@@ -273,7 +273,6 @@ module update_module
                   -vmac(i,j  ) * sedgey(i,j  ) ) / dx(2)
   
           snew(i,j) = sold(i,j) - dt * divsu + dt * force(i,j)
-          if (abs(sold(i,j)) .gt. 1000.) print *,'SPEC ',i,j,sold(i,j)
   
           somax = max(somax,sold(i,j))
           somin = min(somin,sold(i,j))
