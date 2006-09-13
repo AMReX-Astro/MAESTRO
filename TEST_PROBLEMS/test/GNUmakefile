@@ -19,8 +19,8 @@ VPATH_LOCATIONS += $(FPARALLEL)/boxlib
 include $(FPARALLEL)/mg/GPackage.mak
 VPATH_LOCATIONS += $(FPARALLEL)/mg
 
-include $(FPARALLEL)/nova_varden_heating/GPackage.mak
-VPATH_LOCATIONS += $(FPARALLEL)/nova_varden_heating
+include $(FPARALLEL)/MAESTRO/GPackage.mak
+VPATH_LOCATIONS += $(FPARALLEL)/MAESTRO
 
 include ../../extern/helmeos/GPackage.mak
 VPATH_LOCATIONS += ../../extern/helmeos
