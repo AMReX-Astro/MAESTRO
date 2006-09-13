@@ -138,6 +138,59 @@ contains
 
   end subroutine mkrhohforce_2d
 
+  subroutine mkspecforce_2d(force, s, ng, rho, ng_r, dx, bc, &
+                            time, pred_vs_corr, nspec)
+
+    ! compute the source terms for (rho X)_n
+
+    integer        , intent(in   ) :: ng,ng_r,pred_vs_corr,nspec
+    real(kind=dp_t), intent(  out) :: force(0:,0:,:)
+    real(kind=dp_t), intent(in   ) ::     s(1-ng  :,1-ng  :,:)
+    real(kind=dp_t), intent(in   ) ::   rho(1-ng_r:,1-ng_r:)
+    real(kind=dp_t), intent(in   ) ::    dx(:)
+    integer        , intent(in   ) ::    bc(:,:,:) 
+    real(kind=dp_t), intent(in   ) :: time
+
+    real(kind=dp_t), allocatable ::    H(:,:)
+    integer :: i,j,n,nx,ny,lo(2),hi(2)
+
+    nx = size(force,dim=1) - 2
+    ny = size(force,dim=2) - 2
+    lo(:) = 1
+    hi(1) = nx
+    hi(2) = ny
+ 
+    force = ZERO
+
+    allocate(H(lo(1):hi(1),lo(2):hi(2)))
+    call get_H_2d(H,lo,hi,dx,time)
+
+    if (pred_vs_corr .eq. 1) then
+
+       do n = 1,nspec
+       do j = lo(2),hi(2)
+          do i = lo(1),hi(1)
+             force(i,j,n) = rho(i,j) * H(i,j)
+          end do
+       end do
+       end do
+
+    else if (pred_vs_corr .eq. 2) then
+
+       do n = 1,nspec
+       do j = lo(2),hi(2)
+          do i = lo(1),hi(1)
+             force(i,j,n) = rho(i,j) * H(i,j)
+          end do
+       end do
+       end do
+
+    end if
+
+    deallocate(H)
+ 
+  end subroutine mkspecforce_2d
+
   subroutine mkrhohforce_3d(force, s, ng, rho, ng_r, wmac, dx, bc, &
                             diff_coef, diff_fac, p0, rho0, temp0, time, pred_vs_corr)
 
@@ -274,5 +327,64 @@ contains
     deallocate(diff)
 
   end subroutine mkrhohforce_3d
+
+  subroutine mkspecforce_3d(force, s, ng, rho, ng_r, dx, bc, &
+                            time, pred_vs_corr, nspec)
+
+    ! compute the source terms for (rho X)_n
+
+    integer        , intent(in   ) :: ng,ng_r,pred_vs_corr,nspec
+    real(kind=dp_t), intent(  out) :: force(0:,0:,0:,:)
+    real(kind=dp_t), intent(in   ) ::     s(1-ng  :,1-ng  :,1-ng  :,:)
+    real(kind=dp_t), intent(in   ) ::   rho(1-ng_r:,1-ng_r:,1-ng_r:)
+    real(kind=dp_t), intent(in   ) ::    dx(:)
+    integer        , intent(in   ) ::    bc(:,:,:) 
+    real(kind=dp_t), intent(in   ) :: time
+
+    real(kind=dp_t), allocatable ::    H(:,:,:)
+    integer :: i,j,k,n,nx,ny,nz,lo(3),hi(3)
+
+    nx = size(force,dim=1) - 2
+    ny = size(force,dim=2) - 2
+    nz = size(force,dim=3) - 2
+    lo(:) = 1
+    hi(1) = nx
+    hi(2) = ny
+    hi(3) = nz
+ 
+    force = ZERO
+
+    allocate(H(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+    call get_H_3d(H,lo,hi,dx,time)
+
+    if (pred_vs_corr .eq. 1) then
+
+       do n = 1,nspec
+       do k = lo(3),hi(3)
+       do j = lo(2),hi(2)
+          do i = lo(1),hi(1)
+             force(i,j,k,n) = rho(i,j,k) * H(i,j,k)
+          end do
+       end do
+       end do
+       end do
+
+    else if (pred_vs_corr .eq. 2) then
+
+       do n = 1,nspec
+       do k = lo(3),hi(3)
+       do j = lo(2),hi(2)
+          do i = lo(1),hi(1)
+             force(i,j,k,n) = rho(i,j,k) * H(i,j,k)
+          end do
+       end do
+       end do
+       end do
+
+    end if
+
+    deallocate(H)
+ 
+  end subroutine mkspecforce_3d
 
 end module mkscalforce_module

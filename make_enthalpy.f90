@@ -8,8 +8,9 @@ module enthalpy_module
 
 contains
 
-   subroutine make_enthalpy (enthalpy,s)
+   subroutine make_enthalpy (enthalpy,comp,s)
 
+      integer        , intent(in   ) :: comp
       type(multifab) , intent(inout) :: enthalpy
       type(multifab) , intent(in   ) :: s
 
@@ -29,9 +30,9 @@ contains
          hi =  upb(get_box(s, i))
          select case (dm)
             case (2)
-              call make_enthalpy_2d(rp(:,:,1,1),sp(:,:,1,:), lo, hi, ng)
+              call make_enthalpy_2d(rp(:,:,1,comp),sp(:,:,1,:), lo, hi, ng)
             case (3)
-              call make_enthalpy_3d(rp(:,:,:,1),sp(:,:,:,:), lo, hi, ng)
+              call make_enthalpy_3d(rp(:,:,:,comp),sp(:,:,:,:), lo, hi, ng)
          end select
       end do
 

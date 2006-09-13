@@ -8,8 +8,9 @@ module rhopert_module
 
 contains
 
-   subroutine make_rhopert (rhopert,s,rho0)
+   subroutine make_rhopert (rhopert,comp,s,rho0)
 
+      integer        , intent(in   ) :: comp
       type(multifab) , intent(inout) :: rhopert
       type(multifab) , intent(in   ) :: s
       real(kind=dp_t), intent(in   ) :: rho0(:)
@@ -30,9 +31,9 @@ contains
          hi =  upb(get_box(s, i))
          select case (dm)
             case (2)
-              call makerhopert_2d(pp(:,:,1,1),sp(:,:,1,1), lo, hi, ng, rho0)
+              call makerhopert_2d(pp(:,:,1,comp),sp(:,:,1,1), lo, hi, ng, rho0)
             case (3)
-              call makerhopert_3d(pp(:,:,:,1),sp(:,:,:,1), lo, hi, ng, rho0)
+              call makerhopert_3d(pp(:,:,:,comp),sp(:,:,:,1), lo, hi, ng, rho0)
          end select
       end do
 

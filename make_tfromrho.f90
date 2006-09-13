@@ -13,8 +13,9 @@ contains
 
 !  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-   subroutine make_tfromrho (t,s,t0,p0,time,dx)
+   subroutine make_tfromrho (t,comp,s,t0,p0,time,dx)
 
+      integer        , intent(inout) :: comp
       type(multifab) , intent(inout) :: t
       type(multifab) , intent(in   ) :: s
       real(kind=dp_t), intent(in   ) :: t0(:),p0(:)
@@ -35,9 +36,9 @@ contains
          hi =  upb(get_box(s, i))
          select case (dm)
             case (2)
-              call maketfromrho_2d(tp(:,:,1,1),sp(:,:,1,:), lo, hi, ng, t0, p0, time, dx)
+              call maketfromrho_2d(tp(:,:,1,comp),sp(:,:,1,:), lo, hi, ng, t0, p0, time, dx)
             case (3)
-              call maketfromrho_3d(tp(:,:,:,1),sp(:,:,:,:), lo, hi, ng, t0, p0, time, dx)
+              call maketfromrho_3d(tp(:,:,:,comp),sp(:,:,:,:), lo, hi, ng, t0, p0, time, dx)
          end select
       end do
 

@@ -10,10 +10,10 @@ module machno_module
 
 contains
 
-   subroutine make_machno (machno,deltap,u,s,p0,temp0)
+   subroutine make_machno (machno,comp,u,s,p0,temp0)
 
+      integer        , intent(in   ) :: comp
       type(multifab) , intent(inout) :: machno
-      type(multifab) , intent(inout) :: deltap
       type(multifab) , intent(in   ) :: u,s
       real(kind=dp_t), intent(in   ) :: p0(:),temp0(:)
 
@@ -32,25 +32,23 @@ contains
          up => dataptr(u, i)
          sp => dataptr(s, i)
          mp => dataptr(machno, i)
-         dp => dataptr(deltap, i)
          lo =  lwb(get_box(s, i))
          hi =  upb(get_box(s, i))
          select case (dm)
             case (2)
-              call makemachno_2d(mp(:,:,1,1),dp(:,:,1,1),up(:,:,1,:),sp(:,:,1,:), lo, hi, ng, p0, temp0)
+              call makemachno_2d(mp(:,:,1,comp),up(:,:,1,:),sp(:,:,1,:), lo, hi, ng, p0, temp0)
             case (3)
-              call makemachno_3d(mp(:,:,:,1),dp(:,:,:,1),up(:,:,:,:),sp(:,:,:,:), lo, hi, ng, p0, temp0)
+              call makemachno_3d(mp(:,:,:,comp),up(:,:,:,:),sp(:,:,:,:), lo, hi, ng, p0, temp0)
          end select
       end do
 
    end subroutine make_machno
 
-   subroutine makemachno_2d (machno,deltap,u,s,lo,hi,ng,p0,temp0)
+   subroutine makemachno_2d (machno,u,s,lo,hi,ng,p0,temp0)
 
       implicit none
       integer, intent(in) :: lo(:), hi(:), ng
       real (kind = dp_t), intent(  out) :: machno(lo(1):,lo(2):)  
-      real (kind = dp_t), intent(  out) :: deltap(lo(1):,lo(2):)  
       real (kind = dp_t), intent(in   ) ::       u(lo(1)-ng:,lo(2)-ng:,:)
       real (kind = dp_t), intent(in   ) ::       s(lo(1)-ng:,lo(2)-ng:,:)
       real (kind = dp_t), intent(in   ) ::      p0(lo(2):)
@@ -85,19 +83,17 @@ contains
                   s_row, do_diag)
              vel = sqrt(u(i,j,1)*u(i,j,1) + u(i,j,2)*u(i,j,2))
              machno(i,j) = vel / cs_row(1)
-             deltap(i,j) = (p_row(1)-p0(j))/ p0(j)
           enddo
 !       end if
       enddo
 
    end subroutine makemachno_2d
 
-   subroutine makemachno_3d (machno,deltap,u,s,lo,hi,ng,p0,temp0)
+   subroutine makemachno_3d (machno,u,s,lo,hi,ng,p0,temp0)
 
       implicit none
       integer, intent(in) :: lo(:), hi(:), ng
       real (kind = dp_t), intent(  out) :: machno(lo(1):,lo(2):,lo(3):)  
-      real (kind = dp_t), intent(  out) :: deltap(lo(1):,lo(2):,lo(3):)  
       real (kind = dp_t), intent(in   ) ::       u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
       real (kind = dp_t), intent(in   ) ::       s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
       real (kind = dp_t), intent(in   ) ::      p0(lo(3):)
@@ -133,7 +129,6 @@ contains
                   s_row, do_diag)
              vel = sqrt(u(i,j,k,1)*u(i,j,k,1) + u(i,j,k,2)*u(i,j,k,2) + u(i,j,k,3)*u(i,j,k,3))
              machno(i,j,k) = vel / cs_row(1)
-             deltap(i,j,k) = (p_row(1)-p0(k))/ p0(k)
           enddo
           enddo
 !       end if

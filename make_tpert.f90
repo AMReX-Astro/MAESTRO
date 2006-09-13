@@ -9,8 +9,9 @@ module tpert_module
 
 contains
 
-  subroutine make_tpert (T,state,p0,temp0)
+  subroutine make_tpert (T,comp,state,p0,temp0)
 
+    integer        , intent(inout) :: comp
     type(multifab) , intent(inout) :: T
     type(multifab) , intent(in   ) :: state
     real(kind=dp_t), intent(in   ) ::    p0(:)
@@ -32,9 +33,9 @@ contains
        hi =  upb(get_box(state, i))
        select case (dm)
        case (2)
-          call maketpert_2d(tp(:,:,1,1),sp(:,:,1,:), lo, hi, ng, p0, temp0)
+          call maketpert_2d(tp(:,:,1,comp),sp(:,:,1,:), lo, hi, ng, p0, temp0)
        case (3)
-          call maketpert_3d(tp(:,:,:,1),sp(:,:,:,:), lo, hi, ng, p0, temp0)
+          call maketpert_3d(tp(:,:,:,comp),sp(:,:,:,:), lo, hi, ng, p0, temp0)
        end select
     end do
 

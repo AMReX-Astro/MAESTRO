@@ -15,14 +15,15 @@ module update_module
   contains
 
    subroutine update_density_2d (sold,snew,umac,vmac,w0,sedgex,sedgey,rhohalf, &
-                                 rho0_old,rho0_new,lo,hi,ng,dx,dt,pred_vs_corr,div_coeff,div_coeff_half)
+                                 rho0_old,rho0_new,lo,hi,ng,dx,dt,pred_vs_corr,div_coeff,div_coeff_half,&
+                                 verbose)
 
      ! in the density update, the edge states (sedgex and sedgey) are
      ! taken to be the perturbational density (rhopert = rho - rho0)
 
       implicit none
 
-      integer, intent(in) :: lo(:), hi(:), ng, pred_vs_corr
+      integer, intent(in) :: lo(:), hi(:), ng, pred_vs_corr, verbose
       real (kind = dp_t), intent(in   ) ::     sold(lo(1)-ng:,lo(2)-ng:)  
       real (kind = dp_t), intent(  out) ::     snew(lo(1)-ng:,lo(2)-ng:)  
       real (kind = dp_t), intent(in   ) ::     umac(lo(1)- 1:,lo(2)- 1:)  
@@ -109,7 +110,10 @@ module update_module
 
       end if
 
-      print *,'NEW MIN/MAX OF RHO ',smin,smax
+      if (verbose .ge. 1) then
+        print *,'NEW MIN/MAX OF RHO ',smin,smax
+        print *,' '
+      end if
 
       do j = lo(2), hi(2)
       do i = lo(1), hi(1)
@@ -121,8 +125,9 @@ module update_module
 
    end subroutine update_density_2d
 
-   subroutine update_scalar_2d (sold,snew,umac,vmac,w0,sedgex,sedgey,force, &
-                                rhoh0_old,rhoh0_new,lo,hi,ng,dx,dt,pred_vs_corr)
+   subroutine update_rhoh_2d (sold,snew,umac,vmac,w0,sedgex,sedgey,force, &
+                              rhoh0_old,rhoh0_new,lo,hi,ng,dx,dt,pred_vs_corr,&
+                              verbose)
 
      ! update the enthalpy in time.  Here, it is assumed that the edge
      ! states (sedgex and sedgey) are for the enthalpy perturbation
@@ -130,7 +135,7 @@ module update_module
 
       implicit none
 
-      integer, intent(in) :: lo(:), hi(:), ng, pred_vs_corr
+      integer, intent(in) :: lo(:), hi(:), ng, pred_vs_corr, verbose
       real (kind = dp_t), intent(in   ) ::    sold(lo(1)-ng:,lo(2)-ng:)  
       real (kind = dp_t), intent(  out) ::    snew(lo(1)-ng:,lo(2)-ng:)  
       real (kind = dp_t), intent(in   ) ::    umac(lo(1)- 1:,lo(2)- 1:)  
@@ -218,14 +223,102 @@ module update_module
 
       end if
 
-      print *,'NEW MIN/MAX OF (RHO H) ',smin,smax
+      if (verbose .ge. 1) then
+        print *,'NEW MIN/MAX OF (RHO H) ',smin,smax
+        print *,' '
+      end if
 
       deallocate(rhoh0_edge)
 
-   end subroutine update_scalar_2d
+   end subroutine update_rhoh_2d
+
+   subroutine update_species_2d (sold,snew,umac,vmac,w0,sedgex,sedgey,force, &
+                                 lo,hi,ng,dx,dt,pred_vs_corr,verbose)
+
+     ! Update the species in time.  
+
+      implicit none
+
+      integer, intent(in) :: lo(:), hi(:), ng, pred_vs_corr, verbose
+      real (kind = dp_t), intent(in   ) ::    sold(lo(1)-ng:,lo(2)-ng:)  
+      real (kind = dp_t), intent(  out) ::    snew(lo(1)-ng:,lo(2)-ng:)  
+      real (kind = dp_t), intent(in   ) ::    umac(lo(1)- 1:,lo(2)- 1:)  
+      real (kind = dp_t), intent(in   ) ::    vmac(lo(1)- 1:,lo(2)- 1:)  
+      real (kind = dp_t), intent(in   ) ::  sedgex(lo(1)   :,lo(2)   :)  
+      real (kind = dp_t), intent(in   ) ::  sedgey(lo(1)   :,lo(2)   :)  
+      real (kind = dp_t), intent(in   ) ::   force(lo(1)- 1:,lo(2)- 1:)  
+      real (kind = dp_t), intent(in   ) :: w0(lo(2):)
+      real (kind = dp_t), intent(in   ) :: dt,dx(:)
+
+      integer :: i, j, n
+      real (kind = dp_t) :: divsu,divbaseu
+      real (kind = dp_t) :: somin,somax,snmin,snmax
+
+      somax = -1.d20
+      somin =  1.d20
+
+      snmax = -1.d20
+      snmin =  1.d20
+
+      if (pred_vs_corr .eq. 1) then
+
+         ! see ABRZ2, step 2
+
+        do j = lo(2), hi(2)
+        do i = lo(1), hi(1)
+  
+          divsu = (umac(i+1,j) * sedgex(i+1,j) &
+                  -umac(i  ,j) * sedgex(i  ,j) ) / dx(1) + &
+                  (vmac(i,j+1) * sedgey(i,j+1) &
+                  -vmac(i,j  ) * sedgey(i,j  ) ) / dx(2)
+  
+          snew(i,j) = sold(i,j) - dt * divsu + dt * force(i,j)
+          if (abs(sold(i,j)) .gt. 1000.) print *,'SPEC ',i,j,sold(i,j)
+  
+          somax = max(somax,sold(i,j))
+          somin = min(somin,sold(i,j))
+  
+          snmax = max(snmax,snew(i,j))
+          snmin = min(snmin,snew(i,j))
+  
+        enddo
+        enddo
+
+      else if (pred_vs_corr .eq. 2) then
+
+         ! see ABRZ2, step 4
+
+        do j = lo(2), hi(2)
+        do i = lo(1), hi(1)
+  
+          divsu = (umac(i+1,j) * sedgex(i+1,j) &
+                  -umac(i  ,j) * sedgex(i  ,j) ) / dx(1) + &
+                 ((vmac(i,j+1)+w0(j+1)) * sedgey(i,j+1) &
+                 -(vmac(i,j  )+w0(j  )) * sedgey(i,j  ) ) / dx(2)
+
+          snew(i,j) = sold(i,j) - dt * divsu + dt * force(i,j)
+  
+          somax = max(somax,sold(i,j))
+          somin = min(somin,sold(i,j))
+  
+          snmax = max(snmax,snew(i,j))
+          snmin = min(snmin,snew(i,j))
+  
+        enddo
+        enddo
+
+      end if
+
+      if (verbose .ge. 1) then
+        print *,'OLD MIN/MAX OF SPECIES ',somin,somax
+        print *,'NEW MIN/MAX OF SPECIES ',snmin,snmax
+        print *,' '
+      end if
+
+   end subroutine update_species_2d
 
    subroutine update_velocity_2d (uold,unew,rhoold,rhonew,umac,vmac,sedgex,sedgey,force,w0, &
-                                  lo,hi,ng,dx,time,dt,do_mom)
+                                  lo,hi,ng,dx,time,dt,do_mom,verbose)
 
 
      ! update the velocity in time (to get the provisional velocity that
@@ -234,7 +327,7 @@ module update_module
 
       implicit none
 
-      integer, intent(in) :: lo(:), hi(:), ng
+      integer, intent(in) :: lo(:), hi(:), ng, verbose
       real (kind = dp_t), intent(in   ) ::    uold(lo(1)-ng:,lo(2)-ng:,:)  
       real (kind = dp_t), intent(  out) ::    unew(lo(1)-ng:,lo(2)-ng:,:)  
       real (kind = dp_t), intent(in   ) ::  rhoold(lo(1)-ng:,lo(2)-ng:)  
@@ -331,17 +424,21 @@ module update_module
           vmin = min(vmin,unew(i,j,2))
         enddo
       enddo
-      print *,'MIN/MAX OF UNEW ',umin,umax
-      print *,'MIN/MAX OF VNEW ',vmin,vmax
+      if (verbose .ge. 1) then
+        print *,'MIN/MAX OF UNEW ',umin,umax
+        print *,'MIN/MAX OF VNEW ',vmin,vmax
+        print *,' '
+      end if
 
    end subroutine update_velocity_2d
 
    subroutine update_density_3d (sold,snew,umac,vmac,wmac,w0,sedgex,sedgey,sedgez,rhohalf, &
-                                 rho0_old,rho0_new,lo,hi,ng,dx,dt,pred_vs_corr,div_coeff,div_coeff_half)
+                                 rho0_old,rho0_new,lo,hi,ng,dx,dt,pred_vs_corr,div_coeff,div_coeff_half,&
+                                 verbose)
 
       implicit none
 
-      integer, intent(in) :: lo(:), hi(:), ng, pred_vs_corr
+      integer, intent(in) :: lo(:), hi(:), ng, pred_vs_corr, verbose
       real (kind = dp_t), intent(in   ) ::     sold(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
       real (kind = dp_t), intent(  out) ::     snew(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
       real (kind = dp_t), intent(in   ) ::     umac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
@@ -438,7 +535,10 @@ module update_module
 
       end if
 
-      print *,'NEW MIN/MAX OF RHO ',smin,smax
+      if (verbose .ge. 1) then
+        print *,'NEW MIN/MAX OF RHO ',smin,smax
+        print *,' '
+      end if
 
       do k = lo(3), hi(3)
       do j = lo(2), hi(2)
@@ -452,12 +552,12 @@ module update_module
 
    end subroutine update_density_3d
 
-   subroutine update_scalar_3d (sold,snew,umac,vmac,wmac,w0,sedgex,sedgey,sedgez,force, &
-                                rhoh0_old,rhoh0_new,lo,hi,ng,dx,dt,pred_vs_corr)
+   subroutine update_rhoh_3d (sold,snew,umac,vmac,wmac,w0,sedgex,sedgey,sedgez,force, &
+                              rhoh0_old,rhoh0_new,lo,hi,ng,dx,dt,pred_vs_corr,verbose)
 
       implicit none
 
-      integer, intent(in) :: lo(:), hi(:), ng, pred_vs_corr
+      integer, intent(in) :: lo(:), hi(:), ng, pred_vs_corr, verbose
       real (kind = dp_t), intent(in   ) ::    sold(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)  
       real (kind = dp_t), intent(  out) ::    snew(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)  
       real (kind = dp_t), intent(in   ) ::    umac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)  
@@ -552,18 +652,105 @@ module update_module
 
       end if
 
-      print *,'NEW MIN/MAX OF (RHO H) ',smin,smax
+      if (verbose .ge. 1) then
+        print *,'NEW MIN/MAX OF (RHO H) ',smin,smax
+        print *,' '
+      end if
 
       deallocate(rhoh0_edge)
 
-   end subroutine update_scalar_3d
+   end subroutine update_rhoh_3d
 
-   subroutine update_velocity_3d (uold,unew,rhoold,rhonew,umac,vmac,wmac,sedgex,sedgey,sedgez, &
-                                  force,w0,lo,hi,ng,dx,time,dt,do_mom)
+   subroutine update_species_3d (sold,snew,umac,vmac,wmac,w0,sedgex,sedgey,sedgez,force, &
+                                 lo,hi,ng,dx,dt,pred_vs_corr,verbose)
+
+     ! Update the species in time.  
 
       implicit none
 
-      integer, intent(in) :: lo(:), hi(:), ng
+      integer, intent(in) :: lo(:), hi(:), ng, pred_vs_corr, verbose
+      real (kind = dp_t), intent(in   ) ::    sold(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)  
+      real (kind = dp_t), intent(  out) ::    snew(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)  
+      real (kind = dp_t), intent(in   ) ::    umac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)  
+      real (kind = dp_t), intent(in   ) ::    vmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)  
+      real (kind = dp_t), intent(in   ) ::    wmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)  
+      real (kind = dp_t), intent(in   ) ::  sedgex(lo(1)   :,lo(2)   :,lo(3)   :)  
+      real (kind = dp_t), intent(in   ) ::  sedgey(lo(1)   :,lo(2)   :,lo(3)   :)  
+      real (kind = dp_t), intent(in   ) ::  sedgez(lo(1)   :,lo(2)   :,lo(3)   :)  
+      real (kind = dp_t), intent(in   ) ::   force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)  
+      real (kind = dp_t), intent(in   ) :: w0(lo(3):)
+      real (kind = dp_t), intent(in   ) :: dt,dx(:)
+
+      integer :: i, j, k, n
+      real (kind = dp_t) :: divsu
+      real (kind = dp_t) :: smin,smax
+
+      smax = -1.d20
+      smin =  1.d20
+
+      if (pred_vs_corr .eq. 1) then
+
+         ! see ABRZ2, step 2
+
+        do k = lo(3), hi(3)
+        do j = lo(2), hi(2)
+        do i = lo(1), hi(1)
+  
+          divsu = (umac(i+1,j,k) * sedgex(i+1,j,k) &
+                  -umac(i  ,j,k) * sedgex(i  ,j,k) ) / dx(1) + &
+                  (vmac(i,j+1,k) * sedgey(i,j+1,k) &
+                  -vmac(i,j  ,k) * sedgey(i,j  ,k) ) / dx(2) + &
+                  (wmac(i,j,k+1) * sedgez(i,j,k+1) &
+                  -wmac(i,j,k  ) * sedgez(i,j,k  ) ) / dx(3)
+  
+          snew(i,j,k) = sold(i,j,k) - dt * divsu + dt * force(i,j,k)
+  
+          smax = max(smax,snew(i,j,k))
+          smin = min(smin,snew(i,j,k))
+  
+        enddo
+        enddo
+        enddo
+
+      else if (pred_vs_corr .eq. 2) then
+
+         ! see ABRZ2, step 4
+
+        do k = lo(3), hi(3)
+        do j = lo(2), hi(2)
+        do i = lo(1), hi(1)
+  
+          divsu = (umac(i+1,j,k) * sedgex(i+1,j,k) &
+                  -umac(i  ,j,k) * sedgex(i  ,j,k) ) / dx(1) + &
+                  (vmac(i,j+1,k) * sedgey(i,j+1,k) &
+                  -vmac(i,j  ,k) * sedgey(i,j  ,k) ) / dx(2) + &
+                 ((wmac(i,j,k+1)+w0(k+1)) * sedgez(i,j,k+1) &
+                 -(wmac(i,j,k  )+w0(k  )) * sedgez(i,j,k  ) ) / dx(3)
+
+          snew(i,j,k) = sold(i,j,k) - dt * divsu + dt * force(i,j,k)
+  
+          smax = max(smax,snew(i,j,k))
+          smin = min(smin,snew(i,j,k))
+  
+        enddo
+        enddo
+        enddo
+
+      end if
+
+      if (verbose .ge. 1) then
+        print *,'NEW MIN/MAX OF SPECIES ',smin,smax
+        print *,' '
+      end if
+
+   end subroutine update_species_3d
+
+   subroutine update_velocity_3d (uold,unew,rhoold,rhonew,umac,vmac,wmac,sedgex,sedgey,sedgez, &
+                                  force,w0,lo,hi,ng,dx,time,dt,do_mom,verbose)
+
+      implicit none
+
+      integer, intent(in) :: lo(:), hi(:), ng, verbose
       real (kind = dp_t), intent(in   ) ::    uold(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
       real (kind = dp_t), intent(  out) ::    unew(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
       real (kind = dp_t), intent(in   ) ::  rhoold(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:  )
@@ -684,9 +871,12 @@ module update_module
         enddo
       enddo
       enddo
-      print *,'MIN/MAX OF UNEW ',umin,umax
-      print *,'MIN/MAX OF VNEW ',vmin,vmax
-      print *,'MIN/MAX OF WNEW ',wmin,wmax
+      if (verbose .ge. 1) then
+        print *,'MIN/MAX OF UNEW ',umin,umax
+        print *,'MIN/MAX OF VNEW ',vmin,vmax
+        print *,'MIN/MAX OF WNEW ',wmin,wmax
+        print *,' '
+      end if
 
    end subroutine update_velocity_3d
 
