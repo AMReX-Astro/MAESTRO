@@ -45,7 +45,6 @@ contains
     dm = get_dim(mba)
     nlevs = size(plotdata)
     nscal = multifab_ncomp(sold(nlevs))
-    print *,'DM NLEVS NSCAL IN PLOT ',dm,nlevs,nscal
 
     do n = 1,nlevs
        call multifab_copy_c(plotdata(n),1            ,    uold(n),1,dm)
@@ -79,14 +78,6 @@ contains
        icomp = derive_comp+8
        call multifab_copy_c(plotdata(n),icomp,gp(n),1,dm)
 
-!      call multifab_copy_c(plotdata(n),derive_comp  ,    vort(n),1,1)
-!      call multifab_copy_c(plotdata(n),derive_comp+1, rhopert(n),1,1)
-!      call multifab_copy_c(plotdata(n),derive_comp+2,enthalpy(n),1,1)
-!      call multifab_copy_c(plotdata(n),derive_comp+3, tfrmrho(n),1,1)
-!      call multifab_copy_c(plotdata(n),derive_comp+4,   tfrmH(n),1,1)
-!      call multifab_copy_c(plotdata(n),derive_comp+5,   tpert(n),1,1)
-!      call multifab_copy_c(plotdata(n),derive_comp+6,  machno(n),1,1)
-!      call multifab_copy_c(plotdata(n),derive_comp+7,  deltap(n),1,1)
      end do
 
      write(unit=sd_name,fmt='("plt",i4.4)') istep
