@@ -5,7 +5,7 @@ module variables
 
   implicit none
 
-  integer, save :: rho_comp, rhoh_comp, press_comp, derive_comp
+  integer, save :: rho_comp, rhoh_comp, spec_comp, press_comp, derive_comp
 
 contains
 
@@ -13,10 +13,12 @@ contains
 
     integer, intent(in) :: dm, nscal
 
-    rho_comp = dm + 1
-    rhoh_comp = rho_comp + 1
-    press_comp = dm + nscal + 1
-    derive_comp = rho_comp + nscal
+    rho_comp    = 1
+    rhoh_comp   = 2
+    spec_comp   = rhoh_comp + 1
+    press_comp  = dm + nscal + 1
+    derive_comp = dm + nscal + 1
 
   end subroutine init_variables
+
 end module variables
