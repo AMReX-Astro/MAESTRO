@@ -12,7 +12,7 @@ contains
       subroutine mkflux_2d(s,u,rho,sedgex,sedgey,uadv,vadv,utrans,vtrans,&
                            force,lo,dx,dt,is_vel,is_cons,&
                            phys_bc,adv_bc,velpred,ng,base, &
-                           advect_rhopert,do_mom,n)
+                           advect_in_pert_form,do_mom,n)
 
       integer, intent(in) :: lo(:),ng,n
 
@@ -33,7 +33,7 @@ contains
       integer        ,intent(in) ::  adv_bc(:,:,:)
       logical        ,intent(in) :: is_vel
       logical        ,intent(in) :: is_cons(:)
-      logical        ,intent(in) :: advect_rhopert
+      logical        ,intent(in) :: advect_in_pert_form
       logical        ,intent(in) :: do_mom
 
       real(kind=dp_t), allocatable::  slopex(:,:,:),slopey(:,:,:)
@@ -70,7 +70,7 @@ contains
       allocate(slopex(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1))
       allocate(slopey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1))
 
-      if (.not. is_vel .and. advect_rhopert) then
+      if (.not. is_vel .and. advect_in_pert_form) then
          do j = js,je
            do i = is-ng,ie+ng
              s(i,j,n) = s(i,j,n) - base(j)
@@ -384,7 +384,7 @@ contains
         endif
        enddo
 
-      if (.not. is_vel .and. advect_rhopert) then
+      if (.not. is_vel .and. advect_in_pert_form) then
          do j = js,je
            do i = is-ng,ie+ng
              s(i,j,n) = s(i,j,n) + base(j)
@@ -445,7 +445,7 @@ contains
       subroutine mkflux_3d(s,u,rho,sedgex,sedgey,sedgez,uadv,vadv,wadv,utrans,vtrans,wtrans,&
                            force,lo,dx,dt,is_vel,is_cons,&
                            phys_bc,adv_bc,velpred,ng,base, &
-                           advect_rhopert,do_mom,n)
+                           advect_in_pert_form,do_mom,n)
 
       integer, intent(in) :: lo(:),ng,n
 
@@ -469,7 +469,7 @@ contains
       integer        ,intent(in) ::  adv_bc(:,:,:)
       logical        ,intent(in) :: is_vel
       logical        ,intent(in) :: is_cons(:)
-      logical        ,intent(in) :: advect_rhopert
+      logical        ,intent(in) :: advect_in_pert_form
       logical        ,intent(in) :: do_mom
 
       real(kind=dp_t), allocatable::  slopex(:,:,:,:),slopey(:,:,:,:),slopez(:,:,:,:)
@@ -512,7 +512,7 @@ contains
       allocate(slopey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1))
       allocate(slopez(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1))
 
-      if (.not. is_vel .and. advect_rhopert) then
+      if (.not. is_vel .and. advect_in_pert_form) then
          do k = ks,ke
            do j = js-ng,je+ng
            do i = is-ng,ie+ng
@@ -1138,7 +1138,7 @@ contains
         enddo
        endif
 
-      if (.not. is_vel .and. advect_rhopert) then
+      if (.not. is_vel .and. advect_in_pert_form) then
          do k = ks,ke
            do j = js-ng,je+ng
            do i = is-ng,ie+ng
