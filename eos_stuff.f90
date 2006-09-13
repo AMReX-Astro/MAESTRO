@@ -1,15 +1,13 @@
 module eos_module
 
       use bl_types
+      use network
 
-      integer, parameter :: IONMAX = 2
       integer, parameter :: NP = 1
       integer, parameter :: npts = 1
-      integer, parameter :: nspecies = 2
 
-      real(kind=dp_t), parameter :: xmass(IONMAX) = (/  0.3_dp_t,  0.7_dp_t /)
-      real(kind=dp_t), parameter ::  aion(IONMAX) = (/ 12.0_dp_t, 16.0_dp_t /)
-      real(kind=dp_t), parameter ::  zion(IONMAX) = (/  6.0_dp_t,  8.0_dp_t /)
+      real(kind=dp_t) :: xmass(nspec)= (/  0.3_dp_t,  0.7_dp_t, 0.0_dp_t /)
+
 
       real(kind=dp_t) :: temp_row(NP)
       real(kind=dp_t) :: den_row(NP)

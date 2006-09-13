@@ -124,7 +124,7 @@ contains
            ! (rho,P) --> h, etc
            input_flag = 4
 
-           call eos(input_flag, den_row, temp_row, npts, nspecies, &
+           call eos(input_flag, den_row, temp_row, npts, nspec, &
                 xmass, aion, zion, &
                 p_row, h_row, e_row, &
                 cv_row, cp_row, xne_row, eta_row, &
@@ -184,7 +184,7 @@ contains
 !        ! (rho,P) --> T, h
          input_flag = 4
 
-         call eos(input_flag, den_row, temp_row, npts, nspecies, &
+         call eos(input_flag, den_row, temp_row, npts, nspec, &
                   xmass, aion, zion, &
                   p_row, h_row, e_row, &
                   cv_row, cp_row, xne_row, eta_row, &
@@ -278,7 +278,7 @@ contains
              p_row(1) = p0_old(k)
            ! (rho,P) --> h, etc
            input_flag = 4
-           call eos(input_flag, den_row, temp_row, npts, nspecies, &
+           call eos(input_flag, den_row, temp_row, npts, nspec, &
                 xmass, aion, zion, &
                 p_row, h_row, e_row, &
                 cv_row, cp_row, xne_row, eta_row, &
@@ -339,7 +339,7 @@ contains
 !        ! (rho,P) --> T, h
          input_flag = 4
 
-         call eos(input_flag, den_row, temp_row, npts, nspecies, &
+         call eos(input_flag, den_row, temp_row, npts, nspec, &
                   xmass, aion, zion, &
                   p_row, h_row, e_row, &
                   cv_row, cp_row, xne_row, eta_row, &

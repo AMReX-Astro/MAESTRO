@@ -9,6 +9,8 @@ module init_module
   use multifab_module
   use make_div_coeff_module
   use eos_module
+  use variables
+  use network
 
   implicit none
 
@@ -87,8 +89,9 @@ contains
     !     Local variables
     integer :: i, j, n
     real(kind=dp_t) :: x,y,r,r0,r1,r2,temp
-    real(kind=dp_t) :: dens_pert, rhoh_pert
-    logical, parameter :: perturbModel = .false.
+    real(kind=dp_t) :: dens_pert, rhoh_pert, xn_pert(nspec)
+
+    logical, parameter :: perturbModel = .true.
 
     ! initial the domain with the base state
     u = ZERO
@@ -110,9 +113,10 @@ contains
           x = prob_lo(1) + (dble(i)+HALF) * dx(1)
           
           if (perturbModel) then
-             call perturb_2d(x, y, temp0(j), p0(j), rho0(j), dens_pert, rhoh_pert)
+             call perturb_2d(x, y, temp0(j), p0(j), rho0(j), dens_pert, rhoh_pert, xn_pert)
              s(i,j,1) = dens_pert
              s(i,j,2) = rhoh_pert
+             s(i,j,spec_comp:spec_comp+nspec-1) = dens_pert*xn_pert(:)
           endif
 
        enddo
@@ -149,7 +153,7 @@ contains
     !     Local variables
     integer :: i, j, k, n
     real(kind=dp_t) :: x,y,z,r,r0,r1,r2,temp
-    real(kind=dp_t) :: dens_pert, rhoh_pert
+    real(kind=dp_t) :: dens_pert, rhoh_pert, xn_pert(nspec)
     logical, parameter :: perturbModel = .true.
 
     ! initial the domain with the base state
@@ -176,9 +180,10 @@ contains
           x = prob_lo(1) + (dble(i)+HALF) * dx(1)
           
           if (perturbModel) then
-             call perturb_3d(x, y, z, temp0(k), p0(k), rho0(k), dens_pert, rhoh_pert)
+             call perturb_3d(x, y, z, temp0(k), p0(k), rho0(k), dens_pert, rhoh_pert, xn_pert)
              s(i,j,k,1) = dens_pert
              s(i,j,k,2) = rhoh_pert
+             s(i,j,k,spec_comp:spec_comp+nspec-1) = dens_pert*xn_pert(:)
           endif
         enddo
        enddo
@@ -198,7 +203,7 @@ contains
     
   end subroutine initdata_3d
 
-  subroutine perturb_2d(x, y, t0, p0, rho0, dens_pert, rhoh_pert)
+  subroutine perturb_2d(x, y, t0, p0, rho0, dens_pert, rhoh_pert, xn_pert)
 
     ! apply an optional perturbation to the initial temperature field
     ! to see some bubbles
@@ -206,6 +211,7 @@ contains
     real(kind=dp_t), intent(in ) :: x, y
     real(kind=dp_t), intent(in ) :: t0, p0, rho0
     real(kind=dp_t), intent(out) :: dens_pert, rhoh_pert
+    real(kind=dp_t), dimension(nspec), intent(out) :: xn_pert
 
     real(kind=dp_t) :: temp
     real(kind=dp_t) :: x0, y0, x1, y1, x2, y2
@@ -239,7 +245,7 @@ contains
     den_row(1) = rho0
     input_flag = 3      ! (t, p) -> (rho, h)
 
-    call eos(input_flag, den_row, temp_row, npts, nspecies, &
+    call eos(input_flag, den_row, temp_row, npts, nspec, &
          xmass, aion, zion, &
          p_row, h_row, e_row, &
          cv_row, cp_row, xne_row, eta_row, &
@@ -251,7 +257,7 @@ contains
 
   end subroutine perturb_2d
 
-  subroutine perturb_3d(x, y, z, t0, p0, rho0, dens_pert, rhoh_pert)
+  subroutine perturb_3d(x, y, z, t0, p0, rho0, dens_pert, rhoh_pert, xn_pert)
 
     ! apply an optional perturbation to the initial temperature field
     ! to see some bubbles
@@ -259,6 +265,7 @@ contains
     real(kind=dp_t), intent(in ) :: x, y, z
     real(kind=dp_t), intent(in ) :: t0, p0, rho0
     real(kind=dp_t), intent(out) :: dens_pert, rhoh_pert
+    real(kind=dp_t), dimension(nspec), intent(out) :: xn_pert
 
     real(kind=dp_t) :: temp
     real(kind=dp_t) :: x0, y0, z0, x1, y1, z1, x2, y2, z2
@@ -291,7 +298,7 @@ contains
     den_row(1) = rho0
     input_flag = 3      ! (t, p) -> (rho, h)
 
-    call eos(input_flag, den_row, temp_row, npts, nspecies, &
+    call eos(input_flag, den_row, temp_row, npts, nspec, &
          xmass, aion, zion, &
          p_row, h_row, e_row, &
          cv_row, cp_row, xne_row, eta_row, &
@@ -393,7 +400,7 @@ contains
        ! (rho,T) --> p,h
        input_flag = 1
 
-       call eos(input_flag, den_row, temp_row, npts, nspecies, &
+       call eos(input_flag, den_row, temp_row, npts, nspec, &
             xmass, aion, zion, &
             p_row, h_row, e_row, &
             cv_row, cp_row, xne_row, eta_row, &
@@ -441,7 +448,7 @@ contains
 !       (rho, p) --> T, h
        input_flag = 4
 
-       call eos(input_flag, den_row, temp_row, npts, nspecies, &
+       call eos(input_flag, den_row, temp_row, npts, nspec, &
             xmass, aion, zion, &
             p_row, h_row, e_row, &
             cv_row, cp_row, xne_row, eta_row, &

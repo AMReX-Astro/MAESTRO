@@ -4,6 +4,7 @@ module tfromh_module
   use bc_module
   use multifab_module
   use eos_module
+  use network
 
   implicit none
 
@@ -72,7 +73,7 @@ contains
 
              input_flag = 7
 
-             call eos(input_flag, den_row, temp_row, npts, nspecies, &
+             call eos(input_flag, den_row, temp_row, npts, nspec, &
                   xmass, aion, zion, &
                   p_row, h_row, e_row, &
                   cv_row, cp_row, xne_row, eta_row, &
@@ -96,7 +97,7 @@ contains
 
              input_flag = 2
   
-             call eos(input_flag, den_row, temp_row, npts, nspecies, &
+             call eos(input_flag, den_row, temp_row, npts, nspec, &
                   xmass, aion, zion, &
                   p_row, h_row, e_row, &
                   cv_row, cp_row, xne_row, eta_row, &
@@ -146,7 +147,7 @@ contains
 
              input_flag = 7
 
-             call eos(input_flag, den_row, temp_row, npts, nspecies, &
+             call eos(input_flag, den_row, temp_row, npts, nspec, &
                   xmass, aion, zion, &
                   p_row, h_row, e_row, &
                   cv_row, cp_row, xne_row, eta_row, &
@@ -166,7 +167,7 @@ contains
 
              input_flag = 2
   
-             call eos(input_flag, den_row, temp_row, npts, nspecies, &
+             call eos(input_flag, den_row, temp_row, npts, nspec, &
                   xmass, aion, zion, &
                   p_row, h_row, e_row, &
                   cv_row, cp_row, xne_row, eta_row, &
