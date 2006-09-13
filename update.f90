@@ -6,7 +6,6 @@ module update_module
 
   use bl_types
   use multifab_module
-  use eos_module
 
   implicit none
 
@@ -256,8 +255,6 @@ module update_module
       real (kind = dp_t), allocatable :: base_edge(:)
 
       allocate(base_edge(lo(3):hi(3)+1))
-
-      do_diag = .false.
 
       smax = -1.d20
       smin =  1.d20
