@@ -28,7 +28,9 @@ contains
    subroutine scalar_advance (uold, sold, snew, rhohalf,&
                               umac, w0, sedge, utrans, ext_scal_force, &
                               rho0_old , rho0_new , rho0_nph, &
-                              rhoh0_old, rhoh0_new, p0_old, p0_new, temp0, &
+                              rhoh0_old, rhoh0_new, &
+                              rhoX0_old, rhoX0_new, &
+                              p0_old, p0_new, temp0, &
                               dx,time, dt, the_bc_level,diff_coef,&
                               verbose, div_coeff, div_coeff_half, &
                               pred_vs_corr)
@@ -55,6 +57,8 @@ contains
       real(kind=dp_t), intent(in   ) ::  rho0_nph(:)
       real(kind=dp_t), intent(in   ) :: rhoh0_old(:)
       real(kind=dp_t), intent(in   ) :: rhoh0_new(:)
+      real(kind=dp_t), intent(in   ) :: rhoX0_old(:,:)
+      real(kind=dp_t), intent(in   ) :: rhoX0_new(:,:)
       real(kind=dp_t), intent(in   ) ::    p0_old(:)
       real(kind=dp_t), intent(in   ) ::    p0_new(:)
       real(kind=dp_t), intent(in   ) ::     temp0(:)
@@ -240,27 +244,27 @@ contains
          hi =  upb(get_box(uold, i))
          select case (dm)
             case (2)
-              call update_density_2d( &
+              call update_scal_2d( &
                              sop(:,:,1,1), snp(:,:,1,1), ump(:,:,1,1), vmp(:,:,1,1), w0, &
                              sepx(:,:,1,1), sepy(:,:,1,1), rp(:,:,1,1) , rho0_old, rho0_new, &
-                             lo, hi, ng_cell, dx, dt, pred_vs_corr,div_coeff,div_coeff_half, &
-                             verbose)
+                             lo, hi, ng_cell, dx, dt, pred_vs_corr, verbose)
               call setbc_2d(snp(:,:,1,1), lo, ng_cell, &
                             the_bc_level%adv_bc_level_array(i,:,:,rho_comp+dm),dx,rho_comp+dm)
               call setbc_2d(rp(:,:,1,1), lo, ng_rho, &
                             the_bc_level%adv_bc_level_array(i,:,:,rho_comp+dm),dx,rho_comp+dm)
+              call mk_rhohalf(sop(:,:,1,1),snp(:,:,1,1),rp(:,:,1,1),lo,hi,ng_cell)
            case (3)
               wmp => dataptr(umac(3), i)
               sepz => dataptr(sedge(3), i)
-              call update_density_3d( &
+              call update_scal_3d( &
                              sop(:,:,:,1), snp(:,:,:,1), ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0, &
                              sepx(:,:,:,1), sepy(:,:,:,1), sepz(:,:,:,1), rp(:,:,:,1) , rho0_old, rho0_new, &
-                             lo, hi, ng_cell, dx, dt, pred_vs_corr,div_coeff,div_coeff_half, &
-                             verbose)
+                             lo, hi, ng_cell, dx, dt, pred_vs_corr, verbose)
               call setbc_3d(snp(:,:,:,1), lo, ng_cell, &
                             the_bc_level%adv_bc_level_array(i,:,:,rho_comp+dm),dx,rho_comp+dm)
               call setbc_3d(rp(:,:,:,1), lo, ng_rho, &
                             the_bc_level%adv_bc_level_array(i,:,:,rho_comp+dm),dx,rho_comp+dm)
+              call mk_rhohalf(sop(:,:,1,1),snp(:,:,1,1),rp(:,:,1,1),lo,hi,ng_cell)
          end select
       end do
       call multifab_fill_boundary(rhohalf)
@@ -282,6 +286,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       visc_fac = ONE
+      n = rhoh_comp
       do i = 1, scal_force%nboxes
          if ( multifab_remote(scal_force, i) ) cycle
           fp => dataptr(scal_force, i)
@@ -292,19 +297,19 @@ contains
          hi =  upb(get_box(sold, i))
          select case (dm)
             case (2)
-              call  mkrhohforce_2d(fp(:,:,1,2), sop(:,:,1,2), ng_cell, & 
+              call  mkrhohforce_2d(fp(:,:,1,n), sop(:,:,1,n), ng_cell, & 
                                    sop(:,:,1,1), ng_cell, vmp(:,:,1,1), &
                                    dx, the_bc_level%ell_bc_level_array(i,:,:,rhoh_comp+dm), &
                                    diff_coef, visc_fac, p0_old, rho0_old, temp0, time, pred_vs_corr)
-              call modify_force_2d(fp(:,:,1,2),sop(:,:,1,2),ng_cell,rhoh0_old, &
+              call modify_force_2d(fp(:,:,1,n),sop(:,:,1,n),ng_cell,rhoh0_old, &
                                    ump(:,:,1,1),vmp(:,:,1,1),w0,dx,pred_vs_corr)
             case(3)
               wmp  => dataptr(umac(3), i)
-              call  mkrhohforce_3d(fp(:,:,:,2), sop(:,:,:,2), ng_cell, & 
+              call  mkrhohforce_3d(fp(:,:,:,n), sop(:,:,:,n), ng_cell, & 
                                    sop(:,:,:,1), ng_cell, wmp(:,:,:,1), &
                                    dx, the_bc_level%ell_bc_level_array(i,:,:,rhoh_comp+dm), &
                                    diff_coef, visc_fac, p0_old, rho0_old, temp0, time, pred_vs_corr)
-              call modify_force_3d(fp(:,:,:,2),sop(:,:,:,2),ng_cell,rhoh0_old, &
+              call modify_force_3d(fp(:,:,:,n),sop(:,:,:,n),ng_cell,rhoh0_old, &
                                    ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),w0,dx,pred_vs_corr)
          end select
       end do
@@ -314,7 +319,6 @@ contains
 !     for (rho X) looks like (rho wdot_i).
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      n = spec_comp
       do i = 1, scal_force%nboxes
          if ( multifab_remote(scal_force, i) ) cycle
           fp => dataptr(scal_force, i)
@@ -325,16 +329,26 @@ contains
          hi =  upb(get_box(sold, i))
          select case (dm)
             case (2)
+              n = spec_comp
               call mkspecforce_2d(fp(:,:,1,n:), sop(:,:,1,n:), ng_cell, & 
                                   sop(:,:,1,1), ng_cell, &
                                   dx, the_bc_level%ell_bc_level_array(i,:,:,n+dm:), &
                                   time, pred_vs_corr, nspec)
+              do n = spec_comp,spec_comp+nspec-1
+                call modify_force_2d(fp(:,:,1,n),sop(:,:,1,n),ng_cell,rhoX0_old(:,n), &
+                                     ump(:,:,1,1),vmp(:,:,1,1),w0,dx,pred_vs_corr)
+              end do
             case(3)
               wmp  => dataptr(umac(3), i)
+              n = spec_comp
               call mkspecforce_3d(fp(:,:,:,n:), sop(:,:,:,n:), ng_cell, & 
                                   sop(:,:,:,1), ng_cell, &
                                   dx, the_bc_level%ell_bc_level_array(i,:,:,n+dm:), &
                                   time, pred_vs_corr, nspec)
+              do n = spec_comp,spec_comp+nspec-1
+                call modify_force_3d(fp(:,:,:,n),sop(:,:,:,n),ng_cell,rhoX0_old(:,n), &
+                                     ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),w0,dx,pred_vs_corr)
+              end do
          end select
       end do
 
@@ -381,7 +395,7 @@ contains
          hi =  upb(get_box(uold, i))
          select case (dm)
             case (2)
-              do n = rhoh_comp,nscal
+              n = rhoh_comp
                 bc_comp = dm+n
                 call mkflux_2d(sop(:,:,1,:), uop(:,:,1,:), sop(:,:,1,1), &
                                sepx(:,:,1,:), sepy(:,:,1,:), &
@@ -391,12 +405,22 @@ contains
                                the_bc_level%phys_bc_level_array(i,:,:), &
                                the_bc_level%adv_bc_level_array(i,:,:,bc_comp:), &
                                velpred, ng_cell, rhoh0_old, advect_in_pert_form, do_mom, n)
+              do n = spec_comp,nscal
+                bc_comp = dm+n
+                call mkflux_2d(sop(:,:,1,:), uop(:,:,1,:), sop(:,:,1,1), &
+                               sepx(:,:,1,:), sepy(:,:,1,:), &
+                               ump(:,:,1,1), vmp(:,:,1,1), &
+                               utp(:,:,1,1), vtp(:,:,1,1), fp(:,:,1,:), &
+                               lo, dx, dt, is_vel, is_conservative, &
+                               the_bc_level%phys_bc_level_array(i,:,:), &
+                               the_bc_level%adv_bc_level_array(i,:,:,bc_comp:), &
+                               velpred, ng_cell, rhoX0_old(:,n), advect_in_pert_form, do_mom, n)
               end do
             case (3)
               wmp  => dataptr(  umac(3), i)
               wtp  => dataptr(utrans(3), i)
               sepz => dataptr( sedge(3), i)
-              do n = rhoh_comp,nscal
+              n = rhoh_comp
                 bc_comp = dm+n
                 call mkflux_3d(sop(:,:,:,:), uop(:,:,:,:), sop(:,:,:,1), &
                                sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
@@ -406,6 +430,16 @@ contains
                                the_bc_level%phys_bc_level_array(i,:,:), &
                                the_bc_level%adv_bc_level_array(i,:,:,bc_comp:), &
                                velpred, ng_cell, rhoh0_old, advect_in_pert_form, do_mom, n)
+              do n = spec_comp,nscal
+                bc_comp = dm+n
+                call mkflux_3d(sop(:,:,:,:), uop(:,:,:,:), sop(:,:,:,1), &
+                               sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
+                               ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
+                               utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), fp(:,:,:,:), &
+                               lo, dx, dt, is_vel, is_conservative, &
+                               the_bc_level%phys_bc_level_array(i,:,:), &
+                               the_bc_level%adv_bc_level_array(i,:,:,bc_comp:), &
+                               velpred, ng_cell, rhoX0_old(:,n), advect_in_pert_form, do_mom, n)
               end do
          end select
       end do
@@ -442,13 +476,15 @@ contains
          select case (dm)
             case (2)
               vmp  => dataptr(umac(2), i)
-              call mkrhohforce_2d(fp(:,:,1,2), sop(:,:,1,2), ng_cell, &
+              n = rhoh_comp
+              call mkrhohforce_2d(fp(:,:,1,n), sop(:,:,1,n), ng_cell, &
                                   rp(:,:,1,1), ng_rho, vmp(:,:,1,1), &
                                   dx, the_bc_level%ell_bc_level_array(i,:,:,rhoh_comp+dm), &
                                   diff_coef, diff_fac, p0_nph, rho0_nph, temp0, half_time, pred_vs_corr)
             case (3)
               wmp  => dataptr(umac(3), i)
-              call mkrhohforce_3d(fp(:,:,:,2), sop(:,:,:,2), ng_cell, &
+              n = rhoh_comp
+              call mkrhohforce_3d(fp(:,:,:,n), sop(:,:,:,n), ng_cell, &
                                   rp(:,:,:,1), ng_rho, wmp(:,:,:,1), &
                                   dx, the_bc_level%ell_bc_level_array(i,:,:,rhoh_comp+dm), &
                                   diff_coef, diff_fac, p0_nph, rho0_nph, temp0, half_time, pred_vs_corr)
@@ -488,7 +524,7 @@ contains
       end do
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!     Update (rho h)' with conservative differencing.
+!     Update (rho h)' and (rho X)'_i with conservative differencing.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       do i = 1, sold%nboxes
@@ -505,48 +541,19 @@ contains
          n = rhoh_comp
          select case (dm)
             case (2)
-              call update_rhoh_2d( &
+              call update_scal_2d( &
                              sop(:,:,1,n), snp(:,:,1,n), ump(:,:,1,1), vmp(:,:,1,1), w0, &
                              sepx(:,:,1,n), sepy(:,:,1,n), fp(:,:,1,n), &
                              rhoh0_old, rhoh0_new, &
                              lo, hi, ng_cell, dx, dt, pred_vs_corr, verbose)
               call setbc_2d(snp(:,:,1,n), lo, ng_cell, &
                             the_bc_level%adv_bc_level_array(i,:,:,rhoh_comp),dx,n+dm)
-            case (3)
-              wmp => dataptr(umac(3), i)
-              sepz => dataptr(sedge(3), i)
-              call update_rhoh_3d( &
-                             sop(:,:,:,n), snp(:,:,:,n), ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0, &
-                             sepx(:,:,:,n), sepy(:,:,:,n), sepz(:,:,:,n), fp(:,:,:,n), &
-                             rhoh0_old, rhoh0_new, &
-                             lo, hi, ng_cell, dx, dt, pred_vs_corr, verbose)
-              call setbc_3d(snp(:,:,:,2), lo, ng_cell, & 
-                            the_bc_level%adv_bc_level_array(i,:,:,rhoh_comp),dx,n+dm)
-         end select
-      end do
-
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!     Update the (rho X)_i with conservative differencing.
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      do i = 1, sold%nboxes
-         if ( multifab_remote(uold, i) ) cycle
-         sop => dataptr(sold, i)
-         snp => dataptr(snew, i)
-         ump => dataptr(umac(1), i)
-         vmp => dataptr(umac(2), i)
-         sepx => dataptr(sedge(1), i)
-         sepy => dataptr(sedge(2), i)
-          fp => dataptr(scal_force , i)
-         lo =  lwb(get_box(uold, i))
-         hi =  upb(get_box(uold, i))
-         select case (dm)
-            case (2)
-              do n = rhoh_comp+1,nscal
-                call update_species_2d( &
+              do n = spec_comp,nscal
+                call update_scal_2d( &
                                sop(:,:,1,n), snp(:,:,1,n), &
                                ump(:,:,1,1), vmp(:,:,1,1), w0, &
                                sepx(:,:,1,n), sepy(:,:,1,n), fp(:,:,1,n), &
+                               rhoX0_old(:,n), rhoX0_new(:,n), &
                                lo, hi, ng_cell, dx, dt, pred_vs_corr, verbose)
                 call setbc_2d(snp(:,:,1,n), lo, ng_cell, &
                               the_bc_level%adv_bc_level_array(i,:,:,n+dm),dx,n+dm)
@@ -554,15 +561,22 @@ contains
             case (3)
               wmp => dataptr(umac(3), i)
               sepz => dataptr(sedge(3), i)
-              do n = rhoh_comp+1,nscal
-                call update_species_3d( &
+              call update_scal_3d( &
+                             sop(:,:,:,n), snp(:,:,:,n), ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0, &
+                             sepx(:,:,:,n), sepy(:,:,:,n), sepz(:,:,:,n), fp(:,:,:,n), &
+                             rhoh0_old, rhoh0_new, &
+                             lo, hi, ng_cell, dx, dt, pred_vs_corr, verbose)
+              call setbc_3d(snp(:,:,:,2), lo, ng_cell, & 
+                            the_bc_level%adv_bc_level_array(i,:,:,rhoh_comp),dx,n+dm)
+              do n = spec_comp,nscal
+                call update_scal_3d( &
                                sop(:,:,:,n), snp(:,:,:,n), &
                                ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0, &
-                               sepx(:,:,:,n), sepy(:,:,:,n), sepz(:,:,:,n), &
-                               fp(:,:,:,n), &
+                               sepx(:,:,:,n), sepy(:,:,:,n), sepz(:,:,:,n), fp(:,:,:,n), &
+                               rhoX0_old(:,n), rhoX0_new(:,n), &
                                lo, hi, ng_cell, dx, dt, pred_vs_corr, verbose)
-              call setbc_3d(snp(:,:,:,n), lo, ng_cell, &
-                            the_bc_level%adv_bc_level_array(i,:,:,n+dm),dx,n+dm)
+                call setbc_3d(snp(:,:,:,n), lo, ng_cell, &
+                              the_bc_level%adv_bc_level_array(i,:,:,n+dm),dx,n+dm)
               end do
          end select
       end do
