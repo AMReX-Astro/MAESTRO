@@ -29,8 +29,8 @@ FINCLUDE_LOCATIONS += ../../extern/helmeos
 include $(FPARALLEL)/varden/GPackage.mak
 VPATH_LOCATIONS += $(FPARALLEL)/varden
 
-#include $(FPARALLEL)/extern/VODE/GPackage.mak
-#VPATH_LOCATIONS += $(FPARALLEL)/extern/VODE
+include $(FPARALLEL)/extern/networks/ignition/GPackage.mak
+VPATH_LOCATIONS += $(FPARALLEL)/extern/networks/ignition
 
 main.$(suf).exe: $(objects)
 	$(LINK.f90) -o main.$(suf).exe $(objects) $(libraries)
