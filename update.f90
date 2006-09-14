@@ -468,44 +468,44 @@ module update_module
 
    end subroutine update_velocity_3d
 
-   subroutine mk_rhohalf_2d (sold,snew,rhohalf,lo,hi,ng)
+   subroutine mk_shalf_2d (sold,snew,shalf,lo,hi,ng)
 
       implicit none
 
       integer, intent(in) :: lo(:), hi(:), ng
-      real (kind = dp_t), intent(in   ) ::     sold(lo(1)-ng:,lo(2)-ng:)  
-      real (kind = dp_t), intent(in   ) ::     snew(lo(1)-ng:,lo(2)-ng:)  
-      real (kind = dp_t), intent(  out) ::  rhohalf(lo(1)- 1:,lo(2)- 1:)
+      real (kind = dp_t), intent(in   ) ::   sold(lo(1)-ng:,lo(2)-ng:)  
+      real (kind = dp_t), intent(in   ) ::   snew(lo(1)-ng:,lo(2)-ng:)  
+      real (kind = dp_t), intent(  out) ::  shalf(lo(1)- 1:,lo(2)- 1:)
 
       integer :: i, j
 
       do j = lo(2), hi(2)
       do i = lo(1), hi(1)
-        rhohalf(i,j) = HALF * (sold(i,j) + snew(i,j))
+        shalf(i,j) = HALF * (sold(i,j) + snew(i,j))
       end do
       end do
 
-   end subroutine mk_rhohalf_2d
+   end subroutine mk_shalf_2d
 
-   subroutine mk_rhohalf_3d (sold,snew,rhohalf,lo,hi,ng)
+   subroutine mk_shalf_3d (sold,snew,shalf,lo,hi,ng)
 
       implicit none
 
       integer, intent(in) :: lo(:), hi(:), ng
-      real (kind = dp_t), intent(in   ) ::     sold(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)  
-      real (kind = dp_t), intent(in   ) ::     snew(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)  
-      real (kind = dp_t), intent(  out) ::  rhohalf(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
+      real (kind = dp_t), intent(in   ) ::   sold(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)  
+      real (kind = dp_t), intent(in   ) ::   snew(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)  
+      real (kind = dp_t), intent(  out) ::  shalf(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
 
       integer :: i, j, k
 
       do k = lo(3), hi(3)
       do j = lo(2), hi(2)
       do i = lo(1), hi(1)
-        rhohalf(i,j,k) = HALF * (sold(i,j,k) + snew(i,j,k))
+        shalf(i,j,k) = HALF * (sold(i,j,k) + snew(i,j,k))
       end do
       end do
       end do
 
-   end subroutine mk_rhohalf_3d
+   end subroutine mk_shalf_3d
 
 end module update_module

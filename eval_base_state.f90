@@ -10,6 +10,7 @@ module base_state_module
   use heating_module
   use mkflux_module
   use make_div_coeff_module
+  use variables
   use eos_module
 
   implicit none
@@ -21,14 +22,14 @@ contains
                               temp0,rhoh0_old,rhoh0_new, &
                               rhoX0_old,rhoX0_nph,rhoX0_new, &
                               gam1,div_coeff_n,div_coeff_nph,div_coeff_half, &
-                              rhohalf,grav,dx, &
+                              shalf,grav,dx, &
                               dt,time,div_coef_type,anelastic_cutoff)
 
       real(kind=dp_t), intent(  out) :: vel(:)
       real(kind=dp_t), intent(in   ) :: p0_old(:), rho0_old(:), rhoh0_old(:), rhoX0_old(:,:)
       real(kind=dp_t), intent(  out) :: p0_new(:), rho0_new(:), rho0_nph(:), rhoh0_new(:), rhoX0_new(:,:), rhoX0_nph(:,:)
       real(kind=dp_t), intent(inout) :: temp0(:),gam1(:),div_coeff_n(:),div_coeff_nph(:),div_coeff_half(:)
-      type(multifab) , intent(in   ) :: rhohalf
+      type(multifab) , intent(in   ) :: shalf
       real(kind=dp_t), intent(in   ) :: dx(:),dt,grav,time,anelastic_cutoff
       integer        , intent(in   ) :: div_coef_type
 
@@ -36,31 +37,31 @@ contains
       real(kind=dp_t), pointer:: snp(:,:,:,:)
       real(kind=dp_t), pointer:: sep(:,:,:,:)
       real(kind=dp_t), pointer:: ufp(:,:,:,:)
-      real(kind=dp_t), pointer:: rhp(:,:,:,:)
+      real(kind=dp_t), pointer:: shp(:,:,:,:)
       real(kind=dp_t), pointer:: uap(:,:,:,:)
-      integer :: lo(rhohalf%dim),hi(rhohalf%dim),dm
+      integer :: lo(shalf%dim),hi(shalf%dim),dm
       integer :: i
 
-      dm = rhohalf%dim
+      dm = shalf%dim
 
-      do i = 1, rhohalf%nboxes
-         if ( multifab_remote(rhohalf, i) ) cycle
-         rhp => dataptr(rhohalf , i)
-         lo =  lwb(get_box(rhohalf, i))
-         hi =  upb(get_box(rhohalf, i))
+      do i = 1, shalf%nboxes
+         if ( multifab_remote(shalf, i) ) cycle
+         shp => dataptr(shalf , i)
+         lo =  lwb(get_box(shalf, i))
+         hi =  upb(get_box(shalf, i))
          select case (dm)
             case (2)
               call eval_base_state_2d(vel,p0_old,p0_new,rho0_old,rho0_nph,rho0_new,temp0, &
                                       rhoh0_old,rhoh0_new, rhoX0_old, rhoX0_nph, rhoX0_new, &
                                       gam1,div_coeff_n,div_coeff_nph, &
-                                      div_coeff_half,rhp(:,:,1,1),grav,lo,hi, &
-                                      dx,dt,time,div_coef_type,anelastic_cutoff)
+                                      div_coeff_half,shp(:,:,1,:),&
+                                      grav,lo,hi,dx,dt,time,div_coef_type,anelastic_cutoff)
             case (3)
               call eval_base_state_3d(vel,p0_old,p0_new,rho0_old,rho0_nph,rho0_new,temp0, &
                                       rhoh0_old,rhoh0_new, rhoX0_old, rhoX0_nph, rhoX0_new, &
                                       gam1,div_coeff_n,div_coeff_nph, &
-                                      div_coeff_half,rhp(:,:,:,1),grav,lo,hi, &
-                                      dx,dt,time,div_coef_type,anelastic_cutoff)
+                                      div_coeff_half,shp(:,:,:,:),&
+                                      grav,lo,hi,dx,dt,time,div_coef_type,anelastic_cutoff)
          end select
       end do
 
@@ -69,7 +70,7 @@ contains
    subroutine eval_base_state_2d (vel,p0_old,p0_new,rho0_old,rho0_nph,rho0_new,temp0, &
                                   rhoh0_old,rhoh0_new, rhoX0_old, rhoX0_nph, rhoX0_new, &
                                   gam1,div_coeff_n,div_coeff_nph, &
-                                  div_coeff_half,rhohalf,grav,lo,hi, & 
+                                  div_coeff_half,shalf,grav,lo,hi, & 
                                   dx,dt,time,div_coef_type,anelastic_cutoff)
 
       implicit none
@@ -83,7 +84,7 @@ contains
       real(kind=dp_t), intent(inout) :: div_coeff_n   (lo(2):)
       real(kind=dp_t), intent(inout) :: div_coeff_nph (lo(2):)
       real(kind=dp_t), intent(inout) :: div_coeff_half(lo(2):)
-      real(kind=dp_t), intent(in   ) :: rhohalf(lo(1)- 1:,lo(2)- 1:)
+      real(kind=dp_t), intent(in   ) ::  shalf(lo(1)- 1:,lo(2)- 1:,:)
       real(kind=dp_t), intent(in   ) :: dx(:),dt,grav,time,anelastic_cutoff
       integer        , intent(in   ) :: div_coef_type
 
@@ -124,7 +125,7 @@ contains
          do i = lo(1), hi(1)
 
             ! Compute the coefficient of heating in the divu expression
-            den_row(1)  = rhohalf(i,j)
+            den_row(1)  = shalf(i,j,rho_comp)
             temp_row(1) = temp0(j)
             p_row(1)    = p0_old(j)
 
@@ -244,7 +245,7 @@ contains
    subroutine eval_base_state_3d (vel,p0_old,p0_new,rho0_old,rho0_nph,rho0_new,temp0, &
                                   rhoh0_old,rhoh0_new, rhoX0_old, rhoX0_nph, rhoX0_new, &
                                   gam1,div_coeff_n,div_coeff_nph, &
-                                  div_coeff_half,rhohalf,grav,lo,hi, & 
+                                  div_coeff_half,shalf,grav,lo,hi, & 
                                   dx,dt,time,div_coef_type,anelastic_cutoff)
 
       implicit none
@@ -258,7 +259,7 @@ contains
       real(kind=dp_t), intent(inout) :: div_coeff_n   (lo(3):)
       real(kind=dp_t), intent(inout) :: div_coeff_nph (lo(3):)
       real(kind=dp_t), intent(inout) :: div_coeff_half(lo(3):)
-      real(kind=dp_t), intent(in   ) :: rhohalf(lo(1)-1:,lo(2)-1:,lo(3)-1:)
+      real(kind=dp_t), intent(in   ) :: shalf(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)
       real(kind=dp_t), intent(in   ) :: dx(:),dt,grav,time, anelastic_cutoff
       integer        , intent(in   ) :: div_coef_type
 
@@ -300,7 +301,7 @@ contains
             do i = lo(1), hi(1)
 
                ! Compute the coefficient of heating in the divu expression
-               den_row(1)  = rhohalf(i,j,k)
+               den_row(1)  = shalf(i,j,k,rho_comp)
                temp_row(1) = temp0(k)
                p_row(1)    = p0_old(k)
 
