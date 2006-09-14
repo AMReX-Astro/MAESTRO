@@ -6,6 +6,8 @@ module update_module
 
   use bl_types
   use multifab_module
+  use variables
+  use network
 
   implicit none
 
@@ -13,7 +15,7 @@ module update_module
 
   contains
 
-   subroutine update_scal_2d (sold,snew,umac,vmac,w0,sedgex,sedgey,force, &
+   subroutine update_scal_2d (n,sold,snew,rhonew,umac,vmac,w0,sedgex,sedgey,force, &
                               base_old,base_new,lo,hi,ng,dx,dt,pred_vs_corr,&
                               verbose)
 
@@ -22,9 +24,10 @@ module update_module
 
       implicit none
 
-      integer, intent(in) :: lo(:), hi(:), ng, pred_vs_corr, verbose
+      integer              , intent(in) :: n, lo(:), hi(:), ng, pred_vs_corr, verbose
       real (kind = dp_t), intent(in   ) ::    sold(lo(1)-ng:,lo(2)-ng:)  
       real (kind = dp_t), intent(  out) ::    snew(lo(1)-ng:,lo(2)-ng:)  
+      real (kind = dp_t), intent(in   ) ::  rhonew(lo(1)-ng:,lo(2)-ng:)  
       real (kind = dp_t), intent(in   ) ::    umac(lo(1)- 1:,lo(2)- 1:)  
       real (kind = dp_t), intent(in   ) ::    vmac(lo(1)- 1:,lo(2)- 1:)  
       real (kind = dp_t), intent(in   ) ::  sedgex(lo(1)   :,lo(2)   :)  
@@ -35,7 +38,7 @@ module update_module
       real (kind = dp_t), intent(in   ) :: w0(lo(2):)
       real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
-      integer :: i, j, n
+      integer :: i, j
       real (kind = dp_t) :: divsu,divbaseu
       real (kind = dp_t) :: smin,smax
       real (kind = dp_t), allocatable :: base_edge(:)
@@ -74,8 +77,13 @@ module update_module
   
           snew(i,j) = sold(i,j) - dt * (divsu + divbaseu) + dt * force(i,j)
   
-          smax = max(smax,snew(i,j))
-          smin = min(smin,snew(i,j))
+          if (n .gt. rhoh_comp) then
+            smax = max(smax,snew(i,j)/rhonew(i,j))
+            smin = min(smin,snew(i,j)/rhonew(i,j))
+          else
+            smax = max(smax,snew(i,j))
+            smin = min(smin,snew(i,j))
+          endif
   
         enddo
         enddo
@@ -97,8 +105,13 @@ module update_module
 
           snew(i,j) = sold(i,j) + (base_new(j) - base_old(j)) - dt * (divsu + divbaseu) + dt * force(i,j)
   
-          smax = max(smax,snew(i,j))
-          smin = min(smin,snew(i,j))
+          if (n .gt. rhoh_comp) then
+            smax = max(smax,snew(i,j)/rhonew(i,j))
+            smin = min(smin,snew(i,j)/rhonew(i,j))
+          else
+            smax = max(smax,snew(i,j))
+            smin = min(smin,snew(i,j))
+          endif
   
         enddo
         enddo
@@ -106,9 +119,15 @@ module update_module
       end if
 
       if (verbose .ge. 1) then
-        print *,'NEW MIN/MAX OF SCALAR ',smin,smax
-        print *,' '
+        if (n.eq. rho_comp) write(6,1000) smin,smax
+        if (n.eq.rhoh_comp) write(6,1001) smin,smax
+        if (n.gt.rhoh_comp) write(6,1002) spec_names(n-rhoh_comp),smin,smax
+        if (n.eq.rhoh_comp) print *,' '
       end if
+
+1000  format('NEW MIN/MAX : density           ',e15.10,2x,e15.10)
+1001  format('NEW MIN/MAX : rho * H           ',e15.10,2x,e15.10)
+1002  format('NEW MIN/MAX : ',a16,2x,e15.10,2x,e15.10)
 
       deallocate(base_edge)
 
@@ -229,14 +248,15 @@ module update_module
 
    end subroutine update_velocity_2d
 
-   subroutine update_scal_3d (sold,snew,umac,vmac,wmac,w0,sedgex,sedgey,sedgez,force, &
+   subroutine update_scal_3d (n,sold,snew,rhonew,umac,vmac,wmac,w0,sedgex,sedgey,sedgez,force, &
                               base_old,base_new,lo,hi,ng,dx,dt,pred_vs_corr,verbose)
 
       implicit none
 
-      integer, intent(in) :: lo(:), hi(:), ng, pred_vs_corr, verbose
+      integer, intent(in) :: n, lo(:), hi(:), ng, pred_vs_corr, verbose
       real (kind = dp_t), intent(in   ) ::    sold(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)  
       real (kind = dp_t), intent(  out) ::    snew(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)  
+      real (kind = dp_t), intent(in   ) ::  rhonew(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)  
       real (kind = dp_t), intent(in   ) ::    umac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)  
       real (kind = dp_t), intent(in   ) ::    vmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)  
       real (kind = dp_t), intent(in   ) ::    wmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)  
@@ -249,7 +269,7 @@ module update_module
       real (kind = dp_t), intent(in   ) :: w0(lo(3):)
       real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
-      integer :: i, j, k, n
+      integer :: i, j, k
       real (kind = dp_t) :: divsu,divbaseu
       real (kind = dp_t) :: smin,smax
       real (kind = dp_t), allocatable :: base_edge(:)
@@ -289,8 +309,13 @@ module update_module
 
           snew(i,j,k) = sold(i,j,k) - dt * (divsu + divbaseu) + dt * force(i,j,k)
   
-          smax = max(smax,snew(i,j,k))
-          smin = min(smin,snew(i,j,k))
+          if (n .gt. rhoh_comp) then
+            smax = max(smax,snew(i,j,k)/rhonew(i,j,k))
+            smin = min(smin,snew(i,j,k)/rhonew(i,j,k))
+          else
+            smax = max(smax,snew(i,j,k))
+            smin = min(smin,snew(i,j,k))
+          endif
   
         enddo
         enddo
@@ -315,8 +340,13 @@ module update_module
 
           snew(i,j,k) = sold(i,j,k) + (base_new(k) - base_old(k)) - dt * (divsu + divbaseu) + dt * force(i,j,k)
   
-          smax = max(smax,snew(i,j,k))
-          smin = min(smin,snew(i,j,k))
+          if (n .gt. rhoh_comp) then
+            smax = max(smax,snew(i,j,k)/rhonew(i,j,k))
+            smin = min(smin,snew(i,j,k)/rhonew(i,j,k))
+          else
+            smax = max(smax,snew(i,j,k))
+            smin = min(smin,snew(i,j,k))
+          endif
   
         enddo
         enddo
@@ -325,9 +355,15 @@ module update_module
       end if
 
       if (verbose .ge. 1) then
-        print *,'NEW MIN/MAX OF SCAL',smin,smax
-        print *,' '
+        if (n.eq. rho_comp) write(6,1000) smin,smax
+        if (n.eq.rhoh_comp) write(6,1001) smin,smax
+        if (n.gt.rhoh_comp) write(6,1002) spec_names(n-rhoh_comp),smin,smax
+        if (n.eq.rhoh_comp) print *,' '
       end if
+
+1000  format('NEW MIN/MAX : density           ',e15.10,2x,e15.10)
+1001  format('NEW MIN/MAX : rho * H           ',e15.10,2x,e15.10)
+1002  format('NEW MIN/MAX : ',a16,2x,e15.10,2x,e15.10)
 
       deallocate(base_edge)
 

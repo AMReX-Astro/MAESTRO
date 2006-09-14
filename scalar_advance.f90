@@ -231,6 +231,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     Update density
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      n = 1
       do i = 1, sold%nboxes
          if ( multifab_remote(uold, i) ) cycle
          sop => dataptr(sold, i)
@@ -245,8 +246,9 @@ contains
          hi =  upb(get_box(uold, i))
          select case (dm)
             case (2)
-              call update_scal_2d( &
-                             sop(:,:,1,1), snp(:,:,1,1), ump(:,:,1,1), vmp(:,:,1,1), w0, &
+              call update_scal_2d(n, &
+                             sop(:,:,1,1), snp(:,:,1,1), snp(:,:,1,1), &
+                             ump(:,:,1,1), vmp(:,:,1,1), w0, &
                              sepx(:,:,1,1), sepy(:,:,1,1), &
                              shp(:,:,1,1), rho0_old, rho0_new, &
                              lo, hi, ng_cell, dx, dt, pred_vs_corr, verbose)
@@ -258,8 +260,9 @@ contains
            case (3)
               wmp => dataptr(umac(3), i)
               sepz => dataptr(sedge(3), i)
-              call update_scal_3d( &
-                             sop(:,:,:,1), snp(:,:,:,1), ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0, &
+              call update_scal_3d(n, &
+                             sop(:,:,:,1), snp(:,:,:,1), snp(:,:,:,1), &
+                             ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0, &
                              sepx(:,:,:,1), sepy(:,:,:,1), sepz(:,:,:,1), &
                              shp(:,:,:,1) , rho0_old, rho0_new, &
                              lo, hi, ng_cell, dx, dt, pred_vs_corr, verbose)
@@ -499,16 +502,16 @@ contains
           fp => dataptr(scal_force , i)
          lo =  lwb(get_box(uold, i))
          hi =  upb(get_box(uold, i))
-         n = rhoh_comp
          select case (dm)
             case (2)
+              n = spec_comp
               call mkspecforce_2d(fp(:,:,1,n:), sop(:,:,1,n:), ng_cell, & 
                                   shp(:,:,1,1), ng_cell, &
                                   dx, the_bc_level%ell_bc_level_array(i,:,:,n+dm:), &
                                   time, pred_vs_corr, nspec)
               do n = spec_comp,nscal
-                call update_scal_2d( &
-                               sop(:,:,1,n), snp(:,:,1,n), &
+                call update_scal_2d(n, &
+                               sop(:,:,1,n), snp(:,:,1,n), snp(:,:,1,1), &
                                ump(:,:,1,1), vmp(:,:,1,1), w0, &
                                sepx(:,:,1,n), sepy(:,:,1,n), fp(:,:,1,n), &
                                rhoX0_old(:,n-spec_comp+1), rhoX0_new(:,n-spec_comp+1), &
@@ -520,13 +523,14 @@ contains
             case (3)
               wmp => dataptr(umac(3), i)
               sepz => dataptr(sedge(3), i)
+              n = spec_comp
               call mkspecforce_3d(fp(:,:,:,n:), sop(:,:,:,n:), ng_cell, & 
                                   shp(:,:,:,1), ng_cell, &
                                   dx, the_bc_level%ell_bc_level_array(i,:,:,n+dm:), &
                                   time, pred_vs_corr, nspec)
               do n = spec_comp,nscal
-                call update_scal_3d( &
-                               sop(:,:,:,n), snp(:,:,:,n), &
+                call update_scal_3d(n, &
+                               sop(:,:,:,n), snp(:,:,:,n), snp(:,:,:,1), &
                                ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0, &
                                sepx(:,:,:,n), sepy(:,:,:,n), sepz(:,:,:,n), fp(:,:,:,n), &
                                rhoX0_old(:,n-spec_comp+1), rhoX0_new(:,n-spec_comp+1), &
@@ -574,8 +578,8 @@ contains
                                   p0_nph, rho0_nph, rhoX0_nph, &
                                   temp0, half_time, pred_vs_corr)
 
-              call update_scal_2d( &
-                             sop(:,:,1,n), snp(:,:,1,n), &
+              call update_scal_2d(n, &
+                             sop(:,:,1,n), snp(:,:,1,n), snp(:,:,1,1), &
                              ump(:,:,1,1), vmp(:,:,1,1), w0, &
                              sepx(:,:,1,n), sepy(:,:,1,n), fp(:,:,1,n), &
                              rhoh0_old, rhoh0_new, &
@@ -596,8 +600,8 @@ contains
                                   p0_nph, rho0_nph, rhoX0_nph, temp0, &
                                   half_time, pred_vs_corr)
 
-              call update_scal_3d( &
-                             sop(:,:,:,n), snp(:,:,:,n), &
+              call update_scal_3d(n, &
+                             sop(:,:,:,n), snp(:,:,:,n), snp(:,:,:,1), &
                              ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0, &
                              sepx(:,:,:,n), sepy(:,:,:,n), sepz(:,:,:,n), fp(:,:,:,n), &
                              rhoh0_old, rhoh0_new, &
