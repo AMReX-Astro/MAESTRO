@@ -44,6 +44,8 @@ contains
 
       dm = shalf%dim
 
+      print *, '<<< updating base state >>>'
+
       do i = 1, shalf%nboxes
          if ( multifab_remote(shalf, i) ) cycle
          shp => dataptr(shalf , i)
@@ -128,12 +130,13 @@ contains
             den_row(1)  = shalf(i,j,rho_comp)
             temp_row(1) = temp0(j)
             p_row(1)    = p0_old(j)
+            xn_zone(:) = shalf(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
 
             ! (rho,P) --> h, etc
             input_flag = 4
 
             call eos(input_flag, den_row, temp_row, npts, nspec, &
-                     xmass, aion, zion, &
+                     xn_zone, aion, zion, &
                      p_row, h_row, e_row, &
                      cv_row, cp_row, xne_row, eta_row, &
                      pele_row, dpdt_row, dpdr_row, dedt_row, dedr_row, gam1_row, cs_row, &
@@ -206,12 +209,13 @@ contains
          den_row(1)  = rho0_new(j)
          temp_row(1) = temp0(j)
          p_row(1)    = p0_new(j)
+         xn_zone(:) = rhoX0_new(j,:)/rho0_new(j)
 
          ! (rho,P) --> T, h
          input_flag = 4
 
          call eos(input_flag, den_row, temp_row, npts, nspec, &
-                  xmass, aion, zion, &
+                  xn_zone, aion, zion, &
                   p_row, h_row, e_row, &
                   cv_row, cp_row, xne_row, eta_row, &
                   pele_row, dpdt_row, dpdr_row, dedt_row, dedr_row, gam1_row, cs_row, &
@@ -304,12 +308,13 @@ contains
                den_row(1)  = shalf(i,j,k,rho_comp)
                temp_row(1) = temp0(k)
                p_row(1)    = p0_old(k)
+               xn_zone(:) = shalf(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
 
                ! (rho,P) --> h, etc
                input_flag = 4
 
                call eos(input_flag, den_row, temp_row, npts, nspec, &
-                        xmass, aion, zion, &
+                        xn_zone, aion, zion, &
                         p_row, h_row, e_row, &
                         cv_row, cp_row, xne_row, eta_row, &
                         pele_row, dpdt_row, dpdr_row, dedt_row, dedr_row, gam1_row, cs_row, &
@@ -381,12 +386,13 @@ contains
          den_row(1) = rho0_new(k)
          temp_row(1) = temp0(k)
          p_row(1) = p0_new(k)
+         xn_zone(:) = rhoX0_new(k,:)/rho0_new(k)
 
          ! (rho,P) --> T, h
          input_flag = 4
 
          call eos(input_flag, den_row, temp_row, npts, nspec, &
-                  xmass, aion, zion, &
+                  xn_zone, aion, zion, &
                   p_row, h_row, e_row, &
                   cv_row, cp_row, xne_row, eta_row, &
                   pele_row, dpdt_row, dpdr_row, dedt_row, dedr_row, gam1_row, cs_row, &
