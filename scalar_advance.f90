@@ -335,7 +335,7 @@ contains
                                   dx, the_bc_level%ell_bc_level_array(i,:,:,n+dm:), &
                                   time, pred_vs_corr, nspec)
               do n = spec_comp,spec_comp+nspec-1
-                call modify_force_2d(fp(:,:,1,n),sop(:,:,1,n),ng_cell,rhoX0_old(:,n), &
+                call modify_force_2d(fp(:,:,1,n),sop(:,:,1,n),ng_cell,rhoX0_old(:,n-spec_comp+1), &
                                      ump(:,:,1,1),vmp(:,:,1,1),w0,dx,pred_vs_corr)
               end do
             case(3)
@@ -346,7 +346,7 @@ contains
                                   dx, the_bc_level%ell_bc_level_array(i,:,:,n+dm:), &
                                   time, pred_vs_corr, nspec)
               do n = spec_comp,spec_comp+nspec-1
-                call modify_force_3d(fp(:,:,:,n),sop(:,:,:,n),ng_cell,rhoX0_old(:,n), &
+                call modify_force_3d(fp(:,:,:,n),sop(:,:,:,n),ng_cell,rhoX0_old(:,n-spec_comp+1), &
                                      ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),w0,dx,pred_vs_corr)
               end do
          end select
@@ -414,7 +414,7 @@ contains
                                lo, dx, dt, is_vel, is_conservative, &
                                the_bc_level%phys_bc_level_array(i,:,:), &
                                the_bc_level%adv_bc_level_array(i,:,:,bc_comp:), &
-                               velpred, ng_cell, rhoX0_old(:,n), advect_in_pert_form, do_mom, n)
+                               velpred, ng_cell, rhoX0_old(:,n-spec_comp+1), advect_in_pert_form, do_mom, n)
               end do
             case (3)
               wmp  => dataptr(  umac(3), i)
@@ -439,7 +439,7 @@ contains
                                lo, dx, dt, is_vel, is_conservative, &
                                the_bc_level%phys_bc_level_array(i,:,:), &
                                the_bc_level%adv_bc_level_array(i,:,:,bc_comp:), &
-                               velpred, ng_cell, rhoX0_old(:,n), advect_in_pert_form, do_mom, n)
+                               velpred, ng_cell, rhoX0_old(:,n-spec_comp+1), advect_in_pert_form, do_mom, n)
               end do
          end select
       end do
@@ -553,10 +553,11 @@ contains
                                sop(:,:,1,n), snp(:,:,1,n), &
                                ump(:,:,1,1), vmp(:,:,1,1), w0, &
                                sepx(:,:,1,n), sepy(:,:,1,n), fp(:,:,1,n), &
-                               rhoX0_old(:,n), rhoX0_new(:,n), &
+                               rhoX0_old(:,n-spec_comp+1), rhoX0_new(:,n-spec_comp+1), &
                                lo, hi, ng_cell, dx, dt, pred_vs_corr, verbose)
                 call setbc_2d(snp(:,:,1,n), lo, ng_cell, &
                               the_bc_level%adv_bc_level_array(i,:,:,n+dm),dx,n+dm)
+                if (n == nscal) print *, 'Mg done'
               end do
             case (3)
               wmp => dataptr(umac(3), i)
@@ -573,7 +574,7 @@ contains
                                sop(:,:,:,n), snp(:,:,:,n), &
                                ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0, &
                                sepx(:,:,:,n), sepy(:,:,:,n), sepz(:,:,:,n), fp(:,:,:,n), &
-                               rhoX0_old(:,n), rhoX0_new(:,n), &
+                               rhoX0_old(:,n-spec_comp+1), rhoX0_new(:,n-spec_comp+1), &
                                lo, hi, ng_cell, dx, dt, pred_vs_corr, verbose)
                 call setbc_3d(snp(:,:,:,n), lo, ng_cell, &
                               the_bc_level%adv_bc_level_array(i,:,:,n+dm),dx,n+dm)
