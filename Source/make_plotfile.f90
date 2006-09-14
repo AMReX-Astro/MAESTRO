@@ -18,6 +18,7 @@ module make_plotfile_module
   use enthalpy_module
   use machno_module
   use deltap_module
+  use XfromrhoX_module
 
   use variables
 
@@ -25,13 +26,13 @@ module make_plotfile_module
 
 contains
 
-  subroutine make_plotfile(istep,plotdata,uold,sold,gp,mba,plot_names,time,dx,the_bc_tower, &
+  subroutine make_plotfile(istep,plotdata,u,s,gp,mba,plot_names,time,dx,the_bc_tower, &
                            rho0,p0,temp0)
 
     integer          , intent(in   ) :: istep
     type(multifab)   , intent(inout) :: plotdata(:)
-    type(multifab)   , intent(in   ) :: uold(:)
-    type(multifab)   , intent(in   ) :: sold(:)
+    type(multifab)   , intent(in   ) :: u(:)
+    type(multifab)   , intent(in   ) :: s(:)
     type(multifab)   , intent(in   ) :: gp(:)
     type(ml_boxarray), intent(in   ) :: mba
     character(len=20), intent(in   ) :: plot_names(:)
@@ -44,37 +45,54 @@ contains
 
     dm = get_dim(mba)
     nlevs = size(plotdata)
-    nscal = multifab_ncomp(sold(nlevs))
+    nscal = multifab_ncomp(s(nlevs))
 
     do n = 1,nlevs
-       call multifab_copy_c(plotdata(n),1            ,    uold(n),1,dm)
-       call multifab_copy_c(plotdata(n),rho_comp+dm  ,    sold(n),1,nscal)
 
+       ! VELOCITY 
+       call multifab_copy_c(plotdata(n),1            ,    u(n),1,dm)
+
+       ! DENSITY AND (RHO H) 
+       call multifab_copy_c(plotdata(n),rho_comp+dm  ,    s(n),1,2)
+
+       ! SPECIES
+       icomp = spec_comp
+       call make_XfromrhoX(plotdata(n),icomp,s(n),nspec)
+
+       ! VORTICITY
        icomp = derive_comp
-       call make_vorticity(plotdata(n),icomp,uold(n),dx(n,:), &
-                           the_bc_tower%bc_tower_array(n))
+       call make_vorticity (plotdata(n),icomp,u(n),dx(n,:), &
+                            the_bc_tower%bc_tower_array(n))
 
+       ! DENSITY PERTURBATION
        icomp = derive_comp+1
-       call make_rhopert (plotdata(n) ,icomp,sold(n),rho0)
+       call make_rhopert   (plotdata(n),icomp,s(n),rho0)
 
+       ! ENTHALPY (RHO H)
        icomp = derive_comp+2
-       call make_enthalpy(plotdata(n),icomp,sold(n))
+       call make_enthalpy  (plotdata(n),icomp,s(n))
 
+       ! TEMP (FROM RHO)
        icomp = derive_comp+3
-       call make_tfromrho(plotdata(n) ,icomp,sold(n),temp0,p0,time,dx(n,:))
+       call make_tfromrho  (plotdata(n),icomp,s(n),temp0,p0,time,dx(n,:))
 
+       ! TEMP (FROM H)
        icomp = derive_comp+4
-       call make_tfromH  (plotdata(n)   ,icomp,sold(n),p0,temp0)
+       call make_tfromH    (plotdata(n),icomp,s(n),p0,temp0)
 
+       ! TEMPERATURE PERTURBATION
        icomp = derive_comp+5
-       call make_tpert   (plotdata(n)   ,icomp,sold(n),p0,temp0)
+       call make_tpert     (plotdata(n),icomp,s(n),p0,temp0)
 
+       ! MACH NUMBER
        icomp = derive_comp+6
-       call make_machno  (plotdata(n)  ,icomp,uold(n),sold(n),p0,temp0)
+       call make_machno    (plotdata(n),icomp,u(n),s(n),p0,temp0)
 
+       ! DELTA P (P - P0)
        icomp = derive_comp+7
-       call make_deltap  (plotdata(n)  ,icomp,sold(n),p0,temp0)
+       call make_deltap    (plotdata(n),icomp,s(n),p0,temp0)
 
+       ! PRESSURE GRADIENT
        icomp = derive_comp+8
        call multifab_copy_c(plotdata(n),icomp,gp(n),1,dm)
 
