@@ -53,11 +53,12 @@ contains
        call multifab_copy_c(plotdata(n),1            ,    u(n),1,dm)
 
        ! DENSITY AND (RHO H) 
-       call multifab_copy_c(plotdata(n),rho_comp+dm  ,    s(n),1,2)
+       icomp = dm+rho_comp
+       call multifab_copy_c(plotdata(n),icomp,s(n),1,2)
 
        ! SPECIES
-       icomp = spec_comp
-       call make_XfromrhoX(plotdata(n),icomp,s(n),nspec)
+       icomp = dm+spec_comp
+       call make_XfromrhoX(plotdata(n),icomp,s(n))
 
        ! VORTICITY
        icomp = derive_comp
