@@ -29,7 +29,7 @@ contains
                               umac, w0, sedge, utrans, ext_scal_force, &
                               rho0_old , rho0_new , rho0_nph, &
                               rhoh0_old, rhoh0_new, &
-                              rhoX0_old, rhoX0_new, &
+                              rhoX0_old, rhoX0_new, rhoX0_nph, &
                               p0_old, p0_new, temp0, &
                               dx,time, dt, the_bc_level,diff_coef,&
                               verbose, div_coeff, div_coeff_half, &
@@ -59,6 +59,7 @@ contains
       real(kind=dp_t), intent(in   ) :: rhoh0_new(:)
       real(kind=dp_t), intent(in   ) :: rhoX0_old(:,:)
       real(kind=dp_t), intent(in   ) :: rhoX0_new(:,:)
+      real(kind=dp_t), intent(in   ) :: rhoX0_nph(:,:)
       real(kind=dp_t), intent(in   ) ::    p0_old(:)
       real(kind=dp_t), intent(in   ) ::    p0_new(:)
       real(kind=dp_t), intent(in   ) ::     temp0(:)
@@ -300,17 +301,27 @@ contains
          select case (dm)
             case (2)
               call  mkrhohforce_2d(fp(:,:,1,n), sop(:,:,1,n), ng_cell, & 
-                                   sop(:,:,1,1), ng_cell, vmp(:,:,1,1), &
-                                   dx, the_bc_level%ell_bc_level_array(i,:,:,rhoh_comp+dm), &
-                                   diff_coef, visc_fac, p0_old, rho0_old, temp0, time, pred_vs_corr)
+                                   sop(:,:,1,rho_comp), &
+                                   sop(:,:,1,spec_comp:spec_comp+nspec-1), &
+                                   ng_cell, vmp(:,:,1,1), dx, &
+                                   the_bc_level%ell_bc_level_array(i,:,:,rhoh_comp+dm), &
+                                   diff_coef, visc_fac, &
+                                   p0_old, rho0_old, rhoX0_old, temp0, &
+                                   time, pred_vs_corr)
+
               call modify_force_2d(fp(:,:,1,n),sop(:,:,1,n),ng_cell,rhoh0_old, &
                                    ump(:,:,1,1),vmp(:,:,1,1),w0,dx,pred_vs_corr)
             case(3)
               wmp  => dataptr(umac(3), i)
               call  mkrhohforce_3d(fp(:,:,:,n), sop(:,:,:,n), ng_cell, & 
-                                   sop(:,:,:,1), ng_cell, wmp(:,:,:,1), &
-                                   dx, the_bc_level%ell_bc_level_array(i,:,:,rhoh_comp+dm), &
-                                   diff_coef, visc_fac, p0_old, rho0_old, temp0, time, pred_vs_corr)
+                                   sop(:,:,:,rho_comp), &
+                                   sop(:,:,:,spec_comp:spec_comp+nspec-1), &
+                                   ng_cell, wmp(:,:,:,1), dx, &
+                                   the_bc_level%ell_bc_level_array(i,:,:,rhoh_comp+dm), &
+                                   diff_coef, visc_fac, &
+                                   p0_old, rho0_old, rhoX0_old, temp0, &
+                                   time, pred_vs_corr)
+
               call modify_force_3d(fp(:,:,:,n),sop(:,:,:,n),ng_cell,rhoh0_old, &
                                    ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),w0,dx,pred_vs_corr)
          end select
@@ -555,15 +566,21 @@ contains
          select case (dm)
             case (2)
               call mkrhohforce_2d(fp(:,:,1,n), sop(:,:,1,n), ng_cell, &
-                                  shp(:,:,1,1), ng_rho, vmp(:,:,1,1), &
-                                  dx, the_bc_level%ell_bc_level_array(i,:,:,rhoh_comp+dm), &
-                                  diff_coef, diff_fac, p0_nph, rho0_nph, temp0, half_time, pred_vs_corr)
+                                  shp(:,:,1,rho_comp), &
+                                  shp(:,:,1,spec_comp:spec_comp+nspec-1), &
+                                  ng_rho, vmp(:,:,1,1), dx, &
+                                  the_bc_level%ell_bc_level_array(i,:,:,rhoh_comp+dm), &
+                                  diff_coef, diff_fac, &
+                                  p0_nph, rho0_nph, rhoX0_nph, &
+                                  temp0, half_time, pred_vs_corr)
+
               call update_scal_2d( &
                              sop(:,:,1,n), snp(:,:,1,n), &
                              ump(:,:,1,1), vmp(:,:,1,1), w0, &
                              sepx(:,:,1,n), sepy(:,:,1,n), fp(:,:,1,n), &
                              rhoh0_old, rhoh0_new, &
                              lo, hi, ng_cell, dx, dt, pred_vs_corr, verbose)
+
               call setbc_2d(snp(:,:,1,n), lo, ng_cell, &
                             the_bc_level%adv_bc_level_array(i,:,:,rhoh_comp),dx,n+dm)
             case (3)
@@ -571,15 +588,21 @@ contains
               sepz => dataptr(sedge(3), i)
 
               call mkrhohforce_3d(fp(:,:,:,n), sop(:,:,:,n), ng_cell, &
-                                  shp(:,:,:,1), ng_rho, wmp(:,:,:,1), &
-                                  dx, the_bc_level%ell_bc_level_array(i,:,:,rhoh_comp+dm), &
-                                  diff_coef, diff_fac, p0_nph, rho0_nph, temp0, half_time, pred_vs_corr)
+                                  shp(:,:,:,rho_comp), &
+                                  shp(:,:,:,spec_comp:spec_comp+nspec-1), &
+                                  ng_rho, wmp(:,:,:,1), dx, &
+                                  the_bc_level%ell_bc_level_array(i,:,:,rhoh_comp+dm), &
+                                  diff_coef, diff_fac, &
+                                  p0_nph, rho0_nph, rhoX0_nph, temp0, &
+                                  half_time, pred_vs_corr)
+
               call update_scal_3d( &
                              sop(:,:,:,n), snp(:,:,:,n), &
                              ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0, &
                              sepx(:,:,:,n), sepy(:,:,:,n), sepz(:,:,:,n), fp(:,:,:,n), &
                              rhoh0_old, rhoh0_new, &
                              lo, hi, ng_cell, dx, dt, pred_vs_corr, verbose)
+
               call setbc_3d(snp(:,:,:,2), lo, ng_cell, & 
                             the_bc_level%adv_bc_level_array(i,:,:,rhoh_comp),dx,n+dm)
          end select

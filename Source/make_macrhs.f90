@@ -7,6 +7,7 @@ module macrhs_module
   use heating_module
   use eos_module
   use network
+  use variables
 
   implicit none
 
@@ -99,15 +100,17 @@ contains
 
         do i = lo(1), hi(1)
 
-           den_row(1) = s(i,j,1)
-          temp_row(1) = t0(j)
-             p_row(1) = p0(j)
+           den_row(1) = s(i,j,rho_comp)
+           temp_row(1) = t0(j)
+           p_row(1) = p0(j)
+           xn_zone(:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
 
+           
            ! (rho, P) --> T
            input_flag = 4
 
            call eos(input_flag, den_row, temp_row, npts, nspec, &
-                xmass, aion, zion, &
+                xn_zone, aion, zion, &
                 p_row, h_row, e_row, & 
                 cv_row, cp_row, xne_row, eta_row, &
                 pele_row, dpdt_row, dpdr_row, dedt_row, dedr_row, gam1_row, cs_row, &
@@ -190,21 +193,22 @@ contains
         end if
 
         do j = lo(3), hi(2)
-        do i = lo(1), hi(1)
+           do i = lo(1), hi(1)
 
-           den_row(1) = s(i,j,k,1)
-          temp_row(1) = t0(k)
-             p_row(1) = p0(k)
+              den_row(1) = s(i,j,k,rho_comp)
+              temp_row(1) = t0(k)
+              p_row(1) = p0(k)
+              xn_zone(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
 
-           ! (rho, P) --> T
-           input_flag = 4
+              ! (rho, P) --> T
+              input_flag = 4
 
-           call eos(input_flag, den_row, temp_row, npts, nspec, &
-                xmass, aion, zion, &
-                p_row, h_row, e_row, & 
-                cv_row, cp_row, xne_row, eta_row, &
-                pele_row, dpdt_row, dpdr_row, dedt_row, dedr_row, gam1_row, cs_row, &
-                s_row, do_diag)
+              call eos(input_flag, den_row, temp_row, npts, nspec, &
+                   xn_zone, aion, zion, &
+                   p_row, h_row, e_row, & 
+                   cv_row, cp_row, xne_row, eta_row, &
+                   pele_row, dpdt_row, dpdr_row, dedt_row, dedr_row, gam1_row, cs_row, &
+                   s_row, do_diag)
 
 !          dgam = abs(gam1_row(1) - gam1(k))
 !          if (dgam .gt. dgam_max) then
@@ -217,23 +221,23 @@ contains
 !          rhs(i,j,k) = (gam1_row(1) - gam1(k)) / (gam1_row(1) * gam1(k)) *  u(i,j,k,3) * gradp0 / p0(k)
 !          rhs(i,j,k) = div_coeff(k) * rhs(i,j,k)
 
-           H(i,j,k) = H(i,j,k) * dpdt_row(1) / (den_row(1) * cp_row(1) * dpdr_row(1))
-           sigma_H = sigma_H + H(i,j,k)
-        enddo
+              H(i,j,k) = H(i,j,k) * dpdt_row(1) / (den_row(1) * cp_row(1) * dpdr_row(1))
+              sigma_H = sigma_H + H(i,j,k)
+           enddo
         enddo
         sigma_H = sigma_H * denom
 
         do j = lo(1), hi(1)
-        do i = lo(1), hi(1)
-           rhs(i,j,k) = div_coeff(k) * (H(i,j,k) - sigma_H)
-           rhs_max = max(rhs_max, abs(rhs(i,j,k)))
+           do i = lo(1), hi(1)
+              rhs(i,j,k) = div_coeff(k) * (H(i,j,k) - sigma_H)
+              rhs_max = max(rhs_max, abs(rhs(i,j,k)))
+           enddo
         enddo
-        enddo
-      enddo
+     enddo
 
-      print *,'MACRHS: DIVU AT TIME ',time, rhs_max
+     print *,'MACRHS: DIVU AT TIME ',time, rhs_max
 
-      deallocate(H)
+     deallocate(H)
  
    end subroutine make_macrhs_3d
 

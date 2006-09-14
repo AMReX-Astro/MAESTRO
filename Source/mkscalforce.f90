@@ -18,8 +18,14 @@ module mkscalforce_module
 contains
 
 
-  subroutine mkrhohforce_2d(force, s, ng, rho, ng_r, wmac, dx, bc, &
-                            diff_coef, diff_fac, p0, rho0, temp0, time, pred_vs_corr)
+  subroutine mkrhohforce_2d(force, s, ng, &
+                            rho, &
+                            rhoX, &
+                            ng_r, wmac, dx, &
+                            bc, &
+                            diff_coef, diff_fac, &
+                            p0, rho0, rhoX0, temp0, &
+                            time, pred_vs_corr)
 
     ! compute the source terms for the perturbational form of the
     ! enthalpy equation { w dp0/dr + (rho H - (rho0/sigma0) <sigma H>) }
@@ -28,11 +34,12 @@ contains
     real(kind=dp_t), intent(  out) :: force(0:,0:)
     real(kind=dp_t), intent(in   ) ::     s(1-ng  :,1-ng  :)
     real(kind=dp_t), intent(in   ) ::   rho(1-ng_r:,1-ng_r:)
+    real(kind=dp_t), intent(in   ) ::  rhoX(1-ng_r:,1-ng_r:,:)
     real(kind=dp_t), intent(in   ) ::  wmac(0     :,0     :)
     real(kind=dp_t), intent(in   ) ::    dx(:)
     integer        , intent(in   ) ::    bc(:,:) 
     real(kind=dp_t), intent(in   ) :: diff_coef, diff_fac
-    real(kind=dp_t), intent(in   ) ::    p0(:), rho0(:), temp0(:)
+    real(kind=dp_t), intent(in   ) ::    p0(:), rho0(:), temp0(:), rhoX0(:,:)
     real(kind=dp_t), intent(in   ) :: time
 
     real(kind=dp_t) :: lapu
@@ -82,10 +89,13 @@ contains
           den_row(1) = rho0(j)
           temp_row(1) = temp0(j)
           p_row(1) = p0(j)
+          xn_zone(:) = rhoX0(j,:)/rho0(j)
+
           ! (rho,P) --> h, etc
           input_flag = 4
+
           call eos(input_flag, den_row, temp_row, npts, nspec, &
-               xmass, aion, zion, &
+               xn_zone, aion, zion, &
                p_row, h_row, e_row, &
                cv_row, cp_row, xne_row, eta_row, &
                pele_row, dpdt_row, dpdr_row, dedt_row, dedr_row, gam1_row, cs_row, &
@@ -98,10 +108,13 @@ contains
              den_row(1) = rho(i,j)
              temp_row(1) = temp0(j)
              p_row(1) = p0(j)
+             xn_zone(:) = rhoX(i,j,:)/rho(i,j)
+
              ! (rho,P) --> h, etc
              input_flag = 4
+
              call eos(input_flag, den_row, temp_row, npts, nspec, &
-                  xmass, aion, zion, &
+                  xn_zone, aion, zion, &
                   p_row, h_row, e_row, &
                   cv_row, cp_row, xne_row, eta_row, &
                   pele_row, dpdt_row, dpdr_row, dedt_row, dedr_row, gam1_row, cs_row, &
@@ -191,8 +204,14 @@ contains
  
   end subroutine mkspecforce_2d
 
-  subroutine mkrhohforce_3d(force, s, ng, rho, ng_r, wmac, dx, bc, &
-                            diff_coef, diff_fac, p0, rho0, temp0, time, pred_vs_corr)
+  subroutine mkrhohforce_3d(force, s, ng, &
+                            rho, &
+                            rhoX, &
+                            ng_r, wmac, dx, & 
+                            bc, &
+                            diff_coef, diff_fac, &
+                            p0, rho0, rhoX0, temp0, &
+                            time, pred_vs_corr)
 
     ! compute the source terms for the perturbational form of the
     ! enthalpy equation { w dp0/dr + (rho H - (rho0/sigma0) <sigma H>) }
@@ -201,11 +220,12 @@ contains
     real(kind=dp_t), intent(  out) :: force(0:,0:,0:)
     real(kind=dp_t), intent(in   ) ::     s(1-ng  :,1-ng  :,1-ng:)
     real(kind=dp_t), intent(in   ) ::   rho(1-ng_r:,1-ng_r:,1-ng_r:)
+    real(kind=dp_t), intent(in   ) ::  rhoX(1-ng_r:,1-ng_r:,1-ng_r:,:)
     real(kind=dp_t), intent(in   ) ::  wmac(0     :,0     :,0:)
     real(kind=dp_t), intent(in   ) ::    dx(:)
     integer        , intent(in   ) ::    bc(:,:) 
     real(kind=dp_t), intent(in   ) :: diff_coef, diff_fac
-    real(kind=dp_t), intent(in   ) ::    p0(:), rho0(:), temp0(:)
+    real(kind=dp_t), intent(in   ) ::    p0(:), rho0(:), temp0(:), rhoX0(:,:)
     real(kind=dp_t), intent(in   ) :: time
 
     real(kind=dp_t) :: lapu
@@ -261,10 +281,13 @@ contains
           den_row(1) = rho0(k)
           temp_row(1) = temp0(k)
           p_row(1) = p0(k)
+          xn_zone(:) = rhoX0(k,:)/rho0(k)
+
           ! (rho,P) --> h, etc
           input_flag = 4
+
           call eos(input_flag, den_row, temp_row, npts, nspec, &
-               xmass, aion, zion, &
+               xn_zone, aion, zion, &
                p_row, h_row, e_row, &
                cv_row, cp_row, xne_row, eta_row, &
                pele_row, dpdt_row, dpdr_row, dedt_row, dedr_row, gam1_row, cs_row, &
@@ -274,28 +297,32 @@ contains
           sigma_H = ZERO
 
           do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-             den_row(1) = rho(i,j,k)
-             temp_row(1) = temp0(k)
-             p_row(1) = p0(k)
-             ! (rho,P) --> h, etc
-             input_flag = 4
-             call eos(input_flag, den_row, temp_row, npts, nspec, &
-                  xmass, aion, zion, &
-                  p_row, h_row, e_row, &
-                  cv_row, cp_row, xne_row, eta_row, &
-                  pele_row, dpdt_row, dpdr_row, dedt_row, dedr_row, gam1_row, cs_row, &
-                  s_row, do_diag)
-             coeff = dpdt_row(1) / (den_row(1) * cp_row(1) * dpdr_row(1))
-             sigma_H = sigma_H + coeff * H(i,j,k)
-          end do
+             do i = lo(1), hi(1)
+                den_row(1) = rho(i,j,k)
+                temp_row(1) = temp0(k)
+                p_row(1) = p0(k)
+                xn_zone(:) = rhoX(i,j,k,:)/rho(i,j,k)
+
+                ! (rho,P) --> h, etc
+                input_flag = 4
+
+                call eos(input_flag, den_row, temp_row, npts, nspec, &
+                     xn_zone, aion, zion, &
+                     p_row, h_row, e_row, &
+                     cv_row, cp_row, xne_row, eta_row, &
+                     pele_row, dpdt_row, dpdr_row, dedt_row, dedr_row, gam1_row, cs_row, &
+                     s_row, do_diag)
+
+                coeff = dpdt_row(1) / (den_row(1) * cp_row(1) * dpdr_row(1))
+                sigma_H = sigma_H + coeff * H(i,j,k)
+             end do
           end do
           sigma_H = sigma_H * denom
 
           do j = lo(2),hi(2)
-          do i = lo(1),hi(1)
-             H(i,j,k) = rho(i,j,k) * H(i,j,k) - (rho0(k) / sigma0) * sigma_H
-          end do
+             do i = lo(1),hi(1)
+                H(i,j,k) = rho(i,j,k) * H(i,j,k) - (rho0(k) / sigma0) * sigma_H
+             end do
           end do
        end do
        
