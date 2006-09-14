@@ -213,21 +213,6 @@ module update_module
         enddo
       end if
 
-      umax = uold(lo(1),lo(2),1) 
-      umin = uold(lo(1),lo(2),1) 
-      vmax = uold(lo(1),lo(2),2) 
-      vmin = uold(lo(1),lo(2),2) 
-      do j = lo(2), hi(2)
-        do i = lo(1), hi(1)
-          umax = max(umax,uold(i,j,1))
-          umin = min(umin,uold(i,j,1))
-          vmax = max(vmax,uold(i,j,2))
-          vmin = min(vmin,uold(i,j,2))
-        enddo
-      enddo
-      print *,'MIN/MAX OF UOLD ',umin,umax
-      print *,'MIN/MAX OF VOLD ',vmin,vmax
-
       umax = unew(lo(1),lo(2),1) 
       umin = unew(lo(1),lo(2),1) 
       vmax = unew(lo(1),lo(2),2) 
@@ -454,28 +439,6 @@ module update_module
         enddo
         enddo
       end if
-
-      umax = uold(lo(1),lo(2),lo(3),1) 
-      umin = uold(lo(1),lo(2),lo(3),1) 
-      vmax = uold(lo(1),lo(2),lo(3),2) 
-      vmin = uold(lo(1),lo(2),lo(3),2) 
-      wmax = uold(lo(1),lo(2),lo(3),3) 
-      wmin = uold(lo(1),lo(2),lo(3),3) 
-      do k = lo(3), hi(3)
-      do j = lo(2), hi(2)
-        do i = lo(1), hi(1)
-          umax = max(umax,uold(i,j,k,1))
-          umin = min(umin,uold(i,j,k,1))
-          vmax = max(vmax,uold(i,j,k,2))
-          vmin = min(vmin,uold(i,j,k,2))
-          wmax = max(wmax,uold(i,j,k,3))
-          wmin = min(wmin,uold(i,j,k,3))
-        enddo
-      enddo
-      enddo
-      print *,'MIN/MAX OF UOLD ',umin,umax
-      print *,'MIN/MAX OF VOLD ',vmin,vmax
-      print *,'MIN/MAX OF WOLD ',wmin,wmax
 
       umax = unew(lo(1),lo(2),lo(3),1) 
       umin = unew(lo(1),lo(2),lo(3),1) 
