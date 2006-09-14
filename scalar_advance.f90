@@ -504,7 +504,7 @@ contains
                                lo, hi, ng_cell, dx, dt, pred_vs_corr, verbose)
                 call setbc_2d(snp(:,:,1,n), lo, ng_cell, &
                               the_bc_level%adv_bc_level_array(i,:,:,n+dm),dx,n+dm)
-                if (n == nscal) print *, 'Mg done'
+                call mk_shalf_2d(sop(:,:,1,n),snp(:,:,1,n),shp(:,:,1,n),lo,hi,ng_cell)
               end do
             case (3)
               wmp => dataptr(umac(3), i)
@@ -522,6 +522,7 @@ contains
                                lo, hi, ng_cell, dx, dt, pred_vs_corr, verbose)
                 call setbc_3d(snp(:,:,:,n), lo, ng_cell, &
                               the_bc_level%adv_bc_level_array(i,:,:,n+dm),dx,n+dm)
+                call mk_shalf_3d(sop(:,:,:,n),snp(:,:,:,n),shp(:,:,:,n),lo,hi,ng_cell)
               end do
          end select
       end do
@@ -568,6 +569,11 @@ contains
             case (3)
               wmp => dataptr(umac(3), i)
               sepz => dataptr(sedge(3), i)
+
+              call mkrhohforce_2d(fp(:,:,:,n), sop(:,:,:,n), ng_cell, &
+                                  shp(:,:,:,1), ng_rho, wmp(:,:,:,1), &
+                                  dx, the_bc_level%ell_bc_level_array(i,:,:,rhoh_comp+dm), &
+                                  diff_coef, diff_fac, p0_nph, rho0_nph, temp0, half_time, pred_vs_corr)
               call update_scal_3d( &
                              sop(:,:,:,n), snp(:,:,:,n), &
                              ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0, &
