@@ -225,10 +225,12 @@ contains
     temp_row(1) = temp
     p_row(1) = p0
     den_row(1) = rho0
+    xn_zone(:) = rhoX0(:)/rho0
+
     input_flag = 3      ! (t, p) -> (rho, h)
 
     call eos(input_flag, den_row, temp_row, npts, nspec, &
-         xmass, aion, zion, &
+         xn_zone, aion, zion, &
          p_row, h_row, e_row, &
          cv_row, cp_row, xne_row, eta_row, &
          pele_row, dpdt_row, dpdr_row, dedt_row, dedr_row, gam1_row, cs_row, &
@@ -236,7 +238,7 @@ contains
 
     dens_pert = den_row(1)
     rhoh_pert = den_row(1)*h_row(1)
-    rhoX_pert(:) = rhoX0(:)
+    rhoX_pert(:) = dens_pert*xn_zone(:)
     
 
   end subroutine perturb_2d
@@ -280,10 +282,12 @@ contains
     temp_row(1) = temp
     p_row(1) = p0
     den_row(1) = rho0
+    xn_zone(:) = rhoX0(:)/rho0
+
     input_flag = 3      ! (t, p) -> (rho, h)
 
     call eos(input_flag, den_row, temp_row, npts, nspec, &
-         xmass, aion, zion, &
+         xn_zone, aion, zion, &
          p_row, h_row, e_row, &
          cv_row, cp_row, xne_row, eta_row, &
          pele_row, dpdt_row, dpdr_row, dedt_row, dedr_row, gam1_row, cs_row, &
@@ -291,7 +295,7 @@ contains
 
     dens_pert = den_row(1)
     rhoh_pert = den_row(1)*h_row(1)
-    rhoX_pert(:) = rhoX0(:)
+    rhoX_pert(:) = dens_pert*xn_zone(:)
 
 
   end subroutine perturb_3d
