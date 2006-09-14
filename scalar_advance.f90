@@ -252,7 +252,7 @@ contains
                             the_bc_level%adv_bc_level_array(i,:,:,rho_comp+dm),dx,rho_comp+dm)
               call setbc_2d(rp(:,:,1,1), lo, ng_rho, &
                             the_bc_level%adv_bc_level_array(i,:,:,rho_comp+dm),dx,rho_comp+dm)
-              call mk_rhohalf(sop(:,:,1,1),snp(:,:,1,1),rp(:,:,1,1),lo,hi,ng_cell)
+              call mk_rhohalf_2d(sop(:,:,1,1),snp(:,:,1,1),rp(:,:,1,1),lo,hi,ng_cell)
            case (3)
               wmp => dataptr(umac(3), i)
               sepz => dataptr(sedge(3), i)
@@ -264,7 +264,7 @@ contains
                             the_bc_level%adv_bc_level_array(i,:,:,rho_comp+dm),dx,rho_comp+dm)
               call setbc_3d(rp(:,:,:,1), lo, ng_rho, &
                             the_bc_level%adv_bc_level_array(i,:,:,rho_comp+dm),dx,rho_comp+dm)
-              call mk_rhohalf(sop(:,:,1,1),snp(:,:,1,1),rp(:,:,1,1),lo,hi,ng_cell)
+              call mk_rhohalf_3d(sop(:,:,:,1),snp(:,:,:,1),rp(:,:,:,1),lo,hi,ng_cell)
          end select
       end do
       call multifab_fill_boundary(rhohalf)
