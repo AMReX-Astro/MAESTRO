@@ -4,16 +4,17 @@ module XfromrhoX_module
   use bc_module
   use multifab_module
   use variables
+  use network
 
   implicit none
 
 contains
 
-   subroutine make_XfromrhoX (plotdata,comp,s,nspec)
+   subroutine make_XfromrhoX (plotdata,comp,s)
 
-      integer        , intent(in   ) :: comp,nspec
+      integer        , intent(in   ) :: comp
       type(multifab) , intent(in   ) :: s
-      type(multifab) , intent(  out) :: plotdata
+      type(multifab) , intent(inout) :: plotdata
 
       real(kind=dp_t), pointer:: sp(:,:,:,:)
       real(kind=dp_t), pointer:: pp(:,:,:,:)
@@ -31,19 +32,19 @@ contains
          hi =  upb(get_box(s, i))
          select case (dm)
             case (2)
-              call makeXfromrhoX_2d(pp(:,:,1,comp:),sp(:,:,1,1),sp(:,:,1,spec_comp:), lo, hi, ng, nspec)
+              call makeXfromrhoX_2d(pp(:,:,1,comp:),sp(:,:,1,1),sp(:,:,1,spec_comp:), lo, hi, ng)
             case (3)
-              call makeXfromrhoX_3d(pp(:,:,:,comp:),sp(:,:,:,1),sp(:,:,:,spec_comp:), lo, hi, ng, nspec)
+              call makeXfromrhoX_3d(pp(:,:,:,comp:),sp(:,:,:,1),sp(:,:,:,spec_comp:), lo, hi, ng)
          end select
       end do
 
    end subroutine make_XfromrhoX
 
-   subroutine makeXfromrhoX_2d (X,rho,rhoX,lo,hi,ng,nspec)
+   subroutine makeXfromrhoX_2d (X,rho,rhoX,lo,hi,ng)
 
       implicit none
 
-      integer, intent(in) :: lo(:), hi(:), ng, nspec
+      integer, intent(in) :: lo(:), hi(:), ng
       real (kind = dp_t), intent(  out) ::    X(lo(1)   :,lo(2)   :,:)  
       real (kind = dp_t), intent(in   ) :: rhoX(lo(1)-ng:,lo(2)-ng:,:)
       real (kind = dp_t), intent(in   ) ::  rho(lo(1)-ng:,lo(2)-ng:  )
@@ -61,11 +62,11 @@ contains
 
    end subroutine makeXfromrhoX_2d
 
-   subroutine makeXfromrhoX_3d (X,rho,rhoX,lo,hi,ng,nspec)
+   subroutine makeXfromrhoX_3d (X,rho,rhoX,lo,hi,ng)
 
       implicit none
 
-      integer, intent(in) :: lo(:), hi(:), ng, nspec
+      integer, intent(in) :: lo(:), hi(:), ng
       real (kind = dp_t), intent(  out) ::    X(lo(1)   :,lo(2)   :,lo(3)   :,:)  
       real (kind = dp_t), intent(in   ) :: rhoX(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
       real (kind = dp_t), intent(in   ) ::  rho(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:  )
