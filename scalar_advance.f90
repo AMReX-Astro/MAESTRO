@@ -570,7 +570,7 @@ contains
               wmp => dataptr(umac(3), i)
               sepz => dataptr(sedge(3), i)
 
-              call mkrhohforce_2d(fp(:,:,:,n), sop(:,:,:,n), ng_cell, &
+              call mkrhohforce_3d(fp(:,:,:,n), sop(:,:,:,n), ng_cell, &
                                   shp(:,:,:,1), ng_rho, wmp(:,:,:,1), &
                                   dx, the_bc_level%ell_bc_level_array(i,:,:,rhoh_comp+dm), &
                                   diff_coef, diff_fac, p0_nph, rho0_nph, temp0, half_time, pred_vs_corr)
