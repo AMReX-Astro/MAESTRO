@@ -4,6 +4,7 @@ module tpert_module
   use bc_module
   use multifab_module
   use eos_module
+  use variables
 
   implicit none
 
@@ -16,12 +17,12 @@ contains
     type(multifab) , intent(in   ) :: state
     real(kind=dp_t), intent(in   ) ::    p0(:)
     real(kind=dp_t), intent(in   ) :: temp0(:)
-
+    
     real(kind=dp_t), pointer:: sp(:,:,:,:)
     real(kind=dp_t), pointer:: tp(:,:,:,:)
     integer :: lo(state%dim),hi(state%dim),ng,dm
     integer :: i
-
+    
     ng = state%ng
     dm = state%dim
 
@@ -43,75 +44,77 @@ contains
 
   subroutine maketpert_2d (T,state,lo,hi,ng,p0,temp0)
 
-     implicit none
-     integer, intent(in) :: lo(:), hi(:), ng
-     real (kind = dp_t), intent(  out) ::     T(lo(1)   :,lo(2):)  
-     real (kind = dp_t), intent(in   ) :: state(lo(1)-ng:,lo(2)-ng:,:)
-     real (kind = dp_t), intent(in   ) ::    p0(lo(2):)
-     real (kind = dp_t), intent(in   ) :: temp0(lo(2):)
+    implicit none
+    integer, intent(in) :: lo(:), hi(:), ng
+    real (kind = dp_t), intent(  out) ::     T(lo(1)   :,lo(2):)  
+    real (kind = dp_t), intent(in   ) :: state(lo(1)-ng:,lo(2)-ng:,:)
+    real (kind = dp_t), intent(in   ) ::    p0(lo(2):)
+    real (kind = dp_t), intent(in   ) :: temp0(lo(2):)
 
-     integer :: i, j
+    integer :: i, j
 
-     do_diag = .false.
+    do_diag = .false.
 
-     do j = lo(2), hi(2)
+    do j = lo(2), hi(2)
        do i = lo(1), hi(1)
             
-         den_row(1) = state(i,j,1)
-        temp_row(1) = temp0(j)
-           p_row(1) = p0(j)
+          den_row(1) = state(i,j,rho_comp)
+          temp_row(1) = temp0(j)
+          p_row(1) = p0(j)
+          xn_zone(:) = state(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
 
-         ! (rho, P) --> T
-         input_flag = 4
+          ! (rho, P) --> T
+          input_flag = 4
 
-         call eos(input_flag, den_row, temp_row, npts, nspec, &
-              xmass, aion, zion, &
-              p_row, h_row, e_row, &
-              cv_row, cp_row, xne_row, eta_row, &
-              pele_row, dpdt_row, dpdr_row, dedt_row, dedr_row, gam1_row, cs_row, &
-              s_row, do_diag)
-
-         T(i,j) = temp_row(1) - temp0(j)
+          call eos(input_flag, den_row, temp_row, npts, nspec, &
+                   xn_zone, aion, zion, &
+                   p_row, h_row, e_row, &
+                   cv_row, cp_row, xne_row, eta_row, &
+                   pele_row, dpdt_row, dpdr_row, dedt_row, dedr_row, gam1_row, cs_row, &
+                   s_row, do_diag)
+          
+          T(i,j) = temp_row(1) - temp0(j)
        enddo
-     enddo
+    enddo
 
   end subroutine maketpert_2d
 
   subroutine maketpert_3d (T,state,lo,hi,ng,p0,temp0)
 
-     implicit none
-     integer, intent(in) :: lo(:), hi(:), ng
-     real (kind = dp_t), intent(  out) ::     T(lo(1)   :,lo(2):   ,lo(3)   :  )  
-     real (kind = dp_t), intent(in   ) :: state(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-     real (kind = dp_t), intent(in   ) ::    p0(lo(3):)
-     real (kind = dp_t), intent(in   ) :: temp0(lo(3):)
+    implicit none
+    integer, intent(in) :: lo(:), hi(:), ng
+    real (kind = dp_t), intent(  out) ::     T(lo(1)   :,lo(2):   ,lo(3)   :  )  
+    real (kind = dp_t), intent(in   ) :: state(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
+    real (kind = dp_t), intent(in   ) ::    p0(lo(3):)
+    real (kind = dp_t), intent(in   ) :: temp0(lo(3):)
 
-     integer :: i, j, k
+    integer :: i, j, k
 
-     do_diag = .false.
+    do_diag = .false.
 
-     do k = lo(3), hi(3)
+    do k = lo(3), hi(3)
        do j = lo(2), hi(2)
-       do i = lo(1), hi(1)
+          do i = lo(1), hi(1)
             
-         den_row(1) = state(i,j,k,1)
-        temp_row(1) = temp0(k)
-           p_row(1) = p0(k)
+             den_row(1) = state(i,j,k,rho_comp)
+             temp_row(1) = temp0(k)
+             p_row(1) = p0(k)
+             xn_zone(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
+                          
+             ! (rho, P) --> T
+             input_flag = 4
 
-         ! (rho, P) --> T
-         input_flag = 4
+             call eos(input_flag, den_row, temp_row, npts, nspec, &
+                      xn_zone, aion, zion, &
+                      p_row, h_row, e_row, &
+                      cv_row, cp_row, xne_row, eta_row, &
+                      pele_row, dpdt_row, dpdr_row, dedt_row, dedr_row, gam1_row, cs_row, &
+                      s_row, do_diag)
 
-         call eos(input_flag, den_row, temp_row, npts, nspec, &
-              xmass, aion, zion, &
-              p_row, h_row, e_row, &
-              cv_row, cp_row, xne_row, eta_row, &
-              pele_row, dpdt_row, dpdr_row, dedt_row, dedr_row, gam1_row, cs_row, &
-              s_row, do_diag)
-
-         T(i,j,k) = temp_row(1) - temp0(k)
+             T(i,j,k) = temp_row(1) - temp0(k)
+          enddo
        enddo
-       enddo
-     enddo
+    enddo
 
   end subroutine maketpert_3d
 
