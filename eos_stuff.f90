@@ -8,6 +8,7 @@ module eos_module
 
       real(kind=dp_t) :: xmass(nspec)= (/  0.3_dp_t,  0.7_dp_t, 0.0_dp_t /)
 
+      real(kind=dp_t) :: xn_zone(nspec)
 
       real(kind=dp_t) :: temp_row(NP)
       real(kind=dp_t) :: den_row(NP)
