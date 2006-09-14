@@ -128,11 +128,11 @@ contains
         vmp  => dataptr(umac(2), i)
         select case(dm)
         case(2)
-          call modify_force_2d(fp(:,:,1,1),sop(:,:,1,1),ng_cell,s0_old(:,rho_comp),&
+          call modify_force_2d(fp(:,:,1,1),sop(:,:,1,rho_comp),ng_cell,s0_old(:,rho_comp),&
                                ump(:,:,1,1),vmp(:,:,1,1),w0,dx,pred_vs_corr)
         case(3)
           wmp  => dataptr(umac(3), i)
-          call modify_force_3d(fp(:,:,:,1),sop(:,:,:,1),ng_cell,s0_old(:,rho_comp),&
+          call modify_force_3d(fp(:,:,:,1),sop(:,:,:,rho_comp),ng_cell,s0_old(:,rho_comp),&
                                ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),w0,dx,pred_vs_corr)
         end select
       end do
@@ -242,8 +242,8 @@ contains
               call update_scal_2d(n, &
                              sop(:,:,1,1), snp(:,:,1,1), snp(:,:,1,1), &
                              ump(:,:,1,1), vmp(:,:,1,1), w0, &
-                             sepx(:,:,1,1), sepy(:,:,1,1), &
-                             shp(:,:,1,1), s0_old(:,rho_comp), s0_new(:,rho_comp), &
+                             sepx(:,:,1,1), sepy(:,:,1,1), fp(:,:,1,1), &
+                             s0_old(:,rho_comp), s0_new(:,rho_comp), &
                              lo, hi, ng_cell, dx, dt, pred_vs_corr, verbose)
               call setbc_2d(snp(:,:,1,1), lo, ng_cell, &
                             the_bc_level%adv_bc_level_array(i,:,:,rho_comp+dm),dx,rho_comp+dm)
@@ -257,7 +257,7 @@ contains
                              sop(:,:,:,1), snp(:,:,:,1), snp(:,:,:,1), &
                              ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0, &
                              sepx(:,:,:,1), sepy(:,:,:,1), sepz(:,:,:,1), &
-                             shp(:,:,:,1) , s0_old(:,rho_comp), s0_new(:,rho_comp), &
+                             fp(:,:,:,1) , s0_old(:,rho_comp), s0_new(:,rho_comp), &
                              lo, hi, ng_cell, dx, dt, pred_vs_corr, verbose)
               call setbc_3d(snp(:,:,:,1), lo, ng_cell, &
                             the_bc_level%adv_bc_level_array(i,:,:,rho_comp+dm),dx,rho_comp+dm)
