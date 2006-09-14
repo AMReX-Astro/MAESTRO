@@ -18,16 +18,15 @@ module base_state_module
 contains
 
    subroutine eval_base_state(vel,p0_old,p0_new, &
-                              rho0_old,rho0_nph,rho0_new, &
-                              temp0,rhoh0_old,rhoh0_new, &
-                              rhoX0_old,rhoX0_nph,rhoX0_new, &
+                              s0_old,s0_nph,s0_new,temp0, &
                               gam1,div_coeff_n,div_coeff_nph,div_coeff_half, &
                               shalf,grav,dx, &
                               dt,time,div_coef_type,anelastic_cutoff)
 
       real(kind=dp_t), intent(  out) :: vel(:)
-      real(kind=dp_t), intent(in   ) :: p0_old(:), rho0_old(:), rhoh0_old(:), rhoX0_old(:,:)
-      real(kind=dp_t), intent(  out) :: p0_new(:), rho0_new(:), rho0_nph(:), rhoh0_new(:), rhoX0_new(:,:), rhoX0_nph(:,:)
+      real(kind=dp_t), intent(in   ) :: p0_old(:), s0_old(:,:)
+      real(kind=dp_t), intent(  out) :: p0_new(:), s0_new(:,:)
+      real(kind=dp_t), intent(  out) ::            s0_nph(:,:)
       real(kind=dp_t), intent(inout) :: temp0(:),gam1(:),div_coeff_n(:),div_coeff_nph(:),div_coeff_half(:)
       type(multifab) , intent(in   ) :: shalf
       real(kind=dp_t), intent(in   ) :: dx(:),dt,grav,time,anelastic_cutoff
@@ -53,14 +52,12 @@ contains
          hi =  upb(get_box(shalf, i))
          select case (dm)
             case (2)
-              call eval_base_state_2d(vel,p0_old,p0_new,rho0_old,rho0_nph,rho0_new,temp0, &
-                                      rhoh0_old,rhoh0_new, rhoX0_old, rhoX0_nph, rhoX0_new, &
+              call eval_base_state_2d(vel,p0_old,p0_new,s0_old,s0_nph,s0_new,temp0, &
                                       gam1,div_coeff_n,div_coeff_nph, &
                                       div_coeff_half,shp(:,:,1,:),&
                                       grav,lo,hi,dx,dt,time,div_coef_type,anelastic_cutoff)
             case (3)
-              call eval_base_state_3d(vel,p0_old,p0_new,rho0_old,rho0_nph,rho0_new,temp0, &
-                                      rhoh0_old,rhoh0_new, rhoX0_old, rhoX0_nph, rhoX0_new, &
+              call eval_base_state_3d(vel,p0_old,p0_new,s0_old,s0_nph,s0_new,temp0, &
                                       gam1,div_coeff_n,div_coeff_nph, &
                                       div_coeff_half,shp(:,:,:,:),&
                                       grav,lo,hi,dx,dt,time,div_coef_type,anelastic_cutoff)
@@ -69,8 +66,7 @@ contains
 
    end subroutine eval_base_state
 
-   subroutine eval_base_state_2d (vel,p0_old,p0_new,rho0_old,rho0_nph,rho0_new,temp0, &
-                                  rhoh0_old,rhoh0_new, rhoX0_old, rhoX0_nph, rhoX0_new, &
+   subroutine eval_base_state_2d (vel,p0_old,p0_new,s0_old,s0_nph,s0_new,temp0, &
                                   gam1,div_coeff_n,div_coeff_nph, &
                                   div_coeff_half,shalf,grav,lo,hi, & 
                                   dx,dt,time,div_coef_type,anelastic_cutoff)
@@ -78,9 +74,9 @@ contains
       implicit none
       integer, intent(in) :: lo(:), hi(:)
       real(kind=dp_t), intent(  out) :: vel(lo(2):)
-      real(kind=dp_t), intent(in   ) :: p0_old(lo(2):), rho0_old(lo(2):), rhoh0_old(lo(2):), rhoX0_old(lo(2):,:)
-      real(kind=dp_t), intent(  out) :: p0_new(lo(2):), rho0_new(lo(2):), rhoh0_new(lo(2):), rhoX0_new(lo(2):,:)
-      real(kind=dp_t), intent(  out) :: rho0_nph(lo(2):), rhoX0_nph(lo(2):,:)
+      real(kind=dp_t), intent(in   ) :: p0_old(lo(2):), s0_old(lo(2):,:)
+      real(kind=dp_t), intent(  out) :: p0_new(lo(2):), s0_new(lo(2):,:)
+      real(kind=dp_t), intent(  out) ::                 s0_nph(lo(2):,:)
       real(kind=dp_t), intent(inout) :: temp0(lo(2):)
       real(kind=dp_t), intent(inout) :: gam1(lo(2):)
       real(kind=dp_t), intent(inout) :: div_coeff_n   (lo(2):)
@@ -170,33 +166,33 @@ contains
 !     UPDATE RHO0
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       do j = lo(2),hi(2)
-        force(j) = rho0_old(j) * (vel(j+1) - vel(j)) / dx(2)
+        force(j) = s0_old(j,rho_comp) * (vel(j+1) - vel(j)) / dx(2)
       end do
-      call mkflux_1d(rho0_old,edge,vel,force,lo(2),dx(2),dt)
+      call mkflux_1d(s0_old(:,rho_comp),edge,vel,force,lo(2),dx(2),dt)
       do j = lo(2), hi(2)
 
-        rho0_new(j) = rho0_old(j) - dt / dx(2) * (edge(j+1) * vel(j+1) - edge(j) * vel(j))
-        rho0_new(j) = max(rho0_new(j), rho0_old(hi(2)))
+        s0_new(j,rho_comp) = s0_old(j,rho_comp) - dt / dx(2) * (edge(j+1) * vel(j+1) - edge(j) * vel(j))
+        s0_new(j,rho_comp) = max(s0_new(j,rho_comp), s0_old(hi(2),rho_comp))
 
-        rho0_nph(j) = HALF * (rho0_old(j) + rho0_new(j))
+        s0_nph(j,rho_comp) = HALF * (s0_old(j,rho_comp) + s0_new(j,rho_comp))
       end do
 
 
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     UPDATE RHOX0
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      do n = 1, nspec
+      do n = spec_comp,spec_comp+nspec-1
          do j = lo(2),hi(2)
-            force(j) = rhoX0_old(j,n) * (vel(j+1) - vel(j)) / dx(2)
+            force(j) = s0_old(j,n) * (vel(j+1) - vel(j)) / dx(2)
          end do
 
-         call mkflux_1d(rhoX0_old(:,n),edge,vel,force,lo(2),dx(2),dt)
+         call mkflux_1d(s0_old(:,n),edge,vel,force,lo(2),dx(2),dt)
 
          do j = lo(2), hi(2)
-            rhoX0_new(j,n) = rhoX0_old(j,n) - dt / dx(2) * (edge(j+1) * vel(j+1) - edge(j) * vel(j))
-            rhoX0_new(j,n) = max(rhoX0_new(j,n), rhoX0_old(hi(2),n))
+            s0_new(j,n) = s0_old(j,n) - dt / dx(2) * (edge(j+1) * vel(j+1) - edge(j) * vel(j))
+            s0_new(j,n) = max(s0_new(j,n), s0_old(hi(2),n))
             
-            rhoX0_nph(j,n) = HALF * (rhoX0_old(j,n) + rhoX0_new(j,n))
+            s0_nph(j,n) = HALF * (s0_old(j,n) + s0_new(j,n))
          end do
 
       enddo
@@ -206,10 +202,10 @@ contains
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       do j = lo(2), hi(2)
 
-         den_row(1)  = rho0_new(j)
+         den_row(1)  = s0_new(j,rho_comp)
          temp_row(1) = temp0(j)
          p_row(1)    = p0_new(j)
-         xn_zone(:) = rhoX0_new(j,:)/rho0_new(j)
+         xn_zone(1:) = s0_new(j,spec_comp:)/s0_new(j,rho_comp)
 
          ! (rho,P) --> T, h
          input_flag = 4
@@ -224,15 +220,15 @@ contains
          temp0(j) = temp_row(1)
          gam1(j) = gam1_row(1)
 
-         rhoh0_new(j) = rho0_new(j) * h_row(1)
+         s0_new(j,rhoh_comp) = s0_new(j,rho_comp) * h_row(1)
 
       end do
 
       if (div_coef_type .eq. 2) then
-         div_coeff_n   = rho0_new
-         div_coeff_nph = rho0_nph
+         div_coeff_n   = s0_new(:,rho_comp)
+         div_coeff_nph = s0_nph(:,rho_comp)
       else 
-         call make_div_coeff(temp_array,temp_array_half,rho0_new,p0_new,gam1,grav,dx(2),anelastic_cutoff)
+         call make_div_coeff(temp_array,temp_array_half,s0_new(:,rho_comp),p0_new,gam1,grav,dx(2),anelastic_cutoff)
          div_coeff_nph = HALF * (temp_array + div_coeff_n)
          div_coeff_n   =         temp_array
          div_coeff_half=         temp_array_half
@@ -246,8 +242,7 @@ contains
 
    end subroutine eval_base_state_2d
 
-   subroutine eval_base_state_3d (vel,p0_old,p0_new,rho0_old,rho0_nph,rho0_new,temp0, &
-                                  rhoh0_old,rhoh0_new, rhoX0_old, rhoX0_nph, rhoX0_new, &
+   subroutine eval_base_state_3d (vel,p0_old,p0_new,s0_old,s0_nph,s0_new,temp0, &
                                   gam1,div_coeff_n,div_coeff_nph, &
                                   div_coeff_half,shalf,grav,lo,hi, & 
                                   dx,dt,time,div_coef_type,anelastic_cutoff)
@@ -255,9 +250,9 @@ contains
       implicit none
       integer, intent(in) :: lo(:), hi(:)
       real(kind=dp_t), intent(  out) :: vel(lo(3):)
-      real(kind=dp_t), intent(in   ) :: p0_old(lo(3):), rho0_old(lo(3):), rhoh0_old(lo(3):), rhoX0_old(lo(3):,:)
-      real(kind=dp_t), intent(  out) :: p0_new(lo(3):), rho0_new(lo(3):), rhoh0_new(lo(3):), rhoX0_new(lo(3):,:)
-      real(kind=dp_t), intent(  out) :: rho0_nph(lo(3):), rhoX0_nph(lo(3):,:)
+      real(kind=dp_t), intent(in   ) :: p0_old(lo(3):), s0_old(lo(3):,:)
+      real(kind=dp_t), intent(  out) :: p0_new(lo(3):), s0_new(lo(3):,:)
+      real(kind=dp_t), intent(  out) ::                 s0_nph(lo(3):,:)
       real(kind=dp_t), intent(inout) :: temp0(lo(3):)
       real(kind=dp_t), intent(inout) :: gam1(lo(3):)
       real(kind=dp_t), intent(inout) :: div_coeff_n   (lo(3):)
@@ -348,32 +343,32 @@ contains
 !     UPDATE RHO0
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       do k = lo(3),hi(3)
-        force(k) = rho0_old(k) * (vel(k+1) - vel(k)) / dx(3)
+        force(k) = s0_old(k,rho_comp) * (vel(k+1) - vel(k)) / dx(3)
       end do
-      call mkflux_1d(rho0_old,edge,vel,force,lo(3),dx(3),dt)
+      call mkflux_1d(s0_old(:,rho_comp),edge,vel,force,lo(3),dx(3),dt)
       do k = lo(3), hi(3)
 
-        rho0_new(k) = rho0_old(k) - dt / dx(3) * (edge(k+1) * vel(k+1) - edge(k) * vel(k))
-        rho0_new(k) = max(rho0_new(k), rho0_old(hi(3)))
+        s0_new(k,rho_comp) = s0_old(k,rho_comp) - dt / dx(3) * (edge(k+1) * vel(k+1) - edge(k) * vel(k))
+        s0_new(k,rho_comp) = max(s0_new(k,rho_comp), s0_old(hi(3),rho_comp))
 
-        rho0_nph(k) = HALF * (rho0_old(k) + rho0_new(k))
+        s0_nph(k,rho_comp) = HALF * (s0_old(k,rho_comp) + s0_new(k,rho_comp))
       end do
 
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     UPDATE RHOX0
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      do n = 1, nspec
+      do n = spec_comp, spec_comp+nspec-1
          do k = lo(3),hi(3)
-            force(k) = rhoX0_old(k,n) * (vel(k+1) - vel(k)) / dx(3)
+            force(k) = s0_old(k,n) * (vel(k+1) - vel(k)) / dx(3)
          end do
 
-         call mkflux_1d(rhoX0_old(:,n),edge,vel,force,lo(3),dx(3),dt)
+         call mkflux_1d(s0_old(:,n),edge,vel,force,lo(3),dx(3),dt)
 
          do k = lo(3), hi(3)
-            rhoX0_new(k,n) = rhoX0_old(k,n) - dt / dx(3) * (edge(k+1) * vel(k+1) - edge(k) * vel(k))
-            rhoX0_new(k,n) = max(rhoX0_new(k,n), rhoX0_old(hi(3),n))
+            s0_new(k,n) = s0_old(k,n) - dt / dx(3) * (edge(k+1) * vel(k+1) - edge(k) * vel(k))
+            s0_new(k,n) = max(s0_new(k,n), s0_old(hi(3),n))
             
-            rhoX0_nph(k,n) = HALF * (rhoX0_old(k,n) + rhoX0_new(k,n))
+            s0_nph(k,n) = HALF * (s0_old(k,n) + s0_new(k,n))
          end do
       enddo
 
@@ -383,10 +378,10 @@ contains
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       do k = lo(3), hi(3)
 
-         den_row(1) = rho0_new(k)
+         den_row(1) = s0_new(k,rho_comp)
          temp_row(1) = temp0(k)
          p_row(1) = p0_new(k)
-         xn_zone(:) = rhoX0_new(k,:)/rho0_new(k)
+         xn_zone(:) = s0_new(k,spec_comp:)/s0_new(k,rho_comp)
 
          ! (rho,P) --> T, h
          input_flag = 4
@@ -401,15 +396,16 @@ contains
          temp0(k) = temp_row(1)
          gam1(k) = gam1_row(1)
 
-         rhoh0_new(k) = rho0_new(k) * h_row(1)
+         s0_new(k,rhoh_comp) = s0_new(k,rho_comp) * h_row(1)
 
       end do
 
       if (div_coef_type .eq. 2) then
-         div_coeff_n   = rho0_new
-         div_coeff_nph = rho0_nph
+         div_coeff_n   = s0_new(:,rho_comp)
+         div_coeff_nph = s0_nph(:,rho_comp)
       else 
-         call make_div_coeff(temp_array,temp_array_half,rho0_new,p0_new,gam1,grav,dx(2),anelastic_cutoff)
+         call make_div_coeff(temp_array,temp_array_half,s0_new(:,rho_comp),p0_new, &
+                             gam1,grav,dx(2),anelastic_cutoff)
          div_coeff_nph = HALF * (temp_array + div_coeff_n)
          div_coeff_n   =         temp_array
          div_coeff_half=         temp_array_half

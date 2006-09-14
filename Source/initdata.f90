@@ -16,12 +16,10 @@ module init_module
 
 contains
 
-  subroutine initdata (u,s,rho0,rhoh0,rhoX0,p0,temp0,dx,prob_lo,prob_hi,bc,nscal)
+  subroutine initdata (u,s,s0,p0,temp0,dx,prob_lo,prob_hi,bc,nscal)
 
     type(multifab) , intent(inout) :: u,s
-    real(kind=dp_t), intent(in   ) ::  rho0(:)
-    real(kind=dp_t), intent(in   ) :: rhoh0(:)
-    real(kind=dp_t), intent(in   ) :: rhoX0(:,:)
+    real(kind=dp_t), intent(in   ) ::    s0(:,:)
     real(kind=dp_t), intent(in   ) ::    p0(:)
     real(kind=dp_t), intent(in   ) :: temp0(:)
     real(kind=dp_t), intent(in   ) :: dx(:)
@@ -47,7 +45,7 @@ contains
        select case (dm)
        case (2)
           call initdata_2d(uop(:,:,1,:), sop(:,:,1,:), lo, hi, ng, dx, &
-                           prob_lo, prob_hi, rho0, rhoh0, rhoX0, p0, temp0)
+                           prob_lo, prob_hi, s0, p0, temp0)
           do n = 1,dm
              call setbc_2d(uop(:,:,1,n), lo, ng, bc%adv_bc_level_array(i,:,:,   n),dx,   n)
           end do
@@ -57,7 +55,7 @@ contains
 
        case (3)
           call initdata_3d(uop(:,:,:,:), sop(:,:,:,:), lo, hi, ng, dx, &
-                           prob_lo, prob_hi, rho0, rhoh0, rhoX0, p0, temp0)
+                           prob_lo, prob_hi, s0, p0, temp0)
           do n = 1, dm
              call setbc_3d(uop(:,:,:,n), lo, ng, bc%adv_bc_level_array(i,:,:,   n),dx,   n)
           end do
@@ -72,7 +70,7 @@ contains
 
   end subroutine initdata
 
-  subroutine initdata_2d (u,s,lo,hi,ng,dx,prob_lo,prob_hi,rho0,rhoh0,rhoX0,p0,temp0)
+  subroutine initdata_2d (u,s,lo,hi,ng,dx,prob_lo,prob_hi,s0,p0,temp0)
 
     implicit none
 
@@ -82,9 +80,7 @@ contains
     real (kind = dp_t), intent(in ) :: dx(:)
     real (kind = dp_t), intent(in ) :: prob_lo(:)
     real (kind = dp_t), intent(in ) :: prob_hi(:)
-    real(kind=dp_t), intent(in   ) ::  rho0(lo(2):)
-    real(kind=dp_t), intent(in   ) :: rhoh0(lo(2):)
-    real(kind=dp_t), intent(in   ) :: rhoX0(lo(2):,:)
+    real(kind=dp_t), intent(in   ) ::    s0(lo(2):,:)
     real(kind=dp_t), intent(in   ) ::    p0(lo(2):)
     real(kind=dp_t), intent(in   ) :: temp0(lo(2):)
 
@@ -99,14 +95,13 @@ contains
     u = ZERO
     s = ZERO
 
+    do n = rho_comp,spec_comp+nspec-1
     do j = lo(2), hi(2)
-       do i = lo(1), hi(1)
-          s(i,j,rho_comp) = rho0(j)
-          s(i,j,rhoh_comp) = rhoh0(j)
-          s(i,j,spec_comp:spec_comp+nspec-1) = rhoX0(j,:)
-       enddo
+    do i = lo(1), hi(1)
+      s(i,j,n) = s0(j,n)
     enddo
-
+    enddo
+    enddo
     
     ! add an optional perturbation
     do j = lo(2), hi(2)
@@ -116,10 +111,10 @@ contains
           x = prob_lo(1) + (dble(i)+HALF) * dx(1)
           
           if (perturbModel) then
-             call perturb_2d(x, y, temp0(j), p0(j), rho0(j), rhoX0(j,:), dens_pert, rhoh_pert, rhoX_pert)
+             call perturb_2d(x, y, temp0(j), p0(j), s0(j,:), dens_pert, rhoh_pert, rhoX_pert)
              s(i,j,rho_comp) = dens_pert
              s(i,j,rhoh_comp) = rhoh_pert
-             s(i,j,spec_comp:spec_comp+nspec-1) = rhoX_pert(:)
+             s(i,j,spec_comp:spec_comp+nspec-1) = rhoX_pert(1:)
           endif
 
        enddo
@@ -127,7 +122,7 @@ contains
 
   end subroutine initdata_2d
 
-  subroutine initdata_3d (u,s,lo,hi,ng,dx,prob_lo,prob_hi,rho0,rhoh0,rhoX0,p0,temp0)
+  subroutine initdata_3d (u,s,lo,hi,ng,dx,prob_lo,prob_hi,s0,p0,temp0)
 
     implicit none
 
@@ -137,9 +132,7 @@ contains
     real (kind = dp_t), intent(in ) :: dx(:)
     real (kind = dp_t), intent(in ) :: prob_lo(:)
     real (kind = dp_t), intent(in ) :: prob_hi(:)
-    real(kind=dp_t), intent(in   ) ::  rho0(lo(3):)
-    real(kind=dp_t), intent(in   ) :: rhoh0(lo(3):)
-    real(kind=dp_t), intent(in   ) :: rhoX0(lo(3):,:)
+    real(kind=dp_t), intent(in   ) ::    s0(lo(3):,:)
     real(kind=dp_t), intent(in   ) ::    p0(lo(3):)
     real(kind=dp_t), intent(in   ) :: temp0(lo(3):)
 
@@ -153,16 +146,15 @@ contains
     u = ZERO
     s = ZERO
 
+    do n = rho_comp,spec_comp+nspec-1
     do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-             s(i,j,k,rho_comp) = rho0(k)
-             s(i,j,k,rhoh_comp) = rhoh0(k)
-             s(i,j,k,spec_comp:spec_comp+nspec-1) = rhoX0(j,:)
-          enddo
-       enddo
+    do j = lo(2), hi(2)
+    do i = lo(1), hi(1)
+      s(i,j,k,n) = s0(k,n)
     enddo
-
+    enddo
+    enddo
+    enddo
     
     ! add an optional perturbation
     do k = lo(3), hi(3)
@@ -174,7 +166,7 @@ contains
           x = prob_lo(1) + (dble(i)+HALF) * dx(1)
           
           if (perturbModel) then
-             call perturb_3d(x, y, z, temp0(k), p0(k), rho0(k), rhoX0(k,:), dens_pert, rhoh_pert, rhoX_pert)
+             call perturb_3d(x, y, z, temp0(k), p0(k), s0(k,:), dens_pert, rhoh_pert, rhoX_pert)
              s(i,j,k,rho_comp) = dens_pert
              s(i,j,k,rhoh_comp) = rhoh_pert
              s(i,j,k,spec_comp:spec_comp+nspec-1) = rhoX_pert(:)
@@ -185,13 +177,13 @@ contains
     
   end subroutine initdata_3d
 
-  subroutine perturb_2d(x, y, t0, p0, rho0, rhoX0, dens_pert, rhoh_pert, rhoX_pert)
+  subroutine perturb_2d(x, y, t0, p0, s0, dens_pert, rhoh_pert, rhoX_pert)
 
     ! apply an optional perturbation to the initial temperature field
     ! to see some bubbles
 
     real(kind=dp_t), intent(in ) :: x, y
-    real(kind=dp_t), intent(in ) :: t0, p0, rho0, rhoX0(nspec)
+    real(kind=dp_t), intent(in ) :: t0, p0, s0(:)
     real(kind=dp_t), intent(out) :: dens_pert, rhoh_pert
     real(kind=dp_t), dimension(nspec), intent(out) :: rhoX_pert
 
@@ -224,8 +216,8 @@ contains
     ! pressure
     temp_row(1) = temp
     p_row(1) = p0
-    den_row(1) = rho0
-    xn_zone(:) = rhoX0(:)/rho0
+    den_row(1) = s0(rho_comp)
+    xn_zone(:) = s0(spec_comp:)/s0(rho_comp)
 
     input_flag = 3      ! (t, p) -> (rho, h)
 
@@ -243,13 +235,13 @@ contains
 
   end subroutine perturb_2d
 
-  subroutine perturb_3d(x, y, z, t0, p0, rho0, rhoX0, dens_pert, rhoh_pert, rhoX_pert)
+  subroutine perturb_3d(x, y, z, t0, p0, s0, dens_pert, rhoh_pert, rhoX_pert)
 
     ! apply an optional perturbation to the initial temperature field
     ! to see some bubbles
 
     real(kind=dp_t), intent(in ) :: x, y, z
-    real(kind=dp_t), intent(in ) :: t0, p0, rho0, rhoX0(nspec)
+    real(kind=dp_t), intent(in ) :: t0, p0, s0(:)
     real(kind=dp_t), intent(out) :: dens_pert, rhoh_pert
     real(kind=dp_t), dimension(nspec), intent(out) :: rhoX_pert
 
@@ -281,8 +273,8 @@ contains
     ! pressure
     temp_row(1) = temp
     p_row(1) = p0
-    den_row(1) = rho0
-    xn_zone(:) = rhoX0(:)/rho0
+    den_row(1) = s0(rho_comp)
+    xn_zone(spec_comp:) = s0(spec_comp:)/s0(rho_comp)
 
     input_flag = 3      ! (t, p) -> (rho, h)
 
@@ -301,16 +293,14 @@ contains
   end subroutine perturb_3d
 
   subroutine init_base_state (div_coef_type,div_coeff,div_coeff_half,gam1, &
-                              rho0,temp0,rhoh0,rhoX0,p0,dx,prob_lo,prob_hi,grav,anelastic_cutoff)
+                              s0,temp0,p0,dx,prob_lo,prob_hi,grav,anelastic_cutoff)
 
     integer        , intent(in   ) :: div_coef_type
     real(kind=dp_t), intent(inout) :: div_coeff(0:)
     real(kind=dp_t), intent(inout) :: div_coeff_half(0:)
     real(kind=dp_t), intent(inout) ::  gam1(0:)
-    real(kind=dp_t), intent(inout) ::  rho0(0:)
+    real(kind=dp_t), intent(inout) ::    s0(0:,:)
     real(kind=dp_t), intent(inout) :: temp0(0:)
-    real(kind=dp_t), intent(inout) :: rhoh0(0:)
-    real(kind=dp_t), intent(inout) :: rhoX0(0:,:)
     real(kind=dp_t), intent(inout) ::    p0(0:)
     real(kind=dp_t), intent(in   ) :: prob_lo(:)
     real(kind=dp_t), intent(in   ) :: prob_hi(:)
@@ -417,14 +407,14 @@ contains
             s_row,do_diag)
 
        
-       rho0(j)  = d_ambient
+       s0(j, rho_comp ) = d_ambient
+       s0(j,rhoh_comp ) = d_ambient * h_row(1)
+       s0(j,spec_comp:) = d_ambient * xn_ambient(1:)
        p0(j)    = p_row(1)
        temp0(j) = t_ambient
-       rhoh0(j) = d_ambient * h_row(1)
-       rhoX0(j,:) = d_ambient * xn_ambient(:)
 
        ! keep track of the height where we drop below the cutoff density
-       if (rho0(j) .lt. cutoff_density .and. j_cutoff .eq. nx-1) j_cutoff = j
+       if (s0(j,rho_comp) .lt. cutoff_density .and. j_cutoff .eq. nx-1) j_cutoff = j
 
     end do
  
@@ -433,11 +423,11 @@ contains
     print *,'JCUT_comp ',j_cutoff
 
     do j = j_cutoff,nx-1
-       rho0(j)  =  rho0(j_cutoff)
-       p0(j)    =    p0(j_cutoff)
-       temp0(j) = temp0(j_cutoff)
-       rhoh0(j) = rhoh0(j_cutoff)
-       rhoX0(j,:) = rhoX0(j_cutoff,:)
+       s0(j, rho_comp ) = s0(j_cutoff, rho_comp )
+       s0(j,rhoh_comp ) = s0(j_cutoff,rhoh_comp )
+       s0(j,spec_comp:) = s0(j_cutoff,spec_comp:)
+       p0(j)            = p0(j_cutoff)
+       temp0(j)         = temp0(j_cutoff)
     end do
 
 
@@ -445,10 +435,10 @@ contains
 
     do j = 0,nx-1
 
-       den_row(1)  = rho0(j)
+       den_row(1)  = s0(j,rho_comp)
+       xn_ambient(1:) = s0(j,spec_comp:)/den_row(1)
        temp_row(1) = temp0(j)
        p_row(1)    =   p0(j)
-       xn_ambient(:) = rhoX0(j,:)/den_row(1)
 
 !       (rho, p) --> T, h
        input_flag = 4
@@ -462,7 +452,7 @@ contains
        
        temp0(j) = temp_row(1)
        gam1(j)  = gam1_row(1)
-       rhoh0(j) = h_row(1) * rho0(j)
+       s0(j,rhoh_comp) = h_row(1) * s0(j,rho_comp)
        
     end do
 
@@ -473,14 +463,14 @@ contains
     !     div_coef_type = 3        P-I
     
     if (div_coef_type .eq. 2) then
-       div_coeff = rho0
-       div_coeff_half(   0) = rho0( 0)
-       div_coeff_half(nx+1) = rho0(nx)
+       div_coeff(:)         = s0(:,rho_comp)
+       div_coeff_half(   0) = s0( 0,rho_comp)
+       div_coeff_half(nx+1) = s0(nx,rho_comp)
        do j = 1,nx
-          div_coeff_half(j) = HALF * (rho0(j) + rho0(j-1))
+          div_coeff_half(j) = HALF * (s0(j,rho_comp) + s0(j-1,rho_comp))
        end do
     else
-       call make_div_coeff(div_coeff,div_coeff_half,rho0,p0,gam1,grav,dx(2),anelastic_cutoff)
+       call make_div_coeff(div_coeff,div_coeff_half,s0(:,rho_comp),p0,gam1,grav,dx(2),anelastic_cutoff)
     end if
 
   end subroutine init_base_state
@@ -523,19 +513,19 @@ contains
   end function interpolate
 
 
-  subroutine write_base_state(sd_name,rho0,rhoh0,rhoX0,temp0,p0,div_coeff)
+  subroutine write_base_state(sd_name,s0,temp0,p0,div_coeff)
 
     character(len=9), intent(in) :: sd_name
-    real(kind=dp_t) , intent(in) :: rho0(:),p0(:),rhoh0(:),temp0(:),div_coeff(:)
-    real(kind=dp_t), intent(in) :: rhoX0(:,:)  ! (i, nspec)
+    real(kind=dp_t) , intent(in) :: s0(:,:),p0(:),temp0(:),div_coeff(:)
 
     integer :: i, n
 
     print *,'Writing base state to ',sd_name
 
     open(unit=99,file=sd_name,form = "formatted", access = "sequential",action="write")
-    do i = 1, size(rho0,dim=1)
-       write(99,1000)  rho0(i), p0(i), rhoh0(i), (rhoX0(i,n), n=1, nspec), temp0(i), div_coeff(i)
+    do i = 1, size(s0,dim=1)
+       write(99,1000)  s0(i,rho_comp), p0(i), s0(i,rhoh_comp), &
+                       (s0(i,n), n=spec_comp,spec_comp+nspec-1), temp0(i), div_coeff(i)
     end do
     close(99)
 
@@ -544,19 +534,19 @@ contains
   end subroutine write_base_state
 
 
-  subroutine read_base_state(sd_name,rho0,rhoh0,rhoX0,temp0,p0,div_coeff)
+  subroutine read_base_state(sd_name,s0,temp0,p0,div_coeff)
     
     character(len=9), intent(in   ) :: sd_name
-    real(kind=dp_t) , intent(inout) :: rho0(:),p0(:),rhoh0(:),temp0(:),div_coeff(:)
-    real(kind=dp_t), intent(inout) :: rhoX0(:,:)
+    real(kind=dp_t) , intent(inout) :: s0(:,:),p0(:),temp0(:),div_coeff(:)
 
     integer :: i, n
 
     print *,'Reading base state from ',sd_name
 
     open(unit=99,file=sd_name)
-    do i = 1, size(rho0,dim=1)
-       read(99,*)  rho0(i), p0(i), rhoh0(i), (rhoX0(i,n), n=1, nspec), temp0(i), div_coeff(i)
+    do i = 1, size(s0,dim=1)
+       read(99,*)  s0(i,rho_comp), p0(i), s0(i,rhoh_comp), &
+                   (s0(i,n), n=spec_comp,spec_comp+nspec-1), temp0(i), div_coeff(i)
     end do
     close(99)
 

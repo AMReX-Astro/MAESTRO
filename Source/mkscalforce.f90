@@ -11,6 +11,7 @@ module mkscalforce_module
   use bl_constants_module
   use laplac_module
   use heating_module
+  use variables
   use eos_module
 
   implicit none
@@ -24,7 +25,7 @@ contains
                             ng_r, wmac, dx, &
                             bc, &
                             diff_coef, diff_fac, &
-                            p0, rho0, rhoX0, temp0, &
+                            p0, s0, temp0, &
                             time, pred_vs_corr)
 
     ! compute the source terms for the perturbational form of the
@@ -39,7 +40,7 @@ contains
     real(kind=dp_t), intent(in   ) ::    dx(:)
     integer        , intent(in   ) ::    bc(:,:) 
     real(kind=dp_t), intent(in   ) :: diff_coef, diff_fac
-    real(kind=dp_t), intent(in   ) ::    p0(:), rho0(:), temp0(:), rhoX0(:,:)
+    real(kind=dp_t), intent(in   ) ::    p0(:), s0(:,:), temp0(:)
     real(kind=dp_t), intent(in   ) :: time
 
     real(kind=dp_t) :: lapu
@@ -86,10 +87,10 @@ contains
     else if (pred_vs_corr .eq. 2) then
 
        do j = lo(2),hi(2)
-          den_row(1) = rho0(j)
+          den_row(1) = s0(j,rho_comp)
           temp_row(1) = temp0(j)
           p_row(1) = p0(j)
-          xn_zone(:) = rhoX0(j,:)/rho0(j)
+          xn_zone(:) = s0(j,spec_comp:)/s0(j,rho_comp)
 
           ! (rho,P) --> h, etc
           input_flag = 4
@@ -125,7 +126,7 @@ contains
           sigma_H = sigma_H * denom
 
           do i = lo(1),hi(1)
-             H(i,j) = rho(i,j) * H(i,j) - (rho0(j) / sigma0) * sigma_H
+             H(i,j) = rho(i,j) * H(i,j) - (s0(j,rho_comp) / sigma0) * sigma_H
           end do
        end do
        
@@ -210,7 +211,7 @@ contains
                             ng_r, wmac, dx, & 
                             bc, &
                             diff_coef, diff_fac, &
-                            p0, rho0, rhoX0, temp0, &
+                            p0, s0, temp0, &
                             time, pred_vs_corr)
 
     ! compute the source terms for the perturbational form of the
@@ -225,7 +226,7 @@ contains
     real(kind=dp_t), intent(in   ) ::    dx(:)
     integer        , intent(in   ) ::    bc(:,:) 
     real(kind=dp_t), intent(in   ) :: diff_coef, diff_fac
-    real(kind=dp_t), intent(in   ) ::    p0(:), rho0(:), temp0(:), rhoX0(:,:)
+    real(kind=dp_t), intent(in   ) ::    p0(:), s0(:,:), temp0(:)
     real(kind=dp_t), intent(in   ) :: time
 
     real(kind=dp_t) :: lapu
@@ -278,10 +279,10 @@ contains
     else if (pred_vs_corr .eq. 2) then
 
        do k = lo(3),hi(3)
-          den_row(1) = rho0(k)
+          den_row(1) = s0(k,rho_comp)
           temp_row(1) = temp0(k)
           p_row(1) = p0(k)
-          xn_zone(:) = rhoX0(k,:)/rho0(k)
+          xn_zone(:) = s0(k,spec_comp:)/s0(k,rho_comp)
 
           ! (rho,P) --> h, etc
           input_flag = 4
@@ -321,7 +322,7 @@ contains
 
           do j = lo(2),hi(2)
              do i = lo(1),hi(1)
-                H(i,j,k) = rho(i,j,k) * H(i,j,k) - (rho0(k) / sigma0) * sigma_H
+                H(i,j,k) = rho(i,j,k) * H(i,j,k) - (s0(k,rho_comp) / sigma0) * sigma_H
              end do
           end do
        end do
