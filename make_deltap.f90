@@ -5,6 +5,7 @@ module deltap_module
   use multifab_module
   use eos_module
   use network
+  use variables
 
   implicit none
 
@@ -64,18 +65,17 @@ contains
                p_row(1) = p0(j)
 
              ! (rho,h) --> T,p, etc
-!            h_row(1) = s(i,j,2) / s(i,j,1)
-!            input_flag = 2
+             h_row(1) = s(i,j,2) / s(i,j,1)
+             input_flag = 2
 
-             ! (rho,P) --> T,h, etc
-             input_flag = 4
+             xn_zone(:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
 
              call eos(input_flag, den_row, temp_row, npts, nspec, &
-                  xmass, aion, zion, &
-                  p_row, h_row, e_row, &
-                  cv_row, cp_row, xne_row, eta_row, &
-                  pele_row, dpdt_row, dpdr_row, dedt_row, dedr_row, gam1_row, cs_row, &
-                  s_row, do_diag)
+                      xn_zone, aion, zion, &
+                      p_row, h_row, e_row, &
+                      cv_row, cp_row, xne_row, eta_row, &
+                      pele_row, dpdt_row, dpdr_row, dedt_row, dedr_row, gam1_row, cs_row, &
+                      s_row, do_diag)
              deltap(i,j) = (p_row(1)-p0(j))/ p0(j)
           enddo
 !       end if
@@ -106,18 +106,17 @@ contains
                p_row(1) = p0(k)
 
              ! (rho,h) --> T,p, etc
-!            h_row(1) = s(i,j,k,2) / s(i,j,k,1)
-!            input_flag = 2
+             h_row(1) = s(i,j,k,2) / s(i,j,k,1)
+             input_flag = 2
 
-             ! (rho,P) --> T,h, etc
-             input_flag = 4
+             xn_zone(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
 
              call eos(input_flag, den_row, temp_row, npts, nspec, &
-                  xmass, aion, zion, &
-                  p_row, h_row, e_row, &
-                  cv_row, cp_row, xne_row, eta_row, &
-                  pele_row, dpdt_row, dpdr_row, dedt_row, dedr_row, gam1_row, cs_row, &
-                  s_row, do_diag)
+                      xn_zone, aion, zion, &
+                      p_row, h_row, e_row, &
+                      cv_row, cp_row, xne_row, eta_row, &
+                      pele_row, dpdt_row, dpdr_row, dedt_row, dedr_row, gam1_row, cs_row, &
+                      s_row, do_diag)
              deltap(i,j,k) = (p_row(1)-p0(k))/ p0(k)
           enddo
           enddo
