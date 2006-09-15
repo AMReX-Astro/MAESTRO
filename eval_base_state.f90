@@ -150,7 +150,6 @@ contains
 
       end do
 
-
       print *,'MAX CFL FRAC OF DISPL ',max_vel * dt / dx(2)
 
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -162,21 +161,6 @@ contains
         p0_new(j) = p0_old(j) - dt / dx(2) * HALF * (vel(j) + vel(j+1)) * (edge(j+1) - edge(j))
       end do
 
-!     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!     UPDATE RHO0
-!     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      do j = lo(2),hi(2)
-        force(j) = s0_old(j,rho_comp) * (vel(j+1) - vel(j)) / dx(2)
-      end do
-      call mkflux_1d(s0_old(:,rho_comp),edge,vel,force,lo(2),dx(2),dt)
-      do j = lo(2), hi(2)
-
-        s0_new(j,rho_comp) = s0_old(j,rho_comp) - dt / dx(2) * (edge(j+1) * vel(j+1) - edge(j) * vel(j))
-        s0_new(j,rho_comp) = max(s0_new(j,rho_comp), s0_old(hi(2),rho_comp))
-
-        s0_nph(j,rho_comp) = HALF * (s0_old(j,rho_comp) + s0_new(j,rho_comp))
-      end do
-
 
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     UPDATE RHOX0
@@ -185,17 +169,24 @@ contains
          do j = lo(2),hi(2)
             force(j) = s0_old(j,n) * (vel(j+1) - vel(j)) / dx(2)
          end do
-
          call mkflux_1d(s0_old(:,n),edge,vel,force,lo(2),dx(2),dt)
-
          do j = lo(2), hi(2)
             s0_new(j,n) = s0_old(j,n) - dt / dx(2) * (edge(j+1) * vel(j+1) - edge(j) * vel(j))
-            s0_new(j,n) = max(s0_new(j,n), s0_old(hi(2),n))
-            
             s0_nph(j,n) = HALF * (s0_old(j,n) + s0_new(j,n))
          end do
 
       enddo
+
+!     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!     UPDATE RHO0 FROM RHOX0
+!     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      do j = lo(2),hi(2)
+        s0_new(j,rho_comp) =  ZERO
+        do n = spec_comp,spec_comp+nspec-1
+          s0_new(j,rho_comp) =  s0_new(j,rho_comp) + s0_new(j,n)
+        end do
+        s0_nph(j,rho_comp) = HALF * (s0_old(j,rho_comp) + s0_new(j,rho_comp))
+      end do
 
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     MAKE TEMP0, RHOH0 AND GAM1 FROM P0 AND RHO0

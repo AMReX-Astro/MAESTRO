@@ -11,6 +11,7 @@ module update_module
 
   implicit none
 
+  real (kind = dp_t), private, parameter :: ZERO  = 0.0_dp_t
   real (kind = dp_t), private, parameter :: HALF  = 0.5_dp_t
 
   contains
@@ -467,14 +468,14 @@ module update_module
 
    end subroutine update_velocity_3d
 
-   subroutine mk_shalf_2d (sold,snew,shalf,lo,hi,ng)
+   subroutine mk_shalf_2d (sold,snew,ng,shalf,ng_shalf,lo,hi)
 
       implicit none
 
-      integer, intent(in) :: lo(:), hi(:), ng
-      real (kind = dp_t), intent(in   ) ::   sold(lo(1)-ng:,lo(2)-ng:)  
-      real (kind = dp_t), intent(in   ) ::   snew(lo(1)-ng:,lo(2)-ng:)  
-      real (kind = dp_t), intent(  out) ::  shalf(lo(1)- 1:,lo(2)- 1:)
+      integer, intent(in) :: lo(:), hi(:), ng, ng_shalf
+      real (kind = dp_t), intent(in   ) ::   sold(lo(1)-ng      :,lo(2)-ng      :)  
+      real (kind = dp_t), intent(in   ) ::   snew(lo(1)-ng      :,lo(2)-ng      :)  
+      real (kind = dp_t), intent(  out) ::  shalf(lo(1)-ng_shalf:,lo(2)-ng_shalf:)
 
       integer :: i, j
 
@@ -486,14 +487,14 @@ module update_module
 
    end subroutine mk_shalf_2d
 
-   subroutine mk_shalf_3d (sold,snew,shalf,lo,hi,ng)
+   subroutine mk_shalf_3d (sold,snew,ng,shalf,ng_shalf,lo,hi)
 
       implicit none
 
-      integer, intent(in) :: lo(:), hi(:), ng
-      real (kind = dp_t), intent(in   ) ::   sold(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)  
-      real (kind = dp_t), intent(in   ) ::   snew(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)  
-      real (kind = dp_t), intent(  out) ::  shalf(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
+      integer, intent(in) :: lo(:), hi(:), ng, ng_shalf
+      real (kind = dp_t), intent(in   ) ::   sold(lo(1)-ng      :,lo(2)-ng      :,lo(3)-ng      :)  
+      real (kind = dp_t), intent(in   ) ::   snew(lo(1)-ng      :,lo(2)-ng      :,lo(3)-ng      :)  
+      real (kind = dp_t), intent(  out) ::  shalf(lo(1)-ng_shalf:,lo(2)-ng_shalf:,lo(3)-ng_shalf:)
 
       integer :: i, j, k
 
@@ -506,5 +507,49 @@ module update_module
       end do
 
    end subroutine mk_shalf_3d
+
+   subroutine mk_density_fromrhoX_2d (rho,rhoX,lo,hi,ng)
+
+      implicit none
+
+      integer              , intent(in) :: lo(:), hi(:), ng
+      real (kind = dp_t), intent(inout) ::    rho(lo(1)-ng:,lo(2)-ng:)
+      real (kind = dp_t), intent(in   ) ::   rhoX(lo(1)-ng:,lo(2)-ng:,:)  
+
+      integer :: i, j, n
+
+      do j = lo(2), hi(2)
+      do i = lo(1), hi(1)
+        rho(i,j) = ZERO
+        do n = 1,nspec
+          rho(i,j) = rho(i,j) + rhoX(i,j,n)
+        end do
+      end do
+      end do
+
+   end subroutine mk_density_fromrhoX_2d
+
+   subroutine mk_density_fromrhoX_3d (rho,rhoX,lo,hi,ng)
+
+      implicit none
+
+      integer              , intent(in) :: lo(:), hi(:), ng
+      real (kind = dp_t), intent(  out) ::    rho(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
+      real (kind = dp_t), intent(in   ) ::   rhoX(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
+
+      integer :: i, j, k, n
+
+      do k = lo(3), hi(3)
+      do j = lo(2), hi(2)
+      do i = lo(1), hi(1)
+        rho(i,j,k) = ZERO
+        do n = 1,nspec
+          rho(i,j,k) = rho(i,j,k) + rhoX(i,j,k,n)
+        end do
+      end do
+      end do
+      end do
+
+   end subroutine mk_density_fromrhoX_3d
 
 end module update_module
