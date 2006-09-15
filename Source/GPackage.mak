@@ -12,6 +12,7 @@ f90sources += make_macrhs.f90
 f90sources += make_hgrhs.f90
 f90sources += make_machno.f90
 f90sources += make_deltap.f90
+f90sources += make_deltagamma.f90
 f90sources += make_XfromrhoX.f90
 f90sources += makevort.f90
 f90sources += mkflux.f90

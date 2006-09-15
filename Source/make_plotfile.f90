@@ -18,6 +18,7 @@ module make_plotfile_module
   use enthalpy_module
   use machno_module
   use deltap_module
+  use deltagamma_module
   use XfromrhoX_module
 
   use variables
@@ -27,7 +28,7 @@ module make_plotfile_module
 contains
 
   subroutine make_plotfile(istep,plotdata,u,s,gp,mba,plot_names,time,dx,the_bc_tower, &
-                           rho0,p0,temp0)
+                           rho0,p0,temp0,rhoX0)
 
     integer          , intent(in   ) :: istep
     type(multifab)   , intent(inout) :: plotdata(:)
@@ -38,7 +39,7 @@ contains
     character(len=20), intent(in   ) :: plot_names(:)
     real(dp_t)       , intent(in   ) :: time,dx(:,:)
     type(bc_tower)   , intent(in   ) :: the_bc_tower
-    real(dp_t)       , intent(in   ) :: rho0(:),p0(:),temp0(:)
+    real(dp_t)       , intent(in   ) :: rho0(:),p0(:),temp0(:),rhoX0(:,:)
 
     integer :: n,dm,nlevs,nscal,icomp
     character(len=7) :: sd_name
@@ -93,8 +94,12 @@ contains
        icomp = derive_comp+7
        call make_deltap    (plotdata(n),icomp,s(n),p0,temp0)
 
-       ! PRESSURE GRADIENT
+       ! GAMMA1 (gamma1 - gamma1_0)
        icomp = derive_comp+8
+       call make_deltagamma(plotdata(n),icomp,s(n),rho0,p0,temp0,rhoX0)
+
+       ! PRESSURE GRADIENT
+       icomp = derive_comp+9
        call multifab_copy_c(plotdata(n),icomp,gp(n),1,dm)
 
      end do
