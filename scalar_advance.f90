@@ -332,7 +332,7 @@ contains
                               the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
 
                 call mk_shalf_2d(sop(:,:,1,n),snp(:,:,1,n),ng_cell,shp(:,:,1,n),ng_half,lo,hi)
-                call setbc_2d(shp(:,:,1,n), lo, ng_cell, &
+                call setbc_2d(shp(:,:,1,n), lo, ng_half, &
                               the_bc_level%adv_bc_level_array(i,:,:,n+dm),dx,n+dm)
               end do
             case (3)
@@ -356,7 +356,7 @@ contains
                               the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
 
                 call mk_shalf_3d(sop(:,:,:,n),snp(:,:,:,n),ng_cell,shp(:,:,:,n),ng_half,lo,hi)
-                call setbc_3d(shp(:,:,:,n), lo, ng_cell, &
+                call setbc_3d(shp(:,:,:,n), lo, ng_half, &
                               the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
               end do
          end select
@@ -382,15 +382,15 @@ contains
                             the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
 
               call mk_shalf_2d(sop(:,:,1,n),snp(:,:,1,n),ng_cell,shp(:,:,1,n),ng_half,lo,hi)
-              call setbc_2d(shp(:,:,1,n), lo, ng_cell, &
+              call setbc_2d(shp(:,:,1,n), lo, ng_half, &
                             the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
             case (3)
               call mk_density_fromrhoX_3d(snp(:,:,:,n),snp(:,:,:,spec_comp:),lo,hi,ng_cell)
-              call mk_shalf_3d(sop(:,:,:,n),snp(:,:,:,n),ng_cell,shp(:,:,:,n),ng_half,lo,hi)
-
               call setbc_3d(snp(:,:,:,n), lo, ng_cell, &
                             the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
-              call setbc_3d(shp(:,:,:,n), lo, ng_cell, &
+
+              call mk_shalf_3d(sop(:,:,:,n),snp(:,:,:,n),ng_cell,shp(:,:,:,n),ng_half,lo,hi)
+              call setbc_3d(shp(:,:,:,n), lo, ng_half, &
                             the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
          end select
       end do
@@ -444,7 +444,7 @@ contains
                             the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
 
               call mk_shalf_2d(sop(:,:,1,n),snp(:,:,1,n),ng_cell,shp(:,:,1,n),ng_half,lo,hi)
-              call setbc_2d(shp(:,:,1,n), lo, 1, &
+              call setbc_2d(shp(:,:,1,n), lo, ng_half, &
                             the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
             case (3)
               wmp => dataptr(umac(3), i)
@@ -470,7 +470,7 @@ contains
                             the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
 
               call mk_shalf_3d(sop(:,:,:,n),snp(:,:,:,n),ng_cell,shp(:,:,:,n),ng_half,lo,hi)
-              call setbc_3d(shp(:,:,:,n), lo, 1, & 
+              call setbc_3d(shp(:,:,:,n), lo, ng_half, & 
                             the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
          end select
       end do
