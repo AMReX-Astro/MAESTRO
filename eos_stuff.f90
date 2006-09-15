@@ -6,8 +6,6 @@ module eos_module
       integer, parameter :: NP = 1
       integer, parameter :: npts = 1
 
-      real(kind=dp_t) :: xmass(nspec)= (/  0.3_dp_t,  0.7_dp_t, 0.0_dp_t /)
-
       real(kind=dp_t) :: xn_zone(nspec)
 
       real(kind=dp_t) :: temp_row(NP)
