@@ -123,11 +123,13 @@ module update_module
         if (n.eq. rho_comp) write(6,1000) smin,smax
         if (n.eq.rhoh_comp) write(6,1001) smin,smax
         if (n.gt.rhoh_comp) write(6,1002) spec_names(n-rhoh_comp),smin,smax
+        if (n.eq.rhoh_comp) write(6,1003)
       end if
 
 1000  format('NEW MIN/MAX : density           ',e15.10,2x,e15.10)
 1001  format('NEW MIN/MAX : rho * H           ',e15.10,2x,e15.10)
 1002  format('NEW MIN/MAX : ',a16,2x,e15.10,2x,e15.10)
+1003  format(' ')
 
       deallocate(base_edge)
 
@@ -226,10 +228,14 @@ module update_module
         enddo
       enddo
       if (verbose .ge. 1) then
-        print *,'MIN/MAX OF UNEW ',umin,umax
-        print *,'MIN/MAX OF VNEW ',vmin,vmax
-        print *,' '
+        write(6,1000) umin,umax
+        write(6,1001) vmin,vmax
+        write(6,1002)
       end if
+
+1000  format('NEW MIN/MAX : x-velocity       ',e15.10,2x,e15.10)
+1001  format('NEW MIN/MAX : y-velocity       ',e15.10,2x,e15.10)
+1002  format(' ')
 
    end subroutine update_velocity_2d
 
@@ -343,12 +349,13 @@ module update_module
         if (n.eq. rho_comp) write(6,1000) smin,smax
         if (n.eq.rhoh_comp) write(6,1001) smin,smax
         if (n.gt.rhoh_comp) write(6,1002) spec_names(n-rhoh_comp),smin,smax
-        if (n.eq.rhoh_comp) print *,' '
+        if (n.eq.rhoh_comp) write(6,1003)
       end if
 
 1000  format('NEW MIN/MAX : density           ',e15.10,2x,e15.10)
 1001  format('NEW MIN/MAX : rho * H           ',e15.10,2x,e15.10)
 1002  format('NEW MIN/MAX : ',a16,2x,e15.10,2x,e15.10)
+1003  format(' ')
 
       deallocate(base_edge)
 
@@ -459,11 +466,16 @@ module update_module
       enddo
       enddo
       if (verbose .ge. 1) then
-        print *,'MIN/MAX OF UNEW ',umin,umax
-        print *,'MIN/MAX OF VNEW ',vmin,vmax
-        print *,'MIN/MAX OF WNEW ',wmin,wmax
-        print *,' '
+        write(6,1000) umin,umax
+        write(6,1001) vmin,vmax
+        write(6,1002) wmin,wmax
+        write(6,1003)
       end if
+
+1000  format('NEW MIN/MAX : x-velocity       ',e15.10,2x,e15.10)
+1001  format('NEW MIN/MAX : y-velocity       ',e15.10,2x,e15.10)
+1002  format('NEW MIN/MAX : z-velocity       ',e15.10,2x,e15.10)
+1003  format(' ')
 
    end subroutine update_velocity_3d
 
