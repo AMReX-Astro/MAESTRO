@@ -43,7 +43,7 @@ contains
       type(multifab) , intent(inout) :: ext_scal_force
 !
       real(kind=dp_t), intent(inout) :: w0(:)
-      real(kind=dp_t), intent(inout) :: dx(:),time,dt
+      real(kind=dp_t), intent(in   ) :: dx(:),time,dt
       type(bc_level) , intent(in   ) :: the_bc_level
       real(kind=dp_t), intent(in   ) :: diff_coef
 ! 
@@ -377,7 +377,7 @@ contains
          hi =  upb(get_box(sold, i))
          select case (dm)
             case (2)
-              call mk_density_fromrhoX_2d(snp(:,:,1,n),snp(:,:,1,spec_comp:),lo,hi,ng_cell)
+              call mk_density_fromrhoX_2d(snp(:,:,1,n),snp(:,:,1,spec_comp:),lo,hi,ng_cell,verbose)
               call setbc_2d(snp(:,:,1,n), lo, ng_cell, &
                             the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
 
@@ -385,7 +385,7 @@ contains
               call setbc_2d(shp(:,:,1,n), lo, ng_half, &
                             the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
             case (3)
-              call mk_density_fromrhoX_3d(snp(:,:,:,n),snp(:,:,:,spec_comp:),lo,hi,ng_cell)
+              call mk_density_fromrhoX_3d(snp(:,:,:,n),snp(:,:,:,spec_comp:),lo,hi,ng_cell,verbose)
               call setbc_3d(snp(:,:,:,n), lo, ng_cell, &
                             the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
 

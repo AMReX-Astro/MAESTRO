@@ -25,3 +25,5 @@ f90sources += eos_stuff.f90
 f90sources += addw0.f90
 f90sources += variables.f90
 f90sources += make_plotfile.f90
+f90sources += advance.f90
+f90sources += define_bc_tower.f90

@@ -70,6 +70,9 @@ contains
       call make_macrhs_2d(lo,hi,rhs_cc,s,u,ng,div_coeff,p0,t0,gam1,dx,time)
 
 !     HACK : THIS ASSUMES EXTRAP AT SIDES AND NO HEATING NEAR TOP OR BOTTOM!!!
+      rhs(:,lo(2)  ) = ZERO
+      rhs(:,hi(2)  ) = ZERO
+      rhs(:,hi(2)+1) = ZERO
       do j = lo(2)+1, hi(2)-1
         rhs(lo(1)  ,j) = HALF * ( rhs_cc(lo(1),j) + rhs_cc(lo(1),j-1) )
         rhs(hi(1)+1,j) = HALF * ( rhs_cc(hi(1),j) + rhs_cc(hi(1),j-1) )
@@ -102,6 +105,9 @@ contains
       call make_macrhs_3d(lo,hi,rhs_cc,s,u,ng,div_coeff,p0,t0,gam1,dx,time)
 
 !     HACK : THIS ASSUMES EXTRAP AT SIDES AND NO HEATING NEAR TOP OR BOTTOM!!!
+      rhs(:,:,lo(3)  ) = ZERO
+      rhs(:,:,hi(3)  ) = ZERO
+      rhs(:,:,hi(3)+1) = ZERO
       do k = lo(3)+1, hi(3)-1
         do j = lo(2)+1, hi(2)
           rhs(lo(1)  ,j,k) = FOURTH * ( rhs_cc(lo(1),j,k-1) + rhs_cc(lo(1),j-1,k-1) &
