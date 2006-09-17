@@ -20,6 +20,7 @@ module scalar_advance_module
   use addw0_module
   use setbc_module
   use variables
+  use network
 
   implicit none
 
@@ -80,7 +81,7 @@ contains
       type(multifab) :: divu
       real(dp_t)     :: mult
 
-      integer :: nscal,nspec,velpred
+      integer :: nscal,ntrac,velpred
       integer :: lo(uold%dim),hi(uold%dim)
       integer :: i,n,bc_comp,dm,ng_cell,ng_half
       logical :: is_vel, make_divu, advect_in_pert_form
@@ -100,13 +101,16 @@ contains
 
       half_time = time + HALF*dt
 
-      nscal   = ncomp(ext_scal_force)
-      nspec   = nscal - 2
-      is_vel  = .false.
+      nscal  = ncomp(ext_scal_force)
+      ntrac  = nscal - nspec - 2
+      is_vel = .false.
 
       allocate(is_conservative(nscal))
       is_conservative(1) = .true.
       is_conservative(2) = .true.
+      is_conservative(spec_comp:spec_comp+nspec-1) = .true.
+      if (ntrac .ge. 1) &
+        is_conservative(trac_comp:trac_comp+ntrac-1) = .false.
 
       call build(scal_force, ext_scal_force%la, nscal, 1)
       call setval(scal_force,ZERO)
@@ -186,7 +190,7 @@ contains
       call multifab_fill_boundary(scal_force)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!     Create the edge states of (rho h)' and (rho X)_i using the MAC velocity 
+!     Add w0 to vertical velocity if second time through.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       if (pred_vs_corr .eq. 2) then
@@ -205,7 +209,10 @@ contains
          end do
       end if
 
-      n = nscal
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!     Create the edge states of (rho h)' and (rho X)_i using the MAC velocity 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
       advect_in_pert_form = .true.
       do i = 1, sold%nboxes
          if ( multifab_remote(sold, i) ) cycle
@@ -234,7 +241,8 @@ contains
                                the_bc_level%adv_bc_level_array(i,:,:,bc_comp:), &
                                velpred, ng_cell, s0_old(:,n), &
                                advect_in_pert_form, do_mom, n)
-              do n = spec_comp,nscal
+
+              do n = spec_comp,spec_comp+nspec-1
                 bc_comp = dm+n
                 call mkflux_2d(sop(:,:,1,:), uop(:,:,1,:), sop(:,:,1,1), &
                                sepx(:,:,1,:), sepy(:,:,1,:), &
@@ -261,7 +269,8 @@ contains
                                the_bc_level%adv_bc_level_array(i,:,:,bc_comp:), &
                                velpred, ng_cell, s0_old(:,n), &
                                 advect_in_pert_form, do_mom, n)
-              do n = spec_comp,nscal
+
+              do n = spec_comp,spec_comp+nspec-1
                 bc_comp = dm+n
                 call mkflux_3d(sop(:,:,:,:), uop(:,:,:,:), sop(:,:,:,1), &
                                sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
@@ -275,6 +284,64 @@ contains
               end do
          end select
       end do
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!     Create the edge states of tracers using the MAC velocity 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      if (ntrac .ge. 1) then
+      advect_in_pert_form = .false.
+      do i = 1, sold%nboxes
+         if ( multifab_remote(sold, i) ) cycle
+         sop  => dataptr(sold, i)
+         shp  => dataptr(shalf, i)
+         uop  => dataptr(uold, i)
+         sepx => dataptr(sedge(1), i)
+         sepy => dataptr(sedge(2), i)
+         ump  => dataptr(umac(1), i)
+         vmp  => dataptr(umac(2), i)
+         utp  => dataptr(utrans(1), i)
+         vtp  => dataptr(utrans(2), i)
+          fp  => dataptr(scal_force , i)
+         lo =  lwb(get_box(uold, i))
+         hi =  upb(get_box(uold, i))
+         select case (dm)
+            case (2)
+              do n = trac_comp,trac_comp+ntrac-1
+                bc_comp = dm+n
+                call mkflux_2d(sop(:,:,1,:), uop(:,:,1,:), sop(:,:,1,1), &
+                               sepx(:,:,1,:), sepy(:,:,1,:), &
+                               ump(:,:,1,1), vmp(:,:,1,1), &
+                               utp(:,:,1,1), vtp(:,:,1,1), fp(:,:,1,:), &
+                               lo, dx, dt, is_vel, is_conservative, &
+                               the_bc_level%phys_bc_level_array(i,:,:), &
+                               the_bc_level%adv_bc_level_array(i,:,:,bc_comp:), &
+                               velpred, ng_cell, s0_old(:,n), &
+                               advect_in_pert_form, do_mom, n)
+              end do
+            case (3)
+              wmp  => dataptr(  umac(3), i)
+              wtp  => dataptr(utrans(3), i)
+              sepz => dataptr( sedge(3), i)
+              do n = trac_comp,trac_comp+ntrac-1
+                bc_comp = dm+n
+                call mkflux_3d(sop(:,:,:,:), uop(:,:,:,:), sop(:,:,:,1), &
+                               sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
+                               ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
+                               utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), fp(:,:,:,:), &
+                               lo, dx, dt, is_vel, is_conservative, &
+                               the_bc_level%phys_bc_level_array(i,:,:), &
+                               the_bc_level%adv_bc_level_array(i,:,:,bc_comp:), &
+                               velpred, ng_cell, s0_old(:,n), &
+                               advect_in_pert_form, do_mom, n)
+              end do
+         end select
+      end do
+      end if
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!     Subtract w0 from vertical velocity if second time through.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       if (pred_vs_corr .eq. 2) then
          mult = -ONE
@@ -320,7 +387,7 @@ contains
                                   shp(:,:,1,rho_comp), ng_half, &
                                   dx, the_bc_level%ell_bc_level_array(i,:,:,bc_comp:), &
                                   time, pred_vs_corr, nspec)
-              do n = spec_comp,nscal
+              do n = spec_comp,spec_comp+nspec-1
                 bc_comp = dm+n
                 call update_scal_2d(n, &
                                sop(:,:,1,n), snp(:,:,1,n), snp(:,:,1,1), &
@@ -344,7 +411,7 @@ contains
                                   shp(:,:,:,rho_comp), ng_half, &
                                   dx, the_bc_level%ell_bc_level_array(i,:,:,n+dm:), &
                                   time, pred_vs_corr, nspec)
-              do n = spec_comp,nscal
+              do n = spec_comp,spec_comp+nspec-1
                 bc_comp = dm+n
                 call update_scal_3d(n, &
                                sop(:,:,:,n), snp(:,:,:,n), snp(:,:,:,1), &
@@ -362,6 +429,53 @@ contains
          end select
       end do
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!     2) Update tracers with convective differencing.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      if (ntrac .ge. 1) then
+      do i = 1, sold%nboxes
+         if ( multifab_remote(sold, i) ) cycle
+         sop => dataptr(sold, i)
+         shp => dataptr(shalf, i)
+         snp => dataptr(snew, i)
+         ump => dataptr(umac(1), i)
+         vmp => dataptr(umac(2), i)
+         sepx => dataptr(sedge(1), i)
+         sepy => dataptr(sedge(2), i)
+          fp => dataptr(scal_force , i)
+         lo =  lwb(get_box(sold, i))
+         hi =  upb(get_box(sold, i))
+         select case (dm)
+            case (2)
+              do n = trac_comp,trac_comp+ntrac-1
+                bc_comp = dm+n
+                call update_scal_2d(n, &
+                               sop(:,:,1,n), snp(:,:,1,n), snp(:,:,1,1), &
+                               ump(:,:,1,1), vmp(:,:,1,1), w0, &
+                               sepx(:,:,1,n), sepy(:,:,1,n), fp(:,:,1,n), &
+                               s0_old(:,n), s0_new(:,n), &
+                               lo, hi, ng_cell, dx, dt, pred_vs_corr, verbose)
+                call setbc_2d(snp(:,:,1,n), lo, ng_cell, &
+                              the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
+              end do
+            case (3)
+              wmp => dataptr(umac(3), i)
+              sepz => dataptr(sedge(3), i)
+              do n = trac_comp,trac_comp+ntrac-1
+                bc_comp = dm+n
+                call update_scal_3d(n, &
+                               sop(:,:,:,n), snp(:,:,:,n), snp(:,:,:,1), &
+                               ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0, &
+                               sepx(:,:,:,n), sepy(:,:,:,n), sepz(:,:,:,n), fp(:,:,:,n), &
+                               s0_old(:,n), s0_new(:,n), &
+                               lo, hi, ng_cell, dx, dt, pred_vs_corr, verbose)
+                call setbc_3d(snp(:,:,:,n), lo, ng_cell, &
+                              the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
+              end do
+         end select
+      end do
+      end if
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     Define density at new time as the sum of (rho X)_i.

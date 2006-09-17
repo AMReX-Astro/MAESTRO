@@ -16,7 +16,7 @@ module init_module
 
 contains
 
-  subroutine initdata (u,s,s0,p0,temp0,dx,prob_lo,prob_hi,bc,nscal)
+  subroutine initdata (u,s,s0,p0,temp0,dx,prob_lo,prob_hi,bc,nscal,ntrac)
 
     type(multifab) , intent(inout) :: u,s
     real(kind=dp_t), intent(in   ) ::    s0(:,:)
@@ -26,7 +26,7 @@ contains
     real(kind=dp_t), intent(in   ) :: prob_lo(:)
     real(kind=dp_t), intent(in   ) :: prob_hi(:)
     type(bc_level) , intent(in   ) :: bc
-    integer        , intent(in   ) :: nscal
+    integer        , intent(in   ) :: nscal,ntrac
 
     real(kind=dp_t), pointer:: uop(:,:,:,:), sop(:,:,:,:)
     integer :: lo(u%dim),hi(u%dim),ng,dm
@@ -45,7 +45,7 @@ contains
        select case (dm)
        case (2)
           call initdata_2d(uop(:,:,1,:), sop(:,:,1,:), lo, hi, ng, dx, &
-                           prob_lo, prob_hi, s0, p0, temp0)
+                           prob_lo, prob_hi, s0, p0, temp0, ntrac)
           do n = 1,dm
              call setbc_2d(uop(:,:,1,n), lo, ng, bc%adv_bc_level_array(i,:,:,   n),dx,   n)
           end do
@@ -55,7 +55,7 @@ contains
 
        case (3)
           call initdata_3d(uop(:,:,:,:), sop(:,:,:,:), lo, hi, ng, dx, &
-                           prob_lo, prob_hi, s0, p0, temp0)
+                           prob_lo, prob_hi, s0, p0, temp0, ntrac)
           do n = 1, dm
              call setbc_3d(uop(:,:,:,n), lo, ng, bc%adv_bc_level_array(i,:,:,   n),dx,   n)
           end do
@@ -70,11 +70,11 @@ contains
 
   end subroutine initdata
 
-  subroutine initdata_2d (u,s,lo,hi,ng,dx,prob_lo,prob_hi,s0,p0,temp0)
+  subroutine initdata_2d (u,s,lo,hi,ng,dx,prob_lo,prob_hi,s0,p0,temp0,ntrac)
 
     implicit none
 
-    integer, intent(in) :: lo(:), hi(:), ng
+    integer, intent(in) :: lo(:), hi(:), ng, ntrac
     real (kind = dp_t), intent(out) :: u(lo(1)-ng:,lo(2)-ng:,:)  
     real (kind = dp_t), intent(out) :: s(lo(1)-ng:,lo(2)-ng:,:)  
     real (kind = dp_t), intent(in ) :: dx(:)
@@ -87,7 +87,7 @@ contains
     !     Local variables
     integer :: i, j, n
     real(kind=dp_t) :: x,y,r,r0,r1,r2,temp
-    real(kind=dp_t) :: dens_pert, rhoh_pert, rhoX_pert(nspec)
+    real(kind=dp_t) :: dens_pert, rhoh_pert, rhoX_pert(nspec), trac_pert(ntrac)
 
     logical, parameter :: perturbModel = .true.
 
@@ -111,22 +111,22 @@ contains
           x = prob_lo(1) + (dble(i)+HALF) * dx(1)
           
           if (perturbModel) then
-             call perturb_2d(x, y, temp0(j), p0(j), s0(j,:), dens_pert, rhoh_pert, rhoX_pert)
+             call perturb_2d(x, y, temp0(j), p0(j), s0(j,:), dens_pert, rhoh_pert, rhoX_pert, trac_pert)
              s(i,j,rho_comp) = dens_pert
              s(i,j,rhoh_comp) = rhoh_pert
              s(i,j,spec_comp:spec_comp+nspec-1) = rhoX_pert(1:)
+             s(i,j,trac_comp:trac_comp+ntrac-1) = trac_pert(:)
           endif
-
        enddo
     enddo
 
   end subroutine initdata_2d
 
-  subroutine initdata_3d (u,s,lo,hi,ng,dx,prob_lo,prob_hi,s0,p0,temp0)
+  subroutine initdata_3d (u,s,lo,hi,ng,dx,prob_lo,prob_hi,s0,p0,temp0,ntrac)
 
     implicit none
 
-    integer, intent(in) :: lo(:), hi(:), ng
+    integer, intent(in) :: lo(:), hi(:), ng, ntrac
     real (kind = dp_t), intent(out) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
     real (kind = dp_t), intent(out) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
     real (kind = dp_t), intent(in ) :: dx(:)
@@ -139,7 +139,7 @@ contains
     !     Local variables
     integer :: i, j, k, n
     real(kind=dp_t) :: x,y,z,r,r0,r1,r2,temp
-    real(kind=dp_t) :: dens_pert, rhoh_pert, rhoX_pert(nspec)
+    real(kind=dp_t) :: dens_pert, rhoh_pert, rhoX_pert(nspec), trac_pert(ntrac)
     logical, parameter :: perturbModel = .true.
 
     ! initial the domain with the base state
@@ -166,10 +166,11 @@ contains
           x = prob_lo(1) + (dble(i)+HALF) * dx(1)
           
           if (perturbModel) then
-             call perturb_3d(x, y, z, temp0(k), p0(k), s0(k,:), dens_pert, rhoh_pert, rhoX_pert)
+             call perturb_3d(x, y, z, temp0(k), p0(k), s0(k,:), dens_pert, rhoh_pert, rhoX_pert, trac_pert)
              s(i,j,k,rho_comp) = dens_pert
              s(i,j,k,rhoh_comp) = rhoh_pert
              s(i,j,k,spec_comp:spec_comp+nspec-1) = rhoX_pert(:)
+             s(i,j,k,trac_comp:trac_comp+ntrac-1) = trac_pert(:)
           endif
         enddo
        enddo
@@ -177,7 +178,7 @@ contains
     
   end subroutine initdata_3d
 
-  subroutine perturb_2d(x, y, t0, p0, s0, dens_pert, rhoh_pert, rhoX_pert)
+  subroutine perturb_2d(x, y, t0, p0, s0, dens_pert, rhoh_pert, rhoX_pert, trac_pert)
 
     ! apply an optional perturbation to the initial temperature field
     ! to see some bubbles
@@ -185,7 +186,8 @@ contains
     real(kind=dp_t), intent(in ) :: x, y
     real(kind=dp_t), intent(in ) :: t0, p0, s0(:)
     real(kind=dp_t), intent(out) :: dens_pert, rhoh_pert
-    real(kind=dp_t), dimension(nspec), intent(out) :: rhoX_pert
+    real(kind=dp_t), intent(out) :: rhoX_pert(:)
+    real(kind=dp_t), intent(out) :: trac_pert(:)
 
     real(kind=dp_t) :: temp
     real(kind=dp_t) :: x0, y0, x1, y1, x2, y2
@@ -232,10 +234,15 @@ contains
     rhoh_pert = den_row(1)*h_row(1)
     rhoX_pert(:) = dens_pert*xn_zone(:)
     
+    if ( (r0 .lt. 2.0) .or. (r1 .lt. 2.0) .or. (r2 .lt. 2.0) ) then
+      trac_pert(:) = ONE
+    else
+      trac_pert(:) = ZERO
+    end if
 
   end subroutine perturb_2d
 
-  subroutine perturb_3d(x, y, z, t0, p0, s0, dens_pert, rhoh_pert, rhoX_pert)
+  subroutine perturb_3d(x, y, z, t0, p0, s0, dens_pert, rhoh_pert, rhoX_pert, trac_pert)
 
     ! apply an optional perturbation to the initial temperature field
     ! to see some bubbles
@@ -243,7 +250,8 @@ contains
     real(kind=dp_t), intent(in ) :: x, y, z
     real(kind=dp_t), intent(in ) :: t0, p0, s0(:)
     real(kind=dp_t), intent(out) :: dens_pert, rhoh_pert
-    real(kind=dp_t), dimension(nspec), intent(out) :: rhoX_pert
+    real(kind=dp_t), intent(out) :: rhoX_pert(:)
+    real(kind=dp_t), intent(out) :: trac_pert(:)
 
     real(kind=dp_t) :: temp
     real(kind=dp_t) :: x0, y0, z0, x1, y1, z1, x2, y2, z2
@@ -288,7 +296,12 @@ contains
     dens_pert = den_row(1)
     rhoh_pert = den_row(1)*h_row(1)
     rhoX_pert(:) = dens_pert*xn_zone(:)
-
+    
+    if (r1 .lt. 2.0) then
+      trac_pert(:) = ONE
+    else
+      trac_pert(:) = ZERO
+    end if
 
   end subroutine perturb_3d
 
@@ -425,11 +438,10 @@ contains
     do j = j_cutoff,nx-1
        s0(j, rho_comp ) = s0(j_cutoff, rho_comp )
        s0(j,rhoh_comp ) = s0(j_cutoff,rhoh_comp )
-       s0(j,spec_comp:) = s0(j_cutoff,spec_comp:)
+       s0(j,spec_comp:spec_comp+nspec-1) = s0(j_cutoff,spec_comp:spec_comp+nspec-1)
        p0(j)            = p0(j_cutoff)
        temp0(j)         = temp0(j_cutoff)
     end do
-
 
       ! RECALCULATE T, RHO_H
 
@@ -453,6 +465,8 @@ contains
        temp0(j) = temp_row(1)
        gam1(j)  = gam1_row(1)
        s0(j,rhoh_comp) = h_row(1) * s0(j,rho_comp)
+
+       s0(j,trac_comp:) = ZERO
        
     end do
 
@@ -551,30 +565,5 @@ contains
     close(99)
 
   end subroutine read_base_state
-
-
-  subroutine impose_pressure_bcs(p,mla,mult)
-
-    type(multifab ), intent(inout) :: p(:)
-    type(ml_layout), intent(in   ) :: mla
-    real(kind=dp_t), intent(in   ) :: mult
-    
-    type(box)           :: bx,pd
-    integer             :: i,n,nlevs
-     
-    nlevs = size(p,dim=1)
-
-    do n = 1,nlevs
-       pd = layout_get_pd(mla%la(n))
-       do i = 1, p(n)%nboxes; if ( remote(p(n),i) ) cycle
-          bx = get_ibox(p(n),i)
-          if (bx%lo(2) == pd%lo(2)) then
-             bx%hi(2) = bx%lo(2)
-             call setval(p(n),mult,bx)
-          end if
-       end do
-    end do
-    
-  end subroutine impose_pressure_bcs
 
 end module init_module

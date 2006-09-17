@@ -28,9 +28,10 @@ module make_plotfile_module
 contains
 
   subroutine make_plotfile(istep,plotdata,u,s,gp,mba,plot_names,time,dx,the_bc_tower, &
-                           rho0,p0,temp0,rhoX0)
+                           rho0,p0,temp0,rhoX0,ntrac)
 
     integer          , intent(in   ) :: istep
+    integer          , intent(in   ) :: ntrac
     type(multifab)   , intent(inout) :: plotdata(:)
     type(multifab)   , intent(in   ) :: u(:)
     type(multifab)   , intent(in   ) :: s(:)
@@ -60,6 +61,12 @@ contains
        ! SPECIES
        icomp = dm+spec_comp
        call make_XfromrhoX(plotdata(n),icomp,s(n))
+
+       ! TRACER
+       if (ntrac .ge. 1) then
+         icomp = dm+trac_comp
+         call multifab_copy_c(plotdata(n),icomp,s(n),trac_comp,ntrac)
+       end if
 
        ! VORTICITY
        icomp = derive_comp
