@@ -66,12 +66,15 @@ contains
           ! (rho, P) --> T
           input_flag = 4
 
-          call eos(input_flag, den_row, temp_row, npts, nspec, &
+          call eos(input_flag, den_row, temp_row, &
+                   npts, nspec, &
                    xn_zone, aion, zion, &
                    p_row, h_row, e_row, &
-                   cv_row, cp_row, xne_row, eta_row, &
-                   pele_row, dpdt_row, dpdr_row, dedt_row, dedr_row, gam1_row, cs_row, &
-                   s_row, do_diag)
+                   cv_row, cp_row, xne_row, eta_row, pele_row, &
+                   dpdt_row, dpdr_row, dedt_row, dedr_row, &
+                   dpdX_row, dhdX_row, &
+                   gam1_row, cs_row, s_row, &
+                   do_diag)
           
           T(i,j) = temp_row(1) - temp0(j)
        enddo
@@ -104,12 +107,15 @@ contains
              ! (rho, P) --> T
              input_flag = 4
 
-             call eos(input_flag, den_row, temp_row, npts, nspec, &
+             call eos(input_flag, den_row, temp_row, &
+                      npts, nspec, &
                       xn_zone, aion, zion, &
                       p_row, h_row, e_row, &
-                      cv_row, cp_row, xne_row, eta_row, &
-                      pele_row, dpdt_row, dpdr_row, dedt_row, dedr_row, gam1_row, cs_row, &
-                      s_row, do_diag)
+                      cv_row, cp_row, xne_row, eta_row, pele_row, &
+                      dpdt_row, dpdr_row, dedt_row, dedr_row, &
+                      dpdX_row, dhdX_row, &
+                      gam1_row, cs_row, s_row, &
+                      do_diag)
 
              T(i,j,k) = temp_row(1) - temp0(k)
           enddo

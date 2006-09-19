@@ -131,12 +131,15 @@ contains
             ! (rho,P) --> h, etc
             input_flag = 4
 
-            call eos(input_flag, den_row, temp_row, npts, nspec, &
+            call eos(input_flag, den_row, temp_row, &
+                     npts, nspec, &
                      xn_zone, aion, zion, &
                      p_row, h_row, e_row, &
-                     cv_row, cp_row, xne_row, eta_row, &
-                     pele_row, dpdt_row, dpdr_row, dedt_row, dedr_row, gam1_row, cs_row, &
-                     s_row, do_diag)
+                     cv_row, cp_row, xne_row, eta_row, pele_row, &
+                     dpdt_row, dpdr_row, dedt_row, dedr_row, &
+                     dpdX_row, dhdX_row, &
+                     gam1_row, cs_row, s_row, &
+                     do_diag)
 
             ! coeff = p_T / (rho * c_p * p_rho)
             coeff = dpdt_row(1) / (den_row(1) * cp_row(1) * dpdr_row(1))
@@ -201,12 +204,15 @@ contains
          ! (rho,P) --> T, h
          input_flag = 4
 
-         call eos(input_flag, den_row, temp_row, npts, nspec, &
+         call eos(input_flag, den_row, temp_row, &
+                  npts, nspec, &
                   xn_zone, aion, zion, &
                   p_row, h_row, e_row, &
-                  cv_row, cp_row, xne_row, eta_row, &
-                  pele_row, dpdt_row, dpdr_row, dedt_row, dedr_row, gam1_row, cs_row, &
-                  s_row, do_diag)
+                  cv_row, cp_row, xne_row, eta_row, pele_row, &
+                  dpdt_row, dpdr_row, dedt_row, dedr_row, &
+                  dpdX_row, dhdX_row, &
+                  gam1_row, cs_row, s_row, &
+                  do_diag)
 
          temp0(j) = temp_row(1)
          gam1(j) = gam1_row(1)
@@ -299,12 +305,15 @@ contains
                ! (rho,P) --> h, etc
                input_flag = 4
 
-               call eos(input_flag, den_row, temp_row, npts, nspec, &
+               call eos(input_flag, den_row, temp_row, &
+                        npts, nspec, &
                         xn_zone, aion, zion, &
                         p_row, h_row, e_row, &
-                        cv_row, cp_row, xne_row, eta_row, &
-                        pele_row, dpdt_row, dpdr_row, dedt_row, dedr_row, gam1_row, cs_row, &
-                        s_row, do_diag)
+                        cv_row, cp_row, xne_row, eta_row, pele_row, &
+                        dpdt_row, dpdr_row, dedt_row, dedr_row, &
+                        dpdX_row, dhdX_row, &
+                        gam1_row, cs_row, s_row, &
+                        do_diag)
 
                ! coeff = p_T / (rho * c_p * p_rho)
                coeff = dpdt_row(1) / (den_row(1) * cp_row(1) * dpdr_row(1))
@@ -377,12 +386,15 @@ contains
          ! (rho,P) --> T, h
          input_flag = 4
 
-         call eos(input_flag, den_row, temp_row, npts, nspec, &
+         call eos(input_flag, den_row, temp_row, &
+                  npts, nspec, &
                   xn_zone, aion, zion, &
                   p_row, h_row, e_row, &
-                  cv_row, cp_row, xne_row, eta_row, &
-                  pele_row, dpdt_row, dpdr_row, dedt_row, dedr_row, gam1_row, cs_row, &
-                  s_row, do_diag)
+                  cv_row, cp_row, xne_row, eta_row, pele_row, &
+                  dpdt_row, dpdr_row, dedt_row, dedr_row, &
+                  dpdX_row, dhdX_row, &
+                  gam1_row, cs_row, s_row, &
+                  do_diag)
 
          temp0(k) = temp_row(1)
          gam1(k) = gam1_row(1)

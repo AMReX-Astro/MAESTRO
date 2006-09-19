@@ -27,6 +27,9 @@ module eos_module
       real(kind=dp_t) :: gam1_row(NP)
       real(kind=dp_t) ::   cs_row(NP)
       real(kind=dp_t) ::    s_row(NP)
+      real(kind=dp_t) :: dpdX_row(NP,nspec)
+      real(kind=dp_t) :: dhdX_row(NP,nspec)
+
       integer :: input_flag
       logical :: do_diag
 

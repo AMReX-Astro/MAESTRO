@@ -223,12 +223,15 @@ contains
 
     input_flag = 3      ! (t, p) -> (rho, h)
 
-    call eos(input_flag, den_row, temp_row, npts, nspec, &
-         xn_zone, aion, zion, &
-         p_row, h_row, e_row, &
-         cv_row, cp_row, xne_row, eta_row, &
-         pele_row, dpdt_row, dpdr_row, dedt_row, dedr_row, gam1_row, cs_row, &
-         s_row,do_diag)
+    call eos(input_flag, den_row, temp_row, &
+             npts, nspec, &
+             xn_zone, aion, zion, &
+             p_row, h_row, e_row, &
+             cv_row, cp_row, xne_row, eta_row, pele_row, &
+             dpdt_row, dpdr_row, dedt_row, dedr_row, &
+             dpdX_row, dhdX_row, &
+             gam1_row, cs_row, s_row, &
+             do_diag)
 
     dens_pert = den_row(1)
     rhoh_pert = den_row(1)*h_row(1)
@@ -286,12 +289,15 @@ contains
 
     input_flag = 3      ! (t, p) -> (rho, h)
 
-    call eos(input_flag, den_row, temp_row, npts, nspec, &
-         xn_zone, aion, zion, &
-         p_row, h_row, e_row, &
-         cv_row, cp_row, xne_row, eta_row, &
-         pele_row, dpdt_row, dpdr_row, dedt_row, dedr_row, gam1_row, cs_row, &
-         s_row,do_diag)
+    call eos(input_flag, den_row, temp_row, &
+             npts, nspec, &
+             xn_zone, aion, zion, &
+             p_row, h_row, e_row, &
+             cv_row, cp_row, xne_row, eta_row, pele_row, &
+             dpdt_row, dpdr_row, dedt_row, dedr_row, &
+             dpdX_row, dhdX_row, &
+             gam1_row, cs_row, s_row, &
+             do_diag)
 
     dens_pert = den_row(1)
     rhoh_pert = den_row(1)*h_row(1)
@@ -412,12 +418,15 @@ contains
        ! (rho,T) --> p,h
        input_flag = 1
 
-       call eos(input_flag, den_row, temp_row, npts, nspec, &
-            xn_ambient, aion, zion, &
-            p_row, h_row, e_row, &
-            cv_row, cp_row, xne_row, eta_row, &
-            pele_row, dpdt_row, dpdr_row, dedt_row, dedr_row, gam1_row, cs_row, &
-            s_row,do_diag)
+       call eos(input_flag, den_row, temp_row, &
+                npts, nspec, &
+                xn_ambient, aion, zion, &
+                p_row, h_row, e_row, &
+                cv_row, cp_row, xne_row, eta_row, pele_row, &
+                dpdt_row, dpdr_row, dedt_row, dedr_row, &
+                dpdX_row, dhdX_row, &
+                gam1_row, cs_row, s_row, &
+                do_diag)
 
        
        s0(j, rho_comp ) = d_ambient
@@ -455,12 +464,15 @@ contains
 !       (rho, p) --> T, h
        input_flag = 4
 
-       call eos(input_flag, den_row, temp_row, npts, nspec, &
-            xn_ambient, aion, zion, &
-            p_row, h_row, e_row, &
-            cv_row, cp_row, xne_row, eta_row, &
-            pele_row, dpdt_row, dpdr_row, dedt_row, dedr_row, gam1_row, cs_row, &
-            s_row,do_diag)
+       call eos(input_flag, den_row, temp_row, &
+                npts, nspec, &
+                xn_ambient, aion, zion, &
+                p_row, h_row, e_row, &
+                cv_row, cp_row, xne_row, eta_row, pele_row, &
+                dpdt_row, dpdr_row, dedt_row, dedr_row, &
+                dpdX_row, dhdX_row, &
+                gam1_row, cs_row, s_row, &
+                do_diag)
        
        temp0(j) = temp_row(1)
        gam1(j)  = gam1_row(1)

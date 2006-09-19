@@ -14,7 +14,7 @@ module macrhs_module
 contains
 
 
-!  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
    subroutine make_macrhs (macrhs,s,u,div_coeff,p0,t0,gam1,dx,time)
 
@@ -109,12 +109,15 @@ contains
            ! (rho, P) --> T
            input_flag = 4
 
-           call eos(input_flag, den_row, temp_row, npts, nspec, &
-                xn_zone, aion, zion, &
-                p_row, h_row, e_row, & 
-                cv_row, cp_row, xne_row, eta_row, &
-                pele_row, dpdt_row, dpdr_row, dedt_row, dedr_row, gam1_row, cs_row, &
-                s_row, do_diag)
+           call eos(input_flag, den_row, temp_row, &
+                    npts, nspec, &
+                    xn_zone, aion, zion, &
+                    p_row, h_row, e_row, & 
+                    cv_row, cp_row, xne_row, eta_row, pele_row, &
+                    dpdt_row, dpdr_row, dedt_row, dedr_row, &
+                    dpdX_row, dhdX_row, &
+                    gam1_row, cs_row, s_row, &
+                    do_diag)
 
 !          dgam = abs(gam1_row(1) - gam1(j))
 !          if (dgam .gt. dgam_max) then
@@ -203,12 +206,15 @@ contains
               ! (rho, P) --> T
               input_flag = 4
 
-              call eos(input_flag, den_row, temp_row, npts, nspec, &
-                   xn_zone, aion, zion, &
-                   p_row, h_row, e_row, & 
-                   cv_row, cp_row, xne_row, eta_row, &
-                   pele_row, dpdt_row, dpdr_row, dedt_row, dedr_row, gam1_row, cs_row, &
-                   s_row, do_diag)
+              call eos(input_flag, den_row, temp_row, &
+                       npts, nspec, &
+                       xn_zone, aion, zion, &
+                       p_row, h_row, e_row, & 
+                       cv_row, cp_row, xne_row, eta_row, pele_row, &
+                       dpdt_row, dpdr_row, dedt_row, dedr_row, &
+                       dpdX_row, dhdX_row, &
+                       gam1_row, cs_row, s_row, &
+                       do_diag)
 
 !          dgam = abs(gam1_row(1) - gam1(k))
 !          if (dgam .gt. dgam_max) then

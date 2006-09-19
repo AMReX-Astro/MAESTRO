@@ -75,12 +75,15 @@ contains
              ! (rho,P) --> T,h, etc
              input_flag = 4
 
-             call eos(input_flag, den_row, temp_row, npts, nspec, &
+             call eos(input_flag, den_row, temp_row, &
+                      npts, nspec, &
                       xn_zone, aion, zion, &
                       p_row, h_row, e_row, &
-                      cv_row, cp_row, xne_row, eta_row, &
-                      pele_row, dpdt_row, dpdr_row, dedt_row, dedr_row, gam1_row, cs_row, &
-                      s_row, do_diag)
+                      cv_row, cp_row, xne_row, eta_row, pele_row, &
+                      dpdt_row, dpdr_row, dedt_row, dedr_row, &
+                      dpdX_row, dhdX_row, &
+                      gam1_row, cs_row, s_row, &
+                      do_diag)
 
              vel = sqrt(u(i,j,1)*u(i,j,1) + u(i,j,2)*u(i,j,2))
              machno(i,j) = vel / cs_row(1)
@@ -121,12 +124,15 @@ contains
                ! (rho,P) --> T,h, etc
                input_flag = 4
 
-               call eos(input_flag, den_row, temp_row, npts, nspec, &
+               call eos(input_flag, den_row, temp_row, &
+                        npts, nspec, &
                         xn_zone, aion, zion, &
                         p_row, h_row, e_row, &
-                        cv_row, cp_row, xne_row, eta_row, &
-                        pele_row, dpdt_row, dpdr_row, dedt_row, dedr_row, gam1_row, cs_row, &
-                        s_row, do_diag)
+                        cv_row, cp_row, xne_row, eta_row, pele_row, &
+                        dpdt_row, dpdr_row, dedt_row, dedr_row, &
+                        dpdX_row, dhdX_row, &
+                        gam1_row, cs_row, s_row, &
+                        do_diag)
 
                vel = sqrt(u(i,j,k,1)*u(i,j,k,1) + u(i,j,k,2)*u(i,j,k,2) + u(i,j,k,3)*u(i,j,k,3))
                machno(i,j,k) = vel / cs_row(1)
