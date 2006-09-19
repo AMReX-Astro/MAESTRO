@@ -58,17 +58,12 @@ contains
 
     !     Local variables
     integer :: i, j
-    real (kind=dp_t) :: Rsum,Tsum
 
-    real(kind=dp_t) :: smax
-    
     do_diag = .false.
 
     do j = lo(2), hi(2)
-       Rsum = ZERO
-       Tsum = ZERO
-
        do i = lo(1), hi(1)
+
           den_row(1) = s(i,j,rho_comp)
           temp_row(1) = t0(j)
           p_row(1) = p0(j)
@@ -88,15 +83,7 @@ contains
                    do_diag)
           
           t(i,j) = log(temp_row(1))/log(10.)
-          Rsum = Rsum + s(i,j,1)
-          Tsum = Tsum + temp_row(1)
        enddo
-
-       Tsum = Tsum / dble(hi(1)-lo(1)+1)
-       Rsum = Rsum / dble(hi(1)-lo(1)+1)
-!       write(11,*) (dble(j)+HALF)*dx(2), p0(j)
-!       write(12,*) (dble(j)+HALF)*dx(2), log(Rsum)/log(10.)
-!       write(13,*) (dble(j)+HALF)*dx(2), log(Tsum)/log(10.)
     enddo
 
   end subroutine maketfromrho_2d
@@ -114,18 +101,13 @@ contains
 
     !     Local variables
     integer :: i, j, k
-    real (kind=dp_t) :: Rsum,Tsum
-
-    real(kind=dp_t) :: smax
 
     do_diag = .false.
 
     do k = lo(3), hi(3)
-       Rsum = ZERO
-       Tsum = ZERO
-
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
+
              den_row(1) = s(i,j,k,rho_comp)
              temp_row(1) = t0(k)
              p_row(1) = p0(k)
@@ -145,15 +127,9 @@ contains
                       do_diag)
 
              t(i,j,k) = log(temp_row(1))/log(10.)
-             Rsum = Rsum + s(i,j,k,1)
-             Tsum = Tsum + temp_row(1)
+
           enddo
        enddo
-       Tsum = Tsum / dble( (hi(1)-lo(1)+1)*(hi(2)-lo(2)+1) )
-       Rsum = Rsum / dble( (hi(1)-lo(1)+1)*(hi(2)-lo(2)+1) )
-!       write(11,*) (dble(k)+HALF)*dx(3), p0(k)
-!       write(12,*) (dble(k)+HALF)*dx(3), log(Rsum)/log(10.)
-!       write(13,*) (dble(k)+HALF)*dx(3), log(Tsum)/log(10.)
     enddo
 
   end subroutine maketfromrho_3d
