@@ -431,7 +431,7 @@ contains
        
        s0(j, rho_comp ) = d_ambient
        s0(j,rhoh_comp ) = d_ambient * h_row(1)
-       s0(j,spec_comp:) = d_ambient * xn_ambient(1:)
+       s0(j,spec_comp:spec_comp+nspec-1) = d_ambient * xn_ambient(1:nspec)
        p0(j)    = p_row(1)
        temp0(j) = t_ambient
 
