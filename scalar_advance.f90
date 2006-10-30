@@ -1,15 +1,5 @@
 module scalar_advance_module
 
-  ! IF pred_vs_corr = 1:
-  ! This routine does the advancement of rho and (rho h), treating the
-  ! base state as if it were constant.  This is step 2 in Almgren et
-  ! al. 2006 (paper II).
-
-  ! IF pred_vs_corr = 2:
-  ! This routine does the advancement of rho and (rho h), after the
-  ! base state adjustmented.  This is step 4 in Almgren et
-  ! al. 2006 (paper II).
-
   use bl_types
   use bl_constants_module
   use multifab_module
@@ -29,10 +19,9 @@ contains
    subroutine scalar_advance (uold, sold, snew, shalf, &
                               umac, w0, sedge, utrans, ext_scal_force, &
                               s0_old , s0_new , s0_nph, &
-                              p0_old, p0_new, temp0, &
+                              p0_old, p0_new, &
                               dx,time, dt, the_bc_level,diff_coef,&
-                              verbose, div_coeff, div_coeff_half, &
-                              pred_vs_corr)
+                              verbose)
  
       type(multifab) , intent(inout) :: uold
       type(multifab) , intent(inout) :: sold
@@ -48,7 +37,7 @@ contains
       type(bc_level) , intent(in   ) :: the_bc_level
       real(kind=dp_t), intent(in   ) :: diff_coef
 ! 
-      integer        , intent(in   ) :: verbose, pred_vs_corr
+      integer        , intent(in   ) :: verbose
 ! 
       type(multifab) :: force,scal_force
       real(kind=dp_t), intent(in   ) ::  s0_old(:,:)
@@ -56,9 +45,6 @@ contains
       real(kind=dp_t), intent(in   ) ::  s0_nph(:,:)
       real(kind=dp_t), intent(in   ) ::    p0_old(:)
       real(kind=dp_t), intent(in   ) ::    p0_new(:)
-      real(kind=dp_t), intent(in   ) ::     temp0(:)
-      real(kind=dp_t), intent(in   ) :: div_coeff(:)
-      real(kind=dp_t), intent(in   ) :: div_coeff_half(:)
 ! 
       real(kind=dp_t), pointer:: uop(:,:,:,:)
       real(kind=dp_t), pointer:: ump(:,:,:,:)
@@ -135,79 +121,53 @@ contains
          select case (dm)
             case (2)
 
-              n = spec_comp
-              call mkspecforce_2d(fp(:,:,1,n:), sop(:,:,1,n:), ng_cell, & 
-                                  sop(:,:,1,1), ng_cell, &
-                                  dx, the_bc_level%ell_bc_level_array(i,:,:,n+dm:), &
-                                  time, pred_vs_corr, nspec)
               do n = spec_comp,spec_comp+nspec-1
                 call modify_force_2d(fp(:,:,1,n),sop(:,:,1,n),ng_cell,&
                                      s0_old(:,n), &
-                                     ump(:,:,1,1),vmp(:,:,1,1),w0,dx,pred_vs_corr)
+                                     ump(:,:,1,1),vmp(:,:,1,1),w0,dx)
               end do
 
               n = rhoh_comp
-              call  mkrhohforce_2d(fp(:,:,1,n), sop(:,:,1,n), ng_cell, & 
-                                   sop(:,:,1,rho_comp), &
-                                   sop(:,:,1,spec_comp:spec_comp+nspec-1), &
-                                   ng_cell, vmp(:,:,1,1), dx, &
-                                   the_bc_level%ell_bc_level_array(i,:,:,n+dm), &
-                                   diff_coef, visc_fac, &
-                                   p0_old, s0_old, temp0, &
-                                   time, pred_vs_corr)
+              call  mkrhohforce_2d(fp(:,:,1,n), vmp(:,:,1,1), p0_old, p0_new, dx(dm))
               call modify_force_2d(fp(:,:,1,n),sop(:,:,1,n),ng_cell,s0_old(:,rhoh_comp), &
-                                   ump(:,:,1,1),vmp(:,:,1,1),w0,dx,pred_vs_corr)
+                                   ump(:,:,1,1),vmp(:,:,1,1),w0,dx)
 
             case(3)
               wmp  => dataptr(umac(3), i)
 
-              n = spec_comp
-              call mkspecforce_3d(fp(:,:,:,n:), sop(:,:,:,n:), ng_cell, & 
-                                  sop(:,:,:,1), ng_cell, &
-                                  dx, the_bc_level%ell_bc_level_array(i,:,:,n+dm:), &
-                                  time, pred_vs_corr, nspec)
               do n = spec_comp,spec_comp+nspec-1
                 call modify_force_3d(fp(:,:,:,n),sop(:,:,:,n),ng_cell,&
                                      s0_old(:,n), &
-                                     ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),w0,dx,pred_vs_corr)
+                                     ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),w0,dx)
               end do
 
               n = rhoh_comp
-              call  mkrhohforce_3d(fp(:,:,:,n), sop(:,:,:,n), ng_cell, & 
-                                   sop(:,:,:,rho_comp), &
-                                   sop(:,:,:,spec_comp:spec_comp+nspec-1), &
-                                   ng_cell, wmp(:,:,:,1), dx, &
-                                   the_bc_level%ell_bc_level_array(i,:,:,n+dm), &
-                                   diff_coef, visc_fac, &
-                                   p0_old, s0_old, temp0, &
-                                   time, pred_vs_corr)
+              call  mkrhohforce_3d(fp(:,:,:,n), wmp(:,:,:,1), p0_old, p0_new, dx(dm))
 
               call modify_force_3d(fp(:,:,:,n),sop(:,:,:,n),ng_cell,s0_old(:,n), &
-                                   ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),w0,dx,pred_vs_corr)
+                                   ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),w0,dx)
          end select
       end do
 
       call multifab_fill_boundary(scal_force)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!     Add w0 to vertical velocity if second time through.
+!     Add w0 to vertical velocity.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      if (pred_vs_corr .eq. 2) then
-         mult = ONE
-         do i = 1, umac(dm)%nboxes
-            if ( multifab_remote(umac(dm), i) ) cycle
-            wmp  => dataptr(umac(dm), i)
-            lo =  lwb(get_box(uold, i))
-            hi =  upb(get_box(uold, i))
-            select case(dm)
-            case(2)
-              call addw0_2d(wmp(:,:,1,1),w0,lo,hi,mult)
-            case(3)
-              call addw0_3d(wmp(:,:,:,1),w0,lo,hi,mult)
-            end select
-         end do
-      end if
+      mult = ONE
+      do i = 1, umac(dm)%nboxes
+         if ( multifab_remote(umac(dm), i) ) cycle
+         wmp  => dataptr(umac(dm), i)
+         lo =  lwb(get_box(uold, i))
+         hi =  upb(get_box(uold, i))
+         select case(dm)
+         case(2)
+           call addw0_2d(wmp(:,:,1,1),w0,lo,hi,mult)
+         case(3)
+           call addw0_3d(wmp(:,:,:,1),w0,lo,hi,mult)
+         end select
+      end do
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     Create the edge states of (rho h)' and (rho X)_i using the MAC velocity 
@@ -217,7 +177,6 @@ contains
       do i = 1, sold%nboxes
          if ( multifab_remote(sold, i) ) cycle
          sop  => dataptr(sold, i)
-         shp  => dataptr(shalf, i)
          uop  => dataptr(uold, i)
          sepx => dataptr(sedge(1), i)
          sepy => dataptr(sedge(2), i)
@@ -294,7 +253,6 @@ contains
       do i = 1, sold%nboxes
          if ( multifab_remote(sold, i) ) cycle
          sop  => dataptr(sold, i)
-         shp  => dataptr(shalf, i)
          uop  => dataptr(uold, i)
          sepx => dataptr(sedge(1), i)
          sepy => dataptr(sedge(2), i)
@@ -340,24 +298,22 @@ contains
       end if
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!     Subtract w0 from vertical velocity if second time through.
+!     Subtract w0 from vertical velocity.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      if (pred_vs_corr .eq. 2) then
-         mult = -ONE
-         do i = 1, umac(dm)%nboxes
-            if ( multifab_remote(umac(dm), i) ) cycle
-            wmp  => dataptr(umac(dm), i)
-            lo =  lwb(get_box(uold, i))
-            hi =  upb(get_box(uold, i))
-            select case(dm)
-            case(2)
-              call addw0_2d(wmp(:,:,1,1),w0,lo,hi,mult)
-            case(3)
-              call addw0_3d(wmp(:,:,:,1),w0,lo,hi,mult)
-            end select
-         end do
-      end if
+      mult = -ONE
+      do i = 1, umac(dm)%nboxes
+         if ( multifab_remote(umac(dm), i) ) cycle
+         wmp  => dataptr(umac(dm), i)
+         lo =  lwb(get_box(uold, i))
+         hi =  upb(get_box(uold, i))
+         select case(dm)
+         case(2)
+           call addw0_2d(wmp(:,:,1,1),w0,lo,hi,mult)
+         case(3)
+           call addw0_3d(wmp(:,:,:,1),w0,lo,hi,mult)
+         end select
+      end do
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     1) Create scalar source term at time n+1/2 for (rho X)_i.  The source term
@@ -381,12 +337,6 @@ contains
          hi =  upb(get_box(sold, i))
          select case (dm)
             case (2)
-              n = spec_comp
-              bc_comp = dm+n
-              call mkspecforce_2d(fp(:,:,1,n:), sop(:,:,1,n:), ng_cell, & 
-                                  shp(:,:,1,rho_comp), ng_half, &
-                                  dx, the_bc_level%ell_bc_level_array(i,:,:,bc_comp:), &
-                                  time, pred_vs_corr, nspec)
               do n = spec_comp,spec_comp+nspec-1
                 bc_comp = dm+n
                 call update_scal_2d(n, &
@@ -394,7 +344,7 @@ contains
                                ump(:,:,1,1), vmp(:,:,1,1), w0, &
                                sepx(:,:,1,n), sepy(:,:,1,n), fp(:,:,1,n), &
                                s0_old(:,n), s0_new(:,n), &
-                               lo, hi, ng_cell, dx, dt, pred_vs_corr, verbose)
+                               lo, hi, ng_cell, dx, dt, verbose)
                 call setbc_2d(snp(:,:,1,n), lo, ng_cell, &
                               the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
 
@@ -405,12 +355,6 @@ contains
             case (3)
               wmp => dataptr(umac(3), i)
               sepz => dataptr(sedge(3), i)
-              n = spec_comp
-              bc_comp = dm+n
-              call mkspecforce_3d(fp(:,:,:,n:), sop(:,:,:,n:), ng_cell, & 
-                                  shp(:,:,:,rho_comp), ng_half, &
-                                  dx, the_bc_level%ell_bc_level_array(i,:,:,n+dm:), &
-                                  time, pred_vs_corr, nspec)
               do n = spec_comp,spec_comp+nspec-1
                 bc_comp = dm+n
                 call update_scal_3d(n, &
@@ -418,7 +362,7 @@ contains
                                ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0, &
                                sepx(:,:,:,n), sepy(:,:,:,n), sepz(:,:,:,n), fp(:,:,:,n), &
                                s0_old(:,n), s0_new(:,n), &
-                               lo, hi, ng_cell, dx, dt, pred_vs_corr, verbose)
+                               lo, hi, ng_cell, dx, dt, verbose)
                 call setbc_3d(snp(:,:,:,n), lo, ng_cell, &
                               the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
 
@@ -437,7 +381,6 @@ contains
       do i = 1, sold%nboxes
          if ( multifab_remote(sold, i) ) cycle
          sop => dataptr(sold, i)
-         shp => dataptr(shalf, i)
          snp => dataptr(snew, i)
          ump => dataptr(umac(1), i)
          vmp => dataptr(umac(2), i)
@@ -455,7 +398,7 @@ contains
                                ump(:,:,1,1), vmp(:,:,1,1), w0, &
                                sepx(:,:,1,n), sepy(:,:,1,n), fp(:,:,1,n), &
                                s0_old(:,n), s0_new(:,n), &
-                               lo, hi, ng_cell, dx, dt, pred_vs_corr, verbose)
+                               lo, hi, ng_cell, dx, dt, verbose)
                 call setbc_2d(snp(:,:,1,n), lo, ng_cell, &
                               the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
               end do
@@ -469,7 +412,7 @@ contains
                                ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0, &
                                sepx(:,:,:,n), sepy(:,:,:,n), sepz(:,:,:,n), fp(:,:,:,n), &
                                s0_old(:,n), s0_new(:,n), &
-                               lo, hi, ng_cell, dx, dt, pred_vs_corr, verbose)
+                               lo, hi, ng_cell, dx, dt, verbose)
                 call setbc_3d(snp(:,:,:,n), lo, ng_cell, &
                               the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
               end do
@@ -538,21 +481,14 @@ contains
          hi =  upb(get_box(sold, i))
          select case (dm)
             case (2)
-              call mkrhohforce_2d(fp(:,:,1,n), sop(:,:,1,n), ng_cell, &
-                                  shp(:,:,1,rho_comp), &
-                                  shp(:,:,1,spec_comp:spec_comp+nspec-1), &
-                                  ng_half, vmp(:,:,1,1), dx, &
-                                  the_bc_level%ell_bc_level_array(i,:,:,bc_comp), &
-                                  diff_coef, diff_fac, &
-                                  p0_nph, s0_nph, &
-                                  temp0, half_time, pred_vs_corr)
+              call  mkrhohforce_2d(fp(:,:,1,n), vmp(:,:,1,1), p0_old, p0_new, dx(dm))
 
               call update_scal_2d(n, &
                              sop(:,:,1,n), snp(:,:,1,n), snp(:,:,1,1), &
                              ump(:,:,1,1), vmp(:,:,1,1), w0, &
                              sepx(:,:,1,n), sepy(:,:,1,n), fp(:,:,1,n), &
                              s0_old(:,rhoh_comp), s0_new(:,rhoh_comp), &
-                             lo, hi, ng_cell, dx, dt, pred_vs_corr, verbose)
+                             lo, hi, ng_cell, dx, dt, verbose)
 
               call setbc_2d(snp(:,:,1,n), lo, ng_cell, &
                             the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
@@ -564,21 +500,14 @@ contains
               wmp => dataptr(umac(3), i)
               sepz => dataptr(sedge(3), i)
 
-              call mkrhohforce_3d(fp(:,:,:,n), sop(:,:,:,n), ng_cell, &
-                                  shp(:,:,:,rho_comp), &
-                                  shp(:,:,:,spec_comp:spec_comp+nspec-1), &
-                                  ng_half, wmp(:,:,:,1), dx, &
-                                  the_bc_level%ell_bc_level_array(i,:,:,bc_comp), &
-                                  diff_coef, diff_fac, &
-                                  p0_nph, s0_nph, &
-                                  temp0, half_time, pred_vs_corr)
+              call  mkrhohforce_3d(fp(:,:,:,n), wmp(:,:,:,1), p0_old, p0_new, dx(dm))
 
               call update_scal_3d(n, &
                              sop(:,:,:,n), snp(:,:,:,n), snp(:,:,:,1), &
                              ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0, &
                              sepx(:,:,:,n), sepy(:,:,:,n), sepz(:,:,:,n), fp(:,:,:,n), &
                              s0_old(:,rhoh_comp), s0_new(:,rhoh_comp), &
-                             lo, hi, ng_cell, dx, dt, pred_vs_corr, verbose)
+                             lo, hi, ng_cell, dx, dt, verbose)
 
               call setbc_3d(snp(:,:,:,n), lo, ng_cell, & 
                             the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
@@ -604,13 +533,13 @@ contains
 
    end subroutine scalar_advance
 
-   subroutine modify_force_2d(force,s,ng,base,umac,vmac,w0,dx,pred_vs_corr)
+   subroutine modify_force_2d(force,s,ng,base,umac,vmac,w0,dx)
 
     ! When we write the scalar equation in perturbational and convective
     ! form, the terms other than s'_t + U.grad s' act as source terms.  Add
     ! them to the forces here.
 
-    integer        , intent(in   ) :: ng,pred_vs_corr
+    integer        , intent(in   ) :: ng
     real(kind=dp_t), intent(  out) :: force(0:,0:)
     real(kind=dp_t), intent(in   ) :: s(1-ng:,1-ng:)
     real(kind=dp_t), intent(in   ) :: base(:)
@@ -653,22 +582,20 @@ contains
            divbaseu = base(j)*(umac(i+1,j) - umac(i,j))/dx(1) &
                              +(vmac(i,j+1) * base_half_hi &
                              - vmac(i,j  ) * base_half_lo)/ dx(2)
-           if (pred_vs_corr .eq. 2) then
-              divu = divu + (w0(j+1)-w0(j))/dx(2)
-           end if
+           divu = divu + (w0(j+1)-w0(j))/dx(2)
            force(i,j) = force(i,j) - (s(i,j)-base(j))*divu - divbaseu
         end do
      end do
      
    end subroutine modify_force_2d
 
-   subroutine modify_force_3d(force,s,ng,base,umac,vmac,wmac,w0,dx,pred_vs_corr)
+   subroutine modify_force_3d(force,s,ng,base,umac,vmac,wmac,w0,dx)
 
     ! When we write the scalar equation in perturbational and convective
     ! form, the terms other than s'_t + U.grad s' act as source terms.  Add
     ! them to the forces here.
 
-    integer        , intent(in   ) :: ng,pred_vs_corr
+    integer        , intent(in   ) :: ng
     real(kind=dp_t), intent(  out) :: force(0:,0:,0:)
     real(kind=dp_t), intent(in   ) :: s(1-ng:,1-ng:,1-ng:)
     real(kind=dp_t), intent(in   ) :: base(:)
@@ -716,9 +643,7 @@ contains
                                +(vmac(i,j+1,k) - vmac(i,j,k))/dx(2) ) &
                                +(wmac(i,j,k+1) * base_half_hi &
                                - wmac(i,j,k  ) * base_half_lo)/ dx(3)
-           if (pred_vs_corr .eq. 2) then
-              divu = divu + (w0(k+1)-w0(k))/dx(3)
-           end if
+           divu = divu + (w0(k+1)-w0(k))/dx(3)
            force(i,j,k) = force(i,j,k) - (s(i,j,k)-base(k))*divu - divbaseu
         end do
         end do

@@ -4,7 +4,6 @@ module hgrhs_module
   use bl_constants_module
   use bc_module
   use multifab_module
-  use macrhs_module
 
   implicit none
 
@@ -13,61 +12,56 @@ contains
 
 !  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-   subroutine make_hgrhs (hgrhs,macrhs,s,u,div_coeff,p0,t0,gam1,dx,time)
+   subroutine make_hgrhs (hgrhs,Source,Sbar,div_coeff)
 
       type(multifab) , intent(inout) :: hgrhs
-      type(multifab) , intent(inout) :: macrhs
-      type(multifab) , intent(in   ) :: s,u
-      real(kind=dp_t), intent(in   ) :: div_coeff(:),p0(:),t0(:),gam1(:)
-      real(kind=dp_t), intent(in   ) :: dx(:), time
+      type(multifab) , intent(in   ) :: Source
+      real(kind=dp_t), intent(in   ) :: Sbar(:)
+      real(kind=dp_t), intent(in   ) :: div_coeff(:)
 
-      real(kind=dp_t), pointer:: mp(:,:,:,:),cp(:,:,:,:)
-      real(kind=dp_t), pointer:: sp(:,:,:,:),up(:,:,:,:)
-      integer :: lo(s%dim),hi(s%dim),ng,dm
+      real(kind=dp_t), pointer:: hp(:,:,:,:),sp(:,:,:,:)
+      integer :: lo(Source%dim),hi(Source%dim),dm
       integer :: i
 
-      ng = s%ng
-      dm = s%dim
+      dm = Source%dim
 
-      do i = 1, s%nboxes
-         if ( multifab_remote(s, i) ) cycle
-         mp => dataptr(hgrhs, i)
-         cp => dataptr(macrhs, i)
-         sp => dataptr(s, i)
-         up => dataptr(u, i)
-         lo =  lwb(get_box(s, i))
-         hi =  upb(get_box(s, i))
+      do i = 1, Source%nboxes
+         if ( multifab_remote(Source, i) ) cycle
+         hp => dataptr(hgrhs, i)
+         sp => dataptr(Source, i)
+         lo =  lwb(get_box(Source, i))
+         hi =  upb(get_box(Source, i))
          select case (dm)
             case (2)
-              call make_hgrhs_2d(lo,hi,mp(:,:,1,1),cp(:,:,1,1),sp(:,:,1,:),up(:,:,1,:), &
-                                 ng, div_coeff, p0, t0, gam1, dx, time)
+              call make_hgrhs_2d(lo,hi,hp(:,:,1,1),sp(:,:,1,1),Sbar,div_coeff)
             case (3)
-              call make_hgrhs_3d(lo,hi,mp(:,:,:,1),cp(:,:,:,1),sp(:,:,:,:),up(:,:,:,:), &
-                                 ng, div_coeff, p0, t0, gam1, dx, time)
+              call make_hgrhs_3d(lo,hi,hp(:,:,:,1),sp(:,:,:,1),Sbar,div_coeff)
          end select
       end do
 
    end subroutine make_hgrhs
 
-   subroutine make_hgrhs_2d (lo,hi,rhs,rhs_cc,s,u,ng,div_coeff,p0,t0,gam1,dx,time)
+   subroutine make_hgrhs_2d(lo,hi,rhs,Source,Sbar,div_coeff)
 
       implicit none
 
-      integer         , intent(in   ) :: lo(:), hi(:), ng
-      real (kind=dp_t), intent(  out) ::    rhs(lo(1):,lo(2):)  
-      real (kind=dp_t), intent(  out) :: rhs_cc(lo(1):,lo(2):)  
-      real (kind=dp_t), intent(in   ) :: s(lo(1)-ng:,lo(2)-ng:,:)
-      real (kind=dp_t), intent(in   ) :: u(lo(1)-ng:,lo(2)-ng:,:)
+      integer         , intent(in   ) :: lo(:), hi(:)
+      real (kind=dp_t), intent(  out) :: rhs(lo(1):,lo(2):)  
+      real (kind=dp_t), intent(in   ) :: Source(lo(1):,lo(2):)  
+      real (kind=dp_t), intent(in   ) :: Sbar(lo(2):)
       real (kind=dp_t), intent(in   ) :: div_coeff(lo(2):)
-      real (kind=dp_t), intent(in   ) ::        p0(lo(2):)
-      real (kind=dp_t), intent(in   ) ::        t0(lo(2):)
-      real (kind=dp_t), intent(in   ) ::      gam1(lo(2):)
-      real (kind=dp_t), intent(in   ) :: dx(:),time
 
 !     Local variables
       integer :: i, j
+      real (kind=dp_t), allocatable :: rhs_cc(:,:)
 
-      call make_macrhs_2d(lo,hi,rhs_cc,s,u,ng,div_coeff,p0,t0,gam1,dx,time)
+      allocate(rhs_cc(lo(1):hi(1),lo(2):hi(2)))
+
+      do j = lo(2),hi(2)
+      do i = lo(1),hi(1)
+        rhs_cc(i,j) = div_coeff(j) * (Source(i,j) - Sbar(j))
+      end do
+      end do
 
 !     HACK : THIS ASSUMES EXTRAP AT SIDES AND NO HEATING NEAR TOP OR BOTTOM!!!
       rhs(:,lo(2)  ) = ZERO
@@ -82,27 +76,33 @@ contains
         enddo
       enddo
 
+      deallocate(rhs_cc)
+
    end subroutine make_hgrhs_2d
 
-   subroutine make_hgrhs_3d (lo,hi,rhs,rhs_cc,s,u,ng,div_coeff,p0,t0,gam1,dx,time)
+   subroutine make_hgrhs_3d(lo,hi,rhs,Source,Sbar,div_coeff)
 
       implicit none
 
-      integer         , intent(in   ) :: lo(:), hi(:), ng
-      real (kind=dp_t), intent(  out) ::    rhs(lo(1):,lo(2):,lo(3):)  
-      real (kind=dp_t), intent(  out) :: rhs_cc(lo(1):,lo(2):,lo(3):)  
-      real (kind=dp_t), intent(in   ) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-      real (kind=dp_t), intent(in   ) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
+      integer         , intent(in   ) :: lo(:), hi(:)
+      real (kind=dp_t), intent(  out) :: rhs(lo(1):,lo(2):,lo(3):)  
+      real (kind=dp_t), intent(in   ) :: Source(lo(1):,lo(2):,lo(3):)  
+      real (kind=dp_t), intent(in   ) :: Sbar(lo(3):)
       real (kind=dp_t), intent(in   ) :: div_coeff(lo(3):)
-      real (kind=dp_t), intent(in   ) ::        p0(lo(3):)
-      real (kind=dp_t), intent(in   ) ::        t0(lo(3):)
-      real (kind=dp_t), intent(in   ) ::      gam1(lo(3):)
-      real (kind=dp_t), intent(in   ) :: dx(:),time
 
 !     Local variables
-      integer :: i, j, k
+      integer :: i, j,k
+      real (kind=dp_t), allocatable :: rhs_cc(:,:,:)
 
-      call make_macrhs_3d(lo,hi,rhs_cc,s,u,ng,div_coeff,p0,t0,gam1,dx,time)
+      allocate(rhs_cc(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+
+      do k = lo(3),hi(3)
+      do j = lo(2),hi(2)
+      do i = lo(1),hi(1)
+        rhs_cc(i,j,k) = div_coeff(k) * (Source(i,j,k) - Sbar(k))
+      end do
+      end do
+      end do
 
 !     HACK : THIS ASSUMES EXTRAP AT SIDES AND NO HEATING NEAR TOP OR BOTTOM!!!
       rhs(:,:,lo(3)  ) = ZERO

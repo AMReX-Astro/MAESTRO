@@ -63,7 +63,7 @@ contains
 !                     + .01875_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r1))) &
 !                     + .01250_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r2))) ) * 1.d17
 
-            H(i,j) = ZERO
+            H(i,j) = zero
 
             Hmax = max(Hmax,H(i,j))
           end do

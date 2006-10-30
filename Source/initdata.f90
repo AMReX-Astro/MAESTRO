@@ -8,6 +8,7 @@ module init_module
   use define_bc_module
   use multifab_module
   use make_div_coeff_module
+  use make_grav_module
   use eos_module
   use variables
   use network
@@ -89,7 +90,7 @@ contains
     real(kind=dp_t) :: x,y,r,r0,r1,r2,temp
     real(kind=dp_t) :: dens_pert, rhoh_pert, rhoX_pert(nspec), trac_pert(ntrac)
 
-    logical, parameter :: perturbModel = .true.
+    logical, parameter :: perturbModel = .false.
 
     ! initial the domain with the base state
     u = ZERO
@@ -312,7 +313,7 @@ contains
   end subroutine perturb_3d
 
   subroutine init_base_state (div_coef_type,div_coeff,div_coeff_half,gam1, &
-                              s0,temp0,p0,dx,prob_lo,prob_hi,grav,anelastic_cutoff)
+                              s0,temp0,p0,dx,prob_lo,prob_hi,anelastic_cutoff,spherical)
 
     integer        , intent(in   ) :: div_coef_type
     real(kind=dp_t), intent(inout) :: div_coeff(0:)
@@ -324,14 +325,16 @@ contains
     real(kind=dp_t), intent(in   ) :: prob_lo(:)
     real(kind=dp_t), intent(in   ) :: prob_hi(:)
     real(kind=dp_t), intent(in   ) :: dx(:)
-    real(kind=dp_t), intent(in   ) :: grav
     real(kind=dp_t), intent(in   ) :: anelastic_cutoff
+    integer        , intent(in   ) :: spherical
     integer :: i,j,n,nx,j_cutoff
 
     real(kind=dp_t) :: r
     real(kind=dp_t) :: d_ambient,t_ambient,p_ambient, xn_ambient(nspec)
     real(kind=dp_t) :: integral, temp_term_lo, temp_term_hi
     real(kind=dp_t) :: temp_min,p0_lo,p0_hi
+
+    real(kind=dp_t), allocatable :: grav_edge(:)
 
     integer, parameter :: nvars_model = 3 + nspec
     integer, parameter :: idens_model = 1
@@ -349,6 +352,8 @@ contains
     real(kind=dp_t), parameter :: cutoff_density = 2.5d6
 
     nx = size(div_coeff,dim=1)
+
+    allocate(grav_edge(nx+1))
 
     do_diag = .false.
 
@@ -482,22 +487,11 @@ contains
        
     end do
 
-
-    ! compute the coefficient inside the divergence constraint
-    !     div_coef_type = 1   INCOMPRESSIBLE
-    !     div_coef_type = 2     ANELASTIC 
-    !     div_coef_type = 3        P-I
+    call make_grav_edge(grav_edge,s0(:,rho_comp),dx(2),spherical)
     
-    if (div_coef_type .eq. 2) then
-       div_coeff(:)         = s0(:,rho_comp)
-       div_coeff_half(   0) = s0( 0,rho_comp)
-       div_coeff_half(nx+1) = s0(nx,rho_comp)
-       do j = 1,nx
-          div_coeff_half(j) = HALF * (s0(j,rho_comp) + s0(j-1,rho_comp))
-       end do
-    else
-       call make_div_coeff(div_coeff,div_coeff_half,s0(:,rho_comp),p0,gam1,grav,dx(2),anelastic_cutoff)
-    end if
+    call make_div_coeff(div_coeff,div_coeff_half,s0(:,rho_comp),p0,gam1,grav_edge,dx(2),anelastic_cutoff)
+
+    deallocate(grav_edge)
 
   end subroutine init_base_state
 

@@ -28,8 +28,9 @@ contains
       real(kind=dp_t), intent(  out) :: p0_new(:), s0_new(:,:)
       real(kind=dp_t), intent(  out) ::            s0_nph(:,:)
       real(kind=dp_t), intent(inout) :: temp0(:),gam1(:),div_coeff_n(:),div_coeff_nph(:),div_coeff_half(:)
+      real(kind=dp_t), intent(in   ) :: grav(:)
       type(multifab) , intent(in   ) :: shalf
-      real(kind=dp_t), intent(in   ) :: dx(:),dt,grav,time,anelastic_cutoff
+      real(kind=dp_t), intent(in   ) :: dx(:),dt,time,anelastic_cutoff
       integer        , intent(in   ) :: div_coef_type
 
       real(kind=dp_t), pointer:: sop(:,:,:,:)
@@ -82,8 +83,9 @@ contains
       real(kind=dp_t), intent(inout) :: div_coeff_n   (lo(2):)
       real(kind=dp_t), intent(inout) :: div_coeff_nph (lo(2):)
       real(kind=dp_t), intent(inout) :: div_coeff_half(lo(2):)
+      real(kind=dp_t), intent(in   ) ::           grav(lo(2):)
       real(kind=dp_t), intent(in   ) ::  shalf(lo(1)- 1:,lo(2)- 1:,:)
-      real(kind=dp_t), intent(in   ) :: dx(:),dt,grav,time,anelastic_cutoff
+      real(kind=dp_t), intent(in   ) :: dx(:),dt,time,anelastic_cutoff
       integer        , intent(in   ) :: div_coef_type
 
 !     Local variables
@@ -255,8 +257,9 @@ contains
       real(kind=dp_t), intent(inout) :: div_coeff_n   (lo(3):)
       real(kind=dp_t), intent(inout) :: div_coeff_nph (lo(3):)
       real(kind=dp_t), intent(inout) :: div_coeff_half(lo(3):)
+      real(kind=dp_t), intent(in   ) ::           grav(lo(3):)
       real(kind=dp_t), intent(in   ) :: shalf(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)
-      real(kind=dp_t), intent(in   ) :: dx(:),dt,grav,time, anelastic_cutoff
+      real(kind=dp_t), intent(in   ) :: dx(:),dt,time, anelastic_cutoff
       integer        , intent(in   ) :: div_coef_type
 
 !     Local variables

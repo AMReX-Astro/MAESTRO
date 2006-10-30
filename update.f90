@@ -1,9 +1,5 @@
 module update_module
 
-  ! do the conservative updating of the scalars and velocity
-  ! This is used both in step 2 of Almgren et al. 2006, paper II
-  ! (ABRZ2) (when pred_vs_corr = 1) and in step 4 (pred_vs_corr = 2).
-
   use bl_types
   use multifab_module
   use variables
@@ -17,15 +13,14 @@ module update_module
   contains
 
    subroutine update_scal_2d (n,sold,snew,rhonew,umac,vmac,w0,sedgex,sedgey,force, &
-                              base_old,base_new,lo,hi,ng,dx,dt,pred_vs_corr,&
-                              verbose)
+                              base_old,base_new,lo,hi,ng,dx,dt,verbose)
 
      ! update each scalar in time.  Here, it is assumed that the edge
      ! states (sedgex and sedgey) are for the perturbational quantities.
 
       implicit none
 
-      integer              , intent(in) :: n, lo(:), hi(:), ng, pred_vs_corr, verbose
+      integer              , intent(in) :: n, lo(:), hi(:), ng, verbose
       real (kind = dp_t), intent(in   ) ::    sold(lo(1)-ng:,lo(2)-ng:)  
       real (kind = dp_t), intent(  out) ::    snew(lo(1)-ng:,lo(2)-ng:)  
       real (kind = dp_t), intent(in   ) ::  rhonew(lo(1)-ng:,lo(2)-ng:)  
@@ -60,41 +55,9 @@ module update_module
                        -1.d0/12.d0 * (base_old(j+1) + base_old(j-2))
       end do
       
-           
-      if (pred_vs_corr .eq. 1) then
 
-         ! see ABRZ2, step 2
-
-        do j = lo(2), hi(2)
-        do i = lo(1), hi(1)
-  
-          divsu = (umac(i+1,j) * sedgex(i+1,j) &
-                  -umac(i  ,j) * sedgex(i  ,j) ) / dx(1) + &
-                  (vmac(i,j+1) * sedgey(i,j+1) &
-                  -vmac(i,j  ) * sedgey(i,j  ) ) / dx(2)
-
-          divbaseu = (umac(i+1,j) - umac(i,j) ) * base_old(j) / dx(1) &
-                    +(vmac(i,j+1) * base_edge(j+1) - vmac(i,j) * base_edge(j) ) / dx(2)
-  
-          snew(i,j) = sold(i,j) - dt * (divsu + divbaseu) + dt * force(i,j)
-  
-          if (n .gt. rhoh_comp .and. n .lt. trac_comp) then
-            smax = max(smax,snew(i,j)/rhonew(i,j))
-            smin = min(smin,snew(i,j)/rhonew(i,j))
-          else
-            smax = max(smax,snew(i,j))
-            smin = min(smin,snew(i,j))
-          endif
-  
-        enddo
-        enddo
-
-      else if (pred_vs_corr .eq. 2) then
-
-         ! see ABRZ2, step 4
-
-        do j = lo(2), hi(2)
-        do i = lo(1), hi(1)
+      do j = lo(2), hi(2)
+      do i = lo(1), hi(1)
   
           divsu = (umac(i+1,j) * sedgex(i+1,j) &
                   -umac(i  ,j) * sedgex(i  ,j) ) / dx(1) + &
@@ -114,10 +77,8 @@ module update_module
             smin = min(smin,snew(i,j))
           endif
   
-        enddo
-        enddo
-
-      end if
+      enddo
+      enddo
 
       if (verbose .ge. 1) then
         if (n.eq. rho_comp) write(6,1000) smin,smax
@@ -242,11 +203,11 @@ module update_module
    end subroutine update_velocity_2d
 
    subroutine update_scal_3d (n,sold,snew,rhonew,umac,vmac,wmac,w0,sedgex,sedgey,sedgez,force, &
-                              base_old,base_new,lo,hi,ng,dx,dt,pred_vs_corr,verbose)
+                              base_old,base_new,lo,hi,ng,dx,dt,verbose)
 
       implicit none
 
-      integer, intent(in) :: n, lo(:), hi(:), ng, pred_vs_corr, verbose
+      integer, intent(in) :: n, lo(:), hi(:), ng, verbose
       real (kind = dp_t), intent(in   ) ::    sold(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)  
       real (kind = dp_t), intent(  out) ::    snew(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)  
       real (kind = dp_t), intent(in   ) ::  rhonew(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)  
@@ -283,42 +244,10 @@ module update_module
                         -1.d0/12.d0 * (base_old(k+1) + base_old(k-2))
       end do
            
-      if (pred_vs_corr .eq. 1) then
 
-        do k = lo(3), hi(3)
-        do j = lo(2), hi(2)
-        do i = lo(1), hi(1)
-  
-          divsu = (umac(i+1,j,k) * sedgex(i+1,j,k) &
-                  -umac(i  ,j,k) * sedgex(i  ,j,k) ) / dx(1) + &
-                  (vmac(i,j+1,k) * sedgey(i,j+1,k) &
-                  -vmac(i,j  ,k) * sedgey(i,j  ,k) ) / dx(2) + &
-                  (wmac(i,j,k+1) * sedgez(i,j,k+1) &
-                  -wmac(i,j,k  ) * sedgez(i,j,k  ) ) / dx(3)
-
-          divbaseu = (umac(i+1,j,k) - umac(i,j,k) ) * base_old(k) / dx(1) &
-                    +(vmac(i,j+1,k) - vmac(i,j,k) ) * base_old(k) / dx(2) &
-                    +(wmac(i,j,k+1) * base_edge(k+1) - wmac(i,j,k) * base_edge(k) ) / dx(3)
-
-          snew(i,j,k) = sold(i,j,k) - dt * (divsu + divbaseu) + dt * force(i,j,k)
-  
-          if (n .gt. rhoh_comp) then
-            smax = max(smax,snew(i,j,k)/rhonew(i,j,k))
-            smin = min(smin,snew(i,j,k)/rhonew(i,j,k))
-          else
-            smax = max(smax,snew(i,j,k))
-            smin = min(smin,snew(i,j,k))
-          endif
-  
-        enddo
-        enddo
-        enddo
-
-      else if (pred_vs_corr .eq. 2) then
-
-        do k = lo(3), hi(3)
-        do j = lo(2), hi(2)
-        do i = lo(1), hi(1)
+      do k = lo(3), hi(3)
+      do j = lo(2), hi(2)
+      do i = lo(1), hi(1)
   
           divsu = (umac(i+1,j,k) * sedgex(i+1,j,k) &
                   -umac(i  ,j,k) * sedgex(i  ,j,k) ) / dx(1) + &
@@ -341,11 +270,9 @@ module update_module
             smin = min(smin,snew(i,j,k))
           endif
   
-        enddo
-        enddo
-        enddo
-
-      end if
+      enddo
+      enddo
+      enddo
 
       if (verbose .ge. 1) then
         if (n.eq. rho_comp) write(6,1000) smin,smax
