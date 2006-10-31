@@ -11,10 +11,9 @@ contains
 
 !  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-   subroutine make_div_coeff (div_coeff,div_coeff_half,rho0,p0,gam1,grav_edge,dy,anelastic_cutoff)
+   subroutine make_div_coeff (div_coeff,rho0,p0,gam1,grav_edge,dy,anelastic_cutoff)
 
       real(kind=dp_t), intent(  out) :: div_coeff(:)
-      real(kind=dp_t), intent(  out) :: div_coeff_half(:)
       real(kind=dp_t), intent(in   ) :: rho0(:), p0(:), gam1(:)
       real(kind=dp_t), intent(in   ) :: grav_edge(:), dy, anelastic_cutoff
 
@@ -43,23 +42,29 @@ contains
       do j = j_anel,ny
         div_coeff(j) = div_coeff(j-1) * (rho0(j)/rho0(j-1))
       end do
-      print *,'SETTING BETA TO RHO0 STARTING AT  ',j_anel
-
-!     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!     CREATING HALF FIRST THEN AVERAGING ONTO CELLS
-!     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-      div_coeff_half(   1) = div_coeff(1)
-      div_coeff_half(   2) = HALF*(div_coeff( 1) + div_coeff(2))
-      div_coeff_half(ny  ) = HALF*(div_coeff(ny) + div_coeff(ny-1))
-      div_coeff_half(ny+1) = div_coeff(ny)
-      do j = 3,ny-1
-        div_coeff_half(j) = 7.d0/12.d0 * (div_coeff(j  ) + div_coeff(j-1)) &
-                           -1.d0/12.d0 * (div_coeff(j+1) + div_coeff(j-2))
-      end do
-      div_coeff_half(ny+1) = div_coeff_half(ny)
+!     print *,'SETTING BETA TO RHO0 STARTING AT  ',j_anel
 
    end subroutine make_div_coeff
+
+   subroutine put_beta_on_edges (div_coeff_cell,div_coeff_edge)
+
+      real(kind=dp_t), intent(in   ) :: div_coeff_cell(:)
+      real(kind=dp_t), intent(  out) :: div_coeff_edge(:)
+
+      integer :: j,ny
+      ny = size(div_coeff_cell,dim=1)
+
+      div_coeff_edge(   1) = div_coeff_cell(1)
+      div_coeff_edge(   2) = HALF*(div_coeff_cell( 1) + div_coeff_cell(2))
+      div_coeff_edge(ny  ) = HALF*(div_coeff_cell(ny) + div_coeff_cell(ny-1))
+      div_coeff_edge(ny+1) = div_coeff_cell(ny)
+      do j = 3,ny-1
+        div_coeff_edge(j) = 7.d0/12.d0 * (div_coeff_cell(j  ) + div_coeff_cell(j-1)) &
+                           -1.d0/12.d0 * (div_coeff_cell(j+1) + div_coeff_cell(j-2))
+      end do
+      div_coeff_edge(ny+1) = div_coeff_edge(ny)
+
+   end subroutine put_beta_on_edges
 
 end module make_div_coeff_module
 

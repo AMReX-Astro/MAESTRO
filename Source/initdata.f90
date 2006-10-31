@@ -312,29 +312,21 @@ contains
 
   end subroutine perturb_3d
 
-  subroutine init_base_state (div_coef_type,div_coeff,div_coeff_half,gam1, &
-                              s0,temp0,p0,dx,prob_lo,prob_hi,anelastic_cutoff,spherical)
+  subroutine init_base_state (s0,temp0,p0,gam1,dx,prob_lo,prob_hi)
 
-    integer        , intent(in   ) :: div_coef_type
-    real(kind=dp_t), intent(inout) :: div_coeff(0:)
-    real(kind=dp_t), intent(inout) :: div_coeff_half(0:)
-    real(kind=dp_t), intent(inout) ::  gam1(0:)
     real(kind=dp_t), intent(inout) ::    s0(0:,:)
     real(kind=dp_t), intent(inout) :: temp0(0:)
     real(kind=dp_t), intent(inout) ::    p0(0:)
+    real(kind=dp_t), intent(inout) ::  gam1(0:)
     real(kind=dp_t), intent(in   ) :: prob_lo(:)
     real(kind=dp_t), intent(in   ) :: prob_hi(:)
     real(kind=dp_t), intent(in   ) :: dx(:)
-    real(kind=dp_t), intent(in   ) :: anelastic_cutoff
-    integer        , intent(in   ) :: spherical
     integer :: i,j,n,nx,j_cutoff
 
     real(kind=dp_t) :: r
     real(kind=dp_t) :: d_ambient,t_ambient,p_ambient, xn_ambient(nspec)
     real(kind=dp_t) :: integral, temp_term_lo, temp_term_hi
     real(kind=dp_t) :: temp_min,p0_lo,p0_hi
-
-    real(kind=dp_t), allocatable :: grav_edge(:)
 
     integer, parameter :: nvars_model = 3 + nspec
     integer, parameter :: idens_model = 1
@@ -351,9 +343,7 @@ contains
 
     real(kind=dp_t), parameter :: cutoff_density = 2.5d6
 
-    nx = size(div_coeff,dim=1)
-
-    allocate(grav_edge(nx+1))
+    nx = size(p0,dim=1)
 
     do_diag = .false.
 
@@ -397,8 +387,6 @@ contains
 
     call helmeos_init
 
-
-    print *,'DIV_COEF_TYPE ',div_coef_type
     j_cutoff = nx-1
     do j = 0,nx-1
 
@@ -432,7 +420,6 @@ contains
                 dpdX_row, dhdX_row, &
                 gam1_row, cs_row, s_row, &
                 do_diag)
-
        
        s0(j, rho_comp ) = d_ambient
        s0(j,rhoh_comp ) = d_ambient * h_row(1)
@@ -486,12 +473,6 @@ contains
        s0(j,trac_comp:) = ZERO
        
     end do
-
-    call make_grav_edge(grav_edge,s0(:,rho_comp),dx(2),spherical)
-    
-    call make_div_coeff(div_coeff,div_coeff_half,s0(:,rho_comp),p0,gam1,grav_edge,dx(2),anelastic_cutoff)
-
-    deallocate(grav_edge)
 
   end subroutine init_base_state
 

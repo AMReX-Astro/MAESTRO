@@ -17,14 +17,14 @@ contains
 
    subroutine advect_base(vel,Sbar_in,p0_old,p0_new, &
                           s0_old,s0_new,temp0, &
-                          gam1,div_coeff_n,div_coeff_half, &
+                          gam1,div_coeff_edge, &
                           dr,dt,anelastic_cutoff,spherical)
 
       real(kind=dp_t), intent(in   ) :: vel(:)
       real(kind=dp_t), intent(in   ) :: Sbar_in(:)
       real(kind=dp_t), intent(in   ) :: p0_old(:), s0_old(:,:)
       real(kind=dp_t), intent(  out) :: p0_new(:), s0_new(:,:)
-      real(kind=dp_t), intent(inout) :: temp0(:),gam1(:),div_coeff_n(:),div_coeff_half(:)
+      real(kind=dp_t), intent(inout) :: temp0(:),gam1(:),div_coeff_edge(:)
       real(kind=dp_t), intent(in   ) :: dr,dt,anelastic_cutoff
       integer        , intent(in   ) :: spherical
 
@@ -35,13 +35,12 @@ contains
       if (spherical == 0) then
 
         call advect_base_state_planar(vel,p0_old,p0_new,s0_old,s0_new,temp0, &
-                                      gam1,div_coeff_n,div_coeff_half,&
-                                      dr,dt,anelastic_cutoff)
+                                      gam1,dr,dt,anelastic_cutoff)
 
       else
 
         call advect_base_state_spherical(vel,Sbar_in,p0_old,p0_new,s0_old,s0_new,temp0, &
-                                         gam1,div_coeff_n,div_coeff_half,&
+                                         gam1,div_coeff_edge,&
                                          dr,dt,anelastic_cutoff)
       end if
 
@@ -49,8 +48,7 @@ contains
    end subroutine advect_base
 
    subroutine advect_base_state_planar (vel,p0_old,p0_new,s0_old,s0_new,temp0, &
-                                        gam1,div_coeff_n,div_coeff_half,& 
-                                        dr,dt,anelastic_cutoff)
+                                        gam1,dr,dt,anelastic_cutoff)
 
       implicit none
       real(kind=dp_t), intent(in   ) :: vel(:)
@@ -58,8 +56,6 @@ contains
       real(kind=dp_t), intent(  out) :: p0_new(:), s0_new(:,:)
       real(kind=dp_t), intent(inout) :: temp0(:)
       real(kind=dp_t), intent(inout) :: gam1(:)
-      real(kind=dp_t), intent(inout) :: div_coeff_n   (:)
-      real(kind=dp_t), intent(inout) :: div_coeff_half(:)
       real(kind=dp_t), intent(in   ) :: dr,dt,anelastic_cutoff
 
 !     Local variables
@@ -140,14 +136,12 @@ contains
 
       end do
 
-      call make_div_coeff(div_coeff_n,div_coeff_half,s0_new(:,rho_comp),p0_new,gam1,grav_edge,dr,anelastic_cutoff)
-
       deallocate(force,edge,grav_edge)
 
    end subroutine advect_base_state_planar
 
    subroutine advect_base_state_spherical (vel,Sbar_in,p0_old,p0_new,s0_old,s0_new,temp0, &
-                                           gam1,div_coeff,div_coeff_half,& 
+                                           gam1,div_coeff_edge,& 
                                            dr,dt,anelastic_cutoff)
 
       implicit none
@@ -156,8 +150,7 @@ contains
       real(kind=dp_t), intent(  out) :: p0_new(:), s0_new(:,:)
       real(kind=dp_t), intent(inout) :: temp0(:)
       real(kind=dp_t), intent(inout) :: gam1(:)
-      real(kind=dp_t), intent(inout) :: div_coeff     (:)
-      real(kind=dp_t), intent(inout) :: div_coeff_half(:)
+      real(kind=dp_t), intent(inout) :: div_coeff_edge(:)
       real(kind=dp_t), intent(in   ) :: dr,dt,anelastic_cutoff
 
 !     Local variables
@@ -229,7 +222,7 @@ contains
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
      do j = 1,nz+1
-       beta(j) = div_coeff_half(j)
+       beta(j) = div_coeff_edge(j)
      end do
 
      ! Update p0 -- predictor
@@ -313,8 +306,6 @@ contains
          s0_new(j,rhoh_comp) = s0_new(j,rho_comp) * h_row(1)
 
       end do
-
-      call make_div_coeff(div_coeff,div_coeff_half,s0_new(:,rho_comp),p0_new,gam1,grav_edge,dr,anelastic_cutoff)
 
       deallocate(z,zl,force,edge,beta,beta_nh,gam1_old,grav_edge,grav_cell)
 

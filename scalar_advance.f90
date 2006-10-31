@@ -3,11 +3,11 @@ module scalar_advance_module
   use bl_types
   use bl_constants_module
   use multifab_module
-  use viscous_module
   use mkflux_module
   use mkscalforce_module
   use update_module
   use addw0_module
+  use define_bc_module
   use setbc_module
   use variables
   use network
@@ -16,17 +16,16 @@ module scalar_advance_module
 
 contains
 
-   subroutine scalar_advance (uold, sold, snew, shalf, &
+   subroutine scalar_advance (uold, sold, snew, &
                               umac, w0, sedge, utrans, ext_scal_force, &
                               s0_old , s0_new , s0_nph, &
                               p0_old, p0_new, &
-                              dx,time, dt, the_bc_level,diff_coef,&
+                              dx,time, dt, the_bc_level, &
                               verbose)
  
       type(multifab) , intent(inout) :: uold
       type(multifab) , intent(inout) :: sold
       type(multifab) , intent(inout) :: snew
-      type(multifab) , intent(inout) :: shalf
       type(multifab) , intent(inout) :: umac(:)
       type(multifab) , intent(inout) :: sedge(:)
       type(multifab) , intent(inout) :: utrans(:)
@@ -35,7 +34,6 @@ contains
       real(kind=dp_t), intent(inout) :: w0(:)
       real(kind=dp_t), intent(in   ) :: dx(:),time,dt
       type(bc_level) , intent(in   ) :: the_bc_level
-      real(kind=dp_t), intent(in   ) :: diff_coef
 ! 
       integer        , intent(in   ) :: verbose
 ! 
@@ -58,7 +56,6 @@ contains
 !
       real(kind=dp_t), pointer:: sop(:,:,:,:)
       real(kind=dp_t), pointer:: snp(:,:,:,:)
-      real(kind=dp_t), pointer:: shp(:,:,:,:) 
       real(kind=dp_t), pointer::  dp(:,:,:,:) 
       real(kind=dp_t), pointer:: sepx(:,:,:,:)
       real(kind=dp_t), pointer:: sepy(:,:,:,:)
@@ -69,20 +66,19 @@ contains
 
       integer :: nscal,ntrac,velpred
       integer :: lo(uold%dim),hi(uold%dim)
-      integer :: i,n,bc_comp,dm,ng_cell,ng_half
+      integer :: i,n,bc_comp,dm,ng_cell
       logical :: is_vel, make_divu, advect_in_pert_form
       logical :: do_mom
       logical, allocatable :: is_conservative(:)
-      real(kind=dp_t) :: visc_fac, diff_fac
       real(kind=dp_t) :: half_time
-      real(kind=dp_t), allocatable :: p0_nph(:)
+
+      print *,'<<< advect state >>> '
 
       velpred = 0
 
       do_mom = .false.
 
       ng_cell = sold%ng
-      ng_half = shalf%ng
       dm      = sold%dim
 
       half_time = time + HALF*dt
@@ -103,8 +99,8 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     Create scalar source term at time n for (rho X)_i and (rho H).  
-!     The source term for (rho X) looks like (rho wdot_i).
-!     The source term for (rho h) looks like (rho H) where $H$ is heat release.
+!     The source term for (rho X) is zero.
+!     The source term for (rho h) has only the w dp0/dr term.
 
 !     The call to modify_force is used to add those advective terms 
 !     that appear as forces when we write it in convective/perturbational form.
@@ -316,17 +312,13 @@ contains
       end do
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!     1) Create scalar source term at time n+1/2 for (rho X)_i.  The source term
-!         for (rho X) looks like (rho wdot_i).
-!        (NOTE: we don't worry about filling ghost cells of the scal_force
-!               because we only need them in valid regions...)     
-!     2) Update (rho X)'_i with conservative differencing.
+!     1) Update (rho X)'_i with conservative differencing.
+!     2) Define density as the sum of the (rho X)_i
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       do i = 1, sold%nboxes
          if ( multifab_remote(sold, i) ) cycle
          sop => dataptr(sold, i)
-         shp => dataptr(shalf, i)
          snp => dataptr(snew, i)
          ump => dataptr(umac(1), i)
          vmp => dataptr(umac(2), i)
@@ -337,37 +329,29 @@ contains
          hi =  upb(get_box(sold, i))
          select case (dm)
             case (2)
+                call update_scal_2d(spec_comp, spec_comp+nspec-1, &
+                                    sop(:,:,1,:), snp(:,:,1,:), &
+                                    ump(:,:,1,1), vmp(:,:,1,1), w0, &
+                                    sepx(:,:,1,:), sepy(:,:,1,:), fp(:,:,1,:), &
+                                    s0_old(:,:), s0_new(:,:), &
+                                    lo, hi, ng_cell, dx, dt, verbose)
               do n = spec_comp,spec_comp+nspec-1
                 bc_comp = dm+n
-                call update_scal_2d(n, &
-                               sop(:,:,1,n), snp(:,:,1,n), snp(:,:,1,1), &
-                               ump(:,:,1,1), vmp(:,:,1,1), w0, &
-                               sepx(:,:,1,n), sepy(:,:,1,n), fp(:,:,1,n), &
-                               s0_old(:,n), s0_new(:,n), &
-                               lo, hi, ng_cell, dx, dt, verbose)
                 call setbc_2d(snp(:,:,1,n), lo, ng_cell, &
                               the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
-
-                call mk_shalf_2d(sop(:,:,1,n),snp(:,:,1,n),ng_cell,shp(:,:,1,n),ng_half,lo,hi)
-                call setbc_2d(shp(:,:,1,n), lo, ng_half, &
-                              the_bc_level%adv_bc_level_array(i,:,:,n+dm),dx,n+dm)
               end do
             case (3)
               wmp => dataptr(umac(3), i)
               sepz => dataptr(sedge(3), i)
+              call update_scal_3d(spec_comp, spec_comp+nspec-1, &
+                                  sop(:,:,:,:), snp(:,:,:,:), &
+                                  ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0, &
+                                  sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), fp(:,:,:,:), &
+                                  s0_old(:,:), s0_new(:,:), &
+                                  lo, hi, ng_cell, dx, dt, verbose)
               do n = spec_comp,spec_comp+nspec-1
                 bc_comp = dm+n
-                call update_scal_3d(n, &
-                               sop(:,:,:,n), snp(:,:,:,n), snp(:,:,:,1), &
-                               ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0, &
-                               sepx(:,:,:,n), sepy(:,:,:,n), sepz(:,:,:,n), fp(:,:,:,n), &
-                               s0_old(:,n), s0_new(:,n), &
-                               lo, hi, ng_cell, dx, dt, verbose)
                 call setbc_3d(snp(:,:,:,n), lo, ng_cell, &
-                              the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
-
-                call mk_shalf_3d(sop(:,:,:,n),snp(:,:,:,n),ng_cell,shp(:,:,:,n),ng_half,lo,hi)
-                call setbc_3d(shp(:,:,:,n), lo, ng_half, &
                               the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
               end do
          end select
@@ -391,66 +375,34 @@ contains
          hi =  upb(get_box(sold, i))
          select case (dm)
             case (2)
+              call update_scal_2d(trac_comp,trac_comp+ntrac-1, &
+                             sop(:,:,1,:), snp(:,:,1,:), &
+                             ump(:,:,1,1), vmp(:,:,1,1), w0, &
+                             sepx(:,:,1,:), sepy(:,:,1,:), fp(:,:,1,:), &
+                             s0_old(:,:), s0_new(:,:), &
+                             lo, hi, ng_cell, dx, dt, verbose)
               do n = trac_comp,trac_comp+ntrac-1
                 bc_comp = dm+n
-                call update_scal_2d(n, &
-                               sop(:,:,1,n), snp(:,:,1,n), snp(:,:,1,1), &
-                               ump(:,:,1,1), vmp(:,:,1,1), w0, &
-                               sepx(:,:,1,n), sepy(:,:,1,n), fp(:,:,1,n), &
-                               s0_old(:,n), s0_new(:,n), &
-                               lo, hi, ng_cell, dx, dt, verbose)
                 call setbc_2d(snp(:,:,1,n), lo, ng_cell, &
                               the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
               end do
             case (3)
               wmp => dataptr(umac(3), i)
               sepz => dataptr(sedge(3), i)
+              call update_scal_3d(trac_comp,trac_comp+ntrac-1, &
+                                  sop(:,:,:,:), snp(:,:,:,:), &
+                                  ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0, &
+                                  sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), fp(:,:,:,:), &
+                                  s0_old(:,:), s0_new(:,:), &
+                                  lo, hi, ng_cell, dx, dt, verbose)
               do n = trac_comp,trac_comp+ntrac-1
                 bc_comp = dm+n
-                call update_scal_3d(n, &
-                               sop(:,:,:,n), snp(:,:,:,n), snp(:,:,:,1), &
-                               ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0, &
-                               sepx(:,:,:,n), sepy(:,:,:,n), sepz(:,:,:,n), fp(:,:,:,n), &
-                               s0_old(:,n), s0_new(:,n), &
-                               lo, hi, ng_cell, dx, dt, verbose)
                 call setbc_3d(snp(:,:,:,n), lo, ng_cell, &
                               the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
               end do
          end select
       end do
       end if
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!     Define density at new time as the sum of (rho X)_i.
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-      n = rho_comp
-      bc_comp = dm+n
-      do i = 1, sold%nboxes
-         if ( multifab_remote(sold, i) ) cycle
-         snp => dataptr(snew, i)
-         shp => dataptr(shalf, i)
-         lo =  lwb(get_box(sold, i))
-         hi =  upb(get_box(sold, i))
-         select case (dm)
-            case (2)
-              call mk_density_fromrhoX_2d(snp(:,:,1,n),snp(:,:,1,spec_comp:),lo,hi,ng_cell,verbose)
-              call setbc_2d(snp(:,:,1,n), lo, ng_cell, &
-                            the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
-
-              call mk_shalf_2d(sop(:,:,1,n),snp(:,:,1,n),ng_cell,shp(:,:,1,n),ng_half,lo,hi)
-              call setbc_2d(shp(:,:,1,n), lo, ng_half, &
-                            the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
-            case (3)
-              call mk_density_fromrhoX_3d(snp(:,:,:,n),snp(:,:,:,spec_comp:),lo,hi,ng_cell,verbose)
-              call setbc_3d(snp(:,:,:,n), lo, ng_cell, &
-                            the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
-
-              call mk_shalf_3d(sop(:,:,:,n),snp(:,:,:,n),ng_cell,shp(:,:,:,n),ng_half,lo,hi)
-              call setbc_3d(shp(:,:,:,n), lo, ng_half, &
-                            the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
-         end select
-      end do
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -463,14 +415,9 @@ contains
       n = rhoh_comp
       bc_comp = dm+n
 
-      diff_fac = HALF
-      allocate(p0_nph(lo(dm):hi(dm)))
-      p0_nph = HALF * (p0_old + p0_new)
-
       do i = 1, sold%nboxes
          if ( multifab_remote(sold, i) ) cycle
          sop => dataptr(sold, i)
-         shp => dataptr(shalf, i)
          snp => dataptr(snew, i)
          ump => dataptr(umac(1), i)
          vmp => dataptr(umac(2), i)
@@ -483,18 +430,14 @@ contains
             case (2)
               call  mkrhohforce_2d(fp(:,:,1,n), vmp(:,:,1,1), p0_old, p0_new, dx(dm))
 
-              call update_scal_2d(n, &
-                             sop(:,:,1,n), snp(:,:,1,n), snp(:,:,1,1), &
+              call update_scal_2d(rhoh_comp, rhoh_comp, &
+                             sop(:,:,1,:), snp(:,:,1,:), &
                              ump(:,:,1,1), vmp(:,:,1,1), w0, &
-                             sepx(:,:,1,n), sepy(:,:,1,n), fp(:,:,1,n), &
-                             s0_old(:,rhoh_comp), s0_new(:,rhoh_comp), &
+                             sepx(:,:,1,:), sepy(:,:,1,:), fp(:,:,1,:), &
+                             s0_old(:,:), s0_new(:,:), &
                              lo, hi, ng_cell, dx, dt, verbose)
 
               call setbc_2d(snp(:,:,1,n), lo, ng_cell, &
-                            the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
-
-              call mk_shalf_2d(sop(:,:,1,n),snp(:,:,1,n),ng_cell,shp(:,:,1,n),ng_half,lo,hi)
-              call setbc_2d(shp(:,:,1,n), lo, ng_half, &
                             the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
             case (3)
               wmp => dataptr(umac(3), i)
@@ -502,28 +445,22 @@ contains
 
               call  mkrhohforce_3d(fp(:,:,:,n), wmp(:,:,:,1), p0_old, p0_new, dx(dm))
 
-              call update_scal_3d(n, &
-                             sop(:,:,:,n), snp(:,:,:,n), snp(:,:,:,1), &
+              call update_scal_3d(rhoh_comp, rhoh_comp, &
+                             sop(:,:,:,:), snp(:,:,:,:), &
                              ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0, &
-                             sepx(:,:,:,n), sepy(:,:,:,n), sepz(:,:,:,n), fp(:,:,:,n), &
-                             s0_old(:,rhoh_comp), s0_new(:,rhoh_comp), &
+                             sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), fp(:,:,:,:), &
+                             s0_old(:,:), s0_new(:,:), &
                              lo, hi, ng_cell, dx, dt, verbose)
 
               call setbc_3d(snp(:,:,:,n), lo, ng_cell, & 
                             the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
-
-              call mk_shalf_3d(sop(:,:,:,n),snp(:,:,:,n),ng_cell,shp(:,:,:,n),ng_half,lo,hi)
-              call setbc_3d(shp(:,:,:,n), lo, ng_half, & 
-                            the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
          end select
       end do
-      deallocate(p0_nph)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     Call fill_boundary for all components of snew
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      call multifab_fill_boundary(shalf)
       call multifab_fill_boundary(snew)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

@@ -10,7 +10,6 @@ module react_base_module
   use multifab_module
   use heating_module
   use mkflux_module
-  use make_div_coeff_module
   use variables
   use eos_module
 
@@ -18,22 +17,16 @@ module react_base_module
 
 contains
 
-   subroutine react_base(p0_in,s0_in,temp0_in,rho_omegadot,dr,dt,p0_out,s0_out,gam1_out,beta_out,betahalf_out,&
-                         anelastic_cutoff)
+   subroutine react_base(p0_in,s0_in,temp0_in,rho_omegadot,dr,dt,p0_out,s0_out,gam1_out)
 
       real(kind=dp_t), intent(in   ) :: p0_in( :), s0_in( :,:), temp0_in(:), rho_omegadot(:,:)
-      real(kind=dp_t), intent(in   ) :: dr, dt, anelastic_cutoff
+      real(kind=dp_t), intent(in   ) :: dr, dt
       real(kind=dp_t), intent(  out) :: p0_out(:), s0_out(:,:)
-      real(kind=dp_t), intent(inout) :: gam1_out(:), beta_out(:), betahalf_out(:)
+      real(kind=dp_t), intent(inout) :: gam1_out(:)
 
-      real(kind=dp_t), allocatable   :: grav(:)
-
-      integer :: j,n,nspec,nz
+      integer :: j,n,nz
 
       nz    = size(rho_omegadot,dim=1)
-      nspec = size(rho_omegadot,dim=2)
-
-      allocate(grav(nz))
   
       print *,"<<< react_base >>> " 
 
@@ -53,6 +46,7 @@ contains
          den_row(1)  = s0_in(j,rho_comp)
          temp_row(1) = temp0_in(j)
          p_row(1)    = p0_in(j)
+
          do n = spec_comp,spec_comp+nspec-1
            xn_zone(n-spec_comp+1) = s0_out(j,n)/s0_out(j,rho_comp)
          end do
@@ -75,11 +69,6 @@ contains
          gam1_out(j) = gam1_row(1)
 
       end do
-
-      call make_div_coeff(beta_out,betahalf_out,s0_out(:,rho_comp),p0_out, &
-                          gam1_out,grav,dr,anelastic_cutoff)
-
-      deallocate(grav)
 
    end subroutine react_base
 

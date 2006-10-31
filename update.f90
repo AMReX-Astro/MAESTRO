@@ -12,7 +12,7 @@ module update_module
 
   contains
 
-   subroutine update_scal_2d (n,sold,snew,rhonew,umac,vmac,w0,sedgex,sedgey,force, &
+   subroutine update_scal_2d (nstart,nstop,sold,snew,umac,vmac,w0,sedgex,sedgey,force, &
                               base_old,base_new,lo,hi,ng,dx,dt,verbose)
 
      ! update each scalar in time.  Here, it is assumed that the edge
@@ -20,80 +20,165 @@ module update_module
 
       implicit none
 
-      integer              , intent(in) :: n, lo(:), hi(:), ng, verbose
-      real (kind = dp_t), intent(in   ) ::    sold(lo(1)-ng:,lo(2)-ng:)  
-      real (kind = dp_t), intent(  out) ::    snew(lo(1)-ng:,lo(2)-ng:)  
-      real (kind = dp_t), intent(in   ) ::  rhonew(lo(1)-ng:,lo(2)-ng:)  
-      real (kind = dp_t), intent(in   ) ::    umac(lo(1)- 1:,lo(2)- 1:)  
-      real (kind = dp_t), intent(in   ) ::    vmac(lo(1)- 1:,lo(2)- 1:)  
-      real (kind = dp_t), intent(in   ) ::  sedgex(lo(1)   :,lo(2)   :)  
-      real (kind = dp_t), intent(in   ) ::  sedgey(lo(1)   :,lo(2)   :)  
-      real (kind = dp_t), intent(in   ) ::   force(lo(1)- 1:,lo(2)- 1:)  
-      real (kind = dp_t), intent(in   ) ::   base_old(lo(2)   :)
-      real (kind = dp_t), intent(in   ) ::   base_new(lo(2)   :)
+      integer              , intent(in) :: nstart, nstop, lo(:), hi(:), ng, verbose
+      real (kind = dp_t), intent(in   ) ::    sold(lo(1)-ng:,lo(2)-ng:,:)
+      real (kind = dp_t), intent(  out) ::    snew(lo(1)-ng:,lo(2)-ng:,:)
+      real (kind = dp_t), intent(in   ) ::    umac(lo(1)- 1:,lo(2)- 1:)
+      real (kind = dp_t), intent(in   ) ::    vmac(lo(1)- 1:,lo(2)- 1:)
+      real (kind = dp_t), intent(in   ) ::  sedgex(lo(1)   :,lo(2)   :,:)
+      real (kind = dp_t), intent(in   ) ::  sedgey(lo(1)   :,lo(2)   :,:)
+      real (kind = dp_t), intent(in   ) ::   force(lo(1)- 1:,lo(2)- 1:,:)
+      real (kind = dp_t), intent(in   ) ::   base_old(lo(2)   :,:)
+      real (kind = dp_t), intent(in   ) ::   base_new(lo(2)   :,:)
       real (kind = dp_t), intent(in   ) :: w0(lo(2):)
       real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
-      integer :: i, j
-      real (kind = dp_t) :: divsu,divbaseu
-      real (kind = dp_t) :: smin,smax
+      integer :: i, j, n
+      real (kind = dp_t) :: divsu,divbaseu,smax_rho,smin_rho
+      real (kind = dp_t), allocatable :: smin(:)
+      real (kind = dp_t), allocatable :: smax(:)
       real (kind = dp_t), allocatable :: base_edge(:)
 
       allocate(base_edge(lo(2):hi(2)+1))
+      allocate(smax(nstart:nstop))
+      allocate(smin(nstart:nstop))
 
-      smax = -1.d20
-      smin =  1.d20
-
-      base_edge(lo(2)  ) = base_old(lo(2))
-      base_edge(hi(2)+1) = base_old(hi(2))
-      
-      base_edge(lo(2)+1) = HALF*(base_old(lo(2))+base_old(lo(2)+1))
-      base_edge(hi(2)  ) = HALF*(base_old(hi(2))+base_old(hi(2)-1))
-
-      do j = lo(2)+2,hi(2)-1
-         base_edge(j) = 7.d0/12.d0 * (base_old(j  ) + base_old(j-1)) &
-                       -1.d0/12.d0 * (base_old(j+1) + base_old(j-2))
-      end do
-      
-
-      do j = lo(2), hi(2)
-      do i = lo(1), hi(1)
-  
-          divsu = (umac(i+1,j) * sedgex(i+1,j) &
-                  -umac(i  ,j) * sedgex(i  ,j) ) / dx(1) + &
-                 ((vmac(i,j+1)+w0(j+1)) * sedgey(i,j+1) &
-                 -(vmac(i,j  )+w0(j  )) * sedgey(i,j  ) ) / dx(2)
-
-          divbaseu = (umac(i+1,j) - umac(i,j) ) * base_old(j) / dx(1) &
-                    +(vmac(i,j+1) * base_edge(j+1) - vmac(i,j) * base_edge(j) ) / dx(2)
-
-          snew(i,j) = sold(i,j) + (base_new(j) - base_old(j)) - dt * (divsu + divbaseu) + dt * force(i,j)
-  
-          if (n .gt. rhoh_comp .and. n .lt. trac_comp) then
-            smax = max(smax,snew(i,j)/rhonew(i,j))
-            smin = min(smin,snew(i,j)/rhonew(i,j))
-          else
-            smax = max(smax,snew(i,j))
-            smin = min(smin,snew(i,j))
-          endif
-  
-      enddo
-      enddo
 
       if (verbose .ge. 1) then
-        if (n.eq. rho_comp) write(6,1000) smin,smax
-        if (n.eq.rhoh_comp) write(6,1001) smin,smax
-        if (n.gt.rhoh_comp .and. n.lt.trac_comp) write(6,1002) spec_names(n-rhoh_comp),smin,smax
-        if (n.ge.trac_comp) write(6,1003) smin,smax
-        if (n.eq.rhoh_comp) write(6,1004) 
+        smax(:) = -1.d20
+        smin(:) =  1.d20
+        do n = nstart, nstop
+          do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+
+            if (n .gt. rhoh_comp .and. n .lt. trac_comp) then
+              smax(n) = max(smax(n),sold(i,j,n)/sold(i,j,rho_comp))
+              smin(n) = min(smin(n),sold(i,j,n)/sold(i,j,rho_comp))
+            else
+              smax(n) = max(smax(n),sold(i,j,n))
+              smin(n) = min(smin(n),sold(i,j,n))
+            endif
+
+          enddo
+          enddo
+
+          if (n.eq.rhoh_comp) write(6,1001) smin(n),smax(n)
+          if (n.gt.rhoh_comp .and. n.lt.trac_comp) write(6,1002) spec_names(n-rhoh_comp),smin(n),smax(n)
+          if (n.ge.trac_comp) write(6,1003) smin(n),smax(n)
+        enddo
+
+        if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
+          n = rho_comp
+          smax_rho = -1.d20
+          smin_rho =  1.d20
+          do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+              smax_rho = max(smax_rho,sold(i,j,n))
+              smin_rho = min(smin_rho,sold(i,j,n))
+          end do
+          end do
+          write(6,1000) smin_rho,smax_rho
+        end if
+
       end if
 
-1000  format('NEW MIN/MAX : density           ',e15.10,2x,e15.10)
-1001  format('NEW MIN/MAX : rho * H           ',e15.10,2x,e15.10)
-1002  format('NEW MIN/MAX : ',a16,2x,e15.10,2x,e15.10)
-1003  format('NEW MIN/MAX :           tracer',2x,e15.10,2x,e15.10)
-1004  format(' ')
+1000  format('OLD MIN/MAX : density           ',e15.10,2x,e15.10)
+1001  format('OLD MIN/MAX : rho * H           ',e15.10,2x,e15.10)
+1002  format('OLD MIN/MAX : ',a16,2x,e15.10,2x,e15.10)
+1003  format('OLD MIN/MAX :           tracer',2x,e15.10,2x,e15.10)
 
+
+      do n = nstart, nstop
+
+        base_edge(lo(2)  ) = base_old(lo(2),n)
+        base_edge(hi(2)+1) = base_old(hi(2),n)
+      
+        base_edge(lo(2)+1) = HALF*(base_old(lo(2),n)+base_old(lo(2)+1,n))
+        base_edge(hi(2)  ) = HALF*(base_old(hi(2),n)+base_old(hi(2)-1,n))
+
+        do j = lo(2)+2,hi(2)-1
+           base_edge(j) = 7.d0/12.d0 * (base_old(j  ,n) + base_old(j-1,n)) &
+                         -1.d0/12.d0 * (base_old(j+1,n) + base_old(j-2,n))
+        end do
+
+        do j = lo(2), hi(2)
+        do i = lo(1), hi(1)
+  
+          divsu = (umac(i+1,j) * sedgex(i+1,j,n) &
+                  -umac(i  ,j) * sedgex(i  ,j,n) ) / dx(1) + &
+                 ((vmac(i,j+1)+w0(j+1)) * sedgey(i,j+1,n) &
+                 -(vmac(i,j  )+w0(j  )) * sedgey(i,j  ,n) ) / dx(2)
+
+          divbaseu = (umac(i+1,j) - umac(i,j) ) * base_old(j,n) / dx(1) &
+                    +(vmac(i,j+1) * base_edge(j+1) - vmac(i,j) * base_edge(j) ) / dx(2)
+
+          snew(i,j,n) = sold(i,j,n) + (base_new(j,n) - base_old(j,n)) &
+                      - dt * (divsu + divbaseu) + dt * force(i,j,n)
+          if (i.eq.1.and.j.eq.1) print *,'NEW ',snew(i,j,n),divsu,divbaseu,force(i,j,n)
+  
+        enddo
+        enddo
+      enddo
+
+      if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
+        snew(:,:,rho_comp) = ZERO
+        do n = nstart, nstop
+        do j = lo(2), hi(2)
+        do i = lo(1), hi(1)
+           snew(i,j,rho_comp) = snew(i,j,rho_comp) + snew(i,j,n)
+        enddo
+        enddo
+        enddo
+      end if
+  
+      if (verbose .ge. 1) then
+
+        smax(:) = -1.d20
+        smin(:) =  1.d20
+
+        do n = nstart, nstop
+          do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+  
+            if (n .gt. rhoh_comp .and. n .lt. trac_comp) then
+              smax(n) = max(smax(n),snew(i,j,n)/snew(i,j,rho_comp))
+              smin(n) = min(smin(n),snew(i,j,n)/snew(i,j,rho_comp))
+            else
+              smax(n) = max(smax(n),snew(i,j,n))
+              smin(n) = min(smin(n),snew(i,j,n))
+            endif
+    
+          enddo
+          enddo
+  
+          if (n.eq.rhoh_comp) write(6,2001) smin(n),smax(n)
+          if (n.gt.rhoh_comp .and. n.lt.trac_comp) write(6,2002) spec_names(n-rhoh_comp),smin(n),smax(n)
+          if (n.ge.trac_comp) write(6,2003) smin(n),smax(n)
+          if (n.eq.rhoh_comp) write(6,2004) 
+        enddo
+
+        if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
+          n = rho_comp
+          smax_rho = -1.d20
+          smin_rho =  1.d20
+          do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+              smax_rho = max(smax_rho,snew(i,j,n))
+              smin_rho = min(smin_rho,snew(i,j,n))
+          end do
+          end do
+          write(6,2000) smin_rho,smax_rho
+        end if
+
+      end if
+
+2000  format('NEW MIN/MAX : density           ',e15.10,2x,e15.10)
+2001  format('NEW MIN/MAX : rho * H           ',e15.10,2x,e15.10)
+2002  format('NEW MIN/MAX : ',a16,2x,e15.10,2x,e15.10)
+2003  format('NEW MIN/MAX :           tracer',2x,e15.10,2x,e15.10)
+2004  format(' ')
+
+      deallocate(smin,smax)
       deallocate(base_edge)
 
    end subroutine update_scal_2d
@@ -202,90 +287,137 @@ module update_module
 
    end subroutine update_velocity_2d
 
-   subroutine update_scal_3d (n,sold,snew,rhonew,umac,vmac,wmac,w0,sedgex,sedgey,sedgez,force, &
+   subroutine update_scal_3d (nstart,nstop,sold,snew,umac,vmac,wmac,w0,sedgex,sedgey,sedgez,force, &
                               base_old,base_new,lo,hi,ng,dx,dt,verbose)
 
       implicit none
 
-      integer, intent(in) :: n, lo(:), hi(:), ng, verbose
-      real (kind = dp_t), intent(in   ) ::    sold(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)  
-      real (kind = dp_t), intent(  out) ::    snew(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)  
-      real (kind = dp_t), intent(in   ) ::  rhonew(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)  
-      real (kind = dp_t), intent(in   ) ::    umac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)  
-      real (kind = dp_t), intent(in   ) ::    vmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)  
-      real (kind = dp_t), intent(in   ) ::    wmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)  
-      real (kind = dp_t), intent(in   ) ::  sedgex(lo(1)   :,lo(2)   :,lo(3)   :)  
-      real (kind = dp_t), intent(in   ) ::  sedgey(lo(1)   :,lo(2)   :,lo(3)   :)  
-      real (kind = dp_t), intent(in   ) ::  sedgez(lo(1)   :,lo(2)   :,lo(3)   :)  
-      real (kind = dp_t), intent(in   ) ::   force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)  
-      real (kind = dp_t), intent(in   ) ::   base_old(lo(3)   :)
-      real (kind = dp_t), intent(in   ) ::   base_new(lo(3)   :)
+      integer, intent(in) :: nstart,nstop, lo(:), hi(:), ng, verbose
+      real (kind = dp_t), intent(in   ) ::    sold(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
+      real (kind = dp_t), intent(  out) ::    snew(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
+      real (kind = dp_t), intent(in   ) ::    umac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
+      real (kind = dp_t), intent(in   ) ::    vmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
+      real (kind = dp_t), intent(in   ) ::    wmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
+      real (kind = dp_t), intent(in   ) ::  sedgex(lo(1)   :,lo(2)   :,lo(3)   :,:)
+      real (kind = dp_t), intent(in   ) ::  sedgey(lo(1)   :,lo(2)   :,lo(3)   :,:)
+      real (kind = dp_t), intent(in   ) ::  sedgez(lo(1)   :,lo(2)   :,lo(3)   :,:)
+      real (kind = dp_t), intent(in   ) ::   force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
+      real (kind = dp_t), intent(in   ) ::   base_old(lo(3)   :,:)
+      real (kind = dp_t), intent(in   ) ::   base_new(lo(3)   :,:)
       real (kind = dp_t), intent(in   ) :: w0(lo(3):)
       real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
-      integer :: i, j, k
-      real (kind = dp_t) :: divsu,divbaseu
-      real (kind = dp_t) :: smin,smax
+      integer :: i, j, k, n
+      real (kind = dp_t) :: divsu,divbaseu,smax_rho,smin_rho
+      real (kind = dp_t), allocatable :: smin(:)
+      real (kind = dp_t), allocatable :: smax(:)
       real (kind = dp_t), allocatable :: base_edge(:)
 
       allocate(base_edge(lo(3):hi(3)+1))
+      allocate(smax(nstart:nstop))
+      allocate(smin(nstart:nstop))
 
-      smax = -1.d20
-      smin =  1.d20
+      smax(:) = -1.d20
+      smin(:) =  1.d20
 
-      base_edge(lo(3)  ) = base_old(lo(3))
-      base_edge(hi(3)+1) = base_old(hi(3))
-      
-      base_edge(lo(3)+1) = HALF*(base_old(lo(3))+base_old(lo(3)+1))
-      base_edge(hi(3)  ) = HALF*(base_old(hi(3))+base_old(hi(3)-1))
+      do n = nstart, nstop
 
-      do k = lo(3)+2,hi(3)-1
-         base_edge(k) = 7.d0/12.d0 * (base_old(k  ) + base_old(k-1)) &
-                        -1.d0/12.d0 * (base_old(k+1) + base_old(k-2))
-      end do
-           
+        print *,'<<< updating quantity ',n,' >>> '
 
-      do k = lo(3), hi(3)
-      do j = lo(2), hi(2)
-      do i = lo(1), hi(1)
+        base_edge(lo(3)  ) = base_old(lo(3),n)
+        base_edge(hi(3)+1) = base_old(hi(3),n)
+        
+        base_edge(lo(3)+1) = HALF*(base_old(lo(3),n)+base_old(lo(3)+1,n))
+        base_edge(hi(3)  ) = HALF*(base_old(hi(3),n)+base_old(hi(3)-1,n))
   
-          divsu = (umac(i+1,j,k) * sedgex(i+1,j,k) &
-                  -umac(i  ,j,k) * sedgex(i  ,j,k) ) / dx(1) + &
-                  (vmac(i,j+1,k) * sedgey(i,j+1,k) &
-                  -vmac(i,j  ,k) * sedgey(i,j  ,k) ) / dx(2) + &
-                 ((wmac(i,j,k+1)+w0(k+1)) * sedgez(i,j,k+1) &
-                 -(wmac(i,j,k  )+w0(k  )) * sedgez(i,j,k  ) ) / dx(3)
+        do k = lo(3)+2,hi(3)-1
+           base_edge(k) = 7.d0/12.d0 * (base_old(k  ,n) + base_old(k-1,n)) &
+                         -1.d0/12.d0 * (base_old(k+1,n) + base_old(k-2,n))
+        end do
 
-          divbaseu = (umac(i+1,j,k) - umac(i,j,k) ) * base_old(k) / dx(1) &
-                    +(vmac(i,j+1,k) - vmac(i,j,k) ) * base_old(k) / dx(2) &
+        do k = lo(3), hi(3)
+        do j = lo(2), hi(2)
+        do i = lo(1), hi(1)
+  
+          divsu = (umac(i+1,j,k) * sedgex(i+1,j,k,n) &
+                  -umac(i  ,j,k) * sedgex(i  ,j,k,n) ) / dx(1) + &
+                  (vmac(i,j+1,k) * sedgey(i,j+1,k,n) &
+                  -vmac(i,j  ,k) * sedgey(i,j  ,k,n) ) / dx(2) + &
+                 ((wmac(i,j,k+1)+w0(k+1)) * sedgez(i,j,k+1,n) &
+                 -(wmac(i,j,k  )+w0(k  )) * sedgez(i,j,k  ,n) ) / dx(3)
+
+          divbaseu = (umac(i+1,j,k) - umac(i,j,k) ) * base_old(k,n) / dx(1) &
+                    +(vmac(i,j+1,k) - vmac(i,j,k) ) * base_old(k,n) / dx(2) &
                     +(wmac(i,j,k+1) * base_edge(k+1) - wmac(i,j,k) * base_edge(k) ) / dx(3)
 
-          snew(i,j,k) = sold(i,j,k) + (base_new(k) - base_old(k)) - dt * (divsu + divbaseu) + dt * force(i,j,k)
+          snew(i,j,k,n) = sold(i,j,k,n) + (base_new(k,n) - base_old(k,n)) &
+                          - dt * (divsu + divbaseu) + dt * force(i,j,k,n)
   
-          if (n .gt. rhoh_comp) then
-            smax = max(smax,snew(i,j,k)/rhonew(i,j,k))
-            smin = min(smin,snew(i,j,k)/rhonew(i,j,k))
-          else
-            smax = max(smax,snew(i,j,k))
-            smin = min(smin,snew(i,j,k))
-          endif
-  
-      enddo
-      enddo
-      enddo
+        enddo
+        enddo
+        enddo
+
+      end do
+
+      if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
+        snew(:,:,:,rho_comp) = ZERO
+        do n = nstart, nstop
+        do k = lo(3), hi(3)
+        do j = lo(2), hi(2)
+        do i = lo(1), hi(1)
+           snew(i,j,k,rho_comp) = snew(i,j,k,rho_comp) + snew(i,j,k,n)
+        enddo
+        enddo
+        enddo
+        enddo
+      end if
 
       if (verbose .ge. 1) then
-        if (n.eq. rho_comp) write(6,1000) smin,smax
-        if (n.eq.rhoh_comp) write(6,1001) smin,smax
-        if (n.gt.rhoh_comp) write(6,1002) spec_names(n-rhoh_comp),smin,smax
-        if (n.eq.rhoh_comp) write(6,1003)
+        do n = nstart, nstop
+          do k = lo(3), hi(3)
+          do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+  
+            if (n .gt. rhoh_comp .and. n .lt. trac_comp) then
+              smax(n) = max(smax(n),snew(i,j,k,n)/snew(i,j,k,rho_comp))
+              smin(n) = min(smin(n),snew(i,j,k,n)/snew(i,j,k,rho_comp))
+            else
+              smax(n) = max(smax(n),snew(i,j,k,n))
+              smin(n) = min(smin(n),snew(i,j,k,n))
+            endif
+  
+          enddo
+          enddo
+          enddo
+
+          if (n.eq.rhoh_comp) write(6,1001) smin(n),smax(n)
+          if (n.gt.rhoh_comp .and. n.lt.trac_comp) write(6,1002) spec_names(n-rhoh_comp),smin(n),smax(n)
+          if (n.ge.trac_comp) write(6,1003) smin(n),smax(n)
+          if (n.eq.rhoh_comp) write(6,1004)
+        enddo
+
+        if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
+          n = rho_comp
+          smax_rho = -1.d20
+          smin_rho =  1.d20
+          do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+              smax_rho = max(smax_rho,snew(i,j,k,n))
+              smin_rho = min(smin_rho,snew(i,j,k,n))
+          end do
+          end do
+          write(6,1000) smin_rho,smax_rho
+        end if
+
       end if
 
 1000  format('NEW MIN/MAX : density           ',e15.10,2x,e15.10)
 1001  format('NEW MIN/MAX : rho * H           ',e15.10,2x,e15.10)
 1002  format('NEW MIN/MAX : ',a16,2x,e15.10,2x,e15.10)
-1003  format(' ')
+1003  format('NEW MIN/MAX :           tracer',2x,e15.10,2x,e15.10)
+1004  format(' ')
 
+      deallocate(smin,smax)
       deallocate(base_edge)
 
    end subroutine update_scal_3d

@@ -381,7 +381,9 @@ contains
             vadv(i,j) = sedgey(i,j,2)
           enddo
         endif
+
         endif
+
        enddo
 
       if (.not. is_vel .and. advect_in_pert_form) then
