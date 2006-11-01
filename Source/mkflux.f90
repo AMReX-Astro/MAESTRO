@@ -51,6 +51,7 @@ contains
       logical :: test
 
       real(kind=dp_t) :: abs_eps, eps, umax
+      real(kind=dp_t) :: vadv_max
 
       integer :: i,j,is,js,ie,je,g
 
@@ -147,6 +148,7 @@ contains
 !
 !     Loop for fluxes on x-edges.
 !
+      vadv_max = ZERO
 !     do n = 1,ncomp
 
        do j = js,je 
@@ -379,6 +381,7 @@ contains
         if (velpred .eq. 1) then
           do j = js, je+1 
             vadv(i,j) = sedgey(i,j,2)
+            vadv_max = max(vadv_max,abs(sedgey(i,j,2)))
           enddo
         endif
 

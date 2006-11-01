@@ -59,11 +59,11 @@ contains
 !                     + .01875_dp_t * exp(-((x-x1)**2 +(y-y1)**2)/0.25e14) &
 !                     + .01250_dp_t * exp(-((x-x2)**2 +(y-y2)**2)/0.25e14) ) * 1.d17
 
-!           H(i,j) = (  .00625_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r0))) &
-!                     + .01875_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r1))) &
-!                     + .01250_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r2))) ) * 1.d17
+            H(i,j) = (  .00625_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r0))) &
+                      + .01875_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r1))) &
+                      + .01250_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r2))) ) * 1.d17
 
-            H(i,j) = zero
+!           H(i,j) = ey * 1.d16
 
             Hmax = max(Hmax,H(i,j))
           end do

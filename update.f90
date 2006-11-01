@@ -130,8 +130,6 @@ module update_module
         i =  1
         j = 61
         n = rho_comp
-        print *,'RHO  NEW/OLD ',j,snew(i,j,n), sold(i,j,n)
-        print *,'BASE NEW/OLD ',j,base_new(j,n),base_old(j,n)
       end if
   
       if (verbose .ge. 1) then
@@ -175,10 +173,10 @@ module update_module
 
       end if
 
-2000  format('NEW MIN/MAX : density           ',e15.10,2x,e15.10)
-2001  format('NEW MIN/MAX : rho * H           ',e15.10,2x,e15.10)
-2002  format('NEW MIN/MAX : ',a16,2x,e15.10,2x,e15.10)
-2003  format('NEW MIN/MAX :           tracer',2x,e15.10,2x,e15.10)
+2000  format('... new min/max : density           ',e15.10,2x,e15.10)
+2001  format('... new min/max : rho * H           ',e15.10,2x,e15.10)
+2002  format('... new min/max : ',a16,2x,e15.10,2x,e15.10)
+2003  format('... new min/max :           tracer',2x,e15.10,2x,e15.10)
 2004  format(' ')
 
       deallocate(smin,smax)
@@ -217,6 +215,8 @@ module update_module
       real (kind = dp_t) :: divsu
       real (kind = dp_t) :: smin,smax,umin,umax,vmin,vmax
       real (kind = dp_t) :: fac
+
+      print *,'<<< updating velocity ',n,' >>> '
 
       if (do_mom) then
         do j = lo(2), hi(2)
@@ -284,8 +284,8 @@ module update_module
         write(6,1002)
       end if
 
-1000  format('NEW MIN/MAX : x-velocity       ',e17.10,2x,e17.10)
-1001  format('NEW MIN/MAX : y-velocity       ',e17.10,2x,e17.10)
+1000  format('... new min/max : x-velocity       ',e17.10,2x,e17.10)
+1001  format('... new min/max : y-velocity       ',e17.10,2x,e17.10)
 1002  format(' ')
 
    end subroutine update_velocity_2d
@@ -324,8 +324,6 @@ module update_module
       smin(:) =  1.d20
 
       do n = nstart, nstop
-
-        print *,'<<< updating quantity ',n,' >>> '
 
         base_edge(lo(3)  ) = base_old(lo(3),n)
         base_edge(hi(3)+1) = base_old(hi(3),n)
@@ -414,10 +412,10 @@ module update_module
 
       end if
 
-1000  format('NEW MIN/MAX : density           ',e15.10,2x,e15.10)
-1001  format('NEW MIN/MAX : rho * H           ',e15.10,2x,e15.10)
-1002  format('NEW MIN/MAX : ',a16,2x,e15.10,2x,e15.10)
-1003  format('NEW MIN/MAX :           tracer',2x,e15.10,2x,e15.10)
+1000  format('... new min/max : density           ',e15.10,2x,e15.10)
+1001  format('... new min/max : rho * H           ',e15.10,2x,e15.10)
+1002  format('... new min/max : ',a16,2x,e15.10,2x,e15.10)
+1003  format('... new min/max :           tracer',2x,e15.10,2x,e15.10)
 1004  format(' ')
 
       deallocate(smin,smax)
@@ -536,9 +534,9 @@ module update_module
         write(6,1003)
       end if
 
-1000  format('NEW MIN/MAX : x-velocity       ',e17.10,2x,e17.10)
-1001  format('NEW MIN/MAX : y-velocity       ',e17.10,2x,e17.10)
-1002  format('NEW MIN/MAX : z-velocity       ',e17.10,2x,e17.10)
+1000  format('... new min/max : x-velocity       ',e17.10,2x,e17.10)
+1001  format('... new min/max : y-velocity       ',e17.10,2x,e17.10)
+1002  format('... new min/max : z-velocity       ',e17.10,2x,e17.10)
 1003  format(' ')
 
    end subroutine update_velocity_3d
@@ -612,7 +610,7 @@ module update_module
         write(6,1000) smin,smax
       end if
 
-1000  format('NEW MIN/MAX : density           ',e15.10,2x,e15.10)
+1000  format('... new min/max : density           ',e15.10,2x,e15.10)
 
    end subroutine mk_density_fromrhoX_2d
 
@@ -647,7 +645,7 @@ module update_module
         write(6,1000) smin,smax
       end if
 
-1000  format('NEW MIN/MAX : density           ',e15.10,2x,e15.10)
+1000  format('... new min/max : density           ',e15.10,2x,e15.10)
 
    end subroutine mk_density_fromrhoX_3d
 

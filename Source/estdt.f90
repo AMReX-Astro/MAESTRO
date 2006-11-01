@@ -54,7 +54,8 @@ contains
 
       if (dtold .gt. 0.0D0 ) dt = min(dt,dtchange*dtold)
 
-      dt = 0.0001
+      if (istep.le.10)  dt = min(0.005_dp_t,dt)
+
       print *,'Computing dt at istep ',istep,' to be ',dt
 
    end subroutine estdt

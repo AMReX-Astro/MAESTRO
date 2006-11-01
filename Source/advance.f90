@@ -150,9 +150,6 @@ module advance_timestep_module
 
         do n = 1, nlevs
            call make_macrhs(macrhs(n),Source_nph(n),Sbar(:,1),div_coeff_old)
-           call setval(macrhs(n),ZERO,all=.true.)
-           call setval(umac(n,1),ZERO,all=.true.)
-           call setval(umac(n,2),ZERO,all=.true.)
         end do
 
         ! MAC projection !
@@ -167,7 +164,9 @@ module advance_timestep_module
 
         do n = 1,nlevs
           call react_state(sold(n),s1(n),temp0,rho_omegadot1(n),halfdt)
+          call multifab_fill_boundary(s1(n))
         end do
+
         call average(rho_omegadot1(1),rho_omegadotbar1)
         call react_base(p0_old,s0_old,temp0,rho_omegadotbar1,dx(1,dm),halfdt,p0_1,s0_1,gam1)
         call make_grav_edge(grav_edge,s0_1(:,rho_comp),dx(1,dm),spherical)
@@ -215,6 +214,7 @@ module advance_timestep_module
 
         do n = 1,nlevs
           call react_state(s2(n),snew(n),temp0,rho_omegadot2(n),halfdt)
+          call multifab_fill_boundary(s2(n))
         end do
         call average(rho_omegadot2(1),rho_omegadotbar2)
         call react_base(p0_2,s0_2,temp0,rho_omegadotbar2,dx(1,dm),halfdt,p0_new,s0_new,gam1)
@@ -306,6 +306,7 @@ module advance_timestep_module
 
         do n = 1,nlevs
           call react_state(s2(n),snew(n),temp0,rho_omegadot1(n),halfdt)
+          call multifab_fill_boundary(snew(n))
         end do
         call average(rho_omegadot2(1),rho_omegadotbar2)
         call react_base(p0_2,s0_2,temp0,rho_omegadotbar2,dx(1,dm),halfdt,p0_new,s0_new,gam1)
