@@ -43,8 +43,7 @@ module update_module
       allocate(smax(nstart:nstop))
       allocate(smin(nstart:nstop))
 
-
-      if (verbose .ge. 1) then
+      if (0.eq.1 .and. verbose .ge. 1) then
         smax(:) = -1.d20
         smin(:) =  1.d20
         do n = nstart, nstop
@@ -114,7 +113,6 @@ module update_module
 
           snew(i,j,n) = sold(i,j,n) + (base_new(j,n) - base_old(j,n)) &
                       - dt * (divsu + divbaseu) + dt * force(i,j,n)
-          if (i.eq.1.and.j.eq.1) print *,'NEW ',snew(i,j,n),divsu,divbaseu,force(i,j,n)
   
         enddo
         enddo
@@ -129,6 +127,11 @@ module update_module
         enddo
         enddo
         enddo
+        i =  1
+        j = 61
+        n = rho_comp
+        print *,'RHO  NEW/OLD ',j,snew(i,j,n), sold(i,j,n)
+        print *,'BASE NEW/OLD ',j,base_new(j,n),base_old(j,n)
       end if
   
       if (verbose .ge. 1) then

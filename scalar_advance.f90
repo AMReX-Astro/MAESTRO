@@ -18,7 +18,7 @@ contains
 
    subroutine scalar_advance (uold, sold, snew, &
                               umac, w0, sedge, utrans, ext_scal_force, &
-                              s0_old , s0_new , s0_nph, &
+                              s0_old , s0_new , &
                               p0_old, p0_new, &
                               dx,time, dt, the_bc_level, &
                               verbose)
@@ -40,7 +40,6 @@ contains
       type(multifab) :: force,scal_force
       real(kind=dp_t), intent(in   ) ::  s0_old(:,:)
       real(kind=dp_t), intent(in   ) ::  s0_new(:,:)
-      real(kind=dp_t), intent(in   ) ::  s0_nph(:,:)
       real(kind=dp_t), intent(in   ) ::    p0_old(:)
       real(kind=dp_t), intent(in   ) ::    p0_new(:)
 ! 
