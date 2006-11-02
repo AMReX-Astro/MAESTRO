@@ -50,7 +50,7 @@ module update_module
           do j = lo(2), hi(2)
           do i = lo(1), hi(1)
 
-            if (n .gt. rhoh_comp .and. n .lt. trac_comp) then
+            if (n .ge. spec_comp .and. n .le. spec_comp+nspec-1) then
               smax(n) = max(smax(n),sold(i,j,n)/sold(i,j,rho_comp))
               smin(n) = min(smin(n),sold(i,j,n)/sold(i,j,rho_comp))
             else
@@ -141,7 +141,7 @@ module update_module
           do j = lo(2), hi(2)
           do i = lo(1), hi(1)
   
-            if (n .gt. rhoh_comp .and. n .lt. trac_comp) then
+            if (n .ge. spec_comp .and. n .le. spec_comp+nspec-1) then
               smax(n) = max(smax(n),snew(i,j,n)/snew(i,j,rho_comp))
               smin(n) = min(smin(n),snew(i,j,n)/snew(i,j,rho_comp))
             else
@@ -379,7 +379,7 @@ module update_module
           do j = lo(2), hi(2)
           do i = lo(1), hi(1)
   
-            if (n .gt. rhoh_comp .and. n .lt. trac_comp) then
+            if (n .ge. spec_comp .and. n .le. spec_comp+nspec-1) then
               smax(n) = max(smax(n),snew(i,j,k,n)/snew(i,j,k,rho_comp))
               smin(n) = min(smin(n),snew(i,j,k,n)/snew(i,j,k,rho_comp))
             else
