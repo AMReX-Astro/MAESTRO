@@ -18,15 +18,10 @@
 
  bcx_lo = -1
  bcx_hi = -1
-
- bcx_lo = 14
- bcx_hi = 14
-
  bcy_lo = 14
  bcy_hi = 12
 
  pmask_x = T
- pmask_x = F
  pmask_y = F
  pmask_z = F
 
