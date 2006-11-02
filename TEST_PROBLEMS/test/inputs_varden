@@ -1,39 +1,40 @@
 &PROBIN
  test_set = "gr0_2d"
+ spherical = 0
 
  prob_hi_x = 2.5e8
  prob_hi_y = 3.5e8
 
- max_step  = 1000000
+ max_step  = 100000000
  init_iter = 1
 
  stop_time = 4.0
 
- plot_int  = 5
- chk_int   = 1000
+ plot_int  = 10
+ chk_int   = 100
 
  cflfac = 0.9
  init_shrink = 1.
 
- visc_coef = 0.0
- diff_coef = 0.0
-
  bcx_lo = -1
  bcx_hi = -1
+
+ bcx_lo = 14
+ bcx_hi = 14
+
  bcy_lo = 14
  bcy_hi = 12
 
  pmask_x = T
+ pmask_x = F
  pmask_y = F
  pmask_z = F
 
     verbose = 1
  mg_verbose = 0
-
- div_coef_type = 2
- div_coef_type = 3
+ cg_verbose = 0
 
  do_initial_projection = 0
 
-!restart = 220
+!restart = 50
 /
