@@ -156,7 +156,6 @@ module advance_timestep_module
 
         ! MAC projection !
         call put_beta_on_edges(div_coeff_old,div_coeff_edge)
-        div_coeff_edge(:) = ONE
         call macproject(mla,umac,sold,dx,the_bc_tower,verbose,mg_verbose,cg_verbose,press_comp,&
                         macrhs,div_coeff_old,div_coeff_edge)
 
