@@ -184,11 +184,6 @@ module update_module
    subroutine update_velocity_2d (uold,unew,umac,vmac,sedgex,sedgey,force,w0, &
                                   lo,hi,ng,dx,time,dt,verbose)
 
-
-     ! update the velocity in time (to get the provisional velocity that
-     ! does not yet satisfy the divergence constraint).  This is the first
-     ! part of step 5 in ABRZ2.
-
       implicit none
 
       integer, intent(in) :: lo(:), hi(:), ng, verbose
@@ -210,7 +205,7 @@ module update_module
       real (kind = dp_t) :: smin,smax,umin,umax,vmin,vmax
       real (kind = dp_t) :: fac
 
-      print *,'<<< updating velocity ',n,' >>> '
+      print *,'<<< updating velocity >>> '
 
       do j = lo(2), hi(2)
       do i = lo(1), hi(1)
