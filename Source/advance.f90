@@ -26,7 +26,7 @@ module advance_timestep_module
   use react_state_module
   use make_S_module
   use average_module
-  use rhohalf_module
+  use phihalf_module
   use variables
   use network
 
