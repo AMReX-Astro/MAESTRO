@@ -263,7 +263,7 @@ module advance_timestep_module
 
         ! Define base state at half time for use in velocity advance!
         do j = 1,size(s0_nph,dim=1)
-          s0_nph(j.:) = HALF * (s0_old(j,:) + s0_new(j,:))
+          s0_nph(j,:) = HALF * (s0_old(j,:) + s0_new(j,:))
         end do
 
         ! Define beta at half time !
