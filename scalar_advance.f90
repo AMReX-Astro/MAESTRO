@@ -311,9 +311,12 @@ contains
       end do
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!     1) Update (rho X)'_i with conservative differencing.
-!     2) Define density as the sum of the (rho X)_i
+!     1) Set force for (rho X)_i at time n+1/2 = 0.
+!     2) Update (rho X)'_i with conservative differencing.
+!     3) Define density as the sum of the (rho X)_i
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      call setval(scal_force,ZERO)
 
       do i = 1, sold%nboxes
          if ( multifab_remote(sold, i) ) cycle
