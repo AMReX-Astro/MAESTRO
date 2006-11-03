@@ -34,7 +34,7 @@ module advance_timestep_module
 
     subroutine advance_timestep(mla,uold,sold,s1,s2,unew,snew,umac,uedge,sedge,utrans,gp,p, &
                                 force,scal_force,&
-                                s0_old,s0_1,s0_2,s0_new,s0_nph,p0_old,p0_1,p0_2,p0_new,temp0,gam1,w0, &
+                                s0_old,s0_1,s0_2,s0_new,p0_old,p0_1,p0_2,p0_new,temp0,gam1,w0, &
                                 rho_omegadot1, rho_omegadot2, &
                                 div_coeff_old,div_coeff_new,&
                                 dx,time,dt,the_bc_tower, &
@@ -65,7 +65,6 @@ module advance_timestep_module
     real(dp_t)    , intent(inout) :: s0_1(:,:)
     real(dp_t)    , intent(inout) :: s0_2(:,:)
     real(dp_t)    , intent(inout) :: s0_new(:,:)
-    real(dp_t)    , intent(inout) :: s0_nph(:,:)
     real(dp_t)    , intent(inout) :: p0_old(:)
     real(dp_t)    , intent(inout) :: p0_1(:)
     real(dp_t)    , intent(inout) :: p0_2(:)
@@ -85,7 +84,9 @@ module advance_timestep_module
     type(multifab), allocatable :: macrhs(:)
     type(multifab), allocatable ::  hgrhs(:)
     type(multifab), allocatable :: Source_nph(:)
-    real(dp_t)    , allocatable :: Sbar(:,:)
+
+    real(dp_t)    , allocatable ::        s0_nph(:,:)
+    real(dp_t)    , allocatable ::          Sbar(:,:)
     real(dp_t)    , allocatable :: div_coeff_nph(:)
     real(dp_t)    , allocatable :: div_coeff_edge(:)
     real(dp_t)    , allocatable ::      grav_edge(:)
@@ -110,6 +111,7 @@ module advance_timestep_module
     allocate(macrhs(nlevs))
     allocate( hgrhs(nlevs))
 
+    allocate(          s0_nph(extent(mla%mba%pd(1),dm),nscal))
     allocate(            Sbar(extent(mla%mba%pd(1),dm),1))
     allocate(   div_coeff_nph(extent(mla%mba%pd(1),dm)))
     allocate(  div_coeff_edge(extent(mla%mba%pd(1),dm)+1))
@@ -225,7 +227,7 @@ module advance_timestep_module
         call make_grav_edge(grav_edge,s0_new(:,rho_comp),dx(1,dm),spherical)
         call make_div_coeff(div_coeff_new,s0_new(:,rho_comp),p0_new, &
                             gam1,grav_edge,dx(1,dm),anelastic_cutoff)
-        call put_beta_on_edges(div_coeff_old,div_coeff_edge)
+        call put_beta_on_edges(div_coeff_new,div_coeff_edge)
 
 !       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !! STEP 6 !!
@@ -331,7 +333,7 @@ module advance_timestep_module
 
         print *,'<<< STEP 10 >>>'
         do n = 1,nlevs
-           call velocity_advance(uold(n),unew(n),sold(n),snew(n),rhohalf(n),&
+           call velocity_advance(uold(n),unew(n),sold(n),rhohalf(n),&
                                  umac(n,:),uedge(n,:), &
                                  utrans(n,:),gp(n),p(n), &
                                  force(n), w0, s0_old, s0_nph, &

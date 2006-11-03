@@ -9,16 +9,15 @@ module mkflux_module
 
 contains
 
-      subroutine mkflux_2d(s,u,rho,sedgex,sedgey,uadv,vadv,utrans,vtrans,&
+      subroutine mkflux_2d(s,u,sedgex,sedgey,uadv,vadv,utrans,vtrans,&
                            force,lo,dx,dt,is_vel,is_cons,&
                            phys_bc,adv_bc,velpred,ng,base, &
-                           advect_in_pert_form,do_mom,n)
+                           advect_in_pert_form,n)
 
       integer, intent(in) :: lo(:),ng,n
 
       real(kind=dp_t), intent(inout) ::      s(lo(1)-ng:,lo(2)-ng:,:)
       real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng:,lo(2)-ng:,:)
-      real(kind=dp_t), intent(in   ) ::    rho(lo(1)-ng:,lo(2)-ng:  )
       real(kind=dp_t), intent(inout) :: sedgex(lo(1)   :,lo(2)   :,:)
       real(kind=dp_t), intent(inout) :: sedgey(lo(1)   :,lo(2)   :,:)
       real(kind=dp_t), intent(inout) ::   uadv(lo(1)- 1:,lo(2)- 1:)
@@ -34,7 +33,6 @@ contains
       logical        ,intent(in) :: is_vel
       logical        ,intent(in) :: is_cons(:)
       logical        ,intent(in) :: advect_in_pert_form
-      logical        ,intent(in) :: do_mom
 
       real(kind=dp_t), allocatable::  slopex(:,:,:),slopey(:,:,:)
       real(kind=dp_t), allocatable::  s_l(:),s_r(:),s_b(:),s_t(:)
@@ -82,25 +80,6 @@ contains
              s(i,je+g,n) = s(i,je,n)
            end do
           end do
-         end do
-      end if
-
-      if (is_vel .and. do_mom) then
-         do j = js,je
-           do i = is-ng,ie+ng
-             s(i,j,n) = s(i,j,n) * rho(i,j)
-           end do
-           do g = 1,ng
-           do i = is-ng,ie+ng
-             if (n.eq.1) then
-               s(i,js-g,n) = s(i,js,1)
-               s(i,je+g,n) = s(i,je,1)
-             else if (n.eq.2) then
-               s(i,js-g,n) = ZERO
-               s(i,je+g,n) = ZERO
-             end if
-           end do
-           end do
          end do
       end if
 
@@ -417,25 +396,6 @@ contains
 
       end if
 
-      if (is_vel .and. do_mom) then
-         do j = js,je
-           do i = is-ng,ie+ng
-             s(i,j,n) = s(i,j,n) / rho(i,j)
-           end do
-           do g = 1,ng
-           do i = is-ng,ie+ng
-             if (n.eq.1) then
-               s(i,js-g,n) = s(i,js,n)
-               s(i,je+g,n) = s(i,je,n)
-             else if (n.eq.2) then
-               s(i,js-g,n) = ZERO
-               s(i,je+g,n) = ZERO
-             end if
-           end do
-           end do
-         end do
-      end if
-
       deallocate(s_l)
       deallocate(s_r)
       deallocate(s_b)
@@ -447,16 +407,15 @@ contains
       end subroutine mkflux_2d
 
 
-      subroutine mkflux_3d(s,u,rho,sedgex,sedgey,sedgez,uadv,vadv,wadv,utrans,vtrans,wtrans,&
+      subroutine mkflux_3d(s,u,sedgex,sedgey,sedgez,uadv,vadv,wadv,utrans,vtrans,wtrans,&
                            force,lo,dx,dt,is_vel,is_cons,&
                            phys_bc,adv_bc,velpred,ng,base, &
-                           advect_in_pert_form,do_mom,n)
+                           advect_in_pert_form,n)
 
       integer, intent(in) :: lo(:),ng,n
 
       real(kind=dp_t), intent(inout) ::      s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
       real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-      real(kind=dp_t), intent(in   ) ::    rho(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
       real(kind=dp_t), intent(inout) :: sedgex(lo(1)   :,lo(2)   :,lo(3)   :,:)
       real(kind=dp_t), intent(inout) :: sedgey(lo(1)   :,lo(2)   :,lo(3)   :,:)
       real(kind=dp_t), intent(inout) :: sedgez(lo(1)   :,lo(2)   :,lo(3)   :,:)
@@ -475,7 +434,6 @@ contains
       logical        ,intent(in) :: is_vel
       logical        ,intent(in) :: is_cons(:)
       logical        ,intent(in) :: advect_in_pert_form
-      logical        ,intent(in) :: do_mom
 
       real(kind=dp_t), allocatable::  slopex(:,:,:,:),slopey(:,:,:,:),slopez(:,:,:,:)
       real(kind=dp_t), allocatable::  s_l(:),s_r(:),s_b(:),s_t(:),s_u(:),s_d(:)
@@ -532,29 +490,6 @@ contains
            end do
            end do
           end do
-         end do
-      end if
-
-      if (is_vel .and. do_mom) then
-         do k = ks,ke
-           do j = js-ng,je+ng
-           do i = is-ng,ie+ng
-             s(i,j,k,n) = s(i,j,k,n) * rho(i,j,k)
-           end do
-           end do
-           do g = 1,ng
-           do j = js-ng,je+ng
-           do i = is-ng,ie+ng
-             if (n.eq.1 .or. n.eq.2) then
-               s(i,j,ks-g,n) = s(i,j,ks,1)
-               s(i,j,ke+g,n) = s(i,j,ke,1)
-             else if (n.eq.3) then
-               s(i,j,ks-g,n) = ZERO
-               s(i,j,ke+g,n) = ZERO
-             end if
-           end do
-           end do
-           end do
          end do
       end if
 
@@ -1156,29 +1091,6 @@ contains
              s(i,j,ks-g,n) = s(i,j,ks,n)
             end do
             end do
-           end do
-         end do
-      end if
-
-      if (is_vel .and. do_mom) then
-         do k = ks,ke
-           do j = js-ng,je+ng
-           do i = is-ng,ie+ng
-             s(i,j,k,n) = s(i,j,k,n) / rho(i,j,k)
-           end do
-           end do
-           do g = 1,ng
-           do j = js-ng,je+ng
-           do i = is-ng,ie+ng
-             if (n.eq.1 .or. n.eq.2) then
-               s(i,j,ks-g,n) = s(i,j,ks,n)
-               s(i,j,ke+g,n) = s(i,j,ke,n)
-             else if (n.eq.3) then
-               s(i,j,ks-g,n) = ZERO
-               s(i,j,ke+g,n) = ZERO
-             end if
-           end do
-           end do
            end do
          end do
       end if

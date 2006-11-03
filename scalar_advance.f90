@@ -67,15 +67,12 @@ contains
       integer :: lo(uold%dim),hi(uold%dim)
       integer :: i,n,bc_comp,dm,ng_cell
       logical :: is_vel, make_divu, advect_in_pert_form
-      logical :: do_mom
       logical, allocatable :: is_conservative(:)
       real(kind=dp_t) :: half_time
 
       print *,'<<< advect state >>> '
 
       velpred = 0
-
-      do_mom = .false.
 
       ng_cell = sold%ng
       dm      = sold%dim
@@ -186,7 +183,7 @@ contains
             case (2)
               n = rhoh_comp
                 bc_comp = dm+n
-                call mkflux_2d(sop(:,:,1,:), uop(:,:,1,:), sop(:,:,1,1), &
+                call mkflux_2d(sop(:,:,1,:), uop(:,:,1,:), &
                                sepx(:,:,1,:), sepy(:,:,1,:), &
                                ump(:,:,1,1), vmp(:,:,1,1), &
                                utp(:,:,1,1), vtp(:,:,1,1), fp(:,:,1,:), &
@@ -194,11 +191,11 @@ contains
                                the_bc_level%phys_bc_level_array(i,:,:), &
                                the_bc_level%adv_bc_level_array(i,:,:,bc_comp:), &
                                velpred, ng_cell, s0_old(:,n), &
-                               advect_in_pert_form, do_mom, n)
+                               advect_in_pert_form, n)
 
               do n = spec_comp,spec_comp+nspec-1
                 bc_comp = dm+n
-                call mkflux_2d(sop(:,:,1,:), uop(:,:,1,:), sop(:,:,1,1), &
+                call mkflux_2d(sop(:,:,1,:), uop(:,:,1,:), &
                                sepx(:,:,1,:), sepy(:,:,1,:), &
                                ump(:,:,1,1), vmp(:,:,1,1), &
                                utp(:,:,1,1), vtp(:,:,1,1), fp(:,:,1,:), &
@@ -206,7 +203,7 @@ contains
                                the_bc_level%phys_bc_level_array(i,:,:), &
                                the_bc_level%adv_bc_level_array(i,:,:,bc_comp:), &
                                velpred, ng_cell, s0_old(:,n), &
-                               advect_in_pert_form, do_mom, n)
+                               advect_in_pert_form, n)
               end do
             case (3)
               wmp  => dataptr(  umac(3), i)
@@ -214,7 +211,7 @@ contains
               sepz => dataptr( sedge(3), i)
               n = rhoh_comp
                 bc_comp = dm+n
-                call mkflux_3d(sop(:,:,:,:), uop(:,:,:,:), sop(:,:,:,1), &
+                call mkflux_3d(sop(:,:,:,:), uop(:,:,:,:), &
                                sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
                                ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
                                utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), fp(:,:,:,:), &
@@ -222,11 +219,11 @@ contains
                                the_bc_level%phys_bc_level_array(i,:,:), &
                                the_bc_level%adv_bc_level_array(i,:,:,bc_comp:), &
                                velpred, ng_cell, s0_old(:,n), &
-                                advect_in_pert_form, do_mom, n)
+                                advect_in_pert_form, n)
 
               do n = spec_comp,spec_comp+nspec-1
                 bc_comp = dm+n
-                call mkflux_3d(sop(:,:,:,:), uop(:,:,:,:), sop(:,:,:,1), &
+                call mkflux_3d(sop(:,:,:,:), uop(:,:,:,:), &
                                sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
                                ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
                                utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), fp(:,:,:,:), &
@@ -234,7 +231,7 @@ contains
                                the_bc_level%phys_bc_level_array(i,:,:), &
                                the_bc_level%adv_bc_level_array(i,:,:,bc_comp:), &
                                velpred, ng_cell, s0_old(:,n), &
-                               advect_in_pert_form, do_mom, n)
+                               advect_in_pert_form, n)
               end do
          end select
       end do
@@ -262,7 +259,7 @@ contains
             case (2)
               do n = trac_comp,trac_comp+ntrac-1
                 bc_comp = dm+n
-                call mkflux_2d(sop(:,:,1,:), uop(:,:,1,:), sop(:,:,1,1), &
+                call mkflux_2d(sop(:,:,1,:), uop(:,:,1,:), &
                                sepx(:,:,1,:), sepy(:,:,1,:), &
                                ump(:,:,1,1), vmp(:,:,1,1), &
                                utp(:,:,1,1), vtp(:,:,1,1), fp(:,:,1,:), &
@@ -270,7 +267,7 @@ contains
                                the_bc_level%phys_bc_level_array(i,:,:), &
                                the_bc_level%adv_bc_level_array(i,:,:,bc_comp:), &
                                velpred, ng_cell, s0_old(:,n), &
-                               advect_in_pert_form, do_mom, n)
+                               advect_in_pert_form, n)
               end do
             case (3)
               wmp  => dataptr(  umac(3), i)
@@ -278,7 +275,7 @@ contains
               sepz => dataptr( sedge(3), i)
               do n = trac_comp,trac_comp+ntrac-1
                 bc_comp = dm+n
-                call mkflux_3d(sop(:,:,:,:), uop(:,:,:,:), sop(:,:,:,1), &
+                call mkflux_3d(sop(:,:,:,:), uop(:,:,:,:), &
                                sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
                                ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
                                utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), fp(:,:,:,:), &
@@ -286,7 +283,7 @@ contains
                                the_bc_level%phys_bc_level_array(i,:,:), &
                                the_bc_level%adv_bc_level_array(i,:,:,bc_comp:), &
                                velpred, ng_cell, s0_old(:,n), &
-                               advect_in_pert_form, do_mom, n)
+                               advect_in_pert_form, n)
               end do
          end select
       end do
