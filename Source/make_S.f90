@@ -103,7 +103,7 @@ contains
         enddo
       enddo
 
-      print *,'NEW S: AT TIME ',time, Smax
+      print *,'new S at time ',time, Smax
 
       deallocate(H)
  
@@ -164,11 +164,11 @@ contains
               Smax = max(Smax, abs(Source(i,j,k)))
            enddo
         enddo
-     enddo
+      enddo
 
-     print *,'NEW S: AT TIME ',time, Smax
+      print *,'new S at time ',time, Smax
 
-     deallocate(H)
+      deallocate(H)
  
    end subroutine make_S_3d
 
