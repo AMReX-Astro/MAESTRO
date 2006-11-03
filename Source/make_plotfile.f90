@@ -11,15 +11,7 @@ module make_plotfile_module
   use multifab_module
   use parallel
   use vort_module
-  use rhopert_module
-  use tfromrho_module
-  use tfromh_module
-  use tpert_module
-  use enthalpy_module
-  use machno_module
-  use deltap_module
-  use deltagamma_module
-  use XfromrhoX_module
+  use plot_variables_module
 
   use variables
 
