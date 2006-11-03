@@ -127,9 +127,6 @@ module update_module
         enddo
         enddo
         enddo
-        i =  1
-        j = 61
-        n = rho_comp
       end if
   
       if (verbose .ge. 1) then
