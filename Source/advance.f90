@@ -261,6 +261,11 @@ module advance_timestep_module
           call multifab_fill_boundary(rhohalf(n))
         end do
 
+        ! Define base state at half time for use in velocity advance!
+        do j = 1,size(s0_nph,dim=1)
+          s0_nph(j.:) = HALF * (s0_old(j,:) + s0_new(j,:))
+        end do
+
         ! Define beta at half time !
         do j = 1,size(div_coeff_old,dim=1)
           div_coeff_nph(j) = HALF * (div_coeff_old(j) + div_coeff_new(j))
@@ -384,6 +389,7 @@ module advance_timestep_module
         deallocate(rhohalf)
 
         deallocate(  Sbar)
+        deallocate(s0_nph)
         deallocate(div_coeff_nph)
         deallocate(div_coeff_edge)
         deallocate(grav_edge)
