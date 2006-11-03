@@ -253,10 +253,6 @@ module advance_timestep_module
                                verbose)
         end do
 
-        do n = 1, nlevs
-           call make_macrhs(macrhs(n),Source_nph(n),Sbar(:,1),div_coeff_old)
-        end do
-
         ! Define rho at half time !
         do n = 1,nlevs
           call make_rhohalf(rhohalf(n),sold(n),snew(n))
@@ -268,6 +264,10 @@ module advance_timestep_module
           div_coeff_nph(j) = HALF * (div_coeff_old(j) + div_coeff_new(j))
         end do
         call put_beta_on_edges(div_coeff_nph,div_coeff_edge)
+
+        do n = 1, nlevs
+           call make_macrhs(macrhs(n),Source_nph(n),Sbar(:,1),div_coeff_nph)
+        end do
 
         ! MAC projection !
         call macproject(mla,umac,rhohalf,dx,the_bc_tower,verbose,mg_verbose,cg_verbose,&
