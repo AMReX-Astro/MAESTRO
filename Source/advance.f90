@@ -41,6 +41,7 @@ module advance_timestep_module
                                 anelastic_cutoff,verbose,mg_verbose,cg_verbose,&
                                 Source_old,Source_new,spherical)
 
+    implicit none
 
     type(ml_layout),intent(inout) :: mla
     type(multifab), intent(inout) :: uold(:)
@@ -95,11 +96,14 @@ module advance_timestep_module
     type(bc_level) ::  bc
     type(box)      ::  fine_domain
     real(dp_t)     :: halfdt, half_time, new_time
-    integer :: n,dm,nlevs,comp,bc_comp
+    integer :: j,n,dm,nscal,nlevs,comp,bc_comp
+    integer :: ng_cell
     logical :: nodal(mla%dim)
 
     nlevs = size(uold)
     dm    = mla%dim
+
+    ng_cell = uold(1)%ng
 
     halfdt = half * dt
     half_time = dt + halfdt
@@ -110,6 +114,8 @@ module advance_timestep_module
     allocate(rhohalf(nlevs))
     allocate(macrhs(nlevs))
     allocate( hgrhs(nlevs))
+
+    nscal = multifab_ncomp(sold(1))
 
     allocate(          s0_nph(extent(mla%mba%pd(1),dm),nscal))
     allocate(            Sbar(extent(mla%mba%pd(1),dm),1))
@@ -262,6 +268,7 @@ module advance_timestep_module
         end do
 
         ! Define base state at half time for use in velocity advance!
+   
         do j = 1,size(s0_nph,dim=1)
           s0_nph(j,:) = HALF * (s0_old(j,:) + s0_new(j,:))
         end do

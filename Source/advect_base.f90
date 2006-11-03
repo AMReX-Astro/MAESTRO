@@ -50,7 +50,6 @@ contains
    subroutine advect_base_state_planar (vel,p0_old,p0_new,s0_old,s0_new,temp0, &
                                         gam1,dr,dt,anelastic_cutoff)
 
-      implicit none
       real(kind=dp_t), intent(in   ) :: vel(:)
       real(kind=dp_t), intent(in   ) :: p0_old(:), s0_old(:,:)
       real(kind=dp_t), intent(  out) :: p0_new(:), s0_new(:,:)
@@ -144,7 +143,6 @@ contains
                                            gam1,div_coeff_edge,& 
                                            dr,dt,anelastic_cutoff)
 
-      implicit none
       real(kind=dp_t), intent(in   ) :: vel(:),Sbar_in(:)
       real(kind=dp_t), intent(in   ) :: p0_old(:), s0_old(:,:)
       real(kind=dp_t), intent(  out) :: p0_new(:), s0_new(:,:)

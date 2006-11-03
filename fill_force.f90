@@ -48,7 +48,6 @@ contains
 
   subroutine fill_force_2d(force,grav,lo,hi,ng)
 
-    implicit none
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(  out) :: force(lo(1)-ng:,lo(2)-ng:)
     real (kind = dp_t), intent(in   ) ::  grav(lo(2):)
@@ -66,7 +65,6 @@ contains
 
   subroutine fill_force_3d(force,grav,lo,hi,ng)
 
-    implicit none
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(  out) :: force(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
     real (kind = dp_t), intent(in   ) ::  grav(lo(3):)

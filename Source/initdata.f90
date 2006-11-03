@@ -73,8 +73,6 @@ contains
 
   subroutine initdata_2d (u,s,lo,hi,ng,dx,prob_lo,prob_hi,s0,p0,temp0,ntrac)
 
-    implicit none
-
     integer, intent(in) :: lo(:), hi(:), ng, ntrac
     real (kind = dp_t), intent(out) :: u(lo(1)-ng:,lo(2)-ng:,:)  
     real (kind = dp_t), intent(out) :: s(lo(1)-ng:,lo(2)-ng:,:)  

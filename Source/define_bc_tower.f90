@@ -28,13 +28,15 @@ module define_bc_module
 
   subroutine bc_tower_build(bct,mla,domain_bc,domain_box,nscal,nspec,ntrac)
 
+    implicit none
+
     type(bc_tower ), intent(  out) :: bct
     type(ml_layout), intent(in   ) :: mla
     integer        , intent(in   ) :: domain_bc(:,:)
     type(box)      , intent(in   ) :: domain_box(:)
     integer        , intent(in   ) :: nscal,nspec,ntrac
 
-    integer :: ngrids
+    integer :: i,ngrids
     integer :: default_value
 
     bct%nlevels = mla%nlevel
@@ -67,6 +69,8 @@ module define_bc_module
 
   subroutine bc_tower_destroy(bct)
 
+    implicit none
+
     type(bc_tower), intent(inout) :: bct
 
     integer :: i
@@ -81,6 +85,8 @@ module define_bc_module
   end subroutine bc_tower_destroy
 
   subroutine phys_bc_level_build(phys_bc_level,la_level,domain_bc,default_value)
+
+    implicit none
 
     integer     , intent(inout) :: phys_bc_level(0:,:,:)
     integer     , intent(in   ) :: domain_bc(:,:)
@@ -110,6 +116,8 @@ module define_bc_module
   end subroutine phys_bc_level_build
 
   subroutine adv_bc_level_build(adv_bc_level,phys_bc_level,default_value,nspec,ntrac)
+
+    implicit none
 
     integer  , intent(inout) ::  adv_bc_level(0:,:,:,:)
     integer  , intent(in   ) :: phys_bc_level(0:,:,:)
@@ -188,6 +196,8 @@ module define_bc_module
   end subroutine adv_bc_level_build
 
   subroutine ell_bc_level_build(ell_bc_level,phys_bc_level,default_value,nspec,ntrac)
+
+    implicit none
 
     integer  , intent(inout) ::  ell_bc_level(0:,:,:,:)
     integer  , intent(in   ) :: phys_bc_level(0:,:,:)
