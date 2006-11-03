@@ -34,4 +34,4 @@ f90sources += make_S.f90
 f90sources += make_grav.f90
 f90sources += fill_force.f90
 f90sources += average.f90
-f90sources += make_rhohalf.f90
+f90sources += make_at_halftime.f90
