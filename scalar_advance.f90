@@ -148,18 +148,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       mult = ONE
-      do i = 1, umac(dm)%nboxes
-         if ( multifab_remote(umac(dm), i) ) cycle
-         wmp  => dataptr(umac(dm), i)
-         lo =  lwb(get_box(uold, i))
-         hi =  upb(get_box(uold, i))
-         select case(dm)
-         case(2)
-           call addw0_2d(wmp(:,:,1,1),w0,lo,hi,mult)
-         case(3)
-           call addw0_3d(wmp(:,:,:,1),w0,lo,hi,mult)
-         end select
-      end do
+      call addw0(umac,w0,mult)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     Create the edge states of (rho h)' and (rho X)_i using the MAC velocity 
@@ -294,18 +283,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       mult = -ONE
-      do i = 1, umac(dm)%nboxes
-         if ( multifab_remote(umac(dm), i) ) cycle
-         wmp  => dataptr(umac(dm), i)
-         lo =  lwb(get_box(uold, i))
-         hi =  upb(get_box(uold, i))
-         select case(dm)
-         case(2)
-           call addw0_2d(wmp(:,:,1,1),w0,lo,hi,mult)
-         case(3)
-           call addw0_3d(wmp(:,:,:,1),w0,lo,hi,mult)
-         end select
-      end do
+      call addw0(umac,w0,mult)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     1) Set force for (rho X)_i at time n+1/2 = 0.
