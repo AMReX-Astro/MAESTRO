@@ -87,14 +87,21 @@ contains
       pforcey = 0.0D0 
 
       do j = lo(2), hi(2)
+        spdy = max(spdy ,abs(w0(j)))
+      enddo
+
+      do j = lo(2), hi(2)
         do i = lo(1), hi(1)
-          spdx    = max(spdx ,abs(u(i,j,1))/dx(1))
-          spdy    = max(spdy ,abs(u(i,j,2)+w0(j))/dx(2))
+          spdx    = max(spdx ,abs(u(i,j,1)))
+          spdy    = max(spdy ,abs(u(i,j,2)))
           pforcex = max(pforcex,abs(gp(i,j,1)/s(i,j)-force(i,j,1)))
           vert_force = (s(i,j)-rho0(j))/s(i,j) * force(i,j,2)
           pforcey = max(pforcey,abs(gp(i,j,2)/s(i,j)-vert_force))
         enddo
       enddo
+
+      spdx = spdx / dx(1)
+      spdy = spdy / dx(2)
 
       if (spdx < eps .and. spdy < eps) then
 
@@ -145,11 +152,15 @@ contains
       pforcez = 0.0D0 
 
       do k = lo(3), hi(3)
+        spdz = max(spdz ,abs(w0(k)))
+      enddo
+
+      do k = lo(3), hi(3)
       do j = lo(2), hi(2)
         do i = lo(1), hi(1)
-          spdx    = max(spdx ,abs(u(i,j,k,1))/dx(1))
-          spdy    = max(spdy ,abs(u(i,j,k,2))/dx(2))
-          spdz    = max(spdz ,abs(u(i,j,k,3)+w0(k))/dx(3))
+          spdx    = max(spdx ,abs(u(i,j,k,1)))
+          spdy    = max(spdy ,abs(u(i,j,k,2)))
+          spdz    = max(spdz ,abs(u(i,j,k,3)))
           pforcex = max(pforcex,abs(gp(i,j,k,1)/s(i,j,k)-force(i,j,k,1)))
           pforcey = max(pforcey,abs(gp(i,j,k,2)/s(i,j,k)-force(i,j,k,2)))
           vert_force = (s(i,j,k)-rho0(k))/s(i,j,k) * force(i,j,k,3)
@@ -157,6 +168,10 @@ contains
         enddo
       enddo
       enddo
+
+      spdx = spdx / dx(1)
+      spdy = spdy / dx(2)
+      spdz = spdz / dx(3)
 
       if (spdx < eps .and. spdy < eps .and. spdz < eps) then
 
