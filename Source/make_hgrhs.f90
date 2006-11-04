@@ -63,13 +63,14 @@ contains
       end do
       end do
 
-!     HACK : THIS ASSUMES EXTRAP AT SIDES AND NO HEATING NEAR TOP OR BOTTOM!!!
+!     HACK : THIS ASSUMES PERIODIC AT SIDES AND NO HEATING NEAR TOP OR BOTTOM!!!
       rhs(:,lo(2)  ) = ZERO
       rhs(:,hi(2)  ) = ZERO
       rhs(:,hi(2)+1) = ZERO
       do j = lo(2)+1, hi(2)-1
-        rhs(lo(1)  ,j) = HALF * ( rhs_cc(lo(1),j) + rhs_cc(lo(1),j-1) )
-        rhs(hi(1)+1,j) = HALF * ( rhs_cc(hi(1),j) + rhs_cc(hi(1),j-1) )
+        rhs(lo(1)  ,j) = FOURTH * ( rhs_cc(lo(1),j) + rhs_cc(lo(1),j-1) + &
+                                    rhs_cc(hi(1),j) + rhs_cc(hi(1),j-1) )
+        rhs(hi(1)+1,j) = rhs(lo(1),j)
         do i = lo(1)+1, hi(1)
           rhs(i,j) = FOURTH * ( rhs_cc(i,j  ) + rhs_cc(i-1,j  ) &
                                +rhs_cc(i,j-1) + rhs_cc(i-1,j-1) )
@@ -104,27 +105,34 @@ contains
       end do
       end do
 
-!     HACK : THIS ASSUMES EXTRAP AT SIDES AND NO HEATING NEAR TOP OR BOTTOM!!!
+!     HACK : THIS ASSUMES PERIODIC AT SIDES AND NO HEATING NEAR TOP OR BOTTOM!!!
       rhs(:,:,lo(3)  ) = ZERO
       rhs(:,:,hi(3)  ) = ZERO
       rhs(:,:,hi(3)+1) = ZERO
       do k = lo(3)+1, hi(3)-1
         do j = lo(2)+1, hi(2)
-          rhs(lo(1)  ,j,k) = FOURTH * ( rhs_cc(lo(1),j,k-1) + rhs_cc(lo(1),j-1,k-1) &
-                                       +rhs_cc(lo(1),j,k  ) + rhs_cc(lo(1),j-1,k  ) )
-          rhs(hi(1)+1,j,k) = FOURTH * ( rhs_cc(hi(1),j,k-1) + rhs_cc(hi(1),j-1,k-1) &
+          rhs(lo(1)  ,j,k) = EIGHTH * ( rhs_cc(lo(1),j,k-1) + rhs_cc(lo(1),j-1,k-1) &
+                                       +rhs_cc(lo(1),j,k  ) + rhs_cc(lo(1),j-1,k  ) &
+                                       +rhs_cc(hi(1),j,k-1) + rhs_cc(hi(1),j-1,k-1) &
                                        +rhs_cc(hi(1),j,k  ) + rhs_cc(hi(1),j-1,k  ) )
+          rhs(hi(1)+1,j,k) = rhs(lo(1),j,k)
+                            
         enddo
         do i = lo(1)+1, hi(1)
-          rhs(i,lo(2)  ,k) = FOURTH * ( rhs_cc(i,lo(2),k-1) + rhs_cc(i-1,lo(2),k-1) &
-                                       +rhs_cc(i,lo(2),k  ) + rhs_cc(i-1,lo(2),k  ) )
-          rhs(i,hi(2)+1,k) = FOURTH * ( rhs_cc(i,hi(2),k-1) + rhs_cc(i-1,hi(2),k-1) &
+          rhs(i,lo(2)  ,k) = EIGHTH * ( rhs_cc(i,lo(2),k-1) + rhs_cc(i-1,lo(2),k-1) &
+                                       +rhs_cc(i,lo(2),k  ) + rhs_cc(i-1,lo(2),k  ) &
+                                       +rhs_cc(i,hi(2),k-1) + rhs_cc(i-1,hi(2),k-1) &
                                        +rhs_cc(i,hi(2),k  ) + rhs_cc(i-1,hi(2),k  ) )
+          rhs(i,hi(2)+1,k) =  rhs(i,lo(2),k)
+                            
         enddo
-        rhs(lo(1)  ,lo(2)  ,k) = HALF * (rhs_cc(lo(1),lo(2),k-1) + rhs_cc(lo(1),lo(2),k) )
-        rhs(hi(1)+1,lo(2)  ,k) = HALF * (rhs_cc(hi(1),lo(2),k-1) + rhs_cc(hi(1),lo(2),k) )
-        rhs(lo(1)  ,hi(2)+1,k) = HALF * (rhs_cc(lo(1),hi(2),k-1) + rhs_cc(lo(1),hi(2),k) )
-        rhs(hi(1)+1,hi(2)+1,k) = HALF * (rhs_cc(hi(1),hi(2),k-1) + rhs_cc(hi(1),hi(2),k) )
+        rhs(lo(1)  ,lo(2)  ,k) = EIGHTH * ( rhs_cc(lo(1),lo(2),k-1) + rhs_cc(lo(1),lo(2),k) &
+                                           +rhs_cc(hi(1),lo(2),k-1) + rhs_cc(hi(1),lo(2),k) &
+                                           +rhs_cc(lo(1),hi(2),k-1) + rhs_cc(lo(1),hi(2),k) &
+                                           +rhs_cc(hi(1),hi(2),k-1) + rhs_cc(hi(1),hi(2),k) )
+        rhs(hi(1)+1,lo(2)  ,k) = rhs(lo(1),lo(2),k)
+        rhs(lo(1)  ,hi(2)+1,k) = rhs(lo(1),lo(2),k)
+        rhs(hi(1)+1,hi(2)+1,k) = rhs(lo(1),lo(2),k)
         do j = lo(2)+1, hi(2)
         do i = lo(1)+1, hi(1)
           rhs(i,j,k) = EIGHTH * ( rhs_cc(i,j  ,k-1) + rhs_cc(i-1,j  ,k-1) &
