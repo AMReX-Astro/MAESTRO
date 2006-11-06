@@ -20,7 +20,7 @@ module make_plotfile_module
 contains
 
   subroutine make_plotfile(istep,plotdata,u,s,gp,mba,plot_names,time,dx,the_bc_tower, &
-                           rho0,p0,temp0,rhoX0,ntrac)
+                           s0,p0,temp0,ntrac)
 
     integer          , intent(in   ) :: istep
     integer          , intent(in   ) :: ntrac
@@ -32,7 +32,7 @@ contains
     character(len=20), intent(in   ) :: plot_names(:)
     real(dp_t)       , intent(in   ) :: time,dx(:,:)
     type(bc_tower)   , intent(in   ) :: the_bc_tower
-    real(dp_t)       , intent(in   ) :: rho0(:),p0(:),temp0(:),rhoX0(:,:)
+    real(dp_t)       , intent(in   ) :: s0(:,:),p0(:),temp0(:)
 
     integer :: n,dm,nlevs,nscal,icomp
     character(len=7) :: sd_name
@@ -67,7 +67,7 @@ contains
 
        ! DENSITY PERTURBATION
        icomp = derive_comp+1
-       call make_rhopert   (plotdata(n),icomp,s(n),rho0)
+       call make_rhopert   (plotdata(n),icomp,s(n),s0,dx(n,:))
 
        ! ENTHALPY (RHO H)
        icomp = derive_comp+2
@@ -95,7 +95,7 @@ contains
 
        ! GAMMA1 (gamma1 - gamma1_0)
        icomp = derive_comp+8
-       call make_deltagamma(plotdata(n),icomp,s(n),rho0,p0,temp0,rhoX0)
+       call make_deltagamma(plotdata(n),icomp,s(n),s0(:,rho_comp),p0,temp0,s0(:,spec_comp:spec_comp+nspec-1))
 
        ! PRESSURE GRADIENT
        icomp = derive_comp+9

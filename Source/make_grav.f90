@@ -5,17 +5,16 @@ module make_grav_module
   use bc_module
   use multifab_module
   use variables
+  use geometry
 
   implicit none
 
 contains
 
-   subroutine make_grav_cell(grav_cell,rho0,dr,spherical)
+   subroutine make_grav_cell(grav_cell,rho0)
 
       real(kind=dp_t), intent(  out) :: grav_cell(:)
       real(kind=dp_t), intent(in   ) :: rho0(:)
-      real(kind=dp_t), intent(in   ) :: dr
-      integer        , intent(in   ) :: spherical
 
       ! Local variables
       integer                      :: k,nz
@@ -65,12 +64,10 @@ contains
 
    end subroutine make_grav_cell
 
-   subroutine make_grav_edge(grav_edge,rho0,dr,spherical)
+   subroutine make_grav_edge(grav_edge,rho0)
 
       real(kind=dp_t), intent(  out) :: grav_edge(:)
       real(kind=dp_t), intent(in   ) :: rho0(:)
-      real(kind=dp_t), intent(in   ) :: dr
-      integer        , intent(in   ) :: spherical
 
       ! Local variables
       integer                      :: j,k,nz
@@ -101,7 +98,7 @@ contains
           do j = 2, k
             mencl = mencl + fourthirds * pi * (zl(j)**3 - zl(j-1)**3) * rho0(j-1)
           end do
-          grav_edge(k) = Gconst * mencl / zl(j)**2
+          grav_edge(k) = Gconst * mencl / zl(k)**2
         end do
   
         deallocate(zl)

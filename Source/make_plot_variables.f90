@@ -5,8 +5,10 @@ module plot_variables_module
   use bc_module
   use multifab_module
   use eos_module
+  use fill_3d_module
   use network
   use variables
+  use geometry
 
   implicit none
 
@@ -509,12 +511,13 @@ contains
 
    end subroutine makemachno_3d
 
-  subroutine make_rhopert (rhopert,comp,s,rho0)
+  subroutine make_rhopert (rhopert,comp,s,s0,dx)
 
     integer        , intent(in   ) :: comp
     type(multifab) , intent(inout) :: rhopert
     type(multifab) , intent(in   ) :: s
-    real(kind=dp_t), intent(in   ) :: rho0(:)
+    real(kind=dp_t), intent(in   ) :: s0(:,:)
+    real(kind=dp_t), intent(in   ) :: dx(:)
     
     real(kind=dp_t), pointer:: sp(:,:,:,:)
     real(kind=dp_t), pointer:: pp(:,:,:,:)
@@ -533,10 +536,15 @@ contains
        select case (dm)
        case (2)
           call makerhopert_2d(pp(:,:,1,comp), sp(:,:,1,rho_comp), &
-                              lo, hi, ng, rho0)
+                              lo, hi, ng, s0(:,rho_comp))
        case (3)
-          call makerhopert_3d(pp(:,:,:,comp), sp(:,:,:,rho_comp), &
-                              lo, hi, ng, rho0)
+          if (spherical .eq. 0) then
+            call makerhopert_3d_cart(pp(:,:,:,comp), sp(:,:,:,rho_comp), &
+                                     lo, hi, ng, s0(:,rho_comp))
+          else
+            call makerhopert_3d_sphr(pp(:,:,:,comp), sp(:,:,:,rho_comp), &
+                                     lo, hi, ng, s0, dx)
+          end if
        end select
     end do
 
@@ -562,7 +570,7 @@ contains
     
   end subroutine makerhopert_2d
   
-  subroutine makerhopert_3d (rhopert,s,lo,hi,ng,rho0)
+  subroutine makerhopert_3d_cart (rhopert,s,lo,hi,ng,rho0)
 
     implicit none
     
@@ -582,7 +590,37 @@ contains
        enddo
     end do
     
-  end subroutine makerhopert_3d
+  end subroutine makerhopert_3d_cart
+  
+  subroutine makerhopert_3d_sphr (rhopert,s,lo,hi,ng,s0,dx)
+
+    implicit none
+    
+    integer, intent(in) :: lo(:), hi(:), ng
+    real (kind = dp_t), intent(  out) :: rhopert(lo(1):,lo(2):, lo(3):)  
+    real (kind = dp_t), intent(in   ) ::       s(lo(1)-ng:,lo(2)-ng:, lo(3)-ng:)
+    real (kind = dp_t), intent(in   ) ::      s0(lo(3):,:)
+    real (kind = dp_t), intent(in   ) :: dx(:)
+    
+    !     Local variables
+    integer :: i, j, k
+    real (kind = dp_t), allocatable :: rho0_cart(:,:,:)
+
+    allocate(rho0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+
+    call fill_3d_data(rho0_cart,s0(:,rho_comp),dx,0)
+
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+             rhopert(i,j,k) = s(i,j,k) - rho0_cart(i,j,k)
+          enddo
+       enddo
+    end do
+
+    deallocate(rho0_cart)
+    
+  end subroutine makerhopert_3d_sphr
 
   subroutine make_tfromH (T,comp,state,p0,temp0)
 

@@ -9,19 +9,19 @@ module make_w0_module
   use multifab_module
   use heating_module
   use variables
+  use geometry
   use make_grav_module
 
   implicit none
 
 contains
 
-   subroutine make_w0(vel,Sbar_in,p0,rho0,temp0,gam1,dr,dt,spherical)
+   subroutine make_w0(vel,Sbar_in,p0,rho0,temp0,gam1,dz,dt)
 
-      integer        , intent(in   ) :: spherical
       real(kind=dp_t), intent(  out) :: vel(:)
       real(kind=dp_t), intent(in   ) :: p0(:),rho0(:),temp0(:),gam1(:)
       real(kind=dp_t), intent(in   ) :: Sbar_in(:)
-      real(kind=dp_t), intent(in   ) :: dr,dt
+      real(kind=dp_t), intent(in   ) :: dz,dt
 
       integer         :: j,nz
       real(kind=dp_t) :: max_vel
@@ -32,11 +32,11 @@ contains
 
       if (spherical .eq. 0) then
 
-        call make_w0_planar(vel,Sbar_in,dr)
+        call make_w0_planar(vel,Sbar_in,dz)
 
       else
 
-        call make_w0_spherical(vel,Sbar_in,p0,rho0,temp0,gam1,dr)
+        call make_w0_spherical(vel,Sbar_in,p0,rho0,temp0,gam1)
 
       endif
 
@@ -48,12 +48,12 @@ contains
 
    end subroutine make_w0
 
-   subroutine make_w0_planar (vel,Sbar_in,dr)
+   subroutine make_w0_planar (vel,Sbar_in,dz)
 
       implicit none
       real(kind=dp_t), intent(  out) :: vel(:)
       real(kind=dp_t), intent(in   ) :: Sbar_in(:)
-      real(kind=dp_t), intent(in   ) :: dr
+      real(kind=dp_t), intent(in   ) :: dz
 
 !     Local variables
       integer         :: j,nz
@@ -63,18 +63,17 @@ contains
       ! Initialize velocity to zero.
       vel(1) = ZERO
       do j = 2,nz
-         vel(j) = vel(j-1) + Sbar_in(j-1) * dr
+         vel(j) = vel(j-1) + Sbar_in(j-1) * dz
       end do
 
    end subroutine make_w0_planar
 
-   subroutine make_w0_spherical (vel,Sbar_in,p0,rho0,temp0,gam1,dr)
+   subroutine make_w0_spherical (vel,Sbar_in,p0,rho0,temp0,gam1)
 
       implicit none
       real(kind=dp_t), intent(  out) :: vel(:)
       real(kind=dp_t), intent(in   ) :: p0(:),rho0(:),temp0(:),gam1(:)
       real(kind=dp_t), intent(in   ) :: Sbar_in(:)
-      real(kind=dp_t), intent(in   ) :: dr
 
 !     Local variables
       integer         :: j, k, n, nz
@@ -104,8 +103,8 @@ contains
          zl(j) = zl(j-1) + dr
       enddo
 
-     call make_grav_edge(grav_edge,rho0,dr,1)
-     call make_grav_cell(grav_cell,rho0,dr,1)
+     call make_grav_edge(grav_edge,rho0)
+     call make_grav_cell(grav_cell,rho0)
 
      ! Define beta_0 at cell edges using the gravity above
      beta(1) = 1.5d0 * rho0(1) - 0.5d0 * rho0(2)

@@ -1,24 +1,24 @@
 module estdt_module
 
   use bl_types
+  use bl_constants_module
   use multifab_module
 
   implicit none
 
 contains
 
-   subroutine estdt (istep, u, s, gp, force, w0, rho0, dx, cflfac, dtold, dt)
+   subroutine estdt (istep, u, force, w0, dx, cflfac, dtold, dt)
 
       integer        , intent(in ) :: istep
-      type(multifab) , intent(in ) :: u,s,gp,force
+      type(multifab) , intent(in ) :: u,force
       real(kind=dp_t), intent(in ) :: w0(:)
-      real(kind=dp_t), intent(in ) :: rho0(:)
       real(kind=dp_t), intent(in ) :: dx(:)
       real(kind=dp_t), intent(in ) :: cflfac, dtold
       real(kind=dp_t), intent(out) :: dt
 
-      real(kind=dp_t), pointer:: uop(:,:,:,:), sop(:,:,:,:)
-      real(kind=dp_t), pointer:: gpp(:,:,:,:),  fp(:,:,:,:)
+      real(kind=dp_t), pointer:: uop(:,:,:,:)
+      real(kind=dp_t), pointer:: fp(:,:,:,:)
       integer :: lo(u%dim),hi(u%dim),ng,dm
       real(kind=dp_t) :: dt_hold
       real(kind=dp_t) :: dtchange
@@ -33,18 +33,16 @@ contains
       do i = 1, u%nboxes
          if ( multifab_remote(u, i) ) cycle
          uop => dataptr(u, i)
-         sop => dataptr(s, i)
-         gpp => dataptr(gp, i)
           fp => dataptr(force, i)
          lo =  lwb(get_box(u, i))
          hi =  upb(get_box(u, i))
          select case (dm)
             case (2)
-              call estdt_2d(uop(:,:,1,:), sop(:,:,1,1), gpp(:,:,1,:), fp(:,:,1,:),&
-                            w0, rho0, lo, hi, ng, dx, dt)
+              call estdt_2d(uop(:,:,1,:), fp(:,:,1,:),&
+                            w0, lo, hi, ng, dx, dt)
             case (3)
-              call estdt_3d(uop(:,:,:,:), sop(:,:,:,1), gpp(:,:,:,:), fp(:,:,:,:),&
-                            w0, rho0, lo, hi, ng, dx, dt)
+              call estdt_3d(uop(:,:,:,:), fp(:,:,:,:),&
+                            w0, lo, hi, ng, dx, dt)
          end select
          dt_hold = min(dt_hold,dt)
       end do
@@ -60,24 +58,20 @@ contains
 
    end subroutine estdt
 
-   subroutine estdt_2d (u, s, gp, force, w0, rho0, lo, hi, ng, dx, dt)
+   subroutine estdt_2d (u, force, w0, lo, hi, ng, dx, dt)
 
       integer, intent(in) :: lo(:), hi(:), ng
       real (kind = dp_t), intent(in ) ::     u(lo(1)-ng:,lo(2)-ng:,:)  
-      real (kind = dp_t), intent(in ) ::     s(lo(1)-ng:,lo(2)-ng:)  
-      real (kind = dp_t), intent(in ) ::    gp(lo(1)- 1:,lo(2)- 1:,:)  
       real (kind = dp_t), intent(in ) :: force(lo(1)- 1:,lo(2)- 1:,:)  
       real (kind = dp_t), intent( in) ::   w0(lo(2):)
-      real (kind = dp_t), intent( in) :: rho0(lo(2):)
       real (kind = dp_t), intent(in ) :: dx(:)
       real (kind = dp_t), intent(out) :: dt
 
 !     Local variables
-      real (kind = dp_t)  spdx, spdy
-      real (kind = dp_t)  pforcex, pforcey
-      real (kind = dp_t)  eps
-      real (kind = dp_t)  vert_force
-      integer :: i, j
+      real (kind = dp_t)  :: spdx, spdy
+      real (kind = dp_t)  :: pforcex, pforcey
+      real (kind = dp_t)  :: eps
+      integer             :: i,j
 
       eps = 1.0e-8
 
@@ -94,9 +88,8 @@ contains
         do i = lo(1), hi(1)
           spdx    = max(spdx ,abs(u(i,j,1)))
           spdy    = max(spdy ,abs(u(i,j,2)))
-          pforcex = max(pforcex,abs(gp(i,j,1)/s(i,j)-force(i,j,1)))
-          vert_force = (s(i,j)-rho0(j))/s(i,j) * force(i,j,2)
-          pforcey = max(pforcey,abs(gp(i,j,2)/s(i,j)-vert_force))
+          pforcex = max(pforcex,abs(force(i,j,1)))
+          pforcey = max(pforcey,abs(force(i,j,2)))
         enddo
       enddo
 
@@ -123,33 +116,29 @@ contains
 
    end subroutine estdt_2d
 
-   subroutine estdt_3d (u, s, gp, force, w0, rho0, lo, hi, ng, dx, dt)
+   subroutine estdt_3d (u, force, w0, lo, hi, ng, dx, dt)
 
       integer, intent(in) :: lo(:), hi(:), ng
       real (kind = dp_t), intent(in ) ::     u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
-      real (kind = dp_t), intent(in ) ::     s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)  
-      real (kind = dp_t), intent(in ) ::    gp(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)  
       real (kind = dp_t), intent(in ) :: force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)  
       real (kind = dp_t), intent( in) ::   w0(lo(3):)
-      real (kind = dp_t), intent( in) :: rho0(lo(3):)
       real (kind = dp_t), intent(in ) :: dx(:)
       real (kind = dp_t), intent(out) :: dt
 
 !     Local variables
-      real (kind = dp_t)  spdx,spdy, spdz
-      real (kind = dp_t)  pforcex,pforcey,pforcez
-      real (kind = dp_t)  eps
-      real (kind = dp_t)  vert_force
-      integer :: i, j, k
+      real (kind = dp_t)  :: spdx, spdy, spdz
+      real (kind = dp_t)  :: pforcex, pforcey, pforcez
+      real (kind = dp_t)  :: eps
+      integer             :: i,j,k
 
       eps = 1.0e-8
 
-      spdx  = 0.0D0 
-      spdy  = 0.0D0 
-      spdz  = 0.0D0 
-      pforcex = 0.0D0 
-      pforcey = 0.0D0 
-      pforcez = 0.0D0 
+      spdx    = ZERO
+      spdy    = ZERO 
+      spdz    = ZERO 
+      pforcex = ZERO 
+      pforcey = ZERO 
+      pforcez = ZERO 
 
       do k = lo(3), hi(3)
         spdz = max(spdz ,abs(w0(k)))
@@ -161,10 +150,9 @@ contains
           spdx    = max(spdx ,abs(u(i,j,k,1)))
           spdy    = max(spdy ,abs(u(i,j,k,2)))
           spdz    = max(spdz ,abs(u(i,j,k,3)))
-          pforcex = max(pforcex,abs(gp(i,j,k,1)/s(i,j,k)-force(i,j,k,1)))
-          pforcey = max(pforcey,abs(gp(i,j,k,2)/s(i,j,k)-force(i,j,k,2)))
-          vert_force = (s(i,j,k)-rho0(k))/s(i,j,k) * force(i,j,k,3)
-          pforcez = max(pforcez,abs(gp(i,j,k,3)/s(i,j,k)-vert_force))
+          pforcex = max(pforcex,abs(force(i,j,k,1)))
+          pforcey = max(pforcey,abs(force(i,j,k,2)))
+          pforcez = max(pforcez,abs(force(i,j,k,3)))
         enddo
       enddo
       enddo

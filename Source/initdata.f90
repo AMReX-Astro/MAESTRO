@@ -8,6 +8,7 @@ module init_module
   use multifab_module
   use make_div_coeff_module
   use make_grav_module
+  use fill_3d_module
   use eos_module
   use variables
   use network
@@ -138,27 +139,35 @@ contains
     integer :: i, j, k, n
     real(kind=dp_t) :: x,y,z,r,r0,r1,r2,temp
     real(kind=dp_t) :: dens_pert, rhoh_pert, rhoX_pert(nspec), trac_pert(ntrac)
-    logical, parameter :: perturbModel = .true.
+    logical, parameter :: perturbModel = .false.
 
     ! initial the domain with the base state
     u = ZERO
     s = ZERO
+  
+    if (spherical .eq. 1) then
 
-    do n = rho_comp,spec_comp+nspec-1
-    do k = lo(3), hi(3)
-    do j = lo(2), hi(2)
-    do i = lo(1), hi(1)
-      s(i,j,k,n) = s0(k,n)
-    enddo
-    enddo
-    enddo
-    enddo
+      do n = rho_comp, spec_comp+nspec-1
+        call fill_3d_data (s(:,:,:,n),s0(:,n),dx,ng)
+      end do
+
+    else 
+
+      do n = rho_comp,spec_comp+nspec-1
+      do k = lo(3), hi(3)
+      do j = lo(2), hi(2)
+      do i = lo(1), hi(1)
+        s(i,j,k,n) = s0(k,n)
+      enddo
+      enddo
+      enddo
+      enddo
     
     ! add an optional perturbation
-    do k = lo(3), hi(3)
-       z = prob_lo(3) + (dble(k)+HALF) * dx(3)
+      do k = lo(3), hi(3)
+      z = prob_lo(3) + (dble(k)+HALF) * dx(3)
        
-       do j = lo(2), hi(2)
+      do j = lo(2), hi(2)
         y = prob_lo(2) + (dble(j)+HALF) * dx(2)
         do i = lo(1), hi(1)
           x = prob_lo(1) + (dble(i)+HALF) * dx(1)
@@ -171,8 +180,10 @@ contains
              s(i,j,k,trac_comp:trac_comp+ntrac-1) = trac_pert(:)
           endif
         enddo
-       enddo
-    enddo
+      enddo
+      enddo
+
+    end if
     
   end subroutine initdata_3d
 
@@ -332,8 +343,9 @@ contains
     integer, parameter :: ispec_model = 4
 
     integer :: npts_model
+    real(kind=dp_t) :: center(3)
     real(kind=dp_t), allocatable :: base_state(:,:), base_r(:)
-    integer :: ipos
+    integer :: ipos,dm
     character (len=256) :: header_line
 
     logical :: do_diag
@@ -370,7 +382,6 @@ contains
     !     ...
 
 
-
     allocate (base_state(npts_model, nvars_model))
     allocate (base_r(npts_model))
 
@@ -383,6 +394,11 @@ contains
     close(99)
 
     call helmeos_init
+
+!   LATER WE WILL DO THIS 
+!   dr = base_r(2) - base_r(1)
+!   FOR NOW WE SET DR = DX
+    dr = dx(1)
 
     j_cutoff = nx-1
     do j = 0,nx-1
@@ -470,6 +486,10 @@ contains
        s0(j,trac_comp:) = ZERO
        
     end do
+
+    dm = size(prob_lo,dim=1)
+    center(1:dm) = HALF * (prob_lo(1:dm) + prob_hi(1:dm))
+    call init_geometry(center,dr)
 
   end subroutine init_base_state
 

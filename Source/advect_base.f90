@@ -7,8 +7,9 @@ module advect_base_module
   use heating_module
   use mkflux_module
   use make_div_coeff_module
-  use variables
   use eos_module
+  use variables
+  use geometry
   use make_grav_module
 
   implicit none
@@ -18,44 +19,43 @@ contains
    subroutine advect_base(vel,Sbar_in,p0_old,p0_new, &
                           s0_old,s0_new,temp0, &
                           gam1,div_coeff_edge, &
-                          dr,dt,anelastic_cutoff,spherical)
+                          dz,dt,anelastic_cutoff)
 
       real(kind=dp_t), intent(in   ) :: vel(:)
       real(kind=dp_t), intent(in   ) :: Sbar_in(:)
       real(kind=dp_t), intent(in   ) :: p0_old(:), s0_old(:,:)
       real(kind=dp_t), intent(  out) :: p0_new(:), s0_new(:,:)
       real(kind=dp_t), intent(inout) :: temp0(:),gam1(:),div_coeff_edge(:)
-      real(kind=dp_t), intent(in   ) :: dr,dt,anelastic_cutoff
-      integer        , intent(in   ) :: spherical
+      real(kind=dp_t), intent(in   ) :: dz,dt,anelastic_cutoff
 
       integer :: i
 
       print *, '<<< advect base >>>'
 
-      if (spherical == 0) then
+      if (spherical .eq. 0) then
 
         call advect_base_state_planar(vel,p0_old,p0_new,s0_old,s0_new,temp0, &
-                                      gam1,dr,dt,anelastic_cutoff)
+                                      gam1,dz,dt,anelastic_cutoff)
 
       else
 
         call advect_base_state_spherical(vel,Sbar_in,p0_old,p0_new,s0_old,s0_new,temp0, &
                                          gam1,div_coeff_edge,&
-                                         dr,dt,anelastic_cutoff)
+                                         dt,anelastic_cutoff)
       end if
 
 
    end subroutine advect_base
 
    subroutine advect_base_state_planar (vel,p0_old,p0_new,s0_old,s0_new,temp0, &
-                                        gam1,dr,dt,anelastic_cutoff)
+                                        gam1,dz,dt,anelastic_cutoff)
 
       real(kind=dp_t), intent(in   ) :: vel(:)
       real(kind=dp_t), intent(in   ) :: p0_old(:), s0_old(:,:)
       real(kind=dp_t), intent(  out) :: p0_new(:), s0_new(:,:)
       real(kind=dp_t), intent(inout) :: temp0(:)
       real(kind=dp_t), intent(inout) :: gam1(:)
-      real(kind=dp_t), intent(in   ) :: dr,dt,anelastic_cutoff
+      real(kind=dp_t), intent(in   ) :: dz,dt,anelastic_cutoff
 
 !     Local variables
       integer :: i, j, n, nz
@@ -76,9 +76,9 @@ contains
 !     UPDATE P0
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       force = ZERO
-      call mkflux_1d(p0_old,edge,vel,force,1,dr,dt)
+      call mkflux_1d(p0_old,edge,vel,force,1,dz,dt)
       do j = 1,nz
-        p0_new(j) = p0_old(j) - dt / dr * HALF * (vel(j) + vel(j+1)) * (edge(j+1) - edge(j))
+        p0_new(j) = p0_old(j) - dt / dz * HALF * (vel(j) + vel(j+1)) * (edge(j+1) - edge(j))
       end do
 
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -86,11 +86,11 @@ contains
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       do n = spec_comp,spec_comp+nspec-1
          do j = 1,nz
-            force(j) = s0_old(j,n) * (vel(j+1) - vel(j)) / dr
+            force(j) = s0_old(j,n) * (vel(j+1) - vel(j)) / dz
          end do
-         call mkflux_1d(s0_old(:,n),edge,vel,force,1,dr,dt)
+         call mkflux_1d(s0_old(:,n),edge,vel,force,1,dz,dt)
          do j = 1,nz
-            s0_new(j,n) = s0_old(j,n) - dt / dr * (edge(j+1) * vel(j+1) - edge(j) * vel(j))
+            s0_new(j,n) = s0_old(j,n) - dt / dz * (edge(j+1) * vel(j+1) - edge(j) * vel(j))
          end do
 
       enddo
@@ -141,7 +141,7 @@ contains
 
    subroutine advect_base_state_spherical (vel,Sbar_in,p0_old,p0_new,s0_old,s0_new,temp0, &
                                            gam1,div_coeff_edge,& 
-                                           dr,dt,anelastic_cutoff)
+                                           dt,anelastic_cutoff)
 
       real(kind=dp_t), intent(in   ) :: vel(:),Sbar_in(:)
       real(kind=dp_t), intent(in   ) :: p0_old(:), s0_old(:,:)
@@ -149,7 +149,7 @@ contains
       real(kind=dp_t), intent(inout) :: temp0(:)
       real(kind=dp_t), intent(inout) :: gam1(:)
       real(kind=dp_t), intent(inout) :: div_coeff_edge(:)
-      real(kind=dp_t), intent(in   ) :: dr,dt,anelastic_cutoff
+      real(kind=dp_t), intent(in   ) :: dt,anelastic_cutoff
 
 !     Local variables
       integer :: i, j, k, n, nz
@@ -252,8 +252,8 @@ contains
         gam1(j) = gam1_row(1)
      end do
 
-     call make_grav_edge(grav_edge,s0_new(:,rho_comp),dr,1)
-     call make_grav_cell(grav_cell,s0_new(:,rho_comp),dr,1)
+     call make_grav_edge(grav_edge,s0_new(:,rho_comp))
+     call make_grav_cell(grav_cell,s0_new(:,rho_comp))
 
      ! Define beta^n+1 at cell edges using the new gravity above
      beta_new(1) = 1.5d0 * s0_new(1,rho_comp) - 0.5d0 * s0_new(2,rho_comp)

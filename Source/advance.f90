@@ -33,13 +33,12 @@ module advance_timestep_module
   contains
 
     subroutine advance_timestep(mla,uold,sold,s1,s2,unew,snew,umac,uedge,sedge,utrans,gp,p, &
-                                force,scal_force,&
-                                s0_old,s0_1,s0_2,s0_new,p0_old,p0_1,p0_2,p0_new,temp0,gam1,w0, &
+                                scal_force,s0_old,s0_1,s0_2,s0_new,p0_old,p0_1,p0_2,p0_new,temp0,gam1,w0, &
                                 rho_omegadot1, rho_omegadot2, &
                                 div_coeff_old,div_coeff_new,&
                                 dx,time,dt,the_bc_tower, &
                                 anelastic_cutoff,verbose,mg_verbose,cg_verbose,&
-                                Source_old,Source_new,spherical)
+                                Source_old,Source_new)
 
     implicit none
 
@@ -56,7 +55,6 @@ module advance_timestep_module
     type(multifab), intent(inout) :: utrans(:,:)
     type(multifab), intent(inout) :: gp(:)
     type(multifab), intent(inout) :: p(:)
-    type(multifab), intent(inout) :: force(:)
     type(multifab), intent(inout) :: scal_force(:)
     type(multifab), intent(inout) :: rho_omegadot1(:)
     type(multifab), intent(inout) :: rho_omegadot2(:)
@@ -79,7 +77,6 @@ module advance_timestep_module
     type(bc_tower), intent(in   ) :: the_bc_tower
     real(dp_t)    , intent(in   ) :: anelastic_cutoff
     integer       , intent(in   ) :: verbose,mg_verbose,cg_verbose
-    integer       , intent(in   ) :: spherical
 
     type(multifab), allocatable :: rhohalf(:)
     type(multifab), allocatable :: macrhs(:)
@@ -140,7 +137,7 @@ module advance_timestep_module
         do n = 1, nlevs
            call make_S(Source_nph(n),sold(n),p0_old,temp0,gam1,dx(n,:),time)
            call average(Source_nph(n),Sbar)
-           call make_w0(w0,Sbar(:,1),p0_old,s0_old(:,rho_comp),temp0,gam1,dx(n,dm),dt,spherical)
+           call make_w0(w0,Sbar(:,1),p0_old,s0_old(:,rho_comp),temp0,gam1,dx(n,dm),dt)
         end do
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -149,10 +146,10 @@ module advance_timestep_module
         print *,'<<< STEP 2 >>>'
 
         do n = 1,nlevs
+
            call advance_premac(uold(n), sold(n),&
                                umac(n,:), uedge(n,:), utrans(n,:),&
-                               gp(n), p(n), force(n), &
-                               s0_old, &
+                               gp(n), p(n), s0_old, &
                                dx(n,:),time,dt, &
                                the_bc_tower%bc_tower_array(n), &
                                verbose)
@@ -179,7 +176,7 @@ module advance_timestep_module
 
         call average(rho_omegadot1(1),rho_omegadotbar1)
         call react_base(p0_old,s0_old,temp0,rho_omegadotbar1,dx(1,dm),halfdt,p0_1,s0_1,gam1)
-        call make_grav_edge(grav_edge,s0_1(:,rho_comp),dx(1,dm),spherical)
+        call make_grav_edge(grav_edge,s0_1(:,rho_comp))
         call make_div_coeff(div_coeff_new,s0_1(:,rho_comp),p0_1, &
                             gam1,grav_edge,dx(1,dm),anelastic_cutoff)
         call put_beta_on_edges(div_coeff_new,div_coeff_edge)
@@ -192,8 +189,8 @@ module advance_timestep_module
 
         call advect_base(w0,Sbar(:,1),p0_1,p0_2,s0_1,s0_2,temp0,gam1, &
                          div_coeff_edge,&
-                         dx(1,dm),dt,anelastic_cutoff,spherical)
-        call make_grav_edge(grav_edge,s0_2(:,rho_comp),dx(1,dm),spherical)
+                         dx(1,dm),dt,anelastic_cutoff)
+        call make_grav_edge(grav_edge,s0_2(:,rho_comp))
         call make_div_coeff(div_coeff_new,s0_2(:,rho_comp),p0_2, &
                             gam1,grav_edge,dx(1,dm),anelastic_cutoff)
         call put_beta_on_edges(div_coeff_new,div_coeff_edge)
@@ -230,7 +227,7 @@ module advance_timestep_module
         end do
         call average(rho_omegadot2(1),rho_omegadotbar2)
         call react_base(p0_2,s0_2,temp0,rho_omegadotbar2,dx(1,dm),halfdt,p0_new,s0_new,gam1)
-        call make_grav_edge(grav_edge,s0_new(:,rho_comp),dx(1,dm),spherical)
+        call make_grav_edge(grav_edge,s0_new(:,rho_comp))
         call make_div_coeff(div_coeff_new,s0_new(:,rho_comp),p0_new, &
                             gam1,grav_edge,dx(1,dm),anelastic_cutoff)
         call put_beta_on_edges(div_coeff_new,div_coeff_edge)
@@ -243,7 +240,7 @@ module advance_timestep_module
            call make_S(Source_new(n),snew(n),p0_new,temp0,gam1,dx(n,:),time)
            call make_at_halftime(Source_nph(n),Source_old(n),Source_new(n),1,1)
            call average(Source_nph(n),Sbar)
-           call make_w0(w0,Sbar(:,1),p0_new,s0_new(:,rho_comp),temp0,gam1,dx(n,dm),dt,spherical)
+           call make_w0(w0,Sbar(:,1),p0_new,s0_new(:,rho_comp),temp0,gam1,dx(n,dm),dt)
         end do
 
 !       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -254,8 +251,7 @@ module advance_timestep_module
         do n = 1,nlevs
            call advance_premac(uold(n), sold(n),&
                                umac(n,:), uedge(n,:), utrans(n,:),&
-                               gp(n), p(n), force(n), &
-                               s0_old, &
+                               gp(n), p(n), s0_old, &
                                dx(n,:),time,dt, &
                                the_bc_tower%bc_tower_array(n), &
                                verbose)
@@ -294,8 +290,8 @@ module advance_timestep_module
         print *,'<<< STEP 8 >>>'
         call advect_base(w0,Sbar(:,1),p0_1,p0_2,s0_1,s0_2,temp0,gam1, &
                          div_coeff_edge,&
-                         dx(1,dm),dt,anelastic_cutoff,spherical)
-        call make_grav_edge(grav_edge,s0_2(:,rho_comp),dx(1,dm),spherical)
+                         dx(1,dm),dt,anelastic_cutoff)
+        call make_grav_edge(grav_edge,s0_2(:,rho_comp))
         call make_div_coeff(div_coeff_new,s0_2(:,rho_comp),p0_2, &
                             gam1,grav_edge,dx(1,dm),anelastic_cutoff)
         call put_beta_on_edges(div_coeff_new,div_coeff_edge)
@@ -332,7 +328,7 @@ module advance_timestep_module
         end do
         call average(rho_omegadot2(1),rho_omegadotbar2)
         call react_base(p0_2,s0_2,temp0,rho_omegadotbar2,dx(1,dm),halfdt,p0_new,s0_new,gam1)
-        call make_grav_edge(grav_edge,s0_new(:,rho_comp),dx(1,dm),spherical)
+        call make_grav_edge(grav_edge,s0_new(:,rho_comp))
         call make_div_coeff(div_coeff_new,s0_new(:,rho_comp),p0_new, &
                             gam1,grav_edge,dx(1,dm),anelastic_cutoff)
         call put_beta_on_edges(div_coeff_new,div_coeff_edge)
@@ -344,11 +340,12 @@ module advance_timestep_module
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         print *,'<<< STEP 10 >>>'
+
         do n = 1,nlevs
            call velocity_advance(uold(n),unew(n),sold(n),rhohalf(n),&
                                  umac(n,:),uedge(n,:), &
                                  utrans(n,:),gp(n),p(n), &
-                                 force(n), w0, s0_old, s0_nph, &
+                                 w0, s0_old, s0_nph, &
                                  dx(n,:),time,dt, &
                                  the_bc_tower%bc_tower_array(n), &
                                  verbose)
