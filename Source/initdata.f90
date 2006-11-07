@@ -424,6 +424,7 @@ contains
     do i = 1, npts_model
        read(99,*) base_r(i), (vars_stored(j), j = 1, nvars_model_file)
 
+       base_state(i,:) = ZERO
 
        do j = 1, nvars_model_file
 
