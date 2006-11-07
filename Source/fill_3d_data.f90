@@ -40,6 +40,7 @@ contains
           if (index .lt. 0 .or. index .gt. nr) then
             print *,'RADIUS ',radius
             print *,'BOGUS INDEX ',index
+            print *,'NOT IN RANGE 0 TO ',nr
             print *,'I J K ',i,j,k
             print *,'X Y Z ',x,y,z
             stop

@@ -9,7 +9,9 @@ module scalar_advance_module
   use addw0_module
   use define_bc_module
   use setbc_module
+  use fill_3d_module
   use variables
+  use geometry
   use network
 
   implicit none
@@ -68,6 +70,7 @@ contains
       integer :: i,n,bc_comp,dm,ng_cell
       logical :: is_vel, make_divu, advect_in_pert_form
       logical, allocatable :: is_conservative(:)
+      real(dp_t), allocatable :: s0_cart(:,:,:)
       real(kind=dp_t) :: half_time
 
       print *,'<<< advect state >>> '
@@ -94,6 +97,13 @@ contains
       call setval(scal_force,ZERO)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!     Add w0 to vertical velocity.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      mult = ONE
+      call addw0(umac,w0,dx,mult)
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     Create scalar source term at time n for (rho X)_i and (rho H).  
 !     The source term for (rho X) is zero.
 !     The source term for (rho h) has only the w dp0/dr term.
@@ -116,39 +126,52 @@ contains
               do n = spec_comp,spec_comp+nspec-1
                 call modify_force_2d(fp(:,:,1,n),sop(:,:,1,n),ng_cell,&
                                      s0_old(:,n), &
-                                     ump(:,:,1,1),vmp(:,:,1,1),w0,dx)
+                                     ump(:,:,1,1),vmp(:,:,1,1),dx)
               end do
 
               n = rhoh_comp
               call  mkrhohforce_2d(fp(:,:,1,n), vmp(:,:,1,1), p0_old, p0_new, dx(dm))
               call modify_force_2d(fp(:,:,1,n),sop(:,:,1,n),ng_cell,s0_old(:,rhoh_comp), &
-                                   ump(:,:,1,1),vmp(:,:,1,1),w0,dx)
+                                   ump(:,:,1,1),vmp(:,:,1,1),dx)
 
             case(3)
               wmp  => dataptr(umac(3), i)
 
-              do n = spec_comp,spec_comp+nspec-1
-                call modify_force_3d(fp(:,:,:,n),sop(:,:,:,n),ng_cell,&
-                                     s0_old(:,n), &
+              if (spherical .eq. 1) then
+                allocate(s0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+                do n = spec_comp,spec_comp+nspec-1
+                  call fill_3d_data(s0_cart,s0_old(:,n),dx,ng_cell)
+                  call modify_force_3d_sphr(fp(:,:,:,n),sop(:,:,:,n),ng_cell,&
+                                            s0_cart, &
+                                            ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),w0,dx)
+                end do
+
+                n = rhoh_comp
+                call  mkrhohforce_3d_sphr(fp(:,:,:,n), &
+                                          ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
+                                          p0_old, p0_new, dx)
+
+                call fill_3d_data(s0_cart,s0_old(:,n),dx,ng_cell)
+                call modify_force_3d_sphr(fp(:,:,:,n),sop(:,:,:,n),ng_cell,s0_cart, &
+                                          ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),w0,dx)
+                deallocate(s0_cart)
+              else
+                do n = spec_comp,spec_comp+nspec-1
+                  call modify_force_3d(fp(:,:,:,n),sop(:,:,:,n),ng_cell,&
+                                       s0_old(:,n), &
+                                       ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),w0,dx)
+                end do
+
+                n = rhoh_comp
+                call  mkrhohforce_3d(fp(:,:,:,n), wmp(:,:,:,1), p0_old, p0_new, dx(dm))
+
+                call modify_force_3d(fp(:,:,:,n),sop(:,:,:,n),ng_cell,s0_old(:,n), &
                                      ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),w0,dx)
-              end do
-
-              n = rhoh_comp
-              call  mkrhohforce_3d(fp(:,:,:,n), wmp(:,:,:,1), p0_old, p0_new, dx(dm))
-
-              call modify_force_3d(fp(:,:,:,n),sop(:,:,:,n),ng_cell,s0_old(:,n), &
-                                   ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),w0,dx)
+              end if
          end select
       end do
 
       call multifab_fill_boundary(scal_force)
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!     Add w0 to vertical velocity.
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-      mult = ONE
-      call addw0(umac,w0,mult)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     Create the edge states of (rho h)' and (rho X)_i using the MAC velocity 
@@ -283,7 +306,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       mult = -ONE
-      call addw0(umac,w0,mult)
+      call addw0(umac,w0,dx,mult)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     1) Set force for (rho X)_i at time n+1/2 = 0.
@@ -447,11 +470,13 @@ contains
 
    end subroutine scalar_advance
 
-   subroutine modify_force_2d(force,s,ng,base,umac,vmac,w0,dx)
+   subroutine modify_force_2d(force,s,ng,base,umac,vmac,dx)
 
     ! When we write the scalar equation in perturbational and convective
     ! form, the terms other than s'_t + U.grad s' act as source terms.  Add
     ! them to the forces here.
+
+    ! Note that the MAC velocity has w0 already added to it here.
 
     integer        , intent(in   ) :: ng
     real(kind=dp_t), intent(  out) :: force(0:,0:)
@@ -459,7 +484,6 @@ contains
     real(kind=dp_t), intent(in   ) :: base(:)
     real(kind=dp_t), intent(in   ) :: umac(0:,0:)
     real(kind=dp_t), intent(in   ) :: vmac(0:,0:)
-    real(kind=dp_t), intent(in   ) :: w0(:)
     real(kind=dp_t), intent(in   ) :: dx(:)
     
     integer :: i,j,nx,ny
@@ -496,7 +520,6 @@ contains
            divbaseu = base(j)*(umac(i+1,j) - umac(i,j))/dx(1) &
                              +(vmac(i,j+1) * base_half_hi &
                              - vmac(i,j  ) * base_half_lo)/ dx(2)
-           divu = divu + (w0(j+1)-w0(j))/dx(2)
            force(i,j) = force(i,j) - (s(i,j)-base(j))*divu - divbaseu
         end do
      end do
@@ -564,5 +587,86 @@ contains
      end do
      
    end subroutine modify_force_3d
+
+   subroutine modify_force_3d_sphr(force,s,ng,base_cart,umac,vmac,wmac,w0,dx)
+
+    ! When we write the scalar equation in perturbational and convective
+    ! form, the terms other than s'_t + U.grad s' act as source terms.  Add
+    ! them to the forces here.
+
+    integer        , intent(in   ) :: ng
+    real(kind=dp_t), intent(  out) :: force(0:,0:,0:)
+    real(kind=dp_t), intent(in   ) :: s(1-ng:,1-ng:,1-ng:)
+    real(kind=dp_t), intent(in   ) :: base_cart(:,:,:)
+    real(kind=dp_t), intent(in   ) :: umac(0:,0:,0:)
+    real(kind=dp_t), intent(in   ) :: vmac(0:,0:,0:)
+    real(kind=dp_t), intent(in   ) :: wmac(0:,0:,0:)
+    real(kind=dp_t), intent(in   ) :: w0(:)
+    real(kind=dp_t), intent(in   ) :: dx(:)
+    
+    integer :: i,j,k,nx,ny,nz
+    real(kind=dp_t) :: divu,divbaseu
+    real(kind=dp_t) :: base_xlo,base_xhi
+    real(kind=dp_t) :: base_ylo,base_yhi
+    real(kind=dp_t) :: base_zlo,base_zhi
+    
+    nx = size(force,dim=1)-2
+    ny = size(force,dim=2)-2
+    nz = size(force,dim=3)-2
+
+    do k = 1,nz
+        do j = 1,ny
+        do i = 1,nx
+
+           divu = (umac(i+1,j,k) - umac(i,j,k)) / dx(1) &
+                 +(vmac(i,j+1,k) - vmac(i,j,k)) / dx(2) &
+                 +(wmac(i,j,k+1) - wmac(i,j,k)) / dx(3)
+
+           if (i.lt.nx) then
+             base_xhi = HALF * (base_cart(i,j,k) + base_cart(i+1,j,k))
+           else
+             base_xhi = base_cart(i,j,k)
+           end if
+           if (i.gt.1) then
+             base_xlo = HALF * (base_cart(i,j,k) + base_cart(i-1,j,k))
+           else
+             base_xlo = base_cart(i,j,k)
+           end if
+           if (j.lt.ny) then
+             base_yhi = HALF * (base_cart(i,j,k) + base_cart(i,j+1,k))
+           else
+             base_yhi = base_cart(i,j,k)
+           end if
+           if (j.gt.1) then
+             base_ylo = HALF * (base_cart(i,j,k) + base_cart(i,j-1,k))
+           else
+             base_ylo = base_cart(i,j,k)
+           end if
+           if (k.lt.nz) then
+             base_zhi = HALF * (base_cart(i,j,k) + base_cart(i,j,k+1))
+           else
+             base_zhi = base_cart(i,j,k)
+           end if
+           if (k.gt.1) then
+             base_zlo = HALF * (base_cart(i,j,k) + base_cart(i,j,k-1))
+           else
+             base_zlo = base_cart(i,j,k)
+           end if
+
+           divbaseu =  (umac(i+1,j,k) * base_xhi &
+                      - umac(i  ,j,k) * base_xlo)/ dx(3) &
+                      +(vmac(i,j+1,k) * base_yhi &
+                       -vmac(i,j  ,k) * base_ylo)/ dx(3) &
+                      +(wmac(i,j,k+1) * base_zhi &
+                       -wmac(i,j,k  ) * base_zlo)/ dx(3)
+
+           divu = divu + (zl(k+1)**2 * w0(k+1)- zl(k)**2 * w0(k))/dx(3)/z(k)**2
+
+           force(i,j,k) = force(i,j,k) - (s(i,j,k)-base_cart(i,j,k))*divu - divbaseu
+        end do
+        end do
+     end do
+     
+   end subroutine modify_force_3d_sphr
 
 end module scalar_advance_module

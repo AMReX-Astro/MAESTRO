@@ -350,12 +350,11 @@ contains
 
     integer, parameter :: MAX_VARNAME_LENGTH=80
     integer :: npts_model, nvars_model_file
-    real(kind=dp_t) :: center(3)
+
     real(kind=dp_t), allocatable :: base_state(:,:), base_r(:)
     real(kind=dp_t), allocatable :: vars_stored(:)
     character(len=MAX_VARNAME_LENGTH), allocatable :: varnames_stored(:)
     logical :: found
-
 
     integer :: ipos,dm
     character (len=256) :: header_line
@@ -555,10 +554,6 @@ contains
        s0(j,trac_comp:) = ZERO
        
     end do
-
-    dm = size(prob_lo,dim=1)
-    center(1:dm) = HALF * (prob_lo(1:dm) + prob_hi(1:dm))
-    call init_geometry(center,dr)
 
   end subroutine init_base_state
 

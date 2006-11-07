@@ -3,18 +3,22 @@ module addw0_module
   use bl_types
   use bl_constants_module
   use multifab_module
+  use geometry
+  use fill_3d_module
 
   implicit none
 
 contains
 
-      subroutine addw0(umac,w0,mult)
+      subroutine addw0(umac,w0,dx,mult)
 
       type(multifab) , intent(inout) :: umac(:)
       real(kind=dp_t), intent(in   ) ::   w0(:)
-      real(kind=dp_t), intent(in   ) :: mult
+      real(kind=dp_t), intent(in   ) :: dx(:),mult
 
       integer :: i,lo(umac(1)%dim),hi(umac(1)%dim),dm
+      real(kind=dp_t), pointer :: ump(:,:,:,:)
+      real(kind=dp_t), pointer :: vmp(:,:,:,:)
       real(kind=dp_t), pointer :: wmp(:,:,:,:)
 
       dm = umac(1)%dim
@@ -28,7 +32,11 @@ contains
          case(2)
            call addw0_2d(wmp(:,:,1,1),w0,lo,hi,mult)
          case(3)
-           call addw0_3d(wmp(:,:,:,1),w0,lo,hi,mult)
+           if (spherical .eq. 1) then
+             call addw0_3d(wmp(:,:,:,1),w0,lo,hi,mult)
+           else
+             call addw0_3d_sphr(ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),w0,dx,mult)
+           end if
          end select
       end do
 
@@ -70,5 +78,84 @@ contains
 
       end subroutine addw0_3d
 
+      subroutine addw0_3d_sphr(umac,vmac,wmac,w0,dx,mult)
+
+      real(kind=dp_t), intent(inout) :: umac(0:,0:,0:)
+      real(kind=dp_t), intent(inout) :: vmac(0:,0:,0:)
+      real(kind=dp_t), intent(inout) :: wmac(0:,0:,0:)
+      real(kind=dp_t), intent(in   ) ::   w0(:)
+      real(kind=dp_t), intent(in   ) :: dx(:),mult
+
+      integer :: i,j,k
+      integer :: nx,ny,nz,nr
+      real(kind=dp_t), allocatable :: w0_rad(:)
+      real(kind=dp_t), allocatable :: w0_cart(:,:,:)
+      real(kind=dp_t), allocatable :: normal(:,:,:,:)
+
+      nx = size(vmac,dim=1) - 2
+      ny = size(wmac,dim=2) - 2
+      nz = size(umac,dim=3) - 2
+      nr = size(w0,dim=1) - 1
+
+      allocate(normal(nx,ny,nz,3))
+      allocate(w0_rad (nr))
+      allocate(w0_cart(0:nx+1,0:ny+1,0:nz+1))
+
+      ! Put w0 on centers of radial grid first
+      do k = 1,nr
+        w0_rad(k) = HALF * (w0(k) + w0(k+1))
+      end do
+
+      ! Then put w0 on centers of Cartesian grid
+      call fill_3d_data(w0_cart,w0_rad,dx,1)
+      call make_3d_normal(dx,normal)
+
+      do k = 1,nz
+      do j = 1,ny
+         w0_cart(   0,j,k) = w0_cart( 1,j,k)
+         w0_cart(nx+1,j,k) = w0_cart(nx,j,k)
+      end do
+      end do
+      do k = 1,nz
+      do i = 1,nx
+         w0_cart(i,   0,k) = w0_cart(i, 1,k)
+         w0_cart(i,ny+1,k) = w0_cart(i,ny,k)
+      end do
+      end do
+      do j = 1,ny
+      do i = 1,nx
+         w0_cart(i,j,   0) = w0_cart(i,j, 1)
+         w0_cart(i,j,nz+1) = w0_cart(i,j,nz)
+      end do
+      end do
+
+      do k = 1,nz
+      do j = 1,ny
+      do i = 1,nx+1
+         umac(i,j,k) = umac(i,j,k) + mult * normal(i,j,k,1) * &
+                       HALF * (w0_cart(i,j,k) + w0_cart(i-1,j,k))
+      end do
+      end do
+      end do
+      do k = 1,nz
+      do j = 1,ny+1
+      do i = 1,nx
+         vmac(i,j,k) = vmac(i,j,k) + mult * normal(i,j,k,2) * &
+                       HALF * (w0_cart(i,j,k) + w0_cart(i,j-1,k))
+      end do
+      end do
+      end do
+      do k = 1,nz+1
+      do j = 1,ny
+      do i = 1,nx
+         wmac(i,j,k) = wmac(i,j,k) + mult * normal(i,j,k,3) * &
+                       HALF * (w0_cart(i,j,k) + w0_cart(i,j,k-1))
+      end do
+      end do
+      end do
+
+      deallocate(normal,w0_rad,w0_cart)
+
+      end subroutine addw0_3d_sphr
 
 end module addw0_module

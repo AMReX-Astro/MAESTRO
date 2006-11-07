@@ -155,7 +155,6 @@ contains
       integer :: i, j, k, n, nz
       real(kind=dp_t) :: dtdr,divbetaw,betahalf,factor,integral
 
-      real (kind = dp_t), allocatable :: z(:),zl(:)
       real (kind = dp_t), allocatable :: m(:)
       real (kind = dp_t), allocatable :: force(:)
       real (kind = dp_t), allocatable :: edge(:)
@@ -169,26 +168,15 @@ contains
       nz = size(p0_new,dim=1)
 
       ! Cell-centered
-      allocate(force(nz),z(nz))
+      allocate(force(nz))
       allocate(m(nz))
       allocate(gam1_old(nz))
       allocate(grav_cell(nz))
 
       ! Edge-centered
-      allocate(edge(nz+1),zl(nz+1))
+      allocate(edge(nz+1))
       allocate(beta(nz+1),beta_nh(nz+1))
       allocate(grav_edge(nz+1))
-
-      ! z(j)  is the location of the cell center of cell (j)
-      ! zl(j) is the location of the lower edge of cell (j)
-      z(1) = 0.5_dp_t*dr
-      do j = 2,nz
-         z(j) = z(j-1) + dr
-      enddo
-      zl(1) = zero
-      do j = 2,nz+1
-         zl(j) = zl(j-1) + dr
-      enddo
 
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     UPDATE RHOX0
@@ -305,7 +293,7 @@ contains
 
       end do
 
-      deallocate(z,zl,force,edge,beta,beta_nh,gam1_old,grav_edge,grav_cell)
+      deallocate(force,edge,beta,beta_nh,gam1_old,grav_edge,grav_cell)
 
    end subroutine advect_base_state_spherical
 

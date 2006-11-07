@@ -14,301 +14,6 @@ module plot_variables_module
 
 contains
 
-  subroutine make_deltagamma (deltagamma,comp,s,rho0,p0,t0,rhoX0)
-
-    integer        , intent(in   ) :: comp
-    type(multifab) , intent(inout) :: deltagamma
-    type(multifab) , intent(in   ) :: s
-    real(kind=dp_t), intent(in   ) :: rho0(:), p0(:), t0(:), rhoX0(:,:)
-    
-    real(kind=dp_t), pointer:: sp(:,:,:,:)
-    real(kind=dp_t), pointer:: mp(:,:,:,:)
-    real(kind=dp_t), pointer:: dp(:,:,:,:)
-    integer :: lo(s%dim),hi(s%dim),ng,dm
-    integer :: i
-
-    ng = s%ng
-    dm = s%dim
-
-    do i = 1, s%nboxes
-       if ( multifab_remote(s, i) ) cycle
-       sp => dataptr(s, i)
-       dp => dataptr(deltagamma, i)
-       lo =  lwb(get_box(s, i))
-       hi =  upb(get_box(s, i))
-       select case (dm)
-       case (2)
-          call makedeltagamma_2d(dp(:,:,1,comp),sp(:,:,1,:), lo, hi, ng, rho0, p0, t0, rhoX0)
-       case (3)
-          call makedeltagamma_3d(dp(:,:,:,comp),sp(:,:,:,:), lo, hi, ng, rho0, p0, t0, rhoX0)
-       end select
-    end do
-
-  end subroutine make_deltagamma
-
-  subroutine makedeltagamma_2d (deltagamma,s,lo,hi,ng,rho0,p0,t0,rhoX0)
-
-    implicit none
-    integer, intent(in) :: lo(:), hi(:), ng
-    real (kind = dp_t), intent(  out) :: deltagamma(lo(1):,lo(2):)  
-    real (kind = dp_t), intent(in   ) ::       s(lo(1)-ng:,lo(2)-ng:,:)
-    real (kind = dp_t), intent(in   ) ::    rho0(lo(2):)
-    real (kind = dp_t), intent(in   ) ::      p0(lo(2):)
-    real (kind = dp_t), intent(in   ) ::      t0(lo(2):)
-    real (kind = dp_t), intent(in   ) ::   rhoX0(lo(2):,:)
-
-!     Local variables
-    integer :: i, j
-
-    integer :: input_flag
-    real (kind = dp_t) :: gam10
-      
-    do_diag = .false.
-
-    do j = lo(2), hi(2)
-
-       ! first compute the base state gamma1
-       den_row(1) = rho0(j)
-       p_row(1) = p0(j)
-       temp_row(1) = t0(j)   ! used as an initial guess
-
-       xn_zone(:) = rhoX0(j,:)/rho0(j)
-
-       input_flag = 4
-
-       call eos(input_flag, den_row, temp_row, &
-                npts, nspec, &
-                xn_zone, aion, zion, &
-                p_row, h_row, e_row, &
-                cv_row, cp_row, xne_row, eta_row, pele_row, &
-                dpdt_row, dpdr_row, dedt_row, dedr_row, &
-                dpdX_row, dhdX_row, &
-                gam1_row, cs_row, s_row, &
-                do_diag)
-
-       gam10 = gam1_row(1)
-
-       do i = lo(1), hi(1)
-
-          ! compute the thermodynamics of the full state
-          den_row(1) = s(i,j,rho_comp)
-          h_row(1) = s(i,j,rhoh_comp) / s(i,j,rho_comp)
-          temp_row(1) = t0(j)
-            
-          xn_zone(:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
-
-          input_flag = 2
-
-          call eos(input_flag, den_row, temp_row, &
-                   npts, nspec, &
-                   xn_zone, aion, zion, &
-                   p_row, h_row, e_row, &
-                   cv_row, cp_row, xne_row, eta_row, pele_row, &
-                   dpdt_row, dpdr_row, dedt_row, dedr_row, &
-                   dpdX_row, dhdX_row, &
-                   gam1_row, cs_row, s_row, &
-                   do_diag)
-
-          deltagamma(i,j) = gam1_row(1) - gam10
-
-       enddo
-    enddo
-
-  end subroutine makedeltagamma_2d
-    
-  subroutine makedeltagamma_3d (deltagamma,s,lo,hi,ng,rho0,p0,t0,rhoX0)
-
-    implicit none
-    integer, intent(in) :: lo(:), hi(:), ng
-    real (kind = dp_t), intent(  out) :: deltagamma(lo(1):,lo(2):,lo(3):)  
-    real (kind = dp_t), intent(in   ) ::       s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-    real (kind = dp_t), intent(in   ) ::    rho0(lo(3):)
-    real (kind = dp_t), intent(in   ) ::      p0(lo(3):)
-    real (kind = dp_t), intent(in   ) ::      t0(lo(3):)
-    real (kind = dp_t), intent(in   ) ::   rhoX0(lo(3):,:)
-
-
-!     Local variables
-    integer :: i, j, k
-    integer :: input_flag
-    real (kind = dp_t) :: gam10
-      
-    do_diag = .false.
-
-    do k = lo(3), hi(3)
-
-       ! first compute the base state gamma1
-       den_row(1) = rho0(k)
-       p_row(1) = p0(k)
-       temp_row(1) = t0(k)   ! used as an initial guess
-
-       xn_zone(:) = rhoX0(k,:)/rho0(k)
-
-       input_flag = 4
-
-       call eos(input_flag, den_row, temp_row, &
-                npts, nspec, &
-                xn_zone, aion, zion, &
-                p_row, h_row, e_row, &
-                cv_row, cp_row, xne_row, eta_row, pele_row, &
-                dpdt_row, dpdr_row, dedt_row, dedr_row, &
-                dpdX_row, dhdX_row, &
-                gam1_row, cs_row, s_row, &
-                do_diag)
-
-       gam10 = gam1_row(1)
-
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-
-             ! compute the thermodynamics of the full state
-             den_row(1) = s(i,j,k,rho_comp)
-             h_row(1) = s(i,j,k,rhoh_comp) / s(i,j,k,rho_comp)
-             temp_row(1) = t0(k)
-            
-             xn_zone(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
-             
-             input_flag = 2
-
-             call eos(input_flag, den_row, temp_row, &
-                      npts, nspec, &
-                      xn_zone, aion, zion, &
-                      p_row, h_row, e_row, &
-                      cv_row, cp_row, xne_row, eta_row, pele_row, &
-                      dpdt_row, dpdr_row, dedt_row, dedr_row, &
-                      dpdX_row, dhdX_row, &
-                      gam1_row, cs_row, s_row, &
-                      do_diag)
-
-             deltagamma(i,j,k) = gam1_row(1) - gam10
-
-          enddo
-       enddo
-    enddo
-
-  end subroutine makedeltagamma_3d
-
-  subroutine make_deltap (deltap,comp,s,p0,temp0)
-
-    integer        , intent(in   ) :: comp
-    type(multifab) , intent(inout) :: deltap
-    type(multifab) , intent(in   ) :: s
-    real(kind=dp_t), intent(in   ) :: p0(:),temp0(:)
-    
-    real(kind=dp_t), pointer:: sp(:,:,:,:)
-    real(kind=dp_t), pointer:: mp(:,:,:,:)
-    real(kind=dp_t), pointer:: dp(:,:,:,:)
-    integer :: lo(s%dim),hi(s%dim),ng,dm
-    integer :: i
-
-    ng = s%ng
-    dm = s%dim
-
-    do i = 1, s%nboxes
-       if ( multifab_remote(s, i) ) cycle
-       sp => dataptr(s, i)
-       dp => dataptr(deltap, i)
-       lo =  lwb(get_box(s, i))
-       hi =  upb(get_box(s, i))
-       select case (dm)
-       case (2)
-          call makedeltap_2d(dp(:,:,1,comp),sp(:,:,1,:), lo, hi, ng, p0, temp0)
-       case (3)
-          call makedeltap_3d(dp(:,:,:,comp),sp(:,:,:,:), lo, hi, ng, p0, temp0)
-       end select
-    end do
-
-  end subroutine make_deltap
-
-  subroutine makedeltap_2d (deltap,s,lo,hi,ng,p0,temp0)
-
-    implicit none
-    integer, intent(in) :: lo(:), hi(:), ng
-    real (kind = dp_t), intent(  out) :: deltap(lo(1):,lo(2):)  
-    real (kind = dp_t), intent(in   ) ::       s(lo(1)-ng:,lo(2)-ng:,:)
-    real (kind = dp_t), intent(in   ) ::      p0(lo(2):)
-    real (kind = dp_t), intent(in   ) ::   temp0(lo(2):)
-    
-!     Local variables
-    integer :: i, j
-    
-    integer :: input_flag
-      
-    do_diag = .false.
-    
-    do j = lo(2), hi(2)
-       do i = lo(1), hi(1)
-          den_row(1) = s(i,j,rho_comp)
-          p_row(1) = p0(j)
-          h_row(1) = s(i,j,rhoh_comp) / s(i,j,rho_comp)
-          xn_zone(:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
-
-          ! (rho,h) --> T,p, etc
-          input_flag = 2
-
-          call eos(input_flag, den_row, temp_row, &
-                   npts, nspec, &
-                   xn_zone, aion, zion, &
-                   p_row, h_row, e_row, &
-                   cv_row, cp_row, xne_row, eta_row, pele_row, &
-                   dpdt_row, dpdr_row, dedt_row, dedr_row, &
-                   dpdX_row, dhdX_row, &
-                   gam1_row, cs_row, s_row, &
-                   do_diag)
-
-          deltap(i,j) = (p_row(1)-p0(j))/ p0(j)
-
-       enddo
-    enddo
-
-  end subroutine makedeltap_2d
-
-  subroutine makedeltap_3d (deltap,s,lo,hi,ng,p0,temp0)
-
-    implicit none
-    integer, intent(in) :: lo(:), hi(:), ng
-    real (kind = dp_t), intent(  out) :: deltap(lo(1):,lo(2):,lo(3):)  
-    real (kind = dp_t), intent(in   ) ::      s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-    real (kind = dp_t), intent(in   ) ::      p0(lo(3):)
-    real (kind = dp_t), intent(in   ) ::   temp0(lo(3):)
-
-!     Local variables
-    integer :: i, j, k
-
-    integer :: input_flag
-    
-    do_diag = .false.
-
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-
-             den_row(1) = s(i,j,k,rho_comp)
-             p_row(1) = p0(k)
-             h_row(1) = s(i,j,k,rhoh_comp) / s(i,j,k,rho_comp)
-             xn_zone(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
-
-             ! (rho,h) --> T,p, etc
-             input_flag = 2
-
-             call eos(input_flag, den_row, temp_row, &
-                      npts, nspec, &
-                      xn_zone, aion, zion, &
-                      p_row, h_row, e_row, &
-                      cv_row, cp_row, xne_row, eta_row, pele_row, &
-                      dpdt_row, dpdr_row, dedt_row, dedr_row, &
-                      dpdX_row, dhdX_row, &
-                      gam1_row, cs_row, s_row, &
-                      do_diag)
-
-             deltap(i,j,k) = (p_row(1)-p0(k))/ p0(k)
-
-          enddo
-       enddo
-    enddo
-    
-  end subroutine makedeltap_3d
-
   subroutine make_enthalpy (enthalpy,comp,s)
 
     integer        , intent(in   ) :: comp
@@ -379,256 +84,14 @@ contains
     
   end subroutine make_enthalpy_3d
 
-   subroutine make_machno (machno,comp,u,s,p0,temp0)
+  subroutine make_tfromH (plotdata,comp_t,comp_dp,state,p0,temp0, dx)
 
-      integer        , intent(in   ) :: comp
-      type(multifab) , intent(inout) :: machno
-      type(multifab) , intent(in   ) :: u,s
-      real(kind=dp_t), intent(in   ) :: p0(:),temp0(:)
-
-      real(kind=dp_t), pointer:: up(:,:,:,:)
-      real(kind=dp_t), pointer:: sp(:,:,:,:)
-      real(kind=dp_t), pointer:: mp(:,:,:,:)
-      real(kind=dp_t), pointer:: dp(:,:,:,:)
-      integer :: lo(s%dim),hi(s%dim),ng,dm
-      integer :: i
-
-      ng = s%ng
-      dm = s%dim
-
-      do i = 1, s%nboxes
-         if ( multifab_remote(s, i) ) cycle
-         up => dataptr(u, i)
-         sp => dataptr(s, i)
-         mp => dataptr(machno, i)
-         lo =  lwb(get_box(s, i))
-         hi =  upb(get_box(s, i))
-         select case (dm)
-            case (2)
-              call makemachno_2d(mp(:,:,1,comp),up(:,:,1,:),sp(:,:,1,:), lo, hi, ng, p0, temp0)
-            case (3)
-              call makemachno_3d(mp(:,:,:,comp),up(:,:,:,:),sp(:,:,:,:), lo, hi, ng, p0, temp0)
-         end select
-      end do
-
-   end subroutine make_machno
-
-   subroutine makemachno_2d (machno,u,s,lo,hi,ng,p0,temp0)
-
-      implicit none
-      integer, intent(in) :: lo(:), hi(:), ng
-      real (kind = dp_t), intent(  out) :: machno(lo(1):,lo(2):)  
-      real (kind = dp_t), intent(in   ) ::       u(lo(1)-ng:,lo(2)-ng:,:)
-      real (kind = dp_t), intent(in   ) ::       s(lo(1)-ng:,lo(2)-ng:,:)
-      real (kind = dp_t), intent(in   ) ::      p0(lo(2):)
-      real (kind = dp_t), intent(in   ) ::   temp0(lo(2):)
-
-!     Local variables
-      integer :: i, j
-      real (kind = dp_t) :: vel
-
-      integer :: input_flag
-      integer :: nx
-      
-      do_diag = .false.
-
-      do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-
-             den_row(1) = s(i,j,rho_comp)
-             p_row(1) = p0(j)
-
-             xn_zone(:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
-
-             ! (rho,P) --> T,h, etc
-             input_flag = 4
-
-             call eos(input_flag, den_row, temp_row, &
-                      npts, nspec, &
-                      xn_zone, aion, zion, &
-                      p_row, h_row, e_row, &
-                      cv_row, cp_row, xne_row, eta_row, pele_row, &
-                      dpdt_row, dpdr_row, dedt_row, dedr_row, &
-                      dpdX_row, dhdX_row, &
-                      gam1_row, cs_row, s_row, &
-                      do_diag)
-
-             vel = sqrt(u(i,j,1)*u(i,j,1) + u(i,j,2)*u(i,j,2))
-             machno(i,j) = vel / cs_row(1)
-
-          enddo
-      enddo
-
-   end subroutine makemachno_2d
-
-   subroutine makemachno_3d (machno,u,s,lo,hi,ng,p0,temp0)
-
-      implicit none
-      integer, intent(in) :: lo(:), hi(:), ng
-      real (kind = dp_t), intent(  out) :: machno(lo(1):,lo(2):,lo(3):)  
-      real (kind = dp_t), intent(in   ) ::       u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-      real (kind = dp_t), intent(in   ) ::       s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-      real (kind = dp_t), intent(in   ) ::      p0(lo(3):)
-      real (kind = dp_t), intent(in   ) ::   temp0(lo(3):)
-
-!     Local variables
-      integer :: i, j, k
-      real (kind = dp_t) :: vel
-
-      integer :: input_flag
-      integer :: nx
-      
-      do_diag = .false.
-
-      do k = lo(3), hi(3)
-         do j = lo(2), hi(2)
-            do i = lo(1), hi(1)
-
-               den_row(1) = s(i,j,k,rho_comp)
-               p_row(1) = p0(k)
-
-               xn_zone(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
-
-               ! (rho,P) --> T,h, etc
-               input_flag = 4
-
-               call eos(input_flag, den_row, temp_row, &
-                        npts, nspec, &
-                        xn_zone, aion, zion, &
-                        p_row, h_row, e_row, &
-                        cv_row, cp_row, xne_row, eta_row, pele_row, &
-                        dpdt_row, dpdr_row, dedt_row, dedr_row, &
-                        dpdX_row, dhdX_row, &
-                        gam1_row, cs_row, s_row, &
-                        do_diag)
-
-               vel = sqrt(u(i,j,k,1)*u(i,j,k,1) + u(i,j,k,2)*u(i,j,k,2) + u(i,j,k,3)*u(i,j,k,3))
-               machno(i,j,k) = vel / cs_row(1)
-
-            enddo
-         enddo
-      enddo
-
-   end subroutine makemachno_3d
-
-  subroutine make_rhopert (rhopert,comp,s,s0,dx)
-
-    integer        , intent(in   ) :: comp
-    type(multifab) , intent(inout) :: rhopert
-    type(multifab) , intent(in   ) :: s
-    real(kind=dp_t), intent(in   ) :: s0(:,:)
-    real(kind=dp_t), intent(in   ) :: dx(:)
-    
-    real(kind=dp_t), pointer:: sp(:,:,:,:)
-    real(kind=dp_t), pointer:: pp(:,:,:,:)
-    integer :: lo(s%dim),hi(s%dim),ng,dm
-    integer :: i
-    
-    ng = s%ng
-    dm = s%dim
-    
-    do i = 1, s%nboxes
-       if ( multifab_remote(s, i) ) cycle
-       sp => dataptr(s, i)
-       pp => dataptr(rhopert, i)
-       lo =  lwb(get_box(s, i))
-       hi =  upb(get_box(s, i))
-       select case (dm)
-       case (2)
-          call makerhopert_2d(pp(:,:,1,comp), sp(:,:,1,rho_comp), &
-                              lo, hi, ng, s0(:,rho_comp))
-       case (3)
-          if (spherical .eq. 0) then
-            call makerhopert_3d_cart(pp(:,:,:,comp), sp(:,:,:,rho_comp), &
-                                     lo, hi, ng, s0(:,rho_comp))
-          else
-            call makerhopert_3d_sphr(pp(:,:,:,comp), sp(:,:,:,rho_comp), &
-                                     lo, hi, ng, s0, dx)
-          end if
-       end select
-    end do
-
-  end subroutine make_rhopert
-
-  subroutine makerhopert_2d (rhopert,s,lo,hi,ng,rho0)
-
-    implicit none
-    
-    integer, intent(in) :: lo(:), hi(:), ng
-    real (kind = dp_t), intent(  out) :: rhopert(lo(1):,lo(2):)  
-    real (kind = dp_t), intent(in   ) ::       s(lo(1)-ng:,lo(2)-ng:)
-    real (kind = dp_t), intent(in   ) :: rho0(lo(2):)
-
-!     Local variables
-    integer :: i, j
-
-    do j = lo(2), hi(2)
-       do i = lo(1), hi(1)
-          rhopert(i,j) = s(i,j) - rho0(j)
-       enddo
-    enddo
-    
-  end subroutine makerhopert_2d
-  
-  subroutine makerhopert_3d_cart (rhopert,s,lo,hi,ng,rho0)
-
-    implicit none
-    
-    integer, intent(in) :: lo(:), hi(:), ng
-    real (kind = dp_t), intent(  out) :: rhopert(lo(1):,lo(2):, lo(3):)  
-    real (kind = dp_t), intent(in   ) ::       s(lo(1)-ng:,lo(2)-ng:, lo(3)-ng:)
-    real (kind = dp_t), intent(in   ) :: rho0(lo(3):)
-    
-    !     Local variables
-    integer :: i, j, k
-
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-             rhopert(i,j,k) = s(i,j,k) - rho0(k)
-          enddo
-       enddo
-    end do
-    
-  end subroutine makerhopert_3d_cart
-  
-  subroutine makerhopert_3d_sphr (rhopert,s,lo,hi,ng,s0,dx)
-
-    implicit none
-    
-    integer, intent(in) :: lo(:), hi(:), ng
-    real (kind = dp_t), intent(  out) :: rhopert(lo(1):,lo(2):, lo(3):)  
-    real (kind = dp_t), intent(in   ) ::       s(lo(1)-ng:,lo(2)-ng:, lo(3)-ng:)
-    real (kind = dp_t), intent(in   ) ::      s0(lo(3):,:)
-    real (kind = dp_t), intent(in   ) :: dx(:)
-    
-    !     Local variables
-    integer :: i, j, k
-    real (kind = dp_t), allocatable :: rho0_cart(:,:,:)
-
-    allocate(rho0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-
-    call fill_3d_data(rho0_cart,s0(:,rho_comp),dx,0)
-
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-             rhopert(i,j,k) = s(i,j,k) - rho0_cart(i,j,k)
-          enddo
-       enddo
-    end do
-
-    deallocate(rho0_cart)
-    
-  end subroutine makerhopert_3d_sphr
-
-  subroutine make_tfromH (T,comp,state,p0,temp0)
-
-    integer        , intent(inout) :: comp
-    type(multifab) , intent(inout) :: T
+    integer        , intent(in   ) :: comp_t,comp_dp
+    type(multifab) , intent(inout) :: plotdata
     type(multifab) , intent(in   ) :: state
     real(kind=dp_t), intent(in   ) ::    p0(:)
     real(kind=dp_t), intent(in   ) :: temp0(:)
+    real(kind=dp_t), intent(in   ) :: dx(:)
 
     real(kind=dp_t), pointer:: sp(:,:,:,:)
     real(kind=dp_t), pointer:: tp(:,:,:,:)
@@ -641,27 +104,34 @@ contains
     do i = 1, state%nboxes
        if ( multifab_remote(state, i) ) cycle
        sp => dataptr(state, i)
-       tp => dataptr(T    , i)
+       tp => dataptr(plotdata, i)
        lo =  lwb(get_box(state, i))
        hi =  upb(get_box(state, i))
        select case (dm)
        case (2)
-          call maketfromH_2d(tp(:,:,1,comp),sp(:,:,1,:), lo, hi, ng, p0, temp0)
+          call maketfromH_2d(tp(:,:,1,comp_t),tp(:,:,1,comp_dp),sp(:,:,1,:), lo, hi, ng, p0, temp0)
        case (3)
-          call maketfromH_3d(tp(:,:,:,comp),sp(:,:,:,:), lo, hi, ng, p0, temp0)
+          if (spherical .eq. 1) then
+            call maketfromH_3d_cart(tp(:,:,:,comp_t),tp(:,:,:,comp_dp),sp(:,:,:,:), &
+                                    lo, hi, ng, p0, temp0)
+          else
+            call maketfromH_3d_sphr(tp(:,:,:,comp_t),tp(:,:,:,comp_dp),sp(:,:,:,:), &
+                                    lo, hi, ng, p0, temp0, dx)
+          end if
        end select
     end do
 
   end subroutine make_tfromH
 
-  subroutine maketfromH_2d (T,state,lo,hi,ng,p0,temp0)
+  subroutine maketfromH_2d (T,deltaP,state,lo,hi,ng,p0,temp0)
 
     implicit none
     integer, intent(in) :: lo(:), hi(:), ng
-    real (kind = dp_t), intent(  out) ::     T(lo(1)   :,lo(2):)  
-    real (kind = dp_t), intent(in   ) :: state(lo(1)-ng:,lo(2)-ng:,:)
-    real (kind = dp_t), intent(in   ) ::    p0(lo(2):)
-    real (kind = dp_t), intent(in   ) :: temp0(lo(2):)
+    real (kind = dp_t), intent(  out) ::      T(lo(1)   :,lo(2):)  
+    real (kind = dp_t), intent(  out) :: deltaP(lo(1)   :,lo(2):)  
+    real (kind = dp_t), intent(in   ) ::  state(lo(1)-ng:,lo(2)-ng:,:)
+    real (kind = dp_t), intent(in   ) ::     p0(lo(2):)
+    real (kind = dp_t), intent(in   ) ::  temp0(lo(2):)
 
     !     Local variables
     integer :: i, j
@@ -673,7 +143,7 @@ contains
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
 
-          ! (rho, H) --> T
+          ! (rho, H) --> T, p
             
           den_row(1)  = state(i,j,rho_comp)
           h_row(1)    = state(i,j,rhoh_comp) / state(i,j,rho_comp)
@@ -694,17 +164,20 @@ contains
                    do_diag)
           
           T(i,j) = log(temp_row(1))/log(10.)
+
+          deltaP(i,j) = (p_row(1)-p0(j))/ p0(j)
           
        enddo
     enddo
 
   end subroutine maketfromH_2d
 
-  subroutine maketfromH_3d (T,state,lo,hi,ng,p0,temp0)
+  subroutine maketfromH_3d_cart (T,deltaP,state,lo,hi,ng,p0,temp0)
 
     implicit none
     integer, intent(in) :: lo(:), hi(:), ng
-    real (kind = dp_t), intent(  out) ::     T(lo(1)   :,lo(2):   ,lo(3):     )  
+    real (kind = dp_t), intent(  out) ::      T(lo(1)   :,lo(2):   ,lo(3):     )  
+    real (kind = dp_t), intent(  out) :: deltaP(lo(1)   :,lo(2):   ,lo(3):     )  
     real (kind = dp_t), intent(in   ) :: state(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind = dp_t), intent(in   ) ::    p0(lo(3):)
     real (kind = dp_t), intent(in   ) :: temp0(lo(3):)
@@ -720,7 +193,7 @@ contains
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
 
-             ! (rho, H) --> T
+             ! (rho, H) --> T, p
             
              den_row(1)  = state(i,j,k,rho_comp)
              h_row(1)    = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp)
@@ -742,21 +215,89 @@ contains
 
              T(i,j,k) = log(temp_row(1))/log(10.)
 
+             deltaP(i,j,k) = (p_row(1)-p0(k))/ p0(k)
+
           enddo
        enddo
     enddo
 
-  end subroutine maketfromH_3d
+  end subroutine maketfromH_3d_cart
 
-  subroutine make_tfromrho (t,comp,s,t0,p0,time,dx)
+  subroutine maketfromH_3d_sphr (T,deltaP,state,lo,hi,ng,p0,t0,dx)
 
-    integer        , intent(inout) :: comp
-    type(multifab) , intent(inout) :: t
+    implicit none
+    integer, intent(in) :: lo(:), hi(:), ng
+    real (kind = dp_t), intent(  out) ::      T(lo(1)   :,lo(2):   ,lo(3):     )  
+    real (kind = dp_t), intent(  out) :: deltaP(lo(1)   :,lo(2):   ,lo(3):     )  
+    real (kind = dp_t), intent(in   ) :: state(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
+    real (kind = dp_t), intent(in   ) ::    p0(lo(3):)
+    real (kind = dp_t), intent(in   ) ::    t0(lo(3):)
+    real (kind = dp_t), intent(in   ) :: dx(:)
+
+    !     Local variables
+    integer :: i, j, k, nx
+    real (kind=dp_t), allocatable :: t0_cart(:,:,:)
+    real (kind=dp_t), allocatable :: p0_cart(:,:,:)
+
+    allocate(t0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+    call fill_3d_data(t0_cart,t0,dx,0)
+
+    allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+    call fill_3d_data(p0_cart,t0,dx,0)
+
+    do_diag = .false.
+
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+
+             ! (rho, H) --> T, p
+            
+             den_row(1)  = state(i,j,k,rho_comp)
+             h_row(1)    = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp)
+             p_row(1)    = p0_cart(i,j,k)
+             temp_row(1) = t0_cart(i,j,k)
+             xn_zone(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
+
+             input_flag = 2
+  
+             call eos(input_flag, den_row, temp_row, &
+                      npts, nspec, &
+                      xn_zone, aion, zion, &
+                      p_row, h_row, e_row, &
+                      cv_row, cp_row, xne_row, eta_row, pele_row, &
+                      dpdt_row, dpdr_row, dedt_row, dedr_row, &
+                      dpdX_row, dhdX_row, &
+                      gam1_row, cs_row, s_row, &
+                      do_diag)
+
+             T(i,j,k) = log(temp_row(1))/log(10.)
+
+             deltaP(i,j,k) = (p_row(1)-p0_cart(i,j,k))/ p0_cart(i,j,k)
+
+          enddo
+       enddo
+    enddo
+   
+    deallocate(t0_cart,p0_cart)
+
+  end subroutine maketfromH_3d_sphr
+
+  subroutine make_tfromrho (plotdata,comp_tfromrho,comp_tpert,comp_rhopert, &
+                            comp_machno,comp_deltag, &
+                            s,u,s0,t0,p0,time,dx)
+
+    integer        , intent(in   ) :: comp_tfromrho,comp_tpert
+    integer        , intent(in   ) :: comp_rhopert, comp_machno, comp_deltag
+    type(multifab) , intent(inout) :: plotdata
     type(multifab) , intent(in   ) :: s
-    real(kind=dp_t), intent(in   ) :: t0(:),p0(:)
+    type(multifab) , intent(in   ) :: u
+    real(kind=dp_t), intent(in   ) :: s0(:,:)
+    real(kind=dp_t), intent(inout) :: t0(:)
+    real(kind=dp_t), intent(in   ) :: p0(:)
     real(kind=dp_t), intent(in   ) :: time,dx(:)
 
-    real(kind=dp_t), pointer:: sp(:,:,:,:),tp(:,:,:,:)
+    real(kind=dp_t), pointer:: sp(:,:,:,:),tp(:,:,:,:),up(:,:,:,:)
     integer :: lo(s%dim),hi(s%dim),ng,dm
     integer :: i
 
@@ -765,36 +306,87 @@ contains
 
     do i = 1, s%nboxes
        if ( multifab_remote(s, i) ) cycle
-       tp => dataptr(t, i)
+       tp => dataptr(plotdata, i)
        sp => dataptr(s, i)
+       up => dataptr(u, i)
        lo =  lwb(get_box(s, i))
        hi =  upb(get_box(s, i))
        select case (dm)
        case (2)
-          call maketfromrho_2d(tp(:,:,1,comp),sp(:,:,1,:), lo, hi, ng, t0, p0, time, dx)
+          call maketfromrho_2d(tp(:,:,1,comp_tfromrho),tp(:,:,1,comp_tpert), &
+                               tp(:,:,1,comp_rhopert ), &
+                               tp(:,:,1,comp_machno  ),tp(:,:,1,comp_deltag), &
+                               sp(:,:,1,:), up(:,:,1,:), &
+                               lo, hi, ng, s0, t0, p0, time, dx)
        case (3)
-          call maketfromrho_3d(tp(:,:,:,comp),sp(:,:,:,:), lo, hi, ng, t0, p0, time, dx)
+          if (spherical .eq. 1) then
+            call maketfromrho_3d_sphr(tp(:,:,:,comp_tfromrho),tp(:,:,:,comp_tpert), &
+                                      tp(:,:,:,comp_rhopert ), &
+                                      tp(:,:,:,comp_machno  ),tp(:,:,:,comp_deltag), &
+                                      sp(:,:,:,:), up(:,:,:,:), &
+                                      lo, hi, ng, s0, t0, p0, time, dx)
+          else
+            call maketfromrho_3d_cart(tp(:,:,:,comp_tfromrho),tp(:,:,:,comp_tpert), &
+                                      tp(:,:,:,comp_rhopert ), &
+                                      tp(:,:,:,comp_machno  ),tp(:,:,:,comp_deltag), &
+                                      sp(:,:,:,:), up(:,:,:,:), &
+                                      lo, hi, ng, s0, t0, p0, time, dx)
+          endif
        end select
     end do
 
   end subroutine make_tfromrho
 
-  subroutine maketfromrho_2d (t,s,lo,hi,ng,t0,p0,time,dx)
+  subroutine maketfromrho_2d (t,tpert,rhopert,machno,deltagamma,s,u,lo,hi,ng,s0,t0,p0,time,dx)
 
     implicit none
 
     integer, intent(in) :: lo(:), hi(:), ng
-    real (kind=dp_t), intent(  out) :: t(lo(1):,lo(2):)  
+    real (kind=dp_t), intent(  out)     ::      t(lo(1):,lo(2):)  
+    real (kind=dp_t), intent(  out) ::      tpert(lo(1):,lo(2):)  
+    real (kind=dp_t), intent(  out) ::    rhopert(lo(1):,lo(2):)  
+    real (kind=dp_t), intent(  out) ::     machno(lo(1):,lo(2):)  
+    real (kind=dp_t), intent(  out) :: deltagamma(lo(1):,lo(2):)  
     real (kind=dp_t), intent(in   ) ::  s(lo(1)-ng:,lo(2)-ng:,:)
-    real (kind=dp_t), intent(in   ) :: t0(lo(2):)
+    real (kind=dp_t), intent(in   ) ::  u(lo(1)-ng:,lo(2)-ng:,:)
+    real (kind=dp_t), intent(in   ) :: s0(lo(2):,:)
+    real (kind=dp_t), intent(inout) :: t0(lo(2):)
     real (kind=dp_t), intent(in   ) :: p0(lo(2):)
     real (kind=dp_t), intent(in   ) :: time,dx(:)
 
     !     Local variables
-    integer :: i, j
+    integer          :: i, j
+    real (kind=dp_t) :: vel
+    real (kind=dp_t), allocatable :: gam10(:)
+
+    allocate(gam10(lo(2):hi(2)))
 
     do_diag = .false.
 
+    ! First make sure we have t0 right.
+    do j = lo(2), hi(2)
+        den_row(1) = s0(j,rho_comp)
+       temp_row(1) = t0(j)
+          p_row(1) = p0(j)
+       xn_zone(:) = s0(j,spec_comp:spec_comp+nspec-1)/den_row(1)
+
+       ! (rho,P) --> T,h
+       input_flag = 4
+
+       call eos(input_flag, den_row, temp_row, &
+                npts, nspec, &
+                xn_zone, aion, zion, &
+                p_row, h_row, e_row, & 
+                cv_row, cp_row, xne_row, eta_row, pele_row, &
+                dpdt_row, dpdr_row, dedt_row, dedr_row, &
+                dpdX_row, dhdX_row, &
+                gam1_row, cs_row, s_row, &
+                do_diag)
+        t0(j) = temp_row(1)
+     gam10(j) = gam1_row(1)
+    end do
+
+    ! Then compute the perturbation
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
 
@@ -817,27 +409,72 @@ contains
                    do_diag)
           
           t(i,j) = log(temp_row(1))/log(10.)
+          tpert(i,j) = t(i,j) - temp_row(1)
+
+          rhopert(i,j) = s(i,j,rho_comp) - s0(j,rho_comp)
+
+          vel = sqrt(u(i,j,1)*u(i,j,1) + u(i,j,2)*u(i,j,2))
+          machno(i,j) = vel / cs_row(1)
+
+          deltagamma(i,j) = gam1_row(1) - gam10(j)
        enddo
     enddo
 
+    deallocate(gam10)
+
   end subroutine maketfromrho_2d
 
-  subroutine maketfromrho_3d (t,s,lo,hi,ng,t0,p0,time,dx)
+  subroutine maketfromrho_3d_cart (t,tpert,rhopert,machno,deltagamma, &
+                                   s,u,lo,hi,ng,s0,t0,p0,time,dx)
 
     implicit none
 
     integer, intent(in) :: lo(:), hi(:), ng
-    real (kind=dp_t), intent(  out) :: t(lo(1):,lo(2):,lo(3):)  
+    real (kind=dp_t), intent(  out) ::          t(lo(1):,lo(2):,lo(3):)  
+    real (kind=dp_t), intent(  out) ::      tpert(lo(1):,lo(2):,lo(3):)  
+    real (kind=dp_t), intent(  out) ::    rhopert(lo(1):,lo(2):,lo(3):)  
+    real (kind=dp_t), intent(  out) ::     machno(lo(1):,lo(2):,lo(3):)  
+    real (kind=dp_t), intent(  out) :: deltagamma(lo(1):,lo(2):,lo(3):)  
     real (kind=dp_t), intent(in   ) ::  s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-    real (kind=dp_t), intent(in   ) :: t0(lo(3):)
+    real (kind=dp_t), intent(in   ) ::  u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
+    real (kind=dp_t), intent(in   ) :: s0(lo(3):,:)
+    real (kind=dp_t), intent(inout) :: t0(lo(3):)
     real (kind=dp_t), intent(in   ) :: p0(lo(3):)
     real (kind=dp_t), intent(in   ) :: time,dx(:)
 
     !     Local variables
-    integer :: i, j, k
+    integer          :: i, j, k
+    real (kind=dp_t) :: vel
+    real (kind=dp_t), allocatable :: gam10(:)
+
+    allocate(gam10(lo(3):hi(3)))
 
     do_diag = .false.
 
+    ! First make sure we have t0 right.
+    do k = lo(3), hi(3)
+        den_row(1) = s0(k,rho_comp)
+       temp_row(1) = t0(k)
+          p_row(1) = p0(k)
+       xn_zone(:) = s0(k,spec_comp:spec_comp+nspec-1)/den_row(1)
+
+       ! (rho,P) --> T,h
+       input_flag = 4
+
+       call eos(input_flag, den_row, temp_row, &
+                npts, nspec, &
+                xn_zone, aion, zion, &
+                p_row, h_row, e_row, & 
+                cv_row, cp_row, xne_row, eta_row, pele_row, &
+                dpdt_row, dpdr_row, dedt_row, dedr_row, &
+                dpdX_row, dhdX_row, &
+                gam1_row, cs_row, s_row, &
+                do_diag)
+        t0(k) = temp_row(1)
+     gam10(k) = gam1_row(1)
+    end do
+
+    ! Then compute the perturbation and Mach number
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -861,126 +498,132 @@ contains
                       do_diag)
 
              t(i,j,k) = log(temp_row(1))/log(10.)
+             tpert(i,j,k) = temp_row(1) - t0(k)
 
+             rhopert(i,j,k) = s(i,j,k,rho_comp) - s0(k,rho_comp)
+
+             vel = sqrt(u(i,j,k,1)*u(i,j,k,1) + u(i,j,k,2)*u(i,j,k,2) + u(i,j,k,3)*u(i,j,k,3))
+             machno(i,j,k) = vel / cs_row(1)
+
+             deltagamma(i,j,k) = gam1_row(1) - gam10(k)
           enddo
        enddo
     enddo
 
-  end subroutine maketfromrho_3d
+    deallocate(gam10)
 
-  subroutine make_tpert (T,comp,state,p0,temp0)
+   end subroutine maketfromrho_3d_cart
 
-    integer        , intent(inout) :: comp
-    type(multifab) , intent(inout) :: T
-    type(multifab) , intent(in   ) :: state
-    real(kind=dp_t), intent(in   ) ::    p0(:)
-    real(kind=dp_t), intent(in   ) :: temp0(:)
-    
-    real(kind=dp_t), pointer:: sp(:,:,:,:)
-    real(kind=dp_t), pointer:: tp(:,:,:,:)
-    integer :: lo(state%dim),hi(state%dim),ng,dm
-    integer :: i
-    
-    ng = state%ng
-    dm = state%dim
+  subroutine maketfromrho_3d_sphr (t,tpert,rhopert,machno,deltagamma, &
+                                   s,u,lo,hi,ng,s0,t0,p0,time,dx)
 
-    do i = 1, state%nboxes
-       if ( multifab_remote(state, i) ) cycle
-       sp => dataptr(state, i)
-       tp => dataptr(T    , i)
-       lo =  lwb(get_box(state, i))
-       hi =  upb(get_box(state, i))
-       select case (dm)
-       case (2)
-          call maketpert_2d(tp(:,:,1,comp),sp(:,:,1,:), lo, hi, ng, p0, temp0)
-       case (3)
-          call maketpert_3d(tp(:,:,:,comp),sp(:,:,:,:), lo, hi, ng, p0, temp0)
-       end select
+    implicit none
+
+    integer, intent(in) :: lo(:), hi(:), ng
+    real (kind=dp_t), intent(  out) ::          t(lo(1):,lo(2):,lo(3):)  
+    real (kind=dp_t), intent(  out) ::      tpert(lo(1):,lo(2):,lo(3):)  
+    real (kind=dp_t), intent(  out) ::    rhopert(lo(1):,lo(2):,lo(3):)  
+    real (kind=dp_t), intent(  out) ::     machno(lo(1):,lo(2):,lo(3):)  
+    real (kind=dp_t), intent(  out) :: deltagamma(lo(1):,lo(2):,lo(3):)  
+    real (kind=dp_t), intent(in   ) ::  s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
+    real (kind=dp_t), intent(in   ) ::  u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
+    real (kind=dp_t), intent(in   ) :: s0(lo(3):,:)
+    real (kind=dp_t), intent(inout) :: t0(lo(3):)
+    real (kind=dp_t), intent(in   ) :: p0(lo(3):)
+    real (kind=dp_t), intent(in   ) :: time,dx(:)
+
+    !     Local variables
+    integer          :: i, j, k
+    real (kind=dp_t) :: vel
+    real (kind=dp_t), allocatable :: gam10(:)
+    real (kind=dp_t), allocatable :: rho0_cart(:,:,:)
+    real (kind=dp_t), allocatable ::   t0_cart(:,:,:)
+    real (kind=dp_t), allocatable ::   p0_cart(:,:,:)
+    real (kind=dp_t), allocatable :: gam0_cart(:,:,:)
+
+    allocate(gam10(lo(3):hi(3)))
+    allocate(rho0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+    allocate(  t0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+    allocate(  p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+    allocate(gam0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+
+    do_diag = .false.
+
+    ! First make sure we have t0 right.
+    do k = lo(3), hi(3)
+        den_row(1) = s0(k,rho_comp)
+       temp_row(1) = t0(k)
+          p_row(1) = p0(k)
+       xn_zone(:) = s0(k,spec_comp:spec_comp+nspec-1)/den_row(1)
+
+       ! (rho,P) --> T,h
+       input_flag = 4
+
+       call eos(input_flag, den_row, temp_row, &
+                npts, nspec, &
+                xn_zone, aion, zion, &
+                p_row, h_row, e_row, & 
+                cv_row, cp_row, xne_row, eta_row, pele_row, &
+                dpdt_row, dpdr_row, dedt_row, dedr_row, &
+                dpdX_row, dhdX_row, &
+                gam1_row, cs_row, s_row, &
+                do_diag)
+        t0(k) = temp_row(1)
+     gam10(k) = gam1_row(1)
     end do
 
-  end subroutine make_tpert
+    allocate(rho0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+    call fill_3d_data(rho0_cart,s0(:,rho_comp),dx,0)
 
-  subroutine maketpert_2d (T,state,lo,hi,ng,p0,temp0)
+    allocate(t0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+    call fill_3d_data(t0_cart,t0,dx,0)
 
-    implicit none
-    integer, intent(in) :: lo(:), hi(:), ng
-    real (kind = dp_t), intent(  out) ::     T(lo(1)   :,lo(2):)  
-    real (kind = dp_t), intent(in   ) :: state(lo(1)-ng:,lo(2)-ng:,:)
-    real (kind = dp_t), intent(in   ) ::    p0(lo(2):)
-    real (kind = dp_t), intent(in   ) :: temp0(lo(2):)
+    allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+    call fill_3d_data(p0_cart,t0,dx,0)
 
-    integer :: i, j
+    allocate(gam0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+    call fill_3d_data(gam0_cart,gam10,dx,0)
 
-    do_diag = .false.
-
-    do j = lo(2), hi(2)
-       do i = lo(1), hi(1)
-            
-          den_row(1) = state(i,j,rho_comp)
-          temp_row(1) = temp0(j)
-          p_row(1) = p0(j)
-          xn_zone(:) = state(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
-
-          ! (rho, P) --> T
-          input_flag = 4
-
-          call eos(input_flag, den_row, temp_row, &
-                   npts, nspec, &
-                   xn_zone, aion, zion, &
-                   p_row, h_row, e_row, &
-                   cv_row, cp_row, xne_row, eta_row, pele_row, &
-                   dpdt_row, dpdr_row, dedt_row, dedr_row, &
-                   dpdX_row, dhdX_row, &
-                   gam1_row, cs_row, s_row, &
-                   do_diag)
-          
-          T(i,j) = temp_row(1) - temp0(j)
-       enddo
-    enddo
-
-  end subroutine maketpert_2d
-
-  subroutine maketpert_3d (T,state,lo,hi,ng,p0,temp0)
-
-    implicit none
-    integer, intent(in) :: lo(:), hi(:), ng
-    real (kind = dp_t), intent(  out) ::     T(lo(1)   :,lo(2):   ,lo(3)   :  )  
-    real (kind = dp_t), intent(in   ) :: state(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-    real (kind = dp_t), intent(in   ) ::    p0(lo(3):)
-    real (kind = dp_t), intent(in   ) :: temp0(lo(3):)
-
-    integer :: i, j, k
-
-    do_diag = .false.
-
+    ! Then compute the perturbation and Mach number
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
-            
-             den_row(1) = state(i,j,k,rho_comp)
-             temp_row(1) = temp0(k)
-             p_row(1) = p0(k)
-             xn_zone(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
-                          
-             ! (rho, P) --> T
+
+             den_row(1) = s(i,j,k,rho_comp)
+             temp_row(1) = t0_cart(i,j,k)
+             p_row(1) = p0_cart(i,j,k)
+             xn_zone(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
+
+             ! (rho,P) --> T,h
              input_flag = 4
 
              call eos(input_flag, den_row, temp_row, &
                       npts, nspec, &
                       xn_zone, aion, zion, &
-                      p_row, h_row, e_row, &
+                      p_row, h_row, e_row, & 
                       cv_row, cp_row, xne_row, eta_row, pele_row, &
                       dpdt_row, dpdr_row, dedt_row, dedr_row, &
                       dpdX_row, dhdX_row, &
                       gam1_row, cs_row, s_row, &
                       do_diag)
 
-             T(i,j,k) = temp_row(1) - temp0(k)
+             t(i,j,k) = log(temp_row(1))/log(10.)
+             tpert(i,j,k) = temp_row(1) - t0_cart(i,j,k)
+
+             rhopert(i,j,k) = s(i,j,k,rho_comp) - rho0_cart(i,j,k)
+
+             vel = sqrt(u(i,j,k,1)*u(i,j,k,1) + u(i,j,k,2)*u(i,j,k,2) + u(i,j,k,3)*u(i,j,k,3))
+             machno(i,j,k) = vel / cs_row(1)
+
+             deltagamma(i,j,k) = gam1_row(1) - gam0_cart(i,j,k)
           enddo
        enddo
     enddo
 
-  end subroutine maketpert_3d
+    deallocate(gam10)
+    deallocate(rho0_cart,t0_cart,p0_cart,gam0_cart)
+
+   end subroutine maketfromrho_3d_sphr
 
    subroutine make_XfromrhoX (plotdata,comp,s)
 

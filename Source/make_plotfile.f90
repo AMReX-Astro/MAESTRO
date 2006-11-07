@@ -11,6 +11,7 @@ module make_plotfile_module
   use multifab_module
   use parallel
   use vort_module
+  use geometry
   use plot_variables_module
 
   use variables
@@ -32,9 +33,13 @@ contains
     character(len=20), intent(in   ) :: plot_names(:)
     real(dp_t)       , intent(in   ) :: time,dx(:,:)
     type(bc_tower)   , intent(in   ) :: the_bc_tower
-    real(dp_t)       , intent(in   ) :: s0(:,:),p0(:),temp0(:)
+    real(dp_t)       , intent(in   ) :: s0(:,:),p0(:)
+    real(dp_t)       , intent(inout) :: temp0(:)
 
     integer :: n,dm,nlevs,nscal,icomp
+    integer :: icomp_tfromrho,icomp_tpert,icomp_rhopert
+    integer :: icomp_machno,icomp_deltag
+    integer :: icomp_tfromH,icomp_dp
     character(len=7) :: sd_name
 
     dm = get_dim(mba)
@@ -65,46 +70,66 @@ contains
        call make_vorticity (plotdata(n),icomp,u(n),dx(n,:), &
                             the_bc_tower%bc_tower_array(n))
 
-       ! DENSITY PERTURBATION
-       icomp = derive_comp+1
-       call make_rhopert   (plotdata(n),icomp,s(n),s0,dx(n,:))
-
        ! ENTHALPY (RHO H)
-       icomp = derive_comp+2
+       icomp = derive_comp+1
        call make_enthalpy  (plotdata(n),icomp,s(n))
 
-       ! TEMP (FROM RHO)
-       icomp = derive_comp+3
-       call make_tfromrho  (plotdata(n),icomp,s(n),temp0,p0,time,dx(n,:))
+    end do
 
-       ! TEMP (FROM H)
-       icomp = derive_comp+4
-       call make_tfromH    (plotdata(n),icomp,s(n),p0,temp0)
+    if (spherical .eq. 1) then
 
-       ! TEMPERATURE PERTURBATION
-       icomp = derive_comp+5
-       call make_tpert     (plotdata(n),icomp,s(n),p0,temp0)
+      do n = 1,nlevs
 
-       ! MACH NUMBER
-       icomp = derive_comp+6
-       call make_machno    (plotdata(n),icomp,u(n),s(n),p0,temp0)
+       ! RHOPERT & TEMP (FROM RHO) & TPERT & MACHNO & (GAM1 - GAM10)
+       icomp_rhopert  = derive_comp+2
+       icomp_tfromrho = derive_comp+3
+       icomp_tpert    = derive_comp+5
+       icomp_machno   = derive_comp+6
+       icomp_deltag   = derive_comp+8
+       call make_tfromrho  (plotdata(n),icomp_tfromrho,icomp_tpert,icomp_rhopert, &
+                            icomp_machno,icomp_deltag, &
+                            s(n),u(n),s0,temp0,p0,time,dx(n,:))
 
-       ! DELTA P (P - P0)
-       icomp = derive_comp+7
-       call make_deltap    (plotdata(n),icomp,s(n),p0,temp0)
+       ! TEMP (FROM H) & DELTA_P
+       icomp_tfromH  = derive_comp+4
+       icomp_dp      = derive_comp+7
+       call make_tfromH    (plotdata(n),icomp_tfromH,icomp_dp,s(n),p0,temp0,dx(n,:))
 
-       ! GAMMA1 (gamma1 - gamma1_0)
-       icomp = derive_comp+8
-       call make_deltagamma(plotdata(n),icomp,s(n),s0(:,rho_comp),p0,temp0,s0(:,spec_comp:spec_comp+nspec-1))
+      end do
 
-       ! PRESSURE GRADIENT
-       icomp = derive_comp+9
-       call multifab_copy_c(plotdata(n),icomp,gp(n),1,dm)
+    else
 
-     end do
+      do n = 1,nlevs
 
-     write(unit=sd_name,fmt='("plt",i4.4)') istep
-     call fabio_ml_multifab_write_d(plotdata, mba%rr(:,1), sd_name, plot_names, &
+       ! RHOPERT & TEMP (FROM RHO) & TPERT & MACHNO & (GAM1 - GAM10)
+       icomp_rhopert  = derive_comp+2
+       icomp_tfromrho = derive_comp+3
+       icomp_tpert    = derive_comp+5
+       icomp_machno   = derive_comp+6
+       icomp_deltag   = derive_comp+8
+       call make_tfromrho  (plotdata(n),icomp_tfromrho,icomp_tpert,icomp_rhopert, &
+                            icomp_machno,icomp_deltag, &
+                            s(n),u(n),s0,temp0,p0,time,dx(n,:))
+
+       ! TEMP (FROM H) & DELTA_P
+       icomp_tfromH  = derive_comp+4
+       icomp_dp      = derive_comp+7
+       call make_tfromH    (plotdata(n),icomp_tfromH,icomp_dp,s(n),p0,temp0,dx(n,:))
+
+      end do
+
+    end if
+
+    do n = 1,nlevs
+
+      ! PRESSURE GRADIENT
+      icomp = derive_comp+9
+      call multifab_copy_c(plotdata(n),icomp,gp(n),1,dm)
+
+    end do
+
+    write(unit=sd_name,fmt='("plt",i4.4)') istep
+    call fabio_ml_multifab_write_d(plotdata, mba%rr(:,1), sd_name, plot_names, &
                                     mba%pd(1), time, dx(1,:))
 
   end subroutine make_plotfile

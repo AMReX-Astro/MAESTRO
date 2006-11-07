@@ -18,7 +18,7 @@ contains
 
       ! Local variables
       integer                      :: k,nz
-      real(kind=dp_t), allocatable :: z(:),zl(:),m(:)
+      real(kind=dp_t), allocatable :: m(:)
 
       real(kind=dp_t), parameter :: Gconst = 6.6725985E-8_dp_t
       real(kind=dp_t), parameter ::     pi = 3.141592653589793238_dp_t
@@ -31,18 +31,6 @@ contains
         grav_cell(:) = -1.5d10
 
       else
-
-        allocate(z(nz))
-        z(1) = half*dr
-        do k = 2,nz
-           z(k) = z(k-1) + dr
-        enddo
-
-        allocate(zl(nz))
-        zl(1) = zero
-        do k = 2,nz
-           zl(k) = zl(k-1) + dr
-        enddo
 
         allocate(m(nz))
 
@@ -58,7 +46,7 @@ contains
            grav_cell(k) = Gconst * m(k) / z(k)**2
         enddo
 
-        deallocate(z,zl,m)
+        deallocate(m)
 
       end if
 
@@ -72,7 +60,6 @@ contains
       ! Local variables
       integer                      :: j,k,nz
       real(kind=dp_t)              :: mencl
-      real(kind=dp_t), allocatable :: zl(:)
 
       real(kind=dp_t), parameter :: Gconst = 6.6725985E-8_dp_t
       real(kind=dp_t), parameter ::     pi = 3.141592653589793238_dp_t
@@ -86,12 +73,6 @@ contains
 
       else
 
-        allocate(zl(nz))
-        zl(1) = zero
-        do k = 2,nz
-           zl(k) = zl(k-1) + dr
-        enddo
-  
         grav_edge(1) = zero 
         do k = 2,nz
           mencl = zero 
@@ -100,8 +81,6 @@ contains
           end do
           grav_edge(k) = Gconst * mencl / zl(k)**2
         end do
-  
-        deallocate(zl)
 
       end if
 

@@ -78,31 +78,18 @@ contains
 !     Local variables
       integer         :: j, k, n, nz
       real(kind=dp_t) :: mencl,rhohalf,integral,velmax
-      real(kind=dp_t), allocatable :: z(:),zl(:),c(:),d(:),e(:),u(:),rhs(:)
+      real(kind=dp_t), allocatable :: c(:),d(:),e(:),u(:),rhs(:)
       real(kind=dp_t), allocatable :: m(:),grav_edge(:),grav_cell(:),beta(:)
 
       nz = size(vel,dim=1)-1
 
       ! Cell-centered
-      allocate(z(nz))
       allocate(m(nz),c(nz),d(nz),e(nz),rhs(nz))
       allocate(grav_cell(nz))
 
       ! Edge-centered
-      allocate(zl(nz+1))
       allocate(grav_edge(nz+1),beta(nz+1))
    
-      ! z(j)  is the location of the cell center of cell (j)
-      ! zl(j) is the location of the lower edge of cell (j) 
-      z(1) = 0.5_dp_t*dr
-      do j = 2,nz
-         z(j) = z(j-1) + dr
-      enddo
-      zl(1) = zero
-      do j = 2,nz+1
-         zl(j) = zl(j-1) + dr
-      enddo
-
      call make_grav_edge(grav_edge,rho0)
      call make_grav_cell(grav_cell,rho0)
 
@@ -165,50 +152,50 @@ contains
        velmax = max(velmax,abs(vel(j)))
      end do
 
-     deallocate(z,zl,m,grav_cell,grav_edge,beta)
+     deallocate(m,grav_cell,grav_edge,beta)
 
    end subroutine make_w0_spherical
 
    subroutine tridiag(a,b,c,r,u,n)
 
-  integer, intent(in) ::  n
+   integer, intent(in) ::  n
 
-  real(kind=dp_t), intent(in   ) :: a(:), b(:), c(:), r(:)
-  real(kind=dp_t), intent(  out) :: u(:)
+   real(kind=dp_t), intent(in   ) :: a(:), b(:), c(:), r(:)
+   real(kind=dp_t), intent(  out) :: u(:)
 
-  integer, parameter :: nmax = 4098
-
-  real(kind=dp_t) :: bet, gam(nmax)
-  integer         :: j
-
-  if (n .gt. nmax ) then
-    print *,'tridiag: size exceeded'
-    stop
-  end if
-  if (b(1) .eq. 0) then
+   integer, parameter :: nmax = 4098
+ 
+   real(kind=dp_t) :: bet, gam(nmax)
+   integer         :: j
+ 
+   if (n .gt. nmax ) then
+     print *,'tridiag: size exceeded'
+     stop
+   end if
+   if (b(1) .eq. 0) then
     print *,'tridiag: CANT HAVE B(1) = ZERO'
-    stop
-  end if
-
-  bet = b(1)
-  u(1) = r(1)/bet
-
-  do j = 2,n
-    gam(j) = c(j-1)/bet
-    bet = b(j) - a(j)*gam(j)
-    if (bet .eq. 0) then
-      print *,'tridiag: TRIDIAG FAILED'
-      stop
-    end if
-    u(j) = (r(j)-a(j)*u(j-1))/bet
-  end do
-
-  do j = n-1,1,-1
-    u(j) = u(j) - gam(j+1)*u(j+1)
-  end do
-
-  return
-
-end subroutine tridiag
+     stop
+   end if
+ 
+   bet = b(1)
+   u(1) = r(1)/bet
+ 
+   do j = 2,n
+     gam(j) = c(j-1)/bet
+     bet = b(j) - a(j)*gam(j)
+     if (bet .eq. 0) then
+       print *,'tridiag: TRIDIAG FAILED'
+       stop
+     end if
+     u(j) = (r(j)-a(j)*u(j-1))/bet
+   end do
+ 
+   do j = n-1,1,-1
+     u(j) = u(j) - gam(j+1)*u(j+1)
+   end do
+ 
+   return
+ 
+   end subroutine tridiag
 
 end module make_w0_module

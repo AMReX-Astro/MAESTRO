@@ -6,7 +6,9 @@ module make_S_module
   use multifab_module
   use heating_module
   use eos_module
+  use fill_3d_module
   use network
+  use geometry
   use variables
 
   implicit none
@@ -126,9 +128,17 @@ contains
       integer :: imax, jmax, kmax
 
       real(kind=dp_t) :: x,y,z,Smax
+      real(kind=dp_t), allocatable :: p0_cart(:,:,:)
+      real(kind=dp_t), allocatable :: t0_cart(:,:,:)
       real(kind=dp_t), allocatable :: H(:,:,:)
 
       allocate(H(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+      if (spherical .eq. 1) then
+        allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+        allocate(t0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+        call fill_3d_data(p0_cart,p0,dx,0)
+        call fill_3d_data(t0_cart,t0,dx,0)
+      end if
 
       Source = zero
       Smax = zero
@@ -143,8 +153,15 @@ contains
            do i = lo(1), hi(1)
 
               den_row(1) = s(i,j,k,rho_comp)
-              temp_row(1) = t0(k)
-              p_row(1) = p0(k)
+
+              if (spherical .eq. 1) then
+                temp_row(1) = t0(k)
+                p_row(1) = p0(k)
+              else
+                temp_row(1) = t0_cart(i,j,k)
+                p_row(1) = p0_cart(i,j,k)
+              end if
+
               xn_zone(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
 
               ! (rho, P) --> T
@@ -169,6 +186,9 @@ contains
       print *,'new S at time ',time, Smax
 
       deallocate(H)
+      if (spherical .eq. 1) then
+        deallocate(p0_cart,t0_cart)
+      end if
  
    end subroutine make_S_3d
 
