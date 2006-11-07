@@ -1,3 +1,4 @@
+f90sources += main.f90
 f90sources += varden.f90
 f90sources += hgproject.f90
 f90sources += scalar_advance.f90
