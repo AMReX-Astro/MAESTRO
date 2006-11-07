@@ -94,30 +94,31 @@ contains
     u = ZERO
     s = ZERO
 
+    ! initialize the scalars
     do n = rho_comp,spec_comp+nspec-1
-    do j = lo(2), hi(2)
-    do i = lo(1), hi(1)
-      s(i,j,n) = s0(j,n)
-    enddo
-    enddo
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+             s(i,j,n) = s0(j,n)
+          enddo
+       enddo
     enddo
     
     ! add an optional perturbation
-    do j = lo(2), hi(2)
-       y = prob_lo(2) + (dble(j)+HALF) * dx(2)
+    if (perturbModel) then
+       do j = lo(2), hi(2)
+          y = prob_lo(2) + (dble(j)+HALF) * dx(2)
        
-       do i = lo(1), hi(1)
-          x = prob_lo(1) + (dble(i)+HALF) * dx(1)
+          do i = lo(1), hi(1)
+             x = prob_lo(1) + (dble(i)+HALF) * dx(1)
           
-          if (perturbModel) then
              call perturb_2d(x, y, temp0(j), p0(j), s0(j,:), dens_pert, rhoh_pert, rhoX_pert, trac_pert)
              s(i,j,rho_comp) = dens_pert
              s(i,j,rhoh_comp) = rhoh_pert
              s(i,j,spec_comp:spec_comp+nspec-1) = rhoX_pert(1:)
              s(i,j,trac_comp:trac_comp+ntrac-1) = trac_pert(:)
-          endif
+          enddo
        enddo
-    enddo
+    endif
 
   end subroutine initdata_2d
 
@@ -153,35 +154,38 @@ contains
 
     else 
 
-      do n = rho_comp,spec_comp+nspec-1
-      do k = lo(3), hi(3)
-      do j = lo(2), hi(2)
-      do i = lo(1), hi(1)
-        s(i,j,k,n) = s0(k,n)
-      enddo
-      enddo
-      enddo
-      enddo
+       ! initialize the scalars
+       do n = rho_comp,spec_comp+nspec-1
+          do k = lo(3), hi(3)
+             do j = lo(2), hi(2)
+                do i = lo(1), hi(1)
+                   s(i,j,k,n) = s0(k,n)
+                enddo
+             enddo
+          enddo
+       enddo
     
-    ! add an optional perturbation
-      do k = lo(3), hi(3)
-      z = prob_lo(3) + (dble(k)+HALF) * dx(3)
-       
-      do j = lo(2), hi(2)
-        y = prob_lo(2) + (dble(j)+HALF) * dx(2)
-        do i = lo(1), hi(1)
-          x = prob_lo(1) + (dble(i)+HALF) * dx(1)
+       if (perturbModel) then
+
+          ! add an optional perturbation
+          do k = lo(3), hi(3)
+             z = prob_lo(3) + (dble(k)+HALF) * dx(3)
+             
+             do j = lo(2), hi(2)
+                y = prob_lo(2) + (dble(j)+HALF) * dx(2)
+
+                do i = lo(1), hi(1)
+                   x = prob_lo(1) + (dble(i)+HALF) * dx(1)
           
-          if (perturbModel) then
-             call perturb_3d(x, y, z, temp0(k), p0(k), s0(k,:), dens_pert, rhoh_pert, rhoX_pert, trac_pert)
-             s(i,j,k,rho_comp) = dens_pert
-             s(i,j,k,rhoh_comp) = rhoh_pert
-             s(i,j,k,spec_comp:spec_comp+nspec-1) = rhoX_pert(:)
-             s(i,j,k,trac_comp:trac_comp+ntrac-1) = trac_pert(:)
-          endif
-        enddo
-      enddo
-      enddo
+                   call perturb_3d(x, y, z, temp0(k), p0(k), s0(k,:), dens_pert, rhoh_pert, rhoX_pert, trac_pert)
+                   s(i,j,k,rho_comp) = dens_pert
+                   s(i,j,k,rhoh_comp) = rhoh_pert
+                   s(i,j,k,spec_comp:spec_comp+nspec-1) = rhoX_pert(:)
+                   s(i,j,k,trac_comp:trac_comp+ntrac-1) = trac_pert(:)
+                enddo
+             enddo
+          enddo
+       endif
 
     end if
     
@@ -336,15 +340,23 @@ contains
     real(kind=dp_t) :: integral, temp_term_lo, temp_term_hi
     real(kind=dp_t) :: temp_min,p0_lo,p0_hi
 
+    ! these indices define how the initial model is stored in the 
+    ! base_state array
     integer, parameter :: nvars_model = 3 + nspec
     integer, parameter :: idens_model = 1
     integer, parameter :: itemp_model = 2
     integer, parameter :: ipres_model = 3
     integer, parameter :: ispec_model = 4
 
-    integer :: npts_model
+    integer, parameter :: MAX_VARNAME_LENGTH=80
+    integer :: npts_model, nvars_model_file
     real(kind=dp_t) :: center(3)
     real(kind=dp_t), allocatable :: base_state(:,:), base_r(:)
+    real(kind=dp_t), allocatable :: vars_stored(:)
+    character(len=MAX_VARNAME_LENGTH), allocatable :: varnames_stored(:)
+    logical :: found
+
+
     integer :: ipos,dm
     character (len=256) :: header_line
 
@@ -357,40 +369,96 @@ contains
     do_diag = .false.
 
     ! open the model file and read in the header
-    ! the first line has the number of points in the model
+    ! the model file is assumed to be of the follow form:
+    ! # npts = 896
+    ! # num of variables = 6
+    ! # density
+    ! # temperature
+    ! # pressure
+    ! # carbon-12
+    ! # oxygen-16
+    ! # magnesium-24
+    ! 195312.5000  5437711139.  8805500.952   .4695704813E+28  0.3  0.7  0
+    ! 585937.5000  5410152416.  8816689.836  0.4663923963E+28  0.3  0.7  0
+
+    ! we read in the number of variables and their order and use this to map 
+    ! them into the base_state array.  We ignore anything other than density, 
+    ! temperature, pressure and composition.  
+
+    ! Presently, we take density, temperature, and composition as the 
+    ! independent variables and use them to define the thermodynamic state.
+
+    ! composition is assumed to be in terms of mass fractions
+    
     open(99,file="model.hse")
+
+    ! the first line has the number of points in the model
     read (99, '(a256)') header_line
     ipos = index(header_line, '=') + 1
     read (header_line(ipos:),*) npts_model
 
-    ! we will assume, for now, that the model.hse file hold the data as
-    ! r   dens   temp   pres   X(C12)   X(O16)   X(Mg24)
-    !
-    ! *** this needs to be changed.  base_state should hold rho, T, p, + ALL
-    !     species.  The routine should check the list of species stored in 
-    !     in the network model and initialize those not found in the inputs
-    !     file to 0.
+    print *, npts_model, ' points found in the initial model file'
 
-    ! the base state from the model input file is contained in two arrays.
-    ! base_r(:) holds the coordinate information and base_state(:,var) holds
-    ! variable var as a function of height.
-    !     base_state(i,idens_model) =  rho(i)
-    !     base_state(i,itemp_model) = temp(i)
-    !     base_state(i,ipres_model) = pres(i)
-    !     base_state(i,ispec_model) =  X(c12(i))
-    !     base_state(i,ispec_model+1) =  X(o16(i))
-    !     ...
+    ! now read in the number of variables
+    read (99, '(a256)') header_line
+    ipos = index(header_line, '=') + 1
+    read (header_line(ipos:),*) nvars_model_file
 
+    print *, nvars_model_file, ' variables found in the initial model file'
 
+    allocate (vars_stored(nvars_model_file))
+    allocate (varnames_stored(nvars_model_file))
+
+    ! now read in the names of the variables
+    do i = 1, nvars_model_file
+       read (99, '(a256)') header_line
+       ipos = index(header_line, '#') + 1
+       varnames_stored(i) = trim(adjustl(header_line(ipos:)))
+    enddo
+
+    
+    ! allocate storage for the model data
     allocate (base_state(npts_model, nvars_model))
     allocate (base_r(npts_model))
 
-    print *, '<<< npts_model = ', npts_model, ' >>>'
-
     do i = 1, npts_model
-       read(99,*) base_r(i),base_state(i,1),base_state(i,2),base_state(i,3), &
-            base_state(i,4),base_state(i,5),base_state(i,6)
+       read(99,*) base_r(i), (vars_stored(j), j = 1, nvars_model_file)
+
+
+       do j = 1, nvars_model_file
+
+          found = .false.
+       
+          if (trim(varnames_stored(j)) == "density") then
+             base_state(i,idens_model) = vars_stored(j)
+             found = .true.
+
+          else if (trim(varnames_stored(j)) == "temperature") then
+             base_state(i,itemp_model) = vars_stored(j)
+             found = .true.
+
+          else if (trim(varnames_stored(j)) == "pressure") then
+             base_state(i,ipres_model) = vars_stored(j)
+             found = .true.
+
+          else
+             do n = 1, nspec
+                if (trim(varnames_stored(j)) == spec_names(n)) then
+                   base_state(i,ispec_model-1+n) = vars_stored(j)
+                   found = .true.
+                   exit
+                endif
+             enddo
+          endif
+
+          if (.NOT. found) then
+             print *, 'ERROR: variable not found: ', varnames_stored(j)
+          endif
+          
+       enddo
+
     end do
+
     close(99)
 
     call helmeos_init
