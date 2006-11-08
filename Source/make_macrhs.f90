@@ -2,9 +2,7 @@ module macrhs_module
 
   use bl_types
   use bl_constants_module
-  use bc_module
   use multifab_module
-  use heating_module
   use eos_module
   use network
   use variables

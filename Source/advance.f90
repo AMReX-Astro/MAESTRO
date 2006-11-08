@@ -20,6 +20,7 @@ module advance_timestep_module
   use box_util_module
   use bl_IO_module
   use fabio_module
+  use make_div_coeff_module
   use make_w0_module
   use advect_base_module
   use react_base_module
@@ -170,7 +171,7 @@ module advance_timestep_module
         print *,'<<< STEP 3 >>>'
 
         do n = 1,nlevs
-          call react_state(sold(n),s1(n),temp0,rho_omegadot1(n),halfdt)
+          call react_state(sold(n),s1(n),rho_omegadot1(n),halfdt)
           call multifab_fill_boundary(s1(n))
         end do
 
@@ -222,7 +223,7 @@ module advance_timestep_module
 
         print *,'<<< STEP 5 >>>'
         do n = 1,nlevs
-          call react_state(s2(n),snew(n),temp0,rho_omegadot2(n),halfdt)
+          call react_state(s2(n),snew(n),rho_omegadot2(n),halfdt)
           call multifab_fill_boundary(s2(n))
         end do
         call average(rho_omegadot2(1),rho_omegadotbar2,dx(1,:))
@@ -323,7 +324,7 @@ module advance_timestep_module
 
         print *,'<<< STEP 9 >>>'
         do n = 1,nlevs
-          call react_state(s2(n),snew(n),temp0,rho_omegadot1(n),halfdt)
+          call react_state(s2(n),snew(n),rho_omegadot1(n),halfdt)
           call multifab_fill_boundary(snew(n))
         end do
         call average(rho_omegadot2(1),rho_omegadotbar2,dx(1,:))

@@ -2,7 +2,6 @@
 module plot_variables_module
 
   use bl_types
-  use bc_module
   use multifab_module
   use eos_module
   use fill_3d_module

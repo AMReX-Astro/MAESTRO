@@ -2,7 +2,6 @@ module make_div_coeff_module
 
   use bl_types
   use bl_constants_module
-  use bc_module
 
   implicit none
 

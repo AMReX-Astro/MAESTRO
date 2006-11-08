@@ -5,9 +5,7 @@ module make_w0_module
 
   use bl_types
   use bl_constants_module
-  use bc_module
   use multifab_module
-  use heating_module
   use variables
   use geometry
   use make_grav_module
@@ -84,10 +82,11 @@ contains
       nz = size(vel,dim=1)-1
 
       ! Cell-centered
-      allocate(m(nz),c(nz),d(nz),e(nz),rhs(nz))
+      allocate(m(nz))
       allocate(grav_cell(nz))
 
       ! Edge-centered
+      allocate(c(nz+1),d(nz+1),e(nz+1),rhs(nz+1),u(nz+1))
       allocate(grav_edge(nz+1),beta(nz+1))
    
      call make_grav_edge(grav_edge,rho0)
@@ -96,11 +95,11 @@ contains
      ! Define beta_0 at cell edges using the gravity above
      beta(1) = 1.5d0 * rho0(1) - 0.5d0 * rho0(2)
      do j = 2,nz+1
-        integral  = rho0(j-1) * grav_cell(j) * dr / (gam1(j-1) * p0(j-1))
+        integral  = rho0(j-1) * grav_cell(j-1) * dr / (gam1(j-1) * p0(j-1))
         beta(j) = beta(j-1) * exp(-integral)
      end do 
 
-     do j = 1,nz+1
+     do j = 2,nz+1
        c(j) = gam1(j-1) * p0(j-1) * zl(j-1)**2 / z(j-1)**2
        c(j) = c(j) / dr**2
      end do
@@ -132,16 +131,14 @@ contains
      end do
 
      ! Lower boundary
-     d(1) = one
-     e(1) = zero
+       d(1) = one
+       e(1) = zero
      rhs(1) = zero
 
      ! Upper boundary
-!    c(nz) = -beta(nz  ) * zl(nz  )**2
-!    d(nz) =  beta(nz+1) * zl(nz+1)**2
-     c(nz) = zero
-     d(nz) = one
-     rhs(nz) = zero
+       c(nz+1) = zero
+       d(nz+1) = one
+     rhs(nz+1) = zero
 
      ! Call the tridiagonal solver
      call tridiag(c, d, e, rhs, u, nz+1)

@@ -2,7 +2,6 @@ module fill_3d_module
 
   use bl_constants_module
   use bl_types
-  use bc_module
   use multifab_module
   use variables
   use geometry

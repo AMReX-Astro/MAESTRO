@@ -2,7 +2,6 @@ module phihalf_module
 
   use bl_types
   use bl_constants_module
-  use bc_module
   use variables
   use multifab_module
 

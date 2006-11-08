@@ -2,11 +2,8 @@ module advect_base_module
 
   use bl_types
   use bl_constants_module
-  use bc_module
   use multifab_module
-  use heating_module
   use mkflux_module
-  use make_div_coeff_module
   use eos_module
   use variables
   use geometry
@@ -175,7 +172,7 @@ contains
 
       ! Edge-centered
       allocate(edge(nz+1))
-      allocate(beta(nz+1),beta_nh(nz+1))
+      allocate(beta(nz+1),beta_new(nz+1),beta_nh(nz+1))
       allocate(grav_edge(nz+1))
 
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -246,7 +243,7 @@ contains
      ! Define beta^n+1 at cell edges using the new gravity above
      beta_new(1) = 1.5d0 * s0_new(1,rho_comp) - 0.5d0 * s0_new(2,rho_comp)
      do j = 2,nz+1
-        integral  = s0_new(j-1,rho_comp) * grav_cell(j) * dr / (gam1(j-1) * p0_new(j-1))
+        integral  = s0_new(j-1,rho_comp) * grav_cell(j-1) * dr / (gam1(j-1) * p0_new(j-1))
         beta_new(j) = beta_new(j-1) * exp(-integral)
      end do 
 
@@ -293,7 +290,7 @@ contains
 
       end do
 
-      deallocate(force,edge,beta,beta_nh,gam1_old,grav_edge,grav_cell)
+      deallocate(force,edge,beta,beta_new,beta_nh,gam1_old,grav_edge,grav_cell)
 
    end subroutine advect_base_state_spherical
 

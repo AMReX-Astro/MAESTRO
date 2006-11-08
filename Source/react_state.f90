@@ -1,7 +1,6 @@
 module react_state_module
 
   use bl_types
-  use bc_module
   use multifab_module
   use eos_module
   use network
@@ -11,10 +10,9 @@ module react_state_module
   
 contains
 
-  subroutine react_state (s_in,s_out,temp0,rho_omegadot,dt)
+  subroutine react_state (s_in,s_out,rho_omegadot,dt)
 
     type(multifab) , intent(in   ) :: s_in
-    real(kind=dp_t), intent(in   ) :: temp0(:)
     type(multifab) , intent(inout) :: s_out
     type(multifab) , intent(inout) :: rho_omegadot
     real(kind=dp_t), intent(in   ) :: dt
@@ -40,22 +38,21 @@ contains
        hi =  upb(get_box(s_in, i))
        select case (dm)
        case (2)
-          call react_state_2d(sinp(:,:,1,:),sotp(:,:,1,:),temp0,rp(:,:,1,:),dt,lo,hi,ng)
+          call react_state_2d(sinp(:,:,1,:),sotp(:,:,1,:),rp(:,:,1,:),dt,lo,hi,ng)
        case (3)
-          call react_state_3d(sinp(:,:,:,:),sotp(:,:,:,:),temp0,rp(:,:,:,:),dt,lo,hi,ng)
+          call react_state_3d(sinp(:,:,:,:),sotp(:,:,:,:),rp(:,:,:,:),dt,lo,hi,ng)
        end select
     end do
 
   end subroutine react_state
 
-  subroutine react_state_2d (s_in,s_out,temp0,rho_omegadot,dt,lo,hi,ng)
+  subroutine react_state_2d (s_in,s_out,rho_omegadot,dt,lo,hi,ng)
 
     implicit none
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(in   ) :: s_in (lo(1)-ng:,lo(2)-ng:,:)
     real (kind = dp_t), intent(  out) :: s_out(lo(1)-ng:,lo(2)-ng:,:)
     real (kind = dp_t), intent(  out) :: rho_omegadot(lo(1):,lo(2):,:)
-    real (kind = dp_t), intent(in   ) :: temp0(lo(2):)
     real (kind = dp_t), intent(in   ) :: dt
 
     !     Local variables
@@ -71,7 +68,22 @@ contains
           rho = s_in(i,j,rho_comp)
           x_in(:) = s_in(i,j,spec_comp:spec_comp+nspec-1) / rho
           h_in = s_in(i,j,rhoh_comp) / rho
-          T_in = temp0(j)
+
+          ! (rho, H) --> T, p
+          input_flag = 2
+          xn_zone(:) = x_in(:)
+
+          call eos(input_flag, den_row, temp_row, &
+                   npts, nspec, &
+                   xn_zone, aion, zion, &
+                   p_row, h_row, e_row, &
+                   cv_row, cp_row, xne_row, eta_row, pele_row, &
+                   dpdt_row, dpdr_row, dedt_row, dedr_row, &
+                   dpdX_row, dhdX_row, &
+                   gam1_row, cs_row, s_row, &
+                   do_diag)
+
+          T_in = temp_row(1)
 
           call burner(rho, T_in, x_in, h_in, dt, x_out, h_out, rhowdot)
 
@@ -87,14 +99,13 @@ contains
 
   end subroutine react_state_2d
 
-  subroutine react_state_3d (s_in,s_out,temp0,rho_omegadot,dt,lo,hi,ng)
+  subroutine react_state_3d (s_in,s_out,rho_omegadot,dt,lo,hi,ng)
 
     implicit none
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(in   ) :: s_in (lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind = dp_t), intent(  out) :: s_out(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind = dp_t), intent(  out) :: rho_omegadot(lo(1):,lo(2):,lo(3):,:)
-    real (kind = dp_t), intent(in   ) :: temp0(:)
     real (kind = dp_t), intent(in   ) :: dt
 
     !     Local variables
@@ -111,7 +122,22 @@ contains
           rho = s_in(i,j,k,rho_comp)
           x_in(:) = s_in(i,j,k,spec_comp:spec_comp+nspec-1) / rho
           h_in = s_in(i,j,k,rhoh_comp) / rho
-          T_in = temp0(j)
+
+          ! (rho, H) --> T, p
+          input_flag = 2
+          xn_zone(:) = x_in(:)
+
+          call eos(input_flag, den_row, temp_row, &
+                   npts, nspec, &
+                   xn_zone, aion, zion, &
+                   p_row, h_row, e_row, &
+                   cv_row, cp_row, xne_row, eta_row, pele_row, &
+                   dpdt_row, dpdr_row, dedt_row, dedr_row, &
+                   dpdX_row, dhdX_row, &
+                   gam1_row, cs_row, s_row, &
+                   do_diag)
+
+          T_in = temp_row(1)
 
           call burner(rho, T_in, x_in, h_in, dt, x_out, h_out, rhowdot)
 

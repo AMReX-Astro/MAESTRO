@@ -2,7 +2,6 @@ module heating_module
 
   use bl_types
   use bl_constants_module
-  use bc_module
   use multifab_module
 
   implicit none
@@ -64,6 +63,8 @@ contains
                       + .01875_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r1))) &
                       + .01250_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r2))) ) * 1.d17
 
+            ! HACK NO HEATING
+            H(i,j) = ZERO
 
             Hmax = max(Hmax,H(i,j))
           end do

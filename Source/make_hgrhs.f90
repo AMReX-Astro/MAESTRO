@@ -2,7 +2,6 @@ module hgrhs_module
 
   use bl_types
   use bl_constants_module
-  use bc_module
   use multifab_module
 
   implicit none
