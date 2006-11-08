@@ -157,16 +157,16 @@ contains
                 deallocate(s0_cart)
               else
                 do n = spec_comp,spec_comp+nspec-1
-                  call modify_force_3d(fp(:,:,:,n),sop(:,:,:,n),ng_cell,&
-                                       s0_old(:,n), &
-                                       ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),w0,dx)
+                  call modify_force_3d_cart(fp(:,:,:,n),sop(:,:,:,n),ng_cell,&
+                                            s0_old(:,n), &
+                                            ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),w0,dx)
                 end do
 
                 n = rhoh_comp
                 call  mkrhohforce_3d(fp(:,:,:,n), wmp(:,:,:,1), p0_old, p0_new, dx(dm))
 
-                call modify_force_3d(fp(:,:,:,n),sop(:,:,:,n),ng_cell,s0_old(:,n), &
-                                     ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),w0,dx)
+                call modify_force_3d_cart(fp(:,:,:,n),sop(:,:,:,n),ng_cell,s0_old(:,n), &
+                                          ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),w0,dx)
               end if
          end select
       end do
@@ -526,7 +526,7 @@ contains
      
    end subroutine modify_force_2d
 
-   subroutine modify_force_3d(force,s,ng,base,umac,vmac,wmac,w0,dx)
+   subroutine modify_force_3d_cart(force,s,ng,base,umac,vmac,wmac,w0,dx)
 
     ! When we write the scalar equation in perturbational and convective
     ! form, the terms other than s'_t + U.grad s' act as source terms.  Add
@@ -586,7 +586,7 @@ contains
         end do
      end do
      
-   end subroutine modify_force_3d
+   end subroutine modify_force_3d_cart
 
    subroutine modify_force_3d_sphr(force,s,ng,base_cart,umac,vmac,wmac,w0,dx)
 

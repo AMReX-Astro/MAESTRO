@@ -119,11 +119,11 @@ module update_module
       enddo
 
       if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
-        snew(:,:,rho_comp) = ZERO
+        snew(:,:,rho_comp) = sold(:,:,rho_comp)
         do n = nstart, nstop
         do j = lo(2), hi(2)
         do i = lo(1), hi(1)
-           snew(i,j,rho_comp) = snew(i,j,rho_comp) + snew(i,j,n)
+           snew(i,j,rho_comp) = snew(i,j,rho_comp) + (snew(i,j,n)-sold(i,j,n))
         enddo
         enddo
         enddo
@@ -327,12 +327,12 @@ module update_module
       end do
 
       if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
-        snew(:,:,:,rho_comp) = ZERO
+        snew(:,:,:,rho_comp) = sold(:,:,:,rho_comp)
         do n = nstart, nstop
         do k = lo(3), hi(3)
         do j = lo(2), hi(2)
         do i = lo(1), hi(1)
-           snew(i,j,k,rho_comp) = snew(i,j,k,rho_comp) + snew(i,j,k,n)
+           snew(i,j,k,rho_comp) = snew(i,j,k,rho_comp) + (snew(i,j,k,n)-sold(i,j,k,n))
         enddo
         enddo
         enddo
@@ -521,73 +521,5 @@ module update_module
       end do
 
    end subroutine mk_shalf_3d
-
-   subroutine mk_density_fromrhoX_2d (rho,rhoX,lo,hi,ng,verbose)
-
-      implicit none
-
-      integer              , intent(in) :: lo(:), hi(:), ng, verbose
-      real (kind = dp_t), intent(inout) ::    rho(lo(1)-ng:,lo(2)-ng:)
-      real (kind = dp_t), intent(in   ) ::   rhoX(lo(1)-ng:,lo(2)-ng:,:)  
-
-      integer :: i, j, n
-      real(dp_t) :: smin,smax
-
-      smax = -1.d20
-      smin =  1.d20
-
-      do j = lo(2), hi(2)
-      do i = lo(1), hi(1)
-        rho(i,j) = ZERO
-        do n = 1,nspec
-          rho(i,j) = rho(i,j) + rhoX(i,j,n)
-        end do
-        smax = max(smax,rho(i,j))
-        smin = min(smin,rho(i,j))
-      end do
-      end do
-
-      if (verbose .ge. 1) then
-        write(6,1000) smin,smax
-      end if
-
-1000  format('... new min/max : density           ',e15.10,2x,e15.10)
-
-   end subroutine mk_density_fromrhoX_2d
-
-   subroutine mk_density_fromrhoX_3d (rho,rhoX,lo,hi,ng,verbose)
-
-      implicit none
-
-      integer              , intent(in) :: lo(:), hi(:), ng, verbose
-      real (kind = dp_t), intent(  out) ::    rho(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
-      real (kind = dp_t), intent(in   ) ::   rhoX(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
-
-      integer :: i, j, k, n
-      real(dp_t) :: smin,smax
-
-      smax = -1.d20
-      smin =  1.d20
-
-      do k = lo(3), hi(3)
-      do j = lo(2), hi(2)
-      do i = lo(1), hi(1)
-        rho(i,j,k) = ZERO
-        do n = 1,nspec
-          rho(i,j,k) = rho(i,j,k) + rhoX(i,j,k,n)
-        end do
-        smax = max(smax,rho(i,j,k))
-        smin = min(smin,rho(i,j,k))
-      end do
-      end do
-      end do
-
-      if (verbose .ge. 1) then
-        write(6,1000) smin,smax
-      end if
-
-1000  format('... new min/max : density           ',e15.10,2x,e15.10)
-
-   end subroutine mk_density_fromrhoX_3d
 
 end module update_module
