@@ -1,16 +1,17 @@
 &PROBIN
  test_set = "gr0_3d"
  spherical_in = 1
+ base_state_resolution = 56
 
- prob_hi_x = 3.5e8
- prob_hi_y = 3.5e8
- prob_hi_z = 3.5e8
+ prob_hi_x = 4.e8
+ prob_hi_y = 4.e8
+ prob_hi_z = 4.e8
 
  max_step  = 100000000
  init_iter = 1
 
  max_step  = 0
- init_iter = 0
+ init_iter = 1
 
  stop_time = 1.75
 
