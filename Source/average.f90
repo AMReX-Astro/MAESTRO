@@ -4,6 +4,7 @@ module average_module
   use bl_constants_module
   use bc_module
   use multifab_module
+  use geometry
 
   implicit none
 
@@ -12,10 +13,11 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-   subroutine average (phi,phibar)
+   subroutine average (phi,phibar,dx)
 
       type(multifab) , intent(inout) :: phi
       real(kind=dp_t), intent(  out) :: phibar(:,:)
+      real(kind=dp_t), intent(in   ) :: dx(:)
 
       real(kind=dp_t), pointer:: pp(:,:,:,:)
       integer :: lo(phi%dim),hi(phi%dim),ng,dm
@@ -33,7 +35,11 @@ contains
             case (2)
               call average_2d(pp(:,:,1,:),phibar,lo,hi,ng)
             case (3)
-              call average_3d(pp(:,:,:,:),phibar,lo,hi,ng)
+              if (spherical .eq. 1) then
+                call average_3d_sphr(pp(:,:,:,:),phibar,ng,dx)
+              else
+                call average_3d(pp(:,:,:,:),phibar,lo,hi,ng)
+              end if
          end select
       end do
 
@@ -88,5 +94,72 @@ contains
       end do
  
    end subroutine average_3d
+
+   subroutine average_3d_sphr (phi,phibar,ng,dx)
+
+      integer         , intent(in   ) :: ng
+      real (kind=dp_t), intent(in   ) :: phi(1-ng:,1-ng:,1-ng:,:)
+      real (kind=dp_t), intent(  out) :: phibar(:,:)
+      real (kind=dp_t), intent(in   ) :: dx(:)
+
+!     Local variables
+      integer                       :: i, j, k, n, index
+      integer                       :: nx, ny, nz, nr, nc
+      real (kind=dp_t)              :: x,y,z,radius,vol
+      real (kind=dp_t), allocatable :: sum(:)
+      real (kind=dp_t), parameter   :: fourthirdspi = 4.18879020478639098400_dp_t
+
+      nx = size(phi,dim=1)-2*ng
+      ny = size(phi,dim=2)-2*ng
+      nz = size(phi,dim=3)-2*ng
+
+      nr = size(phibar,dim=1)
+      nc = size(phibar,dim=2)
+
+      allocate(sum(nr))
+
+      phibar = ZERO
+      sum    = ZERO
+
+      do k = 1,nz
+        z = (dble(k)-HALF)*dx(3) - center(3)
+        do j = 1,nz
+          y = (dble(j)-HALF)*dx(2) - center(2)
+          do i = 1,nz
+            x = (dble(i)-HALF)*dx(1) - center(1)
+
+            radius = sqrt(x**2 + y**2 + z**2)
+            index = radius / dr + 1
+
+            if (index .lt. 1 .or. index .gt. nr) then
+              print *,'RADIUS ',radius
+              print *,'BOGUS INDEX ',index
+              print *,'NOT IN RANGE 0 TO ',nr
+              print *,'I J K ',i,j,k
+              print *,'X Y Z ',x,y,z
+              stop
+            end if
+
+            vol = fourthirdspi * (zl(index+1)**3  - zl(index)**3)
+
+            do n = 1,nc
+              phibar(index,n) = phibar(index,n) + vol * phi(i,j,k,n)
+            end do
+
+            sum(index) = sum(index) + vol
+
+          end do
+        end do
+      end do
+
+      do n = 1,nc
+      do i = 1,nr-1
+         phibar(i,n) = phibar(i,n) / sum(i)
+      end do
+      end do
+
+      deallocate(sum)
+ 
+   end subroutine average_3d_sphr
 
 end module average_module

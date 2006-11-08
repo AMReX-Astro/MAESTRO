@@ -136,7 +136,7 @@ module advance_timestep_module
         print *,'<<< STEP 1 >>>'
         do n = 1, nlevs
            call make_S(Source_nph(n),sold(n),p0_old,temp0,gam1,dx(n,:),time)
-           call average(Source_nph(n),Sbar)
+           call average(Source_nph(n),Sbar,dx(n,:))
            call make_w0(w0,Sbar(:,1),p0_old,s0_old(:,rho_comp),temp0,gam1,dx(n,dm),dt)
         end do
 
@@ -174,7 +174,7 @@ module advance_timestep_module
           call multifab_fill_boundary(s1(n))
         end do
 
-        call average(rho_omegadot1(1),rho_omegadotbar1)
+        call average(rho_omegadot1(1),rho_omegadotbar1,dx(1,:))
         call react_base(p0_old,s0_old,temp0,rho_omegadotbar1,dx(1,dm),halfdt,p0_1,s0_1,gam1)
         call make_grav_edge(grav_edge,s0_1(:,rho_comp))
         call make_div_coeff(div_coeff_new,s0_1(:,rho_comp),p0_1, &
@@ -225,7 +225,7 @@ module advance_timestep_module
           call react_state(s2(n),snew(n),temp0,rho_omegadot2(n),halfdt)
           call multifab_fill_boundary(s2(n))
         end do
-        call average(rho_omegadot2(1),rho_omegadotbar2)
+        call average(rho_omegadot2(1),rho_omegadotbar2,dx(1,:))
         call react_base(p0_2,s0_2,temp0,rho_omegadotbar2,dx(1,dm),halfdt,p0_new,s0_new,gam1)
         call make_grav_edge(grav_edge,s0_new(:,rho_comp))
         call make_div_coeff(div_coeff_new,s0_new(:,rho_comp),p0_new, &
@@ -239,7 +239,7 @@ module advance_timestep_module
         do n = 1, nlevs
            call make_S(Source_new(n),snew(n),p0_new,temp0,gam1,dx(n,:),time)
            call make_at_halftime(Source_nph(n),Source_old(n),Source_new(n),1,1)
-           call average(Source_nph(n),Sbar)
+           call average(Source_nph(n),Sbar,dx(n,:))
            call make_w0(w0,Sbar(:,1),p0_new,s0_new(:,rho_comp),temp0,gam1,dx(n,dm),dt)
         end do
 
@@ -326,7 +326,7 @@ module advance_timestep_module
           call react_state(s2(n),snew(n),temp0,rho_omegadot1(n),halfdt)
           call multifab_fill_boundary(snew(n))
         end do
-        call average(rho_omegadot2(1),rho_omegadotbar2)
+        call average(rho_omegadot2(1),rho_omegadotbar2,dx(1,:))
         call react_base(p0_2,s0_2,temp0,rho_omegadotbar2,dx(1,dm),halfdt,p0_new,s0_new,gam1)
         call make_grav_edge(grav_edge,s0_new(:,rho_comp))
         call make_div_coeff(div_coeff_new,s0_new(:,rho_comp),p0_new, &
@@ -364,7 +364,7 @@ module advance_timestep_module
         end do
 
         do n = 1,nlevs
-           call average(Source_new(n),Sbar)
+           call average(Source_new(n),Sbar,dx(n,:))
            call make_hgrhs(hgrhs(n),Source_new(n),Sbar(:,1),div_coeff_new)
         end do
 

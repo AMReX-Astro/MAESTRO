@@ -112,11 +112,11 @@ contains
           call maketfromH_2d(tp(:,:,1,comp_t),tp(:,:,1,comp_dp),sp(:,:,1,:), lo, hi, ng, p0, temp0)
        case (3)
           if (spherical .eq. 1) then
-            call maketfromH_3d_cart(tp(:,:,:,comp_t),tp(:,:,:,comp_dp),sp(:,:,:,:), &
-                                    lo, hi, ng, p0, temp0)
-          else
             call maketfromH_3d_sphr(tp(:,:,:,comp_t),tp(:,:,:,comp_dp),sp(:,:,:,:), &
                                     lo, hi, ng, p0, temp0, dx)
+          else
+            call maketfromH_3d_cart(tp(:,:,:,comp_t),tp(:,:,:,comp_dp),sp(:,:,:,:), &
+                                    lo, hi, ng, p0, temp0)
           end if
        end select
     end do
@@ -243,15 +243,13 @@ contains
     call fill_3d_data(t0_cart,t0,dx,0)
 
     allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-    call fill_3d_data(p0_cart,t0,dx,0)
+    call fill_3d_data(p0_cart,p0,dx,0)
 
     do_diag = .false.
 
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
-
-             ! (rho, H) --> T, p
             
              den_row(1)  = state(i,j,k,rho_comp)
              h_row(1)    = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp)
@@ -259,6 +257,7 @@ contains
              temp_row(1) = t0_cart(i,j,k)
              xn_zone(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
 
+             ! (rho, H) --> T, p
              input_flag = 2
   
              call eos(input_flag, den_row, temp_row, &
@@ -542,10 +541,6 @@ contains
     real (kind=dp_t), allocatable :: gam0_cart(:,:,:)
 
     allocate(gam10(lo(3):hi(3)))
-    allocate(rho0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-    allocate(  t0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-    allocate(  p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-    allocate(gam0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
 
     do_diag = .false.
 
@@ -579,7 +574,7 @@ contains
     call fill_3d_data(t0_cart,t0,dx,0)
 
     allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-    call fill_3d_data(p0_cart,t0,dx,0)
+    call fill_3d_data(p0_cart,p0,dx,0)
 
     allocate(gam0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
     call fill_3d_data(gam0_cart,gam10,dx,0)

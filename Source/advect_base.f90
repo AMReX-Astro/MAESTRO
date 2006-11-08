@@ -187,8 +187,8 @@ contains
          end do
          call mkflux_1d(s0_old(:,n),edge,vel,force,1,dr,dt)
          do j = 1,nz
-            s0_new(j,n) = s0_old(j,n) - dtdr / zl(j)**2 * ( z(j+1)**2 * edge(j+1) * vel(j+1) &
-                                                           -z(  j)**2 * edge(j  ) * vel(j  ))
+            s0_new(j,n) = s0_old(j,n) - dtdr / z(j)**2 * ( zl(j+1)**2 * edge(j+1) * vel(j+1) &
+                                                          -zl(j  )**2 * edge(j  ) * vel(j  ))
          end do
 
       enddo

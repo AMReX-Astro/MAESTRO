@@ -30,17 +30,17 @@ contains
     nz = size(data,dim=3)-2*ng
 
     do k = 0,nz-1
-      z = (dble(k)-HALF)*dx(3) - center(3)
+      z = (dble(k)+HALF)*dx(3) - center(3)
       do j = 0,nz-1
-        y = (dble(j)-HALF)*dx(2) - center(2)
+        y = (dble(j)+HALF)*dx(2) - center(2)
         do i = 0,nz-1
-          x = (dble(i)-HALF)*dx(1) - center(1)
+          x = (dble(i)+HALF)*dx(1) - center(1)
           radius = sqrt(x**2 + y**2 + z**2)
           index = radius / dr
-          if (index .lt. 0 .or. index .gt. nr) then
+          if (index .lt. 0 .or. index .gt. nr-1) then
             print *,'RADIUS ',radius
             print *,'BOGUS INDEX ',index
-            print *,'NOT IN RANGE 0 TO ',nr
+            print *,'NOT IN RANGE 0 TO ',nr-1
             print *,'I J K ',i,j,k
             print *,'X Y Z ',x,y,z
             stop
