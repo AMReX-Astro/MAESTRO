@@ -4,6 +4,8 @@ module mkflux_module
   use bl_constants_module
   use multifab_module
   use slope_module
+  use fill_3d_module
+  use geometry
 
   implicit none
 
@@ -437,6 +439,7 @@ contains
 
       real(kind=dp_t), allocatable::  slopex(:,:,:,:),slopey(:,:,:,:),slopez(:,:,:,:)
       real(kind=dp_t), allocatable::  s_l(:),s_r(:),s_b(:),s_t(:),s_u(:),s_d(:)
+      real(kind=dp_t), allocatable::  base_cart(:,:,:)
 
 !     Local variables
       real(kind=dp_t) ubardth, vbardth, wbardth
@@ -476,21 +479,46 @@ contains
       allocate(slopez(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1))
 
       if (.not. is_vel .and. advect_in_pert_form) then
-         do k = ks,ke
+         if (spherical .eq. 1) then
+           allocate(base_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+           call fill_3d_data(base_cart,base,dx,0)
+           do k = ks,ke
+             do j = js,je
+             do i = is,ie
+               s(i,j,k,n) = s(i,j,k,n) - base_cart(i,j,k)
+             end do
+             end do
+             do g = 1,ng
+               do j = js,je
+                 s(is-g,j,k,n) = s(is,j,k,n)
+                 s(ie+g,j,k,n) = s(ie,j,k,n)
+               end do
+               do i = is-1,ie+1
+                 s(i,js-g,k,n) = s(i,j,k,n)
+                 s(i,je+g,k,n) = s(i,je,k,n)
+               end do
+             end do
+           end do
+         else
+           do k = ks,ke
+             do j = js-ng,je+ng
+             do i = is-ng,ie+ng
+               s(i,j,k,n) = s(i,j,k,n) - base(k)
+             end do
+             end do
+           end do
+         end if
+
+        do k = ks,ke
+          do g = 1,ng
            do j = js-ng,je+ng
            do i = is-ng,ie+ng
-             s(i,j,k,n) = s(i,j,k,n) - base(k)
-           end do
-           end do
-           do g = 1,ng
-            do j = js-ng,je+ng
-            do i = is-ng,ie+ng
-             s(i,j,ks-g,n) = s(i,j,ks,n)
-             s(i,j,ke+g,n) = s(i,j,ke,n)
-           end do
-           end do
+            s(i,j,ks-g,n) = s(i,j,ks,n)
+            s(i,j,ke+g,n) = s(i,j,ke,n)
+          end do
           end do
          end do
+        end do
       end if
 
       do k = lo(3)-1,hi(3)+1
@@ -559,12 +587,9 @@ contains
       end if
 
       eps = abs_eps * umax
-
 !
 !     Loop for fluxes on x-edges.
 !
-!     do n = 1,ncomp
-
       if (velpred .eq. 0 .or. n .eq. 1) then
        do k = ks,ke 
        do j = js,je 
@@ -1079,20 +1104,44 @@ contains
        endif
 
       if (.not. is_vel .and. advect_in_pert_form) then
-         do k = ks,ke
+         if (spherical .eq. 1) then
+           do k = ks,ke
+             do j = js,je
+             do i = is,ie
+               s(i,j,k,n) = s(i,j,k,n) + base_cart(i,j,k)
+             end do
+             end do
+             do g = 1,ng
+               do j = js,je
+                 s(is-g,j,k,n) = s(is,j,k,n)
+                 s(ie+g,j,k,n) = s(ie,j,k,n)
+               end do
+               do i = is-1,ie+1
+                 s(i,js-g,k,n) = s(i,j,k,n)
+                 s(i,je+g,k,n) = s(i,je,k,n)
+               end do
+             end do
+           end do
+         else
+           do k = ks,ke
+             do j = js-ng,je+ng
+             do i = is-ng,ie+ng
+               s(i,j,k,n) = s(i,j,k,n) + base(k)
+             end do
+             end do
+           end do
+         end if
+
+        do k = ks,ke
+          do g = 1,ng
            do j = js-ng,je+ng
            do i = is-ng,ie+ng
-             s(i,j,k,n) = s(i,j,k,n) + base(k)
-           end do
-           end do
-           do g = 1,ng
-            do j = js-ng,je+ng
-            do i = is-ng,ie+ng
-             s(i,j,ks-g,n) = s(i,j,ks,n)
-            end do
-            end do
-           end do
+            s(i,j,ks-g,n) = s(i,j,ks,n)
+            s(i,j,ke+g,n) = s(i,j,ke,n)
+          end do
+          end do
          end do
+        end do
       end if
 
       deallocate(s_l)
@@ -1105,6 +1154,9 @@ contains
       deallocate(slopex)
       deallocate(slopey)
       deallocate(slopez)
+
+      if (.not. is_vel .and. advect_in_pert_form .and. (spherical .eq. 1) ) &
+        deallocate(base_cart)
 
       end subroutine mkflux_3d
 

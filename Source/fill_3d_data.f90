@@ -51,25 +51,26 @@ contains
 
   end subroutine fill_3d_data
 
-  subroutine make_3d_normal (dx,normal)
+  subroutine make_3d_normal (dx,normal,ng)
 
+    integer        , intent(in   ) :: ng
     real(kind=dp_t), intent(in   ) :: dx(:)
-    real(kind=dp_t), intent(  out) :: normal(0:,0:,0:,:)
+    real(kind=dp_t), intent(  out) :: normal(-ng:,-ng:,-ng:,:)
 
     integer                  :: i,j,k,n,index
     integer                  :: nr,nx,ny,nz
     real(kind=dp_t)          :: x,y,z
     real(kind=dp_t)          :: radius
 
-    nx = size(normal,dim=1)
-    ny = size(normal,dim=2)
-    nz = size(normal,dim=3)
+    nx = size(normal,dim=1)-2*ng
+    ny = size(normal,dim=2)-2*ng
+    nz = size(normal,dim=3)-2*ng
 
-    do k = 0,nz-1
+    do k = -ng,nz-1+ng
       z = (dble(k)-HALF)*dx(3) - center(3)
-      do j = 0,nz-1
+      do j = -ng,nz-1+ng
         y = (dble(j)-HALF)*dx(2) - center(2)
-        do i = 0,nz-1
+        do i = -ng,nz-1+ng
           x = (dble(i)-HALF)*dx(1) - center(1)
           radius = sqrt(x**2 + y**2 + z**2)
           index = radius / dr

@@ -6,6 +6,8 @@ module macrhs_module
   use eos_module
   use network
   use variables
+  use geometry
+  use fill_3d_module
 
   implicit none
 
@@ -14,12 +16,13 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-   subroutine make_macrhs (macrhs,Source,Sbar,div_coeff)
+   subroutine make_macrhs (macrhs,Source,Sbar,div_coeff,dx)
 
       type(multifab) , intent(inout) :: macrhs
       type(multifab) , intent(in   ) :: Source
       real(kind=dp_t), intent(in   ) :: Sbar(:)
       real(kind=dp_t), intent(in   ) :: div_coeff(:)
+      real(kind=dp_t), intent(in   ) :: dx(:)
 
       real(kind=dp_t), pointer:: mp(:,:,:,:),sp(:,:,:,:)
       integer :: lo(Source%dim),hi(Source%dim),dm
@@ -37,7 +40,7 @@ contains
             case (2)
               call make_macrhs_2d(lo,hi,mp(:,:,1,1),sp(:,:,1,1),Sbar,div_coeff)
             case (3)
-              call make_macrhs_3d(lo,hi,mp(:,:,:,1),sp(:,:,:,1),Sbar,div_coeff)
+              call make_macrhs_3d(lo,hi,mp(:,:,:,1),sp(:,:,:,1),Sbar,div_coeff,dx)
          end select
       end do
 
@@ -64,7 +67,7 @@ contains
  
    end subroutine make_macrhs_2d
 
-   subroutine make_macrhs_3d (lo,hi,rhs,Source,Sbar,div_coeff)
+   subroutine make_macrhs_3d (lo,hi,rhs,Source,Sbar,div_coeff,dx)
 
       implicit none
 
@@ -73,17 +76,40 @@ contains
       real (kind=dp_t), intent(in   ) :: Source(lo(1):,lo(2):,lo(3):)  
       real (kind=dp_t), intent(in   ) :: Sbar(lo(3):)  
       real (kind=dp_t), intent(in   ) :: div_coeff(lo(3):)  
+      real (kind=dp_t), intent(in   ) :: dx(:)
 
 !     Local variables
       integer :: i, j, k
+      real (kind=dp_t), allocatable :: div_cart(:,:,:),Sbar_cart(:,:,:)
 
-      do k = lo(3),hi(3)
-      do j = lo(2),hi(2)
-      do i = lo(1),hi(1)
-        rhs(i,j,k) = div_coeff(k) * (Source(i,j,k) - Sbar(k))
-      end do
-      end do
-      end do
+      if (spherical .eq. 1) then
+
+        allocate(div_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+        call fill_3d_data(div_cart,div_coeff,dx,0)
+
+        allocate(Sbar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+        call fill_3d_data(Sbar_cart,Sbar,dx,0)
+
+        do k = lo(3),hi(3)
+        do j = lo(2),hi(2)
+        do i = lo(1),hi(1)
+          rhs(i,j,k) = div_cart(i,j,k) * (Source(i,j,k) - Sbar_cart(i,j,k))
+        end do
+        end do
+        end do
+
+        deallocate(Sbar_cart,div_cart)
+
+      else
+
+        do k = lo(3),hi(3)
+        do j = lo(2),hi(2)
+        do i = lo(1),hi(1)
+          rhs(i,j,k) = div_coeff(k) * (Source(i,j,k) - Sbar(k))
+        end do
+        end do
+        end do
+      end if
  
    end subroutine make_macrhs_3d
 

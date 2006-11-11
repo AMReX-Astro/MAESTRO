@@ -2,6 +2,8 @@ module react_state_module
 
   use bl_types
   use multifab_module
+  use define_bc_module
+  use setbc_module
   use eos_module
   use network
   use variables
@@ -10,19 +12,20 @@ module react_state_module
   
 contains
 
-  subroutine react_state (s_in,s_out,rho_omegadot,dt)
+  subroutine react_state (s_in,s_out,rho_omegadot,dt,dx,the_bc_level)
 
     type(multifab) , intent(in   ) :: s_in
     type(multifab) , intent(inout) :: s_out
     type(multifab) , intent(inout) :: rho_omegadot
-    real(kind=dp_t), intent(in   ) :: dt
+    real(kind=dp_t), intent(in   ) :: dt,dx(:)
+    type(bc_level) , intent(in   ) :: the_bc_level
 
     real(kind=dp_t), pointer:: sinp(:,:,:,:)
     real(kind=dp_t), pointer:: sotp(:,:,:,:)
     real(kind=dp_t), pointer::   rp(:,:,:,:)
 
     integer :: lo(s_in%dim),hi(s_in%dim),ng,dm
-    integer :: i
+    integer :: i,n,bc_comp
 
     ng = s_in%ng
     dm = s_in%dim
@@ -39,8 +42,40 @@ contains
        select case (dm)
        case (2)
           call react_state_2d(sinp(:,:,1,:),sotp(:,:,1,:),rp(:,:,1,:),dt,lo,hi,ng)
+          ! Impose bc's on new rho
+          n = rho_comp
+          bc_comp = dm+n 
+          call setbc_2d(sotp(:,:,1,n), lo, ng, &
+                        the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
+          ! Impose bc's on new rhoh
+          n = rhoh_comp
+          bc_comp = dm+n 
+          call setbc_2d(sotp(:,:,1,n), lo, ng, &
+                        the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
+          ! Impose bc's on new species
+          do n = spec_comp,spec_comp+nspec-1
+            bc_comp = dm+n 
+            call setbc_2d(sotp(:,:,1,n), lo, ng, &
+                          the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
+          end do
+
        case (3)
           call react_state_3d(sinp(:,:,:,:),sotp(:,:,:,:),rp(:,:,:,:),dt,lo,hi,ng)
+          ! Impose bc's on new rho
+          n = rho_comp
+          bc_comp = dm+n 
+          call setbc_3d(sotp(:,:,:,n), lo, ng, &
+                        the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
+          ! Impose bc's on new rhoh
+          n = rhoh_comp
+          bc_comp = dm+n 
+          call setbc_3d(sotp(:,:,:,n), lo, ng, &
+                        the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
+          do n = spec_comp,spec_comp+nspec-1
+            bc_comp = dm+n 
+            call setbc_3d(sotp(:,:,:,n), lo, ng, &
+                          the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
+          end do
        end select
     end do
 

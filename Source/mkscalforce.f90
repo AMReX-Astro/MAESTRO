@@ -135,7 +135,7 @@ contains
     end do
 
     call fill_3d_data(gradp_cart,gradp_rad,dx,0)
-    call make_3d_normal(dx,normal)
+    call make_3d_normal(dx,normal,0)
 
     do k = 1,nz
        do j = 1,ny

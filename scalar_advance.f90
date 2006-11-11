@@ -97,7 +97,7 @@ contains
       call setval(scal_force,ZERO)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!     Add w0 to vertical velocity.
+!     Add w0 to radial velocity.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       mult = ONE
@@ -302,7 +302,7 @@ contains
       end if
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!     Subtract w0 from vertical velocity.
+!     Subtract w0 from radial velocity.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       mult = -ONE
@@ -340,6 +340,11 @@ contains
                 call setbc_2d(snp(:,:,1,n), lo, ng_cell, &
                               the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
               end do
+              ! Dont forget to call setbc for density also
+              n = rho_comp
+              bc_comp = dm+n
+              call setbc_2d(snp(:,:,1,n), lo, ng_cell, &
+                            the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
             case (3)
               wmp => dataptr(umac(3), i)
               sepz => dataptr(sedge(3), i)
@@ -354,6 +359,11 @@ contains
                 call setbc_3d(snp(:,:,:,n), lo, ng_cell, &
                               the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
               end do
+              ! Dont forget to call setbc for density also
+              n = rho_comp
+              bc_comp = dm+n
+              call setbc_3d(snp(:,:,:,n), lo, ng_cell, &
+                            the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
          end select
       end do
 

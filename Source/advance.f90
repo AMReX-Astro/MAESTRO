@@ -157,7 +157,7 @@ module advance_timestep_module
         end do
 
         do n = 1, nlevs
-           call make_macrhs(macrhs(n),Source_nph(n),Sbar(:,1),div_coeff_old)
+           call make_macrhs(macrhs(n),Source_nph(n),Sbar(:,1),div_coeff_old,dx(n,:))
         end do
 
         ! MAC projection !
@@ -171,7 +171,8 @@ module advance_timestep_module
         print *,'<<< STEP 3 >>>'
 
         do n = 1,nlevs
-          call react_state(sold(n),s1(n),rho_omegadot1(n),halfdt)
+          call react_state(sold(n),s1(n),rho_omegadot1(n),halfdt,dx(n,:), &
+                           the_bc_tower%bc_tower_array(n))
           call multifab_fill_boundary(s1(n))
         end do
 
@@ -223,7 +224,8 @@ module advance_timestep_module
 
         print *,'<<< STEP 5 >>>'
         do n = 1,nlevs
-          call react_state(s2(n),snew(n),rho_omegadot2(n),halfdt)
+          call react_state(s2(n),snew(n),rho_omegadot2(n),halfdt,dx(n,:), &
+                           the_bc_tower%bc_tower_array(n))
           call multifab_fill_boundary(s2(n))
         end do
         call average(rho_omegadot2(1),rho_omegadotbar2,dx(1,:))
@@ -239,7 +241,8 @@ module advance_timestep_module
         print *,'<<< STEP 6 >>>'
         do n = 1, nlevs
            call make_S(Source_new(n),snew(n),p0_new,temp0,gam1,dx(n,:),time)
-           call make_at_halftime(Source_nph(n),Source_old(n),Source_new(n),1,1)
+           call make_at_halftime(Source_nph(n),Source_old(n),Source_new(n),1,1,dx(n,:), &
+                                 the_bc_tower%bc_tower_array(n))
            call average(Source_nph(n),Sbar,dx(n,:))
            call make_w0(w0,Sbar(:,1),p0_new,s0_new(:,rho_comp),temp0,gam1,dx(n,dm),dt)
         end do
@@ -260,8 +263,9 @@ module advance_timestep_module
 
         ! Define rho at half time !
         do n = 1,nlevs
-          call make_at_halftime(rhohalf(n),sold(n),snew(n),rho_comp,1)
-          call multifab_fill_boundary(rhohalf(n))
+           call make_at_halftime(rhohalf(n),sold(n),snew(n),rho_comp,1,dx(n,:), &
+                                 the_bc_tower%bc_tower_array(n))
+           call multifab_fill_boundary(rhohalf(n))
         end do
 
         ! Define base state at half time for use in velocity advance!
@@ -277,7 +281,7 @@ module advance_timestep_module
         call put_beta_on_edges(div_coeff_nph,div_coeff_edge)
 
         do n = 1, nlevs
-           call make_macrhs(macrhs(n),Source_nph(n),Sbar(:,1),div_coeff_nph)
+           call make_macrhs(macrhs(n),Source_nph(n),Sbar(:,1),div_coeff_nph,dx(n,:))
         end do
 
         ! MAC projection !
@@ -324,7 +328,8 @@ module advance_timestep_module
 
         print *,'<<< STEP 9 >>>'
         do n = 1,nlevs
-          call react_state(s2(n),snew(n),rho_omegadot1(n),halfdt)
+          call react_state(s2(n),snew(n),rho_omegadot1(n),halfdt,dx(n,:),&
+                           the_bc_tower%bc_tower_array(n))
           call multifab_fill_boundary(snew(n))
         end do
         call average(rho_omegadot2(1),rho_omegadotbar2,dx(1,:))
@@ -366,7 +371,7 @@ module advance_timestep_module
 
         do n = 1,nlevs
            call average(Source_new(n),Sbar,dx(n,:))
-           call make_hgrhs(hgrhs(n),Source_new(n),Sbar(:,1),div_coeff_new)
+           call make_hgrhs(hgrhs(n),Source_new(n),Sbar(:,1),div_coeff_new,dx(n,:))
         end do
 
 !       Project the new velocity field.

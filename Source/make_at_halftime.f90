@@ -4,6 +4,8 @@ module phihalf_module
   use bl_constants_module
   use variables
   use multifab_module
+  use setbc_module
+  use define_bc_module
 
   implicit none
 
@@ -12,18 +14,20 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-   subroutine make_at_halftime (phihalf,sold,snew,in_comp,out_comp)
+   subroutine make_at_halftime (phihalf,sold,snew,in_comp,out_comp,dx,the_bc_level)
 
       type(multifab) , intent(inout) :: phihalf
       type(multifab) , intent(in   ) :: sold
       type(multifab) , intent(in   ) :: snew
       integer        , intent(in   ) :: in_comp,out_comp
+      real(kind=dp_t), intent(in   ) :: dx(:)
+      type(bc_level) , intent(in   ) :: the_bc_level
 
       real(kind=dp_t), pointer:: rhp(:,:,:,:)
       real(kind=dp_t), pointer:: rop(:,:,:,:)
       real(kind=dp_t), pointer:: rnp(:,:,:,:)
       integer :: lo(phihalf%dim),hi(phihalf%dim),ng_h,ng_o,dm
-      integer :: i
+      integer :: i,bc_comp
 
       dm = phihalf%dim
       ng_h = phihalf%ng
@@ -40,9 +44,19 @@ contains
             case (2)
               call make_at_halftime_2d(rhp(:,:,1,out_comp),rop(:,:,1,in_comp),rnp(:,:,1,in_comp),&
                                    lo,hi,ng_h,ng_o)
+              if (ng_h .gt. 0) then
+                bc_comp = dm+in_comp
+                call setbc_2d(rhp(:,:,1,out_comp), lo, ng_h, &
+                              the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
+              end if
             case (3)
               call make_at_halftime_3d(rhp(:,:,:,out_comp),rop(:,:,:,in_comp),rnp(:,:,:,in_comp),&
                                    lo,hi,ng_h,ng_o)
+              if (ng_h .gt. 0) then
+                bc_comp = dm+in_comp
+                call setbc_3d(rhp(:,:,:,out_comp), lo, ng_h, &
+                              the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
+              end if
          end select
       end do
 

@@ -97,7 +97,7 @@ contains
       nz = size(umac,dim=3) - 2
       nr = size(w0,dim=1) - 1
 
-      allocate(normal(nx,ny,nz,3))
+      allocate(normal(0:nx+1,0:ny+1,0:nz+1,3))
       allocate(w0_rad (nr))
       allocate(w0_cart(0:nx+1,0:ny+1,0:nz+1))
 
@@ -108,7 +108,7 @@ contains
 
       ! Then put w0 on centers of Cartesian grid
       call fill_3d_data(w0_cart,w0_rad,dx,1)
-      call make_3d_normal(dx,normal)
+      call make_3d_normal(dx,normal,1)
 
       do k = 1,nz
       do j = 1,ny
@@ -132,24 +132,27 @@ contains
       do k = 1,nz
       do j = 1,ny
       do i = 1,nx+1
-         umac(i,j,k) = umac(i,j,k) + mult * normal(i,j,k,1) * &
-                       HALF * (w0_cart(i,j,k) + w0_cart(i-1,j,k))
+         umac(i,j,k) = umac(i,j,k) + mult * &
+                       HALF * ( w0_cart(i  ,j,k) * normal(i  ,j,k,1) &
+                               +w0_cart(i-1,j,k) * normal(i-1,j,k,1) )
       end do
       end do
       end do
       do k = 1,nz
       do j = 1,ny+1
       do i = 1,nx
-         vmac(i,j,k) = vmac(i,j,k) + mult * normal(i,j,k,2) * &
-                       HALF * (w0_cart(i,j,k) + w0_cart(i,j-1,k))
+         vmac(i,j,k) = vmac(i,j,k) + mult * &
+                       HALF * ( w0_cart(i,j  ,k) * normal(i,j  ,k,2) &
+                               +w0_cart(i,j-1,k) * normal(i,j-1,k,2) )
       end do
       end do
       end do
       do k = 1,nz+1
       do j = 1,ny
       do i = 1,nx
-         wmac(i,j,k) = wmac(i,j,k) + mult * normal(i,j,k,3) * &
-                       HALF * (w0_cart(i,j,k) + w0_cart(i,j,k-1))
+         wmac(i,j,k) = wmac(i,j,k) + mult * &
+                       HALF * ( w0_cart(i,j  ,k) * normal(i,j,k  ,3) &
+                               +w0_cart(i,j-1,k) * normal(i,j,k-1,3) )
       end do
       end do
       end do

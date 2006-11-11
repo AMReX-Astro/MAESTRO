@@ -3,6 +3,8 @@ module hgrhs_module
   use bl_types
   use bl_constants_module
   use multifab_module
+  use geometry
+  use fill_3d_module
 
   implicit none
 
@@ -11,12 +13,13 @@ contains
 
 !  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-   subroutine make_hgrhs (hgrhs,Source,Sbar,div_coeff)
+   subroutine make_hgrhs (hgrhs,Source,Sbar,div_coeff,dx)
 
       type(multifab) , intent(inout) :: hgrhs
       type(multifab) , intent(in   ) :: Source
       real(kind=dp_t), intent(in   ) :: Sbar(:)
       real(kind=dp_t), intent(in   ) :: div_coeff(:)
+      real(kind=dp_t), intent(in   ) :: dx(:)
 
       real(kind=dp_t), pointer:: hp(:,:,:,:),sp(:,:,:,:)
       integer :: lo(Source%dim),hi(Source%dim),dm
@@ -34,7 +37,7 @@ contains
             case (2)
               call make_hgrhs_2d(lo,hi,hp(:,:,1,1),sp(:,:,1,1),Sbar,div_coeff)
             case (3)
-              call make_hgrhs_3d(lo,hi,hp(:,:,:,1),sp(:,:,:,1),Sbar,div_coeff)
+              call make_hgrhs_3d(lo,hi,hp(:,:,:,1),sp(:,:,:,1),Sbar,div_coeff,dx)
          end select
       end do
 
@@ -80,7 +83,7 @@ contains
 
    end subroutine make_hgrhs_2d
 
-   subroutine make_hgrhs_3d(lo,hi,rhs,Source,Sbar,div_coeff)
+   subroutine make_hgrhs_3d(lo,hi,rhs,Source,Sbar,div_coeff,dx)
 
       implicit none
 
@@ -89,26 +92,60 @@ contains
       real (kind=dp_t), intent(in   ) :: Source(lo(1):,lo(2):,lo(3):)  
       real (kind=dp_t), intent(in   ) :: Sbar(lo(3):)
       real (kind=dp_t), intent(in   ) :: div_coeff(lo(3):)
+      real (kind=dp_t), intent(in   ) :: dx(:)
 
 !     Local variables
       integer :: i, j,k
-      real (kind=dp_t), allocatable :: rhs_cc(:,:,:)
+      real (kind=dp_t), allocatable :: rhs_cc(:,:,:),Sbar_cart(:,:,:),div_cart(:,:,:)
 
       allocate(rhs_cc(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
 
-      do k = lo(3),hi(3)
-      do j = lo(2),hi(2)
-      do i = lo(1),hi(1)
-        rhs_cc(i,j,k) = div_coeff(k) * (Source(i,j,k) - Sbar(k))
-      end do
-      end do
-      end do
+     if (spherical .eq. 1) then
+ 
+        allocate(div_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+        call fill_3d_data(div_cart,div_coeff,dx,0)
+ 
+        allocate(Sbar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+        call fill_3d_data(Sbar_cart,Sbar,dx,0)
+ 
+        do k = lo(3),hi(3)
+        do j = lo(2),hi(2)
+        do i = lo(1),hi(1)
+          rhs_cc(i,j,k) = div_cart(i,j,k) * (Source(i,j,k) - Sbar_cart(i,j,k))
+        end do
+        end do  
+        end do
+       
+        deallocate(Sbar_cart,div_cart) 
 
-!     HACK : THIS ASSUMES PERIODIC AT SIDES AND NO HEATING NEAR TOP OR BOTTOM!!!
-      rhs(:,:,lo(3)  ) = ZERO
-      rhs(:,:,hi(3)  ) = ZERO
-      rhs(:,:,hi(3)+1) = ZERO
-      do k = lo(3)+1, hi(3)-1
+        ! HACK : THIS ASSUMES OUTFLOW AT ALL SIDES AND NO HEATING NEAR ANY SIDES
+        rhs = ZERO
+        do k = lo(3)+1, hi(3)
+        do j = lo(2)+1, hi(2)
+        do i = lo(1)+1, hi(1)
+          rhs(i,j,k) = EIGHTH * ( rhs_cc(i,j  ,k-1) + rhs_cc(i-1,j  ,k-1) &
+                                 +rhs_cc(i,j-1,k-1) + rhs_cc(i-1,j-1,k-1) &
+                                 +rhs_cc(i,j-1,k  ) + rhs_cc(i-1,j-1,k  ) &
+                                 +rhs_cc(i,j-1,k  ) + rhs_cc(i-1,j-1,k  ) )
+        enddo
+        enddo
+        enddo
+       
+      else  
+       
+        do k = lo(3),hi(3)
+        do j = lo(2),hi(2)
+        do i = lo(1),hi(1)
+          rhs_cc(i,j,k) = div_coeff(k) * (Source(i,j,k) - Sbar(k))
+        end do 
+        end do 
+        end do 
+
+        ! HACK : THIS ASSUMES PERIODIC AT SIDES AND NO HEATING NEAR TOP OR BOTTOM!!!
+        rhs(:,:,lo(3)  ) = ZERO
+        rhs(:,:,hi(3)  ) = ZERO
+        rhs(:,:,hi(3)+1) = ZERO
+        do k = lo(3)+1, hi(3)-1
         do j = lo(2)+1, hi(2)
           rhs(lo(1)  ,j,k) = EIGHTH * ( rhs_cc(lo(1),j,k-1) + rhs_cc(lo(1),j-1,k-1) &
                                        +rhs_cc(lo(1),j,k  ) + rhs_cc(lo(1),j-1,k  ) &
@@ -140,7 +177,8 @@ contains
                                  +rhs_cc(i,j-1,k  ) + rhs_cc(i-1,j-1,k  ) )
         enddo
         enddo
-      enddo
+        enddo
+      end if
 
    end subroutine make_hgrhs_3d
 

@@ -63,8 +63,8 @@ contains
                       + .01875_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r1))) &
                       + .01250_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r2))) ) * 1.d17
 
-            ! HACK NO HEATING
-            H(i,j) = ZERO
+!           ! HACK NO HEATING
+!           H(i,j) = ZERO
 
             Hmax = max(Hmax,H(i,j))
           end do
@@ -132,6 +132,7 @@ contains
                         + .01875_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r1))) &
                         + .01250_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r2))) ) * 1.d17
                       
+            ! HACK NO HEATING
             H(i,j,k) = ZERO
                       
             Hmax = max(Hmax,H(i,j,k))

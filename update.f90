@@ -2,13 +2,14 @@ module update_module
 
   use bl_types
   use multifab_module
+  use bl_constants_module
+  use fill_3d_module
+  use addw0_module
+  use geometry
   use variables
   use network
 
   implicit none
-
-  real (kind = dp_t), private, parameter :: ZERO  = 0.0_dp_t
-  real (kind = dp_t), private, parameter :: HALF  = 0.5_dp_t
 
   contains
 
@@ -81,10 +82,10 @@ module update_module
 
       end if
 
-1000  format('OLD MIN/MAX : density           ',e15.10,2x,e15.10)
-1001  format('OLD MIN/MAX : rho * H           ',e15.10,2x,e15.10)
-1002  format('OLD MIN/MAX : ',a16,2x,e15.10,2x,e15.10)
-1003  format('OLD MIN/MAX :           tracer',2x,e15.10,2x,e15.10)
+1000  format('OLD MIN/MAX : density           ',e17.10,2x,e17.10)
+1001  format('OLD MIN/MAX : rho * H           ',e17.10,2x,e17.10)
+1002  format('OLD MIN/MAX : ',a16,2x,e17.10,2x,e17.10)
+1003  format('OLD MIN/MAX :           tracer',2x,e17.10,2x,e17.10)
 
 
       do n = nstart, nstop
@@ -150,6 +151,7 @@ module update_module
           enddo
   
           if (n.eq.rhoh_comp) write(6,2001) smin(n),smax(n)
+          if (n.gt.rhoh_comp .and. n.lt.trac_comp) print *,'SPEC MIN/MAX ',smin(n),smax(n)
           if (n.gt.rhoh_comp .and. n.lt.trac_comp) write(6,2002) spec_names(n-rhoh_comp),smin(n),smax(n)
           if (n.ge.trac_comp) write(6,2003) smin(n),smax(n)
           if (n.eq.rhoh_comp) write(6,2004) 
@@ -170,10 +172,10 @@ module update_module
 
       end if
 
-2000  format('... new min/max : density           ',e15.10,2x,e15.10)
-2001  format('... new min/max : rho * H           ',e15.10,2x,e15.10)
-2002  format('... new min/max : ',a16,2x,e15.10,2x,e15.10)
-2003  format('... new min/max :           tracer',2x,e15.10,2x,e15.10)
+2000  format('... new min/max : density           ',e17.10,2x,e17.10)
+2001  format('... new min/max : rho * H           ',e17.10,2x,e17.10)
+2002  format('... new min/max : ',a16,2x,e17.10,2x,e17.10)
+2003  format('... new min/max :           tracer',2x,e17.10,2x,e17.10)
 2004  format(' ')
 
       deallocate(smin,smax)
@@ -264,9 +266,9 @@ module update_module
       integer, intent(in) :: nstart,nstop, lo(:), hi(:), ng, verbose
       real (kind = dp_t), intent(in   ) ::    sold(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
       real (kind = dp_t), intent(  out) ::    snew(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-      real (kind = dp_t), intent(in   ) ::    umac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
-      real (kind = dp_t), intent(in   ) ::    vmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
-      real (kind = dp_t), intent(in   ) ::    wmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
+      real (kind = dp_t), intent(inout) ::    umac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
+      real (kind = dp_t), intent(inout) ::    vmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
+      real (kind = dp_t), intent(inout) ::    wmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
       real (kind = dp_t), intent(in   ) ::  sedgex(lo(1)   :,lo(2)   :,lo(3)   :,:)
       real (kind = dp_t), intent(in   ) ::  sedgey(lo(1)   :,lo(2)   :,lo(3)   :,:)
       real (kind = dp_t), intent(in   ) ::  sedgez(lo(1)   :,lo(2)   :,lo(3)   :,:)
@@ -276,8 +278,10 @@ module update_module
       real (kind = dp_t), intent(in   ) :: w0(lo(3):)
       real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
-      integer :: i, j, k, n
-      real (kind = dp_t) :: divsu,divbaseu,smax_rho,smin_rho
+      integer :: i, j, k, n, nr
+      real (kind = dp_t) :: divsu,divbaseu,smax_rho,smin_rho,mult
+      real (kind = dp_t), allocatable :: delta_base(:),delta_base_cart(:,:,:)
+      real (kind = dp_t), allocatable :: base_cart(:,:,:)
       real (kind = dp_t), allocatable :: smin(:)
       real (kind = dp_t), allocatable :: smax(:)
       real (kind = dp_t), allocatable :: base_edge(:)
@@ -286,45 +290,139 @@ module update_module
       allocate(smax(nstart:nstop))
       allocate(smin(nstart:nstop))
 
+      nr = size(base_old,dim=1)
+
       smax(:) = -1.d20
       smin(:) =  1.d20
 
-      do n = nstart, nstop
+      if (spherical .eq. 1) then
 
-        base_edge(lo(3)  ) = base_old(lo(3),n)
-        base_edge(hi(3)+1) = base_old(hi(3),n)
-        
-        base_edge(lo(3)+1) = HALF*(base_old(lo(3),n)+base_old(lo(3)+1,n))
-        base_edge(hi(3)  ) = HALF*(base_old(hi(3),n)+base_old(hi(3)-1,n))
-  
-        do k = lo(3)+2,hi(3)-1
-           base_edge(k) = 7.d0/12.d0 * (base_old(k  ,n) + base_old(k-1,n)) &
-                         -1.d0/12.d0 * (base_old(k+1,n) + base_old(k-2,n))
+        allocate(delta_base(nr))
+        allocate(delta_base_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+        allocate(      base_cart(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
+
+        do n = nstart, nstop
+          do k = 1,nr
+            delta_base(k) = base_new(lo(3)+k-1,n) - base_old(lo(3)+k-1,n)
+          end do
+          call fill_3d_data(delta_base_cart,delta_base,dx,0)
+          call fill_3d_data(base_cart,base_old(:,n),dx,1)
+          do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+            base_cart(i,j,lo(3)-1) = base_cart(i,j,lo(3))
+            base_cart(i,j,hi(3)+1) = base_cart(i,j,hi(3))
+          end do
+          end do
+          do k = lo(3), hi(3)
+          do i = lo(1), hi(1)
+            base_cart(i,lo(2)-1,k) = base_cart(i,lo(2),k)
+            base_cart(i,hi(2)+1,k) = base_cart(i,hi(2),k)
+          end do
+          end do
+          do k = lo(3), hi(3)
+          do j = lo(2), hi(2)
+            base_cart(lo(1)-1,j,k) = base_cart(lo(1),j,k)
+            base_cart(hi(1)+1,j,k) = base_cart(hi(1),j,k)
+          end do
+          end do
+
+          ! Note the umac here does NOT have w0 in it
+          do k = lo(3), hi(3)
+            do j = lo(2), hi(2)
+            do i = lo(1), hi(1)
+    
+              divbaseu = HALF * (  &
+                   (umac(i+1,j,k)*(base_cart(i,j,k)+base_cart(i+1,j,k)) &
+                   -umac(i  ,j,k)*(base_cart(i,j,k)+base_cart(i-1,j,k)) ) / dx(1) &
+                  +(vmac(i,j+1,k)*(base_cart(i,j,k)+base_cart(i,j+1,k)) &
+                   -vmac(i,j  ,k)*(base_cart(i,j,k)+base_cart(i,j-1,k)) ) / dx(2) &
+                  +(wmac(i,j,k+1)*(base_cart(i,j,k)+base_cart(i,j,k+1)) &
+                   -wmac(i,j,k  )*(base_cart(i,j,k)+base_cart(i,j,k-1)) ) ) / dx(3) 
+
+              snew(i,j,k,n) = sold(i,j,k,n) + delta_base_cart(i,j,k) &
+                              - dt * divbaseu + dt * force(i,j,k,n)
+      
+            enddo
+            enddo
+          enddo
         end do
 
-        do k = lo(3), hi(3)
-        do j = lo(2), hi(2)
-        do i = lo(1), hi(1)
+        deallocate(delta_base,delta_base_cart,base_cart)
+
+        mult = ONE
+        call addw0_3d_sphr(umac,vmac,wmac,w0,dx,mult)
+
+        do n = nstart, nstop
+
+          ! Note the umac here DOES have w0 in it
+          do k = lo(3), hi(3)
+            do j = lo(2), hi(2)
+            do i = lo(1), hi(1)
+    
+              divsu = (umac(i+1,j,k) * sedgex(i+1,j,k,n) &
+                      -umac(i  ,j,k) * sedgex(i  ,j,k,n) ) / dx(1) + &
+                      (vmac(i,j+1,k) * sedgey(i,j+1,k,n) &
+                      -vmac(i,j  ,k) * sedgey(i,j  ,k,n) ) / dx(2) + &
+                      (wmac(i,j,k+1) * sedgez(i,j,k+1,n) &
+                      -wmac(i,j,k  ) * sedgez(i,j,k  ,n) ) / dx(3)
+
+              snew(i,j,k,n) = snew(i,j,k,n) - dt * divsu
+
+            enddo
+            enddo
+          enddo
+        enddo
+
+        mult = -ONE
+        call addw0_3d_sphr(umac,vmac,wmac,w0,dx,mult)
+
+      ! not spherical
+      else 
+
+        do n = nstart, nstop
+
+          base_edge(lo(3)  ) = base_old(lo(3),n)
+          base_edge(hi(3)+1) = base_old(hi(3),n)
+          
+          base_edge(lo(3)+1) = HALF*(base_old(lo(3),n)+base_old(lo(3)+1,n))
+          base_edge(hi(3)  ) = HALF*(base_old(hi(3),n)+base_old(hi(3)-1,n))
+    
+          do k = lo(3)+2,hi(3)-1
+             base_edge(k) = 7.d0/12.d0 * (base_old(k  ,n) + base_old(k-1,n)) &
+                           -1.d0/12.d0 * (base_old(k+1,n) + base_old(k-2,n))
+          end do
+
+          allocate(delta_base(lo(3):hi(3)))
+          do k = lo(3), hi(3)
+            delta_base(k) = base_new(k,n) - base_old(k,n)
+          end do
   
-          divsu = (umac(i+1,j,k) * sedgex(i+1,j,k,n) &
-                  -umac(i  ,j,k) * sedgex(i  ,j,k,n) ) / dx(1) + &
-                  (vmac(i,j+1,k) * sedgey(i,j+1,k,n) &
-                  -vmac(i,j  ,k) * sedgey(i,j  ,k,n) ) / dx(2) + &
-                 ((wmac(i,j,k+1)+w0(k+1)) * sedgez(i,j,k+1,n) &
-                 -(wmac(i,j,k  )+w0(k  )) * sedgez(i,j,k  ,n) ) / dx(3)
+          do k = lo(3), hi(3)
+            do j = lo(2), hi(2)
+            do i = lo(1), hi(1)
+      
+              divsu = (umac(i+1,j,k) * sedgex(i+1,j,k,n) &
+                      -umac(i  ,j,k) * sedgex(i  ,j,k,n) ) / dx(1) + &
+                      (vmac(i,j+1,k) * sedgey(i,j+1,k,n) &
+                      -vmac(i,j  ,k) * sedgey(i,j  ,k,n) ) / dx(2) + &
+                     ((wmac(i,j,k+1)+w0(k+1)) * sedgez(i,j,k+1,n) &
+                     -(wmac(i,j,k  )+w0(k  )) * sedgez(i,j,k  ,n) ) / dx(3)
+    
+              divbaseu = (umac(i+1,j,k) - umac(i,j,k) ) * base_old(k,n) / dx(1) &
+                        +(vmac(i,j+1,k) - vmac(i,j,k) ) * base_old(k,n) / dx(2) &
+                        +(wmac(i,j,k+1) * base_edge(k+1) - wmac(i,j,k) * base_edge(k) ) / dx(3)
+    
+              snew(i,j,k,n) = sold(i,j,k,n) + delta_base(k) &
+                              - dt * (divsu + divbaseu) + dt * force(i,j,k,n)
+      
+            enddo
+            enddo
+          enddo
+        end do
+        deallocate(delta_base)
+ 
+      end if
 
-          divbaseu = (umac(i+1,j,k) - umac(i,j,k) ) * base_old(k,n) / dx(1) &
-                    +(vmac(i,j+1,k) - vmac(i,j,k) ) * base_old(k,n) / dx(2) &
-                    +(wmac(i,j,k+1) * base_edge(k+1) - wmac(i,j,k) * base_edge(k) ) / dx(3)
-
-          snew(i,j,k,n) = sold(i,j,k,n) + (base_new(k,n) - base_old(k,n)) &
-                          - dt * (divsu + divbaseu) + dt * force(i,j,k,n)
-  
-        enddo
-        enddo
-        enddo
-
-      end do
 
       if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
         snew(:,:,:,rho_comp) = sold(:,:,:,rho_comp)
@@ -333,6 +431,12 @@ module update_module
         do j = lo(2), hi(2)
         do i = lo(1), hi(1)
            snew(i,j,k,rho_comp) = snew(i,j,k,rho_comp) + (snew(i,j,k,n)-sold(i,j,k,n))
+           if (i.eq.27.and.j.eq.27.and.k.eq.2 .and. n.eq.nstop) then
+              print *,'(27,27,2):SOLD SNEW ',sold(i,j,k,rho_comp),snew(i,j,k,rho_comp)
+           end if
+           if (i.eq.27.and.j.eq.27.and.k.eq.53 .and. n.eq.nstop) then
+              print *,'(27,27,53):SOLD SNEW ',sold(i,j,k,rho_comp),snew(i,j,k,rho_comp)
+           end if
         enddo
         enddo
         enddo
@@ -378,10 +482,10 @@ module update_module
 
       end if
 
-1000  format('... new min/max : density           ',e15.10,2x,e15.10)
-1001  format('... new min/max : rho * H           ',e15.10,2x,e15.10)
-1002  format('... new min/max : ',a16,2x,e15.10,2x,e15.10)
-1003  format('... new min/max :           tracer',2x,e15.10,2x,e15.10)
+1000  format('... new min/max : density           ',e17.10,2x,e17.10)
+1001  format('... new min/max : rho * H           ',e17.10,2x,e17.10)
+1002  format('... new min/max : ',a16,2x,e17.10,2x,e17.10)
+1003  format('... new min/max :           tracer',2x,e17.10,2x,e17.10)
 1004  format(' ')
 
       deallocate(smin,smax)
