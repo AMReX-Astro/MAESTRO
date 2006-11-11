@@ -151,7 +151,6 @@ module update_module
           enddo
   
           if (n.eq.rhoh_comp) write(6,2001) smin(n),smax(n)
-          if (n.gt.rhoh_comp .and. n.lt.trac_comp) print *,'SPEC MIN/MAX ',smin(n),smax(n)
           if (n.gt.rhoh_comp .and. n.lt.trac_comp) write(6,2002) spec_names(n-rhoh_comp),smin(n),smax(n)
           if (n.ge.trac_comp) write(6,2003) smin(n),smax(n)
           if (n.eq.rhoh_comp) write(6,2004) 
@@ -431,12 +430,6 @@ module update_module
         do j = lo(2), hi(2)
         do i = lo(1), hi(1)
            snew(i,j,k,rho_comp) = snew(i,j,k,rho_comp) + (snew(i,j,k,n)-sold(i,j,k,n))
-           if (i.eq.27.and.j.eq.27.and.k.eq.2 .and. n.eq.nstop) then
-              print *,'(27,27,2):SOLD SNEW ',sold(i,j,k,rho_comp),snew(i,j,k,rho_comp)
-           end if
-           if (i.eq.27.and.j.eq.27.and.k.eq.53 .and. n.eq.nstop) then
-              print *,'(27,27,53):SOLD SNEW ',sold(i,j,k,rho_comp),snew(i,j,k,rho_comp)
-           end if
         enddo
         enddo
         enddo

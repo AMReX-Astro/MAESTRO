@@ -38,10 +38,11 @@ contains
           index = radius / dr
           if (index .lt. 0 .or. index .gt. nr-1) then
             print *,'RADIUS ',radius
-            print *,'BOGUS INDEX ',index
+            print *,'BOGUS INDEX IN FILL_3D: ',index
             print *,'NOT IN RANGE 0 TO ',nr-1
             print *,'I J K ',i,j,k
             print *,'X Y Z ',x,y,z
+            x = 1.0 / 0.0
             stop
           end if
           data(i,j,k) = s0(index)
@@ -76,8 +77,9 @@ contains
           index = radius / dr
 
           if (index .lt. 0 .or. index .gt. nr) then
-            print *,'BOGUS INDEX ',index
             print *,'RADIUS ',radius
+            print *,'BOGUS INDEX ',index
+            print *,'NOT IN RANGE 0 TO ',nr-1
             print *,'I J K ',i,j,k
             print *,'X Y Z ',x,y,z
             stop

@@ -94,8 +94,8 @@ module advance_timestep_module
     type(bc_level) ::  bc
     type(box)      ::  fine_domain
     real(dp_t)     :: halfdt, half_time, new_time
-    integer :: j,n,dm,nscal,nlevs,comp,bc_comp
-    integer :: ng_cell
+    integer :: j,n,dm,nscal,nlevs,comp
+    integer :: nr,ng_cell
     logical :: nodal(mla%dim)
 
     nlevs = size(uold)
@@ -114,14 +114,15 @@ module advance_timestep_module
     allocate( hgrhs(nlevs))
 
     nscal = multifab_ncomp(sold(1))
+    nr    = size(s0_old,dim=1)
 
-    allocate(          s0_nph(extent(mla%mba%pd(1),dm),nscal))
-    allocate(            Sbar(extent(mla%mba%pd(1),dm),1))
-    allocate(   div_coeff_nph(extent(mla%mba%pd(1),dm)))
-    allocate(  div_coeff_edge(extent(mla%mba%pd(1),dm)+1))
-    allocate(       grav_edge(extent(mla%mba%pd(1),dm)+1))
-    allocate(rho_omegadotbar1(extent(mla%mba%pd(1),dm),nspec))
-    allocate(rho_omegadotbar2(extent(mla%mba%pd(1),dm),nspec))
+    allocate(          s0_nph(nr,nscal))
+    allocate(            Sbar(nr,1))
+    allocate(   div_coeff_nph(nr))
+    allocate(  div_coeff_edge(nr+1))
+    allocate(       grav_edge(nr+1))
+    allocate(rho_omegadotbar1(nr,nspec))
+    allocate(rho_omegadotbar2(nr,nspec))
 
     nodal = .true.
     do n = 1,nlevs
