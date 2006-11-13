@@ -525,9 +525,9 @@ contains
     real (kind=dp_t), intent(  out) :: deltagamma(lo(1):,lo(2):,lo(3):)  
     real (kind=dp_t), intent(in   ) ::  s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind=dp_t), intent(in   ) ::  u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-    real (kind=dp_t), intent(in   ) :: s0(lo(3):,:)
-    real (kind=dp_t), intent(inout) :: t0(lo(3):)
-    real (kind=dp_t), intent(in   ) :: p0(lo(3):)
+    real (kind=dp_t), intent(in   ) :: s0(:,:)
+    real (kind=dp_t), intent(inout) :: t0(:)
+    real (kind=dp_t), intent(in   ) :: p0(:)
     real (kind=dp_t), intent(in   ) :: time,dx(:)
 
     !     Local variables
@@ -539,12 +539,12 @@ contains
     real (kind=dp_t), allocatable ::   p0_cart(:,:,:)
     real (kind=dp_t), allocatable :: gam0_cart(:,:,:)
 
-    allocate(gam10(lo(3):lo(3)+size(s0,dim=1)-1))
+    allocate(gam10(size(s0,dim=1)))
 
     do_diag = .false.
 
     ! First make sure we have t0 right.
-    do k = lo(3), hi(3)
+    do k = 1, size(s0,dim=1)
         den_row(1) = s0(k,rho_comp)
        temp_row(1) = t0(k)
           p_row(1) = p0(k)
@@ -567,16 +567,16 @@ contains
     end do
 
     allocate(rho0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-    call fill_3d_data(rho0_cart,s0(lo(3):,rho_comp),dx,0)
+    call fill_3d_data(rho0_cart,s0(:,rho_comp),dx,0)
 
     allocate(t0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-    call fill_3d_data(t0_cart,t0(lo(3):),dx,0)
+    call fill_3d_data(t0_cart,t0,dx,0)
 
     allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-    call fill_3d_data(p0_cart,p0(lo(3):),dx,0)
+    call fill_3d_data(p0_cart,p0,dx,0)
 
     allocate(gam0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-    call fill_3d_data(gam0_cart,gam10(lo(3):),dx,0)
+    call fill_3d_data(gam0_cart,gam10,dx,0)
 
     ! Then compute the perturbation and Mach number
     do k = lo(3), hi(3)
