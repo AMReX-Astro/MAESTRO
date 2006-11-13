@@ -13,7 +13,6 @@ f90sources += mkforce.f90
 f90sources += mkscalforce.f90
 f90sources += make_heating.f90
 f90sources += make_div_coeff.f90
-f90sources += eos_stuff.f90
 f90sources += addw0.f90
 f90sources += geometry.f90
 f90sources += variables.f90
