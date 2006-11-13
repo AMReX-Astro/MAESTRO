@@ -151,10 +151,14 @@ contains
         end do
       end do
 
-      do n = 1,nc
       do i = 1,nr-1
-         phibar(i,n) = phibar(i,n) / sum(i)
-      end do
+        if (sum(i) .gt. ZERO) then
+          do n = 1,nc
+            phibar(i,n) = phibar(i,n) / sum(i)
+          end do
+        else
+          phibar(i,1:nc) = ZERO
+        end if
       end do
 
       deallocate(sum)

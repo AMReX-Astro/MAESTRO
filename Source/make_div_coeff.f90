@@ -45,7 +45,7 @@ contains
 
    end subroutine make_div_coeff
 
-   subroutine put_beta_on_edges (div_coeff_cell,div_coeff_edge)
+   subroutine put_1d_beta_on_edges (div_coeff_cell,div_coeff_edge)
 
       real(kind=dp_t), intent(in   ) :: div_coeff_cell(:)
       real(kind=dp_t), intent(  out) :: div_coeff_edge(:)
@@ -63,7 +63,7 @@ contains
       end do
       div_coeff_edge(ny+1) = div_coeff_edge(ny)
 
-   end subroutine put_beta_on_edges
+   end subroutine put_1d_beta_on_edges
 
 end module make_div_coeff_module
 

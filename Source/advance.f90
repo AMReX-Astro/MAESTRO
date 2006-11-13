@@ -84,6 +84,10 @@ module advance_timestep_module
     type(multifab), allocatable ::  hgrhs(:)
     type(multifab), allocatable :: Source_nph(:)
 
+    ! Only needed for spherical.eq.1 
+    type(multifab)              :: div_coeff_3d
+    real(kind=dp_t), pointer ::  dp(:,:,:,:)
+
     real(dp_t)    , allocatable ::        s0_nph(:,:)
     real(dp_t)    , allocatable ::          Sbar(:,:)
     real(dp_t)    , allocatable :: div_coeff_nph(:)
@@ -93,8 +97,8 @@ module advance_timestep_module
     real(dp_t)    , allocatable :: rho_omegadotbar2(:,:)
     type(bc_level) ::  bc
     type(box)      ::  fine_domain
-    real(dp_t)     :: halfdt, half_time, new_time
-    integer :: j,n,dm,nscal,nlevs,comp
+    real(dp_t)     :: halfdt, half_time, new_time, eps_in
+    integer :: i,j,n,dm,nscal,nlevs,comp
     integer :: nr,ng_cell
     logical :: nodal(mla%dim)
 
@@ -131,40 +135,52 @@ module advance_timestep_module
      call multifab_build(    macrhs(n), mla%la(n),     1, 0)
      call multifab_build(     hgrhs(n), mla%la(n),     1,       0, nodal)
     end do
+ 
+    if (spherical .eq. 1) call multifab_build(div_coeff_3d,mla%la(nlevs),1,0)
 
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        !! STEP 1 !!
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        print *,'<<< STEP 1 >>>'
-        do n = 1, nlevs
-           call make_S(Source_nph(n),sold(n),p0_old,temp0,gam1,dx(n,:),time)
-           call average(Source_nph(n),Sbar,dx(n,:))
-           call make_w0(w0,Sbar(:,1),p0_old,s0_old(:,rho_comp),temp0,gam1,dx(n,dm),dt)
-        end do
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !! STEP 1 !!
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    print *,'<<< STEP 1 >>>'
+    do n = 1, nlevs
+       call make_S(Source_nph(n),sold(n),p0_old,temp0,gam1,dx(n,:),time)
+       call average(Source_nph(n),Sbar,dx(n,:))
+       call make_w0(w0,Sbar(:,1),p0_old,s0_old(:,rho_comp),temp0,gam1,dx(n,dm),dt)
+    end do
 
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        !! STEP 2 !!
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        print *,'<<< STEP 2 >>>'
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !! STEP 2 !!
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    print *,'<<< STEP 2 >>>'
 
-        do n = 1,nlevs
+    do n = 1,nlevs
 
-           call advance_premac(uold(n), sold(n),&
-                               umac(n,:), uedge(n,:), utrans(n,:),&
-                               gp(n), p(n), s0_old, &
-                               dx(n,:),time,dt, &
-                               the_bc_tower%bc_tower_array(n), &
-                               verbose)
-        end do
+       call advance_premac(uold(n), sold(n),&
+                           umac(n,:), uedge(n,:), utrans(n,:),&
+                           gp(n), p(n), s0_old, &
+                           dx(n,:),time,dt, &
+                           the_bc_tower%bc_tower_array(n), &
+                           verbose)
+    end do
 
-        do n = 1, nlevs
-           call make_macrhs(macrhs(n),Source_nph(n),Sbar(:,1),div_coeff_old,dx(n,:))
-        end do
+    do n = 1, nlevs
+       call make_macrhs(macrhs(n),Source_nph(n),Sbar(:,1),div_coeff_old,dx(n,:))
+    end do
 
-        ! MAC projection !
-        call put_beta_on_edges(div_coeff_old,div_coeff_edge)
-        call macproject(mla,umac,sold,dx,the_bc_tower,verbose,mg_verbose,cg_verbose,press_comp,&
-                        macrhs,div_coeff_old,div_coeff_edge)
+    ! MAC projection !
+    if (spherical .eq. 1) then
+      do i = 1,div_coeff_3d%nboxes
+        if (multifab_remote(div_coeff_3d,i)) cycle
+        dp => dataptr(div_coeff_3d, i)
+        call fill_3d_data(dp(:,:,:,1),div_coeff_old,dx(nlevs,:),0)
+      end do
+      call macproject(mla,umac,sold,dx,the_bc_tower,verbose,mg_verbose,cg_verbose,press_comp,&
+                      macrhs,div_coeff_3d=div_coeff_3d)
+    else
+      call put_1d_beta_on_edges(div_coeff_old,div_coeff_edge)
+      call macproject(mla,umac,sold,dx,the_bc_tower,verbose,mg_verbose,cg_verbose,press_comp,&
+                      macrhs,div_coeff_1d=div_coeff_old,div_coeff_half_1d=div_coeff_edge)
+    end if
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !! STEP 3 !!
@@ -182,7 +198,6 @@ module advance_timestep_module
         call make_grav_edge(grav_edge,s0_1(:,rho_comp))
         call make_div_coeff(div_coeff_new,s0_1(:,rho_comp),p0_1, &
                             gam1,grav_edge,dx(1,dm),anelastic_cutoff)
-        call put_beta_on_edges(div_coeff_new,div_coeff_edge)
 
 
 !       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -190,13 +205,13 @@ module advance_timestep_module
 !       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         print *,'<<< STEP 4 >>>'
 
+        call put_1d_beta_on_edges(div_coeff_new,div_coeff_edge)
         call advect_base(w0,Sbar(:,1),p0_1,p0_2,s0_1,s0_2,temp0,gam1, &
                          div_coeff_edge,&
                          dx(1,dm),dt,anelastic_cutoff)
         call make_grav_edge(grav_edge,s0_2(:,rho_comp))
         call make_div_coeff(div_coeff_new,s0_2(:,rho_comp),p0_2, &
                             gam1,grav_edge,dx(1,dm),anelastic_cutoff)
-        call put_beta_on_edges(div_coeff_new,div_coeff_edge)
 
         do n = 1,nlevs
            call scalar_advance (uold(n), s1(n), s2(n), &
@@ -234,7 +249,6 @@ module advance_timestep_module
         call make_grav_edge(grav_edge,s0_new(:,rho_comp))
         call make_div_coeff(div_coeff_new,s0_new(:,rho_comp),p0_new, &
                             gam1,grav_edge,dx(1,dm),anelastic_cutoff)
-        call put_beta_on_edges(div_coeff_new,div_coeff_edge)
 
 !       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !! STEP 6 !!
@@ -279,15 +293,25 @@ module advance_timestep_module
         do j = 1,size(div_coeff_old,dim=1)
           div_coeff_nph(j) = HALF * (div_coeff_old(j) + div_coeff_new(j))
         end do
-        call put_beta_on_edges(div_coeff_nph,div_coeff_edge)
 
         do n = 1, nlevs
            call make_macrhs(macrhs(n),Source_nph(n),Sbar(:,1),div_coeff_nph,dx(n,:))
         end do
 
         ! MAC projection !
-        call macproject(mla,umac,rhohalf,dx,the_bc_tower,verbose,mg_verbose,cg_verbose,&
-                        press_comp,macrhs,div_coeff_nph,div_coeff_edge)
+        if (spherical .eq. 1) then
+          do i = 1,div_coeff_3d%nboxes
+            if (multifab_remote(div_coeff_3d,i)) cycle
+            dp => dataptr(div_coeff_3d, i)
+            call fill_3d_data(dp(:,:,:,1),div_coeff_nph,dx(nlevs,:),0)
+          end do
+          call macproject(mla,umac,rhohalf,dx,the_bc_tower,verbose,mg_verbose,cg_verbose,&
+                          press_comp,macrhs,div_coeff_3d=div_coeff_3d)
+        else
+          call put_1d_beta_on_edges(div_coeff_nph,div_coeff_edge)
+          call macproject(mla,umac,rhohalf,dx,the_bc_tower,verbose,mg_verbose,cg_verbose,&
+                          press_comp,macrhs,div_coeff_1d=div_coeff_nph,div_coeff_half_1d=div_coeff_edge)
+        end if
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !! STEP 8 !!
@@ -300,7 +324,6 @@ module advance_timestep_module
         call make_grav_edge(grav_edge,s0_2(:,rho_comp))
         call make_div_coeff(div_coeff_new,s0_2(:,rho_comp),p0_2, &
                             gam1,grav_edge,dx(1,dm),anelastic_cutoff)
-        call put_beta_on_edges(div_coeff_new,div_coeff_edge)
 
         do n = 1,nlevs
            call scalar_advance (uold(n), s1(n), s2(n), &
@@ -338,7 +361,6 @@ module advance_timestep_module
         call make_grav_edge(grav_edge,s0_new(:,rho_comp))
         call make_div_coeff(div_coeff_new,s0_new(:,rho_comp),p0_new, &
                             gam1,grav_edge,dx(1,dm),anelastic_cutoff)
-        call put_beta_on_edges(div_coeff_new,div_coeff_edge)
 
 
 
@@ -376,9 +398,21 @@ module advance_timestep_module
         end do
 
 !       Project the new velocity field.
-        call hgproject(mla, unew, rhohalf, p, gp, dx, dt, &
-                       the_bc_tower, verbose, mg_verbose, cg_verbose, press_comp, &
-                       hgrhs, div_coeff_nph)
+        if (spherical .eq. 1) then
+          do i = 1,div_coeff_3d%nboxes
+            if (multifab_remote(div_coeff_3d,i)) cycle
+            dp => dataptr(div_coeff_3d, i)
+            call fill_3d_data(dp(:,:,:,1),div_coeff_nph,dx(nlevs,:),0)
+          end do
+          eps_in = 1.d-10
+          call hgproject(mla, unew, rhohalf, p, gp, dx, dt, &
+                         the_bc_tower, verbose, mg_verbose, cg_verbose, press_comp, &
+                         hgrhs, div_coeff_3d=div_coeff_3d, eps_in = eps_in)
+        else
+          call hgproject(mla, unew, rhohalf, p, gp, dx, dt, &
+                         the_bc_tower, verbose, mg_verbose, cg_verbose, press_comp, &
+                         hgrhs, div_coeff_1d=div_coeff_nph)
+        end if
 
         do n = 2, nlevs
            fine_domain = layout_get_pd(mla%la(n))
@@ -398,6 +432,8 @@ module advance_timestep_module
         deallocate(macrhs)
         deallocate( hgrhs)
         deallocate(rhohalf)
+
+        if (spherical .eq. 1) call destroy(div_coeff_3d)
 
         deallocate(  Sbar)
         deallocate(s0_nph)
