@@ -539,7 +539,7 @@ contains
     real (kind=dp_t), allocatable ::   p0_cart(:,:,:)
     real (kind=dp_t), allocatable :: gam0_cart(:,:,:)
 
-    allocate(gam10(lo(3):hi(3)))
+    allocate(gam10(lo(3):lo(3)+size(s0,dim=1)-1))
 
     do_diag = .false.
 
@@ -567,16 +567,16 @@ contains
     end do
 
     allocate(rho0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-    call fill_3d_data(rho0_cart,s0(:,rho_comp),dx,0)
+    call fill_3d_data(rho0_cart,s0(lo(3):,rho_comp),dx,0)
 
     allocate(t0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-    call fill_3d_data(t0_cart,t0,dx,0)
+    call fill_3d_data(t0_cart,t0(lo(3):),dx,0)
 
     allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-    call fill_3d_data(p0_cart,p0,dx,0)
+    call fill_3d_data(p0_cart,p0(lo(3):),dx,0)
 
     allocate(gam0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-    call fill_3d_data(gam0_cart,gam10,dx,0)
+    call fill_3d_data(gam0_cart,gam10(lo(3):),dx,0)
 
     ! Then compute the perturbation and Mach number
     do k = lo(3), hi(3)
