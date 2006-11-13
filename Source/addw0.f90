@@ -32,7 +32,7 @@ contains
          case(2)
            call addw0_2d(wmp(:,:,1,1),w0,lo,hi,mult)
          case(3)
-           if (spherical .eq. 1) then
+           if (spherical .eq. 0) then
              call addw0_3d(wmp(:,:,:,1),w0,lo,hi,mult)
            else
              call addw0_3d_sphr(ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),w0,dx,mult)
