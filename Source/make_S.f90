@@ -153,7 +153,7 @@ contains
 
               den_row(1) = s(i,j,k,rho_comp)
 
-              if (spherical .eq. 1) then
+              if (spherical .eq. 0) then
                 temp_row(1) = t0(k)
                 p_row(1) = p0(k)
               else
