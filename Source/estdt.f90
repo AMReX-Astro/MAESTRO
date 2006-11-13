@@ -63,7 +63,7 @@ contains
       integer, intent(in) :: lo(:), hi(:), ng
       real (kind = dp_t), intent(in ) ::     u(lo(1)-ng:,lo(2)-ng:,:)  
       real (kind = dp_t), intent(in ) :: force(lo(1)- 1:,lo(2)- 1:,:)  
-      real (kind = dp_t), intent( in) ::   w0(lo(2):)
+      real (kind = dp_t), intent( in) ::   w0(:)
       real (kind = dp_t), intent(in ) :: dx(:)
       real (kind = dp_t), intent(out) :: dt
 
@@ -80,7 +80,7 @@ contains
       pforcex = 0.0D0 
       pforcey = 0.0D0 
 
-      do j = lo(2), hi(2)
+      do j = 1,size(w0,dim=1)
         spdy = max(spdy ,abs(w0(j)))
       enddo
 
@@ -121,7 +121,7 @@ contains
       integer, intent(in) :: lo(:), hi(:), ng
       real (kind = dp_t), intent(in ) ::     u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
       real (kind = dp_t), intent(in ) :: force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)  
-      real (kind = dp_t), intent( in) ::   w0(lo(3):)
+      real (kind = dp_t), intent( in) ::   w0(:)
       real (kind = dp_t), intent(in ) :: dx(:)
       real (kind = dp_t), intent(out) :: dt
 
@@ -140,7 +140,7 @@ contains
       pforcey = ZERO 
       pforcez = ZERO 
 
-      do k = lo(3), hi(3)
+      do k = 1,size(w0,dim=1)
         spdz = max(spdz ,abs(w0(k)))
       enddo
 
