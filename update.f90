@@ -505,13 +505,23 @@ module update_module
       real (kind = dp_t), intent(in   ) :: dx(:)
       real (kind = dp_t), intent(in   ) :: time,dt
 
-      integer :: i, j, k, n
+      integer :: i, j, k, n, nr
       real (kind = dp_t) ubar,vbar,wbar
       real (kind = dp_t) ugradu,ugradv,ugradw,ugrads
       real (kind = dp_t) :: divsu
       real (kind = dp_t) :: smin,smax,umin,umax,vmin,vmax,wmin,wmax
-      real (kind = dp_t) :: fac
+      real (kind = dp_t) :: gradux,graduy,graduz
+      real (kind = dp_t) :: gradvx,gradvy,gradvz
+      real (kind = dp_t) :: gradwx,gradwy,gradwz
+      real (kind = dp_t) :: gradur,gradvr,gradwr
+      real (kind = dp_t) :: dt_wmac_dw0dr
+      real (kind = dp_t), allocatable :: w0_cell(:),divw0(:)
+      real (kind = dp_t), allocatable :: divw0_cart(:,:,:)
+      real (kind = dp_t), allocatable :: w0_cart(:,:,:)
+      real (kind = dp_t), allocatable :: normal(:,:,:,:)
 
+      ! 1) Subtract (Utilde dot grad) Utilde term from old Utilde
+      ! 2) Add forcing term to new Utilde
       do k = lo(3), hi(3)
       do j = lo(2), hi(2)
       do i = lo(1), hi(1)
@@ -536,16 +546,101 @@ module update_module
            unew(i,j,k,2) = uold(i,j,k,2) - dt * ugradv + dt * force(i,j,k,2)
            unew(i,j,k,3) = uold(i,j,k,3) - dt * ugradw + dt * force(i,j,k,3)
 
-           ! Add w dot grad w0 term to w.
-           unew(i,j,k,3) = unew(i,j,k,3) - dt * wbar*(w0(k+1) - w0(k))/dx(3)
-
-           ! Add w0 dot grad u term to u and w.
-           wbar = HALF*(w0(k) + w0(k+1))
-           unew(i,j,k,:) = unew(i,j,k,:) - dt * wbar*(sedgez(i,j,k+1,:) - sedgez(i,j,k,:))/dx(3)
 
       enddo
       enddo
       enddo
+
+      ! 3) Subtract (Utilde dot er) dot grad w0 term from new Utilde.
+      if (spherical .eq. 0) then
+
+        do k = lo(3), hi(3)
+          wbar = HALF*(wmac(i,j,k) + wmac(i,j,k+1))
+          dt_wmac_dw0dr = dt * wbar * (w0(k+1) - w0(k)) /dx(3)
+          unew(:,:,k,3) = unew(:,:,k,3) - dt_wmac_dw0dr
+        enddo
+
+      else
+
+        nr = size(w0,dim=1)-1
+        allocate(divw0(nr))
+        do k = 1,nr
+          i = k + (lo(3)-1)
+          divw0(k) = (w0(i+1)-w0(i))/dr
+        end do
+        allocate(divw0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+        call fill_3d_data(divw0_cart,divw0,dx,0)
+
+        allocate(normal(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),3))
+        call make_3d_normal(dx,normal,0)
+
+        do k = lo(3), hi(3)
+        do j = lo(2), hi(2)
+        do i = lo(1), hi(1)
+           ubar = HALF*(umac(i,j,k) + umac(i+1,j,k))
+           vbar = HALF*(vmac(i,j,k) + vmac(i,j+1,k))
+           wbar = HALF*(wmac(i,j,k) + wmac(i,j,k+1))
+           unew(i,j,k,1) = unew(i,j,k,1) - dt * ubar*normal(i,j,k,1)*divw0_cart(i,j,k)
+           unew(i,j,k,2) = unew(i,j,k,2) - dt * vbar*normal(i,j,k,2)*divw0_cart(i,j,k)
+           unew(i,j,k,3) = unew(i,j,k,3) - dt * wbar*normal(i,j,k,3)*divw0_cart(i,j,k)
+        enddo
+        enddo
+        enddo
+        deallocate(divw0,divw0_cart)
+
+      end if
+
+      ! 3) Subtract w0 dot grad U term from new Utilde
+      if (spherical .eq. 0) then
+
+        do k = lo(3), hi(3)
+        do j = lo(2), hi(2)
+        do i = lo(1), hi(1)
+          wbar = HALF*(w0(k) + w0(k+1))
+          unew(i,j,k,:) = unew(i,j,k,:) - dt * wbar*(sedgez(i,j,k+1,:) - sedgez(i,j,k,:))/dx(3)
+        enddo
+        enddo
+        enddo
+
+      else
+
+        allocate(w0_cell(nr))
+        do k = 1,nr
+          i = k + (lo(3)-1)
+          w0_cell(k) = HALF * (w0(i+1)+w0(i))
+        end do
+
+        allocate(w0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+        call fill_3d_data(w0_cart,w0_cell,dx,0)
+
+        do k = lo(3), hi(3)
+        do j = lo(2), hi(2)
+        do i = lo(1), hi(1)
+           gradux = (sedgex(i+1,j,k,1) - sedgex(i,j,k,1))/dx(1)
+           gradvx = (sedgex(i+1,j,k,2) - sedgex(i,j,k,2))/dx(1)
+           gradwx = (sedgex(i+1,j,k,3) - sedgex(i,j,k,3))/dx(1)
+           graduy = (sedgey(i,j+1,k,1) - sedgey(i,j,k,1))/dx(2)
+           gradvy = (sedgey(i,j+1,k,2) - sedgey(i,j,k,2))/dx(2)
+           gradwy = (sedgey(i,j+1,k,3) - sedgey(i,j,k,3))/dx(2)
+           graduz = (sedgez(i,j,k+1,1) - sedgez(i,j,k,1))/dx(3)
+           gradvz = (sedgez(i,j,k+1,2) - sedgez(i,j,k,2))/dx(3)
+           gradwz = (sedgez(i,j,k+1,3) - sedgez(i,j,k,3))/dx(3)
+
+           gradur = gradux * normal(i,j,k,1) + graduy * normal(i,j,k,2) + graduz * normal(i,j,k,3)
+           gradvr = gradvx * normal(i,j,k,1) + gradvy * normal(i,j,k,2) + gradvz * normal(i,j,k,3)
+           gradwr = gradwx * normal(i,j,k,1) + gradwy * normal(i,j,k,2) + gradwz * normal(i,j,k,3)
+
+           unew(i,j,k,1) = unew(i,j,k,1) - dt * w0_cart(i,j,k) * gradur
+           unew(i,j,k,2) = unew(i,j,k,2) - dt * w0_cart(i,j,k) * gradvr
+           unew(i,j,k,2) = unew(i,j,k,3) - dt * w0_cart(i,j,k) * gradwr
+
+        enddo
+        enddo
+        enddo
+        deallocate(w0_cell,w0_cart,normal)
+
+      end if
+   
 
       umax = unew(lo(1),lo(2),lo(3),1) 
       umin = unew(lo(1),lo(2),lo(3),1) 

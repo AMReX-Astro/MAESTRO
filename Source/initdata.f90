@@ -395,7 +395,7 @@ contains
     ipos = index(header_line, '=') + 1
     read (header_line(ipos:),*) npts_model
 
-    print *, npts_model, ' points found in the initial model file'
+    print *, npts_model, '    points found in the initial model file'
 
     ! now read in the number of variables
     read (99, '(a256)') header_line

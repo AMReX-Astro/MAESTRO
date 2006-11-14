@@ -449,11 +449,22 @@ contains
 
               call setbc_2d(snp(:,:,1,n), lo, ng_cell, &
                             the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
-            case (3)
-              wmp => dataptr(umac(3), i)
+
+            case(3)
+              wmp  => dataptr(umac(3), i)
               sepz => dataptr(sedge(3), i)
 
-              call  mkrhohforce_3d(fp(:,:,:,n), wmp(:,:,:,1), p0_old, p0_new, dx(dm))
+              if (spherical .eq. 1) then
+
+                call  mkrhohforce_3d_sphr(fp(:,:,:,n), &
+                                          ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
+                                          p0_old, p0_new, dx)
+
+              else
+
+                call  mkrhohforce_3d(fp(:,:,:,n), wmp(:,:,:,1), p0_old, p0_new, dx(dm))
+
+              end if
 
               call update_scal_3d(rhoh_comp, rhoh_comp, &
                              sop(:,:,:,:), snp(:,:,:,:), &
@@ -614,23 +625,35 @@ contains
     real(kind=dp_t), intent(in   ) :: w0(:)
     real(kind=dp_t), intent(in   ) :: dx(:)
     
-    integer :: i,j,k,nx,ny,nz
-    real(kind=dp_t) :: divu,divbaseu
+    ! Local variables
+    integer :: i,j,k,nx,ny,nz,nr
+    real(kind=dp_t) :: divumac,divbaseu
     real(kind=dp_t) :: base_xlo,base_xhi
     real(kind=dp_t) :: base_ylo,base_yhi
     real(kind=dp_t) :: base_zlo,base_zhi
+
+    real(kind=dp_t), allocatable :: divu(:),divu_cart(:,:,:)
     
     nx = size(force,dim=1)-2
     ny = size(force,dim=2)-2
     nz = size(force,dim=3)-2
 
+    nr = size(w0,dim=1)-1
+    allocate(divu(nr))
+    allocate(divu_cart(nx,ny,nz))
+
+    do k = 1,nr
+      divu(k) = (zl(k+1)**2 * w0(k+1)- zl(k)**2 * w0(k))/(dr*z(k)**2)
+    end do
+    call fill_3d_data(divu_cart,divu,dx,0)
+
     do k = 1,nz
         do j = 1,ny
         do i = 1,nx
 
-           divu = (umac(i+1,j,k) - umac(i,j,k)) / dx(1) &
-                 +(vmac(i,j+1,k) - vmac(i,j,k)) / dx(2) &
-                 +(wmac(i,j,k+1) - wmac(i,j,k)) / dx(3)
+           divumac = (umac(i+1,j,k) - umac(i,j,k)) / dx(1) &
+                    +(vmac(i,j+1,k) - vmac(i,j,k)) / dx(2) &
+                    +(wmac(i,j,k+1) - wmac(i,j,k)) / dx(3)
 
            if (i.lt.nx) then
              base_xhi = HALF * (base_cart(i,j,k) + base_cart(i+1,j,k))
@@ -670,12 +693,13 @@ contains
                       +(wmac(i,j,k+1) * base_zhi &
                        -wmac(i,j,k  ) * base_zlo)/ dx(3)
 
-           divu = divu + (zl(k+1)**2 * w0(k+1)- zl(k)**2 * w0(k))/dx(3)/z(k)**2
-
-           force(i,j,k) = force(i,j,k) - (s(i,j,k)-base_cart(i,j,k))*divu - divbaseu
+           force(i,j,k) = force(i,j,k) - divbaseu &
+                          -(s(i,j,k)-base_cart(i,j,k))*(divumac+divu_cart(i,j,k)) 
         end do
         end do
      end do
+
+     deallocate(divu,divu_cart)
      
    end subroutine modify_force_3d_sphr
 
