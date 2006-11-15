@@ -17,14 +17,15 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-   subroutine make_S (Source,state,p0,t0,gam1,dx,time)
+   subroutine make_S (Source,state,rho_omegadot,p0,t0,gam1,dx,time)
 
       type(multifab) , intent(inout) :: Source
       type(multifab) , intent(in   ) :: state
+      type(multifab) , intent(in   ) :: rho_omegadot
       real(kind=dp_t), intent(in   ) :: p0(:),t0(:),gam1(:)
       real(kind=dp_t), intent(in   ) :: dx(:), time
 
-      real(kind=dp_t), pointer:: srcp(:,:,:,:),sp(:,:,:,:),up(:,:,:,:)
+      real(kind=dp_t), pointer:: srcp(:,:,:,:),sp(:,:,:,:),up(:,:,:,:),omegap(:,:,:,:)
       integer :: lo(state%dim),hi(state%dim),ng,dm
       integer :: i
 
@@ -35,27 +36,29 @@ contains
          if ( multifab_remote(state, i) ) cycle
          srcp => dataptr(Source, i)
          sp => dataptr(state, i)
+         omegap => dataptr(rho_omegadot, i)
          lo =  lwb(get_box(state, i))
          hi =  upb(get_box(state, i))
          select case (dm)
             case (2)
-              call make_S_2d(lo,hi,srcp(:,:,1,1),sp(:,:,1,:), &
+              call make_S_2d(lo,hi,srcp(:,:,1,1),sp(:,:,1,:),omegap(:,:,1,1), &
                              ng, p0, t0, gam1, dx, time)
             case (3)
-              call make_S_3d(lo,hi,srcp(:,:,:,1),sp(:,:,:,:), &
+              call make_S_3d(lo,hi,srcp(:,:,:,1),sp(:,:,:,:),omegap(:,:,:,1), &
                              ng, p0, t0, gam1, dx, time)
          end select
       end do
 
    end subroutine make_S
 
-   subroutine make_S_2d (lo,hi,Source,s,ng,p0,t0,gam1,dx,time)
+   subroutine make_S_2d (lo,hi,Source,s,rho_omegadot,ng,p0,t0,gam1,dx,time)
 
       implicit none
 
       integer         , intent(in   ) :: lo(:), hi(:), ng
       real (kind=dp_t), intent(  out) :: Source(lo(1):,lo(2):)  
       real (kind=dp_t), intent(in   ) :: s(lo(1)-ng:,lo(2)-ng:,:)
+      real (kind=dp_t), intent(in   ) :: rho_omegadot(lo(1)-ng:,lo(2)-ng:)
       real (kind=dp_t), intent(in   ) ::        p0(lo(2):)
       real (kind=dp_t), intent(in   ) ::        t0(lo(2):)
       real (kind=dp_t), intent(in   ) ::      gam1(lo(2):)
@@ -110,13 +113,14 @@ contains
  
    end subroutine make_S_2d
 
-   subroutine make_S_3d (lo,hi,Source,s,ng,p0,t0,gam1,dx,time)
+   subroutine make_S_3d (lo,hi,Source,s,rho_omegadot,ng,p0,t0,gam1,dx,time)
 
       implicit none
 
       integer         , intent(in   ) :: lo(:), hi(:), ng
       real (kind=dp_t), intent(  out) :: Source(lo(1):,lo(2):,lo(3):)  
       real (kind=dp_t), intent(in   ) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
+      real (kind=dp_t), intent(in   ) :: rho_omegadot(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
       real (kind=dp_t), intent(in   ) ::        p0(lo(3):)
       real (kind=dp_t), intent(in   ) ::        t0(lo(3):)
       real (kind=dp_t), intent(in   ) ::      gam1(lo(3):)

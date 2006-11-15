@@ -143,7 +143,7 @@ module advance_timestep_module
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     print *,'<<< STEP 1 >>>'
     do n = 1, nlevs
-       call make_S(Source_nph(n),sold(n),p0_old,temp0,gam1,dx(n,:),time)
+       call make_S(Source_nph(n),sold(n),rho_omegadot1(n),p0_old,temp0,gam1,dx(n,:),time)  ! this needs to be replaced by extrapolation
        call average(Source_nph(n),Sbar,dx(n,:))
        call make_w0(w0,Sbar(:,1),p0_old,s0_old(:,rho_comp),temp0,gam1,dx(n,dm),dt)
     end do
@@ -255,7 +255,7 @@ module advance_timestep_module
 !       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         print *,'<<< STEP 6 >>>'
         do n = 1, nlevs
-           call make_S(Source_new(n),snew(n),p0_new,temp0,gam1,dx(n,:),time)
+           call make_S(Source_new(n),snew(n),rho_omegadot2(n),p0_new,temp0,gam1,dx(n,:),time)
            call make_at_halftime(Source_nph(n),Source_old(n),Source_new(n),1,1,dx(n,:), &
                                  the_bc_tower%bc_tower_array(n))
            call average(Source_nph(n),Sbar,dx(n,:))
