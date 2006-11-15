@@ -352,7 +352,7 @@ module advance_timestep_module
 
         print *,'<<< STEP 9 >>>'
         do n = 1,nlevs
-          call react_state(s2(n),snew(n),rho_omegadot1(n),halfdt,dx(n,:),&
+          call react_state(s2(n),snew(n),rho_omegadot2(n),halfdt,dx(n,:),&
                            the_bc_tower%bc_tower_array(n))
           call multifab_fill_boundary(snew(n))
         end do
