@@ -17,9 +17,9 @@ module init_module
 
 contains
 
-  subroutine initdata (u,s,s0,p0,temp0,dx,prob_lo,prob_hi,bc,nscal,ntrac)
+  subroutine initscalardata (s,s0,p0,temp0,dx,prob_lo,prob_hi,bc,nscal,ntrac)
 
-    type(multifab) , intent(inout) :: u,s
+    type(multifab) , intent(inout) :: s
     real(kind=dp_t), intent(in   ) ::    s0(:,:)
     real(kind=dp_t), intent(in   ) ::    p0(:)
     real(kind=dp_t), intent(in   ) :: temp0(:)
@@ -29,52 +29,48 @@ contains
     type(bc_level) , intent(in   ) :: bc
     integer        , intent(in   ) :: nscal,ntrac
 
-    real(kind=dp_t), pointer:: uop(:,:,:,:), sop(:,:,:,:)
-    integer :: lo(u%dim),hi(u%dim),ng,dm
+    real(kind=dp_t), pointer:: sop(:,:,:,:)
+    integer :: lo(s%dim),hi(s%dim),ng,dm
     integer :: i,n
     
-    ng = u%ng
-    dm = u%dim
+    ng = s%ng
+    dm = s%dim
 
-    do i = 1, u%nboxes
-       if ( multifab_remote(u, i) ) cycle
-       uop => dataptr(u, i)
+    do i = 1, s%nboxes
+       if ( multifab_remote(s, i) ) cycle
        sop => dataptr(s, i)
-       lo =  lwb(get_box(u, i))
-       hi =  upb(get_box(u, i))
+       lo =  lwb(get_box(s, i))
+       hi =  upb(get_box(s, i))
 
        select case (dm)
        case (2)
-          call initdata_2d(uop(:,:,1,:), sop(:,:,1,:), lo, hi, ng, dx, &
-                           prob_lo, prob_hi, s0, p0, temp0, ntrac)
-          do n = 1,dm
-             call setbc_2d(uop(:,:,1,n), lo, ng, bc%adv_bc_level_array(i,:,:,   n),dx,   n)
-          end do
+          call initscalardata_2d(sop(:,:,1,:), lo, hi, ng, dx, &
+                                 prob_lo, prob_hi, s0, p0, temp0, ntrac)
+
           do n = 1,nscal
-             call setbc_2d(sop(:,:,1,n), lo, ng, bc%adv_bc_level_array(i,:,:,dm+n),dx,dm+n)
+             call setbc_2d(sop(:,:,1,n), lo, ng, &
+                           bc%adv_bc_level_array(i,:,:,dm+n),dx,dm+n)
           end do
 
        case (3)
-          call initdata_3d(uop(:,:,:,:), sop(:,:,:,:), lo, hi, ng, dx, &
-                           prob_lo, prob_hi, s0, p0, temp0, ntrac)
-          do n = 1, dm
-             call setbc_3d(uop(:,:,:,n), lo, ng, bc%adv_bc_level_array(i,:,:,   n),dx,   n)
-          end do
+          call initscalardata_3d(sop(:,:,:,:), lo, hi, ng, dx, &
+                                 prob_lo, prob_hi, s0, p0, temp0, ntrac)
+
           do n = 1, nscal
-             call setbc_3d(sop(:,:,:,n), lo, ng, bc%adv_bc_level_array(i,:,:,dm+n),dx,dm+n)
+             call setbc_3d(sop(:,:,:,n), lo, ng, &
+                           bc%adv_bc_level_array(i,:,:,dm+n),dx,dm+n)
           end do
        end select
     end do
 
-    call multifab_fill_boundary(u)
     call multifab_fill_boundary(s)
 
-  end subroutine initdata
+  end subroutine initscalardata
 
-  subroutine initdata_2d (u,s,lo,hi,ng,dx,prob_lo,prob_hi,s0,p0,temp0,ntrac)
+  subroutine initscalardata_2d (s,lo,hi,ng,dx, &
+                                prob_lo,prob_hi,s0,p0,temp0,ntrac)
 
     integer, intent(in) :: lo(:), hi(:), ng, ntrac
-    real (kind = dp_t), intent(out) :: u(lo(1)-ng:,lo(2)-ng:,:)  
     real (kind = dp_t), intent(out) :: s(lo(1)-ng:,lo(2)-ng:,:)  
     real (kind = dp_t), intent(in ) :: dx(:)
     real (kind = dp_t), intent(in ) :: prob_lo(:)
@@ -91,7 +87,6 @@ contains
     logical, parameter :: perturbModel = .false.
 
     ! initial the domain with the base state
-    u = ZERO
     s = ZERO
 
     ! initialize the scalars
@@ -111,7 +106,9 @@ contains
           do i = lo(1), hi(1)
              x = prob_lo(1) + (dble(i)+HALF) * dx(1)
           
-             call perturb_2d(x, y, temp0(j), p0(j), s0(j,:), dens_pert, rhoh_pert, rhoX_pert, trac_pert)
+             call perturb_2d(x, y, temp0(j), p0(j), s0(j,:), &
+                             dens_pert, rhoh_pert, rhoX_pert, trac_pert)
+
              s(i,j,rho_comp) = dens_pert
              s(i,j,rhoh_comp) = rhoh_pert
              s(i,j,spec_comp:spec_comp+nspec-1) = rhoX_pert(1:)
@@ -119,15 +116,15 @@ contains
           enddo
        enddo
     endif
+    
+  end subroutine initscalardata_2d
 
-  end subroutine initdata_2d
-
-  subroutine initdata_3d (u,s,lo,hi,ng,dx,prob_lo,prob_hi,s0,p0,temp0,ntrac)
+  subroutine initscalardata_3d (s,lo,hi,ng,dx, &
+                                prob_lo,prob_hi,s0,p0,temp0,ntrac)
 
     implicit none
 
     integer, intent(in) :: lo(:), hi(:), ng, ntrac
-    real (kind = dp_t), intent(out) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
     real (kind = dp_t), intent(out) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
     real (kind = dp_t), intent(in ) :: dx(:)
     real (kind = dp_t), intent(in ) :: prob_lo(:)
@@ -143,14 +140,13 @@ contains
     logical, parameter :: perturbModel = .false.
 
     ! initial the domain with the base state
-    u = ZERO
     s = ZERO
   
     if (spherical .eq. 1) then
 
-      do n = rho_comp, spec_comp+nspec-1
-        call fill_3d_data (s(:,:,:,n),s0(:,n),dx,ng)
-      end do
+       do n = rho_comp, spec_comp+nspec-1
+          call fill_3d_data (s(:,:,:,n),s0(:,n),dx,ng)
+       end do
 
     else 
 
@@ -164,7 +160,7 @@ contains
              enddo
           enddo
        enddo
-    
+       
        if (perturbModel) then
 
           ! add an optional perturbation
@@ -173,11 +169,13 @@ contains
              
              do j = lo(2), hi(2)
                 y = prob_lo(2) + (dble(j)+HALF) * dx(2)
-
+                
                 do i = lo(1), hi(1)
                    x = prob_lo(1) + (dble(i)+HALF) * dx(1)
-          
-                   call perturb_3d(x, y, z, temp0(k), p0(k), s0(k,:), dens_pert, rhoh_pert, rhoX_pert, trac_pert)
+                   
+                   call perturb_3d(x, y, z, temp0(k), p0(k), s0(k,:), &
+                                   dens_pert, rhoh_pert, rhoX_pert, trac_pert)
+
                    s(i,j,k,rho_comp) = dens_pert
                    s(i,j,k,rhoh_comp) = rhoh_pert
                    s(i,j,k,spec_comp:spec_comp+nspec-1) = rhoX_pert(:)
@@ -189,7 +187,108 @@ contains
 
     end if
     
-  end subroutine initdata_3d
+  end subroutine initscalardata_3d
+
+  subroutine initveldata (u,s0,p0,temp0,dx,prob_lo,prob_hi,bc,nscal,ntrac)
+
+    type(multifab) , intent(inout) :: u
+    real(kind=dp_t), intent(in   ) ::    s0(:,:)
+    real(kind=dp_t), intent(in   ) ::    p0(:)
+    real(kind=dp_t), intent(in   ) :: temp0(:)
+    real(kind=dp_t), intent(in   ) :: dx(:)
+    real(kind=dp_t), intent(in   ) :: prob_lo(:)
+    real(kind=dp_t), intent(in   ) :: prob_hi(:)
+    type(bc_level) , intent(in   ) :: bc
+    integer        , intent(in   ) :: nscal,ntrac
+
+    real(kind=dp_t), pointer:: uop(:,:,:,:)
+    integer :: lo(u%dim),hi(u%dim),ng,dm
+    integer :: i,n
+    
+    ng = u%ng
+    dm = u%dim
+
+    do i = 1, u%nboxes
+       if ( multifab_remote(u, i) ) cycle
+       uop => dataptr(u, i)
+       lo =  lwb(get_box(u, i))
+       hi =  upb(get_box(u, i))
+
+       select case (dm)
+       case (2)
+          call initveldata_2d(uop(:,:,1,:), lo, hi, ng, dx, &
+                              prob_lo, prob_hi, s0, p0, temp0, ntrac)
+   
+          do n = 1,dm
+             call setbc_2d(uop(:,:,1,n), lo, ng, &
+                           bc%adv_bc_level_array(i,:,:,   n),dx,   n)
+          end do
+
+       case (3)
+          call initveldata_3d(uop(:,:,:,:), lo, hi, ng, dx, &
+                              prob_lo, prob_hi, s0, p0, temp0, ntrac)
+
+          do n = 1, dm
+             call setbc_3d(uop(:,:,:,n), lo, ng, &
+                           bc%adv_bc_level_array(i,:,:,   n),dx,   n)
+          end do
+
+       end select
+    end do
+
+    call multifab_fill_boundary(u)
+
+  end subroutine initveldata
+
+  subroutine initveldata_2d (u,lo,hi,ng,dx, &
+                             prob_lo,prob_hi,s0,p0,temp0,ntrac)
+
+    integer, intent(in) :: lo(:), hi(:), ng, ntrac
+    real (kind = dp_t), intent(out) :: u(lo(1)-ng:,lo(2)-ng:,:)  
+    real (kind = dp_t), intent(in ) :: dx(:)
+    real (kind = dp_t), intent(in ) :: prob_lo(:)
+    real (kind = dp_t), intent(in ) :: prob_hi(:)
+    real(kind=dp_t), intent(in   ) ::    s0(lo(2):,:)
+    real(kind=dp_t), intent(in   ) ::    p0(lo(2):)
+    real(kind=dp_t), intent(in   ) :: temp0(lo(2):)
+
+    !     Local variables
+    integer :: i, j, n
+    real(kind=dp_t) :: x,y,r,r0,r1,r2,temp
+    real(kind=dp_t) :: dens_pert, rhoh_pert, rhoX_pert(nspec), trac_pert(ntrac)
+
+    logical, parameter :: perturbModel = .false.
+
+    ! initial the velocity
+    u = ZERO
+
+  end subroutine initveldata_2d
+
+  subroutine initveldata_3d (u,lo,hi,ng,dx, &
+                             prob_lo,prob_hi,s0,p0,temp0,ntrac)
+
+    implicit none
+
+    integer, intent(in) :: lo(:), hi(:), ng, ntrac
+    real (kind = dp_t), intent(out) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
+    real (kind = dp_t), intent(in ) :: dx(:)
+    real (kind = dp_t), intent(in ) :: prob_lo(:)
+    real (kind = dp_t), intent(in ) :: prob_hi(:)
+    real(kind=dp_t), intent(in   ) ::    s0(lo(3):,:)
+    real(kind=dp_t), intent(in   ) ::    p0(lo(3):)
+    real(kind=dp_t), intent(in   ) :: temp0(lo(3):)
+
+    !     Local variables
+    integer :: i, j, k, n
+    real(kind=dp_t) :: x,y,z,r,r0,r1,r2,temp
+    real(kind=dp_t) :: dens_pert, rhoh_pert, rhoX_pert(nspec), trac_pert(ntrac)
+    logical, parameter :: perturbModel = .false.
+
+    ! initial the velocity
+    u = ZERO
+    
+  end subroutine initveldata_3d
+
 
   subroutine perturb_2d(x, y, t0, p0, s0, dens_pert, rhoh_pert, rhoX_pert, trac_pert)
 
