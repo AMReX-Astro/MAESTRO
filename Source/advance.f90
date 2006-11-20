@@ -33,15 +33,18 @@ module advance_timestep_module
 
   contains
 
-    subroutine advance_timestep(mla,uold,sold,s1,s2,unew,snew,umac,uedge,sedge,utrans,gp,p, &
+    subroutine advance_timestep(init_mode, &
+                                mla,uold,sold,s1,s2,unew,snew,umac,uedge,sedge,utrans,gp,p, &
                                 scal_force,s0_old,s0_1,s0_2,s0_new,p0_old,p0_1,p0_2,p0_new,temp0,gam1,w0, &
                                 rho_omegadot1, rho_omegadot2, &
                                 div_coeff_old,div_coeff_new,&
                                 dx,time,dt,the_bc_tower, &
                                 anelastic_cutoff,verbose,mg_verbose,cg_verbose,&
-                                Source_old,Source_new)
+                                Source_nm1,Source_old,Source_new)
 
     implicit none
+
+    logical, intent(in) :: init_mode
 
     type(ml_layout),intent(inout) :: mla
     type(multifab), intent(inout) :: uold(:)
@@ -59,6 +62,7 @@ module advance_timestep_module
     type(multifab), intent(inout) :: scal_force(:)
     type(multifab), intent(inout) :: rho_omegadot1(:)
     type(multifab), intent(inout) :: rho_omegadot2(:)
+    type(multifab), intent(inout) :: Source_nm1(:)
     type(multifab), intent(inout) :: Source_old(:)
     type(multifab), intent(inout) :: Source_new(:)
     real(dp_t)    , intent(inout) :: s0_old(:,:)
