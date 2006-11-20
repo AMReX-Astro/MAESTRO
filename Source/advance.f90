@@ -38,7 +38,7 @@ module advance_timestep_module
                                 scal_force,s0_old,s0_1,s0_2,s0_new,p0_old,p0_1,p0_2,p0_new,temp0,gam1,w0, &
                                 rho_omegadot1, rho_omegadot2, &
                                 div_coeff_old,div_coeff_new,&
-                                dx,time,dt,the_bc_tower, &
+                                dx,time,dt,dtold,the_bc_tower, &
                                 anelastic_cutoff,verbose,mg_verbose,cg_verbose,&
                                 Source_nm1,Source_old,Source_new)
 
@@ -78,7 +78,7 @@ module advance_timestep_module
     real(dp_t)    , intent(inout) :: w0(:)
     real(dp_t)    , intent(in   ) :: div_coeff_old(:)
     real(dp_t)    , intent(inout) :: div_coeff_new(:)
-    real(dp_t)    , intent(in   ) :: dx(:,:), time, dt
+    real(dp_t)    , intent(in   ) :: dx(:,:), time, dt, dtold
     type(bc_tower), intent(in   ) :: the_bc_tower
     real(dp_t)    , intent(in   ) :: anelastic_cutoff
     integer       , intent(in   ) :: verbose,mg_verbose,cg_verbose
