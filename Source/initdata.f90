@@ -638,7 +638,7 @@ contains
     do j = 0,n_base-1
 
        den_row(1)  = s0(j,rho_comp)
-       xn_ambient(1:) = s0(j,spec_comp:)/den_row(1)
+       xn_ambient(1:nspec) = s0(j,spec_comp:spec_comp-1+nspec)/den_row(1)
        temp_row(1) = temp0(j)
        p_row(1)    =   p0(j)
 
