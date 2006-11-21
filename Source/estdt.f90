@@ -3,15 +3,19 @@ module estdt_module
   use bl_types
   use bl_constants_module
   use multifab_module
+  use fill_3d_module
+  use geometry
 
   implicit none
 
 contains
 
-   subroutine estdt (istep, u, force, w0, dx, cflfac, dtold, dt)
+   subroutine estdt (istep, u, force, normal, w0, dx, cflfac, dtold, dt)
 
       integer        , intent(in ) :: istep
-      type(multifab) , intent(in ) :: u,force
+      type(multifab) , intent(in ) :: u
+      type(multifab) , intent(in ) :: force
+      type(multifab) , intent(in ) :: normal
       real(kind=dp_t), intent(in ) :: w0(:)
       real(kind=dp_t), intent(in ) :: dx(:)
       real(kind=dp_t), intent(in ) :: cflfac, dtold
@@ -19,6 +23,7 @@ contains
 
       real(kind=dp_t), pointer:: uop(:,:,:,:)
       real(kind=dp_t), pointer:: fp(:,:,:,:)
+      real(kind=dp_t), pointer:: np(:,:,:,:)
       integer :: lo(u%dim),hi(u%dim),ng,dm
       real(kind=dp_t) :: dt_hold
       real(kind=dp_t) :: dtchange
@@ -41,7 +46,8 @@ contains
               call estdt_2d(uop(:,:,1,:), fp(:,:,1,:),&
                             w0, lo, hi, ng, dx, dt)
             case (3)
-              call estdt_3d(uop(:,:,:,:), fp(:,:,:,:),&
+              np => dataptr(normal, i)
+              call estdt_3d(uop(:,:,:,:), fp(:,:,:,:), np(:,:,:,:), &
                             w0, lo, hi, ng, dx, dt)
          end select
          dt_hold = min(dt_hold,dt)
@@ -63,12 +69,12 @@ contains
       integer, intent(in) :: lo(:), hi(:), ng
       real (kind = dp_t), intent(in ) ::     u(lo(1)-ng:,lo(2)-ng:,:)  
       real (kind = dp_t), intent(in ) :: force(lo(1)- 1:,lo(2)- 1:,:)  
-      real (kind = dp_t), intent( in) ::   w0(:)
+      real (kind = dp_t), intent( in) ::   w0(0:)
       real (kind = dp_t), intent(in ) :: dx(:)
       real (kind = dp_t), intent(out) :: dt
 
 !     Local variables
-      real (kind = dp_t)  :: spdx, spdy
+      real (kind = dp_t)  :: spdx, spdy, spdr
       real (kind = dp_t)  :: pforcex, pforcey
       real (kind = dp_t)  :: eps
       integer             :: i,j
@@ -80,14 +86,10 @@ contains
       pforcex = 0.0D0 
       pforcey = 0.0D0 
 
-      do j = 1,size(w0,dim=1)
-        spdy = max(spdy ,abs(w0(j)))
-      enddo
-
       do j = lo(2), hi(2)
         do i = lo(1), hi(1)
           spdx    = max(spdx ,abs(u(i,j,1)))
-          spdy    = max(spdy ,abs(u(i,j,2)))
+          spdy    = max(spdy ,abs(u(i,j,2)+w0(j)))
           pforcex = max(pforcex,abs(force(i,j,1)))
           pforcey = max(pforcey,abs(force(i,j,2)))
         enddo
@@ -96,13 +98,19 @@ contains
       spdx = spdx / dx(1)
       spdy = spdy / dx(2)
 
-      if (spdx < eps .and. spdy < eps) then
+      spdr = ZERO 
+      do j = lo(2),hi(2)
+        spdr = max(spdr ,abs(w0(j)))
+      enddo
+      spdr = spdr / dx(2)
+
+      if (spdx < eps .and. spdy < eps .and. spdr < eps) then
 
         dt = min(dx(1),dx(2))
 
       else
 
-        dt = 1.0D0  / max(spdx,spdy)
+        dt = 1.0D0  / max(spdx,spdy,spdr)
 
       endif
 
@@ -116,17 +124,19 @@ contains
 
    end subroutine estdt_2d
 
-   subroutine estdt_3d (u, force, w0, lo, hi, ng, dx, dt)
+   subroutine estdt_3d (u, force, normal, w0, lo, hi, ng, dx, dt)
 
       integer, intent(in) :: lo(:), hi(:), ng
-      real (kind = dp_t), intent(in ) ::     u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
-      real (kind = dp_t), intent(in ) :: force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)  
-      real (kind = dp_t), intent( in) ::   w0(:)
+      real (kind = dp_t), intent(in ) ::      u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
+      real (kind = dp_t), intent(in ) ::  force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)  
+      real (kind = dp_t), intent(in ) :: normal(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
+      real (kind = dp_t), intent( in) ::   w0(0:)
       real (kind = dp_t), intent(in ) :: dx(:)
       real (kind = dp_t), intent(out) :: dt
 
 !     Local variables
-      real (kind = dp_t)  :: spdx, spdy, spdz
+      real (kind = dp_t), allocatable :: w0_cart(:,:,:)
+      real (kind = dp_t)  :: spdx, spdy, spdz, spdr
       real (kind = dp_t)  :: pforcex, pforcey, pforcez
       real (kind = dp_t)  :: eps
       integer             :: i,j,k
@@ -136,40 +146,79 @@ contains
       spdx    = ZERO
       spdy    = ZERO 
       spdz    = ZERO 
-      pforcex = ZERO 
-      pforcey = ZERO 
-      pforcez = ZERO 
 
-      do k = 1,size(w0,dim=1)
-        spdz = max(spdz ,abs(w0(k)))
-      enddo
+      if (spherical .eq. 0) then
 
-      do k = lo(3), hi(3)
-      do j = lo(2), hi(2)
+        ! Limit dt based on velocity terms
+        do k = lo(3), hi(3)
+        do j = lo(2), hi(2)
         do i = lo(1), hi(1)
-          spdx    = max(spdx ,abs(u(i,j,k,1)))
-          spdy    = max(spdy ,abs(u(i,j,k,2)))
-          spdz    = max(spdz ,abs(u(i,j,k,3)))
-          pforcex = max(pforcex,abs(force(i,j,k,1)))
-          pforcey = max(pforcey,abs(force(i,j,k,2)))
-          pforcez = max(pforcez,abs(force(i,j,k,3)))
+            spdx = max(spdx ,abs(u(i,j,k,1)))
+            spdy = max(spdy ,abs(u(i,j,k,2)))
+            spdz = max(spdz ,abs(u(i,j,k,3)+w0(k)))
         enddo
-      enddo
-      enddo
+        enddo
+        enddo
+
+        spdr = ZERO 
+        do k = lo(3),hi(3)
+          spdr = max(spdr ,abs(w0(k)))
+        enddo
+        spdr = spdr / dx(3)
+
+      else
+
+        allocate(w0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+        call fill_3d_data(w0_cart,w0(0:),dx,0)
+
+        ! Limit dt based on velocity terms
+        do k = lo(3), hi(3)
+        do j = lo(2), hi(2)
+        do i = lo(1), hi(1)
+            spdx = max(spdx ,abs(u(i,j,k,1)+w0_cart(i,j,k)*normal(i,j,k,1)))
+            spdy = max(spdy ,abs(u(i,j,k,2)+w0_cart(i,j,k)*normal(i,j,k,2)))
+            spdz = max(spdz ,abs(u(i,j,k,3)+w0_cart(i,j,k)*normal(i,j,k,3)))
+        enddo
+        enddo
+        enddo
+
+        deallocate(w0_cart)
+
+        spdr = ZERO 
+        do k = 0,size(w0,dim=1)-1
+          spdr = max(spdr ,abs(w0(k)))
+        enddo
+        spdr = spdr / dr
+
+      end if
 
       spdx = spdx / dx(1)
       spdy = spdy / dx(2)
       spdz = spdz / dx(3)
 
-      if (spdx < eps .and. spdy < eps .and. spdz < eps) then
+      if (spdx < eps .and. spdy < eps .and. spdz < eps .and. spdr < eps) then
 
         dt = min(dx(1),dx(2),dx(3))
 
       else
 
-        dt = 1.0D0  / max(spdx,spdy,spdz)
+        dt = 1.0D0  / max(spdx,spdy,spdz,spdr)
 
       endif
+
+      ! Limit dt based on forcing terms
+      pforcex = ZERO 
+      pforcey = ZERO 
+      pforcez = ZERO 
+      do k = lo(3), hi(3)
+      do j = lo(2), hi(2)
+      do i = lo(1), hi(1)
+          pforcex = max(pforcex,abs(force(i,j,k,1)))
+          pforcey = max(pforcey,abs(force(i,j,k,2)))
+          pforcez = max(pforcez,abs(force(i,j,k,3)))
+      enddo
+      enddo
+      enddo
 
       if (pforcex > eps) then
         dt = min(dt,sqrt(2.0D0*dx(1)/pforcex))

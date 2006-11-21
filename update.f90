@@ -31,7 +31,7 @@ module update_module
       real (kind = dp_t), intent(in   ) ::   force(lo(1)- 1:,lo(2)- 1:,:)
       real (kind = dp_t), intent(in   ) ::   base_old(lo(2)   :,:)
       real (kind = dp_t), intent(in   ) ::   base_new(lo(2)   :,:)
-      real (kind = dp_t), intent(in   ) :: w0(lo(2):)
+      real (kind = dp_t), intent(in   ) :: w0(0:)
       real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
       integer :: i, j, n
@@ -195,7 +195,7 @@ module update_module
       real (kind = dp_t), intent(in   ) ::  sedgex(lo(1)   :,lo(2)   :,:)  
       real (kind = dp_t), intent(in   ) ::  sedgey(lo(1)   :,lo(2)   :,:)  
       real (kind = dp_t), intent(in   ) ::   force(lo(1)- 1:,lo(2)- 1:,:)  
-      real (kind = dp_t), intent(in   ) ::      w0(          lo(2)   :)  
+      real (kind = dp_t), intent(in   ) ::      w0(0:)
       real (kind = dp_t), intent(in   ) :: dx(:)
       real (kind = dp_t), intent(in   ) :: time,dt
 
@@ -275,7 +275,7 @@ module update_module
       real (kind = dp_t), intent(in   ) ::   force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
       real (kind = dp_t), intent(in   ) ::   base_old(lo(3)   :,:)
       real (kind = dp_t), intent(in   ) ::   base_new(lo(3)   :,:)
-      real (kind = dp_t), intent(in   ) :: w0(lo(3):)
+      real (kind = dp_t), intent(in   ) :: w0(0:)
       real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
       integer :: i, j, k, n, nr
@@ -503,7 +503,7 @@ module update_module
       real (kind = dp_t), intent(in   ) ::  sedgez(lo(1)   :,lo(2)   :,lo(3)   :,:)
       real (kind = dp_t), intent(in   ) ::  normal(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
       real (kind = dp_t), intent(in   ) ::   force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
-      real (kind = dp_t), intent(in   ) ::      w0(          lo(3)   :)  
+      real (kind = dp_t), intent(in   ) ::      w0(0:)
       real (kind = dp_t), intent(in   ) :: dx(:)
       real (kind = dp_t), intent(in   ) :: time,dt
 

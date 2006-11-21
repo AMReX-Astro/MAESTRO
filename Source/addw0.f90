@@ -14,7 +14,7 @@ contains
 
       type(multifab) , intent(inout) :: umac(:)
       type(multifab) , intent(in   ) :: normal
-      real(kind=dp_t), intent(in   ) ::   w0(:)
+      real(kind=dp_t), intent(in   ) :: w0(:)
       real(kind=dp_t), intent(in   ) :: dx(:),mult
 
       ! Local variables
@@ -52,7 +52,7 @@ contains
 
       integer        , intent(in   ) :: lo(:),hi(:)
       real(kind=dp_t), intent(inout) :: vmac(lo(1)- 1:,lo(2)- 1:)
-      real(kind=dp_t), intent(in   ) ::   w0(          lo(2)   :)
+      real(kind=dp_t), intent(in   ) ::   w0(0:)
       real(kind=dp_t), intent(in   ) :: mult
 
       integer :: i,j
@@ -69,7 +69,7 @@ contains
 
       integer        , intent(in   ) :: lo(:),hi(:)
       real(kind=dp_t), intent(inout) :: wmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-      real(kind=dp_t), intent(in   ) ::   w0(                  lo(3)  :)
+      real(kind=dp_t), intent(in   ) ::   w0(0:)
       real(kind=dp_t), intent(in   ) :: mult
 
       integer :: i,j,k
