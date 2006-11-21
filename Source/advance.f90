@@ -35,7 +35,8 @@ module advance_timestep_module
 
     subroutine advance_timestep(init_mode, &
                                 mla,uold,sold,s1,s2,unew,snew,umac,uedge,sedge,utrans,gp,p, &
-                                scal_force,s0_old,s0_1,s0_2,s0_new,p0_old,p0_1,p0_2,p0_new,temp0,gam1,w0, &
+                                scal_force,normal, &
+                                s0_old,s0_1,s0_2,s0_new,p0_old,p0_1,p0_2,p0_new,temp0,gam1,w0, &
                                 rho_omegadot1, rho_omegadot2, &
                                 div_coeff_old,div_coeff_new,&
                                 dx,time,dt,dtold,the_bc_tower, &
@@ -60,6 +61,7 @@ module advance_timestep_module
     type(multifab), intent(inout) :: gp(:)
     type(multifab), intent(inout) :: p(:)
     type(multifab), intent(inout) :: scal_force(:)
+    type(multifab), intent(in   ) :: normal(:)
     type(multifab), intent(inout) :: rho_omegadot1(:)
     type(multifab), intent(inout) :: rho_omegadot2(:)
     type(multifab), intent(inout) :: Source_nm1(:)
@@ -161,7 +163,7 @@ module advance_timestep_module
 
        call advance_premac(uold(n), sold(n),&
                            umac(n,:), uedge(n,:), utrans(n,:),&
-                           gp(n), p(n), s0_old, &
+                           gp(n), p(n), normal(n), s0_old, &
                            dx(n,:),time,dt, &
                            the_bc_tower%bc_tower_array(n), &
                            verbose)
@@ -220,7 +222,7 @@ module advance_timestep_module
         do n = 1,nlevs
            call scalar_advance (uold(n), s1(n), s2(n), &
                                 umac(n,:), w0, sedge(n,:), utrans(n,:),&
-                                scal_force(n), s0_1, s0_2, p0_1, p0_2, &
+                                scal_force(n), normal(n), s0_1, s0_2, p0_1, p0_2, &
                                 dx(n,:),time,dt, &
                                 the_bc_tower%bc_tower_array(n), &
                                 verbose)
@@ -274,7 +276,7 @@ module advance_timestep_module
         do n = 1,nlevs
            call advance_premac(uold(n), sold(n),&
                                umac(n,:), uedge(n,:), utrans(n,:),&
-                               gp(n), p(n), s0_old, &
+                               gp(n), p(n), normal(n), s0_old, &
                                dx(n,:),time,dt, &
                                the_bc_tower%bc_tower_array(n), &
                                verbose)
@@ -332,7 +334,7 @@ module advance_timestep_module
         do n = 1,nlevs
            call scalar_advance (uold(n), s1(n), s2(n), &
                                 umac(n,:), w0, sedge(n,:), utrans(n,:),&
-                                scal_force(n), s0_1, s0_2, p0_1, p0_2, &
+                                scal_force(n), normal(n), s0_1, s0_2, p0_1, p0_2, &
                                 dx(n,:),time,dt, &
                                 the_bc_tower%bc_tower_array(n), &
                                 verbose)
@@ -388,7 +390,7 @@ module advance_timestep_module
            call velocity_advance(uold(n),unew(n),sold(n),rhohalf(n),&
                                  umac(n,:),uedge(n,:), &
                                  utrans(n,:),gp(n),p(n), &
-                                 w0, s0_old, s0_nph, &
+                                 normal(n), w0, s0_old, s0_nph, &
                                  dx(n,:),time,dt, &
                                  the_bc_tower%bc_tower_array(n), &
                                  verbose)

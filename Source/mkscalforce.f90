@@ -91,7 +91,7 @@ contains
 
   end subroutine mkrhohforce_3d
 
-  subroutine mkrhohforce_3d_sphr(force, umac, vmac, wmac, p0_old, p0_new, dx)
+  subroutine mkrhohforce_3d_sphr(force, umac, vmac, wmac, normal, p0_old, p0_new, dx)
 
     ! compute the source terms for the non-reactive part of the enthalpy equation { w dp0/dr }
 
@@ -99,12 +99,12 @@ contains
     real(kind=dp_t), intent(in   ) ::   umac(0:,0:,0:)
     real(kind=dp_t), intent(in   ) ::   vmac(0:,0:,0:)
     real(kind=dp_t), intent(in   ) ::   wmac(0:,0:,0:)
+    real(kind=dp_t), intent(in   ) :: normal(0:,0:,0:,:)
     real(kind=dp_t), intent(in   ) :: p0_old(:)
     real(kind=dp_t), intent(in   ) :: p0_new(:)
     real(kind=dp_t), intent(in   ) :: dx(:)
 
     real(kind=dp_t) :: uadv,vadv,wadv,normal_vel
-    real(kind=dp_t), allocatable :: normal(:,:,:,:)
     real(kind=dp_t), allocatable :: gradp_rad(:)
     real(kind=dp_t), allocatable :: gradp_cart(:,:,:)
     integer :: i,j,k,nx,ny,nz,nr
@@ -117,7 +117,6 @@ contains
 
     allocate(gradp_rad(nr))
     allocate(gradp_cart(nx,ny,nz))
-    allocate(normal(nx,ny,nz,3))
  
     force = ZERO
 
@@ -135,7 +134,6 @@ contains
     end do
 
     call fill_3d_data(gradp_cart,gradp_rad,dx,0)
-    call make_3d_normal(dx,normal,0)
 
     do k = 1,nz
        do j = 1,ny
@@ -149,7 +147,7 @@ contains
        end do
     end do
 
-    deallocate(gradp_rad, gradp_cart, normal)
+    deallocate(gradp_rad, gradp_cart)
 
   end subroutine mkrhohforce_3d_sphr
 

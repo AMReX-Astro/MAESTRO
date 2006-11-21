@@ -257,8 +257,8 @@ module update_module
 
    end subroutine update_velocity_2d
 
-   subroutine update_scal_3d (nstart,nstop,sold,snew,umac,vmac,wmac,w0,sedgex,sedgey,sedgez,force, &
-                              base_old,base_new,lo,hi,ng,dx,dt,verbose)
+   subroutine update_scal_3d (nstart,nstop,sold,snew,umac,vmac,wmac,w0,sedgex,sedgey,sedgez,&
+                              normal,force,base_old,base_new,lo,hi,ng,dx,dt,verbose)
 
       implicit none
 
@@ -271,6 +271,7 @@ module update_module
       real (kind = dp_t), intent(in   ) ::  sedgex(lo(1)   :,lo(2)   :,lo(3)   :,:)
       real (kind = dp_t), intent(in   ) ::  sedgey(lo(1)   :,lo(2)   :,lo(3)   :,:)
       real (kind = dp_t), intent(in   ) ::  sedgez(lo(1)   :,lo(2)   :,lo(3)   :,:)
+      real (kind = dp_t), intent(in   ) ::  normal(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
       real (kind = dp_t), intent(in   ) ::   force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
       real (kind = dp_t), intent(in   ) ::   base_old(lo(3)   :,:)
       real (kind = dp_t), intent(in   ) ::   base_new(lo(3)   :,:)
@@ -349,7 +350,7 @@ module update_module
         deallocate(delta_base,delta_base_cart,base_cart)
 
         mult = ONE
-        call addw0_3d_sphr(umac,vmac,wmac,w0,dx,mult)
+        call addw0_3d_sphr(umac,vmac,wmac,normal,w0,dx,mult)
 
         do n = nstart, nstop
 
@@ -373,7 +374,7 @@ module update_module
         enddo
 
         mult = -ONE
-        call addw0_3d_sphr(umac,vmac,wmac,w0,dx,mult)
+        call addw0_3d_sphr(umac,vmac,wmac,normal,w0,dx,mult)
 
       ! not spherical
       else 
@@ -486,7 +487,7 @@ module update_module
 
    end subroutine update_scal_3d
 
-   subroutine update_velocity_3d (uold,unew,umac,vmac,wmac,sedgex,sedgey,sedgez, &
+   subroutine update_velocity_3d (uold,unew,umac,vmac,wmac,sedgex,sedgey,sedgez,normal, &
                                   force,w0,lo,hi,ng,dx,time,dt,verbose)
 
       implicit none
@@ -500,6 +501,7 @@ module update_module
       real (kind = dp_t), intent(in   ) ::  sedgex(lo(1)   :,lo(2)   :,lo(3)   :,:)
       real (kind = dp_t), intent(in   ) ::  sedgey(lo(1)   :,lo(2)   :,lo(3)   :,:)
       real (kind = dp_t), intent(in   ) ::  sedgez(lo(1)   :,lo(2)   :,lo(3)   :,:)
+      real (kind = dp_t), intent(in   ) ::  normal(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
       real (kind = dp_t), intent(in   ) ::   force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
       real (kind = dp_t), intent(in   ) ::      w0(          lo(3)   :)  
       real (kind = dp_t), intent(in   ) :: dx(:)
@@ -518,7 +520,6 @@ module update_module
       real (kind = dp_t), allocatable :: w0_cell(:),divw0(:)
       real (kind = dp_t), allocatable :: divw0_cart(:,:,:)
       real (kind = dp_t), allocatable :: w0_cart(:,:,:)
-      real (kind = dp_t), allocatable :: normal(:,:,:,:)
 
       ! 1) Subtract (Utilde dot grad) Utilde term from old Utilde
       ! 2) Add forcing term to new Utilde
@@ -570,9 +571,6 @@ module update_module
         end do
         allocate(divw0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
         call fill_3d_data(divw0_cart,divw0,dx,0)
-
-        allocate(normal(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),3))
-        call make_3d_normal(dx,normal,0)
 
         do k = lo(3), hi(3)
         do j = lo(2), hi(2)
@@ -637,7 +635,7 @@ module update_module
         enddo
         enddo
         enddo
-        deallocate(w0_cell,w0_cart,normal)
+        deallocate(w0_cell,w0_cart)
 
       end if
    

@@ -19,7 +19,7 @@ module scalar_advance_module
 contains
 
    subroutine scalar_advance (uold, sold, snew, &
-                              umac, w0, sedge, utrans, ext_scal_force, &
+                              umac, w0, sedge, utrans, ext_scal_force, normal, &
                               s0_old , s0_new , &
                               p0_old, p0_new, &
                               dx,time, dt, the_bc_level, &
@@ -32,6 +32,7 @@ contains
       type(multifab) , intent(inout) :: sedge(:)
       type(multifab) , intent(inout) :: utrans(:)
       type(multifab) , intent(inout) :: ext_scal_force
+      type(multifab) , intent(in   ) :: normal
 !
       real(kind=dp_t), intent(inout) :: w0(:)
       real(kind=dp_t), intent(in   ) :: dx(:),time,dt
@@ -54,6 +55,7 @@ contains
       real(kind=dp_t), pointer:: wtp(:,:,:,:)
       real(kind=dp_t), pointer::  ep(:,:,:,:)
       real(kind=dp_t), pointer::  fp(:,:,:,:)
+      real(kind=dp_t), pointer::  np(:,:,:,:)
 !
       real(kind=dp_t), pointer:: sop(:,:,:,:)
       real(kind=dp_t), pointer:: snp(:,:,:,:)
@@ -101,7 +103,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       mult = ONE
-      call addw0(umac,w0,dx,mult)
+      call addw0(umac,normal,w0,dx,mult)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     Create scalar source term at time n for (rho X)_i and (rho H).  
@@ -147,9 +149,10 @@ contains
                 end do
 
                 n = rhoh_comp
+                np => dataptr(normal, i)
                 call  mkrhohforce_3d_sphr(fp(:,:,:,n), &
                                           ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
-                                          p0_old, p0_new, dx)
+                                          np(:,:,:,:), p0_old, p0_new, dx)
 
                 call fill_3d_data(s0_cart,s0_old(:,n),dx,ng_cell)
                 call modify_force_3d_sphr(fp(:,:,:,n),sop(:,:,:,n),ng_cell,s0_cart, &
@@ -306,7 +309,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       mult = -ONE
-      call addw0(umac,w0,dx,mult)
+      call addw0(umac,normal,w0,dx,mult)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     1) Set force for (rho X)_i at time n+1/2 = 0.
@@ -346,12 +349,14 @@ contains
               call setbc_2d(snp(:,:,1,n), lo, ng_cell, &
                             the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
             case (3)
-              wmp => dataptr(umac(3), i)
+               wmp => dataptr(umac(3), i)
               sepz => dataptr(sedge(3), i)
+                np => dataptr(normal , i)
               call update_scal_3d(spec_comp, spec_comp+nspec-1, &
                                   sop(:,:,:,:), snp(:,:,:,:), &
                                   ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0, &
-                                  sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), fp(:,:,:,:), &
+                                  sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
+                                  np(:,:,:,:), fp(:,:,:,:), &
                                   s0_old(:,:), s0_new(:,:), &
                                   lo, hi, ng_cell, dx, dt, verbose)
               do n = spec_comp,spec_comp+nspec-1
@@ -397,12 +402,14 @@ contains
                               the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
               end do
             case (3)
-              wmp => dataptr(umac(3), i)
+               wmp => dataptr(umac(3), i)
               sepz => dataptr(sedge(3), i)
+                np => dataptr(normal , i)
               call update_scal_3d(trac_comp,trac_comp+ntrac-1, &
                                   sop(:,:,:,:), snp(:,:,:,:), &
                                   ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0, &
-                                  sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), fp(:,:,:,:), &
+                                  sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
+                                  np(:,:,:,:), fp(:,:,:,:), &
                                   s0_old(:,:), s0_new(:,:), &
                                   lo, hi, ng_cell, dx, dt, verbose)
               do n = trac_comp,trac_comp+ntrac-1
@@ -456,9 +463,10 @@ contains
 
               if (spherical .eq. 1) then
 
+                np => dataptr(normal, i)
                 call  mkrhohforce_3d_sphr(fp(:,:,:,n), &
                                           ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
-                                          p0_old, p0_new, dx)
+                                          np(:,:,:,:), p0_old, p0_new, dx)
 
               else
 
@@ -466,10 +474,12 @@ contains
 
               end if
 
+               np => dataptr(normal , i)
               call update_scal_3d(rhoh_comp, rhoh_comp, &
                              sop(:,:,:,:), snp(:,:,:,:), &
                              ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0, &
-                             sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), fp(:,:,:,:), &
+                             sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
+                             np(:,:,:,:), fp(:,:,:,:), &
                              s0_old(:,:), s0_new(:,:), &
                              lo, hi, ng_cell, dx, dt, verbose)
 

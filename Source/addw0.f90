@@ -10,16 +10,19 @@ module addw0_module
 
 contains
 
-      subroutine addw0(umac,w0,dx,mult)
+      subroutine addw0(umac,normal,w0,dx,mult)
 
       type(multifab) , intent(inout) :: umac(:)
+      type(multifab) , intent(in   ) :: normal
       real(kind=dp_t), intent(in   ) ::   w0(:)
       real(kind=dp_t), intent(in   ) :: dx(:),mult
 
+      ! Local variables
       integer :: i,lo(umac(1)%dim),hi(umac(1)%dim),dm
       real(kind=dp_t), pointer :: ump(:,:,:,:)
       real(kind=dp_t), pointer :: vmp(:,:,:,:)
       real(kind=dp_t), pointer :: wmp(:,:,:,:)
+      real(kind=dp_t), pointer ::  np(:,:,:,:)
 
       dm = umac(1)%dim
 
@@ -35,7 +38,10 @@ contains
            if (spherical .eq. 0) then
              call addw0_3d(wmp(:,:,:,1),w0,lo,hi,mult)
            else
-             call addw0_3d_sphr(ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),w0,dx,mult)
+             ump  => dataptr(umac(1), i)
+             vmp  => dataptr(umac(2), i)
+              np  => dataptr(normal, i)
+             call addw0_3d_sphr(ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),np(:,:,:,:),w0,dx,mult)
            end if
          end select
       end do
@@ -78,11 +84,12 @@ contains
 
       end subroutine addw0_3d
 
-      subroutine addw0_3d_sphr(umac,vmac,wmac,w0,dx,mult)
+      subroutine addw0_3d_sphr(umac,vmac,wmac,normal,w0,dx,mult)
 
-      real(kind=dp_t), intent(inout) :: umac(0:,0:,0:)
-      real(kind=dp_t), intent(inout) :: vmac(0:,0:,0:)
-      real(kind=dp_t), intent(inout) :: wmac(0:,0:,0:)
+      real(kind=dp_t), intent(inout) ::   umac(0:,0:,0:)
+      real(kind=dp_t), intent(inout) ::   vmac(0:,0:,0:)
+      real(kind=dp_t), intent(inout) ::   wmac(0:,0:,0:)
+      real(kind=dp_t), intent(in   ) :: normal(0:,0:,0:,:)
       real(kind=dp_t), intent(in   ) ::   w0(:)
       real(kind=dp_t), intent(in   ) :: dx(:),mult
 
@@ -90,14 +97,12 @@ contains
       integer :: nx,ny,nz,nr
       real(kind=dp_t), allocatable :: w0_rad(:)
       real(kind=dp_t), allocatable :: w0_cart(:,:,:)
-      real(kind=dp_t), allocatable :: normal(:,:,:,:)
 
       nx = size(vmac,dim=1) - 2
       ny = size(wmac,dim=2) - 2
       nz = size(umac,dim=3) - 2
       nr = size(w0,dim=1) - 1
 
-      allocate(normal(0:nx+1,0:ny+1,0:nz+1,3))
       allocate(w0_rad (nr))
       allocate(w0_cart(0:nx+1,0:ny+1,0:nz+1))
 
@@ -108,7 +113,6 @@ contains
 
       ! Then put w0 on centers of Cartesian grid
       call fill_3d_data(w0_cart,w0_rad,dx,1)
-      call make_3d_normal(dx,normal,1)
 
       do k = 1,nz
       do j = 1,ny
@@ -157,7 +161,7 @@ contains
       end do
       end do
 
-      deallocate(normal,w0_rad,w0_cart)
+      deallocate(w0_rad,w0_cart)
 
       end subroutine addw0_3d_sphr
 
