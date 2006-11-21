@@ -41,10 +41,10 @@ contains
          hi =  upb(get_box(state, i))
          select case (dm)
             case (2)
-              call make_S_2d(lo,hi,srcp(:,:,1,1),sp(:,:,1,:),omegap(:,:,1,1), &
+              call make_S_2d(lo,hi,srcp(:,:,1,1),sp(:,:,1,:),omegap(:,:,1,:), &
                              ng, p0, t0, gam1, dx, time)
             case (3)
-              call make_S_3d(lo,hi,srcp(:,:,:,1),sp(:,:,:,:),omegap(:,:,:,1), &
+              call make_S_3d(lo,hi,srcp(:,:,:,1),sp(:,:,:,:),omegap(:,:,:,:), &
                              ng, p0, t0, gam1, dx, time)
          end select
       end do
@@ -58,18 +58,19 @@ contains
       integer         , intent(in   ) :: lo(:), hi(:), ng
       real (kind=dp_t), intent(  out) :: Source(lo(1):,lo(2):)  
       real (kind=dp_t), intent(in   ) :: s(lo(1)-ng:,lo(2)-ng:,:)
-      real (kind=dp_t), intent(in   ) :: rho_omegadot(lo(1):,lo(2):)
+      real (kind=dp_t), intent(in   ) :: rho_omegadot(lo(1):,lo(2):,:)
       real (kind=dp_t), intent(in   ) ::        p0(lo(2):)
       real (kind=dp_t), intent(in   ) ::        t0(lo(2):)
       real (kind=dp_t), intent(in   ) ::      gam1(lo(2):)
       real (kind=dp_t), intent(in   ) :: dx(:), time
 
 !     Local variables
-      integer :: i, j
+      integer :: i, j, n
       integer :: imax, jmax
 
       real(kind=dp_t) :: x,y,Smax
       real(kind=dp_t), allocatable :: H(:,:)
+      real(kind=dp_t) :: sigma, react_term, pres_term
 
       allocate(H(lo(1):hi(1),lo(2):hi(2)))
 
@@ -102,7 +103,21 @@ contains
                     gam1_row, cs_row, s_row, &
                     do_diag)
 
-           Source(i,j) = H(i,j) * dpdt_row(1) / (den_row(1) * cp_row(1) * dpdr_row(1))
+           sigma = dpdt_row(1) / (den_row(1) * cp_row(1) * dpdr_row(1))
+
+           react_term = ZERO
+           pres_term = ZERO
+           do n = 1, nspec
+              react_term = react_term - &
+                   (dhdX_row(1,n) + ebin(n))*rho_omegadot(i,j,n)/den_row(1)
+
+              pres_term = pres_term + &
+                   dpdX_row(1,n)*rho_omegadot(i,j,n)/den_row(1)
+           enddo
+
+           Source(i,j) = sigma*(H(i,j) + react_term) + &
+                pres_term/(den_row(1)*dpdr_row(1))
+
            Smax = max(Smax, abs(Source(i,j)))
         enddo
       enddo
@@ -120,20 +135,21 @@ contains
       integer         , intent(in   ) :: lo(:), hi(:), ng
       real (kind=dp_t), intent(  out) :: Source(lo(1):,lo(2):,lo(3):)  
       real (kind=dp_t), intent(in   ) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-      real (kind=dp_t), intent(in   ) :: rho_omegadot(lo(1):,lo(2):,lo(3):)
+      real (kind=dp_t), intent(in   ) :: rho_omegadot(lo(1):,lo(2):,lo(3):,:)
       real (kind=dp_t), intent(in   ) ::        p0(lo(3):)
       real (kind=dp_t), intent(in   ) ::        t0(lo(3):)
       real (kind=dp_t), intent(in   ) ::      gam1(lo(3):)
       real (kind=dp_t), intent(in   ) :: dx(:), time
 
 !     Local variables
-      integer :: i, j, k 
+      integer :: i, j, k , n
       integer :: imax, jmax, kmax
 
       real(kind=dp_t) :: x,y,z,Smax
       real(kind=dp_t), allocatable :: p0_cart(:,:,:)
       real(kind=dp_t), allocatable :: t0_cart(:,:,:)
       real(kind=dp_t), allocatable :: H(:,:,:)
+      real(kind=dp_t) :: sigma, react_term, pres_term
 
       allocate(H(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
       if (spherical .eq. 1) then
@@ -180,7 +196,21 @@ contains
                        gam1_row, cs_row, s_row, &
                        do_diag)
 
-              Source(i,j,k) = H(i,j,k) * dpdt_row(1) / (den_row(1) * cp_row(1) * dpdr_row(1))
+              sigma = dpdt_row(1) / (den_row(1) * cp_row(1) * dpdr_row(1))
+
+              react_term = ZERO
+              pres_term = ZERO
+              do n = 1, nspec
+                 react_term = react_term - &
+                      (dhdX_row(1,n) + ebin(n))*rho_omegadot(i,j,k,n)/den_row(1)
+
+                 pres_term = pres_term + &
+                      dpdX_row(1,n)*rho_omegadot(i,j,k,n)/den_row(1)
+              enddo
+  
+              Source(i,j,k) = sigma*(H(i,j,k) + react_term) + &
+                   pres_term/(den_row(1)*dpdr_row(1))
+
               Smax = max(Smax, abs(Source(i,j,k)))
            enddo
         enddo
