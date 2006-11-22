@@ -17,13 +17,15 @@ module init_module
 
 contains
 
-  subroutine initscalardata (s,s0,p0,temp0,dx,prob_lo,prob_hi,bc,nscal,ntrac)
+  subroutine initscalardata (s,s0,p0,temp0,dx,perturb_model, &
+                             prob_lo,prob_hi,bc,nscal,ntrac)
 
     type(multifab) , intent(inout) :: s
     real(kind=dp_t), intent(in   ) ::    s0(:,:)
     real(kind=dp_t), intent(in   ) ::    p0(:)
     real(kind=dp_t), intent(in   ) :: temp0(:)
     real(kind=dp_t), intent(in   ) :: dx(:)
+    logical,         intent(in   ) :: perturb_model
     real(kind=dp_t), intent(in   ) :: prob_lo(:)
     real(kind=dp_t), intent(in   ) :: prob_hi(:)
     type(bc_level) , intent(in   ) :: bc
@@ -44,7 +46,7 @@ contains
 
        select case (dm)
        case (2)
-          call initscalardata_2d(sop(:,:,1,:), lo, hi, ng, dx, &
+          call initscalardata_2d(sop(:,:,1,:), lo, hi, ng, dx, perturb_model, &
                                  prob_lo, prob_hi, s0, p0, temp0, ntrac)
 
           do n = 1,nscal
@@ -53,7 +55,7 @@ contains
           end do
 
        case (3)
-          call initscalardata_3d(sop(:,:,:,:), lo, hi, ng, dx, &
+          call initscalardata_3d(sop(:,:,:,:), lo, hi, ng, dx, perturb_model, &
                                  prob_lo, prob_hi, s0, p0, temp0, ntrac)
 
           do n = 1, nscal
@@ -67,12 +69,13 @@ contains
 
   end subroutine initscalardata
 
-  subroutine initscalardata_2d (s,lo,hi,ng,dx, &
+  subroutine initscalardata_2d (s,lo,hi,ng,dx, perturb_model, &
                                 prob_lo,prob_hi,s0,p0,temp0,ntrac)
 
     integer, intent(in) :: lo(:), hi(:), ng, ntrac
     real (kind = dp_t), intent(out) :: s(lo(1)-ng:,lo(2)-ng:,:)  
     real (kind = dp_t), intent(in ) :: dx(:)
+    logical,            intent(in ) :: perturb_model
     real (kind = dp_t), intent(in ) :: prob_lo(:)
     real (kind = dp_t), intent(in ) :: prob_hi(:)
     real(kind=dp_t), intent(in   ) ::    s0(lo(2):,:)
@@ -84,7 +87,6 @@ contains
     real(kind=dp_t) :: x,y,r,r0,r1,r2,temp
     real(kind=dp_t) :: dens_pert, rhoh_pert, rhoX_pert(nspec), trac_pert(ntrac)
 
-    logical, parameter :: perturbModel = .false.
 
     ! initial the domain with the base state
     s = ZERO
@@ -99,7 +101,7 @@ contains
     enddo
     
     ! add an optional perturbation
-    if (perturbModel) then
+    if (perturb_model) then
        do j = lo(2), hi(2)
           y = prob_lo(2) + (dble(j)+HALF) * dx(2)
        
@@ -119,7 +121,7 @@ contains
     
   end subroutine initscalardata_2d
 
-  subroutine initscalardata_3d (s,lo,hi,ng,dx, &
+  subroutine initscalardata_3d (s,lo,hi,ng,dx, perturb_model, &
                                 prob_lo,prob_hi,s0,p0,temp0,ntrac)
 
     implicit none
@@ -127,6 +129,7 @@ contains
     integer, intent(in) :: lo(:), hi(:), ng, ntrac
     real (kind = dp_t), intent(out) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
     real (kind = dp_t), intent(in ) :: dx(:)
+    logical,            intent(in ) :: perturb_model
     real (kind = dp_t), intent(in ) :: prob_lo(:)
     real (kind = dp_t), intent(in ) :: prob_hi(:)
     real(kind=dp_t), intent(in   ) ::    s0(lo(3):,:)
@@ -137,7 +140,6 @@ contains
     integer :: i, j, k, n
     real(kind=dp_t) :: x,y,z,r,r0,r1,r2,temp
     real(kind=dp_t) :: dens_pert, rhoh_pert, rhoX_pert(nspec), trac_pert(ntrac)
-    logical, parameter :: perturbModel = .false.
 
     ! initial the domain with the base state
     s = ZERO
@@ -161,7 +163,7 @@ contains
           enddo
        enddo
        
-       if (perturbModel) then
+       if (perturb_model) then
 
           ! add an optional perturbation
           do k = lo(3), hi(3)
@@ -257,8 +259,6 @@ contains
     real(kind=dp_t) :: x,y,r,r0,r1,r2,temp
     real(kind=dp_t) :: dens_pert, rhoh_pert, rhoX_pert(nspec), trac_pert(ntrac)
 
-    logical, parameter :: perturbModel = .false.
-
     ! initial the velocity
     u = ZERO
 
@@ -282,7 +282,6 @@ contains
     integer :: i, j, k, n
     real(kind=dp_t) :: x,y,z,r,r0,r1,r2,temp
     real(kind=dp_t) :: dens_pert, rhoh_pert, rhoX_pert(nspec), trac_pert(ntrac)
-    logical, parameter :: perturbModel = .false.
 
     ! initial the velocity
     u = ZERO
