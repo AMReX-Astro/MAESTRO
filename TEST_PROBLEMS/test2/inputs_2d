@@ -31,5 +31,7 @@
  do_initial_projection = 1
  init_divu_iter = 3
 
+ perturb_model = T
+
 !restart = 50
 /
