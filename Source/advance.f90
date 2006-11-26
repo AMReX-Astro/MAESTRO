@@ -28,6 +28,7 @@ module advance_timestep_module
   use make_S_module
   use average_module
   use phihalf_module
+  use extraphalf_module
   use variables
   use network
 
@@ -149,7 +150,16 @@ module advance_timestep_module
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     print *,'<<< STEP 1 >>>'
     do n = 1, nlevs
-       call make_S(Source_nph(n),sold(n),rho_omegadot1(n),p0_old,temp0,gam1,dx(n,:),time)  ! this needs to be replaced by extrapolation
+
+       if (init_mode) then
+          call make_at_halftime(Source_nph(n),Source_old(n),Source_new(n), &
+                                1,1,dx(n,:), &
+                                the_bc_tower%bc_tower_array(n))          
+       else
+          call extrap_to_halftime(Source_nph(n),Source_nm1(n),Source_old(n), &
+                                  dx(n,:),dtold,dt)
+       endif
+
        call average(Source_nph(n),Sbar,dx(n,:))
        call make_w0(w0,Sbar(:,1),p0_old,s0_old(:,rho_comp),temp0,gam1,dx(n,dm),dt)
     end do
