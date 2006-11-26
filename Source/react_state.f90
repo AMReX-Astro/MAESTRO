@@ -106,6 +106,10 @@ contains
 
           ! (rho, H) --> T, p
           input_flag = 2
+
+          den_row(1) = rho
+          temp_row(1) = 1.d7   ! we should use a better guess here
+          h_row(1) = h_in
           xn_zone(:) = x_in(:)
 
           call eos(input_flag, den_row, temp_row, &
@@ -160,6 +164,10 @@ contains
 
           ! (rho, H) --> T, p
           input_flag = 2
+
+          den_row(1) = rho
+          temp_row(1) = 1.d7   ! we should use a better guess here
+          h_row(1) = h_in
           xn_zone(:) = x_in(:)
 
           call eos(input_flag, den_row, temp_row, &
