@@ -26,6 +26,7 @@ module network
   integer, parameter :: nspec = 3
 
   character (len=16), save :: spec_names(nspec) 
+  character (len=5), save :: short_spec_names(nspec)
   real(kind=dp_t), save :: aion(nspec), zion(nspec), ebin(nspec)
 
   logical, save :: network_initialized = .false.
@@ -37,6 +38,10 @@ contains
     spec_names(1) = "carbon-12"
     spec_names(2) = "oxygen-16"
     spec_names(3) = "magnesium-24"
+
+    short_spec_names(1) = "C12"
+    short_spec_names(2) = "O16"
+    short_spec_names(3) = "Mg24"
     
     aion(1) = 12.0_dp_t
     aion(2) = 16.0_dp_t
