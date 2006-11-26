@@ -27,11 +27,8 @@ FINCLUDE_LOCATIONS += $(FPARALLEL)/extern/helmeos
 include $(FPARALLEL)/varden/GPackage.mak
 VPATH_LOCATIONS += $(FPARALLEL)/varden
 
-#include $(FPARALLEL)/extern/networks/ignition/GPackage.mak
-#VPATH_LOCATIONS += $(FPARALLEL)/extern/networks/ignition
-
-include $(FPARALLEL)/extern/networks/null/GPackage.mak
-VPATH_LOCATIONS += $(FPARALLEL)/extern/networks/null
+include $(FPARALLEL)/extern/networks/ignition/GPackage.mak
+VPATH_LOCATIONS += $(FPARALLEL)/extern/networks/ignition
 
 include $(FPARALLEL)/extern/VODE/GPackage.mak
 VPATH_LOCATIONS += $(FPARALLEL)/extern/VODE
