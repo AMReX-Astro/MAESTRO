@@ -696,9 +696,9 @@ contains
    end subroutine makeXfromrhoX_3d
 
 
-   subroutine make_omegadot(plotdata,comp,s,rho_omegadot)
+   subroutine make_omegadot(plotdata,comp,comp_enuc,s,rho_omegadot)
 
-     integer        , intent(in   ) :: comp
+     integer        , intent(in   ) :: comp, comp_enuc
      type(multifab) , intent(in   ) :: s, rho_omegadot
      type(multifab) , intent(inout) :: plotdata
      
@@ -723,53 +723,64 @@ contains
 
         select case (dm)
         case (2)
-           call makeomega_2d(pp(:,:,1,comp:),rop(:,:,1,:),sp(:,:,1,rho_comp), lo, hi, ng_s, ng_o)
+           call makeomega_2d(pp(:,:,1,comp:comp-1+nspec),pp(:,:,1,comp_enuc), &
+                             rop(:,:,1,:),sp(:,:,1,rho_comp), lo, hi, ng_s, ng_o)
         case (3)
-           call makeomega_3d(pp(:,:,:,comp:),rop(:,:,:,:),sp(:,:,:,rho_comp), lo, hi, ng_s, ng_o)
+           call makeomega_3d(pp(:,:,:,comp:comp-1+nspec),pp(:,:,:,comp_enuc), &
+                             rop(:,:,:,:),sp(:,:,:,rho_comp), lo, hi, ng_s, ng_o)
         end select
      end do
      
    end subroutine make_omegadot
 
-   subroutine makeomega_2d (omegadot,rho_omegadot,rho,lo,hi,ng_s,ng_o)
+
+   subroutine makeomega_2d (omegadot,enuc,rho_omegadot,rho,lo,hi,ng_s,ng_o)
 
      implicit none
      
      integer, intent(in) :: lo(:), hi(:), ng_s, ng_o
-     real (kind = dp_t), intent(  out) :: omegadot(lo(1):,lo(2):,:)  
+     real (kind = dp_t), intent(  out) :: omegadot(lo(1):,lo(2):,:)
+     real (kind = dp_t), intent(  out) :: enuc(lo(1):,lo(2):)
      real (kind = dp_t), intent(in   ) :: rho_omegadot(lo(1)-ng_o:,lo(2)-ng_o:,:)
      real (kind = dp_t), intent(in   ) :: rho(lo(1)-ng_s:,lo(2)-ng_s:)
      
      ! Local variables
      integer :: i, j, n
 
+     enuc(:,:) = ZERO
+
      do n = 1, nspec
         do j = lo(2), hi(2)
            do i = lo(1), hi(1)
               omegadot(i,j,n) = rho_omegadot(i,j,n) / rho(i,j)
+              enuc(i,j) = enuc(i,j) - omegadot(i,j,n)*ebin(n)
            enddo
         enddo
      enddo
      
    end subroutine makeomega_2d
    
-   subroutine makeomega_3d (omegadot,rho_omegadot,rho,lo,hi,ng_s,ng_o)
+   subroutine makeomega_3d (omegadot,enuc,rho_omegadot,rho,lo,hi,ng_s,ng_o)
 
      implicit none
      
      integer, intent(in) :: lo(:), hi(:), ng_s, ng_o
      real (kind = dp_t), intent(  out) :: omegadot(lo(1):,lo(2):,lo(3):,:)  
+     real (kind = dp_t), intent(  out) :: enuc(lo(1):,lo(2):,lo(3):)
      real (kind = dp_t), intent(in   ) :: rho_omegadot(lo(1)-ng_o:,lo(2)-ng_o:,lo(3)-ng_o:,:)
      real (kind = dp_t), intent(in   ) :: rho(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:  )
 
      ! Local variables
      integer :: i, j, k, n
 
+     enuc(:,:,:) = ZERO
+
      do n = 1, nspec
         do k = lo(3), hi(3)
            do j = lo(2), hi(2)
               do i = lo(1), hi(1)
                  omegadot(i,j,k,n) = rho_omegadot(i,j,k,n) / rho(i,j,k)
+                 enuc(i,j,k) = enuc(i,j,k) - omegadot(i,j,k,n)*ebin(n)
               enddo
            enddo
         enddo

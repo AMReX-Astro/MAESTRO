@@ -43,6 +43,7 @@ contains
     integer :: icomp_tfromrho,icomp_tpert,icomp_rhopert
     integer :: icomp_machno,icomp_deltag
     integer :: icomp_tfromH,icomp_dp
+    integer :: icomp_enuc
     character(len=7) :: sd_name
 
     dm = get_dim(mba)
@@ -136,7 +137,8 @@ contains
 
        ! OMEGADOT
        icomp = derive_spec_comp
-       call make_omegadot(plotdata(n),icomp,s(n),rho_omegadot(n))
+       icomp_enuc = derive_spec_comp+nspec
+       call make_omegadot(plotdata(n),icomp,icomp_enuc,s(n),rho_omegadot(n))
 
     enddo
 
