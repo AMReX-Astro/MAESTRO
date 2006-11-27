@@ -5,7 +5,7 @@ module variables
 
   implicit none
 
-  integer, save :: rho_comp, rhoh_comp, spec_comp, trac_comp, press_comp, derive_comp
+  integer, save :: rho_comp, rhoh_comp, spec_comp, trac_comp, press_comp, derive_comp, derive_spec_comp
 
 contains
 
@@ -19,6 +19,7 @@ contains
     trac_comp = spec_comp + nspec
     press_comp  = dm + nscal + 1
     derive_comp = dm + nscal + 1
+    derive_spec_comp = derive_comp + 8 + dm + 1
 
   end subroutine init_variables
 

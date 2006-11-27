@@ -20,7 +20,9 @@ module make_plotfile_module
 
 contains
 
-  subroutine make_plotfile(istep,plotdata,u,s,gp,mba,plot_names,time,dx,the_bc_tower, &
+  subroutine make_plotfile(istep,plotdata,u,s,gp,rho_omegadot,mba, &
+                           plot_names,time,dx, &
+                           the_bc_tower, &
                            s0,p0,temp0,ntrac)
 
     integer          , intent(in   ) :: istep
@@ -29,6 +31,7 @@ contains
     type(multifab)   , intent(in   ) :: u(:)
     type(multifab)   , intent(in   ) :: s(:)
     type(multifab)   , intent(in   ) :: gp(:)
+    type(multifab)   , intent(in   ) :: rho_omegadot(:)
     type(ml_boxarray), intent(in   ) :: mba
     character(len=20), intent(in   ) :: plot_names(:)
     real(dp_t)       , intent(in   ) :: time,dx(:,:)
@@ -127,6 +130,16 @@ contains
       call multifab_copy_c(plotdata(n),icomp,gp(n),1,dm)
 
     end do
+
+
+    do n = 1,nlevs
+
+       ! OMEGADOT
+       icomp = derive_spec_comp
+       call make_omegadot(plotdata(n),icomp,s(n),rho_omegadot(n))
+
+    enddo
+
 
     write(unit=sd_name,fmt='("plt",i4.4)') istep
     call fabio_ml_multifab_write_d(plotdata, mba%rr(:,1), sd_name, plot_names, &
