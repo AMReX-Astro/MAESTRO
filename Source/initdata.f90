@@ -321,9 +321,9 @@ contains
     r2 = sqrt( (x-x2)**2 +(y-y2)**2 ) / 2.5e6
     
     temp = t0 * (ONE + TWO * ( &
-         .0625_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r0))) + &
-         .1875_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r1))) + &
-         .1250_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r2)))  ) )
+         .15_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r0))) + &
+         .3_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r1))) + &
+         .225_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r2)))  ) )
           
     ! Use the EOS to make this temperature perturbation occur at constant 
     ! pressure
