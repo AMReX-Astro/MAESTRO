@@ -13,11 +13,10 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   subroutine extrap_to_halftime(Source_nph,Source_nm1,Source_old, &
-                                dx,dtold,dt)
+                                dtold,dt)
 
     type(multifab) , intent(inout) :: Source_nph
     type(multifab) , intent(in   ) :: Source_nm1, Source_old
-    real(kind=dp_t), intent(in   ) :: dx(:)
     real(kind=dp_t), intent(in   ) :: dt, dtold
 
     real(kind=dp_t), pointer:: Snphp(:,:,:,:)

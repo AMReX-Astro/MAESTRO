@@ -152,12 +152,9 @@ module advance_timestep_module
     do n = 1, nlevs
 
        if (init_mode) then
-          call make_at_halftime(Source_nph(n),Source_old(n),Source_new(n), &
-                                1,1,dx(n,:), &
-                                the_bc_tower%bc_tower_array(n))          
+          call make_S_at_halftime(Source_nph(n),Source_old(n),Source_new(n))
        else
-          call extrap_to_halftime(Source_nph(n),Source_nm1(n),Source_old(n), &
-                                  dx(n,:),dtold,dt)
+          call extrap_to_halftime(Source_nph(n),Source_nm1(n),Source_old(n),dtold,dt)
        endif
 
        call average(Source_nph(n),Sbar,dx(n,:))
@@ -272,8 +269,7 @@ module advance_timestep_module
         print *,'<<< STEP 6 >>>'
         do n = 1, nlevs
            call make_S(Source_new(n),snew(n),rho_omegadot2(n),p0_new,temp0,gam1,dx(n,:),time)
-           call make_at_halftime(Source_nph(n),Source_old(n),Source_new(n),1,1,dx(n,:), &
-                                 the_bc_tower%bc_tower_array(n))
+           call make_S_at_halftime(Source_nph(n),Source_old(n),Source_new(n))
            call average(Source_nph(n),Sbar,dx(n,:))
            call make_w0(w0,Sbar(:,1),p0_new,s0_new(:,rho_comp),temp0,gam1,dx(n,dm),dt)
         end do

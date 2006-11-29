@@ -11,6 +11,45 @@ module phihalf_module
 
 contains
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+   subroutine make_S_at_halftime (shalf,sold,snew)
+
+      type(multifab) , intent(inout) :: shalf
+      type(multifab) , intent(in   ) :: sold
+      type(multifab) , intent(in   ) :: snew
+
+      real(kind=dp_t), pointer:: shp(:,:,:,:)
+      real(kind=dp_t), pointer:: sop(:,:,:,:)
+      real(kind=dp_t), pointer:: snp(:,:,:,:)
+      integer :: lo(shalf%dim),hi(shalf%dim),ng_h,ng_o,dm
+      integer :: i,in_comp,out_comp
+
+      dm = shalf%dim
+      ng_h = shalf%ng
+      ng_o = sold%ng
+
+       in_comp = 1
+      out_comp = 1
+
+      do i = 1, shalf%nboxes
+         if ( multifab_remote(shalf, i) ) cycle
+         shp => dataptr(shalf, i)
+         sop => dataptr(sold, i)
+         snp => dataptr(snew, i)
+         lo =  lwb(get_box(shalf, i))
+         hi =  upb(get_box(shalf, i))
+         select case (dm)
+            case (2)
+              call make_at_halftime_2d(shp(:,:,1,out_comp),sop(:,:,1,in_comp),snp(:,:,1,in_comp),&
+                                       lo,hi,ng_h,ng_o)
+            case (3)
+              call make_at_halftime_3d(shp(:,:,:,out_comp),sop(:,:,:,in_comp),snp(:,:,:,in_comp),&
+                                       lo,hi,ng_h,ng_o)
+         end select
+      end do
+
+   end subroutine make_S_at_halftime
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
