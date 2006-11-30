@@ -91,7 +91,7 @@ contains
     real (kind = dp_t), intent(in   ) :: s_in (lo(1)-ng:,lo(2)-ng:,:)
     real (kind = dp_t), intent(  out) :: s_out(lo(1)-ng:,lo(2)-ng:,:)
     real (kind = dp_t), intent(  out) :: rho_omegadot(lo(1):,lo(2):,:)
-    real (kind = dp_t), intent(in   ) :: temp0(:)
+    real (kind = dp_t), intent(in   ) :: temp0(lo(2):)
     real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
     !     Local variables
@@ -149,7 +149,7 @@ contains
     real (kind = dp_t), intent(in   ) :: s_in (lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind = dp_t), intent(  out) :: s_out(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind = dp_t), intent(  out) :: rho_omegadot(lo(1):,lo(2):,lo(3):,:)
-    real (kind = dp_t), intent(in   ) :: temp0(:)
+    real (kind = dp_t), intent(in   ) :: temp0(lo(2):)
     real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
     real (kind = dp_t), allocatable :: temp0_cart(:,:,:)
