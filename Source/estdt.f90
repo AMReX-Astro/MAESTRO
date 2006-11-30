@@ -25,7 +25,7 @@ contains
       real(kind=dp_t), pointer:: fp(:,:,:,:)
       real(kind=dp_t), pointer:: np(:,:,:,:)
       integer :: lo(u%dim),hi(u%dim),ng,dm
-      real(kind=dp_t) :: dt_hold
+      real(kind=dp_t) :: dt_grid,dt_proc
       real(kind=dp_t) :: dtchange
       integer         :: i
 
@@ -33,7 +33,8 @@ contains
       dm = u%dim
 
       dtchange = 1.1d0
-      dt_hold  = 1.d20
+      dt_grid  = 1.d20
+      dt_proc  = 1.d20
 
       do i = 1, u%nboxes
          if ( multifab_remote(u, i) ) cycle
@@ -44,16 +45,18 @@ contains
          select case (dm)
             case (2)
               call estdt_2d(uop(:,:,1,:), fp(:,:,1,:),&
-                            w0, lo, hi, ng, dx, dt)
+                            w0, lo, hi, ng, dx, dt_grid)
             case (3)
               np => dataptr(normal, i)
               call estdt_3d(uop(:,:,:,:), fp(:,:,:,:), np(:,:,:,:), &
-                            w0, lo, hi, ng, dx, dt)
+                            w0, lo, hi, ng, dx, dt_grid)
          end select
-         dt_hold = min(dt_hold,dt)
+         dt_proc = min(dt_proc,dt_grid)
       end do
 
-      dt = dt_hold
+      ! This sets dt to be the min of dt_proc over all processors.
+      call parallel_reduce(dt,dt_proc,MPI_MIN)
+
       dt = dt * cflfac
 
       if (dtold .gt. 0.0D0 ) dt = min(dt,dtchange*dtold)
