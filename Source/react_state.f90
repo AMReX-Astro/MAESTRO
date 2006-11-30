@@ -7,16 +7,19 @@ module react_state_module
   use eos_module
   use network
   use variables
+  use geometry
+  use fill_3d_module
 
   implicit none
   
 contains
 
-  subroutine react_state (s_in,s_out,rho_omegadot,dt,dx,the_bc_level)
+  subroutine react_state (s_in,s_out,rho_omegadot,temp0,dt,dx,the_bc_level)
 
     type(multifab) , intent(in   ) :: s_in
     type(multifab) , intent(inout) :: s_out
     type(multifab) , intent(inout) :: rho_omegadot
+    real(kind=dp_t), intent(in   ) :: temp0(:)
     real(kind=dp_t), intent(in   ) :: dt,dx(:)
     type(bc_level) , intent(in   ) :: the_bc_level
 
@@ -41,7 +44,7 @@ contains
        hi =  upb(get_box(s_in, i))
        select case (dm)
        case (2)
-          call react_state_2d(sinp(:,:,1,:),sotp(:,:,1,:),rp(:,:,1,:),dt,lo,hi,ng)
+          call react_state_2d(sinp(:,:,1,:),sotp(:,:,1,:),rp(:,:,1,:),temp0,dt,dx,lo,hi,ng)
           ! Impose bc's on new rho
           n = rho_comp
           bc_comp = dm+n 
@@ -60,7 +63,7 @@ contains
           end do
 
        case (3)
-          call react_state_3d(sinp(:,:,:,:),sotp(:,:,:,:),rp(:,:,:,:),dt,lo,hi,ng)
+          call react_state_3d(sinp(:,:,:,:),sotp(:,:,:,:),rp(:,:,:,:),temp0,dt,dx,lo,hi,ng)
           ! Impose bc's on new rho
           n = rho_comp
           bc_comp = dm+n 
@@ -81,14 +84,15 @@ contains
 
   end subroutine react_state
 
-  subroutine react_state_2d (s_in,s_out,rho_omegadot,dt,lo,hi,ng)
+  subroutine react_state_2d (s_in,s_out,rho_omegadot,temp0,dt,dx,lo,hi,ng)
 
     implicit none
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(in   ) :: s_in (lo(1)-ng:,lo(2)-ng:,:)
     real (kind = dp_t), intent(  out) :: s_out(lo(1)-ng:,lo(2)-ng:,:)
     real (kind = dp_t), intent(  out) :: rho_omegadot(lo(1):,lo(2):,:)
-    real (kind = dp_t), intent(in   ) :: dt
+    real (kind = dp_t), intent(in   ) :: temp0(:)
+    real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
     !     Local variables
     integer :: i, j
@@ -108,7 +112,7 @@ contains
           input_flag = 2
 
           den_row(1) = rho
-          temp_row(1) = 1.d7   ! we should use a better guess here
+          temp_row(1) = temp0(j)
           h_row(1) = h_in
           xn_zone(:) = x_in(:)
 
@@ -138,14 +142,17 @@ contains
 
   end subroutine react_state_2d
 
-  subroutine react_state_3d (s_in,s_out,rho_omegadot,dt,lo,hi,ng)
+  subroutine react_state_3d (s_in,s_out,rho_omegadot,temp0,dt,dx,lo,hi,ng)
 
     implicit none
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(in   ) :: s_in (lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind = dp_t), intent(  out) :: s_out(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind = dp_t), intent(  out) :: rho_omegadot(lo(1):,lo(2):,lo(3):,:)
-    real (kind = dp_t), intent(in   ) :: dt
+    real (kind = dp_t), intent(in   ) :: temp0(:)
+    real (kind = dp_t), intent(in   ) :: dt,dx(:)
+
+    real (kind = dp_t), allocatable :: temp0_cart(:,:,:)
 
     !     Local variables
     integer :: i, j, k
@@ -153,6 +160,12 @@ contains
     real (kind = dp_t) :: rho,T_in,h_in,h_out
 
     allocate(x_in(nspec),x_out(nspec),rhowdot(nspec))
+
+    if (spherical == 1) then
+       allocate(temp0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+       call fill_3d_data(temp0_cart,temp0,dx,0)
+    endif
+
 
     do k = lo(3), hi(3)
      do j = lo(2), hi(2)
@@ -166,7 +179,13 @@ contains
           input_flag = 2
 
           den_row(1) = rho
-          temp_row(1) = 1.d7   ! we should use a better guess here
+
+          if (spherical == 0) then
+             temp_row(1) = temp0(k)
+          else
+             temp_row(1) = temp0_cart(i,j,k)
+          endif
+
           h_row(1) = h_in
           xn_zone(:) = x_in(:)
 
@@ -194,6 +213,10 @@ contains
     enddo
 
     deallocate(x_in,x_out,rhowdot)
+
+    if (spherical == 1) then
+       deallocate(temp0_cart)
+    endif
 
   end subroutine react_state_3d
 
