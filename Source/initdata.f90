@@ -717,7 +717,7 @@ contains
     end do
     close(99)
 
-1000 format(e18.12,1x,e18.12,1x,e18.12,1x,e18.12,1x,e18.12)
+1000 format(16(e18.12,1x))
 
   end subroutine write_base_state
 
