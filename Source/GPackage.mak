@@ -30,3 +30,5 @@ f90sources += make_at_halftime.f90
 f90sources += extrap_to_halftime.f90
 f90sources += fill_3d_data.f90
 f90sources += firstdt.f90
+f90sources += checkpoint.f90
+f90sources += restart.f90
