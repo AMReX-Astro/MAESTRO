@@ -42,7 +42,7 @@ module advance_timestep_module
                                 div_coeff_old,div_coeff_new,&
                                 dx,time,dt,dtold,the_bc_tower, &
                                 anelastic_cutoff,verbose,mg_verbose,cg_verbose,&
-                                Source_nm1,Source_old,Source_new)
+                                Source_nm1,Source_old,Source_new,gamma1_term)
 
     implicit none
 
@@ -68,6 +68,7 @@ module advance_timestep_module
     type(multifab), intent(inout) :: Source_nm1(:)
     type(multifab), intent(inout) :: Source_old(:)
     type(multifab), intent(inout) :: Source_new(:)
+    type(multifab), intent(inout) :: gamma1_term(:)
     real(dp_t)    , intent(inout) :: s0_old(:,:)
     real(dp_t)    , intent(inout) :: s0_1(:,:)
     real(dp_t)    , intent(inout) :: s0_2(:,:)
@@ -177,7 +178,7 @@ module advance_timestep_module
     end do
 
     do n = 1, nlevs
-       call make_macrhs(macrhs(n),Source_nph(n),Sbar(:,1),div_coeff_old,dx(n,:))
+       call make_macrhs(macrhs(n),Source_nph(n),gamma1_term(n),Sbar(:,1),div_coeff_old,dx(n,:))
     end do
 
     ! MAC projection !
@@ -270,7 +271,8 @@ module advance_timestep_module
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         print *,'<<< STEP 6 >>>'
         do n = 1, nlevs
-           call make_S(Source_new(n),snew(n),rho_omegadot2(n),p0_new,temp0,gam1,dx(n,:),time)
+           call make_S(Source_new(n),gamma1_term(n),snew(n),uold(n), &
+                       rho_omegadot2(n),p0_new,temp0,gam1,dx(n,:),time)
            call make_S_at_halftime(Source_nph(n),Source_old(n),Source_new(n))
            call average(Source_nph(n),Sbar,dx(n,:))
            call make_w0(w0,Sbar(:,1),p0_new,s0_new(:,rho_comp),temp0,gam1,dx(n,dm),dt)
@@ -309,7 +311,7 @@ module advance_timestep_module
         end do
 
         do n = 1, nlevs
-           call make_macrhs(macrhs(n),Source_nph(n),Sbar(:,1),div_coeff_nph,dx(n,:))
+           call make_macrhs(macrhs(n),Source_nph(n),gamma1_term(n),Sbar(:,1),div_coeff_nph,dx(n,:))
         end do
 
         ! MAC projection !
@@ -386,7 +388,8 @@ module advance_timestep_module
         print *,'<<< STEP 10 >>>'
 
         do n = 1, nlevs
-           call make_S(Source_new(n),snew(n),rho_omegadot2(n),p0_new,temp0,gam1,dx(n,:),time)
+           call make_S(Source_new(n),gamma1_term(n),snew(n),uold(n), &
+                       rho_omegadot2(n),p0_new,temp0,gam1,dx(n,:),time)
            call average(Source_new(n),Sbar,dx(n,:))
         end do
 
@@ -418,7 +421,7 @@ module advance_timestep_module
         end do
 
         do n = 1,nlevs
-           call make_hgrhs(hgrhs(n),Source_new(n),Sbar(:,1),div_coeff_new,dx(n,:))
+           call make_hgrhs(hgrhs(n),Source_new(n),gamma1_term(n),Sbar(:,1),div_coeff_new,dx(n,:))
         end do
 
 !       Project the new velocity field.

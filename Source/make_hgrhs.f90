@@ -13,15 +13,16 @@ contains
 
 !  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-   subroutine make_hgrhs (hgrhs,Source,Sbar,div_coeff,dx)
+   subroutine make_hgrhs (hgrhs,Source,gamma1_term,Sbar,div_coeff,dx)
 
       type(multifab) , intent(inout) :: hgrhs
       type(multifab) , intent(in   ) :: Source
+      type(multifab) , intent(in   ) :: gamma1_term
       real(kind=dp_t), intent(in   ) :: Sbar(:)
       real(kind=dp_t), intent(in   ) :: div_coeff(:)
       real(kind=dp_t), intent(in   ) :: dx(:)
 
-      real(kind=dp_t), pointer:: hp(:,:,:,:),sp(:,:,:,:)
+      real(kind=dp_t), pointer:: hp(:,:,:,:),sp(:,:,:,:),gp(:,:,:,:)
       integer :: lo(Source%dim),hi(Source%dim),dm
       integer :: i
 
@@ -31,25 +32,27 @@ contains
          if ( multifab_remote(Source, i) ) cycle
          hp => dataptr(hgrhs, i)
          sp => dataptr(Source, i)
+         gp => dataptr(gamma1_term, i)
          lo =  lwb(get_box(Source, i))
          hi =  upb(get_box(Source, i))
          select case (dm)
             case (2)
-              call make_hgrhs_2d(lo,hi,hp(:,:,1,1),sp(:,:,1,1),Sbar,div_coeff)
+              call make_hgrhs_2d(lo,hi,hp(:,:,1,1),sp(:,:,1,1),gp(:,:,1,1),Sbar,div_coeff)
             case (3)
-              call make_hgrhs_3d(lo,hi,hp(:,:,:,1),sp(:,:,:,1),Sbar,div_coeff,dx)
+              call make_hgrhs_3d(lo,hi,hp(:,:,:,1),sp(:,:,:,1),gp(:,:,:,1),Sbar,div_coeff,dx)
          end select
       end do
 
    end subroutine make_hgrhs
 
-   subroutine make_hgrhs_2d(lo,hi,rhs,Source,Sbar,div_coeff)
+   subroutine make_hgrhs_2d(lo,hi,rhs,Source,gamma1_term,Sbar,div_coeff)
 
       implicit none
 
       integer         , intent(in   ) :: lo(:), hi(:)
       real (kind=dp_t), intent(  out) :: rhs(lo(1):,lo(2):)  
-      real (kind=dp_t), intent(in   ) :: Source(lo(1):,lo(2):)  
+      real (kind=dp_t), intent(in   ) :: Source(lo(1):,lo(2):)
+      real (kind=dp_t), intent(in   ) :: gamma1_term(lo(1):,lo(2):)  
       real (kind=dp_t), intent(in   ) :: Sbar(lo(2):)
       real (kind=dp_t), intent(in   ) :: div_coeff(lo(2):)
 
@@ -61,7 +64,7 @@ contains
 
       do j = lo(2),hi(2)
       do i = lo(1),hi(1)
-        rhs_cc(i,j) = div_coeff(j) * (Source(i,j) - Sbar(j))
+        rhs_cc(i,j) = div_coeff(j) * (Source(i,j) - Sbar(j) + gamma1_term(i,j))
       end do
       end do
 
@@ -83,13 +86,14 @@ contains
 
    end subroutine make_hgrhs_2d
 
-   subroutine make_hgrhs_3d(lo,hi,rhs,Source,Sbar,div_coeff,dx)
+   subroutine make_hgrhs_3d(lo,hi,rhs,Source,gamma1_term,Sbar,div_coeff,dx)
 
       implicit none
 
       integer         , intent(in   ) :: lo(:), hi(:)
       real (kind=dp_t), intent(  out) :: rhs(lo(1):,lo(2):,lo(3):)  
       real (kind=dp_t), intent(in   ) :: Source(lo(1):,lo(2):,lo(3):)  
+      real (kind=dp_t), intent(in   ) :: gamma1_term(lo(1):,lo(2):,lo(3):)  
       real (kind=dp_t), intent(in   ) :: Sbar(lo(3):)
       real (kind=dp_t), intent(in   ) :: div_coeff(lo(3):)
       real (kind=dp_t), intent(in   ) :: dx(:)
