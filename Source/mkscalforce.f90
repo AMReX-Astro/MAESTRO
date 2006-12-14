@@ -21,25 +21,22 @@ contains
 
     ! compute the source terms for the non-reactive part of the enthalpy equation { w dp0/dr }
 
-    real(kind=dp_t), intent(  out) ::  force(0:,0:)
-    real(kind=dp_t), intent(in   ) ::   wmac(0:,0:)
     integer,         intent(in   ) :: lo(:), hi(:), ng
+    real(kind=dp_t), intent(  out) ::  force(lo(1)- 1:,lo(2)- 1:)
+    real(kind=dp_t), intent(in   ) ::   wmac(lo(1)- 1:,lo(2)- 1:)
     real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng:,lo(2)-ng:,:)
     real(kind=dp_t), intent(in   ) :: dx(:)
     real(kind=dp_t), intent(in   ) :: time
-    real(kind=dp_t), intent(in   ) :: p0_old(:)
-    real(kind=dp_t), intent(in   ) :: p0_new(:)
-    real(kind=dp_t), intent(in   ) :: s0_old(:,:)
-    real(kind=dp_t), intent(in   ) :: s0_new(:,:)
-    real(kind=dp_t), intent(in   ) :: temp0(:)
+    real(kind=dp_t), intent(in   ) :: p0_old(lo(2):)
+    real(kind=dp_t), intent(in   ) :: p0_new(lo(2):)
+    real(kind=dp_t), intent(in   ) :: s0_old(lo(2):,:)
+    real(kind=dp_t), intent(in   ) :: s0_new(lo(2):,:)
+    real(kind=dp_t), intent(in   ) :: temp0(lo(2):)
     real(kind=dp_t), intent(in   ) ::     dr
 
     real(kind=dp_t), allocatable :: H(:,:)
     real(kind=dp_t) :: gradp0,wadv,denom,coeff,sigma_H, sigma0
-    integer :: i,j,nx,ny
-
-    nx = size(force,dim=1) - 2
-    ny = size(force,dim=2) - 2
+    integer :: i,j
  
     allocate(H(lo(1):hi(1),lo(2):hi(2)))
 
@@ -107,13 +104,13 @@ contains
     end do
 
 !   Add w d(p0)/dz and full heating term to forcing term for (rho h)
-    do j = 1,ny
-       do i = 1,nx
+    do j = lo(2),hi(2)
+       do i = lo(1),hi(1)
           wadv = HALF*(wmac(i,j)+wmac(i,j+1))
-          if (j.eq.1) then
+          if (j.eq.lo(2)) then
              gradp0 = HALF * ( p0_old(j+1) + p0_new(j+1) &
                               -p0_old(j  ) - p0_new(j  ) ) / dr
-          else if (j.eq.ny) then
+          else if (j.eq.hi(2)) then
              gradp0 = HALF * ( p0_old(j  ) + p0_new(j  ) &
                               -p0_old(j-1) - p0_new(j-1) ) / dr
           else
