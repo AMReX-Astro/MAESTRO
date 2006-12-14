@@ -421,7 +421,8 @@ module advance_timestep_module
         end do
 
         do n = 1,nlevs
-           call make_hgrhs(hgrhs(n),Source_new(n),gamma1_term(n),Sbar(:,1),div_coeff_new,dx(n,:))
+           call make_hgrhs(hgrhs(n),Source_new(n),gamma1_term(n),Sbar(:,1),div_coeff_new,dx(n,:), &
+                           layout_get_pd(mla%la(n)))
         end do
 
 !       Project the new velocity field.
