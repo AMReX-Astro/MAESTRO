@@ -258,7 +258,7 @@ module advance_timestep_module
           call react_state(s2(n),snew(n),rho_omegadot2(n),temp0, &
                            halfdt,dx(n,:), &
                            the_bc_tower%bc_tower_array(n))
-          call multifab_fill_boundary(s2(n))
+          call multifab_fill_boundary(snew(n))
         end do
         call average(rho_omegadot2(1),rho_omegadotbar2,dx(1,:))
         call react_base(p0_2,s0_2,temp0,rho_omegadotbar2,dx(1,dm),halfdt,p0_new,s0_new,gam1)
