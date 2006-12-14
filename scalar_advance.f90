@@ -21,7 +21,7 @@ contains
    subroutine scalar_advance (uold, sold, snew, &
                               umac, w0, sedge, utrans, ext_scal_force, normal, &
                               s0_old , s0_new , &
-                              p0_old, p0_new, &
+                              p0_old, p0_new, temp0, &
                               dx,time, dt, the_bc_level, &
                               verbose)
  
@@ -45,6 +45,7 @@ contains
       real(kind=dp_t), intent(in   ) ::  s0_new(:,:)
       real(kind=dp_t), intent(in   ) ::    p0_old(:)
       real(kind=dp_t), intent(in   ) ::    p0_new(:)
+      real(kind=dp_t), intent(in   ) ::    temp0(:)
 ! 
       real(kind=dp_t), pointer:: uop(:,:,:,:)
       real(kind=dp_t), pointer:: ump(:,:,:,:)
@@ -132,7 +133,10 @@ contains
               end do
 
               n = rhoh_comp
-              call  mkrhohforce_2d(fp(:,:,1,n), vmp(:,:,1,1), p0_old, p0_new, dx(dm))
+              call  mkrhohforce_2d(fp(:,:,1,n), vmp(:,:,1,1), lo, hi, &
+                                   sop(:,:,1,:),ng_cell,dx(:),time, &
+                                   p0_old, p0_new,s0_old,s0_new,temp0,dx(dm))
+
               call modify_force_2d(fp(:,:,1,n),sop(:,:,1,n),ng_cell,s0_old(:,rhoh_comp), &
                                    ump(:,:,1,1),vmp(:,:,1,1),dx)
 
@@ -151,8 +155,9 @@ contains
                 n = rhoh_comp
                 np => dataptr(normal, i)
                 call  mkrhohforce_3d_sphr(fp(:,:,:,n), &
-                                          ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
-                                          np(:,:,:,:), p0_old, p0_new, dx)
+                                          ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), lo, hi, &
+                                          sop(:,:,:,:),ng_cell,dx,time, &
+                                          np(:,:,:,:), p0_old, p0_new, s0_old, s0_new, temp0)
 
                 call fill_3d_data(s0_cart,s0_old(:,n),dx,ng_cell)
                 call modify_force_3d_sphr(fp(:,:,:,n),sop(:,:,:,n),ng_cell,s0_cart, &
@@ -166,7 +171,9 @@ contains
                 end do
 
                 n = rhoh_comp
-                call  mkrhohforce_3d(fp(:,:,:,n), wmp(:,:,:,1), p0_old, p0_new, dx(dm))
+                call  mkrhohforce_3d(fp(:,:,:,n), wmp(:,:,:,1), lo, hi, &
+                                     sop(:,:,:,:), ng_cell, dx(:), time, &
+                                     p0_old, p0_new, s0_old, s0_new, temp0, dx(dm))
 
                 call modify_force_3d_cart(fp(:,:,:,n),sop(:,:,:,n),ng_cell,s0_old(:,n), &
                                           ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),w0,dx)
@@ -445,7 +452,9 @@ contains
          hi =  upb(get_box(sold, i))
          select case (dm)
             case (2)
-              call  mkrhohforce_2d(fp(:,:,1,n), vmp(:,:,1,1), p0_old, p0_new, dx(dm))
+              call  mkrhohforce_2d(fp(:,:,1,n), vmp(:,:,1,1), lo, hi, &
+                                   sop(:,:,1,:), ng_cell, dx(:), time, &
+                                   p0_old, p0_new, s0_old, s0_new, temp0, dx(dm))
 
               call update_scal_2d(rhoh_comp, rhoh_comp, &
                              sop(:,:,1,:), snp(:,:,1,:), &
@@ -465,12 +474,15 @@ contains
 
                 np => dataptr(normal, i)
                 call  mkrhohforce_3d_sphr(fp(:,:,:,n), &
-                                          ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
-                                          np(:,:,:,:), p0_old, p0_new, dx)
+                                          ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), lo, hi, &
+                                          sop(:,:,:,:), ng_cell, dx(:), time, &
+                                          np(:,:,:,:), p0_old, p0_new, s0_old, s0_new, temp0)
 
               else
 
-                call  mkrhohforce_3d(fp(:,:,:,n), wmp(:,:,:,1), p0_old, p0_new, dx(dm))
+                call  mkrhohforce_3d(fp(:,:,:,n), wmp(:,:,:,1), lo, hi, &
+                                     sop(:,:,:,:), ng_cell, dx(:), time, &
+                                     p0_old, p0_new, s0_old, s0_new, temp0, dx(dm))
 
               end if
 

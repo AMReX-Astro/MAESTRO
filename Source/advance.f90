@@ -231,7 +231,7 @@ module advance_timestep_module
         do n = 1,nlevs
            call scalar_advance (uold(n), s1(n), s2(n), &
                                 umac(n,:), w0, sedge(n,:), utrans(n,:),&
-                                scal_force(n), normal(n), s0_1, s0_2, p0_1, p0_2, &
+                                scal_force(n), normal(n), s0_1, s0_2, p0_1, p0_2, temp0, &
                                 dx(n,:),time,dt, &
                                 the_bc_tower%bc_tower_array(n), &
                                 verbose)
@@ -344,7 +344,7 @@ module advance_timestep_module
         do n = 1,nlevs
            call scalar_advance (uold(n), s1(n), s2(n), &
                                 umac(n,:), w0, sedge(n,:), utrans(n,:),&
-                                scal_force(n), normal(n), s0_1, s0_2, p0_1, p0_2, &
+                                scal_force(n), normal(n), s0_1, s0_2, p0_1, p0_2, temp0, &
                                 dx(n,:),time,dt, &
                                 the_bc_tower%bc_tower_array(n), &
                                 verbose)
