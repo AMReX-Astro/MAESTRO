@@ -103,15 +103,11 @@ contains
 !     Local variables
       integer :: i, j
 
-      print *,'LO(2) LO_Z ',lo(2),lo_z
-      print *,'HI(2) HI_Z ',hi(2),hi_z
-
       do j = lo(2),hi(2)+1
         if (j.ne.lo_z .and. j.ne.(hi_z+1)) then
           do i = lo(1), hi(1)+1
             rhs(i,j) = FOURTH * ( rhs_cc(i,j  ) + rhs_cc(i-1,j  ) &
                                  +rhs_cc(i,j-1) + rhs_cc(i-1,j-1) )
-            if (abs(rhs(i,j)).gt.1540.) print *,'RHS ',i,j,rhs(i,j)
           enddo
         end if
       enddo
