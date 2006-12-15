@@ -102,8 +102,21 @@ contains
         end do
       end do
 
+
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!     MAKE TEMP0, RHOH0 AND GAM1 FROM P0 AND RHO0
+!     UPDATE RHOH0
+!     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      do j = 1,nz
+         force(j) = s0_old(j,rhoh_comp) * (vel(j+1) - vel(j)) / dz
+      end do
+      call mkflux_1d(s0_old(:,rhoh_comp),edge,vel,force,1,dz,dt)
+      do j = 1,nz
+         s0_new(j,rhoh_comp) = s0_old(j,rhoh_comp) - dt / dz * (edge(j+1) * vel(j+1) - edge(j) * vel(j))
+      end do
+
+
+!     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!     MAKE TEMP0 AND GAM1 FROM P0 AND RHO0
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       do j = 1,nz
 
@@ -128,7 +141,6 @@ contains
          temp0(j) = temp_row(1)
          gam1(j) = gam1_row(1)
 
-         s0_new(j,rhoh_comp) = s0_new(j,rho_comp) * h_row(1)
 
       end do
 
@@ -261,7 +273,24 @@ contains
      end do
 
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!     MAKE TEMP0, RHOH0 AND GAM1 FROM P0 AND RHO0
+!     UPDATE RHOH0
+!     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+     print *, 'need eta in advect_base'
+     stop
+
+      do j = 1,nz
+         force(j) = s0_old(j,rhoh_comp) * (vel(j+1) - vel(j)) / dr
+      end do
+      call mkflux_1d(s0_old(:,rhoh_comp),edge,vel,force,1,dr,dt)
+      do j = 1,nz
+         s0_new(j,rhoh_comp) = s0_old(j,rhoh_comp) - &
+              dtdr / z(j)**2 * ( zl(j+1)**2 * edge(j+1) * vel(j+1) &
+                                -zl(j  )**2 * edge(j  ) * vel(j  ))
+      end do
+
+
+!     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!     MAKE TEMP0 AND GAM1 FROM P0 AND RHO0
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       do j = 1,nz
 
@@ -285,8 +314,6 @@ contains
 
          temp0(j) = temp_row(1)
          gam1(j) = gam1_row(1)
-
-         s0_new(j,rhoh_comp) = s0_new(j,rho_comp) * h_row(1)
 
       end do
 
