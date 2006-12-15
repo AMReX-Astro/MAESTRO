@@ -134,8 +134,8 @@ contains
 
               n = rhoh_comp
               call  mkrhohforce_2d(fp(:,:,1,n), vmp(:,:,1,1), lo, hi, &
-                                   sop(:,:,1,:),ng_cell,dx(:),time, &
-                                   p0_old, p0_new,s0_old,s0_new,temp0,dx(dm))
+                                   sop(:,:,1,:),sop(:,:,1,:), ng_cell, dx(:), time, &
+                                   p0_old, p0_old, s0_old, s0_old, temp0, dx(dm))
 
               call modify_force_2d(fp(:,:,1,n),sop(:,:,1,n),ng_cell,s0_old(:,rhoh_comp), &
                                    ump(:,:,1,1),vmp(:,:,1,1),dx)
@@ -156,8 +156,8 @@ contains
                 np => dataptr(normal, i)
                 call  mkrhohforce_3d_sphr(fp(:,:,:,n), &
                                           ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), lo, hi, &
-                                          sop(:,:,:,:),ng_cell,dx,time, &
-                                          np(:,:,:,:), p0_old, p0_new, s0_old, s0_new, temp0)
+                                          sop(:,:,:,:),sop(:,:,:,:), ng_cell, dx, time, &
+                                          np(:,:,:,:), p0_old, p0_old, s0_old, s0_old, temp0)
 
                 call fill_3d_data(s0_cart,s0_old(:,n),dx,ng_cell)
                 call modify_force_3d_sphr(fp(:,:,:,n),sop(:,:,:,n),ng_cell,s0_cart, &
@@ -172,8 +172,8 @@ contains
 
                 n = rhoh_comp
                 call  mkrhohforce_3d(fp(:,:,:,n), wmp(:,:,:,1), lo, hi, &
-                                     sop(:,:,:,:), ng_cell, dx(:), time, &
-                                     p0_old, p0_new, s0_old, s0_new, temp0, dx(dm))
+                                     sop(:,:,:,:), sop(:,:,:,:), ng_cell, dx(:), time, &
+                                     p0_old, p0_old, s0_old, s0_old, temp0, dx(dm))
 
                 call modify_force_3d_cart(fp(:,:,:,n),sop(:,:,:,n),ng_cell,s0_old(:,n), &
                                           ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),w0,dx)
@@ -453,7 +453,7 @@ contains
          select case (dm)
             case (2)
               call  mkrhohforce_2d(fp(:,:,1,n), vmp(:,:,1,1), lo, hi, &
-                                   sop(:,:,1,:), ng_cell, dx(:), time, &
+                                   sop(:,:,1,:), snp(:,:,1,:), ng_cell, dx(:), half_time, &
                                    p0_old, p0_new, s0_old, s0_new, temp0, dx(dm))
 
               call update_scal_2d(rhoh_comp, rhoh_comp, &
@@ -475,13 +475,13 @@ contains
                 np => dataptr(normal, i)
                 call  mkrhohforce_3d_sphr(fp(:,:,:,n), &
                                           ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), lo, hi, &
-                                          sop(:,:,:,:), ng_cell, dx(:), time, &
+                                          sop(:,:,:,:), snp(:,:,:,:), ng_cell, dx(:), half_time, &
                                           np(:,:,:,:), p0_old, p0_new, s0_old, s0_new, temp0)
 
               else
 
                 call  mkrhohforce_3d(fp(:,:,:,n), wmp(:,:,:,1), lo, hi, &
-                                     sop(:,:,:,:), ng_cell, dx(:), time, &
+                                     sop(:,:,:,:), snp(:,:,:,:), ng_cell, dx(:), half_time, &
                                      p0_old, p0_new, s0_old, s0_new, temp0, dx(dm))
 
               end if

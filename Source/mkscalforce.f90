@@ -16,15 +16,20 @@ contains
 
 
   subroutine mkrhohforce_2d(force, wmac, lo, hi, &
-                            s, ng, dx, time, &
+                            s_old, s_new, ng, dx, time, &
                             p0_old, p0_new, s0_old, s0_new, temp0, dr)
 
     ! compute the source terms for the non-reactive part of the enthalpy equation { w dp0/dr }
+    
+    ! note, in the prediction of the interface states, we will set
+    ! both p0_old and p0_new to the same old value.  In the computation
+    ! of the force for the update, they will be used to time-center.
 
     integer,         intent(in   ) :: lo(:), hi(:), ng
     real(kind=dp_t), intent(  out) ::  force(lo(1)- 1:,lo(2)- 1:)
     real(kind=dp_t), intent(in   ) ::   wmac(lo(1)- 1:,lo(2)- 1:)
-    real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng:,lo(2)-ng:,:)
+    real(kind=dp_t), intent(in   ) ::  s_old(lo(1)-ng:,lo(2)-ng:,:)
+    real(kind=dp_t), intent(in   ) ::  s_new(lo(1)-ng:,lo(2)-ng:,:)
     real(kind=dp_t), intent(in   ) :: dx(:)
     real(kind=dp_t), intent(in   ) :: time
     real(kind=dp_t), intent(in   ) :: p0_old(lo(2):)
@@ -35,7 +40,8 @@ contains
     real(kind=dp_t), intent(in   ) ::     dr
 
     real(kind=dp_t), allocatable :: H(:,:)
-    real(kind=dp_t) :: gradp0,wadv,denom,coeff,sigma_H, sigma0
+    real(kind=dp_t) :: gradp0, wadv, denom
+    real(kind=dp_t) :: coeff_old, coeff_new, sigma_H, sigma0_old, sigma0_new
     integer :: i,j
  
     allocate(H(lo(1):hi(1),lo(2):hi(2)))
@@ -48,12 +54,14 @@ contains
 
     do j = lo(2),hi(2)
 
-       den_row(1) = HALF*(s0_old(j,rho_comp) + s0_new(j,rho_comp))
-       temp_row(1) = temp0(j)
-       p_row(1) = HALF*(p0_old(j) + p0_new(j))
+       ! compute sigma_0 at the old and new times
 
-       xn_zone(:) = HALF*(s0_old(j,spec_comp:spec_comp-1+nspec)/s0_old(j,rho_comp) + &
-                          s0_new(j,spec_comp:spec_comp-1+nspec)/s0_new(j,rho_comp))
+       ! old
+       den_row(1) = s0_old(j,rho_comp)
+       temp_row(1) = temp0(j)
+       p_row(1) = p0_old(j)
+
+       xn_zone(:) = s0_old(j,spec_comp:spec_comp-1+nspec)/s0_old(j,rho_comp)
 
        ! (rho,P) --> h, etc
        input_flag = 4
@@ -68,16 +76,46 @@ contains
                 gam1_row, cs_row, s_row, &
                 do_diag)
 
-       sigma0 = dpdt_row(1) / (den_row(1) * cp_row(1) * dpdr_row(1))
+       sigma0_old = dpdt_row(1) / (den_row(1) * cp_row(1) * dpdr_row(1))
+
+
+       ! new
+       den_row(1) = s0_new(j,rho_comp)
+       temp_row(1) = temp0(j)
+       p_row(1) = p0_new(j)
+
+       xn_zone(:) = s0_new(j,spec_comp:spec_comp-1+nspec)/s0_new(j,rho_comp)
+
+       ! (rho,P) --> h, etc
+       input_flag = 4
+
+       call eos(input_flag, den_row, temp_row, &
+                npts, nspec, &
+                xn_zone, aion, zion, &
+                p_row, h_row, e_row, &
+                cv_row, cp_row, xne_row, eta_row, pele_row, &
+                dpdt_row, dpdr_row, dedt_row, dedr_row, &
+                dpdX_row, dhdX_row, &
+                gam1_row, cs_row, s_row, &
+                do_diag)
+
+       sigma0_new = dpdt_row(1) / (den_row(1) * cp_row(1) * dpdr_row(1))
+
+
+       ! loop over the entire row and do the averaging
 
        sigma_H = ZERO
 
        do i = lo(1), hi(1)
-          den_row(1) = s(i,j,rho_comp)
-          temp_row(1) = temp0(j)
-          p_row(1) = HALF*(p0_old(j) + p0_new(j))
 
-          xn_zone(:) = s(i,j,spec_comp:spec_comp-1+nspec)/s(i,j,rho_comp) 
+          ! compute the coeff at the old and new times
+
+          ! old
+          den_row(1) = s_old(i,j,rho_comp)
+          temp_row(1) = temp0(j)
+          p_row(1) = p0_old(j)
+
+          xn_zone(:) = s_old(i,j,spec_comp:spec_comp-1+nspec)/s_old(i,j,rho_comp) 
 
           ! (rho,P) --> h, etc
           input_flag = 4
@@ -92,14 +130,41 @@ contains
                    gam1_row, cs_row, s_row, &
                    do_diag)
 
-          coeff = dpdt_row(1) / (den_row(1) * cp_row(1) * dpdr_row(1))
-          sigma_H = sigma_H + coeff * H(i,j)
+          coeff_old = dpdt_row(1) / (den_row(1) * cp_row(1) * dpdr_row(1))
+
+
+          ! new
+          den_row(1) = s_new(i,j,rho_comp)
+          temp_row(1) = temp0(j)
+          p_row(1) = p0_new(j)
+
+          xn_zone(:) = s_new(i,j,spec_comp:spec_comp-1+nspec)/s_new(i,j,rho_comp) 
+
+          ! (rho,P) --> h, etc
+          input_flag = 4
+
+          call eos(input_flag, den_row, temp_row, &
+                   npts, nspec, &
+                   xn_zone, aion, zion, &
+                   p_row, h_row, e_row, &
+                   cv_row, cp_row, xne_row, eta_row, pele_row, &
+                   dpdt_row, dpdr_row, dedt_row, dedr_row, &
+                   dpdX_row, dhdX_row, &
+                   gam1_row, cs_row, s_row, &
+                   do_diag)
+
+          coeff_new = dpdt_row(1) / (den_row(1) * cp_row(1) * dpdr_row(1))
+
+
+          sigma_H = sigma_H + HALF*(coeff_old + coeff_new) * H(i,j)
        end do
 
        sigma_H = sigma_H * denom
 
        do i = lo(1),hi(1)
-          H(i,j) = s(i,j,rho_comp) * H(i,j) - (HALF*(s0_old(j,rho_comp)+s0_new(j,rho_comp)) / sigma0) * sigma_H
+          H(i,j) = HALF*(s_old(i,j,rho_comp) + s_new(i,j,rho_comp)) * H(i,j) - &
+                   ( (s0_old(j,rho_comp)+s0_new(j,rho_comp)) / &
+                     (sigma0_old + sigma0_new)) * sigma_H
        end do
     end do
 
@@ -124,7 +189,7 @@ contains
   end subroutine mkrhohforce_2d
 
   subroutine mkrhohforce_3d(force, wmac, lo, hi, &
-                            s, ng, dx, time, &
+                            s_old, s_new, ng, dx, time, &
                             p0_old, p0_new, s0_old, s0_new, temp0, dr)
 
     ! compute the source terms for the non-reactive part of the enthalpy equation { w dp0/dr }
@@ -132,7 +197,8 @@ contains
     integer,         intent(in   ) :: lo(:), hi(:), ng
     real(kind=dp_t), intent(  out) ::  force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
     real(kind=dp_t), intent(in   ) ::   wmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
-    real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
+    real(kind=dp_t), intent(in   ) ::  s_old(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
+    real(kind=dp_t), intent(in   ) ::  s_new(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real(kind=dp_t), intent(in   ) :: dx(:)
     real(kind=dp_t), intent(in   ) :: time
     real(kind=dp_t), intent(in   ) :: p0_old(lo(2):)
@@ -171,7 +237,7 @@ contains
   end subroutine mkrhohforce_3d
 
   subroutine mkrhohforce_3d_sphr(force, umac, vmac, wmac, lo, hi, &
-                                 s, ng, dx, time, normal, &
+                                 s_old, s_new, ng, dx, time, normal, &
                                  p0_old, p0_new, s0_old, s0_new, temp0)
 
     ! compute the source terms for the non-reactive part of the enthalpy equation { w dp0/dr }
@@ -182,7 +248,8 @@ contains
     real(kind=dp_t), intent(in   ) ::   vmac(lo(1)- 1:,lo(2)- 1:,lo(3)-1:)
     real(kind=dp_t), intent(in   ) ::   wmac(lo(1)- 1:,lo(2)- 1:,lo(3)-1:)
     real(kind=dp_t), intent(in   ) :: normal(lo(1)- 1:,lo(2)- 1:,lo(3)-1:,:)
-    real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
+    real(kind=dp_t), intent(in   ) ::  s_old(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
+    real(kind=dp_t), intent(in   ) ::  s_new(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real(kind=dp_t), intent(in   ) :: dx(:)
     real(kind=dp_t), intent(in   ) :: time
     real(kind=dp_t), intent(in   ) :: p0_old(0:)
