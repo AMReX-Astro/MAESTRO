@@ -38,7 +38,7 @@ module advance_timestep_module
                                 mla,uold,sold,s1,s2,unew,snew,umac,uedge,sedge,utrans,gp,p, &
                                 scal_force,normal, &
                                 s0_old,s0_1,s0_2,s0_new,p0_old,p0_1,p0_2,p0_new,temp0,gam1,w0, &
-                                rho_omegadot1, rho_omegadot2, &
+                                rho_omegadot1, rho_omegadot2, rho_Hext, &
                                 div_coeff_old,div_coeff_new,&
                                 dx,time,dt,dtold,the_bc_tower, &
                                 anelastic_cutoff,verbose,mg_verbose,cg_verbose,&
@@ -65,6 +65,7 @@ module advance_timestep_module
     type(multifab), intent(in   ) :: normal(:)
     type(multifab), intent(inout) :: rho_omegadot1(:)
     type(multifab), intent(inout) :: rho_omegadot2(:)
+    type(multifab), intent(inout) :: rho_Hext(:)
     type(multifab), intent(inout) :: Source_nm1(:)
     type(multifab), intent(inout) :: Source_old(:)
     type(multifab), intent(inout) :: Source_new(:)
@@ -103,6 +104,7 @@ module advance_timestep_module
     real(dp_t)    , allocatable ::      grav_edge(:)
     real(dp_t)    , allocatable :: rho_omegadotbar1(:,:)
     real(dp_t)    , allocatable :: rho_omegadotbar2(:,:)
+    real(dp_t)    , allocatable :: rho_Hextbar(:,:)
     type(bc_level) ::  bc
     type(box)      ::  fine_domain
     real(dp_t)     :: halfdt, half_time, new_time, eps_in
@@ -135,6 +137,7 @@ module advance_timestep_module
     allocate(       grav_edge(nr+1))
     allocate(rho_omegadotbar1(nr,nspec))
     allocate(rho_omegadotbar2(nr,nspec))
+    allocate(rho_Hextbar(nr,1))
 
     nodal = .true.
     do n = 1,nlevs
@@ -202,14 +205,15 @@ module advance_timestep_module
         print *,'<<< STEP 3 >>>'
 
         do n = 1,nlevs
-          call react_state(sold(n),s1(n),rho_omegadot1(n),temp0, &
+          call react_state(sold(n),s1(n),rho_omegadot1(n),rho_Hext(n),temp0, &
                            halfdt,dx(n,:), &
-                           the_bc_tower%bc_tower_array(n))
+                           the_bc_tower%bc_tower_array(n),time)
           call multifab_fill_boundary(s1(n))
         end do
 
         call average(rho_omegadot1(1),rho_omegadotbar1,dx(1,:))
-        call react_base(p0_old,s0_old,temp0,rho_omegadotbar1,dx(1,dm),halfdt,p0_1,s0_1,gam1)
+        call average(rho_Hext(1),rho_Hextbar,dx(1,:))
+        call react_base(p0_old,s0_old,temp0,rho_omegadotbar1,rho_Hextbar(:,1),dx(1,dm),halfdt,p0_1,s0_1,gam1)
         call make_grav_edge(grav_edge,s0_1(:,rho_comp))
         call make_div_coeff(div_coeff_new,s0_1(:,rho_comp),p0_1, &
                             gam1,grav_edge,dx(1,dm),anelastic_cutoff)
@@ -255,13 +259,14 @@ module advance_timestep_module
 
         print *,'<<< STEP 5 >>>'
         do n = 1,nlevs
-          call react_state(s2(n),snew(n),rho_omegadot2(n),temp0, &
+          call react_state(s2(n),snew(n),rho_omegadot2(n),rho_Hext(n),temp0, &
                            halfdt,dx(n,:), &
-                           the_bc_tower%bc_tower_array(n))
+                           the_bc_tower%bc_tower_array(n),time)
           call multifab_fill_boundary(snew(n))
         end do
         call average(rho_omegadot2(1),rho_omegadotbar2,dx(1,:))
-        call react_base(p0_2,s0_2,temp0,rho_omegadotbar2,dx(1,dm),halfdt,p0_new,s0_new,gam1)
+        call average(rho_Hext(1),rho_Hextbar,dx(1,:))
+        call react_base(p0_2,s0_2,temp0,rho_omegadotbar2,rho_Hextbar(:,1),dx(1,dm),halfdt,p0_new,s0_new,gam1)
         call make_grav_edge(grav_edge,s0_new(:,rho_comp))
         call make_div_coeff(div_coeff_new,s0_new(:,rho_comp),p0_new, &
                             gam1,grav_edge,dx(1,dm),anelastic_cutoff)
@@ -368,13 +373,14 @@ module advance_timestep_module
 
         print *,'<<< STEP 9 >>>'
         do n = 1,nlevs
-          call react_state(s2(n),snew(n),rho_omegadot2(n),temp0, &
+          call react_state(s2(n),snew(n),rho_omegadot2(n),rho_Hext(n),temp0, &
                            halfdt,dx(n,:),&
-                           the_bc_tower%bc_tower_array(n))
+                           the_bc_tower%bc_tower_array(n),time)
           call multifab_fill_boundary(snew(n))
         end do
         call average(rho_omegadot2(1),rho_omegadotbar2,dx(1,:))
-        call react_base(p0_2,s0_2,temp0,rho_omegadotbar2,dx(1,dm),halfdt,p0_new,s0_new,gam1)
+        call average(rho_Hext(1),rho_Hextbar,dx(1,:))
+        call react_base(p0_2,s0_2,temp0,rho_omegadotbar2,rho_Hextbar(:,1),dx(1,dm),halfdt,p0_new,s0_new,gam1)
         call make_grav_edge(grav_edge,s0_new(:,rho_comp))
         call make_div_coeff(div_coeff_new,s0_new(:,rho_comp),p0_new, &
                             gam1,grav_edge,dx(1,dm),anelastic_cutoff)

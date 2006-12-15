@@ -9,23 +9,26 @@ module react_state_module
   use variables
   use geometry
   use fill_3d_module
+  use heating_module
 
   implicit none
   
 contains
 
-  subroutine react_state (s_in,s_out,rho_omegadot,temp0,dt,dx,the_bc_level)
+  subroutine react_state (s_in,s_out,rho_omegadot,rho_Hext,temp0,dt,dx,the_bc_level,time)
 
     type(multifab) , intent(in   ) :: s_in
     type(multifab) , intent(inout) :: s_out
     type(multifab) , intent(inout) :: rho_omegadot
+    type(multifab) , intent(inout) :: rho_Hext
     real(kind=dp_t), intent(in   ) :: temp0(:)
-    real(kind=dp_t), intent(in   ) :: dt,dx(:)
+    real(kind=dp_t), intent(in   ) :: dt,dx(:),time
     type(bc_level) , intent(in   ) :: the_bc_level
 
     real(kind=dp_t), pointer:: sinp(:,:,:,:)
     real(kind=dp_t), pointer:: sotp(:,:,:,:)
     real(kind=dp_t), pointer::   rp(:,:,:,:)
+    real(kind=dp_t), pointer::   hp(:,:,:,:)
 
     integer :: lo(s_in%dim),hi(s_in%dim),ng,dm
     integer :: i,n,bc_comp
@@ -40,11 +43,12 @@ contains
        sinp => dataptr(s_in , i)
        sotp => dataptr(s_out, i)
          rp => dataptr(rho_omegadot, i)
+         hp => dataptr(rho_Hext, i)
        lo =  lwb(get_box(s_in, i))
        hi =  upb(get_box(s_in, i))
        select case (dm)
        case (2)
-          call react_state_2d(sinp(:,:,1,:),sotp(:,:,1,:),rp(:,:,1,:),temp0,dt,dx,lo,hi,ng)
+          call react_state_2d(sinp(:,:,1,:),sotp(:,:,1,:),rp(:,:,1,:),hp(:,:,1,1),temp0,dt,dx,lo,hi,ng,time)
           ! Impose bc's on new rho
           n = rho_comp
           bc_comp = dm+n 
@@ -63,7 +67,7 @@ contains
           end do
 
        case (3)
-          call react_state_3d(sinp(:,:,:,:),sotp(:,:,:,:),rp(:,:,:,:),temp0,dt,dx,lo,hi,ng)
+          call react_state_3d(sinp(:,:,:,:),sotp(:,:,:,:),rp(:,:,:,:),hp(:,:,:,1),temp0,dt,dx,lo,hi,ng,time)
           ! Impose bc's on new rho
           n = rho_comp
           bc_comp = dm+n 
@@ -84,22 +88,25 @@ contains
 
   end subroutine react_state
 
-  subroutine react_state_2d (s_in,s_out,rho_omegadot,temp0,dt,dx,lo,hi,ng)
+  subroutine react_state_2d (s_in,s_out,rho_omegadot,rho_Hext,temp0,dt,dx,lo,hi,ng,time)
 
     implicit none
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(in   ) :: s_in (lo(1)-ng:,lo(2)-ng:,:)
     real (kind = dp_t), intent(  out) :: s_out(lo(1)-ng:,lo(2)-ng:,:)
     real (kind = dp_t), intent(  out) :: rho_omegadot(lo(1):,lo(2):,:)
+    real (kind = dp_t), intent(  out) :: rho_Hext(lo(1):,lo(2):)
     real (kind = dp_t), intent(in   ) :: temp0(lo(2):)
-    real (kind = dp_t), intent(in   ) :: dt,dx(:)
+    real (kind = dp_t), intent(in   ) :: dt,dx(:),time
 
     !     Local variables
     integer :: i, j
     real (kind = dp_t), allocatable :: x_in(:),x_out(:),rhowdot(:)
+    real (kind = dp_t), allocatable :: H(:,:)
     real (kind = dp_t) :: rho,T_in,h_in,h_out
 
-    allocate(x_in(nspec),x_out(nspec),rhowdot(nspec))
+    allocate(x_in(nspec),x_out(nspec),rhowdot(nspec),H(lo(1):hi(1),lo(2):hi(2)))
+    call get_H_2d(H,lo,hi,dx,time)
 
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
@@ -132,40 +139,45 @@ contains
 
           s_out(i,j,rho_comp) = s_in(i,j,rho_comp)
           s_out(i,j,spec_comp:spec_comp+nspec-1) = x_out(1:nspec) * rho
-          s_out(i,j,rhoh_comp) = rho * h_out
+
+          rho_Hext(i,j) = s_in(i,j,rho_comp) * H(i,j)
           rho_omegadot(i,j,1:nspec) = rhowdot(1:nspec)
+
+          s_out(i,j,rhoh_comp) = rho * h_out + dt * rho_Hext(i,j)
 
        enddo
     enddo
 
-    deallocate(x_in,x_out,rhowdot)
+    deallocate(x_in,x_out,rhowdot,H)
 
   end subroutine react_state_2d
 
-  subroutine react_state_3d (s_in,s_out,rho_omegadot,temp0,dt,dx,lo,hi,ng)
+  subroutine react_state_3d (s_in,s_out,rho_omegadot,rho_Hext,temp0,dt,dx,lo,hi,ng,time)
 
     implicit none
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(in   ) :: s_in (lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind = dp_t), intent(  out) :: s_out(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind = dp_t), intent(  out) :: rho_omegadot(lo(1):,lo(2):,lo(3):,:)
+    real (kind = dp_t), intent(  out) :: rho_Hext(lo(1):,lo(2):,lo(3):)
     real (kind = dp_t), intent(in   ) :: temp0(lo(2):)
-    real (kind = dp_t), intent(in   ) :: dt,dx(:)
+    real (kind = dp_t), intent(in   ) :: dt,dx(:),time
 
     real (kind = dp_t), allocatable :: temp0_cart(:,:,:)
 
     !     Local variables
     integer :: i, j, k
     real (kind = dp_t), allocatable :: x_in(:),x_out(:),rhowdot(:)
+    real (kind = dp_t), allocatable :: H(:,:,:)
     real (kind = dp_t) :: rho,T_in,h_in,h_out
 
-    allocate(x_in(nspec),x_out(nspec),rhowdot(nspec))
+    allocate(x_in(nspec),x_out(nspec),rhowdot(nspec),H(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+    call get_H_3d(H,lo,hi,dx,time)
 
     if (spherical == 1) then
        allocate(temp0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
        call fill_3d_data(temp0_cart,temp0,dx,0)
     endif
-
 
     do k = lo(3), hi(3)
      do j = lo(2), hi(2)
@@ -205,14 +217,17 @@ contains
 
           s_out(i,j,k,rho_comp) = s_in(i,j,k,rho_comp)
           s_out(i,j,k,spec_comp:spec_comp+nspec-1) = x_out(1:nspec) * rho
-          s_out(i,j,k,rhoh_comp) = rho * h_out
+
+          rho_Hext(i,j,k) = s_in(i,j,k,rho_comp) * H(i,j,k)
           rho_omegadot(i,j,k,1:nspec) = rhowdot(1:nspec)
+
+          s_out(i,j,k,rhoh_comp) = rho * h_out + dt * rho_Hext(i,j,k)
 
        enddo
      enddo
     enddo
 
-    deallocate(x_in,x_out,rhowdot)
+    deallocate(x_in,x_out,rhowdot,H)
 
     if (spherical == 1) then
        deallocate(temp0_cart)

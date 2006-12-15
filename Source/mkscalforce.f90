@@ -39,134 +39,13 @@ contains
     real(kind=dp_t), intent(in   ) :: temp0(lo(2):)
     real(kind=dp_t), intent(in   ) ::     dr
 
-    real(kind=dp_t), allocatable :: H(:,:)
     real(kind=dp_t) :: gradp0, wadv, denom
     real(kind=dp_t) :: coeff_old, coeff_new, sigma_H, sigma0_old, sigma0_new
     integer :: i,j
- 
-    allocate(H(lo(1):hi(1),lo(2):hi(2)))
 
     denom = ONE/dble(hi(1)-lo(1)+1)
 
     force = ZERO
-
-    call get_H_2d(H,lo,hi,dx,time)
-
-    do j = lo(2),hi(2)
-
-       ! compute sigma_0 at the old and new times
-
-       ! old
-       den_row(1) = s0_old(j,rho_comp)
-       temp_row(1) = temp0(j)
-       p_row(1) = p0_old(j)
-
-       xn_zone(:) = s0_old(j,spec_comp:spec_comp-1+nspec)/s0_old(j,rho_comp)
-
-       ! (rho,P) --> h, etc
-       input_flag = 4
-
-       call eos(input_flag, den_row, temp_row, &
-                npts, nspec, &
-                xn_zone, aion, zion, &
-                p_row, h_row, e_row, &
-                cv_row, cp_row, xne_row, eta_row, pele_row, &
-                dpdt_row, dpdr_row, dedt_row, dedr_row, &
-                dpdX_row, dhdX_row, &
-                gam1_row, cs_row, s_row, &
-                do_diag)
-
-       sigma0_old = dpdt_row(1) / (den_row(1) * cp_row(1) * dpdr_row(1))
-
-
-       ! new
-       den_row(1) = s0_new(j,rho_comp)
-       temp_row(1) = temp0(j)
-       p_row(1) = p0_new(j)
-
-       xn_zone(:) = s0_new(j,spec_comp:spec_comp-1+nspec)/s0_new(j,rho_comp)
-
-       ! (rho,P) --> h, etc
-       input_flag = 4
-
-       call eos(input_flag, den_row, temp_row, &
-                npts, nspec, &
-                xn_zone, aion, zion, &
-                p_row, h_row, e_row, &
-                cv_row, cp_row, xne_row, eta_row, pele_row, &
-                dpdt_row, dpdr_row, dedt_row, dedr_row, &
-                dpdX_row, dhdX_row, &
-                gam1_row, cs_row, s_row, &
-                do_diag)
-
-       sigma0_new = dpdt_row(1) / (den_row(1) * cp_row(1) * dpdr_row(1))
-
-
-       ! loop over the entire row and do the averaging
-
-       sigma_H = ZERO
-
-       do i = lo(1), hi(1)
-
-          ! compute the coeff at the old and new times
-
-          ! old
-          den_row(1) = s_old(i,j,rho_comp)
-          temp_row(1) = temp0(j)
-          p_row(1) = p0_old(j)
-
-          xn_zone(:) = s_old(i,j,spec_comp:spec_comp-1+nspec)/s_old(i,j,rho_comp) 
-
-          ! (rho,P) --> h, etc
-          input_flag = 4
-
-          call eos(input_flag, den_row, temp_row, &
-                   npts, nspec, &
-                   xn_zone, aion, zion, &
-                   p_row, h_row, e_row, &
-                   cv_row, cp_row, xne_row, eta_row, pele_row, &
-                   dpdt_row, dpdr_row, dedt_row, dedr_row, &
-                   dpdX_row, dhdX_row, &
-                   gam1_row, cs_row, s_row, &
-                   do_diag)
-
-          coeff_old = dpdt_row(1) / (den_row(1) * cp_row(1) * dpdr_row(1))
-
-
-          ! new
-          den_row(1) = s_new(i,j,rho_comp)
-          temp_row(1) = temp0(j)
-          p_row(1) = p0_new(j)
-
-          xn_zone(:) = s_new(i,j,spec_comp:spec_comp-1+nspec)/s_new(i,j,rho_comp) 
-
-          ! (rho,P) --> h, etc
-          input_flag = 4
-
-          call eos(input_flag, den_row, temp_row, &
-                   npts, nspec, &
-                   xn_zone, aion, zion, &
-                   p_row, h_row, e_row, &
-                   cv_row, cp_row, xne_row, eta_row, pele_row, &
-                   dpdt_row, dpdr_row, dedt_row, dedr_row, &
-                   dpdX_row, dhdX_row, &
-                   gam1_row, cs_row, s_row, &
-                   do_diag)
-
-          coeff_new = dpdt_row(1) / (den_row(1) * cp_row(1) * dpdr_row(1))
-
-
-          sigma_H = sigma_H + HALF*(coeff_old + coeff_new) * H(i,j)
-       end do
-
-       sigma_H = sigma_H * denom
-
-       do i = lo(1),hi(1)
-          H(i,j) = HALF*(s_old(i,j,rho_comp) + s_new(i,j,rho_comp)) * H(i,j) - &
-                   ( (s0_old(j,rho_comp)+s0_new(j,rho_comp)) / &
-                     (sigma0_old + sigma0_new)) * sigma_H
-       end do
-    end do
 
 !   Add w d(p0)/dz and full heating term to forcing term for (rho h)
     do j = lo(2),hi(2)
@@ -182,7 +61,7 @@ contains
              gradp0 = FOURTH * ( p0_old(j+1) + p0_new(j+1) &
                                 -p0_old(j-1) - p0_new(j-1) ) / dr
           end if
-          force(i,j) =  wadv * gradp0 + H(i,j)
+          force(i,j) =  wadv * gradp0 
        end do
     end do
 

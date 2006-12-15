@@ -42,7 +42,7 @@ contains
     integer :: n,dm,nlevs,nscal,icomp
     integer :: icomp_tfromrho,icomp_tpert,icomp_rhopert
     integer :: icomp_machno,icomp_deltag
-    integer :: icomp_tfromH,icomp_dp
+    integer :: icomp_tfromH,icomp_dp,icomp_deltaT
     integer :: icomp_enuc
     character(len=7) :: sd_name
 
@@ -99,6 +99,10 @@ contains
        icomp_dp      = derive_comp+7
        call make_tfromH    (plotdata(n),icomp_tfromH,icomp_dp,s(n),p0,temp0,dx(n,:))
 
+       ! DIFF BETWEEN TFROMRHO AND TFROMH
+       icomp_deltaT = derive_spec_comp+nspec+1
+       call make_deltaT (plotdata(n),icomp_deltaT,s(n),p0,temp0,dx(n,:))
+
       end do
 
     else
@@ -119,6 +123,10 @@ contains
        icomp_tfromH  = derive_comp+4
        icomp_dp      = derive_comp+7
        call make_tfromH    (plotdata(n),icomp_tfromH,icomp_dp,s(n),p0,temp0,dx(n,:))
+
+       ! DIFF BETWEEN TFROMRHO AND TFROMH
+       icomp_deltaT = derive_spec_comp+nspec+1
+       call make_deltaT (plotdata(n),icomp_deltaT,s(n),p0,temp0,dx(n,:))
 
       end do
 

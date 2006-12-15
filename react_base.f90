@@ -9,29 +9,32 @@ module react_base_module
   use multifab_module
   use variables
   use eos_module
+  use network
 
   implicit none
 
 contains
 
-   subroutine react_base(p0_in,s0_in,temp0_in,rho_omegadot,dr,dt,p0_out,s0_out,gam1_out)
+   subroutine react_base(p0_in,s0_in,temp0_in,rho_omegadotbar,rho_Hextbar,dr,dt_in,p0_out,s0_out,gam1_out)
 
-      real(kind=dp_t), intent(in   ) :: p0_in( :), s0_in( :,:), temp0_in(:), rho_omegadot(:,:)
-      real(kind=dp_t), intent(in   ) :: dr, dt
+      real(kind=dp_t), intent(in   ) :: p0_in( :), s0_in( :,:), temp0_in(:)
+      real(kind=dp_t), intent(in   ) :: rho_omegadotbar(:,:)
+      real(kind=dp_t), intent(in   ) :: rho_Hextbar(:)
+      real(kind=dp_t), intent(in   ) :: dr, dt_in
       real(kind=dp_t), intent(  out) :: p0_out(:), s0_out(:,:)
       real(kind=dp_t), intent(inout) :: gam1_out(:)
 
       integer :: j,n,nz
 
-      nz    = size(rho_omegadot,dim=1)
+      nz    = size(rho_omegadotbar,dim=1)
   
       print *,"<<< react_base >>> " 
 
       do j = 1,nz
 
-         ! (rho X)_out = (rho X)_in + dt/2 * (rho omegadot)_in
+         ! (rho X)_out = (rho X)_in + dt_in * (rho omegadotbar)_in
          do n = spec_comp,spec_comp+nspec-1
-           s0_out(j,n) = s0_in(j,n) + half * dt * rho_omegadot(j,n-spec_comp+1) 
+           s0_out(j,n) = s0_in(j,n) + dt_in * rho_omegadotbar(j,n-spec_comp+1) 
          end do
 
          ! p_out = p_in
@@ -61,7 +64,12 @@ contains
                   gam1_row, cs_row, s_row, &
                   do_diag)
 
-         s0_out(j,rhoh_comp) = s0_out(j,rho_comp) * h_row(1)
+         s0_out(j,rhoh_comp) = s0_in(j,rhoh_comp)
+         do n = spec_comp,spec_comp+nspec-1
+           s0_out(j,rhoh_comp) = s0_out(j,rhoh_comp) &
+             - dt_in * rho_omegadotbar(j,n-spec_comp+1) * ebin(n-spec_comp+1)
+         end do
+         s0_out(j,rhoh_comp) = s0_out(j,rhoh_comp) + dt_in * rho_Hextbar(j)
 
          gam1_out(j) = gam1_row(1)
 
