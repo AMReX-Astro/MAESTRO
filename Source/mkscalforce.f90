@@ -8,7 +8,6 @@ module mkscalforce_module
   use fill_3d_module
   use variables
   use geometry
-  use heating_module
 
   implicit none
 
@@ -47,7 +46,7 @@ contains
 
     force = ZERO
 
-!   Add w d(p0)/dz and full heating term to forcing term for (rho h)
+!   Add w d(p0)/dz 
     do j = lo(2),hi(2)
        do i = lo(1),hi(1)
           wadv = HALF*(wmac(i,j)+wmac(i,j+1))
