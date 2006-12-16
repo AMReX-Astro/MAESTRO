@@ -3,7 +3,6 @@ module make_S_module
   use bl_types
   use bl_constants_module
   use multifab_module
-  use heating_module
   use eos_module
   use fill_3d_module
   use network
@@ -17,15 +16,17 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-   subroutine make_S (Source,gamma1_term,state,u,rho_omegadot,p0,t0,gam1,dx,time)
+   subroutine make_S (Source,gamma1_term,state,u,rho_omegadot,rho_Hext,p0,t0,gam1,dx,time)
 
       type(multifab) , intent(inout) :: Source, gamma1_term
       type(multifab) , intent(in   ) :: state, u
       type(multifab) , intent(in   ) :: rho_omegadot
+      type(multifab) , intent(in   ) :: rho_Hext
       real(kind=dp_t), intent(in   ) :: p0(:),t0(:),gam1(:)
       real(kind=dp_t), intent(in   ) :: dx(:), time
 
-      real(kind=dp_t), pointer:: srcp(:,:,:,:),gp(:,:,:,:),sp(:,:,:,:),up(:,:,:,:),omegap(:,:,:,:)
+      real(kind=dp_t), pointer:: srcp(:,:,:,:),gp(:,:,:,:),sp(:,:,:,:),up(:,:,:,:)
+      real(kind=dp_t), pointer:: omegap(:,:,:,:), hp(:,:,:,:)
       integer :: lo(state%dim),hi(state%dim),ng,dm
       integer :: i
 
@@ -39,23 +40,25 @@ contains
          sp => dataptr(state, i)
          up => dataptr(u, i)
          omegap => dataptr(rho_omegadot, i)
+         hp     => dataptr(rho_Hext, i)
          lo =  lwb(get_box(state, i))
          hi =  upb(get_box(state, i))
          select case (dm)
             case (2)
               call make_S_2d(lo,hi,srcp(:,:,1,1),gp(:,:,1,1),sp(:,:,1,:),up(:,:,1,:), &
-                             omegap(:,:,1,:), &
+                             omegap(:,:,1,:), hp(:,:,1,1), &
                              ng, p0, t0, gam1, dx, time)
             case (3)
               call make_S_3d(lo,hi,srcp(:,:,:,1),gp(:,:,:,1),sp(:,:,:,:),up(:,:,:,:), &
-                             omegap(:,:,:,:), &
+                             omegap(:,:,:,:), hp(:,:,:,1), &
                              ng, p0, t0, gam1, dx, time)
          end select
       end do
 
    end subroutine make_S
 
-   subroutine make_S_2d (lo,hi,Source,gamma1_term,s,u,rho_omegadot,ng,p0,t0,gam1,dx,time)
+   subroutine make_S_2d (lo,hi,Source,gamma1_term,s,u, &
+                         rho_omegadot,rho_Hext,ng,p0,t0,gam1,dx,time)
 
       implicit none
 
@@ -65,6 +68,7 @@ contains
       real (kind=dp_t), intent(in   ) :: s(lo(1)-ng:,lo(2)-ng:,:)
       real (kind=dp_t), intent(in   ) :: u(lo(1)-ng:,lo(2)-ng:,:)
       real (kind=dp_t), intent(in   ) :: rho_omegadot(lo(1):,lo(2):,:)
+      real (kind=dp_t), intent(in   ) ::     rho_Hext(lo(1):,lo(2):)
       real (kind=dp_t), intent(in   ) ::        p0(lo(2):)
       real (kind=dp_t), intent(in   ) ::        t0(lo(2):)
       real (kind=dp_t), intent(in   ) ::      gam1(lo(2):)
@@ -75,15 +79,10 @@ contains
       integer :: imax, jmax
 
       real(kind=dp_t) :: x,y,Smax
-      real(kind=dp_t), allocatable :: H(:,:)
       real(kind=dp_t) :: sigma, react_term, pres_term, gradp0
-
-      allocate(H(lo(1):hi(1),lo(2):hi(2)))
 
       Source = zero
       Smax = ZERO
-
-      call get_H_2d(H,lo,hi,dx,time)
 
       do_diag = .false.
 
@@ -121,8 +120,8 @@ contains
                    dpdX_row(1,n)*rho_omegadot(i,j,n)/den_row(1)
            enddo
 
-           Source(i,j) = sigma*(H(i,j) + react_term) + &
-                pres_term/(den_row(1)*dpdr_row(1))
+           Source(i,j) = sigma*(rho_Hext(i,j)/den_row(1) + react_term) + &
+                pres_term/(den_row(1)*dpdr_row(1)) 
 
            if (j .eq. lo(2)) then
               gradp0 = (p0(j+1) - p0(j))/dx(2)
@@ -141,11 +140,11 @@ contains
 
       print *,'new S at time ',time, Smax
 
-      deallocate(H)
  
    end subroutine make_S_2d
 
-   subroutine make_S_3d (lo,hi,Source,gamma1_term,s,u,rho_omegadot,ng,p0,t0,gam1,dx,time)
+   subroutine make_S_3d (lo,hi,Source,gamma1_term,s,u, &
+                         rho_omegadot,rho_Hext,ng,p0,t0,gam1,dx,time)
 
       implicit none
 
@@ -155,6 +154,7 @@ contains
       real (kind=dp_t), intent(in   ) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
       real (kind=dp_t), intent(in   ) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
       real (kind=dp_t), intent(in   ) :: rho_omegadot(lo(1):,lo(2):,lo(3):,:)
+      real (kind=dp_t), intent(in   ) ::     rho_Hext(lo(1):,lo(2):,lo(3):)
       real (kind=dp_t), intent(in   ) ::        p0(lo(3):)
       real (kind=dp_t), intent(in   ) ::        t0(lo(3):)
       real (kind=dp_t), intent(in   ) ::      gam1(lo(3):)
@@ -167,10 +167,8 @@ contains
       real(kind=dp_t) :: x,y,z,Smax
       real(kind=dp_t), allocatable :: p0_cart(:,:,:)
       real(kind=dp_t), allocatable :: t0_cart(:,:,:)
-      real(kind=dp_t), allocatable :: H(:,:,:)
       real(kind=dp_t) :: sigma, react_term, pres_term
 
-      allocate(H(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
       if (spherical .eq. 1) then
         allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
         allocate(t0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
@@ -180,8 +178,6 @@ contains
 
       Source = zero
       Smax = zero
-
-      call get_H_3d(H,lo,hi,dx,time)
 
       do_diag = .false.
 
@@ -227,7 +223,7 @@ contains
                       dpdX_row(1,n)*rho_omegadot(i,j,k,n)/den_row(1)
               enddo
   
-              Source(i,j,k) = sigma*(H(i,j,k) + react_term) + &
+              Source(i,j,k) = sigma*(rho_Hext(i,j,k)/den_row(1) + react_term) + &
                    pres_term/(den_row(1)*dpdr_row(1))
 
               Smax = max(Smax, abs(Source(i,j,k)))
@@ -239,7 +235,6 @@ contains
 
       print *,'new S at time ',time, Smax
 
-      deallocate(H)
       if (spherical .eq. 1) then
         deallocate(p0_cart,t0_cart)
       end if
