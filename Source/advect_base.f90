@@ -75,7 +75,8 @@ contains
       force = ZERO
       call mkflux_1d(p0_old,edge,vel,force,1,dz,dt)
       do j = 1,nz
-        p0_new(j) = p0_old(j) - dt / dz * HALF * (vel(j) + vel(j+1)) * (edge(j+1) - edge(j))
+        p0_new(j) = p0_old(j) - &
+             dt / dz * HALF * (vel(j) + vel(j+1)) * (edge(j+1) - edge(j))
       end do
 
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -83,11 +84,14 @@ contains
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       do n = spec_comp,spec_comp+nspec-1
          do j = 1,nz
-            force(j) = s0_old(j,n) * (vel(j+1) - vel(j)) / dz
+            force(j) = -s0_old(j,n) * (vel(j+1) - vel(j)) / dz
          end do
+
          call mkflux_1d(s0_old(:,n),edge,vel,force,1,dz,dt)
+
          do j = 1,nz
-            s0_new(j,n) = s0_old(j,n) - dt / dz * (edge(j+1) * vel(j+1) - edge(j) * vel(j))
+            s0_new(j,n) = s0_old(j,n) - &
+                 dt / dz * (edge(j+1) * vel(j+1) - edge(j) * vel(j))
          end do
 
       enddo
@@ -107,11 +111,14 @@ contains
 !     UPDATE RHOH0
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       do j = 1,nz
-         force(j) = s0_old(j,rhoh_comp) * (vel(j+1) - vel(j)) / dz
+         force(j) = -s0_old(j,rhoh_comp) * (vel(j+1) - vel(j)) / dz
       end do
+
       call mkflux_1d(s0_old(:,rhoh_comp),edge,vel,force,1,dz,dt)
+
       do j = 1,nz
-         s0_new(j,rhoh_comp) = s0_old(j,rhoh_comp) - dt / dz * (edge(j+1) * vel(j+1) - edge(j) * vel(j))
+         s0_new(j,rhoh_comp) = s0_old(j,rhoh_comp) - &
+              dt / dz * (edge(j+1) * vel(j+1) - edge(j) * vel(j))
       end do
 
 
@@ -191,13 +198,20 @@ contains
 !     UPDATE RHOX0
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       do n = spec_comp,spec_comp+nspec-1
+
+         ! compute the force -- include the geometric source term that
+         ! results from expanding out the spherical divergence
          do j = 1,nz
-            force(j) = s0_old(j,n) * (vel(j+1) - vel(j)) / dr
+            force(j) = -s0_old(j,n) * (vel(j+1) - vel(j)) / dr - &
+                       2.0_dp_t*s0_old(j,n)*HALF*(vel(j) + vel(j+1))/z(j)
          end do
+
          call mkflux_1d(s0_old(:,n),edge,vel,force,1,dr,dt)
+
          do j = 1,nz
-            s0_new(j,n) = s0_old(j,n) - dtdr / z(j)**2 * ( zl(j+1)**2 * edge(j+1) * vel(j+1) &
-                                                          -zl(j  )**2 * edge(j  ) * vel(j  ))
+            s0_new(j,n) = s0_old(j,n) - &
+                 dtdr / z(j)**2 * ( zl(j+1)**2 * edge(j+1) * vel(j+1) &
+                                   -zl(j  )**2 * edge(j  ) * vel(j  ))
          end do
 
       enddo
@@ -279,9 +293,12 @@ contains
      stop
 
       do j = 1,nz
-         force(j) = s0_old(j,rhoh_comp) * (vel(j+1) - vel(j)) / dr
+         force(j) = -s0_old(j,rhoh_comp) * (vel(j+1) - vel(j)) / dr - &
+              2.0_dp_t*s0_old(j,rhoh_comp)*HALF*(vel(j) + vel(j+1))/z(j)
       end do
+
       call mkflux_1d(s0_old(:,rhoh_comp),edge,vel,force,1,dr,dt)
+
       do j = 1,nz
          s0_new(j,rhoh_comp) = s0_old(j,rhoh_comp) - &
               dtdr / z(j)**2 * ( zl(j+1)**2 * edge(j+1) * vel(j+1) &
