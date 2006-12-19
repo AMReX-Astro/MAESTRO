@@ -99,12 +99,6 @@ contains
       call build(scal_force, ext_scal_force%la, nscal, 1)
       call setval(scal_force,ZERO)
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!     Add w0 to radial velocity.
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-      mult = ONE
-      call addw0(umac,normal,w0,dx,mult)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     Create scalar source term at time n for (rho X)_i and (rho H).  
@@ -124,64 +118,83 @@ contains
          lo =  lwb(get_box(sold, i))
          hi =  upb(get_box(sold, i))
          select case (dm)
-            case (2)
+         case (2)
 
-              do n = spec_comp,spec_comp+nspec-1
-                call modify_force_2d(fp(:,:,1,n),sop(:,:,1,n),ng_cell,&
-                                     s0_old(:,n), &
-                                     ump(:,:,1,1),vmp(:,:,1,1),dx)
-              end do
+            do n = spec_comp,spec_comp+nspec-1
+               call modify_force_2d(fp(:,:,1,n),sop(:,:,1,n),ng_cell,&
+                                    s0_old(:,n), &
+                                    ump(:,:,1,1),vmp(:,:,1,1), &
+                                    w0,dx)
+            end do
 
-              n = rhoh_comp
-              call  mkrhohforce_2d(fp(:,:,1,n), vmp(:,:,1,1), lo, hi, &
-                                   sop(:,:,1,:),sop(:,:,1,:), ng_cell, dx(:), time, &
-                                   p0_old, p0_old, s0_old, s0_old, temp0, dx(dm))
+            n = rhoh_comp
+            call  mkrhohforce_2d(fp(:,:,1,n), vmp(:,:,1,1), lo, hi, &
+                                 sop(:,:,1,:),sop(:,:,1,:), ng_cell, dx(:), time, &
+                                 p0_old, p0_old, s0_old, s0_old, temp0, dx(dm))
 
-              call modify_force_2d(fp(:,:,1,n),sop(:,:,1,n),ng_cell,s0_old(:,rhoh_comp), &
-                                   ump(:,:,1,1),vmp(:,:,1,1),dx)
+            call modify_force_2d(fp(:,:,1,n),sop(:,:,1,n),ng_cell, &
+                                 s0_old(:,rhoh_comp), &
+                                 ump(:,:,1,1),vmp(:,:,1,1), &
+                                 w0, dx)
 
-            case(3)
-              wmp  => dataptr(umac(3), i)
+         case(3)
+            wmp  => dataptr(umac(3), i)
 
-              if (spherical .eq. 1) then
-                allocate(s0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-                do n = spec_comp,spec_comp+nspec-1
+            if (spherical .eq. 1) then
+
+               allocate(s0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+
+               do n = spec_comp,spec_comp+nspec-1
                   call fill_3d_data(s0_cart,s0_old(:,n),dx,ng_cell)
                   call modify_force_3d_sphr(fp(:,:,:,n),sop(:,:,:,n),ng_cell,&
                                             s0_cart, &
-                                            ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),w0,dx)
-                end do
+                                            ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1), &
+                                            w0,dx)
+               end do
+                
+               n = rhoh_comp
+               np => dataptr(normal, i)
+               call  mkrhohforce_3d_sphr(fp(:,:,:,n), &
+                                         ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), lo, hi, &
+                                         sop(:,:,:,:),sop(:,:,:,:), ng_cell, dx, time, &
+                                         np(:,:,:,:), p0_old, p0_old, s0_old, s0_old, temp0)
 
-                n = rhoh_comp
-                np => dataptr(normal, i)
-                call  mkrhohforce_3d_sphr(fp(:,:,:,n), &
-                                          ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), lo, hi, &
-                                          sop(:,:,:,:),sop(:,:,:,:), ng_cell, dx, time, &
-                                          np(:,:,:,:), p0_old, p0_old, s0_old, s0_old, temp0)
-
-                call fill_3d_data(s0_cart,s0_old(:,n),dx,ng_cell)
-                call modify_force_3d_sphr(fp(:,:,:,n),sop(:,:,:,n),ng_cell,s0_cart, &
-                                          ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),w0,dx)
-                deallocate(s0_cart)
-              else
-                do n = spec_comp,spec_comp+nspec-1
+               call fill_3d_data(s0_cart,s0_old(:,n),dx,ng_cell)
+               call modify_force_3d_sphr(fp(:,:,:,n),sop(:,:,:,n),ng_cell,s0_cart, &
+                                         ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1), &
+                                         w0,dx)
+               deallocate(s0_cart)
+            else
+               do n = spec_comp,spec_comp+nspec-1
                   call modify_force_3d_cart(fp(:,:,:,n),sop(:,:,:,n),ng_cell,&
                                             s0_old(:,n), &
-                                            ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),w0,dx)
-                end do
+                                            ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1), &
+                                            w0,dx)
+               end do
 
-                n = rhoh_comp
-                call  mkrhohforce_3d(fp(:,:,:,n), wmp(:,:,:,1), lo, hi, &
-                                     sop(:,:,:,:), sop(:,:,:,:), ng_cell, dx(:), time, &
-                                     p0_old, p0_old, s0_old, s0_old, temp0, dx(dm))
+               n = rhoh_comp
+               call  mkrhohforce_3d(fp(:,:,:,n), wmp(:,:,:,1), lo, hi, &
+                                    sop(:,:,:,:), sop(:,:,:,:), ng_cell, dx(:), time, &
+                                    p0_old, p0_old, s0_old, s0_old, temp0, dx(dm))
 
-                call modify_force_3d_cart(fp(:,:,:,n),sop(:,:,:,n),ng_cell,s0_old(:,n), &
-                                          ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),w0,dx)
-              end if
+               call modify_force_3d_cart(fp(:,:,:,n),sop(:,:,:,n),ng_cell, &
+                                         s0_old(:,n), &
+                                         ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1), &
+                                         w0,dx)
+            end if
          end select
       end do
 
       call multifab_fill_boundary(scal_force)
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!     Add w0 to radial velocity.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+      mult = ONE
+      call addw0(umac,normal,w0,dx,mult)
+
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     Create the edge states of (rho h)' and (rho X)_i using the MAC velocity 
@@ -513,7 +526,7 @@ contains
 
    end subroutine scalar_advance
 
-   subroutine modify_force_2d(force,s,ng,base,umac,vmac,dx)
+   subroutine modify_force_2d(force,s,ng,base,umac,vmac,w0,dx)
 
     ! When we write the scalar equation in perturbational and convective
     ! form, the terms other than s'_t + U.grad s' act as source terms.  Add
@@ -525,6 +538,7 @@ contains
     real(kind=dp_t), intent(  out) :: force(0:,0:)
     real(kind=dp_t), intent(in   ) :: s(1-ng:,1-ng:)
     real(kind=dp_t), intent(in   ) :: base(:)
+    real(kind=dp_t), intent(in   ) :: w0(:)
     real(kind=dp_t), intent(in   ) :: umac(0:,0:)
     real(kind=dp_t), intent(in   ) :: vmac(0:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
@@ -559,7 +573,8 @@ contains
        end if
         do i = 1,nx
            divu = (umac(i+1,j) - umac(i,j)) / dx(1) &
-                 +(vmac(i,j+1) - vmac(i,j)) / dx(2)
+                 +((vmac(i,j+1) + w0(j+1)) - &
+                   (vmac(i,j)   + w0(j)  )) / dx(2)
            divbaseu = base(j)*(umac(i+1,j) - umac(i,j))/dx(1) &
                              +(vmac(i,j+1) * base_half_hi &
                              - vmac(i,j  ) * base_half_lo)/ dx(2)
