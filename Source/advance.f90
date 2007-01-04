@@ -174,7 +174,7 @@ module advance_timestep_module
 
        call advance_premac(uold(n), sold(n),&
                            umac(n,:), uedge(n,:), utrans(n,:),&
-                           gp(n), p(n), normal(n), s0_old, &
+                           gp(n), p(n), normal(n), w0, s0_old, &
                            dx(n,:),time,dt, &
                            the_bc_tower%bc_tower_array(n), &
                            verbose)
@@ -291,7 +291,7 @@ module advance_timestep_module
         do n = 1,nlevs
            call advance_premac(uold(n), sold(n),&
                                umac(n,:), uedge(n,:), utrans(n,:),&
-                               gp(n), p(n), normal(n), s0_old, &
+                               gp(n), p(n), normal(n), w0, s0_old, &
                                dx(n,:),time,dt, &
                                the_bc_tower%bc_tower_array(n), &
                                verbose)

@@ -12,7 +12,7 @@ module mkflux_module
 contains
 
       subroutine mkflux_2d(s,u,sedgex,sedgey,uadv,vadv,utrans,vtrans,&
-                           force,lo,dx,dt,is_vel,is_cons,&
+                           force,w0,lo,dx,dt,is_vel,is_cons,&
                            phys_bc,adv_bc,velpred,ng,base, &
                            advect_in_pert_form,n)
 
@@ -27,6 +27,7 @@ contains
       real(kind=dp_t), intent(in   ) :: utrans(lo(1)- 1:,lo(2)- 1:)
       real(kind=dp_t), intent(in   ) :: vtrans(lo(1)- 1:,lo(2)- 1:)
       real(kind=dp_t), intent(inout) ::  force(lo(1)- 1:,lo(2)- 1:,:)
+      real(kind=dp_t), intent(in   ) ::     w0(0:)
 
       real(kind=dp_t),intent(in) :: dt,dx(:),base(lo(2):)
       integer        ,intent(in) :: velpred
@@ -44,6 +45,7 @@ contains
       real(kind=dp_t) hx, hy, dth
       real(kind=dp_t) splus,sminus
       real(kind=dp_t) savg,st
+      real(kind=dp_t) vlo,vhi
       real(kind=dp_t) sptop,spbot,smtop,smbot,splft,sprgt,smlft,smrgt
 
       integer :: hi(2)
@@ -135,11 +137,16 @@ contains
        do j = js,je 
         if (velpred .eq. 0 .or. n .eq. 1) then
         do i = is-1,ie+1 
+ 
+          vlo = u(i,j  ,2) + HALF * (w0(j  )+w0(j+1))
+          if (j.eq.je .and. phys_bc(2,2) .ne. INTERIOR) then
+            vhi = u(i,j+1,2) + w0(j+1)
+          else
+            vhi = u(i,j+1,2) + HALF * (w0(j+1)+w0(j+2))
+          end if
 
-          spbot = s(i,j  ,n) + (HALF - dth*u(i,j  ,2)/hy) * slopey(i,j  ,1)
-!    $            + dth * force(i,  j,n)
-          sptop = s(i,j+1,n) - (HALF + dth*u(i,j+1,2)/hy) * slopey(i,j+1,1)
-!    $            + dth * force(i,j+1,n)
+          spbot = s(i,j  ,n) + (HALF - dth*vlo/hy) * slopey(i,j  ,1)
+          sptop = s(i,j+1,n) - (HALF + dth*vhi/hy) * slopey(i,j+1,1)
 
           sptop = merge(s(i,je+1,n),sptop,j.eq.je .and. phys_bc(2,2) .eq. INLET)
           spbot = merge(s(i,je+1,n),spbot,j.eq.je .and. phys_bc(2,2) .eq. INLET)
@@ -160,10 +167,15 @@ contains
           savg  = HALF * (spbot + sptop)
           splus = merge(splus, savg, abs(vtrans(i,j+1)) .gt. eps)
 
-          smtop = s(i,j  ,n) - (HALF + dth*u(i,j  ,2)/hy) * slopey(i,j  ,1)
-!    $            + dth * force(i,j  ,n)
-          smbot = s(i,j-1,n) + (HALF - dth*u(i,j-1,2)/hy) * slopey(i,j-1,1)
-!    $            + dth * force(i,j-1,n)
+          if (j.eq.js .and. phys_bc(2,1) .ne. INTERIOR) then
+            vlo = u(i,j-1,2) + w0(j)
+          else
+            vlo = u(i,j-1,2) + HALF * (w0(j-1)+w0(j  ))
+          end if
+          vhi = u(i,j  ,2) + HALF * (w0(j  )+w0(j+1))
+
+          smtop = s(i,j  ,n) - (HALF + dth*vhi/hy) * slopey(i,j  ,1)
+          smbot = s(i,j-1,n) + (HALF - dth*vlo/hy) * slopey(i,j-1,1)
 
           smtop = merge(s(i,js-1,n),smtop,j.eq.js .and. phys_bc(2,1) .eq. INLET)
           smbot = merge(s(i,js-1,n),smbot,j.eq.js .and. phys_bc(2,1) .eq. INLET)
@@ -186,6 +198,10 @@ contains
 
           st = force(i,j,n) - &
                 HALF * (vtrans(i,j)+vtrans(i,j+1))*(splus - sminus) / hy
+
+          if (is_vel .and. n.eq.2) then
+            st = st - HALF * (vtrans(i,j)+vtrans(i,j+1))*(w0(j+1)-w0(j))/hy
+          end if
 
           ubardth = dth*u(i,j,1)/hx
 
@@ -254,9 +270,7 @@ contains
         do j = js-1, je+1 
 
           splft = s(i,j  ,n) + (HALF - dth*u(i  ,j,1)/hx) * slopex(i  ,j,1)
-!    $            + dth * force(i  ,j,n)
           sprgt = s(i+1,j,n) - (HALF + dth*u(i+1,j,1)/hx) * slopex(i+1,j,1)
-!    $            + dth * force(i+1,j,n)
 
           sprgt = merge(s(ie+1,j,n),sprgt,i.eq.ie .and. phys_bc(1,2) .eq. INLET)
           splft = merge(s(ie+1,j,n),splft,i.eq.ie .and. phys_bc(1,2) .eq. INLET)
@@ -278,9 +292,7 @@ contains
           splus = merge(splus, savg, abs(utrans(i+1,j)) .gt. eps)
 
           smrgt = s(i  ,j,n) - (HALF + dth*u(i  ,j,1)/hx) * slopex(i  ,j,1)
-!    $            + dth * force(i  ,j,n)
           smlft = s(i-1,j,n) + (HALF - dth*u(i-1,j,1)/hx) * slopex(i-1,j,1)
-!    $            + dth * force(i-1,j,n)
 
           smrgt = merge(s(is-1,j,n),smrgt,i.eq.is .and. phys_bc(1,1) .eq. INLET)
           smlft = merge(s(is-1,j,n),smlft,i.eq.is .and. phys_bc(1,1) .eq. INLET)
@@ -304,7 +316,11 @@ contains
           st = force(i,j,n) - &
                HALF * (utrans(i,j)+utrans(i+1,j))*(splus - sminus) / hx
 
-          vbardth = dth*u(i,j,2)/hy
+          if (is_vel .and. n.eq.2 .and. j.ge.js .and. j.le.je) then
+            st = st - HALF * (vtrans(i,j)+vtrans(i,j+1))*(w0(j+1)-w0(j))/hy
+          end if
+
+          vbardth = dth / hy * ( u(i,j,2) + HALF * (w0(j)+w0(j+1)) )
 
           s_b(j+1)= s(i,j,n) + (HALF-vbardth)*slopey(i,j,1) + dth*st
           s_t(j  )= s(i,j,n) - (HALF+vbardth)*slopey(i,j,1) + dth*st
@@ -410,7 +426,7 @@ contains
 
 
       subroutine mkflux_3d(s,u,sedgex,sedgey,sedgez,uadv,vadv,wadv,utrans,vtrans,wtrans,&
-                           force,lo,dx,dt,is_vel,is_cons,&
+                           force,w0,lo,dx,dt,is_vel,is_cons,&
                            phys_bc,adv_bc,velpred,ng,base, &
                            advect_in_pert_form,n)
 
@@ -428,6 +444,7 @@ contains
       real(kind=dp_t), intent(in   ) :: vtrans(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
       real(kind=dp_t), intent(in   ) :: wtrans(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
       real(kind=dp_t), intent(inout) ::  force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
+      real(kind=dp_t), intent(in   ) ::     w0(0:)
 
       real(kind=dp_t),intent(in) :: dt,dx(:),base(lo(3):)
       integer        ,intent(in) :: velpred
@@ -446,6 +463,7 @@ contains
       real(kind=dp_t) hx, hy, hz, dth
       real(kind=dp_t) splus,sminus
       real(kind=dp_t) savg,st
+      real(kind=dp_t) wlo,whi
       real(kind=dp_t) sptop,spbot,smtop,smbot,splft,sprgt,smlft,smrgt
 
       integer :: hi(3)
@@ -596,10 +614,9 @@ contains
         do i = is-1,ie+1 
 
           ! Do transverse in j direction
+
           spbot = s(i,j  ,k,n) + (HALF - dth*u(i,j  ,k,2)/hy) * slopey(i,j  ,k,1)
-!    $            + dth * force(i,  j,k,n)
           sptop = s(i,j+1,k,n) - (HALF + dth*u(i,j+1,k,2)/hy) * slopey(i,j+1,k,1)
-!    $            + dth * force(i,j+1,k,n)
 
           sptop = merge(s(i,je+1,k,n),sptop,j.eq.je .and. phys_bc(2,2) .eq. INLET)
           spbot = merge(s(i,je+1,k,n),spbot,j.eq.je .and. phys_bc(2,2) .eq. INLET)
@@ -621,9 +638,7 @@ contains
           splus = merge(splus, savg, abs(vtrans(i,j+1,k)) .gt. eps)
 
           smtop = s(i,j  ,k,n) - (HALF + dth*u(i,j  ,k,2)/hy) * slopey(i,j  ,k,1)
-!    $            + dth * force(i,j  ,k,n)
           smbot = s(i,j-1,k,n) + (HALF - dth*u(i,j-1,k,2)/hy) * slopey(i,j-1,k,1)
-!    $            + dth * force(i,j-1,k,n)
 
           smtop = merge(s(i,js-1,k,n),smtop,j.eq.js .and. phys_bc(2,1) .eq. INLET)
           smbot = merge(s(i,js-1,k,n),smbot,j.eq.js .and. phys_bc(2,1) .eq. INLET)
@@ -648,10 +663,16 @@ contains
                 HALF * (vtrans(i,j,k)+vtrans(i,j+1,k))*(splus - sminus) / hy
 
           ! Do transverse in k direction
-          spbot = s(i,j,k  ,n) + (HALF - dth*u(i,j,k  ,3)/hz) * slopez(i,j,k  ,1)
-!    $            + dth * force(i,j,k  ,n)
-          sptop = s(i,j,k+1,n) - (HALF + dth*u(i,j,k+1,3)/hz) * slopez(i,j,k+1,1)
-!    $            + dth * force(i,j,k+1,n)
+
+          wlo = u(i,j,k,3) + HALF * (w0(k) + w0(k+1))
+          if (k.eq.ke .and. phys_bc(3,2) .ne. INTERIOR) then
+            whi = u(i,j,k+1,3) + HALF * w0(k+1)
+          else
+            whi = u(i,j,k+1,3) + HALF * (w0(k+1)+w0(k+2))
+          end if
+
+          spbot = s(i,j,k  ,n) + (HALF - dth*wlo/hz) * slopez(i,j,k  ,1)
+          sptop = s(i,j,k+1,n) - (HALF + dth*whi/hz) * slopez(i,j,k+1,1)
 
           sptop = merge(s(i,j,ke+1,n),sptop,k.eq.ke .and. phys_bc(3,2) .eq. INLET)
           spbot = merge(s(i,j,ke+1,n),spbot,k.eq.ke .and. phys_bc(3,2) .eq. INLET)
@@ -672,10 +693,15 @@ contains
           savg  = HALF * (spbot + sptop)
           splus = merge(splus, savg, abs(wtrans(i,j,k+1)) .gt. eps)
 
-          smtop = s(i,j,k  ,n) - (HALF + dth*u(i,j,k  ,3)/hz) * slopez(i,j,k  ,1)
-!    $            + dth * force(i,j,k  ,n)
-          smbot = s(i,j,k-1,n) + (HALF - dth*u(i,j,k-1,3)/hz) * slopez(i,j,k-1,1)
-!    $            + dth * force(i,j,k-1,n)
+          if (k.eq.ks .and. phys_bc(3,1) .ne. INTERIOR) then
+            wlo = u(i,j,k-1,3) + w0(k)
+          else
+            wlo = u(i,j,k-1,3) + HALF * (w0(k-1)+w0(k  ))
+          end if
+          whi = u(i,j,k,3) + HALF * (w0(k) + w0(k+1))
+
+          smtop = s(i,j,k  ,n) - (HALF + dth*whi/hz) * slopez(i,j,k  ,1)
+          smbot = s(i,j,k-1,n) + (HALF - dth*wlo/hz) * slopez(i,j,k-1,1)
 
           smtop = merge(s(i,j,ks-1,n),smtop,k.eq.ks .and. phys_bc(3,1) .eq. INLET)
           smbot = merge(s(i,j,ks-1,n),smbot,k.eq.ks .and. phys_bc(3,1) .eq. INLET)
@@ -697,6 +723,10 @@ contains
           sminus = merge(sminus, savg, abs(wtrans(i,j,k)) .gt. eps)
 
           st = st - HALF * (wtrans(i,j,k)+wtrans(i,j+1,k))*(splus - sminus) / hz
+
+          if (is_vel .and. n.eq.3) then
+            st = st - HALF * (wtrans(i,j,k)+wtrans(i,j,k+1))*(w0(k+1)-w0(k))/hz
+          end if
 
           ubardth = dth*u(i,j,k,1)/hx
 
@@ -768,9 +798,7 @@ contains
 
           ! Do transverse in i direction
           splft = s(i  ,j,k,n) + (HALF - dth*u(i  ,j,k,1)/hx) * slopex(i  ,j,k,1)
-!    $            + dth * force(i  ,j,k,n)
           sprgt = s(i+1,j,k,n) - (HALF + dth*u(i+1,j,k,1)/hx) * slopex(i+1,j,k,1)
-!    $            + dth * force(i+1,j,k,n)
 
           sprgt = merge(s(ie+1,j,k,n),sprgt,i.eq.ie .and. phys_bc(1,2) .eq. INLET)
           splft = merge(s(ie+1,j,k,n),splft,i.eq.ie .and. phys_bc(1,2) .eq. INLET)
@@ -792,9 +820,7 @@ contains
           splus = merge(splus, savg, abs(utrans(i+1,j,k)) .gt. eps)
 
           smrgt = s(i  ,j,k,n) - (HALF + dth*u(i  ,j,k,1)/hx) * slopex(i  ,j,k,1)
-!    $            + dth * force(i  ,j,k,n)
           smlft = s(i-1,j,k,n) + (HALF - dth*u(i-1,j,k,1)/hx) * slopex(i-1,j,k,1)
-!    $            + dth * force(i-1,j,k,n)
 
           smrgt = merge(s(is-1,j,k,n),smrgt,i.eq.is .and. phys_bc(1,1) .eq. INLET)
           smlft = merge(s(is-1,j,k,n),smlft,i.eq.is .and. phys_bc(1,1) .eq. INLET)
@@ -819,10 +845,16 @@ contains
                HALF * (utrans(i,j,k)+utrans(i+1,j,k))*(splus - sminus) / hx
 
           ! Do transverse in k direction
-          splft = s(i,j,k  ,n) + (HALF - dth*u(i,j,k  ,3)/hz) * slopex(i  ,j,k,1)
-!    $            + dth * force(i,j,k  ,n)
-          sprgt = s(i,j,k+1,n) - (HALF + dth*u(i,j,k+1,3)/hz) * slopex(i+1,j,k,1)
-!    $            + dth * force(i,j,k+1,n)
+
+          wlo = u(i,j,k,3) + HALF * (w0(k) + w0(k+1))
+          if (k.eq.ke .and. phys_bc(3,2) .ne. INTERIOR) then
+            whi = u(i,j,k+1,3) + w0(k+1)
+          else
+            whi = u(i,j,k+1,3) + HALF * (w0(k+1)+w0(k+2))
+          end if
+
+          splft = s(i,j,k  ,n) + (HALF - dth*wlo/hz) * slopex(i  ,j,k,1)
+          sprgt = s(i,j,k+1,n) - (HALF + dth*whi/hz) * slopex(i+1,j,k,1)
 
           sprgt = merge(s(i,j,ke+1,n),sprgt,k.eq.ke .and. phys_bc(3,2) .eq. INLET)
           splft = merge(s(i,j,ke+1,n),splft,k.eq.ke .and. phys_bc(3,2) .eq. INLET)
@@ -843,10 +875,15 @@ contains
           savg  = HALF * (splft + sprgt)
           splus = merge(splus, savg, abs(wtrans(i,j,k+1)) .gt. eps)
 
-          smrgt = s(i,j,k  ,n) - (HALF + dth*u(i,j,k  ,3)/hz) * slopez(i,j,k  ,1)
-!    $            + dth * force(i,j,k  ,n)
-          smlft = s(i,j,k-1,n) + (HALF - dth*u(i,j,k-1,3)/hz) * slopez(i,j,k-1,1)
-!    $            + dth * force(i,j,k-1,n)
+          if (k.eq.ks .and. phys_bc(3,1) .ne. INTERIOR) then
+            wlo = u(i,j,k-1,3) + w0(k)
+          else
+            wlo = u(i,j,k-1,3) + HALF * (w0(k-1)+w0(k  ))
+          end if
+          whi = u(i,j,k,3) + HALF * (w0(k) + w0(k+1))
+
+          smrgt = s(i,j,k  ,n) - (HALF + dth*whi/hz) * slopez(i,j,k  ,1)
+          smlft = s(i,j,k-1,n) + (HALF - dth*wlo/hz) * slopez(i,j,k-1,1)
 
           smrgt = merge(s(i,j,ks-1,n),smrgt,k.eq.ks .and. phys_bc(3,1) .eq. INLET)
           smlft = merge(s(i,j,ks-1,n),smlft,k.eq.ks .and. phys_bc(3,1) .eq. INLET)
@@ -868,6 +905,10 @@ contains
           sminus = merge(sminus, savg, abs(wtrans(i,j,k)) .gt. eps)
 
           st = st - HALF * (wtrans(i,j,k)+wtrans(i,j,k+1))*(splus - sminus) / hz
+
+          if (is_vel .and. n.eq.3) then
+            st = st - HALF * (wtrans(i,j,k)+wtrans(i,j,k+1))*(w0(k+1)-w0(k))/hz
+          end if
 
           vbardth = dth*u(i,j,k,2)/hy
 
@@ -939,9 +980,7 @@ contains
 
           ! Do transverse in i direction
           splft = s(i  ,j,k,n) + (HALF - dth*u(i  ,j,k,1)/hx) * slopex(i  ,j,k,1)
-!    $            + dth * force(i  ,j,k,n)
           sprgt = s(i+1,j,k,n) - (HALF + dth*u(i+1,j,k,1)/hx) * slopex(i+1,j,k,1)
-!    $            + dth * force(i+1,j,k,n)
 
           sprgt = merge(s(ie+1,j,k,n),sprgt,i.eq.ie .and. phys_bc(1,2) .eq. INLET)
           splft = merge(s(ie+1,j,k,n),splft,i.eq.ie .and. phys_bc(1,2) .eq. INLET)
@@ -963,9 +1002,7 @@ contains
           splus = merge(splus, savg, abs(utrans(i+1,j,k)) .gt. eps)
 
           smrgt = s(i  ,j,k,n) - (HALF + dth*u(i  ,j,k,1)/hx) * slopex(i  ,j,k,1)
-!    $            + dth * force(i  ,j,k,n)
           smlft = s(i-1,j,k,n) + (HALF - dth*u(i-1,j,k,1)/hx) * slopex(i-1,j,k,1)
-!    $            + dth * force(i-1,j,k,n)
 
           smrgt = merge(s(is-1,j,k,n),smrgt,i.eq.is .and. phys_bc(1,1) .eq. INLET)
           smlft = merge(s(is-1,j,k,n),smlft,i.eq.is .and. phys_bc(1,1) .eq. INLET)
@@ -991,9 +1028,7 @@ contains
 
           ! Do transverse in j direction
           spbot = s(i,j  ,k,n) + (HALF - dth*u(i,j  ,k,2)/hy) * slopey(i,j  ,k,1)
-!    $            + dth * force(i,  j,k,n)
           sptop = s(i,j+1,k,n) - (HALF + dth*u(i,j+1,k,2)/hy) * slopey(i,j+1,k,1)
-!    $            + dth * force(i,j+1,k,n)
 
           sptop = merge(s(i,je+1,k,n),sptop,j.eq.je .and. phys_bc(2,2) .eq. INLET)
           spbot = merge(s(i,je+1,k,n),spbot,j.eq.je .and. phys_bc(2,2) .eq. INLET)
@@ -1015,9 +1050,7 @@ contains
           splus = merge(splus, savg, abs(vtrans(i,j+1,k)) .gt. eps)
 
           smtop = s(i,j  ,k,n) - (HALF + dth*u(i,j  ,k,2)/hy) * slopey(i,j  ,k,1)
-!    $            + dth * force(i,j  ,k,n)
           smbot = s(i,j-1,k,n) + (HALF - dth*u(i,j-1,k,2)/hy) * slopey(i,j-1,k,1)
-!    $            + dth * force(i,j-1,k,n)
 
           smtop = merge(s(i,js-1,k,n),smtop,j.eq.js .and. phys_bc(2,1) .eq. INLET)
           smbot = merge(s(i,js-1,k,n),smbot,j.eq.js .and. phys_bc(2,1) .eq. INLET)
@@ -1040,7 +1073,11 @@ contains
 
           st = st - HALF * (vtrans(i,j,k)+vtrans(i,j+1,k))*(splus - sminus) / hy
 
-          wbardth = dth*u(i,j,k,3)/hz
+          if (is_vel .and. n.eq.3 .and. k.ge.ks .and. k.le.ke) then
+            st = st - HALF * (wtrans(i,j,k)+wtrans(i,j,k+1))*(w0(k+1)-w0(k))/hz
+          end if
+
+          wbardth = dth/hz * ( u(i,j,k,3) + HALF * (w0(k) + w0(k+1)) )
 
           s_d(k+1)= s(i,j,k,n) + (HALF-wbardth)*slopez(i,j,k,1) + dth*st
           s_u(k  )= s(i,j,k,n) - (HALF+wbardth)*slopez(i,j,k,1) + dth*st

@@ -99,13 +99,12 @@ contains
       call build(scal_force, ext_scal_force%la, nscal, 1)
       call setval(scal_force,ZERO)
 
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     Create scalar source term at time n for (rho X)_i and (rho H).  
 !     The source term for (rho X) is zero.
 !     The source term for (rho h) has only the w dp0/dr term.
 
-!     The call to modify_force is used to add those advective terms 
+!     The call to modify_scal_force is used to add those advective terms 
 !     that appear as forces when we write it in convective/perturbational form.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -121,10 +120,10 @@ contains
          case (2)
 
             do n = spec_comp,spec_comp+nspec-1
-               call modify_force_2d(fp(:,:,1,n),sop(:,:,1,n),ng_cell,&
-                                    s0_old(:,n), &
-                                    ump(:,:,1,1),vmp(:,:,1,1), &
-                                    w0,dx)
+               call modify_scal_force_2d(fp(:,:,1,n),sop(:,:,1,n),ng_cell,&
+                                         s0_old(:,n), &
+                                         ump(:,:,1,1),vmp(:,:,1,1), &
+                                         w0,dx)
             end do
 
             n = rhoh_comp
@@ -132,10 +131,10 @@ contains
                                  sop(:,:,1,:),sop(:,:,1,:), ng_cell, dx(:), time, &
                                  p0_old, p0_old, s0_old, s0_old, temp0, dx(dm))
 
-            call modify_force_2d(fp(:,:,1,n),sop(:,:,1,n),ng_cell, &
-                                 s0_old(:,rhoh_comp), &
-                                 ump(:,:,1,1),vmp(:,:,1,1), &
-                                 w0, dx)
+            call modify_scal_force_2d(fp(:,:,1,n),sop(:,:,1,n),ng_cell, &
+                                      s0_old(:,rhoh_comp), &
+                                      ump(:,:,1,1),vmp(:,:,1,1), &
+                                      w0, dx)
 
          case(3)
             wmp  => dataptr(umac(3), i)
@@ -146,10 +145,10 @@ contains
 
                do n = spec_comp,spec_comp+nspec-1
                   call fill_3d_data(s0_cart,s0_old(:,n),dx,ng_cell)
-                  call modify_force_3d_sphr(fp(:,:,:,n),sop(:,:,:,n),ng_cell,&
-                                            s0_cart, &
-                                            ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1), &
-                                            w0,dx)
+                  call modify_scal_force_3d_sphr(fp(:,:,:,n),sop(:,:,:,n),ng_cell,&
+                                                 s0_cart, &
+                                                 ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1), &
+                                                 w0,dx)
                end do
                 
                n = rhoh_comp
@@ -160,16 +159,16 @@ contains
                                          np(:,:,:,:), p0_old, p0_old, s0_old, s0_old, temp0)
 
                call fill_3d_data(s0_cart,s0_old(:,n),dx,ng_cell)
-               call modify_force_3d_sphr(fp(:,:,:,n),sop(:,:,:,n),ng_cell,s0_cart, &
-                                         ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1), &
-                                         w0,dx)
+               call modify_scal_force_3d_sphr(fp(:,:,:,n),sop(:,:,:,n),ng_cell,s0_cart, &
+                                              ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1), &
+                                              w0,dx)
                deallocate(s0_cart)
             else
                do n = spec_comp,spec_comp+nspec-1
-                  call modify_force_3d_cart(fp(:,:,:,n),sop(:,:,:,n),ng_cell,&
-                                            s0_old(:,n), &
-                                            ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1), &
-                                            w0,dx)
+                  call modify_scal_force_3d_cart(fp(:,:,:,n),sop(:,:,:,n),ng_cell,&
+                                                 s0_old(:,n), &
+                                                 ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1), &
+                                                 w0,dx)
                end do
 
                n = rhoh_comp
@@ -177,10 +176,10 @@ contains
                                     sop(:,:,:,:), sop(:,:,:,:), ng_cell, dx(:), time, &
                                     p0_old, p0_old, s0_old, s0_old, temp0, dx(dm))
 
-               call modify_force_3d_cart(fp(:,:,:,n),sop(:,:,:,n),ng_cell, &
-                                         s0_old(:,n), &
-                                         ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1), &
-                                         w0,dx)
+               call modify_scal_force_3d_cart(fp(:,:,:,n),sop(:,:,:,n),ng_cell, &
+                                              s0_old(:,n), &
+                                              ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1), &
+                                              w0,dx)
             end if
          end select
       end do
@@ -189,15 +188,14 @@ contains
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!     Add w0 to radial velocity.
+!     Add w0 to MAC velocities (trans velocities already have w0).
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       mult = ONE
       call addw0(umac,normal,w0,dx,mult)
 
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!     Create the edge states of (rho h)' and (rho X)_i using the MAC velocity 
+!     Create the edge states of (rho h)' and (rho X)_i.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       advect_in_pert_form = .true.
@@ -221,7 +219,7 @@ contains
                 call mkflux_2d(sop(:,:,1,:), uop(:,:,1,:), &
                                sepx(:,:,1,:), sepy(:,:,1,:), &
                                ump(:,:,1,1), vmp(:,:,1,1), &
-                               utp(:,:,1,1), vtp(:,:,1,1), fp(:,:,1,:), &
+                               utp(:,:,1,1), vtp(:,:,1,1), fp(:,:,1,:), w0, &
                                lo, dx, dt, is_vel, is_conservative, &
                                the_bc_level%phys_bc_level_array(i,:,:), &
                                the_bc_level%adv_bc_level_array(i,:,:,bc_comp:), &
@@ -233,7 +231,7 @@ contains
                 call mkflux_2d(sop(:,:,1,:), uop(:,:,1,:), &
                                sepx(:,:,1,:), sepy(:,:,1,:), &
                                ump(:,:,1,1), vmp(:,:,1,1), &
-                               utp(:,:,1,1), vtp(:,:,1,1), fp(:,:,1,:), &
+                               utp(:,:,1,1), vtp(:,:,1,1), fp(:,:,1,:), w0, &
                                lo, dx, dt, is_vel, is_conservative, &
                                the_bc_level%phys_bc_level_array(i,:,:), &
                                the_bc_level%adv_bc_level_array(i,:,:,bc_comp:), &
@@ -249,19 +247,19 @@ contains
                 call mkflux_3d(sop(:,:,:,:), uop(:,:,:,:), &
                                sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
                                ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
-                               utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), fp(:,:,:,:), &
+                               utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), fp(:,:,:,:), w0, &
                                lo, dx, dt, is_vel, is_conservative, &
                                the_bc_level%phys_bc_level_array(i,:,:), &
                                the_bc_level%adv_bc_level_array(i,:,:,bc_comp:), &
                                velpred, ng_cell, s0_old(:,n), &
-                                advect_in_pert_form, n)
+                               advect_in_pert_form, n)
 
               do n = spec_comp,spec_comp+nspec-1
                 bc_comp = dm+n
                 call mkflux_3d(sop(:,:,:,:), uop(:,:,:,:), &
                                sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
                                ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
-                               utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), fp(:,:,:,:), &
+                               utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), fp(:,:,:,:), w0, &
                                lo, dx, dt, is_vel, is_conservative, &
                                the_bc_level%phys_bc_level_array(i,:,:), &
                                the_bc_level%adv_bc_level_array(i,:,:,bc_comp:), &
@@ -272,7 +270,7 @@ contains
       end do
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!     Create the edge states of tracers using the MAC velocity 
+!     Create the edge states of tracers.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       if (ntrac .ge. 1) then
@@ -297,7 +295,7 @@ contains
                 call mkflux_2d(sop(:,:,1,:), uop(:,:,1,:), &
                                sepx(:,:,1,:), sepy(:,:,1,:), &
                                ump(:,:,1,1), vmp(:,:,1,1), &
-                               utp(:,:,1,1), vtp(:,:,1,1), fp(:,:,1,:), &
+                               utp(:,:,1,1), vtp(:,:,1,1), fp(:,:,1,:), w0, &
                                lo, dx, dt, is_vel, is_conservative, &
                                the_bc_level%phys_bc_level_array(i,:,:), &
                                the_bc_level%adv_bc_level_array(i,:,:,bc_comp:), &
@@ -313,7 +311,7 @@ contains
                 call mkflux_3d(sop(:,:,:,:), uop(:,:,:,:), &
                                sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
                                ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
-                               utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), fp(:,:,:,:), &
+                               utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), fp(:,:,:,:), w0, &
                                lo, dx, dt, is_vel, is_conservative, &
                                the_bc_level%phys_bc_level_array(i,:,:), &
                                the_bc_level%adv_bc_level_array(i,:,:,bc_comp:), &
@@ -325,7 +323,7 @@ contains
       end if
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!     Subtract w0 from radial velocity.
+!     Subtract w0 from MAC velocities.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       mult = -ONE
@@ -526,13 +524,11 @@ contains
 
    end subroutine scalar_advance
 
-   subroutine modify_force_2d(force,s,ng,base,umac,vmac,w0,dx)
+   subroutine modify_scal_force_2d(force,s,ng,base,umac,vmac,w0,dx)
 
     ! When we write the scalar equation in perturbational and convective
     ! form, the terms other than s'_t + U.grad s' act as source terms.  Add
     ! them to the forces here.
-
-    ! Note that the MAC velocity has w0 already added to it here.
 
     integer        , intent(in   ) :: ng
     real(kind=dp_t), intent(  out) :: force(0:,0:)
@@ -582,9 +578,9 @@ contains
         end do
      end do
      
-   end subroutine modify_force_2d
+   end subroutine modify_scal_force_2d
 
-   subroutine modify_force_3d_cart(force,s,ng,base,umac,vmac,wmac,w0,dx)
+   subroutine modify_scal_force_3d_cart(force,s,ng,base,umac,vmac,wmac,w0,dx)
 
     ! When we write the scalar equation in perturbational and convective
     ! form, the terms other than s'_t + U.grad s' act as source terms.  Add
@@ -644,9 +640,9 @@ contains
         end do
      end do
      
-   end subroutine modify_force_3d_cart
+   end subroutine modify_scal_force_3d_cart
 
-   subroutine modify_force_3d_sphr(force,s,ng,base_cart,umac,vmac,wmac,w0,dx)
+   subroutine modify_scal_force_3d_sphr(force,s,ng,base_cart,umac,vmac,wmac,w0,dx)
 
     ! When we write the scalar equation in perturbational and convective
     ! form, the terms other than s'_t + U.grad s' act as source terms.  Add
@@ -738,6 +734,6 @@ contains
 
      deallocate(divu,divu_cart)
      
-   end subroutine modify_force_3d_sphr
+   end subroutine modify_scal_force_3d_sphr
 
 end module scalar_advance_module

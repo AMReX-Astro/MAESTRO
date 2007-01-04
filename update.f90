@@ -672,44 +672,4 @@ module update_module
 
    end subroutine update_velocity_3d
 
-   subroutine mk_shalf_2d (sold,snew,ng,shalf,ng_shalf,lo,hi)
-
-      implicit none
-
-      integer, intent(in) :: lo(:), hi(:), ng, ng_shalf
-      real (kind = dp_t), intent(in   ) ::   sold(lo(1)-ng      :,lo(2)-ng      :)  
-      real (kind = dp_t), intent(in   ) ::   snew(lo(1)-ng      :,lo(2)-ng      :)  
-      real (kind = dp_t), intent(  out) ::  shalf(lo(1)-ng_shalf:,lo(2)-ng_shalf:)
-
-      integer :: i, j
-
-      do j = lo(2), hi(2)
-      do i = lo(1), hi(1)
-        shalf(i,j) = HALF * (sold(i,j) + snew(i,j))
-      end do
-      end do
-
-   end subroutine mk_shalf_2d
-
-   subroutine mk_shalf_3d (sold,snew,ng,shalf,ng_shalf,lo,hi)
-
-      implicit none
-
-      integer, intent(in) :: lo(:), hi(:), ng, ng_shalf
-      real (kind = dp_t), intent(in   ) ::   sold(lo(1)-ng      :,lo(2)-ng      :,lo(3)-ng      :)  
-      real (kind = dp_t), intent(in   ) ::   snew(lo(1)-ng      :,lo(2)-ng      :,lo(3)-ng      :)  
-      real (kind = dp_t), intent(  out) ::  shalf(lo(1)-ng_shalf:,lo(2)-ng_shalf:,lo(3)-ng_shalf:)
-
-      integer :: i, j, k
-
-      do k = lo(3), hi(3)
-      do j = lo(2), hi(2)
-      do i = lo(1), hi(1)
-        shalf(i,j,k) = HALF * (sold(i,j,k) + snew(i,j,k))
-      end do
-      end do
-      end do
-
-   end subroutine mk_shalf_3d
-
 end module update_module
