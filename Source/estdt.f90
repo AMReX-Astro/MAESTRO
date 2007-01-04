@@ -178,7 +178,6 @@ contains
 
    end subroutine estdt_2d
 
-
    subroutine estdt_3d (u, s, force, divU, normal, w0, p0, gam1, lo, hi, ng, dx, rho_min, dt)
 
      integer, intent(in) :: lo(:), hi(:), ng
@@ -193,7 +192,7 @@ contains
      real (kind = dp_t), intent(out) :: dt
 
 !    Local variables
-     real (kind = dp_t), allocatable :: w0_cart(:,:,:)
+     real (kind = dp_t), allocatable :: w0_cart(:,:,:,:)
      real (kind = dp_t)  :: spdx, spdy, spdz, spdr
      real (kind = dp_t)  :: pforcex, pforcey, pforcez
      real (kind = dp_t)  :: eps
@@ -227,16 +226,16 @@ contains
         
      else
 
-        allocate(w0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-        call fill_3d_data(w0_cart,w0(0:),dx,0)
+        allocate(w0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),3))
+        call put_w0_on_3d_cells(w0(0:),w0_cart,normal,lo,hi,dx,0)
 
         ! Limit dt based on velocity terms
         do k = lo(3), hi(3)
            do j = lo(2), hi(2)
               do i = lo(1), hi(1)
-                 spdx = max(spdx ,abs(u(i,j,k,1)+w0_cart(i,j,k)*normal(i,j,k,1)))
-                 spdy = max(spdy ,abs(u(i,j,k,2)+w0_cart(i,j,k)*normal(i,j,k,2)))
-                 spdz = max(spdz ,abs(u(i,j,k,3)+w0_cart(i,j,k)*normal(i,j,k,3)))
+                 spdx = max(spdx ,abs(u(i,j,k,1)+w0_cart(i,j,k,1)))
+                 spdy = max(spdy ,abs(u(i,j,k,2)+w0_cart(i,j,k,2)))
+                 spdz = max(spdz ,abs(u(i,j,k,3)+w0_cart(i,j,k,3)))
               enddo
            enddo
         enddo
@@ -307,7 +306,6 @@ contains
      enddo
 
      dt = min(dt,dt_divU)
-
 
    end subroutine estdt_3d
 
