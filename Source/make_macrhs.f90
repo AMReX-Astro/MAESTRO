@@ -89,10 +89,10 @@ contains
       if (spherical .eq. 1) then
 
         allocate(div_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-        call fill_3d_data(div_cart,div_coeff,dx,0)
+        call fill_3d_data(div_cart,div_coeff,lo,hi,dx,0)
 
         allocate(Sbar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-        call fill_3d_data(Sbar_cart,Sbar,dx,0)
+        call fill_3d_data(Sbar_cart,Sbar,lo,hi,dx,0)
 
         do k = lo(3),hi(3)
         do j = lo(2),hi(2)

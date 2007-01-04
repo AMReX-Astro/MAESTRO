@@ -147,7 +147,7 @@ contains
     if (spherical .eq. 1) then
 
        do n = rho_comp, spec_comp+nspec-1
-          call fill_3d_data (s(:,:,:,n),s0(:,n),dx,ng)
+          call fill_3d_data (s(:,:,:,n),s0(:,n),lo,hi,dx,ng)
        end do
 
     else 

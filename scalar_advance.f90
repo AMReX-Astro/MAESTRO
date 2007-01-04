@@ -19,7 +19,7 @@ module scalar_advance_module
 contains
 
    subroutine scalar_advance (uold, sold, snew, &
-                              umac, w0, sedge, utrans, ext_scal_force, normal, &
+                              umac, w0, w0_cart_vec, sedge, utrans, ext_scal_force, normal, &
                               s0_old , s0_new , &
                               p0_old, p0_new, temp0, &
                               dx,time, dt, the_bc_level, &
@@ -35,6 +35,7 @@ contains
       type(multifab) , intent(in   ) :: normal
 !
       real(kind=dp_t), intent(inout) :: w0(:)
+      type(multifab) , intent(in   ) :: w0_cart_vec
       real(kind=dp_t), intent(in   ) :: dx(:),time,dt
       type(bc_level) , intent(in   ) :: the_bc_level
 ! 
@@ -54,6 +55,7 @@ contains
       real(kind=dp_t), pointer:: utp(:,:,:,:)
       real(kind=dp_t), pointer:: vtp(:,:,:,:)
       real(kind=dp_t), pointer:: wtp(:,:,:,:)
+      real(kind=dp_t), pointer:: w0p(:,:,:,:)
       real(kind=dp_t), pointer::  ep(:,:,:,:)
       real(kind=dp_t), pointer::  fp(:,:,:,:)
       real(kind=dp_t), pointer::  np(:,:,:,:)
@@ -144,11 +146,11 @@ contains
                allocate(s0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
 
                do n = spec_comp,spec_comp+nspec-1
-                  call fill_3d_data(s0_cart,s0_old(:,n),dx,ng_cell)
+                  call fill_3d_data(s0_cart,s0_old(:,n),lo,hi,dx,ng_cell)
                   call modify_scal_force_3d_sphr(fp(:,:,:,n),sop(:,:,:,n),ng_cell,&
                                                  s0_cart, &
                                                  ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1), &
-                                                 w0,dx)
+                                                 w0,lo,hi,dx)
                end do
                 
                n = rhoh_comp
@@ -158,10 +160,10 @@ contains
                                          sop(:,:,:,:),sop(:,:,:,:), ng_cell, dx, time, &
                                          np(:,:,:,:), p0_old, p0_old, s0_old, s0_old, temp0)
 
-               call fill_3d_data(s0_cart,s0_old(:,n),dx,ng_cell)
+               call fill_3d_data(s0_cart,s0_old(:,n),lo,hi,dx,ng_cell)
                call modify_scal_force_3d_sphr(fp(:,:,:,n),sop(:,:,:,n),ng_cell,s0_cart, &
                                               ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1), &
-                                              w0,dx)
+                                              w0,lo,hi,dx)
                deallocate(s0_cart)
             else
                do n = spec_comp,spec_comp+nspec-1
@@ -192,7 +194,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       mult = ONE
-      call addw0(umac,normal,w0,dx,mult)
+      call addw0(umac,w0,w0_cart_vec,dx,mult)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     Create the edge states of (rho h)' and (rho X)_i.
@@ -242,12 +244,13 @@ contains
               wmp  => dataptr(  umac(3), i)
               wtp  => dataptr(utrans(3), i)
               sepz => dataptr( sedge(3), i)
+               w0p => dataptr(w0_cart_vec, i)
               n = rhoh_comp
                 bc_comp = dm+n
                 call mkflux_3d(sop(:,:,:,:), uop(:,:,:,:), &
                                sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
                                ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
-                               utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), fp(:,:,:,:), w0, &
+                               utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), fp(:,:,:,:), w0, w0p(:,:,:,:), &
                                lo, dx, dt, is_vel, is_conservative, &
                                the_bc_level%phys_bc_level_array(i,:,:), &
                                the_bc_level%adv_bc_level_array(i,:,:,bc_comp:), &
@@ -259,7 +262,7 @@ contains
                 call mkflux_3d(sop(:,:,:,:), uop(:,:,:,:), &
                                sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
                                ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
-                               utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), fp(:,:,:,:), w0, &
+                               utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), fp(:,:,:,:), w0, w0p(:,:,:,:), &
                                lo, dx, dt, is_vel, is_conservative, &
                                the_bc_level%phys_bc_level_array(i,:,:), &
                                the_bc_level%adv_bc_level_array(i,:,:,bc_comp:), &
@@ -306,12 +309,13 @@ contains
               wmp  => dataptr(  umac(3), i)
               wtp  => dataptr(utrans(3), i)
               sepz => dataptr( sedge(3), i)
+              w0p  => dataptr(w0_cart_vec, i)
               do n = trac_comp,trac_comp+ntrac-1
                 bc_comp = dm+n
                 call mkflux_3d(sop(:,:,:,:), uop(:,:,:,:), &
                                sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
                                ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
-                               utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), fp(:,:,:,:), w0, &
+                               utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), fp(:,:,:,:), w0, w0p(:,:,:,:), &
                                lo, dx, dt, is_vel, is_conservative, &
                                the_bc_level%phys_bc_level_array(i,:,:), &
                                the_bc_level%adv_bc_level_array(i,:,:,bc_comp:), &
@@ -327,7 +331,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       mult = -ONE
-      call addw0(umac,normal,w0,dx,mult)
+      call addw0(umac,w0,w0_cart_vec,dx,mult)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     1) Set force for (rho X)_i at time n+1/2 = 0.
@@ -369,12 +373,12 @@ contains
             case (3)
                wmp => dataptr(umac(3), i)
               sepz => dataptr(sedge(3), i)
-                np => dataptr(normal , i)
+               w0p => dataptr(w0_cart_vec, i)
               call update_scal_3d(spec_comp, spec_comp+nspec-1, &
                                   sop(:,:,:,:), snp(:,:,:,:), &
-                                  ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0, &
+                                  ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0, w0p(:,:,:,:), &
                                   sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
-                                  np(:,:,:,:), fp(:,:,:,:), &
+                                  fp(:,:,:,:), &
                                   s0_old(:,:), s0_new(:,:), &
                                   lo, hi, ng_cell, dx, dt, verbose)
               do n = spec_comp,spec_comp+nspec-1
@@ -422,12 +426,12 @@ contains
             case (3)
                wmp => dataptr(umac(3), i)
               sepz => dataptr(sedge(3), i)
-                np => dataptr(normal , i)
+               w0p => dataptr(w0_cart_vec, i)
               call update_scal_3d(trac_comp,trac_comp+ntrac-1, &
                                   sop(:,:,:,:), snp(:,:,:,:), &
-                                  ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0, &
+                                  ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0, w0p(:,:,:,:), &
                                   sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
-                                  np(:,:,:,:), fp(:,:,:,:), &
+                                  fp(:,:,:,:), &
                                   s0_old(:,:), s0_new(:,:), &
                                   lo, hi, ng_cell, dx, dt, verbose)
               do n = trac_comp,trac_comp+ntrac-1
@@ -497,12 +501,12 @@ contains
 
               end if
 
-               np => dataptr(normal , i)
+               w0p => dataptr(w0_cart_vec, i)
               call update_scal_3d(rhoh_comp, rhoh_comp, &
                              sop(:,:,:,:), snp(:,:,:,:), &
-                             ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0, &
+                             ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0, w0p(:,:,:,:), &
                              sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
-                             np(:,:,:,:), fp(:,:,:,:), &
+                             fp(:,:,:,:), &
                              s0_old(:,:), s0_new(:,:), &
                              lo, hi, ng_cell, dx, dt, verbose)
 
@@ -642,78 +646,74 @@ contains
      
    end subroutine modify_scal_force_3d_cart
 
-   subroutine modify_scal_force_3d_sphr(force,s,ng,base_cart,umac,vmac,wmac,w0,dx)
+   subroutine modify_scal_force_3d_sphr(force,s,ng,base_cart,umac,vmac,wmac,w0,lo,hi,dx)
 
     ! When we write the scalar equation in perturbational and convective
     ! form, the terms other than s'_t + U.grad s' act as source terms.  Add
     ! them to the forces here.
 
-    integer        , intent(in   ) :: ng
-    real(kind=dp_t), intent(  out) :: force(0:,0:,0:)
-    real(kind=dp_t), intent(in   ) :: s(1-ng:,1-ng:,1-ng:)
-    real(kind=dp_t), intent(in   ) :: base_cart(:,:,:)
-    real(kind=dp_t), intent(in   ) :: umac(0:,0:,0:)
-    real(kind=dp_t), intent(in   ) :: vmac(0:,0:,0:)
-    real(kind=dp_t), intent(in   ) :: wmac(0:,0:,0:)
-    real(kind=dp_t), intent(in   ) :: w0(:)
+    integer        , intent(in   ) :: lo(:),hi(:),ng
+    real(kind=dp_t), intent(  out) :: force(lo(1)-1:,lo(2)-1:,lo(3)-1:)
+    real(kind=dp_t), intent(in   ) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
+    real(kind=dp_t), intent(in   ) :: base_cart(lo(1):,lo(2):,lo(3):)
+    real(kind=dp_t), intent(in   ) :: umac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
+    real(kind=dp_t), intent(in   ) :: vmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
+    real(kind=dp_t), intent(in   ) :: wmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
+    real(kind=dp_t), intent(in   ) :: w0(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
     
     ! Local variables
-    integer :: i,j,k,nx,ny,nz,nr
+    integer :: i,j,k,nr
     real(kind=dp_t) :: divumac,divbaseu
     real(kind=dp_t) :: base_xlo,base_xhi
     real(kind=dp_t) :: base_ylo,base_yhi
     real(kind=dp_t) :: base_zlo,base_zhi
 
     real(kind=dp_t), allocatable :: divu(:),divu_cart(:,:,:)
-    
-    nx = size(force,dim=1)-2
-    ny = size(force,dim=2)-2
-    nz = size(force,dim=3)-2
 
     nr = size(w0,dim=1)-1
     allocate(divu(nr))
-    allocate(divu_cart(nx,ny,nz))
+    allocate(divu_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
 
     do k = 1,nr
       divu(k) = (zl(k+1)**2 * w0(k+1)- zl(k)**2 * w0(k))/(dr*z(k)**2)
     end do
-    call fill_3d_data(divu_cart,divu,dx,0)
+    call fill_3d_data(divu_cart,divu,lo,hi,dx,0)
 
-    do k = 1,nz
-        do j = 1,ny
-        do i = 1,nx
+    do k = lo(3),hi(3)
+        do j = lo(2),hi(2)
+        do i = lo(1),hi(1)
 
            divumac = (umac(i+1,j,k) - umac(i,j,k)) / dx(1) &
                     +(vmac(i,j+1,k) - vmac(i,j,k)) / dx(2) &
                     +(wmac(i,j,k+1) - wmac(i,j,k)) / dx(3)
 
-           if (i.lt.nx) then
+           if (i.lt.hi(1)) then
              base_xhi = HALF * (base_cart(i,j,k) + base_cart(i+1,j,k))
            else
              base_xhi = base_cart(i,j,k)
            end if
-           if (i.gt.1) then
+           if (i.gt.lo(1)) then
              base_xlo = HALF * (base_cart(i,j,k) + base_cart(i-1,j,k))
            else
              base_xlo = base_cart(i,j,k)
            end if
-           if (j.lt.ny) then
+           if (j.lt.hi(2)) then
              base_yhi = HALF * (base_cart(i,j,k) + base_cart(i,j+1,k))
            else
              base_yhi = base_cart(i,j,k)
            end if
-           if (j.gt.1) then
+           if (j.gt.lo(2)) then
              base_ylo = HALF * (base_cart(i,j,k) + base_cart(i,j-1,k))
            else
              base_ylo = base_cart(i,j,k)
            end if
-           if (k.lt.nz) then
+           if (k.lt.hi(3)) then
              base_zhi = HALF * (base_cart(i,j,k) + base_cart(i,j,k+1))
            else
              base_zhi = base_cart(i,j,k)
            end if
-           if (k.gt.1) then
+           if (k.gt.lo(3)) then
              base_zlo = HALF * (base_cart(i,j,k) + base_cart(i,j,k-1))
            else
              base_zlo = base_cart(i,j,k)

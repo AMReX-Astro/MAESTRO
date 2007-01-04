@@ -172,8 +172,8 @@ contains
       if (spherical .eq. 1) then
         allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
         allocate(t0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-        call fill_3d_data(p0_cart,p0,dx,0)
-        call fill_3d_data(t0_cart,t0,dx,0)
+        call fill_3d_data(p0_cart,p0,lo,hi,dx,0)
+        call fill_3d_data(t0_cart,t0,lo,hi,dx,0)
       end if
 
       Source = zero

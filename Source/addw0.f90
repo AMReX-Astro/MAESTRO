@@ -10,11 +10,11 @@ module addw0_module
 
 contains
 
-      subroutine addw0(umac,normal,w0,dx,mult)
+      subroutine addw0(umac,w0,w0_cart,dx,mult)
 
       type(multifab) , intent(inout) :: umac(:)
-      type(multifab) , intent(in   ) :: normal
       real(kind=dp_t), intent(in   ) :: w0(:)
+      type(multifab) , intent(in   ) :: w0_cart
       real(kind=dp_t), intent(in   ) :: dx(:),mult
 
       ! Local variables
@@ -22,7 +22,7 @@ contains
       real(kind=dp_t), pointer :: ump(:,:,:,:)
       real(kind=dp_t), pointer :: vmp(:,:,:,:)
       real(kind=dp_t), pointer :: wmp(:,:,:,:)
-      real(kind=dp_t), pointer ::  np(:,:,:,:)
+      real(kind=dp_t), pointer :: w0p(:,:,:,:)
 
       dm = umac(1)%dim
 
@@ -40,8 +40,11 @@ contains
            else
              ump  => dataptr(umac(1), i)
              vmp  => dataptr(umac(2), i)
-              np  => dataptr(normal, i)
-             call addw0_3d_sphr(ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),np(:,:,:,:),w0,dx,mult)
+             wmp  => dataptr(umac(3), i)
+             w0p  => dataptr(w0_cart, i)
+               lo =  lwb(get_box(w0_cart, i))
+               hi =  upb(get_box(w0_cart, i))
+             call addw0_3d_sphr(ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),w0p(:,:,:,:),lo,hi,dx,mult)
            end if
          end select
       end do
@@ -84,84 +87,41 @@ contains
 
       end subroutine addw0_3d
 
-      subroutine addw0_3d_sphr(umac,vmac,wmac,normal,w0,dx,mult)
+      subroutine addw0_3d_sphr(umac,vmac,wmac,w0_cart,lo,hi,dx,mult)
 
-      real(kind=dp_t), intent(inout) ::   umac(0:,0:,0:)
-      real(kind=dp_t), intent(inout) ::   vmac(0:,0:,0:)
-      real(kind=dp_t), intent(inout) ::   wmac(0:,0:,0:)
-      real(kind=dp_t), intent(in   ) :: normal(0:,0:,0:,:)
-      real(kind=dp_t), intent(in   ) ::   w0(:)
+      integer        , intent(in   ) :: lo(:),hi(:)
+      real(kind=dp_t), intent(inout) ::   umac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
+      real(kind=dp_t), intent(inout) ::   vmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
+      real(kind=dp_t), intent(inout) ::   wmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
+      real(kind=dp_t), intent(in   ) :: w0_cart(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)
       real(kind=dp_t), intent(in   ) :: dx(:),mult
 
       integer :: i,j,k
-      integer :: nx,ny,nz,nr
-      real(kind=dp_t), allocatable :: w0_rad(:)
-      real(kind=dp_t), allocatable :: w0_cart(:,:,:)
 
-      nx = size(vmac,dim=1) - 2
-      ny = size(wmac,dim=2) - 2
-      nz = size(umac,dim=3) - 2
-      nr = size(w0,dim=1) - 1
-
-      allocate(w0_rad (nr))
-      allocate(w0_cart(0:nx+1,0:ny+1,0:nz+1))
-
-      ! Put w0 on centers of radial grid first
-      do k = 1,nr
-        w0_rad(k) = HALF * (w0(k) + w0(k+1))
-      end do
-
-      ! Then put w0 on centers of Cartesian grid
-      call fill_3d_data(w0_cart,w0_rad,dx,1)
-
-      do k = 1,nz
-      do j = 1,ny
-         w0_cart(   0,j,k) = w0_cart( 1,j,k)
-         w0_cart(nx+1,j,k) = w0_cart(nx,j,k)
-      end do
-      end do
-      do k = 1,nz
-      do i = 1,nx
-         w0_cart(i,   0,k) = w0_cart(i, 1,k)
-         w0_cart(i,ny+1,k) = w0_cart(i,ny,k)
-      end do
-      end do
-      do j = 1,ny
-      do i = 1,nx
-         w0_cart(i,j,   0) = w0_cart(i,j, 1)
-         w0_cart(i,j,nz+1) = w0_cart(i,j,nz)
-      end do
-      end do
-
-      do k = 1,nz
-      do j = 1,ny
-      do i = 1,nx+1
+      do k = lo(3),hi(3)
+      do j = lo(2),hi(2)
+      do i = lo(1),hi(1)+1
          umac(i,j,k) = umac(i,j,k) + mult * &
-                       HALF * ( w0_cart(i  ,j,k) * normal(i  ,j,k,1) &
-                               +w0_cart(i-1,j,k) * normal(i-1,j,k,1) )
+                       HALF * ( w0_cart(i  ,j,k,1) +w0_cart(i-1,j,k,1) )
       end do
       end do
       end do
-      do k = 1,nz
-      do j = 1,ny+1
-      do i = 1,nx
+      do k = lo(3),hi(3)
+      do j = lo(2),hi(2)+1
+      do i = lo(1),hi(1)
          vmac(i,j,k) = vmac(i,j,k) + mult * &
-                       HALF * ( w0_cart(i,j  ,k) * normal(i,j  ,k,2) &
-                               +w0_cart(i,j-1,k) * normal(i,j-1,k,2) )
+                       HALF * ( w0_cart(i,j  ,k,2) + w0_cart(i,j-1,k,2) )
       end do
       end do
       end do
-      do k = 1,nz+1
-      do j = 1,ny
-      do i = 1,nx
+      do k = lo(3),hi(3)+1
+      do j = lo(2),hi(2)
+      do i = lo(1),hi(1)
          wmac(i,j,k) = wmac(i,j,k) + mult * &
-                       HALF * ( w0_cart(i,j  ,k) * normal(i,j,k  ,3) &
-                               +w0_cart(i,j-1,k) * normal(i,j,k-1,3) )
+                       HALF * ( w0_cart(i,j,k  ,3) + w0_cart(i,j,k-1,3) )
       end do
       end do
       end do
-
-      deallocate(w0_rad,w0_cart)
 
       end subroutine addw0_3d_sphr
 

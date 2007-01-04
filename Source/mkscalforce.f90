@@ -162,7 +162,7 @@ contains
        end if
     end do
 
-    call fill_3d_data(gradp_cart,gradp_rad,dx,0)
+    call fill_3d_data(gradp_cart,gradp_rad,lo,hi,dx,0)
 
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)

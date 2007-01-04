@@ -257,8 +257,8 @@ module update_module
 
    end subroutine update_velocity_2d
 
-   subroutine update_scal_3d (nstart,nstop,sold,snew,umac,vmac,wmac,w0,sedgex,sedgey,sedgez,&
-                              normal,force,base_old,base_new,lo,hi,ng,dx,dt,verbose)
+   subroutine update_scal_3d (nstart,nstop,sold,snew,umac,vmac,wmac,w0,w0_cart,sedgex,sedgey,sedgez,&
+                              force,base_old,base_new,lo,hi,ng,dx,dt,verbose)
 
       implicit none
 
@@ -271,11 +271,11 @@ module update_module
       real (kind = dp_t), intent(in   ) ::  sedgex(lo(1)   :,lo(2)   :,lo(3)   :,:)
       real (kind = dp_t), intent(in   ) ::  sedgey(lo(1)   :,lo(2)   :,lo(3)   :,:)
       real (kind = dp_t), intent(in   ) ::  sedgez(lo(1)   :,lo(2)   :,lo(3)   :,:)
-      real (kind = dp_t), intent(in   ) ::  normal(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
       real (kind = dp_t), intent(in   ) ::   force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
       real (kind = dp_t), intent(in   ) ::   base_old(lo(3)   :,:)
       real (kind = dp_t), intent(in   ) ::   base_new(lo(3)   :,:)
       real (kind = dp_t), intent(in   ) :: w0(0:)
+      real (kind = dp_t), intent(in   ) :: w0_cart(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
       real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
       integer :: i, j, k, n, nr
@@ -305,8 +305,8 @@ module update_module
           do k = 1,nr
             delta_base(k) = base_new(lo(3)+k-1,n) - base_old(lo(3)+k-1,n)
           end do
-          call fill_3d_data(delta_base_cart,delta_base,dx,0)
-          call fill_3d_data(base_cart,base_old(:,n),dx,1)
+          call fill_3d_data(delta_base_cart,delta_base,lo,hi,dx,0)
+          call fill_3d_data(base_cart,base_old(:,n),lo,hi,dx,1)
           do j = lo(2), hi(2)
           do i = lo(1), hi(1)
             base_cart(i,j,lo(3)-1) = base_cart(i,j,lo(3))
@@ -350,7 +350,7 @@ module update_module
         deallocate(delta_base,delta_base_cart,base_cart)
 
         mult = ONE
-        call addw0_3d_sphr(umac,vmac,wmac,normal,w0,dx,mult)
+        call addw0_3d_sphr(umac,vmac,wmac,w0_cart,lo,hi,dx,mult)
 
         do n = nstart, nstop
 
@@ -374,7 +374,7 @@ module update_module
         enddo
 
         mult = -ONE
-        call addw0_3d_sphr(umac,vmac,wmac,normal,w0,dx,mult)
+        call addw0_3d_sphr(umac,vmac,wmac,w0_cart,lo,hi,dx,mult)
 
       ! not spherical
       else 
@@ -487,8 +487,8 @@ module update_module
 
    end subroutine update_scal_3d
 
-   subroutine update_velocity_3d (uold,unew,umac,vmac,wmac,sedgex,sedgey,sedgez,normal, &
-                                  force,w0,lo,hi,ng,dx,time,dt,verbose)
+   subroutine update_velocity_3d (uold,unew,umac,vmac,wmac,sedgex,sedgey,sedgez, &
+                                  force,w0,w0_cart,lo,hi,ng,dx,time,dt,verbose)
 
       implicit none
 
@@ -501,9 +501,9 @@ module update_module
       real (kind = dp_t), intent(in   ) ::  sedgex(lo(1)   :,lo(2)   :,lo(3)   :,:)
       real (kind = dp_t), intent(in   ) ::  sedgey(lo(1)   :,lo(2)   :,lo(3)   :,:)
       real (kind = dp_t), intent(in   ) ::  sedgez(lo(1)   :,lo(2)   :,lo(3)   :,:)
-      real (kind = dp_t), intent(in   ) ::  normal(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
       real (kind = dp_t), intent(in   ) ::   force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
       real (kind = dp_t), intent(in   ) ::      w0(0:)
+      real (kind = dp_t), intent(in   ) ::  w0_cart(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
       real (kind = dp_t), intent(in   ) :: dx(:)
       real (kind = dp_t), intent(in   ) :: time,dt
 
@@ -515,11 +515,10 @@ module update_module
       real (kind = dp_t) :: gradux,graduy,graduz
       real (kind = dp_t) :: gradvx,gradvy,gradvz
       real (kind = dp_t) :: gradwx,gradwy,gradwz
-      real (kind = dp_t) :: gradur,gradvr,gradwr
-      real (kind = dp_t) :: dt_wmac_dw0dr
-      real (kind = dp_t), allocatable :: w0_cell(:),divw0(:)
+      real (kind = dp_t) :: w0_gradur,w0_gradvr,w0_gradwr
+      real (kind = dp_t) :: gradw0
+      real (kind = dp_t), allocatable :: divw0(:)
       real (kind = dp_t), allocatable :: divw0_cart(:,:,:)
-      real (kind = dp_t), allocatable :: w0_cart(:,:,:)
 
       ! 1) Subtract (Utilde dot grad) Utilde term from old Utilde
       ! 2) Add forcing term to new Utilde
@@ -552,64 +551,59 @@ module update_module
       enddo
       enddo
 
-      ! 3) Subtract (Utilde dot er) dot grad w0 term from new Utilde.
+      ! A) Subtract (Utilde dot er) dot grad w0 term from new Utilde.
+      ! B) Subtract w0 dot grad U term from new Utilde
       if (spherical .eq. 0) then
 
         do k = lo(3), hi(3)
-          wbar = HALF*(wmac(i,j,k) + wmac(i,j,k+1))
-          dt_wmac_dw0dr = dt * wbar * (w0(k+1) - w0(k)) /dx(3)
-          unew(:,:,k,3) = unew(:,:,k,3) - dt_wmac_dw0dr
+
+          gradw0 = (w0(k+1) - w0(k)) /dx(3)
+          do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+            wbar = HALF*(wmac(i,j,k) + wmac(i,j,k+1))
+            unew(i,j,k,3) = unew(i,j,k,3) - dt * wbar * gradw0
+          enddo
+          enddo
+
+          wbar = HALF*(w0(k) + w0(k+1))
+          do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+            unew(i,j,k,:) = unew(i,j,k,:) - dt * wbar*(sedgez(i,j,k+1,:) - sedgez(i,j,k,:))/dx(3)
+          enddo
+          enddo
+
         enddo
 
       else
+
+      ! A) Subtract (Utilde dot er) dot grad w0 term from new Utilde.
 
         nr = size(w0,dim=1)-1
-        allocate(divw0(nr))
-        do k = 1,nr
-          i = k + (lo(3)-1)
-          divw0(k) = (w0(i+1)-w0(i))/dr
-        end do
-        allocate(divw0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-        call fill_3d_data(divw0_cart,divw0,dx,0)
 
-        do k = lo(3), hi(3)
-        do j = lo(2), hi(2)
-        do i = lo(1), hi(1)
-           ubar = HALF*(umac(i,j,k) + umac(i+1,j,k))
-           vbar = HALF*(vmac(i,j,k) + vmac(i,j+1,k))
-           wbar = HALF*(wmac(i,j,k) + wmac(i,j,k+1))
-           unew(i,j,k,1) = unew(i,j,k,1) - dt * ubar*normal(i,j,k,1)*divw0_cart(i,j,k)
-           unew(i,j,k,2) = unew(i,j,k,2) - dt * vbar*normal(i,j,k,2)*divw0_cart(i,j,k)
-           unew(i,j,k,3) = unew(i,j,k,3) - dt * wbar*normal(i,j,k,3)*divw0_cart(i,j,k)
-        enddo
-        enddo
-        enddo
-        deallocate(divw0,divw0_cart)
+!       THIS IS CURRENTLY WRONG !!
+!       allocate(divw0(nr))
+!       do k = 1,nr
+!         i = k + (lo(3)-1)
+!         divw0(k) = (w0(i+1)-w0(i))/dr
+!       end do
+!       allocate(divw0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+!       call fill_3d_data(divw0_cart,divw0,lo,hi,dx,0)
 
-      end if
+!       do k = lo(3), hi(3)
+!       do j = lo(2), hi(2)
+!       do i = lo(1), hi(1)
+!          ubar = HALF*(umac(i,j,k) + umac(i+1,j,k))
+!          vbar = HALF*(vmac(i,j,k) + vmac(i,j+1,k))
+!          wbar = HALF*(wmac(i,j,k) + wmac(i,j,k+1))
+!          unew(i,j,k,1) = unew(i,j,k,1) - dt * ubar*ddx_w0dotex + vbar*ddy_w0dotex + wbar*ddz_w0dotex
+!          unew(i,j,k,2) = unew(i,j,k,2) - dt * vbar*normal(i,j,k,2)*divw0_cart(i,j,k)
+!          unew(i,j,k,3) = unew(i,j,k,3) - dt * wbar*normal(i,j,k,3)*divw0_cart(i,j,k)
+!       enddo
+!       enddo
+!       enddo
+!       deallocate(divw0,divw0_cart)
 
-      ! 3) Subtract w0 dot grad U term from new Utilde
-      if (spherical .eq. 0) then
-
-        do k = lo(3), hi(3)
-        do j = lo(2), hi(2)
-        do i = lo(1), hi(1)
-          wbar = HALF*(w0(k) + w0(k+1))
-          unew(i,j,k,:) = unew(i,j,k,:) - dt * wbar*(sedgez(i,j,k+1,:) - sedgez(i,j,k,:))/dx(3)
-        enddo
-        enddo
-        enddo
-
-      else
-
-        allocate(w0_cell(nr))
-        do k = 1,nr
-          i = k + (lo(3)-1)
-          w0_cell(k) = HALF * (w0(i+1)+w0(i))
-        end do
-
-        allocate(w0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-        call fill_3d_data(w0_cart,w0_cell,dx,0)
+        ! B) Subtract (w0 dot grad) U term from new Utilde
 
         do k = lo(3), hi(3)
         do j = lo(2), hi(2)
@@ -624,18 +618,17 @@ module update_module
            gradvz = (sedgez(i,j,k+1,2) - sedgez(i,j,k,2))/dx(3)
            gradwz = (sedgez(i,j,k+1,3) - sedgez(i,j,k,3))/dx(3)
 
-           gradur = gradux * normal(i,j,k,1) + graduy * normal(i,j,k,2) + graduz * normal(i,j,k,3)
-           gradvr = gradvx * normal(i,j,k,1) + gradvy * normal(i,j,k,2) + gradvz * normal(i,j,k,3)
-           gradwr = gradwx * normal(i,j,k,1) + gradwy * normal(i,j,k,2) + gradwz * normal(i,j,k,3)
+           w0_gradur = gradux * w0_cart(i,j,k,1) + graduy * w0_cart(i,j,k,2) + graduz * w0_cart(i,j,k,3)
+           w0_gradvr = gradvx * w0_cart(i,j,k,1) + gradvy * w0_cart(i,j,k,2) + gradvz * w0_cart(i,j,k,3)
+           w0_gradwr = gradwx * w0_cart(i,j,k,1) + gradwy * w0_cart(i,j,k,2) + gradwz * w0_cart(i,j,k,3)
 
-           unew(i,j,k,1) = unew(i,j,k,1) - dt * w0_cart(i,j,k) * gradur
-           unew(i,j,k,2) = unew(i,j,k,2) - dt * w0_cart(i,j,k) * gradvr
-           unew(i,j,k,2) = unew(i,j,k,3) - dt * w0_cart(i,j,k) * gradwr
+           unew(i,j,k,1) = unew(i,j,k,1) - dt * w0_gradur
+           unew(i,j,k,2) = unew(i,j,k,2) - dt * w0_gradvr
+           unew(i,j,k,2) = unew(i,j,k,3) - dt * w0_gradwr
 
         enddo
         enddo
         enddo
-        deallocate(w0_cell,w0_cart)
 
       end if
    

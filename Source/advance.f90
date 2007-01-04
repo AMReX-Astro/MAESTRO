@@ -89,6 +89,7 @@ module advance_timestep_module
     integer       , intent(in   ) :: verbose,mg_verbose,cg_verbose
 
     type(multifab), allocatable :: rhohalf(:)
+    type(multifab), allocatable :: w0_cart_vec(:)
     type(multifab), allocatable :: macrhs(:)
     type(multifab), allocatable ::  hgrhs(:)
     type(multifab), allocatable :: Source_nph(:)
@@ -110,10 +111,13 @@ module advance_timestep_module
     real(dp_t)     :: halfdt, half_time, new_time, eps_in
     integer :: i,j,n,dm,nscal,nlevs,comp
     integer :: nr,ng_cell
+    integer, allocatable :: lo(:),hi(:)
     logical :: nodal(mla%dim)
 
     nlevs = size(uold)
     dm    = mla%dim
+
+    allocate(lo(dm),hi(dm))
 
     ng_cell = uold(1)%ng
 
@@ -124,6 +128,7 @@ module advance_timestep_module
     allocate(Source_nph(nlevs))
 
     allocate(rhohalf(nlevs))
+    allocate(w0_cart_vec(nlevs))
     allocate(macrhs(nlevs))
     allocate( hgrhs(nlevs))
 
@@ -163,6 +168,10 @@ module advance_timestep_module
 
        call average(Source_nph(n),Sbar,dx(n,:))
        call make_w0(w0,Sbar(:,1),p0_old,s0_old(:,rho_comp),temp0,gam1,dx(n,dm),dt)
+       if (dm .eq. 3) then
+         call multifab_build(w0_cart_vec(n), mla%la(n),dm,1)
+         call make_w0_cart(w0,w0_cart_vec(n),normal(n),dx(n,:)) 
+       end if
     end do
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -174,7 +183,7 @@ module advance_timestep_module
 
        call advance_premac(uold(n), sold(n),&
                            umac(n,:), uedge(n,:), utrans(n,:),&
-                           gp(n), p(n), normal(n), w0, s0_old, &
+                           gp(n), p(n), normal(n), w0, w0_cart_vec(n), s0_old, &
                            dx(n,:),time,dt, &
                            the_bc_tower%bc_tower_array(n), &
                            verbose)
@@ -189,7 +198,9 @@ module advance_timestep_module
       do i = 1,div_coeff_3d%nboxes
         if (multifab_remote(div_coeff_3d,i)) cycle
         dp => dataptr(div_coeff_3d, i)
-        call fill_3d_data(dp(:,:,:,1),div_coeff_old,dx(nlevs,:),0)
+        lo =  lwb(get_box(div_coeff_3d, i))
+        hi =  upb(get_box(div_coeff_3d, i))
+        call fill_3d_data(dp(:,:,:,1),div_coeff_old,lo,hi,dx(nlevs,:),0)
       end do
       call macproject(mla,umac,sold,dx,the_bc_tower,verbose,mg_verbose,cg_verbose,press_comp,&
                       macrhs,div_coeff_3d=div_coeff_3d)
@@ -234,7 +245,7 @@ module advance_timestep_module
 
         do n = 1,nlevs
            call scalar_advance (uold(n), s1(n), s2(n), &
-                                umac(n,:), w0, sedge(n,:), utrans(n,:),&
+                                umac(n,:), w0, w0_cart_vec(n), sedge(n,:), utrans(n,:),&
                                 scal_force(n), normal(n), s0_1, s0_2, p0_1, p0_2, temp0, &
                                 dx(n,:),time,dt, &
                                 the_bc_tower%bc_tower_array(n), &
@@ -281,6 +292,10 @@ module advance_timestep_module
            call make_S_at_halftime(Source_nph(n),Source_old(n),Source_new(n))
            call average(Source_nph(n),Sbar,dx(n,:))
            call make_w0(w0,Sbar(:,1),p0_new,s0_new(:,rho_comp),temp0,gam1,dx(n,dm),dt)
+           if (dm .eq. 3) then
+             call multifab_build(w0_cart_vec(n), mla%la(n),dm,1)
+             call make_w0_cart(w0,w0_cart_vec(n),normal(n),dx(n,:)) 
+           end if
         end do
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -291,7 +306,7 @@ module advance_timestep_module
         do n = 1,nlevs
            call advance_premac(uold(n), sold(n),&
                                umac(n,:), uedge(n,:), utrans(n,:),&
-                               gp(n), p(n), normal(n), w0, s0_old, &
+                               gp(n), p(n), normal(n), w0, w0_cart_vec(n), s0_old, &
                                dx(n,:),time,dt, &
                                the_bc_tower%bc_tower_array(n), &
                                verbose)
@@ -324,7 +339,9 @@ module advance_timestep_module
           do i = 1,div_coeff_3d%nboxes
             if (multifab_remote(div_coeff_3d,i)) cycle
             dp => dataptr(div_coeff_3d, i)
-            call fill_3d_data(dp(:,:,:,1),div_coeff_nph,dx(nlevs,:),0)
+            lo =  lwb(get_box(div_coeff_3d, i))
+            hi =  upb(get_box(div_coeff_3d, i))
+            call fill_3d_data(dp(:,:,:,1),div_coeff_nph,lo,hi,dx(nlevs,:),0)
           end do
           call macproject(mla,umac,rhohalf,dx,the_bc_tower,verbose,mg_verbose,cg_verbose,&
                           press_comp,macrhs,div_coeff_3d=div_coeff_3d)
@@ -348,7 +365,7 @@ module advance_timestep_module
 
         do n = 1,nlevs
            call scalar_advance (uold(n), s1(n), s2(n), &
-                                umac(n,:), w0, sedge(n,:), utrans(n,:),&
+                                umac(n,:), w0, w0_cart_vec(n), sedge(n,:), utrans(n,:),&
                                 scal_force(n), normal(n), s0_1, s0_2, p0_1, p0_2, temp0, &
                                 dx(n,:),time,dt, &
                                 the_bc_tower%bc_tower_array(n), &
@@ -408,7 +425,7 @@ module advance_timestep_module
            call velocity_advance(uold(n),unew(n),sold(n),rhohalf(n),&
                                  umac(n,:),uedge(n,:), &
                                  utrans(n,:),gp(n),p(n), &
-                                 normal(n), w0, s0_old, s0_nph, &
+                                 normal(n), w0, w0_cart_vec(n), s0_old, s0_nph, &
                                  dx(n,:),time,dt, &
                                  the_bc_tower%bc_tower_array(n), &
                                  verbose)
@@ -436,7 +453,9 @@ module advance_timestep_module
           do i = 1,div_coeff_3d%nboxes
             if (multifab_remote(div_coeff_3d,i)) cycle
             dp => dataptr(div_coeff_3d, i)
-            call fill_3d_data(dp(:,:,:,1),div_coeff_nph,dx(nlevs,:),0)
+            lo =  lwb(get_box(div_coeff_3d, i))
+            hi =  upb(get_box(div_coeff_3d, i))
+            call fill_3d_data(dp(:,:,:,1),div_coeff_nph,lo,hi,dx(nlevs,:),0)
           end do
           eps_in = 1.d-10
           call hgproject(mla, unew, rhohalf, p, gp, dx, dt, &
@@ -466,14 +485,22 @@ module advance_timestep_module
         deallocate(macrhs)
         deallocate( hgrhs)
         deallocate(rhohalf)
-
-        if (spherical .eq. 1) call destroy(div_coeff_3d)
+       
+        if (spherical .eq. 1) then
+          do n = 1, nlevs
+            call destroy(w0_cart_vec(n))
+          end do
+          deallocate(w0_cart_vec)
+          call destroy(div_coeff_3d)
+        end if
 
         deallocate(  Sbar)
         deallocate(s0_nph)
         deallocate(div_coeff_nph)
         deallocate(div_coeff_edge)
         deallocate(grav_edge)
+
+        deallocate(lo,hi)
 
     end subroutine advance_timestep
 

@@ -176,7 +176,7 @@ contains
 
     if (spherical == 1) then
        allocate(temp0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-       call fill_3d_data(temp0_cart,temp0,dx,0)
+       call fill_3d_data(temp0_cart,temp0,lo,hi,dx,0)
     endif
 
     do k = lo(3), hi(3)

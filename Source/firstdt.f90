@@ -167,10 +167,10 @@ contains
 
       if (spherical == 1) then
          allocate(t0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-         call fill_3d_data(t0_cart,t0,dx,0)
+         call fill_3d_data(t0_cart,t0,lo,hi,dx,0)
          
          allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-         call fill_3d_data(p0_cart,p0,dx,0)
+         call fill_3d_data(p0_cart,p0,lo,hi,dx,0)
       endif
 
 

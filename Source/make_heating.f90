@@ -63,6 +63,8 @@ contains
                       + .01875_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r1))) &
                       + .01250_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r2))) ) * 1.d17
 
+!           H(i,j) = ey * 1.d17
+
 !           ! HACK NO HEATING
 !           H(i,j) = ZERO
 
