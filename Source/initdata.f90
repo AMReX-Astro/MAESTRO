@@ -320,10 +320,17 @@ contains
     r1 = sqrt( (x-x1)**2 +(y-y1)**2 ) / 2.5e6
     r2 = sqrt( (x-x2)**2 +(y-y2)**2 ) / 2.5e6
     
+    ! This case works
     temp = t0 * (ONE + TWO * ( &
          .15_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r0))) + &
          .3_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r1))) + &
          .225_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r2)))  ) )
+
+    ! This case breaks
+!   temp = t0 * (ONE + FOUR * ( &
+!        .15_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r0))) + &
+!        .3_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r1))) + &
+!        .225_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r2)))  ) )
           
     ! Use the EOS to make this temperature perturbation occur at constant 
     ! pressure
@@ -460,7 +467,7 @@ contains
 
     logical :: do_diag
 
-    real(kind=dp_t), parameter :: cutoff_density = 2.5d6
+    real(kind=dp_t), parameter :: cutoff_density = 3.0d6
 
     do_diag = .false.
 
