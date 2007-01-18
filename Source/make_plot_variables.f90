@@ -407,7 +407,7 @@ contains
                    do_diag)
           
           t(i,j) = log(temp_row(1))/log(10.)
-          tpert(i,j) = t(i,j) - temp_row(1)
+          tpert(i,j) = temp_row(1) - t0(j)
 
           rhopert(i,j) = s(i,j,rho_comp) - s0(j,rho_comp)
 
