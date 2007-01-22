@@ -78,9 +78,9 @@ contains
     logical,            intent(in ) :: perturb_model
     real (kind = dp_t), intent(in ) :: prob_lo(:)
     real (kind = dp_t), intent(in ) :: prob_hi(:)
-    real(kind=dp_t), intent(in   ) ::    s0(lo(2):,:)
-    real(kind=dp_t), intent(in   ) ::    p0(lo(2):)
-    real(kind=dp_t), intent(in   ) :: temp0(lo(2):)
+    real(kind=dp_t), intent(in   ) ::    s0(0:,:)
+    real(kind=dp_t), intent(in   ) ::    p0(0:)
+    real(kind=dp_t), intent(in   ) :: temp0(0:)
 
     !     Local variables
     integer :: i, j, n
@@ -132,9 +132,9 @@ contains
     logical,            intent(in ) :: perturb_model
     real (kind = dp_t), intent(in ) :: prob_lo(:)
     real (kind = dp_t), intent(in ) :: prob_hi(:)
-    real(kind=dp_t), intent(in   ) ::    s0(lo(3):,:)
-    real(kind=dp_t), intent(in   ) ::    p0(lo(3):)
-    real(kind=dp_t), intent(in   ) :: temp0(lo(3):)
+    real(kind=dp_t), intent(in   ) ::    s0(0:,:)
+    real(kind=dp_t), intent(in   ) ::    p0(0:)
+    real(kind=dp_t), intent(in   ) :: temp0(0:)
 
     !     Local variables
     integer :: i, j, k, n
@@ -250,9 +250,9 @@ contains
     real (kind = dp_t), intent(in ) :: dx(:)
     real (kind = dp_t), intent(in ) :: prob_lo(:)
     real (kind = dp_t), intent(in ) :: prob_hi(:)
-    real(kind=dp_t), intent(in   ) ::    s0(lo(2):,:)
-    real(kind=dp_t), intent(in   ) ::    p0(lo(2):)
-    real(kind=dp_t), intent(in   ) :: temp0(lo(2):)
+    real(kind=dp_t), intent(in   ) ::    s0(0:,:)
+    real(kind=dp_t), intent(in   ) ::    p0(0:)
+    real(kind=dp_t), intent(in   ) :: temp0(0:)
 
     !     Local variables
     integer :: i, j, n
@@ -274,9 +274,9 @@ contains
     real (kind = dp_t), intent(in ) :: dx(:)
     real (kind = dp_t), intent(in ) :: prob_lo(:)
     real (kind = dp_t), intent(in ) :: prob_hi(:)
-    real(kind=dp_t), intent(in   ) ::    s0(lo(3):,:)
-    real(kind=dp_t), intent(in   ) ::    p0(lo(3):)
-    real(kind=dp_t), intent(in   ) :: temp0(lo(3):)
+    real(kind=dp_t), intent(in   ) ::    s0(0:,:)
+    real(kind=dp_t), intent(in   ) ::    p0(0:)
+    real(kind=dp_t), intent(in   ) :: temp0(0:)
 
     !     Local variables
     integer :: i, j, k, n
