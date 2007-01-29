@@ -403,7 +403,6 @@ module advance_timestep_module
                             gam1,grav_edge,dx(1,dm),anelastic_cutoff)
 
 
-
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !! STEP 10 -- compute S^{n+1} for the final projection
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -420,6 +419,13 @@ module advance_timestep_module
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !! STEP 11 -- update the velocity
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+        ! Define rho at half time using the new rho from Step 8!
+        do n = 1,nlevs
+           call make_at_halftime(rhohalf(n),sold(n),snew(n),rho_comp,1,dx(n,:), &
+                                 the_bc_tower%bc_tower_array(n))
+           call multifab_fill_boundary(rhohalf(n))
+        end do
 
         do n = 1,nlevs
            call velocity_advance(uold(n),unew(n),sold(n),rhohalf(n),&
@@ -446,6 +452,11 @@ module advance_timestep_module
         do n = 1,nlevs
            call make_hgrhs(hgrhs(n),Source_new(n),gamma1_term(n),Sbar(:,1),div_coeff_new,dx(n,:), &
                            layout_get_pd(mla%la(n)))
+        end do
+
+        ! Define beta at half time using the div_coeff_new from step 9!
+        do j = 1,size(div_coeff_old,dim=1)
+          div_coeff_nph(j) = HALF * (div_coeff_old(j) + div_coeff_new(j))
         end do
 
 !       Project the new velocity field.
