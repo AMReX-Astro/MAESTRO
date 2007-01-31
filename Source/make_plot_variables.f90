@@ -162,7 +162,8 @@ contains
                    gam1_row, cs_row, s_row, &
                    do_diag)
           
-          T(i,j) = log(temp_row(1))/log(10.)
+!         T(i,j) = log(temp_row(1))/log(10.)
+          T(i,j) = temp_row(1)
 
           deltaP(i,j) = (p_row(1)-p0(j))/ p0(j)
           
@@ -406,7 +407,8 @@ contains
                    gam1_row, cs_row, s_row, &
                    do_diag)
           
-          t(i,j) = log(temp_row(1))/log(10.)
+!         t(i,j) = log(temp_row(1))/log(10.)
+          t(i,j) = temp_row(1)
           tpert(i,j) = temp_row(1) - t0(j)
 
           rhopert(i,j) = s(i,j,rho_comp) - s0(j,rho_comp)
