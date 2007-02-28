@@ -6,6 +6,7 @@ module react_state_module
   use setbc_module
   use eos_module
   use network
+  use burner_module
   use variables
   use geometry
   use fill_3d_module
