@@ -62,6 +62,7 @@ contains
                   dpdt_row, dpdr_row, dedt_row, dedr_row, &
                   dpdX_row, dhdX_row, &
                   gam1_row, cs_row, s_row, &
+                  dsdt_row, dsdr_row, &
                   do_diag)
 
          s0_out(j,rhoh_comp) = s0_in(j,rhoh_comp)

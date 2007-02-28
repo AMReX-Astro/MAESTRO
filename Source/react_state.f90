@@ -131,6 +131,7 @@ contains
                    dpdt_row, dpdr_row, dedt_row, dedr_row, &
                    dpdX_row, dhdX_row, &
                    gam1_row, cs_row, s_row, &
+                   dsdt_row, dsdr_row, &
                    do_diag)
 
           T_in = temp_row(1)
@@ -209,6 +210,7 @@ contains
                    dpdt_row, dpdr_row, dedt_row, dedr_row, &
                    dpdX_row, dhdX_row, &
                    gam1_row, cs_row, s_row, &
+                   dsdt_row, dsdr_row, &
                    do_diag)
 
           T_in = temp_row(1)

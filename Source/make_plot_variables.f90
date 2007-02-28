@@ -160,6 +160,7 @@ contains
                    dpdt_row, dpdr_row, dedt_row, dedr_row, &
                    dpdX_row, dhdX_row, &
                    gam1_row, cs_row, s_row, &
+                   dsdt_row, dsdr_row, &
                    do_diag)
           
 !         T(i,j) = log(temp_row(1))/log(10.)
@@ -211,6 +212,7 @@ contains
                       dpdt_row, dpdr_row, dedt_row, dedr_row, &
                       dpdX_row, dhdX_row, &
                       gam1_row, cs_row, s_row, &
+                      dsdt_row, dsdr_row, &
                       do_diag)
 
              T(i,j,k) = log(temp_row(1))/log(10.)
@@ -268,6 +270,7 @@ contains
                       dpdt_row, dpdr_row, dedt_row, dedr_row, &
                       dpdX_row, dhdX_row, &
                       gam1_row, cs_row, s_row, &
+                      dsdt_row, dsdr_row, &
                       do_diag)
 
              T(i,j,k) = log(temp_row(1))/log(10.)
@@ -380,6 +383,7 @@ contains
                 dpdt_row, dpdr_row, dedt_row, dedr_row, &
                 dpdX_row, dhdX_row, &
                 gam1_row, cs_row, s_row, &
+                dsdt_row, dsdr_row, &
                 do_diag)
         t0(j) = temp_row(1)
      gam10(j) = gam1_row(1)
@@ -405,6 +409,7 @@ contains
                    dpdt_row, dpdr_row, dedt_row, dedr_row, &
                    dpdX_row, dhdX_row, &
                    gam1_row, cs_row, s_row, &
+                   dsdt_row, dsdr_row, &
                    do_diag)
           
 !         t(i,j) = log(temp_row(1))/log(10.)
@@ -469,6 +474,7 @@ contains
                 dpdt_row, dpdr_row, dedt_row, dedr_row, &
                 dpdX_row, dhdX_row, &
                 gam1_row, cs_row, s_row, &
+                dsdt_row, dsdr_row, &
                 do_diag)
         t0(k) = temp_row(1)
      gam10(k) = gam1_row(1)
@@ -495,6 +501,7 @@ contains
                       dpdt_row, dpdr_row, dedt_row, dedr_row, &
                       dpdX_row, dhdX_row, &
                       gam1_row, cs_row, s_row, &
+                      dsdt_row, dsdr_row, &
                       do_diag)
 
              t(i,j,k) = log(temp_row(1))/log(10.)
@@ -563,6 +570,7 @@ contains
                 dpdt_row, dpdr_row, dedt_row, dedr_row, &
                 dpdX_row, dhdX_row, &
                 gam1_row, cs_row, s_row, &
+                dsdt_row, dsdr_row, &
                 do_diag)
         t0(k) = temp_row(1)
      gam10(k) = gam1_row(1)
@@ -601,6 +609,7 @@ contains
                       dpdt_row, dpdr_row, dedt_row, dedr_row, &
                       dpdX_row, dhdX_row, &
                       gam1_row, cs_row, s_row, &
+                      dsdt_row, dsdr_row, &
                       do_diag)
 
              t(i,j,k) = log(temp_row(1))/log(10.)
@@ -860,6 +869,7 @@ contains
                    dpdt_row, dpdr_row, dedt_row, dedr_row, &
                    dpdX_row, dhdX_row, &
                    gam1_row, cs_row, s_row, &
+                   dsdt_row, dsdr_row, &
                    do_diag)
           
           dT(i,j) = temp_row(1)
@@ -886,6 +896,7 @@ contains
                    dpdt_row, dpdr_row, dedt_row, dedr_row, &
                    dpdX_row, dhdX_row, &
                    gam1_row, cs_row, s_row, &
+                   dsdt_row, dsdr_row, &
                    do_diag)
 
           dT(i,j) = dT(i,j) - temp_row(1)
