@@ -3,7 +3,6 @@ module mkscalforce_module
   ! this module contains the 2d and 3d routines that make the 
   ! forcing term, w dp/dr,  for rho*h .  
 
-  use eos_module
   use bl_constants_module
   use fill_3d_module
   use variables
