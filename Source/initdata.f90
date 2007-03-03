@@ -6,8 +6,6 @@ module init_module
   use setbc_module
   use define_bc_module
   use multifab_module
-  use make_div_coeff_module
-  use make_grav_module
   use fill_3d_module
   use eos_module
   use variables
