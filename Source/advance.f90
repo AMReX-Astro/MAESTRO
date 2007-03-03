@@ -102,7 +102,7 @@ module advance_timestep_module
     real(dp_t)    , allocatable ::          Sbar(:,:)
     real(dp_t)    , allocatable :: div_coeff_nph(:)
     real(dp_t)    , allocatable :: div_coeff_edge(:)
-    real(dp_t)    , allocatable ::      grav_edge(:)
+    real(dp_t)    , allocatable ::      grav_cell(:)
     real(dp_t)    , allocatable :: rho_omegadotbar1(:,:)
     real(dp_t)    , allocatable :: rho_omegadotbar2(:,:)
     real(dp_t)    , allocatable :: rho_Hextbar(:,:)
@@ -139,7 +139,7 @@ module advance_timestep_module
     allocate(            Sbar(nr,1))
     allocate(   div_coeff_nph(nr))
     allocate(  div_coeff_edge(nr+1))
-    allocate(       grav_edge(nr+1))
+    allocate(       grav_cell(nr))
     allocate(rho_omegadotbar1(nr,nspec))
     allocate(rho_omegadotbar2(nr,nspec))
     allocate(rho_Hextbar(nr,1))
@@ -225,9 +225,9 @@ module advance_timestep_module
         call average(rho_omegadot1(1),rho_omegadotbar1,dx(1,:))
         call average(rho_Hext(1),rho_Hextbar,dx(1,:))
         call react_base(p0_old,s0_old,temp0,rho_omegadotbar1,rho_Hextbar(:,1),dx(1,dm),halfdt,p0_1,s0_1,gam1)
-        call make_grav_edge(grav_edge,s0_1(:,rho_comp))
+        call make_grav_cell(grav_cell,s0_1(:,rho_comp))
         call make_div_coeff(div_coeff_new,s0_1(:,rho_comp),p0_1, &
-                            gam1,grav_edge,dx(1,dm),anelastic_cutoff)
+                            gam1,grav_cell,dx(1,dm),anelastic_cutoff)
 
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -239,9 +239,9 @@ module advance_timestep_module
         call advect_base(w0,Sbar(:,1),p0_1,p0_2,s0_1,s0_2,temp0,gam1, &
                          div_coeff_edge,&
                          dx(1,dm),dt,anelastic_cutoff)
-        call make_grav_edge(grav_edge,s0_2(:,rho_comp))
+        call make_grav_cell(grav_cell,s0_2(:,rho_comp))
         call make_div_coeff(div_coeff_new,s0_2(:,rho_comp),p0_2, &
-                            gam1,grav_edge,dx(1,dm),anelastic_cutoff)
+                            gam1,grav_cell,dx(1,dm),anelastic_cutoff)
 
         do n = 1,nlevs
            call scalar_advance (uold(n), s1(n), s2(n), &
@@ -278,9 +278,9 @@ module advance_timestep_module
         call average(rho_omegadot2(1),rho_omegadotbar2,dx(1,:))
         call average(rho_Hext(1),rho_Hextbar,dx(1,:))
         call react_base(p0_2,s0_2,temp0,rho_omegadotbar2,rho_Hextbar(:,1),dx(1,dm),halfdt,p0_new,s0_new,gam1)
-        call make_grav_edge(grav_edge,s0_new(:,rho_comp))
+        call make_grav_cell(grav_cell,s0_new(:,rho_comp))
         call make_div_coeff(div_coeff_new,s0_new(:,rho_comp),p0_new, &
-                            gam1,grav_edge,dx(1,dm),anelastic_cutoff)
+                            gam1,grav_cell,dx(1,dm),anelastic_cutoff)
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !! STEP 6 -- define a new average expansion rate at n+1/2
@@ -359,9 +359,9 @@ module advance_timestep_module
         call advect_base(w0,Sbar(:,1),p0_1,p0_2,s0_1,s0_2,temp0,gam1, &
                          div_coeff_edge,&
                          dx(1,dm),dt,anelastic_cutoff)
-        call make_grav_edge(grav_edge,s0_2(:,rho_comp))
+        call make_grav_cell(grav_cell,s0_2(:,rho_comp))
         call make_div_coeff(div_coeff_new,s0_2(:,rho_comp),p0_2, &
-                            gam1,grav_edge,dx(1,dm),anelastic_cutoff)
+                            gam1,grav_cell,dx(1,dm),anelastic_cutoff)
 
         do n = 1,nlevs
            call scalar_advance (uold(n), s1(n), s2(n), &
@@ -398,9 +398,9 @@ module advance_timestep_module
         call average(rho_omegadot2(1),rho_omegadotbar2,dx(1,:))
         call average(rho_Hext(1),rho_Hextbar,dx(1,:))
         call react_base(p0_2,s0_2,temp0,rho_omegadotbar2,rho_Hextbar(:,1),dx(1,dm),halfdt,p0_new,s0_new,gam1)
-        call make_grav_edge(grav_edge,s0_new(:,rho_comp))
+        call make_grav_cell(grav_cell,s0_new(:,rho_comp))
         call make_div_coeff(div_coeff_new,s0_new(:,rho_comp),p0_new, &
-                            gam1,grav_edge,dx(1,dm),anelastic_cutoff)
+                            gam1,grav_cell,dx(1,dm),anelastic_cutoff)
 
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -509,7 +509,7 @@ module advance_timestep_module
         deallocate(s0_nph)
         deallocate(div_coeff_nph)
         deallocate(div_coeff_edge)
-        deallocate(grav_edge)
+        deallocate(grav_cell)
 
         deallocate(lo,hi)
 

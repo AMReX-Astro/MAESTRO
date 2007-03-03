@@ -10,11 +10,11 @@ contains
 
 !  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-   subroutine make_div_coeff (div_coeff,rho0,p0,gam1,grav_edge,dy,anelastic_cutoff)
+   subroutine make_div_coeff (div_coeff,rho0,p0,gam1,grav_center,dy,anelastic_cutoff)
 
       real(kind=dp_t), intent(  out) :: div_coeff(:)
       real(kind=dp_t), intent(in   ) :: rho0(:), p0(:), gam1(:)
-      real(kind=dp_t), intent(in   ) :: grav_edge(:), dy, anelastic_cutoff
+      real(kind=dp_t), intent(in   ) :: grav_center(:), dy, anelastic_cutoff
 
       integer :: j,ny,j_anel
       real(kind=dp_t) :: integral
@@ -49,7 +49,7 @@ contains
 
          if (j == 1 .or. j == ny) then
 
-            integral = abs(grav_edge(j))*rho0(j)*dy/(p0(j)*gam1(j))
+            integral = abs(grav_center(j))*rho0(j)*dy/(p0(j)*gam1(j))
 
          else
             denom = nu*gam1(j) - mu*p0(j)
@@ -58,7 +58,7 @@ contains
             coeff2 = lambda*p0(j)/nu - rho0(j)
 
             
-            integral = (abs(grav_edge(j))/denom)* &
+            integral = (abs(grav_center(j))/denom)* &
                  (coeff1*log( (gam1(j) + HALF*mu*dy)/ &
                               (gam1(j) - HALF*mu*dy)) - &
                   coeff2*log( (p0(j) + HALF*nu*dy)/ &
