@@ -167,6 +167,7 @@ module advance_timestep_module
        endif
 
        call average(Source_nph(n),Sbar,dx(n,:))
+
        call make_w0(w0,Sbar(:,1),p0_old,s0_old(:,rho_comp),temp0,gam1,dx(n,dm),dt)
        if (dm .eq. 3) then
          call multifab_build(w0_cart_vec(n), mla%la(n),dm,1)
@@ -291,6 +292,7 @@ module advance_timestep_module
                        rho_omegadot2(n),rho_Hext(n),p0_new,temp0,gam1,dx(n,:),time)
            call make_S_at_halftime(Source_nph(n),Source_old(n),Source_new(n))
            call average(Source_nph(n),Sbar,dx(n,:))
+
            call make_w0(w0,Sbar(:,1),p0_new,s0_new(:,rho_comp),temp0,gam1,dx(n,dm),dt)
            if (dm .eq. 3) then
              call multifab_build(w0_cart_vec(n), mla%la(n),dm,1)
@@ -299,7 +301,7 @@ module advance_timestep_module
         end do
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        !! STEP 7 -- redo the construction of the advective velocity
+        !! STEP 7 -- redo the construction of the advective velocity using the current w0
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         print *,'<<< STEP 7 >>>'
 
@@ -414,7 +416,6 @@ module advance_timestep_module
                        rho_omegadot2(n),rho_Hext(n),p0_new,temp0,gam1,dx(n,:),time)
            call average(Source_new(n),Sbar,dx(n,:))
         end do
-
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !! STEP 11 -- update the velocity
