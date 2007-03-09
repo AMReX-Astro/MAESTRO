@@ -749,4 +749,62 @@ contains
 
   end subroutine read_base_state
 
+  subroutine scalar_diags (istep,s,s0,dx)
+
+    integer        , intent(in   ) :: istep
+    type(multifab) , intent(inout) :: s
+    real(kind=dp_t), intent(in)    :: s0(:,:)
+    real(kind=dp_t), intent(in)    :: dx(:)
+
+    real(kind=dp_t), pointer:: sop(:,:,:,:)
+    integer :: lo(s%dim),hi(s%dim),ng,dm
+    integer :: i,n
+    
+    ng = s%ng
+    dm = s%dim
+
+    do i = 1, s%nboxes
+       if ( multifab_remote(s, i) ) cycle
+       sop => dataptr(s, i)
+       lo =  lwb(get_box(s, i))
+       hi =  upb(get_box(s, i))
+
+       select case (dm)
+       case (2)
+          call scalar_diags_2d(istep, sop(:,:,1,:), lo, hi, ng, dx, s0)
+       case (3)
+!         call scalar_diags_3d(istep, sop(:,:,:,:), lo, hi, ng, dx, s0)
+       end select
+    end do
+
+  end subroutine scalar_diags
+
+  subroutine scalar_diags_2d (istep, s,lo,hi,ng,dx,s0)
+
+    integer, intent(in) :: istep, lo(:), hi(:), ng
+    real (kind = dp_t), intent(in) ::  s(lo(1)-ng:,lo(2)-ng:,:)  
+    real (kind = dp_t), intent(in) :: dx(:)
+    real(kind=dp_t)   , intent(in) :: s0(0:,:)
+
+    ! Local variables
+    integer :: i, j, n
+    real(kind=dp_t) :: fac, stot, smax
+    character(len=11) :: file_name
+
+    write(unit=file_name,fmt='("rhodiag",i4.4)') istep
+    open(90,file=file_name)
+
+    fac = ONE / dble(hi(1)-lo(1)+1)
+    do j = lo(2), hi(2)
+      stot = ZERO
+      smax = ZERO
+      do i = lo(1), hi(1)
+         stot = stot + (s(i,j,rho_comp) - s0(j,rho_comp))
+         smax = max(smax,abs(s(i,j,rho_comp) - s0(j,rho_comp)))
+      enddo
+      write(90,*) j,stot*fac/ s0(j,rho_comp), smax / s0(j,rho_comp)
+    enddo
+    
+  end subroutine scalar_diags_2d
+
 end module init_module
