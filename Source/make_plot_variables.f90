@@ -215,7 +215,8 @@ contains
                       dsdt_row, dsdr_row, &
                       do_diag)
 
-             T(i,j,k) = log(temp_row(1))/log(10.)
+!            T(i,j,k) = log(temp_row(1))/log(10.)
+             T(i,j,k) = temp_row(1)
 
              deltaP(i,j,k) = (p_row(1)-p0(k))/ p0(k)
 
@@ -273,7 +274,8 @@ contains
                       dsdt_row, dsdr_row, &
                       do_diag)
 
-             T(i,j,k) = log(temp_row(1))/log(10.)
+!            T(i,j,k) = log(temp_row(1))/log(10.)
+             T(i,j,k) = temp_row(1)
 
              deltaP(i,j,k) = (p_row(1)-p0_cart(i,j,k))/ p0_cart(i,j,k)
 
@@ -504,7 +506,8 @@ contains
                       dsdt_row, dsdr_row, &
                       do_diag)
 
-             t(i,j,k) = log(temp_row(1))/log(10.)
+!            t(i,j,k) = log(temp_row(1))/log(10.)
+             t(i,j,k) = temp_row(1)
              tpert(i,j,k) = temp_row(1) - t0(k)
 
              rhopert(i,j,k) = s(i,j,k,rho_comp) - s0(k,rho_comp)
@@ -612,7 +615,8 @@ contains
                       dsdt_row, dsdr_row, &
                       do_diag)
 
-             t(i,j,k) = log(temp_row(1))/log(10.)
+!            t(i,j,k) = log(temp_row(1))/log(10.)
+             t(i,j,k) = temp_row(1)
              tpert(i,j,k) = temp_row(1) - t0_cart(i,j,k)
 
              rhopert(i,j,k) = s(i,j,k,rho_comp) - rho0_cart(i,j,k)
