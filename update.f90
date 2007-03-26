@@ -379,6 +379,7 @@ module update_module
       ! not spherical
       else 
 
+        allocate(delta_base(lo(3):hi(3)))
         do n = nstart, nstop
 
           base_edge(lo(3)  ) = base_old(lo(3),n)
@@ -392,7 +393,6 @@ module update_module
                            -1.d0/12.d0 * (base_old(k+1,n) + base_old(k-2,n))
           end do
 
-          allocate(delta_base(lo(3):hi(3)))
           do k = lo(3), hi(3)
             delta_base(k) = base_new(k,n) - base_old(k,n)
           end do
