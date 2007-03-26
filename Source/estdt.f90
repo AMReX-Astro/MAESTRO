@@ -58,7 +58,11 @@ contains
               call estdt_2d(uop(:,:,1,:), sop(:,:,1,:), fp(:,:,1,:), dUp(:,:,1,1), &
                             w0, p0, gam1, lo, hi, ng, dx, rho_min, dt_grid)
             case (3)
-              np => dataptr(normal, i)
+              if (spherical .eq. 1) then
+                np => dataptr(normal, i)
+              else
+                np => Null()
+              end if
               call estdt_3d(uop(:,:,:,:), sop(:,:,:,:), fp(:,:,:,:), dUp(:,:,:,1), np(:,:,:,:), &
                             w0, p0, gam1, lo, hi, ng, dx, rho_min, dt_grid)
          end select

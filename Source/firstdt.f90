@@ -68,7 +68,7 @@ contains
       real (kind = dp_t), intent(in ) ::     u(lo(1)-ng:,lo(2)-ng:,:)  
       real (kind = dp_t), intent(in ) ::     s(lo(1)-ng:,lo(2)-ng:,:)  
       real (kind = dp_t), intent(in ) :: force(lo(1)- 1:,lo(2)- 1:,:)  
-      real (kind = dp_t), intent(in ) :: p0(lo(2):), t0(lo(2):)
+      real (kind = dp_t), intent(in ) :: p0(0:), t0(0:)
       real (kind = dp_t), intent(in ) :: dx(:)
       real (kind = dp_t), intent(out) :: dt
 
@@ -144,7 +144,7 @@ contains
       real (kind = dp_t), intent(in ) ::     u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
       real (kind = dp_t), intent(in ) ::     s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
       real (kind = dp_t), intent(in ) :: force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)  
-      real (kind = dp_t), intent(in ) :: p0(lo(3):), t0(lo(3):)
+      real (kind = dp_t), intent(in ) :: p0(0:), t0(0:)
       real (kind = dp_t), intent(in ) :: dx(:)
       real (kind = dp_t), intent(out) :: dt
 
@@ -174,7 +174,6 @@ contains
          call fill_3d_data(p0_cart,p0,lo,hi,dx,0)
       endif
 
-
       do k = lo(3), hi(3)
          do j = lo(2), hi(2)
             do i = lo(1), hi(1)
@@ -196,11 +195,12 @@ contains
                call eos(input_flag, den_row, temp_row, &
                         npts, nspec, &
                         xn_zone, aion, zion, &
-                        p_row, h_row, e_row, &
+                        p_row, h_row, e_row, & 
                         cv_row, cp_row, xne_row, eta_row, pele_row, &
                         dpdt_row, dpdr_row, dedt_row, dedr_row, &
                         dpdX_row, dhdX_row, &
                         gam1_row, cs_row, s_row, &
+                        dsdt_row, dsdr_row, &
                         do_diag)
                
                spdx    = max(spdx ,max(abs(u(i,j,k,1)),cs_row(1)))
@@ -239,7 +239,8 @@ contains
         dt = min(dt,sqrt(2.0D0*dx(3)/pforcez))
       endif
 
-      deallocate(t0_cart,p0_cart)
+      if (spherical == 1) &
+        deallocate(t0_cart,p0_cart)
 
     end subroutine firstdt_3d
 
