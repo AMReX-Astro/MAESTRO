@@ -547,8 +547,8 @@ contains
       end if
 
       do k = lo(3)-1,hi(3)+1
-         call slopex_2d(s(:,:,k,:),slopex(:,:,k,:),lo,ng,1,adv_bc,slope_order)
-         call slopey_2d(s(:,:,k,:),slopey(:,:,k,:),lo,ng,1,adv_bc,slope_order)
+         call slopex_2d(s(:,:,k,n:),slopex(:,:,k,:),lo,ng,1,adv_bc,slope_order)
+         call slopey_2d(s(:,:,k,n:),slopey(:,:,k,:),lo,ng,1,adv_bc,slope_order)
       end do
       call slopez_3d(s(:,:,:,n:),slopez,lo,ng,1,adv_bc,slope_order)
 
