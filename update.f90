@@ -85,7 +85,7 @@ module update_module
 1000  format('OLD MIN/MAX : density           ',e17.10,2x,e17.10)
 1001  format('OLD MIN/MAX : rho * H           ',e17.10,2x,e17.10)
 1002  format('OLD MIN/MAX : ',a16,2x,e17.10,2x,e17.10)
-1003  format('OLD MIN/MAX :           tracer',2x,e17.10,2x,e17.10)
+1003  format('OLD MIN/MAX : tracer            ',2x,e17.10,2x,e17.10)
 
 
       do n = nstart, nstop
@@ -465,10 +465,12 @@ module update_module
           n = rho_comp
           smax_rho = -1.d20
           smin_rho =  1.d20
+          do k = lo(3), hi(3)
           do j = lo(2), hi(2)
           do i = lo(1), hi(1)
               smax_rho = max(smax_rho,snew(i,j,k,n))
               smin_rho = min(smin_rho,snew(i,j,k,n))
+          end do
           end do
           end do
           write(6,1000) smin_rho,smax_rho
@@ -479,7 +481,7 @@ module update_module
 1000  format('... new min/max : density           ',e17.10,2x,e17.10)
 1001  format('... new min/max : rho * H           ',e17.10,2x,e17.10)
 1002  format('... new min/max : ',a16,2x,e17.10,2x,e17.10)
-1003  format('... new min/max :           tracer',2x,e17.10,2x,e17.10)
+1003  format('... new min/max : tracer            ',2x,e17.10,2x,e17.10)
 1004  format(' ')
 
       deallocate(smin,smax)

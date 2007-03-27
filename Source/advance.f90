@@ -150,6 +150,8 @@ module advance_timestep_module
      call multifab_build(Source_nph(n), mla%la(n),     1, 0)
      call multifab_build(    macrhs(n), mla%la(n),     1, 0)
      call multifab_build(     hgrhs(n), mla%la(n),     1,       0, nodal)
+     if (dm.eq.3) &
+         call multifab_build(w0_cart_vec(n), mla%la(n),dm,1)
     end do
  
     if (spherical .eq. 1) call multifab_build(div_coeff_3d,mla%la(nlevs),1,0)
@@ -170,7 +172,6 @@ module advance_timestep_module
 
        call make_w0(w0,Sbar(:,1),p0_old,s0_old(:,rho_comp),temp0,gam1,dx(n,dm),dt)
        if (dm .eq. 3) then
-         call multifab_build(w0_cart_vec(n), mla%la(n),dm,1)
          call make_w0_cart(w0,w0_cart_vec(n),normal(n),dx(n,:)) 
        end if
     end do
@@ -295,7 +296,6 @@ module advance_timestep_module
 
            call make_w0(w0,Sbar(:,1),p0_new,s0_new(:,rho_comp),temp0,gam1,dx(n,dm),dt)
            if (dm .eq. 3) then
-             call multifab_build(w0_cart_vec(n), mla%la(n),dm,1)
              call make_w0_cart(w0,w0_cart_vec(n),normal(n),dx(n,:)) 
            end if
         end do
@@ -498,11 +498,14 @@ module advance_timestep_module
         deallocate( hgrhs)
         deallocate(rhohalf)
        
-        if (spherical .eq. 1) then
+        if (dm .eq. 3) then
           do n = 1, nlevs
             call destroy(w0_cart_vec(n))
           end do
           deallocate(w0_cart_vec)
+        end if
+
+        if (spherical .eq. 1) then
           call destroy(div_coeff_3d)
         end if
 
