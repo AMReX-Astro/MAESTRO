@@ -30,7 +30,8 @@ contains
       real(kind=dp_t), pointer:: np(:,:,:,:)
       real(kind=dp_t), pointer:: dUp(:,:,:,:)     
       integer :: lo(u%dim),hi(u%dim),ng,dm
-      real(kind=dp_t) :: dt_grid,dt_proc
+      real(kind=dp_t) :: dt_adv,  dt_adv_grid,dt_adv_proc
+      real(kind=dp_t) :: dt_divu,dt_divu_grid,dt_divu_proc
       real(kind=dp_t) :: dtchange
       integer         :: i
 
@@ -40,8 +41,11 @@ contains
       dm = u%dim
 
       dtchange = 1.1d0
-      dt_grid  = 1.d20
-      dt_proc  = 1.d20
+
+      dt_adv_grid   = 1.d20
+      dt_adv_proc   = 1.d20
+      dt_divu_grid  = 1.d20
+      dt_divu_proc  = 1.d20
 
       do i = 1, u%nboxes
          if ( multifab_remote(u, i) ) cycle
@@ -56,7 +60,7 @@ contains
          select case (dm)
             case (2)
               call estdt_2d(uop(:,:,1,:), sop(:,:,1,:), fp(:,:,1,:), dUp(:,:,1,1), &
-                            w0, p0, gam1, lo, hi, ng, dx, rho_min, dt_grid)
+                            w0, p0, gam1, lo, hi, ng, dx, rho_min, dt_adv_grid, dt_divu_grid)
             case (3)
               if (spherical .eq. 1) then
                 np => dataptr(normal, i)
@@ -64,14 +68,20 @@ contains
                 np => Null()
               end if
               call estdt_3d(uop(:,:,:,:), sop(:,:,:,:), fp(:,:,:,:), dUp(:,:,:,1), np(:,:,:,:), &
-                            w0, p0, gam1, lo, hi, ng, dx, rho_min, dt_grid)
+                            w0, p0, gam1, lo, hi, ng, dx, rho_min, dt_adv_grid, dt_divu_grid)
          end select
 
-         dt_proc = min(dt_proc,dt_grid)
+         dt_adv_proc  = min(dt_adv_proc ,dt_adv_grid)
+         dt_divu_proc = min(dt_divu_proc,dt_divu_grid)
       end do
 
       ! This sets dt to be the min of dt_proc over all processors.
-      call parallel_reduce(dt,dt_proc,MPI_MIN)
+      call parallel_reduce(dt_adv ,dt_adv_proc ,MPI_MIN)
+      call parallel_reduce(dt_divu,dt_divu_proc,MPI_MIN)
+
+      print *, '%%% timesteps (source, advective): ', dt_divu, dt_adv
+
+      dt = min(dt_adv,dt_divu)
 
       dt = dt * cflfac
 
@@ -82,7 +92,7 @@ contains
    end subroutine estdt
 
 
-   subroutine estdt_2d (u, s, force, divU, w0, p0, gam1, lo, hi, ng, dx, rho_min, dt)
+   subroutine estdt_2d (u, s, force, divU, w0, p0, gam1, lo, hi, ng, dx, rho_min, dt_adv, dt_divu)
 
      integer, intent(in) :: lo(:), hi(:), ng
      real (kind = dp_t), intent(in ) ::     u(lo(1)-ng:,lo(2)-ng:,:)  
@@ -92,13 +102,13 @@ contains
      real (kind = dp_t), intent( in) ::   w0(0:), p0(lo(2):), gam1(lo(2):)
      real (kind = dp_t), intent(in ) :: dx(:)
      real (kind = dp_t), intent(in ) :: rho_min
-     real (kind = dp_t), intent(out) :: dt
+     real (kind = dp_t), intent(out) :: dt_adv,dt_divu
 
 !    Local variables
      real (kind = dp_t)  :: spdx, spdy, spdr
      real (kind = dp_t)  :: pforcex, pforcey
      real (kind = dp_t)  :: eps
-     real (kind = dp_t)  :: dt_divU, denom, gradp0
+     real (kind = dp_t)  :: denom, gradp0
      integer             :: i,j
 
 
@@ -125,9 +135,9 @@ contains
      spdr = spdr / dx(2)
 
      if (spdx < eps .and. spdy < eps .and. spdr < eps) then
-        dt = min(dx(1),dx(2))
+        dt_adv = min(dx(1),dx(2))
      else
-        dt = 1.0D0  / max(spdx,spdy,spdr)
+        dt_adv = 1.0D0  / max(spdx,spdy,spdr)
      endif
 
 
@@ -143,16 +153,16 @@ contains
      enddo
 
      if (pforcex > eps) then
-        dt = min(dt,sqrt(2.0D0 *dx(1)/pforcex))
+        dt_adv = min(dt_adv,sqrt(2.0D0 *dx(1)/pforcex))
      endif
 
      if (pforcey > eps) then
-        dt = min(dt,sqrt(2.0D0 *dx(2)/pforcey))
+        dt_adv = min(dt_adv,sqrt(2.0D0 *dx(2)/pforcey))
      endif
 
 
      ! divU constraint
-     dt_divU = 1.d30
+     dt_divu = 1.d30
 
      do j = lo(2), hi(2)
         
@@ -170,19 +180,16 @@ contains
 
            if (denom > ZERO) then
 
-              dt_divU = min(dt_divU, &
+              dt_divu = min(dt_divu, &
                             HALF*(ONE - rho_min/s(i,j,rho_comp))/denom)
            endif
 
         enddo
      enddo
-     print *, '%%% timesteps (source, advective): ', dt_divU, dt
-
-     dt = min(dt,dt_divU)
 
    end subroutine estdt_2d
 
-   subroutine estdt_3d (u, s, force, divU, normal, w0, p0, gam1, lo, hi, ng, dx, rho_min, dt)
+   subroutine estdt_3d (u, s, force, divU, normal, w0, p0, gam1, lo, hi, ng, dx, rho_min, dt_adv, dt_divu)
 
      integer, intent(in) :: lo(:), hi(:), ng
      real (kind = dp_t), intent(in ) ::      u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
@@ -193,14 +200,13 @@ contains
      real (kind = dp_t), intent( in) ::   w0(0:), p0(lo(3):), gam1(lo(3):)
      real (kind = dp_t), intent(in ) :: dx(:)
      real (kind = dp_t), intent(in ) :: rho_min
-     real (kind = dp_t), intent(out) :: dt
+     real (kind = dp_t), intent(out) :: dt_adv, dt_divu
 
 !    Local variables
      real (kind = dp_t), allocatable :: w0_cart(:,:,:,:)
      real (kind = dp_t)  :: spdx, spdy, spdz, spdr
      real (kind = dp_t)  :: pforcex, pforcey, pforcez
      real (kind = dp_t)  :: eps
-     real (kind = dp_t)  :: dt_divU
      integer             :: i,j,k
 
      eps = 1.0e-8
@@ -259,9 +265,9 @@ contains
      spdz = spdz / dx(3)
       
      if (spdx < eps .and. spdy < eps .and. spdz < eps .and. spdr < eps) then
-        dt = min(dx(1),dx(2),dx(3))
+        dt_adv = min(dx(1),dx(2),dx(3))
      else
-        dt = 1.0D0  / max(spdx,spdy,spdz,spdr)
+        dt_adv = 1.0D0  / max(spdx,spdy,spdz,spdr)
      endif
      
 
@@ -281,35 +287,33 @@ contains
      enddo
      
      if (pforcex > eps) then
-        dt = min(dt,sqrt(2.0D0*dx(1)/pforcex))
+        dt_adv = min(dt_adv,sqrt(2.0D0*dx(1)/pforcex))
      endif
      
      if (pforcey > eps) then
-        dt = min(dt,sqrt(2.0D0*dx(2)/pforcey))
+        dt_adv = min(dt_adv,sqrt(2.0D0*dx(2)/pforcey))
      endif
      
      if (pforcez > eps) then
-        dt = min(dt,sqrt(2.0D0*dx(3)/pforcez))
+        dt_adv = min(dt_adv,sqrt(2.0D0*dx(3)/pforcez))
      endif
 
 
      ! divU constraint
-     dt_divU = 1.d30
+     dt_divu = 1.d30
 
      do k = lo(3), hi(3)
         do j = lo(2), hi(2)
            do i = lo(1), hi(1)
 
               if (divU(i,j,k) > ZERO) then
-                 dt_divU = min(dt_divU, &
+                 dt_divu = min(dt_divu, &
                                (ONE - rho_min/s(i,j,k,rho_comp))/divU(i,j,k))
               endif
 
            enddo
         enddo
      enddo
-
-     dt = min(dt,dt_divU)
 
    end subroutine estdt_3d
 

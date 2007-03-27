@@ -72,8 +72,6 @@ contains
           end do
         end do
 
-!       if (parallel_IOProcessor()) print *,'MAX VALUE OF H ',Hmax
-
       end if
 
    end subroutine get_H_2d
@@ -141,8 +139,6 @@ contains
           end do
         end do
         end do
-
-!       if (parallel_IOProcessor()) print *,'MAX VALUE OF H ',Hmax
 
       end if
 

@@ -78,11 +78,10 @@ contains
       integer :: i, j, n
       integer :: imax, jmax
 
-      real(kind=dp_t) :: x,y,Smax
+      real(kind=dp_t) :: x,y
       real(kind=dp_t) :: sigma, react_term, pres_term, gradp0
 
       Source = zero
-      Smax = ZERO
 
       do_diag = .false.
 
@@ -135,12 +134,8 @@ contains
 !           gamma1_term(i,j) = (gam1_row(1) - gam1(j))*u(i,j,2)*gradp0/(gam1(j)*gam1(j)*p0(j))
            gamma1_term(i,j) = 0.0_dp_t
 
-           Smax = max(Smax, abs(Source(i,j)))
         enddo
       enddo
-
-      print *,'new S at time ',time, Smax
-
  
    end subroutine make_S_2d
 
@@ -165,7 +160,7 @@ contains
       integer :: i, j, k , n
       integer :: imax, jmax, kmax
 
-      real(kind=dp_t) :: x,y,z,Smax
+      real(kind=dp_t) :: x,y,z
       real(kind=dp_t), allocatable :: p0_cart(:,:,:)
       real(kind=dp_t), allocatable :: t0_cart(:,:,:)
       real(kind=dp_t) :: sigma, react_term, pres_term
@@ -178,7 +173,6 @@ contains
       end if
 
       Source = zero
-      Smax = zero
 
       do_diag = .false.
 
@@ -228,14 +222,10 @@ contains
               Source(i,j,k) = sigma*(rho_Hext(i,j,k)/den_row(1) + react_term) + &
                    pres_term/(den_row(1)*dpdr_row(1))
 
-              Smax = max(Smax, abs(Source(i,j,k)))
-
               gamma1_term(i,j,k) = 0.0_dp_t
            enddo
         enddo
       enddo
-
-      print *,'new S at time ',time, Smax
 
       if (spherical .eq. 1) then
         deallocate(p0_cart,t0_cart)

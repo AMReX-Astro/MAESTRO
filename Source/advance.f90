@@ -291,6 +291,7 @@ module advance_timestep_module
         do n = 1, nlevs
            call make_S(Source_new(n),gamma1_term(n),snew(n),uold(n), &
                        rho_omegadot2(n),rho_Hext(n),p0_new,temp0,gam1,dx(n,:),time)
+           print *,'Source_new max at level ',n,norm_inf(Source_new(n))
            call make_S_at_halftime(Source_nph(n),Source_old(n),Source_new(n))
            call average(Source_nph(n),Sbar,dx(n,:))
 
@@ -414,6 +415,7 @@ module advance_timestep_module
         do n = 1, nlevs
            call make_S(Source_new(n),gamma1_term(n),snew(n),uold(n), &
                        rho_omegadot2(n),rho_Hext(n),p0_new,temp0,gam1,dx(n,:),time)
+           print *,'Source_new max at level ',n,norm_inf(Source_new(n))
            call average(Source_new(n),Sbar,dx(n,:))
         end do
 
