@@ -154,74 +154,85 @@ module advance_timestep_module
          call multifab_build(w0_cart_vec(n), mla%la(n),dm,1)
     end do
  
-    if (spherical .eq. 1) call multifab_build(div_coeff_3d,mla%la(nlevs),1,0)
+        if (spherical .eq. 1) call multifab_build(div_coeff_3d,mla%la(nlevs),1,0)
 
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    !! STEP 1 -- define average expansion at time n+1/2
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    print *,'<<< STEP 1 >>>'
-    do n = 1, nlevs
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !! STEP 1 -- define average expansion at time n+1/2
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-       if (init_mode) then
-          call make_S_at_halftime(Source_nph(n),Source_old(n),Source_new(n))
-       else
-          call extrap_to_halftime(Source_nph(n),Source_nm1(n),Source_old(n),dtold,dt)
-       endif
+        if (parallel_IOProcessor() .and. verbose .ge. 1) then
+          write(6,*) '<<< STEP  1 : make w0 >>> '
+        end if
 
-       call average(Source_nph(n),Sbar,dx(n,:))
+        do n = 1, nlevs
 
-       call make_w0(w0,Sbar(:,1),p0_old,s0_old(:,rho_comp),temp0,gam1,dx(n,dm),dt)
-       if (dm .eq. 3) then
-         call make_w0_cart(w0,w0_cart_vec(n),normal(n),dx(n,:)) 
-       end if
-    end do
+           if (init_mode) then
+              call make_S_at_halftime(Source_nph(n),Source_old(n),Source_new(n))
+           else
+              call extrap_to_halftime(Source_nph(n),Source_nm1(n),Source_old(n),dtold,dt)
+           endif
 
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    !! STEP 2 -- construct the advective velocity
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    print *,'<<< STEP 2 >>>'
+           call average(Source_nph(n),Sbar,dx(n,:))
+    
+           call make_w0(w0,Sbar(:,1),p0_old,s0_old(:,rho_comp),temp0,gam1,dx(n,dm),dt,verbose)
+           if (dm .eq. 3) then
+             call make_w0_cart(w0,w0_cart_vec(n),normal(n),dx(n,:)) 
+           end if
+        end do
 
-    do n = 1,nlevs
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !! STEP 2 -- construct the advective velocity
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-       call advance_premac(uold(n), sold(n),&
-                           umac(n,:), uedge(n,:), utrans(n,:),&
-                           gp(n), p(n), normal(n), w0, w0_cart_vec(n), s0_old, &
-                           dx(n,:),time,dt, &
-                           the_bc_tower%bc_tower_array(n), &
-                           verbose)
-    end do
+        if (parallel_IOProcessor() .and. verbose .ge. 1) then
+          write(6,*) '<<< STEP  2 : create MAC velocities>>> '
+        end if
 
-    do n = 1, nlevs
-       call make_macrhs(macrhs(n),Source_nph(n),gamma1_term(n),Sbar(:,1),div_coeff_old,dx(n,:))
-    end do
+        do n = 1,nlevs
 
-    ! MAC projection !
-    if (spherical .eq. 1) then
-      do i = 1,div_coeff_3d%nboxes
-        if (multifab_remote(div_coeff_3d,i)) cycle
-        dp => dataptr(div_coeff_3d, i)
-        lo =  lwb(get_box(div_coeff_3d, i))
-        hi =  upb(get_box(div_coeff_3d, i))
-        call fill_3d_data(dp(:,:,:,1),div_coeff_old,lo,hi,dx(nlevs,:),0)
-      end do
-      call macproject(mla,umac,sold,dx,the_bc_tower,verbose,mg_verbose,cg_verbose,press_comp,&
-                      macrhs,div_coeff_3d=div_coeff_3d)
-    else
-      call put_1d_beta_on_edges(div_coeff_old,div_coeff_edge)
-      call macproject(mla,umac,sold,dx,the_bc_tower,verbose,mg_verbose,cg_verbose,press_comp,&
-                      macrhs,div_coeff_1d=div_coeff_old,div_coeff_half_1d=div_coeff_edge)
-    end if
+           call advance_premac(uold(n), sold(n),&
+                               umac(n,:), uedge(n,:), utrans(n,:),&
+                               gp(n), p(n), normal(n), w0, w0_cart_vec(n), s0_old, &
+                               dx(n,:),time,dt, &
+                               the_bc_tower%bc_tower_array(n), &
+                               verbose)
+        end do
+
+        do n = 1, nlevs
+           call make_macrhs(macrhs(n),Source_nph(n),gamma1_term(n),Sbar(:,1),div_coeff_old,dx(n,:))
+        end do
+
+        ! MAC projection !
+        if (spherical .eq. 1) then
+          do i = 1,div_coeff_3d%nboxes
+            if (multifab_remote(div_coeff_3d,i)) cycle
+            dp => dataptr(div_coeff_3d, i)
+            lo =  lwb(get_box(div_coeff_3d, i))
+            hi =  upb(get_box(div_coeff_3d, i))
+            call fill_3d_data(dp(:,:,:,1),div_coeff_old,lo,hi,dx(nlevs,:),0)
+          end do
+          call macproject(mla,umac,sold,dx,the_bc_tower,verbose,mg_verbose,cg_verbose,press_comp,&
+                          macrhs,div_coeff_3d=div_coeff_3d)
+        else
+          call put_1d_beta_on_edges(div_coeff_old,div_coeff_edge)
+          call macproject(mla,umac,sold,dx,the_bc_tower,verbose,mg_verbose,cg_verbose,press_comp,&
+                          macrhs,div_coeff_1d=div_coeff_old,div_coeff_half_1d=div_coeff_edge)
+            end if
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !! STEP 3 -- react the full state and then base state through dt/2
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        print *,'<<< STEP 3 >>>'
+
+        if (parallel_IOProcessor() .and. verbose .ge. 1) then
+          write(6,*) '<<< STEP  3 : react state     '
+          write(6,*) '            : react  base >>> '
+        end if
 
         do n = 1,nlevs
-          call react_state(sold(n),s1(n),rho_omegadot1(n),rho_Hext(n),temp0, &
-                           halfdt,dx(n,:), &
-                           the_bc_tower%bc_tower_array(n),time)
-          call multifab_fill_boundary(s1(n))
+           call react_state(sold(n),s1(n),rho_omegadot1(n),rho_Hext(n),temp0, &
+                            halfdt,dx(n,:), &
+                            the_bc_tower%bc_tower_array(n),time)
+           call multifab_fill_boundary(s1(n))
         end do
 
         call average(rho_omegadot1(1),rho_omegadotbar1,dx(1,:))
@@ -235,7 +246,11 @@ module advance_timestep_module
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !! STEP 4 -- advect the base state and full state through dt
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        print *,'<<< STEP 4 >>>'
+
+        if (parallel_IOProcessor() .and. verbose .ge. 1) then
+          write(6,*) '<<< STEP  4 : advect base        '
+          write(6,*) '            : scalar_advance >>> '
+        end if
 
         call put_1d_beta_on_edges(div_coeff_new,div_coeff_edge)
         call advect_base(w0,Sbar(:,1),p0_1,p0_2,s0_1,s0_2,temp0,gam1, &
@@ -270,7 +285,11 @@ module advance_timestep_module
         !! STEP 5 -- react the full state and then base state through dt/2
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-        print *,'<<< STEP 5 >>>'
+        if (parallel_IOProcessor() .and. verbose .ge. 1) then
+          write(6,*) '<<< STEP  5 : react state     '
+          write(6,*) '            : react  base >>> '
+        end if
+
         do n = 1,nlevs
           call react_state(s2(n),snew(n),rho_omegadot2(n),rho_Hext(n),temp0, &
                            halfdt,dx(n,:), &
@@ -287,15 +306,18 @@ module advance_timestep_module
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !! STEP 6 -- define a new average expansion rate at n+1/2
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        print *,'<<< STEP 6 >>>'
+
+        if (parallel_IOProcessor() .and. verbose .ge. 1) then
+          write(6,*) '<<< STEP  6 : make new S and new w0 >>> '
+        end if
+
         do n = 1, nlevs
            call make_S(Source_new(n),gamma1_term(n),snew(n),uold(n), &
                        rho_omegadot2(n),rho_Hext(n),p0_new,temp0,gam1,dx(n,:),time)
-           print *,'Source_new max at level ',n,norm_inf(Source_new(n))
            call make_S_at_halftime(Source_nph(n),Source_old(n),Source_new(n))
            call average(Source_nph(n),Sbar,dx(n,:))
 
-           call make_w0(w0,Sbar(:,1),p0_new,s0_new(:,rho_comp),temp0,gam1,dx(n,dm),dt)
+           call make_w0(w0,Sbar(:,1),p0_new,s0_new(:,rho_comp),temp0,gam1,dx(n,dm),dt,verbose)
            if (dm .eq. 3) then
              call make_w0_cart(w0,w0_cart_vec(n),normal(n),dx(n,:)) 
            end if
@@ -304,7 +326,9 @@ module advance_timestep_module
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !! STEP 7 -- redo the construction of the advective velocity using the current w0
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        print *,'<<< STEP 7 >>>'
+        if (parallel_IOProcessor() .and. verbose .ge. 1) then
+          write(6,*) '<<< STEP  7 : create MAC velocities >>> '
+        end if
 
         do n = 1,nlevs
            call advance_premac(uold(n), sold(n),&
@@ -358,7 +382,10 @@ module advance_timestep_module
         !! STEP 8 -- advect the base state and full state through dt
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-        print *,'<<< STEP 8 >>>'
+        if (parallel_IOProcessor() .and. verbose .ge. 1) then
+          write(6,*) '<<< STEP  8 : advect base   '
+          write(6,*) '            : scalar_advance >>>'
+        end if
         call advect_base(w0,Sbar(:,1),p0_1,p0_2,s0_1,s0_2,temp0,gam1, &
                          div_coeff_edge,&
                          dx(1,dm),dt,anelastic_cutoff)
@@ -391,7 +418,10 @@ module advance_timestep_module
         !! STEP 9 -- react the full state and then base state through dt/2
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-        print *,'<<< STEP 9 >>>'
+        if (parallel_IOProcessor() .and. verbose .ge. 1) then
+          write(6,*) '<<< STEP  9 : react state '
+          write(6,*) '            : react  base >>>'
+        end if
         do n = 1,nlevs
           call react_state(s2(n),snew(n),rho_omegadot2(n),rho_Hext(n),temp0, &
                            halfdt,dx(n,:),&
@@ -410,18 +440,23 @@ module advance_timestep_module
         !! STEP 10 -- compute S^{n+1} for the final projection
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-        print *,'<<< STEP 10 >>>'
+        if (parallel_IOProcessor() .and. verbose .ge. 1) then
+          write(6,*) '<<< STEP 10 : make new S >>>'
+        end if
 
         do n = 1, nlevs
            call make_S(Source_new(n),gamma1_term(n),snew(n),uold(n), &
                        rho_omegadot2(n),rho_Hext(n),p0_new,temp0,gam1,dx(n,:),time)
-           print *,'Source_new max at level ',n,norm_inf(Source_new(n))
            call average(Source_new(n),Sbar,dx(n,:))
         end do
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !! STEP 11 -- update the velocity
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+        if (parallel_IOProcessor() .and. verbose .ge. 1) then
+          write(6,*) '<<< STEP 11 : update and project new velocity >>>'
+        end if
 
         ! Define rho at half time using the new rho from Step 8!
         do n = 1,nlevs

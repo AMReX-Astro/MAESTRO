@@ -55,9 +55,9 @@ contains
     call fabio_ml_multifab_write_d(mfs_nodal, rrs(:,1), sd_name_nodal)
 
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
-      print *,'Writing    state to checkpoint file ',trim(sd_name)
-      print *,'Writing pressure to checkpoint file ',trim(sd_name_nodal)
-      print *,' '
+      write(6,*) 'Writing    state to checkpoint file ',trim(sd_name)
+      write(6,*) 'Writing pressure to checkpoint file ',trim(sd_name_nodal)
+      write(6,*) 
     end if
     
     nl = size(mfs)

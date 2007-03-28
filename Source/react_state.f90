@@ -37,8 +37,6 @@ contains
     ng = s_in%ng
     dm = s_in%dim
 
-    print *,"<<< react state >>> " 
-
     do i = 1, s_in%nboxes
        if ( multifab_remote(s_in, i) ) cycle
        sinp => dataptr(s_in , i)

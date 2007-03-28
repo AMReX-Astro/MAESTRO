@@ -78,8 +78,6 @@ contains
       real(dp_t), allocatable :: s0_cart(:,:,:)
       real(kind=dp_t) :: half_time
 
-      print *,'<<< advect state >>> '
-
       velpred = 0
 
       ng_cell = sold%ng

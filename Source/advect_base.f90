@@ -27,8 +27,6 @@ contains
 
       integer :: i
 
-      print *, '<<< advect base >>>'
-
       if (spherical .eq. 0) then
 
         call advect_base_state_planar(vel,p0_old,p0_new,s0_old,s0_new,temp0, &

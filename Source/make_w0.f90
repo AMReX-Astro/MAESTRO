@@ -14,19 +14,18 @@ module make_w0_module
 
 contains
 
-   subroutine make_w0(vel,Sbar_in,p0,rho0,temp0,gam1,dz,dt)
+   subroutine make_w0(vel,Sbar_in,p0,rho0,temp0,gam1,dz,dt,verbose)
 
       real(kind=dp_t), intent(  out) :: vel(:)
       real(kind=dp_t), intent(in   ) :: p0(:),rho0(:),temp0(:),gam1(:)
       real(kind=dp_t), intent(in   ) :: Sbar_in(:)
       real(kind=dp_t), intent(in   ) :: dz,dt
+      integer        , intent(in   ) :: verbose
 
       integer         :: j,nz
       real(kind=dp_t) :: max_vel
 
       nz = size(vel,dim=1)
-
-      print *, '<<< integrating to get w0>>>'
 
       if (spherical .eq. 0) then
 
@@ -42,7 +41,8 @@ contains
       do j = 1,nz
          max_vel = max(max_vel, abs(vel(j)))
       end do
-      print *,'MAX CFL FRAC OF DISPL ',max_vel * dt / dr
+      if (parallel_IOProcessor() .and. verbose .ge. 1) &
+        write(6,*) '... max CFL of w0: ',max_vel * dt / dr
 
    end subroutine make_w0
 

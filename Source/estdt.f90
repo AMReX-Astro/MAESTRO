@@ -11,7 +11,7 @@ module estdt_module
 
 contains
 
-   subroutine estdt (istep, u, s, force, divU, normal, w0, p0, gam1, dx, cflfac, dtold, dt)
+   subroutine estdt (istep, u, s, force, divU, normal, w0, p0, gam1, dx, cflfac, dtold, dt, verbose)
 
       integer        , intent(in ) :: istep
       type(multifab) , intent(in ) :: u
@@ -23,6 +23,7 @@ contains
       real(kind=dp_t), intent(in ) :: dx(:)
       real(kind=dp_t), intent(in ) :: cflfac, dtold
       real(kind=dp_t), intent(out) :: dt
+      integer        , intent(in ) :: verbose
 
       real(kind=dp_t), pointer:: uop(:,:,:,:)
       real(kind=dp_t), pointer:: sop(:,:,:,:)
@@ -79,7 +80,8 @@ contains
       call parallel_reduce(dt_adv ,dt_adv_proc ,MPI_MIN)
       call parallel_reduce(dt_divu,dt_divu_proc,MPI_MIN)
 
-      print *, '%%% timesteps (source, advective): ', dt_divu, dt_adv
+      if (parallel_IOProcessor() .and. verbose .ge. 1) &
+        write(6,*) '%%% timesteps (source, advective): ', dt_divu, dt_adv
 
       dt = min(dt_adv,dt_divu)
 
@@ -87,7 +89,8 @@ contains
 
       if (dtold .gt. 0.0D0 ) dt = min(dt,dtchange*dtold)
 
-      print *,'Computing dt at istep ',istep,' to be ',dt
+      if (parallel_IOProcessor() .and. verbose .ge. 1) &
+        write(6,*) 'Computing dt at istep ',istep,' to be ',dt
 
    end subroutine estdt
 

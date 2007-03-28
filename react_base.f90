@@ -27,8 +27,6 @@ contains
       integer :: j,n,nz
 
       nz    = size(rho_omegadotbar,dim=1)
-  
-      print *,"<<< react_base >>> " 
 
       do j = 1,nz
 
