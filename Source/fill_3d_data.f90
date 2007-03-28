@@ -74,15 +74,8 @@ contains
         end do
       end do
     else 
-      do k = lo(3)-ng,hi(3)+ng
-        do j = -lo(2)-ng,hi(2)+ng
-          do i = -lo(1)-ng,hi(1)+ng
-            normal(i,j,k,1) = 0.d0
-            normal(i,j,k,2) = 0.d0
-            normal(i,j,k,3) = 1.d0
-          end do
-        end do
-      end do
+      print *,'SHOULDNT CALL MAKE_3D_NORMAL WITH SPHERICAL = 0'
+      stop
     end if
 
   end subroutine make_3d_normal
@@ -107,9 +100,13 @@ contains
       do i = 1, w0_cart%nboxes
          if ( multifab_remote(w0_cart, i) ) cycle
          wp => dataptr(w0_cart, i)
-         np => dataptr(normal , i)
          lo =  lwb(get_box(w0_cart, i))
          hi =  upb(get_box(w0_cart, i))
+         if (spherical .eq. 1) then
+           np => dataptr(normal, i)
+         else
+           np => Null()
+         end if
          call put_w0_on_3d_cells(w0,wp(:,:,:,:),np(:,:,:,:),lo,hi,dx,ng)
       end do
 
