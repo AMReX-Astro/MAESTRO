@@ -359,7 +359,7 @@ contains
                                     ump(:,:,1,1), vmp(:,:,1,1), w0, &
                                     sepx(:,:,1,:), sepy(:,:,1,:), fp(:,:,1,:), &
                                     s0_old(:,:), s0_new(:,:), &
-                                    lo, hi, ng_cell, dx, dt, verbose)
+                                    lo, hi, ng_cell, dx, dt)
               do n = spec_comp,spec_comp+nspec-1
                 bc_comp = dm+n
                 call setbc_2d(snp(:,:,1,n), lo, ng_cell, &
@@ -380,7 +380,7 @@ contains
                                   sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
                                   fp(:,:,:,:), &
                                   s0_old(:,:), s0_new(:,:), &
-                                  lo, hi, ng_cell, dx, dt, verbose)
+                                  lo, hi, ng_cell, dx, dt)
               do n = spec_comp,spec_comp+nspec-1
                 bc_comp = dm+n
                 call setbc_3d(snp(:,:,:,n), lo, ng_cell, &
@@ -393,6 +393,17 @@ contains
                             the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
          end select
       end do
+
+      if (parallel_IOProcessor() .and. verbose .eq. 1) then
+        do n = spec_comp,spec_comp+nspec-1
+          if (n.gt.rhoh_comp .and. n.lt.trac_comp) then
+            call multifab_div_div_c(snew,n,snew,rho_comp,1)
+            write(6,2002) spec_names(n-rhoh_comp), multifab_min_c(snew,n), multifab_max_c(snew,n)
+            call multifab_mult_mult_c(snew,n,snew,rho_comp,1)
+          end if
+        end do
+        write(6,2000) multifab_min_c(snew,rho_comp), multifab_max_c(snew,rho_comp)
+      end if
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     2) Update tracers with convective differencing.
@@ -417,7 +428,7 @@ contains
                              ump(:,:,1,1), vmp(:,:,1,1), w0, &
                              sepx(:,:,1,:), sepy(:,:,1,:), fp(:,:,1,:), &
                              s0_old(:,:), s0_new(:,:), &
-                             lo, hi, ng_cell, dx, dt, verbose)
+                             lo, hi, ng_cell, dx, dt)
               do n = trac_comp,trac_comp+ntrac-1
                 bc_comp = dm+n
                 call setbc_2d(snp(:,:,1,n), lo, ng_cell, &
@@ -433,7 +444,7 @@ contains
                                   sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
                                   fp(:,:,:,:), &
                                   s0_old(:,:), s0_new(:,:), &
-                                  lo, hi, ng_cell, dx, dt, verbose)
+                                  lo, hi, ng_cell, dx, dt)
               do n = trac_comp,trac_comp+ntrac-1
                 bc_comp = dm+n
                 call setbc_3d(snp(:,:,:,n), lo, ng_cell, &
@@ -441,8 +452,12 @@ contains
               end do
          end select
       end do
+
+      if (parallel_IOProcessor() .and. verbose .eq. 1) then
+        write(6,2003) multifab_min_c(snew,trac_comp), multifab_max_c(snew,trac_comp)
       end if
 
+      end if
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     1) Create (rhoh)' force at time n+1/2.
@@ -476,7 +491,7 @@ contains
                              ump(:,:,1,1), vmp(:,:,1,1), w0, &
                              sepx(:,:,1,:), sepy(:,:,1,:), fp(:,:,1,:), &
                              s0_old(:,:), s0_new(:,:), &
-                             lo, hi, ng_cell, dx, dt, verbose)
+                             lo, hi, ng_cell, dx, dt)
 
               call setbc_2d(snp(:,:,1,n), lo, ng_cell, &
                             the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
@@ -508,12 +523,18 @@ contains
                              sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
                              fp(:,:,:,:), &
                              s0_old(:,:), s0_new(:,:), &
-                             lo, hi, ng_cell, dx, dt, verbose)
+                             lo, hi, ng_cell, dx, dt)
 
               call setbc_3d(snp(:,:,:,n), lo, ng_cell, & 
                             the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
          end select
       end do
+
+      if (parallel_IOProcessor() .and. verbose .eq. 1) then
+        write(6,2001) multifab_min_c(snew,rhoh_comp), multifab_max_c(snew,rhoh_comp)
+        write(6,2004) 
+      end if
+
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     Call fill_boundary for all components of snew
@@ -525,6 +546,12 @@ contains
 
       deallocate(is_conservative)
       call multifab_destroy(scal_force)
+
+2000  format('... new min/max : density           ',e17.10,2x,e17.10)
+2001  format('... new min/max : rho * H           ',e17.10,2x,e17.10)
+2002  format('... new min/max : ',a16,2x,e17.10,2x,e17.10)
+2003  format('... new min/max : tracer            ',e17.10,2x,e17.10)
+2004  format(' ')
 
    end subroutine scalar_advance
 

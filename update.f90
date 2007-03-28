@@ -14,14 +14,14 @@ module update_module
   contains
 
    subroutine update_scal_2d (nstart,nstop,sold,snew,umac,vmac,w0,sedgex,sedgey,force, &
-                              base_old,base_new,lo,hi,ng,dx,dt,verbose)
+                              base_old,base_new,lo,hi,ng,dx,dt)
 
      ! update each scalar in time.  Here, it is assumed that the edge
      ! states (sedgex and sedgey) are for the perturbational quantities.
 
       implicit none
 
-      integer              , intent(in) :: nstart, nstop, lo(:), hi(:), ng, verbose
+      integer              , intent(in) :: nstart, nstop, lo(:), hi(:), ng
       real (kind = dp_t), intent(in   ) ::    sold(lo(1)-ng:,lo(2)-ng:,:)
       real (kind = dp_t), intent(  out) ::    snew(lo(1)-ng:,lo(2)-ng:,:)
       real (kind = dp_t), intent(in   ) ::    umac(lo(1)- 1:,lo(2)- 1:)
@@ -35,58 +35,10 @@ module update_module
       real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
       integer :: i, j, n
-      real (kind = dp_t) :: divsu,divbaseu,smax_rho,smin_rho
-      real (kind = dp_t), allocatable :: smin(:)
-      real (kind = dp_t), allocatable :: smax(:)
+      real (kind = dp_t) :: divsu,divbaseu
       real (kind = dp_t), allocatable :: base_edge(:)
 
       allocate(base_edge(lo(2):hi(2)+1))
-      allocate(smax(nstart:nstop))
-      allocate(smin(nstart:nstop))
-
-      if (0.eq.1 .and. verbose .ge. 1) then
-        smax(:) = -1.d20
-        smin(:) =  1.d20
-        do n = nstart, nstop
-          do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-
-            if (n .ge. spec_comp .and. n .le. spec_comp+nspec-1) then
-              smax(n) = max(smax(n),sold(i,j,n)/sold(i,j,rho_comp))
-              smin(n) = min(smin(n),sold(i,j,n)/sold(i,j,rho_comp))
-            else
-              smax(n) = max(smax(n),sold(i,j,n))
-              smin(n) = min(smin(n),sold(i,j,n))
-            endif
-
-          enddo
-          enddo
-
-          if (n.eq.rhoh_comp) write(6,1001) smin(n),smax(n)
-          if (n.gt.rhoh_comp .and. n.lt.trac_comp) write(6,1002) spec_names(n-rhoh_comp),smin(n),smax(n)
-          if (n.ge.trac_comp) write(6,1003) smin(n),smax(n)
-        enddo
-
-        if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
-          n = rho_comp
-          smax_rho = -1.d20
-          smin_rho =  1.d20
-          do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-              smax_rho = max(smax_rho,sold(i,j,n))
-              smin_rho = min(smin_rho,sold(i,j,n))
-          end do
-          end do
-          write(6,1000) smin_rho,smax_rho
-        end if
-
-      end if
-
-1000  format('OLD MIN/MAX : density           ',e17.10,2x,e17.10)
-1001  format('OLD MIN/MAX : rho * H           ',e17.10,2x,e17.10)
-1002  format('OLD MIN/MAX : ',a16,2x,e17.10,2x,e17.10)
-1003  format('OLD MIN/MAX : tracer            ',2x,e17.10,2x,e17.10)
-
 
       do n = nstart, nstop
 
@@ -130,64 +82,16 @@ module update_module
         enddo
       end if
   
-      if (verbose .ge. 1) then
-
-        smax(:) = -1.d20
-        smin(:) =  1.d20
-
-        do n = nstart, nstop
-          do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-  
-            if (n .ge. spec_comp .and. n .le. spec_comp+nspec-1) then
-              smax(n) = max(smax(n),snew(i,j,n)/snew(i,j,rho_comp))
-              smin(n) = min(smin(n),snew(i,j,n)/snew(i,j,rho_comp))
-            else
-              smax(n) = max(smax(n),snew(i,j,n))
-              smin(n) = min(smin(n),snew(i,j,n))
-            endif
-    
-          enddo
-          enddo
-  
-          if (n.eq.rhoh_comp) write(6,2001) smin(n),smax(n)
-          if (n.gt.rhoh_comp .and. n.lt.trac_comp) write(6,2002) spec_names(n-rhoh_comp),smin(n),smax(n)
-          if (n.ge.trac_comp) write(6,2003) smin(n),smax(n)
-          if (n.eq.rhoh_comp) write(6,2004) 
-        enddo
-
-        if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
-          n = rho_comp
-          smax_rho = -1.d20
-          smin_rho =  1.d20
-          do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-              smax_rho = max(smax_rho,snew(i,j,n))
-              smin_rho = min(smin_rho,snew(i,j,n))
-          end do
-          end do
-          write(6,2000) smin_rho,smax_rho
-        end if
-
-      end if
-
-2000  format('... new min/max : density           ',e17.10,2x,e17.10)
-2001  format('... new min/max : rho * H           ',e17.10,2x,e17.10)
-2002  format('... new min/max : ',a16,2x,e17.10,2x,e17.10)
-2003  format('... new min/max :           tracer',2x,e17.10,2x,e17.10)
-2004  format(' ')
-
-      deallocate(smin,smax)
       deallocate(base_edge)
 
    end subroutine update_scal_2d
 
    subroutine update_velocity_2d (uold,unew,umac,vmac,sedgex,sedgey,force,w0, &
-                                  lo,hi,ng,dx,time,dt,verbose)
+                                  lo,hi,ng,dx,time,dt)
 
       implicit none
 
-      integer, intent(in) :: lo(:), hi(:), ng, verbose
+      integer, intent(in) :: lo(:), hi(:), ng
       real (kind = dp_t), intent(in   ) ::    uold(lo(1)-ng:,lo(2)-ng:,:)  
       real (kind = dp_t), intent(  out) ::    unew(lo(1)-ng:,lo(2)-ng:,:)  
       real (kind = dp_t), intent(in   ) ::    umac(lo(1)- 1:,lo(2)- 1:)  
@@ -203,10 +107,7 @@ module update_module
       real (kind = dp_t) ubar,vbar
       real (kind = dp_t) ugradu,ugradv,ugrads
       real (kind = dp_t) :: divsu
-      real (kind = dp_t) :: smin,smax,umin,umax,vmin,vmax
       real (kind = dp_t) :: fac
-
-      print *,'<<< updating velocity >>> '
 
       do j = lo(2), hi(2)
       do i = lo(1), hi(1)
@@ -233,36 +134,14 @@ module update_module
       enddo
       enddo
 
-      umax = unew(lo(1),lo(2),1) 
-      umin = unew(lo(1),lo(2),1) 
-      vmax = unew(lo(1),lo(2),2) 
-      vmin = unew(lo(1),lo(2),2) 
-      do j = lo(2), hi(2)
-        do i = lo(1), hi(1)
-          umax = max(umax,unew(i,j,1))
-          umin = min(umin,unew(i,j,1))
-          vmax = max(vmax,unew(i,j,2))
-          vmin = min(vmin,unew(i,j,2))
-        enddo
-      enddo
-      if (verbose .ge. 1) then
-        write(6,1000) umin,umax
-        write(6,1001) vmin,vmax
-        write(6,1002)
-      end if
-
-1000  format('... new min/max : x-velocity       ',e17.10,2x,e17.10)
-1001  format('... new min/max : y-velocity       ',e17.10,2x,e17.10)
-1002  format(' ')
-
    end subroutine update_velocity_2d
 
    subroutine update_scal_3d (nstart,nstop,sold,snew,umac,vmac,wmac,w0,w0_cart,sedgex,sedgey,sedgez,&
-                              force,base_old,base_new,lo,hi,ng,dx,dt,verbose)
+                              force,base_old,base_new,lo,hi,ng,dx,dt)
 
       implicit none
 
-      integer, intent(in) :: nstart,nstop, lo(:), hi(:), ng, verbose
+      integer, intent(in) :: nstart,nstop, lo(:), hi(:), ng
       real (kind = dp_t), intent(in   ) ::    sold(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
       real (kind = dp_t), intent(  out) ::    snew(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
       real (kind = dp_t), intent(inout) ::    umac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
@@ -279,21 +158,14 @@ module update_module
       real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
       integer :: i, j, k, n, nr
-      real (kind = dp_t) :: divsu,divbaseu,smax_rho,smin_rho,mult
+      real (kind = dp_t) :: divsu,divbaseu,mult
       real (kind = dp_t), allocatable :: delta_base(:),delta_base_cart(:,:,:)
       real (kind = dp_t), allocatable :: base_cart(:,:,:)
-      real (kind = dp_t), allocatable :: smin(:)
-      real (kind = dp_t), allocatable :: smax(:)
       real (kind = dp_t), allocatable :: base_edge(:)
 
       allocate(base_edge(lo(3):hi(3)+1))
-      allocate(smax(nstart:nstop))
-      allocate(smin(nstart:nstop))
 
       nr = size(base_old,dim=1)
-
-      smax(:) = -1.d20
-      smin(:) =  1.d20
 
       if (spherical .eq. 1) then
 
@@ -437,64 +309,16 @@ module update_module
         enddo
       end if
 
-      if (verbose .ge. 1) then
-        do n = nstart, nstop
-          do k = lo(3), hi(3)
-          do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-  
-            if (n .ge. spec_comp .and. n .le. spec_comp+nspec-1) then
-              smax(n) = max(smax(n),snew(i,j,k,n)/snew(i,j,k,rho_comp))
-              smin(n) = min(smin(n),snew(i,j,k,n)/snew(i,j,k,rho_comp))
-            else
-              smax(n) = max(smax(n),snew(i,j,k,n))
-              smin(n) = min(smin(n),snew(i,j,k,n))
-            endif
-  
-          enddo
-          enddo
-          enddo
-
-          if (n.eq.rhoh_comp) write(6,1001) smin(n),smax(n)
-          if (n.gt.rhoh_comp .and. n.lt.trac_comp) write(6,1002) spec_names(n-rhoh_comp),smin(n),smax(n)
-          if (n.ge.trac_comp) write(6,1003) smin(n),smax(n)
-          if (n.eq.rhoh_comp) write(6,1004)
-        enddo
-
-        if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
-          n = rho_comp
-          smax_rho = -1.d20
-          smin_rho =  1.d20
-          do k = lo(3), hi(3)
-          do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-              smax_rho = max(smax_rho,snew(i,j,k,n))
-              smin_rho = min(smin_rho,snew(i,j,k,n))
-          end do
-          end do
-          end do
-          write(6,1000) smin_rho,smax_rho
-        end if
-
-      end if
-
-1000  format('... new min/max : density           ',e17.10,2x,e17.10)
-1001  format('... new min/max : rho * H           ',e17.10,2x,e17.10)
-1002  format('... new min/max : ',a16,2x,e17.10,2x,e17.10)
-1003  format('... new min/max : tracer            ',2x,e17.10,2x,e17.10)
-1004  format(' ')
-
-      deallocate(smin,smax)
       deallocate(base_edge)
 
    end subroutine update_scal_3d
 
    subroutine update_velocity_3d (uold,unew,umac,vmac,wmac,sedgex,sedgey,sedgez, &
-                                  force,w0,w0_cart,lo,hi,ng,dx,time,dt,verbose)
+                                  force,w0,w0_cart,lo,hi,ng,dx,time,dt)
 
       implicit none
 
-      integer, intent(in) :: lo(:), hi(:), ng, verbose
+      integer, intent(in) :: lo(:), hi(:), ng
       real (kind = dp_t), intent(in   ) ::    uold(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
       real (kind = dp_t), intent(  out) ::    unew(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
       real (kind = dp_t), intent(in   ) ::    umac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:  )
@@ -513,7 +337,6 @@ module update_module
       real (kind = dp_t) ubar,vbar,wbar
       real (kind = dp_t) ugradu,ugradv,ugradw,ugrads
       real (kind = dp_t) :: divsu
-      real (kind = dp_t) :: smin,smax,umin,umax,vmin,vmax,wmin,wmax
       real (kind = dp_t) :: gradux,graduy,graduz
       real (kind = dp_t) :: gradvx,gradvy,gradvz
       real (kind = dp_t) :: gradwx,gradwy,gradwz
@@ -634,37 +457,6 @@ module update_module
 
       end if
    
-
-      umax = unew(lo(1),lo(2),lo(3),1) 
-      umin = unew(lo(1),lo(2),lo(3),1) 
-      vmax = unew(lo(1),lo(2),lo(3),2) 
-      vmin = unew(lo(1),lo(2),lo(3),2) 
-      wmax = unew(lo(1),lo(2),lo(3),3) 
-      wmin = unew(lo(1),lo(2),lo(3),3) 
-      do k = lo(3), hi(3)
-      do j = lo(2), hi(2)
-        do i = lo(1), hi(1)
-          umax = max(umax,unew(i,j,k,1))
-          umin = min(umin,unew(i,j,k,1))
-          vmax = max(vmax,unew(i,j,k,2))
-          vmin = min(vmin,unew(i,j,k,2))
-          wmax = max(wmax,unew(i,j,k,3))
-          wmin = min(wmin,unew(i,j,k,3))
-        enddo
-      enddo
-      enddo
-      if (verbose .ge. 1) then
-        write(6,1000) umin,umax
-        write(6,1001) vmin,vmax
-        write(6,1002) wmin,wmax
-        write(6,1003)
-      end if
-
-1000  format('... new min/max : x-velocity       ',e17.10,2x,e17.10)
-1001  format('... new min/max : y-velocity       ',e17.10,2x,e17.10)
-1002  format('... new min/max : z-velocity       ',e17.10,2x,e17.10)
-1003  format(' ')
-
    end subroutine update_velocity_3d
 
 end module update_module
