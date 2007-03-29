@@ -39,26 +39,28 @@ contains
 
     real(kind=dp_t) :: gradp0, wadv, denom
     real(kind=dp_t) :: coeff_old, coeff_new, sigma_H, sigma0_old, sigma0_new
-    integer :: i,j
+    integer :: i,j,nr
 
     denom = ONE/dble(hi(1)-lo(1)+1)
 
     force = ZERO
 
+    nr = size(p0_old,dim=1)
+
 !   Add w d(p0)/dz 
     do j = lo(2),hi(2)
+       if (j.eq.0) then
+          gradp0 = HALF * ( p0_old(j+1) + p0_new(j+1) &
+                           -p0_old(j  ) - p0_new(j  ) ) / dr
+       else if (j.eq.nr-1) then
+          gradp0 = HALF * ( p0_old(j  ) + p0_new(j  ) &
+                           -p0_old(j-1) - p0_new(j-1) ) / dr
+       else
+          gradp0 = FOURTH * ( p0_old(j+1) + p0_new(j+1) &
+                             -p0_old(j-1) - p0_new(j-1) ) / dr
+       end if
        do i = lo(1),hi(1)
           wadv = HALF*(wmac(i,j)+wmac(i,j+1))
-          if (j.eq.lo(2)) then
-             gradp0 = HALF * ( p0_old(j+1) + p0_new(j+1) &
-                              -p0_old(j  ) - p0_new(j  ) ) / dr
-          else if (j.eq.hi(2)) then
-             gradp0 = HALF * ( p0_old(j  ) + p0_new(j  ) &
-                              -p0_old(j-1) - p0_new(j-1) ) / dr
-          else
-             gradp0 = FOURTH * ( p0_old(j+1) + p0_new(j+1) &
-                                -p0_old(j-1) - p0_new(j-1) ) / dr
-          end if
           force(i,j) =  wadv * gradp0 
        end do
     end do
@@ -86,29 +88,32 @@ contains
     real(kind=dp_t), intent(in   ) ::     dr
 
     real(kind=dp_t) :: gradp0,wadv
-    integer :: i,j,k
+    integer :: i,j,k,nr
  
     force = ZERO
+ 
+    nr = size(p0_old,dim=1)
 
     do k = lo(3),hi(3)
+
+       if (k.eq.0) then
+          gradp0 = HALF * ( p0_old(k+1) + p0_new(k+1) &
+                           -p0_old(k  ) - p0_new(k  ) ) / dr
+       else if (k.eq.nr-1) then
+          gradp0 = HALF * ( p0_old(k  ) + p0_new(k  ) &
+                           -p0_old(k-1) - p0_new(k-1) ) / dr
+       else
+          gradp0 = FOURTH * ( p0_old(k+1) + p0_new(k+1) &
+                             -p0_old(k-1) - p0_new(k-1) ) / dr
+       end if
+
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
-
              wadv = HALF*(wmac(i,j,k)+wmac(i,j,k+1))
-
-             if (k.eq.lo(3)) then
-                gradp0 = HALF * ( p0_old(k+1) + p0_new(k+1) &
-                                 -p0_old(k  ) - p0_new(k  ) ) / dr
-             else if (k.eq.hi(3)) then
-                gradp0 = HALF * ( p0_old(k  ) + p0_new(k  ) &
-                                 -p0_old(k-1) - p0_new(k-1) ) / dr
-             else
-                gradp0 = FOURTH * ( p0_old(k+1) + p0_new(k+1) &
-                                   -p0_old(k-1) - p0_new(k-1) ) / dr
-             end if
              force(i,j,k) = wadv * gradp0 
           end do
        end do
+
     end do
 
   end subroutine mkrhohforce_3d

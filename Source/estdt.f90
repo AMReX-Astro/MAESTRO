@@ -112,8 +112,9 @@ contains
      real (kind = dp_t)  :: pforcex, pforcey
      real (kind = dp_t)  :: eps
      real (kind = dp_t)  :: denom, gradp0
-     integer             :: i,j
+     integer             :: i,j,nr
 
+     nr = size(p0,dim=1)
 
      eps = 1.0e-8
 
@@ -169,9 +170,9 @@ contains
 
      do j = lo(2), hi(2)
         
-        if (j .eq. lo(2)) then
+        if (j .eq. 0) then
            gradp0 = (p0(j+1) - p0(j))/dx(2)
-        else if (j .eq. hi(2)) then
+        else if (j .eq. nr-1) then
            gradp0 = (p0(j) - p0(j-1))/dx(2)
         else
            gradp0 = HALF*(p0(j+1) - p0(j-1))/dx(2)
@@ -209,10 +210,12 @@ contains
      real (kind = dp_t), allocatable :: w0_cart(:,:,:,:)
      real (kind = dp_t)  :: spdx, spdy, spdz, spdr
      real (kind = dp_t)  :: pforcex, pforcey, pforcez
-     real (kind = dp_t)  :: eps
-     integer             :: i,j,k
+     real (kind = dp_t)  :: eps,denom,gradp0
+     integer             :: i,j,k,nr
 
      eps = 1.0e-8
+
+     nr = size(p0,dim=1)
 
      spdx    = ZERO
      spdy    = ZERO 
@@ -306,12 +309,23 @@ contains
      dt_divu = 1.d30
 
      do k = lo(3), hi(3)
+        
+        if (k .eq. 0) then
+           gradp0 = (p0(k+1) - p0(k))/dx(3)
+        else if (k .eq. nr-1) then
+           gradp0 = (p0(k) - p0(k-1))/dx(3)
+        else
+           gradp0 = HALF*(p0(k+1) - p0(k-1))/dx(3)
+        endif
+
         do j = lo(2), hi(2)
            do i = lo(1), hi(1)
 
-              if (divU(i,j,k) > ZERO) then
-                 dt_divu = min(dt_divu, &
-                               (ONE - rho_min/s(i,j,k,rho_comp))/divU(i,j,k))
+              denom = divU(i,j,k) - u(i,j,k,3)*gradp0/(gam1(k)*p0(k))
+
+              if (denom > ZERO) then
+                dt_divu = min(dt_divu, &
+                              HALF*(ONE - rho_min/s(i,j,k,rho_comp))/denom)
               endif
 
            enddo

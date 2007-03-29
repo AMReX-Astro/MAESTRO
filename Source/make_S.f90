@@ -75,11 +75,13 @@ contains
       real (kind=dp_t), intent(in   ) :: dx(:), time
 
 !     Local variables
-      integer :: i, j, n
+      integer :: i, j, n, nr
       integer :: imax, jmax
 
       real(kind=dp_t) :: x,y
       real(kind=dp_t) :: sigma, react_term, pres_term, gradp0
+ 
+      nr = size(p0,dim=1)
 
       Source = zero
 
@@ -122,15 +124,15 @@ contains
            Source(i,j) = sigma*(rho_Hext(i,j)/den_row(1) + react_term) + &
                 pres_term/(den_row(1)*dpdr_row(1)) 
 
-           if (j .eq. lo(2)) then
+           if (j .eq. 0) then
               gradp0 = (p0(j+1) - p0(j))/dx(2)
-           else if (j .eq. hi(2)) then
+           else if (j .eq. nr-1) then
               gradp0 = (p0(j) - p0(j-1))/dx(2)
            else
               gradp0 = HALF*(p0(j+1) - p0(j-1))/dx(2)
            endif
 
-!           gamma1_term(i,j) = (gam1_row(1) - gam1(j))*u(i,j,2)*gradp0/(gam1(j)*gam1(j)*p0(j))
+!          gamma1_term(i,j) = (gam1_row(1) - gam1(j))*u(i,j,2)*gradp0/(gam1(j)*gam1(j)*p0(j))
            gamma1_term(i,j) = 0.0_dp_t
 
         enddo
@@ -156,13 +158,13 @@ contains
       real (kind=dp_t), intent(in   ) :: dx(:), time
 
 !     Local variables
-      integer :: i, j, k , n
+      integer :: i, j, k , n, nr
       integer :: imax, jmax, kmax
 
       real(kind=dp_t) :: x,y,z
       real(kind=dp_t), allocatable :: p0_cart(:,:,:)
       real(kind=dp_t), allocatable :: t0_cart(:,:,:)
-      real(kind=dp_t) :: sigma, react_term, pres_term
+      real(kind=dp_t) :: sigma, react_term, pres_term, gradp0
 
       if (spherical .eq. 1) then
         allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
@@ -170,6 +172,8 @@ contains
         call fill_3d_data(p0_cart,p0,lo,hi,dx,0)
         call fill_3d_data(t0_cart,t0,lo,hi,dx,0)
       end if
+
+      nr = size(p0,dim=1)
 
       Source = zero
 
@@ -221,6 +225,16 @@ contains
               Source(i,j,k) = sigma*(rho_Hext(i,j,k)/den_row(1) + react_term) + &
                    pres_term/(den_row(1)*dpdr_row(1))
 
+
+              if (j .eq. 0) then
+                 gradp0 = (p0(j+1) - p0(j))/dx(2)
+              else if (j .eq. nr-1) then
+                 gradp0 = (p0(j) - p0(j-1))/dx(2)
+              else
+                 gradp0 = HALF*(p0(j+1) - p0(j-1))/dx(2)
+              endif
+
+!             gamma1_term(i,j,k) = (gam1_row(1) - gam1(j))*u(i,j,k,3)*gradp0/(gam1(k)**2*p0(k))
               gamma1_term(i,j,k) = 0.0_dp_t
            enddo
         enddo
