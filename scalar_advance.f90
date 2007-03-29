@@ -120,10 +120,9 @@ contains
          case (2)
 
             do n = spec_comp,spec_comp+nspec-1
-               call modify_scal_force_2d(fp(:,:,1,n),sop(:,:,1,n),ng_cell,&
-                                         s0_old(:,n), &
+               call modify_scal_force_2d(fp(:,:,1,n),sop(:,:,1,n), lo, hi, ng_cell,&
                                          ump(:,:,1,1),vmp(:,:,1,1), &
-                                         w0,dx)
+                                         s0_old(:,n), w0, dx)
             end do
 
             n = rhoh_comp
@@ -131,10 +130,9 @@ contains
                                  sop(:,:,1,:),sop(:,:,1,:), ng_cell, dx(:), time, &
                                  p0_old, p0_old, s0_old, s0_old, temp0, dx(dm))
 
-            call modify_scal_force_2d(fp(:,:,1,n),sop(:,:,1,n),ng_cell, &
-                                      s0_old(:,rhoh_comp), &
+            call modify_scal_force_2d(fp(:,:,1,n),sop(:,:,1,n), lo, hi, ng_cell, &
                                       ump(:,:,1,1),vmp(:,:,1,1), &
-                                      w0, dx)
+                                      s0_old(:,rhoh_comp),w0,dx)
 
          case(3)
             wmp  => dataptr(umac(3), i)
@@ -145,10 +143,9 @@ contains
 
                do n = spec_comp,spec_comp+nspec-1
                   call fill_3d_data(s0_cart,s0_old(:,n),lo,hi,dx,ng_cell)
-                  call modify_scal_force_3d_sphr(fp(:,:,:,n),sop(:,:,:,n),ng_cell,&
-                                                 s0_cart, &
+                  call modify_scal_force_3d_sphr(fp(:,:,:,n),sop(:,:,:,n),lo,hi,ng_cell,&
                                                  ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1), &
-                                                 w0,lo,hi,dx)
+                                                 s0_cart,w0,dx)
                end do
                 
                n = rhoh_comp
@@ -159,16 +156,15 @@ contains
                                          np(:,:,:,:), p0_old, p0_old, s0_old, s0_old, temp0)
 
                call fill_3d_data(s0_cart,s0_old(:,n),lo,hi,dx,ng_cell)
-               call modify_scal_force_3d_sphr(fp(:,:,:,n),sop(:,:,:,n),ng_cell,s0_cart, &
+               call modify_scal_force_3d_sphr(fp(:,:,:,n),sop(:,:,:,n),lo,hi,ng_cell,&
                                               ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1), &
-                                              w0,lo,hi,dx)
+                                              s0_cart,w0,dx)
                deallocate(s0_cart)
             else
                do n = spec_comp,spec_comp+nspec-1
-                  call modify_scal_force_3d_cart(fp(:,:,:,n),sop(:,:,:,n),ng_cell,&
-                                                 s0_old(:,n), &
+                  call modify_scal_force_3d_cart(fp(:,:,:,n),sop(:,:,:,n),lo, hi, ng_cell,&
                                                  ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1), &
-                                                 w0,dx)
+                                                 s0_old(:,n),w0,dx)
                end do
 
                n = rhoh_comp
@@ -176,10 +172,9 @@ contains
                                     sop(:,:,:,:), sop(:,:,:,:), ng_cell, dx(:), time, &
                                     p0_old, p0_old, s0_old, s0_old, temp0, dx(dm))
 
-               call modify_scal_force_3d_cart(fp(:,:,:,n),sop(:,:,:,n),ng_cell, &
-                                              s0_old(:,n), &
+               call modify_scal_force_3d_cart(fp(:,:,:,n),sop(:,:,:,n),lo, hi, ng_cell, &
                                               ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1), &
-                                              w0,dx)
+                                              s0_old(:,n),w0,dx)
             end if
          end select
       end do
@@ -553,50 +548,48 @@ contains
 
    end subroutine scalar_advance
 
-   subroutine modify_scal_force_2d(force,s,ng,base,umac,vmac,w0,dx)
+   subroutine modify_scal_force_2d(force,s,lo,hi,ng,umac,vmac,base,w0,dx)
 
     ! When we write the scalar equation in perturbational and convective
     ! form, the terms other than s'_t + U.grad s' act as source terms.  Add
     ! them to the forces here.
 
-    integer        , intent(in   ) :: ng
-    real(kind=dp_t), intent(  out) :: force(0:,0:)
-    real(kind=dp_t), intent(in   ) :: s(1-ng:,1-ng:)
-    real(kind=dp_t), intent(in   ) :: base(:)
-    real(kind=dp_t), intent(in   ) :: w0(:)
-    real(kind=dp_t), intent(in   ) :: umac(0:,0:)
-    real(kind=dp_t), intent(in   ) :: vmac(0:,0:)
+    integer        , intent(in   ) :: lo(:),hi(:),ng
+    real(kind=dp_t), intent(  out) :: force(lo(1)-1:,lo(2)-1:)
+    real(kind=dp_t), intent(in   ) ::     s(lo(1)-ng:,lo(2)-ng:)
+    real(kind=dp_t), intent(in   ) ::  umac(lo(1)-1:,lo(2)-1:)
+    real(kind=dp_t), intent(in   ) ::  vmac(lo(1)-1:,lo(2)-1:)
+    real(kind=dp_t), intent(in   ) ::  base(0:)
+    real(kind=dp_t), intent(in   ) ::    w0(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
     
-    integer :: i,j,nx,ny
+    integer :: i,j,nr
     real(kind=dp_t) :: divu,divbaseu
     real(kind=dp_t) :: base_half_lo,base_half_hi
-    
-    nx = size(force,dim=1)-2
-    ny = size(force,dim=2)-2
 
-    do j = 1,ny
-       if (j.eq.1) then
+    nr = size(base,dim=1)
+
+    do j = lo(2),hi(2)
+
+       if (j.eq.0) then
           base_half_lo = base(j)
-          base_half_hi = HALF*(base(j)+base(j+1))
-       else if (j.eq.ny) then
+       else if (j.eq.1 .or. j.eq.nr-1) then
           base_half_lo = HALF*(base(j)+base(j-1))
-          base_half_hi = base(j)
-       else if (j.eq.2) then
-          base_half_lo = HALF*(base(j)+base(j-1))
-          base_half_hi = 7.d0/12.d0 * (base(j  )+base(j+1)) &
-               -1.d0/12.d0 * (base(j-1)+base(j+2))
-       else if (j.eq.ny-1) then
-          base_half_lo = 7.d0/12.d0 * (base(j  )+base(j-1)) &
-               -1.d0/12.d0 * (base(j+1)+base(j-2))
-          base_half_hi = HALF*(base(j)+base(j+1))
        else 
           base_half_lo = 7.d0/12.d0 * (base(j  )+base(j-1)) &
                -1.d0/12.d0 * (base(j+1)+base(j-2))
+       end if
+
+       if (j.eq.nr-1) then
+          base_half_hi = base(j)
+       else if (j.eq.nr-2 .or. j.eq.0) then
+          base_half_hi = HALF*(base(j)+base(j+1))
+       else 
           base_half_hi = 7.d0/12.d0 * (base(j  )+base(j+1)) &
                -1.d0/12.d0 * (base(j-1)+base(j+2))
        end if
-        do i = 1,nx
+       
+       do i = lo(1),hi(1)
            divu = (umac(i+1,j) - umac(i,j)) / dx(1) &
                  +((vmac(i,j+1) + w0(j+1)) - &
                    (vmac(i,j)   + w0(j)  )) / dx(2)
@@ -604,58 +597,55 @@ contains
                              +(vmac(i,j+1) * base_half_hi &
                              - vmac(i,j  ) * base_half_lo)/ dx(2)
            force(i,j) = force(i,j) - (s(i,j)-base(j))*divu - divbaseu
-        end do
+       end do
      end do
      
    end subroutine modify_scal_force_2d
 
-   subroutine modify_scal_force_3d_cart(force,s,ng,base,umac,vmac,wmac,w0,dx)
+   subroutine modify_scal_force_3d_cart(force,s,lo,hi,ng,umac,vmac,wmac,base,w0,dx)
 
     ! When we write the scalar equation in perturbational and convective
     ! form, the terms other than s'_t + U.grad s' act as source terms.  Add
     ! them to the forces here.
 
-    integer        , intent(in   ) :: ng
-    real(kind=dp_t), intent(  out) :: force(0:,0:,0:)
-    real(kind=dp_t), intent(in   ) :: s(1-ng:,1-ng:,1-ng:)
-    real(kind=dp_t), intent(in   ) :: base(:)
-    real(kind=dp_t), intent(in   ) :: umac(0:,0:,0:)
-    real(kind=dp_t), intent(in   ) :: vmac(0:,0:,0:)
-    real(kind=dp_t), intent(in   ) :: wmac(0:,0:,0:)
-    real(kind=dp_t), intent(in   ) :: w0(:)
+    integer        , intent(in   ) :: lo(:),hi(:),ng
+    real(kind=dp_t), intent(  out) :: force(lo(1)-1:,lo(2)-1:,lo(3)-1:)
+    real(kind=dp_t), intent(in   ) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
+    real(kind=dp_t), intent(in   ) ::  umac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
+    real(kind=dp_t), intent(in   ) ::  vmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
+    real(kind=dp_t), intent(in   ) ::  wmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
+    real(kind=dp_t), intent(in   ) :: base(0:)
+    real(kind=dp_t), intent(in   ) ::   w0(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
     
-    integer :: i,j,k,nx,ny,nz
+    integer :: i,j,k,nr
     real(kind=dp_t) :: divu,divbaseu
     real(kind=dp_t) :: base_half_lo,base_half_hi
-    
-    nx = size(force,dim=1)-2
-    ny = size(force,dim=2)-2
-    nz = size(force,dim=3)-2
 
-    do k = 1,nz
-       if (k.eq.1) then
+    nr = size(base,dim=1)
+
+    do k = lo(3),hi(3)
+
+       if (k.eq.0) then
           base_half_lo = base(k)
-          base_half_hi = HALF*(base(k)+base(k+1))
-       else if (k.eq.nz) then
+       else if (k.eq.1 .or. k.eq.nr-1) then
           base_half_lo = HALF*(base(k)+base(k-1))
-          base_half_hi = base(k)
-       else if (k.eq.2) then
-          base_half_lo = HALF*(base(k)+base(k-1))
-          base_half_hi = 7.d0/12.d0 * (base(k  )+base(k+1)) &
-               -1.d0/12.d0 * (base(k-1)+base(k+2))
-       else if (k.eq.nz-1) then
-          base_half_lo = 7.d0/12.d0 * (base(k  )+base(k-1)) &
-               -1.d0/12.d0 * (base(k+1)+base(k-2))
-          base_half_hi = HALF*(base(k)+base(k+1))
        else 
           base_half_lo = 7.d0/12.d0 * (base(k  )+base(k-1)) &
                -1.d0/12.d0 * (base(k+1)+base(k-2))
+       end if
+
+       if (k.eq.nr-1) then
+          base_half_hi = base(k)
+       else if (k.eq.nr-2 .or. k.eq.0) then
+          base_half_hi = HALF*(base(k)+base(k+1))
+       else 
           base_half_hi = 7.d0/12.d0 * (base(k  )+base(k+1)) &
                -1.d0/12.d0 * (base(k-1)+base(k+2))
        end if
-        do j = 1,ny
-        do i = 1,nx
+
+       do j = lo(2),hi(2)
+       do i = lo(1),hi(1)
            divu = (umac(i+1,j,k) - umac(i,j,k)) / dx(1) &
                  +(vmac(i,j+1,k) - vmac(i,j,k)) / dx(2) &
                  +(wmac(i,j,k+1) - wmac(i,j,k)) / dx(3)
@@ -665,25 +655,26 @@ contains
                                - wmac(i,j,k  ) * base_half_lo)/ dx(3)
            divu = divu + (w0(k+1)-w0(k))/dx(3)
            force(i,j,k) = force(i,j,k) - (s(i,j,k)-base(k))*divu - divbaseu
-        end do
-        end do
+       end do
+       end do
      end do
      
    end subroutine modify_scal_force_3d_cart
 
-   subroutine modify_scal_force_3d_sphr(force,s,ng,base_cart,umac,vmac,wmac,w0,lo,hi,dx)
+   subroutine modify_scal_force_3d_sphr(force,s,lo,hi,ng,umac,vmac,wmac,base_cart,w0,dx)
 
     ! When we write the scalar equation in perturbational and convective
     ! form, the terms other than s'_t + U.grad s' act as source terms.  Add
     ! them to the forces here.
 
     integer        , intent(in   ) :: lo(:),hi(:),ng
-    real(kind=dp_t), intent(  out) :: force(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-    real(kind=dp_t), intent(in   ) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
+    real(kind=dp_t), intent(  out) :: force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
+    real(kind=dp_t), intent(in   ) ::     s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
+    real(kind=dp_t), intent(in   ) ::  umac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
+    real(kind=dp_t), intent(in   ) ::  vmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
+    real(kind=dp_t), intent(in   ) ::  wmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
+
     real(kind=dp_t), intent(in   ) :: base_cart(lo(1):,lo(2):,lo(3):)
-    real(kind=dp_t), intent(in   ) :: umac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-    real(kind=dp_t), intent(in   ) :: vmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-    real(kind=dp_t), intent(in   ) :: wmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
     real(kind=dp_t), intent(in   ) :: w0(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
     

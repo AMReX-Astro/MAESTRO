@@ -107,7 +107,6 @@ contains
         div_coeff_edge(j) = 7.d0/12.d0 * (div_coeff_cell(j  ) + div_coeff_cell(j-1)) &
                            -1.d0/12.d0 * (div_coeff_cell(j+1) + div_coeff_cell(j-2))
       end do
-      div_coeff_edge(ny+1) = div_coeff_edge(ny)
 
    end subroutine put_1d_beta_on_edges
 

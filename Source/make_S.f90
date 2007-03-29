@@ -69,9 +69,9 @@ contains
       real (kind=dp_t), intent(in   ) :: u(lo(1)-ng:,lo(2)-ng:,:)
       real (kind=dp_t), intent(in   ) :: rho_omegadot(lo(1):,lo(2):,:)
       real (kind=dp_t), intent(in   ) ::     rho_Hext(lo(1):,lo(2):)
-      real (kind=dp_t), intent(in   ) ::        p0(lo(2):)
-      real (kind=dp_t), intent(in   ) ::        t0(lo(2):)
-      real (kind=dp_t), intent(in   ) ::      gam1(lo(2):)
+      real (kind=dp_t), intent(in   ) ::        p0(0:)
+      real (kind=dp_t), intent(in   ) ::        t0(0:)
+      real (kind=dp_t), intent(in   ) ::      gam1(0:)
       real (kind=dp_t), intent(in   ) :: dx(:), time
 
 !     Local variables
@@ -86,7 +86,6 @@ contains
       do_diag = .false.
 
       do j = lo(2), hi(2)
-
         do i = lo(1), hi(1)
 
            den_row(1) = s(i,j,rho_comp)
@@ -151,9 +150,9 @@ contains
       real (kind=dp_t), intent(in   ) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
       real (kind=dp_t), intent(in   ) :: rho_omegadot(lo(1):,lo(2):,lo(3):,:)
       real (kind=dp_t), intent(in   ) ::     rho_Hext(lo(1):,lo(2):,lo(3):)
-      real (kind=dp_t), intent(in   ) ::        p0(lo(3):)
-      real (kind=dp_t), intent(in   ) ::        t0(lo(3):)
-      real (kind=dp_t), intent(in   ) ::      gam1(lo(3):)
+      real (kind=dp_t), intent(in   ) ::        p0(0:)
+      real (kind=dp_t), intent(in   ) ::        t0(0:)
+      real (kind=dp_t), intent(in   ) ::      gam1(0:)
       real (kind=dp_t), intent(in   ) :: dx(:), time
 
 !     Local variables

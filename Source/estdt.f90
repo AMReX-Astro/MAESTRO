@@ -102,7 +102,7 @@ contains
      real (kind = dp_t), intent(in ) ::     s(lo(1)-ng:,lo(2)-ng:,:)  
      real (kind = dp_t), intent(in ) :: force(lo(1)- 1:,lo(2)- 1:,:)  
      real (kind = dp_t), intent(in ) ::  divU(lo(1):,lo(2):)
-     real (kind = dp_t), intent( in) ::   w0(0:), p0(lo(2):), gam1(lo(2):)
+     real (kind = dp_t), intent( in) ::   w0(0:), p0(0:), gam1(0:)
      real (kind = dp_t), intent(in ) :: dx(:)
      real (kind = dp_t), intent(in ) :: rho_min
      real (kind = dp_t), intent(out) :: dt_adv,dt_divu
@@ -200,7 +200,7 @@ contains
      real (kind = dp_t), intent(in ) ::  force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)  
      real (kind = dp_t), intent(in ) ::   divU(lo(1):,lo(2):,lo(3):)
      real (kind = dp_t), intent(in ) :: normal(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
-     real (kind = dp_t), intent( in) ::   w0(0:), p0(lo(3):), gam1(lo(3):)
+     real (kind = dp_t), intent( in) ::   w0(0:), p0(0:), gam1(0:)
      real (kind = dp_t), intent(in ) :: dx(:)
      real (kind = dp_t), intent(in ) :: rho_min
      real (kind = dp_t), intent(out) :: dt_adv, dt_divu

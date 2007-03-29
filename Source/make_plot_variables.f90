@@ -129,8 +129,8 @@ contains
     real (kind = dp_t), intent(  out) ::      T(lo(1)   :,lo(2):)  
     real (kind = dp_t), intent(  out) :: deltaP(lo(1)   :,lo(2):)  
     real (kind = dp_t), intent(in   ) ::  state(lo(1)-ng:,lo(2)-ng:,:)
-    real (kind = dp_t), intent(in   ) ::     p0(lo(2):)
-    real (kind = dp_t), intent(in   ) ::  temp0(lo(2):)
+    real (kind = dp_t), intent(in   ) ::     p0(0:)
+    real (kind = dp_t), intent(in   ) ::  temp0(0:)
 
     !     Local variables
     integer :: i, j
@@ -180,8 +180,8 @@ contains
     real (kind = dp_t), intent(  out) ::      T(lo(1)   :,lo(2):   ,lo(3):     )  
     real (kind = dp_t), intent(  out) :: deltaP(lo(1)   :,lo(2):   ,lo(3):     )  
     real (kind = dp_t), intent(in   ) :: state(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-    real (kind = dp_t), intent(in   ) ::    p0(lo(3):)
-    real (kind = dp_t), intent(in   ) :: temp0(lo(3):)
+    real (kind = dp_t), intent(in   ) ::    p0(0:)
+    real (kind = dp_t), intent(in   ) :: temp0(0:)
 
     !     Local variables
     integer :: i, j, k
@@ -233,8 +233,8 @@ contains
     real (kind = dp_t), intent(  out) ::      T(lo(1)   :,lo(2):   ,lo(3):     )  
     real (kind = dp_t), intent(  out) :: deltaP(lo(1)   :,lo(2):   ,lo(3):     )  
     real (kind = dp_t), intent(in   ) :: state(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-    real (kind = dp_t), intent(in   ) ::    p0(lo(3):)
-    real (kind = dp_t), intent(in   ) ::    t0(lo(3):)
+    real (kind = dp_t), intent(in   ) ::    p0(0:)
+    real (kind = dp_t), intent(in   ) ::    t0(0:)
     real (kind = dp_t), intent(in   ) :: dx(:)
 
     !     Local variables
@@ -353,9 +353,9 @@ contains
     real (kind=dp_t), intent(  out) :: deltagamma(lo(1):,lo(2):)  
     real (kind=dp_t), intent(in   ) ::  s(lo(1)-ng:,lo(2)-ng:,:)
     real (kind=dp_t), intent(in   ) ::  u(lo(1)-ng:,lo(2)-ng:,:)
-    real (kind=dp_t), intent(in   ) :: s0(lo(2):,:)
-    real (kind=dp_t), intent(inout) :: t0(lo(2):)
-    real (kind=dp_t), intent(in   ) :: p0(lo(2):)
+    real (kind=dp_t), intent(in   ) :: s0(0:,:)
+    real (kind=dp_t), intent(inout) :: t0(0:)
+    real (kind=dp_t), intent(in   ) :: p0(0:)
     real (kind=dp_t), intent(in   ) :: time,dx(:)
 
     !     Local variables
@@ -444,9 +444,9 @@ contains
     real (kind=dp_t), intent(  out) :: deltagamma(lo(1):,lo(2):,lo(3):)  
     real (kind=dp_t), intent(in   ) ::  s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind=dp_t), intent(in   ) ::  u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-    real (kind=dp_t), intent(in   ) :: s0(lo(3):,:)
-    real (kind=dp_t), intent(inout) :: t0(lo(3):)
-    real (kind=dp_t), intent(in   ) :: p0(lo(3):)
+    real (kind=dp_t), intent(in   ) :: s0(0:,:)
+    real (kind=dp_t), intent(inout) :: t0(0:)
+    real (kind=dp_t), intent(in   ) :: p0(0:)
     real (kind=dp_t), intent(in   ) :: time,dx(:)
 
     !     Local variables
@@ -841,8 +841,8 @@ contains
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(  out) ::     dT(lo(1)   :,lo(2):)  
     real (kind = dp_t), intent(in   ) ::  state(lo(1)-ng:,lo(2)-ng:,:)
-    real (kind = dp_t), intent(in   ) ::     p0(lo(2):)
-    real (kind = dp_t), intent(in   ) ::  temp0(lo(2):)
+    real (kind = dp_t), intent(in   ) ::     p0(0:)
+    real (kind = dp_t), intent(in   ) ::  temp0(0:)
 
     !     Local variables
     integer :: i, j
