@@ -29,7 +29,7 @@ contains
       real(kind=dp_t), intent(inout) ::  force(lo(1)- 1:,lo(2)- 1:,:)
       real(kind=dp_t), intent(in   ) ::     w0(0:)
 
-      real(kind=dp_t),intent(in) :: dt,dx(:),base(lo(2):)
+      real(kind=dp_t),intent(in) :: dt,dx(:),base(0:)
       integer        ,intent(in) :: velpred
       integer        ,intent(in) :: phys_bc(:,:)
       integer        ,intent(in) ::  adv_bc(:,:,:)
@@ -89,6 +89,7 @@ contains
          end do
       end if
 
+
       call slopex_2d(s(:,:,n:),slopex,lo,ng,1,adv_bc,slope_order)
       call slopey_2d(s(:,:,n:),slopey,lo,ng,1,adv_bc,slope_order)
 
@@ -134,7 +135,6 @@ contains
 !     Loop for fluxes on x-edges.
 !
       vadv_max = ZERO
-!     do n = 1,ncomp
 
        do j = js,je 
         if (velpred .eq. 0 .or. n .eq. 1) then
@@ -350,7 +350,7 @@ contains
             sedgey(i,j,n)=merge(savg,sedgey(i,j,n),abs(vadv(i,j)) .lt. eps)
           enddo
           ! OUTFLOW HACK 
-          if (vadv(i,je+1).lt.ZERO) sedgey(i,je+1,n) = s_b(je+1)
+          if (phys_bc(2,2) .eq. OUTLET .and. vadv(i,je+1).lt.ZERO ) sedgey(i,je+1,n) = s_b(je+1)
         endif
 
         if (phys_bc(2,1) .eq. SLIP_WALL .or. phys_bc(2,1) .eq. NO_SLIP_WALL) then
@@ -386,7 +386,7 @@ contains
             vadv(i,j) = sedgey(i,j,2)
             vadv_max = max(vadv_max,abs(sedgey(i,j,2)))
           enddo
-        endif
+        end if
 
         endif
 
@@ -453,7 +453,7 @@ contains
       real(kind=dp_t), intent(in   ) ::     w0(0:)
       real(kind=dp_t), intent(in   ) :: w0_cart_vec(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
 
-      real(kind=dp_t),intent(in) :: dt,dx(:),base(lo(3):)
+      real(kind=dp_t),intent(in) :: dt,dx(:),base(0:)
       integer        ,intent(in) :: velpred
       integer        ,intent(in) :: phys_bc(:,:)
       integer        ,intent(in) ::  adv_bc(:,:,:)

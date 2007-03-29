@@ -29,29 +29,33 @@ module update_module
       real (kind = dp_t), intent(in   ) ::  sedgex(lo(1)   :,lo(2)   :,:)
       real (kind = dp_t), intent(in   ) ::  sedgey(lo(1)   :,lo(2)   :,:)
       real (kind = dp_t), intent(in   ) ::   force(lo(1)- 1:,lo(2)- 1:,:)
-      real (kind = dp_t), intent(in   ) ::   base_old(lo(2)   :,:)
-      real (kind = dp_t), intent(in   ) ::   base_new(lo(2)   :,:)
+      real (kind = dp_t), intent(in   ) ::   base_old(0:,:)
+      real (kind = dp_t), intent(in   ) ::   base_new(0:,:)
       real (kind = dp_t), intent(in   ) :: w0(0:)
       real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
-      integer :: i, j, n
+      integer :: i, j, n, nr
       real (kind = dp_t) :: divsu,divbaseu
       real (kind = dp_t), allocatable :: base_edge(:)
 
       allocate(base_edge(lo(2):hi(2)+1))
+      nr = size(base_old,dim=1)
 
       do n = nstart, nstop
 
+        ! In case lo(2) = 0
         base_edge(lo(2)  ) = base_old(lo(2),n)
-        base_edge(hi(2)+1) = base_old(hi(2),n)
-      
         base_edge(lo(2)+1) = HALF*(base_old(lo(2),n)+base_old(lo(2)+1,n))
+
+        ! In case hi(2) = nr
+        base_edge(hi(2)+1) = base_old(hi(2),n)
         base_edge(hi(2)  ) = HALF*(base_old(hi(2),n)+base_old(hi(2)-1,n))
 
-        do j = lo(2)+2,hi(2)-1
+        do j = max(2,lo(2)),min(nr-2,hi(2)+1)
            base_edge(j) = 7.d0/12.d0 * (base_old(j  ,n) + base_old(j-1,n)) &
                          -1.d0/12.d0 * (base_old(j+1,n) + base_old(j-2,n))
         end do
+
 
         do j = lo(2), hi(2)
         do i = lo(1), hi(1)
@@ -66,7 +70,7 @@ module update_module
 
           snew(i,j,n) = sold(i,j,n) + (base_new(j,n) - base_old(j,n)) &
                       - dt * (divsu + divbaseu) + dt * force(i,j,n)
-  
+
         enddo
         enddo
       enddo
@@ -151,8 +155,8 @@ module update_module
       real (kind = dp_t), intent(in   ) ::  sedgey(lo(1)   :,lo(2)   :,lo(3)   :,:)
       real (kind = dp_t), intent(in   ) ::  sedgez(lo(1)   :,lo(2)   :,lo(3)   :,:)
       real (kind = dp_t), intent(in   ) ::   force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
-      real (kind = dp_t), intent(in   ) ::   base_old(lo(3)   :,:)
-      real (kind = dp_t), intent(in   ) ::   base_new(lo(3)   :,:)
+      real (kind = dp_t), intent(in   ) ::   base_old(0:,:)
+      real (kind = dp_t), intent(in   ) ::   base_new(0:,:)
       real (kind = dp_t), intent(in   ) :: w0(0:)
       real (kind = dp_t), intent(in   ) :: w0_cart(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
       real (kind = dp_t), intent(in   ) :: dt,dx(:)
