@@ -180,8 +180,7 @@ contains
       do_diag = .false.
 
       do k = lo(3), hi(3)
-
-        do j = lo(3), hi(2)
+        do j = lo(2), hi(2)
            do i = lo(1), hi(1)
 
               den_row(1) = s(i,j,k,rho_comp)
