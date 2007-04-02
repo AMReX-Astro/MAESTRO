@@ -723,7 +723,8 @@ contains
 
     integer :: i, n
 
-    print *,'Writing base state to ',sd_name
+    if (parallel_IOProcessor()) &
+       write(6,*) 'Writing base state to ',sd_name
 
     open(unit=99,file=sd_name,form = "formatted", access = "sequential",action="write")
     do i = 1, size(s0,dim=1)
