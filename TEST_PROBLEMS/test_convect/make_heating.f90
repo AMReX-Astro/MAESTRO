@@ -62,10 +62,27 @@ contains
 !                     + .01875_dp_t * exp(-((x-x1)**2 +(y-y1)**2)/0.25e14) &
 !                     + .01250_dp_t * exp(-((x-x2)**2 +(y-y2)**2)/0.25e14) ) * 1.d17
 
+!            H(i,j) = ey*(.01875_dp_t * (1.d0 + sin(2*pi*x/L_x)) &
+!                      +  .01250_dp_t * (1.d0 + sin((6*pi*x/L_x) + pi/3.d0)) &
+!                      +  .00625_dp_t * (1.d0 + sin((8*pi*x/L_x) + pi/5.d0)) )*1.d17
+ 
+! best so far
             H(i,j) = ey*(ONE + &
                         .00625_dp_t * sin(2*pi*x/L_x) &
                       + .01875_dp_t * sin((6*pi*x/L_x) + pi/3.d0) &
-                      + .01250_dp_t * sin((8*pi*x/L_x) + pi/5.d0))*1.d16
+                      + .01250_dp_t * sin((8*pi*x/L_x) + pi/5.d0))*1.d17
+
+!           H(i,j) = ey*(ONE + &
+!                       .00625_dp_t * sin(2*pi*x/L_x) &
+!                     + .0025_dp_t * sin(pi*x/L_x + .562) &
+!                     + .01875_dp_t * sin((6*pi*x/L_x) + pi/3.d0) &
+!                     + .01250_dp_t * sin((8*pi*x/L_x) + pi/5.d0))*1.d15
+
+!           H(i,j) = ey*(ONE + &
+!                       .00625_dp_t * sin(2*pi*x/L_x) &
+!                     + .0025_dp_t * sin(pi*x/L_x + .562) &
+!                     + .01875_dp_t * sin((6*pi*x/L_x) + pi/3.d0) &
+!                     + .01250_dp_t * sin((8*pi*x/L_x) + pi/5.d0))*1.d14
 
 !           H(i,j) = ey * 1.d17
 

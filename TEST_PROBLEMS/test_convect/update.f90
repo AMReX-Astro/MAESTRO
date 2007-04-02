@@ -207,11 +207,13 @@ module update_module
       real (kind = dp_t) :: fac
 
       real (kind = dp_t) :: z_sp, z_top, anelastic_cutoff, alpha, y
+      real (kind = dp_t) :: z_md, z_tp, smdamp, z_shift, new_cutoff
       real (kind = dp_t), parameter :: pi = 3.14159265358979323846264338327950288d0
 
       ! sponge
       ! start by finding the height of the anelastic cutoff
       z_top = 3.5e8   ! this should be prob_hi(2)
+      new_cutoff = 1.d7   ! this should come from inputs
       anelastic_cutoff = 3.d6   ! this should come from inputs
 
       z_sp = z_top
@@ -222,11 +224,41 @@ module update_module
             exit
          endif
       enddo
+      z_shift = z_top
+      do j = lo(2), hi(2)
+         y = (dble(j)+HALF) * dx(2)
+         if (s0(j,rho_comp) < new_cutoff) then
+            z_shift = y
+            exit
+         endif
+      enddo
+
+      z_md = z_top
+      do j = lo(2), hi(2)
+         y = (dble(j)+HALF) * dx(2)
+         if (s0(j,rho_comp) < anelastic_cutoff) then
+            z_md = y
+            exit
+         endif
+      enddo
+
+      z_shift = z_shift - z_md
+
+      z_tp = z_md + z_md - z_sp
+
+!  widen sponge width
+    
+      z_shift = 0.d0
+
+      z_tp = z_tp + z_md - z_sp  - z_shift
+      z_sp = z_sp - z_md + z_sp  - z_shift
+      z_md = z_md - z_shift
+
 
       alpha = 100.d0
 
 
-      print *, 'sponge : ', z_sp, z_top
+      print *, 'sponge : ', z_sp, z_md, z_tp, z_top
 
       print *,'<<< updating velocity >>> '
 
@@ -256,8 +288,16 @@ module update_module
 
            ! Add the sponge
            if (y >= z_sp) then
-              unew(i,j,:) = unew(i,j,:) - &
-                   dt * HALF*alpha*(ONE - cos(pi*(y - z_sp)/(z_top - z_sp)))*uold(i,j,:)
+              if (y < z_tp) then
+                smdamp = HALF*(ONE - cos(pi*(y - z_sp)/(z_tp - z_sp)))
+              else
+                smdamp = ONE
+              endif
+!             unew(i,j,:) = unew(i,j,:) - dt * alpha*smdamp*uold(i,j,:)
+              unew(i,j,:) = unew(i,j,:)/ (ONE + dt * smdamp* alpha)
+!              if(i.eq.10)then
+!                 write(6,*)j,y, smdamp
+!              endif
            endif
       enddo
       enddo

@@ -1,16 +1,16 @@
 &PROBIN
- test_set = "gr0_2d"
+ test_set = "gr0_2d_old"
  spherical_in = 0
 
  prob_hi_x = 2.5e8
  prob_hi_y = 3.5e8
 
  max_step  = 100000000
- init_iter = 1
+ init_iter = 4
 
- stop_time = 20.00
+ stop_time = 5.00
 
- plot_int  = 50
+ plot_int  = 100
  chk_int   = 200
 
  cflfac = 0.5
@@ -25,7 +25,7 @@
  pmask_y = F
 
     verbose = 1
- mg_verbose = 2
+ mg_verbose = 1
  cg_verbose = 0
 
  do_initial_projection = 1
@@ -33,5 +33,5 @@
 
  anelastic_cutoff = 3.e6
 
-!restart = 50
+! restart = 600
 /
