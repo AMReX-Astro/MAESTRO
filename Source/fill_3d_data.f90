@@ -104,17 +104,34 @@ contains
          hi =  upb(get_box(w0_cart, i))
          if (spherical .eq. 1) then
            np => dataptr(normal, i)
+           call put_w0_on_3d_cells_sphr(w0,wp(:,:,:,:),np(:,:,:,:),lo,hi,dx,ng)
          else
-           np => Null()
+           call put_w0_on_3d_cells_cart(w0,wp(:,:,:,:),lo,hi,ng)
          end if
-         call put_w0_on_3d_cells(w0,wp(:,:,:,:),np(:,:,:,:),lo,hi,dx,ng)
       end do
 
       call multifab_fill_boundary(w0_cart)
 
   end subroutine make_w0_cart
 
-  subroutine put_w0_on_3d_cells (w0,w0_cell,normal,lo,hi,dx,ng)
+  subroutine put_w0_on_3d_cells_cart (w0,w0_cell,lo,hi,ng)
+
+    integer        , intent(in   ) :: lo(:),hi(:),ng
+    real(kind=dp_t), intent(  out) :: w0_cell(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
+    real(kind=dp_t), intent(in   ) :: w0(0:)
+
+    integer                  :: i,j,k
+    real(kind=dp_t)          :: w0_edge
+
+    w0_cell = ZERO
+    do k = lo(3),hi(3)
+      w0_edge = HALF * (w0(k) + w0(k+1))
+      w0_cell(:,:,k,3) = w0_edge
+    end do
+
+  end subroutine put_w0_on_3d_cells_cart
+
+  subroutine put_w0_on_3d_cells_sphr (w0,w0_cell,normal,lo,hi,dx,ng)
 
     integer        , intent(in   ) :: lo(:),hi(:),ng
     real(kind=dp_t), intent(  out) :: w0_cell(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
@@ -128,8 +145,7 @@ contains
 
     nr = size(w0,dim=1)
 
-    if (spherical .eq. 1) then
-     do k = lo(3),hi(3)
+    do k = lo(3),hi(3)
       z = (dble(k)+HALF)*dx(3) - center(3)
       do j = lo(2),hi(2)
         y = (dble(j)+HALF)*dx(2) - center(2)
@@ -159,21 +175,8 @@ contains
           w0_cell(i,j,k,3) = w0_cell_val * normal(i,j,k,3)
         end do
       end do
-     end do
+    end do
 
-    else 
-
-      w0_cell = ZERO
-      do k = lo(3),hi(3)
-      do j = lo(2),hi(2)
-      do i = lo(1),hi(1)
-        w0_cell(i,j,k,3) = HALF * (w0(k) + w0(k+1))
-      end do
-      end do
-      end do
-
-    end if
-
-  end subroutine put_w0_on_3d_cells
+  end subroutine put_w0_on_3d_cells_sphr
 
 end module fill_3d_module

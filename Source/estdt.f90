@@ -65,11 +65,12 @@ contains
             case (3)
               if (spherical .eq. 1) then
                 np => dataptr(normal, i)
+                call estdt_3d_sphr(uop(:,:,:,:), sop(:,:,:,:), fp(:,:,:,:), dUp(:,:,:,1), np(:,:,:,:), &
+                                   w0, p0, gam1, lo, hi, ng, dx, rho_min, dt_adv_grid, dt_divu_grid)
               else
-                np => Null()
+                call estdt_3d_cart(uop(:,:,:,:), sop(:,:,:,:), fp(:,:,:,:), dUp(:,:,:,1), &
+                                   w0, p0, gam1, lo, hi, ng, dx, rho_min, dt_adv_grid, dt_divu_grid)
               end if
-              call estdt_3d(uop(:,:,:,:), sop(:,:,:,:), fp(:,:,:,:), dUp(:,:,:,1), np(:,:,:,:), &
-                            w0, p0, gam1, lo, hi, ng, dx, rho_min, dt_adv_grid, dt_divu_grid)
          end select
 
          dt_adv_proc  = min(dt_adv_proc ,dt_adv_grid)
@@ -193,14 +194,13 @@ contains
 
    end subroutine estdt_2d
 
-   subroutine estdt_3d (u, s, force, divU, normal, w0, p0, gam1, lo, hi, ng, dx, rho_min, dt_adv, dt_divu)
+   subroutine estdt_3d_cart (u, s, force, divU, w0, p0, gam1, lo, hi, ng, dx, rho_min, dt_adv, dt_divu)
 
      integer, intent(in) :: lo(:), hi(:), ng
      real (kind = dp_t), intent(in ) ::      u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
      real (kind = dp_t), intent(in ) ::      s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
      real (kind = dp_t), intent(in ) ::  force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)  
      real (kind = dp_t), intent(in ) ::   divU(lo(1):,lo(2):,lo(3):)
-     real (kind = dp_t), intent(in ) :: normal(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
      real (kind = dp_t), intent( in) ::   w0(0:), p0(0:), gam1(0:)
      real (kind = dp_t), intent(in ) :: dx(:)
      real (kind = dp_t), intent(in ) :: rho_min
@@ -220,51 +220,23 @@ contains
      spdx    = ZERO
      spdy    = ZERO 
      spdz    = ZERO 
+
+     ! Limit dt based on velocity terms
+     do k = lo(3), hi(3)
+        do j = lo(2), hi(2)
+           do i = lo(1), hi(1)
+              spdx = max(spdx ,abs(u(i,j,k,1)))
+              spdy = max(spdy ,abs(u(i,j,k,2)))
+              spdz = max(spdz ,abs(u(i,j,k,3)+w0(k)))
+           enddo
+        enddo
+     enddo
      
-     if (spherical .eq. 0) then
-
-        ! Limit dt based on velocity terms
-        do k = lo(3), hi(3)
-           do j = lo(2), hi(2)
-              do i = lo(1), hi(1)
-                 spdx = max(spdx ,abs(u(i,j,k,1)))
-                 spdy = max(spdy ,abs(u(i,j,k,2)))
-                 spdz = max(spdz ,abs(u(i,j,k,3)+w0(k)))
-              enddo
-           enddo
-        enddo
-        
-        spdr = ZERO 
-        do k = lo(3),hi(3)
-           spdr = max(spdr ,abs(w0(k)))
-        enddo
-        spdr = spdr / dx(3)
-        
-     else
-
-        allocate(w0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),3))
-        call put_w0_on_3d_cells(w0(0:),w0_cart,normal,lo,hi,dx,0)
-
-        ! Limit dt based on velocity terms
-        do k = lo(3), hi(3)
-           do j = lo(2), hi(2)
-              do i = lo(1), hi(1)
-                 spdx = max(spdx ,abs(u(i,j,k,1)+w0_cart(i,j,k,1)))
-                 spdy = max(spdy ,abs(u(i,j,k,2)+w0_cart(i,j,k,2)))
-                 spdz = max(spdz ,abs(u(i,j,k,3)+w0_cart(i,j,k,3)))
-              enddo
-           enddo
-        enddo
-
-        deallocate(w0_cart)
-
-        spdr = ZERO 
-        do k = 0,size(w0,dim=1)-1
-           spdr = max(spdr ,abs(w0(k)))
-        enddo
-        spdr = spdr / dr
-        
-     end if
+     spdr = ZERO 
+     do k = lo(3),hi(3)
+        spdr = max(spdr ,abs(w0(k)))
+     enddo
+     spdr = spdr / dx(3)
 
      spdx = spdx / dx(1)
      spdy = spdy / dx(2)
@@ -275,7 +247,6 @@ contains
      else
         dt_adv = 1.0D0  / max(spdx,spdy,spdz,spdr)
      endif
-     
 
      ! Limit dt based on forcing terms
      pforcex = ZERO 
@@ -332,6 +303,126 @@ contains
         enddo
      enddo
 
-   end subroutine estdt_3d
+   end subroutine estdt_3d_cart
+
+   subroutine estdt_3d_sphr (u, s, force, divU, normal, w0, p0, gam1, lo, hi, ng, dx, rho_min, dt_adv, dt_divu)
+
+     integer, intent(in) :: lo(:), hi(:), ng
+     real (kind = dp_t), intent(in ) ::      u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
+     real (kind = dp_t), intent(in ) ::      s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
+     real (kind = dp_t), intent(in ) ::  force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)  
+     real (kind = dp_t), intent(in ) ::   divU(lo(1):,lo(2):,lo(3):)
+     real (kind = dp_t), intent(in ) :: normal(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
+     real (kind = dp_t), intent( in) ::   w0(0:), p0(0:), gam1(0:)
+     real (kind = dp_t), intent(in ) :: dx(:)
+     real (kind = dp_t), intent(in ) :: rho_min
+     real (kind = dp_t), intent(out) :: dt_adv, dt_divu
+
+!    Local variables
+     real (kind = dp_t), allocatable :: w0_cart(:,:,:,:)
+     real (kind = dp_t)  :: spdx, spdy, spdz, spdr
+     real (kind = dp_t)  :: pforcex, pforcey, pforcez
+     real (kind = dp_t)  :: eps,denom,gradp0
+     integer             :: i,j,k,nr
+
+     eps = 1.0e-8
+
+     nr = size(p0,dim=1)
+
+     spdx    = ZERO
+     spdy    = ZERO 
+     spdz    = ZERO 
+
+     allocate(w0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),3))
+     call put_w0_on_3d_cells_sphr(w0(0:),w0_cart,normal,lo,hi,dx,0)
+
+     ! Limit dt based on velocity terms
+     do k = lo(3), hi(3)
+        do j = lo(2), hi(2)
+           do i = lo(1), hi(1)
+              spdx = max(spdx ,abs(u(i,j,k,1)+w0_cart(i,j,k,1)))
+              spdy = max(spdy ,abs(u(i,j,k,2)+w0_cart(i,j,k,2)))
+              spdz = max(spdz ,abs(u(i,j,k,3)+w0_cart(i,j,k,3)))
+           enddo
+        enddo
+     enddo
+
+     deallocate(w0_cart)
+
+     spdr = ZERO 
+     do k = 0,size(w0,dim=1)-1
+        spdr = max(spdr ,abs(w0(k)))
+     enddo
+     spdr = spdr / dr
+
+     spdx = spdx / dx(1)
+     spdy = spdy / dx(2)
+     spdz = spdz / dx(3)
+      
+     if (spdx < eps .and. spdy < eps .and. spdz < eps .and. spdr < eps) then
+        dt_adv = min(dx(1),dx(2),dx(3))
+     else
+        dt_adv = 1.0D0  / max(spdx,spdy,spdz,spdr)
+     endif
+     
+     ! Limit dt based on forcing terms
+     pforcex = ZERO 
+     pforcey = ZERO 
+     pforcez = ZERO 
+
+     do k = lo(3), hi(3)
+        do j = lo(2), hi(2)
+           do i = lo(1), hi(1)
+              pforcex = max(pforcex,abs(force(i,j,k,1)))
+              pforcey = max(pforcey,abs(force(i,j,k,2)))
+              pforcez = max(pforcez,abs(force(i,j,k,3)))
+           enddo
+        enddo
+     enddo
+     
+     if (pforcex > eps) then
+        dt_adv = min(dt_adv,sqrt(2.0D0*dx(1)/pforcex))
+     endif
+     
+     if (pforcey > eps) then
+        dt_adv = min(dt_adv,sqrt(2.0D0*dx(2)/pforcey))
+     endif
+     
+     if (pforcez > eps) then
+        dt_adv = min(dt_adv,sqrt(2.0D0*dx(3)/pforcez))
+     endif
+
+
+     ! FIX ME FIX ME FIX ME 
+     print *,'NOT FIXED IN ESTDT_3D_SPHR '
+     stop
+     ! divU constraint
+     dt_divu = 1.d30
+
+     do k = lo(3), hi(3)
+        
+        if (k .eq. 0) then
+           gradp0 = (p0(k+1) - p0(k))/dx(3)
+        else if (k .eq. nr-1) then
+           gradp0 = (p0(k) - p0(k-1))/dx(3)
+        else
+           gradp0 = HALF*(p0(k+1) - p0(k-1))/dx(3)
+        endif
+
+        do j = lo(2), hi(2)
+           do i = lo(1), hi(1)
+
+              denom = divU(i,j,k) - u(i,j,k,3)*gradp0/(gam1(k)*p0(k))
+
+              if (denom > ZERO) then
+                dt_divu = min(dt_divu, &
+                              HALF*(ONE - rho_min/s(i,j,k,rho_comp))/denom)
+              endif
+
+           enddo
+        enddo
+     enddo
+
+   end subroutine estdt_3d_sphr
 
 end module estdt_module

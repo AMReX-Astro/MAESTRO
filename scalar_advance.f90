@@ -69,6 +69,7 @@ contains
 !
       type(multifab) :: divu
       real(dp_t)     :: mult
+      real(dp_t)     :: smin,smax
 
       integer :: nscal,ntrac,velpred
       integer :: lo(uold%dim),hi(uold%dim)
@@ -387,15 +388,21 @@ contains
          end select
       end do
 
-      if (parallel_IOProcessor() .and. verbose .eq. 1) then
+      if (verbose .ge. 1) then
         do n = spec_comp,spec_comp+nspec-1
           if (n.gt.rhoh_comp .and. n.lt.trac_comp) then
             call multifab_div_div_c(snew,n,snew,rho_comp,1)
-            write(6,2002) spec_names(n-rhoh_comp), multifab_min_c(snew,n), multifab_max_c(snew,n)
+            smin = multifab_min_c(snew,n) 
+            smax = multifab_max_c(snew,n)
+            if (parallel_IOProcessor()) &
+              write(6,2002) spec_names(n-rhoh_comp), smin,smax
             call multifab_mult_mult_c(snew,n,snew,rho_comp,1)
           end if
         end do
-        write(6,2000) multifab_min_c(snew,rho_comp), multifab_max_c(snew,rho_comp)
+        smin = multifab_min_c(snew,rho_comp) 
+        smax = multifab_max_c(snew,rho_comp)
+        if (parallel_IOProcessor()) &
+          write(6,2000) smin,smax
       end if
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -446,8 +453,11 @@ contains
          end select
       end do
 
-      if (parallel_IOProcessor() .and. verbose .eq. 1) then
-        write(6,2003) multifab_min_c(snew,trac_comp), multifab_max_c(snew,trac_comp)
+      if (verbose .eq. 1) then
+        smin = multifab_min_c(snew,trac_comp) 
+        smax = multifab_max_c(snew,trac_comp)
+        if (parallel_IOProcessor()) &
+          write(6,2003) smin,smax
       end if
 
       end if
@@ -523,9 +533,13 @@ contains
          end select
       end do
 
-      if (parallel_IOProcessor() .and. verbose .eq. 1) then
-        write(6,2001) multifab_min_c(snew,rhoh_comp), multifab_max_c(snew,rhoh_comp)
-        write(6,2004) 
+      if (verbose .eq. 1) then
+        smin = multifab_min_c(snew,rhoh_comp) 
+        smax = multifab_max_c(snew,rhoh_comp)
+        if (parallel_IOProcessor()) then
+          write(6,2001) smin,smax
+          write(6,2004) 
+        end if
       end if
 
 
