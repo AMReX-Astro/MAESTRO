@@ -506,7 +506,8 @@ contains
     ipos = index(header_line, '=') + 1
     read (header_line(ipos:),*) npts_model
 
-    print *, npts_model, '    points found in the initial model file'
+    if ( parallel_IOProcessor() ) &
+      print *, npts_model, '    points found in the initial model file'
 
     ! now read in the number of variables
     read (99, '(a256)') header_line
@@ -574,8 +575,10 @@ contains
 
     dr_in = base_r(2) - base_r(1)
     dr = dr_in * dble(npts_model)  / dble(n_base)
-    print *,'DR_IN  ',dr_in
-    print *,'NEW DR ',dr
+    if ( parallel_IOProcessor() ) then
+      print *,'DR_IN  ',dr_in
+      print *,'NEW DR ',dr
+    end if
 
     if (spherical .eq. 1) then
       if (dble(npts_model)*dr_in .lt. HALF*prob_hi(1)*dsqrt(3.0_dp_t)) then
