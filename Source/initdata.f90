@@ -639,7 +639,8 @@ contains
  
 
     ! KEEP RHO0 CONSTANT ABOVE J_CUTOFF
-    print *,'JCUT_comp ',j_cutoff
+    if ( parallel_IOProcessor() ) &
+      print *,'JCUT_comp ',j_cutoff
 
     do j = j_cutoff,n_base-1
        s0(j, rho_comp ) = s0(j_cutoff, rho_comp )
