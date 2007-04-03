@@ -689,7 +689,7 @@ contains
     real(kind=dp_t), intent(in   ) ::  wmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
 
     real(kind=dp_t), intent(in   ) :: base_cart(lo(1):,lo(2):,lo(3):)
-    real(kind=dp_t), intent(in   ) :: w0(0:)
+    real(kind=dp_t), intent(in   ) :: w0(:)
     real(kind=dp_t), intent(in   ) :: dx(:)
     
     ! Local variables
