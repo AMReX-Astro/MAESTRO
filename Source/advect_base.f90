@@ -169,9 +169,11 @@ contains
 !     Local variables
       integer :: i, j, k, n, nz
       real(kind=dp_t) :: dtdr,divbetaw,betahalf,factor,integral
+      real(kind=dp_t) :: div_w0
 
       real (kind = dp_t), allocatable :: m(:)
       real (kind = dp_t), allocatable :: force(:)
+      real (kind = dp_t), allocatable :: eta(:)
       real (kind = dp_t), allocatable :: edge(:)
       real (kind = dp_t), allocatable :: beta(:),beta_new(:),beta_nh(:)
       real (kind = dp_t), allocatable :: gam1_old(:)
@@ -184,6 +186,7 @@ contains
 
       ! Cell-centered
       allocate(force(nz))
+      allocate(eta(nz))
       allocate(m(nz))
       allocate(gam1_old(nz))
       allocate(grav_cell(nz))
@@ -229,80 +232,88 @@ contains
 !     UPDATE P0
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-     do j = 1,nz+1
-       beta(j) = div_coeff_edge(j)
-     end do
-
-     ! Update p0 -- predictor
-     do j = 1,nz
-        divbetaw = one / (z(j)**2) * (zl(j+1)**2 * beta(j+1) * vel(j+1) - &
-                                      zl(j  )**2 * beta(j  ) * vel(j  ) ) / dr
-        betahalf = half * (beta(j+1) + beta(j))
-        factor = half * dt * gam1(j) * (Sbar_in(j) - divbetaw / betahalf)
-        p0_new(j) = p0_old(j) * (one + factor ) / (one - factor)
-
-     end do
-
-     do j = 1,nz
-        ! (rho, p) --> T,h, etc
-        input_flag = 4
-        den_row(1)  = s0_new(j,rho_comp)
-          p_row(1) =  p0_new(j)
-        gam1_old(j) = gam1(j)
-
-        call eos(input_flag, den_row, temp_row, & 
-                 npts, nspec, & 
-                 xn_zone, aion, zion, & 
-                 p_row, h_row, e_row, & 
-                 cv_row, cp_row, xne_row, eta_row, pele_row, &
-                 dpdt_row, dpdr_row, dedt_row, dedr_row, &
-                 dpdX_row, dhdX_row, &
-                 gam1_row, cs_row, s_row, & 
-                 dsdt_row, dsdr_row, &
-                 do_diag) 
-        gam1(j) = gam1_row(1)
-     end do
-
-     call make_grav_edge(grav_edge,s0_new(:,rho_comp))
-     call make_grav_cell(grav_cell,s0_new(:,rho_comp))
-
-     ! Define beta^n+1 at cell edges using the new gravity above
-     beta_new(1) = 1.5d0 * s0_new(1,rho_comp) - 0.5d0 * s0_new(2,rho_comp)
-     do j = 2,nz+1
-        integral  = s0_new(j-1,rho_comp) * grav_cell(j-1) * dr / (gam1(j-1) * p0_new(j-1))
-        beta_new(j) = beta_new(j-1) * exp(-integral)
-     end do 
-
-     ! time-centered beta
-     beta_nh = HALF*(beta + beta_new)
-
-     ! Update p0 -- corrector
-     do j = 1,nz
-        divbetaw = one / (z(j)**2) * (zl(j+1)**2 * beta_nh(j+1) * vel(j+1) - &
-                                      zl(j  )**2 * beta_nh(j  ) * vel(j  ) ) / dr
-        betahalf = half * (beta_nh(j+1) + beta_nh(j))
-        factor = half * dt * (Sbar_in(j) - divbetaw / betahalf)
-        p0_new(j) = p0_old(j) * (one + factor * gam1_old(j)) / (one - factor * gam1(j))
-
-     end do
+      do j = 1,nz+1
+        beta(j) = div_coeff_edge(j)
+      end do
+ 
+      ! Update p0 -- predictor
+      do j = 1,nz
+         divbetaw = one / (z(j)**2) * (zl(j+1)**2 * beta(j+1) * vel(j+1) - &
+                                       zl(j  )**2 * beta(j  ) * vel(j  ) ) / dr
+         betahalf = half * (beta(j+1) + beta(j))
+         factor = half * dt * gam1(j) * (Sbar_in(j) - divbetaw / betahalf)
+         p0_new(j) = p0_old(j) * (one + factor ) / (one - factor)
+ 
+      end do
+ 
+      do j = 1,nz
+         ! (rho, p) --> T,h, etc
+         input_flag = 4
+         den_row(1)  = s0_new(j,rho_comp)
+           p_row(1) =  p0_new(j)
+         gam1_old(j) = gam1(j)
+ 
+         call eos(input_flag, den_row, temp_row, & 
+                  npts, nspec, & 
+                  xn_zone, aion, zion, & 
+                  p_row, h_row, e_row, & 
+                  cv_row, cp_row, xne_row, eta_row, pele_row, &
+                  dpdt_row, dpdr_row, dedt_row, dedr_row, &
+                  dpdX_row, dhdX_row, &
+                  gam1_row, cs_row, s_row, & 
+                  dsdt_row, dsdr_row, &
+                  do_diag) 
+         gam1(j) = gam1_row(1)
+      end do
+ 
+      call make_grav_edge(grav_edge,s0_new(:,rho_comp))
+      call make_grav_cell(grav_cell,s0_new(:,rho_comp))
+ 
+      ! Define beta^n+1 at cell edges using the new gravity above
+      beta_new(1) = 1.5d0 * s0_new(1,rho_comp) - 0.5d0 * s0_new(2,rho_comp)
+       do j = 2,nz+1
+         integral  = s0_new(j-1,rho_comp) * grav_cell(j-1) * dr / (gam1(j-1) * p0_new(j-1))
+         beta_new(j) = beta_new(j-1) * exp(-integral)
+      end do 
+ 
+      ! time-centered beta
+      beta_nh = HALF*(beta + beta_new)
+ 
+      ! Update p0 -- corrector
+      do j = 1,nz
+         divbetaw = one / (z(j)**2) * (zl(j+1)**2 * beta_nh(j+1) * vel(j+1) - &
+                                       zl(j  )**2 * beta_nh(j  ) * vel(j  ) ) / dr
+         betahalf = half * (beta_nh(j+1) + beta_nh(j))
+         factor = half * dt * (Sbar_in(j) - divbetaw / betahalf)
+         p0_new(j) = p0_old(j) * (one + factor * gam1_old(j)) / (one - factor * gam1(j))
+ 
+      end do
 
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     UPDATE RHOH0
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-     print *, 'need eta in advect_base'
-     stop
 
       do j = 1,nz
-         force(j) = -s0_old(j,rhoh_comp) * (vel(j+1) - vel(j)) / dr - &
+
+         div_w0 = (vel(j+1) - vel(j)) / dr 
+
+         force(j) = -s0_old(j,rhoh_comp) * div_w0 - &
               2.0_dp_t*s0_old(j,rhoh_comp)*HALF*(vel(j) + vel(j+1))/z(j)
+
+         eta(j) = gam1_old(j) * p0_old(j) * (Sbar_in(j) - div_w0)
+
       end do
 
       call mkflux_1d(s0_old(:,rhoh_comp),edge,vel,force,1,dr,dt)
 
       do j = 1,nz
+
          s0_new(j,rhoh_comp) = s0_old(j,rhoh_comp) - &
               dtdr / z(j)**2 * ( zl(j+1)**2 * edge(j+1) * vel(j+1) &
                                 -zl(j  )**2 * edge(j  ) * vel(j  ))
+
+         s0_new(j,rhoh_comp) = s0_new(j,rhoh_comp) + dt * eta(j)
+
       end do
 
 
@@ -335,7 +346,7 @@ contains
 
       end do
 
-      deallocate(force,edge,beta,beta_new,beta_nh,gam1_old,grav_edge,grav_cell)
+      deallocate(force,eta,edge,beta,beta_new,beta_nh,gam1_old,grav_edge,grav_cell)
 
    end subroutine advect_base_state_spherical
 
