@@ -155,7 +155,7 @@ contains
           index = radius / dr
           if (index .lt. 0 .or. index .gt. nr-1) then
             print *,'RADIUS ',radius
-            print *,'BOGUS INDEX IN FILL_3D: ',index
+            print *,'BOGUS INDEX IN PUT_ON_CELLS: ',index
             print *,'NOT IN RANGE 0 TO ',nr-1
             print *,'I J K ',i,j,k
             print *,'X Y Z ',x,y,z

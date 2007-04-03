@@ -319,8 +319,10 @@ contains
      real (kind = dp_t), intent(out) :: dt_adv, dt_divu
 
 !    Local variables
-     real (kind = dp_t), allocatable :: w0_cart(:,:,:,:)
-     real (kind = dp_t)  :: spdx, spdy, spdz, spdr
+     real (kind = dp_t), allocatable ::  w0_cart(:,:,:,:)
+     real (kind = dp_t), allocatable :: gp0_cart(:,:,:,:)
+     real (kind = dp_t), allocatable :: gp0(:)
+     real (kind = dp_t)  :: spdx, spdy, spdz, spdr, gp_dot_u, gam1_p_avg
      real (kind = dp_t)  :: pforcex, pforcey, pforcez
      real (kind = dp_t)  :: eps,denom,gradp0
      integer             :: i,j,k,nr
@@ -333,8 +335,9 @@ contains
      spdy    = ZERO 
      spdz    = ZERO 
 
-     allocate(w0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),3))
+     allocate( w0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),3))
      call put_w0_on_3d_cells_sphr(w0(0:),w0_cart,normal,lo,hi,dx,0)
+
 
      ! Limit dt based on velocity terms
      do k = lo(3), hi(3)
@@ -392,27 +395,29 @@ contains
         dt_adv = min(dt_adv,sqrt(2.0D0*dx(3)/pforcez))
      endif
 
-
-     ! FIX ME FIX ME FIX ME 
-     print *,'NOT FIXED IN ESTDT_3D_SPHR '
-     stop
      ! divU constraint
      dt_divu = 1.d30
 
-     do k = lo(3), hi(3)
-        
-        if (k .eq. 0) then
-           gradp0 = (p0(k+1) - p0(k))/dx(3)
-        else if (k .eq. nr-1) then
-           gradp0 = (p0(k) - p0(k-1))/dx(3)
-        else
-           gradp0 = HALF*(p0(k+1) - p0(k-1))/dx(3)
-        endif
+     allocate(gp0(0:nr))
+     do k = 1,nr-1
+       gp0(k) = (p0(k) - p0(k-1))/dr
+       gam1_p_avg = HALF * (gam1(k)*p0(k) + gam1(k-1)*p0(k-1))
+       gp0(k) = gp0(k) / gam1_p_avg
+     end do
+     gp0(nr) = gp0(nr-1)
+     gp0( 0) = gp0(   1)
+     allocate(gp0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),3))
+     call put_w0_on_3d_cells_sphr(gp0,gp0_cart,normal,lo,hi,dx,0)
 
+     do k = lo(3), hi(3)
         do j = lo(2), hi(2)
            do i = lo(1), hi(1)
 
-              denom = divU(i,j,k) - u(i,j,k,3)*gradp0/(gam1(k)*p0(k))
+              gp_dot_u = u(i,j,k,1) * gp0_cart(i,j,k,1) + &
+                         u(i,j,k,2) * gp0_cart(i,j,k,2) + &
+                         u(i,j,k,3) * gp0_cart(i,j,k,3)
+
+              denom = divU(i,j,k) - gp_dot_u 
 
               if (denom > ZERO) then
                 dt_divu = min(dt_divu, &
@@ -422,6 +427,9 @@ contains
            enddo
         enddo
      enddo
+
+     deallocate(gp0)
+     deallocate(gp0_cart)
 
    end subroutine estdt_3d_sphr
 
