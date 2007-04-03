@@ -143,7 +143,7 @@ contains
                allocate(s0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
 
                do n = spec_comp,spec_comp+nspec-1
-                  call fill_3d_data(s0_cart,s0_old(:,n),lo,hi,dx,ng_cell)
+                  call fill_3d_data(s0_cart,s0_old(:,n),lo,hi,dx,0)
                   call modify_scal_force_3d_sphr(fp(:,:,:,n),sop(:,:,:,n),lo,hi,ng_cell,&
                                                  ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1), &
                                                  s0_cart,w0,dx)
@@ -156,7 +156,7 @@ contains
                                          sop(:,:,:,:),sop(:,:,:,:), ng_cell, dx, time, &
                                          np(:,:,:,:), p0_old, p0_old, s0_old, s0_old, temp0)
 
-               call fill_3d_data(s0_cart,s0_old(:,n),lo,hi,dx,ng_cell)
+               call fill_3d_data(s0_cart,s0_old(:,n),lo,hi,dx,0)
                call modify_scal_force_3d_sphr(fp(:,:,:,n),sop(:,:,:,n),lo,hi,ng_cell,&
                                               ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1), &
                                               s0_cart,w0,dx)
