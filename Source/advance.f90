@@ -95,8 +95,8 @@ module advance_timestep_module
     type(multifab), allocatable :: Source_nph(:)
 
     ! Only needed for spherical.eq.1 
-    type(multifab)              :: div_coeff_3d
-    real(kind=dp_t), pointer ::  dp(:,:,:,:)
+    type(multifab) , allocatable :: div_coeff_3d(:)
+    real(kind=dp_t), pointer     :: dp(:,:,:,:)
 
     real(dp_t)    , allocatable ::        s0_nph(:,:)
     real(dp_t)    , allocatable ::          Sbar(:,:)
@@ -144,6 +144,9 @@ module advance_timestep_module
     allocate(rho_omegadotbar2(nr,nspec))
     allocate(rho_Hextbar(nr,1))
 
+    if (spherical.eq.1) &
+      allocate(div_coeff_3d(nlevs))
+
     nodal = .true.
     do n = 1,nlevs
      call multifab_build(   rhohalf(n), mla%la(n),     1, 1)
@@ -152,9 +155,9 @@ module advance_timestep_module
      call multifab_build(     hgrhs(n), mla%la(n),     1,       0, nodal)
      if (dm.eq.3) &
          call multifab_build(w0_cart_vec(n), mla%la(n),dm,1)
+     if (spherical.eq.1) &
+         call multifab_build(div_coeff_3d(n),mla%la(nlevs),1,0)
     end do
- 
-        if (spherical .eq. 1) call multifab_build(div_coeff_3d,mla%la(nlevs),1,0)
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !! STEP 1 -- define average expansion at time n+1/2
@@ -204,12 +207,14 @@ module advance_timestep_module
 
         ! MAC projection !
         if (spherical .eq. 1) then
-          do i = 1,div_coeff_3d%nboxes
-            if (multifab_remote(div_coeff_3d,i)) cycle
-            dp => dataptr(div_coeff_3d, i)
-            lo =  lwb(get_box(div_coeff_3d, i))
-            hi =  upb(get_box(div_coeff_3d, i))
-            call fill_3d_data(dp(:,:,:,1),div_coeff_old,lo,hi,dx(nlevs,:),0)
+          do n = 1, nlevs
+            do i = 1,div_coeff_3d(n)%nboxes
+              if (multifab_remote(div_coeff_3d(n),i)) cycle
+              dp => dataptr(div_coeff_3d(n), i)
+              lo =  lwb(get_box(div_coeff_3d(n), i))
+              hi =  upb(get_box(div_coeff_3d(n), i))
+              call fill_3d_data(dp(:,:,:,1),div_coeff_old,lo,hi,dx(nlevs,:),0)
+            end do
           end do
           call macproject(mla,umac,sold,dx,the_bc_tower,verbose,mg_verbose,cg_verbose,press_comp,&
                           macrhs,div_coeff_3d=div_coeff_3d)
@@ -217,7 +222,7 @@ module advance_timestep_module
           call put_1d_beta_on_edges(div_coeff_old,div_coeff_edge)
           call macproject(mla,umac,sold,dx,the_bc_tower,verbose,mg_verbose,cg_verbose,press_comp,&
                           macrhs,div_coeff_1d=div_coeff_old,div_coeff_half_1d=div_coeff_edge)
-            end if
+        end if
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !! STEP 3 -- react the full state and then base state through dt/2
@@ -363,12 +368,14 @@ module advance_timestep_module
 
         ! MAC projection !
         if (spherical .eq. 1) then
-          do i = 1,div_coeff_3d%nboxes
-            if (multifab_remote(div_coeff_3d,i)) cycle
-            dp => dataptr(div_coeff_3d, i)
-            lo =  lwb(get_box(div_coeff_3d, i))
-            hi =  upb(get_box(div_coeff_3d, i))
-            call fill_3d_data(dp(:,:,:,1),div_coeff_nph,lo,hi,dx(nlevs,:),0)
+          do n = 1, nlevs
+            do i = 1,div_coeff_3d(n)%nboxes
+              if (multifab_remote(div_coeff_3d(n),i)) cycle
+              dp => dataptr(div_coeff_3d(n), i)
+              lo =  lwb(get_box(div_coeff_3d(n), i))
+              hi =  upb(get_box(div_coeff_3d(n), i))
+              call fill_3d_data(dp(:,:,:,1),div_coeff_nph,lo,hi,dx(nlevs,:),0)
+            end do
           end do
           call macproject(mla,umac,rhohalf,dx,the_bc_tower,verbose,mg_verbose,cg_verbose,&
                           press_comp,macrhs,div_coeff_3d=div_coeff_3d)
@@ -499,12 +506,14 @@ module advance_timestep_module
 
 !       Project the new velocity field.
         if (spherical .eq. 1) then
-          do i = 1,div_coeff_3d%nboxes
-            if (multifab_remote(div_coeff_3d,i)) cycle
-            dp => dataptr(div_coeff_3d, i)
-            lo =  lwb(get_box(div_coeff_3d, i))
-            hi =  upb(get_box(div_coeff_3d, i))
-            call fill_3d_data(dp(:,:,:,1),div_coeff_nph,lo,hi,dx(nlevs,:),0)
+          do n = 1,nlevs
+            do i = 1,div_coeff_3d(n)%nboxes
+              if (multifab_remote(div_coeff_3d(n),i)) cycle
+              dp => dataptr(div_coeff_3d(n), i)
+              lo =  lwb(get_box(div_coeff_3d(n), i))
+              hi =  upb(get_box(div_coeff_3d(n), i))
+              call fill_3d_data(dp(:,:,:,1),div_coeff_nph,lo,hi,dx(nlevs,:),0)
+            end do
           end do
           eps_in = 1.d-10
           call hgproject(mla, unew, rhohalf, p, gp, dx, dt, &
@@ -529,21 +538,22 @@ module advance_timestep_module
           call destroy(macrhs(n))
           call destroy( hgrhs(n))
           call destroy(rhohalf(n))
+          if (spherical .eq. 1) &
+            call destroy(div_coeff_3d(n))
         end do
         deallocate(Source_nph)
         deallocate(macrhs)
         deallocate( hgrhs)
         deallocate(rhohalf)
+
+        if (spherical .eq. 1) &
+          deallocate(div_coeff_3d)
        
         if (dm .eq. 3) then
           do n = 1, nlevs
             call destroy(w0_cart_vec(n))
           end do
           deallocate(w0_cart_vec)
-        end if
-
-        if (spherical .eq. 1) then
-          call destroy(div_coeff_3d)
         end if
 
         deallocate(  Sbar)
