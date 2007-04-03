@@ -56,12 +56,15 @@ contains
     integer                  :: i,j,k
     real(kind=dp_t)          :: x,y,z,radius
 
+    print *,'NG IN MAKE_3D_NORMAL ',ng
+    print *,'LOHI IN MAKE_3D_NORMAL ',lo(1),hi(1),lo(2),hi(2),lo(3),hi(3)
+
     if (spherical .eq. 1) then
       do k = lo(3)-ng,hi(3)+ng
         z = (dble(k)-HALF)*dx(3) - center(3)
-        do j = -lo(2)-ng,hi(2)+ng
+        do j = lo(2)-ng,hi(2)+ng
           y = (dble(j)-HALF)*dx(2) - center(2)
-          do i = -lo(1)-ng,hi(1)+ng
+          do i = lo(1)-ng,hi(1)+ng
             x = (dble(i)-HALF)*dx(1) - center(1)
   
             radius = sqrt(x**2 + y**2 + z**2)
