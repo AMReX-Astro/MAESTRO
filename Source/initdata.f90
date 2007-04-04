@@ -514,7 +514,8 @@ contains
     ipos = index(header_line, '=') + 1
     read (header_line(ipos:),*) nvars_model_file
 
-    print *, nvars_model_file, ' variables found in the initial model file'
+    if ( parallel_IOProcessor() ) &
+      print *, nvars_model_file, ' variables found in the initial model file'
 
     allocate (vars_stored(nvars_model_file))
     allocate (varnames_stored(nvars_model_file))
