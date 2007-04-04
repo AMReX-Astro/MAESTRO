@@ -41,7 +41,7 @@ contains
         x2 = 2.d8
         y2 = 7.5d7
 
-        y_layer = y2
+        y_layer = y2 + 5.0d7
 
         do j = lo(2),hi(2)
           y = (dble(j)+HALF)*dx(2)

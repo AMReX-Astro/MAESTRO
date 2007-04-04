@@ -253,6 +253,11 @@ module update_module
       z_tp = z_tp + z_md - z_sp  - z_shift
       z_sp = z_sp - z_md + z_sp  - z_shift
       z_md = z_md - z_shift
+      
+      z_sp =     169140625.000000   +5.d7
+      z_md =     208203125.000000     +5.d7
+      z_tp =   247265625.000000    +5.d7
+
 
 
       alpha = 100.d0
