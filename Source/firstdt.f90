@@ -20,11 +20,11 @@ contains
 
    subroutine firstdt (istep, u, s, force, p0, t0, dx, dt)
 
-      integer        , intent(in ) :: istep
-      type(multifab) , intent(in ) :: u,s,force
-      real(kind=dp_t), intent(in ) :: p0(:), t0(:)
-      real(kind=dp_t), intent(in ) :: dx(:)
-      real(kind=dp_t), intent(out) :: dt
+      integer        , intent(in   ) :: istep
+      type(multifab) , intent(inout) :: u,s,force
+      real(kind=dp_t), intent(in   ) :: p0(:), t0(:)
+      real(kind=dp_t), intent(in   ) :: dx(:)
+      real(kind=dp_t), intent(  out) :: dt
 
       real(kind=dp_t), pointer:: uop(:,:,:,:)
       real(kind=dp_t), pointer:: sop(:,:,:,:)
