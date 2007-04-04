@@ -409,29 +409,6 @@ module update_module
 
         nr = size(w0,dim=1)-1
 
-!       THIS IS CURRENTLY WRONG !!
-!       allocate(divw0(nr))
-!       do k = 1,nr
-!         i = k + (lo(3)-1)
-!         divw0(k) = (w0(i+1)-w0(i))/dr
-!       end do
-!       allocate(divw0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-!       call fill_3d_data(divw0_cart,divw0,lo,hi,dx,0)
-
-!       do k = lo(3), hi(3)
-!       do j = lo(2), hi(2)
-!       do i = lo(1), hi(1)
-!          ubar = HALF*(umac(i,j,k) + umac(i+1,j,k))
-!          vbar = HALF*(vmac(i,j,k) + vmac(i,j+1,k))
-!          wbar = HALF*(wmac(i,j,k) + wmac(i,j,k+1))
-!          unew(i,j,k,1) = unew(i,j,k,1) - dt * ubar*ddx_w0dotex + vbar*ddy_w0dotex + wbar*ddz_w0dotex
-!          unew(i,j,k,2) = unew(i,j,k,2) - dt * vbar*normal(i,j,k,2)*divw0_cart(i,j,k)
-!          unew(i,j,k,3) = unew(i,j,k,3) - dt * wbar*normal(i,j,k,3)*divw0_cart(i,j,k)
-!       enddo
-!       enddo
-!       enddo
-!       deallocate(divw0,divw0_cart)
-
         ! B) Subtract (w0 dot grad) U term from new Utilde
 
         do k = lo(3), hi(3)
