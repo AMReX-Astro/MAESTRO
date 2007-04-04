@@ -71,7 +71,7 @@ contains
                                 prob_lo,prob_hi,s0,p0,temp0,ntrac)
 
     integer, intent(in) :: lo(:), hi(:), ng, ntrac
-    real (kind = dp_t), intent(out) :: s(lo(1)-ng:,lo(2)-ng:,:)  
+    real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,:)  
     real (kind = dp_t), intent(in ) :: dx(:)
     logical,            intent(in ) :: perturb_model
     real (kind = dp_t), intent(in ) :: prob_lo(:)
@@ -125,7 +125,7 @@ contains
     implicit none
 
     integer, intent(in) :: lo(:), hi(:), ng, ntrac
-    real (kind = dp_t), intent(out) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
+    real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
     real (kind = dp_t), intent(in ) :: dx(:)
     logical,            intent(in ) :: perturb_model
     real (kind = dp_t), intent(in ) :: prob_lo(:)
