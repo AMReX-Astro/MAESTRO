@@ -15,7 +15,7 @@ contains
    subroutine average (phi,phibar,dx)
 
       type(multifab) , intent(inout) :: phi
-      real(kind=dp_t), intent(  out) :: phibar(0:,:)
+      real(kind=dp_t), intent(inout) :: phibar(0:,:)
       real(kind=dp_t), intent(in   ) :: dx(:)
 
       real(kind=dp_t), pointer:: pp(:,:,:,:)
@@ -38,7 +38,7 @@ contains
         npts_tot(:)  = 0
       end if
 
-      phibar(:,:) = ZERO
+      phibar = ZERO
 
       do i = 1, phi%nboxes
          if ( multifab_remote(phi, i) ) cycle
@@ -48,7 +48,7 @@ contains
          select case (dm)
             case (2)
               npts_grid(:) = 0
-              call average_2d(pp(:,:,1,:),phibar(lo(2):,:),lo,hi,ng,npts_grid(lo(2):))
+              call average_2d(pp(:,:,1,:),phibar,lo,hi,ng,npts_grid(lo(2):))
               npts_proc(lo(2):hi(2)) = npts_proc(lo(2):hi(2)) + npts_grid(lo(2):hi(2))
             case (3)
               if (spherical .eq. 1) then
@@ -57,7 +57,7 @@ contains
                 vol_proc = vol_proc + vol_grid
               else
                 npts_grid(:) = 0
-                call average_3d(pp(:,:,:,:),phibar(lo(3):,:),lo,hi,ng,npts_grid(lo(3):))
+                call average_3d(pp(:,:,:,:),phibar,lo,hi,ng,npts_grid(lo(3):))
                 npts_proc(lo(3):hi(3)) = npts_proc(lo(3):hi(3)) + npts_grid(lo(3):hi(3))
               end if
          end select
@@ -87,7 +87,7 @@ contains
 
       integer         , intent(in   ) :: lo(:), hi(:), ng
       real (kind=dp_t), intent(in   ) :: phi(lo(1)-ng:,lo(2)-ng:,:)
-      real (kind=dp_t), intent(  out) :: phibar(lo(2):,:)
+      real (kind=dp_t), intent(  out) :: phibar(0:,:)
       integer         , intent(  out) :: npts(lo(2):)
 
 !     Local variables
@@ -109,7 +109,7 @@ contains
 
       integer         , intent(in   ) :: lo(:), hi(:), ng
       real (kind=dp_t), intent(in   ) :: phi(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-      real (kind=dp_t), intent(  out) :: phibar(lo(3):,:)
+      real (kind=dp_t), intent(  out) :: phibar(0:,:)
       integer         , intent(  out) :: npts(lo(3):)
 
 !     Local variables
@@ -132,9 +132,9 @@ contains
 
       integer         , intent(in   ) :: lo(:),hi(:),ng
       real (kind=dp_t), intent(in   ) :: phi(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-      real (kind=dp_t), intent(  out) :: phibar(0:,:)
+      real (kind=dp_t), intent(inout) :: phibar(0:,:)
       real (kind=dp_t), intent(in   ) :: dx(:)
-      real (kind=dp_t), intent(  out) :: sum(:)
+      real (kind=dp_t), intent(inout) :: sum(:)
 
 !     Local variables
       integer                       :: i, j, k, n, index
@@ -149,7 +149,7 @@ contains
         z = (dble(k)-HALF)*dx(3) - center(3)
         do j = lo(2),hi(2)
           y = (dble(j)-HALF)*dx(2) - center(2)
-          do i = lo(3),hi(3)
+          do i = lo(1),hi(1)
             x = (dble(i)-HALF)*dx(1) - center(1)
 
             radius = sqrt(x**2 + y**2 + z**2)
