@@ -173,13 +173,13 @@ module update_module
 
       if (spherical .eq. 1) then
 
-        allocate(delta_base(nr))
+        allocate(delta_base(0:nr-1))
         allocate(delta_base_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
         allocate(      base_cart(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
 
         do n = nstart, nstop
-          do k = 1,nr
-            delta_base(k) = base_new(lo(3)+k-1,n) - base_old(lo(3)+k-1,n)
+          do k = 0,nr-1
+            delta_base(k) = base_new(k,n) - base_old(k,n)
           end do
           call fill_3d_data(delta_base_cart,delta_base,lo,hi,dx,0)
           call fill_3d_data(base_cart,base_old(:,n),lo,hi,dx,1)
@@ -217,7 +217,7 @@ module update_module
 
               snew(i,j,k,n) = sold(i,j,k,n) + delta_base_cart(i,j,k) &
                               - dt * divbaseu + dt * force(i,j,k,n)
-      
+
             enddo
             enddo
           enddo
