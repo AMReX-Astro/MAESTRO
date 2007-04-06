@@ -430,7 +430,7 @@ module update_module
 
            unew(i,j,k,1) = unew(i,j,k,1) - dt * w0_gradur
            unew(i,j,k,2) = unew(i,j,k,2) - dt * w0_gradvr
-           unew(i,j,k,2) = unew(i,j,k,3) - dt * w0_gradwr
+           unew(i,j,k,3) = unew(i,j,k,3) - dt * w0_gradwr
 
         enddo
         enddo
