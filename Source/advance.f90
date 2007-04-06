@@ -156,7 +156,7 @@ module advance_timestep_module
      if (dm.eq.3) &
          call multifab_build(w0_cart_vec(n), mla%la(n),dm,1)
      if (spherical.eq.1) &
-         call multifab_build(div_coeff_3d(n),mla%la(nlevs),1,0)
+         call multifab_build(div_coeff_3d(n),mla%la(nlevs),1,1)
     end do
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -213,8 +213,9 @@ module advance_timestep_module
               dp => dataptr(div_coeff_3d(n), i)
               lo =  lwb(get_box(div_coeff_3d(n), i))
               hi =  upb(get_box(div_coeff_3d(n), i))
-              call fill_3d_data(dp(:,:,:,1),div_coeff_old,lo,hi,dx(nlevs,:),0)
+              call fill_3d_data(dp(:,:,:,1),div_coeff_old,lo,hi,dx(nlevs,:),1)
             end do
+            call multifab_fill_boundary(div_coeff_3d(n))
           end do
           call macproject(mla,umac,sold,dx,the_bc_tower,verbose,mg_verbose,cg_verbose,press_comp,&
                           macrhs,div_coeff_3d=div_coeff_3d)
@@ -374,8 +375,9 @@ module advance_timestep_module
               dp => dataptr(div_coeff_3d(n), i)
               lo =  lwb(get_box(div_coeff_3d(n), i))
               hi =  upb(get_box(div_coeff_3d(n), i))
-              call fill_3d_data(dp(:,:,:,1),div_coeff_nph,lo,hi,dx(nlevs,:),0)
+              call fill_3d_data(dp(:,:,:,1),div_coeff_nph,lo,hi,dx(nlevs,:),1)
             end do
+            call multifab_fill_boundary(div_coeff_3d(n))
           end do
           call macproject(mla,umac,rhohalf,dx,the_bc_tower,verbose,mg_verbose,cg_verbose,&
                           press_comp,macrhs,div_coeff_3d=div_coeff_3d)
@@ -512,7 +514,7 @@ module advance_timestep_module
               dp => dataptr(div_coeff_3d(n), i)
               lo =  lwb(get_box(div_coeff_3d(n), i))
               hi =  upb(get_box(div_coeff_3d(n), i))
-              call fill_3d_data(dp(:,:,:,1),div_coeff_nph,lo,hi,dx(nlevs,:),0)
+              call fill_3d_data(dp(:,:,:,1),div_coeff_nph,lo,hi,dx(nlevs,:),1)
             end do
           end do
           eps_in = 1.d-10
