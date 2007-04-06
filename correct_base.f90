@@ -53,7 +53,7 @@ contains
 
 !     Local variables
       integer :: i, j, n, nz
-      real(kind=dp_t) :: xfrac(nspec), enthalpy
+      real(kind=dp_t) :: enthalpy
       real(kind=dp_t), allocatable :: deltap0(:)
 
       nz = size(p0,dim=1)
@@ -65,31 +65,28 @@ contains
 
       do j = 0,nz-1
         ! Compute X_i and h
-        do n = spec_comp,spec_comp+nspec-1
-          xfrac(n-spec_comp+1) = s0(j,n) / s0(j,rho_comp)
-        end do
-        enthalpy = s0(j,rhoh_comp) / s0(j,rho_comp)
+        xn_zone(1:) = s0(j,spec_comp:) / s0(j,rho_comp)
+        enthalpy    = s0(j,rhoh_comp ) / s0(j,rho_comp)
 
         ! Update rho
         s0(j,rho_comp) = s0(j,rho_comp) + rhopertbar(j)
 
         ! Compute new (rho X)_i and (rho h)
-        do n = spec_comp,spec_comp+nspec-1
-          s0(j,n) = s0(j,rho_comp) * xfrac(n-spec_comp+1)
-        end do
-        s0(j,rhoh_comp) = enthalpy * s0(j,rho_comp)
+        s0(j,spec_comp:spec_comp+nspec-1) = s0(j,rho_comp) * xn_zone(1:nspec)
+        s0(j,rhoh_comp                  ) = s0(j,rho_comp) * enthalpy
       end do
 
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     UPDATE P0
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      do j = 0,nz-1
-        deltap0(j) = -rhopertbar(j) * grav_cell(j) * dz
+      deltap0(0) = ZERO
+      do j = 1,nz-1
+        deltap0(j) = deltap0(j-1) - dz * HALF * ( &
+           rhopertbar(j-1) * grav_cell(j-1) &
+          +rhopertbar(j  ) * grav_cell(j  ) )
       end do
 
-      do j = 1,nz-1
-        p0(j) = p0(j) + HALF * (deltap0(j-1) + deltap0(j))
-      end do
+      p0(1:nz-1) = p0(1:nz-1) + deltap0(1:nz-1)
 
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     MAKE TEMP0 AND GAM1 FROM P0 AND RHO0
