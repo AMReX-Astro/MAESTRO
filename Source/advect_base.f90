@@ -59,13 +59,11 @@ contains
       real (kind = dp_t), allocatable :: H(:,:)
       real (kind = dp_t), allocatable :: force(:)
       real (kind = dp_t), allocatable :: edge(:)
-      real (kind = dp_t), allocatable :: grav_edge(:)
 
       nz = size(p0_new,dim=1)
 
       allocate(    force(nz))
       allocate(     edge(nz+1))
-      allocate(grav_edge(nz+1))
 
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     UPDATE P0
@@ -150,7 +148,7 @@ contains
 
       end do
 
-      deallocate(force,edge,grav_edge)
+      deallocate(force,edge)
 
    end subroutine advect_base_state_planar
 

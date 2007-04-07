@@ -12,8 +12,9 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-   subroutine average (phi,phibar,dx)
+   subroutine average (phi,phibar,dx,comp,ncomp)
 
+      integer        , intent(in   ) :: comp,ncomp
       type(multifab) , intent(inout) :: phi
       real(kind=dp_t), intent(inout) :: phibar(0:,:)
       real(kind=dp_t), intent(in   ) :: dx(:)
@@ -48,16 +49,16 @@ contains
          select case (dm)
             case (2)
               npts_grid(:) = 0
-              call average_2d(pp(:,:,1,:),phibar,lo,hi,ng,npts_grid(lo(2):))
+              call average_2d(pp(:,:,1,:),phibar,lo,hi,ng,npts_grid(lo(2):),comp,ncomp)
               npts_proc(lo(2):hi(2)) = npts_proc(lo(2):hi(2)) + npts_grid(lo(2):hi(2))
             case (3)
               if (spherical .eq. 1) then
                 vol_grid(:) = ZERO
-                call average_3d_sphr(pp(:,:,:,:),phibar,lo,hi,ng,dx,vol_grid)
+                call average_3d_sphr(pp(:,:,:,:),phibar,lo,hi,ng,dx,vol_grid,comp,ncomp)
                 vol_proc = vol_proc + vol_grid
               else
                 npts_grid(:) = 0
-                call average_3d(pp(:,:,:,:),phibar,lo,hi,ng,npts_grid(lo(3):))
+                call average_3d(pp(:,:,:,:),phibar,lo,hi,ng,npts_grid(lo(3):),comp,ncomp)
                 npts_proc(lo(3):hi(3)) = npts_proc(lo(3):hi(3)) + npts_grid(lo(3):hi(3))
               end if
          end select
@@ -83,9 +84,9 @@ contains
 
    end subroutine average
 
-   subroutine average_2d (phi,phibar,lo,hi,ng,npts)
+   subroutine average_2d (phi,phibar,lo,hi,ng,npts,comp,ncomp)
 
-      integer         , intent(in   ) :: lo(:), hi(:), ng
+      integer         , intent(in   ) :: lo(:), hi(:), ng, comp, ncomp
       real (kind=dp_t), intent(in   ) :: phi(lo(1)-ng:,lo(2)-ng:,:)
       real (kind=dp_t), intent(  out) :: phibar(0:,:)
       integer         , intent(  out) :: npts(lo(2):)
@@ -93,8 +94,7 @@ contains
 !     Local variables
       integer          :: i, j, n
 
-
-      do n = 1,size(phibar,dim=2)
+      do n = comp,comp+ncomp-1
       do j = lo(2),hi(2)
         npts(j) = hi(1)-lo(1)+1
         do i = lo(1),hi(1)
@@ -105,9 +105,9 @@ contains
  
    end subroutine average_2d
 
-   subroutine average_3d (phi,phibar,lo,hi,ng,npts)
+   subroutine average_3d (phi,phibar,lo,hi,ng,npts,comp,ncomp)
 
-      integer         , intent(in   ) :: lo(:), hi(:), ng
+      integer         , intent(in   ) :: lo(:), hi(:), ng, comp, ncomp
       real (kind=dp_t), intent(in   ) :: phi(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
       real (kind=dp_t), intent(  out) :: phibar(0:,:)
       integer         , intent(  out) :: npts(lo(3):)
@@ -115,7 +115,7 @@ contains
 !     Local variables
       integer          :: i, j, k, n
 
-      do n = 1,size(phibar,dim=2)
+      do n = comp,comp+ncomp-1
       do k = lo(3),hi(3)
         npts(k) = (hi(1)-lo(1)+1)*(hi(2)-lo(2)+1)
         do j = lo(2),hi(2)
@@ -128,9 +128,9 @@ contains
  
    end subroutine average_3d
 
-   subroutine average_3d_sphr (phi,phibar,lo,hi,ng,dx,sum)
+   subroutine average_3d_sphr (phi,phibar,lo,hi,ng,dx,sum,comp,ncomp)
 
-      integer         , intent(in   ) :: lo(:),hi(:),ng
+      integer         , intent(in   ) :: lo(:), hi(:), ng, comp, ncomp
       real (kind=dp_t), intent(in   ) :: phi(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
       real (kind=dp_t), intent(inout) :: phibar(0:,:)
       real (kind=dp_t), intent(in   ) :: dx(:)
@@ -166,7 +166,7 @@ contains
 
             vol = fourthirdspi * (zl(index+1)**3  - zl(index)**3)
 
-            do n = 1,nc
+            do n = comp,comp+ncomp-1
               phibar(index,n) = phibar(index,n) + vol * phi(i,j,k,n)
             end do
 

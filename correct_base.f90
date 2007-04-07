@@ -79,14 +79,14 @@ contains
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     UPDATE P0
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      deltap0(0) = ZERO
-      do j = 1,nz-1
-        deltap0(j) = deltap0(j-1) - dz * HALF * ( &
-           rhopertbar(j-1) * grav_cell(j-1) &
+      deltap0(nz-1) = ZERO
+      do j = nz-2,0
+        deltap0(j) = deltap0(j+1) + dz * HALF * ( &
+           rhopertbar(j+1) * grav_cell(j+1) &
           +rhopertbar(j  ) * grav_cell(j  ) )
       end do
 
-      p0(1:nz-1) = p0(1:nz-1) + deltap0(1:nz-1)
+!     p0(1:nz-1) = p0(1:nz-1) + deltap0(1:nz-1)
 
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     MAKE TEMP0 AND GAM1 FROM P0 AND RHO0

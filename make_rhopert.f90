@@ -13,31 +13,31 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-   subroutine make_rhopert(rhopert,rho,rho0)
+   subroutine make_rhopert(rhopert,s,rho0)
 
       type(multifab)  , intent(inout) :: rhopert
-      type(multifab)  , intent(in   ) :: rho
+      type(multifab)  , intent(in   ) :: s
       real (kind=dp_t), intent(in   ) :: rho0(:)
 
-      real(kind=dp_t), pointer::  rp(:,:,:,:)
+      real(kind=dp_t), pointer::  sp(:,:,:,:)
       real(kind=dp_t), pointer:: rpp(:,:,:,:)
-      integer :: lo(rho%dim),hi(rho%dim)
+      integer :: lo(s%dim),hi(s%dim)
       integer :: i,dm,ng
 
-      dm = rho%dim
-      ng = rho%ng
+      dm = s%dim
+      ng = s%ng
 
-      do i = 1, rho%nboxes
-         if ( multifab_remote(rho, i) ) cycle
+      do i = 1, s%nboxes
+         if ( multifab_remote(s, i) ) cycle
          rpp => dataptr(rhopert, i)
-          rp => dataptr(rho, i)
-         lo =  lwb(get_box(rho, i))
-         hi =  upb(get_box(rho, i))
+          sp => dataptr(s, i)
+         lo =  lwb(get_box(s, i))
+         hi =  upb(get_box(s, i))
          select case (dm)
             case (2)
-              call make_rhopert_2d(rpp(:,:,1,1),rp(:,:,1,rho_comp),rho0,lo,hi,ng)
+              call make_rhopert_2d(rpp(:,:,1,1),sp(:,:,1,rho_comp),rho0,lo,hi,ng)
             case (3)
-              call make_rhopert_3d(rpp(:,:,:,1),rp(:,:,:,rho_comp),rho0,lo,hi,ng)
+              call make_rhopert_3d(rpp(:,:,:,1),sp(:,:,:,rho_comp),rho0,lo,hi,ng)
          end select
       end do
 
