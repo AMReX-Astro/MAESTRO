@@ -27,6 +27,7 @@ contains
 
       if (spherical .eq. 0) then
 
+!       write(6,*)" in correct_base"
         call correct_base_state_planar(rhopertbar,p0,s0,temp0,gam1,grav_cell,dz, &
                                        dt,anelastic_cutoff)
 
@@ -63,6 +64,7 @@ contains
 !     CORRECT RHOX0 AND RHOH0
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+!     write(6,*)" in correct_base nz = ",nz 
       do j = 0,nz-1
         ! Compute X_i and h
         xn_zone(1:) = s0(j,spec_comp:) / s0(j,rho_comp)
@@ -80,13 +82,15 @@ contains
 !     UPDATE P0
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       deltap0(nz-1) = ZERO
-      do j = nz-2,0
-        deltap0(j) = deltap0(j+1) + dz * HALF * ( &
+      do j = nz-2,0,-1
+        deltap0(j) = deltap0(j+1) - dz * HALF * ( &
            rhopertbar(j+1) * grav_cell(j+1) &
           +rhopertbar(j  ) * grav_cell(j  ) )
+!        write(6,*)"drho,dp,p",j,rhopertbar(j),deltap0(j),p0(j)
       end do
 
 !     p0(1:nz-1) = p0(1:nz-1) + deltap0(1:nz-1)
+      p0(0:nz-1) = p0(0:nz-1) + deltap0(0:nz-1)
 
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     MAKE TEMP0 AND GAM1 FROM P0 AND RHO0
