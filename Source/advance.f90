@@ -30,7 +30,6 @@ module advance_timestep_module
   use phihalf_module
   use extraphalf_module
   use rhopert_module
-  use correct_base_module
   use variables
   use network
 
@@ -416,14 +415,6 @@ module advance_timestep_module
                                 dx(n,:),time,dt, &
                                 the_bc_tower%bc_tower_array(n), &
                                 verbose)
-        end do
-
-        do n = 1,nlevs
-          call make_rhopert(rhopert(n),s2(n),s0_2(:,rho_comp))
-          call average(rhopert(n),rhopertbar,dx(n,:),1,1)
-          call correct_base(rhopertbar(:,1),p0_2,s0_2,temp0,gam1, &
-                            grav_cell,div_coeff_edge,&
-                            dx(1,dm),dt,anelastic_cutoff)
         end do
 
         do n = 2, nlevs
