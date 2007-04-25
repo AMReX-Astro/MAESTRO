@@ -29,7 +29,6 @@ module advance_timestep_module
   use average_module
   use phihalf_module
   use extraphalf_module
-  use rhopert_module
   use variables
   use network
 
