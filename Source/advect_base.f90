@@ -176,7 +176,6 @@ contains
       real (kind = dp_t), allocatable :: beta(:),beta_new(:),beta_nh(:)
       real (kind = dp_t), allocatable :: gam1_old(:)
       real (kind = dp_t), allocatable :: grav_cell(:)
-      real (kind = dp_t), allocatable :: grav_edge(:)
 
       dtdr = dt / dr
 
@@ -192,7 +191,6 @@ contains
       ! Edge-centered
       allocate(edge(nz+1))
       allocate(beta(nz+1),beta_new(nz+1),beta_nh(nz+1))
-      allocate(grav_edge(nz+1))
 
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     UPDATE RHOX0
@@ -264,7 +262,6 @@ contains
          gam1(j) = gam1_row(1)
       end do
  
-      call make_grav_edge(grav_edge,s0_new(:,rho_comp))
       call make_grav_cell(grav_cell,s0_new(:,rho_comp))
  
       ! Define beta^n+1 at cell edges using the new gravity above
@@ -344,7 +341,7 @@ contains
 
       end do
 
-      deallocate(force,eta,edge,beta,beta_new,beta_nh,gam1_old,grav_edge,grav_cell)
+      deallocate(force,eta,edge,beta,beta_new,beta_nh,gam1_old,grav_cell)
 
    end subroutine advect_base_state_spherical
 

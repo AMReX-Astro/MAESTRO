@@ -90,7 +90,7 @@ module update_module
 
    end subroutine update_scal_2d
 
-   subroutine update_velocity_2d (uold,unew,umac,vmac,sedgex,sedgey,force,w0, &
+   subroutine update_velocity_2d (uold,unew,umac,vmac,sedgex,sedgey,force,s0,w0, &
                                   lo,hi,ng,dx,time,dt)
 
       implicit none
@@ -103,7 +103,7 @@ module update_module
       real (kind = dp_t), intent(in   ) ::  sedgex(lo(1)   :,lo(2)   :,:)  
       real (kind = dp_t), intent(in   ) ::  sedgey(lo(1)   :,lo(2)   :,:)  
       real (kind = dp_t), intent(in   ) ::   force(lo(1)- 1:,lo(2)- 1:,:)  
-      real (kind = dp_t), intent(in   ) ::      w0(0:)
+      real (kind = dp_t), intent(in   ) ::      w0(0:),s0(0:,:)
       real (kind = dp_t), intent(in   ) :: dx(:)
       real (kind = dp_t), intent(in   ) :: time,dt
 
