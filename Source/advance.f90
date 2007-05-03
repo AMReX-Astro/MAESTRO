@@ -92,6 +92,7 @@ module advance_timestep_module
 
     type(multifab), allocatable :: rhohalf(:)
     type(multifab), allocatable :: w0_cart_vec(:)
+    type(multifab), allocatable :: w0_force_cart_vec(:)
     type(multifab), allocatable :: macrhs(:)
     type(multifab), allocatable ::  hgrhs(:)
     type(multifab), allocatable :: Source_nph(:)
@@ -104,6 +105,8 @@ module advance_timestep_module
     real (dp_t), allocatable :: grav_cell_new(:)
 
     real(dp_t)    , allocatable ::        s0_nph(:,:)
+    real(dp_t)    , allocatable ::      w0_force(:)
+    real(dp_t)    , allocatable ::        w0_old(:)
     real(dp_t)    , allocatable ::          Sbar(:,:)
     real(dp_t)    , allocatable :: div_coeff_nph(:)
     real(dp_t)    , allocatable :: div_coeff_edge(:)
@@ -133,6 +136,7 @@ module advance_timestep_module
 
     allocate(rhohalf(nlevs))
     allocate(w0_cart_vec(nlevs))
+    allocate(w0_force_cart_vec(nlevs))
     allocate(macrhs(nlevs))
     allocate( hgrhs(nlevs))
 
@@ -152,14 +156,21 @@ module advance_timestep_module
     if (spherical.eq.1) &
       allocate(div_coeff_3d(nlevs))
 
+    allocate(w0_force(nr),w0_old(nr+1))
+
+    ! Set w0_old to w0 from last time step.
+    w0_old(:) = w0(:)
+
     nodal = .true.
     do n = 1,nlevs
      call multifab_build(   rhohalf(n), mla%la(n),     1, 1)
      call multifab_build(Source_nph(n), mla%la(n),     1, 0)
      call multifab_build(    macrhs(n), mla%la(n),     1, 0)
      call multifab_build(     hgrhs(n), mla%la(n),     1,       0, nodal)
-     if (dm.eq.3) &
-         call multifab_build(w0_cart_vec(n), mla%la(n),dm,1)
+     if (dm.eq.3) then
+         call multifab_build(      w0_cart_vec(n), mla%la(n),dm,1)
+         call multifab_build(w0_force_cart_vec(n), mla%la(n),dm,1)
+     end if
      if (spherical.eq.1) &
          call multifab_build(div_coeff_3d(n),mla%la(nlevs),1,1)
     end do
@@ -182,9 +193,10 @@ module advance_timestep_module
 
            call average(Source_nph(n),Sbar,dx(n,:),1,1)
     
-           call make_w0(w0,Sbar(:,1),p0_old,s0_old(:,rho_comp),temp0,gam1,dx(n,dm),dt,verbose)
+           call make_w0(w0,w0_old,w0_force,Sbar(:,1),p0_old,s0_old(:,rho_comp),temp0,gam1,dx(n,dm),dt,verbose)
            if (dm .eq. 3) then
-             call make_w0_cart(w0,w0_cart_vec(n),normal(n),dx(n,:)) 
+             call make_w0_cart(w0      ,w0_cart_vec(n),normal(n),dx(n,:)) 
+             call make_w0_cart(w0_force,w0_force_cart_vec(n),normal(n),dx(n,:)) 
            end if
         end do
 
@@ -331,9 +343,10 @@ module advance_timestep_module
            call make_S_at_halftime(Source_nph(n),Source_old(n),Source_new(n))
            call average(Source_nph(n),Sbar,dx(n,:),1,1)
 
-           call make_w0(w0,Sbar(:,1),p0_new,s0_new(:,rho_comp),temp0,gam1,dx(n,dm),dt,verbose)
+           call make_w0(w0,w0_old,w0_force,Sbar(:,1),p0_new,s0_new(:,rho_comp),temp0,gam1,dx(n,dm),dt,verbose)
            if (dm .eq. 3) then
              call make_w0_cart(w0,w0_cart_vec(n),normal(n),dx(n,:)) 
+             call make_w0_cart(w0_force,w0_force_cart_vec(n),normal(n),dx(n,:)) 
            end if
         end do
 
@@ -491,6 +504,7 @@ module advance_timestep_module
                                  umac(n,:),uedge(n,:), &
                                  utrans(n,:),gp(n),p(n), &
                                  normal(n), w0, w0_cart_vec(n), &
+                                 w0_force, w0_force_cart_vec(n), &
                                  s0_old, grav_cell_old, s0_nph, grav_cell_nph, &
                                  dx(n,:),time,dt, &
                                  the_bc_tower%bc_tower_array(n), &
@@ -567,8 +581,10 @@ module advance_timestep_module
         if (dm .eq. 3) then
           do n = 1, nlevs
             call destroy(w0_cart_vec(n))
+            call destroy(w0_force_cart_vec(n))
           end do
           deallocate(w0_cart_vec)
+          deallocate(w0_force_cart_vec)
         end if
 
         deallocate(Sbar)
@@ -577,6 +593,8 @@ module advance_timestep_module
         deallocate(div_coeff_edge)
         deallocate(grav_cell_nph)
         deallocate(grav_cell_new)
+
+        deallocate(w0_old,w0_force)
 
         deallocate(lo,hi)
 

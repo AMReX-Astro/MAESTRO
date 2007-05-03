@@ -8,15 +8,18 @@ module make_w0_module
   use multifab_module
   use variables
   use geometry
+  use mkflux_module
   use make_grav_module
 
   implicit none
 
 contains
 
-   subroutine make_w0(vel,Sbar_in,p0,rho0,temp0,gam1,dz,dt,verbose)
+   subroutine make_w0(vel,vel_old,f,Sbar_in,p0,rho0,temp0,gam1,dz,dt,verbose)
 
       real(kind=dp_t), intent(  out) :: vel(:)
+      real(kind=dp_t), intent(in   ) :: vel_old(:)
+      real(kind=dp_t), intent(inout) ::   f(:)
       real(kind=dp_t), intent(in   ) :: p0(:),rho0(:),temp0(:),gam1(:)
       real(kind=dp_t), intent(in   ) :: Sbar_in(:)
       real(kind=dp_t), intent(in   ) :: dz,dt
@@ -27,9 +30,11 @@ contains
 
       nz = size(vel,dim=1)
 
+      print *, '<<< integrating to get w0>>>'
+
       if (spherical .eq. 0) then
 
-        call make_w0_planar(vel,Sbar_in,dz)
+        call make_w0_planar(vel,vel_old,Sbar_in,f,dz,dt)
 
       else
 
@@ -46,23 +51,49 @@ contains
 
    end subroutine make_w0
 
-   subroutine make_w0_planar (vel,Sbar_in,dz)
+   subroutine make_w0_planar (vel,vel_old,Sbar_in,f,dz,dt)
 
       implicit none
       real(kind=dp_t), intent(  out) :: vel(:)
+      real(kind=dp_t), intent(in   ) :: vel_old(:)
       real(kind=dp_t), intent(in   ) :: Sbar_in(:)
-      real(kind=dp_t), intent(in   ) :: dz
+      real(kind=dp_t), intent(inout) ::   f(:)
+      real(kind=dp_t), intent(in   ) :: dz,dt
 
 !     Local variables
       integer         :: j,nz
+      real(kind=dp_t), allocatable :: vel_old_cen(:)
+      real(kind=dp_t), allocatable :: vel_new_cen(:)
+      real(kind=dp_t), allocatable ::   force(:)
+      real(kind=dp_t), allocatable ::    edge(:)
 
       nz = size(vel,dim=1)
 
-      ! Initialize velocity to zero.
+      allocate(edge(nz))
+      allocate(vel_old_cen(nz-1),vel_new_cen(nz-1),force(nz-1))
+
+      ! Initialize new velocity to zero.
       vel(1) = ZERO
       do j = 2,nz
          vel(j) = vel(j-1) + Sbar_in(j-1) * dz
       end do
+
+      ! Compute the 1/rho0 grad pi0 term.
+
+      do j = 1,nz-1
+         vel_old_cen(j) = HALF * (vel_old(j) + vel_old(j+1))
+         vel_new_cen(j) = HALF * (vel    (j) + vel    (j+1))
+      end do
+
+      force = ZERO
+      call mkflux_1d(vel_old_cen,edge,vel_old,force,1,dz,dt)
+
+      do j = 1,nz-1
+         f(j) = (vel_new_cen(j)-vel_old_cen(j)) / dt + vel_old_cen(j) * (edge(j+1)-edge(j)) / dz
+      end do
+
+      deallocate(edge)
+      deallocate(vel_old_cen,vel_new_cen,force)
 
    end subroutine make_w0_planar
 
