@@ -90,20 +90,22 @@ module update_module
 
    end subroutine update_scal_2d
 
-   subroutine update_velocity_2d (uold,unew,umac,vmac,sedgex,sedgey,force,s0,w0, &
+   subroutine update_velocity_2d (uold,unew,umac,vmac,sedgex,sedgey,force,s0,w0,w0_force, &
                                   lo,hi,ng,dx,time,dt)
 
       implicit none
 
       integer, intent(in) :: lo(:), hi(:), ng
-      real (kind = dp_t), intent(in   ) ::    uold(lo(1)-ng:,lo(2)-ng:,:)  
-      real (kind = dp_t), intent(  out) ::    unew(lo(1)-ng:,lo(2)-ng:,:)  
-      real (kind = dp_t), intent(in   ) ::    umac(lo(1)- 1:,lo(2)- 1:)  
-      real (kind = dp_t), intent(in   ) ::    vmac(lo(1)- 1:,lo(2)- 1:)  
-      real (kind = dp_t), intent(in   ) ::  sedgex(lo(1)   :,lo(2)   :,:)  
-      real (kind = dp_t), intent(in   ) ::  sedgey(lo(1)   :,lo(2)   :,:)  
-      real (kind = dp_t), intent(in   ) ::   force(lo(1)- 1:,lo(2)- 1:,:)  
-      real (kind = dp_t), intent(in   ) ::      w0(0:),s0(0:,:)
+      real (kind = dp_t), intent(in   ) ::     uold(lo(1)-ng:,lo(2)-ng:,:)  
+      real (kind = dp_t), intent(  out) ::     unew(lo(1)-ng:,lo(2)-ng:,:)  
+      real (kind = dp_t), intent(in   ) ::     umac(lo(1)- 1:,lo(2)- 1:)  
+      real (kind = dp_t), intent(in   ) ::     vmac(lo(1)- 1:,lo(2)- 1:)  
+      real (kind = dp_t), intent(in   ) ::   sedgex(lo(1)   :,lo(2)   :,:)  
+      real (kind = dp_t), intent(in   ) ::   sedgey(lo(1)   :,lo(2)   :,:)  
+      real (kind = dp_t), intent(in   ) ::    force(lo(1)- 1:,lo(2)- 1:,:)  
+      real (kind = dp_t), intent(in   ) ::       s0(0:,:)
+      real (kind = dp_t), intent(in   ) ::       w0(0:)
+      real (kind = dp_t), intent(in   ) :: w0_force(0:)
       real (kind = dp_t), intent(in   ) :: dx(:)
       real (kind = dp_t), intent(in   ) :: time,dt
 
@@ -134,6 +136,9 @@ module update_module
            ! Add w0 dot grad u term to u and w.
            vbar = HALF*(w0(j) + w0(j+1))
            unew(i,j,:) = unew(i,j,:) - dt * vbar*(sedgey(i,j+1,:) - sedgey(i,j,:))/dx(2)
+
+           ! Add in the pi0 term.
+           unew(i,j,2) = unew(i,j,2) - dt * w0_force(j)
 
       enddo
       enddo
@@ -318,22 +323,25 @@ module update_module
    end subroutine update_scal_3d
 
    subroutine update_velocity_3d (uold,unew,umac,vmac,wmac,sedgex,sedgey,sedgez, &
-                                  force,w0,w0_cart,lo,hi,ng,dx,time,dt)
+                                  force,s0,w0,w0_cart,w0_force,w0_force_cart,lo,hi,ng,dx,time,dt)
 
       implicit none
 
       integer, intent(in) :: lo(:), hi(:), ng
-      real (kind = dp_t), intent(in   ) ::    uold(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-      real (kind = dp_t), intent(  out) ::    unew(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-      real (kind = dp_t), intent(in   ) ::    umac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:  )
-      real (kind = dp_t), intent(in   ) ::    vmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:  )
-      real (kind = dp_t), intent(in   ) ::    wmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:  )
-      real (kind = dp_t), intent(in   ) ::  sedgex(lo(1)   :,lo(2)   :,lo(3)   :,:)
-      real (kind = dp_t), intent(in   ) ::  sedgey(lo(1)   :,lo(2)   :,lo(3)   :,:)
-      real (kind = dp_t), intent(in   ) ::  sedgez(lo(1)   :,lo(2)   :,lo(3)   :,:)
-      real (kind = dp_t), intent(in   ) ::   force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
-      real (kind = dp_t), intent(in   ) ::      w0(0:)
+      real (kind = dp_t), intent(in   ) ::     uold(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
+      real (kind = dp_t), intent(  out) ::     unew(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
+      real (kind = dp_t), intent(in   ) ::     umac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:  )
+      real (kind = dp_t), intent(in   ) ::     vmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:  )
+      real (kind = dp_t), intent(in   ) ::     wmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:  )
+      real (kind = dp_t), intent(in   ) ::   sedgex(lo(1)   :,lo(2)   :,lo(3)   :,:)
+      real (kind = dp_t), intent(in   ) ::   sedgey(lo(1)   :,lo(2)   :,lo(3)   :,:)
+      real (kind = dp_t), intent(in   ) ::   sedgez(lo(1)   :,lo(2)   :,lo(3)   :,:)
+      real (kind = dp_t), intent(in   ) ::    force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
+      real (kind = dp_t), intent(in   ) ::       s0(0:,:)
+      real (kind = dp_t), intent(in   ) ::       w0(0:)
       real (kind = dp_t), intent(in   ) ::  w0_cart(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
+      real (kind = dp_t), intent(in   ) :: w0_force(0:)
+      real (kind = dp_t), intent(in   ) ::  w0_force_cart(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
       real (kind = dp_t), intent(in   ) :: dx(:)
       real (kind = dp_t), intent(in   ) :: time,dt
 
@@ -346,8 +354,6 @@ module update_module
       real (kind = dp_t) :: gradwx,gradwy,gradwz
       real (kind = dp_t) :: w0_gradur,w0_gradvr,w0_gradwr
       real (kind = dp_t) :: gradw0
-      real (kind = dp_t), allocatable :: divw0(:)
-      real (kind = dp_t), allocatable :: divw0_cart(:,:,:)
 
       ! 1) Subtract (Utilde dot grad) Utilde term from old Utilde
       ! 2) Add forcing term to new Utilde
@@ -398,6 +404,9 @@ module update_module
           do j = lo(2), hi(2)
           do i = lo(1), hi(1)
             unew(i,j,k,:) = unew(i,j,k,:) - dt * wbar*(sedgez(i,j,k+1,:) - sedgez(i,j,k,:))/dx(3)
+
+            ! Add in the pi0 term.
+            unew(i,j,k,3) = unew(i,j,k,3) - dt * w0_force(k)
           enddo
           enddo
 
@@ -431,6 +440,9 @@ module update_module
            unew(i,j,k,1) = unew(i,j,k,1) - dt * w0_gradur
            unew(i,j,k,2) = unew(i,j,k,2) - dt * w0_gradvr
            unew(i,j,k,3) = unew(i,j,k,3) - dt * w0_gradwr
+
+           ! Add in the pi0 term.
+           unew(i,j,k,:) = unew(i,j,k,:) - dt * w0_force_cart(i,j,k,:)
 
         enddo
         enddo
