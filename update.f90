@@ -263,11 +263,30 @@ module update_module
         allocate(delta_base(lo(3):hi(3)))
         do n = nstart, nstop
 
-          base_edge(lo(3)  ) = base_old(lo(3),n)
-          base_edge(hi(3)+1) = base_old(hi(3),n)
+          if (lo(3) .eq. 0) then
+             base_edge(lo(3)  ) = base_old(lo(3),n)
+             base_edge(lo(3)+1) = HALF*(base_old(lo(3),n)+base_old(lo(3)+1,n))
+          else
+             k = lo(3)
+             base_edge(k) = 7.d0/12.d0 * (base_old(k  ,n) + base_old(k-1,n)) &
+                           -1.d0/12.d0 * (base_old(k+1,n) + base_old(k-2,n))
+             k = lo(3)+1
+             base_edge(k) = 7.d0/12.d0 * (base_old(k  ,n) + base_old(k-1,n)) &
+                           -1.d0/12.d0 * (base_old(k+1,n) + base_old(k-2,n))
+          end if
+
+          if (hi(3) .eq. nr) then
+             base_edge(hi(3)+1) = base_old(hi(3),n)
+             base_edge(hi(3)  ) = HALF*(base_old(hi(3),n)+base_old(hi(3)-1,n))
+          else
+             k = hi(3)+1
+             base_edge(k) = 7.d0/12.d0 * (base_old(k  ,n) + base_old(k-1,n)) &
+                           -1.d0/12.d0 * (base_old(k+1,n) + base_old(k-2,n))
+             k = hi(3)
+             base_edge(k) = 7.d0/12.d0 * (base_old(k  ,n) + base_old(k-1,n)) &
+                           -1.d0/12.d0 * (base_old(k+1,n) + base_old(k-2,n))
+          end if
           
-          base_edge(lo(3)+1) = HALF*(base_old(lo(3),n)+base_old(lo(3)+1,n))
-          base_edge(hi(3)  ) = HALF*(base_old(hi(3),n)+base_old(hi(3)-1,n))
     
           do k = lo(3)+2,hi(3)-1
              base_edge(k) = 7.d0/12.d0 * (base_old(k  ,n) + base_old(k-1,n)) &
@@ -380,7 +399,6 @@ module update_module
            unew(i,j,k,1) = uold(i,j,k,1) - dt * ugradu + dt * force(i,j,k,1)
            unew(i,j,k,2) = uold(i,j,k,2) - dt * ugradv + dt * force(i,j,k,2)
            unew(i,j,k,3) = uold(i,j,k,3) - dt * ugradw + dt * force(i,j,k,3)
-
 
       enddo
       enddo
