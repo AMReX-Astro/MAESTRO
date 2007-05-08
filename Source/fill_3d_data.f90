@@ -78,8 +78,6 @@ contains
       stop
     end if
 
-    stop
-
   end subroutine make_3d_normal
 
   subroutine make_w0_cart(w0,w0_cart,normal,dx)
