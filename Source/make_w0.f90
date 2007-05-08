@@ -32,6 +32,8 @@ contains
 
       print *, '<<< integrating to get w0>>>'
 
+      f = ZERO
+
       if (spherical .eq. 0) then
 
         call make_w0_planar(vel,vel_old,Sbar_in,f,dz,dt)
