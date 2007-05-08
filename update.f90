@@ -145,8 +145,8 @@ module update_module
 
    end subroutine update_velocity_2d
 
-   subroutine update_scal_3d (nstart,nstop,sold,snew,umac,vmac,wmac,w0,w0_cart,sedgex,sedgey,sedgez,&
-                              force,base_old,base_new,lo,hi,ng,dx,dt)
+   subroutine update_scal_3d_cart (nstart,nstop,sold,snew,umac,vmac,wmac,w0,w0_cart,sedgex,sedgey,sedgez,&
+                                   force,base_old,base_new,lo,hi,ng,dx,dt)
 
       implicit none
 
@@ -176,89 +176,7 @@ module update_module
 
       nr = size(base_old,dim=1)
 
-      if (spherical .eq. 1) then
-
-        allocate(delta_base(0:nr-1))
-        allocate(delta_base_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-        allocate(      base_cart(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
-
-        do n = nstart, nstop
-          do k = 0,nr-1
-            delta_base(k) = base_new(k,n) - base_old(k,n)
-          end do
-          call fill_3d_data(delta_base_cart,delta_base,lo,hi,dx,0)
-          call fill_3d_data(base_cart,base_old(:,n),lo,hi,dx,1)
-          do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-            base_cart(i,j,lo(3)-1) = base_cart(i,j,lo(3))
-            base_cart(i,j,hi(3)+1) = base_cart(i,j,hi(3))
-          end do
-          end do
-          do k = lo(3), hi(3)
-          do i = lo(1), hi(1)
-            base_cart(i,lo(2)-1,k) = base_cart(i,lo(2),k)
-            base_cart(i,hi(2)+1,k) = base_cart(i,hi(2),k)
-          end do
-          end do
-          do k = lo(3), hi(3)
-          do j = lo(2), hi(2)
-            base_cart(lo(1)-1,j,k) = base_cart(lo(1),j,k)
-            base_cart(hi(1)+1,j,k) = base_cart(hi(1),j,k)
-          end do
-          end do
-
-          ! Note the umac here does NOT have w0 in it
-          do k = lo(3), hi(3)
-            do j = lo(2), hi(2)
-            do i = lo(1), hi(1)
-    
-              divbaseu = HALF * (  &
-                   (umac(i+1,j,k)*(base_cart(i,j,k)+base_cart(i+1,j,k)) &
-                   -umac(i  ,j,k)*(base_cart(i,j,k)+base_cart(i-1,j,k)) ) / dx(1) &
-                  +(vmac(i,j+1,k)*(base_cart(i,j,k)+base_cart(i,j+1,k)) &
-                   -vmac(i,j  ,k)*(base_cart(i,j,k)+base_cart(i,j-1,k)) ) / dx(2) &
-                  +(wmac(i,j,k+1)*(base_cart(i,j,k)+base_cart(i,j,k+1)) &
-                   -wmac(i,j,k  )*(base_cart(i,j,k)+base_cart(i,j,k-1)) ) ) / dx(3) 
-
-              snew(i,j,k,n) = sold(i,j,k,n) + delta_base_cart(i,j,k) &
-                              - dt * divbaseu + dt * force(i,j,k,n)
-
-            enddo
-            enddo
-          enddo
-        end do
-
-        deallocate(delta_base,delta_base_cart,base_cart)
-
-        mult = ONE
-        call addw0_3d_sphr(umac,vmac,wmac,w0_cart,lo,hi,dx,mult)
-
-        do n = nstart, nstop
-
-          ! Note the umac here DOES have w0 in it
-          do k = lo(3), hi(3)
-            do j = lo(2), hi(2)
-            do i = lo(1), hi(1)
-    
-              divsu = (umac(i+1,j,k) * sedgex(i+1,j,k,n) &
-                      -umac(i  ,j,k) * sedgex(i  ,j,k,n) ) / dx(1) + &
-                      (vmac(i,j+1,k) * sedgey(i,j+1,k,n) &
-                      -vmac(i,j  ,k) * sedgey(i,j  ,k,n) ) / dx(2) + &
-                      (wmac(i,j,k+1) * sedgez(i,j,k+1,n) &
-                      -wmac(i,j,k  ) * sedgez(i,j,k  ,n) ) / dx(3)
-
-              snew(i,j,k,n) = snew(i,j,k,n) - dt * divsu
-
-            enddo
-            enddo
-          enddo
-        enddo
-
-        mult = -ONE
-        call addw0_3d_sphr(umac,vmac,wmac,w0_cart,lo,hi,dx,mult)
-
       ! not spherical
-      else 
 
         allocate(delta_base(lo(3):hi(3)))
         do n = nstart, nstop
@@ -320,9 +238,6 @@ module update_module
           enddo
         end do
         deallocate(delta_base)
- 
-      end if
-
 
       if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
         snew(:,:,:,rho_comp) = sold(:,:,:,rho_comp)
@@ -339,7 +254,117 @@ module update_module
 
       deallocate(base_edge)
 
-   end subroutine update_scal_3d
+   end subroutine update_scal_3d_cart
+
+   subroutine update_scal_3d_sphr (nstart,nstop,sold,snew,umac,vmac,wmac,w0,w0_cart,sedgex,sedgey,sedgez,&
+                                   force,base_old,base_new,base_cart,lo,hi,ng,dx,dt)
+
+      implicit none
+
+      integer, intent(in) :: nstart,nstop, lo(:), hi(:), ng
+      real (kind = dp_t), intent(in   ) ::    sold(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
+      real (kind = dp_t), intent(  out) ::    snew(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
+      real (kind = dp_t), intent(inout) ::    umac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
+      real (kind = dp_t), intent(inout) ::    vmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
+      real (kind = dp_t), intent(inout) ::    wmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
+      real (kind = dp_t), intent(in   ) ::  sedgex(lo(1)   :,lo(2)   :,lo(3)   :,:)
+      real (kind = dp_t), intent(in   ) ::  sedgey(lo(1)   :,lo(2)   :,lo(3)   :,:)
+      real (kind = dp_t), intent(in   ) ::  sedgez(lo(1)   :,lo(2)   :,lo(3)   :,:)
+      real (kind = dp_t), intent(in   ) ::   force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
+      real (kind = dp_t), intent(in   ) ::   base_old(0:,:)
+      real (kind = dp_t), intent(in   ) ::   base_new(0:,:)
+      real (kind = dp_t), intent(in   ) ::   base_cart(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
+      real (kind = dp_t), intent(in   ) :: w0(0:)
+      real (kind = dp_t), intent(in   ) :: w0_cart(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
+      real (kind = dp_t), intent(in   ) :: dt,dx(:)
+
+      integer :: i, j, k, n, nr
+      real (kind = dp_t) :: divsu,divbaseu,mult
+      real (kind = dp_t), allocatable :: delta_base(:),delta_base_cart(:,:,:)
+
+      real (kind = dp_t) :: divu
+
+      nr = size(base_old,dim=1)
+
+      ! is spherical
+
+      allocate(delta_base(0:nr-1))
+      allocate(delta_base_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+
+      do n = nstart, nstop
+          do k = 0,nr-1
+            delta_base(k) = base_new(k,n) - base_old(k,n)
+          end do
+          call fill_3d_data(delta_base_cart,delta_base,lo,hi,dx,0)
+
+          ! Note the umac here does NOT have w0 in it
+          do k = lo(3), hi(3)
+            do j = lo(2), hi(2)
+            do i = lo(1), hi(1)
+    
+              divbaseu = HALF * (  &
+                   (umac(i+1,j,k)*(base_cart(i,j,k,n)+base_cart(i+1,j,k,n)) &
+                   -umac(i  ,j,k)*(base_cart(i,j,k,n)+base_cart(i-1,j,k,n)) ) / dx(1) &
+                  +(vmac(i,j+1,k)*(base_cart(i,j,k,n)+base_cart(i,j+1,k,n)) &
+                   -vmac(i,j  ,k)*(base_cart(i,j,k,n)+base_cart(i,j-1,k,n)) ) / dx(2) &
+                  +(wmac(i,j,k+1)*(base_cart(i,j,k,n)+base_cart(i,j,k+1,n)) &
+                   -wmac(i,j,k  )*(base_cart(i,j,k,n)+base_cart(i,j,k-1,n)) ) ) / dx(3) 
+
+              divu = (umac(i+1,j,k) - umac(i  ,j,k) ) / dx(1) &
+                    +(vmac(i,j+1,k) - vmac(i,j  ,k) ) / dx(2) &
+                    +(wmac(i,j,k+1) - wmac(i,j,k  ) ) / dx(3) 
+
+              snew(i,j,k,n) = sold(i,j,k,n) + delta_base_cart(i,j,k) &
+                              - dt * divbaseu + dt * force(i,j,k,n)
+
+            enddo
+            enddo
+          enddo
+        end do
+
+        mult = ONE
+        call addw0_3d_sphr(umac,vmac,wmac,w0_cart,lo,hi,dx,mult)
+
+        do n = nstart, nstop
+
+          ! Note the umac here DOES have w0 in it
+          do k = lo(3), hi(3)
+            do j = lo(2), hi(2)
+            do i = lo(1), hi(1)
+    
+              divsu = (umac(i+1,j,k) * sedgex(i+1,j,k,n) &
+                      -umac(i  ,j,k) * sedgex(i  ,j,k,n) ) / dx(1) + &
+                      (vmac(i,j+1,k) * sedgey(i,j+1,k,n) &
+                      -vmac(i,j  ,k) * sedgey(i,j  ,k,n) ) / dx(2) + &
+                      (wmac(i,j,k+1) * sedgez(i,j,k+1,n) &
+                      -wmac(i,j,k  ) * sedgez(i,j,k  ,n) ) / dx(3)
+
+              snew(i,j,k,n) = snew(i,j,k,n) - dt * divsu
+
+            enddo
+            enddo
+          enddo
+      enddo
+
+      deallocate(delta_base,delta_base_cart)
+
+      mult = -ONE
+      call addw0_3d_sphr(umac,vmac,wmac,w0_cart,lo,hi,dx,mult)
+
+      if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
+        snew(:,:,:,rho_comp) = sold(:,:,:,rho_comp)
+        do n = nstart, nstop
+        do k = lo(3), hi(3)
+        do j = lo(2), hi(2)
+        do i = lo(1), hi(1)
+           snew(i,j,k,rho_comp) = snew(i,j,k,rho_comp) + (snew(i,j,k,n)-sold(i,j,k,n))
+        enddo
+        enddo
+        enddo
+        enddo
+      end if
+
+   end subroutine update_scal_3d_sphr
 
    subroutine update_velocity_3d (uold,unew,umac,vmac,wmac,sedgex,sedgey,sedgez, &
                                   force,s0,w0,w0_cart,w0_force,w0_force_cart,lo,hi,ng,dx,time,dt)
