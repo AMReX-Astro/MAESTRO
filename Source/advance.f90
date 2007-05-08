@@ -524,8 +524,7 @@ module advance_timestep_module
         end do
 
         do n = 1,nlevs
-           call make_hgrhs(hgrhs(n),Source_new(n),gamma1_term(n),Sbar(:,1),div_coeff_new,dx(n,:), &
-                           layout_get_pd(mla%la(n)))
+           call make_hgrhs(hgrhs(n),Source_new(n),gamma1_term(n),Sbar(:,1),div_coeff_new,dx(n,:))
         end do
 
         ! Define beta at half time using the div_coeff_new from step 9!

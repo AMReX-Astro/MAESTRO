@@ -13,7 +13,7 @@ contains
 
 !  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-   subroutine make_hgrhs (hgrhs,Source,gamma1_term,Sbar,div_coeff,dx,domain)
+   subroutine make_hgrhs (hgrhs,Source,gamma1_term,Sbar,div_coeff,dx)
 
       type(multifab) , intent(inout) :: hgrhs
       type(multifab) , intent(in   ) :: Source
@@ -21,7 +21,6 @@ contains
       real(kind=dp_t), intent(in   ) :: Sbar(0:)
       real(kind=dp_t), intent(in   ) :: div_coeff(0:)
       real(kind=dp_t), intent(in   ) :: dx(:)
-      type(box      ), intent(in   ) :: domain
 
       type(multifab)  :: rhs_cc
       type(multifab)  :: Sbar_cart,div_coeff_cart
