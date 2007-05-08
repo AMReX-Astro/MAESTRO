@@ -58,11 +58,11 @@ contains
 
     if (spherical .eq. 1) then
       do k = lo(3)-ng,hi(3)+ng
-        z = (dble(k)-HALF)*dx(3) - center(3)
+        z = (dble(k)+HALF)*dx(3) - center(3)
         do j = lo(2)-ng,hi(2)+ng
-          y = (dble(j)-HALF)*dx(2) - center(2)
+          y = (dble(j)+HALF)*dx(2) - center(2)
           do i = lo(1)-ng,hi(1)+ng
-            x = (dble(i)-HALF)*dx(1) - center(1)
+            x = (dble(i)+HALF)*dx(1) - center(1)
   
             radius = sqrt(x**2 + y**2 + z**2)
   
@@ -77,6 +77,8 @@ contains
       print *,'SHOULDNT CALL MAKE_3D_NORMAL WITH SPHERICAL = 0'
       stop
     end if
+
+    stop
 
   end subroutine make_3d_normal
 
