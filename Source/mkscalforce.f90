@@ -15,7 +15,7 @@ contains
 
   subroutine mkrhohforce_2d(force, wmac, lo, hi, &
                             s_old, s_new, ng, dx, time, &
-                            p0_old, p0_new, s0_old, s0_new, temp0, dr)
+                            p0_old, p0_new, temp0, dr)
 
     ! compute the source terms for the non-reactive part of the enthalpy equation { w dp0/dr }
     
@@ -32,8 +32,6 @@ contains
     real(kind=dp_t), intent(in   ) :: time
     real(kind=dp_t), intent(in   ) :: p0_old(0:)
     real(kind=dp_t), intent(in   ) :: p0_new(0:)
-    real(kind=dp_t), intent(in   ) :: s0_old(0:,:)
-    real(kind=dp_t), intent(in   ) :: s0_new(0:,:)
     real(kind=dp_t), intent(in   ) ::  temp0(0:)
     real(kind=dp_t), intent(in   ) ::     dr
 
@@ -69,7 +67,7 @@ contains
 
   subroutine mkrhohforce_3d(force, wmac, lo, hi, &
                             s_old, s_new, ng, dx, time, &
-                            p0_old, p0_new, s0_old, s0_new, temp0, dr)
+                            p0_old, p0_new, temp0, dr)
 
     ! compute the source terms for the non-reactive part of the enthalpy equation { w dp0/dr }
 
@@ -82,8 +80,6 @@ contains
     real(kind=dp_t), intent(in   ) :: time
     real(kind=dp_t), intent(in   ) :: p0_old(0:)
     real(kind=dp_t), intent(in   ) :: p0_new(0:)
-    real(kind=dp_t), intent(in   ) :: s0_old(0:,:)
-    real(kind=dp_t), intent(in   ) :: s0_new(0:,:)
     real(kind=dp_t), intent(in   ) ::  temp0(0:)
     real(kind=dp_t), intent(in   ) ::     dr
 
@@ -120,7 +116,7 @@ contains
 
   subroutine mkrhohforce_3d_sphr(force, umac, vmac, wmac, lo, hi, &
                                  s_old, s_new, ng, dx, time, normal, &
-                                 p0_old, p0_new, s0_old, s0_new, temp0)
+                                 p0_old, p0_new, temp0)
 
     ! compute the source terms for the non-reactive part of the enthalpy equation { w dp0/dr }
 
@@ -136,8 +132,6 @@ contains
     real(kind=dp_t), intent(in   ) :: time
     real(kind=dp_t), intent(in   ) :: p0_old(0:)
     real(kind=dp_t), intent(in   ) :: p0_new(0:)
-    real(kind=dp_t), intent(in   ) :: s0_old(0:,:)
-    real(kind=dp_t), intent(in   ) :: s0_new(0:,:)
     real(kind=dp_t), intent(in   ) :: temp0(0:)
 
     real(kind=dp_t) :: uadv,vadv,wadv,normal_vel
@@ -175,8 +169,11 @@ contains
              uadv = HALF*(umac(i,j,k)+umac(i+1,j,k))
              vadv = HALF*(vmac(i,j,k)+vmac(i,j+1,k))
              wadv = HALF*(wmac(i,j,k)+wmac(i,j,k+1))
+
              normal_vel = uadv*normal(i,j,k,1)+vadv*normal(i,j,k,2)+wadv*normal(i,j,k,3)
+
              force(i,j,k) = gradp_cart(i,j,k) * normal_vel
+
           end do
        end do
     end do
