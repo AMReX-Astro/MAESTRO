@@ -54,16 +54,16 @@ contains
          if ( multifab_remote(Source, i) ) cycle
          rp => dataptr(rhs_cc, i)
          sp => dataptr(Source, i)
-         sbp => dataptr(Sbar_cart, i)
-         dp => dataptr(div_coeff_cart, i)
-         gp => dataptr(gamma1_term, i)
          lo =  lwb(get_box(Source, i))
          hi =  upb(get_box(Source, i))
          select case (dm)
             case (2)
+              gp => dataptr(gamma1_term, i)
               call make_rhscc_2d(lo,hi,rp(:,:,1,1),sp(:,:,1,1),gp(:,:,1,1),Sbar,div_coeff)
             case (3)
               if (spherical .eq. 1) then
+                 dp => dataptr(div_coeff_cart, i)
+                sbp => dataptr(Sbar_cart, i)
                 call make_rhscc_3d_sphr(lo,hi,rp(:,:,:,1),sp(:,:,:,1),sbp(:,:,:,1),dp(:,:,:,1))
               else
                 call make_rhscc_3d_cart(lo,hi,rp(:,:,:,1),sp(:,:,:,1),Sbar,div_coeff)
