@@ -131,6 +131,11 @@ contains
 
       eps = abs_eps * umax
 
+      ! HACK -- NOTE THAT EPS >= 1.0 FOR VELPRED == 1.
+      if (velpred .eq. 1) then
+        eps = max(1.d0,eps)
+      end if
+
 !
 !     Loop for fluxes on x-edges.
 !
@@ -217,7 +222,7 @@ contains
              savg = HALF*(s_r(i) + s_l(i))
              test = ( (s_l(i) .le. ZERO  .and. &
                        s_r(i) .ge. ZERO)  .or. &
-                     (abs(s_l(i) + s_r(i)) .lt. max(1.d0,eps)) )
+                     (abs(s_l(i) + s_r(i)) .lt. eps) )
              sedgex(i,j,n)=merge(s_l(i),s_r(i),savg.gt.ZERO)
              sedgex(i,j,n)=merge(savg,sedgex(i,j,n),test)
            enddo
@@ -612,6 +617,11 @@ contains
       end if
 
       eps = abs_eps * umax
+
+      ! HACK -- NOTE THAT EPS >= 1.0 FOR VELPRED == 1.
+      if (velpred .eq. 1) then
+        eps = max(1.d0,eps)
+      end if
 !
 !     Loop for fluxes on x-edges.
 !
@@ -746,7 +756,7 @@ contains
              savg = HALF*(s_r(i) + s_l(i))
              test = ( (s_l(i) .le. ZERO  .and. &
                        s_r(i) .ge. ZERO)  .or. &
-                     (abs(s_l(i) + s_r(i)) .lt. max(1.d0,eps)) )
+                     (abs(s_l(i) + s_r(i)) .lt. eps) )
              sedgex(i,j,k,n)=merge(s_l(i),s_r(i),savg.gt.ZERO)
              sedgex(i,j,k,n)=merge(savg,sedgex(i,j,k,n),test)
            enddo
@@ -912,7 +922,7 @@ contains
           st = st - HALF * (wtrans(i,j,k)+wtrans(i,j,k+1))*(splus - sminus) / hz
 
           ! NOTE NOTE : THIS IS WRONG FOR SPHERICAL !!
-          if (is_vel .and. n.eq.3) then
+          if (spherical .eq. 0 .and. is_vel .and. n.eq.3) then
             st = st - HALF * (wtrans(i,j,k)+wtrans(i,j,k+1))*(w0(k+1)-w0(k))/hz
           end if
 
@@ -1094,7 +1104,7 @@ contains
           st = st - HALF * (vtrans(i,j,k)+vtrans(i,j+1,k))*(splus - sminus) / hy
 
           ! NOTE NOTE : THIS IS WRONG FOR SPHERICAL !!
-          if (is_vel .and. n.eq.3 .and. k.ge.ks .and. k.le.ke) then
+          if (spherical .eq. 0 .and. is_vel .and. n.eq.3) then
             st = st - HALF * (wtrans(i,j,k)+wtrans(i,j,k+1))*(w0(k+1)-w0(k))/hz
           end if
 
@@ -1120,7 +1130,9 @@ contains
             sedgez(i,j,k,n)=merge(savg,sedgez(i,j,k,n),abs(wadv(i,j,k)) .lt. eps)
           enddo
           ! OUTFLOW HACK 
-          if (wadv(i,j,ke+1).lt.ZERO) sedgez(i,j,ke+1,n) = s_d(ke+1)
+          if (spherical .eq. 0 .and. phys_bc(3,2) .eq. OUTLET) then
+            if (wadv(i,j,ke+1).lt.ZERO) sedgez(i,j,ke+1,n) = s_d(ke+1)
+          end if
         endif
 
         if (phys_bc(3,1) .eq. SLIP_WALL .or. phys_bc(3,1) .eq. NO_SLIP_WALL) then
