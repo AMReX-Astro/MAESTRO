@@ -308,7 +308,7 @@ module update_module
                   +(vmac(i,j+1,k)*(base_cart(i,j,k,n)+base_cart(i,j+1,k,n)) &
                    -vmac(i,j  ,k)*(base_cart(i,j,k,n)+base_cart(i,j-1,k,n)) ) / dx(2) &
                   +(wmac(i,j,k+1)*(base_cart(i,j,k,n)+base_cart(i,j,k+1,n)) &
-                   -wmac(i,j,k  )*(base_cart(i,j,k,n)+base_cart(i,j,k-1,n)) ) ) / dx(3) 
+                   -wmac(i,j,k  )*(base_cart(i,j,k,n)+base_cart(i,j,k-1,n)) ) / dx(3)  )
 
               divu = (umac(i+1,j,k) - umac(i  ,j,k) ) / dx(1) &
                     +(vmac(i,j+1,k) - vmac(i,j  ,k) ) / dx(2) &
@@ -486,7 +486,7 @@ module update_module
 
            ! Add in the pi0 term.
            unew(i,j,k,:) = unew(i,j,k,:) - dt * w0_force_cart(i,j,k,:)
-
+ 
         enddo
         enddo
         enddo
