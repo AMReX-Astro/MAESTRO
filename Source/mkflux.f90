@@ -354,8 +354,6 @@ contains
             savg = HALF*(s_b(j) + s_t(j))
             sedgey(i,j,n)=merge(savg,sedgey(i,j,n),abs(vadv(i,j)) .lt. eps)
           enddo
-          ! OUTFLOW HACK 
-          if (phys_bc(2,2) .eq. OUTLET .and. vadv(i,je+1).lt.ZERO ) sedgey(i,je+1,n) = s_b(je+1)
         endif
 
         if (phys_bc(2,1) .eq. SLIP_WALL .or. phys_bc(2,1) .eq. NO_SLIP_WALL) then
@@ -1129,10 +1127,6 @@ contains
             savg = HALF*(s_d(k) + s_u(k))
             sedgez(i,j,k,n)=merge(savg,sedgez(i,j,k,n),abs(wadv(i,j,k)) .lt. eps)
           enddo
-          ! OUTFLOW HACK 
-          if (spherical .eq. 0 .and. phys_bc(3,2) .eq. OUTLET) then
-            if (wadv(i,j,ke+1).lt.ZERO) sedgez(i,j,ke+1,n) = s_d(ke+1)
-          end if
         endif
 
         if (phys_bc(3,1) .eq. SLIP_WALL .or. phys_bc(3,1) .eq. NO_SLIP_WALL) then
