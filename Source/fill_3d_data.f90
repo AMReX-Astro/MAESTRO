@@ -121,12 +121,10 @@ contains
     real(kind=dp_t), intent(in   ) :: w0(0:)
 
     integer                  :: i,j,k
-    real(kind=dp_t)          :: w0_edge
 
     w0_cell = ZERO
     do k = lo(3),hi(3)
-      w0_edge = HALF * (w0(k) + w0(k+1))
-      w0_cell(:,:,k,3) = w0_edge
+      w0_cell(:,:,k,3) = HALF * (w0(k) + w0(k+1))
     end do
 
   end subroutine put_w0_on_3d_cells_cart
