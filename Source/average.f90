@@ -146,18 +146,18 @@ contains
       nc = size(phibar,dim=2)
 
       do k = lo(3),hi(3)
-        z = (dble(k)-HALF)*dx(3) - center(3)
+        z = (dble(k)+HALF)*dx(3) - center(3)
         do j = lo(2),hi(2)
-          y = (dble(j)-HALF)*dx(2) - center(2)
+          y = (dble(j)+HALF)*dx(2) - center(2)
           do i = lo(1),hi(1)
-            x = (dble(i)-HALF)*dx(1) - center(1)
+            x = (dble(i)+HALF)*dx(1) - center(1)
 
             radius = sqrt(x**2 + y**2 + z**2)
             index = radius / dr + 1
 
             if (index .lt. 1 .or. index .gt. nr) then
               print *,'RADIUS ',radius
-              print *,'BOGUS INDEX ',index
+              print *,'BOGUS INDEX IN AVERAGE ',index
               print *,'NOT IN RANGE 0 TO ',nr
               print *,'I J K ',i,j,k
               print *,'X Y Z ',x,y,z
