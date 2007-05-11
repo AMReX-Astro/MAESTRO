@@ -94,6 +94,7 @@ module advance_timestep_module
     type(multifab), allocatable :: w0_cart_vec(:)
     type(multifab), allocatable :: w0_force_cart_vec(:)
     type(multifab), allocatable :: macrhs(:)
+    type(multifab), allocatable :: macphi(:)
     type(multifab), allocatable ::  hgrhs(:)
     type(multifab), allocatable :: Source_nph(:)
 
@@ -138,6 +139,7 @@ module advance_timestep_module
     allocate(w0_cart_vec(nlevs))
     allocate(w0_force_cart_vec(nlevs))
     allocate(macrhs(nlevs))
+    allocate(macphi(nlevs))
     allocate( hgrhs(nlevs))
 
     nscal = multifab_ncomp(sold(1))
@@ -166,7 +168,11 @@ module advance_timestep_module
      call multifab_build(   rhohalf(n), mla%la(n),     1, 1)
      call multifab_build(Source_nph(n), mla%la(n),     1, 0)
      call multifab_build(    macrhs(n), mla%la(n),     1, 0)
+     call multifab_build(    macphi(n), mla%la(n),     1, 1)
      call multifab_build(     hgrhs(n), mla%la(n),     1,       0, nodal)
+
+     call setval(macphi(n),ZERO,all=.true.)
+
      if (dm.eq.3) then
          call multifab_build(      w0_cart_vec(n), mla%la(n),dm,1)
          call multifab_build(w0_force_cart_vec(n), mla%la(n),dm,1)
@@ -235,11 +241,11 @@ module advance_timestep_module
             end do
             call multifab_fill_boundary(div_coeff_3d(n))
           end do
-          call macproject(mla,umac,sold,dx,the_bc_tower,verbose,mg_verbose,cg_verbose,press_comp,&
+          call macproject(mla,umac,macphi,sold,dx,the_bc_tower,verbose,mg_verbose,cg_verbose,press_comp,&
                           macrhs,div_coeff_3d=div_coeff_3d)
         else
           call put_1d_beta_on_edges(div_coeff_old,div_coeff_edge)
-          call macproject(mla,umac,sold,dx,the_bc_tower,verbose,mg_verbose,cg_verbose,press_comp,&
+          call macproject(mla,umac,macphi,sold,dx,the_bc_tower,verbose,mg_verbose,cg_verbose,press_comp,&
                           macrhs,div_coeff_1d=div_coeff_old,div_coeff_half_1d=div_coeff_edge)
         end if
 
@@ -402,11 +408,11 @@ module advance_timestep_module
             end do
             call multifab_fill_boundary(div_coeff_3d(n))
           end do
-          call macproject(mla,umac,rhohalf,dx,the_bc_tower,verbose,mg_verbose,cg_verbose,&
+          call macproject(mla,umac,macphi,rhohalf,dx,the_bc_tower,verbose,mg_verbose,cg_verbose,&
                           press_comp,macrhs,div_coeff_3d=div_coeff_3d)
         else
           call put_1d_beta_on_edges(div_coeff_nph,div_coeff_edge)
-          call macproject(mla,umac,rhohalf,dx,the_bc_tower,verbose,mg_verbose,cg_verbose,&
+          call macproject(mla,umac,macphi,rhohalf,dx,the_bc_tower,verbose,mg_verbose,cg_verbose,&
                           press_comp,macrhs,div_coeff_1d=div_coeff_nph,div_coeff_half_1d=div_coeff_edge)
         end if
 
@@ -564,6 +570,7 @@ module advance_timestep_module
         do n = 1, nlevs
           call destroy(Source_nph(n))
           call destroy(macrhs(n))
+          call destroy(macphi(n))
           call destroy( hgrhs(n))
           call destroy(rhohalf(n))
           if (spherical .eq. 1) &
@@ -571,6 +578,7 @@ module advance_timestep_module
         end do
         deallocate(Source_nph)
         deallocate(macrhs)
+        deallocate(macphi)
         deallocate( hgrhs)
         deallocate(rhohalf)
 
