@@ -654,6 +654,7 @@ contains
          s0(j,spec_comp:spec_comp+nspec-1) = d_ambient * xn_ambient(1:nspec)
          p0(j)    = p_row(1)
          temp0(j) = t_ambient
+         gam1(j) = gam1_row(1)
   
          ! keep track of the height where we drop below the cutoff density
          if (s0(j,rho_comp) .lt. cutoff_density .and. j_cutoff .eq. n_base) then
@@ -662,6 +663,7 @@ contains
          end if
 
        end if
+
     end do
  
     ! Make sure to define variable "dr" -- that is the global variable
