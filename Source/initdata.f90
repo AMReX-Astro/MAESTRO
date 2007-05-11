@@ -483,6 +483,8 @@ contains
 
     do_diag = .false.
 
+    dm = size(dx,dim=1)
+
     ! open the model file and read in the header
     ! the model file is assumed to be of the follow form:
     ! # npts = 896
@@ -602,6 +604,7 @@ contains
     do j = 0,n_base-1
 
        if (j .ge. j_cutoff) then
+
          s0(j, rho_comp ) = s0(j_cutoff, rho_comp )
          s0(j,rhoh_comp ) = s0(j_cutoff,rhoh_comp )
          s0(j,spec_comp:spec_comp+nspec-1) = s0(j_cutoff,spec_comp:spec_comp+nspec-1)
@@ -661,36 +664,6 @@ contains
        end if
     end do
  
-    ! RECALCULATE T, RHO_H
-    do j = 0,n_base-1
-
-       den_row(1)  = s0(j,rho_comp)
-       xn_ambient(1:nspec) = s0(j,spec_comp:spec_comp-1+nspec)/den_row(1)
-       temp_row(1) = temp0(j)
-       p_row(1)    =   p0(j)
-
-!       (rho, p) --> T, h
-       input_flag = 4
-
-       call eos(input_flag, den_row, temp_row, &
-                npts, nspec, &
-                xn_ambient, aion, zion, &
-                p_row, h_row, e_row, &
-                cv_row, cp_row, xne_row, eta_row, pele_row, &
-                dpdt_row, dpdr_row, dedt_row, dedr_row, &
-                dpdX_row, dhdX_row, &
-                gam1_row, cs_row, s_row, &
-                dsdt_row, dsdr_row, &
-                do_diag)
-       
-       temp0(j) = temp_row(1)
-       gam1(j)  = gam1_row(1)
-       s0(j,rhoh_comp) = h_row(1) * s0(j,rho_comp)
-
-       s0(j,trac_comp:) = ZERO
-       
-    end do
-
     ! Make sure to define variable "dr" -- that is the global variable
     dr = dr_base
 
