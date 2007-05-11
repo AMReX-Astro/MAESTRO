@@ -379,12 +379,15 @@ contains
     real(kind=dp_t) :: r0, r1, r2
 
     x0 = 5.0d7
+    y0 = 5.0d7
     z0 = 6.5d7
     
     x1 = 1.2d8
+    y1 = 1.2d8
     z1 = 8.5d7
     
     x2 = 2.0d8
+    y2 = 2.0d8
     z2 = 7.5d7
 
 !   temp = t0 * (ONE + TWO * ( &
@@ -393,9 +396,9 @@ contains
 !        .1250_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r2)))  ) )
 
     ! Tanh bubbles from perturb_2d
-    r0 = sqrt( (x-x0)**2 +(z-z0)**2 ) / 2.5e6
-    r1 = sqrt( (x-x1)**2 +(z-z1)**2 ) / 2.5e6
-    r2 = sqrt( (x-x2)**2 +(z-z2)**2 ) / 2.5e6
+    r0 = sqrt( (y-y0)**2 +(z-z0)**2 ) / 2.5e6
+    r1 = sqrt( (y-y1)**2 +(z-z1)**2 ) / 2.5e6
+    r2 = sqrt( (y-y2)**2 +(z-z2)**2 ) / 2.5e6
     
     ! This case works
     temp = t0 * (ONE + TWO * ( &
@@ -435,7 +438,7 @@ contains
 
   end subroutine perturb_3d
 
-  subroutine init_base_state (n_base,s0,temp0,p0,gam1,dx,prob_lo,prob_hi)
+  subroutine init_base_state (n_base,dr_base,s0,temp0,p0,gam1,dx,prob_lo,prob_hi)
 
     integer        , intent(in   ) :: n_base
     real(kind=dp_t), intent(inout) ::    s0(0:,:)
@@ -444,13 +447,14 @@ contains
     real(kind=dp_t), intent(inout) ::  gam1(0:)
     real(kind=dp_t), intent(in   ) :: prob_lo(:)
     real(kind=dp_t), intent(in   ) :: prob_hi(:)
-    real(kind=dp_t), intent(in   ) :: dx(:)
+    real(kind=dp_t), intent(in   ) :: dx(:),dr_base
     integer :: i,j,n,j_cutoff
 
-    real(kind=dp_t) :: r,dr_in
+    real(kind=dp_t) :: r,dr_in,rmax,starting_rad
     real(kind=dp_t) :: d_ambient,t_ambient,p_ambient, xn_ambient(nspec)
     real(kind=dp_t) :: integral, temp_term_lo, temp_term_hi
     real(kind=dp_t) :: temp_min,p0_lo,p0_hi
+    real(kind=dp_t) :: height_of_model, height_of_domain
 
     ! these indices define how the initial model is stored in the 
     ! base_state array
@@ -462,6 +466,8 @@ contains
 
     integer, parameter :: MAX_VARNAME_LENGTH=80
     integer :: npts_model, nvars_model_file
+
+    real(kind=dp_t) :: x,y,z
 
     real(kind=dp_t), allocatable :: base_state(:,:), base_r(:)
     real(kind=dp_t), allocatable :: vars_stored(:)
@@ -575,20 +581,20 @@ contains
     call helmeos_init
 
     dr_in = base_r(2) - base_r(1)
-    dr = dr_in * dble(npts_model)  / dble(n_base)
+    rmax = base_r(npts_model)
+
     if ( parallel_IOProcessor() ) then
-      print *,'DR_IN  ',dr_in
-      print *,'NEW DR ',dr
+      print *,'DR , RMAX OF MODEL     ',dr_in, rmax
+      print *,'DR , RMAX OF BASE ARRAY',dr_base, dble(n_base) * dr_base
     end if
 
-    if (spherical .eq. 1) then
-      if (dble(npts_model)*dr_in .lt. HALF*prob_hi(1)*dsqrt(3.0_dp_t)) then
-         print *,'OOPS - NEED LARGER RADIAL ARRAY OR SMALLER DOMAIN '
-         print *,'-- base state goes to radius ',dble(npts_model)*dr_in
-         print *,'-- problem domain goes from ',prob_lo(1),' to ',prob_hi(1)
-         print *,'-- which means corners are at a radius of ', &
-                  HALF*prob_hi(1)*dsqrt(3.0_dp_t)
-         stop
+    if (dm .eq. 2) then
+      starting_rad = prob_lo(2)
+    else 
+      if (spherical .eq. 0) then
+        starting_rad = prob_lo(3)
+      else
+        starting_rad = ZERO
       end if
     end if
 
@@ -598,7 +604,11 @@ contains
        ! compute the coordinate height at this level
        ! NOTE: we are assuming that the basestate is in the y-direction
        ! and that ymin = 0.0
-       r = prob_lo(2) + (dble(j) + HALF)*dr
+       r = starting_rad + (dble(j) + HALF)*dr_base
+
+       ! here we account for r > rmax of the model.hse array, assuming
+       ! that the state stays constant beyond rmax
+       r = min(r, rmax)
 
        d_ambient = interpolate(r, npts_model, base_r, base_state(:,idens_model))
        t_ambient = interpolate(r, npts_model, base_r, base_state(:,itemp_model))
@@ -681,6 +691,9 @@ contains
        s0(j,trac_comp:) = ZERO
        
     end do
+
+    ! Make sure to define variable "dr" -- that is the global variable
+    dr = dr_base
 
   end subroutine init_base_state
 
