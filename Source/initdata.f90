@@ -580,7 +580,7 @@ contains
 
     call helmeos_init
 
-    dr_in = base_r(2) - base_r(1)
+    dr_in = (base_r(npts_model) - base_r(1)) / dble(npts_model-1)
     rmax = base_r(npts_model)
 
     if ( parallel_IOProcessor() ) then
@@ -598,71 +598,70 @@ contains
       end if
     end if
 
-    j_cutoff = n_base-1
+    j_cutoff = n_base
     do j = 0,n_base-1
 
-       ! compute the coordinate height at this level
-       ! NOTE: we are assuming that the basestate is in the y-direction
-       ! and that ymin = 0.0
-       r = starting_rad + (dble(j) + HALF)*dr_base
+       if (j .ge. j_cutoff) then
+         s0(j, rho_comp ) = s0(j_cutoff, rho_comp )
+         s0(j,rhoh_comp ) = s0(j_cutoff,rhoh_comp )
+         s0(j,spec_comp:spec_comp+nspec-1) = s0(j_cutoff,spec_comp:spec_comp+nspec-1)
+         p0(j)            = p0(j_cutoff)
+         temp0(j)         = temp0(j_cutoff)
 
-       ! here we account for r > rmax of the model.hse array, assuming
-       ! that the state stays constant beyond rmax
-       r = min(r, rmax)
+       else
 
-       d_ambient = interpolate(r, npts_model, base_r, base_state(:,idens_model))
-       t_ambient = interpolate(r, npts_model, base_r, base_state(:,itemp_model))
-       p_ambient = interpolate(r, npts_model, base_r, base_state(:,ipres_model))
+         ! compute the coordinate height at this level
+         ! NOTE: we are assuming that the basestate is in the y-direction
+         ! and that ymin = 0.0
+         r = starting_rad + (dble(j) + HALF)*dr_base
+  
+         ! here we account for r > rmax of the model.hse array, assuming
+         ! that the state stays constant beyond rmax
+         r = min(r, rmax)
 
-       do n = 1, nspec
-          xn_ambient(n) = interpolate(r, npts_model, base_r, base_state(:,ispec_model-1+n))
-       enddo
+         d_ambient = interpolate(r, npts_model, base_r, base_state(:,idens_model))
+         t_ambient = interpolate(r, npts_model, base_r, base_state(:,itemp_model))
+         p_ambient = interpolate(r, npts_model, base_r, base_state(:,ipres_model))
 
-       ! use the EOS to make the state consistent
-       temp_row(1) = t_ambient
-       den_row(1)  = d_ambient
-       p_row(1)    = p_ambient
+         do n = 1, nspec
+            xn_ambient(n) = interpolate(r, npts_model, base_r, base_state(:,ispec_model-1+n))
+         enddo
 
-       ! (rho,T) --> p,h
-       input_flag = 1
+         ! use the EOS to make the state consistent
+         temp_row(1) = t_ambient
+         den_row(1)  = d_ambient
+         p_row(1)    = p_ambient
+  
+         ! (rho,T) --> p,h
+         input_flag = 1
+  
+         call eos(input_flag, den_row, temp_row, &
+                  npts, nspec, &
+                  xn_ambient, aion, zion, &
+                  p_row, h_row, e_row, &
+                  cv_row, cp_row, xne_row, eta_row, pele_row, &
+                  dpdt_row, dpdr_row, dedt_row, dedr_row, &
+                  dpdX_row, dhdX_row, &
+                  gam1_row, cs_row, s_row, &
+                  dsdt_row, dsdr_row, &
+                  do_diag)
+         
+         s0(j, rho_comp ) = d_ambient
+         s0(j,rhoh_comp ) = d_ambient * h_row(1)
+         s0(j,spec_comp:spec_comp+nspec-1) = d_ambient * xn_ambient(1:nspec)
+         p0(j)    = p_row(1)
+         temp0(j) = t_ambient
+  
+         ! keep track of the height where we drop below the cutoff density
+         if (s0(j,rho_comp) .lt. cutoff_density .and. j_cutoff .eq. n_base) then
+            if ( parallel_IOProcessor() ) print *,'SETTING J_CUTOFF TO ',j
+            j_cutoff = j
+         end if
 
-       call eos(input_flag, den_row, temp_row, &
-                npts, nspec, &
-                xn_ambient, aion, zion, &
-                p_row, h_row, e_row, &
-                cv_row, cp_row, xne_row, eta_row, pele_row, &
-                dpdt_row, dpdr_row, dedt_row, dedr_row, &
-                dpdX_row, dhdX_row, &
-                gam1_row, cs_row, s_row, &
-                dsdt_row, dsdr_row, &
-                do_diag)
-       
-       s0(j, rho_comp ) = d_ambient
-       s0(j,rhoh_comp ) = d_ambient * h_row(1)
-       s0(j,spec_comp:spec_comp+nspec-1) = d_ambient * xn_ambient(1:nspec)
-       p0(j)    = p_row(1)
-       temp0(j) = t_ambient
-
-       ! keep track of the height where we drop below the cutoff density
-       if (s0(j,rho_comp) .lt. cutoff_density .and. j_cutoff .eq. n_base-1) j_cutoff = j
-
+       end if
     end do
  
-
-    ! KEEP RHO0 CONSTANT ABOVE J_CUTOFF
-    if ( parallel_IOProcessor() ) &
-      print *,'JCUT_comp ',j_cutoff
-
-    do j = j_cutoff,n_base-1
-       s0(j, rho_comp ) = s0(j_cutoff, rho_comp )
-       s0(j,rhoh_comp ) = s0(j_cutoff,rhoh_comp )
-       s0(j,spec_comp:spec_comp+nspec-1) = s0(j_cutoff,spec_comp:spec_comp+nspec-1)
-       p0(j)            = p0(j_cutoff)
-       temp0(j)         = temp0(j_cutoff)
-    end do
-
-      ! RECALCULATE T, RHO_H
-
+    ! RECALCULATE T, RHO_H
     do j = 0,n_base-1
 
        den_row(1)  = s0(j,rho_comp)
