@@ -712,18 +712,25 @@ contains
 
     character(len=9), intent(in) :: sd_name
     real(kind=dp_t) , intent(in) :: s0(:,:),p0(:),temp0(:),div_coeff(:)
+    real(kind=dp_t) , allocatable   :: base_r(:)
 
-    integer :: i, n
+    integer :: i, n, nr
+
+    nr = size(s0,dim=1)
+    allocate(base_r(nr))
 
     if (parallel_IOProcessor()) &
        write(6,*) 'Writing base state to ',sd_name
 
     open(unit=99,file=sd_name,form = "formatted", access = "sequential",action="write")
-    do i = 1, size(s0,dim=1)
-       write(99,1000)  s0(i,rho_comp), p0(i), s0(i,rhoh_comp), &
+    do i = 1, nr
+       base_r(i) = (dble(i)-HALF) * dr
+       write(99,1000)  base_r(i),s0(i,rho_comp), p0(i), s0(i,rhoh_comp), &
                        (s0(i,n), n=spec_comp,spec_comp+nspec-1), temp0(i), div_coeff(i)
     end do
     close(99)
+
+    deallocate(base_r)
 
 1000 format(16(e18.12,1x))
 
@@ -734,17 +741,23 @@ contains
     
     character(len=9), intent(in   ) :: sd_name
     real(kind=dp_t) , intent(inout) :: s0(:,:),p0(:),temp0(:),div_coeff(:)
+    real(kind=dp_t) , allocatable   :: base_r(:)
 
-    integer :: i, n
+    integer :: i, n, nr
+
+    nr = size(s0,dim=1)
+    allocate(base_r(nr))
 
     print *,'Reading base state from ',sd_name
 
     open(unit=99,file=sd_name)
     do i = 1, size(s0,dim=1)
-       read(99,*)  s0(i,rho_comp), p0(i), s0(i,rhoh_comp), &
+       read(99,*)  base_r(i),s0(i,rho_comp), p0(i), s0(i,rhoh_comp), &
                    (s0(i,n), n=spec_comp,spec_comp+nspec-1), temp0(i), div_coeff(i)
     end do
     close(99)
+
+    deallocate(base_r)
 
   end subroutine read_base_state
 
