@@ -5,7 +5,7 @@ module scalar_advance_module
   use multifab_module
   use mkflux_module
   use mkscalforce_module
-  use update_module
+  use update_scal_module
   use addw0_module
   use define_bc_module
   use setbc_module

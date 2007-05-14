@@ -20,8 +20,8 @@ module make_plotfile_module
 
 contains
 
-  subroutine make_plotfile(istep,plotdata,u,s,gp,rho_omegadot,mba, &
-                           plot_names,time,dx, &
+  subroutine make_plotfile(istep,plotdata,u,s,gp,rho_omegadot,sponge, &
+                           mba,plot_names,time,dx, &
                            the_bc_tower, &
                            s0,p0,temp0,ntrac)
 
@@ -32,6 +32,7 @@ contains
     type(multifab)   , intent(in   ) :: s(:)
     type(multifab)   , intent(in   ) :: gp(:)
     type(multifab)   , intent(in   ) :: rho_omegadot(:)
+    type(multifab)   , intent(in   ) :: sponge(:)
     type(ml_boxarray), intent(in   ) :: mba
     character(len=20), intent(in   ) :: plot_names(:)
     real(dp_t)       , intent(in   ) :: time,dx(:,:)
@@ -147,6 +148,14 @@ contains
        icomp = derive_spec_comp
        icomp_enuc = derive_spec_comp+nspec
        call make_omegadot(plotdata(n),icomp,icomp_enuc,s(n),rho_omegadot(n))
+
+    enddo
+
+    do n = 1,nlevs
+
+       ! SPONGE
+       icomp = icomp_deltaT + 1
+       call multifab_copy_c(plotdata(n),icomp,sponge(n),1,1)
 
     enddo
 

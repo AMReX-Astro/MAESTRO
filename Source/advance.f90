@@ -43,7 +43,7 @@ module advance_timestep_module
                                 grav_cell_old, &
                                 dx,time,dt,dtold,the_bc_tower, &
                                 anelastic_cutoff,verbose,mg_verbose,cg_verbose,&
-                                Source_nm1,Source_old,Source_new,gamma1_term)
+                                Source_nm1,Source_old,Source_new,gamma1_term,sponge,do_sponge)
 
     implicit none
 
@@ -89,6 +89,9 @@ module advance_timestep_module
     type(bc_tower), intent(in   ) :: the_bc_tower
     real(dp_t)    , intent(in   ) :: anelastic_cutoff
     integer       , intent(in   ) :: verbose,mg_verbose,cg_verbose
+
+    type(multifab), intent(in   ) :: sponge(:)
+    logical       , intent(in   ) :: do_sponge
 
     type(multifab), allocatable :: rhohalf(:)
     type(multifab), allocatable :: w0_cart_vec(:)
@@ -514,7 +517,7 @@ module advance_timestep_module
                                  s0_old, grav_cell_old, s0_nph, grav_cell_nph, &
                                  dx(n,:),time,dt, &
                                  the_bc_tower%bc_tower_array(n), &
-                                 verbose)
+                                 sponge(n),do_sponge,verbose)
         end do
 
         do n = 2, nlevs
