@@ -32,3 +32,7 @@ f90sources += fill_3d_data.f90
 f90sources += firstdt.f90
 f90sources += checkpoint.f90
 f90sources += restart.f90
+f90sources += macproject.f90
+f90sources += sponge.f90
+f90sources += update_vel.f90
+f90sources += update_scal.f90
