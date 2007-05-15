@@ -31,10 +31,8 @@ contains
 !     compute beta0 on the edges and average to the center      
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      
       beta0_edge_lo = rho0(1)
       do j = 1,ny
-
 
          ! compute the slopes
          if (j == 1 .or. j == ny) then
@@ -57,7 +55,6 @@ contains
             coeff1 = lambda*gam1(j)/mu - rho0(j)
             coeff2 = lambda*p0(j)/nu - rho0(j)
 
-            
             integral = (abs(grav_center(j))/denom)* &
                  (coeff1*log( (gam1(j) + HALF*mu*dy)/ &
                               (gam1(j) - HALF*mu*dy)) - &
@@ -69,25 +66,19 @@ contains
          beta0_edge_hi = beta0_edge_lo * exp(-integral)
 
          div_coeff(j) = HALF*(beta0_edge_lo + beta0_edge_hi)
-         if (rho0(j) .lt. anelastic_cutoff .and. j_anel .eq. ny) j_anel = j
+
+         if (rho0(j) .lt. anelastic_cutoff .and. j_anel .eq. ny) then
+            j_anel = j
+            exit
+         end if
          
          beta0_edge_lo = beta0_edge_hi
+
       end do
 
       do j = j_anel,ny
         div_coeff(j) = div_coeff(j-1) * (rho0(j)/rho0(j-1))
       end do
-!     print *,'SETTING BETA TO RHO0 STARTING AT  ',j_anel
-
-!1000  format(1x, i5, 1x, 5(g20.8,1x))
-!      do j = 2,ny-1
-!         write(99,1000) j,div_coeff(j) / rho0(j), &
-!              (log(p0(j+1)) - log(p0(j-1)))/(log(rho0(j+1))-log(rho0(j-1)))/gam1(j), &
-!              gam1(j), (log(p0(j+1)) - log(p0(j-1)))/(log(rho0(j+1))-log(rho0(j-1)))
-!      end do
-!      write(99,*) " "
-
-
 
    end subroutine make_div_coeff
 
