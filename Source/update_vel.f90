@@ -3,8 +3,6 @@ module update_vel_module
   use bl_types
   use multifab_module
   use bl_constants_module
-  use fill_3d_module
-  use addw0_module
   use geometry
   use sponge_module
   use variables
