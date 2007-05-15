@@ -438,8 +438,9 @@ contains
 
   end subroutine perturb_3d
 
-  subroutine init_base_state (n_base,dr_base,s0,temp0,p0,gam1,dx,prob_lo,prob_hi)
+  subroutine init_base_state (model_file,n_base,dr_base,s0,temp0,p0,gam1,dx,prob_lo,prob_hi)
 
+    character (len=256), intent(in) :: model_file
     integer        , intent(in   ) :: n_base
     real(kind=dp_t), intent(inout) ::    s0(0:,:)
     real(kind=dp_t), intent(inout) :: temp0(0:)
@@ -507,7 +508,7 @@ contains
 
     ! composition is assumed to be in terms of mass fractions
     
-    open(99,file="model.hse")
+    open(99,file=model_file)
 
     ! the first line has the number of points in the model
     read (99, '(a256)') header_line
