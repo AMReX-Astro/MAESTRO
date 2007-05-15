@@ -611,6 +611,7 @@ contains
          s0(j,spec_comp:spec_comp+nspec-1) = s0(j_cutoff,spec_comp:spec_comp+nspec-1)
          p0(j)            = p0(j_cutoff)
          temp0(j)         = temp0(j_cutoff)
+          gam1(j)         =  gam1(j_cutoff)
 
        else
 
