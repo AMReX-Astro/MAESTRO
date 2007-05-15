@@ -34,7 +34,7 @@ contains
         allocate(m(nz))
 
         m(1) = fourthirds*pi*rho0(1)*z(1)**3
-        grav_cell(1) = Gconst * m(1) / z(1)**2
+        grav_cell(1) = -Gconst * m(1) / z(1)**2
         do k = 2, nz
            ! the mass is defined at the cell-centers, so to compute the
            ! mass at the current center, we need to add the contribution of
@@ -42,7 +42,7 @@ contains
            ! current zone.
            m(k) = m(k-1) + fourthirds*pi*rho0(k-1)*(zl(k)**3 -  z(k-1)**3) &
                          + fourthirds*pi*rho0(k  )*( z(k)**3 - zl(k  )**3)
-           grav_cell(k) = Gconst * m(k) / z(k)**2
+           grav_cell(k) = -Gconst * m(k) / z(k)**2
         enddo
 
         deallocate(m)
@@ -78,7 +78,7 @@ contains
           do j = 2, k
             mencl = mencl + fourthirds * pi * (zl(j)**3 - zl(j-1)**3) * rho0(j-1)
           end do
-          grav_edge(k) = Gconst * mencl / zl(k)**2
+          grav_edge(k) = -Gconst * mencl / zl(k)**2
         end do
 
       end if
