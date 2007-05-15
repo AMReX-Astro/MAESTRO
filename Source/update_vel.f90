@@ -6,7 +6,7 @@ module update_vel_module
   use fill_3d_module
   use addw0_module
   use geometry
-  use sponge
+  use sponge_module
   use variables
   use network
 

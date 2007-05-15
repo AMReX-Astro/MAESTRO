@@ -1,6 +1,6 @@
 ! a module for storing the geometric information so we don't have to pass it
  
-module sponge
+module sponge_module
  
   use bl_types
   use bl_constants_module
@@ -164,4 +164,4 @@ contains
 
   end subroutine mk_sponge_3d
 
-end module sponge
+end module sponge_module
