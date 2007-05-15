@@ -92,19 +92,17 @@ contains
       sponge = ONE
 
       do j = lo(2),hi(2)
-      do i = lo(1),hi(1)
+        y = (dble(j)+HALF)*dx(2)
 
-         y = (dble(j)+HALF)*dx(2)
-         if (y >= r_sp) then
-            if (y < r_tp) then
-              smdamp = HALF*(ONE - cos(M_PI*(y - r_sp)/(r_tp - r_sp)))
-            else
-              smdamp = ONE
-            endif
-            sponge(i,j) = ONE / (ONE + dt * smdamp* alpha)
-         endif
+          if (y >= r_sp) then
+             if (y < r_tp) then
+               smdamp = HALF*(ONE - cos(M_PI*(y - r_sp)/(r_tp - r_sp)))
+             else
+               smdamp = ONE
+             endif
+             sponge(:,j) = ONE / (ONE + dt * smdamp* alpha)
+          endif
 
-      end do
       end do
 
   end subroutine mk_sponge_2d
@@ -122,42 +120,38 @@ contains
 
       if (spherical .eq. 0) then
         do k = lo(3),hi(3)
-        do j = lo(2),hi(2)
-        do i = lo(1),hi(1)
-  
-           z = (dble(j)+HALF)*dx(2)
-           if (z >= r_sp) then
-              if (z < r_tp) then
-                smdamp = HALF*(ONE - cos(M_PI*(z - r_sp)/(r_tp - r_sp)))
-              else
-                smdamp = ONE
-              endif
-              sponge(i,j,k) = ONE / (ONE + dt * smdamp* alpha)
-           endif
-
-        end do
-        end do
+          z = (dble(k)+HALF)*dx(3)
+          if (z >= r_sp) then
+            if (z < r_tp) then
+              smdamp = HALF*(ONE - cos(M_PI*(z - r_sp)/(r_tp - r_sp)))
+            else
+              smdamp = ONE
+            endif
+            sponge(:,:,k) = ONE / (ONE + dt * smdamp* alpha)
+          end if
         end do
 
       else
 
         do k = lo(3),hi(3)
-        do j = lo(2),hi(2)
-        do i = lo(1),hi(1)
+          z = (dble(k)+HALF)*dx(3)
+          do j = lo(2),hi(2)
+            y = (dble(j)+HALF)*dx(2)
+            do i = lo(1),hi(1)
+              x = (dble(i)+HALF)*dx(1)
   
-          r = sqrt( (x-center(1))**2 + (y-center(2))**2 + (z-center(3))**2 )
-          print *,'SPONGE R ',r, r_sp, r_tp
-          if (r >= r_sp) then
-             if (r < r_tp) then
-               smdamp = HALF*(ONE - cos(M_PI*(r - r_sp)/(r_tp - r_sp)))
-             else
-               smdamp = ONE
-             endif
-             sponge(i,j,k) = ONE / (ONE + dt * smdamp* alpha)
-          endif
+              r = sqrt( (x-center(1))**2 + (y-center(2))**2 + (z-center(3))**2 )
+              if (r >= r_sp) then
+                 if (r < r_tp) then
+                   smdamp = HALF*(ONE - cos(M_PI*(r - r_sp)/(r_tp - r_sp)))
+                 else
+                   smdamp = ONE
+                 endif
+                 sponge(i,j,k) = ONE / (ONE + dt * smdamp* alpha)
+              endif
 
-        end do
-        end do
+            end do
+          end do
         end do
 
       end if
