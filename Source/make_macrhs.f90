@@ -39,7 +39,7 @@ contains
          hi =  upb(get_box(Source, i))
          select case (dm)
             case (2)
-              call make_macrhs_2d(lo,hi,mp(:,:,1,1),sp(:,:,1,1),gp(:,:,1,1),Sbar,div_coeff)
+              call make_macrhs_2d(lo,hi,mp(:,:,1,1),sp(:,:,1,1),gp(:,:,1,1),Sbar,div_coeff,dx)
             case (3)
               call make_macrhs_3d(lo,hi,mp(:,:,:,1),sp(:,:,:,1),gp(:,:,:,1),Sbar,div_coeff,dx)
          end select
@@ -47,7 +47,7 @@ contains
 
    end subroutine make_macrhs
 
-   subroutine make_macrhs_2d (lo,hi,rhs,Source,gamma1_term,Sbar,div_coeff)
+   subroutine make_macrhs_2d (lo,hi,rhs,Source,gamma1_term,Sbar,div_coeff,dx)
 
       implicit none
 
@@ -57,13 +57,17 @@ contains
       real (kind=dp_t), intent(in   ) :: gamma1_term(lo(1):,lo(2):)  
       real (kind=dp_t), intent(in   ) :: Sbar(lo(2):)  
       real (kind=dp_t), intent(in   ) :: div_coeff(lo(2):)  
+      real (kind=dp_t), intent(in   ) :: dx(:)
 
 !     Local variables
       integer :: i, j
+      integer :: rr
+
+      rr = int( dx(2) / dr + 1.d-12)
 
       do j = lo(2),hi(2)
       do i = lo(1),hi(1)
-        rhs(i,j) = div_coeff(j) * (Source(i,j) - Sbar(j) + gamma1_term(i,j))
+        rhs(i,j) = div_coeff(j) * (Source(i,j) - Sbar(rr*j) + gamma1_term(i,j))
       end do
       end do
  
@@ -83,6 +87,7 @@ contains
 
 !     Local variables
       integer :: i, j, k
+      integer :: rr
       real (kind=dp_t), allocatable :: div_cart(:,:,:),Sbar_cart(:,:,:)
 
       if (spherical .eq. 1) then
@@ -105,10 +110,12 @@ contains
 
       else
 
+        rr = int( dx(2) / dr + 1.d-12)
+
         do k = lo(3),hi(3)
         do j = lo(2),hi(2)
         do i = lo(1),hi(1)
-          rhs(i,j,k) = div_coeff(k) * (Source(i,j,k) - Sbar(k))
+          rhs(i,j,k) = div_coeff(k) * (Source(i,j,k) - Sbar(rr*k))
         end do
         end do
         end do

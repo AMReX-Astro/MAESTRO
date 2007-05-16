@@ -59,14 +59,14 @@ contains
          select case (dm)
             case (2)
               gp => dataptr(gamma1_term, i)
-              call make_rhscc_2d(lo,hi,rp(:,:,1,1),sp(:,:,1,1),gp(:,:,1,1),Sbar,div_coeff)
+              call make_rhscc_2d(lo,hi,rp(:,:,1,1),sp(:,:,1,1),gp(:,:,1,1),Sbar,div_coeff,dx)
             case (3)
               if (spherical .eq. 1) then
                  dp => dataptr(div_coeff_cart, i)
                 sbp => dataptr(Sbar_cart, i)
                 call make_rhscc_3d_sphr(lo,hi,rp(:,:,:,1),sp(:,:,:,1),sbp(:,:,:,1),dp(:,:,:,1))
               else
-                call make_rhscc_3d_cart(lo,hi,rp(:,:,:,1),sp(:,:,:,1),Sbar,div_coeff)
+                call make_rhscc_3d_cart(lo,hi,rp(:,:,:,1),sp(:,:,:,1),Sbar,div_coeff,dx)
               endif
          end select
       end do
@@ -95,7 +95,7 @@ contains
 
    end subroutine make_hgrhs
 
-   subroutine make_rhscc_2d(lo,hi,rhs_cc,Source,gamma1_term,Sbar,div_coeff)
+   subroutine make_rhscc_2d(lo,hi,rhs_cc,Source,gamma1_term,Sbar,div_coeff,dx)
 
       implicit none
 
@@ -105,13 +105,17 @@ contains
       real (kind=dp_t), intent(in   ) :: gamma1_term(lo(1):,lo(2):)  
       real (kind=dp_t), intent(in   ) ::      Sbar(0:)
       real (kind=dp_t), intent(in   ) :: div_coeff(0:)
+      real (kind=dp_t), intent(in   ) :: dx(:)
 
 !     Local variables
       integer :: i, j
+      integer :: rr
+
+      rr = int( dx(2) / dr + 1.d-12)
 
       do j = lo(2),hi(2)
       do i = lo(1),hi(1)
-        rhs_cc(i,j) = div_coeff(j) * (Source(i,j) - Sbar(j) + gamma1_term(i,j))
+        rhs_cc(i,j) = div_coeff(j) * (Source(i,j) - Sbar(rr*j) + gamma1_term(i,j))
       end do
       end do
 
@@ -137,7 +141,7 @@ contains
 
    end subroutine make_hgrhs_2d
 
-   subroutine make_rhscc_3d_cart(lo,hi,rhs_cc,Source,Sbar,div_coeff)
+   subroutine make_rhscc_3d_cart(lo,hi,rhs_cc,Source,Sbar,div_coeff,dx)
 
       implicit none
 
@@ -146,14 +150,18 @@ contains
       real (kind=dp_t), intent(in   ) :: Source(lo(1):,lo(2):,lo(3):)  
       real (kind=dp_t), intent(in   ) :: Sbar(0:)
       real (kind=dp_t), intent(in   ) :: div_coeff(0:)
+      real (kind=dp_t), intent(in   ) :: dx(:)
 
 !     Local variables
       integer :: i, j,k
+      integer :: rr
+
+      rr = int( dx(3) / dr + 1.d-12)
 
       do k = lo(3),hi(3)
       do j = lo(2),hi(2)
       do i = lo(1),hi(1)
-        rhs_cc(i,j,k) = div_coeff(k) * (Source(i,j,k) - Sbar(k))
+        rhs_cc(i,j,k) = div_coeff(k) * (Source(i,j,k) - Sbar(rr*k))
       end do 
       end do 
       end do 

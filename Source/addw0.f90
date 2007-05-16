@@ -33,10 +33,10 @@ contains
          hi =  upb(get_box(umac(dm), i))
          select case(dm)
          case(2)
-           call addw0_2d(wmp(:,:,1,1),w0,lo,hi,mult)
+           call addw0_2d(wmp(:,:,1,1),w0,lo,hi,dx,mult)
          case(3)
            if (spherical .eq. 0) then
-             call addw0_3d(wmp(:,:,:,1),w0,lo,hi,mult)
+             call addw0_3d(wmp(:,:,:,1),w0,lo,hi,dx,mult)
            else
              ump  => dataptr(umac(1), i)
              vmp  => dataptr(umac(2), i)
@@ -51,36 +51,44 @@ contains
 
       end subroutine addw0
 
-      subroutine addw0_2d(vmac,w0,lo,hi,mult)
+      subroutine addw0_2d(vmac,w0,lo,hi,dx,mult)
 
       integer        , intent(in   ) :: lo(:),hi(:)
       real(kind=dp_t), intent(inout) :: vmac(lo(1)- 1:,lo(2)- 1:)
       real(kind=dp_t), intent(in   ) ::   w0(0:)
       real(kind=dp_t), intent(in   ) :: mult
+      real(kind=dp_t), intent(in   ) :: dx(:)
 
       integer :: i,j
+      integer :: rr
+
+      rr = int( dx(2) / dr + 1.d-12)
 
       do j = lo(2),hi(2)
       do i = lo(1),hi(1)
-         vmac(i,j) = vmac(i,j) + mult * w0(j)
+         vmac(i,j) = vmac(i,j) + mult * w0(rr*j)
       end do
       end do
 
       end subroutine addw0_2d
 
-      subroutine addw0_3d(wmac,w0,lo,hi,mult)
+      subroutine addw0_3d(wmac,w0,lo,hi,dx,mult)
 
       integer        , intent(in   ) :: lo(:),hi(:)
       real(kind=dp_t), intent(inout) :: wmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
       real(kind=dp_t), intent(in   ) ::   w0(0:)
       real(kind=dp_t), intent(in   ) :: mult
+      real(kind=dp_t), intent(in   ) :: dx(:)
 
       integer :: i,j,k
+      integer :: rr
+
+      rr = int( dx(3) / dr + 1.d-12)
 
       do k = lo(3),hi(3)
       do j = lo(2),hi(2)
       do i = lo(1),hi(1)
-         wmac(i,j,k) = wmac(i,j,k) + mult * w0(k)
+         wmac(i,j,k) = wmac(i,j,k) + mult * w0(rr*k)
       end do
       end do
       end do

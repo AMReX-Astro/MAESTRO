@@ -106,7 +106,7 @@ contains
            np => dataptr(normal, i)
            call put_w0_on_3d_cells_sphr(w0,wp(:,:,:,:),np(:,:,:,:),lo,hi,dx,ng)
          else
-           call put_w0_on_3d_cells_cart(w0,wp(:,:,:,:),lo,hi,ng)
+           call put_w0_on_3d_cells_cart(w0,wp(:,:,:,:),lo,hi,dx(dm),ng)
          end if
       end do
 
@@ -114,17 +114,27 @@ contains
 
   end subroutine make_w0_cart
 
-  subroutine put_w0_on_3d_cells_cart (w0,w0_cell,lo,hi,ng)
+  subroutine put_w0_on_3d_cells_cart (w0,w0_cell,lo,hi,dz,ng)
 
     integer        , intent(in   ) :: lo(:),hi(:),ng
     real(kind=dp_t), intent(  out) :: w0_cell(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real(kind=dp_t), intent(in   ) :: w0(0:)
+    real(kind=dp_t), intent(in   ) :: dz
 
-    integer                  :: i,j,k
+    integer         :: i,j,k
+    integer         :: rr,klo,khi
+
+    rr = int( dz / dr + 1.d-12)
 
     w0_cell = ZERO
     do k = lo(3),hi(3)
-      w0_cell(:,:,k,3) = HALF * (w0(k) + w0(k+1))
+    do j = lo(2),hi(2)
+    do i = lo(1),hi(1)
+      klo = rr*k
+      khi = rr*(k+1)
+      w0_cell(i,j,k,3) =  HALF * (w0(klo) + w0(khi))
+    end do
+    end do
     end do
 
   end subroutine put_w0_on_3d_cells_cart
