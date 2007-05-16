@@ -273,7 +273,7 @@ module advance_timestep_module
         call react_base(p0_old,s0_old,temp0,rho_omegadotbar1,rho_Hextbar(:,1),dx(1,dm),halfdt,p0_1,s0_1,gam1)
         call make_grav_cell(grav_cell_new,s0_1(:,rho_comp))
         call make_div_coeff(div_coeff_new,s0_1(:,rho_comp),p0_1, &
-                            gam1,grav_cell_new,dr,anelastic_cutoff)
+                            gam1,grav_cell_new,anelastic_cutoff)
 
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -285,15 +285,13 @@ module advance_timestep_module
           write(6,*) '            : scalar_advance >>> '
         end if
 
-        call put_1d_beta_on_edges(div_coeff_new,div_coeff_edge)
         call advect_base(w0,Sbar(:,1),p0_1,p0_2,s0_1,s0_2,temp0,gam1, &
-                         div_coeff_edge,&
-                         dx(1,dm),dt,anelastic_cutoff)
+                         div_coeff_new,dx(1,dm),dt,anelastic_cutoff)
 
 !       Dont think we need these calls.
 !       call make_grav_cell(grav_cell,s0_2(:,rho_comp))
 !       call make_div_coeff(div_coeff_new,s0_2(:,rho_comp),p0_2, &
-!                           gam1,grav_cell,dr,anelastic_cutoff)
+!                           gam1,grav_cell,anelastic_cutoff)
 
         do n = 1,nlevs
            call scalar_advance (uold(n), s1(n), s2(n), &
@@ -336,7 +334,7 @@ module advance_timestep_module
         call react_base(p0_2,s0_2,temp0,rho_omegadotbar2,rho_Hextbar(:,1),dx(1,dm),halfdt,p0_new,s0_new,gam1)
         call make_grav_cell(grav_cell_new,s0_new(:,rho_comp))
         call make_div_coeff(div_coeff_new,s0_new(:,rho_comp),p0_new, &
-                            gam1,grav_cell_new,dr,anelastic_cutoff)
+                            gam1,grav_cell_new,anelastic_cutoff)
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !! STEP 6 -- define a new average expansion rate at n+1/2
@@ -428,13 +426,12 @@ module advance_timestep_module
           write(6,*) '            : scalar_advance >>>'
         end if
         call advect_base(w0,Sbar(:,1),p0_1,p0_2,s0_1,s0_2,temp0,gam1, &
-                         div_coeff_edge,&
-                         dx(1,dm),dt,anelastic_cutoff)
+                         div_coeff_nph,dx(1,dm),dt,anelastic_cutoff)
 
 !       Dont think we need these calls.
 !       call make_grav_cell(grav_cell,s0_2(:,rho_comp))
 !       call make_div_coeff(div_coeff_new,s0_2(:,rho_comp),p0_2, &
-!                           gam1,grav_cell,dr,anelastic_cutoff)
+!                           gam1,grav_cell,anelastic_cutoff)
 
         do n = 1,nlevs
            call scalar_advance (uold(n), s1(n), s2(n), &
@@ -476,7 +473,7 @@ module advance_timestep_module
         call react_base(p0_2,s0_2,temp0,rho_omegadotbar2,rho_Hextbar(:,1),dx(1,dm),halfdt,p0_new,s0_new,gam1)
         call make_grav_cell(grav_cell_new,s0_new(:,rho_comp))
         call make_div_coeff(div_coeff_new,s0_new(:,rho_comp),p0_new, &
-                            gam1,grav_cell_new,dr,anelastic_cutoff)
+                            gam1,grav_cell_new,anelastic_cutoff)
 
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

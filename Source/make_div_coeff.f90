@@ -2,6 +2,7 @@ module make_div_coeff_module
 
   use bl_types
   use bl_constants_module
+  use geometry
 
   implicit none
 
@@ -10,11 +11,11 @@ contains
 
 !  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-   subroutine make_div_coeff (div_coeff,rho0,p0,gam1,grav_center,dy,anelastic_cutoff)
+   subroutine make_div_coeff (div_coeff,rho0,p0,gam1,grav_center,anelastic_cutoff)
 
       real(kind=dp_t), intent(  out) :: div_coeff(:)
       real(kind=dp_t), intent(in   ) :: rho0(:), p0(:), gam1(:)
-      real(kind=dp_t), intent(in   ) :: grav_center(:), dy, anelastic_cutoff
+      real(kind=dp_t), intent(in   ) :: grav_center(:), anelastic_cutoff
 
       integer :: j,ny,j_anel
       real(kind=dp_t) :: integral
@@ -40,14 +41,14 @@ contains
             mu = ZERO
             nu = ZERO
          else
-            lambda = HALF*(rho0(j+1) - rho0(j-1))/dy
-            mu     = HALF*(gam1(j+1) - gam1(j-1))/dy
-            nu     = HALF*(  p0(j+1)   - p0(j-1))/dy
+            lambda = HALF*(rho0(j+1) - rho0(j-1))/dr
+            mu     = HALF*(gam1(j+1) - gam1(j-1))/dr
+            nu     = HALF*(  p0(j+1)   - p0(j-1))/dr
          endif
 
          if (j == 1 .or. j == ny) then
 
-            integral = abs(grav_center(j))*rho0(j)*dy/(p0(j)*gam1(j))
+            integral = abs(grav_center(j))*rho0(j)*dr/(p0(j)*gam1(j))
 
          else
             denom = nu*gam1(j) - mu*p0(j)
@@ -56,10 +57,10 @@ contains
             coeff2 = lambda*p0(j)/nu - rho0(j)
 
             integral = (abs(grav_center(j))/denom)* &
-                 (coeff1*log( (gam1(j) + HALF*mu*dy)/ &
-                              (gam1(j) - HALF*mu*dy)) - &
-                  coeff2*log( (p0(j) + HALF*nu*dy)/ &
-                              (p0(j) - HALF*nu*dy)) )
+                 (coeff1*log( (gam1(j) + HALF*mu*dr)/ &
+                              (gam1(j) - HALF*mu*dr)) - &
+                  coeff2*log( (p0(j) + HALF*nu*dr)/ &
+                              (p0(j) - HALF*nu*dr)) )
          endif
 
 
