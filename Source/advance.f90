@@ -202,7 +202,7 @@ module advance_timestep_module
 
            call average(Source_nph(n),Sbar,dx(n,:),1,1)
     
-           call make_w0(w0,w0_old,w0_force,Sbar(:,1),p0_old,s0_old(:,rho_comp),temp0,gam1,dx(n,dm),dt,verbose)
+           call make_w0(w0,w0_old,w0_force,Sbar(:,1),p0_old,s0_old(:,rho_comp),gam1,dx(n,dm),dt,verbose)
            if (dm .eq. 3) then
              call make_w0_cart(w0      ,w0_cart_vec(n),normal(n),dx(n,:)) 
              call make_w0_cart(w0_force,w0_force_cart_vec(n),normal(n),dx(n,:)) 
@@ -352,7 +352,7 @@ module advance_timestep_module
            call make_S_at_halftime(Source_nph(n),Source_old(n),Source_new(n))
            call average(Source_nph(n),Sbar,dx(n,:),1,1)
 
-           call make_w0(w0,w0_old,w0_force,Sbar(:,1),p0_new,s0_new(:,rho_comp),temp0,gam1,dx(n,dm),dt,verbose)
+           call make_w0(w0,w0_old,w0_force,Sbar(:,1),p0_new,s0_new(:,rho_comp),gam1,dx(n,dm),dt,verbose)
            if (dm .eq. 3) then
              call make_w0_cart(w0,w0_cart_vec(n),normal(n),dx(n,:)) 
              call make_w0_cart(w0_force,w0_force_cart_vec(n),normal(n),dx(n,:)) 

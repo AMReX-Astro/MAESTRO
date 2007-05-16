@@ -15,12 +15,12 @@ module make_w0_module
 
 contains
 
-   subroutine make_w0(vel,vel_old,f,Sbar_in,p0,rho0,temp0,gam1,dz,dt,verbose)
+   subroutine make_w0(vel,vel_old,f,Sbar_in,p0,rho0,gam1,dz,dt,verbose)
 
       real(kind=dp_t), intent(  out) :: vel(:)
       real(kind=dp_t), intent(in   ) :: vel_old(:)
       real(kind=dp_t), intent(inout) ::   f(:)
-      real(kind=dp_t), intent(in   ) :: p0(:),rho0(:),temp0(:),gam1(:)
+      real(kind=dp_t), intent(in   ) :: p0(:),rho0(:),gam1(:)
       real(kind=dp_t), intent(in   ) :: Sbar_in(:)
       real(kind=dp_t), intent(in   ) :: dz,dt
       integer        , intent(in   ) :: verbose
@@ -40,7 +40,7 @@ contains
 
       else
 
-        call make_w0_spherical(vel,Sbar_in,p0,rho0,temp0,gam1)
+        call make_w0_spherical(vel,Sbar_in,p0,rho0,gam1)
 
       endif
 
@@ -99,38 +99,29 @@ contains
 
    end subroutine make_w0_planar
 
-   subroutine make_w0_spherical (vel,Sbar_in,p0,rho0,temp0,gam1)
+   subroutine make_w0_spherical (vel,Sbar_in,p0,rho0,gam1)
 
       implicit none
       real(kind=dp_t), intent(  out) :: vel(:)
-      real(kind=dp_t), intent(in   ) :: p0(:),rho0(:),temp0(:),gam1(:)
+      real(kind=dp_t), intent(in   ) :: p0(:),rho0(:),gam1(:)
       real(kind=dp_t), intent(in   ) :: Sbar_in(:)
 
 !     Local variables
       integer         :: j, k, n, nz
       real(kind=dp_t) :: mencl,rhohalf,integral,velmax
       real(kind=dp_t), allocatable :: c(:),d(:),e(:),u(:),rhs(:)
-      real(kind=dp_t), allocatable :: m(:),grav_edge(:),grav_cell(:),beta(:)
+      real(kind=dp_t), allocatable :: m(:),grav_edge(:)
 
       nz = size(vel,dim=1)-1
 
       ! Cell-centered
       allocate(m(nz))
-      allocate(grav_cell(nz))
 
       ! Edge-centered
       allocate(c(nz+1),d(nz+1),e(nz+1),rhs(nz+1),u(nz+1))
-      allocate(grav_edge(nz+1),beta(nz+1))
+      allocate(grav_edge(nz+1))
    
      call make_grav_edge(grav_edge,rho0)
-     call make_grav_cell(grav_cell,rho0)
-
-     ! Define beta_0 at cell edges using the gravity above
-     beta(1) = 1.5d0 * rho0(1) - 0.5d0 * rho0(2)
-     do j = 2,nz+1
-        integral  = rho0(j-1) * grav_cell(j-1) * dr / (gam1(j-1) * p0(j-1))
-        beta(j) = beta(j-1) * exp(-integral)
-     end do 
 
      do j = 2,nz+1
        c(j) = gam1(j-1) * p0(j-1) * zl(j-1)**2 / z(j-1)**2
@@ -182,7 +173,7 @@ contains
        velmax = max(velmax,abs(vel(j)))
      end do
 
-     deallocate(m,grav_cell,grav_edge,beta)
+     deallocate(m,grav_edge)
 
    end subroutine make_w0_spherical
 
