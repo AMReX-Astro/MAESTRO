@@ -34,8 +34,10 @@ module update_scal_module
       real (kind = dp_t), intent(in   ) :: w0(0:)
       real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
-      integer :: i, j, n, nr
+      integer :: i, j, n, nr, n2
       real (kind = dp_t) :: divsu,divbaseu
+      real (kind = dp_t) :: delta,frac,sum
+      real (kind = dp_t), allocatable :: smin(:),smax(:)
       real (kind = dp_t), allocatable :: base_edge(:)
 
       allocate(base_edge(lo(2):hi(2)+1))
@@ -75,15 +77,51 @@ module update_scal_module
         enddo
       enddo
 
+      ! Define the update to rho as the sum of the updates to (rho X)_i
       if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
+
+        allocate(smin(nstart:nstop),smax(nstart:nstop))
+        smin(:) =  1.e20
+        smax(:) = -1.e20
+
         snew(:,:,rho_comp) = sold(:,:,rho_comp)
+
         do n = nstart, nstop
         do j = lo(2), hi(2)
         do i = lo(1), hi(1)
            snew(i,j,rho_comp) = snew(i,j,rho_comp) + (snew(i,j,n)-sold(i,j,n))
+           smin(n) = min(smin(n),snew(i,j,n))
+           smax(n) = max(smax(n),snew(i,j,n))
         enddo
         enddo
         enddo
+      end if
+
+      ! Do not allow the species to leave here negative.
+      if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
+        do n = nstart, nstop
+          if (smin(n) .lt. ZERO) then 
+            do j = lo(2), hi(2)
+            do i = lo(1), hi(1)
+              if (snew(i,j,n) .lt. ZERO) then
+                 delta = -snew(i,j,n)
+                 sum = ZERO 
+                 do n2 = nstart, nstop
+                   if (n2 .ne. n .and. snew(i,j,n2) .ge. ZERO) sum = sum + snew(i,j,n2)
+                 enddo
+                 do n2 = nstart, nstop
+                   if (n2 .ne. n .and. snew(i,j,n2) .ge. ZERO) then
+                     frac = snew(i,j,n2) / sum
+                     snew(i,j,n2) = snew(i,j,n2) - frac * delta
+                   end if
+                 enddo
+                 snew(i,j,n) = ZERO
+              end if
+            enddo
+            enddo
+          end if
+        enddo
+        deallocate(smin,smax)
       end if
   
       deallocate(base_edge)
@@ -111,8 +149,10 @@ module update_scal_module
       real (kind = dp_t), intent(in   ) :: w0_cart(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
       real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
-      integer :: i, j, k, n, nr
+      integer :: i, j, k, n, nr, n2
       real (kind = dp_t) :: divsu,divbaseu,mult
+      real (kind = dp_t) :: delta,frac,sum
+      real (kind = dp_t), allocatable :: smin(:),smax(:)
       real (kind = dp_t), allocatable :: delta_base(:),delta_base_cart(:,:,:)
       real (kind = dp_t), allocatable :: base_cart(:,:,:)
       real (kind = dp_t), allocatable :: base_edge(:)
@@ -184,18 +224,57 @@ module update_scal_module
         end do
         deallocate(delta_base)
 
+      ! Define the update to rho as the sum of the updates to (rho X)_i
       if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
+
+        allocate(smin(nstart:nstop),smax(nstart:nstop))
+        smin(:) =  1.e20
+        smax(:) = -1.e20
+
         snew(:,:,:,rho_comp) = sold(:,:,:,rho_comp)
+
         do n = nstart, nstop
         do k = lo(3), hi(3)
         do j = lo(2), hi(2)
         do i = lo(1), hi(1)
            snew(i,j,k,rho_comp) = snew(i,j,k,rho_comp) + (snew(i,j,k,n)-sold(i,j,k,n))
+           smin(n) = min(smin(n),snew(i,j,k,n))
+           smax(n) = max(smax(n),snew(i,j,k,n))
         enddo
         enddo
         enddo
         enddo
       end if
+
+      ! Do not allow the species to leave here negative.
+      if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
+        do n = nstart, nstop
+          if (smin(n) .lt. ZERO) then
+            do k = lo(3), hi(3)
+            do j = lo(2), hi(2)
+            do i = lo(1), hi(1)
+              if (snew(i,j,k,n) .lt. ZERO) then
+                 delta = -snew(i,j,k,n)
+                 sum = ZERO
+                 do n2 = nstart, nstop
+                   if (n2 .ne. n .and. snew(i,j,k,n2) .ge. ZERO) sum = sum + snew(i,j,k,n2)
+                 enddo
+                 do n2 = nstart, nstop
+                   if (n2 .ne. n .and. snew(i,j,k,n2) .ge. ZERO) then
+                     frac = snew(i,j,k,n2) / sum
+                     snew(i,j,k,n2) = snew(i,j,k,n2) - frac * delta
+                   end if
+                 enddo
+                 snew(i,j,k,n) = ZERO
+              end if
+            enddo
+            enddo
+            enddo
+          end if
+        enddo
+        deallocate(smin,smax)
+      end if
+
 
       deallocate(base_edge)
 
@@ -223,9 +302,11 @@ module update_scal_module
       real (kind = dp_t), intent(in   ) :: w0_cart(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
       real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
-      integer :: i, j, k, n, nr
+      integer :: i, j, k, n, nr, n2
       real (kind = dp_t) :: divsu,divbaseu,mult
+      real (kind = dp_t) :: delta,frac,sum
       real (kind = dp_t), allocatable :: delta_base(:),delta_base_cart(:,:,:)
+      real (kind = dp_t), allocatable :: smin(:),smax(:)
 
       real (kind = dp_t) :: divu
 
@@ -295,18 +376,56 @@ module update_scal_module
 
       mult = -ONE
       call addw0_3d_sphr(umac,vmac,wmac,w0_cart,lo,hi,dx,mult)
-
+ 
+      ! Define the update to rho as the sum of the updates to (rho X)_i
       if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
+
+        allocate(smin(nstart:nstop),smax(nstart:nstop))
+        smin(:) =  1.e20
+        smax(:) = -1.e20
+
         snew(:,:,:,rho_comp) = sold(:,:,:,rho_comp)
+
         do n = nstart, nstop
         do k = lo(3), hi(3)
         do j = lo(2), hi(2)
         do i = lo(1), hi(1)
            snew(i,j,k,rho_comp) = snew(i,j,k,rho_comp) + (snew(i,j,k,n)-sold(i,j,k,n))
+           smin(n) = min(smin(n),snew(i,j,k,n))
+           smax(n) = max(smax(n),snew(i,j,k,n))
         enddo
         enddo
         enddo
         enddo
+      end if
+
+      ! Do not allow the species to leave here negative.
+      if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
+        do n = nstart, nstop
+          if (smin(n) .lt. ZERO) then
+            do k = lo(3), hi(3)
+            do j = lo(2), hi(2)
+            do i = lo(1), hi(1)
+              if (snew(i,j,k,n) .lt. ZERO) then
+                 delta = -snew(i,j,k,n)
+                 sum = ZERO
+                 do n2 = nstart, nstop
+                   if (n2 .ne. n .and. snew(i,j,k,n2) .ge. ZERO) sum = sum + snew(i,j,k,n2)
+                 enddo
+                 do n2 = nstart, nstop
+                   if (n2 .ne. n .and. snew(i,j,k,n2) .ge. ZERO) then
+                     frac = snew(i,j,k,n2) / sum
+                     snew(i,j,k,n2) = snew(i,j,k,n2) - frac * delta
+                   end if
+                 enddo
+                 snew(i,j,k,n) = ZERO
+              end if
+            enddo
+            enddo
+            enddo
+          end if
+        enddo
+        deallocate(smin,smax)
       end if
 
    end subroutine update_scal_3d_sphr
