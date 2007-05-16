@@ -15,14 +15,14 @@ module make_w0_module
 
 contains
 
-   subroutine make_w0(vel,vel_old,f,Sbar_in,p0,rho0,gam1,dz,dt,verbose)
+   subroutine make_w0(vel,vel_old,f,Sbar_in,p0,rho0,gam1,dt,verbose)
 
       real(kind=dp_t), intent(  out) :: vel(:)
       real(kind=dp_t), intent(in   ) :: vel_old(:)
       real(kind=dp_t), intent(inout) ::   f(:)
       real(kind=dp_t), intent(in   ) :: p0(:),rho0(:),gam1(:)
       real(kind=dp_t), intent(in   ) :: Sbar_in(:)
-      real(kind=dp_t), intent(in   ) :: dz,dt
+      real(kind=dp_t), intent(in   ) :: dt
       integer        , intent(in   ) :: verbose
 
       integer         :: j,nz
@@ -36,7 +36,7 @@ contains
 
       if (spherical .eq. 0) then
 
-        call make_w0_planar(vel,vel_old,Sbar_in,f,dz,dt)
+        call make_w0_planar(vel,vel_old,Sbar_in,f,dt)
 
       else
 
@@ -53,14 +53,14 @@ contains
 
    end subroutine make_w0
 
-   subroutine make_w0_planar (vel,vel_old,Sbar_in,f,dz,dt)
+   subroutine make_w0_planar (vel,vel_old,Sbar_in,f,dt)
 
       implicit none
       real(kind=dp_t), intent(  out) :: vel(:)
       real(kind=dp_t), intent(in   ) :: vel_old(:)
       real(kind=dp_t), intent(in   ) :: Sbar_in(:)
       real(kind=dp_t), intent(inout) ::   f(:)
-      real(kind=dp_t), intent(in   ) :: dz,dt
+      real(kind=dp_t), intent(in   ) :: dt
 
 !     Local variables
       integer         :: j,nz
@@ -77,7 +77,7 @@ contains
       ! Initialize new velocity to zero.
       vel(1) = ZERO
       do j = 2,nz
-         vel(j) = vel(j-1) + Sbar_in(j-1) * dz
+         vel(j) = vel(j-1) + Sbar_in(j-1) * dr
       end do
 
       ! Compute the 1/rho0 grad pi0 term.
@@ -88,10 +88,10 @@ contains
       end do
 
       force = ZERO
-      call mkflux_1d(vel_old_cen,edge,vel_old,force,1,dz,dt)
+      call mkflux_1d(vel_old_cen,edge,vel_old,force,1,dr,dt)
 
       do j = 1,nz-1
-         f(j) = (vel_new_cen(j)-vel_old_cen(j)) / dt + vel_old_cen(j) * (edge(j+1)-edge(j)) / dz
+         f(j) = (vel_new_cen(j)-vel_old_cen(j)) / dt + vel_old_cen(j) * (edge(j+1)-edge(j)) / dr
       end do
 
       deallocate(edge)

@@ -201,13 +201,17 @@ module advance_timestep_module
            endif
 
            call average(Source_nph(n),Sbar,dx(n,:),1,1)
+
+        end do
     
-           call make_w0(w0,w0_old,w0_force,Sbar(:,1),p0_old,s0_old(:,rho_comp),gam1,dx(n,dm),dt,verbose)
-           if (dm .eq. 3) then
+        call make_w0(w0,w0_old,w0_force,Sbar(:,1),p0_old,s0_old(:,rho_comp),gam1,dt,verbose)
+
+        if (dm .eq. 3) then
+          do n = 1, nlevs
              call make_w0_cart(w0      ,w0_cart_vec(n),normal(n),dx(n,:)) 
              call make_w0_cart(w0_force,w0_force_cart_vec(n),normal(n),dx(n,:)) 
-           end if
-        end do
+          end do
+        end if
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !! STEP 2 -- construct the advective velocity
@@ -345,17 +349,22 @@ module advance_timestep_module
         end if
 
         do n = 1, nlevs
+
            call make_S(Source_new(n),gamma1_term(n),snew(n),uold(n), &
                        rho_omegadot2(n),rho_Hext(n),p0_new,temp0,gam1,dx(n,:),time)
            call make_S_at_halftime(Source_nph(n),Source_old(n),Source_new(n))
            call average(Source_nph(n),Sbar,dx(n,:),1,1)
 
-           call make_w0(w0,w0_old,w0_force,Sbar(:,1),p0_new,s0_new(:,rho_comp),gam1,dx(n,dm),dt,verbose)
-           if (dm .eq. 3) then
+        end do
+
+        call make_w0(w0,w0_old,w0_force,Sbar(:,1),p0_new,s0_new(:,rho_comp),gam1,dt,verbose)
+
+        if (dm .eq. 3) then
+           do n = 1, nlevs
              call make_w0_cart(w0,w0_cart_vec(n),normal(n),dx(n,:)) 
              call make_w0_cart(w0_force,w0_force_cart_vec(n),normal(n),dx(n,:)) 
-           end if
-        end do
+           end do
+        end if
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !! STEP 7 -- redo the construction of the advective velocity using the current w0
