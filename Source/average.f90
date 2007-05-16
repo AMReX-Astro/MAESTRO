@@ -15,19 +15,20 @@ contains
    subroutine average (phi,phibar,dx,comp,ncomp)
 
       integer        , intent(in   ) :: comp,ncomp
-      type(multifab) , intent(inout) :: phi
+      type(multifab) , intent(inout) :: phi(:)
       real(kind=dp_t), intent(inout) :: phibar(0:,:)
-      real(kind=dp_t), intent(in   ) :: dx(:)
+      real(kind=dp_t), intent(in   ) :: dx(:,:)
 
       real(kind=dp_t), pointer:: pp(:,:,:,:)
-      integer :: lo(phi%dim),hi(phi%dim),ng,dm,nr
-      integer :: i,k
+      integer :: lo(phi(1)%dim),hi(phi(1)%dim),ng,dm,nr
+      integer :: i,k,n,nlevs
       integer        , allocatable :: npts_grid(:), npts_proc(:), npts_tot(:)
       real(kind=dp_t), allocatable :: vol_grid(:), vol_proc(:), vol_tot(:)
 
-      dm = phi%dim
-      ng = phi%ng
+      dm = phi(1)%dim
+      ng = phi(1)%ng
       nr = size(phibar,dim=1)
+      nlevs = size(dx,dim=1)
 
       if (spherical .eq. 1) then
         allocate(vol_grid(0:nr-1),vol_proc(0:nr-1),vol_tot(0:nr-1))
@@ -41,11 +42,12 @@ contains
 
       phibar = ZERO
 
-      do i = 1, phi%nboxes
-         if ( multifab_remote(phi, i) ) cycle
-         pp => dataptr(phi, i)
-         lo =  lwb(get_box(phi, i))
-         hi =  upb(get_box(phi, i))
+      do n = 1, nlevs
+       do i = 1, phi(n)%nboxes
+         if ( multifab_remote(phi(n), i) ) cycle
+         pp => dataptr(phi(n), i)
+         lo =  lwb(get_box(phi(n), i))
+         hi =  upb(get_box(phi(n), i))
          select case (dm)
             case (2)
               npts_grid(:) = 0
@@ -54,7 +56,7 @@ contains
             case (3)
               if (spherical .eq. 1) then
                 vol_grid(:) = ZERO
-                call average_3d_sphr(pp(:,:,:,:),phibar,lo,hi,ng,dx,vol_grid,comp,ncomp)
+                call average_3d_sphr(pp(:,:,:,:),phibar,lo,hi,ng,dx(n,:),vol_grid,comp,ncomp)
                 vol_proc = vol_proc + vol_grid
               else
                 npts_grid(:) = 0
@@ -62,6 +64,7 @@ contains
                 npts_proc(lo(3):hi(3)) = npts_proc(lo(3):hi(3)) + npts_grid(lo(3):hi(3))
               end if
          end select
+       end do
       end do
 
       if (dm .eq. 2 .or. (dm.eq.3.and.spherical.eq.0)) then
