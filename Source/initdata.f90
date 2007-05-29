@@ -734,7 +734,7 @@ contains
 
     deallocate(base_r)
 
-1000 format(16(e18.12,1x))
+1000 format(16(e30.20,1x))
 
   end subroutine write_base_state
 
