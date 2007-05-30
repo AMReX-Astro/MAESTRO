@@ -78,6 +78,12 @@ contains
       logical :: is_vel, make_divu, advect_in_pert_form
       logical, allocatable :: is_conservative(:)
       real(kind=dp_t) :: half_time
+      type(box)       :: domain
+      integer         :: domlo(uold%dim), domhi(uold%dim)
+
+      domain = layout_get_pd(uold%la)
+      domlo = lwb(domain)
+      domhi = upb(domain)
 
       velpred = 0
 
@@ -402,7 +408,7 @@ contains
                                          sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
                                          fp(:,:,:,:), &
                                          s0_old(:,:), s0_new(:,:), s0p(:,:,:,:), &
-                                         lo, hi, ng_cell, dx, dt)
+                                         lo, hi, domlo, domhi, ng_cell, dx, dt)
               end if
               do n = spec_comp,spec_comp+nspec-1
                 bc_comp = dm+n
@@ -499,7 +505,7 @@ contains
                                          sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
                                          fp(:,:,:,:), &
                                          s0_old(:,:), s0_new(:,:), s0p(:,:,:,:), &
-                                         lo, hi, ng_cell, dx, dt)
+                                         lo, hi, domlo, domhi, ng_cell, dx, dt)
               end if
               do n = trac_comp,trac_comp+ntrac-1
                 bc_comp = dm+n
@@ -587,7 +593,7 @@ contains
                                          sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
                                          fp(:,:,:,:), &
                                          s0_old(:,:), s0_new(:,:), s0p(:,:,:,:),  &
-                                         lo, hi, ng_cell, dx, dt)
+                                         lo, hi, domlo, domhi, ng_cell, dx, dt)
 
               else
 

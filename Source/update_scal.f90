@@ -281,11 +281,11 @@ module update_scal_module
    end subroutine update_scal_3d_cart
 
    subroutine update_scal_3d_sphr (nstart,nstop,sold,snew,umac,vmac,wmac,w0,w0_cart,sedgex,sedgey,sedgez,&
-                                   force,base_old,base_new,base_cart,lo,hi,ng,dx,dt)
+                                   force,base_old,base_new,base_cart,lo,hi,domlo,domhi,ng,dx,dt)
 
       implicit none
 
-      integer, intent(in) :: nstart,nstop, lo(:), hi(:), ng
+      integer, intent(in) :: nstart,nstop, lo(:), hi(:), domlo(:), domhi(:), ng
       real (kind = dp_t), intent(in   ) ::    sold(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
       real (kind = dp_t), intent(  out) ::    snew(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
       real (kind = dp_t), intent(inout) ::    umac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
@@ -303,12 +303,13 @@ module update_scal_module
       real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
       integer :: i, j, k, n, nr, n2
+      logical :: do_mult
       real (kind = dp_t) :: divsu,divbaseu,mult
       real (kind = dp_t) :: delta,frac,sum
+      real (kind = dp_t) :: bc_lox,bc_loy,bc_loz
+      real (kind = dp_t) :: bc_hix,bc_hiy,bc_hiz
       real (kind = dp_t), allocatable :: delta_base(:),delta_base_cart(:,:,:)
       real (kind = dp_t), allocatable :: smin(:),smax(:)
-
-      real (kind = dp_t) :: divu
 
       nr = size(base_old,dim=1)
 
@@ -325,27 +326,35 @@ module update_scal_module
 
           ! Note the umac here does NOT have w0 in it
           do k = lo(3), hi(3)
-            do j = lo(2), hi(2)
-            do i = lo(1), hi(1)
+          do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
     
-              divbaseu = HALF * (  &
-                   (umac(i+1,j,k)*(base_cart(i,j,k,n)+base_cart(i+1,j,k,n)) &
-                   -umac(i  ,j,k)*(base_cart(i,j,k,n)+base_cart(i-1,j,k,n)) ) / dx(1) &
-                  +(vmac(i,j+1,k)*(base_cart(i,j,k,n)+base_cart(i,j+1,k,n)) &
-                   -vmac(i,j  ,k)*(base_cart(i,j,k,n)+base_cart(i,j-1,k,n)) ) / dx(2) &
-                  +(wmac(i,j,k+1)*(base_cart(i,j,k,n)+base_cart(i,j,k+1,n)) &
-                   -wmac(i,j,k  )*(base_cart(i,j,k,n)+base_cart(i,j,k-1,n)) ) / dx(3)  )
+              bc_lox = (base_cart(i,j,k,n)+base_cart(i-1,j,k,n)) * HALF
+              bc_loy = (base_cart(i,j,k,n)+base_cart(i,j-1,k,n)) * HALF
+              bc_loz = (base_cart(i,j,k,n)+base_cart(i,j,k-1,n)) * HALF
+              bc_hix = (base_cart(i,j,k,n)+base_cart(i+1,j,k,n)) * HALF
+              bc_hiy = (base_cart(i,j,k,n)+base_cart(i,j+1,k,n)) * HALF
+              bc_hiz = (base_cart(i,j,k,n)+base_cart(i,j,k+1,n)) * HALF
 
-              divu = (umac(i+1,j,k) - umac(i  ,j,k) ) / dx(1) &
-                    +(vmac(i,j+1,k) - vmac(i,j  ,k) ) / dx(2) &
-                    +(wmac(i,j,k+1) - wmac(i,j,k  ) ) / dx(3) 
+              if (i.eq.domlo(1)) bc_lox = base_cart(i,j,k,n)
+              if (j.eq.domlo(2)) bc_loy = base_cart(i,j,k,n)
+              if (k.eq.domlo(3)) bc_loz = base_cart(i,j,k,n)
+              if (i.eq.domhi(1)) bc_hix = base_cart(i,j,k,n)
+              if (j.eq.domhi(2)) bc_hiy = base_cart(i,j,k,n)
+              if (k.eq.domhi(3)) bc_hiz = base_cart(i,j,k,n)
+
+              divbaseu =  &
+                   ( bc_hix * umac(i+1,j,k) - bc_lox * umac(i,j,k) ) / dx(1) &
+                  +( bc_hiy * vmac(i,j+1,k) - bc_loy * vmac(i,j,k) ) / dx(2) &
+                  +( bc_hiz * wmac(i,j,k+1) - bc_loz * wmac(i,j,k) ) / dx(3)
 
               snew(i,j,k,n) = sold(i,j,k,n) + delta_base_cart(i,j,k) &
                               - dt * divbaseu + dt * force(i,j,k,n)
 
-            enddo
-            enddo
           enddo
+          enddo
+          enddo
+
         end do
 
         mult = ONE
