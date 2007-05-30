@@ -10,6 +10,7 @@ module init_module
   use eos_module
   use variables
   use network
+  use geometry
 
   implicit none
 
@@ -438,7 +439,7 @@ contains
 
   end subroutine perturb_3d
 
-  subroutine init_base_state (model_file,n_base,dr_base,s0,temp0,p0,gam1,dx,prob_lo,prob_hi)
+  subroutine init_base_state (model_file,n_base,s0,temp0,p0,gam1,dx,prob_lo,prob_hi)
 
     character (len=256), intent(in) :: model_file
     integer        , intent(in   ) :: n_base
@@ -448,7 +449,7 @@ contains
     real(kind=dp_t), intent(inout) ::  gam1(0:)
     real(kind=dp_t), intent(in   ) :: prob_lo(:)
     real(kind=dp_t), intent(in   ) :: prob_hi(:)
-    real(kind=dp_t), intent(in   ) :: dx(:),dr_base
+    real(kind=dp_t), intent(in   ) :: dx(:)
     integer :: i,j,n,j_cutoff
 
     real(kind=dp_t) :: r,dr_in,rmax,starting_rad
@@ -588,7 +589,7 @@ contains
 
     if ( parallel_IOProcessor() ) then
       print *,'DR , RMAX OF MODEL     ',dr_in, rmax
-      print *,'DR , RMAX OF BASE ARRAY',dr_base, dble(n_base) * dr_base
+      print *,'DR , RMAX OF BASE ARRAY',dr, dble(n_base) * dr
     end if
 
     if (dm .eq. 2) then
@@ -618,7 +619,7 @@ contains
          ! compute the coordinate height at this level
          ! NOTE: we are assuming that the basestate is in the y-direction
          ! and that ymin = 0.0
-         r = starting_rad + (dble(j) + HALF)*dr_base
+         r = starting_rad + (dble(j) + HALF)*dr
   
          ! here we account for r > rmax of the model.hse array, assuming
          ! that the state stays constant beyond rmax
@@ -668,9 +669,6 @@ contains
 
     end do
  
-    ! Make sure to define variable "dr" -- that is the global variable
-    dr = dr_base
-
   end subroutine init_base_state
 
   function interpolate(r, npts, model_r, model_var)
