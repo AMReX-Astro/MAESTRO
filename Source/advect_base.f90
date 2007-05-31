@@ -220,10 +220,11 @@ contains
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     UPDATE RHO0 FROM RHOX0
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
       do j = 1,nz
-        s0_new(j,rho_comp) =  zero
+        s0_new(j,rho_comp) =  s0_old(j,rho_comp)
         do n = spec_comp,spec_comp+nspec-1
-          s0_new(j,rho_comp) =  s0_new(j,rho_comp) + s0_new(j,n)
+          s0_new(j,rho_comp) =  s0_new(j,rho_comp) + (s0_new(j,n)-s0_old(j,n))
         end do
       end do
 
