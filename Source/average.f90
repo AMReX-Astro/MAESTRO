@@ -22,7 +22,6 @@ contains
       real(kind=dp_t), pointer:: pp(:,:,:,:)
       integer :: lo(phi(1)%dim),hi(phi(1)%dim),ng,dm,nr
       integer :: i,k,n,nlevs
-      integer        , allocatable :: npts_grid(:), npts_proc(:), npts_tot(:)
       real(kind=dp_t), allocatable :: vol_grid(:), vol_proc(:), vol_tot(:)
 
       dm = phi(1)%dim
@@ -31,14 +30,11 @@ contains
       nlevs = size(dx,dim=1)
 
       if (spherical .eq. 1) then
-        allocate(vol_grid(0:nr-1),vol_proc(0:nr-1),vol_tot(0:nr-1))
-        vol_proc(:) = ZERO
-        vol_tot(:)  = ZERO
-      else
-        allocate(npts_grid(0:nr-1),npts_proc(0:nr-1),npts_tot(0:nr-1))
-        npts_proc(:) = 0
-        npts_tot(:)  = 0
+        allocate(vol_grid(0:nr-1))
       end if
+      allocate(vol_proc(0:nr-1),vol_tot(0:nr-1))
+      vol_proc(:) = ZERO
+      vol_tot(:)  = ZERO
 
       phibar = ZERO
 
@@ -50,29 +46,26 @@ contains
          hi =  upb(get_box(phi(n), i))
          select case (dm)
             case (2)
-              npts_grid(:) = 0
-              call average_2d(pp(:,:,1,:),phibar,lo,hi,ng,npts_grid(lo(2):),comp,ncomp)
-              npts_proc(lo(2):hi(2)) = npts_proc(lo(2):hi(2)) + npts_grid(lo(2):hi(2))
+              call average_2d(pp(:,:,1,:),phibar,lo,hi,ng,comp,ncomp,dx(n,:))
+              vol_proc(lo(2):hi(2)) = vol_proc(lo(2):hi(2)) + (hi(1)-lo(1)+1)*dx(n,1)
             case (3)
               if (spherical .eq. 1) then
                 vol_grid(:) = ZERO
                 call average_3d_sphr(pp(:,:,:,:),phibar,lo,hi,ng,dx(n,:),vol_grid,comp,ncomp)
                 vol_proc = vol_proc + vol_grid
               else
-                npts_grid(:) = 0
-                call average_3d(pp(:,:,:,:),phibar,lo,hi,ng,npts_grid(lo(3):),comp,ncomp)
-                npts_proc(lo(3):hi(3)) = npts_proc(lo(3):hi(3)) + npts_grid(lo(3):hi(3))
+                call average_3d(pp(:,:,:,:),phibar,lo,hi,ng,comp,ncomp,dx(n,:))
+                vol_proc(lo(3):hi(3)) = vol_proc(lo(3):hi(3)) + (hi(1)-lo(1)+1)*(hi(2)-lo(2)+1)*dx(n,1)*dx(n,2)
               end if
          end select
        end do
       end do
 
       if (dm .eq. 2 .or. (dm.eq.3.and.spherical.eq.0)) then
-        call parallel_reduce(npts_tot,npts_proc,MPI_SUM)
+        call parallel_reduce(vol_tot,vol_proc,MPI_SUM)
         do k = 0,nr-1
-          phibar(k,:) = phibar(k,:) / dble(npts_tot(k))
+          phibar(k,:) = phibar(k,:) / vol_tot(k)
         end do
-        deallocate(npts_grid,npts_proc,npts_tot)
       else
         do k = 0,nr-1
           call parallel_reduce(vol_tot(k),vol_proc(k),MPI_SUM)
@@ -82,52 +75,60 @@ contains
             phibar(k,:) = ZERO
           end if
         end do
-        deallocate(vol_grid,vol_proc,vol_tot)
+        deallocate(vol_grid)
       end if
+      deallocate(vol_proc,vol_tot)
 
    end subroutine average
 
-   subroutine average_2d (phi,phibar,lo,hi,ng,npts,comp,ncomp)
+   subroutine average_2d (phi,phibar,lo,hi,ng,comp,ncomp,dx)
 
       integer         , intent(in   ) :: lo(:), hi(:), ng, comp, ncomp
       real (kind=dp_t), intent(in   ) :: phi(lo(1)-ng:,lo(2)-ng:,:)
       real (kind=dp_t), intent(  out) :: phibar(0:,:)
-      integer         , intent(  out) :: npts(lo(2):)
+      real (kind=dp_t), intent(in   ) :: dx(:)
 
 !     Local variables
       integer          :: i, j, n
+      real (kind=dp_t) :: vol
+
+      vol = dx(1)*dx(2)
 
       do n = comp,comp+ncomp-1
       do j = lo(2),hi(2)
-        npts(j) = hi(1)-lo(1)+1
         do i = lo(1),hi(1)
           phibar(j,n) = phibar(j,n) + phi(i,j,n)
         end do
+        phibar(j,n) = phibar(j,n) * vol
       end do
       end do
  
    end subroutine average_2d
 
-   subroutine average_3d (phi,phibar,lo,hi,ng,npts,comp,ncomp)
+   subroutine average_3d (phi,phibar,lo,hi,ng,comp,ncomp,dx)
 
       integer         , intent(in   ) :: lo(:), hi(:), ng, comp, ncomp
       real (kind=dp_t), intent(in   ) :: phi(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
       real (kind=dp_t), intent(  out) :: phibar(0:,:)
-      integer         , intent(  out) :: npts(lo(3):)
+      real (kind=dp_t), intent(in   ) :: dx(:)
 
 !     Local variables
       integer          :: i, j, k, n
+      real (kind=dp_t) :: vol
+
+      vol = dx(1)*dx(2)*dx(3)
 
       do n = comp,comp+ncomp-1
       do k = lo(3),hi(3)
-        npts(k) = (hi(1)-lo(1)+1)*(hi(2)-lo(2)+1)
         do j = lo(2),hi(2)
         do i = lo(1),hi(1)
           phibar(k,n) = phibar(k,n) + phi(i,j,k,n)
         end do
         end do
+        phibar(k,n) = phibar(k,n) * vol
       end do
       end do
+
  
    end subroutine average_3d
 
