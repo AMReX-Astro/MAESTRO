@@ -1,0 +1,13 @@
+&PROBIN
+ spherical_in = 1
+
+ prob_hi_x = 3.e8
+
+ max_step  = 100000000
+
+ stop_time = 2.5
+
+ cflfac = 0.9
+
+ model_file = "model_7.e8.hse"
+/

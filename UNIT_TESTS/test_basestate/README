@@ -1,0 +1,4 @@
+An attempt to do just the 1-d base state expansion using the 
+same routines as the main code.  This is effectively the oned_test
+routines reimplemented to use the main Maestro code.
+
