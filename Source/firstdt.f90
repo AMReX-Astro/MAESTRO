@@ -18,25 +18,27 @@ module firstdt_module
 
 contains
 
-   subroutine firstdt (istep, u, s, force, p0, t0, dx, dt)
+   subroutine firstdt (istep, u, s, force, p0, t0, dx, dt, verbose)
 
       integer        , intent(in   ) :: istep
       type(multifab) , intent(inout) :: u,s,force
       real(kind=dp_t), intent(in   ) :: p0(:), t0(:)
       real(kind=dp_t), intent(in   ) :: dx(:)
       real(kind=dp_t), intent(  out) :: dt
+      integer        , intent(in   ) :: verbose
 
       real(kind=dp_t), pointer:: uop(:,:,:,:)
       real(kind=dp_t), pointer:: sop(:,:,:,:)
       real(kind=dp_t), pointer:: fp(:,:,:,:)
       integer :: lo(u%dim),hi(u%dim),ng,dm
-      real(kind=dp_t) :: dt_hold
+      real(kind=dp_t) :: dt_hold_proc,dt_grid
       integer         :: i
 
       ng = u%ng
       dm = u%dim
 
-      dt_hold  = 1.d20
+      dt_hold_proc  = 1.d20
+      dt_grid       = 1.d20
 
       do i = 1, u%nboxes
          if ( multifab_remote(u, i) ) cycle
@@ -48,17 +50,18 @@ contains
          select case (dm)
             case (2)
               call firstdt_2d(uop(:,:,1,:), sop(:,:,1,:), fp(:,:,1,:),&
-                              p0, t0, lo, hi, ng, dx, dt)
+                              p0, t0, lo, hi, ng, dx, dt_grid)
             case (3)
               call firstdt_3d(uop(:,:,:,:), sop(:,:,:,:), fp(:,:,:,:),&
-                              p0, t0, lo, hi, ng, dx, dt)
+                              p0, t0, lo, hi, ng, dx, dt_grid)
          end select
-         dt_hold = min(dt_hold,dt)
+         dt_hold_proc = min(dt_hold_proc,dt_grid)
       end do
 
-      dt = dt_hold
+      call parallel_reduce(dt, dt_hold_proc ,MPI_MIN)
 
-      print *,'Computing dt at istep ',istep,' to be ',dt
+      if (parallel_IOProcessor() .and. verbose .ge. 1) &
+        print *,'Computing dt at istep ',istep,' to be ',dt
 
     end subroutine firstdt
 
