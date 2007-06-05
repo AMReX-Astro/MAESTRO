@@ -30,8 +30,6 @@ contains
 
       nz = size(vel,dim=1)
 
-      print *, '<<< integrating to get w0>>>'
-
       f = ZERO
 
       if (spherical .eq. 0) then
