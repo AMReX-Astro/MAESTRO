@@ -109,8 +109,6 @@ module update_vel_module
       real (kind = dp_t) :: gradw0, smdamp
       real (kind = dp_t) :: x,y,z,r
 
-      if (parallel_IOProcessor() .and. do_sponge) print *,'DOING SPONGE '
-
       ! 1) Subtract (Utilde dot grad) Utilde term from old Utilde
       ! 2) Add forcing term to new Utilde
       do k = lo(3), hi(3)
