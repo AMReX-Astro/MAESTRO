@@ -14,6 +14,8 @@ subroutine varden()
   use geometry
   use network
   use eos_module
+  use make_w0_module
+  use advect_base_module
 
   implicit none
 
@@ -48,22 +50,22 @@ subroutine varden()
   real(dp_t) :: prob_lo(1), prob_hi(1)
 
   real(dp_t), allocatable :: div_coeff_old(:)
-  real(dp_t), allocatable :: div_coeff_new(:)
+  real(dp_t), allocatable :: div_coeff(:)
   real(dp_t), allocatable :: grav_cell(:)
   real(dp_t), allocatable :: gam1(:)
   real(dp_t), allocatable :: s0_old(:,:)
-  real(dp_t), allocatable :: s0_new(:,:)
-  real(dp_t), allocatable :: s0_1(:,:)
-  real(dp_t), allocatable :: s0_2(:,:)
+  real(dp_t), allocatable :: s0(:,:)
   real(dp_t), allocatable :: temp0(:)
   real(dp_t), allocatable :: p0_old(:)
-  real(dp_t), allocatable :: p0_1(:)
-  real(dp_t), allocatable :: p0_2(:)
-  real(dp_t), allocatable :: p0_new(:)
+  real(dp_t), allocatable :: p0(:)
   real(dp_t), allocatable :: w0(:)
+  real(dp_t), allocatable :: w0_old(:)
+  real(dp_t), allocatable :: f(:)
   real(dp_t), allocatable :: Sbar_in(:)
 
   real(dp_t) :: coeff, Hbar
+
+  integer, parameter :: verbose = 0
 
   namelist /probin/ model_file
   namelist /probin/ stop_time
@@ -209,7 +211,6 @@ subroutine varden()
   prob_lo(1) = prob_lo_x
   prob_hi(1) = prob_hi_x
 
-  dx(1) = (prob_hi_x-prob_lo_x) / real(n_base)
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -217,23 +218,22 @@ subroutine varden()
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   dr_base = (prob_hi_x-prob_lo_x) / dble(n_base)
+  dx(1) = dr_base
 
   allocate(div_coeff_old(n_base))
-  allocate(div_coeff_new(n_base))
+  allocate(    div_coeff(n_base))
 
   allocate(grav_cell(n_base))
 
   allocate(   gam1(n_base  ))
   allocate( s0_old(n_base, nscal))
-  allocate( s0_new(n_base, nscal))
-  allocate( s0_1  (n_base, nscal))
-  allocate( s0_2  (n_base, nscal))
+  allocate(     s0(n_base, nscal))
   allocate(  temp0(n_base  ))
   allocate( p0_old(n_base  ))
-  allocate( p0_new(n_base  ))
-  allocate( p0_1  (n_base  ))
-  allocate( p0_2  (n_base  ))
+  allocate(     p0(n_base  ))
+  allocate( w0_old(0:n_base))
   allocate(     w0(0:n_base))
+  allocate(      f(0:n_base))
   allocate(Sbar_in(n_base))
 
   w0(:) = ZERO
@@ -243,64 +243,119 @@ subroutine varden()
 ! read in the base state
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    call init_geometry(center,n_base,dr_base)
-    call init_base_state(model_file,n_base,s0_old,temp0,p0_old,gam1,dx,prob_lo,prob_hi)
+  call init_geometry(center,n_base,dr_base)
+  call init_base_state(model_file,n_base,s0,temp0,p0,gam1,dx,prob_lo,prob_hi)
 
-
-    do i = 1, n_base
-       print *, i, z(i), s0_old(i,rho_comp), p0_old(i), gam1(i)
-    enddo
-
-
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! compute the heating term
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-  y_0 = 4.e7
 
   do i = 1, n_base
-
-     Hbar = 1.e16 * exp(-((z(i) - y_0)**2)/ 1.e14)
-     
-     ! (rho, T) --> p,h, etc
-     input_flag = 1
-     den_row(1)  = s0_old(i,rho_comp)
-     temp_row(1) = temp0(i)
-     xn_zone(:) = s0_old(i,spec_comp:spec_comp-1+nspec)/s0_old(i,rho_comp)
-
-     call eos(input_flag, den_row, temp_row, NP, nspec, &
-              xn_zone, aion, zion, &
-              p_row, h_row, e_row, &
-              cv_row, cp_row, xne_row, eta_row, pele_row, &
-              dpdt_row, dpdr_row, dedt_row, dedr_row, &
-              dpdX_row, dhdX_row, &
-              gam1_row, cs_row, s_row, &
-              dsdt_row, dsdr_row, &
-              do_diag)
-
-     s0_old(i,rhoh_comp) = den_row(1)*h_row(1)
-     p0_old(i) = p_row(1)
-     gam1(i) = gam1_row(1)
-
-     coeff = dpdt_row(1)/ (den_row(1) * cp_row(1) * dpdr_row(1))
-
-     Sbar_in(i) = coeff*Hbar
+     print *, i, z(i), s0(i,rho_comp), p0(i), gam1(i)
   enddo
 
 
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! main timestepping loop
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!    
+  time = ZERO
+  dt = 0.0001_dp_t
 
+  w0_old(:) = ZERO
+
+  do while (time < stop_time)
+
+     print *, 'time = ', time
+
+
+     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+     ! compute the heating term
+     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+     y_0 = 4.e7
+       
+     do i = 1, n_base
+
+        Hbar = 1.e16 * exp(-((z(i) - y_0)**2)/ 1.e14)
+     
+        ! (rho, T) --> p,h, etc
+        input_flag = 1
+        den_row(1)  = s0(i,rho_comp)
+        temp_row(1) = temp0(i)
+        xn_zone(:) = s0(i,spec_comp:spec_comp-1+nspec)/s0(i,rho_comp)
+        
+        call eos(input_flag, den_row, temp_row, NP, nspec, &
+                 xn_zone, aion, zion, &
+                 p_row, h_row, e_row, &
+                 cv_row, cp_row, xne_row, eta_row, pele_row, &
+                 dpdt_row, dpdr_row, dedt_row, dedr_row, &
+                 dpdX_row, dhdX_row, &
+                 gam1_row, cs_row, s_row, &
+                 dsdt_row, dsdr_row, &
+                 do_diag)
+
+        s0(i,rhoh_comp) = den_row(1)*h_row(1)
+        p0(i) = p_row(1)
+        gam1(i) = gam1_row(1)
+
+        coeff = dpdt_row(1)/ (den_row(1) * cp_row(1) * dpdr_row(1))
+
+        Sbar_in(i) = coeff*Hbar
+     enddo
+
+
+
+     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+     ! compute w_0
+     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+     w0(:) = ZERO
+
+     call make_w0(w0,w0_old,f,Sbar_in,p0,s0(:,rho_comp),gam1,dt,verbose)
   
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! compute w_0
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+     ! compute the divergance coefficient (beta_0)
+     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+     call make_grav_cell(grav_cell,s0(:,rho_comp))
+
+     call make_div_coeff(div_coeff,s0(:,rho_comp),p0, &
+                         gam1,grav_cell,anelastic_cutoff)     
 
 
 
+     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+     ! compute the new base state
+     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  deallocate(div_coeff_old,div_coeff_new,grav_cell)
-  deallocate(gam1,s0_old,s0_new,s0_1,s0_2,temp0,p0_old,p0_new,w0)
+     ! here we set the old state to the current state -- advect_base will 
+     ! update the state
+     s0_old(:,:) = s0(:,:)
+     p0_old(:) = p0(:)
+
+     call advect_base(w0,Sbar_in,p0_old,p0, &
+                      s0_old,s0,temp0, &
+                      gam1,div_coeff, &
+                      dr_base,dt,anelastic_cutoff)
+
+
+     print *, 'new base pressure', p0(1)
+     print *, 'new base density', s0(1,rho_comp)
+
+     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+     ! compute the new timestep
+     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+     time = time + dt
+
+     dt = min(1.1*dt,cflfac*dr_base/maxval(abs(w0)))
+     if (time+dt > stop_time) dt = stop_time - time
+
+     ! store the old velocity
+     w0_old(:) = w0(:)
+
+  enddo
+
+
+  deallocate(div_coeff_old,div_coeff,grav_cell)
+  deallocate(gam1,s0_old,s0,temp0,p0_old,p0,w0,f)
   
 
 end subroutine varden
