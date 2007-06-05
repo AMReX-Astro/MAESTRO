@@ -418,6 +418,9 @@ module advance_timestep_module
             end do
             call multifab_fill_boundary(div_coeff_3d(n))
           end do
+          do n = 1, nlevs
+            call multifab_fill_boundary(macphi(n))
+          end do
           call macproject(mla,umac,macphi,rhohalf,dx,the_bc_tower,verbose,mg_verbose,cg_verbose,&
                           press_comp,macrhs,div_coeff_3d=div_coeff_3d)
         else
