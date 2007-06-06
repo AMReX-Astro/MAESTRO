@@ -40,8 +40,10 @@ contains
            ! mass at the current center, we need to add the contribution of
            ! the upper half of the zone below us and the lower half of the
            ! current zone.
-           m(k) = m(k-1) + fourthirds*pi*rho0(k-1)*(zl(k)**3 -  z(k-1)**3) &
-                         + fourthirds*pi*rho0(k  )*( z(k)**3 - zl(k  )**3)
+           m(k) = m(k-1) + fourthirds*pi*rho0(k-1)*(zl(k) -  z(k-1))*(zl(k)**2 + zl(k)* z(k-1) +  z(k-1)**2) &
+                         + fourthirds*pi*rho0(k  )*( z(k) - zl(k  ))*( z(k)**2 +  z(k)*zl(k  ) + zl(k  )**2)
+!          m(k) = m(k-1) + fourthirds*pi*rho0(k-1)*(zl(k)**3 -  z(k-1)**3) &
+!                        + fourthirds*pi*rho0(k  )*( z(k)**3 - zl(k  )**3)
            grav_cell(k) = -Gconst * m(k) / z(k)**2
         enddo
 
@@ -76,7 +78,8 @@ contains
         do k = 2,nz
           mencl = zero 
           do j = 2, k
-            mencl = mencl + fourthirds * pi * (zl(j)**3 - zl(j-1)**3) * rho0(j-1)
+!           mencl = mencl + fourthirds * pi * (zl(j)**3 - zl(j-1)**3) * rho0(j-1)
+            mencl = mencl + fourthirds * pi * (zl(j) - zl(j-1)) * (zl(j)**2 + zl(j)*zl(j-1) + zl(j-1)**2) * rho0(j-1)
           end do
           grav_edge(k) = -Gconst * mencl / zl(k)**2
         end do
