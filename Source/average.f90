@@ -168,7 +168,8 @@ contains
               stop
             end if
 
-            vol = fourthirdspi * (zl(index+1)**3  - zl(index)**3)
+            vol = fourthirdspi * (zl(index+1)  - zl(index)) * &
+                                 (zl(index+1)**2 + zl(index+1)*zl(index) + zl(index)**2)
 
             do n = comp,comp+ncomp-1
               phibar(index,n) = phibar(index,n) + vol * phi(i,j,k,n)
