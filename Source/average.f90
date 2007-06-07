@@ -85,7 +85,7 @@ contains
 
       integer         , intent(in   ) :: lo(:), hi(:), ng, comp, ncomp
       real (kind=dp_t), intent(in   ) :: phi(lo(1)-ng:,lo(2)-ng:,:)
-      real (kind=dp_t), intent(  out) :: phibar(0:,:)
+      real (kind=dp_t), intent(inout) :: phibar(0:,:)
       real (kind=dp_t), intent(in   ) :: dx(:)
 
 !     Local variables
@@ -109,7 +109,7 @@ contains
 
       integer         , intent(in   ) :: lo(:), hi(:), ng, comp, ncomp
       real (kind=dp_t), intent(in   ) :: phi(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-      real (kind=dp_t), intent(  out) :: phibar(0:,:)
+      real (kind=dp_t), intent(inout) :: phibar(0:,:)
       real (kind=dp_t), intent(in   ) :: dx(:)
 
 !     Local variables
