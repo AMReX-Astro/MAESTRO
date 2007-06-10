@@ -90,7 +90,7 @@ subroutine varden()
   max_step  = 1
 
   prob_lo_x = ZERO
-  prob_lo_x = ONE
+  prob_hi_x = 5.e8_dp_t
 
   anelastic_cutoff = 3.e6
 
@@ -98,6 +98,8 @@ subroutine varden()
   nscal = nspec + ntrac + 2
 
   n_base = 512
+  cflfac = 0.5_dp_t
+
 
   need_inputs = .true.
 
@@ -302,7 +304,6 @@ subroutine varden()
      enddo
 
 
-
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      ! compute w_0
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -310,7 +311,6 @@ subroutine varden()
 
      call make_w0(w0,w0_old,f,Sbar_in,p0,s0(:,rho_comp),gam1,dt,verbose)
   
-
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      ! compute the divergance coefficient (beta_0)
@@ -353,6 +353,12 @@ subroutine varden()
 
   enddo
 
+  ! output
+  open(unit=10,file="base.new")
+  do i = 1, n_base
+     write(10,*) z(i), s0(i,rho_comp)
+  enddo
+  close(unit=10)
 
   deallocate(div_coeff_old,div_coeff,grav_cell)
   deallocate(gam1,s0_old,s0,temp0,p0_old,p0,w0,f)

@@ -1,13 +1,18 @@
 &PROBIN
+
+ anelastic_cutoff = 1.e-4
  spherical_in = 1
 
- prob_hi_x = 3.e8
+ prob_lo_x = 0.0
+ prob_hi_x = 5.e8
 
  max_step  = 100000000
 
- stop_time = 2.5
+ stop_time = 10
 
- cflfac = 0.9
+ cflfac = 0.5
 
- model_file = "model_7.e8.hse"
+ model_file = "model.sph.768"
+ n_base = 768
+
 /
