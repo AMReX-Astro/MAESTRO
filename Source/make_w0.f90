@@ -139,7 +139,7 @@ contains
 
        d(j) = -( gam1(j-1) * p0(j-1) / z(j-1)**2 &
                 +gam1(j  ) * p0(j  ) / z(j  )**2 ) * (zl(j)**2/dr**2) &
-              + four * rhohalf * grav_edge(j) / zl(j)
+              - four * rhohalf * grav_edge(j) / zl(j)
      end do
 
      do j = 2,nz
