@@ -248,10 +248,12 @@ subroutine varden()
   call init_geometry(center,n_base,dr_base)
   call init_base_state(model_file,n_base,s0,temp0,p0,gam1,dx,prob_lo,prob_hi)
 
-
+  ! output
+  open(unit=10,file="base.orig")
   do i = 1, n_base
-     print *, i, z(i), s0(i,rho_comp), p0(i), gam1(i)
+     write(10,*) z(i), s0(i,rho_comp)
   enddo
+  close(unit=10)
 
 
 
