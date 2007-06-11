@@ -73,12 +73,13 @@ contains
 
             integral = abs(grav_center(j))*rho0(j)*dr/(p0(j)*gam1(j))
 
-         else if (nu .eq. ZERO .or. mu .eq. ZERO) then
+         else if (nu .eq. ZERO .or. mu .eq. ZERO .or. &
+                  ((gam1(j) + HALF*mu*dr)/(gam1(j) - HALF*mu*dr)) .le. ZERO .or. &
+                  ((p0(j) + HALF*nu*dr)/(p0(j) - HALF*nu*dr)) .le. ZERO) then
 
             integral = abs(grav_center(j))*rho0(j)*dr/(p0(j)*gam1(j))
 
          else 
-
             denom = nu*gam1(j) - mu*p0(j)
 
             coeff1 = lambda*gam1(j)/mu - rho0(j)
@@ -89,11 +90,13 @@ contains
                               (gam1(j) - HALF*mu*dr)) - &
                   coeff2*log( (p0(j) + HALF*nu*dr)/ &
                               (p0(j) - HALF*nu*dr)) )
+
          endif
 
          beta0_edge_hi = beta0_edge_lo * exp(-integral)
 
          div_coeff(j) = HALF*(beta0_edge_lo + beta0_edge_hi)
+
 
          if (rho0(j) .lt. anelastic_cutoff .and. j_anel .eq. ny) then
             j_anel = j
@@ -103,7 +106,7 @@ contains
          beta0_edge_lo = beta0_edge_hi
 
       end do
-
+      
       do j = j_anel,ny
         div_coeff(j) = div_coeff(j-1) * (rho0(j)/rho0(j-1))
       end do 
