@@ -50,7 +50,8 @@ contains
 !     alpha = 100.d0
       alpha = 1000.d0
 
-      print *, 'sponge : r_sp, r_md, r_tp, r_top ', r_sp, r_md, r_tp, r_top
+      if ( parallel_IOProcessor() ) &
+        print *, 'sponge : r_sp, r_md, r_tp, r_top ', r_sp, r_md, r_tp, r_top
 
   end subroutine init_sponge
 
