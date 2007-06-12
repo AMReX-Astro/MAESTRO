@@ -47,7 +47,7 @@ contains
          select case (dm)
             case (2)
               call average_2d(pp(:,:,1,:),phibar,lo,hi,ng,comp,ncomp,dx(n,:))
-              vol_proc(lo(2):hi(2)) = vol_proc(lo(2):hi(2)) + (hi(1)-lo(1)+1)*dx(n,1)
+              vol_proc(lo(2):hi(2)) = vol_proc(lo(2):hi(2)) + (hi(1)-lo(1)+1)*dx(n,1)*dx(n,2)
             case (3)
               if (spherical .eq. 1) then
                 vol_grid(:) = ZERO
@@ -55,7 +55,7 @@ contains
                 vol_proc = vol_proc + vol_grid
               else
                 call average_3d(pp(:,:,:,:),phibar,lo,hi,ng,comp,ncomp,dx(n,:))
-                vol_proc(lo(3):hi(3)) = vol_proc(lo(3):hi(3)) + (hi(1)-lo(1)+1)*(hi(2)-lo(2)+1)*dx(n,1)*dx(n,2)
+                vol_proc(lo(3):hi(3)) = vol_proc(lo(3):hi(3)) + (hi(1)-lo(1)+1)*(hi(2)-lo(2)+1)*dx(n,1)*dx(n,2)*dx(n,3)
               end if
          end select
        end do
