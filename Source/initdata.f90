@@ -719,16 +719,17 @@ contains
     nr = size(s0,dim=1)
     allocate(base_r(nr))
 
-    if (parallel_IOProcessor()) &
+    if (parallel_IOProcessor()) then
        write(6,*) 'Writing base state to ',sd_name
 
-    open(unit=99,file=sd_name,form = "formatted", access = "sequential",action="write")
-    do i = 1, nr
-       base_r(i) = (dble(i)-HALF) * dr
-       write(99,1000)  base_r(i),s0(i,rho_comp), p0(i), s0(i,rhoh_comp), &
-                       (s0(i,n), n=spec_comp,spec_comp+nspec-1), temp0(i), div_coeff(i)
-    end do
-    close(99)
+       open(unit=99,file=sd_name,form = "formatted", access = "sequential",action="write")
+       do i = 1, nr
+          base_r(i) = (dble(i)-HALF) * dr
+          write(99,1000)  base_r(i),s0(i,rho_comp), p0(i), s0(i,rhoh_comp), &
+               (s0(i,n), n=spec_comp,spec_comp+nspec-1), temp0(i), div_coeff(i)
+       end do
+       close(99)
+    endif
 
     deallocate(base_r)
 
