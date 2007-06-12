@@ -2,7 +2,10 @@
  model_file = "model_7.e8.hse"
 
  test_set = "gr0_3d"
+
  spherical_in = 1
+ do_sponge = .true.
+
  dr_base = 976562.5
 
  prob_hi_x = 5.e8
@@ -12,7 +15,7 @@
  max_step  = 100000000
  init_iter = 0
 
- stop_time = 1.75
+ stop_time = 1000.
 
  plot_int  = 10
  chk_int   = 100
@@ -35,7 +38,7 @@
  mg_verbose = 1
  cg_verbose = 0
 
- do_initial_projection = 0
+ do_initial_projection = 1
 
 !restart = 50
 /
