@@ -561,7 +561,7 @@ module advance_timestep_module
               call fill_3d_data(dp(:,:,:,1),div_coeff_nph,lo,hi,dx(nlevs,:),1)
             end do
           end do
-          eps_in = 1.d-10
+          eps_in = 1.d-12
           call hgproject(mla, unew, rhohalf, p, gp, dx, dt, &
                          the_bc_tower, verbose, mg_verbose, cg_verbose, press_comp, &
                          hgrhs, div_coeff_3d=div_coeff_3d, eps_in = eps_in)
