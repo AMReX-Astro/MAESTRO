@@ -749,7 +749,9 @@ contains
     nr = size(s0,dim=1)
     allocate(base_r(nr))
 
-    print *,'Reading base state from ',sd_name
+    if (parallel_IOProcessor()) then
+      print *,'Reading base state from ',sd_name
+    end if
 
     open(unit=99,file=sd_name)
     do i = 1, size(s0,dim=1)

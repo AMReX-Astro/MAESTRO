@@ -32,7 +32,8 @@ contains
     integer                           :: n,nlevs,dm
 
     write(unit=sd_name,fmt='("chk",i4.4)') restart_int
-    print *,'Reading ',sd_name,' to get state data for restart'
+    if ( parallel_IOProcessor()) &
+      print *,'Reading ',sd_name,' to get state data for restart'
     call checkpoint_read(chkdata, chk_p, chk_src_nm1, chk_src_old, sd_name, time, dt, nlevs)
 
     dm = chkdata(1)%dim
