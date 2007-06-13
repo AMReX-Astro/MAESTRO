@@ -759,7 +759,7 @@ contains
     ! form, the terms other than s'_t + U.grad s' act as source terms.  Add
     ! them to the forces here.
 
-    integer        , intent(in   ) :: lo(:),hi(:),domlo(:),domhi(:)ng
+    integer        , intent(in   ) :: lo(:),hi(:),domlo(:),domhi(:),ng
     real(kind=dp_t), intent(  out) :: force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
     real(kind=dp_t), intent(in   ) ::     s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
     real(kind=dp_t), intent(in   ) ::  umac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
