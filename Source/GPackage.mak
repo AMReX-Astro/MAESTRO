@@ -36,3 +36,5 @@ f90sources += macproject.f90
 f90sources += sponge.f90
 f90sources += update_vel.f90
 f90sources += update_scal.f90
+f90sources += fillpatch.f90
+f90sources += put_in_pert_form.f90
