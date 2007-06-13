@@ -10,6 +10,7 @@ module scalar_advance_module
   use define_bc_module
   use setbc_module
   use fill_3d_module
+  use pert_form_module
   use variables
   use geometry
   use network
@@ -75,7 +76,7 @@ contains
       integer :: nscal,ntrac,velpred
       integer :: lo(uold%dim),hi(uold%dim)
       integer :: i,n,bc_comp,dm,ng_cell
-      logical :: is_vel, make_divu, advect_in_pert_form
+      logical :: is_vel, make_divu
       logical, allocatable :: is_conservative(:)
       real(kind=dp_t) :: half_time
       type(box)       :: domain
@@ -106,8 +107,8 @@ contains
       call build(scal_force, ext_scal_force%la, nscal, 1)
       call setval(scal_force,ZERO)
 
-      call build(s0_cart, ext_scal_force%la, nscal, 1)
-      call setval(s0_cart,ZERO,all=.true.)
+      call build(s0_cart   , ext_scal_force%la, nscal, 1)
+      call setval(s0_cart   ,ZERO,all=.true.)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     Create scalar source term at time n for (rho X)_i and (rho H).  
@@ -202,7 +203,8 @@ contains
 !     Create the edge states of (rho h)' and (rho X)_i.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      advect_in_pert_form = .true.
+      call put_in_pert_form(sold,s0_old,dx,rhoh_comp,    1,.true.)
+      call put_in_pert_form(sold,s0_old,dx,spec_comp,nspec,.true.)
       do i = 1, sold%nboxes
          if ( multifab_remote(sold, i) ) cycle
          sop  => dataptr(sold, i)
@@ -227,8 +229,7 @@ contains
                                lo, dx, dt, is_vel, is_conservative, &
                                the_bc_level%phys_bc_level_array(i,:,:), &
                                the_bc_level%adv_bc_level_array(i,:,:,bc_comp:), &
-                               velpred, ng_cell, s0_old(:,n), &
-                               advect_in_pert_form, n)
+                               velpred, ng_cell, n)
 
               do n = spec_comp,spec_comp+nspec-1
                 bc_comp = dm+n
@@ -239,15 +240,14 @@ contains
                                lo, dx, dt, is_vel, is_conservative, &
                                the_bc_level%phys_bc_level_array(i,:,:), &
                                the_bc_level%adv_bc_level_array(i,:,:,bc_comp:), &
-                               velpred, ng_cell, s0_old(:,n), &
-                               advect_in_pert_form, n)
+                               velpred, ng_cell, n)
               end do
             case (3)
               wmp  => dataptr(  umac(3), i)
               wtp  => dataptr(utrans(3), i)
               sepz => dataptr( sedge(3), i)
                w0p => dataptr(w0_cart_vec, i)
-              n = rhoh_comp
+                n = rhoh_comp
                 bc_comp = dm+n
                 call mkflux_3d(sop(:,:,:,:), uop(:,:,:,:), &
                                sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
@@ -256,8 +256,7 @@ contains
                                lo, dx, dt, is_vel, is_conservative, &
                                the_bc_level%phys_bc_level_array(i,:,:), &
                                the_bc_level%adv_bc_level_array(i,:,:,bc_comp:), &
-                               velpred, ng_cell, s0_old(:,n), &
-                               advect_in_pert_form, n)
+                               velpred, ng_cell, n)
 
               do n = spec_comp,spec_comp+nspec-1
                 bc_comp = dm+n
@@ -268,18 +267,18 @@ contains
                                lo, dx, dt, is_vel, is_conservative, &
                                the_bc_level%phys_bc_level_array(i,:,:), &
                                the_bc_level%adv_bc_level_array(i,:,:,bc_comp:), &
-                               velpred, ng_cell, s0_old(:,n), &
-                               advect_in_pert_form, n)
+                               velpred, ng_cell, n)
               end do
          end select
       end do
+      call put_in_pert_form(sold,s0_old,dx,rhoh_comp,    1,.false.)
+      call put_in_pert_form(sold,s0_old,dx,spec_comp,nspec,.false.)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     Create the edge states of tracers.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       if (ntrac .ge. 1) then
-      advect_in_pert_form = .false.
       do i = 1, sold%nboxes
          if ( multifab_remote(sold, i) ) cycle
          sop  => dataptr(sold, i)
@@ -304,8 +303,7 @@ contains
                                lo, dx, dt, is_vel, is_conservative, &
                                the_bc_level%phys_bc_level_array(i,:,:), &
                                the_bc_level%adv_bc_level_array(i,:,:,bc_comp:), &
-                               velpred, ng_cell, s0_old(:,n), &
-                               advect_in_pert_form, n)
+                               velpred, ng_cell, n)
               end do
             case (3)
               wmp  => dataptr(  umac(3), i)
@@ -321,8 +319,7 @@ contains
                                lo, dx, dt, is_vel, is_conservative, &
                                the_bc_level%phys_bc_level_array(i,:,:), &
                                the_bc_level%adv_bc_level_array(i,:,:,bc_comp:), &
-                               velpred, ng_cell, s0_old(:,n), &
-                               advect_in_pert_form, n)
+                               velpred, ng_cell, n)
               end do
          end select
       end do

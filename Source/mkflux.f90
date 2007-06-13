@@ -13,8 +13,7 @@ contains
 
       subroutine mkflux_2d(s,u,sedgex,sedgey,uadv,vadv,utrans,vtrans,&
                            force,w0,lo,dx,dt,is_vel,is_cons,&
-                           phys_bc,adv_bc,velpred,ng,base, &
-                           advect_in_pert_form,n)
+                           phys_bc,adv_bc,velpred,ng,n)
 
       integer, intent(in) :: lo(:),ng,n
 
@@ -29,13 +28,12 @@ contains
       real(kind=dp_t), intent(inout) ::  force(lo(1)- 1:,lo(2)- 1:,:)
       real(kind=dp_t), intent(in   ) ::     w0(0:)
 
-      real(kind=dp_t),intent(in) :: dt,dx(:),base(0:)
+      real(kind=dp_t),intent(in) :: dt,dx(:)
       integer        ,intent(in) :: velpred
       integer        ,intent(in) :: phys_bc(:,:)
       integer        ,intent(in) ::  adv_bc(:,:,:)
       logical        ,intent(in) :: is_vel
       logical        ,intent(in) :: is_cons(:)
-      logical        ,intent(in) :: advect_in_pert_form
 
       real(kind=dp_t), allocatable::  slopex(:,:,:),slopey(:,:,:)
       real(kind=dp_t), allocatable::  s_l(:),s_r(:),s_b(:),s_t(:)
@@ -74,21 +72,6 @@ contains
 
       allocate(slopex(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1))
       allocate(slopey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1))
-
-      if (.not. is_vel .and. advect_in_pert_form) then
-         do j = js,je
-           do i = is-ng,ie+ng
-             s(i,j,n) = s(i,j,n) - base(j)
-           end do
-           do g = 1,ng
-            do i = is-ng,ie+ng
-             s(i,js-g,n) = s(i,js,n)
-             s(i,je+g,n) = s(i,je,n)
-           end do
-          end do
-         end do
-      end if
-
 
       call slopex_2d(s(:,:,n:),slopex,lo,ng,1,adv_bc,slope_order)
       call slopey_2d(s(:,:,n:),slopey,lo,ng,1,adv_bc,slope_order)
@@ -391,37 +374,8 @@ contains
           enddo
         end if
 
-        endif
-
-       enddo
-
-      if (.not. is_vel .and. advect_in_pert_form) then
-         do j = js,je
-           do i = is-ng,ie+ng
-             s(i,j,n) = s(i,j,n) + base(j)
-           end do
-           do g = 1,ng
-            do i = is-ng,ie+ng
-             s(i,js-g,n) = s(i,js,n)
-           end do
-          end do
-         end do
-
-!        do j = js,je
-!          do i = is,ie+1 
-!            sedgex(i,j,n) = sedgex(i,j,n) + base(j)
-!          enddo
-!        enddo 
-
-!        do i = is,ie
-!          do j = js+1,je
-!            sedgey(i,j,n) = sedgey(i,j,n) + HALF*(base(j)+base(j-1))
-!          enddo
-!          sedgey(i,js  ,n) = sedgey(i,js  ,n) + base(js)
-!          sedgey(i,je+1,n) = sedgey(i,je+1,n) + base(je)
-!        enddo
-
-      end if
+       end if
+      enddo
 
       deallocate(s_l)
       deallocate(s_r)
@@ -436,8 +390,7 @@ contains
 
       subroutine mkflux_3d(s,u,sedgex,sedgey,sedgez,uadv,vadv,wadv,utrans,vtrans,wtrans,&
                            force,w0,w0_cart_vec,lo,dx,dt,is_vel,is_cons,&
-                           phys_bc,adv_bc,velpred,ng,base, &
-                           advect_in_pert_form,n)
+                           phys_bc,adv_bc,velpred,ng,n)
 
       integer, intent(in) :: lo(:),ng,n
 
@@ -456,17 +409,15 @@ contains
       real(kind=dp_t), intent(in   ) ::     w0(0:)
       real(kind=dp_t), intent(in   ) :: w0_cart_vec(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
 
-      real(kind=dp_t),intent(in) :: dt,dx(:),base(0:)
+      real(kind=dp_t),intent(in) :: dt,dx(:)
       integer        ,intent(in) :: velpred
       integer        ,intent(in) :: phys_bc(:,:)
       integer        ,intent(in) ::  adv_bc(:,:,:)
       logical        ,intent(in) :: is_vel
       logical        ,intent(in) :: is_cons(:)
-      logical        ,intent(in) :: advect_in_pert_form
 
       real(kind=dp_t), allocatable :: slopex(:,:,:,:),slopey(:,:,:,:),slopez(:,:,:,:)
       real(kind=dp_t), allocatable :: s_l(:),s_r(:),s_b(:),s_t(:),s_u(:),s_d(:)
-      real(kind=dp_t), allocatable :: base_cart(:,:,:)
 
 !     Local variables
       real(kind=dp_t) ubardth, vbardth, wbardth
@@ -505,49 +456,6 @@ contains
       allocate(slopex(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1))
       allocate(slopey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1))
       allocate(slopez(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1))
-
-      if (.not. is_vel .and. advect_in_pert_form) then
-         if (spherical .eq. 1) then
-           allocate(base_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-           call fill_3d_data(base_cart,base,lo,hi,dx,0)
-           do k = ks,ke
-             do j = js,je
-             do i = is,ie
-               s(i,j,k,n) = s(i,j,k,n) - base_cart(i,j,k)
-             end do
-             end do
-             do g = 1,ng
-               do j = js,je
-                 s(is-g,j,k,n) = s(is,j,k,n)
-                 s(ie+g,j,k,n) = s(ie,j,k,n)
-               end do
-               do i = is-1,ie+1
-                 s(i,js-g,k,n) = s(i,j,k,n)
-                 s(i,je+g,k,n) = s(i,je,k,n)
-               end do
-             end do
-           end do
-         else
-           do k = ks,ke
-             do j = js-ng,je+ng
-             do i = is-ng,ie+ng
-               s(i,j,k,n) = s(i,j,k,n) - base(k)
-             end do
-             end do
-           end do
-         end if
-
-        do k = ks,ke
-          do g = 1,ng
-           do j = js-ng,je+ng
-           do i = is-ng,ie+ng
-            s(i,j,ks-g,n) = s(i,j,ks,n)
-            s(i,j,ke+g,n) = s(i,j,ke,n)
-          end do
-          end do
-         end do
-        end do
-      end if
 
       do k = lo(3)-1,hi(3)+1
          call slopex_2d(s(:,:,k,n:),slopex(:,:,k,:),lo,ng,1,adv_bc,slope_order)
@@ -1167,47 +1075,6 @@ contains
         enddo
        endif
 
-      if (.not. is_vel .and. advect_in_pert_form) then
-         if (spherical .eq. 1) then
-           do k = ks,ke
-             do j = js,je
-             do i = is,ie
-               s(i,j,k,n) = s(i,j,k,n) + base_cart(i,j,k)
-             end do
-             end do
-             do g = 1,ng
-               do j = js,je
-                 s(is-g,j,k,n) = s(is,j,k,n)
-                 s(ie+g,j,k,n) = s(ie,j,k,n)
-               end do
-               do i = is-1,ie+1
-                 s(i,js-g,k,n) = s(i,j,k,n)
-                 s(i,je+g,k,n) = s(i,je,k,n)
-               end do
-             end do
-           end do
-         else
-           do k = ks,ke
-             do j = js-ng,je+ng
-             do i = is-ng,ie+ng
-               s(i,j,k,n) = s(i,j,k,n) + base(k)
-             end do
-             end do
-           end do
-         end if
-
-        do k = ks,ke
-          do g = 1,ng
-           do j = js-ng,je+ng
-           do i = is-ng,ie+ng
-            s(i,j,ks-g,n) = s(i,j,ks,n)
-            s(i,j,ke+g,n) = s(i,j,ke,n)
-          end do
-          end do
-         end do
-        end do
-      end if
-
       deallocate(s_l)
       deallocate(s_r)
       deallocate(s_b)
@@ -1218,9 +1085,6 @@ contains
       deallocate(slopex)
       deallocate(slopey)
       deallocate(slopez)
-
-      if (.not. is_vel .and. advect_in_pert_form .and. (spherical .eq. 1) ) &
-        deallocate(base_cart)
 
       end subroutine mkflux_3d
 
