@@ -119,6 +119,23 @@ contains
 !     that appear as forces when we write it in convective/perturbational form.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+      ! Define s0_cart 
+      if (spherical .eq. 1) then
+        do i = 1, s0_cart%nboxes
+           if ( multifab_remote(s0_cart, i) ) cycle
+           s0p => dataptr(s0_cart, i)
+           lo =  lwb(get_box(s0_cart, i))
+           hi =  upb(get_box(s0_cart, i))
+           do n = spec_comp,spec_comp+nspec-1
+             call fill_3d_data(s0p(:,:,:,n),s0_old(:,n),lo,hi,dx,1)
+           end do
+           n = rhoh_comp
+           call fill_3d_data(s0p(:,:,:,n),s0_old(:,n),lo,hi,dx,1)
+        end do
+        call multifab_fill_boundary_c(s0_cart,spec_comp,nspec)
+        call multifab_fill_boundary_c(s0_cart,rhoh_comp,1)
+      end if
+
       do i = 1, scal_force%nboxes
          if ( multifab_remote(scal_force, i) ) cycle
           fp => dataptr(scal_force, i)
@@ -149,12 +166,9 @@ contains
             wmp  => dataptr(umac(3), i)
 
             if (spherical .eq. 1) then
-
                s0p => dataptr(s0_cart, i)
-
                do n = spec_comp,spec_comp+nspec-1
-                  call fill_3d_data(s0p(:,:,:,n),s0_old(:,n),lo,hi,dx,1)
-                  call modify_scal_force_3d_sphr(fp(:,:,:,n),sop(:,:,:,n),lo,hi,ng_cell,&
+                  call modify_scal_force_3d_sphr(fp(:,:,:,n),sop(:,:,:,n),lo,hi,domlo,domhi,ng_cell,&
                                                  ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1), &
                                                  s0p(:,:,:,n),w0,dx)
                end do
@@ -166,8 +180,7 @@ contains
                                          sop(:,:,:,:),sop(:,:,:,:), ng_cell, dx, time, &
                                          np(:,:,:,:), p0_old, p0_old, temp0)
 
-               call fill_3d_data(s0p(:,:,:,n),s0_old(:,n),lo,hi,dx,1)
-               call modify_scal_force_3d_sphr(fp(:,:,:,n),sop(:,:,:,n),lo,hi,ng_cell,&
+               call modify_scal_force_3d_sphr(fp(:,:,:,n),sop(:,:,:,n),lo,hi,domlo,domhi,ng_cell,&
                                               ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1), &
                                               s0p(:,:,:,n),w0,dx)
             else
@@ -339,22 +352,6 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       call setval(scal_force,ZERO)
-
-      ! Define s0_cart 
-      if (spherical .eq. 1) then
-        do i = 1, sold%nboxes
-           if ( multifab_remote(s0_cart, i) ) cycle
-           s0p => dataptr(s0_cart, i)
-           lo =  lwb(get_box(s0_cart, i))
-           hi =  upb(get_box(s0_cart, i))
-           do n = spec_comp,spec_comp+nspec-1
-             call fill_3d_data(s0p(:,:,:,n),s0_old(:,n),lo,hi,dx,1)
-           end do
-        end do
-        do n = spec_comp,spec_comp+nspec-1
-           call multifab_fill_boundary_c(s0_cart,n,1)
-        end do
-      end if
 
       do i = 1, sold%nboxes
          if ( multifab_remote(sold, i) ) cycle
@@ -755,20 +752,21 @@ contains
      
    end subroutine modify_scal_force_3d_cart
 
-   subroutine modify_scal_force_3d_sphr(force,s,lo,hi,ng,umac,vmac,wmac,base_cart,w0,dx)
+   subroutine modify_scal_force_3d_sphr(force,s,lo,hi,domlo,domhi,ng, &
+                                        umac,vmac,wmac,base_cart,w0,dx)
 
     ! When we write the scalar equation in perturbational and convective
     ! form, the terms other than s'_t + U.grad s' act as source terms.  Add
     ! them to the forces here.
 
-    integer        , intent(in   ) :: lo(:),hi(:),ng
+    integer        , intent(in   ) :: lo(:),hi(:),domlo(:),domhi(:)ng
     real(kind=dp_t), intent(  out) :: force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
     real(kind=dp_t), intent(in   ) ::     s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
     real(kind=dp_t), intent(in   ) ::  umac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
     real(kind=dp_t), intent(in   ) ::  vmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
     real(kind=dp_t), intent(in   ) ::  wmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
 
-    real(kind=dp_t), intent(in   ) :: base_cart(lo(1):,lo(2):,lo(3):)
+    real(kind=dp_t), intent(in   ) :: base_cart(lo(1)-1:,lo(2)-1:,lo(3)-1:)
     real(kind=dp_t), intent(in   ) :: w0(:)
     real(kind=dp_t), intent(in   ) :: dx(:)
     
@@ -798,32 +796,32 @@ contains
                     +(vmac(i,j+1,k) - vmac(i,j,k)) / dx(2) &
                     +(wmac(i,j,k+1) - wmac(i,j,k)) / dx(3)
 
-           if (i.lt.hi(1)) then
+           if (i.lt.domhi(1)) then
              base_xhi = HALF * (base_cart(i,j,k) + base_cart(i+1,j,k))
            else
              base_xhi = base_cart(i,j,k)
            end if
-           if (i.gt.lo(1)) then
+           if (i.gt.domlo(1)) then
              base_xlo = HALF * (base_cart(i,j,k) + base_cart(i-1,j,k))
            else
              base_xlo = base_cart(i,j,k)
            end if
-           if (j.lt.hi(2)) then
+           if (j.lt.domhi(2)) then
              base_yhi = HALF * (base_cart(i,j,k) + base_cart(i,j+1,k))
            else
              base_yhi = base_cart(i,j,k)
            end if
-           if (j.gt.lo(2)) then
+           if (j.gt.domlo(2)) then
              base_ylo = HALF * (base_cart(i,j,k) + base_cart(i,j-1,k))
            else
              base_ylo = base_cart(i,j,k)
            end if
-           if (k.lt.hi(3)) then
+           if (k.lt.domhi(3)) then
              base_zhi = HALF * (base_cart(i,j,k) + base_cart(i,j,k+1))
            else
              base_zhi = base_cart(i,j,k)
            end if
-           if (k.gt.lo(3)) then
+           if (k.gt.domlo(3)) then
              base_zlo = HALF * (base_cart(i,j,k) + base_cart(i,j,k-1))
            else
              base_zlo = base_cart(i,j,k)
