@@ -643,7 +643,7 @@ contains
           savg   = HALF * (smbot + smtop)
           sminus = merge(sminus, savg, abs(wtrans(i,j,k)) .gt. eps)
 
-          st = st - HALF * (wtrans(i,j,k)+wtrans(i,j+1,k))*(splus - sminus) / hz
+          st = st - HALF * (wtrans(i,j,k)+wtrans(i,j,k+1))*(splus - sminus) / hz
 
           ! NOTE NOTE : THIS IS WRONG FOR SPHERICAL !!
           if (spherical .eq. 0 .and. is_vel .and. n.eq.3) then
@@ -836,6 +836,7 @@ contains
 
           s_b(j+1)= s(i,j,k,n) + (HALF-vbardth)*slopey(i,j,k,1) + dth*st
           s_t(j  )= s(i,j,k,n) - (HALF+vbardth)*slopey(i,j,k,1) + dth*st
+
         enddo
 
         if (velpred .eq. 1) then
@@ -1018,6 +1019,7 @@ contains
 
           s_d(k+1)= s(i,j,k,n) + (HALF-wbardth)*slopez(i,j,k,1) + dth*st
           s_u(k  )= s(i,j,k,n) - (HALF+wbardth)*slopez(i,j,k,1) + dth*st
+
         enddo
 
         if (velpred .eq. 1) then
