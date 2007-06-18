@@ -778,8 +778,8 @@ contains
           wlo = u(i,j,k  ,3) + w0_cart_vec(i,j,k  ,3)
           whi = u(i,j,k+1,3) + w0_cart_vec(i,j,k+1,3)
 
-          splft = s(i,j,k  ,n) + (HALF - dth*wlo/hz) * slopex(i  ,j,k,1)
-          sprgt = s(i,j,k+1,n) - (HALF + dth*whi/hz) * slopex(i+1,j,k,1)
+          splft = s(i,j,k  ,n) + (HALF - dth*wlo/hz) * slopez(i,j,k  ,1)
+          sprgt = s(i,j,k+1,n) - (HALF + dth*whi/hz) * slopez(i,j,k+1,1)
 
           sprgt = merge(s(i,j,ke+1,n),sprgt,k.eq.ke .and. phys_bc(3,2) .eq. INLET)
           splft = merge(s(i,j,ke+1,n),splft,k.eq.ke .and. phys_bc(3,2) .eq. INLET)
@@ -799,6 +799,7 @@ contains
           splus = merge(splft,sprgt,wtrans(i,j,k+1).gt.ZERO)
           savg  = HALF * (splft + sprgt)
           splus = merge(splus, savg, abs(wtrans(i,j,k+1)) .gt. eps)
+
 
           wlo = u(i,j,k-1,3) + w0_cart_vec(i,j,k-1,3)
           whi = u(i,j,k  ,3) + w0_cart_vec(i,j,k  ,3)
@@ -824,6 +825,7 @@ contains
           sminus = merge(smlft,smrgt,wtrans(i,j,k).gt.ZERO)
           savg   = HALF * (smlft + smrgt)
           sminus = merge(sminus, savg, abs(wtrans(i,j,k)) .gt. eps)
+
 
           st = st - HALF * (wtrans(i,j,k)+wtrans(i,j,k+1))*(splus - sminus) / hz
 
