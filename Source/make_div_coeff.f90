@@ -118,6 +118,8 @@ contains
       real(kind=dp_t), intent(  out) :: div_coeff_edge(:)
 
       integer :: j,ny
+      real(kind=dp_t) :: dmax,dmin
+
       ny = size(div_coeff_cell,dim=1)
 
       div_coeff_edge(   1) = div_coeff_cell(1)
@@ -127,6 +129,10 @@ contains
       do j = 3,ny-1
         div_coeff_edge(j) = 7.d0/12.d0 * (div_coeff_cell(j  ) + div_coeff_cell(j-1)) &
                            -1.d0/12.d0 * (div_coeff_cell(j+1) + div_coeff_cell(j-2))
+        dmin = min(div_coeff_cell(j),div_coeff_cell(j-1))
+        dmax = max(div_coeff_cell(j),div_coeff_cell(j-1))
+        div_coeff_edge(j) = max(div_coeff_edge(j),dmin)
+        div_coeff_edge(j) = min(div_coeff_edge(j),dmax)
       end do
 
    end subroutine put_1d_beta_on_edges
