@@ -251,7 +251,7 @@ subroutine varden()
   ! output
   open(unit=10,file="base.orig")
   do i = 1, n_base
-     write(10,*) z(i), s0(i,rho_comp)
+     write(10,1000) z(i), s0(i,rho_comp), temp0(i), p0(i)
   enddo
   close(unit=10)
 
@@ -358,9 +358,10 @@ subroutine varden()
   ! output
   open(unit=10,file="base.new")
   do i = 1, n_base
-     write(10,*) z(i), s0(i,rho_comp)
+     write(10,1000) z(i), s0(i,rho_comp), temp0(i), p0(i)
   enddo
   close(unit=10)
+1000 format(1x,5(g20.10))
 
   deallocate(div_coeff_old,div_coeff,grav_cell)
   deallocate(gam1,s0_old,s0,temp0,p0_old,p0,w0,f)
