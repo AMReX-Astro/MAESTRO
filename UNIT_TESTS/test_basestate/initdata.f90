@@ -481,8 +481,7 @@ contains
 
     logical :: do_diag
 
-!   real(kind=dp_t), parameter :: cutoff_density = 1.e-4
-    real(kind=dp_t), parameter :: cutoff_density = 1.e4
+   real(kind=dp_t), parameter :: cutoff_density = 1.e-4
 
     do_diag = .false.
 
