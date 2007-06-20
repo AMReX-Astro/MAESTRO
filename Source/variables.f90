@@ -68,8 +68,6 @@ contains
       n_plot_comps = icomp_gp + dm - 1
     end if
 
-    print *,'NPLOTCOMPS ',n_plot_comps
-
   end subroutine init_plot_variables
 
 end module variables
