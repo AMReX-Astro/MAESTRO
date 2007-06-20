@@ -120,6 +120,7 @@ contains
 
 !
 !     Loop for fluxes on x-edges.
+!
 
        do j = js,je 
         if (velpred .eq. 0 .or. n .eq. 1) then
@@ -681,7 +682,11 @@ contains
          elseif (phys_bc(1,1) .eq. INLET) then
            sedgex(is,j,k,n) = s(is-1,j,k,n)
          elseif (phys_bc(1,1) .eq. OUTLET) then
-           sedgex(is,j,k,n) = s_r(is)
+           if (is_vel .and. n.eq.1) then
+              sedgex(is,j,k,n) = MIN(s_r(is),ZERO)
+           else
+              sedgex(is,j,k,n) = s_r(is)
+           end if
          endif
          if (phys_bc(1,2) .eq. SLIP_WALL .or. phys_bc(1,2) .eq. NO_SLIP_WALL) then
            if (is_vel .and. n .eq. 1) then
@@ -694,7 +699,11 @@ contains
          elseif (phys_bc(1,2) .eq. INLET) then
            sedgex(ie+1,j,k,n) = s(ie+1,j,k,n)
          elseif (phys_bc(1,2) .eq. OUTLET) then
-           sedgex(ie+1,j,k,n) = s_l(ie+1)
+           if (is_vel .and. n.eq.1) then
+              sedgex(ie+1,j,k,n) = MAX(s_l(ie+1),ZERO)
+           else
+              sedgex(ie+1,j,k,n) = s_l(ie+1)
+           end if
          endif
 
          if (velpred .eq. 1) then
@@ -865,7 +874,11 @@ contains
         elseif (phys_bc(2,1) .eq. INLET) then
           sedgey(i,js,k,n) = s(i,js-1,k,n)
         elseif (phys_bc(2,1) .eq. OUTLET) then
-          sedgey(i,js,k,n) = s_t(js)
+          if (is_vel .and. n.eq.2) then
+             sedgey(i,js,k,n) = MIN(s_t(js),ZERO)
+          else
+             sedgey(i,js,k,n) = s_t(js)
+          end if
         endif
 
         if (phys_bc(2,2) .eq. SLIP_WALL .or. phys_bc(2,2) .eq. NO_SLIP_WALL) then
@@ -879,7 +892,11 @@ contains
         elseif (phys_bc(2,2) .eq. INLET) then
           sedgey(i,je+1,k,n) = s(i,je+1,k,n)
         elseif (phys_bc(2,2) .eq. OUTLET) then
-          sedgey(i,je+1,k,n) = s_b(je+1)
+          if (is_vel .and. n.eq.2) then
+             sedgey(i,je+1,k,n) = MAX(s_b(je+1),ZERO)
+          else
+             sedgey(i,je+1,k,n) = s_b(je+1)
+          end if
         endif
 
         if (velpred .eq. 1) then
@@ -1048,7 +1065,11 @@ contains
         elseif (phys_bc(3,1) .eq. INLET) then
           sedgez(i,j,ks,n) = s(i,j,ks-1,n)
         elseif (phys_bc(3,1) .eq. OUTLET) then
-          sedgez(i,j,ks,n) = s_u(ks)
+          if (is_vel .and. n.eq.3) then
+             sedgez(i,j,ks,n) = MIN(s_u(ks),ZERO)
+          else
+             sedgez(i,j,ks,n) = s_u(ks)
+          end if
         endif
 
         if (phys_bc(3,2) .eq. SLIP_WALL .or. phys_bc(3,2) .eq. NO_SLIP_WALL) then
@@ -1062,7 +1083,11 @@ contains
         elseif (phys_bc(3,2) .eq. INLET) then
           sedgez(i,j,ke+1,n) = s(i,j,ke+1,n)
         elseif (phys_bc(3,2) .eq. OUTLET) then
-          sedgez(i,j,ke+1,n) = s_d(ke+1)
+          if (is_vel .and. n.eq.3) then
+             sedgez(i,j,ke+1,n) = MAX(s_d(ke+1),ZERO)
+          else
+             sedgez(i,j,ke+1,n) = s_d(ke+1)
+          end if
         endif
 
         if (velpred .eq. 1) then
