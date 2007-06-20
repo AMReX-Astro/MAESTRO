@@ -300,8 +300,13 @@ contains
          force(j) = -s0_old(j,rhoh_comp) * div_w0 - &
               2.0_dp_t*s0_old(j,rhoh_comp)*HALF*(vel(j) + vel(j+1))/z(j)
 
+         ! add eta at time-level n to the force for the prediction
          eta(j) = gam1_old(j) * p0_old(j) * (Sbar_in(j) - div_w0)
+         force(j) = force(j) + eta(j)
 
+         ! construct a new, time-centered eta for the final update
+         eta(j) = HALF*(gam1(j)*p0_new(j) + gam1_old(j)*p0_old(j))* &
+              (Sbar_in(j) - div_w0)
       end do
 
       call mkflux_1d(s0_old(:,rhoh_comp),edge,vel,force,1,dr,dt)
