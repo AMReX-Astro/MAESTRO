@@ -12,6 +12,7 @@ module make_plotfile_module
   use parallel
   use vort_module
   use geometry
+  use variables
   use plot_variables_module
 
   use variables
@@ -19,6 +20,54 @@ module make_plotfile_module
   implicit none
 
 contains
+
+  subroutine get_plot_names(dm,ntrac,plot_names)
+
+     integer          ,intent(in   ) :: dm,ntrac
+     character(len=20),intent(inout) :: plot_names(:)
+
+     ! Local variables
+     integer :: n
+
+     plot_names(icomp_vel  ) = "x_vel"
+     plot_names(icomp_vel+1) = "y_vel"
+     if (dm > 2) &
+       plot_names(icomp_vel+2) = "z_vel"
+     plot_names(icomp_rho)  = "density"
+     plot_names(icomp_rhoh) = "rhoh"
+
+     do n = 1, nspec
+        plot_names(icomp_spec+n-1) = "X(" // trim(short_spec_names(n)) // ")"
+     enddo
+     do n = 1, ntrac
+        plot_names(icomp_trac+n-1) = "tracer"
+     enddo
+
+     plot_names(icomp_magvel)   = "magvel"
+     plot_names(icomp_vort)     = "vort"
+     plot_names(icomp_enthalpy) = "enthalpy"
+     plot_names(icomp_rhopert)  = "rhopert"
+     plot_names(icomp_tfromrho) = "tfromrho"
+     plot_names(icomp_tfromH)   = "tfromH"
+     plot_names(icomp_tpert)    = "tpert"
+     plot_names(icomp_machno)   = "Machnumber"
+     plot_names(icomp_dp)       = "deltap"
+     plot_names(icomp_dg)       = "deltagamma"
+     plot_names(icomp_gp)       = "gpx"
+     plot_names(icomp_gp+1)     = "gpy"
+     if (dm > 2) plot_names(icomp_gp+2) = "gpz"
+
+     if ( parallel_IOProcessor() ) &
+       print *, 'spec: ', derive_spec_comp, n_plot_comps
+
+     do n = 1, nspec
+        plot_names(derive_spec_comp+n-1) = "omegadot(" // trim(short_spec_names(n)) // ")"
+     enddo
+     plot_names(derive_spec_comp+nspec  ) = "enucdot"
+     plot_names(derive_spec_comp+nspec+1) = "deltaT"
+     plot_names(derive_spec_comp+nspec+2) = "sponge"
+
+  end subroutine get_plot_names
 
   subroutine make_plotfile(istep,plotdata,u,s,gp,rho_omegadot,sponge, &
                            mba,plot_names,time,dx, &
@@ -40,11 +89,7 @@ contains
     real(dp_t)       , intent(in   ) :: s0(:,:),p0(:)
     real(dp_t)       , intent(inout) :: temp0(:)
 
-    integer :: n,dm,nlevs,nscal,icomp
-    integer :: icomp_tfromrho,icomp_tpert,icomp_rhopert
-    integer :: icomp_machno,icomp_deltag
-    integer :: icomp_tfromH,icomp_dp,icomp_deltaT
-    integer :: icomp_enuc
+    integer :: n,dm,nlevs,nscal
     character(len=7) :: sd_name
 
     dm = get_dim(mba)
@@ -54,30 +99,28 @@ contains
     do n = 1,nlevs
 
        ! VELOCITY 
-       call multifab_copy_c(plotdata(n),1            ,    u(n),1,dm)
+       call multifab_copy_c(plotdata(n),icomp_vel,u(n),1,dm)
 
        ! DENSITY AND (RHO H) 
-       icomp = dm+rho_comp
-       call multifab_copy_c(plotdata(n),icomp,s(n),1,2)
+       call multifab_copy_c(plotdata(n),icomp_rho,s(n),rho_comp,2)
 
        ! SPECIES
-       icomp = dm+spec_comp
-       call make_XfromrhoX(plotdata(n),icomp,s(n))
+       call make_XfromrhoX(plotdata(n),icomp_spec,s(n))
 
        ! TRACER
        if (ntrac .ge. 1) then
-         icomp = dm+trac_comp
-         call multifab_copy_c(plotdata(n),icomp,s(n),trac_comp,ntrac)
+         call multifab_copy_c(plotdata(n),icomp_trac,s(n),trac_comp,ntrac)
        end if
 
+       ! MAGVEL
+       call make_magvel (plotdata(n),icomp_magvel,u(n))
+
        ! VORTICITY
-       icomp = derive_comp
-       call make_vorticity (plotdata(n),icomp,u(n),dx(n,:), &
+       call make_vorticity (plotdata(n),icomp_vort,u(n),dx(n,:), &
                             the_bc_tower%bc_tower_array(n))
 
-       ! ENTHALPY (RHO H)
-       icomp = derive_comp+1
-       call make_enthalpy  (plotdata(n),icomp,s(n))
+       ! ENTHALPY 
+       call make_enthalpy  (plotdata(n),icomp_enthalpy,s(n))
 
     end do
 
@@ -86,23 +129,15 @@ contains
       do n = 1,nlevs
 
        ! RHOPERT & TEMP (FROM RHO) & TPERT & MACHNO & (GAM1 - GAM10)
-       icomp_rhopert  = derive_comp+2
-       icomp_tfromrho = derive_comp+3
-       icomp_tpert    = derive_comp+5
-       icomp_machno   = derive_comp+6
-       icomp_deltag   = derive_comp+8
        call make_tfromrho  (plotdata(n),icomp_tfromrho,icomp_tpert,icomp_rhopert, &
-                            icomp_machno,icomp_deltag, &
+                            icomp_machno,icomp_dg, &
                             s(n),u(n),s0,temp0,p0,time,dx(n,:))
 
        ! TEMP (FROM H) & DELTA_P
-       icomp_tfromH  = derive_comp+4
-       icomp_dp      = derive_comp+7
        call make_tfromH    (plotdata(n),icomp_tfromH,icomp_dp,s(n),p0,temp0,dx(n,:))
 
        ! DIFF BETWEEN TFROMRHO AND TFROMH
-       icomp_deltaT = derive_spec_comp+nspec+1
-       call make_deltaT (plotdata(n),icomp_deltaT,s(n),p0,temp0,dx(n,:))
+       call make_deltaT (plotdata(n),icomp_dT,s(n),p0,temp0,dx(n,:))
 
       end do
 
@@ -111,23 +146,15 @@ contains
       do n = 1,nlevs
 
        ! RHOPERT & TEMP (FROM RHO) & TPERT & MACHNO & (GAM1 - GAM10)
-       icomp_rhopert  = derive_comp+2
-       icomp_tfromrho = derive_comp+3
-       icomp_tpert    = derive_comp+5
-       icomp_machno   = derive_comp+6
-       icomp_deltag   = derive_comp+8
        call make_tfromrho  (plotdata(n),icomp_tfromrho,icomp_tpert,icomp_rhopert, &
-                            icomp_machno,icomp_deltag, &
+                            icomp_machno,icomp_dg, &
                             s(n),u(n),s0,temp0,p0,time,dx(n,:))
 
        ! TEMP (FROM H) & DELTA_P
-       icomp_tfromH  = derive_comp+4
-       icomp_dp      = derive_comp+7
        call make_tfromH    (plotdata(n),icomp_tfromH,icomp_dp,s(n),p0,temp0,dx(n,:))
 
        ! DIFF BETWEEN TFROMRHO AND TFROMH
-       icomp_deltaT = derive_spec_comp+nspec+1
-       call make_deltaT (plotdata(n),icomp_deltaT,s(n),p0,temp0,dx(n,:))
+       call make_deltaT (plotdata(n),icomp_dT,s(n),p0,temp0,dx(n,:))
 
       end do
 
@@ -136,8 +163,7 @@ contains
     do n = 1,nlevs
 
       ! PRESSURE GRADIENT
-      icomp = derive_comp+9
-      call multifab_copy_c(plotdata(n),icomp,gp(n),1,dm)
+      call multifab_copy_c(plotdata(n),icomp_gp,gp(n),1,dm)
 
     end do
 
@@ -145,20 +171,16 @@ contains
     do n = 1,nlevs
 
        ! OMEGADOT
-       icomp = derive_spec_comp
-       icomp_enuc = derive_spec_comp+nspec
-       call make_omegadot(plotdata(n),icomp,icomp_enuc,s(n),rho_omegadot(n))
+       call make_omegadot(plotdata(n),icomp_omegadot,icomp_enuc,s(n),rho_omegadot(n))
 
     enddo
 
     do n = 1,nlevs
 
        ! SPONGE
-       icomp = icomp_deltaT + 1
-       call multifab_copy_c(plotdata(n),icomp,sponge(n),1,1)
+       call multifab_copy_c(plotdata(n),icomp_sponge,sponge(n),1,1)
 
     enddo
-
 
     write(unit=sd_name,fmt='("plt",i4.4)') istep
     call fabio_ml_multifab_write_d(plotdata, mba%rr(:,1), sd_name, plot_names, &
