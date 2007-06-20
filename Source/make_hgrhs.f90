@@ -185,6 +185,7 @@ contains
       do j = lo(2),hi(2)
       do i = lo(1),hi(1)
         rhs_cc(i,j,k) = div_coeff_cart(i,j,k) * (Source(i,j,k) - Sbar_cart(i,j,k))
+
       end do
       end do  
       end do
@@ -207,7 +208,7 @@ contains
         do i = lo(1), hi(1)+1
           rhs(i,j,k) = EIGHTH * ( rhs_cc(i,j  ,k-1) + rhs_cc(i-1,j  ,k-1) &
                                  +rhs_cc(i,j-1,k-1) + rhs_cc(i-1,j-1,k-1) &
-                                 +rhs_cc(i,j-1,k  ) + rhs_cc(i-1,j-1,k  ) &
+                                 +rhs_cc(i,j  ,k  ) + rhs_cc(i-1,j  ,k  ) &
                                  +rhs_cc(i,j-1,k  ) + rhs_cc(i-1,j-1,k  ) )
         enddo
         enddo
