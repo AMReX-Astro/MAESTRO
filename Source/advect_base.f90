@@ -248,8 +248,12 @@ contains
       do j = 1,nz
          ! (rho, p) --> T,h, etc
          input_flag = 4
+
          den_row(1)  = s0_new(j,rho_comp)
-           p_row(1) =  p0_new(j)
+        temp_row(1)  = temp0(j) 
+           p_row(1)  = p0_new(j)
+         xn_zone(1:) = s0_new(j,spec_comp:)/s0_new(j,rho_comp)
+
          gam1_old(j) = gam1(j)
  
          call eos(input_flag, den_row, temp_row, & 
@@ -262,6 +266,7 @@ contains
                   gam1_row, cs_row, s_row, & 
                   dsdt_row, dsdr_row, &
                   do_diag) 
+
          gam1(j) = gam1_row(1)
       end do
  
