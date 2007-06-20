@@ -21,58 +21,67 @@ module make_plotfile_module
 
 contains
 
-  subroutine get_plot_names(dm,ntrac,plot_names)
+  subroutine get_plot_names(dm,ntrac,plot_names,plot_spec,plot_trac)
 
-     integer          ,intent(in   ) :: dm,ntrac
-     character(len=20),intent(inout) :: plot_names(:)
+    integer          , intent(in   ) :: dm,ntrac
+    logical          , intent(in   ) :: plot_spec,plot_trac
+    character(len=20), intent(inout) :: plot_names(:)
 
-     ! Local variables
-     integer :: n
+    ! Local variables
+    integer :: n
 
-     plot_names(icomp_vel  ) = "x_vel"
-     plot_names(icomp_vel+1) = "y_vel"
-     if (dm > 2) &
-       plot_names(icomp_vel+2) = "z_vel"
-     plot_names(icomp_rho)  = "density"
-     plot_names(icomp_rhoh) = "rhoh"
+    plot_names(icomp_vel  ) = "x_vel"
+    plot_names(icomp_vel+1) = "y_vel"
+    if (dm > 2) &
+      plot_names(icomp_vel+2) = "z_vel"
+    plot_names(icomp_rho)  = "density"
+    plot_names(icomp_rhoh) = "rhoh"
 
-     do n = 1, nspec
-        plot_names(icomp_spec+n-1) = "X(" // trim(short_spec_names(n)) // ")"
-     enddo
-     do n = 1, ntrac
-        plot_names(icomp_trac+n-1) = "tracer"
-     enddo
+    if (plot_spec) then
+      do n = 1, nspec
+         plot_names(icomp_spec+n-1) = "X(" // trim(short_spec_names(n)) // ")"
+      enddo
+    end if
 
-     plot_names(icomp_magvel)   = "magvel"
-     plot_names(icomp_vort)     = "vort"
-     plot_names(icomp_enthalpy) = "enthalpy"
-     plot_names(icomp_rhopert)  = "rhopert"
-     plot_names(icomp_tfromrho) = "tfromrho"
-     plot_names(icomp_tfromH)   = "tfromH"
-     plot_names(icomp_tpert)    = "tpert"
-     plot_names(icomp_machno)   = "Machnumber"
-     plot_names(icomp_dp)       = "deltap"
-     plot_names(icomp_dg)       = "deltagamma"
-     plot_names(icomp_gp)       = "gpx"
-     plot_names(icomp_gp+1)     = "gpy"
-     if (dm > 2) plot_names(icomp_gp+2) = "gpz"
+    if (plot_trac) then
+      do n = 1, ntrac
+       plot_names(icomp_trac+n-1) = "tracer"
+      enddo
+    end if
 
-     if ( parallel_IOProcessor() ) &
-       print *, 'spec: ', derive_spec_comp, n_plot_comps
+    plot_names(icomp_magvel)   = "magvel"
+    plot_names(icomp_vort)     = "vort"
+    plot_names(icomp_enthalpy) = "enthalpy"
+    plot_names(icomp_rhopert)  = "rhopert"
+    plot_names(icomp_tfromrho) = "tfromrho"
+    plot_names(icomp_tfromH)   = "tfromH"
+    plot_names(icomp_tpert)    = "tpert"
+    plot_names(icomp_machno)   = "Machnumber"
+    plot_names(icomp_dp)       = "deltap"
+    plot_names(icomp_dg)       = "deltagamma"
+    plot_names(icomp_dT)       = "deltaT"
+    plot_names(icomp_sponge)   = "sponge"
+    plot_names(icomp_gp)       = "gpx"
+    plot_names(icomp_gp+1)     = "gpy"
+    if (dm > 2) plot_names(icomp_gp+2) = "gpz"
 
-     do n = 1, nspec
-        plot_names(derive_spec_comp+n-1) = "omegadot(" // trim(short_spec_names(n)) // ")"
-     enddo
-     plot_names(derive_spec_comp+nspec  ) = "enucdot"
-     plot_names(derive_spec_comp+nspec+1) = "deltaT"
-     plot_names(derive_spec_comp+nspec+2) = "sponge"
+    if (plot_spec) then
+      do n = 1, nspec
+         plot_names(icomp_omegadot+n-1) = "omegadot(" // trim(short_spec_names(n)) // ")"
+      enddo
+      plot_names(icomp_enuc) = "enucdot"
+    end if
+
+    do n = 1, n_plot_comps
+      print *,'NAME ',n,plot_names(n)
+    end do
 
   end subroutine get_plot_names
 
   subroutine make_plotfile(istep,plotdata,u,s,gp,rho_omegadot,sponge, &
                            mba,plot_names,time,dx, &
                            the_bc_tower, &
-                           s0,p0,temp0,ntrac)
+                           s0,p0,temp0,ntrac,plot_spec,plot_trac)
 
     integer          , intent(in   ) :: istep
     integer          , intent(in   ) :: ntrac
@@ -88,6 +97,7 @@ contains
     type(bc_tower)   , intent(in   ) :: the_bc_tower
     real(dp_t)       , intent(in   ) :: s0(:,:),p0(:)
     real(dp_t)       , intent(inout) :: temp0(:)
+    logical          , intent(in   ) :: plot_spec,plot_trac
 
     integer :: n,dm,nlevs,nscal
     character(len=7) :: sd_name
@@ -105,10 +115,11 @@ contains
        call multifab_copy_c(plotdata(n),icomp_rho,s(n),rho_comp,2)
 
        ! SPECIES
-       call make_XfromrhoX(plotdata(n),icomp_spec,s(n))
+       if (plot_spec) &
+         call make_XfromrhoX(plotdata(n),icomp_spec,s(n))
 
        ! TRACER
-       if (ntrac .ge. 1) then
+       if (plot_trac .and. ntrac .ge. 1) then
          call multifab_copy_c(plotdata(n),icomp_trac,s(n),trac_comp,ntrac)
        end if
 
@@ -168,12 +179,12 @@ contains
     end do
 
 
-    do n = 1,nlevs
-
-       ! OMEGADOT
+    if (plot_spec) then
+      ! OMEGADOT
+      do n = 1,nlevs
        call make_omegadot(plotdata(n),icomp_omegadot,icomp_enuc,s(n),rho_omegadot(n))
-
-    enddo
+      enddo
+    end if
 
     do n = 1,nlevs
 
