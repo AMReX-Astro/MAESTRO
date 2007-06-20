@@ -72,10 +72,6 @@ contains
       plot_names(icomp_enuc) = "enucdot"
     end if
 
-    do n = 1, n_plot_comps
-      print *,'NAME ',n,plot_names(n)
-    end do
-
   end subroutine get_plot_names
 
   subroutine make_plotfile(istep,plotdata,u,s,gp,rho_omegadot,sponge, &
