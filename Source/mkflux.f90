@@ -226,7 +226,11 @@ contains
          elseif (phys_bc(1,1) .eq. INLET) then
            sedgex(is,j,n) = s(is-1,j,n)
          elseif (phys_bc(1,1) .eq. OUTLET) then
-           sedgex(is,j,n) = s_r(is)
+           if (is_vel .and. n.eq.1) then
+              sedgex(is,j,n) = MIN(s_r(is),ZERO)
+           else
+              sedgex(is,j,n) = s_r(is)
+           end if
          endif
          if (phys_bc(1,2) .eq. SLIP_WALL .or. phys_bc(1,2) .eq. NO_SLIP_WALL) then
            if (is_vel .and. n .eq. 1) then
@@ -239,7 +243,11 @@ contains
          elseif (phys_bc(1,2) .eq. INLET) then
            sedgex(ie+1,j,n) = s(ie+1,j,n)
          elseif (phys_bc(1,2) .eq. OUTLET) then
-           sedgex(ie+1,j,n) = s_l(ie+1)
+           if (is_vel .and. n.eq.1) then
+              sedgex(ie+1,j,n) = MAX(s_l(ie+1),ZERO)
+           else
+              sedgex(ie+1,j,n) = s_l(ie+1)
+           end if
          endif
 
          if (velpred .eq. 1) then
@@ -348,7 +356,11 @@ contains
         elseif (phys_bc(2,1) .eq. INLET) then
           sedgey(i,js,n) = s(i,js-1,n)
         elseif (phys_bc(2,1) .eq. OUTLET) then
-          sedgey(i,js,n) = s_t(js)
+          if (is_vel .and. n.eq.2) then
+             sedgey(i,js,n) = MIN(s_t(js),ZERO)
+          else
+             sedgey(i,js,n) = s_t(js)
+          end if
         endif
 
         if (phys_bc(2,2) .eq. SLIP_WALL .or. phys_bc(2,2) .eq. NO_SLIP_WALL) then
@@ -362,7 +374,11 @@ contains
         elseif (phys_bc(2,2) .eq. INLET) then
           sedgey(i,je+1,n) = s(i,je+1,n)
         elseif (phys_bc(2,2) .eq. OUTLET) then
-          sedgey(i,je+1,n) = s_b(je+1)
+          if (is_vel .and. n.eq.2) then
+             sedgey(i,je+1,n) = MAX(s_b(je+1),ZERO)
+          else
+             sedgey(i,je+1,n) = s_b(je+1)
+          end if
         endif
 
         if (velpred .eq. 1) then
