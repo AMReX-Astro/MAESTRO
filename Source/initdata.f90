@@ -682,7 +682,7 @@ contains
     integer :: npts
     real(kind=dp_t), dimension(npts) :: model_r, model_var
 
-    real(kind=dp_t) :: val, slope
+    real(kind=dp_t) :: val, slope, xi, dr_model
 
     integer :: i, id
 
@@ -695,13 +695,17 @@ contains
 
     if (id == 1) then
        slope = (model_var(id+1) - model_var(id))/(model_r(id+1) - model_r(id))
+       interpolate = slope*(r - model_r(id)) + model_var(id)
     else if (id == npts) then
        slope = (model_var(id) - model_var(id-1))/(model_r(id) - model_r(id-1))
+       interpolate = slope*(r - model_r(id)) + model_var(id)
     else
-       slope = (model_var(id+1) - model_var(id-1))/(model_r(id+1) - model_r(id-1))
+       dr_model = model_r(id+1) - model_r(id)
+       xi = r - model_r(id)
+       interpolate = (model_var(id+1) - 2*model_var(id) + model_var(id-1))*xi**2/(2*dr_model**2) + &
+                     (model_var(id+1) - model_var(id-1))*xi/(2*dr_model) + &
+                     (-model_var(id+1) + 26*model_var(id) - model_var(id-1))/24.0_dp_t
     endif
-
-    interpolate = slope*(r - model_r(id)) + model_var(id)
 
     return
 
