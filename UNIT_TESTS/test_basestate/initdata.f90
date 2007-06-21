@@ -481,7 +481,7 @@ contains
 
     logical :: do_diag
 
-   real(kind=dp_t), parameter :: cutoff_density = 1.e-4
+    real(kind=dp_t), parameter :: cutoff_density = 1.d-4
 
     do_diag = .false.
 
@@ -682,7 +682,7 @@ contains
     integer :: npts
     real(kind=dp_t), dimension(npts) :: model_r, model_var
 
-    real(kind=dp_t) :: val, slope
+    real(kind=dp_t) :: val, slope, xi, dr_model
 
     integer :: i, id
 
@@ -695,32 +695,37 @@ contains
 
     if (id == 1) then
        slope = (model_var(id+1) - model_var(id))/(model_r(id+1) - model_r(id))
+       interpolate = slope*(r - model_r(id)) + model_var(id)
     else if (id == npts) then
        slope = (model_var(id) - model_var(id-1))/(model_r(id) - model_r(id-1))
+       interpolate = slope*(r - model_r(id)) + model_var(id)
     else
-       slope = (model_var(id+1) - model_var(id-1))/(model_r(id+1) - model_r(id-1))
+       dr_model = model_r(id+1) - model_r(id)
+       xi = r - model_r(id)
+       interpolate = (model_var(id+1) - 2*model_var(id) + model_var(id-1))*xi**2/(2*dr_model**2) + &
+                     (model_var(id+1) - model_var(id-1))*xi/(2*dr_model) + &
+                     (-model_var(id+1) + 26*model_var(id) - model_var(id-1))/24.0_dp_t
     endif
-
-    interpolate = slope*(r - model_r(id)) + model_var(id)
 
     return
 
   end function interpolate
 
+
   subroutine write_base_state(sd_name,s0,temp0,p0,div_coeff)
- 
+
     character(len=9), intent(in) :: sd_name
     real(kind=dp_t) , intent(in) :: s0(:,:),p0(:),temp0(:),div_coeff(:)
     real(kind=dp_t) , allocatable   :: base_r(:)
- 
+
     integer :: i, n, nr
- 
+
     nr = size(s0,dim=1)
     allocate(base_r(nr))
- 
+
     if (parallel_IOProcessor()) then
        write(6,*) 'Writing base state to ',sd_name
- 
+
        open(unit=99,file=sd_name,form = "formatted", access = "sequential",action="write")
        do i = 1, nr
           base_r(i) = (dble(i)-HALF) * dr
@@ -729,12 +734,14 @@ contains
        end do
        close(99)
     endif
- 
+
     deallocate(base_r)
- 
+
 1000 format(16(e30.20,1x))
- 
+
   end subroutine write_base_state
+
+
   subroutine read_base_state(sd_name,s0,temp0,p0,div_coeff)
     
     character(len=9), intent(in   ) :: sd_name
@@ -746,7 +753,9 @@ contains
     nr = size(s0,dim=1)
     allocate(base_r(nr))
 
-    print *,'Reading base state from ',sd_name
+    if (parallel_IOProcessor()) then
+      print *,'Reading base state from ',sd_name
+    end if
 
     open(unit=99,file=sd_name)
     do i = 1, size(s0,dim=1)
