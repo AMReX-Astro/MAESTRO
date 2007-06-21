@@ -239,7 +239,7 @@ contains
       do j = 1,nz
          divbetaw = one / (z(j)**2) * (zl(j+1)**2 * beta(j+1) * vel(j+1) - &
                                        zl(j  )**2 * beta(j  ) * vel(j  ) ) / dr
-         betahalf = half * (beta(j+1) + beta(j))
+         betahalf = div_coeff_old(j)
          factor = half * dt * gam1(j) * (Sbar_in(j) - divbetaw / betahalf)
          p0_new(j) = p0_old(j) * (one + factor ) / (one - factor)
  
@@ -283,7 +283,7 @@ contains
       do j = 1,nz
          divbetaw = one / (z(j)**2) * (zl(j+1)**2 * beta_nh(j+1) * vel(j+1) - &
                                        zl(j  )**2 * beta_nh(j  ) * vel(j  ) ) / dr
-         betahalf = half * (beta_nh(j+1) + beta_nh(j))
+         betahalf = HALF*(div_coeff_old(j) + div_coeff_new(j))
          factor = half * dt * (Sbar_in(j) - divbetaw / betahalf)
          p0_new(j) = p0_old(j) * (one + factor * gam1_old(j)) / (one - factor * gam1(j))
  
