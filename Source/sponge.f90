@@ -11,14 +11,16 @@ module sponge_module
   implicit none
  
   real(dp_t), save :: r_sp, r_md, r_tp
+  real(dp_t), save :: r_sp_outer, r_tp_outer
   real(dp_t), save :: alpha
  
 contains
 
-  subroutine init_sponge (s0,anelastic_cutoff)
+  subroutine init_sponge (s0,anelastic_cutoff,prob_hi,dx)
 
     real(kind=dp_t), intent(in   ) :: s0(0:,:)
     real(kind=dp_t), intent(in   ) :: anelastic_cutoff
+    real(kind=dp_t), intent(in   ) :: prob_hi(:),dx(:)
 
     real (kind = dp_t) :: x, y, z, r
     real (kind = dp_t) :: r_top
@@ -47,11 +49,21 @@ contains
 
       r_tp = 2.d0 * r_md - r_sp
 
+      r_tp_outer = HALF * max(max(prob_hi(1),prob_hi(2)),prob_hi(3))
+      r_sp_outer = r_tp_outer - 4.d0 * dx(3)
+
+      alpha = 10.d0
 !     alpha = 100.d0
-      alpha = 1000.d0
+!     alpha = 1000.d0
 
       if ( parallel_IOProcessor() ) &
-        print *, 'sponge : r_sp, r_md, r_tp, r_top ', r_sp, r_md, r_tp, r_top
+        write(6,1000)  r_sp, r_tp
+
+      if ( parallel_IOProcessor() ) &
+        write(6,1001)  r_sp_outer, r_tp_outer
+
+1000  format('inner sponge: r_sp      , r_tp      : ',e20.12,2x,e20.12)
+1001  format('outer sponge: r_sp_outer, r_tp_outer: ',e20.12,2x,e20.12)
 
   end subroutine init_sponge
 
@@ -110,9 +122,9 @@ contains
 
   subroutine mk_sponge_3d(sponge,lo,hi,dx,dt)
 
-      integer        , intent(in   ) ::  lo(:),hi(:)
+      integer        , intent(in   ) :: lo(:),hi(:)
       real(kind=dp_t), intent(inout) :: sponge(lo(1):,lo(2):,lo(3):)
-      real(kind=dp_t), intent(in   ) ::     dx(:),dt
+      real(kind=dp_t), intent(in   ) :: dx(:),dt
 
       integer         :: i,j,k
       real(kind=dp_t) :: x,y,z,r,smdamp
@@ -142,13 +154,25 @@ contains
               x = (dble(i)+HALF)*dx(1)
   
               r = sqrt( (x-center(1))**2 + (y-center(2))**2 + (z-center(3))**2 )
+
+              ! Inner sponge: damps velocities at edge of star
               if (r >= r_sp) then
                  if (r < r_tp) then
                    smdamp = HALF*(ONE - cos(M_PI*(r - r_sp)/(r_tp - r_sp)))
                  else
                    smdamp = ONE
                  endif
-                 sponge(i,j,k) = ONE / (ONE + dt * smdamp* alpha)
+                 sponge(i,j,k) = ONE / (ONE + dt * smdamp * alpha)
+              endif
+
+              ! Outer sponge: damps velocities at edge of domain
+              if (r >= r_sp_outer) then
+                 if (r < r_tp_outer) then
+                   smdamp = HALF*(ONE - cos(M_PI*(r - r_sp_outer)/(r_tp_outer - r_sp_outer)))
+                 else
+                   smdamp = ONE
+                 endif
+                 sponge(i,j,k) = sponge(i,j,k) / (ONE + dt * smdamp * 10.d0 * alpha)
               endif
 
             end do
