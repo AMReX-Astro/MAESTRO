@@ -71,6 +71,7 @@ contains
 
       ! HACK -- these are the domain sizes
       L_x = 2.5d8
+      L_y = 2.5d8
 
       pi = 3.1415926535897932384626433d0
 
