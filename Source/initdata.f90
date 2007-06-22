@@ -355,11 +355,11 @@ contains
     rhoh_pert = den_row(1)*h_row(1)
     rhoX_pert(:) = dens_pert*xn_zone(:)
     
-    if ( (r0 .lt. 2.0) .or. (r1 .lt. 2.0) .or. (r2 .lt. 2.0) ) then
-      trac_pert(:) = ONE
-    else
+!   if ( (r0 .lt. 2.0) .or. (r1 .lt. 2.0) .or. (r2 .lt. 2.0) ) then
+!     trac_pert(:) = ONE
+!   else
       trac_pert(:) = ZERO
-    end if
+!   end if
 
   end subroutine perturb_2d
 
@@ -431,11 +431,11 @@ contains
     rhoh_pert = den_row(1)*h_row(1)
     rhoX_pert(:) = dens_pert*xn_zone(:)
     
-    if (r1 .lt. 2.0) then
-      trac_pert(:) = ONE
-    else
+!   if (r1 .lt. 2.0) then
+!     trac_pert(:) = ONE
+!   else
       trac_pert(:) = ZERO
-    end if
+!   end if
 
   end subroutine perturb_3d
 
