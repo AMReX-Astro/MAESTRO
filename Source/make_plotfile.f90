@@ -145,7 +145,7 @@ contains
        call make_tfromH    (plotdata(n),icomp_tfromH,icomp_dp,s(n),p0,temp0,dx(n,:))
 
        ! DIFF BETWEEN TFROMRHO AND TFROMH
-       call make_deltaT (plotdata(n),icomp_dT,s(n),p0,temp0,dx(n,:))
+       call make_deltaT (plotdata(n),icomp_dT,icomp_tfromrho,icomp_tfromH)
 
       end do
 
@@ -162,7 +162,7 @@ contains
        call make_tfromH    (plotdata(n),icomp_tfromH,icomp_dp,s(n),p0,temp0,dx(n,:))
 
        ! DIFF BETWEEN TFROMRHO AND TFROMH
-       call make_deltaT (plotdata(n),icomp_dT,s(n),p0,temp0,dx(n,:))
+       call make_deltaT (plotdata(n),icomp_dT,icomp_tfromrho,icomp_tfromH)
 
       end do
 
