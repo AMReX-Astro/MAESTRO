@@ -13,8 +13,8 @@ contains
    subroutine make_vorticity (vort,comp,u,dx,bc)
 
       integer        , intent(in   ) :: comp
-      type(multifab) , intent(inout) :: vort
-      type(multifab) , intent(in   ) :: u
+      type(multifab) , intent(in   ) :: vort
+      type(multifab) , intent(inout) :: u
       real(kind=dp_t), intent(in   ) :: dx(:)
       type(bc_level) , intent(in   ) :: bc
 
