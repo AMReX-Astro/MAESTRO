@@ -25,6 +25,7 @@ contains
 
       ng = u%ng
       dm = u%dim
+      call multifab_fill_boundary(u)
 
       do i = 1, u%nboxes
          if ( multifab_remote(u, i) ) cycle
