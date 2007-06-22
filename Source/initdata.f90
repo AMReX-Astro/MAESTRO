@@ -454,6 +454,7 @@ contains
 
     real(kind=dp_t) :: r,dr_in,rmax,starting_rad
     real(kind=dp_t) :: d_ambient,t_ambient,p_ambient, xn_ambient(nspec)
+    real(kind=dp_t) :: sum
     real(kind=dp_t) :: integral, temp_term_lo, temp_term_hi
     real(kind=dp_t) :: temp_min,p0_lo,p0_hi
     real(kind=dp_t) :: height_of_model, height_of_domain
@@ -629,10 +630,15 @@ contains
          t_ambient = interpolate(r, npts_model, base_r, base_state(:,itemp_model))
          p_ambient = interpolate(r, npts_model, base_r, base_state(:,ipres_model))
 
+         sum = ZERO
          do n = 1, nspec
-            xn_ambient(n) = interpolate(r, npts_model, base_r, base_state(:,ispec_model-1+n))
+            xn_ambient(n) = max(ZERO, &
+                                min(ONE, &
+                                    interpolate(r, npts_model, base_r, base_state(:,ispec_model-1+n))))
+            sum = sum + xn_ambient(n)
          enddo
-
+         xn_ambient(:) = xn_ambient(:)/sum
+         
          ! use the EOS to make the state consistent
          temp_row(1) = t_ambient
          den_row(1)  = d_ambient
@@ -699,6 +705,11 @@ contains
     else if (id == npts) then
        slope = (model_var(id) - model_var(id-1))/(model_r(id) - model_r(id-1))
        interpolate = slope*(r - model_r(id)) + model_var(id)
+    else if ((model_var(id+1) - model_var(id))*(model_var(id) - model_var(id-1)) <= ZERO) then
+
+       ! if we are at a maximum or minimum, then drop to linear interpolation
+       slope = (model_var(id+1) - model_var(id-1))/(model_r(id+1) - model_r(id-1))
+       interpolate = slope*(r - model_r(id)) + model_var(id)       
     else
        dr_model = model_r(id+1) - model_r(id)
        xi = r - model_r(id)
@@ -706,6 +717,7 @@ contains
                      (model_var(id+1) - model_var(id-1))*xi/(2*dr_model) + &
                      (-model_var(id+1) + 26*model_var(id) - model_var(id-1))/24.0_dp_t
     endif
+
 
     return
 
