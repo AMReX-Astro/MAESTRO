@@ -2,15 +2,12 @@ program grid
 
   integer :: i, j, k
 
-! integer, parameter :: nx = 4
-! integer, parameter :: ny = 4
-! integer, parameter :: nz = 4
-! integer, parameter :: nzones = 256
-
-  integer, parameter :: nx = 2
-  integer, parameter :: ny = 2
-  integer, parameter :: nz = 2
-  integer, parameter :: nzones = 128
+  integer, parameter :: nx = 4
+  integer, parameter :: ny = 4
+  integer, parameter :: nz = 4
+  integer, parameter :: nzonesx = 320
+  integer, parameter :: nzonesy = 320
+  integer, parameter :: nzonesz = 512
 
   integer :: ix, iy, iz
   integer :: nlevs, ngrids
@@ -24,7 +21,7 @@ program grid
   ngrids = nx*ny*nz
 
   write (*, 99) nlevs
-  write (*,101) 0,0,0,nzones-1,nzones-1,nzones-1,0,0,0,ngrids
+  write (*,101) 0,0,0,nzonesx-1,nzonesy-1,nzonesz-1,0,0,0,ngrids
   do i = 1, nx
 
      iy = 0
@@ -33,15 +30,15 @@ program grid
         iz = 0
         do k = 1, nz
 
-           write (*,100) ix,iy,iz, ix+nzones/nx-1,iy+nzones/ny-1,iz+nzones/nz-1,0,0,0
+           write (*,100) ix,iy,iz, ix+nzonesx/nx-1,iy+nzonesy/ny-1,iz+nzonesz/nz-1,0,0,0
 
-           iz = iz + nzones/nz
+           iz = iz + nzonesz/nz
         enddo
 
-        iy = iy + nzones/ny
+        iy = iy + nzonesy/ny
      enddo
 
-     ix = ix + nzones/nx
+     ix = ix + nzonesx/nx
   enddo
         
 end program grid
