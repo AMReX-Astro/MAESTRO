@@ -15,7 +15,7 @@ contains
       real(kind=dp_t), intent(in   ) :: dx(:),time
 
       integer :: i,j
-      real(kind=dp_t) :: x,y,,y_layer
+      real(kind=dp_t) :: x,y,y_layer
       real(kind=dp_t) :: ey,Hmax
       real(kind=dp_t) :: pi,L_x
 
