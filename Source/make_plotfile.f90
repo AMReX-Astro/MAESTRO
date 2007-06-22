@@ -83,7 +83,7 @@ contains
     integer          , intent(in   ) :: istep
     integer          , intent(in   ) :: ntrac
     type(multifab)   , intent(inout) :: plotdata(:)
-    type(multifab)   , intent(in   ) :: u(:)
+    type(multifab)   , intent(inout) :: u(:)
     type(multifab)   , intent(in   ) :: s(:)
     type(multifab)   , intent(in   ) :: gp(:)
     type(multifab)   , intent(in   ) :: rho_omegadot(:)
