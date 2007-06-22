@@ -50,6 +50,7 @@ contains
     end if
 
     plot_names(icomp_magvel)   = "magvel"
+    plot_names(icomp_mom)      = "momentum"
     plot_names(icomp_vort)     = "vort"
     plot_names(icomp_enthalpy) = "enthalpy"
     plot_names(icomp_rhopert)  = "rhopert"
@@ -119,8 +120,8 @@ contains
          call multifab_copy_c(plotdata(n),icomp_trac,s(n),trac_comp,ntrac)
        end if
 
-       ! MAGVEL
-       call make_magvel (plotdata(n),icomp_magvel,u(n))
+       ! MAGVEL & MOMENTUM
+       call make_magvel (plotdata(n),icomp_magvel,icomp_mom,u(n),s(n))
 
        ! VORTICITY
        call make_vorticity (plotdata(n),icomp_vort,u(n),dx(n,:), &
