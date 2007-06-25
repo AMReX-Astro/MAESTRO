@@ -268,6 +268,7 @@ contains
                   do_diag) 
 
          gam1(j) = gam1_row(1)
+        temp0(j) = temp_row(1)
       end do
  
       call make_grav_cell(grav_cell,s0_new(:,rho_comp))
