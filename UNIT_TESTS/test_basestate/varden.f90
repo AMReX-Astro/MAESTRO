@@ -296,7 +296,10 @@ subroutine varden()
                  dsdt_row, dsdr_row, &
                  do_diag)
 
+        ! in the real Maestro code, we are updating the enthalpy by differencing
+        ! the enthalpy equation with the heating term, rather than using the EOS.
         s0(i,rhoh_comp) = den_row(1)*h_row(1)
+
         p0(i) = p_row(1)
         gam1(i) = gam1_row(1)
 
@@ -321,6 +324,7 @@ subroutine varden()
 
      call make_div_coeff(div_coeff,s0(:,rho_comp),p0, &
                          gam1,grav_cell,anelastic_cutoff)     
+
 
 
 
