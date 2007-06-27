@@ -118,6 +118,12 @@ contains
       ! Edge-centered
       allocate(c(nz+1),d(nz+1),e(nz+1),rhs(nz+1),u(nz+1))
       allocate(grav_edge(nz+1))
+
+      c(:)   = ZERO
+      d(:)   = ZERO
+      e(:)   = ZERO
+      rhs(:) = ZERO
+      u(:)   = ZERO
    
      call make_grav_edge(grav_edge,rho0)
 
