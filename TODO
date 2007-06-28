@@ -1,0 +1,21 @@
+-- implement regression testing
+
+-- rebase the EOS to Frank's latest and turn on the Coulomb
+   corrections.  Also make it a module to enable compile-time
+   argument checking
+
+-- make all of the base state stuff start at index 0 to be consistent
+   and double check the test_basestate results
+
+-- deal with the comment "! NOTE NOTE : THIS IS WRONG FOR SPHERICAL !!"
+   in mkflux.f90
+
+-- add S - S_0 as a plot variable
+
+-- make a runtime diagnostic that prints <q> and q_rms for temperature,
+   energy generation, and velocity as a function of radius.
+
+-- figure out what density_cutoff should be in initdata.f90 (in relation
+   to anelastic_cutoff), and understand what values of this give a valid
+   basestate expansion.
+
