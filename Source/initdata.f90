@@ -593,14 +593,10 @@ contains
       print *,'DR , RMAX OF BASE ARRAY',dr, dble(n_base) * dr
     end if
 
-    if (dm .eq. 2) then
-      starting_rad = prob_lo(2)
-    else 
-      if (spherical .eq. 0) then
-        starting_rad = prob_lo(3)
-      else
-        starting_rad = ZERO
-      end if
+    if (spherical .eq. 0) then
+       starting_rad = prob_lo(dm)
+    else
+       starting_rad = ZERO
     end if
 
     j_cutoff = n_base
@@ -702,14 +698,17 @@ contains
     if (id == 1) then
        slope = (model_var(id+1) - model_var(id))/(model_r(id+1) - model_r(id))
        interpolate = slope*(r - model_r(id)) + model_var(id)
+
     else if (id == npts) then
        slope = (model_var(id) - model_var(id-1))/(model_r(id) - model_r(id-1))
        interpolate = slope*(r - model_r(id)) + model_var(id)
+
     else if ((model_var(id+1) - model_var(id))*(model_var(id) - model_var(id-1)) <= ZERO) then
 
        ! if we are at a maximum or minimum, then drop to linear interpolation
        slope = (model_var(id+1) - model_var(id-1))/(model_r(id+1) - model_r(id-1))
        interpolate = slope*(r - model_r(id)) + model_var(id)       
+
     else
        dr_model = model_r(id+1) - model_r(id)
        xi = r - model_r(id)
