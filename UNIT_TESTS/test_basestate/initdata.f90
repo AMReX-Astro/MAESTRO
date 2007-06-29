@@ -593,14 +593,10 @@ contains
       print *,'DR , RMAX OF BASE ARRAY',dr, dble(n_base) * dr
     end if
 
-    if (dm .eq. 2) then
-      starting_rad = prob_lo(2)
-    else 
-      if (spherical .eq. 0) then
-        starting_rad = prob_lo(3)
-      else
-        starting_rad = ZERO
-      end if
+    if (spherical .eq. 0) then
+       starting_rad = prob_lo(dm)
+    else
+       starting_rad = ZERO
     end if
 
     j_cutoff = n_base
