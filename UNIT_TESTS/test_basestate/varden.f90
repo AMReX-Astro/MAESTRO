@@ -222,21 +222,21 @@ subroutine varden()
   dr_base = (prob_hi_x-prob_lo_x) / dble(n_base)
   dx(1) = dr_base
 
-  allocate(div_coeff_old(n_base))
-  allocate(    div_coeff(n_base))
+  allocate(div_coeff_old(0:n_base-1))
+  allocate(    div_coeff(0:n_base-1))
 
-  allocate(grav_cell(n_base))
+  allocate(grav_cell(0:n_base-1))
 
-  allocate(   gam1(n_base  ))
-  allocate( s0_old(n_base, nscal))
-  allocate(     s0(n_base, nscal))
-  allocate(  temp0(n_base  ))
-  allocate( p0_old(n_base  ))
-  allocate(     p0(n_base  ))
+  allocate(   gam1(0:n_base-1  ))
+  allocate( s0_old(0:n_base-1, nscal))
+  allocate(     s0(0:n_base-1, nscal))
+  allocate(  temp0(0:n_base-1  ))
+  allocate( p0_old(0:n_base-1  ))
+  allocate(     p0(0:n_base-1  ))
   allocate( w0_old(0:n_base))
   allocate(     w0(0:n_base))
   allocate(      f(0:n_base))
-  allocate(Sbar_in(n_base))
+  allocate(Sbar_in(0:n_base-1))
 
   w0(:) = ZERO
 
@@ -250,7 +250,7 @@ subroutine varden()
 
   ! output
   open(unit=10,file="base.orig")
-  do i = 1, n_base
+  do i = 0, n_base-1
      write(10,1000) z(i), s0(i,rho_comp), temp0(i), p0(i)
   enddo
   close(unit=10)
@@ -276,7 +276,7 @@ subroutine varden()
 
      y_0 = 4.e7
        
-     do i = 1, n_base
+     do i = 0, n_base-1
 
         Hbar = 1.e16 * exp(-((z(i) - y_0)**2)/ 1.e14)
      
@@ -361,7 +361,7 @@ subroutine varden()
 
   ! output
   open(unit=10,file="base.new")
-  do i = 1, n_base
+  do i = 0, n_base-1
      write(10,1000) z(i), s0(i,rho_comp), temp0(i), p0(i)
   enddo
   close(unit=10)
