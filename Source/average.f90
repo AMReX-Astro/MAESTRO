@@ -136,9 +136,9 @@ contains
 
       integer         , intent(in   ) :: lo(:), hi(:), ng, comp, ncomp
       real (kind=dp_t), intent(in   ) :: phi(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-      real (kind=dp_t), intent(inout) :: phibar(:,:)
+      real (kind=dp_t), intent(inout) :: phibar(0:,:)
       real (kind=dp_t), intent(in   ) :: dx(:)
-      real (kind=dp_t), intent(inout) :: sum(:)
+      real (kind=dp_t), intent(inout) :: sum(0:)
 
 !     Local variables
       integer                       :: i, j, k, n, index
@@ -157,12 +157,12 @@ contains
             x = (dble(i)+HALF)*dx(1) - center(1)
 
             radius = sqrt(x**2 + y**2 + z**2)
-            index = radius / dr + 1
+            index = radius / dr 
 
-            if (index .lt. 1 .or. index .gt. nr) then
+            if (index .lt. 0 .or. index .gt. nr-1) then
               print *,'RADIUS ',radius
               print *,'BOGUS INDEX IN AVERAGE ',index
-              print *,'NOT IN RANGE 0 TO ',nr
+              print *,'NOT IN RANGE 0 TO ',nr-1
               print *,'I J K ',i,j,k
               print *,'X Y Z ',x,y,z
               stop

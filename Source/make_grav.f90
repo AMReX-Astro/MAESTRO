@@ -10,53 +10,60 @@ module make_grav_module
 
 contains
 
-   subroutine make_grav_cell(grav_cell,rho0)
+  subroutine make_grav_cell(grav_cell,rho0)
 
-      real(kind=dp_t), intent(  out) :: grav_cell(:)
-      real(kind=dp_t), intent(in   ) :: rho0(:)
+    ! compute the base state gravitational acceleration at the cell
+    ! centers.  The base state uses 0-based indexing, so grav_cell 
+    ! does too.
 
-      ! Local variables
-      integer                      :: k,nz
-      real(kind=dp_t), allocatable :: m(:)
+    real(kind=dp_t), intent(  out) :: grav_cell(0:)
+    real(kind=dp_t), intent(in   ) :: rho0(0:)
 
-      real(kind=dp_t), parameter :: Gconst = 6.6725985E-8_dp_t
-      real(kind=dp_t), parameter ::     pi = 3.141592653589793238_dp_t
-      real(kind=dp_t), parameter :: fourthirds = 4.0_dp_t/3.0_dp_t
+    ! Local variables
+    integer                      :: k,nz
+    real(kind=dp_t), allocatable :: m(:)
 
-      nz = size(grav_cell,dim=1)
+    real(kind=dp_t), parameter :: Gconst = 6.6725985E-8_dp_t
+    real(kind=dp_t), parameter ::     pi = 3.141592653589793238_dp_t
+    real(kind=dp_t), parameter :: fourthirds = 4.0_dp_t/3.0_dp_t
 
-      if (spherical .eq. 0) then
+    nz = size(grav_cell,dim=1)
 
-        grav_cell(:) = -1.5d10
+    if (spherical .eq. 0) then
 
-      else
+       grav_cell(:) = -1.5d10
+       
+    else
 
-        allocate(m(nz))
+       allocate(m(0:nz-1))
 
-        m(1) = fourthirds*pi*rho0(1)*z(1)**3
-        grav_cell(1) = -Gconst * m(1) / z(1)**2
-        do k = 2, nz
-           ! the mass is defined at the cell-centers, so to compute the
-           ! mass at the current center, we need to add the contribution of
-           ! the upper half of the zone below us and the lower half of the
-           ! current zone.
-           m(k) = m(k-1) + fourthirds*pi*rho0(k-1)*(zl(k) -  z(k-1))*(zl(k)**2 + zl(k)* z(k-1) +  z(k-1)**2) &
-                         + fourthirds*pi*rho0(k  )*( z(k) - zl(k  ))*( z(k)**2 +  z(k)*zl(k  ) + zl(k  )**2)
-!          m(k) = m(k-1) + fourthirds*pi*rho0(k-1)*(zl(k)**3 -  z(k-1)**3) &
-!                        + fourthirds*pi*rho0(k  )*( z(k)**3 - zl(k  )**3)
-           grav_cell(k) = -Gconst * m(k) / z(k)**2
-        enddo
+       m(0) = fourthirds*pi*rho0(0)*z(0)**3
+       grav_cell(0) = -Gconst * m(0) / z(0)**2
 
-        deallocate(m)
+       do k = 1, nz-1
+          ! the mass is defined at the cell-centers, so to compute the
+          ! mass at the current center, we need to add the contribution of
+          ! the upper half of the zone below us and the lower half of the
+          ! current zone.
+          m(k) = m(k-1) + fourthirds*pi*rho0(k-1)*(zl(k) -  z(k-1))*(zl(k)**2 + zl(k)* z(k-1) +  z(k-1)**2) &
+                        + fourthirds*pi*rho0(k  )*( z(k) - zl(k  ))*( z(k)**2 +  z(k)*zl(k  ) + zl(k  )**2)
+          grav_cell(k) = -Gconst * m(k) / z(k)**2
+       enddo
 
-      end if
+       deallocate(m)
 
-   end subroutine make_grav_cell
+    end if
 
-   subroutine make_grav_edge(grav_edge,rho0)
+  end subroutine make_grav_cell
 
-      real(kind=dp_t), intent(  out) :: grav_edge(:)
-      real(kind=dp_t), intent(in   ) :: rho0(:)
+  subroutine make_grav_edge(grav_edge,rho0)
+
+    ! compute the base state gravity at the cell edges (grav_edge(1)
+    ! is the gravitational acceleration at the left edge of zone 1).
+    ! The base state uses 0-based indexing, so grav_edge does too.
+
+    real(kind=dp_t), intent(  out) :: grav_edge(0:)
+    real(kind=dp_t), intent(in   ) :: rho0(0:)
 
       ! Local variables
       integer                      :: j,k,nz
@@ -74,13 +81,14 @@ contains
 
       else
 
-        grav_edge(1) = zero 
-        do k = 2,nz
+        grav_edge(0) = zero 
+        do k = 1,nz-1
+
           mencl = zero 
-          do j = 2, k
-!           mencl = mencl + fourthirds * pi * (zl(j)**3 - zl(j-1)**3) * rho0(j-1)
+          do j = 1, k
             mencl = mencl + fourthirds * pi * (zl(j) - zl(j-1)) * (zl(j)**2 + zl(j)*zl(j-1) + zl(j-1)**2) * rho0(j-1)
           end do
+
           grav_edge(k) = -Gconst * mencl / zl(k)**2
         end do
 

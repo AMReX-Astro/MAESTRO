@@ -15,171 +15,180 @@ module make_w0_module
 
 contains
 
-   subroutine make_w0(vel,vel_old,f,Sbar_in,p0,rho0,gam1,dt,verbose)
+  subroutine make_w0(vel,vel_old,f,Sbar_in,p0,rho0,gam1,dt,verbose)
 
-      real(kind=dp_t), intent(  out) :: vel(:)
-      real(kind=dp_t), intent(in   ) :: vel_old(:)
-      real(kind=dp_t), intent(inout) ::   f(:)
-      real(kind=dp_t), intent(in   ) :: p0(:),rho0(:),gam1(:)
-      real(kind=dp_t), intent(in   ) :: Sbar_in(:)
-      real(kind=dp_t), intent(in   ) :: dt
-      integer        , intent(in   ) :: verbose
+    real(kind=dp_t), intent(  out) :: vel(0:)
+    real(kind=dp_t), intent(in   ) :: vel_old(0:)
+    real(kind=dp_t), intent(inout) ::   f(0:)
+    real(kind=dp_t), intent(in   ) :: p0(0:),rho0(0:),gam1(0:)
+    real(kind=dp_t), intent(in   ) :: Sbar_in(0:)
+    real(kind=dp_t), intent(in   ) :: dt
+    integer        , intent(in   ) :: verbose
 
-      integer         :: j,nz
-      real(kind=dp_t) :: max_vel
+    integer         :: j,nz
+    real(kind=dp_t) :: max_vel
 
-      nz = size(vel,dim=1)
+    ! nz is the dimension of a cell-centered quantity
+    nz = size(vel,dim=1)-1
 
-      f = ZERO
+    f = ZERO
 
-      if (spherical .eq. 0) then
+    if (spherical .eq. 0) then
 
-        call make_w0_planar(vel,vel_old,Sbar_in,f,dt)
+       call make_w0_planar(vel,vel_old,Sbar_in,f,dt)
 
-      else
+    else
 
-        call make_w0_spherical(vel,Sbar_in,p0,rho0,gam1)
+       call make_w0_spherical(vel,Sbar_in,p0,rho0,gam1)
 
-      endif
+    endif
 
-      max_vel = zero
-      do j = 1,nz
-         max_vel = max(max_vel, abs(vel(j)))
-      end do
-      if (parallel_IOProcessor() .and. verbose .ge. 1) &
-        write(6,*) '... max CFL of w0: ',max_vel * dt / dr
+    max_vel = zero
+    do j = 0,nz
+       max_vel = max(max_vel, abs(vel(j)))
+    end do
 
-   end subroutine make_w0
+    if (parallel_IOProcessor() .and. verbose .ge. 1) &
+         write(6,*) '... max CFL of w0: ',max_vel * dt / dr
 
-   subroutine make_w0_planar (vel,vel_old,Sbar_in,f,dt)
+  end subroutine make_w0
 
-      implicit none
-      real(kind=dp_t), intent(  out) :: vel(:)
-      real(kind=dp_t), intent(in   ) :: vel_old(:)
-      real(kind=dp_t), intent(in   ) :: Sbar_in(:)
-      real(kind=dp_t), intent(inout) ::   f(:)
-      real(kind=dp_t), intent(in   ) :: dt
+  subroutine make_w0_planar (vel,vel_old,Sbar_in,f,dt)
 
-!     Local variables
-      integer         :: j,nz
-      real(kind=dp_t), allocatable :: vel_old_cen(:)
-      real(kind=dp_t), allocatable :: vel_new_cen(:)
-      real(kind=dp_t), allocatable ::   force(:)
-      real(kind=dp_t), allocatable ::    edge(:)
-
-      nz = size(vel,dim=1)
-
-      allocate(edge(nz))
-      allocate(vel_old_cen(nz-1),vel_new_cen(nz-1),force(nz-1))
-
-      ! Initialize new velocity to zero.
-      vel(1) = ZERO
-      do j = 2,nz
-         vel(j) = vel(j-1) + Sbar_in(j-1) * dr
-      end do
-
-      ! Compute the 1/rho0 grad pi0 term.
-
-      do j = 1,nz-1
-         vel_old_cen(j) = HALF * (vel_old(j) + vel_old(j+1))
-         vel_new_cen(j) = HALF * (vel    (j) + vel    (j+1))
-      end do
-
-      force = ZERO
-      call mkflux_1d(vel_old_cen,edge,vel_old,force,1,dr,dt)
-
-      do j = 1,nz-1
-         f(j) = (vel_new_cen(j)-vel_old_cen(j)) / dt + vel_old_cen(j) * (edge(j+1)-edge(j)) / dr
-      end do
-
-      deallocate(edge)
-      deallocate(vel_old_cen,vel_new_cen,force)
-
-   end subroutine make_w0_planar
-
-   subroutine make_w0_spherical (vel,Sbar_in,p0,rho0,gam1)
-
-      implicit none
-      real(kind=dp_t), intent(  out) :: vel(:)
-      real(kind=dp_t), intent(in   ) :: p0(:),rho0(:),gam1(:)
-      real(kind=dp_t), intent(in   ) :: Sbar_in(:)
+    implicit none
+    real(kind=dp_t), intent(  out) :: vel(0:)
+    real(kind=dp_t), intent(in   ) :: vel_old(0:)
+    real(kind=dp_t), intent(in   ) :: Sbar_in(0:)
+    real(kind=dp_t), intent(inout) ::   f(0:)
+    real(kind=dp_t), intent(in   ) :: dt
 
 !     Local variables
-      integer         :: j, k, n, nz
-      real(kind=dp_t) :: mencl,rhohalf,integral,velmax
-      real(kind=dp_t), allocatable :: c(:),d(:),e(:),u(:),rhs(:)
-      real(kind=dp_t), allocatable :: m(:),grav_edge(:)
+    integer         :: j,nz
+    real(kind=dp_t), allocatable :: vel_old_cen(:)
+    real(kind=dp_t), allocatable :: vel_new_cen(:)
+    real(kind=dp_t), allocatable ::   force(:)
+    real(kind=dp_t), allocatable ::    edge(:)
 
-      nz = size(vel,dim=1)-1
+    ! nz is the dimension of a cell-centered quantity
+    nz = size(vel,dim=1)-1
 
-      ! Cell-centered
-      allocate(m(nz))
+    ! edge-centered
+    allocate(edge(0:nz))
 
-      ! Edge-centered
-      allocate(c(nz+1),d(nz+1),e(nz+1),rhs(nz+1),u(nz+1))
-      allocate(grav_edge(nz+1))
+    ! cell-centered
+    allocate(vel_old_cen(0:nz-1),vel_new_cen(0:nz-1),force(0:nz-1))
 
-      c(:)   = ZERO
-      d(:)   = ZERO
-      e(:)   = ZERO
-      rhs(:) = ZERO
-      u(:)   = ZERO
+    ! Initialize new velocity to zero.
+    vel(0) = ZERO
+    do j = 1,nz
+       vel(j) = vel(j-1) + Sbar_in(j-1) * dr
+    end do
+
+    ! Compute the 1/rho0 grad pi0 term.
+
+    do j = 0,nz-1
+       vel_old_cen(j) = HALF * (vel_old(j) + vel_old(j+1))
+       vel_new_cen(j) = HALF * (vel    (j) + vel    (j+1))
+    end do
+
+    force = ZERO
+    call mkflux_1d(vel_old_cen,edge,vel_old,force,1,dr,dt)
+
+    do j = 0,nz-1
+       f(j) = (vel_new_cen(j)-vel_old_cen(j)) / dt + &
+            vel_old_cen(j) * (edge(j+1)-edge(j)) / dr
+    end do
+
+    deallocate(edge)
+    deallocate(vel_old_cen,vel_new_cen,force)
+
+  end subroutine make_w0_planar
+
+  subroutine make_w0_spherical (vel,Sbar_in,p0,rho0,gam1)
+
+    implicit none
+    real(kind=dp_t), intent(  out) :: vel(0:)
+    real(kind=dp_t), intent(in   ) :: p0(0:),rho0(0:),gam1(0:)
+    real(kind=dp_t), intent(in   ) :: Sbar_in(0:)
+
+!     Local variables
+    integer         :: j, k, n, nz
+    real(kind=dp_t) :: mencl,rhohalf,integral,velmax
+    real(kind=dp_t), allocatable :: c(:),d(:),e(:),u(:),rhs(:)
+    real(kind=dp_t), allocatable :: m(:),grav_edge(:)
+    
+    ! nz is the dimension of an cell-centered quantity
+    nz = size(vel,dim=1)-1
+
+    ! Cell-centered
+    allocate(m(0:nz-1))
+
+    ! Edge-centered
+    allocate(c(0:nz),d(0:nz),e(0:nz),rhs(0:nz),u(0:nz))
+    allocate(grav_edge(0:nz))
+
+    c(:)   = ZERO
+    d(:)   = ZERO
+    e(:)   = ZERO
+    rhs(:) = ZERO
+    u(:)   = ZERO
    
-     call make_grav_edge(grav_edge,rho0)
+    call make_grav_edge(grav_edge,rho0)
 
-     do j = 2,nz+1
+    do j = 1,nz
        c(j) = gam1(j-1) * p0(j-1) * zl(j-1)**2 / z(j-1)**2
        c(j) = c(j) / dr**2
-     end do
+    end do
 
-     do j = 2,nz
-!       rhohalf = half * (rho0(j) + rho0(j-1))
-        if (j == 2) then
-           rhohalf = half * (rho0(1) + rho0(2))
-        else if (j == nz) then
-           rhohalf = half * (rho0(nz-1) + rho0(nz))
-        else
-           rhohalf = 7.d0/12.d0 * (rho0(j) + rho0(j-1)) - &
-                     1.d0/12.d0 * (rho0(j+1) + rho0(j-2))
-        endif
+    do j = 1,nz-1
+
+       if (j == 1) then
+          rhohalf = half * (rho0(0) + rho0(1))
+       else if (j == nz-1) then
+          rhohalf = half * (rho0(nz-2) + rho0(nz-1))
+       else
+          rhohalf = 7.d0/12.d0 * (rho0(j) + rho0(j-1)) - &
+                    1.d0/12.d0 * (rho0(j+1) + rho0(j-2))
+       endif
 
        d(j) = -( gam1(j-1) * p0(j-1) / z(j-1)**2 &
                 +gam1(j  ) * p0(j  ) / z(j  )**2 ) * (zl(j)**2/dr**2) &
-              - four * rhohalf * grav_edge(j) / zl(j)
-     end do
+                - four * rhohalf * grav_edge(j) / zl(j)
+    end do
 
-     do j = 2,nz
+    do j = 1,nz-1
        rhs(j) = ( gam1(j  )*p0(j  )*Sbar_in(j) - gam1(j-1)*p0(j-1)*Sbar_in(j-1) ) 
        rhs(j) = rhs(j) / dr
-     end do
+    end do
 
-     do j = 1,nz
+    do j = 0,nz-1
        e(j) = gam1(j) * p0(j) * zl(j+1)**2 / z(j)**2
        e(j) = e(j) / dr**2
-     end do
+    end do
 
-     ! Lower boundary
-       d(1) = one
-       e(1) = zero
-     rhs(1) = zero
+    ! Lower boundary
+       d(0) = one
+       e(0) = zero
+     rhs(0) = zero
 
-     ! Upper boundary
-       c(nz+1) = zero
-       d(nz+1) = one
-     rhs(nz+1) = zero
+    ! Upper boundary
+       c(nz) = zero
+       d(nz) = one
+     rhs(nz) = zero
 
-     ! Call the tridiagonal solver
-     call tridiag(c, d, e, rhs, u, nz+1)
+    ! Call the tridiagonal solver
+    call tridiag(c, d, e, rhs, u, nz+1)
 
-     velmax = zero
-     do j = 1,nz+1
+    velmax = zero
+    do j = 0,nz
        vel(j) = u(j)
        velmax = max(velmax,abs(vel(j)))
-     end do
+    end do
 
-     deallocate(m,grav_edge)
+    deallocate(m,grav_edge)
 
-   end subroutine make_w0_spherical
+  end subroutine make_w0_spherical
+
 
    subroutine tridiag(a,b,c,r,u,n)
 

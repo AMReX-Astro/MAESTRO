@@ -35,7 +35,7 @@ contains
       type(multifab) , intent(inout) :: ext_scal_force
       type(multifab) , intent(in   ) :: normal
 !
-      real(kind=dp_t), intent(inout) :: w0(:)
+      real(kind=dp_t), intent(inout) :: w0(0:)
       type(multifab) , intent(in   ) :: w0_cart_vec
       real(kind=dp_t), intent(in   ) :: dx(:),time,dt
       type(bc_level) , intent(in   ) :: the_bc_level
@@ -44,11 +44,11 @@ contains
 !
       type(multifab) :: force,scal_force,s0_cart
 
-      real(kind=dp_t), intent(in   ) ::  s0_old(:,:)
-      real(kind=dp_t), intent(in   ) ::  s0_new(:,:)
-      real(kind=dp_t), intent(in   ) ::    p0_old(:)
-      real(kind=dp_t), intent(in   ) ::    p0_new(:)
-      real(kind=dp_t), intent(in   ) ::    temp0(:)
+      real(kind=dp_t), intent(in   ) ::  s0_old(0:,:)
+      real(kind=dp_t), intent(in   ) ::  s0_new(0:,:)
+      real(kind=dp_t), intent(in   ) ::    p0_old(0:)
+      real(kind=dp_t), intent(in   ) ::    p0_new(0:)
+      real(kind=dp_t), intent(in   ) ::    temp0(0:)
 ! 
       real(kind=dp_t), pointer:: uop(:,:,:,:)
       real(kind=dp_t), pointer:: ump(:,:,:,:)
@@ -767,7 +767,7 @@ contains
     real(kind=dp_t), intent(in   ) ::  wmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
 
     real(kind=dp_t), intent(in   ) :: base_cart(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-    real(kind=dp_t), intent(in   ) :: w0(:)
+    real(kind=dp_t), intent(in   ) :: w0(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
     
     ! Local variables
@@ -780,10 +780,10 @@ contains
     real(kind=dp_t), allocatable :: divu(:),divu_cart(:,:,:)
 
     nr = size(w0,dim=1)-1
-    allocate(divu(nr))
+    allocate(divu(0:nr-1))
     allocate(divu_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
 
-    do k = 1,nr
+    do k = 0,nr-1
       divu(k) = (zl(k+1)**2 * w0(k+1)- zl(k)**2 * w0(k))/(dr*z(k)**2)
     end do
     call fill_3d_data(divu_cart,divu,lo,hi,dx,0)
