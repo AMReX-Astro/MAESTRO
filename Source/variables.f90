@@ -8,7 +8,7 @@ module variables
   integer, save :: rho_comp, rhoh_comp, spec_comp, trac_comp, press_comp, first_derive_comp
   integer, save :: icomp_vel, icomp_rho, icomp_rhoh, icomp_spec, icomp_trac
   integer, save :: icomp_magvel, icomp_mom, icomp_vort,icomp_enthalpy,icomp_tfromrho,icomp_tpert,icomp_rhopert
-  integer, save :: icomp_machno,icomp_dg,icomp_gp
+  integer, save :: icomp_machno,icomp_dg,icomp_spert,icomp_gp
   integer, save :: icomp_tfromH,icomp_dp,icomp_dT
   integer, save :: icomp_omegadot,icomp_enuc,icomp_sponge
   integer, save :: n_plot_comps
@@ -57,9 +57,10 @@ contains
     icomp_machno   = first_derive_comp+8
     icomp_dp       = first_derive_comp+9
     icomp_dg       = first_derive_comp+10
-    icomp_dT       = first_derive_comp+11
-    icomp_sponge   = first_derive_comp+12
-    icomp_gp       = first_derive_comp+13
+    icomp_spert    = first_derive_comp+11
+    icomp_dT       = first_derive_comp+12
+    icomp_sponge   = first_derive_comp+13
+    icomp_gp       = first_derive_comp+14
 
     if (plot_spec) then
       icomp_omegadot = icomp_gp + dm

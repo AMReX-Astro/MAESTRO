@@ -288,11 +288,12 @@ contains
   end subroutine maketfromH_3d_sphr
 
   subroutine make_tfromrho (plotdata,comp_tfromrho,comp_tpert,comp_rhopert, &
-                            comp_machno,comp_deltag, &
+                            comp_machno,comp_deltag,comp_spert, &
                             s,u,s0,t0,p0,time,dx)
 
     integer        , intent(in   ) :: comp_tfromrho,comp_tpert
-    integer        , intent(in   ) :: comp_rhopert, comp_machno, comp_deltag
+    integer        , intent(in   ) :: comp_rhopert, comp_machno
+    integer        , intent(in   ) :: comp_deltag, comp_spert
     type(multifab) , intent(inout) :: plotdata
     type(multifab) , intent(in   ) :: s
     type(multifab) , intent(in   ) :: u
@@ -300,7 +301,6 @@ contains
     real(kind=dp_t), intent(inout) :: t0(0:)
     real(kind=dp_t), intent(in   ) :: p0(0:)
     real(kind=dp_t), intent(in   ) :: time,dx(:)
-
     real(kind=dp_t), pointer:: sp(:,:,:,:),tp(:,:,:,:),up(:,:,:,:)
     integer :: lo(s%dim),hi(s%dim),ng,dm
     integer :: i
@@ -320,6 +320,7 @@ contains
           call maketfromrho_2d(tp(:,:,1,comp_tfromrho),tp(:,:,1,comp_tpert), &
                                tp(:,:,1,comp_rhopert ), &
                                tp(:,:,1,comp_machno  ),tp(:,:,1,comp_deltag), &
+                               tp(:,:,1,comp_spert   ), &
                                sp(:,:,1,:), up(:,:,1,:), &
                                lo, hi, ng, s0, t0, p0, time, dx)
        case (3)
@@ -327,12 +328,14 @@ contains
             call maketfromrho_3d_sphr(tp(:,:,:,comp_tfromrho),tp(:,:,:,comp_tpert), &
                                       tp(:,:,:,comp_rhopert ), &
                                       tp(:,:,:,comp_machno  ),tp(:,:,:,comp_deltag), &
+                                      tp(:,:,:,comp_spert   ), &
                                       sp(:,:,:,:), up(:,:,:,:), &
                                       lo, hi, ng, s0, t0, p0, time, dx)
           else
             call maketfromrho_3d_cart(tp(:,:,:,comp_tfromrho),tp(:,:,:,comp_tpert), &
                                       tp(:,:,:,comp_rhopert ), &
                                       tp(:,:,:,comp_machno  ),tp(:,:,:,comp_deltag), &
+                                      tp(:,:,:,comp_spert   ), &
                                       sp(:,:,:,:), up(:,:,:,:), &
                                       lo, hi, ng, s0, t0, p0, time, dx)
           endif
@@ -341,7 +344,8 @@ contains
 
   end subroutine make_tfromrho
 
-  subroutine maketfromrho_2d (t,tpert,rhopert,machno,deltagamma,s,u,lo,hi,ng,s0,t0,p0,time,dx)
+  subroutine maketfromrho_2d (t,tpert,rhopert,machno,deltagamma,spert, &
+                              s,u,lo,hi,ng,s0,t0,p0,time,dx)
 
     implicit none
 
@@ -351,6 +355,7 @@ contains
     real (kind=dp_t), intent(  out) ::    rhopert(lo(1):,lo(2):)  
     real (kind=dp_t), intent(  out) ::     machno(lo(1):,lo(2):)  
     real (kind=dp_t), intent(  out) :: deltagamma(lo(1):,lo(2):)  
+    real (kind=dp_t), intent(  out) ::      spert(lo(1):,lo(2):)  
     real (kind=dp_t), intent(in   ) ::  s(lo(1)-ng:,lo(2)-ng:,:)
     real (kind=dp_t), intent(in   ) ::  u(lo(1)-ng:,lo(2)-ng:,:)
     real (kind=dp_t), intent(in   ) :: s0(0:,:)
@@ -361,9 +366,10 @@ contains
     !     Local variables
     integer          :: i, j
     real (kind=dp_t) :: vel
-    real (kind=dp_t), allocatable :: gam10(:)
+    real (kind=dp_t), allocatable :: gam10(:), entr0(:)
 
     allocate(gam10(lo(2):hi(2)))
+    allocate(entr0(lo(2):hi(2)))
 
     do_diag = .false.
 
@@ -389,6 +395,8 @@ contains
                 do_diag)
         t0(j) = temp_row(1)
      gam10(j) = gam1_row(1)
+     entr0(j) = s_row(1)
+
     end do
 
     ! Then compute the perturbation
@@ -424,14 +432,17 @@ contains
           machno(i,j) = vel / cs_row(1)
 
           deltagamma(i,j) = gam1_row(1) - gam10(j)
+
+          spert(i,j) = s_row(1) - entr0(j)
        enddo
     enddo
 
     deallocate(gam10)
+    deallocate(entr0)
 
   end subroutine maketfromrho_2d
 
-  subroutine maketfromrho_3d_cart (t,tpert,rhopert,machno,deltagamma, &
+  subroutine maketfromrho_3d_cart (t,tpert,rhopert,machno,deltagamma,spert, &
                                    s,u,lo,hi,ng,s0,t0,p0,time,dx)
 
     implicit none
@@ -442,6 +453,7 @@ contains
     real (kind=dp_t), intent(  out) ::    rhopert(lo(1):,lo(2):,lo(3):)  
     real (kind=dp_t), intent(  out) ::     machno(lo(1):,lo(2):,lo(3):)  
     real (kind=dp_t), intent(  out) :: deltagamma(lo(1):,lo(2):,lo(3):)  
+    real (kind=dp_t), intent(  out) ::      spert(lo(1):,lo(2):,lo(3):)  
     real (kind=dp_t), intent(in   ) ::  s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind=dp_t), intent(in   ) ::  u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind=dp_t), intent(in   ) :: s0(0:,:)
@@ -452,9 +464,10 @@ contains
     !     Local variables
     integer          :: i, j, k
     real (kind=dp_t) :: vel
-    real (kind=dp_t), allocatable :: gam10(:)
+    real (kind=dp_t), allocatable :: gam10(:), entr0(:)
 
     allocate(gam10(lo(3):hi(3)))
+    allocate(entr0(lo(3):hi(3)))
 
     do_diag = .false.
 
@@ -480,6 +493,7 @@ contains
                 do_diag)
         t0(k) = temp_row(1)
      gam10(k) = gam1_row(1)
+     entr0(k) = s_row(1)
     end do
 
     ! Then compute the perturbation and Mach number
@@ -516,6 +530,8 @@ contains
              machno(i,j,k) = vel / cs_row(1)
 
              deltagamma(i,j,k) = gam1_row(1) - gam10(k)
+
+             spert(i,j,k) = s_row(1) - entr0(k)
           enddo
        enddo
     enddo
@@ -524,7 +540,7 @@ contains
 
    end subroutine maketfromrho_3d_cart
 
-  subroutine maketfromrho_3d_sphr (t,tpert,rhopert,machno,deltagamma, &
+  subroutine maketfromrho_3d_sphr (t,tpert,rhopert,machno,deltagamma,spert, &
                                    s,u,lo,hi,ng,s0,t0,p0,time,dx)
 
     implicit none
@@ -535,6 +551,7 @@ contains
     real (kind=dp_t), intent(  out) ::    rhopert(lo(1):,lo(2):,lo(3):)  
     real (kind=dp_t), intent(  out) ::     machno(lo(1):,lo(2):,lo(3):)  
     real (kind=dp_t), intent(  out) :: deltagamma(lo(1):,lo(2):,lo(3):)  
+    real (kind=dp_t), intent(  out) ::      spert(lo(1):,lo(2):,lo(3):)  
     real (kind=dp_t), intent(in   ) ::  s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind=dp_t), intent(in   ) ::  u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind=dp_t), intent(in   ) :: s0(0:,:)
@@ -545,17 +562,19 @@ contains
     !     Local variables
     integer          :: i, j, k
     real (kind=dp_t) :: vel
-    real (kind=dp_t), allocatable :: gam10(:)
-    real (kind=dp_t), allocatable :: rho0_cart(:,:,:)
-    real (kind=dp_t), allocatable ::   t0_cart(:,:,:)
-    real (kind=dp_t), allocatable ::   p0_cart(:,:,:)
-    real (kind=dp_t), allocatable :: gam0_cart(:,:,:)
+    real (kind=dp_t), allocatable :: gam10(:), entr0(:)
+    real (kind=dp_t), allocatable ::  rho0_cart(:,:,:)
+    real (kind=dp_t), allocatable ::    t0_cart(:,:,:)
+    real (kind=dp_t), allocatable ::    p0_cart(:,:,:)
+    real (kind=dp_t), allocatable ::  gam0_cart(:,:,:)
+    real (kind=dp_t), allocatable :: entr0_cart(:,:,:)
 
     integer :: nr 
 
     nr = size(s0,dim=1)
 
     allocate(gam10(0:nr-1))
+    allocate(entr0(0:nr-1))
 
     do_diag = .false.
 
@@ -581,6 +600,7 @@ contains
                 do_diag)
         t0(k) = temp_row(1)
      gam10(k) = gam1_row(1)
+     entr0(k) = s_row(1)
     end do
 
     allocate(rho0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
@@ -594,6 +614,9 @@ contains
 
     allocate(gam0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
     call fill_3d_data(gam0_cart,gam10,lo,hi,dx,0)
+
+    allocate(entr0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+    call fill_3d_data(entr0_cart,entr0,lo,hi,dx,0)
 
     ! Then compute the perturbation and Mach number
     do k = lo(3), hi(3)
@@ -629,12 +652,14 @@ contains
              machno(i,j,k) = vel / cs_row(1)
 
              deltagamma(i,j,k) = gam1_row(1) - gam0_cart(i,j,k)
+             
+             spert(i,j,k) = s_row(1) - entr0_cart(i,j,k)
           enddo
        enddo
     enddo
 
-    deallocate(gam10)
-    deallocate(rho0_cart,t0_cart,p0_cart,gam0_cart)
+    deallocate(gam10,entr0)
+    deallocate(rho0_cart,t0_cart,p0_cart,gam0_cart,entr0_cart)
 
    end subroutine maketfromrho_3d_sphr
 

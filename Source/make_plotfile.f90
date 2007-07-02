@@ -60,6 +60,7 @@ contains
     plot_names(icomp_machno)   = "Machnumber"
     plot_names(icomp_dp)       = "deltap"
     plot_names(icomp_dg)       = "deltagamma"
+    plot_names(icomp_spert)    = "spert"
     plot_names(icomp_dT)       = "deltaT"
     plot_names(icomp_sponge)   = "sponge"
     plot_names(icomp_gp)       = "gpx"
@@ -138,7 +139,7 @@ contains
 
        ! RHOPERT & TEMP (FROM RHO) & TPERT & MACHNO & (GAM1 - GAM10)
        call make_tfromrho  (plotdata(n),icomp_tfromrho,icomp_tpert,icomp_rhopert, &
-                            icomp_machno,icomp_dg, &
+                            icomp_machno,icomp_dg,icomp_spert, &
                             s(n),u(n),s0,temp0,p0,time,dx(n,:))
 
        ! TEMP (FROM H) & DELTA_P
@@ -155,7 +156,7 @@ contains
 
        ! RHOPERT & TEMP (FROM RHO) & TPERT & MACHNO & (GAM1 - GAM10)
        call make_tfromrho  (plotdata(n),icomp_tfromrho,icomp_tpert,icomp_rhopert, &
-                            icomp_machno,icomp_dg, &
+                            icomp_machno,icomp_dg,icomp_spert, &
                             s(n),u(n),s0,temp0,p0,time,dx(n,:))
 
        ! TEMP (FROM H) & DELTA_P
