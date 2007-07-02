@@ -82,7 +82,7 @@ contains
 
   subroutine make_w0_cart(w0,w0_cart,normal,dx)
 
-      real(kind=dp_t), intent(in   ) :: w0(:)
+      real(kind=dp_t), intent(in   ) :: w0(0:)
       type(multifab) , intent(inout) :: w0_cart
       type(multifab) , intent(in   ) :: normal
       real(kind=dp_t), intent(in   ) :: dx(:)

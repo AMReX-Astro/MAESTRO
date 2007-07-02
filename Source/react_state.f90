@@ -22,7 +22,7 @@ contains
     type(multifab) , intent(inout) :: s_out
     type(multifab) , intent(inout) :: rho_omegadot
     type(multifab) , intent(inout) :: rho_Hext
-    real(kind=dp_t), intent(in   ) :: temp0(:)
+    real(kind=dp_t), intent(in   ) :: temp0(0:)
     real(kind=dp_t), intent(in   ) :: dt,dx(:),time
     type(bc_level) , intent(in   ) :: the_bc_level
 

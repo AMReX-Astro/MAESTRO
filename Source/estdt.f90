@@ -19,7 +19,7 @@ contains
       type(multifab) , intent(in ) :: force
       type(multifab) , intent(in ) :: divU
       type(multifab) , intent(in ) :: normal
-      real(kind=dp_t), intent(in ) :: w0(:), p0(:), gam1(:)
+      real(kind=dp_t), intent(in ) :: w0(0:), p0(0:), gam1(0:)
       real(kind=dp_t), intent(in ) :: dx(:)
       real(kind=dp_t), intent(in ) :: cflfac, dtold
       real(kind=dp_t), intent(out) :: dt

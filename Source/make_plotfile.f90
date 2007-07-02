@@ -92,8 +92,8 @@ contains
     character(len=20), intent(in   ) :: plot_names(:)
     real(dp_t)       , intent(in   ) :: time,dx(:,:)
     type(bc_tower)   , intent(in   ) :: the_bc_tower
-    real(dp_t)       , intent(in   ) :: s0(:,:),p0(:)
-    real(dp_t)       , intent(inout) :: temp0(:)
+    real(dp_t)       , intent(in   ) :: s0(0:,:),p0(0:)
+    real(dp_t)       , intent(inout) :: temp0(0:)
     logical          , intent(in   ) :: plot_spec,plot_trac
 
     integer :: n,dm,nlevs,nscal

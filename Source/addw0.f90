@@ -13,7 +13,7 @@ contains
       subroutine addw0(umac,w0,w0_cart,dx,mult)
 
       type(multifab) , intent(inout) :: umac(:)
-      real(kind=dp_t), intent(in   ) :: w0(:)
+      real(kind=dp_t), intent(in   ) :: w0(0:)
       type(multifab) , intent(in   ) :: w0_cart
       real(kind=dp_t), intent(in   ) :: dx(:),mult
 

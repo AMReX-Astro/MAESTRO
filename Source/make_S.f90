@@ -22,7 +22,7 @@ contains
       type(multifab) , intent(in   ) :: state, u
       type(multifab) , intent(in   ) :: rho_omegadot
       type(multifab) , intent(in   ) :: rho_Hext
-      real(kind=dp_t), intent(in   ) :: p0(:),t0(:),gam1(:)
+      real(kind=dp_t), intent(in   ) :: p0(0:),t0(0:),gam1(0:)
       real(kind=dp_t), intent(in   ) :: dx(:), time
 
       real(kind=dp_t), pointer:: srcp(:,:,:,:),gp(:,:,:,:),sp(:,:,:,:),up(:,:,:,:)

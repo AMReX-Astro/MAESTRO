@@ -22,7 +22,7 @@ contains
 
       integer        , intent(in   ) :: istep
       type(multifab) , intent(inout) :: u,s,force
-      real(kind=dp_t), intent(in   ) :: p0(:), t0(:)
+      real(kind=dp_t), intent(in   ) :: p0(0:), t0(0:)
       real(kind=dp_t), intent(in   ) :: dx(:)
       real(kind=dp_t), intent(  out) :: dt
       integer        , intent(in   ) :: verbose

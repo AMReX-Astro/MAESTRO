@@ -71,20 +71,20 @@ module advance_timestep_module
     type(multifab), intent(inout) :: Source_old(:)
     type(multifab), intent(inout) :: Source_new(:)
     type(multifab), intent(inout) :: gamma1_term(:)
-    real(dp_t)    , intent(inout) :: s0_old(:,:)
-    real(dp_t)    , intent(inout) :: s0_1(:,:)
-    real(dp_t)    , intent(inout) :: s0_2(:,:)
-    real(dp_t)    , intent(inout) :: s0_new(:,:)
-    real(dp_t)    , intent(inout) :: p0_old(:)
-    real(dp_t)    , intent(inout) :: p0_1(:)
-    real(dp_t)    , intent(inout) :: p0_2(:)
-    real(dp_t)    , intent(inout) :: p0_new(:)
-    real(dp_t)    , intent(inout) :: temp0(:)
-    real(dp_t)    , intent(inout) :: gam1(:)
-    real(dp_t)    , intent(inout) :: w0(:)
-    real(dp_t)    , intent(in   ) :: div_coeff_old(:)
-    real(dp_t)    , intent(inout) :: div_coeff_new(:)
-    real(dp_t)    , intent(in   ) :: grav_cell_old(:)
+    real(dp_t)    , intent(inout) :: s0_old(0:,:)
+    real(dp_t)    , intent(inout) :: s0_1(0:,:)
+    real(dp_t)    , intent(inout) :: s0_2(0:,:)
+    real(dp_t)    , intent(inout) :: s0_new(0:,:)
+    real(dp_t)    , intent(inout) :: p0_old(0:)
+    real(dp_t)    , intent(inout) :: p0_1(0:)
+    real(dp_t)    , intent(inout) :: p0_2(0:)
+    real(dp_t)    , intent(inout) :: p0_new(0:)
+    real(dp_t)    , intent(inout) :: temp0(0:)
+    real(dp_t)    , intent(inout) :: gam1(0:)
+    real(dp_t)    , intent(inout) :: w0(0:)
+    real(dp_t)    , intent(in   ) :: div_coeff_old(0:)
+    real(dp_t)    , intent(inout) :: div_coeff_new(0:)
+    real(dp_t)    , intent(in   ) :: grav_cell_old(0:)
     real(dp_t)    , intent(in   ) :: dx(:,:), time, dt, dtold
     type(bc_tower), intent(in   ) :: the_bc_tower
     real(dp_t)    , intent(in   ) :: anelastic_cutoff
@@ -146,22 +146,29 @@ module advance_timestep_module
     allocate( hgrhs(nlevs))
 
     nscal = multifab_ncomp(sold(1))
+    
+    ! nr is the number of zones in a cell-centered basestate quantity
     nr    = size(s0_old,dim=1)
 
-    allocate(          s0_nph(nr,nscal))
-    allocate(            Sbar(nr,1))
-    allocate(   div_coeff_nph(nr))
-    allocate(  div_coeff_edge(nr+1))
-    allocate(   grav_cell_nph(nr))
-    allocate(   grav_cell_new(nr))
-    allocate(rho_omegadotbar1(nr,nspec))
-    allocate(rho_omegadotbar2(nr,nspec))
-    allocate(rho_Hextbar(nr,1))
+    allocate(          s0_nph(0:nr-1,nscal))
+    allocate(            Sbar(0:nr-1,1))
+
+    allocate(   div_coeff_nph(0:nr-1))
+    allocate(  div_coeff_edge(0:nr))
+
+    allocate(   grav_cell_nph(0:nr-1))
+    allocate(   grav_cell_new(0:nr-1))
+
+    allocate(rho_omegadotbar1(0:nr-1,nspec))
+    allocate(rho_omegadotbar2(0:nr-1,nspec))
+    allocate(     rho_Hextbar(0:nr-1,1))
 
     if (spherical.eq.1) &
       allocate(div_coeff_3d(nlevs))
 
-    allocate(w0_force(nr),w0_old(nr+1))
+    allocate(w0_force(0:nr-1))
+
+    allocate(w0_old(0:nr))
 
     ! Set w0_old to w0 from last time step.
     w0_old(:) = w0(:)
@@ -391,16 +398,16 @@ module advance_timestep_module
         end do
 
         ! Define base state at half time for use in velocity advance!
-   
-        do j = 1,size(s0_nph,dim=1)
-          s0_nph(j,:) = HALF * (s0_old(j,:) + s0_new(j,:))
-        end do
+        do j = 0, nr-1
+           s0_nph(j,:) = HALF * (s0_old(j,:) + s0_new(j,:))
+        enddo
+
         call make_grav_cell(grav_cell_nph,s0_nph(:,rho_comp))
 
         ! Define beta at half time !
-        do j = 1,size(div_coeff_old,dim=1)
-          div_coeff_nph(j) = HALF * (div_coeff_old(j) + div_coeff_new(j))
-        end do
+        do j = 0, nr-1
+           div_coeff_nph(j) = HALF * (div_coeff_old(j) + div_coeff_new(j))
+        enddo
 
         do n = 1, nlevs
            call make_macrhs(macrhs(n),Source_nph(n),gamma1_term(n),Sbar(:,1),div_coeff_nph,dx(n,:))
@@ -546,7 +553,7 @@ module advance_timestep_module
         end do
 
         ! Define beta at half time using the div_coeff_new from step 9!
-        do j = 1,size(div_coeff_old,dim=1)
+        do j = 0, nr-1
           div_coeff_nph(j) = HALF * (div_coeff_old(j) + div_coeff_new(j))
         end do
 

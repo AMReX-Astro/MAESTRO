@@ -88,8 +88,8 @@ contains
     integer        , intent(in   ) :: comp_t,comp_dp
     type(multifab) , intent(inout) :: plotdata
     type(multifab) , intent(in   ) :: state
-    real(kind=dp_t), intent(in   ) ::    p0(:)
-    real(kind=dp_t), intent(in   ) :: temp0(:)
+    real(kind=dp_t), intent(in   ) ::    p0(0:)
+    real(kind=dp_t), intent(in   ) :: temp0(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
 
     real(kind=dp_t), pointer:: sp(:,:,:,:)
@@ -296,9 +296,9 @@ contains
     type(multifab) , intent(inout) :: plotdata
     type(multifab) , intent(in   ) :: s
     type(multifab) , intent(in   ) :: u
-    real(kind=dp_t), intent(in   ) :: s0(:,:)
-    real(kind=dp_t), intent(inout) :: t0(:)
-    real(kind=dp_t), intent(in   ) :: p0(:)
+    real(kind=dp_t), intent(in   ) :: s0(0:,:)
+    real(kind=dp_t), intent(inout) :: t0(0:)
+    real(kind=dp_t), intent(in   ) :: p0(0:)
     real(kind=dp_t), intent(in   ) :: time,dx(:)
 
     real(kind=dp_t), pointer:: sp(:,:,:,:),tp(:,:,:,:),up(:,:,:,:)
@@ -537,9 +537,9 @@ contains
     real (kind=dp_t), intent(  out) :: deltagamma(lo(1):,lo(2):,lo(3):)  
     real (kind=dp_t), intent(in   ) ::  s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind=dp_t), intent(in   ) ::  u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-    real (kind=dp_t), intent(in   ) :: s0(:,:)
-    real (kind=dp_t), intent(inout) :: t0(:)
-    real (kind=dp_t), intent(in   ) :: p0(:)
+    real (kind=dp_t), intent(in   ) :: s0(0:,:)
+    real (kind=dp_t), intent(inout) :: t0(0:)
+    real (kind=dp_t), intent(in   ) :: p0(0:)
     real (kind=dp_t), intent(in   ) :: time,dx(:)
 
     !     Local variables
@@ -551,16 +551,20 @@ contains
     real (kind=dp_t), allocatable ::   p0_cart(:,:,:)
     real (kind=dp_t), allocatable :: gam0_cart(:,:,:)
 
-    allocate(gam10(size(s0,dim=1)))
+    integer :: nr 
+
+    nr = size(s0,dim=1)
+
+    allocate(gam10(0:nr-1))
 
     do_diag = .false.
 
     ! First make sure we have t0 right.
-    do k = 1, size(s0,dim=1)
+    do k = 0, nr-1
         den_row(1) = s0(k,rho_comp)
        temp_row(1) = t0(k)
           p_row(1) = p0(k)
-       xn_zone(:) = s0(k,spec_comp:spec_comp+nspec-1)/den_row(1)
+        xn_zone(:) = s0(k,spec_comp:spec_comp+nspec-1)/den_row(1)
 
        ! (rho,P) --> T,h
        input_flag = 4
@@ -596,10 +600,10 @@ contains
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
 
-             den_row(1) = s(i,j,k,rho_comp)
+              den_row(1) = s(i,j,k,rho_comp)
              temp_row(1) = t0_cart(i,j,k)
-             p_row(1) = p0_cart(i,j,k)
-             xn_zone(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
+                p_row(1) = p0_cart(i,j,k)
+              xn_zone(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
 
              ! (rho,P) --> T,h
              input_flag = 4

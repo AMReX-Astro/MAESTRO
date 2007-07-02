@@ -17,18 +17,18 @@ contains
 
    subroutine react_base(p0_in,s0_in,temp0_in,rho_omegadotbar,rho_Hextbar,dr,dt_in,p0_out,s0_out,gam1_out)
 
-      real(kind=dp_t), intent(in   ) :: p0_in( :), s0_in( :,:), temp0_in(:)
-      real(kind=dp_t), intent(in   ) :: rho_omegadotbar(:,:)
-      real(kind=dp_t), intent(in   ) :: rho_Hextbar(:)
+      real(kind=dp_t), intent(in   ) :: p0_in(0:), s0_in(0:,:), temp0_in(0:)
+      real(kind=dp_t), intent(in   ) :: rho_omegadotbar(0:,:)
+      real(kind=dp_t), intent(in   ) :: rho_Hextbar(0:)
       real(kind=dp_t), intent(in   ) :: dr, dt_in
-      real(kind=dp_t), intent(  out) :: p0_out(:), s0_out(:,:)
-      real(kind=dp_t), intent(inout) :: gam1_out(:)
+      real(kind=dp_t), intent(  out) :: p0_out(0:), s0_out(0:,:)
+      real(kind=dp_t), intent(inout) :: gam1_out(0:)
 
       integer :: j,n,nz
 
       nz    = size(rho_omegadotbar,dim=1)
 
-      do j = 1,nz
+      do j = 0,nz-1
 
          ! (rho X)_out = (rho X)_in + dt_in * (rho omegadotbar)_in
          do n = spec_comp,spec_comp+nspec-1

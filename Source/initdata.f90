@@ -20,9 +20,9 @@ contains
                              prob_lo,prob_hi,bc,nscal,ntrac)
 
     type(multifab) , intent(inout) :: s
-    real(kind=dp_t), intent(in   ) ::    s0(:,:)
-    real(kind=dp_t), intent(in   ) ::    p0(:)
-    real(kind=dp_t), intent(in   ) :: temp0(:)
+    real(kind=dp_t), intent(in   ) ::    s0(0:,:)
+    real(kind=dp_t), intent(in   ) ::    p0(0:)
+    real(kind=dp_t), intent(in   ) :: temp0(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
     logical,         intent(in   ) :: perturb_model
     real(kind=dp_t), intent(in   ) :: prob_lo(:)
