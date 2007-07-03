@@ -27,9 +27,9 @@ contains
 
   end subroutine init_variables
 
-  subroutine init_plot_variables(dm, nscal, nspec, ntrac, plot_spec, plot_trac)
+  subroutine init_plot_variables(dm, nspec, ntrac, plot_spec, plot_trac)
 
-    integer, intent(in) :: dm, nscal, nspec, ntrac
+    integer, intent(in) :: dm, nspec, ntrac
     logical, intent(in) :: plot_spec,plot_trac
 
     icomp_vel      = 1
