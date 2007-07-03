@@ -17,7 +17,7 @@ contains
     real(kind=dp_t), intent(in   ) ::   s0(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
 
-    integer                  :: i,j,k,n,nr,index
+    integer                  :: i,j,k,nr,index
     real(kind=dp_t)          :: x,y,z
     real(kind=dp_t)          :: radius
 
@@ -30,7 +30,7 @@ contains
         do i = lo(1),hi(1)
           x = (dble(i)+HALF)*dx(1) - center(1)
           radius = sqrt(x**2 + y**2 + z**2)
-          index = radius / dr
+          index = int(radius / dr)
           if (index .lt. 0 .or. index .gt. nr-1) then
             print *,'RADIUS ',radius
             print *,'BOGUS INDEX IN FILL_3D: ',index
@@ -147,7 +147,7 @@ contains
     real(kind=dp_t), intent(in   ) :: w0(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
 
-    integer                  :: i,j,k,n,nr,index
+    integer                  :: i,j,k,nr,index
     real(kind=dp_t)          :: x,y,z
     real(kind=dp_t)          :: radius,rfac,w0_cell_val
 
@@ -160,7 +160,7 @@ contains
         do i = lo(1),hi(1)
           x = (dble(i)+HALF)*dx(1) - center(1)
           radius = sqrt(x**2 + y**2 + z**2)
-          index = radius / dr
+          index = int(radius / dr)
           if (index .lt. 0 .or. index .gt. nr-1) then
             print *,'RADIUS ',radius
             print *,'BOGUS INDEX IN PUT_ON_CELLS: ',index

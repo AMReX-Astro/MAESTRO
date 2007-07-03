@@ -44,7 +44,7 @@ contains
              w0p  => dataptr(w0_cart, i)
                lo =  lwb(get_box(w0_cart, i))
                hi =  upb(get_box(w0_cart, i))
-             call addw0_3d_sphr(ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),w0p(:,:,:,:),lo,hi,dx,mult)
+             call addw0_3d_sphr(ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),w0p(:,:,:,:),lo,hi,mult)
            end if
          end select
       end do
@@ -95,14 +95,14 @@ contains
 
       end subroutine addw0_3d
 
-      subroutine addw0_3d_sphr(umac,vmac,wmac,w0_cart,lo,hi,dx,mult)
+      subroutine addw0_3d_sphr(umac,vmac,wmac,w0_cart,lo,hi,mult)
 
       integer        , intent(in   ) :: lo(:),hi(:)
       real(kind=dp_t), intent(inout) ::   umac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
       real(kind=dp_t), intent(inout) ::   vmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
       real(kind=dp_t), intent(inout) ::   wmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
       real(kind=dp_t), intent(in   ) :: w0_cart(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)
-      real(kind=dp_t), intent(in   ) :: dx(:),mult
+      real(kind=dp_t), intent(in   ) :: mult
 
       integer :: i,j,k
 
