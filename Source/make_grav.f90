@@ -24,8 +24,6 @@ contains
     real(kind=dp_t), allocatable :: m(:)
 
     real(kind=dp_t), parameter :: Gconst = 6.6725985E-8_dp_t
-    real(kind=dp_t), parameter ::     pi = 3.141592653589793238_dp_t
-    real(kind=dp_t), parameter :: fourthirds = 4.0_dp_t/3.0_dp_t
 
     nz = size(grav_cell,dim=1)
 
@@ -37,7 +35,7 @@ contains
 
        allocate(m(0:nz-1))
 
-       m(0) = fourthirds*pi*rho0(0)*z(0)**3
+       m(0) = FOUR3RD*M_PI*rho0(0)*z(0)**3
        grav_cell(0) = -Gconst * m(0) / z(0)**2
 
        do k = 1, nz-1
@@ -45,8 +43,8 @@ contains
           ! mass at the current center, we need to add the contribution of
           ! the upper half of the zone below us and the lower half of the
           ! current zone.
-          m(k) = m(k-1) + fourthirds*pi*rho0(k-1)*(zl(k) -  z(k-1))*(zl(k)**2 + zl(k)* z(k-1) +  z(k-1)**2) &
-                        + fourthirds*pi*rho0(k  )*( z(k) - zl(k  ))*( z(k)**2 +  z(k)*zl(k  ) + zl(k  )**2)
+          m(k) = m(k-1) + FOUR3RD*M_PI*rho0(k-1)*(zl(k) -  z(k-1))*(zl(k)**2 + zl(k)* z(k-1) +  z(k-1)**2) &
+                        + FOUR3RD*M_PI*rho0(k  )*( z(k) - zl(k  ))*( z(k)**2 +  z(k)*zl(k  ) + zl(k  )**2)
           grav_cell(k) = -Gconst * m(k) / z(k)**2
        enddo
 
@@ -70,8 +68,6 @@ contains
       real(kind=dp_t)              :: mencl
 
       real(kind=dp_t), parameter :: Gconst = 6.6725985E-8_dp_t
-      real(kind=dp_t), parameter ::     pi = 3.141592653589793238_dp_t
-      real(kind=dp_t), parameter :: fourthirds = 4.0_dp_t/3.0_dp_t
 
       nz = size(grav_edge,dim=1)
 
@@ -86,7 +82,7 @@ contains
 
           mencl = zero 
           do j = 1, k
-            mencl = mencl + fourthirds * pi * (zl(j) - zl(j-1)) * (zl(j)**2 + zl(j)*zl(j-1) + zl(j-1)**2) * rho0(j-1)
+            mencl = mencl + FOUR3RD*M_PI * (zl(j) - zl(j-1)) * (zl(j)**2 + zl(j)*zl(j-1) + zl(j-1)**2) * rho0(j-1)
           end do
 
           grav_edge(k) = -Gconst * mencl / zl(k)**2

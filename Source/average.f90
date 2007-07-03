@@ -144,7 +144,6 @@ contains
       integer                       :: i, j, k, n, index
       integer                       :: nr, nc
       real (kind=dp_t)              :: x,y,z,radius,vol
-      real (kind=dp_t), parameter   :: fourthirdspi = 4.18879020478639098400_dp_t
 
       nr = size(phibar,dim=1)
       nc = size(phibar,dim=2)
@@ -168,7 +167,7 @@ contains
               stop
             end if
 
-            vol = fourthirdspi * (zl(index+1)  - zl(index)) * &
+            vol = FOUR3RD*M_PI * (zl(index+1)  - zl(index)) * &
                                  (zl(index+1)**2 + zl(index+1)*zl(index) + zl(index)**2)
 
             do n = comp,comp+ncomp-1
