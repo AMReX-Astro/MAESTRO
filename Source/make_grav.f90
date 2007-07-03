@@ -8,6 +8,8 @@ module make_grav_module
 
   implicit none
 
+  real(kind=dp_t), parameter :: Gconst = 6.6725985E-8_dp_t
+
 contains
 
   subroutine make_grav_cell(grav_cell,rho0)
@@ -22,8 +24,6 @@ contains
     ! Local variables
     integer                      :: k,nz
     real(kind=dp_t), allocatable :: m(:)
-
-    real(kind=dp_t), parameter :: Gconst = 6.6725985E-8_dp_t
 
     nz = size(grav_cell,dim=1)
 
@@ -66,8 +66,6 @@ contains
       ! Local variables
       integer                      :: j,k,nz
       real(kind=dp_t)              :: mencl
-
-      real(kind=dp_t), parameter :: Gconst = 6.6725985E-8_dp_t
 
       nz = size(grav_edge,dim=1)
 
