@@ -12,7 +12,7 @@ module update_vel_module
 
   contains
 
-   subroutine update_velocity_2d (uold,unew,umac,vmac,sedgex,sedgey,force,s0,w0,w0_force, &
+   subroutine update_velocity_2d (uold,unew,umac,vmac,sedgex,sedgey,force,w0,w0_force, &
                                   lo,hi,ng,dx,time,dt,sponge,do_sponge)
 
       implicit none
@@ -26,7 +26,6 @@ module update_vel_module
       real (kind = dp_t), intent(in   ) ::   sedgey(lo(1)   :,lo(2)   :,:)  
       real (kind = dp_t), intent(in   ) ::    force(lo(1)- 1:,lo(2)- 1:,:)  
       real (kind = dp_t), intent(in   ) ::   sponge(lo(1)   :,lo(2)   :  )
-      real (kind = dp_t), intent(in   ) ::       s0(0:,:)
       real (kind = dp_t), intent(in   ) ::       w0(0:)
       real (kind = dp_t), intent(in   ) :: w0_force(0:)
       real (kind = dp_t), intent(in   ) :: dx(:)
@@ -73,7 +72,7 @@ module update_vel_module
    end subroutine update_velocity_2d
 
    subroutine update_velocity_3d (uold,unew,umac,vmac,wmac,sedgex,sedgey,sedgez, &
-                                  force,s0,w0,w0_cart,w0_force,w0_force_cart,lo,hi,ng,dx,time,dt, &
+                                  force,w0,w0_cart,w0_force,w0_force_cart,lo,hi,ng,dx,time,dt, &
                                   sponge,do_sponge)
 
       implicit none
@@ -89,7 +88,6 @@ module update_vel_module
       real (kind = dp_t), intent(in   ) ::   sedgez(lo(1)   :,lo(2)   :,lo(3)   :,:)
       real (kind = dp_t), intent(in   ) ::    force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
       real (kind = dp_t), intent(in   ) ::   sponge(lo(1)   :,lo(2)   :,lo(3)   :  ) 
-      real (kind = dp_t), intent(in   ) ::       s0(0:,:)
       real (kind = dp_t), intent(in   ) ::       w0(0:)
       real (kind = dp_t), intent(in   ) ::  w0_cart(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
       real (kind = dp_t), intent(in   ) :: w0_force(0:)
