@@ -22,7 +22,7 @@ contains
       real(kind=dp_t), pointer:: pp(:,:,:,:)
       integer :: lo(phi(1)%dim),hi(phi(1)%dim),ng,dm,nr
       integer :: i,k,n,nlevs
-      real(kind=dp_t), allocatable :: vol_grid(:), vol_proc(:), vol_tot(:)
+      real(kind=dp_t), allocatable :: vol_grid(:), vol_proc(:), vol_tot(:), phibar_proc(:,:)
 
       dm = phi(1)%dim
       ng = phi(1)%ng
@@ -33,10 +33,13 @@ contains
         allocate(vol_grid(0:nr-1))
       end if
       allocate(vol_proc(0:nr-1),vol_tot(0:nr-1))
+      allocate(phibar_proc(0:nr-1,ncomp))
+
       vol_proc(:) = ZERO
       vol_tot(:)  = ZERO
 
-      phibar = ZERO
+      phibar(:,:) = ZERO
+      phibar_proc(:,:) = ZERO
 
       do n = 1, nlevs
        do i = 1, phi(n)%nboxes
@@ -46,15 +49,15 @@ contains
          hi =  upb(get_box(phi(n), i))
          select case (dm)
             case (2)
-              call average_2d(pp(:,:,1,:),phibar,lo,hi,ng,comp,ncomp,dx(n,:))
+              call average_2d(pp(:,:,1,:),phibar_proc,lo,hi,ng,comp,ncomp,dx(n,:))
               vol_proc(lo(2):hi(2)) = vol_proc(lo(2):hi(2)) + (hi(1)-lo(1)+1)*dx(n,1)*dx(n,2)
             case (3)
               if (spherical .eq. 1) then
                 vol_grid(:) = ZERO
-                call average_3d_sphr(pp(:,:,:,:),phibar,lo,hi,ng,dx(n,:),vol_grid,comp,ncomp)
+                call average_3d_sphr(pp(:,:,:,:),phibar_proc,lo,hi,ng,dx(n,:),vol_grid,comp,ncomp)
                 vol_proc = vol_proc + vol_grid
               else
-                call average_3d(pp(:,:,:,:),phibar,lo,hi,ng,comp,ncomp,dx(n,:))
+                call average_3d(pp(:,:,:,:),phibar_proc,lo,hi,ng,comp,ncomp,dx(n,:))
                 vol_proc(lo(3):hi(3)) = vol_proc(lo(3):hi(3)) + (hi(1)-lo(1)+1)*(hi(2)-lo(2)+1)*dx(n,1)*dx(n,2)*dx(n,3)
               end if
          end select
@@ -62,22 +65,29 @@ contains
       end do
 
       if (dm .eq. 2 .or. (dm.eq.3.and.spherical.eq.0)) then
-        call parallel_reduce(vol_tot,vol_proc,MPI_SUM)
         do k = 0,nr-1
-          phibar(k,:) = phibar(k,:) / vol_tot(k)
+           call parallel_reduce(vol_tot(k),  vol_proc(k),      MPI_SUM)
+           call parallel_reduce(phibar(k,:), phibar_proc(k,:), MPI_SUM)
+
+           phibar(k,:) = phibar(k,:) / vol_tot(k)
         end do
+
       else
         do k = 0,nr-1
-          call parallel_reduce(vol_tot(k),vol_proc(k),MPI_SUM)
+          call parallel_reduce(vol_tot(k),  vol_proc(k),      MPI_SUM)
+          call parallel_reduce(phibar(k,:), phibar_proc(k,:), MPI_SUM)
+
           if (vol_tot(k) .gt. ZERO) then
             phibar(k,:) = phibar(k,:) / vol_tot(k)
           else
             phibar(k,:) = ZERO
           end if
+
         end do
         deallocate(vol_grid)
+
       end if
-      deallocate(vol_proc,vol_tot)
+      deallocate(vol_proc,vol_tot,phibar_proc)
 
    end subroutine average
 
