@@ -544,16 +544,20 @@ subroutine varden()
 
   ! now that we are initialized, try averaging the state to 1-d
   ! and compare to the base state
-  print *, 'averaging...'
+  if ( parallel_IOProcessor() ) &
+       print *, 'averaging...'
   call average(sold,s0_avg(:,:),dx,1,nscal)
-  print *, 'done'
+  if ( parallel_IOProcessor() ) &
+       print *, 'done'
 
   ! compute the error against the base state
-  open (unit=10, file="dens.error")
-  do n = 1, n_base
-     write (10,*) n, s0_old(n,rho_comp), s0_avg(n,rho_comp)
-  enddo
-  close (10)
+  if ( parallel_IOProcessor() ) then
+     open (unit=10, file="dens.error")
+     do n = 1, n_base
+        write (10,*) n, s0_old(n,rho_comp), s0_avg(n,rho_comp)
+     enddo
+     close (10)
+  endif
 
 
 
