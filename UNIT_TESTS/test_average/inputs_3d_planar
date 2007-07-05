@@ -1,0 +1,25 @@
+&PROBIN
+ model_file = "model.hse"
+
+ test_set = "gr0_3d"
+
+ spherical_in = 0
+
+ !dr_base = 1302083.3334
+
+ prob_hi_x = 5.e8
+ prob_hi_y = 5.e8
+ prob_hi_z = 5.e8
+
+ bcx_lo = 12
+ bcx_hi = 12
+ bcy_lo = 12
+ bcy_hi = 12
+ bcz_lo = 12
+ bcz_hi = 12
+
+ pmask_x = F
+ pmask_y = F
+ pmask_z = F
+
+/
