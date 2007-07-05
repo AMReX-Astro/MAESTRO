@@ -358,7 +358,7 @@ module update_scal_module
         end do
 
         mult = ONE
-        call addw0_3d_sphr(umac,vmac,wmac,w0_cart,lo,hi,dx,mult)
+        call addw0_3d_sphr(umac,vmac,wmac,w0_cart,lo,hi,mult)
 
         do n = nstart, nstop
 
@@ -384,7 +384,7 @@ module update_scal_module
       deallocate(delta_base,delta_base_cart)
 
       mult = -ONE
-      call addw0_3d_sphr(umac,vmac,wmac,w0_cart,lo,hi,dx,mult)
+      call addw0_3d_sphr(umac,vmac,wmac,w0_cart,lo,hi,mult)
  
       ! Define the update to rho as the sum of the updates to (rho X)_i
       if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
