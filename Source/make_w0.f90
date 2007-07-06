@@ -112,8 +112,8 @@ contains
     real(kind=dp_t), intent(in   ) :: Sbar_in(0:)
 
 !     Local variables
-    integer         :: j, k, n, nz
-    real(kind=dp_t) :: mencl,rhohalf,integral,velmax
+    integer         :: j, nz
+    real(kind=dp_t) :: rhohalf,velmax
     real(kind=dp_t), allocatable :: c(:),d(:),e(:),u(:),rhs(:)
     real(kind=dp_t), allocatable :: m(:),grav_edge(:)
     

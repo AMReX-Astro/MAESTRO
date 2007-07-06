@@ -128,7 +128,7 @@ module update_scal_module
 
    end subroutine update_scal_2d
 
-   subroutine update_scal_3d_cart (nstart,nstop,sold,snew,umac,vmac,wmac,w0,w0_cart,sedgex,sedgey,sedgez,&
+   subroutine update_scal_3d_cart (nstart,nstop,sold,snew,umac,vmac,wmac,w0,sedgex,sedgey,sedgez,&
                                    force,base_old,base_new,lo,hi,ng,dx,dt)
 
       implicit none
@@ -146,15 +146,13 @@ module update_scal_module
       real (kind = dp_t), intent(in   ) ::   base_old(0:,:)
       real (kind = dp_t), intent(in   ) ::   base_new(0:,:)
       real (kind = dp_t), intent(in   ) :: w0(0:)
-      real (kind = dp_t), intent(in   ) :: w0_cart(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
       real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
       integer :: i, j, k, n, nr, n2
-      real (kind = dp_t) :: divsu,divbaseu,mult
+      real (kind = dp_t) :: divsu,divbaseu
       real (kind = dp_t) :: delta,frac,sum
       real (kind = dp_t), allocatable :: smin(:),smax(:)
-      real (kind = dp_t), allocatable :: delta_base(:),delta_base_cart(:,:,:)
-      real (kind = dp_t), allocatable :: base_cart(:,:,:)
+      real (kind = dp_t), allocatable :: delta_base(:)
       real (kind = dp_t), allocatable :: base_edge(:)
 
       allocate(base_edge(lo(3):hi(3)+1))
@@ -280,7 +278,7 @@ module update_scal_module
 
    end subroutine update_scal_3d_cart
 
-   subroutine update_scal_3d_sphr (nstart,nstop,sold,snew,umac,vmac,wmac,w0,w0_cart,sedgex,sedgey,sedgez,&
+   subroutine update_scal_3d_sphr (nstart,nstop,sold,snew,umac,vmac,wmac,w0_cart,sedgex,sedgey,sedgez,&
                                    force,base_old,base_new,base_cart,lo,hi,domlo,domhi,ng,dx,dt)
 
       implicit none
@@ -298,12 +296,10 @@ module update_scal_module
       real (kind = dp_t), intent(in   ) ::   base_old(0:,:)
       real (kind = dp_t), intent(in   ) ::   base_new(0:,:)
       real (kind = dp_t), intent(in   ) ::   base_cart(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
-      real (kind = dp_t), intent(in   ) :: w0(0:)
       real (kind = dp_t), intent(in   ) :: w0_cart(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
       real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
       integer :: i, j, k, n, nr, n2
-      logical :: do_mult
       real (kind = dp_t) :: divsu,divbaseu,mult
       real (kind = dp_t) :: delta,frac,sum
       real (kind = dp_t) :: bc_lox,bc_loy,bc_loz

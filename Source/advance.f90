@@ -117,10 +117,9 @@ module advance_timestep_module
     real(dp_t)    , allocatable :: rho_omegadotbar1(:,:)
     real(dp_t)    , allocatable :: rho_omegadotbar2(:,:)
     real(dp_t)    , allocatable :: rho_Hextbar(:,:)
-    type(bc_level) ::  bc
     type(box)      ::  fine_domain
-    real(dp_t)     :: halfdt, half_time, new_time, eps_in
-    integer :: i,j,n,dm,nscal,nlevs,comp
+    real(dp_t)     :: halfdt, eps_in
+    integer :: i,j,n,dm,nscal,nlevs
     integer :: nr,ng_cell
     integer, allocatable :: lo(:),hi(:)
     logical :: nodal(mla%dim)
@@ -133,8 +132,6 @@ module advance_timestep_module
     ng_cell = uold(1)%ng
 
     halfdt = half * dt
-    half_time = dt + halfdt
-     new_time = dt +      dt
 
     allocate(Source_nph(nlevs))
 
@@ -232,11 +229,9 @@ module advance_timestep_module
 
            call advance_premac(uold(n), sold(n),&
                                umac(n,:), uedge(n,:), utrans(n,:),&
-                               gp(n), p(n), normal(n), w0, w0_cart_vec(n), &
+                               gp(n), normal(n), w0, w0_cart_vec(n), &
                                s0_old, grav_cell_old, &
-                               dx(n,:),time,dt, &
-                               the_bc_tower%bc_tower_array(n), &
-                               verbose)
+                               dx(n,:),dt,the_bc_tower%bc_tower_array(n))
         end do
 
         do n = 1, nlevs
@@ -383,11 +378,9 @@ module advance_timestep_module
         do n = 1,nlevs
            call advance_premac(uold(n), sold(n),&
                                umac(n,:), uedge(n,:), utrans(n,:),&
-                               gp(n), p(n), normal(n), w0, w0_cart_vec(n), &
+                               gp(n),  normal(n), w0, w0_cart_vec(n), &
                                s0_old, grav_cell_old, &
-                               dx(n,:),time,dt, &
-                               the_bc_tower%bc_tower_array(n), &
-                               verbose)
+                               dx(n,:),dt,the_bc_tower%bc_tower_array(n))
         end do
 
         ! Define rho at half time !

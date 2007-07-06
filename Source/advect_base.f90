@@ -27,12 +27,10 @@ contains
       real(kind=dp_t), intent(in   ) :: div_coeff(0:)
       real(kind=dp_t), intent(in   ) :: dz,dt,anelastic_cutoff
 
-      integer :: i
-
       if (spherical .eq. 0) then
 
         call advect_base_state_planar(vel,p0_old,p0_new,s0_old,s0_new,temp0, &
-                                      gam1,dz,dt,anelastic_cutoff)
+                                      gam1,dz,dt)
 
       else
 
@@ -45,20 +43,18 @@ contains
    end subroutine advect_base
 
    subroutine advect_base_state_planar (vel,p0_old,p0_new,s0_old,s0_new,temp0, &
-                                        gam1,dz,dt,anelastic_cutoff)
+                                        gam1,dz,dt)
 
       real(kind=dp_t), intent(in   ) :: vel(0:)
       real(kind=dp_t), intent(in   ) :: p0_old(0:), s0_old(0:,:)
       real(kind=dp_t), intent(  out) :: p0_new(0:), s0_new(0:,:)
       real(kind=dp_t), intent(inout) :: temp0(0:)
       real(kind=dp_t), intent(inout) :: gam1(0:)
-      real(kind=dp_t), intent(in   ) :: dz,dt,anelastic_cutoff
+      real(kind=dp_t), intent(in   ) :: dz,dt
 
 !     Local variables
-      integer :: i, j, n, nz
-      real(kind=dp_t) :: coeff
+      integer :: j, n, nz
 
-      real (kind = dp_t), allocatable :: H(:,:)
       real (kind = dp_t), allocatable :: force(:)
       real (kind = dp_t), allocatable :: edge(:)
 
@@ -167,8 +163,8 @@ contains
       real(kind=dp_t), intent(in   ) :: dt,anelastic_cutoff
 
 !     Local variables
-      integer :: i, j, k, n, nz
-      real(kind=dp_t) :: dtdr,divbetaw,betahalf,factor,integral
+      integer :: j, n, nz
+      real(kind=dp_t) :: dtdr,divbetaw,betahalf,factor
       real(kind=dp_t) :: div_w0
 
       real (kind = dp_t), allocatable :: force(:)

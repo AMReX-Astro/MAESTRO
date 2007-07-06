@@ -24,12 +24,9 @@ contains
     character(len=*), intent(in) :: dirname
     real(kind=dp_t), intent(in) :: time_in, dt_in
     integer        , intent(in) :: verbose
-    integer :: i, j, k, n
+    integer :: n
     character(len=128) :: header, sd_name, sd_name_nodal
-    integer :: nc, un, nl, dm
-    integer, allocatable ::  lo(:),  hi(:)
-    integer :: idummy, rdummy
-    type(box) :: lbbox
+    integer :: un
 
     integer         :: nlevs
     real(kind=dp_t) :: time, dt
@@ -59,16 +56,6 @@ contains
       write(6,*) 'Writing pressure to checkpoint file ',trim(sd_name_nodal)
       write(6,*) 
     end if
-    
-    nl = size(mfs)
-    nc = ncomp(mfs(1))
-    dm = mfs(1)%dim
-    allocate(lo(dm),hi(dm))
-    lbbox = bbox(get_boxarray(mfs(1)))
-
-    idummy = 0
-    rdummy = 0.0_dp_t
-    lo = lwb(lbbox); hi = upb(lbbox)
 
     time = time_in
       dt =   dt_in
@@ -101,11 +88,9 @@ contains
     integer         ,                pointer :: rrs(:)
     real(kind=dp_t) ,                pointer :: dx(:,:)
 
-    integer :: i, j, k, n
+    integer :: n
     character(len=128) :: header, sd_name
-    integer :: nc, un, nl, dm
-    integer :: idummy, rdummy
-    type(box) :: lbbox
+    integer :: un
 
     integer         :: nlevs
     real(kind=dp_t) :: time, dt
@@ -149,11 +134,6 @@ contains
 !   Read the Source_old data into a multilevel multifab.
     write(unit=sd_name, fmt='(a,"/Source_old")') trim(dirname)
     call fabio_ml_multifab_read_d(Source_old, sd_name)
-    
-    nl = nlevs
-    nc = ncomp(mfs(1))
-    dm = mfs(1)%dim
-    lbbox = bbox(get_boxarray(mfs(1)))
 
     deallocate(dx,rrs)
 

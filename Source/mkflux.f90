@@ -12,7 +12,7 @@ module mkflux_module
 contains
 
       subroutine mkflux_2d(s,u,sedgex,sedgey,uadv,vadv,utrans,vtrans,&
-                           force,w0,lo,dx,dt,is_vel,is_cons,&
+                           force,w0,lo,dx,dt,is_vel,&
                            phys_bc,adv_bc,velpred,ng,n)
 
       integer, intent(in) :: lo(:),ng,n
@@ -33,7 +33,6 @@ contains
       integer        ,intent(in) :: phys_bc(:,:)
       integer        ,intent(in) ::  adv_bc(:,:,:)
       logical        ,intent(in) :: is_vel
-      logical        ,intent(in) :: is_cons(:)
 
       real(kind=dp_t), allocatable::  slopex(:,:,:),slopey(:,:,:)
       real(kind=dp_t), allocatable::  s_l(:),s_r(:),s_b(:),s_t(:)
@@ -52,7 +51,7 @@ contains
 
       real(kind=dp_t) :: abs_eps, eps, umax
 
-      integer :: i,j,is,js,ie,je,g,nr
+      integer :: i,j,is,js,ie,je,nr
 
       hi(1) = lo(1) + size(s,dim=1) - (2*ng+1)
       hi(2) = lo(2) + size(s,dim=2) - (2*ng+1)
@@ -402,7 +401,7 @@ contains
 
 
       subroutine mkflux_3d(s,u,sedgex,sedgey,sedgez,uadv,vadv,wadv,utrans,vtrans,wtrans,&
-                           force,w0,w0_cart_vec,lo,dx,dt,is_vel,is_cons,&
+                           force,w0,w0_cart_vec,lo,dx,dt,is_vel,&
                            phys_bc,adv_bc,velpred,ng,n)
 
       integer, intent(in) :: lo(:),ng,n
@@ -427,7 +426,6 @@ contains
       integer        ,intent(in) :: phys_bc(:,:)
       integer        ,intent(in) ::  adv_bc(:,:,:)
       logical        ,intent(in) :: is_vel
-      logical        ,intent(in) :: is_cons(:)
 
       real(kind=dp_t), allocatable :: slopex(:,:,:,:),slopey(:,:,:,:),slopez(:,:,:,:)
       real(kind=dp_t), allocatable :: s_l(:),s_r(:),s_b(:),s_t(:),s_u(:),s_d(:)
@@ -444,9 +442,9 @@ contains
       integer :: slope_order = 4
       logical :: test
 
-      real(kind=dp_t) :: abs_eps, eps, umax, w0cell
+      real(kind=dp_t) :: abs_eps, eps, umax
 
-      integer :: i,j,k,is,js,ie,je,ks,ke,g
+      integer :: i,j,k,is,js,ie,je,ks,ke
 
       hi(1) = lo(1) + size(s,dim=1) - (2*ng+1)
       hi(2) = lo(2) + size(s,dim=2) - (2*ng+1)
@@ -1149,8 +1147,6 @@ contains
 
       integer :: i,is,ie
       integer :: hi,cen,lim,flag,fromm
-      integer :: slope_order = 4
-      logical :: test
 
       parameter( cen = 1 )
       parameter( lim = 2 )

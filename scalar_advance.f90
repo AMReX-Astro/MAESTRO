@@ -42,7 +42,7 @@ contains
 ! 
       integer        , intent(in   ) :: verbose
 !
-      type(multifab) :: force,scal_force,s0_cart
+      type(multifab) :: scal_force,s0_cart
 
       real(kind=dp_t), intent(in   ) ::  s0_old(0:,:)
       real(kind=dp_t), intent(in   ) ::  s0_new(0:,:)
@@ -58,14 +58,12 @@ contains
       real(kind=dp_t), pointer:: vtp(:,:,:,:)
       real(kind=dp_t), pointer:: wtp(:,:,:,:)
       real(kind=dp_t), pointer:: w0p(:,:,:,:)
-      real(kind=dp_t), pointer::  ep(:,:,:,:)
       real(kind=dp_t), pointer::  fp(:,:,:,:)
       real(kind=dp_t), pointer::  np(:,:,:,:)
       real(kind=dp_t), pointer:: s0p(:,:,:,:)
 !
       real(kind=dp_t), pointer:: sop(:,:,:,:)
       real(kind=dp_t), pointer:: snp(:,:,:,:)
-      real(kind=dp_t), pointer::  dp(:,:,:,:) 
       real(kind=dp_t), pointer:: sepx(:,:,:,:)
       real(kind=dp_t), pointer:: sepy(:,:,:,:)
       real(kind=dp_t), pointer:: sepz(:,:,:,:)
@@ -76,8 +74,7 @@ contains
       integer :: nscal,ntrac,velpred
       integer :: lo(uold%dim),hi(uold%dim)
       integer :: i,n,bc_comp,dm,ng_cell
-      logical :: is_vel, make_divu
-      logical, allocatable :: is_conservative(:)
+      logical :: is_vel
       real(kind=dp_t) :: half_time
       type(box)       :: domain
       integer         :: domlo(uold%dim), domhi(uold%dim)
@@ -96,13 +93,6 @@ contains
       nscal  = ncomp(ext_scal_force)
       ntrac  = nscal - nspec - 2
       is_vel = .false.
-
-      allocate(is_conservative(nscal))
-      is_conservative(1) = .true.
-      is_conservative(2) = .true.
-      is_conservative(spec_comp:spec_comp+nspec-1) = .true.
-      if (ntrac .ge. 1) &
-        is_conservative(trac_comp:trac_comp+ntrac-1) = .false.
 
       call build(scal_force, ext_scal_force%la, nscal, 1)
       call setval(scal_force,ZERO)
@@ -239,7 +229,7 @@ contains
                                sepx(:,:,1,:), sepy(:,:,1,:), &
                                ump(:,:,1,1), vmp(:,:,1,1), &
                                utp(:,:,1,1), vtp(:,:,1,1), fp(:,:,1,:), w0, &
-                               lo, dx, dt, is_vel, is_conservative, &
+                               lo, dx, dt, is_vel, &
                                the_bc_level%phys_bc_level_array(i,:,:), &
                                the_bc_level%adv_bc_level_array(i,:,:,bc_comp:), &
                                velpred, ng_cell, n)
@@ -250,7 +240,7 @@ contains
                                sepx(:,:,1,:), sepy(:,:,1,:), &
                                ump(:,:,1,1), vmp(:,:,1,1), &
                                utp(:,:,1,1), vtp(:,:,1,1), fp(:,:,1,:), w0, &
-                               lo, dx, dt, is_vel, is_conservative, &
+                               lo, dx, dt, is_vel, &
                                the_bc_level%phys_bc_level_array(i,:,:), &
                                the_bc_level%adv_bc_level_array(i,:,:,bc_comp:), &
                                velpred, ng_cell, n)
@@ -266,7 +256,7 @@ contains
                                sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
                                ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
                                utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), fp(:,:,:,:), w0, w0p(:,:,:,:), &
-                               lo, dx, dt, is_vel, is_conservative, &
+                               lo, dx, dt, is_vel, &
                                the_bc_level%phys_bc_level_array(i,:,:), &
                                the_bc_level%adv_bc_level_array(i,:,:,bc_comp:), &
                                velpred, ng_cell, n)
@@ -277,7 +267,7 @@ contains
                                sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
                                ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
                                utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), fp(:,:,:,:), w0, w0p(:,:,:,:), &
-                               lo, dx, dt, is_vel, is_conservative, &
+                               lo, dx, dt, is_vel, &
                                the_bc_level%phys_bc_level_array(i,:,:), &
                                the_bc_level%adv_bc_level_array(i,:,:,bc_comp:), &
                                velpred, ng_cell, n)
@@ -313,7 +303,7 @@ contains
                                sepx(:,:,1,:), sepy(:,:,1,:), &
                                ump(:,:,1,1), vmp(:,:,1,1), &
                                utp(:,:,1,1), vtp(:,:,1,1), fp(:,:,1,:), w0, &
-                               lo, dx, dt, is_vel, is_conservative, &
+                               lo, dx, dt, is_vel, &
                                the_bc_level%phys_bc_level_array(i,:,:), &
                                the_bc_level%adv_bc_level_array(i,:,:,bc_comp:), &
                                velpred, ng_cell, n)
@@ -329,7 +319,7 @@ contains
                                sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
                                ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
                                utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), fp(:,:,:,:), w0, w0p(:,:,:,:), &
-                               lo, dx, dt, is_vel, is_conservative, &
+                               lo, dx, dt, is_vel, &
                                the_bc_level%phys_bc_level_array(i,:,:), &
                                the_bc_level%adv_bc_level_array(i,:,:,bc_comp:), &
                                velpred, ng_cell, n)
@@ -389,7 +379,7 @@ contains
               if (spherical .eq. 0) then
                 call update_scal_3d_cart(spec_comp, spec_comp+nspec-1, &
                                          sop(:,:,:,:), snp(:,:,:,:), &
-                                         ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0, w0p(:,:,:,:), &
+                                         ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0, &
                                          sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
                                          fp(:,:,:,:), &
                                          s0_old(:,:), s0_new(:,:), &
@@ -398,7 +388,7 @@ contains
                 s0p => dataptr(s0_cart, i)
                 call update_scal_3d_sphr(spec_comp, spec_comp+nspec-1, &
                                          sop(:,:,:,:), snp(:,:,:,:), &
-                                         ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0, w0p(:,:,:,:), &
+                                         ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0p(:,:,:,:), &
                                          sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
                                          fp(:,:,:,:), &
                                          s0_old(:,:), s0_new(:,:), s0p(:,:,:,:), &
@@ -486,7 +476,7 @@ contains
               if (spherical .eq. 0) then
                 call update_scal_3d_cart(trac_comp,trac_comp+ntrac-1, &
                                          sop(:,:,:,:), snp(:,:,:,:), &
-                                         ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0, w0p(:,:,:,:), &
+                                         ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0, &
                                          sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
                                          fp(:,:,:,:), &
                                          s0_old(:,:), s0_new(:,:), &
@@ -495,7 +485,7 @@ contains
                 s0p => dataptr(s0_cart, i)
                 call update_scal_3d_sphr(trac_comp,trac_comp+ntrac-1, &
                                          sop(:,:,:,:), snp(:,:,:,:), &
-                                         ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0, w0p(:,:,:,:), &
+                                         ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0p(:,:,:,:), &
                                          sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
                                          fp(:,:,:,:), &
                                          s0_old(:,:), s0_new(:,:), s0p(:,:,:,:), &
@@ -583,7 +573,7 @@ contains
                 s0p => dataptr(s0_cart, i)
                 call update_scal_3d_sphr(rhoh_comp, rhoh_comp, &
                                          sop(:,:,:,:), snp(:,:,:,:), &
-                                         ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0, w0p(:,:,:,:), &
+                                         ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0p(:,:,:,:), &
                                          sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
                                          fp(:,:,:,:), &
                                          s0_old(:,:), s0_new(:,:), s0p(:,:,:,:),  &
@@ -597,7 +587,7 @@ contains
 
                 call update_scal_3d_cart(rhoh_comp, rhoh_comp, &
                                          sop(:,:,:,:), snp(:,:,:,:), &
-                                         ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0, w0p(:,:,:,:), &
+                                         ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0, &
                                          sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
                                          fp(:,:,:,:), &
                                          s0_old(:,:), s0_new(:,:), &
@@ -627,7 +617,6 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      deallocate(is_conservative)
       call multifab_destroy(scal_force)
       call multifab_destroy(s0_cart)
 

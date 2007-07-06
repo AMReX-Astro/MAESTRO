@@ -38,8 +38,7 @@ subroutine macproject(mla,umac,phi,rho,dx,the_bc_tower,verbose,mg_verbose,cg_ver
   type(bndry_reg), pointer    :: fine_flx(:) => Null()
   real(dp_t)     ,allocatable :: umac_norm(:)
   integer                     :: dm,stencil_order,i,n
-  integer                     :: ng,nc
-  integer                     :: nlevs,nscal
+  integer                     :: nlevs
   logical                     :: use_rhs, use_div_coeff_1d, use_div_coeff_3d
 
   nlevs = mla%nlevel
@@ -117,7 +116,7 @@ subroutine macproject(mla,umac,phi,rho,dx,the_bc_tower,verbose,mg_verbose,cg_ver
   call mac_multigrid(mla,rh,phi,fine_flx,alpha,beta,dx,&
                      the_bc_tower,bc_comp,stencil_order,mla%mba%rr,mg_verbose,cg_verbose,umac_norm)
 
-  call mkumac(rh,umac,phi,beta,fine_flx,dx,the_bc_tower,bc_comp,mla%mba%rr,verbose)
+  call mkumac(rh,umac,phi,beta,fine_flx,dx,the_bc_tower,bc_comp,mla%mba%rr)
 
   if (use_rhs) then
     call divumac(nlevs,umac,rh,dx,mla%mba%rr,verbose,.false.,divu_rhs)
@@ -707,7 +706,7 @@ subroutine macproject(mla,umac,phi,rho,dx,the_bc_tower,verbose,mg_verbose,cg_ver
 
     end subroutine mk_mac_coeffs_3d
 
-    subroutine mkumac(rh,umac,phi,beta,fine_flx,dx,the_bc_tower,press_comp,ref_ratio,verbose)
+    subroutine mkumac(rh,umac,phi,beta,fine_flx,dx,the_bc_tower,press_comp,ref_ratio)
 
       type(multifab), intent(inout) :: umac(:,:)
       type(multifab), intent(inout) ::   rh(:)
@@ -718,7 +717,6 @@ subroutine macproject(mla,umac,phi,rho,dx,the_bc_tower,verbose,mg_verbose,cg_ver
       type(bc_tower), intent(in   ) :: the_bc_tower
       integer       , intent(in   ) :: press_comp
       integer       , intent(in   ) :: ref_ratio(:,:)
-      integer       , intent(in   ) :: verbose
 
       integer :: i,dm,nlevs
  
@@ -727,7 +725,6 @@ subroutine macproject(mla,umac,phi,rho,dx,the_bc_tower,verbose,mg_verbose,cg_ver
       real(kind=dp_t), pointer :: vmp(:,:,:,:) 
       real(kind=dp_t), pointer :: wmp(:,:,:,:) 
       real(kind=dp_t), pointer :: php(:,:,:,:) 
-      real(kind=dp_t), pointer :: rhp(:,:,:,:) 
       real(kind=dp_t), pointer ::  bp(:,:,:,:) 
       real(kind=dp_t), pointer :: lxp(:,:,:,:) 
       real(kind=dp_t), pointer :: hxp(:,:,:,:) 
@@ -735,7 +732,6 @@ subroutine macproject(mla,umac,phi,rho,dx,the_bc_tower,verbose,mg_verbose,cg_ver
       real(kind=dp_t), pointer :: hyp(:,:,:,:) 
       real(kind=dp_t), pointer :: lzp(:,:,:,:) 
       real(kind=dp_t), pointer :: hzp(:,:,:,:) 
-      real(kind=dp_t)          :: rhmax
 
       nlevs = size(rh,dim=1)
       dm = rh(nlevs)%dim
@@ -1270,14 +1266,12 @@ subroutine mac_multigrid(mla,rh,phi,fine_flx,alpha,beta,dx,&
   type(mg_tower), allocatable :: mgt(:)
   integer        :: i, dm, ns, nlevs
   integer        :: test
-  real(dp_t)     :: snrm(2)
 
   ! MG solver defaults
   integer :: bottom_solver, bottom_max_iter
   integer    :: max_iter
   integer    :: min_width
   integer    :: max_nlevel
-  integer    :: verbose
   integer    :: n, nu1, nu2, gamma, cycle, smoother
   integer    :: max_nlevel_in,do_diagnostics
   real(dp_t) :: rel_eps,abs_eps,omega,bottom_solver_eps
@@ -1307,7 +1301,6 @@ subroutine mac_multigrid(mla,rh,phi,fine_flx,alpha,beta,dx,&
   bottom_solver_eps = mgt(nlevs)%bottom_solver_eps
   bottom_max_iter   = mgt(nlevs)%bottom_max_iter
   min_width         = mgt(nlevs)%min_width
-  verbose           = mgt(nlevs)%verbose
 
 ! Note: put this here to minimize asymmetries - ASA
   if (nlevs .eq. 1) then

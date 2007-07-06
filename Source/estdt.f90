@@ -207,7 +207,6 @@ contains
      real (kind = dp_t), intent(out) :: dt_adv, dt_divu
 
 !    Local variables
-     real (kind = dp_t), allocatable :: w0_cart(:,:,:,:)
      real (kind = dp_t)  :: spdx, spdy, spdz, spdr
      real (kind = dp_t)  :: pforcex, pforcey, pforcez
      real (kind = dp_t)  :: eps,denom,gradp0
@@ -324,7 +323,7 @@ contains
      real (kind = dp_t), allocatable :: gp0(:)
      real (kind = dp_t)  :: spdx, spdy, spdz, spdr, gp_dot_u, gam1_p_avg
      real (kind = dp_t)  :: pforcex, pforcey, pforcez
-     real (kind = dp_t)  :: eps,denom,gradp0
+     real (kind = dp_t)  :: eps,denom
      integer             :: i,j,k,nr
 
      eps = 1.0e-8
@@ -337,7 +336,6 @@ contains
 
      allocate( w0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),3))
      call put_w0_on_3d_cells_sphr(w0(0:),w0_cart,normal,lo,hi,dx,0)
-
 
      ! Limit dt based on velocity terms
      do k = lo(3), hi(3)
