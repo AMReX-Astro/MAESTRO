@@ -24,7 +24,7 @@ contains
 
     type(box) :: fbox,cstrip
     type(box) :: crse_domain
-    integer   :: i,j,n,d,dm
+    integer   :: i,j,n,dm
     integer   :: iface,ishift
     integer   :: lo(4),hi(4),lo_f(3),lo_c(3),hi_f(3),hi_c(3),interior_lo(4)
     integer   :: fvcx_lo,fvcy_lo,fvcz_lo
@@ -39,7 +39,6 @@ contains
     real(kind=dp_t), allocatable :: cvcx(:),cvcy(:),cvcz(:)
     integer                      :: local_bc(fine%dim,2,nc)
 
-    integer         :: ii,jj
     integer         :: ng_of_crse
     real(kind=dp_t) :: dx(2)
     dx = ONE
@@ -175,6 +174,12 @@ contains
                    do n = 1,nc
                       call setbc_3d(cp(:,:,:,n),interior_lo,1,local_bc(:,:,n),dx,bc_comp+n-1)
                    end do
+                   fvcx_lo = lo_f(1)
+                   fvcy_lo = lo_f(2)
+                   fvcz_lo = lo_f(3)
+                   cvcx_lo = lo_c(1)
+                   cvcy_lo = lo_c(2)
+                   cvcz_lo = lo_c(3)
                    call lin_cc_interp_3d(fp(:,:,:,:), lo_f, cp(:,:,:,:), lo_c, ir, local_bc, &
                                          fvcx, fvcx_lo, fvcy, fvcy_lo, fvcz, fvcz_lo, &
                                          cvcx, cvcx_lo, cvcy, cvcy_lo, cvcz, cvcz_lo, &

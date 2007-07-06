@@ -302,8 +302,8 @@ module advance_timestep_module
         do n = 1,nlevs
            call scalar_advance (uold(n), s1(n), s2(n), &
                                 umac(n,:), w0, w0_cart_vec(n), sedge(n,:), utrans(n,:),&
-                                scal_force(n), normal(n), s0_1, s0_2, p0_1, p0_2, temp0, &
-                                dx(n,:),time,dt, &
+                                scal_force(n), normal(n), s0_1, s0_2, p0_1, p0_2, &
+                                dx(n,:),dt, &
                                 the_bc_tower%bc_tower_array(n), &
                                 verbose)
         end do
@@ -353,7 +353,7 @@ module advance_timestep_module
         do n = 1, nlevs
 
            call make_S(Source_new(n),gamma1_term(n),snew(n),uold(n), &
-                       rho_omegadot2(n),rho_Hext(n),p0_new,temp0,gam1,dx(n,:),time)
+                       rho_omegadot2(n),rho_Hext(n),p0_new,temp0,gam1,dx(n,:))
            call make_S_at_halftime(Source_nph(n),Source_old(n),Source_new(n))
            call average(Source_nph,Sbar,dx,1,1)
 
@@ -448,8 +448,8 @@ module advance_timestep_module
         do n = 1,nlevs
            call scalar_advance (uold(n), s1(n), s2(n), &
                                 umac(n,:), w0, w0_cart_vec(n), sedge(n,:), utrans(n,:),&
-                                scal_force(n), normal(n), s0_1, s0_2, p0_1, p0_2, temp0, &
-                                dx(n,:),time,dt, &
+                                scal_force(n), normal(n), s0_1, s0_2, p0_1, p0_2, &
+                                dx(n,:),dt, &
                                 the_bc_tower%bc_tower_array(n), &
                                 verbose)
         end do
@@ -498,7 +498,7 @@ module advance_timestep_module
 
         do n = 1, nlevs
            call make_S(Source_new(n),gamma1_term(n),snew(n),uold(n), &
-                       rho_omegadot2(n),rho_Hext(n),p0_new,temp0,gam1,dx(n,:),time)
+                       rho_omegadot2(n),rho_Hext(n),p0_new,temp0,gam1,dx(n,:))
         end do
         call average(Source_new,Sbar,dx,1,1)
 
@@ -524,7 +524,7 @@ module advance_timestep_module
                                  normal(n), w0, w0_cart_vec(n), &
                                  w0_force, w0_force_cart_vec(n), &
                                  s0_old, grav_cell_old, s0_nph, grav_cell_nph, &
-                                 dx(n,:),time,dt, &
+                                 dx(n,:),dt, &
                                  the_bc_tower%bc_tower_array(n), &
                                  sponge(n),do_sponge,verbose)
         end do

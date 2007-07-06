@@ -135,8 +135,6 @@ contains
     !     Local variables
     integer :: i, j
 
-    integer :: nx
-
     do_diag = .false.
 
     do j = lo(2), hi(2)
@@ -185,8 +183,6 @@ contains
 
     !     Local variables
     integer :: i, j, k
-
-    integer :: nx
 
     do_diag = .false.
 
@@ -238,7 +234,7 @@ contains
     real (kind = dp_t), intent(in   ) :: dx(:)
 
     !     Local variables
-    integer :: i, j, k, nx
+    integer :: i, j, k
     real (kind=dp_t), allocatable :: t0_cart(:,:,:)
     real (kind=dp_t), allocatable :: p0_cart(:,:,:)
 
@@ -289,7 +285,7 @@ contains
 
   subroutine make_tfromrho (plotdata,comp_tfromrho,comp_tpert,comp_rhopert, &
                             comp_machno,comp_deltag,comp_spert, &
-                            s,u,s0,t0,p0,time,dx)
+                            s,u,s0,t0,p0,dx)
 
     integer        , intent(in   ) :: comp_tfromrho,comp_tpert
     integer        , intent(in   ) :: comp_rhopert, comp_machno
@@ -300,7 +296,7 @@ contains
     real(kind=dp_t), intent(in   ) :: s0(0:,:)
     real(kind=dp_t), intent(inout) :: t0(0:)
     real(kind=dp_t), intent(in   ) :: p0(0:)
-    real(kind=dp_t), intent(in   ) :: time,dx(:)
+    real(kind=dp_t), intent(in   ) :: dx(:)
     real(kind=dp_t), pointer:: sp(:,:,:,:),tp(:,:,:,:),up(:,:,:,:)
     integer :: lo(s%dim),hi(s%dim),ng,dm
     integer :: i
@@ -322,7 +318,7 @@ contains
                                tp(:,:,1,comp_machno  ),tp(:,:,1,comp_deltag), &
                                tp(:,:,1,comp_spert   ), &
                                sp(:,:,1,:), up(:,:,1,:), &
-                               lo, hi, ng, s0, t0, p0, time, dx)
+                               lo, hi, ng, s0, t0, p0)
        case (3)
           if (spherical .eq. 1) then
             call maketfromrho_3d_sphr(tp(:,:,:,comp_tfromrho),tp(:,:,:,comp_tpert), &
@@ -330,14 +326,14 @@ contains
                                       tp(:,:,:,comp_machno  ),tp(:,:,:,comp_deltag), &
                                       tp(:,:,:,comp_spert   ), &
                                       sp(:,:,:,:), up(:,:,:,:), &
-                                      lo, hi, ng, s0, t0, p0, time, dx)
+                                      lo, hi, ng, s0, t0, p0, dx)
           else
             call maketfromrho_3d_cart(tp(:,:,:,comp_tfromrho),tp(:,:,:,comp_tpert), &
                                       tp(:,:,:,comp_rhopert ), &
                                       tp(:,:,:,comp_machno  ),tp(:,:,:,comp_deltag), &
                                       tp(:,:,:,comp_spert   ), &
                                       sp(:,:,:,:), up(:,:,:,:), &
-                                      lo, hi, ng, s0, t0, p0, time, dx)
+                                      lo, hi, ng, s0, t0, p0)
           endif
        end select
     end do
@@ -345,7 +341,7 @@ contains
   end subroutine make_tfromrho
 
   subroutine maketfromrho_2d (t,tpert,rhopert,machno,deltagamma,spert, &
-                              s,u,lo,hi,ng,s0,t0,p0,time,dx)
+                              s,u,lo,hi,ng,s0,t0,p0)
 
     implicit none
 
@@ -361,7 +357,6 @@ contains
     real (kind=dp_t), intent(in   ) :: s0(0:,:)
     real (kind=dp_t), intent(inout) :: t0(0:)
     real (kind=dp_t), intent(in   ) :: p0(0:)
-    real (kind=dp_t), intent(in   ) :: time,dx(:)
 
     !     Local variables
     integer          :: i, j
@@ -443,7 +438,7 @@ contains
   end subroutine maketfromrho_2d
 
   subroutine maketfromrho_3d_cart (t,tpert,rhopert,machno,deltagamma,spert, &
-                                   s,u,lo,hi,ng,s0,t0,p0,time,dx)
+                                   s,u,lo,hi,ng,s0,t0,p0)
 
     implicit none
 
@@ -459,7 +454,6 @@ contains
     real (kind=dp_t), intent(in   ) :: s0(0:,:)
     real (kind=dp_t), intent(inout) :: t0(0:)
     real (kind=dp_t), intent(in   ) :: p0(0:)
-    real (kind=dp_t), intent(in   ) :: time,dx(:)
 
     !     Local variables
     integer          :: i, j, k
@@ -541,7 +535,7 @@ contains
    end subroutine maketfromrho_3d_cart
 
   subroutine maketfromrho_3d_sphr (t,tpert,rhopert,machno,deltagamma,spert, &
-                                   s,u,lo,hi,ng,s0,t0,p0,time,dx)
+                                   s,u,lo,hi,ng,s0,t0,p0,dx)
 
     implicit none
 
@@ -557,7 +551,7 @@ contains
     real (kind=dp_t), intent(in   ) :: s0(0:,:)
     real (kind=dp_t), intent(inout) :: t0(0:)
     real (kind=dp_t), intent(in   ) :: p0(0:)
-    real (kind=dp_t), intent(in   ) :: time,dx(:)
+    real (kind=dp_t), intent(in   ) :: dx(:)
 
     !     Local variables
     integer          :: i, j, k

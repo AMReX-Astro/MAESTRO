@@ -152,11 +152,10 @@ contains
 
 !     Local variables
       integer                       :: i, j, k, n, index
-      integer                       :: nr, nc
+      integer                       :: nr
       real (kind=dp_t)              :: x,y,z,radius,vol
 
       nr = size(phibar,dim=1)
-      nc = size(phibar,dim=2)
 
       do k = lo(3),hi(3)
         z = (dble(k)+HALF)*dx(3) - center(3)
@@ -166,7 +165,7 @@ contains
             x = (dble(i)+HALF)*dx(1) - center(1)
 
             radius = sqrt(x**2 + y**2 + z**2)
-            index = radius / dr 
+            index = int(radius / dr)
 
             if (index .lt. 0 .or. index .gt. nr-1) then
               print *,'RADIUS ',radius

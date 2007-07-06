@@ -22,8 +22,8 @@ contains
    subroutine scalar_advance (uold, sold, snew, &
                               umac, w0, w0_cart_vec, sedge, utrans, ext_scal_force, normal, &
                               s0_old , s0_new , &
-                              p0_old, p0_new, temp0, &
-                              dx,time, dt, the_bc_level, &
+                              p0_old, p0_new, &
+                              dx, dt, the_bc_level, &
                               verbose)
  
       type(multifab) , intent(inout) :: uold
@@ -37,7 +37,7 @@ contains
 !
       real(kind=dp_t), intent(inout) :: w0(0:)
       type(multifab) , intent(in   ) :: w0_cart_vec
-      real(kind=dp_t), intent(in   ) :: dx(:),time,dt
+      real(kind=dp_t), intent(in   ) :: dx(:),dt
       type(bc_level) , intent(in   ) :: the_bc_level
 ! 
       integer        , intent(in   ) :: verbose
@@ -48,7 +48,6 @@ contains
       real(kind=dp_t), intent(in   ) ::  s0_new(0:,:)
       real(kind=dp_t), intent(in   ) ::    p0_old(0:)
       real(kind=dp_t), intent(in   ) ::    p0_new(0:)
-      real(kind=dp_t), intent(in   ) ::    temp0(0:)
 ! 
       real(kind=dp_t), pointer:: uop(:,:,:,:)
       real(kind=dp_t), pointer:: ump(:,:,:,:)
@@ -75,7 +74,6 @@ contains
       integer :: lo(uold%dim),hi(uold%dim)
       integer :: i,n,bc_comp,dm,ng_cell
       logical :: is_vel
-      real(kind=dp_t) :: half_time
       type(box)       :: domain
       integer         :: domlo(uold%dim), domhi(uold%dim)
 
@@ -87,8 +85,6 @@ contains
 
       ng_cell = sold%ng
       dm      = sold%dim
-
-      half_time = time + HALF*dt
 
       nscal  = ncomp(ext_scal_force)
       ntrac  = nscal - nspec - 2
@@ -144,9 +140,7 @@ contains
             end do
 
             n = rhoh_comp
-            call  mkrhohforce_2d(fp(:,:,1,n), vmp(:,:,1,1), lo, hi, &
-                                 sop(:,:,1,:),sop(:,:,1,:), ng_cell, dx(:), time, &
-                                 p0_old, p0_old, temp0, dx(dm))
+            call  mkrhohforce_2d(fp(:,:,1,n), vmp(:,:,1,1), lo, hi, p0_old, p0_old)
 
             call modify_scal_force_2d(fp(:,:,1,n),sop(:,:,1,n), lo, hi, ng_cell, &
                                       ump(:,:,1,1),vmp(:,:,1,1), &
@@ -167,8 +161,7 @@ contains
                np => dataptr(normal, i)
                call  mkrhohforce_3d_sphr(fp(:,:,:,n), &
                                          ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), lo, hi, &
-                                         sop(:,:,:,:),sop(:,:,:,:), ng_cell, dx, time, &
-                                         np(:,:,:,:), p0_old, p0_old, temp0)
+                                         dx, np(:,:,:,:), p0_old, p0_old)
 
                call modify_scal_force_3d_sphr(fp(:,:,:,n),sop(:,:,:,n),lo,hi,domlo,domhi,ng_cell,&
                                               ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1), &
@@ -181,9 +174,7 @@ contains
                end do
 
                n = rhoh_comp
-               call  mkrhohforce_3d(fp(:,:,:,n), wmp(:,:,:,1), lo, hi, &
-                                    sop(:,:,:,:), sop(:,:,:,:), ng_cell, dx(:), time, &
-                                    p0_old, p0_old, temp0, dx(dm))
+               call  mkrhohforce_3d(fp(:,:,:,n), wmp(:,:,:,1), lo, hi, p0_old, p0_old)
 
                call modify_scal_force_3d_cart(fp(:,:,:,n),sop(:,:,:,n),lo, hi, ng_cell, &
                                               ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1), &
@@ -544,9 +535,7 @@ contains
          hi =  upb(get_box(sold, i))
          select case (dm)
             case (2)
-              call  mkrhohforce_2d(fp(:,:,1,n), vmp(:,:,1,1), lo, hi, &
-                                   sop(:,:,1,:), snp(:,:,1,:), ng_cell, dx(:), half_time, &
-                                   p0_old, p0_new, temp0, dx(dm))
+              call  mkrhohforce_2d(fp(:,:,1,n), vmp(:,:,1,1), lo, hi, p0_old, p0_new)
 
               call update_scal_2d(rhoh_comp, rhoh_comp, &
                              sop(:,:,1,:), snp(:,:,1,:), &
@@ -568,8 +557,7 @@ contains
                 np => dataptr(normal, i)
                 call  mkrhohforce_3d_sphr(fp(:,:,:,n), &
                                           ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), lo, hi, &
-                                          sop(:,:,:,:), snp(:,:,:,:), ng_cell, dx(:), half_time, &
-                                          np(:,:,:,:), p0_old, p0_new, temp0)
+                                          dx, np(:,:,:,:), p0_old, p0_new)
                 s0p => dataptr(s0_cart, i)
                 call update_scal_3d_sphr(rhoh_comp, rhoh_comp, &
                                          sop(:,:,:,:), snp(:,:,:,:), &
@@ -582,8 +570,7 @@ contains
               else
 
                 call  mkrhohforce_3d(fp(:,:,:,n), wmp(:,:,:,1), lo, hi, &
-                                     sop(:,:,:,:), snp(:,:,:,:), ng_cell, dx(:), half_time, &
-                                     p0_old, p0_new, temp0, dx(dm))
+                                     p0_old, p0_new)
 
                 call update_scal_3d_cart(rhoh_comp, rhoh_comp, &
                                          sop(:,:,:,:), snp(:,:,:,:), &

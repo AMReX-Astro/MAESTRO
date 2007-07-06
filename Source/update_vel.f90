@@ -13,7 +13,7 @@ module update_vel_module
   contains
 
    subroutine update_velocity_2d (uold,unew,umac,vmac,sedgex,sedgey,force,w0,w0_force, &
-                                  lo,hi,ng,dx,time,dt,sponge,do_sponge)
+                                  lo,hi,ng,dx,dt,sponge,do_sponge)
 
       implicit none
 
@@ -29,14 +29,12 @@ module update_vel_module
       real (kind = dp_t), intent(in   ) ::       w0(0:)
       real (kind = dp_t), intent(in   ) :: w0_force(0:)
       real (kind = dp_t), intent(in   ) :: dx(:)
-      real (kind = dp_t), intent(in   ) :: time,dt
+      real (kind = dp_t), intent(in   ) :: dt
       logical           , intent(in   ) :: do_sponge
 
-      integer :: i, j, n
+      integer :: i, j
       real (kind = dp_t) ubar,vbar
-      real (kind = dp_t) ugradu,ugradv,ugrads
-      real (kind = dp_t) :: divsu
-      real (kind = dp_t) :: y,smdamp
+      real (kind = dp_t) ugradu,ugradv
 
       do j = lo(2), hi(2)
       do i = lo(1), hi(1)
@@ -72,7 +70,7 @@ module update_vel_module
    end subroutine update_velocity_2d
 
    subroutine update_velocity_3d (uold,unew,umac,vmac,wmac,sedgex,sedgey,sedgez, &
-                                  force,w0,w0_cart,w0_force,w0_force_cart,lo,hi,ng,dx,time,dt, &
+                                  force,w0,w0_cart,w0_force,w0_force_cart,lo,hi,ng,dx,dt, &
                                   sponge,do_sponge)
 
       implicit none
@@ -93,19 +91,17 @@ module update_vel_module
       real (kind = dp_t), intent(in   ) :: w0_force(0:)
       real (kind = dp_t), intent(in   ) ::  w0_force_cart(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
       real (kind = dp_t), intent(in   ) :: dx(:)
-      real (kind = dp_t), intent(in   ) :: time,dt
+      real (kind = dp_t), intent(in   ) :: dt
       logical           , intent(in   ) :: do_sponge
 
-      integer :: i, j, k, n, nr
+      integer :: i, j, k
       real (kind = dp_t) ubar,vbar,wbar
-      real (kind = dp_t) ugradu,ugradv,ugradw,ugrads
-      real (kind = dp_t) :: divsu
+      real (kind = dp_t) ugradu,ugradv,ugradw
       real (kind = dp_t) :: gradux,graduy,graduz
       real (kind = dp_t) :: gradvx,gradvy,gradvz
       real (kind = dp_t) :: gradwx,gradwy,gradwz
       real (kind = dp_t) :: w0_gradur,w0_gradvr,w0_gradwr
-      real (kind = dp_t) :: gradw0, smdamp
-      real (kind = dp_t) :: x,y,z,r
+      real (kind = dp_t) :: gradw0
 
       ! 1) Subtract (Utilde dot grad) Utilde term from old Utilde
       ! 2) Add forcing term to new Utilde
@@ -143,8 +139,6 @@ module update_vel_module
 
         do k = lo(3), hi(3)
 
-          r = (dble(k)+HALF) * dx(3)
-
           gradw0 = (w0(k+1) - w0(k)) /dx(3)
           do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -177,11 +171,8 @@ module update_vel_module
         ! B) Subtract (w0 dot grad) U term from new Utilde
 
         do k = lo(3), hi(3)
-         z = (dble(k)+HALF) * dx(3)
          do j = lo(2), hi(2)
-          y = (dble(j)+HALF) * dx(2)
           do i = lo(1), hi(1)
-           x = (dble(i)+HALF) * dx(1)
            
            gradux = (sedgex(i+1,j,k,1) - sedgex(i,j,k,1))/dx(1)
            gradvx = (sedgex(i+1,j,k,2) - sedgex(i,j,k,2))/dx(1)

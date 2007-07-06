@@ -13,9 +13,7 @@ module mkscalforce_module
 contains
 
 
-  subroutine mkrhohforce_2d(force, wmac, lo, hi, &
-                            s_old, s_new, ng, dx, time, &
-                            p0_old, p0_new, temp0, dr)
+  subroutine mkrhohforce_2d(force, wmac, lo, hi, p0_old, p0_new)
 
     ! compute the source terms for the non-reactive part of the enthalpy equation { w dp0/dr }
     
@@ -23,23 +21,14 @@ contains
     ! both p0_old and p0_new to the same old value.  In the computation
     ! of the force for the update, they will be used to time-center.
 
-    integer,         intent(in   ) :: lo(:), hi(:), ng
+    integer,         intent(in   ) :: lo(:), hi(:)
     real(kind=dp_t), intent(  out) ::  force(lo(1)- 1:,lo(2)- 1:)
     real(kind=dp_t), intent(in   ) ::   wmac(lo(1)- 1:,lo(2)- 1:)
-    real(kind=dp_t), intent(in   ) ::  s_old(lo(1)-ng:,lo(2)-ng:,:)
-    real(kind=dp_t), intent(in   ) ::  s_new(lo(1)-ng:,lo(2)-ng:,:)
-    real(kind=dp_t), intent(in   ) :: dx(:)
-    real(kind=dp_t), intent(in   ) :: time
     real(kind=dp_t), intent(in   ) :: p0_old(0:)
     real(kind=dp_t), intent(in   ) :: p0_new(0:)
-    real(kind=dp_t), intent(in   ) ::  temp0(0:)
-    real(kind=dp_t), intent(in   ) ::     dr
 
-    real(kind=dp_t) :: gradp0, wadv, denom
-    real(kind=dp_t) :: coeff_old, coeff_new, sigma_H, sigma0_old, sigma0_new
+    real(kind=dp_t) :: gradp0, wadv
     integer :: i,j,nr
-
-    denom = ONE/dble(hi(1)-lo(1)+1)
 
     force = ZERO
 
@@ -65,23 +54,15 @@ contains
 
   end subroutine mkrhohforce_2d
 
-  subroutine mkrhohforce_3d(force, wmac, lo, hi, &
-                            s_old, s_new, ng, dx, time, &
-                            p0_old, p0_new, temp0, dr)
+  subroutine mkrhohforce_3d(force, wmac, lo, hi, p0_old, p0_new)
 
     ! compute the source terms for the non-reactive part of the enthalpy equation { w dp0/dr }
 
-    integer,         intent(in   ) :: lo(:), hi(:), ng
+    integer,         intent(in   ) :: lo(:), hi(:)
     real(kind=dp_t), intent(  out) ::  force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
     real(kind=dp_t), intent(in   ) ::   wmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
-    real(kind=dp_t), intent(in   ) ::  s_old(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-    real(kind=dp_t), intent(in   ) ::  s_new(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-    real(kind=dp_t), intent(in   ) :: dx(:)
-    real(kind=dp_t), intent(in   ) :: time
     real(kind=dp_t), intent(in   ) :: p0_old(0:)
     real(kind=dp_t), intent(in   ) :: p0_new(0:)
-    real(kind=dp_t), intent(in   ) ::  temp0(0:)
-    real(kind=dp_t), intent(in   ) ::     dr
 
     real(kind=dp_t) :: gradp0,wadv
     integer :: i,j,k,nr
@@ -115,24 +96,19 @@ contains
   end subroutine mkrhohforce_3d
 
   subroutine mkrhohforce_3d_sphr(force, umac, vmac, wmac, lo, hi, &
-                                 s_old, s_new, ng, dx, time, normal, &
-                                 p0_old, p0_new, temp0)
+                                 dx, normal, p0_old, p0_new)
 
     ! compute the source terms for the non-reactive part of the enthalpy equation { w dp0/dr }
 
-    integer,         intent(in   ) :: lo(:), hi(:), ng
+    integer,         intent(in   ) :: lo(:), hi(:)
     real(kind=dp_t), intent(  out) ::  force(lo(1)- 1:,lo(2)- 1:,lo(3)-1:)
     real(kind=dp_t), intent(in   ) ::   umac(lo(1)- 1:,lo(2)- 1:,lo(3)-1:)
     real(kind=dp_t), intent(in   ) ::   vmac(lo(1)- 1:,lo(2)- 1:,lo(3)-1:)
     real(kind=dp_t), intent(in   ) ::   wmac(lo(1)- 1:,lo(2)- 1:,lo(3)-1:)
     real(kind=dp_t), intent(in   ) :: normal(lo(1)- 1:,lo(2)- 1:,lo(3)-1:,:)
-    real(kind=dp_t), intent(in   ) ::  s_old(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-    real(kind=dp_t), intent(in   ) ::  s_new(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real(kind=dp_t), intent(in   ) :: dx(:)
-    real(kind=dp_t), intent(in   ) :: time
     real(kind=dp_t), intent(in   ) :: p0_old(0:)
     real(kind=dp_t), intent(in   ) :: p0_new(0:)
-    real(kind=dp_t), intent(in   ) :: temp0(0:)
 
     real(kind=dp_t) :: uadv,vadv,wadv,normal_vel
     real(kind=dp_t), allocatable :: gradp_rad(:)

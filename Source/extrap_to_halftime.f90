@@ -23,7 +23,7 @@ contains
     real(kind=dp_t), pointer:: Soldp(:,:,:,:)
     real(kind=dp_t), pointer:: Snm1p(:,:,:,:)
     integer :: lo(Source_nph%dim),hi(Source_nph%dim),ng_h,ng_o,dm
-    integer :: i,bc_comp
+    integer :: i
       
     dm = Source_nph%dim
     ng_h = Source_nph%ng

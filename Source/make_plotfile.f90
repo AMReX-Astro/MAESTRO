@@ -97,12 +97,11 @@ contains
     real(dp_t)       , intent(inout) :: temp0(0:)
     logical          , intent(in   ) :: plot_spec,plot_trac
 
-    integer :: n,dm,nlevs,nscal
+    integer :: n,dm,nlevs
     character(len=7) :: sd_name
 
     dm = get_dim(mba)
     nlevs = size(plotdata)
-    nscal = multifab_ncomp(s(nlevs))
 
     do n = 1,nlevs
 
@@ -140,7 +139,7 @@ contains
        ! RHOPERT & TEMP (FROM RHO) & TPERT & MACHNO & (GAM1 - GAM10)
        call make_tfromrho  (plotdata(n),icomp_tfromrho,icomp_tpert,icomp_rhopert, &
                             icomp_machno,icomp_dg,icomp_spert, &
-                            s(n),u(n),s0,temp0,p0,time,dx(n,:))
+                            s(n),u(n),s0,temp0,p0,dx(n,:))
 
        ! TEMP (FROM H) & DELTA_P
        call make_tfromH    (plotdata(n),icomp_tfromH,icomp_dp,s(n),p0,temp0,dx(n,:))
@@ -157,7 +156,7 @@ contains
        ! RHOPERT & TEMP (FROM RHO) & TPERT & MACHNO & (GAM1 - GAM10)
        call make_tfromrho  (plotdata(n),icomp_tfromrho,icomp_tpert,icomp_rhopert, &
                             icomp_machno,icomp_dg,icomp_spert, &
-                            s(n),u(n),s0,temp0,p0,time,dx(n,:))
+                            s(n),u(n),s0,temp0,p0,dx(n,:))
 
        ! TEMP (FROM H) & DELTA_P
        call make_tfromH    (plotdata(n),icomp_tfromH,icomp_dp,s(n),p0,temp0,dx(n,:))
@@ -193,7 +192,7 @@ contains
 
     write(unit=sd_name,fmt='("plt",i4.4)') istep
     call fabio_ml_multifab_write_d(plotdata, mba%rr(:,1), sd_name, plot_names, &
-                                    mba%pd(1), time, dx(1,:))
+                                   mba%pd(1), time, dx(1,:))
 
   end subroutine make_plotfile
 

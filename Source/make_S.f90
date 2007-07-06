@@ -16,14 +16,14 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-   subroutine make_S (Source,gamma1_term,state,u,rho_omegadot,rho_Hext,p0,t0,gam1,dx,time)
+   subroutine make_S (Source,gamma1_term,state,u,rho_omegadot,rho_Hext,p0,t0,gam1,dx)
 
       type(multifab) , intent(inout) :: Source, gamma1_term
       type(multifab) , intent(in   ) :: state, u
       type(multifab) , intent(in   ) :: rho_omegadot
       type(multifab) , intent(in   ) :: rho_Hext
       real(kind=dp_t), intent(in   ) :: p0(0:),t0(0:),gam1(0:)
-      real(kind=dp_t), intent(in   ) :: dx(:), time
+      real(kind=dp_t), intent(in   ) :: dx(:)
 
       real(kind=dp_t), pointer:: srcp(:,:,:,:),gp(:,:,:,:),sp(:,:,:,:),up(:,:,:,:)
       real(kind=dp_t), pointer:: omegap(:,:,:,:), hp(:,:,:,:)
@@ -47,18 +47,18 @@ contains
             case (2)
               call make_S_2d(lo,hi,srcp(:,:,1,1),gp(:,:,1,1),sp(:,:,1,:),up(:,:,1,:), &
                              omegap(:,:,1,:), hp(:,:,1,1), &
-                             ng, p0, t0, gam1, dx, time)
+                             ng, p0, t0, gam1, dx)
             case (3)
               call make_S_3d(lo,hi,srcp(:,:,:,1),gp(:,:,:,1),sp(:,:,:,:),up(:,:,:,:), &
                              omegap(:,:,:,:), hp(:,:,:,1), &
-                             ng, p0, t0, gam1, dx, time)
+                             ng, p0, t0, gam1, dx)
          end select
       end do
 
    end subroutine make_S
 
    subroutine make_S_2d (lo,hi,Source,gamma1_term,s,u, &
-                         rho_omegadot,rho_Hext,ng,p0,t0,gam1,dx,time)
+                         rho_omegadot,rho_Hext,ng,p0,t0,gam1,dx)
 
       implicit none
 
@@ -72,16 +72,15 @@ contains
       real (kind=dp_t), intent(in   ) ::        p0(0:)
       real (kind=dp_t), intent(in   ) ::        t0(0:)
       real (kind=dp_t), intent(in   ) ::      gam1(0:)
-      real (kind=dp_t), intent(in   ) :: dx(:), time
+      real (kind=dp_t), intent(in   ) :: dx(:)
 
 !     Local variables
       integer :: i, j, n, nr
-      integer :: imax, jmax
 
-      real(kind=dp_t) :: x,y
-      real(kind=dp_t) :: sigma, react_term, pres_term, gradp0
+      real(kind=dp_t) :: sigma, react_term, pres_term
+!     real(kind=dp_t) :: gradp0
  
-      nr = size(p0,dim=1)
+!     nr = size(p0,dim=1)
 
       Source = zero
 
@@ -124,15 +123,15 @@ contains
            Source(i,j) = sigma*(rho_Hext(i,j)/den_row(1) + react_term) + &
                 pres_term/(den_row(1)*dpdr_row(1)) 
 
-           if (j .eq. 0) then
-              gradp0 = (p0(j+1) - p0(j))/dx(2)
-           else if (j .eq. nr-1) then
-              gradp0 = (p0(j) - p0(j-1))/dx(2)
-           else
-              gradp0 = HALF*(p0(j+1) - p0(j-1))/dx(2)
-           endif
-
+!          if (j .eq. 0) then
+!             gradp0 = (p0(j+1) - p0(j))/dx(2)
+!          else if (j .eq. nr-1) then
+!             gradp0 = (p0(j) - p0(j-1))/dx(2)
+!          else
+!             gradp0 = HALF*(p0(j+1) - p0(j-1))/dx(2)
+!          endif
 !          gamma1_term(i,j) = (gam1_row(1) - gam1(j))*u(i,j,2)*gradp0/(gam1(j)*gam1(j)*p0(j))
+
            gamma1_term(i,j) = 0.0_dp_t
 
         enddo
@@ -141,7 +140,7 @@ contains
    end subroutine make_S_2d
 
    subroutine make_S_3d (lo,hi,Source,gamma1_term,s,u, &
-                         rho_omegadot,rho_Hext,ng,p0,t0,gam1,dx,time)
+                         rho_omegadot,rho_Hext,ng,p0,t0,gam1,dx)
 
       implicit none
 
@@ -155,16 +154,16 @@ contains
       real (kind=dp_t), intent(in   ) ::        p0(0:)
       real (kind=dp_t), intent(in   ) ::        t0(0:)
       real (kind=dp_t), intent(in   ) ::      gam1(0:)
-      real (kind=dp_t), intent(in   ) :: dx(:), time
+      real (kind=dp_t), intent(in   ) :: dx(:)
 
 !     Local variables
-      integer :: i, j, k , n, nr
-      integer :: imax, jmax, kmax
+      integer :: i, j, k , n
+!     integer :: nr
 
-      real(kind=dp_t) :: x,y,z
       real(kind=dp_t), allocatable :: p0_cart(:,:,:)
       real(kind=dp_t), allocatable :: t0_cart(:,:,:)
-      real(kind=dp_t) :: sigma, react_term, pres_term, gradp0
+      real(kind=dp_t) :: sigma, react_term, pres_term
+!     real(kind=dp_t) :: gradp0
 
       if (spherical .eq. 1) then
         allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
@@ -173,7 +172,7 @@ contains
         call fill_3d_data(t0_cart,t0,lo,hi,dx,0)
       end if
 
-      nr = size(p0,dim=1)
+!     nr = size(p0,dim=1)
 
       Source = zero
 
@@ -225,15 +224,15 @@ contains
                    pres_term/(den_row(1)*dpdr_row(1))
 
 
-              if (j .eq. 0) then
-                 gradp0 = (p0(j+1) - p0(j))/dx(2)
-              else if (j .eq. nr-1) then
-                 gradp0 = (p0(j) - p0(j-1))/dx(2)
-              else
-                 gradp0 = HALF*(p0(j+1) - p0(j-1))/dx(2)
-              endif
-
+!             if (j .eq. 0) then
+!                gradp0 = (p0(j+1) - p0(j))/dx(2)
+!             else if (j .eq. nr-1) then
+!                gradp0 = (p0(j) - p0(j-1))/dx(2)
+!             else
+!                gradp0 = HALF*(p0(j+1) - p0(j-1))/dx(2)
+!             endif
 !             gamma1_term(i,j,k) = (gam1_row(1) - gam1(j))*u(i,j,k,3)*gradp0/(gam1(k)**2*p0(k))
+
               gamma1_term(i,j,k) = 0.0_dp_t
            enddo
         enddo

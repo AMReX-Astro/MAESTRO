@@ -22,7 +22,7 @@ contains
     real(kind=dp_t), intent(in   ) :: anelastic_cutoff
     real(kind=dp_t), intent(in   ) :: prob_hi(:),dx(:)
 
-    real (kind = dp_t) :: x, y, z, r
+    real (kind = dp_t) :: r
     real (kind = dp_t) :: r_top
     integer            :: j,nr
 
@@ -99,7 +99,7 @@ contains
       real(kind=dp_t), intent(inout) :: sponge(lo(1):,lo(2):)
       real(kind=dp_t), intent(in   ) ::     dx(:),dt
 
-      integer         :: i,j
+      integer         :: j
       real(kind=dp_t) :: y,smdamp
 
       sponge = ONE

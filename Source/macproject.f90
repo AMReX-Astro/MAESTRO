@@ -1419,9 +1419,7 @@ subroutine mac_multigrid(mla,rh,phi,fine_flx,alpha,beta,dx,&
   else
     do_diagnostics = 0
   end if
-  call ml_cc_solve(mla, mgt, rh, phi, fine_flx, &
-                   the_bc_tower%bc_tower_array(nlevs)%ell_bc_level_array(0,:,:,bc_comp), &
-                   stencil_order,ref_ratio,do_diagnostics)
+  call ml_cc_solve(mla, mgt, rh, phi, fine_flx,ref_ratio,do_diagnostics)
 
   do n = 1,nlevs
      call multifab_fill_boundary(phi(n))

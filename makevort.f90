@@ -54,7 +54,7 @@ contains
       integer           , intent(in   ) :: bc(:,:)
 
 !     Local variables
-      integer :: i, j, n
+      integer :: i, j
       real (kind = dp_t) :: vx,uy
    
       do j = lo(2), hi(2)
@@ -118,10 +118,9 @@ contains
       integer           , intent(in   ) :: bc(:,:)
 
 !     Local variables
-      integer :: i, j, k, n
+      integer :: i, j, k
       logical :: fix_lo_x,fix_hi_x,fix_lo_y,fix_hi_y,fix_lo_z,fix_hi_z
       real (kind = dp_t) :: wy,vz,uz,wx,vx,uy
-      real (kind = dp_t) :: vort_x, vort_y, vort_z
       real (kind = dp_t) :: uycen, uzcen, uylo, uyhi, uzlo, uzhi
       real (kind = dp_t) :: vxcen, vzcen, vxlo, vxhi, vzlo, vzhi
       real (kind = dp_t) :: wxcen, wycen, wxlo, wxhi, wylo, wyhi
@@ -155,7 +154,6 @@ contains
       wyhi(i,j,k)  =-(u(i,j-1,k,3)+THREE*u(i,j,k,3)-FOUR*u(i,j+1,k,3))/(THREE*dx(2))
 
       vorfun(uy,uz,vx,vz,wx,wy) = sqrt((wy-vz)**2+(uz-wx)**2+(vx-uy)**2)
-
 
       do k = lo(3), hi(3)
       do j = lo(2), hi(2)
@@ -594,8 +592,7 @@ contains
       real (kind = dp_t), intent(in   ) ::    rho(lo(1)-ng:,lo(2)-ng:)  
 
 !     Local variables
-      integer :: i, j, n
-      real (kind = dp_t) :: vx,uy
+      integer :: i, j
    
       do j = lo(2), hi(2)
         do i = lo(1), hi(1)
