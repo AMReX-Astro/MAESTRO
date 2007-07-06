@@ -276,7 +276,7 @@ module advance_timestep_module
 
         call average(rho_omegadot1,rho_omegadotbar1,dx,1,nspec)
         call average(rho_Hext,rho_Hextbar,dx,1,1)
-        call react_base(p0_old,s0_old,temp0,rho_omegadotbar1,rho_Hextbar(:,1),dx(1,dm),halfdt,p0_1,s0_1,gam1)
+        call react_base(p0_old,s0_old,temp0,rho_omegadotbar1,rho_Hextbar(:,1),halfdt,p0_1,s0_1,gam1)
         call make_grav_cell(grav_cell_new,s0_1(:,rho_comp))
         call make_div_coeff(div_coeff_new,s0_1(:,rho_comp),p0_1, &
                             gam1,grav_cell_new,anelastic_cutoff)
@@ -337,7 +337,7 @@ module advance_timestep_module
         end do
         call average(rho_omegadot2,rho_omegadotbar2,dx,1,nspec)
         call average(rho_Hext,rho_Hextbar,dx,1,1)
-        call react_base(p0_2,s0_2,temp0,rho_omegadotbar2,rho_Hextbar(:,1),dx(1,dm),halfdt,p0_new,s0_new,gam1)
+        call react_base(p0_2,s0_2,temp0,rho_omegadotbar2,rho_Hextbar(:,1),halfdt,p0_new,s0_new,gam1)
         call make_grav_cell(grav_cell_new,s0_new(:,rho_comp))
         call make_div_coeff(div_coeff_new,s0_new(:,rho_comp),p0_new, &
                             gam1,grav_cell_new,anelastic_cutoff)
@@ -482,7 +482,7 @@ module advance_timestep_module
         end do
         call average(rho_omegadot2,rho_omegadotbar2,dx,1,nspec)
         call average(rho_Hext,rho_Hextbar,dx,1,1)
-        call react_base(p0_2,s0_2,temp0,rho_omegadotbar2,rho_Hextbar(:,1),dx(1,dm),halfdt,p0_new,s0_new,gam1)
+        call react_base(p0_2,s0_2,temp0,rho_omegadotbar2,rho_Hextbar(:,1),halfdt,p0_new,s0_new,gam1)
         call make_grav_cell(grav_cell_new,s0_new(:,rho_comp))
         call make_div_coeff(div_coeff_new,s0_new(:,rho_comp),p0_new, &
                             gam1,grav_cell_new,anelastic_cutoff)
