@@ -6,6 +6,7 @@ subroutine write_job_info(dirname)
   ! directory
 
   use parallel
+  use probin_module
 
   implicit none
   character (len=*)   :: dirname
@@ -34,6 +35,7 @@ subroutine write_job_info(dirname)
      write (99,1003) "output date:          ", values(1), values(2), values(3)
      write (99,1004) "output time:          ", values(5), values(6), values(7)
      write (99,*) " "
+     write (99,*) " "
 
      write (99,*) "Build Information"
      write (99,1000)
@@ -41,7 +43,11 @@ subroutine write_job_info(dirname)
      write (99,1001) "build machine: ", trim(build_machine)
      write (99,1001) "build dir:     ", trim(build_dir)
      write (99,*) " "
+     write (99,*) " "
 
+     write (99,*) "Runtime Parameter Information"
+     write (99,1000)
+     write (99,nml=probin)
      close(99)
   endif
 
