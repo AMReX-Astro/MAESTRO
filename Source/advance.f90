@@ -29,6 +29,7 @@ module advance_timestep_module
   use average_module
   use phihalf_module
   use extraphalf_module
+  use thermal_conduct_module
   use variables
   use network
 
@@ -319,6 +320,16 @@ module advance_timestep_module
         do n = 1,nlevs
            call multifab_fill_boundary(s2(n))
         end do
+
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !! STEP 4a (Option I) -- Add thermal conduction (only enthalpy terms)
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+        if (parallel_IOProcessor() .and. verbose .ge. 1) then
+          write(6,*) '<<< STEP  4a: thermal conduct >>>'
+        end if
+        call thermal_conduct()
+
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !! STEP 5 -- react the full state and then base state through dt/2
