@@ -208,7 +208,7 @@ module advance_timestep_module
 
         call average(Source_nph,Sbar,dx,1,1)
     
-        call make_w0(w0,w0_old,w0_force,Sbar(:,1),p0_old,s0_old(:,rho_comp),gam1,dt,verbose)
+        call make_w0(w0,w0_old,w0_force,Sbar(:,1),p0_old,s0_old(:,rho_comp),gam1,dt,dtold,verbose)
 
         if (dm .eq. 3) then
           do n = 1, nlevs
@@ -359,7 +359,7 @@ module advance_timestep_module
 
         end do
 
-        call make_w0(w0,w0_old,w0_force,Sbar(:,1),p0_new,s0_new(:,rho_comp),gam1,dt,verbose)
+        call make_w0(w0,w0_old,w0_force,Sbar(:,1),p0_new,s0_new(:,rho_comp),gam1,dt,dtold,verbose)
 
         if (dm .eq. 3) then
            do n = 1, nlevs

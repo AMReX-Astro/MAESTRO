@@ -15,14 +15,14 @@ module make_w0_module
 
 contains
 
-  subroutine make_w0(vel,vel_old,f,Sbar_in,p0,rho0,gam1,dt,verbose)
+  subroutine make_w0(vel,vel_old,f,Sbar_in,p0,rho0,gam1,dt,dtold,verbose)
 
     real(kind=dp_t), intent(  out) :: vel(0:)
     real(kind=dp_t), intent(in   ) :: vel_old(0:)
     real(kind=dp_t), intent(inout) ::   f(0:)
     real(kind=dp_t), intent(in   ) :: p0(0:),rho0(0:),gam1(0:)
     real(kind=dp_t), intent(in   ) :: Sbar_in(0:)
-    real(kind=dp_t), intent(in   ) :: dt
+    real(kind=dp_t), intent(in   ) :: dt,dtold
     integer        , intent(in   ) :: verbose
 
     integer         :: j,nz
@@ -35,7 +35,7 @@ contains
 
     if (spherical .eq. 0) then
 
-       call make_w0_planar(vel,vel_old,Sbar_in,f,dt)
+       call make_w0_planar(vel,vel_old,Sbar_in,f,dt,dtold)
 
     else
 
@@ -53,14 +53,14 @@ contains
 
   end subroutine make_w0
 
-  subroutine make_w0_planar (vel,vel_old,Sbar_in,f,dt)
+  subroutine make_w0_planar (vel,vel_old,Sbar_in,f,dt,dtold)
 
     implicit none
     real(kind=dp_t), intent(  out) :: vel(0:)
     real(kind=dp_t), intent(in   ) :: vel_old(0:)
     real(kind=dp_t), intent(in   ) :: Sbar_in(0:)
     real(kind=dp_t), intent(inout) ::   f(0:)
-    real(kind=dp_t), intent(in   ) :: dt
+    real(kind=dp_t), intent(in   ) :: dt,dtold
 
 !     Local variables
     integer         :: j,nz
@@ -95,8 +95,8 @@ contains
     call mkflux_1d(vel_old_cen,edge,vel_old,force,1,dr,dt)
 
     do j = 0,nz-1
-       f(j) = (vel_new_cen(j)-vel_old_cen(j)) / dt + &
-            vel_old_cen(j) * (edge(j+1)-edge(j)) / dr
+       f(j) = (vel_new_cen(j)-vel_old_cen(j)) / (HALF*(dt+dtold)) + &
+            HALF*(vel_old_cen(j)+vel_new_cen(j)) * (edge(j+1)-edge(j)) / dr
     end do
 
     deallocate(edge)
