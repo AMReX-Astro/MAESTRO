@@ -329,7 +329,7 @@ module advance_timestep_module
           write(6,*) '<<< STEP  4a: thermal conduct >>>'
         end if
 
-        call thermal_conduct(mla,dx,s2)
+        call thermal_conduct(mla,dx,dt,sold,s2)
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !! STEP 5 -- react the full state and then base state through dt/2
