@@ -24,7 +24,7 @@ subroutine thermal_conduct(mla,dx,s2)
   type(multifab), allocatable :: rh(:),phi(:),alpha(:),beta(:)
   integer                     :: n,nlevs
 
-  print *,'... Entering thermal_conduct ...'
+  if (parallel_IOProcessor()) print *,'... Entering thermal_conduct ...'
 
   nlevs = mla%nlevel
 
@@ -36,11 +36,11 @@ subroutine thermal_conduct(mla,dx,s2)
      call multifab_build( beta(n), mla%la(n), 1, 1)
   end do
 
-  print *,'... Setting alpha = rho ...'
+  if (parallel_IOProcessor()) print *,'... Setting alpha = rho ...'
   ! Copy rho directly into alpha
 
 
-  print *,'... Setting beta ...'
+  if (parallel_IOProcessor()) print *,'... Setting beta ...'
   ! Compute kappa
 
 
@@ -50,7 +50,7 @@ subroutine thermal_conduct(mla,dx,s2)
   ! Create beta
 
 
-  print *,'... Making RHS ...'
+  if (parallel_IOProcessor()) print *,'... Making RHS ...'
   ! Compute kappa (if needed)
 
 
@@ -59,7 +59,7 @@ subroutine thermal_conduct(mla,dx,s2)
 
   ! Create RHS
 
-  print *,'... Calling solver ...'
+  if (parallel_IOProcessor()) print *,'... Calling solver ...'
   ! Call the big solve to get updated h
 
 
