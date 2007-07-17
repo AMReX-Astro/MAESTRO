@@ -67,6 +67,12 @@ subroutine thermal_conduct(mla,dx,s2)
   ! Compute updated \rho h
 
 
+  do n = 1,nlevs
+     call destroy(rh(n))
+     call destroy(phi(n))
+     call destroy(alpha(n))
+     call destroy(beta(n))
+  enddo
 
   deallocate(rh,phi,alpha,beta)
 
