@@ -68,6 +68,8 @@ subroutine thermal_conduct(mla,dx,s2)
 
 
 
+  deallocate(rh,phi,alpha,beta)
+
 end subroutine thermal_conduct
 
 end module thermal_conduct_module
