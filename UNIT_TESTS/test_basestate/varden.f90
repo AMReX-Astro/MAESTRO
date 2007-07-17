@@ -29,7 +29,7 @@ subroutine varden()
   real(dp_t) :: dr_base
   real(dp_t) :: cflfac
   real(dp_t) :: stop_time
-  real(dp_t) :: time,dt,half_time
+  real(dp_t) :: time,dt,half_time,dtold
   real(dp_t) :: prob_lo_x, prob_hi_x
   real(dp_t) :: anelastic_cutoff
   real(dp_t) :: smin,smax
@@ -262,6 +262,7 @@ subroutine varden()
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!    
   time = ZERO
   dt = 0.0001_dp_t
+  dtold = dt
 
   w0_old(:) = ZERO
 
@@ -314,7 +315,7 @@ subroutine varden()
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      w0(:) = ZERO
 
-     call make_w0(w0,w0_old,f,Sbar_in,p0,s0(:,rho_comp),gam1,dt,verbose)
+     call make_w0(w0,w0_old,f,Sbar_in,p0,s0(:,rho_comp),gam1,dt,dtold,verbose)
   
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -350,6 +351,7 @@ subroutine varden()
      ! compute the new timestep
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      time = time + dt
+     dtold = dt
 
      dt = min(1.1*dt,cflfac*dr_base/maxval(abs(w0)))
      if (time+dt > stop_time) dt = stop_time - time
