@@ -1441,7 +1441,7 @@ subroutine mac_multigrid(mla,rh,phi,fine_flx,alpha,beta,dx,&
 
 end subroutine mac_multigrid
 
-subroutine mac_applyop(mla,rh,phi,fine_flx,alpha,beta,dx,&
+subroutine mac_applyop(mla,res,phi,alpha,beta,dx,&
                        the_bc_tower,bc_comp,stencil_order,ref_ratio, &
                        mg_verbose,cg_verbose,umac_norm)
 
@@ -1474,8 +1474,7 @@ subroutine mac_applyop(mla,rh,phi,fine_flx,alpha,beta,dx,&
   type(multifab), allocatable :: coeffs(:)
 
   type(multifab) , intent(in   ) :: alpha(:), beta(:)
-  type(multifab) , intent(inout) ::    rh(:),  phi(:)
-  type(bndry_reg), intent(inout) :: fine_flx(2:)
+  type(multifab) , intent(inout) ::    res(:), phi(:)
 
   type( multifab) :: ss
   type(imultifab) :: mm
@@ -1583,7 +1582,7 @@ subroutine mac_applyop(mla,rh,phi,fine_flx,alpha,beta,dx,&
             abs_eps = abs_eps, &
             verbose = mg_verbose, &
             cg_verbose = cg_verbose, &
-            nodal = rh(nlevs)%nodal)
+            nodal = res(nlevs)%nodal)
 
   end do
 
@@ -1653,7 +1652,7 @@ subroutine mac_applyop(mla,rh,phi,fine_flx,alpha,beta,dx,&
      call destroy(bac)
   end do
 
-  call ml_cc_applyop(mla, mgt, rh, phi, fine_mask, ref_ratio, do_diagnostics)
+  call ml_cc_applyop(mla, mgt, res, phi, fine_mask, ref_ratio, do_diagnostics)
 
   ! Copied in from ml_solve.f90:85 to destroy fine_mask
   do n = 1,nlevs
