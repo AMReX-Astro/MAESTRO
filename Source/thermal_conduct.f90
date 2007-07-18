@@ -7,6 +7,7 @@ module thermal_conduct_module
   use stencil_module
   use macproject_module
   use eos_module
+  use fill_3d_module
 
   implicit none
 
@@ -16,13 +17,15 @@ contains
 ! Crank-Nicholson solve for enthalpy, taking into account only the
 ! enthalpy-diffusion terms in the temperature conduction term.
 ! See paper IV, steps 4a and 8a.
-subroutine thermal_conduct(mla,dx,dt,sold,s2)
+subroutine thermal_conduct(mla,dx,dt,sold,s2,p0old,p02)
 
   type(ml_layout), intent(inout) :: mla
   real(dp_t)     , intent(in   ) :: dx(:,:)
   real(dp_t)     , intent(in   ) :: dt
   type(multifab) , intent(in   ) :: sold(:)
   type(multifab) , intent(inout) :: s2(:)
+  real(kind=dp_t), intent(in   ) :: p0old(0:)
+  real(kind=dp_t), intent(in   ) :: p02(0:)
 
 ! Local
   type(multifab), allocatable :: rh(:),phi(:),alpha(:),beta(:)
@@ -81,11 +84,13 @@ subroutine thermal_conduct(mla,dx,dt,sold,s2)
         hi =  upb(get_box(sold(n), i))
         select case (dm)
         case (2)
-           call make_thermal_beta_2d(lo,hi,ng,ng_s,dt,betap(:,:,1,1), &
-                                     s2p(:,:,1,:),kth2p(:,:,1,1),cp2p(:,:,1,1))
+           call make_thermal_beta_2d(lo,hi,ng,ng_s,dt,betap(:,:,1,1),p02, &
+                                     s2p(:,:,1,:),kth2p(:,:,1,1), &
+                                     cp2p(:,:,1,1),dx(n,:))
         case (3)
-           call make_thermal_beta_3d(lo,hi,ng,ng_s,dt,betap(:,:,:,1), &
-                                     s2p(:,:,:,:),kth2p(:,:,:,1),cp2p(:,:,:,1))
+           call make_thermal_beta_3d(lo,hi,ng,ng_s,dt,betap(:,:,:,1),p02, &
+                                     s2p(:,:,:,:),kth2p(:,:,:,1), &
+                                     cp2p(:,:,:,1),dx(n,:))
         end select
      end do
      
@@ -105,12 +110,12 @@ subroutine thermal_conduct(mla,dx,dt,sold,s2)
         select case (dm)
         case (2)
            call make_thermal_rhs_2d(lo,hi,ng,ng_rh,ng_s,dt,rhp(:,:,1,1), &
-                                    ktholdp(:,:,1,1),cpoldp(:,:,1,1), &
-                                    soldp(:,:,1,:),s2p(:,:,1,:))
+                                    p0old,ktholdp(:,:,1,1),cpoldp(:,:,1,1), &
+                                    soldp(:,:,1,:),s2p(:,:,1,:),dx(n,:))
         case (3)
            call make_thermal_rhs_3d(lo,hi,ng,ng_rh,ng_s,dt,rhp(:,:,:,1), &
-                                    ktholdp(:,:,:,1),cpoldp(:,:,:,1), &
-                                    soldp(:,:,:,:),s2p(:,:,:,:))
+                                    p0old,ktholdp(:,:,:,1),cpoldp(:,:,:,1), &
+                                    soldp(:,:,:,:),s2p(:,:,:,:),dx(n,:))
         end select
      end do
    
@@ -166,39 +171,46 @@ end subroutine thermal_conduct
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Compute beta for 2d problems
-subroutine make_thermal_beta_2d(lo,hi,ng,ng_s,dt,beta,s2,kth,cp)
+subroutine make_thermal_beta_2d(lo,hi,ng,ng_s,dt,beta,p02,s2,kth2,cp2,dx)
 
   integer        , intent(in   ) :: lo(:),hi(:),ng,ng_s
   real(dp_t)     , intent(in   ) :: dt
   real(kind=dp_t), intent(  out) :: beta(lo(1)-ng:,lo(2)-ng:)
+  real(kind=dp_t), intent(in   ) :: p02(0:)
   real(kind=dp_t), intent(in   ) :: s2(lo(1)-ng_s:,lo(2)-ng_s:,:)
-  real(kind=dp_t), intent(inout) :: kth(lo(1)-ng:,lo(2)-ng:)
-  real(kind=dp_t), intent(inout) :: cp(lo(1)-ng:,lo(2)-ng:)
+  real(kind=dp_t), intent(inout) :: kth2(lo(1)-ng:,lo(2)-ng:)
+  real(kind=dp_t), intent(inout) :: cp2(lo(1)-ng:,lo(2)-ng:)
+  real(dp_t)    ,  intent(in   ) :: dx(:)
 
 ! Local
   integer :: i,j
   
 ! dens, pres, and xmass are inputs
   input_flag = 4
+  do_diag = .false.
 
-  ! Compute c_p^(2) - (temporarily set to 1 until I hook it into the eos)
+  ! Compute c_p^(2), k_th^2, and beta
   do j=lo(2),hi(2)
      do i=lo(1),hi(1)
-        cp(i,j) = ONE
-     enddo
-  enddo
 
-  ! Compute k_th^(2) - (temporarily set to 1 until I hook it into the eos)
-  do j=lo(2),hi(2)
-     do i=lo(1),hi(1)
-        kth(i,j) = ONE
-     enddo
-  enddo
+        den_row(1) = s2(i,j,rho_comp)
+        p_row(1) = p02(j)
+        xn_zone(:) = s2(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
 
-  ! Create beta = \frac{\Delta t k_th^(2)}{2 c_p^(2)}
-  do j=lo(2),hi(2)
-     do i=lo(1),hi(1)
-        beta(i,j) = HALF*dt*kth(i,j)/cp(i,j)
+        call eos(input_flag, den_row, temp_row, &
+                 npts, nspec, &
+                 xn_zone, aion, zion, &
+                 p_row, h_row, e_row, & 
+                 cv_row, cp_row, xne_row, eta_row, pele_row, &
+                 dpdt_row, dpdr_row, dedt_row, dedr_row, &
+                 dpdX_row, dhdX_row, &
+                 gam1_row, cs_row, s_row, &
+                 dsdt_row, dsdr_row, &
+                 do_diag)
+
+        cp2(i,j) = cp_row(1)
+        kth2(i,j) = ONE ! Temporarily set to 1
+        beta(i,j) = HALF*dt*kth2(i,j)/cp2(i,j)
      enddo
   enddo
 
@@ -206,41 +218,58 @@ end subroutine make_thermal_beta_2d
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Compute beta for 3d problems
-subroutine make_thermal_beta_3d(lo,hi,ng,ng_s,dt,beta,s2,kth,cp)
+subroutine make_thermal_beta_3d(lo,hi,ng,ng_s,dt,beta,p02,s2,kth2,cp2,dx)
 
   integer        , intent(in   ) :: lo(:),hi(:),ng,ng_s
   real(dp_t)     , intent(in   ) :: dt
   real(kind=dp_t), intent(  out) :: beta(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
+  real(kind=dp_t), intent(in   ) :: p02(0:)
   real(kind=dp_t), intent(in   ) :: s2(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
-  real(kind=dp_t), intent(inout) :: kth(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
-  real(kind=dp_t), intent(inout) :: cp(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
+  real(kind=dp_t), intent(inout) :: kth2(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
+  real(kind=dp_t), intent(inout) :: cp2(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
+  real(dp_t)    ,  intent(in   ) :: dx(:)
 
 ! Local
-  integer :: i,j,k
+  integer :: i,j,k      
+  real(kind=dp_t), allocatable :: p0_cart(:,:,:)
 
-  ! Compute c_p^(2) - (temporarily set to 1 until I hook it into the eos)
+  if (spherical .eq. 1) then
+     allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+     call fill_3d_data(p0_cart,p02,lo,hi,dx,0)
+  end if
+
+! dens, pres, and xmass are inputs
+  input_flag = 4
+  do_diag = .false.
+
+  ! Compute c_p^(2), k_th^(2), and beta
   do k=lo(3),hi(3)
      do j=lo(2),hi(2)
         do i=lo(1),hi(1)
-           cp(i,j,k) = ONE
-        enddo
-     enddo
-  enddo
 
-  ! Compute k_th^(2) - (temporarily set to 1 until I hook it into the eos)
-  do k=lo(3),hi(3)
-     do j=lo(2),hi(2)
-        do i=lo(1),hi(1)
-           kth(i,j,k) = ONE
-        enddo
-     enddo
-  enddo
+           den_row(1) = s2(i,j,k,rho_comp)
+           xn_zone(:) = s2(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
 
-  ! Create beta = \frac{\Delta t k_th^(2)}{2 c_p^(2)}
-  do k=lo(3),hi(3)
-     do j=lo(2),hi(2)
-        do i=lo(1),hi(1)
-           beta(i,j,k) = HALF*dt*kth(i,j,k)/cp(i,j,k)
+           if (spherical .eq. 0) then
+              p_row(1) = p02(k)
+           else
+              p_row(1) = p0_cart(i,j,k)
+           end if
+           
+           call eos(input_flag, den_row, temp_row, &
+                    npts, nspec, &
+                    xn_zone, aion, zion, &
+                    p_row, h_row, e_row, & 
+                    cv_row, cp_row, xne_row, eta_row, pele_row, &
+                    dpdt_row, dpdr_row, dedt_row, dedr_row, &
+                    dpdX_row, dhdX_row, &
+                    gam1_row, cs_row, s_row, &
+                    dsdt_row, dsdr_row, &
+                    do_diag)
+
+           cp2(i,j,k) = cp_row(1)
+           kth2(i,j,k) = ONE ! Temporarily set to 1
+           beta(i,j,k) = HALF*dt*kth2(i,j,k)/cp2(i,j,k)
         enddo
      enddo
   enddo
@@ -249,37 +278,59 @@ end subroutine make_thermal_beta_3d
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Compute RHS for 2d problems
-subroutine make_thermal_rhs_2d(lo,hi,ng,ng_rh,ng_s,dt,rh,kthold,cpold,sold,s2)
+subroutine make_thermal_rhs_2d(lo,hi,ng,ng_rh,ng_s,dt,rh,p0old,kthold,cpold, &
+                               sold,s2,dx)
 
   integer        , intent(in   ) :: lo(:),hi(:),ng,ng_rh,ng_s
   real(dp_t)     , intent(in   ) :: dt
   real(kind=dp_t), intent(  out) :: rh(lo(1)-ng_rh:,lo(2)-ng_rh:)
+  real(kind=dp_t), intent(in   ) :: p0old(0:)
   real(kind=dp_t), intent(inout) :: kthold(lo(1)-ng:,lo(2)-ng:)
   real(kind=dp_t), intent(inout) :: cpold(lo(1)-ng:,lo(2)-ng:)
   real(kind=dp_t), intent(in   ) :: sold(lo(1)-ng_s:,lo(2)-ng_s:,:)
   real(kind=dp_t), intent(in   ) :: s2(lo(1)-ng_s:,lo(2)-ng_s:,:)
+  real(dp_t)     , intent(in   ) :: dx(:)
 
 ! Local
   integer :: i,j
 
-  ! Compute c_p^n - (temporarily set to 1 until I hook it into the eos)
+! dens, pres, and xmass are inputs
+  input_flag = 4
+  do_diag = .false.
+
+  ! Compute c_p^n and k_th^n
     do j=lo(2),hi(2)
      do i=lo(1),hi(1)
-        cpold(i,j) = ONE
+
+        den_row(1) = sold(i,j,rho_comp)
+        p_row(1) = p0old(j)
+        xn_zone(:) = sold(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
+
+        call eos(input_flag, den_row, temp_row, &
+                 npts, nspec, &
+                 xn_zone, aion, zion, &
+                 p_row, h_row, e_row, & 
+                 cv_row, cp_row, xne_row, eta_row, pele_row, &
+                 dpdt_row, dpdr_row, dedt_row, dedr_row, &
+                 dpdX_row, dhdX_row, &
+                 gam1_row, cs_row, s_row, &
+                 dsdt_row, dsdr_row, &
+                 do_diag)
+
+        cpold(i,j) = cp_row(1)
+        kthold(i,j) = ONE ! Temporarily set to 1
      enddo
   enddo
 
-  ! Compute k_th^n - (temporarily set to 1 until I hook into eos)
-  do j=lo(2),hi(2)
-     do i=lo(1),hi(1)
-        kthold(i,j) = ONE
-     enddo
-  enddo
+  ! Compute residual = del dot (dt*kthold/(2*cpold)) nabla h => store in rh
 
-  ! Compute rh - (temporarily set to 1)
+
+
+
+  ! Compute rh += (\rho h)^{(2)}
   do j=lo(2),hi(2)
      do i=lo(1),hi(1)
-        rh(i,j) = ONE
+        rh(i,j) = rh(i,j) + s2(i,j,rhoh_comp)
      enddo
   enddo
 
@@ -287,42 +338,73 @@ end subroutine make_thermal_rhs_2d
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Compute RHS for 3d problems
-subroutine make_thermal_rhs_3d(lo,hi,ng,ng_rh,ng_s,dt,rh,kthold,cpold,sold,s2)
+subroutine make_thermal_rhs_3d(lo,hi,ng,ng_rh,ng_s,dt,rh,p0old,kthold,cpold, &
+                               sold,s2,dx)
 
   integer        , intent(in   ) :: lo(:),hi(:),ng,ng_rh,ng_s
   real(dp_t)     , intent(in   ) :: dt
   real(kind=dp_t), intent(  out) :: rh(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:)
+  real(kind=dp_t), intent(in   ) :: p0old(0:)
   real(kind=dp_t), intent(inout) :: kthold(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
   real(kind=dp_t), intent(inout) :: cpold(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
   real(kind=dp_t), intent(in   ) :: sold(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
   real(kind=dp_t), intent(in   ) :: s2(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
+  real(dp_t)     , intent(in   ) :: dx(:)
 
 ! Local
   integer :: i,j,k
+  real(kind=dp_t), allocatable :: p0_cart(:,:,:)
 
-  ! Compute c_p^n - (temporarily set to 1 until I hook it into the eos)
+  if (spherical .eq. 1) then
+     allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+     call fill_3d_data(p0_cart,p0old,lo,hi,dx,0)
+  end if
+
+! dens, pres, and xmass are inputs
+  input_flag = 4
+  do_diag = .false.
+
+  ! Compute c_p^n and k_th^n
   do k=lo(3),hi(3)
      do j=lo(2),hi(2)
         do i=lo(1),hi(1)
-           cpold(i,j,k) = ONE
+
+           den_row(1) = sold(i,j,k,rho_comp)
+           xn_zone(:) = sold(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
+
+           if (spherical .eq. 0) then
+              p_row(1) = p0old(k)
+           else
+              p_row(1) = p0_cart(i,j,k)
+           end if
+           
+           call eos(input_flag, den_row, temp_row, &
+                    npts, nspec, &
+                    xn_zone, aion, zion, &
+                    p_row, h_row, e_row, & 
+                    cv_row, cp_row, xne_row, eta_row, pele_row, &
+                    dpdt_row, dpdr_row, dedt_row, dedr_row, &
+                    dpdX_row, dhdX_row, &
+                    gam1_row, cs_row, s_row, &
+                    dsdt_row, dsdr_row, &
+                    do_diag)
+
+           cpold(i,j,k) = cp_row(1)
+           kthold(i,j,k) = ONE ! Temporarily set to 1
         enddo
      enddo
   enddo
 
-  ! Compute k_th^n - (temporarily set to 1 until I hook into eos)
-  do k=lo(3),hi(3)
-     do j=lo(2),hi(2)
-        do i=lo(1),hi(1)
-           kthold(i,j,k) = ONE
-        enddo
-     enddo
-  enddo
+  ! Compute residual = del dot (dt*kthold/(2*cpold)) nabla h; store in rh
 
-  ! Compute rh - (temporarily set to 1)
+
+
+
+  ! Compute rh += (\rho h)^{(2)}
   do k=lo(3),hi(3)
      do j=lo(2),hi(2)
         do i=lo(1),hi(1)
-           rh(i,j,k) = ONE
+           rh(i,j,k) = rh(i,j,k) + s2(i,j,k,rhoh_comp)
         enddo
      enddo
   enddo
