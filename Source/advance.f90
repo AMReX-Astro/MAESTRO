@@ -331,7 +331,7 @@ module advance_timestep_module
 
         ! Commented out until I finish writing it.
         call thermal_conduct(mla,dx,dt,sold,s2,p0_old,p0_2, &
-                             mg_verbose,cg_verbose)
+                             mg_verbose,cg_verbose,the_bc_tower)
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !! STEP 5 -- react the full state and then base state through dt/2

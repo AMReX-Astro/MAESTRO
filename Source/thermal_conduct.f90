@@ -19,42 +19,24 @@ contains
 ! enthalpy-diffusion terms in the temperature conduction term.
 ! See paper IV, steps 4a and 8a.
 subroutine thermal_conduct(mla,dx,dt,sold,s2,p0old,p02, &
-                           mg_verbose,cg_verbose)
+                           mg_verbose,cg_verbose,the_bc_tower)
 
   type(ml_layout), intent(inout) :: mla
-  real(dp_t)     , intent(in   ) :: dx(:,:)
-  real(dp_t)     , intent(in   ) :: dt
+  real(dp_t)     , intent(in   ) :: dx(:,:),dt
   type(multifab) , intent(in   ) :: sold(:)
   type(multifab) , intent(inout) :: s2(:)
-  real(kind=dp_t), intent(in   ) :: p0old(0:)
-  real(kind=dp_t), intent(in   ) :: p02(0:)
+  real(kind=dp_t), intent(in   ) :: p0old(0:),p02(0:)
   integer        , intent(in   ) :: mg_verbose,cg_verbose
+  type(bc_tower) , intent(in   ) :: the_bc_tower
 
 ! Local
-  type(multifab), allocatable :: rh(:),phi(:),alpha(:),beta(:)
-  type(multifab), allocatable :: kthold(:),kth2(:),cpold(:),cp2(:)
-  type(multifab), allocatable :: rhsbeta(:),res(:)
-  integer                     :: i,n,nlevs,dm,ng,ng_rh,ng_s
+  type(multifab), allocatable :: rh(:),phi(:),alpha(:),beta(:),rhsbeta(:)
+  integer                     :: i,n,nlevs,dm,ng,ng_rh,ng_s,stencil_order
   integer                     :: lo(sold(1)%dim),hi(sold(1)%dim)
   real(kind=dp_t), pointer    :: soldp(:,:,:,:),s2p(:,:,:,:)
   real(kind=dp_t), pointer    :: rhp(:,:,:,:),phip(:,:,:,:)
   real(kind=dp_t), pointer    :: betap(:,:,:,:),rhsbetap(:,:,:,:)
-  real(kind=dp_t), pointer    :: ktholdp(:,:,:,:),kth2p(:,:,:,:)
-  real(kind=dp_t), pointer    :: cpoldp(:,:,:,:),cp2p(:,:,:,:)
-
-  integer                     :: test1,test2,nscal
-  integer                     :: stencil_order,bc_comp
-  integer       , allocatable :: domain_phys_bc(:,:)
-  type(bc_tower)              :: the_bc_tower
-  type(box)     , allocatable :: domain_box(:)
-  integer                     :: bcx_lo,bcx_hi,bcy_lo,bcy_hi,bcz_lo,bcz_hi
-
-  bcx_lo = SLIP_WALL
-  bcy_lo = SLIP_WALL
-  bcz_lo = SLIP_WALL
-  bcx_hi = SLIP_WALL
-  bcy_hi = SLIP_WALL
-  bcz_hi = SLIP_WALL
+  type(bndry_reg), pointer    :: fine_flx(:) => Null()
 
   if (parallel_IOProcessor()) print *,'... Entering thermal_conduct ...'
 
@@ -62,7 +44,7 @@ subroutine thermal_conduct(mla,dx,dt,sold,s2,p0old,p02, &
   dm    = mla%dim
 
   allocate(rh(nlevs),phi(nlevs),alpha(nlevs),beta(nlevs))
-  allocate(rhsbeta(nlevs),res(nlevs))
+  allocate(rhsbeta(nlevs))
 
   do n = 1,nlevs
      call multifab_build(     rh(n), mla%la(n), 1, 0)
@@ -72,7 +54,6 @@ subroutine thermal_conduct(mla,dx,dt,sold,s2,p0old,p02, &
      call multifab_build(  alpha(n), mla%la(n), 1, 1)
      call multifab_build(   beta(n), mla%la(n), 1, 1)
      call multifab_build(rhsbeta(n), mla%la(n), 1, 1)
-     call multifab_build(    res(n), mla%la(n), 1, 0)
   end do
 
   if (parallel_IOProcessor()) print *,'... Setting alpha = rho ...'
@@ -83,8 +64,9 @@ subroutine thermal_conduct(mla,dx,dt,sold,s2,p0old,p02, &
      ng_rh = rh(n)%ng
      ng_s  = sold(n)%ng
 
-      ! Copy rho^(2) directly into alpha
-     call multifab_copy_c(alpha(n),1,s2(n),rho_comp,1)
+     ! set alpha to zero for resid calc
+     ! will set alpha = rho^(2) after resid calc
+     call setval(alpha(n),ZERO,all=.true.)
      
      ! Create beta = \frac{\Delta t k_th^(2)}{2 c_p^(2)}
      ! Create rhsbeta = dt*k_th^n/(2*c_p^n)
@@ -114,24 +96,22 @@ subroutine thermal_conduct(mla,dx,dt,sold,s2,p0old,p02, &
   enddo
 
   if (parallel_IOProcessor()) print *,'... Computing RHS operator residual ...'
-  ! define a solver with alpha=0 and beta=rhsbeta
-  ! use boundary conditions for rho h
-
-
-
-
   ! compute residual to get del dot rhsbeta grad h term in RHS
-
-
-
+  ! residual is stored in rh
+  stencil_order = 2
+  call mac_applyop(mla,rh,phi,alpha,rhsbeta,dx,the_bc_tower,rhoh_comp, &
+                   stencil_order,mla%mba%rr,mg_verbose,cg_verbose)
 
   if (parallel_IOProcessor()) print *,'... Adding rho h to RHS ...'
   ! add (\rho h)^(2) to RHS
-
+  ! set alpha to rho^(2)
   do n=1,nlevs
      ng    = alpha(n)%ng
      ng_rh = rh(n)%ng
      ng_s  = sold(n)%ng
+
+     ! Copy rho^(2) directly into alpha
+     call multifab_copy_c(alpha(n),1,s2(n),rho_comp,1)
 
      do i=1,sold(n)%nboxes
         if (multifab_remote(sold(n),i)) cycle
@@ -149,16 +129,15 @@ subroutine thermal_conduct(mla,dx,dt,sold,s2,p0old,p02, &
   enddo
 
   if (parallel_IOProcessor()) print *,'... Calling solver ...'
-  ! Compute solution to (alpha - \nabla\cdot\beta\nabla)\phi = RHS
-  ! First, define a new solver with different alpha and beta
 
+  allocate(fine_flx(2:nlevs))
+  do n = 2,nlevs
+     call bndry_reg_build(fine_flx(n),mla%la(n),ml_layout_get_pd(mla,n))
+  end do
 
-
-
-  ! Call the solver to obtain h^(2')
-
-
-
+  ! Call the solver to obtain h^(2') (it will be stored in phi)
+  call mac_multigrid(mla,rh,phi,fine_flx,alpha,beta,dx,the_bc_tower, &
+                     rhoh_comp,stencil_order,mla%mba%rr,mg_verbose,cg_verbose)
 
   ! Compute updated (\rho h) = \rho^(2)h^(2')
   do n=1,nlevs
@@ -188,14 +167,11 @@ subroutine thermal_conduct(mla,dx,dt,sold,s2,p0old,p02, &
      call destroy(phi(n))
      call destroy(alpha(n))
      call destroy(beta(n))
-
      call destroy(rhsbeta(n))
-     call destroy(res(n))
   enddo
 
   deallocate(rh,phi,alpha,beta)
-  deallocate(kthold,kth2,cpold,cp2)
-  deallocate(rhsbeta,res)
+  deallocate(rhsbeta)
 
 end subroutine thermal_conduct
 
