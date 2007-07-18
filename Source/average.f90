@@ -188,43 +188,66 @@ contains
 
 !     Local variables
       integer                       :: i, j, k, n, index
-      integer                       :: nr
+      integer                       :: ii, jj, kk
+      integer                       :: nr, nc
       real (kind=dp_t)              :: x,y,z,radius,vol
+      real (kind=dp_t)              :: xx, yy, zz
+      real (kind=dp_t)              :: xmin, ymin, zmin
+      integer :: nsub
 
+      ! compute nsub such that we are always guaranteed to fill each of
+      ! the base state radial bins
+      nsub = int(dx(1)/dr) + 1
       nr = size(phibar,dim=1)
 
       do k = lo(3),hi(3)
-        z = (dble(k)+HALF)*dx(3) - center(3)
+        zmin = dble(k)*dx(3) - center(3)
+
         do j = lo(2),hi(2)
-          y = (dble(j)+HALF)*dx(2) - center(2)
+          ymin = dble(j)*dx(2) - center(2)
+
           do i = lo(1),hi(1)
-            x = (dble(i)+HALF)*dx(1) - center(1)
+            xmin = dble(i)*dx(1) - center(1)
 
-            radius = sqrt(x**2 + y**2 + z**2)
-            index = int(radius / dr)
 
-            if (index .lt. 0 .or. index .gt. nr-1) then
-              print *,'RADIUS ',radius
-              print *,'BOGUS INDEX IN AVERAGE ',index
-              print *,'NOT IN RANGE 0 TO ',nr-1
-              print *,'I J K ',i,j,k
-              print *,'X Y Z ',x,y,z
-              stop
-            end if
+            do kk = 0, nsub-1
+               zz = zmin + (dble(kk) + HALF)*dx(3)/nsub
 
-            vol = FOUR3RD*M_PI * (zl(index+1)  - zl(index)) * &
-                                 (zl(index+1)**2 + zl(index+1)*zl(index) + zl(index)**2)
+               do jj = 0, nsub-1
+                  yy = ymin + (dble(jj) + HALF)*dx(2)/nsub
 
-            do n = comp,comp+ncomp-1
-              phibar(index,n) = phibar(index,n) + vol * phi(i,j,k,n)
-            end do
+                  do ii = 0, nsub-1
+                     xx = xmin + (dble(ii) + HALF)*dx(1)/nsub
 
-            sum(index) = sum(index) + vol
+                     radius = sqrt(xx**2 + yy**2 + zz**2)
+                     index = radius / dr 
+
+                     if (index .lt. 0 .or. index .gt. nr-1) then
+                        print *,'RADIUS ',radius
+                        print *,'BOGUS INDEX IN AVERAGE ',index
+                        print *,'NOT IN RANGE 0 TO ',nr-1
+                        print *,'I J K ',i,j,k
+                        print *,'X Y Z ',x,y,z
+                        stop
+                     end if
+
+                     vol = FOUR3RD*M_PI * dr * &
+                          (zl(index+1)**2 + zl(index+1)*zl(index) + zl(index)**2)
+
+                     do n = comp,comp+ncomp-1
+                        phibar(index,n) = phibar(index,n) + vol * phi(i,j,k,n)
+                     end do
+
+                     sum(index) = sum(index) + vol
+
+                  enddo
+               enddo
+            enddo
 
           end do
         end do
       end do
- 
+
    end subroutine average_3d_sphr
 
 end module average_module
