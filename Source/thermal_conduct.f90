@@ -62,40 +62,33 @@ subroutine thermal_conduct(mla,dx,dt,sold,s2,p0old,p02, &
   dm    = mla%dim
 
   allocate(rh(nlevs),phi(nlevs),alpha(nlevs),beta(nlevs))
-  allocate(kthold(nlevs),kth2(nlevs),cpold(nlevs),cp2(nlevs))
   allocate(rhsbeta(nlevs),res(nlevs))
 
   do n = 1,nlevs
-     call multifab_build(   rh(n), mla%la(n), 1, 0)
-     call multifab_build(  phi(n), mla%la(n), 1, 1)
-     call multifab_build(alpha(n), mla%la(n), 1, 1)
-     call multifab_build( beta(n), mla%la(n), 1, 1)
-
-     call multifab_build(kthold(n), mla%la(n), 1, 1)
-     call multifab_build(  kth2(n), mla%la(n), 1, 1)
-     call multifab_build( cpold(n), mla%la(n), 1, 1)
-     call multifab_build(   cp2(n), mla%la(n), 1, 1)
-
-     call multifab_build(rhsbeta(n),mla%la(n), 1, 1)
-     call multifab_build(    res(n),mla%la(n), 1, 0)
+     call multifab_build(     rh(n), mla%la(n), 1, 0)
+     ! phi will be used to hold the applyop input for the RHS
+     ! and later as the solution for the implicit h^(2') solve
+     call multifab_build(    phi(n), mla%la(n), 1, 1)
+     call multifab_build(  alpha(n), mla%la(n), 1, 1)
+     call multifab_build(   beta(n), mla%la(n), 1, 1)
+     call multifab_build(rhsbeta(n), mla%la(n), 1, 1)
+     call multifab_build(    res(n), mla%la(n), 1, 0)
   end do
 
-  do n=1,nlevs
+  if (parallel_IOProcessor()) print *,'... Setting alpha = rho ...'
+  if (parallel_IOProcessor()) print *,'... Computing betas and phi ...'
 
+  do n=1,nlevs
      ng    = alpha(n)%ng
      ng_rh = rh(n)%ng
      ng_s  = sold(n)%ng
 
-     if (parallel_IOProcessor()) print *,'... Setting alpha = rho ...'
-
-     ! Copy rho^(2) directly into alpha
+      ! Copy rho^(2) directly into alpha
      call multifab_copy_c(alpha(n),1,s2(n),rho_comp,1)
      
      ! Create beta = \frac{\Delta t k_th^(2)}{2 c_p^(2)}
      ! Create rhsbeta = dt*k_th^n/(2*c_p^n)
      ! Copy h^n into phi
-     if (parallel_IOProcessor()) print *,'... Computing betas and phi ...'
-
      do i=1,sold(n)%nboxes
         if (multifab_remote(sold(n),i)) cycle
         soldp    => dataptr(sold(n),i)
@@ -118,51 +111,27 @@ subroutine thermal_conduct(mla,dx,dt,sold,s2,p0old,p02, &
                                       phip(:,:,:,1))
         end select
      end do
-
   enddo
 
-  ! define a solver
-  allocate(domain_box(nlevs))
-  do n = 1,nlevs
-     domain_box(n) = layout_get_pd(mla%la(n))
-  end do
+  if (parallel_IOProcessor()) print *,'... Computing RHS operator residual ...'
+  ! define a solver with alpha=0 and beta=rhsbeta
+  ! use boundary conditions for rho h
 
-  allocate(domain_phys_bc(dm,2))
-  domain_phys_bc(1,1) = bcx_lo
-  domain_phys_bc(1,2) = bcx_hi
-  if (dm > 1) then
-     domain_phys_bc(2,1) = bcy_lo
-     domain_phys_bc(2,2) = bcy_hi
-  end if
-  if (dm > 2) then
-     domain_phys_bc(3,1) = bcz_lo
-     domain_phys_bc(3,2) = bcz_hi
-  end if
-
-  nscal = 1
-
-  ! call bc_tower_build( the_bc_tower,mla,domain_phys_bc,domain_box,nscal)
-
-  bc_comp = rhoh_comp
-  stencil_order = 2
-
-  ! compute residual to get del dot rhsbeta grad h term in RHS
-  !call mac_applyop(mla,res,phi,alpha,beta,dx,&
-  !                 the_bc_tower,bc_comp,stencil_order,mla%mba%rr, &
-  !                 mg_verbose,cg_verbose)
-
-  ! multiply residual by -1
 
 
 
+  ! compute residual to get del dot rhsbeta grad h term in RHS
+
+
+
+
+  if (parallel_IOProcessor()) print *,'... Adding rho h to RHS ...'
   ! add (\rho h)^(2) to RHS
-  do n=1,nlevs
 
+  do n=1,nlevs
      ng    = alpha(n)%ng
      ng_rh = rh(n)%ng
      ng_s  = sold(n)%ng
-
-     if (parallel_IOProcessor()) print *,'... Adding rho h to RHS ...'
 
      do i=1,sold(n)%nboxes
         if (multifab_remote(sold(n),i)) cycle
@@ -177,14 +146,17 @@ subroutine thermal_conduct(mla,dx,dt,sold,s2,p0old,p02, &
            call add_rhoh_to_rh_3d(lo,hi,ng_rh,ng_s,s2p(:,:,:,:),rhp(:,:,:,1))
         end select
      end do
-
   enddo
 
-  ! Compute solution to (alpha - \nabla\cdot\beta\nabla)\phi = RHS
-  ! Then, h^(2') = phi
   if (parallel_IOProcessor()) print *,'... Calling solver ...'
+  ! Compute solution to (alpha - \nabla\cdot\beta\nabla)\phi = RHS
+  ! First, define a new solver with different alpha and beta
 
-  ! Define a new solver with different alpha and beta
+
+
+
+  ! Call the solver to obtain h^(2')
+
 
 
 
@@ -216,11 +188,6 @@ subroutine thermal_conduct(mla,dx,dt,sold,s2,p0old,p02, &
      call destroy(phi(n))
      call destroy(alpha(n))
      call destroy(beta(n))
-
-     call destroy(kthold(n))
-     call destroy(kth2(n))
-     call destroy(cpold(n))
-     call destroy(cp2(n))
 
      call destroy(rhsbeta(n))
      call destroy(res(n))
