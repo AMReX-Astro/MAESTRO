@@ -42,6 +42,7 @@ subroutine thermal_conduct(mla,dx,dt,sold,s2,p0old,p02, &
 
   nlevs = mla%nlevel
   dm    = mla%dim
+  stencil_order = 2
 
   allocate(rh(nlevs),phi(nlevs),alpha(nlevs),beta(nlevs))
   allocate(rhsbeta(nlevs))
@@ -54,6 +55,12 @@ subroutine thermal_conduct(mla,dx,dt,sold,s2,p0old,p02, &
      call multifab_build(  alpha(n), mla%la(n), 1, 1)
      call multifab_build(   beta(n), mla%la(n),dm, 1)
      call multifab_build(rhsbeta(n), mla%la(n),dm, 1)
+
+     call setval(rh(n),ZERO,all=.true.)
+     call setval(phi(n),ZERO,all=.true.)
+     call setval(alpha(n),ZERO,all=.true.)
+     call setval(beta(n),ZERO,all=.true.)
+     call setval(rhsbeta(n),ZERO,all=.true.)
   end do
 
   if (parallel_IOProcessor()) print *,'... Setting alpha = rho ...'
@@ -63,10 +70,6 @@ subroutine thermal_conduct(mla,dx,dt,sold,s2,p0old,p02, &
      ng    = alpha(n)%ng
      ng_rh = rh(n)%ng
      ng_s  = sold(n)%ng
-
-     ! set alpha to zero for resid calc
-     ! will set alpha = rho^(2) after resid calc
-     call setval(alpha(n),ZERO,all=.true.)
      
      ! Create beta = \frac{\Delta t k_th^(2)}{2 c_p^(2)}
      ! Create rhsbeta = dt*k_th^n/(2*c_p^n)
@@ -96,9 +99,8 @@ subroutine thermal_conduct(mla,dx,dt,sold,s2,p0old,p02, &
   enddo
 
   if (parallel_IOProcessor()) print *,'... Computing RHS operator residual ...'
-  ! compute residual to get del dot rhsbeta grad h term in RHS
-  ! residual is stored in rh
-  stencil_order = 2
+  ! residual = -(alpha-nabla dot rhsbeta nabla)phi
+  ! rh = -residual
   call mac_applyop(mla,rh,phi,alpha,rhsbeta,dx,the_bc_tower,dm+rhoh_comp, &
                    stencil_order,mla%mba%rr,mg_verbose,cg_verbose)
 
@@ -136,6 +138,11 @@ subroutine thermal_conduct(mla,dx,dt,sold,s2,p0old,p02, &
   end do
 
   ! Call the solver to obtain h^(2') (it will be stored in phi)
+  do n = 1,nlevs
+     call setval(phi(n),ZERO,all=.true.)
+  end do
+
+  ! solves (alpha - nabla dot beta nabla)phi = rh
   call mac_multigrid(mla,rh,phi,fine_flx,alpha,beta,dx,the_bc_tower, &
                      dm+rhoh_comp,stencil_order,mla%mba%rr, &
                      mg_verbose,cg_verbose)
@@ -217,8 +224,8 @@ subroutine make_betas_and_phi_2d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
                  dsdt_row, dsdr_row, &
                  do_diag)
 
-        beta(i,j,1) = HALF*dt*ONE/cp_row(1) ! k_th^(2) = 1 for now
-        beta(i,j,2) = HALF*dt*ONE/cp_row(1) ! k_th^(2) = 1 for now
+        beta(i,j,1) = HALF*dt*1000.0/cp_row(1) ! k_th^(2) = 1 for now
+        beta(i,j,2) = HALF*dt*1000.0/cp_row(1) ! k_th^(2) = 1 for now
      enddo
   enddo
 
@@ -241,8 +248,8 @@ subroutine make_betas_and_phi_2d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
                  dsdt_row, dsdr_row, &
                  do_diag)
 
-        rhsbeta(i,j,1) = -(dt*ONE)/(TWO*cp_row(1)) ! k_th^n = 1 for now
-        rhsbeta(i,j,2) = -(dt*ONE)/(TWO*cp_row(1)) ! k_th^n = 1 for now
+        rhsbeta(i,j,1) = -(dt*1000.0)/(TWO*cp_row(1)) ! k_th^n = 1 for now
+        rhsbeta(i,j,2) = -(dt*1000.0)/(TWO*cp_row(1)) ! k_th^n = 1 for now
      enddo
   enddo
 
@@ -308,9 +315,9 @@ subroutine make_betas_and_phi_3d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
                     dsdt_row, dsdr_row, &
                     do_diag)
 
-           beta(i,j,k,1) = HALF*dt*ONE/cp_row(1) ! k_th^(2) = 1 for now
-           beta(i,j,k,2) = HALF*dt*ONE/cp_row(1) ! k_th^(2) = 1 for now
-           beta(i,j,k,3) = HALF*dt*ONE/cp_row(1) ! k_th^(2) = 1 for now
+           beta(i,j,k,1) = HALF*dt*1000.0/cp_row(1) ! k_th^(2) = 1 for now
+           beta(i,j,k,2) = HALF*dt*1000.0/cp_row(1) ! k_th^(2) = 1 for now
+           beta(i,j,k,3) = HALF*dt*1000.0/cp_row(1) ! k_th^(2) = 1 for now
         enddo
      enddo
   enddo
@@ -344,9 +351,9 @@ subroutine make_betas_and_phi_3d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
                     dsdt_row, dsdr_row, &
                     do_diag)
            
-           rhsbeta(i,j,k,1) = (dt*ONE)/(TWO*cp_row(1)) ! k_th^n = 1 for now
-           rhsbeta(i,j,k,2) = (dt*ONE)/(TWO*cp_row(1)) ! k_th^n = 1 for now
-           rhsbeta(i,j,k,3) = (dt*ONE)/(TWO*cp_row(1)) ! k_th^n = 1 for now
+           rhsbeta(i,j,k,1) = (dt*1000.0)/(TWO*cp_row(1)) ! k_th^n = 1 for now
+           rhsbeta(i,j,k,2) = (dt*1000.0)/(TWO*cp_row(1)) ! k_th^n = 1 for now
+           rhsbeta(i,j,k,3) = (dt*1000.0)/(TWO*cp_row(1)) ! k_th^n = 1 for now
         enddo
      enddo
   enddo
