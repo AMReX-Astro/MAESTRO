@@ -242,8 +242,8 @@ subroutine make_betas_and_phi_2d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
                  dsdt_row, dsdr_row, &
                  do_diag)
 
-        beta(i,j,1) = HALF*dt*1000.0d0/cp_row(1) ! k_th^(2) = 1 for now
-        beta(i,j,2) = HALF*dt*1000.0d0/cp_row(1) ! k_th^(2) = 1 for now
+        beta(i,j,1) = HALF*dt*1000.0d0/cp_row(1) ! k_th^(2) needs eos
+        beta(i,j,2) = HALF*dt*1000.0d0/cp_row(1) ! k_th^(2) needs eos
      enddo
   enddo
 
@@ -266,8 +266,8 @@ subroutine make_betas_and_phi_2d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
                  dsdt_row, dsdr_row, &
                  do_diag)
 
-        rhsbeta(i,j,1) = -(dt*1000.0d0)/(TWO*cp_row(1)) ! k_th^n = 1 for now
-        rhsbeta(i,j,2) = -(dt*1000.0d0)/(TWO*cp_row(1)) ! k_th^n = 1 for now
+        rhsbeta(i,j,1) = -(dt*1000.0d0)/(TWO*cp_row(1)) ! k_th^n needs eos
+        rhsbeta(i,j,2) = -(dt*1000.0d0)/(TWO*cp_row(1)) ! k_th^n needs eos
      enddo
   enddo
 
@@ -333,9 +333,9 @@ subroutine make_betas_and_phi_3d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
                     dsdt_row, dsdr_row, &
                     do_diag)
 
-           beta(i,j,k,1) = HALF*dt*1000.0d0/cp_row(1) ! k_th^(2) = 1 for now
-           beta(i,j,k,2) = HALF*dt*1000.0d0/cp_row(1) ! k_th^(2) = 1 for now
-           beta(i,j,k,3) = HALF*dt*1000.0d0/cp_row(1) ! k_th^(2) = 1 for now
+           beta(i,j,k,1) = HALF*dt*1000.0d0/cp_row(1) ! k_th^(2) needs eos
+           beta(i,j,k,2) = HALF*dt*1000.0d0/cp_row(1) ! k_th^(2) needs eos
+           beta(i,j,k,3) = HALF*dt*1000.0d0/cp_row(1) ! k_th^(2) needs eos
         enddo
      enddo
   enddo
@@ -369,9 +369,9 @@ subroutine make_betas_and_phi_3d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
                     dsdt_row, dsdr_row, &
                     do_diag)
            
-           rhsbeta(i,j,k,1) = (dt*1000.0d0)/(TWO*cp_row(1))! k_th^n = 1 for now
-           rhsbeta(i,j,k,2) = (dt*1000.0d0)/(TWO*cp_row(1))! k_th^n = 1 for now
-           rhsbeta(i,j,k,3) = (dt*1000.0d0)/(TWO*cp_row(1))! k_th^n = 1 for now
+           rhsbeta(i,j,k,1) = -(dt*1000.0d0)/(TWO*cp_row(1))! k_th^n needs eos
+           rhsbeta(i,j,k,2) = -(dt*1000.0d0)/(TWO*cp_row(1))! k_th^n needs eos
+           rhsbeta(i,j,k,3) = -(dt*1000.0d0)/(TWO*cp_row(1))! k_th^n needs eos
         enddo
      enddo
   enddo
