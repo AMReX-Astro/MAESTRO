@@ -291,7 +291,7 @@ subroutine make_betas_and_phi_3d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
            xn_zone(:) = s2(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
 
            if(spherical .eq. 0) then
-              p_row(1) = p02(j)
+              p_row(1) = p02(k)
            else
               p_row(1) = p0_cart(i,j,k)
            endif
@@ -327,7 +327,7 @@ subroutine make_betas_and_phi_3d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
            xn_zone(:) = sold(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
            
            if(spherical .eq. 0) then
-              p_row(1) = p0old(j)
+              p_row(1) = p0old(k)
            else
               p_row(1) = p0_cart(i,j,k)
            endif
