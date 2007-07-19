@@ -52,8 +52,8 @@ subroutine thermal_conduct(mla,dx,dt,sold,s2,p0old,p02, &
      ! and later as the solution for the implicit h^(2') solve
      call multifab_build(    phi(n), mla%la(n), 1, 1)
      call multifab_build(  alpha(n), mla%la(n), 1, 1)
-     call multifab_build(   beta(n), mla%la(n), 1, 1)
-     call multifab_build(rhsbeta(n), mla%la(n), 1, 1)
+     call multifab_build(   beta(n), mla%la(n),dm, 1)
+     call multifab_build(rhsbeta(n), mla%la(n),dm, 1)
   end do
 
   if (parallel_IOProcessor()) print *,'... Setting alpha = rho ...'
@@ -84,12 +84,12 @@ subroutine thermal_conduct(mla,dx,dt,sold,s2,p0old,p02, &
         case (2)
            call make_betas_and_phi_2d(lo,hi,dt,dx(n,:),ng,ng_rh,ng_s, &
                                       p0old,p02,soldp(:,:,1,:),s2p(:,:,1,:), &
-                                      betap(:,:,1,1),rhsbetap(:,:,1,1), &
+                                      betap(:,:,1,:),rhsbetap(:,:,1,:), &
                                       phip(:,:,1,1))
         case (3)
            call make_betas_and_phi_3d(lo,hi,dt,dx(n,:),ng,ng_rh,ng_s, &
                                       p0old,p02,soldp(:,:,:,:),s2p(:,:,:,:), &
-                                      betap(:,:,:,1),rhsbetap(:,:,:,1), &
+                                      betap(:,:,:,:),rhsbetap(:,:,:,:), &
                                       phip(:,:,:,1))
         end select
      end do
@@ -186,8 +186,8 @@ subroutine make_betas_and_phi_2d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
   real(kind=dp_t), intent(in   ) :: p0old(0:),p02(0:)
   real(kind=dp_t), intent(in   ) :: sold(lo(1)-ng_s:,lo(2)-ng_s:,:)
   real(kind=dp_t), intent(in   ) :: s2(lo(1)-ng_s:,lo(2)-ng_s:,:)
-  real(kind=dp_t), intent(  out) :: beta(lo(1)-ng:,lo(2)-ng:)
-  real(kind=dp_t), intent(  out) :: rhsbeta(lo(1)-ng:,lo(2)-ng:)
+  real(kind=dp_t), intent(  out) :: beta(lo(1)-ng:,lo(2)-ng:,:)
+  real(kind=dp_t), intent(  out) :: rhsbeta(lo(1)-ng:,lo(2)-ng:,:)
   real(kind=dp_t), intent(  out) :: phi(lo(1)-ng:,lo(2)-ng:)
 
 ! Local
@@ -216,7 +216,8 @@ subroutine make_betas_and_phi_2d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
                  dsdt_row, dsdr_row, &
                  do_diag)
 
-        beta(i,j) = HALF*dt*ONE/cp_row(1) ! k_th^(2) = 1 for now
+        beta(i,j,1) = HALF*dt*ONE/cp_row(1) ! k_th^(2) = 1 for now
+        beta(i,j,2) = HALF*dt*ONE/cp_row(1) ! k_th^(2) = 1 for now
      enddo
   enddo
 
@@ -239,32 +240,15 @@ subroutine make_betas_and_phi_2d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
                  dsdt_row, dsdr_row, &
                  do_diag)
 
-        rhsbeta(i,j) = (dt*ONE)/(TWO*cp_row(1)) ! k_th^n = 1 for now
+        rhsbeta(i,j,1) = (dt*ONE)/(TWO*cp_row(1)) ! k_th^n = 1 for now
+        rhsbeta(i,j,2) = (dt*ONE)/(TWO*cp_row(1)) ! k_th^n = 1 for now
      enddo
   enddo
 
   ! set phi = h^n for applyop on RHS
     do j=lo(2),hi(2)
      do i=lo(1),hi(1)
-
         phi(i,j) = sold(i,j,rhoh_comp)/sold(i,j,rho_comp)
-
-        den_row(1) = sold(i,j,rho_comp)
-        p_row(1) = p0old(j)
-        xn_zone(:) = sold(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
-
-        call eos(input_flag, den_row, temp_row, &
-                 npts, nspec, &
-                 xn_zone, aion, zion, &
-                 p_row, h_row, e_row, & 
-                 cv_row, cp_row, xne_row, eta_row, pele_row, &
-                 dpdt_row, dpdr_row, dedt_row, dedr_row, &
-                 dpdX_row, dhdX_row, &
-                 gam1_row, cs_row, s_row, &
-                 dsdt_row, dsdr_row, &
-                 do_diag)
-
-        rhsbeta(i,j) = (dt*ONE)/(TWO*cp_row(1)) ! k_th^n = 1 for now
      enddo
   enddo
 
@@ -281,8 +265,8 @@ subroutine make_betas_and_phi_3d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
   real(kind=dp_t), intent(in   ) :: p0old(0:),p02(0:)
   real(kind=dp_t), intent(in   ) :: sold(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
   real(kind=dp_t), intent(in   ) :: s2(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
-  real(kind=dp_t), intent(  out) :: beta(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
-  real(kind=dp_t), intent(  out) :: rhsbeta(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
+  real(kind=dp_t), intent(  out) :: beta(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
+  real(kind=dp_t), intent(  out) :: rhsbeta(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
   real(kind=dp_t), intent(  out) :: phi(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
 
 ! Local
@@ -323,7 +307,9 @@ subroutine make_betas_and_phi_3d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
                     dsdt_row, dsdr_row, &
                     do_diag)
 
-           beta(i,j,k) = HALF*dt*ONE/cp_row(1) ! k_th^(2) = 1 for now
+           beta(i,j,k,1) = HALF*dt*ONE/cp_row(1) ! k_th^(2) = 1 for now
+           beta(i,j,k,2) = HALF*dt*ONE/cp_row(1) ! k_th^(2) = 1 for now
+           beta(i,j,k,3) = HALF*dt*ONE/cp_row(1) ! k_th^(2) = 1 for now
         enddo
      enddo
   enddo
@@ -357,7 +343,9 @@ subroutine make_betas_and_phi_3d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
                     dsdt_row, dsdr_row, &
                     do_diag)
            
-           rhsbeta(i,j,k) = (dt*ONE)/(TWO*cp_row(1)) ! k_th^n = 1 for now
+           rhsbeta(i,j,k,1) = (dt*ONE)/(TWO*cp_row(1)) ! k_th^n = 1 for now
+           rhsbeta(i,j,k,2) = (dt*ONE)/(TWO*cp_row(1)) ! k_th^n = 1 for now
+           rhsbeta(i,j,k,3) = (dt*ONE)/(TWO*cp_row(1)) ! k_th^n = 1 for now
         enddo
      enddo
   enddo
