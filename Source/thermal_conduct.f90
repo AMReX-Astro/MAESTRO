@@ -240,8 +240,8 @@ subroutine make_betas_and_phi_2d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
                  dsdt_row, dsdr_row, &
                  do_diag)
 
-        rhsbeta(i,j,1) = (dt*ONE)/(TWO*cp_row(1)) ! k_th^n = 1 for now
-        rhsbeta(i,j,2) = (dt*ONE)/(TWO*cp_row(1)) ! k_th^n = 1 for now
+        rhsbeta(i,j,1) = -(dt*ONE)/(TWO*cp_row(1)) ! k_th^n = 1 for now
+        rhsbeta(i,j,2) = -(dt*ONE)/(TWO*cp_row(1)) ! k_th^n = 1 for now
      enddo
   enddo
 
