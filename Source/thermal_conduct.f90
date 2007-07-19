@@ -49,8 +49,6 @@ subroutine thermal_conduct(mla,dx,dt,sold,s2,p0old,p02, &
 
   do n = 1,nlevs
      call multifab_build(     rh(n), mla%la(n), 1, 0)
-     ! phi will be used to hold the applyop input for the RHS
-     ! and later as the solution for the implicit h^(2') solve
      call multifab_build(    phi(n), mla%la(n), 1, 1)
      call multifab_build(  alpha(n), mla%la(n), 1, 1)
      call multifab_build(   beta(n), mla%la(n),dm, 1)
@@ -137,11 +135,31 @@ subroutine thermal_conduct(mla,dx,dt,sold,s2,p0old,p02, &
      call bndry_reg_build(fine_flx(n),mla%la(n),ml_layout_get_pd(mla,n))
   end do
 
-  ! Call the solver to obtain h^(2') (it will be stored in phi)
-  do n = 1,nlevs
-     call setval(phi(n),ZERO,all=.true.)
-  end do
+  ! Make initial guess at phi equal to h^(2)
+  do n=1,nlevs
+     ng    = alpha(n)%ng
+     ng_rh = rh(n)%ng
+     ng_s  = sold(n)%ng
+     
+     ! Create beta = \frac{\Delta t k_th^(2)}{2 c_p^(2)}
+     ! Create rhsbeta = dt*k_th^n/(2*c_p^n)
+     ! Copy h^n into phi
+     do i=1,sold(n)%nboxes
+        if (multifab_remote(sold(n),i)) cycle
+        s2p      => dataptr(s2(n),i)
+        phip     => dataptr(phi(n),i)
+        lo =  lwb(get_box(sold(n), i))
+        hi =  upb(get_box(sold(n), i))
+        select case (dm)
+        case (2)
+           call make_initial_phi_2d(lo,hi,ng,ng_s,s2p(:,:,1,:),phip(:,:,1,1))
+        case (3)
+           call make_initial_phi_3d(lo,hi,ng,ng_s,s2p(:,:,:,:),phip(:,:,:,1))
+        end select
+     end do
+  enddo
 
+  ! Call the solver to obtain h^(2') (it will be stored in phi)
   ! solves (alpha - nabla dot beta nabla)phi = rh
   call mac_multigrid(mla,rh,phi,fine_flx,alpha,beta,dx,the_bc_tower, &
                      dm+rhoh_comp,stencil_order,mla%mba%rr, &
@@ -224,8 +242,8 @@ subroutine make_betas_and_phi_2d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
                  dsdt_row, dsdr_row, &
                  do_diag)
 
-        beta(i,j,1) = HALF*dt*1000.0/cp_row(1) ! k_th^(2) = 1 for now
-        beta(i,j,2) = HALF*dt*1000.0/cp_row(1) ! k_th^(2) = 1 for now
+        beta(i,j,1) = HALF*dt*1000.0d0/cp_row(1) ! k_th^(2) = 1 for now
+        beta(i,j,2) = HALF*dt*1000.0d0/cp_row(1) ! k_th^(2) = 1 for now
      enddo
   enddo
 
@@ -248,8 +266,8 @@ subroutine make_betas_and_phi_2d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
                  dsdt_row, dsdr_row, &
                  do_diag)
 
-        rhsbeta(i,j,1) = -(dt*1000.0)/(TWO*cp_row(1)) ! k_th^n = 1 for now
-        rhsbeta(i,j,2) = -(dt*1000.0)/(TWO*cp_row(1)) ! k_th^n = 1 for now
+        rhsbeta(i,j,1) = -(dt*1000.0d0)/(TWO*cp_row(1)) ! k_th^n = 1 for now
+        rhsbeta(i,j,2) = -(dt*1000.0d0)/(TWO*cp_row(1)) ! k_th^n = 1 for now
      enddo
   enddo
 
@@ -315,9 +333,9 @@ subroutine make_betas_and_phi_3d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
                     dsdt_row, dsdr_row, &
                     do_diag)
 
-           beta(i,j,k,1) = HALF*dt*1000.0/cp_row(1) ! k_th^(2) = 1 for now
-           beta(i,j,k,2) = HALF*dt*1000.0/cp_row(1) ! k_th^(2) = 1 for now
-           beta(i,j,k,3) = HALF*dt*1000.0/cp_row(1) ! k_th^(2) = 1 for now
+           beta(i,j,k,1) = HALF*dt*1000.0d0/cp_row(1) ! k_th^(2) = 1 for now
+           beta(i,j,k,2) = HALF*dt*1000.0d0/cp_row(1) ! k_th^(2) = 1 for now
+           beta(i,j,k,3) = HALF*dt*1000.0d0/cp_row(1) ! k_th^(2) = 1 for now
         enddo
      enddo
   enddo
@@ -351,9 +369,9 @@ subroutine make_betas_and_phi_3d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
                     dsdt_row, dsdr_row, &
                     do_diag)
            
-           rhsbeta(i,j,k,1) = (dt*1000.0)/(TWO*cp_row(1)) ! k_th^n = 1 for now
-           rhsbeta(i,j,k,2) = (dt*1000.0)/(TWO*cp_row(1)) ! k_th^n = 1 for now
-           rhsbeta(i,j,k,3) = (dt*1000.0)/(TWO*cp_row(1)) ! k_th^n = 1 for now
+           rhsbeta(i,j,k,1) = (dt*1000.0d0)/(TWO*cp_row(1))! k_th^n = 1 for now
+           rhsbeta(i,j,k,2) = (dt*1000.0d0)/(TWO*cp_row(1))! k_th^n = 1 for now
+           rhsbeta(i,j,k,3) = (dt*1000.0d0)/(TWO*cp_row(1))! k_th^n = 1 for now
         enddo
      enddo
   enddo
@@ -368,6 +386,50 @@ subroutine make_betas_and_phi_3d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
   enddo
 
 end subroutine make_betas_and_phi_3d
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Compute betas and phi for 2d problems
+subroutine make_initial_phi_2d(lo,hi,ng,ng_s,s2,phi)
+
+  integer        , intent(in   ) :: lo(:),hi(:)
+  integer        , intent(in   ) :: ng,ng_s
+  real(kind=dp_t), intent(in   ) :: s2(lo(1)-ng_s:,lo(2)-ng_s:,:)
+  real(kind=dp_t), intent(  out) :: phi(lo(1)-ng:,lo(2)-ng:)
+
+! Local
+  integer :: i,j
+
+  ! set phi = h^n for applyop on RHS
+    do j=lo(2),hi(2)
+     do i=lo(1),hi(1)
+        phi(i,j) = s2(i,j,rhoh_comp)/s2(i,j,rho_comp)
+     enddo
+  enddo
+
+end subroutine make_initial_phi_2d
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Compute betas and phi for 3d problems
+subroutine make_initial_phi_3d(lo,hi,ng,ng_s,s2,phi)
+
+  integer        , intent(in   ) :: lo(:),hi(:)
+  integer        , intent(in   ) :: ng,ng_s
+  real(kind=dp_t), intent(in   ) :: s2(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
+  real(kind=dp_t), intent(  out) :: phi(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
+
+! Local
+  integer :: i,j,k
+
+  ! set phi = h^n for applyop on RHS
+  do k=lo(3),hi(3)
+     do j=lo(2),hi(2)
+        do i=lo(1),hi(1)
+           phi(i,j,k) = s2(i,j,k,rhoh_comp)/s2(i,j,k,rho_comp)
+        enddo
+     enddo
+  enddo
+
+end subroutine make_initial_phi_3d
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Add rho h to RHS for 2d problems
