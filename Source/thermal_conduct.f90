@@ -99,7 +99,7 @@ subroutine thermal_conduct(mla,dx,dt,sold,s2,p0old,p02, &
   ! compute residual to get del dot rhsbeta grad h term in RHS
   ! residual is stored in rh
   stencil_order = 2
-  call mac_applyop(mla,rh,phi,alpha,rhsbeta,dx,the_bc_tower,rhoh_comp, &
+  call mac_applyop(mla,rh,phi,alpha,rhsbeta,dx,the_bc_tower,dm+rhoh_comp, &
                    stencil_order,mla%mba%rr,mg_verbose,cg_verbose)
 
   if (parallel_IOProcessor()) print *,'... Adding rho h to RHS ...'
@@ -137,7 +137,8 @@ subroutine thermal_conduct(mla,dx,dt,sold,s2,p0old,p02, &
 
   ! Call the solver to obtain h^(2') (it will be stored in phi)
   call mac_multigrid(mla,rh,phi,fine_flx,alpha,beta,dx,the_bc_tower, &
-                     rhoh_comp,stencil_order,mla%mba%rr,mg_verbose,cg_verbose)
+                     dm+rhoh_comp,stencil_order,mla%mba%rr, &
+                     mg_verbose,cg_verbose)
 
   ! Compute updated (\rho h) = \rho^(2)h^(2')
   do n=1,nlevs
