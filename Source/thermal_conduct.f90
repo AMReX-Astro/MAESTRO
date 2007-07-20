@@ -218,6 +218,7 @@ subroutine make_betas_and_phi_2d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
 
 ! Local
   integer :: i,j
+  real(kind=dp_t) :: conductivity
   
 ! dens, pres, and xmass are inputs
   input_flag = 4
@@ -231,7 +232,7 @@ subroutine make_betas_and_phi_2d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
         p_row(1) = p02(j)
         xn_zone(:) = s2(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
 
-        call eos(input_flag, den_row, temp_row, &
+        call conducteos(input_flag, den_row, temp_row, &
                  npts, nspec, &
                  xn_zone, aion, zion, &
                  p_row, h_row, e_row, & 
@@ -240,10 +241,10 @@ subroutine make_betas_and_phi_2d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
                  dpdX_row, dhdX_row, &
                  gam1_row, cs_row, s_row, &
                  dsdt_row, dsdr_row, &
-                 do_diag)
+                 do_diag, conductivity)
 
-        beta(i,j,1) = HALF*dt*1000.0d0/cp_row(1) ! k_th^(2) needs eos
-        beta(i,j,2) = HALF*dt*1000.0d0/cp_row(1) ! k_th^(2) needs eos
+        beta(i,j,1) = HALF*dt*conductivity/cp_row(1)
+        beta(i,j,2) = HALF*dt*conductivity/cp_row(1)
      enddo
   enddo
 
@@ -255,7 +256,7 @@ subroutine make_betas_and_phi_2d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
         p_row(1) = p0old(j)
         xn_zone(:) = sold(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
 
-        call eos(input_flag, den_row, temp_row, &
+        call conducteos(input_flag, den_row, temp_row, &
                  npts, nspec, &
                  xn_zone, aion, zion, &
                  p_row, h_row, e_row, & 
@@ -264,10 +265,10 @@ subroutine make_betas_and_phi_2d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
                  dpdX_row, dhdX_row, &
                  gam1_row, cs_row, s_row, &
                  dsdt_row, dsdr_row, &
-                 do_diag)
+                 do_diag, conductivity)
 
-        rhsbeta(i,j,1) = -(dt*1000.0d0)/(TWO*cp_row(1)) ! k_th^n needs eos
-        rhsbeta(i,j,2) = -(dt*1000.0d0)/(TWO*cp_row(1)) ! k_th^n needs eos
+        rhsbeta(i,j,1) = -HALF*dt*conductivity/cp_row(1)
+        rhsbeta(i,j,2) = -HALF*dt*conductivity/cp_row(1)
      enddo
   enddo
 
@@ -298,6 +299,7 @@ subroutine make_betas_and_phi_3d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
 ! Local
   integer :: i,j,k
   real(kind=dp_t), allocatable :: p0_cart(:,:,:)
+  real(kind=dp_t)              :: conductivity
 
   if (spherical .eq. 1) then
      allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
@@ -322,7 +324,7 @@ subroutine make_betas_and_phi_3d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
               p_row(1) = p0_cart(i,j,k)
            endif
            
-           call eos(input_flag, den_row, temp_row, &
+           call conducteos(input_flag, den_row, temp_row, &
                     npts, nspec, &
                     xn_zone, aion, zion, &
                     p_row, h_row, e_row, & 
@@ -331,11 +333,11 @@ subroutine make_betas_and_phi_3d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
                     dpdX_row, dhdX_row, &
                     gam1_row, cs_row, s_row, &
                     dsdt_row, dsdr_row, &
-                    do_diag)
+                    do_diag, conductivity)
 
-           beta(i,j,k,1) = HALF*dt*1000.0d0/cp_row(1) ! k_th^(2) needs eos
-           beta(i,j,k,2) = HALF*dt*1000.0d0/cp_row(1) ! k_th^(2) needs eos
-           beta(i,j,k,3) = HALF*dt*1000.0d0/cp_row(1) ! k_th^(2) needs eos
+           beta(i,j,k,1) = HALF*dt*conductivity/cp_row(1)
+           beta(i,j,k,2) = HALF*dt*conductivity/cp_row(1)
+           beta(i,j,k,3) = HALF*dt*conductivity/cp_row(1)
         enddo
      enddo
   enddo
@@ -358,7 +360,7 @@ subroutine make_betas_and_phi_3d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
               p_row(1) = p0_cart(i,j,k)
            endif
            
-           call eos(input_flag, den_row, temp_row, &
+           call conducteos(input_flag, den_row, temp_row, &
                     npts, nspec, &
                     xn_zone, aion, zion, &
                     p_row, h_row, e_row, & 
@@ -367,11 +369,11 @@ subroutine make_betas_and_phi_3d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
                     dpdX_row, dhdX_row, &
                     gam1_row, cs_row, s_row, &
                     dsdt_row, dsdr_row, &
-                    do_diag)
+                    do_diag, conductivity)
            
-           rhsbeta(i,j,k,1) = -(dt*1000.0d0)/(TWO*cp_row(1))! k_th^n needs eos
-           rhsbeta(i,j,k,2) = -(dt*1000.0d0)/(TWO*cp_row(1))! k_th^n needs eos
-           rhsbeta(i,j,k,3) = -(dt*1000.0d0)/(TWO*cp_row(1))! k_th^n needs eos
+           rhsbeta(i,j,k,1) = -HALF*dt*conductivity/cp_row(1)
+           rhsbeta(i,j,k,2) = -HALF*dt*conductivity/cp_row(1)
+           rhsbeta(i,j,k,3) = -HALF*dt*conductivity/cp_row(1)
         enddo
      enddo
   enddo
