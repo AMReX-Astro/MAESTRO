@@ -24,16 +24,17 @@ contains
     character(len=*), intent(in) :: dirname
     real(kind=dp_t), intent(in) :: time_in, dt_in
     integer        , intent(in) :: verbose
-    integer :: n
+    integer :: n, i
     character(len=128) :: header, sd_name, sd_name_nodal
     integer :: un
 
-    integer         :: nlevs
+    integer         :: nlevs, dm
     real(kind=dp_t) :: time, dt
 
     namelist /chkpoint/ time
     namelist /chkpoint/ dt
     namelist /chkpoint/ nlevs
+    namelist /chkpoint/ dm
 
     if ( parallel_IOProcessor() ) then
        call fabio_mkdir(dirname)
@@ -60,6 +61,8 @@ contains
     time = time_in
       dt =   dt_in
 
+      dm = size(dx,dim=2)
+
     header = "Header"
     un = unit_new()
     open(unit=un, &
@@ -69,12 +72,13 @@ contains
     nlevs = size(mfs)
     write(unit=un, nml = chkpoint)
     do n = 1,nlevs
-       write(unit=un,fmt=*) dx(n,1), dx(n,2)
+       write(unit=un,fmt=*) (dx(n,i), i=1,dm)
     end do
     do n = 1,nlevs-1
        write(unit=un,fmt=*) rrs(n,1)
     end do
-    
+    close(un)
+
   end subroutine checkpoint_write
 
   subroutine checkpoint_read(mfs, mfs_nodal, Source_nm1, Source_old, dirname, time_out, dt_out, nlevs_out)
@@ -88,16 +92,17 @@ contains
     integer         ,                pointer :: rrs(:)
     real(kind=dp_t) ,                pointer :: dx(:,:)
 
-    integer :: n
+    integer :: n, i
     character(len=128) :: header, sd_name
     integer :: un
 
-    integer         :: nlevs
+    integer         :: nlevs, dm
     real(kind=dp_t) :: time, dt
 
     namelist /chkpoint/ nlevs
     namelist /chkpoint/ time
     namelist /chkpoint/ dt
+    namelist /chkpoint/ dm
 
 !   First read the header information
     header = "Header"
@@ -107,14 +112,18 @@ contains
          status = "old", &
          action = "read")
     read(unit=un, nml = chkpoint)
-    allocate( dx(nlevs,2))
+
+    allocate( dx(nlevs,dm))
     allocate(rrs(nlevs-1))
+
     do n = 1,nlevs
-       read(unit=un,fmt=*) dx(n,1), dx(n,2)
+       read(unit=un,fmt=*) (dx(n,i), i=1,dm)
     end do
     do n = 1,nlevs-1
        read(unit=un,fmt=*) rrs(n)
     end do
+    close(un)
+
      time_out = time
        dt_out = dt
     nlevs_out = nlevs
