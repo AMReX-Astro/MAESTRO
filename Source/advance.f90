@@ -480,6 +480,18 @@ module advance_timestep_module
         end do
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !! STEP 8a (Option I) -- Add thermal conduction (only enthalpy terms)
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+        if (parallel_IOProcessor() .and. verbose .ge. 1) then
+          write(6,*) '<<< STEP  8a: thermal conduct >>>'
+        end if
+
+        ! Commented out until I finish writing it.
+!        call thermal_conduct(mla,dx,dt,sold,s2,p0_old,p0_2, &
+!                             mg_verbose,cg_verbose,the_bc_tower)
+
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !! STEP 9 -- react the full state and then base state through dt/2
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
