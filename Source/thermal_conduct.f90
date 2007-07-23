@@ -96,11 +96,17 @@ subroutine thermal_conduct(mla,dx,dt,sold,s2,p0old,p02, &
      end do
   enddo
 
+!  call fabio_ml_multifab_write_d(phi,mla%mba%rr(:,1),"h^n")
+!  call fabio_ml_multifab_write_d(alpha,mla%mba%rr(:,1),"rhsalpha")
+!  call fabio_ml_multifab_write_d(rhsbeta,mla%mba%rr(:,1),"rhsbeta")
+
   if (parallel_IOProcessor()) print *,'... Computing RHS operator residual ...'
   ! residual = -(alpha-nabla dot rhsbeta nabla)phi
   ! rh = -residual
   call mac_applyop(mla,rh,phi,alpha,rhsbeta,dx,the_bc_tower,dm+rhoh_comp, &
                    stencil_order,mla%mba%rr,mg_verbose,cg_verbose)
+
+!  call fabio_ml_multifab_write_d(rh,mla%mba%rr(:,1),"resid")
 
   if (parallel_IOProcessor()) print *,'... Adding rho h to RHS ...'
   ! add (\rho h)^(2) to RHS
