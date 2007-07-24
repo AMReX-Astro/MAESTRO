@@ -44,7 +44,8 @@ module advance_timestep_module
                                 grav_cell_old, &
                                 dx,time,dt,dtold,the_bc_tower, &
                                 anelastic_cutoff,verbose,mg_verbose,cg_verbose,&
-                                Source_nm1,Source_old,Source_new,gamma1_term,sponge,do_sponge)
+                                Source_nm1,Source_old,Source_new,gamma1_term,sponge,do_sponge, &
+                                use_thermal_diffusion)
 
     implicit none
 
@@ -93,6 +94,7 @@ module advance_timestep_module
 
     type(multifab), intent(in   ) :: sponge(:)
     logical       , intent(in   ) :: do_sponge
+    logical       , intent(in   ) :: use_thermal_diffusion
 
     type(multifab), allocatable :: rhohalf(:)
     type(multifab), allocatable :: w0_cart_vec(:)
@@ -325,13 +327,14 @@ module advance_timestep_module
         !! STEP 4a (Option I) -- Add thermal conduction (only enthalpy terms)
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-        if (parallel_IOProcessor() .and. verbose .ge. 1) then
-          write(6,*) '<<< STEP  4a: thermal conduct >>>'
-        end if
+        if (use_thermal_diffusion) then
+           if (parallel_IOProcessor() .and. verbose .ge. 1) then
+              write(6,*) '<<< STEP  4a: thermal conduct >>>'
+           end if
 
-        ! Commented out until I finish writing it.
-        call thermal_conduct(mla,dx,dt,sold,s2,p0_old,p0_2, &
-                             mg_verbose,cg_verbose,the_bc_tower)
+           call thermal_conduct(mla,dx,dt,sold,s2,p0_old,p0_2, &
+                                mg_verbose,cg_verbose,the_bc_tower)
+        endif
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !! STEP 5 -- react the full state and then base state through dt/2
@@ -483,13 +486,14 @@ module advance_timestep_module
         !! STEP 8a (Option I) -- Add thermal conduction (only enthalpy terms)
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-        if (parallel_IOProcessor() .and. verbose .ge. 1) then
-          write(6,*) '<<< STEP  8a: thermal conduct >>>'
-        end if
+        if(use_thermal_diffusion) then
+           if (parallel_IOProcessor() .and. verbose .ge. 1) then
+              write(6,*) '<<< STEP  8a: thermal conduct >>>'
+           end if
 
-        ! Commented out until I finish writing it.
-        call thermal_conduct(mla,dx,dt,sold,s2,p0_old,p0_2, &
-                             mg_verbose,cg_verbose,the_bc_tower)
+           call thermal_conduct(mla,dx,dt,sold,s2,p0_old,p0_2, &
+                                mg_verbose,cg_verbose,the_bc_tower)
+        endif
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !! STEP 9 -- react the full state and then base state through dt/2

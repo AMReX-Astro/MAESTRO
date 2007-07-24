@@ -35,6 +35,7 @@
  init_divu_iter = 3
 
  perturb_model = T
+ use_thermal_diffusion = T
 
 !restart = 50
 /
