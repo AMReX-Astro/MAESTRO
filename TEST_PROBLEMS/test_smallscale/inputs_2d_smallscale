@@ -6,7 +6,7 @@
  prob_lo_y = 8.4999999e7
 
  prob_hi_x = 1.20000001e8
- prob_hi_y = 8.5000007e7
+ prob_hi_y = 8.5000003e7
 
  max_step  = 300
  init_iter = 1
