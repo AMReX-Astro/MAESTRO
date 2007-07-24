@@ -31,11 +31,13 @@ subroutine thermal_conduct(mla,dx,dt,sold,s2,p0old,p02, &
 
 ! Local
   type(multifab), allocatable :: rh(:),phi(:),alpha(:),beta(:),rhsbeta(:)
+  type(multifab), allocatable :: const(:)
   integer                     :: i,n,nlevs,dm,ng,ng_rh,ng_s,stencil_order
   integer                     :: lo(sold(1)%dim),hi(sold(1)%dim)
   real(kind=dp_t), pointer    :: soldp(:,:,:,:),s2p(:,:,:,:)
   real(kind=dp_t), pointer    :: rhp(:,:,:,:),phip(:,:,:,:)
   real(kind=dp_t), pointer    :: betap(:,:,:,:),rhsbetap(:,:,:,:)
+  real(kind=dp_t), pointer    :: constp(:,:,:,:)
   type(bndry_reg), pointer    :: fine_flx(:) => Null()
 
   if (parallel_IOProcessor()) print *,'... Entering thermal_conduct ...'
@@ -45,7 +47,7 @@ subroutine thermal_conduct(mla,dx,dt,sold,s2,p0old,p02, &
   stencil_order = 2
 
   allocate(rh(nlevs),phi(nlevs),alpha(nlevs),beta(nlevs))
-  allocate(rhsbeta(nlevs))
+  allocate(rhsbeta(nlevs),const(nlevs))
 
   do n = 1,nlevs
      call multifab_build(     rh(n), mla%la(n), 1, 0)
@@ -53,12 +55,14 @@ subroutine thermal_conduct(mla,dx,dt,sold,s2,p0old,p02, &
      call multifab_build(  alpha(n), mla%la(n), 1, 1)
      call multifab_build(   beta(n), mla%la(n),dm, 1)
      call multifab_build(rhsbeta(n), mla%la(n),dm, 1)
+     call multifab_build(   const(n), mla%la(n), 1, 1)  
 
      call setval(rh(n),ZERO,all=.true.)
      call setval(phi(n),ZERO,all=.true.)
      call setval(alpha(n),ZERO,all=.true.)
      call setval(beta(n),ZERO,all=.true.)
      call setval(rhsbeta(n),ZERO,all=.true.)
+     call setval(const(n),ZERO,all=.true.)
   end do
 
   if (parallel_IOProcessor()) print *,'... Setting alpha = rho ...'
@@ -79,6 +83,7 @@ subroutine thermal_conduct(mla,dx,dt,sold,s2,p0old,p02, &
         betap    => dataptr(beta(n),i)
         rhsbetap => dataptr(rhsbeta(n),i)
         phip     => dataptr(phi(n),i)
+        constp    => dataptr(const(n),i)
         lo =  lwb(get_box(sold(n), i))
         hi =  upb(get_box(sold(n), i))
         select case (dm)
@@ -86,12 +91,12 @@ subroutine thermal_conduct(mla,dx,dt,sold,s2,p0old,p02, &
            call make_betas_and_phi_2d(lo,hi,dt,dx(n,:),ng,ng_rh,ng_s, &
                                       p0old,p02,soldp(:,:,1,:),s2p(:,:,1,:), &
                                       betap(:,:,1,:),rhsbetap(:,:,1,:), &
-                                      phip(:,:,1,1))
+                                      phip(:,:,1,1),constp(:,:,1,1))
         case (3)
            call make_betas_and_phi_3d(lo,hi,dt,dx(n,:),ng,ng_rh,ng_s, &
                                       p0old,p02,soldp(:,:,:,:),s2p(:,:,:,:), &
                                       betap(:,:,:,:),rhsbetap(:,:,:,:), &
-                                      phip(:,:,:,1))
+                                      phip(:,:,:,1),constp(:,:,:,1))
         end select
      end do
   enddo
@@ -200,17 +205,17 @@ subroutine thermal_conduct(mla,dx,dt,sold,s2,p0old,p02, &
      call destroy(alpha(n))
      call destroy(beta(n))
      call destroy(rhsbeta(n))
+     call destroy(const(n))
   enddo
 
-  deallocate(rh,phi,alpha,beta)
-  deallocate(rhsbeta)
+  deallocate(rh,phi,alpha,beta,rhsbeta,const)
 
 end subroutine thermal_conduct
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Compute betas and phi for 2d problems
 subroutine make_betas_and_phi_2d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
-                                 p0old,p02,sold,s2,beta,rhsbeta,phi)
+                                 p0old,p02,sold,s2,beta,rhsbeta,phi,const)
 
   integer        , intent(in   ) :: lo(:),hi(:)
   real(dp_t)    ,  intent(in   ) :: dt,dx(:)
@@ -221,14 +226,19 @@ subroutine make_betas_and_phi_2d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
   real(kind=dp_t), intent(  out) :: beta(lo(1)-ng:,lo(2)-ng:,:)
   real(kind=dp_t), intent(  out) :: rhsbeta(lo(1)-ng:,lo(2)-ng:,:)
   real(kind=dp_t), intent(  out) :: phi(lo(1)-ng:,lo(2)-ng:)
+  real(kind=dp_t), intent(inout) :: const(lo(1)-ng:,lo(2)-ng:)
 
 ! Local
   integer :: i,j
+  integer :: nx,ny
   real(kind=dp_t) :: conductivity
   
 ! dens, pres, and xmass are inputs
   input_flag = 4
   do_diag = .false.
+
+  nx = size(beta,dim=1) - 2*ng
+  ny = size(beta,dim=2) - 2*ng
 
   ! Compute c_p^(2), k_th^2, and beta
   do j=lo(2),hi(2)
@@ -249,10 +259,22 @@ subroutine make_betas_and_phi_2d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
                  dsdt_row, dsdr_row, &
                  do_diag, conductivity)
 
-        beta(i,j,1) = HALF*dt*conductivity/cp_row(1)
-        beta(i,j,2) = HALF*dt*conductivity/cp_row(1)
+        const(i,j) = HALF*dt*conductivity/cp_row(1)
+
      enddo
   enddo
+
+  do j = 0,ny-1
+     do i = 0,nx
+        beta(i,j,1) = (const(i,j) + const(i-1,j)) / TWO
+     end do
+  end do
+  
+  do j = 0,ny
+     do i = 0,nx-1
+        beta(i,j,2) = (const(i,j) + const(i,j-1)) / TWO
+     end do
+  end do
 
  ! Compute c_p^n, k_th^n, and rhsbeta
     do j=lo(2),hi(2)
@@ -273,10 +295,22 @@ subroutine make_betas_and_phi_2d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
                  dsdt_row, dsdr_row, &
                  do_diag, conductivity)
 
-        rhsbeta(i,j,1) = -HALF*dt*conductivity/cp_row(1)
-        rhsbeta(i,j,2) = -HALF*dt*conductivity/cp_row(1)
+        const(i,j) = -HALF*dt*conductivity/cp_row(1)
+
      enddo
   enddo
+
+  do j = 0,ny-1
+     do i = 0,nx
+        rhsbeta(i,j,1) = (const(i,j) + const(i-1,j)) / TWO
+     end do
+  end do
+  
+  do j = 0,ny
+     do i = 0,nx-1
+        rhsbeta(i,j,2) = (const(i,j) + const(i,j-1)) / TWO
+     end do
+  end do
 
   ! set phi = h^n for applyop on RHS
     do j=lo(2),hi(2)
@@ -290,7 +324,7 @@ end subroutine make_betas_and_phi_2d
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Compute betas and phi for 3d problems
 subroutine make_betas_and_phi_3d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
-                                 p0old,p02,sold,s2,beta,rhsbeta,phi)
+                                 p0old,p02,sold,s2,beta,rhsbeta,phi,const)
 
   integer        , intent(in   ) :: lo(:),hi(:)
   real(dp_t)    ,  intent(in   ) :: dt,dx(:)
@@ -301,9 +335,11 @@ subroutine make_betas_and_phi_3d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
   real(kind=dp_t), intent(  out) :: beta(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
   real(kind=dp_t), intent(  out) :: rhsbeta(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
   real(kind=dp_t), intent(  out) :: phi(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
+  real(kind=dp_t), intent(inout) :: const(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
 
 ! Local
   integer :: i,j,k
+  integer :: nx,ny,nz
   real(kind=dp_t), allocatable :: p0_cart(:,:,:)
   real(kind=dp_t)              :: conductivity
 
@@ -315,6 +351,10 @@ subroutine make_betas_and_phi_3d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
 ! dens, pres, and xmass are inputs
   input_flag = 4
   do_diag = .false.
+
+      nx = size(beta,dim=1) - 2*ng
+      ny = size(beta,dim=2) - 2*ng
+      nz = size(beta,dim=3) - 2*ng
 
   ! Compute c_p^(2), k_th^2, and beta
   do k=lo(3),hi(3)
@@ -341,13 +381,36 @@ subroutine make_betas_and_phi_3d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
                     dsdt_row, dsdr_row, &
                     do_diag, conductivity)
 
-           beta(i,j,k,1) = HALF*dt*conductivity/cp_row(1)
-           beta(i,j,k,2) = HALF*dt*conductivity/cp_row(1)
-           beta(i,j,k,3) = HALF*dt*conductivity/cp_row(1)
+           const(i,j,k) = HALF*dt*conductivity/cp_row(1)
+
         enddo
      enddo
   enddo
 
+  do k = 0,nz-1
+     do j = 0,ny-1
+        do i = 0,nx
+           beta(i,j,k,1) = (const(i,j,k) + const(i-1,j,k)) / TWO
+        end do
+     end do
+  end do
+  
+  do k = 0,nz-1
+     do j = 0,ny
+        do i = 0,nx-1
+           beta(i,j,k,2) = (const(i,j,k) + const(i,j-1,k)) / TWO
+        end do
+     end do
+  end do
+  
+  do k = 0,nz
+     do j = 0,ny-1
+        do i = 0,nx-1
+           beta(i,j,k,3) = (const(i,j,k) + const(i,j,k-1)) / TWO
+        end do
+     end do
+  end do
+  
   if (spherical .eq. 1) then
      call fill_3d_data(p0_cart,p0old,lo,hi,dx,0)
   end if
@@ -377,12 +440,35 @@ subroutine make_betas_and_phi_3d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
                     dsdt_row, dsdr_row, &
                     do_diag, conductivity)
            
-           rhsbeta(i,j,k,1) = -HALF*dt*conductivity/cp_row(1)
-           rhsbeta(i,j,k,2) = -HALF*dt*conductivity/cp_row(1)
-           rhsbeta(i,j,k,3) = -HALF*dt*conductivity/cp_row(1)
+           const(i,j,k) = -HALF*dt*conductivity/cp_row(1)
+
         enddo
      enddo
   enddo
+
+  do k = 0,nz-1
+     do j = 0,ny-1
+        do i = 0,nx
+           rhsbeta(i,j,k,1) = (const(i,j,k) + const(i-1,j,k)) / TWO
+        end do
+     end do
+  end do
+  
+  do k = 0,nz-1
+     do j = 0,ny
+        do i = 0,nx-1
+           rhsbeta(i,j,k,2) = (const(i,j,k) + const(i,j-1,k)) / TWO
+        end do
+     end do
+  end do
+  
+  do k = 0,nz
+     do j = 0,ny-1
+        do i = 0,nx-1
+           rhsbeta(i,j,k,3) = (const(i,j,k) + const(i,j,k-1)) / TWO
+        end do
+     end do
+  end do
 
   ! set phi = h^n for applyop on RHS
   do k=lo(3),hi(3)

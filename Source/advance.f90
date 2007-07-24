@@ -330,8 +330,8 @@ module advance_timestep_module
         end if
 
         ! Commented out until I finish writing it.
-!        call thermal_conduct(mla,dx,dt,sold,s2,p0_old,p0_2, &
-!                             mg_verbose,cg_verbose,the_bc_tower)
+        call thermal_conduct(mla,dx,dt,sold,s2,p0_old,p0_2, &
+                             mg_verbose,cg_verbose,the_bc_tower)
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !! STEP 5 -- react the full state and then base state through dt/2
@@ -488,8 +488,8 @@ module advance_timestep_module
         end if
 
         ! Commented out until I finish writing it.
-!        call thermal_conduct(mla,dx,dt,sold,s2,p0_old,p0_2, &
-!                             mg_verbose,cg_verbose,the_bc_tower)
+        call thermal_conduct(mla,dx,dt,sold,s2,p0_old,p0_2, &
+                             mg_verbose,cg_verbose,the_bc_tower)
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !! STEP 9 -- react the full state and then base state through dt/2
