@@ -231,7 +231,6 @@ subroutine make_betas_and_phi_2d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
 ! Local
   integer :: i,j
   integer :: nx,ny
-  real(kind=dp_t) :: conductivity
   
 ! dens, pres, and xmass are inputs
   input_flag = 4
@@ -257,9 +256,9 @@ subroutine make_betas_and_phi_2d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
                  dpdX_row, dhdX_row, &
                  gam1_row, cs_row, s_row, &
                  dsdt_row, dsdr_row, &
-                 do_diag, conductivity)
+                 do_diag, conduct_row)
 
-        const(i,j) = HALF*dt*conductivity/cp_row(1)
+        const(i,j) = HALF*dt*conduct_row(1)/cp_row(1)
 
      enddo
   enddo
@@ -293,9 +292,9 @@ subroutine make_betas_and_phi_2d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
                  dpdX_row, dhdX_row, &
                  gam1_row, cs_row, s_row, &
                  dsdt_row, dsdr_row, &
-                 do_diag, conductivity)
+                 do_diag, conduct_row)
 
-        const(i,j) = -HALF*dt*conductivity/cp_row(1)
+        const(i,j) = -HALF*dt*conduct_row(1)/cp_row(1)
 
      enddo
   enddo
@@ -341,7 +340,6 @@ subroutine make_betas_and_phi_3d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
   integer :: i,j,k
   integer :: nx,ny,nz
   real(kind=dp_t), allocatable :: p0_cart(:,:,:)
-  real(kind=dp_t)              :: conductivity
 
   if (spherical .eq. 1) then
      allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
@@ -379,9 +377,9 @@ subroutine make_betas_and_phi_3d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
                     dpdX_row, dhdX_row, &
                     gam1_row, cs_row, s_row, &
                     dsdt_row, dsdr_row, &
-                    do_diag, conductivity)
+                    do_diag, conduct_row)
 
-           const(i,j,k) = HALF*dt*conductivity/cp_row(1)
+           const(i,j,k) = HALF*dt*conduct_row(1)/cp_row(1)
 
         enddo
      enddo
@@ -438,9 +436,9 @@ subroutine make_betas_and_phi_3d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
                     dpdX_row, dhdX_row, &
                     gam1_row, cs_row, s_row, &
                     dsdt_row, dsdr_row, &
-                    do_diag, conductivity)
+                    do_diag, conduct_row)
            
-           const(i,j,k) = -HALF*dt*conductivity/cp_row(1)
+           const(i,j,k) = -HALF*dt*conduct_row(1)/cp_row(1)
 
         enddo
      enddo
