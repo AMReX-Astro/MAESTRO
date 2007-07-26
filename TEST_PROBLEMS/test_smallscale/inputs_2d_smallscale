@@ -2,11 +2,8 @@
  test_set = "gr0_2d_smallscale"
  spherical_in = 0
 
- prob_lo_x = 1.19999999e8
- prob_lo_y = 8.4999999e7
-
- prob_hi_x = 1.20000001e8
- prob_hi_y = 8.5000003e7
+ prob_hi_x = 0.25
+ prob_hi_y = 2.0
 
  max_step  = 100
  init_iter = 1
@@ -34,7 +31,7 @@
  do_initial_projection = 1
  init_divu_iter = 3
 
- perturb_model = T
+ perturb_model = F
  use_thermal_diffusion = T
 
 !restart = 50
