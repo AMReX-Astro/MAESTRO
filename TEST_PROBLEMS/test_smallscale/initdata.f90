@@ -253,13 +253,29 @@ contains
     real(kind=dp_t), intent(in   ) ::    p0(0:)
     real(kind=dp_t), intent(in   ) :: temp0(0:)
 
-    !     Local variables
-    integer :: i, j, n
-    real(kind=dp_t) :: x,y,r,r0,r1,r2,temp
-    real(kind=dp_t) :: dens_pert, rhoh_pert, rhoX_pert(nspec), trac_pert(ntrac)
+    ! local
+    integer ndum, i, dm
+    parameter (ndum = 31)
 
-    ! initial the velocity
-    u = ZERO
+    character(len=128) :: lamsolfile
+    real(kind=dp_t) :: state1d(ndum)
+    real(kind=dp_t) :: loloc,hiloc
+    
+    dm = size(dx)
+
+    lamsolfile = 'flame_4.e7_screen_left.out'
+
+    do i=0,hi(2)
+
+       loloc = dble(i)*dx(dm)
+       hiloc = (dble(i) + ONE)*dx(dm)
+
+       call asin1d(lamsolfile, loloc, hiloc, state1d, ndum, .false.)
+
+       u(lo(1):hi(1),i,1) = 0.0d0
+       u(lo(1):hi(1),i,2) = state1d(2)
+
+    enddo
 
   end subroutine initveldata_2d
 
@@ -277,12 +293,30 @@ contains
     real(kind=dp_t), intent(in   ) ::    p0(0:)
     real(kind=dp_t), intent(in   ) :: temp0(0:)
 
-    !     Local variables
+    ! local
+    integer ndum, i, dm
+    parameter (ndum = 31)
 
-
-    ! initial the velocity
-    u = ZERO
+    character(len=128) :: lamsolfile
+    real(kind=dp_t) :: state1d(ndum)
+    real(kind=dp_t) :: loloc,hiloc
     
+    dm = size(dx)
+
+    lamsolfile = 'flame_4.e7_screen_left.out'
+
+    do i=0,hi(3)
+
+       loloc = dble(i)*dx(dm)
+       hiloc = (dble(i) + ONE)*dx(dm)
+
+       call asin1d(lamsolfile, loloc, hiloc, state1d, ndum, .false.)
+
+       u(lo(1):hi(1),lo(2):hi(2),i,1:2) = 0.0d0
+       u(lo(1):hi(1),lo(2):hi(2),i,3) = state1d(2)
+
+    enddo
+
   end subroutine initveldata_3d
 
 
@@ -450,67 +484,82 @@ contains
     real(kind=dp_t),     intent(in   ) :: dx(:)
 
     ! local
-    integer ndum
+    integer ndum, i, j, dm, nspec
+    integer input_flag
     parameter (ndum = 31)
+    parameter (nspec = 3)
 
     character(len=128) :: lamsolfile
     real(kind=dp_t) :: state1d(ndum)
+    real(kind=dp_t) :: loloc,hiloc,flameloc
     
+    dm = size(dx)
+
     lamsolfile = 'flame_4.e7_screen_left.out'
-    
-    call asin1d(lamsolfile, -0.001d0, 0.d0, state1d, ndum, .false.)
-    
+
+    ! ambient pressure from john's problem
+    p_row(1) = 6.08741290776e24
+
+    flameloc = 1.0d0
+
+    do i=0,n_base-1
+
+       loloc = dble(i)*dx(dm) - flameloc
+       hiloc = (dble(i) + ONE)*dx(dm) - flameloc
+
+       call asin1d(lamsolfile, loloc, hiloc, state1d, ndum, .false.)
+
+       temp_row(1) = state1d(9)
+
+       xn_zone(1) = state1d(21)
+       xn_zone(2) = state1d(23)
+       xn_zone(3) = state1d(22)
+       
+       den_row(1) = state1d(3)
+       
+       WRITE(*,*) "In init_base_state"
+       WRITE(*,*) "i =",i
+       WRITE(*,*) "loloc =",dble(i)*dx(dm)
+       WRITE(*,*) "hiloc =",(dble(i)+ONE)*dx(dm)
+       WRITE(*,*) "p_row =",p_row(1)
+       WRITE(*,*) "temp_row =",temp_row(1)
+       WRITE(*,*) "X =",xn_zone(1),xn_zone(2),xn_zone(3)
+       WRITE(*,*) "initial den_row =",den_row(1)
+       
+       ! given P, T, and X, compute rho and h.
+       input_flag = 3
+
+       call eos(input_flag, den_row, temp_row, &
+                npts, nspec, &
+                xn_zone, aion, zion, &
+                p_row, h_row, e_row, & 
+                cv_row, cp_row, xne_row, eta_row, pele_row, &
+                dpdt_row, dpdr_row, dedt_row, dedr_row, &
+                dpdX_row, dhdX_row, &
+                gam1_row, cs_row, s_row, &
+                dsdt_row, dsdr_row, &
+                do_diag)
+
+       WRITE(*,*) "den_row =",den_row(1)
+       WRITE(*,*) "den_row*h_row =",den_row(1)*h_row(1)
+
+       s0(i,rho_comp) = den_row(1)
+       s0(i,rhoh_comp) = den_row(1)*h_row(1)
+       do j=1,nspec
+          s0(i,spec_comp+j-1) = xn_zone(j)
+       enddo
+       s0(i,trac_comp) = 0.0d0
+       
+       temp0(i) = temp_row(1)
+       
+       p0(i) = p_row(1)
+       
+       gam1(i) = gam1_row(1)
+       
+    enddo
+        
   end subroutine init_base_state
   
-  function interpolate(r, npts, model_r, model_var)
-
-    ! given the array of model coordinates (model_r), and variable (model_var),
-    ! find the value of model_var at point r using linear interpolation.
-    ! Eventually, we can do something fancier here.
-
-    real(kind=dp_t) :: interpolate
-    real(kind=dp_t), intent(in) :: r
-    integer :: npts
-    real(kind=dp_t), dimension(npts) :: model_r, model_var
-
-    real(kind=dp_t) :: val, slope, xi, dr_model
-
-    integer :: i, id
-
-    ! find the location in the coordinate array where we want to interpolate
-    do i = 1, npts
-       if (model_r(i) >= r) exit
-    enddo
-
-    id = i
-
-    if (id == 1) then
-       slope = (model_var(id+1) - model_var(id))/(model_r(id+1) - model_r(id))
-       interpolate = slope*(r - model_r(id)) + model_var(id)
-
-    else if (id == npts) then
-       slope = (model_var(id) - model_var(id-1))/(model_r(id) - model_r(id-1))
-       interpolate = slope*(r - model_r(id)) + model_var(id)
-
-    else if ((model_var(id+1) - model_var(id))*(model_var(id) - model_var(id-1)) <= ZERO) then
-
-       ! if we are at a maximum or minimum, then drop to linear interpolation
-       slope = (model_var(id+1) - model_var(id-1))/(model_r(id+1) - model_r(id-1))
-       interpolate = slope*(r - model_r(id)) + model_var(id)       
-
-    else
-       dr_model = model_r(id+1) - model_r(id)
-       xi = r - model_r(id)
-       interpolate = (model_var(id+1) - 2*model_var(id) + model_var(id-1))*xi**2/(2*dr_model**2) + &
-                     (model_var(id+1) - model_var(id-1))*xi/(2*dr_model) + &
-                     (-model_var(id+1) + 26*model_var(id) - model_var(id-1))/24.0_dp_t
-    endif
-
-
-    return
-
-  end function interpolate
-
 
   subroutine write_base_state(state_name,w0_name,chk_name,s0,temp0,p0,w0,div_coeff)
 
@@ -524,7 +573,6 @@ contains
     integer :: i, n, nr
 
     nr = size(s0,dim=1)
-
 
     if (parallel_IOProcessor()) then
 
@@ -552,7 +600,6 @@ contains
        close(99)
 
     endif
-
 
 1000 format(16(e30.20,1x))
 
