@@ -146,8 +146,8 @@ module define_bc_module
     do d  = 1,dm
     do i  = 1,2
        if (phys_bc_level(n,d,i) == SLIP_WALL) then
-          adv_bc_level(n,d,i,     1:dm)                        = HOEXTRAP      ! tangential vel.
-          adv_bc_level(n,d,i,        d)                        = EXT_DIR       ! normal vel.
+          adv_bc_level(n,d,i,     1:dm)                        = HOEXTRAP      ! tangential vel
+          adv_bc_level(n,d,i,        d)                        = EXT_DIR       ! normal vel
           adv_bc_level(n,d,i, rho_comp+dm)                     = HOEXTRAP      ! density
           adv_bc_level(n,d,i,rhoh_comp+dm)                     = HOEXTRAP      ! (rho h)
           adv_bc_level(n,d,i,spec_comp+dm:spec_comp+dm+nspec-1)= HOEXTRAP      ! (rho X)_i
@@ -169,7 +169,6 @@ module define_bc_module
           adv_bc_level(n,d,i,spec_comp+dm:spec_comp+dm+nspec-1)= EXT_DIR       ! (rho X)_i
           adv_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= EXT_DIR       ! tracers
           adv_bc_level(n,d,i,press_comp)                       = FOEXTRAP      ! pressure
-          adv_bc_level(n,d,i,press_comp)                       = FOEXTRAP      ! pressure
 
        else if (phys_bc_level(n,d,i) == OUTLET) then
           adv_bc_level(n,d,i,     1:dm)                        = FOEXTRAP      ! velocity
@@ -180,8 +179,8 @@ module define_bc_module
           adv_bc_level(n,d,i,press_comp)                       = EXT_DIR       ! pressure
 
        else if (phys_bc_level(n,d,i) == SYMMETRY) then
-          adv_bc_level(n,d,i,     1:dm)                        = REFLECT_EVEN  ! tangential vel.
-          adv_bc_level(n,d,i,        d)                        = REFLECT_ODD   ! normal vel.
+          adv_bc_level(n,d,i,     1:dm)                        = REFLECT_EVEN  ! tangential vel
+          adv_bc_level(n,d,i,        d)                        = REFLECT_ODD   ! normal vel
           adv_bc_level(n,d,i, rho_comp+dm)                     = REFLECT_EVEN  ! density
           adv_bc_level(n,d,i,rhoh_comp+dm)                     = REFLECT_EVEN  ! (rho h)
           adv_bc_level(n,d,i,spec_comp+dm:spec_comp+dm+nspec-1)= REFLECT_EVEN  ! (rho X)_i
@@ -246,12 +245,12 @@ module define_bc_module
           ell_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= BC_DIR   ! tracers
           ell_bc_level(n,d,i,press_comp)                       = BC_NEU   ! pressure
        else if (phys_bc_level(n,d,i) == OUTLET) then
-          ell_bc_level(n,d,i,                      1:dm)       = BC_NEU   ! vel.
+          ell_bc_level(n,d,i,                      1:dm)       = BC_NEU   ! tangential vel.
           ell_bc_level(n,d,i,rho_comp+dm:spec_comp+dm+nspec-1) = BC_NEU   ! density,(rho h),(rho X)_i, tracers
           ell_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= BC_NEU   ! tracers
           ell_bc_level(n,d,i,press_comp)                       = BC_DIR   ! pressure
        else if (phys_bc_level(n,d,i) == SYMMETRY) then
-          ell_bc_level(n,d,i,                      1:dm)       = BC_NEU   ! vel.
+          ell_bc_level(n,d,i,                      1:dm)       = BC_NEU   ! tangential vel.
           ell_bc_level(n,d,i,                         d)       = BC_DIR   ! normal vel.
           ell_bc_level(n,d,i,rho_comp+dm:spec_comp+dm+nspec-1) = BC_NEU   ! density,(rho h),(rho X)_i, tracers
           ell_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= BC_NEU   ! tracers
