@@ -8,12 +8,12 @@
  prob_hi_x = 1.20000001e8
  prob_hi_y = 8.5000003e7
 
- max_step  = 300
+ max_step  = 100
  init_iter = 1
 
  stop_time = 2.5
 
- plot_int  = 25
+ plot_int  = 5
  chk_int   = 100
 
  cflfac = 0.9
@@ -21,7 +21,7 @@
 
  bcx_lo = -1
  bcx_hi = -1
- bcy_lo = 14
+ bcy_lo = 11
  bcy_hi = 12
 
  pmask_x = T
