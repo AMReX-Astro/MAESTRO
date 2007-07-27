@@ -259,21 +259,23 @@ contains
 
     character(len=128) :: lamsolfile
     real(kind=dp_t) :: state1d(ndum)
-    real(kind=dp_t) :: loloc,hiloc
+    real(kind=dp_t) :: loloc,hiloc,flameloc
     
     dm = size(dx)
 
     lamsolfile = 'flame_4.e7_screen_left.out'
 
+    flameloc = ONE
+
     do i=0,hi(2)
 
-       loloc = dble(i)*dx(dm)
-       hiloc = (dble(i) + ONE)*dx(dm)
+       loloc = dble(i)*dx(dm) - flameloc
+       hiloc = (dble(i) + ONE)*dx(dm) - flameloc
 
        call asin1d(lamsolfile, loloc, hiloc, state1d, ndum, .false.)
 
        u(lo(1):hi(1),i,1) = 0.0d0
-       u(lo(1):hi(1),i,2) = state1d(2)
+       u(lo(1):hi(1),i,2) = state1d(2)-1.0e5
 
     enddo
 
@@ -313,7 +315,7 @@ contains
        call asin1d(lamsolfile, loloc, hiloc, state1d, ndum, .false.)
 
        u(lo(1):hi(1),lo(2):hi(2),i,1:2) = 0.0d0
-       u(lo(1):hi(1),lo(2):hi(2),i,3) = state1d(2)
+       u(lo(1):hi(1),lo(2):hi(2),i,3) = state1d(2)-1.0e5
 
     enddo
 
@@ -502,7 +504,7 @@ contains
     ! ambient pressure from john's problem
     p_row(1) = 6.08741290776e24
 
-    flameloc = 1.0d0
+    flameloc = ONE
 
     do i=0,n_base-1
 
