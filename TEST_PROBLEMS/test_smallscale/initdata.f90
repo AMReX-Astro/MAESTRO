@@ -150,7 +150,7 @@ contains
        end do
 
     else 
-
+ 
        ! initialize the scalars
        do n = rho_comp,spec_comp+nspec-1
           do k = lo(3), hi(3)
@@ -493,6 +493,8 @@ contains
     real(kind=dp_t) :: state1d(ndum)
     real(kind=dp_t) :: loloc,hiloc,flameloc
     
+    call helmeos_init
+
     dm = size(dx)
 
     lamsolfile = 'flame_4.e7_screen_left.out'
@@ -517,15 +519,6 @@ contains
        
        den_row(1) = state1d(3)
        
-       WRITE(*,*) "In init_base_state"
-       WRITE(*,*) "i =",i
-       WRITE(*,*) "loloc =",dble(i)*dx(dm)
-       WRITE(*,*) "hiloc =",(dble(i)+ONE)*dx(dm)
-       WRITE(*,*) "p_row =",p_row(1)
-       WRITE(*,*) "temp_row =",temp_row(1)
-       WRITE(*,*) "X =",xn_zone(1),xn_zone(2),xn_zone(3)
-       WRITE(*,*) "initial den_row =",den_row(1)
-       
        ! given P, T, and X, compute rho and h.
        input_flag = 3
 
@@ -540,9 +533,6 @@ contains
                 dsdt_row, dsdr_row, &
                 do_diag)
 
-       WRITE(*,*) "den_row =",den_row(1)
-       WRITE(*,*) "den_row*h_row =",den_row(1)*h_row(1)
-
        s0(i,rho_comp) = den_row(1)
        s0(i,rhoh_comp) = den_row(1)*h_row(1)
        do j=1,nspec
@@ -551,9 +541,7 @@ contains
        s0(i,trac_comp) = 0.0d0
        
        temp0(i) = temp_row(1)
-       
        p0(i) = p_row(1)
-       
        gam1(i) = gam1_row(1)
        
     enddo
