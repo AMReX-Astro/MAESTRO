@@ -25,47 +25,83 @@ contains
       hi(2) = lo(2) + size(s,dim=2) - (2*ng+1)
 
       if (bc(1,1) .eq. EXT_DIR) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(1,1) .eq. EXT_DIR'
-         stop
+         print *,'*******************************************'
+         print *,''
       else if (bc(1,1) .eq. FOEXTRAP) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(1,1) .eq. FOEXTRAP'
-         stop
+         print *,'*******************************************'
+         print *,''
       else if (bc(1,1) .eq. HOEXTRAP) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(1,1) .eq. HOEXTRAP'
-         stop
+         print *,'*******************************************'
+         print *,''
       else if (bc(1,1) .eq. REFLECT_EVEN) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(1,1) .eq. REFLECT_EVEN'
-         stop
+         print *,'*******************************************'
+         print *,''
       else if (bc(1,1) .eq. REFLECT_ODD) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(1,1) .eq. REFLECT_ODD'
-         stop
+         print *,'*******************************************'
+         print *,''
       else if (bc(1,1) .eq. INTERIOR) then
          ! this is the only thing it should call
       else
+         print *,''
+         print *,'*******************************************'
          print *,'In setbc.f90: bc(1,1) = ',bc(1,1),' NOT YET SUPPORTED '
-         stop
+         print *,'*******************************************'
+         print *,''
       end if
 
       if (bc(1,2) .eq. EXT_DIR) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(1,2) .eq. EXT_DIR'
-         stop
+         print *,'*******************************************'
+         print *,''
       else if (bc(1,2) .eq. FOEXTRAP) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(1,2) .eq. FOEXTRAP'
-         stop
+         print *,'*******************************************'
+         print *,''
       else if (bc(1,2) .eq. HOEXTRAP) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(1,2) .eq. HOEXTRAP'
-         stop
+         print *,'*******************************************'
+         print *,''
       else if (bc(1,2) .eq. REFLECT_EVEN) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(1,2) .eq. REFLECT_EVEN'
-         stop
+         print *,'*******************************************'
+         print *,''
       else if (bc(1,2) .eq. REFLECT_ODD) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(1,2) .eq. REFLECT_ODD'
-         stop
+         print *,'*******************************************'
+         print *,''
       else if (bc(1,2) .eq. INTERIOR) then
          ! this is the only thing it should call
       else 
+         print *,''
+         print *,'*******************************************'
          print *,'In setbc.f90: bc(1,2) = ',bc(1,2),' NOT YET SUPPORTED '
-         stop
+         print *,'*******************************************'
+         print *,''
       end if
 
       if (bc(2,1) .eq. EXT_DIR) then
@@ -79,48 +115,84 @@ contains
          if (icomp.eq.7) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_MG24
          if (icomp.eq.8) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_TRA
       else if (bc(2,1) .eq. FOEXTRAP) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(2,1) .eq. FOEXTRAP'
-         stop
+         print *,'*******************************************'
+         print *,''
       else if (bc(2,1) .eq. HOEXTRAP) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(2,1) .eq. HOEXTRAP'
-         stop
+         print *,'*******************************************'
+         print *,''
       else if (bc(2,1) .eq. REFLECT_EVEN) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(2,1) .eq. REFLECT_EVEN'
-         stop
+         print *,'*******************************************'
+         print *,''
       else if (bc(2,1) .eq. REFLECT_ODD) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(2,1) .eq. REFLECT_ODD'
-         stop
+         print *,'*******************************************'
+         print *,''
       else if (bc(2,1) .eq. INTERIOR) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(2,1) .eq. INTERIOR'
-         stop
+         print *,'*******************************************'
+         print *,''
       else 
+         print *,''
+         print *,'*******************************************'
          print *,'In setbc.f90: bc(2,1) = ',bc(2,1),' NOT YET SUPPORTED '
-         stop
+         print *,'*******************************************'
+         print *,''
       end if
 
       if (bc(2,2) .eq. EXT_DIR) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(2,2) .eq. EXT_DIR'
-         stop
+         print *,'*******************************************'
+         print *,''
       else if (bc(2,2) .eq. FOEXTRAP) then
          ! this is the only thing it should call
          do i = lo(1)-ng,hi(1)+ng
             s(i,hi(2)+1:hi(2)+ng) = s(i,hi(2))
          end do
       else if (bc(2,2) .eq. HOEXTRAP) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(2,2) .eq. HOEXTRAP'
-         stop
+         print *,'*******************************************'
+         print *,''
       else if (bc(2,2) .eq. REFLECT_EVEN) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(2,2) .eq. REFLECT_EVEN'
-         stop
+         print *,'*******************************************'
+         print *,''
       else if (bc(2,2) .eq. REFLECT_ODD) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(2,2) .eq. REFLECT_ODD'
-         stop
+         print *,'*******************************************'
+         print *,''
       else if (bc(2,2) .eq. INTERIOR) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(2,2) .eq. INTERIOR'
-         stop
+         print *,'*******************************************'
+         print *,''
       else 
+         print *,''
+         print *,'*******************************************'
          print *,'In setbc.f90: bc(2,2) = ',bc(2,2),' NOT YET SUPPORTED '
-         stop
+         print *,'*******************************************'
+         print *,''
       end if
 
       end subroutine setbc_2d
@@ -141,91 +213,163 @@ contains
       hi(3) = lo(3) + size(s,dim=3) - (2*ng+1)
 
       if (bc(1,1) .eq. EXT_DIR) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(1,1) .eq. EXT_DIR'
-         stop
+         print *,'*******************************************'
+         print *,''
       else if (bc(1,1) .eq. FOEXTRAP) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(1,1) .eq. FOEXTRAP'
-         stop
+         print *,'*******************************************'
+         print *,''
       else if (bc(1,1) .eq. HOEXTRAP) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(1,1) .eq. HOEXTRAP'
-         stop
+         print *,'*******************************************'
+         print *,''
       else if (bc(1,1) .eq. REFLECT_EVEN) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(1,1) .eq. REFLECT_EVEN'
-         stop
+         print *,'*******************************************'
+         print *,''
       else if (bc(1,1) .eq. REFLECT_ODD) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(1,1) .eq. REFLECT_ODD'
-         stop
+         print *,'*******************************************'
+         print *,'' 
       else if (bc(1,1) .eq. INTERIOR) then
          ! this is the only thing it should call
       else
+         print *,''
+         print *,'*******************************************'
          print *,'In setbc.f90: bc(1,1) = ',bc(1,1),' NOT YET SUPPORTED '
-         stop
+         print *,'*******************************************'
+         print *,''
       end if
 
       if (bc(1,2) .eq. EXT_DIR) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(1,2) .eq. EXT_DIR'
-         stop
+         print *,'*******************************************'
+         print *,''         
       else if (bc(1,2) .eq. FOEXTRAP) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(1,2) .eq. FOEXTRAP'
-         stop
+         print *,'*******************************************'
+         print *,''         
       else if (bc(1,2) .eq. HOEXTRAP) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(1,2) .eq. HOEXTRAP'
-         stop
+         print *,'*******************************************'
+         print *,''        
       else if (bc(1,2) .eq. REFLECT_EVEN) then
-         print *,'WARNING: In setbc.f90: bc(1,2) .eq. REFLECT_EVEN'
-         stop
+        print *,''
+        print *,'*******************************************'
+        print *,'WARNING: In setbc.f90: bc(1,2) .eq. REFLECT_EVEN'
+        print *,'*******************************************'
+        print *,''         
       else if (bc(1,2) .eq. REFLECT_ODD) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(1,2) .eq. REFLECT_ODD'
-         stop
+         print *,'*******************************************'
+         print *,''         
       else if (bc(1,2) .eq. INTERIOR) then
          ! this is the only thing it should call
       else 
+         print *,''
+         print *,'*******************************************'
          print *,'In setbc.f90: bc(1,2) = ',bc(1,2),' NOT YET SUPPORTED '
-         stop
+         print *,'*******************************************'
+         print *,''         
       end if
 
       if (bc(2,1) .eq. EXT_DIR) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(2,1) .eq. EXT_DIR'
-         stop
+         print *,'*******************************************'
+         print *,''         
       else if (bc(2,1) .eq. FOEXTRAP) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(2,1) .eq. FOEXTRAP'
-         stop
+         print *,'*******************************************'
+         print *,''         
       else if (bc(2,1) .eq. HOEXTRAP) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(2,1) .eq. HOEXTRAP'
-         stop
+         print *,'*******************************************'
+         print *,''         
       else if (bc(2,1) .eq. REFLECT_EVEN) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(2,1) .eq. REFLECT_EVEN'
-         stop
+         print *,'*******************************************'
+         print *,''         
       else if (bc(2,1) .eq. REFLECT_ODD) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(2,1) .eq. REFLECT_ODD'
-         stop
+         print *,'*******************************************'
+         print *,''         
       else if (bc(2,1) .eq. INTERIOR) then
          ! this is the only thing it should call
       else
+         print *,''
+         print *,'*******************************************'
          print *,'In setbc.f90: bc(2,1) = ',bc(2,1),' NOT YET SUPPORTED '
-         stop
+         print *,'*******************************************'
+         print *,''         
       end if
 
       if (bc(2,2) .eq. EXT_DIR) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(2,2) .eq. EXT_DIR'
-         stop
+         print *,'*******************************************'
+         print *,''         
       else if (bc(2,2) .eq. FOEXTRAP) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(2,2) .eq. FOEXTRAP'
-         stop
+         print *,'*******************************************'
+         print *,''         
       else if (bc(2,2) .eq. HOEXTRAP) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(2,2) .eq. HOEXTRAP'
-         stop
+         print *,'*******************************************'
+         print *,''         
       else if (bc(2,2) .eq. REFLECT_EVEN) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(2,2) .eq. REFLECT_EVEN'
-         stop
+         print *,'*******************************************'
+         print *,''         
       else if (bc(2,2) .eq. REFLECT_ODD) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(2,2) .eq. REFLECT_ODD'
-         stop
+         print *,'*******************************************'
+         print *,''         
       else if (bc(2,2) .eq. INTERIOR) then
          ! this is the only thing it should call
       else 
+         print *,''
+         print *,'*******************************************'
          print *,'In setbc.f90: bc(2,2) = ',bc(2,2),' NOT YET SUPPORTED '
-         stop
+         print *,'*******************************************'
+         print *,''        
       end if
 
       if (bc(3,1) .eq. EXT_DIR) then
@@ -240,28 +384,49 @@ contains
          if (icomp.eq.8) s(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-ng:lo(3)-1) = INLET_MG24
          if (icomp.eq.9) s(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-ng:lo(3)-1) = INLET_TRA
       else if (bc(3,1) .eq. FOEXTRAP .or. bc(3,1) .eq. REFLECT_EVEN) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(3,1) .eq. FOEXTRAP .or. REFLECT_EVEN'
-         stop
+         print *,'*******************************************'
+         print *,''         
       else if (bc(3,1) .eq. HOEXTRAP) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(3,1) .eq. HOEXTRAP'
-         stop
+         print *,'*******************************************'
+         print *,''        
       else if (bc(3,1) .eq. REFLECT_EVEN) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(3,1) .eq. REFLECT_EVEN'
-         stop
+         print *,'*******************************************'
+         print *,''         
       else if (bc(3,1) .eq. REFLECT_ODD) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(3,1) .eq. REFLECT_ODD'
-         stop
+         print *,'*******************************************'
+         print *,''         
       else if (bc(3,1) .eq. INTERIOR) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(3,1) .eq. INTERIOR'
-         stop
+         print *,'*******************************************'
+         print *,''         
       else 
+         print *,''
+         print *,'*******************************************'
          print *,'In setbc.f90: bc(3,1) = ',bc(3,1),' NOT YET SUPPORTED '
-         stop
+         print *,'*******************************************'
+         print *,''         
       end if
 
       if (bc(3,2) .eq. EXT_DIR) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(3,2) .eq. EXT_DIR'
-         stop
+         print *,'*******************************************'
+         print *,''
       else if (bc(3,2) .eq. FOEXTRAP .or. bc(3,2) .eq. REFLECT_EVEN) then
          ! this is the only thing it should call
          do j = lo(2)-ng,hi(2)+ng
@@ -270,20 +435,35 @@ contains
             end do
          end do
       else if (bc(3,2) .eq. HOEXTRAP) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(3,2) .eq. HOEXTRAP'
-         stop
+         print *,'*******************************************'
+         print *,''
       else if (bc(3,2) .eq. REFLECT_EVEN) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(3,2) .eq. REFLECT_EVEN'
-         stop
+         print *,'*******************************************'
+         print *,''
       else if (bc(3,2) .eq. REFLECT_ODD) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(3,2) .eq. REFLECT_ODD'
-         stop
+         print *,'*******************************************'
+         print *,''
       else if (bc(3,2) .eq. INTERIOR) then
+         print *,''
+         print *,'*******************************************'
          print *,'WARNING: In setbc.f90: bc(3,2) .eq. REFLECT_INTERIOR'
-         stop
+         print *,'*******************************************'
+         print *,''
       else 
+         print *,''
+         print *,'*******************************************'
          print *,'In setbc.f90: bc(3,2) = ',bc(3,2),' NOT YET SUPPORTED '
-         stop
+         print *,'*******************************************'
+         print *,''
       end if
 
       end subroutine setbc_3d
