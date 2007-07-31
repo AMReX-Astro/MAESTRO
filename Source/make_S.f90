@@ -16,16 +16,19 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-   subroutine make_S (Source,gamma1_term,state,u,rho_omegadot,rho_Hext,p0,t0,gam1,dx)
+   subroutine make_S (Source,gamma1_term,state,u,rho_omegadot,rho_Hext, &
+                      thermal,p0,t0,gam1,dx)
 
       type(multifab) , intent(inout) :: Source, gamma1_term
       type(multifab) , intent(in   ) :: state, u
       type(multifab) , intent(in   ) :: rho_omegadot
       type(multifab) , intent(in   ) :: rho_Hext
+      type(multifab) , intent(in   ) :: thermal
       real(kind=dp_t), intent(in   ) :: p0(0:),t0(0:),gam1(0:)
       real(kind=dp_t), intent(in   ) :: dx(:)
 
-      real(kind=dp_t), pointer:: srcp(:,:,:,:),gp(:,:,:,:),sp(:,:,:,:),up(:,:,:,:)
+      real(kind=dp_t), pointer:: srcp(:,:,:,:),gp(:,:,:,:),sp(:,:,:,:)
+      real(kind=dp_t), pointer:: up(:,:,:,:),thermalp(:,:,:,:)
       real(kind=dp_t), pointer:: omegap(:,:,:,:), hp(:,:,:,:)
       integer :: lo(state%dim),hi(state%dim),ng,dm
       integer :: i
@@ -41,24 +44,25 @@ contains
          up => dataptr(u, i)
          omegap => dataptr(rho_omegadot, i)
          hp     => dataptr(rho_Hext, i)
+         thermalp => dataptr(thermal, i)
          lo =  lwb(get_box(state, i))
          hi =  upb(get_box(state, i))
          select case (dm)
             case (2)
-              call make_S_2d(lo,hi,srcp(:,:,1,1),gp(:,:,1,1),sp(:,:,1,:),up(:,:,1,:), &
-                             omegap(:,:,1,:), hp(:,:,1,1), &
-                             ng, p0, t0, gam1, dx)
+              call make_S_2d(lo,hi,srcp(:,:,1,1),gp(:,:,1,1),sp(:,:,1,:), &
+                             up(:,:,1,:), omegap(:,:,1,:), hp(:,:,1,1), &
+                             thermalp(:,:,1,1), ng, p0, t0, gam1, dx)
             case (3)
-              call make_S_3d(lo,hi,srcp(:,:,:,1),gp(:,:,:,1),sp(:,:,:,:),up(:,:,:,:), &
-                             omegap(:,:,:,:), hp(:,:,:,1), &
-                             ng, p0, t0, gam1, dx)
+              call make_S_3d(lo,hi,srcp(:,:,:,1),gp(:,:,:,1),sp(:,:,:,:), &
+                             up(:,:,:,:), omegap(:,:,:,:), hp(:,:,:,1), &
+                             thermalp(:,:,:,1), ng, p0, t0, gam1, dx)
          end select
       end do
 
    end subroutine make_S
 
    subroutine make_S_2d (lo,hi,Source,gamma1_term,s,u, &
-                         rho_omegadot,rho_Hext,ng,p0,t0,gam1,dx)
+                         rho_omegadot,rho_Hext,thermal,ng,p0,t0,gam1,dx)
 
       implicit none
 
@@ -68,10 +72,11 @@ contains
       real (kind=dp_t), intent(in   ) :: s(lo(1)-ng:,lo(2)-ng:,:)
       real (kind=dp_t), intent(in   ) :: u(lo(1)-ng:,lo(2)-ng:,:)
       real (kind=dp_t), intent(in   ) :: rho_omegadot(lo(1):,lo(2):,:)
-      real (kind=dp_t), intent(in   ) ::     rho_Hext(lo(1):,lo(2):)
-      real (kind=dp_t), intent(in   ) ::        p0(0:)
-      real (kind=dp_t), intent(in   ) ::        t0(0:)
-      real (kind=dp_t), intent(in   ) ::      gam1(0:)
+      real (kind=dp_t), intent(in   ) :: rho_Hext(lo(1):,lo(2):)
+      real (kind=dp_t), intent(in   ) :: thermal(lo(1):,lo(2):)
+      real (kind=dp_t), intent(in   ) :: p0(0:)
+      real (kind=dp_t), intent(in   ) :: t0(0:)
+      real (kind=dp_t), intent(in   ) :: gam1(0:)
       real (kind=dp_t), intent(in   ) :: dx(:)
 
 !     Local variables
@@ -121,7 +126,7 @@ contains
            enddo
 
            Source(i,j) = sigma*(rho_Hext(i,j)/den_row(1) + react_term) + &
-                pres_term/(den_row(1)*dpdr_row(1)) 
+                pres_term/(den_row(1)*dpdr_row(1)) + thermal(i,j)
 
 !          if (j .eq. 0) then
 !             gradp0 = (p0(j+1) - p0(j))/dx(2)
@@ -140,7 +145,7 @@ contains
    end subroutine make_S_2d
 
    subroutine make_S_3d (lo,hi,Source,gamma1_term,s,u, &
-                         rho_omegadot,rho_Hext,ng,p0,t0,gam1,dx)
+                         rho_omegadot,rho_Hext,thermal,ng,p0,t0,gam1,dx)
 
       implicit none
 
@@ -150,10 +155,11 @@ contains
       real (kind=dp_t), intent(in   ) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
       real (kind=dp_t), intent(in   ) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
       real (kind=dp_t), intent(in   ) :: rho_omegadot(lo(1):,lo(2):,lo(3):,:)
-      real (kind=dp_t), intent(in   ) ::     rho_Hext(lo(1):,lo(2):,lo(3):)
-      real (kind=dp_t), intent(in   ) ::        p0(0:)
-      real (kind=dp_t), intent(in   ) ::        t0(0:)
-      real (kind=dp_t), intent(in   ) ::      gam1(0:)
+      real (kind=dp_t), intent(in   ) :: rho_Hext(lo(1):,lo(2):,lo(3):)
+      real (kind=dp_t), intent(in   ) :: thermal(lo(1):,lo(2):,lo(3):)
+      real (kind=dp_t), intent(in   ) :: p0(0:)
+      real (kind=dp_t), intent(in   ) :: t0(0:)
+      real (kind=dp_t), intent(in   ) :: gam1(0:)
       real (kind=dp_t), intent(in   ) :: dx(:)
 
 !     Local variables
@@ -221,7 +227,7 @@ contains
               enddo
   
               Source(i,j,k) = sigma*(rho_Hext(i,j,k)/den_row(1) + react_term) + &
-                   pres_term/(den_row(1)*dpdr_row(1))
+                   pres_term/(den_row(1)*dpdr_row(1)) + thermal(i,j,k)
 
 
 !             if (j .eq. 0) then

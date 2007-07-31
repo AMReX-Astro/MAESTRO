@@ -103,6 +103,7 @@ module advance_timestep_module
     type(multifab), allocatable :: macphi(:)
     type(multifab), allocatable ::  hgrhs(:)
     type(multifab), allocatable :: Source_nph(:)
+    type(multifab), allocatable :: thermal(:)
 
     ! Only needed for spherical.eq.1 
     type(multifab) , allocatable :: div_coeff_3d(:)
@@ -144,6 +145,7 @@ module advance_timestep_module
     allocate(macrhs(nlevs))
     allocate(macphi(nlevs))
     allocate( hgrhs(nlevs))
+    allocate(thermal(nlevs))
 
     nscal = multifab_ncomp(sold(1))
     
@@ -180,6 +182,7 @@ module advance_timestep_module
      call multifab_build(    macrhs(n), mla%la(n),     1, 0)
      call multifab_build(    macphi(n), mla%la(n),     1, 1)
      call multifab_build(     hgrhs(n), mla%la(n),     1,       0, nodal)
+     call multifab_build(   thermal(n), mla%la(n),     1,       0)
 
      call setval(macphi(n),ZERO,all=.true.)
 
@@ -369,7 +372,7 @@ module advance_timestep_module
         do n = 1, nlevs
 
            call make_S(Source_new(n),gamma1_term(n),snew(n),uold(n), &
-                       rho_omegadot2(n),rho_Hext(n),p0_new,temp0,gam1,dx(n,:))
+                       rho_omegadot2(n),rho_Hext(n),thermal(n),p0_new,temp0,gam1,dx(n,:))
            call make_S_at_halftime(Source_nph(n),Source_old(n),Source_new(n))
            call average(Source_nph,Sbar,dx,1,1)
 
@@ -527,7 +530,7 @@ module advance_timestep_module
 
         do n = 1, nlevs
            call make_S(Source_new(n),gamma1_term(n),snew(n),uold(n), &
-                       rho_omegadot2(n),rho_Hext(n),p0_new,temp0,gam1,dx(n,:))
+                       rho_omegadot2(n),rho_Hext(n),thermal(n),p0_new,temp0,gam1,dx(n,:))
         end do
         call average(Source_new,Sbar,dx,1,1)
 
@@ -613,6 +616,7 @@ module advance_timestep_module
           call destroy(macrhs(n))
           call destroy(macphi(n))
           call destroy( hgrhs(n))
+          call destroy(thermal(n))
           call destroy(rhohalf(n))
           if (spherical .eq. 1) &
             call destroy(div_coeff_3d(n))
@@ -621,6 +625,7 @@ module advance_timestep_module
         deallocate(macrhs)
         deallocate(macphi)
         deallocate( hgrhs)
+        deallocate(thermal)
         deallocate(rhohalf)
 
         if (spherical .eq. 1) &
