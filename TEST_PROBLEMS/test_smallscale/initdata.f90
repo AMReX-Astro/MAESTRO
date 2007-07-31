@@ -20,7 +20,7 @@ contains
                              prob_lo,prob_hi,bc,nscal,ntrac)
 
     type(multifab) , intent(inout) :: s
-    real(kind=dp_t), intent(in   ) ::    s0(0:,:)
+    real(kind=dp_t), intent(inout) ::    s0(0:,:)
     real(kind=dp_t), intent(in   ) ::    p0(0:)
     real(kind=dp_t), intent(in   ) :: temp0(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
@@ -77,7 +77,7 @@ contains
     logical,            intent(in ) :: perturb_model
     real (kind = dp_t), intent(in ) :: prob_lo(:)
     real (kind = dp_t), intent(in ) :: prob_hi(:)
-    real(kind=dp_t), intent(in   ) ::    s0(0:,:)
+    real(kind=dp_t), intent(inout) ::    s0(0:,:)
     real(kind=dp_t), intent(in   ) ::    p0(0:)
     real(kind=dp_t), intent(in   ) :: temp0(0:)
 
@@ -97,6 +97,11 @@ contains
              s(i,j,n) = s0(j,n)
           enddo
        enddo
+    enddo
+
+    ! set density in base state to the constant, "bottom domain" value
+    do j=lo(2),hi(2)
+       s0(j,rho_comp) = s0(0,rho_comp)
     enddo
     
     ! add an optional perturbation
@@ -131,7 +136,7 @@ contains
     logical,            intent(in ) :: perturb_model
     real (kind = dp_t), intent(in ) :: prob_lo(:)
     real (kind = dp_t), intent(in ) :: prob_hi(:)
-    real(kind=dp_t), intent(in   ) ::    s0(0:,:)
+    real(kind=dp_t), intent(inout) ::    s0(0:,:)
     real(kind=dp_t), intent(in   ) ::    p0(0:)
     real(kind=dp_t), intent(in   ) :: temp0(0:)
 
@@ -160,6 +165,11 @@ contains
                 enddo
              enddo
           enddo
+       enddo
+       
+       ! set density in base state to the constant, "bottom domain" value
+       do k=lo(3),hi(3)
+          s0(k,rho_comp) = s0(k,rho_comp)
        enddo
        
        if (perturb_model) then
