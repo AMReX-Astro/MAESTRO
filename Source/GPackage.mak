@@ -42,3 +42,4 @@ f90sources += build_info.f90
 f90sources += write_job_info.f90
 f90sources += probin.f90
 f90sources += thermal_conduct.f90
+f90sources += make_explicit_thermal.f90
