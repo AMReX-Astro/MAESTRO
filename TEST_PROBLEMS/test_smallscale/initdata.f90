@@ -538,7 +538,7 @@ contains
        s0(i,rho_comp) = den_row(1)
        s0(i,rhoh_comp) = den_row(1)*h_row(1)
        do j=1,nspec
-          s0(i,spec_comp+j-1) = xn_zone(j)
+          s0(i,spec_comp+j-1) = den_row(1)*xn_zone(j)
        enddo
        s0(i,trac_comp) = 0.0d0
        
