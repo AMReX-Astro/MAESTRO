@@ -285,7 +285,7 @@ contains
        call asin1d(lamsolfile, loloc, hiloc, state1d, ndum, .false.)
 
        u(lo(1):hi(1),i,1) = 0.0d0
-       u(lo(1):hi(1),i,2) = state1d(2)-1.0e5
+       u(lo(1):hi(1),i,2) = state1d(2)
 
     enddo
 
@@ -325,7 +325,7 @@ contains
        call asin1d(lamsolfile, loloc, hiloc, state1d, ndum, .false.)
 
        u(lo(1):hi(1),lo(2):hi(2),i,1:2) = 0.0d0
-       u(lo(1):hi(1),lo(2):hi(2),i,3) = state1d(2)-1.0e5
+       u(lo(1):hi(1),lo(2):hi(2),i,3) = state1d(2)
 
     enddo
 
