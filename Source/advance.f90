@@ -30,6 +30,7 @@ module advance_timestep_module
   use phihalf_module
   use extraphalf_module
   use thermal_conduct_module
+  use make_explicit_thermal_module
   use variables
   use network
 
@@ -369,6 +370,15 @@ module advance_timestep_module
           write(6,*) '<<< STEP  6 : make new S and new w0 >>> '
         end if
 
+        do n=1,nlevs
+           call setval(thermal(n),ZERO,all=.true.)
+        enddo
+
+        if(use_thermal_diffusion) then
+           call make_explicit_thermal(mla,dx,dt,thermal,snew,p0_new, &
+                                      mg_verbose,cg_verbose,the_bc_tower)
+        endif
+
         do n = 1, nlevs
 
            call make_S(Source_new(n),gamma1_term(n),snew(n),uold(n), &
@@ -527,6 +537,15 @@ module advance_timestep_module
         if (parallel_IOProcessor() .and. verbose .ge. 1) then
           write(6,*) '<<< STEP 10 : make new S >>>'
         end if
+
+        do n=1,nlevs
+           call setval(thermal(n),ZERO,all=.true.)
+        enddo
+
+        if(use_thermal_diffusion) then
+           call make_explicit_thermal(mla,dx,dt,thermal,snew,p0_new, &
+                                      mg_verbose,cg_verbose,the_bc_tower)
+        endif
 
         do n = 1, nlevs
            call make_S(Source_new(n),gamma1_term(n),snew(n),uold(n), &

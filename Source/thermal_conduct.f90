@@ -32,7 +32,7 @@ subroutine thermal_conduct(mla,dx,dt,sold,s2,p0old,p02, &
 ! Local
   type(multifab), allocatable :: rh(:),phi(:),alpha(:),beta(:),rhsbeta(:)
   type(multifab), allocatable :: const(:)
-  integer                     :: i,n,nlevs,dm,ng,ng_rh,ng_s,stencil_order
+  integer                     :: i,n,nlevs,dm,ng_1,ng_0,ng_3,stencil_order
   integer                     :: lo(sold(1)%dim),hi(sold(1)%dim)
   real(kind=dp_t), pointer    :: soldp(:,:,:,:),s2p(:,:,:,:)
   real(kind=dp_t), pointer    :: rhp(:,:,:,:),phip(:,:,:,:)
@@ -69,9 +69,9 @@ subroutine thermal_conduct(mla,dx,dt,sold,s2,p0old,p02, &
   if (parallel_IOProcessor()) print *,'... Computing betas and phi ...'
 
   do n=1,nlevs
-     ng    = alpha(n)%ng
-     ng_rh = rh(n)%ng
-     ng_s  = sold(n)%ng
+     ng_1    = alpha(n)%ng
+     ng_0 = rh(n)%ng
+     ng_3  = sold(n)%ng
      
      ! Create beta = \frac{\Delta t k_th^(2)}{2 c_p^(2)}
      ! Create rhsbeta = dt*k_th^n/(2*c_p^n)
@@ -88,12 +88,12 @@ subroutine thermal_conduct(mla,dx,dt,sold,s2,p0old,p02, &
         hi =  upb(get_box(sold(n), i))
         select case (dm)
         case (2)
-           call make_betas_and_phi_2d(lo,hi,dt,dx(n,:),ng,ng_rh,ng_s, &
+           call make_betas_and_phi_2d(lo,hi,dt,dx(n,:),ng_1,ng_0,ng_3, &
                                       p0old,p02,soldp(:,:,1,:),s2p(:,:,1,:), &
                                       betap(:,:,1,:),rhsbetap(:,:,1,:), &
                                       phip(:,:,1,1),constp(:,:,1,1))
         case (3)
-           call make_betas_and_phi_3d(lo,hi,dt,dx(n,:),ng,ng_rh,ng_s, &
+           call make_betas_and_phi_3d(lo,hi,dt,dx(n,:),ng_1,ng_0,ng_3, &
                                       p0old,p02,soldp(:,:,:,:),s2p(:,:,:,:), &
                                       betap(:,:,:,:),rhsbetap(:,:,:,:), &
                                       phip(:,:,:,1),constp(:,:,:,1))
@@ -117,9 +117,9 @@ subroutine thermal_conduct(mla,dx,dt,sold,s2,p0old,p02, &
   ! add (\rho h)^(2) to RHS
   ! set alpha to rho^(2)
   do n=1,nlevs
-     ng    = alpha(n)%ng
-     ng_rh = rh(n)%ng
-     ng_s  = sold(n)%ng
+     ng_1    = alpha(n)%ng
+     ng_0 = rh(n)%ng
+     ng_3  = sold(n)%ng
 
      ! Copy rho^(2) directly into alpha
      call multifab_copy_c(alpha(n),1,s2(n),rho_comp,1)
@@ -132,9 +132,9 @@ subroutine thermal_conduct(mla,dx,dt,sold,s2,p0old,p02, &
         hi =  upb(get_box(sold(n), i))
         select case (dm)
         case (2)
-           call add_rhoh_to_rh_2d(lo,hi,ng_rh,ng_s,s2p(:,:,1,:),rhp(:,:,1,1))
+           call add_rhoh_to_rh_2d(lo,hi,ng_0,ng_3,s2p(:,:,1,:),rhp(:,:,1,1))
         case (3)
-           call add_rhoh_to_rh_3d(lo,hi,ng_rh,ng_s,s2p(:,:,:,:),rhp(:,:,:,1))
+           call add_rhoh_to_rh_3d(lo,hi,ng_0,ng_3,s2p(:,:,:,:),rhp(:,:,:,1))
         end select
      end do
   enddo
@@ -148,9 +148,9 @@ subroutine thermal_conduct(mla,dx,dt,sold,s2,p0old,p02, &
 
   ! Make initial guess at phi equal to h^(2)
   do n=1,nlevs
-     ng    = alpha(n)%ng
-     ng_rh = rh(n)%ng
-     ng_s  = sold(n)%ng
+     ng_1    = alpha(n)%ng
+     ng_0 = rh(n)%ng
+     ng_3  = sold(n)%ng
      
      ! Create beta = \frac{\Delta t k_th^(2)}{2 c_p^(2)}
      ! Create rhsbeta = dt*k_th^n/(2*c_p^n)
@@ -163,9 +163,9 @@ subroutine thermal_conduct(mla,dx,dt,sold,s2,p0old,p02, &
         hi =  upb(get_box(sold(n), i))
         select case (dm)
         case (2)
-           call make_initial_phi_2d(lo,hi,ng,ng_s,s2p(:,:,1,:),phip(:,:,1,1))
+           call make_initial_phi_2d(lo,hi,ng_1,ng_3,s2p(:,:,1,:),phip(:,:,1,1))
         case (3)
-           call make_initial_phi_3d(lo,hi,ng,ng_s,s2p(:,:,:,:),phip(:,:,:,1))
+           call make_initial_phi_3d(lo,hi,ng_1,ng_3,s2p(:,:,:,:),phip(:,:,:,1))
         end select
      end do
   enddo
@@ -179,9 +179,9 @@ subroutine thermal_conduct(mla,dx,dt,sold,s2,p0old,p02, &
   ! Compute updated (\rho h) = \rho^(2)h^(2')
   do n=1,nlevs
 
-     ng    = alpha(n)%ng
-     ng_rh = rh(n)%ng
-     ng_s  = sold(n)%ng
+     ng_1    = alpha(n)%ng
+     ng_0 = rh(n)%ng
+     ng_3  = sold(n)%ng
 
      do i=1,sold(n)%nboxes
         if (multifab_remote(sold(n),i)) cycle
@@ -191,9 +191,9 @@ subroutine thermal_conduct(mla,dx,dt,sold,s2,p0old,p02, &
         hi =  upb(get_box(sold(n), i))
         select case (dm)
         case (2)
-           call compute_rhoh_2d(lo,hi,ng,ng_s,phip(:,:,1,1),s2p(:,:,1,:))
+           call compute_rhoh_2d(lo,hi,ng_1,ng_3,phip(:,:,1,1),s2p(:,:,1,:))
         case (3)
-           call compute_rhoh_3d(lo,hi,ng,ng_s,phip(:,:,:,1),s2p(:,:,:,:))
+           call compute_rhoh_3d(lo,hi,ng_1,ng_3,phip(:,:,:,1),s2p(:,:,:,:))
         end select
      end do
   enddo
@@ -214,19 +214,19 @@ end subroutine thermal_conduct
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Compute betas and phi for 2d problems
-subroutine make_betas_and_phi_2d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
+subroutine make_betas_and_phi_2d(lo,hi,dt,dx,ng_1,ng_0,ng_3, &
                                  p0old,p02,sold,s2,beta,rhsbeta,phi,const)
 
   integer        , intent(in   ) :: lo(:),hi(:)
   real(dp_t)    ,  intent(in   ) :: dt,dx(:)
-  integer        , intent(in   ) :: ng,ng_rh,ng_s
+  integer        , intent(in   ) :: ng_1,ng_0,ng_3
   real(kind=dp_t), intent(in   ) :: p0old(0:),p02(0:)
-  real(kind=dp_t), intent(in   ) :: sold(lo(1)-ng_s:,lo(2)-ng_s:,:)
-  real(kind=dp_t), intent(in   ) :: s2(lo(1)-ng_s:,lo(2)-ng_s:,:)
-  real(kind=dp_t), intent(  out) :: beta(lo(1)-ng:,lo(2)-ng:,:)
-  real(kind=dp_t), intent(  out) :: rhsbeta(lo(1)-ng:,lo(2)-ng:,:)
-  real(kind=dp_t), intent(  out) :: phi(lo(1)-ng:,lo(2)-ng:)
-  real(kind=dp_t), intent(inout) :: const(lo(1)-ng:,lo(2)-ng:)
+  real(kind=dp_t), intent(in   ) :: sold(lo(1)-ng_3:,lo(2)-ng_3:,:)
+  real(kind=dp_t), intent(in   ) :: s2(lo(1)-ng_3:,lo(2)-ng_3:,:)
+  real(kind=dp_t), intent(  out) :: beta(lo(1)-ng_1:,lo(2)-ng_1:,:)
+  real(kind=dp_t), intent(  out) :: rhsbeta(lo(1)-ng_1:,lo(2)-ng_1:,:)
+  real(kind=dp_t), intent(  out) :: phi(lo(1)-ng_1:,lo(2)-ng_1:)
+  real(kind=dp_t), intent(inout) :: const(lo(1)-ng_1:,lo(2)-ng_1:)
 
 ! Local
   integer :: i,j
@@ -236,8 +236,8 @@ subroutine make_betas_and_phi_2d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
   input_flag = 4
   do_diag = .false.
 
-  nx = size(beta,dim=1) - 2*ng
-  ny = size(beta,dim=2) - 2*ng
+  nx = size(beta,dim=1) - 2*ng_1
+  ny = size(beta,dim=2) - 2*ng_1
 
   ! Compute c_p^(2), k_th^2, and beta
   do j=lo(2),hi(2)
@@ -322,19 +322,19 @@ end subroutine make_betas_and_phi_2d
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Compute betas and phi for 3d problems
-subroutine make_betas_and_phi_3d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
+subroutine make_betas_and_phi_3d(lo,hi,dt,dx,ng_1,ng_0,ng_3, &
                                  p0old,p02,sold,s2,beta,rhsbeta,phi,const)
 
   integer        , intent(in   ) :: lo(:),hi(:)
   real(dp_t)    ,  intent(in   ) :: dt,dx(:)
-  integer        , intent(in   ) :: ng,ng_rh,ng_s
+  integer        , intent(in   ) :: ng_1,ng_0,ng_3
   real(kind=dp_t), intent(in   ) :: p0old(0:),p02(0:)
-  real(kind=dp_t), intent(in   ) :: sold(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
-  real(kind=dp_t), intent(in   ) :: s2(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
-  real(kind=dp_t), intent(  out) :: beta(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-  real(kind=dp_t), intent(  out) :: rhsbeta(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-  real(kind=dp_t), intent(  out) :: phi(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
-  real(kind=dp_t), intent(inout) :: const(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
+  real(kind=dp_t), intent(in   ) :: sold(lo(1)-ng_3:,lo(2)-ng_3:,lo(3)-ng_3:,:)
+  real(kind=dp_t), intent(in   ) :: s2(lo(1)-ng_3:,lo(2)-ng_3:,lo(3)-ng_3:,:)
+  real(kind=dp_t), intent(  out) :: beta(lo(1)-ng_1:,lo(2)-ng_1:,lo(3)-ng_1:,:)
+  real(kind=dp_t), intent(  out) :: rhsbeta(lo(1)-ng_1:,lo(2)-ng_1:,lo(3)-ng_1:,:)
+  real(kind=dp_t), intent(  out) :: phi(lo(1)-ng_1:,lo(2)-ng_1:,lo(3)-ng_1:)
+  real(kind=dp_t), intent(inout) :: const(lo(1)-ng_1:,lo(2)-ng_1:,lo(3)-ng_1:)
 
 ! Local
   integer :: i,j,k
@@ -350,9 +350,9 @@ subroutine make_betas_and_phi_3d(lo,hi,dt,dx,ng,ng_rh,ng_s, &
   input_flag = 4
   do_diag = .false.
 
-      nx = size(beta,dim=1) - 2*ng
-      ny = size(beta,dim=2) - 2*ng
-      nz = size(beta,dim=3) - 2*ng
+      nx = size(beta,dim=1) - 2*ng_1
+      ny = size(beta,dim=2) - 2*ng_1
+      nz = size(beta,dim=3) - 2*ng_1
 
   ! Compute c_p^(2), k_th^2, and beta
   do k=lo(3),hi(3)
@@ -481,12 +481,12 @@ end subroutine make_betas_and_phi_3d
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Compute betas and phi for 2d problems
-subroutine make_initial_phi_2d(lo,hi,ng,ng_s,s2,phi)
+subroutine make_initial_phi_2d(lo,hi,ng_1,ng_3,s2,phi)
 
   integer        , intent(in   ) :: lo(:),hi(:)
-  integer        , intent(in   ) :: ng,ng_s
-  real(kind=dp_t), intent(in   ) :: s2(lo(1)-ng_s:,lo(2)-ng_s:,:)
-  real(kind=dp_t), intent(  out) :: phi(lo(1)-ng:,lo(2)-ng:)
+  integer        , intent(in   ) :: ng_1,ng_3
+  real(kind=dp_t), intent(in   ) :: s2(lo(1)-ng_3:,lo(2)-ng_3:,:)
+  real(kind=dp_t), intent(  out) :: phi(lo(1)-ng_1:,lo(2)-ng_1:)
 
 ! Local
   integer :: i,j
@@ -502,12 +502,12 @@ end subroutine make_initial_phi_2d
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Compute betas and phi for 3d problems
-subroutine make_initial_phi_3d(lo,hi,ng,ng_s,s2,phi)
+subroutine make_initial_phi_3d(lo,hi,ng_1,ng_3,s2,phi)
 
   integer        , intent(in   ) :: lo(:),hi(:)
-  integer        , intent(in   ) :: ng,ng_s
-  real(kind=dp_t), intent(in   ) :: s2(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
-  real(kind=dp_t), intent(  out) :: phi(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
+  integer        , intent(in   ) :: ng_1,ng_3
+  real(kind=dp_t), intent(in   ) :: s2(lo(1)-ng_3:,lo(2)-ng_3:,lo(3)-ng_3:,:)
+  real(kind=dp_t), intent(  out) :: phi(lo(1)-ng_1:,lo(2)-ng_1:,lo(3)-ng_1:)
 
 ! Local
   integer :: i,j,k
@@ -525,11 +525,11 @@ end subroutine make_initial_phi_3d
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Add rho h to RHS for 2d problems
-subroutine add_rhoh_to_rh_2d(lo,hi,ng_rh,ng_s,s2,rh)
+subroutine add_rhoh_to_rh_2d(lo,hi,ng_0,ng_3,s2,rh)
 
-  integer        , intent(in   ) :: lo(:),hi(:),ng_rh,ng_s
-  real(kind=dp_t), intent(inout) :: s2(lo(1)-ng_s:,lo(2)-ng_s:,:)
-  real(kind=dp_t), intent(inout) :: rh(lo(1)-ng_rh:,lo(2)-ng_rh:)
+  integer        , intent(in   ) :: lo(:),hi(:),ng_0,ng_3
+  real(kind=dp_t), intent(inout) :: s2(lo(1)-ng_3:,lo(2)-ng_3:,:)
+  real(kind=dp_t), intent(inout) :: rh(lo(1)-ng_0:,lo(2)-ng_0:)
 
 ! Local
   integer :: i,j
@@ -545,11 +545,11 @@ end subroutine add_rhoh_to_rh_2d
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Add rho h to RHS for 3d problems
-subroutine add_rhoh_to_rh_3d(lo,hi,ng_rh,ng_s,s2,rh)
+subroutine add_rhoh_to_rh_3d(lo,hi,ng_0,ng_3,s2,rh)
 
-  integer        , intent(in   ) :: lo(:),hi(:),ng_rh,ng_s
-  real(kind=dp_t), intent(inout) :: s2(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
-  real(kind=dp_t), intent(inout) :: rh(lo(1)-ng_rh:,lo(2)-ng_rh:,lo(3)-ng_rh:)
+  integer        , intent(in   ) :: lo(:),hi(:),ng_0,ng_3
+  real(kind=dp_t), intent(inout) :: s2(lo(1)-ng_3:,lo(2)-ng_3:,lo(3)-ng_3:,:)
+  real(kind=dp_t), intent(inout) :: rh(lo(1)-ng_0:,lo(2)-ng_0:,lo(3)-ng_0:)
 
 ! Local
   integer :: i,j,k
@@ -567,11 +567,11 @@ end subroutine add_rhoh_to_rh_3d
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Compute \rho h for 2d problems
-subroutine compute_rhoh_2d(lo,hi,ng,ng_s,phi,s2)
+subroutine compute_rhoh_2d(lo,hi,ng_1,ng_3,phi,s2)
 
-  integer        , intent(in   ) :: lo(:),hi(:),ng,ng_s
-  real(kind=dp_t), intent(in   ) :: phi(lo(1)-ng:,lo(2)-ng:)
-  real(kind=dp_t), intent(inout) :: s2(lo(1)-ng_s:,lo(2)-ng_s:,:)
+  integer        , intent(in   ) :: lo(:),hi(:),ng_1,ng_3
+  real(kind=dp_t), intent(in   ) :: phi(lo(1)-ng_1:,lo(2)-ng_1:)
+  real(kind=dp_t), intent(inout) :: s2(lo(1)-ng_3:,lo(2)-ng_3:,:)
 
 ! Local
   integer :: i,j
@@ -587,11 +587,11 @@ end subroutine compute_rhoh_2d
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Compute \rho h for 3d problems
-subroutine compute_rhoh_3d(lo,hi,ng,ng_s,phi,s2)
+subroutine compute_rhoh_3d(lo,hi,ng_1,ng_3,phi,s2)
 
-  integer        , intent(in   ) :: lo(:),hi(:),ng,ng_s
-  real(kind=dp_t), intent(in   ) :: phi(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
-  real(kind=dp_t), intent(inout) :: s2(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
+  integer        , intent(in   ) :: lo(:),hi(:),ng_1,ng_3
+  real(kind=dp_t), intent(in   ) :: phi(lo(1)-ng_1:,lo(2)-ng_1:,lo(3)-ng_1:)
+  real(kind=dp_t), intent(inout) :: s2(lo(1)-ng_3:,lo(2)-ng_3:,lo(3)-ng_3:,:)
 
 ! Local
   integer :: i,j,k
