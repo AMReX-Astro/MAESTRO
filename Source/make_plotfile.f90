@@ -52,6 +52,7 @@ contains
     plot_names(icomp_magvel)   = "magvel"
     plot_names(icomp_mom)      = "momentum"
     plot_names(icomp_vort)     = "vort"
+    plot_names(icomp_divu)     = "divu"
     plot_names(icomp_enthalpy) = "enthalpy"
     plot_names(icomp_rhopert)  = "rhopert"
     plot_names(icomp_tfromrho) = "tfromrho"
@@ -76,7 +77,7 @@ contains
 
   end subroutine get_plot_names
 
-  subroutine make_plotfile(istep,plotdata,u,s,gp,rho_omegadot,sponge, &
+  subroutine make_plotfile(istep,plotdata,u,s,gp,rho_omegadot,Source,sponge, &
                            mba,plot_names,time,dx, &
                            the_bc_tower, &
                            s0,p0,temp0,ntrac,plot_spec,plot_trac)
@@ -88,6 +89,7 @@ contains
     type(multifab)   , intent(in   ) :: s(:)
     type(multifab)   , intent(in   ) :: gp(:)
     type(multifab)   , intent(in   ) :: rho_omegadot(:)
+    type(multifab)   , intent(in   ) :: Source(:)
     type(multifab)   , intent(in   ) :: sponge(:)
     type(ml_boxarray), intent(in   ) :: mba
     character(len=20), intent(in   ) :: plot_names(:)
@@ -126,6 +128,9 @@ contains
        ! VORTICITY
        call make_vorticity (plotdata(n),icomp_vort,u(n),dx(n,:), &
                             the_bc_tower%bc_tower_array(n))
+
+       ! DIVU
+       call multifab_copy_c(plotdata(n),icomp_divu,Source(n),1,1)
 
        ! ENTHALPY 
        call make_enthalpy  (plotdata(n),icomp_enthalpy,s(n))

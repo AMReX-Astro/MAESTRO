@@ -7,7 +7,8 @@ module variables
 
   integer, save :: rho_comp, rhoh_comp, spec_comp, trac_comp, press_comp, first_derive_comp
   integer, save :: icomp_vel, icomp_rho, icomp_rhoh, icomp_spec, icomp_trac
-  integer, save :: icomp_magvel, icomp_mom, icomp_vort,icomp_enthalpy,icomp_tfromrho,icomp_tpert,icomp_rhopert
+  integer, save :: icomp_magvel, icomp_mom, icomp_vort, icomp_divu
+  integer, save :: icomp_enthalpy,icomp_tfromrho,icomp_tpert,icomp_rhopert
   integer, save :: icomp_machno,icomp_dg,icomp_spert,icomp_gp
   integer, save :: icomp_tfromH,icomp_dp,icomp_dT
   integer, save :: icomp_omegadot,icomp_enuc,icomp_sponge
@@ -49,18 +50,19 @@ contains
     icomp_magvel   = first_derive_comp
     icomp_mom      = first_derive_comp+1
     icomp_vort     = first_derive_comp+2
-    icomp_enthalpy = first_derive_comp+3
-    icomp_rhopert  = first_derive_comp+4
-    icomp_tfromrho = first_derive_comp+5
-    icomp_tfromH   = first_derive_comp+6
-    icomp_tpert    = first_derive_comp+7
-    icomp_machno   = first_derive_comp+8
-    icomp_dp       = first_derive_comp+9
-    icomp_dg       = first_derive_comp+10
-    icomp_spert    = first_derive_comp+11
-    icomp_dT       = first_derive_comp+12
-    icomp_sponge   = first_derive_comp+13
-    icomp_gp       = first_derive_comp+14
+    icomp_divu     = first_derive_comp+3
+    icomp_enthalpy = first_derive_comp+4
+    icomp_rhopert  = first_derive_comp+5
+    icomp_tfromrho = first_derive_comp+6
+    icomp_tfromH   = first_derive_comp+7
+    icomp_tpert    = first_derive_comp+8
+    icomp_machno   = first_derive_comp+9
+    icomp_dp       = first_derive_comp+10
+    icomp_dg       = first_derive_comp+11
+    icomp_spert    = first_derive_comp+12
+    icomp_dT       = first_derive_comp+13
+    icomp_sponge   = first_derive_comp+14
+    icomp_gp       = first_derive_comp+15
 
     if (plot_spec) then
       icomp_omegadot = icomp_gp + dm
