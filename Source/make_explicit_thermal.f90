@@ -173,10 +173,6 @@ subroutine make_thermal_coeffs_2d(lo,hi,dt,dx,ng_0,ng_1,ng_3, &
         temp(i,j) = -conduct_row(1)/cp_row(1)
         scalefactor(i,j) = dpdt_row(1)/(den_row(1)**2*cp_row(1)*dpdr_row(1))
 
-        if(i .eq. 6 .and. j .eq. 96) then
-           print*, "i,j =",i,j,"temp =",temp(i,j),"scalefactor =",scalefactor(i,j)
-        endif
-
      enddo
   enddo
 
