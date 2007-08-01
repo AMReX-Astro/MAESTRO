@@ -85,7 +85,6 @@ subroutine make_explicit_thermal(mla,dx,dt,thermal,s,p0, &
      end do
   enddo
 
-
   ! applyop
   call mac_applyop(mla,thermal,h,alpha,beta,dx,the_bc_tower,dm+rhoh_comp, &
                    stencil_order,mla%mba%rr,mg_verbose,cg_verbose)
@@ -156,14 +155,15 @@ subroutine make_thermal_coeffs_2d(lo,hi,dt,dx,ng_0,ng_1,ng_3, &
      do i=lo(1)-1,hi(1)+1
 
         den_row(1) = s(i,j,rho_comp)
-        if(j .eq. -1) then
-           p_row(1) = p0(0)
+        xn_zone(:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
+
+        if(j .eq. lo(2)-1) then
+           p_row(1) = p0(lo(2))
         else if(j .eq. hi(2)+1) then
            p_row(1) = p0(hi(2))
         else
            p_row(1) = p0(j)
         endif
-        xn_zone(:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
 
         call conducteos(input_flag, den_row, temp_row, &
                         npts, nspec, &
@@ -245,8 +245,18 @@ subroutine make_thermal_coeffs_3d(lo,hi,dt,dx,ng_0,ng_1,ng_3, &
            xn_zone(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
 
            if(spherical .eq. 0) then
-              p_row(1) = p0(k)
+              if(k .eq. lo(3)-1) then
+                 p_row(1) = p0(lo(3))
+              else if(k .eq. hi(3)+1) then
+                 p_row(1) = p0(hi(3))
+              else
+                 p_row(1) = p0(k)
+              endif
            else
+              ! This still needs to be rewritten to handle out-of-domain cases!
+              print*, "Computation of beta for spherical case not written!"
+              stop
+              
               p_row(1) = p0_cart(i,j,k)
            endif
         
