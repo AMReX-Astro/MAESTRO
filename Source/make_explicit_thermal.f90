@@ -159,19 +159,23 @@ subroutine make_thermal_coeffs_2d(lo,hi,dt,dx,ng_0,ng_1,ng_3, &
         p_row(1) = p0(j)
         xn_zone(:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
 
-        call eos(input_flag, den_row, temp_row, &
-                 npts, nspec, &
-                 xn_zone, aion, zion, &
-                 p_row, h_row, e_row, & 
-                 cv_row, cp_row, xne_row, eta_row, pele_row, &
-                 dpdt_row, dpdr_row, dedt_row, dedr_row, &
-                 dpdX_row, dhdX_row, &
-                 gam1_row, cs_row, s_row, &
-                 dsdt_row, dsdr_row, &
-                 do_diag)
+        call conducteos(input_flag, den_row, temp_row, &
+                        npts, nspec, &
+                        xn_zone, aion, zion, &
+                        p_row, h_row, e_row, & 
+                        cv_row, cp_row, xne_row, eta_row, pele_row, &
+                        dpdt_row, dpdr_row, dedt_row, dedr_row, &
+                        dpdX_row, dhdX_row, &
+                        gam1_row, cs_row, s_row, &
+                        dsdt_row, dsdr_row, &
+                        do_diag, conduct_row)
 
-        temp(i,j) = -ONE/cp_row(1)
+        temp(i,j) = -conduct_row(1)/cp_row(1)
         scalefactor(i,j) = dpdt_row(1)/(den_row(1)**2*cp_row(1)*dpdr_row(1))
+
+        if(i .eq. 6 .and. j .eq. 96) then
+           print*, "i,j =",i,j,"temp =",temp(i,j),"scalefactor =",scalefactor(i,j)
+        endif
 
      enddo
   enddo
