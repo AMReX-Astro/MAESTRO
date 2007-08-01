@@ -38,8 +38,10 @@ f90sources += update_vel.f90
 f90sources += update_scal.f90
 f90sources += fillpatch.f90
 f90sources += put_in_pert_form.f90
-f90sources += build_info.f90
 f90sources += write_job_info.f90
 f90sources += probin.f90
 f90sources += thermal_conduct.f90
 f90sources += make_explicit_thermal.f90
+sf90sources += build_info.f90
+
+
