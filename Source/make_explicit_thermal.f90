@@ -97,9 +97,15 @@ subroutine make_explicit_thermal(mla,dx,dt,thermal,s,p0, &
      end do
   enddo
 
+  call fabio_ml_multifab_write_d(alpha,mla%mba%rr(:,1),"a_alpha")
+  call fabio_ml_multifab_write_d(beta,mla%mba%rr(:,1),"a_beta")
+  call fabio_ml_multifab_write_d(phi,mla%mba%rr(:,1),"a_h")
+
   ! applyop
   call mac_applyop(mla,temp,phi,alpha,beta,dx,the_bc_tower,dm+rhoh_comp, &
                    stencil_order,mla%mba%rr,mg_verbose,cg_verbose)
+
+  call fabio_ml_multifab_write_d(temp,mla%mba%rr(:,1),"a_resid")
 
   ! scale residual by sigma/rho
   do n=1,nlevs
@@ -122,6 +128,9 @@ subroutine make_explicit_thermal(mla,dx,dt,thermal,s,p0, &
      end do
   enddo
 
+  call fabio_ml_multifab_write_d(temp,mla%mba%rr(:,1),"a_scaled_resid")
+  call fabio_ml_multifab_write_d(thermal,mla%mba%rr(:,1),"a_thermal0")
+
   ! add resid to final answer
   do n=1,nlevs
      ng_0 = temp(n)%ng
@@ -142,6 +151,9 @@ subroutine make_explicit_thermal(mla,dx,dt,thermal,s,p0, &
         end select
      end do
   enddo
+
+  call fabio_ml_multifab_write_d(thermal,mla%mba%rr(:,1),"a_thermal1")
+  stop
 
   ! now for the species terms
   do k=1,nspec
@@ -643,7 +655,7 @@ subroutine add_resid_to_thermal_2d(lo,hi,ng,resid,thermal)
 
   integer        , intent(in   ) :: lo(:),hi(:),ng
   real(kind=dp_t), intent(in   ) :: resid(lo(1)-ng:,lo(2)-ng:)
-  real(kind=dp_t), intent(  out) :: thermal((1)-ng:,lo(2)-ng:)
+  real(kind=dp_t), intent(  out) :: thermal(lo(1)-ng:,lo(2)-ng:)
 
 ! Local
   integer :: i,j
