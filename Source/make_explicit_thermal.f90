@@ -150,7 +150,7 @@ subroutine make_thermal_coeffs_2d(lo,hi,dt,dx,ng_0,ng_1,ng_3, &
   nx = size(beta,dim=1) - 2*ng_1
   ny = size(beta,dim=2) - 2*ng_1
 
-  ! Compute c_p^(2), k_th^2, and beta
+  ! Compute c_p^(2), k_th^2, betacc, and h
   do j=lo(2)-1,hi(2)+1
      do i=lo(1)-1,hi(1)+1
 
@@ -179,9 +179,12 @@ subroutine make_thermal_coeffs_2d(lo,hi,dt,dx,ng_0,ng_1,ng_3, &
         ccbeta(i,j) = -conduct_row(1)/cp_row(1)
         scalefactor(i,j) = dpdt_row(1)/(den_row(1)**2*cp_row(1)*dpdr_row(1))
 
+        h(i,j) = s(i,j,rhoh_comp)/s(i,j,rho_comp)
+
      enddo
   enddo
 
+  ! set beta
   do j = 0,ny-1
      do i = 0,nx
         beta(i,j,1) = (ccbeta(i,j) + ccbeta(i-1,j)) / TWO
@@ -193,13 +196,6 @@ subroutine make_thermal_coeffs_2d(lo,hi,dt,dx,ng_0,ng_1,ng_3, &
         beta(i,j,2) = (ccbeta(i,j) + ccbeta(i,j-1)) / TWO
      end do
   end do
-
-  ! set phi = h^n for applyop on RHS
-  do j=lo(2),hi(2)
-     do i=lo(1),hi(1)
-        h(i,j) = s(i,j,rhoh_comp)/s(i,j,rho_comp)
-     enddo
-  enddo
 
 end subroutine make_thermal_coeffs_2d
 
@@ -236,7 +232,7 @@ subroutine make_thermal_coeffs_3d(lo,hi,dt,dx,ng_0,ng_1,ng_3, &
      call fill_3d_data(p0_cart,p0,lo,hi,dx,0)
   end if
 
-  ! Compute c_p^(2), k_th^2, and beta
+  ! Compute c_p^(2), k_th^2, betacc, and h
   do k=lo(3)-1,hi(3)+1
      do j=lo(2)-1,hi(2)+1
         do i=lo(1)-1,hi(1)+1
@@ -274,10 +270,13 @@ subroutine make_thermal_coeffs_3d(lo,hi,dt,dx,ng_0,ng_1,ng_3, &
            ccbeta(i,j,k) = -ONE/cp_row(1)
            scalefactor(i,j,k) = dpdt_row(1)/(den_row(1)**2*cp_row(1)*dpdr_row(1))
            
+           h(i,j,k) = s(i,j,k,rhoh_comp)/s(i,j,k,rho_comp)
+
         enddo
      enddo
   enddo
   
+  ! set beta
   do k = 0,nz-1
      do j = 0,ny-1
         do i = 0,nx
@@ -301,15 +300,6 @@ subroutine make_thermal_coeffs_3d(lo,hi,dt,dx,ng_0,ng_1,ng_3, &
         end do
      end do
   end do
-
-  ! set phi = h^n for applyop on RHS
-  do k=lo(3),hi(3)
-     do j=lo(2),hi(2)
-        do i=lo(1),hi(1)
-           h(i,j,k) = s(i,j,k,rhoh_comp)/s(i,j,k,rho_comp)
-        enddo
-     enddo
-  enddo
 
 end subroutine make_thermal_coeffs_3d
 
