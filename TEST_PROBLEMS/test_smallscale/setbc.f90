@@ -110,9 +110,9 @@ contains
          if (icomp.eq.2) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_VN
          if (icomp.eq.3) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_RHO
          if (icomp.eq.4) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_RHOH
-         if (icomp.eq.5) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_C12
-         if (icomp.eq.6) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_O16
-         if (icomp.eq.7) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_MG24
+         if (icomp.eq.5) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_RHOC12
+         if (icomp.eq.6) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_RHOO16
+         if (icomp.eq.7) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_RHOMG24
          if (icomp.eq.8) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_TRA
       else if (bc(2,1) .eq. FOEXTRAP) then
          print *,''
@@ -379,9 +379,9 @@ contains
          if (icomp.eq.3) s(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-ng:lo(3)-1) = INLET_VN
          if (icomp.eq.4) s(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-ng:lo(3)-1) = INLET_RHO
          if (icomp.eq.5) s(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-ng:lo(3)-1) = INLET_RHOH
-         if (icomp.eq.6) s(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-ng:lo(3)-1) = INLET_C12
-         if (icomp.eq.7) s(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-ng:lo(3)-1) = INLET_O16
-         if (icomp.eq.8) s(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-ng:lo(3)-1) = INLET_MG24
+         if (icomp.eq.6) s(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-ng:lo(3)-1) = INLET_RHOC12
+         if (icomp.eq.7) s(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-ng:lo(3)-1) = INLET_RHOO16
+         if (icomp.eq.8) s(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-ng:lo(3)-1) = INLET_RHOMG24
          if (icomp.eq.9) s(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-ng:lo(3)-1) = INLET_TRA
       else if (bc(3,1) .eq. FOEXTRAP .or. bc(3,1) .eq. REFLECT_EVEN) then
          print *,''
