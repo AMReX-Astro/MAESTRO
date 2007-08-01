@@ -28,33 +28,32 @@ subroutine make_explicit_thermal(mla,dx,dt,thermal,s,p0, &
   type(bc_tower) , intent(in   ) :: the_bc_tower
 
   ! Local
-  type(multifab), allocatable :: h(:),alpha(:),beta(:),scalefactor(:),temp(:)
-  integer                     :: i,n,nlevs,dm,stencil_order
-  integer                     :: ng_0,ng_1,ng_3
-
-  real(kind=dp_t), pointer    :: thermalp(:,:,:,:),sp(:,:,:,:)
-  real(kind=dp_t), pointer    :: hp(:,:,:,:),tempp(:,:,:,:)
-  real(kind=dp_t), pointer    :: betap(:,:,:,:),scalefactorp(:,:,:,:)
+  type(multifab), allocatable :: h(:),alpha(:),beta(:)
+  type(multifab), allocatable :: scalefactor(:),ccbeta(:)
+  integer                     :: i,n,nlevs,dm,stencil_order,ng_0,ng_1,ng_3
   integer                     :: lo(s(1)%dim),hi(s(1)%dim)
+  real(kind=dp_t), pointer    :: thermalp(:,:,:,:),sp(:,:,:,:)
+  real(kind=dp_t), pointer    :: hp(:,:,:,:),ccbetap(:,:,:,:)
+  real(kind=dp_t), pointer    :: betap(:,:,:,:),scalefactorp(:,:,:,:)
 
   nlevs = mla%nlevel
   dm      = mla%dim
   stencil_order = 2
 
-  allocate(h(nlevs),alpha(nlevs),beta(nlevs),scalefactor(nlevs),temp(nlevs))
+  allocate(h(nlevs),alpha(nlevs),beta(nlevs),scalefactor(nlevs),ccbeta(nlevs))
 
   do n = 1,nlevs
-     call multifab_build(      h(n), mla%la(n), 1, 1)
-     call multifab_build(  alpha(n), mla%la(n), 1, 1)
-     call multifab_build(   beta(n), mla%la(n),dm, 1)
-     call multifab_build(scalefactor(n), mla%la(n), 1, 0)  
-     call multifab_build(  temp(n), mla%la(n), 1, 1)
+     call multifab_build(          h(n), mla%la(n), 1, 1)
+     call multifab_build(      alpha(n), mla%la(n), 1, 0)
+     call multifab_build(       beta(n), mla%la(n),dm, 1)
+     call multifab_build(     ccbeta(n), mla%la(n), 1, 1)
+     call multifab_build(scalefactor(n), mla%la(n), 1, 1)  
 
-     call setval(h(n),ZERO,all=.true.)
-     call setval(alpha(n),ZERO,all=.true.)
-     call setval(beta(n),ZERO,all=.true.)
-     call setval(scalefactor(n),ZERO,all=.true.)
-     call setval(temp(n),ZERO,all=.true.)
+     call setval(          h(n), ZERO, all=.true.)
+     call setval(      alpha(n), ZERO, all=.true.)
+     call setval(       beta(n), ZERO, all=.true.)
+     call setval(scalefactor(n), ZERO, all=.true.)
+     call setval(     ccbeta(n), ZERO, all=.true.)
   end do
 
   do n=1,nlevs
@@ -68,7 +67,7 @@ subroutine make_explicit_thermal(mla,dx,dt,thermal,s,p0, &
         betap => dataptr(beta(n),i)
         hp => dataptr(h(n),i)
         scalefactorp => dataptr(scalefactor(n),i)
-        tempp => dataptr(temp(n),i)
+        ccbetap => dataptr(ccbeta(n),i)
         lo =  lwb(get_box(s(n), i))
         hi =  upb(get_box(s(n), i))
         select case (dm)
@@ -76,12 +75,12 @@ subroutine make_explicit_thermal(mla,dx,dt,thermal,s,p0, &
            call make_thermal_coeffs_2d(lo,hi,dt,dx(n,:),ng_0,ng_1,ng_3, &
                                        p0,sp(:,:,1,:),betap(:,:,1,:), &
                                        hp(:,:,1,1),scalefactorp(:,:,1,1), &
-                                       tempp(:,:,1,1))
+                                       ccbetap(:,:,1,1))
         case (3)
            call make_thermal_coeffs_3d(lo,hi,dt,dx(n,:),ng_0,ng_1,ng_3, &
                                        p0,sp(:,:,:,:),betap(:,:,:,:), &
                                        hp(:,:,:,1),scalefactorp(:,:,:,1), &
-                                       tempp(:,:,:,1))
+                                       ccbetap(:,:,:,1))
         end select
      end do
   enddo
@@ -117,11 +116,12 @@ subroutine make_explicit_thermal(mla,dx,dt,thermal,s,p0, &
      call destroy(h(n))
      call destroy(alpha(n))
      call destroy(beta(n))
+     call destroy(ccbeta(n))
      call destroy(scalefactor(n))
-     call destroy(temp(n))
+
   enddo
 
-  deallocate(h,alpha,beta,scalefactor,temp)
+  deallocate(h,alpha,beta,ccbeta,scalefactor)
 
 end subroutine make_explicit_thermal
 
@@ -129,7 +129,7 @@ end subroutine make_explicit_thermal
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! 
 subroutine make_thermal_coeffs_2d(lo,hi,dt,dx,ng_0,ng_1,ng_3, &
-                                  p0,s,beta,h,scalefactor,temp)
+                                  p0,s,beta,h,scalefactor,ccbeta)
 
   integer        , intent(in   ) :: lo(:),hi(:)
   real(dp_t)    ,  intent(in   ) :: dt,dx(:)
@@ -138,8 +138,8 @@ subroutine make_thermal_coeffs_2d(lo,hi,dt,dx,ng_0,ng_1,ng_3, &
   real(kind=dp_t), intent(in   ) :: s(lo(1)-ng_3:,lo(2)-ng_3:,:)
   real(kind=dp_t), intent(inout) :: beta(lo(1)-ng_1:,lo(2)-ng_1:,:)
   real(kind=dp_t), intent(inout) :: h(lo(1)-ng_1:,lo(2)-ng_1:)
-  real(kind=dp_t), intent(inout) :: scalefactor(lo(1)-ng_0:,lo(2)-ng_0:)
-  real(kind=dp_t), intent(inout) :: temp(lo(1)-ng_1:,lo(2)-ng_1:)
+  real(kind=dp_t), intent(inout) :: scalefactor(lo(1)-ng_1:,lo(2)-ng_1:)
+  real(kind=dp_t), intent(inout) :: ccbeta(lo(1)-ng_1:,lo(2)-ng_1:)
 
   integer :: i,j
   integer :: nx,ny
@@ -152,11 +152,17 @@ subroutine make_thermal_coeffs_2d(lo,hi,dt,dx,ng_0,ng_1,ng_3, &
   ny = size(beta,dim=2) - 2*ng_1
 
   ! Compute c_p^(2), k_th^2, and beta
-  do j=lo(2),hi(2)
-     do i=lo(1),hi(1)
+  do j=lo(2)-1,hi(2)+1
+     do i=lo(1)-1,hi(1)+1
 
         den_row(1) = s(i,j,rho_comp)
-        p_row(1) = p0(j)
+        if(j .eq. -1) then
+           p_row(1) = p0(0)
+        else if(j .eq. hi(2)+1) then
+           p_row(1) = p0(hi(2))
+        else
+           p_row(1) = p0(j)
+        endif
         xn_zone(:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
 
         call conducteos(input_flag, den_row, temp_row, &
@@ -170,7 +176,7 @@ subroutine make_thermal_coeffs_2d(lo,hi,dt,dx,ng_0,ng_1,ng_3, &
                         dsdt_row, dsdr_row, &
                         do_diag, conduct_row)
 
-        temp(i,j) = -conduct_row(1)/cp_row(1)
+        ccbeta(i,j) = -conduct_row(1)/cp_row(1)
         scalefactor(i,j) = dpdt_row(1)/(den_row(1)**2*cp_row(1)*dpdr_row(1))
 
      enddo
@@ -178,13 +184,13 @@ subroutine make_thermal_coeffs_2d(lo,hi,dt,dx,ng_0,ng_1,ng_3, &
 
   do j = 0,ny-1
      do i = 0,nx
-        beta(i,j,1) = (temp(i,j) + temp(i-1,j)) / TWO
+        beta(i,j,1) = (ccbeta(i,j) + ccbeta(i-1,j)) / TWO
      end do
   end do
   
   do j = 0,ny
      do i = 0,nx-1
-        beta(i,j,2) = (temp(i,j) + temp(i,j-1)) / TWO
+        beta(i,j,2) = (ccbeta(i,j) + ccbeta(i,j-1)) / TWO
      end do
   end do
 
@@ -201,7 +207,7 @@ end subroutine make_thermal_coeffs_2d
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! 
 subroutine make_thermal_coeffs_3d(lo,hi,dt,dx,ng_0,ng_1,ng_3, &
-                                  p0,s,beta,h,scalefactor,temp)
+                                  p0,s,beta,h,scalefactor,ccbeta)
 
   integer        , intent(in   ) :: lo(:),hi(:)
   real(dp_t)    ,  intent(in   ) :: dt,dx(:)
@@ -210,8 +216,8 @@ subroutine make_thermal_coeffs_3d(lo,hi,dt,dx,ng_0,ng_1,ng_3, &
   real(kind=dp_t), intent(in   ) :: s(lo(1)-ng_3:,lo(2)-ng_3:,lo(3)-ng_3:,:)
   real(kind=dp_t), intent(inout) :: beta(lo(1)-ng_1:,lo(2)-ng_1:,lo(3)-ng_1:,:)
   real(kind=dp_t), intent(inout) :: h(lo(1)-ng_1:,lo(2)-ng_1:,lo(3)-ng_1:)
-  real(kind=dp_t), intent(inout) :: scalefactor(lo(1)-ng_0:,lo(2)-ng_0:,lo(3)-ng_0:)
-  real(kind=dp_t), intent(inout) :: temp(lo(1)-ng_1:,lo(2)-ng_1:,lo(3)-ng_1:)
+  real(kind=dp_t), intent(inout) :: scalefactor(lo(1)-ng_1:,lo(2)-ng_1:,lo(3)-ng_1:)
+  real(kind=dp_t), intent(inout) :: ccbeta(lo(1)-ng_1:,lo(2)-ng_1:,lo(3)-ng_1:)
 
   integer :: i,j,k
   integer :: nx,ny,nz
@@ -231,9 +237,9 @@ subroutine make_thermal_coeffs_3d(lo,hi,dt,dx,ng_0,ng_1,ng_3, &
   end if
 
   ! Compute c_p^(2), k_th^2, and beta
-  do k=lo(3),hi(3)
-     do j=lo(2),hi(2)
-        do i=lo(1),hi(1)
+  do k=lo(3)-1,hi(3)+1
+     do j=lo(2)-1,hi(2)+1
+        do i=lo(1)-1,hi(1)+1
            
            den_row(1) = s(i,j,k,rho_comp)
            xn_zone(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
@@ -255,7 +261,7 @@ subroutine make_thermal_coeffs_3d(lo,hi,dt,dx,ng_0,ng_1,ng_3, &
                 dsdt_row, dsdr_row, &
                 do_diag)
            
-           temp(i,j,k) = -ONE/cp_row(1)
+           ccbeta(i,j,k) = -ONE/cp_row(1)
            scalefactor(i,j,k) = dpdt_row(1)/(den_row(1)**2*cp_row(1)*dpdr_row(1))
            
         enddo
@@ -265,7 +271,7 @@ subroutine make_thermal_coeffs_3d(lo,hi,dt,dx,ng_0,ng_1,ng_3, &
   do k = 0,nz-1
      do j = 0,ny-1
         do i = 0,nx
-           beta(i,j,k,1) = (temp(i,j,k) + temp(i-1,j,k)) / TWO
+           beta(i,j,k,1) = (ccbeta(i,j,k) + ccbeta(i-1,j,k)) / TWO
         end do
      end do
   end do
@@ -273,7 +279,7 @@ subroutine make_thermal_coeffs_3d(lo,hi,dt,dx,ng_0,ng_1,ng_3, &
   do k = 0,nz-1
      do j = 0,ny
         do i = 0,nx-1
-           beta(i,j,k,2) = (temp(i,j,k) + temp(i,j-1,k)) / TWO
+           beta(i,j,k,2) = (ccbeta(i,j,k) + ccbeta(i,j-1,k)) / TWO
         end do
      end do
   end do
@@ -281,7 +287,7 @@ subroutine make_thermal_coeffs_3d(lo,hi,dt,dx,ng_0,ng_1,ng_3, &
   do k = 0,nz
      do j = 0,ny-1
         do i = 0,nx-1
-           beta(i,j,k,3) = (temp(i,j,k) + temp(i,j,k-1)) / TWO
+           beta(i,j,k,3) = (ccbeta(i,j,k) + ccbeta(i,j,k-1)) / TWO
         end do
      end do
   end do
