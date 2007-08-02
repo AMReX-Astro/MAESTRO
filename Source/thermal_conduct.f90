@@ -192,10 +192,22 @@ subroutine thermal_conduct(mla,dx,dt,sold,s2,p0old,p02, &
         select case (dm)
         case (2)
            call compute_rhoh_2d(lo,hi,ng_1,ng_3,phip(:,:,1,1),s2p(:,:,1,:))
+            ! Impose bc's on new rhoh
+!           call setbc_2d(s2p(:,:,1,rhoh_comp), lo, ng_3, &
+!                the_bc_level%adv_bc_level_array(i,:,:,dm+rhoh_comp), &
+!                dx,dm+rhoh_comp)
         case (3)
            call compute_rhoh_3d(lo,hi,ng_1,ng_3,phip(:,:,:,1),s2p(:,:,:,:))
+           ! Impose bc's on new rhoh
+!           call setbc_3d(s2p(:,:,:,n), lo, ng, &
+!                the_bc_level%adv_bc_level_array(i,:,:,dm+rhoh_comp), &
+!                dx,dm_rhoh_comp)
         end select
      end do
+  enddo
+
+  do n=1,nlevs
+     call multifab_fill_boundary(s2(n))
   enddo
 
   ! Deallocate memory
@@ -240,12 +252,18 @@ subroutine make_betas_and_phi_2d(lo,hi,dt,dx,ng_1,ng_0,ng_3, &
   ny = size(beta,dim=2) - 2*ng_1
 
   ! Compute c_p^(2), k_th^2, and beta
-  do j=lo(2),hi(2)
-     do i=lo(1),hi(1)
+  do j=lo(2)-1,hi(2)+1
+     do i=lo(1)-1,hi(1)+1
 
         den_row(1) = s2(i,j,rho_comp)
-        p_row(1) = p02(j)
         xn_zone(:) = s2(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
+        if(j .eq. lo(2)-1) then
+           p_row(1) = p02(lo(2))
+        else if(j .eq. hi(2)+1) then
+           p_row(1) = p02(hi(2))
+        else
+           p_row(1) = p02(j)
+        endif
 
         call conducteos(input_flag, den_row, temp_row, &
                  npts, nspec, &
@@ -276,12 +294,18 @@ subroutine make_betas_and_phi_2d(lo,hi,dt,dx,ng_1,ng_0,ng_3, &
   end do
 
  ! Compute c_p^n, k_th^n, and rhsbeta
-    do j=lo(2),hi(2)
-     do i=lo(1),hi(1)
+    do j=lo(2)-1,hi(2)+1
+     do i=lo(1)-1,hi(1)+1
 
         den_row(1) = sold(i,j,rho_comp)
-        p_row(1) = p0old(j)
         xn_zone(:) = sold(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
+        if(j .eq. lo(2)-1) then
+           p_row(1) = p0old(lo(2))
+        else if(j .eq. hi(2)+1) then
+           p_row(1) = p0old(hi(2))
+        else
+           p_row(1) = p0old(j)
+        endif
 
         call conducteos(input_flag, den_row, temp_row, &
                  npts, nspec, &
@@ -295,6 +319,8 @@ subroutine make_betas_and_phi_2d(lo,hi,dt,dx,ng_1,ng_0,ng_3, &
                  do_diag, conduct_row)
 
         const(i,j) = -HALF*dt*conduct_row(1)/cp_row(1)
+        ! set phi = h^n for applyop on RHS
+        phi(i,j) = sold(i,j,rhoh_comp)/sold(i,j,rho_comp)
 
      enddo
   enddo
@@ -310,13 +336,6 @@ subroutine make_betas_and_phi_2d(lo,hi,dt,dx,ng_1,ng_0,ng_3, &
         rhsbeta(i,j,2) = (const(i,j) + const(i,j-1)) / TWO
      end do
   end do
-
-  ! set phi = h^n for applyop on RHS
-    do j=lo(2),hi(2)
-     do i=lo(1),hi(1)
-        phi(i,j) = sold(i,j,rhoh_comp)/sold(i,j,rho_comp)
-     enddo
-  enddo
 
 end subroutine make_betas_and_phi_2d
 
@@ -355,16 +374,26 @@ subroutine make_betas_and_phi_3d(lo,hi,dt,dx,ng_1,ng_0,ng_3, &
       nz = size(beta,dim=3) - 2*ng_1
 
   ! Compute c_p^(2), k_th^2, and beta
-  do k=lo(3),hi(3)
-     do j=lo(2),hi(2)
-        do i=lo(1),hi(1)
+  do k=lo(3)-1,hi(3)+1
+     do j=lo(2)-1,hi(2)+1
+        do i=lo(1)-1,hi(1)+1
            
            den_row(1) = s2(i,j,k,rho_comp)
            xn_zone(:) = s2(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
 
            if(spherical .eq. 0) then
-              p_row(1) = p02(k)
+              if(k .eq. lo(3)-1) then
+                 p_row(1) = p02(lo(3))
+              else if(k .eq. hi(3)+1) then
+                 p_row(1) = p02(hi(3))
+              else
+                 p_row(1) = p02(k)
+              endif
            else
+              ! This still needs to be rewritten to handle out-of-domain cases!
+              print*, "Computation of beta for spherical case not written!"
+              stop
+
               p_row(1) = p0_cart(i,j,k)
            endif
            
@@ -414,16 +443,25 @@ subroutine make_betas_and_phi_3d(lo,hi,dt,dx,ng_1,ng_0,ng_3, &
   end if
 
  ! Compute c_p^n, k_th^n, and rhsbeta
-  do k=lo(3),hi(3)
-     do j=lo(2),hi(2)
-        do i=lo(1),hi(1)
+  do k=lo(3)-1,hi(3)+1
+     do j=lo(2)-1,hi(2)+1
+        do i=lo(1)-1,hi(1)+1
            
            den_row(1) = sold(i,j,k,rho_comp)
            xn_zone(:) = sold(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
-           
            if(spherical .eq. 0) then
-              p_row(1) = p0old(k)
+              if(k .eq. lo(3)-1) then
+                 p_row(1) = p0old(lo(3))
+              else if(k .eq. hi(3)+1) then
+                 p_row(1) = p0old(hi(3))
+              else
+                 p_row(1) = p0old(k)
+              endif
            else
+              ! This still needs to be rewritten to handle out-of-domain cases!
+              print*, "Computation of beta for spherical case not written!"
+              stop
+
               p_row(1) = p0_cart(i,j,k)
            endif
            
@@ -440,6 +478,8 @@ subroutine make_betas_and_phi_3d(lo,hi,dt,dx,ng_1,ng_0,ng_3, &
            
            const(i,j,k) = -HALF*dt*conduct_row(1)/cp_row(1)
 
+           ! set phi = h^n for applyop on RHS
+           phi(i,j,k) = sold(i,j,k,rhoh_comp)/sold(i,j,k,rho_comp)
         enddo
      enddo
   enddo
@@ -468,15 +508,6 @@ subroutine make_betas_and_phi_3d(lo,hi,dt,dx,ng_1,ng_0,ng_3, &
      end do
   end do
 
-  ! set phi = h^n for applyop on RHS
-  do k=lo(3),hi(3)
-     do j=lo(2),hi(2)
-        do i=lo(1),hi(1)
-           phi(i,j,k) = sold(i,j,k,rhoh_comp)/sold(i,j,k,rho_comp)
-        enddo
-     enddo
-  enddo
-
 end subroutine make_betas_and_phi_3d
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -492,8 +523,8 @@ subroutine make_initial_phi_2d(lo,hi,ng_1,ng_3,s2,phi)
   integer :: i,j
 
   ! set phi = h^n for applyop on RHS
-    do j=lo(2),hi(2)
-     do i=lo(1),hi(1)
+    do j=lo(2)-1,hi(2)+1
+     do i=lo(1)-1,hi(1)+1
         phi(i,j) = s2(i,j,rhoh_comp)/s2(i,j,rho_comp)
      enddo
   enddo
@@ -513,9 +544,9 @@ subroutine make_initial_phi_3d(lo,hi,ng_1,ng_3,s2,phi)
   integer :: i,j,k
 
   ! set phi = h^n for applyop on RHS
-  do k=lo(3),hi(3)
-     do j=lo(2),hi(2)
-        do i=lo(1),hi(1)
+  do k=lo(3)-1,hi(3)+1
+     do j=lo(2)-1,hi(2)+1
+        do i=lo(1)-1,hi(1)+1
            phi(i,j,k) = s2(i,j,k,rhoh_comp)/s2(i,j,k,rho_comp)
         enddo
      enddo
