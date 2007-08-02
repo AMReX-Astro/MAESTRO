@@ -50,7 +50,7 @@ subroutine make_explicit_thermal(mla,dx,dt,thermal,s,p0,mg_verbose, &
 
   do n = 1,nlevs
      call multifab_build(         phi(n), mla%la(n), 1, 1)
-     call multifab_build(       alpha(n), mla%la(n), 1, 0)
+     call multifab_build(       alpha(n), mla%la(n), 1, 1)
      call multifab_build(        beta(n), mla%la(n),dm, 1)
      call multifab_build(         xik(n), mla%la(n), 1, 1)
      call multifab_build(sigmaoverrho(n), mla%la(n), 1, 1)
