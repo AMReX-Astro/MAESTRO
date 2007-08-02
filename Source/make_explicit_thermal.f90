@@ -167,7 +167,7 @@ subroutine make_explicit_thermal(mla,dx,dt,thermal,s,p0, &
                    kthovercpp(:,:,1,1),phip(:,:,1,1),betap(:,:,1,:), &
                    xikp(:,:,1,1))
            case (3)
-              call setup_Xk_op_2d(k,lo,hi,dx(n,:),ng_1,ng_3,p0,sp(:,:,:,:), &
+              call setup_Xk_op_3d(k,lo,hi,dx(n,:),ng_1,ng_3,p0,sp(:,:,:,:), &
                    kthovercpp(:,:,:,1),phip(:,:,:,1),betap(:,:,:,:), &
                    xikp(:,:,:,1))
            end select
