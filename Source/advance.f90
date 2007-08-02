@@ -46,7 +46,7 @@ module advance_timestep_module
                                 dx,time,dt,dtold,the_bc_tower, &
                                 anelastic_cutoff,verbose,mg_verbose,cg_verbose,&
                                 Source_nm1,Source_old,Source_new,gamma1_term,sponge,do_sponge, &
-                                use_thermal_diffusion)
+                                use_thermal_diffusion,temperature_diffusion)
 
     implicit none
 
@@ -96,6 +96,7 @@ module advance_timestep_module
     type(multifab), intent(in   ) :: sponge(:)
     logical       , intent(in   ) :: do_sponge
     logical       , intent(in   ) :: use_thermal_diffusion
+    logical       , intent(in   ) :: temperature_diffusion
 
     type(multifab), allocatable :: rhohalf(:)
     type(multifab), allocatable :: w0_cart_vec(:)
@@ -376,7 +377,8 @@ module advance_timestep_module
 
         if(use_thermal_diffusion) then
            call make_explicit_thermal(mla,dx,dt,thermal,snew,p0_new, &
-                                      mg_verbose,cg_verbose,the_bc_tower)
+                                      mg_verbose,cg_verbose,the_bc_tower, &
+                                      temperature_diffusion)
         endif
 
         do n = 1, nlevs
@@ -544,7 +546,8 @@ module advance_timestep_module
 
         if(use_thermal_diffusion) then
            call make_explicit_thermal(mla,dx,dt,thermal,snew,p0_new, &
-                                      mg_verbose,cg_verbose,the_bc_tower)
+                                      mg_verbose,cg_verbose,the_bc_tower, &
+                                      temperature_diffusion)
         endif
 
         do n = 1, nlevs

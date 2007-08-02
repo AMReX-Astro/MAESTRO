@@ -33,6 +33,7 @@
 
  perturb_model = F
  use_thermal_diffusion = T
+ temperature_diffusion = F
 
  evolve_base_state = F
 
