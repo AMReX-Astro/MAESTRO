@@ -1,5 +1,5 @@
-NDEBUG :=  
 NDEBUG := t
+NDEBUG := 
 MPI    :=
 OMP    :=
 
