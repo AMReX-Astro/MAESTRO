@@ -332,14 +332,14 @@ module advance_timestep_module
         !! STEP 4a (Option I) -- Add thermal conduction (only enthalpy terms)
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-        if (use_thermal_diffusion) then
-           if (parallel_IOProcessor() .and. verbose .ge. 1) then
-              write(6,*) '<<< STEP  4a: thermal conduct >>>'
-           end if
-
-           call thermal_conduct(mla,dx,dt,sold,s2,p0_old,p0_2, &
-                                mg_verbose,cg_verbose,the_bc_tower)
-        endif
+!        if (use_thermal_diffusion) then
+!           if (parallel_IOProcessor() .and. verbose .ge. 1) then
+!              write(6,*) '<<< STEP  4a: thermal conduct >>>'
+!           end if
+!
+!           call thermal_conduct(mla,dx,dt,sold,s2,p0_old,p0_2, &
+!                                mg_verbose,cg_verbose,the_bc_tower)
+!        endif
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !! STEP 5 -- react the full state and then base state through dt/2
@@ -501,14 +501,14 @@ module advance_timestep_module
         !! STEP 8a (Option I) -- Add thermal conduction (only enthalpy terms)
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-        if(use_thermal_diffusion) then
-           if (parallel_IOProcessor() .and. verbose .ge. 1) then
-              write(6,*) '<<< STEP  8a: thermal conduct >>>'
-           end if
-
-           call thermal_conduct(mla,dx,dt,sold,s2,p0_old,p0_2, &
-                                mg_verbose,cg_verbose,the_bc_tower)
-        endif
+!        if(use_thermal_diffusion) then
+!           if (parallel_IOProcessor() .and. verbose .ge. 1) then
+!              write(6,*) '<<< STEP  8a: thermal conduct >>>'
+!           end if
+!
+!           call thermal_conduct(mla,dx,dt,sold,s2,p0_old,p0_2, &
+!                                mg_verbose,cg_verbose,the_bc_tower)
+!        endif
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !! STEP 9 -- react the full state and then base state through dt/2
