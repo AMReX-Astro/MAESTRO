@@ -68,6 +68,8 @@ subroutine make_explicit_thermal(mla,dx,dt,thermal,s,p0,mg_verbose, &
      call setval(   kthovercp(n), ZERO, all=.true.)
      call setval(       resid(n), ZERO, all=.true.)
      call setval(        temp(n), ZERO, all=.true.)
+
+     call setval(     thermal(n), ZERO, all=.true.)
   end do
 
   ! create sigmaoverrho = p_T(\rho^2 c_p p_\rho)
