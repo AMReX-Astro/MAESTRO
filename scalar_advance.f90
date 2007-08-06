@@ -353,6 +353,9 @@ contains
                                     sepx(:,:,1,:), sepy(:,:,1,:), fp(:,:,1,:), &
                                     s0_old(:,:), s0_new(:,:), &
                                     lo, hi, ng_cell, dx, dt)
+
+                call multifab_fill_boundary(snew)
+
               do n = spec_comp,spec_comp+nspec-1
                 bc_comp = dm+n
                 call setbc_2d(snp(:,:,1,n), lo, ng_cell, &
@@ -385,6 +388,9 @@ contains
                                          s0_old(:,:), s0_new(:,:), s0p(:,:,:,:), &
                                          lo, hi, domlo, domhi, ng_cell, dx, dt)
               end if
+
+              call multifab_fill_boundary(snew)
+
               do n = spec_comp,spec_comp+nspec-1
                 bc_comp = dm+n
                 call setbc_3d(snp(:,:,:,n), lo, ng_cell, &
@@ -455,6 +461,9 @@ contains
                              sepx(:,:,1,:), sepy(:,:,1,:), fp(:,:,1,:), &
                              s0_old(:,:), s0_new(:,:), &
                              lo, hi, ng_cell, dx, dt)
+
+              call multifab_fill_boundary(snew)
+
               do n = trac_comp,trac_comp+ntrac-1
                 bc_comp = dm+n
                 call setbc_2d(snp(:,:,1,n), lo, ng_cell, &
@@ -482,6 +491,9 @@ contains
                                          s0_old(:,:), s0_new(:,:), s0p(:,:,:,:), &
                                          lo, hi, domlo, domhi, ng_cell, dx, dt)
               end if
+
+              call multifab_fill_boundary(snew)
+
               do n = trac_comp,trac_comp+ntrac-1
                 bc_comp = dm+n
                 call setbc_3d(snp(:,:,:,n), lo, ng_cell, &
@@ -544,6 +556,8 @@ contains
                              s0_old(:,:), s0_new(:,:), &
                              lo, hi, ng_cell, dx, dt)
 
+              call multifab_fill_boundary(snew)
+
               call setbc_2d(snp(:,:,1,n), lo, ng_cell, &
                             the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
 
@@ -580,6 +594,8 @@ contains
                                          s0_old(:,:), s0_new(:,:), &
                                          lo, hi, ng_cell, dx, dt)
                end if
+
+                call multifab_fill_boundary(snew)
 
                call setbc_3d(snp(:,:,:,n), lo, ng_cell, & 
                              the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
