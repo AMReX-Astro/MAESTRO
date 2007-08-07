@@ -46,7 +46,7 @@ module advance_timestep_module
                                 dx,time,dt,dtold,the_bc_tower, &
                                 anelastic_cutoff,verbose,mg_verbose,cg_verbose,&
                                 Source_nm1,Source_old,Source_new,gamma1_term,sponge,do_sponge, &
-                                use_thermal_diffusion,temperature_diffusion)
+                                use_thermal_diffusion,temperature_diffusion,do_half_alg)
 
     implicit none
 
@@ -97,6 +97,7 @@ module advance_timestep_module
     logical       , intent(in   ) :: do_sponge
     logical       , intent(in   ) :: use_thermal_diffusion
     logical       , intent(in   ) :: temperature_diffusion
+    logical       , intent(in   ) :: do_half_alg
 
     type(multifab), allocatable :: rhohalf(:)
     type(multifab), allocatable :: w0_cart_vec(:)
@@ -357,6 +358,25 @@ module advance_timestep_module
         call make_div_coeff(div_coeff_new,s0_new(:,rho_comp),p0_new, &
                             gam1,grav_cell_new,anelastic_cutoff)
 
+        ! Define rho at half time !
+        do n = 1,nlevs
+           call make_at_halftime(rhohalf(n),sold(n),snew(n),rho_comp,1,dx(n,:), &
+                                 the_bc_tower%bc_tower_array(n))
+        end do
+
+        ! Define base state at half time for use in velocity advance!
+        do j = 0, nr-1
+           s0_nph(j,:) = HALF * (s0_old(j,:) + s0_new(j,:))
+        enddo
+
+        call make_grav_cell(grav_cell_nph,s0_nph(:,rho_comp))
+
+        ! Define beta at half time !
+        do j = 0, nr-1
+           div_coeff_nph(j) = HALF * (div_coeff_old(j) + div_coeff_new(j))
+        enddo
+
+        if(.not. do_half_alg) then
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !! STEP 6 -- define a new average expansion rate at n+1/2
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -407,24 +427,6 @@ module advance_timestep_module
                                s0_old, grav_cell_old, &
                                dx(n,:),dt,the_bc_tower%bc_tower_array(n))
         end do
-
-        ! Define rho at half time !
-        do n = 1,nlevs
-           call make_at_halftime(rhohalf(n),sold(n),snew(n),rho_comp,1,dx(n,:), &
-                                 the_bc_tower%bc_tower_array(n))
-        end do
-
-        ! Define base state at half time for use in velocity advance!
-        do j = 0, nr-1
-           s0_nph(j,:) = HALF * (s0_old(j,:) + s0_new(j,:))
-        enddo
-
-        call make_grav_cell(grav_cell_nph,s0_nph(:,rho_comp))
-
-        ! Define beta at half time !
-        do j = 0, nr-1
-           div_coeff_nph(j) = HALF * (div_coeff_old(j) + div_coeff_new(j))
-        enddo
 
         do n = 1, nlevs
            call make_macrhs(macrhs(n),Source_nph(n),gamma1_term(n),Sbar(:,1),div_coeff_nph,dx(n,:))
@@ -516,6 +518,9 @@ module advance_timestep_module
         call make_div_coeff(div_coeff_new,s0_new(:,rho_comp),p0_new, &
                             gam1,grav_cell_new,anelastic_cutoff)
 
+
+        ! endif corresponding to .not. do_half_alg
+        endif
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !! STEP 10 -- compute S^{n+1} for the final projection

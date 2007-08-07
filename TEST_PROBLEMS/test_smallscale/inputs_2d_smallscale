@@ -5,13 +5,13 @@
  prob_hi_x = 0.25
  prob_hi_y = 2.0
 
- max_step  = 0
+ max_step  = 200
  init_iter = 1
 
  stop_time = 2.5
 
- plot_int  = 1
- chk_int   = 1
+ plot_int  = 10
+ chk_int   = 100
 
  cflfac = 0.9
  init_shrink = 1.
@@ -34,6 +34,7 @@
  perturb_model = F
  use_thermal_diffusion = T
  temperature_diffusion = F
+ do_half_alg = F
 
  evolve_base_state = F
 
