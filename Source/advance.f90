@@ -183,8 +183,8 @@ module advance_timestep_module
      call multifab_build(Source_nph(n), mla%la(n),     1, 0)
      call multifab_build(    macrhs(n), mla%la(n),     1, 0)
      call multifab_build(    macphi(n), mla%la(n),     1, 1)
-     call multifab_build(     hgrhs(n), mla%la(n),     1,       0, nodal)
-     call multifab_build(   thermal(n), mla%la(n),     1,       0)
+     call multifab_build(     hgrhs(n), mla%la(n),     1, 0, nodal)
+     call multifab_build(   thermal(n), mla%la(n),     1, 0)
 
      call setval(macphi(n),ZERO,all=.true.)
 
@@ -279,7 +279,6 @@ module advance_timestep_module
            call react_state(sold(n),s1(n),rho_omegadot1(n),rho_Hext(n),temp0, &
                             halfdt,dx(n,:), &
                             the_bc_tower%bc_tower_array(n),time)
-           call multifab_fill_boundary(s1(n))
         end do
 
         call average(rho_omegadot1,rho_omegadotbar1,dx,1,nspec)
@@ -324,10 +323,6 @@ module advance_timestep_module
                                           1,rho_comp,nscal)
         end do
 
-        do n = 1,nlevs
-           call multifab_fill_boundary(s2(n))
-        end do
-
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !! STEP 4a (Option I) -- Add thermal conduction (only enthalpy terms)
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -354,7 +349,6 @@ module advance_timestep_module
           call react_state(s2(n),snew(n),rho_omegadot2(n),rho_Hext(n),temp0, &
                            halfdt,dx(n,:), &
                            the_bc_tower%bc_tower_array(n),time)
-          call multifab_fill_boundary(snew(n))
         end do
         call average(rho_omegadot2,rho_omegadotbar2,dx,1,nspec)
         call average(rho_Hext,rho_Hextbar,dx,1,1)
@@ -418,7 +412,6 @@ module advance_timestep_module
         do n = 1,nlevs
            call make_at_halftime(rhohalf(n),sold(n),snew(n),rho_comp,1,dx(n,:), &
                                  the_bc_tower%bc_tower_array(n))
-           call multifab_fill_boundary(rhohalf(n))
         end do
 
         ! Define base state at half time for use in velocity advance!
@@ -448,9 +441,6 @@ module advance_timestep_module
               call fill_3d_data(dp(:,:,:,1),div_coeff_nph,lo,hi,dx(nlevs,:),1)
             end do
             call multifab_fill_boundary(div_coeff_3d(n))
-          end do
-          do n = 1, nlevs
-            call multifab_fill_boundary(macphi(n))
           end do
           call macproject(mla,umac,macphi,rhohalf,dx,the_bc_tower,verbose,mg_verbose,cg_verbose,&
                           press_comp,macrhs,div_coeff_3d=div_coeff_3d)
@@ -493,10 +483,6 @@ module advance_timestep_module
                                           1,rho_comp,nscal)
         end do
 
-        do n = 1,nlevs
-           call multifab_fill_boundary(s2(n))
-        end do
-
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !! STEP 8a (Option I) -- Add thermal conduction (only enthalpy terms)
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -522,7 +508,6 @@ module advance_timestep_module
           call react_state(s2(n),snew(n),rho_omegadot2(n),rho_Hext(n),temp0, &
                            halfdt,dx(n,:),&
                            the_bc_tower%bc_tower_array(n),time)
-          call multifab_fill_boundary(snew(n))
         end do
         call average(rho_omegadot2,rho_omegadotbar2,dx,1,nspec)
         call average(rho_Hext,rho_Hextbar,dx,1,1)
@@ -568,7 +553,6 @@ module advance_timestep_module
         do n = 1,nlevs
            call make_at_halftime(rhohalf(n),sold(n),snew(n),rho_comp,1,dx(n,:), &
                                  the_bc_tower%bc_tower_array(n))
-           call multifab_fill_boundary(rhohalf(n))
         end do
 
         do n = 1,nlevs
@@ -589,10 +573,6 @@ module advance_timestep_module
                                           ng_cell,mla%mba%rr(n-1,:), &
                                           the_bc_tower%bc_tower_array(n-1)%adv_bc_level_array(0,:,:,:), &
                                           1,1,dm)
-        end do
-
-        do n = 1,nlevs
-           call multifab_fill_boundary(unew(n))
         end do
 
         do n = 1,nlevs

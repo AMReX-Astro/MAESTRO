@@ -47,47 +47,60 @@ contains
        hi =  upb(get_box(s_in, i))
        select case (dm)
        case (2)
-          call react_state_2d(sinp(:,:,1,:),sotp(:,:,1,:),rp(:,:,1,:),hp(:,:,1,1),temp0,dt,dx,lo,hi,ng,time)
+          call react_state_2d(sinp(:,:,1,:),sotp(:,:,1,:),rp(:,:,1,:), &
+               hp(:,:,1,1),temp0,dt,dx,lo,hi,ng,time)
+          ! Fill ghost cells on periodic boundaries and in between patches
+          call multifab_fill_boundary(s_out)
           ! Impose bc's on new rho
           n = rho_comp
           bc_comp = dm+n 
           call setbc_2d(sotp(:,:,1,n), lo, ng, &
-                        the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
+                        the_bc_level%adv_bc_level_array(i,:,:,bc_comp), &
+                        dx,bc_comp)
           ! Impose bc's on new rhoh
           n = rhoh_comp
           bc_comp = dm+n 
           call setbc_2d(sotp(:,:,1,n), lo, ng, &
-                        the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
+                        the_bc_level%adv_bc_level_array(i,:,:,bc_comp), &
+                        dx,bc_comp)
           ! Impose bc's on new species
           do n = spec_comp,spec_comp+nspec-1
             bc_comp = dm+n 
             call setbc_2d(sotp(:,:,1,n), lo, ng, &
-                          the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
+                          the_bc_level%adv_bc_level_array(i,:,:,bc_comp), &
+                          dx,bc_comp)
           end do
 
        case (3)
-          call react_state_3d(sinp(:,:,:,:),sotp(:,:,:,:),rp(:,:,:,:),hp(:,:,:,1),temp0,dt,dx,lo,hi,ng,time)
+          call react_state_3d(sinp(:,:,:,:),sotp(:,:,:,:),rp(:,:,:,:), &
+               hp(:,:,:,1),temp0,dt,dx,lo,hi,ng,time)
+          ! Fill ghost cells on periodic boundaries and in between patches
+          call multifab_fill_boundary(s_out)
           ! Impose bc's on new rho
           n = rho_comp
           bc_comp = dm+n 
           call setbc_3d(sotp(:,:,:,n), lo, ng, &
-                        the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
+                        the_bc_level%adv_bc_level_array(i,:,:,bc_comp), &
+                        dx,bc_comp)
           ! Impose bc's on new rhoh
           n = rhoh_comp
           bc_comp = dm+n 
           call setbc_3d(sotp(:,:,:,n), lo, ng, &
-                        the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
+                        the_bc_level%adv_bc_level_array(i,:,:,bc_comp), &
+                        dx,bc_comp)
           do n = spec_comp,spec_comp+nspec-1
             bc_comp = dm+n 
             call setbc_3d(sotp(:,:,:,n), lo, ng, &
-                          the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
+                          the_bc_level%adv_bc_level_array(i,:,:,bc_comp), &
+                          dx,bc_comp)
           end do
        end select
     end do
 
   end subroutine react_state
 
-  subroutine react_state_2d (s_in,s_out,rho_omegadot,rho_Hext,temp0,dt,dx,lo,hi,ng,time)
+  subroutine react_state_2d (s_in,s_out,rho_omegadot,rho_Hext,temp0, &
+       dt,dx,lo,hi,ng,time)
 
     implicit none
     integer, intent(in) :: lo(:), hi(:), ng

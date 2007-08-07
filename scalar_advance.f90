@@ -20,7 +20,8 @@ module scalar_advance_module
 contains
 
    subroutine scalar_advance (uold, sold, snew, &
-                              umac, w0, w0_cart_vec, sedge, utrans, ext_scal_force, normal, &
+                              umac, w0, w0_cart_vec, sedge, utrans, &
+                              ext_scal_force, normal, &
                               s0_old , s0_new , &
                               p0_old, p0_new, &
                               dx, dt, the_bc_level, &
@@ -134,16 +135,17 @@ contains
          case (2)
 
             do n = spec_comp,spec_comp+nspec-1
-               call modify_scal_force_2d(fp(:,:,1,n),sop(:,:,1,n), lo, hi, ng_cell,&
-                                         ump(:,:,1,1),vmp(:,:,1,1), &
+               call modify_scal_force_2d(fp(:,:,1,n),sop(:,:,1,n), lo, hi, &
+                                         ng_cell,ump(:,:,1,1),vmp(:,:,1,1), &
                                          s0_old(:,n), w0, dx)
             end do
 
             n = rhoh_comp
-            call  mkrhohforce_2d(fp(:,:,1,n), vmp(:,:,1,1), lo, hi, p0_old, p0_old)
+            call mkrhohforce_2d(fp(:,:,1,n), vmp(:,:,1,1), lo, hi, &
+                                p0_old, p0_old)
 
-            call modify_scal_force_2d(fp(:,:,1,n),sop(:,:,1,n), lo, hi, ng_cell, &
-                                      ump(:,:,1,1),vmp(:,:,1,1), &
+            call modify_scal_force_2d(fp(:,:,1,n),sop(:,:,1,n), lo, hi, &
+                                      ng_cell, ump(:,:,1,1),vmp(:,:,1,1), &
                                       s0_old(:,rhoh_comp),w0,dx)
 
          case(3)
@@ -152,32 +154,39 @@ contains
             if (spherical .eq. 1) then
                s0p => dataptr(s0_cart, i)
                do n = spec_comp,spec_comp+nspec-1
-                  call modify_scal_force_3d_sphr(fp(:,:,:,n),sop(:,:,:,n),lo,hi,domlo,domhi,ng_cell,&
-                                                 ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1), &
-                                                 s0p(:,:,:,n),w0,dx)
+                  call modify_scal_force_3d_sphr(fp(:,:,:,n),sop(:,:,:,n), &
+                                                 lo,hi,domlo,domhi,ng_cell, &
+                                                 ump(:,:,:,1),vmp(:,:,:,1), &
+                                                 wmp(:,:,:,1),s0p(:,:,:,n), &
+                                                 w0,dx)
                end do
                 
                n = rhoh_comp
                np => dataptr(normal, i)
                call  mkrhohforce_3d_sphr(fp(:,:,:,n), &
-                                         ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), lo, hi, &
+                                         ump(:,:,:,1), vmp(:,:,:,1), &
+                                         wmp(:,:,:,1), lo, hi, &
                                          dx, np(:,:,:,:), p0_old, p0_old)
 
-               call modify_scal_force_3d_sphr(fp(:,:,:,n),sop(:,:,:,n),lo,hi,domlo,domhi,ng_cell,&
-                                              ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1), &
-                                              s0p(:,:,:,n),w0,dx)
+               call modify_scal_force_3d_sphr(fp(:,:,:,n),sop(:,:,:,n),lo,hi, &
+                                              domlo,domhi,ng_cell,&
+                                              ump(:,:,:,1),vmp(:,:,:,1), &
+                                              wmp(:,:,:,1), s0p(:,:,:,n),w0,dx)
             else
                do n = spec_comp,spec_comp+nspec-1
-                  call modify_scal_force_3d_cart(fp(:,:,:,n),sop(:,:,:,n),lo, hi, ng_cell,&
-                                                 ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1), &
+                  call modify_scal_force_3d_cart(fp(:,:,:,n),sop(:,:,:,n), &
+                                                 lo,hi,ng_cell,ump(:,:,:,1), &
+                                                 vmp(:,:,:,1),wmp(:,:,:,1), &
                                                  s0_old(:,n),w0,dx)
                end do
 
                n = rhoh_comp
-               call  mkrhohforce_3d(fp(:,:,:,n), wmp(:,:,:,1), lo, hi, p0_old, p0_old)
+               call  mkrhohforce_3d(fp(:,:,:,n), wmp(:,:,:,1), lo, hi, &
+                                    p0_old, p0_old)
 
-               call modify_scal_force_3d_cart(fp(:,:,:,n),sop(:,:,:,n),lo, hi, ng_cell, &
-                                              ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1), &
+               call modify_scal_force_3d_cart(fp(:,:,:,n),sop(:,:,:,n),lo,hi, &
+                                              ng_cell,ump(:,:,:,1), &
+                                              vmp(:,:,:,1),wmp(:,:,:,1), &
                                               s0_old(:,n),w0,dx)
             end if
          end select
@@ -333,7 +342,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       call setval(scal_force,ZERO)
-
+      
       do i = 1, sold%nboxes
          if ( multifab_remote(sold, i) ) cycle
          sop => dataptr(sold, i)
@@ -346,61 +355,65 @@ contains
          lo =  lwb(get_box(sold, i))
          hi =  upb(get_box(sold, i))
          select case (dm)
-            case (2)
-                call update_scal_2d(spec_comp, spec_comp+nspec-1, &
-                                    sop(:,:,1,:), snp(:,:,1,:), &
-                                    ump(:,:,1,1), vmp(:,:,1,1), w0, &
-                                    sepx(:,:,1,:), sepy(:,:,1,:), fp(:,:,1,:), &
-                                    s0_old(:,:), s0_new(:,:), &
-                                    lo, hi, ng_cell, dx, dt)
-
-                call multifab_fill_boundary(snew)
-
-              do n = spec_comp,spec_comp+nspec-1
-                bc_comp = dm+n
-                call setbc_2d(snp(:,:,1,n), lo, ng_cell, &
-                              the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
-              end do
-              ! Dont forget to call setbc for density also
-              n = rho_comp
-              bc_comp = dm+n
-              call setbc_2d(snp(:,:,1,n), lo, ng_cell, &
-                            the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
-            case (3)
-               wmp => dataptr(umac(3), i)
-              sepz => dataptr(sedge(3), i)
-               w0p => dataptr(w0_cart_vec, i)
-              if (spherical .eq. 0) then
-                call update_scal_3d_cart(spec_comp, spec_comp+nspec-1, &
-                                         sop(:,:,:,:), snp(:,:,:,:), &
-                                         ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0, &
-                                         sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
-                                         fp(:,:,:,:), &
-                                         s0_old(:,:), s0_new(:,:), &
-                                         lo, hi, ng_cell, dx, dt)
-              else
-                s0p => dataptr(s0_cart, i)
-                call update_scal_3d_sphr(spec_comp, spec_comp+nspec-1, &
-                                         sop(:,:,:,:), snp(:,:,:,:), &
-                                         ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0p(:,:,:,:), &
-                                         sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
-                                         fp(:,:,:,:), &
-                                         s0_old(:,:), s0_new(:,:), s0p(:,:,:,:), &
-                                         lo, hi, domlo, domhi, ng_cell, dx, dt)
-              end if
-
-              call multifab_fill_boundary(snew)
-
-              do n = spec_comp,spec_comp+nspec-1
-                bc_comp = dm+n
-                call setbc_3d(snp(:,:,:,n), lo, ng_cell, &
-                              the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
-              end do
-              ! Dont forget to call setbc for density also
-              n = rho_comp
-              bc_comp = dm+n
-              call setbc_3d(snp(:,:,:,n), lo, ng_cell, &
-                            the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
+         case (2)
+            call update_scal_2d(spec_comp, spec_comp+nspec-1, &
+                                sop(:,:,1,:), snp(:,:,1,:), &
+                                ump(:,:,1,1), vmp(:,:,1,1), w0, &
+                                sepx(:,:,1,:), sepy(:,:,1,:), fp(:,:,1,:), &
+                                s0_old(:,:), s0_new(:,:), &
+                                lo, hi, ng_cell, dx, dt)
+            
+            call multifab_fill_boundary(snew)
+            
+            do n = spec_comp,spec_comp+nspec-1
+               bc_comp = dm+n
+               call setbc_2d(snp(:,:,1,n), lo, ng_cell, &
+                    the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
+            end do
+            ! Dont forget to call setbc for density also
+            n = rho_comp
+            bc_comp = dm+n
+            call setbc_2d(snp(:,:,1,n), lo, ng_cell, &
+                          the_bc_level%adv_bc_level_array(i,:,:,bc_comp), &
+                          dx,bc_comp)
+         case (3)
+            wmp => dataptr(umac(3), i)
+            sepz => dataptr(sedge(3), i)
+            w0p => dataptr(w0_cart_vec, i)
+            if (spherical .eq. 0) then
+               call update_scal_3d_cart(spec_comp, spec_comp+nspec-1, &
+                                        sop(:,:,:,:), snp(:,:,:,:), &
+                                        ump(:,:,:,1), vmp(:,:,:,1), &
+                                        wmp(:,:,:,1), w0, &
+                                        sepx(:,:,:,:), sepy(:,:,:,:), &
+                                        sepz(:,:,:,:), fp(:,:,:,:), &
+                                        s0_old(:,:), s0_new(:,:), &
+                                        lo, hi, ng_cell, dx, dt)
+            else
+               s0p => dataptr(s0_cart, i)
+               call update_scal_3d_sphr(spec_comp, spec_comp+nspec-1, &
+                                        sop(:,:,:,:), snp(:,:,:,:), &
+                                        ump(:,:,:,1), vmp(:,:,:,1), &
+                                        wmp(:,:,:,1), w0p(:,:,:,:), &
+                                        sepx(:,:,:,:), sepy(:,:,:,:), &
+                                        sepz(:,:,:,:), fp(:,:,:,:), &
+                                        s0_old(:,:), s0_new(:,:), &
+                                        s0p(:,:,:,:), lo, hi, domlo, domhi, &
+                                        ng_cell, dx, dt)
+            end if
+            
+            call multifab_fill_boundary(snew)
+              
+            do n = spec_comp,spec_comp+nspec-1
+               bc_comp = dm+n
+               call setbc_3d(snp(:,:,:,n), lo, ng_cell, &
+                    the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
+            end do
+            ! Dont forget to call setbc for density also
+            n = rho_comp
+            bc_comp = dm+n
+            call setbc_3d(snp(:,:,:,n), lo, ng_cell, &
+                 the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
          end select
       end do
 
@@ -454,41 +467,44 @@ contains
          lo =  lwb(get_box(sold, i))
          hi =  upb(get_box(sold, i))
          select case (dm)
-            case (2)
-              call update_scal_2d(trac_comp,trac_comp+ntrac-1, &
-                             sop(:,:,1,:), snp(:,:,1,:), &
-                             ump(:,:,1,1), vmp(:,:,1,1), w0, &
-                             sepx(:,:,1,:), sepy(:,:,1,:), fp(:,:,1,:), &
-                             s0_old(:,:), s0_new(:,:), &
-                             lo, hi, ng_cell, dx, dt)
+         case (2)
+            call update_scal_2d(trac_comp,trac_comp+ntrac-1, &
+                                sop(:,:,1,:), snp(:,:,1,:), &
+                                ump(:,:,1,1), vmp(:,:,1,1), w0, &
+                                sepx(:,:,1,:), sepy(:,:,1,:), fp(:,:,1,:), &
+                                s0_old(:,:), s0_new(:,:), &
+                                lo, hi, ng_cell, dx, dt)
 
-              call multifab_fill_boundary(snew)
+            call multifab_fill_boundary(snew)
 
-              do n = trac_comp,trac_comp+ntrac-1
-                bc_comp = dm+n
-                call setbc_2d(snp(:,:,1,n), lo, ng_cell, &
-                              the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
-              end do
-            case (3)
-               wmp => dataptr(umac(3), i)
-              sepz => dataptr(sedge(3), i)
-               w0p => dataptr(w0_cart_vec, i)
-              if (spherical .eq. 0) then
-                call update_scal_3d_cart(trac_comp,trac_comp+ntrac-1, &
-                                         sop(:,:,:,:), snp(:,:,:,:), &
-                                         ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0, &
-                                         sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
-                                         fp(:,:,:,:), &
-                                         s0_old(:,:), s0_new(:,:), &
-                                         lo, hi, ng_cell, dx, dt)
+            do n = trac_comp,trac_comp+ntrac-1
+               bc_comp = dm+n
+               call setbc_2d(snp(:,:,1,n), lo, ng_cell, &
+                             the_bc_level%adv_bc_level_array(i,:,:,bc_comp), &
+                             dx,bc_comp)
+            end do
+         case (3)
+            wmp => dataptr(umac(3), i)
+            sepz => dataptr(sedge(3), i)
+            w0p => dataptr(w0_cart_vec, i)
+            if (spherical .eq. 0) then
+               call update_scal_3d_cart(trac_comp,trac_comp+ntrac-1, &
+                                        sop(:,:,:,:), snp(:,:,:,:), &
+                                        ump(:,:,:,1), vmp(:,:,:,1), &
+                                        wmp(:,:,:,1), w0, sepx(:,:,:,:), &
+                                        sepy(:,:,:,:), sepz(:,:,:,:), &
+                                        fp(:,:,:,:), s0_old(:,:),s0_new(:,:), &
+                                        lo, hi, ng_cell, dx, dt)
               else
                 s0p => dataptr(s0_cart, i)
                 call update_scal_3d_sphr(trac_comp,trac_comp+ntrac-1, &
                                          sop(:,:,:,:), snp(:,:,:,:), &
-                                         ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0p(:,:,:,:), &
-                                         sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
-                                         fp(:,:,:,:), &
-                                         s0_old(:,:), s0_new(:,:), s0p(:,:,:,:), &
+                                         ump(:,:,:,1), vmp(:,:,:,1), &
+                                         wmp(:,:,:,1), w0p(:,:,:,:), &
+                                         sepx(:,:,:,:), sepy(:,:,:,:), &
+                                         sepz(:,:,:,:), fp(:,:,:,:), &
+                                         s0_old(:,:), s0_new(:,:), &
+                                         s0p(:,:,:,:), &
                                          lo, hi, domlo, domhi, ng_cell, dx, dt)
               end if
 
@@ -497,7 +513,8 @@ contains
               do n = trac_comp,trac_comp+ntrac-1
                 bc_comp = dm+n
                 call setbc_3d(snp(:,:,:,n), lo, ng_cell, &
-                              the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
+                              the_bc_level%adv_bc_level_array(i,:,:,bc_comp), &
+                              dx,bc_comp)
               end do
          end select
       end do
@@ -547,7 +564,8 @@ contains
          hi =  upb(get_box(sold, i))
          select case (dm)
             case (2)
-              call  mkrhohforce_2d(fp(:,:,1,n), vmp(:,:,1,1), lo, hi, p0_old, p0_new)
+              call  mkrhohforce_2d(fp(:,:,1,n), vmp(:,:,1,1), lo, hi, &
+                                   p0_old, p0_new)
 
               call update_scal_2d(rhoh_comp, rhoh_comp, &
                              sop(:,:,1,:), snp(:,:,1,:), &
@@ -557,9 +575,10 @@ contains
                              lo, hi, ng_cell, dx, dt)
 
               call multifab_fill_boundary(snew)
-
+              
               call setbc_2d(snp(:,:,1,n), lo, ng_cell, &
-                            the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
+                            the_bc_level%adv_bc_level_array(i,:,:,bc_comp), &
+                            dx,bc_comp)
 
             case(3)
               wmp  => dataptr(umac(3), i)
@@ -569,27 +588,31 @@ contains
               if (spherical .eq. 1) then
 
                 np => dataptr(normal, i)
-                call  mkrhohforce_3d_sphr(fp(:,:,:,n), &
-                                          ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), lo, hi, &
-                                          dx, np(:,:,:,:), p0_old, p0_new)
+                call mkrhohforce_3d_sphr(fp(:,:,:,n), &
+                                         ump(:,:,:,1), vmp(:,:,:,1), &
+                                         wmp(:,:,:,1), lo, hi, &
+                                         dx, np(:,:,:,:), p0_old, p0_new)
                 s0p => dataptr(s0_cart, i)
                 call update_scal_3d_sphr(rhoh_comp, rhoh_comp, &
                                          sop(:,:,:,:), snp(:,:,:,:), &
-                                         ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0p(:,:,:,:), &
-                                         sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
-                                         fp(:,:,:,:), &
-                                         s0_old(:,:), s0_new(:,:), s0p(:,:,:,:),  &
-                                         lo, hi, domlo, domhi, ng_cell, dx, dt)
+                                         ump(:,:,:,1), vmp(:,:,:,1), &
+                                         wmp(:,:,:,1), w0p(:,:,:,:), &
+                                         sepx(:,:,:,:), sepy(:,:,:,:), &
+                                         sepz(:,:,:,:), fp(:,:,:,:), &
+                                         s0_old(:,:), s0_new(:,:), &
+                                         s0p(:,:,:,:), lo, hi, &
+                                         domlo, domhi, ng_cell, dx, dt)
 
               else
 
-                call  mkrhohforce_3d(fp(:,:,:,n), wmp(:,:,:,1), lo, hi, &
-                                     p0_old, p0_new)
+                call mkrhohforce_3d(fp(:,:,:,n), wmp(:,:,:,1), lo, hi, &
+                                    p0_old, p0_new)
 
                 call update_scal_3d_cart(rhoh_comp, rhoh_comp, &
                                          sop(:,:,:,:), snp(:,:,:,:), &
-                                         ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), w0, &
-                                         sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
+                                         ump(:,:,:,1), vmp(:,:,:,1), &
+                                         wmp(:,:,:,1), w0, sepx(:,:,:,:), &
+                                         sepy(:,:,:,:), sepz(:,:,:,:), &
                                          fp(:,:,:,:), &
                                          s0_old(:,:), s0_new(:,:), &
                                          lo, hi, ng_cell, dx, dt)
@@ -598,7 +621,8 @@ contains
                 call multifab_fill_boundary(snew)
 
                call setbc_3d(snp(:,:,:,n), lo, ng_cell, & 
-                             the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
+                             the_bc_level%adv_bc_level_array(i,:,:,bc_comp), &
+                             dx,bc_comp)
          end select
       end do
 

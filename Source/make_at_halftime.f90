@@ -40,12 +40,12 @@ contains
          lo =  lwb(get_box(shalf, i))
          hi =  upb(get_box(shalf, i))
          select case (dm)
-            case (2)
-              call make_at_halftime_2d(shp(:,:,1,out_comp),sop(:,:,1,in_comp),snp(:,:,1,in_comp),&
-                                       lo,hi,ng_h,ng_o)
-            case (3)
-              call make_at_halftime_3d(shp(:,:,:,out_comp),sop(:,:,:,in_comp),snp(:,:,:,in_comp),&
-                                       lo,hi,ng_h,ng_o)
+         case (2)
+            call make_at_halftime_2d(shp(:,:,1,out_comp),sop(:,:,1,in_comp), &
+                                     snp(:,:,1,in_comp),lo,hi,ng_h,ng_o)
+         case (3)
+            call make_at_halftime_3d(shp(:,:,:,out_comp),sop(:,:,:,in_comp), &
+                                     snp(:,:,:,in_comp),lo,hi,ng_h,ng_o)
          end select
       end do
 
@@ -53,7 +53,8 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-   subroutine make_at_halftime (phihalf,sold,snew,in_comp,out_comp,dx,the_bc_level)
+   subroutine make_at_halftime(phihalf,sold,snew,in_comp,out_comp,dx, &
+                               the_bc_level)
 
       type(multifab) , intent(inout) :: phihalf
       type(multifab) , intent(in   ) :: sold
@@ -80,22 +81,27 @@ contains
          lo =  lwb(get_box(phihalf, i))
          hi =  upb(get_box(phihalf, i))
          select case (dm)
-            case (2)
-              call make_at_halftime_2d(rhp(:,:,1,out_comp),rop(:,:,1,in_comp),rnp(:,:,1,in_comp),&
-                                   lo,hi,ng_h,ng_o)
-              if (ng_h .gt. 0) then
-                bc_comp = dm+in_comp
-                call setbc_2d(rhp(:,:,1,out_comp), lo, ng_h, &
-                              the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
-              end if
-            case (3)
-              call make_at_halftime_3d(rhp(:,:,:,out_comp),rop(:,:,:,in_comp),rnp(:,:,:,in_comp),&
-                                   lo,hi,ng_h,ng_o)
-              if (ng_h .gt. 0) then
-                bc_comp = dm+in_comp
-                call setbc_3d(rhp(:,:,:,out_comp), lo, ng_h, &
-                              the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
-              end if
+         case (2)
+            call make_at_halftime_2d(rhp(:,:,1,out_comp),rop(:,:,1,in_comp), &
+                                     rnp(:,:,1,in_comp),lo,hi,ng_h,ng_o)
+            
+            if (ng_h .gt. 0) then
+               call multifab_fill_boundary(phihalf)
+               bc_comp = dm+in_comp
+               call setbc_2d(rhp(:,:,1,out_comp), lo, ng_h, &
+                             the_bc_level%adv_bc_level_array(i,:,:,bc_comp), &
+                             dx,bc_comp)
+            end if
+         case (3)
+            call make_at_halftime_3d(rhp(:,:,:,out_comp),rop(:,:,:,in_comp), &
+                                     rnp(:,:,:,in_comp),lo,hi,ng_h,ng_o)
+            if (ng_h .gt. 0) then
+               call multifab_fill_boundary(phihalf)
+               bc_comp = dm+in_comp
+               call setbc_3d(rhp(:,:,:,out_comp), lo, ng_h, &
+                             the_bc_level%adv_bc_level_array(i,:,:,bc_comp), &
+                             dx,bc_comp)
+            end if
          end select
       end do
 
