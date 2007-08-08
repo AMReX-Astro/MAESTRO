@@ -32,9 +32,10 @@
  init_divu_iter = 3
 
  perturb_model = F
+
  use_thermal_diffusion = T
- temperature_diffusion = F
- do_half_alg = F
+ temp_diffusion_formulation = F
+ do_half_alg = T
 
  evolve_base_state = F
 
