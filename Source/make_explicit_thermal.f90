@@ -135,25 +135,8 @@ subroutine make_explicit_thermal(mla,dx,dt,thermal,s,p0,mg_verbose, &
      
      ! scale residual by sigma/rho and add to thermal
      do n=1,nlevs
-        ng_0 = resid(n)%ng
-        ng_1 = sigmaoverrho(n)%ng
-        
-        do i=1,s(n)%nboxes
-           if (multifab_remote(s(n),i)) cycle
-           residp => dataptr(resid(n),i)
-           sigmaoverrhop => dataptr(sigmaoverrho(n),i)
-           thermalp => dataptr(thermal(n),i)
-           lo =  lwb(get_box(s(n), i))
-           hi =  upb(get_box(s(n), i))
-           select case (dm)
-           case (2)
-              call scale_and_add_resid_2d(lo,hi,ng_0,ng_1, &
-                   residp(:,:,1,1),sigmaoverrhop(:,:,1,1),thermalp(:,:,1,1))
-           case (3)
-              call scale_and_add_resid_3d(lo,hi,ng_0,ng_1, &
-                   residp(:,:,:,1),sigmaoverrhop(:,:,:,1),thermalp(:,:,:,1))
-           end select
-        end do
+        call multifab_mult_mult_c(resid(n),1,sigmaoverrho(n),1,1)
+        call multifab_plus_plus_c(thermal(n),1,resid(n),1,1)
      enddo
 
   else
@@ -188,25 +171,8 @@ subroutine make_explicit_thermal(mla,dx,dt,thermal,s,p0,mg_verbose, &
      
      ! scale residual by sigma/rho and add to thermal
      do n=1,nlevs
-        ng_0 = resid(n)%ng
-        ng_1 = sigmaoverrho(n)%ng
-        
-        do i=1,s(n)%nboxes
-           if (multifab_remote(s(n),i)) cycle
-           residp => dataptr(resid(n),i)
-           sigmaoverrhop => dataptr(sigmaoverrho(n),i)
-           thermalp => dataptr(thermal(n),i)
-           lo =  lwb(get_box(s(n), i))
-           hi =  upb(get_box(s(n), i))
-           select case (dm)
-           case (2)
-              call scale_and_add_resid_2d(lo,hi,ng_0,ng_1, &
-                   residp(:,:,1,1),sigmaoverrhop(:,:,1,1),thermalp(:,:,1,1))
-           case (3)
-              call scale_and_add_resid_3d(lo,hi,ng_0,ng_1, &
-                   residp(:,:,:,1),sigmaoverrhop(:,:,:,1),thermalp(:,:,:,1))
-           end select
-        end do
+        call multifab_mult_mult_c(resid(n),1,sigmaoverrho(n),1,1)
+        call multifab_plus_plus_c(thermal(n),1,resid(n),1,1)
      enddo
      
      ! load X_k into phi
@@ -245,29 +211,10 @@ subroutine make_explicit_thermal(mla,dx,dt,thermal,s,p0,mg_verbose, &
         
         ! scale residual by sigma/rho and add to thermal
         do n=1,nlevs
-           ng_0 = resid(n)%ng
-           ng_1 = sigmaoverrho(n)%ng
-           
-           do i=1,s(n)%nboxes
-              if (multifab_remote(s(n),i)) cycle
-              residp => dataptr(resid(n),i)
-              sigmaoverrhop => dataptr(sigmaoverrho(n),i)
-              thermalp => dataptr(thermal(n),i)
-              lo =  lwb(get_box(s(n), i))
-              hi =  upb(get_box(s(n), i))
-              select case (dm)
-              case (2)
-                 call scale_and_add_resid_2d(lo,hi,ng_0,ng_1, &
-                      residp(:,:,1,1),sigmaoverrhop(:,:,1,1),thermalp(:,:,1,1))
-              case (3)
-                 call scale_and_add_resid_3d(lo,hi,ng_0,ng_1, &
-                      residp(:,:,:,1),sigmaoverrhop(:,:,:,1),thermalp(:,:,:,1))
-              end select
-           end do
+           call multifab_mult_mult_c(resid(n),1,sigmaoverrho(n),1,1)
+           call multifab_plus_plus_c(thermal(n),1,resid(n),1,1)
         enddo
-        
      enddo
-
   endif
 
   !  call fabio_ml_multifab_write_d(thermal,mla%mba%rr(:,1),"a_thermal")
@@ -816,52 +763,6 @@ subroutine setup_Xk_op_3d(spec,lo,hi,dx,ng_1,ng_3,p0,s,kthovercp,phi,beta,xik)
   end do
 
 end subroutine setup_Xk_op_3d
-
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! scale residual by sigma/rho and add to thermal
-subroutine scale_and_add_resid_2d(lo,hi,ng_0,ng_1,resid,sigmaoverrho,thermal)
-
-  integer        , intent(in   ) :: lo(:),hi(:),ng_0,ng_1
-  real(kind=dp_t), intent(inout) :: resid(lo(1)-ng_0:,lo(2)-ng_0:)
-  real(kind=dp_t), intent(in   ) :: sigmaoverrho(lo(1)-ng_1:,lo(2)-ng_1:)
-  real(kind=dp_t), intent(inout) :: thermal(lo(1)-ng_0:,lo(2)-ng_0:)
-
-! Local
-  integer :: i,j
-
-  do j=lo(2),hi(2)
-     do i=lo(1),hi(1)
-        resid(i,j) = sigmaoverrho(i,j)*resid(i,j)
-        thermal(i,j) = thermal(i,j) + resid(i,j)
-     enddo
-  enddo
-  
-end subroutine scale_and_add_resid_2d
-
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! scale residual by sigma/rho and add to thermal
-subroutine scale_and_add_resid_3d(lo,hi,ng_0,ng_1,resid,sigmaoverrho,thermal)
-
-  integer        , intent(in   ) :: lo(:),hi(:),ng_0,ng_1
-  real(kind=dp_t), intent(inout) :: resid(lo(1)-ng_0:,lo(2)-ng_0:,lo(3)-ng_0:)
-  real(kind=dp_t), intent(in   ) :: sigmaoverrho(lo(1)-ng_1:,lo(2)-ng_1:,lo(3)-ng_1:)
-  real(kind=dp_t), intent(inout) :: thermal(lo(1)-ng_0:,lo(2)-ng_0:,lo(3)-ng_0:)
-
-! Local
-  integer :: i,j,k
-
-  do k=lo(3),hi(3)
-     do j=lo(2),hi(2)
-        do i=lo(1),hi(1)
-           resid(i,j,k) = sigmaoverrho(i,j,k)*resid(i,j,k)
-           thermal(i,j,k) = thermal(i,j,k) + resid(i,j,k)
-        enddo
-     enddo
-  enddo
-
-end subroutine scale_and_add_resid_3d
 
 
 end module make_explicit_thermal_module
