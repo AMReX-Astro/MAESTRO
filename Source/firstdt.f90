@@ -68,8 +68,8 @@ contains
    subroutine firstdt_2d (u, s, force, p0, t0, lo, hi, ng, dx, dt)
 
       integer, intent(in) :: lo(:), hi(:), ng
-      real (kind = dp_t), intent(in ) ::     u(lo(1)-ng:,lo(2)-ng:,:)  
-      real (kind = dp_t), intent(in ) ::     s(lo(1)-ng:,lo(2)-ng:,:)  
+      real (kind = dp_t), intent(in ) :: u(lo(1)-ng:,lo(2)-ng:,:)  
+      real (kind = dp_t), intent(in ) :: s(lo(1)-ng:,lo(2)-ng:,:)  
       real (kind = dp_t), intent(in ) :: force(lo(1)- 1:,lo(2)- 1:,:)  
       real (kind = dp_t), intent(in ) :: p0(0:), t0(0:)
       real (kind = dp_t), intent(in ) :: dx(:)
@@ -78,15 +78,18 @@ contains
 !     Local variables
       real (kind = dp_t)  :: spdx, spdy
       real (kind = dp_t)  :: pforcex, pforcey
+      real (kind = dp_t)  :: ux, uy
       real (kind = dp_t)  :: eps
       integer             :: i,j
 
       eps = 1.0e-8
 
-      spdx  = 0.0D0 
-      spdy  = 0.0D0 
+      spdx    = 0.0D0 
+      spdy    = 0.0D0
       pforcex = 0.0D0 
       pforcey = 0.0D0 
+      ux      = 0.0D0
+      uy      = 0.0D0
 
       do j = lo(2), hi(2)
          do i = lo(1), hi(1)
@@ -111,17 +114,28 @@ contains
                      dsdt_row, dsdr_row, &
                      do_diag)
 
-            spdx    = max(spdx ,max(abs(u(i,j,1)), cs_row(1)))
-            spdy    = max(spdy ,max(abs(u(i,j,2)), cs_row(1)))
+            spdx = max(spdx,cs_row(1))
+            spdy = max(spdy,cs_row(1))
             pforcex = max(pforcex,abs(force(i,j,1)))
             pforcey = max(pforcey,abs(force(i,j,2)))
+            ux = max(ux,abs(u(i,j,1)))
+            uy = max(uy,abs(u(i,j,2)))
          enddo
       enddo
+
+      ux = ux / dx(1)
+      uy = uy / dx(2)
 
       spdx = spdx / dx(1)
       spdy = spdy / dx(2)
 
-      if (spdx < eps .and. spdy < eps) then
+      ! if ux or uy is non-zero use it
+      ! otherwise, use soundspeed
+      if(ux .ne. ZERO .or. uy .ne. ZERO) then
+
+         dt = 1.0D0 / max(ux,uy)
+
+      else if (spdx < eps .and. spdy < eps) then
 
         dt = min(dx(1),dx(2))
 
@@ -132,11 +146,11 @@ contains
       endif
 
       if (pforcex > eps) then
-        dt = min(dt,sqrt(2.0D0 *dx(1)/pforcex))
+        dt = min(dt,sqrt(2.0D0*dx(1)/pforcex))
       endif
 
       if (pforcey > eps) then
-        dt = min(dt,sqrt(2.0D0 *dx(2)/pforcey))
+        dt = min(dt,sqrt(2.0D0*dx(2)/pforcey))
       endif
 
     end subroutine firstdt_2d
@@ -154,6 +168,7 @@ contains
 !     Local variables
       real (kind = dp_t)  :: spdx, spdy, spdz
       real (kind = dp_t)  :: pforcex, pforcey, pforcez
+      real (kind = dp_t)  :: ux, uy, uz
       real (kind = dp_t)  :: eps
       integer             :: i,j,k
 
@@ -168,6 +183,9 @@ contains
       pforcex = ZERO 
       pforcey = ZERO 
       pforcez = ZERO 
+      ux      = ZERO
+      uy      = ZERO
+      uz      = ZERO
 
       if (spherical == 1) then
          allocate(t0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
@@ -206,12 +224,15 @@ contains
                         dsdt_row, dsdr_row, &
                         do_diag)
                
-               spdx    = max(spdx ,max(abs(u(i,j,k,1)),cs_row(1)))
-               spdy    = max(spdy ,max(abs(u(i,j,k,2)),cs_row(1)))
-               spdz    = max(spdz ,max(abs(u(i,j,k,3)),cs_row(1)))
+               spdx    = max(spdx,cs_row(1))
+               spdy    = max(spdy,cs_row(1))
+               spdz    = max(spdz,cs_row(1))
                pforcex = max(pforcex,abs(force(i,j,k,1)))
                pforcey = max(pforcey,abs(force(i,j,k,2)))
                pforcez = max(pforcez,abs(force(i,j,k,3)))
+               ux      = max(ux,abs(u(i,j,k,1)))
+               uy      = max(uy,abs(u(i,j,k,2)))
+               uz      = max(uz,abs(u(i,j,k,3)))
             enddo
          enddo
       enddo
@@ -220,7 +241,17 @@ contains
       spdy = spdy / dx(2)
       spdz = spdz / dx(3)
 
-      if (spdx < eps .and. spdy < eps .and. spdz < eps) then
+      ux = ux / dx(1)
+      uy = uy / dx(2)
+      uz = uz / dx(3)
+
+      ! if ux, uy, or uz is non-zero use it
+      ! otherwise, use soundspeed
+      if(ux .ne. ZERO .or. uy .ne. ZERO .or. uz .ne. ZERO) then
+
+         dt = 1.0D0 / max(ux,uy,uz)
+
+      else if (spdx < eps .and. spdy < eps .and. spdz < eps) then
 
         dt = min(dx(1),dx(2),dx(3))
 

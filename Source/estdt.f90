@@ -11,7 +11,8 @@ module estdt_module
 
 contains
 
-   subroutine estdt (istep, u, s, force, divU, normal, w0, p0, gam1, dx, cflfac, dtold, dt, verbose)
+   subroutine estdt (istep, u, s, force, divU, normal, w0, p0, gam1, dx, cflfac, dtold, dt, &
+                     max_dt_growth, verbose)
 
       integer        , intent(in ) :: istep
       type(multifab) , intent(in ) :: u
@@ -23,6 +24,7 @@ contains
       real(kind=dp_t), intent(in ) :: dx(:)
       real(kind=dp_t), intent(in ) :: cflfac, dtold
       real(kind=dp_t), intent(out) :: dt
+      real(kind=dp_t), intent(in ) :: max_dt_growth
       integer        , intent(in ) :: verbose
 
       real(kind=dp_t), pointer:: uop(:,:,:,:)
@@ -33,15 +35,12 @@ contains
       integer :: lo(u%dim),hi(u%dim),ng,dm
       real(kind=dp_t) :: dt_adv,  dt_adv_grid,dt_adv_proc
       real(kind=dp_t) :: dt_divu,dt_divu_grid,dt_divu_proc
-      real(kind=dp_t) :: dtchange
       integer         :: i
 
       real(kind=dp_t), parameter :: rho_min = 1.d-20
 
       ng = u%ng
       dm = u%dim
-
-      dtchange = 1.1d0
 
       dt_adv_grid   = 1.d20
       dt_adv_proc   = 1.d20
@@ -88,7 +87,7 @@ contains
 
       dt = dt * cflfac
 
-      if (dtold .gt. 0.0D0 ) dt = min(dt,dtchange*dtold)
+      if (dtold .gt. 0.0D0 ) dt = min(dt,max_dt_growth*dtold)
 
       if (parallel_IOProcessor() .and. verbose .ge. 1) &
         write(6,*) 'Computing dt at istep ',istep,' to be ',dt
