@@ -18,11 +18,11 @@ module firstdt_module
 
 contains
 
-   subroutine firstdt (istep, u, s, force, p0, t0, dx, dt, verbose)
+   subroutine firstdt (istep, u, s, force, p0, t0, dx, cflfac, dt, verbose)
 
       integer        , intent(in   ) :: istep
       type(multifab) , intent(inout) :: u,s,force
-      real(kind=dp_t), intent(in   ) :: p0(0:), t0(0:)
+      real(kind=dp_t), intent(in   ) :: p0(0:), cflfac, t0(0:)
       real(kind=dp_t), intent(in   ) :: dx(:)
       real(kind=dp_t), intent(  out) :: dt
       integer        , intent(in   ) :: verbose
@@ -50,10 +50,10 @@ contains
          select case (dm)
             case (2)
               call firstdt_2d(uop(:,:,1,:), sop(:,:,1,:), fp(:,:,1,:),&
-                              p0, t0, lo, hi, ng, dx, dt_grid)
+                              p0, t0, lo, hi, ng, dx, cflfac, dt_grid)
             case (3)
               call firstdt_3d(uop(:,:,:,:), sop(:,:,:,:), fp(:,:,:,:),&
-                              p0, t0, lo, hi, ng, dx, dt_grid)
+                              p0, t0, lo, hi, ng, dx, cflfac, dt_grid)
          end select
          dt_hold_proc = min(dt_hold_proc,dt_grid)
       end do
@@ -65,14 +65,14 @@ contains
 
     end subroutine firstdt
 
-   subroutine firstdt_2d (u, s, force, p0, t0, lo, hi, ng, dx, dt)
+   subroutine firstdt_2d (u, s, force, p0, t0, lo, hi, ng, dx, cflfac, dt)
 
       integer, intent(in) :: lo(:), hi(:), ng
       real (kind = dp_t), intent(in ) :: u(lo(1)-ng:,lo(2)-ng:,:)  
       real (kind = dp_t), intent(in ) :: s(lo(1)-ng:,lo(2)-ng:,:)  
       real (kind = dp_t), intent(in ) :: force(lo(1)- 1:,lo(2)- 1:,:)  
       real (kind = dp_t), intent(in ) :: p0(0:), t0(0:)
-      real (kind = dp_t), intent(in ) :: dx(:)
+      real (kind = dp_t), intent(in ) :: dx(:), cflfac
       real (kind = dp_t), intent(out) :: dt
 
 !     Local variables
@@ -153,16 +153,18 @@ contains
         dt = min(dt,sqrt(2.0D0*dx(2)/pforcey))
       endif
 
+      dt = dt*cflfac
+
     end subroutine firstdt_2d
 
-    subroutine firstdt_3d (u, s, force, p0, t0, lo, hi, ng, dx, dt)
+    subroutine firstdt_3d (u, s, force, p0, t0, lo, hi, ng, dx, cflfac, dt)
 
       integer, intent(in) :: lo(:), hi(:), ng
       real (kind = dp_t), intent(in ) ::     u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
       real (kind = dp_t), intent(in ) ::     s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
       real (kind = dp_t), intent(in ) :: force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)  
       real (kind = dp_t), intent(in ) :: p0(0:), t0(0:)
-      real (kind = dp_t), intent(in ) :: dx(:)
+      real (kind = dp_t), intent(in ) :: dx(:), cflfac
       real (kind = dp_t), intent(out) :: dt
 
 !     Local variables
@@ -272,6 +274,8 @@ contains
       if (pforcez > eps) then
         dt = min(dt,sqrt(2.0D0*dx(3)/pforcez))
       endif
+
+      dt = dt*cflfac
 
       if (spherical == 1) &
         deallocate(t0_cart,p0_cart)
