@@ -81,7 +81,7 @@ contains
       call parallel_reduce(dt_divu,dt_divu_proc,MPI_MIN)
 
       if (parallel_IOProcessor() .and. verbose .ge. 1) &
-        write(6,*) '%%% timesteps (source, advective): ', dt_divu, dt_adv
+        write(6,*) '%%% timesteps (dt_divu, dt_adv): ', dt_divu, dt_adv
 
       dt = min(dt_adv,dt_divu)
 
