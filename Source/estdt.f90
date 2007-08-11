@@ -60,15 +60,15 @@ contains
          select case (dm)
             case (2)
               call estdt_2d(uop(:,:,1,:), sop(:,:,1,:), fp(:,:,1,:), dUp(:,:,1,1), &
-                            w0, p0, gam1, lo, hi, ng, dx, rho_min, dt_adv_grid, dt_divu_grid)
+                            w0, p0, gam1, lo, hi, ng, dx, rho_min, dt_adv_grid, dt_divu_grid, verbose)
             case (3)
               if (spherical .eq. 1) then
                 np => dataptr(normal, i)
                 call estdt_3d_sphr(uop(:,:,:,:), sop(:,:,:,:), fp(:,:,:,:), dUp(:,:,:,1), np(:,:,:,:), &
-                                   w0, p0, gam1, lo, hi, ng, dx, rho_min, dt_adv_grid, dt_divu_grid)
+                                   w0, p0, gam1, lo, hi, ng, dx, rho_min, dt_adv_grid, dt_divu_grid, verbose)
               else
                 call estdt_3d_cart(uop(:,:,:,:), sop(:,:,:,:), fp(:,:,:,:), dUp(:,:,:,1), &
-                                   w0, p0, gam1, lo, hi, ng, dx, rho_min, dt_adv_grid, dt_divu_grid)
+                                   w0, p0, gam1, lo, hi, ng, dx, rho_min, dt_adv_grid, dt_divu_grid, verbose)
               end if
          end select
 
@@ -80,22 +80,27 @@ contains
       call parallel_reduce(dt_adv ,dt_adv_proc ,MPI_MIN)
       call parallel_reduce(dt_divu,dt_divu_proc,MPI_MIN)
 
-      if (parallel_IOProcessor() .and. verbose .ge. 1) &
-        write(6,*) '%%% timesteps (dt_divu, dt_adv): ', dt_divu, dt_adv
-
       dt = min(dt_adv,dt_divu)
 
       dt = dt * cflfac
 
-      if (dtold .gt. 0.0D0 ) dt = min(dt,max_dt_growth*dtold)
+      if (dtold .gt. 0.0D0 ) then
+         if(dt .gt. max_dt_growth*dtold) then
+            if (parallel_IOProcessor() .and. verbose .ge. 1) then
+               print*,'dt_growth factor limits the new dt'
+            endif
+         endif
+         dt = min(dt,max_dt_growth*dtold)
+      endif
 
-      if (parallel_IOProcessor() .and. verbose .ge. 1) &
-        write(6,*) 'Computing dt at istep ',istep,' to be ',dt
+      if (parallel_IOProcessor() .and. verbose .ge. 1) then
+         write(6,*) 'Using estdt, at istep',istep,', CFL*dt =',dt
+      endif
 
    end subroutine estdt
 
 
-   subroutine estdt_2d (u, s, force, divU, w0, p0, gam1, lo, hi, ng, dx, rho_min, dt_adv, dt_divu)
+   subroutine estdt_2d (u, s, force, divU, w0, p0, gam1, lo, hi, ng, dx, rho_min, dt_adv, dt_divu, verbose)
 
      integer, intent(in) :: lo(:), hi(:), ng
      real (kind = dp_t), intent(in ) ::     u(lo(1)-ng:,lo(2)-ng:,:)  
@@ -106,6 +111,7 @@ contains
      real (kind = dp_t), intent(in ) :: dx(:)
      real (kind = dp_t), intent(in ) :: rho_min
      real (kind = dp_t), intent(out) :: dt_adv,dt_divu
+     integer           , intent(in ) :: verbose
 
 !    Local variables
      real (kind = dp_t)  :: spdx, spdy, spdr
@@ -142,6 +148,10 @@ contains
         dt_adv = min(dx(1),dx(2))
      else
         dt_adv = 1.0D0  / max(spdx,spdy,spdr)
+        if (parallel_IOProcessor() .and. verbose .ge. 1) then
+           print*, ''
+           print*, 'advective dt =',dt_adv
+        endif
      endif
 
 
@@ -164,10 +174,14 @@ contains
         dt_adv = min(dt_adv,sqrt(2.0D0 *dx(2)/pforcey))
      endif
 
+     if (parallel_IOProcessor() .and. verbose .ge. 1) then
+        print*, 'force dt =', &
+             min(sqrt(2.0D0 *dx(2)/pforcey),sqrt(2.0D0 *dx(1)/pforcex))
+     endif
 
      ! divU constraint
      dt_divu = 1.d30
-
+     
      do j = lo(2), hi(2)
         
         if (j .eq. 0) then
@@ -191,9 +205,13 @@ contains
         enddo
      enddo
 
+     if (parallel_IOProcessor() .and. verbose .ge. 1) then
+        print*, 'divu dt =',dt_divu
+     endif
+
    end subroutine estdt_2d
 
-   subroutine estdt_3d_cart (u, s, force, divU, w0, p0, gam1, lo, hi, ng, dx, rho_min, dt_adv, dt_divu)
+   subroutine estdt_3d_cart (u, s, force, divU, w0, p0, gam1, lo, hi, ng, dx, rho_min, dt_adv, dt_divu, verbose)
 
      integer, intent(in) :: lo(:), hi(:), ng
      real (kind = dp_t), intent(in ) ::      u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
@@ -204,6 +222,7 @@ contains
      real (kind = dp_t), intent(in ) :: dx(:)
      real (kind = dp_t), intent(in ) :: rho_min
      real (kind = dp_t), intent(out) :: dt_adv, dt_divu
+     integer           , intent(in ) :: verbose
 
 !    Local variables
      real (kind = dp_t)  :: spdx, spdy, spdz, spdr
@@ -246,6 +265,11 @@ contains
         dt_adv = 1.0D0  / max(spdx,spdy,spdz,spdr)
      endif
 
+     if (parallel_IOProcessor() .and. verbose .ge. 1) then
+        print*, ''
+        print*, 'advective dt =',dt_adv
+     endif
+
      ! Limit dt based on forcing terms
      pforcex = ZERO 
      pforcey = ZERO 
@@ -272,6 +296,11 @@ contains
      if (pforcez > eps) then
         dt_adv = min(dt_adv,sqrt(2.0D0*dx(3)/pforcez))
      endif
+
+        if (parallel_IOProcessor() .and. verbose .ge. 1) then
+           print*, 'force dt =', &
+                min(sqrt(2.0D0*dx(1)/pforcex),min(sqrt(2.0D0*dx(2)/pforcey),sqrt(2.0D0*dx(3)/pforcez)))
+        endif
 
 
      ! divU constraint
@@ -301,9 +330,13 @@ contains
         enddo
      enddo
 
+     if (parallel_IOProcessor() .and. verbose .ge. 1) then
+        print*, 'divu dt =',dt_divu
+     endif
+
    end subroutine estdt_3d_cart
 
-   subroutine estdt_3d_sphr (u, s, force, divU, normal, w0, p0, gam1, lo, hi, ng, dx, rho_min, dt_adv, dt_divu)
+   subroutine estdt_3d_sphr (u, s, force, divU, normal, w0, p0, gam1, lo, hi, ng, dx, rho_min, dt_adv, dt_divu, verbose)
 
      integer, intent(in) :: lo(:), hi(:), ng
      real (kind = dp_t), intent(in ) ::      u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
@@ -315,6 +348,7 @@ contains
      real (kind = dp_t), intent(in ) :: dx(:)
      real (kind = dp_t), intent(in ) :: rho_min
      real (kind = dp_t), intent(out) :: dt_adv, dt_divu
+     integer           , intent(in ) :: verbose
 
 !    Local variables
      real (kind = dp_t), allocatable ::  w0_cart(:,:,:,:)

@@ -50,30 +50,36 @@ contains
          select case (dm)
             case (2)
               call firstdt_2d(uop(:,:,1,:), sop(:,:,1,:), fp(:,:,1,:),&
-                              p0, t0, lo, hi, ng, dx, cflfac, dt_grid)
+                              p0, t0, lo, hi, ng, dx, dt_grid, &
+                              verbose)
             case (3)
               call firstdt_3d(uop(:,:,:,:), sop(:,:,:,:), fp(:,:,:,:),&
-                              p0, t0, lo, hi, ng, dx, cflfac, dt_grid)
+                              p0, t0, lo, hi, ng, dx, dt_grid, &
+                              verbose)
          end select
          dt_hold_proc = min(dt_hold_proc,dt_grid)
       end do
 
       call parallel_reduce(dt, dt_hold_proc ,MPI_MIN)
 
+      dt = dt * cflfac
+
       if (parallel_IOProcessor() .and. verbose .ge. 1) &
-        print *,'Computing dt at istep ',istep,' to be ',dt
+        print *,'Using firstdt, at istep',istep,', CFL*dt =',dt
 
     end subroutine firstdt
 
-   subroutine firstdt_2d (u, s, force, p0, t0, lo, hi, ng, dx, cflfac, dt)
+   subroutine firstdt_2d (u, s, force, p0, t0, lo, hi, ng, dx, &
+                          dt, verbose)
 
       integer, intent(in) :: lo(:), hi(:), ng
       real (kind = dp_t), intent(in ) :: u(lo(1)-ng:,lo(2)-ng:,:)  
       real (kind = dp_t), intent(in ) :: s(lo(1)-ng:,lo(2)-ng:,:)  
       real (kind = dp_t), intent(in ) :: force(lo(1)- 1:,lo(2)- 1:,:)  
       real (kind = dp_t), intent(in ) :: p0(0:), t0(0:)
-      real (kind = dp_t), intent(in ) :: dx(:), cflfac
+      real (kind = dp_t), intent(in ) :: dx(:)
       real (kind = dp_t), intent(out) :: dt
+      integer           , intent(in ) :: verbose
 
 !     Local variables
       real (kind = dp_t)  :: spdx, spdy
@@ -132,40 +138,49 @@ contains
       ! if ux or uy is non-zero use it
       ! otherwise, use soundspeed
       if(ux .ne. ZERO .or. uy .ne. ZERO) then
-
          dt = 1.0D0 / max(ux,uy)
-
+         if ( parallel_IOProcessor() .and. verbose .ge. 1) then
+            print*, 'advective dt =',dt
+         endif         
       else if (spdx < eps .and. spdy < eps) then
-
-        dt = min(dx(1),dx(2))
-
+         dt = min(dx(1),dx(2))
+         if ( parallel_IOProcessor() .and. verbose .ge. 1) then
+            print*, 'sound speed < eps; dt =',dt
+         endif      
       else
-
-        dt = 1.0D0  / max(spdx,spdy)
-
+         dt = 1.0D0  / max(spdx,spdy)
+         if ( parallel_IOProcessor() .and. verbose .ge. 1) then
+            print*, 'sound speed dt =',dt
+         endif
       endif
 
       if (pforcex > eps) then
-        dt = min(dt,sqrt(2.0D0*dx(1)/pforcex))
+         dt = min(dt,sqrt(2.0D0*dx(1)/pforcex))
+         if ( parallel_IOProcessor() .and. verbose .ge. 1) then
+            print*, 'pforcex dt =',sqrt(2.0D0*dx(1)/pforcex)
+         endif      
       endif
 
       if (pforcey > eps) then
-        dt = min(dt,sqrt(2.0D0*dx(2)/pforcey))
+         dt = min(dt,sqrt(2.0D0*dx(2)/pforcey))
+         if ( parallel_IOProcessor() .and. verbose .ge. 1) then
+            print*, 'pforcey dt =',sqrt(2.0D0*dx(2)/pforcey)
+         endif
       endif
-
-      dt = dt*cflfac
 
     end subroutine firstdt_2d
 
-    subroutine firstdt_3d (u, s, force, p0, t0, lo, hi, ng, dx, cflfac, dt)
+    subroutine firstdt_3d (u, s, force, p0, t0, lo, hi, ng, dx, dt, &
+                           verbose)
 
       integer, intent(in) :: lo(:), hi(:), ng
       real (kind = dp_t), intent(in ) ::     u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
       real (kind = dp_t), intent(in ) ::     s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
       real (kind = dp_t), intent(in ) :: force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)  
       real (kind = dp_t), intent(in ) :: p0(0:), t0(0:)
-      real (kind = dp_t), intent(in ) :: dx(:), cflfac
+      real (kind = dp_t), intent(in ) :: dx(:)
       real (kind = dp_t), intent(out) :: dt
+      integer           , intent(in ) :: verbose
 
 !     Local variables
       real (kind = dp_t)  :: spdx, spdy, spdz
@@ -250,32 +265,42 @@ contains
       ! if ux, uy, or uz is non-zero use it
       ! otherwise, use soundspeed
       if(ux .ne. ZERO .or. uy .ne. ZERO .or. uz .ne. ZERO) then
-
          dt = 1.0D0 / max(ux,uy,uz)
-
+         if ( parallel_IOProcessor() .and. verbose .ge. 1) then
+            print*, 'advective dt =',dt
+         endif        
       else if (spdx < eps .and. spdy < eps .and. spdz < eps) then
-
-        dt = min(dx(1),dx(2),dx(3))
-
+         dt = min(dx(1),dx(2),dx(3))
+         if ( parallel_IOProcessor() .and. verbose .ge. 1) then
+            print*, 'sound speed < eps; dt =',dt
+         endif
       else
-
-        dt = 1.0D0  / max(spdx,spdy,spdz)
-
+         dt = 1.0D0  / max(spdx,spdy,spdz)
+         if ( parallel_IOProcessor() .and. verbose .ge. 1) then
+            print*, 'sound speed dt =',dt
+         endif
       endif
 
       if (pforcex > eps) then
-        dt = min(dt,sqrt(2.0D0*dx(1)/pforcex))
+         dt = min(dt,sqrt(2.0D0*dx(1)/pforcex))
+         if ( parallel_IOProcessor() .and. verbose .ge. 1) then
+            print*, 'pforcex dt =',sqrt(2.0D0*dx(1)/pforcex)
+         endif     
       endif
 
       if (pforcey > eps) then
-        dt = min(dt,sqrt(2.0D0*dx(2)/pforcey))
+         dt = min(dt,sqrt(2.0D0*dx(2)/pforcey))
+         if ( parallel_IOProcessor() .and. verbose .ge. 1) then
+            print*, 'pforcey dt =',sqrt(2.0D0*dx(2)/pforcey)
+         endif     
       endif
 
       if (pforcez > eps) then
-        dt = min(dt,sqrt(2.0D0*dx(3)/pforcez))
+         dt = min(dt,sqrt(2.0D0*dx(3)/pforcez))
+         if ( parallel_IOProcessor() .and. verbose .ge. 1) then
+            print*, 'pforcez dt =',sqrt(2.0D0*dx(3)/pforcez)
+         endif     
       endif
-
-      dt = dt*cflfac
 
       if (spherical == 1) &
         deallocate(t0_cart,p0_cart)
