@@ -81,17 +81,7 @@ contains
       call parallel_reduce(dt_divu,dt_divu_proc,MPI_MIN)
 
       dt = min(dt_adv,dt_divu)
-
       dt = dt * cflfac
-
-      if (dtold .gt. 0.0D0 ) then
-         if(dt .gt. max_dt_growth*dtold) then
-            if (parallel_IOProcessor() .and. verbose .ge. 1) then
-               print*,'dt_growth factor limits the new dt'
-            endif
-         endif
-         dt = min(dt,max_dt_growth*dtold)
-      endif
 
       if (parallel_IOProcessor() .and. verbose .ge. 1) then
          write(6,*) 'Using estdt, at istep',istep,', CFL*dt =',dt

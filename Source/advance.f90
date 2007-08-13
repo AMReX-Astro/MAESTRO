@@ -202,6 +202,7 @@ module advance_timestep_module
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         if (parallel_IOProcessor() .and. verbose .ge. 1) then
+          write(6,*) '<<< CALLING advance_timestep with dt =',dt 
           write(6,*) '<<< STEP  1 : make w0 >>> '
         end if
 
