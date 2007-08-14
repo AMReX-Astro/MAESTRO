@@ -140,6 +140,7 @@ contains
       if(ux .ne. ZERO .or. uy .ne. ZERO) then
          dt = 1.0D0 / max(ux,uy)
          if ( parallel_IOProcessor() .and. verbose .ge. 1) then
+            print*, ''
             print*, 'advective dt =',dt
          endif         
       else if (spdx < eps .and. spdy < eps) then
