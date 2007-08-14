@@ -660,13 +660,13 @@ subroutine put_beta_on_faces_2d(lo,hi,ccbeta,beta)
 
   do j = 0,ny-1
      do i = 0,nx
-        beta(i,j,1) = (ccbeta(i,j) + ccbeta(i-1,j)) / TWO
+        beta(i,j,1) = TWO*(ccbeta(i,j)*ccbeta(i-1,j))/(ccbeta(i,j) + ccbeta(i-1,j))
      end do
   end do
   
   do j = 0,ny
      do i = 0,nx-1
-        beta(i,j,2) = (ccbeta(i,j) + ccbeta(i,j-1)) / TWO
+        beta(i,j,2) = TWO*(ccbeta(i,j)*ccbeta(i,j-1))/(ccbeta(i,j) + ccbeta(i,j-1))
      end do
   end do
 

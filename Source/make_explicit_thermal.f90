@@ -418,13 +418,13 @@ subroutine setup_T_op_2d(lo,hi,ng_1,temp,kth,phi,beta)
   ! set beta
   do j = 0,ny-1
      do i = 0,nx
-        beta(i,j,1) = -(kth(i,j) + kth(i-1,j)) / TWO
+        beta(i,j,1) = -TWO*(kth(i,j)*kth(i-1,j))/(kth(i,j) + kth(i-1,j))
      end do
   end do
   
   do j = 0,ny
      do i = 0,nx-1
-        beta(i,j,2) = -(kth(i,j) + kth(i,j-1)) / TWO
+        beta(i,j,2) = -TWO*(kth(i,j)*kth(i,j-1))/(kth(i,j) + kth(i,j-1))
      end do
   end do
 
@@ -466,7 +466,8 @@ subroutine setup_T_op_3d(lo,hi,ng_1,temp,kth,phi,beta)
   do k = 0,nz-1
      do j = 0,ny-1
         do i = 0,nx
-           beta(i,j,k,1) = -(kth(i,j,k) + kth(i-1,j,k)) / TWO
+           beta(i,j,k,1) = -TWO*(kth(i,j,k)*kth(i-1,j,k))/(kth(i,j,k) &
+                + kth(i-1,j,k))
         end do
      end do
   end do
@@ -474,7 +475,8 @@ subroutine setup_T_op_3d(lo,hi,ng_1,temp,kth,phi,beta)
   do k = 0,nz-1
      do j = 0,ny
         do i = 0,nx-1
-           beta(i,j,k,2) = -(kth(i,j,k) + kth(i,j-1,k)) / TWO
+           beta(i,j,k,2) = -TWO*(kth(i,j,k)*kth(i,j-1,k))/(kth(i,j,k) &
+                + kth(i,j-1,k))
         end do
      end do
   end do
@@ -482,7 +484,8 @@ subroutine setup_T_op_3d(lo,hi,ng_1,temp,kth,phi,beta)
   do k = 0,nz
      do j = 0,ny-1
         do i = 0,nx-1
-           beta(i,j,k,3) = -(kth(i,j,k) + kth(i,j,k-1)) / TWO
+           beta(i,j,k,3) = -TWO*(kth(i,j,k)*kth(i,j,k-1))/(kth(i,j,k) &
+                + kth(i,j,k-1))
         end do
      end do
   end do
@@ -521,13 +524,15 @@ subroutine setup_h_op_2d(lo,hi,ng_1,ng_3,s,kthovercp,phi,beta)
   ! set beta
   do j = 0,ny-1
      do i = 0,nx
-        beta(i,j,1) = -(kthovercp(i,j) + kthovercp(i-1,j)) / TWO
+        beta(i,j,1) = -TWO*(kthovercp(i,j)*kthovercp(i-1,j))/(kthovercp(i,j) &
+             + kthovercp(i-1,j))
      end do
   end do
   
   do j = 0,ny
      do i = 0,nx-1
-        beta(i,j,2) = -(kthovercp(i,j) + kthovercp(i,j-1)) / TWO
+        beta(i,j,2) = -TWO*(kthovercp(i,j)*kthovercp(i,j-1))/(kthovercp(i,j) &
+             + kthovercp(i,j-1))
      end do
   end do
 
@@ -569,7 +574,8 @@ subroutine setup_h_op_3d(lo,hi,ng_1,ng_3,s,kthovercp,phi,beta)
   do k = 0,nz-1
      do j = 0,ny-1
         do i = 0,nx
-           beta(i,j,k,1) = -(kthovercp(i,j,k) + kthovercp(i-1,j,k)) / TWO
+           beta(i,j,k,1) = -TWO*(kthovercp(i,j,k)*kthovercp(i-1,j,k)) &
+                /(kthovercp(i,j,k) + kthovercp(i-1,j,k))
         end do
      end do
   end do
@@ -577,7 +583,8 @@ subroutine setup_h_op_3d(lo,hi,ng_1,ng_3,s,kthovercp,phi,beta)
   do k = 0,nz-1
      do j = 0,ny
         do i = 0,nx-1
-           beta(i,j,k,2) = -(kthovercp(i,j,k) + kthovercp(i,j-1,k)) / TWO
+           beta(i,j,k,2) = -TWO*(kthovercp(i,j,k)*kthovercp(i,j-1,k)) &
+                /(kthovercp(i,j,k) + kthovercp(i,j-1,k))
         end do
      end do
   end do
@@ -585,7 +592,8 @@ subroutine setup_h_op_3d(lo,hi,ng_1,ng_3,s,kthovercp,phi,beta)
   do k = 0,nz
      do j = 0,ny-1
         do i = 0,nx-1
-           beta(i,j,k,3) = -(kthovercp(i,j,k) + kthovercp(i,j,k-1)) / TWO
+           beta(i,j,k,3) = -TWO*(kthovercp(i,j,k) + kthovercp(i,j,k-1)) &
+                /(kthovercp(i,j,k) + kthovercp(i,j,k-1))
         end do
      end do
   end do
@@ -629,15 +637,15 @@ subroutine setup_Xk_op_2d(spec,lo,hi,dx,ng_1,ng_3,p0,s,kthovercp,phi,beta,xik)
   ! set beta
   do j = 0,ny-1
      do i = 0,nx
-        beta(i,j,1) = (xik(i,j,spec)*kthovercp(i,j) + xik(i-1,j,spec)*kthovercp(i-1,j)) &
-             / TWO
+        beta(i,j,1) = TWO*(xik(i,j,spec)*kthovercp(i,j)*xik(i-1,j,spec)*kthovercp(i-1,j)) &
+             /(xik(i,j,spec)*kthovercp(i,j) + xik(i-1,j,spec)*kthovercp(i-1,j))
      end do
   end do
   
   do j = 0,ny
      do i = 0,nx-1
-        beta(i,j,2) = (xik(i,j,spec)*kthovercp(i,j) + xik(i,j-1,spec)*kthovercp(i,j-1)) &
-             / TWO
+        beta(i,j,2) = TWO*(xik(i,j,spec)*kthovercp(i,j)*xik(i,j-1,spec)*kthovercp(i,j-1)) &
+             /(xik(i,j,spec)*kthovercp(i,j) + xik(i,j-1,spec)*kthovercp(i,j-1))
      end do
   end do
 
@@ -690,8 +698,8 @@ subroutine setup_Xk_op_3d(spec,lo,hi,dx,ng_1,ng_3,p0,s,kthovercp,phi,beta,xik)
   do k = 0,nz-1
      do j = 0,ny-1
         do i = 0,nx
-           beta(i,j,k,1) = (xik(i,j,k,spec)*kthovercp(i,j,k) + &
-                xik(i-1,j,k,spec)*kthovercp(i-1,j,k)) / TWO
+           beta(i,j,k,1) = TWO*(xik(i,j,k,spec)*kthovercp(i,j,k)*xik(i-1,j,k,spec)*kthovercp(i-1,j,k)) &
+                /(xik(i,j,k,spec)*kthovercp(i,j,k) + xik(i-1,j,k,spec)*kthovercp(i-1,j,k))
         end do
      end do
   end do
@@ -699,8 +707,8 @@ subroutine setup_Xk_op_3d(spec,lo,hi,dx,ng_1,ng_3,p0,s,kthovercp,phi,beta,xik)
   do k = 0,nz-1
      do j = 0,ny
         do i = 0,nx-1
-           beta(i,j,k,2) = (xik(i,j,k,spec)*kthovercp(i,j,k) + &
-                xik(i,j-1,k,spec)*kthovercp(i,j-1,k)) / TWO
+           beta(i,j,k,2) = TWO*(xik(i,j,k,spec)*kthovercp(i,j,k)*xik(i,j-1,k,spec)*kthovercp(i,j-1,k)) &
+                /(xik(i,j,k,spec)*kthovercp(i,j,k) + xik(i,j-1,k,spec)*kthovercp(i,j-1,k))
         end do
      end do
   end do
@@ -708,8 +716,8 @@ subroutine setup_Xk_op_3d(spec,lo,hi,dx,ng_1,ng_3,p0,s,kthovercp,phi,beta,xik)
   do k = 0,nz
      do j = 0,ny-1
         do i = 0,nx-1
-           beta(i,j,k,3) = (xik(i,j,k,spec)*kthovercp(i,j,k) + &
-                xik(i,j,k-1,spec)*kthovercp(i,j,k-1)) / TWO
+           beta(i,j,k,3) = TWO*(xik(i,j,k,spec)*kthovercp(i,j,k)*xik(i,j,k-1,spec)*kthovercp(i,j,k-1)) &
+                /(xik(i,j,k,spec)*kthovercp(i,j,k) + xik(i,j,k-1,spec)*kthovercp(i,j,k-1))
         end do
      end do
   end do
