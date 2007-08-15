@@ -500,7 +500,6 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,temp0, &
      end do
   enddo
 
-
   do n = 1,nlevs
      call destroy(rhsalpha(n))
      call destroy(lhsalpha(n))
@@ -715,6 +714,33 @@ subroutine put_beta_on_faces_3d(lo,hi,ccbeta,beta)
 
 end subroutine put_beta_on_faces_3d
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! output stuff in a multifab
+subroutine fab_access_2d(lo,hi,fab,ng)
 
+ integer        , intent(in   ) :: lo(:),hi(:),ng
+ real(kind=dp_t), intent(in   ) :: fab(lo(1)-ng:,lo(2)-ng:,:)
+
+! Local
+  integer :: i,j
+
+
+
+end subroutine fab_access_2d
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! output stuff in a multifab
+subroutine fab_access_3d(lo,hi,fab,ng)
+
+ integer        , intent(in   ) :: lo(:),hi(:),ng
+ real(kind=dp_t), intent(in   ) :: fab(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
+
+! Local
+  integer :: i,j,k
+
+
+
+end subroutine fab_access_3d
 
 end module thermal_conduct_module
