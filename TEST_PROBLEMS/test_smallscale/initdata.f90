@@ -483,7 +483,7 @@ contains
 
   end subroutine perturb_3d
 
-  subroutine init_base_state (model_file,n_base,s0,temp0,p0,gam1,dx,prob_lo,prob_hi)
+  subroutine init_base_state (model_file,n_base,s0,temp0,p0,gam1,dx,prob_lo,prob_hi,use_big_h)
 
     character (len=256), intent(in) :: model_file ! I'm not using this anymore
     integer        ,     intent(in   ) :: n_base
@@ -494,6 +494,7 @@ contains
     real(kind=dp_t),     intent(in   ) :: prob_lo(:)
     real(kind=dp_t),     intent(in   ) :: prob_hi(:)
     real(kind=dp_t),     intent(in   ) :: dx(:)
+    logical,             intent(in )   :: use_big_h
 
     ! local
     integer ndum, i, j, dm, nspec
@@ -503,11 +504,13 @@ contains
 
     character(len=128) :: lamsolfile
     real(kind=dp_t) :: state1d(ndum)
-    real(kind=dp_t) :: loloc,hiloc,flameloc
+    real(kind=dp_t) :: loloc,hiloc,flameloc,qreact
     
     call helmeos_init
 
     dm = size(dx)
+
+
 
     lamsolfile = 'flame_4.e7_screen_left.out'
 
@@ -546,7 +549,16 @@ contains
                 do_diag)
 
        s0(i,rho_comp) = den_row(1)
-       s0(i,rhoh_comp) = den_row(1)*h_row(1)
+
+       if(use_big_h) then
+          qreact = ZERO
+          do j=1,nspec
+             qreact = qreact - ebin(j)*xn_zone(j)
+          enddo
+          s0(i,rhoh_comp) = den_row(1)*(h_row(1) + qreact)
+       else
+          s0(i,rhoh_comp) = den_row(1)*h_row(1)
+       endif
        do j=1,nspec
           s0(i,spec_comp+j-1) = den_row(1)*xn_zone(j)
        enddo

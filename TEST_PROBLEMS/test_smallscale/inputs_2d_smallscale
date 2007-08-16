@@ -38,6 +38,8 @@
  temp_diffusion_formulation = F
  do_half_alg = T
 
+ use_big_h = T
+
  evolve_base_state = F
 
 !restart = 50
