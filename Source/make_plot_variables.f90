@@ -8,6 +8,7 @@ module plot_variables_module
   use network
   use variables
   use geometry
+  use probin_module
 
   implicit none
 
@@ -133,7 +134,8 @@ contains
     real (kind = dp_t), intent(in   ) ::  temp0(0:)
 
     !     Local variables
-    integer :: i, j
+    integer :: i, j, n
+    real(kind=dp_t) qreact
 
     do_diag = .false.
 
@@ -143,10 +145,19 @@ contains
           ! (rho, H) --> T, p
             
           den_row(1)  = state(i,j,rho_comp)
-          h_row(1)    = state(i,j,rhoh_comp) / state(i,j,rho_comp)
           p_row(1)    = p0(j)
           temp_row(1) = temp0(j)
           xn_zone(:) = state(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
+
+          qreact = 0.0d0
+          if(use_big_h) then
+             do n=1,nspec
+                qreact = qreact - ebin(n)*xn_zone(n)
+             enddo
+             h_row(1) = state(i,j,rhoh_comp) / state(i,j,rho_comp) - qreact
+          else
+             h_row(1) = state(i,j,rhoh_comp) / state(i,j,rho_comp)
+          endif
 
           input_flag = 2
   
@@ -182,7 +193,8 @@ contains
     real (kind = dp_t), intent(in   ) :: temp0(0:)
 
     !     Local variables
-    integer :: i, j, k
+    integer :: i, j, k, n
+    real(kind=dp_t) qreact
 
     do_diag = .false.
 
@@ -191,12 +203,21 @@ contains
           do i = lo(1), hi(1)
 
              ! (rho, H) --> T, p
-            
-             den_row(1)  = state(i,j,k,rho_comp)
-             h_row(1)    = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp)
+              den_row(1)  = state(i,j,k,rho_comp)
              p_row(1)    = p0(k)
              temp_row(1) = temp0(k)
              xn_zone(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
+
+             qreact = 0.0d0
+             if(use_big_h) then
+                do n=1,nspec
+                   qreact = qreact - ebin(n)*xn_zone(n)
+                enddo
+                h_row(1) = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp) &
+                           - qreact
+             else
+                h_row(1) = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp)
+             endif
 
              input_flag = 2
   

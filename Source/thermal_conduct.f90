@@ -9,6 +9,7 @@ module thermal_conduct_module
   use macproject_module
   use eos_module
   use fill_3d_module
+  use probin_module
 
   implicit none
 
@@ -537,6 +538,7 @@ subroutine compute_thermo_quantities_2d(lo,hi,dt,temp0,s,kthovercp,xik)
 
   ! Local
   integer :: i,j,n
+  real(dp_t) :: qreact
 
   ! density, enthalpy, and xmass are inputs with initial temperature guess
   input_flag = 2
@@ -546,8 +548,17 @@ subroutine compute_thermo_quantities_2d(lo,hi,dt,temp0,s,kthovercp,xik)
      do i=lo(1)-1,hi(1)+1
 
         den_row(1) = s(i,j,rho_comp)
-        h_row(1) = s(i,j,rhoh_comp)/den_row(1)
         xn_zone(:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
+
+        qreact = 0.0d0
+        if(use_big_h) then
+           do n=1,nspec
+              qreact = qreact - ebin(n)*xn_zone(n)
+           enddo
+           h_row(1) = s(i,j,rhoh_comp)/den_row(1) - qreact
+        else
+           h_row(1) = s(i,j,rhoh_comp)/den_row(1)
+        endif
 
         if(j .lt. lo(2)) then
            temp_row(1) = temp0(lo(2))
@@ -570,9 +581,15 @@ subroutine compute_thermo_quantities_2d(lo,hi,dt,temp0,s,kthovercp,xik)
 
         kthovercp(i,j) = -HALF*dt*conduct_row(1)/cp_row(1)
 
-        do n=1,nspec
-           xik(i,j,n) = -dhdX_row(1,n)*kthovercp(i,j)
-        enddo
+        if(use_big_h) then
+           do n=1,nspec
+              xik(i,j,n) = -(dhdX_row(1,n)-ebin(n))*kthovercp(i,j)
+           enddo
+        else
+           do n=1,nspec
+              xik(i,j,n) = -dhdX_row(1,n)*kthovercp(i,j)
+           enddo
+        endif
      enddo
   enddo
 
@@ -593,6 +610,7 @@ subroutine compute_thermo_quantities_3d(lo,hi,dt,temp0,s,kthovercp,xik)
 
   ! Local
   integer :: i,j,k,n
+  real(dp_t) :: qreact
 
   if(spherical .eq. 1) then
      print*, "compute_thermo1_quantities_3d spherical case not written!"
@@ -608,8 +626,17 @@ subroutine compute_thermo_quantities_3d(lo,hi,dt,temp0,s,kthovercp,xik)
         do i=lo(1)-1,hi(1)+1
 
            den_row(1) = s(i,j,k,rho_comp)
-           h_row(1) = s(i,j,k,rhoh_comp)/den_row(1)
            xn_zone(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
+
+           qreact = 0.0d0
+           if(use_big_h) then
+              do n=1,nspec
+                 qreact = qreact - ebin(n)*xn_zone(n)
+              enddo
+              h_row(1) = s(i,j,k,rhoh_comp)/den_row(1) - qreact
+           else
+              h_row(1) = s(i,j,k,rhoh_comp)/den_row(1)
+           endif
 
            if(j .lt. lo(3)) then
               temp_row(1) = temp0(lo(3))
@@ -632,9 +659,13 @@ subroutine compute_thermo_quantities_3d(lo,hi,dt,temp0,s,kthovercp,xik)
 
            kthovercp(i,j,k) = -HALF*dt*conduct_row(1)/cp_row(1)
 
-           do n=1,nspec
-              xik(i,j,k,n) = -dhdX_row(1,n)*kthovercp(i,j,k)
-           enddo
+           if(use_big_h) then
+              xik(i,j,k,n) = -(dhdX_row(1,n)-ebin(n))*kthovercp(i,j,k)
+           else
+              do n=1,nspec
+                 xik(i,j,k,n) = -dhdX_row(1,n)*kthovercp(i,j,k)
+              enddo
+           endif
         enddo
      enddo
   enddo
