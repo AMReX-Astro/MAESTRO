@@ -11,6 +11,7 @@ module init_module
   use variables
   use network
   use geometry
+  use probin_module
 
   implicit none
 
@@ -483,7 +484,7 @@ contains
 
   end subroutine perturb_3d
 
-  subroutine init_base_state (model_file,n_base,s0,temp0,p0,gam1,dx,prob_lo,prob_hi,use_big_h)
+  subroutine init_base_state (model_file,n_base,s0,temp0,p0,gam1,dx,prob_lo,prob_hi)
 
     character (len=256), intent(in) :: model_file ! I'm not using this anymore
     integer        ,     intent(in   ) :: n_base
@@ -494,7 +495,6 @@ contains
     real(kind=dp_t),     intent(in   ) :: prob_lo(:)
     real(kind=dp_t),     intent(in   ) :: prob_hi(:)
     real(kind=dp_t),     intent(in   ) :: dx(:)
-    logical,             intent(in )   :: use_big_h
 
     ! local
     integer ndum, i, j, dm, nspec
