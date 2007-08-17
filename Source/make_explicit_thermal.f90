@@ -298,7 +298,7 @@ subroutine make_coeffs_2d(lo,hi,dx,ng_1,ng_3,p0,s,sigmaoverrho,kth, &
         do n=1,nspec
            xik(i,j,n) = dhdX_row(1,n)
            if(use_big_h) then
-              xik(i,j,n) = xik(i,j,n) - ebin(n)
+              xik(i,j,n) = xik(i,j,n) + ebin(n)
            endif
         enddo
 
@@ -383,7 +383,7 @@ subroutine make_coeffs_3d(lo,hi,dx,ng_1,ng_3,p0,s,sigmaoverrho,kth, &
            do n=1,nspec
               xik(i,j,k,n) = dhdX_row(1,n)
               if(use_big_h) then
-                 xik(i,j,k,n) = xik(i,j,k,n) - ebin(n)
+                 xik(i,j,k,n) = xik(i,j,k,n) + ebin(n)
               endif
            enddo
 

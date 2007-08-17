@@ -553,7 +553,7 @@ subroutine compute_thermo_quantities_2d(lo,hi,dt,temp0,s,kthovercp,xik)
         qreact = 0.0d0
         if(use_big_h) then
            do n=1,nspec
-              qreact = qreact - ebin(n)*xn_zone(n)
+              qreact = qreact + ebin(n)*xn_zone(n)
            enddo
            h_row(1) = s(i,j,rhoh_comp)/den_row(1) - qreact
         else
@@ -583,7 +583,7 @@ subroutine compute_thermo_quantities_2d(lo,hi,dt,temp0,s,kthovercp,xik)
 
         if(use_big_h) then
            do n=1,nspec
-              xik(i,j,n) = -(dhdX_row(1,n)-ebin(n))*kthovercp(i,j)
+              xik(i,j,n) = -(dhdX_row(1,n)+ebin(n))*kthovercp(i,j)
            enddo
         else
            do n=1,nspec
@@ -631,7 +631,7 @@ subroutine compute_thermo_quantities_3d(lo,hi,dt,temp0,s,kthovercp,xik)
            qreact = 0.0d0
            if(use_big_h) then
               do n=1,nspec
-                 qreact = qreact - ebin(n)*xn_zone(n)
+                 qreact = qreact + ebin(n)*xn_zone(n)
               enddo
               h_row(1) = s(i,j,k,rhoh_comp)/den_row(1) - qreact
            else
@@ -660,7 +660,7 @@ subroutine compute_thermo_quantities_3d(lo,hi,dt,temp0,s,kthovercp,xik)
            kthovercp(i,j,k) = -HALF*dt*conduct_row(1)/cp_row(1)
 
            if(use_big_h) then
-              xik(i,j,k,n) = -(dhdX_row(1,n)-ebin(n))*kthovercp(i,j,k)
+              xik(i,j,k,n) = -(dhdX_row(1,n)+ebin(n))*kthovercp(i,j,k)
            else
               do n=1,nspec
                  xik(i,j,k,n) = -dhdX_row(1,n)*kthovercp(i,j,k)

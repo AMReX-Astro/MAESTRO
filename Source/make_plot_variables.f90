@@ -152,7 +152,7 @@ contains
           qreact = 0.0d0
           if(use_big_h) then
              do n=1,nspec
-                qreact = qreact - ebin(n)*xn_zone(n)
+                qreact = qreact + ebin(n)*xn_zone(n)
              enddo
              h_row(1) = state(i,j,rhoh_comp) / state(i,j,rho_comp) - qreact
           else
@@ -211,7 +211,7 @@ contains
              qreact = 0.0d0
              if(use_big_h) then
                 do n=1,nspec
-                   qreact = qreact - ebin(n)*xn_zone(n)
+                   qreact = qreact + ebin(n)*xn_zone(n)
                 enddo
                 h_row(1) = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp) &
                            - qreact

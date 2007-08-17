@@ -130,7 +130,7 @@ contains
           qreact = 0.0d0
           if(use_big_h) then
              do n=1,nspec
-                qreact = qreact - x_in(n)*ebin(n)
+                qreact = qreact + x_in(n)*ebin(n)
              enddo
              h_in = s_in(i,j,rhoh_comp) / rho - qreact
           else
@@ -215,7 +215,7 @@ contains
           qreact = 0.0d0
           if(use_big_h) then
              do n=1,nspec
-                qreact = qreact - x_in(n)*ebin(n)
+                qreact = qreact + x_in(n)*ebin(n)
              enddo
              h_in = s_in(i,j,k,rhoh_comp) / rho - qreact
           else

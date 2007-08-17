@@ -553,7 +553,7 @@ contains
        if(use_big_h) then
           qreact = ZERO
           do j=1,nspec
-             qreact = qreact - ebin(j)*xn_zone(j)
+             qreact = qreact + ebin(j)*xn_zone(j)
           enddo
           s0(i,rhoh_comp) = den_row(1)*(h_row(1) + qreact)
        else
