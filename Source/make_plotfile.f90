@@ -14,6 +14,7 @@ module make_plotfile_module
   use geometry
   use variables
   use plot_variables_module
+  use probin_module
 
   use variables
 
@@ -35,7 +36,11 @@ contains
     if (dm > 2) &
       plot_names(icomp_vel+2) = "z_vel"
     plot_names(icomp_rho)  = "density"
-    plot_names(icomp_rhoh) = "rhoh"
+    if(use_big_h) then
+       plot_names(icomp_rhoh) = "rhoH"
+    else
+       plot_names(icomp_rhoh) = "rhoh"
+    endif
 
     if (plot_spec) then
       do n = 1, nspec

@@ -53,11 +53,22 @@ contains
     real (kind = dp_t), intent(in   ) ::    s(lo(1)-ng:,lo(2)-ng:,:)
 
 !     Local variables
-    integer :: i, j
+    integer :: i, j, n
+    real(kind=dp_t) :: qreact
 
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
-          enthalpy(i,j) = s(i,j,rhoh_comp) / s(i,j,rho_comp)
+
+          qreact = 0.0d0
+          if(use_big_h) then
+             do n=1,nspec
+                qreact = qreact + ebin(n)*s(i,j,spec_comp+n-1)/s(i,j,rho_comp)
+             enddo
+             enthalpy(i,j) = s(i,j,rhoh_comp)/s(i,j,rho_comp) - qreact
+          else
+             enthalpy(i,j) = s(i,j,rhoh_comp)/s(i,j,rho_comp)
+          endif
+
        enddo
     enddo
 
@@ -72,12 +83,23 @@ contains
     real (kind = dp_t), intent(in   ) ::    s(lo(1)-ng:,lo(2)-ng:, lo(3)-ng:,:)
     
 !     Local variables
-    integer :: i, j, k
+    integer :: i, j, k, n
+    real(kind=dp_t) :: qreact
     
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
-             enthalpy(i,j,k) = s(i,j,k,rhoh_comp) / s(i,j,k,rho_comp)
+
+             qreact = 0.0d0
+             if(use_big_h) then
+                do n=1,nspec
+                   qreact = qreact + ebin(n)*s(i,j,k,spec_comp+n-1)/s(i,j,k,rho_comp)
+                enddo
+                enthalpy(i,j,k) = s(i,j,k,rhoh_comp)/s(i,j,k,rho_comp) - qreact
+             else
+                enthalpy(i,j,k) = s(i,j,k,rhoh_comp)/s(i,j,k,rho_comp)
+             endif
+
           enddo
        enddo
     end do
@@ -213,10 +235,9 @@ contains
                 do n=1,nspec
                    qreact = qreact + ebin(n)*xn_zone(n)
                 enddo
-                h_row(1) = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp) &
-                           - qreact
+                h_row(1) = state(i,j,k,rhoh_comp)/state(i,j,k,rho_comp) - qreact
              else
-                h_row(1) = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp)
+                h_row(1) = state(i,j,k,rhoh_comp)/state(i,j,k,rho_comp)
              endif
 
              input_flag = 2
@@ -273,6 +294,9 @@ contains
             
              den_row(1)  = state(i,j,k,rho_comp)
              h_row(1)    = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp)
+             if(use_big_h) then
+               print*,"WARNING: H conversion not defined in maketfromH_3d_sphr"
+             endif
              p_row(1)    = p0_cart(i,j,k)
              temp_row(1) = t0_cart(i,j,k)
              xn_zone(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
