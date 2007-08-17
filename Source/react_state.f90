@@ -113,10 +113,10 @@ contains
     real (kind = dp_t), intent(in   ) :: dt,dx(:),time
 
     !     Local variables
-    integer :: i, j
+    integer :: i, j, n
     real (kind = dp_t), allocatable :: x_in(:),x_out(:),rhowdot(:)
     real (kind = dp_t), allocatable :: H(:,:)
-    real (kind = dp_t) :: rho,T_in,h_in,h_out
+    real (kind = dp_t) :: rho,T_in,h_in,h_out,qreact
 
     allocate(x_in(nspec),x_out(nspec),rhowdot(nspec),H(lo(1):hi(1),lo(2):hi(2)))
     call get_H_2d(H,lo,hi,dx,time)
@@ -124,45 +124,54 @@ contains
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
 
-          if(.not. use_big_h) then
-             rho = s_in(i,j,rho_comp)
-             x_in(:) = s_in(i,j,spec_comp:spec_comp+nspec-1) / rho
-             h_in = s_in(i,j,rhoh_comp) / rho
-             
-             ! (rho, H) --> T, p
-             input_flag = 2
-             
-             den_row(1) = rho
-             temp_row(1) = temp0(j)
-             h_row(1) = h_in
-             xn_zone(:) = x_in(:)
-             
-             call eos(input_flag, den_row, temp_row, &
-                  npts, nspec, &
-                  xn_zone, aion, zion, &
-                  p_row, h_row, e_row, &
-                  cv_row, cp_row, xne_row, eta_row, pele_row, &
-                  dpdt_row, dpdr_row, dedt_row, dedr_row, &
-                  dpdX_row, dhdX_row, &
-                  gam1_row, cs_row, s_row, &
-                  dsdt_row, dsdr_row, &
-                  do_diag)
-             
-             T_in = temp_row(1)
-             
-             call burner(rho, T_in, x_in, h_in, dt, x_out, h_out, rhowdot)
-             
-             s_out(i,j,rho_comp) = s_in(i,j,rho_comp)
-             s_out(i,j,spec_comp:spec_comp+nspec-1) = x_out(1:nspec) * rho
-             
-             rho_Hext(i,j) = s_in(i,j,rho_comp) * H(i,j)
-             rho_omegadot(i,j,1:nspec) = rhowdot(1:nspec)
-             
-             s_out(i,j,rhoh_comp) = rho * h_out + dt * rho_Hext(i,j)
+          rho = s_in(i,j,rho_comp)
+          x_in(:) = s_in(i,j,spec_comp:spec_comp+nspec-1) / rho
+
+          qreact = 0.0d0
+          if(use_big_h) then
+             do n=1,nspec
+                qreact = qreact - x_in(n)*ebin(n)
+             enddo
+             h_in = s_in(i,j,rhoh_comp) / rho - qreact
           else
-             rho_Hext(i,j) = s_in(i,j,rho_comp) * H(i,j)
-             s_out(i,j,rhoh_comp) =  s_in(i,j,rhoh_comp) + dt * rho_Hext(i,j)
+             h_in = s_in(i,j,rhoh_comp) / rho
           endif
+          
+          ! (rho, H) --> T, p
+          input_flag = 2
+          
+          den_row(1) = rho
+          temp_row(1) = temp0(j)
+          h_row(1) = h_in
+          xn_zone(:) = x_in(:)
+          
+          call eos(input_flag, den_row, temp_row, &
+               npts, nspec, &
+               xn_zone, aion, zion, &
+               p_row, h_row, e_row, &
+               cv_row, cp_row, xne_row, eta_row, pele_row, &
+               dpdt_row, dpdr_row, dedt_row, dedr_row, &
+               dpdX_row, dhdX_row, &
+               gam1_row, cs_row, s_row, &
+               dsdt_row, dsdr_row, &
+               do_diag)
+          
+          T_in = temp_row(1)
+          
+          call burner(rho, T_in, x_in, h_in, dt, x_out, h_out, rhowdot)
+          
+          s_out(i,j,rho_comp) = s_in(i,j,rho_comp)
+          s_out(i,j,spec_comp:spec_comp+nspec-1) = x_out(1:nspec) * rho
+          
+          rho_Hext(i,j) = s_in(i,j,rho_comp) * H(i,j)
+          rho_omegadot(i,j,1:nspec) = rhowdot(1:nspec)
+          
+          if(use_big_h) then
+             s_out(i,j,rhoh_comp) = s_in(i,j,rhoh_comp) + dt * rho_Hext(i,j)
+          else
+             s_out(i,j,rhoh_comp) = rho * h_out + dt * rho_Hext(i,j)
+          endif
+
        enddo
     enddo
 
@@ -184,10 +193,10 @@ contains
     real (kind = dp_t), allocatable :: temp0_cart(:,:,:)
 
     !     Local variables
-    integer :: i, j, k
+    integer :: i, j, k, n
     real (kind = dp_t), allocatable :: x_in(:),x_out(:),rhowdot(:)
     real (kind = dp_t), allocatable :: H(:,:,:)
-    real (kind = dp_t) :: rho,T_in,h_in,h_out
+    real (kind = dp_t) :: rho,T_in,h_in,h_out,qreact
 
     allocate(x_in(nspec),x_out(nspec),rhowdot(nspec),H(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
     call get_H_3d(H,lo,hi,dx,time)
@@ -200,52 +209,60 @@ contains
     do k = lo(3), hi(3)
      do j = lo(2), hi(2)
        do i = lo(1), hi(1)
+          rho = s_in(i,j,k,rho_comp)
+          x_in(:) = s_in(i,j,k,spec_comp:spec_comp+nspec-1) / rho
 
-          if(.not. use_big_h) then
-             rho = s_in(i,j,k,rho_comp)
-             x_in(:) = s_in(i,j,k,spec_comp:spec_comp+nspec-1) / rho
-             h_in = s_in(i,j,k,rhoh_comp) / rho
-             
-             ! (rho, H) --> T, p
-             input_flag = 2
-             
-             den_row(1) = rho
-             
-             if (spherical == 0) then
-                temp_row(1) = temp0(k)
-             else
-                temp_row(1) = temp0_cart(i,j,k)
-             endif
-
-             h_row(1) = h_in
-             xn_zone(:) = x_in(:)
-             
-             call eos(input_flag, den_row, temp_row, &
-                  npts, nspec, &
-                  xn_zone, aion, zion, &
-                  p_row, h_row, e_row, &
-                  cv_row, cp_row, xne_row, eta_row, pele_row, &
-                  dpdt_row, dpdr_row, dedt_row, dedr_row, &
-                  dpdX_row, dhdX_row, &
-                  gam1_row, cs_row, s_row, &
-                  dsdt_row, dsdr_row, &
-                  do_diag)
-             
-             T_in = temp_row(1)
-             
-             call burner(rho, T_in, x_in, h_in, dt, x_out, h_out, rhowdot)
-             
-             s_out(i,j,k,rho_comp) = s_in(i,j,k,rho_comp)
-             s_out(i,j,k,spec_comp:spec_comp+nspec-1) = x_out(1:nspec) * rho
-             
-             rho_Hext(i,j,k) = s_in(i,j,k,rho_comp) * H(i,j,k)
-             rho_omegadot(i,j,k,1:nspec) = rhowdot(1:nspec)
-             
-             s_out(i,j,k,rhoh_comp) = rho * h_out + dt * rho_Hext(i,j,k)
+          qreact = 0.0d0
+          if(use_big_h) then
+             do n=1,nspec
+                qreact = qreact - x_in(n)*ebin(n)
+             enddo
+             h_in = s_in(i,j,k,rhoh_comp) / rho - qreact
           else
-             rho_Hext(i,j,k) = s_in(i,j,k,rho_comp) * H(i,j,k)
-             s_out(i,j,k,rhoh_comp) =  s_in(i,j,k,rhoh_comp) + dt * rho_Hext(i,j,k)
+             h_in = s_in(i,j,k,rhoh_comp) / rho
           endif
+          
+          ! (rho, H) --> T, p
+          input_flag = 2
+          
+          den_row(1) = rho
+          
+          if (spherical == 0) then
+             temp_row(1) = temp0(k)
+          else
+             temp_row(1) = temp0_cart(i,j,k)
+          endif
+          
+          h_row(1) = h_in
+          xn_zone(:) = x_in(:)
+          
+          call eos(input_flag, den_row, temp_row, &
+               npts, nspec, &
+               xn_zone, aion, zion, &
+               p_row, h_row, e_row, &
+               cv_row, cp_row, xne_row, eta_row, pele_row, &
+               dpdt_row, dpdr_row, dedt_row, dedr_row, &
+               dpdX_row, dhdX_row, &
+               gam1_row, cs_row, s_row, &
+               dsdt_row, dsdr_row, &
+               do_diag)
+          
+          T_in = temp_row(1)
+          
+          call burner(rho, T_in, x_in, h_in, dt, x_out, h_out, rhowdot)
+          
+          s_out(i,j,k,rho_comp) = s_in(i,j,k,rho_comp)
+          s_out(i,j,k,spec_comp:spec_comp+nspec-1) = x_out(1:nspec) * rho
+          
+          rho_Hext(i,j,k) = s_in(i,j,k,rho_comp) * H(i,j,k)
+          rho_omegadot(i,j,k,1:nspec) = rhowdot(1:nspec)
+          
+          if(use_big_h) then
+             s_out(i,j,k,rhoh_comp) = s_in(i,j,k,rhoh_comp) + dt * rho_Hext(i,j,k)
+          else
+             s_out(i,j,k,rhoh_comp) = rho * h_out + dt * rho_Hext(i,j,k)
+          endif
+  
        enddo
      enddo
     enddo
