@@ -10,6 +10,7 @@ module react_base_module
   use variables
   use eos_module
   use network
+  use probin_module
 
   implicit none
 
@@ -64,10 +65,12 @@ contains
                   do_diag)
 
          s0_out(j,rhoh_comp) = s0_in(j,rhoh_comp)
-         do n = spec_comp,spec_comp+nspec-1
-           s0_out(j,rhoh_comp) = s0_out(j,rhoh_comp) &
-             - dt_in * rho_omegadotbar(j,n-spec_comp+1) * ebin(n-spec_comp+1)
-         end do
+         if(.not. use_big_h) then
+            do n = spec_comp,spec_comp+nspec-1
+               s0_out(j,rhoh_comp) = s0_out(j,rhoh_comp) &
+                    -dt_in*rho_omegadotbar(j,n-spec_comp+1)*ebin(n-spec_comp+1)
+            end do
+         endif
          s0_out(j,rhoh_comp) = s0_out(j,rhoh_comp) + dt_in * rho_Hextbar(j)
 
          gam1_out(j) = gam1_row(1)
