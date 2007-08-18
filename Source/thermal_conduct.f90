@@ -551,6 +551,35 @@ subroutine convert_bigH_to_h_2d(lo,hi,s2,ng)
 
 end subroutine convert_bigH_to_h_2d
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! 
+subroutine convert_h_to_bigH_2d(lo,hi,s2,ng)
+
+ integer        , intent(in   ) :: lo(:),hi(:),ng
+ real(kind=dp_t), intent(inout) :: s2(lo(1)-ng:,lo(2)-ng:,:)
+
+! Local
+  integer :: i,j,n
+  real(kind=dp_t) :: qreact
+
+  do j=lo(2),hi(2)
+     do i=lo(1),hi(1)
+
+        s2(i,j,rhoh_comp) = s2(i,j,rhoh_comp)/s2(i,j,rho_comp)
+
+        qreact = 0.0d0
+        do n=1,nspec
+           qreact = qreact + s2(i,j,spec_comp+n-1)*ebin(n)/s2(i,j,rho_comp)
+        enddo
+        s2(i,j,rhoh_comp) = s2(i,j,rhoh_comp) + qreact
+
+        s2(i,j,rhoh_comp) = s2(i,j,rhoh_comp)*s2(i,j,rho_comp)
+
+     enddo
+  enddo
+
+end subroutine convert_h_to_bigH_2d
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! compute kthovercp and xik, defined as:
 ! kthovercp = -(dt/2)k_{th}/c_p
