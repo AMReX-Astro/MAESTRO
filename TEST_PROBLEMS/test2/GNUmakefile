@@ -39,6 +39,7 @@ VPATH_LOCATIONS += $(FPARALLEL)/extern/VODE
 
 main.$(suf).exe: $(objects)
 	$(LINK.f90) -o main.$(suf).exe $(objects) $(libraries)
+	@echo SUCCESS
 
 include $(FPARALLEL)/mk/GMakerules.mak
 
