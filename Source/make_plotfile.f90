@@ -82,12 +82,12 @@ contains
 
   end subroutine get_plot_names
 
-  subroutine make_plotfile(istep,plotdata,u,s,gp,rho_omegadot,Source,sponge, &
+  subroutine make_plotfile(dirname,plotdata,u,s,gp,rho_omegadot,Source,sponge, &
                            mba,plot_names,time,dx, &
                            the_bc_tower, &
                            s0,p0,temp0,ntrac,plot_spec,plot_trac)
 
-    integer          , intent(in   ) :: istep
+    character(len=*) , intent(in   ) :: dirname
     integer          , intent(in   ) :: ntrac
     type(multifab)   , intent(inout) :: plotdata(:)
     type(multifab)   , intent(inout) :: u(:)
@@ -105,7 +105,6 @@ contains
     logical          , intent(in   ) :: plot_spec,plot_trac
 
     integer :: n,dm,nlevs
-    character(len=7) :: sd_name
 
     dm = get_dim(mba)
     nlevs = size(plotdata)
@@ -200,8 +199,7 @@ contains
 
     enddo
 
-    write(unit=sd_name,fmt='("plt",i4.4)') istep
-    call fabio_ml_multifab_write_d(plotdata, mba%rr(:,1), sd_name, plot_names, &
+    call fabio_ml_multifab_write_d(plotdata, mba%rr(:,1), dirname, plot_names, &
                                    mba%pd(1), time, dx(1,:))
 
   end subroutine make_plotfile
