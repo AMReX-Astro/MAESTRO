@@ -11,14 +11,14 @@ subroutine write_job_info(dirname)
   implicit none
   character (len=*)   :: dirname
   character (len=256) :: build_date, build_dir, build_machine
-  character (len=64) :: out_name
+  character (len=256) :: out_name
   character (len=16) :: date, time
   integer, dimension(8) :: values
 
   call build_info(build_date, build_dir, build_machine)
   call date_and_time(date, time, VALUES=values)
 
-  out_name = dirname // "/job_info"
+  out_name = trim(dirname) // "/job_info"
 
 1000 format(79('-'))
 1001 format(a,a)
