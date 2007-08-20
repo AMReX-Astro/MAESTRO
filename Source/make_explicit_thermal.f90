@@ -137,8 +137,8 @@ subroutine make_explicit_thermal(mla,dx,dt,thermal,s,p0,mg_verbose, &
      
      ! scale residual by sigma/rho and add to thermal
      do n=1,nlevs
-        call multifab_mult_mult_c(resid(n),1,sigmaoverrho(n),1,1)
-        call multifab_plus_plus_c(thermal(n),1,resid(n),1,1)
+        call multifab_mult_mult_c(resid(n),1,sigmaoverrho(n),1,1,0)
+        call multifab_plus_plus_c(thermal(n),1,resid(n),1,1,0)
      enddo
 
   else
@@ -173,8 +173,8 @@ subroutine make_explicit_thermal(mla,dx,dt,thermal,s,p0,mg_verbose, &
      
      ! scale residual by sigma/rho and add to thermal
      do n=1,nlevs
-        call multifab_mult_mult_c(resid(n),1,sigmaoverrho(n),1,1)
-        call multifab_plus_plus_c(thermal(n),1,resid(n),1,1)
+        call multifab_mult_mult_c(resid(n),1,sigmaoverrho(n),1,1,0)
+        call multifab_plus_plus_c(thermal(n),1,resid(n),1,1,0)
      enddo
      
      ! load X_k into phi
@@ -213,8 +213,8 @@ subroutine make_explicit_thermal(mla,dx,dt,thermal,s,p0,mg_verbose, &
         
         ! scale residual by sigma/rho and add to thermal
         do n=1,nlevs
-           call multifab_mult_mult_c(resid(n),1,sigmaoverrho(n),1,1)
-           call multifab_plus_plus_c(thermal(n),1,resid(n),1,1)
+           call multifab_mult_mult_c(resid(n),1,sigmaoverrho(n),1,1,0)
+           call multifab_plus_plus_c(thermal(n),1,resid(n),1,1,0)
         enddo
      enddo
   endif
