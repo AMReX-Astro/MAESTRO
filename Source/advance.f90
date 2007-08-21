@@ -388,7 +388,7 @@ module advance_timestep_module
         enddo
 
         if(use_thermal_diffusion) then
-           call make_explicit_thermal(mla,dx,dt,thermal,snew,p0_new, &
+           call make_explicit_thermal(mla,dx,thermal,snew,p0_new, &
                                       mg_verbose,cg_verbose,the_bc_tower, &
                                       temp_diffusion_formulation)
         endif
@@ -533,7 +533,7 @@ module advance_timestep_module
         enddo
 
         if(use_thermal_diffusion) then
-           call make_explicit_thermal(mla,dx,dt,thermal,snew,p0_new, &
+           call make_explicit_thermal(mla,dx,thermal,snew,p0_new, &
                                       mg_verbose,cg_verbose,the_bc_tower, &
                                       temp_diffusion_formulation)
         endif

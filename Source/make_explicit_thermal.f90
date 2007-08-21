@@ -17,11 +17,11 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Compute the explicit thermal conduction term needed for "S"
-subroutine make_explicit_thermal(mla,dx,dt,thermal,s,p0,mg_verbose, &
+subroutine make_explicit_thermal(mla,dx,thermal,s,p0,mg_verbose, &
      cg_verbose,the_bc_tower,temperature_diffusion)
 
   type(ml_layout), intent(inout) :: mla
-  real(dp_t)     , intent(in   ) :: dx(:,:),dt
+  real(dp_t)     , intent(in   ) :: dx(:,:)
   type(multifab) , intent(inout) :: thermal(:)
   type(multifab) , intent(in   ) :: s(:)
   real(kind=dp_t), intent(in   ) :: p0(0:)

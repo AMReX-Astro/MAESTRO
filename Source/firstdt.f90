@@ -18,11 +18,11 @@ module firstdt_module
 
 contains
 
-   subroutine firstdt (istep, u, s, force, p0, t0, dx, cflfac, dt, verbose)
+   subroutine firstdt (istep, u, s, force, divU, p0, gam1, t0, dx, cflfac, dt, verbose)
 
       integer        , intent(in   ) :: istep
-      type(multifab) , intent(inout) :: u,s,force
-      real(kind=dp_t), intent(in   ) :: p0(0:), cflfac, t0(0:)
+      type(multifab) , intent(in   ) :: u,s,force,divU
+      real(kind=dp_t), intent(in   ) :: p0(0:), cflfac, t0(0:), gam1(0:)
       real(kind=dp_t), intent(in   ) :: dx(:)
       real(kind=dp_t), intent(  out) :: dt
       integer        , intent(in   ) :: verbose
@@ -30,6 +30,7 @@ contains
       real(kind=dp_t), pointer:: uop(:,:,:,:)
       real(kind=dp_t), pointer:: sop(:,:,:,:)
       real(kind=dp_t), pointer:: fp(:,:,:,:)
+      real(kind=dp_t), pointer:: divup(:,:,:,:)
       integer :: lo(u%dim),hi(u%dim),ng,dm
       real(kind=dp_t) :: dt_hold_proc,dt_grid
       integer         :: i
@@ -44,18 +45,19 @@ contains
          if ( multifab_remote(u, i) ) cycle
          uop => dataptr(u, i)
          sop => dataptr(s, i)
-          fp => dataptr(force, i)
+         fp => dataptr(force, i)
+         divup => dataptr(divU,i)
          lo =  lwb(get_box(u, i))
          hi =  upb(get_box(u, i))
          select case (dm)
             case (2)
               call firstdt_2d(uop(:,:,1,:), sop(:,:,1,:), fp(:,:,1,:),&
-                              p0, t0, lo, hi, ng, dx, dt_grid, cflfac, &
-                              verbose)
+                              divup(:,:,1,1), p0, gam1, t0, lo, hi, ng, dx, &
+                              dt_grid, cflfac, verbose)
             case (3)
               call firstdt_3d(uop(:,:,:,:), sop(:,:,:,:), fp(:,:,:,:),&
-                              p0, t0, lo, hi, ng, dx, dt_grid, cflfac, &
-                              verbose)
+                              divup(:,:,:,1), p0, gam1, t0, lo, hi, ng, dx, &
+                              dt_grid, cflfac, verbose)
          end select
          dt_hold_proc = min(dt_hold_proc,dt_grid)
       end do
@@ -67,14 +69,15 @@ contains
 
     end subroutine firstdt
 
-   subroutine firstdt_2d (u, s, force, p0, t0, lo, hi, ng, dx, &
+   subroutine firstdt_2d (u, s, force, divu, p0, gam1, t0, lo, hi, ng, dx, &
                           dt, cfl, verbose)
 
       integer, intent(in) :: lo(:), hi(:), ng
       real (kind = dp_t), intent(in ) :: u(lo(1)-ng:,lo(2)-ng:,:)  
       real (kind = dp_t), intent(in ) :: s(lo(1)-ng:,lo(2)-ng:,:)  
-      real (kind = dp_t), intent(in ) :: force(lo(1)- 1:,lo(2)- 1:,:)  
-      real (kind = dp_t), intent(in ) :: p0(0:), t0(0:)
+      real (kind = dp_t), intent(in ) :: force(lo(1)- 1:,lo(2)- 1:,:)
+      real (kind = dp_t), intent(in ) :: divu(lo(1):,lo(2):)
+      real (kind = dp_t), intent(in ) :: p0(0:), gam1(0:), t0(0:)
       real (kind = dp_t), intent(in ) :: dx(:)
       real (kind = dp_t), intent(out) :: dt
       real (kind = dp_t), intent(in ) :: cfl
@@ -84,8 +87,12 @@ contains
       real (kind = dp_t)  :: spdx, spdy
       real (kind = dp_t)  :: pforcex, pforcey
       real (kind = dp_t)  :: ux, uy
-      real (kind = dp_t)  :: eps
-      integer             :: i,j
+      real (kind = dp_t)  :: eps, dt_divu, rho_min
+      integer             :: i,j,nr,gradp0,denom
+
+      nr = size(p0,dim=1)
+
+      rho_min = 1.d-20
 
       eps = 1.0e-8
 
@@ -168,16 +175,42 @@ contains
          endif
       endif
 
+     ! divU constraint
+     dt_divu = 1.d30
+     
+     do j = lo(2), hi(2)
+        if (j .eq. 0) then
+           gradp0 = (p0(j+1) - p0(j))/dx(2)
+        else if (j .eq. nr-1) then
+           gradp0 = (p0(j) - p0(j-1))/dx(2)
+        else
+           gradp0 = HALF*(p0(j+1) - p0(j-1))/dx(2)
+        endif
+
+        do i = lo(1), hi(1)
+           denom = divU(i,j) - u(i,j,2)*gradp0/(gam1(j)*p0(j))
+           if (denom > ZERO) then
+              dt_divu = min(dt_divu, &
+                            HALF*(ONE - rho_min/s(i,j,rho_comp))/denom)
+           endif
+        enddo
+     enddo
+
+     if ( parallel_IOProcessor() .and. verbose .ge. 1) then
+        print*, 'divu_dt =',dt_divu
+     endif     
+
     end subroutine firstdt_2d
 
-    subroutine firstdt_3d (u, s, force, p0, t0, lo, hi, ng, dx, dt, cfl, &
+    subroutine firstdt_3d (u, s, force, divU, p0, gam1, t0, lo, hi, ng, dx, dt, cfl, &
                            verbose)
 
       integer, intent(in) :: lo(:), hi(:), ng
       real (kind = dp_t), intent(in ) ::     u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
       real (kind = dp_t), intent(in ) ::     s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
       real (kind = dp_t), intent(in ) :: force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)  
-      real (kind = dp_t), intent(in ) :: p0(0:), t0(0:)
+      real (kind = dp_t), intent(in ) :: divU(lo(1):,lo(2):,lo(3):)  
+      real (kind = dp_t), intent(in ) :: p0(0:), t0(0:), gam1(0:)
       real (kind = dp_t), intent(in ) :: dx(:)
       real (kind = dp_t), intent(out) :: dt
       real (kind = dp_t), intent(in ) :: cfl
@@ -187,13 +220,17 @@ contains
       real (kind = dp_t)  :: spdx, spdy, spdz
       real (kind = dp_t)  :: pforcex, pforcey, pforcez
       real (kind = dp_t)  :: ux, uy, uz
-      real (kind = dp_t)  :: eps
-      integer             :: i,j,k
+      real (kind = dp_t)  :: eps, dt_divu, gradp0, denom, rho_min
+      integer             :: i,j,k,nr
 
       real (kind=dp_t), allocatable :: t0_cart(:,:,:)
       real (kind=dp_t), allocatable :: p0_cart(:,:,:)
 
       eps = 1.0e-8
+
+      rho_min = 1.d-20
+
+      nr = size(p0,dim=1)
 
       spdx    = ZERO
       spdy    = ZERO 
@@ -303,8 +340,35 @@ contains
          endif     
       endif
 
-      if (spherical == 1) &
-        deallocate(t0_cart,p0_cart)
+     ! divU constraint
+     dt_divu = 1.d30
+
+     do k = lo(3), hi(3)
+        if (k .eq. 0) then
+           gradp0 = (p0(k+1) - p0(k))/dx(3)
+        else if (k .eq. nr-1) then
+           gradp0 = (p0(k) - p0(k-1))/dx(3)
+        else
+           gradp0 = HALF*(p0(k+1) - p0(k-1))/dx(3)
+        endif
+        
+        do j = lo(2), hi(2)
+           do i = lo(1), hi(1)
+              denom = divU(i,j,k) - u(i,j,k,3)*gradp0/(gam1(k)*p0(k))
+              if (denom > ZERO) then
+                dt_divu = min(dt_divu, &
+                              HALF*(ONE - rho_min/s(i,j,k,rho_comp))/denom)
+              endif
+           enddo
+        enddo
+     enddo
+
+     if ( parallel_IOProcessor() .and. verbose .ge. 1) then
+        print*, 'divu_dt =',dt_divu
+     endif    
+
+     if (spherical == 1) &
+          deallocate(t0_cart,p0_cart)
 
     end subroutine firstdt_3d
 
