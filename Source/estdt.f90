@@ -188,7 +188,7 @@ contains
            if (denom > ZERO) then
 
               dt_divu = min(dt_divu, &
-                            HALF*(ONE - rho_min/s(i,j,rho_comp))/denom)
+                            0.4d0*(ONE - rho_min/s(i,j,rho_comp))/denom)
            endif
 
         enddo
@@ -312,7 +312,7 @@ contains
 
               if (denom > ZERO) then
                 dt_divu = min(dt_divu, &
-                              HALF*(ONE - rho_min/s(i,j,k,rho_comp))/denom)
+                              0.4d0*(ONE - rho_min/s(i,j,k,rho_comp))/denom)
               endif
 
            enddo
@@ -441,7 +441,7 @@ contains
 
               if (denom > ZERO) then
                 dt_divu = min(dt_divu, &
-                              HALF*(ONE - rho_min/s(i,j,k,rho_comp))/denom)
+                              0.4d0*(ONE - rho_min/s(i,j,k,rho_comp))/denom)
               endif
 
            enddo

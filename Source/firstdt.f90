@@ -191,7 +191,7 @@ contains
            denom = divU(i,j) - u(i,j,2)*gradp0/(gam1(j)*p0(j))
            if (denom > ZERO) then
               dt_divu = min(dt_divu, &
-                            HALF*(ONE - rho_min/s(i,j,rho_comp))/denom)
+                            0.4d0*(ONE - rho_min/s(i,j,rho_comp))/denom)
            endif
         enddo
      enddo
@@ -357,7 +357,7 @@ contains
               denom = divU(i,j,k) - u(i,j,k,3)*gradp0/(gam1(k)*p0(k))
               if (denom > ZERO) then
                 dt_divu = min(dt_divu, &
-                              HALF*(ONE - rho_min/s(i,j,k,rho_comp))/denom)
+                              0.4d0*(ONE - rho_min/s(i,j,k,rho_comp))/denom)
               endif
            enddo
         enddo
