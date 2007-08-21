@@ -60,15 +60,15 @@ contains
          select case (dm)
             case (2)
               call estdt_2d(uop(:,:,1,:), sop(:,:,1,:), fp(:,:,1,:), dUp(:,:,1,1), &
-                            w0, p0, gam1, lo, hi, ng, dx, rho_min, dt_adv_grid, dt_divu_grid, verbose)
+                            w0, p0, gam1, lo, hi, ng, dx, rho_min, dt_adv_grid, dt_divu_grid, cflfac, verbose)
             case (3)
               if (spherical .eq. 1) then
                 np => dataptr(normal, i)
                 call estdt_3d_sphr(uop(:,:,:,:), sop(:,:,:,:), fp(:,:,:,:), dUp(:,:,:,1), np(:,:,:,:), &
-                                   w0, p0, gam1, lo, hi, ng, dx, rho_min, dt_adv_grid, dt_divu_grid, verbose)
+                                   w0, p0, gam1, lo, hi, ng, dx, rho_min, dt_adv_grid, dt_divu_grid, cflfac, verbose)
               else
                 call estdt_3d_cart(uop(:,:,:,:), sop(:,:,:,:), fp(:,:,:,:), dUp(:,:,:,1), &
-                                   w0, p0, gam1, lo, hi, ng, dx, rho_min, dt_adv_grid, dt_divu_grid, verbose)
+                                   w0, p0, gam1, lo, hi, ng, dx, rho_min, dt_adv_grid, dt_divu_grid, cflfac, verbose)
               end if
          end select
 
@@ -81,16 +81,15 @@ contains
       call parallel_reduce(dt_divu,dt_divu_proc,MPI_MIN)
 
       dt = min(dt_adv,dt_divu)
-      dt = dt * cflfac
 
       if (parallel_IOProcessor() .and. verbose .ge. 1) then
-         write(6,*) 'Using estdt, at istep',istep,', CFL*dt =',dt
+         write(6,*) 'Using estdt, at istep',istep,', dt =',dt
       endif
 
    end subroutine estdt
 
 
-   subroutine estdt_2d (u, s, force, divU, w0, p0, gam1, lo, hi, ng, dx, rho_min, dt_adv, dt_divu, verbose)
+   subroutine estdt_2d (u, s, force, divU, w0, p0, gam1, lo, hi, ng, dx, rho_min, dt_adv, dt_divu, cfl, verbose)
 
      integer, intent(in) :: lo(:), hi(:), ng
      real (kind = dp_t), intent(in ) ::     u(lo(1)-ng:,lo(2)-ng:,:)  
@@ -99,7 +98,7 @@ contains
      real (kind = dp_t), intent(in ) ::  divU(lo(1):,lo(2):)
      real (kind = dp_t), intent( in) ::   w0(0:), p0(0:), gam1(0:)
      real (kind = dp_t), intent(in ) :: dx(:)
-     real (kind = dp_t), intent(in ) :: rho_min
+     real (kind = dp_t), intent(in ) :: rho_min,cfl
      real (kind = dp_t), intent(out) :: dt_adv,dt_divu
      integer           , intent(in ) :: verbose
 
@@ -137,7 +136,7 @@ contains
      if (spdx < eps .and. spdy < eps .and. spdr < eps) then
         dt_adv = min(dx(1),dx(2))
      else
-        dt_adv = 1.0D0  / max(spdx,spdy,spdr)
+        dt_adv = cfl / max(spdx,spdy,spdr)
         if (parallel_IOProcessor() .and. verbose .ge. 1) then
            print*, ''
            print*, 'advective dt =',dt_adv
@@ -201,7 +200,7 @@ contains
 
    end subroutine estdt_2d
 
-   subroutine estdt_3d_cart (u, s, force, divU, w0, p0, gam1, lo, hi, ng, dx, rho_min, dt_adv, dt_divu, verbose)
+   subroutine estdt_3d_cart (u, s, force, divU, w0, p0, gam1, lo, hi, ng, dx, rho_min, dt_adv, dt_divu, cfl, verbose)
 
      integer, intent(in) :: lo(:), hi(:), ng
      real (kind = dp_t), intent(in ) ::      u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
@@ -210,7 +209,7 @@ contains
      real (kind = dp_t), intent(in ) ::   divU(lo(1):,lo(2):,lo(3):)
      real (kind = dp_t), intent( in) ::   w0(0:), p0(0:), gam1(0:)
      real (kind = dp_t), intent(in ) :: dx(:)
-     real (kind = dp_t), intent(in ) :: rho_min
+     real (kind = dp_t), intent(in ) :: rho_min,cfl
      real (kind = dp_t), intent(out) :: dt_adv, dt_divu
      integer           , intent(in ) :: verbose
 
@@ -252,7 +251,7 @@ contains
      if (spdx < eps .and. spdy < eps .and. spdz < eps .and. spdr < eps) then
         dt_adv = min(dx(1),dx(2),dx(3))
      else
-        dt_adv = 1.0D0  / max(spdx,spdy,spdz,spdr)
+        dt_adv = cfl  / max(spdx,spdy,spdz,spdr)
      endif
 
      if (parallel_IOProcessor() .and. verbose .ge. 1) then
@@ -326,7 +325,7 @@ contains
 
    end subroutine estdt_3d_cart
 
-   subroutine estdt_3d_sphr (u, s, force, divU, normal, w0, p0, gam1, lo, hi, ng, dx, rho_min, dt_adv, dt_divu, verbose)
+   subroutine estdt_3d_sphr (u, s, force, divU, normal, w0, p0, gam1, lo, hi, ng, dx, rho_min, dt_adv, dt_divu, cfl, verbose)
 
      integer, intent(in) :: lo(:), hi(:), ng
      real (kind = dp_t), intent(in ) ::      u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
@@ -336,7 +335,7 @@ contains
      real (kind = dp_t), intent(in ) :: normal(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
      real (kind = dp_t), intent( in) ::   w0(0:), p0(0:), gam1(0:)
      real (kind = dp_t), intent(in ) :: dx(:)
-     real (kind = dp_t), intent(in ) :: rho_min
+     real (kind = dp_t), intent(in ) :: rho_min, cfl
      real (kind = dp_t), intent(out) :: dt_adv, dt_divu
      integer           , intent(in ) :: verbose
 
@@ -386,7 +385,7 @@ contains
      if (spdx < eps .and. spdy < eps .and. spdz < eps .and. spdr < eps) then
         dt_adv = min(dx(1),dx(2),dx(3))
      else
-        dt_adv = 1.0D0  / max(spdx,spdy,spdz,spdr)
+        dt_adv = cfl / max(spdx,spdy,spdz,spdr)
      endif
      
      ! Limit dt based on forcing terms
