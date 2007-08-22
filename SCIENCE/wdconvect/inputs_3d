@@ -1,12 +1,12 @@
 &PROBIN
- model_file = "model_7.e8.hse"
+ model_file = "model_6.e8.hse"
 
  test_set = "gr0_3d"
 
  spherical_in = 1
  do_sponge = .true.
 
- dr_base = 976562.5
+ dr_base = 195312.5
 
  prob_hi_x = 5.e8
  prob_hi_y = 5.e8
@@ -18,9 +18,9 @@
  stop_time = 1000.
 
  plot_int  = 10
- chk_int   = 10
+ chk_int   = 20
 
- cflfac = 0.9
+ cflfac = 0.5
  init_shrink = 1.
 
  bcx_lo = 12
