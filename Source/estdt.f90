@@ -1,3 +1,7 @@
+! the differences between firstdt and estdt are as follows:
+! firstdt does not use the base state velocity w0 since it's supposed to be 0
+! firstdt uses the sound speed time step constraint if the velocity is 0
+
 module estdt_module
 
   use bl_types
@@ -11,8 +15,8 @@ module estdt_module
 
 contains
 
-   subroutine estdt (istep, u, s, force, divU, normal, w0, p0, gam1, dx, cflfac, dtold, dt, &
-                     max_dt_growth, verbose)
+   subroutine estdt (istep, u, s, force, divU, normal, w0, p0, gam1, dx, &
+        cflfac, dtold, dt, verbose)
 
       integer        , intent(in ) :: istep
       type(multifab) , intent(in ) :: u
@@ -24,16 +28,17 @@ contains
       real(kind=dp_t), intent(in ) :: dx(:)
       real(kind=dp_t), intent(in ) :: cflfac, dtold
       real(kind=dp_t), intent(out) :: dt
-      real(kind=dp_t), intent(in ) :: max_dt_growth
       integer        , intent(in ) :: verbose
 
       real(kind=dp_t), pointer:: uop(:,:,:,:)
       real(kind=dp_t), pointer:: sop(:,:,:,:)
       real(kind=dp_t), pointer:: fp(:,:,:,:)
       real(kind=dp_t), pointer:: np(:,:,:,:)
-      real(kind=dp_t), pointer:: dUp(:,:,:,:)     
+      real(kind=dp_t), pointer:: dUp(:,:,:,:)
+
       integer :: lo(u%dim),hi(u%dim),ng,dm
-      real(kind=dp_t) :: dt_adv,  dt_adv_grid,dt_adv_proc
+
+      real(kind=dp_t) :: dt_adv,dt_adv_grid,dt_adv_proc
       real(kind=dp_t) :: dt_divu,dt_divu_grid,dt_divu_proc
       integer         :: i
 
@@ -59,16 +64,19 @@ contains
 
          select case (dm)
             case (2)
-              call estdt_2d(uop(:,:,1,:), sop(:,:,1,:), fp(:,:,1,:), dUp(:,:,1,1), &
-                            w0, p0, gam1, lo, hi, ng, dx, rho_min, dt_adv_grid, dt_divu_grid, cflfac, verbose)
+              call estdt_2d(uop(:,:,1,:), sop(:,:,1,:), fp(:,:,1,:), &
+                   dUp(:,:,1,1), w0, p0, gam1, lo, hi, ng, dx, rho_min, &
+                   dt_adv_grid, dt_divu_grid, cflfac, verbose)
             case (3)
               if (spherical .eq. 1) then
                 np => dataptr(normal, i)
-                call estdt_3d_sphr(uop(:,:,:,:), sop(:,:,:,:), fp(:,:,:,:), dUp(:,:,:,1), np(:,:,:,:), &
-                                   w0, p0, gam1, lo, hi, ng, dx, rho_min, dt_adv_grid, dt_divu_grid, cflfac, verbose)
+                call estdt_3d_sphr(uop(:,:,:,:), sop(:,:,:,:), fp(:,:,:,:), &
+                     dUp(:,:,:,1), np(:,:,:,:), w0, p0, gam1, lo, hi, ng, dx, &
+                     rho_min, dt_adv_grid, dt_divu_grid, cflfac, verbose)
               else
-                call estdt_3d_cart(uop(:,:,:,:), sop(:,:,:,:), fp(:,:,:,:), dUp(:,:,:,1), &
-                                   w0, p0, gam1, lo, hi, ng, dx, rho_min, dt_adv_grid, dt_divu_grid, cflfac, verbose)
+                call estdt_3d_cart(uop(:,:,:,:), sop(:,:,:,:), fp(:,:,:,:), &
+                     dUp(:,:,:,1), w0, p0, gam1, lo, hi, ng, dx, rho_min, &
+                     dt_adv_grid, dt_divu_grid, cflfac, verbose)
               end if
          end select
 
@@ -89,14 +97,15 @@ contains
    end subroutine estdt
 
 
-   subroutine estdt_2d (u, s, force, divU, w0, p0, gam1, lo, hi, ng, dx, rho_min, dt_adv, dt_divu, cfl, verbose)
+   subroutine estdt_2d (u, s, force, divU, w0, p0, gam1, lo, hi, ng, dx, &
+        rho_min, dt_adv, dt_divu, cfl, verbose)
 
      integer, intent(in) :: lo(:), hi(:), ng
-     real (kind = dp_t), intent(in ) ::     u(lo(1)-ng:,lo(2)-ng:,:)  
-     real (kind = dp_t), intent(in ) ::     s(lo(1)-ng:,lo(2)-ng:,:)  
-     real (kind = dp_t), intent(in ) :: force(lo(1)- 1:,lo(2)- 1:,:)  
-     real (kind = dp_t), intent(in ) ::  divU(lo(1):,lo(2):)
-     real (kind = dp_t), intent( in) ::   w0(0:), p0(0:), gam1(0:)
+     real (kind = dp_t), intent(in ) :: u(lo(1)-ng:,lo(2)-ng:,:)  
+     real (kind = dp_t), intent(in ) :: s(lo(1)-ng:,lo(2)-ng:,:)  
+     real (kind = dp_t), intent(in ) :: force(lo(1)-1:,lo(2)-1:,:)  
+     real (kind = dp_t), intent(in ) :: divU(lo(1):,lo(2):)
+     real (kind = dp_t), intent( in) :: w0(0:), p0(0:), gam1(0:)
      real (kind = dp_t), intent(in ) :: dx(:)
      real (kind = dp_t), intent(in ) :: rho_min,cfl
      real (kind = dp_t), intent(out) :: dt_adv,dt_divu
@@ -143,7 +152,6 @@ contains
         endif
      endif
 
-
      ! force constraints
      pforcex = 0.0D0 
      pforcey = 0.0D0 
@@ -165,7 +173,7 @@ contains
 
      if (parallel_IOProcessor() .and. verbose .ge. 1) then
         print*, 'force dt =', &
-             min(sqrt(2.0D0 *dx(2)/pforcey),sqrt(2.0D0 *dx(1)/pforcex))
+             min(sqrt(2.0D0*dx(2)/pforcey),sqrt(2.0D0*dx(1)/pforcex))
      endif
 
      ! divU constraint
@@ -203,11 +211,11 @@ contains
    subroutine estdt_3d_cart (u, s, force, divU, w0, p0, gam1, lo, hi, ng, dx, rho_min, dt_adv, dt_divu, cfl, verbose)
 
      integer, intent(in) :: lo(:), hi(:), ng
-     real (kind = dp_t), intent(in ) ::      u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
-     real (kind = dp_t), intent(in ) ::      s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
-     real (kind = dp_t), intent(in ) ::  force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)  
-     real (kind = dp_t), intent(in ) ::   divU(lo(1):,lo(2):,lo(3):)
-     real (kind = dp_t), intent( in) ::   w0(0:), p0(0:), gam1(0:)
+     real (kind = dp_t), intent(in ) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
+     real (kind = dp_t), intent(in ) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
+     real (kind = dp_t), intent(in ) :: force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
+     real (kind = dp_t), intent(in ) :: divU(lo(1):,lo(2):,lo(3):)
+     real (kind = dp_t), intent( in) :: w0(0:), p0(0:), gam1(0:)
      real (kind = dp_t), intent(in ) :: dx(:)
      real (kind = dp_t), intent(in ) :: rho_min,cfl
      real (kind = dp_t), intent(out) :: dt_adv, dt_divu
@@ -288,7 +296,8 @@ contains
 
         if (parallel_IOProcessor() .and. verbose .ge. 1) then
            print*, 'force dt =', &
-                min(sqrt(2.0D0*dx(1)/pforcex),min(sqrt(2.0D0*dx(2)/pforcey),sqrt(2.0D0*dx(3)/pforcez)))
+                min(sqrt(2.0D0*dx(1)/pforcex), &
+                min(sqrt(2.0D0*dx(2)/pforcey),sqrt(2.0D0*dx(3)/pforcez)))
         endif
 
 
@@ -325,15 +334,16 @@ contains
 
    end subroutine estdt_3d_cart
 
-   subroutine estdt_3d_sphr (u, s, force, divU, normal, w0, p0, gam1, lo, hi, ng, dx, rho_min, dt_adv, dt_divu, cfl, verbose)
+   subroutine estdt_3d_sphr (u, s, force, divU, normal, w0, p0, gam1, lo, hi, &
+        ng, dx, rho_min, dt_adv, dt_divu, cfl, verbose)
 
      integer, intent(in) :: lo(:), hi(:), ng
-     real (kind = dp_t), intent(in ) ::      u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
-     real (kind = dp_t), intent(in ) ::      s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
-     real (kind = dp_t), intent(in ) ::  force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)  
-     real (kind = dp_t), intent(in ) ::   divU(lo(1):,lo(2):,lo(3):)
-     real (kind = dp_t), intent(in ) :: normal(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
-     real (kind = dp_t), intent( in) ::   w0(0:), p0(0:), gam1(0:)
+     real (kind = dp_t), intent(in ) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
+     real (kind = dp_t), intent(in ) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
+     real (kind = dp_t), intent(in ) :: force(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)  
+     real (kind = dp_t), intent(in ) :: divU(lo(1):,lo(2):,lo(3):)
+     real (kind = dp_t), intent(in ) :: normal(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)
+     real (kind = dp_t), intent( in) :: w0(0:), p0(0:), gam1(0:)
      real (kind = dp_t), intent(in ) :: dx(:)
      real (kind = dp_t), intent(in ) :: rho_min, cfl
      real (kind = dp_t), intent(out) :: dt_adv, dt_divu
@@ -440,8 +450,8 @@ contains
               denom = divU(i,j,k) - gp_dot_u 
 
               if (denom > ZERO) then
-                dt_divu = min(dt_divu, &
-                              0.4d0*(ONE - rho_min/s(i,j,k,rho_comp))/denom)
+                dt_divu = &
+                     min(dt_divu,0.4d0*(ONE - rho_min/s(i,j,k,rho_comp))/denom)
               endif
 
            enddo

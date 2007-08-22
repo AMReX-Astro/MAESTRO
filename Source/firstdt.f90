@@ -1,8 +1,8 @@
-! in the initial projection, if the velocity is zero everywhere and there
-! is no buoyancy terms, then estdt will give 0 as the initial timestep.
-! Here we also consider dx/c, where c is the sound speed.  After the
-! first iteration, we should have a source term tat gave rise to a 
-! velocity field, and we can use the normal estdt.
+! the differences between firstdt and estdt are as follows:
+! firstdt does not use the base state velocity w0 since it's supposed to be 0
+! firstdt uses the sound speed time step constraint if the velocity is 0
+! After the initial projection, we should have a source term that gives
+! rise to a velocity field, and we can use the normal estdt.
 
 module firstdt_module
 
@@ -18,7 +18,8 @@ module firstdt_module
 
 contains
 
-   subroutine firstdt (istep, u, s, force, divU, p0, gam1, t0, dx, cflfac, dt, verbose)
+   subroutine firstdt (istep, u, s, force, divU, p0, gam1, t0, dx, cflfac, &
+        dt, verbose)
 
       integer        , intent(in   ) :: istep
       type(multifab) , intent(in   ) :: u,s,force,divU
@@ -202,13 +203,13 @@ contains
 
     end subroutine firstdt_2d
 
-    subroutine firstdt_3d (u, s, force, divU, p0, gam1, t0, lo, hi, ng, dx, dt, cfl, &
-                           verbose)
+    subroutine firstdt_3d (u, s, force, divU, p0, gam1, t0, lo, hi, ng, dx, &
+         dt, cfl, verbose)
 
       integer, intent(in) :: lo(:), hi(:), ng
-      real (kind = dp_t), intent(in ) ::     u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
-      real (kind = dp_t), intent(in ) ::     s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
-      real (kind = dp_t), intent(in ) :: force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)  
+      real (kind = dp_t), intent(in ) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
+      real (kind = dp_t), intent(in ) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
+      real (kind = dp_t), intent(in ) :: force(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)
       real (kind = dp_t), intent(in ) :: divU(lo(1):,lo(2):,lo(3):)  
       real (kind = dp_t), intent(in ) :: p0(0:), t0(0:), gam1(0:)
       real (kind = dp_t), intent(in ) :: dx(:)
