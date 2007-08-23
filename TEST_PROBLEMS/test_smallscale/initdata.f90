@@ -84,24 +84,19 @@ contains
     !     Local variables
     integer :: i, j, n
     real(kind=dp_t) :: x,y,r,r0,r1,r2,temp
-    real(kind=dp_t) :: dens_pert, rhoh_pert, rhoX_pert(nspec), trac_pert(ntrac)
+    real(kind=dp_t) :: dens_pert, rhoh_pert, temp_pert, rhoX_pert(nspec), trac_pert(ntrac)
 
 
     ! initial the domain with the base state
     s = ZERO
 
     ! initialize the scalars
-    do n = rho_comp,spec_comp+nspec-1
+    do n = rho_comp,temp_comp
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
              s(i,j,n) = s0(j,n)
           enddo
        enddo
-    enddo
-
-    ! set density in base state to the constant, "bottom domain" value
-    do j=lo(2),hi(2)
-       s0(j,rho_comp) = s0(0,rho_comp)
     enddo
     
     ! add an optional perturbation
@@ -113,7 +108,7 @@ contains
              x = prob_lo(1) + (dble(i)+HALF) * dx(1)
           
              call perturb_2d(x, y, temp0(j), p0(j), s0(j,:), &
-                             dens_pert, rhoh_pert, rhoX_pert, trac_pert)
+                             dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
 
              s(i,j,rho_comp) = dens_pert
              s(i,j,rhoh_comp) = rhoh_pert
@@ -143,7 +138,7 @@ contains
     !     Local variables
     integer :: i, j, k, n
     real(kind=dp_t) :: x,y,z,r,r0,r1,r2,temp
-    real(kind=dp_t) :: dens_pert, rhoh_pert, rhoX_pert(nspec), trac_pert(ntrac)
+    real(kind=dp_t) :: dens_pert, rhoh_pert, temp_pert, rhoX_pert(nspec), trac_pert(ntrac)
 
     ! initial the domain with the base state
     s = ZERO
@@ -185,7 +180,7 @@ contains
                    x = prob_lo(1) + (dble(i)+HALF) * dx(1)
                    
                    call perturb_3d(x, y, z, temp0(k), p0(k), s0(k,:), &
-                                   dens_pert, rhoh_pert, rhoX_pert, trac_pert)
+                                   dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
 
                    s(i,j,k,rho_comp) = dens_pert
                    s(i,j,k,rhoh_comp) = rhoh_pert
@@ -331,14 +326,14 @@ contains
   end subroutine initveldata_3d
 
 
-  subroutine perturb_2d(x, y, t0, p0, s0, dens_pert, rhoh_pert, rhoX_pert, trac_pert)
+  subroutine perturb_2d(x, y, t0, p0, s0, dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
 
     ! apply an optional perturbation to the initial temperature field
     ! to see some bubbles
 
     real(kind=dp_t), intent(in ) :: x, y
     real(kind=dp_t), intent(in ) :: t0, p0, s0(:)
-    real(kind=dp_t), intent(out) :: dens_pert, rhoh_pert
+    real(kind=dp_t), intent(out) :: dens_pert, rhoh_pert, temp_pert
     real(kind=dp_t), intent(out) :: rhoX_pert(:)
     real(kind=dp_t), intent(out) :: trac_pert(:)
 
@@ -397,6 +392,8 @@ contains
     dens_pert = den_row(1)
     rhoh_pert = den_row(1)*h_row(1)
     rhoX_pert(:) = dens_pert*xn_zone(:)
+
+    temp_pert = temp
     
 !   if ( (r0 .lt. 2.0) .or. (r1 .lt. 2.0) .or. (r2 .lt. 2.0) ) then
 !     trac_pert(:) = ONE
@@ -406,14 +403,14 @@ contains
 
   end subroutine perturb_2d
 
-  subroutine perturb_3d(x, y, z, t0, p0, s0, dens_pert, rhoh_pert, rhoX_pert, trac_pert)
+  subroutine perturb_3d(x, y, z, t0, p0, s0, dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
 
     ! apply an optional perturbation to the initial temperature field
     ! to see some bubbles
 
     real(kind=dp_t), intent(in ) :: x, y, z
     real(kind=dp_t), intent(in ) :: t0, p0, s0(:)
-    real(kind=dp_t), intent(out) :: dens_pert, rhoh_pert
+    real(kind=dp_t), intent(out) :: dens_pert, rhoh_pert, temp_pert
     real(kind=dp_t), intent(out) :: rhoX_pert(:)
     real(kind=dp_t), intent(out) :: trac_pert(:)
 
@@ -473,6 +470,8 @@ contains
     dens_pert = den_row(1)
     rhoh_pert = den_row(1)*h_row(1)
     rhoX_pert(:) = dens_pert*xn_zone(:)
+
+    temp_pert = temp
     
 !   if (r1 .lt. 2.0) then
 !     trac_pert(:) = ONE
@@ -563,6 +562,8 @@ contains
        s0(i,trac_comp) = 0.0d0
        
        temp0(i) = temp_row(1)
+       s0(i,temp_comp) = temp_row(1)
+
        p0(i) = p_row(1)
        gam1(i) = gam1_row(1)
        

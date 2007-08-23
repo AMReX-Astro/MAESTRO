@@ -24,12 +24,13 @@ contains
     rho_comp    = 1
     rhoh_comp   = 2
     spec_comp   = rhoh_comp + 1
-    trac_comp = spec_comp + nspec
+    temp_comp   = spec_comp + nspec
+    trac_comp   = temp_comp + 1
 
     ntrac = 1
 
-!   The "2" here refers to rho, rhoh
-    nscal = nspec + ntrac + 2
+  ! The "3" here refers to rho, rhoh, and temp
+    nscal = nspec + ntrac + 3
 
     press_comp  = dm + nscal + 1
 
