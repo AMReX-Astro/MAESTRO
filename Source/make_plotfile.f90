@@ -22,9 +22,9 @@ module make_plotfile_module
 
 contains
 
-  subroutine get_plot_names(dm,ntrac,plot_names,plot_spec,plot_trac)
+  subroutine get_plot_names(dm,plot_names,plot_spec,plot_trac)
 
-    integer          , intent(in   ) :: dm,ntrac
+    integer          , intent(in   ) :: dm
     logical          , intent(in   ) :: plot_spec,plot_trac
     character(len=20), intent(inout) :: plot_names(:)
 
@@ -85,10 +85,9 @@ contains
   subroutine make_plotfile(dirname,plotdata,u,s,gp,rho_omegadot,Source,sponge, &
                            mba,plot_names,time,dx, &
                            the_bc_tower, &
-                           s0,p0,temp0,ntrac,plot_spec,plot_trac)
+                           s0,p0,temp0,plot_spec,plot_trac)
 
     character(len=*) , intent(in   ) :: dirname
-    integer          , intent(in   ) :: ntrac
     type(multifab)   , intent(inout) :: plotdata(:)
     type(multifab)   , intent(inout) :: u(:)
     type(multifab)   , intent(in   ) :: s(:)

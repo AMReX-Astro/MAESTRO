@@ -123,7 +123,7 @@ module advance_timestep_module
     real(dp_t)    , allocatable :: rho_Hextbar(:,:)
     type(box)      ::  fine_domain
     real(dp_t)     :: halfdt, eps_in
-    integer :: i,j,n,dm,nscal,nlevs
+    integer :: i,j,n,dm,nlevs
     integer :: nr,ng_cell
     integer, allocatable :: lo(:),hi(:)
     logical :: nodal(mla%dim)
@@ -146,8 +146,6 @@ module advance_timestep_module
     allocate(macphi(nlevs))
     allocate( hgrhs(nlevs))
     allocate(thermal(nlevs))
-
-    nscal = multifab_ncomp(sold(1))
     
     ! nr is the number of zones in a cell-centered basestate quantity
     nr    = size(s0_old,dim=1)

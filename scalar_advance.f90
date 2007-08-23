@@ -71,7 +71,7 @@ contains
       real(dp_t)     :: mult
       real(dp_t)     :: smin,smax
 
-      integer :: nscal,ntrac,velpred
+      integer :: velpred
       integer :: lo(uold%dim),hi(uold%dim)
       integer :: i,n,bc_comp,dm,ng_cell
       logical :: is_vel
@@ -87,8 +87,6 @@ contains
       ng_cell = sold%ng
       dm      = sold%dim
 
-      nscal  = ncomp(ext_scal_force)
-      ntrac  = nscal - nspec - 2
       is_vel = .false.
 
       call build(scal_force, ext_scal_force%la, nscal, 1)

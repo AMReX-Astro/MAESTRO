@@ -17,7 +17,7 @@ module init_module
 contains
 
   subroutine initscalardata (s,s0,p0,temp0,dx,perturb_model, &
-                             prob_lo,prob_hi,bc,nscal,ntrac)
+                             prob_lo,prob_hi,bc)
 
     type(multifab) , intent(inout) :: s
     real(kind=dp_t), intent(in   ) ::    s0(0:,:)
@@ -28,7 +28,6 @@ contains
     real(kind=dp_t), intent(in   ) :: prob_lo(:)
     real(kind=dp_t), intent(in   ) :: prob_hi(:)
     type(bc_level) , intent(in   ) :: bc
-    integer        , intent(in   ) :: nscal,ntrac
 
     real(kind=dp_t), pointer:: sop(:,:,:,:)
     integer :: lo(s%dim),hi(s%dim),ng,dm
@@ -46,7 +45,7 @@ contains
        select case (dm)
        case (2)
           call initscalardata_2d(sop(:,:,1,:), lo, hi, ng, dx, perturb_model, &
-                                 prob_lo, prob_hi, s0, p0, temp0, ntrac)
+                                 prob_lo, prob_hi, s0, p0, temp0)
 
           do n = 1,nscal
              call setbc_2d(sop(:,:,1,n), lo, ng, &
@@ -55,7 +54,7 @@ contains
 
        case (3)
           call initscalardata_3d(sop(:,:,:,:), lo, hi, ng, dx, perturb_model, &
-                                 prob_lo, prob_hi, s0, p0, temp0, ntrac)
+                                 prob_lo, prob_hi, s0, p0, temp0)
 
           do n = 1, nscal
              call setbc_3d(sop(:,:,:,n), lo, ng, &
@@ -69,9 +68,9 @@ contains
   end subroutine initscalardata
 
   subroutine initscalardata_2d (s,lo,hi,ng,dx, perturb_model, &
-                                prob_lo,prob_hi,s0,p0,temp0,ntrac)
+                                prob_lo,prob_hi,s0,p0,temp0)
 
-    integer, intent(in) :: lo(:), hi(:), ng, ntrac
+    integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,:)  
     real (kind = dp_t), intent(in ) :: dx(:)
     logical,            intent(in ) :: perturb_model
@@ -121,11 +120,11 @@ contains
   end subroutine initscalardata_2d
 
   subroutine initscalardata_3d (s,lo,hi,ng,dx, perturb_model, &
-                                prob_lo,prob_hi,s0,p0,temp0,ntrac)
+                                prob_lo,prob_hi,s0,p0,temp0)
 
     implicit none
 
-    integer, intent(in) :: lo(:), hi(:), ng, ntrac
+    integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
     real (kind = dp_t), intent(in ) :: dx(:)
     logical,            intent(in ) :: perturb_model
@@ -190,7 +189,7 @@ contains
     
   end subroutine initscalardata_3d
 
-  subroutine initveldata (u,s0,p0,temp0,dx,prob_lo,prob_hi,bc,nscal,ntrac)
+  subroutine initveldata (u,s0,p0,temp0,dx,prob_lo,prob_hi,bc)
 
     type(multifab) , intent(inout) :: u
     real(kind=dp_t), intent(in   ) ::    s0(:,:)
@@ -200,7 +199,6 @@ contains
     real(kind=dp_t), intent(in   ) :: prob_lo(:)
     real(kind=dp_t), intent(in   ) :: prob_hi(:)
     type(bc_level) , intent(in   ) :: bc
-    integer        , intent(in   ) :: nscal,ntrac
 
     real(kind=dp_t), pointer:: uop(:,:,:,:)
     integer :: lo(u%dim),hi(u%dim),ng,dm
@@ -218,7 +216,7 @@ contains
        select case (dm)
        case (2)
           call initveldata_2d(uop(:,:,1,:), lo, hi, ng, dx, &
-                              prob_lo, prob_hi, s0, p0, temp0, ntrac)
+                              prob_lo, prob_hi, s0, p0, temp0)
    
           do n = 1,dm
              call setbc_2d(uop(:,:,1,n), lo, ng, &
@@ -227,7 +225,7 @@ contains
 
        case (3)
           call initveldata_3d(uop(:,:,:,:), lo, hi, ng, dx, &
-                              prob_lo, prob_hi, s0, p0, temp0, ntrac)
+                              prob_lo, prob_hi, s0, p0, temp0)
 
           do n = 1, dm
              call setbc_3d(uop(:,:,:,n), lo, ng, &
@@ -242,9 +240,9 @@ contains
   end subroutine initveldata
 
   subroutine initveldata_2d (u,lo,hi,ng,dx, &
-                             prob_lo,prob_hi,s0,p0,temp0,ntrac)
+                             prob_lo,prob_hi,s0,p0,temp0)
 
-    integer, intent(in) :: lo(:), hi(:), ng, ntrac
+    integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(out) :: u(lo(1)-ng:,lo(2)-ng:,:)  
     real (kind = dp_t), intent(in ) :: dx(:)
     real (kind = dp_t), intent(in ) :: prob_lo(:)
@@ -264,11 +262,11 @@ contains
   end subroutine initveldata_2d
 
   subroutine initveldata_3d (u,lo,hi,ng,dx, &
-                             prob_lo,prob_hi,s0,p0,temp0,ntrac)
+                             prob_lo,prob_hi,s0,p0,temp0)
 
     implicit none
 
-    integer, intent(in) :: lo(:), hi(:), ng, ntrac
+    integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(out) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
     real (kind = dp_t), intent(in ) :: dx(:)
     real (kind = dp_t), intent(in ) :: prob_lo(:)

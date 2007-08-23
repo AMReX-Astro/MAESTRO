@@ -5,7 +5,7 @@ module variables
 
   implicit none
 
-  integer, save :: rho_comp, rhoh_comp, spec_comp, trac_comp, press_comp, first_derive_comp
+  integer, save :: rho_comp, rhoh_comp, spec_comp, temp_comp, trac_comp, press_comp, first_derive_comp
   integer, save :: icomp_vel, icomp_rho, icomp_rhoh, icomp_spec, icomp_trac
   integer, save :: icomp_magvel, icomp_mom, icomp_vort, icomp_divu
   integer, save :: icomp_enthalpy,icomp_tfromrho,icomp_tpert,icomp_rhopert
@@ -13,24 +13,31 @@ module variables
   integer, save :: icomp_tfromH,icomp_dp,icomp_dT
   integer, save :: icomp_omegadot,icomp_enuc,icomp_sponge
   integer, save :: n_plot_comps
+  integer, save :: ntrac,nscal
 
 contains
 
-  subroutine init_variables(dm, nscal, nspec)
+  subroutine init_variables(dm, nspec)
 
-    integer, intent(in) :: dm, nscal, nspec
+    integer, intent(in) :: dm, nspec
 
     rho_comp    = 1
     rhoh_comp   = 2
     spec_comp   = rhoh_comp + 1
     trac_comp = spec_comp + nspec
+
+    ntrac = 1
+
+!   The "2" here refers to rho, rhoh
+    nscal = nspec + ntrac + 2
+
     press_comp  = dm + nscal + 1
 
   end subroutine init_variables
 
-  subroutine init_plot_variables(dm, nspec, ntrac, plot_spec, plot_trac)
+  subroutine init_plot_variables(dm, nspec, plot_spec, plot_trac)
 
-    integer, intent(in) :: dm, nspec, ntrac
+    integer, intent(in) :: dm, nspec
     logical, intent(in) :: plot_spec,plot_trac
 
     icomp_vel      = 1
