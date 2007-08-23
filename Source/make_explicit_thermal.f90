@@ -196,11 +196,11 @@ subroutine make_explicit_thermal(mla,dx,thermal,s,p0,mg_verbose, &
               hi =  upb(get_box(s(n), i))
               select case (dm)
               case (2)
-                 call setup_Xk_op_2d(k,lo,hi,dx(n,:),ng_1,ng_3,p0,sp(:,:,1,:), &
+                 call setup_Xk_op_2d(k,lo,hi,dx(n,:),ng_1,ng_3,sp(:,:,1,:), &
                       kthovercpp(:,:,1,1),phip(:,:,1,1),betap(:,:,1,:), &
                       xikp(:,:,1,:))
               case (3)
-                 call setup_Xk_op_3d(k,lo,hi,dx(n,:),ng_1,ng_3,p0,sp(:,:,:,:), &
+                 call setup_Xk_op_3d(k,lo,hi,dx(n,:),ng_1,ng_3,sp(:,:,:,:), &
                       kthovercpp(:,:,:,1),phip(:,:,:,1),betap(:,:,:,:), &
                       xikp(:,:,:,:))
               end select
@@ -612,12 +612,11 @@ end subroutine setup_h_op_3d
 ! load X_k into phi
 ! compute \xi_k
 ! setup beta = \xi_k * (k_{th}/c_p)
-subroutine setup_Xk_op_2d(spec,lo,hi,dx,ng_1,ng_3,p0,s,kthovercp,phi,beta,xik)
+subroutine setup_Xk_op_2d(spec,lo,hi,dx,ng_1,ng_3,s,kthovercp,phi,beta,xik)
 
   integer        , intent(in   ) :: spec,lo(:),hi(:)
   real(dp_t)     , intent(in   ) :: dx(:)
   integer        , intent(in   ) :: ng_1,ng_3
-  real(kind=dp_t), intent(in   ) :: p0(0:)
   real(kind=dp_t), intent(in   ) :: s(lo(1)-ng_3:,lo(2)-ng_3:,:)
   real(kind=dp_t), intent(in   ) :: kthovercp(lo(1)-ng_1:,lo(2)-ng_1:)
   real(kind=dp_t), intent(inout) :: phi(lo(1)-ng_1:,lo(2)-ng_1:)
@@ -663,12 +662,11 @@ end subroutine setup_Xk_op_2d
 ! load X_k into phi
 ! compute \xi_k
 ! setup beta = \xi_k * (k_{th}/c_p)
-subroutine setup_Xk_op_3d(spec,lo,hi,dx,ng_1,ng_3,p0,s,kthovercp,phi,beta,xik)
+subroutine setup_Xk_op_3d(spec,lo,hi,dx,ng_1,ng_3,s,kthovercp,phi,beta,xik)
 
   integer        , intent(in   ) :: spec,lo(:),hi(:)
   real(dp_t)     , intent(in   ) :: dx(:)
   integer        , intent(in   ) :: ng_1,ng_3
-  real(kind=dp_t), intent(in   ) :: p0(0:)
   real(kind=dp_t), intent(in   ) :: s(lo(1)-ng_3:,lo(2)-ng_3:,lo(3)-ng_3:,:)
   real(kind=dp_t), intent(in   ) :: kthovercp(lo(1)-ng_1:,lo(2)-ng_1:,lo(3)-ng_1:)
   real(kind=dp_t), intent(inout) :: phi(lo(1)-ng_1:,lo(2)-ng_1:,lo(3)-ng_1:)
@@ -677,7 +675,6 @@ subroutine setup_Xk_op_3d(spec,lo,hi,dx,ng_1,ng_3,p0,s,kthovercp,phi,beta,xik)
 
   integer :: i,j,k
   integer :: nx,ny,nz
-  real(kind=dp_t), allocatable :: p0_cart(:,:,:)
 
 ! dens, pres, and xmass are inputs
   input_flag = 4
@@ -686,11 +683,6 @@ subroutine setup_Xk_op_3d(spec,lo,hi,dx,ng_1,ng_3,p0,s,kthovercp,phi,beta,xik)
   nx = size(beta,dim=1) - 2*ng_1
   ny = size(beta,dim=2) - 2*ng_1
   nz = size(beta,dim=3) - 2*ng_1
-
-  if (spherical .eq. 1) then
-     allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-     call fill_3d_data(p0_cart,p0,lo,hi,dx,0)
-  end if
 
   ! Load X_k into phi
   do k=lo(3)-1,hi(3)+1
