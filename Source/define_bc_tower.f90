@@ -26,7 +26,7 @@ module define_bc_module
 
   contains
 
-  subroutine bc_tower_build(bct,mla,domain_bc,domain_box,nscal,nspec,ntrac)
+  subroutine bc_tower_build(bct,mla,domain_bc,domain_box,nspec)
 
     implicit none
 
@@ -34,7 +34,7 @@ module define_bc_module
     type(ml_layout), intent(in   ) :: mla
     integer        , intent(in   ) :: domain_bc(:,:)
     type(box)      , intent(in   ) :: domain_box(:)
-    integer        , intent(in   ) :: nscal,nspec,ntrac
+    integer        , intent(in   ) :: nspec
 
     integer :: i,ngrids
     integer :: default_value
@@ -57,12 +57,12 @@ module define_bc_module
        allocate(bct%bc_tower_array(i)%adv_bc_level_array(0:ngrids,bct%dim,2,bct%dim+nscal+1))
        default_value = INTERIOR
        call adv_bc_level_build(bct%bc_tower_array(i)%adv_bc_level_array, &
-                               bct%bc_tower_array(i)%phys_bc_level_array,default_value,nspec,ntrac)
+                               bct%bc_tower_array(i)%phys_bc_level_array,default_value,nspec)
 
        allocate(bct%bc_tower_array(i)%ell_bc_level_array(0:ngrids,bct%dim,2,bct%dim+nscal+1))
        default_value = BC_INT
        call ell_bc_level_build(bct%bc_tower_array(i)%ell_bc_level_array, &
-                               bct%bc_tower_array(i)%phys_bc_level_array,default_value,nspec,ntrac)
+                               bct%bc_tower_array(i)%phys_bc_level_array,default_value,nspec)
     end do
 
   end subroutine bc_tower_build
@@ -115,14 +115,14 @@ module define_bc_module
 
   end subroutine phys_bc_level_build
 
-  subroutine adv_bc_level_build(adv_bc_level,phys_bc_level,default_value,nspec,ntrac)
+  subroutine adv_bc_level_build(adv_bc_level,phys_bc_level,default_value,nspec)
 
     implicit none
 
     integer  , intent(inout) ::  adv_bc_level(0:,:,:,:)
     integer  , intent(in   ) :: phys_bc_level(0:,:,:)
     integer  , intent(in   ) :: default_value
-    integer  , intent(in   ) :: nspec,ntrac
+    integer  , intent(in   ) :: nspec
 
     integer :: dm
     integer :: n,d,i
@@ -194,14 +194,14 @@ module define_bc_module
 
   end subroutine adv_bc_level_build
 
-  subroutine ell_bc_level_build(ell_bc_level,phys_bc_level,default_value,nspec,ntrac)
+  subroutine ell_bc_level_build(ell_bc_level,phys_bc_level,default_value,nspec)
 
     implicit none
 
     integer  , intent(inout) ::  ell_bc_level(0:,:,:,:)
     integer  , intent(in   ) :: phys_bc_level(0:,:,:)
     integer  , intent(in   ) :: default_value
-    integer  , intent(in   ) :: nspec,ntrac
+    integer  , intent(in   ) :: nspec
 
     integer :: dm
     integer :: n,d,i
