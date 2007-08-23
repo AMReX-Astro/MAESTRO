@@ -258,7 +258,7 @@ module define_bc_module
        else if (phys_bc_level(n,d,i) == PERIODIC) then
           ell_bc_level(n,d,i,                      1:dm      ) = BC_PER   ! vel.
           ell_bc_level(n,d,i,rho_comp+dm:spec_comp+dm+nspec-1) = BC_PER   ! density,(rho h),(rho X)_i, tracers
-          ell_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= BC_NEU   ! tracers
+          ell_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= BC_PER   ! tracers
           ell_bc_level(n,d,i,press_comp)                       = BC_PER   ! pressure
        end if
     end do
