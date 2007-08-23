@@ -1,0 +1,44 @@
+&PROBIN
+ model_file = "model_6.e8.hse"
+
+ test_set = "gr0_3d.small"
+
+ spherical_in = 1
+ do_sponge = .true.
+
+ dr_base = 2083333.334
+
+ prob_hi_x = 5.e8
+ prob_hi_y = 5.e8
+ prob_hi_z = 5.e8
+
+ max_step  = 50
+ init_iter = 0
+
+ stop_time = 1000.
+
+ plot_int  = 10
+ chk_int   = 10
+
+ cflfac = 0.9
+ init_shrink = 1.
+
+ bcx_lo = 12
+ bcx_hi = 12
+ bcy_lo = 12
+ bcy_hi = 12
+ bcz_lo = 12
+ bcz_hi = 12
+
+ pmask_x = F
+ pmask_y = F
+ pmask_z = F
+
+    verbose = 1
+ mg_verbose = 1
+ cg_verbose = 0
+
+ do_initial_projection = 1
+
+!restart = 50
+/
