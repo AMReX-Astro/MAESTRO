@@ -16,9 +16,9 @@ module react_base_module
 
 contains
 
-   subroutine react_base(p0_in,s0_in,temp0_in,rho_omegadotbar,rho_Hextbar,dt_in,p0_out,s0_out,gam1_out)
+   subroutine react_base(p0_in,s0_in,rho_omegadotbar,rho_Hextbar,dt_in,p0_out,s0_out,gam1_out)
 
-      real(kind=dp_t), intent(in   ) :: p0_in(0:), s0_in(0:,:), temp0_in(0:)
+      real(kind=dp_t), intent(in   ) :: p0_in(0:), s0_in(0:,:)
       real(kind=dp_t), intent(in   ) :: rho_omegadotbar(0:,:)
       real(kind=dp_t), intent(in   ) :: rho_Hextbar(0:)
       real(kind=dp_t), intent(in   ) :: dt_in
@@ -43,7 +43,7 @@ contains
          s0_out(j,rho_comp) = s0_in(j,rho_comp)
 
          den_row(1)  = s0_in(j,rho_comp)
-         temp_row(1) = temp0_in(j)
+         temp_row(1) = s0_in(j,temp_comp)
          p_row(1)    = p0_in(j)
 
          do n = spec_comp,spec_comp+nspec-1
@@ -72,6 +72,8 @@ contains
             end do
          endif
          s0_out(j,rhoh_comp) = s0_out(j,rhoh_comp) + dt_in * rho_Hextbar(j)
+
+         s0_out(j,temp_comp) = temp_row(1)
 
          gam1_out(j) = gam1_row(1)
 

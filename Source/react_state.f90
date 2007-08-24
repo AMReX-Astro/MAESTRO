@@ -17,13 +17,13 @@ module react_state_module
   
 contains
 
-  subroutine react_state (s_in,s_out,rho_omegadot,rho_Hext,temp0,dt,dx,the_bc_level,time)
+  subroutine react_state (s_in,s_out,rho_omegadot,rho_Hext,t0,dt,dx,the_bc_level,time)
 
     type(multifab) , intent(in   ) :: s_in
     type(multifab) , intent(inout) :: s_out
     type(multifab) , intent(inout) :: rho_omegadot
     type(multifab) , intent(inout) :: rho_Hext
-    real(kind=dp_t), intent(in   ) :: temp0(0:)
+    real(kind=dp_t), intent(in   ) :: t0(0:)
     real(kind=dp_t), intent(in   ) :: dt,dx(:),time
     type(bc_level) , intent(in   ) :: the_bc_level
 
@@ -49,7 +49,7 @@ contains
        select case (dm)
        case (2)
           call react_state_2d(sinp(:,:,1,:),sotp(:,:,1,:),rp(:,:,1,:), &
-               hp(:,:,1,1),temp0,dt,dx,lo,hi,ng,time)
+               hp(:,:,1,1),t0,dt,dx,lo,hi,ng,time)
           ! Fill ghost cells on periodic boundaries and in between patches
           call multifab_fill_boundary(s_out)
           ! Impose bc's on new rho
@@ -74,7 +74,7 @@ contains
 
        case (3)
           call react_state_3d(sinp(:,:,:,:),sotp(:,:,:,:),rp(:,:,:,:), &
-               hp(:,:,:,1),temp0,dt,dx,lo,hi,ng,time)
+               hp(:,:,:,1),t0,dt,dx,lo,hi,ng,time)
           ! Fill ghost cells on periodic boundaries and in between patches
           call multifab_fill_boundary(s_out)
           ! Impose bc's on new rho
@@ -100,7 +100,7 @@ contains
 
   end subroutine react_state
 
-  subroutine react_state_2d (s_in,s_out,rho_omegadot,rho_Hext,temp0, &
+  subroutine react_state_2d (s_in,s_out,rho_omegadot,rho_Hext,t0, &
        dt,dx,lo,hi,ng,time)
 
     implicit none
@@ -109,7 +109,7 @@ contains
     real (kind = dp_t), intent(  out) :: s_out(lo(1)-ng:,lo(2)-ng:,:)
     real (kind = dp_t), intent(  out) :: rho_omegadot(lo(1):,lo(2):,:)
     real (kind = dp_t), intent(  out) :: rho_Hext(lo(1):,lo(2):)
-    real (kind = dp_t), intent(in   ) :: temp0(0:)
+    real (kind = dp_t), intent(in   ) :: t0(0:)
     real (kind = dp_t), intent(in   ) :: dt,dx(:),time
 
     !     Local variables
@@ -141,7 +141,7 @@ contains
           input_flag = 2
           
           den_row(1) = rho
-          temp_row(1) = temp0(j)
+          temp_row(1) = t0(j)
           h_row(1) = h_in
           xn_zone(:) = x_in(:)
           
@@ -179,7 +179,7 @@ contains
 
   end subroutine react_state_2d
 
-  subroutine react_state_3d (s_in,s_out,rho_omegadot,rho_Hext,temp0,dt,dx,lo,hi,ng,time)
+  subroutine react_state_3d (s_in,s_out,rho_omegadot,rho_Hext,t0,dt,dx,lo,hi,ng,time)
 
     implicit none
     integer, intent(in) :: lo(:), hi(:), ng
@@ -187,10 +187,10 @@ contains
     real (kind = dp_t), intent(  out) :: s_out(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind = dp_t), intent(  out) :: rho_omegadot(lo(1):,lo(2):,lo(3):,:)
     real (kind = dp_t), intent(  out) :: rho_Hext(lo(1):,lo(2):,lo(3):)
-    real (kind = dp_t), intent(in   ) :: temp0(0:)
+    real (kind = dp_t), intent(in   ) :: t0(0:)
     real (kind = dp_t), intent(in   ) :: dt,dx(:),time
 
-    real (kind = dp_t), allocatable :: temp0_cart(:,:,:)
+    real (kind = dp_t), allocatable :: t0_cart(:,:,:)
 
     !     Local variables
     integer :: i, j, k, n
@@ -202,8 +202,8 @@ contains
     call get_H_3d(H,lo,hi,dx,time)
 
     if (spherical == 1) then
-       allocate(temp0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-       call fill_3d_data(temp0_cart,temp0,lo,hi,dx,0)
+       allocate(t0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+       call fill_3d_data(t0_cart,t0,lo,hi,dx,0)
     endif
 
     do k = lo(3), hi(3)
@@ -228,9 +228,9 @@ contains
           den_row(1) = rho
           
           if (spherical == 0) then
-             temp_row(1) = temp0(k)
+             temp_row(1) = t0(k)
           else
-             temp_row(1) = temp0_cart(i,j,k)
+             temp_row(1) = t0_cart(i,j,k)
           endif
           
           h_row(1) = h_in
@@ -270,7 +270,7 @@ contains
     deallocate(x_in,x_out,rhowdot,H)
 
     if (spherical == 1) then
-       deallocate(temp0_cart)
+       deallocate(t0_cart)
     endif
 
   end subroutine react_state_3d

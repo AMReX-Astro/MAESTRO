@@ -16,13 +16,12 @@ module init_module
 
 contains
 
-  subroutine initscalardata (s,s0,p0,temp0,dx,perturb_model, &
+  subroutine initscalardata (s,s0,p0,dx,perturb_model, &
                              prob_lo,prob_hi,bc)
 
     type(multifab) , intent(inout) :: s
     real(kind=dp_t), intent(in   ) ::    s0(0:,:)
     real(kind=dp_t), intent(in   ) ::    p0(0:)
-    real(kind=dp_t), intent(in   ) :: temp0(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
     logical,         intent(in   ) :: perturb_model
     real(kind=dp_t), intent(in   ) :: prob_lo(:)
@@ -45,7 +44,7 @@ contains
        select case (dm)
        case (2)
           call initscalardata_2d(sop(:,:,1,:), lo, hi, ng, dx, perturb_model, &
-                                 prob_lo, prob_hi, s0, p0, temp0)
+                                 prob_lo, prob_hi, s0, p0)
 
           do n = 1,nscal
              call setbc_2d(sop(:,:,1,n), lo, ng, &
@@ -54,7 +53,7 @@ contains
 
        case (3)
           call initscalardata_3d(sop(:,:,:,:), lo, hi, ng, dx, perturb_model, &
-                                 prob_lo, prob_hi, s0, p0, temp0)
+                                 prob_lo, prob_hi, s0, p0)
 
           do n = 1, nscal
              call setbc_3d(sop(:,:,:,n), lo, ng, &
@@ -68,7 +67,7 @@ contains
   end subroutine initscalardata
 
   subroutine initscalardata_2d (s,lo,hi,ng,dx, perturb_model, &
-                                prob_lo,prob_hi,s0,p0,temp0)
+                                prob_lo,prob_hi,s0,p0)
 
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,:)  
@@ -78,7 +77,6 @@ contains
     real (kind = dp_t), intent(in ) :: prob_hi(:)
     real(kind=dp_t), intent(in   ) ::    s0(0:,:)
     real(kind=dp_t), intent(in   ) ::    p0(0:)
-    real(kind=dp_t), intent(in   ) :: temp0(0:)
 
     !     Local variables
     integer :: i, j, n
@@ -106,7 +104,7 @@ contains
           do i = lo(1), hi(1)
              x = prob_lo(1) + (dble(i)+HALF) * dx(1)
           
-             call perturb_2d(x, y, temp0(j), p0(j), s0(j,:), &
+             call perturb_2d(x, y, p0(j), s0(j,:), &
                              dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
 
              s(i,j,rho_comp) = dens_pert
@@ -121,7 +119,7 @@ contains
   end subroutine initscalardata_2d
 
   subroutine initscalardata_3d (s,lo,hi,ng,dx, perturb_model, &
-                                prob_lo,prob_hi,s0,p0,temp0)
+                                prob_lo,prob_hi,s0,p0)
 
     implicit none
 
@@ -133,7 +131,6 @@ contains
     real (kind = dp_t), intent(in ) :: prob_hi(:)
     real(kind=dp_t), intent(in   ) ::    s0(0:,:)
     real(kind=dp_t), intent(in   ) ::    p0(0:)
-    real(kind=dp_t), intent(in   ) :: temp0(0:)
 
     !     Local variables
     integer :: i, j, k, n
@@ -175,7 +172,7 @@ contains
                 do i = lo(1), hi(1)
                    x = prob_lo(1) + (dble(i)+HALF) * dx(1)
                    
-                   call perturb_3d(x, y, z, temp0(k), p0(k), s0(k,:), &
+                   call perturb_3d(x, y, z, p0(k), s0(k,:), &
                                    dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
 
                    s(i,j,k,rho_comp) = dens_pert
@@ -192,12 +189,11 @@ contains
     
   end subroutine initscalardata_3d
 
-  subroutine initveldata (u,s0,p0,temp0,dx,prob_lo,prob_hi,bc)
+  subroutine initveldata (u,s0,p0,dx,prob_lo,prob_hi,bc)
 
     type(multifab) , intent(inout) :: u
     real(kind=dp_t), intent(in   ) ::    s0(:,:)
     real(kind=dp_t), intent(in   ) ::    p0(:)
-    real(kind=dp_t), intent(in   ) :: temp0(:)
     real(kind=dp_t), intent(in   ) :: dx(:)
     real(kind=dp_t), intent(in   ) :: prob_lo(:)
     real(kind=dp_t), intent(in   ) :: prob_hi(:)
@@ -219,7 +215,7 @@ contains
        select case (dm)
        case (2)
           call initveldata_2d(uop(:,:,1,:), lo, hi, ng, dx, &
-                              prob_lo, prob_hi, s0, p0, temp0)
+                              prob_lo, prob_hi, s0, p0)
    
           do n = 1,dm
              call setbc_2d(uop(:,:,1,n), lo, ng, &
@@ -228,7 +224,7 @@ contains
 
        case (3)
           call initveldata_3d(uop(:,:,:,:), lo, hi, ng, dx, &
-                              prob_lo, prob_hi, s0, p0, temp0)
+                              prob_lo, prob_hi, s0, p0)
 
           do n = 1, dm
              call setbc_3d(uop(:,:,:,n), lo, ng, &
@@ -243,7 +239,7 @@ contains
   end subroutine initveldata
 
   subroutine initveldata_2d (u,lo,hi,ng,dx, &
-                             prob_lo,prob_hi,s0,p0,temp0)
+                             prob_lo,prob_hi,s0,p0)
 
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(out) :: u(lo(1)-ng:,lo(2)-ng:,:)  
@@ -252,7 +248,6 @@ contains
     real (kind = dp_t), intent(in ) :: prob_hi(:)
     real(kind=dp_t), intent(in   ) ::    s0(0:,:)
     real(kind=dp_t), intent(in   ) ::    p0(0:)
-    real(kind=dp_t), intent(in   ) :: temp0(0:)
 
     !     Local variables
     integer :: i, j, n
@@ -265,7 +260,7 @@ contains
   end subroutine initveldata_2d
 
   subroutine initveldata_3d (u,lo,hi,ng,dx, &
-                             prob_lo,prob_hi,s0,p0,temp0)
+                             prob_lo,prob_hi,s0,p0)
 
     implicit none
 
@@ -276,7 +271,6 @@ contains
     real (kind = dp_t), intent(in ) :: prob_hi(:)
     real(kind=dp_t), intent(in   ) ::    s0(0:,:)
     real(kind=dp_t), intent(in   ) ::    p0(0:)
-    real(kind=dp_t), intent(in   ) :: temp0(0:)
 
     !     Local variables
     integer :: i, j, k, n
@@ -289,22 +283,23 @@ contains
   end subroutine initveldata_3d
 
 
-  subroutine perturb_2d(x, y, t0, p0, s0, dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
+  subroutine perturb_2d(x, y, p0, s0, dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
 
     ! apply an optional perturbation to the initial temperature field
     ! to see some bubbles
 
     real(kind=dp_t), intent(in ) :: x, y
-    real(kind=dp_t), intent(in ) :: t0, p0, s0(:)
+    real(kind=dp_t), intent(in ) :: p0, s0(:)
     real(kind=dp_t), intent(out) :: dens_pert, rhoh_pert, temp_pert
     real(kind=dp_t), intent(out) :: rhoX_pert(:)
     real(kind=dp_t), intent(out) :: trac_pert(:)
 
-    real(kind=dp_t) :: temp
+    real(kind=dp_t) :: temp,t0
     real(kind=dp_t) :: x0, y0, x1, y1, x2, y2
     integer :: i, j
     real(kind=dp_t) :: r0, r1, r2
 
+    t0 = s0(temp_comp)
 
     x0 = 5.0d7
     y0 = 6.5d7
@@ -366,21 +361,23 @@ contains
 
   end subroutine perturb_2d
 
-  subroutine perturb_3d(x, y, z, t0, p0, s0, dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
+  subroutine perturb_3d(x, y, z, p0, s0, dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
 
     ! apply an optional perturbation to the initial temperature field
     ! to see some bubbles
 
     real(kind=dp_t), intent(in ) :: x, y, z
-    real(kind=dp_t), intent(in ) :: t0, p0, s0(:)
+    real(kind=dp_t), intent(in ) :: p0, s0(:)
     real(kind=dp_t), intent(out) :: dens_pert, rhoh_pert, temp_pert
     real(kind=dp_t), intent(out) :: rhoX_pert(:)
     real(kind=dp_t), intent(out) :: trac_pert(:)
 
-    real(kind=dp_t) :: temp
+    real(kind=dp_t) :: temp, t0
     real(kind=dp_t) :: x0, y0, z0, x1, y1, z1, x2, y2, z2
     integer :: i, j, k
     real(kind=dp_t) :: r0, r1, r2
+
+    t0 = s0(temp_comp)
 
     x0 = 5.0d7
     y0 = 5.0d7
@@ -444,12 +441,11 @@ contains
 
   end subroutine perturb_3d
 
-  subroutine init_base_state (model_file,n_base,s0,temp0,p0,gam1,dx,prob_lo,prob_hi)
+  subroutine init_base_state (model_file,n_base,s0,p0,gam1,dx,prob_lo,prob_hi)
 
     character (len=256), intent(in) :: model_file
     integer        , intent(in   ) :: n_base
     real(kind=dp_t), intent(inout) ::    s0(0:,:)
-    real(kind=dp_t), intent(inout) :: temp0(0:)
     real(kind=dp_t), intent(inout) ::    p0(0:)
     real(kind=dp_t), intent(inout) ::  gam1(0:)
     real(kind=dp_t), intent(in   ) :: prob_lo(:)
@@ -613,7 +609,7 @@ contains
          s0(j,rhoh_comp ) = s0(j_cutoff,rhoh_comp )
          s0(j,spec_comp:spec_comp+nspec-1) = s0(j_cutoff,spec_comp:spec_comp+nspec-1)
          p0(j)            = p0(j_cutoff)
-         temp0(j)         = temp0(j_cutoff)
+         s0(j,temp_comp)  = s0(j_cutoff,temp_comp)
           gam1(j)         =  gam1(j_cutoff)
 
        else
@@ -664,7 +660,7 @@ contains
          s0(j,spec_comp:spec_comp+nspec-1) = d_ambient * xn_ambient(1:nspec)
          p0(j)    = p_row(1)
 
-         temp0(j) = t_ambient
+         s0(j,temp_comp) = t_ambient
          s0(j,temp_comp) = t_ambient
 
          gam1(j) = gam1_row(1)
@@ -731,12 +727,12 @@ contains
   end function interpolate
 
 
-  subroutine write_base_state(state_name,w0_name,chk_name,s0,temp0,p0,w0,div_coeff)
+  subroutine write_base_state(state_name,w0_name,chk_name,s0,p0,w0,div_coeff)
 
     character(len=10), intent(in) :: state_name
     character(len=7), intent(in) :: w0_name
     character(len=7), intent(in) :: chk_name
-    real(kind=dp_t) , intent(in) :: s0(:,:),p0(:),temp0(:),div_coeff(:), w0(:)
+    real(kind=dp_t) , intent(in) :: s0(:,:),p0(:),div_coeff(:), w0(:)
     real(kind=dp_t) :: base_r
 
     character(len=18) :: out_name
@@ -755,7 +751,7 @@ contains
        do i = 1, nr
           base_r = (dble(i)-HALF) * dr
           write(99,1000)  base_r,s0(i,rho_comp), p0(i), s0(i,rhoh_comp), &
-               (s0(i,n), n=spec_comp,spec_comp+nspec-1), temp0(i), div_coeff(i)
+               (s0(i,n), n=spec_comp,temp_comp), div_coeff(i)
        end do
        close(99)
 
@@ -778,12 +774,12 @@ contains
   end subroutine write_base_state
 
 
-  subroutine read_base_state(state_name,w0_name,chk_name,s0,temp0,p0,w0,div_coeff)
+  subroutine read_base_state(state_name,w0_name,chk_name,s0,p0,w0,div_coeff)
     
     character(len=10), intent(in   ) :: state_name
     character(len=7) , intent(in   ) :: w0_name
     character(len=7) , intent(in   ) :: chk_name    
-    real(kind=dp_t) , intent(inout) :: s0(:,:),p0(:),temp0(:),div_coeff(:),w0(:)
+    real(kind=dp_t) , intent(inout) :: s0(:,:),p0(:),div_coeff(:),w0(:)
     real(kind=dp_t) , allocatable   :: base_r(:)
 
     real(kind=dp_t) :: r_dummy
@@ -802,7 +798,7 @@ contains
     open(unit=99,file=out_name)
     do i = 1, size(s0,dim=1)
        read(99,*)  base_r(i),s0(i,rho_comp), p0(i), s0(i,rhoh_comp), &
-                   (s0(i,n), n=spec_comp,spec_comp+nspec-1), temp0(i), div_coeff(i)
+                   (s0(i,n), n=spec_comp,temp_comp), div_coeff(i)
     end do
     close(99)
 

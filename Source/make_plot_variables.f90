@@ -106,13 +106,13 @@ contains
     
   end subroutine make_enthalpy_3d
 
-  subroutine make_tfromH (plotdata,comp_t,comp_dp,state,p0,temp0, dx)
+  subroutine make_tfromH (plotdata,comp_t,comp_dp,state,p0,t0, dx)
 
     integer        , intent(in   ) :: comp_t,comp_dp
     type(multifab) , intent(inout) :: plotdata
     type(multifab) , intent(in   ) :: state
-    real(kind=dp_t), intent(in   ) ::    p0(0:)
-    real(kind=dp_t), intent(in   ) :: temp0(0:)
+    real(kind=dp_t), intent(in   ) :: p0(0:)
+    real(kind=dp_t), intent(in   ) :: t0(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
 
     real(kind=dp_t), pointer:: sp(:,:,:,:)
@@ -131,29 +131,29 @@ contains
        hi =  upb(get_box(state, i))
        select case (dm)
        case (2)
-          call maketfromH_2d(tp(:,:,1,comp_t),tp(:,:,1,comp_dp),sp(:,:,1,:), lo, hi, ng, p0, temp0)
+          call maketfromH_2d(tp(:,:,1,comp_t),tp(:,:,1,comp_dp),sp(:,:,1,:), lo, hi, ng, p0, t0)
        case (3)
           if (spherical .eq. 1) then
             call maketfromH_3d_sphr(tp(:,:,:,comp_t),tp(:,:,:,comp_dp),sp(:,:,:,:), &
-                                    lo, hi, ng, p0, temp0, dx)
+                                    lo, hi, ng, p0, t0, dx)
           else
             call maketfromH_3d_cart(tp(:,:,:,comp_t),tp(:,:,:,comp_dp),sp(:,:,:,:), &
-                                    lo, hi, ng, p0, temp0)
+                                    lo, hi, ng, p0, t0)
           end if
        end select
     end do
 
   end subroutine make_tfromH
 
-  subroutine maketfromH_2d (T,deltaP,state,lo,hi,ng,p0,temp0)
+  subroutine maketfromH_2d (T,deltaP,state,lo,hi,ng,p0,t0)
 
     implicit none
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(  out) ::      T(lo(1)   :,lo(2):)  
     real (kind = dp_t), intent(  out) :: deltaP(lo(1)   :,lo(2):)  
     real (kind = dp_t), intent(in   ) ::  state(lo(1)-ng:,lo(2)-ng:,:)
-    real (kind = dp_t), intent(in   ) ::     p0(0:)
-    real (kind = dp_t), intent(in   ) ::  temp0(0:)
+    real (kind = dp_t), intent(in   ) ::  p0(0:)
+    real (kind = dp_t), intent(in   ) ::  t0(0:)
 
     !     Local variables
     integer :: i, j, n
@@ -168,7 +168,7 @@ contains
             
           den_row(1)  = state(i,j,rho_comp)
           p_row(1)    = p0(j)
-          temp_row(1) = temp0(j)
+          temp_row(1) = t0(j)
           xn_zone(:) = state(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
 
           qreact = 0.0d0
@@ -204,15 +204,15 @@ contains
 
   end subroutine maketfromH_2d
 
-  subroutine maketfromH_3d_cart (T,deltaP,state,lo,hi,ng,p0,temp0)
+  subroutine maketfromH_3d_cart (T,deltaP,state,lo,hi,ng,p0,t0)
 
     implicit none
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(  out) ::      T(lo(1)   :,lo(2):   ,lo(3):     )  
     real (kind = dp_t), intent(  out) :: deltaP(lo(1)   :,lo(2):   ,lo(3):     )  
     real (kind = dp_t), intent(in   ) :: state(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-    real (kind = dp_t), intent(in   ) ::    p0(0:)
-    real (kind = dp_t), intent(in   ) :: temp0(0:)
+    real (kind = dp_t), intent(in   ) :: p0(0:)
+    real (kind = dp_t), intent(in   ) :: t0(0:)
 
     !     Local variables
     integer :: i, j, k, n
@@ -227,7 +227,7 @@ contains
              ! (rho, H) --> T, p
               den_row(1)  = state(i,j,k,rho_comp)
              p_row(1)    = p0(k)
-             temp_row(1) = temp0(k)
+             temp_row(1) = t0(k)
              xn_zone(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
 
              qreact = 0.0d0
@@ -330,7 +330,7 @@ contains
 
   subroutine make_tfromrho (plotdata,comp_tfromrho,comp_tpert,comp_rhopert, &
                             comp_machno,comp_deltag,comp_spert, &
-                            s,u,s0,t0,p0,dx)
+                            s,u,s0,p0,dx)
 
     integer        , intent(in   ) :: comp_tfromrho,comp_tpert
     integer        , intent(in   ) :: comp_rhopert, comp_machno
@@ -339,7 +339,6 @@ contains
     type(multifab) , intent(in   ) :: s
     type(multifab) , intent(in   ) :: u
     real(kind=dp_t), intent(in   ) :: s0(0:,:)
-    real(kind=dp_t), intent(inout) :: t0(0:)
     real(kind=dp_t), intent(in   ) :: p0(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
     real(kind=dp_t), pointer:: sp(:,:,:,:),tp(:,:,:,:),up(:,:,:,:)
@@ -363,7 +362,7 @@ contains
                                tp(:,:,1,comp_machno  ),tp(:,:,1,comp_deltag), &
                                tp(:,:,1,comp_spert   ), &
                                sp(:,:,1,:), up(:,:,1,:), &
-                               lo, hi, ng, s0, t0, p0)
+                               lo, hi, ng, s0, p0)
        case (3)
           if (spherical .eq. 1) then
             call maketfromrho_3d_sphr(tp(:,:,:,comp_tfromrho),tp(:,:,:,comp_tpert), &
@@ -371,14 +370,14 @@ contains
                                       tp(:,:,:,comp_machno  ),tp(:,:,:,comp_deltag), &
                                       tp(:,:,:,comp_spert   ), &
                                       sp(:,:,:,:), up(:,:,:,:), &
-                                      lo, hi, ng, s0, t0, p0, dx)
+                                      lo, hi, ng, s0, p0, dx)
           else
             call maketfromrho_3d_cart(tp(:,:,:,comp_tfromrho),tp(:,:,:,comp_tpert), &
                                       tp(:,:,:,comp_rhopert ), &
                                       tp(:,:,:,comp_machno  ),tp(:,:,:,comp_deltag), &
                                       tp(:,:,:,comp_spert   ), &
                                       sp(:,:,:,:), up(:,:,:,:), &
-                                      lo, hi, ng, s0, t0, p0)
+                                      lo, hi, ng, s0, p0)
           endif
        end select
     end do
@@ -386,7 +385,7 @@ contains
   end subroutine make_tfromrho
 
   subroutine maketfromrho_2d (t,tpert,rhopert,machno,deltagamma,spert, &
-                              s,u,lo,hi,ng,s0,t0,p0)
+                              s,u,lo,hi,ng,s0,p0)
 
     implicit none
 
@@ -400,7 +399,6 @@ contains
     real (kind=dp_t), intent(in   ) ::  s(lo(1)-ng:,lo(2)-ng:,:)
     real (kind=dp_t), intent(in   ) ::  u(lo(1)-ng:,lo(2)-ng:,:)
     real (kind=dp_t), intent(in   ) :: s0(0:,:)
-    real (kind=dp_t), intent(inout) :: t0(0:)
     real (kind=dp_t), intent(in   ) :: p0(0:)
 
     !     Local variables
@@ -413,10 +411,11 @@ contains
 
     do_diag = .false.
 
-    ! First make sure we have t0 right.
+    ! We now assume that the temperature coming in in the base state is correct, but
+    !   we do this eos call to get gam10 and entr0.
     do j = lo(2), hi(2)
         den_row(1) = s0(j,rho_comp)
-       temp_row(1) = t0(j)
+       temp_row(1) = s0(j,temp_comp)
           p_row(1) = p0(j)
        xn_zone(:) = s0(j,spec_comp:spec_comp+nspec-1)/den_row(1)
 
@@ -433,7 +432,6 @@ contains
                 gam1_row, cs_row, s_row, &
                 dsdt_row, dsdr_row, &
                 do_diag)
-        t0(j) = temp_row(1)
      gam10(j) = gam1_row(1)
      entr0(j) = s_row(1)
 
@@ -444,7 +442,7 @@ contains
        do i = lo(1), hi(1)
 
           den_row(1) = s(i,j,rho_comp)
-          temp_row(1) = t0(j)
+          temp_row(1) = s0(j,temp_comp)
           p_row(1) = p0(j)
           xn_zone(:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
 
@@ -464,7 +462,7 @@ contains
           
 !         t(i,j) = log(temp_row(1))/log(10.)
           t(i,j) = temp_row(1)
-          tpert(i,j) = temp_row(1) - t0(j)
+          tpert(i,j) = temp_row(1) - s0(j,temp_comp)
 
           rhopert(i,j) = s(i,j,rho_comp) - s0(j,rho_comp)
 
@@ -483,7 +481,7 @@ contains
   end subroutine maketfromrho_2d
 
   subroutine maketfromrho_3d_cart (t,tpert,rhopert,machno,deltagamma,spert, &
-                                   s,u,lo,hi,ng,s0,t0,p0)
+                                   s,u,lo,hi,ng,s0,p0)
 
     implicit none
 
@@ -497,7 +495,6 @@ contains
     real (kind=dp_t), intent(in   ) ::  s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind=dp_t), intent(in   ) ::  u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind=dp_t), intent(in   ) :: s0(0:,:)
-    real (kind=dp_t), intent(inout) :: t0(0:)
     real (kind=dp_t), intent(in   ) :: p0(0:)
 
     !     Local variables
@@ -510,10 +507,11 @@ contains
 
     do_diag = .false.
 
-    ! First make sure we have t0 right.
+    ! We now assume that the temperature coming in in the base state is correct, but
+    !   we do this eos call to get gam10 and entr0.
     do k = lo(3), hi(3)
         den_row(1) = s0(k,rho_comp)
-       temp_row(1) = t0(k)
+       temp_row(1) = s0(k,temp_comp)
           p_row(1) = p0(k)
        xn_zone(:) = s0(k,spec_comp:spec_comp+nspec-1)/den_row(1)
 
@@ -530,7 +528,6 @@ contains
                 gam1_row, cs_row, s_row, &
                 dsdt_row, dsdr_row, &
                 do_diag)
-        t0(k) = temp_row(1)
      gam10(k) = gam1_row(1)
      entr0(k) = s_row(1)
     end do
@@ -541,7 +538,7 @@ contains
           do i = lo(1), hi(1)
 
              den_row(1) = s(i,j,k,rho_comp)
-             temp_row(1) = t0(k)
+             temp_row(1) = s0(k,temp_comp)
              p_row(1) = p0(k)
              xn_zone(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
 
@@ -561,7 +558,7 @@ contains
 
 !            t(i,j,k) = log(temp_row(1))/log(10.)
              t(i,j,k) = temp_row(1)
-             tpert(i,j,k) = temp_row(1) - t0(k)
+             tpert(i,j,k) = temp_row(1) - s0(k,temp_comp)
 
              rhopert(i,j,k) = s(i,j,k,rho_comp) - s0(k,rho_comp)
 
@@ -580,7 +577,7 @@ contains
    end subroutine maketfromrho_3d_cart
 
   subroutine maketfromrho_3d_sphr (t,tpert,rhopert,machno,deltagamma,spert, &
-                                   s,u,lo,hi,ng,s0,t0,p0,dx)
+                                   s,u,lo,hi,ng,s0,p0,dx)
 
     implicit none
 
@@ -594,7 +591,6 @@ contains
     real (kind=dp_t), intent(in   ) ::  s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind=dp_t), intent(in   ) ::  u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind=dp_t), intent(in   ) :: s0(0:,:)
-    real (kind=dp_t), intent(inout) :: t0(0:)
     real (kind=dp_t), intent(in   ) :: p0(0:)
     real (kind=dp_t), intent(in   ) :: dx(:)
 
@@ -617,10 +613,11 @@ contains
 
     do_diag = .false.
 
-    ! First make sure we have t0 right.
+    ! We now assume that the temperature coming in in the base state is correct, but
+    !   we do this eos call to get gam10 and entr0.
     do k = 0, nr-1
         den_row(1) = s0(k,rho_comp)
-       temp_row(1) = t0(k)
+       temp_row(1) = s0(k,temp_comp)
           p_row(1) = p0(k)
         xn_zone(:) = s0(k,spec_comp:spec_comp+nspec-1)/den_row(1)
 
@@ -637,7 +634,6 @@ contains
                 gam1_row, cs_row, s_row, &
                 dsdt_row, dsdr_row, &
                 do_diag)
-        t0(k) = temp_row(1)
      gam10(k) = gam1_row(1)
      entr0(k) = s_row(1)
     end do
@@ -646,7 +642,7 @@ contains
     call fill_3d_data(rho0_cart,s0(:,rho_comp),lo,hi,dx,0)
 
     allocate(t0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-    call fill_3d_data(t0_cart,t0,lo,hi,dx,0)
+    call fill_3d_data(t0_cart,s0(:,temp_comp),lo,hi,dx,0)
 
     allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
     call fill_3d_data(p0_cart,p0,lo,hi,dx,0)

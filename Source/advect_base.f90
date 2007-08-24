@@ -15,7 +15,7 @@ module advect_base_module
 contains
 
    subroutine advect_base(vel,Sbar_in,p0_old,p0_new, &
-                          s0_old,s0_new,temp0, &
+                          s0_old,s0_new,&
                           gam1,div_coeff, &
                           dz,dt,anelastic_cutoff)
 
@@ -23,18 +23,18 @@ contains
       real(kind=dp_t), intent(in   ) :: Sbar_in(0:)
       real(kind=dp_t), intent(in   ) :: p0_old(0:), s0_old(0:,:)
       real(kind=dp_t), intent(  out) :: p0_new(0:), s0_new(0:,:)
-      real(kind=dp_t), intent(inout) :: temp0(0:),gam1(0:)
+      real(kind=dp_t), intent(inout) :: gam1(0:)
       real(kind=dp_t), intent(in   ) :: div_coeff(0:)
       real(kind=dp_t), intent(in   ) :: dz,dt,anelastic_cutoff
 
       if (spherical .eq. 0) then
 
-        call advect_base_state_planar(vel,p0_old,p0_new,s0_old,s0_new,temp0, &
+        call advect_base_state_planar(vel,p0_old,p0_new,s0_old,s0_new,&
                                       gam1,dz,dt)
 
       else
 
-        call advect_base_state_spherical(vel,Sbar_in,p0_old,p0_new,s0_old,s0_new,temp0, &
+        call advect_base_state_spherical(vel,Sbar_in,p0_old,p0_new,s0_old,s0_new,&
                                          gam1,div_coeff,&
                                          dt,anelastic_cutoff)
       end if
@@ -42,13 +42,12 @@ contains
 
    end subroutine advect_base
 
-   subroutine advect_base_state_planar (vel,p0_old,p0_new,s0_old,s0_new,temp0, &
+   subroutine advect_base_state_planar (vel,p0_old,p0_new,s0_old,s0_new,&
                                         gam1,dz,dt)
 
       real(kind=dp_t), intent(in   ) :: vel(0:)
       real(kind=dp_t), intent(in   ) :: p0_old(0:), s0_old(0:,:)
       real(kind=dp_t), intent(  out) :: p0_new(0:), s0_new(0:,:)
-      real(kind=dp_t), intent(inout) :: temp0(0:)
       real(kind=dp_t), intent(inout) :: gam1(0:)
       real(kind=dp_t), intent(in   ) :: dz,dt
 
@@ -123,7 +122,7 @@ contains
       do j = 0,nz-1
 
          den_row(1)  = s0_new(j,rho_comp)
-         temp_row(1) = temp0(j)
+         temp_row(1) = s0_old(j,temp_comp)
          p_row(1)    = p0_new(j)
          xn_zone(1:) = s0_new(j,spec_comp:)/s0_new(j,rho_comp)
 
@@ -141,9 +140,8 @@ contains
                   dsdt_row, dsdr_row, &
                   do_diag)
 
-         temp0(j) = temp_row(1)
+         s0_new(j,temp_comp) = temp_row(1)
          gam1(j) = gam1_row(1)
-
 
       end do
 
@@ -151,14 +149,14 @@ contains
 
    end subroutine advect_base_state_planar
 
-   subroutine advect_base_state_spherical (vel,Sbar_in,p0_old,p0_new,s0_old,s0_new,temp0, &
+   subroutine advect_base_state_spherical (vel,Sbar_in,p0_old,p0_new,s0_old,s0_new,&
                                            gam1,div_coeff_old,& 
                                            dt,anelastic_cutoff)
 
       real(kind=dp_t), intent(in   ) :: vel(0:),Sbar_in(0:)
       real(kind=dp_t), intent(in   ) :: p0_old(0:), s0_old(0:,:)
       real(kind=dp_t), intent(  out) :: p0_new(0:), s0_new(0:,:)
-      real(kind=dp_t), intent(inout) :: temp0(0:), gam1(0:)
+      real(kind=dp_t), intent(inout) :: gam1(0:)
       real(kind=dp_t), intent(in   ) :: div_coeff_old(0:)
       real(kind=dp_t), intent(in   ) :: dt,anelastic_cutoff
 
@@ -246,7 +244,7 @@ contains
          input_flag = 4
 
          den_row(1)  = s0_new(j,rho_comp)
-        temp_row(1)  = temp0(j) 
+        temp_row(1)  = s0_old(j,temp_comp) 
            p_row(1)  = p0_new(j)
          xn_zone(1:) = s0_new(j,spec_comp:)/s0_new(j,rho_comp)
 
@@ -263,8 +261,8 @@ contains
                   dsdt_row, dsdr_row, &
                   do_diag) 
 
-         gam1(j) = gam1_row(1)
-        temp0(j) = temp_row(1)
+        gam1(j) = gam1_row(1)
+        s0_new(j,temp_comp) = temp_row(1)
       end do
  
       call make_grav_cell(grav_cell,s0_new(:,rho_comp))
@@ -325,7 +323,7 @@ contains
       do j = 0,nz-1
 
          den_row(1)  = s0_new(j,rho_comp)
-         temp_row(1) = temp0(j)
+         temp_row(1) = s0_new(j,temp_comp)
          p_row(1)    = p0_new(j)
          xn_zone(1:) = s0_new(j,spec_comp:)/s0_new(j,rho_comp)
 
@@ -343,7 +341,7 @@ contains
                   dsdt_row, dsdr_row, &
                   do_diag)
 
-         temp0(j) = temp_row(1)
+         s0_new(j,temp_comp) = temp_row(1)
          gam1(j) = gam1_row(1)
 
       end do

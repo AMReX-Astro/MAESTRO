@@ -40,7 +40,7 @@ module advance_timestep_module
     subroutine advance_timestep(init_mode, &
                                 mla,uold,sold,s1,s2,unew,snew,umac,uedge,sedge,utrans,gp,p, &
                                 scal_force,normal, &
-                                s0_old,s0_1,s0_2,s0_new,p0_old,p0_1,p0_2,p0_new,temp0,gam1,w0, &
+                                s0_old,s0_1,s0_2,s0_new,p0_old,p0_1,p0_2,p0_new,gam1,w0, &
                                 rho_omegadot1, rho_omegadot2, rho_Hext, &
                                 div_coeff_old,div_coeff_new,&
                                 grav_cell_old, &
@@ -82,7 +82,6 @@ module advance_timestep_module
     real(dp_t)    , intent(inout) :: p0_1(0:)
     real(dp_t)    , intent(inout) :: p0_2(0:)
     real(dp_t)    , intent(inout) :: p0_new(0:)
-    real(dp_t)    , intent(inout) :: temp0(0:)
     real(dp_t)    , intent(inout) :: gam1(0:)
     real(dp_t)    , intent(inout) :: w0(0:)
     real(dp_t)    , intent(in   ) :: div_coeff_old(0:)
@@ -273,14 +272,14 @@ module advance_timestep_module
         end if
 
         do n = 1,nlevs
-           call react_state(sold(n),s1(n),rho_omegadot1(n),rho_Hext(n),temp0, &
+           call react_state(sold(n),s1(n),rho_omegadot1(n),rho_Hext(n),s0_old(:,temp_comp), &
                             halfdt,dx(n,:), &
                             the_bc_tower%bc_tower_array(n),time)
         end do
 
         call average(rho_omegadot1,rho_omegadotbar1,dx,1,nspec)
         call average(rho_Hext,rho_Hextbar,dx,1,1)
-        call react_base(p0_old,s0_old,temp0,rho_omegadotbar1,rho_Hextbar(:,1),halfdt,p0_1,s0_1,gam1)
+        call react_base(p0_old,s0_old,rho_omegadotbar1,rho_Hextbar(:,1),halfdt,p0_1,s0_1,gam1)
         call make_grav_cell(grav_cell_new,s0_1(:,rho_comp))
         call make_div_coeff(div_coeff_new,s0_1(:,rho_comp),p0_1, &
                             gam1,grav_cell_new,anelastic_cutoff)
@@ -295,7 +294,7 @@ module advance_timestep_module
           write(6,*) '            : scalar_advance >>> '
         end if
 
-        call advect_base(w0,Sbar(:,1),p0_1,p0_2,s0_1,s0_2,temp0,gam1, &
+        call advect_base(w0,Sbar(:,1),p0_1,p0_2,s0_1,s0_2,gam1, &
                          div_coeff_new,dx(1,dm),dt,anelastic_cutoff)
 
 !       Dont think we need these calls.
@@ -329,7 +328,7 @@ module advance_timestep_module
               write(6,*) '<<< STEP  4a: thermal conduct >>>'
            end if
 
-           call thermal_conduct_half_alg(mla,dx,dt,s1,s2,p0_1,p0_2,temp0, &
+           call thermal_conduct_half_alg(mla,dx,dt,s1,s2,p0_1,p0_2,s0_2(:,temp_comp), &
                                          mg_verbose,cg_verbose,the_bc_tower)
         endif
 
@@ -343,13 +342,13 @@ module advance_timestep_module
         end if
 
         do n = 1,nlevs
-          call react_state(s2(n),snew(n),rho_omegadot2(n),rho_Hext(n),temp0, &
+          call react_state(s2(n),snew(n),rho_omegadot2(n),rho_Hext(n),s0_2(:,temp_comp), &
                            halfdt,dx(n,:), &
                            the_bc_tower%bc_tower_array(n),time)
         end do
         call average(rho_omegadot2,rho_omegadotbar2,dx,1,nspec)
         call average(rho_Hext,rho_Hextbar,dx,1,1)
-        call react_base(p0_2,s0_2,temp0,rho_omegadotbar2,rho_Hextbar(:,1),halfdt,p0_new,s0_new,gam1)
+        call react_base(p0_2,s0_2,rho_omegadotbar2,rho_Hextbar(:,1),halfdt,p0_new,s0_new,gam1)
         call make_grav_cell(grav_cell_new,s0_new(:,rho_comp))
         call make_div_coeff(div_coeff_new,s0_new(:,rho_comp),p0_new, &
                             gam1,grav_cell_new,anelastic_cutoff)
@@ -394,7 +393,7 @@ module advance_timestep_module
         do n = 1, nlevs
 
            call make_S(Source_new(n),gamma1_term(n),snew(n),uold(n), &
-                       rho_omegadot2(n),rho_Hext(n),thermal(n),p0_new,temp0,gam1,dx(n,:))
+                       rho_omegadot2(n),rho_Hext(n),thermal(n),p0_new,s0_old(:,temp_comp),gam1,dx(n,:))
            call make_S_at_halftime(Source_nph(n),Source_old(n),Source_new(n))
            call average(Source_nph,Sbar,dx,1,1)
 
@@ -456,7 +455,7 @@ module advance_timestep_module
           write(6,*) '<<< STEP  8 : advect base   '
           write(6,*) '            : scalar_advance >>>'
         end if
-        call advect_base(w0,Sbar(:,1),p0_1,p0_2,s0_1,s0_2,temp0,gam1, &
+        call advect_base(w0,Sbar(:,1),p0_1,p0_2,s0_1,s0_2,gam1, &
                          div_coeff_nph,dx(1,dm),dt,anelastic_cutoff)
 
 !       Dont think we need these calls.
@@ -503,13 +502,13 @@ module advance_timestep_module
           write(6,*) '            : react  base >>>'
         end if
         do n = 1,nlevs
-          call react_state(s2(n),snew(n),rho_omegadot2(n),rho_Hext(n),temp0, &
+          call react_state(s2(n),snew(n),rho_omegadot2(n),rho_Hext(n),s0_2(:,temp_comp), &
                            halfdt,dx(n,:),&
                            the_bc_tower%bc_tower_array(n),time)
         end do
         call average(rho_omegadot2,rho_omegadotbar2,dx,1,nspec)
         call average(rho_Hext,rho_Hextbar,dx,1,1)
-        call react_base(p0_2,s0_2,temp0,rho_omegadotbar2,rho_Hextbar(:,1),halfdt,p0_new,s0_new,gam1)
+        call react_base(p0_2,s0_2,rho_omegadotbar2,rho_Hextbar(:,1),halfdt,p0_new,s0_new,gam1)
         call make_grav_cell(grav_cell_new,s0_new(:,rho_comp))
         call make_div_coeff(div_coeff_new,s0_new(:,rho_comp),p0_new, &
                             gam1,grav_cell_new,anelastic_cutoff)
@@ -538,7 +537,7 @@ module advance_timestep_module
 
         do n = 1, nlevs
            call make_S(Source_new(n),gamma1_term(n),snew(n),uold(n), &
-                       rho_omegadot2(n),rho_Hext(n),thermal(n),p0_new,temp0,gam1,dx(n,:))
+                       rho_omegadot2(n),rho_Hext(n),thermal(n),p0_new,s0_new(:,temp_comp),gam1,dx(n,:))
         end do
         call average(Source_new,Sbar,dx,1,1)
 

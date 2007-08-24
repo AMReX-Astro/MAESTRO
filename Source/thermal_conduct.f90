@@ -19,14 +19,14 @@ contains
 ! Crank-Nicholson solve for enthalpy, taking into account only the
 ! enthalpy-diffusion terms in the temperature conduction term.
 ! See paper IV, steps 4a and 8a.
-subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,temp0, &
+subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t0, &
                                     mg_verbose,cg_verbose,the_bc_tower)
 
   type(ml_layout), intent(inout) :: mla
   real(dp_t)     , intent(in   ) :: dx(:,:),dt
   type(multifab) , intent(in   ) :: s1(:)
   type(multifab) , intent(inout) :: s2(:)
-  real(kind=dp_t), intent(in   ) :: p01(0:),p02(0:),temp0(0:)
+  real(kind=dp_t), intent(in   ) :: p01(0:),p02(0:),t0(0:)
   integer        , intent(in   ) :: mg_verbose,cg_verbose
   type(bc_tower) , intent(in   ) :: the_bc_tower
 
@@ -116,12 +116,12 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,temp0, &
         hi = upb(get_box(s1(n), i))
         select case (dm)
         case (2)
-           call compute_thermo_quantities_2d(lo,hi,dt,temp0, &
+           call compute_thermo_quantities_2d(lo,hi,dt,t0, &
                                              s1p(:,:,1,:), &
                                              kthovercp1p(:,:,1,1), &
                                              xik1p(:,:,1,:))
         case (3)
-           call compute_thermo_quantities_3d(lo,hi,dt,temp0, &
+           call compute_thermo_quantities_3d(lo,hi,dt,t0, &
                                              s1p(:,:,:,:), &
                                              kthovercp1p(:,:,:,1), &
                                              xik1p(:,:,:,:))
@@ -306,12 +306,12 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,temp0, &
         hi = upb(get_box(s2(n), i))
         select case (dm)
         case (2)
-           call compute_thermo_quantities_2d(lo,hi,dt,temp0, &
+           call compute_thermo_quantities_2d(lo,hi,dt,t0, &
                                              s2p(:,:,1,:), &
                                              kthovercp2primep(:,:,1,1), &
                                              xik2primep(:,:,1,:))
         case (3)
-           call compute_thermo_quantities_3d(lo,hi,dt,temp0, &
+           call compute_thermo_quantities_3d(lo,hi,dt,t0, &
                                              s2p(:,:,:,:), &
                                              kthovercp2primep(:,:,:,1), &
                                              xik2primep(:,:,:,:))
@@ -529,11 +529,11 @@ end subroutine thermal_conduct_half_alg
 ! compute kthovercp and xik, defined as:
 ! kthovercp = -(dt/2)k_{th}/c_p
 ! xik = (dt/2)\xi_k k_{th}/c_p
-subroutine compute_thermo_quantities_2d(lo,hi,dt,temp0,s,kthovercp,xik)
+subroutine compute_thermo_quantities_2d(lo,hi,dt,t0,s,kthovercp,xik)
 
   integer        , intent(in   ) :: lo(:),hi(:)
   real(dp_t)    ,  intent(in   ) :: dt
-  real(kind=dp_t), intent(in   ) :: temp0(0:)
+  real(kind=dp_t), intent(in   ) :: t0(0:)
   real(kind=dp_t), intent(in   ) :: s(lo(1)-3:,lo(2)-3:,:)
   real(kind=dp_t), intent(inout) :: kthovercp(lo(1)-1:,lo(2)-1:)
   real(kind=dp_t), intent(inout) :: xik(lo(1)-1:,lo(2)-1:,:)
@@ -563,11 +563,11 @@ subroutine compute_thermo_quantities_2d(lo,hi,dt,temp0,s,kthovercp,xik)
         endif
 
         if(j .lt. lo(2)) then
-           temp_row(1) = temp0(lo(2))
+           temp_row(1) = t0(lo(2))
         else if(j .gt. hi(2)) then
-           temp_row(1) = temp0(hi(2))
+           temp_row(1) = t0(hi(2))
         else
-           temp_row(1) = temp0(j)
+           temp_row(1) = t0(j)
         endif
 
         call conducteos(input_flag, den_row, temp_row, &
@@ -592,6 +592,7 @@ subroutine compute_thermo_quantities_2d(lo,hi,dt,temp0,s,kthovercp,xik)
               xik(i,j,n) = -dhdX_row(1,n)*kthovercp(i,j)
            enddo
         endif
+
      enddo
   enddo
 
@@ -601,11 +602,11 @@ end subroutine compute_thermo_quantities_2d
 ! compute kthovercp1 and xik1, defined as:
 ! kthovercp1 = -(dt/2)k_{th}^{(1)}/c_p^{(1)}
 ! xik1 = (dt/2)\xi_k^{(1)}k_{th}^{(1)}/c_p^{(1)}
-subroutine compute_thermo_quantities_3d(lo,hi,dt,temp0,s,kthovercp,xik)
+subroutine compute_thermo_quantities_3d(lo,hi,dt,t0,s,kthovercp,xik)
 
   integer        , intent(in   ) :: lo(:),hi(:)
   real(dp_t)    ,  intent(in   ) :: dt
-  real(kind=dp_t), intent(in   ) :: temp0(0:)
+  real(kind=dp_t), intent(in   ) :: t0(0:)
   real(kind=dp_t), intent(in   ) :: s(lo(1)-3:,lo(2)-3:,lo(3)-3:,:)
   real(kind=dp_t), intent(inout) :: kthovercp(lo(1)-1:,lo(2)-1:,lo(3)-1:)
   real(kind=dp_t), intent(inout) :: xik(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)
@@ -641,11 +642,11 @@ subroutine compute_thermo_quantities_3d(lo,hi,dt,temp0,s,kthovercp,xik)
            endif
 
            if(j .lt. lo(3)) then
-              temp_row(1) = temp0(lo(3))
+              temp_row(1) = t0(lo(3))
            else if(j .gt. hi(3)) then
-              temp_row(1) = temp0(hi(3))
+              temp_row(1) = t0(hi(3))
            else
-              temp_row(1) = temp0(k)
+              temp_row(1) = t0(k)
            endif
 
            call conducteos(input_flag, den_row, temp_row, &

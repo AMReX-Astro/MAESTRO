@@ -85,7 +85,7 @@ contains
   subroutine make_plotfile(dirname,plotdata,u,s,gp,rho_omegadot,Source,sponge, &
                            mba,plot_names,time,dx, &
                            the_bc_tower, &
-                           s0,p0,temp0,plot_spec,plot_trac)
+                           s0,p0,plot_spec,plot_trac)
 
     character(len=*) , intent(in   ) :: dirname
     type(multifab)   , intent(inout) :: plotdata(:)
@@ -99,8 +99,8 @@ contains
     character(len=20), intent(in   ) :: plot_names(:)
     real(dp_t)       , intent(in   ) :: time,dx(:,:)
     type(bc_tower)   , intent(in   ) :: the_bc_tower
-    real(dp_t)       , intent(in   ) :: s0(0:,:),p0(0:)
-    real(dp_t)       , intent(inout) :: temp0(0:)
+    real(dp_t)       , intent(in   ) :: s0(0:,:)
+    real(dp_t)       , intent(in   ) :: p0(0:)
     logical          , intent(in   ) :: plot_spec,plot_trac
 
     integer :: n,dm,nlevs
@@ -147,10 +147,10 @@ contains
        ! RHOPERT & TEMP (FROM RHO) & TPERT & MACHNO & (GAM1 - GAM10)
        call make_tfromrho  (plotdata(n),icomp_tfromrho,icomp_tpert,icomp_rhopert, &
                             icomp_machno,icomp_dg,icomp_spert, &
-                            s(n),u(n),s0,temp0,p0,dx(n,:))
+                            s(n),u(n),s0,p0,dx(n,:))
 
        ! TEMP (FROM H) & DELTA_P
-       call make_tfromH    (plotdata(n),icomp_tfromH,icomp_dp,s(n),p0,temp0,dx(n,:))
+       call make_tfromH    (plotdata(n),icomp_tfromH,icomp_dp,s(n),p0,s0(:,temp_comp),dx(n,:))
 
        ! DIFF BETWEEN TFROMRHO AND TFROMH
        call make_deltaT (plotdata(n),icomp_dT,icomp_tfromrho,icomp_tfromH)
@@ -164,10 +164,10 @@ contains
        ! RHOPERT & TEMP (FROM RHO) & TPERT & MACHNO & (GAM1 - GAM10)
        call make_tfromrho  (plotdata(n),icomp_tfromrho,icomp_tpert,icomp_rhopert, &
                             icomp_machno,icomp_dg,icomp_spert, &
-                            s(n),u(n),s0,temp0,p0,dx(n,:))
+                            s(n),u(n),s0,p0,dx(n,:))
 
        ! TEMP (FROM H) & DELTA_P
-       call make_tfromH    (plotdata(n),icomp_tfromH,icomp_dp,s(n),p0,temp0,dx(n,:))
+       call make_tfromH    (plotdata(n),icomp_tfromH,icomp_dp,s(n),p0,s0(:,temp_comp),dx(n,:))
 
        ! DIFF BETWEEN TFROMRHO AND TFROMH
        call make_deltaT (plotdata(n),icomp_dT,icomp_tfromrho,icomp_tfromH)
