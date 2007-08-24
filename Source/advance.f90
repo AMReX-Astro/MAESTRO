@@ -328,7 +328,8 @@ module advance_timestep_module
               write(6,*) '<<< STEP  4a: thermal conduct >>>'
            end if
 
-           call thermal_conduct_half_alg(mla,dx,dt,s1,s2,p0_1,p0_2,s0_2(:,temp_comp), &
+           call thermal_conduct_half_alg(mla,dx,dt,s1,s2,p0_1,p0_2, &
+                                         s0_1(:,temp_comp), s0_2(:,temp_comp), &
                                          mg_verbose,cg_verbose,the_bc_tower)
         endif
 

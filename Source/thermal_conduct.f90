@@ -19,14 +19,14 @@ contains
 ! Crank-Nicholson solve for enthalpy, taking into account only the
 ! enthalpy-diffusion terms in the temperature conduction term.
 ! See paper IV, steps 4a and 8a.
-subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t0, &
+subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
                                     mg_verbose,cg_verbose,the_bc_tower)
 
   type(ml_layout), intent(inout) :: mla
   real(dp_t)     , intent(in   ) :: dx(:,:),dt
   type(multifab) , intent(in   ) :: s1(:)
   type(multifab) , intent(inout) :: s2(:)
-  real(kind=dp_t), intent(in   ) :: p01(0:),p02(0:),t0(0:)
+  real(kind=dp_t), intent(in   ) :: p01(0:),p02(0:),t01(0:),t02(0:)
   integer        , intent(in   ) :: mg_verbose,cg_verbose
   type(bc_tower) , intent(in   ) :: the_bc_tower
 
@@ -116,12 +116,12 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t0, &
         hi = upb(get_box(s1(n), i))
         select case (dm)
         case (2)
-           call compute_thermo_quantities_2d(lo,hi,dt,t0, &
+           call compute_thermo_quantities_2d(lo,hi,dt,t01, &
                                              s1p(:,:,1,:), &
                                              kthovercp1p(:,:,1,1), &
                                              xik1p(:,:,1,:))
         case (3)
-           call compute_thermo_quantities_3d(lo,hi,dt,t0, &
+           call compute_thermo_quantities_3d(lo,hi,dt,t01, &
                                              s1p(:,:,:,:), &
                                              kthovercp1p(:,:,:,1), &
                                              xik1p(:,:,:,:))
@@ -306,12 +306,12 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t0, &
         hi = upb(get_box(s2(n), i))
         select case (dm)
         case (2)
-           call compute_thermo_quantities_2d(lo,hi,dt,t0, &
+           call compute_thermo_quantities_2d(lo,hi,dt,t02, &
                                              s2p(:,:,1,:), &
                                              kthovercp2primep(:,:,1,1), &
                                              xik2primep(:,:,1,:))
         case (3)
-           call compute_thermo_quantities_3d(lo,hi,dt,t0, &
+           call compute_thermo_quantities_3d(lo,hi,dt,t02, &
                                              s2p(:,:,:,:), &
                                              kthovercp2primep(:,:,:,1), &
                                              xik2primep(:,:,:,:))
