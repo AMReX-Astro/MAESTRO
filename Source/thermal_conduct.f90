@@ -254,7 +254,14 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,temp0, &
                      dm+rhoh_comp,stencil_order,mla%mba%rr, &
                      mg_verbose,cg_verbose)
 
-  ! load new h into s2
+  ! need to set rhs for second implicit solve to rhoh^2 before I overwrite
+  ! with rhoh^{2'}
+  ! begin construction of rhs by setting rhs = (\rho h)^{(2)}
+  do n=1,nlevs
+     call multifab_copy_c(rhs(n),1,s2(n),rhoh_comp,1)
+  enddo
+
+  ! load h^{2'} into s2
   do n=1,nlevs
      call multifab_copy_c(s2(n),rhoh_comp,phi(n),1,1,.false.)
      call multifab_mult_mult_c(s2(n),rhoh_comp,s2(n),rho_comp,1,3)
@@ -310,11 +317,6 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,temp0, &
                                              xik2primep(:,:,:,:))
         end select
      end do
-  enddo
-
-  ! begin construction of rhs by setting rhs = (\rho h)^{(2)}
-  do n=1,nlevs
-     call multifab_copy_c(rhs(n),1,s2(n),rhoh_comp,1)
   enddo
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
