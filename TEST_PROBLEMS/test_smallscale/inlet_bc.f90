@@ -14,6 +14,7 @@ module inlet_bc
    real(kind=dp_t), parameter :: INLET_RHOC12  =  1.99999998217626d7
    real(kind=dp_t), parameter :: INLET_RHOO16  =  1.99999998217626d7
    real(kind=dp_t), parameter :: INLET_RHOMG24 =  0.0d0
+   real(kind=dp_t), parameter :: INLET_TEMP    =  1.00000000047000d8
    real(kind=dp_t), parameter :: INLET_TRA     =  0.0d0
 
 end module inlet_bc
