@@ -96,7 +96,9 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
   ! rhsalpha = 0 (already initialized above)
   ! thess will be true for this entire subroutine
   do n=1,nlevs
-     call multifab_copy_c(lhsalpha(n),1,s2(n),rho_comp,1)
+!     call multifab_copy_c(lhsalpha(n),1,s2(n),rho_comp,1)
+     call setval(lhsalpha(n),ZERO,all=.true.)
+     call multifab_plus_plus_c(lhsalpha(n),1,s2(n),rho_comp,1,1)
   enddo
 
   !!!!!!!!!!!!!!!!!!!!!!!
@@ -159,7 +161,9 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
 
   ! load phi = h^{(1)}
   do n=1,nlevs
-     call multifab_copy_c(phi(n),1,s1(n),rhoh_comp,1)
+!     call multifab_copy_c(phi(n),1,s1(n),rhoh_comp,1)
+     call setval(phi(n),ZERO,all=.true.)
+     call multifab_plus_plus_c(phi(n),1,s1(n),rhoh_comp,1,1)
      call multifab_div_div_c(phi(n),1,s1(n),rho_comp,1,1)
   enddo
 
@@ -170,7 +174,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
 
   ! add Lphi to rhs
   do n=1,nlevs
-     call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,1,0)
+     call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,1)
   enddo
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -201,9 +205,13 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
 
      ! load phi = X_k^{(1)} + X_k^{(2)}
      do n=1,nlevs
-        call multifab_copy_c(phi(n),1,s1(n),spec_comp+spec-1,1)
+!        call multifab_copy_c(phi(n),1,s1(n),spec_comp+spec-1,1)
+        call setval(phi(n),ZERO,all=.true.)
+        call multifab_plus_plus_c(phi(n),1,s1(n),spec_comp+spec-1,1,1)
         call multifab_div_div_c(phi(n),1,s1(n),rho_comp,1,1)
-        call multifab_copy_c(phitemp(n),1,s2(n),spec_comp+spec-1,1)
+!        call multifab_copy_c(phitemp(n),1,s2(n),spec_comp+spec-1,1)
+        call setval(phitemp(n),ZERO,all=.true.)
+        call multifab_plus_plus_c(phitemp(n),1,s2(n),spec_comp+spec-1,1,1)
         call multifab_div_div_c(phitemp(n),1,s2(n),rho_comp,1,1)
         call multifab_plus_plus_c(phi(n),1,phitemp(n),1,1,1)
      enddo
@@ -215,7 +223,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
      
      ! add lphi to rhs
      do n=1,nlevs
-        call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,1,0)
+        call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,1)
      enddo
   enddo
 
@@ -263,8 +271,8 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
 
   ! load h^{2'} into s2
   do n=1,nlevs
-     call multifab_copy_c(s2(n),rhoh_comp,phi(n),1,1,.false.)
-     call multifab_mult_mult_c(s2(n),rhoh_comp,s2(n),rho_comp,1,3)
+     call multifab_copy_c(s2(n),rhoh_comp,phi(n),1,1)
+     call multifab_mult_mult_c(s2(n),rhoh_comp,s2(n),rho_comp,1)
   enddo
 
   ! fill in ghost cells on s2
@@ -344,7 +352,9 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
 
   ! load phi = h^{(1)}
   do n=1,nlevs
-     call multifab_copy_c(phi(n),1,s1(n),rhoh_comp,1)
+!     call multifab_copy_c(phi(n),1,s1(n),rhoh_comp,1)
+     call setval(phi(n),ZERO,all=.true.)
+     call multifab_plus_plus_c(phi(n),1,s1(n),rhoh_comp,1,1)
      call multifab_div_div_c(phi(n),1,s1(n),rho_comp,1,1)
   enddo
 
@@ -355,7 +365,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
 
   ! add Lphi to rhs
   do n=1,nlevs
-     call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,1,0)
+     call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,1)
   enddo
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -388,7 +398,9 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
 
      ! load phi = X_k^{(1)}
      do n=1,nlevs
-        call multifab_copy_c(phi(n),1,s1(n),spec_comp+spec-1,1)
+!        call multifab_copy_c(phi(n),1,s1(n),spec_comp+spec-1,1)
+        call setval(phi(n),ZERO,all=.true.)
+        call multifab_plus_plus_c(phi(n),1,s1(n),spec_comp+spec-1,1,1)
         call multifab_div_div_c(phi(n),1,s1(n),rho_comp,1,1)
      enddo
 
@@ -399,7 +411,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
      
      ! add lphi to rhs
      do n=1,nlevs
-        call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,1,0)
+        call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,1)
      enddo
 
      ! now do X_k^{(2)} term
@@ -425,7 +437,9 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
 
      ! load phi = X_k^{(2)}
      do n=1,nlevs
-        call multifab_copy_c(phi(n),1,s2(n),spec_comp+spec-1,1)
+!        call multifab_copy_c(phi(n),1,s2(n),spec_comp+spec-1,1)
+        call setval(phi(n),ZERO,all=.true.)
+        call multifab_plus_plus_c(phi(n),1,s2(n),spec_comp+spec-1,1,1)
         call multifab_div_div_c(phi(n),1,s2(n),rho_comp,1,1)
      enddo
 
@@ -436,7 +450,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
      
      ! add lphi to rhs
      do n=1,nlevs
-        call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,1,0)
+        call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,1)
      enddo
   enddo
 
@@ -477,8 +491,8 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
 
   ! load new h into s2
   do n=1,nlevs
-     call multifab_copy_c(s2(n),rhoh_comp,phi(n),1,1,.false.)
-     call multifab_mult_mult_c(s2(n),rhoh_comp,s2(n),rho_comp,1,3)
+     call multifab_copy_c(s2(n),rhoh_comp,phi(n),1,1)
+     call multifab_mult_mult_c(s2(n),rhoh_comp,s2(n),rho_comp,1)
   enddo
 
   ! fill in ghost cells on s2
