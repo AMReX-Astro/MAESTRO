@@ -641,9 +641,9 @@ subroutine compute_thermo_quantities_3d(lo,hi,dt,t0,s,kthovercp,xik)
               h_row(1) = s(i,j,k,rhoh_comp)/den_row(1)
            endif
 
-           if(j .lt. lo(3)) then
+           if(k .lt. lo(3)) then
               temp_row(1) = t0(lo(3))
-           else if(j .gt. hi(3)) then
+           else if(k .gt. hi(3)) then
               temp_row(1) = t0(hi(3))
            else
               temp_row(1) = t0(k)
