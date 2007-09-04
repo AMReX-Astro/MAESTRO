@@ -256,6 +256,13 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
      call multifab_mult_mult_s_c(lhsbeta(n),1,-1.0d0,dm,1)
   enddo
 
+  ! initialize phi to H^2 as a guess; also sets the ghost cells at inflow/outflow
+  ! to a reasonable value
+  do n=1,nlevs
+     call multifab_plus_plus_c(phi(n),1,s2(n),rhoh_comp,1,1)
+     call multifab_div_div_c(phi(n),1,s2(n),rho_comp,1,1)
+  enddo
+
   ! Call the solver to obtain h^(2') (it will be stored in phi)
   ! solves (alpha - nabla dot beta nabla)phi = rh
   call mac_multigrid(mla,rhs,phi,fine_flx,lhsalpha,lhsbeta,dx,the_bc_tower, &
@@ -481,6 +488,13 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
   ! scale by -1
   do n=1,nlevs
      call multifab_mult_mult_s_c(lhsbeta(n),1,-1.0d0,dm,1)
+  enddo
+
+  ! initialize phi to H^2 as a guess; also sets the ghost cells at inflow/outflow
+  ! to a reasonable value
+  do n=1,nlevs
+     call multifab_plus_plus_c(phi(n),1,s2(n),rhoh_comp,1,1)
+     call multifab_div_div_c(phi(n),1,s2(n),rho_comp,1,1)
   enddo
 
   ! Call the solver to obtain h^(3) (it will be stored in phi)
