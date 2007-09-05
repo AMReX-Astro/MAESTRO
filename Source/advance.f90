@@ -302,8 +302,14 @@ module advance_timestep_module
 !       call make_div_coeff(div_coeff_new,s0_2(:,rho_comp),p0_2, &
 !                           gam1,grav_cell,anelastic_cutoff)
 
+        if(use_thermal_diffusion) then
+           call make_explicit_thermal(mla,dx,thermal,s1,p0_1, &
+                                      mg_verbose,cg_verbose,the_bc_tower, &
+                                      temp_diffusion_formulation)
+        endif
+
         do n = 1,nlevs
-           call scalar_advance (uold(n), s1(n), s2(n), &
+           call scalar_advance (uold(n), s1(n), s2(n), thermal(n),&
                                 umac(n,:), w0, w0_cart_vec(n), sedge(n,:), utrans(n,:),&
                                 scal_force(n), normal(n), s0_1, s0_2, p0_1, p0_2, &
                                 dx(n,:),dt, &
@@ -464,8 +470,14 @@ module advance_timestep_module
 !       call make_div_coeff(div_coeff_new,s0_2(:,rho_comp),p0_2, &
 !                           gam1,grav_cell,anelastic_cutoff)
 
+        if(use_thermal_diffusion) then
+           call make_explicit_thermal(mla,dx,thermal,s1,p0_1, &
+                                      mg_verbose,cg_verbose,the_bc_tower, &
+                                      temp_diffusion_formulation)
+        endif
+
         do n = 1,nlevs
-           call scalar_advance (uold(n), s1(n), s2(n), &
+           call scalar_advance (uold(n), s1(n), s2(n), thermal(n), &
                                 umac(n,:), w0, w0_cart_vec(n), sedge(n,:), utrans(n,:),&
                                 scal_force(n), normal(n), s0_1, s0_2, p0_1, p0_2, &
                                 dx(n,:),dt, &

@@ -19,7 +19,7 @@ module scalar_advance_module
 
 contains
 
-   subroutine scalar_advance (uold, sold, snew, &
+   subroutine scalar_advance (uold, sold, snew, thermal, &
                               umac, w0, w0_cart_vec, sedge, utrans, &
                               ext_scal_force, normal, &
                               s0_old , s0_new , &
@@ -30,6 +30,7 @@ contains
       type(multifab) , intent(inout) :: uold
       type(multifab) , intent(inout) :: sold
       type(multifab) , intent(inout) :: snew
+      type(multifab) , intent(inout) :: thermal
       type(multifab) , intent(inout) :: umac(:)
       type(multifab) , intent(inout) :: sedge(:)
       type(multifab) , intent(inout) :: utrans(:)
@@ -144,7 +145,7 @@ contains
 
             call modify_scal_force_2d(fp(:,:,1,n),sop(:,:,1,n), lo, hi, &
                                       ng_cell, ump(:,:,1,1),vmp(:,:,1,1), &
-                                      s0_old(:,rhoh_comp),w0,dx)
+                                      s0_old(:,rhoh_comp),w0,dx)            
 
          case(3)
             wmp  => dataptr(umac(3), i)
@@ -188,6 +189,12 @@ contains
                                               s0_old(:,n),w0,dx)
             end if
          end select
+
+         ! add to the rhoh component of force
+         if(use_thermal_diffusion) then
+            call multifab_plus_plus_c(scal_force,rhoh_comp,thermal,1,1)
+         endif
+
       end do
 
       call multifab_fill_boundary(scal_force)
