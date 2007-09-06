@@ -31,13 +31,13 @@ subroutine make_explicit_thermal(mla,dx,thermal,s,p0,mg_verbose, &
 
   ! Local
   type(multifab), allocatable :: phi(:),alpha(:),beta(:),xik(:)
-  type(multifab), allocatable :: sigmaoverrho(:),kth(:),kthovercp(:),resid(:)
+  type(multifab), allocatable :: kth(:),kthovercp(:),resid(:)
   type(multifab), allocatable :: temp(:)
   integer                     :: i,k,n,nlevs,dm,stencil_order,ng_0,ng_1,ng_3
   integer                     :: lo(s(1)%dim),hi(s(1)%dim)
   real(kind=dp_t), pointer    :: thermalp(:,:,:,:),sp(:,:,:,:)
   real(kind=dp_t), pointer    :: phip(:,:,:,:),betap(:,:,:,:)
-  real(kind=dp_t), pointer    :: xikp(:,:,:,:),sigmaoverrhop(:,:,:,:)
+  real(kind=dp_t), pointer    :: xikp(:,:,:,:)
   real(kind=dp_t), pointer    :: kthp(:,:,:,:),kthovercpp(:,:,:,:)
   real(kind=dp_t), pointer    :: residp(:,:,:,:),tempp(:,:,:,:)
 
@@ -46,7 +46,7 @@ subroutine make_explicit_thermal(mla,dx,thermal,s,p0,mg_verbose, &
   stencil_order = 2
 
   allocate(phi(nlevs),alpha(nlevs),beta(nlevs),xik(nlevs))
-  allocate(sigmaoverrho(nlevs),kth(nlevs),kthovercp(nlevs),resid(nlevs))
+  allocate(kth(nlevs),kthovercp(nlevs),resid(nlevs))
   allocate(temp(nlevs))
 
   do n = 1,nlevs
@@ -54,7 +54,6 @@ subroutine make_explicit_thermal(mla,dx,thermal,s,p0,mg_verbose, &
      call multifab_build(       alpha(n), mla%la(n), 1, 1)
      call multifab_build(        beta(n), mla%la(n),dm, 1)
      call multifab_build(         xik(n), mla%la(n),nspec, 1)
-     call multifab_build(sigmaoverrho(n), mla%la(n), 1, 1)
      call multifab_build(         kth(n), mla%la(n), 1, 1)
      call multifab_build(   kthovercp(n), mla%la(n), 1, 1)
      call multifab_build(       resid(n), mla%la(n), 1, 0)
@@ -63,7 +62,6 @@ subroutine make_explicit_thermal(mla,dx,thermal,s,p0,mg_verbose, &
      call setval(         phi(n), ZERO, all=.true.)
      call setval(       alpha(n), ZERO, all=.true.)
      call setval(        beta(n), ZERO, all=.true.)
-     call setval(sigmaoverrho(n), ZERO, all=.true.)
      call setval(         xik(n), ZERO, all=.true.)
      call setval(         kth(n), ZERO, all=.true.)
      call setval(   kthovercp(n), ZERO, all=.true.)
@@ -73,7 +71,6 @@ subroutine make_explicit_thermal(mla,dx,thermal,s,p0,mg_verbose, &
      call setval(     thermal(n), ZERO, all=.true.)
   end do
 
-  ! create sigmaoverrho = p_T(\rho^2 c_p p_\rho)
   ! create kth
   ! create kthovercp
   ! create temp
@@ -85,7 +82,6 @@ subroutine make_explicit_thermal(mla,dx,thermal,s,p0,mg_verbose, &
      do i=1,s(n)%nboxes
         if (multifab_remote(s(n),i)) cycle
         sp            => dataptr(s(n),i)
-        sigmaoverrhop => dataptr(sigmaoverrho(n),i)
         kthp          => dataptr(kth(n),i)
         kthovercpp    => dataptr(kthovercp(n),i)
         tempp         => dataptr(temp(n),i)
@@ -95,12 +91,12 @@ subroutine make_explicit_thermal(mla,dx,thermal,s,p0,mg_verbose, &
         select case (dm)
         case (2)
            call make_coeffs_2d(lo,hi,dx(n,:),ng_1,ng_3,p0,sp(:,:,1,:), &
-                sigmaoverrhop(:,:,1,1),kthp(:,:,1,1),kthovercpp(:,:,1,1), &
-                tempp(:,:,1,1),xikp(:,:,1,:))
+                               kthp(:,:,1,1),kthovercpp(:,:,1,1), &
+                               tempp(:,:,1,1),xikp(:,:,1,:))
         case (3)
            call make_coeffs_3d(lo,hi,dx(n,:),ng_1,ng_3,p0,sp(:,:,:,:), &
-                sigmaoverrhop(:,:,:,1),kthp(:,:,:,1),kthovercpp(:,:,:,1), &
-                tempp(:,:,:,1),xikp(:,:,:,:))
+                               kthp(:,:,:,1),kthovercpp(:,:,:,1), &
+                               tempp(:,:,:,1),xikp(:,:,:,:))
         end select
      end do
   enddo
@@ -137,7 +133,6 @@ subroutine make_explicit_thermal(mla,dx,thermal,s,p0,mg_verbose, &
      
      ! scale residual by sigma/rho and add to thermal
      do n=1,nlevs
-        call multifab_mult_mult_c(resid(n),1,sigmaoverrho(n),1,1,0)
         call multifab_plus_plus_c(thermal(n),1,resid(n),1,1,0)
      enddo
 
@@ -173,7 +168,6 @@ subroutine make_explicit_thermal(mla,dx,thermal,s,p0,mg_verbose, &
      
      ! scale residual by sigma/rho and add to thermal
      do n=1,nlevs
-        call multifab_mult_mult_c(resid(n),1,sigmaoverrho(n),1,1,0)
         call multifab_plus_plus_c(thermal(n),1,resid(n),1,1,0)
      enddo
      
@@ -213,7 +207,6 @@ subroutine make_explicit_thermal(mla,dx,thermal,s,p0,mg_verbose, &
         
         ! scale residual by sigma/rho and add to thermal
         do n=1,nlevs
-           call multifab_mult_mult_c(resid(n),1,sigmaoverrho(n),1,1,0)
            call multifab_plus_plus_c(thermal(n),1,resid(n),1,1,0)
         enddo
      enddo
@@ -227,32 +220,28 @@ subroutine make_explicit_thermal(mla,dx,thermal,s,p0,mg_verbose, &
      call destroy(alpha(n))
      call destroy(beta(n))
      call destroy(xik(n))
-     call destroy(sigmaoverrho(n))
      call destroy(kth(n))
      call destroy(kthovercp(n))
      call destroy(resid(n))
      call destroy(temp(n))
   enddo
 
-  deallocate(phi,alpha,beta,xik,sigmaoverrho,kth,kthovercp,resid,temp)
+  deallocate(phi,alpha,beta,xik,kth,kthovercp,resid,temp)
 
 end subroutine make_explicit_thermal
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! create sigmaoverrho = p_T(\rho^2 c_p p_\rho)
 ! create kth
 ! create kthovercp
 ! create temp
-subroutine make_coeffs_2d(lo,hi,dx,ng_1,ng_3,p0,s,sigmaoverrho,kth, &
-     kthovercp,temp,xik)
+subroutine make_coeffs_2d(lo,hi,dx,ng_1,ng_3,p0,s,kth,kthovercp,temp,xik)
 
   integer        , intent(in   ) :: lo(:),hi(:)
   real(dp_t)    ,  intent(in   ) :: dx(:)
   integer        , intent(in   ) :: ng_1,ng_3
   real(kind=dp_t), intent(in   ) :: p0(0:)
   real(kind=dp_t), intent(in   ) :: s(lo(1)-ng_3:,lo(2)-ng_3:,:)
-  real(kind=dp_t), intent(inout) :: sigmaoverrho(lo(1)-ng_1:,lo(2)-ng_1:)
   real(kind=dp_t), intent(inout) :: kth(lo(1)-ng_1:,lo(2)-ng_1:)
   real(kind=dp_t), intent(inout) :: kthovercp(lo(1)-ng_1:,lo(2)-ng_1:)
   real(kind=dp_t), intent(inout) :: temp(lo(1)-ng_1:,lo(2)-ng_1:)
@@ -290,7 +279,6 @@ subroutine make_coeffs_2d(lo,hi,dx,ng_1,ng_3,p0,s,sigmaoverrho,kth, &
              dsdt_row, dsdr_row, &
              do_diag, conduct_row)
 
-        sigmaoverrho(i,j) = dpdt_row(1)/(den_row(1)**2*cp_row(1)*dpdr_row(1))
         kth(i,j) = conduct_row(1)
         kthovercp(i,j) = conduct_row(1)/cp_row(1)
         temp(i,j) = temp_row(1)
@@ -309,19 +297,16 @@ end subroutine make_coeffs_2d
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! create sigmaoverrho = p_T(\rho^2 c_p p_\rho)
 ! create kth
 ! create kthovercp
 ! create temp
-subroutine make_coeffs_3d(lo,hi,dx,ng_1,ng_3,p0,s,sigmaoverrho,kth, &
-     kthovercp,temp,xik)
+subroutine make_coeffs_3d(lo,hi,dx,ng_1,ng_3,p0,s,kth,kthovercp,temp,xik)
 
   integer        , intent(in   ) :: lo(:),hi(:)
   real(dp_t)    ,  intent(in   ) :: dx(:)
   integer        , intent(in   ) :: ng_1,ng_3
   real(kind=dp_t), intent(in   ) :: p0(0:)
   real(kind=dp_t), intent(in   ) :: s(lo(1)-ng_3:,lo(2)-ng_3:,lo(3)-ng_3:,:)
-  real(kind=dp_t), intent(inout) :: sigmaoverrho(lo(1)-ng_1:,lo(2)-ng_1:,lo(3)-ng_1:)
   real(kind=dp_t), intent(inout) :: kth(lo(1)-ng_1:,lo(2)-ng_1:,lo(3)-ng_1:)
   real(kind=dp_t), intent(inout) :: kthovercp(lo(1)-ng_1:,lo(2)-ng_1:,lo(3)-ng_1:)
   real(kind=dp_t), intent(inout) :: temp(lo(1)-ng_1:,lo(2)-ng_1:,lo(3)-ng_1:)
@@ -375,7 +360,6 @@ subroutine make_coeffs_3d(lo,hi,dx,ng_1,ng_3,p0,s,sigmaoverrho,kth, &
                 dsdt_row, dsdr_row, &
                 do_diag, conduct_row)
 
-           sigmaoverrho(i,j,k) = dpdt_row(1)/(den_row(1)**2*cp_row(1)*dpdr_row(1))
            kth(i,j,k) = conduct_row(1)
            kthovercp(i,j,k) = conduct_row(1)/cp_row(1)
            temp(i,j,k) = temp_row(1)
