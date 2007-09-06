@@ -252,12 +252,14 @@ subroutine make_coeffs_2d(lo,hi,dx,ng_1,ng_3,p0,s,kth,kthovercp,temp,xik)
 
   ! dens, pres, and xmass are inputs
   input_flag = 4
+
   do_diag = .false.
 
   do j=lo(2)-1,hi(2)+1
      do i=lo(1)-1,hi(1)+1
 
         den_row(1) = s(i,j,rho_comp)
+        temp_row(1) = s(i,j,temp_comp)
         xn_zone(:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
 
         if(j .eq. lo(2)-1) then
