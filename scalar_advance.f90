@@ -14,6 +14,7 @@ module scalar_advance_module
   use variables
   use geometry
   use network
+  use probin_module
 
   implicit none
 
