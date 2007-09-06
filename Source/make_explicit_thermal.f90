@@ -332,6 +332,7 @@ subroutine make_coeffs_3d(lo,hi,dx,ng_1,ng_3,p0,s,kth,kthovercp,temp,xik)
         do i=lo(1)-1,hi(1)+1
            
            den_row(1) = s(i,j,k,rho_comp)
+           temp_row(1) = s(i,j,k,temp_comp)
            xn_zone(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
 
            if(spherical .eq. 0) then
@@ -395,10 +396,6 @@ subroutine setup_T_op_2d(lo,hi,ng_1,temp,kth,phi,beta)
   integer :: i,j
   integer :: nx,ny
 
-! dens, pres, and xmass are inputs
-  input_flag = 4
-  do_diag = .false.
-
   nx = size(beta,dim=1) - 2*ng_1
   ny = size(beta,dim=2) - 2*ng_1
 
@@ -438,10 +435,6 @@ subroutine setup_T_op_3d(lo,hi,ng_1,temp,kth,phi,beta)
 
   integer :: i,j,k
   integer :: nx,ny,nz
-
-! dens, pres, and xmass are inputs
-  input_flag = 4
-  do_diag = .false.
 
   nx = size(beta,dim=1) - 2*ng_1
   ny = size(beta,dim=2) - 2*ng_1
@@ -501,10 +494,6 @@ subroutine setup_h_op_2d(lo,hi,ng_1,ng_3,s,kthovercp,phi,beta)
   integer :: i,j
   integer :: nx,ny
 
-! dens, pres, and xmass are inputs
-  input_flag = 4
-  do_diag = .false.
-
   nx = size(beta,dim=1) - 2*ng_1
   ny = size(beta,dim=2) - 2*ng_1
 
@@ -546,10 +535,6 @@ subroutine setup_h_op_3d(lo,hi,ng_1,ng_3,s,kthovercp,phi,beta)
 
   integer :: i,j,k
   integer :: nx,ny,nz
-
-! dens, pres, and xmass are inputs
-  input_flag = 4
-  do_diag = .false.
 
   nx = size(beta,dim=1) - 2*ng_1
   ny = size(beta,dim=2) - 2*ng_1
@@ -612,10 +597,6 @@ subroutine setup_Xk_op_2d(spec,lo,hi,dx,ng_1,ng_3,s,kthovercp,phi,beta,xik)
   integer :: i,j
   integer :: nx,ny
 
-! dens, pres, and xmass are inputs
-  input_flag = 4
-  do_diag = .false.
-
   nx = size(beta,dim=1) - 2*ng_1
   ny = size(beta,dim=2) - 2*ng_1
 
@@ -661,10 +642,6 @@ subroutine setup_Xk_op_3d(spec,lo,hi,dx,ng_1,ng_3,s,kthovercp,phi,beta,xik)
 
   integer :: i,j,k
   integer :: nx,ny,nz
-
-! dens, pres, and xmass are inputs
-  input_flag = 4
-  do_diag = .false.
 
   nx = size(beta,dim=1) - 2*ng_1
   ny = size(beta,dim=2) - 2*ng_1
