@@ -259,6 +259,13 @@ contains
 
   end subroutine initveldata_2d
 
+  ! the velocity is initialized to zero plus a perturbation which is a 
+  ! summation of 27 fourier modes with random amplitudes and phase shifts
+  ! over a square of length "L".  The parameter "R" is the cutoff radius, 
+  ! such that the actual perturbation that gets added to the initial 
+  ! velocity decays to zero quickly if r > "R", via the tanh function.
+  ! The steepness of the cutoff is controlled by "W".  The relative 
+  ! amplitude of the modes is controlled by "A".
   subroutine initveldata_3d (u,lo,hi,ng,dx, &
                              prob_lo,prob_hi,s0,p0)
 
@@ -278,11 +285,11 @@ contains
     integer :: iloc, jloc, kloc
     ! L2 norm of k
     real(kind=dp_t) :: normk(3,3,3)
-    ! random numbers (-1,1]
+    ! random numbers between -1 and 1
     real(kind=dp_t) :: alpha(3,3,3), beta(3,3,3), gamma(3,3,3)
-    ! random numbers (0,2*pi)
+    ! random numbers between 0 and 2*pi
     real(kind=dp_t) :: phix(3,3,3), phiy(3,3,3), phiz(3,3,3)
-    ! cos and sin (k_i*x_i + phi_i)
+    ! cos and sin of (2*pi*kx/L + phix), etc
     real(kind=dp_t) :: cx(3,3,3), cy(3,3,3), cz(3,3,3)
     real(kind=dp_t) :: sx(3,3,3), sy(3,3,3), sz(3,3,3)
     ! location of center of star
@@ -291,21 +298,23 @@ contains
     real(kind=dp_t) :: rloc
     ! the point we're at
     real(kind=dp_t) :: xloc(3)
-    ! amplitude, cutoff radius, scaling, and cutoff steepness
+    ! amplitude (A), cutoff radius (R), scaling (L), and cutoff steepness (W)
     real(kind=dp_t) :: A, R, L, W
     ! perturbational velocity to add
     real(kind=dp_t) :: upert(3)
     ! random number
     real(kind=dp_t) :: rand
 
-    ! begin by initializing the velocity to zero everywhere
-    u = ZERO
-
-    ! set A, R, L, and W
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ! Here are the tunable parameters
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     A = 10000.0d0
     R = 0.75d8
     L = 0.8d8
     W = 1.0d0
+
+    ! initialize the velocity to zero everywhere
+    u = ZERO
 
     ! load in random numbers alpha, beta, gamma, phix, phiy, and phiz
     do i=1,3
@@ -343,12 +352,12 @@ contains
     enddo
 
     ! define where center of star is
-    ! for now I am assuming at the center of the domain
+    ! this currently assumes the star is at the center of the domain
     do i=1,3
        xc(i) = 0.5d0*(prob_lo(i)+prob_hi(i))
     enddo
 
-    ! now do the big loop over all points
+    ! now do the big loop over all points in the domain
     do iloc = lo(1),hi(1)
        do jloc = lo(2),hi(2)
           do kloc = lo(3),hi(3)
@@ -356,7 +365,7 @@ contains
              ! set perturbational velocity to zero
              upert = ZERO
 
-             ! compute where we are
+             ! compute where we physically are
              xloc(1) = prob_lo(1) + (dble(iloc)+0.5d0)*dx(1)
              xloc(2) = prob_lo(2) + (dble(jloc)+0.5d0)*dx(2)
              xloc(3) = prob_lo(3) + (dble(kloc)+0.5d0)*dx(3)
@@ -387,7 +396,7 @@ contains
              do i=1,3
                 do j=1,3
                    do k=1,3
-                      ! compute additions to perturbational velocity
+                      ! compute contribution from perturbation velocity from each mode
                       upert(1) = upert(1) + &
                            (-gamma(i,j,k)*dble(j)*cx(i,j,k)*cz(i,j,k)*sy(i,j,k) &
                             +beta(i,j,k)*dble(k)*cx(i,j,k)*cy(i,j,k)*sz(i,j,k)) &
