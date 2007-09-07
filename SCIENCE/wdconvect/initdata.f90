@@ -283,7 +283,8 @@ contains
     ! random numbers (0,2*pi)
     real(kind=dp_t) :: phix(3,3,3), phiy(3,3,3), phiz(3,3,3)
     ! cos and sin (k_i*x_i + phi_i)
-    real(kind=dp_t) :: cx(3,3,3), cy(3,3,3), cz(3,3,3), sx(3,3,3), sy(3,3,3), sz(3,3,3)
+    real(kind=dp_t) :: cx(3,3,3), cy(3,3,3), cz(3,3,3)
+    real(kind=dp_t) :: sx(3,3,3), sy(3,3,3), sz(3,3,3)
     ! location of center of star
     real(kind=dp_t) :: xc(3)
     ! radius, or distance, to center of star
@@ -301,9 +302,9 @@ contains
     u = ZERO
 
     ! set A, R, L, and W
-    A = 1.0d0
-    R = 0.5d8
-    L = 0.6d8
+    A = 10000.0d0
+    R = 0.75d8
+    L = 0.8d8
     W = 1.0d0
 
     ! load in random numbers alpha, beta, gamma, phix, phiy, and phiz
@@ -389,21 +390,26 @@ contains
                       ! compute additions to perturbational velocity
                       upert(1) = upert(1) + &
                            (-gamma(i,j,k)*dble(j)*cx(i,j,k)*cz(i,j,k)*sy(i,j,k) &
-                            +beta(i,j,k)*dble(k)*cx(i,j,k)*cy(i,j,k)*sz(i,j,k)) / normk(i,j,k)
+                            +beta(i,j,k)*dble(k)*cx(i,j,k)*cy(i,j,k)*sz(i,j,k)) &
+                            / normk(i,j,k)
 
                       upert(2) = upert(2) + &
                            (gamma(i,j,k)*dble(i)*cy(i,j,k)*cz(i,j,k)*sx(i,j,k) &
-                            -alpha(i,j,k)*dble(k)*cx(i,j,k)*cy(i,j,k)*sz(i,j,k)) / normk(i,j,k)
+                            -alpha(i,j,k)*dble(k)*cx(i,j,k)*cy(i,j,k)*sz(i,j,k)) &
+                            / normk(i,j,k)
 
                       upert(3) = upert(3) + &
                            (-beta(i,j,k)*dble(i)*cy(i,j,k)*cz(i,j,k)*sx(i,j,k) &
-                            +alpha(i,j,k)*dble(j)*cx(i,j,k)*cz(i,j,k)*sy(i,j,k)) / normk(i,j,k)
+                            +alpha(i,j,k)*dble(j)*cx(i,j,k)*cz(i,j,k)*sy(i,j,k)) &
+                            / normk(i,j,k)
                    enddo
                 enddo
              enddo
 
              ! apply the cutoff function to the perturbational velocity
-             upert = upert*(0.5d0+0.5d0*tanh((R-rloc)/W))
+             do i=1,3
+                upert(i) = A*upert(i)*(0.5d0+0.5d0*tanh((R-rloc)/W))
+             enddo
 
              ! add perturbational velocity to background velocity
              do i=1,3
