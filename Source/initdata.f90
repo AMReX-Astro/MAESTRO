@@ -143,14 +143,15 @@ contains
   
     if (spherical .eq. 1) then
 
-       do n = rho_comp, spec_comp+nspec-1
+       ! initialize the scalars
+       do n = rho_comp,temp_comp
           call fill_3d_data (s(:,:,:,n),s0(:,n),lo,hi,dx,ng)
        end do
 
     else 
 
        ! initialize the scalars
-       do n = rho_comp,spec_comp+nspec-1
+       do n = rho_comp,temp_comp
           do k = lo(3), hi(3)
              do j = lo(2), hi(2)
                 do i = lo(1), hi(1)
