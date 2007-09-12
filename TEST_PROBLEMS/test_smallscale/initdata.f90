@@ -282,9 +282,6 @@ contains
 
     enddo
 
-    INLET_VN = 0.0d0
-    INLET_VT = 0.0d0
-
   end subroutine initveldata_2d
 
   subroutine initveldata_3d (u,lo,hi,ng,dx, &
@@ -323,9 +320,6 @@ contains
        u(lo(1):hi(1),lo(2):hi(2),i,3) = state1d(2)
 
     enddo
-
-    INLET_VN = 0.0d0
-    INLET_VT = 0.0d0
 
   end subroutine initveldata_3d
 
@@ -501,7 +495,7 @@ contains
     ! local
     integer ndum, i, j, dm, nspec
     integer input_flag
-    parameter (ndum = 31)
+    parameter (ndum = 30)
     parameter (nspec = 3)
 
     character(len=128) :: lamsolfile
@@ -514,9 +508,62 @@ contains
 
     lamsolfile = 'flame_4.e7_screen_left.out'
 
-    ! ambient pressure from john's problem
-    p_row(1) = 6.08741290776d24
+    ! first set the inflow boundary condition
+    call asin1d(lamsolfile, -.00125d0, 0.d0, state1d, ndum, .false.)
 
+    den_row(1) = state1d(3) ! this is going to be overwritten
+    temp_row(1) = state1d(9)
+    p_row(1) = state1d(18)
+
+    xn_zone(1) = state1d(21)
+    xn_zone(2) = state1d(23)
+    xn_zone(3) = state1d(22)
+
+    ! given P, T, and X, compute rho
+    input_flag = 3
+    call eos(input_flag, den_row, temp_row, &
+         npts, nspec, &
+         xn_zone, aion, zion, &
+         p_row, h_row, e_row, & 
+         cv_row, cp_row, xne_row, eta_row, pele_row, &
+         dpdt_row, dpdr_row, dedt_row, dedr_row, &
+         dpdX_row, dhdX_row, &
+         gam1_row, cs_row, s_row, &
+         dsdt_row, dsdr_row, &
+         do_diag)
+
+    ! given rho, T, and X, compute h
+    input_flag = 1
+    call eos(input_flag, den_row, temp_row, &
+         npts, nspec, &
+         xn_zone, aion, zion, &
+         p_row, h_row, e_row, & 
+         cv_row, cp_row, xne_row, eta_row, pele_row, &
+         dpdt_row, dpdr_row, dedt_row, dedr_row, &
+         dpdX_row, dhdX_row, &
+         gam1_row, cs_row, s_row, &
+         dsdt_row, dsdr_row, &
+         do_diag)
+
+    INLET_VN = 0.0d0
+    INLET_VT = 0.0d0
+    INLET_RHO = den_row(1)
+    if(use_big_h) then
+       qreact = 0.0d0
+       do j=1,nspec
+          qreact = qreact + ebin(j)*xn_zone(j)
+       enddo
+       INLET_RHOH = den_row(1)*(h_row(1) + qreact)
+    else
+       INLET_RHOH = den_row(1)*h_row(1)
+    endif
+    INLET_RHOC12 = den_row(1)*xn_zone(1)
+    INLET_RHOO16 = den_row(1)*xn_zone(2)
+    INLET_RHOMG24 = den_row(1)*xn_zone(3)
+    INLET_TEMP = temp_row(1)
+    INLET_TRA = 0.0d0
+
+    ! Now do the interior cells
     flameloc = ONE
 
     do i=0,n_base-1
@@ -570,15 +617,6 @@ contains
        gam1(i) = gam1_row(1)
 
     enddo
-
-    ! temporary - when you fix make sure you do 3d case as well
-    INLET_RHO = 3.9999999999798551d7
-    INLET_RHOH = 3.00943325470894d25
-    INLET_RHOC12 = 0.5d0*3.9999999999798551d7
-    INLET_RHOO16 = 0.5d0*3.9999999999798551d7
-    INLET_RHOMG24 = 0.0d0
-    INLET_TEMP = 1.00000000047000d8
-    INLET_TRA = 0.0d0
         
   end subroutine init_base_state
   
