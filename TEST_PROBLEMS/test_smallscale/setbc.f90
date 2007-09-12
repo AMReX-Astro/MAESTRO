@@ -3,7 +3,7 @@ module setbc_module
   use bl_types
   use bl_constants_module
   use bc_module
-  use inlet_bc
+  use inlet_bc_module
   use probin_module
 
   implicit none
@@ -110,13 +110,7 @@ contains
          if (icomp.eq.1) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_VT
          if (icomp.eq.2) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_VN
          if (icomp.eq.3) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_RHO
-         if (icomp.eq.4) then
-            if(use_big_h) then
-               s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_RHOBIGH
-            else
-               s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_RHOH  
-            endif
-         endif
+         if (icomp.eq.4) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_RHOH
          if (icomp.eq.5) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_RHOC12
          if (icomp.eq.6) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_RHOO16
          if (icomp.eq.7) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_RHOMG24
@@ -386,13 +380,7 @@ contains
          if (icomp.eq.2) s(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-ng:lo(3)-1) = INLET_VT
          if (icomp.eq.3) s(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-ng:lo(3)-1) = INLET_VN
          if (icomp.eq.4) s(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-ng:lo(3)-1) = INLET_RHO
-         if (icomp.eq.5) then
-            if(use_big_h) then
-               s(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-ng:lo(3)-1) = INLET_RHOBIGH
-            else
-               s(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-ng:lo(3)-1) = INLET_RHOH
-            endif
-         endif
+         if (icomp.eq.5) s(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-ng:lo(3)-1) = INLET_RHOH
          if (icomp.eq.6) s(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-ng:lo(3)-1) = INLET_RHOC12
          if (icomp.eq.7) s(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-ng:lo(3)-1) = INLET_RHOO16
          if (icomp.eq.8) s(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-ng:lo(3)-1) = INLET_RHOMG24

@@ -12,6 +12,7 @@ module init_module
   use network
   use geometry
   use probin_module
+  use inlet_bc_module
 
   implicit none
 
@@ -82,8 +83,8 @@ contains
     !     Local variables
     integer :: i, j, n
     real(kind=dp_t) :: x,y,r,r0,r1,r2,temp
-    real(kind=dp_t) :: dens_pert, rhoh_pert, temp_pert, rhoX_pert(nspec), trac_pert(ntrac)
-
+    real(kind=dp_t) :: dens_pert, rhoh_pert, temp_pert
+    real(kind=dp_t) :: rhoX_pert(nspec), trac_pert(ntrac)
 
     ! initial the domain with the base state
     s = ZERO
@@ -106,7 +107,8 @@ contains
              x = prob_lo(1) + (dble(i)+HALF) * dx(1)
           
              call perturb_2d(x, y, p0(j), s0(j,:), &
-                             dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
+                             dens_pert, rhoh_pert, rhoX_pert, &
+                             temp_pert, trac_pert)
 
              s(i,j,rho_comp) = dens_pert
              s(i,j,rhoh_comp) = rhoh_pert
@@ -135,7 +137,8 @@ contains
     !     Local variables
     integer :: i, j, k, n
     real(kind=dp_t) :: x,y,z,r,r0,r1,r2,temp
-    real(kind=dp_t) :: dens_pert, rhoh_pert, temp_pert, rhoX_pert(nspec), trac_pert(ntrac)
+    real(kind=dp_t) :: dens_pert, rhoh_pert, temp_pert
+    real(kind=dp_t) :: rhoX_pert(nspec), trac_pert(ntrac)
 
     ! initial the domain with the base state
     s = ZERO
@@ -177,7 +180,8 @@ contains
                    x = prob_lo(1) + (dble(i)+HALF) * dx(1)
                    
                    call perturb_3d(x, y, z, p0(k), s0(k,:), &
-                                   dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
+                                   dens_pert, rhoh_pert, rhoX_pert, &
+                                   temp_pert, trac_pert)
 
                    s(i,j,k,rho_comp) = dens_pert
                    s(i,j,k,rhoh_comp) = rhoh_pert
@@ -278,6 +282,9 @@ contains
 
     enddo
 
+    INLET_VN = 0.0d0
+    INLET_VT = 0.0d0
+
   end subroutine initveldata_2d
 
   subroutine initveldata_3d (u,lo,hi,ng,dx, &
@@ -316,6 +323,9 @@ contains
        u(lo(1):hi(1),lo(2):hi(2),i,3) = state1d(2)
 
     enddo
+
+    INLET_VN = 0.0d0
+    INLET_VT = 0.0d0
 
   end subroutine initveldata_3d
 
@@ -502,8 +512,6 @@ contains
 
     dm = size(dx)
 
-
-
     lamsolfile = 'flame_4.e7_screen_left.out'
 
     ! ambient pressure from john's problem
@@ -560,8 +568,17 @@ contains
 
        p0(i) = p_row(1)
        gam1(i) = gam1_row(1)
-       
+
     enddo
+
+    ! temporary - when you fix make sure you do 3d case as well
+    INLET_RHO = 3.9999999999798551d7
+    INLET_RHOH = 3.00943325470894d25
+    INLET_RHOC12 = 0.5d0*3.9999999999798551d7
+    INLET_RHOO16 = 0.5d0*3.9999999999798551d7
+    INLET_RHOMG24 = 0.0d0
+    INLET_TEMP = 1.00000000047000d8
+    INLET_TRA = 0.0d0
         
   end subroutine init_base_state
   

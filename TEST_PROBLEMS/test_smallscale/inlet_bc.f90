@@ -1,20 +1,28 @@
-module inlet_bc
+module inlet_bc_module
 
-   use bl_types,  only: dp_t
-   implicit none
+  use bl_types
+  use bl_space
+  
+  implicit none
 
-   real(kind=dp_t), parameter :: INLET_VN      =  0.0d0
-   real(kind=dp_t), parameter :: INLET_VT      =  0.0d0
-   real(kind=dp_t), parameter :: INLET_RHO     =  3.9999999999798551d7
-   real(kind=dp_t), parameter :: INLET_RHOH    =  1.89543326464019d25
-!  This is for the ebin formulation
-   real(kind=dp_t), parameter :: INLET_RHOBIGH = -2.83171202661189d26
-!  This is for the qs formulation
-!   real(kind=dp_t), parameter :: INLET_RHOBIGH =  3.00943325470894d25
-   real(kind=dp_t), parameter :: INLET_RHOC12  =  0.5d0*3.9999999999798551d7
-   real(kind=dp_t), parameter :: INLET_RHOO16  =  0.5d0*3.9999999999798551d7
-   real(kind=dp_t), parameter :: INLET_RHOMG24 =  0.0d0
-   real(kind=dp_t), parameter :: INLET_TEMP    =  1.00000000047000d8
-   real(kind=dp_t), parameter :: INLET_TRA     =  0.0d0
+  real(dp_t), save    :: INLET_VN
+  real(dp_t), save    :: INLET_VT
+  real(dp_t), save    :: INLET_RHO
+  real(dp_t), save    :: INLET_RHOH
+  real(dp_t), save    :: INLET_RHOC12
+  real(dp_t), save    :: INLET_RHOO16
+  real(dp_t), save    :: INLET_RHOMG24
+  real(dp_t), save    :: INLET_TEMP
+  real(dp_t), save    :: INLET_TRA
 
-end module inlet_bc
+  namelist /inlet_bc/ INLET_VN
+  namelist /inlet_bc/ INLET_VT
+  namelist /inlet_bc/ INLET_RHO
+  namelist /inlet_bc/ INLET_RHOH
+  namelist /inlet_bc/ INLET_RHOC12
+  namelist /inlet_bc/ INLET_RHOO16
+  namelist /inlet_bc/ INLET_RHOMG24
+  namelist /inlet_bc/ INLET_TEMP
+  namelist /inlet_bc/ INLET_TRA
+
+end module inlet_bc_module
