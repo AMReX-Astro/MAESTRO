@@ -507,7 +507,7 @@ contains
     lamsolfile = 'flame_4.e7_screen_left.out'
 
     ! ambient pressure from john's problem
-    p_row(1) = 6.08741290776e24
+    p_row(1) = 6.08741290776d24
 
     flameloc = ONE
 
