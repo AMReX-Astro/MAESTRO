@@ -250,8 +250,8 @@ subroutine make_coeffs_2d(lo,hi,dx,ng_1,ng_3,p0,s,kth,kthovercp,temp,xik)
   ! local
   integer :: i,j,n
 
-  ! dens, pres, and xmass are inputs
-  input_flag = 4
+  ! dens, temp, and xmass are inputs
+  input_flag = 1
 
   do_diag = .false.
 
@@ -261,14 +261,6 @@ subroutine make_coeffs_2d(lo,hi,dx,ng_1,ng_3,p0,s,kth,kthovercp,temp,xik)
         den_row(1) = s(i,j,rho_comp)
         temp_row(1) = s(i,j,temp_comp)
         xn_zone(:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
-
-        if(j .eq. lo(2)-1) then
-           p_row(1) = p0(lo(2))
-        else if(j .eq. hi(2)+1) then
-           p_row(1) = p0(hi(2))
-        else
-           p_row(1) = p0(j)
-        endif
 
         call conducteos(input_flag, den_row, temp_row, &
              npts, nspec, &
@@ -318,8 +310,8 @@ subroutine make_coeffs_3d(lo,hi,dx,ng_1,ng_3,p0,s,kth,kthovercp,temp,xik)
   integer :: i,j,k,n
   real(kind=dp_t), allocatable :: p0_cart(:,:,:)
 
-  ! dens, pres, and xmass are inputs
-  input_flag = 4
+  ! dens, temp, and xmass are inputs
+  input_flag = 1
   do_diag = .false.
 
   if (spherical .eq. 1) then
@@ -334,23 +326,6 @@ subroutine make_coeffs_3d(lo,hi,dx,ng_1,ng_3,p0,s,kth,kthovercp,temp,xik)
            den_row(1) = s(i,j,k,rho_comp)
            temp_row(1) = s(i,j,k,temp_comp)
            xn_zone(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
-
-           if(spherical .eq. 0) then
-              if(k .eq. lo(3)-1) then
-                 p_row(1) = p0(lo(3))
-              else if(k .eq. hi(3)+1) then
-                 p_row(1) = p0(hi(3))
-              else
-                 p_row(1) = p0(k)
-              endif
-           else
-              ! This still needs to be rewritten to handle out-of-domain cases!
-              print*, "make_explicit_thermal.90:make_coeffs_3d"
-              print*, "Pressure in ghost cells not defined!"
-              stop
-              
-              p_row(1) = p0_cart(i,j,k)
-           endif
         
            call conducteos(input_flag, den_row, temp_row, &
                 npts, nspec, &
