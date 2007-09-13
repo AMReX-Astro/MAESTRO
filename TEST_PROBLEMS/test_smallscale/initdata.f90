@@ -499,7 +499,7 @@ contains
     parameter (nspec = 3)
 
     character(len=128) :: lamsolfile
-    real(kind=dp_t) :: state1d(ndum)
+    real(kind=dp_t) :: state1d(ndum), Pamb
     real(kind=dp_t) :: loloc,hiloc,flameloc,qreact
     
     call helmeos_init
@@ -514,6 +514,7 @@ contains
     den_row(1) = state1d(3) ! this is going to be overwritten
     temp_row(1) = state1d(9)
     p_row(1) = state1d(18)
+    Pamb = p_row(1)
 
     xn_zone(1) = state1d(21)
     xn_zone(2) = state1d(23)
@@ -578,12 +579,26 @@ contains
        xn_zone(1) = state1d(21)
        xn_zone(2) = state1d(23)
        xn_zone(3) = state1d(22)
-       
-       den_row(1) = state1d(3)
-       
-       ! given P, T, and X, compute rho and h.
-       input_flag = 3
 
+       den_row(1) = state1d(3)
+
+       p_row(1) = Pamb
+
+       ! given P, T, and X, compute rho
+       input_flag = 3
+       call eos(input_flag, den_row, temp_row, &
+                npts, nspec, &
+                xn_zone, aion, zion, &
+                p_row, h_row, e_row, & 
+                cv_row, cp_row, xne_row, eta_row, pele_row, &
+                dpdt_row, dpdr_row, dedt_row, dedr_row, &
+                dpdX_row, dhdX_row, &
+                gam1_row, cs_row, s_row, &
+                dsdt_row, dsdr_row, &
+                do_diag)
+
+       ! given rho, T, and X, compute h.
+       input_flag = 1
        call eos(input_flag, den_row, temp_row, &
                 npts, nspec, &
                 xn_zone, aion, zion, &
@@ -602,6 +617,7 @@ contains
           do j=1,nspec
              qreact = qreact + ebin(j)*xn_zone(j)
           enddo
+
           s0(i,rhoh_comp) = den_row(1)*(h_row(1) + qreact)
        else
           s0(i,rhoh_comp) = den_row(1)*h_row(1)
