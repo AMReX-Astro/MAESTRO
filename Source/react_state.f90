@@ -52,49 +52,25 @@ contains
                hp(:,:,1,1),t0,dt,dx,lo,hi,ng,time)
           ! Fill ghost cells on periodic boundaries and in between patches
           call multifab_fill_boundary(s_out)
-          ! Impose bc's on new rho
-          n = rho_comp
-          bc_comp = dm+n 
-          call setbc_2d(sotp(:,:,1,n), lo, ng, &
-                        the_bc_level%adv_bc_level_array(i,:,:,bc_comp), &
-                        dx,bc_comp)
-          ! Impose bc's on new rhoh
-          n = rhoh_comp
-          bc_comp = dm+n 
-          call setbc_2d(sotp(:,:,1,n), lo, ng, &
-                        the_bc_level%adv_bc_level_array(i,:,:,bc_comp), &
-                        dx,bc_comp)
-          ! Impose bc's on new species
-          do n = spec_comp,spec_comp+nspec-1
-            bc_comp = dm+n 
-            call setbc_2d(sotp(:,:,1,n), lo, ng, &
-                          the_bc_level%adv_bc_level_array(i,:,:,bc_comp), &
-                          dx,bc_comp)
-          end do
-
+          ! Impose bc's
+          do n = rho_comp,rho_comp+nscal-1
+             bc_comp = dm+n 
+             call setbc_2d(sotp(:,:,1,n), lo, ng, &
+                           the_bc_level%adv_bc_level_array(i,:,:,bc_comp), &
+                           dx,bc_comp)
+          enddo
        case (3)
           call react_state_3d(sinp(:,:,:,:),sotp(:,:,:,:),rp(:,:,:,:), &
                hp(:,:,:,1),t0,dt,dx,lo,hi,ng,time)
           ! Fill ghost cells on periodic boundaries and in between patches
           call multifab_fill_boundary(s_out)
-          ! Impose bc's on new rho
-          n = rho_comp
-          bc_comp = dm+n 
-          call setbc_3d(sotp(:,:,:,n), lo, ng, &
-                        the_bc_level%adv_bc_level_array(i,:,:,bc_comp), &
-                        dx,bc_comp)
-          ! Impose bc's on new rhoh
-          n = rhoh_comp
-          bc_comp = dm+n 
-          call setbc_3d(sotp(:,:,:,n), lo, ng, &
-                        the_bc_level%adv_bc_level_array(i,:,:,bc_comp), &
-                        dx,bc_comp)
-          do n = spec_comp,spec_comp+nspec-1
-            bc_comp = dm+n 
-            call setbc_3d(sotp(:,:,:,n), lo, ng, &
-                          the_bc_level%adv_bc_level_array(i,:,:,bc_comp), &
-                          dx,bc_comp)
-          end do
+          ! Impose bc's
+          do n = rho_comp,rho_comp+nscal-1
+             bc_comp = dm+n 
+             call setbc_3d(sotp(:,:,:,n), lo, ng, &
+                           the_bc_level%adv_bc_level_array(i,:,:,bc_comp), &
+                           dx,bc_comp)
+          enddo
        end select
     end do
 
@@ -171,6 +147,25 @@ contains
           else
              s_out(i,j,rhoh_comp) = rho * h_out + dt * rho_Hext(i,j)
           endif
+
+          ! now compute temperature and put it into s_out
+          den_row(1) = rho
+          temp_row(1) = t0(j)
+          h_row(1) = h_out
+          xn_zone(:) = x_out(1:nspec)
+
+          call eos(input_flag, den_row, temp_row, &
+               npts, nspec, &
+               xn_zone, aion, zion, &
+               p_row, h_row, e_row, &
+               cv_row, cp_row, xne_row, eta_row, pele_row, &
+               dpdt_row, dpdr_row, dedt_row, dedr_row, &
+               dpdX_row, dhdX_row, &
+               gam1_row, cs_row, s_row, &
+               dsdt_row, dsdr_row, &
+               do_diag)
+
+          s_out(i,j,temp_comp) = temp_row(1)
 
        enddo
     enddo
@@ -263,6 +258,25 @@ contains
              s_out(i,j,k,rhoh_comp) = rho * h_out + dt * rho_Hext(i,j,k)
           endif
   
+          ! now compute temperature and put it into s_out
+          den_row(1) = rho
+          temp_row(1) = t0(k)
+          h_row(1) = h_out
+          xn_zone(:) = x_out(1:nspec)
+
+          call eos(input_flag, den_row, temp_row, &
+               npts, nspec, &
+               xn_zone, aion, zion, &
+               p_row, h_row, e_row, &
+               cv_row, cp_row, xne_row, eta_row, pele_row, &
+               dpdt_row, dpdr_row, dedt_row, dedr_row, &
+               dpdX_row, dhdX_row, &
+               gam1_row, cs_row, s_row, &
+               dsdt_row, dsdr_row, &
+               do_diag)
+
+          s_out(i,j,k,temp_comp) = temp_row(1)
+
        enddo
      enddo
     enddo
