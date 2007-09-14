@@ -499,7 +499,7 @@ contains
     parameter (nspec = 3)
 
     character(len=128) :: lamsolfile
-    real(kind=dp_t) :: state1d(ndum), Pamb
+    real(kind=dp_t) :: state1d(ndum), Pamb, temporary
     real(kind=dp_t) :: loloc,hiloc,flameloc,qreact
     
     call helmeos_init
@@ -584,6 +584,17 @@ contains
 
        p_row(1) = Pamb
 
+       temporary = aion(2)
+       aion(2) = aion(3)
+       aion(3) = temporary
+       temporary = zion(2)
+       zion(2) = zion(3)
+       zion(3) = temporary
+       temporary = xn_zone(2)
+       xn_zone(2) = xn_zone(3)
+       xn_zone(3) = temporary
+
+
        ! given P, T, and X, compute rho
        input_flag = 3
        call eos(input_flag, den_row, temp_row, &
@@ -610,6 +621,16 @@ contains
                 dsdt_row, dsdr_row, &
                 do_diag)
 
+       temporary = aion(2)
+       aion(2) = aion(3)
+       aion(3) = temporary
+       temporary = zion(2)
+       zion(2) = zion(3)
+       zion(3) = temporary
+       temporary = xn_zone(2)
+       xn_zone(2) = xn_zone(3)
+       xn_zone(3) = temporary
+
        s0(i,rho_comp) = den_row(1)
 
        if(use_big_h) then
@@ -617,8 +638,8 @@ contains
           do j=1,nspec
              qreact = qreact + ebin(j)*xn_zone(j)
           enddo
-
-          s0(i,rhoh_comp) = den_row(1)*(h_row(1) + qreact)
+          temporary = h_row(1) + qreact
+          s0(i,rhoh_comp) = den_row(1)*temporary
        else
           s0(i,rhoh_comp) = den_row(1)*h_row(1)
        endif
