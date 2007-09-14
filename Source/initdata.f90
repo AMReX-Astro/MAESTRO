@@ -698,6 +698,7 @@ contains
        if (model_r(i) >= r) exit
     enddo
 
+    if (i == npts+1) i = npts
     id = i
 
     if (id == 1) then
