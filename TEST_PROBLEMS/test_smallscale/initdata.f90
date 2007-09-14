@@ -629,7 +629,7 @@ contains
        
        s0(i,temp_comp) = temp_row(1)
 
-       p0(i) = p_row(1)
+       p0(i) = pamb
        gam1(i) = gam1_row(1)
 
     enddo
