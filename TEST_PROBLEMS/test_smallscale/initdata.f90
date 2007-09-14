@@ -511,14 +511,21 @@ contains
     ! first set the inflow boundary condition
     call asin1d(lamsolfile, -.00125d0, 0.d0, state1d, ndum, .false.)
 
-    den_row(1) = state1d(3) ! this is going to be overwritten
-    temp_row(1) = state1d(9)
+    den_row(1) = state1d(3)
     p_row(1) = state1d(18)
     Pamb = p_row(1)
-
-    xn_zone(1) = state1d(21)
-    xn_zone(2) = state1d(23)
-    xn_zone(3) = state1d(22)
+    temp_row(1) = state1d(9)
+    do j=1,nspec
+       if(spec_names(j) .eq. "carbon-12") then
+          xn_zone(j) = state1d(21)
+       else if(spec_names(j) .eq. "magnesium-24") then
+          xn_zone(j) = state1d(22)
+       else if(spec_names(j) .eq. "oxygen-16") then
+          xn_zone(j) = state1d(23)
+       else
+          print*,"In initdata, spec_names(",j,") invalid"
+       endif
+    enddo
 
     ! given P, T, and X, compute rho
     input_flag = 3
@@ -558,9 +565,15 @@ contains
     else
        INLET_RHOH = den_row(1)*h_row(1)
     endif
-    INLET_RHOC12 = den_row(1)*xn_zone(1)
-    INLET_RHOO16 = den_row(1)*xn_zone(2)
-    INLET_RHOMG24 = den_row(1)*xn_zone(3)
+    do j=1,nspec
+       if(spec_names(j) .eq. "carbon-12") then
+          INLET_RHOC12 = den_row(1)*xn_zone(j)
+       else if(spec_names(j) .eq. "magnesium-24") then
+          INLET_RHOMG24 = den_row(1)*xn_zone(j)
+       else if(spec_names(j) .eq. "oxygen-16") then
+          INLET_RHOO16 = den_row(1)*xn_zone(j)
+       endif
+    enddo
     INLET_TEMP = temp_row(1)
     INLET_TRA = 0.0d0
 
@@ -574,26 +587,18 @@ contains
 
        call asin1d(lamsolfile, loloc, hiloc, state1d, ndum, .false.)
 
-       temp_row(1) = state1d(9)
-
-       xn_zone(1) = state1d(21)
-       xn_zone(2) = state1d(23)
-       xn_zone(3) = state1d(22)
-
        den_row(1) = state1d(3)
-
        p_row(1) = Pamb
-
-       temporary = aion(2)
-       aion(2) = aion(3)
-       aion(3) = temporary
-       temporary = zion(2)
-       zion(2) = zion(3)
-       zion(3) = temporary
-       temporary = xn_zone(2)
-       xn_zone(2) = xn_zone(3)
-       xn_zone(3) = temporary
-
+       temp_row(1) = state1d(9)
+       do j=1,nspec
+          if(spec_names(j) .eq. "carbon-12") then
+             xn_zone(j) = state1d(21)
+          else if(spec_names(j) .eq. "magnesium-24") then
+             xn_zone(j) = state1d(22)
+          else if(spec_names(j) .eq. "oxygen-16") then
+             xn_zone(j) = state1d(23)
+          endif
+       enddo
 
        ! given P, T, and X, compute rho
        input_flag = 3
@@ -621,18 +626,7 @@ contains
                 dsdt_row, dsdr_row, &
                 do_diag)
 
-       temporary = aion(2)
-       aion(2) = aion(3)
-       aion(3) = temporary
-       temporary = zion(2)
-       zion(2) = zion(3)
-       zion(3) = temporary
-       temporary = xn_zone(2)
-       xn_zone(2) = xn_zone(3)
-       xn_zone(3) = temporary
-
        s0(i,rho_comp) = den_row(1)
-
        if(use_big_h) then
           qreact = ZERO
           do j=1,nspec
@@ -647,14 +641,12 @@ contains
           s0(i,spec_comp+j-1) = den_row(1)*xn_zone(j)
        enddo
        s0(i,trac_comp) = 0.0d0
-       
        s0(i,temp_comp) = temp_row(1)
-
        p0(i) = pamb
        gam1(i) = gam1_row(1)
 
     enddo
-        
+
   end subroutine init_base_state
   
 
