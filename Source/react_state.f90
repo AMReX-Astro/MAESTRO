@@ -113,26 +113,7 @@ contains
              h_in = s_in(i,j,rhoh_comp) / rho
           endif
           
-          ! (rho, H) --> T, p
-          input_flag = 2
-          
-          den_row(1) = rho
-          temp_row(1) = t0(j)
-          h_row(1) = h_in
-          xn_zone(:) = x_in(:)
-          
-          call eos(input_flag, den_row, temp_row, &
-               npts, nspec, &
-               xn_zone, aion, zion, &
-               p_row, h_row, e_row, &
-               cv_row, cp_row, xne_row, eta_row, pele_row, &
-               dpdt_row, dpdr_row, dedt_row, dedr_row, &
-               dpdX_row, dhdX_row, &
-               gam1_row, cs_row, s_row, &
-               dsdt_row, dsdr_row, &
-               do_diag)
-          
-          T_in = temp_row(1)
+          T_in = s_in(i,j,temp_comp)
           
           call burner(rho, T_in, x_in, h_in, dt, x_out, h_out, rhowdot)
           
@@ -149,10 +130,13 @@ contains
           endif
 
           ! now compute temperature and put it into s_out
+          ! dens, enthalpy, and xmass are inputs
+          input_flag = 2
+
           den_row(1) = rho
-          temp_row(1) = t0(j)
           h_row(1) = h_out
           xn_zone(:) = x_out(1:nspec)
+          temp_row(1) = T_in
 
           call eos(input_flag, den_row, temp_row, &
                npts, nspec, &
@@ -203,6 +187,7 @@ contains
 
     do k = lo(3), hi(3)
      do j = lo(2), hi(2)
+
        do i = lo(1), hi(1)
           rho = s_in(i,j,k,rho_comp)
           x_in(:) = s_in(i,j,k,spec_comp:spec_comp+nspec-1) / rho
@@ -217,32 +202,11 @@ contains
              h_in = s_in(i,j,k,rhoh_comp) / rho
           endif
           
-          ! (rho, H) --> T, p
-          input_flag = 2
-          
-          den_row(1) = rho
-          
-          if (spherical == 0) then
-             temp_row(1) = t0(k)
+          if(spherical == 0) then
+             T_in = s_in(i,j,k,temp_comp)
           else
              temp_row(1) = t0_cart(i,j,k)
           endif
-          
-          h_row(1) = h_in
-          xn_zone(:) = x_in(:)
-          
-          call eos(input_flag, den_row, temp_row, &
-               npts, nspec, &
-               xn_zone, aion, zion, &
-               p_row, h_row, e_row, &
-               cv_row, cp_row, xne_row, eta_row, pele_row, &
-               dpdt_row, dpdr_row, dedt_row, dedr_row, &
-               dpdX_row, dhdX_row, &
-               gam1_row, cs_row, s_row, &
-               dsdt_row, dsdr_row, &
-               do_diag)
-          
-          T_in = temp_row(1)
           
           call burner(rho, T_in, x_in, h_in, dt, x_out, h_out, rhowdot)
           
@@ -259,10 +223,13 @@ contains
           endif
   
           ! now compute temperature and put it into s_out
+          ! dens, enthalpy, and xmass are inputs
+          input_flag = 2
+
           den_row(1) = rho
-          temp_row(1) = t0(k)
-          h_row(1) = h_out
+           h_row(1) = h_out
           xn_zone(:) = x_out(1:nspec)
+         temp_row(1) = T_in
 
           call eos(input_flag, den_row, temp_row, &
                npts, nspec, &
