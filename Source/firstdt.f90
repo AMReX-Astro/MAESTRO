@@ -53,7 +53,7 @@ contains
          select case (dm)
             case (2)
               call firstdt_2d(uop(:,:,1,:), sop(:,:,1,:), fp(:,:,1,:),&
-                              divup(:,:,1,1), p0, gam1, t0, lo, hi, ng, dx, &
+                              divup(:,:,1,1), p0, gam1, lo, hi, ng, dx, &
                               dt_grid, cflfac, verbose)
             case (3)
               call firstdt_3d(uop(:,:,:,:), sop(:,:,:,:), fp(:,:,:,:),&
@@ -70,7 +70,7 @@ contains
 
     end subroutine firstdt
 
-   subroutine firstdt_2d (u, s, force, divu, p0, gam1, t0, lo, hi, ng, dx, &
+   subroutine firstdt_2d (u, s, force, divu, p0, gam1, lo, hi, ng, dx, &
                           dt, cfl, verbose)
 
       integer, intent(in) :: lo(:), hi(:), ng
@@ -78,7 +78,7 @@ contains
       real (kind = dp_t), intent(in ) :: s(lo(1)-ng:,lo(2)-ng:,:)  
       real (kind = dp_t), intent(in ) :: force(lo(1)- 1:,lo(2)- 1:,:)
       real (kind = dp_t), intent(in ) :: divu(lo(1):,lo(2):)
-      real (kind = dp_t), intent(in ) :: p0(0:), gam1(0:), t0(0:)
+      real (kind = dp_t), intent(in ) :: p0(0:), gam1(0:)
       real (kind = dp_t), intent(in ) :: dx(:)
       real (kind = dp_t), intent(out) :: dt
       real (kind = dp_t), intent(in ) :: cfl
@@ -109,12 +109,11 @@ contains
 
             ! compute the sound speed from rho and p0
             den_row(1) = s(i,j,rho_comp)
-            temp_row(1) = t0(j)
-            p_row(1) = p0(j)
+            temp_row(1) = s(i,j,temp_comp)
             xn_zone(:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
 
-            ! (rho,P) --> T,h
-            input_flag = 4
+            ! dens, temp, and xmass are inputs
+            input_flag = 1
 
             call eos(input_flag, den_row, temp_row, &
                      npts, nspec, &
@@ -256,18 +255,15 @@ contains
             do i = lo(1), hi(1)
 
                den_row(1) = s(i,j,k,rho_comp)
-               xn_zone(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
-
                if (spherical == 1) then
-                  p_row(1) = p0_cart(i,j,k)
                   temp_row(1) = t0_cart(i,j,k)
                else
-                  p_row(1) = p0(k)
-                  temp_row(1) = t0(k)
+                  temp_row(1) = s(i,j,k,temp_comp)
                endif
+               xn_zone(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
 
-               ! (rho,P) --> T,h
-               input_flag = 4
+               ! dens, temp, and xmass are inputs
+               input_flag = 1
 
                call eos(input_flag, den_row, temp_row, &
                         npts, nspec, &
