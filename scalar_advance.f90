@@ -61,6 +61,8 @@ contains
       real(kind=dp_t), pointer:: wtp(:,:,:,:)
       real(kind=dp_t), pointer:: w0p(:,:,:,:)
       real(kind=dp_t), pointer::  fp(:,:,:,:)
+      real(kind=dp_t), pointer::  dp(:,:,:,:)
+      real(kind=dp_t), pointer::  tp(:,:,:,:)
       real(kind=dp_t), pointer::  np(:,:,:,:)
       real(kind=dp_t), pointer:: s0p(:,:,:,:)
 !
@@ -79,6 +81,10 @@ contains
       logical :: is_vel
       type(box)       :: domain
       integer         :: domlo(uold%dim), domhi(uold%dim)
+
+      logical         :: use_temp_in_mkflux
+!     use_temp_in_mkflux = .true.
+      use_temp_in_mkflux = .false.
 
       domain = layout_get_pd(uold%la)
       domlo = lwb(domain)
@@ -140,13 +146,22 @@ contains
                                          s0_old(:,n), w0, dx)
             end do
 
-            n = rhoh_comp
-            call mkrhohforce_2d(fp(:,:,1,n), vmp(:,:,1,1), lo, hi, &
-                                p0_old, p0_old)
+            if (use_temp_in_mkflux) then
+              n = temp_comp
+              tp => dataptr(thermal, i)
 
-            call modify_scal_force_2d(fp(:,:,1,n),sop(:,:,1,n), lo, hi, &
-                                      ng_cell, ump(:,:,1,1),vmp(:,:,1,1), &
-                                      s0_old(:,rhoh_comp),w0,dx)            
+              call makeTfromRhoH_2d(sop(:,:,1,:), lo, hi, ng_cell, p0_old, s0_old(:,temp_comp))
+
+              call mktempforce_2d(fp(:,:,1,n), sop(:,:,1,:), tp(:,:,1,1), lo, hi, ng_cell, p0_old)
+            else
+              n = rhoh_comp
+              call mkrhohforce_2d(fp(:,:,1,n), vmp(:,:,1,1), lo, hi, &
+                                  p0_old, p0_old)
+
+              call modify_scal_force_2d(fp(:,:,1,n),sop(:,:,1,n), lo, hi, &
+                                        ng_cell, ump(:,:,1,1),vmp(:,:,1,1), &
+                                        s0_old(:,rhoh_comp),w0,dx)            
+            end if
 
          case(3)
             wmp  => dataptr(umac(3), i)
@@ -198,8 +213,11 @@ contains
 
       end do
 
-      call multifab_fill_boundary(scal_force)
+      ! Do this because we have just defined temperature in the valid region
+      if (use_temp_in_mkflux) &
+        call multifab_fill_boundary(sold)
 
+      call multifab_fill_boundary(scal_force)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     Add w0 to MAC velocities (trans velocities already have w0).
@@ -214,6 +232,7 @@ contains
 
       call put_in_pert_form(sold,s0_old,dx,rhoh_comp,    1,.true.)
       call put_in_pert_form(sold,s0_old,dx,spec_comp,nspec,.true.)
+
       do i = 1, sold%nboxes
          if ( multifab_remote(sold, i) ) cycle
          sop  => dataptr(sold, i)
@@ -229,7 +248,20 @@ contains
          hi =  upb(get_box(uold, i))
          select case (dm)
             case (2)
-              n = rhoh_comp
+              if (use_temp_in_mkflux) then
+                n = temp_comp
+                bc_comp = dm+n
+
+                call mkflux_2d(sop(:,:,1,:), uop(:,:,1,:), &
+                               sepx(:,:,1,:), sepy(:,:,1,:), &
+                               ump(:,:,1,1), vmp(:,:,1,1), &
+                               utp(:,:,1,1), vtp(:,:,1,1), fp(:,:,1,:), w0, &
+                               lo, dx, dt, is_vel, &
+                               the_bc_level%phys_bc_level_array(i,:,:), &
+                               the_bc_level%adv_bc_level_array(i,:,:,bc_comp:), &
+                               velpred, ng_cell, n)
+              else
+                n = rhoh_comp
                 bc_comp = dm+n
                 call mkflux_2d(sop(:,:,1,:), uop(:,:,1,:), &
                                sepx(:,:,1,:), sepy(:,:,1,:), &
@@ -239,6 +271,7 @@ contains
                                the_bc_level%phys_bc_level_array(i,:,:), &
                                the_bc_level%adv_bc_level_array(i,:,:,bc_comp:), &
                                velpred, ng_cell, n)
+              end if
 
               do n = spec_comp,spec_comp+nspec-1
                 bc_comp = dm+n
@@ -251,6 +284,11 @@ contains
                                the_bc_level%adv_bc_level_array(i,:,:,bc_comp:), &
                                velpred, ng_cell, n)
               end do
+
+              if (use_temp_in_mkflux) then
+                call makeRhoHfromT_2d(sepx(:,:,1,:), sepy(:,:,1,:), lo, hi)
+              end if
+
             case (3)
               wmp  => dataptr(  umac(3), i)
               wtp  => dataptr(utrans(3), i)
@@ -632,6 +670,20 @@ contains
          end select
       end do
 
+      if (use_temp_in_mkflux) then
+        n = temp_comp
+        do i = 1, snew%nboxes
+          if ( multifab_remote(snew, i) ) cycle
+          snp => dataptr(snew , i)
+          lo =  lwb(get_box(snew, i))
+          hi =  upb(get_box(snew, i))
+          select case (dm)
+          case (2)
+            call makeTfromRhoH_2d(snp(:,:,1,:), lo, hi, ng_cell, p0_new, s0_new(:,temp_comp))
+          end select
+        end do
+      end if
+
       if (verbose .eq. 1) then
         smin = multifab_min_c(snew,rhoh_comp) 
         smax = multifab_max_c(snew,rhoh_comp)
@@ -640,7 +692,6 @@ contains
           write(6,2004) 
         end if
       end if
-
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     Call fill_boundary for all components of snew
@@ -865,5 +916,369 @@ contains
      deallocate(divu,divu_cart)
      
    end subroutine modify_scal_force_3d_sphr
+
+   subroutine makeRhoHfromT_2d (sx,sy,lo,hi)
+
+    implicit none
+    integer        , intent(in   ) :: lo(:),hi(:)
+    real(kind=dp_t), intent(inout) :: sx(lo(1):,lo(2):,:)
+    real(kind=dp_t), intent(inout) :: sy(lo(1):,lo(2):,:)
+
+    !     Local variables
+    integer :: i, j, n
+    real(kind=dp_t) qreact
+
+    do_diag = .false.
+
+    do j = lo(2), hi(2)
+       do i = lo(1), hi(1)+1
+         sx(i,j,rho_comp) = 0.d0
+         do n = 1,nspec
+           sx(i,j,rho_comp) = sx(i,j,rho_comp) + sx(i,j,spec_comp+n-1)
+         end do
+       end do
+    end do
+
+    do j = lo(2), hi(2)
+       do i = lo(1), hi(1)+1
+
+         temp_row(1) = sx(i,j,temp_comp)
+          den_row(1) = sx(i,j,rho_comp)
+          xn_zone(:) = sx(i,j,spec_comp:)/den_row(1)
+
+         input_flag = 1      ! (rho, T) -> (p, h)
+
+         call eos(input_flag, den_row, temp_row, &
+                  npts, nspec, &
+                  xn_zone, aion, zion, &
+                  p_row, h_row, e_row, &
+                  cv_row, cp_row, xne_row, eta_row, pele_row, &
+                  dpdt_row, dpdr_row, dedt_row, dedr_row, &
+                  dpdX_row, dhdX_row, &
+                  gam1_row, cs_row, s_row, &
+                  dsdt_row, dsdr_row, &
+                  do_diag)
+
+         sx(i,j,rhoh_comp) = den_row(1)*h_row(1)
+
+         qreact = 0.0d0
+         if(use_big_h) then
+            do n=1,nspec
+               qreact = qreact + ebin(n)*xn_zone(n)
+            enddo
+            sx(i,j,rhoh_comp) = sx(i,j,rhoh_comp) + sx(i,j,rho_comp) * qreact
+         endif
+          
+       enddo
+    enddo
+
+    do j = lo(2), hi(2)+1
+       do i = lo(1), hi(1)
+         sy(i,j,rho_comp) = 0.d0
+         do n = 1,nspec
+           sy(i,j,rho_comp) = sy(i,j,rho_comp) + sy(i,j,spec_comp+n-1)
+         end do
+       end do
+    end do
+
+    do j = lo(2), hi(2)+1
+       do i = lo(1), hi(1)
+
+         temp_row(1) = sy(i,j,temp_comp)
+          den_row(1) = sy(i,j,rho_comp)
+          xn_zone(:) = sy(i,j,spec_comp:)/den_row(1)
+
+         input_flag = 1      ! (rho, T) -> (p, h)
+
+         call eos(input_flag, den_row, temp_row, &
+                  npts, nspec, &
+                  xn_zone, aion, zion, &
+                  p_row, h_row, e_row, &
+                  cv_row, cp_row, xne_row, eta_row, pele_row, &
+                  dpdt_row, dpdr_row, dedt_row, dedr_row, &
+                  dpdX_row, dhdX_row, &
+                  gam1_row, cs_row, s_row, &
+                  dsdt_row, dsdr_row, &
+                  do_diag)
+
+         sy(i,j,rhoh_comp) = den_row(1)*h_row(1)
+
+         qreact = 0.0d0
+         if(use_big_h) then
+            do n=1,nspec
+               qreact = qreact + ebin(n)*xn_zone(n)
+            enddo
+            sy(i,j,rhoh_comp) = sy(i,j,rhoh_comp) + sy(i,j,rho_comp) * qreact
+         endif
+          
+       enddo
+    enddo
+
+   end subroutine makeRhoHfromT_2d
+
+   subroutine makeRhoHfromT_3d (sx,sy,sz,lo,hi)
+
+    implicit none
+    integer        , intent(in   ) :: lo(:),hi(:)
+    real(kind=dp_t), intent(inout) :: sx(lo(1):,lo(2):,lo(3):,:)
+    real(kind=dp_t), intent(inout) :: sy(lo(1):,lo(2):,lo(3):,:)
+    real(kind=dp_t), intent(inout) :: sz(lo(1):,lo(2):,lo(3):,:)
+
+    !     Local variables
+    integer :: i, j, k, n
+    real(kind=dp_t) qreact
+
+    do_diag = .false.
+
+    do k = lo(3), hi(3)
+     do j = lo(2), hi(2)
+       do i = lo(1), hi(1)+1
+         sx(i,j,k,rho_comp) = 0.d0
+         do n = 1,nspec
+           sx(i,j,k,rho_comp) = sx(i,j,k,rho_comp) + sx(i,j,k,spec_comp+n-1)
+         end do
+       end do
+      end do
+    end do
+
+    do k = lo(3), hi(3)
+     do j = lo(2), hi(2)
+       do i = lo(1), hi(1)+1
+
+         temp_row(1) = sx(i,j,k,temp_comp)
+          den_row(1) = sx(i,j,k,rho_comp)
+          xn_zone(:) = sx(i,j,k,spec_comp:)/den_row(1)
+
+         input_flag = 1      ! (rho, T) -> (p, h)
+
+         call eos(input_flag, den_row, temp_row, &
+                  npts, nspec, &
+                  xn_zone, aion, zion, &
+                  p_row, h_row, e_row, &
+                  cv_row, cp_row, xne_row, eta_row, pele_row, &
+                  dpdt_row, dpdr_row, dedt_row, dedr_row, &
+                  dpdX_row, dhdX_row, &
+                  gam1_row, cs_row, s_row, &
+                  dsdt_row, dsdr_row, &
+                  do_diag)
+
+         sx(i,j,k,rhoh_comp) = den_row(1)*h_row(1)
+
+         qreact = 0.0d0
+         if(use_big_h) then
+            do n=1,nspec
+               qreact = qreact + ebin(n)*xn_zone(n)
+            enddo
+            sx(i,j,k,rhoh_comp) = sx(i,j,k,rhoh_comp) + sx(i,j,k,rho_comp) * qreact
+         endif
+          
+       enddo
+      enddo
+    enddo
+
+    do k = lo(3), hi(3)
+     do j = lo(2), hi(2)+1
+       do i = lo(1), hi(1)
+         sy(i,j,k,rho_comp) = 0.d0
+         do n = 1,nspec
+           sy(i,j,k,rho_comp) = sy(i,j,k,rho_comp) + sy(i,j,k,spec_comp+n-1)
+         end do
+       end do
+      end do
+    end do
+
+    do k = lo(3), hi(3)
+     do j = lo(2), hi(2)+1
+       do i = lo(1), hi(1)
+
+         temp_row(1) = sy(i,j,k,temp_comp)
+          den_row(1) = sy(i,j,k,rho_comp)
+          xn_zone(:) = sy(i,j,k,spec_comp:)/den_row(1)
+
+         input_flag = 1      ! (rho, T) -> (p, h)
+
+         call eos(input_flag, den_row, temp_row, &
+                  npts, nspec, &
+                  xn_zone, aion, zion, &
+                  p_row, h_row, e_row, &
+                  cv_row, cp_row, xne_row, eta_row, pele_row, &
+                  dpdt_row, dpdr_row, dedt_row, dedr_row, &
+                  dpdX_row, dhdX_row, &
+                  gam1_row, cs_row, s_row, &
+                  dsdt_row, dsdr_row, &
+                  do_diag)
+
+         sy(i,j,k,rhoh_comp) = den_row(1)*h_row(1)
+
+         qreact = 0.0d0
+         if(use_big_h) then
+            do n=1,nspec
+               qreact = qreact + ebin(n)*xn_zone(n)
+            enddo
+            sy(i,j,k,rhoh_comp) = sy(i,j,k,rhoh_comp) + sy(i,j,k,rho_comp) * qreact
+         endif
+          
+       enddo
+      enddo
+    enddo
+
+    do k = lo(3), hi(3)+1
+     do j = lo(2), hi(2)
+       do i = lo(1), hi(1)
+         sz(i,j,k,rho_comp) = 0.d0
+         do n = 1,nspec
+           sz(i,j,k,rho_comp) = sz(i,j,k,rho_comp) + sz(i,j,k,spec_comp+n-1)
+         end do
+       end do
+      end do
+    end do
+
+    do k = lo(3), hi(3)+1
+     do j = lo(2), hi(2)
+       do i = lo(1), hi(1)
+
+         temp_row(1) = sz(i,j,k,temp_comp)
+          den_row(1) = sz(i,j,k,rho_comp)
+          xn_zone(:) = sz(i,j,k,spec_comp:)/den_row(1)
+
+         input_flag = 1      ! (rho, T) -> (p, h)
+
+         call eos(input_flag, den_row, temp_row, &
+                  npts, nspec, &
+                  xn_zone, aion, zion, &
+                  p_row, h_row, e_row, &
+                  cv_row, cp_row, xne_row, eta_row, pele_row, &
+                  dpdt_row, dpdr_row, dedt_row, dedr_row, &
+                  dpdX_row, dhdX_row, &
+                  gam1_row, cs_row, s_row, &
+                  dsdt_row, dsdr_row, &
+                  do_diag)
+
+         sz(i,j,k,rhoh_comp) = den_row(1)*h_row(1)
+
+         qreact = 0.0d0
+         if(use_big_h) then
+            do n=1,nspec
+               qreact = qreact + ebin(n)*xn_zone(n)
+            enddo
+            sz(i,j,k,rhoh_comp) = sz(i,j,k,rhoh_comp) + sz(i,j,k,rho_comp) * qreact
+         endif
+          
+       enddo
+      enddo
+    enddo
+
+   end subroutine makeRhoHfromT_3d
+
+  subroutine makeTfromRhoH_2d (state,lo,hi,ng,p0,t0)
+
+    implicit none
+    integer, intent(in) :: lo(:), hi(:), ng
+    real (kind = dp_t), intent(inout) ::  state(lo(1)-ng:,lo(2)-ng:,:)
+    real (kind = dp_t), intent(in   ) ::  p0(0:)
+    real (kind = dp_t), intent(in   ) ::  t0(0:)
+
+    !     Local variables
+    integer :: i, j, n
+    real(kind=dp_t) qreact
+
+    do_diag = .false.
+
+    do j = lo(2), hi(2)
+       do i = lo(1), hi(1)
+
+          ! (rho, H) --> T, p
+
+          den_row(1)  = state(i,j,rho_comp)
+          p_row(1)    = p0(j)
+          temp_row(1) = t0(j)
+          xn_zone(:) = state(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
+
+          qreact = 0.0d0
+          if(use_big_h) then
+             do n=1,nspec
+                qreact = qreact + ebin(n)*xn_zone(n)
+             enddo
+             h_row(1) = state(i,j,rhoh_comp) / state(i,j,rho_comp) - qreact
+          else
+             h_row(1) = state(i,j,rhoh_comp) / state(i,j,rho_comp)
+          endif
+
+          input_flag = 2
+
+          call eos(input_flag, den_row, temp_row, &
+                   npts, nspec, &
+                   xn_zone, aion, zion, &
+                   p_row, h_row, e_row, &
+                   cv_row, cp_row, xne_row, eta_row, pele_row, &
+                   dpdt_row, dpdr_row, dedt_row, dedr_row, &
+                   dpdX_row, dhdX_row, &
+                   gam1_row, cs_row, s_row, &
+                   dsdt_row, dsdr_row, &
+                   do_diag)
+
+          state(i,j,temp_comp) = temp_row(1)
+
+       enddo
+    enddo
+
+  end subroutine makeTfromRhoH_2d
+
+  subroutine makeTfromRhoH_3d (state,lo,hi,ng,p0,t0)
+
+    implicit none
+    integer, intent(in) :: lo(:), hi(:), ng
+    real (kind = dp_t), intent(inout) ::  state(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
+    real (kind = dp_t), intent(in   ) ::  p0(0:)
+    real (kind = dp_t), intent(in   ) ::  t0(0:)
+
+    !     Local variables
+    integer :: i, j, k, n
+    real(kind=dp_t) qreact
+
+    do_diag = .false.
+
+    do k = lo(3), hi(3)
+     do j = lo(2), hi(2)
+       do i = lo(1), hi(1)
+
+          ! (rho, H) --> T, p
+
+          den_row(1)  = state(i,j,k,rho_comp)
+          p_row(1)    = p0(k)
+          temp_row(1) = t0(k)
+          xn_zone(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
+
+          qreact = 0.0d0
+          if(use_big_h) then
+             do n=1,nspec
+                qreact = qreact + ebin(n)*xn_zone(n)
+             enddo
+             h_row(1) = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp) - qreact
+          else
+             h_row(1) = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp)
+          endif
+
+          input_flag = 2
+
+          call eos(input_flag, den_row, temp_row, &
+                   npts, nspec, &
+                   xn_zone, aion, zion, &
+                   p_row, h_row, e_row, &
+                   cv_row, cp_row, xne_row, eta_row, pele_row, &
+                   dpdt_row, dpdr_row, dedt_row, dedr_row, &
+                   dpdX_row, dhdX_row, &
+                   gam1_row, cs_row, s_row, &
+                   dsdt_row, dsdr_row, &
+                   do_diag)
+
+          state(i,j,k,temp_comp) = temp_row(1)
+
+       enddo
+      enddo
+    enddo
+
+  end subroutine makeTfromRhoH_3d
+
 
 end module scalar_advance_module
