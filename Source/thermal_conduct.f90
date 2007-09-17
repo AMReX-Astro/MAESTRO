@@ -9,6 +9,7 @@ module thermal_conduct_module
   use macproject_module
   use eos_module
   use fill_3d_module
+  use scalar_advance_module
   use probin_module
 
   implicit none
@@ -118,7 +119,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
         hi = upb(get_box(s1(n), i))
         select case (dm)
         case (2)
-           call compute_thermo_quantities_2d(lo,hi,dt,t01, &
+           call compute_thermo_quantities_2d(lo,hi,dt, &
                                              s1p(:,:,1,:), &
                                              kthovercp1p(:,:,1,1), &
                                              xik1p(:,:,1,:))
@@ -282,6 +283,22 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
      call multifab_mult_mult_c(s2(n),rhoh_comp,s2(n),rho_comp,1)
   enddo
 
+  ! compute updated temperature
+  do n=1,nlevs
+     do i=1,s2(n)%nboxes
+        if (multifab_remote(s2(n),i)) cycle
+        s2p => dataptr(s2(n),i)
+        lo = lwb(get_box(s2(n), i))
+        hi = upb(get_box(s2(n), i))
+        select case (dm)
+        case (2)
+           call makeTfromRhoH_2d(s2p(:,:,1,:), lo, hi, 3, p01, t01)
+        case (3)
+           call makeTfromRhoH_3d(s2p(:,:,:,:), lo, hi, 3, p01, t01)
+        end select
+     end do
+  enddo
+
   ! fill in ghost cells on s2
   do n=1,nlevs
      call multifab_fill_boundary(s2(n))
@@ -321,7 +338,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
         hi = upb(get_box(s2(n), i))
         select case (dm)
         case (2)
-           call compute_thermo_quantities_2d(lo,hi,dt,t02, &
+           call compute_thermo_quantities_2d(lo,hi,dt, &
                                              s2p(:,:,1,:), &
                                              kthovercp2primep(:,:,1,1), &
                                              xik2primep(:,:,1,:))
@@ -509,6 +526,22 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
      call multifab_mult_mult_c(s2(n),rhoh_comp,s2(n),rho_comp,1)
   enddo
 
+  ! compute updated temperature
+  do n=1,nlevs
+     do i=1,s2(n)%nboxes
+        if (multifab_remote(s2(n),i)) cycle
+        s2p => dataptr(s2(n),i)
+        lo = lwb(get_box(s2(n), i))
+        hi = upb(get_box(s2(n), i))
+        select case (dm)
+        case (2)
+           call makeTfromRhoH_2d(s2p(:,:,1,:), lo, hi, 3, p02, t02)
+        case (3)
+           call makeTfromRhoH_3d(s2p(:,:,:,:), lo, hi, 3, p02, t02)
+        end select
+     end do
+  enddo
+
   ! fill in ghost cells on s2
   do n=1,nlevs
      call multifab_fill_boundary(s2(n))
@@ -557,11 +590,10 @@ end subroutine thermal_conduct_half_alg
 ! compute kthovercp and xik, defined as:
 ! kthovercp = -(dt/2)k_{th}/c_p
 ! xik = (dt/2)\xi_k k_{th}/c_p
-subroutine compute_thermo_quantities_2d(lo,hi,dt,t0,s,kthovercp,xik)
+subroutine compute_thermo_quantities_2d(lo,hi,dt,s,kthovercp,xik)
 
   integer        , intent(in   ) :: lo(:),hi(:)
   real(dp_t)    ,  intent(in   ) :: dt
-  real(kind=dp_t), intent(in   ) :: t0(0:)
   real(kind=dp_t), intent(in   ) :: s(lo(1)-3:,lo(2)-3:,:)
   real(kind=dp_t), intent(inout) :: kthovercp(lo(1)-1:,lo(2)-1:)
   real(kind=dp_t), intent(inout) :: xik(lo(1)-1:,lo(2)-1:,:)
@@ -570,33 +602,16 @@ subroutine compute_thermo_quantities_2d(lo,hi,dt,t0,s,kthovercp,xik)
   integer :: i,j,n
   real(dp_t) :: qreact
 
-  ! density, enthalpy, and xmass are inputs with initial temperature guess
-  input_flag = 2
+  ! dens, temp, and xmass are inputs
+  input_flag = 1
   do_diag = .false.
 
   do j=lo(2)-1,hi(2)+1
      do i=lo(1)-1,hi(1)+1
 
         den_row(1) = s(i,j,rho_comp)
+        temp_row(1) = s(i,j,temp_comp)
         xn_zone(:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
-
-        qreact = 0.0d0
-        if(use_big_h) then
-           do n=1,nspec
-              qreact = qreact + ebin(n)*xn_zone(n)
-           enddo
-           h_row(1) = s(i,j,rhoh_comp)/den_row(1) - qreact
-        else
-           h_row(1) = s(i,j,rhoh_comp)/den_row(1)
-        endif
-
-        if(j .lt. lo(2)) then
-           temp_row(1) = t0(lo(2))
-        else if(j .gt. hi(2)) then
-           temp_row(1) = t0(hi(2))
-        else
-           temp_row(1) = t0(j)
-        endif
 
         call conducteos(input_flag, den_row, temp_row, &
                  npts, nspec, &
@@ -648,8 +663,8 @@ subroutine compute_thermo_quantities_3d(lo,hi,dt,t0,s,kthovercp,xik)
      stop
   endif
 
-  ! density, enthalpy, and xmass are inputs with initial temperature guess
-  input_flag = 2
+  ! dens, temp, and xmass are inputs
+  input_flag = 1
   do_diag = .false.
 
   do k=lo(3)-1,hi(3)+1
@@ -657,25 +672,8 @@ subroutine compute_thermo_quantities_3d(lo,hi,dt,t0,s,kthovercp,xik)
         do i=lo(1)-1,hi(1)+1
 
            den_row(1) = s(i,j,k,rho_comp)
+           temp_row(1) = s(i,j,k,temp_comp)
            xn_zone(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
-
-           qreact = 0.0d0
-           if(use_big_h) then
-              do n=1,nspec
-                 qreact = qreact + ebin(n)*xn_zone(n)
-              enddo
-              h_row(1) = s(i,j,k,rhoh_comp)/den_row(1) - qreact
-           else
-              h_row(1) = s(i,j,k,rhoh_comp)/den_row(1)
-           endif
-
-           if(k .lt. lo(3)) then
-              temp_row(1) = t0(lo(3))
-           else if(k .gt. hi(3)) then
-              temp_row(1) = t0(hi(3))
-           else
-              temp_row(1) = t0(k)
-           endif
 
            call conducteos(input_flag, den_row, temp_row, &
                            npts, nspec, &
