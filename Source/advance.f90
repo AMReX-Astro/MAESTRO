@@ -279,7 +279,12 @@ module advance_timestep_module
 
         call average(rho_omegadot1,rho_omegadotbar1,dx,1,nspec)
         call average(rho_Hext,rho_Hextbar,dx,1,1)
-        call react_base(p0_old,s0_old,rho_omegadotbar1,rho_Hextbar(:,1),halfdt,p0_1,s0_1,gam1)
+        if (evolve_base_state) then
+          call react_base(p0_old,s0_old,rho_omegadotbar1,rho_Hextbar(:,1),halfdt,p0_1,s0_1,gam1)
+        else
+          p0_1(:  ) = p0_old(:  )
+          s0_1(:,:) = s0_old(:,:)
+        end if
         call make_grav_cell(grav_cell_new,s0_1(:,rho_comp))
         call make_div_coeff(div_coeff_new,s0_1(:,rho_comp),p0_1, &
                             gam1,grav_cell_new,anelastic_cutoff)
@@ -294,13 +299,13 @@ module advance_timestep_module
           write(6,*) '            : scalar_advance >>> '
         end if
 
-        call advect_base(w0,Sbar(:,1),p0_1,p0_2,s0_1,s0_2,gam1, &
-                         div_coeff_new,dx(1,dm),dt,anelastic_cutoff)
-
-!       Dont think we need these calls.
-!       call make_grav_cell(grav_cell,s0_2(:,rho_comp))
-!       call make_div_coeff(div_coeff_new,s0_2(:,rho_comp),p0_2, &
-!                           gam1,grav_cell,anelastic_cutoff)
+        if (evolve_base_state) then
+          call advect_base(w0,Sbar(:,1),p0_1,p0_2,s0_1,s0_2,gam1, &
+                           div_coeff_new,dx(1,dm),dt,anelastic_cutoff)
+        else
+          p0_2(:  ) = p0_1(:  )
+          s0_2(:,:) = s0_1(:,:)
+        end if
 
         if(use_thermal_diffusion) then
            call make_explicit_thermal(mla,dx,thermal,s1,p0_1, &
@@ -355,7 +360,12 @@ module advance_timestep_module
         end do
         call average(rho_omegadot2,rho_omegadotbar2,dx,1,nspec)
         call average(rho_Hext,rho_Hextbar,dx,1,1)
-        call react_base(p0_2,s0_2,rho_omegadotbar2,rho_Hextbar(:,1),halfdt,p0_new,s0_new,gam1)
+        if (evolve_base_state) then
+          call react_base(p0_2,s0_2,rho_omegadotbar2,rho_Hextbar(:,1),halfdt,p0_new,s0_new,gam1)
+        else
+          p0_new(:  ) = p0_2(:  )
+          s0_new(:,:) = s0_2(:,:)
+        end if
         call make_grav_cell(grav_cell_new,s0_new(:,rho_comp))
         call make_div_coeff(div_coeff_new,s0_new(:,rho_comp),p0_new, &
                             gam1,grav_cell_new,anelastic_cutoff)
@@ -462,13 +472,13 @@ module advance_timestep_module
           write(6,*) '<<< STEP  8 : advect base   '
           write(6,*) '            : scalar_advance >>>'
         end if
-        call advect_base(w0,Sbar(:,1),p0_1,p0_2,s0_1,s0_2,gam1, &
-                         div_coeff_nph,dx(1,dm),dt,anelastic_cutoff)
-
-!       Dont think we need these calls.
-!       call make_grav_cell(grav_cell,s0_2(:,rho_comp))
-!       call make_div_coeff(div_coeff_new,s0_2(:,rho_comp),p0_2, &
-!                           gam1,grav_cell,anelastic_cutoff)
+        if (evolve_base_state) then
+          call advect_base(w0,Sbar(:,1),p0_1,p0_2,s0_1,s0_2,gam1, &
+                           div_coeff_nph,dx(1,dm),dt,anelastic_cutoff)
+        else
+          p0_2(:  ) = p0_1(:  )
+          s0_2(:,:) = s0_1(:,:)
+        end if
 
         if(use_thermal_diffusion) then
            call make_explicit_thermal(mla,dx,thermal,s1,p0_1, &
@@ -521,7 +531,12 @@ module advance_timestep_module
         end do
         call average(rho_omegadot2,rho_omegadotbar2,dx,1,nspec)
         call average(rho_Hext,rho_Hextbar,dx,1,1)
-        call react_base(p0_2,s0_2,rho_omegadotbar2,rho_Hextbar(:,1),halfdt,p0_new,s0_new,gam1)
+        if (evolve_base_state) then
+          call react_base(p0_2,s0_2,rho_omegadotbar2,rho_Hextbar(:,1),halfdt,p0_new,s0_new,gam1)
+        else
+          p0_new(:  ) = p0_2(:  )
+          s0_new(:,:) = s0_2(:,:)
+        end if
         call make_grav_cell(grav_cell_new,s0_new(:,rho_comp))
         call make_div_coeff(div_coeff_new,s0_new(:,rho_comp),p0_new, &
                             gam1,grav_cell_new,anelastic_cutoff)
