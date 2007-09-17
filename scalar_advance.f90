@@ -82,10 +82,6 @@ contains
       type(box)       :: domain
       integer         :: domlo(uold%dim), domhi(uold%dim)
 
-      logical         :: use_temp_in_mkflux
-!     use_temp_in_mkflux = .true.
-      use_temp_in_mkflux = .false.
-
       domain = layout_get_pd(uold%la)
       domlo = lwb(domain)
       domhi = upb(domain)
