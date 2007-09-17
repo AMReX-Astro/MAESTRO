@@ -17,14 +17,14 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
    subroutine make_S (Source,gamma1_term,state,u,rho_omegadot,rho_Hext, &
-                      thermal,p0,t0,gam1,dx)
+                      thermal,t0,gam1,dx)
 
       type(multifab) , intent(inout) :: Source, gamma1_term
       type(multifab) , intent(in   ) :: state, u
       type(multifab) , intent(in   ) :: rho_omegadot
       type(multifab) , intent(in   ) :: rho_Hext
       type(multifab) , intent(in   ) :: thermal
-      real(kind=dp_t), intent(in   ) :: p0(0:),t0(0:),gam1(0:)
+      real(kind=dp_t), intent(in   ) :: t0(0:),gam1(0:)
       real(kind=dp_t), intent(in   ) :: dx(:)
 
       real(kind=dp_t), pointer:: srcp(:,:,:,:),gp(:,:,:,:),sp(:,:,:,:)
@@ -51,18 +51,18 @@ contains
             case (2)
               call make_S_2d(lo,hi,srcp(:,:,1,1),gp(:,:,1,1),sp(:,:,1,:), &
                              up(:,:,1,:), omegap(:,:,1,:), hp(:,:,1,1), &
-                             thermalp(:,:,1,1), ng, p0, t0, gam1, dx)
+                             thermalp(:,:,1,1), ng, gam1, dx)
             case (3)
               call make_S_3d(lo,hi,srcp(:,:,:,1),gp(:,:,:,1),sp(:,:,:,:), &
                              up(:,:,:,:), omegap(:,:,:,:), hp(:,:,:,1), &
-                             thermalp(:,:,:,1), ng, p0, t0, gam1, dx)
+                             thermalp(:,:,:,1), ng, t0, gam1, dx)
          end select
       end do
 
    end subroutine make_S
 
    subroutine make_S_2d (lo,hi,Source,gamma1_term,s,u, &
-                         rho_omegadot,rho_Hext,thermal,ng,p0,t0,gam1,dx)
+                         rho_omegadot,rho_Hext,thermal,ng,gam1,dx)
 
       implicit none
 
@@ -74,8 +74,6 @@ contains
       real (kind=dp_t), intent(in   ) :: rho_omegadot(lo(1):,lo(2):,:)
       real (kind=dp_t), intent(in   ) :: rho_Hext(lo(1):,lo(2):)
       real (kind=dp_t), intent(in   ) :: thermal(lo(1):,lo(2):)
-      real (kind=dp_t), intent(in   ) :: p0(0:)
-      real (kind=dp_t), intent(in   ) :: t0(0:)
       real (kind=dp_t), intent(in   ) :: gam1(0:)
       real (kind=dp_t), intent(in   ) :: dx(:)
 
@@ -83,9 +81,6 @@ contains
       integer :: i, j, n, nr
 
       real(kind=dp_t) :: sigma, react_term, pres_term
-!     real(kind=dp_t) :: gradp0
- 
-!     nr = size(p0,dim=1)
 
       Source = zero
 
@@ -95,12 +90,11 @@ contains
         do i = lo(1), hi(1)
 
            den_row(1) = s(i,j,rho_comp)
-           temp_row(1) = t0(j)
-           p_row(1) = p0(j)
+           temp_row(1) = s(i,j,temp_comp)
            xn_zone(:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
            
-           ! (rho, P) --> T
-           input_flag = 4
+           ! dens, temp, and xmass are inputs
+           input_flag = 1
 
            call eos(input_flag, den_row, temp_row, &
                     npts, nspec, &
@@ -128,15 +122,6 @@ contains
            Source(i,j) = sigma*(rho_Hext(i,j)/den_row(1) + react_term) + &
                 pres_term/(den_row(1)*dpdr_row(1)) + (sigma / den_row(1)) * thermal(i,j)
 
-!          if (j .eq. 0) then
-!             gradp0 = (p0(j+1) - p0(j))/dx(2)
-!          else if (j .eq. nr-1) then
-!             gradp0 = (p0(j) - p0(j-1))/dx(2)
-!          else
-!             gradp0 = HALF*(p0(j+1) - p0(j-1))/dx(2)
-!          endif
-!          gamma1_term(i,j) = (gam1_row(1) - gam1(j))*u(i,j,2)*gradp0/(gam1(j)*gam1(j)*p0(j))
-
            gamma1_term(i,j) = 0.0_dp_t
 
         enddo
@@ -145,7 +130,7 @@ contains
    end subroutine make_S_2d
 
    subroutine make_S_3d (lo,hi,Source,gamma1_term,s,u, &
-                         rho_omegadot,rho_Hext,thermal,ng,p0,t0,gam1,dx)
+                         rho_omegadot,rho_Hext,thermal,ng,t0,gam1,dx)
 
       implicit none
 
@@ -157,28 +142,20 @@ contains
       real (kind=dp_t), intent(in   ) :: rho_omegadot(lo(1):,lo(2):,lo(3):,:)
       real (kind=dp_t), intent(in   ) :: rho_Hext(lo(1):,lo(2):,lo(3):)
       real (kind=dp_t), intent(in   ) :: thermal(lo(1):,lo(2):,lo(3):)
-      real (kind=dp_t), intent(in   ) :: p0(0:)
       real (kind=dp_t), intent(in   ) :: t0(0:)
       real (kind=dp_t), intent(in   ) :: gam1(0:)
       real (kind=dp_t), intent(in   ) :: dx(:)
 
 !     Local variables
       integer :: i, j, k , n
-!     integer :: nr
 
-      real(kind=dp_t), allocatable :: p0_cart(:,:,:)
       real(kind=dp_t), allocatable :: t0_cart(:,:,:)
       real(kind=dp_t) :: sigma, react_term, pres_term
-!     real(kind=dp_t) :: gradp0
 
       if (spherical .eq. 1) then
-        allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
         allocate(t0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-        call fill_3d_data(p0_cart,p0,lo,hi,dx,0)
         call fill_3d_data(t0_cart,t0,lo,hi,dx,0)
       end if
-
-!     nr = size(p0,dim=1)
 
       Source = zero
 
@@ -189,19 +166,15 @@ contains
            do i = lo(1), hi(1)
 
               den_row(1) = s(i,j,k,rho_comp)
-
               if (spherical .eq. 0) then
-                temp_row(1) = t0(k)
-                p_row(1) = p0(k)
+                temp_row(1) = s(i,j,k,temp_comp)
               else
                 temp_row(1) = t0_cart(i,j,k)
-                p_row(1) = p0_cart(i,j,k)
               end if
-
               xn_zone(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
 
-              ! (rho, P) --> T
-              input_flag = 4
+              ! dens, temp, and xmass are inputs
+              input_flag = 1
 
               call eos(input_flag, den_row, temp_row, &
                        npts, nspec, &
@@ -229,23 +202,13 @@ contains
               Source(i,j,k) = sigma*(rho_Hext(i,j,k)/den_row(1) + react_term) + &
                    pres_term/(den_row(1)*dpdr_row(1)) + (sigma / den_row(1)) * thermal(i,j,k)
 
-
-!             if (j .eq. 0) then
-!                gradp0 = (p0(j+1) - p0(j))/dx(2)
-!             else if (j .eq. nr-1) then
-!                gradp0 = (p0(j) - p0(j-1))/dx(2)
-!             else
-!                gradp0 = HALF*(p0(j+1) - p0(j-1))/dx(2)
-!             endif
-!             gamma1_term(i,j,k) = (gam1_row(1) - gam1(j))*u(i,j,k,3)*gradp0/(gam1(k)**2*p0(k))
-
               gamma1_term(i,j,k) = 0.0_dp_t
            enddo
         enddo
       enddo
 
       if (spherical .eq. 1) then
-        deallocate(p0_cart,t0_cart)
+        deallocate(t0_cart)
       end if
  
    end subroutine make_S_3d

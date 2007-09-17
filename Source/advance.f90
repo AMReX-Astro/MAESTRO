@@ -410,7 +410,8 @@ module advance_timestep_module
         do n = 1, nlevs
 
            call make_S(Source_new(n),gamma1_term(n),snew(n),uold(n), &
-                       rho_omegadot2(n),rho_Hext(n),thermal(n),p0_new,s0_old(:,temp_comp),gam1,dx(n,:))
+                       rho_omegadot2(n),rho_Hext(n),thermal(n), &
+                       s0_old(:,temp_comp),gam1,dx(n,:))
            call make_S_at_halftime(Source_nph(n),Source_old(n),Source_new(n))
            call average(Source_nph,Sbar,dx,1,1)
 
@@ -565,7 +566,8 @@ module advance_timestep_module
 
         do n = 1, nlevs
            call make_S(Source_new(n),gamma1_term(n),snew(n),uold(n), &
-                       rho_omegadot2(n),rho_Hext(n),thermal(n),p0_new,s0_new(:,temp_comp),gam1,dx(n,:))
+                       rho_omegadot2(n),rho_Hext(n),thermal(n), &
+                       s0_new(:,temp_comp),gam1,dx(n,:))
         end do
         call average(Source_new,Sbar,dx,1,1)
 
