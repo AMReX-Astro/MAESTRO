@@ -172,17 +172,30 @@ contains
                                                  w0,dx)
                end do
                 
-               n = rhoh_comp
-               np => dataptr(normal, i)
-               call  mkrhohforce_3d_sphr(fp(:,:,:,n), &
-                                         ump(:,:,:,1), vmp(:,:,:,1), &
-                                         wmp(:,:,:,1), lo, hi, &
-                                         dx, np(:,:,:,:), p0_old, p0_old)
+               if (use_temp_in_mkflux) then
 
-               call modify_scal_force_3d_sphr(fp(:,:,:,n),sop(:,:,:,n),lo,hi, &
-                                              domlo,domhi,ng_cell,&
-                                              ump(:,:,:,1),vmp(:,:,:,1), &
-                                              wmp(:,:,:,1), s0p(:,:,:,n),w0,dx)
+                 n = temp_comp
+                 tp => dataptr(thermal, i)
+   
+                 call makeTfromRhoH_3d(sop(:,:,:,:), lo, hi, ng_cell, p0_old, s0_old(:,temp_comp))
+   
+                 call mktempforce_3d_sphr(fp(:,:,:,n), sop(:,:,:,:), tp(:,:,:,1), lo, hi, ng_cell, p0_old, dx)
+
+               else 
+
+                  n = rhoh_comp
+                  np => dataptr(normal, i)
+                  call  mkrhohforce_3d_sphr(fp(:,:,:,n), &
+                                            ump(:,:,:,1), vmp(:,:,:,1), &
+                                            wmp(:,:,:,1), lo, hi, &
+                                            dx, np(:,:,:,:), p0_old, p0_old)
+
+                  call modify_scal_force_3d_sphr(fp(:,:,:,n),sop(:,:,:,n),lo,hi, &
+                                                 domlo,domhi,ng_cell,&
+                                                 ump(:,:,:,1),vmp(:,:,:,1), &
+                                                 wmp(:,:,:,1), s0p(:,:,:,n),w0,dx)
+               end if
+
             else
                do n = spec_comp,spec_comp+nspec-1
                   call modify_scal_force_3d_cart(fp(:,:,:,n),sop(:,:,:,n), &
@@ -191,14 +204,26 @@ contains
                                                  s0_old(:,n),w0,dx)
                end do
 
-               n = rhoh_comp
-               call  mkrhohforce_3d(fp(:,:,:,n), wmp(:,:,:,1), lo, hi, &
-                                    p0_old, p0_old)
+               if (use_temp_in_mkflux) then
 
-               call modify_scal_force_3d_cart(fp(:,:,:,n),sop(:,:,:,n),lo,hi, &
-                                              ng_cell,ump(:,:,:,1), &
-                                              vmp(:,:,:,1),wmp(:,:,:,1), &
-                                              s0_old(:,n),w0,dx)
+                 n = temp_comp
+                 tp => dataptr(thermal, i)
+
+                 call makeTfromRhoH_3d(sop(:,:,:,:), lo, hi, ng_cell, p0_old, s0_old(:,temp_comp))
+
+                 call mktempforce_3d(fp(:,:,:,n), sop(:,:,:,:), tp(:,:,:,1), lo, hi, ng_cell, p0_old)
+
+               else
+
+                  n = rhoh_comp
+                  call  mkrhohforce_3d(fp(:,:,:,n), wmp(:,:,:,1), lo, hi, &
+                                       p0_old, p0_old)
+   
+                  call modify_scal_force_3d_cart(fp(:,:,:,n),sop(:,:,:,n),lo,hi, &
+                                                 ng_cell,ump(:,:,:,1), &
+                                                 vmp(:,:,:,1),wmp(:,:,:,1), &
+                                                 s0_old(:,n),w0,dx)
+               end if
             end if
          end select
 
@@ -211,7 +236,7 @@ contains
 
       ! Do this because we have just defined temperature in the valid region
       if (use_temp_in_mkflux) &
-        call multifab_fill_boundary(sold)
+        call multifab_fill_boundary_c(sold,temp_comp,1)
 
       call multifab_fill_boundary(scal_force)
 
