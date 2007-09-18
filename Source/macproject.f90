@@ -1378,8 +1378,8 @@ subroutine mac_multigrid(mla,rh,phi,fine_flx,alpha,beta,dx,&
      pd = layout_get_pd(la)
 
      call multifab_build(coeffs(mgt(n)%nlevels), la, 1+dm, 1)
-     call multifab_copy_c(coeffs(mgt(n)%nlevels),1,alpha(n),1, 1,all=.true.)
-     call multifab_copy_c(coeffs(mgt(n)%nlevels),2, beta(n),1,dm,all=.true.)
+     call multifab_copy_c(coeffs(mgt(n)%nlevels),1,alpha(n),1, 1,ng=alpha(n)%ng)
+     call multifab_copy_c(coeffs(mgt(n)%nlevels),2, beta(n),1,dm,ng= beta(n)%ng)
 
      do i = mgt(n)%nlevels-1, 1, -1
         call multifab_build(coeffs(i), mgt(n)%ss(i)%la, 1+dm, 1)
@@ -1596,8 +1596,8 @@ subroutine mac_applyop(mla,res,phi,alpha,beta,dx,&
      pd = layout_get_pd(la)
 
      call multifab_build(coeffs(mgt(n)%nlevels), la, 1+dm, 1)
-     call multifab_copy_c(coeffs(mgt(n)%nlevels),1,alpha(n),1, 1,all=.true.)
-     call multifab_copy_c(coeffs(mgt(n)%nlevels),2, beta(n),1,dm,all=.true.)
+     call multifab_copy_c(coeffs(mgt(n)%nlevels),1,alpha(n),1, 1,ng=alpha(n)%ng)
+     call multifab_copy_c(coeffs(mgt(n)%nlevels),2, beta(n),1,dm,ng= beta(n)%ng)
 
      do i = mgt(n)%nlevels-1, 1, -1
         call multifab_build(coeffs(i), mgt(n)%ss(i)%la, 1+dm, 1)
