@@ -240,7 +240,7 @@ contains
 
     flameloc = ONE
 
-    do i=0,hi(2)
+    do i=lo(2),hi(2)
 
        loloc = dble(i)*dx(dm) - flameloc
        hiloc = (dble(i) + ONE)*dx(dm) - flameloc
@@ -279,7 +279,7 @@ contains
 
     lamsolfile = 'flame_4.e7_screen_left.out'
 
-    do i=0,hi(3)
+    do i=lo(3),hi(3)
 
        loloc = dble(i)*dx(dm)
        hiloc = (dble(i) + ONE)*dx(dm)
