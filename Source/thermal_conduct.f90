@@ -311,12 +311,18 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
         select case (dm)
         case (2)
            call setbc_2d(s2p(:,:,1,rhoh_comp), lo, 3, &
-       the_bc_tower%bc_tower_array(n)%adv_bc_level_array(i,:,:,dm+rhoh_comp), &
-       dx(n,:),dm+rhoh_comp)
+                the_bc_tower%bc_tower_array(n)%adv_bc_level_array(i,:,:,dm+rhoh_comp), &
+                dx(n,:),dm+rhoh_comp)
+           call setbc_2d(s2p(:,:,1,temp_comp), lo, 3, &
+                the_bc_tower%bc_tower_array(n)%adv_bc_level_array(i,:,:,dm+temp_comp), &
+                dx(n,:),dm+temp_comp)
         case (3)
            call setbc_3d(s2p(:,:,:,rhoh_comp), lo, 3, &
-       the_bc_tower%bc_tower_array(n)%adv_bc_level_array(i,:,:,dm+rhoh_comp), &
-       dx(n,:),dm+rhoh_comp)
+                the_bc_tower%bc_tower_array(n)%adv_bc_level_array(i,:,:,dm+rhoh_comp), &
+                dx(n,:),dm+rhoh_comp)
+           call setbc_3d(s2p(:,:,:,temp_comp), lo, 3, &
+                the_bc_tower%bc_tower_array(n)%adv_bc_level_array(i,:,:,dm+temp_comp), &
+                dx(n,:),dm+temp_comp)
         end select
      end do
   enddo
@@ -554,12 +560,18 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
         select case (dm)
         case (2)
            call setbc_2d(s2p(:,:,1,rhoh_comp), lo, 3, &
-       the_bc_tower%bc_tower_array(n)%adv_bc_level_array(i,:,:,dm+rhoh_comp), &
-       dx(n,:),dm+rhoh_comp)
+                the_bc_tower%bc_tower_array(n)%adv_bc_level_array(i,:,:,dm+rhoh_comp), &
+                dx(n,:),dm+rhoh_comp)
+           call setbc_2d(s2p(:,:,1,temp_comp), lo, 3, &
+                the_bc_tower%bc_tower_array(n)%adv_bc_level_array(i,:,:,dm+temp_comp), &
+                dx(n,:),dm+temp_comp)
         case (3)
            call setbc_3d(s2p(:,:,:,rhoh_comp), lo, 3, &
-       the_bc_tower%bc_tower_array(n)%adv_bc_level_array(i,:,:,dm+rhoh_comp), &
-       dx(n,:),dm+rhoh_comp)
+                the_bc_tower%bc_tower_array(n)%adv_bc_level_array(i,:,:,dm+rhoh_comp), &
+                dx(n,:),dm+rhoh_comp)
+           call setbc_3d(s2p(:,:,:,temp_comp), lo, 3, &
+                the_bc_tower%bc_tower_array(n)%adv_bc_level_array(i,:,:,dm+temp_comp), &
+                dx(n,:),dm+temp_comp)
         end select
      end do
   enddo
