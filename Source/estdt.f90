@@ -91,6 +91,7 @@ contains
       dt = min(dt_adv,dt_divu)
 
       if (parallel_IOProcessor() .and. verbose .ge. 1) then
+         write(6,*) ''
          write(6,*) 'Using estdt, at istep',istep,', dt =',dt
       endif
 
@@ -146,10 +147,6 @@ contains
         dt_adv = min(dx(1),dx(2))
      else
         dt_adv = cfl / max(spdx,spdy,spdr)
-        if (parallel_IOProcessor() .and. verbose .ge. 1) then
-           print*, ''
-           print*, 'advective dt =',dt_adv
-        endif
      endif
 
      ! force constraints
@@ -169,11 +166,6 @@ contains
 
      if (pforcey > eps) then
         dt_adv = min(dt_adv,sqrt(2.0D0 *dx(2)/pforcey))
-     endif
-
-     if (parallel_IOProcessor() .and. verbose .ge. 1) then
-        print*, 'force dt =', &
-             min(sqrt(2.0D0*dx(2)/pforcey),sqrt(2.0D0*dx(1)/pforcex))
      endif
 
      ! divU constraint
@@ -201,10 +193,6 @@ contains
 
         enddo
      enddo
-
-     if (parallel_IOProcessor() .and. verbose .ge. 1) then
-        print*, 'divu dt =',dt_divu
-     endif
 
    end subroutine estdt_2d
 
@@ -262,11 +250,6 @@ contains
         dt_adv = cfl  / max(spdx,spdy,spdz,spdr)
      endif
 
-     if (parallel_IOProcessor() .and. verbose .ge. 1) then
-        print*, ''
-        print*, 'advective dt =',dt_adv
-     endif
-
      ! Limit dt based on forcing terms
      pforcex = ZERO 
      pforcey = ZERO 
@@ -294,13 +277,6 @@ contains
         dt_adv = min(dt_adv,sqrt(2.0D0*dx(3)/pforcez))
      endif
 
-        if (parallel_IOProcessor() .and. verbose .ge. 1) then
-           print*, 'force dt =', &
-                min(sqrt(2.0D0*dx(1)/pforcex), &
-                min(sqrt(2.0D0*dx(2)/pforcey),sqrt(2.0D0*dx(3)/pforcez)))
-        endif
-
-
      ! divU constraint
      dt_divu = 1.d30
 
@@ -327,10 +303,6 @@ contains
            enddo
         enddo
      enddo
-
-     if (parallel_IOProcessor() .and. verbose .ge. 1) then
-        print*, 'divu dt =',dt_divu
-     endif
 
    end subroutine estdt_3d_cart
 

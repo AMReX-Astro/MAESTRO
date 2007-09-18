@@ -145,34 +145,18 @@ contains
       ! otherwise, use soundspeed
       if(ux .ne. ZERO .or. uy .ne. ZERO) then
          dt = cfl / max(ux,uy)
-         if ( parallel_IOProcessor() .and. verbose .ge. 1) then
-            print*, ''
-            print*, 'advective dt =',dt
-         endif         
       else if (spdx < eps .and. spdy < eps) then
          dt = min(dx(1),dx(2))
-         if ( parallel_IOProcessor() .and. verbose .ge. 1) then
-            print*, 'sound speed < eps; dt =',dt
-         endif      
       else
          dt = cfl / max(spdx,spdy)
-         if ( parallel_IOProcessor() .and. verbose .ge. 1) then
-            print*, 'sound speed dt =',dt
-         endif
       endif
 
       if (pforcex > eps) then
          dt = min(dt,sqrt(2.0D0*dx(1)/pforcex))
-         if ( parallel_IOProcessor() .and. verbose .ge. 1) then
-            print*, 'pforcex dt =',sqrt(2.0D0*dx(1)/pforcex)
-         endif      
       endif
 
       if (pforcey > eps) then
          dt = min(dt,sqrt(2.0D0*dx(2)/pforcey))
-         if ( parallel_IOProcessor() .and. verbose .ge. 1) then
-            print*, 'pforcey dt =',sqrt(2.0D0*dx(2)/pforcey)
-         endif
       endif
 
      ! divU constraint
@@ -195,10 +179,6 @@ contains
            endif
         enddo
      enddo
-
-     if ( parallel_IOProcessor() .and. verbose .ge. 1) then
-        print*, 'divu_dt =',dt_divu
-     endif     
 
     end subroutine firstdt_2d
 
@@ -301,40 +281,22 @@ contains
       ! otherwise, use soundspeed
       if(ux .ne. ZERO .or. uy .ne. ZERO .or. uz .ne. ZERO) then
          dt = cfl / max(ux,uy,uz)
-         if ( parallel_IOProcessor() .and. verbose .ge. 1) then
-            print*, 'advective dt =',dt
-         endif        
       else if (spdx < eps .and. spdy < eps .and. spdz < eps) then
          dt = min(dx(1),dx(2),dx(3))
-         if ( parallel_IOProcessor() .and. verbose .ge. 1) then
-            print*, 'sound speed < eps; dt =',dt
-         endif
       else
          dt = cfl / max(spdx,spdy,spdz)
-         if ( parallel_IOProcessor() .and. verbose .ge. 1) then
-            print*, 'sound speed dt =',dt
-         endif
       endif
 
       if (pforcex > eps) then
          dt = min(dt,sqrt(2.0D0*dx(1)/pforcex))
-         if ( parallel_IOProcessor() .and. verbose .ge. 1) then
-            print*, 'pforcex dt =',sqrt(2.0D0*dx(1)/pforcex)
-         endif     
       endif
 
       if (pforcey > eps) then
          dt = min(dt,sqrt(2.0D0*dx(2)/pforcey))
-         if ( parallel_IOProcessor() .and. verbose .ge. 1) then
-            print*, 'pforcey dt =',sqrt(2.0D0*dx(2)/pforcey)
-         endif     
       endif
 
       if (pforcez > eps) then
          dt = min(dt,sqrt(2.0D0*dx(3)/pforcez))
-         if ( parallel_IOProcessor() .and. verbose .ge. 1) then
-            print*, 'pforcez dt =',sqrt(2.0D0*dx(3)/pforcez)
-         endif     
       endif
 
      ! divU constraint
@@ -359,10 +321,6 @@ contains
            enddo
         enddo
      enddo
-
-     if ( parallel_IOProcessor() .and. verbose .ge. 1) then
-        print*, 'divu_dt =',dt_divu
-     endif    
 
      if (spherical == 1) &
           deallocate(t0_cart,p0_cart)
