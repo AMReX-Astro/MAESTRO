@@ -719,8 +719,8 @@ end subroutine compute_thermo_quantities_3d
 subroutine put_beta_on_faces_2d(lo,hi,ccbeta,beta)
 
   integer        , intent(in   ) :: lo(:),hi(:)
-  real(kind=dp_t), intent(in   ) :: ccbeta(lo(1)-1:,lo(2)-1:)
-  real(kind=dp_t), intent(inout) :: beta(lo(1)-1:,lo(2)-1:,:)
+  real(kind=dp_t), intent(in   ) :: ccbeta(-1:,-1:)
+  real(kind=dp_t), intent(inout) :: beta(-1:,-1:,:)
 
 ! Local
   integer :: i,j
@@ -749,8 +749,8 @@ end subroutine put_beta_on_faces_2d
 subroutine put_beta_on_faces_3d(lo,hi,ccbeta,beta)
 
   integer        , intent(in   ) :: lo(:),hi(:)
-  real(kind=dp_t), intent(in   ) :: ccbeta(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-  real(kind=dp_t), intent(inout) :: beta(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)
+  real(kind=dp_t), intent(in   ) :: ccbeta(-1:,-1:,-1:)
+  real(kind=dp_t), intent(inout) :: beta(-1:,-1:,-1:,:)
 
 ! Local
   integer :: i,j,k

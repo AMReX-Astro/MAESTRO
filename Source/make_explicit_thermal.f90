@@ -364,9 +364,9 @@ subroutine setup_T_op_2d(lo,hi,ng_1,temp,kth,phi,beta)
   integer        , intent(in   ) :: lo(:),hi(:)
   integer        , intent(in   ) :: ng_1
   real(kind=dp_t), intent(in   ) :: temp(lo(1)-ng_1:,lo(2)-ng_1:)
-  real(kind=dp_t), intent(in   ) :: kth(lo(1)-ng_1:,lo(2)-ng_1:)
+  real(kind=dp_t), intent(in   ) :: kth(-ng_1:,-ng_1:)
   real(kind=dp_t), intent(inout) :: phi(lo(1)-ng_1:,lo(2)-ng_1:)
-  real(kind=dp_t), intent(inout) :: beta(lo(1)-ng_1:,lo(2)-ng_1:,:)
+  real(kind=dp_t), intent(inout) :: beta(-ng_1:,-ng_1:,:)
 
   integer :: i,j
   integer :: nx,ny
@@ -404,9 +404,9 @@ subroutine setup_T_op_3d(lo,hi,ng_1,temp,kth,phi,beta)
   integer        , intent(in   ) :: lo(:),hi(:)
   integer        , intent(in   ) :: ng_1
   real(kind=dp_t), intent(in   ) :: temp(lo(1)-ng_1:,lo(2)-ng_1:,lo(3)-ng_1:)
-  real(kind=dp_t), intent(in   ) :: kth(lo(1)-ng_1:,lo(2)-ng_1:,lo(3)-ng_1:)
+  real(kind=dp_t), intent(in   ) :: kth(-ng_1:,-ng_1:,-ng_1:)
   real(kind=dp_t), intent(inout) :: phi(lo(1)-ng_1:,lo(2)-ng_1:,lo(3)-ng_1:)
-  real(kind=dp_t), intent(inout) :: beta(lo(1)-ng_1:,lo(2)-ng_1:,lo(3)-ng_1:,:)
+  real(kind=dp_t), intent(inout) :: beta(-ng_1:,-ng_1:,-ng_1:,:)
 
   integer :: i,j,k
   integer :: nx,ny,nz
@@ -462,9 +462,9 @@ subroutine setup_h_op_2d(lo,hi,ng_1,ng_3,s,kthovercp,phi,beta)
   integer        , intent(in   ) :: lo(:),hi(:)
   integer        , intent(in   ) :: ng_1,ng_3
   real(kind=dp_t), intent(in   ) :: s(lo(1)-ng_3:,lo(2)-ng_3:,:)
-  real(kind=dp_t), intent(in   ) :: kthovercp(lo(1)-ng_1:,lo(2)-ng_1:)
+  real(kind=dp_t), intent(in   ) :: kthovercp(-ng_1:,-ng_1:)
   real(kind=dp_t), intent(inout) :: phi(lo(1)-ng_1:,lo(2)-ng_1:)
-  real(kind=dp_t), intent(inout) :: beta(lo(1)-ng_1:,lo(2)-ng_1:,:)
+  real(kind=dp_t), intent(inout) :: beta(-ng_1:,-ng_1:,:)
 
   integer :: i,j
   integer :: nx,ny
@@ -504,9 +504,9 @@ subroutine setup_h_op_3d(lo,hi,ng_1,ng_3,s,kthovercp,phi,beta)
   integer        , intent(in   ) :: lo(:),hi(:)
   integer        , intent(in   ) :: ng_1,ng_3
   real(kind=dp_t), intent(in   ) :: s(lo(1)-ng_3:,lo(2)-ng_3:,lo(3)-ng_3:,:)
-  real(kind=dp_t), intent(in   ) :: kthovercp(lo(1)-ng_1:,lo(2)-ng_1:,lo(3)-ng_1:)
+  real(kind=dp_t), intent(in   ) :: kthovercp(-ng_1:,-ng_1:,-ng_1:)
   real(kind=dp_t), intent(inout) :: phi(lo(1)-ng_1:,lo(2)-ng_1:,lo(3)-ng_1:)
-  real(kind=dp_t), intent(inout) :: beta(lo(1)-ng_1:,lo(2)-ng_1:,lo(3)-ng_1:,:)
+  real(kind=dp_t), intent(inout) :: beta(-ng_1:,-ng_1:,-ng_1:,:)
 
   integer :: i,j,k
   integer :: nx,ny,nz
@@ -564,10 +564,10 @@ subroutine setup_Xk_op_2d(spec,lo,hi,dx,ng_1,ng_3,s,kthovercp,phi,beta,xik)
   real(dp_t)     , intent(in   ) :: dx(:)
   integer        , intent(in   ) :: ng_1,ng_3
   real(kind=dp_t), intent(in   ) :: s(lo(1)-ng_3:,lo(2)-ng_3:,:)
-  real(kind=dp_t), intent(in   ) :: kthovercp(lo(1)-ng_1:,lo(2)-ng_1:)
+  real(kind=dp_t), intent(in   ) :: kthovercp(-ng_1:,-ng_1:)
   real(kind=dp_t), intent(inout) :: phi(lo(1)-ng_1:,lo(2)-ng_1:)
-  real(kind=dp_t), intent(inout) :: beta(lo(1)-ng_1:,lo(2)-ng_1:,:)
-  real(kind=dp_t), intent(in   ) :: xik(lo(1)-ng_1:,lo(2)-ng_1:,:)
+  real(kind=dp_t), intent(inout) :: beta(-ng_1:,-ng_1:,:)
+  real(kind=dp_t), intent(in   ) :: xik(-ng_1:,-ng_1:,:)
 
   integer :: i,j
   integer :: nx,ny
@@ -610,10 +610,10 @@ subroutine setup_Xk_op_3d(spec,lo,hi,dx,ng_1,ng_3,s,kthovercp,phi,beta,xik)
   real(dp_t)     , intent(in   ) :: dx(:)
   integer        , intent(in   ) :: ng_1,ng_3
   real(kind=dp_t), intent(in   ) :: s(lo(1)-ng_3:,lo(2)-ng_3:,lo(3)-ng_3:,:)
-  real(kind=dp_t), intent(in   ) :: kthovercp(lo(1)-ng_1:,lo(2)-ng_1:,lo(3)-ng_1:)
+  real(kind=dp_t), intent(in   ) :: kthovercp(-ng_1:,-ng_1:,-ng_1:)
   real(kind=dp_t), intent(inout) :: phi(lo(1)-ng_1:,lo(2)-ng_1:,lo(3)-ng_1:)
-  real(kind=dp_t), intent(inout) :: beta(lo(1)-ng_1:,lo(2)-ng_1:,lo(3)-ng_1:,:)
-  real(kind=dp_t), intent(in   ) :: xik(lo(1)-ng_1:,lo(2)-ng_1:,lo(3)-ng_1:,:)
+  real(kind=dp_t), intent(inout) :: beta(-ng_1:,-ng_1:,-ng_1:,:)
+  real(kind=dp_t), intent(in   ) :: xik(-ng_1:,-ng_1:,-ng_1:,:)
 
   integer :: i,j,k
   integer :: nx,ny,nz
