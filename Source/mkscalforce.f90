@@ -208,5 +208,114 @@ contains
 
   end subroutine mktempforce_2d
 
+  subroutine mktempforce_3d(force, s, thermal, lo, hi, ng, p0)
+
+    ! compute the source terms for temperature
+
+    ! note, in the prediction of the interface states, we will set
+    ! both p0_old and p0_new to the same old value.  In the computation
+    ! of the force for the update, they will be used to time-center.
+
+    integer,         intent(in   ) :: lo(:), hi(:), ng
+    real(kind=dp_t), intent(  out) ::   force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
+    real(kind=dp_t), intent(in   ) ::       s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
+    real(kind=dp_t), intent(in   ) :: thermal(lo(1)   :,lo(2)   :,lo(3)   :)
+    real(kind=dp_t), intent(in   ) ::      p0(0:)
+
+    integer :: i,j,k
+
+    force = ZERO
+
+!   HACK HACK HACK 
+!   We ignore the w d(p0) / dz term since p0 is essentially constant
+
+    do k = lo(3),hi(3)
+     do j = lo(2),hi(2)
+       do i = lo(1),hi(1)
+
+         temp_row(1) = s(i,j,k,temp_comp)
+          den_row(1) = s(i,j,k,rho_comp)
+          xn_zone(:) = s(i,j,k,spec_comp:)/den_row(1)
+            p_row(1) = p0(j)
+
+         input_flag = 3      ! (t, p) -> (rho, h)
+
+         call eos(input_flag, den_row, temp_row, &
+                  npts, nspec, &
+                  xn_zone, aion, zion, &
+                  p_row, h_row, e_row, &
+                  cv_row, cp_row, xne_row, eta_row, pele_row, &
+                  dpdt_row, dpdr_row, dedt_row, dedr_row, &
+                  dpdX_row, dhdX_row, &
+                  gam1_row, cs_row, s_row, &
+                  dsdt_row, dsdr_row, &
+                  do_diag)
+
+          force(i,j,k) =  thermal(i,j,k) / (s(i,j,k,rho_comp) * cp_row(1))
+
+       end do
+     end do
+    end do
+
+  end subroutine mktempforce_3d
+
+  subroutine mktempforce_3d_sphr(force, s, thermal, lo, hi, ng, p0, dx)
+
+    ! compute the source terms for temperature
+
+    ! note, in the prediction of the interface states, we will set
+    ! both p0_old and p0_new to the same old value.  In the computation
+    ! of the force for the update, they will be used to time-center.
+
+    integer,         intent(in   ) :: lo(:), hi(:), ng
+    real(kind=dp_t), intent(  out) ::   force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
+    real(kind=dp_t), intent(in   ) ::       s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
+    real(kind=dp_t), intent(in   ) :: thermal(lo(1)   :,lo(2)   :,lo(3)   :)
+    real(kind=dp_t), intent(in   ) ::      p0(0:)
+    real(kind=dp_t), intent(in   ) :: dx(:)
+    real(kind=dp_t), allocatable   :: p0_cart(:,:,:)
+
+    integer :: i,j,k,nr
+
+    nr = size(p0,dim=1)
+    allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+    call fill_3d_data(p0_cart,p0,lo,hi,dx,0)
+
+    force = ZERO
+
+!   HACK HACK HACK 
+!   We ignore the w d(p0) / dz term since p0 is essentially constant
+
+    do k = lo(3),hi(3)
+     do j = lo(2),hi(2)
+       do i = lo(1),hi(1)
+
+         temp_row(1) = s(i,j,k,temp_comp)
+          den_row(1) = s(i,j,k,rho_comp)
+          xn_zone(:) = s(i,j,k,spec_comp:)/den_row(1)
+            p_row(1) = p0_cart(i,j,k)
+
+         input_flag = 3      ! (t, p) -> (rho, h)
+
+         call eos(input_flag, den_row, temp_row, &
+                  npts, nspec, &
+                  xn_zone, aion, zion, &
+                  p_row, h_row, e_row, &
+                  cv_row, cp_row, xne_row, eta_row, pele_row, &
+                  dpdt_row, dpdr_row, dedt_row, dedr_row, &
+                  dpdX_row, dhdX_row, &
+                  gam1_row, cs_row, s_row, &
+                  dsdt_row, dsdr_row, &
+                  do_diag)
+
+          force(i,j,k) =  thermal(i,j,k) / (s(i,j,k,rho_comp) * cp_row(1))
+
+       end do
+     end do
+    end do
+
+    deallocate(p0_cart)
+
+  end subroutine mktempforce_3d_sphr
 
 end module mkscalforce_module
