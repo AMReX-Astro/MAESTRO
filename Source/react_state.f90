@@ -50,6 +50,19 @@ contains
        case (2)
           call react_state_2d(sinp(:,:,1,:),sotp(:,:,1,:),rp(:,:,1,:), &
                hp(:,:,1,1),t0,dt,dx,lo,hi,ng,time)
+       case (3)
+          call react_state_3d(sinp(:,:,:,:),sotp(:,:,:,:),rp(:,:,:,:), &
+               hp(:,:,:,1),t0,dt,dx,lo,hi,ng,time)
+       end select
+    end do
+
+    do i = 1, s_in%nboxes
+       if ( multifab_remote(s_in, i) ) cycle
+       sotp => dataptr(s_out, i)
+       lo =  lwb(get_box(s_in, i))
+       hi =  upb(get_box(s_in, i))
+       select case (dm)
+       case (2)
           ! Fill ghost cells on periodic boundaries and in between patches
           call multifab_fill_boundary(s_out)
           ! Impose bc's
@@ -60,8 +73,6 @@ contains
                            dx,bc_comp)
           enddo
        case (3)
-          call react_state_3d(sinp(:,:,:,:),sotp(:,:,:,:),rp(:,:,:,:), &
-               hp(:,:,:,1),t0,dt,dx,lo,hi,ng,time)
           ! Fill ghost cells on periodic boundaries and in between patches
           call multifab_fill_boundary(s_out)
           ! Impose bc's
