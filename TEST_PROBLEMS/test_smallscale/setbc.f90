@@ -56,7 +56,7 @@ contains
          print *,'*******************************************'
          print *,''
       else if (bc(1,1) .eq. INTERIOR) then
-         ! this is the only thing it should call
+
       else
          print *,''
          print *,'*******************************************'
@@ -96,7 +96,7 @@ contains
          print *,'*******************************************'
          print *,''
       else if (bc(1,2) .eq. INTERIOR) then
-         ! this is the only thing it should call
+
       else 
          print *,''
          print *,'*******************************************'
@@ -141,11 +141,7 @@ contains
          print *,'*******************************************'
          print *,''
       else if (bc(2,1) .eq. INTERIOR) then
-         print *,''
-         print *,'*******************************************'
-         print *,'WARNING: In setbc.f90: bc(2,1) .eq. INTERIOR'
-         print *,'*******************************************'
-         print *,''
+
       else 
          print *,''
          print *,'*******************************************'
@@ -184,11 +180,7 @@ contains
          print *,'*******************************************'
          print *,''
       else if (bc(2,2) .eq. INTERIOR) then
-         print *,''
-         print *,'*******************************************'
-         print *,'WARNING: In setbc.f90: bc(2,2) .eq. INTERIOR'
-         print *,'*******************************************'
-         print *,''
+
       else 
          print *,''
          print *,'*******************************************'
@@ -245,7 +237,7 @@ contains
          print *,'*******************************************'
          print *,'' 
       else if (bc(1,1) .eq. INTERIOR) then
-         ! this is the only thing it should call
+
       else
          print *,''
          print *,'*******************************************'
@@ -285,7 +277,7 @@ contains
          print *,'*******************************************'
          print *,''         
       else if (bc(1,2) .eq. INTERIOR) then
-         ! this is the only thing it should call
+ 
       else 
          print *,''
          print *,'*******************************************'
@@ -325,7 +317,7 @@ contains
          print *,'*******************************************'
          print *,''         
       else if (bc(2,1) .eq. INTERIOR) then
-         ! this is the only thing it should call
+
       else
          print *,''
          print *,'*******************************************'
@@ -365,7 +357,7 @@ contains
          print *,'*******************************************'
          print *,''         
       else if (bc(2,2) .eq. INTERIOR) then
-         ! this is the only thing it should call
+
       else 
          print *,''
          print *,'*******************************************'
@@ -411,11 +403,7 @@ contains
          print *,'*******************************************'
          print *,''         
       else if (bc(3,1) .eq. INTERIOR) then
-         print *,''
-         print *,'*******************************************'
-         print *,'WARNING: In setbc.f90: bc(3,1) .eq. INTERIOR'
-         print *,'*******************************************'
-         print *,''         
+
       else 
          print *,''
          print *,'*******************************************'
@@ -456,11 +444,7 @@ contains
          print *,'*******************************************'
          print *,''
       else if (bc(3,2) .eq. INTERIOR) then
-         print *,''
-         print *,'*******************************************'
-         print *,'WARNING: In setbc.f90: bc(3,2) .eq. REFLECT_INTERIOR'
-         print *,'*******************************************'
-         print *,''
+
       else 
          print *,''
          print *,'*******************************************'
