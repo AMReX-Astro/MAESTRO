@@ -227,10 +227,9 @@ contains
             end if
          end select
 
-         ! add to the rhoh component of force
-         if(use_thermal_diffusion) then
+         ! add to the rhoh component of force if NOT use_temp_in_mkflux
+         if ( (.not. use_temp_in_mkflux) .and. use_thermal_diffusion) &
             call multifab_plus_plus_c(scal_force,rhoh_comp,thermal,1,1)
-         endif
 
       end do
 
@@ -251,7 +250,8 @@ contains
 !     Create the edge states of (rho h)' and (rho X)_i.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      call put_in_pert_form(sold,s0_old,dx,rhoh_comp,    1,.true.)
+      if (.not. use_temp_in_mkflux) &
+        call put_in_pert_form(sold,s0_old,dx,rhoh_comp,    1,.true.)
       call put_in_pert_form(sold,s0_old,dx,spec_comp,nspec,.true.)
 
       do i = 1, sold%nboxes
@@ -271,28 +271,19 @@ contains
             case (2)
               if (use_temp_in_mkflux) then
                 n = temp_comp
-                bc_comp = dm+n
-
-                call mkflux_2d(sop(:,:,1,:), uop(:,:,1,:), &
-                               sepx(:,:,1,:), sepy(:,:,1,:), &
-                               ump(:,:,1,1), vmp(:,:,1,1), &
-                               utp(:,:,1,1), vtp(:,:,1,1), fp(:,:,1,:), w0, &
-                               lo, dx, dt, is_vel, &
-                               the_bc_level%phys_bc_level_array(i,:,:), &
-                               the_bc_level%adv_bc_level_array(i,:,:,bc_comp:), &
-                               velpred, ng_cell, n)
               else
                 n = rhoh_comp
-                bc_comp = dm+n
-                call mkflux_2d(sop(:,:,1,:), uop(:,:,1,:), &
-                               sepx(:,:,1,:), sepy(:,:,1,:), &
-                               ump(:,:,1,1), vmp(:,:,1,1), &
-                               utp(:,:,1,1), vtp(:,:,1,1), fp(:,:,1,:), w0, &
-                               lo, dx, dt, is_vel, &
-                               the_bc_level%phys_bc_level_array(i,:,:), &
-                               the_bc_level%adv_bc_level_array(i,:,:,bc_comp:), &
-                               velpred, ng_cell, n)
               end if
+              bc_comp = dm+n
+
+              call mkflux_2d(sop(:,:,1,:), uop(:,:,1,:), &
+                             sepx(:,:,1,:), sepy(:,:,1,:), &
+                             ump(:,:,1,1), vmp(:,:,1,1), &
+                             utp(:,:,1,1), vtp(:,:,1,1), fp(:,:,1,:), w0, &
+                             lo, dx, dt, is_vel, &
+                             the_bc_level%phys_bc_level_array(i,:,:), &
+                             the_bc_level%adv_bc_level_array(i,:,:,bc_comp:), &
+                             velpred, ng_cell, n)
 
               do n = spec_comp,spec_comp+nspec-1
                 bc_comp = dm+n
@@ -306,16 +297,20 @@ contains
                                velpred, ng_cell, n)
               end do
 
-              if (use_temp_in_mkflux) then
+              if (use_temp_in_mkflux) &
                 call makeRhoHfromT_2d(sepx(:,:,1,:), sepy(:,:,1,:), lo, hi)
-              end if
 
             case (3)
               wmp  => dataptr(  umac(3), i)
               wtp  => dataptr(utrans(3), i)
               sepz => dataptr( sedge(3), i)
                w0p => dataptr(w0_cart_vec, i)
-                n = rhoh_comp
+
+                if (use_temp_in_mkflux) then
+                  n = temp_comp
+                else
+                  n = rhoh_comp
+                end if
                 bc_comp = dm+n
                 call mkflux_3d(sop(:,:,:,:), uop(:,:,:,:), &
                                sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
@@ -339,7 +334,8 @@ contains
               end do
          end select
       end do
-      call put_in_pert_form(sold,s0_old,dx,rhoh_comp,    1,.false.)
+      if (.not. use_temp_in_mkflux) &
+        call put_in_pert_form(sold,s0_old,dx,rhoh_comp,    1,.false.)
       call put_in_pert_form(sold,s0_old,dx,spec_comp,nspec,.false.)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -428,19 +424,6 @@ contains
                                 s0_old(:,:), s0_new(:,:), &
                                 lo, hi, ng_cell, dx, dt)
             
-            call multifab_fill_boundary(snew)
-            
-            do n = spec_comp,spec_comp+nspec-1
-               bc_comp = dm+n
-               call setbc_2d(snp(:,:,1,n), lo, ng_cell, &
-                    the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
-            end do
-            ! Dont forget to call setbc for density also
-            n = rho_comp
-            bc_comp = dm+n
-            call setbc_2d(snp(:,:,1,n), lo, ng_cell, &
-                          the_bc_level%adv_bc_level_array(i,:,:,bc_comp), &
-                          dx,bc_comp)
          case (3)
             wmp => dataptr(umac(3), i)
             sepz => dataptr(sedge(3), i)
@@ -466,9 +449,28 @@ contains
                                         s0p(:,:,:,:), lo, hi, domlo, domhi, &
                                         ng_cell, dx, dt)
             end if
+         end select
+      end do
             
-            call multifab_fill_boundary(snew)
-              
+      ! Make sure we do this before the calls to setbc.
+      call multifab_fill_boundary(snew)
+
+      do i = 1, snew%nboxes
+         if ( multifab_remote(snew, i) ) cycle
+         snp => dataptr(snew, i)
+         select case (dm)
+         case (2)
+            do n = spec_comp,spec_comp+nspec-1
+               bc_comp = dm+n
+               call setbc_2d(snp(:,:,1,n), lo, ng_cell, &
+                    the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
+            end do
+            ! Dont forget to call setbc for density also
+            n = rho_comp
+            bc_comp = dm+n
+            call setbc_2d(snp(:,:,1,n), lo, ng_cell, &
+                 the_bc_level%adv_bc_level_array(i,:,:,bc_comp),dx,bc_comp)
+         case (3)
             do n = spec_comp,spec_comp+nspec-1
                bc_comp = dm+n
                call setbc_3d(snp(:,:,:,n), lo, ng_cell, &
@@ -540,14 +542,6 @@ contains
                                 s0_old(:,:), s0_new(:,:), &
                                 lo, hi, ng_cell, dx, dt)
 
-            call multifab_fill_boundary(snew)
-
-            do n = trac_comp,trac_comp+ntrac-1
-               bc_comp = dm+n
-               call setbc_2d(snp(:,:,1,n), lo, ng_cell, &
-                             the_bc_level%adv_bc_level_array(i,:,:,bc_comp), &
-                             dx,bc_comp)
-            end do
          case (3)
             wmp => dataptr(umac(3), i)
             sepz => dataptr(sedge(3), i)
@@ -572,9 +566,24 @@ contains
                                          s0p(:,:,:,:), &
                                          lo, hi, domlo, domhi, ng_cell, dx, dt)
               end if
+         end select
+      end do
 
-              call multifab_fill_boundary(snew)
+      ! Make sure we do this before the calls to setbc.
+      call multifab_fill_boundary(snew)
 
+      do i = 1, snew%nboxes
+         if ( multifab_remote(snew, i) ) cycle
+         snp => dataptr(snew, i)
+         select case (dm)
+         case (2)
+            do n = trac_comp,trac_comp+ntrac-1
+               bc_comp = dm+n
+               call setbc_2d(snp(:,:,1,n), lo, ng_cell, &
+                             the_bc_level%adv_bc_level_array(i,:,:,bc_comp), &
+                             dx,bc_comp)
+            end do
+         case (3)
               do n = trac_comp,trac_comp+ntrac-1
                 bc_comp = dm+n
                 call setbc_3d(snp(:,:,:,n), lo, ng_cell, &
@@ -638,13 +647,7 @@ contains
                              sepx(:,:,1,:), sepy(:,:,1,:), fp(:,:,1,:), &
                              s0_old(:,:), s0_new(:,:), &
                              lo, hi, ng_cell, dx, dt)
-
-              call multifab_fill_boundary(snew)
               
-              call setbc_2d(snp(:,:,1,n), lo, ng_cell, &
-                            the_bc_level%adv_bc_level_array(i,:,:,bc_comp), &
-                            dx,bc_comp)
-
             case(3)
               wmp  => dataptr(umac(3), i)
               w0p => dataptr(w0_cart_vec, i)
@@ -682,9 +685,21 @@ contains
                                          s0_old(:,:), s0_new(:,:), &
                                          lo, hi, ng_cell, dx, dt)
                end if
+         end select
+      end do
 
-                call multifab_fill_boundary(snew)
+      ! Make sure we do this before the calls to setbc.
+      call multifab_fill_boundary(snew)
 
+      do i = 1, snew%nboxes
+         if ( multifab_remote(snew, i) ) cycle
+         snp => dataptr(snew, i)
+         select case (dm)
+            case (2)
+              call setbc_2d(snp(:,:,1,n), lo, ng_cell, &
+                            the_bc_level%adv_bc_level_array(i,:,:,bc_comp), &
+                            dx,bc_comp)
+            case (3)
                call setbc_3d(snp(:,:,:,n), lo, ng_cell, & 
                              the_bc_level%adv_bc_level_array(i,:,:,bc_comp), &
                              dx,bc_comp)
