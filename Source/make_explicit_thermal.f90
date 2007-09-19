@@ -32,14 +32,13 @@ subroutine make_explicit_thermal(mla,dx,thermal,s,p0,mg_verbose, &
   ! Local
   type(multifab), allocatable :: phi(:),alpha(:),beta(:),xik(:)
   type(multifab), allocatable :: kth(:),kthovercp(:),resid(:)
-  type(multifab), allocatable :: temp(:)
   integer                     :: i,k,n,nlevs,dm,stencil_order,ng_0,ng_1,ng_3
   integer                     :: lo(s(1)%dim),hi(s(1)%dim)
   real(kind=dp_t), pointer    :: thermalp(:,:,:,:),sp(:,:,:,:)
   real(kind=dp_t), pointer    :: phip(:,:,:,:),betap(:,:,:,:)
   real(kind=dp_t), pointer    :: xikp(:,:,:,:)
   real(kind=dp_t), pointer    :: kthp(:,:,:,:),kthovercpp(:,:,:,:)
-  real(kind=dp_t), pointer    :: residp(:,:,:,:),tempp(:,:,:,:)
+  real(kind=dp_t), pointer    :: residp(:,:,:,:)
 
   nlevs = mla%nlevel
   dm      = mla%dim
@@ -47,7 +46,6 @@ subroutine make_explicit_thermal(mla,dx,thermal,s,p0,mg_verbose, &
 
   allocate(phi(nlevs),alpha(nlevs),beta(nlevs),xik(nlevs))
   allocate(kth(nlevs),kthovercp(nlevs),resid(nlevs))
-  allocate(temp(nlevs))
 
   do n = 1,nlevs
      call multifab_build(         phi(n), mla%la(n), 1, 1)
@@ -57,7 +55,6 @@ subroutine make_explicit_thermal(mla,dx,thermal,s,p0,mg_verbose, &
      call multifab_build(         kth(n), mla%la(n), 1, 1)
      call multifab_build(   kthovercp(n), mla%la(n), 1, 1)
      call multifab_build(       resid(n), mla%la(n), 1, 0)
-     call multifab_build(        temp(n), mla%la(n), 1, 1)
 
      call setval(         phi(n), ZERO, all=.true.)
      call setval(       alpha(n), ZERO, all=.true.)
@@ -66,14 +63,11 @@ subroutine make_explicit_thermal(mla,dx,thermal,s,p0,mg_verbose, &
      call setval(         kth(n), ZERO, all=.true.)
      call setval(   kthovercp(n), ZERO, all=.true.)
      call setval(       resid(n), ZERO, all=.true.)
-     call setval(        temp(n), ZERO, all=.true.)
-
      call setval(     thermal(n), ZERO, all=.true.)
   end do
 
   ! create kth
   ! create kthovercp
-  ! create temp
   do n=1,nlevs
      ng_0 = resid(n)%ng
      ng_1 = phi(n)%ng
@@ -84,7 +78,6 @@ subroutine make_explicit_thermal(mla,dx,thermal,s,p0,mg_verbose, &
         sp            => dataptr(s(n),i)
         kthp          => dataptr(kth(n),i)
         kthovercpp    => dataptr(kthovercp(n),i)
-        tempp         => dataptr(temp(n),i)
         xikp          => dataptr(xik(n),i)
         lo =  lwb(get_box(s(n), i))
         hi =  upb(get_box(s(n), i))
@@ -92,14 +85,15 @@ subroutine make_explicit_thermal(mla,dx,thermal,s,p0,mg_verbose, &
         case (2)
            call make_coeffs_2d(lo,hi,dx(n,:),ng_1,ng_3,p0,sp(:,:,1,:), &
                                kthp(:,:,1,1),kthovercpp(:,:,1,1), &
-                               tempp(:,:,1,1),xikp(:,:,1,:))
+                               xikp(:,:,1,:))
         case (3)
            call make_coeffs_3d(lo,hi,dx(n,:),ng_1,ng_3,p0,sp(:,:,:,:), &
                                kthp(:,:,:,1),kthovercpp(:,:,:,1), &
-                               tempp(:,:,:,1),xikp(:,:,:,:))
+                               xikp(:,:,:,:))
         end select
      end do
   enddo
+
 
   if(temperature_diffusion) then
      ! load T into phi
@@ -110,7 +104,7 @@ subroutine make_explicit_thermal(mla,dx,thermal,s,p0,mg_verbose, &
         
         do i=1,s(n)%nboxes
            if (multifab_remote(s(n),i)) cycle
-           tempp => dataptr(temp(n),i)
+           sp => dataptr(s(n),i)
            kthp => dataptr(kth(n),i)
            phip => dataptr(phi(n),i)
            betap => dataptr(beta(n),i)
@@ -118,10 +112,10 @@ subroutine make_explicit_thermal(mla,dx,thermal,s,p0,mg_verbose, &
            hi =  upb(get_box(s(n), i))
            select case (dm)
            case (2)
-              call setup_T_op_2d(lo,hi,ng_1,tempp(:,:,1,1), &
+              call setup_T_op_2d(lo,hi,ng_1,ng_3,sp(:,:,1,:), &
                    kthp(:,:,1,1),phip(:,:,1,1),betap(:,:,1,:))
            case (3)
-              call setup_T_op_3d(lo,hi,ng_1,tempp(:,:,:,1), &
+              call setup_T_op_3d(lo,hi,ng_1,ng_3,sp(:,:,:,:), &
                    kthp(:,:,:,1),phip(:,:,:,1),betap(:,:,:,:))
            end select
         end do
@@ -223,10 +217,9 @@ subroutine make_explicit_thermal(mla,dx,thermal,s,p0,mg_verbose, &
      call destroy(kth(n))
      call destroy(kthovercp(n))
      call destroy(resid(n))
-     call destroy(temp(n))
   enddo
 
-  deallocate(phi,alpha,beta,xik,kth,kthovercp,resid,temp)
+  deallocate(phi,alpha,beta,xik,kth,kthovercp,resid)
 
 end subroutine make_explicit_thermal
 
@@ -234,8 +227,7 @@ end subroutine make_explicit_thermal
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! create kth
 ! create kthovercp
-! create temp
-subroutine make_coeffs_2d(lo,hi,dx,ng_1,ng_3,p0,s,kth,kthovercp,temp,xik)
+subroutine make_coeffs_2d(lo,hi,dx,ng_1,ng_3,p0,s,kth,kthovercp,xik)
 
   integer        , intent(in   ) :: lo(:),hi(:)
   real(dp_t)    ,  intent(in   ) :: dx(:)
@@ -244,7 +236,6 @@ subroutine make_coeffs_2d(lo,hi,dx,ng_1,ng_3,p0,s,kth,kthovercp,temp,xik)
   real(kind=dp_t), intent(in   ) :: s(lo(1)-ng_3:,lo(2)-ng_3:,:)
   real(kind=dp_t), intent(inout) :: kth(lo(1)-ng_1:,lo(2)-ng_1:)
   real(kind=dp_t), intent(inout) :: kthovercp(lo(1)-ng_1:,lo(2)-ng_1:)
-  real(kind=dp_t), intent(inout) :: temp(lo(1)-ng_1:,lo(2)-ng_1:)
   real(kind=dp_t), intent(inout) :: xik(lo(1)-ng_1:,lo(2)-ng_1:,:)
 
   ! local
@@ -275,7 +266,6 @@ subroutine make_coeffs_2d(lo,hi,dx,ng_1,ng_3,p0,s,kth,kthovercp,temp,xik)
 
         kth(i,j) = conduct_row(1)
         kthovercp(i,j) = conduct_row(1)/cp_row(1)
-        temp(i,j) = temp_row(1)
 
         do n=1,nspec
            xik(i,j,n) = dhdX_row(1,n)
@@ -293,8 +283,7 @@ end subroutine make_coeffs_2d
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! create kth
 ! create kthovercp
-! create temp
-subroutine make_coeffs_3d(lo,hi,dx,ng_1,ng_3,p0,s,kth,kthovercp,temp,xik)
+subroutine make_coeffs_3d(lo,hi,dx,ng_1,ng_3,p0,s,kth,kthovercp,xik)
 
   integer        , intent(in   ) :: lo(:),hi(:)
   real(dp_t)    ,  intent(in   ) :: dx(:)
@@ -303,7 +292,6 @@ subroutine make_coeffs_3d(lo,hi,dx,ng_1,ng_3,p0,s,kth,kthovercp,temp,xik)
   real(kind=dp_t), intent(in   ) :: s(lo(1)-ng_3:,lo(2)-ng_3:,lo(3)-ng_3:,:)
   real(kind=dp_t), intent(inout) :: kth(lo(1)-ng_1:,lo(2)-ng_1:,lo(3)-ng_1:)
   real(kind=dp_t), intent(inout) :: kthovercp(lo(1)-ng_1:,lo(2)-ng_1:,lo(3)-ng_1:)
-  real(kind=dp_t), intent(inout) :: temp(lo(1)-ng_1:,lo(2)-ng_1:,lo(3)-ng_1:)
   real(kind=dp_t), intent(inout) :: xik(lo(1)-ng_1:,lo(2)-ng_1:,lo(3)-ng_1:,:)
 
   ! local
@@ -340,7 +328,6 @@ subroutine make_coeffs_3d(lo,hi,dx,ng_1,ng_3,p0,s,kth,kthovercp,temp,xik)
 
            kth(i,j,k) = conduct_row(1)
            kthovercp(i,j,k) = conduct_row(1)/cp_row(1)
-           temp(i,j,k) = temp_row(1)
 
            do n=1,nspec
               xik(i,j,k,n) = dhdX_row(1,n)
@@ -359,11 +346,11 @@ end subroutine make_coeffs_3d
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! load T into phi
 ! setup beta for T term
-subroutine setup_T_op_2d(lo,hi,ng_1,temp,kth,phi,beta)
+subroutine setup_T_op_2d(lo,hi,ng_1,ng_3,s,kth,phi,beta)
 
   integer        , intent(in   ) :: lo(:),hi(:)
-  integer        , intent(in   ) :: ng_1
-  real(kind=dp_t), intent(in   ) :: temp(lo(1)-ng_1:,lo(2)-ng_1:)
+  integer        , intent(in   ) :: ng_1,ng_3
+  real(kind=dp_t), intent(in   ) :: s(lo(1)-ng_3:,lo(2)-ng_3:,:)
   real(kind=dp_t), intent(in   ) :: kth(-ng_1:,-ng_1:)
   real(kind=dp_t), intent(inout) :: phi(lo(1)-ng_1:,lo(2)-ng_1:)
   real(kind=dp_t), intent(inout) :: beta(-ng_1:,-ng_1:,:)
@@ -376,7 +363,7 @@ subroutine setup_T_op_2d(lo,hi,ng_1,temp,kth,phi,beta)
 
   do j=lo(2)-1,hi(2)+1
      do i=lo(1)-1,hi(1)+1
-        phi(i,j) = temp(i,j)
+        phi(i,j) = s(i,j,temp_comp)
      enddo
   enddo
 
@@ -399,11 +386,11 @@ end subroutine setup_T_op_2d
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! load T into phi
 ! setup beta for T term
-subroutine setup_T_op_3d(lo,hi,ng_1,temp,kth,phi,beta)
+subroutine setup_T_op_3d(lo,hi,ng_1,ng_3,s,kth,phi,beta)
 
   integer        , intent(in   ) :: lo(:),hi(:)
-  integer        , intent(in   ) :: ng_1
-  real(kind=dp_t), intent(in   ) :: temp(lo(1)-ng_1:,lo(2)-ng_1:,lo(3)-ng_1:)
+  integer        , intent(in   ) :: ng_1,ng_3
+  real(kind=dp_t), intent(in   ) :: s(lo(1)-ng_3:,lo(2)-ng_3:,lo(3)-ng_3:,:)
   real(kind=dp_t), intent(in   ) :: kth(-ng_1:,-ng_1:,-ng_1:)
   real(kind=dp_t), intent(inout) :: phi(lo(1)-ng_1:,lo(2)-ng_1:,lo(3)-ng_1:)
   real(kind=dp_t), intent(inout) :: beta(-ng_1:,-ng_1:,-ng_1:,:)
@@ -418,7 +405,7 @@ subroutine setup_T_op_3d(lo,hi,ng_1,temp,kth,phi,beta)
   do k=lo(3)-1,hi(3)+1
      do j=lo(2)-1,hi(2)+1
         do i=lo(1)-1,hi(1)+1
-           phi(i,j,k) = temp(i,j,k)
+           phi(i,j,k) = s(i,j,k,temp_comp)
         enddo
      enddo
   enddo
