@@ -4,6 +4,7 @@ f90sources += hgproject.f90
 f90sources += scalar_advance.f90
 f90sources += velocity_advance.f90
 f90sources += initdata.f90
+f90sources += base_state.f90
 f90sources += make_plot_variables.f90
 f90sources += make_macrhs.f90
 f90sources += make_hgrhs.f90
