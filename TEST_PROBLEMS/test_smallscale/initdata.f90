@@ -17,12 +17,11 @@ module init_module
 
 contains
 
-  subroutine initscalardata (s,s0,p0,dx,perturb_model, &
-                             prob_lo,prob_hi,bc)
+  subroutine initscalardata (s,s0,p0,dx,perturb_model,prob_lo,prob_hi,bc)
 
     type(multifab) , intent(inout) :: s
-    real(kind=dp_t), intent(inout) ::    s0(0:,:)
-    real(kind=dp_t), intent(in   ) ::    p0(0:)
+    real(kind=dp_t), intent(inout) :: s0(0:,:)
+    real(kind=dp_t), intent(in   ) :: p0(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
     logical,         intent(in   ) :: perturb_model
     real(kind=dp_t), intent(in   ) :: prob_lo(:)
@@ -44,19 +43,34 @@ contains
        select case (dm)
        case (2)
           call initscalardata_2d(sop(:,:,1,:), lo, hi, ng, dx, perturb_model, &
-                                 prob_lo, prob_hi, s0, p0)
+                                 prob_lo, prob_hi, s0)
        case (3)
           call initscalardata_3d(sop(:,:,:,:), lo, hi, ng, dx, perturb_model, &
-                                 prob_lo, prob_hi, s0, p0)
+                                 prob_lo, prob_hi, s0)
        end select
     end do
 
     ! note: multifab_fill_boundary and setbc are called in varden
 
+    do i = 1, s%nboxes
+       if ( multifab_remote(s, i) ) cycle
+       sop => dataptr(s, i)
+       lo =  lwb(get_box(s, i))
+       hi =  upb(get_box(s, i))
+       select case (dm)
+       case (2)
+          call zerobasestate_2d(sop(:,:,1,:), lo, hi, ng, dx, perturb_model, &
+                                 prob_lo, prob_hi, s0)
+       case (3)
+          call zerobasestate_3d(sop(:,:,:,:), lo, hi, ng, dx, perturb_model, &
+                                 prob_lo, prob_hi, s0)
+       end select
+    end do
+
   end subroutine initscalardata
 
   subroutine initscalardata_2d (s,lo,hi,ng,dx, perturb_model, &
-                                prob_lo,prob_hi,s0,p0)
+                                prob_lo,prob_hi,s0)
 
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,:)  
@@ -65,13 +79,9 @@ contains
     real (kind = dp_t), intent(in ) :: prob_lo(:)
     real (kind = dp_t), intent(in ) :: prob_hi(:)
     real(kind=dp_t), intent(inout) ::    s0(0:,:)
-    real(kind=dp_t), intent(in   ) ::    p0(0:)
 
     !     Local variables
     integer :: i, j, n
-    real(kind=dp_t) :: x,y,r,r0,r1,r2,temp
-    real(kind=dp_t) :: dens_pert, rhoh_pert, temp_pert
-    real(kind=dp_t) :: rhoX_pert(nspec), trac_pert(ntrac)
 
     ! initial the domain with the base state
     s = ZERO
@@ -84,19 +94,11 @@ contains
           enddo
        enddo
     enddo
-
-   ! HACK HACK HACK
-    do j = lo(2), hi(2)
-       s0(j,rho_comp)                    = 0.d0
-       s0(j,rhoh_comp)                   = 0.d0
-       s0(j,spec_comp:spec_comp+nspec-1) = 0.d0
-       s0(j,temp_comp)                   = 0.d0
-    enddo
     
   end subroutine initscalardata_2d
 
   subroutine initscalardata_3d (s,lo,hi,ng,dx, perturb_model, &
-                                prob_lo,prob_hi,s0,p0)
+                                prob_lo,prob_hi,s0)
 
     implicit none
 
@@ -107,13 +109,9 @@ contains
     real (kind = dp_t), intent(in ) :: prob_lo(:)
     real (kind = dp_t), intent(in ) :: prob_hi(:)
     real(kind=dp_t), intent(inout) ::    s0(0:,:)
-    real(kind=dp_t), intent(in   ) ::    p0(0:)
 
     !     Local variables
     integer :: i, j, k, n
-    real(kind=dp_t) :: x,y,z,r,r0,r1,r2,temp
-    real(kind=dp_t) :: dens_pert, rhoh_pert, temp_pert
-    real(kind=dp_t) :: rhoX_pert(nspec), trac_pert(ntrac)
 
     ! initial the domain with the base state
     s = ZERO
@@ -133,14 +131,57 @@ contains
              enddo
           enddo
        enddo
-       
-       ! set density in base state to the constant, "bottom domain" value
-       do k=lo(3),hi(3)
-          s0(k,rho_comp) = s0(k,rho_comp)
-       enddo
     end if
     
   end subroutine initscalardata_3d
+
+  subroutine zerobasestate_2d (s,lo,hi,ng,dx, perturb_model, &
+                               prob_lo,prob_hi,s0)
+
+    integer, intent(in) :: lo(:), hi(:), ng
+    real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,:)  
+    real (kind = dp_t), intent(in ) :: dx(:)
+    logical,            intent(in ) :: perturb_model
+    real (kind = dp_t), intent(in ) :: prob_lo(:)
+    real (kind = dp_t), intent(in ) :: prob_hi(:)
+    real(kind=dp_t), intent(inout) ::    s0(0:,:)
+
+    !     Local variables
+    integer :: j
+
+    do j = lo(2),hi(2)
+       s0(j,rho_comp)                    = 0.d0
+       s0(j,rhoh_comp)                   = 0.d0
+       s0(j,spec_comp:spec_comp+nspec-1) = 0.d0
+       s0(j,temp_comp)                   = 0.d0
+    enddo
+    
+  end subroutine zerobasestate_2d
+
+  subroutine zerobasestate_3d (s,lo,hi,ng,dx, perturb_model, &
+                               prob_lo,prob_hi,s0)
+
+    implicit none
+
+    integer, intent(in) :: lo(:), hi(:), ng
+    real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
+    real (kind = dp_t), intent(in ) :: dx(:)
+    logical,            intent(in ) :: perturb_model
+    real (kind = dp_t), intent(in ) :: prob_lo(:)
+    real (kind = dp_t), intent(in ) :: prob_hi(:)
+    real(kind=dp_t), intent(inout) ::    s0(0:,:)
+
+    !     Local variables
+    integer :: k
+
+    do k = lo(3),hi(3)
+       s0(k,rho_comp)                    = 0.d0
+       s0(k,rhoh_comp)                   = 0.d0
+       s0(k,spec_comp:spec_comp+nspec-1) = 0.d0
+       s0(k,temp_comp)                   = 0.d0
+    enddo
+    
+  end subroutine zerobasestate_3d
 
   subroutine initveldata (u,s0,p0,dx,prob_lo,prob_hi,bc)
 
@@ -167,10 +208,10 @@ contains
        select case (dm)
        case (2)
           call initveldata_2d(uop(:,:,1,:), lo, hi, ng, dx, &
-                              prob_lo, prob_hi, s0, p0)
+                              prob_lo, prob_hi, s0)
        case (3)
           call initveldata_3d(uop(:,:,:,:), lo, hi, ng, dx, &
-                              prob_lo, prob_hi, s0, p0)
+                              prob_lo, prob_hi, s0)
        end select
     end do
 
@@ -179,7 +220,7 @@ contains
   end subroutine initveldata
 
   subroutine initveldata_2d (u,lo,hi,ng,dx, &
-                             prob_lo,prob_hi,s0,p0)
+                             prob_lo,prob_hi,s0)
 
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(out) :: u(lo(1)-ng:,lo(2)-ng:,:)  
@@ -187,7 +228,6 @@ contains
     real (kind = dp_t), intent(in ) :: prob_lo(:)
     real (kind = dp_t), intent(in ) :: prob_hi(:)
     real(kind=dp_t), intent(in   ) ::    s0(0:,:)
-    real(kind=dp_t), intent(in   ) ::    p0(0:)
 
     ! local
     integer ndum, i, dm
@@ -218,7 +258,7 @@ contains
   end subroutine initveldata_2d
 
   subroutine initveldata_3d (u,lo,hi,ng,dx, &
-                             prob_lo,prob_hi,s0,p0)
+                             prob_lo,prob_hi,s0)
 
     implicit none
 
@@ -228,7 +268,6 @@ contains
     real (kind = dp_t), intent(in ) :: prob_lo(:)
     real (kind = dp_t), intent(in ) :: prob_hi(:)
     real(kind=dp_t), intent(in   ) ::    s0(0:,:)
-    real(kind=dp_t), intent(in   ) ::    p0(0:)
 
     ! local
     integer ndum, i, dm
