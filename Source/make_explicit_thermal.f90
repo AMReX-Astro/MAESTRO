@@ -202,6 +202,7 @@ subroutine make_explicit_thermal(mla,dx,thermal,s,p0,mg_verbose, &
         ! scale residual by sigma/rho and add to thermal
         do n=1,nlevs
            call multifab_plus_plus_c(thermal(n),1,resid(n),1,1,0)
+           call multifab_fill_boundary(thermal(n))
         enddo
      enddo
   endif
