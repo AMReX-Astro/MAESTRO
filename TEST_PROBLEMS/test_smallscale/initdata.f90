@@ -87,16 +87,10 @@ contains
 
    ! HACK HACK HACK
     do j = lo(2), hi(2)
-       do i = lo(1), hi(1)
-          s0(j,rho_comp)  = 1.d0
-          s0(j,rhoh_comp) = 0.d0
-          s0(j,spec_comp:spec_comp+nspec-1) = 0.d0
-       enddo
-    enddo
-    
-    ! set density in base state to the constant, "bottom domain" value
-    do j=lo(2),hi(2)
-       s0(j,rho_comp) = s0(j,rho_comp)
+       s0(j,rho_comp)                    = 0.d0
+       s0(j,rhoh_comp)                   = 0.d0
+       s0(j,spec_comp:spec_comp+nspec-1) = 0.d0
+       s0(j,temp_comp)                   = 0.d0
     enddo
     
   end subroutine initscalardata_2d
