@@ -1,11 +1,12 @@
 &PROBIN
- test_set = "gr0_2d_smallscale"
+ test_set = "gr0_2d_smallscale_multgrids"
+ !test_set = "gr0_2d_smallscale"
  spherical_in = 0
 
  prob_hi_x = 0.25
  prob_hi_y = 2.0
 
- max_step  = 0
+ max_step  = 80
  init_iter = 1
 
  stop_time = 2.5
@@ -36,7 +37,7 @@
 
  use_thermal_diffusion = T
  temp_diffusion_formulation = F
- use_temp_in_mkflux = F
+ use_temp_in_mkflux = T
  do_half_alg = T
 
  use_big_h = T
