@@ -56,6 +56,9 @@ contains
        end select
     end do
 
+    ! Fill ghost cells on periodic boundaries and in between patches
+    call multifab_fill_boundary(s_out)
+
     do i = 1, s_in%nboxes
        if ( multifab_remote(s_in, i) ) cycle
        sotp => dataptr(s_out, i)
@@ -63,8 +66,6 @@ contains
        hi =  upb(get_box(s_in, i))
        select case (dm)
        case (2)
-          ! Fill ghost cells on periodic boundaries and in between patches
-          call multifab_fill_boundary(s_out)
           ! Impose bc's
           do n = rho_comp,rho_comp+nscal-1
              bc_comp = dm+n 
@@ -73,8 +74,6 @@ contains
                            dx,bc_comp)
           enddo
        case (3)
-          ! Fill ghost cells on periodic boundaries and in between patches
-          call multifab_fill_boundary(s_out)
           ! Impose bc's
           do n = rho_comp,rho_comp+nscal-1
              bc_comp = dm+n 

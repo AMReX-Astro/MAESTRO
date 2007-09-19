@@ -84,19 +84,30 @@ contains
          case (2)
             call make_at_halftime_2d(rhp(:,:,1,out_comp),rop(:,:,1,in_comp), &
                                      rnp(:,:,1,in_comp),lo,hi,ng_h,ng_o)
-            
+         case (3)
+            call make_at_halftime_3d(rhp(:,:,:,out_comp),rop(:,:,:,in_comp), &
+                                     rnp(:,:,:,in_comp),lo,hi,ng_h,ng_o)
+         end select
+      end do
+
+      if (ng_h .gt. 0) then
+         call multifab_fill_boundary(phihalf)
+      endif
+
+      do i = 1, phihalf%nboxes
+         if ( multifab_remote(phihalf, i) ) cycle
+         rhp => dataptr(phihalf, i)
+         lo =  lwb(get_box(phihalf, i))
+         select case (dm)
+         case (2)
             if (ng_h .gt. 0) then
-               call multifab_fill_boundary(phihalf)
                bc_comp = dm+in_comp
                call setbc_2d(rhp(:,:,1,out_comp), lo, ng_h, &
                              the_bc_level%adv_bc_level_array(i,:,:,bc_comp), &
                              dx,bc_comp)
             end if
          case (3)
-            call make_at_halftime_3d(rhp(:,:,:,out_comp),rop(:,:,:,in_comp), &
-                                     rnp(:,:,:,in_comp),lo,hi,ng_h,ng_o)
             if (ng_h .gt. 0) then
-               call multifab_fill_boundary(phihalf)
                bc_comp = dm+in_comp
                call setbc_3d(rhp(:,:,:,out_comp), lo, ng_h, &
                              the_bc_level%adv_bc_level_array(i,:,:,bc_comp), &
