@@ -86,6 +86,7 @@ contains
               call make_hgrhs_3d(lo,hi,hp(:,:,:,1),rp(:,:,:,1))
          end select
       end do
+      call multifab_fill_boundary(hgrhs)
 
       call multifab_destroy(rhs_cc)
       if (spherical .eq. 1) then

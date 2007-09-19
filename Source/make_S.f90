@@ -58,6 +58,7 @@ contains
                              thermalp(:,:,:,1), ng, t0, gam1, dx)
          end select
       end do
+      call multifab_fill_boundary(Source)
 
    end subroutine make_S
 
