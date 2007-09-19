@@ -183,12 +183,12 @@ contains
     do j = lo(2),hi(2)
        do i = lo(1),hi(1)
 
-         temp_row(1) = s(i,j,temp_comp)
+          temp_row(1) = s(i,j,temp_comp)
           den_row(1) = s(i,j,rho_comp)
           xn_zone(:) = s(i,j,spec_comp:)/den_row(1)
-            p_row(1) = p0(j)
 
-         input_flag = 3      ! (t, p) -> (rho, h)
+          ! dens, temp, xmass inputs
+          input_flag = 1
 
          call eos(input_flag, den_row, temp_row, &
                   npts, nspec, &
@@ -233,12 +233,12 @@ contains
      do j = lo(2),hi(2)
        do i = lo(1),hi(1)
 
-         temp_row(1) = s(i,j,k,temp_comp)
+          temp_row(1) = s(i,j,k,temp_comp)
           den_row(1) = s(i,j,k,rho_comp)
           xn_zone(:) = s(i,j,k,spec_comp:)/den_row(1)
-            p_row(1) = p0(j)
-
-         input_flag = 3      ! (t, p) -> (rho, h)
+          
+          ! dens, temp, xmass inputs
+          input_flag = 1
 
          call eos(input_flag, den_row, temp_row, &
                   npts, nspec, &
@@ -290,12 +290,12 @@ contains
      do j = lo(2),hi(2)
        do i = lo(1),hi(1)
 
-         temp_row(1) = s(i,j,k,temp_comp)
+          temp_row(1) = s(i,j,k,temp_comp)
           den_row(1) = s(i,j,k,rho_comp)
           xn_zone(:) = s(i,j,k,spec_comp:)/den_row(1)
-            p_row(1) = p0_cart(i,j,k)
-
-         input_flag = 3      ! (t, p) -> (rho, h)
+          
+          ! dens, temp, xmass inputs
+          input_flag = 1
 
          call eos(input_flag, den_row, temp_row, &
                   npts, nspec, &
