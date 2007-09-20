@@ -5,6 +5,7 @@ module setbc_module
   use bc_module
   use inlet_bc_module
   use probin_module
+  use network
 
   implicit none
 
@@ -111,9 +112,15 @@ contains
          if (icomp.eq.2) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_VN
          if (icomp.eq.3) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_RHO
          if (icomp.eq.4) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_RHOH
-         if (icomp.eq.5) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_RHOC12
-         if (icomp.eq.6) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_RHOMG24
-         if (icomp.eq.7) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_RHOO16
+         if (icomp .eq. 5 .or. icomp .eq. 6 .or. icomp .eq. 7) then
+            if(spec_names(icomp-4) .eq. "carbon-12") then
+               s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_RHOC12
+            else if(spec_names(icomp-4) .eq. "magnesium-24") then
+               s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_RHOMG24
+            else if(spec_names(icomp-4) .eq. "oxygen-16") then
+               s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_RHOO16
+            endif
+         endif
          if (icomp.eq.8) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_TEMP
          if (icomp.eq.9) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_TRA
       else if (bc(2,1) .eq. FOEXTRAP) then
@@ -373,9 +380,15 @@ contains
          if (icomp.eq.3) s(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-ng:lo(3)-1) = INLET_VN
          if (icomp.eq.4) s(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-ng:lo(3)-1) = INLET_RHO
          if (icomp.eq.5) s(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-ng:lo(3)-1) = INLET_RHOH
-         if (icomp.eq.6) s(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-ng:lo(3)-1) = INLET_RHOC12
-         if (icomp.eq.7) s(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-ng:lo(3)-1) = INLET_RHOMG24
-         if (icomp.eq.8) s(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-ng:lo(3)-1) = INLET_RHOO16
+         if (icomp .eq. 6 .or. icomp .eq. 7 .or. icomp .eq. 8) then
+            if(spec_names(icomp-5) .eq. "carbon-12") then
+               s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1,lo(3)-ng:lo(3)-1) = INLET_RHOC12
+            else if(spec_names(icomp-5) .eq. "magnesium-24") then
+               s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1,lo(3)-ng:lo(3)-1) = INLET_RHOMG24
+            else if(spec_names(icomp-5) .eq. "oxygen-16") then
+               s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1,lo(3)-ng:lo(3)-1) = INLET_RHOO16
+            endif
+         endif
          if (icomp.eq.9) s(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-ng:lo(3)-1) = INLET_TEMP
          if(icomp.eq.10) s(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-ng:lo(3)-1) = INLET_TRA
       else if (bc(3,1) .eq. FOEXTRAP .or. bc(3,1) .eq. REFLECT_EVEN) then
