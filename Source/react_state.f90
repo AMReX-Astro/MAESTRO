@@ -141,25 +141,26 @@ contains
 
           ! now compute temperature and put it into s_out
           ! dens, enthalpy, and xmass are inputs
-          input_flag = 2
-
-          den_row(1) = rho
-          h_row(1) = h_out
-          xn_zone(:) = x_out(1:nspec)
-          temp_row(1) = T_in
-
-          call eos(input_flag, den_row, temp_row, &
-               npts, nspec, &
-               xn_zone, aion, zion, &
-               p_row, h_row, e_row, &
-               cv_row, cp_row, xne_row, eta_row, pele_row, &
-               dpdt_row, dpdr_row, dedt_row, dedr_row, &
-               dpdX_row, dhdX_row, &
-               gam1_row, cs_row, s_row, &
-               dsdt_row, dsdr_row, &
-               do_diag)
-
-          s_out(i,j,temp_comp) = temp_row(1)
+!          input_flag = 2
+!
+!          den_row(1) = rho
+!          h_row(1) = h_out
+!          xn_zone(:) = x_out(1:nspec)
+!          temp_row(1) = T_in
+!
+!          call eos(input_flag, den_row, temp_row, &
+!               npts, nspec, &
+!               xn_zone, aion, zion, &
+!               p_row, h_row, e_row, &
+!               cv_row, cp_row, xne_row, eta_row, pele_row, &
+!               dpdt_row, dpdr_row, dedt_row, dedr_row, &
+!               dpdX_row, dhdX_row, &
+!               gam1_row, cs_row, s_row, &
+!               dsdt_row, dsdr_row, &
+!               do_diag)
+!
+!          s_out(i,j,temp_comp) = temp_row(1)
+          s_out(i,j,temp_comp) = s_in(i,j,temp_comp)
 
        enddo
     enddo
@@ -234,25 +235,26 @@ contains
   
           ! now compute temperature and put it into s_out
           ! dens, enthalpy, and xmass are inputs
-          input_flag = 2
-
-          den_row(1) = rho
-           h_row(1) = h_out
-          xn_zone(:) = x_out(1:nspec)
-         temp_row(1) = T_in
-
-          call eos(input_flag, den_row, temp_row, &
-               npts, nspec, &
-               xn_zone, aion, zion, &
-               p_row, h_row, e_row, &
-               cv_row, cp_row, xne_row, eta_row, pele_row, &
-               dpdt_row, dpdr_row, dedt_row, dedr_row, &
-               dpdX_row, dhdX_row, &
-               gam1_row, cs_row, s_row, &
-               dsdt_row, dsdr_row, &
-               do_diag)
-
-          s_out(i,j,k,temp_comp) = temp_row(1)
+!          input_flag = 2
+!
+!          den_row(1) = rho
+!           h_row(1) = h_out
+!          xn_zone(:) = x_out(1:nspec)
+!         temp_row(1) = T_in
+!
+!          call eos(input_flag, den_row, temp_row, &
+!               npts, nspec, &
+!               xn_zone, aion, zion, &
+!               p_row, h_row, e_row, &
+!               cv_row, cp_row, xne_row, eta_row, pele_row, &
+!               dpdt_row, dpdr_row, dedt_row, dedr_row, &
+!               dpdX_row, dhdX_row, &
+!               gam1_row, cs_row, s_row, &
+!               dsdt_row, dsdr_row, &
+!               do_diag)
+!
+!          s_out(i,j,k,temp_comp) = temp_row(1)
+          s_out(i,j,k,temp_comp) = s_in(i,j,k,temp_comp)
 
        enddo
      enddo
