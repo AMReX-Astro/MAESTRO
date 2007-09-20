@@ -14,6 +14,7 @@ module advance_timestep_module
   use macproject_module
   use hgrhs_module
   use hgproject_module
+  use proj_parameters
   use bc_module
   use bl_mem_stat_module
   use bl_timer_module
@@ -46,7 +47,7 @@ module advance_timestep_module
                                 grav_cell_old, &
                                 dx,time,dt,dtold,the_bc_tower, &
                                 anelastic_cutoff,verbose,mg_verbose,cg_verbose,&
-                                Source_nm1,Source_old,Source_new,gamma1_term,sponge,do_sponge)
+                                Source_nm1,Source_old,Source_new,gamma1_term,sponge,do_sponge,hgrhs)
 
     implicit none
 
@@ -74,6 +75,7 @@ module advance_timestep_module
     type(multifab), intent(inout) :: Source_old(:)
     type(multifab), intent(inout) :: Source_new(:)
     type(multifab), intent(inout) :: gamma1_term(:)
+    type(multifab), intent(inout) :: hgrhs(:)
     real(dp_t)    , intent(inout) :: s0_old(0:,:)
     real(dp_t)    , intent(inout) :: s0_1(0:,:)
     real(dp_t)    , intent(inout) :: s0_2(0:,:)
@@ -100,7 +102,7 @@ module advance_timestep_module
     type(multifab), allocatable :: w0_force_cart_vec(:)
     type(multifab), allocatable :: macrhs(:)
     type(multifab), allocatable :: macphi(:)
-    type(multifab), allocatable ::  hgrhs(:)
+    type(multifab), allocatable ::  hgrhs_old(:)
     type(multifab), allocatable :: Source_nph(:)
     type(multifab), allocatable :: thermal(:)
 
@@ -123,7 +125,7 @@ module advance_timestep_module
     type(box)      ::  fine_domain
     real(dp_t)     :: halfdt, eps_in
     integer :: i,j,n,dm,nlevs
-    integer :: nr,ng_cell
+    integer :: nr,ng_cell,proj_type
     integer, allocatable :: lo(:),hi(:)
     logical :: nodal(mla%dim)
 
@@ -143,7 +145,7 @@ module advance_timestep_module
     allocate(w0_force_cart_vec(nlevs))
     allocate(macrhs(nlevs))
     allocate(macphi(nlevs))
-    allocate( hgrhs(nlevs))
+    allocate( hgrhs_old(nlevs))
     allocate(thermal(nlevs))
     
     ! nr is the number of zones in a cell-centered basestate quantity
@@ -178,7 +180,7 @@ module advance_timestep_module
      call multifab_build(Source_nph(n), mla%la(n),     1, 0)
      call multifab_build(    macrhs(n), mla%la(n),     1, 0)
      call multifab_build(    macphi(n), mla%la(n),     1, 1)
-     call multifab_build(     hgrhs(n), mla%la(n),     1, 0, nodal)
+     call multifab_build(     hgrhs_old(n), mla%la(n), 1, 0, nodal)
      call multifab_build(   thermal(n), mla%la(n),     1, 0)
 
      call setval(macphi(n),ZERO,all=.true.)
@@ -306,7 +308,7 @@ module advance_timestep_module
           p0_2(:  ) = p0_1(:  )
           s0_2(:,:) = s0_1(:,:)
         end if
-
+        
         if(use_thermal_diffusion) then
            call make_explicit_thermal(mla,dx,thermal,s1,p0_1, &
                                       mg_verbose,cg_verbose,the_bc_tower, &
@@ -606,6 +608,7 @@ module advance_timestep_module
         end do
 
         do n = 1,nlevs
+           call multifab_copy(hgrhs_old(n),hgrhs(n))
            call make_hgrhs(hgrhs(n),Source_new(n),gamma1_term(n),Sbar(:,1),div_coeff_new,dx(n,:))
         end do
 
@@ -615,6 +618,14 @@ module advance_timestep_module
         end do
 
 !       Project the new velocity field.
+        if (init_mode) then
+          proj_type = pressure_iters
+          do n = 1,nlevs
+             call multifab_sub_sub(hgrhs(n),hgrhs_old(n))
+          end do
+        else
+          proj_type = regular_timestep
+        end if
         if (spherical .eq. 1) then
           do n = 1,nlevs
             do i = 1,div_coeff_3d(n)%nboxes
@@ -626,11 +637,11 @@ module advance_timestep_module
             end do
           end do
           eps_in = 1.d-12
-          call hgproject(mla, unew, rhohalf, p, gp, dx, dt, &
+          call hgproject(proj_type, mla, unew, uold, rhohalf, p, gp, dx, dt, &
                          the_bc_tower, verbose, mg_verbose, cg_verbose, press_comp, &
                          hgrhs, div_coeff_3d=div_coeff_3d, eps_in = eps_in)
         else
-          call hgproject(mla, unew, rhohalf, p, gp, dx, dt, &
+          call hgproject(proj_type, mla, unew, uold, rhohalf, p, gp, dx, dt, &
                          the_bc_tower, verbose, mg_verbose, cg_verbose, press_comp, &
                          hgrhs, div_coeff_1d=div_coeff_nph)
         end if
@@ -647,7 +658,7 @@ module advance_timestep_module
           call destroy(Source_nph(n))
           call destroy(macrhs(n))
           call destroy(macphi(n))
-          call destroy( hgrhs(n))
+          call destroy( hgrhs_old(n))
           call destroy(thermal(n))
           call destroy(rhohalf(n))
           if (spherical .eq. 1) &
@@ -656,7 +667,7 @@ module advance_timestep_module
         deallocate(Source_nph)
         deallocate(macrhs)
         deallocate(macphi)
-        deallocate( hgrhs)
+        deallocate( hgrhs_old)
         deallocate(thermal)
         deallocate(rhohalf)
 
