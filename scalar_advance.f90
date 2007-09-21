@@ -20,7 +20,7 @@ module scalar_advance_module
 
 contains
 
-   subroutine scalar_advance (uold, sold, snew, thermal, &
+   subroutine scalar_advance (which_step, uold, sold, snew, thermal, &
                               umac, w0, w0_cart_vec, sedge, utrans, &
                               ext_scal_force, normal, &
                               s0_old , s0_new , &
@@ -28,6 +28,7 @@ contains
                               dx, dt, the_bc_level, &
                               verbose)
  
+      integer        , intent(in   ) :: which_step
       type(multifab) , intent(inout) :: uold
       type(multifab) , intent(inout) :: sold
       type(multifab) , intent(inout) :: snew
@@ -417,7 +418,7 @@ contains
          hi =  upb(get_box(sold, i))
          select case (dm)
          case (2)
-            call update_scal_2d(spec_comp, spec_comp+nspec-1, &
+            call update_scal_2d(which_step, spec_comp, spec_comp+nspec-1, &
                                 sop(:,:,1,:), snp(:,:,1,:), &
                                 ump(:,:,1,1), vmp(:,:,1,1), w0, &
                                 sepx(:,:,1,:), sepy(:,:,1,:), fp(:,:,1,:), &
@@ -429,7 +430,7 @@ contains
             sepz => dataptr(sedge(3), i)
             w0p => dataptr(w0_cart_vec, i)
             if (spherical .eq. 0) then
-               call update_scal_3d_cart(spec_comp, spec_comp+nspec-1, &
+               call update_scal_3d_cart(which_step, spec_comp, spec_comp+nspec-1, &
                                         sop(:,:,:,:), snp(:,:,:,:), &
                                         ump(:,:,:,1), vmp(:,:,:,1), &
                                         wmp(:,:,:,1), w0, &
@@ -439,7 +440,7 @@ contains
                                         lo, hi, ng_cell, dx, dt)
             else
                s0p => dataptr(s0_cart, i)
-               call update_scal_3d_sphr(spec_comp, spec_comp+nspec-1, &
+               call update_scal_3d_sphr(which_step, spec_comp, spec_comp+nspec-1, &
                                         sop(:,:,:,:), snp(:,:,:,:), &
                                         ump(:,:,:,1), vmp(:,:,:,1), &
                                         wmp(:,:,:,1), w0p(:,:,:,:), &
@@ -535,7 +536,7 @@ contains
          hi =  upb(get_box(sold, i))
          select case (dm)
          case (2)
-            call update_scal_2d(trac_comp,trac_comp+ntrac-1, &
+            call update_scal_2d(which_step, trac_comp,trac_comp+ntrac-1, &
                                 sop(:,:,1,:), snp(:,:,1,:), &
                                 ump(:,:,1,1), vmp(:,:,1,1), w0, &
                                 sepx(:,:,1,:), sepy(:,:,1,:), fp(:,:,1,:), &
@@ -547,7 +548,7 @@ contains
             sepz => dataptr(sedge(3), i)
             w0p => dataptr(w0_cart_vec, i)
             if (spherical .eq. 0) then
-               call update_scal_3d_cart(trac_comp,trac_comp+ntrac-1, &
+               call update_scal_3d_cart(which_step, trac_comp,trac_comp+ntrac-1, &
                                         sop(:,:,:,:), snp(:,:,:,:), &
                                         ump(:,:,:,1), vmp(:,:,:,1), &
                                         wmp(:,:,:,1), w0, sepx(:,:,:,:), &
@@ -556,7 +557,7 @@ contains
                                         lo, hi, ng_cell, dx, dt)
               else
                 s0p => dataptr(s0_cart, i)
-                call update_scal_3d_sphr(trac_comp,trac_comp+ntrac-1, &
+                call update_scal_3d_sphr(which_step, trac_comp,trac_comp+ntrac-1, &
                                          sop(:,:,:,:), snp(:,:,:,:), &
                                          ump(:,:,:,1), vmp(:,:,:,1), &
                                          wmp(:,:,:,1), w0p(:,:,:,:), &
@@ -641,7 +642,7 @@ contains
               call  mkrhohforce_2d(fp(:,:,1,n), vmp(:,:,1,1), lo, hi, &
                                    p0_old, p0_new)
 
-              call update_scal_2d(rhoh_comp, rhoh_comp, &
+              call update_scal_2d(which_step, rhoh_comp, rhoh_comp, &
                              sop(:,:,1,:), snp(:,:,1,:), &
                              ump(:,:,1,1), vmp(:,:,1,1), w0, &
                              sepx(:,:,1,:), sepy(:,:,1,:), fp(:,:,1,:), &
@@ -661,7 +662,7 @@ contains
                                          wmp(:,:,:,1), lo, hi, &
                                          dx, np(:,:,:,:), p0_old, p0_new)
                 s0p => dataptr(s0_cart, i)
-                call update_scal_3d_sphr(rhoh_comp, rhoh_comp, &
+                call update_scal_3d_sphr(which_step, rhoh_comp, rhoh_comp, &
                                          sop(:,:,:,:), snp(:,:,:,:), &
                                          ump(:,:,:,1), vmp(:,:,:,1), &
                                          wmp(:,:,:,1), w0p(:,:,:,:), &
@@ -676,7 +677,7 @@ contains
                 call mkrhohforce_3d(fp(:,:,:,n), wmp(:,:,:,1), lo, hi, &
                                     p0_old, p0_new)
 
-                call update_scal_3d_cart(rhoh_comp, rhoh_comp, &
+                call update_scal_3d_cart(which_step, rhoh_comp, rhoh_comp, &
                                          sop(:,:,:,:), snp(:,:,:,:), &
                                          ump(:,:,:,1), vmp(:,:,:,1), &
                                          wmp(:,:,:,1), w0, sepx(:,:,:,:), &

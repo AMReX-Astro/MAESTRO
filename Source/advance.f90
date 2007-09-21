@@ -316,7 +316,7 @@ module advance_timestep_module
         endif
 
         do n = 1,nlevs
-           call scalar_advance (uold(n), s1(n), s2(n), thermal(n),&
+           call scalar_advance (1, uold(n), s1(n), s2(n), thermal(n),&
                                 umac(n,:), w0, w0_cart_vec(n), sedge(n,:), utrans(n,:),&
                                 scal_force(n), normal(n), s0_1, s0_2, p0_1, p0_2, &
                                 dx(n,:),dt, &
@@ -490,7 +490,7 @@ module advance_timestep_module
         endif
 
         do n = 1,nlevs
-           call scalar_advance (uold(n), s1(n), s2(n), thermal(n), &
+           call scalar_advance (2, uold(n), s1(n), s2(n), thermal(n), &
                                 umac(n,:), w0, w0_cart_vec(n), sedge(n,:), utrans(n,:),&
                                 scal_force(n), normal(n), s0_1, s0_2, p0_1, p0_2, &
                                 dx(n,:),dt, &

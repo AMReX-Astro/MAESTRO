@@ -13,7 +13,7 @@ module update_scal_module
 
   contains
 
-   subroutine update_scal_2d (nstart,nstop,sold,snew,umac,vmac,w0,sedgex,sedgey,force, &
+   subroutine update_scal_2d (which_step, nstart,nstop,sold,snew,umac,vmac,w0,sedgex,sedgey,force, &
                               base_old,base_new,lo,hi,ng,dx,dt)
 
      ! update each scalar in time.  Here, it is assumed that the edge
@@ -21,7 +21,7 @@ module update_scal_module
 
       implicit none
 
-      integer              , intent(in) :: nstart, nstop, lo(:), hi(:), ng
+      integer           , intent(in   ) :: which_step, nstart, nstop, lo(:), hi(:), ng
       real (kind = dp_t), intent(in   ) ::    sold(lo(1)-ng:,lo(2)-ng:,:)
       real (kind = dp_t), intent(  out) ::    snew(lo(1)-ng:,lo(2)-ng:,:)
       real (kind = dp_t), intent(in   ) ::    umac(lo(1)- 1:,lo(2)- 1:)
@@ -128,12 +128,12 @@ module update_scal_module
 
    end subroutine update_scal_2d
 
-   subroutine update_scal_3d_cart (nstart,nstop,sold,snew,umac,vmac,wmac,w0,sedgex,sedgey,sedgez,&
+   subroutine update_scal_3d_cart (which_step,nstart,nstop,sold,snew,umac,vmac,wmac,w0,sedgex,sedgey,sedgez,&
                                    force,base_old,base_new,lo,hi,ng,dx,dt)
 
       implicit none
 
-      integer, intent(in) :: nstart,nstop, lo(:), hi(:), ng
+      integer           , intent(in   ) :: which_step, nstart, nstop, lo(:), hi(:), ng
       real (kind = dp_t), intent(in   ) ::    sold(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
       real (kind = dp_t), intent(  out) ::    snew(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
       real (kind = dp_t), intent(inout) ::    umac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
@@ -278,12 +278,13 @@ module update_scal_module
 
    end subroutine update_scal_3d_cart
 
-   subroutine update_scal_3d_sphr (nstart,nstop,sold,snew,umac,vmac,wmac,w0_cart,sedgex,sedgey,sedgez,&
+   subroutine update_scal_3d_sphr (which_step,nstart,nstop,sold,snew,umac,vmac,wmac,w0_cart,sedgex,sedgey,sedgez,&
                                    force,base_old,base_new,base_cart,lo,hi,domlo,domhi,ng,dx,dt)
 
       implicit none
 
-      integer, intent(in) :: nstart,nstop, lo(:), hi(:), domlo(:), domhi(:), ng
+      integer           , intent(in   ) :: which_step, nstart, nstop
+      integer           , intent(in   ) :: lo(:), hi(:), domlo(:), domhi(:), ng
       real (kind = dp_t), intent(in   ) ::    sold(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
       real (kind = dp_t), intent(  out) ::    snew(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
       real (kind = dp_t), intent(inout) ::    umac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
