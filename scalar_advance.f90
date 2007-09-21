@@ -688,6 +688,19 @@ contains
          end select
       end do
 
+      do i = 1, snew%nboxes
+         if ( multifab_remote(snew, i) ) cycle
+         snp => dataptr(snew , i)
+         lo =  lwb(get_box(snew, i))
+         hi =  upb(get_box(snew, i))
+         select case (dm)
+         case (2)
+            call makeTfromRhoH_2d(snp(:,:,1,:), lo, hi, ng_cell, p0_new, s0_new(:,temp_comp))
+         case (3)
+            call makeTfromRhoH_3d(snp(:,:,:,:), lo, hi, ng_cell, p0_new, s0_new(:,temp_comp))
+         end select
+      end do
+
       ! Make sure we do this before the calls to setbc.
       call multifab_fill_boundary(snew)
 
@@ -696,29 +709,21 @@ contains
          snp => dataptr(snew, i)
          select case (dm)
             case (2)
-              call setbc_2d(snp(:,:,1,n), lo, ng_cell, &
-                            the_bc_level%adv_bc_level_array(i,:,:,bc_comp), &
-                            dx,bc_comp)
+               do n=rho_comp,rho_comp+nscal-1
+                  bc_comp = dm+n
+                  call setbc_2d(snp(:,:,1,n), lo, ng_cell, &
+                                the_bc_level%adv_bc_level_array(i,:,:,bc_comp), &
+                                dx,bc_comp)
+               enddo
             case (3)
-               call setbc_3d(snp(:,:,:,n), lo, ng_cell, & 
-                             the_bc_level%adv_bc_level_array(i,:,:,bc_comp), &
-                             dx,bc_comp)
+               do n=rho_comp,rho_comp+nscal-1
+                  bc_comp = dm+n
+                  call setbc_3d(snp(:,:,:,n), lo, ng_cell, & 
+                                the_bc_level%adv_bc_level_array(i,:,:,bc_comp), &
+                                dx,bc_comp)
+               enddo
          end select
       end do
-
-      if (use_temp_in_mkflux) then
-        n = temp_comp
-        do i = 1, snew%nboxes
-          if ( multifab_remote(snew, i) ) cycle
-          snp => dataptr(snew , i)
-          lo =  lwb(get_box(snew, i))
-          hi =  upb(get_box(snew, i))
-          select case (dm)
-          case (2)
-            call makeTfromRhoH_2d(snp(:,:,1,:), lo, hi, ng_cell, p0_new, s0_new(:,temp_comp))
-          end select
-        end do
-      end if
 
       if (verbose .eq. 1) then
         smin = multifab_min_c(snew,rhoh_comp) 
