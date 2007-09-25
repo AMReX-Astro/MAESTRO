@@ -213,11 +213,7 @@ contains
              h_in = s_in(i,j,k,rhoh_comp) / rho
           endif
           
-          if(spherical == 0) then
-             T_in = s_in(i,j,k,temp_comp)
-          else
-             temp_row(1) = t0_cart(i,j,k)
-          endif
+          T_in = s_in(i,j,k,temp_comp)
           
           call burner(rho, T_in, x_in, h_in, dt, x_out, h_out, rhowdot)
           
