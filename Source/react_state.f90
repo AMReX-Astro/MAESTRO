@@ -180,8 +180,6 @@ contains
     real (kind = dp_t), intent(in   ) :: t0(0:)
     real (kind = dp_t), intent(in   ) :: dt,dx(:),time
 
-    real (kind = dp_t), allocatable :: t0_cart(:,:,:)
-
     !     Local variables
     integer :: i, j, k, n
     real (kind = dp_t), allocatable :: x_in(:),x_out(:),rhowdot(:)
@@ -190,11 +188,6 @@ contains
 
     allocate(x_in(nspec),x_out(nspec),rhowdot(nspec),H(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
     call get_H_3d(H,lo,hi,dx,time)
-
-    if (spherical == 1) then
-       allocate(t0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-       call fill_3d_data(t0_cart,t0,lo,hi,dx,0)
-    endif
 
     do k = lo(3), hi(3)
      do j = lo(2), hi(2)
@@ -257,10 +250,6 @@ contains
     enddo
 
     deallocate(x_in,x_out,rhowdot,H)
-
-    if (spherical == 1) then
-       deallocate(t0_cart)
-    endif
 
   end subroutine react_state_3d
 
