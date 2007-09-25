@@ -600,9 +600,6 @@ subroutine compute_thermo_quantities_2d(lo,hi,dt,s,kthovercp,xik)
   integer :: i,j,n
   real(dp_t) :: qreact
 
-  ! dens, temp, and xmass are inputs
-  input_flag = 1
-  do_diag = .false.
 
   do j=lo(2)-1,hi(2)+1
      do i=lo(1)-1,hi(1)+1
@@ -610,6 +607,10 @@ subroutine compute_thermo_quantities_2d(lo,hi,dt,s,kthovercp,xik)
         den_row(1) = s(i,j,rho_comp)
         temp_row(1) = s(i,j,temp_comp)
         xn_zone(:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
+
+        ! dens, temp, and xmass are inputs
+        input_flag = 1
+        do_diag = .false.
 
         call conducteos(input_flag, den_row, temp_row, &
                  npts, nspec, &
@@ -661,10 +662,6 @@ subroutine compute_thermo_quantities_3d(lo,hi,dt,t0,s,kthovercp,xik)
      stop
   endif
 
-  ! dens, temp, and xmass are inputs
-  input_flag = 1
-  do_diag = .false.
-
   do k=lo(3)-1,hi(3)+1
      do j=lo(2)-1,hi(2)+1
         do i=lo(1)-1,hi(1)+1
@@ -672,6 +669,10 @@ subroutine compute_thermo_quantities_3d(lo,hi,dt,t0,s,kthovercp,xik)
            den_row(1) = s(i,j,k,rho_comp)
            temp_row(1) = s(i,j,k,temp_comp)
            xn_zone(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
+
+           ! dens, temp, and xmass are inputs
+           input_flag = 1
+           do_diag = .false.
 
            call conducteos(input_flag, den_row, temp_row, &
                            npts, nspec, &

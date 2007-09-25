@@ -242,10 +242,6 @@ subroutine make_coeffs_2d(lo,hi,dx,ng_1,ng_3,p0,s,kth,kthovercp,xik)
   ! local
   integer :: i,j,n
 
-  ! dens, temp, and xmass are inputs
-  input_flag = 1
-
-  do_diag = .false.
 
   do j=lo(2)-1,hi(2)+1
      do i=lo(1)-1,hi(1)+1
@@ -253,6 +249,10 @@ subroutine make_coeffs_2d(lo,hi,dx,ng_1,ng_3,p0,s,kth,kthovercp,xik)
         den_row(1) = s(i,j,rho_comp)
         temp_row(1) = s(i,j,temp_comp)
         xn_zone(:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
+
+        ! dens, temp, and xmass are inputs
+        input_flag = 1
+        do_diag = .false.
 
         call conducteos(input_flag, den_row, temp_row, &
              npts, nspec, &
@@ -299,10 +299,6 @@ subroutine make_coeffs_3d(lo,hi,dx,ng_1,ng_3,p0,s,kth,kthovercp,xik)
   integer :: i,j,k,n
   real(kind=dp_t), allocatable :: p0_cart(:,:,:)
 
-  ! dens, temp, and xmass are inputs
-  input_flag = 1
-  do_diag = .false.
-
   if (spherical .eq. 1) then
      allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
      call fill_3d_data(p0_cart,p0,lo,hi,dx,0)
@@ -315,6 +311,10 @@ subroutine make_coeffs_3d(lo,hi,dx,ng_1,ng_3,p0,s,kth,kthovercp,xik)
            den_row(1) = s(i,j,k,rho_comp)
            temp_row(1) = s(i,j,k,temp_comp)
            xn_zone(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
+
+           ! dens, temp, and xmass are inputs
+           input_flag = 1
+           do_diag = .false.
         
            call conducteos(input_flag, den_row, temp_row, &
                 npts, nspec, &
