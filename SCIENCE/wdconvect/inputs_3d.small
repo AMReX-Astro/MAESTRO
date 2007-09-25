@@ -21,7 +21,7 @@
  chk_int   = 10
 
  cflfac = 0.9
- init_shrink = 1.
+ init_shrink = 0.1
 
  bcx_lo = 12
  bcx_hi = 12
@@ -41,4 +41,9 @@
  do_initial_projection = 1
 
 !restart = 50
+
+ velpert_amplitude = 1.d6
+ velpert_radius = 1.d7
+ velpert_scale = 1.d7
+ velpert_steep = 1.d5
 /
