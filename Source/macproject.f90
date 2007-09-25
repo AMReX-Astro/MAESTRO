@@ -1236,9 +1236,8 @@ subroutine mac_multigrid(mla,rh,phi,fine_flx,alpha,beta,dx,&
   use list_box_module
   use itsol_module
   use sparse_solve_module
-  use ml_solve_module
+  use ml_solve_module, only: ml_cc_solve
   use bl_mem_stat_module
-  use box_util_module
   use bl_IO_module
 
   type(ml_layout),intent(inout) :: mla
@@ -1452,9 +1451,8 @@ subroutine mac_applyop(mla,res,phi,alpha,beta,dx,&
   use list_box_module
   use itsol_module
   use sparse_solve_module
-  use ml_solve_module
+  use ml_cc_module, only: ml_cc_applyop
   use bl_mem_stat_module
-  use box_util_module
   use bl_IO_module
 
   type(ml_layout),intent(inout) :: mla
@@ -1488,7 +1486,7 @@ subroutine mac_applyop(mla,res,phi,alpha,beta,dx,&
   integer    :: max_iter
   integer    :: min_width
   integer    :: max_nlevel
-  integer    :: n, nu1, nu2, gamma, cycle, smoother
+  integer    :: n, nu1, nu2, gamma, ncycle, smoother
   integer    :: max_nlevel_in,do_diagnostics
   real(dp_t) :: rel_eps,abs_eps,omega,bottom_solver_eps
   real(dp_t) ::  xa(mla%dim),  xb(mla%dim)
@@ -1515,7 +1513,7 @@ subroutine mac_applyop(mla,res,phi,alpha,beta,dx,&
   nu2               = mgt(nlevs)%nu2
   gamma             = mgt(nlevs)%gamma
   omega             = mgt(nlevs)%omega
-  cycle             = mgt(nlevs)%cycle
+  ncycle            = mgt(nlevs)%cycle
   bottom_solver     = mgt(nlevs)%bottom_solver
   bottom_solver_eps = mgt(nlevs)%bottom_solver_eps
   bottom_max_iter   = mgt(nlevs)%bottom_max_iter
@@ -1570,7 +1568,7 @@ subroutine mac_applyop(mla,res,phi,alpha,beta,dx,&
             nu1 = nu1, &
             nu2 = nu2, &
             gamma = gamma, &
-            cycle = cycle, &
+            cycle = ncycle, &
             omega = omega, &
             bottom_solver = bottom_solver, &
             bottom_max_iter = bottom_max_iter, &
