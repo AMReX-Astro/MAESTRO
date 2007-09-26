@@ -986,7 +986,7 @@ contains
 
          temp_row(1) = sx(i,j,temp_comp)
           den_row(1) = sx(i,j,rho_comp)
-          xn_zone(:) = sx(i,j,spec_comp:)/den_row(1)
+          xn_zone(:) = sx(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
 
          input_flag = 1      ! (rho, T) -> (p, h)
 
@@ -1028,7 +1028,7 @@ contains
 
          temp_row(1) = sy(i,j,temp_comp)
           den_row(1) = sy(i,j,rho_comp)
-          xn_zone(:) = sy(i,j,spec_comp:)/den_row(1)
+          xn_zone(:) = sy(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
 
          input_flag = 1      ! (rho, T) -> (p, h)
 
@@ -1089,7 +1089,7 @@ contains
 
          temp_row(1) = sx(i,j,k,temp_comp)
           den_row(1) = sx(i,j,k,rho_comp)
-          xn_zone(:) = sx(i,j,k,spec_comp:)/den_row(1)
+          xn_zone(:) = sx(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
 
          input_flag = 1      ! (rho, T) -> (p, h)
 
@@ -1135,7 +1135,7 @@ contains
 
          temp_row(1) = sy(i,j,k,temp_comp)
           den_row(1) = sy(i,j,k,rho_comp)
-          xn_zone(:) = sy(i,j,k,spec_comp:)/den_row(1)
+          xn_zone(:) = sy(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
 
          input_flag = 1      ! (rho, T) -> (p, h)
 
@@ -1181,7 +1181,7 @@ contains
 
          temp_row(1) = sz(i,j,k,temp_comp)
           den_row(1) = sz(i,j,k,rho_comp)
-          xn_zone(:) = sz(i,j,k,spec_comp:)/den_row(1)
+          xn_zone(:) = sz(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
 
          input_flag = 1      ! (rho, T) -> (p, h)
 

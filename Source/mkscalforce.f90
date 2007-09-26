@@ -185,7 +185,7 @@ contains
 
           temp_row(1) = s(i,j,temp_comp)
           den_row(1) = s(i,j,rho_comp)
-          xn_zone(:) = s(i,j,spec_comp:)/den_row(1)
+          xn_zone(:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
 
           ! dens, temp, xmass inputs
           input_flag = 1
@@ -235,7 +235,7 @@ contains
 
           temp_row(1) = s(i,j,k,temp_comp)
           den_row(1) = s(i,j,k,rho_comp)
-          xn_zone(:) = s(i,j,k,spec_comp:)/den_row(1)
+          xn_zone(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
           
           ! dens, temp, xmass inputs
           input_flag = 1
@@ -292,7 +292,7 @@ contains
 
           temp_row(1) = s(i,j,k,temp_comp)
           den_row(1) = s(i,j,k,rho_comp)
-          xn_zone(:) = s(i,j,k,spec_comp:)/den_row(1)
+          xn_zone(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
           
           ! dens, temp, xmass inputs
           input_flag = 1

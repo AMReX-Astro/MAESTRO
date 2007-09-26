@@ -720,9 +720,9 @@ contains
          hi =  upb(get_box(s, i))
          select case (dm)
             case (2)
-              call makeXfromrhoX_2d(pp(:,:,1,comp:),sp(:,:,1,1),sp(:,:,1,spec_comp:), lo, hi, ng)
+              call makeXfromrhoX_2d(pp(:,:,1,comp:),sp(:,:,1,1),sp(:,:,1,spec_comp:spec_comp+nspec-1), lo, hi, ng)
             case (3)
-              call makeXfromrhoX_3d(pp(:,:,:,comp:),sp(:,:,:,1),sp(:,:,:,spec_comp:), lo, hi, ng)
+              call makeXfromrhoX_3d(pp(:,:,:,comp:),sp(:,:,:,1),sp(:,:,:,spec_comp:spec_comp+nspec-1), lo, hi, ng)
          end select
       end do
 

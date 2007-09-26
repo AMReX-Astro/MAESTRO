@@ -95,11 +95,14 @@ contains
     s = ZERO
 
     ! initialize the scalars
-    do n = rho_comp,temp_comp
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-             s(i,j,n) = s0(j,n)
-          enddo
+    do j = lo(2), hi(2)
+       do i = lo(1), hi(1)
+          s(i,j,rho_comp)  = s0(j,rho_comp)
+          s(i,j,rhoh_comp) = s0(j,rhoh_comp)
+          s(i,j,temp_comp) = s0(j,temp_comp)
+
+          s(i,j,spec_comp:spec_comp+nspec-1) = &
+               s0(j,spec_comp:spec_comp+nspec-1)
        enddo
     enddo
     
@@ -151,19 +154,26 @@ contains
     if (spherical .eq. 1) then
 
        ! initialize the scalars
-       do n = rho_comp,temp_comp
+       call fill_3d_data (s(:,:,:,rho_comp), s0(:,rho_comp), lo,hi,dx,ng)
+       call fill_3d_data (s(:,:,:,rhoh_comp),s0(:,rhoh_comp),lo,hi,dx,ng)
+       call fill_3d_data (s(:,:,:,temp_comp),s0(:,temp_comp),lo,hi,dx,ng)
+
+       do n = spec_comp, spec_comp+nspec-1
           call fill_3d_data (s(:,:,:,n),s0(:,n),lo,hi,dx,ng)
        end do
 
     else 
 
        ! initialize the scalars
-       do n = rho_comp,temp_comp
-          do k = lo(3), hi(3)
-             do j = lo(2), hi(2)
-                do i = lo(1), hi(1)
-                   s(i,j,k,n) = s0(k,n)
-                enddo
+       do k = lo(3), hi(3)
+          do j = lo(2), hi(2)
+             do i = lo(1), hi(1)
+                s(i,j,k,rho_comp)  = s0(k,rho_comp)
+                s(i,j,k,rhoh_comp) = s0(k,rhoh_comp)
+                s(i,j,k,temp_comp) = s0(k,temp_comp)
+
+                s(i,j,k,spec_comp:spec_comp+nspec-1) = &
+                     s0(k,spec_comp:spec_comp+nspec-1)
              enddo
           enddo
        enddo
@@ -345,7 +355,7 @@ contains
     temp_row(1) = temp
     p_row(1) = p0
     den_row(1) = s0(rho_comp)
-    xn_zone(:) = s0(spec_comp:)/s0(rho_comp)
+    xn_zone(:) = s0(spec_comp:spec_comp+nspec-1)/s0(rho_comp)
 
     input_flag = 3      ! (t, p) -> (rho, h)
 
@@ -425,7 +435,7 @@ contains
     temp_row(1) = temp
     p_row(1) = p0
     den_row(1) = s0(rho_comp)
-    xn_zone(:) = s0(spec_comp:)/s0(rho_comp)
+    xn_zone(:) = s0(spec_comp:spec_comp+nspec-1)/s0(rho_comp)
 
     input_flag = 3      ! (t, p) -> (rho, h)
 

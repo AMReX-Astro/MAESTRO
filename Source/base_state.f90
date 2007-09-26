@@ -341,7 +341,7 @@ contains
        do i = 1, nr
           base_r = (dble(i)-HALF) * dr
           write(99,1000)  base_r,s0(i,rho_comp), p0(i), s0(i,rhoh_comp), &
-               (s0(i,n), n=spec_comp,temp_comp), div_coeff(i)
+               (s0(i,n), n=spec_comp,spec_comp+nspec-1), s0(i,temp_comp), div_coeff(i)
        end do
        close(99)
 
@@ -388,7 +388,7 @@ contains
     open(unit=99,file=out_name)
     do i = 1, size(s0,dim=1)
        read(99,*)  base_r(i),s0(i,rho_comp), p0(i), s0(i,rhoh_comp), &
-                   (s0(i,n), n=spec_comp,temp_comp), div_coeff(i)
+                   (s0(i,n), n=spec_comp,spec_comp+nspec-1), s0(i,temp_comp), div_coeff(i)
     end do
     close(99)
 
