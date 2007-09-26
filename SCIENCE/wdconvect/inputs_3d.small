@@ -42,7 +42,7 @@
 
 !restart = 50
 
- velpert_amplitude = 1.d6
+ velpert_amplitude = 0.d0
  velpert_radius = 1.d7
  velpert_scale = 1.d7
  velpert_steep = 1.d5
