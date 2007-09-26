@@ -263,6 +263,7 @@ contains
     real(kind=dp_t), dimension(npts) :: model_r, model_var
 
     real(kind=dp_t) :: val, slope, xi, dr_model
+    real(kind=dp_t) :: minvar, maxvar
 
     integer :: i, id
 
@@ -289,11 +290,25 @@ contains
        interpolate = slope*(r - model_r(id)) + model_var(id)       
 
     else
+
+       ! do a quadratic interpolation
        dr_model = model_r(id+1) - model_r(id)
        xi = r - model_r(id)
        interpolate = (model_var(id+1) - 2*model_var(id) + model_var(id-1))*xi**2/(2*dr_model**2) + &
                      (model_var(id+1) - model_var(id-1))*xi/(2*dr_model) + &
                      (-model_var(id+1) + 26*model_var(id) - model_var(id-1))/24.0_dp_t
+
+       ! make sure that we have not under- or overshot 
+       minvar = min(model_var(id), min(model_var(id-1), model_var(id+1)))
+       maxvar = max(model_var(id), max(model_var(id-1), model_var(id+1)))
+
+       if (interpolate > maxvar .OR. interpolate < minvar) then
+          
+          slope = (model_var(id+1) - model_var(id-1))/(model_r(id+1) - model_r(id-1))
+          interpolate = slope*(r - model_r(id)) + model_var(id)       
+          
+       endif
+
     endif
 
 
