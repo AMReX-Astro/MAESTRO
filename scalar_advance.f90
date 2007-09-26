@@ -486,20 +486,22 @@ contains
       end do
 
       if (verbose .ge. 1) then
-        do n = spec_comp,spec_comp+nspec-1
-          if (n.gt.rhoh_comp .and. n.lt.trac_comp) then
+         do n = spec_comp,spec_comp+nspec-1
             call multifab_div_div_c(snew,n,snew,rho_comp,1)
+
             smin = multifab_min_c(snew,n) 
             smax = multifab_max_c(snew,n)
+
             if (parallel_IOProcessor()) &
-              write(6,2002) spec_names(n-rhoh_comp), smin,smax
+                 write(6,2002) spec_names(n-spec_comp+1), smin,smax
             call multifab_mult_mult_c(snew,n,snew,rho_comp,1)
-          end if
-        end do
-        smin = multifab_min_c(snew,rho_comp) 
-        smax = multifab_max_c(snew,rho_comp)
-        if (parallel_IOProcessor()) &
-          write(6,2000) smin,smax
+         end do
+
+         smin = multifab_min_c(snew,rho_comp) 
+         smax = multifab_max_c(snew,rho_comp)
+
+         if (parallel_IOProcessor()) &
+              write(6,2000) smin,smax
       end if
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
