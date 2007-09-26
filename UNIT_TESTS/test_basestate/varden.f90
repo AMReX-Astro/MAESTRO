@@ -8,6 +8,7 @@ subroutine varden()
   use layout_module
   use multifab_module
   use init_module
+  use base_state_module
   use box_util_module
   use bl_IO_module
   use variables
@@ -24,7 +25,6 @@ subroutine varden()
   integer    :: narg, farg
   integer    :: max_step
   integer    :: dm,n_base
-  integer    :: nscal, ntrac
 
   real(dp_t) :: dr_base
   real(dp_t) :: cflfac
@@ -55,7 +55,6 @@ subroutine varden()
   real(dp_t), allocatable :: gam1(:)
   real(dp_t), allocatable :: s0_old(:,:)
   real(dp_t), allocatable :: s0(:,:)
-  real(dp_t), allocatable :: temp0(:)
   real(dp_t), allocatable :: p0_old(:)
   real(dp_t), allocatable :: p0(:)
   real(dp_t), allocatable :: w0(:)
@@ -202,7 +201,7 @@ subroutine varden()
   center(1) = ZERO
 
 
-  call init_variables(dm, nscal, nspec)
+  call init_variables(dm, nspec)
   call network_init()
 
 
@@ -230,7 +229,6 @@ subroutine varden()
   allocate(   gam1(0:n_base-1  ))
   allocate( s0_old(0:n_base-1, nscal))
   allocate(     s0(0:n_base-1, nscal))
-  allocate(  temp0(0:n_base-1  ))
   allocate( p0_old(0:n_base-1  ))
   allocate(     p0(0:n_base-1  ))
   allocate( w0_old(0:n_base))
@@ -246,12 +244,12 @@ subroutine varden()
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   call init_geometry(center,n_base,dr_base)
-  call init_base_state(model_file,n_base,s0,temp0,p0,gam1,dx,prob_lo,prob_hi)
+  call init_base_state(model_file,n_base,s0,p0,gam1,dx,prob_lo,prob_hi)
 
   ! output
   open(unit=10,file="base.orig")
   do i = 0, n_base-1
-     write(10,1000) z(i), s0(i,rho_comp), temp0(i), p0(i)
+     write(10,1000) z(i), s0(i,rho_comp), s0(i,temp_comp), p0(i)
   enddo
   close(unit=10)
 
@@ -284,7 +282,7 @@ subroutine varden()
         ! (rho, T) --> p,h, etc
         input_flag = 1
         den_row(1)  = s0(i,rho_comp)
-        temp_row(1) = temp0(i)
+        temp_row(1) = s0(i,temp_comp)
         xn_zone(:) = s0(i,spec_comp:spec_comp-1+nspec)/s0(i,rho_comp)
         
         call eos(input_flag, den_row, temp_row, NP, nspec, &
@@ -339,7 +337,7 @@ subroutine varden()
      p0_old(:) = p0(:)
 
      call advect_base(w0,Sbar_in,p0_old,p0, &
-                      s0_old,s0,temp0, &
+                      s0_old,s0, &
                       gam1,div_coeff, &
                       dr_base,dt,anelastic_cutoff)
 
@@ -364,13 +362,13 @@ subroutine varden()
   ! output
   open(unit=10,file="base.new")
   do i = 0, n_base-1
-     write(10,1000) z(i), s0(i,rho_comp), temp0(i), p0(i)
+     write(10,1000) z(i), s0(i,rho_comp), s0(i,temp_comp), p0(i)
   enddo
   close(unit=10)
 1000 format(1x,5(g20.10))
 
   deallocate(div_coeff_old,div_coeff,grav_cell)
-  deallocate(gam1,s0_old,s0,temp0,p0_old,p0,w0,f)
+  deallocate(gam1,s0_old,s0,p0_old,p0,w0,f)
   
 
 end subroutine varden
