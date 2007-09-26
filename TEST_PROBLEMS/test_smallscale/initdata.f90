@@ -87,11 +87,13 @@ contains
     s = ZERO
 
     ! initialize the scalars
-    do n = rho_comp,rho_comp+nscal-1
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-             s(i,j,n) = s0(j,n)
-          enddo
+    do j = lo(2), hi(2)
+       do i = lo(1), hi(1)
+          s(i,j,rho_comp) = s0(j,rho_comp)
+          s(i,j,rhoh_comp) = s0(j,rhoh_comp)
+          s(i,j,temp_comp) = s0(j,temp_comp)
+          s(i,j,spec_comp:spec_comp+nspec-1) = s0(j,spec_comp:spec_comp+nspec-1)
+          s(i,j,trac_comp:trac_comp+ntrac-1) = s0(j,trac_comp:trac_comp+ntrac-1)
        enddo
     enddo
     
@@ -117,17 +119,26 @@ contains
     s = ZERO
   
     if (spherical .eq. 1) then
-       do n = rho_comp,rho_comp+nscal-1
-          call fill_3d_data(s(:,:,:,n),s0(:,n),lo,hi,dx,ng)
+       ! initialize the scalars
+       call fill_3d_data (s(:,:,:,rho_comp), s0(:,rho_comp), lo,hi,dx,ng)
+       call fill_3d_data (s(:,:,:,rhoh_comp),s0(:,rhoh_comp),lo,hi,dx,ng)
+       call fill_3d_data (s(:,:,:,temp_comp),s0(:,temp_comp),lo,hi,dx,ng)
+       do n = spec_comp, spec_comp+nspec-1
+          call fill_3d_data (s(:,:,:,n),s0(:,n),lo,hi,dx,ng)
+       end do
+       do n = trac_comp, trac_comp+ntrac-1
+          call fill_3d_data (s(:,:,:,n),s0(:,n),lo,hi,dx,ng)
        end do
     else 
-        ! initialize the scalars
-       do n = rho_comp,rho_comp+nscal-1
-          do k = lo(3), hi(3)
-             do j = lo(2), hi(2)
-                do i = lo(1), hi(1)
-                   s(i,j,k,n) = s0(k,n)
-                enddo
+       ! initialize the scalars
+       do k = lo(3), hi(3)
+          do j = lo(2), hi(2)
+             do i = lo(1), hi(1)
+                s(i,j,k,rho_comp) = s0(k,rho_comp)
+                s(i,j,k,rhoh_comp) = s0(k,rhoh_comp)
+                s(i,j,k,temp_comp) = s0(k,temp_comp)
+                s(i,j,k,spec_comp:spec_comp+nspec-1) = s0(k,spec_comp:spec_comp+nspec-1)
+                s(i,j,k,trac_comp:trac_comp+ntrac-1) = s0(k,trac_comp:trac_comp+ntrac-1)
              enddo
           enddo
        enddo
@@ -319,7 +330,7 @@ contains
        case (2)
           call scalar_diags_2d(istep, sop(:,:,1,:), lo, hi, ng, dx, s0)
        case (3)
-!         call scalar_diags_3d(istep, sop(:,:,:,:), lo, hi, ng, dx, s0)
+          ! 3d case not written yet
        end select
     end do
 
