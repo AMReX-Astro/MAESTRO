@@ -1,4 +1,4 @@
-NDEBUG :=  
+NDEBUG := t 
 MPI    :=
 OMP    :=
 
@@ -22,6 +22,10 @@ VPATH_LOCATIONS += $(FPARALLEL)/MAESTRO
 include $(FPARALLEL)/extern/helmeos/GPackage.mak
 VPATH_LOCATIONS += $(FPARALLEL)/extern/helmeos
 FINCLUDE_LOCATIONS += $(FPARALLEL)/extern/helmeos
+
+include $(FPARALLEL)/extern/conducteos/GPackage.mak
+VPATH_LOCATIONS += $(FPARALLEL)/extern/conducteos
+FINCLUDE_LOCATIONS += $(FPARALLEL)/extern/conducteos
 
 include $(FPARALLEL)/varden/GPackage.mak
 VPATH_LOCATIONS += $(FPARALLEL)/varden
