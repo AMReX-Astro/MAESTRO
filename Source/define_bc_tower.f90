@@ -117,6 +117,8 @@ module define_bc_module
 
   subroutine adv_bc_level_build(adv_bc_level,phys_bc_level,default_value,nspec)
 
+    ! define boundary conditions for the advection problem
+
     implicit none
 
     integer  , intent(inout) ::  adv_bc_level(0:,:,:,:)
@@ -132,13 +134,13 @@ module define_bc_module
 !    *** 2-D ***
 !   COMP = 1     : x-velocity
 !   COMP = 2     : y-velocity
-!   COMP = 3...  : density, (rho H), (rho X)_i
+!   COMP = 3...  : density, (rho h), (rho X)_i, temp, tracers, pressure
 
 !    *** 3-D ***
 !   COMP = 1     : x-velocity
 !   COMP = 2     : y-velocity
 !   COMP = 3     : z-velocity
-!   COMP = 4...  : density, (rho H), (rho X)_i
+!   COMP = 4...  : density, (rho h), (rho X)_i, temp, tracers, pressure
 
     dm = size(adv_bc_level,dim=2)
 
@@ -201,6 +203,8 @@ module define_bc_module
 
   subroutine ell_bc_level_build(ell_bc_level,phys_bc_level,default_value,nspec)
 
+    ! define boundary conditions for the elliptic problem
+
     implicit none
 
     integer  , intent(inout) ::  ell_bc_level(0:,:,:,:)
@@ -214,19 +218,15 @@ module define_bc_module
     ell_bc_level = default_value
 
 !    *** 2-D ***
-!   COMP = 1  : x-velocity
-!   COMP = 2  : y-velocity
-!   COMP = 3  : density
-!   COMP = 4  : tracer
-!   COMP = 5  : pressure
+!   COMP = 1     : x-velocity
+!   COMP = 2     : y-velocity
+!   COMP = 3...  : density, (rho h), (rho X)_i, temp, tracers, pressure
 
 !    *** 3-D ***
-!   COMP = 1  : x-velocity
-!   COMP = 2  : y-velocity
-!   COMP = 3  : z-velocity
-!   COMP = 4  : density
-!   COMP = 5  : tracer
-!   COMP = 6  : pressure
+!   COMP = 1     : x-velocity
+!   COMP = 2     : y-velocity
+!   COMP = 3     : z-velocity
+!   COMP = 4...  : density, (rho h), (rho X)_i, temp, tracers, pressure
 
     dm = size(ell_bc_level,dim=2)
 
@@ -236,38 +236,50 @@ module define_bc_module
        if (phys_bc_level(n,d,i) == SLIP_WALL) then
           ell_bc_level(n,d,i,                      1:dm)       = BC_NEU   ! tangential vel.
           ell_bc_level(n,d,i,                         d)       = BC_DIR   ! normal vel.
-          ell_bc_level(n,d,i,rho_comp+dm:spec_comp+dm+nspec-1) = BC_NEU   ! density,(rho h),(rho X)_i, tracers
+          ell_bc_level(n,d,i,rho_comp+dm)                      = BC_NEU   ! density
+          ell_bc_level(n,d,i,rhoh_comp+dm)                     = BC_NEU   ! (rho h)
+          ell_bc_level(n,d,i,spec_comp+dm:spec_comp+dm+nspec-1)= BC_NEU   ! (rho X)_i
           ell_bc_level(n,d,i,temp_comp+dm)                     = BC_NEU   ! temperature
           ell_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= BC_NEU   ! tracers
           ell_bc_level(n,d,i,press_comp)                       = BC_NEU   ! pressure
        else if (phys_bc_level(n,d,i) == NO_SLIP_WALL) then
           ell_bc_level(n,d,i,                      1:dm)       = BC_DIR   ! vel.
-          ell_bc_level(n,d,i,rho_comp+dm:spec_comp+dm+nspec-1) = BC_NEU   ! density,(rho h),(rho X)_i, tracers
+          ell_bc_level(n,d,i,rho_comp+dm)                      = BC_NEU   ! density
+          ell_bc_level(n,d,i,rhoh_comp+dm)                     = BC_NEU   ! (rho h)
+          ell_bc_level(n,d,i,spec_comp+dm:spec_comp+dm+nspec-1)= BC_NEU   ! (rho X)_i
           ell_bc_level(n,d,i,temp_comp+dm)                     = BC_NEU   ! temperature
           ell_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= BC_NEU   ! tracers
           ell_bc_level(n,d,i,press_comp)                       = BC_NEU   ! pressure
        else if (phys_bc_level(n,d,i) == INLET) then
           ell_bc_level(n,d,i,                      1:dm)       = BC_DIR   ! vel.
-          ell_bc_level(n,d,i,rho_comp+dm:spec_comp+dm+nspec-1) = BC_DIR   ! density,(rho h),(rho X)_i, tracers
+          ell_bc_level(n,d,i,rho_comp+dm)                      = BC_DIR   ! density
+          ell_bc_level(n,d,i,rhoh_comp+dm)                     = BC_DIR   ! (rho h)
+          ell_bc_level(n,d,i,spec_comp+dm:spec_comp+dm+nspec-1)= BC_DIR   ! (rho X)_i
           ell_bc_level(n,d,i,temp_comp+dm)                     = BC_DIR   ! temperature
           ell_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= BC_DIR   ! tracers
           ell_bc_level(n,d,i,press_comp)                       = BC_NEU   ! pressure
        else if (phys_bc_level(n,d,i) == OUTLET) then
           ell_bc_level(n,d,i,                      1:dm)       = BC_NEU   ! tangential vel.
-          ell_bc_level(n,d,i,rho_comp+dm:spec_comp+dm+nspec-1) = BC_NEU   ! density,(rho h),(rho X)_i, tracers
+          ell_bc_level(n,d,i,rho_comp+dm)                      = BC_NEU   ! density
+          ell_bc_level(n,d,i,rhoh_comp+dm)                     = BC_NEU   ! (rho h)
+          ell_bc_level(n,d,i,spec_comp+dm:spec_comp+dm+nspec-1)= BC_NEU   ! (rho X)_i
           ell_bc_level(n,d,i,temp_comp+dm)                     = BC_NEU   ! temperature
           ell_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= BC_NEU   ! tracers
           ell_bc_level(n,d,i,press_comp)                       = BC_DIR   ! pressure
        else if (phys_bc_level(n,d,i) == SYMMETRY) then
           ell_bc_level(n,d,i,                      1:dm)       = BC_NEU   ! tangential vel.
           ell_bc_level(n,d,i,                         d)       = BC_DIR   ! normal vel.
-          ell_bc_level(n,d,i,rho_comp+dm:spec_comp+dm+nspec-1) = BC_NEU   ! density,(rho h),(rho X)_i, tracers
+          ell_bc_level(n,d,i,rho_comp+dm)                      = BC_NEU   ! density
+          ell_bc_level(n,d,i,rhoh_comp+dm)                     = BC_NEU   ! (rho h)
+          ell_bc_level(n,d,i,spec_comp+dm:spec_comp+dm+nspec-1)= BC_NEU   ! (rho X)_i
           ell_bc_level(n,d,i,temp_comp+dm)                     = BC_NEU   ! temperature
           ell_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= BC_NEU   ! tracers
           ell_bc_level(n,d,i,press_comp)                       = BC_NEU   ! pressure
        else if (phys_bc_level(n,d,i) == PERIODIC) then
           ell_bc_level(n,d,i,                      1:dm      ) = BC_PER   ! vel.
-          ell_bc_level(n,d,i,rho_comp+dm:spec_comp+dm+nspec-1) = BC_PER   ! density,(rho h),(rho X)_i, tracers
+          ell_bc_level(n,d,i,rho_comp+dm)                      = BC_PER   ! density
+          ell_bc_level(n,d,i,rhoh_comp+dm)                     = BC_PER   ! (rho h)
+          ell_bc_level(n,d,i,spec_comp+dm:spec_comp+dm+nspec-1)= BC_PER   ! (rho X)_i
           ell_bc_level(n,d,i,temp_comp+dm)                     = BC_PER   ! temperature
           ell_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= BC_PER   ! tracers
           ell_bc_level(n,d,i,press_comp)                       = BC_PER   ! pressure
