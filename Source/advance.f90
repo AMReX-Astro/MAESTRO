@@ -622,6 +622,7 @@ module advance_timestep_module
           proj_type = pressure_iters
           do n = 1,nlevs
              call multifab_sub_sub(hgrhs(n),hgrhs_old(n))
+             call multifab_div_div_s(hgrhs(n),dt)
           end do
         else
           proj_type = regular_timestep
