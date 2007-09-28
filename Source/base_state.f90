@@ -216,9 +216,7 @@ contains
          p_row(1)    = p_ambient
   
          ! (rho,T) --> p,h
-         input_flag = 1
-  
-         call eos(input_flag, den_row, temp_row, &
+         call eos(eos_input_rt, den_row, temp_row, &
                   npts, nspec, &
                   xn_ambient, aion, zion, &
                   p_row, h_row, e_row, &

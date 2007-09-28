@@ -141,14 +141,13 @@ contains
 
           ! now compute temperature and put it into s_out
           ! dens, enthalpy, and xmass are inputs
-!          input_flag = 2
 !
 !          den_row(1) = rho
 !          h_row(1) = h_out
 !          xn_zone(:) = x_out(1:nspec)
 !          temp_row(1) = T_in
 !
-!          call eos(input_flag, den_row, temp_row, &
+!          call eos(eos_input_rh, den_row, temp_row, &
 !               npts, nspec, &
 !               xn_zone, aion, zion, &
 !               p_row, h_row, e_row, &
@@ -224,14 +223,13 @@ contains
   
           ! now compute temperature and put it into s_out
           ! dens, enthalpy, and xmass are inputs
-!          input_flag = 2
 !
 !          den_row(1) = rho
 !           h_row(1) = h_out
 !          xn_zone(:) = x_out(1:nspec)
 !         temp_row(1) = T_in
 !
-!          call eos(input_flag, den_row, temp_row, &
+!          call eos(eos_input_rh, den_row, temp_row, &
 !               npts, nspec, &
 !               xn_zone, aion, zion, &
 !               p_row, h_row, e_row, &

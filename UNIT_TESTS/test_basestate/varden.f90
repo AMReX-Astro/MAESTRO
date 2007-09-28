@@ -280,12 +280,11 @@ subroutine varden()
         Hbar = 1.e16 * exp(-((z(i) - y_0)**2)/ 1.e14)
      
         ! (rho, T) --> p,h, etc
-        input_flag = 1
         den_row(1)  = s0(i,rho_comp)
         temp_row(1) = s0(i,temp_comp)
         xn_zone(:) = s0(i,spec_comp:spec_comp-1+nspec)/s0(i,rho_comp)
         
-        call eos(input_flag, den_row, temp_row, NP, nspec, &
+        call eos(eos_input_rt, den_row, temp_row, NP, nspec, &
                  xn_zone, aion, zion, &
                  p_row, h_row, e_row, &
                  cv_row, cp_row, xne_row, eta_row, pele_row, &

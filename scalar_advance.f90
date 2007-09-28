@@ -990,9 +990,7 @@ contains
           den_row(1) = sx(i,j,rho_comp)
           xn_zone(:) = sx(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
 
-         input_flag = 1      ! (rho, T) -> (p, h)
-
-         call eos(input_flag, den_row, temp_row, &
+         call eos(eos_input_rt, den_row, temp_row, &
                   npts, nspec, &
                   xn_zone, aion, zion, &
                   p_row, h_row, e_row, &
@@ -1032,9 +1030,7 @@ contains
           den_row(1) = sy(i,j,rho_comp)
           xn_zone(:) = sy(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
 
-         input_flag = 1      ! (rho, T) -> (p, h)
-
-         call eos(input_flag, den_row, temp_row, &
+         call eos(eos_input_rt, den_row, temp_row, &
                   npts, nspec, &
                   xn_zone, aion, zion, &
                   p_row, h_row, e_row, &
@@ -1093,9 +1089,7 @@ contains
           den_row(1) = sx(i,j,k,rho_comp)
           xn_zone(:) = sx(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
 
-         input_flag = 1      ! (rho, T) -> (p, h)
-
-         call eos(input_flag, den_row, temp_row, &
+         call eos(eos_input_rt, den_row, temp_row, &
                   npts, nspec, &
                   xn_zone, aion, zion, &
                   p_row, h_row, e_row, &
@@ -1139,9 +1133,7 @@ contains
           den_row(1) = sy(i,j,k,rho_comp)
           xn_zone(:) = sy(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
 
-         input_flag = 1      ! (rho, T) -> (p, h)
-
-         call eos(input_flag, den_row, temp_row, &
+         call eos(eos_input_rt, den_row, temp_row, &
                   npts, nspec, &
                   xn_zone, aion, zion, &
                   p_row, h_row, e_row, &
@@ -1185,9 +1177,7 @@ contains
           den_row(1) = sz(i,j,k,rho_comp)
           xn_zone(:) = sz(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
 
-         input_flag = 1      ! (rho, T) -> (p, h)
-
-         call eos(input_flag, den_row, temp_row, &
+         call eos(eos_input_rt, den_row, temp_row, &
                   npts, nspec, &
                   xn_zone, aion, zion, &
                   p_row, h_row, e_row, &
@@ -1248,9 +1238,7 @@ contains
              h_row(1) = state(i,j,rhoh_comp) / state(i,j,rho_comp)
           endif
 
-          input_flag = 2
-
-          call eos(input_flag, den_row, temp_row, &
+          call eos(eos_input_rh, den_row, temp_row, &
                    npts, nspec, &
                    xn_zone, aion, zion, &
                    p_row, h_row, e_row, &
@@ -1303,9 +1291,7 @@ contains
              h_row(1) = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp)
           endif
 
-          input_flag = 2
-
-          call eos(input_flag, den_row, temp_row, &
+          call eos(eos_input_rh, den_row, temp_row, &
                    npts, nspec, &
                    xn_zone, aion, zion, &
                    p_row, h_row, e_row, &

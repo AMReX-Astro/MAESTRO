@@ -28,7 +28,7 @@ contains
 
     ! local
     integer ndum, i, j, dm, nspec
-    integer input_flag
+
     parameter (ndum = 30)
     parameter (nspec = 3)
 
@@ -63,8 +63,7 @@ contains
     enddo
 
     ! given P, T, and X, compute rho
-    input_flag = 3
-    call eos(input_flag, den_row, temp_row, &
+    call eos(eos_input_tp, den_row, temp_row, &
          npts, nspec, &
          xn_zone, aion, zion, &
          p_row, h_row, e_row, & 
@@ -76,8 +75,7 @@ contains
          do_diag)
 
     ! given rho, T, and X, compute h
-    input_flag = 1
-    call eos(input_flag, den_row, temp_row, &
+    call eos(eos_input_rt, den_row, temp_row, &
          npts, nspec, &
          xn_zone, aion, zion, &
          p_row, h_row, e_row, & 
@@ -136,8 +134,7 @@ contains
        enddo
 
        ! given P, T, and X, compute rho
-       input_flag = 3
-       call eos(input_flag, den_row, temp_row, &
+       call eos(eos_input_tp, den_row, temp_row, &
                 npts, nspec, &
                 xn_zone, aion, zion, &
                 p_row, h_row, e_row, & 
@@ -149,8 +146,7 @@ contains
                 do_diag)
 
        ! given rho, T, and X, compute h.
-       input_flag = 1
-       call eos(input_flag, den_row, temp_row, &
+       call eos(eos_input_rt, den_row, temp_row, &
                 npts, nspec, &
                 xn_zone, aion, zion, &
                 p_row, h_row, e_row, & 

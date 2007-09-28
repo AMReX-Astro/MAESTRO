@@ -507,9 +507,9 @@ contains
     den_row(1) = s0(rho_comp)
     xn_zone(:) = s0(spec_comp:spec_comp+nspec-1)/s0(rho_comp)
 
-    input_flag = 3      ! (t, p) -> (rho, h)
+    ! (t, p) -> (rho, h)
 
-    call eos(input_flag, den_row, temp_row, &
+    call eos(eos_input_tp, den_row, temp_row, &
              npts, nspec, &
              xn_zone, aion, zion, &
              p_row, h_row, e_row, &
@@ -587,9 +587,9 @@ contains
     den_row(1) = s0(rho_comp)
     xn_zone(:) = s0(spec_comp:spec_comp+nspec-1)/s0(rho_comp)
 
-    input_flag = 3      ! (t, p) -> (rho, h)
+    ! (t, p) -> (rho, h)
 
-    call eos(input_flag, den_row, temp_row, &
+    call eos(eos_input_tp, den_row, temp_row, &
              npts, nspec, &
              xn_zone, aion, zion, &
              p_row, h_row, e_row, &

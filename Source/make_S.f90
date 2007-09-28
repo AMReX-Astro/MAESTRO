@@ -95,9 +95,7 @@ contains
            xn_zone(:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
            
            ! dens, temp, and xmass are inputs
-           input_flag = 1
-
-           call eos(input_flag, den_row, temp_row, &
+           call eos(eos_input_rt, den_row, temp_row, &
                     npts, nspec, &
                     xn_zone, aion, zion, &
                     p_row, h_row, e_row, & 
@@ -175,9 +173,7 @@ contains
               xn_zone(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
 
               ! dens, temp, and xmass are inputs
-              input_flag = 1
-
-              call eos(input_flag, den_row, temp_row, &
+              call eos(eos_input_rt, den_row, temp_row, &
                        npts, nspec, &
                        xn_zone, aion, zion, &
                        p_row, h_row, e_row, & 

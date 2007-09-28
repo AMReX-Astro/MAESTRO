@@ -251,10 +251,9 @@ subroutine make_coeffs_2d(lo,hi,dx,ng_1,ng_3,p0,s,kth,kthovercp,xik)
         xn_zone(:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
 
         ! dens, temp, and xmass are inputs
-        input_flag = 1
         do_diag = .false.
 
-        call conducteos(input_flag, den_row, temp_row, &
+        call conducteos(eos_input_rt, den_row, temp_row, &
              npts, nspec, &
              xn_zone, aion, zion, &
              p_row, h_row, e_row, & 
@@ -313,10 +312,9 @@ subroutine make_coeffs_3d(lo,hi,dx,ng_1,ng_3,p0,s,kth,kthovercp,xik)
            xn_zone(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
 
            ! dens, temp, and xmass are inputs
-           input_flag = 1
            do_diag = .false.
         
-           call conducteos(input_flag, den_row, temp_row, &
+           call conducteos(eos_input_rt, den_row, temp_row, &
                 npts, nspec, &
                 xn_zone, aion, zion, &
                 p_row, h_row, e_row, & 

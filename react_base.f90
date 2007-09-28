@@ -51,9 +51,7 @@ contains
          end do
 
          ! (rho,P,X) --> T, h
-         input_flag = 4
-
-         call eos(input_flag, den_row, temp_row, &
+         call eos(eos_input_rp, den_row, temp_row, &
                   npts, nspec, &
                   xn_zone, aion, zion, &
                   p_row, h_row, e_row, &
