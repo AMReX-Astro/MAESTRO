@@ -225,9 +225,9 @@ contains
           ! dens, enthalpy, and xmass are inputs
 !
 !          den_row(1) = rho
-!           h_row(1) = h_out
+!          h_row(1) = h_out
 !          xn_zone(:) = x_out(1:nspec)
-!         temp_row(1) = T_in
+!          temp_row(1) = T_in
 !
 !          call eos(eos_input_rh, den_row, temp_row, &
 !               npts, nspec, &

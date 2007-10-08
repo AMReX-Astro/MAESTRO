@@ -284,9 +284,9 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
         hi = upb(get_box(s2(n), i))
         select case (dm)
         case (2)
-           call makeTfromRhoH_2d(s2p(:,:,1,:), lo, hi, 3, p01, t01)
+           call makeTfromRhoH_2d(s2p(:,:,1,:), lo, hi, 3, t01)
         case (3)
-           call makeTfromRhoH_3d(s2p(:,:,:,:), lo, hi, 3, p01, t01)
+           call makeTfromRhoH_3d(s2p(:,:,:,:), lo, hi, 3, t01)
         end select
      end do
   enddo
@@ -527,9 +527,9 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
         hi = upb(get_box(s2(n), i))
         select case (dm)
         case (2)
-           call makeTfromRhoH_2d(s2p(:,:,1,:), lo, hi, 3, p02, t02)
+           call makeTfromRhoH_2d(s2p(:,:,1,:), lo, hi, 3, t02)
         case (3)
-           call makeTfromRhoH_3d(s2p(:,:,:,:), lo, hi, 3, p02, t02)
+           call makeTfromRhoH_3d(s2p(:,:,:,:), lo, hi, 3, t02)
         end select
      end do
   enddo

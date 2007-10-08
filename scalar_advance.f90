@@ -147,7 +147,8 @@ contains
               n = temp_comp
               tp => dataptr(thermal, i)
 
-              call makeTfromRhoH_2d(sop(:,:,1,:), lo, hi, ng_cell, p0_old, s0_old(:,temp_comp))
+              ! This can be uncommented if you wish to compute T           
+              ! call makeTfromRhoH_2d(sop(:,:,1,:), lo, hi, ng_cell, s0_old(:,temp_comp))
 
               call mktempforce_2d(fp(:,:,1,n), sop(:,:,1,:), tp(:,:,1,1), lo, hi, ng_cell, p0_old)
             else
@@ -177,8 +178,9 @@ contains
 
                  n = temp_comp
                  tp => dataptr(thermal, i)
-   
-                 call makeTfromRhoH_3d(sop(:,:,:,:), lo, hi, ng_cell, p0_old, s0_old(:,temp_comp))
+
+                 ! This can be uncommented if you wish to compute T      
+                 ! call makeTfromRhoH_3d(sop(:,:,:,:), lo, hi, ng_cell, s0_old(:,temp_comp))
    
                  call mktempforce_3d_sphr(fp(:,:,:,n), sop(:,:,:,:), tp(:,:,:,1), lo, hi, ng_cell, p0_old, dx)
 
@@ -210,7 +212,8 @@ contains
                  n = temp_comp
                  tp => dataptr(thermal, i)
 
-                 call makeTfromRhoH_3d(sop(:,:,:,:), lo, hi, ng_cell, p0_old, s0_old(:,temp_comp))
+                 ! This can be uncommented if you wish to compute T      
+                 ! call makeTfromRhoH_3d(sop(:,:,:,:), lo, hi, ng_cell, s0_old(:,temp_comp))
 
                  call mktempforce_3d(fp(:,:,:,n), sop(:,:,:,:), tp(:,:,:,1), lo, hi, ng_cell, p0_old)
 
@@ -688,19 +691,6 @@ contains
                                          s0_old(:,:), s0_new(:,:), &
                                          lo, hi, ng_cell, dx, dt)
                end if
-         end select
-      end do
-
-      do i = 1, snew%nboxes
-         if ( multifab_remote(snew, i) ) cycle
-         snp => dataptr(snew , i)
-         lo =  lwb(get_box(snew, i))
-         hi =  upb(get_box(snew, i))
-         select case (dm)
-         case (2)
-            call makeTfromRhoH_2d(snp(:,:,1,:), lo, hi, ng_cell, p0_new, s0_new(:,temp_comp))
-         case (3)
-            call makeTfromRhoH_3d(snp(:,:,:,:), lo, hi, ng_cell, p0_new, s0_new(:,temp_comp))
          end select
       end do
 
@@ -1204,12 +1194,11 @@ contains
 
    end subroutine makeRhoHfromT_3d
 
-  subroutine makeTfromRhoH_2d (state,lo,hi,ng,p0,t0)
+  subroutine makeTfromRhoH_2d (state,lo,hi,ng,t0)
 
     implicit none
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(inout) ::  state(lo(1)-ng:,lo(2)-ng:,:)
-    real (kind = dp_t), intent(in   ) ::  p0(0:)
     real (kind = dp_t), intent(in   ) ::  t0(0:)
 
     !     Local variables
@@ -1224,7 +1213,6 @@ contains
           ! (rho, H) --> T, p
 
           den_row(1)  = state(i,j,rho_comp)
-          p_row(1)    = p0(j)
           temp_row(1) = t0(j)
           xn_zone(:) = state(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
 
@@ -1256,12 +1244,11 @@ contains
 
   end subroutine makeTfromRhoH_2d
 
-  subroutine makeTfromRhoH_3d (state,lo,hi,ng,p0,t0)
+  subroutine makeTfromRhoH_3d (state,lo,hi,ng,t0)
 
     implicit none
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(inout) ::  state(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-    real (kind = dp_t), intent(in   ) ::  p0(0:)
     real (kind = dp_t), intent(in   ) ::  t0(0:)
 
     !     Local variables
@@ -1277,7 +1264,6 @@ contains
           ! (rho, H) --> T, p
 
           den_row(1)  = state(i,j,k,rho_comp)
-          p_row(1)    = p0(k)
           temp_row(1) = t0(k)
           xn_zone(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
 
