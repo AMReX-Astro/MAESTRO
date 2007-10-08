@@ -18,7 +18,7 @@ module restart_module
 
 contains
 
-  subroutine fill_restart_data(restart_int,mba,chkdata,chk_p,chk_src_nm1,chk_src_old,time,dt)
+  subroutine fill_restart_data(restart_int,mba,chkdata,chk_p,chk_src_nm1,chk_src_old,chk_rho_omegadot2,time,dt)
 
     integer          , intent(in   ) :: restart_int
     real(dp_t)       , intent(  out) :: time,dt
@@ -28,13 +28,15 @@ contains
     type(multifab)   , pointer        :: chk_p(:)
     type(multifab)   , pointer        :: chk_src_nm1(:)
     type(multifab)   , pointer        :: chk_src_old(:)
+    type(multifab)   , pointer        :: chk_rho_omegadot2(:)
     character(len=7)                  :: sd_name
     integer                           :: n,nlevs,dm
 
     write(unit=sd_name,fmt='("chk",i4.4)') restart_int
     if ( parallel_IOProcessor()) &
       print *,'Reading ',sd_name,' to get state data for restart'
-    call checkpoint_read(chkdata, chk_p, chk_src_nm1, chk_src_old, sd_name, time, dt, nlevs)
+    call checkpoint_read(chkdata, chk_p, chk_src_nm1, chk_src_old, &
+         chk_rho_omegadot2, sd_name, time, dt, nlevs)
 
     dm = chkdata(1)%dim
 
