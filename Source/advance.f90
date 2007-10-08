@@ -32,6 +32,7 @@ module advance_timestep_module
   use extraphalf_module
   use thermal_conduct_module
   use make_explicit_thermal_module
+  use add_react_to_thermal_module
   use variables
   use network
   use probin_module
@@ -47,7 +48,8 @@ module advance_timestep_module
                                 grav_cell_old, &
                                 dx,time,dt,dtold,the_bc_tower, &
                                 anelastic_cutoff,verbose,mg_verbose,cg_verbose,&
-                                Source_nm1,Source_old,Source_new,gamma1_term,sponge,do_sponge,hgrhs)
+                                Source_nm1,Source_old,Source_new,gamma1_term, &
+                                sponge,do_sponge,hgrhs,istep)
 
     implicit none
 
@@ -92,7 +94,7 @@ module advance_timestep_module
     real(dp_t)    , intent(in   ) :: dx(:,:), time, dt, dtold
     type(bc_tower), intent(in   ) :: the_bc_tower
     real(dp_t)    , intent(in   ) :: anelastic_cutoff
-    integer       , intent(in   ) :: verbose,mg_verbose,cg_verbose
+    integer       , intent(in   ) :: verbose,mg_verbose,cg_verbose,istep
 
     type(multifab), intent(in   ) :: sponge(:)
     logical       , intent(in   ) :: do_sponge
@@ -314,6 +316,14 @@ module advance_timestep_module
                                       mg_verbose,cg_verbose,the_bc_tower, &
                                       temp_diffusion_formulation)
         endif
+
+        do n=1,nlevs
+           if(istep .le. 1) then
+              call add_react_to_thermal(thermal(n),rho_omegadot1(n),s1(n))
+           else
+              call add_react_to_thermal(thermal(n),rho_omegadot2(n),s1(n))
+           endif
+        enddo
 
         do n = 1,nlevs
            call scalar_advance (1, uold(n), s1(n), s2(n), thermal(n),&
