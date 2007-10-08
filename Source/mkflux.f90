@@ -193,8 +193,13 @@ contains
 
           ubardth = dth*u(i,j,1)/hx
 
-          s_l(i+1)= s(i,j,n) + (HALF-ubardth)*slopex(i,j,1) + dth*st
-          s_r(i  )= s(i,j,n) - (HALF+ubardth)*slopex(i,j,1) + dth*st
+          if(velpred .eq. 1) then
+             s_l(i+1)= s(i,j,n) + (HALF-ubardth)*slopex(i,j,1) + dth*st
+             s_r(i  )= s(i,j,n) - (HALF+ubardth)*slopex(i,j,1) + dth*st
+          else
+             s_l(i+1)= s(i,j,n) + (HALF-dth*uadv(i+1,j)/hx)*slopex(i,j,1) + dth*st
+             s_r(i  )= s(i,j,n) - (HALF+dth*uadv(i  ,j)/hx)*slopex(i,j,1) + dth*st
+          endif
 
          enddo
 
@@ -322,8 +327,14 @@ contains
             vbardth = dth / hy * u(i,j,2) 
           end if
 
-          s_b(j+1)= s(i,j,n) + (HALF-vbardth)*slopey(i,j,1) + dth*st
-          s_t(j  )= s(i,j,n) - (HALF+vbardth)*slopey(i,j,1) + dth*st
+          if(velpred .eq. 1) then
+             s_b(j+1)= s(i,j,n) + (HALF-vbardth)*slopey(i,j,1) + dth*st
+             s_t(j  )= s(i,j,n) - (HALF+vbardth)*slopey(i,j,1) + dth*st
+          else
+             s_b(j+1)= s(i,j,n) + (HALF-dth*vadv(i,j+1)/hy)*slopey(i,j,1) + dth*st
+             s_t(j  )= s(i,j,n) - (HALF+dth*vadv(i,j  )/hy)*slopey(i,j,1) + dth*st
+          endif
+
         enddo
 
         if (velpred .eq. 1) then
@@ -664,8 +675,13 @@ contains
 
           ubardth = dth/hx * ( u(i,j,k,1) + w0_cart_vec(i,j,k,1))
 
-          s_l(i+1)= s(i,j,k,n) + (HALF-ubardth)*slopex(i,j,k,1) + dth*st
-          s_r(i  )= s(i,j,k,n) - (HALF+ubardth)*slopex(i,j,k,1) + dth*st
+          if(velpred .eq. 1) then
+             s_l(i+1)= s(i,j,k,n) + (HALF-ubardth)*slopex(i,j,k,1) + dth*st
+             s_r(i  )= s(i,j,k,n) - (HALF+ubardth)*slopex(i,j,k,1) + dth*st
+          else
+             s_l(i+1)= s(i,j,k,n) + (HALF-dth*uadv(i+1,j,k))*slopex(i,j,k,1) + dth*st
+             s_r(i  )= s(i,j,k,n) - (HALF+dth*uadv(i  ,j,k))*slopex(i,j,k,1) + dth*st
+          endif
 
          enddo
 
@@ -856,8 +872,13 @@ contains
 
           vbardth = dth/hy * ( u(i,j,k,2) + w0_cart_vec(i,j,k,2))
 
-          s_b(j+1)= s(i,j,k,n) + (HALF-vbardth)*slopey(i,j,k,1) + dth*st
-          s_t(j  )= s(i,j,k,n) - (HALF+vbardth)*slopey(i,j,k,1) + dth*st
+          if(velpred .eq. 1) then
+             s_b(j+1)= s(i,j,k,n) + (HALF-vbardth)*slopey(i,j,k,1) + dth*st
+             s_t(j  )= s(i,j,k,n) - (HALF+vbardth)*slopey(i,j,k,1) + dth*st
+          else
+             s_b(j+1)= s(i,j,k,n) + (HALF-dth*vadv(i,j+1,k))*slopey(i,j,k,1) + dth*st
+             s_t(j  )= s(i,j,k,n) - (HALF+dth*vadv(i,j,  k))*slopey(i,j,k,1) + dth*st
+          endif
 
         enddo
 
@@ -1047,8 +1068,13 @@ contains
 
           wbardth = dth/hz * ( u(i,j,k,3) + w0_cart_vec(i,j,k,3))
 
-          s_d(k+1)= s(i,j,k,n) + (HALF-wbardth)*slopez(i,j,k,1) + dth*st
-          s_u(k  )= s(i,j,k,n) - (HALF+wbardth)*slopez(i,j,k,1) + dth*st
+          if(velpred .eq. 1) then
+             s_d(k+1)= s(i,j,k,n) + (HALF-wbardth)*slopez(i,j,k,1) + dth*st
+             s_u(k  )= s(i,j,k,n) - (HALF+wbardth)*slopez(i,j,k,1) + dth*st
+          else
+             s_d(k+1)= s(i,j,k,n) + (HALF-dth*wadv(i,j,k+1))*slopez(i,j,k,1) + dth*st
+             s_u(k  )= s(i,j,k,n) - (HALF+dth*wadv(i,j,k  ))*slopez(i,j,k,1) + dth*st
+          endif
 
         enddo
 
