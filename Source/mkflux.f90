@@ -122,8 +122,8 @@ contains
 !     Loop for fluxes on x-edges.
 !
 
+      if (velpred .eq. 0 .or. n .eq. 1) then
        do j = js,je 
-        if (velpred .eq. 0 .or. n .eq. 1) then
         do i = is-1,ie+1 
  
           vlo = u(i,j  ,2) + HALF * (w0(j  )+w0(j+1))
@@ -260,14 +260,14 @@ contains
              uadv(i,j) = sedgex(i,j,1)
            enddo
          endif
-         endif
        enddo
+      endif
 
 !
 !     Loop for fluxes on y-edges.
 !
+      if (velpred .eq. 0 .or. n .eq. 2) then
        do i = is, ie 
-        if (velpred .eq. 0 .or. n .eq. 2) then
         do j = js-1, je+1 
 
           splft = s(i,j  ,n) + (HALF - dth*u(i  ,j,1)/hx) * slopex(i  ,j,1)
@@ -398,8 +398,8 @@ contains
           enddo
         end if
 
-       end if
-      enddo
+       enddo
+      end if
 
       deallocate(s_l)
       deallocate(s_r)
