@@ -44,22 +44,36 @@ contains
     write(unit=sd_name, fmt='(a,"/State")') trim(dirname)
     call fabio_ml_multifab_write_d(mfs, rrs(:,1), sd_name)
 
+    if (parallel_IOProcessor() .and. verbose .ge. 1) then
+      write(6,*) 'Writing    state to checkpoint file ',trim(sd_name)
+    end if
+
     write(unit=sd_name, fmt='(a,"/Source_nm1")') trim(dirname)
     call fabio_ml_multifab_write_d(Source_nm1, rrs(:,1), sd_name)
+
+    if (parallel_IOProcessor() .and. verbose .ge. 1) then
+      write(6,*) 'Writing    state to checkpoint file ',trim(sd_name)
+    end if
 
     write(unit=sd_name, fmt='(a,"/Source_old")') trim(dirname)
     call fabio_ml_multifab_write_d(Source_old, rrs(:,1), sd_name)
 
+    if (parallel_IOProcessor() .and. verbose .ge. 1) then
+      write(6,*) 'Writing    state to checkpoint file ',trim(sd_name)
+    end if
+
     write(unit=sd_name, fmt='(a,"/rho_omegadot2")') trim(dirname)
     call fabio_ml_multifab_write_d(rho_omegadot2, rrs(:,1), sd_name)
+
+    if (parallel_IOProcessor() .and. verbose .ge. 1) then
+      write(6,*) 'Writing    state to checkpoint file ',trim(sd_name)
+    end if
 
     write(unit=sd_name_nodal, fmt='(a,"/Pressure")') trim(dirname)
     call fabio_ml_multifab_write_d(mfs_nodal, rrs(:,1), sd_name_nodal)
 
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
-      write(6,*) 'Writing    state to checkpoint file ',trim(sd_name)
-      write(6,*) 'Writing pressure to checkpoint file ',trim(sd_name_nodal)
-      write(6,*) 
+      write(6,*) 'Writing state to checkpoint file ',trim(sd_name_nodal)
     end if
 
     time = time_in

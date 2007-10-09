@@ -346,6 +346,7 @@ contains
        ! write out w0 (it is nodal, so it gets a separate file)
        out_name = chk_name // "/" // w0_name
        write(6,*) 'Writing w0 state to ',out_name
+       write(6,*) ''
 
        open(unit=99,file=out_name,form = "formatted", access = "sequential",action="write")
        do i = 1, nr+1
