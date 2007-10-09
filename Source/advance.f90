@@ -178,21 +178,32 @@ module advance_timestep_module
 
     nodal = .true.
     do n = 1,nlevs
-     call multifab_build(   rhohalf(n), mla%la(n),     1, 1)
-     call multifab_build(Source_nph(n), mla%la(n),     1, 0)
-     call multifab_build(    macrhs(n), mla%la(n),     1, 0)
-     call multifab_build(    macphi(n), mla%la(n),     1, 1)
-     call multifab_build(     hgrhs_old(n), mla%la(n), 1, 0, nodal)
-     call multifab_build(   thermal(n), mla%la(n),     1, 0)
+       call multifab_build(   rhohalf(n), mla%la(n),     1, 1)
+       call multifab_build(Source_nph(n), mla%la(n),     1, 0)
+       call multifab_build(    macrhs(n), mla%la(n),     1, 0)
+       call multifab_build(    macphi(n), mla%la(n),     1, 1)
+       call multifab_build( hgrhs_old(n), mla%la(n),     1, 0, nodal)
+       call multifab_build(   thermal(n), mla%la(n),     1, 0)
+       
+       call setval(rhohalf(n),ZERO,all=.true.)
+       call setval(Source_nph(n),ZERO,all=.true.)
+       call setval(macrhs(n),ZERO,all=.true.)
+       call setval(macphi(n),ZERO,all=.true.)
+       call setval(hgrhs_old(n),ZERO,all=.true.)
+       call setval(thermal(n),ZERO,all=.true.)
+       
+       if (dm.eq.3) then
+          call multifab_build(      w0_cart_vec(n), mla%la(n),dm,1)
+          call multifab_build(w0_force_cart_vec(n), mla%la(n),dm,1)
+          call setval(w0_cart_vec(n),ZERO,all=.true.)
+          call setval(w0_force_cart_vec(n),ZERO,all=.true.)
+       end if
 
-     call setval(macphi(n),ZERO,all=.true.)
-
-     if (dm.eq.3) then
-         call multifab_build(      w0_cart_vec(n), mla%la(n),dm,1)
-         call multifab_build(w0_force_cart_vec(n), mla%la(n),dm,1)
-     end if
-     if (spherical.eq.1) &
-         call multifab_build(div_coeff_3d(n),mla%la(nlevs),1,1)
+       if (spherical.eq.1) then
+          call multifab_build(div_coeff_3d(n),mla%la(nlevs),1,1)
+          call setval(div_coeff_3d(n),ZERO,all=.true.)
+       endif
+       
     end do
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -351,9 +362,13 @@ module advance_timestep_module
               write(6,*) '<<< STEP  4a: thermal conduct >>>'
            end if
 
-           call thermal_conduct_half_alg(mla,dx,dt,s1,s2,p0_1,p0_2, &
-                                         s0_1(:,temp_comp), s0_2(:,temp_comp), &
-                                         mg_verbose,cg_verbose,the_bc_tower)
+           if(do_half_alg) then
+              call thermal_conduct_half_alg(mla,dx,dt,s1,s2,p0_1,p0_2, &
+                                            s0_1(:,temp_comp), s0_2(:,temp_comp), &
+                                            mg_verbose,cg_verbose,the_bc_tower)
+           else
+              
+           endif
         endif
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -408,10 +423,6 @@ module advance_timestep_module
         if (parallel_IOProcessor() .and. verbose .ge. 1) then
           write(6,*) '<<< STEP  6 : make new S and new w0 >>> '
         end if
-
-        do n=1,nlevs
-           call setval(thermal(n),ZERO,all=.true.)
-        enddo
 
         if(use_thermal_diffusion) then
            call make_explicit_thermal(mla,dx,thermal,snew,p0_new, &
@@ -499,6 +510,14 @@ module advance_timestep_module
                                       temp_diffusion_formulation)
         endif
 
+        do n=1,nlevs
+           if(istep .le. 1) then
+              call add_react_to_thermal(thermal(n),rho_omegadot1(n),s1(n))
+           else
+              call add_react_to_thermal(thermal(n),rho_omegadot2(n),s1(n))
+           endif
+        enddo
+
         do n = 1,nlevs
            call scalar_advance (2, uold(n), s1(n), s2(n), thermal(n), &
                                 umac(n,:), w0, w0_cart_vec(n), sedge(n,:), utrans(n,:),&
@@ -525,8 +544,6 @@ module advance_timestep_module
 !              write(6,*) '<<< STEP  8a: thermal conduct >>>'
 !           end if
 !
-!           call thermal_conduct(mla,dx,dt,sold,s2,p0_old,p0_2, &
-!                                mg_verbose,cg_verbose,the_bc_tower)
 !        endif
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -565,10 +582,6 @@ module advance_timestep_module
         if (parallel_IOProcessor() .and. verbose .ge. 1) then
           write(6,*) '<<< STEP 10 : make new S >>>'
         end if
-
-        do n=1,nlevs
-           call setval(thermal(n),ZERO,all=.true.)
-        enddo
 
         if(use_thermal_diffusion) then
            call make_explicit_thermal(mla,dx,thermal,snew,p0_new, &
