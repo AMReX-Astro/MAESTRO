@@ -15,14 +15,15 @@ module estdt_module
 
 contains
 
-   subroutine estdt (istep, u, s, force, divU, normal, w0, p0, gam1, dx, &
-        cflfac, dt, verbose)
+   subroutine estdt (istep, u, s, force, divU, dSdt, normal, w0, p0, gam1, &
+                     dx, cflfac, dt, verbose)
 
       integer        , intent(in ) :: istep
       type(multifab) , intent(in ) :: u
       type(multifab) , intent(in ) :: s
       type(multifab) , intent(in ) :: force
       type(multifab) , intent(in ) :: divU
+      type(multifab) , intent(in ) :: dSdt
       type(multifab) , intent(in ) :: normal
       real(kind=dp_t), intent(in ) :: w0(0:), p0(0:), gam1(0:)
       real(kind=dp_t), intent(in ) :: dx(:)
@@ -35,6 +36,7 @@ contains
       real(kind=dp_t), pointer:: fp(:,:,:,:)
       real(kind=dp_t), pointer:: np(:,:,:,:)
       real(kind=dp_t), pointer:: dUp(:,:,:,:)
+      real(kind=dp_t), pointer:: dSdtp(:,:,:,:)
 
       integer :: lo(u%dim),hi(u%dim),ng,dm
 
@@ -58,6 +60,7 @@ contains
          sop => dataptr(s, i)
           fp => dataptr(force, i)
          dUp => dataptr(divU, i)
+         dSdtp => dataptr(dSdt, i)
 
          lo =  lwb(get_box(u, i))
          hi =  upb(get_box(u, i))
@@ -65,17 +68,19 @@ contains
          select case (dm)
             case (2)
               call estdt_2d(uop(:,:,1,:), sop(:,:,1,:), fp(:,:,1,:), &
-                   dUp(:,:,1,1), w0, p0, gam1, lo, hi, ng, dx, rho_min, &
-                   dt_adv_grid, dt_divu_grid, cflfac, verbose)
+                   dUp(:,:,1,1), dSdtp(:,:,1,1), w0, p0, gam1, lo, hi, ng, &
+                   dx, rho_min, dt_adv_grid, dt_divu_grid, cflfac, verbose)
             case (3)
               if (spherical .eq. 1) then
                 np => dataptr(normal, i)
                 call estdt_3d_sphr(uop(:,:,:,:), sop(:,:,:,:), fp(:,:,:,:), &
-                     dUp(:,:,:,1), np(:,:,:,:), w0, p0, gam1, lo, hi, ng, dx, &
+                     dUp(:,:,:,1), dSdtp(:,:,:,1), &
+                     np(:,:,:,:), w0, p0, gam1, lo, hi, ng, dx, &
                      rho_min, dt_adv_grid, dt_divu_grid, cflfac, verbose)
               else
                 call estdt_3d_cart(uop(:,:,:,:), sop(:,:,:,:), fp(:,:,:,:), &
-                     dUp(:,:,:,1), w0, p0, gam1, lo, hi, ng, dx, rho_min, &
+                     dUp(:,:,:,1), dSdtp(:,:,:,1), &
+                     w0, p0, gam1, lo, hi, ng, dx, rho_min, &
                      dt_adv_grid, dt_divu_grid, cflfac, verbose)
               end if
          end select
@@ -93,14 +98,15 @@ contains
    end subroutine estdt
 
 
-   subroutine estdt_2d (u, s, force, divU, w0, p0, gam1, lo, hi, ng, dx, &
-        rho_min, dt_adv, dt_divu, cfl, verbose)
+   subroutine estdt_2d (u, s, force, divU, dSdt, w0, p0, gam1, lo, hi, &
+        ng, dx, rho_min, dt_adv, dt_divu, cfl, verbose)
 
      integer, intent(in) :: lo(:), hi(:), ng
      real (kind = dp_t), intent(in ) :: u(lo(1)-ng:,lo(2)-ng:,:)  
      real (kind = dp_t), intent(in ) :: s(lo(1)-ng:,lo(2)-ng:,:)  
      real (kind = dp_t), intent(in ) :: force(lo(1)-1:,lo(2)-1:,:)  
      real (kind = dp_t), intent(in ) :: divU(lo(1):,lo(2):)
+     real (kind = dp_t), intent(in ) :: dSdt(lo(1):,lo(2):)
      real (kind = dp_t), intent( in) :: w0(0:), p0(0:), gam1(0:)
      real (kind = dp_t), intent(in ) :: dx(:)
      real (kind = dp_t), intent(in ) :: rho_min,cfl
@@ -112,6 +118,7 @@ contains
      real (kind = dp_t)  :: pforcex, pforcey
      real (kind = dp_t)  :: eps
      real (kind = dp_t)  :: denom, gradp0
+     real (kind = dp_t)  :: a, b, c
      integer             :: i,j,nr
 
      nr = size(p0,dim=1)
@@ -189,15 +196,37 @@ contains
         enddo
      enddo
 
+     do j = lo(2), hi(2)
+        do i = lo(1), hi(1)           
+
+           ! an additional dS/dt timestep constraint originally
+           ! used in nova
+           ! solve the quadratic equation
+           ! (rho - rho_min)/(rho dt) = S + (dt/2)*(dS/dt)
+           ! which is equivalent to
+           ! (rho/2)*dS/dt*dt^2 + rho*S*dt + (rho_min-rho) = 0
+           ! which has solution dt = 2.0d0*c/(-b-sqrt(b**2-4.0d0*a*c))
+           if(dSdt(i,j) .gt. 1.d-20) then
+              a = HALF*s(i,j,rho_comp)*dSdt(i,j)
+              b = s(i,j,rho_comp)*divU(i,j)
+              c = rho_min - s(i,j,rho_comp)
+              dt_divu = min(dt_divu, 0.4d0*2.0d0*c/(-b-sqrt(b**2-4.0d0*a*c)))
+           endif
+
+        enddo
+     enddo
+
    end subroutine estdt_2d
 
-   subroutine estdt_3d_cart (u, s, force, divU, w0, p0, gam1, lo, hi, ng, dx, rho_min, dt_adv, dt_divu, cfl, verbose)
+   subroutine estdt_3d_cart (u, s, force, divU, dSdt, w0, p0, gam1, lo, hi, &
+        ng, dx, rho_min, dt_adv, dt_divu, cfl, verbose)
 
      integer, intent(in) :: lo(:), hi(:), ng
      real (kind = dp_t), intent(in ) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
      real (kind = dp_t), intent(in ) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
      real (kind = dp_t), intent(in ) :: force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
      real (kind = dp_t), intent(in ) :: divU(lo(1):,lo(2):,lo(3):)
+     real (kind = dp_t), intent(in ) :: dSdt(lo(1):,lo(2):,lo(3):)
      real (kind = dp_t), intent( in) :: w0(0:), p0(0:), gam1(0:)
      real (kind = dp_t), intent(in ) :: dx(:)
      real (kind = dp_t), intent(in ) :: rho_min,cfl
@@ -208,6 +237,7 @@ contains
      real (kind = dp_t)  :: spdx, spdy, spdz, spdr
      real (kind = dp_t)  :: pforcex, pforcey, pforcez
      real (kind = dp_t)  :: eps,denom,gradp0
+     real (kind = dp_t)  :: a, b, c
      integer             :: i,j,k,nr
 
      eps = 1.0e-8
@@ -299,16 +329,39 @@ contains
         enddo
      enddo
 
+     do k = lo(3), hi(3)
+        do j = lo(2), hi(2)
+           do i = lo(1), hi(1)           
+              
+              ! an additional dS/dt timestep constraint originally
+              ! used in nova
+              ! solve the quadratic equation
+              ! (rho - rho_min)/(rho dt) = S + (dt/2)*(dS/dt)
+              ! which is equivalent to
+              ! (rho/2)*dS/dt*dt^2 + rho*S*dt + (rho_min-rho) = 0
+              ! which has solution dt = 2.0d0*c/(-b-sqrt(b**2-4.0d0*a*c))
+              if(dSdt(i,j,k) .gt. 1.d-20) then
+                 a = HALF*s(i,j,k,rho_comp)*dSdt(i,j,k)
+                 b = s(i,j,k,rho_comp)*divU(i,j,k)
+                 c = rho_min - s(i,j,k,rho_comp)
+                 dt_divu = min(dt_divu,0.4d0*2.0d0*c/(-b-sqrt(b**2-4.0d0*a*c)))
+              endif
+
+           enddo
+        enddo
+     enddo
+
    end subroutine estdt_3d_cart
 
-   subroutine estdt_3d_sphr (u, s, force, divU, normal, w0, p0, gam1, lo, hi, &
-        ng, dx, rho_min, dt_adv, dt_divu, cfl, verbose)
+   subroutine estdt_3d_sphr (u, s, force, divU, dSdt, normal, w0, p0, gam1, &
+        lo, hi, ng, dx, rho_min, dt_adv, dt_divu, cfl, verbose)
 
      integer, intent(in) :: lo(:), hi(:), ng
      real (kind = dp_t), intent(in ) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
      real (kind = dp_t), intent(in ) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
      real (kind = dp_t), intent(in ) :: force(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)  
      real (kind = dp_t), intent(in ) :: divU(lo(1):,lo(2):,lo(3):)
+     real (kind = dp_t), intent(in ) :: dSdt(lo(1):,lo(2):,lo(3):)
      real (kind = dp_t), intent(in ) :: normal(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)
      real (kind = dp_t), intent( in) :: w0(0:), p0(0:), gam1(0:)
      real (kind = dp_t), intent(in ) :: dx(:)
@@ -323,6 +376,7 @@ contains
      real (kind = dp_t)  :: spdx, spdy, spdz, spdr, gp_dot_u, gam1_p_avg
      real (kind = dp_t)  :: pforcex, pforcey, pforcez
      real (kind = dp_t)  :: eps,denom
+     real (kind = dp_t)  :: a, b, c
      integer             :: i,j,k,nr
 
      eps = 1.0e-8
@@ -419,6 +473,28 @@ contains
               if (denom > ZERO) then
                 dt_divu = &
                      min(dt_divu,0.4d0*(ONE - rho_min/s(i,j,k,rho_comp))/denom)
+              endif
+
+           enddo
+        enddo
+     enddo
+
+     do k = lo(3), hi(3)
+        do j = lo(2), hi(2)
+           do i = lo(1), hi(1)           
+              
+              ! an additional dS/dt timestep constraint originally
+              ! used in nova
+              ! solve the quadratic equation
+              ! (rho - rho_min)/(rho dt) = S + (dt/2)*(dS/dt)
+              ! which is equivalent to
+              ! (rho/2)*dS/dt*dt^2 + rho*S*dt + (rho_min-rho) = 0
+              ! which has solution dt = 2.0d0*c/(-b-sqrt(b**2-4.0d0*a*c))
+              if(dSdt(i,j,k) .gt. 1.d-20) then
+                 a = HALF*s(i,j,k,rho_comp)*dSdt(i,j,k)
+                 b = s(i,j,k,rho_comp)*divU(i,j,k)
+                 c = rho_min - s(i,j,k,rho_comp)
+                 dt_divu = min(dt_divu,0.4d0*2.0d0*c/(-b-sqrt(b**2-4.0d0*a*c)))
               endif
 
            enddo
