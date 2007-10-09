@@ -18,10 +18,8 @@ module firstdt_module
 
 contains
 
-   subroutine firstdt (istep, u, s, force, divU, p0, gam1, t0, dx, cflfac, &
-        dt, verbose)
+   subroutine firstdt(u,s,force,divU,p0,gam1,t0,dx,cflfac,dt,verbose)
 
-      integer        , intent(in   ) :: istep
       type(multifab) , intent(in   ) :: u,s,force,divU
       real(kind=dp_t), intent(in   ) :: p0(0:), cflfac, t0(0:), gam1(0:)
       real(kind=dp_t), intent(in   ) :: dx(:)
@@ -64,9 +62,6 @@ contains
       end do
 
       call parallel_reduce(dt, dt_hold_proc ,MPI_MIN)
-
-      if (parallel_IOProcessor() .and. verbose .ge. 1) &
-        print *,'Using firstdt, at istep',istep,', dt =',dt
 
     end subroutine firstdt
 

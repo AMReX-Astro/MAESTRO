@@ -16,7 +16,7 @@ module estdt_module
 contains
 
    subroutine estdt (istep, u, s, force, divU, normal, w0, p0, gam1, dx, &
-        cflfac, dtold, dt, verbose)
+        cflfac, dt, verbose)
 
       integer        , intent(in ) :: istep
       type(multifab) , intent(in ) :: u
@@ -26,7 +26,7 @@ contains
       type(multifab) , intent(in ) :: normal
       real(kind=dp_t), intent(in ) :: w0(0:), p0(0:), gam1(0:)
       real(kind=dp_t), intent(in ) :: dx(:)
-      real(kind=dp_t), intent(in ) :: cflfac, dtold
+      real(kind=dp_t), intent(in ) :: cflfac
       real(kind=dp_t), intent(out) :: dt
       integer        , intent(in ) :: verbose
 
@@ -89,11 +89,6 @@ contains
       call parallel_reduce(dt_divu,dt_divu_proc,MPI_MIN)
 
       dt = min(dt_adv,dt_divu)
-
-      if (parallel_IOProcessor() .and. verbose .ge. 1) then
-         write(6,*) ''
-         write(6,*) 'Using estdt, at istep',istep,', dt =',dt
-      endif
 
    end subroutine estdt
 
