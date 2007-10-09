@@ -15,10 +15,10 @@ module checkpoint_module
 
 contains
 
-  subroutine checkpoint_write(dirname, mfs, mfs_nodal, Source_nm1, Source_old, &
+  subroutine checkpoint_write(dirname, mfs, mfs_nodal, dSdt, Source_old, &
                               rho_omegadot2, rrs, dx, time_in, dt_in, verbose)
     type(multifab), intent(in) :: mfs(:), mfs_nodal(:)
-    type(multifab), intent(in) :: Source_nm1(:), Source_old(:)
+    type(multifab), intent(in) :: dSdt(:), Source_old(:)
     type(multifab), intent(in) :: rho_omegadot2(:)
     integer        , intent(in) :: rrs(:,:)
     real(kind=dp_t), intent(in) :: dx(:,:)
@@ -48,8 +48,8 @@ contains
       write(6,*) 'Writing    state to checkpoint file ',trim(sd_name)
     end if
 
-    write(unit=sd_name, fmt='(a,"/Source_nm1")') trim(dirname)
-    call fabio_ml_multifab_write_d(Source_nm1, rrs(:,1), sd_name)
+    write(unit=sd_name, fmt='(a,"/dSdt")') trim(dirname)
+    call fabio_ml_multifab_write_d(dSdt, rrs(:,1), sd_name)
 
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
       write(6,*) 'Writing    state to checkpoint file ',trim(sd_name)
@@ -99,11 +99,11 @@ contains
 
   end subroutine checkpoint_write
 
-  subroutine checkpoint_read(mfs, mfs_nodal, Source_nm1, Source_old, rho_omegadot2, &
+  subroutine checkpoint_read(mfs, mfs_nodal, dSdt, Source_old, rho_omegadot2, &
        dirname, time_out, dt_out, nlevs_out)
     use bl_IO_module
     type(multifab  ),                pointer :: mfs(:), mfs_nodal(:)
-    type(multifab  ),                pointer :: Source_nm1(:), Source_old(:), rho_omegadot2(:)
+    type(multifab  ),                pointer :: dSdt(:), Source_old(:), rho_omegadot2(:)
     character(len=*), intent(in   )          :: dirname
     integer         , intent(  out)          :: nlevs_out
     real(kind=dp_t) , intent(  out)          :: time_out, dt_out
@@ -155,9 +155,9 @@ contains
     write(unit=sd_name, fmt='(a,"/Pressure")') trim(dirname)
     call fabio_ml_multifab_read_d(mfs_nodal, sd_name)
 
-!   Read the Source_nm1 data into a multilevel multifab.
-    write(unit=sd_name, fmt='(a,"/Source_nm1")') trim(dirname)
-    call fabio_ml_multifab_read_d(Source_nm1, sd_name)
+!   Read the dSdt data into a multilevel multifab.
+    write(unit=sd_name, fmt='(a,"/dSdt")') trim(dirname)
+    call fabio_ml_multifab_read_d(dSdt, sd_name)
 
 !   Read the Source_old data into a multilevel multifab.
     write(unit=sd_name, fmt='(a,"/Source_old")') trim(dirname)

@@ -48,7 +48,7 @@ module advance_timestep_module
                                 grav_cell_old, &
                                 dx,time,dt,dtold,the_bc_tower, &
                                 anelastic_cutoff,verbose,mg_verbose,cg_verbose,&
-                                Source_nm1,Source_old,Source_new,gamma1_term, &
+                                dSdt,Source_old,Source_new,gamma1_term, &
                                 sponge,do_sponge,hgrhs,istep)
 
     implicit none
@@ -73,7 +73,7 @@ module advance_timestep_module
     type(multifab), intent(inout) :: rho_omegadot1(:)
     type(multifab), intent(inout) :: rho_omegadot2(:)
     type(multifab), intent(inout) :: rho_Hext(:)
-    type(multifab), intent(inout) :: Source_nm1(:)
+    type(multifab), intent(inout) :: dSdt(:)
     type(multifab), intent(inout) :: Source_old(:)
     type(multifab), intent(inout) :: Source_new(:)
     type(multifab), intent(inout) :: gamma1_term(:)
@@ -209,7 +209,7 @@ module advance_timestep_module
            if (init_mode) then
               call make_S_at_halftime(Source_nph(n),Source_old(n),Source_new(n))
            else
-              call extrap_to_halftime(Source_nph(n),Source_nm1(n),Source_old(n),dtold,dt)
+              call extrap_to_halftime(Source_nph(n),dSdt(n),Source_old(n),dt)
            endif
 
         end do
@@ -582,6 +582,13 @@ module advance_timestep_module
                        s0_new(:,temp_comp),gam1,dx(n,:))
         end do
         call average(Source_new,Sbar,dx,1,1)
+
+        ! define dSdt = (Source_new - Source_old) / dt
+        do n = 1,nlevs
+             call multifab_copy(dSdt(n),Source_new(n))
+             call multifab_sub_sub(dSdt(n),Source_old(n))
+             call multifab_div_div_s(dSdt(n),dt)
+          end do
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !! STEP 11 -- update the velocity

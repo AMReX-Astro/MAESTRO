@@ -12,16 +12,14 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine extrap_to_halftime(Source_nph,Source_nm1,Source_old, &
-                                dtold,dt)
+  subroutine extrap_to_halftime(Source_nph,dSdt,Source_old,dt)
 
-    type(multifab) , intent(inout) :: Source_nph
-    type(multifab) , intent(in   ) :: Source_nm1, Source_old
-    real(kind=dp_t), intent(in   ) :: dt, dtold
+    type(multifab) , intent(inout) :: Source_nph, dSdt, Source_old
+    real(kind=dp_t), intent(in   ) :: dt
 
     real(kind=dp_t), pointer:: Snphp(:,:,:,:)
     real(kind=dp_t), pointer:: Soldp(:,:,:,:)
-    real(kind=dp_t), pointer:: Snm1p(:,:,:,:)
+    real(kind=dp_t), pointer:: dSdtp(:,:,:,:)
     integer :: lo(Source_nph%dim),hi(Source_nph%dim),ng_h,ng_o,dm
     integer :: i
       
@@ -33,7 +31,7 @@ contains
        if ( multifab_remote(Source_nph, i) ) cycle
        Snphp => dataptr(Source_nph, i)
        Soldp => dataptr(Source_old, i)
-       Snm1p => dataptr(Source_nm1, i)
+       dSdtp => dataptr(dSdt, i)
 
        lo =  lwb(get_box(Source_nph, i))
        hi =  upb(get_box(Source_nph, i))
@@ -41,15 +39,15 @@ contains
        select case (dm)
        case (2)
           call extrap_to_halftime_2d(Snphp(:,:,1,1), &
-                                     Snm1p(:,:,1,1), Soldp(:,:,1,1),&
-                                     dt, dtold, &
-                                     lo,hi,ng_h,ng_o)
+                                     dSdtp(:,:,1,1), &
+                                     Soldp(:,:,1,1), &
+                                     dt,lo,hi,ng_h,ng_o)
 
        case (3)
           call extrap_to_halftime_3d(Snphp(:,:,:,1), &
-                                     Snm1p(:,:,:,1), Soldp(:,:,:,1),&
-                                     dt, dtold, &
-                                     lo,hi,ng_h,ng_o)
+                                     dSdtp(:,:,:,1), &
+                                     Soldp(:,:,:,1), &
+                                     dt,lo,hi,ng_h,ng_o)
 
        end select
     end do
@@ -57,16 +55,14 @@ contains
   end subroutine extrap_to_halftime
 
 
-  subroutine extrap_to_halftime_2d(Source_nph, &
-                                   Source_nm1, Source_old, &
-                                   dt, dtold, &
-                                   lo,hi,ng_h,ng_o)
+  subroutine extrap_to_halftime_2d(Source_nph,dSdt,Source_old, &
+                                   dt,lo,hi,ng_h,ng_o)
 
     implicit none
 
     integer         , intent(in ) :: lo(:), hi(:), ng_h, ng_o
     real (kind=dp_t), intent(out) :: Source_nph(lo(1)-ng_h:,lo(2)-ng_h:)
-    real (kind=dp_t), intent(in ) :: Source_nm1(lo(1)-ng_o:,lo(2)-ng_o:)
+    real (kind=dp_t), intent(in ) :: dSdt(lo(1)-ng_o:,lo(2)-ng_o:)
     real (kind=dp_t), intent(in ) :: Source_old(lo(1)-ng_o:,lo(2)-ng_o:)
     real (kind=dp_t) :: dt, dtold
 
@@ -75,24 +71,21 @@ contains
 
     do j = lo(2),hi(2)
        do i = lo(1),hi(1)
-          Source_nph(i,j) = Source_old(i,j) + &
-               HALF * dt * (Source_old(i,j) - Source_nm1(i,j))/dtold
+          Source_nph(i,j) = Source_old(i,j) + HALF*dt*dSdt(i,j)
        end do
     end do
  
   end subroutine extrap_to_halftime_2d
 
 
-  subroutine extrap_to_halftime_3d(Source_nph, &
-                                 Source_nm1, Source_old, &
-                                 dt, dtold, &
-                                 lo,hi,ng_h,ng_o)
+  subroutine extrap_to_halftime_3d(Source_nph,dSdt,Source_old, &
+                                   dt,lo,hi,ng_h,ng_o)
 
     implicit none
 
     integer         , intent(in ) :: lo(:), hi(:), ng_h, ng_o
     real (kind=dp_t), intent(out) :: Source_nph(lo(1)-ng_h:,lo(2)-ng_h:,lo(3)-ng_h:)
-    real (kind=dp_t), intent(in ) :: Source_nm1(lo(1)-ng_o:,lo(2)-ng_o:,lo(3)-ng_o:)
+    real (kind=dp_t), intent(in ) :: dSdt(lo(1)-ng_o:,lo(2)-ng_o:,lo(3)-ng_o:)
     real (kind=dp_t), intent(in ) :: Source_old(lo(1)-ng_o:,lo(2)-ng_o:,lo(3)-ng_o:)
     real (kind=dp_t) :: dt, dtold
 
@@ -102,8 +95,7 @@ contains
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
-             Source_nph(i,j,k) = Source_old(i,j,k) + &
-                  HALF * dt * (Source_old(i,j,k) - Source_nm1(i,j,k))/dtold
+             Source_nph(i,j,k) = Source_old(i,j,k) + HALF*dt*dSdt(i,j,k)
           end do
        end do
     end do
