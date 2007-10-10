@@ -118,30 +118,5 @@ contains
 
    end subroutine make_div_coeff
 
-   subroutine put_1d_beta_on_edges (div_coeff_cell,div_coeff_edge)
-
-      real(kind=dp_t), intent(in   ) :: div_coeff_cell(0:)
-      real(kind=dp_t), intent(  out) :: div_coeff_edge(0:)
-
-      integer :: j,ny
-      real(kind=dp_t) :: dmax,dmin
-
-      ny = size(div_coeff_cell,dim=1)
-
-      div_coeff_edge(   0) = div_coeff_cell(0)
-      div_coeff_edge(   1) = HALF*(div_coeff_cell( 0) + div_coeff_cell(1))
-      div_coeff_edge(ny-1) = HALF*(div_coeff_cell(ny-1) + div_coeff_cell(ny-2))
-      div_coeff_edge(ny  ) = div_coeff_cell(ny-1)
-      do j = 2,ny-2
-        div_coeff_edge(j) = 7.d0/12.d0 * (div_coeff_cell(j  ) + div_coeff_cell(j-1)) &
-                           -1.d0/12.d0 * (div_coeff_cell(j+1) + div_coeff_cell(j-2))
-        dmin = min(div_coeff_cell(j),div_coeff_cell(j-1))
-        dmax = max(div_coeff_cell(j),div_coeff_cell(j-1))
-        div_coeff_edge(j) = max(div_coeff_edge(j),dmin)
-        div_coeff_edge(j) = min(div_coeff_edge(j),dmax)
-      end do
-
-   end subroutine put_1d_beta_on_edges
-
 end module make_div_coeff_module
 
