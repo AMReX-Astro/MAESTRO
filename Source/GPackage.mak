@@ -45,6 +45,7 @@ f90sources += thermal_conduct.f90
 f90sources += make_explicit_thermal.f90
 f90sources += convert_h.f90
 f90sources += add_react_to_thermal.f90
+f90sources += cell_to_edge.f90
 sf90sources += build_info.f90
 
 
