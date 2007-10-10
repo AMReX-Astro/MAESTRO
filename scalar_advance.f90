@@ -694,6 +694,22 @@ contains
          end select
       end do
 
+      if(.not. use_thermal_diffusion) then
+         ! compute updated temperature
+         do i=1,snew%nboxes
+            if (multifab_remote(snew,i)) cycle
+            snp => dataptr(snew,i)
+            lo = lwb(get_box(snew, i))
+            hi = upb(get_box(snew, i))
+            select case (dm)
+            case (2)
+               call makeTfromRhoH_2d(snp(:,:,1,:), lo, hi, 3, s0_new(:,temp_comp))
+            case (3)
+               call makeTfromRhoH_3d(snp(:,:,:,:), lo, hi, 3, s0_new(:,temp_comp))
+            end select
+         end do
+      endif
+
       ! Make sure we do this before the calls to setbc.
       call multifab_fill_boundary(snew)
 
