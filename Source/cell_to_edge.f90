@@ -24,12 +24,12 @@ module cell_to_edge_module
       s0_edge(nr-1) = HALF * (s0_cell(nr-1) + s0_cell(nr-2))
 
       do k = 2, nr-2
-           s0_edge(k) = 7.d0/12.d0 * (s0_cell(k  ) + s0_cell(k-1)) &
-                       -1.d0/12.d0 * (s0_cell(k+1) + s0_cell(k-2))
-           s0min = min(s0_cell(k),s0_cell(k-1))
-           s0max = max(s0_cell(k),s0_cell(k-1))
-           s0_edge(k) = max(s0_edge(k),s0min)
-           s0_edge(k) = min(s0_edge(k),s0max)
+         s0_edge(k) = 7.d0/12.d0 * (s0_cell(k  ) + s0_cell(k-1)) &
+                     -1.d0/12.d0 * (s0_cell(k+1) + s0_cell(k-2))
+         s0min = min(s0_cell(k),s0_cell(k-1))
+         s0max = max(s0_cell(k),s0_cell(k-1))
+         s0_edge(k) = max(s0_edge(k),s0min)
+         s0_edge(k) = min(s0_edge(k),s0max)
       end do
 
    end subroutine cell_to_edge
