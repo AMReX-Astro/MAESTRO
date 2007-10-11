@@ -8,7 +8,6 @@ module thermal_conduct_module
   use stencil_module
   use macproject_module
   use eos_module
-  use fill_3d_module
   use scalar_advance_module
   use probin_module
 
