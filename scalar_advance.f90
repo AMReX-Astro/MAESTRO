@@ -11,6 +11,7 @@ module scalar_advance_module
   use setbc_module
   use fill_3d_module
   use pert_form_module
+  use cell_to_edge_module
   use variables
   use geometry
   use network
@@ -52,6 +53,9 @@ contains
       real(kind=dp_t), intent(in   ) ::  s0_new(0:,:)
       real(kind=dp_t), intent(in   ) ::    p0_old(0:)
       real(kind=dp_t), intent(in   ) ::    p0_new(0:)
+
+      real(kind=dp_t), allocatable :: s0_edge_old(:,:)
+      real(kind=dp_t), allocatable :: s0_edge_new(:,:)
 ! 
       real(kind=dp_t), pointer:: uop(:,:,:,:)
       real(kind=dp_t), pointer:: ump(:,:,:,:)
@@ -78,10 +82,17 @@ contains
 
       integer :: velpred
       integer :: lo(uold%dim),hi(uold%dim)
-      integer :: i,n,bc_comp,dm,ng_cell
+      integer :: i,n,bc_comp,dm,ng_cell,nr
       logical :: is_vel
       type(box)       :: domain
       integer         :: domlo(uold%dim), domhi(uold%dim)
+
+      nr = size(s0_old,dim=1)
+      allocate(s0_edge_old(0:nr,nscal))
+      allocate(s0_edge_new(0:nr,nscal))
+
+      call cell_to_edge_n(s0_old,s0_edge_old)
+      call cell_to_edge_n(s0_new,s0_edge_new)
 
       domain = layout_get_pd(uold%la)
       domlo = lwb(domain)
@@ -140,7 +151,7 @@ contains
             do n = spec_comp,spec_comp+nspec-1
                call modify_scal_force_2d(fp(:,:,1,n),sop(:,:,1,n), lo, hi, &
                                          ng_cell,ump(:,:,1,1),vmp(:,:,1,1), &
-                                         s0_old(:,n), w0, dx)
+                                         s0_old(:,n), s0_edge_old(:,n), w0, dx)
             end do
 
             if (use_temp_in_mkflux) then
@@ -151,6 +162,7 @@ contains
               ! call makeTfromRhoH_2d(sop(:,:,1,:), lo, hi, ng_cell, s0_old(:,temp_comp))
 
               call mktempforce_2d(fp(:,:,1,n), sop(:,:,1,:), tp(:,:,1,1), lo, hi, ng_cell, p0_old)
+
             else
               n = rhoh_comp
               call mkrhohforce_2d(fp(:,:,1,n), vmp(:,:,1,1), lo, hi, &
@@ -158,7 +170,7 @@ contains
 
               call modify_scal_force_2d(fp(:,:,1,n),sop(:,:,1,n), lo, hi, &
                                         ng_cell, ump(:,:,1,1),vmp(:,:,1,1), &
-                                        s0_old(:,rhoh_comp),w0,dx)            
+                                        s0_old(:,rhoh_comp),s0_edge_old(:,rhoh_comp), w0,dx)            
             end if
 
          case(3)
@@ -204,7 +216,7 @@ contains
                   call modify_scal_force_3d_cart(fp(:,:,:,n),sop(:,:,:,n), &
                                                  lo,hi,ng_cell,ump(:,:,:,1), &
                                                  vmp(:,:,:,1),wmp(:,:,:,1), &
-                                                 s0_old(:,n),w0,dx)
+                                                 s0_old(:,n),s0_edge_old(:,n),w0,dx)
                end do
 
                if (use_temp_in_mkflux) then
@@ -226,7 +238,7 @@ contains
                   call modify_scal_force_3d_cart(fp(:,:,:,n),sop(:,:,:,n),lo,hi, &
                                                  ng_cell,ump(:,:,:,1), &
                                                  vmp(:,:,:,1),wmp(:,:,:,1), &
-                                                 s0_old(:,n),w0,dx)
+                                                 s0_old(:,n),s0_edge_old(:,n),w0,dx)
                end if
             end if
          end select
@@ -302,7 +314,9 @@ contains
               end do
 
               if (use_temp_in_mkflux) &
-                call makeRhoHfromT_2d(sepx(:,:,1,:), sepy(:,:,1,:), lo, hi)
+                call makeRhoHfromT_2d(sepx(:,:,1,:), sepy(:,:,1,:), &
+                                      s0_old, s0_edge_old, &
+                                      s0_new, s0_edge_new, lo, hi)
 
             case (3)
               wmp  => dataptr(  umac(3), i)
@@ -336,6 +350,12 @@ contains
                                the_bc_level%adv_bc_level_array(i,:,:,bc_comp:), &
                                velpred, ng_cell, n)
               end do
+
+              if (use_temp_in_mkflux) &
+                call makeRhoHfromT_3d(sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
+                                      s0_old, s0_edge_old, &
+                                      s0_new, s0_edge_new, lo, hi)
+
          end select
       end do
       if (.not. use_temp_in_mkflux) &
@@ -425,9 +445,8 @@ contains
                                 sop(:,:,1,:), snp(:,:,1,:), &
                                 ump(:,:,1,1), vmp(:,:,1,1), w0, &
                                 sepx(:,:,1,:), sepy(:,:,1,:), fp(:,:,1,:), &
-                                s0_old(:,:), s0_new(:,:), &
+                                s0_old(:,:), s0_edge_old(:,:), s0_new(:,:), &
                                 lo, hi, ng_cell, dx, dt)
-            
          case (3)
             wmp => dataptr(umac(3), i)
             sepz => dataptr(sedge(3), i)
@@ -439,7 +458,7 @@ contains
                                         wmp(:,:,:,1), w0, &
                                         sepx(:,:,:,:), sepy(:,:,:,:), &
                                         sepz(:,:,:,:), fp(:,:,:,:), &
-                                        s0_old(:,:), s0_new(:,:), &
+                                        s0_old(:,:), s0_edge_old(:,:), s0_new(:,:), &
                                         lo, hi, ng_cell, dx, dt)
             else
                s0p => dataptr(s0_cart, i)
@@ -545,7 +564,7 @@ contains
                                 sop(:,:,1,:), snp(:,:,1,:), &
                                 ump(:,:,1,1), vmp(:,:,1,1), w0, &
                                 sepx(:,:,1,:), sepy(:,:,1,:), fp(:,:,1,:), &
-                                s0_old(:,:), s0_new(:,:), &
+                                s0_old(:,:), s0_edge_old(:,:), s0_new(:,:), &
                                 lo, hi, ng_cell, dx, dt)
 
          case (3)
@@ -556,9 +575,10 @@ contains
                call update_scal_3d_cart(which_step, trac_comp,trac_comp+ntrac-1, &
                                         sop(:,:,:,:), snp(:,:,:,:), &
                                         ump(:,:,:,1), vmp(:,:,:,1), &
-                                        wmp(:,:,:,1), w0, sepx(:,:,:,:), &
-                                        sepy(:,:,:,:), sepz(:,:,:,:), &
-                                        fp(:,:,:,:), s0_old(:,:),s0_new(:,:), &
+                                        wmp(:,:,:,1), w0, &
+                                        sepx(:,:,:,:), sepy(:,:,:,:), &
+                                        sepz(:,:,:,:),   fp(:,:,:,:), &
+                                        s0_old(:,:), s0_edge_old(:,:), s0_new(:,:), &
                                         lo, hi, ng_cell, dx, dt)
               else
                 s0p => dataptr(s0_cart, i)
@@ -651,7 +671,7 @@ contains
                              sop(:,:,1,:), snp(:,:,1,:), &
                              ump(:,:,1,1), vmp(:,:,1,1), w0, &
                              sepx(:,:,1,:), sepy(:,:,1,:), fp(:,:,1,:), &
-                             s0_old(:,:), s0_new(:,:), &
+                             s0_old(:,:), s0_edge_old(:,:), s0_new(:,:), &
                              lo, hi, ng_cell, dx, dt)
               
             case(3)
@@ -685,10 +705,10 @@ contains
                 call update_scal_3d_cart(which_step, rhoh_comp, rhoh_comp, &
                                          sop(:,:,:,:), snp(:,:,:,:), &
                                          ump(:,:,:,1), vmp(:,:,:,1), &
-                                         wmp(:,:,:,1), w0, sepx(:,:,:,:), &
-                                         sepy(:,:,:,:), sepz(:,:,:,:), &
-                                         fp(:,:,:,:), &
-                                         s0_old(:,:), s0_new(:,:), &
+                                         wmp(:,:,:,1), w0, &
+                                         sepx(:,:,:,:), sepy(:,:,:,:), &
+                                         sepz(:,:,:,:), fp(:,:,:,:), &
+                                         s0_old(:,:), s0_edge_old(:,:), s0_new(:,:), &
                                          lo, hi, ng_cell, dx, dt)
                end if
          end select
@@ -754,6 +774,8 @@ contains
       call multifab_destroy(scal_force)
       call multifab_destroy(s0_cart)
 
+      deallocate(s0_edge_old,s0_edge_new)
+
 2000  format('... new min/max : density           ',e17.10,2x,e17.10)
 2001  format('... new min/max : rho * H           ',e17.10,2x,e17.10)
 2002  format('... new min/max : ',a16,2x,e17.10,2x,e17.10)
@@ -762,7 +784,7 @@ contains
 
    end subroutine scalar_advance
 
-   subroutine modify_scal_force_2d(force,s,lo,hi,ng,umac,vmac,base,w0,dx)
+   subroutine modify_scal_force_2d(force,s,lo,hi,ng,umac,vmac,base,base_edge,w0,dx)
 
     ! When we write the scalar equation in perturbational and convective
     ! form, the terms other than s'_t + U.grad s' act as source terms.  Add
@@ -773,50 +795,30 @@ contains
     real(kind=dp_t), intent(in   ) ::     s(lo(1)-ng:,lo(2)-ng:)
     real(kind=dp_t), intent(in   ) ::  umac(lo(1)-1:,lo(2)-1:)
     real(kind=dp_t), intent(in   ) ::  vmac(lo(1)-1:,lo(2)-1:)
-    real(kind=dp_t), intent(in   ) ::  base(0:)
+    real(kind=dp_t), intent(in   ) ::  base(0:), base_edge(0:)
     real(kind=dp_t), intent(in   ) ::    w0(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
     
     integer :: i,j,nr
     real(kind=dp_t) :: divu,divbaseu
-    real(kind=dp_t) :: base_half_lo,base_half_hi
 
     nr = size(base,dim=1)
 
     do j = lo(2),hi(2)
-
-       if (j.eq.0) then
-          base_half_lo = base(j)
-       else if (j.eq.1 .or. j.eq.nr-1) then
-          base_half_lo = HALF*(base(j)+base(j-1))
-       else 
-          base_half_lo = 7.d0/12.d0 * (base(j  )+base(j-1)) &
-               -1.d0/12.d0 * (base(j+1)+base(j-2))
-       end if
-
-       if (j.eq.nr-1) then
-          base_half_hi = base(j)
-       else if (j.eq.nr-2 .or. j.eq.0) then
-          base_half_hi = HALF*(base(j)+base(j+1))
-       else 
-          base_half_hi = 7.d0/12.d0 * (base(j  )+base(j+1)) &
-               -1.d0/12.d0 * (base(j-1)+base(j+2))
-       end if
-       
        do i = lo(1),hi(1)
-           divu = (umac(i+1,j) - umac(i,j)) / dx(1) &
-                 +((vmac(i,j+1) + w0(j+1)) - &
-                   (vmac(i,j)   + w0(j)  )) / dx(2)
+           divu =  (umac(i+1,j) - umac(i,j)) / dx(1) &
+                +( (vmac(i,j+1) + w0(j+1)) &
+                  -(vmac(i,j)   + w0(j)  ) ) / dx(2)
            divbaseu = base(j)*(umac(i+1,j) - umac(i,j))/dx(1) &
-                             +(vmac(i,j+1) * base_half_hi &
-                             - vmac(i,j  ) * base_half_lo)/ dx(2)
+                             +(vmac(i,j+1) * base_edge(j+1) &
+                             - vmac(i,j  ) * base_edge(j  ) )/ dx(2)
            force(i,j) = force(i,j) - (s(i,j)-base(j))*divu - divbaseu
        end do
      end do
      
    end subroutine modify_scal_force_2d
 
-   subroutine modify_scal_force_3d_cart(force,s,lo,hi,ng,umac,vmac,wmac,base,w0,dx)
+   subroutine modify_scal_force_3d_cart(force,s,lo,hi,ng,umac,vmac,wmac,base,base_edge,w0,dx)
 
     ! When we write the scalar equation in perturbational and convective
     ! form, the terms other than s'_t + U.grad s' act as source terms.  Add
@@ -828,50 +830,28 @@ contains
     real(kind=dp_t), intent(in   ) ::  umac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
     real(kind=dp_t), intent(in   ) ::  vmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
     real(kind=dp_t), intent(in   ) ::  wmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-    real(kind=dp_t), intent(in   ) :: base(0:)
+    real(kind=dp_t), intent(in   ) :: base(0:), base_edge(0:)
     real(kind=dp_t), intent(in   ) ::   w0(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
     
-    integer :: i,j,k,nr
+    integer :: i,j,k
     real(kind=dp_t) :: divu,divbaseu
-    real(kind=dp_t) :: base_half_lo,base_half_hi
-
-    nr = size(base,dim=1)
 
     do k = lo(3),hi(3)
-
-       if (k.eq.0) then
-          base_half_lo = base(k)
-       else if (k.eq.1 .or. k.eq.nr-1) then
-          base_half_lo = HALF*(base(k)+base(k-1))
-       else 
-          base_half_lo = 7.d0/12.d0 * (base(k  )+base(k-1)) &
-               -1.d0/12.d0 * (base(k+1)+base(k-2))
-       end if
-
-       if (k.eq.nr-1) then
-          base_half_hi = base(k)
-       else if (k.eq.nr-2 .or. k.eq.0) then
-          base_half_hi = HALF*(base(k)+base(k+1))
-       else 
-          base_half_hi = 7.d0/12.d0 * (base(k  )+base(k+1)) &
-               -1.d0/12.d0 * (base(k-1)+base(k+2))
-       end if
-
-       do j = lo(2),hi(2)
+     do j = lo(2),hi(2)
        do i = lo(1),hi(1)
            divu = (umac(i+1,j,k) - umac(i,j,k)) / dx(1) &
                  +(vmac(i,j+1,k) - vmac(i,j,k)) / dx(2) &
                  +(wmac(i,j,k+1) - wmac(i,j,k)) / dx(3)
            divbaseu = base(k)*( (umac(i+1,j,k) - umac(i,j,k))/dx(1) &
                                +(vmac(i,j+1,k) - vmac(i,j,k))/dx(2) ) &
-                               +(wmac(i,j,k+1) * base_half_hi &
-                               - wmac(i,j,k  ) * base_half_lo)/ dx(3)
+                               +(wmac(i,j,k+1) * base_edge(k+1) &
+                               - wmac(i,j,k  ) * base_edge(k  ))/ dx(3)
            divu = divu + (w0(k+1)-w0(k))/dx(3)
            force(i,j,k) = force(i,j,k) - (s(i,j,k)-base(k))*divu - divbaseu
        end do
-       end do
      end do
+    end do
      
    end subroutine modify_scal_force_3d_cart
 
@@ -967,16 +947,20 @@ contains
      
    end subroutine modify_scal_force_3d_sphr
 
-   subroutine makeRhoHfromT_2d (sx,sy,lo,hi)
+   subroutine makeRhoHfromT_2d (sx,sy,s0_old,s0_edge_old,s0_new,s0_edge_new,lo,hi)
 
     implicit none
     integer        , intent(in   ) :: lo(:),hi(:)
     real(kind=dp_t), intent(inout) :: sx(lo(1):,lo(2):,:)
     real(kind=dp_t), intent(inout) :: sy(lo(1):,lo(2):,:)
+    real(kind=dp_t), intent(in   ) :: s0_old(0:,:), s0_edge_old(0:,:)
+    real(kind=dp_t), intent(in   ) :: s0_new(0:,:), s0_edge_new(0:,:)
 
     !     Local variables
-    integer :: i, j, n
+    integer :: i, j, n, nr
     real(kind=dp_t) qreact
+
+    nr = size(s0_old,dim=1)
 
     do_diag = .false.
 
@@ -993,8 +977,10 @@ contains
        do i = lo(1), hi(1)+1
 
          temp_row(1) = sx(i,j,temp_comp)
-          den_row(1) = sx(i,j,rho_comp)
-          xn_zone(:) = sx(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
+          den_row(1) = sx(i,j,rho_comp) + HALF * (s0_old(j,rho_comp) + s0_new(j,rho_comp))
+          xn_zone(:) = (sx(i,j,spec_comp:spec_comp+nspec-1)  + &
+                       HALF * ( s0_old(j,spec_comp:spec_comp+nspec-1) + &
+                                s0_new(j,spec_comp:spec_comp+nspec-1) ) ) /den_row(1) 
 
          call eos(eos_input_rt, den_row, temp_row, &
                   npts, nspec, &
@@ -1014,8 +1000,10 @@ contains
             do n=1,nspec
                qreact = qreact + ebin(n)*xn_zone(n)
             enddo
-            sx(i,j,rhoh_comp) = sx(i,j,rhoh_comp) + sx(i,j,rho_comp) * qreact
+            sx(i,j,rhoh_comp) = sx(i,j,rhoh_comp) + den_row(1) * qreact
          endif
+
+         sx(i,j,rhoh_comp) = sx(i,j,rhoh_comp) - HALF * (s0_old(j,rhoh_comp) + s0_new(j,rhoh_comp))
           
        enddo
     enddo
@@ -1033,8 +1021,10 @@ contains
        do i = lo(1), hi(1)
 
          temp_row(1) = sy(i,j,temp_comp)
-          den_row(1) = sy(i,j,rho_comp)
-          xn_zone(:) = sy(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
+          den_row(1) = sy(i,j,rho_comp) + HALF * (s0_edge_old(j,rho_comp) + s0_edge_new(j,rho_comp))
+          xn_zone(:) = (sy(i,j,spec_comp:spec_comp+nspec-1)  + &
+                      HALF * ( s0_edge_old(j,spec_comp:spec_comp+nspec-1) + &
+                               s0_edge_new(j,spec_comp:spec_comp+nspec-1) ) ) /den_row(1) 
 
          call eos(eos_input_rt, den_row, temp_row, &
                   npts, nspec, &
@@ -1047,34 +1037,45 @@ contains
                   dsdt_row, dsdr_row, &
                   do_diag)
 
-         sy(i,j,rhoh_comp) = den_row(1)*h_row(1)
+         sy(i,j,rhoh_comp) = den_row(1)*h_row(1) 
 
          qreact = 0.0d0
          if(use_big_h) then
             do n=1,nspec
                qreact = qreact + ebin(n)*xn_zone(n)
             enddo
-            sy(i,j,rhoh_comp) = sy(i,j,rhoh_comp) + sy(i,j,rho_comp) * qreact
+            sy(i,j,rhoh_comp) = sy(i,j,rhoh_comp) + den_row(1) * qreact
          endif
+
+         sy(i,j,rhoh_comp) = sy(i,j,rhoh_comp) - HALF * (s0_edge_old(j,rhoh_comp) + s0_edge_new(j,rhoh_comp))
           
        enddo
     enddo
 
    end subroutine makeRhoHfromT_2d
 
-   subroutine makeRhoHfromT_3d (sx,sy,sz,lo,hi)
+   subroutine makeRhoHfromT_3d (sx,sy,sz,s0_old,s0_edge_old,s0_new,s0_edge_new,lo,hi)
 
     implicit none
     integer        , intent(in   ) :: lo(:),hi(:)
     real(kind=dp_t), intent(inout) :: sx(lo(1):,lo(2):,lo(3):,:)
     real(kind=dp_t), intent(inout) :: sy(lo(1):,lo(2):,lo(3):,:)
     real(kind=dp_t), intent(inout) :: sz(lo(1):,lo(2):,lo(3):,:)
+    real(kind=dp_t), intent(in   ) :: s0_old(0:,:), s0_edge_old(0:,:)
+    real(kind=dp_t), intent(in   ) :: s0_new(0:,:), s0_edge_new(0:,:)
 
     !     Local variables
-    integer :: i, j, k, n
+    integer :: i, j, k, n, nr
     real(kind=dp_t) qreact
 
+    nr = size(s0_old,dim=1)
+
     do_diag = .false.
+
+    if (spherical .eq. 1) then
+       print *,'MAKERHOHFROMT_3D NOT YET SET UP FOR SPHERICAL '
+       stop
+    end if
 
     do k = lo(3), hi(3)
      do j = lo(2), hi(2)
@@ -1092,8 +1093,10 @@ contains
        do i = lo(1), hi(1)+1
 
          temp_row(1) = sx(i,j,k,temp_comp)
-          den_row(1) = sx(i,j,k,rho_comp)
-          xn_zone(:) = sx(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
+          den_row(1) = sx(i,j,k,rho_comp) + HALF * (s0_old(k,rho_comp) + s0_new(k,rho_comp))
+          xn_zone(:) = (sx(i,j,k,spec_comp:spec_comp+nspec-1)  + &
+                       HALF * ( s0_old(k,spec_comp:spec_comp+nspec-1) + &
+                                s0_new(k,spec_comp:spec_comp+nspec-1) ) ) /den_row(1) 
 
          call eos(eos_input_rt, den_row, temp_row, &
                   npts, nspec, &
@@ -1115,6 +1118,8 @@ contains
             enddo
             sx(i,j,k,rhoh_comp) = sx(i,j,k,rhoh_comp) + sx(i,j,k,rho_comp) * qreact
          endif
+
+         sx(i,j,k,rhoh_comp) = sx(i,j,k,rhoh_comp) - HALF * (s0_old(k,rhoh_comp) + s0_new(k,rhoh_comp))
           
        enddo
       enddo
@@ -1136,8 +1141,10 @@ contains
        do i = lo(1), hi(1)
 
          temp_row(1) = sy(i,j,k,temp_comp)
-          den_row(1) = sy(i,j,k,rho_comp)
-          xn_zone(:) = sy(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
+          den_row(1) = sy(i,j,k,rho_comp) + HALF * (s0_old(k,rho_comp) + s0_new(k,rho_comp))
+          xn_zone(:) = (sy(i,j,k,spec_comp:spec_comp+nspec-1)  + &
+                       HALF * ( s0_old(k,spec_comp:spec_comp+nspec-1) + &
+                                s0_new(k,spec_comp:spec_comp+nspec-1) ) ) /den_row(1) 
 
          call eos(eos_input_rt, den_row, temp_row, &
                   npts, nspec, &
@@ -1159,6 +1166,8 @@ contains
             enddo
             sy(i,j,k,rhoh_comp) = sy(i,j,k,rhoh_comp) + sy(i,j,k,rho_comp) * qreact
          endif
+
+         sy(i,j,k,rhoh_comp) = sy(i,j,k,rhoh_comp) - HALF * (s0_old(k,rhoh_comp) + s0_new(k,rhoh_comp))
           
        enddo
       enddo
@@ -1180,8 +1189,10 @@ contains
        do i = lo(1), hi(1)
 
          temp_row(1) = sz(i,j,k,temp_comp)
-          den_row(1) = sz(i,j,k,rho_comp)
-          xn_zone(:) = sz(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
+          den_row(1) = sz(i,j,k,rho_comp) + HALF * (s0_edge_old(k,rho_comp) + s0_edge_new(k,rho_comp))
+          xn_zone(:) = (sz(i,j,k,spec_comp:spec_comp+nspec-1)  + &
+                        HALF * ( s0_edge_old(k,spec_comp:spec_comp+nspec-1) + &
+                                 s0_edge_new(k,spec_comp:spec_comp+nspec-1) ) ) /den_row(1)
 
          call eos(eos_input_rt, den_row, temp_row, &
                   npts, nspec, &
@@ -1203,6 +1214,8 @@ contains
             enddo
             sz(i,j,k,rhoh_comp) = sz(i,j,k,rhoh_comp) + sz(i,j,k,rho_comp) * qreact
          endif
+
+         sz(i,j,k,rhoh_comp) = sz(i,j,k,rhoh_comp) - HALF * (s0_edge_old(k,rhoh_comp) + s0_edge_new(k,rhoh_comp))
           
        enddo
       enddo

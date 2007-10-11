@@ -272,7 +272,7 @@ module advance_timestep_module
           call macproject(mla,umac,macphi,sold,dx,the_bc_tower,verbose,mg_verbose,cg_verbose,press_comp,&
                           macrhs,div_coeff_3d=div_coeff_3d)
         else
-          call put_1d_beta_on_edges(div_coeff_old,div_coeff_edge)
+          call cell_to_edge(div_coeff_old,div_coeff_edge)
           call macproject(mla,umac,macphi,sold,dx,the_bc_tower,verbose,mg_verbose,cg_verbose,press_comp,&
                           macrhs,div_coeff_1d=div_coeff_old,div_coeff_half_1d=div_coeff_edge)
         end if
@@ -483,7 +483,7 @@ module advance_timestep_module
           call macproject(mla,umac,macphi,rhohalf,dx,the_bc_tower,verbose,mg_verbose,cg_verbose,&
                           press_comp,macrhs,div_coeff_3d=div_coeff_3d)
         else
-          call put_1d_beta_on_edges(div_coeff_nph,div_coeff_edge)
+          call cell_to_edge(div_coeff_nph,div_coeff_edge)
           call macproject(mla,umac,macphi,rhohalf,dx,the_bc_tower,verbose,mg_verbose,cg_verbose,&
                           press_comp,macrhs,div_coeff_1d=div_coeff_nph,div_coeff_half_1d=div_coeff_edge)
         end if

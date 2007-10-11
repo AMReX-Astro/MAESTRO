@@ -10,6 +10,7 @@ module make_w0_module
   use geometry
   use mkflux_module
   use make_grav_module
+  use cell_to_edge_module
 
   implicit none
 
@@ -113,9 +114,8 @@ contains
 
 !     Local variables
     integer         :: j, nz
-    real(kind=dp_t) :: rhohalf,velmax
     real(kind=dp_t), allocatable :: c(:),d(:),e(:),u(:),rhs(:)
-    real(kind=dp_t), allocatable :: m(:),grav_edge(:)
+    real(kind=dp_t), allocatable :: m(:),grav_edge(:),rho0_edge(:)
     
     ! nz is the dimension of an cell-centered quantity
     nz = size(vel,dim=1)-1
@@ -125,7 +125,7 @@ contains
 
     ! Edge-centered
     allocate(c(0:nz),d(0:nz),e(0:nz),rhs(0:nz),u(0:nz))
-    allocate(grav_edge(0:nz))
+    allocate(grav_edge(0:nz),rho0_edge(0:nz))
 
     c(:)   = ZERO
     d(:)   = ZERO
@@ -140,20 +140,13 @@ contains
        c(j) = c(j) / dr**2
     end do
 
-    do j = 1,nz-1
+    call cell_to_edge(rho0,rho0_edge)
 
-       if (j == 1) then
-          rhohalf = half * (rho0(0) + rho0(1))
-       else if (j == nz-1) then
-          rhohalf = half * (rho0(nz-2) + rho0(nz-1))
-       else
-          rhohalf = 7.d0/12.d0 * (rho0(j) + rho0(j-1)) - &
-                    1.d0/12.d0 * (rho0(j+1) + rho0(j-2))
-       endif
+    do j = 1,nz-1
 
        d(j) = -( gam1(j-1) * p0(j-1) / z(j-1)**2 &
                 +gam1(j  ) * p0(j  ) / z(j  )**2 ) * (zl(j)**2/dr**2) &
-                - four * rhohalf * grav_edge(j) / zl(j)
+                - four * rho0_edge(j) * grav_edge(j) / zl(j)
     end do
 
     do j = 1,nz-1
@@ -179,13 +172,11 @@ contains
     ! Call the tridiagonal solver
     call tridiag(c, d, e, rhs, u, nz+1)
 
-    velmax = zero
     do j = 0,nz
        vel(j) = u(j)
-       velmax = max(velmax,abs(vel(j)))
     end do
 
-    deallocate(m,grav_edge)
+    deallocate(m,grav_edge,rho0_edge)
 
   end subroutine make_w0_spherical
 

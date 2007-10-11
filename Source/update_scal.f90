@@ -14,7 +14,7 @@ module update_scal_module
   contains
 
    subroutine update_scal_2d (which_step, nstart,nstop,sold,snew,umac,vmac,w0,sedgex,sedgey,force, &
-                              base_old,base_new,lo,hi,ng,dx,dt)
+                              base_old,base_old_edge,base_new,lo,hi,ng,dx,dt)
 
      ! update each scalar in time.  Here, it is assumed that the edge
      ! states (sedgex and sedgey) are for the perturbational quantities.
@@ -29,7 +29,7 @@ module update_scal_module
       real (kind = dp_t), intent(in   ) ::  sedgex(lo(1)   :,lo(2)   :,:)
       real (kind = dp_t), intent(in   ) ::  sedgey(lo(1)   :,lo(2)   :,:)
       real (kind = dp_t), intent(in   ) ::   force(lo(1)- 1:,lo(2)- 1:,:)
-      real (kind = dp_t), intent(in   ) ::   base_old(0:,:)
+      real (kind = dp_t), intent(in   ) ::   base_old(0:,:), base_old_edge(0:,:)
       real (kind = dp_t), intent(in   ) ::   base_new(0:,:)
       real (kind = dp_t), intent(in   ) :: w0(0:)
       real (kind = dp_t), intent(in   ) :: dt,dx(:)
@@ -38,26 +38,8 @@ module update_scal_module
       real (kind = dp_t) :: divsu,divbaseu
       real (kind = dp_t) :: delta,frac,sum
       real (kind = dp_t), allocatable :: smin(:),smax(:)
-      real (kind = dp_t), allocatable :: base_edge(:)
-
-      allocate(base_edge(lo(2):hi(2)+1))
-      nr = size(base_old,dim=1)
 
       do n = nstart, nstop
-
-        ! In case lo(2) = 0
-        base_edge(lo(2)  ) = base_old(lo(2),n)
-        base_edge(lo(2)+1) = HALF*(base_old(lo(2),n)+base_old(lo(2)+1,n))
-
-        ! In case hi(2) = nr
-        base_edge(hi(2)+1) = base_old(hi(2),n)
-        base_edge(hi(2)  ) = HALF*(base_old(hi(2),n)+base_old(hi(2)-1,n))
-
-        do j = max(2,lo(2)),min(nr-2,hi(2)+1)
-           base_edge(j) = 7.d0/12.d0 * (base_old(j  ,n) + base_old(j-1,n)) &
-                         -1.d0/12.d0 * (base_old(j+1,n) + base_old(j-2,n))
-        end do
-
 
         do j = lo(2), hi(2)
         do i = lo(1), hi(1)
@@ -68,7 +50,8 @@ module update_scal_module
                  -(vmac(i,j  )+w0(j  )) * sedgey(i,j  ,n) ) / dx(2)
 
           divbaseu = (umac(i+1,j) - umac(i,j) ) * base_old(j,n) / dx(1) &
-                    +(vmac(i,j+1) * base_edge(j+1) - vmac(i,j) * base_edge(j) ) / dx(2)
+                    +( vmac(i,j+1) * base_old_edge(j+1,n) &
+                      -vmac(i,j  ) * base_old_edge(j  ,n) ) / dx(2)
 
           snew(i,j,n) = sold(i,j,n) + (base_new(j,n) - base_old(j,n)) &
                       - dt * (divsu + divbaseu) + dt * force(i,j,n)
@@ -124,12 +107,10 @@ module update_scal_module
         deallocate(smin,smax)
       end if
   
-      deallocate(base_edge)
-
    end subroutine update_scal_2d
 
    subroutine update_scal_3d_cart (which_step,nstart,nstop,sold,snew,umac,vmac,wmac,w0,sedgex,sedgey,sedgez,&
-                                   force,base_old,base_new,lo,hi,ng,dx,dt)
+                                   force,base_old,base_old_edge,base_new,lo,hi,ng,dx,dt)
 
       implicit none
 
@@ -143,7 +124,7 @@ module update_scal_module
       real (kind = dp_t), intent(in   ) ::  sedgey(lo(1)   :,lo(2)   :,lo(3)   :,:)
       real (kind = dp_t), intent(in   ) ::  sedgez(lo(1)   :,lo(2)   :,lo(3)   :,:)
       real (kind = dp_t), intent(in   ) ::   force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
-      real (kind = dp_t), intent(in   ) ::   base_old(0:,:)
+      real (kind = dp_t), intent(in   ) ::   base_old(0:,:), base_old_edge(0:,:)
       real (kind = dp_t), intent(in   ) ::   base_new(0:,:)
       real (kind = dp_t), intent(in   ) :: w0(0:)
       real (kind = dp_t), intent(in   ) :: dt,dx(:)
@@ -153,9 +134,6 @@ module update_scal_module
       real (kind = dp_t) :: delta,frac,sum
       real (kind = dp_t), allocatable :: smin(:),smax(:)
       real (kind = dp_t), allocatable :: delta_base(:)
-      real (kind = dp_t), allocatable :: base_edge(:)
-
-      allocate(base_edge(lo(3):hi(3)+1))
 
       nr = size(base_old,dim=1)
 
@@ -163,36 +141,6 @@ module update_scal_module
 
         allocate(delta_base(lo(3):hi(3)))
         do n = nstart, nstop
-
-          if (lo(3) .eq. 0) then
-             base_edge(lo(3)  ) = base_old(lo(3),n)
-             base_edge(lo(3)+1) = HALF*(base_old(lo(3),n)+base_old(lo(3)+1,n))
-          else
-             k = lo(3)
-             base_edge(k) = 7.d0/12.d0 * (base_old(k  ,n) + base_old(k-1,n)) &
-                           -1.d0/12.d0 * (base_old(k+1,n) + base_old(k-2,n))
-             k = lo(3)+1
-             base_edge(k) = 7.d0/12.d0 * (base_old(k  ,n) + base_old(k-1,n)) &
-                           -1.d0/12.d0 * (base_old(k+1,n) + base_old(k-2,n))
-          end if
-
-          if (hi(3) .eq. nr) then
-             base_edge(hi(3)+1) = base_old(hi(3),n)
-             base_edge(hi(3)  ) = HALF*(base_old(hi(3),n)+base_old(hi(3)-1,n))
-          else
-             k = hi(3)+1
-             base_edge(k) = 7.d0/12.d0 * (base_old(k  ,n) + base_old(k-1,n)) &
-                           -1.d0/12.d0 * (base_old(k+1,n) + base_old(k-2,n))
-             k = hi(3)
-             base_edge(k) = 7.d0/12.d0 * (base_old(k  ,n) + base_old(k-1,n)) &
-                           -1.d0/12.d0 * (base_old(k+1,n) + base_old(k-2,n))
-          end if
-          
-    
-          do k = lo(3)+2,hi(3)-1
-             base_edge(k) = 7.d0/12.d0 * (base_old(k  ,n) + base_old(k-1,n)) &
-                           -1.d0/12.d0 * (base_old(k+1,n) + base_old(k-2,n))
-          end do
 
           do k = lo(3), hi(3)
             delta_base(k) = base_new(k,n) - base_old(k,n)
@@ -211,7 +159,7 @@ module update_scal_module
     
               divbaseu = (umac(i+1,j,k) - umac(i,j,k) ) * base_old(k,n) / dx(1) &
                         +(vmac(i,j+1,k) - vmac(i,j,k) ) * base_old(k,n) / dx(2) &
-                        +(wmac(i,j,k+1) * base_edge(k+1) - wmac(i,j,k) * base_edge(k) ) / dx(3)
+                        +(wmac(i,j,k+1) * base_old_edge(k+1,n) - wmac(i,j,k) * base_old_edge(k,n) ) / dx(3)
     
               snew(i,j,k,n) = sold(i,j,k,n) + delta_base(k) &
                               - dt * (divsu + divbaseu) + dt * force(i,j,k,n)
@@ -272,9 +220,6 @@ module update_scal_module
         enddo
         deallocate(smin,smax)
       end if
-
-
-      deallocate(base_edge)
 
    end subroutine update_scal_3d_cart
 

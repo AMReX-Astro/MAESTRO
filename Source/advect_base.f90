@@ -8,6 +8,7 @@ module advect_base_module
   use variables
   use geometry
   use make_grav_module
+  use cell_to_edge_module
   use make_div_coeff_module
 
   implicit none
@@ -225,7 +226,7 @@ contains
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       ! Put beta_old on edges
-      call put_1d_beta_on_edges(div_coeff_old,beta)
+      call cell_to_edge(div_coeff_old,beta)
  
       ! Update p0 -- predictor
       do j = 0,nz-1
@@ -266,7 +267,7 @@ contains
  
       ! Define beta^n+1 at cell edges using the new gravity above
       call make_div_coeff(div_coeff_new,s0_new(:,rho_comp),p0_new,gam1,grav_cell,anelastic_cutoff)
-      call put_1d_beta_on_edges(div_coeff_new,beta_new)
+      call cell_to_edge(div_coeff_new,beta_new)
 
       ! time-centered beta
       beta_nh = HALF*(beta + beta_new)
