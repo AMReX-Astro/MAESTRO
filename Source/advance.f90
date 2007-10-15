@@ -510,13 +510,14 @@ module advance_timestep_module
                                       temp_diffusion_formulation)
         endif
 
-        do n=1,nlevs
-           if(istep .le. 1) then
-              call add_react_to_thermal(thermal(n),rho_omegadot1(n),s1(n))
-           else
-              call add_react_to_thermal(thermal(n),rho_omegadot2(n),s1(n))
-           endif
-        enddo
+! We're not sure how to handle this yet
+!        do n=1,nlevs
+!           if(istep .le. 1) then
+!              call add_react_to_thermal(thermal(n),rho_omegadot1(n),s1(n))
+!           else
+!              call add_react_to_thermal(thermal(n),rho_omegadot2(n),s1(n))
+!           endif
+!        enddo
 
         do n = 1,nlevs
            call scalar_advance (2, uold(n), s1(n), s2(n), thermal(n), &
