@@ -326,6 +326,10 @@ module advance_timestep_module
            call make_explicit_thermal(mla,dx,thermal,s1,p0_1, &
                                       mg_verbose,cg_verbose,the_bc_tower, &
                                       temp_diffusion_formulation)
+        else
+          do n = 1,nlevs
+             call setval(thermal(n),ZERO)
+          end do
         endif
 
         do n=1,nlevs
@@ -512,6 +516,10 @@ module advance_timestep_module
            call make_explicit_thermal(mla,dx,thermal,s1,p0_1, &
                                       mg_verbose,cg_verbose,the_bc_tower, &
                                       temp_diffusion_formulation)
+        else
+          do n = 1,nlevs
+             call setval(thermal(n),ZERO)
+          end do
         endif
 
          do n=1,nlevs
