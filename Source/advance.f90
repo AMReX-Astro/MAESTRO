@@ -428,6 +428,10 @@ module advance_timestep_module
            call make_explicit_thermal(mla,dx,thermal,snew,p0_new, &
                                       mg_verbose,cg_verbose,the_bc_tower, &
                                       temp_diffusion_formulation)
+        else
+          do n = 1,nlevs
+             call setval(thermal(n),ZERO)
+          end do
         endif
 
         do n = 1, nlevs
@@ -510,14 +514,13 @@ module advance_timestep_module
                                       temp_diffusion_formulation)
         endif
 
-! We're not sure how to handle this yet
-!        do n=1,nlevs
-!           if(istep .le. 1) then
-!              call add_react_to_thermal(thermal(n),rho_omegadot1(n),s1(n))
-!           else
-!              call add_react_to_thermal(thermal(n),rho_omegadot2(n),s1(n))
-!           endif
-!        enddo
+         do n=1,nlevs
+            if(istep .le. 1) then
+               call add_react_to_thermal(thermal(n),rho_omegadot1(n),s1(n))
+            else
+               call add_react_to_thermal(thermal(n),rho_omegadot2(n),s1(n))
+            endif
+         enddo
 
         do n = 1,nlevs
            call scalar_advance (2, uold(n), s1(n), s2(n), thermal(n), &
@@ -588,6 +591,10 @@ module advance_timestep_module
            call make_explicit_thermal(mla,dx,thermal,snew,p0_new, &
                                       mg_verbose,cg_verbose,the_bc_tower, &
                                       temp_diffusion_formulation)
+        else
+          do n = 1,nlevs
+             call setval(thermal(n),ZERO)
+          end do
         endif
 
         do n = 1, nlevs
