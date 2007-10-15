@@ -118,8 +118,9 @@ contains
                    dpdX_row(1,n)*rho_omegadot(i,j,n)/den_row(1)
            enddo
 
-           Source(i,j) = sigma*(rho_Hext(i,j)/den_row(1) + react_term) + &
-                pres_term/(den_row(1)*dpdr_row(1)) + (sigma / den_row(1)) * thermal(i,j)
+           Source(i,j) = (sigma/den_row(1)) * ( rho_Hext(i,j) + thermal(i,j) ) &
+                        + sigma*react_term &
+                        + pres_term/(den_row(1)*dpdr_row(1))
 
            gamma1_term(i,j) = 0.0_dp_t
 
@@ -195,9 +196,10 @@ contains
                  pres_term = pres_term + &
                       dpdX_row(1,n)*rho_omegadot(i,j,k,n)/den_row(1)
               enddo
-  
-              Source(i,j,k) = sigma*(rho_Hext(i,j,k)/den_row(1) + react_term) + &
-                   pres_term/(den_row(1)*dpdr_row(1)) + (sigma / den_row(1)) * thermal(i,j,k)
+
+              Source(i,j,k) = (sigma/den_row(1)) * ( rho_Hext(i,j,k) + thermal(i,j,k) ) &
+                           + sigma*react_term &
+                           + pres_term/(den_row(1)*dpdr_row(1))
 
               gamma1_term(i,j,k) = 0.0_dp_t
            enddo
