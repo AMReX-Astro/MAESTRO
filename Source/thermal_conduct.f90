@@ -33,13 +33,13 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
 ! Local
   type(multifab), allocatable :: rhsalpha(:),lhsalpha(:),rhsbeta(:),lhsbeta(:)
   type(multifab), allocatable :: ccbeta(:),phi(:),phitemp(:)
-  type(multifab), allocatable :: Lphi(:),rhs(:),kthovercp1(:)
-  type(multifab), allocatable :: kthovercp2prime(:),xik1(:),xik2prime(:)
+  type(multifab), allocatable :: Lphi(:),rhs(:),hcoeff1(:)
+  type(multifab), allocatable :: hcoeff2(:),Xkcoeff1(:),Xkcoeff2(:)
   real(kind=dp_t), pointer    :: s1p(:,:,:,:),s2p(:,:,:,:),rhsalphap(:,:,:,:)
   real(kind=dp_t), pointer    :: rhsbetap(:,:,:,:),lhsbetap(:,:,:,:)
   real(kind=dp_t), pointer    :: ccbetap(:,:,:,:),phip(:,:,:,:),rhsp(:,:,:,:)
-  real(kind=dp_t), pointer    :: kthovercp1p(:,:,:,:),kthovercp2primep(:,:,:,:)
-  real(kind=dp_t), pointer    :: xik1p(:,:,:,:),xik2primep(:,:,:,:)
+  real(kind=dp_t), pointer    :: hcoeff1p(:,:,:,:),hcoeff2p(:,:,:,:)
+  real(kind=dp_t), pointer    :: Xkcoeff1p(:,:,:,:),Xkcoeff2p(:,:,:,:)
   integer                     :: nlevs,dm,stencil_order
   integer                     :: i,n,spec
   integer                     :: lo(s1(1)%dim),hi(s1(1)%dim)
@@ -52,8 +52,8 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
   allocate(rhsalpha(nlevs),lhsalpha(nlevs))
   allocate(rhsbeta(nlevs),lhsbeta(nlevs),ccbeta(nlevs))
   allocate(phi(nlevs),phitemp(nlevs),Lphi(nlevs),rhs(nlevs))
-  allocate(kthovercp1(nlevs),kthovercp2prime(nlevs))
-  allocate(xik1(nlevs),xik2prime(nlevs))
+  allocate(hcoeff1(nlevs),hcoeff2(nlevs))
+  allocate(Xkcoeff1(nlevs),Xkcoeff2(nlevs))
 
   allocate(fine_flx(2:nlevs))
   do n = 2,nlevs
@@ -71,10 +71,10 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
      call multifab_build(    Lphi(n), mla%la(n),  1, 0)
      call multifab_build(     rhs(n), mla%la(n),  1, 0)
 
-     call multifab_build(     kthovercp1(n), mla%la(n),  1, 1)
-     call multifab_build(kthovercp2prime(n), mla%la(n),  1, 1)
-     call multifab_build(           xik1(n), mla%la(n),  nspec, 1)
-     call multifab_build(      xik2prime(n), mla%la(n),  nspec, 1)
+     call multifab_build( hcoeff1(n), mla%la(n),  1,     1)
+     call multifab_build( hcoeff2(n), mla%la(n),  1,     1)
+     call multifab_build(Xkcoeff1(n), mla%la(n),  nspec, 1)
+     call multifab_build(Xkcoeff2(n), mla%la(n),  nspec, 1)
 
      call setval(rhsalpha(n), ZERO, all=.true.)
      call setval(lhsalpha(n), ZERO, all=.true.)
@@ -86,13 +86,13 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
      call setval(phitemp(n),  ZERO, all=.true.)
      call setval(rhs(n),      ZERO, all=.true.)
 
-     call setval(     kthovercp1(n), ZERO, all=.true.)
-     call setval(kthovercp2prime(n), ZERO, all=.true.)
-     call setval(           xik1(n), ZERO, all=.true.)
-     call setval(      xik2prime(n), ZERO, all=.true.)
+     call setval( hcoeff1(n), ZERO, all=.true.)
+     call setval( hcoeff2(n), ZERO, all=.true.)
+     call setval(Xkcoeff1(n), ZERO, all=.true.)
+     call setval(Xkcoeff2(n), ZERO, all=.true.)
   end do
 
-  ! lhsalpha = \rho^{(2')} = \rho^{(2)}
+  ! lhsalpha = \rho^{(2)}
   ! rhsalpha = 0 (already initialized above)
   ! thess will be true for this entire subroutine
   do n=1,nlevs
@@ -103,33 +103,33 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
   ! First implicit solve
   !!!!!!!!!!!!!!!!!!!!!!!
 
-  ! compute kthovercp1 and xik1, defined as:
-  ! kthovercp1 = -(dt/2)k_{th}^{(1)}/c_p^{(1)}
-  ! xik1 = (dt/2)\xi_k^{(1)}k_{th}^{(1)}/c_p^{(1)}
+  ! compute hcoeff1 and Xkcoeff1, defined as:
+  ! hcoeff1 = -(dt/2)k_{th}^{(1)}/c_p^{(1)}
+  ! Xkcoeff1 = (dt/2)\xi_k^{(1)}k_{th}^{(1)}/c_p^{(1)}
   do n=1,nlevs
      do i=1,s1(n)%nboxes
         if (multifab_remote(s1(n),i)) cycle
         s1p         => dataptr(s1(n),i)
-        kthovercp1p => dataptr(kthovercp1(n),i)
-        xik1p       => dataptr(xik1(n),i)
+        hcoeff1p => dataptr(hcoeff1(n),i)
+        Xkcoeff1p       => dataptr(Xkcoeff1(n),i)
         lo = lwb(get_box(s1(n), i))
         hi = upb(get_box(s1(n), i))
         select case (dm)
         case (2)
            call compute_thermo_quantities_2d(lo,hi,dt, &
                                              s1p(:,:,1,:), &
-                                             kthovercp1p(:,:,1,1), &
-                                             xik1p(:,:,1,:))
+                                             hcoeff1p(:,:,1,1), &
+                                             Xkcoeff1p(:,:,1,:))
         case (3)
            call compute_thermo_quantities_3d(lo,hi,dt,t01, &
                                              s1p(:,:,:,:), &
-                                             kthovercp1p(:,:,:,1), &
-                                             xik1p(:,:,:,:))
+                                             hcoeff1p(:,:,:,1), &
+                                             Xkcoeff1p(:,:,:,:))
         end select
      end do
   enddo
 
-  ! begin construction of rhs by setting rhs = (\rho h)^{(2)}
+  ! begin construction of rhs by setting rhs = \rho^{(2)}h^{(2')}
   do n=1,nlevs
      call multifab_copy_c(rhs(n),1,s2(n),rhoh_comp,1)
   enddo
@@ -142,16 +142,16 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
   do n=1,nlevs
      do i=1,s1(n)%nboxes
         if (multifab_remote(s1(n),i)) cycle
-        kthovercp1p => dataptr(kthovercp1(n),i)
+        hcoeff1p => dataptr(hcoeff1(n),i)
         rhsbetap    => dataptr(rhsbeta(n),i)
         lo = lwb(get_box(s1(n), i))
         hi = upb(get_box(s1(n), i))
         select case (dm)
         case (2)
-           call put_beta_on_faces_2d(lo,hi,kthovercp1p(:,:,1,1), &
+           call put_beta_on_faces_2d(lo,hi,hcoeff1p(:,:,1,1), &
                                      rhsbetap(:,:,1,:))
         case (3)
-           call put_beta_on_faces_3d(lo,hi,kthovercp1p(:,:,:,1), &
+           call put_beta_on_faces_3d(lo,hi,hcoeff1p(:,:,:,1), &
                                      rhsbetap(:,:,:,:))
         end select
      end do
@@ -184,16 +184,16 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
      do n=1,nlevs
         do i=1,s1(n)%nboxes
            if (multifab_remote(s1(n),i)) cycle
-           xik1p    => dataptr(xik1(n),i)
+           Xkcoeff1p    => dataptr(Xkcoeff1(n),i)
            rhsbetap => dataptr(rhsbeta(n),i)
            lo = lwb(get_box(s1(n), i))
            hi = upb(get_box(s1(n), i))
            select case (dm)
            case (2)
-              call put_beta_on_faces_2d(lo,hi,xik1p(:,:,1,spec), &
+              call put_beta_on_faces_2d(lo,hi,Xkcoeff1p(:,:,1,spec), &
                                         rhsbetap(:,:,1,:))
            case (3)
-              call put_beta_on_faces_3d(lo,hi,xik1p(:,:,:,spec), &
+              call put_beta_on_faces_3d(lo,hi,Xkcoeff1p(:,:,:,spec), &
                                         rhsbetap(:,:,:,:))
            end select
         end do
@@ -220,24 +220,24 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
   enddo
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!
-  ! Now do the implicit solve
+  ! Setup LHS coefficients
   !!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  ! create lhsbeta = -kthovercp1 = (dt/2)k_{th}^{(1)}/c_p^{(1)}
+  ! create lhsbeta = -hcoeff1 = (dt/2)k_{th}^{(1)}/c_p^{(1)}
   ! put beta on faces (remember to scale by -1 afterwards)
   do n=1,nlevs
      do i=1,s1(n)%nboxes
         if (multifab_remote(s1(n),i)) cycle
-        kthovercp1p => dataptr(kthovercp1(n),i)
+        hcoeff1p => dataptr(hcoeff1(n),i)
         lhsbetap    => dataptr(lhsbeta(n),i)
         lo = lwb(get_box(s1(n), i))
         hi = upb(get_box(s1(n), i))
         select case (dm)
         case (2)
-           call put_beta_on_faces_2d(lo,hi,kthovercp1p(:,:,1,1), &
+           call put_beta_on_faces_2d(lo,hi,hcoeff1p(:,:,1,1), &
                                      lhsbetap(:,:,1,:))
         case (3)
-           call put_beta_on_faces_3d(lo,hi,kthovercp1p(:,:,:,1), &
+           call put_beta_on_faces_3d(lo,hi,hcoeff1p(:,:,:,1), &
                                      lhsbetap(:,:,:,:))
         end select
      end do
@@ -248,27 +248,30 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
      call multifab_mult_mult_s_c(lhsbeta(n),1,-1.0d0,dm,1)
   enddo
 
-  ! initialize phi to H^2 as a guess; also sets the ghost cells at inflow/outflow
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!
+  ! Now do the implicit solve
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  ! initialize phi to h^{(2')} as a guess; also sets the ghost cells at inflow/outflow
   ! to a reasonable value
   do n=1,nlevs
      call multifab_plus_plus_c(phi(n),1,s2(n),rhoh_comp,1,1)
      call multifab_div_div_c(phi(n),1,s2(n),rho_comp,1,1)
   enddo
 
-  ! Call the solver to obtain h^(2') (it will be stored in phi)
+  ! Call the solver to obtain h^(2'') (it will be stored in phi)
   ! solves (alpha - nabla dot beta nabla)phi = rh
   call mac_multigrid(mla,rhs,phi,fine_flx,lhsalpha,lhsbeta,dx,the_bc_tower, &
                      dm+rhoh_comp,stencil_order,mla%mba%rr, &
                      mg_verbose,cg_verbose)
 
-  ! need to set rhs for second implicit solve to rhoh^2 before I overwrite
-  ! with rhoh^{2'}
-  ! begin construction of rhs by setting rhs = (\rho h)^{(2)}
+  ! need to set rhs for second implicit solve to 
+  ! rho^{(2)}h^{(2')} before I overwrite s2 with rhoh^{2'}
   do n=1,nlevs
      call multifab_copy_c(rhs(n),1,s2(n),rhoh_comp,1)
   enddo
 
-  ! load h^{2'} into s2
+  ! load h^{2''} into s2
   do n=1,nlevs
      call multifab_copy_c(s2(n),rhoh_comp,phi(n),1,1)
      call multifab_mult_mult_c(s2(n),rhoh_comp,s2(n),rho_comp,1)
@@ -322,28 +325,28 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
   ! Second implicit solve
   !!!!!!!!!!!!!!!!!!!!!!!
 
-  ! compute kthovercp2prime and xik2prime, defined as:
-  ! kthovercp2prime = -(dt/2)k_{th}^{(2')}/c_p^{(2')}
-  ! xik2prime = (dt/2)\xi_k^{(2')}k_{th}^{(2')}/c_p^{(2')}
+  ! compute hcoeff2 and Xkcoeff2, defined as:
+  ! hcoeff2 = -(dt/2)k_{th}^{(2'')}/c_p^{(2'')}
+  ! Xkcoeff2 = (dt/2)\xi_k^{(2'')}k_{th}^{(2'')}/c_p^{(2'')}
   do n=1,nlevs
      do i=1,s1(n)%nboxes
         if (multifab_remote(s2(n),i)) cycle
         s2p         => dataptr(s2(n),i)
-        kthovercp2primep => dataptr(kthovercp2prime(n),i)
-        xik2primep       => dataptr(xik2prime(n),i)
+        hcoeff2p => dataptr(hcoeff2(n),i)
+        Xkcoeff2p       => dataptr(Xkcoeff2(n),i)
         lo = lwb(get_box(s2(n), i))
         hi = upb(get_box(s2(n), i))
         select case (dm)
         case (2)
            call compute_thermo_quantities_2d(lo,hi,dt, &
                                              s2p(:,:,1,:), &
-                                             kthovercp2primep(:,:,1,1), &
-                                             xik2primep(:,:,1,:))
+                                             hcoeff2p(:,:,1,1), &
+                                             Xkcoeff2p(:,:,1,:))
         case (3)
            call compute_thermo_quantities_3d(lo,hi,dt,t02, &
                                              s2p(:,:,:,:), &
-                                             kthovercp2primep(:,:,:,1), &
-                                             xik2primep(:,:,:,:))
+                                             hcoeff2p(:,:,:,1), &
+                                             Xkcoeff2p(:,:,:,:))
         end select
      end do
   enddo
@@ -356,16 +359,16 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
   do n=1,nlevs
      do i=1,s1(n)%nboxes
         if (multifab_remote(s1(n),i)) cycle
-        kthovercp1p => dataptr(kthovercp1(n),i)
+        hcoeff1p => dataptr(hcoeff1(n),i)
         rhsbetap    => dataptr(rhsbeta(n),i)
         lo = lwb(get_box(s1(n), i))
         hi = upb(get_box(s1(n), i))
         select case (dm)
         case (2)
-           call put_beta_on_faces_2d(lo,hi,kthovercp1p(:,:,1,1), &
+           call put_beta_on_faces_2d(lo,hi,hcoeff1p(:,:,1,1), &
                                      rhsbetap(:,:,1,:))
         case (3)
-           call put_beta_on_faces_3d(lo,hi,kthovercp1p(:,:,:,1), &
+           call put_beta_on_faces_3d(lo,hi,hcoeff1p(:,:,:,1), &
                                      rhsbetap(:,:,:,:))
         end select
      end do
@@ -395,21 +398,20 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
   do spec=1,nspec
 
      ! do X_k^{(1)} term first
-
      ! put beta on faces
      do n=1,nlevs
         do i=1,s1(n)%nboxes
            if (multifab_remote(s1(n),i)) cycle
-           xik1p    => dataptr(xik1(n),i)
+           Xkcoeff1p    => dataptr(Xkcoeff1(n),i)
            rhsbetap => dataptr(rhsbeta(n),i)
            lo = lwb(get_box(s1(n), i))
            hi = upb(get_box(s1(n), i))
            select case (dm)
            case (2)
-              call put_beta_on_faces_2d(lo,hi,xik1p(:,:,1,spec), &
+              call put_beta_on_faces_2d(lo,hi,Xkcoeff1p(:,:,1,spec), &
                                         rhsbetap(:,:,1,:))
            case (3)
-              call put_beta_on_faces_3d(lo,hi,xik1p(:,:,:,spec), &
+              call put_beta_on_faces_3d(lo,hi,Xkcoeff1p(:,:,:,spec), &
                                         rhsbetap(:,:,:,:))
            end select
         end do
@@ -432,21 +434,20 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
      enddo
 
      ! now do X_k^{(2)} term
-
      ! put beta on faces
      do n=1,nlevs
         do i=1,s1(n)%nboxes
            if (multifab_remote(s1(n),i)) cycle
-           xik2primep    => dataptr(xik2prime(n),i)
+           Xkcoeff2p    => dataptr(Xkcoeff2(n),i)
            rhsbetap => dataptr(rhsbeta(n),i)
            lo = lwb(get_box(s1(n), i))
            hi = upb(get_box(s1(n), i))
            select case (dm)
            case (2)
-              call put_beta_on_faces_2d(lo,hi,xik2primep(:,:,1,spec), &
+              call put_beta_on_faces_2d(lo,hi,Xkcoeff2p(:,:,1,spec), &
                                         rhsbetap(:,:,1,:))
            case (3)
-              call put_beta_on_faces_3d(lo,hi,xik2primep(:,:,:,spec), &
+              call put_beta_on_faces_3d(lo,hi,Xkcoeff2p(:,:,:,spec), &
                                         rhsbetap(:,:,:,:))
            end select
         end do
@@ -470,24 +471,24 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
   enddo
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!
-  ! Now do the implicit solve
+  ! Setup LHS coefficients
   !!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  ! create lhsbeta = -kthovercp1 = (dt/2)k_{th}^{(2')}/c_p^{(2')}
+  ! create lhsbeta = -hcoeff2 = (dt/2)k_{th}^{(2'')}/c_p^{(2'')}
   ! put beta on faces (remember to scale by -1 afterwards)
   do n=1,nlevs
      do i=1,s1(n)%nboxes
         if (multifab_remote(s1(n),i)) cycle
-        kthovercp2primep => dataptr(kthovercp2prime(n),i)
+        hcoeff2p => dataptr(hcoeff2(n),i)
         lhsbetap    => dataptr(lhsbeta(n),i)
         lo = lwb(get_box(s1(n), i))
         hi = upb(get_box(s1(n), i))
         select case (dm)
         case (2)
-           call put_beta_on_faces_2d(lo,hi,kthovercp2primep(:,:,1,1), &
+           call put_beta_on_faces_2d(lo,hi,hcoeff2p(:,:,1,1), &
                                      lhsbetap(:,:,1,:))
         case (3)
-           call put_beta_on_faces_3d(lo,hi,kthovercp2primep(:,:,:,1), &
+           call put_beta_on_faces_3d(lo,hi,hcoeff2p(:,:,:,1), &
                                      lhsbetap(:,:,:,:))
         end select
      end do
@@ -498,14 +499,18 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
      call multifab_mult_mult_s_c(lhsbeta(n),1,-1.0d0,dm,1)
   enddo
 
-  ! initialize phi to H^2 as a guess; also sets the ghost cells at inflow/outflow
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!
+  ! Now do the implicit solve
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  ! initialize phi to h^{(2'')} as a guess; also sets the ghost cells at inflow/outflow
   ! to a reasonable value
   do n=1,nlevs
      call multifab_plus_plus_c(phi(n),1,s2(n),rhoh_comp,1,1)
      call multifab_div_div_c(phi(n),1,s2(n),rho_comp,1,1)
   enddo
 
-  ! Call the solver to obtain h^(3) (it will be stored in phi)
+  ! Call the solver to obtain h^(2) (it will be stored in phi)
   ! solves (alpha - nabla dot beta nabla)phi = rh
   call mac_multigrid(mla,rhs,phi,fine_flx,lhsalpha,lhsbeta,dx,the_bc_tower, &
                      dm+rhoh_comp,stencil_order,mla%mba%rr, &
@@ -571,29 +576,29 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
      call destroy(phitemp(n))
      call destroy(Lphi(n))
      call destroy(rhs(n))
-     call destroy(kthovercp1(n))
-     call destroy(kthovercp2prime(n))
-     call destroy(xik1(n))
-     call destroy(xik2prime(n))
+     call destroy(hcoeff1(n))
+     call destroy(hcoeff2(n))
+     call destroy(Xkcoeff1(n))
+     call destroy(Xkcoeff2(n))
   enddo
 
   deallocate(rhsalpha,lhsalpha,rhsbeta,lhsbeta,ccbeta,phi,phitemp,Lphi,rhs)
-  deallocate(kthovercp1,kthovercp2prime,xik1,xik2prime)
+  deallocate(hcoeff1,hcoeff2,Xkcoeff1,Xkcoeff2)
 
 end subroutine thermal_conduct_half_alg
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! compute kthovercp and xik, defined as:
-! kthovercp = -(dt/2)k_{th}/c_p
-! xik = (dt/2)\xi_k k_{th}/c_p
-subroutine compute_thermo_quantities_2d(lo,hi,dt,s,kthovercp,xik)
+! compute hcoeff and Xkcoeff, defined as:
+! hcoeff = -(dt/2)k_{th}/c_p
+! Xkcoeff = (dt/2)\xi_k k_{th}/c_p
+subroutine compute_thermo_quantities_2d(lo,hi,dt,s,hcoeff,Xkcoeff)
 
   integer        , intent(in   ) :: lo(:),hi(:)
   real(dp_t)    ,  intent(in   ) :: dt
   real(kind=dp_t), intent(in   ) :: s(lo(1)-3:,lo(2)-3:,:)
-  real(kind=dp_t), intent(inout) :: kthovercp(lo(1)-1:,lo(2)-1:)
-  real(kind=dp_t), intent(inout) :: xik(lo(1)-1:,lo(2)-1:,:)
+  real(kind=dp_t), intent(inout) :: hcoeff(lo(1)-1:,lo(2)-1:)
+  real(kind=dp_t), intent(inout) :: Xkcoeff(lo(1)-1:,lo(2)-1:,:)
 
   ! Local
   integer :: i,j,n
@@ -620,15 +625,15 @@ subroutine compute_thermo_quantities_2d(lo,hi,dt,s,kthovercp,xik)
                  dsdt_row, dsdr_row, &
                  do_diag, conduct_row)
 
-        kthovercp(i,j) = -HALF*dt*conduct_row(1)/cp_row(1)
+        hcoeff(i,j) = -HALF*dt*conduct_row(1)/cp_row(1)
 
         if(use_big_h) then
            do n=1,nspec
-              xik(i,j,n) = -(dhdX_row(1,n)+ebin(n))*kthovercp(i,j)
+              Xkcoeff(i,j,n) = -(dhdX_row(1,n)+ebin(n))*hcoeff(i,j)
            enddo
         else
            do n=1,nspec
-              xik(i,j,n) = -dhdX_row(1,n)*kthovercp(i,j)
+              Xkcoeff(i,j,n) = -dhdX_row(1,n)*hcoeff(i,j)
            enddo
         endif
 
@@ -638,17 +643,16 @@ subroutine compute_thermo_quantities_2d(lo,hi,dt,s,kthovercp,xik)
 end subroutine compute_thermo_quantities_2d
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! compute kthovercp1 and xik1, defined as:
-! kthovercp1 = -(dt/2)k_{th}^{(1)}/c_p^{(1)}
-! xik1 = (dt/2)\xi_k^{(1)}k_{th}^{(1)}/c_p^{(1)}
-subroutine compute_thermo_quantities_3d(lo,hi,dt,t0,s,kthovercp,xik)
+! hcoeff = -(dt/2)k_{th}/c_p
+! Xkcoeff = (dt/2)\xi_k k_{th}/c_p
+subroutine compute_thermo_quantities_3d(lo,hi,dt,t0,s,hcoeff,Xkcoeff)
 
   integer        , intent(in   ) :: lo(:),hi(:)
   real(dp_t)    ,  intent(in   ) :: dt
   real(kind=dp_t), intent(in   ) :: t0(0:)
   real(kind=dp_t), intent(in   ) :: s(lo(1)-3:,lo(2)-3:,lo(3)-3:,:)
-  real(kind=dp_t), intent(inout) :: kthovercp(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-  real(kind=dp_t), intent(inout) :: xik(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)
+  real(kind=dp_t), intent(inout) :: hcoeff(lo(1)-1:,lo(2)-1:,lo(3)-1:)
+  real(kind=dp_t), intent(inout) :: Xkcoeff(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)
 
   ! Local
   integer :: i,j,k,n
@@ -680,13 +684,13 @@ subroutine compute_thermo_quantities_3d(lo,hi,dt,t0,s,kthovercp,xik)
                            dsdt_row, dsdr_row, &
                            do_diag, conduct_row)
 
-           kthovercp(i,j,k) = -HALF*dt*conduct_row(1)/cp_row(1)
+           hcoeff(i,j,k) = -HALF*dt*conduct_row(1)/cp_row(1)
 
            if(use_big_h) then
-              xik(i,j,k,n) = -(dhdX_row(1,n)+ebin(n))*kthovercp(i,j,k)
+              Xkcoeff(i,j,k,n) = -(dhdX_row(1,n)+ebin(n))*hcoeff(i,j,k)
            else
               do n=1,nspec
-                 xik(i,j,k,n) = -dhdX_row(1,n)*kthovercp(i,j,k)
+                 Xkcoeff(i,j,k,n) = -dhdX_row(1,n)*hcoeff(i,j,k)
               enddo
            endif
         enddo
@@ -745,7 +749,7 @@ subroutine put_beta_on_faces_3d(lo,hi,ccbeta,beta)
   do k = lo(3),lo(3)+nz-1
      do j = lo(2),lo(2)+ny-1
         do i = lo(1),lo(1)+nx
-           beta(i,j,k,1) = (ccbeta(i,j,k) + ccbeta(i-1,j,k)) / TWO
+           beta(i,j,k,1) = TWO*(ccbeta(i,j,k)*ccbeta(i-1,j,k))/(ccbeta(i,j,k) + ccbeta(i-1,j,k))
         end do
      end do
   end do
@@ -753,7 +757,7 @@ subroutine put_beta_on_faces_3d(lo,hi,ccbeta,beta)
   do k = lo(3),lo(3)+nz-1
      do j = lo(2),lo(2)+ny
         do i = lo(1),lo(1)+nx-1
-           beta(i,j,k,2) = (ccbeta(i,j,k) + ccbeta(i,j-1,k)) / TWO
+           beta(i,j,k,2) = TWO*(ccbeta(i,j,k)*ccbeta(i,j-1,k))/(ccbeta(i,j,k) + ccbeta(i,j-1,k))
         end do
      end do
   end do
@@ -761,7 +765,7 @@ subroutine put_beta_on_faces_3d(lo,hi,ccbeta,beta)
   do k = lo(3),lo(3)+nz
      do j = lo(2),lo(2)+ny-1
         do i = lo(1),lo(1)+nx-1
-           beta(i,j,k,3) = (ccbeta(i,j,k) + ccbeta(i,j,k-1)) / TWO
+           beta(i,j,k,3) = TWO*(ccbeta(i,j,k)*ccbeta(i,j,k-1))/(ccbeta(i,j,k) + ccbeta(i,j,k-1))
         end do
      end do
   end do
