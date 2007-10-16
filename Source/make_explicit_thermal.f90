@@ -71,7 +71,7 @@ subroutine make_explicit_thermal(mla,dx,thermal,s,p0,mg_verbose, &
      call setval(     thermal(n), ZERO, all=.true.)
   end do
 
-  ! create Tcoeff = kth, hcoeff = kth/cp, Xkcoeff = xik*kth/cp, pcoeff = hp*kth/cp
+  ! create Tcoeff = -kth, hcoeff = -kth/cp, Xkcoeff = xik*kth/cp, pcoeff = hp*kth/cp
   do n=1,nlevs
      do i=1,s(n)%nboxes
         if (multifab_remote(s(n),i)) cycle
@@ -95,14 +95,13 @@ subroutine make_explicit_thermal(mla,dx,thermal,s,p0,mg_verbose, &
      end do
   enddo
 
-
   if(temperature_diffusion) then
      ! load T into phi
      do n=1,nlevs
         call multifab_copy_c(phi(n),1,s(n),temp_comp,1,1)
      enddo
 
-     ! setup beta = -Tcoeff on faces
+     ! setup beta = Tcoeff on faces
      do n=1,nlevs
         do i=1,s(n)%nboxes
            if (multifab_remote(s(n),i)) cycle
@@ -117,11 +116,6 @@ subroutine make_explicit_thermal(mla,dx,thermal,s,p0,mg_verbose, &
               call put_beta_on_faces_3d(lo,hi,Tcoeffp(:,:,:,1),betap(:,:,:,:))
            end select
         end do
-     enddo
-     
-     ! scale beta by -1
-     do n=1,nlevs
-        call multifab_mult_mult_s_c(beta(n),1,-1.0d0,dm,1)
      enddo
      
      ! applyop
@@ -141,7 +135,7 @@ subroutine make_explicit_thermal(mla,dx,thermal,s,p0,mg_verbose, &
         call multifab_div_div_c(phi(n),1,s(n),rho_comp,1,1)
      enddo
 
-     ! setup beta = -hcoeff on faces
+     ! setup beta = hcoeff on faces
      do n=1,nlevs
         do i=1,s(n)%nboxes
            if (multifab_remote(s(n),i)) cycle
@@ -158,11 +152,6 @@ subroutine make_explicit_thermal(mla,dx,thermal,s,p0,mg_verbose, &
         end do
      enddo
 
-     ! scale beta by -1
-     do n=1,nlevs
-        call multifab_mult_mult_s_c(beta(n),1,-1.0d0,dm,1)
-     enddo
-     
      ! applyop
      call mac_applyop(mla,resid,phi,alpha,beta,dx,the_bc_tower,dm+rhoh_comp, &
           stencil_order,mla%mba%rr,mg_verbose,cg_verbose)
@@ -293,7 +282,7 @@ end subroutine make_explicit_thermal
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! create Tcoeff = kth, hcoeff = kth/cp, Xkcoeff = xik*kth/cp, pcoeff = hp*kth/cp
+! create Tcoeff = -kth, hcoeff = -kth/cp, Xkcoeff = xik*kth/cp, pcoeff = hp*kth/cp
 subroutine make_coeffs_2d(lo,hi,dx,p0,s,Tcoeff,hcoeff,Xkcoeff,pcoeff)
 
   integer        , intent(in   ) :: lo(:),hi(:)
@@ -330,17 +319,19 @@ subroutine make_coeffs_2d(lo,hi,dx,p0,s,Tcoeff,hcoeff,Xkcoeff,pcoeff)
              dsdt_row, dsdr_row, &
              do_diag, conduct_row)
 
-        Tcoeff(i,j) = conduct_row(1)
-        hcoeff(i,j) = conduct_row(1)/cp_row(1)
-        pcoeff(i,j) = hcoeff(i,j)*((1.0d0/den_row(1))*(1.0d0-p_row(1)/(den_row(1)*dpdr_row(1)))+dedr_row(1)/dpdr_row(1))
+        Tcoeff(i,j) = -conduct_row(1)
+        hcoeff(i,j) = -conduct_row(1)/cp_row(1)
+        pcoeff(i,j) = (conduct_row(1)/cp_row(1))* &
+             ((1.0d0/den_row(1))* &
+              (1.0d0-p_row(1)/(den_row(1)*dpdr_row(1)))+dedr_row(1)/dpdr_row(1))
 
         if(use_big_h) then
            do n=1,nspec
-              Xkcoeff(i,j,n) = hcoeff(i,j)*(dhdX_row(1,n) + ebin(n))
+              Xkcoeff(i,j,n) = (conduct_row(1)/cp_row(1))*(dhdX_row(1,n) + ebin(n))
            enddo
         else
            do n=1,nspec
-              Xkcoeff(i,j,n) = hcoeff(i,j)*dhdX_row(1,n)
+              Xkcoeff(i,j,n) = (conduct_row(1)/cp_row(1))*dhdX_row(1,n)
            enddo
         endif
      enddo
@@ -350,7 +341,7 @@ end subroutine make_coeffs_2d
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! create Tcoeff = kth, hcoeff = kth/cp, Xkcoeff = xik*kth/cp, pcoeff = hp*kth/cp
+! create Tcoeff = -kth, hcoeff = -kth/cp, Xkcoeff = xik*kth/cp, pcoeff = hp*kth/cp
 subroutine make_coeffs_3d(lo,hi,dx,p0,s,Tcoeff,hcoeff,Xkcoeff,pcoeff)
 
   integer        , intent(in   ) :: lo(:),hi(:)
@@ -393,17 +384,19 @@ subroutine make_coeffs_3d(lo,hi,dx,p0,s,Tcoeff,hcoeff,Xkcoeff,pcoeff)
                 dsdt_row, dsdr_row, &
                 do_diag, conduct_row)
 
-           Tcoeff(i,j,k) = conduct_row(1)
-           hcoeff(i,j,k) = conduct_row(1)/cp_row(1)
-           pcoeff(i,j,k) = hcoeff(i,j,k)*((1.0d0/den_row(1))*(1.0d0-p_row(1)/(den_row(1)*dpdr_row(1)))+dedr_row(1)/dpdr_row(1))
+           Tcoeff(i,j,k) = -conduct_row(1)
+           hcoeff(i,j,k) = -conduct_row(1)/cp_row(1)
+           pcoeff(i,j,k) = (conduct_row(1)/cp_row(1))* &
+                ((1.0d0/den_row(1))* &
+                 (1.0d0-p_row(1)/(den_row(1)*dpdr_row(1)))+dedr_row(1)/dpdr_row(1))
 
            if(use_big_h) then
               do n=1,nspec
-                 Xkcoeff(i,j,k,n) = hcoeff(i,j,k)*(dhdX_row(1,n) + ebin(n))
+                 Xkcoeff(i,j,k,n) = (conduct_row(1)/cp_row(1))*(dhdX_row(1,n) + ebin(n))
               enddo
            else
               do n=1,nspec
-                 Xkcoeff(i,j,k,n) = hcoeff(i,j,k)*dhdX_row(1,n)
+                 Xkcoeff(i,j,k,n) = (conduct_row(1)/cp_row(1))*dhdX_row(1,n)
               enddo
            endif
         enddo
