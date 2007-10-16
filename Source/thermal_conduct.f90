@@ -701,8 +701,8 @@ end subroutine compute_thermo_quantities_3d
 subroutine put_beta_on_faces_2d(lo,hi,ccbeta,beta)
 
   integer        , intent(in   ) :: lo(:),hi(:)
-  real(kind=dp_t), intent(in   ) :: ccbeta(-1:,-1:)
-  real(kind=dp_t), intent(inout) :: beta(-1:,-1:,:)
+  real(kind=dp_t), intent(in   ) :: ccbeta(lo(1)-1:,lo(2)-1:)
+  real(kind=dp_t), intent(inout) :: beta(lo(1)-1:,lo(2)-1:,:)
 
 ! Local
   integer :: i,j
@@ -711,14 +711,14 @@ subroutine put_beta_on_faces_2d(lo,hi,ccbeta,beta)
   nx = size(beta,dim=1) - 2
   ny = size(beta,dim=2) - 2
 
-  do j = 0,ny-1
-     do i = 0,nx
+  do j = lo(2),lo(2)+ny-1
+     do i = lo(1),lo(1)+nx
         beta(i,j,1) = TWO*(ccbeta(i,j)*ccbeta(i-1,j))/(ccbeta(i,j) + ccbeta(i-1,j))
      end do
   end do
   
-  do j = 0,ny
-     do i = 0,nx-1
+  do j = lo(2),lo(2)+ny
+     do i = lo(1),lo(1)+nx-1
         beta(i,j,2) = TWO*(ccbeta(i,j)*ccbeta(i,j-1))/(ccbeta(i,j) + ccbeta(i,j-1))
      end do
   end do
@@ -731,8 +731,8 @@ end subroutine put_beta_on_faces_2d
 subroutine put_beta_on_faces_3d(lo,hi,ccbeta,beta)
 
   integer        , intent(in   ) :: lo(:),hi(:)
-  real(kind=dp_t), intent(in   ) :: ccbeta(-1:,-1:,-1:)
-  real(kind=dp_t), intent(inout) :: beta(-1:,-1:,-1:,:)
+  real(kind=dp_t), intent(in   ) :: ccbeta(lo(1)-1:,lo(2)-1:,lo(3)-1:)
+  real(kind=dp_t), intent(inout) :: beta(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)
 
 ! Local
   integer :: i,j,k
@@ -742,59 +742,30 @@ subroutine put_beta_on_faces_3d(lo,hi,ccbeta,beta)
   ny = size(beta,dim=2) - 2
   nz = size(beta,dim=3) - 2
 
-  do k = 0,nz-1
-     do j = 0,ny-1
-        do i = 0,nx
+  do k = lo(3),lo(3)+nz-1
+     do j = lo(2),lo(2)+ny-1
+        do i = lo(1),lo(1)+nx
            beta(i,j,k,1) = (ccbeta(i,j,k) + ccbeta(i-1,j,k)) / TWO
         end do
      end do
   end do
   
-  do k = 0,nz-1
-     do j = 0,ny
-        do i = 0,nx-1
+  do k = lo(3),lo(3)+nz-1
+     do j = lo(2),lo(2)+ny
+        do i = lo(1),lo(1)+nx-1
            beta(i,j,k,2) = (ccbeta(i,j,k) + ccbeta(i,j-1,k)) / TWO
         end do
      end do
   end do
   
-  do k = 0,nz
-     do j = 0,ny-1
-        do i = 0,nx-1
+  do k = lo(3),lo(3)+nz
+     do j = lo(2),lo(2)+ny-1
+        do i = lo(1),lo(1)+nx-1
            beta(i,j,k,3) = (ccbeta(i,j,k) + ccbeta(i,j,k-1)) / TWO
         end do
      end do
   end do
 
 end subroutine put_beta_on_faces_3d
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! output stuff in a multifab
-subroutine fab_access_2d(lo,hi,fab,ng)
-
- integer        , intent(in   ) :: lo(:),hi(:),ng
- real(kind=dp_t), intent(in   ) :: fab(lo(1)-ng:,lo(2)-ng:,:)
-
-! Local
-  integer :: i,j
-
-
-
-end subroutine fab_access_2d
-
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! output stuff in a multifab
-subroutine fab_access_3d(lo,hi,fab,ng)
-
- integer        , intent(in   ) :: lo(:),hi(:),ng
- real(kind=dp_t), intent(in   ) :: fab(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-
-! Local
-  integer :: i,j,k
-
-
-
-end subroutine fab_access_3d
 
 end module thermal_conduct_module
