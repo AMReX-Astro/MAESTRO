@@ -156,6 +156,7 @@ module define_bc_module
           adv_bc_level(n,d,i,temp_comp+dm)                     = HOEXTRAP      ! temperature
           adv_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= HOEXTRAP      ! tracers
           adv_bc_level(n,d,i,press_comp)                       = FOEXTRAP      ! pressure
+          adv_bc_level(n,d,i,neumann_comp)                     = FOEXTRAP      ! first order extrap
 
        else if (phys_bc_level(n,d,i) == NO_SLIP_WALL) then
           adv_bc_level(n,d,i,     1:dm)                        = EXT_DIR       ! velocity
@@ -165,6 +166,7 @@ module define_bc_module
           adv_bc_level(n,d,i,temp_comp+dm)                     = HOEXTRAP      ! temperature
           adv_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= HOEXTRAP      ! tracers
           adv_bc_level(n,d,i,press_comp)                       = FOEXTRAP      ! pressure
+          adv_bc_level(n,d,i,neumann_comp)                     = FOEXTRAP      ! first order extrap
    
        else if (phys_bc_level(n,d,i) == INLET) then
           adv_bc_level(n,d,i,     1:dm)                        = EXT_DIR       ! velocity
@@ -174,6 +176,7 @@ module define_bc_module
           adv_bc_level(n,d,i,temp_comp+dm)                     = EXT_DIR       ! temperature
           adv_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= EXT_DIR       ! tracers
           adv_bc_level(n,d,i,press_comp)                       = FOEXTRAP      ! pressure
+          adv_bc_level(n,d,i,neumann_comp)                     = FOEXTRAP      ! first order extrap
 
        else if (phys_bc_level(n,d,i) == OUTLET) then
           adv_bc_level(n,d,i,     1:dm)                        = FOEXTRAP      ! velocity
@@ -182,7 +185,8 @@ module define_bc_module
           adv_bc_level(n,d,i,spec_comp+dm:spec_comp+dm+nspec-1)= FOEXTRAP      ! (rho X)_i
           adv_bc_level(n,d,i,temp_comp+dm)                     = FOEXTRAP      ! temperature
           adv_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= FOEXTRAP      ! tracers
-          adv_bc_level(n,d,i,press_comp)                       = FOEXTRAP      ! pressure
+          adv_bc_level(n,d,i,press_comp)                       = EXT_DIR       ! pressure
+          adv_bc_level(n,d,i,neumann_comp)                     = FOEXTRAP      ! first order extrap
 
        else if (phys_bc_level(n,d,i) == SYMMETRY) then
           adv_bc_level(n,d,i,     1:dm)                        = REFLECT_EVEN  ! tangential vel
@@ -193,6 +197,7 @@ module define_bc_module
           adv_bc_level(n,d,i,temp_comp+dm)                     = REFLECT_EVEN  ! temperature
           adv_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= REFLECT_EVEN  ! tracers
           adv_bc_level(n,d,i,press_comp)                       = REFLECT_EVEN  ! pressure
+          adv_bc_level(n,d,i,neumann_comp)                     = FOEXTRAP      ! first order extrap
 
        end if
     end do
@@ -242,6 +247,7 @@ module define_bc_module
           ell_bc_level(n,d,i,temp_comp+dm)                     = BC_NEU   ! temperature
           ell_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= BC_NEU   ! tracers
           ell_bc_level(n,d,i,press_comp)                       = BC_NEU   ! pressure
+          ell_bc_level(n,d,i,neumann_comp)                     = BC_NEU   ! first order extrap
        else if (phys_bc_level(n,d,i) == NO_SLIP_WALL) then
           ell_bc_level(n,d,i,                      1:dm)       = BC_DIR   ! vel.
           ell_bc_level(n,d,i,rho_comp+dm)                      = BC_NEU   ! density
@@ -250,6 +256,7 @@ module define_bc_module
           ell_bc_level(n,d,i,temp_comp+dm)                     = BC_NEU   ! temperature
           ell_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= BC_NEU   ! tracers
           ell_bc_level(n,d,i,press_comp)                       = BC_NEU   ! pressure
+          ell_bc_level(n,d,i,neumann_comp)                     = BC_NEU   ! first order extrap
        else if (phys_bc_level(n,d,i) == INLET) then
           ell_bc_level(n,d,i,                      1:dm)       = BC_DIR   ! vel.
           ell_bc_level(n,d,i,rho_comp+dm)                      = BC_DIR   ! density
@@ -258,6 +265,7 @@ module define_bc_module
           ell_bc_level(n,d,i,temp_comp+dm)                     = BC_DIR   ! temperature
           ell_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= BC_DIR   ! tracers
           ell_bc_level(n,d,i,press_comp)                       = BC_NEU   ! pressure
+          ell_bc_level(n,d,i,neumann_comp)                     = BC_NEU   ! first order extrap
        else if (phys_bc_level(n,d,i) == OUTLET) then
           ell_bc_level(n,d,i,                      1:dm)       = BC_NEU   ! tangential vel.
           ell_bc_level(n,d,i,rho_comp+dm)                      = BC_NEU   ! density
@@ -266,6 +274,7 @@ module define_bc_module
           ell_bc_level(n,d,i,temp_comp+dm)                     = BC_NEU   ! temperature
           ell_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= BC_NEU   ! tracers
           ell_bc_level(n,d,i,press_comp)                       = BC_DIR   ! pressure
+          ell_bc_level(n,d,i,neumann_comp)                     = BC_NEU   ! first order extrap
        else if (phys_bc_level(n,d,i) == SYMMETRY) then
           ell_bc_level(n,d,i,                      1:dm)       = BC_NEU   ! tangential vel.
           ell_bc_level(n,d,i,                         d)       = BC_DIR   ! normal vel.
@@ -275,6 +284,7 @@ module define_bc_module
           ell_bc_level(n,d,i,temp_comp+dm)                     = BC_NEU   ! temperature
           ell_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= BC_NEU   ! tracers
           ell_bc_level(n,d,i,press_comp)                       = BC_NEU   ! pressure
+          ell_bc_level(n,d,i,neumann_comp)                     = BC_NEU   ! first order extrap
        else if (phys_bc_level(n,d,i) == PERIODIC) then
           ell_bc_level(n,d,i,                      1:dm      ) = BC_PER   ! vel.
           ell_bc_level(n,d,i,rho_comp+dm)                      = BC_PER   ! density
@@ -283,6 +293,7 @@ module define_bc_module
           ell_bc_level(n,d,i,temp_comp+dm)                     = BC_PER   ! temperature
           ell_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= BC_PER   ! tracers
           ell_bc_level(n,d,i,press_comp)                       = BC_PER   ! pressure
+          ell_bc_level(n,d,i,neumann_comp)                     = BC_NEU   ! first order extrap
        end if
     end do
     end do

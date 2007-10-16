@@ -107,7 +107,6 @@ contains
       end if
 
       if (bc(2,1) .eq. EXT_DIR) then
-         ! this is the only thing it should call
          if (icomp.eq.1) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_VT
          if (icomp.eq.2) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_VN
          if (icomp.eq.3) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_RHO
@@ -124,11 +123,9 @@ contains
          if (icomp.eq.8) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_TEMP
          if (icomp.eq.9) s(lo(1)-ng:hi(1)+ng,lo(2)-ng:lo(2)-1) = INLET_TRA
       else if (bc(2,1) .eq. FOEXTRAP) then
-         print *,''
-         print *,'*******************************************'
-         print *,'WARNING: In setbc.f90: bc(2,1) .eq. FOEXTRAP'
-         print *,'*******************************************'
-         print *,''
+         do i = lo(1)-ng,hi(1)+ng
+            s(i,lo(2)-ng:lo(2)-1) = s(i,lo(2))
+         end do
       else if (bc(2,1) .eq. HOEXTRAP) then
          print *,''
          print *,'*******************************************'
@@ -164,7 +161,6 @@ contains
          print *,'*******************************************'
          print *,''
       else if (bc(2,2) .eq. FOEXTRAP) then
-         ! this is the only thing it should call
          do i = lo(1)-ng,hi(1)+ng
             s(i,hi(2)+1:hi(2)+ng) = s(i,hi(2))
          end do
@@ -374,7 +370,6 @@ contains
       end if
 
       if (bc(3,1) .eq. EXT_DIR) then
-         ! this is the only thing it should call
          if (icomp.eq.1) s(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-ng:lo(3)-1) = INLET_VT
          if (icomp.eq.2) s(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-ng:lo(3)-1) = INLET_VT
          if (icomp.eq.3) s(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-ng:lo(3)-1) = INLET_VN
@@ -432,7 +427,6 @@ contains
          print *,'*******************************************'
          print *,''
       else if (bc(3,2) .eq. FOEXTRAP .or. bc(3,2) .eq. REFLECT_EVEN) then
-         ! this is the only thing it should call
          do j = lo(2)-ng,hi(2)+ng
             do i = lo(1)-ng,hi(1)+ng
                s(i,j,hi(3)+1:hi(3)+ng) = s(i,j,hi(3))

@@ -41,6 +41,8 @@ subroutine make_explicit_thermal(mla,dx,thermal,s,p0,mg_verbose, &
   real(kind=dp_t), pointer    :: Tcoeffp(:,:,:,:),hcoeffp(:,:,:,:)
   real(kind=dp_t), pointer    :: pcoeffp(:,:,:,:),residp(:,:,:,:)
 
+  type(bc_level) ::  bc
+
   nlevs = mla%nlevel
   dm      = mla%dim
   stencil_order = 2
@@ -129,6 +131,7 @@ subroutine make_explicit_thermal(mla,dx,thermal,s,p0,mg_verbose, &
      ! scale residual by sigma/rho and add to thermal
      do n=1,nlevs
         call multifab_plus_plus_c(thermal(n),1,resid(n),1,1,0)
+        call multifab_fill_boundary(thermal(n))
      enddo
 
   else
@@ -167,6 +170,7 @@ subroutine make_explicit_thermal(mla,dx,thermal,s,p0,mg_verbose, &
      ! scale residual by sigma/rho and add to thermal
      do n=1,nlevs
         call multifab_plus_plus_c(thermal(n),1,resid(n),1,1,0)
+        call multifab_fill_boundary(thermal(n))
      enddo
      
      ! loop over species
@@ -203,6 +207,71 @@ subroutine make_explicit_thermal(mla,dx,thermal,s,p0,mg_verbose, &
            call multifab_plus_plus_c(thermal(n),1,resid(n),1,1,0)
            call multifab_fill_boundary(thermal(n))
         enddo
+     enddo
+
+     ! load p0 into phi
+     do n=1,nlevs
+        do i=1,s(n)%nboxes
+           if (multifab_remote(s(n),i)) cycle
+           phip    => dataptr(phi(n),i)
+           lo =  lwb(get_box(s(n), i))
+           hi =  upb(get_box(s(n), i))
+           select case (dm)
+           case (2)
+              call put_base_state_on_multifab_2d(lo,hi,p0,phip(:,:,1,1))
+           case (3)
+              call put_base_state_on_multifab_3d(lo,hi,p0,phip(:,:,:,1))
+           end select
+        end do
+     enddo
+
+     ! set the boundary conditions for pressure
+     do n=1,nlevs
+        call multifab_fill_boundary(phi(n))
+        bc = the_bc_tower%bc_tower_array(n)
+        do i = 1, phi(n)%nboxes
+           if ( multifab_remote(phi(n), i) ) cycle
+           phip => dataptr(phi(n), i)
+           lo =  lwb(get_box(phi(n), i))
+           hi =  upb(get_box(phi(n), i))
+           select case (dm)
+           case (2)
+              call setbc_2d(phip(:,:,1,1), lo, 1, &
+                   bc%adv_bc_level_array(i,:,:,neumann_comp), &
+                   dx(n,:),neumann_comp)
+           case (3)
+              call setbc_3d(phip(:,:,:,1), lo, 1, &
+                   bc%adv_bc_level_array(i,:,:,neumann_comp), &
+                   dx(n,:),neumann_comp)
+           end select
+        enddo
+     enddo
+
+     ! setup beta = pcoeff on faces
+     do n=1,nlevs
+        do i=1,s(n)%nboxes
+           if (multifab_remote(s(n),i)) cycle
+           pcoeffp    => dataptr(pcoeff(n),i)
+           betap      => dataptr(beta(n),i)
+           lo =  lwb(get_box(s(n), i))
+           hi =  upb(get_box(s(n), i))
+           select case (dm)
+           case (2)
+              call put_beta_on_faces_2d(lo,hi,pcoeffp(:,:,1,1),betap(:,:,1,:))
+           case (3)
+              call put_beta_on_faces_3d(lo,hi,pcoeffp(:,:,:,1),betap(:,:,:,:))
+           end select
+        end do
+     enddo
+
+     ! applyop
+     call mac_applyop(mla,resid,phi,alpha,beta,dx,the_bc_tower,neumann_comp, &
+          stencil_order,mla%mba%rr,mg_verbose,cg_verbose)
+     
+     ! scale residual by sigma/rho and add to thermal
+     do n=1,nlevs
+        call multifab_plus_plus_c(thermal(n),1,resid(n),1,1,0)
+        call multifab_fill_boundary(thermal(n))
      enddo
   endif
 
@@ -342,5 +411,48 @@ subroutine make_coeffs_3d(lo,hi,dx,p0,s,Tcoeff,hcoeff,Xkcoeff,pcoeff)
   enddo
 
 end subroutine make_coeffs_3d
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! 
+subroutine put_base_state_on_multifab_2d(lo,hi,p0,phi)
+
+  integer        , intent(in   ) :: lo(:),hi(:)
+  real(kind=dp_t), intent(in   ) :: p0(0:)
+  real(kind=dp_t), intent(inout) :: phi(lo(1)-1:,lo(2)-1:)
+
+  ! local
+  integer :: i,j
+
+  do j=lo(2),hi(2)
+     do i=lo(1)-1,hi(1)+1
+        phi(i,j) = p0(j)
+     enddo
+  enddo
+
+end subroutine put_base_state_on_multifab_2d
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! 
+subroutine put_base_state_on_multifab_3d(lo,hi,p0,phi)
+
+  integer        , intent(in   ) :: lo(:),hi(:)
+  real(kind=dp_t), intent(in   ) :: p0(0:)
+  real(kind=dp_t), intent(inout) :: phi(lo(1)-1:,lo(2)-1:,lo(3)-1:)
+
+  ! local
+  integer :: i,j,k
+
+  do k=lo(3),hi(3)
+     do j=lo(2)-1,hi(2)+1
+        do i=lo(1)-1,hi(1)+1
+           phi(i,j,k) = p0(k)
+        enddo
+     enddo
+  enddo
+
+end subroutine put_base_state_on_multifab_3d
+
 
 end module make_explicit_thermal_module

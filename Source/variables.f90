@@ -5,7 +5,8 @@ module variables
 
   implicit none
 
-  integer, save :: rho_comp, rhoh_comp, spec_comp, temp_comp, trac_comp, press_comp, first_derive_comp
+  integer, save :: rho_comp, rhoh_comp, spec_comp, temp_comp, trac_comp, press_comp
+  integer, save :: neumann_comp, first_derive_comp
   integer, save :: icomp_vel, icomp_rho, icomp_rhoh, icomp_spec, icomp_trac
   integer, save :: icomp_magvel, icomp_mom, icomp_vort, icomp_divu
   integer, save :: icomp_enthalpy,icomp_tfromrho,icomp_tpert,icomp_rhopert
@@ -33,6 +34,8 @@ contains
     nscal = nspec + ntrac + 3
 
     press_comp  = dm + nscal + 1
+
+    neumann_comp = press_comp+1
 
   end subroutine init_variables
 
