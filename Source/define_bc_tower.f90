@@ -54,12 +54,12 @@ module define_bc_module
        call phys_bc_level_build(bct%bc_tower_array(i)%phys_bc_level_array,mla%la(i), &
                                 domain_bc,default_value)
 
-       allocate(bct%bc_tower_array(i)%adv_bc_level_array(0:ngrids,bct%dim,2,bct%dim+nscal+1))
+       allocate(bct%bc_tower_array(i)%adv_bc_level_array(0:ngrids,bct%dim,2,bct%dim+nscal+2))
        default_value = INTERIOR
        call adv_bc_level_build(bct%bc_tower_array(i)%adv_bc_level_array, &
                                bct%bc_tower_array(i)%phys_bc_level_array,default_value,nspec)
 
-       allocate(bct%bc_tower_array(i)%ell_bc_level_array(0:ngrids,bct%dim,2,bct%dim+nscal+1))
+       allocate(bct%bc_tower_array(i)%ell_bc_level_array(0:ngrids,bct%dim,2,bct%dim+nscal+2))
        default_value = BC_INT
        call ell_bc_level_build(bct%bc_tower_array(i)%ell_bc_level_array, &
                                bct%bc_tower_array(i)%phys_bc_level_array,default_value,nspec)
