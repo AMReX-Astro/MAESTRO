@@ -17,13 +17,12 @@ module react_state_module
   
 contains
 
-  subroutine react_state (s_in,s_out,rho_omegadot,rho_Hext,t0,dt,dx,the_bc_level,time)
+  subroutine react_state (s_in,s_out,rho_omegadot,rho_Hext,dt,dx,the_bc_level,time)
 
     type(multifab) , intent(in   ) :: s_in
     type(multifab) , intent(inout) :: s_out
     type(multifab) , intent(inout) :: rho_omegadot
     type(multifab) , intent(inout) :: rho_Hext
-    real(kind=dp_t), intent(in   ) :: t0(0:)
     real(kind=dp_t), intent(in   ) :: dt,dx(:),time
     type(bc_level) , intent(in   ) :: the_bc_level
 
@@ -49,10 +48,10 @@ contains
        select case (dm)
        case (2)
           call react_state_2d(sinp(:,:,1,:),sotp(:,:,1,:),rp(:,:,1,:), &
-               hp(:,:,1,1),t0,dt,dx,lo,hi,ng,time)
+               hp(:,:,1,1),dt,dx,lo,hi,ng,time)
        case (3)
           call react_state_3d(sinp(:,:,:,:),sotp(:,:,:,:),rp(:,:,:,:), &
-               hp(:,:,:,1),t0,dt,dx,lo,hi,ng,time)
+               hp(:,:,:,1),dt,dx,lo,hi,ng,time)
        end select
     end do
 
@@ -86,7 +85,7 @@ contains
 
   end subroutine react_state
 
-  subroutine react_state_2d (s_in,s_out,rho_omegadot,rho_Hext,t0, &
+  subroutine react_state_2d (s_in,s_out,rho_omegadot,rho_Hext, &
        dt,dx,lo,hi,ng,time)
 
     implicit none
@@ -95,7 +94,6 @@ contains
     real (kind = dp_t), intent(  out) :: s_out(lo(1)-ng:,lo(2)-ng:,:)
     real (kind = dp_t), intent(  out) :: rho_omegadot(lo(1):,lo(2):,:)
     real (kind = dp_t), intent(  out) :: rho_Hext(lo(1):,lo(2):)
-    real (kind = dp_t), intent(in   ) :: t0(0:)
     real (kind = dp_t), intent(in   ) :: dt,dx(:),time
 
     !     Local variables
@@ -168,7 +166,7 @@ contains
 
   end subroutine react_state_2d
 
-  subroutine react_state_3d (s_in,s_out,rho_omegadot,rho_Hext,t0,dt,dx,lo,hi,ng,time)
+  subroutine react_state_3d (s_in,s_out,rho_omegadot,rho_Hext,dt,dx,lo,hi,ng,time)
 
     implicit none
     integer, intent(in) :: lo(:), hi(:), ng
@@ -176,7 +174,6 @@ contains
     real (kind = dp_t), intent(  out) :: s_out(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind = dp_t), intent(  out) :: rho_omegadot(lo(1):,lo(2):,lo(3):,:)
     real (kind = dp_t), intent(  out) :: rho_Hext(lo(1):,lo(2):,lo(3):)
-    real (kind = dp_t), intent(in   ) :: t0(0:)
     real (kind = dp_t), intent(in   ) :: dt,dx(:),time
 
     !     Local variables

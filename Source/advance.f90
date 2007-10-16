@@ -287,7 +287,7 @@ module advance_timestep_module
         end if
 
         do n = 1,nlevs
-           call react_state(sold(n),s1(n),rho_omegadot1(n),rho_Hext(n),s0_old(:,temp_comp), &
+           call react_state(sold(n),s1(n),rho_omegadot1(n),rho_Hext(n), &
                             halfdt,dx(n,:), &
                             the_bc_tower%bc_tower_array(n),time)
         end do
@@ -385,7 +385,7 @@ module advance_timestep_module
         end if
 
         do n = 1,nlevs
-          call react_state(s2(n),snew(n),rho_omegadot2(n),rho_Hext(n),s0_2(:,temp_comp), &
+          call react_state(s2(n),snew(n),rho_omegadot2(n),rho_Hext(n), &
                            halfdt,dx(n,:), &
                            the_bc_tower%bc_tower_array(n),time)
         end do
@@ -567,7 +567,7 @@ module advance_timestep_module
           write(6,*) '            : react  base >>>'
         end if
         do n = 1,nlevs
-          call react_state(s2(n),snew(n),rho_omegadot2(n),rho_Hext(n),s0_2(:,temp_comp), &
+          call react_state(s2(n),snew(n),rho_omegadot2(n),rho_Hext(n), &
                            halfdt,dx(n,:),&
                            the_bc_tower%bc_tower_array(n),time)
         end do
