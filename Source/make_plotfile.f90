@@ -61,7 +61,11 @@ contains
     plot_names(icomp_enthalpy) = "enthalpy"
     plot_names(icomp_rhopert)  = "rhopert"
     plot_names(icomp_tfromrho) = "tfromrho"
-    plot_names(icomp_tfromH)   = "tfromH"
+    if(use_big_h) then
+       plot_names(icomp_tfromH)   = "tfromH"
+    else
+       plot_names(icomp_tfromH)   = "tfromh"
+    endif
     plot_names(icomp_tpert)    = "tpert"
     plot_names(icomp_machno)   = "Machnumber"
     plot_names(icomp_dp)       = "deltap"
