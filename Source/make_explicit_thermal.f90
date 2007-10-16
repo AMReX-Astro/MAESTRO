@@ -32,21 +32,21 @@ subroutine make_explicit_thermal(mla,dx,thermal,s,p0,mg_verbose, &
 
   ! Local
   type(multifab), allocatable :: phi(:),alpha(:),beta(:),Xkcoeff(:)
-  type(multifab), allocatable :: Tcoeff(:),hcoeff(:),resid(:)
+  type(multifab), allocatable :: Tcoeff(:),hcoeff(:),pcoeff(:),resid(:)
   integer                     :: i,k,n,nlevs,dm,stencil_order
   integer                     :: lo(s(1)%dim),hi(s(1)%dim)
   real(kind=dp_t), pointer    :: thermalp(:,:,:,:),sp(:,:,:,:)
   real(kind=dp_t), pointer    :: phip(:,:,:,:),betap(:,:,:,:)
   real(kind=dp_t), pointer    :: Xkcoeffp(:,:,:,:)
   real(kind=dp_t), pointer    :: Tcoeffp(:,:,:,:),hcoeffp(:,:,:,:)
-  real(kind=dp_t), pointer    :: residp(:,:,:,:)
+  real(kind=dp_t), pointer    :: pcoeffp(:,:,:,:),residp(:,:,:,:)
 
   nlevs = mla%nlevel
   dm      = mla%dim
   stencil_order = 2
 
   allocate(phi(nlevs),alpha(nlevs),beta(nlevs),Xkcoeff(nlevs))
-  allocate(Tcoeff(nlevs),hcoeff(nlevs),resid(nlevs))
+  allocate(Tcoeff(nlevs),hcoeff(nlevs),pcoeff(nlevs),resid(nlevs))
 
   do n = 1,nlevs
      call multifab_build(         phi(n), mla%la(n), 1, 1)
@@ -55,6 +55,7 @@ subroutine make_explicit_thermal(mla,dx,thermal,s,p0,mg_verbose, &
      call multifab_build(     Xkcoeff(n), mla%la(n),nspec, 1)
      call multifab_build(      Tcoeff(n), mla%la(n), 1, 1)
      call multifab_build(      hcoeff(n), mla%la(n), 1, 1)
+     call multifab_build(      pcoeff(n), mla%la(n), 1, 1)
      call multifab_build(       resid(n), mla%la(n), 1, 0)
 
      call setval(         phi(n), ZERO, all=.true.)
@@ -63,11 +64,12 @@ subroutine make_explicit_thermal(mla,dx,thermal,s,p0,mg_verbose, &
      call setval(     Xkcoeff(n), ZERO, all=.true.)
      call setval(      Tcoeff(n), ZERO, all=.true.)
      call setval(      hcoeff(n), ZERO, all=.true.)
+     call setval(      pcoeff(n), ZERO, all=.true.)
      call setval(       resid(n), ZERO, all=.true.)
      call setval(     thermal(n), ZERO, all=.true.)
   end do
 
-  ! create Tcoeff = kth, hcoeff = kth/cp, Xkcoeff = xik*kth/cp, pcoeff = hp/cp
+  ! create Tcoeff = kth, hcoeff = kth/cp, Xkcoeff = xik*kth/cp, pcoeff = hp*kth/cp
   do n=1,nlevs
      do i=1,s(n)%nboxes
         if (multifab_remote(s(n),i)) cycle
@@ -75,17 +77,18 @@ subroutine make_explicit_thermal(mla,dx,thermal,s,p0,mg_verbose, &
         Tcoeffp       => dataptr(Tcoeff(n),i)
         hcoeffp       => dataptr(hcoeff(n),i)
         Xkcoeffp      => dataptr(Xkcoeff(n),i)
+        pcoeffp       => dataptr(pcoeff(n),i)
         lo =  lwb(get_box(s(n), i))
         hi =  upb(get_box(s(n), i))
         select case (dm)
         case (2)
            call make_coeffs_2d(lo,hi,dx(n,:),p0,sp(:,:,1,:), &
                                Tcoeffp(:,:,1,1),hcoeffp(:,:,1,1), &
-                               Xkcoeffp(:,:,1,:))
+                               Xkcoeffp(:,:,1,:),pcoeffp(:,:,1,1))
         case (3)
            call make_coeffs_3d(lo,hi,dx(n,:),p0,sp(:,:,:,:), &
                                Tcoeffp(:,:,:,1),hcoeffp(:,:,:,1), &
-                               Xkcoeffp(:,:,:,:))
+                               Xkcoeffp(:,:,:,:),pcoeffp(:,:,:,1))
         end select
      end do
   enddo
@@ -211,17 +214,18 @@ subroutine make_explicit_thermal(mla,dx,thermal,s,p0,mg_verbose, &
      call destroy(Xkcoeff(n))
      call destroy(Tcoeff(n))
      call destroy(hcoeff(n))
+     call destroy(pcoeff(n))
      call destroy(resid(n))
   enddo
 
-  deallocate(phi,alpha,beta,Xkcoeff,Tcoeff,hcoeff,resid)
+  deallocate(phi,alpha,beta,Xkcoeff,Tcoeff,hcoeff,pcoeff,resid)
 
 end subroutine make_explicit_thermal
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! create Tcoeff = kth, hcoeff = kth/cp, Xkcoeff = xik*kth/cp, pcoeff = hp/cp
-subroutine make_coeffs_2d(lo,hi,dx,p0,s,Tcoeff,hcoeff,Xkcoeff)
+! create Tcoeff = kth, hcoeff = kth/cp, Xkcoeff = xik*kth/cp, pcoeff = hp*kth/cp
+subroutine make_coeffs_2d(lo,hi,dx,p0,s,Tcoeff,hcoeff,Xkcoeff,pcoeff)
 
   integer        , intent(in   ) :: lo(:),hi(:)
   real(dp_t)    ,  intent(in   ) :: dx(:)
@@ -230,6 +234,7 @@ subroutine make_coeffs_2d(lo,hi,dx,p0,s,Tcoeff,hcoeff,Xkcoeff)
   real(kind=dp_t), intent(inout) :: Tcoeff(lo(1)-1:,lo(2)-1:)
   real(kind=dp_t), intent(inout) :: hcoeff(lo(1)-1:,lo(2)-1:)
   real(kind=dp_t), intent(inout) :: Xkcoeff(lo(1)-1:,lo(2)-1:,:)
+  real(kind=dp_t), intent(inout) :: pcoeff(lo(1)-1:,lo(2)-1:)
 
   ! local
   integer :: i,j,n
@@ -258,6 +263,7 @@ subroutine make_coeffs_2d(lo,hi,dx,p0,s,Tcoeff,hcoeff,Xkcoeff)
 
         Tcoeff(i,j) = conduct_row(1)
         hcoeff(i,j) = conduct_row(1)/cp_row(1)
+        pcoeff(i,j) = hcoeff(i,j)*((1.0d0/den_row(1))*(1.0d0-p_row(1)/(den_row(1)*dpdr_row(1)))+dedr_row(1)/dpdr_row(1))
 
         if(use_big_h) then
            do n=1,nspec
@@ -275,8 +281,8 @@ end subroutine make_coeffs_2d
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! create Tcoeff = kth, hcoeff = kth/cp, Xkcoeff = xik*kth/cp, pcoeff = hp/cp
-subroutine make_coeffs_3d(lo,hi,dx,p0,s,Tcoeff,hcoeff,Xkcoeff)
+! create Tcoeff = kth, hcoeff = kth/cp, Xkcoeff = xik*kth/cp, pcoeff = hp*kth/cp
+subroutine make_coeffs_3d(lo,hi,dx,p0,s,Tcoeff,hcoeff,Xkcoeff,pcoeff)
 
   integer        , intent(in   ) :: lo(:),hi(:)
   real(dp_t)    ,  intent(in   ) :: dx(:)
@@ -285,6 +291,7 @@ subroutine make_coeffs_3d(lo,hi,dx,p0,s,Tcoeff,hcoeff,Xkcoeff)
   real(kind=dp_t), intent(inout) :: Tcoeff(lo(1)-1:,lo(2)-1:,lo(3)-1:)
   real(kind=dp_t), intent(inout) :: hcoeff(lo(1)-1:,lo(2)-1:,lo(3)-1:)
   real(kind=dp_t), intent(inout) :: Xkcoeff(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)
+  real(kind=dp_t), intent(inout) :: pcoeff(lo(1)-1:,lo(2)-1:,lo(3)-1:)
 
   ! local
   integer :: i,j,k,n
@@ -319,6 +326,7 @@ subroutine make_coeffs_3d(lo,hi,dx,p0,s,Tcoeff,hcoeff,Xkcoeff)
 
            Tcoeff(i,j,k) = conduct_row(1)
            hcoeff(i,j,k) = conduct_row(1)/cp_row(1)
+           pcoeff(i,j,k) = hcoeff(i,j,k)*((1.0d0/den_row(1))*(1.0d0-p_row(1)/(den_row(1)*dpdr_row(1)))+dedr_row(1)/dpdr_row(1))
 
            if(use_big_h) then
               do n=1,nspec
