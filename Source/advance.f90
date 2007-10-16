@@ -296,6 +296,7 @@ module advance_timestep_module
         call average(rho_Hext,rho_Hextbar,dx,1,1)
         if (evolve_base_state) then
           call react_base(p0_old,s0_old,rho_omegadotbar1,rho_Hextbar(:,1),halfdt,p0_1,s0_1,gam1)
+          s0_1(:,temp_comp) = s0_old(:,temp_comp)
         else
           p0_1(:  ) = p0_old(:  )
           s0_1(:,:) = s0_old(:,:)
@@ -393,6 +394,7 @@ module advance_timestep_module
         call average(rho_Hext,rho_Hextbar,dx,1,1)
         if (evolve_base_state) then
           call react_base(p0_2,s0_2,rho_omegadotbar2,rho_Hextbar(:,1),halfdt,p0_new,s0_new,gam1)
+          s0_new(:,temp_comp) = s0_2(:,temp_comp)
         else
           p0_new(:  ) = p0_2(:  )
           s0_new(:,:) = s0_2(:,:)
@@ -575,6 +577,7 @@ module advance_timestep_module
         call average(rho_Hext,rho_Hextbar,dx,1,1)
         if (evolve_base_state) then
           call react_base(p0_2,s0_2,rho_omegadotbar2,rho_Hextbar(:,1),halfdt,p0_new,s0_new,gam1)
+          s0_new(:,temp_comp) = s0_2(:,temp_comp)
         else
           p0_new(:  ) = p0_2(:  )
           s0_new(:,:) = s0_2(:,:)

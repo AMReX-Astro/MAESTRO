@@ -50,6 +50,16 @@ contains
            xn_zone(n-spec_comp+1) = s0_out(j,n)/s0_out(j,rho_comp)
          end do
 
+         s0_out(j,rhoh_comp) = s0_in(j,rhoh_comp)
+         if(.not. use_big_h) then
+            do n = spec_comp,spec_comp+nspec-1
+               s0_out(j,rhoh_comp) = s0_out(j,rhoh_comp) &
+                    -dt_in*rho_omegadotbar(j,n-spec_comp+1)*ebin(n-spec_comp+1)
+            end do
+         endif
+         s0_out(j,rhoh_comp) = s0_out(j,rhoh_comp) + dt_in * rho_Hextbar(j)
+
+         ! Only do this to evaluate a new Gamma.
          ! (rho,P,X) --> T, h
          call eos(eos_input_rp, den_row, temp_row, &
                   npts, nspec, &
@@ -62,16 +72,8 @@ contains
                   dsdt_row, dsdr_row, &
                   do_diag)
 
-         s0_out(j,rhoh_comp) = s0_in(j,rhoh_comp)
-         if(.not. use_big_h) then
-            do n = spec_comp,spec_comp+nspec-1
-               s0_out(j,rhoh_comp) = s0_out(j,rhoh_comp) &
-                    -dt_in*rho_omegadotbar(j,n-spec_comp+1)*ebin(n-spec_comp+1)
-            end do
-         endif
-         s0_out(j,rhoh_comp) = s0_out(j,rhoh_comp) + dt_in * rho_Hextbar(j)
-
-         s0_out(j,temp_comp) = temp_row(1)
+!        We shouldn't update temp here since we don't update it in react-state.
+!        s0_out(j,temp_comp) = temp_row(1)
 
          gam1_out(j) = gam1_row(1)
 
