@@ -73,7 +73,7 @@ contains
                   do_diag)
 
 !        We shouldn't update temp here since we don't update it in react-state.
-!        s0_out(j,temp_comp) = temp_row(1)
+         s0_out(j,temp_comp) = s0_in(j,temp_comp)
 
          gam1_out(j) = gam1_row(1)
 
