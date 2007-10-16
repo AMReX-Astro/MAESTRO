@@ -440,7 +440,7 @@ module advance_timestep_module
 
         do n = 1, nlevs
 
-           call make_S(Source_new(n),gamma1_term(n),snew(n),uold(n), &
+           call make_S(Source_new(n),gamma1_term(n),snew(n), &
                        rho_omegadot2(n),rho_Hext(n),thermal(n), &
                        s0_old(:,temp_comp),gam1,dx(n,:))
            call make_S_at_halftime(Source_nph(n),Source_old(n),Source_new(n))
@@ -606,7 +606,7 @@ module advance_timestep_module
         endif
 
         do n = 1, nlevs
-           call make_S(Source_new(n),gamma1_term(n),snew(n),uold(n), &
+           call make_S(Source_new(n),gamma1_term(n),snew(n), &
                        rho_omegadot2(n),rho_Hext(n),thermal(n), &
                        s0_new(:,temp_comp),gam1,dx(n,:))
         end do
