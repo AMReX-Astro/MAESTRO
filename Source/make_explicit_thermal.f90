@@ -350,9 +350,9 @@ subroutine setup_T_op_2d(lo,hi,ng_1,ng_3,s,kth,phi,beta)
   integer        , intent(in   ) :: lo(:),hi(:)
   integer        , intent(in   ) :: ng_1,ng_3
   real(kind=dp_t), intent(in   ) :: s(lo(1)-ng_3:,lo(2)-ng_3:,:)
-  real(kind=dp_t), intent(in   ) :: kth(-ng_1:,-ng_1:)
+  real(kind=dp_t), intent(in   ) :: kth(lo(1)-ng_1:,lo(2)-ng_1:)
   real(kind=dp_t), intent(inout) :: phi(lo(1)-ng_1:,lo(2)-ng_1:)
-  real(kind=dp_t), intent(inout) :: beta(-ng_1:,-ng_1:,:)
+  real(kind=dp_t), intent(inout) :: beta(lo(1)-ng_1:,lo(2)-ng_1:,:)
 
   integer :: i,j
   integer :: nx,ny
@@ -367,14 +367,14 @@ subroutine setup_T_op_2d(lo,hi,ng_1,ng_3,s,kth,phi,beta)
   enddo
 
   ! set beta
-  do j = 0,ny-1
-     do i = 0,nx
+  do j = lo(2),lo(2)+ny-1
+     do i = lo(1),lo(1)+nx
         beta(i,j,1) = -TWO*(kth(i,j)*kth(i-1,j))/(kth(i,j) + kth(i-1,j))
      end do
   end do
   
-  do j = 0,ny
-     do i = 0,nx-1
+  do j = lo(2),lo(2)+ny
+     do i = lo(1),lo(1)+nx-1
         beta(i,j,2) = -TWO*(kth(i,j)*kth(i,j-1))/(kth(i,j) + kth(i,j-1))
      end do
   end do
@@ -390,9 +390,9 @@ subroutine setup_T_op_3d(lo,hi,ng_1,ng_3,s,kth,phi,beta)
   integer        , intent(in   ) :: lo(:),hi(:)
   integer        , intent(in   ) :: ng_1,ng_3
   real(kind=dp_t), intent(in   ) :: s(lo(1)-ng_3:,lo(2)-ng_3:,lo(3)-ng_3:,:)
-  real(kind=dp_t), intent(in   ) :: kth(-ng_1:,-ng_1:,-ng_1:)
+  real(kind=dp_t), intent(in   ) :: kth(lo(1)-ng_1:,lo(2)-ng_1:,lo(3)-ng_1:)
   real(kind=dp_t), intent(inout) :: phi(lo(1)-ng_1:,lo(2)-ng_1:,lo(3)-ng_1:)
-  real(kind=dp_t), intent(inout) :: beta(-ng_1:,-ng_1:,-ng_1:,:)
+  real(kind=dp_t), intent(inout) :: beta(lo(1)-ng_1:,lo(2)-ng_1:,lo(3)-ng_1:,:)
 
   integer :: i,j,k
   integer :: nx,ny,nz
@@ -410,8 +410,8 @@ subroutine setup_T_op_3d(lo,hi,ng_1,ng_3,s,kth,phi,beta)
   enddo
   
   ! set beta
-  do k = 0,nz-1
-     do j = 0,ny-1
+  do k = lo(3),lo(3)+nz-1
+     do j = lo(2),lo(2)+ny-1
         do i = 0,nx
            beta(i,j,k,1) = -TWO*(kth(i,j,k)*kth(i-1,j,k))/(kth(i,j,k) &
                 + kth(i-1,j,k))
@@ -419,18 +419,18 @@ subroutine setup_T_op_3d(lo,hi,ng_1,ng_3,s,kth,phi,beta)
      end do
   end do
   
-  do k = 0,nz-1
-     do j = 0,ny
-        do i = 0,nx-1
+  do k = lo(3),lo(3)+nz-1
+     do j = lo(2),lo(2)+ny
+        do i = lo(1),lo(1)+nx-1
            beta(i,j,k,2) = -TWO*(kth(i,j,k)*kth(i,j-1,k))/(kth(i,j,k) &
                 + kth(i,j-1,k))
         end do
      end do
   end do
   
-  do k = 0,nz
-     do j = 0,ny-1
-        do i = 0,nx-1
+  do k = lo(3),lo(3)+nz
+     do j = lo(2),lo(2)+ny-1
+        do i = lo(1),lo(1)+nx-1
            beta(i,j,k,3) = -TWO*(kth(i,j,k)*kth(i,j,k-1))/(kth(i,j,k) &
                 + kth(i,j,k-1))
         end do
@@ -448,9 +448,9 @@ subroutine setup_h_op_2d(lo,hi,ng_1,ng_3,s,kthovercp,phi,beta)
   integer        , intent(in   ) :: lo(:),hi(:)
   integer        , intent(in   ) :: ng_1,ng_3
   real(kind=dp_t), intent(in   ) :: s(lo(1)-ng_3:,lo(2)-ng_3:,:)
-  real(kind=dp_t), intent(in   ) :: kthovercp(-ng_1:,-ng_1:)
+  real(kind=dp_t), intent(in   ) :: kthovercp(lo(1)-ng_1:,lo(2)-ng_1:)
   real(kind=dp_t), intent(inout) :: phi(lo(1)-ng_1:,lo(2)-ng_1:)
-  real(kind=dp_t), intent(inout) :: beta(-ng_1:,-ng_1:,:)
+  real(kind=dp_t), intent(inout) :: beta(lo(1)-ng_1:,lo(2)-ng_1:,:)
 
   integer :: i,j
   integer :: nx,ny
@@ -465,15 +465,15 @@ subroutine setup_h_op_2d(lo,hi,ng_1,ng_3,s,kthovercp,phi,beta)
   enddo
 
   ! set beta
-  do j = 0,ny-1
-     do i = 0,nx
+  do j = lo(2),lo(2)+ny-1
+     do i = lo(1),lo(1)+nx
         beta(i,j,1) = -TWO*(kthovercp(i,j)*kthovercp(i-1,j))/(kthovercp(i,j) &
              + kthovercp(i-1,j))
      end do
   end do
   
-  do j = 0,ny
-     do i = 0,nx-1
+  do j = lo(2),lo(2)+ny
+     do i = lo(1),lo(1)+nx-1
         beta(i,j,2) = -TWO*(kthovercp(i,j)*kthovercp(i,j-1))/(kthovercp(i,j) &
              + kthovercp(i,j-1))
      end do
@@ -490,9 +490,9 @@ subroutine setup_h_op_3d(lo,hi,ng_1,ng_3,s,kthovercp,phi,beta)
   integer        , intent(in   ) :: lo(:),hi(:)
   integer        , intent(in   ) :: ng_1,ng_3
   real(kind=dp_t), intent(in   ) :: s(lo(1)-ng_3:,lo(2)-ng_3:,lo(3)-ng_3:,:)
-  real(kind=dp_t), intent(in   ) :: kthovercp(-ng_1:,-ng_1:,-ng_1:)
+  real(kind=dp_t), intent(in   ) :: kthovercp(lo(1)-ng_1:,lo(2)-ng_1:,lo(3)-ng_1:)
   real(kind=dp_t), intent(inout) :: phi(lo(1)-ng_1:,lo(2)-ng_1:,lo(3)-ng_1:)
-  real(kind=dp_t), intent(inout) :: beta(-ng_1:,-ng_1:,-ng_1:,:)
+  real(kind=dp_t), intent(inout) :: beta(lo(1)-ng_1:,lo(2)-ng_1:,lo(3)-ng_1:,:)
 
   integer :: i,j,k
   integer :: nx,ny,nz
@@ -510,27 +510,27 @@ subroutine setup_h_op_3d(lo,hi,ng_1,ng_3,s,kthovercp,phi,beta)
   enddo
   
   ! set beta
-  do k = 0,nz-1
-     do j = 0,ny-1
-        do i = 0,nx
+  do k = lo(3),lo(3)+nz-1
+     do j = lo(2),lo(2)+ny-1
+        do i = lo(1),lo(1)+nx
            beta(i,j,k,1) = -TWO*(kthovercp(i,j,k)*kthovercp(i-1,j,k)) &
                 /(kthovercp(i,j,k) + kthovercp(i-1,j,k))
         end do
      end do
   end do
   
-  do k = 0,nz-1
-     do j = 0,ny
-        do i = 0,nx-1
+  do k = lo(3),lo(3)+nz-1
+     do j = lo(2),lo(2)+ny
+        do i = lo(1),lo(1)+nx-1
            beta(i,j,k,2) = -TWO*(kthovercp(i,j,k)*kthovercp(i,j-1,k)) &
                 /(kthovercp(i,j,k) + kthovercp(i,j-1,k))
         end do
      end do
   end do
   
-  do k = 0,nz
-     do j = 0,ny-1
-        do i = 0,nx-1
+  do k = lo(3),lo(3)+nz
+     do j = lo(2),lo(2)+ny-1
+        do i = lo(1),lo(1)+nx-1
            beta(i,j,k,3) = -TWO*(kthovercp(i,j,k) + kthovercp(i,j,k-1)) &
                 /(kthovercp(i,j,k) + kthovercp(i,j,k-1))
         end do
@@ -550,10 +550,10 @@ subroutine setup_Xk_op_2d(spec,lo,hi,dx,ng_1,ng_3,s,kthovercp,phi,beta,xik)
   real(dp_t)     , intent(in   ) :: dx(:)
   integer        , intent(in   ) :: ng_1,ng_3
   real(kind=dp_t), intent(in   ) :: s(lo(1)-ng_3:,lo(2)-ng_3:,:)
-  real(kind=dp_t), intent(in   ) :: kthovercp(-ng_1:,-ng_1:)
+  real(kind=dp_t), intent(in   ) :: kthovercp(lo(1)-ng_1:,lo(2)-ng_1:)
   real(kind=dp_t), intent(inout) :: phi(lo(1)-ng_1:,lo(2)-ng_1:)
-  real(kind=dp_t), intent(inout) :: beta(-ng_1:,-ng_1:,:)
-  real(kind=dp_t), intent(in   ) :: xik(-ng_1:,-ng_1:,:)
+  real(kind=dp_t), intent(inout) :: beta(lo(1)-ng_1:,lo(2)-ng_1:,:)
+  real(kind=dp_t), intent(in   ) :: xik(lo(1)-ng_1:,lo(2)-ng_1:,:)
 
   integer :: i,j
   integer :: nx,ny
@@ -569,15 +569,15 @@ subroutine setup_Xk_op_2d(spec,lo,hi,dx,ng_1,ng_3,s,kthovercp,phi,beta,xik)
   enddo
 
   ! set beta
-  do j = 0,ny-1
-     do i = 0,nx
+  do j = lo(2),lo(2)+ny-1
+     do i = lo(1),lo(1)+nx
         beta(i,j,1) = TWO*(xik(i,j,spec)*kthovercp(i,j)*xik(i-1,j,spec)*kthovercp(i-1,j)) &
              /(xik(i,j,spec)*kthovercp(i,j) + xik(i-1,j,spec)*kthovercp(i-1,j))
      end do
   end do
   
-  do j = 0,ny
-     do i = 0,nx-1
+  do j = lo(2),lo(2)+ny
+     do i = lo(1),lo(1)+nx-1
         beta(i,j,2) = TWO*(xik(i,j,spec)*kthovercp(i,j)*xik(i,j-1,spec)*kthovercp(i,j-1)) &
              /(xik(i,j,spec)*kthovercp(i,j) + xik(i,j-1,spec)*kthovercp(i,j-1))
      end do
@@ -596,10 +596,10 @@ subroutine setup_Xk_op_3d(spec,lo,hi,dx,ng_1,ng_3,s,kthovercp,phi,beta,xik)
   real(dp_t)     , intent(in   ) :: dx(:)
   integer        , intent(in   ) :: ng_1,ng_3
   real(kind=dp_t), intent(in   ) :: s(lo(1)-ng_3:,lo(2)-ng_3:,lo(3)-ng_3:,:)
-  real(kind=dp_t), intent(in   ) :: kthovercp(-ng_1:,-ng_1:,-ng_1:)
+  real(kind=dp_t), intent(in   ) :: kthovercp(lo(1)-ng_1:,lo(2)-ng_1:,lo(3)-ng_1:)
   real(kind=dp_t), intent(inout) :: phi(lo(1)-ng_1:,lo(2)-ng_1:,lo(3)-ng_1:)
-  real(kind=dp_t), intent(inout) :: beta(-ng_1:,-ng_1:,-ng_1:,:)
-  real(kind=dp_t), intent(in   ) :: xik(-ng_1:,-ng_1:,-ng_1:,:)
+  real(kind=dp_t), intent(inout) :: beta(lo(1)-ng_1:,lo(2)-ng_1:,lo(3)-ng_1:,:)
+  real(kind=dp_t), intent(in   ) :: xik(lo(1)-ng_1:,lo(2)-ng_1:,lo(3)-ng_1:,:)
 
   integer :: i,j,k
   integer :: nx,ny,nz
@@ -618,27 +618,27 @@ subroutine setup_Xk_op_3d(spec,lo,hi,dx,ng_1,ng_3,s,kthovercp,phi,beta,xik)
   enddo
   
   ! set beta
-  do k = 0,nz-1
-     do j = 0,ny-1
-        do i = 0,nx
+  do k = lo(3),lo(3)+nz-1
+     do j = lo(2),lo(2)+ny-1
+        do i = lo(1),lo(1)+nx
            beta(i,j,k,1) = TWO*(xik(i,j,k,spec)*kthovercp(i,j,k)*xik(i-1,j,k,spec)*kthovercp(i-1,j,k)) &
                 /(xik(i,j,k,spec)*kthovercp(i,j,k) + xik(i-1,j,k,spec)*kthovercp(i-1,j,k))
         end do
      end do
   end do
   
-  do k = 0,nz-1
-     do j = 0,ny
-        do i = 0,nx-1
+  do k = lo(3),lo(3)+nz-1
+     do j = lo(2),lo(2)+ny
+        do i = lo(1),lo(1)+nx-1
            beta(i,j,k,2) = TWO*(xik(i,j,k,spec)*kthovercp(i,j,k)*xik(i,j-1,k,spec)*kthovercp(i,j-1,k)) &
                 /(xik(i,j,k,spec)*kthovercp(i,j,k) + xik(i,j-1,k,spec)*kthovercp(i,j-1,k))
         end do
      end do
   end do
   
-  do k = 0,nz
-     do j = 0,ny-1
-        do i = 0,nx-1
+  do k = lo(3),lo(3)+nz
+     do j = lo(2),lo(2)+ny-1
+        do i = lo(1),lo(1)+nx-1
            beta(i,j,k,3) = TWO*(xik(i,j,k,spec)*kthovercp(i,j,k)*xik(i,j,k-1,spec)*kthovercp(i,j,k-1)) &
                 /(xik(i,j,k,spec)*kthovercp(i,j,k) + xik(i,j,k-1,spec)*kthovercp(i,j,k-1))
         end do
