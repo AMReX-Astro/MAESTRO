@@ -653,11 +653,6 @@ module advance_timestep_module
                                           1,1,dm)
         end do
 
-        do n = 1,nlevs
-           call multifab_copy(hgrhs_old(n),hgrhs(n))
-           call make_hgrhs(hgrhs(n),Source_new(n),gamma1_term(n),Sbar(:,1),div_coeff_new,dx(n,:))
-        end do
-
         ! Define beta at half time using the div_coeff_new from step 9!
         do j = 0, nr-1
           div_coeff_nph(j) = HALF * (div_coeff_old(j) + div_coeff_new(j))
@@ -667,12 +662,18 @@ module advance_timestep_module
         if (init_mode) then
           proj_type = pressure_iters
           do n = 1,nlevs
+             call multifab_copy(hgrhs_old(n),hgrhs(n))
+             call make_hgrhs(hgrhs(n),Source_new(n),gamma1_term(n),Sbar(:,1),div_coeff_new,dx(n,:))
              call multifab_sub_sub(hgrhs(n),hgrhs_old(n))
              call multifab_div_div_s(hgrhs(n),dt)
           end do
         else
           proj_type = regular_timestep
+          do n = 1,nlevs
+             call make_hgrhs(hgrhs(n),Source_new(n),gamma1_term(n),Sbar(:,1),div_coeff_new,dx(n,:))
+          end do
         end if
+
         if (spherical .eq. 1) then
           do n = 1,nlevs
             do i = 1,div_coeff_3d(n)%nboxes
@@ -691,6 +692,13 @@ module advance_timestep_module
           call hgproject(proj_type, mla, unew, uold, rhohalf, p, gp, dx, dt, &
                          the_bc_tower, verbose, mg_verbose, cg_verbose, press_comp, &
                          hgrhs, div_coeff_1d=div_coeff_nph)
+        end if
+
+!       If doing pressure iterations then put hgrhs_old into hgrhs to be returned to varden.
+        if (init_mode) then
+          do n = 1,nlevs
+            call multifab_copy(hgrhs(n),hgrhs_old(n))
+          end do
         end if
 
         do n = 2, nlevs
