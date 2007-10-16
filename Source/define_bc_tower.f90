@@ -182,7 +182,7 @@ module define_bc_module
           adv_bc_level(n,d,i,spec_comp+dm:spec_comp+dm+nspec-1)= FOEXTRAP      ! (rho X)_i
           adv_bc_level(n,d,i,temp_comp+dm)                     = FOEXTRAP      ! temperature
           adv_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= FOEXTRAP      ! tracers
-          adv_bc_level(n,d,i,press_comp)                       = EXT_DIR       ! pressure
+          adv_bc_level(n,d,i,press_comp)                       = FOEXTRAP      ! pressure
 
        else if (phys_bc_level(n,d,i) == SYMMETRY) then
           adv_bc_level(n,d,i,     1:dm)                        = REFLECT_EVEN  ! tangential vel
