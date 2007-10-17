@@ -204,7 +204,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
         s1p       => dataptr(s1(n),i)
         hcoeff1p  => dataptr(hcoeff1(n),i)
         Xkcoeff1p => dataptr(Xkcoeff1(n),i)
-        pcoeff1p  => dataptr(pcoeff1(n),1)
+        pcoeff1p  => dataptr(pcoeff1(n),i)
         lo = lwb(get_box(s1(n), i))
         hi = upb(get_box(s1(n), i))
         select case (dm)
@@ -318,40 +318,40 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
   ! add pressure diffusion to rhs
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-!  ! put beta on faces
-!  do n=1,nlevs
-!     do i=1,rhsbeta(n)%nboxes
-!        if (multifab_remote(rhsbeta(n),i)) cycle
-!        pcoeff1p => dataptr(pcoeff1(n),i)
-!        rhsbetap => dataptr(rhsbeta(n),i)
-!        lo = lwb(get_box(rhsbeta(n), i))
-!        hi = upb(get_box(rhsbeta(n), i))
-!        select case (dm)
-!        case (2)
-!           call put_beta_on_faces_2d(lo,hi,pcoeff1p(:,:,1,spec), &
-!                rhsbetap(:,:,1,:))
-!        case (3)
-!           call put_beta_on_faces_3d(lo,hi,pcoeff1p(:,:,:,spec), &
-!                rhsbetap(:,:,:,:))
-!        end select
-!     end do
-!  enddo
-!  
-!  ! load phi = p01 + p02
-!  do n=1,nlevs
-!     call multifab_copy_c(phi(n),1,p01fab(n),1,1,1)
-!     call multifab_plus_plus_c(phi(n),1,p02fab(n),1,1,1)
-!  enddo
-!  
-!  ! apply the operator
-!  call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
-!       neumann_comp,stencil_order,mla%mba%rr, &
-!       mg_verbose,cg_verbose)
-!
-!  ! add lphi to rhs
-!  do n=1,nlevs
-!     call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,1)
-!  enddo
+  ! put beta on faces
+  do n=1,nlevs
+     do i=1,rhsbeta(n)%nboxes
+        if (multifab_remote(rhsbeta(n),i)) cycle
+        pcoeff1p => dataptr(pcoeff1(n),i)
+        rhsbetap => dataptr(rhsbeta(n),i)
+        lo = lwb(get_box(rhsbeta(n), i))
+        hi = upb(get_box(rhsbeta(n), i))
+        select case (dm)
+        case (2)
+           call put_beta_on_faces_2d(lo,hi,pcoeff1p(:,:,1,1), &
+                rhsbetap(:,:,1,:))
+        case (3)
+           call put_beta_on_faces_3d(lo,hi,pcoeff1p(:,:,:,1), &
+                rhsbetap(:,:,:,:))
+        end select
+     end do
+  enddo
+  
+  ! load phi = p01 + p02
+  do n=1,nlevs
+     call multifab_copy_c(phi(n),1,p01fab(n),1,1,1)
+     call multifab_plus_plus_c(phi(n),1,p02fab(n),1,1,1)
+  enddo
+  
+  ! apply the operator
+  call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
+       neumann_comp,stencil_order,mla%mba%rr, &
+       mg_verbose,cg_verbose)  
+
+  ! add lphi to rhs
+  do n=1,nlevs
+     call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,1)
+  enddo
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! Setup LHS coefficients
@@ -389,7 +389,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
   ! initialize phi to h^{(2')} as a guess; also sets the ghost cells at inflow/outflow
   ! to a reasonable value
   do n=1,nlevs
-     call multifab_plus_plus_c(phi(n),1,s2(n),rhoh_comp,1,1)
+     call multifab_copy_c(phi(n),1,s2(n),rhoh_comp,1,1)
      call multifab_div_div_c(phi(n),1,s2(n),rho_comp,1,1)
   enddo
 
@@ -611,75 +611,75 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
   ! add pressure diffusino to rhs
   !!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-!  ! do p01 term first
-!  ! put beta on faces
-!  do n=1,nlevs
-!     do i=1,rhsbeta(n)%nboxes
-!        if (multifab_remote(rhsbeta(n),i)) cycle
-!        pcoeff1p => dataptr(pcoeff1(n),i)
-!        rhsbetap => dataptr(rhsbeta(n),i)
-!        lo = lwb(get_box(rhsbeta(n), i))
-!        hi = upb(get_box(rhsbeta(n), i))
-!        select case (dm)
-!        case (2)
-!           call put_beta_on_faces_2d(lo,hi,pcoeff1p(:,:,1,spec), &
-!                rhsbetap(:,:,1,:))
-!        case (3)
-!           call put_beta_on_faces_3d(lo,hi,pcoeff1p(:,:,:,spec), &
-!                rhsbetap(:,:,:,:))
-!        end select
-!     end do
-!  enddo
-!  
-!  ! load phi = p01
-!  do n=1,nlevs
-!     call multifab_copy_c(phi(n),1,p01fab(n),1,1,1)
-!  enddo
-!  
-!  ! apply the operator
-!  call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
-!       neumann_comp,stencil_order,mla%mba%rr, &
-!       mg_verbose,cg_verbose)
-!  
-!  ! add lphi to rhs
-!  do n=1,nlevs
-!     call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,1)
-!  enddo
-!  
-!  ! now do p02 term
-!  ! put beta on faces
-!  do n=1,nlevs
-!     do i=1,rhsbeta(n)%nboxes
-!        if (multifab_remote(rhsbeta(n),i)) cycle
-!        pcoeff2p => dataptr(pcoeff2(n),i)
-!        rhsbetap => dataptr(rhsbeta(n),i)
-!        lo = lwb(get_box(rhsbeta(n), i))
-!        hi = upb(get_box(rhsbeta(n), i))
-!        select case (dm)
-!        case (2)
-!           call put_beta_on_faces_2d(lo,hi,pcoeff2p(:,:,1,spec), &
-!                rhsbetap(:,:,1,:))
-!        case (3)
-!           call put_beta_on_faces_3d(lo,hi,pcoeff2p(:,:,:,spec), &
-!                rhsbetap(:,:,:,:))
-!        end select
-!     end do
-!  enddo
-!  
-!  ! load phi = -02
-!  do n=1,nlevs
-!     call multifab_copy_c(phi(n),1,p02fab(n),1,1,1)
-!  enddo
-!  
-!  ! apply the operator
-!  call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
-!       neumann_comp,stencil_order,mla%mba%rr, &
-!       mg_verbose,cg_verbose)
-!  
-!  ! add lphi to rhs
-!  do n=1,nlevs
-!     call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,1)
-!  enddo
+  ! do p01 term first
+  ! put beta on faces
+  do n=1,nlevs
+     do i=1,rhsbeta(n)%nboxes
+        if (multifab_remote(rhsbeta(n),i)) cycle
+        pcoeff1p => dataptr(pcoeff1(n),i)
+        rhsbetap => dataptr(rhsbeta(n),i)
+        lo = lwb(get_box(rhsbeta(n), i))
+        hi = upb(get_box(rhsbeta(n), i))
+        select case (dm)
+        case (2)
+           call put_beta_on_faces_2d(lo,hi,pcoeff1p(:,:,1,1), &
+                rhsbetap(:,:,1,:))
+        case (3)
+           call put_beta_on_faces_3d(lo,hi,pcoeff1p(:,:,:,1), &
+                rhsbetap(:,:,:,:))
+        end select
+     end do
+  enddo
+
+  ! load phi = p01
+  do n=1,nlevs
+     call multifab_copy_c(phi(n),1,p01fab(n),1,1,1)
+  enddo
+  
+  ! apply the operator
+  call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
+       neumann_comp,stencil_order,mla%mba%rr, &
+       mg_verbose,cg_verbose)
+  
+  ! add lphi to rhs
+  do n=1,nlevs
+     call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,1)
+  enddo
+  
+  ! now do p02 term
+  ! put beta on faces
+  do n=1,nlevs
+     do i=1,rhsbeta(n)%nboxes
+        if (multifab_remote(rhsbeta(n),i)) cycle
+        pcoeff2p => dataptr(pcoeff2(n),i)
+        rhsbetap => dataptr(rhsbeta(n),i)
+        lo = lwb(get_box(rhsbeta(n), i))
+        hi = upb(get_box(rhsbeta(n), i))
+        select case (dm)
+        case (2)
+           call put_beta_on_faces_2d(lo,hi,pcoeff2p(:,:,1,1), &
+                rhsbetap(:,:,1,:))
+        case (3)
+           call put_beta_on_faces_3d(lo,hi,pcoeff2p(:,:,:,1), &
+                rhsbetap(:,:,:,:))
+        end select
+     end do
+  enddo
+  
+  ! load phi = -02
+  do n=1,nlevs
+     call multifab_copy_c(phi(n),1,p02fab(n),1,1,1)
+  enddo
+  
+  ! apply the operator
+  call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
+       neumann_comp,stencil_order,mla%mba%rr, &
+       mg_verbose,cg_verbose)
+  
+  ! add lphi to rhs
+  do n=1,nlevs
+     call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,1)
+  enddo
   
   !!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! Setup LHS coefficients
@@ -717,7 +717,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
   ! initialize phi to h^{(2'')} as a guess; also sets the ghost cells at inflow/outflow
   ! to a reasonable value
   do n=1,nlevs
-     call multifab_plus_plus_c(phi(n),1,s2(n),rhoh_comp,1,1)
+     call multifab_copy_c(phi(n),1,s2(n),rhoh_comp,1,1)
      call multifab_div_div_c(phi(n),1,s2(n),rho_comp,1,1)
   enddo
 
@@ -851,7 +851,6 @@ subroutine compute_thermo_quantities_2d(lo,hi,dt,s,hcoeff,Xkcoeff,pcoeff)
            do n=1,nspec
               Xkcoeff(i,j,n) = HALF*dt*conduct_row(1)* &
                    (dhdX_row(1,n)+ebin(n))/cp_row(1)
-
            enddo
         else
            do n=1,nspec
