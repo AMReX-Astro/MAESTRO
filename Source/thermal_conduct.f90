@@ -32,18 +32,22 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
 
 ! Local
   type(multifab), allocatable :: rhsalpha(:),lhsalpha(:),rhsbeta(:),lhsbeta(:)
-  type(multifab), allocatable :: ccbeta(:),phi(:),phitemp(:)
-  type(multifab), allocatable :: Lphi(:),rhs(:),hcoeff1(:)
-  type(multifab), allocatable :: hcoeff2(:),Xkcoeff1(:),Xkcoeff2(:)
+  type(multifab), allocatable :: ccbeta(:),phi(:),phitemp(:),Lphi(:),rhs(:)
+  type(multifab), allocatable :: p01fab(:),p02fab(:)
+  type(multifab), allocatable :: hcoeff1(:),hcoeff2(:),Xkcoeff1(:),Xkcoeff2(:)
+  type(multifab), allocatable :: pcoeff1(:),pcoeff2(:)
   real(kind=dp_t), pointer    :: s1p(:,:,:,:),s2p(:,:,:,:),rhsalphap(:,:,:,:)
   real(kind=dp_t), pointer    :: rhsbetap(:,:,:,:),lhsbetap(:,:,:,:)
   real(kind=dp_t), pointer    :: ccbetap(:,:,:,:),phip(:,:,:,:),rhsp(:,:,:,:)
+  real(kind=dp_t), pointer    :: p01fabp(:,:,:,:),p02fabp(:,:,:,:)
   real(kind=dp_t), pointer    :: hcoeff1p(:,:,:,:),hcoeff2p(:,:,:,:)
   real(kind=dp_t), pointer    :: Xkcoeff1p(:,:,:,:),Xkcoeff2p(:,:,:,:)
   integer                     :: nlevs,dm,stencil_order
   integer                     :: i,n,spec
   integer                     :: lo(s1(1)%dim),hi(s1(1)%dim)
   type(bndry_reg), pointer    :: fine_flx(:) => Null()
+
+  type(bc_level) ::  bc
 
   nlevs = mla%nlevel
   dm = mla%dim
@@ -52,8 +56,10 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
   allocate(rhsalpha(nlevs),lhsalpha(nlevs))
   allocate(rhsbeta(nlevs),lhsbeta(nlevs),ccbeta(nlevs))
   allocate(phi(nlevs),phitemp(nlevs),Lphi(nlevs),rhs(nlevs))
+  allocate(p01fab(nlevs),p02fab(nlevs))
   allocate(hcoeff1(nlevs),hcoeff2(nlevs))
   allocate(Xkcoeff1(nlevs),Xkcoeff2(nlevs))
+  allocate(pcoeff1(nlevs),pcoeff2(nlevs))
 
   allocate(fine_flx(2:nlevs))
   do n = 2,nlevs
@@ -70,11 +76,15 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
      call multifab_build( phitemp(n), mla%la(n),  1, 1)
      call multifab_build(    Lphi(n), mla%la(n),  1, 0)
      call multifab_build(     rhs(n), mla%la(n),  1, 0)
+     call multifab_build(  p01fab(n), mla%la(n),  1, 1)
+     call multifab_build(  p02fab(n), mla%la(n),  1, 1)
 
      call multifab_build( hcoeff1(n), mla%la(n),  1,     1)
      call multifab_build( hcoeff2(n), mla%la(n),  1,     1)
      call multifab_build(Xkcoeff1(n), mla%la(n),  nspec, 1)
      call multifab_build(Xkcoeff2(n), mla%la(n),  nspec, 1)
+     call multifab_build( pcoeff1(n), mla%la(n),  1,     1)
+     call multifab_build( pcoeff2(n), mla%la(n),  1,     1)
 
      call setval(rhsalpha(n), ZERO, all=.true.)
      call setval(lhsalpha(n), ZERO, all=.true.)
@@ -85,12 +95,56 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
      call setval(phi(n),      ZERO, all=.true.)
      call setval(phitemp(n),  ZERO, all=.true.)
      call setval(rhs(n),      ZERO, all=.true.)
+     call setval(p01fab(n),   ZERO, all=.true.)
+     call setval(p02fab(n),   ZERO, all=.true.)
 
      call setval( hcoeff1(n), ZERO, all=.true.)
      call setval( hcoeff2(n), ZERO, all=.true.)
      call setval(Xkcoeff1(n), ZERO, all=.true.)
      call setval(Xkcoeff2(n), ZERO, all=.true.)
+     call setval( pcoeff1(n), ZERO, all=.true.)
+     call setval( pcoeff2(n), ZERO, all=.true.)
   end do
+
+  ! create p01fab and p02fab
+     ! load p0 into phi
+     do n=1,nlevs
+        do i=1,p01fab(n)%nboxes
+           if (multifab_remote(p01fab(n),i)) cycle
+           p01fabp => dataptr(p01fab(n),i)
+           lo =  lwb(get_box(p01fab(n), i))
+           hi =  upb(get_box(p01fab(n), i))
+           select case (dm)
+           case (2)
+              call put_base_state_on_multifab_2d(lo,hi,p01,p01fabp(:,:,1,1))
+           case (3)
+              call put_base_state_on_multifab_3d(lo,hi,p01,p01fabp(:,:,:,1))
+           end select
+        end do
+     enddo
+
+     ! set the boundary conditions for pressure
+     do n=1,nlevs
+        call multifab_fill_boundary(phi(n))
+        bc = the_bc_tower%bc_tower_array(n)
+        do i = 1, phi(n)%nboxes
+           if ( multifab_remote(phi(n), i) ) cycle
+           phip => dataptr(phi(n), i)
+           lo =  lwb(get_box(phi(n), i))
+           hi =  upb(get_box(phi(n), i))
+           select case (dm)
+           case (2)
+              call setbc_2d(phip(:,:,1,1), lo, 1, &
+                   bc%adv_bc_level_array(i,:,:,neumann_comp), &
+                   dx(n,:),neumann_comp)
+           case (3)
+              call setbc_3d(phip(:,:,:,1), lo, 1, &
+                   bc%adv_bc_level_array(i,:,:,neumann_comp), &
+                   dx(n,:),neumann_comp)
+           end select
+        enddo
+     enddo
+
 
   ! lhsalpha = \rho^{(2)}
   ! rhsalpha = 0 (already initialized above)
@@ -576,14 +630,19 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
      call destroy(phitemp(n))
      call destroy(Lphi(n))
      call destroy(rhs(n))
+     call destroy(p01fab(n))
+     call destroy(p02fab(n))
      call destroy(hcoeff1(n))
      call destroy(hcoeff2(n))
      call destroy(Xkcoeff1(n))
      call destroy(Xkcoeff2(n))
+     call destroy(pcoeff1(n))
+     call destroy(pcoeff2(n))
   enddo
 
   deallocate(rhsalpha,lhsalpha,rhsbeta,lhsbeta,ccbeta,phi,phitemp,Lphi,rhs)
-  deallocate(hcoeff1,hcoeff2,Xkcoeff1,Xkcoeff2)
+  deallocate(p01fab,p02fab)
+  deallocate(hcoeff1,hcoeff2,Xkcoeff1,Xkcoeff2,pcoeff1,pcoeff2)
 
 end subroutine thermal_conduct_half_alg
 
@@ -771,5 +830,47 @@ subroutine put_beta_on_faces_3d(lo,hi,ccbeta,beta)
   end do
 
 end subroutine put_beta_on_faces_3d
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! 
+subroutine put_base_state_on_multifab_2d(lo,hi,p0,phi)
+
+  integer        , intent(in   ) :: lo(:),hi(:)
+  real(kind=dp_t), intent(in   ) :: p0(0:)
+  real(kind=dp_t), intent(inout) :: phi(lo(1)-1:,lo(2)-1:)
+
+  ! local
+  integer :: i,j
+
+  do j=lo(2),hi(2)
+     do i=lo(1)-1,hi(1)+1
+        phi(i,j) = p0(j)
+     enddo
+  enddo
+
+end subroutine put_base_state_on_multifab_2d
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! 
+subroutine put_base_state_on_multifab_3d(lo,hi,p0,phi)
+
+  integer        , intent(in   ) :: lo(:),hi(:)
+  real(kind=dp_t), intent(in   ) :: p0(0:)
+  real(kind=dp_t), intent(inout) :: phi(lo(1)-1:,lo(2)-1:,lo(3)-1:)
+
+  ! local
+  integer :: i,j,k
+
+  do k=lo(3),hi(3)
+     do j=lo(2)-1,hi(2)+1
+        do i=lo(1)-1,hi(1)+1
+           phi(i,j,k) = p0(k)
+        enddo
+     enddo
+  enddo
+
+end subroutine put_base_state_on_multifab_3d
 
 end module thermal_conduct_module

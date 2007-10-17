@@ -406,46 +406,7 @@ subroutine make_coeffs_3d(lo,hi,dx,p0,s,Tcoeff,hcoeff,Xkcoeff,pcoeff)
 end subroutine make_coeffs_3d
 
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! 
-subroutine put_base_state_on_multifab_2d(lo,hi,p0,phi)
 
-  integer        , intent(in   ) :: lo(:),hi(:)
-  real(kind=dp_t), intent(in   ) :: p0(0:)
-  real(kind=dp_t), intent(inout) :: phi(lo(1)-1:,lo(2)-1:)
-
-  ! local
-  integer :: i,j
-
-  do j=lo(2),hi(2)
-     do i=lo(1)-1,hi(1)+1
-        phi(i,j) = p0(j)
-     enddo
-  enddo
-
-end subroutine put_base_state_on_multifab_2d
-
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! 
-subroutine put_base_state_on_multifab_3d(lo,hi,p0,phi)
-
-  integer        , intent(in   ) :: lo(:),hi(:)
-  real(kind=dp_t), intent(in   ) :: p0(0:)
-  real(kind=dp_t), intent(inout) :: phi(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-
-  ! local
-  integer :: i,j,k
-
-  do k=lo(3),hi(3)
-     do j=lo(2)-1,hi(2)+1
-        do i=lo(1)-1,hi(1)+1
-           phi(i,j,k) = p0(k)
-        enddo
-     enddo
-  enddo
-
-end subroutine put_base_state_on_multifab_3d
 
 
 end module make_explicit_thermal_module
