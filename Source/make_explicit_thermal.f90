@@ -201,10 +201,10 @@ subroutine make_explicit_thermal(mla,dx,thermal,s,p0,mg_verbose, &
      ! load p0 into phi
      do n=1,nlevs
         do i=1,s(n)%nboxes
-           if (multifab_remote(s(n),i)) cycle
+           if (multifab_remote(phi(n),i)) cycle
            phip    => dataptr(phi(n),i)
-           lo =  lwb(get_box(s(n), i))
-           hi =  upb(get_box(s(n), i))
+           lo =  lwb(get_box(phi(n), i))
+           hi =  upb(get_box(phi(n), i))
            select case (dm)
            case (2)
               call put_base_state_on_multifab_2d(lo,hi,p0,phip(:,:,1,1))
