@@ -122,7 +122,7 @@ subroutine make_explicit_thermal(mla,dx,thermal,s,p0,mg_verbose, &
      call mac_applyop(mla,resid,phi,alpha,beta,dx,the_bc_tower,dm+rhoh_comp, &
           stencil_order,mla%mba%rr,mg_verbose,cg_verbose)
      
-     ! scale residual by sigma/rho and add to thermal
+     ! add residual to thermal
      do n=1,nlevs
         call multifab_plus_plus_c(thermal(n),1,resid(n),1,1,0)
         call multifab_fill_boundary(thermal(n))
@@ -156,7 +156,7 @@ subroutine make_explicit_thermal(mla,dx,thermal,s,p0,mg_verbose, &
      call mac_applyop(mla,resid,phi,alpha,beta,dx,the_bc_tower,dm+rhoh_comp, &
           stencil_order,mla%mba%rr,mg_verbose,cg_verbose)
      
-     ! scale residual by sigma/rho and add to thermal
+     ! add residual to thermal
      do n=1,nlevs
         call multifab_plus_plus_c(thermal(n),1,resid(n),1,1,0)
         call multifab_fill_boundary(thermal(n))
@@ -191,7 +191,7 @@ subroutine make_explicit_thermal(mla,dx,thermal,s,p0,mg_verbose, &
         call mac_applyop(mla,resid,phi,alpha,beta,dx,the_bc_tower, &
              dm+spec_comp+k-1,stencil_order,mla%mba%rr,mg_verbose,cg_verbose)
         
-        ! scale residual by sigma/rho and add to thermal
+        ! add residual to thermal
         do n=1,nlevs
            call multifab_plus_plus_c(thermal(n),1,resid(n),1,1,0)
            call multifab_fill_boundary(thermal(n))
@@ -237,31 +237,31 @@ subroutine make_explicit_thermal(mla,dx,thermal,s,p0,mg_verbose, &
      enddo
 
      ! setup beta = pcoeff on faces
-!     do n=1,nlevs
-!        do i=1,beta(n)%nboxes
-!           if (multifab_remote(beta(n),i)) cycle
-!           pcoeffp => dataptr(pcoeff(n),i)
-!           betap   => dataptr(beta(n),i)
-!           lo = lwb(get_box(beta(n), i))
-!           hi = upb(get_box(beta(n), i))
-!           select case (dm)
-!           case (2)
-!              call put_beta_on_faces_2d(lo,hi,pcoeffp(:,:,1,1),betap(:,:,1,:))
-!           case (3)
-!              call put_beta_on_faces_3d(lo,hi,pcoeffp(:,:,:,1),betap(:,:,:,:))
-!           end select
-!        end do
-!     enddo
-!
-!     ! applyop
-!     call mac_applyop(mla,resid,phi,alpha,beta,dx,the_bc_tower,neumann_comp, &
-!          stencil_order,mla%mba%rr,mg_verbose,cg_verbose)
-!     
-!     ! scale residual by sigma/rho and add to thermal
-!     do n=1,nlevs
-!        call multifab_plus_plus_c(thermal(n),1,resid(n),1,1,0)
-!        call multifab_fill_boundary(thermal(n))
-!     enddo
+     do n=1,nlevs
+        do i=1,beta(n)%nboxes
+           if (multifab_remote(beta(n),i)) cycle
+           pcoeffp => dataptr(pcoeff(n),i)
+           betap   => dataptr(beta(n),i)
+           lo = lwb(get_box(beta(n), i))
+           hi = upb(get_box(beta(n), i))
+           select case (dm)
+           case (2)
+              call put_beta_on_faces_2d(lo,hi,pcoeffp(:,:,1,1),betap(:,:,1,:))
+           case (3)
+              call put_beta_on_faces_3d(lo,hi,pcoeffp(:,:,:,1),betap(:,:,:,:))
+           end select
+        end do
+     enddo
+
+     ! applyop
+     call mac_applyop(mla,resid,phi,alpha,beta,dx,the_bc_tower,neumann_comp, &
+          stencil_order,mla%mba%rr,mg_verbose,cg_verbose)
+     
+     ! add residual to thermal
+     do n=1,nlevs
+        call multifab_plus_plus_c(thermal(n),1,resid(n),1,1,0)
+        call multifab_fill_boundary(thermal(n))
+     enddo
   endif
 
   ! Deallocate memory
