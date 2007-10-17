@@ -42,6 +42,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
   real(kind=dp_t), pointer    :: p01fabp(:,:,:,:),p02fabp(:,:,:,:)
   real(kind=dp_t), pointer    :: hcoeff1p(:,:,:,:),hcoeff2p(:,:,:,:)
   real(kind=dp_t), pointer    :: Xkcoeff1p(:,:,:,:),Xkcoeff2p(:,:,:,:)
+  real(kind=dp_t), pointer    :: pcoeff1p(:,:,:,:),pcoeff2p(:,:,:,:)
   integer                     :: nlevs,dm,stencil_order
   integer                     :: i,n,spec
   integer                     :: lo(s1(1)%dim),hi(s1(1)%dim)
@@ -106,45 +107,82 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
      call setval( pcoeff2(n), ZERO, all=.true.)
   end do
 
-  ! create p01fab and p02fab
-     ! load p0 into phi
-     do n=1,nlevs
-        do i=1,p01fab(n)%nboxes
-           if (multifab_remote(p01fab(n),i)) cycle
-           p01fabp => dataptr(p01fab(n),i)
-           lo =  lwb(get_box(p01fab(n), i))
-           hi =  upb(get_box(p01fab(n), i))
-           select case (dm)
-           case (2)
-              call put_base_state_on_multifab_2d(lo,hi,p01,p01fabp(:,:,1,1))
-           case (3)
-              call put_base_state_on_multifab_3d(lo,hi,p01,p01fabp(:,:,:,1))
-           end select
-        end do
+  ! create p01fab
+  do n=1,nlevs
+     do i=1,p01fab(n)%nboxes
+        if (multifab_remote(p01fab(n),i)) cycle
+        p01fabp => dataptr(p01fab(n),i)
+        lo = lwb(get_box(p01fab(n), i))
+        hi = upb(get_box(p01fab(n), i))
+        select case (dm)
+        case (2)
+           call put_base_state_on_multifab_2d(lo,hi,p01,p01fabp(:,:,1,1))
+        case (3)
+           call put_base_state_on_multifab_3d(lo,hi,p01,p01fabp(:,:,:,1))
+        end select
+     end do
+  enddo
+  
+  ! set the boundary conditions for p01
+  do n=1,nlevs
+     call multifab_fill_boundary(p01fab(n))
+     bc = the_bc_tower%bc_tower_array(n)
+     do i = 1, p01fab(n)%nboxes
+        if ( multifab_remote(p01fab(n), i) ) cycle
+        p01fabp => dataptr(p01fab(n), i)
+        lo = lwb(get_box(p01fab(n), i))
+        hi = upb(get_box(p01fab(n), i))
+        select case (dm)
+        case (2)
+           call setbc_2d(p01fabp(:,:,1,1), lo, 1, &
+                bc%adv_bc_level_array(i,:,:,neumann_comp), &
+                dx(n,:),neumann_comp)
+        case (3)
+           call setbc_3d(p01fabp(:,:,:,1), lo, 1, &
+                bc%adv_bc_level_array(i,:,:,neumann_comp), &
+                dx(n,:),neumann_comp)
+        end select
      enddo
+  enddo
 
-     ! set the boundary conditions for pressure
-     do n=1,nlevs
-        call multifab_fill_boundary(phi(n))
-        bc = the_bc_tower%bc_tower_array(n)
-        do i = 1, phi(n)%nboxes
-           if ( multifab_remote(phi(n), i) ) cycle
-           phip => dataptr(phi(n), i)
-           lo =  lwb(get_box(phi(n), i))
-           hi =  upb(get_box(phi(n), i))
-           select case (dm)
-           case (2)
-              call setbc_2d(phip(:,:,1,1), lo, 1, &
-                   bc%adv_bc_level_array(i,:,:,neumann_comp), &
-                   dx(n,:),neumann_comp)
-           case (3)
-              call setbc_3d(phip(:,:,:,1), lo, 1, &
-                   bc%adv_bc_level_array(i,:,:,neumann_comp), &
-                   dx(n,:),neumann_comp)
-           end select
-        enddo
+  ! create p02fab
+  do n=1,nlevs
+     do i=1,p02fab(n)%nboxes
+        if (multifab_remote(p02fab(n),i)) cycle
+        p02fabp => dataptr(p02fab(n),i)
+        lo = lwb(get_box(p02fab(n), i))
+        hi = upb(get_box(p02fab(n), i))
+        select case (dm)
+        case (2)
+           call put_base_state_on_multifab_2d(lo,hi,p02,p02fabp(:,:,1,1))
+        case (3)
+           call put_base_state_on_multifab_3d(lo,hi,p02,p02fabp(:,:,:,1))
+        end select
+     end do
+  enddo
+  
+  ! set the boundary conditions for p02
+  do n=1,nlevs
+     call multifab_fill_boundary(p02fab(n))
+     bc = the_bc_tower%bc_tower_array(n)
+     do i = 1, p02fab(n)%nboxes
+        if ( multifab_remote(p02fab(n), i) ) cycle
+        p02fabp => dataptr(p02fab(n), i)
+        lo = lwb(get_box(p02fab(n), i))
+        hi = upb(get_box(p02fab(n), i))
+        select case (dm)
+        case (2)
+           call setbc_2d(p02fabp(:,:,1,1), lo, 1, &
+                bc%adv_bc_level_array(i,:,:,neumann_comp), &
+                dx(n,:),neumann_comp)
+        case (3)
+           call setbc_3d(p02fabp(:,:,:,1), lo, 1, &
+                bc%adv_bc_level_array(i,:,:,neumann_comp), &
+                dx(n,:),neumann_comp)
+        end select
      enddo
-
+  enddo
+  
 
   ! lhsalpha = \rho^{(2)}
   ! rhsalpha = 0 (already initialized above)
@@ -163,9 +201,10 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
   do n=1,nlevs
      do i=1,s1(n)%nboxes
         if (multifab_remote(s1(n),i)) cycle
-        s1p         => dataptr(s1(n),i)
-        hcoeff1p => dataptr(hcoeff1(n),i)
-        Xkcoeff1p       => dataptr(Xkcoeff1(n),i)
+        s1p       => dataptr(s1(n),i)
+        hcoeff1p  => dataptr(hcoeff1(n),i)
+        Xkcoeff1p => dataptr(Xkcoeff1(n),i)
+        pcoeff1p  => dataptr(pcoeff1(n),1)
         lo = lwb(get_box(s1(n), i))
         hi = upb(get_box(s1(n), i))
         select case (dm)
@@ -173,12 +212,14 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
            call compute_thermo_quantities_2d(lo,hi,dt, &
                                              s1p(:,:,1,:), &
                                              hcoeff1p(:,:,1,1), &
-                                             Xkcoeff1p(:,:,1,:))
+                                             Xkcoeff1p(:,:,1,:), &
+                                             pcoeff1p(:,:,1,1))
         case (3)
            call compute_thermo_quantities_3d(lo,hi,dt,t01, &
                                              s1p(:,:,:,:), &
                                              hcoeff1p(:,:,:,1), &
-                                             Xkcoeff1p(:,:,:,:))
+                                             Xkcoeff1p(:,:,:,:), &
+                                             pcoeff1p(:,:,:,1))
         end select
      end do
   enddo
@@ -194,12 +235,12 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
 
   ! put beta on faces
   do n=1,nlevs
-     do i=1,s1(n)%nboxes
-        if (multifab_remote(s1(n),i)) cycle
+     do i=1,rhsbeta(n)%nboxes
+        if (multifab_remote(rhsbeta(n),i)) cycle
         hcoeff1p => dataptr(hcoeff1(n),i)
-        rhsbetap    => dataptr(rhsbeta(n),i)
-        lo = lwb(get_box(s1(n), i))
-        hi = upb(get_box(s1(n), i))
+        rhsbetap => dataptr(rhsbeta(n),i)
+        lo = lwb(get_box(rhsbeta(n), i))
+        hi = upb(get_box(rhsbeta(n), i))
         select case (dm)
         case (2)
            call put_beta_on_faces_2d(lo,hi,hcoeff1p(:,:,1,1), &
@@ -236,12 +277,12 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
 
      ! put beta on faces
      do n=1,nlevs
-        do i=1,s1(n)%nboxes
-           if (multifab_remote(s1(n),i)) cycle
-           Xkcoeff1p    => dataptr(Xkcoeff1(n),i)
-           rhsbetap => dataptr(rhsbeta(n),i)
-           lo = lwb(get_box(s1(n), i))
-           hi = upb(get_box(s1(n), i))
+        do i=1,rhsbeta(n)%nboxes
+           if (multifab_remote(rhsbeta(n),i)) cycle
+           Xkcoeff1p => dataptr(Xkcoeff1(n),i)
+           rhsbetap  => dataptr(rhsbeta(n),i)
+           lo = lwb(get_box(rhsbeta(n), i))
+           hi = upb(get_box(rhsbeta(n), i))
            select case (dm)
            case (2)
               call put_beta_on_faces_2d(lo,hi,Xkcoeff1p(:,:,1,spec), &
@@ -273,6 +314,45 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
      enddo
   enddo
 
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  ! add pressure diffusion to rhs
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!  ! put beta on faces
+!  do n=1,nlevs
+!     do i=1,rhsbeta(n)%nboxes
+!        if (multifab_remote(rhsbeta(n),i)) cycle
+!        pcoeff1p => dataptr(pcoeff1(n),i)
+!        rhsbetap => dataptr(rhsbeta(n),i)
+!        lo = lwb(get_box(rhsbeta(n), i))
+!        hi = upb(get_box(rhsbeta(n), i))
+!        select case (dm)
+!        case (2)
+!           call put_beta_on_faces_2d(lo,hi,pcoeff1p(:,:,1,spec), &
+!                rhsbetap(:,:,1,:))
+!        case (3)
+!           call put_beta_on_faces_3d(lo,hi,pcoeff1p(:,:,:,spec), &
+!                rhsbetap(:,:,:,:))
+!        end select
+!     end do
+!  enddo
+!  
+!  ! load phi = p01 + p02
+!  do n=1,nlevs
+!     call multifab_copy_c(phi(n),1,p01fab(n),1,1,1)
+!     call multifab_plus_plus_c(phi(n),1,p02fab(n),1,1,1)
+!  enddo
+!  
+!  ! apply the operator
+!  call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
+!       neumann_comp,stencil_order,mla%mba%rr, &
+!       mg_verbose,cg_verbose)
+!
+!  ! add lphi to rhs
+!  do n=1,nlevs
+!     call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,1)
+!  enddo
+
   !!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! Setup LHS coefficients
   !!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -280,12 +360,12 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
   ! create lhsbeta = -hcoeff1 = (dt/2)k_{th}^{(1)}/c_p^{(1)}
   ! put beta on faces (remember to scale by -1 afterwards)
   do n=1,nlevs
-     do i=1,s1(n)%nboxes
-        if (multifab_remote(s1(n),i)) cycle
+     do i=1,lhsbeta(n)%nboxes
+        if (multifab_remote(lhsbeta(n),i)) cycle
         hcoeff1p => dataptr(hcoeff1(n),i)
-        lhsbetap    => dataptr(lhsbeta(n),i)
-        lo = lwb(get_box(s1(n), i))
-        hi = upb(get_box(s1(n), i))
+        lhsbetap => dataptr(lhsbeta(n),i)
+        lo = lwb(get_box(lhsbeta(n), i))
+        hi = upb(get_box(lhsbeta(n), i))
         select case (dm)
         case (2)
            call put_beta_on_faces_2d(lo,hi,hcoeff1p(:,:,1,1), &
@@ -385,9 +465,10 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
   do n=1,nlevs
      do i=1,s1(n)%nboxes
         if (multifab_remote(s2(n),i)) cycle
-        s2p         => dataptr(s2(n),i)
-        hcoeff2p => dataptr(hcoeff2(n),i)
-        Xkcoeff2p       => dataptr(Xkcoeff2(n),i)
+        s2p       => dataptr(s2(n),i)
+        hcoeff2p  => dataptr(hcoeff2(n),i)
+        Xkcoeff2p => dataptr(Xkcoeff2(n),i)
+        pcoeff2p  => dataptr(pcoeff2(n),i)
         lo = lwb(get_box(s2(n), i))
         hi = upb(get_box(s2(n), i))
         select case (dm)
@@ -395,12 +476,14 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
            call compute_thermo_quantities_2d(lo,hi,dt, &
                                              s2p(:,:,1,:), &
                                              hcoeff2p(:,:,1,1), &
-                                             Xkcoeff2p(:,:,1,:))
+                                             Xkcoeff2p(:,:,1,:), &
+                                             pcoeff2p(:,:,1,1))
         case (3)
            call compute_thermo_quantities_3d(lo,hi,dt,t02, &
                                              s2p(:,:,:,:), &
                                              hcoeff2p(:,:,:,1), &
-                                             Xkcoeff2p(:,:,:,:))
+                                             Xkcoeff2p(:,:,:,:), &
+                                             pcoeff2p(:,:,:,1))
         end select
      end do
   enddo
@@ -411,12 +494,12 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
 
   ! put beta on faces
   do n=1,nlevs
-     do i=1,s1(n)%nboxes
-        if (multifab_remote(s1(n),i)) cycle
+     do i=1,rhsbeta(n)%nboxes
+        if (multifab_remote(rhsbeta(n),i)) cycle
         hcoeff1p => dataptr(hcoeff1(n),i)
-        rhsbetap    => dataptr(rhsbeta(n),i)
-        lo = lwb(get_box(s1(n), i))
-        hi = upb(get_box(s1(n), i))
+        rhsbetap => dataptr(rhsbeta(n),i)
+        lo = lwb(get_box(rhsbeta(n), i))
+        hi = upb(get_box(rhsbeta(n), i))
         select case (dm)
         case (2)
            call put_beta_on_faces_2d(lo,hi,hcoeff1p(:,:,1,1), &
@@ -454,12 +537,12 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
      ! do X_k^{(1)} term first
      ! put beta on faces
      do n=1,nlevs
-        do i=1,s1(n)%nboxes
-           if (multifab_remote(s1(n),i)) cycle
-           Xkcoeff1p    => dataptr(Xkcoeff1(n),i)
-           rhsbetap => dataptr(rhsbeta(n),i)
-           lo = lwb(get_box(s1(n), i))
-           hi = upb(get_box(s1(n), i))
+        do i=1,rhsbeta(n)%nboxes
+           if (multifab_remote(rhsbeta(n),i)) cycle
+           Xkcoeff1p => dataptr(Xkcoeff1(n),i)
+           rhsbetap  => dataptr(rhsbeta(n),i)
+           lo = lwb(get_box(rhsbeta(n), i))
+           hi = upb(get_box(rhsbeta(n), i))
            select case (dm)
            case (2)
               call put_beta_on_faces_2d(lo,hi,Xkcoeff1p(:,:,1,spec), &
@@ -490,12 +573,12 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
      ! now do X_k^{(2)} term
      ! put beta on faces
      do n=1,nlevs
-        do i=1,s1(n)%nboxes
-           if (multifab_remote(s1(n),i)) cycle
-           Xkcoeff2p    => dataptr(Xkcoeff2(n),i)
-           rhsbetap => dataptr(rhsbeta(n),i)
-           lo = lwb(get_box(s1(n), i))
-           hi = upb(get_box(s1(n), i))
+        do i=1,rhsbeta(n)%nboxes
+           if (multifab_remote(rhsbeta(n),i)) cycle
+           Xkcoeff2p => dataptr(Xkcoeff2(n),i)
+           rhsbetap  => dataptr(rhsbeta(n),i)
+           lo = lwb(get_box(rhsbeta(n), i))
+           hi = upb(get_box(rhsbeta(n), i))
            select case (dm)
            case (2)
               call put_beta_on_faces_2d(lo,hi,Xkcoeff2p(:,:,1,spec), &
@@ -525,18 +608,92 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
   enddo
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!
+  ! add pressure diffusino to rhs
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!  ! do p01 term first
+!  ! put beta on faces
+!  do n=1,nlevs
+!     do i=1,rhsbeta(n)%nboxes
+!        if (multifab_remote(rhsbeta(n),i)) cycle
+!        pcoeff1p => dataptr(pcoeff1(n),i)
+!        rhsbetap => dataptr(rhsbeta(n),i)
+!        lo = lwb(get_box(rhsbeta(n), i))
+!        hi = upb(get_box(rhsbeta(n), i))
+!        select case (dm)
+!        case (2)
+!           call put_beta_on_faces_2d(lo,hi,pcoeff1p(:,:,1,spec), &
+!                rhsbetap(:,:,1,:))
+!        case (3)
+!           call put_beta_on_faces_3d(lo,hi,pcoeff1p(:,:,:,spec), &
+!                rhsbetap(:,:,:,:))
+!        end select
+!     end do
+!  enddo
+!  
+!  ! load phi = p01
+!  do n=1,nlevs
+!     call multifab_copy_c(phi(n),1,p01fab(n),1,1,1)
+!  enddo
+!  
+!  ! apply the operator
+!  call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
+!       neumann_comp,stencil_order,mla%mba%rr, &
+!       mg_verbose,cg_verbose)
+!  
+!  ! add lphi to rhs
+!  do n=1,nlevs
+!     call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,1)
+!  enddo
+!  
+!  ! now do p02 term
+!  ! put beta on faces
+!  do n=1,nlevs
+!     do i=1,rhsbeta(n)%nboxes
+!        if (multifab_remote(rhsbeta(n),i)) cycle
+!        pcoeff2p => dataptr(pcoeff2(n),i)
+!        rhsbetap => dataptr(rhsbeta(n),i)
+!        lo = lwb(get_box(rhsbeta(n), i))
+!        hi = upb(get_box(rhsbeta(n), i))
+!        select case (dm)
+!        case (2)
+!           call put_beta_on_faces_2d(lo,hi,pcoeff2p(:,:,1,spec), &
+!                rhsbetap(:,:,1,:))
+!        case (3)
+!           call put_beta_on_faces_3d(lo,hi,pcoeff2p(:,:,:,spec), &
+!                rhsbetap(:,:,:,:))
+!        end select
+!     end do
+!  enddo
+!  
+!  ! load phi = -02
+!  do n=1,nlevs
+!     call multifab_copy_c(phi(n),1,p02fab(n),1,1,1)
+!  enddo
+!  
+!  ! apply the operator
+!  call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
+!       neumann_comp,stencil_order,mla%mba%rr, &
+!       mg_verbose,cg_verbose)
+!  
+!  ! add lphi to rhs
+!  do n=1,nlevs
+!     call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,1)
+!  enddo
+  
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! Setup LHS coefficients
   !!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   ! create lhsbeta = -hcoeff2 = (dt/2)k_{th}^{(2'')}/c_p^{(2'')}
   ! put beta on faces (remember to scale by -1 afterwards)
   do n=1,nlevs
-     do i=1,s1(n)%nboxes
-        if (multifab_remote(s1(n),i)) cycle
+     do i=1,lhsbeta(n)%nboxes
+        if (multifab_remote(lhsbeta(n),i)) cycle
         hcoeff2p => dataptr(hcoeff2(n),i)
-        lhsbetap    => dataptr(lhsbeta(n),i)
-        lo = lwb(get_box(s1(n), i))
-        hi = upb(get_box(s1(n), i))
+        lhsbetap => dataptr(lhsbeta(n),i)
+        lo = lwb(get_box(lhsbeta(n), i))
+        hi = upb(get_box(lhsbeta(n), i))
         select case (dm)
         case (2)
            call put_beta_on_faces_2d(lo,hi,hcoeff2p(:,:,1,1), &
@@ -651,18 +808,19 @@ end subroutine thermal_conduct_half_alg
 ! compute hcoeff and Xkcoeff, defined as:
 ! hcoeff = -(dt/2)k_{th}/c_p
 ! Xkcoeff = (dt/2)\xi_k k_{th}/c_p
-subroutine compute_thermo_quantities_2d(lo,hi,dt,s,hcoeff,Xkcoeff)
+! pcoeff = (dt/2)h_p*k_{th}/c_p
+subroutine compute_thermo_quantities_2d(lo,hi,dt,s,hcoeff,Xkcoeff,pcoeff)
 
   integer        , intent(in   ) :: lo(:),hi(:)
   real(dp_t)    ,  intent(in   ) :: dt
   real(kind=dp_t), intent(in   ) :: s(lo(1)-3:,lo(2)-3:,:)
   real(kind=dp_t), intent(inout) :: hcoeff(lo(1)-1:,lo(2)-1:)
   real(kind=dp_t), intent(inout) :: Xkcoeff(lo(1)-1:,lo(2)-1:,:)
+  real(kind=dp_t), intent(inout) :: pcoeff(lo(1)-1:,lo(2)-1:)
 
   ! Local
   integer :: i,j,n
   real(dp_t) :: qreact
-
 
   do j=lo(2)-1,hi(2)+1
      do i=lo(1)-1,hi(1)+1
@@ -685,14 +843,19 @@ subroutine compute_thermo_quantities_2d(lo,hi,dt,s,hcoeff,Xkcoeff)
                  do_diag, conduct_row)
 
         hcoeff(i,j) = -HALF*dt*conduct_row(1)/cp_row(1)
+        pcoeff(i,j) = HALF*dt*(conduct_row(1)/cp_row(1))* &
+             ((1.0d0/den_row(1))* &
+              (1.0d0-p_row(1)/(den_row(1)*dpdr_row(1)))+dedr_row(1)/dpdr_row(1))
 
         if(use_big_h) then
            do n=1,nspec
-              Xkcoeff(i,j,n) = -(dhdX_row(1,n)+ebin(n))*hcoeff(i,j)
+              Xkcoeff(i,j,n) = HALF*dt*conduct_row(1)* &
+                   (dhdX_row(1,n)+ebin(n))/cp_row(1)
+
            enddo
         else
            do n=1,nspec
-              Xkcoeff(i,j,n) = -dhdX_row(1,n)*hcoeff(i,j)
+              Xkcoeff(i,j,n) = HALF*dt*conduct_row(1)*dhdX_row(1,n)/cp_row(1)
            enddo
         endif
 
@@ -704,7 +867,8 @@ end subroutine compute_thermo_quantities_2d
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! hcoeff = -(dt/2)k_{th}/c_p
 ! Xkcoeff = (dt/2)\xi_k k_{th}/c_p
-subroutine compute_thermo_quantities_3d(lo,hi,dt,t0,s,hcoeff,Xkcoeff)
+! pcoeff = (dt/2)h_p*k_{th}/c_p
+subroutine compute_thermo_quantities_3d(lo,hi,dt,t0,s,hcoeff,Xkcoeff,pcoeff)
 
   integer        , intent(in   ) :: lo(:),hi(:)
   real(dp_t)    ,  intent(in   ) :: dt
@@ -712,6 +876,7 @@ subroutine compute_thermo_quantities_3d(lo,hi,dt,t0,s,hcoeff,Xkcoeff)
   real(kind=dp_t), intent(in   ) :: s(lo(1)-3:,lo(2)-3:,lo(3)-3:,:)
   real(kind=dp_t), intent(inout) :: hcoeff(lo(1)-1:,lo(2)-1:,lo(3)-1:)
   real(kind=dp_t), intent(inout) :: Xkcoeff(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)
+  real(kind=dp_t), intent(inout) :: pcoeff(lo(1)-1:,lo(2)-1:,lo(3)-1:)
 
   ! Local
   integer :: i,j,k,n
@@ -744,12 +909,19 @@ subroutine compute_thermo_quantities_3d(lo,hi,dt,t0,s,hcoeff,Xkcoeff)
                            do_diag, conduct_row)
 
            hcoeff(i,j,k) = -HALF*dt*conduct_row(1)/cp_row(1)
+           pcoeff(i,j,k) = HALF*dt*(conduct_row(1)/cp_row(1))* &
+                ((1.0d0/den_row(1))* &
+                (1.0d0-p_row(1)/(den_row(1)*dpdr_row(1)))+dedr_row(1)/dpdr_row(1))
 
            if(use_big_h) then
-              Xkcoeff(i,j,k,n) = -(dhdX_row(1,n)+ebin(n))*hcoeff(i,j,k)
+              do n=1,nspec
+                 Xkcoeff(i,j,k,n) = HALF*dt*conduct_row(1)* &
+                      (dhdX_row(1,n)+ebin(n))/cp_row(1)
+
+              enddo
            else
               do n=1,nspec
-                 Xkcoeff(i,j,k,n) = -dhdX_row(1,n)*hcoeff(i,j,k)
+                 Xkcoeff(i,j,k,n) = HALF*dt*conduct_row(1)*dhdX_row(1,n)/cp_row(1)
               enddo
            endif
         enddo
