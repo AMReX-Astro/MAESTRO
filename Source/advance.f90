@@ -107,6 +107,8 @@ module advance_timestep_module
     type(multifab), allocatable ::  hgrhs_old(:)
     type(multifab), allocatable :: Source_nph(:)
     type(multifab), allocatable :: thermal(:)
+    type(multifab), allocatable :: s2star(:)
+    type(multifab), allocatable :: rho_omegadot2_hold(:)
 
     ! Only needed for spherical.eq.1 
     type(multifab) , allocatable :: div_coeff_3d(:)
@@ -142,13 +144,9 @@ module advance_timestep_module
 
     allocate(Source_nph(nlevs))
 
-    allocate(rhohalf(nlevs))
-    allocate(w0_cart_vec(nlevs))
-    allocate(w0_force_cart_vec(nlevs))
-    allocate(macrhs(nlevs))
-    allocate(macphi(nlevs))
-    allocate( hgrhs_old(nlevs))
-    allocate(thermal(nlevs))
+    allocate(rhohalf(nlevs),w0_cart_vec(nlevs),w0_force_cart_vec(nlevs))
+    allocate(macrhs(nlevs),macphi(nlevs),hgrhs_old(nlevs))
+    allocate(thermal(nlevs),s2star(nlevs),rho_omegadot2_hold(nlevs))
     
     ! nr is the number of zones in a cell-centered basestate quantity
     nr    = size(s0_old,dim=1)
@@ -184,13 +182,17 @@ module advance_timestep_module
        call multifab_build(    macphi(n), mla%la(n),     1, 1)
        call multifab_build( hgrhs_old(n), mla%la(n),     1, 0, nodal)
        call multifab_build(   thermal(n), mla%la(n),     1, 0)
-       
+       call multifab_build(    s2star(n), mla%la(n), nscal, ng_cell)
+       call multifab_build(rho_omegadot2_hold(n), mla%la(n), nspec, 0)
+              
        call setval(rhohalf(n),ZERO,all=.true.)
        call setval(Source_nph(n),ZERO,all=.true.)
        call setval(macrhs(n),ZERO,all=.true.)
        call setval(macphi(n),ZERO,all=.true.)
        call setval(hgrhs_old(n),ZERO,all=.true.)
        call setval(thermal(n),ZERO,all=.true.)
+       call setval(s2star(n),ZERO,all=.true.)
+       call setval(rho_omegadot2_hold(n),ZERO,all=.true.)
        
        if (dm.eq.3) then
           call multifab_build(      w0_cart_vec(n), mla%la(n),dm,1)
@@ -337,6 +339,7 @@ module advance_timestep_module
               call add_react_to_thermal(thermal(n),rho_omegadot1(n),s1(n))
            else
               call add_react_to_thermal(thermal(n),rho_omegadot2(n),s1(n))
+              call multifab_copy_c(rho_omegadot2_hold(n),1,rho_omegadot2(n),1,3,0)
            endif
         enddo
 
@@ -371,7 +374,15 @@ module advance_timestep_module
                                             s0_1(:,temp_comp), s0_2(:,temp_comp), &
                                             mg_verbose,cg_verbose,the_bc_tower)
            else
-              
+              call thermal_conduct_full_alg(mla,dx,dt,s1,s1,s2,p0_1,p0_2, &
+                                            s0_1(:,temp_comp),s0_2(:,temp_comp), &
+                                            mg_verbose,cg_verbose,the_bc_tower)
+
+              ! make a copy of s2star since these are needed to compute
+              ! coefficients in the call to thermal_conduct_full_alg
+              do n=1,nlevs
+                 call multifab_copy_c(s2star(n),1,s2(n),1,nscal,ng_cell)
+              enddo
            endif
         endif
 
@@ -526,7 +537,7 @@ module advance_timestep_module
             if(istep .le. 1) then
                call add_react_to_thermal(thermal(n),rho_omegadot1(n),s1(n))
             else
-               call add_react_to_thermal(thermal(n),rho_omegadot2(n),s1(n))
+               call add_react_to_thermal(thermal(n),rho_omegadot2_hold(n),s1(n))
             endif
          enddo
 
@@ -551,12 +562,16 @@ module advance_timestep_module
         !! STEP 8a (Option I) -- Add thermal conduction (only enthalpy terms)
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-!        if (use_thermal_diffusion) then
-!           if (parallel_IOProcessor() .and. verbose .ge. 1) then
-!              write(6,*) '<<< STEP  8a: thermal conduct >>>'
-!           end if
-!
-!        endif
+        if (use_thermal_diffusion) then
+           if (parallel_IOProcessor() .and. verbose .ge. 1) then
+              write(6,*) '<<< STEP  8a: thermal conduct >>>'
+           end if
+
+           call thermal_conduct_full_alg(mla,dx,dt,s1,s2star,s2,p0_1,p0_2, &
+                                         s0_1(:,temp_comp),s0_2(:,temp_comp), &
+                                         mg_verbose,cg_verbose,the_bc_tower)
+
+        endif
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         !! STEP 9 -- react the full state and then base state through dt/2
@@ -716,6 +731,8 @@ module advance_timestep_module
           call destroy( hgrhs_old(n))
           call destroy(thermal(n))
           call destroy(rhohalf(n))
+          call destroy(s2star(n))
+          call destroy(rho_omegadot2_hold(n))
           if (spherical .eq. 1) &
             call destroy(div_coeff_3d(n))
         end do
@@ -725,6 +742,8 @@ module advance_timestep_module
         deallocate( hgrhs_old)
         deallocate(thermal)
         deallocate(rhohalf)
+        deallocate(s2star)
+        deallocate(rho_omegadot2_hold)
 
         if (spherical .eq. 1) &
           deallocate(div_coeff_3d)
