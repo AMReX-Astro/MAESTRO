@@ -15,10 +15,8 @@ module estdt_module
 
 contains
 
-   subroutine estdt (istep, u, s, force, divU, dSdt, normal, w0, p0, gam1, &
-                     dx, cflfac, dt, verbose)
+   subroutine estdt (u, s, force, divU, dSdt, normal, w0, p0, gam1, dx, cflfac, dt)
 
-      integer        , intent(in ) :: istep
       type(multifab) , intent(in ) :: u
       type(multifab) , intent(in ) :: s
       type(multifab) , intent(in ) :: force
@@ -29,7 +27,6 @@ contains
       real(kind=dp_t), intent(in ) :: dx(:)
       real(kind=dp_t), intent(in ) :: cflfac
       real(kind=dp_t), intent(out) :: dt
-      integer        , intent(in ) :: verbose
 
       real(kind=dp_t), pointer:: uop(:,:,:,:)
       real(kind=dp_t), pointer:: sop(:,:,:,:)
@@ -69,19 +66,19 @@ contains
             case (2)
               call estdt_2d(uop(:,:,1,:), sop(:,:,1,:), fp(:,:,1,:), &
                    dUp(:,:,1,1), dSdtp(:,:,1,1), w0, p0, gam1, lo, hi, ng, &
-                   dx, rho_min, dt_adv_grid, dt_divu_grid, cflfac, verbose)
+                   dx, rho_min, dt_adv_grid, dt_divu_grid, cflfac)
             case (3)
               if (spherical .eq. 1) then
                 np => dataptr(normal, i)
                 call estdt_3d_sphr(uop(:,:,:,:), sop(:,:,:,:), fp(:,:,:,:), &
                      dUp(:,:,:,1), dSdtp(:,:,:,1), &
                      np(:,:,:,:), w0, p0, gam1, lo, hi, ng, dx, &
-                     rho_min, dt_adv_grid, dt_divu_grid, cflfac, verbose)
+                     rho_min, dt_adv_grid, dt_divu_grid, cflfac)
               else
                 call estdt_3d_cart(uop(:,:,:,:), sop(:,:,:,:), fp(:,:,:,:), &
                      dUp(:,:,:,1), dSdtp(:,:,:,1), &
                      w0, p0, gam1, lo, hi, ng, dx, rho_min, &
-                     dt_adv_grid, dt_divu_grid, cflfac, verbose)
+                     dt_adv_grid, dt_divu_grid, cflfac)
               end if
          end select
 
@@ -99,7 +96,7 @@ contains
 
 
    subroutine estdt_2d (u, s, force, divU, dSdt, w0, p0, gam1, lo, hi, &
-        ng, dx, rho_min, dt_adv, dt_divu, cfl, verbose)
+        ng, dx, rho_min, dt_adv, dt_divu, cfl)
 
      integer, intent(in) :: lo(:), hi(:), ng
      real (kind = dp_t), intent(in ) :: u(lo(1)-ng:,lo(2)-ng:,:)  
@@ -111,7 +108,6 @@ contains
      real (kind = dp_t), intent(in ) :: dx(:)
      real (kind = dp_t), intent(in ) :: rho_min,cfl
      real (kind = dp_t), intent(out) :: dt_adv,dt_divu
-     integer           , intent(in ) :: verbose
 
 !    Local variables
      real (kind = dp_t)  :: spdx, spdy, spdr
@@ -219,7 +215,7 @@ contains
    end subroutine estdt_2d
 
    subroutine estdt_3d_cart (u, s, force, divU, dSdt, w0, p0, gam1, lo, hi, &
-        ng, dx, rho_min, dt_adv, dt_divu, cfl, verbose)
+        ng, dx, rho_min, dt_adv, dt_divu, cfl)
 
      integer, intent(in) :: lo(:), hi(:), ng
      real (kind = dp_t), intent(in ) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
@@ -231,7 +227,6 @@ contains
      real (kind = dp_t), intent(in ) :: dx(:)
      real (kind = dp_t), intent(in ) :: rho_min,cfl
      real (kind = dp_t), intent(out) :: dt_adv, dt_divu
-     integer           , intent(in ) :: verbose
 
 !    Local variables
      real (kind = dp_t)  :: spdx, spdy, spdz, spdr
@@ -354,7 +349,7 @@ contains
    end subroutine estdt_3d_cart
 
    subroutine estdt_3d_sphr (u, s, force, divU, dSdt, normal, w0, p0, gam1, &
-        lo, hi, ng, dx, rho_min, dt_adv, dt_divu, cfl, verbose)
+        lo, hi, ng, dx, rho_min, dt_adv, dt_divu, cfl)
 
      integer, intent(in) :: lo(:), hi(:), ng
      real (kind = dp_t), intent(in ) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
@@ -367,7 +362,6 @@ contains
      real (kind = dp_t), intent(in ) :: dx(:)
      real (kind = dp_t), intent(in ) :: rho_min, cfl
      real (kind = dp_t), intent(out) :: dt_adv, dt_divu
-     integer           , intent(in ) :: verbose
 
 !    Local variables
      real (kind = dp_t), allocatable ::  w0_cart(:,:,:,:)
