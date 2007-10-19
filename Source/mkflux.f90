@@ -456,7 +456,9 @@ contains
 
       real(kind=dp_t) :: abs_eps, eps, umax
 
-      integer :: i,j,k,is,js,ie,je,ks,ke
+      integer :: i,j,k,is,js,ie,je,ks,ke,nr
+
+      nr = size(w0,dim=1)-1
 
       hi(1) = lo(1) + size(s,dim=1) - (2*ng+1)
       hi(2) = lo(2) + size(s,dim=2) - (2*ng+1)
@@ -1062,14 +1064,8 @@ contains
           st = st - HALF * (vtrans(i,j,k)+vtrans(i,j+1,k))*(splus - sminus) / hy
 
           ! NOTE NOTE : THIS IS WRONG FOR SPHERICAL !!
-          if (spherical .eq. 0 .and. is_vel .and. n.eq.3) then
-             if(k .ge. ke) then
-                st = st - HALF * (wtrans(i,j,k)+wtrans(i,j,k+1))*(w0(k)-w0(k))/hz
-             else if(k .lt. ks) then
-                st = st - HALF * (wtrans(i,j,k)+wtrans(i,j,k+1))*(w0(k+1)-w0(k+1))/hz
-             else
-                st = st - HALF * (wtrans(i,j,k)+wtrans(i,j,k+1))*(w0(k+1)-w0(k))/hz
-             endif
+          if (spherical .eq. 0 .and. is_vel .and. n.eq.3 .and. k.ge.0 .and. k.lt.nr) then
+             st = st - HALF * (wtrans(i,j,k)+wtrans(i,j,k+1))*(w0(k+1)-w0(k))/hz
           end if
 
           wbardth = dth/hz * ( u(i,j,k,3) + w0_cart_vec(i,j,k,3))
