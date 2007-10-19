@@ -132,6 +132,9 @@ contains
     do i = lo(1),hi(1)
       klo = rr*k
       khi = rr*(k+1)
+      if(khi .gt. hi(3)) then
+         khi = klo
+      endif
       w0_cell(i,j,k,3) =  HALF * (w0(klo) + w0(khi))
     end do
     end do
