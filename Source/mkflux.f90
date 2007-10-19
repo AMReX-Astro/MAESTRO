@@ -1063,7 +1063,13 @@ contains
 
           ! NOTE NOTE : THIS IS WRONG FOR SPHERICAL !!
           if (spherical .eq. 0 .and. is_vel .and. n.eq.3) then
-            st = st - HALF * (wtrans(i,j,k)+wtrans(i,j,k+1))*(w0(k+1)-w0(k))/hz
+             if(k .ge. ke) then
+                st = st - HALF * (wtrans(i,j,k)+wtrans(i,j,k+1))*(w0(k)-w0(k))/hz
+             else if(k .lt. ks) then
+                st = st - HALF * (wtrans(i,j,k)+wtrans(i,j,k+1))*(w0(k+1)-w0(k+1))/hz
+             else
+                st = st - HALF * (wtrans(i,j,k)+wtrans(i,j,k+1))*(w0(k+1)-w0(k))/hz
+             endif
           end if
 
           wbardth = dth/hz * ( u(i,j,k,3) + w0_cart_vec(i,j,k,3))
