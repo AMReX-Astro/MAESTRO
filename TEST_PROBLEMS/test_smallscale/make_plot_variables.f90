@@ -493,35 +493,35 @@ contains
     !     Local variables
     integer          :: i, j, k
     real (kind=dp_t) :: vel
-    real (kind=dp_t), allocatable :: gam10(:), entr0(:)
+!    real (kind=dp_t), allocatable :: gam10(:), entr0(:)
 
-    allocate(gam10(lo(3):hi(3)))
-    allocate(entr0(lo(3):hi(3)))
+!    allocate(gam10(lo(3):hi(3)))
+!    allocate(entr0(lo(3):hi(3)))
 
     do_diag = .false.
 
     ! We now assume that the temperature coming in in the base state is correct, but
     !   we do this eos call to get gam10 and entr0.
-    do k = lo(3), hi(3)
-        den_row(1) = s0(k,rho_comp)
-       temp_row(1) = s0(k,temp_comp)
-          p_row(1) = p0(k)
-       xn_zone(:) = s0(k,spec_comp:spec_comp+nspec-1)/den_row(1)
+!    do k = lo(3), hi(3)
+!        den_row(1) = s0(k,rho_comp)
+!       temp_row(1) = s0(k,temp_comp)
+!          p_row(1) = p0(k)
+!       xn_zone(:) = s0(k,spec_comp:spec_comp+nspec-1)/den_row(1)
 
        ! (rho,P) --> T,h
-       call eos(eos_input_rp, den_row, temp_row, &
-                npts, nspec, &
-                xn_zone, aion, zion, &
-                p_row, h_row, e_row, & 
-                cv_row, cp_row, xne_row, eta_row, pele_row, &
-                dpdt_row, dpdr_row, dedt_row, dedr_row, &
-                dpdX_row, dhdX_row, &
-                gam1_row, cs_row, s_row, &
-                dsdt_row, dsdr_row, &
-                do_diag)
-     gam10(k) = gam1_row(1)
-     entr0(k) = s_row(1)
-    end do
+!       call eos(eos_input_rp, den_row, temp_row, &
+!                npts, nspec, &
+!                xn_zone, aion, zion, &
+!                p_row, h_row, e_row, & 
+!                cv_row, cp_row, xne_row, eta_row, pele_row, &
+!                dpdt_row, dpdr_row, dedt_row, dedr_row, &
+!                dpdX_row, dhdX_row, &
+!                gam1_row, cs_row, s_row, &
+!                dsdt_row, dsdr_row, &
+!                do_diag)
+!     gam10(k) = gam1_row(1)
+!     entr0(k) = s_row(1)
+!    end do
 
     ! Then compute the perturbation and Mach number
     do k = lo(3), hi(3)
@@ -554,14 +554,16 @@ contains
              vel = sqrt(u(i,j,k,1)*u(i,j,k,1) + u(i,j,k,2)*u(i,j,k,2) + u(i,j,k,3)*u(i,j,k,3))
              machno(i,j,k) = vel / cs_row(1)
 
-             deltagamma(i,j,k) = gam1_row(1) - gam10(k)
-
-             spert(i,j,k) = s_row(1) - entr0(k)
+!             deltagamma(i,j,k) = gam1_row(1) - gam10(k)
+!             spert(i,j,k) = s_row(1) - entr0(k)
           enddo
        enddo
     enddo
 
-    deallocate(gam10)
+    deltagamma = 0.d0
+    spert = 0.d0
+
+!    deallocate(gam10)
 
    end subroutine maketfromrho_3d_cart
 
