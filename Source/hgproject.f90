@@ -153,7 +153,9 @@ subroutine hgproject(proj_type,mla,unew,uold,rhohalf,p,gp,dx,dt,the_bc_tower, &
      call setval(phi(n),ZERO,all=.true.)
   end do
 
-  call enforce_outflow_on_divu_rhs(divu_rhs,the_bc_tower)
+  if (present(divu_rhs)) then
+     call enforce_outflow_on_divu_rhs(divu_rhs,the_bc_tower)
+  endif
 
   if (present(eps_in)) then
     call hg_multigrid(mla,unew,rhohalf,phi,dx,the_bc_tower, &
