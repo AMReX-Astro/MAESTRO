@@ -183,7 +183,7 @@ contains
 
           call eos(eos_input_rh, den_row, temp_row, &
                    npts, nspec, &
-                   xn_zone, aion, zion, &
+                   xn_zone, &
                    p_row, h_row, e_row, &
                    cv_row, cp_row, xne_row, eta_row, pele_row, &
                    dpdt_row, dpdr_row, dedt_row, dedr_row, &
@@ -240,7 +240,7 @@ contains
 
              call eos(eos_input_rh, den_row, temp_row, &
                       npts, nspec, &
-                      xn_zone, aion, zion, &
+                      xn_zone, &
                       p_row, h_row, e_row, &
                       cv_row, cp_row, xne_row, eta_row, pele_row, &
                       dpdt_row, dpdr_row, dedt_row, dedr_row, &
@@ -300,7 +300,7 @@ contains
              ! (rho, H) --> T, p
              call eos(eos_input_rh, den_row, temp_row, &
                       npts, nspec, &
-                      xn_zone, aion, zion, &
+                      xn_zone, &
                       p_row, h_row, e_row, &
                       cv_row, cp_row, xne_row, eta_row, pele_row, &
                       dpdt_row, dpdr_row, dedt_row, dedr_row, &
@@ -417,7 +417,7 @@ contains
 
 !      call eos(eos_input_rp, den_row, temp_row, &
 !               npts, nspec, &
-!               xn_zone, aion, zion, &
+!               xn_zone, &
 !               p_row, h_row, e_row, & 
 !               cv_row, cp_row, xne_row, eta_row, pele_row, &
 !               dpdt_row, dpdr_row, dedt_row, dedr_row, &
@@ -442,7 +442,7 @@ contains
           ! (rho,P) --> T,h
           call eos(eos_input_rp, den_row, temp_row, &
                    npts, nspec, &
-                   xn_zone, aion, zion, &
+                   xn_zone, &
                    p_row, h_row, e_row, & 
                    cv_row, cp_row, xne_row, eta_row, pele_row, &
                    dpdt_row, dpdr_row, dedt_row, dedr_row, &
@@ -511,7 +511,7 @@ contains
        ! (rho,P) --> T,h
 !       call eos(eos_input_rp, den_row, temp_row, &
 !                npts, nspec, &
-!                xn_zone, aion, zion, &
+!                xn_zone, &
 !                p_row, h_row, e_row, & 
 !                cv_row, cp_row, xne_row, eta_row, pele_row, &
 !                dpdt_row, dpdr_row, dedt_row, dedr_row, &
@@ -536,7 +536,7 @@ contains
              ! (rho,P) --> T,h
              call eos(eos_input_rp, den_row, temp_row, &
                       npts, nspec, &
-                      xn_zone, aion, zion, &
+                      xn_zone, &
                       p_row, h_row, e_row, & 
                       cv_row, cp_row, xne_row, eta_row, pele_row, &
                       dpdt_row, dpdr_row, dedt_row, dedr_row, &
@@ -615,7 +615,7 @@ contains
        ! (rho,P) --> T,h
        call eos(eos_input_rp, den_row, temp_row, &
                 npts, nspec, &
-                xn_zone, aion, zion, &
+                xn_zone, &
                 p_row, h_row, e_row, & 
                 cv_row, cp_row, xne_row, eta_row, pele_row, &
                 dpdt_row, dpdr_row, dedt_row, dedr_row, &
@@ -655,7 +655,7 @@ contains
              ! (rho,P) --> T,h
              call eos(eos_input_rp, den_row, temp_row, &
                       npts, nspec, &
-                      xn_zone, aion, zion, &
+                      xn_zone, &
                       p_row, h_row, e_row, & 
                       cv_row, cp_row, xne_row, eta_row, pele_row, &
                       dpdt_row, dpdr_row, dedt_row, dedr_row, &

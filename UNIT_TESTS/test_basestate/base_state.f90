@@ -218,7 +218,7 @@ contains
          ! (rho,T) --> p,h
          call eos(eos_input_rt, den_row, temp_row, &
                   npts, nspec, &
-                  xn_ambient, aion, zion, &
+                  xn_ambient, &
                   p_row, h_row, e_row, &
                   cv_row, cp_row, xne_row, eta_row, pele_row, &
                   dpdt_row, dpdr_row, dedt_row, dedr_row, &

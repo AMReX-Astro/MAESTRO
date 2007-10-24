@@ -6,7 +6,6 @@ module init_module
   use define_bc_module
   use multifab_module
   use fill_3d_module
-  use eos_module
   use variables
   use network
   use geometry

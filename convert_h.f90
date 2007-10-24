@@ -7,9 +7,9 @@ module convert_h
   use boxarray_module
   use stencil_module
   use macproject_module
-  use eos_module
   use fill_3d_module
   use probin_module
+  use network
 
   implicit none
 

@@ -64,27 +64,27 @@ contains
 
     ! given P, T, and X, compute rho
     call eos(eos_input_tp, den_row, temp_row, &
-         npts, nspec, &
-         xn_zone, aion, zion, &
-         p_row, h_row, e_row, & 
-         cv_row, cp_row, xne_row, eta_row, pele_row, &
-         dpdt_row, dpdr_row, dedt_row, dedr_row, &
-         dpdX_row, dhdX_row, &
-         gam1_row, cs_row, s_row, &
-         dsdt_row, dsdr_row, &
-         do_diag)
+             npts, nspec, &
+             xn_zone, &
+             p_row, h_row, e_row, & 
+             cv_row, cp_row, xne_row, eta_row, pele_row, &
+             dpdt_row, dpdr_row, dedt_row, dedr_row, &
+             dpdX_row, dhdX_row, &
+             gam1_row, cs_row, s_row, &
+             dsdt_row, dsdr_row, &
+             do_diag)
 
     ! given rho, T, and X, compute h
     call eos(eos_input_rt, den_row, temp_row, &
-         npts, nspec, &
-         xn_zone, aion, zion, &
-         p_row, h_row, e_row, & 
-         cv_row, cp_row, xne_row, eta_row, pele_row, &
-         dpdt_row, dpdr_row, dedt_row, dedr_row, &
-         dpdX_row, dhdX_row, &
-         gam1_row, cs_row, s_row, &
-         dsdt_row, dsdr_row, &
-         do_diag)
+             npts, nspec, &
+             xn_zone, &
+             p_row, h_row, e_row, & 
+             cv_row, cp_row, xne_row, eta_row, pele_row, &
+             dpdt_row, dpdr_row, dedt_row, dedr_row, &
+             dpdX_row, dhdX_row, &
+             gam1_row, cs_row, s_row, &
+             dsdt_row, dsdr_row, &
+             do_diag)
 
     INLET_VN = 0.0d0
     INLET_VT = 0.0d0
@@ -136,7 +136,7 @@ contains
        ! given P, T, and X, compute rho
        call eos(eos_input_tp, den_row, temp_row, &
                 npts, nspec, &
-                xn_zone, aion, zion, &
+                xn_zone, &
                 p_row, h_row, e_row, & 
                 cv_row, cp_row, xne_row, eta_row, pele_row, &
                 dpdt_row, dpdr_row, dedt_row, dedr_row, &
@@ -148,7 +148,7 @@ contains
        ! given rho, T, and X, compute h.
        call eos(eos_input_rt, den_row, temp_row, &
                 npts, nspec, &
-                xn_zone, aion, zion, &
+                xn_zone, &
                 p_row, h_row, e_row, & 
                 cv_row, cp_row, xne_row, eta_row, pele_row, &
                 dpdt_row, dpdr_row, dedt_row, dedr_row, &
