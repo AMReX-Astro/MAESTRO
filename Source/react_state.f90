@@ -142,7 +142,7 @@ contains
 !
 !          den_row(1) = rho
 !          h_row(1) = h_out
-!          xn_zone(:) = x_out(1:nspec)
+!          xn_zone(1,:) = x_out(1:nspec)
 !          temp_row(1) = T_in
 !
 !          call eos(eos_input_rh, den_row, temp_row, &
@@ -223,7 +223,7 @@ contains
 !
 !          den_row(1) = rho
 !          h_row(1) = h_out
-!          xn_zone(:) = x_out(1:nspec)
+!          xn_zone(1,:) = x_out(1:nspec)
 !          temp_row(1) = T_in
 !
 !          call eos(eos_input_rh, den_row, temp_row, &

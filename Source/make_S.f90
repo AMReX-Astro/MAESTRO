@@ -90,7 +90,7 @@ contains
 
            den_row(1) = s(i,j,rho_comp)
            temp_row(1) = s(i,j,temp_comp)
-           xn_zone(:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
+           xn_zone(1,:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
            
            ! dens, temp, and xmass are inputs
            call eos(eos_input_rt, den_row, temp_row, &
@@ -168,7 +168,7 @@ contains
               else
                 temp_row(1) = t0_cart(i,j,k)
               end if
-              xn_zone(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
+              xn_zone(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
 
               ! dens, temp, and xmass are inputs
               call eos(eos_input_rt, den_row, temp_row, &

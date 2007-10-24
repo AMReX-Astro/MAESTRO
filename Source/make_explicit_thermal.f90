@@ -303,7 +303,7 @@ subroutine make_coeffs_2d(lo,hi,dx,p0,s,Tcoeff,hcoeff,Xkcoeff,pcoeff)
 
         den_row(1) = s(i,j,rho_comp)
         temp_row(1) = s(i,j,temp_comp)
-        xn_zone(:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
+        xn_zone(1,:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
 
         ! dens, temp, and xmass are inputs
         do_diag = .false.
@@ -368,7 +368,7 @@ subroutine make_coeffs_3d(lo,hi,dx,p0,s,Tcoeff,hcoeff,Xkcoeff,pcoeff)
            
            den_row(1) = s(i,j,k,rho_comp)
            temp_row(1) = s(i,j,k,temp_comp)
-           xn_zone(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
+           xn_zone(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
 
            ! dens, temp, and xmass are inputs
            do_diag = .false.

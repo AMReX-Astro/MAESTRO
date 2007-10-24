@@ -282,7 +282,7 @@ subroutine varden()
         ! (rho, T) --> p,h, etc
         den_row(1)  = s0(i,rho_comp)
         temp_row(1) = s0(i,temp_comp)
-        xn_zone(:) = s0(i,spec_comp:spec_comp-1+nspec)/s0(i,rho_comp)
+        xn_zone(1,:) = s0(i,spec_comp:spec_comp-1+nspec)/s0(i,rho_comp)
         
         call eos(eos_input_rt, den_row, temp_row, NP, nspec, &
                  xn_zone, &

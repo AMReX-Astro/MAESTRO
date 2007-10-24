@@ -52,11 +52,11 @@ contains
     temp_row(1) = state1d(9)
     do j=1,nspec
        if(spec_names(j) .eq. "carbon-12") then
-          xn_zone(j) = state1d(21)
+          xn_zone(1,j) = state1d(21)
        else if(spec_names(j) .eq. "magnesium-24") then
-          xn_zone(j) = state1d(22)
+          xn_zone(1,j) = state1d(22)
        else if(spec_names(j) .eq. "oxygen-16") then
-          xn_zone(j) = state1d(23)
+          xn_zone(1,j) = state1d(23)
        else
           print*,"In initdata, spec_names(",j,") invalid"
        endif
@@ -92,7 +92,7 @@ contains
     if(use_big_h) then
        qreact = 0.0d0
        do j=1,nspec
-          qreact = qreact + ebin(j)*xn_zone(j)
+          qreact = qreact + ebin(j)*xn_zone(1,j)
        enddo
        INLET_RHOH = den_row(1)*(h_row(1) + qreact)
     else
@@ -100,11 +100,11 @@ contains
     endif
     do j=1,nspec
        if(spec_names(j) .eq. "carbon-12") then
-          INLET_RHOC12 = den_row(1)*xn_zone(j)
+          INLET_RHOC12 = den_row(1)*xn_zone(1,j)
        else if(spec_names(j) .eq. "magnesium-24") then
-          INLET_RHOMG24 = den_row(1)*xn_zone(j)
+          INLET_RHOMG24 = den_row(1)*xn_zone(1,j)
        else if(spec_names(j) .eq. "oxygen-16") then
-          INLET_RHOO16 = den_row(1)*xn_zone(j)
+          INLET_RHOO16 = den_row(1)*xn_zone(1,j)
        endif
     enddo
     INLET_TEMP = temp_row(1)
@@ -125,11 +125,11 @@ contains
        temp_row(1) = state1d(9)
        do j=1,nspec
           if(spec_names(j) .eq. "carbon-12") then
-             xn_zone(j) = state1d(21)
+             xn_zone(1,j) = state1d(21)
           else if(spec_names(j) .eq. "magnesium-24") then
-             xn_zone(j) = state1d(22)
+             xn_zone(1,j) = state1d(22)
           else if(spec_names(j) .eq. "oxygen-16") then
-             xn_zone(j) = state1d(23)
+             xn_zone(1,j) = state1d(23)
           endif
        enddo
 
@@ -161,7 +161,7 @@ contains
        if(use_big_h) then
           qreact = ZERO
           do j=1,nspec
-             qreact = qreact + ebin(j)*xn_zone(j)
+             qreact = qreact + ebin(j)*xn_zone(1,j)
           enddo
           temporary = h_row(1) + qreact
           s0(i,rhoh_comp) = den_row(1)*temporary
@@ -169,7 +169,7 @@ contains
           s0(i,rhoh_comp) = den_row(1)*h_row(1)
        endif
        do j=1,nspec
-          s0(i,spec_comp+j-1) = den_row(1)*xn_zone(j)
+          s0(i,spec_comp+j-1) = den_row(1)*xn_zone(1,j)
        enddo
        s0(i,trac_comp) = 0.0d0
        s0(i,temp_comp) = temp_row(1)

@@ -355,7 +355,7 @@ contains
     temp_row(1) = temp
     p_row(1) = p0
     den_row(1) = s0(rho_comp)
-    xn_zone(:) = s0(spec_comp:spec_comp+nspec-1)/s0(rho_comp)
+    xn_zone(1,:) = s0(spec_comp:spec_comp+nspec-1)/s0(rho_comp)
 
     call eos(eos_input_tp, den_row, temp_row, &
              npts, nspec, &
@@ -370,7 +370,7 @@ contains
 
     dens_pert = den_row(1)
     rhoh_pert = den_row(1)*h_row(1)
-    rhoX_pert(:) = dens_pert*xn_zone(:)
+    rhoX_pert(:) = dens_pert*xn_zone(1,:)
 
     temp_pert = temp
     
@@ -433,7 +433,7 @@ contains
     temp_row(1) = temp
     p_row(1) = p0
     den_row(1) = s0(rho_comp)
-    xn_zone(:) = s0(spec_comp:spec_comp+nspec-1)/s0(rho_comp)
+    xn_zone(1,:) = s0(spec_comp:spec_comp+nspec-1)/s0(rho_comp)
 
     call eos(eos_input_tp, den_row, temp_row, &
              npts, nspec, &
@@ -448,7 +448,7 @@ contains
 
     dens_pert = den_row(1)
     rhoh_pert = den_row(1)*h_row(1)
-    rhoX_pert(:) = dens_pert*xn_zone(:)
+    rhoX_pert(:) = dens_pert*xn_zone(1,:)
 
     temp_pert = temp
     

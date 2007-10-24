@@ -169,12 +169,12 @@ contains
           den_row(1)  = state(i,j,rho_comp)
           p_row(1)    = p0(j)
           temp_row(1) = t0(j)
-          xn_zone(:) = state(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
+          xn_zone(1,:) = state(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
 
           qreact = 0.0d0
           if(use_big_h) then
              do n=1,nspec
-                qreact = qreact + ebin(n)*xn_zone(n)
+                qreact = qreact + ebin(n)*xn_zone(1,n)
              enddo
              h_row(1) = state(i,j,rhoh_comp) / state(i,j,rho_comp) - qreact
           else
@@ -226,12 +226,12 @@ contains
               den_row(1)  = state(i,j,k,rho_comp)
              p_row(1)    = p0(k)
              temp_row(1) = t0(k)
-             xn_zone(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
+             xn_zone(1,:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
 
              qreact = 0.0d0
              if(use_big_h) then
                 do n=1,nspec
-                   qreact = qreact + ebin(n)*xn_zone(n)
+                   qreact = qreact + ebin(n)*xn_zone(1,n)
                 enddo
                 h_row(1) = state(i,j,k,rhoh_comp)/state(i,j,k,rho_comp) - qreact
              else
@@ -295,7 +295,7 @@ contains
              endif
              p_row(1)    = p0_cart(i,j,k)
              temp_row(1) = t0_cart(i,j,k)
-             xn_zone(:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
+             xn_zone(1,:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
 
              ! (rho, H) --> T, p
              call eos(eos_input_rh, den_row, temp_row, &
@@ -411,7 +411,7 @@ contains
         den_row(1) = s0(j,rho_comp)
        temp_row(1) = s0(j,temp_comp)
           p_row(1) = p0(j)
-       xn_zone(:) = s0(j,spec_comp:spec_comp+nspec-1)/den_row(1)
+       xn_zone(1,:) = s0(j,spec_comp:spec_comp+nspec-1)/den_row(1)
 
        ! (rho,P) --> T,h
        call eos(eos_input_rp, den_row, temp_row, &
@@ -436,7 +436,7 @@ contains
           den_row(1) = s(i,j,rho_comp)
           temp_row(1) = s0(j,temp_comp)
           p_row(1) = p0(j)
-          xn_zone(:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
+          xn_zone(1,:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
 
           ! (rho,P) --> T,h
           call eos(eos_input_rp, den_row, temp_row, &
@@ -503,7 +503,7 @@ contains
         den_row(1) = s0(k,rho_comp)
        temp_row(1) = s0(k,temp_comp)
           p_row(1) = p0(k)
-       xn_zone(:) = s0(k,spec_comp:spec_comp+nspec-1)/den_row(1)
+       xn_zone(1,:) = s0(k,spec_comp:spec_comp+nspec-1)/den_row(1)
 
        ! (rho,P) --> T,h
        call eos(eos_input_rp, den_row, temp_row, &
@@ -528,7 +528,7 @@ contains
              den_row(1) = s(i,j,k,rho_comp)
              temp_row(1) = s0(k,temp_comp)
              p_row(1) = p0(k)
-             xn_zone(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
+             xn_zone(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
 
              ! (rho,P) --> T,h
              call eos(eos_input_rp, den_row, temp_row, &
@@ -605,7 +605,7 @@ contains
         den_row(1) = s0(k,rho_comp)
        temp_row(1) = s0(k,temp_comp)
           p_row(1) = p0(k)
-        xn_zone(:) = s0(k,spec_comp:spec_comp+nspec-1)/den_row(1)
+        xn_zone(1,:) = s0(k,spec_comp:spec_comp+nspec-1)/den_row(1)
 
        ! (rho,P) --> T,h
        call eos(eos_input_rp, den_row, temp_row, &
@@ -645,7 +645,7 @@ contains
               den_row(1) = s(i,j,k,rho_comp)
              temp_row(1) = t0_cart(i,j,k)
                 p_row(1) = p0_cart(i,j,k)
-              xn_zone(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
+              xn_zone(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
 
              ! (rho,P) --> T,h
              call eos(eos_input_rp, den_row, temp_row, &

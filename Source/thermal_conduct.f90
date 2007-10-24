@@ -1391,7 +1391,7 @@ subroutine compute_thermo_quantities_2d(lo,hi,dt,s,hcoeff,Xkcoeff,pcoeff)
 
         den_row(1) = s(i,j,rho_comp)
         temp_row(1) = s(i,j,temp_comp)
-        xn_zone(:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
+        xn_zone(1,:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
 
         do_diag = .false.
 
@@ -1456,7 +1456,7 @@ subroutine compute_thermo_quantities_3d(lo,hi,dt,t0,s,hcoeff,Xkcoeff,pcoeff)
 
            den_row(1) = s(i,j,k,rho_comp)
            temp_row(1) = s(i,j,k,temp_comp)
-           xn_zone(:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
+           xn_zone(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
 
            do_diag = .false.
 

@@ -47,7 +47,7 @@ contains
          p_row(1)    = p0_in(j)
 
          do n = spec_comp,spec_comp+nspec-1
-           xn_zone(n-spec_comp+1) = s0_out(j,n)/s0_out(j,rho_comp)
+           xn_zone(1,n-spec_comp+1) = s0_out(j,n)/s0_out(j,rho_comp)
          end do
 
          s0_out(j,rhoh_comp) = s0_in(j,rhoh_comp)

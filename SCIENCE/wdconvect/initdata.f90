@@ -505,7 +505,7 @@ contains
     temp_row(1) = temp
     p_row(1) = p0
     den_row(1) = s0(rho_comp)
-    xn_zone(:) = s0(spec_comp:spec_comp+nspec-1)/s0(rho_comp)
+    xn_zone(1,:) = s0(spec_comp:spec_comp+nspec-1)/s0(rho_comp)
 
     ! (t, p) -> (rho, h)
 
@@ -522,7 +522,7 @@ contains
 
     dens_pert = den_row(1)
     rhoh_pert = den_row(1)*h_row(1)
-    rhoX_pert(:) = dens_pert*xn_zone(:)
+    rhoX_pert(:) = dens_pert*xn_zone(1,:)
 
     temp_pert = temp
     
@@ -585,7 +585,7 @@ contains
     temp_row(1) = temp
     p_row(1) = p0
     den_row(1) = s0(rho_comp)
-    xn_zone(:) = s0(spec_comp:spec_comp+nspec-1)/s0(rho_comp)
+    xn_zone(1,:) = s0(spec_comp:spec_comp+nspec-1)/s0(rho_comp)
 
     ! (t, p) -> (rho, h)
 
@@ -602,7 +602,7 @@ contains
 
     dens_pert = den_row(1)
     rhoh_pert = den_row(1)*h_row(1)
-    rhoX_pert(:) = dens_pert*xn_zone(:)
+    rhoX_pert(:) = dens_pert*xn_zone(1,:)
 
     temp_pert = temp
     

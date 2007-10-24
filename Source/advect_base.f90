@@ -125,7 +125,7 @@ contains
          den_row(1)  = s0_new(j,rho_comp)
          temp_row(1) = s0_old(j,temp_comp)
          p_row(1)    = p0_new(j)
-         xn_zone(1:) = s0_new(j,spec_comp:spec_comp+nspec-1)/s0_new(j,rho_comp)
+         xn_zone(1,:) = s0_new(j,spec_comp:spec_comp+nspec-1)/s0_new(j,rho_comp)
 
          ! (rho,P) --> T, h
          call eos(eos_input_rp, den_row, temp_row, &
@@ -244,7 +244,7 @@ contains
          den_row(1)  = s0_new(j,rho_comp)
         temp_row(1)  = s0_old(j,temp_comp) 
            p_row(1)  = p0_new(j)
-         xn_zone(1:) = s0_new(j,spec_comp:spec_comp+nspec-1)/s0_new(j,rho_comp)
+         xn_zone(1,:) = s0_new(j,spec_comp:spec_comp+nspec-1)/s0_new(j,rho_comp)
 
          gam1_old(j) = gam1(j)
  
@@ -323,7 +323,7 @@ contains
          den_row(1)  = s0_new(j,rho_comp)
          temp_row(1) = s0_new(j,temp_comp)
          p_row(1)    = p0_new(j)
-         xn_zone(1:) = s0_new(j,spec_comp:spec_comp+nspec-1)/s0_new(j,rho_comp)
+         xn_zone(1,:) = s0_new(j,spec_comp:spec_comp+nspec-1)/s0_new(j,rho_comp)
 
          ! (rho,P) --> T, h
          call eos(eos_input_rp, den_row, temp_row, &
