@@ -142,12 +142,12 @@ contains
 !
 !          den_row(1) = rho
 !          h_row(1) = h_out
-!          xn_zone(1,:) = x_out(1:nspec)
+!          xn_row(1,:) = x_out(1:nspec)
 !          temp_row(1) = T_in
 !
 !          call eos(eos_input_rh, den_row, temp_row, &
 !               npts, nspec, &
-!               xn_zone, &
+!               xn_row, &
 !               p_row, h_row, e_row, &
 !               cv_row, cp_row, xne_row, eta_row, pele_row, &
 !               dpdt_row, dpdr_row, dedt_row, dedr_row, &
@@ -223,12 +223,12 @@ contains
 !
 !          den_row(1) = rho
 !          h_row(1) = h_out
-!          xn_zone(1,:) = x_out(1:nspec)
+!          xn_row(1,:) = x_out(1:nspec)
 !          temp_row(1) = T_in
 !
 !          call eos(eos_input_rh, den_row, temp_row, &
 !               npts, nspec, &
-!               xn_zone, &
+!               xn_row, &
 !               p_row, h_row, e_row, &
 !               cv_row, cp_row, xne_row, eta_row, pele_row, &
 !               dpdt_row, dpdr_row, dedt_row, dedr_row, &

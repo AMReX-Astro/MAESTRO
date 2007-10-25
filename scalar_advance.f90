@@ -978,13 +978,13 @@ contains
 
          temp_row(1) = sx(i,j,temp_comp)
           den_row(1) = sx(i,j,rho_comp) + HALF * (s0_old(j,rho_comp) + s0_new(j,rho_comp))
-          xn_zone(1,:) = (sx(i,j,spec_comp:spec_comp+nspec-1)  + &
+          xn_row(1,:) = (sx(i,j,spec_comp:spec_comp+nspec-1)  + &
                        HALF * ( s0_old(j,spec_comp:spec_comp+nspec-1) + &
                                 s0_new(j,spec_comp:spec_comp+nspec-1) ) ) /den_row(1) 
 
          call eos(eos_input_rt, den_row, temp_row, &
                   npts, nspec, &
-                  xn_zone, &
+                  xn_row, &
                   p_row, h_row, e_row, &
                   cv_row, cp_row, xne_row, eta_row, pele_row, &
                   dpdt_row, dpdr_row, dedt_row, dedr_row, &
@@ -998,7 +998,7 @@ contains
          qreact = 0.0d0
          if(use_big_h) then
             do n=1,nspec
-               qreact = qreact + ebin(n)*xn_zone(1,n)
+               qreact = qreact + ebin(n)*xn_row(1,n)
             enddo
             sx(i,j,rhoh_comp) = sx(i,j,rhoh_comp) + den_row(1) * qreact
          endif
@@ -1022,13 +1022,13 @@ contains
 
          temp_row(1) = sy(i,j,temp_comp)
           den_row(1) = sy(i,j,rho_comp) + HALF * (s0_edge_old(j,rho_comp) + s0_edge_new(j,rho_comp))
-          xn_zone(1,:) = (sy(i,j,spec_comp:spec_comp+nspec-1)  + &
+          xn_row(1,:) = (sy(i,j,spec_comp:spec_comp+nspec-1)  + &
                       HALF * ( s0_edge_old(j,spec_comp:spec_comp+nspec-1) + &
                                s0_edge_new(j,spec_comp:spec_comp+nspec-1) ) ) /den_row(1) 
 
          call eos(eos_input_rt, den_row, temp_row, &
                   npts, nspec, &
-                  xn_zone, &
+                  xn_row, &
                   p_row, h_row, e_row, &
                   cv_row, cp_row, xne_row, eta_row, pele_row, &
                   dpdt_row, dpdr_row, dedt_row, dedr_row, &
@@ -1042,7 +1042,7 @@ contains
          qreact = 0.0d0
          if(use_big_h) then
             do n=1,nspec
-               qreact = qreact + ebin(n)*xn_zone(1,n)
+               qreact = qreact + ebin(n)*xn_row(1,n)
             enddo
             sy(i,j,rhoh_comp) = sy(i,j,rhoh_comp) + den_row(1) * qreact
          endif
@@ -1094,13 +1094,13 @@ contains
 
          temp_row(1) = sx(i,j,k,temp_comp)
           den_row(1) = sx(i,j,k,rho_comp) + HALF * (s0_old(k,rho_comp) + s0_new(k,rho_comp))
-          xn_zone(1,:) = (sx(i,j,k,spec_comp:spec_comp+nspec-1)  + &
+          xn_row(1,:) = (sx(i,j,k,spec_comp:spec_comp+nspec-1)  + &
                        HALF * ( s0_old(k,spec_comp:spec_comp+nspec-1) + &
                                 s0_new(k,spec_comp:spec_comp+nspec-1) ) ) /den_row(1) 
 
          call eos(eos_input_rt, den_row, temp_row, &
                   npts, nspec, &
-                  xn_zone, &
+                  xn_row, &
                   p_row, h_row, e_row, &
                   cv_row, cp_row, xne_row, eta_row, pele_row, &
                   dpdt_row, dpdr_row, dedt_row, dedr_row, &
@@ -1114,7 +1114,7 @@ contains
          qreact = 0.0d0
          if(use_big_h) then
             do n=1,nspec
-               qreact = qreact + ebin(n)*xn_zone(1,n)
+               qreact = qreact + ebin(n)*xn_row(1,n)
             enddo
             sx(i,j,k,rhoh_comp) = sx(i,j,k,rhoh_comp) + sx(i,j,k,rho_comp) * qreact
          endif
@@ -1142,13 +1142,13 @@ contains
 
          temp_row(1) = sy(i,j,k,temp_comp)
           den_row(1) = sy(i,j,k,rho_comp) + HALF * (s0_old(k,rho_comp) + s0_new(k,rho_comp))
-          xn_zone(1,:) = (sy(i,j,k,spec_comp:spec_comp+nspec-1)  + &
+          xn_row(1,:) = (sy(i,j,k,spec_comp:spec_comp+nspec-1)  + &
                        HALF * ( s0_old(k,spec_comp:spec_comp+nspec-1) + &
                                 s0_new(k,spec_comp:spec_comp+nspec-1) ) ) /den_row(1) 
 
          call eos(eos_input_rt, den_row, temp_row, &
                   npts, nspec, &
-                  xn_zone, &
+                  xn_row, &
                   p_row, h_row, e_row, &
                   cv_row, cp_row, xne_row, eta_row, pele_row, &
                   dpdt_row, dpdr_row, dedt_row, dedr_row, &
@@ -1162,7 +1162,7 @@ contains
          qreact = 0.0d0
          if(use_big_h) then
             do n=1,nspec
-               qreact = qreact + ebin(n)*xn_zone(1,n)
+               qreact = qreact + ebin(n)*xn_row(1,n)
             enddo
             sy(i,j,k,rhoh_comp) = sy(i,j,k,rhoh_comp) + sy(i,j,k,rho_comp) * qreact
          endif
@@ -1190,13 +1190,13 @@ contains
 
          temp_row(1) = sz(i,j,k,temp_comp)
           den_row(1) = sz(i,j,k,rho_comp) + HALF * (s0_edge_old(k,rho_comp) + s0_edge_new(k,rho_comp))
-          xn_zone(1,:) = (sz(i,j,k,spec_comp:spec_comp+nspec-1)  + &
+          xn_row(1,:) = (sz(i,j,k,spec_comp:spec_comp+nspec-1)  + &
                         HALF * ( s0_edge_old(k,spec_comp:spec_comp+nspec-1) + &
                                  s0_edge_new(k,spec_comp:spec_comp+nspec-1) ) ) /den_row(1)
 
          call eos(eos_input_rt, den_row, temp_row, &
                   npts, nspec, &
-                  xn_zone, &
+                  xn_row, &
                   p_row, h_row, e_row, &
                   cv_row, cp_row, xne_row, eta_row, pele_row, &
                   dpdt_row, dpdr_row, dedt_row, dedr_row, &
@@ -1210,7 +1210,7 @@ contains
          qreact = 0.0d0
          if(use_big_h) then
             do n=1,nspec
-               qreact = qreact + ebin(n)*xn_zone(1,n)
+               qreact = qreact + ebin(n)*xn_row(1,n)
             enddo
             sz(i,j,k,rhoh_comp) = sz(i,j,k,rhoh_comp) + sz(i,j,k,rho_comp) * qreact
          endif
@@ -1243,12 +1243,12 @@ contains
 
           den_row(1)  = state(i,j,rho_comp)
           temp_row(1) = t0(j)
-          xn_zone(1,:) = state(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
+          xn_row(1,:) = state(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
 
           qreact = 0.0d0
           if(use_big_h) then
              do n=1,nspec
-                qreact = qreact + ebin(n)*xn_zone(1,n)
+                qreact = qreact + ebin(n)*xn_row(1,n)
              enddo
              h_row(1) = state(i,j,rhoh_comp) / state(i,j,rho_comp) - qreact
           else
@@ -1257,7 +1257,7 @@ contains
 
           call eos(eos_input_rh, den_row, temp_row, &
                    npts, nspec, &
-                   xn_zone, &
+                   xn_row, &
                    p_row, h_row, e_row, &
                    cv_row, cp_row, xne_row, eta_row, pele_row, &
                    dpdt_row, dpdr_row, dedt_row, dedr_row, &
@@ -1294,12 +1294,12 @@ contains
 
           den_row(1)  = state(i,j,k,rho_comp)
           temp_row(1) = t0(k)
-          xn_zone(1,:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
+          xn_row(1,:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
 
           qreact = 0.0d0
           if(use_big_h) then
              do n=1,nspec
-                qreact = qreact + ebin(n)*xn_zone(1,n)
+                qreact = qreact + ebin(n)*xn_row(1,n)
              enddo
              h_row(1) = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp) - qreact
           else
@@ -1308,7 +1308,7 @@ contains
 
           call eos(eos_input_rh, den_row, temp_row, &
                    npts, nspec, &
-                   xn_zone, &
+                   xn_row, &
                    p_row, h_row, e_row, &
                    cv_row, cp_row, xne_row, eta_row, pele_row, &
                    dpdt_row, dpdr_row, dedt_row, dedr_row, &

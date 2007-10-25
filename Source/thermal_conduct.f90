@@ -1391,13 +1391,13 @@ subroutine compute_thermo_quantities_2d(lo,hi,dt,s,hcoeff,Xkcoeff,pcoeff)
 
         den_row(1) = s(i,j,rho_comp)
         temp_row(1) = s(i,j,temp_comp)
-        xn_zone(1,:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
+        xn_row(1,:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
 
         do_diag = .false.
 
         call conducteos(eos_input_rt, den_row, temp_row, &
                  npts, nspec, &
-                 xn_zone, &
+                 xn_row, &
                  p_row, h_row, e_row, & 
                  cv_row, cp_row, xne_row, eta_row, pele_row, &
                  dpdt_row, dpdr_row, dedt_row, dedr_row, &
@@ -1456,13 +1456,13 @@ subroutine compute_thermo_quantities_3d(lo,hi,dt,t0,s,hcoeff,Xkcoeff,pcoeff)
 
            den_row(1) = s(i,j,k,rho_comp)
            temp_row(1) = s(i,j,k,temp_comp)
-           xn_zone(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
+           xn_row(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
 
            do_diag = .false.
 
            call conducteos(eos_input_rt, den_row, temp_row, &
                            npts, nspec, &
-                           xn_zone, &
+                           xn_row, &
                            p_row, h_row, e_row, & 
                            cv_row, cp_row, xne_row, eta_row, pele_row, &
                            dpdt_row, dpdr_row, dedt_row, dedr_row, &

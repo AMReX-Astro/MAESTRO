@@ -214,11 +214,12 @@ contains
          temp_row(1) = t_ambient
          den_row(1)  = d_ambient
          p_row(1)    = p_ambient
-  
+         xn_row(1,:) = xn_ambient(:)
+
          ! (rho,T) --> p,h
          call eos(eos_input_rt, den_row, temp_row, &
                   npts, nspec, &
-                  xn_ambient, &
+                  xn_row, &
                   p_row, h_row, e_row, &
                   cv_row, cp_row, xne_row, eta_row, pele_row, &
                   dpdt_row, dpdr_row, dedt_row, dedr_row, &
