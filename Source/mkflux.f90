@@ -113,11 +113,6 @@ contains
 
       eps = abs_eps * umax
 
-      ! HACK -- NOTE THAT EPS >= 1.0 FOR VELPRED == 1.
-      if (velpred .eq. 1) then
-        eps = max(1.d0,eps)
-      end if
-
 !
 !     Loop for fluxes on x-edges.
 !
@@ -549,10 +544,6 @@ contains
 
       eps = abs_eps * umax
 
-      ! HACK -- NOTE THAT EPS >= 1.0 FOR VELPRED == 1.
-      if (velpred .eq. 1) then
-        eps = max(1.d0,eps)
-      end if
 !
 !     Loop for fluxes on x-edges.
 !
