@@ -53,6 +53,7 @@ f90sources += update_vel.f90
 f90sources += varden.f90
 f90sources += variables.f90
 f90sources += velocity_advance.f90
+f90sources += rhoh_vs_t.f90
 f90sources += write_job_info.f90
 sf90sources += build_info.f90
 
