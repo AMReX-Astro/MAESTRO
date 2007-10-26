@@ -460,11 +460,12 @@ contains
 
   end subroutine perturb_3d
 
-  subroutine scalar_diags (istep,s,s0,dx)
+  subroutine scalar_diags (istep,s,s0,p0,dx)
 
     integer        , intent(in   ) :: istep
     type(multifab) , intent(inout) :: s
     real(kind=dp_t), intent(in)    :: s0(:,:)
+    real(kind=dp_t), intent(in)    :: p0(:)
     real(kind=dp_t), intent(in)    :: dx(:)
 
     real(kind=dp_t), pointer:: sop(:,:,:,:)
@@ -482,7 +483,7 @@ contains
 
        select case (dm)
        case (2)
-          call scalar_diags_2d(istep, sop(:,:,1,:), lo, hi, ng, dx, s0)
+          call scalar_diags_2d(istep, sop(:,:,1,:), lo, hi, ng, dx, s0, p0)
        case (3)
 !         call scalar_diags_3d(istep, sop(:,:,:,:), lo, hi, ng, dx, s0)
        end select
@@ -490,31 +491,61 @@ contains
 
   end subroutine scalar_diags
 
-  subroutine scalar_diags_2d (istep, s,lo,hi,ng,dx,s0)
+  subroutine scalar_diags_2d (istep, s,lo,hi,ng,dx,s0,p0)
 
     integer, intent(in) :: istep, lo(:), hi(:), ng
     real (kind = dp_t), intent(in) ::  s(lo(1)-ng:,lo(2)-ng:,:)  
     real (kind = dp_t), intent(in) :: dx(:)
     real(kind=dp_t)   , intent(in) :: s0(0:,:)
+    real(kind=dp_t)   , intent(in) :: p0(0:)
 
     ! Local variables
     integer :: i, j, n
-    real(kind=dp_t) :: fac, stot, smax
+    real(kind=dp_t) :: fac, stot_pert, grav, mass, mass0
+    real(kind=dp_t), allocatable :: rhoavg(:), pavg(:)
     character(len=11) :: file_name
+    character(len=10) :: file_name2
+    character(len= 8) :: file_name3
 
-    write(unit=file_name,fmt='("rhodiag",i4.4)') istep
+    allocate(rhoavg(lo(2):hi(2))) 
+    allocate(  pavg(lo(2):hi(2))) 
+  
+    grav = 1.5d10
+
+    write(unit=file_name ,fmt='("rhopert",i4.4)') istep
+    write(unit=file_name2,fmt='("rhoavg",i4.4)') istep
+    write(unit=file_name3,fmt='("pavg",i4.4)') istep
     open(90,file=file_name)
+    open(91,file=file_name2)
+    open(92,file=file_name3)
 
     fac = ONE / dble(hi(1)-lo(1)+1)
+    mass  = ZERO
+    mass0 = ZERO
     do j = lo(2), hi(2)
-      stot = ZERO
-      smax = ZERO
+      rhoavg(j) = ZERO
+      stot_pert = ZERO
       do i = lo(1), hi(1)
-         stot = stot + (s(i,j,rho_comp) - s0(j,rho_comp))
-         smax = max(smax,abs(s(i,j,rho_comp) - s0(j,rho_comp)))
+         stot_pert = stot_pert + (s(i,j,rho_comp) - s0(j,rho_comp))
+         rhoavg(j) = rhoavg(j) +  s(i,j,rho_comp)
       enddo
-      write(90,*) j,stot*fac/ s0(j,rho_comp), smax / s0(j,rho_comp)
+      rhoavg(j)  = rhoavg(j) * fac
+      stot_pert  = stot_pert * fac
+      if (j.eq.lo(2)) then
+        pavg(j) = p0(j)
+      else
+        pavg(j) = pavg(j-1) - 0.5d0 * (rhoavg(j-1)+rhoavg(j))*grav*dx(2)
+      end if
+      write(90,*) (dble(j)+HALF)*dx(2),stot_pert
+      write(91,*) (dble(j)+HALF)*dx(2),rhoavg(j)
+      write(92,*) (dble(j)+HALF)*dx(2),p0(j),pavg(j)
+      mass  = mass  + rhoavg(j)
+      mass0 = mass0 + s0(j,rho_comp)
     enddo
+
+!   print *,'TOTAL MASS ',istep, mass, mass0
+
+    deallocate(rhoavg,pavg)
     
   end subroutine scalar_diags_2d
 
