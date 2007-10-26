@@ -8,7 +8,7 @@ module thermal_conduct_module
   use stencil_module
   use macproject_module
   use eos_module
-  use scalar_advance_module
+  use rhoh_vs_t_module
   use probin_module
 
   implicit none
