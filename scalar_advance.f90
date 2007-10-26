@@ -12,6 +12,7 @@ module scalar_advance_module
   use fill_3d_module
   use pert_form_module
   use cell_to_edge_module
+  use rhoh_vs_t_module
   use variables
   use geometry
   use network
