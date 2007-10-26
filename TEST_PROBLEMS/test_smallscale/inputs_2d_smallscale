@@ -6,6 +6,8 @@
  prob_hi_x = 0.25
  prob_hi_y = 2.0
 
+ grav_const = 0.e0
+
  max_step  = 300
  init_iter = 1
 

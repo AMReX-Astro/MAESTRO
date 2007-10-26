@@ -5,6 +5,7 @@ module make_grav_module
   use multifab_module
   use variables
   use geometry
+  use probin_module, only: grav_const
 
   implicit none
 
@@ -29,7 +30,7 @@ contains
 
     if (spherical .eq. 0) then
 
-       grav_cell(:) = -1.5d10
+       grav_cell(:) = grav_const
        
     else
 
@@ -71,7 +72,7 @@ contains
 
       if (spherical .eq. 0) then
 
-        grav_edge(:) = -1.5d10
+        grav_edge(:) = grav_const
 
       else
 
