@@ -64,8 +64,8 @@ contains
 
       rr = int( dx(2) / dr + 1.d-12)
 
-      do j = lo(2),hi(2)
-      do i = lo(1),hi(1)
+      do j = lo(2)  ,hi(2)
+      do i = lo(1)-1,hi(1)+1
          vmac(i,j) = vmac(i,j) + mult * w0(rr*j)
       end do
       end do
@@ -86,8 +86,8 @@ contains
       rr = int( dx(3) / dr + 1.d-12)
 
       do k = lo(3),hi(3)
-      do j = lo(2),hi(2)
-      do i = lo(1),hi(1)
+      do j = lo(2)-1,hi(2)+1
+      do i = lo(1)-1,hi(1)+1
          wmac(i,j,k) = wmac(i,j,k) + mult * w0(rr*k)
       end do
       end do
