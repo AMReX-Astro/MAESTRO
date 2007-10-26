@@ -46,68 +46,68 @@ contains
     call asin1d(lamsolfile, -.00125d0, 0.d0, state1d, ndum, .false.)
 
     Pamb = state1d(18)
-    p_row(1) = Pamb
+    p_eos(1) = Pamb
 
-    den_row(1) = state1d(3)
-    temp_row(1) = state1d(9)
+    den_eos(1) = state1d(3)
+    temp_eos(1) = state1d(9)
     do j=1,nspec
        if(spec_names(j) .eq. "carbon-12") then
-          xn_row(1,j) = state1d(21)
+          xn_eos(1,j) = state1d(21)
        else if(spec_names(j) .eq. "magnesium-24") then
-          xn_row(1,j) = state1d(22)
+          xn_eos(1,j) = state1d(22)
        else if(spec_names(j) .eq. "oxygen-16") then
-          xn_row(1,j) = state1d(23)
+          xn_eos(1,j) = state1d(23)
        else
           print*,"In initdata, spec_names(",j,") invalid"
        endif
     enddo
 
     ! given P, T, and X, compute rho
-    call eos(eos_input_tp, den_row, temp_row, &
+    call eos(eos_input_tp, den_eos, temp_eos, &
              npts, nspec, &
-             xn_row, &
-             p_row, h_row, e_row, & 
-             cv_row, cp_row, xne_row, eta_row, pele_row, &
-             dpdt_row, dpdr_row, dedt_row, dedr_row, &
-             dpdX_row, dhdX_row, &
-             gam1_row, cs_row, s_row, &
-             dsdt_row, dsdr_row, &
+             xn_eos, &
+             p_eos, h_eos, e_eos, & 
+             cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+             dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+             dpdX_eos, dhdX_eos, &
+             gam1_eos, cs_eos, s_eos, &
+             dsdt_eos, dsdr_eos, &
              do_diag)
 
     ! given rho, T, and X, compute h
-    call eos(eos_input_rt, den_row, temp_row, &
+    call eos(eos_input_rt, den_eos, temp_eos, &
              npts, nspec, &
-             xn_row, &
-             p_row, h_row, e_row, & 
-             cv_row, cp_row, xne_row, eta_row, pele_row, &
-             dpdt_row, dpdr_row, dedt_row, dedr_row, &
-             dpdX_row, dhdX_row, &
-             gam1_row, cs_row, s_row, &
-             dsdt_row, dsdr_row, &
+             xn_eos, &
+             p_eos, h_eos, e_eos, & 
+             cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+             dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+             dpdX_eos, dhdX_eos, &
+             gam1_eos, cs_eos, s_eos, &
+             dsdt_eos, dsdr_eos, &
              do_diag)
 
     INLET_VN = 0.0d0
     INLET_VT = 0.0d0
-    INLET_RHO = den_row(1)
+    INLET_RHO = den_eos(1)
     if(use_big_h) then
        qreact = 0.0d0
        do j=1,nspec
-          qreact = qreact + ebin(j)*xn_row(1,j)
+          qreact = qreact + ebin(j)*xn_eos(1,j)
        enddo
-       INLET_RHOH = den_row(1)*(h_row(1) + qreact)
+       INLET_RHOH = den_eos(1)*(h_eos(1) + qreact)
     else
-       INLET_RHOH = den_row(1)*h_row(1)
+       INLET_RHOH = den_eos(1)*h_eos(1)
     endif
     do j=1,nspec
        if(spec_names(j) .eq. "carbon-12") then
-          INLET_RHOC12 = den_row(1)*xn_row(1,j)
+          INLET_RHOC12 = den_eos(1)*xn_eos(1,j)
        else if(spec_names(j) .eq. "magnesium-24") then
-          INLET_RHOMG24 = den_row(1)*xn_row(1,j)
+          INLET_RHOMG24 = den_eos(1)*xn_eos(1,j)
        else if(spec_names(j) .eq. "oxygen-16") then
-          INLET_RHOO16 = den_row(1)*xn_row(1,j)
+          INLET_RHOO16 = den_eos(1)*xn_eos(1,j)
        endif
     enddo
-    INLET_TEMP = temp_row(1)
+    INLET_TEMP = temp_eos(1)
     INLET_TRA = 0.0d0
 
     ! Now do the interior cells
@@ -120,61 +120,61 @@ contains
 
        call asin1d(lamsolfile, loloc, hiloc, state1d, ndum, .false.)
 
-       p_row(1) = Pamb
-       den_row(1) = state1d(3)
-       temp_row(1) = state1d(9)
+       p_eos(1) = Pamb
+       den_eos(1) = state1d(3)
+       temp_eos(1) = state1d(9)
        do j=1,nspec
           if(spec_names(j) .eq. "carbon-12") then
-             xn_row(1,j) = state1d(21)
+             xn_eos(1,j) = state1d(21)
           else if(spec_names(j) .eq. "magnesium-24") then
-             xn_row(1,j) = state1d(22)
+             xn_eos(1,j) = state1d(22)
           else if(spec_names(j) .eq. "oxygen-16") then
-             xn_row(1,j) = state1d(23)
+             xn_eos(1,j) = state1d(23)
           endif
        enddo
 
        ! given P, T, and X, compute rho
-       call eos(eos_input_tp, den_row, temp_row, &
+       call eos(eos_input_tp, den_eos, temp_eos, &
                 npts, nspec, &
-                xn_row, &
-                p_row, h_row, e_row, & 
-                cv_row, cp_row, xne_row, eta_row, pele_row, &
-                dpdt_row, dpdr_row, dedt_row, dedr_row, &
-                dpdX_row, dhdX_row, &
-                gam1_row, cs_row, s_row, &
-                dsdt_row, dsdr_row, &
+                xn_eos, &
+                p_eos, h_eos, e_eos, & 
+                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                dpdX_eos, dhdX_eos, &
+                gam1_eos, cs_eos, s_eos, &
+                dsdt_eos, dsdr_eos, &
                 do_diag)
 
        ! given rho, T, and X, compute h.
-       call eos(eos_input_rt, den_row, temp_row, &
+       call eos(eos_input_rt, den_eos, temp_eos, &
                 npts, nspec, &
-                xn_row, &
-                p_row, h_row, e_row, & 
-                cv_row, cp_row, xne_row, eta_row, pele_row, &
-                dpdt_row, dpdr_row, dedt_row, dedr_row, &
-                dpdX_row, dhdX_row, &
-                gam1_row, cs_row, s_row, &
-                dsdt_row, dsdr_row, &
+                xn_eos, &
+                p_eos, h_eos, e_eos, & 
+                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                dpdX_eos, dhdX_eos, &
+                gam1_eos, cs_eos, s_eos, &
+                dsdt_eos, dsdr_eos, &
                 do_diag)
 
-       s0(i,rho_comp) = den_row(1)
+       s0(i,rho_comp) = den_eos(1)
        if(use_big_h) then
           qreact = ZERO
           do j=1,nspec
-             qreact = qreact + ebin(j)*xn_row(1,j)
+             qreact = qreact + ebin(j)*xn_eos(1,j)
           enddo
-          temporary = h_row(1) + qreact
-          s0(i,rhoh_comp) = den_row(1)*temporary
+          temporary = h_eos(1) + qreact
+          s0(i,rhoh_comp) = den_eos(1)*temporary
        else
-          s0(i,rhoh_comp) = den_row(1)*h_row(1)
+          s0(i,rhoh_comp) = den_eos(1)*h_eos(1)
        endif
        do j=1,nspec
-          s0(i,spec_comp+j-1) = den_row(1)*xn_row(1,j)
+          s0(i,spec_comp+j-1) = den_eos(1)*xn_eos(1,j)
        enddo
        s0(i,trac_comp) = 0.0d0
-       s0(i,temp_comp) = temp_row(1)
+       s0(i,temp_comp) = temp_eos(1)
        p0(i) = pamb
-       gam1(i) = gam1_row(1)
+       gam1(i) = gam1_eos(1)
 
     enddo
 

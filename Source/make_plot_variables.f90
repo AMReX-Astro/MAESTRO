@@ -166,36 +166,36 @@ contains
 
           ! (rho, H) --> T, p
             
-          den_row(1)  = state(i,j,rho_comp)
-          p_row(1)    = p0(j)
-          temp_row(1) = t0(j)
-          xn_row(1,:) = state(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
+          den_eos(1)  = state(i,j,rho_comp)
+          p_eos(1)    = p0(j)
+          temp_eos(1) = t0(j)
+          xn_eos(1,:) = state(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
 
           qreact = 0.0d0
           if(use_big_h) then
              do n=1,nspec
-                qreact = qreact + ebin(n)*xn_row(1,n)
+                qreact = qreact + ebin(n)*xn_eos(1,n)
              enddo
-             h_row(1) = state(i,j,rhoh_comp) / state(i,j,rho_comp) - qreact
+             h_eos(1) = state(i,j,rhoh_comp) / state(i,j,rho_comp) - qreact
           else
-             h_row(1) = state(i,j,rhoh_comp) / state(i,j,rho_comp)
+             h_eos(1) = state(i,j,rhoh_comp) / state(i,j,rho_comp)
           endif
 
-          call eos(eos_input_rh, den_row, temp_row, &
+          call eos(eos_input_rh, den_eos, temp_eos, &
                    npts, nspec, &
-                   xn_row, &
-                   p_row, h_row, e_row, &
-                   cv_row, cp_row, xne_row, eta_row, pele_row, &
-                   dpdt_row, dpdr_row, dedt_row, dedr_row, &
-                   dpdX_row, dhdX_row, &
-                   gam1_row, cs_row, s_row, &
-                   dsdt_row, dsdr_row, &
+                   xn_eos, &
+                   p_eos, h_eos, e_eos, &
+                   cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                   dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                   dpdX_eos, dhdX_eos, &
+                   gam1_eos, cs_eos, s_eos, &
+                   dsdt_eos, dsdr_eos, &
                    do_diag)
           
-!         T(i,j) = log(temp_row(1))/log(10.)
-          T(i,j) = temp_row(1)
+!         T(i,j) = log(temp_eos(1))/log(10.)
+          T(i,j) = temp_eos(1)
 
-          deltaP(i,j) = (p_row(1)-p0(j))/ p0(j)
+          deltaP(i,j) = (p_eos(1)-p0(j))/ p0(j)
           
        enddo
     enddo
@@ -223,36 +223,36 @@ contains
           do i = lo(1), hi(1)
 
              ! (rho, H) --> T, p
-              den_row(1)  = state(i,j,k,rho_comp)
-             p_row(1)    = p0(k)
-             temp_row(1) = t0(k)
-             xn_row(1,:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
+              den_eos(1)  = state(i,j,k,rho_comp)
+             p_eos(1)    = p0(k)
+             temp_eos(1) = t0(k)
+             xn_eos(1,:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
 
              qreact = 0.0d0
              if(use_big_h) then
                 do n=1,nspec
-                   qreact = qreact + ebin(n)*xn_row(1,n)
+                   qreact = qreact + ebin(n)*xn_eos(1,n)
                 enddo
-                h_row(1) = state(i,j,k,rhoh_comp)/state(i,j,k,rho_comp) - qreact
+                h_eos(1) = state(i,j,k,rhoh_comp)/state(i,j,k,rho_comp) - qreact
              else
-                h_row(1) = state(i,j,k,rhoh_comp)/state(i,j,k,rho_comp)
+                h_eos(1) = state(i,j,k,rhoh_comp)/state(i,j,k,rho_comp)
              endif
 
-             call eos(eos_input_rh, den_row, temp_row, &
+             call eos(eos_input_rh, den_eos, temp_eos, &
                       npts, nspec, &
-                      xn_row, &
-                      p_row, h_row, e_row, &
-                      cv_row, cp_row, xne_row, eta_row, pele_row, &
-                      dpdt_row, dpdr_row, dedt_row, dedr_row, &
-                      dpdX_row, dhdX_row, &
-                      gam1_row, cs_row, s_row, &
-                      dsdt_row, dsdr_row, &
+                      xn_eos, &
+                      p_eos, h_eos, e_eos, &
+                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                      dpdX_eos, dhdX_eos, &
+                      gam1_eos, cs_eos, s_eos, &
+                      dsdt_eos, dsdr_eos, &
                       do_diag)
 
-!            T(i,j,k) = log(temp_row(1))/log(10.)
-             T(i,j,k) = temp_row(1)
+!            T(i,j,k) = log(temp_eos(1))/log(10.)
+             T(i,j,k) = temp_eos(1)
 
-             deltaP(i,j,k) = (p_row(1)-p0(k))/ p0(k)
+             deltaP(i,j,k) = (p_eos(1)-p0(k))/ p0(k)
 
           enddo
        enddo
@@ -288,31 +288,31 @@ contains
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
             
-             den_row(1)  = state(i,j,k,rho_comp)
-             h_row(1)    = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp)
+             den_eos(1)  = state(i,j,k,rho_comp)
+             h_eos(1)    = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp)
              if(use_big_h) then
                print*,"WARNING: H conversion not defined in maketfromH_3d_sphr"
              endif
-             p_row(1)    = p0_cart(i,j,k)
-             temp_row(1) = t0_cart(i,j,k)
-             xn_row(1,:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
+             p_eos(1)    = p0_cart(i,j,k)
+             temp_eos(1) = t0_cart(i,j,k)
+             xn_eos(1,:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
 
              ! (rho, H) --> T, p
-             call eos(eos_input_rh, den_row, temp_row, &
+             call eos(eos_input_rh, den_eos, temp_eos, &
                       npts, nspec, &
-                      xn_row, &
-                      p_row, h_row, e_row, &
-                      cv_row, cp_row, xne_row, eta_row, pele_row, &
-                      dpdt_row, dpdr_row, dedt_row, dedr_row, &
-                      dpdX_row, dhdX_row, &
-                      gam1_row, cs_row, s_row, &
-                      dsdt_row, dsdr_row, &
+                      xn_eos, &
+                      p_eos, h_eos, e_eos, &
+                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                      dpdX_eos, dhdX_eos, &
+                      gam1_eos, cs_eos, s_eos, &
+                      dsdt_eos, dsdr_eos, &
                       do_diag)
 
-!            T(i,j,k) = log(temp_row(1))/log(10.)
-             T(i,j,k) = temp_row(1)
+!            T(i,j,k) = log(temp_eos(1))/log(10.)
+             T(i,j,k) = temp_eos(1)
 
-             deltaP(i,j,k) = (p_row(1)-p0_cart(i,j,k))/ p0_cart(i,j,k)
+             deltaP(i,j,k) = (p_eos(1)-p0_cart(i,j,k))/ p0_cart(i,j,k)
 
           enddo
        enddo
@@ -408,24 +408,24 @@ contains
     ! We now assume that the temperature coming in in the base state is correct, but
     !   we do this eos call to get gam10 and entr0.
     do j = lo(2), hi(2)
-        den_row(1) = s0(j,rho_comp)
-       temp_row(1) = s0(j,temp_comp)
-          p_row(1) = p0(j)
-       xn_row(1,:) = s0(j,spec_comp:spec_comp+nspec-1)/den_row(1)
+        den_eos(1) = s0(j,rho_comp)
+       temp_eos(1) = s0(j,temp_comp)
+          p_eos(1) = p0(j)
+       xn_eos(1,:) = s0(j,spec_comp:spec_comp+nspec-1)/den_eos(1)
 
        ! (rho,P) --> T,h
-       call eos(eos_input_rp, den_row, temp_row, &
+       call eos(eos_input_rp, den_eos, temp_eos, &
                 npts, nspec, &
-                xn_row, &
-                p_row, h_row, e_row, & 
-                cv_row, cp_row, xne_row, eta_row, pele_row, &
-                dpdt_row, dpdr_row, dedt_row, dedr_row, &
-                dpdX_row, dhdX_row, &
-                gam1_row, cs_row, s_row, &
-                dsdt_row, dsdr_row, &
+                xn_eos, &
+                p_eos, h_eos, e_eos, & 
+                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                dpdX_eos, dhdX_eos, &
+                gam1_eos, cs_eos, s_eos, &
+                dsdt_eos, dsdr_eos, &
                 do_diag)
-     gam10(j) = gam1_row(1)
-     entr0(j) = s_row(1)
+     gam10(j) = gam1_eos(1)
+     entr0(j) = s_eos(1)
 
     end do
 
@@ -433,35 +433,35 @@ contains
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
 
-          den_row(1) = s(i,j,rho_comp)
-          temp_row(1) = s0(j,temp_comp)
-          p_row(1) = p0(j)
-          xn_row(1,:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
+          den_eos(1) = s(i,j,rho_comp)
+          temp_eos(1) = s0(j,temp_comp)
+          p_eos(1) = p0(j)
+          xn_eos(1,:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
 
           ! (rho,P) --> T,h
-          call eos(eos_input_rp, den_row, temp_row, &
+          call eos(eos_input_rp, den_eos, temp_eos, &
                    npts, nspec, &
-                   xn_row, &
-                   p_row, h_row, e_row, & 
-                   cv_row, cp_row, xne_row, eta_row, pele_row, &
-                   dpdt_row, dpdr_row, dedt_row, dedr_row, &
-                   dpdX_row, dhdX_row, &
-                   gam1_row, cs_row, s_row, &
-                   dsdt_row, dsdr_row, &
+                   xn_eos, &
+                   p_eos, h_eos, e_eos, & 
+                   cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                   dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                   dpdX_eos, dhdX_eos, &
+                   gam1_eos, cs_eos, s_eos, &
+                   dsdt_eos, dsdr_eos, &
                    do_diag)
           
-!         t(i,j) = log(temp_row(1))/log(10.)
-          t(i,j) = temp_row(1)
-          tpert(i,j) = temp_row(1) - s0(j,temp_comp)
+!         t(i,j) = log(temp_eos(1))/log(10.)
+          t(i,j) = temp_eos(1)
+          tpert(i,j) = temp_eos(1) - s0(j,temp_comp)
 
           rhopert(i,j) = s(i,j,rho_comp) - s0(j,rho_comp)
 
           vel = sqrt(u(i,j,1)*u(i,j,1) + u(i,j,2)*u(i,j,2))
-          machno(i,j) = vel / cs_row(1)
+          machno(i,j) = vel / cs_eos(1)
 
-          deltagamma(i,j) = gam1_row(1) - gam10(j)
+          deltagamma(i,j) = gam1_eos(1) - gam10(j)
 
-          spert(i,j) = s_row(1) - entr0(j)
+          spert(i,j) = s_eos(1) - entr0(j)
        enddo
     enddo
 
@@ -500,24 +500,24 @@ contains
     ! We now assume that the temperature coming in in the base state is correct, but
     !   we do this eos call to get gam10 and entr0.
     do k = lo(3), hi(3)
-        den_row(1) = s0(k,rho_comp)
-       temp_row(1) = s0(k,temp_comp)
-          p_row(1) = p0(k)
-       xn_row(1,:) = s0(k,spec_comp:spec_comp+nspec-1)/den_row(1)
+        den_eos(1) = s0(k,rho_comp)
+       temp_eos(1) = s0(k,temp_comp)
+          p_eos(1) = p0(k)
+       xn_eos(1,:) = s0(k,spec_comp:spec_comp+nspec-1)/den_eos(1)
 
        ! (rho,P) --> T,h
-       call eos(eos_input_rp, den_row, temp_row, &
+       call eos(eos_input_rp, den_eos, temp_eos, &
                 npts, nspec, &
-                xn_row, &
-                p_row, h_row, e_row, & 
-                cv_row, cp_row, xne_row, eta_row, pele_row, &
-                dpdt_row, dpdr_row, dedt_row, dedr_row, &
-                dpdX_row, dhdX_row, &
-                gam1_row, cs_row, s_row, &
-                dsdt_row, dsdr_row, &
+                xn_eos, &
+                p_eos, h_eos, e_eos, & 
+                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                dpdX_eos, dhdX_eos, &
+                gam1_eos, cs_eos, s_eos, &
+                dsdt_eos, dsdr_eos, &
                 do_diag)
-     gam10(k) = gam1_row(1)
-     entr0(k) = s_row(1)
+     gam10(k) = gam1_eos(1)
+     entr0(k) = s_eos(1)
     end do
 
     ! Then compute the perturbation and Mach number
@@ -525,35 +525,35 @@ contains
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
 
-             den_row(1) = s(i,j,k,rho_comp)
-             temp_row(1) = s0(k,temp_comp)
-             p_row(1) = p0(k)
-             xn_row(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
+             den_eos(1) = s(i,j,k,rho_comp)
+             temp_eos(1) = s0(k,temp_comp)
+             p_eos(1) = p0(k)
+             xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
 
              ! (rho,P) --> T,h
-             call eos(eos_input_rp, den_row, temp_row, &
+             call eos(eos_input_rp, den_eos, temp_eos, &
                       npts, nspec, &
-                      xn_row, &
-                      p_row, h_row, e_row, & 
-                      cv_row, cp_row, xne_row, eta_row, pele_row, &
-                      dpdt_row, dpdr_row, dedt_row, dedr_row, &
-                      dpdX_row, dhdX_row, &
-                      gam1_row, cs_row, s_row, &
-                      dsdt_row, dsdr_row, &
+                      xn_eos, &
+                      p_eos, h_eos, e_eos, & 
+                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                      dpdX_eos, dhdX_eos, &
+                      gam1_eos, cs_eos, s_eos, &
+                      dsdt_eos, dsdr_eos, &
                       do_diag)
 
-!            t(i,j,k) = log(temp_row(1))/log(10.)
-             t(i,j,k) = temp_row(1)
-             tpert(i,j,k) = temp_row(1) - s0(k,temp_comp)
+!            t(i,j,k) = log(temp_eos(1))/log(10.)
+             t(i,j,k) = temp_eos(1)
+             tpert(i,j,k) = temp_eos(1) - s0(k,temp_comp)
 
              rhopert(i,j,k) = s(i,j,k,rho_comp) - s0(k,rho_comp)
 
              vel = sqrt(u(i,j,k,1)*u(i,j,k,1) + u(i,j,k,2)*u(i,j,k,2) + u(i,j,k,3)*u(i,j,k,3))
-             machno(i,j,k) = vel / cs_row(1)
+             machno(i,j,k) = vel / cs_eos(1)
 
-             deltagamma(i,j,k) = gam1_row(1) - gam10(k)
+             deltagamma(i,j,k) = gam1_eos(1) - gam10(k)
 
-             spert(i,j,k) = s_row(1) - entr0(k)
+             spert(i,j,k) = s_eos(1) - entr0(k)
           enddo
        enddo
     enddo
@@ -602,24 +602,24 @@ contains
     ! We now assume that the temperature coming in in the base state is correct, but
     !   we do this eos call to get gam10 and entr0.
     do k = 0, nr-1
-        den_row(1) = s0(k,rho_comp)
-       temp_row(1) = s0(k,temp_comp)
-          p_row(1) = p0(k)
-        xn_row(1,:) = s0(k,spec_comp:spec_comp+nspec-1)/den_row(1)
+        den_eos(1) = s0(k,rho_comp)
+       temp_eos(1) = s0(k,temp_comp)
+          p_eos(1) = p0(k)
+        xn_eos(1,:) = s0(k,spec_comp:spec_comp+nspec-1)/den_eos(1)
 
        ! (rho,P) --> T,h
-       call eos(eos_input_rp, den_row, temp_row, &
+       call eos(eos_input_rp, den_eos, temp_eos, &
                 npts, nspec, &
-                xn_row, &
-                p_row, h_row, e_row, & 
-                cv_row, cp_row, xne_row, eta_row, pele_row, &
-                dpdt_row, dpdr_row, dedt_row, dedr_row, &
-                dpdX_row, dhdX_row, &
-                gam1_row, cs_row, s_row, &
-                dsdt_row, dsdr_row, &
+                xn_eos, &
+                p_eos, h_eos, e_eos, & 
+                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                dpdX_eos, dhdX_eos, &
+                gam1_eos, cs_eos, s_eos, &
+                dsdt_eos, dsdr_eos, &
                 do_diag)
-     gam10(k) = gam1_row(1)
-     entr0(k) = s_row(1)
+     gam10(k) = gam1_eos(1)
+     entr0(k) = s_eos(1)
     end do
 
     allocate(rho0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
@@ -642,35 +642,35 @@ contains
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
 
-              den_row(1) = s(i,j,k,rho_comp)
-             temp_row(1) = t0_cart(i,j,k)
-                p_row(1) = p0_cart(i,j,k)
-              xn_row(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
+              den_eos(1) = s(i,j,k,rho_comp)
+             temp_eos(1) = t0_cart(i,j,k)
+                p_eos(1) = p0_cart(i,j,k)
+              xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
 
              ! (rho,P) --> T,h
-             call eos(eos_input_rp, den_row, temp_row, &
+             call eos(eos_input_rp, den_eos, temp_eos, &
                       npts, nspec, &
-                      xn_row, &
-                      p_row, h_row, e_row, & 
-                      cv_row, cp_row, xne_row, eta_row, pele_row, &
-                      dpdt_row, dpdr_row, dedt_row, dedr_row, &
-                      dpdX_row, dhdX_row, &
-                      gam1_row, cs_row, s_row, &
-                      dsdt_row, dsdr_row, &
+                      xn_eos, &
+                      p_eos, h_eos, e_eos, & 
+                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                      dpdX_eos, dhdX_eos, &
+                      gam1_eos, cs_eos, s_eos, &
+                      dsdt_eos, dsdr_eos, &
                       do_diag)
 
-!            t(i,j,k) = log(temp_row(1))/log(10.)
-             t(i,j,k) = temp_row(1)
-             tpert(i,j,k) = temp_row(1) - t0_cart(i,j,k)
+!            t(i,j,k) = log(temp_eos(1))/log(10.)
+             t(i,j,k) = temp_eos(1)
+             tpert(i,j,k) = temp_eos(1) - t0_cart(i,j,k)
 
              rhopert(i,j,k) = s(i,j,k,rho_comp) - rho0_cart(i,j,k)
 
              vel = sqrt(u(i,j,k,1)*u(i,j,k,1) + u(i,j,k,2)*u(i,j,k,2) + u(i,j,k,3)*u(i,j,k,3))
-             machno(i,j,k) = vel / cs_row(1)
+             machno(i,j,k) = vel / cs_eos(1)
 
-             deltagamma(i,j,k) = gam1_row(1) - gam0_cart(i,j,k)
+             deltagamma(i,j,k) = gam1_eos(1) - gam0_cart(i,j,k)
              
-             spert(i,j,k) = s_row(1) - entr0_cart(i,j,k)
+             spert(i,j,k) = s_eos(1) - entr0_cart(i,j,k)
           enddo
        enddo
     enddo

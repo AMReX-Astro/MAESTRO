@@ -502,27 +502,27 @@ contains
           
     ! Use the EOS to make this temperature perturbation occur at constant 
     ! pressure
-    temp_row(1) = temp
-    p_row(1) = p0
-    den_row(1) = s0(rho_comp)
-    xn_row(1,:) = s0(spec_comp:spec_comp+nspec-1)/s0(rho_comp)
+    temp_eos(1) = temp
+    p_eos(1) = p0
+    den_eos(1) = s0(rho_comp)
+    xn_eos(1,:) = s0(spec_comp:spec_comp+nspec-1)/s0(rho_comp)
 
     ! (t, p) -> (rho, h)
 
-    call eos(eos_input_tp, den_row, temp_row, &
+    call eos(eos_input_tp, den_eos, temp_eos, &
              npts, nspec, &
-             xn_row, &
-             p_row, h_row, e_row, &
-             cv_row, cp_row, xne_row, eta_row, pele_row, &
-             dpdt_row, dpdr_row, dedt_row, dedr_row, &
-             dpdX_row, dhdX_row, &
-             gam1_row, cs_row, s_row, &
-             dsdt_row, dsdr_row, &
+             xn_eos, &
+             p_eos, h_eos, e_eos, &
+             cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+             dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+             dpdX_eos, dhdX_eos, &
+             gam1_eos, cs_eos, s_eos, &
+             dsdt_eos, dsdr_eos, &
              do_diag)
 
-    dens_pert = den_row(1)
-    rhoh_pert = den_row(1)*h_row(1)
-    rhoX_pert(:) = dens_pert*xn_row(1,:)
+    dens_pert = den_eos(1)
+    rhoh_pert = den_eos(1)*h_eos(1)
+    rhoX_pert(:) = dens_pert*xn_eos(1,:)
 
     temp_pert = temp
     
@@ -582,27 +582,27 @@ contains
 
     ! Use the EOS to make this temperature perturbation occur at constant 
     ! pressure
-    temp_row(1) = temp
-    p_row(1) = p0
-    den_row(1) = s0(rho_comp)
-    xn_row(1,:) = s0(spec_comp:spec_comp+nspec-1)/s0(rho_comp)
+    temp_eos(1) = temp
+    p_eos(1) = p0
+    den_eos(1) = s0(rho_comp)
+    xn_eos(1,:) = s0(spec_comp:spec_comp+nspec-1)/s0(rho_comp)
 
     ! (t, p) -> (rho, h)
 
-    call eos(eos_input_tp, den_row, temp_row, &
+    call eos(eos_input_tp, den_eos, temp_eos, &
              npts, nspec, &
-             xn_row, &
-             p_row, h_row, e_row, &
-             cv_row, cp_row, xne_row, eta_row, pele_row, &
-             dpdt_row, dpdr_row, dedt_row, dedr_row, &
-             dpdX_row, dhdX_row, &
-             gam1_row, cs_row, s_row, &
-             dsdt_row, dsdr_row, &
+             xn_eos, &
+             p_eos, h_eos, e_eos, &
+             cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+             dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+             dpdX_eos, dhdX_eos, &
+             gam1_eos, cs_eos, s_eos, &
+             dsdt_eos, dsdr_eos, &
              do_diag)
 
-    dens_pert = den_row(1)
-    rhoh_pert = den_row(1)*h_row(1)
-    rhoX_pert(:) = dens_pert*xn_row(1,:)
+    dens_pert = den_eos(1)
+    rhoh_pert = den_eos(1)*h_eos(1)
+    rhoX_pert(:) = dens_pert*xn_eos(1,:)
 
     temp_pert = temp
     

@@ -103,24 +103,24 @@ contains
          do i = lo(1), hi(1)
 
             ! compute the sound speed from rho and p0
-            den_row(1) = s(i,j,rho_comp)
-            temp_row(1) = s(i,j,temp_comp)
-            xn_row(1,:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
+            den_eos(1) = s(i,j,rho_comp)
+            temp_eos(1) = s(i,j,temp_comp)
+            xn_eos(1,:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
 
             ! dens, temp, and xmass are inputs
-            call eos(eos_input_rt, den_row, temp_row, &
+            call eos(eos_input_rt, den_eos, temp_eos, &
                      npts, nspec, &
-                     xn_row, &
-                     p_row, h_row, e_row, & 
-                     cv_row, cp_row, xne_row, eta_row, pele_row, &
-                     dpdt_row, dpdr_row, dedt_row, dedr_row, &
-                     dpdX_row, dhdX_row, &
-                     gam1_row, cs_row, s_row, &
-                     dsdt_row, dsdr_row, &
+                     xn_eos, &
+                     p_eos, h_eos, e_eos, & 
+                     cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                     dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                     dpdX_eos, dhdX_eos, &
+                     gam1_eos, cs_eos, s_eos, &
+                     dsdt_eos, dsdr_eos, &
                      do_diag)
 
-            spdx = max(spdx,cs_row(1))
-            spdy = max(spdy,cs_row(1))
+            spdx = max(spdx,cs_eos(1))
+            spdy = max(spdy,cs_eos(1))
             pforcex = max(pforcex,abs(force(i,j,1)))
             pforcey = max(pforcey,abs(force(i,j,2)))
             ux = max(ux,abs(u(i,j,1)))
@@ -227,29 +227,29 @@ contains
          do j = lo(2), hi(2)
             do i = lo(1), hi(1)
 
-               den_row(1) = s(i,j,k,rho_comp)
+               den_eos(1) = s(i,j,k,rho_comp)
                if (spherical == 1) then
-                  temp_row(1) = t0_cart(i,j,k)
+                  temp_eos(1) = t0_cart(i,j,k)
                else
-                  temp_row(1) = s(i,j,k,temp_comp)
+                  temp_eos(1) = s(i,j,k,temp_comp)
                endif
-               xn_row(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
+               xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
 
                ! dens, temp, and xmass are inputs
-               call eos(eos_input_rt, den_row, temp_row, &
+               call eos(eos_input_rt, den_eos, temp_eos, &
                         npts, nspec, &
-                        xn_row, &
-                        p_row, h_row, e_row, & 
-                        cv_row, cp_row, xne_row, eta_row, pele_row, &
-                        dpdt_row, dpdr_row, dedt_row, dedr_row, &
-                        dpdX_row, dhdX_row, &
-                        gam1_row, cs_row, s_row, &
-                        dsdt_row, dsdr_row, &
+                        xn_eos, &
+                        p_eos, h_eos, e_eos, & 
+                        cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                        dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                        dpdX_eos, dhdX_eos, &
+                        gam1_eos, cs_eos, s_eos, &
+                        dsdt_eos, dsdr_eos, &
                         do_diag)
                
-               spdx    = max(spdx,cs_row(1))
-               spdy    = max(spdy,cs_row(1))
-               spdz    = max(spdz,cs_row(1))
+               spdx    = max(spdx,cs_eos(1))
+               spdy    = max(spdy,cs_eos(1))
+               spdz    = max(spdz,cs_eos(1))
                pforcex = max(pforcex,abs(force(i,j,k,1)))
                pforcey = max(pforcey,abs(force(i,j,k,2)))
                pforcez = max(pforcez,abs(force(i,j,k,3)))

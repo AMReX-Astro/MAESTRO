@@ -301,37 +301,37 @@ subroutine make_coeffs_2d(lo,hi,dx,p0,s,Tcoeff,hcoeff,Xkcoeff,pcoeff)
   do j=lo(2)-1,hi(2)+1
      do i=lo(1)-1,hi(1)+1
 
-        den_row(1) = s(i,j,rho_comp)
-        temp_row(1) = s(i,j,temp_comp)
-        xn_row(1,:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_row(1)
+        den_eos(1) = s(i,j,rho_comp)
+        temp_eos(1) = s(i,j,temp_comp)
+        xn_eos(1,:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
 
         ! dens, temp, and xmass are inputs
         do_diag = .false.
 
-        call conducteos(eos_input_rt, den_row, temp_row, &
+        call conducteos(eos_input_rt, den_eos, temp_eos, &
              npts, nspec, &
-             xn_row, &
-             p_row, h_row, e_row, & 
-             cv_row, cp_row, xne_row, eta_row, pele_row, &
-             dpdt_row, dpdr_row, dedt_row, dedr_row, &
-             dpdX_row, dhdX_row, &
-             gam1_row, cs_row, s_row, &
-             dsdt_row, dsdr_row, &
-             do_diag, conduct_row)
+             xn_eos, &
+             p_eos, h_eos, e_eos, & 
+             cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+             dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+             dpdX_eos, dhdX_eos, &
+             gam1_eos, cs_eos, s_eos, &
+             dsdt_eos, dsdr_eos, &
+             do_diag, conduct_eos)
 
-        Tcoeff(i,j) = -conduct_row(1)
-        hcoeff(i,j) = -conduct_row(1)/cp_row(1)
-        pcoeff(i,j) = (conduct_row(1)/cp_row(1))* &
-             ((1.0d0/den_row(1))* &
-              (1.0d0-p_row(1)/(den_row(1)*dpdr_row(1)))+dedr_row(1)/dpdr_row(1))
+        Tcoeff(i,j) = -conduct_eos(1)
+        hcoeff(i,j) = -conduct_eos(1)/cp_eos(1)
+        pcoeff(i,j) = (conduct_eos(1)/cp_eos(1))* &
+             ((1.0d0/den_eos(1))* &
+              (1.0d0-p_eos(1)/(den_eos(1)*dpdr_eos(1)))+dedr_eos(1)/dpdr_eos(1))
 
         if(use_big_h) then
            do n=1,nspec
-              Xkcoeff(i,j,n) = (conduct_row(1)/cp_row(1))*(dhdX_row(1,n) + ebin(n))
+              Xkcoeff(i,j,n) = (conduct_eos(1)/cp_eos(1))*(dhdX_eos(1,n) + ebin(n))
            enddo
         else
            do n=1,nspec
-              Xkcoeff(i,j,n) = (conduct_row(1)/cp_row(1))*dhdX_row(1,n)
+              Xkcoeff(i,j,n) = (conduct_eos(1)/cp_eos(1))*dhdX_eos(1,n)
            enddo
         endif
      enddo
@@ -366,37 +366,37 @@ subroutine make_coeffs_3d(lo,hi,dx,p0,s,Tcoeff,hcoeff,Xkcoeff,pcoeff)
      do j=lo(2)-1,hi(2)+1
         do i=lo(1)-1,hi(1)+1
            
-           den_row(1) = s(i,j,k,rho_comp)
-           temp_row(1) = s(i,j,k,temp_comp)
-           xn_row(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_row(1)
+           den_eos(1) = s(i,j,k,rho_comp)
+           temp_eos(1) = s(i,j,k,temp_comp)
+           xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
 
            ! dens, temp, and xmass are inputs
            do_diag = .false.
         
-           call conducteos(eos_input_rt, den_row, temp_row, &
+           call conducteos(eos_input_rt, den_eos, temp_eos, &
                 npts, nspec, &
-                xn_row, &
-                p_row, h_row, e_row, & 
-                cv_row, cp_row, xne_row, eta_row, pele_row, &
-                dpdt_row, dpdr_row, dedt_row, dedr_row, &
-                dpdX_row, dhdX_row, &
-                gam1_row, cs_row, s_row, &
-                dsdt_row, dsdr_row, &
-                do_diag, conduct_row)
+                xn_eos, &
+                p_eos, h_eos, e_eos, & 
+                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                dpdX_eos, dhdX_eos, &
+                gam1_eos, cs_eos, s_eos, &
+                dsdt_eos, dsdr_eos, &
+                do_diag, conduct_eos)
 
-           Tcoeff(i,j,k) = -conduct_row(1)
-           hcoeff(i,j,k) = -conduct_row(1)/cp_row(1)
-           pcoeff(i,j,k) = (conduct_row(1)/cp_row(1))* &
-                ((1.0d0/den_row(1))* &
-                 (1.0d0-p_row(1)/(den_row(1)*dpdr_row(1)))+dedr_row(1)/dpdr_row(1))
+           Tcoeff(i,j,k) = -conduct_eos(1)
+           hcoeff(i,j,k) = -conduct_eos(1)/cp_eos(1)
+           pcoeff(i,j,k) = (conduct_eos(1)/cp_eos(1))* &
+                ((1.0d0/den_eos(1))* &
+                 (1.0d0-p_eos(1)/(den_eos(1)*dpdr_eos(1)))+dedr_eos(1)/dpdr_eos(1))
 
            if(use_big_h) then
               do n=1,nspec
-                 Xkcoeff(i,j,k,n) = (conduct_row(1)/cp_row(1))*(dhdX_row(1,n) + ebin(n))
+                 Xkcoeff(i,j,k,n) = (conduct_eos(1)/cp_eos(1))*(dhdX_eos(1,n) + ebin(n))
               enddo
            else
               do n=1,nspec
-                 Xkcoeff(i,j,k,n) = (conduct_row(1)/cp_row(1))*dhdX_row(1,n)
+                 Xkcoeff(i,j,k,n) = (conduct_eos(1)/cp_eos(1))*dhdX_eos(1,n)
               enddo
            endif
         enddo
