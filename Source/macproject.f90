@@ -1319,7 +1319,7 @@ subroutine mac_multigrid(mla,rh,phi,fine_flx,alpha,beta,dx,&
     abs_eps = rel_eps * abs_eps
   end if
 
-  bottom_solver = 2
+  bottom_solver = 1
   bottom_solver_eps = 1.d-3
 
   if ( test /= 0 .AND. max_iter == mgt(nlevs)%max_iter ) &
