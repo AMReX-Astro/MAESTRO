@@ -111,7 +111,11 @@ contains
         end do
       end if
 
-      eps = abs_eps * umax
+      if(umax .eq. 0.d0) then
+         eps = abs_eps
+      else
+         eps = abs_eps * umax
+      endif
 
 !
 !     Loop for fluxes on x-edges.
@@ -542,7 +546,11 @@ contains
         end do
       end if
 
-      eps = abs_eps * umax
+      if(umax .eq. 0.d0) then
+         eps = abs_eps
+      else
+         eps = abs_eps * umax
+      endif
 
 !
 !     Loop for fluxes on x-edges.

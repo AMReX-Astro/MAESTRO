@@ -26,10 +26,10 @@ contains
       real(kind=dp_t), allocatable::  vely(:,:,:)
 
 !     Local variables
-      real(kind=dp_t) hx, hy, dth
+      real(kind=dp_t) hx, hy, dth, umax
       real(kind=dp_t) ulft,urgt,vbot,vtop
 
-      real(kind=dp_t) :: eps
+      real(kind=dp_t) :: eps, abs_eps
 
       integer :: hi(2)
       integer :: i,j,is,js,ie,je
@@ -45,7 +45,22 @@ contains
       ie = hi(1)
       je = hi(2)
 
-      eps = 1.0e-8              ! FIXME what should EPS really be?
+      abs_eps = 1.d-8
+
+      ! Compute eps, which is relative to the max velocity
+      umax = abs(vel(is,js,1))
+      do j = js,je
+         do i = is,ie
+            umax = max(umax,abs(vel(i,j,1)))
+            umax = max(umax,abs(vel(i,j,2)))
+         end do
+      end do
+
+      if(umax .eq. 0.d0) then
+         eps = abs_eps
+      else
+         eps = abs_eps * umax
+      endif
 
       dth = HALF * dt
 
@@ -139,9 +154,9 @@ contains
 
 !     Local variables
       real(kind=dp_t) ulft,urgt,vbot,vtop,wbot,wtop
-      real(kind=dp_t) hx, hy, hz, dth
+      real(kind=dp_t) hx, hy, hz, dth, umax
 
-      real(kind=dp_t) :: eps
+      real(kind=dp_t) :: eps, abs_eps
 
       logical :: test
 
@@ -161,7 +176,23 @@ contains
       je = hi(2)
       ke = hi(3)
 
-      eps = 1.0e-8              ! FIXME what should EPS really be?
+      ! Compute eps, which is relative to the max velocity
+      umax = abs(vel(is,js,ks,1))
+      do k = ks,ke
+         do j = js,je
+            do i = is,ie
+               umax = max(umax,abs(vel(i,j,k,1)))
+               umax = max(umax,abs(vel(i,j,k,2)))
+               umax = max(umax,abs(vel(i,j,k,3)))
+            end do
+         end do
+      end do
+
+      if(umax .eq. 0.d0) then
+         eps = abs_eps
+      else
+         eps = abs_eps * umax
+      endif
 
       dth = HALF * dt
 
