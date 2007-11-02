@@ -41,6 +41,8 @@ contains
        call fabio_mkdir(dirname)
     end if
 
+    call parallel_barrier()
+
     write(unit=sd_name, fmt='(a,"/State")') trim(dirname)
     call fabio_ml_multifab_write_d(mfs, rrs(:,1), sd_name)
 
