@@ -83,21 +83,24 @@ contains
 
       dm = size(dx,dim=2)
 
-    header = "Header"
-    un = unit_new()
-    open(unit=un, &
-         file = trim(dirname) // "/" // trim(header), &
-         form = "formatted", access = "sequential", &
-         status = "replace", action = "write")
-    nlevs = size(mfs)
-    write(unit=un, nml = chkpoint)
-    do n = 1,nlevs
-       write(unit=un,fmt=*) (dx(n,i), i=1,dm)
-    end do
-    do n = 1,nlevs-1
-       write(unit=un,fmt=*) rrs(n,1)
-    end do
-    close(un)
+    ! Note: parallel fails on Bassi if this is done on all processors
+    if (parallel_IOProcessor()) then
+       header = "Header"
+       un = unit_new()
+       open(unit=un, &
+            file = trim(dirname) // "/" // trim(header), &
+            form = "formatted", access = "sequential", &
+            status = "replace", action = "write")
+       nlevs = size(mfs)
+       write(unit=un, nml = chkpoint)
+       do n = 1,nlevs
+          write(unit=un,fmt=*) (dx(n,i), i=1,dm)
+       end do
+       do n = 1,nlevs-1
+          write(unit=un,fmt=*) rrs(n,1)
+       end do
+       close(un)
+    end if
 
   end subroutine checkpoint_write
 
