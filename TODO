@@ -1,8 +1,5 @@
--- implement regression testing
-
 -- rebase the EOS to Frank's latest and turn on the Coulomb
-   corrections.  Also make it a module to enable compile-time
-   argument checking
+   corrections.  
 
 -- deal with the comment "! NOTE NOTE : THIS IS WRONG FOR SPHERICAL !!"
    in mkflux.f90
