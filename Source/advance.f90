@@ -133,44 +133,49 @@ module advance_timestep_module
     integer, allocatable :: lo(:),hi(:)
     logical :: nodal(mla%dim)
 
-    nlevs = size(uold)
-    dm    = mla%dim
-
-    allocate(lo(dm),hi(dm))
-
-    ng_cell = uold(1)%ng
-
-    halfdt = half * dt
-
-    allocate(Source_nph(nlevs))
-
-    allocate(rhohalf(nlevs),w0_cart_vec(nlevs),w0_force_cart_vec(nlevs))
-    allocate(macrhs(nlevs),macphi(nlevs),hgrhs_old(nlevs))
-    allocate(thermal(nlevs),s2star(nlevs),rho_omegadot2_hold(nlevs))
-    
     ! nr is the number of zones in a cell-centered basestate quantity
     nr    = size(s0_old,dim=1)
 
-    allocate(          s0_nph(0:nr-1,nscal))
-    allocate(            Sbar(0:nr-1,1))
+    dm    = mla%dim
+    nlevs = size(uold)
 
-    allocate(   div_coeff_nph(0:nr-1))
-    allocate(  div_coeff_edge(0:nr))
+    allocate(lo(dm))
+    allocate(hi(dm))
 
-    allocate(   grav_cell_nph(0:nr-1))
-    allocate(   grav_cell_new(0:nr-1))
+    allocate(s0_nph(0:nr-1,nscal))
+    allocate(Sbar  (0:nr-1,1))
+
+    allocate(div_coeff_nph (0:nr-1))
+    allocate(div_coeff_edge(0:nr))
+
+    allocate(grav_cell_nph(0:nr-1))
+    allocate(grav_cell_new(0:nr-1))
 
     allocate(rho_omegadotbar1(0:nr-1,nspec))
     allocate(rho_omegadotbar2(0:nr-1,nspec))
-    allocate(     rho_Hextbar(0:nr-1,1))
+    allocate(rho_Hextbar     (0:nr-1,1))
 
     if (spherical.eq.1) &
       allocate(div_coeff_3d(nlevs))
 
     allocate(w0_force(0:nr-1))
+    allocate(w0_old  (0:nr))
 
-    allocate(w0_old(0:nr))
+    allocate(Source_nph(nlevs))
+    allocate(rhohalf(nlevs))
+    allocate(w0_cart_vec(nlevs))
+    allocate(w0_force_cart_vec(nlevs))
+    allocate(macrhs(nlevs))
+    allocate(macphi(nlevs))
+    allocate(hgrhs_old(nlevs))
+    allocate(thermal(nlevs))
+    allocate(s2star(nlevs))
+    allocate(rho_omegadot2_hold(nlevs))
 
+    ng_cell = uold(1)%ng
+
+    halfdt = half * dt
+    
     ! Set w0_old to w0 from last time step.
     w0_old(:) = w0(:)
 
@@ -728,7 +733,7 @@ module advance_timestep_module
           call destroy(Source_nph(n))
           call destroy(macrhs(n))
           call destroy(macphi(n))
-          call destroy( hgrhs_old(n))
+          call destroy(hgrhs_old(n))
           call destroy(thermal(n))
           call destroy(rhohalf(n))
           call destroy(s2star(n))
@@ -739,7 +744,7 @@ module advance_timestep_module
         deallocate(Source_nph)
         deallocate(macrhs)
         deallocate(macphi)
-        deallocate( hgrhs_old)
+        deallocate(hgrhs_old)
         deallocate(thermal)
         deallocate(rhohalf)
         deallocate(s2star)
@@ -753,9 +758,10 @@ module advance_timestep_module
             call destroy(w0_cart_vec(n))
             call destroy(w0_force_cart_vec(n))
           end do
-          deallocate(w0_cart_vec)
-          deallocate(w0_force_cart_vec)
         end if
+
+        deallocate(w0_cart_vec)
+        deallocate(w0_force_cart_vec)
 
         deallocate(Sbar)
         deallocate(s0_nph)
@@ -764,9 +770,15 @@ module advance_timestep_module
         deallocate(grav_cell_nph)
         deallocate(grav_cell_new)
 
-        deallocate(w0_old,w0_force)
+        deallocate(rho_omegadotbar1)
+        deallocate(rho_omegadotbar2)
+        deallocate(rho_Hextbar)
 
-        deallocate(lo,hi)
+        deallocate(w0_old)
+        deallocate(w0_force)
+
+        deallocate(lo)
+        deallocate(hi)
 
     end subroutine advance_timestep
 
