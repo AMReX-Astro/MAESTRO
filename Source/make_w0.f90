@@ -176,6 +176,7 @@ contains
        vel(j) = u(j)
     end do
 
+    deallocate(c,d,e,rhs,u)
     deallocate(m,grav_edge,rho0_edge)
 
   end subroutine make_w0_spherical

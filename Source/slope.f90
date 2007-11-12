@@ -160,6 +160,8 @@ contains
 
       endif
 
+      deallocate(dxscr)
+
       end subroutine slopex_2d
 
       subroutine slopey_2d(s,sly,lo,ng,nvar,bc,slope_order)
@@ -315,6 +317,8 @@ contains
       enddo
 
       endif
+
+      deallocate(dyscr)
 
       end subroutine slopey_2d
 
@@ -479,6 +483,8 @@ contains
       enddo
 
       endif
+
+      deallocate(dzscr)
 
       end subroutine slopez_3d
 

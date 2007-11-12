@@ -189,6 +189,7 @@ contains
                 deallocate(cp)
                 deallocate(cvcx)
                 deallocate(fvcx)
+                deallocate(fp)
                 if (dm > 1) deallocate(cvcy)
                 if (dm > 1) deallocate(fvcy)
                 if (dm > 2) deallocate(cvcz)

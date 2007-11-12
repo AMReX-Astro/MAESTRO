@@ -573,7 +573,7 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
   enddo
 
   deallocate(rhsalpha,lhsalpha,rhsbeta,lhsbeta,ccbeta,phi,phitemp,Lphi,rhs)
-  deallocate(p01fab,p02fab)
+  deallocate(p01fab,p02fab,fine_flx)
   deallocate(hcoeff1,hcoeff2,Xkcoeff1,Xkcoeff2,pcoeff1,pcoeff2)
 
 end subroutine thermal_conduct_full_alg
@@ -1362,7 +1362,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
   enddo
 
   deallocate(rhsalpha,lhsalpha,rhsbeta,lhsbeta,ccbeta,phi,phitemp,Lphi,rhs)
-  deallocate(p01fab,p02fab)
+  deallocate(p01fab,p02fab,fine_flx)
   deallocate(hcoeff1,hcoeff2,Xkcoeff1,Xkcoeff2,pcoeff1,pcoeff2)
 
 end subroutine thermal_conduct_half_alg

@@ -226,6 +226,7 @@ subroutine hgproject(proj_type,mla,unew,uold,rhohalf,p,gp,dx,dt,the_bc_tower, &
 
   deallocate(phi)
   deallocate(gphi)
+  deallocate(nodal)
 
   contains
 
@@ -883,6 +884,8 @@ subroutine hg_multigrid(mla,unew,rhohalf,phi,dx,the_bc_tower,&
 
   deallocate(mgt)
   deallocate(rh)
+  deallocate(nodal)
+  deallocate(one_sided_ss)
 
 end subroutine hg_multigrid
 

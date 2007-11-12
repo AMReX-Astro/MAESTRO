@@ -134,6 +134,8 @@ contains
         enddo
       enddo
 
+      deallocate(velx,vely)
+
       end subroutine mkutrans_2d
 
       subroutine mkutrans_3d(vel,utrans,vtrans,wtrans,force,lo,dx,dt,ng_cell,adv_bc,phys_bc)
@@ -309,6 +311,8 @@ contains
         enddo
         enddo
       enddo
+
+      deallocate(velx,vely,velz)
 
       end subroutine mkutrans_3d
 

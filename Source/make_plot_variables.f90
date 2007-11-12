@@ -558,7 +558,7 @@ contains
        enddo
     enddo
 
-    deallocate(gam10)
+    deallocate(gam10,entr0)
 
    end subroutine maketfromrho_3d_cart
 
