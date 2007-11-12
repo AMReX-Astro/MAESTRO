@@ -67,11 +67,11 @@ contains
       hx = dx(1)
       hy = dx(2)
 
-      allocate(velx(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
-      allocate(vely(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
+      allocate(velx(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1))
+      allocate(vely(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1))
 
-      call slopex_2d(vel,velx,lo,ng_cell,2,adv_bc,slope_order)
-      call slopey_2d(vel,vely,lo,ng_cell,2,adv_bc,slope_order)
+      call slopex_2d(vel(:,:,1:),velx,lo,ng_cell,1,adv_bc,slope_order)
+      call slopey_2d(vel(:,:,2:),vely,lo,ng_cell,1,adv_bc,slope_order)
 
 !     Create the x-velocity to be used for transverse derivatives.
       do j = js-1,je+1 
@@ -108,9 +108,9 @@ contains
       do j = js,je+1 
         do i = is-1,ie+1 
 
-          vtop = vel(i,j  ,2) - (HALF + dth*vel(i,j  ,2)/hy) * vely(i,j  ,2)
+          vtop = vel(i,j  ,2) - (HALF + dth*vel(i,j  ,2)/hy) * vely(i,j  ,1)
 !    $           + dth * force(i,j  ,2)
-          vbot = vel(i,j-1,2) + (HALF - dth*vel(i,j-1,2)/hy) * vely(i,j-1,2)
+          vbot = vel(i,j-1,2) + (HALF - dth*vel(i,j-1,2)/hy) * vely(i,j-1,1)
 !    $           + dth * force(i,j-1,2)
 
           vtop = merge(vel(i,js-1,2),vtop,j.eq.js   .and. phys_bc(2,1) .eq. INLET)
@@ -202,15 +202,15 @@ contains
       hy = dx(2)
       hz = dx(3)
 
-      allocate(velx(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
-      allocate(vely(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
-      allocate(velz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
+      allocate(velx(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1))
+      allocate(vely(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1))
+      allocate(velz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1))
 
       do k = lo(3)-1,hi(3)+1
-         call slopex_2d(vel(:,:,k,:),velx(:,:,k,:),lo,ng_cell,3,adv_bc,slope_order)
-         call slopey_2d(vel(:,:,k,:),vely(:,:,k,:),lo,ng_cell,3,adv_bc,slope_order)
+         call slopex_2d(vel(:,:,k,1:),velx(:,:,k,:),lo,ng_cell,1,adv_bc,slope_order)
+         call slopey_2d(vel(:,:,k,2:),vely(:,:,k,:),lo,ng_cell,1,adv_bc,slope_order)
       end do
-      call slopez_3d(vel,velz,lo,ng_cell,  3,adv_bc,    slope_order)
+      call slopez_3d(vel(:,:,:,3:),velz,lo,ng_cell,1,adv_bc,slope_order)
 
 !     Create the x-velocity to be used for transverse derivatives.
       do k = ks-1,ke+1
@@ -249,9 +249,9 @@ contains
         do k = ks-1,ke+1
         do i = is-1,ie+1
 
-          vtop = vel(i,j  ,k,2) - (HALF + dth*vel(i,j  ,k,2)/hy) * vely(i,j  ,k,2)
+          vtop = vel(i,j  ,k,2) - (HALF + dth*vel(i,j  ,k,2)/hy) * vely(i,j  ,k,1)
 !    $           + dth * force(i,j  ,k,2)
-          vbot = vel(i,j-1,k,2) + (HALF - dth*vel(i,j-1,k,2)/hy) * vely(i,j-1,k,2)
+          vbot = vel(i,j-1,k,2) + (HALF - dth*vel(i,j-1,k,2)/hy) * vely(i,j-1,k,1)
 !    $           + dth * force(i,j-1,k,2)
 
           vtop = merge(vel(i,js-1,k,2),vtop,j.eq.js   .and. phys_bc(2,1) .eq. INLET)
@@ -282,9 +282,9 @@ contains
         do j = js-1,je+1
         do i = is-1,ie+1
 
-          wtop = vel(i,j,k  ,3) - (HALF + dth*vel(i,j,k  ,3)/hz) * velz(i,j,k  ,3)
+          wtop = vel(i,j,k  ,3) - (HALF + dth*vel(i,j,k  ,3)/hz) * velz(i,j,k  ,1)
 !    $           + dth * force(i,j,k  ,3)
-          wbot = vel(i,j,k-1,3) + (HALF - dth*vel(i,j,k-1,3)/hz) * velz(i,j,k-1,3)
+          wbot = vel(i,j,k-1,3) + (HALF - dth*vel(i,j,k-1,3)/hz) * velz(i,j,k-1,1)
 !    $           + dth * force(i,j,k-1,3)
 
           wtop = merge(vel(i,j,ks-1,3),wtop,k.eq.ks   .and. phys_bc(3,1) .eq. INLET)
