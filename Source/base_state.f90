@@ -247,6 +247,9 @@ contains
        end if
 
     end do
+
+    deallocate(vars_stored,varnames_stored)
+    deallocate(base_state,base_r)
  
   end subroutine init_base_state
 
