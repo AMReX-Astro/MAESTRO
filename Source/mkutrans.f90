@@ -176,6 +176,8 @@ contains
       je = hi(2)
       ke = hi(3)
 
+      abs_eps = 1.d-8
+
       ! Compute eps, which is relative to the max velocity
       umax = abs(vel(is,js,ks,1))
       do k = ks,ke
