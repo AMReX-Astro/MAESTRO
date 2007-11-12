@@ -47,6 +47,7 @@ contains
       integer :: lo(phi(1)%dim),hi(phi(1)%dim),ng,dm,nr
       integer :: i,k,n,nlevs
       real(kind=dp_t), allocatable :: vol_grid(:), vol_proc(:), vol_tot(:), phibar_proc(:,:)
+      real(kind=dp_t), allocatable :: source_buffer(:), target_buffer(:)
 
       dm = phi(1)%dim
       ng = phi(1)%ng
@@ -63,6 +64,7 @@ contains
 
          allocate(vol_proc(0:nr-1),vol_tot(0:nr-1))
          allocate(phibar_proc(0:nr-1,ncomp))
+         allocate(source_buffer(ncomp), target_buffer(ncomp))
 
          vol_proc(:) = ZERO
          vol_tot(:)  = ZERO
@@ -101,7 +103,12 @@ contains
          if (dm .eq. 2 .or. (dm.eq.3.and.spherical.eq.0)) then
             do k = 0,nr-1
                call parallel_reduce(vol_tot(k),  vol_proc(k),      MPI_SUM)
-               call parallel_reduce(phibar(k,:), phibar_proc(k,:), MPI_SUM)
+
+               ! put all the components for the current k into a buffer array
+               ! and reduce
+               source_buffer(:) = phibar_proc(k,:)
+               call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
+               phibar(k,:) = target_buffer(:)
 
                phibar(k,:) = phibar(k,:) / vol_tot(k)
             end do
@@ -109,7 +116,12 @@ contains
          else
             do k = 0,nr-1
                call parallel_reduce(vol_tot(k),  vol_proc(k),      MPI_SUM)
-               call parallel_reduce(phibar(k,:), phibar_proc(k,:), MPI_SUM)
+
+               ! put all the components for the current k into a buffer array
+               ! and reduce
+               source_buffer(:) = phibar_proc(k,:)
+               call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
+               phibar(k,:) = target_buffer(:)
 
                if (vol_tot(k) .gt. ZERO) then
                   phibar(k,:) = phibar(k,:) / vol_tot(k)
@@ -122,6 +134,7 @@ contains
 
          end if
          deallocate(vol_proc,vol_tot,phibar_proc)
+         deallocate(source_buffer, target_buffer)
 
       endif
 
