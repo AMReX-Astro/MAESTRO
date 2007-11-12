@@ -75,7 +75,7 @@ contains
       call slopex_2d(s(:,:,n:),slopex,lo,ng,1,adv_bc,slope_order)
       call slopey_2d(s(:,:,n:),slopey,lo,ng,1,adv_bc,slope_order)
 
-      abs_eps = 1.0e-8
+      abs_eps = 1.0d-8
 
       dth = HALF*dt
 
@@ -487,7 +487,7 @@ contains
       end do
       call slopez_3d(s(:,:,:,n:),slopez,lo,ng,1,adv_bc,slope_order)
 
-      abs_eps = 1.0e-8
+      abs_eps = 1.0d-8
 
       dth = HALF*dt
 
@@ -1188,7 +1188,7 @@ contains
 
       allocate(dxscr(lo:hi,4))
 
-      abs_eps = 1.0e-8
+      abs_eps = 1.0d-8
 
       dth = HALF*dt
 

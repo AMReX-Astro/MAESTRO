@@ -119,7 +119,7 @@ contains
 
      nr = size(p0,dim=1)
 
-     eps = 1.0e-8
+     eps = 1.0d-8
 
      ! advective constraints
      spdx  = 0.0D0 
@@ -235,7 +235,7 @@ contains
      real (kind = dp_t)  :: a, b, c
      integer             :: i,j,k,nr
 
-     eps = 1.0e-8
+     eps = 1.0d-8
 
      nr = size(p0,dim=1)
 
@@ -373,7 +373,7 @@ contains
      real (kind = dp_t)  :: a, b, c
      integer             :: i,j,k,nr
 
-     eps = 1.0e-8
+     eps = 1.0d-8
 
      nr = size(p0,dim=1)
 

@@ -90,7 +90,7 @@ contains
 
       rho_min = 1.d-20
 
-      eps = 1.0e-8
+      eps = 1.0d-8
 
       spdx    = 0.0D0 
       spdy    = 0.0D0
@@ -199,7 +199,7 @@ contains
       real (kind=dp_t), allocatable :: t0_cart(:,:,:)
       real (kind=dp_t), allocatable :: p0_cart(:,:,:)
 
-      eps = 1.0e-8
+      eps = 1.0d-8
 
       rho_min = 1.d-20
 
