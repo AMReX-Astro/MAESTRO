@@ -882,6 +882,12 @@ subroutine hg_multigrid(mla,unew,rhohalf,phi,dx,the_bc_tower,&
      call multifab_destroy(rh(n))
   end do
 
+  if (stencil_type .ne. ST_DENSE) then
+     do n = nlevs, 2, -1
+        call multifab_destroy(one_sided_ss(n))
+     end do
+  endif
+
   deallocate(mgt)
   deallocate(rh)
   deallocate(nodal)

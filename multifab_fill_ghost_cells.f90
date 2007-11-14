@@ -195,10 +195,8 @@ contains
                                          cslope_lo, cslope_hi, lim_slope, lin_limit)
                 end select
    
-                deallocate(dx,cslope_lo,cslope_hi)
-                
-                deallocate(cp)
                 deallocate(fp)
+                deallocate(cp)
                 deallocate(cvcx)
                 deallocate(fvcx)
                 if (dm > 1) deallocate(cvcy)

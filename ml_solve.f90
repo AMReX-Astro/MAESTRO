@@ -144,7 +144,6 @@ contains
           call lmultifab_destroy(fine_mask(n))
        end do
 
-       deallocate(nodal,lo,hi)
        deallocate(fine_mask)
 
    contains
