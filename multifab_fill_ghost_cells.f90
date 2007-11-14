@@ -195,7 +195,7 @@ contains
                                          cslope_lo, cslope_hi, lim_slope, lin_limit)
                 end select
    
-                deallocate(fp)
+
                 deallocate(cp)
                 deallocate(cvcx)
                 deallocate(fvcx)
@@ -212,6 +212,8 @@ contains
                          fstrip%lo(3):fstrip%hi(3),1:nc) = &
                       fp(fstrip%lo(1):fstrip%hi(1),fstrip%lo(2):fstrip%hi(2), &
                          fstrip%lo(3):fstrip%hi(3),1:nc)
+
+                deallocate(fp)
 
              end if
          end do
