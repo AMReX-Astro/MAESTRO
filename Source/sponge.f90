@@ -49,8 +49,13 @@ contains
 
       r_tp = 2.d0 * r_md - r_sp
 
-      r_tp_outer = HALF * max(max(prob_hi(1),prob_hi(2)),prob_hi(3))
-      r_sp_outer = r_tp_outer - 4.d0 * dx(3)
+      r_tp_outer = HALF * max(prob_hi(1),prob_hi(2)) 
+      if (size(prob_hi,dim=1) .eq. 2) then
+        r_sp_outer = r_tp_outer - 4.d0 * dx(2)
+      else
+        r_tp_outer = max(r_tp_outer, HALF * prob_hi(3)) 
+        r_sp_outer = r_tp_outer - 4.d0 * dx(3)
+      end if
 
       alpha = 10.d0
 !     alpha = 100.d0
