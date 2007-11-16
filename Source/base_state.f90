@@ -319,12 +319,12 @@ contains
   end function interpolate
 
 
-  subroutine write_base_state(state_name,w0_name,chk_name,s0,p0,w0,div_coeff)
+  subroutine write_base_state(state_name,w0_name,chk_name,s0,p0,gam1,w0,div_coeff)
 
     character(len=10), intent(in) :: state_name
     character(len=7), intent(in) :: w0_name
     character(len=7), intent(in) :: chk_name
-    real(kind=dp_t) , intent(in) :: s0(:,:),p0(:),div_coeff(:), w0(:)
+    real(kind=dp_t) , intent(in) :: s0(:,:),p0(:),gam1(:),div_coeff(:), w0(:)
     real(kind=dp_t) :: base_r
 
     character(len=18) :: out_name
@@ -342,7 +342,7 @@ contains
        open(unit=99,file=out_name,form = "formatted", access = "sequential",action="write")
        do i = 1, nr
           base_r = (dble(i)-HALF) * dr
-          write(99,1000)  base_r,s0(i,rho_comp), p0(i), s0(i,rhoh_comp), &
+          write(99,1000)  base_r,s0(i,rho_comp), p0(i), gam1(i), s0(i,rhoh_comp), &
                (s0(i,n), n=spec_comp,spec_comp+nspec-1), s0(i,temp_comp), div_coeff(i)
        end do
        close(99)
@@ -362,17 +362,17 @@ contains
     endif
 
 
-1000 format(16(e30.20,1x))
+1000 format(32(e30.20,1x))
 
   end subroutine write_base_state
 
 
-  subroutine read_base_state(state_name,w0_name,chk_name,s0,p0,w0,div_coeff)
+  subroutine read_base_state(state_name,w0_name,chk_name,s0,p0,gam1,w0,div_coeff)
     
     character(len=10), intent(in   ) :: state_name
     character(len=7) , intent(in   ) :: w0_name
     character(len=7) , intent(in   ) :: chk_name    
-    real(kind=dp_t) , intent(inout) :: s0(:,:),p0(:),div_coeff(:),w0(:)
+    real(kind=dp_t) , intent(inout) :: s0(:,:),p0(:),gam1(:),div_coeff(:),w0(:)
     real(kind=dp_t) , allocatable   :: base_r(:)
 
     real(kind=dp_t) :: r_dummy
@@ -390,7 +390,7 @@ contains
 
     open(unit=99,file=out_name)
     do i = 1, size(s0,dim=1)
-       read(99,*)  base_r(i),s0(i,rho_comp), p0(i), s0(i,rhoh_comp), &
+       read(99,*)  base_r(i),s0(i,rho_comp), p0(i), gam1(i),s0(i,rhoh_comp), &
                    (s0(i,n), n=spec_comp,spec_comp+nspec-1), s0(i,temp_comp), div_coeff(i)
     end do
     close(99)
