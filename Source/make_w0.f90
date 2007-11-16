@@ -88,7 +88,7 @@ contains
     vel(0) = ZERO
     do j = 1,nz
        eta_avg = HALF * (eta(j,rho_comp)+eta(j-1,rho_comp))
-       vel(j) = vel(j-1) + Sbar_in(j-1) * dr -
+       vel(j) = vel(j-1) + Sbar_in(j-1) * dr - &
                          ( eta_avg * abs(grav_const) / (gam1(j-1)*p0(j-1)) ) * dr
     end do
 
