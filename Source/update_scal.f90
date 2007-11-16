@@ -46,8 +46,6 @@ module update_scal_module
         do n = nstart, nstop
           eta(:,n) = ZERO
           do j = lo(2), hi(2)+1
-             vel_tmp = 0.d0
-              sy_tmp = 0.d0
              do i = lo(1), hi(1)
 !               eta(j,n) = eta(j,n) + vmac(i,j)*sedgey(i,j,n)
                 eta(j,n) = 0.d0
@@ -183,7 +181,8 @@ module update_scal_module
              eta(k,n) = ZERO
              do j = lo(2), hi(2)
              do i = lo(1), hi(1)
-                eta(k,n) = eta(k,n) + wmac(i,j,k)*sedgez(i,j,k,n)
+!               eta(k,n) = eta(k,n) + wmac(i,j,k)*sedgez(i,j,k,n)
+                eta(k,n) = 0.d0
              end do
              end do
              eta(k,n) = eta(k,n) * fac
