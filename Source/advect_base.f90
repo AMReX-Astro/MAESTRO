@@ -10,6 +10,7 @@ module advect_base_module
   use make_grav_module
   use cell_to_edge_module
   use make_div_coeff_module
+  use probin_module, only: grav_const
 
   implicit none
 
@@ -17,7 +18,7 @@ contains
 
    subroutine advect_base(vel,Sbar_in,p0_old,p0_new, &
                           s0_old,s0_new,&
-                          gam1,div_coeff, &
+                          gam1,div_coeff,eta, &
                           dz,dt,anelastic_cutoff)
 
       real(kind=dp_t), intent(in   ) :: vel(0:)
@@ -26,12 +27,13 @@ contains
       real(kind=dp_t), intent(  out) :: p0_new(0:), s0_new(0:,:)
       real(kind=dp_t), intent(inout) :: gam1(0:)
       real(kind=dp_t), intent(in   ) :: div_coeff(0:)
+      real(kind=dp_t), intent(in   ) :: eta(0:,:)
       real(kind=dp_t), intent(in   ) :: dz,dt,anelastic_cutoff
 
       if (spherical .eq. 0) then
 
         call advect_base_state_planar(vel,p0_old,p0_new,s0_old,s0_new,&
-                                      gam1,dz,dt)
+                                      gam1,eta,dz,dt)
 
       else
 
@@ -44,12 +46,13 @@ contains
    end subroutine advect_base
 
    subroutine advect_base_state_planar (vel,p0_old,p0_new,s0_old,s0_new,&
-                                        gam1,dz,dt)
+                                        gam1,eta,dz,dt)
 
       real(kind=dp_t), intent(in   ) :: vel(0:)
       real(kind=dp_t), intent(in   ) :: p0_old(0:), s0_old(0:,:)
       real(kind=dp_t), intent(  out) :: p0_new(0:), s0_new(0:,:)
       real(kind=dp_t), intent(inout) :: gam1(0:)
+      real(kind=dp_t), intent(in   ) :: eta(0:,:)
       real(kind=dp_t), intent(in   ) :: dz,dt
 
 !     Local variables
@@ -57,7 +60,7 @@ contains
 
       real (kind = dp_t), allocatable :: force(:)
       real (kind = dp_t), allocatable :: edge(:)
-
+    
       ! nz is the size of a cell-centered quantity
       nz = size(p0_new,dim=1)
 
@@ -70,8 +73,9 @@ contains
       force = ZERO
       call mkflux_1d(p0_old,edge,vel,force,1,dz,dt)
       do j = 0,nz-1
-        p0_new(j) = p0_old(j) - &
-             dt / dz * HALF * (vel(j) + vel(j+1)) * (edge(j+1) - edge(j))
+        p0_new(j) = p0_old(j) &
+           - dt / dz * HALF * (vel(j) + vel(j+1)) * (edge(j+1) - edge(j)) &
+           + HALF * dt * (eta(j,rho_comp)+eta(j+1,rho_comp))*abs(grav_const)
       end do
 
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -85,8 +89,9 @@ contains
          call mkflux_1d(s0_old(:,n),edge,vel,force,1,dz,dt)
 
          do j = 0,nz-1
-            s0_new(j,n) = s0_old(j,n) - &
-                 dt / dz * (edge(j+1) * vel(j+1) - edge(j) * vel(j))
+            s0_new(j,n) = s0_old(j,n) &
+               - dt / dz * (edge(j+1) * vel(j+1) - edge(j) * vel(j)) &
+               - dt / dz * (eta(j+1,n) - eta(j,n))
          end do
 
       enddo
@@ -112,8 +117,10 @@ contains
       call mkflux_1d(s0_old(:,rhoh_comp),edge,vel,force,1,dz,dt)
 
       do j = 0,nz-1
-         s0_new(j,rhoh_comp) = s0_old(j,rhoh_comp) - &
-              dt / dz * (edge(j+1) * vel(j+1) - edge(j) * vel(j))
+         s0_new(j,rhoh_comp) = s0_old(j,rhoh_comp) &
+           - dt / dz * (edge(j+1) * vel(j+1) - edge(j) * vel(j)) &
+           + HALF * dt * (eta(j,rho_comp)+eta(j+1,rho_comp))*abs(grav_const) &
+                  - dt / dz * (eta(j+1,rhoh_comp) - eta(j,rhoh_comp))
       end do
 
 

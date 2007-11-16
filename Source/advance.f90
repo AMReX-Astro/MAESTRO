@@ -42,7 +42,7 @@ module advance_timestep_module
     subroutine advance_timestep(init_mode, &
                                 mla,uold,sold,s1,s2,unew,snew,umac,uedge,sedge,utrans,gp,p, &
                                 scal_force,normal, &
-                                s0_old,s0_1,s0_2,s0_new,p0_old,p0_1,p0_2,p0_new,gam1,w0, &
+                                s0_old,s0_1,s0_2,s0_new,p0_old,p0_1,p0_2,p0_new,gam1,w0,eta, &
                                 rho_omegadot1, rho_omegadot2, rho_Hext, &
                                 div_coeff_old,div_coeff_new,&
                                 grav_cell_old, &
@@ -88,6 +88,7 @@ module advance_timestep_module
     real(dp_t)    , intent(inout) :: p0_new(0:)
     real(dp_t)    , intent(inout) :: gam1(0:)
     real(dp_t)    , intent(inout) :: w0(0:)
+    real(dp_t)    , intent(inout) :: eta(0:,:)
     real(dp_t)    , intent(in   ) :: div_coeff_old(0:)
     real(dp_t)    , intent(inout) :: div_coeff_new(0:)
     real(dp_t)    , intent(in   ) :: grav_cell_old(0:)
@@ -138,6 +139,9 @@ module advance_timestep_module
 
     dm    = mla%dim
     nlevs = size(uold)
+
+    ! This is always zero at the beginning of a time step
+    eta(:,:) = ZERO
 
     allocate(lo(dm))
     allocate(hi(dm))
@@ -234,7 +238,7 @@ module advance_timestep_module
 
         call average(Source_nph,Sbar,dx,1,1)
     
-        call make_w0(w0,w0_old,w0_force,Sbar(:,1),p0_old,s0_old(:,rho_comp),gam1,dt,dtold,verbose)
+        call make_w0(w0,w0_old,w0_force,Sbar(:,1),p0_old,s0_old(:,rho_comp),gam1,eta,dt,dtold,verbose)
 
         if (dm .eq. 3) then
           do n = 1, nlevs
@@ -323,7 +327,7 @@ module advance_timestep_module
 
         if (evolve_base_state) then
           call advect_base(w0,Sbar(:,1),p0_1,p0_2,s0_1,s0_2,gam1, &
-                           div_coeff_new,dx(1,dm),dt,anelastic_cutoff)
+                           div_coeff_new,eta,dx(1,dm),dt,anelastic_cutoff)
         else
           p0_2(:  ) = p0_1(:  )
           s0_2(:,:) = s0_1(:,:)
@@ -350,7 +354,7 @@ module advance_timestep_module
 
         do n = 1,nlevs
            call scalar_advance (1, uold(n), s1(n), s2(n), thermal(n),&
-                                umac(n,:), w0, w0_cart_vec(n), sedge(n,:), utrans(n,:),&
+                                umac(n,:), w0, w0_cart_vec(n), eta, sedge(n,:), utrans(n,:),&
                                 scal_force(n), normal(n), s0_1, s0_2, p0_1, p0_2, &
                                 dx(n,:),dt, &
                                 the_bc_tower%bc_tower_array(n), &
@@ -464,7 +468,7 @@ module advance_timestep_module
 
         end do
 
-        call make_w0(w0,w0_old,w0_force,Sbar(:,1),p0_new,s0_new(:,rho_comp),gam1,dt,dtold,verbose)
+        call make_w0(w0,w0_old,w0_force,Sbar(:,1),p0_new,s0_new(:,rho_comp),gam1,eta,dt,dtold,verbose)
 
         if (dm .eq. 3) then
            do n = 1, nlevs
@@ -522,7 +526,7 @@ module advance_timestep_module
         end if
         if (evolve_base_state) then
           call advect_base(w0,Sbar(:,1),p0_1,p0_2,s0_1,s0_2,gam1, &
-                           div_coeff_nph,dx(1,dm),dt,anelastic_cutoff)
+                           div_coeff_nph,eta,dx(1,dm),dt,anelastic_cutoff)
         else
           p0_2(:  ) = p0_1(:  )
           s0_2(:,:) = s0_1(:,:)
@@ -548,7 +552,7 @@ module advance_timestep_module
 
         do n = 1,nlevs
            call scalar_advance (2, uold(n), s1(n), s2(n), thermal(n), &
-                                umac(n,:), w0, w0_cart_vec(n), sedge(n,:), utrans(n,:),&
+                                umac(n,:), w0, w0_cart_vec(n), eta, sedge(n,:), utrans(n,:),&
                                 scal_force(n), normal(n), s0_1, s0_2, p0_1, p0_2, &
                                 dx(n,:),dt, &
                                 the_bc_tower%bc_tower_array(n), &

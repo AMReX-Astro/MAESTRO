@@ -23,7 +23,7 @@ module scalar_advance_module
 contains
 
    subroutine scalar_advance (which_step, uold, sold, snew, thermal, &
-                              umac, w0, w0_cart_vec, sedge, utrans, &
+                              umac, w0, w0_cart_vec, eta, sedge, utrans, &
                               ext_scal_force, normal, &
                               s0_old , s0_new , &
                               p0_old, p0_new, &
@@ -42,6 +42,7 @@ contains
       type(multifab) , intent(in   ) :: normal
 !
       real(kind=dp_t), intent(inout) :: w0(0:)
+      real(kind=dp_t), intent(inout) :: eta(0:,:)
       type(multifab) , intent(in   ) :: w0_cart_vec
       real(kind=dp_t), intent(in   ) :: dx(:),dt
       type(bc_level) , intent(in   ) :: the_bc_level
@@ -444,7 +445,7 @@ contains
          case (2)
             call update_scal_2d(which_step, spec_comp, spec_comp+nspec-1, &
                                 sop(:,:,1,:), snp(:,:,1,:), &
-                                ump(:,:,1,1), vmp(:,:,1,1), w0, &
+                                ump(:,:,1,1), vmp(:,:,1,1), w0, eta, &
                                 sepx(:,:,1,:), sepy(:,:,1,:), fp(:,:,1,:), &
                                 s0_old(:,:), s0_edge_old(:,:), s0_new(:,:), &
                                 lo, hi, ng_cell, dx, dt)
@@ -456,7 +457,7 @@ contains
                call update_scal_3d_cart(which_step, spec_comp, spec_comp+nspec-1, &
                                         sop(:,:,:,:), snp(:,:,:,:), &
                                         ump(:,:,:,1), vmp(:,:,:,1), &
-                                        wmp(:,:,:,1), w0, &
+                                        wmp(:,:,:,1), w0, eta, &
                                         sepx(:,:,:,:), sepy(:,:,:,:), &
                                         sepz(:,:,:,:), fp(:,:,:,:), &
                                         s0_old(:,:), s0_edge_old(:,:), s0_new(:,:), &
@@ -563,7 +564,7 @@ contains
          case (2)
             call update_scal_2d(which_step, trac_comp,trac_comp+ntrac-1, &
                                 sop(:,:,1,:), snp(:,:,1,:), &
-                                ump(:,:,1,1), vmp(:,:,1,1), w0, &
+                                ump(:,:,1,1), vmp(:,:,1,1), w0, eta, &
                                 sepx(:,:,1,:), sepy(:,:,1,:), fp(:,:,1,:), &
                                 s0_old(:,:), s0_edge_old(:,:), s0_new(:,:), &
                                 lo, hi, ng_cell, dx, dt)
@@ -576,7 +577,7 @@ contains
                call update_scal_3d_cart(which_step, trac_comp,trac_comp+ntrac-1, &
                                         sop(:,:,:,:), snp(:,:,:,:), &
                                         ump(:,:,:,1), vmp(:,:,:,1), &
-                                        wmp(:,:,:,1), w0, &
+                                        wmp(:,:,:,1), w0, eta, &
                                         sepx(:,:,:,:), sepy(:,:,:,:), &
                                         sepz(:,:,:,:),   fp(:,:,:,:), &
                                         s0_old(:,:), s0_edge_old(:,:), s0_new(:,:), &
@@ -670,7 +671,7 @@ contains
 
               call update_scal_2d(which_step, rhoh_comp, rhoh_comp, &
                              sop(:,:,1,:), snp(:,:,1,:), &
-                             ump(:,:,1,1), vmp(:,:,1,1), w0, &
+                             ump(:,:,1,1), vmp(:,:,1,1), w0, eta, &
                              sepx(:,:,1,:), sepy(:,:,1,:), fp(:,:,1,:), &
                              s0_old(:,:), s0_edge_old(:,:), s0_new(:,:), &
                              lo, hi, ng_cell, dx, dt)
@@ -706,7 +707,7 @@ contains
                 call update_scal_3d_cart(which_step, rhoh_comp, rhoh_comp, &
                                          sop(:,:,:,:), snp(:,:,:,:), &
                                          ump(:,:,:,1), vmp(:,:,:,1), &
-                                         wmp(:,:,:,1), w0, &
+                                         wmp(:,:,:,1), w0, eta, &
                                          sepx(:,:,:,:), sepy(:,:,:,:), &
                                          sepz(:,:,:,:), fp(:,:,:,:), &
                                          s0_old(:,:), s0_edge_old(:,:), s0_new(:,:), &

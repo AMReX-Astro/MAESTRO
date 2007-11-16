@@ -11,15 +11,17 @@ module make_w0_module
   use mkflux_module
   use make_grav_module
   use cell_to_edge_module
+  use probin_module, only: grav_const
 
   implicit none
 
 contains
 
-  subroutine make_w0(vel,vel_old,f,Sbar_in,p0,rho0,gam1,dt,dtold,verbose)
+  subroutine make_w0(vel,vel_old,f,Sbar_in,p0,rho0,gam1,eta,dt,dtold,verbose)
 
     real(kind=dp_t), intent(  out) :: vel(0:)
     real(kind=dp_t), intent(in   ) :: vel_old(0:)
+    real(kind=dp_t), intent(in   ) :: eta(0:,:)
     real(kind=dp_t), intent(inout) ::   f(0:)
     real(kind=dp_t), intent(in   ) :: p0(0:),rho0(0:),gam1(0:)
     real(kind=dp_t), intent(in   ) :: Sbar_in(0:)
@@ -36,7 +38,7 @@ contains
 
     if (spherical .eq. 0) then
 
-       call make_w0_planar(vel,vel_old,Sbar_in,f,dt,dtold)
+       call make_w0_planar(vel,vel_old,Sbar_in,p0,gam1,eta,f,dt,dtold)
 
     else
 
@@ -54,12 +56,13 @@ contains
 
   end subroutine make_w0
 
-  subroutine make_w0_planar (vel,vel_old,Sbar_in,f,dt,dtold)
+  subroutine make_w0_planar (vel,vel_old,Sbar_in,p0,gam1,eta,f,dt,dtold)
 
     implicit none
     real(kind=dp_t), intent(  out) :: vel(0:)
     real(kind=dp_t), intent(in   ) :: vel_old(0:)
     real(kind=dp_t), intent(in   ) :: Sbar_in(0:)
+    real(kind=dp_t), intent(in   ) :: p0(0:),gam1(0:),eta(0:,:)
     real(kind=dp_t), intent(inout) ::   f(0:)
     real(kind=dp_t), intent(in   ) :: dt,dtold
 
@@ -69,6 +72,8 @@ contains
     real(kind=dp_t), allocatable :: vel_new_cen(:)
     real(kind=dp_t), allocatable ::   force(:)
     real(kind=dp_t), allocatable ::    edge(:)
+
+    real(kind=dp_t) :: eta_avg
 
     ! nz is the dimension of a cell-centered quantity
     nz = size(vel,dim=1)-1
@@ -82,7 +87,9 @@ contains
     ! Initialize new velocity to zero.
     vel(0) = ZERO
     do j = 1,nz
-       vel(j) = vel(j-1) + Sbar_in(j-1) * dr
+       eta_avg = HALF * (eta(j,rho_comp)+eta(j-1,rho_comp))
+       vel(j) = vel(j-1) + Sbar_in(j-1) * dr -
+                         ( eta_avg * abs(grav_const) / (gam1(j-1)*p0(j-1)) ) * dr
     end do
 
     ! Compute the 1/rho0 grad pi0 term.
