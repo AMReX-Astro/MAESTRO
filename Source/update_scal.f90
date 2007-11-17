@@ -13,7 +13,7 @@ module update_scal_module
 
   contains
 
-   subroutine update_scal_2d (which_step, nstart,nstop,sold,snew,umac,vmac,w0,eta,sedgex,sedgey,force, &
+   subroutine update_scal_2d (which_step,nstart,nstop,sold,snew,umac,vmac,w0,eta,sedgex,sedgey,force, &
                               base_old,base_old_edge,base_new,base_new_edge,lo,hi,ng,dx,dt)
 
      ! update each scalar in time.  Here, it is assumed that the edge

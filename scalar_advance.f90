@@ -25,7 +25,7 @@ contains
    subroutine scalar_advance (which_step, uold, sold, snew, thermal, &
                               umac, w0, w0_cart_vec, eta, sedge, utrans, &
                               ext_scal_force, normal, &
-                              s0_old , s0_new , &
+                              s0_old, s0_new , &
                               p0_old, p0_new, &
                               dx, dt, the_bc_level, &
                               verbose)
@@ -49,7 +49,7 @@ contains
 ! 
       integer        , intent(in   ) :: verbose
 !
-      type(multifab) :: scal_force,s0_cart
+      type(multifab) :: scal_force,s0_old_cart,s0_new_cart
 
       real(kind=dp_t), intent(in   ) ::  s0_old(0:,:)
       real(kind=dp_t), intent(in   ) ::  s0_new(0:,:)
@@ -71,7 +71,8 @@ contains
       real(kind=dp_t), pointer::  dp(:,:,:,:)
       real(kind=dp_t), pointer::  tp(:,:,:,:)
       real(kind=dp_t), pointer::  np(:,:,:,:)
-      real(kind=dp_t), pointer:: s0p(:,:,:,:)
+      real(kind=dp_t), pointer:: s0op(:,:,:,:)
+      real(kind=dp_t), pointer:: s0np(:,:,:,:)
 !
       real(kind=dp_t), pointer:: sop(:,:,:,:)
       real(kind=dp_t), pointer:: snp(:,:,:,:)
@@ -110,8 +111,10 @@ contains
       call build(scal_force, ext_scal_force%la, nscal, 1)
       call setval(scal_force,ZERO)
 
-      call build(s0_cart   , ext_scal_force%la, nscal, 1)
-      call setval(s0_cart   ,ZERO,all=.true.)
+      call build(s0_old_cart, ext_scal_force%la, nscal, 1)
+      call build(s0_new_cart, ext_scal_force%la, nscal, 1)
+      call setval(s0_old_cart,ZERO,all=.true.)
+      call setval(s0_new_cart,ZERO,all=.true.)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     Create scalar source term at time n for (rho X)_i and (rho H).  
@@ -122,21 +125,26 @@ contains
 !     that appear as forces when we write it in convective/perturbational form.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      ! Define s0_cart 
+      ! Define s0_old_cart and s0_new_cart
       if (spherical .eq. 1) then
-        do i = 1, s0_cart%nboxes
-           if ( multifab_remote(s0_cart, i) ) cycle
-           s0p => dataptr(s0_cart, i)
-           lo =  lwb(get_box(s0_cart, i))
-           hi =  upb(get_box(s0_cart, i))
+        do i = 1, s0_old_cart%nboxes
+           if ( multifab_remote(s0_old_cart, i) ) cycle
+           s0op => dataptr(s0_old_cart, i)
+           s0np => dataptr(s0_new_cart, i)
+           lo =  lwb(get_box(s0_old_cart, i))
+           hi =  upb(get_box(s0_old_cart, i))
            do n = spec_comp,spec_comp+nspec-1
-             call fill_3d_data(s0p(:,:,:,n),s0_old(:,n),lo,hi,dx,1)
+             call fill_3d_data(s0op(:,:,:,n),s0_old(:,n),lo,hi,dx,1)
+             call fill_3d_data(s0np(:,:,:,n),s0_new(:,n),lo,hi,dx,1)
            end do
            n = rhoh_comp
-           call fill_3d_data(s0p(:,:,:,n),s0_old(:,n),lo,hi,dx,1)
+           call fill_3d_data(s0op(:,:,:,n),s0_old(:,n),lo,hi,dx,1)
+           call fill_3d_data(s0np(:,:,:,n),s0_new(:,n),lo,hi,dx,1)
         end do
-        call multifab_fill_boundary_c(s0_cart,spec_comp,nspec)
-        call multifab_fill_boundary_c(s0_cart,rhoh_comp,1)
+        call multifab_fill_boundary_c(s0_old_cart,spec_comp,nspec)
+        call multifab_fill_boundary_c(s0_old_cart,rhoh_comp,1)
+        call multifab_fill_boundary_c(s0_new_cart,spec_comp,nspec)
+        call multifab_fill_boundary_c(s0_new_cart,rhoh_comp,1)
       end if
 
       do i = 1, scal_force%nboxes
@@ -179,12 +187,12 @@ contains
             wmp  => dataptr(umac(3), i)
 
             if (spherical .eq. 1) then
-               s0p => dataptr(s0_cart, i)
+               s0op => dataptr(s0_old_cart, i)
                do n = spec_comp,spec_comp+nspec-1
                   call modify_scal_force_3d_sphr(fp(:,:,:,n),sop(:,:,:,n), &
                                                  lo,hi,domlo,domhi,ng_cell, &
                                                  ump(:,:,:,1),vmp(:,:,:,1), &
-                                                 wmp(:,:,:,1),s0p(:,:,:,n), &
+                                                 wmp(:,:,:,1),s0op(:,:,:,n), &
                                                  w0,dx)
                end do
                 
@@ -210,7 +218,7 @@ contains
                   call modify_scal_force_3d_sphr(fp(:,:,:,n),sop(:,:,:,n),lo,hi, &
                                                  domlo,domhi,ng_cell,&
                                                  ump(:,:,:,1),vmp(:,:,:,1), &
-                                                 wmp(:,:,:,1), s0p(:,:,:,n),w0,dx)
+                                                 wmp(:,:,:,1), s0op(:,:,:,n),w0,dx)
                end if
 
             else
@@ -447,7 +455,8 @@ contains
                                 sop(:,:,1,:), snp(:,:,1,:), &
                                 ump(:,:,1,1), vmp(:,:,1,1), w0, eta, &
                                 sepx(:,:,1,:), sepy(:,:,1,:), fp(:,:,1,:), &
-                                s0_old(:,:), s0_edge_old(:,:), s0_new(:,:), &
+                                s0_old(:,:), s0_edge_old(:,:), &
+                                s0_new(:,:), s0_edge_new(:,:), &
                                 lo, hi, ng_cell, dx, dt)
          case (3)
             wmp => dataptr(umac(3), i)
@@ -460,10 +469,12 @@ contains
                                         wmp(:,:,:,1), w0, eta, &
                                         sepx(:,:,:,:), sepy(:,:,:,:), &
                                         sepz(:,:,:,:), fp(:,:,:,:), &
-                                        s0_old(:,:), s0_edge_old(:,:), s0_new(:,:), &
+                                        s0_old(:,:), s0_edge_old(:,:), &
+                                        s0_new(:,:), s0_edge_new(:,:), &
                                         lo, hi, ng_cell, dx, dt)
             else
-               s0p => dataptr(s0_cart, i)
+               s0op => dataptr(s0_old_cart, i)
+               s0np => dataptr(s0_new_cart, i)
                call update_scal_3d_sphr(which_step, spec_comp, spec_comp+nspec-1, &
                                         sop(:,:,:,:), snp(:,:,:,:), &
                                         ump(:,:,:,1), vmp(:,:,:,1), &
@@ -471,8 +482,8 @@ contains
                                         sepx(:,:,:,:), sepy(:,:,:,:), &
                                         sepz(:,:,:,:), fp(:,:,:,:), &
                                         s0_old(:,:), s0_new(:,:), &
-                                        s0p(:,:,:,:), lo, hi, domlo, domhi, &
-                                        ng_cell, dx, dt)
+                                        s0op(:,:,:,:), s0np(:,:,:,:), &
+                                        lo, hi, domlo, domhi, ng_cell, dx, dt)
             end if
          end select
       end do
@@ -532,19 +543,22 @@ contains
 !     2) Update tracers with convective differencing.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      ! Define s0_cart 
+      ! Define s0_old_cart and s0_new_cart
       if (spherical .eq. 1) then
         do i = 1, sold%nboxes
-           if ( multifab_remote(s0_cart, i) ) cycle
-           s0p => dataptr(s0_cart, i)
-           lo =  lwb(get_box(s0_cart, i))
-           hi =  upb(get_box(s0_cart, i))
+           if ( multifab_remote(s0_old_cart, i) ) cycle
+           s0op => dataptr(s0_old_cart, i)
+           s0np => dataptr(s0_new_cart, i)
+           lo =  lwb(get_box(s0_old_cart, i))
+           hi =  upb(get_box(s0_old_cart, i))
            do n = trac_comp,trac_comp+ntrac-1
-             call fill_3d_data(s0p(:,:,:,n),s0_old(:,n),lo,hi,dx,1)
+             call fill_3d_data(s0op(:,:,:,n),s0_old(:,n),lo,hi,dx,1)
+             call fill_3d_data(s0np(:,:,:,n),s0_new(:,n),lo,hi,dx,1)
            end do
         end do
         do n = trac_comp,trac_comp+ntrac-1
-           call multifab_fill_boundary_c(s0_cart,n,1)
+           call multifab_fill_boundary_c(s0_old_cart,n,1)
+           call multifab_fill_boundary_c(s0_new_cart,n,1)
         end do
       end if
 
@@ -566,7 +580,8 @@ contains
                                 sop(:,:,1,:), snp(:,:,1,:), &
                                 ump(:,:,1,1), vmp(:,:,1,1), w0, eta, &
                                 sepx(:,:,1,:), sepy(:,:,1,:), fp(:,:,1,:), &
-                                s0_old(:,:), s0_edge_old(:,:), s0_new(:,:), &
+                                s0_old(:,:), s0_edge_old(:,:), &
+                                s0_new(:,:), s0_edge_new(:,:), &
                                 lo, hi, ng_cell, dx, dt)
 
          case (3)
@@ -580,10 +595,12 @@ contains
                                         wmp(:,:,:,1), w0, eta, &
                                         sepx(:,:,:,:), sepy(:,:,:,:), &
                                         sepz(:,:,:,:),   fp(:,:,:,:), &
-                                        s0_old(:,:), s0_edge_old(:,:), s0_new(:,:), &
+                                        s0_old(:,:), s0_edge_old(:,:), &
+                                        s0_new(:,:), s0_edge_new(:,:), &
                                         lo, hi, ng_cell, dx, dt)
               else
-                s0p => dataptr(s0_cart, i)
+                s0op => dataptr(s0_old_cart, i)
+                s0np => dataptr(s0_new_cart, i)
                 call update_scal_3d_sphr(which_step, trac_comp,trac_comp+ntrac-1, &
                                          sop(:,:,:,:), snp(:,:,:,:), &
                                          ump(:,:,:,1), vmp(:,:,:,1), &
@@ -591,7 +608,7 @@ contains
                                          sepx(:,:,:,:), sepy(:,:,:,:), &
                                          sepz(:,:,:,:), fp(:,:,:,:), &
                                          s0_old(:,:), s0_new(:,:), &
-                                         s0p(:,:,:,:), &
+                                         s0op(:,:,:,:), s0np(:,:,:,:), &
                                          lo, hi, domlo, domhi, ng_cell, dx, dt)
               end if
          end select
@@ -640,17 +657,20 @@ contains
       n = rhoh_comp
       bc_comp = dm+n
 
-      ! Define s0_cart 
+      ! Define s0_old_cart and s0_new_cart
       if (spherical .eq. 1) then
         do i = 1, sold%nboxes
-           if ( multifab_remote(s0_cart, i) ) cycle
-           s0p => dataptr(s0_cart, i)
-           lo =  lwb(get_box(s0_cart, i))
-           hi =  upb(get_box(s0_cart, i))
+           if ( multifab_remote(s0_old_cart, i) ) cycle
+           s0op => dataptr(s0_old_cart, i)
+           s0np => dataptr(s0_new_cart, i)
+           lo =  lwb(get_box(s0_old_cart, i))
+           hi =  upb(get_box(s0_old_cart, i))
            n = rhoh_comp
-           call fill_3d_data(s0p(:,:,:,n),s0_old(:,n),lo,hi,dx,1)
+           call fill_3d_data(s0op(:,:,:,n),s0_old(:,n),lo,hi,dx,1)
+           call fill_3d_data(s0np(:,:,:,n),s0_new(:,n),lo,hi,dx,1)
         end do
-        call multifab_fill_boundary_c(s0_cart,rhoh_comp,1)
+        call multifab_fill_boundary_c(s0_old_cart,rhoh_comp,1)
+        call multifab_fill_boundary_c(s0_new_cart,rhoh_comp,1)
       end if
 
       do i = 1, sold%nboxes
@@ -673,7 +693,8 @@ contains
                              sop(:,:,1,:), snp(:,:,1,:), &
                              ump(:,:,1,1), vmp(:,:,1,1), w0, eta, &
                              sepx(:,:,1,:), sepy(:,:,1,:), fp(:,:,1,:), &
-                             s0_old(:,:), s0_edge_old(:,:), s0_new(:,:), &
+                             s0_old(:,:), s0_edge_old(:,:), &
+                             s0_new(:,:), s0_edge_new(:,:), &
                              lo, hi, ng_cell, dx, dt)
               
             case(3)
@@ -681,25 +702,7 @@ contains
               w0p => dataptr(w0_cart_vec, i)
               sepz => dataptr(sedge(3), i)
 
-              if (spherical .eq. 1) then
-
-                np => dataptr(normal, i)
-                call mkrhohforce_3d_sphr(fp(:,:,:,n), &
-                                         ump(:,:,:,1), vmp(:,:,:,1), &
-                                         wmp(:,:,:,1), lo, hi, &
-                                         dx, np(:,:,:,:), p0_old, p0_new)
-                s0p => dataptr(s0_cart, i)
-                call update_scal_3d_sphr(which_step, rhoh_comp, rhoh_comp, &
-                                         sop(:,:,:,:), snp(:,:,:,:), &
-                                         ump(:,:,:,1), vmp(:,:,:,1), &
-                                         wmp(:,:,:,1), w0p(:,:,:,:), &
-                                         sepx(:,:,:,:), sepy(:,:,:,:), &
-                                         sepz(:,:,:,:), fp(:,:,:,:), &
-                                         s0_old(:,:), s0_new(:,:), &
-                                         s0p(:,:,:,:), lo, hi, &
-                                         domlo, domhi, ng_cell, dx, dt)
-
-              else
+              if (spherical .eq. 0) then
 
                 call mkrhohforce_3d(fp(:,:,:,n), wmp(:,:,:,1), lo, hi, &
                                     p0_old, p0_new)
@@ -710,9 +713,30 @@ contains
                                          wmp(:,:,:,1), w0, eta, &
                                          sepx(:,:,:,:), sepy(:,:,:,:), &
                                          sepz(:,:,:,:), fp(:,:,:,:), &
-                                         s0_old(:,:), s0_edge_old(:,:), s0_new(:,:), &
+                                         s0_old(:,:), s0_edge_old(:,:), &
+                                         s0_new(:,:), s0_edge_new(:,:), &
                                          lo, hi, ng_cell, dx, dt)
-               end if
+
+              else
+
+                np => dataptr(normal, i)
+                call mkrhohforce_3d_sphr(fp(:,:,:,n), &
+                                         ump(:,:,:,1), vmp(:,:,:,1), &
+                                         wmp(:,:,:,1), lo, hi, &
+                                         dx, np(:,:,:,:), p0_old, p0_new)
+                s0op => dataptr(s0_old_cart, i)
+                s0np => dataptr(s0_new_cart, i)
+                call update_scal_3d_sphr(which_step, rhoh_comp, rhoh_comp, &
+                                         sop(:,:,:,:), snp(:,:,:,:), &
+                                         ump(:,:,:,1), vmp(:,:,:,1), &
+                                         wmp(:,:,:,1), w0p(:,:,:,:), &
+                                         sepx(:,:,:,:), sepy(:,:,:,:), &
+                                         sepz(:,:,:,:), fp(:,:,:,:), &
+                                         s0_old(:,:), s0_new(:,:), &
+                                         s0op(:,:,:,:), s0np(:,:,:,:), &
+                                         lo, hi, domlo, domhi, ng_cell, dx, dt)
+
+              end if
          end select
       end do
 
@@ -774,7 +798,8 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       call multifab_destroy(scal_force)
-      call multifab_destroy(s0_cart)
+      call multifab_destroy(s0_old_cart)
+      call multifab_destroy(s0_new_cart)
 
       deallocate(s0_edge_old,s0_edge_new)
 
@@ -814,6 +839,7 @@ contains
            divbaseu = base(j)*(umac(i+1,j) - umac(i,j))/dx(1) &
                              +(vmac(i,j+1) * base_edge(j+1) &
                              - vmac(i,j  ) * base_edge(j  ) )/ dx(2)
+
            force(i,j) = force(i,j) - (s(i,j)-base(j))*divu - divbaseu
        end do
      end do
