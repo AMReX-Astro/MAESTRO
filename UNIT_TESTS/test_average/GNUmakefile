@@ -25,11 +25,12 @@ include $(FPARALLEL)/extern/helmeos/GPackage.mak
 VPATH_LOCATIONS += $(FPARALLEL)/extern/helmeos
 FINCLUDE_LOCATIONS += $(FPARALLEL)/extern/helmeos
 
+include $(FPARALLEL)/extern/conducteos/GPackage.mak
+VPATH_LOCATIONS += $(FPARALLEL)/extern/conducteos
+FINCLUDE_LOCATIONS += $(FPARALLEL)/extern/conducteos
+
 include $(FPARALLEL)/extern/networks/ignition/GPackage.mak
 VPATH_LOCATIONS += $(FPARALLEL)/extern/networks/ignition
-
-include $(FPARALLEL)/varden/GPackage.mak
-VPATH_LOCATIONS += $(FPARALLEL)/varden
 
 include $(FPARALLEL)/extern/VODE/GPackage.mak
 VPATH_LOCATIONS += $(FPARALLEL)/extern/VODE

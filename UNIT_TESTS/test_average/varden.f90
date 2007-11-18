@@ -7,6 +7,7 @@ subroutine varden()
   use layout_module
   use multifab_module
   use init_module
+  use base_state_module
   use ml_restriction_module
   use bc_module
   use define_bc_module
@@ -29,7 +30,7 @@ subroutine varden()
   real(dp_t) :: lenx,leny,lenz,max_dist
   integer    :: bcx_lo,bcx_hi,bcy_lo,bcy_hi,bcz_lo,bcz_hi
   integer    :: k,ng_cell,ng_edge,ng_fill
-  integer    :: i, j, d, n, nlevs, nscal, ntrac
+  integer    :: i, j, d, n, nlevs
   integer    :: comp,bc_comp
   logical    :: pmask_x,pmask_y,pmask_z
   logical    :: perturb_model
@@ -80,7 +81,6 @@ subroutine varden()
   real(dp_t), allocatable :: gam1(:)
   real(dp_t), allocatable :: s0_old(:,:)
   real(dp_t), allocatable :: s0_avg(:,:)
-  real(dp_t), allocatable :: temp0(:)
   real(dp_t), allocatable :: p0_old(:)
   real(dp_t), allocatable :: w0(:)
 
@@ -129,9 +129,6 @@ subroutine varden()
   prob_lo_z = ZERO
 
   anelastic_cutoff = 3.e6
-
-  ntrac = 1
-  nscal = nspec + ntrac + 2
 
   need_inputs = .true.
   test_set = ''
@@ -315,7 +312,7 @@ subroutine varden()
 
   dm = get_dim(mba)
   allocate(lo(dm),hi(dm))
-  call init_variables(dm, nscal, nspec)
+  call init_variables(dm, nspec)
   call network_init()
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -393,7 +390,6 @@ subroutine varden()
   allocate(   gam1(n_base  ))
   allocate( s0_old(n_base, nscal))
   allocate( s0_avg(n_base, nscal))
-  allocate(  temp0(n_base  ))
   allocate( p0_old(n_base  ))
   allocate(     w0(0:n_base))
 
@@ -448,7 +444,7 @@ subroutine varden()
   end do
 
 ! Build the arrays for each grid from the domain_bc arrays.
-  call bc_tower_build( the_bc_tower,mla,domain_phys_bc,domain_boxes,nscal,nspec,ntrac)
+  call bc_tower_build(the_bc_tower,mla,domain_phys_bc,domain_boxes,nspec)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Now initialize the grid data, and do initial projection if restart < 0.
@@ -459,7 +455,8 @@ subroutine varden()
   call init_geometry(center,n_base,dr_base)
 
   ! Initialize base state at finest level
-  call init_base_state(model_file,n_base,s0_old,temp0,p0_old,gam1,dx(nlevs,:),prob_lo,prob_hi)
+  call init_base_state(model_file,n_base,s0_old,p0_old,gam1, &
+                       dx(nlevs,:),prob_lo,prob_hi)
 
   ! Create the normal array once we have defined "center"
   if (spherical .eq. 1) then
@@ -475,14 +472,14 @@ subroutine varden()
   end if
 
   do n = 1,nlevs
-     call initveldata(uold(n),s0_old,p0_old,temp0,dx(n,:), &
+     call initveldata(uold(n),s0_old,p0_old,dx(n,:), &
                       prob_lo,prob_hi, &
-                      the_bc_tower%bc_tower_array(n),nscal,ntrac)
+                      the_bc_tower%bc_tower_array(n))
 
-     call initscalardata(sold(n),s0_old,p0_old,temp0,dx(n,:), &
+     call initscalardata(sold(n),s0_old,p0_old,dx(n,:), &
                          perturb_model, &
                          prob_lo,prob_hi, &
-                         the_bc_tower%bc_tower_array(n),nscal,ntrac)
+                         the_bc_tower%bc_tower_array(n))
 
   end do
 
@@ -536,8 +533,8 @@ subroutine varden()
      call multifab_fill_boundary(sold(n))
 
 !    This is done to impose any Dirichlet bc's on unew or snew.
-     call multifab_copy_c(unew(n),1,uold(n),1,dm   ,all=.true.)
-     call multifab_copy_c(snew(n),1,sold(n),1,nscal,all=.true.)
+     call multifab_copy_c(unew(n),1,uold(n),1,dm   ,ng=unew(n)%ng)
+     call multifab_copy_c(snew(n),1,sold(n),1,nscal,ng=snew(n)%ng)
 
   end do
 
@@ -576,7 +573,7 @@ subroutine varden()
   call destroy(mba)
 
   deallocate(uold,unew,sold,snew)
-  deallocate(gam1,s0_old,s0_avg,temp0,p0_old,w0)
+  deallocate(gam1,s0_old,s0_avg,p0_old,w0)
 
   deallocate(lo,hi)
 
