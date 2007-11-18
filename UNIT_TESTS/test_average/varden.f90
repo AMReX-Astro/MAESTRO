@@ -314,6 +314,7 @@ subroutine varden()
   allocate(lo(dm),hi(dm))
   call init_variables(dm, nspec)
   call network_init()
+  call helmeos_init()
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! allocate storage for the state

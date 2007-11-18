@@ -36,8 +36,6 @@ contains
     real(kind=dp_t) :: state1d(ndum), Pamb, temporary
     real(kind=dp_t) :: loloc,hiloc,flameloc,qreact
     
-    call helmeos_init
-
     dm = size(dx)
 
     lamsolfile = 'flame_4.e7_screen_left.out'

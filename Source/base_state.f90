@@ -158,8 +158,6 @@ contains
 
     close(99)
 
-    call helmeos_init
-
     dr_in = (base_r(npts_model) - base_r(1)) / dble(npts_model-1)
     rmax = base_r(npts_model)
 

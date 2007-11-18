@@ -204,7 +204,7 @@ subroutine varden()
 
   call init_variables(dm, nspec)
   call network_init()
-
+  call helmeos_init()
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! define the grid spacing on all levels
