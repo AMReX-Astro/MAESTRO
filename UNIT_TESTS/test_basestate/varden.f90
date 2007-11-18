@@ -59,6 +59,7 @@ subroutine varden()
   real(dp_t), allocatable :: p0(:)
   real(dp_t), allocatable :: w0(:)
   real(dp_t), allocatable :: w0_old(:)
+  real(dp_t), allocatable :: eta(:,:)
   real(dp_t), allocatable :: f(:)
   real(dp_t), allocatable :: Sbar_in(:)
 
@@ -233,11 +234,12 @@ subroutine varden()
   allocate(     p0(0:n_base-1  ))
   allocate( w0_old(0:n_base))
   allocate(     w0(0:n_base))
+  allocate(    eta(0:n_base,   nscal))
   allocate(      f(0:n_base))
   allocate(Sbar_in(0:n_base-1))
 
   w0(:) = ZERO
-
+  eta(:,:) = ZERO
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! read in the base state
@@ -312,7 +314,7 @@ subroutine varden()
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      w0(:) = ZERO
 
-     call make_w0(w0,w0_old,f,Sbar_in,p0,s0(:,rho_comp),gam1,dt,dtold,verbose)
+     call make_w0(w0,w0_old,f,Sbar_in,p0,s0(:,rho_comp),gam1,eta,dt,dtold,verbose)
   
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -337,7 +339,7 @@ subroutine varden()
 
      call advect_base(w0,Sbar_in,p0_old,p0, &
                       s0_old,s0, &
-                      gam1,div_coeff, &
+                      gam1,div_coeff,eta, &
                       dr_base,dt,anelastic_cutoff)
 
 
