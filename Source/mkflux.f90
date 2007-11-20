@@ -680,8 +680,8 @@ contains
              s_l(i+1)= s(i,j,k,n) + (HALF-ubardth)*slopex(i,j,k,1) + dth*st
              s_r(i  )= s(i,j,k,n) - (HALF+ubardth)*slopex(i,j,k,1) + dth*st
           else
-             s_l(i+1)= s(i,j,k,n) + (HALF-dth*uadv(i+1,j,k))*slopex(i,j,k,1) + dth*st
-             s_r(i  )= s(i,j,k,n) - (HALF+dth*uadv(i  ,j,k))*slopex(i,j,k,1) + dth*st
+             s_l(i+1)= s(i,j,k,n) + (HALF-dth*uadv(i+1,j,k)/hx)*slopex(i,j,k,1) + dth*st
+             s_r(i  )= s(i,j,k,n) - (HALF+dth*uadv(i  ,j,k)/hx)*slopex(i,j,k,1) + dth*st
           endif
 
          enddo
@@ -877,8 +877,8 @@ contains
              s_b(j+1)= s(i,j,k,n) + (HALF-vbardth)*slopey(i,j,k,1) + dth*st
              s_t(j  )= s(i,j,k,n) - (HALF+vbardth)*slopey(i,j,k,1) + dth*st
           else
-             s_b(j+1)= s(i,j,k,n) + (HALF-dth*vadv(i,j+1,k))*slopey(i,j,k,1) + dth*st
-             s_t(j  )= s(i,j,k,n) - (HALF+dth*vadv(i,j,  k))*slopey(i,j,k,1) + dth*st
+             s_b(j+1)= s(i,j,k,n) + (HALF-dth*vadv(i,j+1,k)/hy)*slopey(i,j,k,1) + dth*st
+             s_t(j  )= s(i,j,k,n) - (HALF+dth*vadv(i,j,  k)/hy)*slopey(i,j,k,1) + dth*st
           endif
 
         enddo
@@ -1073,8 +1073,8 @@ contains
              s_d(k+1)= s(i,j,k,n) + (HALF-wbardth)*slopez(i,j,k,1) + dth*st
              s_u(k  )= s(i,j,k,n) - (HALF+wbardth)*slopez(i,j,k,1) + dth*st
           else
-             s_d(k+1)= s(i,j,k,n) + (HALF-dth*wadv(i,j,k+1))*slopez(i,j,k,1) + dth*st
-             s_u(k  )= s(i,j,k,n) - (HALF+dth*wadv(i,j,k  ))*slopez(i,j,k,1) + dth*st
+             s_d(k+1)= s(i,j,k,n) + (HALF-dth*wadv(i,j,k+1)/hz)*slopez(i,j,k,1) + dth*st
+             s_u(k  )= s(i,j,k,n) - (HALF+dth*wadv(i,j,k  )/hz)*slopez(i,j,k,1) + dth*st
           endif
 
         enddo
