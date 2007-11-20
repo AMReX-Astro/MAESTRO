@@ -42,8 +42,8 @@ module advance_timestep_module
     subroutine advance_timestep(init_mode, &
                                 mla,uold,sold,s1,s2,unew,snew,umac,uedge,sedge,utrans,gp,p, &
                                 scal_force,normal, &
-                                s0_old,s0_1,s0_2,s0_new,p0_old,p0_1,p0_2,p0_new,gam1,w0,eta, &
-                                rho_omegadot1, rho_omegadot2, rho_Hext, &
+                                s0_old,s0_1,s0_2,s0_new,p0_old,p0_1,p0_2,p0_new, &
+                                gam1,w0,eta,rho_omegadot1,rho_omegadot2,rho_Hext, &
                                 div_coeff_old,div_coeff_new,&
                                 grav_cell_old, &
                                 dx,time,dt,dtold,the_bc_tower, &
@@ -238,7 +238,8 @@ module advance_timestep_module
 
         call average(Source_nph,Sbar,dx,1,1)
     
-        call make_w0(w0,w0_old,w0_force,Sbar(:,1),p0_old,s0_old(:,rho_comp),gam1,eta,dt,dtold,verbose)
+        call make_w0(w0,w0_old,w0_force,Sbar(:,1),p0_old,s0_old(:,rho_comp),gam1,eta, &
+                     dt,dtold,verbose)
 
         if (dm .eq. 3) then
           do n = 1, nlevs
@@ -265,7 +266,8 @@ module advance_timestep_module
         end do
 
         do n = 1, nlevs
-           call make_macrhs(macrhs(n),Source_nph(n),gamma1_term(n),Sbar(:,1),div_coeff_old,dx(n,:))
+           call make_macrhs(macrhs(n),Source_nph(n),gamma1_term(n),Sbar(:,1), &
+                            div_coeff_old,dx(n,:))
         end do
 
         ! MAC projection !
@@ -280,11 +282,13 @@ module advance_timestep_module
             end do
             call multifab_fill_boundary(div_coeff_3d(n))
           end do
-          call macproject(mla,umac,macphi,sold,dx,the_bc_tower,verbose,mg_verbose,cg_verbose,press_comp,&
+          call macproject(mla,umac,macphi,sold,dx,the_bc_tower, &
+                          verbose,mg_verbose,cg_verbose,press_comp, &
                           macrhs,div_coeff_3d=div_coeff_3d)
         else
           call cell_to_edge(div_coeff_old,div_coeff_edge)
-          call macproject(mla,umac,macphi,sold,dx,the_bc_tower,verbose,mg_verbose,cg_verbose,press_comp,&
+          call macproject(mla,umac,macphi,sold,dx,the_bc_tower, &
+                          verbose,mg_verbose,cg_verbose,press_comp, &
                           macrhs,div_coeff_1d=div_coeff_old,div_coeff_half_1d=div_coeff_edge)
         end if
 
@@ -306,7 +310,8 @@ module advance_timestep_module
         call average(rho_omegadot1,rho_omegadotbar1,dx,1,nspec)
         call average(rho_Hext,rho_Hextbar,dx,1,1)
         if (evolve_base_state) then
-          call react_base(p0_old,s0_old,rho_omegadotbar1,rho_Hextbar(:,1),halfdt,p0_1,s0_1,gam1)
+          call react_base(p0_old,s0_old,rho_omegadotbar1,rho_Hextbar(:,1),halfdt, &
+                          p0_1,s0_1,gam1)
         else
           p0_1(:  ) = p0_old(:  )
           s0_1(:,:) = s0_old(:,:)
@@ -352,21 +357,18 @@ module advance_timestep_module
            endif
         enddo
 
-        do n = 1,nlevs
-           call scalar_advance (1, uold(n), s1(n), s2(n), thermal(n),&
-                                umac(n,:), w0, w0_cart_vec(n), eta, sedge(n,:), utrans(n,:),&
-                                scal_force(n), normal(n), s0_1, s0_2, p0_1, p0_2, &
-                                dx(n,:),dt, &
-                                the_bc_tower%bc_tower_array(n), &
-                                verbose)
-        end do
+        do n=1,nlevs
+        call scalar_advance(1,uold(n),s1(n),s2(n),thermal(n),umac(n,:),w0,w0_cart_vec(n),eta, &
+                            sedge(n,:),utrans(n,:),scal_force(n),normal(n),s0_1,s0_2, &
+                            p0_1,p0_2,dx(n,:),dt,the_bc_tower%bc_tower_array(n),verbose)
+        enddo
 
         do n = 2, nlevs
            fine_domain = layout_get_pd(mla%la(n))
            call multifab_fill_ghost_cells(s2(n),s2(n-1),fine_domain, &
-                                          ng_cell,mla%mba%rr(n-1,:), &
-                                          the_bc_tower%bc_tower_array(n-1)%adv_bc_level_array(0,:,:,:), &
-                                          1,rho_comp,nscal)
+                ng_cell,mla%mba%rr(n-1,:), &
+                the_bc_tower%bc_tower_array(n-1)%adv_bc_level_array(0,:,:,:), &
+                1,rho_comp,nscal)
         end do
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -412,7 +414,8 @@ module advance_timestep_module
         call average(rho_omegadot2,rho_omegadotbar2,dx,1,nspec)
         call average(rho_Hext,rho_Hextbar,dx,1,1)
         if (evolve_base_state) then
-          call react_base(p0_2,s0_2,rho_omegadotbar2,rho_Hextbar(:,1),halfdt,p0_new,s0_new,gam1)
+          call react_base(p0_2,s0_2,rho_omegadotbar2,rho_Hextbar(:,1),halfdt,p0_new, &
+                          s0_new,gam1)
         else
           p0_new(:  ) = p0_2(:  )
           s0_new(:,:) = s0_2(:,:)
@@ -468,7 +471,8 @@ module advance_timestep_module
 
         end do
 
-        call make_w0(w0,w0_old,w0_force,Sbar(:,1),p0_new,s0_new(:,rho_comp),gam1,eta,dt,dtold,verbose)
+        call make_w0(w0,w0_old,w0_force,Sbar(:,1),p0_new,s0_new(:,rho_comp),gam1,eta, &
+                     dt,dtold,verbose)
 
         if (dm .eq. 3) then
            do n = 1, nlevs
@@ -493,7 +497,8 @@ module advance_timestep_module
         end do
 
         do n = 1, nlevs
-           call make_macrhs(macrhs(n),Source_nph(n),gamma1_term(n),Sbar(:,1),div_coeff_nph,dx(n,:))
+           call make_macrhs(macrhs(n),Source_nph(n),gamma1_term(n),Sbar(:,1), &
+                            div_coeff_nph,dx(n,:))
         end do
 
         ! MAC projection !
@@ -508,12 +513,15 @@ module advance_timestep_module
             end do
             call multifab_fill_boundary(div_coeff_3d(n))
           end do
-          call macproject(mla,umac,macphi,rhohalf,dx,the_bc_tower,verbose,mg_verbose,cg_verbose,&
+          call macproject(mla,umac,macphi,rhohalf,dx,the_bc_tower, &
+                          verbose,mg_verbose,cg_verbose,&
                           press_comp,macrhs,div_coeff_3d=div_coeff_3d)
         else
           call cell_to_edge(div_coeff_nph,div_coeff_edge)
-          call macproject(mla,umac,macphi,rhohalf,dx,the_bc_tower,verbose,mg_verbose,cg_verbose,&
-                          press_comp,macrhs,div_coeff_1d=div_coeff_nph,div_coeff_half_1d=div_coeff_edge)
+          call macproject(mla,umac,macphi,rhohalf,dx,the_bc_tower, &
+                          verbose,mg_verbose,cg_verbose,&
+                          press_comp,macrhs,div_coeff_1d=div_coeff_nph, &
+                          div_coeff_half_1d=div_coeff_edge)
         end if
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -550,21 +558,18 @@ module advance_timestep_module
             endif
          enddo
 
-        do n = 1,nlevs
-           call scalar_advance (2, uold(n), s1(n), s2(n), thermal(n), &
-                                umac(n,:), w0, w0_cart_vec(n), eta, sedge(n,:), utrans(n,:),&
-                                scal_force(n), normal(n), s0_1, s0_2, p0_1, p0_2, &
-                                dx(n,:),dt, &
-                                the_bc_tower%bc_tower_array(n), &
-                                verbose)
-        end do
+         do n=1,nlevs
+         call scalar_advance(2,uold(n),s1(n),s2(n),thermal(n),umac(n,:),w0,w0_cart_vec(n),eta, &
+                             sedge(n,:),utrans(n,:),scal_force(n),normal(n),s0_1,s0_2, &
+                             p0_1,p0_2,dx(n,:),dt,the_bc_tower%bc_tower_array(n),verbose)
+         enddo
 
         do n = 2, nlevs
            fine_domain = layout_get_pd(mla%la(n))
            call multifab_fill_ghost_cells(s2(n),s2(n-1),fine_domain, &
-                                          ng_cell,mla%mba%rr(n-1,:), &
-                                          the_bc_tower%bc_tower_array(n-1)%adv_bc_level_array(0,:,:,:), &
-                                          1,rho_comp,nscal)
+                ng_cell,mla%mba%rr(n-1,:), &
+                the_bc_tower%bc_tower_array(n-1)%adv_bc_level_array(0,:,:,:), &
+                1,rho_comp,nscal)
         end do
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -598,7 +603,8 @@ module advance_timestep_module
         call average(rho_omegadot2,rho_omegadotbar2,dx,1,nspec)
         call average(rho_Hext,rho_Hextbar,dx,1,1)
         if (evolve_base_state) then
-          call react_base(p0_2,s0_2,rho_omegadotbar2,rho_Hextbar(:,1),halfdt,p0_new,s0_new,gam1)
+          call react_base(p0_2,s0_2,rho_omegadotbar2,rho_Hextbar(:,1),halfdt,p0_new, &
+                          s0_new,gam1)
         else
           p0_new(:  ) = p0_2(:  )
           s0_new(:,:) = s0_2(:,:)
@@ -672,9 +678,9 @@ module advance_timestep_module
         do n = 2, nlevs
            fine_domain = layout_get_pd(mla%la(n))
            call multifab_fill_ghost_cells(unew(n),unew(n-1),fine_domain, &
-                                          ng_cell,mla%mba%rr(n-1,:), &
-                                          the_bc_tower%bc_tower_array(n-1)%adv_bc_level_array(0,:,:,:), &
-                                          1,1,dm)
+                ng_cell,mla%mba%rr(n-1,:), &
+                the_bc_tower%bc_tower_array(n-1)%adv_bc_level_array(0,:,:,:), &
+                1,1,dm)
         end do
 
         ! Define beta at half time using the div_coeff_new from step 9!
@@ -687,14 +693,16 @@ module advance_timestep_module
           proj_type = pressure_iters
           do n = 1,nlevs
              call multifab_copy(hgrhs_old(n),hgrhs(n))
-             call make_hgrhs(hgrhs(n),Source_new(n),gamma1_term(n),Sbar(:,1),div_coeff_new,dx(n,:))
+             call make_hgrhs(hgrhs(n),Source_new(n),gamma1_term(n),Sbar(:,1), &
+                             div_coeff_new,dx(n,:))
              call multifab_sub_sub(hgrhs(n),hgrhs_old(n))
              call multifab_div_div_s(hgrhs(n),dt)
           end do
         else
           proj_type = regular_timestep
           do n = 1,nlevs
-             call make_hgrhs(hgrhs(n),Source_new(n),gamma1_term(n),Sbar(:,1),div_coeff_new,dx(n,:))
+             call make_hgrhs(hgrhs(n),Source_new(n),gamma1_term(n),Sbar(:,1), &
+                             div_coeff_new,dx(n,:))
           end do
         end if
 
@@ -728,9 +736,9 @@ module advance_timestep_module
         do n = 2, nlevs
            fine_domain = layout_get_pd(mla%la(n))
            call multifab_fill_ghost_cells(unew(n),unew(n-1),fine_domain, &
-                                          ng_cell,mla%mba%rr(n-1,:), &
-                                          the_bc_tower%bc_tower_array(n-1)%adv_bc_level_array(0,:,:,:), &
-                                          1,1,dm)
+                ng_cell,mla%mba%rr(n-1,:), &
+                the_bc_tower%bc_tower_array(n-1)%adv_bc_level_array(0,:,:,:), &
+                1,1,dm)
         end do
 
         do n = 1, nlevs
