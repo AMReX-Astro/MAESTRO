@@ -39,7 +39,7 @@ contains
     
     integer :: lo(u%dim),hi(u%dim),ng,dm
     
-    real(kind=dp_t) :: dt_adv,dt_adv_grid,dt_adv_proc
+    real(kind=dp_t) :: dt_adv,dt_adv_grid,dt_adv_proc,dt_start
     real(kind=dp_t) :: dt_divu,dt_divu_grid,dt_divu_proc
     integer         :: i
     
@@ -48,10 +48,9 @@ contains
     ng = u%ng
     dm = u%dim
     
-    dt_adv_grid   = 1.d20
     dt_adv_proc   = 1.d20
-    dt_divu_grid  = 1.d20
     dt_divu_proc  = 1.d20
+    dt_start      = 1.d20
     
     do i = 1, u%nboxes
        if ( multifab_remote(u, i) ) cycle
@@ -62,6 +61,9 @@ contains
        dSdtp => dataptr(dSdt, i)
        lo =  lwb(get_box(u, i))
        hi =  upb(get_box(u, i))
+
+       dt_adv_grid   = 1.d20
+       dt_divu_grid  = 1.d20
 
        select case (dm)
        case (2)
@@ -85,6 +87,7 @@ contains
        
        dt_adv_proc  = min(dt_adv_proc ,dt_adv_grid)
        dt_divu_proc = min(dt_divu_proc,dt_divu_grid)
+
     end do
     
     ! This sets dt to be the min of dt_proc over all processors.
@@ -92,6 +95,11 @@ contains
     call parallel_reduce(dt_divu,dt_divu_proc,MPI_MIN)
     
     dt = min(dt_adv,dt_divu)
+
+    if (dt .eq. dt_start) then
+       dt = min(dx(1),dx(2))
+       if (dm .eq. 3) dt = min(dt,dx(3))
+    end if
     
   end subroutine estdt
   
@@ -100,19 +108,19 @@ contains
                       ng, dx, rho_min, dt_adv, dt_divu, cfl)
 
     integer, intent(in) :: n, lo(:), hi(:), ng
-    real (kind = dp_t), intent(in ) :: u(lo(1)-ng:,lo(2)-ng:,:)  
-    real (kind = dp_t), intent(in ) :: s(lo(1)-ng:,lo(2)-ng:,:)  
-    real (kind = dp_t), intent(in ) :: force(lo(1)-1:,lo(2)-1:,:)  
-    real (kind = dp_t), intent(in ) :: divU(lo(1):,lo(2):)
-    real (kind = dp_t), intent(in ) :: dSdt(lo(1):,lo(2):)
-    real (kind = dp_t), intent( in) :: w0(0:), p0(0:), gam1(0:)
-    real (kind = dp_t), intent(in ) :: dx(:)
-    real (kind = dp_t), intent(in ) :: rho_min,cfl
-    real (kind = dp_t), intent(out) :: dt_adv,dt_divu
+    real (kind = dp_t), intent(in   ) :: u(lo(1)-ng:,lo(2)-ng:,:)  
+    real (kind = dp_t), intent(in   ) :: s(lo(1)-ng:,lo(2)-ng:,:)  
+    real (kind = dp_t), intent(in   ) :: force(lo(1)-1:,lo(2)-1:,:)  
+    real (kind = dp_t), intent(in   ) :: divU(lo(1):,lo(2):)
+    real (kind = dp_t), intent(in   ) :: dSdt(lo(1):,lo(2):)
+    real (kind = dp_t), intent(in   ) :: w0(0:), p0(0:), gam1(0:)
+    real (kind = dp_t), intent(in   ) :: dx(:)
+    real (kind = dp_t), intent(in   ) :: rho_min,cfl
+    real (kind = dp_t), intent(inout) :: dt_adv,dt_divu
     
     ! Local variables
     real (kind = dp_t)  :: spdx, spdy, spdr
-    real (kind = dp_t)  :: pforcex, pforcey
+    real (kind = dp_t)  :: fx, fy
     real (kind = dp_t)  :: eps
     real (kind = dp_t)  :: denom, gradp0
     real (kind = dp_t)  :: a, b, c
@@ -134,43 +142,35 @@ contains
        enddo
     enddo
     
-    spdx = spdx / dx(1)
-    spdy = spdy / dx(2)
-    
     spdr = ZERO 
     do j = lo(2),hi(2)
        spdr = max(spdr ,abs(w0(j)))
     enddo
-    spdr = spdr / dx(2)
-    
-    if (spdx < eps .and. spdy < eps .and. spdr < eps) then
-       dt_adv = min(dx(1),dx(2))
-    else
-       dt_adv = cfl / max(spdx,spdy,spdr)
-    endif
+
+    if (spdx > eps) dt_adv = min(dt_adv, dx(1)/spdx)
+    if (spdy > eps) dt_adv = min(dt_adv, dx(2)/spdy)
+    if (spdr > eps) dt_adv = min(dt_adv, dx(2)/spdr)
+
+    dt_adv = dt_adv * cfl
     
     ! force constraints
-    pforcex = 0.0D0 
-    pforcey = 0.0D0 
+    fx = 0.0D0 
+    fy = 0.0D0 
     
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
-          pforcex = max(pforcex,abs(force(i,j,1)))
-          pforcey = max(pforcey,abs(force(i,j,2)))
+          fx = max(fx,abs(force(i,j,1)))
+          fy = max(fy,abs(force(i,j,2)))
        enddo
     enddo
     
-    if (pforcex > eps) then
-       dt_adv = min(dt_adv,sqrt(2.0D0 *dx(1)/pforcex))
-    endif
+    if (fx > eps) &
+       dt_adv = min(dt_adv,sqrt(2.0D0 *dx(1)/fx))
     
-    if (pforcey > eps) then
-       dt_adv = min(dt_adv,sqrt(2.0D0 *dx(2)/pforcey))
-    endif
+    if (fy > eps) &
+       dt_adv = min(dt_adv,sqrt(2.0D0 *dx(2)/fy))
     
     ! divU constraint
-    dt_divu = 1.d30
-    
     do j = lo(2), hi(2)
        
        if (j .eq. 0) then
@@ -220,19 +220,19 @@ contains
                            ng, dx, rho_min, dt_adv, dt_divu, cfl)
 
     integer, intent(in) :: n, lo(:), hi(:), ng
-    real (kind = dp_t), intent(in ) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
-    real (kind = dp_t), intent(in ) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
-    real (kind = dp_t), intent(in ) :: force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
-    real (kind = dp_t), intent(in ) :: divU(lo(1):,lo(2):,lo(3):)
-    real (kind = dp_t), intent(in ) :: dSdt(lo(1):,lo(2):,lo(3):)
-    real (kind = dp_t), intent( in) :: w0(0:), p0(0:), gam1(0:)
-    real (kind = dp_t), intent(in ) :: dx(:)
-    real (kind = dp_t), intent(in ) :: rho_min,cfl
-    real (kind = dp_t), intent(out) :: dt_adv, dt_divu
+    real (kind = dp_t), intent(in   ) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
+    real (kind = dp_t), intent(in   ) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
+    real (kind = dp_t), intent(in   ) :: force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
+    real (kind = dp_t), intent(in   ) :: divU(lo(1):,lo(2):,lo(3):)
+    real (kind = dp_t), intent(in   ) :: dSdt(lo(1):,lo(2):,lo(3):)
+    real (kind = dp_t), intent(in   ) :: w0(0:), p0(0:), gam1(0:)
+    real (kind = dp_t), intent(in   ) :: dx(:)
+    real (kind = dp_t), intent(in   ) :: rho_min,cfl
+    real (kind = dp_t), intent(inout) :: dt_adv, dt_divu
     
     ! Local variables
     real (kind = dp_t)  :: spdx, spdy, spdz, spdr
-    real (kind = dp_t)  :: pforcex, pforcey, pforcez
+    real (kind = dp_t)  :: fx, fy, fz
     real (kind = dp_t)  :: eps,denom,gradp0
     real (kind = dp_t)  :: a, b, c
     integer             :: i,j,k,nr
@@ -261,48 +261,39 @@ contains
     do k = lo(3),hi(3)
        spdr = max(spdr ,abs(w0(k)))
     enddo
-    spdr = spdr / dx(3)
-    
-    spdx = spdx / dx(1)
-    spdy = spdy / dx(2)
-    spdz = spdz / dx(3)
-    
-    if (spdx < eps .and. spdy < eps .and. spdz < eps .and. spdr < eps) then
-       dt_adv = min(dx(1),dx(2),dx(3))
-    else
-       dt_adv = cfl  / max(spdx,spdy,spdz,spdr)
-    endif
+
+    if (spdx > eps) dt_adv = min(dt_adv, dx(1)/spdx)
+    if (spdy > eps) dt_adv = min(dt_adv, dx(2)/spdy)
+    if (spdz > eps) dt_adv = min(dt_adv, dx(3)/spdz)
+    if (spdr > eps) dt_adv = min(dt_adv, dx(3)/spdr)
+
+    dt_adv = dt_adv * cfl
     
     ! Limit dt based on forcing terms
-    pforcex = ZERO 
-    pforcey = ZERO 
-    pforcez = ZERO 
+    fx = ZERO 
+    fy = ZERO 
+    fz = ZERO 
     
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
-             pforcex = max(pforcex,abs(force(i,j,k,1)))
-             pforcey = max(pforcey,abs(force(i,j,k,2)))
-             pforcez = max(pforcez,abs(force(i,j,k,3)))
+             fx = max(fx,abs(force(i,j,k,1)))
+             fy = max(fy,abs(force(i,j,k,2)))
+             fz = max(fz,abs(force(i,j,k,3)))
           enddo
        enddo
     enddo
     
-    if (pforcex > eps) then
-       dt_adv = min(dt_adv,sqrt(2.0D0*dx(1)/pforcex))
-    endif
+    if (fx > eps) &
+       dt_adv = min(dt_adv,sqrt(2.0D0*dx(1)/fx))
     
-    if (pforcey > eps) then
-       dt_adv = min(dt_adv,sqrt(2.0D0*dx(2)/pforcey))
-    endif
+    if (fy > eps) &
+       dt_adv = min(dt_adv,sqrt(2.0D0*dx(2)/fy))
     
-    if (pforcez > eps) then
-       dt_adv = min(dt_adv,sqrt(2.0D0*dx(3)/pforcez))
-    endif
+    if (fz > eps) &
+       dt_adv = min(dt_adv,sqrt(2.0D0*dx(3)/fz))
     
     ! divU constraint
-    dt_divu = 1.d30
-    
     do k = lo(3), hi(3)
        
        if (k .eq. 0) then
@@ -355,23 +346,23 @@ contains
                            lo, hi, ng, dx, rho_min, dt_adv, dt_divu, cfl)
     
     integer, intent(in) :: n, lo(:), hi(:), ng
-    real (kind = dp_t), intent(in ) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
-    real (kind = dp_t), intent(in ) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
-    real (kind = dp_t), intent(in ) :: force(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)  
-    real (kind = dp_t), intent(in ) :: divU(lo(1):,lo(2):,lo(3):)
-    real (kind = dp_t), intent(in ) :: dSdt(lo(1):,lo(2):,lo(3):)
-    real (kind = dp_t), intent(in ) :: normal(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)
-    real (kind = dp_t), intent( in) :: w0(0:), p0(0:), gam1(0:)
-    real (kind = dp_t), intent(in ) :: dx(:)
-    real (kind = dp_t), intent(in ) :: rho_min, cfl
-    real (kind = dp_t), intent(out) :: dt_adv, dt_divu
+    real (kind = dp_t), intent(in   ) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
+    real (kind = dp_t), intent(in   ) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
+    real (kind = dp_t), intent(in   ) :: force(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)  
+    real (kind = dp_t), intent(in   ) :: divU(lo(1):,lo(2):,lo(3):)
+    real (kind = dp_t), intent(in   ) :: dSdt(lo(1):,lo(2):,lo(3):)
+    real (kind = dp_t), intent(in   ) :: normal(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)
+    real (kind = dp_t), intent(in   ) :: w0(0:), p0(0:), gam1(0:)
+    real (kind = dp_t), intent(in   ) :: dx(:)
+    real (kind = dp_t), intent(in   ) :: rho_min, cfl
+    real (kind = dp_t), intent(inout) :: dt_adv, dt_divu
     
     ! Local variables
     real (kind = dp_t), allocatable ::  w0_cart(:,:,:,:)
     real (kind = dp_t), allocatable :: gp0_cart(:,:,:,:)
     real (kind = dp_t), allocatable :: gp0(:)
     real (kind = dp_t)  :: spdx, spdy, spdz, spdr, gp_dot_u, gam1_p_avg
-    real (kind = dp_t)  :: pforcex, pforcey, pforcez
+    real (kind = dp_t)  :: fx, fy, fz
     real (kind = dp_t)  :: eps,denom
     real (kind = dp_t)  :: a, b, c
     integer             :: i,j,k,nr
@@ -405,48 +396,39 @@ contains
     do k = 0,size(w0,dim=1)-1
        spdr = max(spdr ,abs(w0(k)))
     enddo
-    spdr = spdr / dr
-    
-    spdx = spdx / dx(1)
-    spdy = spdy / dx(2)
-    spdz = spdz / dx(3)
-    
-    if (spdx < eps .and. spdy < eps .and. spdz < eps .and. spdr < eps) then
-       dt_adv = min(dx(1),dx(2),dx(3))
-    else
-       dt_adv = cfl / max(spdx,spdy,spdz,spdr)
-    endif
+
+    if (spdx > eps) dt_adv = min(dt_adv, dx(1)/spdx)
+    if (spdy > eps) dt_adv = min(dt_adv, dx(2)/spdy)
+    if (spdz > eps) dt_adv = min(dt_adv, dx(3)/spdz)
+    if (spdr > eps) dt_adv = min(dt_adv,    dr/spdr)
+
+    dt_adv = dt_adv * cfl
     
     ! Limit dt based on forcing terms
-    pforcex = ZERO 
-    pforcey = ZERO 
-    pforcez = ZERO 
+    fx = ZERO 
+    fy = ZERO 
+    fz = ZERO 
     
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
-             pforcex = max(pforcex,abs(force(i,j,k,1)))
-             pforcey = max(pforcey,abs(force(i,j,k,2)))
-             pforcez = max(pforcez,abs(force(i,j,k,3)))
+             fx = max(fx,abs(force(i,j,k,1)))
+             fy = max(fy,abs(force(i,j,k,2)))
+             fz = max(fz,abs(force(i,j,k,3)))
           enddo
        enddo
     enddo
     
-    if (pforcex > eps) then
-       dt_adv = min(dt_adv,sqrt(2.0D0*dx(1)/pforcex))
-    endif
+    if (fx > eps) &
+       dt_adv = min(dt_adv,sqrt(2.0D0*dx(1)/fx))
     
-    if (pforcey > eps) then
-       dt_adv = min(dt_adv,sqrt(2.0D0*dx(2)/pforcey))
-    endif
+    if (fy > eps) &
+       dt_adv = min(dt_adv,sqrt(2.0D0*dx(2)/fy))
     
-    if (pforcez > eps) then
-       dt_adv = min(dt_adv,sqrt(2.0D0*dx(3)/pforcez))
-    endif
+    if (fz > eps) &
+       dt_adv = min(dt_adv,sqrt(2.0D0*dx(3)/fz))
     
     ! divU constraint
-    dt_divu = 1.d30
-    
     allocate(gp0(0:nr))
     do k = 1,nr-1
        gp0(k) = (p0(k) - p0(k-1))/dr
