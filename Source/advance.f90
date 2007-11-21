@@ -173,16 +173,15 @@ contains
     allocate(s2star(nlevs))
     allocate(rho_omegadot2_hold(nlevs))
 
+    nodal = .true.
+
     ng_cell = uold(1)%ng
 
     halfdt = half * dt
     
     ! Set w0_old to w0 from last time step.
-    do n = 1, nlevs
-       w0_old(n,:) = w0(n,:)
-    enddo
+    w0_old = w0
 
-    nodal = .true.
     do n = 1, nlevs
        call multifab_build(rhohalf(n),           mla%la(n), 1    , 1)
        call multifab_build(Source_nph(n),        mla%la(n), 1    , 0)
@@ -263,7 +262,7 @@ contains
              dp => dataptr(div_coeff_3d(n), i)
              lo =  lwb(get_box(div_coeff_3d(n), i))
              hi =  upb(get_box(div_coeff_3d(n), i))
-             call fill_3d_data(dp(:,:,:,1),div_coeff_old(1,:),lo,hi,dx(nlevs,:),1)
+             call fill_3d_data(dp(:,:,:,1),div_coeff_old(n,:),lo,hi,dx(n,:),1)
           end do
           call multifab_fill_boundary(div_coeff_3d(n))
        end do
@@ -485,7 +484,7 @@ contains
                 dp => dataptr(div_coeff_3d(n), i)
                 lo =  lwb(get_box(div_coeff_3d(n), i))
                 hi =  upb(get_box(div_coeff_3d(n), i))
-                call fill_3d_data(dp(:,:,:,1),div_coeff_nph(1,:),lo,hi,dx(nlevs,:),1)
+                call fill_3d_data(dp(:,:,:,1),div_coeff_nph(n,:),lo,hi,dx(n,:),1)
              end do
              call multifab_fill_boundary(div_coeff_3d(n))
           end do
@@ -689,7 +688,7 @@ contains
              dp => dataptr(div_coeff_3d(n), i)
              lo =  lwb(get_box(div_coeff_3d(n), i))
              hi =  upb(get_box(div_coeff_3d(n), i))
-             call fill_3d_data(dp(:,:,:,1),div_coeff_nph(1,:),lo,hi,dx(nlevs,:),1)
+             call fill_3d_data(dp(:,:,:,1),div_coeff_nph(n,:),lo,hi,dx(n,:),1)
           end do
        end do
        eps_in = 1.d-12
