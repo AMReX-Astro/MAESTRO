@@ -249,14 +249,8 @@ contains
        write(6,*) '<<< STEP  2 : create MAC velocities>>> '
     end if
     
-    do n = 1,nlevs
-       
-       call advance_premac(uold(n), sold(n),&
-                           umac(n,:), uedge(n,:), utrans(n,:),&
-                           gp(n), normal(n), w0(1,:), w0_cart_vec(n), &
-                           s0_old(1,:,:), grav_cell_old(1,:), &
-                           dx(n,:),dt,the_bc_tower%bc_tower_array(n))
-    end do
+    call advance_premac(nlevs,uold,sold,umac,uedge,utrans,gp,normal,w0,w0_cart_vec, &
+                        s0_old,grav_cell_old,dx,dt,the_bc_tower%bc_tower_array)
     
     do n = 1, nlevs
        call make_macrhs(macrhs(n),Source_nph(n),gamma1_term(n),Sbar(1,:,1), &
@@ -480,13 +474,8 @@ contains
           write(6,*) '<<< STEP  7 : create MAC velocities >>> '
        end if
        
-       do n = 1,nlevs
-          call advance_premac(uold(n), sold(n),&
-                              umac(n,:), uedge(n,:), utrans(n,:),&
-                              gp(n),  normal(n), w0(1,:), w0_cart_vec(n), &
-                              s0_old(1,:,:), grav_cell_old(1,:), &
-                              dx(n,:),dt,the_bc_tower%bc_tower_array(n))
-       end do
+       call advance_premac(nlevs,uold,sold,umac,uedge,utrans,gp,normal,w0,w0_cart_vec, &
+                           s0_old,grav_cell_old,dx,dt,the_bc_tower%bc_tower_array)
        
        do n = 1, nlevs
           call make_macrhs(macrhs(n),Source_nph(n),gamma1_term(n),Sbar(1,:,1), &
