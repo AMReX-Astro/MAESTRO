@@ -80,40 +80,46 @@ contains
 
   end subroutine make_3d_normal
 
-  subroutine make_w0_cart(w0,w0_cart,normal,dx)
+  subroutine make_w0_cart(nlevs,w0,w0_cart,normal,dx)
+    
+    integer        , intent(in   ) :: nlevs
+    real(kind=dp_t), intent(in   ) :: w0(:,0:)
+    type(multifab) , intent(inout) :: w0_cart(:)
+    type(multifab) , intent(in   ) :: normal(:)
+    real(kind=dp_t), intent(in   ) :: dx(:,:)
+    
+    ! Local variables
+    integer :: lo(w0_cart(1)%dim),hi(w0_cart(1)%dim)
+    integer :: i,n,dm,ng
+    real(kind=dp_t), pointer :: wp(:,:,:,:)
+    real(kind=dp_t), pointer :: np(:,:,:,:)
+    
+    dm = w0_cart(1)%dim
+    ng = w0_cart(1)%ng
+    
+    do n = 1, nlevs
+    
+       call setval(w0_cart(n),ZERO,all=.true.)
+       
+       do i = 1, w0_cart(n)%nboxes
+          if ( multifab_remote(w0_cart(n), i) ) cycle
+          wp => dataptr(w0_cart(n), i)
+          lo = lwb(get_box(w0_cart(n), i))
+          hi = upb(get_box(w0_cart(n), i))
+          if (spherical .eq. 1) then
+             np => dataptr(normal(n), i)
+             call put_w0_on_3d_cells_sphr(w0(n,:),wp(:,:,:,:),np(:,:,:,:),lo,hi,dx(n,:),ng)
+          else
+             call put_w0_on_3d_cells_cart(w0(n,:),wp(:,:,:,:),lo,hi,dx(n,dm),ng)
+          end if
+       end do
+       
+       call multifab_fill_boundary(w0_cart(n))
 
-      real(kind=dp_t), intent(in   ) :: w0(0:)
-      type(multifab) , intent(inout) :: w0_cart
-      type(multifab) , intent(in   ) :: normal
-      real(kind=dp_t), intent(in   ) :: dx(:)
-
-      ! Local variables
-      integer :: i,lo(w0_cart%dim),hi(w0_cart%dim),dm,ng
-      real(kind=dp_t), pointer :: wp(:,:,:,:)
-      real(kind=dp_t), pointer :: np(:,:,:,:)
-
-      dm = w0_cart%dim
-      ng = w0_cart%ng
-
-      call setval(w0_cart,ZERO,all=.true.)
-
-      do i = 1, w0_cart%nboxes
-         if ( multifab_remote(w0_cart, i) ) cycle
-         wp => dataptr(w0_cart, i)
-         lo =  lwb(get_box(w0_cart, i))
-         hi =  upb(get_box(w0_cart, i))
-         if (spherical .eq. 1) then
-           np => dataptr(normal, i)
-           call put_w0_on_3d_cells_sphr(w0,wp(:,:,:,:),np(:,:,:,:),lo,hi,dx,ng)
-         else
-           call put_w0_on_3d_cells_cart(w0,wp(:,:,:,:),lo,hi,dx(dm),ng)
-         end if
-      end do
-
-      call multifab_fill_boundary(w0_cart)
-
+    enddo
+    
   end subroutine make_w0_cart
-
+  
   subroutine put_w0_on_3d_cells_cart (w0,w0_cell,lo,hi,dz,ng)
 
     integer        , intent(in   ) :: lo(:),hi(:),ng

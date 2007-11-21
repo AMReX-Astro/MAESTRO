@@ -116,7 +116,7 @@ contains
     real (dp_t), allocatable :: grav_cell_new(:)
 
     real(dp_t)    , allocatable ::        s0_nph(:,:)
-    real(dp_t)    , allocatable ::      w0_force(:)
+    real(dp_t)    , allocatable :: w0_force(:,:)
     real(dp_t)    , allocatable ::        w0_old(:)
     real(dp_t)    , allocatable ::          Sbar(:,:)
     real(dp_t)    , allocatable :: div_coeff_nph(:)
@@ -159,7 +159,7 @@ contains
     if (spherical.eq.1) &
       allocate(div_coeff_3d(nlevs))
 
-    allocate(w0_force(0:nr-1))
+    allocate(w0_force(nlevs,0:nr-1))
     allocate(w0_old  (0:nr))
 
     allocate(Source_nph(nlevs))
@@ -231,14 +231,12 @@ contains
     
     call average(Source_nph,Sbar,dx,1,1)
     
-    call make_w0(w0(1,:),w0_old,w0_force,Sbar(:,1),p0_old(1,:),s0_old(1,:,rho_comp), &
+    call make_w0(w0(1,:),w0_old,w0_force(1,:),Sbar(:,1),p0_old(1,:),s0_old(1,:,rho_comp), &
                  gam1(1,:),eta(1,:,:),dt,dtold,verbose)
     
     if (dm .eq. 3) then
-       do n = 1, nlevs
-          call make_w0_cart(w0(1,:) ,w0_cart_vec(n),normal(n),dx(n,:)) 
-          call make_w0_cart(w0_force,w0_force_cart_vec(n),normal(n),dx(n,:)) 
-       end do
+       call make_w0_cart(nlevs,w0      ,w0_cart_vec      ,normal,dx) 
+       call make_w0_cart(nlevs,w0_force,w0_force_cart_vec,normal,dx) 
     end if
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -465,14 +463,12 @@ contains
           call average(Source_nph,Sbar,dx,1,1)
        end do
        
-       call make_w0(w0(1,:),w0_old,w0_force,Sbar(:,1),p0_new(1,:),s0_new(1,:,rho_comp), &
-                    gam1(1,:),eta(1,:,:),dt,dtold,verbose)
+       call make_w0(w0(1,:),w0_old,w0_force(1,:),Sbar(:,1),p0_new(1,:), &
+                    s0_new(1,:,rho_comp),gam1(1,:),eta(1,:,:),dt,dtold,verbose)
        
        if (dm .eq. 3) then
-          do n = 1, nlevs
-             call make_w0_cart(w0(1,:),w0_cart_vec(n),normal(n),dx(n,:)) 
-             call make_w0_cart(w0_force,w0_force_cart_vec(n),normal(n),dx(n,:)) 
-          end do
+          call make_w0_cart(nlevs,w0      ,w0_cart_vec      ,normal,dx) 
+          call make_w0_cart(nlevs,w0_force,w0_force_cart_vec,normal,dx) 
        end if
        
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -660,7 +656,7 @@ contains
                              umac(n,:),uedge(n,:), &
                              utrans(n,:),gp(n),p(n), &
                              normal(n), w0(1,:), w0_cart_vec(n), &
-                             w0_force, w0_force_cart_vec(n), &
+                             w0_force(1,:), w0_force_cart_vec(n), &
                              s0_old(1,:,:), grav_cell_old(1,:), s0_nph, grav_cell_nph, &
                              dx(n,:),dt, &
                              the_bc_tower%bc_tower_array(n), &
