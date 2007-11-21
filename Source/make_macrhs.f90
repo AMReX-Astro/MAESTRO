@@ -15,35 +15,43 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-   subroutine make_macrhs (macrhs,Source,gamma1_term,Sbar,div_coeff,dx)
+   subroutine make_macrhs(nlevs,macrhs,Source,gamma1_term,Sbar,div_coeff,dx)
 
-      type(multifab) , intent(inout) :: macrhs
-      type(multifab) , intent(in   ) :: Source
-      type(multifab) , intent(in   ) :: gamma1_term
-      real(kind=dp_t), intent(in   ) :: Sbar(:)
-      real(kind=dp_t), intent(in   ) :: div_coeff(:)
-      real(kind=dp_t), intent(in   ) :: dx(:)
-
-      real(kind=dp_t), pointer:: mp(:,:,:,:),sp(:,:,:,:),gp(:,:,:,:)
-      integer :: lo(Source%dim),hi(Source%dim),dm
-      integer :: i
-
-      dm = Source%dim
-
-      do i = 1, Source%nboxes
-         if ( multifab_remote(Source, i) ) cycle
-         mp => dataptr(macrhs, i)
-         sp => dataptr(Source, i)
-         gp => dataptr(gamma1_term, i)
-         lo =  lwb(get_box(Source, i))
-         hi =  upb(get_box(Source, i))
-         select case (dm)
-            case (2)
-              call make_macrhs_2d(lo,hi,mp(:,:,1,1),sp(:,:,1,1),gp(:,:,1,1),Sbar,div_coeff,dx)
-            case (3)
-              call make_macrhs_3d(lo,hi,mp(:,:,:,1),sp(:,:,:,1),gp(:,:,:,1),Sbar,div_coeff,dx)
-         end select
-      end do
+     integer        , intent(in   ) :: nlevs
+     type(multifab) , intent(inout) :: macrhs(:)
+     type(multifab) , intent(in   ) :: Source(:)
+     type(multifab) , intent(in   ) :: gamma1_term(:)
+     real(kind=dp_t), intent(in   ) :: Sbar(:,:)
+     real(kind=dp_t), intent(in   ) :: div_coeff(:,:)
+     real(kind=dp_t), intent(in   ) :: dx(:,:)
+     
+     real(kind=dp_t), pointer:: mp(:,:,:,:),sp(:,:,:,:),gp(:,:,:,:)
+     
+     integer :: lo(Source(1)%dim),hi(Source(1)%dim)
+     integer :: i,dm,n
+     
+     dm = Source(1)%dim
+     
+     do n = 1, nlevs
+        
+        do i = 1, Source(n)%nboxes
+           if ( multifab_remote(Source(n), i) ) cycle
+           mp => dataptr(macrhs(n), i)
+           sp => dataptr(Source(n), i)
+           gp => dataptr(gamma1_term(n), i)
+           lo =  lwb(get_box(Source(n), i))
+           hi =  upb(get_box(Source(n), i))
+           select case (dm)
+           case (2)
+              call make_macrhs_2d(lo,hi,mp(:,:,1,1),sp(:,:,1,1),gp(:,:,1,1),Sbar(n,:), &
+                                  div_coeff(n,:),dx(n,:))
+           case (3)
+              call make_macrhs_3d(lo,hi,mp(:,:,:,1),sp(:,:,:,1),gp(:,:,:,1),Sbar(n,:), &
+                                  div_coeff(n,:),dx(n,:))
+           end select
+        end do
+        
+     enddo
 
    end subroutine make_macrhs
 
