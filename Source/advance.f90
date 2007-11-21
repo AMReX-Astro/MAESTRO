@@ -42,8 +42,8 @@ contains
   subroutine advance_timestep(init_mode,mla,uold,sold,s1,s2,unew,snew,umac,uedge,sedge, &
                               utrans,gp,p,scal_force,normal,s0_old,s0_1,s0_2,s0_new,p0_old, &
                               p0_1,p0_2,p0_new,gam1,w0,eta,rho_omegadot1,rho_omegadot2, &
-                              rho_Hext,div_coeff_old,div_coeff_new,grav_cell_old,dx,time,dt, &
-                              dtold,the_bc_tower,anelastic_cutoff,verbose,mg_verbose, &
+                              rho_Hext,div_coeff_old,div_coeff_new,grav_cell_old,dx,time, &
+                              dt,dtold,the_bc_tower,anelastic_cutoff,verbose,mg_verbose, &
                               cg_verbose,dSdt,Source_old,Source_new,gamma1_term,sponge, &
                               do_sponge,hgrhs,istep)
     
@@ -74,20 +74,20 @@ contains
     type(multifab), intent(inout) :: Source_new(:)
     type(multifab), intent(inout) :: gamma1_term(:)
     type(multifab), intent(inout) :: hgrhs(:)
-    real(dp_t)    , intent(inout) :: s0_old(0:,:)
-    real(dp_t)    , intent(inout) :: s0_1(0:,:)
-    real(dp_t)    , intent(inout) :: s0_2(0:,:)
-    real(dp_t)    , intent(inout) :: s0_new(0:,:)
-    real(dp_t)    , intent(inout) :: p0_old(0:)
-    real(dp_t)    , intent(inout) :: p0_1(0:)
-    real(dp_t)    , intent(inout) :: p0_2(0:)
-    real(dp_t)    , intent(inout) :: p0_new(0:)
-    real(dp_t)    , intent(inout) :: gam1(0:)
+    real(dp_t)    , intent(inout) :: s0_old(:,0:,:)
+    real(dp_t)    , intent(inout) :: s0_1(:,0:,:)
+    real(dp_t)    , intent(inout) :: s0_2(:,0:,:)
+    real(dp_t)    , intent(inout) :: s0_new(:,0:,:)
+    real(dp_t)    , intent(inout) :: p0_old(:,0:)
+    real(dp_t)    , intent(inout) :: p0_1(:,0:)
+    real(dp_t)    , intent(inout) :: p0_2(:,0:)
+    real(dp_t)    , intent(inout) :: p0_new(:,0:)
+    real(dp_t)    , intent(inout) :: gam1(:,0:)
     real(dp_t)    , intent(inout) :: w0(:,0:)
-    real(dp_t)    , intent(inout) :: eta(0:,:)
-    real(dp_t)    , intent(in   ) :: div_coeff_old(0:)
-    real(dp_t)    , intent(inout) :: div_coeff_new(0:)
-    real(dp_t)    , intent(in   ) :: grav_cell_old(0:)
+    real(dp_t)    , intent(inout) :: eta(:,0:,:)
+    real(dp_t)    , intent(in   ) :: div_coeff_old(:,0:)
+    real(dp_t)    , intent(inout) :: div_coeff_new(:,0:)
+    real(dp_t)    , intent(in   ) :: grav_cell_old(:,0:)
     real(dp_t)    , intent(in   ) :: dx(:,:), time, dt, dtold
     type(bc_tower), intent(in   ) :: the_bc_tower
     real(dp_t)    , intent(in   ) :: anelastic_cutoff
@@ -132,13 +132,13 @@ contains
     logical :: nodal(mla%dim)
 
     ! nr is the number of zones in a cell-centered basestate quantity
-    nr    = size(s0_old,dim=1)
+    nr    = size(s0_old,dim=2)
 
     dm    = mla%dim
     nlevs = size(uold)
 
     ! This is always zero at the beginning of a time step
-    eta(:,:) = ZERO
+    eta(:,:,:) = ZERO
 
     allocate(lo(dm))
     allocate(hi(dm))
@@ -181,7 +181,7 @@ contains
     w0_old(:) = w0(1,:)
 
     nodal = .true.
-    do n = 1,nlevs
+    do n = 1, nlevs
        call multifab_build(   rhohalf(n), mla%la(n),     1, 1)
        call multifab_build(Source_nph(n), mla%la(n),     1, 0)
        call multifab_build(    macrhs(n), mla%la(n),     1, 0)
@@ -231,8 +231,8 @@ contains
     
     call average(Source_nph,Sbar,dx,1,1)
     
-    call make_w0(w0(1,:),w0_old,w0_force,Sbar(:,1),p0_old,s0_old(:,rho_comp),gam1,eta, &
-         dt,dtold,verbose)
+    call make_w0(w0(1,:),w0_old,w0_force,Sbar(:,1),p0_old(1,:),s0_old(1,:,rho_comp), &
+                 gam1(1,:),eta(1,:,:),dt,dtold,verbose)
     
     if (dm .eq. 3) then
        do n = 1, nlevs
@@ -254,13 +254,13 @@ contains
        call advance_premac(uold(n), sold(n),&
                            umac(n,:), uedge(n,:), utrans(n,:),&
                            gp(n), normal(n), w0(1,:), w0_cart_vec(n), &
-                           s0_old, grav_cell_old, &
+                           s0_old(1,:,:), grav_cell_old(1,:), &
                            dx(n,:),dt,the_bc_tower%bc_tower_array(n))
     end do
     
     do n = 1, nlevs
        call make_macrhs(macrhs(n),Source_nph(n),gamma1_term(n),Sbar(:,1), &
-                        div_coeff_old,dx(n,:))
+                        div_coeff_old(1,:),dx(n,:))
     end do
     
     ! MAC projection !
@@ -271,7 +271,7 @@ contains
              dp => dataptr(div_coeff_3d(n), i)
              lo =  lwb(get_box(div_coeff_3d(n), i))
              hi =  upb(get_box(div_coeff_3d(n), i))
-             call fill_3d_data(dp(:,:,:,1),div_coeff_old,lo,hi,dx(nlevs,:),1)
+             call fill_3d_data(dp(:,:,:,1),div_coeff_old(1,:),lo,hi,dx(nlevs,:),1)
           end do
           call multifab_fill_boundary(div_coeff_3d(n))
        end do
@@ -279,10 +279,10 @@ contains
                        verbose,mg_verbose,cg_verbose,press_comp, &
                        macrhs,div_coeff_3d=div_coeff_3d)
     else
-       call cell_to_edge(div_coeff_old,div_coeff_edge)
+       call cell_to_edge(div_coeff_old(1,:),div_coeff_edge)
        call macproject(mla,umac,macphi,sold,dx,the_bc_tower, &
             verbose,mg_verbose,cg_verbose,press_comp, &
-            macrhs,div_coeff_1d=div_coeff_old,div_coeff_half_1d=div_coeff_edge)
+            macrhs,div_coeff_1d=div_coeff_old(1,:),div_coeff_half_1d=div_coeff_edge)
     end if
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -303,15 +303,15 @@ contains
     call average(rho_omegadot1,rho_omegadotbar1,dx,1,nspec)
     call average(rho_Hext,rho_Hextbar,dx,1,1)
     if (evolve_base_state) then
-       call react_base(p0_old,s0_old,rho_omegadotbar1,rho_Hextbar(:,1),halfdt, &
-                       p0_1,s0_1,gam1)
+       call react_base(p0_old(1,:),s0_old(1,:,:),rho_omegadotbar1,rho_Hextbar(:,1),halfdt, &
+                       p0_1(1,:),s0_1(1,:,:),gam1(1,:))
     else
-       p0_1(:  ) = p0_old(:  )
-       s0_1(:,:) = s0_old(:,:)
+       p0_1(1,:) = p0_old(1,:)
+       s0_1(1,:,:) = s0_old(1,:,:)
     end if
-    call make_grav_cell(grav_cell_new,s0_1(:,rho_comp))
-    call make_div_coeff(div_coeff_new,s0_1(:,rho_comp),p0_1, &
-                        gam1,grav_cell_new,anelastic_cutoff)
+    call make_grav_cell(grav_cell_new,s0_1(1,:,rho_comp))
+    call make_div_coeff(div_coeff_new(1,:),s0_1(1,:,rho_comp),p0_1(1,:), &
+                        gam1(1,:),grav_cell_new,anelastic_cutoff)
     
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -324,15 +324,15 @@ contains
     end if
     
     if (evolve_base_state) then
-       call advect_base(w0(1,:),Sbar(:,1),p0_1,p0_2,s0_1,s0_2,gam1, &
-                        div_coeff_new,eta,dx(1,dm),dt,anelastic_cutoff)
+       call advect_base(w0(1,:),Sbar(:,1),p0_1(1,:),p0_2(1,:),s0_1(1,:,:),s0_2(1,:,:), &
+                        gam1(1,:),div_coeff_new(1,:),eta(1,:,:),dx(1,dm),dt,anelastic_cutoff)
     else
-       p0_2(:  ) = p0_1(:  )
-       s0_2(:,:) = s0_1(:,:)
+       p0_2(1,:) = p0_1(1,:)
+       s0_2(1,:,:) = s0_1(1,:,:)
     end if
     
     if(use_thermal_diffusion) then
-       call make_explicit_thermal(mla,dx,thermal,s1,p0_1, &
+       call make_explicit_thermal(mla,dx,thermal,s1,p0_1(1,:), &
                                   mg_verbose,cg_verbose,the_bc_tower, &
                                   temp_diffusion_formulation)
     else
@@ -350,8 +350,9 @@ contains
        endif
     enddo
     
-    call scalar_advance(nlevs,1,uold,s1,s2,thermal,umac,w0,w0_cart_vec,eta,sedge, &
-                        utrans,scal_force,normal,s0_1,s0_2,p0_1,p0_2,dx,dt, &
+    call scalar_advance(nlevs,1,uold,s1,s2,thermal,umac,w0,w0_cart_vec,eta(1,:,:),sedge, &
+                        utrans,scal_force,normal,s0_1(1,:,:),s0_2(1,:,:),p0_1(1,:), &
+                        p0_2(1,:),dx,dt, &
                         the_bc_tower%bc_tower_array,verbose)
     
     do n = 2, nlevs
@@ -372,12 +373,12 @@ contains
        end if
        
        if(do_half_alg) then
-          call thermal_conduct_half_alg(mla,dx,dt,s1,s2,p0_1,p0_2, &
-                                        s0_1(:,temp_comp), s0_2(:,temp_comp), &
+          call thermal_conduct_half_alg(mla,dx,dt,s1,s2,p0_1(1,:),p0_2(1,:), &
+                                        s0_1(1,:,temp_comp), s0_2(1,:,temp_comp), &
                                         mg_verbose,cg_verbose,the_bc_tower)
        else
-          call thermal_conduct_full_alg(mla,dx,dt,s1,s1,s2,p0_1,p0_2, &
-                                        s0_1(:,temp_comp),s0_2(:,temp_comp), &
+          call thermal_conduct_full_alg(mla,dx,dt,s1,s1,s2,p0_1(1,:),p0_2(1,:), &
+                                        s0_1(1,:,temp_comp),s0_2(1,:,temp_comp), &
                                         mg_verbose,cg_verbose,the_bc_tower)
           
           ! make a copy of s2star since these are needed to compute
@@ -405,15 +406,15 @@ contains
     call average(rho_omegadot2,rho_omegadotbar2,dx,1,nspec)
     call average(rho_Hext,rho_Hextbar,dx,1,1)
     if (evolve_base_state) then
-       call react_base(p0_2,s0_2,rho_omegadotbar2,rho_Hextbar(:,1),halfdt,p0_new, &
-            s0_new,gam1)
+       call react_base(p0_2(1,:),s0_2(1,:,:),rho_omegadotbar2,rho_Hextbar(:,1),halfdt, &
+                       p0_new(1,:),s0_new(1,:,:),gam1(1,:))
     else
-       p0_new(:  ) = p0_2(:  )
-       s0_new(:,:) = s0_2(:,:)
+       p0_new(1,:) = p0_2(1,:)
+       s0_new(1,:,:) = s0_2(1,:,:)
     end if
-    call make_grav_cell(grav_cell_new,s0_new(:,rho_comp))
-    call make_div_coeff(div_coeff_new,s0_new(:,rho_comp),p0_new, &
-                        gam1,grav_cell_new,anelastic_cutoff)
+    call make_grav_cell(grav_cell_new,s0_new(1,:,rho_comp))
+    call make_div_coeff(div_coeff_new(1,:),s0_new(1,:,rho_comp),p0_new(1,:), &
+                        gam1(1,:),grav_cell_new,anelastic_cutoff)
     
     ! Define rho at half time !
     do n = 1,nlevs
@@ -423,14 +424,14 @@ contains
     
     ! Define base state at half time for use in velocity advance!
     do j = 0, nr-1
-       s0_nph(j,:) = HALF * (s0_old(j,:) + s0_new(j,:))
+       s0_nph(j,:) = HALF * (s0_old(1,j,:) + s0_new(1,j,:))
     enddo
     
     call make_grav_cell(grav_cell_nph,s0_nph(:,rho_comp))
     
     ! Define beta at half time !
     do j = 0, nr-1
-       div_coeff_nph(j) = HALF * (div_coeff_old(j) + div_coeff_new(j))
+       div_coeff_nph(j) = HALF * (div_coeff_old(1,j) + div_coeff_new(1,j))
     enddo
     
     if(.not. do_half_alg) then
@@ -443,7 +444,7 @@ contains
        end if
        
        if(use_thermal_diffusion) then
-          call make_explicit_thermal(mla,dx,thermal,snew,p0_new, &
+          call make_explicit_thermal(mla,dx,thermal,snew,p0_new(1,:), &
                                      mg_verbose,cg_verbose,the_bc_tower, &
                                      temp_diffusion_formulation)
        else
@@ -455,7 +456,7 @@ contains
        do n = 1, nlevs
           call make_S(Source_new(n),gamma1_term(n),snew(n), &
                       rho_omegadot2(n),rho_Hext(n),thermal(n), &
-                      s0_old(:,temp_comp),gam1,dx(n,:))
+                      s0_old(1,:,temp_comp),gam1(1,:),dx(n,:))
        enddo
        
        call make_S_at_halftime(nlevs,Source_nph,Source_old,Source_new)
@@ -464,8 +465,8 @@ contains
           call average(Source_nph,Sbar,dx,1,1)
        end do
        
-       call make_w0(w0(1,:),w0_old,w0_force,Sbar(:,1),p0_new,s0_new(:,rho_comp),gam1,eta, &
-                    dt,dtold,verbose)
+       call make_w0(w0(1,:),w0_old,w0_force,Sbar(:,1),p0_new(1,:),s0_new(1,:,rho_comp), &
+                    gam1(1,:),eta(1,:,:),dt,dtold,verbose)
        
        if (dm .eq. 3) then
           do n = 1, nlevs
@@ -485,7 +486,7 @@ contains
           call advance_premac(uold(n), sold(n),&
                               umac(n,:), uedge(n,:), utrans(n,:),&
                               gp(n),  normal(n), w0(1,:), w0_cart_vec(n), &
-                              s0_old, grav_cell_old, &
+                              s0_old(1,:,:), grav_cell_old(1,:), &
                               dx(n,:),dt,the_bc_tower%bc_tower_array(n))
        end do
        
@@ -526,15 +527,15 @@ contains
           write(6,*) '            : scalar_advance >>>'
        end if
        if (evolve_base_state) then
-          call advect_base(w0(1,:),Sbar(:,1),p0_1,p0_2,s0_1,s0_2,gam1, &
-                           div_coeff_nph,eta,dx(1,dm),dt,anelastic_cutoff)
+          call advect_base(w0(1,:),Sbar(:,1),p0_1(1,:),p0_2(1,:),s0_1(1,:,:),s0_2(1,:,:), &
+                           gam1(1,:),div_coeff_nph,eta(1,:,:),dx(1,dm),dt,anelastic_cutoff)
        else
-          p0_2(:  ) = p0_1(:  )
-          s0_2(:,:) = s0_1(:,:)
+          p0_2(1,:) = p0_1(1,:)
+          s0_2(1,:,:) = s0_1(1,:,:)
        end if
        
        if(use_thermal_diffusion) then
-          call make_explicit_thermal(mla,dx,thermal,s1,p0_1, &
+          call make_explicit_thermal(mla,dx,thermal,s1,p0_1(1,:), &
                                      mg_verbose,cg_verbose,the_bc_tower, &
                                      temp_diffusion_formulation)
        else
@@ -551,9 +552,10 @@ contains
           endif
        enddo
        
-       call scalar_advance(nlevs,2,uold,s1,s2,thermal,umac,w0,w0_cart_vec,eta,sedge, &
-                           utrans,scal_force,normal,s0_1,s0_2,p0_1,p0_2,dx,dt, &
-                           the_bc_tower%bc_tower_array,verbose)
+       call scalar_advance(nlevs,2,uold,s1,s2,thermal,umac,w0,w0_cart_vec,eta(1,:,:),sedge, &
+                           utrans,scal_force,normal,s0_1(1,:,:),s0_2(1,:,:), &
+                           p0_1(1,:),p0_2(1,:), &
+                           dx,dt,the_bc_tower%bc_tower_array,verbose)
 
        do n = 2, nlevs
           fine_domain = layout_get_pd(mla%la(n))
@@ -572,8 +574,8 @@ contains
              write(6,*) '<<< STEP  8a: thermal conduct >>>'
           end if
           
-          call thermal_conduct_full_alg(mla,dx,dt,s1,s2star,s2,p0_1,p0_2, &
-                                        s0_1(:,temp_comp),s0_2(:,temp_comp), &
+          call thermal_conduct_full_alg(mla,dx,dt,s1,s2star,s2,p0_1(1,:),p0_2(1,:), &
+                                        s0_1(1,:,temp_comp),s0_2(1,:,temp_comp), &
                                         mg_verbose,cg_verbose,the_bc_tower)
           
        endif
@@ -594,15 +596,15 @@ contains
        call average(rho_omegadot2,rho_omegadotbar2,dx,1,nspec)
        call average(rho_Hext,rho_Hextbar,dx,1,1)
        if (evolve_base_state) then
-          call react_base(p0_2,s0_2,rho_omegadotbar2,rho_Hextbar(:,1),halfdt,p0_new, &
-                          s0_new,gam1)
+          call react_base(p0_2(1,:),s0_2(1,:,:),rho_omegadotbar2,rho_Hextbar(:,1),halfdt, &
+                          p0_new(1,:),s0_new(1,:,:),gam1(1,:))
        else
-          p0_new(:  ) = p0_2(:  )
-          s0_new(:,:) = s0_2(:,:)
+          p0_new(1,:) = p0_2(1,:)
+          s0_new(1,:,:) = s0_2(1,:,:)
        end if
-       call make_grav_cell(grav_cell_new,s0_new(:,rho_comp))
-       call make_div_coeff(div_coeff_new,s0_new(:,rho_comp),p0_new, &
-                           gam1,grav_cell_new,anelastic_cutoff)
+       call make_grav_cell(grav_cell_new,s0_new(1,:,rho_comp))
+       call make_div_coeff(div_coeff_new(1,:),s0_new(1,:,rho_comp),p0_new(1,:), &
+                           gam1(1,:),grav_cell_new,anelastic_cutoff)
        
        ! endif corresponding to .not. do_half_alg
     endif
@@ -616,7 +618,7 @@ contains
     end if
     
     if(use_thermal_diffusion) then
-       call make_explicit_thermal(mla,dx,thermal,snew,p0_new, &
+       call make_explicit_thermal(mla,dx,thermal,snew,p0_new(1,:), &
                                   mg_verbose,cg_verbose,the_bc_tower, &
                                   temp_diffusion_formulation)
     else
@@ -628,7 +630,7 @@ contains
     do n = 1, nlevs
        call make_S(Source_new(n),gamma1_term(n),snew(n), &
                    rho_omegadot2(n),rho_Hext(n),thermal(n), &
-                   s0_new(:,temp_comp),gam1,dx(n,:))
+                   s0_new(1,:,temp_comp),gam1(1,:),dx(n,:))
     end do
     call average(Source_new,Sbar,dx,1,1)
     
@@ -659,7 +661,7 @@ contains
                              utrans(n,:),gp(n),p(n), &
                              normal(n), w0(1,:), w0_cart_vec(n), &
                              w0_force, w0_force_cart_vec(n), &
-                             s0_old, grav_cell_old, s0_nph, grav_cell_nph, &
+                             s0_old(1,:,:), grav_cell_old(1,:), s0_nph, grav_cell_nph, &
                              dx(n,:),dt, &
                              the_bc_tower%bc_tower_array(n), &
                              sponge(n),do_sponge,verbose)
@@ -675,7 +677,7 @@ contains
     
     ! Define beta at half time using the div_coeff_new from step 9!
     do j = 0, nr-1
-       div_coeff_nph(j) = HALF * (div_coeff_old(j) + div_coeff_new(j))
+       div_coeff_nph(j) = HALF * (div_coeff_old(1,j) + div_coeff_new(1,j))
     end do
     
     ! Project the new velocity field.
@@ -684,7 +686,7 @@ contains
        do n = 1,nlevs
           call multifab_copy(hgrhs_old(n),hgrhs(n))
           call make_hgrhs(hgrhs(n),Source_new(n),gamma1_term(n),Sbar(:,1), &
-                          div_coeff_new,dx(n,:))
+                          div_coeff_new(1,:),dx(n,:))
           call multifab_sub_sub(hgrhs(n),hgrhs_old(n))
           call multifab_div_div_s(hgrhs(n),dt)
        end do
@@ -692,7 +694,7 @@ contains
        proj_type = regular_timestep
        do n = 1,nlevs
           call make_hgrhs(hgrhs(n),Source_new(n),gamma1_term(n),Sbar(:,1), &
-                          div_coeff_new,dx(n,:))
+                          div_coeff_new(1,:),dx(n,:))
        end do
     end if
     
