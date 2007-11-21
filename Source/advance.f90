@@ -331,14 +331,14 @@ contains
     
     ! thermal is the temperature forcing if we use the temperature godunov predictor
     ! so we add the reaction terms to thermal
-    do n=1,nlevs
-       if(istep .le. 1) then
-          call add_react_to_thermal(thermal(n),rho_omegadot1(n),s1(n))
-       else
-          call add_react_to_thermal(thermal(n),rho_omegadot2(n),s1(n))
+    if(istep .le. 1) then
+       call add_react_to_thermal(nlevs,thermal,rho_omegadot1,s1)
+    else
+       call add_react_to_thermal(nlevs,thermal,rho_omegadot2,s1)
+       do n=1, nlevs
           call multifab_copy_c(rho_omegadot2_hold(n),1,rho_omegadot2(n),1,3,0)
-       endif
-    enddo
+       enddo
+    endif
     
     call scalar_advance(nlevs,1,uold,s1,s2,thermal,umac,w0,w0_cart_vec,eta(1,:,:),sedge, &
                         utrans,scal_force,normal,s0_1(1,:,:),s0_2(1,:,:),p0_1(1,:), &
@@ -525,13 +525,11 @@ contains
        
        ! thermal is the temperature forcing if we use the temperature godunov predictor
        ! so we add the reaction terms to thermal
-       do n=1,nlevs
-          if(istep .le. 1) then
-             call add_react_to_thermal(thermal(n),rho_omegadot1(n),s1(n))
-          else
-             call add_react_to_thermal(thermal(n),rho_omegadot2_hold(n),s1(n))
-          endif
-       enddo
+       if(istep .le. 1) then
+          call add_react_to_thermal(nlevs,thermal,rho_omegadot1,s1)
+       else
+          call add_react_to_thermal(nlevs,thermal,rho_omegadot2_hold,s1)
+       endif
        
        call scalar_advance(nlevs,2,uold,s1,s2,thermal,umac,w0,w0_cart_vec,eta(1,:,:),sedge, &
                            utrans,scal_force,normal,s0_1(1,:,:),s0_2(1,:,:), &
