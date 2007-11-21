@@ -31,33 +31,34 @@ contains
                             verbose)
  
     integer        , intent(in   ) :: nlevs, which_step
-    type(multifab) , intent(inout) :: uold(:) !!!
-    type(multifab) , intent(inout) :: sold(:) !!!
-    type(multifab) , intent(inout) :: snew(:) !!!
-    type(multifab) , intent(inout) :: thermal(:) !!!
-    type(multifab) , intent(inout) :: umac(:,:) !!!
-    type(multifab) , intent(inout) :: sedge(:,:) !!!
-    type(multifab) , intent(inout) :: utrans(:,:) !!!
-    type(multifab) , intent(inout) :: ext_scal_force(:) !!!
-    type(multifab) , intent(in   ) :: normal(:) !!!
+    type(multifab) , intent(inout) :: uold(:)
+    type(multifab) , intent(inout) :: sold(:)
+    type(multifab) , intent(inout) :: snew(:)
+    type(multifab) , intent(inout) :: thermal(:)
+    type(multifab) , intent(inout) :: umac(:,:)
 
-    real(kind=dp_t), intent(inout) :: w0(:,0:) !!!
-    real(kind=dp_t), intent(inout) :: eta(0:,:)
+    real(kind=dp_t), intent(inout) :: w0(:,0:)
     type(multifab) , intent(in   ) :: w0_cart_vec(:)
-    real(kind=dp_t), intent(in   ) :: dx(:,:),dt !!!
-    type(bc_level) , intent(in   ) :: the_bc_level(:) !!!
+    real(kind=dp_t), intent(inout) :: eta(0:,:)
 
+    type(multifab) , intent(inout) :: sedge(:,:)
+    type(multifab) , intent(inout) :: utrans(:,:)
+    type(multifab) , intent(inout) :: ext_scal_force(:)
+    type(multifab) , intent(in   ) :: normal(:)
+
+    real(kind=dp_t), intent(in   ) :: s0_old(0:,:)
+    real(kind=dp_t), intent(in   ) :: s0_new(0:,:)
+    real(kind=dp_t), intent(in   ) :: p0_old(0:)
+    real(kind=dp_t), intent(in   ) :: p0_new(0:)
+
+    real(kind=dp_t), intent(in   ) :: dx(:,:),dt
+    type(bc_level) , intent(in   ) :: the_bc_level(:)
     integer        , intent(in   ) :: verbose
 
     ! local
     type(multifab), allocatable :: scal_force(:)
     type(multifab), allocatable :: s0_old_cart(:)
     type(multifab), allocatable :: s0_new_cart(:)
-
-    real(kind=dp_t), intent(in   ) :: s0_old(0:,:)
-    real(kind=dp_t), intent(in   ) :: s0_new(0:,:)
-    real(kind=dp_t), intent(in   ) :: p0_old(0:)
-    real(kind=dp_t), intent(in   ) :: p0_new(0:)
     
     real(kind=dp_t), allocatable :: s0_edge_old(:,:)
     real(kind=dp_t), allocatable :: s0_edge_new(:,:)
@@ -170,7 +171,7 @@ contains
           do comp = spec_comp,spec_comp+nspec-1
              call modify_scal_force_2d(fp(:,:,1,comp),sop(:,:,1,comp), lo, hi, &
                                        ng_cell,ump(:,:,1,1),vmp(:,:,1,1), &
-                                       s0_old(:,comp), s0_edge_old(:,comp), w0(1,:), dx(n,:))
+                                       s0_old(:,comp), s0_edge_old(:,comp), w0(n,:), dx(n,:))
           end do
           
           if (use_temp_in_mkflux) then
@@ -189,7 +190,8 @@ contains
              
              call modify_scal_force_2d(fp(:,:,1,comp),sop(:,:,1,comp), lo, hi, &
                                        ng_cell, ump(:,:,1,1),vmp(:,:,1,1), &
-                                       s0_old(:,rhoh_comp),s0_edge_old(:,rhoh_comp), w0(1,:),dx(n,:))
+                                       s0_old(:,rhoh_comp),s0_edge_old(:,rhoh_comp), &
+                                       w0(n,:),dx(n,:))
           end if
 
        case(3)
@@ -202,7 +204,7 @@ contains
                                                lo,hi,domlo,domhi,ng_cell, &
                                                ump(:,:,:,1),vmp(:,:,:,1), &
                                                wmp(:,:,:,1),s0op(:,:,:,comp), &
-                                               w0(1,:),dx(n,:))
+                                               w0(n,:),dx(n,:))
              end do
              
              if (use_temp_in_mkflux) then
@@ -225,7 +227,8 @@ contains
                   call modify_scal_force_3d_sphr(fp(:,:,:,comp),sop(:,:,:,comp),lo,hi, &
                                                  domlo,domhi,ng_cell,&
                                                  ump(:,:,:,1),vmp(:,:,:,1), &
-                                                 wmp(:,:,:,1), s0op(:,:,:,comp),w0(1,:),dx(n,:))
+                                                 wmp(:,:,:,1), s0op(:,:,:,comp),w0(n,:), &
+                                                 dx(n,:))
                end if
                
             else
@@ -233,7 +236,8 @@ contains
                   call modify_scal_force_3d_cart(fp(:,:,:,comp),sop(:,:,:,comp), &
                                                  lo,hi,ng_cell,ump(:,:,:,1), &
                                                  vmp(:,:,:,1),wmp(:,:,:,1), &
-                                                 s0_old(:,comp),s0_edge_old(:,comp),w0(1,:),dx(n,:))
+                                                 s0_old(:,comp),s0_edge_old(:,comp), &
+                                                 w0(n,:),dx(n,:))
                end do
                
                if (use_temp_in_mkflux) then
@@ -256,7 +260,8 @@ contains
                   call modify_scal_force_3d_cart(fp(:,:,:,comp),sop(:,:,:,comp),lo,hi, &
                                                  ng_cell,ump(:,:,:,1), &
                                                  vmp(:,:,:,1),wmp(:,:,:,1), &
-                                                 s0_old(:,comp),s0_edge_old(:,comp),w0(1,:),dx(n,:))
+                                                 s0_old(:,comp),s0_edge_old(:,comp), &
+                                                 w0(n,:),dx(n,:))
                end if
             end if
          end select
@@ -278,7 +283,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       mult = ONE
-      call addw0(umac(n,:),w0(1,:),w0_cart_vec(n),dx(n,:),mult)
+      call addw0(umac(n,:),w0(n,:),w0_cart_vec(n),dx(n,:),mult)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     Create the edge states of (rho h)' and (rho X)_i.
@@ -441,7 +446,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       mult = -ONE
-      call addw0(umac(n,:),w0(1,:),w0_cart_vec(n),dx(n,:),mult)
+      call addw0(umac(n,:),w0(n,:),w0_cart_vec(n),dx(n,:),mult)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     1) Set force for (rho X)_i at time n+1/2 = 0.
@@ -841,10 +846,8 @@ contains
      real(kind=dp_t), intent(in   ) ::    w0(0:)
      real(kind=dp_t), intent(in   ) :: dx(:)
      
-     integer :: i,j,nr
+     integer :: i,j
      real(kind=dp_t) :: divu,divbaseu
-     
-     nr = size(base,dim=1)
      
      do j = lo(2),hi(2)
         do i = lo(1),hi(1)
