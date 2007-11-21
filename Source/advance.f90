@@ -87,7 +87,7 @@ module advance_timestep_module
     real(dp_t)    , intent(inout) :: p0_2(0:)
     real(dp_t)    , intent(inout) :: p0_new(0:)
     real(dp_t)    , intent(inout) :: gam1(0:)
-    real(dp_t)    , intent(inout) :: w0(0:)
+    real(dp_t)    , intent(inout) :: w0(:,0:)
     real(dp_t)    , intent(inout) :: eta(0:,:)
     real(dp_t)    , intent(in   ) :: div_coeff_old(0:)
     real(dp_t)    , intent(inout) :: div_coeff_new(0:)
@@ -181,7 +181,7 @@ module advance_timestep_module
     halfdt = half * dt
     
     ! Set w0_old to w0 from last time step.
-    w0_old(:) = w0(:)
+    w0_old(:) = w0(1,:)
 
     nodal = .true.
     do n = 1,nlevs
@@ -238,12 +238,12 @@ module advance_timestep_module
 
         call average(Source_nph,Sbar,dx,1,1)
     
-        call make_w0(w0,w0_old,w0_force,Sbar(:,1),p0_old,s0_old(:,rho_comp),gam1,eta, &
+        call make_w0(w0(1,:),w0_old,w0_force,Sbar(:,1),p0_old,s0_old(:,rho_comp),gam1,eta, &
                      dt,dtold,verbose)
 
         if (dm .eq. 3) then
           do n = 1, nlevs
-             call make_w0_cart(w0      ,w0_cart_vec(n),normal(n),dx(n,:)) 
+             call make_w0_cart(w0(1,:) ,w0_cart_vec(n),normal(n),dx(n,:)) 
              call make_w0_cart(w0_force,w0_force_cart_vec(n),normal(n),dx(n,:)) 
           end do
         end if
@@ -260,7 +260,7 @@ module advance_timestep_module
 
            call advance_premac(uold(n), sold(n),&
                                umac(n,:), uedge(n,:), utrans(n,:),&
-                               gp(n), normal(n), w0, w0_cart_vec(n), &
+                               gp(n), normal(n), w0(1,:), w0_cart_vec(n), &
                                s0_old, grav_cell_old, &
                                dx(n,:),dt,the_bc_tower%bc_tower_array(n))
         end do
@@ -331,7 +331,7 @@ module advance_timestep_module
         end if
 
         if (evolve_base_state) then
-          call advect_base(w0,Sbar(:,1),p0_1,p0_2,s0_1,s0_2,gam1, &
+          call advect_base(w0(1,:),Sbar(:,1),p0_1,p0_2,s0_1,s0_2,gam1, &
                            div_coeff_new,eta,dx(1,dm),dt,anelastic_cutoff)
         else
           p0_2(:  ) = p0_1(:  )
@@ -357,11 +357,9 @@ module advance_timestep_module
            endif
         enddo
 
-        do n=1,nlevs
-        call scalar_advance(1,uold(n),s1(n),s2(n),thermal(n),umac(n,:),w0,w0_cart_vec(n),eta, &
-                            sedge(n,:),utrans(n,:),scal_force(n),normal(n),s0_1,s0_2, &
-                            p0_1,p0_2,dx(n,:),dt,the_bc_tower%bc_tower_array(n),verbose)
-        enddo
+        call scalar_advance(nlevs,1,uold,s1,s2,thermal,umac,w0,w0_cart_vec,eta,sedge, &
+                            utrans,scal_force,normal,s0_1,s0_2,p0_1,p0_2,dx,dt, &
+                            the_bc_tower%bc_tower_array,verbose)
 
         do n = 2, nlevs
            fine_domain = layout_get_pd(mla%la(n))
@@ -471,12 +469,12 @@ module advance_timestep_module
 
         end do
 
-        call make_w0(w0,w0_old,w0_force,Sbar(:,1),p0_new,s0_new(:,rho_comp),gam1,eta, &
+        call make_w0(w0(1,:),w0_old,w0_force,Sbar(:,1),p0_new,s0_new(:,rho_comp),gam1,eta, &
                      dt,dtold,verbose)
 
         if (dm .eq. 3) then
            do n = 1, nlevs
-             call make_w0_cart(w0,w0_cart_vec(n),normal(n),dx(n,:)) 
+             call make_w0_cart(w0(1,:),w0_cart_vec(n),normal(n),dx(n,:)) 
              call make_w0_cart(w0_force,w0_force_cart_vec(n),normal(n),dx(n,:)) 
            end do
         end if
@@ -491,7 +489,7 @@ module advance_timestep_module
         do n = 1,nlevs
            call advance_premac(uold(n), sold(n),&
                                umac(n,:), uedge(n,:), utrans(n,:),&
-                               gp(n),  normal(n), w0, w0_cart_vec(n), &
+                               gp(n),  normal(n), w0(1,:), w0_cart_vec(n), &
                                s0_old, grav_cell_old, &
                                dx(n,:),dt,the_bc_tower%bc_tower_array(n))
         end do
@@ -533,7 +531,7 @@ module advance_timestep_module
           write(6,*) '            : scalar_advance >>>'
         end if
         if (evolve_base_state) then
-          call advect_base(w0,Sbar(:,1),p0_1,p0_2,s0_1,s0_2,gam1, &
+          call advect_base(w0(1,:),Sbar(:,1),p0_1,p0_2,s0_1,s0_2,gam1, &
                            div_coeff_nph,eta,dx(1,dm),dt,anelastic_cutoff)
         else
           p0_2(:  ) = p0_1(:  )
@@ -558,11 +556,9 @@ module advance_timestep_module
             endif
          enddo
 
-         do n=1,nlevs
-         call scalar_advance(2,uold(n),s1(n),s2(n),thermal(n),umac(n,:),w0,w0_cart_vec(n),eta, &
-                             sedge(n,:),utrans(n,:),scal_force(n),normal(n),s0_1,s0_2, &
-                             p0_1,p0_2,dx(n,:),dt,the_bc_tower%bc_tower_array(n),verbose)
-         enddo
+         call scalar_advance(nlevs,2,uold,s1,s2,thermal,umac,w0,w0_cart_vec,eta,sedge, &
+                             utrans,scal_force,normal,s0_1,s0_2,p0_1,p0_2,dx,dt, &
+                             the_bc_tower%bc_tower_array,verbose)
 
         do n = 2, nlevs
            fine_domain = layout_get_pd(mla%la(n))
@@ -667,7 +663,7 @@ module advance_timestep_module
            call velocity_advance(uold(n),unew(n),sold(n),rhohalf(n),&
                                  umac(n,:),uedge(n,:), &
                                  utrans(n,:),gp(n),p(n), &
-                                 normal(n), w0, w0_cart_vec(n), &
+                                 normal(n), w0(1,:), w0_cart_vec(n), &
                                  w0_force, w0_force_cart_vec(n), &
                                  s0_old, grav_cell_old, s0_nph, grav_cell_nph, &
                                  dx(n,:),dt, &
