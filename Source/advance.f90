@@ -285,11 +285,8 @@ contains
        write(6,*) '            : react  base >>> '
     end if
     
-    do n = 1,nlevs
-       call react_state(sold(n),s1(n),rho_omegadot1(n),rho_Hext(n), &
-                        halfdt,dx(n,:), &
-                        the_bc_tower%bc_tower_array(n),time)
-    end do
+    call react_state(nlevs,sold,s1,rho_omegadot1,rho_Hext,halfdt,dx, &
+                     the_bc_tower%bc_tower_array,time)
     
     call average(rho_omegadot1,rho_omegadotbar1(1,:,:),dx,1,nspec)
     call average(rho_Hext,rho_Hextbar(1,:,:),dx,1,1)
@@ -332,6 +329,8 @@ contains
        end do
     endif
     
+    ! thermal is the temperature forcing if we use the temperature godunov predictor
+    ! so we add the reaction terms to thermal
     do n=1,nlevs
        if(istep .le. 1) then
           call add_react_to_thermal(thermal(n),rho_omegadot1(n),s1(n))
@@ -389,11 +388,9 @@ contains
        write(6,*) '            : react  base >>> '
     end if
     
-    do n = 1,nlevs
-       call react_state(s2(n),snew(n),rho_omegadot2(n),rho_Hext(n), &
-                        halfdt,dx(n,:), &
-                        the_bc_tower%bc_tower_array(n),time)
-    end do
+    call react_state(nlevs,s2,snew,rho_omegadot2,rho_Hext,halfdt,dx, &
+                     the_bc_tower%bc_tower_array,time)
+
     call average(rho_omegadot2,rho_omegadotbar2(1,:,:),dx,1,nspec)
     call average(rho_Hext,rho_Hextbar(1,:,:),dx,1,1)
     if (evolve_base_state) then
@@ -526,6 +523,8 @@ contains
           end do
        endif
        
+       ! thermal is the temperature forcing if we use the temperature godunov predictor
+       ! so we add the reaction terms to thermal
        do n=1,nlevs
           if(istep .le. 1) then
              call add_react_to_thermal(thermal(n),rho_omegadot1(n),s1(n))
@@ -570,11 +569,10 @@ contains
           write(6,*) '<<< STEP  9 : react state '
           write(6,*) '            : react  base >>>'
        end if
-       do n = 1,nlevs
-          call react_state(s2(n),snew(n),rho_omegadot2(n),rho_Hext(n), &
-                           halfdt,dx(n,:),&
-                           the_bc_tower%bc_tower_array(n),time)
-       end do
+
+       call react_state(nlevs,s2,snew,rho_omegadot2,rho_Hext,halfdt,dx,&
+                        the_bc_tower%bc_tower_array,time)
+
        call average(rho_omegadot2,rho_omegadotbar2(1,:,:),dx,1,nspec)
        call average(rho_Hext,rho_Hextbar(1,:,:),dx,1,1)
        if (evolve_base_state) then

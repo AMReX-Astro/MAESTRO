@@ -17,76 +17,81 @@ module react_state_module
   
 contains
 
-  subroutine react_state (s_in,s_out,rho_omegadot,rho_Hext,dt,dx,the_bc_level,time)
+  subroutine react_state (nlevs,s_in,s_out,rho_omegadot,rho_Hext,dt,dx,the_bc_level,time)
 
-    type(multifab) , intent(in   ) :: s_in
-    type(multifab) , intent(inout) :: s_out
-    type(multifab) , intent(inout) :: rho_omegadot
-    type(multifab) , intent(inout) :: rho_Hext
-    real(kind=dp_t), intent(in   ) :: dt,dx(:),time
-    type(bc_level) , intent(in   ) :: the_bc_level
+    integer        , intent(in   ) :: nlevs
+    type(multifab) , intent(in   ) :: s_in(:)
+    type(multifab) , intent(inout) :: s_out(:)
+    type(multifab) , intent(inout) :: rho_omegadot(:)
+    type(multifab) , intent(inout) :: rho_Hext(:)
+    real(kind=dp_t), intent(in   ) :: dt,dx(:,:),time
+    type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     real(kind=dp_t), pointer:: sinp(:,:,:,:)
     real(kind=dp_t), pointer:: sotp(:,:,:,:)
     real(kind=dp_t), pointer::   rp(:,:,:,:)
     real(kind=dp_t), pointer::   hp(:,:,:,:)
 
-    integer :: lo(s_in%dim),hi(s_in%dim),ng,dm
-    integer :: i,n,bc_comp
+    integer :: lo(s_in(1)%dim),hi(s_in(1)%dim),ng,dm
+    integer :: i,n,bc_comp,comp
 
-    ng = s_in%ng
-    dm = s_in%dim
+    ng = s_in(1)%ng
+    dm = s_in(1)%dim
 
-    do i = 1, s_in%nboxes
-       if ( multifab_remote(s_in, i) ) cycle
-       sinp => dataptr(s_in , i)
-       sotp => dataptr(s_out, i)
-         rp => dataptr(rho_omegadot, i)
-         hp => dataptr(rho_Hext, i)
-       lo =  lwb(get_box(s_in, i))
-       hi =  upb(get_box(s_in, i))
-       select case (dm)
-       case (2)
-          call react_state_2d(sinp(:,:,1,:),sotp(:,:,1,:),rp(:,:,1,:), &
-               hp(:,:,1,1),dt,dx,lo,hi,ng,time)
-       case (3)
-          call react_state_3d(sinp(:,:,:,:),sotp(:,:,:,:),rp(:,:,:,:), &
-               hp(:,:,:,1),dt,dx,lo,hi,ng,time)
-       end select
-    end do
+    do n = 1, nlevs
+       
+       do i = 1, s_in(n)%nboxes
+          if ( multifab_remote(s_in(n), i) ) cycle
+          sinp => dataptr(s_in(n) , i)
+          sotp => dataptr(s_out(n), i)
+          rp => dataptr(rho_omegadot(n), i)
+          hp => dataptr(rho_Hext(n), i)
+          lo =  lwb(get_box(s_in(n), i))
+          hi =  upb(get_box(s_in(n), i))
+          select case (dm)
+          case (2)
+             call react_state_2d(sinp(:,:,1,:),sotp(:,:,1,:),rp(:,:,1,:), &
+                                 hp(:,:,1,1),dt,dx(n,:),lo,hi,ng,time)
+          case (3)
+             call react_state_3d(sinp(:,:,:,:),sotp(:,:,:,:),rp(:,:,:,:), &
+                                 hp(:,:,:,1),dt,dx(n,:),lo,hi,ng,time)
+          end select
+       end do
 
-    ! Fill ghost cells on periodic boundaries and in between patches
-    call multifab_fill_boundary(s_out)
-
-    do i = 1, s_in%nboxes
-       if ( multifab_remote(s_in, i) ) cycle
-       sotp => dataptr(s_out, i)
-       lo =  lwb(get_box(s_in, i))
-       hi =  upb(get_box(s_in, i))
-       select case (dm)
-       case (2)
-          ! Impose bc's
-          do n = rho_comp,rho_comp+nscal-1
-             bc_comp = dm+n 
-             call setbc_2d(sotp(:,:,1,n), lo, ng, &
-                           the_bc_level%adv_bc_level_array(i,:,:,bc_comp), &
-                           dx,bc_comp)
-          enddo
-       case (3)
-          ! Impose bc's
-          do n = rho_comp,rho_comp+nscal-1
-             bc_comp = dm+n 
-             call setbc_3d(sotp(:,:,:,n), lo, ng, &
-                           the_bc_level%adv_bc_level_array(i,:,:,bc_comp), &
-                           dx,bc_comp)
-          enddo
-       end select
-    end do
+       ! Fill ghost cells on periodic boundaries and in between patches
+       call multifab_fill_boundary(s_out(n))
+       
+       do i = 1, s_in(n)%nboxes
+          if ( multifab_remote(s_in(n), i) ) cycle
+          sotp => dataptr(s_out(n), i)
+          lo =  lwb(get_box(s_in(n), i))
+          hi =  upb(get_box(s_in(n), i))
+          select case (dm)
+          case (2)
+             ! Impose bc's
+             do comp = rho_comp,rho_comp+nscal-1
+                bc_comp = dm+comp
+                call setbc_2d(sotp(:,:,1,comp), lo, ng, &
+                              the_bc_level(n)%adv_bc_level_array(i,:,:,bc_comp), &
+                              dx(n,:),bc_comp)
+             enddo
+          case (3)
+             ! Impose bc's
+             do comp = rho_comp,rho_comp+nscal-1
+                bc_comp = dm+comp
+                call setbc_3d(sotp(:,:,:,comp), lo, ng, &
+                              the_bc_level(n)%adv_bc_level_array(i,:,:,bc_comp), &
+                              dx(n,:),bc_comp)
+             enddo
+          end select
+       end do
+       
+    enddo
 
   end subroutine react_state
 
-  subroutine react_state_2d (s_in,s_out,rho_omegadot,rho_Hext, &
-       dt,dx,lo,hi,ng,time)
+  subroutine react_state_2d(s_in,s_out,rho_omegadot,rho_Hext, &
+                            dt,dx,lo,hi,ng,time)
 
     implicit none
     integer, intent(in) :: lo(:), hi(:), ng
@@ -97,7 +102,7 @@ contains
     real (kind = dp_t), intent(in   ) :: dt,dx(:),time
 
     !     Local variables
-    integer :: i, j, n
+    integer :: i, j, comp
     real (kind = dp_t), allocatable :: x_in(:),x_out(:),rhowdot(:)
     real (kind = dp_t), allocatable :: H(:,:)
     real (kind = dp_t) :: rho,T_in,h_in,h_out,qreact
@@ -113,8 +118,8 @@ contains
 
           qreact = 0.0d0
           if(use_big_h) then
-             do n=1,nspec
-                qreact = qreact + x_in(n)*ebin(n)
+             do comp = 1, nspec
+                qreact = qreact + x_in(comp)*ebin(comp)
              enddo
              h_in = s_in(i,j,rhoh_comp) / rho - qreact
           else
@@ -166,7 +171,7 @@ contains
 
   end subroutine react_state_2d
 
-  subroutine react_state_3d (s_in,s_out,rho_omegadot,rho_Hext,dt,dx,lo,hi,ng,time)
+  subroutine react_state_3d(s_in,s_out,rho_omegadot,rho_Hext,dt,dx,lo,hi,ng,time)
 
     implicit none
     integer, intent(in) :: lo(:), hi(:), ng
@@ -177,7 +182,7 @@ contains
     real (kind = dp_t), intent(in   ) :: dt,dx(:),time
 
     !     Local variables
-    integer :: i, j, k, n
+    integer :: i, j, k, comp
     real (kind = dp_t), allocatable :: x_in(:),x_out(:),rhowdot(:)
     real (kind = dp_t), allocatable :: H(:,:,:)
     real (kind = dp_t) :: rho,T_in,h_in,h_out,qreact
@@ -194,8 +199,8 @@ contains
 
           qreact = 0.0d0
           if(use_big_h) then
-             do n=1,nspec
-                qreact = qreact + x_in(n)*ebin(n)
+             do comp = 1, nspec
+                qreact = qreact + x_in(comp)*ebin(comp)
              enddo
              h_in = s_in(i,j,k,rhoh_comp) / rho - qreact
           else
