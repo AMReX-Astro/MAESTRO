@@ -37,24 +37,20 @@ module advance_timestep_module
   use network
   use probin_module
 
-  contains
-
-    subroutine advance_timestep(init_mode, &
-                                mla,uold,sold,s1,s2,unew,snew,umac,uedge,sedge,utrans,gp,p, &
-                                scal_force,normal, &
-                                s0_old,s0_1,s0_2,s0_new,p0_old,p0_1,p0_2,p0_new, &
-                                gam1,w0,eta,rho_omegadot1,rho_omegadot2,rho_Hext, &
-                                div_coeff_old,div_coeff_new,&
-                                grav_cell_old, &
-                                dx,time,dt,dtold,the_bc_tower, &
-                                anelastic_cutoff,verbose,mg_verbose,cg_verbose,&
-                                dSdt,Source_old,Source_new,gamma1_term, &
-                                sponge,do_sponge,hgrhs,istep)
-
+contains
+    
+  subroutine advance_timestep(init_mode,mla,uold,sold,s1,s2,unew,snew,umac,uedge,sedge, &
+                              utrans,gp,p,scal_force,normal,s0_old,s0_1,s0_2,s0_new,p0_old, &
+                              p0_1,p0_2,p0_new,gam1,w0,eta,rho_omegadot1,rho_omegadot2, &
+                              rho_Hext,div_coeff_old,div_coeff_new,grav_cell_old,dx,time,dt, &
+                              dtold,the_bc_tower,anelastic_cutoff,verbose,mg_verbose, &
+                              cg_verbose,dSdt,Source_old,Source_new,gamma1_term,sponge, &
+                              do_sponge,hgrhs,istep)
+    
     implicit none
-
+    
     logical, intent(in) :: init_mode
-
+    
     type(ml_layout),intent(inout) :: mla
     type(multifab), intent(inout) :: uold(:)
     type(multifab), intent(inout) :: sold(:)
@@ -100,6 +96,7 @@ module advance_timestep_module
     type(multifab), intent(in   ) :: sponge(:)
     logical       , intent(in   ) :: do_sponge
 
+    ! local
     type(multifab), allocatable :: rhohalf(:)
     type(multifab), allocatable :: w0_cart_vec(:)
     type(multifab), allocatable :: w0_force_cart_vec(:)
@@ -217,577 +214,574 @@ module advance_timestep_module
        
     end do
 
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        !! STEP 1 -- define average expansion at time n+1/2
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-        if (parallel_IOProcessor() .and. verbose .ge. 1) then
-          write(6,*) '<<< CALLING advance_timestep with dt =',dt 
-          write(6,*) '<<< STEP  1 : make w0 >>> '
-        end if
-
-        do n = 1, nlevs
-
-           if (init_mode) then
-              call make_S_at_halftime(Source_nph(n),Source_old(n),Source_new(n))
-           else
-              call extrap_to_halftime(Source_nph(n),dSdt(n),Source_old(n),dt)
-           endif
-
-        end do
-
-        call average(Source_nph,Sbar,dx,1,1)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! STEP 1 -- define average expansion at time n+1/2
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     
-        call make_w0(w0(1,:),w0_old,w0_force,Sbar(:,1),p0_old,s0_old(:,rho_comp),gam1,eta, &
-                     dt,dtold,verbose)
-
-        if (dm .eq. 3) then
-          do n = 1, nlevs
-             call make_w0_cart(w0(1,:) ,w0_cart_vec(n),normal(n),dx(n,:)) 
-             call make_w0_cart(w0_force,w0_force_cart_vec(n),normal(n),dx(n,:)) 
+    if (parallel_IOProcessor() .and. verbose .ge. 1) then
+       write(6,*) '<<< CALLING advance_timestep with dt =',dt 
+       write(6,*) '<<< STEP  1 : make w0 >>> '
+    end if
+    
+    if (init_mode) then
+       call make_S_at_halftime(nlevs,Source_nph,Source_old,Source_new)
+    else
+       call extrap_to_halftime(nlevs,Source_nph,dSdt,Source_old,dt)
+    endif
+    
+    call average(Source_nph,Sbar,dx,1,1)
+    
+    call make_w0(w0(1,:),w0_old,w0_force,Sbar(:,1),p0_old,s0_old(:,rho_comp),gam1,eta, &
+         dt,dtold,verbose)
+    
+    if (dm .eq. 3) then
+       do n = 1, nlevs
+          call make_w0_cart(w0(1,:) ,w0_cart_vec(n),normal(n),dx(n,:)) 
+          call make_w0_cart(w0_force,w0_force_cart_vec(n),normal(n),dx(n,:)) 
+       end do
+    end if
+    
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! STEP 2 -- construct the advective velocity
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    
+    if (parallel_IOProcessor() .and. verbose .ge. 1) then
+       write(6,*) '<<< STEP  2 : create MAC velocities>>> '
+    end if
+    
+    do n = 1,nlevs
+       
+       call advance_premac(uold(n), sold(n),&
+                           umac(n,:), uedge(n,:), utrans(n,:),&
+                           gp(n), normal(n), w0(1,:), w0_cart_vec(n), &
+                           s0_old, grav_cell_old, &
+                           dx(n,:),dt,the_bc_tower%bc_tower_array(n))
+    end do
+    
+    do n = 1, nlevs
+       call make_macrhs(macrhs(n),Source_nph(n),gamma1_term(n),Sbar(:,1), &
+                        div_coeff_old,dx(n,:))
+    end do
+    
+    ! MAC projection !
+    if (spherical .eq. 1) then
+       do n = 1, nlevs
+          do i = 1,div_coeff_3d(n)%nboxes
+             if (multifab_remote(div_coeff_3d(n),i)) cycle
+             dp => dataptr(div_coeff_3d(n), i)
+             lo =  lwb(get_box(div_coeff_3d(n), i))
+             hi =  upb(get_box(div_coeff_3d(n), i))
+             call fill_3d_data(dp(:,:,:,1),div_coeff_old,lo,hi,dx(nlevs,:),1)
           end do
-        end if
+          call multifab_fill_boundary(div_coeff_3d(n))
+       end do
+       call macproject(mla,umac,macphi,sold,dx,the_bc_tower, &
+                       verbose,mg_verbose,cg_verbose,press_comp, &
+                       macrhs,div_coeff_3d=div_coeff_3d)
+    else
+       call cell_to_edge(div_coeff_old,div_coeff_edge)
+       call macproject(mla,umac,macphi,sold,dx,the_bc_tower, &
+            verbose,mg_verbose,cg_verbose,press_comp, &
+            macrhs,div_coeff_1d=div_coeff_old,div_coeff_half_1d=div_coeff_edge)
+    end if
+    
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! STEP 3 -- react the full state and then base state through dt/2
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        !! STEP 2 -- construct the advective velocity
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    if (parallel_IOProcessor() .and. verbose .ge. 1) then
+       write(6,*) '<<< STEP  3 : react state     '
+       write(6,*) '            : react  base >>> '
+    end if
+    
+    do n = 1,nlevs
+       call react_state(sold(n),s1(n),rho_omegadot1(n),rho_Hext(n), &
+                        halfdt,dx(n,:), &
+                        the_bc_tower%bc_tower_array(n),time)
+    end do
+    
+    call average(rho_omegadot1,rho_omegadotbar1,dx,1,nspec)
+    call average(rho_Hext,rho_Hextbar,dx,1,1)
+    if (evolve_base_state) then
+       call react_base(p0_old,s0_old,rho_omegadotbar1,rho_Hextbar(:,1),halfdt, &
+                       p0_1,s0_1,gam1)
+    else
+       p0_1(:  ) = p0_old(:  )
+       s0_1(:,:) = s0_old(:,:)
+    end if
+    call make_grav_cell(grav_cell_new,s0_1(:,rho_comp))
+    call make_div_coeff(div_coeff_new,s0_1(:,rho_comp),p0_1, &
+                        gam1,grav_cell_new,anelastic_cutoff)
+    
+    
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! STEP 4 -- advect the base state and full state through dt
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-        if (parallel_IOProcessor() .and. verbose .ge. 1) then
-          write(6,*) '<<< STEP  2 : create MAC velocities>>> '
-        end if
+    if (parallel_IOProcessor() .and. verbose .ge. 1) then
+       write(6,*) '<<< STEP  4 : advect base        '
+       write(6,*) '            : scalar_advance >>> '
+    end if
+    
+    if (evolve_base_state) then
+       call advect_base(w0(1,:),Sbar(:,1),p0_1,p0_2,s0_1,s0_2,gam1, &
+                        div_coeff_new,eta,dx(1,dm),dt,anelastic_cutoff)
+    else
+       p0_2(:  ) = p0_1(:  )
+       s0_2(:,:) = s0_1(:,:)
+    end if
+    
+    if(use_thermal_diffusion) then
+       call make_explicit_thermal(mla,dx,thermal,s1,p0_1, &
+                                  mg_verbose,cg_verbose,the_bc_tower, &
+                                  temp_diffusion_formulation)
+    else
+       do n = 1,nlevs
+          call setval(thermal(n),ZERO)
+       end do
+    endif
+    
+    do n=1,nlevs
+       if(istep .le. 1) then
+          call add_react_to_thermal(thermal(n),rho_omegadot1(n),s1(n))
+       else
+          call add_react_to_thermal(thermal(n),rho_omegadot2(n),s1(n))
+          call multifab_copy_c(rho_omegadot2_hold(n),1,rho_omegadot2(n),1,3,0)
+       endif
+    enddo
+    
+    call scalar_advance(nlevs,1,uold,s1,s2,thermal,umac,w0,w0_cart_vec,eta,sedge, &
+                        utrans,scal_force,normal,s0_1,s0_2,p0_1,p0_2,dx,dt, &
+                        the_bc_tower%bc_tower_array,verbose)
+    
+    do n = 2, nlevs
+       fine_domain = layout_get_pd(mla%la(n))
+       call multifab_fill_ghost_cells(s2(n),s2(n-1),fine_domain, &
+            ng_cell,mla%mba%rr(n-1,:), &
+            the_bc_tower%bc_tower_array(n-1)%adv_bc_level_array(0,:,:,:), &
+            1,rho_comp,nscal)
+    end do
 
-        do n = 1,nlevs
-
-           call advance_premac(uold(n), sold(n),&
-                               umac(n,:), uedge(n,:), utrans(n,:),&
-                               gp(n), normal(n), w0(1,:), w0_cart_vec(n), &
-                               s0_old, grav_cell_old, &
-                               dx(n,:),dt,the_bc_tower%bc_tower_array(n))
-        end do
-
-        do n = 1, nlevs
-           call make_macrhs(macrhs(n),Source_nph(n),gamma1_term(n),Sbar(:,1), &
-                            div_coeff_old,dx(n,:))
-        end do
-
-        ! MAC projection !
-        if (spherical .eq. 1) then
-          do n = 1, nlevs
-            do i = 1,div_coeff_3d(n)%nboxes
-              if (multifab_remote(div_coeff_3d(n),i)) cycle
-              dp => dataptr(div_coeff_3d(n), i)
-              lo =  lwb(get_box(div_coeff_3d(n), i))
-              hi =  upb(get_box(div_coeff_3d(n), i))
-              call fill_3d_data(dp(:,:,:,1),div_coeff_old,lo,hi,dx(nlevs,:),1)
-            end do
-            call multifab_fill_boundary(div_coeff_3d(n))
-          end do
-          call macproject(mla,umac,macphi,sold,dx,the_bc_tower, &
-                          verbose,mg_verbose,cg_verbose,press_comp, &
-                          macrhs,div_coeff_3d=div_coeff_3d)
-        else
-          call cell_to_edge(div_coeff_old,div_coeff_edge)
-          call macproject(mla,umac,macphi,sold,dx,the_bc_tower, &
-                          verbose,mg_verbose,cg_verbose,press_comp, &
-                          macrhs,div_coeff_1d=div_coeff_old,div_coeff_half_1d=div_coeff_edge)
-        end if
-
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        !! STEP 3 -- react the full state and then base state through dt/2
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-        if (parallel_IOProcessor() .and. verbose .ge. 1) then
-          write(6,*) '<<< STEP  3 : react state     '
-          write(6,*) '            : react  base >>> '
-        end if
-
-        do n = 1,nlevs
-           call react_state(sold(n),s1(n),rho_omegadot1(n),rho_Hext(n), &
-                            halfdt,dx(n,:), &
-                            the_bc_tower%bc_tower_array(n),time)
-        end do
-
-        call average(rho_omegadot1,rho_omegadotbar1,dx,1,nspec)
-        call average(rho_Hext,rho_Hextbar,dx,1,1)
-        if (evolve_base_state) then
-          call react_base(p0_old,s0_old,rho_omegadotbar1,rho_Hextbar(:,1),halfdt, &
-                          p0_1,s0_1,gam1)
-        else
-          p0_1(:  ) = p0_old(:  )
-          s0_1(:,:) = s0_old(:,:)
-        end if
-        call make_grav_cell(grav_cell_new,s0_1(:,rho_comp))
-        call make_div_coeff(div_coeff_new,s0_1(:,rho_comp),p0_1, &
-                            gam1,grav_cell_new,anelastic_cutoff)
-
-
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        !! STEP 4 -- advect the base state and full state through dt
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-        if (parallel_IOProcessor() .and. verbose .ge. 1) then
-          write(6,*) '<<< STEP  4 : advect base        '
-          write(6,*) '            : scalar_advance >>> '
-        end if
-
-        if (evolve_base_state) then
-          call advect_base(w0(1,:),Sbar(:,1),p0_1,p0_2,s0_1,s0_2,gam1, &
-                           div_coeff_new,eta,dx(1,dm),dt,anelastic_cutoff)
-        else
-          p0_2(:  ) = p0_1(:  )
-          s0_2(:,:) = s0_1(:,:)
-        end if
-        
-        if(use_thermal_diffusion) then
-           call make_explicit_thermal(mla,dx,thermal,s1,p0_1, &
-                                      mg_verbose,cg_verbose,the_bc_tower, &
-                                      temp_diffusion_formulation)
-        else
-          do n = 1,nlevs
-             call setval(thermal(n),ZERO)
-          end do
-        endif
-
-        do n=1,nlevs
-           if(istep .le. 1) then
-              call add_react_to_thermal(thermal(n),rho_omegadot1(n),s1(n))
-           else
-              call add_react_to_thermal(thermal(n),rho_omegadot2(n),s1(n))
-              call multifab_copy_c(rho_omegadot2_hold(n),1,rho_omegadot2(n),1,3,0)
-           endif
-        enddo
-
-        call scalar_advance(nlevs,1,uold,s1,s2,thermal,umac,w0,w0_cart_vec,eta,sedge, &
-                            utrans,scal_force,normal,s0_1,s0_2,p0_1,p0_2,dx,dt, &
-                            the_bc_tower%bc_tower_array,verbose)
-
-        do n = 2, nlevs
-           fine_domain = layout_get_pd(mla%la(n))
-           call multifab_fill_ghost_cells(s2(n),s2(n-1),fine_domain, &
-                ng_cell,mla%mba%rr(n-1,:), &
-                the_bc_tower%bc_tower_array(n-1)%adv_bc_level_array(0,:,:,:), &
-                1,rho_comp,nscal)
-        end do
-
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        !! STEP 4a (Option I) -- Add thermal conduction (only enthalpy terms)
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-        if (use_thermal_diffusion) then
-           if (parallel_IOProcessor() .and. verbose .ge. 1) then
-              write(6,*) '<<< STEP  4a: thermal conduct >>>'
-           end if
-
-           if(do_half_alg) then
-              call thermal_conduct_half_alg(mla,dx,dt,s1,s2,p0_1,p0_2, &
-                                            s0_1(:,temp_comp), s0_2(:,temp_comp), &
-                                            mg_verbose,cg_verbose,the_bc_tower)
-           else
-              call thermal_conduct_full_alg(mla,dx,dt,s1,s1,s2,p0_1,p0_2, &
-                                            s0_1(:,temp_comp),s0_2(:,temp_comp), &
-                                            mg_verbose,cg_verbose,the_bc_tower)
-
-              ! make a copy of s2star since these are needed to compute
-              ! coefficients in the call to thermal_conduct_full_alg
-              do n=1,nlevs
-                 call multifab_copy_c(s2star(n),1,s2(n),1,nscal,ng_cell)
-              enddo
-           endif
-        endif
-
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        !! STEP 5 -- react the full state and then base state through dt/2
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-        if (parallel_IOProcessor() .and. verbose .ge. 1) then
-          write(6,*) '<<< STEP  5 : react state     '
-          write(6,*) '            : react  base >>> '
-        end if
-
-        do n = 1,nlevs
-          call react_state(s2(n),snew(n),rho_omegadot2(n),rho_Hext(n), &
-                           halfdt,dx(n,:), &
-                           the_bc_tower%bc_tower_array(n),time)
-        end do
-        call average(rho_omegadot2,rho_omegadotbar2,dx,1,nspec)
-        call average(rho_Hext,rho_Hextbar,dx,1,1)
-        if (evolve_base_state) then
-          call react_base(p0_2,s0_2,rho_omegadotbar2,rho_Hextbar(:,1),halfdt,p0_new, &
-                          s0_new,gam1)
-        else
-          p0_new(:  ) = p0_2(:  )
-          s0_new(:,:) = s0_2(:,:)
-        end if
-        call make_grav_cell(grav_cell_new,s0_new(:,rho_comp))
-        call make_div_coeff(div_coeff_new,s0_new(:,rho_comp),p0_new, &
-                            gam1,grav_cell_new,anelastic_cutoff)
-
-        ! Define rho at half time !
-        do n = 1,nlevs
-           call make_at_halftime(rhohalf(n),sold(n),snew(n),rho_comp,1,dx(n,:), &
-                                 the_bc_tower%bc_tower_array(n))
-        end do
-
-        ! Define base state at half time for use in velocity advance!
-        do j = 0, nr-1
-           s0_nph(j,:) = HALF * (s0_old(j,:) + s0_new(j,:))
-        enddo
-
-        call make_grav_cell(grav_cell_nph,s0_nph(:,rho_comp))
-
-        ! Define beta at half time !
-        do j = 0, nr-1
-           div_coeff_nph(j) = HALF * (div_coeff_old(j) + div_coeff_new(j))
-        enddo
-
-        if(.not. do_half_alg) then
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        !! STEP 6 -- define a new average expansion rate at n+1/2
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-        if (parallel_IOProcessor() .and. verbose .ge. 1) then
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! STEP 4a (Option I) -- Add thermal conduction (only enthalpy terms)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    
+    if (use_thermal_diffusion) then
+       if (parallel_IOProcessor() .and. verbose .ge. 1) then
+          write(6,*) '<<< STEP  4a: thermal conduct >>>'
+       end if
+       
+       if(do_half_alg) then
+          call thermal_conduct_half_alg(mla,dx,dt,s1,s2,p0_1,p0_2, &
+                                        s0_1(:,temp_comp), s0_2(:,temp_comp), &
+                                        mg_verbose,cg_verbose,the_bc_tower)
+       else
+          call thermal_conduct_full_alg(mla,dx,dt,s1,s1,s2,p0_1,p0_2, &
+                                        s0_1(:,temp_comp),s0_2(:,temp_comp), &
+                                        mg_verbose,cg_verbose,the_bc_tower)
+          
+          ! make a copy of s2star since these are needed to compute
+          ! coefficients in the call to thermal_conduct_full_alg
+          do n=1,nlevs
+             call multifab_copy_c(s2star(n),1,s2(n),1,nscal,ng_cell)
+          enddo
+       endif
+    endif
+    
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! STEP 5 -- react the full state and then base state through dt/2
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    
+    if (parallel_IOProcessor() .and. verbose .ge. 1) then
+       write(6,*) '<<< STEP  5 : react state     '
+       write(6,*) '            : react  base >>> '
+    end if
+    
+    do n = 1,nlevs
+       call react_state(s2(n),snew(n),rho_omegadot2(n),rho_Hext(n), &
+                        halfdt,dx(n,:), &
+                        the_bc_tower%bc_tower_array(n),time)
+    end do
+    call average(rho_omegadot2,rho_omegadotbar2,dx,1,nspec)
+    call average(rho_Hext,rho_Hextbar,dx,1,1)
+    if (evolve_base_state) then
+       call react_base(p0_2,s0_2,rho_omegadotbar2,rho_Hextbar(:,1),halfdt,p0_new, &
+            s0_new,gam1)
+    else
+       p0_new(:  ) = p0_2(:  )
+       s0_new(:,:) = s0_2(:,:)
+    end if
+    call make_grav_cell(grav_cell_new,s0_new(:,rho_comp))
+    call make_div_coeff(div_coeff_new,s0_new(:,rho_comp),p0_new, &
+                        gam1,grav_cell_new,anelastic_cutoff)
+    
+    ! Define rho at half time !
+    do n = 1,nlevs
+       call make_at_halftime(rhohalf(n),sold(n),snew(n),rho_comp,1,dx(n,:), &
+                             the_bc_tower%bc_tower_array(n))
+    end do
+    
+    ! Define base state at half time for use in velocity advance!
+    do j = 0, nr-1
+       s0_nph(j,:) = HALF * (s0_old(j,:) + s0_new(j,:))
+    enddo
+    
+    call make_grav_cell(grav_cell_nph,s0_nph(:,rho_comp))
+    
+    ! Define beta at half time !
+    do j = 0, nr-1
+       div_coeff_nph(j) = HALF * (div_coeff_old(j) + div_coeff_new(j))
+    enddo
+    
+    if(.not. do_half_alg) then
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! STEP 6 -- define a new average expansion rate at n+1/2
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+       
+       if (parallel_IOProcessor() .and. verbose .ge. 1) then
           write(6,*) '<<< STEP  6 : make new S and new w0 >>> '
-        end if
-
-        if(use_thermal_diffusion) then
-           call make_explicit_thermal(mla,dx,thermal,snew,p0_new, &
-                                      mg_verbose,cg_verbose,the_bc_tower, &
-                                      temp_diffusion_formulation)
-        else
+       end if
+       
+       if(use_thermal_diffusion) then
+          call make_explicit_thermal(mla,dx,thermal,snew,p0_new, &
+                                     mg_verbose,cg_verbose,the_bc_tower, &
+                                     temp_diffusion_formulation)
+       else
           do n = 1,nlevs
              call setval(thermal(n),ZERO)
           end do
-        endif
-
-        do n = 1, nlevs
-
-           call make_S(Source_new(n),gamma1_term(n),snew(n), &
-                       rho_omegadot2(n),rho_Hext(n),thermal(n), &
-                       s0_old(:,temp_comp),gam1,dx(n,:))
-           call make_S_at_halftime(Source_nph(n),Source_old(n),Source_new(n))
-           call average(Source_nph,Sbar,dx,1,1)
-
-        end do
-
-        call make_w0(w0(1,:),w0_old,w0_force,Sbar(:,1),p0_new,s0_new(:,rho_comp),gam1,eta, &
-                     dt,dtold,verbose)
-
-        if (dm .eq. 3) then
-           do n = 1, nlevs
+       endif
+       
+       do n = 1, nlevs
+          call make_S(Source_new(n),gamma1_term(n),snew(n), &
+                      rho_omegadot2(n),rho_Hext(n),thermal(n), &
+                      s0_old(:,temp_comp),gam1,dx(n,:))
+       enddo
+       
+       call make_S_at_halftime(nlevs,Source_nph,Source_old,Source_new)
+       
+       do n = 1, nlevs
+          call average(Source_nph,Sbar,dx,1,1)
+       end do
+       
+       call make_w0(w0(1,:),w0_old,w0_force,Sbar(:,1),p0_new,s0_new(:,rho_comp),gam1,eta, &
+                    dt,dtold,verbose)
+       
+       if (dm .eq. 3) then
+          do n = 1, nlevs
              call make_w0_cart(w0(1,:),w0_cart_vec(n),normal(n),dx(n,:)) 
              call make_w0_cart(w0_force,w0_force_cart_vec(n),normal(n),dx(n,:)) 
-           end do
-        end if
-
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        !! STEP 7 -- redo the construction of the advective velocity using the current w0
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        if (parallel_IOProcessor() .and. verbose .ge. 1) then
+          end do
+       end if
+       
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! STEP 7 -- redo the construction of the advective velocity using the current w0
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+       if (parallel_IOProcessor() .and. verbose .ge. 1) then
           write(6,*) '<<< STEP  7 : create MAC velocities >>> '
-        end if
-
-        do n = 1,nlevs
-           call advance_premac(uold(n), sold(n),&
-                               umac(n,:), uedge(n,:), utrans(n,:),&
-                               gp(n),  normal(n), w0(1,:), w0_cart_vec(n), &
-                               s0_old, grav_cell_old, &
-                               dx(n,:),dt,the_bc_tower%bc_tower_array(n))
-        end do
-
-        do n = 1, nlevs
-           call make_macrhs(macrhs(n),Source_nph(n),gamma1_term(n),Sbar(:,1), &
-                            div_coeff_nph,dx(n,:))
-        end do
-
-        ! MAC projection !
-        if (spherical .eq. 1) then
+       end if
+       
+       do n = 1,nlevs
+          call advance_premac(uold(n), sold(n),&
+                              umac(n,:), uedge(n,:), utrans(n,:),&
+                              gp(n),  normal(n), w0(1,:), w0_cart_vec(n), &
+                              s0_old, grav_cell_old, &
+                              dx(n,:),dt,the_bc_tower%bc_tower_array(n))
+       end do
+       
+       do n = 1, nlevs
+          call make_macrhs(macrhs(n),Source_nph(n),gamma1_term(n),Sbar(:,1), &
+                           div_coeff_nph,dx(n,:))
+       end do
+       
+       ! MAC projection !
+       if (spherical .eq. 1) then
           do n = 1, nlevs
-            do i = 1,div_coeff_3d(n)%nboxes
-              if (multifab_remote(div_coeff_3d(n),i)) cycle
-              dp => dataptr(div_coeff_3d(n), i)
-              lo =  lwb(get_box(div_coeff_3d(n), i))
-              hi =  upb(get_box(div_coeff_3d(n), i))
-              call fill_3d_data(dp(:,:,:,1),div_coeff_nph,lo,hi,dx(nlevs,:),1)
-            end do
-            call multifab_fill_boundary(div_coeff_3d(n))
+             do i = 1,div_coeff_3d(n)%nboxes
+                if (multifab_remote(div_coeff_3d(n),i)) cycle
+                dp => dataptr(div_coeff_3d(n), i)
+                lo =  lwb(get_box(div_coeff_3d(n), i))
+                hi =  upb(get_box(div_coeff_3d(n), i))
+                call fill_3d_data(dp(:,:,:,1),div_coeff_nph,lo,hi,dx(nlevs,:),1)
+             end do
+             call multifab_fill_boundary(div_coeff_3d(n))
           end do
           call macproject(mla,umac,macphi,rhohalf,dx,the_bc_tower, &
                           verbose,mg_verbose,cg_verbose,&
                           press_comp,macrhs,div_coeff_3d=div_coeff_3d)
-        else
+       else
           call cell_to_edge(div_coeff_nph,div_coeff_edge)
           call macproject(mla,umac,macphi,rhohalf,dx,the_bc_tower, &
                           verbose,mg_verbose,cg_verbose,&
                           press_comp,macrhs,div_coeff_1d=div_coeff_nph, &
                           div_coeff_half_1d=div_coeff_edge)
-        end if
-
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        !! STEP 8 -- advect the base state and full state through dt
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-        if (parallel_IOProcessor() .and. verbose .ge. 1) then
+       end if
+        
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! STEP 8 -- advect the base state and full state through dt
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+       
+       if (parallel_IOProcessor() .and. verbose .ge. 1) then
           write(6,*) '<<< STEP  8 : advect base   '
           write(6,*) '            : scalar_advance >>>'
-        end if
-        if (evolve_base_state) then
+       end if
+       if (evolve_base_state) then
           call advect_base(w0(1,:),Sbar(:,1),p0_1,p0_2,s0_1,s0_2,gam1, &
                            div_coeff_nph,eta,dx(1,dm),dt,anelastic_cutoff)
-        else
+       else
           p0_2(:  ) = p0_1(:  )
           s0_2(:,:) = s0_1(:,:)
-        end if
-
-        if(use_thermal_diffusion) then
-           call make_explicit_thermal(mla,dx,thermal,s1,p0_1, &
-                                      mg_verbose,cg_verbose,the_bc_tower, &
-                                      temp_diffusion_formulation)
-        else
+       end if
+       
+       if(use_thermal_diffusion) then
+          call make_explicit_thermal(mla,dx,thermal,s1,p0_1, &
+                                     mg_verbose,cg_verbose,the_bc_tower, &
+                                     temp_diffusion_formulation)
+       else
           do n = 1,nlevs
              call setval(thermal(n),ZERO)
           end do
-        endif
+       endif
+       
+       do n=1,nlevs
+          if(istep .le. 1) then
+             call add_react_to_thermal(thermal(n),rho_omegadot1(n),s1(n))
+          else
+             call add_react_to_thermal(thermal(n),rho_omegadot2_hold(n),s1(n))
+          endif
+       enddo
+       
+       call scalar_advance(nlevs,2,uold,s1,s2,thermal,umac,w0,w0_cart_vec,eta,sedge, &
+                           utrans,scal_force,normal,s0_1,s0_2,p0_1,p0_2,dx,dt, &
+                           the_bc_tower%bc_tower_array,verbose)
 
-         do n=1,nlevs
-            if(istep .le. 1) then
-               call add_react_to_thermal(thermal(n),rho_omegadot1(n),s1(n))
-            else
-               call add_react_to_thermal(thermal(n),rho_omegadot2_hold(n),s1(n))
-            endif
-         enddo
-
-         call scalar_advance(nlevs,2,uold,s1,s2,thermal,umac,w0,w0_cart_vec,eta,sedge, &
-                             utrans,scal_force,normal,s0_1,s0_2,p0_1,p0_2,dx,dt, &
-                             the_bc_tower%bc_tower_array,verbose)
-
-        do n = 2, nlevs
-           fine_domain = layout_get_pd(mla%la(n))
-           call multifab_fill_ghost_cells(s2(n),s2(n-1),fine_domain, &
-                ng_cell,mla%mba%rr(n-1,:), &
-                the_bc_tower%bc_tower_array(n-1)%adv_bc_level_array(0,:,:,:), &
-                1,rho_comp,nscal)
-        end do
-
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        !! STEP 8a (Option I) -- Add thermal conduction (only enthalpy terms)
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-        if (use_thermal_diffusion) then
-           if (parallel_IOProcessor() .and. verbose .ge. 1) then
-              write(6,*) '<<< STEP  8a: thermal conduct >>>'
-           end if
-
-           call thermal_conduct_full_alg(mla,dx,dt,s1,s2star,s2,p0_1,p0_2, &
-                                         s0_1(:,temp_comp),s0_2(:,temp_comp), &
-                                         mg_verbose,cg_verbose,the_bc_tower)
-
-        endif
-
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        !! STEP 9 -- react the full state and then base state through dt/2
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-        if (parallel_IOProcessor() .and. verbose .ge. 1) then
+       do n = 2, nlevs
+          fine_domain = layout_get_pd(mla%la(n))
+          call multifab_fill_ghost_cells(s2(n),s2(n-1),fine_domain, &
+               ng_cell,mla%mba%rr(n-1,:), &
+               the_bc_tower%bc_tower_array(n-1)%adv_bc_level_array(0,:,:,:), &
+               1,rho_comp,nscal)
+       end do
+       
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! STEP 8a (Option I) -- Add thermal conduction (only enthalpy terms)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+       
+       if (use_thermal_diffusion) then
+          if (parallel_IOProcessor() .and. verbose .ge. 1) then
+             write(6,*) '<<< STEP  8a: thermal conduct >>>'
+          end if
+          
+          call thermal_conduct_full_alg(mla,dx,dt,s1,s2star,s2,p0_1,p0_2, &
+                                        s0_1(:,temp_comp),s0_2(:,temp_comp), &
+                                        mg_verbose,cg_verbose,the_bc_tower)
+          
+       endif
+       
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! STEP 9 -- react the full state and then base state through dt/2
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+       
+       if (parallel_IOProcessor() .and. verbose .ge. 1) then
           write(6,*) '<<< STEP  9 : react state '
           write(6,*) '            : react  base >>>'
-        end if
-        do n = 1,nlevs
+       end if
+       do n = 1,nlevs
           call react_state(s2(n),snew(n),rho_omegadot2(n),rho_Hext(n), &
                            halfdt,dx(n,:),&
                            the_bc_tower%bc_tower_array(n),time)
-        end do
-        call average(rho_omegadot2,rho_omegadotbar2,dx,1,nspec)
-        call average(rho_Hext,rho_Hextbar,dx,1,1)
-        if (evolve_base_state) then
+       end do
+       call average(rho_omegadot2,rho_omegadotbar2,dx,1,nspec)
+       call average(rho_Hext,rho_Hextbar,dx,1,1)
+       if (evolve_base_state) then
           call react_base(p0_2,s0_2,rho_omegadotbar2,rho_Hextbar(:,1),halfdt,p0_new, &
                           s0_new,gam1)
-        else
+       else
           p0_new(:  ) = p0_2(:  )
           s0_new(:,:) = s0_2(:,:)
-        end if
-        call make_grav_cell(grav_cell_new,s0_new(:,rho_comp))
-        call make_div_coeff(div_coeff_new,s0_new(:,rho_comp),p0_new, &
-                            gam1,grav_cell_new,anelastic_cutoff)
-
-
-        ! endif corresponding to .not. do_half_alg
-        endif
-
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        !! STEP 10 -- compute S^{n+1} for the final projection
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-        if (parallel_IOProcessor() .and. verbose .ge. 1) then
-          write(6,*) '<<< STEP 10 : make new S >>>'
-        end if
-
-        if(use_thermal_diffusion) then
-           call make_explicit_thermal(mla,dx,thermal,snew,p0_new, &
-                                      mg_verbose,cg_verbose,the_bc_tower, &
-                                      temp_diffusion_formulation)
-        else
-          do n = 1,nlevs
-             call setval(thermal(n),ZERO)
-          end do
-        endif
-
-        do n = 1, nlevs
-           call make_S(Source_new(n),gamma1_term(n),snew(n), &
-                       rho_omegadot2(n),rho_Hext(n),thermal(n), &
-                       s0_new(:,temp_comp),gam1,dx(n,:))
-        end do
-        call average(Source_new,Sbar,dx,1,1)
-
-        ! define dSdt = (Source_new - Source_old) / dt
-        do n = 1,nlevs
-             call multifab_copy(dSdt(n),Source_new(n))
-             call multifab_sub_sub(dSdt(n),Source_old(n))
-             call multifab_div_div_s(dSdt(n),dt)
-          end do
-
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        !! STEP 11 -- update the velocity
-        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-        if (parallel_IOProcessor() .and. verbose .ge. 1) then
-          write(6,*) '<<< STEP 11 : update and project new velocity >>>'
-        end if
-
-        ! Define rho at half time using the new rho from Step 8!
-        do n = 1,nlevs
-           call make_at_halftime(rhohalf(n),sold(n),snew(n),rho_comp,1,dx(n,:), &
-                                 the_bc_tower%bc_tower_array(n))
-        end do
-
-        do n = 1,nlevs
-           call velocity_advance(uold(n),unew(n),sold(n),rhohalf(n),&
-                                 umac(n,:),uedge(n,:), &
-                                 utrans(n,:),gp(n),p(n), &
-                                 normal(n), w0(1,:), w0_cart_vec(n), &
-                                 w0_force, w0_force_cart_vec(n), &
-                                 s0_old, grav_cell_old, s0_nph, grav_cell_nph, &
-                                 dx(n,:),dt, &
-                                 the_bc_tower%bc_tower_array(n), &
-                                 sponge(n),do_sponge,verbose)
-        end do
-
-        do n = 2, nlevs
-           fine_domain = layout_get_pd(mla%la(n))
-           call multifab_fill_ghost_cells(unew(n),unew(n-1),fine_domain, &
-                ng_cell,mla%mba%rr(n-1,:), &
-                the_bc_tower%bc_tower_array(n-1)%adv_bc_level_array(0,:,:,:), &
-                1,1,dm)
-        end do
-
-        ! Define beta at half time using the div_coeff_new from step 9!
-        do j = 0, nr-1
-          div_coeff_nph(j) = HALF * (div_coeff_old(j) + div_coeff_new(j))
-        end do
-
-!       Project the new velocity field.
-        if (init_mode) then
-          proj_type = pressure_iters
-          do n = 1,nlevs
-             call multifab_copy(hgrhs_old(n),hgrhs(n))
-             call make_hgrhs(hgrhs(n),Source_new(n),gamma1_term(n),Sbar(:,1), &
-                             div_coeff_new,dx(n,:))
-             call multifab_sub_sub(hgrhs(n),hgrhs_old(n))
-             call multifab_div_div_s(hgrhs(n),dt)
-          end do
-        else
-          proj_type = regular_timestep
-          do n = 1,nlevs
-             call make_hgrhs(hgrhs(n),Source_new(n),gamma1_term(n),Sbar(:,1), &
-                             div_coeff_new,dx(n,:))
-          end do
-        end if
-
-        if (spherical .eq. 1) then
-          do n = 1,nlevs
-            do i = 1,div_coeff_3d(n)%nboxes
-              if (multifab_remote(div_coeff_3d(n),i)) cycle
-              dp => dataptr(div_coeff_3d(n), i)
-              lo =  lwb(get_box(div_coeff_3d(n), i))
-              hi =  upb(get_box(div_coeff_3d(n), i))
-              call fill_3d_data(dp(:,:,:,1),div_coeff_nph,lo,hi,dx(nlevs,:),1)
-            end do
-          end do
-          eps_in = 1.d-12
-          call hgproject(proj_type, mla, unew, uold, rhohalf, p, gp, dx, dt, &
-                         the_bc_tower, verbose, mg_verbose, cg_verbose, press_comp, &
-                         hgrhs, div_coeff_3d=div_coeff_3d, eps_in = eps_in)
-        else
-          call hgproject(proj_type, mla, unew, uold, rhohalf, p, gp, dx, dt, &
-                         the_bc_tower, verbose, mg_verbose, cg_verbose, press_comp, &
-                         hgrhs, div_coeff_1d=div_coeff_nph)
-        end if
-
-!       If doing pressure iterations then put hgrhs_old into hgrhs to be returned to varden.
-        if (init_mode) then
-          do n = 1,nlevs
-            call multifab_copy(hgrhs(n),hgrhs_old(n))
-          end do
-        end if
-
-        do n = 2, nlevs
-           fine_domain = layout_get_pd(mla%la(n))
-           call multifab_fill_ghost_cells(unew(n),unew(n-1),fine_domain, &
-                ng_cell,mla%mba%rr(n-1,:), &
-                the_bc_tower%bc_tower_array(n-1)%adv_bc_level_array(0,:,:,:), &
-                1,1,dm)
-        end do
-
-        do n = 1, nlevs
-          call destroy(Source_nph(n))
-          call destroy(macrhs(n))
-          call destroy(macphi(n))
-          call destroy(hgrhs_old(n))
-          call destroy(thermal(n))
-          call destroy(rhohalf(n))
-          call destroy(s2star(n))
-          call destroy(rho_omegadot2_hold(n))
-          if (spherical .eq. 1) &
-            call destroy(div_coeff_3d(n))
-        end do
-        deallocate(Source_nph)
-        deallocate(macrhs)
-        deallocate(macphi)
-        deallocate(hgrhs_old)
-        deallocate(thermal)
-        deallocate(rhohalf)
-        deallocate(s2star)
-        deallocate(rho_omegadot2_hold)
-
-        if (spherical .eq. 1) &
-          deallocate(div_coeff_3d)
+       end if
+       call make_grav_cell(grav_cell_new,s0_new(:,rho_comp))
+       call make_div_coeff(div_coeff_new,s0_new(:,rho_comp),p0_new, &
+                           gam1,grav_cell_new,anelastic_cutoff)
        
-        if (dm .eq. 3) then
-          do n = 1, nlevs
-            call destroy(w0_cart_vec(n))
-            call destroy(w0_force_cart_vec(n))
+       ! endif corresponding to .not. do_half_alg
+    endif
+    
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! STEP 10 -- compute S^{n+1} for the final projection
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    
+    if (parallel_IOProcessor() .and. verbose .ge. 1) then
+       write(6,*) '<<< STEP 10 : make new S >>>'
+    end if
+    
+    if(use_thermal_diffusion) then
+       call make_explicit_thermal(mla,dx,thermal,snew,p0_new, &
+                                  mg_verbose,cg_verbose,the_bc_tower, &
+                                  temp_diffusion_formulation)
+    else
+       do n = 1,nlevs
+          call setval(thermal(n),ZERO)
+       end do
+    endif
+    
+    do n = 1, nlevs
+       call make_S(Source_new(n),gamma1_term(n),snew(n), &
+                   rho_omegadot2(n),rho_Hext(n),thermal(n), &
+                   s0_new(:,temp_comp),gam1,dx(n,:))
+    end do
+    call average(Source_new,Sbar,dx,1,1)
+    
+    ! define dSdt = (Source_new - Source_old) / dt
+    do n = 1,nlevs
+       call multifab_copy(dSdt(n),Source_new(n))
+       call multifab_sub_sub(dSdt(n),Source_old(n))
+       call multifab_div_div_s(dSdt(n),dt)
+    end do
+    
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! STEP 11 -- update the velocity
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    
+    if (parallel_IOProcessor() .and. verbose .ge. 1) then
+       write(6,*) '<<< STEP 11 : update and project new velocity >>>'
+    end if
+    
+    ! Define rho at half time using the new rho from Step 8!
+    do n = 1,nlevs
+       call make_at_halftime(rhohalf(n),sold(n),snew(n),rho_comp,1,dx(n,:), &
+                             the_bc_tower%bc_tower_array(n))
+    end do
+    
+    do n = 1,nlevs
+       call velocity_advance(uold(n),unew(n),sold(n),rhohalf(n),&
+                             umac(n,:),uedge(n,:), &
+                             utrans(n,:),gp(n),p(n), &
+                             normal(n), w0(1,:), w0_cart_vec(n), &
+                             w0_force, w0_force_cart_vec(n), &
+                             s0_old, grav_cell_old, s0_nph, grav_cell_nph, &
+                             dx(n,:),dt, &
+                             the_bc_tower%bc_tower_array(n), &
+                             sponge(n),do_sponge,verbose)
+    end do
+    
+    do n = 2, nlevs
+       fine_domain = layout_get_pd(mla%la(n))
+       call multifab_fill_ghost_cells(unew(n),unew(n-1),fine_domain, &
+            ng_cell,mla%mba%rr(n-1,:), &
+            the_bc_tower%bc_tower_array(n-1)%adv_bc_level_array(0,:,:,:), &
+            1,1,dm)
+    end do
+    
+    ! Define beta at half time using the div_coeff_new from step 9!
+    do j = 0, nr-1
+       div_coeff_nph(j) = HALF * (div_coeff_old(j) + div_coeff_new(j))
+    end do
+    
+    ! Project the new velocity field.
+    if (init_mode) then
+       proj_type = pressure_iters
+       do n = 1,nlevs
+          call multifab_copy(hgrhs_old(n),hgrhs(n))
+          call make_hgrhs(hgrhs(n),Source_new(n),gamma1_term(n),Sbar(:,1), &
+                          div_coeff_new,dx(n,:))
+          call multifab_sub_sub(hgrhs(n),hgrhs_old(n))
+          call multifab_div_div_s(hgrhs(n),dt)
+       end do
+    else
+       proj_type = regular_timestep
+       do n = 1,nlevs
+          call make_hgrhs(hgrhs(n),Source_new(n),gamma1_term(n),Sbar(:,1), &
+                          div_coeff_new,dx(n,:))
+       end do
+    end if
+    
+    if (spherical .eq. 1) then
+       do n = 1,nlevs
+          do i = 1,div_coeff_3d(n)%nboxes
+             if (multifab_remote(div_coeff_3d(n),i)) cycle
+             dp => dataptr(div_coeff_3d(n), i)
+             lo =  lwb(get_box(div_coeff_3d(n), i))
+             hi =  upb(get_box(div_coeff_3d(n), i))
+             call fill_3d_data(dp(:,:,:,1),div_coeff_nph,lo,hi,dx(nlevs,:),1)
           end do
-        end if
-
-        deallocate(w0_cart_vec)
-        deallocate(w0_force_cart_vec)
-
-        deallocate(Sbar)
-        deallocate(s0_nph)
-        deallocate(div_coeff_nph)
-        deallocate(div_coeff_edge)
-        deallocate(grav_cell_nph)
-        deallocate(grav_cell_new)
-
-        deallocate(rho_omegadotbar1)
-        deallocate(rho_omegadotbar2)
-        deallocate(rho_Hextbar)
-
-        deallocate(w0_old)
-        deallocate(w0_force)
-
-        deallocate(lo)
-        deallocate(hi)
-
+       end do
+       eps_in = 1.d-12
+       call hgproject(proj_type, mla, unew, uold, rhohalf, p, gp, dx, dt, &
+                      the_bc_tower, verbose, mg_verbose, cg_verbose, press_comp, &
+                      hgrhs, div_coeff_3d=div_coeff_3d, eps_in = eps_in)
+    else
+       call hgproject(proj_type, mla, unew, uold, rhohalf, p, gp, dx, dt, &
+                      the_bc_tower, verbose, mg_verbose, cg_verbose, press_comp, &
+                      hgrhs, div_coeff_1d=div_coeff_nph)
+    end if
+    
+    ! If doing pressure iterations then put hgrhs_old into hgrhs to be returned to varden.
+    if (init_mode) then
+       do n = 1,nlevs
+          call multifab_copy(hgrhs(n),hgrhs_old(n))
+       end do
+    end if
+    
+    do n = 2, nlevs
+       fine_domain = layout_get_pd(mla%la(n))
+       call multifab_fill_ghost_cells(unew(n),unew(n-1),fine_domain, &
+            ng_cell,mla%mba%rr(n-1,:), &
+            the_bc_tower%bc_tower_array(n-1)%adv_bc_level_array(0,:,:,:), &
+            1,1,dm)
+    end do
+    
+    do n = 1, nlevs
+       call destroy(Source_nph(n))
+       call destroy(macrhs(n))
+       call destroy(macphi(n))
+       call destroy(hgrhs_old(n))
+       call destroy(thermal(n))
+       call destroy(rhohalf(n))
+       call destroy(s2star(n))
+       call destroy(rho_omegadot2_hold(n))
+       if (spherical .eq. 1) &
+            call destroy(div_coeff_3d(n))
+    end do
+    deallocate(Source_nph)
+    deallocate(macrhs)
+    deallocate(macphi)
+    deallocate(hgrhs_old)
+    deallocate(thermal)
+    deallocate(rhohalf)
+    deallocate(s2star)
+    deallocate(rho_omegadot2_hold)
+    
+    if (spherical .eq. 1) &
+         deallocate(div_coeff_3d)
+    
+    if (dm .eq. 3) then
+       do n = 1, nlevs
+          call destroy(w0_cart_vec(n))
+          call destroy(w0_force_cart_vec(n))
+       end do
+    end if
+    
+    deallocate(w0_cart_vec)
+    deallocate(w0_force_cart_vec)
+    
+    deallocate(Sbar)
+    deallocate(s0_nph)
+    deallocate(div_coeff_nph)
+    deallocate(div_coeff_edge)
+    deallocate(grav_cell_nph)
+    deallocate(grav_cell_new)
+    
+    deallocate(rho_omegadotbar1)
+    deallocate(rho_omegadotbar2)
+    deallocate(rho_Hextbar)
+    
+    deallocate(w0_old)
+    deallocate(w0_force)
+    
+    deallocate(lo)
+    deallocate(hi)
+    
     end subroutine advance_timestep
 
 end module advance_timestep_module

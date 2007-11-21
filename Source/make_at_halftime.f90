@@ -13,41 +13,46 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-   subroutine make_S_at_halftime (shalf,sold,snew)
+   subroutine make_S_at_halftime (nlevs,shalf,sold,snew)
 
-      type(multifab) , intent(inout) :: shalf
-      type(multifab) , intent(in   ) :: sold
-      type(multifab) , intent(in   ) :: snew
+     integer        , intent(in   ) :: nlevs
+     type(multifab) , intent(inout) :: shalf(:)
+     type(multifab) , intent(in   ) :: sold(:)
+     type(multifab) , intent(in   ) :: snew(:)
 
-      real(kind=dp_t), pointer:: shp(:,:,:,:)
-      real(kind=dp_t), pointer:: sop(:,:,:,:)
-      real(kind=dp_t), pointer:: snp(:,:,:,:)
-      integer :: lo(shalf%dim),hi(shalf%dim),ng_h,ng_o,dm
-      integer :: i,in_comp,out_comp
-
-      dm = shalf%dim
-      ng_h = shalf%ng
-      ng_o = sold%ng
-
-       in_comp = 1
-      out_comp = 1
-
-      do i = 1, shalf%nboxes
-         if ( multifab_remote(shalf, i) ) cycle
-         shp => dataptr(shalf, i)
-         sop => dataptr(sold, i)
-         snp => dataptr(snew, i)
-         lo =  lwb(get_box(shalf, i))
-         hi =  upb(get_box(shalf, i))
-         select case (dm)
-         case (2)
-            call make_at_halftime_2d(shp(:,:,1,out_comp),sop(:,:,1,in_comp), &
-                                     snp(:,:,1,in_comp),lo,hi,ng_h,ng_o)
-         case (3)
-            call make_at_halftime_3d(shp(:,:,:,out_comp),sop(:,:,:,in_comp), &
-                                     snp(:,:,:,in_comp),lo,hi,ng_h,ng_o)
-         end select
-      end do
+     real(kind=dp_t), pointer:: shp(:,:,:,:)
+     real(kind=dp_t), pointer:: sop(:,:,:,:)
+     real(kind=dp_t), pointer:: snp(:,:,:,:)
+     integer :: lo(shalf(1)%dim),hi(shalf(1)%dim),ng_h,ng_o,dm
+     integer :: i,in_comp,out_comp,n
+     
+     dm = shalf(1)%dim
+     ng_h = shalf(1)%ng
+     ng_o = sold(1)%ng
+     
+     in_comp = 1
+     out_comp = 1
+     
+     do n = 1, nlevs
+        
+        do i = 1, shalf(n)%nboxes
+           if ( multifab_remote(shalf(n), i) ) cycle
+           shp => dataptr(shalf(n), i)
+           sop => dataptr(sold(n), i)
+           snp => dataptr(snew(n), i)
+           lo =  lwb(get_box(shalf(n), i))
+           hi =  upb(get_box(shalf(n), i))
+           select case (dm)
+           case (2)
+              call make_at_halftime_2d(shp(:,:,1,out_comp),sop(:,:,1,in_comp), &
+                                       snp(:,:,1,in_comp),lo,hi,ng_h,ng_o)
+           case (3)
+              call make_at_halftime_3d(shp(:,:,:,out_comp),sop(:,:,:,in_comp), &
+                                       snp(:,:,:,in_comp),lo,hi,ng_h,ng_o)
+           end select
+        end do
+        
+     enddo
 
    end subroutine make_S_at_halftime
 

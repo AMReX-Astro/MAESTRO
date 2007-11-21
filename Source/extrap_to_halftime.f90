@@ -12,45 +12,48 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine extrap_to_halftime(Source_nph,dSdt,Source_old,dt)
+  subroutine extrap_to_halftime(nlevs,Source_nph,dSdt,Source_old,dt)
 
-    type(multifab) , intent(inout) :: Source_nph, dSdt, Source_old
+    integer        , intent(in   ) :: nlevs
+    type(multifab) , intent(inout) :: Source_nph(:), dSdt(:), Source_old(:)
     real(kind=dp_t), intent(in   ) :: dt
 
     real(kind=dp_t), pointer:: Snphp(:,:,:,:)
     real(kind=dp_t), pointer:: Soldp(:,:,:,:)
     real(kind=dp_t), pointer:: dSdtp(:,:,:,:)
-    integer :: lo(Source_nph%dim),hi(Source_nph%dim),ng_h,ng_o,dm
-    integer :: i
+    integer :: lo(Source_nph(1)%dim),hi(Source_nph(1)%dim),ng_h,ng_o,dm
+    integer :: i,n
       
-    dm = Source_nph%dim
-    ng_h = Source_nph%ng
-    ng_o = Source_old%ng
+    dm = Source_nph(1)%dim
+    ng_h = Source_nph(1)%ng
+    ng_o = Source_old(1)%ng
 
-    do i = 1, Source_nph%nboxes
-       if ( multifab_remote(Source_nph, i) ) cycle
-       Snphp => dataptr(Source_nph, i)
-       Soldp => dataptr(Source_old, i)
-       dSdtp => dataptr(dSdt, i)
+    do n = 1, nlevs
 
-       lo =  lwb(get_box(Source_nph, i))
-       hi =  upb(get_box(Source_nph, i))
-
-       select case (dm)
-       case (2)
-          call extrap_to_halftime_2d(Snphp(:,:,1,1), &
-                                     dSdtp(:,:,1,1), &
-                                     Soldp(:,:,1,1), &
-                                     dt,lo,hi,ng_h,ng_o)
-
-       case (3)
-          call extrap_to_halftime_3d(Snphp(:,:,:,1), &
-                                     dSdtp(:,:,:,1), &
-                                     Soldp(:,:,:,1), &
-                                     dt,lo,hi,ng_h,ng_o)
-
-       end select
-    end do
+       do i = 1, Source_nph(n)%nboxes
+          if ( multifab_remote(Source_nph(n), i) ) cycle
+          Snphp => dataptr(Source_nph(n), i)
+          Soldp => dataptr(Source_old(n), i)
+          dSdtp => dataptr(dSdt(n), i)
+          
+          lo =  lwb(get_box(Source_nph(n), i))
+          hi =  upb(get_box(Source_nph(n), i))
+          
+          select case (dm)
+          case (2)
+             call extrap_to_halftime_2d(Snphp(:,:,1,1), &
+                                        dSdtp(:,:,1,1), &
+                                        Soldp(:,:,1,1), &
+                                        dt,lo,hi,ng_h,ng_o)
+          case (3)
+             call extrap_to_halftime_3d(Snphp(:,:,:,1), &
+                                        dSdtp(:,:,:,1), &
+                                        Soldp(:,:,:,1), &
+                                        dt,lo,hi,ng_h,ng_o)
+          end select
+       end do
+       
+    enddo
 
   end subroutine extrap_to_halftime
 
