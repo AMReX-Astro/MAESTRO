@@ -438,11 +438,8 @@ contains
           end do
        endif
        
-       do n = 1, nlevs
-          call make_S(Source_new(n),gamma1_term(n),snew(n), &
-                      rho_omegadot2(n),rho_Hext(n),thermal(n), &
-                      s0_old(1,:,temp_comp),gam1(1,:),dx(n,:))
-       enddo
+       call make_S(nlevs,Source_new,gamma1_term,snew,rho_omegadot2,rho_Hext,thermal, &
+                   s0_old(:,:,temp_comp),gam1,dx)
        
        call make_S_at_halftime(nlevs,Source_nph,Source_old,Source_new)
        
@@ -602,11 +599,9 @@ contains
        end do
     endif
     
-    do n = 1, nlevs
-       call make_S(Source_new(n),gamma1_term(n),snew(n), &
-                   rho_omegadot2(n),rho_Hext(n),thermal(n), &
-                   s0_new(1,:,temp_comp),gam1(1,:),dx(n,:))
-    end do
+    call make_S(nlevs,Source_new,gamma1_term,snew,rho_omegadot2,rho_Hext,thermal, &
+                s0_new(:,:,temp_comp),gam1,dx)
+
     call average(Source_new,Sbar(1,:,:),dx,1,1)
     
     ! define dSdt = (Source_new - Source_old) / dt

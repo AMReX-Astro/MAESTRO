@@ -16,48 +16,56 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-   subroutine make_S (Source,gamma1_term,state,rho_omegadot,rho_Hext, &
-                      thermal,t0,gam1,dx)
+  subroutine make_S(nlevs,Source,gamma1_term,state,rho_omegadot,rho_Hext, &
+                    thermal,t0,gam1,dx)
 
-      type(multifab) , intent(inout) :: Source, gamma1_term
-      type(multifab) , intent(in   ) :: state
-      type(multifab) , intent(in   ) :: rho_omegadot
-      type(multifab) , intent(in   ) :: rho_Hext
-      type(multifab) , intent(in   ) :: thermal
-      real(kind=dp_t), intent(in   ) :: t0(0:),gam1(0:)
-      real(kind=dp_t), intent(in   ) :: dx(:)
+    integer        , intent(in   ) :: nlevs
+    type(multifab) , intent(inout) :: Source(:)
+    type(multifab) , intent(inout) :: gamma1_term(:)
+    type(multifab) , intent(in   ) :: state(:)
+    type(multifab) , intent(in   ) :: rho_omegadot(:)
+    type(multifab) , intent(in   ) :: rho_Hext(:)
+    type(multifab) , intent(in   ) :: thermal(:)
+    real(kind=dp_t), intent(in   ) :: t0(:,0:)
+    real(kind=dp_t), intent(in   ) :: gam1(:,0:)
+    real(kind=dp_t), intent(in   ) :: dx(:,:)
+    
+    real(kind=dp_t), pointer:: srcp(:,:,:,:),gp(:,:,:,:),sp(:,:,:,:)
+    real(kind=dp_t), pointer:: thermalp(:,:,:,:)
+    real(kind=dp_t), pointer:: omegap(:,:,:,:), hp(:,:,:,:)
+    integer :: lo(state(1)%dim),hi(state(1)%dim),ng,dm
+    integer :: i,n
+    
+    ng = state(1)%ng
+    dm = state(1)%dim
 
-      real(kind=dp_t), pointer:: srcp(:,:,:,:),gp(:,:,:,:),sp(:,:,:,:)
-      real(kind=dp_t), pointer:: thermalp(:,:,:,:)
-      real(kind=dp_t), pointer:: omegap(:,:,:,:), hp(:,:,:,:)
-      integer :: lo(state%dim),hi(state%dim),ng,dm
-      integer :: i
+    do n = 1, nlevs
 
-      ng = state%ng
-      dm = state%dim
+       do i = 1, state(n)%nboxes
+          if ( multifab_remote(state(n), i) ) cycle
+          srcp => dataptr(Source(n), i)
+          gp => dataptr(gamma1_term(n), i)
+          sp => dataptr(state(n), i)
+          omegap => dataptr(rho_omegadot(n), i)
+          hp     => dataptr(rho_Hext(n), i)
+          thermalp => dataptr(thermal(n), i)
+          lo =  lwb(get_box(state(n), i))
+          hi =  upb(get_box(state(n), i))
+          select case (dm)
+          case (2)
+             call make_S_2d(lo,hi,srcp(:,:,1,1),gp(:,:,1,1),sp(:,:,1,:), &
+                            omegap(:,:,1,:), hp(:,:,1,1), &
+                            thermalp(:,:,1,1), ng, gam1(n,:), dx(n,:))
+          case (3)
+             call make_S_3d(lo,hi,srcp(:,:,:,1),gp(:,:,:,1),sp(:,:,:,:), &
+                            omegap(:,:,:,:), hp(:,:,:,1), &
+                            thermalp(:,:,:,1), ng, t0(n,:), gam1(n,:), dx(n,:))
+          end select
+       end do
 
-      do i = 1, state%nboxes
-         if ( multifab_remote(state, i) ) cycle
-         srcp => dataptr(Source, i)
-         gp => dataptr(gamma1_term, i)
-         sp => dataptr(state, i)
-         omegap => dataptr(rho_omegadot, i)
-         hp     => dataptr(rho_Hext, i)
-         thermalp => dataptr(thermal, i)
-         lo =  lwb(get_box(state, i))
-         hi =  upb(get_box(state, i))
-         select case (dm)
-            case (2)
-              call make_S_2d(lo,hi,srcp(:,:,1,1),gp(:,:,1,1),sp(:,:,1,:), &
-                             omegap(:,:,1,:), hp(:,:,1,1), &
-                             thermalp(:,:,1,1), ng, gam1, dx)
-            case (3)
-              call make_S_3d(lo,hi,srcp(:,:,:,1),gp(:,:,:,1),sp(:,:,:,:), &
-                             omegap(:,:,:,:), hp(:,:,:,1), &
-                             thermalp(:,:,:,1), ng, t0, gam1, dx)
-         end select
-      end do
-      call multifab_fill_boundary(Source)
+       call multifab_fill_boundary(Source(n))
+
+    enddo
 
    end subroutine make_S
 
