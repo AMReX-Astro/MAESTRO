@@ -405,10 +405,7 @@ contains
                         gam1(1,:),grav_cell_new(1,:),anelastic_cutoff)
     
     ! Define rho at half time !
-    do n = 1,nlevs
-       call make_at_halftime(rhohalf(n),sold(n),snew(n),rho_comp,1,dx(n,:), &
-                             the_bc_tower%bc_tower_array(n))
-    end do
+    call make_at_halftime(nlevs,rhohalf,sold,snew,rho_comp,1,dx,the_bc_tower%bc_tower_array)
     
     ! Define base state at half time for use in velocity advance!
     do j = 0, nr-1
@@ -628,10 +625,7 @@ contains
     end if
     
     ! Define rho at half time using the new rho from Step 8!
-    do n = 1,nlevs
-       call make_at_halftime(rhohalf(n),sold(n),snew(n),rho_comp,1,dx(n,:), &
-                             the_bc_tower%bc_tower_array(n))
-    end do
+    call make_at_halftime(nlevs,rhohalf,sold,snew,rho_comp,1,dx,the_bc_tower%bc_tower_array)
     
     do n = 1,nlevs
        call velocity_advance(uold(n),unew(n),sold(n),rhohalf(n),&
