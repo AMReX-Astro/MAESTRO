@@ -622,18 +622,10 @@ contains
     ! Define rho at half time using the new rho from Step 8!
     call make_at_halftime(nlevs,rhohalf,sold,snew,rho_comp,1,dx,the_bc_tower%bc_tower_array)
     
-    do n = 1,nlevs
-       call velocity_advance(uold(n),unew(n),sold(n),rhohalf(n),&
-                             umac(n,:),uedge(n,:), &
-                             utrans(n,:),gp(n),p(n), &
-                             normal(n), w0(1,:), w0_cart_vec(n), &
-                             w0_force(1,:), w0_force_cart_vec(n), &
-                             s0_old(1,:,:), grav_cell_old(1,:), s0_nph(1,:,:), &
-                             grav_cell_nph(1,:), &
-                             dx(n,:),dt, &
-                             the_bc_tower%bc_tower_array(n), &
-                             sponge(n),do_sponge,verbose)
-    end do
+    call velocity_advance(nlevs,uold,unew,sold,rhohalf,umac,uedge,utrans,gp,normal,w0, &
+                          w0_cart_vec,w0_force,w0_force_cart_vec,s0_old,grav_cell_old, &
+                          s0_nph,grav_cell_nph,dx,dt,the_bc_tower%bc_tower_array, &
+                          sponge,do_sponge,verbose)
     
     do n = 2, nlevs
        fine_domain = layout_get_pd(mla%la(n))
