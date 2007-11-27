@@ -183,23 +183,23 @@ contains
     w0_old = w0
 
     do n = 1, nlevs
-       call multifab_build(rhohalf(n),           mla%la(n), 1    , 1)
-       call multifab_build(Source_nph(n),        mla%la(n), 1    , 0)
-       call multifab_build(macrhs(n),            mla%la(n), 1    , 0)
-       call multifab_build(macphi(n),            mla%la(n), 1    , 1)
-       call multifab_build(hgrhs_old(n),         mla%la(n), 1    , 0      , nodal)
-       call multifab_build(thermal(n),           mla%la(n), 1    , 0)
-       call multifab_build(rho_omegadot2_hold(n),mla%la(n), nspec, 0)
-       call multifab_build(s2star(n),            mla%la(n), nscal, ng_cell)
+       call multifab_build(rhohalf(n),            mla%la(n), 1    , 1)
+       call multifab_build(Source_nph(n),         mla%la(n), 1    , 0)
+       call multifab_build(macrhs(n),             mla%la(n), 1    , 0)
+       call multifab_build(macphi(n),             mla%la(n), 1    , 1)
+       call multifab_build(thermal(n),            mla%la(n), 1    , 1)
+       call multifab_build(rho_omegadot2_hold(n), mla%la(n), nspec, 0)
+       call multifab_build(s2star(n),             mla%la(n), nscal, ng_cell)
+       call multifab_build(hgrhs_old(n),          mla%la(n), 1    , 0, nodal)
               
-       call setval(rhohalf(n)           ,ZERO,all=.true.)
-       call setval(Source_nph(n)        ,ZERO,all=.true.)
-       call setval(macrhs(n)            ,ZERO,all=.true.)
-       call setval(macphi(n)            ,ZERO,all=.true.)
-       call setval(hgrhs_old(n)         ,ZERO,all=.true.)
-       call setval(thermal(n)           ,ZERO,all=.true.)
-       call setval(s2star(n)            ,ZERO,all=.true.)
-       call setval(rho_omegadot2_hold(n),ZERO,all=.true.)
+       call setval(rhohalf(n)           , ZERO, all=.true.)
+       call setval(Source_nph(n)        , ZERO, all=.true.)
+       call setval(macrhs(n)            , ZERO, all=.true.)
+       call setval(macphi(n)            , ZERO, all=.true.)
+       call setval(thermal(n)           , ZERO, all=.true.)
+       call setval(s2star(n)            , ZERO, all=.true.)
+       call setval(rho_omegadot2_hold(n), ZERO, all=.true.)
+       call setval(hgrhs_old(n)         , ZERO, all=.true.)
        
        if (dm.eq.3) then
           call multifab_build(w0_cart_vec(n)      ,mla%la(n),dm,1)
@@ -325,7 +325,7 @@ contains
                                   temp_diffusion_formulation)
     else
        do n = 1,nlevs
-          call setval(thermal(n),ZERO)
+          call setval(thermal(n),ZERO,all=.true.)
        end do
     endif
     

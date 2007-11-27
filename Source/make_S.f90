@@ -31,7 +31,7 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     
     real(kind=dp_t), pointer:: srcp(:,:,:,:),gp(:,:,:,:),sp(:,:,:,:)
-    real(kind=dp_t), pointer:: thermalp(:,:,:,:)
+    real(kind=dp_t), pointer:: tp(:,:,:,:)
     real(kind=dp_t), pointer:: omegap(:,:,:,:), hp(:,:,:,:)
     integer :: lo(state(1)%dim),hi(state(1)%dim),ng,dm
     integer :: i,n
@@ -44,22 +44,22 @@ contains
        do i = 1, state(n)%nboxes
           if ( multifab_remote(state(n), i) ) cycle
           srcp => dataptr(Source(n), i)
-          gp => dataptr(gamma1_term(n), i)
-          sp => dataptr(state(n), i)
+          gp     => dataptr(gamma1_term(n), i)
+          sp     => dataptr(state(n), i)
           omegap => dataptr(rho_omegadot(n), i)
           hp     => dataptr(rho_Hext(n), i)
-          thermalp => dataptr(thermal(n), i)
-          lo =  lwb(get_box(state(n), i))
-          hi =  upb(get_box(state(n), i))
+          tp     => dataptr(thermal(n), i)
+          lo = lwb(get_box(state(n), i))
+          hi = upb(get_box(state(n), i))
           select case (dm)
           case (2)
              call make_S_2d(lo,hi,srcp(:,:,1,1),gp(:,:,1,1),sp(:,:,1,:), &
                             omegap(:,:,1,:), hp(:,:,1,1), &
-                            thermalp(:,:,1,1), ng, gam1(n,:), dx(n,:))
+                            tp(:,:,1,1), ng, gam1(n,:), dx(n,:))
           case (3)
              call make_S_3d(lo,hi,srcp(:,:,:,1),gp(:,:,:,1),sp(:,:,:,:), &
                             omegap(:,:,:,:), hp(:,:,:,1), &
-                            thermalp(:,:,:,1), ng, t0(n,:), gam1(n,:), dx(n,:))
+                            tp(:,:,:,1), ng, t0(n,:), gam1(n,:), dx(n,:))
           end select
        end do
 
@@ -80,7 +80,7 @@ contains
       real (kind=dp_t), intent(in   ) :: s(lo(1)-ng:,lo(2)-ng:,:)
       real (kind=dp_t), intent(in   ) :: rho_omegadot(lo(1):,lo(2):,:)
       real (kind=dp_t), intent(in   ) :: rho_Hext(lo(1):,lo(2):)
-      real (kind=dp_t), intent(in   ) :: thermal(lo(1):,lo(2):)
+      real (kind=dp_t), intent(in   ) :: thermal(lo(1)-1:,lo(2)-1:)
       real (kind=dp_t), intent(in   ) :: gam1(0:)
       real (kind=dp_t), intent(in   ) :: dx(:)
 
@@ -146,7 +146,7 @@ contains
       real (kind=dp_t), intent(in   ) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
       real (kind=dp_t), intent(in   ) :: rho_omegadot(lo(1):,lo(2):,lo(3):,:)
       real (kind=dp_t), intent(in   ) :: rho_Hext(lo(1):,lo(2):,lo(3):)
-      real (kind=dp_t), intent(in   ) :: thermal(lo(1):,lo(2):,lo(3):)
+      real (kind=dp_t), intent(in   ) :: thermal(lo(1)-1:,lo(2)-1:,lo(3)-1:)
       real (kind=dp_t), intent(in   ) :: t0(0:)
       real (kind=dp_t), intent(in   ) :: gam1(0:)
       real (kind=dp_t), intent(in   ) :: dx(:)

@@ -17,11 +17,12 @@ module make_explicit_thermal_module
 contains 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Compute the explicit thermal conduction term needed for "S"
+! Compute thermal = del dot kappa grad T (if temperature_diffusion)
+! Otherwise, compute thermal with grad h + grad X_k + grad p_0 formulation
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine make_explicit_thermal(mla,dx,thermal,s,p0,mg_verbose, &
-                                   cg_verbose,the_bc_tower,temperature_diffusion)
+  subroutine make_explicit_thermal(mla,dx,thermal,s,p0,mg_verbose,cg_verbose, &
+                                   the_bc_tower,temperature_diffusion)
 
     type(ml_layout), intent(inout) :: mla
     real(dp_t)     , intent(in   ) :: dx(:,:)
@@ -37,12 +38,12 @@ contains
     type(multifab), allocatable :: Tcoeff(:),hcoeff(:),pcoeff(:),resid(:)
     integer                     :: i,k,n,nlevs,dm,stencil_order
     integer                     :: lo(s(1)%dim),hi(s(1)%dim)
-    real(kind=dp_t), pointer    :: thermalp(:,:,:,:),sp(:,:,:,:)
-    real(kind=dp_t), pointer    :: phip(:,:,:,:),betap(:,:,:,:)
-    real(kind=dp_t), pointer    :: Xkcoeffp(:,:,:,:)
+    real(kind=dp_t), pointer    :: sp(:,:,:,:),phip(:,:,:,:)
+    real(kind=dp_t), pointer    :: betap(:,:,:,:),Xkcoeffp(:,:,:,:)
     real(kind=dp_t), pointer    :: Tcoeffp(:,:,:,:),hcoeffp(:,:,:,:)
     real(kind=dp_t), pointer    :: pcoeffp(:,:,:,:),residp(:,:,:,:)
     type(bc_level)              :: bc
+    type(box)                   :: fine_domain
 
     nlevs = mla%nlevel
     dm = mla%dim
@@ -98,13 +99,11 @@ contains
 
     if(temperature_diffusion) then
 
-       ! load T into phi
        do n=1,nlevs
+          ! load T into phi
           call multifab_copy_c(phi(n),1,s(n),temp_comp,1,1)
-       enddo
        
-       ! setup beta = Tcoeff on faces
-       do n=1,nlevs
+          ! setup beta = Tcoeff on faces
           do i=1,s(n)%nboxes
              if (multifab_remote(s(n),i)) cycle
              Tcoeffp => dataptr(Tcoeff(n),i)
@@ -118,9 +117,9 @@ contains
                 call put_beta_on_faces_3d(lo,hi,Tcoeffp(:,:,:,1),betap(:,:,:,:))
              end select
           end do
-       enddo
+       enddo ! end loop over levels
        
-       ! applyop
+       ! applyop to compute resid = del dot Tcoeff grad T
        call mac_applyop(mla,resid,phi,alpha,beta,dx,the_bc_tower,dm+rhoh_comp, &
                         stencil_order,mla%mba%rr,mg_verbose,cg_verbose)
      
@@ -129,16 +128,14 @@ contains
           call multifab_plus_plus_c(thermal(n),1,resid(n),1,1,0)
        enddo
 
-    else ! corresponding to if(temperature_diffusion)
-
-       ! load h into phi
+    else ! the if(.not. temperature_diffusion) case
+       
        do n=1,nlevs
+          ! load h into phi
           call multifab_copy_c(phi(n),1,s(n),rhoh_comp,1,1)
           call multifab_div_div_c(phi(n),1,s(n),rho_comp,1,1)
-       enddo
-       
-       ! setup beta = hcoeff on faces
-       do n=1,nlevs
+                 
+          ! setup beta = hcoeff on faces
           do i=1,s(n)%nboxes
              if (multifab_remote(s(n),i)) cycle
              hcoeffp => dataptr(hcoeff(n),i)
@@ -152,9 +149,9 @@ contains
                 call put_beta_on_faces_3d(lo,hi,hcoeffp(:,:,:,1),betap(:,:,:,:))
              end select
           end do
-       enddo
+       enddo ! end loop over levels
        
-       ! applyop
+       ! applyop to compute resid = del dot hcoeff grad h
        call mac_applyop(mla,resid,phi,alpha,beta,dx,the_bc_tower,dm+rhoh_comp, &
                         stencil_order,mla%mba%rr,mg_verbose,cg_verbose)
        
@@ -165,14 +162,12 @@ contains
      
        ! loop over species
        do k=1,nspec
-          ! load X_k into phi
           do n=1,nlevs
+             ! load X_k into phi
              call multifab_copy_c(phi(n),1,s(n),spec_comp+k-1,1,1)
              call multifab_div_div_c(phi(n),1,s(n),rho_comp,1,1)
-          enddo
-
-          ! setup beta = Xkcoeff on faces
-          do n=1,nlevs
+             
+             ! setup beta = Xkcoeff on faces
              do i=1,s(n)%nboxes
                 if (multifab_remote(s(n),i)) cycle
                 Xkcoeffp => dataptr(Xkcoeff(n),i)
@@ -186,9 +181,9 @@ contains
                    call put_beta_on_faces_3d(lo,hi,Xkcoeffp(:,:,:,k),betap(:,:,:,:))
                 end select
              end do
-          enddo
+          enddo ! end loop over levels
           
-          ! applyop
+          ! applyop to compute resid = del dot Xkcoeff grad X_k
           call mac_applyop(mla,resid,phi,alpha,beta,dx,the_bc_tower,dm+spec_comp+k-1, &
                            stencil_order,mla%mba%rr,mg_verbose,cg_verbose)
           
@@ -217,6 +212,7 @@ contains
        ! set the boundary conditions for pressure
        do n=1,nlevs
           call multifab_fill_boundary(phi(n))
+
           bc = the_bc_tower%bc_tower_array(n)
           do i=1,phi(n)%nboxes
              if ( multifab_remote(phi(n),i) ) cycle
@@ -253,7 +249,7 @@ contains
           end do
        enddo
        
-       ! applyop
+       ! applyop to compute resid = del dot pcoeff grad p0
        call mac_applyop(mla,resid,phi,alpha,beta,dx,the_bc_tower,neumann_comp, &
                         stencil_order,mla%mba%rr,mg_verbose,cg_verbose)
        
@@ -262,10 +258,23 @@ contains
           call multifab_plus_plus_c(thermal(n),1,resid(n),1,1,0)
        enddo
 
-    endif ! corresponding to if(temperature_diffusion)
+    endif ! end if(temperature_diffusion) logic
     
     do n=1,nlevs
        call multifab_fill_boundary(thermal(n))
+
+       ! call to setbc not needed for thermal
+    enddo
+
+    do n=2,nlevs
+       call ml_cc_restriction(thermal(n-1),thermal(n),mla%mba%rr(n-1,:))
+
+       fine_domain = layout_get_pd(mla%la(n))
+       bc = the_bc_tower%bc_tower_array(n-1)
+       call multifab_fill_ghost_cells(thermal(n),thermal(n-1),fine_domain, &
+                                      1,mla%mba%rr(n-1,:), &
+                                      bc%adv_bc_level_array(0,:,:,:), &
+                                      1,neumann_comp,1)
     enddo
     
     ! Deallocate memory

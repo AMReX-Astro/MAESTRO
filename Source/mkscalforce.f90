@@ -170,7 +170,7 @@ contains
     integer,         intent(in   ) :: lo(:), hi(:), ng
     real(kind=dp_t), intent(  out) ::   force(lo(1)- 1:,lo(2)- 1:)
     real(kind=dp_t), intent(in   ) ::       s(lo(1)-ng:,lo(2)-ng:,:)
-    real(kind=dp_t), intent(in   ) :: thermal(lo(1)   :,lo(2)   :)
+    real(kind=dp_t), intent(in   ) :: thermal(lo(1)-1 :,lo(2)-1 :)
     real(kind=dp_t), intent(in   ) ::      p0(0:)
 
     integer :: i,j
@@ -215,9 +215,9 @@ contains
     ! of the force for the update, they will be used to time-center.
 
     integer,         intent(in   ) :: lo(:), hi(:), ng
-    real(kind=dp_t), intent(  out) ::   force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
+    real(kind=dp_t), intent(  out) ::   force(lo(1)-1 :,lo(2)-1 :,lo(3)-1 :)
     real(kind=dp_t), intent(in   ) ::       s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-    real(kind=dp_t), intent(in   ) :: thermal(lo(1)   :,lo(2)   :,lo(3)   :)
+    real(kind=dp_t), intent(in   ) :: thermal(lo(1)-1 :,lo(2)-1 :,lo(3)-1 :)
     real(kind=dp_t), intent(in   ) ::      p0(0:)
 
     integer :: i,j,k
@@ -264,9 +264,9 @@ contains
     ! of the force for the update, they will be used to time-center.
 
     integer,         intent(in   ) :: lo(:), hi(:), ng
-    real(kind=dp_t), intent(  out) ::   force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
+    real(kind=dp_t), intent(  out) ::   force(lo(1)-1 :,lo(2)-1 :,lo(3)-1 :)
     real(kind=dp_t), intent(in   ) ::       s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-    real(kind=dp_t), intent(in   ) :: thermal(lo(1)   :,lo(2)   :,lo(3)   :)
+    real(kind=dp_t), intent(in   ) :: thermal(lo(1)-1 :,lo(2)-1 :,lo(3)-1 :)
     real(kind=dp_t), intent(in   ) ::      p0(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
     real(kind=dp_t), allocatable   :: p0_cart(:,:,:)
