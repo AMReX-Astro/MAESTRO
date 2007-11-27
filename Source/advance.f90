@@ -651,19 +651,17 @@ contains
     ! Project the new velocity field.
     if (init_mode) then
        proj_type = pressure_iters
-       do n = 1,nlevs
+       do n = 1, nlevs
           call multifab_copy(hgrhs_old(n),hgrhs(n))
-          call make_hgrhs(hgrhs(n),Source_new(n),gamma1_term(n),Sbar(1,:,1), &
-                          div_coeff_new(1,:),dx(n,:))
+       enddo
+       call make_hgrhs(nlevs,hgrhs,Source_new,gamma1_term,Sbar(:,:,1),div_coeff_new,dx)
+       do n = 1, nlevs
           call multifab_sub_sub(hgrhs(n),hgrhs_old(n))
           call multifab_div_div_s(hgrhs(n),dt)
        end do
     else
        proj_type = regular_timestep
-       do n = 1,nlevs
-          call make_hgrhs(hgrhs(n),Source_new(n),gamma1_term(n),Sbar(1,:,1), &
-                          div_coeff_new(1,:),dx(n,:))
-       end do
+       call make_hgrhs(nlevs,hgrhs,Source_new,gamma1_term,Sbar(:,:,1),div_coeff_new,dx)
     end if
     
     if (spherical .eq. 1) then
