@@ -49,52 +49,51 @@ contains
     
     implicit none
     
-    logical, intent(in) :: init_mode
-    
-    type(ml_layout),intent(inout) :: mla
-    type(multifab), intent(inout) :: uold(:)
-    type(multifab), intent(inout) :: sold(:)
-    type(multifab), intent(inout) :: s1(:)
-    type(multifab), intent(inout) :: s2(:)
-    type(multifab), intent(inout) :: unew(:)
-    type(multifab), intent(inout) :: snew(:)
-    type(multifab), intent(inout) :: umac(:,:)
-    type(multifab), intent(inout) :: uedge(:,:)
-    type(multifab), intent(inout) :: sedge(:,:)
-    type(multifab), intent(inout) :: utrans(:,:)
-    type(multifab), intent(inout) :: gp(:)
-    type(multifab), intent(inout) :: p(:)
-    type(multifab), intent(inout) :: scal_force(:)
-    type(multifab), intent(in   ) :: normal(:)
-    type(multifab), intent(inout) :: rho_omegadot1(:)
-    type(multifab), intent(inout) :: rho_omegadot2(:)
-    type(multifab), intent(inout) :: rho_Hext(:)
-    type(multifab), intent(inout) :: dSdt(:)
-    type(multifab), intent(inout) :: Source_old(:)
-    type(multifab), intent(inout) :: Source_new(:)
-    type(multifab), intent(inout) :: gamma1_term(:)
-    type(multifab), intent(inout) :: hgrhs(:)
-    real(dp_t)    , intent(inout) :: s0_old(:,0:,:)
-    real(dp_t)    , intent(inout) :: s0_1(:,0:,:)
-    real(dp_t)    , intent(inout) :: s0_2(:,0:,:)
-    real(dp_t)    , intent(inout) :: s0_new(:,0:,:)
-    real(dp_t)    , intent(inout) :: p0_old(:,0:)
-    real(dp_t)    , intent(inout) :: p0_1(:,0:)
-    real(dp_t)    , intent(inout) :: p0_2(:,0:)
-    real(dp_t)    , intent(inout) :: p0_new(:,0:)
-    real(dp_t)    , intent(inout) :: gam1(:,0:)
-    real(dp_t)    , intent(inout) :: w0(:,0:)
-    real(dp_t)    , intent(inout) :: eta(:,0:,:)
-    real(dp_t)    , intent(in   ) :: div_coeff_old(:,0:)
-    real(dp_t)    , intent(inout) :: div_coeff_new(:,0:)
-    real(dp_t)    , intent(in   ) :: grav_cell_old(:,0:)
-    real(dp_t)    , intent(in   ) :: dx(:,:), time, dt, dtold
-    type(bc_tower), intent(in   ) :: the_bc_tower
-    real(dp_t)    , intent(in   ) :: anelastic_cutoff
-    integer       , intent(in   ) :: verbose,mg_verbose,cg_verbose,istep
-
-    type(multifab), intent(in   ) :: sponge(:)
-    logical       , intent(in   ) :: do_sponge
+    logical,         intent(in   ) :: init_mode
+    type(ml_layout), intent(inout) :: mla
+    type(multifab),  intent(inout) :: uold(:)
+    type(multifab),  intent(inout) :: sold(:)
+    type(multifab),  intent(inout) :: s1(:)
+    type(multifab),  intent(inout) :: s2(:)
+    type(multifab),  intent(inout) :: unew(:)
+    type(multifab),  intent(inout) :: snew(:)
+    type(multifab),  intent(inout) :: umac(:,:)
+    type(multifab),  intent(inout) :: uedge(:,:)
+    type(multifab),  intent(inout) :: sedge(:,:)
+    type(multifab),  intent(inout) :: utrans(:,:)
+    type(multifab),  intent(inout) :: gp(:)
+    type(multifab),  intent(inout) :: p(:)
+    type(multifab),  intent(inout) :: scal_force(:)
+    type(multifab),  intent(in   ) :: normal(:)
+    real(dp_t)    ,  intent(inout) :: s0_old(:,0:,:)
+    real(dp_t)    ,  intent(inout) :: s0_1(:,0:,:)
+    real(dp_t)    ,  intent(inout) :: s0_2(:,0:,:)
+    real(dp_t)    ,  intent(inout) :: s0_new(:,0:,:)
+    real(dp_t)    ,  intent(inout) :: p0_old(:,0:)
+    real(dp_t)    ,  intent(inout) :: p0_1(:,0:)
+    real(dp_t)    ,  intent(inout) :: p0_2(:,0:)
+    real(dp_t)    ,  intent(inout) :: p0_new(:,0:)
+    real(dp_t)    ,  intent(inout) :: gam1(:,0:)
+    real(dp_t)    ,  intent(inout) :: w0(:,0:)
+    real(dp_t)    ,  intent(inout) :: eta(:,0:,:)
+    type(multifab),  intent(inout) :: rho_omegadot1(:)
+    type(multifab),  intent(inout) :: rho_omegadot2(:)
+    type(multifab),  intent(inout) :: rho_Hext(:)
+    real(dp_t)    ,  intent(in   ) :: div_coeff_old(:,0:)
+    real(dp_t)    ,  intent(inout) :: div_coeff_new(:,0:)
+    real(dp_t)    ,  intent(in   ) :: grav_cell_old(:,0:)
+    real(dp_t)    ,  intent(in   ) :: dx(:,:),time,dt,dtold
+    type(bc_tower),  intent(in   ) :: the_bc_tower
+    real(dp_t)    ,  intent(in   ) :: anelastic_cutoff
+    integer       ,  intent(in   ) :: verbose,mg_verbose,cg_verbose
+    type(multifab),  intent(inout) :: dSdt(:)
+    type(multifab),  intent(inout) :: Source_old(:)
+    type(multifab),  intent(inout) :: Source_new(:)
+    type(multifab),  intent(inout) :: gamma1_term(:)
+    type(multifab),  intent(in   ) :: sponge(:)
+    logical       ,  intent(in   ) :: do_sponge
+    type(multifab),  intent(inout) :: hgrhs(:)
+    integer       ,  intent(in   ) :: istep
 
     ! local
     type(multifab), allocatable :: rhohalf(:)
@@ -125,11 +124,10 @@ contains
     real(dp_t)    , allocatable :: rho_Hextbar(:,:,:)
     integer       , allocatable :: lo(:),hi(:)
 
-    type(box)  ::  fine_domain
+    type(box)  :: fine_domain
     real(dp_t) :: halfdt, eps_in
-    integer :: i,j,n,dm,nlevs
-    integer :: nr,ng_cell,proj_type
-    logical :: nodal(mla%dim)
+    integer    :: i,j,n,dm,nlevs,nr,ng_cell,proj_type
+    logical    :: nodal(mla%dim)
 
     ! nr is the number of zones in a cell-centered basestate quantity
     nr    = size(s0_old,dim=2)
@@ -137,82 +135,73 @@ contains
     dm    = mla%dim
     nlevs = size(uold)
 
-    ! This is always zero at the beginning of a time step
-    eta(:,:,:) = ZERO
-
-    allocate(lo(dm))
-    allocate(hi(dm))
-
-    allocate(s0_nph(nlevs,0:nr-1,nscal))
-    allocate(Sbar  (nlevs,0:nr-1,1))
-
-    allocate(div_coeff_nph (nlevs,0:nr-1))
-    allocate(div_coeff_edge(nlevs,0:nr))
-
-    allocate(grav_cell_nph(nlevs,0:nr-1))
-    allocate(grav_cell_new(nlevs,0:nr-1))
-
-    allocate(rho_omegadotbar1(nlevs,0:nr-1,nspec))
-    allocate(rho_omegadotbar2(nlevs,0:nr-1,nspec))
-    allocate(rho_Hextbar     (nlevs,0:nr-1,1))
-
-    if (spherical.eq.1) &
-      allocate(div_coeff_3d(nlevs))
-
-    allocate(w0_force(nlevs,0:nr-1))
-    allocate(w0_old  (nlevs,0:nr))
-
-    allocate(Source_nph(nlevs))
     allocate(rhohalf(nlevs))
     allocate(w0_cart_vec(nlevs))
     allocate(w0_force_cart_vec(nlevs))
     allocate(macrhs(nlevs))
     allocate(macphi(nlevs))
     allocate(hgrhs_old(nlevs))
+    allocate(Source_nph(nlevs))
     allocate(thermal(nlevs))
     allocate(s2star(nlevs))
     allocate(rho_omegadot2_hold(nlevs))
+    if (spherical.eq.1) then
+       allocate(div_coeff_3d(nlevs))
+    endif
+
+    allocate(grav_cell_nph(nlevs,0:nr-1))
+    allocate(grav_cell_new(nlevs,0:nr-1))
+    allocate(s0_nph(nlevs,0:nr-1,nscal))
+    allocate(w0_force(nlevs,0:nr-1))
+    allocate(w0_old(nlevs,0:nr))
+    allocate(Sbar(nlevs,0:nr-1,1))
+    allocate(div_coeff_nph (nlevs,0:nr-1))
+    allocate(div_coeff_edge(nlevs,0:nr))
+    allocate(rho_omegadotbar1(nlevs,0:nr-1,nspec))
+    allocate(rho_omegadotbar2(nlevs,0:nr-1,nspec))
+    allocate(rho_Hextbar(nlevs,0:nr-1,1))
+
+    allocate(lo(dm))
+    allocate(hi(dm))
 
     nodal = .true.
-
     ng_cell = uold(1)%ng
-
-    halfdt = half * dt
+    halfdt = half*dt
     
+    ! This is always zero at the beginning of a time step
+    eta(:,:,:) = ZERO
+
     ! Set w0_old to w0 from last time step.
     w0_old = w0
 
     do n = 1, nlevs
        call multifab_build(rhohalf(n),            mla%la(n), 1    , 1)
-       call multifab_build(Source_nph(n),         mla%la(n), 1    , 0)
        call multifab_build(macrhs(n),             mla%la(n), 1    , 0)
        call multifab_build(macphi(n),             mla%la(n), 1    , 1)
-       call multifab_build(thermal(n),            mla%la(n), 1    , 1)
-       call multifab_build(rho_omegadot2_hold(n), mla%la(n), nspec, 0)
-       call multifab_build(s2star(n),             mla%la(n), nscal, ng_cell)
        call multifab_build(hgrhs_old(n),          mla%la(n), 1    , 0, nodal)
-              
+       call multifab_build(Source_nph(n),         mla%la(n), 1    , 0)
+       call multifab_build(thermal(n),            mla%la(n), 1    , 1)
+       call multifab_build(s2star(n),             mla%la(n), nscal, ng_cell)
+       call multifab_build(rho_omegadot2_hold(n), mla%la(n), nspec, 0)
        call setval(rhohalf(n)           , ZERO, all=.true.)
-       call setval(Source_nph(n)        , ZERO, all=.true.)
        call setval(macrhs(n)            , ZERO, all=.true.)
        call setval(macphi(n)            , ZERO, all=.true.)
+       call setval(hgrhs_old(n)         , ZERO, all=.true.)
+       call setval(Source_nph(n)        , ZERO, all=.true.)
        call setval(thermal(n)           , ZERO, all=.true.)
        call setval(s2star(n)            , ZERO, all=.true.)
        call setval(rho_omegadot2_hold(n), ZERO, all=.true.)
-       call setval(hgrhs_old(n)         , ZERO, all=.true.)
        
        if (dm.eq.3) then
-          call multifab_build(w0_cart_vec(n)      ,mla%la(n),dm,1)
-          call multifab_build(w0_force_cart_vec(n),mla%la(n),dm,1)
-
-          call setval(w0_cart_vec(n)      ,ZERO,all=.true.)
-          call setval(w0_force_cart_vec(n),ZERO,all=.true.)
+          call multifab_build(w0_cart_vec(n)      , mla%la(n), dm, 1)
+          call multifab_build(w0_force_cart_vec(n), mla%la(n), dm, 1)
+          call setval(w0_cart_vec(n)      , ZERO, all=.true.)
+          call setval(w0_force_cart_vec(n), ZERO, all=.true.)
        end if
 
        if (spherical.eq.1) then
-          call multifab_build(div_coeff_3d(n),mla%la(nlevs),1,1)
-
-          call setval(div_coeff_3d(n),ZERO,all=.true.)
+          call multifab_build(div_coeff_3d(n), mla%la(nlevs), 1, 1)
+          call setval(div_coeff_3d(n), ZERO, all=.true.)
        endif
     end do
 
@@ -340,19 +329,10 @@ contains
        enddo
     endif
     
-    call scalar_advance(nlevs,1,uold,s1,s2,thermal,umac,w0,w0_cart_vec,eta(1,:,:),sedge, &
-                        utrans,scal_force,normal,s0_1(1,:,:),s0_2(1,:,:),p0_1(1,:), &
-                        p0_2(1,:),dx,dt, &
-                        the_bc_tower%bc_tower_array,verbose)
+    call scalar_advance(nlevs,mla,1,uold,s1,s2,thermal,umac,w0,w0_cart_vec,eta(1,:,:), &
+                        sedge,utrans,scal_force,normal,s0_1(1,:,:),s0_2(1,:,:), &
+                        p0_1(1,:),p0_2(1,:),dx,dt,the_bc_tower%bc_tower_array,verbose)
     
-    do n = 2, nlevs
-       fine_domain = layout_get_pd(mla%la(n))
-       call multifab_fill_ghost_cells(s2(n),s2(n-1),fine_domain, &
-            ng_cell,mla%mba%rr(n-1,:), &
-            the_bc_tower%bc_tower_array(n-1)%adv_bc_level_array(0,:,:,:), &
-            1,rho_comp,nscal)
-    end do
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 4a (Option I) -- Add thermal conduction (only enthalpy terms)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -525,18 +505,9 @@ contains
           call add_react_to_thermal(nlevs,thermal,rho_omegadot2_hold,s1)
        endif
        
-       call scalar_advance(nlevs,2,uold,s1,s2,thermal,umac,w0,w0_cart_vec,eta(1,:,:),sedge, &
-                           utrans,scal_force,normal,s0_1(1,:,:),s0_2(1,:,:), &
-                           p0_1(1,:),p0_2(1,:), &
-                           dx,dt,the_bc_tower%bc_tower_array,verbose)
-
-       do n = 2, nlevs
-          fine_domain = layout_get_pd(mla%la(n))
-          call multifab_fill_ghost_cells(s2(n),s2(n-1),fine_domain, &
-               ng_cell,mla%mba%rr(n-1,:), &
-               the_bc_tower%bc_tower_array(n-1)%adv_bc_level_array(0,:,:,:), &
-               1,rho_comp,nscal)
-       end do
+       call scalar_advance(nlevs,mla,2,uold,s1,s2,thermal,umac,w0,w0_cart_vec,eta(1,:,:), &
+                           sedge,utrans,scal_force,normal,s0_1(1,:,:),s0_2(1,:,:), &
+                           p0_1(1,:),p0_2(1,:),dx,dt,the_bc_tower%bc_tower_array,verbose)
        
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 8a (Option I) -- Add thermal conduction (only enthalpy terms)
@@ -622,18 +593,10 @@ contains
     ! Define rho at half time using the new rho from Step 8!
     call make_at_halftime(nlevs,rhohalf,sold,snew,rho_comp,1,dx,the_bc_tower%bc_tower_array)
     
-    call velocity_advance(nlevs,uold,unew,sold,rhohalf,umac,uedge,utrans,gp,normal,w0, &
+    call velocity_advance(nlevs,mla,uold,unew,sold,rhohalf,umac,uedge,utrans,gp,normal,w0, &
                           w0_cart_vec,w0_force,w0_force_cart_vec,s0_old,grav_cell_old, &
                           s0_nph,grav_cell_nph,dx,dt,the_bc_tower%bc_tower_array, &
                           sponge,do_sponge,verbose)
-    
-    do n = 2, nlevs
-       fine_domain = layout_get_pd(mla%la(n))
-       call multifab_fill_ghost_cells(unew(n),unew(n-1),fine_domain, &
-            ng_cell,mla%mba%rr(n-1,:), &
-            the_bc_tower%bc_tower_array(n-1)%adv_bc_level_array(0,:,:,:), &
-            1,1,dm)
-    end do
     
     ! Define beta at half time using the div_coeff_new from step 9!
     do j = 0, nr-1

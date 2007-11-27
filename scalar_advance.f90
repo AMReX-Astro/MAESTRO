@@ -17,12 +17,14 @@ module scalar_advance_module
   use geometry
   use network
   use probin_module
+  use ml_restriction_module
+  use multifab_fill_ghost_module
 
   implicit none
   
 contains
 
-  subroutine scalar_advance(nlevs, which_step, uold, sold, snew, thermal, &
+  subroutine scalar_advance(nlevs, mla, which_step, uold, sold, snew, thermal, &
                             umac, w0, w0_cart_vec, eta, sedge, utrans, &
                             ext_scal_force, normal, &
                             s0_old, s0_new , &
@@ -30,7 +32,9 @@ contains
                             dx, dt, the_bc_level, &
                             verbose)
  
-    integer        , intent(in   ) :: nlevs, which_step
+    integer        , intent(in   ) :: nlevs
+    type(ml_layout), intent(inout) :: mla
+    integer        , intent(in   ) :: which_step
     type(multifab) , intent(inout) :: uold(:)
     type(multifab) , intent(inout) :: sold(:)
     type(multifab) , intent(inout) :: snew(:)
@@ -811,10 +815,18 @@ contains
 !     Call fill_boundary for all components of snew
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      call multifab_fill_boundary(snew(n))
-
       enddo ! do n = 1, nlevs
 
+      do n = 2, nlevs
+         call ml_cc_restriction(snew(n-1),snew(n),mla%mba%rr(n-1,:))
+
+         domain = layout_get_pd(mla%la(n))
+         call multifab_fill_ghost_cells(snew(n),snew(n-1),domain, &
+                                        ng_cell,mla%mba%rr(n-1,:), &
+                                        the_bc_level(n-1)%adv_bc_level_array(0,:,:,:), &
+                                        1,dm+rho_comp,nscal)
+      end do
+      
       do n = 1,nlevs
          call multifab_destroy(scal_force(n))
          call multifab_destroy(s0_old_cart(n))
