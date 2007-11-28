@@ -6,6 +6,8 @@ module phihalf_module
   use multifab_module
   use setbc_module
   use define_bc_module
+  use ml_restriction_module
+  use multifab_fill_ghost_module
 
   implicit none
 
@@ -58,7 +60,7 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-   subroutine make_at_halftime(nlevs,phihalf,sold,snew,in_comp,out_comp,dx,the_bc_level)
+   subroutine make_at_halftime(nlevs,phihalf,sold,snew,in_comp,out_comp,dx,the_bc_level,mla)
      
      integer        , intent(in   ) :: nlevs
      type(multifab) , intent(inout) :: phihalf(:)
@@ -67,12 +69,14 @@ contains
      integer        , intent(in   ) :: in_comp,out_comp
      real(kind=dp_t), intent(in   ) :: dx(:,:)
      type(bc_level) , intent(in   ) :: the_bc_level(:)
+     type(ml_layout), intent(inout) :: mla
      
      real(kind=dp_t), pointer:: rhp(:,:,:,:)
      real(kind=dp_t), pointer:: rop(:,:,:,:)
      real(kind=dp_t), pointer:: rnp(:,:,:,:)
-     integer :: lo(phihalf(1)%dim),hi(phihalf(1)%dim)
-     integer :: ng_h,ng_o,dm,i,n,bc_comp
+     integer   :: lo(phihalf(1)%dim),hi(phihalf(1)%dim)
+     integer   :: ng_h,ng_o,dm,i,n,bc_comp
+     type(box) :: fine_domain
 
      dm = phihalf(1)%dim
      ng_h = phihalf(1)%ng
@@ -97,47 +101,57 @@ contains
            end select
         end do
         
-        if (ng_h .gt. 0) then
+        if(ng_h .gt. 0) then
            call multifab_fill_boundary(phihalf(n))
-        endif
         
-        do i = 1, phihalf(n)%nboxes
-           if ( multifab_remote(phihalf(n), i) ) cycle
-           rhp => dataptr(phihalf(n), i)
-           lo =  lwb(get_box(phihalf(n), i))
-           select case (dm)
-           case (2)
-              if (ng_h .gt. 0) then
+           do i = 1, phihalf(n)%nboxes
+              if ( multifab_remote(phihalf(n), i) ) cycle
+              rhp => dataptr(phihalf(n), i)
+              lo =  lwb(get_box(phihalf(n), i))
+              select case (dm)
+              case (2)
                  bc_comp = dm+in_comp
                  call setbc_2d(rhp(:,:,1,out_comp), lo, ng_h, &
                                the_bc_level(n)%adv_bc_level_array(i,:,:,bc_comp), &
                                dx(n,:),bc_comp)
-              end if
-           case (3)
-              if (ng_h .gt. 0) then
+              case (3)
                  bc_comp = dm+in_comp
                  call setbc_3d(rhp(:,:,:,out_comp), lo, ng_h, &
                                the_bc_level(n)%adv_bc_level_array(i,:,:,bc_comp), &
                                dx(n,:),bc_comp)
-              end if
-           end select
-        end do
+              end select
+           end do
+        endif
         
-     enddo
+     enddo ! end loop over nlevs
+
+     if(ng_h .gt. 0) then
+        do n = 2, nlevs
+           call ml_cc_restriction(phihalf(n-1),phihalf(n),mla%mba%rr(n-1,:))
+
+           fine_domain = layout_get_pd(mla%la(n))
+           call multifab_fill_ghost_cells(phihalf(n),phihalf(n-1),fine_domain, &
+                                          ng_h,mla%mba%rr(n-1,:), &
+                                          the_bc_level(n-1)%adv_bc_level_array(0,:,:,:), &
+                                          1,dm+in_comp,1)
+        enddo
+     endif
 
    end subroutine make_at_halftime
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
    subroutine make_at_halftime_2d(phihalf,phiold,phinew,lo,hi,ng_half,ng_old)
 
      implicit none
-
-     integer         , intent(in   ) :: lo(:), hi(:), ng_half, ng_old
+     
+     integer         , intent(in   ) :: lo(:),hi(:),ng_half,ng_old
      real (kind=dp_t), intent(  out) :: phihalf(lo(1)-ng_half:,lo(2)-ng_half:)
-     real (kind=dp_t), intent(in   ) ::  phiold(lo(1)-ng_old :,lo(2)-ng_old :)
-     real (kind=dp_t), intent(in   ) ::  phinew(lo(1)-ng_old :,lo(2)-ng_old :)
+     real (kind=dp_t), intent(in   ) :: phiold(lo(1)-ng_old:,lo(2)-ng_old:)
+     real (kind=dp_t), intent(in   ) :: phinew(lo(1)-ng_old:,lo(2)-ng_old:)
      
      !  Local variables
-     integer          :: i, j
+     integer :: i, j
      
      do j = lo(2),hi(2)
         do i = lo(1),hi(1)
@@ -146,18 +160,20 @@ contains
      end do
      
    end subroutine make_at_halftime_2d
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    
-   subroutine make_at_halftime_3d (phihalf,phiold,phinew,lo,hi,ng_half,ng_old)
+   subroutine make_at_halftime_3d(phihalf,phiold,phinew,lo,hi,ng_half,ng_old)
      
      implicit none
      
-     integer         , intent(in   ) :: lo(:), hi(:), ng_half, ng_old
+     integer         , intent(in   ) :: lo(:),hi(:),ng_half,ng_old
      real (kind=dp_t), intent(  out) :: phihalf(lo(1)-ng_half:,lo(2)-ng_half:,lo(3)-ng_half:)
-     real (kind=dp_t), intent(in   ) ::  phiold(lo(1)-ng_old:,lo(2)-ng_old:,lo(3)-ng_old:)
-     real (kind=dp_t), intent(in   ) ::  phinew(lo(1)-ng_old:,lo(2)-ng_old:,lo(3)-ng_old:)
+     real (kind=dp_t), intent(in   ) :: phiold(lo(1)-ng_old:,lo(2)-ng_old:,lo(3)-ng_old:)
+     real (kind=dp_t), intent(in   ) :: phinew(lo(1)-ng_old:,lo(2)-ng_old:,lo(3)-ng_old:)
 
      ! Local variables
-     integer          :: i, j, k
+     integer :: i, j, k
      
      do k = lo(3),hi(3)
         do j = lo(2),hi(2)
@@ -168,5 +184,7 @@ contains
      end do
      
    end subroutine make_at_halftime_3d
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    
  end module phihalf_module

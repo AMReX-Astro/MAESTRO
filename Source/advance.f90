@@ -107,12 +107,8 @@ contains
     type(multifab), allocatable :: s2star(:)
     type(multifab), allocatable :: rho_omegadot2_hold(:)
 
-    ! Only needed for spherical.eq.1 
-    type(multifab) , allocatable :: div_coeff_3d(:)
-    real(kind=dp_t), pointer     :: dp(:,:,:,:)
-
-    real (dp_t)   , allocatable :: grav_cell_nph(:,:)
-    real (dp_t)   , allocatable :: grav_cell_new(:,:)
+    real(dp_t)    , allocatable :: grav_cell_nph(:,:)
+    real(dp_t)    , allocatable :: grav_cell_new(:,:)
     real(dp_t)    , allocatable :: s0_nph(:,:,:)
     real(dp_t)    , allocatable :: w0_force(:,:)
     real(dp_t)    , allocatable :: w0_old(:,:)
@@ -124,14 +120,18 @@ contains
     real(dp_t)    , allocatable :: rho_Hextbar(:,:,:)
     integer       , allocatable :: lo(:),hi(:)
 
-    real(dp_t) :: halfdt, eps_in
+    ! Only needed for spherical.eq.1 
+    type(multifab) , allocatable :: div_coeff_3d(:)
+    real(kind=dp_t), pointer     :: dp(:,:,:,:)
+
+    real(dp_t) :: halfdt,eps_in
     integer    :: i,j,n,dm,nlevs,nr,ng_cell,proj_type
     logical    :: nodal(mla%dim)
 
     ! nr is the number of zones in a cell-centered basestate quantity
-    nr    = size(s0_old,dim=2)
+    nr = size(s0_old,dim=2)
 
-    dm    = mla%dim
+    dm = mla%dim
     nlevs = size(uold)
 
     allocate(rhohalf(nlevs))
@@ -279,8 +279,8 @@ contains
     call average(rho_omegadot1,rho_omegadotbar1(1,:,:),dx,1,nspec)
     call average(rho_Hext,rho_Hextbar(1,:,:),dx,1,1)
     if (evolve_base_state) then
-       call react_base(p0_old(1,:),s0_old(1,:,:),rho_omegadotbar1(1,:,:),rho_Hextbar(1,:,1), &
-                       halfdt,p0_1(1,:),s0_1(1,:,:),gam1(1,:))
+       call react_base(p0_old(1,:),s0_old(1,:,:),rho_omegadotbar1(1,:,:), &
+                       rho_Hextbar(1,:,1),halfdt,p0_1(1,:),s0_1(1,:,:),gam1(1,:))
     else
        p0_1(1,:) = p0_old(1,:)
        s0_1(1,:,:) = s0_old(1,:,:)
@@ -384,7 +384,8 @@ contains
                         gam1(1,:),grav_cell_new(1,:),anelastic_cutoff)
     
     ! Define rho at half time !
-    call make_at_halftime(nlevs,rhohalf,sold,snew,rho_comp,1,dx,the_bc_tower%bc_tower_array)
+    call make_at_halftime(nlevs,rhohalf,sold,snew,rho_comp,1,dx, &
+                          the_bc_tower%bc_tower_array,mla)
     
     ! Define base state at half time for use in velocity advance!
     do j = 0, nr-1
@@ -590,7 +591,8 @@ contains
     end if
     
     ! Define rho at half time using the new rho from Step 8!
-    call make_at_halftime(nlevs,rhohalf,sold,snew,rho_comp,1,dx,the_bc_tower%bc_tower_array)
+    call make_at_halftime(nlevs,rhohalf,sold,snew,rho_comp,1,dx, &
+                          the_bc_tower%bc_tower_array,mla)
     
     call velocity_advance(nlevs,mla,uold,unew,sold,rhohalf,umac,uedge,utrans,gp,normal,w0, &
                           w0_cart_vec,w0_force,w0_force_cart_vec,s0_old,grav_cell_old, &
