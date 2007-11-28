@@ -10,6 +10,7 @@ module base_state_module
   use variables
   use network
   use geometry
+  use probin_module, ONLY: base_cutoff_density, anelastic_cutoff
 
   implicit none
 
@@ -45,6 +46,8 @@ contains
     integer, parameter :: MAX_VARNAME_LENGTH=80
     integer :: npts_model, nvars_model_file
 
+    real(kind=dp_t) :: min_dens, max_dens
+
     real(kind=dp_t) :: x,y,z
 
     real(kind=dp_t), allocatable :: base_state(:,:), base_r(:)
@@ -56,8 +59,6 @@ contains
     character (len=256) :: header_line
 
     logical :: do_diag
-
-    real(kind=dp_t), parameter :: cutoff_density = 3.0d6
 
     do_diag = .false.
 
@@ -158,6 +159,27 @@ contains
 
     close(99)
 
+    max_dens = maxval(base_state(:,idens_model))
+    min_dens = minval(base_state(:,idens_model))
+
+    print *, ' '
+    print *, 'model read in'
+    print *, ' *** maximum density of model =                   ', max_dens
+    print *, ' *** minimum density of model =                   ', min_dens
+    print *, ' *** anelastic cutoff =                           ', anelastic_cutoff
+    print *, ' *** low density cutoff (for mapping the model) = ', base_cutoff_density
+    print *, ' '
+
+    if (min_dens < base_cutoff_density .OR. min_dens < anelastic_cutoff) then
+       print *, 'WARNING: minimum model density is lower than one of the cutoff densities'
+       print *, '         make sure that the cutoff densities are lower than any density'
+       print *, '         of dynamical interest'
+    endif
+
+    print *, ' '
+    print *, ' '
+
+
     dr_in = (base_r(npts_model) - base_r(1)) / dble(npts_model-1)
     rmax = base_r(npts_model)
 
@@ -237,7 +259,7 @@ contains
          gam1(j) = gam1_eos(1)
   
          ! keep track of the height where we drop below the cutoff density
-         if (s0(j,rho_comp) .lt. cutoff_density .and. j_cutoff .eq. n_base) then
+         if (s0(j,rho_comp) .lt. base_cutoff_density .and. j_cutoff .eq. n_base) then
             if ( parallel_IOProcessor() ) print *,'SETTING J_CUTOFF TO ',j
             j_cutoff = j
          end if
