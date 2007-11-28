@@ -176,6 +176,12 @@ contains
        print *, '         of dynamical interest'
     endif
 
+    if (anelastic_cutoff < base_cutoff_density) then
+       print *, 'ERROR: anelastic cutoff should be at a higher density than the base state'
+       print *, '       cutoff density.'
+       call bl_error("anelastic cutoff < base_cutoff_density")
+    endif
+       
     print *, ' '
     print *, ' '
 
