@@ -239,7 +239,7 @@ contains
     end if
     
     call advance_premac(nlevs,uold,sold,umac,uedge,utrans,gp,normal,w0,w0_cart_vec, &
-                        s0_old,grav_cell_old,dx,dt,the_bc_tower%bc_tower_array)
+                        s0_old,grav_cell_old,dx,dt,the_bc_tower%bc_tower_array,mla)
     
     call make_macrhs(nlevs,macrhs,Source_nph,gamma1_term,Sbar(:,:,1),div_coeff_old,dx)
     
@@ -443,7 +443,7 @@ contains
        end if
        
        call advance_premac(nlevs,uold,sold,umac,uedge,utrans,gp,normal,w0,w0_cart_vec, &
-                           s0_old,grav_cell_old,dx,dt,the_bc_tower%bc_tower_array)
+                           s0_old,grav_cell_old,dx,dt,the_bc_tower%bc_tower_array,mla)
        
        call make_macrhs(nlevs,macrhs,Source_nph,gamma1_term,Sbar(:,:,1),div_coeff_nph,dx)
        
