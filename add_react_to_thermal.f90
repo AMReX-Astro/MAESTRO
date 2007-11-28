@@ -8,6 +8,9 @@ module add_react_to_thermal_module
   use network
   use geometry
   use variables
+  use define_bc_module
+  use ml_restriction_module
+  use multifab_fill_ghost_module
 
   implicit none
 
@@ -16,23 +19,25 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine add_react_to_thermal(nlevs,thermal,rho_omegadot,s)
+  subroutine add_react_to_thermal(nlevs,thermal,rho_omegadot,s,the_bc_level,mla)
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: thermal(:)
     type(multifab) , intent(in   ) :: rho_omegadot(:)
     type(multifab) , intent(in   ) :: s(:)
+    type(bc_level) , intent(in   ) :: the_bc_level(:)
+    type(ml_layout), intent(inout) :: mla
 
-    real(kind=dp_t), pointer:: sp(:,:,:,:)
-    real(kind=dp_t), pointer:: tp(:,:,:,:)
-    real(kind=dp_t), pointer:: rhowp(:,:,:,:)
-    integer :: lo(thermal(1)%dim),hi(thermal(1)%dim)
-    integer :: dm,i,n
+    real(kind=dp_t), pointer :: sp(:,:,:,:)
+    real(kind=dp_t), pointer :: tp(:,:,:,:)
+    real(kind=dp_t), pointer :: rhowp(:,:,:,:)
+    integer                  :: lo(thermal(1)%dim),hi(thermal(1)%dim)
+    integer                  :: dm,i,n
+    type(box)                :: fine_domain
     
     dm = thermal(1)%dim
     
     do n = 1, nlevs
-
        do i = 1,thermal(n)%nboxes
           if ( multifab_remote(thermal(n), i) ) cycle
           tp => dataptr(thermal(n),i)
@@ -48,8 +53,27 @@ contains
           end select
        end do
 
+       ! fill ghost cells for two adjacent grids at the same level
+       ! this includes periodic domain boundary conditions
        call multifab_fill_boundary(thermal(n))
        
+       ! A call to setbc for thermal (which may be used as a force in the Godunov step)
+       ! is not required.  Even though the Godunov step 
+       ! references values of force outside of the domain, the boundary conditions
+       ! ensure that the values of force outside of the domain do not influce the result.
+    enddo
+
+    do n=nlevs,2,-1
+       ! make sure that coarse cells are the average of the fine cells covering it.
+       ! the loop over nlevs must count backwards to make sure the finer grids are done first
+       call ml_cc_restriction(thermal(n-1),thermal(n),mla%mba%rr(n-1,:))
+
+       ! fill fine ghost cells using interpolation from the underlying coarse data
+       fine_domain = layout_get_pd(mla%la(n))
+       call multifab_fill_ghost_cells(thermal(n),thermal(n-1),fine_domain, &
+                                      1,mla%mba%rr(n-1,:), &
+                                      the_bc_level(n-1)%adv_bc_level_array(0,:,:,:), &
+                                      1,neumann_comp,1)
     enddo
        
   end subroutine add_react_to_thermal

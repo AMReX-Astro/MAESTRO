@@ -261,14 +261,22 @@ contains
     endif ! end if(temperature_diffusion) logic
     
     do n=1,nlevs
+       ! fill ghost cells for two adjacent grids at the same level
+       ! this includes periodic domain boundary conditions
        call multifab_fill_boundary(thermal(n))
 
-       ! call to setbc not needed for thermal
+       ! A call to setbc for thermal (which may be used as a force in the Godunov step)
+       ! is not required.  Even though the Godunov step 
+       ! references values of force outside of the domain, the boundary conditions
+       ! ensure that the values of force outside of the domain do not influce the result.
     enddo
 
-    do n=2,nlevs
+    do n=nlevs,2,-1
+       ! make sure that coarse cells are the average of the fine cells covering it.
+       ! the loop over nlevs must count backwards to make sure the finer grids are done first
        call ml_cc_restriction(thermal(n-1),thermal(n),mla%mba%rr(n-1,:))
 
+       ! fill fine ghost cells using interpolation from the underlying coarse data
        fine_domain = layout_get_pd(mla%la(n))
        bc = the_bc_tower%bc_tower_array(n-1)
        call multifab_fill_ghost_cells(thermal(n),thermal(n-1),fine_domain, &
