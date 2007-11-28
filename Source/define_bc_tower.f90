@@ -293,7 +293,7 @@ module define_bc_module
           ell_bc_level(n,d,i,temp_comp+dm)                     = BC_PER   ! temperature
           ell_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= BC_PER   ! tracers
           ell_bc_level(n,d,i,press_comp)                       = BC_PER   ! pressure
-          ell_bc_level(n,d,i,neumann_comp)                     = BC_NEU   ! first order extrap
+          ell_bc_level(n,d,i,neumann_comp)                     = BC_PER   ! first order extrap
        end if
     end do
     end do
