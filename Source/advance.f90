@@ -124,7 +124,6 @@ contains
     real(dp_t)    , allocatable :: rho_Hextbar(:,:,:)
     integer       , allocatable :: lo(:),hi(:)
 
-    type(box)  :: fine_domain
     real(dp_t) :: halfdt, eps_in
     integer    :: i,j,n,dm,nlevs,nr,ng_cell,proj_type
     logical    :: nodal(mla%dim)
@@ -645,14 +644,6 @@ contains
           call multifab_copy(hgrhs(n),hgrhs_old(n))
        end do
     end if
-    
-    do n = 2, nlevs
-       fine_domain = layout_get_pd(mla%la(n))
-       call multifab_fill_ghost_cells(unew(n),unew(n-1),fine_domain, &
-            ng_cell,mla%mba%rr(n-1,:), &
-            the_bc_tower%bc_tower_array(n-1)%adv_bc_level_array(0,:,:,:), &
-            1,1,dm)
-    end do
     
     do n = 1, nlevs
        call destroy(Source_nph(n))

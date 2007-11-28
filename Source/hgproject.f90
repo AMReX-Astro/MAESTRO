@@ -1,5 +1,5 @@
 module hgproject_module
-
+  
   use bl_types
   use bl_constants_module
   use bc_module
@@ -12,297 +12,303 @@ module hgproject_module
   use ml_restriction_module
   use proj_parameters
   use fabio_module
+  use multifab_fill_ghost_module
 
   implicit none
 
 contains 
 
-subroutine hgproject(proj_type,mla,unew,uold,rhohalf,p,gp,dx,dt,the_bc_tower, &
-                     verbose,mg_verbose,cg_verbose,press_comp,divu_rhs, &
-                     div_coeff_1d,div_coeff_3d,eps_in)
+  subroutine hgproject(proj_type,mla,unew,uold,rhohalf,p,gp,dx,dt,the_bc_tower, &
+                       verbose,mg_verbose,cg_verbose,press_comp, &
+                       divu_rhs,div_coeff_1d,div_coeff_3d,eps_in)
+    
+    integer        , intent(in   ) :: proj_type
+    type(ml_layout), intent(inout) :: mla
+    type(multifab ), intent(inout) :: unew(:)
+    type(multifab ), intent(in   ) :: uold(:)
+    type(multifab ), intent(inout) :: rhohalf(:)
+    type(multifab ), intent(inout) :: p(:)
+    type(multifab ), intent(inout) :: gp(:)
+    real(dp_t)     , intent(in   ) :: dx(:,:),dt
+    type(bc_tower ), intent(in   ) :: the_bc_tower
+    integer        , intent(in   ) :: verbose,mg_verbose,cg_verbose
+    integer        , intent(in   ) :: press_comp
+    
+    type(multifab ), intent(inout), optional :: divu_rhs(:)
+    real(dp_t)     , intent(in   ), optional :: div_coeff_1d(:)
+    type(multifab ), intent(in   ), optional :: div_coeff_3d(:)
+    real(dp_t)     , intent(in   ), optional :: eps_in
+    
+    ! Local  
+    type(multifab), allocatable :: phi(:),gphi(:)
+    logical,        allocatable :: nodal(:)
+    integer                     :: n,nlevs,dm,ng
+    real(dp_t)                  :: umin,umax,vmin,vmax,wmin,wmax
+    integer                     :: stencil_type
+    logical                     :: use_div_coeff_1d, use_div_coeff_3d
+    type(box)                   :: fine_domain
+    type(bc_level)              ::  bc
+    
+    ! stencil_type = ST_DENSE
+    stencil_type = ST_CROSS
+    
+    nlevs = mla%nlevel
+    dm = mla%dim
+    ng = unew(nlevs)%ng
+    
+    if (parallel_IOProcessor() .and. verbose .ge. 1) then
+       print *,'PROJ_TYPE IN HGPROJECT:',proj_type
+    endif
 
-  integer        , intent(in   ) :: proj_type
-  type(ml_layout), intent(inout) :: mla
-  type(multifab ), intent(inout) :: unew(:)
-  type(multifab ), intent(in   ) :: uold(:)
-  type(multifab ), intent(inout) :: rhohalf(:)
-  type(multifab ), intent(inout) :: gp(:)
-  type(multifab ), intent(inout) :: p(:)
-  real(dp_t)     , intent(in   ) :: dx(:,:),dt
-  type(bc_tower ), intent(in   ) :: the_bc_tower
-  integer        , intent(in   ) :: verbose,mg_verbose,cg_verbose
-  integer        , intent(in   ) :: press_comp
-
-  type(multifab ), intent(inout), optional :: divu_rhs(:)
-  real(dp_t)     , intent(in   ), optional :: div_coeff_1d(:)
-  type(multifab ), intent(in   ), optional :: div_coeff_3d(:)
-
-  real(dp_t)     , intent(in   ), optional :: eps_in
-
-! Local  
-  type(multifab), allocatable :: phi(:),gphi(:)
-  logical, allocatable        :: nodal(:)
-  integer                     :: n,nlevs,dm,ng
-  real(dp_t)                  :: umin,umax,vmin,vmax,wmin,wmax
-  integer                     :: stencil_type
-  logical                     :: use_div_coeff_1d, use_div_coeff_3d
-
-! stencil_type = ST_DENSE
-  stencil_type = ST_CROSS
-
-  nlevs = mla%nlevel
-  dm    = mla%dim
-  ng = unew(nlevs)%ng
-
-  if (parallel_IOProcessor() .and. verbose .ge. 1) &
-    print *,'PROJ_TYPE IN HGPROJECT:',proj_type
-
-  allocate(phi(nlevs), gphi(nlevs), nodal(dm))
-  nodal = .true.
- 
-  use_div_coeff_1d = .false.
-  if (present(div_coeff_1d)) use_div_coeff_1d = .true.
-
-  use_div_coeff_3d = .false.
-  if (present(div_coeff_3d)) use_div_coeff_3d = .true.
-
-  if (use_div_coeff_1d .and. use_div_coeff_3d) then
-     print *,'CANT HAVE 1D and 3D DIV_COEFF IN HGPROJECT '
-     stop
-  end if
-
-  do n = 1, nlevs
-     call multifab_build( phi(n), mla%la(n), 1, 1, nodal)
-     call multifab_build(gphi(n), mla%la(n), dm, 0) 
-     call multifab_copy(phi(n),p(n))
-     call multifab_mult_mult_s(phi(n),dt,phi(n)%ng)
-  end do
-
-  do n = 1, nlevs
-  end do
-
-  if (verbose .ge. 1) then
-     umin = 1.d30
-     vmin = 1.d30
-     wmin = 1.d30
-     umax = -1.d30
-     vmax = -1.d30
-     wmax = -1.d30
-     do n = 1, nlevs
-        umin = min(umin,multifab_min_c(unew(n),1))
-        umax = max(umax,multifab_max_c(unew(n),1))
-        vmin = min(vmin,multifab_min_c(unew(n),2))
-        vmax = max(vmax,multifab_max_c(unew(n),2))
-        if (dm .eq. 3) then
-          wmin = min(wmin,multifab_min_c(unew(n),3))
-          wmax = max(wmax,multifab_max_c(unew(n),3))
-        end if
-     end do
-     if (parallel_IOProcessor()) then
-        write(6,1001) umin,umax
-        write(6,1002) vmin,vmax
-        if (dm .eq. 3) write(6,1003) wmin,wmax
-        write(6,1004)
-     end if
-  end if
-
-1001  format('... x-velocity before projection ',e17.10,2x,e17.10)
-1002  format('... y-velocity before projection ',e17.10,2x,e17.10)
-1003  format('... z-velocity before projection ',e17.10,2x,e17.10)
-1004  format(' ')
-
-  ! quantity projected is U
-  if (proj_type .eq. initial_projection) then
-
-  ! quantity projected is U
-  else if (proj_type .eq. divu_iters) then
-
-  ! quantity projected is (Ustar - Un) 
-  else if (proj_type .eq. pressure_iters) then
-
-     do n = 1,nlevs
-       call multifab_sub_sub(unew(n), uold(n), 1)
-       call multifab_div_div_s(unew(n), dt, 1)
-     end do
-
-  ! quantity projected is Ustar + dt * (1/rho) Gp
-  else if (proj_type .eq. regular_timestep) then
-
-    call create_uvec_for_projection(nlevs,unew,rhohalf,gp,dt,the_bc_tower)
-
-  else 
-
-     print *,'No proj_type by this number ',proj_type
-     stop
-
-  end if
-
-  if (use_div_coeff_1d) then
-     do n = 1, nlevs
-        call mult_by_1d_coeff(unew(n),div_coeff_1d,.true.)
-        call mult_by_1d_coeff(rhohalf(n),div_coeff_1d,.false.)
-     end do
-  else if (use_div_coeff_3d) then
-     do n = 1, nlevs
-        call mult_by_3d_coeff(unew(n),div_coeff_3d(n),.true.)
-        call mult_by_3d_coeff(rhohalf(n),div_coeff_3d(n),.false.)
-     end do
-  end if
-
-  do n = 1, nlevs
-     call setval(phi(n),ZERO,all=.true.)
-  end do
-
-  if (present(divu_rhs)) then
-     call enforce_outflow_on_divu_rhs(divu_rhs,the_bc_tower)
-  endif
-
-  if (present(eps_in)) then
-    call hg_multigrid(mla,unew,rhohalf,phi,dx,the_bc_tower, &
-                      verbose,mg_verbose,cg_verbose,press_comp,stencil_type,divu_rhs,eps_in)
-  else
-    call hg_multigrid(mla,unew,rhohalf,phi,dx,the_bc_tower, &
-                      verbose,mg_verbose,cg_verbose,press_comp,stencil_type,divu_rhs)
-  end if
-
-  if (use_div_coeff_1d) then
-     do n = 1, nlevs
-        call mult_by_1d_coeff(unew(n),div_coeff_1d,.false.)
-        call mult_by_1d_coeff(rhohalf(n),div_coeff_1d,.true.)
-     end do
-  else if (use_div_coeff_3d) then
-     do n = 1, nlevs
-        call mult_by_3d_coeff(unew(n),div_coeff_3d(n),.false.)
-        call mult_by_3d_coeff(rhohalf(n),div_coeff_3d(n),.true.)
-     end do
-  end if
-
-  do n = 1,nlevs
-     call mkgphi(gphi(n),phi(n),dx(n,:))
-     call hg_update(proj_type,unew(n),uold(n), &
-                    gp(n),gphi(n),rhohalf(n),  &
-                     p(n), phi(n),ng,dt)
-  end do
-
-  do n = nlevs,2,-1
-     call ml_cc_restriction(unew(n-1),unew(n),mla%mba%rr(n-1,:)) 
-     call ml_cc_restriction(  gp(n-1),  gp(n),mla%mba%rr(n-1,:))
-  end do
-
-  if (verbose .ge. 1) then
-     umin = 1.d30
-     vmin = 1.d30
-     wmin = 1.d30
-     umax = -1.d30
-     vmax = -1.d30
-     wmax = -1.d30
-     do n = 1, nlevs
-        umin = min(umin,multifab_min_c(unew(n),1))
-        umax = max(umax,multifab_max_c(unew(n),1))
-        vmin = min(vmin,multifab_min_c(unew(n),2))
-        vmax = max(vmax,multifab_max_c(unew(n),2))
-        if (dm .eq. 3) then
-          wmin = min(wmin,multifab_min_c(unew(n),3))
-          wmax = max(wmax,multifab_max_c(unew(n),3))
-        end if
-     end do
-     if (parallel_IOProcessor() .and. verbose .ge. 1) then
-        write(6,1101) umin,umax
-        write(6,1102) vmin,vmax
-        if (dm .eq. 3) write(6,1103) wmin,wmax
-        write(6,1104)
-     end if
-  end if
-
-1101  format('... x-velocity  after projection ',e17.10,2x,e17.10)
-1102  format('... y-velocity  after projection ',e17.10,2x,e17.10)
-1103  format('... z-velocity  after projection ',e17.10,2x,e17.10)
-1104  format(' ')
-
-  do n = 1,nlevs
-     call multifab_destroy(phi(n))
-     call multifab_destroy(gphi(n))
-  end do
-
-  deallocate(phi)
-  deallocate(gphi)
-  deallocate(nodal)
-
+    allocate(phi(nlevs), gphi(nlevs), nodal(dm))
+    nodal = .true.
+    
+    use_div_coeff_1d = .false.
+    if (present(div_coeff_1d)) use_div_coeff_1d = .true.
+    
+    use_div_coeff_3d = .false.
+    if (present(div_coeff_3d)) use_div_coeff_3d = .true.
+    
+    if (use_div_coeff_1d .and. use_div_coeff_3d) then
+       print *,'CANT HAVE 1D and 3D DIV_COEFF IN HGPROJECT '
+       stop
+    end if
+    
+    do n = 1, nlevs
+       call multifab_build( phi(n), mla%la(n), 1, 1, nodal)
+       call multifab_build(gphi(n), mla%la(n), dm, 0) 
+       call multifab_copy(phi(n),p(n))
+       call multifab_mult_mult_s(phi(n),dt,phi(n)%ng)
+    end do
+    
+    if (verbose .ge. 1) then
+       umin = 1.d30
+       vmin = 1.d30
+       wmin = 1.d30
+       umax = -1.d30
+       vmax = -1.d30
+       wmax = -1.d30
+       do n = 1, nlevs
+          umin = min(umin,multifab_min_c(unew(n),1))
+          umax = max(umax,multifab_max_c(unew(n),1))
+          vmin = min(vmin,multifab_min_c(unew(n),2))
+          vmax = max(vmax,multifab_max_c(unew(n),2))
+          if (dm .eq. 3) then
+             wmin = min(wmin,multifab_min_c(unew(n),3))
+             wmax = max(wmax,multifab_max_c(unew(n),3))
+          end if
+       end do
+       if (parallel_IOProcessor()) then
+          write(6,1001) umin,umax
+          write(6,1002) vmin,vmax
+          if (dm .eq. 3) write(6,1003) wmin,wmax
+          write(6,1004)
+       end if
+    end if
+    
+1001 format('... x-velocity before projection ',e17.10,2x,e17.10)
+1002 format('... y-velocity before projection ',e17.10,2x,e17.10)
+1003 format('... z-velocity before projection ',e17.10,2x,e17.10)
+1004 format(' ')
+    
+    ! quantity projected is U
+    if (proj_type .eq. initial_projection) then
+       
+       ! quantity projected is U
+    else if (proj_type .eq. divu_iters) then
+       
+       ! quantity projected is (Ustar - Un) 
+    else if (proj_type .eq. pressure_iters) then
+       
+       do n = 1,nlevs
+          call multifab_sub_sub(unew(n), uold(n), 1)
+          call multifab_div_div_s(unew(n), dt, 1)
+       end do
+       
+       ! quantity projected is Ustar + dt * (1/rho) Gp
+    else if (proj_type .eq. regular_timestep) then
+       
+       call create_uvec_for_projection(nlevs,unew,rhohalf,gp,dt,the_bc_tower)
+       
+    else 
+       
+       print *,'No proj_type by this number ',proj_type
+       stop
+       
+    end if
+    
+    if (use_div_coeff_1d) then
+       do n = 1, nlevs
+          call mult_by_1d_coeff(unew(n),div_coeff_1d,.true.)
+          call mult_by_1d_coeff(rhohalf(n),div_coeff_1d,.false.)
+       end do
+    else if (use_div_coeff_3d) then
+       do n = 1, nlevs
+          call mult_by_3d_coeff(unew(n),div_coeff_3d(n),.true.)
+          call mult_by_3d_coeff(rhohalf(n),div_coeff_3d(n),.false.)
+       end do
+    end if
+    
+    do n = 1, nlevs
+       call setval(phi(n),ZERO,all=.true.)
+    end do
+    
+    if (present(divu_rhs)) then
+       call enforce_outflow_on_divu_rhs(divu_rhs,the_bc_tower)
+    endif
+    
+    if (present(eps_in)) then
+       call hg_multigrid(mla,unew,rhohalf,phi,dx,the_bc_tower,verbose, &
+                         mg_verbose,cg_verbose,press_comp,stencil_type,divu_rhs,eps_in)
+    else
+       call hg_multigrid(mla,unew,rhohalf,phi,dx,the_bc_tower,verbose, &
+                         mg_verbose,cg_verbose,press_comp,stencil_type,divu_rhs)
+    end if
+    
+    if (use_div_coeff_1d) then
+       do n = 1, nlevs
+          call mult_by_1d_coeff(unew(n),div_coeff_1d,.false.)
+          call mult_by_1d_coeff(rhohalf(n),div_coeff_1d,.true.)
+       end do
+    else if (use_div_coeff_3d) then
+       do n = 1, nlevs
+          call mult_by_3d_coeff(unew(n),div_coeff_3d(n),.false.)
+          call mult_by_3d_coeff(rhohalf(n),div_coeff_3d(n),.true.)
+       end do
+    end if
+    
+    do n = 1,nlevs
+       call mkgphi(gphi(n),phi(n),dx(n,:))
+       call hg_update(proj_type,unew(n),uold(n), &
+                      gp(n),gphi(n),rhohalf(n),  &
+                      p(n), phi( n),ng,dt)
+    end do
+    
+    do n = 2, nlevs
+       call ml_cc_restriction(unew(n-1),unew(n),mla%mba%rr(n-1,:)) 
+       call ml_cc_restriction(  gp(n-1),  gp(n),mla%mba%rr(n-1,:))
+       
+       fine_domain = layout_get_pd(mla%la(n))
+       bc = the_bc_tower%bc_tower_array(n-1)
+       call multifab_fill_ghost_cells(unew(n),unew(n-1),fine_domain, &
+                                      ng,mla%mba%rr(n-1,:), &
+                                      bc%adv_bc_level_array(0,:,:,:),1,1,dm)
+    end do
+    
+    if (verbose .ge. 1) then
+       umin = 1.d30
+       vmin = 1.d30
+       wmin = 1.d30
+       umax = -1.d30
+       vmax = -1.d30
+       wmax = -1.d30
+       do n = 1, nlevs
+          umin = min(umin,multifab_min_c(unew(n),1))
+          umax = max(umax,multifab_max_c(unew(n),1))
+          vmin = min(vmin,multifab_min_c(unew(n),2))
+          vmax = max(vmax,multifab_max_c(unew(n),2))
+          if (dm .eq. 3) then
+             wmin = min(wmin,multifab_min_c(unew(n),3))
+             wmax = max(wmax,multifab_max_c(unew(n),3))
+          end if
+       end do
+       if (parallel_IOProcessor() .and. verbose .ge. 1) then
+          write(6,1101) umin,umax
+          write(6,1102) vmin,vmax
+          if (dm .eq. 3) write(6,1103) wmin,wmax
+          write(6,1104)
+       end if
+    end if
+    
+1101 format('... x-velocity  after projection ',e17.10,2x,e17.10)
+1102 format('... y-velocity  after projection ',e17.10,2x,e17.10)
+1103 format('... z-velocity  after projection ',e17.10,2x,e17.10)
+1104 format(' ')
+    
+    do n = 1,nlevs
+       call multifab_destroy(phi(n))
+       call multifab_destroy(gphi(n))
+    end do
+    
+    deallocate(phi)
+    deallocate(gphi)
+    deallocate(nodal)
+    
   contains
-
+    
     subroutine create_uvec_for_projection(nlevs,unew,rhohalf,gp,dt,the_bc_tower)
-
+      
       integer        , intent(in   ) :: nlevs
       type(multifab) , intent(inout) :: unew(:)
       type(multifab) , intent(in   ) :: rhohalf(:)
       type(multifab) , intent(inout) :: gp(:)
       real(kind=dp_t), intent(in   ) :: dt
       type(bc_tower) , intent(in   ) :: the_bc_tower
- 
+      
       type(bc_level) :: bc
-
+      
       real(kind=dp_t), pointer :: unp(:,:,:,:) 
       real(kind=dp_t), pointer :: gpp(:,:,:,:) 
       real(kind=dp_t), pointer ::  rp(:,:,:,:) 
-
+      
       integer :: i,n,dm,ng
-
+      
       dm = unew(nlevs)%dim
       ng = unew(nlevs)%ng
-
+      
       do n = 1, nlevs
          bc = the_bc_tower%bc_tower_array(n)
          do i = 1, unew(n)%nboxes
             if ( multifab_remote(unew(n), i) ) cycle
             unp => dataptr(unew(n)     , i)
             gpp => dataptr(gp(n)       , i)
-             rp => dataptr(  rhohalf(n), i)
+            rp => dataptr(  rhohalf(n), i)
             select case (dm)
-               case (2)
-                 call create_uvec_2d(unp(:,:,1,:), rp(:,:,1,1), gpp(:,:,1,:), dt, &
-                                     bc%phys_bc_level_array(i,:,:), ng)
-               case (3)
-                 call create_uvec_3d(unp(:,:,:,:), rp(:,:,:,1), gpp(:,:,:,:), dt, &
-                                     bc%phys_bc_level_array(i,:,:), ng)
+            case (2)
+               call create_uvec_2d(unp(:,:,1,:), rp(:,:,1,1), gpp(:,:,1,:), dt, &
+                                   bc%phys_bc_level_array(i,:,:), ng)
+            case (3)
+               call create_uvec_3d(unp(:,:,:,:), rp(:,:,:,1), gpp(:,:,:,:), dt, &
+                                   bc%phys_bc_level_array(i,:,:), ng)
             end select
          end do
          call multifab_fill_boundary(unew(n))
       end do
-
+      
     end subroutine create_uvec_for_projection
 
-!   ********************************************************************************************* !
+!   *************************************************************************************** !
 
     subroutine mkgphi(gphi,phi,dx)
-
+      
       type(multifab), intent(inout) :: gphi
       type(multifab), intent(in   ) :: phi
       real(dp_t) :: dx(:)
-
+      
       integer :: i,dm
- 
+      
       real(kind=dp_t), pointer :: gph(:,:,:,:) 
       real(kind=dp_t), pointer :: pp(:,:,:,:) 
-
+      
       dm = phi%dim
-
+      
       do i = 1, phi%nboxes
          if ( multifab_remote(phi, i) ) cycle
          gph => dataptr(gphi, i)
          pp  => dataptr(phi , i)
          select case (dm)
-            case (2)
-              call mkgphi_2d(gph(:,:,1,:), pp(:,:,1,1), dx)
-            case (3)
-              call mkgphi_3d(gph(:,:,:,:), pp(:,:,:,1), dx)
+         case (2)
+            call mkgphi_2d(gph(:,:,1,:), pp(:,:,1,1), dx)
+         case (3)
+            call mkgphi_3d(gph(:,:,:,:), pp(:,:,:,1), dx)
          end select
       end do
-
+      
       call multifab_fill_boundary(gphi)
-
+      
     end subroutine mkgphi
-
-!   ********************************************************************************************* !
+    
+!   *************************************************************************************** !
 
     subroutine hg_update(proj_type,unew,uold,gp,gphi,rhohalf,p,phi,ng,dt)
 
@@ -335,79 +341,79 @@ subroutine hgproject(proj_type,mla,unew,uold,rhohalf,p,gp,dx,dt,the_bc_tower, &
          gpp => dataptr(gp  , i)
          gph => dataptr(gphi, i)
          rp  => dataptr(rhohalf, i)
-          pp => dataptr( p  , i)
-          ph => dataptr( phi, i)
+         pp  => dataptr( p  , i)
+         ph  => dataptr( phi, i)
          select case (dm)
-            case (2)
-              call hg_update_2d(proj_type, upn(:,:,1,:), uon(:,:,1,:), gpp(:,:,1,:), gph(:,:,1,:),rp(:,:,1,1), &
-                                pp(:,:,1,1), ph(:,:,1,1), ng, dt)
-            case (3)
-              call hg_update_3d(proj_type, upn(:,:,:,:), uon(:,:,:,:), gpp(:,:,:,:), gph(:,:,:,:),rp(:,:,:,1), &
-                                pp(:,:,:,1), ph(:,:,:,1), ng, dt)
+         case (2)
+            call hg_update_2d(proj_type, upn(:,:,1,:), uon(:,:,1,:), gpp(:,:,1,:), &
+                              gph(:,:,1,:),rp(:,:,1,1),pp(:,:,1,1), ph(:,:,1,1), ng, dt)
+         case (3)
+            call hg_update_3d(proj_type, upn(:,:,:,:), uon(:,:,:,:), gpp(:,:,:,:), &
+                              gph(:,:,:,:),rp(:,:,:,1),pp(:,:,:,1), ph(:,:,:,1), ng, dt)
          end select
       end do
-
+      
       call multifab_fill_boundary(unew)
       call multifab_fill_boundary(gp)
       call multifab_fill_boundary( p)
-
+      
     end subroutine hg_update
 
-!   ********************************************************************************************* !
+!   *************************************************************************************** !
 
     subroutine enforce_outflow_on_divu_rhs(divu_rhs,the_bc_tower)
-
+      
       type(multifab) , intent(inout) :: divu_rhs(:)
       type(bc_tower) , intent(in   ) :: the_bc_tower
- 
+      
       integer        :: i,n,dm,ng,nlevs
       type(bc_level) :: bc
       real(kind=dp_t), pointer :: divp(:,:,:,:) 
-
+      
       nlevs = size(divu_rhs,dim=1)
-         dm = divu_rhs(1)%dim
-
+      dm = divu_rhs(1)%dim
+      
       do n = 1, nlevs
          bc = the_bc_tower%bc_tower_array(n)
          do i = 1, divu_rhs(n)%nboxes
             if ( multifab_remote(divu_rhs(n), i) ) cycle
             divp => dataptr(divu_rhs(n)     , i)
             select case (dm)
-               case (2)
-                 call enforce_outflow_2d(divp(:,:,1,1), bc%phys_bc_level_array(i,:,:))
-               case (3)
-                 call enforce_outflow_3d(divp(:,:,:,1), bc%phys_bc_level_array(i,:,:))
+            case (2)
+               call enforce_outflow_2d(divp(:,:,1,1), bc%phys_bc_level_array(i,:,:))
+            case (3)
+               call enforce_outflow_3d(divp(:,:,:,1), bc%phys_bc_level_array(i,:,:))
             end select
          end do
       end do
-
+      
     end subroutine enforce_outflow_on_divu_rhs
-
-!   ********************************************************************************************* !
+    
+!   *************************************************************************************** !
 
     subroutine enforce_outflow_2d(divu_rhs,phys_bc)
-
+      
       real(kind=dp_t), intent(inout) :: divu_rhs(0:,0:)
       integer        , intent(in   ) :: phys_bc(:,:)
-
+      
       integer :: nx,ny
       nx = size(divu_rhs,dim=1)-1
       ny = size(divu_rhs,dim=2)-1
-
+      
       if (phys_bc(1,1) .eq. OUTLET) divu_rhs(0,  :) = ZERO
       if (phys_bc(1,2) .eq. OUTLET) divu_rhs(nx, :) = ZERO
       if (phys_bc(2,1) .eq. OUTLET) divu_rhs(: , 0) = ZERO
       if (phys_bc(2,2) .eq. OUTLET) divu_rhs(: ,ny) = ZERO
-
+      
     end subroutine enforce_outflow_2d
 
-!   ********************************************************************************************* !
-
+!   *************************************************************************************** !
+    
     subroutine enforce_outflow_3d(divu_rhs,phys_bc)
-
+      
       real(kind=dp_t), intent(inout) :: divu_rhs(0:,0:,0:)
       integer        , intent(in   ) :: phys_bc(:,:)
-
+      
       integer :: nx,ny,nz
       nx = size(divu_rhs,dim=1)-1
       ny = size(divu_rhs,dim=2)-1
@@ -422,7 +428,7 @@ subroutine hgproject(proj_type,mla,unew,uold,rhohalf,p,gp,dx,dt,the_bc_tower, &
 
     end subroutine enforce_outflow_3d
 
-!   ********************************************************************************************* !
+!   *************************************************************************************** !
 
     subroutine create_uvec_2d(u,rhohalf,gp,dt,phys_bc,ng)
 
@@ -452,7 +458,7 @@ subroutine hgproject(proj_type,mla,unew,uold,rhohalf,p,gp,dx,dt,the_bc_tower, &
 
     end subroutine create_uvec_2d
 
-!   ********************************************************************************************* !
+!   *************************************************************************************** !
 
     subroutine create_uvec_3d(u,rhohalf,gp,dt,phys_bc,ng)
 
@@ -492,7 +498,7 @@ subroutine hgproject(proj_type,mla,unew,uold,rhohalf,p,gp,dx,dt,the_bc_tower, &
 
     end subroutine create_uvec_3d
 
-!   ********************************************************************************************* !
+!   *************************************************************************************** !
 
     subroutine mkgphi_2d(gp,phi,dx)
 
@@ -516,7 +522,7 @@ subroutine hgproject(proj_type,mla,unew,uold,rhohalf,p,gp,dx,dt,the_bc_tower, &
 
     end subroutine mkgphi_2d
 
-!   ********************************************************************************************* !
+!   *************************************************************************************** !
 
     subroutine mkgphi_3d(gp,phi,dx)
 
@@ -551,7 +557,7 @@ subroutine hgproject(proj_type,mla,unew,uold,rhohalf,p,gp,dx,dt,the_bc_tower, &
 
     end subroutine mkgphi_3d
 
-!   ********************************************************************************************* !
+!   *************************************************************************************** !
 
     subroutine hg_update_2d(proj_type,unew,uold,gp,gphi,rhohalf,p,phi,ng,dt)
 
@@ -601,7 +607,7 @@ subroutine hgproject(proj_type,mla,unew,uold,rhohalf,p,gp,dx,dt,the_bc_tower, &
 
     end subroutine hg_update_2d
 
-!   ********************************************************************************************* !
+!   *************************************************************************************** !
 
     subroutine hg_update_3d(proj_type,unew,uold,gp,gphi,rhohalf,p,phi,ng,dt)
 
@@ -656,10 +662,11 @@ subroutine hgproject(proj_type,mla,unew,uold,rhohalf,p,gp,dx,dt,the_bc_tower, &
 
     end subroutine hg_update_3d
 
-end subroutine hgproject
+  end subroutine hgproject
 
-subroutine hg_multigrid(mla,unew,rhohalf,phi,dx,the_bc_tower,&
-                        divu_verbose,mg_verbose,cg_verbose,press_comp,stencil_type,divu_rhs,eps_in)
+  subroutine hg_multigrid(mla,unew,rhohalf,phi,dx,the_bc_tower,&
+                          divu_verbose,mg_verbose,cg_verbose,press_comp,stencil_type, &
+                          divu_rhs,eps_in)
   use BoxLib
   use omp_module
   use f2kcli
@@ -783,25 +790,25 @@ subroutine hg_multigrid(mla,unew,rhohalf,phi,dx,the_bc_tower,&
 
      call mg_tower_build(mgt(n), mla%la(n), pd, &
                          the_bc_tower%bc_tower_array(n)%ell_bc_level_array(0,:,:,press_comp), &
-          dh = dx(n,:), &
-          ns = ns, &
-          smoother = smoother, &
-          nu1 = nu1, &
-          nu2 = nu2, &
-          nub = nu2, &
-          gamma = gamma, &
-          cycle = cycle, &
-          omega = omega, &
-          bottom_solver = bottom_solver, &
-          bottom_max_iter = bottom_max_iter, &
-          bottom_solver_eps = bottom_solver_eps, &
-          max_iter = max_iter, &
-          max_nlevel = max_nlevel_in, &
-          min_width = min_width, &
-          eps = eps, &
-          verbose = verbose, &
-          cg_verbose = cg_verbose, &
-          nodal = nodal)
+                         dh = dx(n,:), &
+                         ns = ns, &
+                         smoother = smoother, &
+                         nu1 = nu1, &
+                         nu2 = nu2, &
+                         nub = nu2, &
+                         gamma = gamma, &
+                         cycle = cycle, &
+                         omega = omega, &
+                         bottom_solver = bottom_solver, &
+                         bottom_max_iter = bottom_max_iter, &
+                         bottom_solver_eps = bottom_solver_eps, &
+                         max_iter = max_iter, &
+                         max_nlevel = max_nlevel_in, &
+                         min_width = min_width, &
+                         eps = eps, &
+                         verbose = verbose, &
+                         cg_verbose = cg_verbose, &
+                         nodal = nodal)
 
   end do
 
@@ -895,7 +902,7 @@ subroutine hg_multigrid(mla,unew,rhohalf,phi,dx,the_bc_tower,&
 
 end subroutine hg_multigrid
 
-!   ********************************************************************************************* !
+!   *************************************************************************************** !
 
     subroutine mkcoeffs(rho,coeffs)
 
@@ -923,7 +930,7 @@ end subroutine hg_multigrid
 
     end subroutine mkcoeffs
 
-!   ********************************************************************************************* !
+!   *************************************************************************************** !
 
     subroutine mkcoeffs_2d(coeffs,rho,ng)
 
@@ -945,7 +952,7 @@ end subroutine hg_multigrid
 
     end subroutine mkcoeffs_2d
 
-!   ********************************************************************************************* !
+!   *************************************************************************************** !
 
     subroutine mkcoeffs_3d(coeffs,rho,ng)
 
@@ -970,7 +977,7 @@ end subroutine hg_multigrid
 
     end subroutine mkcoeffs_3d
 
-!   ********************************************************************************************* !
+!   *************************************************************************************** !
 
     subroutine mult_by_1d_coeff(u,div_coeff,do_mult)
 
@@ -1046,7 +1053,7 @@ end subroutine hg_multigrid
 
     end subroutine mult_by_1d_coeff_3d
 
-!   ********************************************************************************************* !
+!   *************************************************************************************** !
 
     subroutine mult_by_3d_coeff(u,div_coeff,do_mult)
 
