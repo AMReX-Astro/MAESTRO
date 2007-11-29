@@ -36,6 +36,13 @@ module advance_timestep_module
   use variables
   use network
   use probin_module
+  use make_grav_module
+  use fill_3d_module
+  use cell_to_edge_module
+  use define_bc_module
+
+  private
+  public :: advance_timestep
 
 contains
     

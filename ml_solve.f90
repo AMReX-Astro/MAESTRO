@@ -27,6 +27,9 @@ module ml_solve_module
  
    implicit none
 
+   private
+   public :: ml_cc_solve, ml_nd_solve
+
 contains
 
    subroutine ml_cc_solve(mla,mgt,rh,full_soln,fine_flx,ref_ratio,do_diagnostics)

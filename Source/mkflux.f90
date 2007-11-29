@@ -8,6 +8,9 @@ module mkflux_module
   use geometry
 
   implicit none
+
+  private
+  public :: mkflux_1d, mkflux_2d, mkflux_3d
   
 contains
   

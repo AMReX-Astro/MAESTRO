@@ -7,6 +7,9 @@ module fill_3d_module
   use geometry
 
   implicit none
+
+  private
+  public :: fill_3d_data, make_3d_normal, make_w0_cart, put_w0_on_3d_cells_sphr
   
 contains
 

@@ -15,6 +15,9 @@ module make_w0_module
 
   implicit none
 
+  private
+  public :: make_w0
+
 contains
 
   subroutine make_w0(vel,vel_old,f,Sbar_in,p0,rho0,gam1,eta,dt,dtold,verbose)

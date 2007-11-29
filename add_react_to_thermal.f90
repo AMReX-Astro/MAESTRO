@@ -10,9 +10,13 @@ module add_react_to_thermal_module
   use variables
   use define_bc_module
   use ml_restriction_module
+  use ml_layout_module
   use multifab_fill_ghost_module
 
   implicit none
+
+  private
+  public :: add_react_to_thermal
 
 contains
 

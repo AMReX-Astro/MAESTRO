@@ -7,7 +7,10 @@ module hgrhs_module
   use fill_3d_module
   
   implicit none
-  
+
+  private
+  public :: make_hgrhs
+
 contains
   
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

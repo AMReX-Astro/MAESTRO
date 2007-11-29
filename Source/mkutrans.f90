@@ -7,6 +7,9 @@ module mkutrans_module
 
   implicit none
 
+  private
+  public :: mkutrans_2d, mkutrans_3d
+
 contains
 
       subroutine mkutrans_2d(vel,utrans,vtrans,force,lo,dx,dt,ng_cell,adv_bc,phys_bc)

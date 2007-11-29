@@ -14,6 +14,9 @@ module init_module
 
   implicit none
 
+  private
+  public :: initscalardata, initveldata, scalar_diags
+
 contains
 
   subroutine initscalardata (s,s0,p0,dx,perturb_model, &

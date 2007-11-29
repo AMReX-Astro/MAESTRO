@@ -10,6 +10,8 @@ module macrhs_module
 
   implicit none
 
+  private
+  public :: make_macrhs
 contains
 
 

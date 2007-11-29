@@ -10,6 +10,9 @@ module update_vel_module
 
   implicit none
 
+  private
+  public :: update_velocity_2d, update_velocity_3d
+
   contains
 
    subroutine update_velocity_2d (uold,unew,umac,vmac,sedgex,sedgey,force,w0,w0_force, &

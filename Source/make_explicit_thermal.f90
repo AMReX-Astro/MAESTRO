@@ -9,10 +9,21 @@ module make_explicit_thermal_module
   use macproject_module
   use eos_module
   use fill_3d_module
-  use probin_module
+!  use probin_module
   use thermal_conduct_module
-
+  use ml_restriction_module
+  use multifab_fill_ghost_module
+  use ml_layout_module
+  use bl_constants_module
+  use variables
+  use probin_module, ONLY: use_big_h
+  use geometry
+  use setbc_module
+  
   implicit none
+
+  private
+  public :: make_explicit_thermal
 
 contains 
 

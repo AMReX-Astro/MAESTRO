@@ -11,12 +11,16 @@ module react_state_module
   use geometry
   use fill_3d_module
   use heating_module
-  use probin_module
+  use probin_module, ONLY: use_big_h
   use ml_restriction_module
+  use ml_layout_module
   use multifab_fill_ghost_module
 
   implicit none
-  
+
+  private
+  public :: react_state
+
 contains
 
   subroutine react_state (nlevs,mla,s_in,s_out,rho_omegadot,rho_Hext,dt,dx,the_bc_level,time)

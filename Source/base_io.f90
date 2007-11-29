@@ -9,6 +9,9 @@ module base_io_module
 
   implicit none
 
+  private
+  public :: write_base_state, read_base_state
+
 contains
 
   subroutine write_base_state(state_name,w0_name,chk_name,s0,p0,gam1,w0,div_coeff)

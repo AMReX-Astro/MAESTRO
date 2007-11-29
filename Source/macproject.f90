@@ -1,6 +1,7 @@
 module macproject_module
 
   use bl_types
+  use bl_constants_module
   use define_bc_module
   use multifab_module
   use boxarray_module
@@ -11,6 +12,9 @@ module macproject_module
   use fabio_module
 
   implicit none
+  
+  private
+  public :: macproject, mac_applyop, mac_multigrid
 
 contains 
 

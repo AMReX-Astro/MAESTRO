@@ -15,6 +15,9 @@ module restart_module
   use parallel
 
   implicit none
+  
+  private
+  public :: fill_restart_data
 
 contains
 

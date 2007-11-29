@@ -5,8 +5,12 @@ module vort_module
   use bl_constants_module
   use define_bc_module
   use multifab_module
+  use variables
 
   implicit none
+
+  private
+  public :: make_vorticity, make_magvel
 
 contains
 

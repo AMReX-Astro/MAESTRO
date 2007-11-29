@@ -14,6 +14,9 @@ module advect_base_module
 
   implicit none
 
+  private
+  public :: advect_base
+
 contains
 
    subroutine advect_base(vel,Sbar_in,p0_old,p0_new, &

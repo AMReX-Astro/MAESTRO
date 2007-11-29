@@ -15,10 +15,14 @@ module make_plotfile_module
   use variables
   use plot_variables_module
   use probin_module
-
+  use define_bc_module
   use variables
+  use network
 
   implicit none
+
+  private
+  public :: get_plot_names, make_plotfile
 
 contains
 

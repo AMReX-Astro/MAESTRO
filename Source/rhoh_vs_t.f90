@@ -10,6 +10,10 @@ module rhoh_vs_t_module
 
   implicit none
 
+  private
+  public :: makeRhoHfromT_2d, makeRhoHfromT_3d
+  public :: makeTfromRhoH_2d, makeTfromRhoH_3d
+
   contains
 
    subroutine makeRhoHfromT_2d (sx,sy,s0_old,s0_edge_old,s0_new,s0_edge_new,lo,hi)

@@ -5,6 +5,9 @@ module cell_to_edge_module
 
   implicit none
 
+  private
+  public :: cell_to_edge, cell_to_edge_n
+
   contains
 
    subroutine cell_to_edge(s0_cell,s0_edge)

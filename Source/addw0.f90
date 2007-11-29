@@ -8,6 +8,9 @@ module addw0_module
 
   implicit none
 
+  private
+  public :: addw0, addw0_3d_sphr
+
 contains
 
       subroutine addw0(umac,w0,w0_cart,dx,mult)

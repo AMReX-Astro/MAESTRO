@@ -12,7 +12,10 @@ module estdt_module
   use variables
   
   implicit none
-  
+
+  private
+  public :: estdt
+
 contains
 
   subroutine estdt(n, u, s, force, divU, dSdt, normal, w0, p0, gam1, dx, cflfac, dt)

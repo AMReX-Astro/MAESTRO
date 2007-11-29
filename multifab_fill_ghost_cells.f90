@@ -10,6 +10,9 @@ module multifab_fill_ghost_module
 
   implicit none
 
+  private
+  public :: multifab_fill_ghost_cells
+
 contains
 
   subroutine multifab_fill_ghost_cells(fine,crse,fine_domain,ng,ir,bc,icomp,bc_comp,nc)

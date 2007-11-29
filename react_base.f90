@@ -10,9 +10,12 @@ module react_base_module
   use variables
   use eos_module
   use network
-  use probin_module
+  use probin_module, ONLY: use_big_h
 
   implicit none
+
+  private
+  public :: react_base
 
 contains
 

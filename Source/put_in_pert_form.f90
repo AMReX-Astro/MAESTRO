@@ -6,8 +6,12 @@ module pert_form_module
   use geometry
   use variables
   use fill_3d_module
+  use multifab_module
 
   implicit none
+
+  private
+  public :: put_in_pert_form
 
 contains
 

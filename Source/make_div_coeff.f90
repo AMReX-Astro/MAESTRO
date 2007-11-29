@@ -6,6 +6,9 @@ module make_div_coeff_module
 
   implicit none
 
+  private
+  public :: make_div_coeff
+
 contains
 
 

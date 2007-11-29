@@ -16,6 +16,9 @@ module hgproject_module
 
   implicit none
 
+  private
+  public :: hgproject
+
 contains 
 
   subroutine hgproject(proj_type,mla,unew,uold,rhohalf,p,gp,dx,dt,the_bc_tower, &

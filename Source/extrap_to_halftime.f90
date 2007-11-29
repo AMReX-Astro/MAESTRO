@@ -7,6 +7,9 @@ module extraphalf_module
 
   implicit none
 
+  private
+  public :: extrap_to_halftime
+
 contains
 
 

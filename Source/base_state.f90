@@ -13,6 +13,9 @@ module base_state_module
 
   implicit none
 
+  private
+  public :: init_base_state
+
 contains
 
   subroutine init_base_state (model_file,n_base,s0,p0,gam1,dx,prob_lo,prob_hi)

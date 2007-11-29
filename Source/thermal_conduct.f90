@@ -10,8 +10,19 @@ module thermal_conduct_module
   use eos_module
   use rhoh_vs_t_module
   use probin_module
+  use ml_layout_module
+  use bndry_reg_module
+  use setbc_module
+  use variables
+  use geometry
+  use rhoh_vs_t_module
 
   implicit none
+
+  private
+  public :: thermal_conduct_full_alg, thermal_conduct_half_alg
+  public :: put_beta_on_faces_2d, put_beta_on_faces_3d
+  public :: put_base_state_on_multifab_2d, put_base_state_on_multifab_3d
 
 contains 
 

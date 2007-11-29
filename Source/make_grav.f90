@@ -11,6 +11,9 @@ module make_grav_module
 
   real(kind=dp_t), parameter :: Gconst = 6.6725985E-8_dp_t
 
+  private
+  public :: make_grav_cell, make_grav_edge
+
 contains
 
   subroutine make_grav_cell(grav_cell,rho0)

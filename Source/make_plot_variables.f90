@@ -12,6 +12,9 @@ module plot_variables_module
 
   implicit none
 
+  private
+  public :: make_enthalpy, make_tfromH, make_tfromrho, make_XfromrhoX, &
+            make_omegadot, make_deltaT
 contains
 
   subroutine make_enthalpy (enthalpy,comp,s)

@@ -7,9 +7,13 @@ module phihalf_module
   use setbc_module
   use define_bc_module
   use ml_restriction_module
+  use ml_layout_module
   use multifab_fill_ghost_module
 
   implicit none
+  
+  private
+  public :: make_S_at_halftime, make_at_halftime
 
 contains
 

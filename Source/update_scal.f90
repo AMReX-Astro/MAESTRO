@@ -11,6 +11,9 @@ module update_scal_module
 
   implicit none
 
+  private
+  public :: update_scal_2d, update_scal_3d_cart, update_scal_3d_sphr
+
   contains
 
    subroutine update_scal_2d (which_step,nstart,nstop,sold,snew,umac,vmac,w0,eta,sedgex,sedgey,force, &

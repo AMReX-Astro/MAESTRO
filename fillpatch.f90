@@ -10,6 +10,9 @@ module fillpatch_module
 
   implicit none
 
+  private
+  public :: fillpatch
+
 contains
 
   subroutine fillpatch(fine,crse,fine_domain,ng,ir,bc,icomp,bc_comp,nc)

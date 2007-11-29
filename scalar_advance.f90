@@ -18,9 +18,13 @@ module scalar_advance_module
   use network
   use probin_module
   use ml_restriction_module
+  use ml_layout_module
   use multifab_fill_ghost_module
 
   implicit none
+
+  private
+  public :: scalar_advance
   
 contains
 

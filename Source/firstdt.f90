@@ -16,6 +16,9 @@ module firstdt_module
 
   implicit none
 
+  private
+  public :: firstdt
+
 contains
 
    subroutine firstdt(u,s,force,divU,p0,gam1,t0,dx,cflfac,dt,verbose)
