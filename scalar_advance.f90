@@ -8,7 +8,7 @@ module scalar_advance_module
   use update_scal_module
   use addw0_module
   use define_bc_module
-  use setbc_module
+  use multifab_physbc_module
   use fill_3d_module
   use pert_form_module
   use cell_to_edge_module
@@ -514,38 +514,13 @@ contains
          end select
       end do
       
-      ! Make sure we do this before the calls to setbc.
+      ! fill ghost cells for two adjacent grids at the same level
+      ! this includes periodic domain boundary conditions
       call multifab_fill_boundary(snew(n))
-      
-      do i = 1, snew(n)%nboxes
-         if ( multifab_remote(snew(n), i) ) cycle
-         snp => dataptr(snew(n), i)
-         lo = lwb(get_box(snew(n), i))
-         select case (dm)
-         case (2)
-            do comp = spec_comp,spec_comp+nspec-1
-               bc_comp = dm+comp
-               call setbc_2d(snp(:,:,1,comp), lo, ng_cell, &
-                             the_bc_level(n)%adv_bc_level_array(i,:,:,bc_comp),dx(n,:),bc_comp)
-            end do
-            ! Dont forget to call setbc for density also
-            comp = rho_comp
-            bc_comp = dm+comp
-            call setbc_2d(snp(:,:,1,comp), lo, ng_cell, &
-                          the_bc_level(n)%adv_bc_level_array(i,:,:,bc_comp),dx(n,:),bc_comp)
-         case (3)
-            do comp = spec_comp,spec_comp+nspec-1
-               bc_comp = dm+comp
-               call setbc_3d(snp(:,:,:,comp), lo, ng_cell, &
-                             the_bc_level(n)%adv_bc_level_array(i,:,:,bc_comp),dx(n,:),bc_comp)
-            end do
-            ! Dont forget to call setbc for density also
-            comp = rho_comp
-            bc_comp = dm+comp
-            call setbc_3d(snp(:,:,:,comp), lo, ng_cell, &
-                          the_bc_level(n)%adv_bc_level_array(i,:,:,bc_comp),dx(n,:),bc_comp)
-         end select
-      end do
+
+      ! fill ghost cells for physical boundary conditions at domain boundaries
+      call multifab_physbc(snew(n),rho_comp ,dm+rho_comp ,1    ,dx(n,:),the_bc_level(n))
+      call multifab_physbc(snew(n),spec_comp,dm+spec_comp,nspec,dx(n,:),the_bc_level(n))
       
       if (verbose .ge. 1) then
          do comp = spec_comp,spec_comp+nspec-1
@@ -641,30 +616,12 @@ contains
             end select
          end do
          
-         ! Make sure we do this before the calls to setbc.
+         ! fill ghost cells for two adjacent grids at the same level
+         ! this includes periodic domain boundary conditions
          call multifab_fill_boundary(snew(n))
-         
-         do i = 1, snew(n)%nboxes
-            if ( multifab_remote(snew(n), i) ) cycle
-            snp => dataptr(snew(n), i)
-            lo = lwb(get_box(snew(n), i))
-            select case (dm)
-            case (2)
-               do comp = trac_comp,trac_comp+ntrac-1
-                  bc_comp = dm+comp
-                  call setbc_2d(snp(:,:,1,comp), lo, ng_cell, &
-                                the_bc_level(n)%adv_bc_level_array(i,:,:,bc_comp), &
-                                dx(n,:),bc_comp)
-               end do
-            case (3)
-               do comp = trac_comp,trac_comp+ntrac-1
-                  bc_comp = dm+comp
-                  call setbc_3d(snp(:,:,:,comp), lo, ng_cell, &
-                                the_bc_level(n)%adv_bc_level_array(i,:,:,bc_comp), &
-                                dx(n,:),bc_comp)
-               end do
-            end select
-         end do
+
+         ! fill ghost cells for physical boundary conditions at domain boundaries
+         call multifab_physbc(snew(n),trac_comp,dm+trac_comp,ntrac,dx(n,:),the_bc_level(n))
          
          if (verbose .eq. 1) then
             smin = multifab_min_c(snew(n),trac_comp) 
@@ -784,30 +741,12 @@ contains
          end do
       endif
       
-      ! Make sure we do this before the calls to setbc.
+      ! fill ghost cells for two adjacent grids at the same level
+      ! this includes periodic domain boundary conditions
       call multifab_fill_boundary(snew(n))
-      
-      do i = 1, snew(n)%nboxes
-         if ( multifab_remote(snew(n), i) ) cycle
-         snp => dataptr(snew(n), i)
-         lo = lwb(get_box(snew(n), i))
-         select case (dm)
-         case (2)
-            do comp = rho_comp,rho_comp+nscal-1
-               bc_comp = dm+comp
-               call setbc_2d(snp(:,:,1,comp), lo, ng_cell, &
-                             the_bc_level(n)%adv_bc_level_array(i,:,:,bc_comp), &
-                             dx(n,:),bc_comp)
-            enddo
-         case (3)
-            do comp = rho_comp,rho_comp+nscal-1
-               bc_comp = dm+comp
-               call setbc_3d(snp(:,:,:,comp), lo, ng_cell, & 
-                             the_bc_level(n)%adv_bc_level_array(i,:,:,bc_comp), &
-                             dx(n,:),bc_comp)
-            enddo
-         end select
-      end do
+
+      ! fill ghost cells for physical boundary conditions at domain boundaries
+      call multifab_physbc(snew(n),rho_comp,dm+rho_comp,nscal,dx(n,:),the_bc_level(n))
       
       if (verbose .eq. 1) then
          smin = multifab_min_c(snew(n),rhoh_comp) 
