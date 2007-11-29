@@ -4,7 +4,7 @@ module phihalf_module
   use bl_constants_module
   use variables
   use multifab_module
-  use setbc_module
+  use multifab_physbc_module
   use define_bc_module
   use ml_restriction_module
   use ml_layout_module
@@ -107,24 +107,7 @@ contains
         
         if(ng_h .gt. 0) then
            call multifab_fill_boundary(phihalf(n))
-        
-           do i = 1, phihalf(n)%nboxes
-              if ( multifab_remote(phihalf(n), i) ) cycle
-              rhp => dataptr(phihalf(n), i)
-              lo =  lwb(get_box(phihalf(n), i))
-              select case (dm)
-              case (2)
-                 bc_comp = dm+in_comp
-                 call setbc_2d(rhp(:,:,1,out_comp), lo, ng_h, &
-                               the_bc_level(n)%adv_bc_level_array(i,:,:,bc_comp), &
-                               dx(n,:),bc_comp)
-              case (3)
-                 bc_comp = dm+in_comp
-                 call setbc_3d(rhp(:,:,:,out_comp), lo, ng_h, &
-                               the_bc_level(n)%adv_bc_level_array(i,:,:,bc_comp), &
-                               dx(n,:),bc_comp)
-              end select
-           end do
+           call multifab_physbc(phihalf(n),out_comp,dm+in_comp,1,dx(n,:),the_bc_level(n))
         endif
         
      enddo ! end loop over nlevs

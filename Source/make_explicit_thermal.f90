@@ -18,7 +18,7 @@ module make_explicit_thermal_module
   use variables
   use probin_module, ONLY: use_big_h
   use geometry
-  use setbc_module
+  use multifab_physbc_module
   
   implicit none
 
@@ -223,24 +223,8 @@ contains
        ! set the boundary conditions for pressure
        do n=1,nlevs
           call multifab_fill_boundary(phi(n))
-
-          bc = the_bc_tower%bc_tower_array(n)
-          do i=1,phi(n)%nboxes
-             if ( multifab_remote(phi(n),i) ) cycle
-             phip => dataptr(phi(n),i)
-             lo = lwb(get_box(phi(n),i))
-             hi = upb(get_box(phi(n),i))
-             select case (dm)
-             case (2)
-                call setbc_2d(phip(:,:,1,1), lo, 1, &
-                              bc%adv_bc_level_array(i,:,:,neumann_comp), &
-                              dx(n,:),neumann_comp)
-             case (3)
-                call setbc_3d(phip(:,:,:,1), lo, 1, &
-                              bc%adv_bc_level_array(i,:,:,neumann_comp), &
-                              dx(n,:),neumann_comp)
-             end select
-          enddo
+          call multifab_physbc(phi(n),1,neumann_comp,1,dx(n,:), &
+                               the_bc_tower%bc_tower_array(n))
        enddo
 
        ! setup beta = pcoeff on faces
@@ -276,8 +260,8 @@ contains
        ! this includes periodic domain boundary conditions
        call multifab_fill_boundary(thermal(n))
 
-       ! A call to setbc for thermal (which may be used as a force in the Godunov step)
-       ! is not required.  Even though the Godunov step 
+       ! A call to multifab_physbc for thermal (which may be used as a force in the 
+       ! Godunov step) is not required.  Even though the Godunov step 
        ! references values of force outside of the domain, the boundary conditions
        ! ensure that the values of force outside of the domain do not influce the result.
     enddo
