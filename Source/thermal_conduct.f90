@@ -12,7 +12,7 @@ module thermal_conduct_module
   use probin_module
   use ml_layout_module
   use bndry_reg_module
-  use setbc_module
+  use multifab_physbc_module
   use variables
   use geometry
   use rhoh_vs_t_module
@@ -59,8 +59,6 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
   integer                     :: i,n,spec
   integer                     :: lo(s1(1)%dim),hi(s1(1)%dim)
   type(bndry_reg), pointer    :: fine_flx(:) => Null()
-
-  type(bc_level) ::  bc
 
   nlevs = mla%nlevel
   dm = mla%dim
@@ -138,23 +136,7 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
   ! set the boundary conditions for p01
   do n=1,nlevs
      call multifab_fill_boundary(p01fab(n))
-     bc = the_bc_tower%bc_tower_array(n)
-     do i = 1, p01fab(n)%nboxes
-        if ( multifab_remote(p01fab(n), i) ) cycle
-        p01fabp => dataptr(p01fab(n), i)
-        lo = lwb(get_box(p01fab(n), i))
-        hi = upb(get_box(p01fab(n), i))
-        select case (dm)
-        case (2)
-           call setbc_2d(p01fabp(:,:,1,1), lo, 1, &
-                bc%adv_bc_level_array(i,:,:,neumann_comp), &
-                dx(n,:),neumann_comp)
-        case (3)
-           call setbc_3d(p01fabp(:,:,:,1), lo, 1, &
-                bc%adv_bc_level_array(i,:,:,neumann_comp), &
-                dx(n,:),neumann_comp)
-        end select
-     enddo
+     call multifab_physbc(p01fab(n),1,neumann_comp,1,dx(n,:),the_bc_tower%bc_tower_array(n))
   enddo
 
   ! create p02fab
@@ -172,29 +154,12 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
         end select
      end do
   enddo
-  
+
   ! set the boundary conditions for p02
   do n=1,nlevs
      call multifab_fill_boundary(p02fab(n))
-     bc = the_bc_tower%bc_tower_array(n)
-     do i = 1, p02fab(n)%nboxes
-        if ( multifab_remote(p02fab(n), i) ) cycle
-        p02fabp => dataptr(p02fab(n), i)
-        lo = lwb(get_box(p02fab(n), i))
-        hi = upb(get_box(p02fab(n), i))
-        select case (dm)
-        case (2)
-           call setbc_2d(p02fabp(:,:,1,1), lo, 1, &
-                bc%adv_bc_level_array(i,:,:,neumann_comp), &
-                dx(n,:),neumann_comp)
-        case (3)
-           call setbc_3d(p02fabp(:,:,:,1), lo, 1, &
-                bc%adv_bc_level_array(i,:,:,neumann_comp), &
-                dx(n,:),neumann_comp)
-        end select
-     enddo
+     call multifab_physbc(p02fab(n),1,neumann_comp,1,dx(n,:),the_bc_tower%bc_tower_array(n))
   enddo
-  
 
   ! lhsalpha = \rho^{(2),*} or \rho^{(2)}
   ! rhsalpha = 0 (already initialized above)
@@ -539,28 +504,10 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
   do n=1,nlevs
      call multifab_fill_boundary(s2(n))
 
-     do i = 1, s2(n)%nboxes
-        if ( multifab_remote(s2(n), i) ) cycle
-        s2p => dataptr(s2(n),i)
-        lo =  lwb(get_box(s2(n), i))
-        hi =  upb(get_box(s2(n), i))
-        select case (dm)
-        case (2)
-           call setbc_2d(s2p(:,:,1,rhoh_comp), lo, 3, &
-                the_bc_tower%bc_tower_array(n)%adv_bc_level_array(i,:,:,dm+rhoh_comp), &
-                dx(n,:),dm+rhoh_comp)
-           call setbc_2d(s2p(:,:,1,temp_comp), lo, 3, &
-                the_bc_tower%bc_tower_array(n)%adv_bc_level_array(i,:,:,dm+temp_comp), &
-                dx(n,:),dm+temp_comp)
-        case (3)
-           call setbc_3d(s2p(:,:,:,rhoh_comp), lo, 3, &
-                the_bc_tower%bc_tower_array(n)%adv_bc_level_array(i,:,:,dm+rhoh_comp), &
-                dx(n,:),dm+rhoh_comp)
-           call setbc_3d(s2p(:,:,:,temp_comp), lo, 3, &
-                the_bc_tower%bc_tower_array(n)%adv_bc_level_array(i,:,:,dm+temp_comp), &
-                dx(n,:),dm+temp_comp)
-        end select
-     end do
+     call multifab_physbc(s2(n),rhoh_comp,dm+rhoh_comp,1,dx(n,:), &
+                          the_bc_tower%bc_tower_array(n))
+     call multifab_physbc(s2(n),temp_comp,dm+temp_comp,1,dx(n,:), &
+                          the_bc_tower%bc_tower_array(n))
   enddo
 
   do n = 1,nlevs
@@ -695,27 +642,11 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
         end select
      end do
   enddo
-  
+
   ! set the boundary conditions for p01
   do n=1,nlevs
      call multifab_fill_boundary(p01fab(n))
-     bc = the_bc_tower%bc_tower_array(n)
-     do i = 1, p01fab(n)%nboxes
-        if ( multifab_remote(p01fab(n), i) ) cycle
-        p01fabp => dataptr(p01fab(n), i)
-        lo = lwb(get_box(p01fab(n), i))
-        hi = upb(get_box(p01fab(n), i))
-        select case (dm)
-        case (2)
-           call setbc_2d(p01fabp(:,:,1,1), lo, 1, &
-                bc%adv_bc_level_array(i,:,:,neumann_comp), &
-                dx(n,:),neumann_comp)
-        case (3)
-           call setbc_3d(p01fabp(:,:,:,1), lo, 1, &
-                bc%adv_bc_level_array(i,:,:,neumann_comp), &
-                dx(n,:),neumann_comp)
-        end select
-     enddo
+     call multifab_physbc(p01fab(n),1,neumann_comp,1,dx(n,:),the_bc_tower%bc_tower_array(n))
   enddo
 
   ! create p02fab
@@ -733,29 +664,12 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
         end select
      end do
   enddo
-  
+
   ! set the boundary conditions for p02
   do n=1,nlevs
      call multifab_fill_boundary(p02fab(n))
-     bc = the_bc_tower%bc_tower_array(n)
-     do i = 1, p02fab(n)%nboxes
-        if ( multifab_remote(p02fab(n), i) ) cycle
-        p02fabp => dataptr(p02fab(n), i)
-        lo = lwb(get_box(p02fab(n), i))
-        hi = upb(get_box(p02fab(n), i))
-        select case (dm)
-        case (2)
-           call setbc_2d(p02fabp(:,:,1,1), lo, 1, &
-                bc%adv_bc_level_array(i,:,:,neumann_comp), &
-                dx(n,:),neumann_comp)
-        case (3)
-           call setbc_3d(p02fabp(:,:,:,1), lo, 1, &
-                bc%adv_bc_level_array(i,:,:,neumann_comp), &
-                dx(n,:),neumann_comp)
-        end select
-     enddo
+     call multifab_physbc(p02fab(n),1,neumann_comp,1,dx(n,:),the_bc_tower%bc_tower_array(n))
   enddo
-  
 
   ! lhsalpha = \rho^{(2)}
   ! rhsalpha = 0 (already initialized above)
@@ -1005,28 +919,10 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
   do n=1,nlevs
      call multifab_fill_boundary(s2(n))
 
-     do i = 1, s2(n)%nboxes
-        if ( multifab_remote(s2(n), i) ) cycle
-        s2p => dataptr(s2(n),i)
-        lo =  lwb(get_box(s2(n), i))
-        hi =  upb(get_box(s2(n), i))
-        select case (dm)
-        case (2)
-           call setbc_2d(s2p(:,:,1,rhoh_comp), lo, 3, &
-                the_bc_tower%bc_tower_array(n)%adv_bc_level_array(i,:,:,dm+rhoh_comp), &
-                dx(n,:),dm+rhoh_comp)
-           call setbc_2d(s2p(:,:,1,temp_comp), lo, 3, &
-                the_bc_tower%bc_tower_array(n)%adv_bc_level_array(i,:,:,dm+temp_comp), &
-                dx(n,:),dm+temp_comp)
-        case (3)
-           call setbc_3d(s2p(:,:,:,rhoh_comp), lo, 3, &
-                the_bc_tower%bc_tower_array(n)%adv_bc_level_array(i,:,:,dm+rhoh_comp), &
-                dx(n,:),dm+rhoh_comp)
-           call setbc_3d(s2p(:,:,:,temp_comp), lo, 3, &
-                the_bc_tower%bc_tower_array(n)%adv_bc_level_array(i,:,:,dm+temp_comp), &
-                dx(n,:),dm+temp_comp)
-        end select
-     end do
+     call multifab_physbc(s2(n),rhoh_comp,dm+rhoh_comp,1,dx(n,:), &
+                          the_bc_tower%bc_tower_array(n))
+     call multifab_physbc(s2(n),temp_comp,dm+temp_comp,1,dx(n,:), &
+                          the_bc_tower%bc_tower_array(n))
   enddo
 
   !!!!!!!!!!!!!!!!!!!!!!!
@@ -1328,28 +1224,10 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
   do n=1,nlevs
      call multifab_fill_boundary(s2(n))
 
-     do i = 1, s2(n)%nboxes
-        if ( multifab_remote(s2(n), i) ) cycle
-        s2p => dataptr(s2(n),i)
-        lo =  lwb(get_box(s2(n), i))
-        hi =  upb(get_box(s2(n), i))
-        select case (dm)
-        case (2)
-           call setbc_2d(s2p(:,:,1,rhoh_comp), lo, 3, &
-                the_bc_tower%bc_tower_array(n)%adv_bc_level_array(i,:,:,dm+rhoh_comp), &
-                dx(n,:),dm+rhoh_comp)
-           call setbc_2d(s2p(:,:,1,temp_comp), lo, 3, &
-                the_bc_tower%bc_tower_array(n)%adv_bc_level_array(i,:,:,dm+temp_comp), &
-                dx(n,:),dm+temp_comp)
-        case (3)
-           call setbc_3d(s2p(:,:,:,rhoh_comp), lo, 3, &
-                the_bc_tower%bc_tower_array(n)%adv_bc_level_array(i,:,:,dm+rhoh_comp), &
-                dx(n,:),dm+rhoh_comp)
-           call setbc_3d(s2p(:,:,:,temp_comp), lo, 3, &
-                the_bc_tower%bc_tower_array(n)%adv_bc_level_array(i,:,:,dm+temp_comp), &
-                dx(n,:),dm+temp_comp)
-        end select
-     end do
+     call multifab_physbc(s2(n),rhoh_comp,dm+rhoh_comp,1,dx(n,:), &
+                          the_bc_tower%bc_tower_array(n))
+     call multifab_physbc(s2(n),temp_comp,dm+temp_comp,1,dx(n,:), &
+                          the_bc_tower%bc_tower_array(n))
   enddo
 
   do n = 1,nlevs
