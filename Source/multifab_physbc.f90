@@ -6,6 +6,9 @@ module multifab_physbc_module
 
   implicit none
 
+  private
+  public :: multifab_physbc
+
 contains
 
   subroutine multifab_physbc(s,start_scomp,start_bccomp,num_comp,dx,the_bc_level)
