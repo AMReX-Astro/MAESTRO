@@ -264,7 +264,6 @@ contains
          p0(j)    = p_eos(1)
 
          s0(j,temp_comp) = t_ambient
-         s0(j,temp_comp) = t_ambient
 
          gam1(j) = gam1_eos(1)
   
