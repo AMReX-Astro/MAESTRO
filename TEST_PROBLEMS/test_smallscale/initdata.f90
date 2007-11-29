@@ -11,6 +11,7 @@ module init_module
   use geometry
   use probin_module
   use inlet_bc_module
+  use multifab_physbc_module
 
   implicit none
 
@@ -49,7 +50,8 @@ contains
        end select
     end do
 
-    ! note: multifab_fill_boundary and setbc are called in varden
+    call multifab_fill_boundary(s)
+    call multifab_physbc(s,rho_comp,dm+rho_comp,nscal,dx,bc)
 
     do i = 1, s%nboxes
        if ( multifab_remote(s, i) ) cycle
@@ -225,7 +227,8 @@ contains
        end select
     end do
 
-    ! note: multifab_fill_boundary and setbc are called in varden
+    call multifab_fill_boundary(u)
+    call multifab_physbc(u,1,1,dm,dx,bc)
 
   end subroutine initveldata
 

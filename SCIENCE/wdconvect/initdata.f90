@@ -3,7 +3,7 @@ module init_module
   use bl_types
   use bl_constants_module
   use bc_module
-  use setbc_module
+  use multifab_physbc_module
   use define_bc_module
   use multifab_module
   use fill_3d_module
@@ -53,24 +53,7 @@ contains
     end do
 
     call multifab_fill_boundary(s)
-
-    do i = 1, s%nboxes
-       if ( multifab_remote(s, i) ) cycle
-       sop => dataptr(s, i)
-       lo =  lwb(get_box(s, i))
-       select case (dm)
-       case (2)
-          do n = 1,nscal
-             call setbc_2d(sop(:,:,1,n), lo, ng, &
-                           bc%adv_bc_level_array(i,:,:,dm+n),dx,dm+n)
-          end do
-       case (3)
-          do n = 1, nscal
-             call setbc_3d(sop(:,:,:,n), lo, ng, &
-                           bc%adv_bc_level_array(i,:,:,dm+n),dx,dm+n)
-          end do
-       end select
-    end do
+    call multifab_physbc(s,rho_comp,dm+rho_comp,nscal,dx,bc)
 
   end subroutine initscalardata
 
@@ -241,24 +224,7 @@ contains
     end do
 
     call multifab_fill_boundary(u)
-
-    do i = 1, u%nboxes
-       if ( multifab_remote(u, i) ) cycle
-       uop => dataptr(u, i)
-       lo =  lwb(get_box(u, i))
-       select case (dm)
-       case (2)
-          do n = 1,dm
-             call setbc_2d(uop(:,:,1,n), lo, ng, &
-                           bc%adv_bc_level_array(i,:,:,   n),dx,   n)
-          end do
-       case (3)
-          do n = 1, dm
-             call setbc_3d(uop(:,:,:,n), lo, ng, &
-                           bc%adv_bc_level_array(i,:,:,   n),dx,   n)
-          end do
-       end select
-    end do
+    call multifab_physbc(u,1,1,dm,dx,bc)
 
   end subroutine initveldata
 
