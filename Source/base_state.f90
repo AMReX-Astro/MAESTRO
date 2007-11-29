@@ -10,13 +10,14 @@ module base_state_module
   use variables
   use network
   use geometry
-  use probin_module, ONLY: base_cutoff_density, anelastic_cutoff
 
   implicit none
 
 contains
 
   subroutine init_base_state (model_file,n_base,s0,p0,gam1,dx,prob_lo,prob_hi)
+
+    use probin_module, ONLY: base_cutoff_density, anelastic_cutoff
 
     character (len=256), intent(in) :: model_file
     integer        , intent(in   ) :: n_base
