@@ -516,6 +516,7 @@ contains
       do i = 1, snew(n)%nboxes
          if ( multifab_remote(snew(n), i) ) cycle
          snp => dataptr(snew(n), i)
+         lo = lwb(get_box(snew(n), i))
          select case (dm)
          case (2)
             do comp = spec_comp,spec_comp+nspec-1
@@ -642,6 +643,7 @@ contains
          do i = 1, snew(n)%nboxes
             if ( multifab_remote(snew(n), i) ) cycle
             snp => dataptr(snew(n), i)
+            lo = lwb(get_box(snew(n), i))
             select case (dm)
             case (2)
                do comp = trac_comp,trac_comp+ntrac-1
@@ -784,6 +786,7 @@ contains
       do i = 1, snew(n)%nboxes
          if ( multifab_remote(snew(n), i) ) cycle
          snp => dataptr(snew(n), i)
+         lo = lwb(get_box(snew(n), i))
          select case (dm)
          case (2)
             do comp = rho_comp,rho_comp+nscal-1
