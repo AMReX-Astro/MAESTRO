@@ -113,7 +113,7 @@ contains
      enddo ! end loop over nlevs
 
      if(ng_h .gt. 0) then
-        do n = 2, nlevs
+        do n = nlevs, 2, -1
            call ml_cc_restriction(phihalf(n-1),phihalf(n),mla%mba%rr(n-1,:))
 
            fine_domain = layout_get_pd(mla%la(n))

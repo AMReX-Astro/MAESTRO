@@ -620,7 +620,7 @@ subroutine macproject(mla,umac,phi,rho,dx,the_bc_tower,verbose,mg_verbose,cg_ver
       ng = rho(nlevs)%ng
 
       ng_fill = 1
-      do n = 2, nlevs
+      do n = nlevs, 2, -1
          fine_domain = layout_get_pd(mla%la(n))
          call multifab_fill_ghost_cells(rho(n),rho(n-1),fine_domain, &
                                         ng_fill,mla%mba%rr(n-1,:), &

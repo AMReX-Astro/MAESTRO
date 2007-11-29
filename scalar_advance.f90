@@ -763,7 +763,7 @@ contains
 
       enddo ! do n = 1, nlevs
 
-      do n = 2, nlevs
+      do n = nlevs, 2, -1
          call ml_cc_restriction(snew(n-1),snew(n),mla%mba%rr(n-1,:))
 
          domain = layout_get_pd(mla%la(n))

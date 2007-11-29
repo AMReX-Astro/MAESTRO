@@ -75,7 +75,7 @@ contains
 
 !   Put boundary conditions of soln in fine_flx to get correct grad(phi) at
 !     crse-fine boundaries (after soln correctly interpolated in ml_cc)
-    do n = 2,nlevs
+    do n = nlevs, 2, -1
        mglev = mgt(n)%nlevels
        do i = 1, dm
           call ml_fill_fine_fluxes(mgt(n)%ss(mglev), fine_flx(n)%bmf(i,0), &

@@ -187,7 +187,7 @@ contains
                       p(n), phi( n),ng,dt)
     end do
     
-    do n = 2, nlevs
+    do n = nlevs, 2, -1
        call ml_cc_restriction(unew(n-1),unew(n),mla%mba%rr(n-1,:)) 
        call ml_cc_restriction(  gp(n-1),  gp(n),mla%mba%rr(n-1,:))
        
