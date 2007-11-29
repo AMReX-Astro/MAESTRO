@@ -8,10 +8,10 @@ module multifab_physbc_module
 
 contains
 
-  subroutine multifab_physbc(s,start_scomp,num_comp,start_bccomp,dx,the_bc_level)
+  subroutine multifab_physbc(s,start_scomp,start_bccomp,num_comp,dx,the_bc_level)
 
     type(multifab) , intent(inout) :: s
-    integer        , intent(in   ) :: start_scomp,num_comp,start_bccomp
+    integer        , intent(in   ) :: start_scomp,start_bccomp,num_comp
     real(kind=dp_t), intent(in   ) :: dx(:)
     type(bc_level) , intent(in   ) :: the_bc_level
 

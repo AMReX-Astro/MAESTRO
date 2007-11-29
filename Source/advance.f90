@@ -273,7 +273,7 @@ contains
        write(6,*) '            : react  base >>> '
     end if
     
-    call react_state(nlevs,sold,s1,rho_omegadot1,rho_Hext,halfdt,dx, &
+    call react_state(nlevs,mla,sold,s1,rho_omegadot1,rho_Hext,halfdt,dx, &
                      the_bc_tower%bc_tower_array,time)
     
     call average(rho_omegadot1,rho_omegadotbar1(1,:,:),dx,1,nspec)
@@ -369,7 +369,7 @@ contains
        write(6,*) '            : react  base >>> '
     end if
     
-    call react_state(nlevs,s2,snew,rho_omegadot2,rho_Hext,halfdt,dx, &
+    call react_state(nlevs,mla,s2,snew,rho_omegadot2,rho_Hext,halfdt,dx, &
                      the_bc_tower%bc_tower_array,time)
 
     call average(rho_omegadot2,rho_omegadotbar2(1,:,:),dx,1,nspec)
@@ -537,7 +537,7 @@ contains
           write(6,*) '            : react  base >>>'
        end if
 
-       call react_state(nlevs,s2,snew,rho_omegadot2,rho_Hext,halfdt,dx,&
+       call react_state(nlevs,mla,s2,snew,rho_omegadot2,rho_Hext,halfdt,dx,&
                         the_bc_tower%bc_tower_array,time)
 
        call average(rho_omegadot2,rho_omegadotbar2(1,:,:),dx,1,nspec)

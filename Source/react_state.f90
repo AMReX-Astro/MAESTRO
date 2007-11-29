@@ -3,7 +3,7 @@ module react_state_module
   use bl_types
   use multifab_module
   use define_bc_module
-  use setbc_module
+  use multifab_physbc_module
   use eos_module
   use network
   use burner_module
@@ -12,14 +12,17 @@ module react_state_module
   use fill_3d_module
   use heating_module
   use probin_module
+  use ml_restriction_module
+  use multifab_fill_ghost_module
 
   implicit none
   
 contains
 
-  subroutine react_state (nlevs,s_in,s_out,rho_omegadot,rho_Hext,dt,dx,the_bc_level,time)
+  subroutine react_state (nlevs,mla,s_in,s_out,rho_omegadot,rho_Hext,dt,dx,the_bc_level,time)
 
     integer        , intent(in   ) :: nlevs
+    type(ml_layout), intent(inout) :: mla
     type(multifab) , intent(in   ) :: s_in(:)
     type(multifab) , intent(inout) :: s_out(:)
     type(multifab) , intent(inout) :: rho_omegadot(:)
@@ -27,6 +30,7 @@ contains
     real(kind=dp_t), intent(in   ) :: dt,dx(:,:),time
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
+    ! Local
     real(kind=dp_t), pointer:: sinp(:,:,:,:)
     real(kind=dp_t), pointer:: sotp(:,:,:,:)
     real(kind=dp_t), pointer::   rp(:,:,:,:)
@@ -34,6 +38,7 @@ contains
 
     integer :: lo(s_in(1)%dim),hi(s_in(1)%dim),ng,dm
     integer :: i,n,bc_comp,comp
+    type(box) :: fine_domain
 
     ng = s_in(1)%ng
     dm = s_in(1)%dim
@@ -58,34 +63,26 @@ contains
           end select
        end do
 
-       ! Fill ghost cells on periodic boundaries and in between patches
+       ! fill ghost cells for two adjacent grids at the same level
+       ! this includes periodic domain boundary conditions
        call multifab_fill_boundary(s_out(n))
        
-       do i = 1, s_in(n)%nboxes
-          if ( multifab_remote(s_in(n), i) ) cycle
-          sotp => dataptr(s_out(n), i)
-          lo =  lwb(get_box(s_in(n), i))
-          hi =  upb(get_box(s_in(n), i))
-          select case (dm)
-          case (2)
-             ! Impose bc's
-             do comp = rho_comp,rho_comp+nscal-1
-                bc_comp = dm+comp
-                call setbc_2d(sotp(:,:,1,comp), lo, ng, &
-                              the_bc_level(n)%adv_bc_level_array(i,:,:,bc_comp), &
-                              dx(n,:),bc_comp)
-             enddo
-          case (3)
-             ! Impose bc's
-             do comp = rho_comp,rho_comp+nscal-1
-                bc_comp = dm+comp
-                call setbc_3d(sotp(:,:,:,comp), lo, ng, &
-                              the_bc_level(n)%adv_bc_level_array(i,:,:,bc_comp), &
-                              dx(n,:),bc_comp)
-             enddo
-          end select
-       end do
+       ! fill physical boundary conditions at domain boundaries
+       call multifab_physbc(s_out(n),rho_comp,dm+rho_comp,nscal,dx(n,:),the_bc_level(n))
        
+    enddo
+
+    do n=nlevs,2,-1
+       ! make sure that coarse cells are the average of the fine cells covering it.
+       ! the loop over nlevs must count backwards to make sure the finer grids are done first
+       call ml_cc_restriction(s_out(n-1),s_out(n),mla%mba%rr(n-1,:))
+
+       ! fill fine ghost cells using interpolation from the underlying coarse data
+       fine_domain = layout_get_pd(mla%la(n))
+       call multifab_fill_ghost_cells(s_out(n),s_out(n-1),fine_domain, &
+                                      ng,mla%mba%rr(n-1,:), &
+                                      the_bc_level(n-1)%adv_bc_level_array(0,:,:,:), &
+                                      rho_comp,dm+rho_comp,nscal)
     enddo
 
   end subroutine react_state
