@@ -21,6 +21,7 @@ subroutine varden()
   use geometry
   use network
   use average_module
+  use fill_3d_module
 
   implicit none
 
