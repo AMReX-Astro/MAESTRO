@@ -6,6 +6,9 @@ module heating_module
 
   implicit none
 
+  private
+  public :: get_H_2d, get_H_3d
+
 contains
 
    subroutine get_H_2d (H,lo,hi,dx,time)
