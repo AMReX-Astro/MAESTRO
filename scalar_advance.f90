@@ -302,94 +302,39 @@ contains
       
       call put_in_pert_form(sold(n),s0_old,dx(n,:),spec_comp,nspec,.true.)
       
+      if (use_temp_in_mkflux) then
+         comp = temp_comp
+      else
+         comp = rhoh_comp
+      end if
+
+      ! create temperature or enthalpy edge states
+      call mkflux(sold(n),uold(n),sedge(n,:),umac(n,:),utrans(n,:),scal_force(n),w0(n,:), &
+                  w0_cart_vec(n),dx(n,:),dt,is_vel,the_bc_level(n),velpred,comp,dm+comp,1)
+
+      ! create species edge states
+      call mkflux(sold(n),uold(n),sedge(n,:),umac(n,:),utrans(n,:),scal_force(n),w0(n,:), &
+                  w0_cart_vec(n),dx(n,:),dt,is_vel,the_bc_level(n),velpred, &
+                  spec_comp,dm+spec_comp,nspec)
+
       do i = 1, sold(n)%nboxes
          if ( multifab_remote(sold(n), i) ) cycle
-         sop  => dataptr(sold(n), i)
-         uop  => dataptr(uold(n), i)
          sepx => dataptr(sedge(n,1), i)
          sepy => dataptr(sedge(n,2), i)
-         ump  => dataptr(umac(n,1), i)
-         vmp  => dataptr(umac(n,2), i)
-         utp  => dataptr(utrans(n,1), i)
-         vtp  => dataptr(utrans(n,2), i)
-         fp  => dataptr(scal_force(n) , i)
          lo =  lwb(get_box(uold(n), i))
          hi =  upb(get_box(uold(n), i))
          select case (dm)
          case (2)
             if (use_temp_in_mkflux) then
-               comp = temp_comp
-            else
-               comp = rhoh_comp
-            end if
-            bc_comp = dm+comp
-            
-            call mkflux_2d(sop(:,:,1,:), uop(:,:,1,:), &
-                           sepx(:,:,1,:), sepy(:,:,1,:), &
-                           ump(:,:,1,1), vmp(:,:,1,1), &
-                           utp(:,:,1,1), vtp(:,:,1,1), fp(:,:,1,:), w0(1,:), &
-                           lo, dx(n,:), dt, is_vel, &
-                           the_bc_level(n)%phys_bc_level_array(i,:,:), &
-                           the_bc_level(n)%adv_bc_level_array(i,:,:,bc_comp:), &
-                           velpred, ng_cell, comp)
-            
-            do comp = spec_comp,spec_comp+nspec-1
-               bc_comp = dm+comp
-               call mkflux_2d(sop(:,:,1,:), uop(:,:,1,:), &
-                              sepx(:,:,1,:), sepy(:,:,1,:), &
-                              ump(:,:,1,1), vmp(:,:,1,1), &
-                              utp(:,:,1,1), vtp(:,:,1,1), fp(:,:,1,:), w0(1,:), &
-                              lo, dx(n,:), dt, is_vel, &
-                              the_bc_level(n)%phys_bc_level_array(i,:,:), &
-                              the_bc_level(n)%adv_bc_level_array(i,:,:,bc_comp:), &
-                              velpred, ng_cell, comp)
-            end do
-
-            if (use_temp_in_mkflux) &
-                 call makeRhoHfromT_2d(sepx(:,:,1,:), sepy(:,:,1,:), &
-                                       s0_old, s0_edge_old, &
-                                       s0_new, s0_edge_new, lo, hi)
-            
+               call makeRhoHfromT_2d(sepx(:,:,1,:), sepy(:,:,1,:), &
+                                     s0_old, s0_edge_old, s0_new, s0_edge_new, lo, hi)
+            endif            
          case (3)
-            wmp  => dataptr(  umac(n,3), i)
-            wtp  => dataptr(utrans(n,3), i)
             sepz => dataptr( sedge(n,3), i)
-            w0p => dataptr(w0_cart_vec(n), i)
-            
             if (use_temp_in_mkflux) then
-               comp = temp_comp
-            else
-               comp = rhoh_comp
-            end if
-            bc_comp = dm+comp
-            call mkflux_3d(sop(:,:,:,:), uop(:,:,:,:), &
-                           sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
-                           ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
-                           utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), fp(:,:,:,:), &
-                           w0(1,:), w0p(:,:,:,:), &
-                           lo, dx(n,:), dt, is_vel, &
-                           the_bc_level(n)%phys_bc_level_array(i,:,:), &
-                           the_bc_level(n)%adv_bc_level_array(i,:,:,bc_comp:), &
-                           velpred, ng_cell, comp)
-            
-            do comp = spec_comp,spec_comp+nspec-1
-               bc_comp = dm+comp
-               call mkflux_3d(sop(:,:,:,:), uop(:,:,:,:), &
-                              sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
-                              ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
-                              utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), fp(:,:,:,:), &
-                              w0(1,:), w0p(:,:,:,:), &
-                              lo, dx(n,:), dt, is_vel, &
-                              the_bc_level(n)%phys_bc_level_array(i,:,:), &
-                              the_bc_level(n)%adv_bc_level_array(i,:,:,bc_comp:), &
-                              velpred, ng_cell, comp)
-            end do
-            
-            if (use_temp_in_mkflux) &
-                 call makeRhoHfromT_3d(sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
-                                       s0_old, s0_edge_old, &
-                                       s0_new, s0_edge_new, lo, hi)
-            
+               call makeRhoHfromT_3d(sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
+                                     s0_old, s0_edge_old, s0_new, s0_edge_new, lo, hi)
+            endif            
          end select
       end do
       if (.not. use_temp_in_mkflux) &
@@ -402,51 +347,9 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       if (ntrac .ge. 1) then
-         do i = 1, sold(n)%nboxes
-            if ( multifab_remote(sold(n), i) ) cycle
-            sop  => dataptr(sold(n), i)
-            uop  => dataptr(uold(n), i)
-            sepx => dataptr(sedge(n,1), i)
-            sepy => dataptr(sedge(n,2), i)
-            ump  => dataptr(umac(n,1), i)
-            vmp  => dataptr(umac(n,2), i)
-            utp  => dataptr(utrans(n,1), i)
-            vtp  => dataptr(utrans(n,2), i)
-            fp  => dataptr(scal_force(n) , i)
-            lo =  lwb(get_box(uold(n), i))
-            hi =  upb(get_box(uold(n), i))
-            select case (dm)
-            case (2)
-               do comp = trac_comp,trac_comp+ntrac-1
-                  bc_comp = dm+comp
-                  call mkflux_2d(sop(:,:,1,:), uop(:,:,1,:), &
-                                 sepx(:,:,1,:), sepy(:,:,1,:), &
-                                 ump(:,:,1,1), vmp(:,:,1,1), &
-                                 utp(:,:,1,1), vtp(:,:,1,1), fp(:,:,1,:), w0(1,:), &
-                                 lo, dx(n,:), dt, is_vel, &
-                                 the_bc_level(n)%phys_bc_level_array(i,:,:), &
-                                 the_bc_level(n)%adv_bc_level_array(i,:,:,bc_comp:), &
-                                 velpred, ng_cell, comp)
-               end do
-            case (3)
-               wmp  => dataptr(  umac(n,3), i)
-               wtp  => dataptr(utrans(n,3), i)
-               sepz => dataptr( sedge(n,3), i)
-               w0p  => dataptr(w0_cart_vec(n), i)
-               do comp = trac_comp,trac_comp+ntrac-1
-                  bc_comp = dm+comp
-                  call mkflux_3d(sop(:,:,:,:), uop(:,:,:,:), &
-                                 sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
-                                 ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
-                                 utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), fp(:,:,:,:), &
-                                 w0(1,:), w0p(:,:,:,:), &
-                                 lo, dx(n,:), dt, is_vel, &
-                                 the_bc_level(n)%phys_bc_level_array(i,:,:), &
-                                 the_bc_level(n)%adv_bc_level_array(i,:,:,bc_comp:), &
-                                 velpred, ng_cell, comp)
-               end do
-            end select
-         end do
+         call mkflux(sold(n),uold(n),sedge(n,:),umac(n,:),utrans(n,:),scal_force(n), &
+                     w0(n,:),w0_cart_vec(n),dx(n,:),dt,is_vel,the_bc_level(n),velpred,&
+                     trac_comp,dm+trac_comp,ntrac)
       end if
       
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

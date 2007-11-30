@@ -11,7 +11,7 @@ module mkflux_module
   implicit none
 
   private
-  public :: mkflux, mkflux_1d, mkflux_2d, mkflux_3d
+  public :: mkflux, mkflux_1d
   
 contains
 
