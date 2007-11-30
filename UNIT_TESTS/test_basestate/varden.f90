@@ -17,6 +17,8 @@ subroutine varden()
   use eos_module
   use make_w0_module
   use advect_base_module
+  use make_grav_module
+  use make_div_coeff_module
 
   implicit none
 
