@@ -2,6 +2,7 @@ module thermal_conduct_module
 
   use bl_types
   use bc_module
+  use bl_constants_module
   use define_bc_module
   use multifab_module
   use boxarray_module
@@ -9,7 +10,7 @@ module thermal_conduct_module
   use macproject_module
   use eos_module
   use rhoh_vs_t_module
-  use probin_module
+  use probin_module, ONLY: use_big_h
   use ml_layout_module
   use bndry_reg_module
   use multifab_physbc_module

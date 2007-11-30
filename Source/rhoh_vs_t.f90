@@ -5,7 +5,7 @@ module rhoh_vs_t_module
   use variables
   use geometry
   use network
-  use probin_module
+  use probin_module, ONLY: use_big_h
   use eos_module
 
   implicit none

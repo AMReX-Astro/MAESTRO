@@ -9,7 +9,6 @@ module make_explicit_thermal_module
   use macproject_module
   use eos_module
   use fill_3d_module
-!  use probin_module
   use thermal_conduct_module
   use ml_restriction_module
   use multifab_fill_ghost_module

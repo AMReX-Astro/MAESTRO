@@ -14,7 +14,7 @@ module make_plotfile_module
   use geometry
   use variables
   use plot_variables_module
-  use probin_module
+  use probin_module, ONLY: use_big_h
   use define_bc_module
   use variables
   use network
