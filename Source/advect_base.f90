@@ -60,6 +60,7 @@ contains
 
 !     Local variables
       integer :: j, n, nz
+      real (kind = dp_t) :: temp_a, temp_b
 
       real (kind = dp_t), allocatable :: force(:)
       real (kind = dp_t), allocatable :: edge(:)
@@ -95,6 +96,12 @@ contains
             s0_new(j,n) = s0_old(j,n) &
                - dt / dz * (edge(j+1) * vel(j+1) - edge(j) * vel(j)) &
                - dt / dz * (eta(j+1,n) - eta(j,n))
+            
+            if (n.eq.spec_comp) then
+               temp_a = - dt / dz * (edge(j+1) * vel(j+1) - edge(j) * vel(j)) 
+               temp_b = - dt / dz * (eta(j+1,n) - eta(j,n))
+               write(88,*) (dble(j)+HALF)*dz,  temp_a, temp_b
+            end if
          end do
 
       enddo

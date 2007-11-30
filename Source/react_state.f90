@@ -85,7 +85,7 @@ contains
        fine_domain = layout_get_pd(mla%la(n))
        call multifab_fill_ghost_cells(s_out(n),s_out(n-1),fine_domain, &
                                       ng,mla%mba%rr(n-1,:), &
-                                      the_bc_level(n-1)%adv_bc_level_array(0,:,:,:), &
+                                      the_bc_level(n-1), the_bc_level(n), &
                                       rho_comp,dm+rho_comp,nscal)
     enddo
 

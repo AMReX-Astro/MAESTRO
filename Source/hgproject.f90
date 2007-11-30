@@ -192,10 +192,11 @@ contains
        call ml_cc_restriction(  gp(n-1),  gp(n),mla%mba%rr(n-1,:))
        
        fine_domain = layout_get_pd(mla%la(n))
-       bc = the_bc_tower%bc_tower_array(n-1)
        call multifab_fill_ghost_cells(unew(n),unew(n-1),fine_domain, &
                                       ng,mla%mba%rr(n-1,:), &
-                                      bc%adv_bc_level_array(0,:,:,:),1,1,dm)
+                                      the_bc_tower%bc_tower_array(n-1), &
+                                      the_bc_tower%bc_tower_array(n  ), &
+                                      1,1,dm)
     end do
     
     if (verbose .ge. 1) then

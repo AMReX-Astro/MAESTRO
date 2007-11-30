@@ -11,6 +11,7 @@ module init_module
   use variables
   use network
   use geometry
+  use probin_module, only: grav_const
 
   implicit none
 
@@ -463,23 +464,24 @@ contains
   subroutine scalar_diags_2d (istep, s,lo,hi,ng,dx,s0,p0)
 
     integer, intent(in) :: istep, lo(:), hi(:), ng
-    real (kind = dp_t), intent(in) ::  s(lo(1)-ng:,lo(2)-ng:,:)  
+    real (kind = dp_t), intent(in) ::  s(lo(1)-ng:,lo(2)-ng:,:)
     real (kind = dp_t), intent(in) :: dx(:)
     real(kind=dp_t)   , intent(in) :: s0(0:,:)
     real(kind=dp_t)   , intent(in) :: p0(0:)
 
     ! Local variables
     integer :: i, j, n
-    real(kind=dp_t) :: fac, stot_pert, grav, mass, mass0
-    real(kind=dp_t), allocatable :: rhoavg(:), pavg(:)
+    real(kind=dp_t) :: fac, mass, mass0
+    real(kind=dp_t), allocatable ::  rhoavg(:)
+    real(kind=dp_t), allocatable :: rhopert(:)
+    real(kind=dp_t), allocatable ::    pavg(:)
     character(len=11) :: file_name
     character(len=10) :: file_name2
     character(len= 8) :: file_name3
 
-    allocate(rhoavg(lo(2):hi(2))) 
-    allocate(  pavg(lo(2):hi(2))) 
-  
-    grav = 1.5d10
+    allocate(rhopert(lo(2):hi(2)))
+    allocate( rhoavg(lo(2):hi(2)))
+    allocate(   pavg(lo(2):hi(2)))
 
     write(unit=file_name ,fmt='("rhopert",i4.4)') istep
     write(unit=file_name2,fmt='("rhoavg",i4.4)') istep
@@ -493,29 +495,32 @@ contains
     mass0 = ZERO
     do j = lo(2), hi(2)
       rhoavg(j) = ZERO
-      stot_pert = ZERO
+      rhopert(j) = ZERO
       do i = lo(1), hi(1)
-         stot_pert = stot_pert + (s(i,j,rho_comp) - s0(j,rho_comp))
+         rhopert(j) = rhopert(j) + (s(i,j,rho_comp) - s0(j,rho_comp))
          rhoavg(j) = rhoavg(j) +  s(i,j,rho_comp)
       enddo
       rhoavg(j)  = rhoavg(j) * fac
-      stot_pert  = stot_pert * fac
-      if (j.eq.lo(2)) then
-        pavg(j) = p0(j)
-      else
-        pavg(j) = pavg(j-1) - 0.5d0 * (rhoavg(j-1)+rhoavg(j))*grav*dx(2)
-      end if
-      write(90,*) (dble(j)+HALF)*dx(2),stot_pert
+      rhopert(j)  = rhopert(j) * fac
+      write(90,*) (dble(j)+HALF)*dx(2),rhopert(j)
       write(91,*) (dble(j)+HALF)*dx(2),rhoavg(j)
-      write(92,*) (dble(j)+HALF)*dx(2),p0(j),pavg(j)
       mass  = mass  + rhoavg(j)
       mass0 = mass0 + s0(j,rho_comp)
     enddo
 
 !   print *,'TOTAL MASS ',istep, mass, mass0
 
-    deallocate(rhoavg,pavg)
-    
+    pavg(hi(2)) = p0(hi(2))
+    do j = hi(2)-1,lo(2),-1
+      pavg(j) = pavg(j+1) + 0.5d0 * (rhoavg(j+1)+rhoavg(j))*abs(grav_const)*dx(2)
+    enddo
+    do j = lo(2),hi(2)
+      write(92,*) (dble(j)+HALF)*dx(2),p0(j),pavg(j)
+    enddo
+
+    deallocate(rhoavg,rhopert,pavg)
+
   end subroutine scalar_diags_2d
+
 
 end module init_module

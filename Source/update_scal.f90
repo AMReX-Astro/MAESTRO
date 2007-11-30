@@ -145,8 +145,8 @@ contains
           eta(:,n) = ZERO
           do j = lo(2), hi(2)+1
              do i = lo(1), hi(1)
-!               eta(j,n) = eta(j,n) + vmac(i,j)*sedgey(i,j,n)
-                eta(j,n) = 0.d0
+                eta(j,n) = eta(j,n) + vmac(i,j)*sedgey(i,j,n)
+!               eta(j,n) = 0.d0
              end do
              eta(j,n) = eta(j,n) * fac
           end do

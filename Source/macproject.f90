@@ -624,7 +624,8 @@ subroutine macproject(mla,umac,phi,rho,dx,the_bc_tower,verbose,mg_verbose,cg_ver
          fine_domain = layout_get_pd(mla%la(n))
          call multifab_fill_ghost_cells(rho(n),rho(n-1),fine_domain, &
                                         ng_fill,mla%mba%rr(n-1,:), &
-                                        the_bc_tower%bc_tower_array(n-1)%adv_bc_level_array(0,:,:,:), &
+                                        the_bc_tower%bc_tower_array(n-1), &
+                                        the_bc_tower%bc_tower_array(n), &
                                         1,dm+1,1)
       end do
 

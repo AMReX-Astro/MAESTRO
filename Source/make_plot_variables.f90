@@ -134,7 +134,7 @@ contains
        hi =  upb(get_box(state, i))
        select case (dm)
        case (2)
-          call maketfromH_2d(tp(:,:,1,comp_t),tp(:,:,1,comp_dp),sp(:,:,1,:), lo, hi, ng, p0, t0)
+          call maketfromH_2d(tp(:,:,1,comp_t),tp(:,:,1,comp_dp),sp(:,:,1,:), lo, hi, ng, p0, t0, dx)
        case (3)
           if (spherical .eq. 1) then
             call maketfromH_3d_sphr(tp(:,:,:,comp_t),tp(:,:,:,comp_dp),sp(:,:,:,:), &
@@ -148,7 +148,7 @@ contains
 
   end subroutine make_tfromH
 
-  subroutine maketfromH_2d (T,deltaP,state,lo,hi,ng,p0,t0)
+  subroutine maketfromH_2d (T,deltaP,state,lo,hi,ng,p0,t0,dx)
 
     implicit none
     integer, intent(in) :: lo(:), hi(:), ng
@@ -157,14 +157,18 @@ contains
     real (kind = dp_t), intent(in   ) ::  state(lo(1)-ng:,lo(2)-ng:,:)
     real (kind = dp_t), intent(in   ) ::  p0(0:)
     real (kind = dp_t), intent(in   ) ::  t0(0:)
+    real (kind = dp_t), intent(in   ) ::  dx(:)
 
     !     Local variables
     integer :: i, j, n
     real(kind=dp_t) qreact
+    real(kind=dp_t) dp_avg, p_avg
 
     do_diag = .false.
 
     do j = lo(2), hi(2)
+       dp_avg = 0.d0
+        p_avg = 0.d0
        do i = lo(1), hi(1)
 
           ! (rho, H) --> T, p
@@ -198,10 +202,20 @@ contains
 !         T(i,j) = log(temp_eos(1))/log(10.)
           T(i,j) = temp_eos(1)
 
-          deltaP(i,j) = (p_eos(1)-p0(j))/ p0(j)
+!         deltaP(i,j) = abs(p_eos(1)-p0(j))/ p0(j)
+          deltaP(i,j) = abs(p_eos(1)-p0(j))
+ 
+          dp_avg = dp_avg + deltaP(i,j)
+           p_avg =  p_avg + p_eos(1)
           
        enddo
+       dp_avg = dp_avg / dble(hi(1)-lo(1)+1)
+        p_avg =  p_avg / dble(hi(1)-lo(1)+1)
+       write(98,*)  (dble(j)+HALF)*dx(2),dp_avg
+       write(99,*)  (dble(j)+HALF)*dx(2), p_avg
     enddo
+    write(98,*)  ' '
+    write(99,*)  ' '
 
   end subroutine maketfromH_2d
 
@@ -464,7 +478,8 @@ contains
 
           deltagamma(i,j) = gam1_eos(1) - gam10(j)
 
-          spert(i,j) = s_eos(1) - entr0(j)
+!         spert(i,j) = s_eos(1) - entr0(j)
+          spert(i,j) = entr0(j)
        enddo
     enddo
 

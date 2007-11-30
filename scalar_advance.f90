@@ -509,7 +509,7 @@ contains
          domain = layout_get_pd(mla%la(n))
          call multifab_fill_ghost_cells(snew(n),snew(n-1),domain, &
                                         ng_cell,mla%mba%rr(n-1,:), &
-                                        the_bc_level(n-1)%adv_bc_level_array(0,:,:,:), &
+                                        the_bc_level(n-1), the_bc_level(n), &
                                         1,dm+rho_comp,nscal)
       end do
       

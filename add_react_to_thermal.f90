@@ -76,7 +76,7 @@ contains
        fine_domain = layout_get_pd(mla%la(n))
        call multifab_fill_ghost_cells(thermal(n),thermal(n-1),fine_domain, &
                                       1,mla%mba%rr(n-1,:), &
-                                      the_bc_level(n-1)%adv_bc_level_array(0,:,:,:), &
+                                      the_bc_level(n-1), the_bc_level(n), &
                                       1,neumann_comp,1)
     enddo
        

@@ -275,7 +275,8 @@ contains
        bc = the_bc_tower%bc_tower_array(n-1)
        call multifab_fill_ghost_cells(thermal(n),thermal(n-1),fine_domain, &
                                       1,mla%mba%rr(n-1,:), &
-                                      bc%adv_bc_level_array(0,:,:,:), &
+                                      the_bc_tower%bc_tower_array(n-1), &
+                                      the_bc_tower%bc_tower_array(n  ), &
                                       1,neumann_comp,1)
     enddo
     
