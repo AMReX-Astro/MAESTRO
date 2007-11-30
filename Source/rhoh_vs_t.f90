@@ -13,7 +13,7 @@ module rhoh_vs_t_module
 
   private
   public :: makeRhoHfromT
-  public :: makeTfromRhoH_2d, makeTfromRhoH_3d
+  public :: makeTfromRhoH
   
 contains
   
@@ -338,6 +338,35 @@ contains
     
   end subroutine makeRhoHfromT_3d
   
+  subroutine makeTfromRhoH(s,t0)
+
+    implicit none
+    type(multifab)    , intent(inout) :: s
+    real (kind = dp_t), intent(in   ) :: t0(0:)
+
+    ! local
+    integer                  :: i,ng,dm
+    integer                  :: lo(s%dim),hi(s%dim)
+    real(kind=dp_t), pointer :: snp(:,:,:,:)
+
+    dm = s%dim
+    ng = s%ng
+
+    do i=1,s%nboxes
+       if (multifab_remote(s,i)) cycle
+       snp => dataptr(s,i)
+       lo = lwb(get_box(s,i))
+       hi = upb(get_box(s,i))
+       select case (dm)
+       case (2)
+          call makeTfromRhoH_2d(snp(:,:,1,:), lo, hi, 3, t0)
+       case (3)
+          call makeTfromRhoH_3d(snp(:,:,:,:), lo, hi, 3, t0)
+       end select
+    end do
+    
+  end subroutine makeTfromRhoH
+
   subroutine makeTfromRhoH_2d (state,lo,hi,ng,t0)
     
     implicit none

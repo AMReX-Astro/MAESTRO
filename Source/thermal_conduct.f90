@@ -487,18 +487,7 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
 
   ! compute updated temperature
   do n=1,nlevs
-     do i=1,s2(n)%nboxes
-        if (multifab_remote(s2(n),i)) cycle
-        s2p => dataptr(s2(n),i)
-        lo = lwb(get_box(s2(n), i))
-        hi = upb(get_box(s2(n), i))
-        select case (dm)
-        case (2)
-           call makeTfromRhoH_2d(s2p(:,:,1,:), lo, hi, 3, t02)
-        case (3)
-           call makeTfromRhoH_3d(s2p(:,:,:,:), lo, hi, 3, t02)
-        end select
-     end do
+     call makeTfromRhoH(s2(n),t02)
   enddo
 
   ! fill in ghost cells on s2
@@ -902,18 +891,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
 
   ! compute updated temperature
   do n=1,nlevs
-     do i=1,s2(n)%nboxes
-        if (multifab_remote(s2(n),i)) cycle
-        s2p => dataptr(s2(n),i)
-        lo = lwb(get_box(s2(n), i))
-        hi = upb(get_box(s2(n), i))
-        select case (dm)
-        case (2)
-           call makeTfromRhoH_2d(s2p(:,:,1,:), lo, hi, 3, t01)
-        case (3)
-           call makeTfromRhoH_3d(s2p(:,:,:,:), lo, hi, 3, t01)
-        end select
-     end do
+     call makeTfromRhoH(s2(n),t02)
   enddo
 
   ! fill in ghost cells on s2
@@ -1207,18 +1185,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
 
   ! compute updated temperature
   do n=1,nlevs
-     do i=1,s2(n)%nboxes
-        if (multifab_remote(s2(n),i)) cycle
-        s2p => dataptr(s2(n),i)
-        lo = lwb(get_box(s2(n), i))
-        hi = upb(get_box(s2(n), i))
-        select case (dm)
-        case (2)
-           call makeTfromRhoH_2d(s2p(:,:,1,:), lo, hi, 3, t02)
-        case (3)
-           call makeTfromRhoH_3d(s2p(:,:,:,:), lo, hi, 3, t02)
-        end select
-     end do
+     call makeTfromRhoH(s2(n),t02)
   enddo
 
   ! fill in ghost cells on s2

@@ -164,7 +164,10 @@ contains
        call multifab_fill_boundary_c(s0_new_cart(n),spec_comp,nspec)
        call multifab_fill_boundary_c(s0_new_cart(n),rhoh_comp,1)
     end if
-    
+
+    ! This can be uncommented if you wish to compute T
+    ! call makeTfromRhoH(sold(n),s0_old(:,temp_comp))
+
     do i = 1, scal_force(n)%nboxes
        if ( multifab_remote(scal_force(n), i) ) cycle
        fp => dataptr(scal_force(n), i)
@@ -185,10 +188,6 @@ contains
           if (use_temp_in_mkflux) then
              comp = temp_comp
              tp => dataptr(thermal(n), i)
-             
-             ! This can be uncommented if you wish to compute T           
-             ! call makeTfromRhoH_2d(sop(:,:,1,:), lo, hi, ng_cell, s0_old(:,temp_comp))
-             
              call mktempforce_2d(fp(:,:,1,comp), sop(:,:,1,:), tp(:,:,1,1), lo, hi, &
                                  ng_cell, p0_old)
           else
@@ -218,10 +217,6 @@ contains
              if (use_temp_in_mkflux) then
                 comp = temp_comp
                 tp => dataptr(thermal(n), i)
-                
-                ! This can be uncommented if you wish to compute T      
-                ! call makeTfromRhoH_3d(sop(:,:,:,:), lo, hi, ng_cell, s0_old(:,temp_comp))
-                
                 call mktempforce_3d_sphr(fp(:,:,:,comp), sop(:,:,:,:), tp(:,:,:,1), &
                                          lo, hi, ng_cell, p0_old, dx(n,:))
                else 
@@ -252,10 +247,6 @@ contains
 
                   comp = temp_comp
                   tp => dataptr(thermal(n), i)
-                  
-                  ! This can be uncommented if you wish to compute T      
-                  ! call makeTfromRhoH_3d(sop(:,:,:,:), lo, hi, ng_cell, s0_old(:,temp_comp))
-                  
                   call mktempforce_3d(fp(:,:,:,comp), sop(:,:,:,:), tp(:,:,:,1), lo, hi, &
                                       ng_cell, p0_old)
                   
@@ -613,19 +604,7 @@ contains
       end do
       
       if(.not. use_thermal_diffusion) then
-         ! compute updated temperature
-         do i=1,snew(n)%nboxes
-            if (multifab_remote(snew(n),i)) cycle
-            snp => dataptr(snew(n),i)
-            lo = lwb(get_box(snew(n), i))
-            hi = upb(get_box(snew(n), i))
-            select case (dm)
-            case (2)
-               call makeTfromRhoH_2d(snp(:,:,1,:), lo, hi, 3, s0_new(:,temp_comp))
-            case (3)
-               call makeTfromRhoH_3d(snp(:,:,:,:), lo, hi, 3, s0_new(:,temp_comp))
-            end select
-         end do
+         call makeTfromRhoH(snew(n),s0_new(:,temp_comp))
       endif
       
       ! fill ghost cells for two adjacent grids at the same level
