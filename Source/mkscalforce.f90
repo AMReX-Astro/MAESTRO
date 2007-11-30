@@ -8,14 +8,60 @@ module mkscalforce_module
   use variables
   use geometry
   use eos_module
+  use multifab_module
 
   implicit none
 
   private
-  public :: mkrhohforce_2d, mkrhohforce_3d, mkrhohforce_3d_sphr
-  public :: mktempforce_2d, mktempforce_3d, mktempforce_3d_sphr
+  public :: mkrhohforce, mkrhohforce_2d, mkrhohforce_3d, mkrhohforce_3d_sphr
+  public :: mktempforce, mktempforce_2d, mktempforce_3d, mktempforce_3d_sphr
 contains
 
+  subroutine mkrhohforce(force,comp,umac,p0_old,p0_new,normal,dx)
+
+    type(multifab) , intent(inout) :: force
+    integer        , intent(in   ) :: comp
+    type(multifab) , intent(in   ) :: umac(:)
+    real(kind=dp_t), intent(in   ) :: p0_old(0:)
+    real(kind=dp_t), intent(in   ) :: p0_new(0:)
+    type(multifab) , intent(in   ) :: normal
+    real(kind=dp_t), intent(in   ) :: dx(:)
+
+    ! local
+    integer                  :: i,dm
+    integer                  :: lo(force%dim),hi(force%dim)    
+    real(kind=dp_t), pointer :: ump(:,:,:,:)
+    real(kind=dp_t), pointer :: vmp(:,:,:,:)
+    real(kind=dp_t), pointer :: wmp(:,:,:,:)
+    real(kind=dp_t), pointer :: np(:,:,:,:)
+    real(kind=dp_t), pointer :: fp(:,:,:,:)
+
+    dm = force%dim
+      
+    do i=1,force%nboxes
+       if ( multifab_remote(force,i) ) cycle
+       fp => dataptr(force, i)
+       ump => dataptr(umac(1),i)
+       vmp => dataptr(umac(2),i)
+       lo = lwb(get_box(force,i))
+       hi = upb(get_box(force,i))
+       select case (dm)
+       case (2)
+          call  mkrhohforce_2d(fp(:,:,1,comp), vmp(:,:,1,1), lo, hi, p0_old, p0_new)
+       case(3)
+          wmp  => dataptr(umac(3), i)
+          if (spherical .eq. 0) then
+             call mkrhohforce_3d(fp(:,:,:,comp), wmp(:,:,:,1), lo, hi, p0_old, p0_new)
+          else
+             np => dataptr(normal, i)
+             call mkrhohforce_3d_sphr(fp(:,:,:,comp), &
+                                      ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
+                                      lo, hi, dx, np(:,:,:,:), p0_old, p0_new)
+          end if
+       end select
+    end do
+    
+  end subroutine mkrhohforce
 
   subroutine mkrhohforce_2d(force, wmac, lo, hi, p0_old, p0_new)
 
@@ -161,6 +207,51 @@ contains
     deallocate(gradp_rad, gradp_cart)
 
   end subroutine mkrhohforce_3d_sphr
+
+  subroutine mktempforce(force,comp,s,thermal,p0_old,dx)
+
+    type(multifab) , intent(inout) :: force
+    integer        , intent(in   ) :: comp
+    type(multifab) , intent(in   ) :: s
+    type(multifab) , intent(in   ) :: thermal
+    real(kind=dp_t), intent(in   ) :: p0_old(0:)
+    real(kind=dp_t), intent(in   ) :: dx(:)
+
+    ! local
+    integer                  :: i,dm,ng
+    integer                  :: lo(force%dim),hi(force%dim)
+    real(kind=dp_t), pointer :: tp(:,:,:,:)
+    real(kind=dp_t), pointer :: sp(:,:,:,:)
+    real(kind=dp_t), pointer :: fp(:,:,:,:)
+
+    dm = force%dim
+    ng = s%ng
+
+    do i=1,force%nboxes
+       if ( multifab_remote(force,i) ) cycle
+       fp => dataptr(force,i)
+       sp => dataptr(s, i)
+       lo = lwb(get_box(s,i))
+       hi = upb(get_box(s,i))
+       select case (dm)
+       case (2)
+          tp => dataptr(thermal,i)
+          call mktempforce_2d(fp(:,:,1,comp), sp(:,:,1,:), tp(:,:,1,1), lo, hi, &
+                              ng, p0_old)
+       case(3)
+          if (spherical .eq. 1) then
+             tp => dataptr(thermal, i)
+             call mktempforce_3d_sphr(fp(:,:,:,comp), sp(:,:,:,:), tp(:,:,:,1), &
+                                      lo, hi, ng, p0_old, dx)
+          else
+             tp => dataptr(thermal, i)
+             call mktempforce_3d(fp(:,:,:,comp), sp(:,:,:,:), tp(:,:,:,1), lo, hi, &
+                                 ng, p0_old)
+          end if
+       end select
+    end do
+    
+  end subroutine mktempforce
 
   subroutine mktempforce_2d(force, s, thermal, lo, hi, ng, p0)
 
