@@ -342,55 +342,10 @@ contains
 
       call setval(scal_force(n),ZERO)
       
-      do i = 1, sold(n)%nboxes
-         if ( multifab_remote(sold(n), i) ) cycle
-         sop => dataptr(sold(n), i)
-         snp => dataptr(snew(n), i)
-         ump => dataptr(umac(n,1), i)
-         vmp => dataptr(umac(n,2), i)
-         sepx => dataptr(sedge(n,1), i)
-         sepy => dataptr(sedge(n,2), i)
-         fp => dataptr(scal_force(n) , i)
-         lo =  lwb(get_box(sold(n), i))
-         hi =  upb(get_box(sold(n), i))
-         select case (dm)
-         case (2)
-            call update_scal_2d(which_step, spec_comp, spec_comp+nspec-1, &
-                                sop(:,:,1,:), snp(:,:,1,:), &
-                                ump(:,:,1,1), vmp(:,:,1,1), w0(1,:), eta, &
-                                sepx(:,:,1,:), sepy(:,:,1,:), fp(:,:,1,:), &
-                                s0_old(:,:), s0_edge_old(:,:), &
-                                s0_new(:,:), s0_edge_new(:,:), &
-                                lo, hi, ng_cell, dx(n,:), dt)
-         case (3)
-            wmp => dataptr(umac(n,3), i)
-            sepz => dataptr(sedge(n,3), i)
-            w0p => dataptr(w0_cart_vec(n), i)
-            if (spherical .eq. 0) then
-               call update_scal_3d_cart(which_step, spec_comp, spec_comp+nspec-1, &
-                                        sop(:,:,:,:), snp(:,:,:,:), &
-                                        ump(:,:,:,1), vmp(:,:,:,1), &
-                                        wmp(:,:,:,1), w0(1,:), eta, &
-                                        sepx(:,:,:,:), sepy(:,:,:,:), &
-                                        sepz(:,:,:,:), fp(:,:,:,:), &
-                                        s0_old(:,:), s0_edge_old(:,:), &
-                                        s0_new(:,:), s0_edge_new(:,:), &
-                                        lo, hi, ng_cell, dx(n,:), dt)
-            else
-               s0op => dataptr(s0_old_cart(n), i)
-               s0np => dataptr(s0_new_cart(n), i)
-               call update_scal_3d_sphr(which_step, spec_comp, spec_comp+nspec-1, &
-                                        sop(:,:,:,:), snp(:,:,:,:), &
-                                        ump(:,:,:,1), vmp(:,:,:,1), &
-                                        wmp(:,:,:,1), w0p(:,:,:,:), &
-                                        sepx(:,:,:,:), sepy(:,:,:,:), &
-                                        sepz(:,:,:,:), fp(:,:,:,:), &
-                                        s0_old(:,:), s0_new(:,:), &
-                                        s0op(:,:,:,:), s0np(:,:,:,:), &
-                                        lo, hi, domlo, domhi, ng_cell, dx(n,:), dt)
-            end if
-         end select
-      end do
+      call update_scal(which_step,spec_comp,spec_comp+nspec-1,sold(n),snew(n),umac(n,:), &
+                       w0(n,:),w0_cart_vec(n),eta,sedge(n,:),scal_force(n),s0_old, &
+                       s0_edge_old,s0_new,s0_edge_new,s0_old_cart(n),s0_new_cart(n), &
+                       domlo,domhi,dx(n,:),dt)
       
       ! fill ghost cells for two adjacent grids at the same level
       ! this includes periodic domain boundary conditions
@@ -443,56 +398,11 @@ contains
       end if
       
       if (ntrac .ge. 1) then
-         do i = 1, sold(n)%nboxes
-            if ( multifab_remote(sold(n), i) ) cycle
-            sop => dataptr(sold(n), i)
-            snp => dataptr(snew(n), i)
-            ump => dataptr(umac(n,1), i)
-            vmp => dataptr(umac(n,2), i)
-            sepx => dataptr(sedge(n,1), i)
-            sepy => dataptr(sedge(n,2), i)
-            fp => dataptr(scal_force(n) , i)
-            lo =  lwb(get_box(sold(n), i))
-            hi =  upb(get_box(sold(n), i))
-            select case (dm)
-            case (2)
-               call update_scal_2d(which_step, trac_comp,trac_comp+ntrac-1, &
-                                   sop(:,:,1,:), snp(:,:,1,:), &
-                                   ump(:,:,1,1), vmp(:,:,1,1), w0(1,:), eta, &
-                                   sepx(:,:,1,:), sepy(:,:,1,:), fp(:,:,1,:), &
-                                   s0_old(:,:), s0_edge_old(:,:), &
-                                   s0_new(:,:), s0_edge_new(:,:), &
-                                   lo, hi, ng_cell, dx(n,:), dt)
-               
-            case (3)
-               wmp => dataptr(umac(n,3), i)
-               sepz => dataptr(sedge(n,3), i)
-               w0p => dataptr(w0_cart_vec(n), i)
-               if (spherical .eq. 0) then
-                  call update_scal_3d_cart(which_step, trac_comp,trac_comp+ntrac-1, &
-                                           sop(:,:,:,:), snp(:,:,:,:), &
-                                           ump(:,:,:,1), vmp(:,:,:,1), &
-                                           wmp(:,:,:,1), w0(1,:), eta, &
-                                           sepx(:,:,:,:), sepy(:,:,:,:), &
-                                           sepz(:,:,:,:),   fp(:,:,:,:), &
-                                           s0_old(:,:), s0_edge_old(:,:), &
-                                           s0_new(:,:), s0_edge_new(:,:), &
-                                           lo, hi, ng_cell, dx(n,:), dt)
-               else
-                  s0op => dataptr(s0_old_cart(n), i)
-                  s0np => dataptr(s0_new_cart(n), i)
-                  call update_scal_3d_sphr(which_step, trac_comp,trac_comp+ntrac-1, &
-                                           sop(:,:,:,:), snp(:,:,:,:), &
-                                           ump(:,:,:,1), vmp(:,:,:,1), &
-                                           wmp(:,:,:,1), w0p(:,:,:,:), &
-                                           sepx(:,:,:,:), sepy(:,:,:,:), &
-                                           sepz(:,:,:,:), fp(:,:,:,:), &
-                                           s0_old(:,:), s0_new(:,:), &
-                                           s0op(:,:,:,:), s0np(:,:,:,:), &
-                                           lo, hi, domlo, domhi, ng_cell, dx(n,:), dt)
-               end if
-            end select
-         end do
+
+         call update_scal(which_step,trac_comp,trac_comp+ntrac-1,sold(n),snew(n), &
+                          umac(n,:),w0(n,:),w0_cart_vec(n),eta,sedge(n,:),scal_force(n), &
+                          s0_old,s0_edge_old,s0_new,s0_edge_new,s0_old_cart(n), &
+                          s0_new_cart(n),domlo,domhi,dx(n,:),dt)
          
          ! fill ghost cells for two adjacent grids at the same level
          ! this includes periodic domain boundary conditions
@@ -538,13 +448,8 @@ contains
       
       do i = 1, sold(n)%nboxes
          if ( multifab_remote(sold(n), i) ) cycle
-         sop => dataptr(sold(n), i)
-         snp => dataptr(snew(n), i)
          ump => dataptr(umac(n,1), i)
          vmp => dataptr(umac(n,2), i)
-         sepx => dataptr(sedge(n,1), i)
-         sepy => dataptr(sedge(n,2), i)
-         fp => dataptr(scal_force(n) , i)
          lo =  lwb(get_box(sold(n), i))
          hi =  upb(get_box(sold(n), i))
          select case (dm)
@@ -552,56 +457,25 @@ contains
             call  mkrhohforce_2d(fp(:,:,1,comp), vmp(:,:,1,1), lo, hi, &
                                  p0_old, p0_new)
             
-            call update_scal_2d(which_step, rhoh_comp, rhoh_comp, &
-                                sop(:,:,1,:), snp(:,:,1,:), &
-                                ump(:,:,1,1), vmp(:,:,1,1), w0(1,:), eta, &
-                                sepx(:,:,1,:), sepy(:,:,1,:), fp(:,:,1,:), &
-                                s0_old(:,:), s0_edge_old(:,:), &
-                                s0_new(:,:), s0_edge_new(:,:), &
-                                lo, hi, ng_cell, dx(n,:), dt)
-            
          case(3)
             wmp  => dataptr(umac(n,3), i)
-            w0p => dataptr(w0_cart_vec(n), i)
-            sepz => dataptr(sedge(n,3), i)
-            
             if (spherical .eq. 0) then
-               
                call mkrhohforce_3d(fp(:,:,:,comp), wmp(:,:,:,1), lo, hi, &
                                    p0_old, p0_new)
-
-               call update_scal_3d_cart(which_step, rhoh_comp, rhoh_comp, &
-                                        sop(:,:,:,:), snp(:,:,:,:), &
-                                        ump(:,:,:,1), vmp(:,:,:,1), &
-                                        wmp(:,:,:,1), w0(1,:), eta, &
-                                        sepx(:,:,:,:), sepy(:,:,:,:), &
-                                        sepz(:,:,:,:), fp(:,:,:,:), &
-                                        s0_old(:,:), s0_edge_old(:,:), &
-                                        s0_new(:,:), s0_edge_new(:,:), &
-                                        lo, hi, ng_cell, dx(n,:), dt)
-              
             else
-               
                np => dataptr(normal(n), i)
                call mkrhohforce_3d_sphr(fp(:,:,:,comp), &
                                         ump(:,:,:,1), vmp(:,:,:,1), &
                                         wmp(:,:,:,1), lo, hi, &
                                         dx(n,:), np(:,:,:,:), p0_old, p0_new)
-               s0op => dataptr(s0_old_cart(n), i)
-               s0np => dataptr(s0_new_cart(n), i)
-               call update_scal_3d_sphr(which_step, rhoh_comp, rhoh_comp, &
-                                        sop(:,:,:,:), snp(:,:,:,:), &
-                                        ump(:,:,:,1), vmp(:,:,:,1), &
-                                        wmp(:,:,:,1), w0p(:,:,:,:), &
-                                        sepx(:,:,:,:), sepy(:,:,:,:), &
-                                        sepz(:,:,:,:), fp(:,:,:,:), &
-                                        s0_old(:,:), s0_new(:,:), &
-                                        s0op(:,:,:,:), s0np(:,:,:,:), &
-                                        lo, hi, domlo, domhi, ng_cell, dx(n,:), dt)
-               
             end if
          end select
       end do
+
+      call update_scal(which_step,rhoh_comp,rhoh_comp,sold(n),snew(n), &
+                       umac(n,:),w0(n,:),w0_cart_vec(n),eta,sedge(n,:),scal_force(n), &
+                       s0_old,s0_edge_old,s0_new,s0_edge_new,s0_old_cart(n), &
+                       s0_new_cart(n),domlo,domhi,dx(n,:),dt)
       
       if(.not. use_thermal_diffusion) then
          call makeTfromRhoH(snew(n),s0_new(:,temp_comp))
