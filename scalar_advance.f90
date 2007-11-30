@@ -317,26 +317,10 @@ contains
                   w0_cart_vec(n),dx(n,:),dt,is_vel,the_bc_level(n),velpred, &
                   spec_comp,dm+spec_comp,nspec)
 
-      do i = 1, sold(n)%nboxes
-         if ( multifab_remote(sold(n), i) ) cycle
-         sepx => dataptr(sedge(n,1), i)
-         sepy => dataptr(sedge(n,2), i)
-         lo =  lwb(get_box(uold(n), i))
-         hi =  upb(get_box(uold(n), i))
-         select case (dm)
-         case (2)
-            if (use_temp_in_mkflux) then
-               call makeRhoHfromT_2d(sepx(:,:,1,:), sepy(:,:,1,:), &
-                                     s0_old, s0_edge_old, s0_new, s0_edge_new, lo, hi)
-            endif            
-         case (3)
-            sepz => dataptr( sedge(n,3), i)
-            if (use_temp_in_mkflux) then
-               call makeRhoHfromT_3d(sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
-                                     s0_old, s0_edge_old, s0_new, s0_edge_new, lo, hi)
-            endif            
-         end select
-      end do
+      if(use_temp_in_mkflux) then
+         call makeRhoHfromT(uold(n),sedge(n,:),s0_old,s0_edge_old,s0_new,s0_edge_new)
+      endif
+
       if (.not. use_temp_in_mkflux) &
            call put_in_pert_form(sold(n),s0_old,dx(n,:),rhoh_comp,    1,.false.)
 
