@@ -6,6 +6,9 @@ module setbc_module
 
   implicit none
 
+  private
+  public :: setbc_2d, setbc_3d
+
 contains
 
       subroutine setbc_2d(s,lo,ng,bc,dx,icomp)

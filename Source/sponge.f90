@@ -13,7 +13,10 @@ module sponge_module
   real(dp_t), save :: r_sp, r_md, r_tp
   real(dp_t), save :: r_sp_outer, r_tp_outer
   real(dp_t), save :: alpha
- 
+
+  private
+  public :: init_sponge, make_sponge
+
 contains
 
   subroutine init_sponge (s0,anelastic_cutoff,prob_hi,dx)
