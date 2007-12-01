@@ -345,7 +345,7 @@ contains
       call update_scal(which_step,spec_comp,spec_comp+nspec-1,sold(n),snew(n),umac(n,:), &
                        w0(n,:),w0_cart_vec(n),eta,sedge(n,:),scal_force(n),s0_old, &
                        s0_edge_old,s0_new,s0_edge_new,s0_old_cart(n),s0_new_cart(n), &
-                       domlo,domhi,dx(n,:),dt)
+                       domlo,domhi,dx(n,:),dt,evolve_base_state)
       
       ! fill ghost cells for two adjacent grids at the same level
       ! this includes periodic domain boundary conditions
@@ -402,7 +402,7 @@ contains
          call update_scal(which_step,trac_comp,trac_comp+ntrac-1,sold(n),snew(n), &
                           umac(n,:),w0(n,:),w0_cart_vec(n),eta,sedge(n,:),scal_force(n), &
                           s0_old,s0_edge_old,s0_new,s0_edge_new,s0_old_cart(n), &
-                          s0_new_cart(n),domlo,domhi,dx(n,:),dt)
+                          s0_new_cart(n),domlo,domhi,dx(n,:),dt,evolve_base_state)
          
          ! fill ghost cells for two adjacent grids at the same level
          ! this includes periodic domain boundary conditions
@@ -475,7 +475,7 @@ contains
       call update_scal(which_step,rhoh_comp,rhoh_comp,sold(n),snew(n), &
                        umac(n,:),w0(n,:),w0_cart_vec(n),eta,sedge(n,:),scal_force(n), &
                        s0_old,s0_edge_old,s0_new,s0_edge_new,s0_old_cart(n), &
-                       s0_new_cart(n),domlo,domhi,dx(n,:),dt)
+                       s0_new_cart(n),domlo,domhi,dx(n,:),dt,evolve_base_state)
       
       if(.not. use_thermal_diffusion) then
          call makeTfromRhoH(snew(n),s0_new(:,temp_comp))

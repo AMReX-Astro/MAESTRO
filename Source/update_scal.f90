@@ -8,6 +8,7 @@ module update_scal_module
   use geometry
   use variables
   use network
+  use probin_module, ONLY: evolve_base_state
 
   implicit none
 
@@ -18,7 +19,7 @@ contains
 
   subroutine update_scal(which_step,nstart,nstop,sold,snew,umac,w0,w0_cart_vec,eta,sedge, &
                          scal_force,s0_old,s0_edge_old,s0_new,s0_edge_new, &
-                         s0_old_cart,s0_new_cart,domlo,domhi,dx,dt)
+                         s0_old_cart,s0_new_cart,domlo,domhi,dx,dt,evolve_base_state)
 
     implicit none
 
@@ -37,6 +38,7 @@ contains
     type(multifab)    , intent(in   ) :: s0_new_cart
     integer           , intent(in   ) :: domlo(:),domhi(:)
     real(kind = dp_t) , intent(in   ) :: dx(:),dt
+    logical           , intent(in   ) :: evolve_base_state
     
     ! local
     real(kind=dp_t), pointer :: sop(:,:,:,:)
@@ -77,7 +79,7 @@ contains
                               sepx(:,:,1,:), sepy(:,:,1,:), fp(:,:,1,:), &
                               s0_old(:,:), s0_edge_old(:,:), &
                               s0_new(:,:), s0_edge_new(:,:), &
-                              lo, hi, ng, dx, dt)
+                              lo, hi, ng, dx, dt, evolve_base_state)
        case (3)
           wmp => dataptr(umac(3),i)
           sepz => dataptr(sedge(3),i)
@@ -91,7 +93,7 @@ contains
                                       sepz(:,:,:,:), fp(:,:,:,:), &
                                       s0_old(:,:), s0_edge_old(:,:), &
                                       s0_new(:,:), s0_edge_new(:,:), &
-                                      lo, hi, ng, dx, dt)
+                                      lo, hi, ng, dx, dt, evolve_base_state)
           else
              s0op => dataptr(s0_old_cart, i)
              s0np => dataptr(s0_new_cart, i)
@@ -103,7 +105,8 @@ contains
                                       sepz(:,:,:,:), fp(:,:,:,:), &
                                       s0_old(:,:), s0_new(:,:), &
                                       s0op(:,:,:,:), s0np(:,:,:,:), &
-                                      lo, hi, domlo, domhi, ng, dx, dt)
+                                      lo, hi, domlo, domhi, ng, dx, dt, &
+                                      evolve_base_state)
           end if
        end select
     end do
@@ -112,7 +115,7 @@ contains
   
   subroutine update_scal_2d(which_step,nstart,nstop,sold,snew,umac,vmac,w0,eta, &
                             sedgex,sedgey,force,base_old,base_old_edge, &
-                            base_new,base_new_edge,lo,hi,ng,dx,dt)
+                            base_new,base_new_edge,lo,hi,ng,dx,dt,evolve_base_state)
 
     ! update each scalar in time.  Here, it is assumed that the edge
     ! states (sedgex and sedgey) are for the perturbational quantities.
@@ -132,6 +135,7 @@ contains
     real (kind = dp_t), intent(in   ) :: w0(0:)
     real (kind = dp_t), intent(inout) :: eta(0:,:)
     real (kind = dp_t), intent(in   ) :: dt,dx(:)
+    logical           , intent(in   ) :: evolve_base_state
     
     integer :: i, j, n, nr, n2
     real (kind = dp_t) :: divsu,divbaseu,delta_base
@@ -140,7 +144,8 @@ contains
     
     fac = ONE / dble(hi(1)-lo(1)+1)
     
-    if (which_step .eq. 1) then
+    if (evolve_base_state) then
+      if (which_step .eq. 1) then
        do n = nstart, nstop
           eta(:,n) = ZERO
           do j = lo(2), hi(2)+1
@@ -151,6 +156,7 @@ contains
              eta(j,n) = eta(j,n) * fac
           end do
        end do
+      end if
     end if
     
     do n = nstart, nstop
@@ -179,8 +185,10 @@ contains
              snew(i,j,n) = sold(i,j,n) + delta_base &
                   - dt * (divsu + divbaseu) + dt * force(i,j,n)
              
-             if (which_step .eq. 2) then
+             if (evolve_base_state) then
+               if (which_step .eq. 2) then
                 snew(i,j,n) = snew(i,j,n) + dt / dx(2) * (eta(j+1,n)-eta(j,n))
+               end if
              end if
              
           enddo
@@ -248,7 +256,7 @@ contains
   
   subroutine update_scal_3d_cart(which_step,nstart,nstop,sold,snew,umac,vmac,wmac,w0, &
                                  eta,sedgex,sedgey,sedgez,force,base_old,base_old_edge, &
-                                 base_new,base_new_edge,lo,hi,ng,dx,dt)
+                                 base_new,base_new_edge,lo,hi,ng,dx,dt,evolve_base_state)
     
     implicit none
     
@@ -267,6 +275,7 @@ contains
     real (kind = dp_t), intent(in   ) :: w0(0:)
     real (kind = dp_t), intent(inout) :: eta(0:,:)
     real (kind = dp_t), intent(in   ) :: dt,dx(:)
+    logical           , intent(in   ) :: evolve_base_state
     
     integer :: i, j, k, n, n2
     real (kind = dp_t) :: divsu,divbaseu
@@ -390,7 +399,8 @@ contains
 
   subroutine update_scal_3d_sphr(which_step,nstart,nstop,sold,snew,umac,vmac,wmac, &
                                  w0_cart,sedgex,sedgey,sedgez,force,base_old,base_new, &
-                                 base_old_cart,base_new_cart,lo,hi,domlo,domhi,ng,dx,dt)
+                                 base_old_cart,base_new_cart,lo,hi,domlo,domhi,ng,dx,dt, &
+                                 evolve_base_state)
     
     implicit none
     
@@ -411,6 +421,7 @@ contains
     real (kind = dp_t), intent(in   ) ::   base_new_cart(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
     real (kind = dp_t), intent(in   ) :: w0_cart(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
     real (kind = dp_t), intent(in   ) :: dt,dx(:)
+    logical           , intent(in   ) :: evolve_base_state
     
     integer :: i, j, k, n, nr, n2
     real (kind = dp_t) :: divsu,divbaseu,mult
