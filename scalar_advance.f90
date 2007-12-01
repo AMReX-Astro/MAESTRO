@@ -265,11 +265,11 @@ contains
             end if
          end select
          
-         ! add to the rhoh component of force if NOT use_temp_in_mkflux
-         if ( (.not. use_temp_in_mkflux) .and. use_thermal_diffusion) &
-              call multifab_plus_plus_c(scal_force(n),rhoh_comp,thermal(n),1,1)
-         
       end do
+         
+      ! add to the rhoh component of force if NOT use_temp_in_mkflux
+      if ( (.not. use_temp_in_mkflux) .and. use_thermal_diffusion) &
+         call multifab_plus_plus_c(scal_force(n),rhoh_comp,thermal(n),1,1)
       
       ! Do this because we have just defined temperature in the valid region
       if (use_temp_in_mkflux) &
