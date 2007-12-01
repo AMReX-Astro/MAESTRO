@@ -16,7 +16,7 @@ module scalar_advance_module
   use variables
   use geometry
   use network
-  use probin_module, ONLY: use_temp_in_mkflux, use_thermal_diffusion
+  use probin_module, ONLY: use_temp_in_mkflux, use_thermal_diffusion, evolve_base_state
   use ml_restriction_module
   use ml_layout_module
   use multifab_fill_ghost_module
