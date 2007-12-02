@@ -61,10 +61,10 @@ contains
        select case (dm)
        case (2)
           call zerobasestate_2d(sop(:,:,1,:), lo, hi, ng, dx, perturb_model, &
-                                 prob_lo, prob_hi, s0)
+                                prob_lo, prob_hi, s0)
        case (3)
           call zerobasestate_3d(sop(:,:,:,:), lo, hi, ng, dx, perturb_model, &
-                                 prob_lo, prob_hi, s0)
+                                prob_lo, prob_hi, s0)
        end select
     end do
 
@@ -165,7 +165,7 @@ contains
        s0(j,rho_comp)                    = 0.d0
        s0(j,rhoh_comp)                   = 0.d0
        s0(j,spec_comp:spec_comp+nspec-1) = 0.d0
-       s0(j,temp_comp)                   = 0.d0
+!      s0(j,temp_comp)                   = 0.d0
     enddo
     
   end subroutine zerobasestate_2d
@@ -190,7 +190,7 @@ contains
        s0(k,rho_comp)                    = 0.d0
        s0(k,rhoh_comp)                   = 0.d0
        s0(k,spec_comp:spec_comp+nspec-1) = 0.d0
-       s0(k,temp_comp)                   = 0.d0
+!      s0(k,temp_comp)                   = 0.d0
     enddo
     
   end subroutine zerobasestate_3d
