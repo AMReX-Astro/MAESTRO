@@ -46,25 +46,25 @@ contains
             nu = ZERO
          else
 
-            del    = HALF* (rho0(j+1) - rho0(j-1))/dr
-            dpls   = TWO * (rho0(j+1) - rho0(j  ))/dr
-            dmin   = TWO * (rho0(j  ) - rho0(j-1))/dr
+            del    = HALF* (rho0(j+1) - rho0(j-1))/dr(1)
+            dpls   = TWO * (rho0(j+1) - rho0(j  ))/dr(1)
+            dmin   = TWO * (rho0(j  ) - rho0(j-1))/dr(1)
             slim   = min(abs(dpls), abs(dmin))
             slim   = merge(slim, zero, dpls*dmin.gt.ZERO)
             sflag  = sign(ONE,del)
             lambda = sflag*min(slim,abs(del))
 
-            del   = HALF* (gam1(j+1) - gam1(j-1))/dr
-            dpls  = TWO * (gam1(j+1) - gam1(j  ))/dr
-            dmin  = TWO * (gam1(j  ) - gam1(j-1))/dr
+            del   = HALF* (gam1(j+1) - gam1(j-1))/dr(1)
+            dpls  = TWO * (gam1(j+1) - gam1(j  ))/dr(1)
+            dmin  = TWO * (gam1(j  ) - gam1(j-1))/dr(1)
             slim  = min(abs(dpls), abs(dmin))
             slim  = merge(slim, zero, dpls*dmin.gt.ZERO)
             sflag = sign(ONE,del)
             mu    = sflag*min(slim,abs(del))
 
-            del   = HALF* (  p0(j+1) -   p0(j-1))/dr
-            dpls  = TWO * (  p0(j+1) -   p0(j  ))/dr
-            dmin  = TWO * (  p0(j  ) -   p0(j-1))/dr
+            del   = HALF* (  p0(j+1) -   p0(j-1))/dr(1)
+            dpls  = TWO * (  p0(j+1) -   p0(j  ))/dr(1)
+            dmin  = TWO * (  p0(j  ) -   p0(j-1))/dr(1)
             slim  = min(abs(dpls), abs(dmin))
             slim  = merge(slim, zero, dpls*dmin.gt.ZERO)
             sflag = sign(ONE,del)
@@ -74,13 +74,13 @@ contains
 
          if (j == 0 .or. j == ny-1) then
 
-            integral = abs(grav_center(j))*rho0(j)*dr/(p0(j)*gam1(j))
+            integral = abs(grav_center(j))*rho0(j)*dr(1)/(p0(j)*gam1(j))
 
          else if (nu .eq. ZERO .or. mu .eq. ZERO .or. &
-                  ((gam1(j) + HALF*mu*dr)/(gam1(j) - HALF*mu*dr)) .le. ZERO .or. &
-                  ((p0(j) + HALF*nu*dr)/(p0(j) - HALF*nu*dr)) .le. ZERO) then
+                  ((gam1(j) + HALF*mu*dr(1))/(gam1(j) - HALF*mu*dr(1))) .le. ZERO .or. &
+                  ((p0(j) + HALF*nu*dr(1))/(p0(j) - HALF*nu*dr(1))) .le. ZERO) then
 
-            integral = abs(grav_center(j))*rho0(j)*dr/(p0(j)*gam1(j))
+            integral = abs(grav_center(j))*rho0(j)*dr(1)/(p0(j)*gam1(j))
 
          else 
             denom = nu*gam1(j) - mu*p0(j)
@@ -89,10 +89,10 @@ contains
             coeff2 = lambda*p0(j)/nu - rho0(j)
  
             integral = (abs(grav_center(j))/denom)* &
-                 (coeff1*log( (gam1(j) + HALF*mu*dr)/ &
-                              (gam1(j) - HALF*mu*dr)) - &
-                  coeff2*log( (p0(j) + HALF*nu*dr)/ &
-                              (p0(j) - HALF*nu*dr)) )
+                 (coeff1*log( (gam1(j) + HALF*mu*dr(1))/ &
+                              (gam1(j) - HALF*mu*dr(1))) - &
+                  coeff2*log( (p0(j) + HALF*nu*dr(1))/ &
+                              (p0(j) - HALF*nu*dr(1))) )
 
          endif
 

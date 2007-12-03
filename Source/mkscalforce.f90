@@ -65,7 +65,7 @@ contains
 
   subroutine mkrhohforce_2d(force, wmac, lo, hi, p0_old, p0_new)
 
-    ! compute the source terms for the non-reactive part of the enthalpy equation { w dp0/dr }
+    ! compute the source terms for the non-reactive part of the enthalpy equation {w dp0/dr}
     
     ! note, in the prediction of the interface states, we will set
     ! both p0_old and p0_new to the same old value.  In the computation
@@ -88,13 +88,13 @@ contains
     do j = lo(2),hi(2)
        if (j.eq.0) then
           gradp0 = HALF * ( p0_old(j+1) + p0_new(j+1) &
-                           -p0_old(j  ) - p0_new(j  ) ) / dr
+                           -p0_old(j  ) - p0_new(j  ) ) / dr(1)
        else if (j.eq.nr-1) then
           gradp0 = HALF * ( p0_old(j  ) + p0_new(j  ) &
-                           -p0_old(j-1) - p0_new(j-1) ) / dr
+                           -p0_old(j-1) - p0_new(j-1) ) / dr(1)
        else
           gradp0 = FOURTH * ( p0_old(j+1) + p0_new(j+1) &
-                             -p0_old(j-1) - p0_new(j-1) ) / dr
+                             -p0_old(j-1) - p0_new(j-1) ) / dr(1)
        end if
        do i = lo(1),hi(1)
           wadv = HALF*(wmac(i,j)+wmac(i,j+1))
@@ -106,7 +106,7 @@ contains
 
   subroutine mkrhohforce_3d(force, wmac, lo, hi, p0_old, p0_new)
 
-    ! compute the source terms for the non-reactive part of the enthalpy equation { w dp0/dr }
+    ! compute the source terms for the non-reactive part of the enthalpy equation {w dp0/dr}
 
     integer,         intent(in   ) :: lo(:), hi(:)
     real(kind=dp_t), intent(  out) ::  force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
@@ -125,13 +125,13 @@ contains
 
        if (k.eq.0) then
           gradp0 = HALF * ( p0_old(k+1) + p0_new(k+1) &
-                           -p0_old(k  ) - p0_new(k  ) ) / dr
+                           -p0_old(k  ) - p0_new(k  ) ) / dr(1)
        else if (k.eq.nr-1) then
           gradp0 = HALF * ( p0_old(k  ) + p0_new(k  ) &
-                           -p0_old(k-1) - p0_new(k-1) ) / dr
+                           -p0_old(k-1) - p0_new(k-1) ) / dr(1)
        else
           gradp0 = FOURTH * ( p0_old(k+1) + p0_new(k+1) &
-                             -p0_old(k-1) - p0_new(k-1) ) / dr
+                             -p0_old(k-1) - p0_new(k-1) ) / dr(1)
        end if
 
        do j = lo(2),hi(2)
@@ -148,7 +148,7 @@ contains
   subroutine mkrhohforce_3d_sphr(force, umac, vmac, wmac, lo, hi, &
                                  dx, normal, p0_old, p0_new)
 
-    ! compute the source terms for the non-reactive part of the enthalpy equation { w dp0/dr }
+    ! compute the source terms for the non-reactive part of the enthalpy equation {w dp0/dr}
 
     integer,         intent(in   ) :: lo(:), hi(:)
     real(kind=dp_t), intent(  out) ::  force(lo(1)- 1:,lo(2)- 1:,lo(3)-1:)
@@ -176,13 +176,13 @@ contains
        
        if (k.eq.0) then
           gradp_rad(k) = HALF * ( p0_old(k+1) + p0_new(k+1) &
-                                 -p0_old(k  ) - p0_new(k  ) ) / dr
+                                 -p0_old(k  ) - p0_new(k  ) ) / dr(1)
        else if (k.eq.nr-1) then 
           gradp_rad(k) = HALF * ( p0_old(k  ) + p0_new(k  ) &
-                                 -p0_old(k-1) - p0_new(k-1) ) / dr
+                                 -p0_old(k-1) - p0_new(k-1) ) / dr(1)
        else
           gradp_rad(k) = FOURTH * ( p0_old(k+1) + p0_new(k+1) &
-                                   -p0_old(k-1) - p0_new(k-1) ) / dr
+                                   -p0_old(k-1) - p0_new(k-1) ) / dr(1)
        end if
     end do
 

@@ -36,7 +36,7 @@ contains
 
        open(unit=99,file=out_name,form = "formatted", access = "sequential",action="write")
        do i = 1, nr
-          base_r = (dble(i)-HALF) * dr
+          base_r = (dble(i)-HALF) * dr(1)
           write(99,1000)  base_r,s0(i,rho_comp), p0(i), gam1(i), s0(i,rhoh_comp), &
                (s0(i,n), n=spec_comp,spec_comp+nspec-1), s0(i,temp_comp), div_coeff(i)
        end do
@@ -49,7 +49,7 @@ contains
 
        open(unit=99,file=out_name,form = "formatted", access = "sequential",action="write")
        do i = 1, nr+1
-          base_r = (dble(i)-1) * dr
+          base_r = (dble(i)-1) * dr(1)
           write(99,1000)  base_r,w0(i)
        end do
        close(99)

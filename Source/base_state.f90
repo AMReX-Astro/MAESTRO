@@ -195,7 +195,7 @@ contains
 
     if ( parallel_IOProcessor() ) then
       print *,'DR , RMAX OF MODEL     ',dr_in, rmax
-      print *,'DR , RMAX OF BASE ARRAY',dr, dble(n_base) * dr
+      print *,'DR , RMAX OF BASE ARRAY',dr(1), dble(n_base) * dr(1)
     end if
 
     if (spherical .eq. 0) then
@@ -221,7 +221,7 @@ contains
          ! compute the coordinate height at this level
          ! NOTE: we are assuming that the basestate is in the y-direction
          ! and that ymin = 0.0
-         r = starting_rad + (dble(j) + HALF)*dr
+         r = starting_rad + (dble(j) + HALF)*dr(1)
   
          ! here we account for r > rmax of the model.hse array, assuming
          ! that the state stays constant beyond rmax

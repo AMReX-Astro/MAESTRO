@@ -33,7 +33,7 @@ contains
         do i = lo(1),hi(1)
           x = (dble(i)+HALF)*dx(1) - center(1)
           radius = sqrt(x**2 + y**2 + z**2)
-          index = int(radius / dr)
+          index = int(radius / dr(1))
           if (index .lt. 0 .or. index .gt. nr-1) then
             print *,'RADIUS ',radius
             print *,'BOGUS INDEX IN FILL_3D: ',index
@@ -133,7 +133,7 @@ contains
     integer         :: i,j,k
     integer         :: rr,klo,khi
 
-    rr = int( dz / dr + 1.d-12)
+    rr = int( dz / dr(1) + 1.d-12)
 
     w0_cell = ZERO
     do k = lo(3),hi(3)
@@ -172,7 +172,7 @@ contains
         do i = lo(1),hi(1)
           x = (dble(i)+HALF)*dx(1) - center(1)
           radius = sqrt(x**2 + y**2 + z**2)
-          index = int(radius / dr)
+          index = int(radius / dr(1))
           if (index .lt. 0 .or. index .gt. nr-1) then
             print *,'RADIUS ',radius
             print *,'BOGUS INDEX IN PUT_ON_CELLS: ',index
@@ -182,10 +182,10 @@ contains
             x = 1.0 / 0.0
             stop
           end if
-          rfac = (radius - dble(index)*dr) / dr
+          rfac = (radius - dble(index)*dr(1)) / dr(1)
           if (rfac .lt. 0.0 .or. rfac .gt. 1.0) then
             print *,'BAD RFAC ',rfac
-            print *,'RADIUS, INDEX*DR ',radius, dble(index)*dr
+            print *,'RADIUS, INDEX*DR ',radius, dble(index)*dr(1)
             x = 1.0 / 0.0
             stop
           end if

@@ -210,7 +210,7 @@ contains
 
       ! compute nsub such that we are always guaranteed to fill each of
       ! the base state radial bins
-      nsub = int(dx(1)/dr) + 1
+      nsub = int(dx(1)/dr(1)) + 1
       nr = size(phibar,dim=1)
 
       do k = lo(3),hi(3)
@@ -233,7 +233,7 @@ contains
                      xx = xmin + (dble(ii) + HALF)*dx(1)/nsub
 
                      radius = sqrt(xx**2 + yy**2 + zz**2)
-                     index = radius / dr 
+                     index = radius / dr(1) 
 
                      if (index .lt. 0 .or. index .gt. nr-1) then
                         print *,'RADIUS ',radius
@@ -244,7 +244,7 @@ contains
                         stop
                      end if
 
-                     vol = FOUR3RD*M_PI * dr * &
+                     vol = FOUR3RD*M_PI * dr(1) * &
                           (zl(index+1)**2 + zl(index+1)*zl(index) + zl(index)**2)
 
                      do n = comp,comp+ncomp-1

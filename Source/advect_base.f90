@@ -189,7 +189,7 @@ contains
       real (kind = dp_t), allocatable :: gam1_old(:)
       real (kind = dp_t), allocatable :: grav_cell(:)
 
-      dtdr = dt / dr
+      dtdr = dt / dr(1)
 
       ! nz is the size of a cell-centered quantity
       nz = size(p0_new,dim=1)
@@ -213,11 +213,11 @@ contains
          ! compute the force -- include the geometric source term that
          ! results from expanding out the spherical divergence
          do j = 0,nz-1
-            force(j) = -s0_old(j,n) * (vel(j+1) - vel(j)) / dr - &
+            force(j) = -s0_old(j,n) * (vel(j+1) - vel(j)) / dr(1) - &
                        2.0_dp_t*s0_old(j,n)*HALF*(vel(j) + vel(j+1))/z(j)
          end do
 
-         call mkflux_1d(s0_old(:,n),edge,vel,force,1,dr,dt)
+         call mkflux_1d(s0_old(:,n),edge,vel,force,1,dr(1),dt)
 
          do j = 0,nz-1
             s0_new(j,n) = s0_old(j,n) - &
@@ -248,7 +248,7 @@ contains
       ! Update p0 -- predictor
       do j = 0,nz-1
          divbetaw = one / (z(j)**2) * (zl(j+1)**2 * beta(j+1) * vel(j+1) - &
-                                       zl(j  )**2 * beta(j  ) * vel(j  ) ) / dr
+                                       zl(j  )**2 * beta(j  ) * vel(j  ) ) / dr(1)
          betahalf = div_coeff_old(j)
          factor = half * dt * gam1(j) * (Sbar_in(j) - divbetaw / betahalf)
          p0_new(j) = p0_old(j) * (one + factor ) / (one - factor)
@@ -292,7 +292,7 @@ contains
       ! Update p0 -- corrector
       do j = 0,nz-1
          divbetaw = one / (z(j)**2) * (zl(j+1)**2 * beta_nh(j+1) * vel(j+1) - &
-                                       zl(j  )**2 * beta_nh(j  ) * vel(j  ) ) / dr
+                                       zl(j  )**2 * beta_nh(j  ) * vel(j  ) ) / dr(1)
          betahalf = HALF*(div_coeff_old(j) + div_coeff_new(j))
          factor = half * dt * (Sbar_in(j) - divbetaw / betahalf)
          p0_new(j) = p0_old(j) * (one + factor * gam1_old(j)) / (one - factor * gam1(j))
@@ -305,7 +305,7 @@ contains
 
       do j = 0,nz-1
 
-         div_w0 = (vel(j+1) - vel(j)) / dr 
+         div_w0 = (vel(j+1) - vel(j)) / dr(1)
 
          force(j) = -s0_old(j,rhoh_comp) * div_w0 - &
               2.0_dp_t*s0_old(j,rhoh_comp)*HALF*(vel(j) + vel(j+1))/z(j)
@@ -319,7 +319,7 @@ contains
               (Sbar_in(j) - div_w0)
       end do
 
-      call mkflux_1d(s0_old(:,rhoh_comp),edge,vel,force,1,dr,dt)
+      call mkflux_1d(s0_old(:,rhoh_comp),edge,vel,force,1,dr(1),dt)
 
       do j = 0,nz-1
 

@@ -403,7 +403,7 @@ contains
     if (spdx > eps) dt_adv = min(dt_adv, dx(1)/spdx)
     if (spdy > eps) dt_adv = min(dt_adv, dx(2)/spdy)
     if (spdz > eps) dt_adv = min(dt_adv, dx(3)/spdz)
-    if (spdr > eps) dt_adv = min(dt_adv,    dr/spdr)
+    if (spdr > eps) dt_adv = min(dt_adv, dr(1)/spdr)
 
     dt_adv = dt_adv * cfl
     
@@ -434,7 +434,7 @@ contains
     ! divU constraint
     allocate(gp0(0:nr))
     do k = 1,nr-1
-       gp0(k) = (p0(k) - p0(k-1))/dr
+       gp0(k) = (p0(k) - p0(k-1))/dr(1)
        gam1_p_avg = HALF * (gam1(k)*p0(k) + gam1(k-1)*p0(k-1))
        gp0(k) = gp0(k) / gam1_p_avg
     end do

@@ -30,11 +30,11 @@ contains
     integer            :: j,nr
 
     nr = size(s0,dim=1)
-    r_top = dble(nr) * dr
+    r_top = dble(nr) * dr(1)
 
     r_sp = r_top
     do j = 0, nr-1
-       r = (dble(j)+HALF) * dr
+       r = (dble(j)+HALF) * dr(1)
        if (s0(j,rho_comp) < 10.d0*anelastic_cutoff) then
           r_sp = r
           exit
@@ -43,7 +43,7 @@ contains
 
       r_md = r_top
       do j = 0,nr-1
-         r = (dble(j)+HALF) * dr
+         r = (dble(j)+HALF) * dr(1)
          if (s0(j,rho_comp) < anelastic_cutoff) then
             r_md = r
             exit
