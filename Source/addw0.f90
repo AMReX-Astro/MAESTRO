@@ -47,7 +47,8 @@ contains
              w0p  => dataptr(w0_cart, i)
                lo =  lwb(get_box(w0_cart, i))
                hi =  upb(get_box(w0_cart, i))
-             call addw0_3d_sphr(ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),w0p(:,:,:,:),lo,hi,mult)
+             call addw0_3d_sphr(ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),w0p(:,:,:,:), &
+                                lo,hi,mult)
            end if
          end select
       end do
@@ -63,14 +64,11 @@ contains
       real(kind=dp_t), intent(in   ) :: dx(:)
 
       integer :: i,j
-      integer :: rr
-
-      rr = int( dx(2) / dr(1) + 1.d-12)
 
       do j = lo(2)  ,hi(2)
-      do i = lo(1)-1,hi(1)+1
-         vmac(i,j) = vmac(i,j) + mult * w0(rr*j)
-      end do
+         do i = lo(1)-1,hi(1)+1
+            vmac(i,j) = vmac(i,j) + mult * w0(j)
+         end do
       end do
 
       end subroutine addw0_2d
@@ -84,16 +82,13 @@ contains
       real(kind=dp_t), intent(in   ) :: dx(:)
 
       integer :: i,j,k
-      integer :: rr
-
-      rr = int( dx(3) / dr(1) + 1.d-12)
 
       do k = lo(3),hi(3)
-      do j = lo(2)-1,hi(2)+1
-      do i = lo(1)-1,hi(1)+1
-         wmac(i,j,k) = wmac(i,j,k) + mult * w0(rr*k)
-      end do
-      end do
+         do j = lo(2)-1,hi(2)+1
+            do i = lo(1)-1,hi(1)+1
+               wmac(i,j,k) = wmac(i,j,k) + mult * w0(k)
+            end do
+         end do
       end do
 
       end subroutine addw0_3d
