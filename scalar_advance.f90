@@ -28,13 +28,9 @@ module scalar_advance_module
 
 contains
 
-  subroutine scalar_advance(nlevs, mla, which_step, uold, sold, snew, thermal, &
-                            umac, w0, w0_cart_vec, eta, sedge, utrans, &
-                            ext_scal_force, normal, &
-                            s0_old, s0_new , &
-                            p0_old, p0_new, &
-                            dx, dt, the_bc_level, &
-                            verbose)
+  subroutine scalar_advance(nlevs,mla,which_step,uold,sold,snew,thermal,umac,w0, &
+                            w0_cart_vec,eta,sedge,utrans,ext_scal_force,normal, &
+                            s0_old,s0_new,p0_old,p0_new,dx,dt,the_bc_level,verbose)
  
     integer        , intent(in   ) :: nlevs
     type(ml_layout), intent(inout) :: mla
@@ -44,21 +40,17 @@ contains
     type(multifab) , intent(inout) :: snew(:)
     type(multifab) , intent(inout) :: thermal(:)
     type(multifab) , intent(inout) :: umac(:,:)
-
     real(kind=dp_t), intent(inout) :: w0(:,0:)
     type(multifab) , intent(in   ) :: w0_cart_vec(:)
     real(kind=dp_t), intent(inout) :: eta(0:,:)
-
     type(multifab) , intent(inout) :: sedge(:,:)
     type(multifab) , intent(inout) :: utrans(:,:)
     type(multifab) , intent(inout) :: ext_scal_force(:)
     type(multifab) , intent(in   ) :: normal(:)
-
     real(kind=dp_t), intent(in   ) :: s0_old(0:,:)
     real(kind=dp_t), intent(in   ) :: s0_new(0:,:)
     real(kind=dp_t), intent(in   ) :: p0_old(0:)
     real(kind=dp_t), intent(in   ) :: p0_new(0:)
-
     real(kind=dp_t), intent(in   ) :: dx(:,:),dt
     type(bc_level) , intent(in   ) :: the_bc_level(:)
     integer        , intent(in   ) :: verbose
@@ -71,37 +63,19 @@ contains
     real(kind=dp_t), allocatable :: s0_edge_old(:,:)
     real(kind=dp_t), allocatable :: s0_edge_new(:,:)
 
-    real(kind=dp_t), pointer :: uop(:,:,:,:)
-    real(kind=dp_t), pointer :: ump(:,:,:,:)
-    real(kind=dp_t), pointer :: vmp(:,:,:,:)
-    real(kind=dp_t), pointer :: wmp(:,:,:,:)
-    real(kind=dp_t), pointer :: utp(:,:,:,:)
-    real(kind=dp_t), pointer :: vtp(:,:,:,:)
-    real(kind=dp_t), pointer :: wtp(:,:,:,:)
-    real(kind=dp_t), pointer :: w0p(:,:,:,:)
-    real(kind=dp_t), pointer :: fp(:,:,:,:)
-    real(kind=dp_t), pointer :: dp(:,:,:,:)
-    real(kind=dp_t), pointer :: tp(:,:,:,:)
-    real(kind=dp_t), pointer :: np(:,:,:,:)
     real(kind=dp_t), pointer :: s0op(:,:,:,:)
     real(kind=dp_t), pointer :: s0np(:,:,:,:)
-
-    real(kind=dp_t), pointer :: sop(:,:,:,:)
-    real(kind=dp_t), pointer :: snp(:,:,:,:)
-    real(kind=dp_t), pointer :: sepx(:,:,:,:)
-    real(kind=dp_t), pointer :: sepy(:,:,:,:)
-    real(kind=dp_t), pointer :: sepz(:,:,:,:)
 
     real(dp_t) :: mult
     real(dp_t) :: smin,smax
 
     type(box) :: domain
 
-    integer :: velpred
     integer :: lo(uold(1)%dim),hi(uold(1)%dim)
-    integer :: i,comp,n,bc_comp,dm,ng_cell,nr
-    logical :: is_vel
     integer :: domlo(uold(1)%dim),domhi(uold(1)%dim)
+    integer :: velpred,i,comp,n,bc_comp,dm,ng_cell,nr
+
+    logical :: is_vel
     
     allocate(scal_force(nlevs))
     allocate(s0_old_cart(nlevs))
@@ -339,9 +313,6 @@ contains
 !     2) Update (rho h)' with conservative differencing.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-       comp = rhoh_comp
-       bc_comp = dm+comp
-    
        ! Define s0_old_cart and s0_new_cart
        if (spherical .eq. 1) then
           do i = 1, sold(n)%nboxes
@@ -350,9 +321,8 @@ contains
              s0np => dataptr(s0_new_cart(n), i)
              lo =  lwb(get_box(s0_old_cart(n), i))
              hi =  upb(get_box(s0_old_cart(n), i))
-             comp = rhoh_comp
-             call fill_3d_data(s0op(:,:,:,comp),s0_old(:,comp),lo,hi,dx(n,:),1)
-             call fill_3d_data(s0np(:,:,:,comp),s0_new(:,comp),lo,hi,dx(n,:),1)
+             call fill_3d_data(s0op(:,:,:,rhoh_comp),s0_old(:,rhoh_comp),lo,hi,dx(n,:),1)
+             call fill_3d_data(s0np(:,:,:,rhoh_comp),s0_new(:,rhoh_comp),lo,hi,dx(n,:),1)
           end do
           call multifab_fill_boundary_c(s0_old_cart(n),rhoh_comp,1)
           call multifab_fill_boundary_c(s0_new_cart(n),rhoh_comp,1)
