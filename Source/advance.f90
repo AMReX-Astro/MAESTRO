@@ -307,8 +307,11 @@ contains
     end if
     
     if (evolve_base_state) then
-       call advect_base(w0(1,:),Sbar(1,:,1),p0_1(1,:),p0_2(1,:),s0_1(1,:,:),s0_2(1,:,:), &
-                        gam1(1,:),div_coeff_new(1,:),eta(1,:,:),dx(1,dm),dt,anelastic_cutoff)
+       do n=1,nlevs
+          call advect_base(n,w0(n,:),Sbar(n,:,1),p0_1(n,:),p0_2(n,:),s0_1(n,:,:), &
+                           s0_2(n,:,:),gam1(n,:),div_coeff_new(n,:),eta(n,:,:),dx(n,dm), &
+                           dt,anelastic_cutoff)
+       enddo
     else
        p0_2(1,:) = p0_1(1,:)
        s0_2(1,:,:) = s0_1(1,:,:)
@@ -488,9 +491,11 @@ contains
           write(6,*) '            : scalar_advance >>>'
        end if
        if (evolve_base_state) then
-          call advect_base(w0(1,:),Sbar(1,:,1),p0_1(1,:),p0_2(1,:),s0_1(1,:,:),s0_2(1,:,:), &
-                           gam1(1,:),div_coeff_nph(1,:),eta(1,:,:),dx(1,dm),dt, &
-                           anelastic_cutoff)
+          do n=1,nlevs
+             call advect_base(n,w0(n,:),Sbar(n,:,1),p0_1(n,:),p0_2(n,:),s0_1(n,:,:), &
+                              s0_2(n,:,:),gam1(n,:),div_coeff_nph(n,:),eta(n,:,:), &
+                              dx(n,dm),dt,anelastic_cutoff)
+          enddo
        else
           p0_2(1,:) = p0_1(1,:)
           s0_2(1,:,:) = s0_1(1,:,:)

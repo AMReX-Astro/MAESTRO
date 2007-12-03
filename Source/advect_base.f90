@@ -19,11 +19,12 @@ module advect_base_module
 
 contains
 
-   subroutine advect_base(vel,Sbar_in,p0_old,p0_new, &
+   subroutine advect_base(n,vel,Sbar_in,p0_old,p0_new, &
                           s0_old,s0_new,&
                           gam1,div_coeff,eta, &
                           dz,dt,anelastic_cutoff)
 
+      integer        , intent(in   ) :: n
       real(kind=dp_t), intent(in   ) :: vel(0:)
       real(kind=dp_t), intent(in   ) :: Sbar_in(0:)
       real(kind=dp_t), intent(in   ) :: p0_old(0:), s0_old(0:,:)
@@ -40,7 +41,7 @@ contains
 
       else
 
-        call advect_base_state_spherical(vel,Sbar_in,p0_old,p0_new,s0_old,s0_new,&
+        call advect_base_state_spherical(n,vel,Sbar_in,p0_old,p0_new,s0_old,s0_new,&
                                          gam1,div_coeff,&
                                          dt,anelastic_cutoff)
       end if
@@ -59,7 +60,7 @@ contains
       real(kind=dp_t), intent(in   ) :: dz,dt
 
 !     Local variables
-      integer :: j, n, nz
+      integer :: j,comp,nz
       real (kind = dp_t) :: temp_a, temp_b
 
       real (kind = dp_t), allocatable :: force(:)
@@ -85,21 +86,21 @@ contains
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     UPDATE RHOX0
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      do n = spec_comp,spec_comp+nspec-1
+      do comp = spec_comp,spec_comp+nspec-1
          do j = 0,nz-1
-            force(j) = -s0_old(j,n) * (vel(j+1) - vel(j)) / dz
+            force(j) = -s0_old(j,comp) * (vel(j+1) - vel(j)) / dz
          end do
 
-         call mkflux_1d(s0_old(:,n),edge,vel,force,1,dz,dt)
+         call mkflux_1d(s0_old(:,comp),edge,vel,force,1,dz,dt)
 
          do j = 0,nz-1
-            s0_new(j,n) = s0_old(j,n) &
+            s0_new(j,comp) = s0_old(j,comp) &
                - dt / dz * (edge(j+1) * vel(j+1) - edge(j) * vel(j)) &
-               - dt / dz * (eta(j+1,n) - eta(j,n))
+               - dt / dz * (eta(j+1,comp) - eta(j,comp))
             
-            if (n.eq.spec_comp) then
+            if (comp.eq.spec_comp) then
                temp_a = - dt / dz * (edge(j+1) * vel(j+1) - edge(j) * vel(j)) 
-               temp_b = - dt / dz * (eta(j+1,n) - eta(j,n))
+               temp_b = - dt / dz * (eta(j+1,comp) - eta(j,comp))
                write(88,*) (dble(j)+HALF)*dz,  temp_a, temp_b
             end if
          end do
@@ -111,8 +112,8 @@ contains
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       do j = 0,nz-1
         s0_new(j,rho_comp) =  s0_old(j,rho_comp)
-        do n = spec_comp,spec_comp+nspec-1
-          s0_new(j,rho_comp) =  s0_new(j,rho_comp) + (s0_new(j,n)-s0_old(j,n))
+        do comp = spec_comp,spec_comp+nspec-1
+          s0_new(j,rho_comp) =  s0_new(j,rho_comp) + (s0_new(j,comp)-s0_old(j,comp))
         end do
       end do
 
@@ -165,10 +166,11 @@ contains
 
    end subroutine advect_base_state_planar
 
-   subroutine advect_base_state_spherical (vel,Sbar_in,p0_old,p0_new,s0_old,s0_new,&
-                                           gam1,div_coeff_old,& 
-                                           dt,anelastic_cutoff)
+   subroutine advect_base_state_spherical(n,vel,Sbar_in,p0_old,p0_new,s0_old,s0_new,&
+                                          gam1,div_coeff_old,& 
+                                          dt,anelastic_cutoff)
 
+      integer        , intent(in   ) :: n
       real(kind=dp_t), intent(in   ) :: vel(0:),Sbar_in(0:)
       real(kind=dp_t), intent(in   ) :: p0_old(0:), s0_old(0:,:)
       real(kind=dp_t), intent(  out) :: p0_new(0:), s0_new(0:,:)
@@ -177,7 +179,7 @@ contains
       real(kind=dp_t), intent(in   ) :: dt,anelastic_cutoff
 
 !     Local variables
-      integer :: j, n, nz
+      integer :: j,nz,comp
       real(kind=dp_t) :: dtdr,divbetaw,betahalf,factor
       real(kind=dp_t) :: div_w0
 
@@ -189,7 +191,7 @@ contains
       real (kind = dp_t), allocatable :: gam1_old(:)
       real (kind = dp_t), allocatable :: grav_cell(:)
 
-      dtdr = dt / dr(1)
+      dtdr = dt / dr(n)
 
       ! nz is the size of a cell-centered quantity
       nz = size(p0_new,dim=1)
@@ -208,19 +210,19 @@ contains
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     UPDATE RHOX0
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      do n = spec_comp,spec_comp+nspec-1
+      do comp = spec_comp,spec_comp+nspec-1
 
          ! compute the force -- include the geometric source term that
          ! results from expanding out the spherical divergence
          do j = 0,nz-1
-            force(j) = -s0_old(j,n) * (vel(j+1) - vel(j)) / dr(1) - &
-                       2.0_dp_t*s0_old(j,n)*HALF*(vel(j) + vel(j+1))/z(j)
+            force(j) = -s0_old(j,comp) * (vel(j+1) - vel(j)) / dr(n) - &
+                       2.0_dp_t*s0_old(j,comp)*HALF*(vel(j) + vel(j+1))/z(j)
          end do
 
-         call mkflux_1d(s0_old(:,n),edge,vel,force,1,dr(1),dt)
+         call mkflux_1d(s0_old(:,comp),edge,vel,force,1,dr(n),dt)
 
          do j = 0,nz-1
-            s0_new(j,n) = s0_old(j,n) - &
+            s0_new(j,comp) = s0_old(j,comp) - &
                  dtdr / z(j)**2 * ( zl(j+1)**2 * edge(j+1) * vel(j+1) &
                                    -zl(j  )**2 * edge(j  ) * vel(j  ))
          end do
@@ -233,8 +235,8 @@ contains
 
       do j = 0,nz-1
         s0_new(j,rho_comp) =  s0_old(j,rho_comp)
-        do n = spec_comp,spec_comp+nspec-1
-          s0_new(j,rho_comp) =  s0_new(j,rho_comp) + (s0_new(j,n)-s0_old(j,n))
+        do comp = spec_comp,spec_comp+nspec-1
+          s0_new(j,rho_comp) =  s0_new(j,rho_comp) + (s0_new(j,comp)-s0_old(j,comp))
         end do
       end do
 
@@ -248,7 +250,7 @@ contains
       ! Update p0 -- predictor
       do j = 0,nz-1
          divbetaw = one / (z(j)**2) * (zl(j+1)**2 * beta(j+1) * vel(j+1) - &
-                                       zl(j  )**2 * beta(j  ) * vel(j  ) ) / dr(1)
+                                       zl(j  )**2 * beta(j  ) * vel(j  ) ) / dr(n)
          betahalf = div_coeff_old(j)
          factor = half * dt * gam1(j) * (Sbar_in(j) - divbetaw / betahalf)
          p0_new(j) = p0_old(j) * (one + factor ) / (one - factor)
@@ -292,7 +294,7 @@ contains
       ! Update p0 -- corrector
       do j = 0,nz-1
          divbetaw = one / (z(j)**2) * (zl(j+1)**2 * beta_nh(j+1) * vel(j+1) - &
-                                       zl(j  )**2 * beta_nh(j  ) * vel(j  ) ) / dr(1)
+                                       zl(j  )**2 * beta_nh(j  ) * vel(j  ) ) / dr(n)
          betahalf = HALF*(div_coeff_old(j) + div_coeff_new(j))
          factor = half * dt * (Sbar_in(j) - divbetaw / betahalf)
          p0_new(j) = p0_old(j) * (one + factor * gam1_old(j)) / (one - factor * gam1(j))
@@ -305,7 +307,7 @@ contains
 
       do j = 0,nz-1
 
-         div_w0 = (vel(j+1) - vel(j)) / dr(1)
+         div_w0 = (vel(j+1) - vel(j)) / dr(n)
 
          force(j) = -s0_old(j,rhoh_comp) * div_w0 - &
               2.0_dp_t*s0_old(j,rhoh_comp)*HALF*(vel(j) + vel(j+1))/z(j)
@@ -319,7 +321,7 @@ contains
               (Sbar_in(j) - div_w0)
       end do
 
-      call mkflux_1d(s0_old(:,rhoh_comp),edge,vel,force,1,dr(1),dt)
+      call mkflux_1d(s0_old(:,rhoh_comp),edge,vel,force,1,dr(n),dt)
 
       do j = 0,nz-1
 
