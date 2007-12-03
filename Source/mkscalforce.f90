@@ -13,8 +13,8 @@ module mkscalforce_module
   implicit none
 
   private
-  public :: mkrhohforce, mkrhohforce_2d, mkrhohforce_3d, mkrhohforce_3d_sphr
-  public :: mktempforce, mktempforce_2d, mktempforce_3d, mktempforce_3d_sphr
+  public :: mkrhohforce
+  public :: mktempforce
 contains
 
   subroutine mkrhohforce(force,comp,umac,p0_old,p0_new,normal,dx)
