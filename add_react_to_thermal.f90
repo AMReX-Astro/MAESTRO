@@ -32,28 +32,29 @@ contains
     type(bc_level) , intent(in   ) :: the_bc_level(:)
     type(ml_layout), intent(inout) :: mla
 
+    ! local
     real(kind=dp_t), pointer :: sp(:,:,:,:)
     real(kind=dp_t), pointer :: tp(:,:,:,:)
-    real(kind=dp_t), pointer :: rhowp(:,:,:,:)
+    real(kind=dp_t), pointer :: rwp(:,:,:,:)
     integer                  :: lo(thermal(1)%dim),hi(thermal(1)%dim)
     integer                  :: dm,i,n
     type(box)                :: fine_domain
     
     dm = thermal(1)%dim
     
-    do n = 1, nlevs
-       do i = 1,thermal(n)%nboxes
-          if ( multifab_remote(thermal(n), i) ) cycle
-          tp => dataptr(thermal(n),i)
-          rhowp => dataptr(rho_omegadot(n),i)
-          sp => dataptr(s(n),i)
-          lo =  lwb(get_box(thermal(n), i))
-          hi =  upb(get_box(thermal(n), i))
+    do n=1,nlevs
+       do i=1,thermal(n)%nboxes
+          if ( multifab_remote(thermal(n),i) ) cycle
+          tp  => dataptr(thermal(n),i)
+          rwp => dataptr(rho_omegadot(n),i)
+          sp  => dataptr(s(n),i)
+          lo = lwb(get_box(thermal(n), i))
+          hi = upb(get_box(thermal(n), i))
           select case (dm)
           case (2)
-             call add_react_to_thermal_2d(lo,hi,tp(:,:,1,1),rhowp(:,:,1,:),sp(:,:,1,:))
+             call add_react_to_thermal_2d(lo,hi,tp(:,:,1,1),rwp(:,:,1,:),sp(:,:,1,:))
           case (3)
-             call add_react_to_thermal_3d(lo,hi,tp(:,:,:,1),rhowp(:,:,:,:),sp(:,:,:,:))
+             call add_react_to_thermal_3d(lo,hi,tp(:,:,:,1),rwp(:,:,:,:),sp(:,:,:,:))
           end select
        end do
 
@@ -86,13 +87,13 @@ contains
     
     implicit none
     
-    integer         , intent(in   ) :: lo(:), hi(:)
+    integer         , intent(in   ) :: lo(:),hi(:)
     real (kind=dp_t), intent(inout) :: thermal(lo(1)-1:,lo(2)-1:)
     real (kind=dp_t), intent(in   ) :: rho_omegadot(lo(1):,lo(2):,:)
     real (kind=dp_t), intent(in   ) :: s(lo(1)-3:,lo(2)-3:,:)
     
     ! Local variables
-    integer :: i, j, n
+    integer         :: i,j,n
     real(kind=dp_t) :: react_term
     
     do_diag = .false.
@@ -132,13 +133,13 @@ contains
     
     implicit none
     
-    integer         , intent(in   ) :: lo(:), hi(:)
+    integer         , intent(in   ) :: lo(:),hi(:)
     real (kind=dp_t), intent(inout) :: thermal(lo(1):,lo(2):,lo(3):)
     real (kind=dp_t), intent(in   ) :: rho_omegadot(lo(1):,lo(2):,lo(3):,:)
     real (kind=dp_t), intent(in   ) :: s(lo(1)-3:,lo(2)-3:,lo(3):,:)
     
     ! Local variables
-    integer :: i, j, k, n
+    integer :: i,j,k,n
     real(kind=dp_t) :: react_term
     
     do_diag = .false.
