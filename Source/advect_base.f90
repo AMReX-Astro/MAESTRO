@@ -19,35 +19,35 @@ module advect_base_module
 
 contains
 
-   subroutine advect_base(n,vel,Sbar_in,p0_old,p0_new, &
-                          s0_old,s0_new,&
-                          gam1,div_coeff,eta, &
-                          dz,dt,anelastic_cutoff)
+  subroutine advect_base(nlevs,vel,Sbar_in,p0_old,p0_new,s0_old,s0_new,gam1,div_coeff,eta, &
+                         dz,dt,anelastic_cutoff)
 
-      integer        , intent(in   ) :: n
-      real(kind=dp_t), intent(in   ) :: vel(0:)
-      real(kind=dp_t), intent(in   ) :: Sbar_in(0:)
-      real(kind=dp_t), intent(in   ) :: p0_old(0:), s0_old(0:,:)
-      real(kind=dp_t), intent(  out) :: p0_new(0:), s0_new(0:,:)
-      real(kind=dp_t), intent(inout) :: gam1(0:)
-      real(kind=dp_t), intent(in   ) :: div_coeff(0:)
-      real(kind=dp_t), intent(in   ) :: eta(0:,:)
-      real(kind=dp_t), intent(in   ) :: dz,dt,anelastic_cutoff
-
-      if (spherical .eq. 0) then
-
-        call advect_base_state_planar(vel,p0_old,p0_new,s0_old,s0_new,&
-                                      gam1,eta,dz,dt)
-
-      else
-
-        call advect_base_state_spherical(n,vel,Sbar_in,p0_old,p0_new,s0_old,s0_new,&
-                                         gam1,div_coeff,&
-                                         dt,anelastic_cutoff)
-      end if
-
-
-   end subroutine advect_base
+    integer        , intent(in   ) :: nlevs
+    real(kind=dp_t), intent(in   ) :: vel(:,0:)
+    real(kind=dp_t), intent(in   ) :: Sbar_in(:,0:,:)
+    real(kind=dp_t), intent(in   ) :: p0_old(:,0:), s0_old(:,0:,:)
+    real(kind=dp_t), intent(  out) :: p0_new(:,0:), s0_new(:,0:,:)
+    real(kind=dp_t), intent(inout) :: gam1(:,0:)
+    real(kind=dp_t), intent(in   ) :: div_coeff(:,0:)
+    real(kind=dp_t), intent(in   ) :: eta(:,0:,:)
+    real(kind=dp_t), intent(in   ) :: dz(:)
+    real(kind=dp_t), intent(in   ) :: dt,anelastic_cutoff
+    
+    ! local
+    integer :: n
+    
+    do n=1,nlevs
+       if (spherical .eq. 0) then
+          call advect_base_state_planar(vel(n,:),p0_old(n,:),p0_new(n,:),s0_old(n,:,:), &
+                                        s0_new(n,:,:),gam1(n,:),eta(n,:,:),dz(n),dt)
+       else
+          call advect_base_state_spherical(n,vel(n,:),Sbar_in(n,:,1),p0_old(n,:), &
+                                           p0_new(n,:),s0_old(n,:,:),s0_new(n,:,:), &
+                                           gam1(n,:),div_coeff(n,:),dt,anelastic_cutoff)
+       end if
+    enddo
+       
+  end subroutine advect_base
 
    subroutine advect_base_state_planar (vel,p0_old,p0_new,s0_old,s0_new,&
                                         gam1,eta,dz,dt)

@@ -307,11 +307,8 @@ contains
     end if
     
     if (evolve_base_state) then
-       do n=1,nlevs
-          call advect_base(n,w0(n,:),Sbar(n,:,1),p0_1(n,:),p0_2(n,:),s0_1(n,:,:), &
-                           s0_2(n,:,:),gam1(n,:),div_coeff_new(n,:),eta(n,:,:),dx(n,dm), &
-                           dt,anelastic_cutoff)
-       enddo
+       call advect_base(nlevs,w0,Sbar,p0_1,p0_2,s0_1,s0_2,gam1,div_coeff_new,eta, &
+                        dx(:,dm),dt,anelastic_cutoff)
     else
        p0_2 = p0_1
        s0_2 = s0_1
@@ -489,11 +486,8 @@ contains
           write(6,*) '            : scalar_advance >>>'
        end if
        if (evolve_base_state) then
-          do n=1,nlevs
-             call advect_base(n,w0(n,:),Sbar(n,:,1),p0_1(n,:),p0_2(n,:),s0_1(n,:,:), &
-                              s0_2(n,:,:),gam1(n,:),div_coeff_nph(n,:),eta(n,:,:), &
-                              dx(n,dm),dt,anelastic_cutoff)
-          enddo
+          call advect_base(nlevs,w0,Sbar,p0_1,p0_2,s0_1,s0_2,gam1,div_coeff_nph,eta, &
+                           dx(:,dm),dt,anelastic_cutoff)
        else
           p0_2 = p0_1
           s0_2 = s0_1
