@@ -32,11 +32,11 @@ contains
     real(kind=dp_t), intent(in   ) :: dt,dtold
     integer        , intent(in   ) :: verbose
 
-    integer         :: j,nz,n
+    integer         :: j,nr,n
     real(kind=dp_t) :: max_vel
 
-    ! nz is the dimension of a cell-centered quantity
-    nz = size(vel,dim=2)-1
+    ! nr is the dimension of a cell-centered quantity
+    nr = size(vel,dim=2)-1
 
     do n=1,nlevs
        
@@ -50,7 +50,7 @@ contains
        endif
 
        max_vel = zero
-       do j = 0,nz
+       do j = 0,nr
           max_vel = max(max_vel, abs(vel(n,j)))
        end do
 
@@ -71,7 +71,7 @@ contains
     real(kind=dp_t), intent(in   ) :: dt,dtold
 
 !     Local variables
-    integer         :: j,nz
+    integer         :: j,nr
     real(kind=dp_t), allocatable :: vel_old_cen(:)
     real(kind=dp_t), allocatable :: vel_new_cen(:)
     real(kind=dp_t), allocatable ::   force(:)
@@ -79,18 +79,18 @@ contains
 
     real(kind=dp_t) :: eta_avg
 
-    ! nz is the dimension of a cell-centered quantity
-    nz = size(vel,dim=1)-1
+    ! nr is the dimension of a cell-centered quantity
+    nr = size(vel,dim=1)-1
 
     ! edge-centered
-    allocate(edge(0:nz))
+    allocate(edge(0:nr))
 
     ! cell-centered
-    allocate(vel_old_cen(0:nz-1),vel_new_cen(0:nz-1),force(0:nz-1))
+    allocate(vel_old_cen(0:nr-1),vel_new_cen(0:nr-1),force(0:nr-1))
 
     ! Initialize new velocity to zero.
     vel(0) = ZERO
-    do j = 1,nz
+    do j = 1,nr
        eta_avg = HALF * (eta(j,rho_comp)+eta(j-1,rho_comp))
        vel(j) = vel(j-1) + Sbar_in(j-1) * dr(1) - &
                          ( eta_avg * abs(grav_const) / (gam1(j-1)*p0(j-1)) ) * dr(1)
@@ -98,7 +98,7 @@ contains
 
     ! Compute the 1/rho0 grad pi0 term.
 
-    do j = 0,nz-1
+    do j = 0,nr-1
        vel_old_cen(j) = HALF * (vel_old(j) + vel_old(j+1))
        vel_new_cen(j) = HALF * (vel    (j) + vel    (j+1))
     end do
@@ -106,7 +106,7 @@ contains
     force = ZERO
     call mkflux_1d(vel_old_cen,edge,vel_old,force,1,dr(1),dt)
 
-    do j = 0,nz-1
+    do j = 0,nr-1
        f(j) = (vel_new_cen(j)-vel_old_cen(j)) / (HALF*(dt+dtold)) + &
             HALF*(vel_old_cen(j)+vel_new_cen(j)) * (edge(j+1)-edge(j)) / dr(1)
     end do
@@ -125,19 +125,19 @@ contains
     real(kind=dp_t), intent(in   ) :: Sbar_in(0:)
 
 !     Local variables
-    integer         :: j, nz
+    integer         :: j, nr
     real(kind=dp_t), allocatable :: c(:),d(:),e(:),u(:),rhs(:)
     real(kind=dp_t), allocatable :: m(:),grav_edge(:),rho0_edge(:)
     
-    ! nz is the dimension of an cell-centered quantity
-    nz = size(vel,dim=1)-1
+    ! nr is the dimension of an cell-centered quantity
+    nr = size(vel,dim=1)-1
 
     ! Cell-centered
-    allocate(m(0:nz-1))
+    allocate(m(0:nr-1))
 
     ! Edge-centered
-    allocate(c(0:nz),d(0:nz),e(0:nz),rhs(0:nz),u(0:nz))
-    allocate(grav_edge(0:nz),rho0_edge(0:nz))
+    allocate(c(0:nr),d(0:nr),e(0:nr),rhs(0:nr),u(0:nr))
+    allocate(grav_edge(0:nr),rho0_edge(0:nr))
 
     c(:)   = ZERO
     d(:)   = ZERO
@@ -147,26 +147,26 @@ contains
    
     call make_grav_edge(grav_edge,rho0)
 
-    do j = 1,nz
+    do j = 1,nr
        c(j) = gam1(j-1) * p0(j-1) * zl(j-1)**2 / z(j-1)**2
        c(j) = c(j) / dr(1)**2
     end do
 
     call cell_to_edge(n,rho0,rho0_edge)
 
-    do j = 1,nz-1
+    do j = 1,nr-1
 
        d(j) = -( gam1(j-1) * p0(j-1) / z(j-1)**2 &
                 +gam1(j  ) * p0(j  ) / z(j  )**2 ) * (zl(j)**2/dr(1)**2) &
                 - four * rho0_edge(j) * grav_edge(j) / zl(j)
     end do
 
-    do j = 1,nz-1
+    do j = 1,nr-1
        rhs(j) = ( gam1(j  )*p0(j  )*Sbar_in(j) - gam1(j-1)*p0(j-1)*Sbar_in(j-1) ) 
        rhs(j) = rhs(j) / dr(1)
     end do
 
-    do j = 0,nz-1
+    do j = 0,nr-1
        e(j) = gam1(j) * p0(j) * zl(j+1)**2 / z(j)**2
        e(j) = e(j) / dr(1)**2
     end do
@@ -177,14 +177,14 @@ contains
      rhs(0) = zero
 
     ! Upper boundary
-       c(nz) = zero
-       d(nz) = one
-     rhs(nz) = zero
+       c(nr) = zero
+       d(nr) = one
+     rhs(nr) = zero
 
     ! Call the tridiagonal solver
-    call tridiag(c, d, e, rhs, u, nz+1)
+    call tridiag(c, d, e, rhs, u, nr+1)
 
-    do j = 0,nz
+    do j = 0,nr
        vel(j) = u(j)
     end do
 

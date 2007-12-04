@@ -49,8 +49,7 @@ contains
        
   end subroutine advect_base
 
-   subroutine advect_base_state_planar (vel,p0_old,p0_new,s0_old,s0_new,&
-                                        gam1,eta,dz,dt)
+   subroutine advect_base_state_planar(vel,p0_old,p0_new,s0_old,s0_new,gam1,eta,dz,dt)
 
       real(kind=dp_t), intent(in   ) :: vel(0:)
       real(kind=dp_t), intent(in   ) :: p0_old(0:), s0_old(0:,:)
@@ -60,24 +59,24 @@ contains
       real(kind=dp_t), intent(in   ) :: dz,dt
 
 !     Local variables
-      integer :: j,comp,nz
+      integer :: j,comp,nr
       real (kind = dp_t) :: temp_a, temp_b
 
       real (kind = dp_t), allocatable :: force(:)
       real (kind = dp_t), allocatable :: edge(:)
     
-      ! nz is the size of a cell-centered quantity
-      nz = size(p0_new,dim=1)
+      ! nr is the size of a cell-centered quantity
+      nr = size(p0_new,dim=1)
 
-      allocate(    force(0:nz-1))
-      allocate(     edge(0:nz))
+      allocate(    force(0:nr-1))
+      allocate(     edge(0:nr))
 
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     UPDATE P0
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       force = ZERO
       call mkflux_1d(p0_old,edge,vel,force,1,dz,dt)
-      do j = 0,nz-1
+      do j = 0,nr-1
         p0_new(j) = p0_old(j) &
            - dt / dz * HALF * (vel(j) + vel(j+1)) * (edge(j+1) - edge(j)) &
            + HALF * dt * (eta(j,rho_comp)+eta(j+1,rho_comp))*abs(grav_const)
@@ -87,13 +86,13 @@ contains
 !     UPDATE RHOX0
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       do comp = spec_comp,spec_comp+nspec-1
-         do j = 0,nz-1
+         do j = 0,nr-1
             force(j) = -s0_old(j,comp) * (vel(j+1) - vel(j)) / dz
          end do
 
          call mkflux_1d(s0_old(:,comp),edge,vel,force,1,dz,dt)
 
-         do j = 0,nz-1
+         do j = 0,nr-1
             s0_new(j,comp) = s0_old(j,comp) &
                - dt / dz * (edge(j+1) * vel(j+1) - edge(j) * vel(j)) &
                - dt / dz * (eta(j+1,comp) - eta(j,comp))
@@ -110,7 +109,7 @@ contains
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     UPDATE RHO0 FROM RHOX0
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      do j = 0,nz-1
+      do j = 0,nr-1
         s0_new(j,rho_comp) =  s0_old(j,rho_comp)
         do comp = spec_comp,spec_comp+nspec-1
           s0_new(j,rho_comp) =  s0_new(j,rho_comp) + (s0_new(j,comp)-s0_old(j,comp))
@@ -121,13 +120,13 @@ contains
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     UPDATE RHOH0
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      do j = 0,nz-1
+      do j = 0,nr-1
          force(j) = -s0_old(j,rhoh_comp) * (vel(j+1) - vel(j)) / dz
       end do
 
       call mkflux_1d(s0_old(:,rhoh_comp),edge,vel,force,1,dz,dt)
 
-      do j = 0,nz-1
+      do j = 0,nr-1
          s0_new(j,rhoh_comp) = s0_old(j,rhoh_comp) &
            - dt / dz * (edge(j+1) * vel(j+1) - edge(j) * vel(j)) &
            + HALF * dt * (eta(j,rho_comp)+eta(j+1,rho_comp))*abs(grav_const) &
@@ -138,7 +137,7 @@ contains
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     MAKE TEMP0 AND GAM1 FROM P0 AND RHO0
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      do j = 0,nz-1
+      do j = 0,nr-1
 
          den_eos(1)  = s0_new(j,rho_comp)
          temp_eos(1) = s0_old(j,temp_comp)
@@ -166,9 +165,8 @@ contains
 
    end subroutine advect_base_state_planar
 
-   subroutine advect_base_state_spherical(n,vel,Sbar_in,p0_old,p0_new,s0_old,s0_new,&
-                                          gam1,div_coeff_old,& 
-                                          dt,anelastic_cutoff)
+   subroutine advect_base_state_spherical(n,vel,Sbar_in,p0_old,p0_new,s0_old,s0_new,gam1, &
+                                          div_coeff_old,dt,anelastic_cutoff)
 
       integer        , intent(in   ) :: n
       real(kind=dp_t), intent(in   ) :: vel(0:),Sbar_in(0:)
@@ -179,7 +177,7 @@ contains
       real(kind=dp_t), intent(in   ) :: dt,anelastic_cutoff
 
 !     Local variables
-      integer :: j,nz,comp
+      integer :: j,nr,comp
       real(kind=dp_t) :: dtdr,divbetaw,betahalf,factor
       real(kind=dp_t) :: div_w0
 
@@ -193,19 +191,19 @@ contains
 
       dtdr = dt / dr(n)
 
-      ! nz is the size of a cell-centered quantity
-      nz = size(p0_new,dim=1)
+      ! nr is the size of a cell-centered quantity
+      nr = size(p0_new,dim=1)
 
       ! Cell-centered
-      allocate(force(0:nz-1))
-      allocate(eta(0:nz-1))
-      allocate(gam1_old(0:nz-1))
-      allocate(grav_cell(0:nz-1))
-      allocate(div_coeff_new(0:nz-1))
+      allocate(force(0:nr-1))
+      allocate(eta(0:nr-1))
+      allocate(gam1_old(0:nr-1))
+      allocate(grav_cell(0:nr-1))
+      allocate(div_coeff_new(0:nr-1))
 
       ! Edge-centered
-      allocate(edge(0:nz))
-      allocate(beta(0:nz),beta_new(0:nz),beta_nh(0:nz))
+      allocate(edge(0:nr))
+      allocate(beta(0:nr),beta_new(0:nr),beta_nh(0:nr))
 
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     UPDATE RHOX0
@@ -214,14 +212,14 @@ contains
 
          ! compute the force -- include the geometric source term that
          ! results from expanding out the spherical divergence
-         do j = 0,nz-1
+         do j = 0,nr-1
             force(j) = -s0_old(j,comp) * (vel(j+1) - vel(j)) / dr(n) - &
                        2.0_dp_t*s0_old(j,comp)*HALF*(vel(j) + vel(j+1))/z(j)
          end do
 
          call mkflux_1d(s0_old(:,comp),edge,vel,force,1,dr(n),dt)
 
-         do j = 0,nz-1
+         do j = 0,nr-1
             s0_new(j,comp) = s0_old(j,comp) - &
                  dtdr / z(j)**2 * ( zl(j+1)**2 * edge(j+1) * vel(j+1) &
                                    -zl(j  )**2 * edge(j  ) * vel(j  ))
@@ -233,7 +231,7 @@ contains
 !     UPDATE RHO0 FROM RHOX0
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      do j = 0,nz-1
+      do j = 0,nr-1
         s0_new(j,rho_comp) =  s0_old(j,rho_comp)
         do comp = spec_comp,spec_comp+nspec-1
           s0_new(j,rho_comp) =  s0_new(j,rho_comp) + (s0_new(j,comp)-s0_old(j,comp))
@@ -248,7 +246,7 @@ contains
       call cell_to_edge(n,div_coeff_old,beta)
  
       ! Update p0 -- predictor
-      do j = 0,nz-1
+      do j = 0,nr-1
          divbetaw = one / (z(j)**2) * (zl(j+1)**2 * beta(j+1) * vel(j+1) - &
                                        zl(j  )**2 * beta(j  ) * vel(j  ) ) / dr(n)
          betahalf = div_coeff_old(j)
@@ -257,7 +255,7 @@ contains
  
       end do
  
-      do j = 0,nz-1
+      do j = 0,nr-1
          ! (rho, p) --> T,h, etc
 
          den_eos(1)  = s0_new(j,rho_comp)
@@ -293,7 +291,7 @@ contains
       beta_nh = HALF*(beta + beta_new)
  
       ! Update p0 -- corrector
-      do j = 0,nz-1
+      do j = 0,nr-1
          divbetaw = one / (z(j)**2) * (zl(j+1)**2 * beta_nh(j+1) * vel(j+1) - &
                                        zl(j  )**2 * beta_nh(j  ) * vel(j  ) ) / dr(n)
          betahalf = HALF*(div_coeff_old(j) + div_coeff_new(j))
@@ -306,7 +304,7 @@ contains
 !     UPDATE RHOH0
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-      do j = 0,nz-1
+      do j = 0,nr-1
 
          div_w0 = (vel(j+1) - vel(j)) / dr(n)
 
@@ -324,7 +322,7 @@ contains
 
       call mkflux_1d(s0_old(:,rhoh_comp),edge,vel,force,1,dr(n),dt)
 
-      do j = 0,nz-1
+      do j = 0,nr-1
 
          s0_new(j,rhoh_comp) = s0_old(j,rhoh_comp) - &
               dtdr / z(j)**2 * ( zl(j+1)**2 * edge(j+1) * vel(j+1) &
@@ -338,7 +336,7 @@ contains
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     MAKE TEMP0 AND GAM1 FROM P0 AND RHO0
 !     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      do j = 0,nz-1
+      do j = 0,nr-1
 
          den_eos(1)  = s0_new(j,rho_comp)
          temp_eos(1) = s0_new(j,temp_comp)

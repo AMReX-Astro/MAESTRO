@@ -27,10 +27,10 @@ contains
     real(kind=dp_t), intent(in   ) :: rho0(0:)
 
     ! Local variables
-    integer                      :: k,nz
+    integer                      :: k,nr
     real(kind=dp_t), allocatable :: m(:)
 
-    nz = size(grav_cell,dim=1)
+    nr = size(grav_cell,dim=1)
 
     if (spherical .eq. 0) then
 
@@ -38,12 +38,12 @@ contains
        
     else
 
-       allocate(m(0:nz-1))
+       allocate(m(0:nr-1))
 
        m(0) = FOUR3RD*M_PI*rho0(0)*z(0)**3
        grav_cell(0) = -Gconst * m(0) / z(0)**2
 
-       do k = 1, nz-1
+       do k = 1, nr-1
           ! the mass is defined at the cell-centers, so to compute the
           ! mass at the current center, we need to add the contribution of
           ! the upper half of the zone below us and the lower half of the
@@ -69,10 +69,10 @@ contains
     real(kind=dp_t), intent(in   ) :: rho0(0:)
 
       ! Local variables
-      integer                      :: j,k,nz
+      integer                      :: j,k,nr
       real(kind=dp_t)              :: mencl
 
-      nz = size(grav_edge,dim=1)
+      nr = size(grav_edge,dim=1)
 
       if (spherical .eq. 0) then
 
@@ -81,7 +81,7 @@ contains
       else
 
         grav_edge(0) = zero 
-        do k = 1,nz-1
+        do k = 1,nr-1
 
           mencl = zero 
           do j = 1, k

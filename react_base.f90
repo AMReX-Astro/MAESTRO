@@ -30,13 +30,13 @@ contains
     real(kind=dp_t), intent(  out) :: p0_out(:,0:), s0_out(:,0:,:)
     real(kind=dp_t), intent(inout) :: gam1_out(:,0:)
     
-    integer :: n,j,comp,nz
+    integer :: n,j,comp,nr
     
     do n=1,nlevs
 
-       nz = size(rho_omegadotbar,dim=2)
+       nr = size(rho_omegadotbar,dim=2)
        
-       do j = 0,nz-1
+       do j = 0,nr-1
           
           ! (rho X)_out = (rho X)_in + dt_in * (rho omegadotbar)_in
           do comp = spec_comp,spec_comp+nspec-1
