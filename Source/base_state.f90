@@ -18,12 +18,12 @@ module base_state_module
 
 contains
 
-  subroutine init_base_state (model_file,n_base,s0,p0,gam1,dx,prob_lo,prob_hi)
+  subroutine init_base_state (model_file,nr,s0,p0,gam1,dx,prob_lo,prob_hi)
 
     use probin_module, ONLY: base_cutoff_density, anelastic_cutoff
 
     character (len=256), intent(in) :: model_file
-    integer        , intent(in   ) :: n_base
+    integer        , intent(in   ) :: nr
     real(kind=dp_t), intent(inout) ::    s0(0:,:)
     real(kind=dp_t), intent(inout) ::    p0(0:)
     real(kind=dp_t), intent(inout) ::  gam1(0:)
@@ -195,7 +195,7 @@ contains
 
     if ( parallel_IOProcessor() ) then
       print *,'DR , RMAX OF MODEL     ',dr_in, rmax
-      print *,'DR , RMAX OF BASE ARRAY',dr(1), dble(n_base) * dr(1)
+      print *,'DR , RMAX OF BASE ARRAY',dr(1), dble(nr) * dr(1)
     end if
 
     if (spherical .eq. 0) then
@@ -204,8 +204,8 @@ contains
        starting_rad = ZERO
     end if
 
-    j_cutoff = n_base
-    do j = 0,n_base-1
+    j_cutoff = nr
+    do j = 0,nr-1
 
        if (j .ge. j_cutoff) then
 
@@ -268,7 +268,7 @@ contains
          gam1(j) = gam1_eos(1)
   
          ! keep track of the height where we drop below the cutoff density
-         if (s0(j,rho_comp) .lt. base_cutoff_density .and. j_cutoff .eq. n_base) then
+         if (s0(j,rho_comp) .lt. base_cutoff_density .and. j_cutoff .eq. nr) then
             if ( parallel_IOProcessor() ) print *,'SETTING J_CUTOFF TO ',j
             j_cutoff = j
          end if
