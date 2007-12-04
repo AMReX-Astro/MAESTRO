@@ -46,7 +46,7 @@ contains
           call make_w0_planar(vel(n,:),vel_old(n,:),Sbar_in(n,:),p0(n,:),gam1(n,:), &
                               eta(n,:,:),f(n,:),dt,dtold)
        else
-          call make_w0_spherical(vel(n,:),Sbar_in(n,:),p0(n,:),rho0(n,:),gam1(n,:))
+          call make_w0_spherical(n,vel(n,:),Sbar_in(n,:),p0(n,:),rho0(n,:),gam1(n,:))
        endif
 
        max_vel = zero
@@ -116,9 +116,10 @@ contains
 
   end subroutine make_w0_planar
 
-  subroutine make_w0_spherical (vel,Sbar_in,p0,rho0,gam1)
-
+  subroutine make_w0_spherical(n,vel,Sbar_in,p0,rho0,gam1)
+    
     implicit none
+    integer        , intent(in   ) :: n
     real(kind=dp_t), intent(  out) :: vel(0:)
     real(kind=dp_t), intent(in   ) :: p0(0:),rho0(0:),gam1(0:)
     real(kind=dp_t), intent(in   ) :: Sbar_in(0:)
@@ -151,7 +152,7 @@ contains
        c(j) = c(j) / dr(1)**2
     end do
 
-    call cell_to_edge(rho0,rho0_edge)
+    call cell_to_edge(n,rho0,rho0_edge)
 
     do j = 1,nz-1
 

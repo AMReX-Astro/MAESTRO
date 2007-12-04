@@ -258,7 +258,9 @@ contains
                        verbose,mg_verbose,cg_verbose,press_comp, &
                        macrhs,div_coeff_3d=div_coeff_3d)
     else
-       call cell_to_edge(div_coeff_old(1,:),div_coeff_edge(1,:))
+       do n = 1, nlevs
+          call cell_to_edge(n,div_coeff_old(n,:),div_coeff_edge(n,:))
+       enddo
        call macproject(mla,umac,macphi,sold,dx,the_bc_tower, &
             verbose,mg_verbose,cg_verbose,press_comp, &
             macrhs,div_coeff_1d=div_coeff_old,div_coeff_half_1d=div_coeff_edge)
@@ -456,7 +458,9 @@ contains
                           verbose,mg_verbose,cg_verbose,&
                           press_comp,macrhs,div_coeff_3d=div_coeff_3d)
        else
-          call cell_to_edge(div_coeff_nph(1,:),div_coeff_edge(1,:))
+          do n = 1, nlevs
+             call cell_to_edge(n,div_coeff_nph(n,:),div_coeff_edge(n,:))
+          enddo
           call macproject(mla,umac,macphi,rhohalf,dx,the_bc_tower, &
                           verbose,mg_verbose,cg_verbose,&
                           press_comp,macrhs,div_coeff_1d=div_coeff_nph, &

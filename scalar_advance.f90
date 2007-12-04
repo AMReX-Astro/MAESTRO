@@ -92,8 +92,8 @@ contains
     dm = sold(1)%dim
 
     do n = 1, nlevs
-       call cell_to_edge_n(s0_old(n,:,:),s0_edge_old)
-       call cell_to_edge_n(s0_new(n,:,:),s0_edge_new)
+       call cell_to_edge_allcomps(n,s0_old(n,:,:),s0_edge_old)
+       call cell_to_edge_allcomps(n,s0_new(n,:,:),s0_edge_new)
     enddo
 
     do n = 1, nlevs
