@@ -282,10 +282,11 @@ contains
         s0_new(j,temp_comp) = temp_eos(1)
       end do
  
-      call make_grav_cell(grav_cell,s0_new(:,rho_comp))
+      call make_grav_cell(n,grav_cell,s0_new(:,rho_comp))
  
       ! Define beta^n+1 at cell edges using the new gravity above
-      call make_div_coeff(div_coeff_new,s0_new(:,rho_comp),p0_new,gam1,grav_cell,anelastic_cutoff)
+      call make_div_coeff(n,div_coeff_new,s0_new(:,rho_comp),p0_new,gam1,grav_cell, &
+                          anelastic_cutoff)
       call cell_to_edge(n,div_coeff_new,beta_new)
 
       ! time-centered beta

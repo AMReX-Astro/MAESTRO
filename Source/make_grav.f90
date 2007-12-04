@@ -16,12 +16,13 @@ module make_grav_module
 
 contains
 
-  subroutine make_grav_cell(grav_cell,rho0)
+  subroutine make_grav_cell(n,grav_cell,rho0)
 
     ! compute the base state gravitational acceleration at the cell
     ! centers.  The base state uses 0-based indexing, so grav_cell 
     ! does too.
 
+    integer        , intent(in   ) :: n
     real(kind=dp_t), intent(  out) :: grav_cell(0:)
     real(kind=dp_t), intent(in   ) :: rho0(0:)
 

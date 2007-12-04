@@ -287,9 +287,12 @@ contains
        p0_1 = p0_old
        s0_1 = s0_old
     end if
-    call make_grav_cell(grav_cell_new(1,:),s0_1(1,:,rho_comp))
-    call make_div_coeff(div_coeff_new(1,:),s0_1(1,:,rho_comp),p0_1(1,:), &
-                        gam1(1,:),grav_cell_new(1,:),anelastic_cutoff)
+
+    do n=1,nlevs
+       call make_grav_cell(n,grav_cell_new(n,:),s0_1(n,:,rho_comp))
+       call make_div_coeff(n,div_coeff_new(n,:),s0_1(n,:,rho_comp),p0_1(n,:), &
+                           gam1(n,:),grav_cell_new(n,:),anelastic_cutoff)
+    enddo
     
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -382,9 +385,12 @@ contains
        p0_new = p0_2
        s0_new = s0_2
     end if
-    call make_grav_cell(grav_cell_new(1,:),s0_new(1,:,rho_comp))
-    call make_div_coeff(div_coeff_new(1,:),s0_new(1,:,rho_comp),p0_new(1,:), &
-                        gam1(1,:),grav_cell_new(1,:),anelastic_cutoff)
+
+    do n=1,nlevs
+       call make_grav_cell(n,grav_cell_new(n,:),s0_new(n,:,rho_comp))
+       call make_div_coeff(n,div_coeff_new(n,:),s0_new(n,:,rho_comp),p0_new(n,:), &
+                           gam1(n,:),grav_cell_new(n,:),anelastic_cutoff)
+    enddo
     
     ! Define rho at half time !
     call make_at_halftime(nlevs,rhohalf,sold,snew,rho_comp,1,dx, &
@@ -395,7 +401,9 @@ contains
        s0_nph(1,j,:) = HALF * (s0_old(1,j,:) + s0_new(1,j,:))
     enddo
     
-    call make_grav_cell(grav_cell_nph(1,:),s0_nph(1,:,rho_comp))
+    do n=1,nlevs
+       call make_grav_cell(n,grav_cell_nph(n,:),s0_nph(n,:,rho_comp))
+    enddo
     
     ! Define beta at half time !
     do j = 0, nr-1
@@ -542,9 +550,12 @@ contains
           p0_new = p0_2
           s0_new = s0_2
        end if
-       call make_grav_cell(grav_cell_new(1,:),s0_new(1,:,rho_comp))
-       call make_div_coeff(div_coeff_new(1,:),s0_new(1,:,rho_comp),p0_new(1,:), &
-                           gam1(1,:),grav_cell_new(1,:),anelastic_cutoff)
+
+       do n=1,nlevs
+          call make_grav_cell(n,grav_cell_new(n,:),s0_new(n,:,rho_comp))
+          call make_div_coeff(n,div_coeff_new(n,:),s0_new(n,:,rho_comp),p0_new(n,:), &
+                              gam1(n,:),grav_cell_new(n,:),anelastic_cutoff)
+       enddo
        
        ! endif corresponding to .not. do_half_alg
     endif
