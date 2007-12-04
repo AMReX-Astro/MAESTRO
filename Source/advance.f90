@@ -350,12 +350,12 @@ contains
        end if
        
        if(do_half_alg) then
-          call thermal_conduct_half_alg(mla,dx,dt,s1,s2,p0_1(1,:),p0_2(1,:), &
-                                        s0_1(1,:,temp_comp), s0_2(1,:,temp_comp), &
+          call thermal_conduct_half_alg(mla,dx,dt,s1,s2,p0_1,p0_2, &
+                                        s0_1(:,:,temp_comp), s0_2(:,:,temp_comp), &
                                         mg_verbose,cg_verbose,the_bc_tower)
        else
-          call thermal_conduct_full_alg(mla,dx,dt,s1,s1,s2,p0_1(1,:),p0_2(1,:), &
-                                        s0_1(1,:,temp_comp),s0_2(1,:,temp_comp), &
+          call thermal_conduct_full_alg(mla,dx,dt,s1,s1,s2,p0_1,p0_2, &
+                                        s0_1(:,:,temp_comp),s0_2(:,:,temp_comp), &
                                         mg_verbose,cg_verbose,the_bc_tower)
           
           ! make a copy of s2star since these are needed to compute
@@ -525,8 +525,8 @@ contains
              write(6,*) '<<< STEP  8a: thermal conduct >>>'
           end if
           
-          call thermal_conduct_full_alg(mla,dx,dt,s1,s2star,s2,p0_1(1,:),p0_2(1,:), &
-                                        s0_1(1,:,temp_comp),s0_2(1,:,temp_comp), &
+          call thermal_conduct_full_alg(mla,dx,dt,s1,s2star,s2,p0_1,p0_2, &
+                                        s0_1(:,:,temp_comp),s0_2(:,:,temp_comp), &
                                         mg_verbose,cg_verbose,the_bc_tower)
           
        endif

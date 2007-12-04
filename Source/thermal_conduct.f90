@@ -38,7 +38,7 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
   type(multifab) , intent(in   ) :: s1(:)
   type(multifab) , intent(in   ) :: s_for_new_coeff(:)
   type(multifab) , intent(inout) :: s2(:)
-  real(kind=dp_t), intent(in   ) :: p01(0:),p02(0:),t01(0:),t02(0:)
+  real(kind=dp_t), intent(in   ) :: p01(:,0:),p02(:,0:),t01(:,0:),t02(:,0:)
   integer        , intent(in   ) :: mg_verbose,cg_verbose
   type(bc_tower) , intent(in   ) :: the_bc_tower
 
@@ -127,9 +127,9 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
         hi = upb(get_box(p01fab(n), i))
         select case (dm)
         case (2)
-           call put_base_state_on_multifab_2d(lo,hi,p01,p01fabp(:,:,1,1))
+           call put_base_state_on_multifab_2d(lo,hi,p01(n,:),p01fabp(:,:,1,1))
         case (3)
-           call put_base_state_on_multifab_3d(lo,hi,p01,p01fabp(:,:,:,1))
+           call put_base_state_on_multifab_3d(lo,hi,p01(n,:),p01fabp(:,:,:,1))
         end select
      end do
   enddo
@@ -149,9 +149,9 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
         hi = upb(get_box(p02fab(n), i))
         select case (dm)
         case (2)
-           call put_base_state_on_multifab_2d(lo,hi,p02,p02fabp(:,:,1,1))
+           call put_base_state_on_multifab_2d(lo,hi,p02(n,:),p02fabp(:,:,1,1))
         case (3)
-           call put_base_state_on_multifab_3d(lo,hi,p02,p02fabp(:,:,:,1))
+           call put_base_state_on_multifab_3d(lo,hi,p02(n,:),p02fabp(:,:,:,1))
         end select
      end do
   enddo
@@ -196,7 +196,7 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
                                              Xkcoeff1p(:,:,1,:), &
                                              pcoeff1p(:,:,1,1))
         case (3)
-           call compute_thermo_quantities_3d(lo,hi,dt,t01, &
+           call compute_thermo_quantities_3d(lo,hi,dt,t01(n,:), &
                                              s1p(:,:,:,:), &
                                              hcoeff1p(:,:,:,1), &
                                              Xkcoeff1p(:,:,:,:), &
@@ -231,7 +231,7 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
                                              Xkcoeff2p(:,:,1,:), &
                                              pcoeff2p(:,:,1,1))
         case (3)
-           call compute_thermo_quantities_3d(lo,hi,dt,t02, &
+           call compute_thermo_quantities_3d(lo,hi,dt,t02(n,:), &
                                              s_for_new_coeffp(:,:,:,:), &
                                              hcoeff2p(:,:,:,1), &
                                              Xkcoeff2p(:,:,:,:), &
@@ -487,7 +487,7 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
 
   ! compute updated temperature
   do n=1,nlevs
-     call makeTfromRhoH(s2(n),t02)
+     call makeTfromRhoH(s2(n),t02(n,:))
   enddo
 
   ! fill in ghost cells on s2
@@ -536,7 +536,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
   real(dp_t)     , intent(in   ) :: dx(:,:),dt
   type(multifab) , intent(in   ) :: s1(:)
   type(multifab) , intent(inout) :: s2(:)
-  real(kind=dp_t), intent(in   ) :: p01(0:),p02(0:),t01(0:),t02(0:)
+  real(kind=dp_t), intent(in   ) :: p01(:,0:),p02(:,0:),t01(:,0:),t02(:,0:)
   integer        , intent(in   ) :: mg_verbose,cg_verbose
   type(bc_tower) , intent(in   ) :: the_bc_tower
 
@@ -626,9 +626,9 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
         hi = upb(get_box(p01fab(n), i))
         select case (dm)
         case (2)
-           call put_base_state_on_multifab_2d(lo,hi,p01,p01fabp(:,:,1,1))
+           call put_base_state_on_multifab_2d(lo,hi,p01(n,:),p01fabp(:,:,1,1))
         case (3)
-           call put_base_state_on_multifab_3d(lo,hi,p01,p01fabp(:,:,:,1))
+           call put_base_state_on_multifab_3d(lo,hi,p01(n,:),p01fabp(:,:,:,1))
         end select
      end do
   enddo
@@ -648,9 +648,9 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
         hi = upb(get_box(p02fab(n), i))
         select case (dm)
         case (2)
-           call put_base_state_on_multifab_2d(lo,hi,p02,p02fabp(:,:,1,1))
+           call put_base_state_on_multifab_2d(lo,hi,p02(n,:),p02fabp(:,:,1,1))
         case (3)
-           call put_base_state_on_multifab_3d(lo,hi,p02,p02fabp(:,:,:,1))
+           call put_base_state_on_multifab_3d(lo,hi,p02(n,:),p02fabp(:,:,:,1))
         end select
      end do
   enddo
@@ -693,7 +693,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
                                              Xkcoeff1p(:,:,1,:), &
                                              pcoeff1p(:,:,1,1))
         case (3)
-           call compute_thermo_quantities_3d(lo,hi,dt,t01, &
+           call compute_thermo_quantities_3d(lo,hi,dt,t01(n,:), &
                                              s1p(:,:,:,:), &
                                              hcoeff1p(:,:,:,1), &
                                              Xkcoeff1p(:,:,:,:), &
@@ -891,7 +891,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
 
   ! compute updated temperature
   do n=1,nlevs
-     call makeTfromRhoH(s2(n),t02)
+     call makeTfromRhoH(s2(n),t02(n,:))
   enddo
 
   ! fill in ghost cells on s2
@@ -929,7 +929,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
                                              Xkcoeff2p(:,:,1,:), &
                                              pcoeff2p(:,:,1,1))
         case (3)
-           call compute_thermo_quantities_3d(lo,hi,dt,t02, &
+           call compute_thermo_quantities_3d(lo,hi,dt,t02(n,:), &
                                              s2p(:,:,:,:), &
                                              hcoeff2p(:,:,:,1), &
                                              Xkcoeff2p(:,:,:,:), &
@@ -1185,7 +1185,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
 
   ! compute updated temperature
   do n=1,nlevs
-     call makeTfromRhoH(s2(n),t02)
+     call makeTfromRhoH(s2(n),t02(n,:))
   enddo
 
   ! fill in ghost cells on s2
@@ -1400,7 +1400,8 @@ subroutine put_beta_on_faces_3d(lo,hi,ccbeta,beta)
   do k = lo(3),lo(3)+nz-1
      do j = lo(2),lo(2)+ny-1
         do i = lo(1),lo(1)+nx
-           beta(i,j,k,1) = TWO*(ccbeta(i,j,k)*ccbeta(i-1,j,k))/(ccbeta(i,j,k) + ccbeta(i-1,j,k))
+           beta(i,j,k,1) = TWO*(ccbeta(i,j,k)*ccbeta(i-1,j,k))/(ccbeta(i,j,k) &
+                + ccbeta(i-1,j,k))
         end do
      end do
   end do
@@ -1408,7 +1409,8 @@ subroutine put_beta_on_faces_3d(lo,hi,ccbeta,beta)
   do k = lo(3),lo(3)+nz-1
      do j = lo(2),lo(2)+ny
         do i = lo(1),lo(1)+nx-1
-           beta(i,j,k,2) = TWO*(ccbeta(i,j,k)*ccbeta(i,j-1,k))/(ccbeta(i,j,k) + ccbeta(i,j-1,k))
+           beta(i,j,k,2) = TWO*(ccbeta(i,j,k)*ccbeta(i,j-1,k))/(ccbeta(i,j,k) &
+                + ccbeta(i,j-1,k))
         end do
      end do
   end do
@@ -1416,7 +1418,8 @@ subroutine put_beta_on_faces_3d(lo,hi,ccbeta,beta)
   do k = lo(3),lo(3)+nz
      do j = lo(2),lo(2)+ny-1
         do i = lo(1),lo(1)+nx-1
-           beta(i,j,k,3) = TWO*(ccbeta(i,j,k)*ccbeta(i,j,k-1))/(ccbeta(i,j,k) + ccbeta(i,j,k-1))
+           beta(i,j,k,3) = TWO*(ccbeta(i,j,k)*ccbeta(i,j,k-1))/(ccbeta(i,j,k) &
+                + ccbeta(i,j,k-1))
         end do
      end do
   end do
