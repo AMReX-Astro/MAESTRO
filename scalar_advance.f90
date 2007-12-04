@@ -121,24 +121,12 @@ contains
 
        ! Define s0_old_cart and s0_new_cart
        if (spherical .eq. 1) then
-          do i = 1, s0_old_cart(n)%nboxes
-             if ( multifab_remote(s0_old_cart(n), i) ) cycle
-             s0op => dataptr(s0_old_cart(n), i)
-             s0np => dataptr(s0_new_cart(n), i)
-             lo =  lwb(get_box(s0_old_cart(n), i))
-             hi =  upb(get_box(s0_old_cart(n), i))
-             do comp = spec_comp,spec_comp+nspec-1
-                call fill_3d_data(s0op(:,:,:,comp),s0_old(n,:,comp),lo,hi,dx(n,:),1)
-                call fill_3d_data(s0np(:,:,:,comp),s0_new(n,:,comp),lo,hi,dx(n,:),1)
-             end do
-             comp = rhoh_comp
-             call fill_3d_data(s0op(:,:,:,comp),s0_old(n,:,comp),lo,hi,dx(n,:),1)
-             call fill_3d_data(s0np(:,:,:,comp),s0_new(n,:,comp),lo,hi,dx(n,:),1)
-          end do
-          call multifab_fill_boundary_c(s0_old_cart(n),spec_comp,nspec)
-          call multifab_fill_boundary_c(s0_old_cart(n),rhoh_comp,1)
-          call multifab_fill_boundary_c(s0_new_cart(n),spec_comp,nspec)
-          call multifab_fill_boundary_c(s0_new_cart(n),rhoh_comp,1)
+          do comp = spec_comp, spec_comp+nspec-1
+             call fill_3d_data_wrapper(s0_old_cart(n),s0_old(n,:,comp),dx(n,:),comp)
+             call fill_3d_data_wrapper(s0_new_cart(n),s0_new(n,:,comp),dx(n,:),comp)
+          enddo
+          call fill_3d_data_wrapper(s0_old_cart(n),s0_old(n,:,rhoh_comp),dx(n,:),rhoh_comp)
+          call fill_3d_data_wrapper(s0_new_cart(n),s0_new(n,:,rhoh_comp),dx(n,:),rhoh_comp)
        end if
 
        ! This can be uncommented if you wish to compute T
@@ -270,30 +258,18 @@ contains
 
        ! Define s0_old_cart and s0_new_cart
        if (spherical .eq. 1) then
-          do i = 1, sold(n)%nboxes
-             if ( multifab_remote(s0_old_cart(n), i) ) cycle
-             s0op => dataptr(s0_old_cart(n), i)
-             s0np => dataptr(s0_new_cart(n), i)
-             lo =  lwb(get_box(s0_old_cart(n), i))
-             hi =  upb(get_box(s0_old_cart(n), i))
-             do comp = trac_comp,trac_comp+ntrac-1
-                call fill_3d_data(s0op(:,:,:,comp),s0_old(n,:,comp),lo,hi,dx(n,:),1)
-                call fill_3d_data(s0np(:,:,:,comp),s0_new(n,:,comp),lo,hi,dx(n,:),1)
-             end do
-          end do
-          do comp = trac_comp,trac_comp+ntrac-1
-             call multifab_fill_boundary_c(s0_old_cart(n),comp,1)
-             call multifab_fill_boundary_c(s0_new_cart(n),comp,1)
-          end do
+          do comp = trac_comp, trac_comp+ntrac-1
+             call fill_3d_data_wrapper(s0_old_cart(n),s0_old(n,:,comp),dx(n,:),comp)
+             call fill_3d_data_wrapper(s0_new_cart(n),s0_new(n,:,comp),dx(n,:),comp)
+          enddo
        end if
        
        if (ntrac .ge. 1) then
-       
           call update_scal(which_step,trac_comp,trac_comp+ntrac-1,sold(n),snew(n), &
                            umac(n,:),w0(n,:),w0_cart_vec(n),eta(n,:,:),sedge(n,:), &
                            scal_force(n),s0_old(n,:,:),s0_edge_old,s0_new(n,:,:), &
-                           s0_edge_new,s0_old_cart(n),s0_new_cart(n),domlo,domhi,dx(n,:),dt, &
-                           evolve_base_state)
+                           s0_edge_new,s0_old_cart(n),s0_new_cart(n),domlo,domhi,dx(n,:), &
+                           dt,evolve_base_state)
           
           ! fill ghost cells for two adjacent grids at the same level
           ! this includes periodic domain boundary conditions
@@ -308,7 +284,6 @@ contains
              if (parallel_IOProcessor()) &
                   write(6,2003) smin,smax
           end if
-          
        end if
        
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -320,17 +295,8 @@ contains
 
        ! Define s0_old_cart and s0_new_cart
        if (spherical .eq. 1) then
-          do i = 1, sold(n)%nboxes
-             if ( multifab_remote(s0_old_cart(n), i) ) cycle
-             s0op => dataptr(s0_old_cart(n), i)
-             s0np => dataptr(s0_new_cart(n), i)
-             lo =  lwb(get_box(s0_old_cart(n), i))
-             hi =  upb(get_box(s0_old_cart(n), i))
-             call fill_3d_data(s0op(:,:,:,rhoh_comp),s0_old(n,:,rhoh_comp),lo,hi,dx(n,:),1)
-             call fill_3d_data(s0np(:,:,:,rhoh_comp),s0_new(n,:,rhoh_comp),lo,hi,dx(n,:),1)
-          end do
-          call multifab_fill_boundary_c(s0_old_cart(n),rhoh_comp,1)
-          call multifab_fill_boundary_c(s0_new_cart(n),rhoh_comp,1)
+          call fill_3d_data_wrapper(s0_old_cart(n),s0_old(n,:,rhoh_comp),dx(n,:),rhoh_comp)
+          call fill_3d_data_wrapper(s0_new_cart(n),s0_new(n,:,rhoh_comp),dx(n,:),rhoh_comp)
        end if
        
        call mkrhohforce(scal_force(n),rhoh_comp,umac(n,:),p0_old(n,:),p0_new(n,:), &

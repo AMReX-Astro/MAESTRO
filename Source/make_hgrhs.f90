@@ -57,15 +57,8 @@ contains
     do n = 1, nlevs
 
     if (spherical .eq. 1) then
-       do i = 1, Sbar_cart(n)%nboxes
-          dp => dataptr(div_coeff_cart(n), i)
-          sp => dataptr(Sbar_cart(n), i)
-          if ( multifab_remote(Sbar_cart(n), i) ) cycle
-          lo =  lwb(get_box(Sbar_cart(n), i))
-          hi =  upb(get_box(Sbar_cart(n), i))
-          call fill_3d_data(dp(:,:,:,1),div_coeff(n,:),lo,hi,dx(n,:),0)
-          call fill_3d_data(sp(:,:,:,1),Sbar(n,:)     ,lo,hi,dx(n,:),0)
-       end do
+       call fill_3d_data_wrapper(div_coeff_cart(n),div_coeff(n,:),dx(n,:))
+       call fill_3d_data_wrapper(Sbar_cart(n),Sbar(n,:),dx(n,:))
     end if
         
     do i = 1, Source(n)%nboxes

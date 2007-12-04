@@ -132,7 +132,7 @@ contains
     real(kind=dp_t), pointer     :: dp(:,:,:,:)
 
     real(dp_t) :: halfdt,eps_in
-    integer    :: i,j,n,dm,nlevs,nr,ng_cell,proj_type
+    integer    :: j,n,dm,nlevs,nr,ng_cell,proj_type
     logical    :: nodal(mla%dim)
 
     ! nr is the number of zones in a cell-centered basestate quantity
@@ -252,14 +252,7 @@ contains
     ! MAC projection !
     if (spherical .eq. 1) then
        do n = 1, nlevs
-          do i = 1,div_coeff_3d(n)%nboxes
-             if (multifab_remote(div_coeff_3d(n),i)) cycle
-             dp => dataptr(div_coeff_3d(n), i)
-             lo =  lwb(get_box(div_coeff_3d(n), i))
-             hi =  upb(get_box(div_coeff_3d(n), i))
-             call fill_3d_data(dp(:,:,:,1),div_coeff_old(n,:),lo,hi,dx(n,:),1)
-          end do
-          call multifab_fill_boundary(div_coeff_3d(n))
+          call fill_3d_data_wrapper(div_coeff_3d(n),div_coeff_old(n,:),dx(n,:))
        end do
        call macproject(mla,umac,macphi,sold,dx,the_bc_tower, &
                        verbose,mg_verbose,cg_verbose,press_comp, &
@@ -457,14 +450,7 @@ contains
        ! MAC projection !
        if (spherical .eq. 1) then
           do n = 1, nlevs
-             do i = 1,div_coeff_3d(n)%nboxes
-                if (multifab_remote(div_coeff_3d(n),i)) cycle
-                dp => dataptr(div_coeff_3d(n), i)
-                lo =  lwb(get_box(div_coeff_3d(n), i))
-                hi =  upb(get_box(div_coeff_3d(n), i))
-                call fill_3d_data(dp(:,:,:,1),div_coeff_nph(n,:),lo,hi,dx(n,:),1)
-             end do
-             call multifab_fill_boundary(div_coeff_3d(n))
+             call fill_3d_data_wrapper(div_coeff_3d(n),div_coeff_nph(n,:),dx(n,:))
           end do
           call macproject(mla,umac,macphi,rhohalf,dx,the_bc_tower, &
                           verbose,mg_verbose,cg_verbose,&
@@ -628,13 +614,7 @@ contains
     
     if (spherical .eq. 1) then
        do n = 1,nlevs
-          do i = 1,div_coeff_3d(n)%nboxes
-             if (multifab_remote(div_coeff_3d(n),i)) cycle
-             dp => dataptr(div_coeff_3d(n), i)
-             lo =  lwb(get_box(div_coeff_3d(n), i))
-             hi =  upb(get_box(div_coeff_3d(n), i))
-             call fill_3d_data(dp(:,:,:,1),div_coeff_nph(n,:),lo,hi,dx(n,:),1)
-          end do
+          call fill_3d_data_wrapper(div_coeff_3d(n),div_coeff_nph(n,:),dx(n,:))
        end do
        eps_in = 1.d-12
        call hgproject(proj_type, mla, unew, uold, rhohalf, p, gp, dx, dt, &
