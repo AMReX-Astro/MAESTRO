@@ -397,8 +397,10 @@ contains
                           the_bc_tower%bc_tower_array,mla)
     
     ! Define base state at half time for use in velocity advance!
-    do j = 0, nr-1
-       s0_nph(1,j,:) = HALF * (s0_old(1,j,:) + s0_new(1,j,:))
+    do n=1,nlevs
+       do j=0,nr-1
+          s0_nph(n,j,:) = HALF * (s0_old(n,j,:) + s0_new(n,j,:))
+       enddo
     enddo
     
     do n=1,nlevs
