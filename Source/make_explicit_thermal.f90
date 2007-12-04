@@ -38,7 +38,7 @@ contains
     real(dp_t)     , intent(in   ) :: dx(:,:)
     type(multifab) , intent(inout) :: thermal(:)
     type(multifab) , intent(in   ) :: s(:)
-    real(kind=dp_t), intent(in   ) :: p0(0:)
+    real(kind=dp_t), intent(in   ) :: p0(:,0:)
     integer        , intent(in   ) :: mg_verbose,cg_verbose
     type(bc_tower) , intent(in   ) :: the_bc_tower
     logical        , intent(in   ) :: temperature_diffusion
@@ -96,11 +96,11 @@ contains
           hi = upb(get_box(s(n),i))
           select case (dm)
           case (2)
-             call make_coeffs_2d(lo,hi,dx(n,:),p0,sp(:,:,1,:), &
+             call make_coeffs_2d(lo,hi,dx(n,:),p0(n,:),sp(:,:,1,:), &
                                  Tcoeffp(:,:,1,1),hcoeffp(:,:,1,1), &
                                  Xkcoeffp(:,:,1,:),pcoeffp(:,:,1,1))
           case (3)
-             call make_coeffs_3d(lo,hi,dx(n,:),p0,sp(:,:,:,:), &
+             call make_coeffs_3d(lo,hi,dx(n,:),p0(n,:),sp(:,:,:,:), &
                                  Tcoeffp(:,:,:,1),hcoeffp(:,:,:,1), &
                                  Xkcoeffp(:,:,:,:),pcoeffp(:,:,:,1))
           end select
@@ -212,9 +212,9 @@ contains
              hi = upb(get_box(phi(n),i))
              select case (dm)
              case (2)
-                call put_base_state_on_multifab_2d(lo,hi,p0,phip(:,:,1,1))
+                call put_base_state_on_multifab_2d(lo,hi,p0(n,:),phip(:,:,1,1))
              case (3)
-                call put_base_state_on_multifab_3d(lo,hi,p0,phip(:,:,:,1))
+                call put_base_state_on_multifab_3d(lo,hi,p0(n,:),phip(:,:,:,1))
              end select
           end do
        enddo

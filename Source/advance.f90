@@ -289,8 +289,8 @@ contains
        call react_base(p0_old(1,:),s0_old(1,:,:),rho_omegadotbar1(1,:,:), &
                        rho_Hextbar(1,:,1),halfdt,p0_1(1,:),s0_1(1,:,:),gam1(1,:))
     else
-       p0_1(1,:) = p0_old(1,:)
-       s0_1(1,:,:) = s0_old(1,:,:)
+       p0_1 = p0_old
+       s0_1 = s0_old
     end if
     call make_grav_cell(grav_cell_new(1,:),s0_1(1,:,rho_comp))
     call make_div_coeff(div_coeff_new(1,:),s0_1(1,:,rho_comp),p0_1(1,:), &
@@ -313,14 +313,13 @@ contains
                            dt,anelastic_cutoff)
        enddo
     else
-       p0_2(1,:) = p0_1(1,:)
-       s0_2(1,:,:) = s0_1(1,:,:)
+       p0_2 = p0_1
+       s0_2 = s0_1
     end if
     
     if(use_thermal_diffusion) then
-       call make_explicit_thermal(mla,dx,thermal,s1,p0_1(1,:), &
-                                  mg_verbose,cg_verbose,the_bc_tower, &
-                                  temp_diffusion_formulation)
+       call make_explicit_thermal(mla,dx,thermal,s1,p0_1,mg_verbose,cg_verbose, &
+                                  the_bc_tower,temp_diffusion_formulation)
     else
        do n = 1,nlevs
           call setval(thermal(n),ZERO,all=.true.)
@@ -388,8 +387,8 @@ contains
        call react_base(p0_2(1,:),s0_2(1,:,:),rho_omegadotbar2(1,:,:),rho_Hextbar(1,:,1), &
                        halfdt,p0_new(1,:),s0_new(1,:,:),gam1(1,:))
     else
-       p0_new(1,:) = p0_2(1,:)
-       s0_new(1,:,:) = s0_2(1,:,:)
+       p0_new = p0_2
+       s0_new = s0_2
     end if
     call make_grav_cell(grav_cell_new(1,:),s0_new(1,:,rho_comp))
     call make_div_coeff(div_coeff_new(1,:),s0_new(1,:,rho_comp),p0_new(1,:), &
@@ -421,9 +420,8 @@ contains
        end if
        
        if(use_thermal_diffusion) then
-          call make_explicit_thermal(mla,dx,thermal,snew,p0_new(1,:), &
-                                     mg_verbose,cg_verbose,the_bc_tower, &
-                                     temp_diffusion_formulation)
+          call make_explicit_thermal(mla,dx,thermal,snew,p0_new,mg_verbose,cg_verbose, &
+                                     the_bc_tower,temp_diffusion_formulation)
        else
           do n = 1,nlevs
              call setval(thermal(n),ZERO)
@@ -497,14 +495,13 @@ contains
                               dx(n,dm),dt,anelastic_cutoff)
           enddo
        else
-          p0_2(1,:) = p0_1(1,:)
-          s0_2(1,:,:) = s0_1(1,:,:)
+          p0_2 = p0_1
+          s0_2 = s0_1
        end if
        
        if(use_thermal_diffusion) then
-          call make_explicit_thermal(mla,dx,thermal,s1,p0_1(1,:), &
-                                     mg_verbose,cg_verbose,the_bc_tower, &
-                                     temp_diffusion_formulation)
+          call make_explicit_thermal(mla,dx,thermal,s1,p0_1,mg_verbose,cg_verbose, &
+                                     the_bc_tower,temp_diffusion_formulation)
        else
           do n = 1,nlevs
              call setval(thermal(n),ZERO)
@@ -558,8 +555,8 @@ contains
           call react_base(p0_2(1,:),s0_2(1,:,:),rho_omegadotbar2(1,:,:),rho_Hextbar(1,:,1), &
                           halfdt,p0_new(1,:),s0_new(1,:,:),gam1(1,:))
        else
-          p0_new(1,:) = p0_2(1,:)
-          s0_new(1,:,:) = s0_2(1,:,:)
+          p0_new = p0_2
+          s0_new = s0_2
        end if
        call make_grav_cell(grav_cell_new(1,:),s0_new(1,:,rho_comp))
        call make_div_coeff(div_coeff_new(1,:),s0_new(1,:,rho_comp),p0_new(1,:), &
@@ -577,9 +574,8 @@ contains
     end if
     
     if(use_thermal_diffusion) then
-       call make_explicit_thermal(mla,dx,thermal,snew,p0_new(1,:), &
-                                  mg_verbose,cg_verbose,the_bc_tower, &
-                                  temp_diffusion_formulation)
+       call make_explicit_thermal(mla,dx,thermal,snew,p0_new,mg_verbose,cg_verbose, &
+                                  the_bc_tower,temp_diffusion_formulation)
     else
        do n = 1,nlevs
           call setval(thermal(n),ZERO)
