@@ -228,8 +228,8 @@ contains
     
     call average(Source_nph,Sbar(1,:,:),dx,1,1)
     
-    call make_w0(w0(1,:),w0_old(1,:),w0_force(1,:),Sbar(1,:,1),p0_old(1,:), &
-                 s0_old(1,:,rho_comp),gam1(1,:),eta(1,:,:),dt,dtold,verbose)
+    call make_w0(nlevs,w0,w0_old,w0_force,Sbar(:,:,1),p0_old, &
+                 s0_old(:,:,rho_comp),gam1,eta,dt,dtold,verbose)
     
     if (dm .eq. 3) then
        call make_w0_cart(nlevs,w0      ,w0_cart_vec      ,normal,dx) 
@@ -434,8 +434,8 @@ contains
           call average(Source_nph,Sbar(1,:,:),dx,1,1)
        end do
        
-       call make_w0(w0(1,:),w0_old(1,:),w0_force(1,:),Sbar(1,:,1),p0_new(1,:), &
-                    s0_new(1,:,rho_comp),gam1(1,:),eta(1,:,:),dt,dtold,verbose)
+       call make_w0(nlevs,w0,w0_old,w0_force,Sbar(:,:,1),p0_new, &
+                    s0_new(:,:,rho_comp),gam1,eta,dt,dtold,verbose)
        
        if (dm .eq. 3) then
           call make_w0_cart(nlevs,w0      ,w0_cart_vec      ,normal,dx) 

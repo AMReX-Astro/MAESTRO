@@ -20,42 +20,43 @@ module make_w0_module
 
 contains
 
-  subroutine make_w0(vel,vel_old,f,Sbar_in,p0,rho0,gam1,eta,dt,dtold,verbose)
+  subroutine make_w0(nlevs,vel,vel_old,f,Sbar_in,p0,rho0,gam1,eta,dt,dtold,verbose)
 
-    real(kind=dp_t), intent(  out) :: vel(0:)
-    real(kind=dp_t), intent(in   ) :: vel_old(0:)
-    real(kind=dp_t), intent(in   ) :: eta(0:,:)
-    real(kind=dp_t), intent(inout) ::   f(0:)
-    real(kind=dp_t), intent(in   ) :: p0(0:),rho0(0:),gam1(0:)
-    real(kind=dp_t), intent(in   ) :: Sbar_in(0:)
+    integer        , intent(in   ) :: nlevs
+    real(kind=dp_t), intent(  out) :: vel(:,0:)
+    real(kind=dp_t), intent(in   ) :: vel_old(:,0:)
+    real(kind=dp_t), intent(in   ) :: eta(:,0:,:)
+    real(kind=dp_t), intent(inout) :: f(:,0:)
+    real(kind=dp_t), intent(in   ) :: p0(:,0:),rho0(:,0:),gam1(:,0:)
+    real(kind=dp_t), intent(in   ) :: Sbar_in(:,0:)
     real(kind=dp_t), intent(in   ) :: dt,dtold
     integer        , intent(in   ) :: verbose
 
-    integer         :: j,nz
+    integer         :: j,nz,n
     real(kind=dp_t) :: max_vel
 
     ! nz is the dimension of a cell-centered quantity
-    nz = size(vel,dim=1)-1
+    nz = size(vel,dim=2)-1
 
-    f = ZERO
+    do n=1,nlevs
+       
+       f(n,:) = ZERO
 
-    if (spherical .eq. 0) then
+       if (spherical .eq. 0) then
+          call make_w0_planar(vel(n,:),vel_old(n,:),Sbar_in(n,:),p0(n,:),gam1(n,:), &
+                              eta(n,:,:),f(n,:),dt,dtold)
+       else
+          call make_w0_spherical(vel(n,:),Sbar_in(n,:),p0(n,:),rho0(n,:),gam1(n,:))
+       endif
 
-       call make_w0_planar(vel,vel_old,Sbar_in,p0,gam1,eta,f,dt,dtold)
+       max_vel = zero
+       do j = 0,nz
+          max_vel = max(max_vel, abs(vel(n,j)))
+       end do
 
-    else
-
-       call make_w0_spherical(vel,Sbar_in,p0,rho0,gam1)
-
-    endif
-
-    max_vel = zero
-    do j = 0,nz
-       max_vel = max(max_vel, abs(vel(j)))
-    end do
-
-    if (parallel_IOProcessor() .and. verbose .ge. 1) &
-         write(6,*) '... max CFL of w0: ',max_vel * dt / dr(1)
+       if (parallel_IOProcessor() .and. verbose .ge. 1) &
+            write(6,*) '... max CFL of w0: ',max_vel * dt / dr(n)
+    enddo
 
   end subroutine make_w0
 
