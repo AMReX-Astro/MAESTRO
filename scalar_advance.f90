@@ -42,15 +42,15 @@ contains
     type(multifab) , intent(inout) :: umac(:,:)
     real(kind=dp_t), intent(inout) :: w0(:,0:)
     type(multifab) , intent(in   ) :: w0_cart_vec(:)
-    real(kind=dp_t), intent(inout) :: eta(0:,:)
+    real(kind=dp_t), intent(inout) :: eta(:,0:,:)
     type(multifab) , intent(inout) :: sedge(:,:)
     type(multifab) , intent(inout) :: utrans(:,:)
     type(multifab) , intent(inout) :: ext_scal_force(:)
     type(multifab) , intent(in   ) :: normal(:)
-    real(kind=dp_t), intent(in   ) :: s0_old(0:,:)
-    real(kind=dp_t), intent(in   ) :: s0_new(0:,:)
-    real(kind=dp_t), intent(in   ) :: p0_old(0:)
-    real(kind=dp_t), intent(in   ) :: p0_new(0:)
+    real(kind=dp_t), intent(in   ) :: s0_old(:,0:,:)
+    real(kind=dp_t), intent(in   ) :: s0_new(:,0:,:)
+    real(kind=dp_t), intent(in   ) :: p0_old(:,0:)
+    real(kind=dp_t), intent(in   ) :: p0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:),dt
     type(bc_level) , intent(in   ) :: the_bc_level(:)
     integer        , intent(in   ) :: verbose
@@ -81,25 +81,26 @@ contains
     allocate(s0_old_cart(nlevs))
     allocate(s0_new_cart(nlevs))
 
-    nr = size(s0_old,dim=1)
+    nr = size(s0_old,dim=2)
     allocate(s0_edge_old(0:nr,nscal))
     allocate(s0_edge_new(0:nr,nscal))
     
     velpred = 0    
     is_vel = .false.
+    ng_cell = sold(1)%ng
+    dm = sold(1)%dim
 
-    call cell_to_edge_n(s0_old,s0_edge_old)
-    call cell_to_edge_n(s0_new,s0_edge_new)
+    do n = 1, nlevs
+       call cell_to_edge_n(s0_old(n,:,:),s0_edge_old)
+       call cell_to_edge_n(s0_new(n,:,:),s0_edge_new)
+    enddo
 
     do n = 1, nlevs
     
        domain = layout_get_pd(uold(n)%la)
        domlo = lwb(domain)
        domhi = upb(domain)
-       
-       ng_cell = sold(n)%ng
-       dm      = sold(n)%dim
-       
+              
        call build(scal_force(n),  ext_scal_force(n)%la, nscal, 1)
        call build(s0_old_cart(n), ext_scal_force(n)%la, nscal, 1)
        call build(s0_new_cart(n), ext_scal_force(n)%la, nscal, 1)
@@ -126,12 +127,12 @@ contains
              lo =  lwb(get_box(s0_old_cart(n), i))
              hi =  upb(get_box(s0_old_cart(n), i))
              do comp = spec_comp,spec_comp+nspec-1
-                call fill_3d_data(s0op(:,:,:,comp),s0_old(:,comp),lo,hi,dx(n,:),1)
-                call fill_3d_data(s0np(:,:,:,comp),s0_new(:,comp),lo,hi,dx(n,:),1)
+                call fill_3d_data(s0op(:,:,:,comp),s0_old(n,:,comp),lo,hi,dx(n,:),1)
+                call fill_3d_data(s0np(:,:,:,comp),s0_new(n,:,comp),lo,hi,dx(n,:),1)
              end do
              comp = rhoh_comp
-             call fill_3d_data(s0op(:,:,:,comp),s0_old(:,comp),lo,hi,dx(n,:),1)
-             call fill_3d_data(s0np(:,:,:,comp),s0_new(:,comp),lo,hi,dx(n,:),1)
+             call fill_3d_data(s0op(:,:,:,comp),s0_old(n,:,comp),lo,hi,dx(n,:),1)
+             call fill_3d_data(s0np(:,:,:,comp),s0_new(n,:,comp),lo,hi,dx(n,:),1)
           end do
           call multifab_fill_boundary_c(s0_old_cart(n),spec_comp,nspec)
           call multifab_fill_boundary_c(s0_old_cart(n),rhoh_comp,1)
@@ -140,17 +141,18 @@ contains
        end if
 
        ! This can be uncommented if you wish to compute T
-       ! call makeTfromRhoH(sold(n),s0_old(:,temp_comp))
+       ! call makeTfromRhoH(sold(n),s0_old(n,:,temp_comp))
        
-       call modify_scal_force(scal_force(n),sold(n),umac(n,:),s0_old,s0_edge_old,w0(n,:), &
-                              dx(n,:),domlo,domhi,s0_old_cart(n),spec_comp,nspec)
+       call modify_scal_force(scal_force(n),sold(n),umac(n,:),s0_old(n,:,:),s0_edge_old, &
+                              w0(n,:),dx(n,:),domlo,domhi,s0_old_cart(n),spec_comp,nspec)
        
        if(use_temp_in_mkflux) then
-          call mktempforce(scal_force(n),temp_comp,sold(n),thermal(n),p0_old,dx(n,:))
+          call mktempforce(scal_force(n),temp_comp,sold(n),thermal(n),p0_old(n,:),dx(n,:))
        else
-          call mkrhohforce(scal_force(n),rhoh_comp,umac(n,:),p0_old,p0_new,normal(n),dx(n,:))
-          call modify_scal_force(scal_force(n),sold(n),umac(n,:),s0_old,s0_edge_old,w0(n,:), &
-                                 dx(n,:),domlo,domhi,s0_old_cart(n),rhoh_comp,1)
+          call mkrhohforce(scal_force(n),rhoh_comp,umac(n,:),p0_old(n,:),p0_new(n,:), &
+                           normal(n),dx(n,:))
+          call modify_scal_force(scal_force(n),sold(n),umac(n,:),s0_old(n,:,:),s0_edge_old, &
+                                 w0(n,:),dx(n,:),domlo,domhi,s0_old_cart(n),rhoh_comp,1)
        endif
        
        ! add to the rhoh component of force if NOT use_temp_in_mkflux
@@ -175,9 +177,9 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
        if (.not. use_temp_in_mkflux) &
-            call put_in_pert_form(sold(n),s0_old,dx(n,:),rhoh_comp,    1,.true.)
+            call put_in_pert_form(sold(n),s0_old(n,:,:),dx(n,:),rhoh_comp,1,.true.)
        
-       call put_in_pert_form(sold(n),s0_old,dx(n,:),spec_comp,nspec,.true.)
+       call put_in_pert_form(sold(n),s0_old(n,:,:),dx(n,:),spec_comp,nspec,.true.)
        
        if (use_temp_in_mkflux) then
           comp = temp_comp
@@ -195,13 +197,14 @@ contains
                    spec_comp,dm+spec_comp,nspec)
        
        if(use_temp_in_mkflux) then
-          call makeRhoHfromT(uold(n),sedge(n,:),s0_old,s0_edge_old,s0_new,s0_edge_new)
+          call makeRhoHfromT(uold(n),sedge(n,:),s0_old(n,:,:),s0_edge_old,s0_new(n,:,:), &
+                             s0_edge_new)
        endif
        
        if (.not. use_temp_in_mkflux) &
-            call put_in_pert_form(sold(n),s0_old,dx(n,:),rhoh_comp,    1,.false.)
+            call put_in_pert_form(sold(n),s0_old(n,:,:),dx(n,:),rhoh_comp,1,.false.)
        
-       call put_in_pert_form(sold(n),s0_old,dx(n,:),spec_comp,nspec,.false.)
+       call put_in_pert_form(sold(n),s0_old(n,:,:),dx(n,:),spec_comp,nspec,.false.)
        
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     Create the edge states of tracers.
@@ -229,9 +232,9 @@ contains
        call setval(scal_force(n),ZERO)
        
        call update_scal(which_step,spec_comp,spec_comp+nspec-1,sold(n),snew(n),umac(n,:), &
-                        w0(n,:),w0_cart_vec(n),eta,sedge(n,:),scal_force(n),s0_old, &
-                        s0_edge_old,s0_new,s0_edge_new,s0_old_cart(n),s0_new_cart(n), &
-                        domlo,domhi,dx(n,:),dt,evolve_base_state)
+                        w0(n,:),w0_cart_vec(n),eta(n,:,:),sedge(n,:),scal_force(n), &
+                        s0_old(n,:,:),s0_edge_old,s0_new(n,:,:),s0_edge_new,s0_old_cart(n), &
+                        s0_new_cart(n),domlo,domhi,dx(n,:),dt,evolve_base_state)
        
        ! fill ghost cells for two adjacent grids at the same level
        ! this includes periodic domain boundary conditions
@@ -273,8 +276,8 @@ contains
              lo =  lwb(get_box(s0_old_cart(n), i))
              hi =  upb(get_box(s0_old_cart(n), i))
              do comp = trac_comp,trac_comp+ntrac-1
-                call fill_3d_data(s0op(:,:,:,comp),s0_old(:,comp),lo,hi,dx(n,:),1)
-                call fill_3d_data(s0np(:,:,:,comp),s0_new(:,comp),lo,hi,dx(n,:),1)
+                call fill_3d_data(s0op(:,:,:,comp),s0_old(n,:,comp),lo,hi,dx(n,:),1)
+                call fill_3d_data(s0np(:,:,:,comp),s0_new(n,:,comp),lo,hi,dx(n,:),1)
              end do
           end do
           do comp = trac_comp,trac_comp+ntrac-1
@@ -286,9 +289,10 @@ contains
        if (ntrac .ge. 1) then
        
           call update_scal(which_step,trac_comp,trac_comp+ntrac-1,sold(n),snew(n), &
-                           umac(n,:),w0(n,:),w0_cart_vec(n),eta,sedge(n,:),scal_force(n), &
-                           s0_old,s0_edge_old,s0_new,s0_edge_new,s0_old_cart(n), &
-                           s0_new_cart(n),domlo,domhi,dx(n,:),dt,evolve_base_state)
+                           umac(n,:),w0(n,:),w0_cart_vec(n),eta(n,:,:),sedge(n,:), &
+                           scal_force(n),s0_old(n,:,:),s0_edge_old,s0_new(n,:,:), &
+                           s0_edge_new,s0_old_cart(n),s0_new_cart(n),domlo,domhi,dx(n,:),dt, &
+                           evolve_base_state)
           
           ! fill ghost cells for two adjacent grids at the same level
           ! this includes periodic domain boundary conditions
@@ -321,22 +325,24 @@ contains
              s0np => dataptr(s0_new_cart(n), i)
              lo =  lwb(get_box(s0_old_cart(n), i))
              hi =  upb(get_box(s0_old_cart(n), i))
-             call fill_3d_data(s0op(:,:,:,rhoh_comp),s0_old(:,rhoh_comp),lo,hi,dx(n,:),1)
-             call fill_3d_data(s0np(:,:,:,rhoh_comp),s0_new(:,rhoh_comp),lo,hi,dx(n,:),1)
+             call fill_3d_data(s0op(:,:,:,rhoh_comp),s0_old(n,:,rhoh_comp),lo,hi,dx(n,:),1)
+             call fill_3d_data(s0np(:,:,:,rhoh_comp),s0_new(n,:,rhoh_comp),lo,hi,dx(n,:),1)
           end do
           call multifab_fill_boundary_c(s0_old_cart(n),rhoh_comp,1)
           call multifab_fill_boundary_c(s0_new_cart(n),rhoh_comp,1)
        end if
        
-       call mkrhohforce(scal_force(n),rhoh_comp,umac(n,:),p0_old,p0_new,normal(n),dx(n,:))
+       call mkrhohforce(scal_force(n),rhoh_comp,umac(n,:),p0_old(n,:),p0_new(n,:), &
+                        normal(n),dx(n,:))
        
        call update_scal(which_step,rhoh_comp,rhoh_comp,sold(n),snew(n), &
-                        umac(n,:),w0(n,:),w0_cart_vec(n),eta,sedge(n,:),scal_force(n), &
-                        s0_old,s0_edge_old,s0_new,s0_edge_new,s0_old_cart(n), &
-                        s0_new_cart(n),domlo,domhi,dx(n,:),dt,evolve_base_state)
+                        umac(n,:),w0(n,:),w0_cart_vec(n),eta(n,:,:),sedge(n,:), &
+                        scal_force(n),s0_old(n,:,:),s0_edge_old,s0_new(n,:,:),s0_edge_new, &
+                        s0_old_cart(n),s0_new_cart(n),domlo,domhi,dx(n,:),dt, &
+                        evolve_base_state)
        
        if(.not. use_thermal_diffusion) then
-          call makeTfromRhoH(snew(n),s0_new(:,temp_comp))
+          call makeTfromRhoH(snew(n),s0_new(n,:,temp_comp))
        endif
        
        ! fill ghost cells for two adjacent grids at the same level

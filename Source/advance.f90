@@ -336,9 +336,9 @@ contains
        enddo
     endif
     
-    call scalar_advance(nlevs,mla,1,uold,s1,s2,thermal,umac,w0,w0_cart_vec,eta(1,:,:), &
-                        sedge,utrans,scal_force,normal,s0_1(1,:,:),s0_2(1,:,:), &
-                        p0_1(1,:),p0_2(1,:),dx,dt,the_bc_tower%bc_tower_array,verbose)
+    call scalar_advance(nlevs,mla,1,uold,s1,s2,thermal,umac,w0,w0_cart_vec,eta, &
+                        sedge,utrans,scal_force,normal,s0_1,s0_2, &
+                        p0_1,p0_2,dx,dt,the_bc_tower%bc_tower_array,verbose)
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 4a (Option I) -- Add thermal conduction (only enthalpy terms)
@@ -512,9 +512,9 @@ contains
                                     the_bc_tower%bc_tower_array,mla)
        endif
        
-       call scalar_advance(nlevs,mla,2,uold,s1,s2,thermal,umac,w0,w0_cart_vec,eta(1,:,:), &
-                           sedge,utrans,scal_force,normal,s0_1(1,:,:),s0_2(1,:,:), &
-                           p0_1(1,:),p0_2(1,:),dx,dt,the_bc_tower%bc_tower_array,verbose)
+       call scalar_advance(nlevs,mla,2,uold,s1,s2,thermal,umac,w0,w0_cart_vec,eta, &
+                           sedge,utrans,scal_force,normal,s0_1,s0_2, &
+                           p0_1,p0_2,dx,dt,the_bc_tower%bc_tower_array,verbose)
        
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 8a (Option I) -- Add thermal conduction (only enthalpy terms)
