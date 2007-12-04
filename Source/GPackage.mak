@@ -36,6 +36,7 @@ f90sources += mkforce.f90
 f90sources += mkscalforce.f90
 f90sources += mkutrans.f90
 f90sources += ml_solve.f90
+f90sources += modify_scal_force.f90
 f90sources += multifab_fill_ghost_cells.f90
 f90sources += multifab_physbc.f90
 f90sources += probin.f90
