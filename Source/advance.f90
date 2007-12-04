@@ -279,8 +279,8 @@ contains
     call average(rho_omegadot1,rho_omegadotbar1(1,:,:),dx,1,nspec)
     call average(rho_Hext,rho_Hextbar(1,:,:),dx,1,1)
     if (evolve_base_state) then
-       call react_base(p0_old(1,:),s0_old(1,:,:),rho_omegadotbar1(1,:,:), &
-                       rho_Hextbar(1,:,1),halfdt,p0_1(1,:),s0_1(1,:,:),gam1(1,:))
+       call react_base(nlevs,p0_old,s0_old,rho_omegadotbar1,rho_Hextbar(:,:,1),halfdt, &
+                       p0_1,s0_1,gam1)
     else
        p0_1 = p0_old
        s0_1 = s0_old
@@ -374,8 +374,8 @@ contains
     call average(rho_omegadot2,rho_omegadotbar2(1,:,:),dx,1,nspec)
     call average(rho_Hext,rho_Hextbar(1,:,:),dx,1,1)
     if (evolve_base_state) then
-       call react_base(p0_2(1,:),s0_2(1,:,:),rho_omegadotbar2(1,:,:),rho_Hextbar(1,:,1), &
-                       halfdt,p0_new(1,:),s0_new(1,:,:),gam1(1,:))
+       call react_base(nlevs,p0_2,s0_2,rho_omegadotbar2,rho_Hextbar(:,:,1),halfdt, &
+                       p0_new,s0_new,gam1)
     else
        p0_new = p0_2
        s0_new = s0_2
@@ -532,8 +532,8 @@ contains
        call average(rho_omegadot2,rho_omegadotbar2(1,:,:),dx,1,nspec)
        call average(rho_Hext,rho_Hextbar(1,:,:),dx,1,1)
        if (evolve_base_state) then
-          call react_base(p0_2(1,:),s0_2(1,:,:),rho_omegadotbar2(1,:,:),rho_Hextbar(1,:,1), &
-                          halfdt,p0_new(1,:),s0_new(1,:,:),gam1(1,:))
+          call react_base(nlevs,p0_2,s0_2,rho_omegadotbar2,rho_Hextbar(:,:,1),halfdt, &
+                          p0_new,s0_new,gam1)
        else
           p0_new = p0_2
           s0_new = s0_2
