@@ -33,8 +33,8 @@ subroutine macproject(mla,umac,phi,rho,dx,the_bc_tower,verbose,mg_verbose,cg_ver
   integer        , intent(in   ) :: verbose,mg_verbose,cg_verbose
 
   type(multifab ), intent(inout), optional :: divu_rhs(:)
-  real(dp_t)     , intent(in   ), optional :: div_coeff_1d(:)
-  real(dp_t)     , intent(in   ), optional :: div_coeff_half_1d(:)
+  real(dp_t)     , intent(in   ), optional :: div_coeff_1d(:,:)
+  real(dp_t)     , intent(in   ), optional :: div_coeff_half_1d(:,:)
   type(multifab ), intent(in   ), optional :: div_coeff_3d(:)
 
 ! Local  
@@ -78,7 +78,7 @@ subroutine macproject(mla,umac,phi,rho,dx,the_bc_tower,verbose,mg_verbose,cg_ver
 
   if (use_div_coeff_1d) then
     do n = 1,nlevs
-       call mult_umac_by_1d_coeff(umac(n,:),div_coeff_1d,div_coeff_half_1d,.true.)
+       call mult_umac_by_1d_coeff(umac(n,:),div_coeff_1d(n,:),div_coeff_half_1d(n,:),.true.)
     end do
   else if (use_div_coeff_3d) then
     do n = 1,nlevs
@@ -104,7 +104,7 @@ subroutine macproject(mla,umac,phi,rho,dx,the_bc_tower,verbose,mg_verbose,cg_ver
 
   if (use_div_coeff_1d) then
     do n = 1,nlevs
-       call mult_beta_by_1d_coeff(beta(n),div_coeff_1d,div_coeff_half_1d)
+       call mult_beta_by_1d_coeff(beta(n),div_coeff_1d(n,:),div_coeff_half_1d(n,:))
     end do
   else if (use_div_coeff_3d) then
     do n = 1,nlevs
@@ -130,7 +130,7 @@ subroutine macproject(mla,umac,phi,rho,dx,the_bc_tower,verbose,mg_verbose,cg_ver
 
   if (use_div_coeff_1d) then
     do n = 1,nlevs
-       call mult_umac_by_1d_coeff(umac(n,:),div_coeff_1d,div_coeff_half_1d,.false.)
+       call mult_umac_by_1d_coeff(umac(n,:),div_coeff_1d(n,:),div_coeff_half_1d(n,:),.false.)
     end do
   else if (use_div_coeff_3d) then
     do n = 1,nlevs

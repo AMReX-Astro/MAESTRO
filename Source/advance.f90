@@ -268,7 +268,7 @@ contains
        call cell_to_edge(div_coeff_old(1,:),div_coeff_edge(1,:))
        call macproject(mla,umac,macphi,sold,dx,the_bc_tower, &
             verbose,mg_verbose,cg_verbose,press_comp, &
-            macrhs,div_coeff_1d=div_coeff_old(1,:),div_coeff_half_1d=div_coeff_edge(1,:))
+            macrhs,div_coeff_1d=div_coeff_old,div_coeff_half_1d=div_coeff_edge)
     end if
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -473,8 +473,8 @@ contains
           call cell_to_edge(div_coeff_nph(1,:),div_coeff_edge(1,:))
           call macproject(mla,umac,macphi,rhohalf,dx,the_bc_tower, &
                           verbose,mg_verbose,cg_verbose,&
-                          press_comp,macrhs,div_coeff_1d=div_coeff_nph(1,:), &
-                          div_coeff_half_1d=div_coeff_edge(1,:))
+                          press_comp,macrhs,div_coeff_1d=div_coeff_nph, &
+                          div_coeff_half_1d=div_coeff_edge)
        end if
         
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
