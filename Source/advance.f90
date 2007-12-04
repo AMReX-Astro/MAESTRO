@@ -226,7 +226,7 @@ contains
        call extrap_to_halftime(nlevs,Source_nph,dSdt,Source_old,dt)
     endif
     
-    call average(Source_nph,Sbar(1,:,:),dx,1,1)
+    call average(Source_nph,Sbar,dx,1,1)
     
     call make_w0(nlevs,w0,w0_old,w0_force,Sbar(:,:,1),p0_old, &
                  s0_old(:,:,rho_comp),gam1,eta,dt,dtold,verbose)
@@ -278,8 +278,8 @@ contains
     call react_state(nlevs,mla,sold,s1,rho_omegadot1,rho_Hext,halfdt,dx, &
                      the_bc_tower%bc_tower_array,time)
     
-    call average(rho_omegadot1,rho_omegadotbar1(1,:,:),dx,1,nspec)
-    call average(rho_Hext,rho_Hextbar(1,:,:),dx,1,1)
+    call average(rho_omegadot1,rho_omegadotbar1,dx,1,nspec)
+    call average(rho_Hext,rho_Hextbar,dx,1,1)
     if (evolve_base_state) then
        call react_base(nlevs,p0_old,s0_old,rho_omegadotbar1,rho_Hextbar(:,:,1),halfdt, &
                        p0_1,s0_1,gam1)
@@ -376,8 +376,8 @@ contains
     call react_state(nlevs,mla,s2,snew,rho_omegadot2,rho_Hext,halfdt,dx, &
                      the_bc_tower%bc_tower_array,time)
 
-    call average(rho_omegadot2,rho_omegadotbar2(1,:,:),dx,1,nspec)
-    call average(rho_Hext,rho_Hextbar(1,:,:),dx,1,1)
+    call average(rho_omegadot2,rho_omegadotbar2,dx,1,nspec)
+    call average(rho_Hext,rho_Hextbar,dx,1,1)
     if (evolve_base_state) then
        call react_base(nlevs,p0_2,s0_2,rho_omegadotbar2,rho_Hextbar(:,:,1),halfdt, &
                        p0_new,s0_new,gam1)
@@ -438,7 +438,7 @@ contains
        call make_S_at_halftime(nlevs,Source_nph,Source_old,Source_new)
        
        do n = 1, nlevs
-          call average(Source_nph,Sbar(1,:,:),dx,1,1)
+          call average(Source_nph,Sbar,dx,1,1)
        end do
        
        call make_w0(nlevs,w0,w0_old,w0_force,Sbar(:,:,1),p0_new, &
@@ -545,8 +545,8 @@ contains
        call react_state(nlevs,mla,s2,snew,rho_omegadot2,rho_Hext,halfdt,dx,&
                         the_bc_tower%bc_tower_array,time)
 
-       call average(rho_omegadot2,rho_omegadotbar2(1,:,:),dx,1,nspec)
-       call average(rho_Hext,rho_Hextbar(1,:,:),dx,1,1)
+       call average(rho_omegadot2,rho_omegadotbar2,dx,1,nspec)
+       call average(rho_Hext,rho_Hextbar,dx,1,1)
        if (evolve_base_state) then
           call react_base(nlevs,p0_2,s0_2,rho_omegadotbar2,rho_Hextbar(:,:,1),halfdt, &
                           p0_new,s0_new,gam1)
@@ -584,7 +584,7 @@ contains
     call make_S(nlevs,Source_new,gamma1_term,snew,rho_omegadot2,rho_Hext,thermal, &
                 s0_new(:,:,temp_comp),gam1,dx)
 
-    call average(Source_new,Sbar(1,:,:),dx,1,1)
+    call average(Source_new,Sbar,dx,1,1)
     
     ! define dSdt = (Source_new - Source_old) / dt
     do n = 1,nlevs
