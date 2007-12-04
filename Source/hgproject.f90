@@ -38,7 +38,7 @@ contains
     integer        , intent(in   ) :: press_comp
     
     type(multifab ), intent(inout), optional :: divu_rhs(:)
-    real(dp_t)     , intent(in   ), optional :: div_coeff_1d(:)
+    real(dp_t)     , intent(in   ), optional :: div_coeff_1d(:,:)
     type(multifab ), intent(in   ), optional :: div_coeff_3d(:)
     real(dp_t)     , intent(in   ), optional :: eps_in
     
@@ -142,8 +142,8 @@ contains
     
     if (use_div_coeff_1d) then
        do n = 1, nlevs
-          call mult_by_1d_coeff(unew(n),div_coeff_1d,.true.)
-          call mult_by_1d_coeff(rhohalf(n),div_coeff_1d,.false.)
+          call mult_by_1d_coeff(unew(n),div_coeff_1d(n,:),.true.)
+          call mult_by_1d_coeff(rhohalf(n),div_coeff_1d(n,:),.false.)
        end do
     else if (use_div_coeff_3d) then
        do n = 1, nlevs
@@ -170,8 +170,8 @@ contains
     
     if (use_div_coeff_1d) then
        do n = 1, nlevs
-          call mult_by_1d_coeff(unew(n),div_coeff_1d,.false.)
-          call mult_by_1d_coeff(rhohalf(n),div_coeff_1d,.true.)
+          call mult_by_1d_coeff(unew(n),div_coeff_1d(n,:),.false.)
+          call mult_by_1d_coeff(rhohalf(n),div_coeff_1d(n,:),.true.)
        end do
     else if (use_div_coeff_3d) then
        do n = 1, nlevs

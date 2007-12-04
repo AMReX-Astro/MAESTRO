@@ -406,8 +406,10 @@ contains
     enddo
     
     ! Define beta at half time !
-    do j = 0, nr-1
-       div_coeff_nph(1,j) = HALF * (div_coeff_old(1,j) + div_coeff_new(1,j))
+    do n=1,nlevs
+       do j=0,nr-1
+          div_coeff_nph(n,j) = HALF * (div_coeff_old(n,j) + div_coeff_new(n,j))
+       enddo
     enddo
     
     if(.not. do_half_alg) then
@@ -607,10 +609,12 @@ contains
                           sponge,do_sponge,verbose)
     
     ! Define beta at half time using the div_coeff_new from step 9!
-    do j = 0, nr-1
-       div_coeff_nph(1,j) = HALF * (div_coeff_old(1,j) + div_coeff_new(1,j))
-    end do
-    
+    do n=1,nlevs
+       do j=0,nr-1
+          div_coeff_nph(n,j) = HALF * (div_coeff_old(n,j) + div_coeff_new(n,j))
+       end do
+    enddo
+       
     ! Project the new velocity field.
     if (init_mode) then
        proj_type = pressure_iters
@@ -638,7 +642,7 @@ contains
     else
        call hgproject(proj_type, mla, unew, uold, rhohalf, p, gp, dx, dt, &
                       the_bc_tower, verbose, mg_verbose, cg_verbose, press_comp, &
-                      hgrhs, div_coeff_1d=div_coeff_nph(1,:))
+                      hgrhs, div_coeff_1d=div_coeff_nph)
     end if
     
     ! If doing pressure iterations then put hgrhs_old into hgrhs to be returned to varden.
