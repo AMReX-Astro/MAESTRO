@@ -137,7 +137,7 @@ contains
     real (kind = dp_t), intent(in   ) :: dt,dx(:)
     logical           , intent(in   ) :: evolve_base_state
     
-    integer :: i, j, n, n2
+    integer :: i, j, comp, comp2
     real (kind = dp_t) :: divsu,divbaseu,delta_base
     real (kind = dp_t) :: delta,frac,sum,fac
     real (kind = dp_t), allocatable :: smin(:),smax(:)
@@ -146,48 +146,50 @@ contains
     
     if (evolve_base_state) then
       if (which_step .eq. 1) then
-       do n = nstart, nstop
-          eta(:,n) = ZERO
+       do comp = nstart, nstop
+          eta(:,comp) = ZERO
           do j = lo(2), hi(2)+1
              do i = lo(1), hi(1)
-                eta(j,n) = eta(j,n) + vmac(i,j)*sedgey(i,j,n)
-!               eta(j,n) = 0.d0
+                eta(j,comp) = eta(j,comp) + vmac(i,j)*sedgey(i,j,comp)
+!               eta(j,comp) = 0.d0
              end do
-             eta(j,n) = eta(j,n) * fac
+             eta(j,comp) = eta(j,comp) * fac
           end do
        end do
       end if
     end if
     
-    do n = nstart, nstop
+    do comp = nstart, nstop
        do j = lo(2), hi(2)
           
-          delta_base = base_new(j,n) - base_old(j,n)
+          delta_base = base_new(j,comp) - base_old(j,comp)
           
           do i = lo(1), hi(1)
              
-             divsu = (umac(i+1,j) * sedgex(i+1,j,n) &
-                  -umac(i  ,j) * sedgex(i  ,j,n) ) / dx(1) + &
-                  ((vmac(i,j+1)+w0(j+1)) * sedgey(i,j+1,n) &
-                  -(vmac(i,j  )+w0(j  )) * sedgey(i,j  ,n) ) / dx(2)
+             divsu = (umac(i+1,j) * sedgex(i+1,j,comp) &
+                  -umac(i  ,j) * sedgex(i  ,j,comp) ) / dx(1) + &
+                  ((vmac(i,j+1)+w0(j+1)) * sedgey(i,j+1,comp) &
+                  -(vmac(i,j  )+w0(j  )) * sedgey(i,j  ,comp) ) / dx(2)
              
              if (which_step .eq. 1) then
-                divbaseu = (umac(i+1,j) - umac(i,j) ) * base_old(j,n) / dx(1) &
-                     +( vmac(i,j+1) * base_old_edge(j+1,n) &
-                     -vmac(i,j  ) * base_old_edge(j  ,n) ) / dx(2)
+                divbaseu = (umac(i+1,j) - umac(i,j) ) * base_old(j,comp) / dx(1) &
+                     +( vmac(i,j+1) * base_old_edge(j+1,comp) &
+                     -vmac(i,j  ) * base_old_edge(j  ,comp) ) / dx(2)
              else
                 divbaseu = HALF * (umac(i+1,j) - umac(i,j) ) * &
-                     (base_old(j,n)+base_new(j,n)) / dx(1) &
-                     +HALF * (vmac(i,j+1) * (base_old_edge(j+1,n) + base_new_edge(j+1,n)) &
-                     -vmac(i,j  ) * (base_old_edge(j  ,n) + base_new_edge(j  ,n)) ) / dx(2)
+                     (base_old(j,comp)+base_new(j,comp)) / dx(1) &
+                     +HALF * (vmac(i,j+1) * (base_old_edge(j+1,comp) &
+                     + base_new_edge(j+1,comp)) &
+                     -vmac(i,j  ) * (base_old_edge(j  ,comp) &
+                     + base_new_edge(j  ,comp)) ) / dx(2)
              end if
              
-             snew(i,j,n) = sold(i,j,n) + delta_base &
-                  - dt * (divsu + divbaseu) + dt * force(i,j,n)
+             snew(i,j,comp) = sold(i,j,comp) + delta_base &
+                  - dt * (divsu + divbaseu) + dt * force(i,j,comp)
              
              if (evolve_base_state) then
                if (which_step .eq. 2) then
-                snew(i,j,n) = snew(i,j,n) + dt / dx(2) * (eta(j+1,n)-eta(j,n))
+                snew(i,j,comp) = snew(i,j,comp) + dt / dx(2) * (eta(j+1,comp)-eta(j,comp))
                end if
              end if
              
@@ -204,21 +206,21 @@ contains
        
        snew(:,:,rho_comp) = sold(:,:,rho_comp)
        
-       do n = nstart, nstop
+       do comp = nstart, nstop
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
-                snew(i,j,rho_comp) = snew(i,j,rho_comp) + (snew(i,j,n)-sold(i,j,n))
-                smin(n) = min(smin(n),snew(i,j,n))
-                smax(n) = max(smax(n),snew(i,j,n))
+                snew(i,j,rho_comp) = snew(i,j,rho_comp) + (snew(i,j,comp)-sold(i,j,comp))
+                smin(comp) = min(smin(comp),snew(i,j,comp))
+                smax(comp) = max(smax(comp),snew(i,j,comp))
              enddo
           enddo
        enddo
        
        if (which_step .eq. 1) then
           eta(:,rho_comp) = ZERO
-          do n = nstart, nstop
+          do comp = nstart, nstop
              do j = lo(2), hi(2)+1
-                eta(j,rho_comp) = eta(j,rho_comp) + eta(j,n)
+                eta(j,rho_comp) = eta(j,rho_comp) + eta(j,comp)
              end do
           end do
        end if
@@ -227,23 +229,23 @@ contains
     
     ! Do not allow the species to leave here negative.
     if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
-       do n = nstart, nstop
-          if (smin(n) .lt. ZERO) then 
+       do comp = nstart, nstop
+          if (smin(comp) .lt. ZERO) then 
              do j = lo(2), hi(2)
                 do i = lo(1), hi(1)
-                   if (snew(i,j,n) .lt. ZERO) then
-                      delta = -snew(i,j,n)
+                   if (snew(i,j,comp) .lt. ZERO) then
+                      delta = -snew(i,j,comp)
                       sum = ZERO 
-                      do n2 = nstart, nstop
-                         if (n2 .ne. n .and. snew(i,j,n2) .ge. ZERO) sum = sum + snew(i,j,n2)
+                      do comp2 = nstart, nstop
+                         if (comp2 .ne. comp .and. snew(i,j,comp2) .ge. ZERO) sum = sum + snew(i,j,comp2)
                       enddo
-                      do n2 = nstart, nstop
-                         if (n2 .ne. n .and. snew(i,j,n2) .ge. ZERO) then
-                            frac = snew(i,j,n2) / sum
-                            snew(i,j,n2) = snew(i,j,n2) - frac * delta
+                      do comp2 = nstart, nstop
+                         if (comp2 .ne. comp .and. snew(i,j,comp2) .ge. ZERO) then
+                            frac = snew(i,j,comp2) / sum
+                            snew(i,j,comp2) = snew(i,j,comp2) - frac * delta
                          end if
                       enddo
-                      snew(i,j,n) = ZERO
+                      snew(i,j,comp) = ZERO
                    end if
                 enddo
              enddo
@@ -277,7 +279,7 @@ contains
     real (kind = dp_t), intent(in   ) :: dt,dx(:)
     logical           , intent(in   ) :: evolve_base_state
     
-    integer :: i, j, k, n, n2
+    integer :: i, j, k, comp, comp2
     real (kind = dp_t) :: divsu,divbaseu
     real (kind = dp_t) :: delta,frac,sum,delta_base,fac
     real (kind = dp_t), allocatable :: smin(:),smax(:)
@@ -285,57 +287,57 @@ contains
     fac = ONE / dble( (hi(1)-lo(1)+1)*(hi(2)-lo(2)+1) )
     
     if (which_step .eq. 1) then
-       do n = nstart, nstop
+       do comp = nstart, nstop
           do k = lo(3), hi(3)+1
-             eta(k,n) = ZERO
+             eta(k,comp) = ZERO
              do j = lo(2), hi(2)
                 do i = lo(1), hi(1)
-!               eta(k,n) = eta(k,n) + wmac(i,j,k)*sedgez(i,j,k,n)
-                   eta(k,n) = 0.d0
+!               eta(k,comp) = eta(k,comp) + wmac(i,j,k)*sedgez(i,j,k,comp)
+                   eta(k,comp) = 0.d0
                 end do
              end do
-             eta(k,n) = eta(k,n) * fac
+             eta(k,comp) = eta(k,comp) * fac
           end do
        end do
     end if
     
-    do n = nstart, nstop
+    do comp = nstart, nstop
        
        do k = lo(3), hi(3)
           
-          delta_base = base_new(k,n) - base_old(k,n)
+          delta_base = base_new(k,comp) - base_old(k,comp)
           
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
                 
-                divsu = (umac(i+1,j,k) * sedgex(i+1,j,k,n) &
-                     -umac(i  ,j,k) * sedgex(i  ,j,k,n) ) / dx(1) + &
-                     (vmac(i,j+1,k) * sedgey(i,j+1,k,n) &
-                     -vmac(i,j  ,k) * sedgey(i,j  ,k,n) ) / dx(2) + &
-                     ((wmac(i,j,k+1)+w0(k+1)) * sedgez(i,j,k+1,n) &
-                     -(wmac(i,j,k  )+w0(k  )) * sedgez(i,j,k  ,n) ) / dx(3)
+                divsu = (umac(i+1,j,k) * sedgex(i+1,j,k,comp) &
+                     -umac(i  ,j,k) * sedgex(i  ,j,k,comp) ) / dx(1) + &
+                     (vmac(i,j+1,k) * sedgey(i,j+1,k,comp) &
+                     -vmac(i,j  ,k) * sedgey(i,j  ,k,comp) ) / dx(2) + &
+                     ((wmac(i,j,k+1)+w0(k+1)) * sedgez(i,j,k+1,comp) &
+                     -(wmac(i,j,k  )+w0(k  )) * sedgez(i,j,k  ,comp) ) / dx(3)
                 
                 if (which_step .eq. 1) then
-                   divbaseu = base_old(k,n) * &
+                   divbaseu = base_old(k,comp) * &
                         ( (umac(i+1,j,k) - umac(i,j,k) ) / dx(1) &
                         +(vmac(i,j+1,k) - vmac(i,j,k) ) / dx(2) ) &
-                        + ( base_old_edge(k+1,n) * wmac(i,j,k+1) &
-                        -base_old_edge(k  ,n) * wmac(i,j,k  ) ) / dx(3)
+                        + ( base_old_edge(k+1,comp) * wmac(i,j,k+1) &
+                        -base_old_edge(k  ,comp) * wmac(i,j,k  ) ) / dx(3)
                 else
-                   divbaseu = HALF * (base_old(k,n) + base_new(k,n)) * &
+                   divbaseu = HALF * (base_old(k,comp) + base_new(k,comp)) * &
                         ( (umac(i+1,j,k) - umac(i,j,k) ) / dx(1) &
                         +(vmac(i,j+1,k) - vmac(i,j,k) ) / dx(2) ) &
-                        + ( HALF * (base_old_edge(k+1,n) + base_new_edge(k+1,n)) &
+                        + ( HALF * (base_old_edge(k+1,comp) + base_new_edge(k+1,comp)) &
                         * wmac(i,j,k+1) &
-                        - HALF * (base_old_edge(k  ,n) + base_new_edge(k  ,n)) &
+                        - HALF * (base_old_edge(k  ,comp) + base_new_edge(k  ,comp)) &
                         * wmac(i,j,k  ) ) / dx(3)
                 end if
                 
-                snew(i,j,k,n) = sold(i,j,k,n) + delta_base &
-                     - dt * (divsu + divbaseu) + dt * force(i,j,k,n)
+                snew(i,j,k,comp) = sold(i,j,k,comp) + delta_base &
+                     - dt * (divsu + divbaseu) + dt * force(i,j,k,comp)
                 
                 if (which_step .eq. 2) then
-                   snew(i,j,k,n) = snew(i,j,k,n) + dt / dx(3) * (eta(k+1,n)-eta(k,n))
+                   snew(i,j,k,comp) = snew(i,j,k,comp) + dt / dx(3) * (eta(k+1,comp)-eta(k,comp))
                 end if
                 
              enddo
@@ -352,13 +354,13 @@ contains
        
        snew(:,:,:,rho_comp) = sold(:,:,:,rho_comp)
        
-       do n = nstart, nstop
+       do comp = nstart, nstop
           do k = lo(3), hi(3)
              do j = lo(2), hi(2)
                 do i = lo(1), hi(1)
-                   snew(i,j,k,rho_comp) = snew(i,j,k,rho_comp) + (snew(i,j,k,n)-sold(i,j,k,n))
-                   smin(n) = min(smin(n),snew(i,j,k,n))
-                   smax(n) = max(smax(n),snew(i,j,k,n))
+                   snew(i,j,k,rho_comp) = snew(i,j,k,rho_comp) + (snew(i,j,k,comp)-sold(i,j,k,comp))
+                   smin(comp) = min(smin(comp),snew(i,j,k,comp))
+                   smax(comp) = max(smax(comp),snew(i,j,k,comp))
                 enddo
              enddo
           enddo
@@ -367,25 +369,25 @@ contains
     
     ! Do not allow the species to leave here negative.
     if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
-       do n = nstart, nstop
-          if (smin(n) .lt. ZERO) then
+       do comp = nstart, nstop
+          if (smin(comp) .lt. ZERO) then
              do k = lo(3), hi(3)
                 do j = lo(2), hi(2)
                    do i = lo(1), hi(1)
-                      if (snew(i,j,k,n) .lt. ZERO) then
-                         delta = -snew(i,j,k,n)
+                      if (snew(i,j,k,comp) .lt. ZERO) then
+                         delta = -snew(i,j,k,comp)
                          sum = ZERO
-                         do n2 = nstart, nstop
-                            if (n2 .ne. n .and. snew(i,j,k,n2) .ge. ZERO) &
-                                 sum = sum + snew(i,j,k,n2)
+                         do comp2 = nstart, nstop
+                            if (comp2 .ne. comp .and. snew(i,j,k,comp2) .ge. ZERO) &
+                                 sum = sum + snew(i,j,k,comp2)
                          enddo
-                         do n2 = nstart, nstop
-                            if (n2 .ne. n .and. snew(i,j,k,n2) .ge. ZERO) then
-                               frac = snew(i,j,k,n2) / sum
-                               snew(i,j,k,n2) = snew(i,j,k,n2) - frac * delta
+                         do comp2 = nstart, nstop
+                            if (comp2 .ne. comp .and. snew(i,j,k,comp2) .ge. ZERO) then
+                               frac = snew(i,j,k,comp2) / sum
+                               snew(i,j,k,comp2) = snew(i,j,k,comp2) - frac * delta
                             end if
                          enddo
-                         snew(i,j,k,n) = ZERO
+                         snew(i,j,k,comp) = ZERO
                       end if
                    enddo
                 enddo
@@ -423,7 +425,7 @@ contains
     real (kind = dp_t), intent(in   ) :: dt,dx(:)
     logical           , intent(in   ) :: evolve_base_state
     
-    integer :: i, j, k, n, n2
+    integer :: i, j, k, comp, comp2
     real (kind = dp_t) :: divsu,divbaseu,mult
     real (kind = dp_t) :: delta,frac,sum
     real (kind = dp_t) :: bc_lox,bc_loy,bc_loz
@@ -432,7 +434,7 @@ contains
     
     ! is spherical
     
-    do n = nstart, nstop
+    do comp = nstart, nstop
        
        ! Note the umac here does NOT have w0 in it
        if (which_step .eq. 1) then
@@ -440,28 +442,28 @@ contains
              do j = lo(2), hi(2)
                 do i = lo(1), hi(1)
                    
-                   bc_lox = (base_old_cart(i,j,k,n)+base_old_cart(i-1,j,k,n)) * HALF
-                   bc_loy = (base_old_cart(i,j,k,n)+base_old_cart(i,j-1,k,n)) * HALF
-                   bc_loz = (base_old_cart(i,j,k,n)+base_old_cart(i,j,k-1,n)) * HALF
-                   bc_hix = (base_old_cart(i,j,k,n)+base_old_cart(i+1,j,k,n)) * HALF
-                   bc_hiy = (base_old_cart(i,j,k,n)+base_old_cart(i,j+1,k,n)) * HALF
-                   bc_hiz = (base_old_cart(i,j,k,n)+base_old_cart(i,j,k+1,n)) * HALF
+                   bc_lox = (base_old_cart(i,j,k,comp)+base_old_cart(i-1,j,k,comp)) * HALF
+                   bc_loy = (base_old_cart(i,j,k,comp)+base_old_cart(i,j-1,k,comp)) * HALF
+                   bc_loz = (base_old_cart(i,j,k,comp)+base_old_cart(i,j,k-1,comp)) * HALF
+                   bc_hix = (base_old_cart(i,j,k,comp)+base_old_cart(i+1,j,k,comp)) * HALF
+                   bc_hiy = (base_old_cart(i,j,k,comp)+base_old_cart(i,j+1,k,comp)) * HALF
+                   bc_hiz = (base_old_cart(i,j,k,comp)+base_old_cart(i,j,k+1,comp)) * HALF
                    
-                   if (i.eq.domlo(1)) bc_lox = base_old_cart(i,j,k,n)
-                   if (j.eq.domlo(2)) bc_loy = base_old_cart(i,j,k,n)
-                   if (k.eq.domlo(3)) bc_loz = base_old_cart(i,j,k,n)
-                   if (i.eq.domhi(1)) bc_hix = base_old_cart(i,j,k,n)
-                   if (j.eq.domhi(2)) bc_hiy = base_old_cart(i,j,k,n)
-                   if (k.eq.domhi(3)) bc_hiz = base_old_cart(i,j,k,n)
+                   if (i.eq.domlo(1)) bc_lox = base_old_cart(i,j,k,comp)
+                   if (j.eq.domlo(2)) bc_loy = base_old_cart(i,j,k,comp)
+                   if (k.eq.domlo(3)) bc_loz = base_old_cart(i,j,k,comp)
+                   if (i.eq.domhi(1)) bc_hix = base_old_cart(i,j,k,comp)
+                   if (j.eq.domhi(2)) bc_hiy = base_old_cart(i,j,k,comp)
+                   if (k.eq.domhi(3)) bc_hiz = base_old_cart(i,j,k,comp)
                    
                    divbaseu =  &
                         ( bc_hix * umac(i+1,j,k) - bc_lox * umac(i,j,k) ) / dx(1) &
                         +( bc_hiy * vmac(i,j+1,k) - bc_loy * vmac(i,j,k) ) / dx(2) &
                         +( bc_hiz * wmac(i,j,k+1) - bc_loz * wmac(i,j,k) ) / dx(3)
                    
-                   snew(i,j,k,n) = sold(i,j,k,n) + &
-                        (base_new_cart(i,j,k,n)-base_old_cart(i,j,k,n)) - &
-                        dt * divbaseu + dt * force(i,j,k,n)
+                   snew(i,j,k,comp) = sold(i,j,k,comp) + &
+                        (base_new_cart(i,j,k,comp)-base_old_cart(i,j,k,comp)) - &
+                        dt * divbaseu + dt * force(i,j,k,comp)
                    
                 enddo
              enddo
@@ -473,40 +475,40 @@ contains
              do j = lo(2), hi(2)
                 do i = lo(1), hi(1)
                    
-                   bc_lox = (base_old_cart(i,j,k,n)+base_old_cart(i-1,j,k,n) &
-                        +base_new_cart(i,j,k,n)+base_new_cart(i-1,j,k,n) ) * FOURTH
-                   bc_loy = (base_old_cart(i,j,k,n)+base_old_cart(i,j-1,k,n) &
-                        +base_new_cart(i,j,k,n)+base_new_cart(i,j-1,k,n) ) * FOURTH
-                   bc_loz = (base_old_cart(i,j,k,n)+base_old_cart(i,j,k-1,n) &
-                        +base_new_cart(i,j,k,n)+base_new_cart(i,j,k-1,n) ) * FOURTH
-                   bc_hix = (base_old_cart(i,j,k,n)+base_old_cart(i+1,j,k,n) &
-                        +base_new_cart(i,j,k,n)+base_new_cart(i+1,j,k,n) ) * FOURTH
-                   bc_hiy = (base_old_cart(i,j,k,n)+base_old_cart(i,j+1,k,n) &
-                        +base_new_cart(i,j,k,n)+base_new_cart(i,j+1,k,n) ) * FOURTH
-                   bc_hiz = (base_old_cart(i,j,k,n)+base_old_cart(i,j,k+1,n) &
-                        +base_new_cart(i,j,k,n)+base_new_cart(i,j,k+1,n) ) * FOURTH
+                   bc_lox = (base_old_cart(i,j,k,comp)+base_old_cart(i-1,j,k,comp) &
+                        +base_new_cart(i,j,k,comp)+base_new_cart(i-1,j,k,comp) ) * FOURTH
+                   bc_loy = (base_old_cart(i,j,k,comp)+base_old_cart(i,j-1,k,comp) &
+                        +base_new_cart(i,j,k,comp)+base_new_cart(i,j-1,k,comp) ) * FOURTH
+                   bc_loz = (base_old_cart(i,j,k,comp)+base_old_cart(i,j,k-1,comp) &
+                        +base_new_cart(i,j,k,comp)+base_new_cart(i,j,k-1,comp) ) * FOURTH
+                   bc_hix = (base_old_cart(i,j,k,comp)+base_old_cart(i+1,j,k,comp) &
+                        +base_new_cart(i,j,k,comp)+base_new_cart(i+1,j,k,comp) ) * FOURTH
+                   bc_hiy = (base_old_cart(i,j,k,comp)+base_old_cart(i,j+1,k,comp) &
+                        +base_new_cart(i,j,k,comp)+base_new_cart(i,j+1,k,comp) ) * FOURTH
+                   bc_hiz = (base_old_cart(i,j,k,comp)+base_old_cart(i,j,k+1,comp) &
+                        +base_new_cart(i,j,k,comp)+base_new_cart(i,j,k+1,comp) ) * FOURTH
                    
                    if (i.eq.domlo(1)) bc_lox = &
-                        HALF * (base_old_cart(i,j,k,n)+base_new_cart(i,j,k,n))
+                        HALF * (base_old_cart(i,j,k,comp)+base_new_cart(i,j,k,comp))
                    if (j.eq.domlo(2)) bc_loy = &
-                        HALF * (base_old_cart(i,j,k,n)+base_new_cart(i,j,k,n))
+                        HALF * (base_old_cart(i,j,k,comp)+base_new_cart(i,j,k,comp))
                    if (k.eq.domlo(3)) bc_loz = &
-                        HALF * (base_old_cart(i,j,k,n)+base_new_cart(i,j,k,n))
+                        HALF * (base_old_cart(i,j,k,comp)+base_new_cart(i,j,k,comp))
                    if (i.eq.domhi(1)) bc_hix = &
-                        HALF * (base_old_cart(i,j,k,n)+base_new_cart(i,j,k,n))
+                        HALF * (base_old_cart(i,j,k,comp)+base_new_cart(i,j,k,comp))
                    if (j.eq.domhi(2)) bc_hiy = &
-                        HALF * (base_old_cart(i,j,k,n)+base_new_cart(i,j,k,n))
+                        HALF * (base_old_cart(i,j,k,comp)+base_new_cart(i,j,k,comp))
                    if (k.eq.domhi(3)) bc_hiz = &
-                        HALF * (base_old_cart(i,j,k,n)+base_new_cart(i,j,k,n))
+                        HALF * (base_old_cart(i,j,k,comp)+base_new_cart(i,j,k,comp))
                    
                    divbaseu =  &
                         ( bc_hix * umac(i+1,j,k) - bc_lox * umac(i,j,k) ) / dx(1) &
                         +( bc_hiy * vmac(i,j+1,k) - bc_loy * vmac(i,j,k) ) / dx(2) &
                         +( bc_hiz * wmac(i,j,k+1) - bc_loz * wmac(i,j,k) ) / dx(3)
                    
-                   snew(i,j,k,n) = sold(i,j,k,n) &
-                        + (base_new_cart(i,j,k,n)-base_old_cart(i,j,k,n)) &
-                        - dt * divbaseu + dt * force(i,j,k,n)
+                   snew(i,j,k,comp) = sold(i,j,k,comp) &
+                        + (base_new_cart(i,j,k,comp)-base_old_cart(i,j,k,comp)) &
+                        - dt * divbaseu + dt * force(i,j,k,comp)
                    
                 enddo
              enddo
@@ -519,21 +521,21 @@ contains
     mult = ONE
     call addw0_3d_sphr(umac,vmac,wmac,w0_cart,lo,hi,mult)
     
-    do n = nstart, nstop
+    do comp = nstart, nstop
        
        ! Note the umac here DOES have w0 in it
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
                 
-                divsu = (umac(i+1,j,k) * sedgex(i+1,j,k,n) &
-                     -umac(i  ,j,k) * sedgex(i  ,j,k,n) ) / dx(1) + &
-                     (vmac(i,j+1,k) * sedgey(i,j+1,k,n) &
-                     -vmac(i,j  ,k) * sedgey(i,j  ,k,n) ) / dx(2) + &
-                     (wmac(i,j,k+1) * sedgez(i,j,k+1,n) &
-                     -wmac(i,j,k  ) * sedgez(i,j,k  ,n) ) / dx(3)
+                divsu = (umac(i+1,j,k) * sedgex(i+1,j,k,comp) &
+                     -umac(i  ,j,k) * sedgex(i  ,j,k,comp) ) / dx(1) + &
+                     (vmac(i,j+1,k) * sedgey(i,j+1,k,comp) &
+                     -vmac(i,j  ,k) * sedgey(i,j  ,k,comp) ) / dx(2) + &
+                     (wmac(i,j,k+1) * sedgez(i,j,k+1,comp) &
+                     -wmac(i,j,k  ) * sedgez(i,j,k  ,comp) ) / dx(3)
                 
-                snew(i,j,k,n) = snew(i,j,k,n) - dt * divsu
+                snew(i,j,k,comp) = snew(i,j,k,comp) - dt * divsu
                 
              enddo
           enddo
@@ -552,13 +554,13 @@ contains
        
        snew(:,:,:,rho_comp) = sold(:,:,:,rho_comp)
        
-       do n = nstart, nstop
+       do comp = nstart, nstop
           do k = lo(3), hi(3)
              do j = lo(2), hi(2)
                 do i = lo(1), hi(1)
-                   snew(i,j,k,rho_comp) = snew(i,j,k,rho_comp) + (snew(i,j,k,n)-sold(i,j,k,n))
-                   smin(n) = min(smin(n),snew(i,j,k,n))
-                   smax(n) = max(smax(n),snew(i,j,k,n))
+                   snew(i,j,k,rho_comp) = snew(i,j,k,rho_comp) + (snew(i,j,k,comp)-sold(i,j,k,comp))
+                   smin(comp) = min(smin(comp),snew(i,j,k,comp))
+                   smax(comp) = max(smax(comp),snew(i,j,k,comp))
                 enddo
              enddo
           enddo
@@ -567,25 +569,25 @@ contains
     
     ! Do not allow the species to leave here negative.
     if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
-       do n = nstart, nstop
-          if (smin(n) .lt. ZERO) then
+       do comp = nstart, nstop
+          if (smin(comp) .lt. ZERO) then
              do k = lo(3), hi(3)
                 do j = lo(2), hi(2)
                    do i = lo(1), hi(1)
-                      if (snew(i,j,k,n) .lt. ZERO) then
-                         delta = -snew(i,j,k,n)
+                      if (snew(i,j,k,comp) .lt. ZERO) then
+                         delta = -snew(i,j,k,comp)
                          sum = ZERO
-                         do n2 = nstart, nstop
-                            if (n2 .ne. n .and. snew(i,j,k,n2) .ge. ZERO) &
-                                 sum = sum + snew(i,j,k,n2)
+                         do comp2 = nstart, nstop
+                            if (comp2 .ne. comp .and. snew(i,j,k,comp2) .ge. ZERO) &
+                                 sum = sum + snew(i,j,k,comp2)
                          enddo
-                         do n2 = nstart, nstop
-                            if (n2 .ne. n .and. snew(i,j,k,n2) .ge. ZERO) then
-                               frac = snew(i,j,k,n2) / sum
-                               snew(i,j,k,n2) = snew(i,j,k,n2) - frac * delta
+                         do comp2 = nstart, nstop
+                            if (comp2 .ne. comp .and. snew(i,j,k,comp2) .ge. ZERO) then
+                               frac = snew(i,j,k,comp2) / sum
+                               snew(i,j,k,comp2) = snew(i,j,k,comp2) - frac * delta
                             end if
                          enddo
-                         snew(i,j,k,n) = ZERO
+                         snew(i,j,k,comp) = ZERO
                       end if
                    enddo
                 enddo

@@ -57,7 +57,7 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
   real(kind=dp_t), pointer    :: Xkcoeff1p(:,:,:,:),Xkcoeff2p(:,:,:,:)
   real(kind=dp_t), pointer    :: pcoeff1p(:,:,:,:),pcoeff2p(:,:,:,:)
   integer                     :: nlevs,dm,stencil_order
-  integer                     :: i,n,spec
+  integer                     :: i,n,comp
   integer                     :: lo(s1(1)%dim),hi(s1(1)%dim)
   type(bndry_reg), pointer    :: fine_flx(:) => Null()
 
@@ -284,7 +284,7 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   ! loop over species
-  do spec=1,nspec
+  do comp=1,nspec
 
      ! do X_k^{(1)} term first
      ! put beta on faces
@@ -297,10 +297,10 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
            hi = upb(get_box(rhsbeta(n), i))
            select case (dm)
            case (2)
-              call put_beta_on_faces_2d(lo,hi,Xkcoeff1p(:,:,1,spec), &
+              call put_beta_on_faces_2d(lo,hi,Xkcoeff1p(:,:,1,comp), &
                                         rhsbetap(:,:,1,:))
            case (3)
-              call put_beta_on_faces_3d(lo,hi,Xkcoeff1p(:,:,:,spec), &
+              call put_beta_on_faces_3d(lo,hi,Xkcoeff1p(:,:,:,comp), &
                                         rhsbetap(:,:,:,:))
            end select
         end do
@@ -308,13 +308,13 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
 
      ! load phi = X_k^{(1)}
      do n=1,nlevs
-        call multifab_copy_c(phi(n),1,s1(n),spec_comp+spec-1,1,1)
+        call multifab_copy_c(phi(n),1,s1(n),spec_comp+comp-1,1,1)
         call multifab_div_div_c(phi(n),1,s1(n),rho_comp,1,1)
      enddo
 
      ! apply the operator
      call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
-                      dm+spec_comp+spec-1,stencil_order,mla%mba%rr, &
+                      dm+spec_comp+comp-1,stencil_order,mla%mba%rr, &
                       mg_verbose,cg_verbose)
      
      ! add lphi to rhs
@@ -333,10 +333,10 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
            hi = upb(get_box(rhsbeta(n), i))
            select case (dm)
            case (2)
-              call put_beta_on_faces_2d(lo,hi,Xkcoeff2p(:,:,1,spec), &
+              call put_beta_on_faces_2d(lo,hi,Xkcoeff2p(:,:,1,comp), &
                                         rhsbetap(:,:,1,:))
            case (3)
-              call put_beta_on_faces_3d(lo,hi,Xkcoeff2p(:,:,:,spec), &
+              call put_beta_on_faces_3d(lo,hi,Xkcoeff2p(:,:,:,comp), &
                                         rhsbetap(:,:,:,:))
            end select
         end do
@@ -344,13 +344,13 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
 
      ! load phi = X_k^{(2)}
      do n=1,nlevs
-        call multifab_copy_c(phi(n),1,s2(n),spec_comp+spec-1,1,1)
+        call multifab_copy_c(phi(n),1,s2(n),spec_comp+comp-1,1,1)
         call multifab_div_div_c(phi(n),1,s2(n),rho_comp,1,1)
      enddo
 
      ! apply the operator
      call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
-                      dm+spec_comp+spec-1,stencil_order,mla%mba%rr, &
+                      dm+spec_comp+comp-1,stencil_order,mla%mba%rr, &
                       mg_verbose,cg_verbose)
      
      ! add lphi to rhs
@@ -554,7 +554,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
   real(kind=dp_t), pointer    :: Xkcoeff1p(:,:,:,:),Xkcoeff2p(:,:,:,:)
   real(kind=dp_t), pointer    :: pcoeff1p(:,:,:,:),pcoeff2p(:,:,:,:)
   integer                     :: nlevs,dm,stencil_order
-  integer                     :: i,n,spec
+  integer                     :: i,n,comp
   integer                     :: lo(s1(1)%dim),hi(s1(1)%dim)
   type(bndry_reg), pointer    :: fine_flx(:) => Null()
 
@@ -751,7 +751,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   ! loop over species
-  do spec=1,nspec
+  do comp=1,nspec
 
      ! put beta on faces
      do n=1,nlevs
@@ -763,10 +763,10 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
            hi = upb(get_box(rhsbeta(n), i))
            select case (dm)
            case (2)
-              call put_beta_on_faces_2d(lo,hi,Xkcoeff1p(:,:,1,spec), &
+              call put_beta_on_faces_2d(lo,hi,Xkcoeff1p(:,:,1,comp), &
                                         rhsbetap(:,:,1,:))
            case (3)
-              call put_beta_on_faces_3d(lo,hi,Xkcoeff1p(:,:,:,spec), &
+              call put_beta_on_faces_3d(lo,hi,Xkcoeff1p(:,:,:,comp), &
                                         rhsbetap(:,:,:,:))
            end select
         end do
@@ -774,16 +774,16 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
 
      ! load phi = X_k^{(1)} + X_k^{(2)}
      do n=1,nlevs
-        call multifab_copy_c(phi(n),1,s1(n),spec_comp+spec-1,1,1)
+        call multifab_copy_c(phi(n),1,s1(n),spec_comp+comp-1,1,1)
         call multifab_div_div_c(phi(n),1,s1(n),rho_comp,1,1)
-        call multifab_copy_c(phitemp(n),1,s2(n),spec_comp+spec-1,1,1)
+        call multifab_copy_c(phitemp(n),1,s2(n),spec_comp+comp-1,1,1)
         call multifab_div_div_c(phitemp(n),1,s2(n),rho_comp,1,1)
         call multifab_plus_plus_c(phi(n),1,phitemp(n),1,1,1)
      enddo
 
      ! apply the operator
      call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
-                      dm+spec_comp+spec-1,stencil_order,mla%mba%rr, &
+                      dm+spec_comp+comp-1,stencil_order,mla%mba%rr, &
                       mg_verbose,cg_verbose)
      
      ! add lphi to rhs
@@ -982,7 +982,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   ! loop over species
-  do spec=1,nspec
+  do comp=1,nspec
 
      ! do X_k^{(1)} term first
      ! put beta on faces
@@ -995,10 +995,10 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
            hi = upb(get_box(rhsbeta(n), i))
            select case (dm)
            case (2)
-              call put_beta_on_faces_2d(lo,hi,Xkcoeff1p(:,:,1,spec), &
+              call put_beta_on_faces_2d(lo,hi,Xkcoeff1p(:,:,1,comp), &
                                         rhsbetap(:,:,1,:))
            case (3)
-              call put_beta_on_faces_3d(lo,hi,Xkcoeff1p(:,:,:,spec), &
+              call put_beta_on_faces_3d(lo,hi,Xkcoeff1p(:,:,:,comp), &
                                         rhsbetap(:,:,:,:))
            end select
         end do
@@ -1006,13 +1006,13 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
 
      ! load phi = X_k^{(1)}
      do n=1,nlevs
-        call multifab_copy_c(phi(n),1,s1(n),spec_comp+spec-1,1,1)
+        call multifab_copy_c(phi(n),1,s1(n),spec_comp+comp-1,1,1)
         call multifab_div_div_c(phi(n),1,s1(n),rho_comp,1,1)
      enddo
 
      ! apply the operator
      call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
-                      dm+spec_comp+spec-1,stencil_order,mla%mba%rr, &
+                      dm+spec_comp+comp-1,stencil_order,mla%mba%rr, &
                       mg_verbose,cg_verbose)
      
      ! add lphi to rhs
@@ -1031,10 +1031,10 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
            hi = upb(get_box(rhsbeta(n), i))
            select case (dm)
            case (2)
-              call put_beta_on_faces_2d(lo,hi,Xkcoeff2p(:,:,1,spec), &
+              call put_beta_on_faces_2d(lo,hi,Xkcoeff2p(:,:,1,comp), &
                                         rhsbetap(:,:,1,:))
            case (3)
-              call put_beta_on_faces_3d(lo,hi,Xkcoeff2p(:,:,:,spec), &
+              call put_beta_on_faces_3d(lo,hi,Xkcoeff2p(:,:,:,comp), &
                                         rhsbetap(:,:,:,:))
            end select
         end do
@@ -1042,13 +1042,13 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
 
      ! load phi = X_k^{(2)}
      do n=1,nlevs
-        call multifab_copy_c(phi(n),1,s2(n),spec_comp+spec-1,1,1)
+        call multifab_copy_c(phi(n),1,s2(n),spec_comp+comp-1,1,1)
         call multifab_div_div_c(phi(n),1,s2(n),rho_comp,1,1)
      enddo
 
      ! apply the operator
      call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
-                      dm+spec_comp+spec-1,stencil_order,mla%mba%rr, &
+                      dm+spec_comp+comp-1,stencil_order,mla%mba%rr, &
                       mg_verbose,cg_verbose)
      
      ! add lphi to rhs
@@ -1240,7 +1240,7 @@ subroutine compute_thermo_quantities_2d(lo,hi,dt,s,hcoeff,Xkcoeff,pcoeff)
   real(kind=dp_t), intent(inout) :: pcoeff(lo(1)-1:,lo(2)-1:)
 
   ! Local
-  integer :: i,j,n
+  integer :: i,j,comp
   real(dp_t) :: qreact
 
   do j=lo(2)-1,hi(2)+1
@@ -1269,13 +1269,13 @@ subroutine compute_thermo_quantities_2d(lo,hi,dt,s,hcoeff,Xkcoeff,pcoeff)
               (1.0d0-p_eos(1)/(den_eos(1)*dpdr_eos(1)))+dedr_eos(1)/dpdr_eos(1))
 
         if(use_big_h) then
-           do n=1,nspec
-              Xkcoeff(i,j,n) = HALF*dt*conduct_eos(1)* &
-                   (dhdX_eos(1,n)+ebin(n))/cp_eos(1)
+           do comp=1,nspec
+              Xkcoeff(i,j,comp) = HALF*dt*conduct_eos(1)* &
+                   (dhdX_eos(1,comp)+ebin(comp))/cp_eos(1)
            enddo
         else
-           do n=1,nspec
-              Xkcoeff(i,j,n) = HALF*dt*conduct_eos(1)*dhdX_eos(1,n)/cp_eos(1)
+           do comp=1,nspec
+              Xkcoeff(i,j,comp) = HALF*dt*conduct_eos(1)*dhdX_eos(1,comp)/cp_eos(1)
            enddo
         endif
 
@@ -1299,7 +1299,7 @@ subroutine compute_thermo_quantities_3d(lo,hi,dt,t0,s,hcoeff,Xkcoeff,pcoeff)
   real(kind=dp_t), intent(inout) :: pcoeff(lo(1)-1:,lo(2)-1:,lo(3)-1:)
 
   ! Local
-  integer :: i,j,k,n
+  integer :: i,j,k,comp
   real(dp_t) :: qreact
 
   if(spherical .eq. 1) then
@@ -1334,14 +1334,14 @@ subroutine compute_thermo_quantities_3d(lo,hi,dt,t0,s,hcoeff,Xkcoeff,pcoeff)
                 (1.0d0-p_eos(1)/(den_eos(1)*dpdr_eos(1)))+dedr_eos(1)/dpdr_eos(1))
 
            if(use_big_h) then
-              do n=1,nspec
-                 Xkcoeff(i,j,k,n) = HALF*dt*conduct_eos(1)* &
-                      (dhdX_eos(1,n)+ebin(n))/cp_eos(1)
+              do comp=1,nspec
+                 Xkcoeff(i,j,k,comp) = HALF*dt*conduct_eos(1)* &
+                      (dhdX_eos(1,comp)+ebin(comp))/cp_eos(1)
 
               enddo
            else
-              do n=1,nspec
-                 Xkcoeff(i,j,k,n) = HALF*dt*conduct_eos(1)*dhdX_eos(1,n)/cp_eos(1)
+              do comp=1,nspec
+                 Xkcoeff(i,j,k,comp) = HALF*dt*conduct_eos(1)*dhdX_eos(1,comp)/cp_eos(1)
               enddo
            endif
         enddo

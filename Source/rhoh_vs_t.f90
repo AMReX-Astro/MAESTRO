@@ -63,7 +63,7 @@ contains
     real(kind=dp_t), intent(in   ) :: s0_new(0:,:), s0_edge_new(0:,:)
     
     ! Local variables
-    integer :: i, j, n
+    integer :: i, j, comp
     real(kind=dp_t) qreact
     
     do_diag = .false.
@@ -71,8 +71,8 @@ contains
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)+1
           sx(i,j,rho_comp) = 0.d0
-          do n = 1,nspec
-             sx(i,j,rho_comp) = sx(i,j,rho_comp) + sx(i,j,spec_comp+n-1)
+          do comp = 1,nspec
+             sx(i,j,rho_comp) = sx(i,j,rho_comp) + sx(i,j,spec_comp+comp-1)
           end do
        end do
     end do
@@ -101,8 +101,8 @@ contains
           
           qreact = 0.0d0
           if(use_big_h) then
-             do n=1,nspec
-                qreact = qreact + ebin(n)*xn_eos(1,n)
+             do comp=1,nspec
+                qreact = qreact + ebin(comp)*xn_eos(1,comp)
              enddo
              sx(i,j,rhoh_comp) = sx(i,j,rhoh_comp) + den_eos(1) * qreact
           endif
@@ -116,8 +116,8 @@ contains
     do j = lo(2), hi(2)+1
        do i = lo(1), hi(1)
           sy(i,j,rho_comp) = 0.d0
-          do n = 1,nspec
-             sy(i,j,rho_comp) = sy(i,j,rho_comp) + sy(i,j,spec_comp+n-1)
+          do comp = 1,nspec
+             sy(i,j,rho_comp) = sy(i,j,rho_comp) + sy(i,j,spec_comp+comp-1)
           end do
        end do
     end do
@@ -147,8 +147,8 @@ contains
           
           qreact = 0.0d0
           if(use_big_h) then
-             do n=1,nspec
-                qreact = qreact + ebin(n)*xn_eos(1,n)
+             do comp=1,nspec
+                qreact = qreact + ebin(comp)*xn_eos(1,comp)
              enddo
              sy(i,j,rhoh_comp) = sy(i,j,rhoh_comp) + den_eos(1) * qreact
           endif
@@ -172,7 +172,7 @@ contains
     real(kind=dp_t), intent(in   ) :: s0_new(0:,:), s0_edge_new(0:,:)
     
     ! Local variables
-    integer :: i, j, k, n
+    integer :: i, j, k, comp
     real(kind=dp_t) qreact
     
     do_diag = .false.
@@ -186,8 +186,8 @@ contains
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)+1
              sx(i,j,k,rho_comp) = 0.d0
-             do n = 1,nspec
-                sx(i,j,k,rho_comp) = sx(i,j,k,rho_comp) + sx(i,j,k,spec_comp+n-1)
+             do comp = 1,nspec
+                sx(i,j,k,rho_comp) = sx(i,j,k,rho_comp) + sx(i,j,k,spec_comp+comp-1)
              end do
           end do
        end do
@@ -219,8 +219,8 @@ contains
              
              qreact = 0.0d0
              if(use_big_h) then
-                do n=1,nspec
-                   qreact = qreact + ebin(n)*xn_eos(1,n)
+                do comp=1,nspec
+                   qreact = qreact + ebin(comp)*xn_eos(1,comp)
                 enddo
                 sx(i,j,k,rhoh_comp) = sx(i,j,k,rhoh_comp) + sx(i,j,k,rho_comp) * qreact
              endif
@@ -236,8 +236,8 @@ contains
        do j = lo(2), hi(2)+1
           do i = lo(1), hi(1)
              sy(i,j,k,rho_comp) = 0.d0
-             do n = 1,nspec
-                sy(i,j,k,rho_comp) = sy(i,j,k,rho_comp) + sy(i,j,k,spec_comp+n-1)
+             do comp = 1,nspec
+                sy(i,j,k,rho_comp) = sy(i,j,k,rho_comp) + sy(i,j,k,spec_comp+comp-1)
              end do
           end do
        end do
@@ -269,8 +269,8 @@ contains
              
              qreact = 0.0d0
              if(use_big_h) then
-                do n=1,nspec
-                   qreact = qreact + ebin(n)*xn_eos(1,n)
+                do comp=1,nspec
+                   qreact = qreact + ebin(comp)*xn_eos(1,comp)
                 enddo
                 sy(i,j,k,rhoh_comp) = sy(i,j,k,rhoh_comp) + sy(i,j,k,rho_comp) * qreact
              endif
@@ -286,8 +286,8 @@ contains
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
              sz(i,j,k,rho_comp) = 0.d0
-             do n = 1,nspec
-                sz(i,j,k,rho_comp) = sz(i,j,k,rho_comp) + sz(i,j,k,spec_comp+n-1)
+             do comp = 1,nspec
+                sz(i,j,k,rho_comp) = sz(i,j,k,rho_comp) + sz(i,j,k,spec_comp+comp-1)
              end do
           end do
        end do
@@ -319,8 +319,8 @@ contains
              
              qreact = 0.0d0
              if(use_big_h) then
-                do n=1,nspec
-                   qreact = qreact + ebin(n)*xn_eos(1,n)
+                do comp=1,nspec
+                   qreact = qreact + ebin(comp)*xn_eos(1,comp)
                 enddo
                 sz(i,j,k,rhoh_comp) = sz(i,j,k,rhoh_comp) + sz(i,j,k,rho_comp) * qreact
              endif
@@ -371,7 +371,7 @@ contains
     real (kind = dp_t), intent(in   ) ::  t0(0:)
     
     ! Local variables
-    integer :: i, j, n
+    integer :: i, j, comp
     real(kind=dp_t) qreact
     
     do_diag = .false.
@@ -387,8 +387,8 @@ contains
 
           qreact = 0.0d0
           if(use_big_h) then
-             do n=1,nspec
-                qreact = qreact + ebin(n)*xn_eos(1,n)
+             do comp=1,nspec
+                qreact = qreact + ebin(comp)*xn_eos(1,comp)
              enddo
              h_eos(1) = state(i,j,rhoh_comp) / state(i,j,rho_comp) - qreact
           else
@@ -421,7 +421,7 @@ contains
     real (kind = dp_t), intent(in   ) ::  t0(0:)
 
     ! Local variables
-    integer :: i, j, k, n
+    integer :: i, j, k, comp
     real(kind=dp_t) qreact
     
     do_diag = .false.
@@ -438,8 +438,8 @@ contains
              
              qreact = 0.0d0
              if(use_big_h) then
-                do n=1,nspec
-                   qreact = qreact + ebin(n)*xn_eos(1,n)
+                do comp=1,nspec
+                   qreact = qreact + ebin(comp)*xn_eos(1,comp)
                 enddo
                 h_eos(1) = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp) - qreact
              else

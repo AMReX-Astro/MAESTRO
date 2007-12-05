@@ -124,7 +124,7 @@ contains
                    (dhdX_eos(1,comp) + ebin(comp))*rho_omegadot(i,j,comp)/den_eos(1)
 
               pres_term = pres_term + &
-                   dpdX_eos(1,n)*rho_omegadot(i,j,n)/den_eos(1)
+                   dpdX_eos(1,comp)*rho_omegadot(i,j,comp)/den_eos(1)
            enddo
 
            Source(i,j) = (sigma/den_eos(1)) * ( rho_Hext(i,j) + thermal(i,j) ) &
@@ -202,7 +202,7 @@ contains
                       (dhdX_eos(1,comp) + ebin(comp))*rho_omegadot(i,j,k,comp)/den_eos(1)
 
                  pres_term = pres_term + &
-                      dpdX_eos(1,n)*rho_omegadot(i,j,k,n)/den_eos(1)
+                      dpdX_eos(1,comp)*rho_omegadot(i,j,k,comp)/den_eos(1)
               enddo
 
               Source(i,j,k) = (sigma/den_eos(1)) * ( rho_Hext(i,j,k) + thermal(i,j,k) ) &
