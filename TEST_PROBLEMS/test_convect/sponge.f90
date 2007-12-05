@@ -19,8 +19,9 @@ module sponge_module
 
 contains
 
-  subroutine init_sponge (s0,anelastic_cutoff,prob_hi,dx)
+  subroutine init_sponge (nlevs,s0,anelastic_cutoff,prob_hi,dx)
 
+    integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(in   ) :: s0(0:,:)
     real(kind=dp_t), intent(in   ) :: anelastic_cutoff
     real(kind=dp_t), intent(in   ) :: prob_hi(:),dx(:)
