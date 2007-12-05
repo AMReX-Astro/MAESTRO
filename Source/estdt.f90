@@ -127,10 +127,7 @@ contains
     real (kind = dp_t)  :: eps
     real (kind = dp_t)  :: denom, gradp0
     real (kind = dp_t)  :: a, b, c
-    integer             :: i,j,nr
-    
-    nr = size(p0,dim=1)
-    nr = nr/2**(n-1)
+    integer             :: i,j
     
     eps = 1.0d-8
     
@@ -178,7 +175,7 @@ contains
        
        if (j .eq. 0) then
           gradp0 = (p0(j+1) - p0(j))/dx(2)
-       else if (j .eq. nr-1) then
+       else if (j .eq. nr(n)-1) then
           gradp0 = (p0(j) - p0(j-1))/dx(2)
        else
           gradp0 = HALF*(p0(j+1) - p0(j-1))/dx(2)
@@ -238,12 +235,9 @@ contains
     real (kind = dp_t)  :: fx, fy, fz
     real (kind = dp_t)  :: eps,denom,gradp0
     real (kind = dp_t)  :: a, b, c
-    integer             :: i,j,k,nr
+    integer             :: i,j,k
     
     eps = 1.0d-8
-    
-    nr = size(p0,dim=1)
-    nr = nr/2**(n-1)
     
     spdx = ZERO
     spdy = ZERO 
@@ -301,7 +295,7 @@ contains
        
        if (k .eq. 0) then
           gradp0 = (p0(k+1) - p0(k))/dx(3)
-       else if (k .eq. nr-1) then
+       else if (k .eq. nr(n)-1) then
           gradp0 = (p0(k) - p0(k-1))/dx(3)
        else
           gradp0 = HALF*(p0(k+1) - p0(k-1))/dx(3)
@@ -368,12 +362,9 @@ contains
     real (kind = dp_t)  :: fx, fy, fz
     real (kind = dp_t)  :: eps,denom
     real (kind = dp_t)  :: a, b, c
-    integer             :: i,j,k,nr
+    integer             :: i,j,k
     
     eps = 1.0d-8
-    
-    nr = size(p0,dim=1)
-    nr = nr/2**(n-1)
     
     spdx = ZERO
     spdy = ZERO 
@@ -432,14 +423,14 @@ contains
        dt_adv = min(dt_adv,sqrt(2.0D0*dx(3)/fz))
     
     ! divU constraint
-    allocate(gp0(0:nr))
-    do k = 1,nr-1
+    allocate(gp0(0:nr(n)))
+    do k = 1,nr(n)-1
        gp0(k) = (p0(k) - p0(k-1))/dr(1)
        gam1_p_avg = HALF * (gam1(k)*p0(k) + gam1(k-1)*p0(k-1))
        gp0(k) = gp0(k) / gam1_p_avg
     end do
-    gp0(nr) = gp0(nr-1)
-    gp0( 0) = gp0(   1)
+    gp0(nr(n)) = gp0(nr(n)-1)
+    gp0(    0) = gp0(      1)
     allocate(gp0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),3))
     call put_w0_on_3d_cells_sphr(gp0,gp0_cart,normal,lo,hi,dx,0)
     

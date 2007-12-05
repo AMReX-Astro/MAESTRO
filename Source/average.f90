@@ -43,14 +43,13 @@ contains
     
     real(kind=dp_t), pointer     :: pp(:,:,:,:)
     integer                      :: lo(phi(1)%dim),hi(phi(1)%dim)
-    integer                      :: i,k,n,nlevs,ng,dm,nr
+    integer                      :: i,k,n,nlevs,ng,dm
     real(kind=dp_t), allocatable :: vol_grid(:,:),vol_proc(:,:)
     real(kind=dp_t), allocatable :: vol_tot(:,:),phibar_proc(:,:,:)
     real(kind=dp_t), allocatable :: source_buffer(:,:), target_buffer(:,:)
     
     dm = phi(1)%dim
     ng = phi(1)%ng
-    nr = size(phibar,dim=2)
     nlevs = size(dx,dim=1)
     
     phibar(:,:,:) = ZERO
@@ -58,11 +57,11 @@ contains
     if (evolve_base) then
        
        if (spherical .eq. 1) then
-          allocate(vol_grid(nlevs,0:nr-1))
+          allocate(vol_grid(nlevs,0:nr(nlevs)-1))
        end if
        
-       allocate(vol_proc(nlevs,0:nr-1),vol_tot(nlevs,0:nr-1))
-       allocate(phibar_proc(nlevs,0:nr-1,ncomp))
+       allocate(vol_proc(nlevs,0:nr(nlevs)-1),vol_tot(nlevs,0:nr(nlevs)-1))
+       allocate(phibar_proc(nlevs,0:nr(nlevs)-1,ncomp))
        allocate(source_buffer(nlevs,ncomp), target_buffer(nlevs,ncomp))
        
        vol_proc(:,:) = ZERO
@@ -88,7 +87,7 @@ contains
              case (3)
                 if (spherical .eq. 1) then
                    vol_grid(n,:) = ZERO
-                   call average_3d_sphr(pp(:,:,:,:),phibar_proc(n,:,:),lo,hi,ng,dx(n,:), &
+                   call average_3d_sphr(n,pp(:,:,:,:),phibar_proc(n,:,:),lo,hi,ng,dx(n,:), &
                                         vol_grid(n,:),comp,ncomp)
 
                    vol_proc(n,:) = vol_proc(n,:) + vol_grid(n,:)
@@ -104,7 +103,7 @@ contains
           end do
 
           if (dm .eq. 2 .or. (dm.eq.3.and.spherical.eq.0)) then
-             do k = 0,nr-1
+             do k = 0,nr(n)-1
                 call parallel_reduce(vol_tot(n,k),  vol_proc(n,k),      MPI_SUM)
                 
                 ! put all the components for the current k into a buffer array
@@ -117,7 +116,7 @@ contains
              end do
              
           else
-             do k = 0,nr-1
+             do k = 0,nr(n)-1
                 call parallel_reduce(vol_tot(n,k),  vol_proc(n,k),      MPI_SUM)
                 
                 ! put all the components for the current k into a buffer array
@@ -194,8 +193,9 @@ contains
     
   end subroutine average_3d
   
-  subroutine average_3d_sphr (phi,phibar,lo,hi,ng,dx,sum,start_comp,ncomp)
+  subroutine average_3d_sphr(n,phi,phibar,lo,hi,ng,dx,sum,start_comp,ncomp)
     
+    integer         , intent(in   ) :: n
     integer         , intent(in   ) :: lo(:), hi(:), ng, start_comp, ncomp
     real (kind=dp_t), intent(in   ) :: phi(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind=dp_t), intent(inout) :: phibar(0:,:)
@@ -205,7 +205,7 @@ contains
     ! Local variables
     integer                       :: i, j, k, comp, index
     integer                       :: ii, jj, kk
-    integer                       :: nr, nc
+    integer                       :: nc
     real (kind=dp_t)              :: x,y,z,radius,vol
     real (kind=dp_t)              :: xx, yy, zz
     real (kind=dp_t)              :: xmin, ymin, zmin
@@ -214,7 +214,6 @@ contains
     ! compute nsub such that we are always guaranteed to fill each of
     ! the base state radial bins
     nsub = int(dx(1)/dr(1)) + 1
-    nr = size(phibar,dim=1)
     
     do k = lo(3),hi(3)
        zmin = dble(k)*dx(3) - center(3)
@@ -237,10 +236,10 @@ contains
                       radius = sqrt(xx**2 + yy**2 + zz**2)
                       index = radius / dr(1) 
                       
-                      if (index .lt. 0 .or. index .gt. nr-1) then
+                      if (index .lt. 0 .or. index .gt. nr(n)-1) then
                          print *,'RADIUS ',radius
                          print *,'BOGUS INDEX IN AVERAGE ',index
-                         print *,'NOT IN RANGE 0 TO ',nr-1
+                         print *,'NOT IN RANGE 0 TO ',nr(n)-1
                          print *,'I J K ',i,j,k
                          print *,'X Y Z ',x,y,z
                          stop

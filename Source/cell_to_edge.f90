@@ -2,6 +2,7 @@ module cell_to_edge_module
 
   use bl_types
   use bl_constants_module
+  use geometry
   
   implicit none
   
@@ -18,17 +19,15 @@ contains
     
     ! local
     real(kind=dp_t)                ::  s0min,s0max
-    integer                        ::  k,nr
+    integer                        ::  k
     
-    nr = size(s0_cell,dim=1)
+    s0_edge(    0) = s0_cell(      0)
+    s0_edge(nr(n)) = s0_cell(nr(n)-1)
     
-    s0_edge( 0) = s0_cell(   0)
-    s0_edge(nr) = s0_cell(nr-1)
+    s0_edge(      1) = HALF * (s0_cell(      0) + s0_cell(      1))
+    s0_edge(nr(n)-1) = HALF * (s0_cell(nr(n)-1) + s0_cell(nr(n)-2))
     
-    s0_edge(   1) = HALF * (s0_cell(   0) + s0_cell(   1))
-    s0_edge(nr-1) = HALF * (s0_cell(nr-1) + s0_cell(nr-2))
-    
-    do k = 2, nr-2
+    do k = 2, nr(n)-2
        s0_edge(k) = 7.d0/12.d0 * (s0_cell(k  ) + s0_cell(k-1)) &
             -1.d0/12.d0 * (s0_cell(k+1) + s0_cell(k-2))
        s0min = min(s0_cell(k),s0_cell(k-1))
