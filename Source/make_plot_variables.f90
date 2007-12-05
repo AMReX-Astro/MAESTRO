@@ -56,7 +56,7 @@ contains
     real (kind = dp_t), intent(in   ) ::    s(lo(1)-ng:,lo(2)-ng:,:)
 
 !     Local variables
-    integer :: i, j, n
+    integer :: i, j, comp
     real(kind=dp_t) :: qreact
 
     do j = lo(2), hi(2)
@@ -64,8 +64,8 @@ contains
 
           qreact = 0.0d0
           if(use_big_h) then
-             do n=1,nspec
-                qreact = qreact + ebin(n)*s(i,j,spec_comp+n-1)/s(i,j,rho_comp)
+             do comp=1,nspec
+                qreact = qreact + ebin(comp)*s(i,j,spec_comp+comp-1)/s(i,j,rho_comp)
              enddo
              enthalpy(i,j) = s(i,j,rhoh_comp)/s(i,j,rho_comp) - qreact
           else
@@ -81,12 +81,12 @@ contains
 
     implicit none
 
-    integer, intent(in) :: lo(:), hi(:), ng
-    real (kind = dp_t), intent(  out) :: enthalpy(lo(1):,lo(2):, lo(3):)  
-    real (kind = dp_t), intent(in   ) ::    s(lo(1)-ng:,lo(2)-ng:, lo(3)-ng:,:)
+    integer, intent(in)               :: lo(:),hi(:),ng
+    real (kind = dp_t), intent(  out) :: enthalpy(lo(1):,lo(2):,lo(3):)  
+    real (kind = dp_t), intent(in   ) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     
-!     Local variables
-    integer :: i, j, k, n
+    ! Local variables
+    integer         :: i,j,k,comp
     real(kind=dp_t) :: qreact
     
     do k = lo(3), hi(3)
@@ -95,8 +95,8 @@ contains
 
              qreact = 0.0d0
              if(use_big_h) then
-                do n=1,nspec
-                   qreact = qreact + ebin(n)*s(i,j,k,spec_comp+n-1)/s(i,j,k,rho_comp)
+                do comp=1,nspec
+                   qreact = qreact + ebin(comp)*s(i,j,k,spec_comp+comp-1)/s(i,j,k,rho_comp)
                 enddo
                 enthalpy(i,j,k) = s(i,j,k,rhoh_comp)/s(i,j,k,rho_comp) - qreact
              else
@@ -160,7 +160,7 @@ contains
     real (kind = dp_t), intent(in   ) ::  dx(:)
 
     !     Local variables
-    integer :: i, j, n
+    integer :: i, j, comp
     real(kind=dp_t) qreact
     real(kind=dp_t) dp_avg, p_avg
 
@@ -180,8 +180,8 @@ contains
 
           qreact = 0.0d0
           if(use_big_h) then
-             do n=1,nspec
-                qreact = qreact + ebin(n)*xn_eos(1,n)
+             do comp=1,nspec
+                qreact = qreact + ebin(comp)*xn_eos(1,comp)
              enddo
              h_eos(1) = state(i,j,rhoh_comp) / state(i,j,rho_comp) - qreact
           else
@@ -230,7 +230,7 @@ contains
     real (kind = dp_t), intent(in   ) :: t0(0:)
 
     !     Local variables
-    integer :: i, j, k, n
+    integer :: i, j, k, comp
     real(kind=dp_t) qreact
 
     do_diag = .false.
@@ -247,8 +247,8 @@ contains
 
              qreact = 0.0d0
              if(use_big_h) then
-                do n=1,nspec
-                   qreact = qreact + ebin(n)*xn_eos(1,n)
+                do comp=1,nspec
+                   qreact = qreact + ebin(comp)*xn_eos(1,comp)
                 enddo
                 h_eos(1) = state(i,j,k,rhoh_comp)/state(i,j,k,rho_comp) - qreact
              else
@@ -738,12 +738,12 @@ contains
       real (kind = dp_t), intent(in   ) ::  rho(lo(1)-ng:,lo(2)-ng:  )
 
 !     Local variables
-      integer :: i, j, n
+      integer :: i, j, comp
 
-      do n = 1, nspec
+      do comp = 1, nspec
       do j = lo(2), hi(2)
       do i = lo(1), hi(1)
-         X(i,j,n) = rhoX(i,j,n) / rho(i,j)
+         X(i,j,comp) = rhoX(i,j,comp) / rho(i,j)
       enddo
       enddo
       enddo
@@ -760,13 +760,13 @@ contains
       real (kind = dp_t), intent(in   ) ::  rho(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:  )
 
 !     Local variables
-      integer :: i, j, k, n
+      integer :: i, j, k, comp
 
-      do n = 1, nspec
+      do comp = 1, nspec
       do k = lo(3), hi(3)
       do j = lo(2), hi(2)
       do i = lo(1), hi(1)
-         X(i,j,k,n) = rhoX(i,j,k,n) / rho(i,j,k)
+         X(i,j,k,comp) = rhoX(i,j,k,comp) / rho(i,j,k)
       enddo
       enddo
       enddo
@@ -824,15 +824,15 @@ contains
      real (kind = dp_t), intent(in   ) :: rho(lo(1)-ng_s:,lo(2)-ng_s:)
      
      ! Local variables
-     integer :: i, j, n
+     integer :: i, j, comp
 
      enuc(:,:) = ZERO
 
-     do n = 1, nspec
+     do comp = 1, nspec
         do j = lo(2), hi(2)
            do i = lo(1), hi(1)
-              omegadot(i,j,n) = rho_omegadot(i,j,n) / rho(i,j)
-              enuc(i,j) = enuc(i,j) - omegadot(i,j,n)*ebin(n)
+              omegadot(i,j,comp) = rho_omegadot(i,j,comp) / rho(i,j)
+              enuc(i,j) = enuc(i,j) - omegadot(i,j,comp)*ebin(comp)
            enddo
         enddo
      enddo
@@ -850,16 +850,16 @@ contains
      real (kind = dp_t), intent(in   ) :: rho(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:  )
 
      ! Local variables
-     integer :: i, j, k, n
+     integer :: i, j, k, comp
 
      enuc(:,:,:) = ZERO
 
-     do n = 1, nspec
+     do comp = 1, nspec
         do k = lo(3), hi(3)
            do j = lo(2), hi(2)
               do i = lo(1), hi(1)
-                 omegadot(i,j,k,n) = rho_omegadot(i,j,k,n) / rho(i,j,k)
-                 enuc(i,j,k) = enuc(i,j,k) - omegadot(i,j,k,n)*ebin(n)
+                 omegadot(i,j,k,comp) = rho_omegadot(i,j,k,comp) / rho(i,j,k)
+                 enuc(i,j,k) = enuc(i,j,k) - omegadot(i,j,k,comp)*ebin(comp)
               enddo
            enddo
         enddo

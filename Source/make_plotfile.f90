@@ -33,7 +33,7 @@ contains
     character(len=20), intent(inout) :: plot_names(:)
 
     ! Local variables
-    integer :: n
+    integer :: comp
 
     plot_names(icomp_vel  ) = "x_vel"
     plot_names(icomp_vel+1) = "y_vel"
@@ -47,14 +47,14 @@ contains
     endif
 
     if (plot_spec) then
-      do n = 1, nspec
-         plot_names(icomp_spec+n-1) = "X(" // trim(short_spec_names(n)) // ")"
+      do comp = 1, nspec
+         plot_names(icomp_spec+comp-1) = "X(" // trim(short_spec_names(comp)) // ")"
       enddo
     end if
 
     if (plot_trac) then
-      do n = 1, ntrac
-       plot_names(icomp_trac+n-1) = "tracer"
+      do comp = 1, ntrac
+       plot_names(icomp_trac+comp-1) = "tracer"
       enddo
     end if
 
@@ -82,8 +82,9 @@ contains
     if (dm > 2) plot_names(icomp_gp+2) = "gpz"
 
     if (plot_spec) then
-      do n = 1, nspec
-         plot_names(icomp_omegadot+n-1) = "omegadot(" // trim(short_spec_names(n)) // ")"
+      do comp = 1, nspec
+         plot_names(icomp_omegadot+comp-1) = &
+              "omegadot(" // trim(short_spec_names(comp)) // ")"
       enddo
       plot_names(icomp_enuc) = "enucdot"
     end if

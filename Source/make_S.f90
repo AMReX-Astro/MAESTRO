@@ -88,7 +88,7 @@ contains
       real (kind=dp_t), intent(in   ) :: dx(:)
 
 !     Local variables
-      integer :: i, j, n
+      integer :: i, j, comp
 
       real(kind=dp_t) :: sigma, react_term, pres_term
 
@@ -119,9 +119,9 @@ contains
 
            react_term = ZERO
            pres_term = ZERO
-           do n = 1, nspec
+           do comp = 1, nspec
               react_term = react_term - &
-                   (dhdX_eos(1,n) + ebin(n))*rho_omegadot(i,j,n)/den_eos(1)
+                   (dhdX_eos(1,comp) + ebin(comp))*rho_omegadot(i,j,comp)/den_eos(1)
 
               pres_term = pres_term + &
                    dpdX_eos(1,n)*rho_omegadot(i,j,n)/den_eos(1)
@@ -155,7 +155,7 @@ contains
       real (kind=dp_t), intent(in   ) :: dx(:)
 
 !     Local variables
-      integer :: i, j, k , n
+      integer :: i, j, k, comp
 
       real(kind=dp_t), allocatable :: t0_cart(:,:,:)
       real(kind=dp_t) :: sigma, react_term, pres_term
@@ -197,9 +197,9 @@ contains
 
               react_term = ZERO
               pres_term = ZERO
-              do n = 1, nspec
+              do comp = 1, nspec
                  react_term = react_term - &
-                      (dhdX_eos(1,n) + ebin(n))*rho_omegadot(i,j,k,n)/den_eos(1)
+                      (dhdX_eos(1,comp) + ebin(comp))*rho_omegadot(i,j,k,comp)/den_eos(1)
 
                  pres_term = pres_term + &
                       dpdX_eos(1,n)*rho_omegadot(i,j,k,n)/den_eos(1)
