@@ -88,7 +88,7 @@ contains
       real (kind=dp_t), intent(in   ) :: dx(:)
 
 !     Local variables
-      integer :: i, j, n, nr
+      integer :: i, j, n
 
       real(kind=dp_t) :: sigma, react_term, pres_term
 

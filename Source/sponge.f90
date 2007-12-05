@@ -19,22 +19,22 @@ module sponge_module
 
 contains
 
-  subroutine init_sponge (s0,anelastic_cutoff,prob_hi,dx)
+  subroutine init_sponge(nlevs,s0,anelastic_cutoff,prob_hi,dx)
 
+    integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(in   ) :: s0(0:,:)
     real(kind=dp_t), intent(in   ) :: anelastic_cutoff
     real(kind=dp_t), intent(in   ) :: prob_hi(:),dx(:)
 
     real (kind = dp_t) :: r
     real (kind = dp_t) :: r_top
-    integer            :: j,nr
+    integer            :: j
 
-    nr = size(s0,dim=1)
-    r_top = dble(nr) * dr(1)
+    r_top = dble(nr(nlevs)) * dr(nlevs)
 
     r_sp = r_top
-    do j = 0, nr-1
-       r = (dble(j)+HALF) * dr(1)
+    do j = 0, nr(nlevs)-1
+       r = (dble(j)+HALF) * dr(nlevs)
        if (s0(j,rho_comp) < 10.d0*anelastic_cutoff) then
           r_sp = r
           exit
@@ -42,8 +42,8 @@ contains
     enddo
 
       r_md = r_top
-      do j = 0,nr-1
-         r = (dble(j)+HALF) * dr(1)
+      do j = 0,nr(nlevs)-1
+         r = (dble(j)+HALF) * dr(nlevs)
          if (s0(j,rho_comp) < anelastic_cutoff) then
             r_md = r
             exit
