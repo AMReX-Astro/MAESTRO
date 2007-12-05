@@ -53,7 +53,6 @@ contains
     real(kind=dp_t), pointer    :: Tcoeffp(:,:,:,:),hcoeffp(:,:,:,:)
     real(kind=dp_t), pointer    :: pcoeffp(:,:,:,:),residp(:,:,:,:)
     type(bc_level)              :: bc
-    type(box)                   :: fine_domain
 
     nlevs = mla%nlevel
     dm = mla%dim
@@ -271,9 +270,8 @@ contains
        call ml_cc_restriction(thermal(n-1),thermal(n),mla%mba%rr(n-1,:))
 
        ! fill fine ghost cells using interpolation from the underlying coarse data
-       fine_domain = layout_get_pd(mla%la(n))
        bc = the_bc_tower%bc_tower_array(n-1)
-       call multifab_fill_ghost_cells(thermal(n),thermal(n-1),fine_domain, &
+       call multifab_fill_ghost_cells(thermal(n),thermal(n-1), &
                                       1,mla%mba%rr(n-1,:), &
                                       the_bc_tower%bc_tower_array(n-1), &
                                       the_bc_tower%bc_tower_array(n  ), &

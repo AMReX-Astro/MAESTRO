@@ -42,7 +42,6 @@ contains
 
     integer :: lo(s_in(1)%dim),hi(s_in(1)%dim),ng,dm
     integer :: i,n,bc_comp,comp
-    type(box) :: fine_domain
 
     ng = s_in(1)%ng
     dm = s_in(1)%dim
@@ -82,8 +81,7 @@ contains
        call ml_cc_restriction(s_out(n-1),s_out(n),mla%mba%rr(n-1,:))
 
        ! fill fine ghost cells using interpolation from the underlying coarse data
-       fine_domain = layout_get_pd(mla%la(n))
-       call multifab_fill_ghost_cells(s_out(n),s_out(n-1),fine_domain, &
+       call multifab_fill_ghost_cells(s_out(n),s_out(n-1), &
                                       ng,mla%mba%rr(n-1,:), &
                                       the_bc_level(n-1), the_bc_level(n), &
                                       rho_comp,dm+rho_comp,nscal)

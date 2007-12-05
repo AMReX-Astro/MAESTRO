@@ -38,7 +38,6 @@ contains
     real(kind=dp_t), pointer :: rwp(:,:,:,:)
     integer                  :: lo(thermal(1)%dim),hi(thermal(1)%dim)
     integer                  :: dm,i,n
-    type(box)                :: fine_domain
     
     dm = thermal(1)%dim
     
@@ -74,8 +73,7 @@ contains
        call ml_cc_restriction(thermal(n-1),thermal(n),mla%mba%rr(n-1,:))
 
        ! fill fine ghost cells using interpolation from the underlying coarse data
-       fine_domain = layout_get_pd(mla%la(n))
-       call multifab_fill_ghost_cells(thermal(n),thermal(n-1),fine_domain, &
+       call multifab_fill_ghost_cells(thermal(n),thermal(n-1), &
                                       1,mla%mba%rr(n-1,:), &
                                       the_bc_level(n-1), the_bc_level(n), &
                                       1,neumann_comp,1)

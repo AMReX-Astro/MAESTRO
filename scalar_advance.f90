@@ -337,8 +337,7 @@ contains
     do n = nlevs, 2, -1
        call ml_cc_restriction(snew(n-1),snew(n),mla%mba%rr(n-1,:))
        
-       domain = layout_get_pd(mla%la(n))
-       call multifab_fill_ghost_cells(snew(n),snew(n-1),domain, &
+       call multifab_fill_ghost_cells(snew(n),snew(n-1), &
                                       ng_cell,mla%mba%rr(n-1,:), &
                                       the_bc_level(n-1), the_bc_level(n), &
                                       1,dm+rho_comp,nscal)

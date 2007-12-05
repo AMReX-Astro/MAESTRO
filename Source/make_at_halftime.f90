@@ -80,7 +80,6 @@ contains
      real(kind=dp_t), pointer:: rnp(:,:,:,:)
      integer   :: lo(phihalf(1)%dim),hi(phihalf(1)%dim)
      integer   :: ng_h,ng_o,dm,i,n,bc_comp
-     type(box) :: fine_domain
 
      dm = phihalf(1)%dim
      ng_h = phihalf(1)%ng
@@ -116,8 +115,7 @@ contains
         do n = nlevs, 2, -1
            call ml_cc_restriction(phihalf(n-1),phihalf(n),mla%mba%rr(n-1,:))
 
-           fine_domain = layout_get_pd(mla%la(n))
-           call multifab_fill_ghost_cells(phihalf(n),phihalf(n-1),fine_domain, &
+           call multifab_fill_ghost_cells(phihalf(n),phihalf(n-1), &
                                           ng_h,mla%mba%rr(n-1,:), &
                                           the_bc_level(n-1), the_bc_level(n  ), &
                                           1,dm+in_comp,1)

@@ -49,7 +49,6 @@ contains
     real(dp_t)                  :: umin,umax,vmin,vmax,wmin,wmax
     integer                     :: stencil_type
     logical                     :: use_div_coeff_1d, use_div_coeff_3d
-    type(box)                   :: fine_domain
     type(bc_level)              ::  bc
     
     ! stencil_type = ST_DENSE
@@ -191,8 +190,7 @@ contains
        call ml_cc_restriction(unew(n-1),unew(n),mla%mba%rr(n-1,:)) 
        call ml_cc_restriction(  gp(n-1),  gp(n),mla%mba%rr(n-1,:))
        
-       fine_domain = layout_get_pd(mla%la(n))
-       call multifab_fill_ghost_cells(unew(n),unew(n-1),fine_domain, &
+       call multifab_fill_ghost_cells(unew(n),unew(n-1), &
                                       ng,mla%mba%rr(n-1,:), &
                                       the_bc_tower%bc_tower_array(n-1), &
                                       the_bc_tower%bc_tower_array(n  ), &
