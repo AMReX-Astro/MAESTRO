@@ -159,7 +159,7 @@ contains
                           s(n),u(n),s0,p0,dx(n,:))
 
        ! TEMP (FROM H) & DELTA_P
-       call make_tfromH    (plotdata(n),icomp_tfromH,icomp_dp,s(n),p0,s0(:,temp_comp),dx(n,:))
+       call make_tfromH(n,plotdata(n),icomp_tfromH,icomp_dp,s(n),p0,s0(:,temp_comp),dx(n,:))
 
        ! DIFF BETWEEN TFROMRHO AND TFROMH
        call make_deltaT (plotdata(n),icomp_dT,icomp_tfromrho,icomp_tfromH)
@@ -176,7 +176,7 @@ contains
                           s(n),u(n),s0,p0,dx(n,:))
 
        ! TEMP (FROM H) & DELTA_P
-       call make_tfromH    (plotdata(n),icomp_tfromH,icomp_dp,s(n),p0,s0(:,temp_comp),dx(n,:))
+       call make_tfromH(n,plotdata(n),icomp_tfromH,icomp_dp,s(n),p0,s0(:,temp_comp),dx(n,:))
 
        ! DIFF BETWEEN TFROMRHO AND TFROMH
        call make_deltaT (plotdata(n),icomp_dT,icomp_tfromrho,icomp_tfromH)

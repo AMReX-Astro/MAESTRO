@@ -44,25 +44,23 @@ contains
        s0p => dataptr(s0_cart,i)
        lo = lwb(get_box(s0_cart,i))
        hi = upb(get_box(s0_cart,i))
-       call fill_3d_data(s0p(:,:,:,comp),s0(:),lo,hi,dx,ng)
+       call fill_3d_data(n,s0p(:,:,:,comp),s0(:),lo,hi,dx,ng)
     end do
 
     call multifab_fill_boundary_c(s0_cart,comp,1)
 
   end subroutine fill_3d_data_wrapper
 
-  subroutine fill_3d_data(data,s0,lo,hi,dx,ng)
+  subroutine fill_3d_data(n,data,s0,lo,hi,dx,ng)
     
-    integer        , intent(in   ) :: lo(:),hi(:),ng
+    integer        , intent(in   ) :: n,lo(:),hi(:),ng
     real(kind=dp_t), intent(  out) :: data(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
     real(kind=dp_t), intent(in   ) ::   s0(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
     
-    integer                  :: i,j,k,nr,index
+    integer                  :: i,j,k,index
     real(kind=dp_t)          :: x,y,z
     real(kind=dp_t)          :: radius
-    
-    nr = size(s0,dim=1)
     
     do k = lo(3),hi(3)
        z = (dble(k)+HALF)*dx(3) - center(3)
@@ -72,10 +70,10 @@ contains
              x = (dble(i)+HALF)*dx(1) - center(1)
              radius = sqrt(x**2 + y**2 + z**2)
              index = int(radius / dr(1))
-             if (index .lt. 0 .or. index .gt. nr-1) then
+             if (index .lt. 0 .or. index .gt. nr(n)-1) then
                 print *,'RADIUS ',radius
                 print *,'BOGUS INDEX IN FILL_3D: ',index
-                print *,'NOT IN RANGE 0 TO ',nr-1
+                print *,'NOT IN RANGE 0 TO ',nr(n)-1
                 print *,'I J K ',i,j,k
                 print *,'X Y Z ',x,y,z
                 x = 1.0 / 0.0
@@ -87,9 +85,9 @@ contains
     end do
     
   end subroutine fill_3d_data
-
+  
   subroutine make_3d_normal (normal,lo,hi,dx,ng)
-
+    
     integer        , intent(in   ) :: lo(:),hi(:),ng
     real(kind=dp_t), intent(in   ) :: dx(:)
     real(kind=dp_t), intent(  out) :: normal(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)

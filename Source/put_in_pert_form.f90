@@ -15,9 +15,9 @@ module pert_form_module
 
 contains
 
-  subroutine put_in_pert_form(s,base,dx,comp,ncomp,flag)
+  subroutine put_in_pert_form(n,s,base,dx,comp,ncomp,flag)
 
-      integer        , intent(in   ) :: comp,ncomp
+      integer        , intent(in   ) :: n,comp,ncomp
       type(multifab) , intent(inout) :: s
       real(kind=dp_t), intent(in   ) :: base(0:,:)
       real(kind=dp_t), intent(in   ) :: dx(:)
@@ -40,7 +40,7 @@ contains
               call pert_form_2d(sp(:,:,1,:),base,lo,hi,ng,comp,ncomp,flag)
             case (3)
               if (spherical .eq. 1) then
-                call pert_form_3d_sphr(sp(:,:,:,:),base,lo,hi,ng,dx,comp,ncomp,flag)
+                call pert_form_3d_sphr(n,sp(:,:,:,:),base,lo,hi,ng,dx,comp,ncomp,flag)
               else
                 call pert_form_3d_cart(sp(:,:,:,:),base,lo,hi,ng,comp,ncomp,flag)
               end if
@@ -114,9 +114,9 @@ end subroutine put_in_pert_form
 
   end subroutine pert_form_3d_cart
 
-  subroutine pert_form_3d_sphr(s,s0,lo,hi,ng,dx,incomp,ncomp,flag)
+  subroutine pert_form_3d_sphr(n,s,s0,lo,hi,ng,dx,incomp,ncomp,flag)
 
-      integer        , intent(in   ) ::  lo(:),hi(:),ng,incomp,ncomp
+      integer        , intent(in   ) :: n,lo(:),hi(:),ng,incomp,ncomp
       real(kind=dp_t), intent(inout) ::  s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
       real(kind=dp_t), intent(in   ) :: s0(0:,:)
       real(kind=dp_t), intent(in   ) :: dx(:)
@@ -129,7 +129,7 @@ end subroutine put_in_pert_form
 
       if (flag) then
         do comp = incomp,incomp+ncomp-1
-          call fill_3d_data(s0_cart,s0(0:,comp),lo,hi,dx,0)
+          call fill_3d_data(n,s0_cart,s0(0:,comp),lo,hi,dx,0)
           do k = lo(3),hi(3)
           do j = lo(2),hi(2)
           do i = lo(1),hi(1)
@@ -140,7 +140,7 @@ end subroutine put_in_pert_form
         end do
       else
         do comp = incomp,incomp+ncomp-1
-          call fill_3d_data(s0_cart,s0(0:,comp),lo,hi,dx,0)
+          call fill_3d_data(n,s0_cart,s0(0:,comp),lo,hi,dx,0)
           do k = lo(3),hi(3)
           do j = lo(2),hi(2)
           do i = lo(1),hi(1)

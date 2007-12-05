@@ -135,7 +135,7 @@ contains
                               w0(n,:),dx(n,:),domlo,domhi,s0_old_cart(n),spec_comp,nspec)
        
        if(use_temp_in_mkflux) then
-          call mktempforce(scal_force(n),temp_comp,sold(n),thermal(n),p0_old(n,:),dx(n,:))
+          call mktempforce(n,scal_force(n),temp_comp,sold(n),thermal(n),p0_old(n,:),dx(n,:))
        else
           call mkrhohforce(n,scal_force(n),rhoh_comp,umac(n,:),p0_old(n,:),p0_new(n,:), &
                            normal(n),dx(n,:))
@@ -166,9 +166,9 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
        if (.not. use_temp_in_mkflux) &
-            call put_in_pert_form(sold(n),s0_old(n,:,:),dx(n,:),rhoh_comp,1,.true.)
+            call put_in_pert_form(n,sold(n),s0_old(n,:,:),dx(n,:),rhoh_comp,1,.true.)
        
-       call put_in_pert_form(sold(n),s0_old(n,:,:),dx(n,:),spec_comp,nspec,.true.)
+       call put_in_pert_form(n,sold(n),s0_old(n,:,:),dx(n,:),spec_comp,nspec,.true.)
        
        if (use_temp_in_mkflux) then
           comp = temp_comp
@@ -191,9 +191,9 @@ contains
        endif
        
        if (.not. use_temp_in_mkflux) &
-            call put_in_pert_form(sold(n),s0_old(n,:,:),dx(n,:),rhoh_comp,1,.false.)
+            call put_in_pert_form(n,sold(n),s0_old(n,:,:),dx(n,:),rhoh_comp,1,.false.)
        
-       call put_in_pert_form(sold(n),s0_old(n,:,:),dx(n,:),spec_comp,nspec,.false.)
+       call put_in_pert_form(n,sold(n),s0_old(n,:,:),dx(n,:),spec_comp,nspec,.false.)
        
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     Create the edge states of tracers.

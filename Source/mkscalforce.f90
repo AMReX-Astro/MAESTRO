@@ -180,7 +180,7 @@ contains
        end if
     end do
 
-    call fill_3d_data(gradp_cart,gradp_rad,lo,hi,dx,0)
+    call fill_3d_data(n,gradp_cart,gradp_rad,lo,hi,dx,0)
 
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
@@ -202,8 +202,9 @@ contains
 
   end subroutine mkrhohforce_3d_sphr
 
-  subroutine mktempforce(force,comp,s,thermal,p0_old,dx)
+  subroutine mktempforce(n,force,comp,s,thermal,p0_old,dx)
 
+    integer        , intent(in   ) :: n
     type(multifab) , intent(inout) :: force
     integer        , intent(in   ) :: comp
     type(multifab) , intent(in   ) :: s
@@ -235,7 +236,7 @@ contains
        case(3)
           if (spherical .eq. 1) then
              tp => dataptr(thermal, i)
-             call mktempforce_3d_sphr(fp(:,:,:,comp), sp(:,:,:,:), tp(:,:,:,1), &
+             call mktempforce_3d_sphr(n,fp(:,:,:,comp), sp(:,:,:,:), tp(:,:,:,1), &
                                       lo, hi, ng, p0_old, dx)
           else
              tp => dataptr(thermal, i)
@@ -343,7 +344,7 @@ contains
 
   end subroutine mktempforce_3d
 
-  subroutine mktempforce_3d_sphr(force, s, thermal, lo, hi, ng, p0, dx)
+  subroutine mktempforce_3d_sphr(n,force, s, thermal, lo, hi, ng, p0, dx)
 
     ! compute the source terms for temperature
 
@@ -351,7 +352,7 @@ contains
     ! both p0_old and p0_new to the same old value.  In the computation
     ! of the force for the update, they will be used to time-center.
 
-    integer,         intent(in   ) :: lo(:), hi(:), ng
+    integer,         intent(in   ) :: n,lo(:), hi(:), ng
     real(kind=dp_t), intent(  out) ::   force(lo(1)-1 :,lo(2)-1 :,lo(3)-1 :)
     real(kind=dp_t), intent(in   ) ::       s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real(kind=dp_t), intent(in   ) :: thermal(lo(1)-1 :,lo(2)-1 :,lo(3)-1 :)
@@ -362,7 +363,7 @@ contains
     integer :: i,j,k
 
     allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-    call fill_3d_data(p0_cart,p0,lo,hi,dx,0)
+    call fill_3d_data(n,p0_cart,p0,lo,hi,dx,0)
 
     force = ZERO
 

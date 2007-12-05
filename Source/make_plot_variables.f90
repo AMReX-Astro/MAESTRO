@@ -109,9 +109,9 @@ contains
     
   end subroutine make_enthalpy_3d
 
-  subroutine make_tfromH (plotdata,comp_t,comp_dp,state,p0,t0, dx)
+  subroutine make_tfromH(n,plotdata,comp_t,comp_dp,state,p0,t0, dx)
 
-    integer        , intent(in   ) :: comp_t,comp_dp
+    integer        , intent(in   ) :: n,comp_t,comp_dp
     type(multifab) , intent(inout) :: plotdata
     type(multifab) , intent(in   ) :: state
     real(kind=dp_t), intent(in   ) :: p0(0:)
@@ -134,10 +134,11 @@ contains
        hi =  upb(get_box(state, i))
        select case (dm)
        case (2)
-          call maketfromH_2d(tp(:,:,1,comp_t),tp(:,:,1,comp_dp),sp(:,:,1,:), lo, hi, ng, p0, t0, dx)
+          call maketfromH_2d(tp(:,:,1,comp_t),tp(:,:,1,comp_dp),sp(:,:,1,:), lo, hi, &
+                             ng, p0, t0, dx)
        case (3)
           if (spherical .eq. 1) then
-            call maketfromH_3d_sphr(tp(:,:,:,comp_t),tp(:,:,:,comp_dp),sp(:,:,:,:), &
+            call maketfromH_3d_sphr(n,tp(:,:,:,comp_t),tp(:,:,:,comp_dp),sp(:,:,:,:), &
                                     lo, hi, ng, p0, t0, dx)
           else
             call maketfromH_3d_cart(tp(:,:,:,comp_t),tp(:,:,:,comp_dp),sp(:,:,:,:), &
@@ -277,10 +278,10 @@ contains
 
   end subroutine maketfromH_3d_cart
 
-  subroutine maketfromH_3d_sphr (T,deltaP,state,lo,hi,ng,p0,t0,dx)
+  subroutine maketfromH_3d_sphr(n,T,deltaP,state,lo,hi,ng,p0,t0,dx)
 
     implicit none
-    integer, intent(in) :: lo(:), hi(:), ng
+    integer, intent(in) :: n, lo(:), hi(:), ng
     real (kind = dp_t), intent(  out) ::      T(lo(1)   :,lo(2):   ,lo(3):     )  
     real (kind = dp_t), intent(  out) :: deltaP(lo(1)   :,lo(2):   ,lo(3):     )  
     real (kind = dp_t), intent(in   ) :: state(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
@@ -294,10 +295,10 @@ contains
     real (kind=dp_t), allocatable :: p0_cart(:,:,:)
 
     allocate(t0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-    call fill_3d_data(t0_cart,t0,lo,hi,dx,0)
+    call fill_3d_data(n,t0_cart,t0,lo,hi,dx,0)
 
     allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-    call fill_3d_data(p0_cart,p0,lo,hi,dx,0)
+    call fill_3d_data(n,p0_cart,p0,lo,hi,dx,0)
 
     do_diag = .false.
 
@@ -636,19 +637,19 @@ contains
     end do
 
     allocate(rho0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-    call fill_3d_data(rho0_cart,s0(:,rho_comp),lo,hi,dx,0)
+    call fill_3d_data(n,rho0_cart,s0(:,rho_comp),lo,hi,dx,0)
 
     allocate(t0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-    call fill_3d_data(t0_cart,s0(:,temp_comp),lo,hi,dx,0)
+    call fill_3d_data(n,t0_cart,s0(:,temp_comp),lo,hi,dx,0)
 
     allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-    call fill_3d_data(p0_cart,p0,lo,hi,dx,0)
+    call fill_3d_data(n,p0_cart,p0,lo,hi,dx,0)
 
     allocate(gam0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-    call fill_3d_data(gam0_cart,gam10,lo,hi,dx,0)
+    call fill_3d_data(n,gam0_cart,gam10,lo,hi,dx,0)
 
     allocate(entr0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-    call fill_3d_data(entr0_cart,entr0,lo,hi,dx,0)
+    call fill_3d_data(n,entr0_cart,entr0,lo,hi,dx,0)
 
     ! Then compute the perturbation and Mach number
     do k = lo(3), hi(3)

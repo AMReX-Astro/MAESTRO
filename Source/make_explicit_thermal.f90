@@ -99,7 +99,7 @@ contains
                                  Tcoeffp(:,:,1,1),hcoeffp(:,:,1,1), &
                                  Xkcoeffp(:,:,1,:),pcoeffp(:,:,1,1))
           case (3)
-             call make_coeffs_3d(lo,hi,dx(n,:),p0(n,:),sp(:,:,:,:), &
+             call make_coeffs_3d(n,lo,hi,dx(n,:),p0(n,:),sp(:,:,:,:), &
                                  Tcoeffp(:,:,:,1),hcoeffp(:,:,:,1), &
                                  Xkcoeffp(:,:,:,:),pcoeffp(:,:,:,1))
           end select
@@ -358,9 +358,9 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! create Tcoeff = -kth, hcoeff = -kth/cp, Xkcoeff = xik*kth/cp, pcoeff = hp*kth/cp
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine make_coeffs_3d(lo,hi,dx,p0,s,Tcoeff,hcoeff,Xkcoeff,pcoeff)
+  subroutine make_coeffs_3d(n,lo,hi,dx,p0,s,Tcoeff,hcoeff,Xkcoeff,pcoeff)
     
-    integer        , intent(in   ) :: lo(:),hi(:)
+    integer        , intent(in   ) :: n,lo(:),hi(:)
     real(dp_t)    ,  intent(in   ) :: dx(:)
     real(kind=dp_t), intent(in   ) :: p0(0:)
     real(kind=dp_t), intent(in   ) :: s(lo(1)-3:,lo(2)-3:,lo(3)-3:,:)
@@ -375,7 +375,7 @@ contains
     
     if (spherical .eq. 1) then
        allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-       call fill_3d_data(p0_cart,p0,lo,hi,dx,0)
+       call fill_3d_data(n,p0_cart,p0,lo,hi,dx,0)
     end if
     
     do k=lo(3)-1,hi(3)+1

@@ -17,8 +17,9 @@ module init_module
 
 contains
 
-  subroutine initscalardata(s,s0,p0,dx,perturb_model,prob_lo,prob_hi,bc)
+  subroutine initscalardata(n,s,s0,p0,dx,perturb_model,prob_lo,prob_hi,bc)
 
+    integer        , intent(in   ) :: n
     type(multifab) , intent(inout) :: s
     real(kind=dp_t), intent(inout) :: s0(0:,:)
     real(kind=dp_t), intent(in   ) :: p0(0:)
@@ -44,7 +45,7 @@ contains
           call initscalardata_2d(sop(:,:,1,:), lo, hi, ng, dx, perturb_model, &
                                  prob_lo, prob_hi, s0)
        case (3)
-          call initscalardata_3d(sop(:,:,:,:), lo, hi, ng, dx, perturb_model, &
+          call initscalardata_3d(n,sop(:,:,:,:), lo, hi, ng, dx, perturb_model, &
                                  prob_lo, prob_hi, s0)
        end select
     end do
@@ -98,12 +99,11 @@ contains
     
   end subroutine initscalardata_2d
 
-  subroutine initscalardata_3d (s,lo,hi,ng,dx, perturb_model, &
-                                prob_lo,prob_hi,s0)
+  subroutine initscalardata_3d(n,s,lo,hi,ng,dx,perturb_model,prob_lo,prob_hi,s0)
 
     implicit none
 
-    integer, intent(in) :: lo(:), hi(:), ng
+    integer, intent(in) :: n, lo(:), hi(:), ng
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
     real (kind = dp_t), intent(in ) :: dx(:)
     logical,            intent(in ) :: perturb_model
@@ -119,14 +119,14 @@ contains
   
     if (spherical .eq. 1) then
        ! initialize the scalars
-       call fill_3d_data (s(:,:,:,rho_comp), s0(:,rho_comp), lo,hi,dx,ng)
-       call fill_3d_data (s(:,:,:,rhoh_comp),s0(:,rhoh_comp),lo,hi,dx,ng)
-       call fill_3d_data (s(:,:,:,temp_comp),s0(:,temp_comp),lo,hi,dx,ng)
+       call fill_3d_data(n,s(:,:,:,rho_comp), s0(:,rho_comp), lo,hi,dx,ng)
+       call fill_3d_data(n,s(:,:,:,rhoh_comp),s0(:,rhoh_comp),lo,hi,dx,ng)
+       call fill_3d_data(n,s(:,:,:,temp_comp),s0(:,temp_comp),lo,hi,dx,ng)
        do comp = spec_comp, spec_comp+nspec-1
-          call fill_3d_data (s(:,:,:,comp),s0(:,comp),lo,hi,dx,ng)
+          call fill_3d_data(n,s(:,:,:,comp),s0(:,comp),lo,hi,dx,ng)
        end do
        do comp = trac_comp, trac_comp+ntrac-1
-          call fill_3d_data (s(:,:,:,comp),s0(:,comp),lo,hi,dx,ng)
+          call fill_3d_data(n,s(:,:,:,comp),s0(:,comp),lo,hi,dx,ng)
        end do
     else 
        ! initialize the scalars

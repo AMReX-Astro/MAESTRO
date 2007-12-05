@@ -48,7 +48,7 @@ contains
               call make_macrhs_2d(lo,hi,mp(:,:,1,1),sp(:,:,1,1),gp(:,:,1,1),Sbar(n,:), &
                                   div_coeff(n,:),dx(n,:))
            case (3)
-              call make_macrhs_3d(lo,hi,mp(:,:,:,1),sp(:,:,:,1),gp(:,:,:,1),Sbar(n,:), &
+              call make_macrhs_3d(n,lo,hi,mp(:,:,:,1),sp(:,:,:,1),gp(:,:,:,1),Sbar(n,:), &
                                   div_coeff(n,:),dx(n,:))
            end select
         end do
@@ -83,11 +83,11 @@ contains
  
    end subroutine make_macrhs_2d
 
-   subroutine make_macrhs_3d (lo,hi,rhs,Source,gamma1_term,Sbar,div_coeff,dx)
+   subroutine make_macrhs_3d(n,lo,hi,rhs,Source,gamma1_term,Sbar,div_coeff,dx)
 
       implicit none
 
-      integer         , intent(in   ) :: lo(:), hi(:)
+      integer         , intent(in   ) :: n,lo(:), hi(:)
       real (kind=dp_t), intent(  out) :: rhs(lo(1):,lo(2):,lo(3):)  
       real (kind=dp_t), intent(in   ) :: Source(lo(1):,lo(2):,lo(3):)  
       real (kind=dp_t), intent(in   ) :: gamma1_term(lo(1):,lo(2):,lo(3):)  
@@ -103,10 +103,10 @@ contains
       if (spherical .eq. 1) then
 
         allocate(div_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-        call fill_3d_data(div_cart,div_coeff,lo,hi,dx,0)
+        call fill_3d_data(n,div_cart,div_coeff,lo,hi,dx,0)
 
         allocate(Sbar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-        call fill_3d_data(Sbar_cart,Sbar,lo,hi,dx,0)
+        call fill_3d_data(n,Sbar_cart,Sbar,lo,hi,dx,0)
 
         do k = lo(3),hi(3)
         do j = lo(2),hi(2)
