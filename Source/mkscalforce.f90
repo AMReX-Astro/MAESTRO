@@ -87,13 +87,13 @@ contains
     do j = lo(2),hi(2)
        if (j.eq.0) then
           gradp0 = HALF * ( p0_old(j+1) + p0_new(j+1) &
-                           -p0_old(j  ) - p0_new(j  ) ) / dr(1)
+                           -p0_old(j  ) - p0_new(j  ) ) / dr(n)
        else if (j.eq.nr(n)-1) then
           gradp0 = HALF * ( p0_old(j  ) + p0_new(j  ) &
-                           -p0_old(j-1) - p0_new(j-1) ) / dr(1)
+                           -p0_old(j-1) - p0_new(j-1) ) / dr(n)
        else
           gradp0 = FOURTH * ( p0_old(j+1) + p0_new(j+1) &
-                             -p0_old(j-1) - p0_new(j-1) ) / dr(1)
+                             -p0_old(j-1) - p0_new(j-1) ) / dr(n)
        end if
        do i = lo(1),hi(1)
           wadv = HALF*(wmac(i,j)+wmac(i,j+1))
@@ -122,13 +122,13 @@ contains
 
        if (k.eq.0) then
           gradp0 = HALF * ( p0_old(k+1) + p0_new(k+1) &
-                           -p0_old(k  ) - p0_new(k  ) ) / dr(1)
+                           -p0_old(k  ) - p0_new(k  ) ) / dr(n)
        else if (k.eq.nr(n)-1) then
           gradp0 = HALF * ( p0_old(k  ) + p0_new(k  ) &
-                           -p0_old(k-1) - p0_new(k-1) ) / dr(1)
+                           -p0_old(k-1) - p0_new(k-1) ) / dr(n)
        else
           gradp0 = FOURTH * ( p0_old(k+1) + p0_new(k+1) &
-                             -p0_old(k-1) - p0_new(k-1) ) / dr(1)
+                             -p0_old(k-1) - p0_new(k-1) ) / dr(n)
        end if
 
        do j = lo(2),hi(2)
@@ -170,13 +170,13 @@ contains
        
        if (k.eq.0) then
           gradp_rad(k) = HALF * ( p0_old(k+1) + p0_new(k+1) &
-                                 -p0_old(k  ) - p0_new(k  ) ) / dr(1)
+                                 -p0_old(k  ) - p0_new(k  ) ) / dr(n)
        else if (k.eq.nr(n)-1) then 
           gradp_rad(k) = HALF * ( p0_old(k  ) + p0_new(k  ) &
-                                 -p0_old(k-1) - p0_new(k-1) ) / dr(1)
+                                 -p0_old(k-1) - p0_new(k-1) ) / dr(n)
        else
           gradp_rad(k) = FOURTH * ( p0_old(k+1) + p0_new(k+1) &
-                                   -p0_old(k-1) - p0_new(k-1) ) / dr(1)
+                                   -p0_old(k-1) - p0_new(k-1) ) / dr(n)
        end if
     end do
 

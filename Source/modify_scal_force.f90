@@ -172,7 +172,7 @@ contains
     allocate(divu_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
     
     do k = 0,nr(n)-1
-       divu(k) = (zl(k+1)**2 * w0(k+1)- zl(k)**2 * w0(k))/(dr(1)*z(k)**2)
+       divu(k) = (zl(k+1)**2 * w0(k+1)- zl(k)**2 * w0(k))/(dr(n)*z(k)**2)
     end do
     call fill_3d_data(n,divu_cart,divu,lo,hi,dx,0)
     

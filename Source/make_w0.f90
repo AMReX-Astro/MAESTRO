@@ -87,8 +87,8 @@ contains
     vel(0) = ZERO
     do j = 1,nr(n)
        eta_avg = HALF * (eta(j,rho_comp)+eta(j-1,rho_comp))
-       vel(j) = vel(j-1) + Sbar_in(j-1) * dr(1) - &
-                         ( eta_avg * abs(grav_const) / (gam1(j-1)*p0(j-1)) ) * dr(1)
+       vel(j) = vel(j-1) + Sbar_in(j-1) * dr(n) - &
+                         ( eta_avg * abs(grav_const) / (gam1(j-1)*p0(j-1)) ) * dr(n)
     end do
 
     ! Compute the 1/rho0 grad pi0 term.
@@ -99,11 +99,11 @@ contains
     end do
 
     force = ZERO
-    call mkflux_1d(vel_old_cen,edge,vel_old,force,1,dr(1),dt)
+    call mkflux_1d(vel_old_cen,edge,vel_old,force,1,dr(n),dt)
 
     do j = 0,nr(n)-1
        f(j) = (vel_new_cen(j)-vel_old_cen(j)) / (HALF*(dt+dtold)) + &
-            HALF*(vel_old_cen(j)+vel_new_cen(j)) * (edge(j+1)-edge(j)) / dr(1)
+            HALF*(vel_old_cen(j)+vel_new_cen(j)) * (edge(j+1)-edge(j)) / dr(n)
     end do
 
     deallocate(edge)
@@ -141,7 +141,7 @@ contains
 
     do j = 1,nr(n)
        c(j) = gam1(j-1) * p0(j-1) * zl(j-1)**2 / z(j-1)**2
-       c(j) = c(j) / dr(1)**2
+       c(j) = c(j) / dr(n)**2
     end do
 
     call cell_to_edge(n,rho0,rho0_edge)
@@ -149,18 +149,18 @@ contains
     do j = 1,nr(n)-1
 
        d(j) = -( gam1(j-1) * p0(j-1) / z(j-1)**2 &
-                +gam1(j  ) * p0(j  ) / z(j  )**2 ) * (zl(j)**2/dr(1)**2) &
+                +gam1(j  ) * p0(j  ) / z(j  )**2 ) * (zl(j)**2/dr(n)**2) &
                 - four * rho0_edge(j) * grav_edge(j) / zl(j)
     end do
 
     do j = 1,nr(n)-1
        rhs(j) = ( gam1(j  )*p0(j  )*Sbar_in(j) - gam1(j-1)*p0(j-1)*Sbar_in(j-1) ) 
-       rhs(j) = rhs(j) / dr(1)
+       rhs(j) = rhs(j) / dr(n)
     end do
 
     do j = 0,nr(n)-1
        e(j) = gam1(j) * p0(j) * zl(j+1)**2 / z(j)**2
-       e(j) = e(j) / dr(1)**2
+       e(j) = e(j) / dr(n)**2
     end do
 
     ! Lower boundary

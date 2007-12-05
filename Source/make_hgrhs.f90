@@ -56,52 +56,53 @@ contains
     
     do n = 1, nlevs
 
-    if (spherical .eq. 1) then
-       call fill_3d_data_wrapper(n,div_coeff_cart(n),div_coeff(n,:),dx(n,:))
-       call fill_3d_data_wrapper(n,Sbar_cart(n),Sbar(n,:),dx(n,:))
-    end if
-        
-    do i = 1, Source(n)%nboxes
-       if ( multifab_remote(Source(n), i) ) cycle
-       rp => dataptr(rhs_cc(n), i)
-       sp => dataptr(Source(n), i)
-       lo =  lwb(get_box(Source(n), i))
-       hi =  upb(get_box(Source(n), i))
-       select case (dm)
-       case (2)
-          gp => dataptr(gamma1_term(n), i)
-          call make_rhscc_2d(lo,hi,rp(:,:,1,1),sp(:,:,1,1),gp(:,:,1,1),Sbar(n,:), &
-                             div_coeff(n,:),dx(n,:))
-       case (3)
-          if (spherical .eq. 1) then
-             dp => dataptr(div_coeff_cart(n), i)
-             sbp => dataptr(Sbar_cart(n), i)
-             call make_rhscc_3d_sphr(lo,hi,rp(:,:,:,1),sp(:,:,:,1),sbp(:,:,:,1),dp(:,:,:,1))
-          else
-             call make_rhscc_3d_cart(lo,hi,rp(:,:,:,1),sp(:,:,:,1),Sbar(n,:), &
-                                     div_coeff(n,:),dx(n,:))
-          endif
-       end select
-    end do
-    call multifab_fill_boundary(rhs_cc(n))
-    
-    call setval(hgrhs(n),ZERO,all=.true.)
-    do i = 1, Source(n)%nboxes
-       if ( multifab_remote(Source(n), i) ) cycle
-       hp => dataptr(hgrhs(n), i)
-       rp => dataptr(rhs_cc(n), i)
-       lo =  lwb(get_box(Source(n), i))
-       hi =  upb(get_box(Source(n), i))
-       select case (dm)
-       case (2)
-          call make_hgrhs_2d(lo,hi,hp(:,:,1,1),rp(:,:,1,1))
-       case (3)
-          call make_hgrhs_3d(lo,hi,hp(:,:,:,1),rp(:,:,:,1))
-       end select
-    end do
-    call multifab_fill_boundary(hgrhs(n))
-    
-    enddo
+       if (spherical .eq. 1) then
+          call fill_3d_data_wrapper(n,div_coeff_cart(n),div_coeff(n,:),dx(n,:))
+          call fill_3d_data_wrapper(n,Sbar_cart(n),Sbar(n,:),dx(n,:))
+       end if
+       
+       do i = 1, Source(n)%nboxes
+          if ( multifab_remote(Source(n), i) ) cycle
+          rp => dataptr(rhs_cc(n), i)
+          sp => dataptr(Source(n), i)
+          lo =  lwb(get_box(Source(n), i))
+          hi =  upb(get_box(Source(n), i))
+          select case (dm)
+          case (2)
+             gp => dataptr(gamma1_term(n), i)
+             call make_rhscc_2d(lo,hi,rp(:,:,1,1),sp(:,:,1,1),gp(:,:,1,1),Sbar(n,:), &
+                                div_coeff(n,:),dx(n,:))
+          case (3)
+             if (spherical .eq. 1) then
+                dp => dataptr(div_coeff_cart(n), i)
+                sbp => dataptr(Sbar_cart(n), i)
+                call make_rhscc_3d_sphr(lo,hi,rp(:,:,:,1),sp(:,:,:,1),sbp(:,:,:,1), &
+                                        dp(:,:,:,1))
+             else
+                call make_rhscc_3d_cart(lo,hi,rp(:,:,:,1),sp(:,:,:,1),Sbar(n,:), &
+                                        div_coeff(n,:),dx(n,:))
+             endif
+          end select
+       end do
+       call multifab_fill_boundary(rhs_cc(n))
+       
+       call setval(hgrhs(n),ZERO,all=.true.)
+       do i = 1, Source(n)%nboxes
+          if ( multifab_remote(Source(n), i) ) cycle
+          hp => dataptr(hgrhs(n), i)
+          rp => dataptr(rhs_cc(n), i)
+          lo =  lwb(get_box(Source(n), i))
+          hi =  upb(get_box(Source(n), i))
+          select case (dm)
+          case (2)
+             call make_hgrhs_2d(lo,hi,hp(:,:,1,1),rp(:,:,1,1))
+          case (3)
+             call make_hgrhs_3d(lo,hi,hp(:,:,:,1),rp(:,:,:,1))
+          end select
+       end do
+       call multifab_fill_boundary(hgrhs(n))
+       
+    enddo ! end loop over levels
     
     do n = 1, nlevs
        call multifab_destroy(rhs_cc(n))
@@ -127,13 +128,10 @@ contains
     
     ! Local variables
     integer :: i, j
-    integer :: rr
-    
-    rr = int( dx(2) / dr(1) + 1.d-12)
     
     do j = lo(2),hi(2)
        do i = lo(1),hi(1)
-          rhs_cc(i,j) = div_coeff(j) * (Source(i,j) - Sbar(rr*j) + gamma1_term(i,j))
+          rhs_cc(i,j) = div_coeff(j) * (Source(i,j) - Sbar(j) + gamma1_term(i,j))
        end do
     end do
     
@@ -171,15 +169,12 @@ contains
     real (kind=dp_t), intent(in   ) :: dx(:)
     
     ! Local variables
-    integer :: i, j,k
-    integer :: rr
-    
-    rr = int( dx(3) / dr(1) + 1.d-12)
+    integer :: i,j,k
     
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
-             rhs_cc(i,j,k) = div_coeff(k) * (Source(i,j,k) - Sbar(rr*k))
+             rhs_cc(i,j,k) = div_coeff(k) * (Source(i,j,k) - Sbar(k))
           end do
        end do
     end do
