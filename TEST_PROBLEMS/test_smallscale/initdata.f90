@@ -17,7 +17,7 @@ module init_module
 
 contains
 
-  subroutine initscalardata (s,s0,p0,dx,perturb_model,prob_lo,prob_hi,bc)
+  subroutine initscalardata(s,s0,p0,dx,perturb_model,prob_lo,prob_hi,bc)
 
     type(multifab) , intent(inout) :: s
     real(kind=dp_t), intent(inout) :: s0(0:,:)
@@ -29,8 +29,7 @@ contains
     type(bc_level) , intent(in   ) :: bc
 
     real(kind=dp_t), pointer:: sop(:,:,:,:)
-    integer :: lo(s%dim),hi(s%dim),ng,dm
-    integer :: i,n
+    integer :: lo(s%dim),hi(s%dim),ng,dm,i
     
     ng = s%ng
     dm = s%dim
@@ -70,8 +69,7 @@ contains
 
   end subroutine initscalardata
 
-  subroutine initscalardata_2d (s,lo,hi,ng,dx, perturb_model, &
-                                prob_lo,prob_hi,s0)
+  subroutine initscalardata_2d(s,lo,hi,ng,dx, perturb_model,prob_lo,prob_hi,s0)
 
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,:)  
@@ -82,7 +80,7 @@ contains
     real(kind=dp_t), intent(inout) ::    s0(0:,:)
 
     !     Local variables
-    integer :: i, j, n
+    integer :: i,j
 
     ! initial the domain with the base state
     s = ZERO
@@ -114,7 +112,7 @@ contains
     real(kind=dp_t), intent(inout) ::    s0(0:,:)
 
     !     Local variables
-    integer :: i, j, k, n
+    integer :: i, j, k, comp
 
     ! initial the domain with the base state
     s = ZERO
@@ -124,11 +122,11 @@ contains
        call fill_3d_data (s(:,:,:,rho_comp), s0(:,rho_comp), lo,hi,dx,ng)
        call fill_3d_data (s(:,:,:,rhoh_comp),s0(:,rhoh_comp),lo,hi,dx,ng)
        call fill_3d_data (s(:,:,:,temp_comp),s0(:,temp_comp),lo,hi,dx,ng)
-       do n = spec_comp, spec_comp+nspec-1
-          call fill_3d_data (s(:,:,:,n),s0(:,n),lo,hi,dx,ng)
+       do comp = spec_comp, spec_comp+nspec-1
+          call fill_3d_data (s(:,:,:,comp),s0(:,comp),lo,hi,dx,ng)
        end do
-       do n = trac_comp, trac_comp+ntrac-1
-          call fill_3d_data (s(:,:,:,n),s0(:,n),lo,hi,dx,ng)
+       do comp = trac_comp, trac_comp+ntrac-1
+          call fill_3d_data (s(:,:,:,comp),s0(:,comp),lo,hi,dx,ng)
        end do
     else 
        ! initialize the scalars

@@ -20,7 +20,7 @@ contains
 
   subroutine init_base_state (model_file,n_base,s0,p0,gam1,dx,prob_lo,prob_hi)
 
-    character (len=256), intent(in) :: model_file ! I'm not using this anymore
+    character (len=256), intent(in   ) :: model_file ! I'm not using this anymore
     integer        ,     intent(in   ) :: n_base
     real(kind=dp_t),     intent(inout) ::    s0(0:,:)
     real(kind=dp_t),     intent(inout) ::    p0(0:)
@@ -30,13 +30,13 @@ contains
     real(kind=dp_t),     intent(in   ) :: dx(:)
 
     ! local
-    integer ndum, i, j, dm, nspec
+    integer ndum,i,dm,nspec,comp
 
     parameter (ndum = 30)
     parameter (nspec = 3)
 
     character(len=128) :: lamsolfile
-    real(kind=dp_t) :: state1d(ndum), Pamb, temporary
+    real(kind=dp_t) :: state1d(ndum),Pamb,temporary
     real(kind=dp_t) :: loloc,hiloc,flameloc,qreact
     
     dm = size(dx)
@@ -51,15 +51,15 @@ contains
 
     den_eos(1) = state1d(3)
     temp_eos(1) = state1d(9)
-    do j=1,nspec
-       if(spec_names(j) .eq. "carbon-12") then
-          xn_eos(1,j) = state1d(21)
-       else if(spec_names(j) .eq. "magnesium-24") then
-          xn_eos(1,j) = state1d(22)
-       else if(spec_names(j) .eq. "oxygen-16") then
-          xn_eos(1,j) = state1d(23)
+    do comp=1,nspec
+       if(spec_names(comp) .eq. "carbon-12") then
+          xn_eos(1,comp) = state1d(21)
+       else if(spec_names(comp) .eq. "magnesium-24") then
+          xn_eos(1,comp) = state1d(22)
+       else if(spec_names(comp) .eq. "oxygen-16") then
+          xn_eos(1,comp) = state1d(23)
        else
-          print*,"In initdata, spec_names(",j,") invalid"
+          print*,"In initdata, spec_names(",comp,") invalid"
        endif
     enddo
 
@@ -92,20 +92,20 @@ contains
     INLET_RHO = den_eos(1)
     if(use_big_h) then
        qreact = 0.0d0
-       do j=1,nspec
-          qreact = qreact + ebin(j)*xn_eos(1,j)
+       do comp=1,nspec
+          qreact = qreact + ebin(comp)*xn_eos(1,comp)
        enddo
        INLET_RHOH = den_eos(1)*(h_eos(1) + qreact)
     else
        INLET_RHOH = den_eos(1)*h_eos(1)
     endif
-    do j=1,nspec
-       if(spec_names(j) .eq. "carbon-12") then
-          INLET_RHOC12 = den_eos(1)*xn_eos(1,j)
-       else if(spec_names(j) .eq. "magnesium-24") then
-          INLET_RHOMG24 = den_eos(1)*xn_eos(1,j)
-       else if(spec_names(j) .eq. "oxygen-16") then
-          INLET_RHOO16 = den_eos(1)*xn_eos(1,j)
+    do comp=1,nspec
+       if(spec_names(comp) .eq. "carbon-12") then
+          INLET_RHOC12 = den_eos(1)*xn_eos(1,comp)
+       else if(spec_names(comp) .eq. "magnesium-24") then
+          INLET_RHOMG24 = den_eos(1)*xn_eos(1,comp)
+       else if(spec_names(comp) .eq. "oxygen-16") then
+          INLET_RHOO16 = den_eos(1)*xn_eos(1,comp)
        endif
     enddo
     INLET_TEMP = temp_eos(1)
@@ -124,13 +124,13 @@ contains
        p_eos(1) = Pamb
        den_eos(1) = state1d(3)
        temp_eos(1) = state1d(9)
-       do j=1,nspec
-          if(spec_names(j) .eq. "carbon-12") then
-             xn_eos(1,j) = state1d(21)
-          else if(spec_names(j) .eq. "magnesium-24") then
-             xn_eos(1,j) = state1d(22)
-          else if(spec_names(j) .eq. "oxygen-16") then
-             xn_eos(1,j) = state1d(23)
+       do comp=1,nspec
+          if(spec_names(comp) .eq. "carbon-12") then
+             xn_eos(1,comp) = state1d(21)
+          else if(spec_names(comp) .eq. "magnesium-24") then
+             xn_eos(1,comp) = state1d(22)
+          else if(spec_names(comp) .eq. "oxygen-16") then
+             xn_eos(1,comp) = state1d(23)
           endif
        enddo
 
@@ -161,16 +161,16 @@ contains
        s0(i,rho_comp) = den_eos(1)
        if(use_big_h) then
           qreact = ZERO
-          do j=1,nspec
-             qreact = qreact + ebin(j)*xn_eos(1,j)
+          do comp=1,nspec
+             qreact = qreact + ebin(comp)*xn_eos(1,comp)
           enddo
           temporary = h_eos(1) + qreact
           s0(i,rhoh_comp) = den_eos(1)*temporary
        else
           s0(i,rhoh_comp) = den_eos(1)*h_eos(1)
        endif
-       do j=1,nspec
-          s0(i,spec_comp+j-1) = den_eos(1)*xn_eos(1,j)
+       do comp=1,nspec
+          s0(i,spec_comp+comp-1) = den_eos(1)*xn_eos(1,comp)
        enddo
        s0(i,trac_comp) = 0.0d0
        s0(i,temp_comp) = temp_eos(1)
