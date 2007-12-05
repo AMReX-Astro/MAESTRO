@@ -132,40 +132,37 @@ contains
     real(kind=dp_t), pointer     :: dp(:,:,:,:)
 
     real(dp_t) :: halfdt,eps_in
-    integer    :: j,n,dm,nlevs,nr,ng_cell,proj_type
+    integer    :: j,n,dm,nlevs,ng_cell,proj_type
     logical    :: nodal(mla%dim)
-
-    ! nr is the number of zones in a cell-centered basestate quantity
-    nr = size(s0_old,dim=2)
 
     dm = mla%dim
     nlevs = size(uold)
 
-    allocate(rhohalf(nlevs))
-    allocate(w0_cart_vec(nlevs))
-    allocate(w0_force_cart_vec(nlevs))
-    allocate(macrhs(nlevs))
-    allocate(macphi(nlevs))
-    allocate(hgrhs_old(nlevs))
-    allocate(Source_nph(nlevs))
-    allocate(thermal(nlevs))
-    allocate(s2star(nlevs))
+    allocate(           rhohalf(nlevs))
+    allocate(       w0_cart_vec(nlevs))
+    allocate( w0_force_cart_vec(nlevs))
+    allocate(            macrhs(nlevs))
+    allocate(            macphi(nlevs))
+    allocate(         hgrhs_old(nlevs))
+    allocate(        Source_nph(nlevs))
+    allocate(           thermal(nlevs))
+    allocate(            s2star(nlevs))
     allocate(rho_omegadot2_hold(nlevs))
     if (spherical.eq.1) then
        allocate(div_coeff_3d(nlevs))
     endif
 
-    allocate(grav_cell_nph(nlevs,0:nr-1))
-    allocate(grav_cell_new(nlevs,0:nr-1))
-    allocate(s0_nph(nlevs,0:nr-1,nscal))
-    allocate(w0_force(nlevs,0:nr-1))
-    allocate(w0_old(nlevs,0:nr))
-    allocate(Sbar(nlevs,0:nr-1,1))
-    allocate(div_coeff_nph (nlevs,0:nr-1))
-    allocate(div_coeff_edge(nlevs,0:nr))
-    allocate(rho_omegadotbar1(nlevs,0:nr-1,nspec))
-    allocate(rho_omegadotbar2(nlevs,0:nr-1,nspec))
-    allocate(rho_Hextbar(nlevs,0:nr-1,1))
+    allocate(   grav_cell_nph(nlevs,0:nr(nlevs)-1))
+    allocate(   grav_cell_new(nlevs,0:nr(nlevs)-1))
+    allocate(          s0_nph(nlevs,0:nr(nlevs)-1,nscal))
+    allocate(        w0_force(nlevs,0:nr(nlevs)-1))
+    allocate(          w0_old(nlevs,0:nr(nlevs)))
+    allocate(            Sbar(nlevs,0:nr(nlevs)-1,1))
+    allocate(   div_coeff_nph(nlevs,0:nr(nlevs)-1))
+    allocate(  div_coeff_edge(nlevs,0:nr(nlevs)))
+    allocate(rho_omegadotbar1(nlevs,0:nr(nlevs)-1,nspec))
+    allocate(rho_omegadotbar2(nlevs,0:nr(nlevs)-1,nspec))
+    allocate(     rho_Hextbar(nlevs,0:nr(nlevs)-1,1))
 
     allocate(lo(dm))
     allocate(hi(dm))
@@ -398,7 +395,7 @@ contains
     
     ! Define base state at half time for use in velocity advance!
     do n=1,nlevs
-       do j=0,nr-1
+       do j=0,nr(n)-1
           s0_nph(n,j,:) = HALF * (s0_old(n,j,:) + s0_new(n,j,:))
        enddo
     enddo
@@ -409,7 +406,7 @@ contains
     
     ! Define beta at half time !
     do n=1,nlevs
-       do j=0,nr-1
+       do j=0,nr(n)-1
           div_coeff_nph(n,j) = HALF * (div_coeff_old(n,j) + div_coeff_new(n,j))
        enddo
     enddo
@@ -612,7 +609,7 @@ contains
     
     ! Define beta at half time using the div_coeff_new from step 9!
     do n=1,nlevs
-       do j=0,nr-1
+       do j=0,nr(n)-1
           div_coeff_nph(n,j) = HALF * (div_coeff_old(n,j) + div_coeff_new(n,j))
        end do
     enddo
