@@ -246,7 +246,7 @@ contains
                       end if
                       
                       vol = FOUR3RD*M_PI * dr(n) * &
-                           (zl(index+1)**2 + zl(index+1)*zl(index) + zl(index)**2)
+                           (zl(n,index+1)**2 + zl(n,index+1)*zl(n,index) + zl(n,index)**2)
                       
                       do comp = start_comp,start_comp+ncomp-1
                          phibar(index,comp) = phibar(index,comp) + vol * phi(i,j,k,comp)

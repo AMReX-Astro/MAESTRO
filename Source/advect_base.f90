@@ -212,15 +212,15 @@ contains
        ! results from expanding out the spherical divergence
        do j = 0,nr(n)-1
           force(j) = -s0_old(j,comp) * (vel(j+1) - vel(j)) / dr(n) - &
-               2.0_dp_t*s0_old(j,comp)*HALF*(vel(j) + vel(j+1))/z(j)
+               2.0_dp_t*s0_old(j,comp)*HALF*(vel(j) + vel(j+1))/z(n,j)
        end do
        
        call mkflux_1d(s0_old(:,comp),edge,vel,force,1,dr(n),dt)
        
        do j = 0,nr(n)-1
           s0_new(j,comp) = s0_old(j,comp) - &
-               dtdr / z(j)**2 * ( zl(j+1)**2 * edge(j+1) * vel(j+1) &
-               -zl(j  )**2 * edge(j  ) * vel(j  ))
+               dtdr / z(n,j)**2 * ( zl(n,j+1)**2 * edge(j+1) * vel(j+1) &
+               -zl(n,j  )**2 * edge(j  ) * vel(j  ))
        end do
        
     enddo
@@ -245,8 +245,8 @@ contains
     
     ! Update p0 -- predictor
     do j = 0,nr(n)-1
-       divbetaw = one / (z(j)**2) * (zl(j+1)**2 * beta(j+1) * vel(j+1) - &
-            zl(j  )**2 * beta(j  ) * vel(j  ) ) / dr(n)
+       divbetaw = one / (z(n,j)**2) * (zl(n,j+1)**2 * beta(j+1) * vel(j+1) - &
+            zl(n,j  )**2 * beta(j  ) * vel(j  ) ) / dr(n)
        betahalf = div_coeff_old(j)
        factor = half * dt * gam1(j) * (Sbar_in(j) - divbetaw / betahalf)
        p0_new(j) = p0_old(j) * (one + factor ) / (one - factor)
@@ -290,8 +290,8 @@ contains
     
     ! Update p0 -- corrector
     do j = 0,nr(n)-1
-       divbetaw = one / (z(j)**2) * (zl(j+1)**2 * beta_nh(j+1) * vel(j+1) - &
-            zl(j  )**2 * beta_nh(j  ) * vel(j  ) ) / dr(n)
+       divbetaw = one / (z(n,j)**2) * (zl(n,j+1)**2 * beta_nh(j+1) * vel(j+1) - &
+            zl(n,j  )**2 * beta_nh(j  ) * vel(j  ) ) / dr(n)
        betahalf = HALF*(div_coeff_old(j) + div_coeff_new(j))
        factor = half * dt * (Sbar_in(j) - divbetaw / betahalf)
        p0_new(j) = p0_old(j) * (one + factor * gam1_old(j)) / (one - factor * gam1(j))
@@ -307,7 +307,7 @@ contains
        div_w0 = (vel(j+1) - vel(j)) / dr(n)
        
        force(j) = -s0_old(j,rhoh_comp) * div_w0 - &
-            2.0_dp_t*s0_old(j,rhoh_comp)*HALF*(vel(j) + vel(j+1))/z(j)
+            2.0_dp_t*s0_old(j,rhoh_comp)*HALF*(vel(j) + vel(j+1))/z(n,j)
        
        ! add eta at time-level n to the force for the prediction
        eta(j) = gam1_old(j) * p0_old(j) * (Sbar_in(j) - div_w0)
@@ -323,8 +323,8 @@ contains
     do j = 0,nr(n)-1
        
        s0_new(j,rhoh_comp) = s0_old(j,rhoh_comp) - &
-            dtdr / z(j)**2 * ( zl(j+1)**2 * edge(j+1) * vel(j+1) &
-            -zl(j  )**2 * edge(j  ) * vel(j  ))
+            dtdr / z(n,j)**2 * ( zl(n,j+1)**2 * edge(j+1) * vel(j+1) &
+            -zl(n,j  )**2 * edge(j  ) * vel(j  ))
        
        s0_new(j,rhoh_comp) = s0_new(j,rhoh_comp) + dt * eta(j)
        
