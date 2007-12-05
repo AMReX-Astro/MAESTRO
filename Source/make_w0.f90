@@ -32,25 +32,21 @@ contains
     real(kind=dp_t), intent(in   ) :: dt,dtold
     integer        , intent(in   ) :: verbose
 
-    integer         :: j,nr,n
+    integer         :: j,n
     real(kind=dp_t) :: max_vel
 
-    ! nr is the dimension of a cell-centered quantity
-    nr = size(vel,dim=2)-1
+    f(:,:) = ZERO
 
     do n=1,nlevs
-       
-       f(n,:) = ZERO
-
        if (spherical .eq. 0) then
-          call make_w0_planar(vel(n,:),vel_old(n,:),Sbar_in(n,:),p0(n,:),gam1(n,:), &
+          call make_w0_planar(n,vel(n,:),vel_old(n,:),Sbar_in(n,:),p0(n,:),gam1(n,:), &
                               eta(n,:,:),f(n,:),dt,dtold)
        else
           call make_w0_spherical(n,vel(n,:),Sbar_in(n,:),p0(n,:),rho0(n,:),gam1(n,:))
        endif
 
        max_vel = zero
-       do j = 0,nr
+       do j = 0,nr(n)
           max_vel = max(max_vel, abs(vel(n,j)))
        end do
 
@@ -60,9 +56,10 @@ contains
 
   end subroutine make_w0
 
-  subroutine make_w0_planar (vel,vel_old,Sbar_in,p0,gam1,eta,f,dt,dtold)
+  subroutine make_w0_planar(n,vel,vel_old,Sbar_in,p0,gam1,eta,f,dt,dtold)
 
     implicit none
+    integer        , intent(in   ) :: n
     real(kind=dp_t), intent(  out) :: vel(0:)
     real(kind=dp_t), intent(in   ) :: vel_old(0:)
     real(kind=dp_t), intent(in   ) :: Sbar_in(0:)
@@ -70,27 +67,25 @@ contains
     real(kind=dp_t), intent(inout) ::   f(0:)
     real(kind=dp_t), intent(in   ) :: dt,dtold
 
-!     Local variables
-    integer         :: j,nr
+    ! Local variables
+    integer                      :: j
     real(kind=dp_t), allocatable :: vel_old_cen(:)
     real(kind=dp_t), allocatable :: vel_new_cen(:)
     real(kind=dp_t), allocatable ::   force(:)
     real(kind=dp_t), allocatable ::    edge(:)
-
-    real(kind=dp_t) :: eta_avg
-
-    ! nr is the dimension of a cell-centered quantity
-    nr = size(vel,dim=1)-1
+    real(kind=dp_t)              :: eta_avg
 
     ! edge-centered
-    allocate(edge(0:nr))
+    allocate(edge(0:nr(n)))
 
     ! cell-centered
-    allocate(vel_old_cen(0:nr-1),vel_new_cen(0:nr-1),force(0:nr-1))
+    allocate(vel_old_cen(0:nr(n)-1))
+    allocate(vel_new_cen(0:nr(n)-1))
+    allocate(      force(0:nr(n)-1))
 
     ! Initialize new velocity to zero.
     vel(0) = ZERO
-    do j = 1,nr
+    do j = 1,nr(n)
        eta_avg = HALF * (eta(j,rho_comp)+eta(j-1,rho_comp))
        vel(j) = vel(j-1) + Sbar_in(j-1) * dr(1) - &
                          ( eta_avg * abs(grav_const) / (gam1(j-1)*p0(j-1)) ) * dr(1)
@@ -98,7 +93,7 @@ contains
 
     ! Compute the 1/rho0 grad pi0 term.
 
-    do j = 0,nr-1
+    do j = 0,nr(n)-1
        vel_old_cen(j) = HALF * (vel_old(j) + vel_old(j+1))
        vel_new_cen(j) = HALF * (vel    (j) + vel    (j+1))
     end do
@@ -106,7 +101,7 @@ contains
     force = ZERO
     call mkflux_1d(vel_old_cen,edge,vel_old,force,1,dr(1),dt)
 
-    do j = 0,nr-1
+    do j = 0,nr(n)-1
        f(j) = (vel_new_cen(j)-vel_old_cen(j)) / (HALF*(dt+dtold)) + &
             HALF*(vel_old_cen(j)+vel_new_cen(j)) * (edge(j+1)-edge(j)) / dr(1)
     end do
@@ -124,20 +119,17 @@ contains
     real(kind=dp_t), intent(in   ) :: p0(0:),rho0(0:),gam1(0:)
     real(kind=dp_t), intent(in   ) :: Sbar_in(0:)
 
-!     Local variables
-    integer         :: j, nr
+    ! Local variables
+    integer                      :: j
     real(kind=dp_t), allocatable :: c(:),d(:),e(:),u(:),rhs(:)
     real(kind=dp_t), allocatable :: m(:),grav_edge(:),rho0_edge(:)
     
-    ! nr is the dimension of an cell-centered quantity
-    nr = size(vel,dim=1)-1
-
     ! Cell-centered
-    allocate(m(0:nr-1))
+    allocate(m(0:nr(n)-1))
 
     ! Edge-centered
-    allocate(c(0:nr),d(0:nr),e(0:nr),rhs(0:nr),u(0:nr))
-    allocate(grav_edge(0:nr),rho0_edge(0:nr))
+    allocate(c(0:nr(n)),d(0:nr(n)),e(0:nr(n)),rhs(0:nr(n)),u(0:nr(n)))
+    allocate(grav_edge(0:nr(n)),rho0_edge(0:nr(n)))
 
     c(:)   = ZERO
     d(:)   = ZERO
@@ -147,26 +139,26 @@ contains
    
     call make_grav_edge(grav_edge,rho0)
 
-    do j = 1,nr
+    do j = 1,nr(n)
        c(j) = gam1(j-1) * p0(j-1) * zl(j-1)**2 / z(j-1)**2
        c(j) = c(j) / dr(1)**2
     end do
 
     call cell_to_edge(n,rho0,rho0_edge)
 
-    do j = 1,nr-1
+    do j = 1,nr(n)-1
 
        d(j) = -( gam1(j-1) * p0(j-1) / z(j-1)**2 &
                 +gam1(j  ) * p0(j  ) / z(j  )**2 ) * (zl(j)**2/dr(1)**2) &
                 - four * rho0_edge(j) * grav_edge(j) / zl(j)
     end do
 
-    do j = 1,nr-1
+    do j = 1,nr(n)-1
        rhs(j) = ( gam1(j  )*p0(j  )*Sbar_in(j) - gam1(j-1)*p0(j-1)*Sbar_in(j-1) ) 
        rhs(j) = rhs(j) / dr(1)
     end do
 
-    do j = 0,nr-1
+    do j = 0,nr(n)-1
        e(j) = gam1(j) * p0(j) * zl(j+1)**2 / z(j)**2
        e(j) = e(j) / dr(1)**2
     end do
@@ -177,14 +169,14 @@ contains
      rhs(0) = zero
 
     ! Upper boundary
-       c(nr) = zero
-       d(nr) = one
-     rhs(nr) = zero
+       c(nr(n)) = zero
+       d(nr(n)) = one
+     rhs(nr(n)) = zero
 
     ! Call the tridiagonal solver
-    call tridiag(c, d, e, rhs, u, nr+1)
+    call tridiag(c, d, e, rhs, u, nr(n)+1)
 
-    do j = 0,nr
+    do j = 0,nr(n)
        vel(j) = u(j)
     end do
 
@@ -193,47 +185,45 @@ contains
 
   end subroutine make_w0_spherical
 
+  subroutine tridiag(a,b,c,r,u,n)
 
-   subroutine tridiag(a,b,c,r,u,n)
-
-   integer, intent(in) ::  n
-
-   real(kind=dp_t), intent(in   ) :: a(:), b(:), c(:), r(:)
-   real(kind=dp_t), intent(  out) :: u(:)
-
-   integer, parameter :: nmax = 4098
- 
-   real(kind=dp_t) :: bet, gam(nmax)
-   integer         :: j
- 
-   if (n .gt. nmax ) then
-     print *,'tridiag: size exceeded'
-     stop
-   end if
-   if (b(1) .eq. 0) then
-    print *,'tridiag: CANT HAVE B(1) = ZERO'
-     stop
-   end if
- 
-   bet = b(1)
-   u(1) = r(1)/bet
- 
-   do j = 2,n
-     gam(j) = c(j-1)/bet
-     bet = b(j) - a(j)*gam(j)
-     if (bet .eq. 0) then
-       print *,'tridiag: TRIDIAG FAILED'
+    real(kind=dp_t), intent(in   ) :: a(:), b(:), c(:), r(:)
+    real(kind=dp_t), intent(  out) :: u(:)
+    integer, intent(in)            :: n
+    
+    integer, parameter :: nmax = 4098
+    
+    real(kind=dp_t) :: bet, gam(nmax)
+    integer         :: j
+    
+    if (n .gt. nmax ) then
+       print *,'tridiag: size exceeded'
        stop
-     end if
-     u(j) = (r(j)-a(j)*u(j-1))/bet
-   end do
- 
-   do j = n-1,1,-1
-     u(j) = u(j) - gam(j+1)*u(j+1)
-   end do
- 
-   return
- 
-   end subroutine tridiag
-
+    end if
+    if (b(1) .eq. 0) then
+       print *,'tridiag: CANT HAVE B(1) = ZERO'
+       stop
+    end if
+    
+    bet = b(1)
+    u(1) = r(1)/bet
+    
+    do j = 2,n
+       gam(j) = c(j-1)/bet
+       bet = b(j) - a(j)*gam(j)
+       if (bet .eq. 0) then
+          print *,'tridiag: TRIDIAG FAILED'
+          stop
+       end if
+       u(j) = (r(j)-a(j)*u(j-1))/bet
+    end do
+    
+    do j = n-1,1,-1
+       u(j) = u(j) - gam(j+1)*u(j+1)
+    end do
+    
+    return
+    
+  end subroutine tridiag
+  
 end module make_w0_module
