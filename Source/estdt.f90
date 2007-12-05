@@ -371,7 +371,7 @@ contains
     spdz = ZERO 
     
     allocate( w0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),3))
-    call put_w0_on_3d_cells_sphr(w0(0:),w0_cart,normal,lo,hi,dx,0)
+    call put_w0_on_3d_cells_sphr(n,w0(0:),w0_cart,normal,lo,hi,dx,0)
     
     ! Limit dt based on velocity terms
     do k = lo(3), hi(3)
@@ -394,7 +394,7 @@ contains
     if (spdx > eps) dt_adv = min(dt_adv, dx(1)/spdx)
     if (spdy > eps) dt_adv = min(dt_adv, dx(2)/spdy)
     if (spdz > eps) dt_adv = min(dt_adv, dx(3)/spdz)
-    if (spdr > eps) dt_adv = min(dt_adv, dr(1)/spdr)
+    if (spdr > eps) dt_adv = min(dt_adv, dr(n)/spdr)
 
     dt_adv = dt_adv * cfl
     
@@ -425,14 +425,14 @@ contains
     ! divU constraint
     allocate(gp0(0:nr(n)))
     do k = 1,nr(n)-1
-       gp0(k) = (p0(k) - p0(k-1))/dr(1)
+       gp0(k) = (p0(k) - p0(k-1))/dr(n)
        gam1_p_avg = HALF * (gam1(k)*p0(k) + gam1(k-1)*p0(k-1))
        gp0(k) = gp0(k) / gam1_p_avg
     end do
     gp0(nr(n)) = gp0(nr(n)-1)
     gp0(    0) = gp0(      1)
     allocate(gp0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),3))
-    call put_w0_on_3d_cells_sphr(gp0,gp0_cart,normal,lo,hi,dx,0)
+    call put_w0_on_3d_cells_sphr(n,gp0,gp0_cart,normal,lo,hi,dx,0)
     
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)

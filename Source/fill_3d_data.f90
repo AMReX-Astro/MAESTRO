@@ -69,7 +69,7 @@ contains
           do i = lo(1),hi(1)
              x = (dble(i)+HALF)*dx(1) - center(1)
              radius = sqrt(x**2 + y**2 + z**2)
-             index = int(radius / dr(1))
+             index = int(radius / dr(n))
              if (index .lt. 0 .or. index .gt. nr(n)-1) then
                 print *,'RADIUS ',radius
                 print *,'BOGUS INDEX IN FILL_3D: ',index
@@ -147,9 +147,9 @@ contains
           hi = upb(get_box(w0_cart(n), i))
           if (spherical .eq. 1) then
              np => dataptr(normal(n), i)
-             call put_w0_on_3d_cells_sphr(w0(n,:),wp(:,:,:,:),np(:,:,:,:),lo,hi,dx(n,:),ng)
+             call put_w0_on_3d_cells_sphr(n,w0(n,:),wp(:,:,:,:),np(:,:,:,:),lo,hi,dx(n,:),ng)
           else
-             call put_w0_on_3d_cells_cart(w0(n,:),wp(:,:,:,:),lo,hi,dx(n,dm),ng)
+             call put_w0_on_3d_cells_cart(n,w0(n,:),wp(:,:,:,:),lo,hi,dx(n,dm),ng)
           end if
        end do
        
@@ -159,9 +159,9 @@ contains
     
   end subroutine make_w0_cart
   
-  subroutine put_w0_on_3d_cells_cart (w0,w0_cell,lo,hi,dz,ng)
+  subroutine put_w0_on_3d_cells_cart(n,w0,w0_cell,lo,hi,dz,ng)
 
-    integer        , intent(in   ) :: lo(:),hi(:),ng
+    integer        , intent(in   ) :: n,lo(:),hi(:),ng
     real(kind=dp_t), intent(  out) :: w0_cell(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real(kind=dp_t), intent(in   ) :: w0(0:)
     real(kind=dp_t), intent(in   ) :: dz
@@ -169,7 +169,7 @@ contains
     integer         :: i,j,k
     integer         :: rr,klo,khi
 
-    rr = int( dz / dr(1) + 1.d-12)
+    rr = int( dz / dr(n) + 1.d-12)
 
     w0_cell = ZERO
     do k = lo(3),hi(3)
@@ -187,9 +187,9 @@ contains
 
   end subroutine put_w0_on_3d_cells_cart
 
-  subroutine put_w0_on_3d_cells_sphr (w0,w0_cell,normal,lo,hi,dx,ng)
+  subroutine put_w0_on_3d_cells_sphr(n,w0,w0_cell,normal,lo,hi,dx,ng)
 
-    integer        , intent(in   ) :: lo(:),hi(:),ng
+    integer        , intent(in   ) :: n,lo(:),hi(:),ng
     real(kind=dp_t), intent(  out) :: w0_cell(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real(kind=dp_t), intent(in   ) ::  normal(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
     real(kind=dp_t), intent(in   ) :: w0(0:)
@@ -208,7 +208,7 @@ contains
         do i = lo(1),hi(1)
           x = (dble(i)+HALF)*dx(1) - center(1)
           radius = sqrt(x**2 + y**2 + z**2)
-          index = int(radius / dr(1))
+          index = int(radius / dr(n))
           if (index .lt. 0 .or. index .gt. nr-1) then
             print *,'RADIUS ',radius
             print *,'BOGUS INDEX IN PUT_ON_CELLS: ',index
@@ -218,10 +218,10 @@ contains
             x = 1.0 / 0.0
             stop
           end if
-          rfac = (radius - dble(index)*dr(1)) / dr(1)
+          rfac = (radius - dble(index)*dr(n)) / dr(n)
           if (rfac .lt. 0.0 .or. rfac .gt. 1.0) then
             print *,'BAD RFAC ',rfac
-            print *,'RADIUS, INDEX*DR ',radius, dble(index)*dr(1)
+            print *,'RADIUS, INDEX*DR ',radius, dble(index)*dr(n)
             x = 1.0 / 0.0
             stop
           end if
