@@ -137,7 +137,7 @@ contains
        if(use_temp_in_mkflux) then
           call mktempforce(scal_force(n),temp_comp,sold(n),thermal(n),p0_old(n,:),dx(n,:))
        else
-          call mkrhohforce(scal_force(n),rhoh_comp,umac(n,:),p0_old(n,:),p0_new(n,:), &
+          call mkrhohforce(n,scal_force(n),rhoh_comp,umac(n,:),p0_old(n,:),p0_new(n,:), &
                            normal(n),dx(n,:))
           call modify_scal_force(n,scal_force(n),sold(n),umac(n,:),s0_old(n,:,:), &
                                  s0_edge_old,w0(n,:),dx(n,:),domlo,domhi,s0_old_cart(n), &
@@ -177,11 +177,11 @@ contains
        end if
        
        ! create temperature or enthalpy edge states
-       call mkflux(sold(n),uold(n),sedge(n,:),umac(n,:),utrans(n,:),scal_force(n),w0(n,:), &
+       call mkflux(n,sold(n),uold(n),sedge(n,:),umac(n,:),utrans(n,:),scal_force(n),w0(n,:), &
                    w0_cart_vec(n),dx(n,:),dt,is_vel,the_bc_level(n),velpred,comp,dm+comp,1)
        
        ! create species edge states
-       call mkflux(sold(n),uold(n),sedge(n,:),umac(n,:),utrans(n,:),scal_force(n),w0(n,:), &
+       call mkflux(n,sold(n),uold(n),sedge(n,:),umac(n,:),utrans(n,:),scal_force(n),w0(n,:), &
                    w0_cart_vec(n),dx(n,:),dt,is_vel,the_bc_level(n),velpred, &
                    spec_comp,dm+spec_comp,nspec)
        
@@ -200,7 +200,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
        if (ntrac .ge. 1) then
-          call mkflux(sold(n),uold(n),sedge(n,:),umac(n,:),utrans(n,:),scal_force(n), &
+          call mkflux(n,sold(n),uold(n),sedge(n,:),umac(n,:),utrans(n,:),scal_force(n), &
                       w0(n,:),w0_cart_vec(n),dx(n,:),dt,is_vel,the_bc_level(n),velpred,&
                       trac_comp,dm+trac_comp,ntrac)
        end if
@@ -299,7 +299,7 @@ contains
           call fill_3d_data_wrapper(s0_new_cart(n),s0_new(n,:,rhoh_comp),dx(n,:),rhoh_comp)
        end if
        
-       call mkrhohforce(scal_force(n),rhoh_comp,umac(n,:),p0_old(n,:),p0_new(n,:), &
+       call mkrhohforce(n,scal_force(n),rhoh_comp,umac(n,:),p0_old(n,:),p0_new(n,:), &
                         normal(n),dx(n,:))
        
        call update_scal(which_step,rhoh_comp,rhoh_comp,sold(n),snew(n), &

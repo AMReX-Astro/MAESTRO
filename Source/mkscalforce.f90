@@ -17,8 +17,9 @@ module mkscalforce_module
   public :: mktempforce
 contains
 
-  subroutine mkrhohforce(force,comp,umac,p0_old,p0_new,normal,dx)
+  subroutine mkrhohforce(n,force,comp,umac,p0_old,p0_new,normal,dx)
 
+    integer        , intent(in   ) :: n
     type(multifab) , intent(inout) :: force
     integer        , intent(in   ) :: comp
     type(multifab) , intent(in   ) :: umac(:)
@@ -47,14 +48,14 @@ contains
        hi = upb(get_box(force,i))
        select case (dm)
        case (2)
-          call  mkrhohforce_2d(fp(:,:,1,comp), vmp(:,:,1,1), lo, hi, p0_old, p0_new)
+          call  mkrhohforce_2d(n,fp(:,:,1,comp), vmp(:,:,1,1), lo, hi, p0_old, p0_new)
        case(3)
           wmp  => dataptr(umac(3), i)
           if (spherical .eq. 0) then
-             call mkrhohforce_3d(fp(:,:,:,comp), wmp(:,:,:,1), lo, hi, p0_old, p0_new)
+             call mkrhohforce_3d(n,fp(:,:,:,comp), wmp(:,:,:,1), lo, hi, p0_old, p0_new)
           else
              np => dataptr(normal, i)
-             call mkrhohforce_3d_sphr(fp(:,:,:,comp), &
+             call mkrhohforce_3d_sphr(n,fp(:,:,:,comp), &
                                       ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
                                       lo, hi, dx, np(:,:,:,:), p0_old, p0_new)
           end if
@@ -63,7 +64,7 @@ contains
     
   end subroutine mkrhohforce
 
-  subroutine mkrhohforce_2d(force, wmac, lo, hi, p0_old, p0_new)
+  subroutine mkrhohforce_2d(n,force,wmac,lo,hi,p0_old,p0_new)
 
     ! compute the source terms for the non-reactive part of the enthalpy equation {w dp0/dr}
     
@@ -71,25 +72,23 @@ contains
     ! both p0_old and p0_new to the same old value.  In the computation
     ! of the force for the update, they will be used to time-center.
 
-    integer,         intent(in   ) :: lo(:), hi(:)
+    integer,         intent(in   ) :: n,lo(:),hi(:)
     real(kind=dp_t), intent(  out) ::  force(lo(1)- 1:,lo(2)- 1:)
     real(kind=dp_t), intent(in   ) ::   wmac(lo(1)- 1:,lo(2)- 1:)
     real(kind=dp_t), intent(in   ) :: p0_old(0:)
     real(kind=dp_t), intent(in   ) :: p0_new(0:)
 
     real(kind=dp_t) :: gradp0, wadv
-    integer :: i,j,nr
+    integer :: i,j
 
     force = ZERO
-
-    nr = size(p0_old,dim=1)
 
 !   Add w d(p0)/dz 
     do j = lo(2),hi(2)
        if (j.eq.0) then
           gradp0 = HALF * ( p0_old(j+1) + p0_new(j+1) &
                            -p0_old(j  ) - p0_new(j  ) ) / dr(1)
-       else if (j.eq.nr-1) then
+       else if (j.eq.nr(n)-1) then
           gradp0 = HALF * ( p0_old(j  ) + p0_new(j  ) &
                            -p0_old(j-1) - p0_new(j-1) ) / dr(1)
        else
@@ -104,29 +103,27 @@ contains
 
   end subroutine mkrhohforce_2d
 
-  subroutine mkrhohforce_3d(force, wmac, lo, hi, p0_old, p0_new)
+  subroutine mkrhohforce_3d(n,force,wmac,lo,hi,p0_old,p0_new)
 
     ! compute the source terms for the non-reactive part of the enthalpy equation {w dp0/dr}
 
-    integer,         intent(in   ) :: lo(:), hi(:)
+    integer,         intent(in   ) :: n,lo(:),hi(:)
     real(kind=dp_t), intent(  out) ::  force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
     real(kind=dp_t), intent(in   ) ::   wmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
     real(kind=dp_t), intent(in   ) :: p0_old(0:)
     real(kind=dp_t), intent(in   ) :: p0_new(0:)
 
     real(kind=dp_t) :: gradp0,wadv
-    integer :: i,j,k,nr
- 
+    integer :: i,j,k
+
     force = ZERO
  
-    nr = size(p0_old,dim=1)
-
     do k = lo(3),hi(3)
 
        if (k.eq.0) then
           gradp0 = HALF * ( p0_old(k+1) + p0_new(k+1) &
                            -p0_old(k  ) - p0_new(k  ) ) / dr(1)
-       else if (k.eq.nr-1) then
+       else if (k.eq.nr(n)-1) then
           gradp0 = HALF * ( p0_old(k  ) + p0_new(k  ) &
                            -p0_old(k-1) - p0_new(k-1) ) / dr(1)
        else
@@ -145,12 +142,11 @@ contains
 
   end subroutine mkrhohforce_3d
 
-  subroutine mkrhohforce_3d_sphr(force, umac, vmac, wmac, lo, hi, &
-                                 dx, normal, p0_old, p0_new)
+  subroutine mkrhohforce_3d_sphr(n,force,umac,vmac,wmac,lo,hi,dx,normal,p0_old,p0_new)
 
     ! compute the source terms for the non-reactive part of the enthalpy equation {w dp0/dr}
 
-    integer,         intent(in   ) :: lo(:), hi(:)
+    integer,         intent(in   ) :: n,lo(:),hi(:)
     real(kind=dp_t), intent(  out) ::  force(lo(1)- 1:,lo(2)- 1:,lo(3)-1:)
     real(kind=dp_t), intent(in   ) ::   umac(lo(1)- 1:,lo(2)- 1:,lo(3)-1:)
     real(kind=dp_t), intent(in   ) ::   vmac(lo(1)- 1:,lo(2)- 1:,lo(3)-1:)
@@ -163,21 +159,19 @@ contains
     real(kind=dp_t) :: uadv,vadv,wadv,normal_vel
     real(kind=dp_t), allocatable :: gradp_rad(:)
     real(kind=dp_t), allocatable :: gradp_cart(:,:,:)
-    integer :: i,j,k,nr
+    integer :: i,j,k
 
-    nr = size(p0_old,dim=1)
-
-    allocate(gradp_rad(0:nr-1))
+    allocate(gradp_rad(0:nr(n)-1))
     allocate(gradp_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
  
     force = ZERO
 
-    do k = 0, nr-1
+    do k = 0, nr(n)-1
        
        if (k.eq.0) then
           gradp_rad(k) = HALF * ( p0_old(k+1) + p0_new(k+1) &
                                  -p0_old(k  ) - p0_new(k  ) ) / dr(1)
-       else if (k.eq.nr-1) then 
+       else if (k.eq.nr(n)-1) then 
           gradp_rad(k) = HALF * ( p0_old(k  ) + p0_new(k  ) &
                                  -p0_old(k-1) - p0_new(k-1) ) / dr(1)
        else
@@ -365,9 +359,8 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:)
     real(kind=dp_t), allocatable   :: p0_cart(:,:,:)
 
-    integer :: i,j,k,nr
+    integer :: i,j,k
 
-    nr = size(p0,dim=1)
     allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
     call fill_3d_data(p0_cart,p0,lo,hi,dx,0)
 
