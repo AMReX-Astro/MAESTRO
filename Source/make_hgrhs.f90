@@ -57,8 +57,8 @@ contains
     do n = 1, nlevs
 
     if (spherical .eq. 1) then
-       call fill_3d_data_wrapper(div_coeff_cart(n),div_coeff(n,:),dx(n,:))
-       call fill_3d_data_wrapper(Sbar_cart(n),Sbar(n,:),dx(n,:))
+       call fill_3d_data_wrapper(n,div_coeff_cart(n),div_coeff(n,:),dx(n,:))
+       call fill_3d_data_wrapper(n,Sbar_cart(n),Sbar(n,:),dx(n,:))
     end if
         
     do i = 1, Source(n)%nboxes

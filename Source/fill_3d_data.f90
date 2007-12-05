@@ -14,12 +14,13 @@ module fill_3d_module
   
 contains
 
-  subroutine fill_3d_data_wrapper(s0_cart,s0,dx,in_comp)
+  subroutine fill_3d_data_wrapper(n,s0_cart,s0,dx,in_comp)
 
     ! for spherical problems, this copies the base state onto a multifab
     ! sames as the function fill_3d_data_wrap, excpet we assume
     ! start_comp = 1, num_comp = 1, and the base state only has one component
 
+    integer        , intent(in   )        :: n
     type(multifab) , intent(inout)        :: s0_cart
     real(kind=dp_t), intent(in   )        :: s0(0:)
     real(kind=dp_t), intent(in   )        :: dx(:)

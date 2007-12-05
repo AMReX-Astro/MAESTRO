@@ -121,11 +121,11 @@ contains
        ! Define s0_old_cart and s0_new_cart
        if (spherical .eq. 1) then
           do comp = spec_comp, spec_comp+nspec-1
-             call fill_3d_data_wrapper(s0_old_cart(n),s0_old(n,:,comp),dx(n,:),comp)
-             call fill_3d_data_wrapper(s0_new_cart(n),s0_new(n,:,comp),dx(n,:),comp)
+             call fill_3d_data_wrapper(n,s0_old_cart(n),s0_old(n,:,comp),dx(n,:),comp)
+             call fill_3d_data_wrapper(n,s0_new_cart(n),s0_new(n,:,comp),dx(n,:),comp)
           enddo
-          call fill_3d_data_wrapper(s0_old_cart(n),s0_old(n,:,rhoh_comp),dx(n,:),rhoh_comp)
-          call fill_3d_data_wrapper(s0_new_cart(n),s0_new(n,:,rhoh_comp),dx(n,:),rhoh_comp)
+          call fill_3d_data_wrapper(n,s0_old_cart(n),s0_old(n,:,rhoh_comp),dx(n,:),rhoh_comp)
+          call fill_3d_data_wrapper(n,s0_new_cart(n),s0_new(n,:,rhoh_comp),dx(n,:),rhoh_comp)
        end if
 
        ! This can be uncommented if you wish to compute T
@@ -259,8 +259,8 @@ contains
        ! Define s0_old_cart and s0_new_cart
        if (spherical .eq. 1) then
           do comp = trac_comp, trac_comp+ntrac-1
-             call fill_3d_data_wrapper(s0_old_cart(n),s0_old(n,:,comp),dx(n,:),comp)
-             call fill_3d_data_wrapper(s0_new_cart(n),s0_new(n,:,comp),dx(n,:),comp)
+             call fill_3d_data_wrapper(n,s0_old_cart(n),s0_old(n,:,comp),dx(n,:),comp)
+             call fill_3d_data_wrapper(n,s0_new_cart(n),s0_new(n,:,comp),dx(n,:),comp)
           enddo
        end if
        
@@ -295,8 +295,8 @@ contains
 
        ! Define s0_old_cart and s0_new_cart
        if (spherical .eq. 1) then
-          call fill_3d_data_wrapper(s0_old_cart(n),s0_old(n,:,rhoh_comp),dx(n,:),rhoh_comp)
-          call fill_3d_data_wrapper(s0_new_cart(n),s0_new(n,:,rhoh_comp),dx(n,:),rhoh_comp)
+          call fill_3d_data_wrapper(n,s0_old_cart(n),s0_old(n,:,rhoh_comp),dx(n,:),rhoh_comp)
+          call fill_3d_data_wrapper(n,s0_new_cart(n),s0_new(n,:,rhoh_comp),dx(n,:),rhoh_comp)
        end if
        
        call mkrhohforce(n,scal_force(n),rhoh_comp,umac(n,:),p0_old(n,:),p0_new(n,:), &
