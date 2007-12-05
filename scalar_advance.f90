@@ -74,7 +74,7 @@ contains
 
     integer :: lo(uold(1)%dim),hi(uold(1)%dim)
     integer :: domlo(uold(1)%dim),domhi(uold(1)%dim)
-    integer :: velpred,i,comp,n,bc_comp,dm,ng_cell,nr
+    integer :: velpred,i,comp,n,bc_comp,dm,ng_cell
 
     logical :: is_vel
     
@@ -82,9 +82,8 @@ contains
     allocate(s0_old_cart(nlevs))
     allocate(s0_new_cart(nlevs))
 
-    nr = size(s0_old,dim=2)
-    allocate(s0_edge_old(0:nr,nscal))
-    allocate(s0_edge_new(0:nr,nscal))
+    allocate(s0_edge_old(0:nr(nlevs),nscal))
+    allocate(s0_edge_new(0:nr(nlevs),nscal))
     
     velpred = 0    
     is_vel = .false.

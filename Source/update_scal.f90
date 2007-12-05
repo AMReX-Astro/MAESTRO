@@ -137,7 +137,7 @@ contains
     real (kind = dp_t), intent(in   ) :: dt,dx(:)
     logical           , intent(in   ) :: evolve_base_state
     
-    integer :: i, j, n, nr, n2
+    integer :: i, j, n, n2
     real (kind = dp_t) :: divsu,divbaseu,delta_base
     real (kind = dp_t) :: delta,frac,sum,fac
     real (kind = dp_t), allocatable :: smin(:),smax(:)
@@ -423,14 +423,12 @@ contains
     real (kind = dp_t), intent(in   ) :: dt,dx(:)
     logical           , intent(in   ) :: evolve_base_state
     
-    integer :: i, j, k, n, nr, n2
+    integer :: i, j, k, n, n2
     real (kind = dp_t) :: divsu,divbaseu,mult
     real (kind = dp_t) :: delta,frac,sum
     real (kind = dp_t) :: bc_lox,bc_loy,bc_loz
     real (kind = dp_t) :: bc_hix,bc_hiy,bc_hiz
     real (kind = dp_t), allocatable :: smin(:),smax(:)
-    
-    nr = size(base_old,dim=1)
     
     ! is spherical
     
