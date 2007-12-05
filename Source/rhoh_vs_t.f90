@@ -63,10 +63,8 @@ contains
     real(kind=dp_t), intent(in   ) :: s0_new(0:,:), s0_edge_new(0:,:)
     
     ! Local variables
-    integer :: i, j, n, nr
+    integer :: i, j, n
     real(kind=dp_t) qreact
-    
-    nr = size(s0_old,dim=1)
     
     do_diag = .false.
     
@@ -174,10 +172,8 @@ contains
     real(kind=dp_t), intent(in   ) :: s0_new(0:,:), s0_edge_new(0:,:)
     
     ! Local variables
-    integer :: i, j, k, n, nr
+    integer :: i, j, k, n
     real(kind=dp_t) qreact
-    
-    nr = size(s0_old,dim=1)
     
     do_diag = .false.
     

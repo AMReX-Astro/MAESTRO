@@ -131,7 +131,7 @@ contains
        ! This can be uncommented if you wish to compute T
        ! call makeTfromRhoH(sold(n),s0_old(n,:,temp_comp))
        
-       call modify_scal_force(scal_force(n),sold(n),umac(n,:),s0_old(n,:,:),s0_edge_old, &
+       call modify_scal_force(n,scal_force(n),sold(n),umac(n,:),s0_old(n,:,:),s0_edge_old, &
                               w0(n,:),dx(n,:),domlo,domhi,s0_old_cart(n),spec_comp,nspec)
        
        if(use_temp_in_mkflux) then
@@ -139,8 +139,9 @@ contains
        else
           call mkrhohforce(scal_force(n),rhoh_comp,umac(n,:),p0_old(n,:),p0_new(n,:), &
                            normal(n),dx(n,:))
-          call modify_scal_force(scal_force(n),sold(n),umac(n,:),s0_old(n,:,:),s0_edge_old, &
-                                 w0(n,:),dx(n,:),domlo,domhi,s0_old_cart(n),rhoh_comp,1)
+          call modify_scal_force(n,scal_force(n),sold(n),umac(n,:),s0_old(n,:,:), &
+                                 s0_edge_old,w0(n,:),dx(n,:),domlo,domhi,s0_old_cart(n), &
+                                 rhoh_comp,1)
        endif
        
        ! add to the rhoh component of force if NOT use_temp_in_mkflux

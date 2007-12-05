@@ -13,13 +13,14 @@ module modify_scal_force_module
 
 contains
 
-  subroutine modify_scal_force(force,s,umac,base,base_edge,w0,dx,domlo,domhi,base_cart, &
+  subroutine modify_scal_force(n,force,s,umac,base,base_edge,w0,dx,domlo,domhi,base_cart, &
                                start_comp,num_comp)
 
     ! When we write the scalar equation in perturbational and convective
     ! form, the terms other than s'_t + U.grad s' act as source terms.  Add
     ! them to the forces here.
     
+    integer        , intent(in   ) :: n
     type(multifab) , intent(inout) :: force
     type(multifab) , intent(in   ) :: s
     type(multifab) , intent(in   ) :: umac(:)
@@ -62,7 +63,7 @@ contains
           if (spherical .eq. 1) then
              bcp => dataptr(base_cart, i)
              do comp = start_comp, start_comp+num_comp-1
-                call modify_scal_force_3d_sphr(fp(:,:,:,comp),sp(:,:,:,comp), &
+                call modify_scal_force_3d_sphr(n,fp(:,:,:,comp),sp(:,:,:,comp), &
                                                lo,hi,domlo,domhi,ng, &
                                                ump(:,:,:,1),vmp(:,:,:,1), &
                                                wmp(:,:,:,1),bcp(:,:,:,comp), &
@@ -144,10 +145,10 @@ contains
     
   end subroutine modify_scal_force_3d_cart
   
-  subroutine modify_scal_force_3d_sphr(force,s,lo,hi,domlo,domhi,ng, &
+  subroutine modify_scal_force_3d_sphr(n,force,s,lo,hi,domlo,domhi,ng, &
                                        umac,vmac,wmac,base_cart,w0,dx)
     
-    integer        , intent(in   ) :: lo(:),hi(:),domlo(:),domhi(:),ng
+    integer        , intent(in   ) :: n,lo(:),hi(:),domlo(:),domhi(:),ng
     real(kind=dp_t), intent(  out) :: force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
     real(kind=dp_t), intent(in   ) ::     s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
     real(kind=dp_t), intent(in   ) ::  umac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
@@ -159,7 +160,7 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:)
     
     ! Local variables
-    integer :: i,j,k,nr
+    integer :: i,j,k
     real(kind=dp_t) :: divumac,divbaseu
     real(kind=dp_t) :: base_xlo,base_xhi
     real(kind=dp_t) :: base_ylo,base_yhi
@@ -167,11 +168,10 @@ contains
     
     real(kind=dp_t), allocatable :: divu(:),divu_cart(:,:,:)
     
-    nr = size(w0,dim=1)-1
-    allocate(divu(0:nr-1))
+    allocate(divu(0:nr(n)-1))
     allocate(divu_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
     
-    do k = 0,nr-1
+    do k = 0,nr(n)-1
        divu(k) = (zl(k+1)**2 * w0(k+1)- zl(k)**2 * w0(k))/(dr(1)*z(k)**2)
     end do
     call fill_3d_data(divu_cart,divu,lo,hi,dx,0)

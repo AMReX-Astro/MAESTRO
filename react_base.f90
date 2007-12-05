@@ -11,6 +11,7 @@ module react_base_module
   use eos_module
   use network
   use probin_module, ONLY: use_big_h
+  use geometry
 
   implicit none
   
@@ -30,13 +31,11 @@ contains
     real(kind=dp_t), intent(  out) :: p0_out(:,0:), s0_out(:,0:,:)
     real(kind=dp_t), intent(inout) :: gam1_out(:,0:)
     
-    integer :: n,j,comp,nr
+    integer :: n,j,comp
     
     do n=1,nlevs
 
-       nr = size(rho_omegadotbar,dim=2)
-       
-       do j = 0,nr-1
+       do j = 0,nr(n)-1
           
           ! (rho X)_out = (rho X)_in + dt_in * (rho omegadotbar)_in
           do comp = spec_comp,spec_comp+nspec-1
