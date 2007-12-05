@@ -130,7 +130,7 @@ contains
     real(kind=dp_t), intent(in   ) ::    p0(0:)
 
     !     Local variables
-    integer :: i, j, k, n
+    integer :: i, j, k, comp
     real(kind=dp_t) :: x,y,z,r,r0,r1,r2,temp
     real(kind=dp_t) :: dens_pert, rhoh_pert, temp_pert
     real(kind=dp_t) :: rhoX_pert(nspec), trac_pert(ntrac)
@@ -145,8 +145,8 @@ contains
        call fill_3d_data (s(:,:,:,rhoh_comp),s0(:,rhoh_comp),lo,hi,dx,ng)
        call fill_3d_data (s(:,:,:,temp_comp),s0(:,temp_comp),lo,hi,dx,ng)
 
-       do n = spec_comp, spec_comp+nspec-1
-          call fill_3d_data (s(:,:,:,n),s0(:,n),lo,hi,dx,ng)
+       do comp = spec_comp, spec_comp+nspec-1
+          call fill_3d_data (s(:,:,:,comp),s0(:,comp),lo,hi,dx,ng)
        end do
 
     else 

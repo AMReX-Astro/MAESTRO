@@ -46,7 +46,7 @@ contains
     ! Local
     type(multifab), allocatable :: phi(:),alpha(:),beta(:),Xkcoeff(:)
     type(multifab), allocatable :: Tcoeff(:),hcoeff(:),pcoeff(:),resid(:)
-    integer                     :: i,k,n,nlevs,dm,stencil_order
+    integer                     :: i,comp,n,nlevs,dm,stencil_order
     integer                     :: lo(s(1)%dim),hi(s(1)%dim)
     real(kind=dp_t), pointer    :: sp(:,:,:,:),phip(:,:,:,:)
     real(kind=dp_t), pointer    :: betap(:,:,:,:),Xkcoeffp(:,:,:,:)
@@ -170,10 +170,10 @@ contains
        enddo
      
        ! loop over species
-       do k=1,nspec
+       do comp=1,nspec
           do n=1,nlevs
              ! load X_k into phi
-             call multifab_copy_c(phi(n),1,s(n),spec_comp+k-1,1,1)
+             call multifab_copy_c(phi(n),1,s(n),spec_comp+comp-1,1,1)
              call multifab_div_div_c(phi(n),1,s(n),rho_comp,1,1)
              
              ! setup beta = Xkcoeff on faces
@@ -185,15 +185,15 @@ contains
                 hi = upb(get_box(s(n),i))
                 select case (dm)
                 case (2)
-                   call put_beta_on_faces_2d(lo,hi,Xkcoeffp(:,:,1,k),betap(:,:,1,:))
+                   call put_beta_on_faces_2d(lo,hi,Xkcoeffp(:,:,1,comp),betap(:,:,1,:))
                 case (3)
-                   call put_beta_on_faces_3d(lo,hi,Xkcoeffp(:,:,:,k),betap(:,:,:,:))
+                   call put_beta_on_faces_3d(lo,hi,Xkcoeffp(:,:,:,comp),betap(:,:,:,:))
                 end select
              end do
           enddo ! end loop over levels
           
           ! applyop to compute resid = del dot Xkcoeff grad X_k
-          call mac_applyop(mla,resid,phi,alpha,beta,dx,the_bc_tower,dm+spec_comp+k-1, &
+          call mac_applyop(mla,resid,phi,alpha,beta,dx,the_bc_tower,dm+spec_comp+comp-1, &
                            stencil_order,mla%mba%rr,mg_verbose,cg_verbose)
           
           ! add residual to thermal
@@ -310,8 +310,7 @@ contains
     real(kind=dp_t), intent(inout) :: pcoeff(lo(1)-1:,lo(2)-1:)
     
     ! local
-    integer :: i,j,n
-    
+    integer :: i,j,comp    
     
     do j=lo(2)-1,hi(2)+1
        do i=lo(1)-1,hi(1)+1
@@ -341,12 +340,13 @@ contains
                (1.0d0-p_eos(1)/(den_eos(1)*dpdr_eos(1)))+dedr_eos(1)/dpdr_eos(1))
           
           if(use_big_h) then
-             do n=1,nspec
-                Xkcoeff(i,j,n) = (conduct_eos(1)/cp_eos(1))*(dhdX_eos(1,n) + ebin(n))
+             do comp=1,nspec
+                Xkcoeff(i,j,comp) = (conduct_eos(1)/cp_eos(1))*(dhdX_eos(1,comp) &
+                     + ebin(comp))
              enddo
           else
-             do n=1,nspec
-                Xkcoeff(i,j,n) = (conduct_eos(1)/cp_eos(1))*dhdX_eos(1,n)
+             do comp=1,nspec
+                Xkcoeff(i,j,comp) = (conduct_eos(1)/cp_eos(1))*dhdX_eos(1,comp)
              enddo
           endif
        enddo
@@ -370,7 +370,7 @@ contains
     real(kind=dp_t), intent(inout) :: pcoeff(lo(1)-1:,lo(2)-1:,lo(3)-1:)
 
     ! local
-    integer :: i,j,k,n
+    integer :: i,j,k,comp
     real(kind=dp_t), allocatable :: p0_cart(:,:,:)
     
     if (spherical .eq. 1) then
@@ -407,12 +407,13 @@ contains
                   (1.0d0-p_eos(1)/(den_eos(1)*dpdr_eos(1)))+dedr_eos(1)/dpdr_eos(1))
              
              if(use_big_h) then
-                do n=1,nspec
-                   Xkcoeff(i,j,k,n) = (conduct_eos(1)/cp_eos(1))*(dhdX_eos(1,n) + ebin(n))
+                do comp=1,nspec
+                   Xkcoeff(i,j,k,comp) = (conduct_eos(1)/cp_eos(1))*(dhdX_eos(1,comp) &
+                        + ebin(comp))
                 enddo
              else
-                do n=1,nspec
-                   Xkcoeff(i,j,k,n) = (conduct_eos(1)/cp_eos(1))*dhdX_eos(1,n)
+                do comp=1,nspec
+                   Xkcoeff(i,j,k,comp) = (conduct_eos(1)/cp_eos(1))*dhdX_eos(1,comp)
                 enddo
              endif
           enddo
