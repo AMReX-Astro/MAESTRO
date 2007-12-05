@@ -326,11 +326,10 @@ contains
 
   end subroutine maketfromH_3d_sphr
 
-  subroutine make_tfromrho (plotdata,comp_tfromrho,comp_tpert,comp_rhopert, &
-                            comp_machno,comp_deltag,comp_spert, &
-                            s,u,s0,p0,dx)
+  subroutine make_tfromrho(n,plotdata,comp_tfromrho,comp_tpert,comp_rhopert, &
+                            comp_machno,comp_deltag,comp_spert,s,u,s0,p0,dx)
 
-    integer        , intent(in   ) :: comp_tfromrho,comp_tpert
+    integer        , intent(in   ) :: n,comp_tfromrho,comp_tpert
     integer        , intent(in   ) :: comp_rhopert, comp_machno
     integer        , intent(in   ) :: comp_deltag, comp_spert
     type(multifab) , intent(inout) :: plotdata
@@ -363,7 +362,7 @@ contains
                                lo, hi, ng, s0, p0)
        case (3)
           if (spherical .eq. 1) then
-            call maketfromrho_3d_sphr(tp(:,:,:,comp_tfromrho),tp(:,:,:,comp_tpert), &
+            call maketfromrho_3d_sphr(n,tp(:,:,:,comp_tfromrho),tp(:,:,:,comp_tpert), &
                                       tp(:,:,:,comp_rhopert ), &
                                       tp(:,:,:,comp_machno  ),tp(:,:,:,comp_deltag), &
                                       tp(:,:,:,comp_spert   ), &
@@ -571,12 +570,12 @@ contains
 
    end subroutine maketfromrho_3d_cart
 
-  subroutine maketfromrho_3d_sphr (t,tpert,rhopert,machno,deltagamma,spert, &
-                                   s,u,lo,hi,ng,s0,p0,dx)
+  subroutine maketfromrho_3d_sphr(n,t,tpert,rhopert,machno,deltagamma,spert, &
+                                  s,u,lo,hi,ng,s0,p0,dx)
 
     implicit none
 
-    integer, intent(in) :: lo(:), hi(:), ng
+    integer, intent(in)             :: n,lo(:),hi(:),ng
     real (kind=dp_t), intent(  out) ::          t(lo(1):,lo(2):,lo(3):)  
     real (kind=dp_t), intent(  out) ::      tpert(lo(1):,lo(2):,lo(3):)  
     real (kind=dp_t), intent(  out) ::    rhopert(lo(1):,lo(2):,lo(3):)  
@@ -599,18 +598,14 @@ contains
     real (kind=dp_t), allocatable ::  gam0_cart(:,:,:)
     real (kind=dp_t), allocatable :: entr0_cart(:,:,:)
 
-    integer :: nr 
-
-    nr = size(s0,dim=1)
-
-    allocate(gam10(0:nr-1))
-    allocate(entr0(0:nr-1))
+    allocate(gam10(0:nr(n)-1))
+    allocate(entr0(0:nr(n)-1))
 
     do_diag = .false.
 
     ! We now assume that the temperature coming in in the base state is correct, but
     !   we do this eos call to get gam10 and entr0.
-    do k = 0, nr-1
+    do k = 0, nr(n)-1
         den_eos(1) = s0(k,rho_comp)
        temp_eos(1) = s0(k,temp_comp)
           p_eos(1) = p0(k)

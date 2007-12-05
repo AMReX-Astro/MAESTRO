@@ -154,9 +154,9 @@ contains
       do n = 1,nlevs
 
        ! RHOPERT & TEMP (FROM RHO) & TPERT & MACHNO & (GAM1 - GAM10)
-       call make_tfromrho  (plotdata(n),icomp_tfromrho,icomp_tpert,icomp_rhopert, &
-                            icomp_machno,icomp_dg,icomp_spert, &
-                            s(n),u(n),s0,p0,dx(n,:))
+       call make_tfromrho(n,plotdata(n),icomp_tfromrho,icomp_tpert,icomp_rhopert, &
+                          icomp_machno,icomp_dg,icomp_spert, &
+                          s(n),u(n),s0,p0,dx(n,:))
 
        ! TEMP (FROM H) & DELTA_P
        call make_tfromH    (plotdata(n),icomp_tfromH,icomp_dp,s(n),p0,s0(:,temp_comp),dx(n,:))
@@ -171,9 +171,9 @@ contains
       do n = 1,nlevs
 
        ! RHOPERT & TEMP (FROM RHO) & TPERT & MACHNO & (GAM1 - GAM10)
-       call make_tfromrho  (plotdata(n),icomp_tfromrho,icomp_tpert,icomp_rhopert, &
-                            icomp_machno,icomp_dg,icomp_spert, &
-                            s(n),u(n),s0,p0,dx(n,:))
+       call make_tfromrho(n,plotdata(n),icomp_tfromrho,icomp_tpert,icomp_rhopert, &
+                          icomp_machno,icomp_dg,icomp_spert, &
+                          s(n),u(n),s0,p0,dx(n,:))
 
        ! TEMP (FROM H) & DELTA_P
        call make_tfromH    (plotdata(n),icomp_tfromH,icomp_dp,s(n),p0,s0(:,temp_comp),dx(n,:))

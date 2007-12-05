@@ -137,7 +137,7 @@ contains
     rhs(:) = ZERO
     u(:)   = ZERO
    
-    call make_grav_edge(grav_edge,rho0)
+    call make_grav_edge(n,grav_edge,rho0)
 
     do j = 1,nr(n)
        c(j) = gam1(j-1) * p0(j-1) * zl(j-1)**2 / z(j-1)**2
