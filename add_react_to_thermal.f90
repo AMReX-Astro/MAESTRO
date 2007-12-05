@@ -91,7 +91,7 @@ contains
     real (kind=dp_t), intent(in   ) :: s(lo(1)-3:,lo(2)-3:,:)
     
     ! Local variables
-    integer         :: i,j,n
+    integer         :: i,j,comp
     real(kind=dp_t) :: react_term
     
     do_diag = .false.
@@ -116,9 +116,9 @@ contains
                    do_diag)
           
           react_term = ZERO
-          do n = 1, nspec
+          do comp = 1, nspec
              react_term = react_term - &
-                  (dhdX_eos(1,n) + ebin(n))*rho_omegadot(i,j,n)
+                  (dhdX_eos(1,comp) + ebin(comp))*rho_omegadot(i,j,comp)
           enddo
           
           thermal(i,j) = thermal(i,j) + react_term
@@ -137,7 +137,7 @@ contains
     real (kind=dp_t), intent(in   ) :: s(lo(1)-3:,lo(2)-3:,lo(3):,:)
     
     ! Local variables
-    integer :: i,j,k,n
+    integer :: i,j,k,comp
     real(kind=dp_t) :: react_term
     
     do_diag = .false.
@@ -163,9 +163,9 @@ contains
                       do_diag)
              
              react_term = ZERO
-             do n = 1, nspec
+             do comp = 1, nspec
                 react_term = react_term - &
-                     (dhdX_eos(1,n) + ebin(n))*rho_omegadot(i,j,k,n)
+                     (dhdX_eos(1,comp) + ebin(comp))*rho_omegadot(i,j,k,comp)
              enddo
              
              thermal(i,j,k) = thermal(i,j,k) + react_term

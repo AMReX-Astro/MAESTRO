@@ -30,7 +30,7 @@ contains
     real(kind=dp_t), intent(in   ) :: prob_lo(:)
     real(kind=dp_t), intent(in   ) :: prob_hi(:)
     real(kind=dp_t), intent(in   ) :: dx(:)
-    integer :: i,j,n,j_cutoff
+    integer :: i,j,j_cutoff,comp
 
     real(kind=dp_t) :: r,dr_in,rmax,starting_rad
     real(kind=dp_t) :: d_ambient,t_ambient,p_ambient, xn_ambient(nspec)
@@ -144,9 +144,9 @@ contains
              found = .true.
 
           else
-             do n = 1, nspec
-                if (trim(varnames_stored(j)) == spec_names(n)) then
-                   base_state(i,ispec_model-1+n) = vars_stored(j)
+             do comp = 1, nspec
+                if (trim(varnames_stored(j)) == spec_names(comp)) then
+                   base_state(i,ispec_model-1+comp) = vars_stored(j)
                    found = .true.
                    exit
                 endif
@@ -232,11 +232,10 @@ contains
          p_ambient = interpolate(r, npts_model, base_r, base_state(:,ipres_model))
 
          sum = ZERO
-         do n = 1, nspec
-            xn_ambient(n) = max(ZERO, &
-                                min(ONE, &
-                                    interpolate(r, npts_model, base_r, base_state(:,ispec_model-1+n))))
-            sum = sum + xn_ambient(n)
+         do comp = 1, nspec
+            xn_ambient(comp) = max(ZERO,min(ONE, &
+                 interpolate(r, npts_model, base_r, base_state(:,ispec_model-1+comp))))
+            sum = sum + xn_ambient(comp)
          enddo
          xn_ambient(:) = xn_ambient(:)/sum
          
