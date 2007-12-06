@@ -79,11 +79,11 @@ subroutine varden()
   type(box)       :: fine_domain
   type(ml_boxarray) :: mba
 
-  real(dp_t), allocatable :: gam1(:)
-  real(dp_t), allocatable :: s0_old(:,:)
-  real(dp_t), allocatable :: s0_avg(:,:)
-  real(dp_t), allocatable :: p0_old(:)
-  real(dp_t), allocatable :: w0(:)
+  real(dp_t), allocatable :: gam1(:,:)
+  real(dp_t), allocatable :: s0_old(:,:,:)
+  real(dp_t), allocatable :: s0_avg(:,:,:)
+  real(dp_t), allocatable :: p0_old(:,:)
+  real(dp_t), allocatable :: w0(:,:)
 
 
   type(bc_tower) ::  the_bc_tower
@@ -389,15 +389,15 @@ subroutine varden()
   end if
 
 
-  allocate(   gam1(n_base  ))
-  allocate( s0_old(n_base, nscal))
-  allocate( s0_avg(n_base, nscal))
-  allocate( p0_old(n_base  ))
-  allocate(     w0(0:n_base))
+  allocate(   gam1(nlevs,n_base  ))
+  allocate( s0_old(nlevs,n_base, nscal))
+  allocate( s0_avg(nlevs,n_base, nscal))
+  allocate( p0_old(nlevs,n_base  ))
+  allocate(     w0(nlevs,0:n_base))
 
-  s0_old(:,:) = ZERO
-  s0_avg(:,:) = ZERO
-  w0(:) = ZERO
+  s0_old(:,:,:) = ZERO
+  s0_avg(:,:,:) = ZERO
+  w0(:,:) = ZERO
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Initialize all remaining arrays
@@ -454,11 +454,13 @@ subroutine varden()
 
   ! Initialize geometry (IMPT: dr is set in init_base_state)
   center(1:dm) = HALF * (prob_lo(1:dm) + prob_hi(1:dm))
-  call init_geometry(center,n_base,dr_base)
+  call init_geometry(center,n_base,dr_base,nlevs,mla)
 
   ! Initialize base state at finest level
-  call init_base_state(model_file,n_base,s0_old,p0_old,gam1, &
-                       dx(nlevs,:),prob_lo,prob_hi)
+  do n=1,nlevs
+     call init_base_state(n,model_file,s0_old(n,:,:),p0_old(n,:),gam1(n,:), &
+                          dx(n,:),prob_lo,prob_hi)
+  enddo
 
   ! Create the normal array once we have defined "center"
   if (spherical .eq. 1) then
@@ -473,66 +475,14 @@ subroutine varden()
     end do
   end if
 
-  do n = 1,nlevs
-     call initveldata(uold(n),s0_old,p0_old,dx(n,:), &
-                      prob_lo,prob_hi, &
-                      the_bc_tower%bc_tower_array(n))
 
-     call initscalardata(sold(n),s0_old,p0_old,dx(n,:), &
-                         perturb_model, &
-                         prob_lo,prob_hi, &
-                         the_bc_tower%bc_tower_array(n))
-
-  end do
-
-  do n = nlevs,2,-1
-     call ml_cc_restriction(uold(n-1),uold(n),mba%rr(n-1,:))
-     call ml_cc_restriction(sold(n-1),sold(n),mba%rr(n-1,:))
-  end do
-
-
-
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! set the boundary conditions
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  call initveldata(nlevs,uold,s0_old,p0_old,dx, &
+                   prob_lo,prob_hi,the_bc_tower%bc_tower_array,mla)
+  
+  call initscalardata(nlevs,sold,s0_old,p0_old,dx,perturb_model, &
+                      prob_lo,prob_hi,the_bc_tower%bc_tower_array,mla)
 
   do n = 1,nlevs
-     bc = the_bc_tower%bc_tower_array(n)
-     do i = 1, uold(n)%nboxes
-        if ( multifab_remote(uold(n), i) ) cycle
-        uop => dataptr(uold(n), i)
-        sop => dataptr(sold(n), i)
-        lo =  lwb(get_box(uold(n), i))
-        hi =  upb(get_box(uold(n), i))
-        select case (dm)
-        case (2)
-           do d = 1,dm
-              call setbc_2d(uop(:,:,1,d), lo, ng_cell, &
-                            bc%adv_bc_level_array(i,:,:,d), &
-                            dx(n,:),d)
-           end do
-           do d = 1,nscal
-              call setbc_2d(sop(:,:,1,d), lo, ng_cell, &
-                            bc%adv_bc_level_array(i,:,:,dm+d), &
-                            dx(n,:),dm+d)
-           end do
-        case (3)
-           do d = 1,dm
-              call setbc_3d(uop(:,:,:,d), lo, ng_cell, &
-                            bc%adv_bc_level_array(i,:,:,d), &
-                            dx(n,:),d)
-           end do
-           do d = 1, nscal
-              call setbc_3d(sop(:,:,:,d), lo, ng_cell, &
-                            bc%adv_bc_level_array(i,:,:,dm+d), &
-                            dx(n,:),dm+d)
-           end do
-        end select
-     end do
-
-     call multifab_fill_boundary(uold(n))
-     call multifab_fill_boundary(sold(n))
 
 !    This is done to impose any Dirichlet bc's on unew or snew.
      call multifab_copy_c(unew(n),1,uold(n),1,dm   ,ng=unew(n)%ng)
@@ -545,23 +495,22 @@ subroutine varden()
   ! and compare to the base state
   if ( parallel_IOProcessor() ) &
        print *, 'averaging...'
-  call average(sold,s0_avg(:,:),dx,1,nscal)
+  do n=1,nlevs
+     call average(sold,s0_avg,dx,1,nscal)
+  enddo
   if ( parallel_IOProcessor() ) &
        print *, 'done'
 
   ! compute the error against the base state
   if ( parallel_IOProcessor() ) then
      open (unit=10, file="dens.error")
-     do n = 1, n_base
-        write (10,*) n, s0_old(n,rho_comp), s0_avg(n,rho_comp)
+     do n=1,nlevs
+        do i = 1, n_base
+           write (10,*) n, i, s0_old(n,i,rho_comp), s0_avg(n,i,rho_comp)
+        enddo
      enddo
      close (10)
   endif
-
-
-
-
-
 
   do n = 1,nlevs
      call destroy(uold(n))
