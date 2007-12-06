@@ -155,7 +155,7 @@ contains
        else
 
           ! make force for rhoh
-          call mkrhohforce(n,scal_force(n),rhoh_comp,umac(n,:),p0_old(n,:),p0_new(n,:), &
+          call mkrhohforce(n,scal_force(n),rhoh_comp,umac(n,:),p0_old(n,:),p0_old(n,:), &
                            normal(n),dx(n,:))
 
           call modify_scal_force(n,scal_force(n),sold(n),umac(n,:),s0_old(n,:,:), &
