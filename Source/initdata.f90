@@ -12,6 +12,9 @@ module init_module
   use network
   use geometry
   use probin_module, only: grav_const
+  use ml_layout_module
+  use ml_restriction_module
+  use multifab_fill_ghost_module
 
   implicit none
 
@@ -20,60 +23,69 @@ module init_module
 
 contains
 
-  subroutine initscalardata(n,s,s0,p0,dx,perturb_model,prob_lo,prob_hi,bc)
+  subroutine initscalardata(nlevs,s,s0,p0,dx,perturb_model,prob_lo,prob_hi,bc,mla)
 
-    integer        , intent(in   ) :: n
-    type(multifab) , intent(inout) :: s
-    real(kind=dp_t), intent(in   ) ::    s0(0:,:)
-    real(kind=dp_t), intent(in   ) ::    p0(0:)
-    real(kind=dp_t), intent(in   ) :: dx(:)
+    integer        , intent(in   ) :: nlevs
+    type(multifab) , intent(inout) :: s(:)
+    real(kind=dp_t), intent(in   ) :: s0(:,0:,:)
+    real(kind=dp_t), intent(in   ) :: p0(:,0:)
+    real(kind=dp_t), intent(in   ) :: dx(:,:)
     logical,         intent(in   ) :: perturb_model
     real(kind=dp_t), intent(in   ) :: prob_lo(:)
     real(kind=dp_t), intent(in   ) :: prob_hi(:)
-    type(bc_level) , intent(in   ) :: bc
+    type(bc_level) , intent(in   ) :: bc(:)
+    type(ml_layout), intent(inout) :: mla
 
     real(kind=dp_t), pointer:: sop(:,:,:,:)
-    integer :: lo(s%dim),hi(s%dim),ng,dm
-    integer :: i
+    integer :: lo(s(1)%dim),hi(s(1)%dim),ng,dm
+    integer :: i,n
     
-    ng = s%ng
-    dm = s%dim
+    ng = s(1)%ng
+    dm = s(1)%dim
 
-    do i = 1, s%nboxes
-       if ( multifab_remote(s, i) ) cycle
-       sop => dataptr(s, i)
-       lo =  lwb(get_box(s, i))
-       hi =  upb(get_box(s, i))
+    do n=1,nlevs
 
-       select case (dm)
-       case (2)
-          call initscalardata_2d(sop(:,:,1,:), lo, hi, ng, dx, perturb_model, &
-                                 prob_lo, prob_hi, s0, p0)
-       case (3)
-          call initscalardata_3d(n,sop(:,:,:,:), lo, hi, ng, dx, perturb_model, &
-                                 prob_lo, prob_hi, s0, p0)
-       end select
-    end do
+       do i = 1, s(n)%nboxes
+          if ( multifab_remote(s(n),i) ) cycle
+          sop => dataptr(s(n),i)
+          lo =  lwb(get_box(s(n),i))
+          hi =  upb(get_box(s(n),i))
+          select case (dm)
+          case (2)
+             call initscalardata_2d(sop(:,:,1,:), lo, hi, ng, dx(n,:), perturb_model, &
+                                    prob_lo, prob_hi, s0(n,:,:), p0(n,:))
+          case (3)
+             call initscalardata_3d(n,sop(:,:,:,:), lo, hi, ng, dx(n,:), perturb_model, &
+                                    prob_lo, prob_hi, s0(n,:,:), p0(n,:))
+          end select
+       end do
+       
+       call multifab_fill_boundary(s(n))
+       call multifab_physbc(s(n),rho_comp,dm+rho_comp,nscal,dx(n,:),bc(n))
 
-    call multifab_fill_boundary(s)
-    call multifab_physbc(s,rho_comp,dm+rho_comp,nscal,dx,bc)
+    enddo
+
+    do n=nlevs,2,-1
+       call ml_cc_restriction(s(n-1),s(n),mla%mba%rr(n-1,:))
+       call multifab_fill_ghost_cells(s(n),s(n-1),ng,mla%mba%rr(n-1,:), &
+                                       bc(n-1),bc(n),1,dm+rho_comp,nscal)
+    enddo
 
   end subroutine initscalardata
 
-  subroutine initscalardata_2d (s,lo,hi,ng,dx, perturb_model, &
-                                prob_lo,prob_hi,s0,p0)
+  subroutine initscalardata_2d(s,lo,hi,ng,dx, perturb_model,prob_lo,prob_hi,s0,p0)
 
-    integer, intent(in) :: lo(:), hi(:), ng
+    integer           , intent(in   ) :: lo(:),hi(:),ng
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,:)  
-    real (kind = dp_t), intent(in ) :: dx(:)
-    logical,            intent(in ) :: perturb_model
-    real (kind = dp_t), intent(in ) :: prob_lo(:)
-    real (kind = dp_t), intent(in ) :: prob_hi(:)
-    real(kind=dp_t), intent(in   ) ::    s0(0:,:)
-    real(kind=dp_t), intent(in   ) ::    p0(0:)
+    real (kind = dp_t), intent(in   ) :: dx(:)
+    logical           , intent(in   ) :: perturb_model
+    real (kind = dp_t), intent(in   ) :: prob_lo(:)
+    real (kind = dp_t), intent(in   ) :: prob_hi(:)
+    real(kind=dp_t)   , intent(in   ) :: s0(0:,:)
+    real(kind=dp_t)   , intent(in   ) :: p0(0:)
 
-    !     Local variables
-    integer :: i, j, n
+    ! Local variables
+    integer         :: i,j,n
     real(kind=dp_t) :: x,y,r,r0,r1,r2,temp
     real(kind=dp_t) :: dens_pert, rhoh_pert, temp_pert
     real(kind=dp_t) :: rhoX_pert(nspec), trac_pert(ntrac)
@@ -87,7 +99,6 @@ contains
           s(i,j,rho_comp)  = s0(j,rho_comp)
           s(i,j,rhoh_comp) = s0(j,rhoh_comp)
           s(i,j,temp_comp) = s0(j,temp_comp)
-
           s(i,j,spec_comp:spec_comp+nspec-1) = &
                s0(j,spec_comp:spec_comp+nspec-1)
        enddo
@@ -97,7 +108,7 @@ contains
     if (perturb_model) then
        do j = lo(2), hi(2)
           y = prob_lo(2) + (dble(j)+HALF) * dx(2)
-       
+          
           do i = lo(1), hi(1)
              x = prob_lo(1) + (dble(i)+HALF) * dx(1)
           
@@ -116,20 +127,20 @@ contains
   end subroutine initscalardata_2d
 
   subroutine initscalardata_3d(n,s,lo,hi,ng,dx, perturb_model,prob_lo,prob_hi,s0,p0)
-
+    
     implicit none
 
-    integer, intent(in) :: n, lo(:), hi(:), ng
+    integer           , intent(in   ) :: n,lo(:),hi(:),ng
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
-    real (kind = dp_t), intent(in ) :: dx(:)
-    logical,            intent(in ) :: perturb_model
-    real (kind = dp_t), intent(in ) :: prob_lo(:)
-    real (kind = dp_t), intent(in ) :: prob_hi(:)
-    real(kind=dp_t), intent(in   ) ::    s0(0:,:)
-    real(kind=dp_t), intent(in   ) ::    p0(0:)
+    real (kind = dp_t), intent(in   ) :: dx(:)
+    logical,            intent(in   ) :: perturb_model
+    real (kind = dp_t), intent(in   ) :: prob_lo(:)
+    real (kind = dp_t), intent(in   ) :: prob_hi(:)
+    real(kind=dp_t)   , intent(in   ) :: s0(0:,:)
+    real(kind=dp_t)   , intent(in   ) :: p0(0:)
 
     !     Local variables
-    integer :: i, j, k, comp
+    integer         :: i,j,k,comp
     real(kind=dp_t) :: x,y,z,r,r0,r1,r2,temp
     real(kind=dp_t) :: dens_pert, rhoh_pert, temp_pert
     real(kind=dp_t) :: rhoX_pert(nspec), trac_pert(ntrac)
@@ -157,7 +168,6 @@ contains
                 s(i,j,k,rho_comp)  = s0(k,rho_comp)
                 s(i,j,k,rhoh_comp) = s0(k,rhoh_comp)
                 s(i,j,k,temp_comp) = s0(k,temp_comp)
-
                 s(i,j,k,spec_comp:spec_comp+nspec-1) = &
                      s0(k,spec_comp:spec_comp+nspec-1)
              enddo
@@ -193,56 +203,67 @@ contains
     
   end subroutine initscalardata_3d
 
-  subroutine initveldata (u,s0,p0,dx,prob_lo,prob_hi,bc)
+  subroutine initveldata(nlevs,u,s0,p0,dx,prob_lo,prob_hi,bc,mla)
 
-    type(multifab) , intent(inout) :: u
-    real(kind=dp_t), intent(in   ) ::    s0(:,:)
-    real(kind=dp_t), intent(in   ) ::    p0(:)
-    real(kind=dp_t), intent(in   ) :: dx(:)
+    integer        , intent(in   ) :: nlevs
+    type(multifab) , intent(inout) :: u(:)
+    real(kind=dp_t), intent(in   ) :: s0(:,0:,:)
+    real(kind=dp_t), intent(in   ) :: p0(:,0:)
+    real(kind=dp_t), intent(in   ) :: dx(:,:)
     real(kind=dp_t), intent(in   ) :: prob_lo(:)
     real(kind=dp_t), intent(in   ) :: prob_hi(:)
-    type(bc_level) , intent(in   ) :: bc
+    type(bc_level) , intent(in   ) :: bc(:)
+    type(ml_layout), intent(inout) :: mla
 
     real(kind=dp_t), pointer:: uop(:,:,:,:)
-    integer :: lo(u%dim),hi(u%dim),ng,dm
+    integer :: lo(u(1)%dim),hi(u(1)%dim),ng,dm
     integer :: i,n
     
-    ng = u%ng
-    dm = u%dim
+    ng = u(1)%ng
+    dm = u(1)%dim
 
-    do i = 1, u%nboxes
-       if ( multifab_remote(u, i) ) cycle
-       uop => dataptr(u, i)
-       lo =  lwb(get_box(u, i))
-       hi =  upb(get_box(u, i))
-       select case (dm)
-       case (2)
-          call initveldata_2d(uop(:,:,1,:), lo, hi, ng, dx, &
-                              prob_lo, prob_hi, s0, p0)
-       case (3)
-          call initveldata_3d(uop(:,:,:,:), lo, hi, ng, dx, &
-                              prob_lo, prob_hi, s0, p0)
-       end select
-    end do
+    do n=1,nlevs
 
-    call multifab_fill_boundary(u)
-    call multifab_physbc(u,1,1,dm,dx,bc)
+       do i = 1, u(n)%nboxes
+          if ( multifab_remote(u(n),i) ) cycle
+          uop => dataptr(u(n),i)
+          lo =  lwb(get_box(u(n),i))
+          hi =  upb(get_box(u(n),i))
+          select case (dm)
+          case (2)
+             call initveldata_2d(uop(:,:,1,:), lo, hi, ng, dx(n,:), &
+                                 prob_lo, prob_hi, s0(n,:,:), p0(n,:))
+          case (3) 
+             call initveldata_3d(uop(:,:,:,:), lo, hi, ng, dx(n,:), &
+                                 prob_lo, prob_hi, s0(n,:,:), p0(n,:))
+          end select
+       end do
+
+       call multifab_fill_boundary(u(n))
+       call multifab_physbc(u(n),1,1,dm,dx(n,:),bc(n))
+       
+    enddo
+    
+    do n=nlevs,2,-1
+       call ml_cc_restriction(u(n-1),u(n),mla%mba%rr(n-1,:))
+       call multifab_fill_ghost_cells(u(n),u(n-1),ng,mla%mba%rr(n-1,:), &
+                                      bc(n-1),bc(n),1,1,dm)
+    enddo
 
   end subroutine initveldata
 
-  subroutine initveldata_2d (u,lo,hi,ng,dx, &
-                             prob_lo,prob_hi,s0,p0)
+  subroutine initveldata_2d(u,lo,hi,ng,dx,prob_lo,prob_hi,s0,p0)
 
-    integer, intent(in) :: lo(:), hi(:), ng
-    real (kind = dp_t), intent(out) :: u(lo(1)-ng:,lo(2)-ng:,:)  
-    real (kind = dp_t), intent(in ) :: dx(:)
-    real (kind = dp_t), intent(in ) :: prob_lo(:)
-    real (kind = dp_t), intent(in ) :: prob_hi(:)
-    real(kind=dp_t), intent(in   ) ::    s0(0:,:)
-    real(kind=dp_t), intent(in   ) ::    p0(0:)
+    integer           , intent(in   ) :: lo(:),hi(:),ng
+    real (kind = dp_t), intent(  out) :: u(lo(1)-ng:,lo(2)-ng:,:)  
+    real (kind = dp_t), intent(in   ) :: dx(:)
+    real (kind = dp_t), intent(in   ) :: prob_lo(:)
+    real (kind = dp_t), intent(in   ) :: prob_hi(:)
+    real(kind=dp_t)   , intent(in   ) :: s0(0:,:)
+    real(kind=dp_t)   , intent(in   ) :: p0(0:)
 
-    !     Local variables
-    integer :: i, j, n
+    ! Local variables
+    integer         :: i,j,n
     real(kind=dp_t) :: x,y,r,r0,r1,r2,temp
     real(kind=dp_t) :: dens_pert, rhoh_pert, rhoX_pert(nspec), trac_pert(ntrac)
 
@@ -251,21 +272,20 @@ contains
 
   end subroutine initveldata_2d
 
-  subroutine initveldata_3d (u,lo,hi,ng,dx, &
-                             prob_lo,prob_hi,s0,p0)
+  subroutine initveldata_3d(u,lo,hi,ng,dx,prob_lo,prob_hi,s0,p0)
 
     implicit none
+    
+    integer           , intent(in   ) :: lo(:), hi(:), ng
+    real (kind = dp_t), intent(  out) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
+    real (kind = dp_t), intent(in   ) :: dx(:)
+    real (kind = dp_t), intent(in   ) :: prob_lo(:)
+    real (kind = dp_t), intent(in   ) :: prob_hi(:)
+    real(kind=dp_t)   , intent(in   ) :: s0(0:,:)
+    real(kind=dp_t)   , intent(in   ) :: p0(0:)
 
-    integer, intent(in) :: lo(:), hi(:), ng
-    real (kind = dp_t), intent(out) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
-    real (kind = dp_t), intent(in ) :: dx(:)
-    real (kind = dp_t), intent(in ) :: prob_lo(:)
-    real (kind = dp_t), intent(in ) :: prob_hi(:)
-    real(kind=dp_t), intent(in   ) ::    s0(0:,:)
-    real(kind=dp_t), intent(in   ) ::    p0(0:)
-
-    !     Local variables
-    integer :: i, j, k, n
+    ! Local variables
+    integer         :: i,j,k,n
     real(kind=dp_t) :: x,y,z,r,r0,r1,r2,temp
     real(kind=dp_t) :: dens_pert, rhoh_pert, rhoX_pert(nspec), trac_pert(ntrac)
 

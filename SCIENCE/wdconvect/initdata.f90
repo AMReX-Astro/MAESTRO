@@ -12,49 +12,63 @@ module init_module
   use network
   use geometry
   use probin_module
+  use ml_layout_module
+  use ml_restriction_module
+  use multifab_fill_ghost_module
 
   implicit none
 
 contains
 
-  subroutine initscalardata(n,s,s0,p0,dx,perturb_model,prob_lo,prob_hi,bc)
+  subroutine initscalardata(nlevs,s,s0,p0,dx,perturb_model,prob_lo,prob_hi,bc,mla)
 
-    integer        , intent(in   ) :: n
-    type(multifab) , intent(inout) :: s
-    real(kind=dp_t), intent(in   ) ::    s0(0:,:)
-    real(kind=dp_t), intent(in   ) ::    p0(0:)
-    real(kind=dp_t), intent(in   ) :: dx(:)
+    integer        , intent(in   ) :: nlevs
+    type(multifab) , intent(inout) :: s(:)
+    real(kind=dp_t), intent(in   ) :: s0(:,0:,:)
+    real(kind=dp_t), intent(in   ) :: p0(:,0:)
+    real(kind=dp_t), intent(in   ) :: dx(:,:)
     logical,         intent(in   ) :: perturb_model
     real(kind=dp_t), intent(in   ) :: prob_lo(:)
     real(kind=dp_t), intent(in   ) :: prob_hi(:)
-    type(bc_level) , intent(in   ) :: bc
+    type(bc_level) , intent(in   ) :: bc(:)
+    type(ml_layout), intent(inout) :: mla
 
     real(kind=dp_t), pointer:: sop(:,:,:,:)
-    integer :: lo(s%dim),hi(s%dim),ng,dm
-    integer :: i
+    integer :: lo(s(1)%dim),hi(s(1)%dim),ng,dm
+    integer :: i,n
     
-    ng = s%ng
-    dm = s%dim
+    ng = s(1)%ng
+    dm = s(1)%dim
 
-    do i = 1, s%nboxes
-       if ( multifab_remote(s, i) ) cycle
-       sop => dataptr(s, i)
-       lo =  lwb(get_box(s, i))
-       hi =  upb(get_box(s, i))
+    do n=1,nlevs
 
-       select case (dm)
-       case (2)
-          call initscalardata_2d(sop(:,:,1,:), lo, hi, ng, dx, perturb_model, &
-                                 prob_lo, prob_hi, s0, p0)
-       case (3)
-          call initscalardata_3d(n,sop(:,:,:,:), lo, hi, ng, dx, perturb_model, &
-                                 prob_lo, prob_hi, s0, p0)
-       end select
-    end do
+       do i = 1, s(n)%nboxes
+          if ( multifab_remote(s(n),i) ) cycle
+          sop => dataptr(s(n),i)
+          lo =  lwb(get_box(s(n),i))
+          hi =  upb(get_box(s(n),i))
+          
+          select case (dm)
+          case (2)
+             call initscalardata_2d(sop(:,:,1,:), lo, hi, ng, dx(n,:), perturb_model, &
+                                    prob_lo, prob_hi, s0(n,:,:), p0(n,:))
+          case (3)
+             call initscalardata_3d(n,sop(:,:,:,:), lo, hi, ng, dx(n,:), perturb_model, &
+                                    prob_lo, prob_hi, s0(n,:,:), p0(n,:))
+          end select
+       end do
+       
+       call multifab_fill_boundary(s(n))
+       call multifab_physbc(s(n),rho_comp,dm+rho_comp,nscal,dx(n,:),bc(n))
 
-    call multifab_fill_boundary(s)
-    call multifab_physbc(s,rho_comp,dm+rho_comp,nscal,dx,bc)
+    enddo
 
+    do n=nlevs,2,-1
+       call ml_cc_restriction(s(n-1),s(n),mla%mba%rr(n-1,:))
+       call multifab_fill_ghost_cells(s(n),s(n-1),ng,mla%mba%rr(n-1,:), &
+                                       bc(n-1),bc(n),1,dm+rho_comp,nscal)
+    enddo
+       
   end subroutine initscalardata
 
   subroutine initscalardata_2d (s,lo,hi,ng,dx, perturb_model, &
@@ -190,40 +204,52 @@ contains
     
   end subroutine initscalardata_3d
 
-  subroutine initveldata (u,s0,p0,dx,prob_lo,prob_hi,bc)
+  subroutine initveldata(nlevs,u,s0,p0,dx,prob_lo,prob_hi,bc,mla)
 
-    type(multifab) , intent(inout) :: u
-    real(kind=dp_t), intent(in   ) ::    s0(:,:)
-    real(kind=dp_t), intent(in   ) ::    p0(:)
-    real(kind=dp_t), intent(in   ) :: dx(:)
+    integer        , intent(in   ) :: nlevs
+    type(multifab) , intent(inout) :: u(:)
+    real(kind=dp_t), intent(in   ) :: s0(:,0:,:)
+    real(kind=dp_t), intent(in   ) :: p0(:,0:)
+    real(kind=dp_t), intent(in   ) :: dx(:,:)
     real(kind=dp_t), intent(in   ) :: prob_lo(:)
     real(kind=dp_t), intent(in   ) :: prob_hi(:)
-    type(bc_level) , intent(in   ) :: bc
+    type(bc_level) , intent(in   ) :: bc(:)
+    type(ml_layout), intent(inout) :: mla
 
     real(kind=dp_t), pointer:: uop(:,:,:,:)
-    integer :: lo(u%dim),hi(u%dim),ng,dm
+    integer :: lo(u(1)%dim),hi(u(1)%dim),ng,dm
     integer :: i,n
     
-    ng = u%ng
-    dm = u%dim
+    ng = u(1)%ng
+    dm = u(1)%dim
 
-    do i = 1, u%nboxes
-       if ( multifab_remote(u, i) ) cycle
-       uop => dataptr(u, i)
-       lo =  lwb(get_box(u, i))
-       hi =  upb(get_box(u, i))
-       select case (dm)
-       case (2)
-          call initveldata_2d(uop(:,:,1,:), lo, hi, ng, dx, &
-                              prob_lo, prob_hi, s0, p0)   
-       case (3)
-          call initveldata_3d(uop(:,:,:,:), lo, hi, ng, dx, &
-                              prob_lo, prob_hi, s0, p0)
-       end select
-    end do
+    do n=1,nlevs
 
-    call multifab_fill_boundary(u)
-    call multifab_physbc(u,1,1,dm,dx,bc)
+       do i = 1, u(n)%nboxes
+          if ( multifab_remote(u(n),i) ) cycle
+          uop => dataptr(u(n),i)
+          lo =  lwb(get_box(u(n),i))
+          hi =  upb(get_box(u(n),i))
+          select case (dm)
+          case (2)
+             call initveldata_2d(uop(:,:,1,:), lo, hi, ng, dx(n,:), &
+                                 prob_lo, prob_hi, s0(n,:,:), p0(n,:))   
+          case (3)
+             call initveldata_3d(uop(:,:,:,:), lo, hi, ng, dx(n,:), &
+                                 prob_lo, prob_hi, s0(n,:,:), p0(n,:))
+          end select
+       end do
+
+       call multifab_fill_boundary(u(n))
+       call multifab_physbc(u(n),1,1,dm,dx(n,:),bc(n))
+    
+    enddo
+
+    do n=nlevs,2,-1
+       call ml_cc_restriction(u(n-1),u(n),mla%mba%rr(n-1,:))
+       call multifab_fill_ghost_cells(u(n),u(n-1),ng,mla%mba%rr(n-1,:), &
+                                      bc(n-1),bc(n),1,1,dm)
+    enddo
 
   end subroutine initveldata
 
