@@ -28,7 +28,7 @@ subroutine varden()
   integer    :: max_step
   integer    :: dm,n_base
 
-  real(dp_t) :: dr_base
+  real(dp_t) :: dr_base(1)
   real(dp_t) :: cflfac
   real(dp_t) :: stop_time
   real(dp_t) :: time,dt,half_time,dtold
@@ -48,26 +48,28 @@ subroutine varden()
 
   real(dp_t) :: y_0
 
-  real(dp_t) :: dx(1)
+  real(dp_t) :: dx(1,1)
   real(dp_t) :: prob_lo(1), prob_hi(1)
 
-  real(dp_t), allocatable :: div_coeff_old(:)
-  real(dp_t), allocatable :: div_coeff(:)
-  real(dp_t), allocatable :: grav_cell(:)
-  real(dp_t), allocatable :: gam1(:)
-  real(dp_t), allocatable :: s0_old(:,:)
-  real(dp_t), allocatable :: s0(:,:)
-  real(dp_t), allocatable :: p0_old(:)
-  real(dp_t), allocatable :: p0(:)
-  real(dp_t), allocatable :: w0(:)
-  real(dp_t), allocatable :: w0_old(:)
-  real(dp_t), allocatable :: eta(:,:)
-  real(dp_t), allocatable :: f(:)
-  real(dp_t), allocatable :: Sbar_in(:)
+  real(dp_t), allocatable :: div_coeff_old(:,:)
+  real(dp_t), allocatable :: div_coeff(:,:)
+  real(dp_t), allocatable :: grav_cell(:,:)
+  real(dp_t), allocatable :: gam1(:,:)
+  real(dp_t), allocatable :: s0_old(:,:,:)
+  real(dp_t), allocatable :: s0(:,:,:)
+  real(dp_t), allocatable :: p0_old(:,:)
+  real(dp_t), allocatable :: p0(:,:)
+  real(dp_t), allocatable :: w0(:,:)
+  real(dp_t), allocatable :: w0_old(:,:)
+  real(dp_t), allocatable :: eta(:,:,:)
+  real(dp_t), allocatable :: f(:,:)
+  real(dp_t), allocatable :: Sbar_in(:,:,:)
 
   real(dp_t) :: coeff, Hbar
 
   integer, parameter :: verbose = 0
+
+  integer :: nlevs,n
 
   namelist /probin/ model_file
   namelist /probin/ stop_time
@@ -79,6 +81,7 @@ subroutine varden()
   namelist /probin/ spherical_in
   namelist /probin/ n_base
 
+  nlevs = 1
 
   narg = command_argument_count()
 
@@ -221,39 +224,43 @@ subroutine varden()
 ! allocate storage for the base state
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  dr_base = (prob_hi_x-prob_lo_x) / dble(n_base)
-  dx(1) = dr_base
+  dr_base(1) = (prob_hi_x-prob_lo_x) / dble(n_base)
+  dx(1,1) = dr_base(1)
 
-  allocate(div_coeff_old(0:n_base-1))
-  allocate(    div_coeff(0:n_base-1))
+  allocate(div_coeff_old(nlevs,0:n_base-1))
+  allocate(    div_coeff(nlevs,0:n_base-1))
 
-  allocate(grav_cell(0:n_base-1))
+  allocate(grav_cell(nlevs,0:n_base-1))
 
-  allocate(   gam1(0:n_base-1  ))
-  allocate( s0_old(0:n_base-1, nscal))
-  allocate(     s0(0:n_base-1, nscal))
-  allocate( p0_old(0:n_base-1  ))
-  allocate(     p0(0:n_base-1  ))
-  allocate( w0_old(0:n_base))
-  allocate(     w0(0:n_base))
-  allocate(    eta(0:n_base,   nscal))
-  allocate(      f(0:n_base))
-  allocate(Sbar_in(0:n_base-1))
+  allocate(   gam1(nlevs,0:n_base-1  ))
+  allocate( s0_old(nlevs,0:n_base-1, nscal))
+  allocate(     s0(nlevs,0:n_base-1, nscal))
+  allocate( p0_old(nlevs,0:n_base-1  ))
+  allocate(     p0(nlevs,0:n_base-1  ))
+  allocate( w0_old(nlevs,0:n_base))
+  allocate(     w0(nlevs,0:n_base))
+  allocate(    eta(nlevs,0:n_base,   nscal))
+  allocate(      f(nlevs,0:n_base))
+  allocate(Sbar_in(nlevs,0:n_base-1,1))
 
-  w0(:) = ZERO
-  eta(:,:) = ZERO
+  w0(:,:) = ZERO
+  eta(:,:,:) = ZERO
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! read in the base state
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  call init_geometry(center,n_base,dr_base)
-  call init_base_state(model_file,n_base,s0,p0,gam1,dx,prob_lo,prob_hi)
+  call init_geometry(center,n_base,dr_base(1))
+
+  do n = 1,nlevs
+     call init_base_state(n,model_file,s0_old(n,:,:),p0_old(n,:),gam1(n,:),dx(n,:), &
+                          prob_lo,prob_hi)
+  enddo
 
   ! output
   open(unit=10,file="base.orig")
   do i = 0, n_base-1
-     write(10,1000) z(i), s0(i,rho_comp), s0(i,temp_comp), p0(i)
+     write(10,1000) z(1,i), s0(1,i,rho_comp), s0(1,i,temp_comp), p0(1,i)
   enddo
   close(unit=10)
 
@@ -266,7 +273,7 @@ subroutine varden()
   dt = 0.0001_dp_t
   dtold = dt
 
-  w0_old(:) = ZERO
+  w0_old(:,:) = ZERO
 
   do while (time < stop_time)
 
@@ -281,12 +288,12 @@ subroutine varden()
        
      do i = 0, n_base-1
 
-        Hbar = 1.e16 * exp(-((z(i) - y_0)**2)/ 1.e14)
+        Hbar = 1.e16 * exp(-((z(1,i) - y_0)**2)/ 1.e14)
      
         ! (rho, T) --> p,h, etc
-        den_eos(1)  = s0(i,rho_comp)
-        temp_eos(1) = s0(i,temp_comp)
-        xn_eos(1,:) = s0(i,spec_comp:spec_comp-1+nspec)/s0(i,rho_comp)
+        den_eos(1)  = s0(1,i,rho_comp)
+        temp_eos(1) = s0(1,i,temp_comp)
+        xn_eos(1,:) = s0(1,i,spec_comp:spec_comp-1+nspec)/s0(1,i,rho_comp)
         
         call eos(eos_input_rt, den_eos, temp_eos, NP, nspec, &
                  xn_eos, &
@@ -300,32 +307,34 @@ subroutine varden()
 
         ! in the real Maestro code, we are updating the enthalpy by differencing
         ! the enthalpy equation with the heating term, rather than using the EOS.
-        s0(i,rhoh_comp) = den_eos(1)*h_eos(1)
+        s0(1,i,rhoh_comp) = den_eos(1)*h_eos(1)
 
-        p0(i) = p_eos(1)
-        gam1(i) = gam1_eos(1)
+        p0(1,i) = p_eos(1)
+        gam1(1,i) = gam1_eos(1)
 
         coeff = dpdt_eos(1)/ (den_eos(1) * cp_eos(1) * dpdr_eos(1))
 
-        Sbar_in(i) = coeff*Hbar
+        Sbar_in(1,i,1) = coeff*Hbar
      enddo
 
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      ! compute w_0
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-     w0(:) = ZERO
+     w0(:,:) = ZERO
 
-     call make_w0(w0,w0_old,f,Sbar_in,p0,s0(:,rho_comp),gam1,eta,dt,dtold,verbose)
+     call make_w0(nlevs,w0,w0_old,f,Sbar_in(:,:,1),p0,s0(:,:,rho_comp), &
+                  gam1,eta,dt,dtold,verbose)
   
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      ! compute the divergance coefficient (beta_0)
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-     call make_grav_cell(grav_cell,s0(:,rho_comp))
-
-     call make_div_coeff(div_coeff,s0(:,rho_comp),p0, &
-                         gam1,grav_cell,anelastic_cutoff)     
+     do n=1,nlevs
+        call make_grav_cell(n,grav_cell(n,:),s0(n,:,rho_comp))
+        call make_div_coeff(n,div_coeff(n,:),s0(n,:,rho_comp),p0(n,:), &
+                            gam1(n,:),grav_cell(n,:),anelastic_cutoff)     
+     enddo
 
 
 
@@ -336,17 +345,17 @@ subroutine varden()
 
      ! here we set the old state to the current state -- advect_base will 
      ! update the state
-     s0_old(:,:) = s0(:,:)
-     p0_old(:) = p0(:)
+     s0_old(:,:,:) = s0(:,:,:)
+     p0_old(:,:) = p0(:,:)
 
-     call advect_base(w0,Sbar_in,p0_old,p0, &
+     call advect_base(nlevs,w0,Sbar_in,p0_old,p0, &
                       s0_old,s0, &
                       gam1,div_coeff,eta, &
                       dr_base,dt,anelastic_cutoff)
 
 
-     print *, 'new base pressure', p0(1)
-     print *, 'new base density', s0(1,rho_comp)
+     print *, 'new base pressure', p0(1,1)
+     print *, 'new base density', s0(1,1,rho_comp)
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      ! compute the new timestep
@@ -354,18 +363,18 @@ subroutine varden()
      time = time + dt
      dtold = dt
 
-     dt = min(1.1*dt,cflfac*dr_base/maxval(abs(w0)))
+     dt = min(1.1*dt,cflfac*dr_base(1)/maxval(abs(w0)))
      if (time+dt > stop_time) dt = stop_time - time
 
      ! store the old velocity
-     w0_old(:) = w0(:)
+     w0_old(:,:) = w0(:,:)
 
   enddo
 
   ! output
   open(unit=10,file="base.new")
   do i = 0, n_base-1
-     write(10,1000) z(i), s0(i,rho_comp), s0(i,temp_comp), p0(i)
+     write(10,1000) z(1,i), s0(1,i,rho_comp), s0(1,i,temp_comp), p0(1,i)
   enddo
   close(unit=10)
 1000 format(1x,5(g20.10))
