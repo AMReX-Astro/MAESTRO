@@ -130,29 +130,47 @@ contains
 
        ! This can be uncommented if you wish to compute T
        ! call makeTfromRhoH(sold(n),s0_old(n,:,temp_comp))
+       ! call multifab_fill_boundary_c(sold(n),temp_comp,1)
+       ! call multifab_physbc(sold(n),temp_comp,dm+temp_comp,1,dx(n,:),the_bc_level(n))
        
+       ! make force for species
        call modify_scal_force(n,scal_force(n),sold(n),umac(n,:),s0_old(n,:,:),s0_edge_old, &
                               w0(n,:),dx(n,:),domlo,domhi,s0_old_cart(n),spec_comp,nspec)
+
+       call multifab_fill_boundary_c(scal_force(n),spec_comp,nspec)
+
+       do comp = spec_comp, spec_comp+nspec-1
+          call multifab_physbc(scal_force(n),comp,neumann_comp,1,dx(n,:),the_bc_level(n))
+       enddo
        
        if(use_temp_in_mkflux) then
+
+          ! make force for temperature
           call mktempforce(n,scal_force(n),temp_comp,sold(n),thermal(n),p0_old(n,:),dx(n,:))
+
+          call multifab_fill_boundary_c(scal_force(n),temp_comp,1)
+
+          call multifab_physbc(scal_force(n),temp_comp,neumann_comp,1,dx(n,:), &
+                               the_bc_level(n))
        else
+
+          ! make force for rhoh
           call mkrhohforce(n,scal_force(n),rhoh_comp,umac(n,:),p0_old(n,:),p0_new(n,:), &
                            normal(n),dx(n,:))
+
           call modify_scal_force(n,scal_force(n),sold(n),umac(n,:),s0_old(n,:,:), &
                                  s0_edge_old,w0(n,:),dx(n,:),domlo,domhi,s0_old_cart(n), &
                                  rhoh_comp,1)
-       endif
-       
-       ! add to the rhoh component of force if NOT use_temp_in_mkflux
-       if ( (.not. use_temp_in_mkflux) .and. use_thermal_diffusion) &
+
+          if(use_thermal_diffusion) then
             call multifab_plus_plus_c(scal_force(n),rhoh_comp,thermal(n),1,1)
-       
-       ! Do this because we have just defined temperature in the valid region
-       if (use_temp_in_mkflux) &
-            call multifab_fill_boundary_c(sold(n),temp_comp,1)
-       
-       call multifab_fill_boundary(scal_force(n))
+          endif
+
+          call multifab_fill_boundary_c(scal_force(n),rhoh_comp,1)
+
+          call multifab_physbc(scal_force(n),rhoh_comp,neumann_comp,1,dx(n,:), &
+                               the_bc_level(n))
+       endif
        
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     Add w0 to MAC velocities (trans velocities already have w0).
@@ -177,12 +195,13 @@ contains
        end if
        
        ! create temperature or enthalpy edge states
-       call mkflux(n,sold(n),uold(n),sedge(n,:),umac(n,:),utrans(n,:),scal_force(n),w0(n,:), &
-                   w0_cart_vec(n),dx(n,:),dt,is_vel,the_bc_level(n),velpred,comp,dm+comp,1)
+       call mkflux(n,sold(n),uold(n),sedge(n,:),umac(n,:),utrans(n,:),scal_force(n), &
+                   w0(n,:),w0_cart_vec(n),dx(n,:),dt,is_vel,the_bc_level(n),velpred,comp, &
+                   dm+comp,1)
        
        ! create species edge states
-       call mkflux(n,sold(n),uold(n),sedge(n,:),umac(n,:),utrans(n,:),scal_force(n),w0(n,:), &
-                   w0_cart_vec(n),dx(n,:),dt,is_vel,the_bc_level(n),velpred, &
+       call mkflux(n,sold(n),uold(n),sedge(n,:),umac(n,:),utrans(n,:),scal_force(n), &
+                   w0(n,:),w0_cart_vec(n),dx(n,:),dt,is_vel,the_bc_level(n),velpred, &
                    spec_comp,dm+spec_comp,nspec)
        
        if(use_temp_in_mkflux) then
@@ -225,14 +244,6 @@ contains
                         s0_old(n,:,:),s0_edge_old,s0_new(n,:,:),s0_edge_new,s0_old_cart(n), &
                         s0_new_cart(n),domlo,domhi,dx(n,:),dt,evolve_base_state)
        
-       ! fill ghost cells for two adjacent grids at the same level
-       ! this includes periodic domain boundary conditions
-       call multifab_fill_boundary(snew(n))
-       
-       ! fill ghost cells for physical boundary conditions at domain boundaries
-       call multifab_physbc(snew(n),rho_comp ,dm+rho_comp ,1    ,dx(n,:),the_bc_level(n))
-       call multifab_physbc(snew(n),spec_comp,dm+spec_comp,nspec,dx(n,:),the_bc_level(n))
-       
        if (verbose .ge. 1) then
           do comp = spec_comp,spec_comp+nspec-1
              call multifab_div_div_c(snew(n),comp,snew(n),rho_comp,1)
@@ -271,13 +282,6 @@ contains
                            s0_edge_new,s0_old_cart(n),s0_new_cart(n),domlo,domhi,dx(n,:), &
                            dt,evolve_base_state)
           
-          ! fill ghost cells for two adjacent grids at the same level
-          ! this includes periodic domain boundary conditions
-          call multifab_fill_boundary(snew(n))
-          
-          ! fill ghost cells for physical boundary conditions at domain boundaries
-          call multifab_physbc(snew(n),trac_comp,dm+trac_comp,ntrac,dx(n,:),the_bc_level(n))
-          
           if (verbose .eq. 1) then
              smin = multifab_min_c(snew(n),trac_comp) 
              smax = multifab_max_c(snew(n),trac_comp)
@@ -312,13 +316,6 @@ contains
           call makeTfromRhoH(snew(n),s0_new(n,:,temp_comp))
        endif
        
-       ! fill ghost cells for two adjacent grids at the same level
-       ! this includes periodic domain boundary conditions
-       call multifab_fill_boundary(snew(n))
-       
-       ! fill ghost cells for physical boundary conditions at domain boundaries
-       call multifab_physbc(snew(n),rho_comp,dm+rho_comp,nscal,dx(n,:),the_bc_level(n))
-       
        if (verbose .eq. 1) then
           smin = multifab_min_c(snew(n),rhoh_comp) 
           smax = multifab_max_c(snew(n),rhoh_comp)
@@ -332,6 +329,9 @@ contains
 !     Call fill_boundary for all components of snew
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
        
+       call multifab_fill_boundary(snew(n))
+       call multifab_physbc(snew(n),rho_comp,dm+rho_comp,nscal,dx(n,:),the_bc_level(n))
+
     enddo ! do n = 1, nlevs
 
     do n = nlevs, 2, -1
