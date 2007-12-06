@@ -18,26 +18,26 @@ module base_state_module
 
 contains
 
-  subroutine init_base_state (model_file,nr,s0,p0,gam1,dx,prob_lo,prob_hi)
+  subroutine init_base_state(n,model_file,s0,p0,gam1,dx,prob_lo,prob_hi)
 
     use probin_module, ONLY: base_cutoff_density, anelastic_cutoff
 
-    character (len=256), intent(in) :: model_file
-    integer        , intent(in   ) :: nr
-    real(kind=dp_t), intent(inout) ::    s0(0:,:)
-    real(kind=dp_t), intent(inout) ::    p0(0:)
-    real(kind=dp_t), intent(inout) ::  gam1(0:)
-    real(kind=dp_t), intent(in   ) :: prob_lo(:)
-    real(kind=dp_t), intent(in   ) :: prob_hi(:)
-    real(kind=dp_t), intent(in   ) :: dx(:)
-    integer :: i,j,j_cutoff,comp
+    integer           , intent(in   ) :: n
+    character(len=256), intent(in   ) :: model_file
+    real(kind=dp_t)   , intent(inout) :: s0(0:,:)
+    real(kind=dp_t)   , intent(inout) :: p0(0:)
+    real(kind=dp_t)   , intent(inout) :: gam1(0:)
+    real(kind=dp_t)   , intent(in   ) :: prob_lo(:)
+    real(kind=dp_t)   , intent(in   ) :: prob_hi(:)
+    real(kind=dp_t)   , intent(in   ) :: dx(:)
 
+    ! local
+    integer         :: i,j,j_cutoff,comp
     real(kind=dp_t) :: r,dr_in,rmax,starting_rad
-    real(kind=dp_t) :: d_ambient,t_ambient,p_ambient, xn_ambient(nspec)
-    real(kind=dp_t) :: sum
-    real(kind=dp_t) :: integral, temp_term_lo, temp_term_hi
+    real(kind=dp_t) :: d_ambient,t_ambient,p_ambient,xn_ambient(nspec)
+    real(kind=dp_t) :: sum,integral,temp_term_lo,temp_term_hi
     real(kind=dp_t) :: temp_min,p0_lo,p0_hi
-    real(kind=dp_t) :: height_of_model, height_of_domain
+    real(kind=dp_t) :: height_of_model,height_of_domain
 
     ! these indices define how the initial model is stored in the 
     ! base_state array
@@ -195,7 +195,7 @@ contains
 
     if ( parallel_IOProcessor() ) then
       print *,'DR , RMAX OF MODEL     ',dr_in, rmax
-      print *,'DR , RMAX OF BASE ARRAY',dr(1), dble(nr) * dr(1)
+      print *,'DR , RMAX OF BASE ARRAY',dr(n), dble(nr(n)) * dr(n)
     end if
 
     if (spherical .eq. 0) then
@@ -204,8 +204,8 @@ contains
        starting_rad = ZERO
     end if
 
-    j_cutoff = nr
-    do j = 0,nr-1
+    j_cutoff = nr(n)
+    do j = 0,nr(n)-1
 
        if (j .ge. j_cutoff) then
 
@@ -221,7 +221,7 @@ contains
          ! compute the coordinate height at this level
          ! NOTE: we are assuming that the basestate is in the y-direction
          ! and that ymin = 0.0
-         r = starting_rad + (dble(j) + HALF)*dr(1)
+         r = starting_rad + (dble(j) + HALF)*dr(n)
   
          ! here we account for r > rmax of the model.hse array, assuming
          ! that the state stays constant beyond rmax
@@ -267,7 +267,7 @@ contains
          gam1(j) = gam1_eos(1)
   
          ! keep track of the height where we drop below the cutoff density
-         if (s0(j,rho_comp) .lt. base_cutoff_density .and. j_cutoff .eq. nr) then
+         if (s0(j,rho_comp) .lt. base_cutoff_density .and. j_cutoff .eq. nr(n)) then
             if ( parallel_IOProcessor() ) print *,'SETTING J_CUTOFF TO ',j
             j_cutoff = j
          end if
@@ -313,7 +313,7 @@ contains
        slope = (model_var(id) - model_var(id-1))/(model_r(id) - model_r(id-1))
        interpolate = slope*(r - model_r(id)) + model_var(id)
 
-    else if ((model_var(id+1) - model_var(id))*(model_var(id) - model_var(id-1)) <= ZERO) then
+    else if((model_var(id+1) - model_var(id))*(model_var(id) - model_var(id-1)) <= ZERO) then
 
        ! if we are at a maximum or minimum, then drop to linear interpolation
        slope = (model_var(id+1) - model_var(id-1))/(model_r(id+1) - model_r(id-1))
@@ -324,9 +324,10 @@ contains
        ! do a quadratic interpolation
        dr_model = model_r(id+1) - model_r(id)
        xi = r - model_r(id)
-       interpolate = (model_var(id+1) - 2*model_var(id) + model_var(id-1))*xi**2/(2*dr_model**2) + &
-                     (model_var(id+1) - model_var(id-1))*xi/(2*dr_model) + &
-                     (-model_var(id+1) + 26*model_var(id) - model_var(id-1))/24.0_dp_t
+       interpolate = &
+            (model_var(id+1) - 2*model_var(id) + model_var(id-1))*xi**2/(2*dr_model**2) + &
+            (model_var(id+1) - model_var(id-1))*xi/(2*dr_model) + &
+            (-model_var(id+1) + 26*model_var(id) - model_var(id-1))/24.0_dp_t
 
        ! make sure that we have not under- or overshot 
        minvar = min(model_var(id), min(model_var(id-1), model_var(id+1)))

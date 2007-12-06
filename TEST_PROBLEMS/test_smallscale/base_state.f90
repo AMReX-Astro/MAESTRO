@@ -18,13 +18,13 @@ module base_state_module
 
 contains
 
-  subroutine init_base_state (model_file,n_base,s0,p0,gam1,dx,prob_lo,prob_hi)
+  subroutine init_base_state(n,model_file,s0,p0,gam1,dx,prob_lo,prob_hi)
 
-    character (len=256), intent(in   ) :: model_file ! I'm not using this anymore
-    integer        ,     intent(in   ) :: n_base
-    real(kind=dp_t),     intent(inout) ::    s0(0:,:)
-    real(kind=dp_t),     intent(inout) ::    p0(0:)
-    real(kind=dp_t),     intent(inout) ::  gam1(0:)
+    integer,             intent(in   ) :: n
+    character(len=256),  intent(in   ) :: model_file ! I'm not using this anymore
+    real(kind=dp_t),     intent(inout) :: s0(0:,:)
+    real(kind=dp_t),     intent(inout) :: p0(0:)
+    real(kind=dp_t),     intent(inout) :: gam1(0:)
     real(kind=dp_t),     intent(in   ) :: prob_lo(:)
     real(kind=dp_t),     intent(in   ) :: prob_hi(:)
     real(kind=dp_t),     intent(in   ) :: dx(:)
@@ -114,7 +114,7 @@ contains
     ! Now do the interior cells
     flameloc = ONE
 
-    do i=0,n_base-1
+    do i=0,nr(n)-1
 
        loloc = dble(i)*dx(dm) - flameloc
        hiloc = (dble(i) + ONE)*dx(dm) - flameloc
