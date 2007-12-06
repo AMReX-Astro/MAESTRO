@@ -15,17 +15,17 @@ module base_state_module
 
 contains
 
-  subroutine init_base_state (model_file,n_base,s0,p0,gam1,dx,prob_lo,prob_hi)
+  subroutine init_base_state(n,model_file,s0,p0,gam1,dx,prob_lo,prob_hi)
 
-    character (len=256), intent(in) :: model_file
-    integer        , intent(in   ) :: n_base
-    real(kind=dp_t), intent(inout) ::    s0(0:,:)
-    real(kind=dp_t), intent(inout) ::    p0(0:)
-    real(kind=dp_t), intent(inout) ::  gam1(0:)
-    real(kind=dp_t), intent(in   ) :: prob_lo(:)
-    real(kind=dp_t), intent(in   ) :: prob_hi(:)
-    real(kind=dp_t), intent(in   ) :: dx(:)
-    integer :: i,j,n,j_cutoff
+    integer           , intent(in   ) :: n
+    character(len=256), intent(in)    :: model_file
+    real(kind=dp_t)   , intent(inout) :: s0(0:,:)
+    real(kind=dp_t)   , intent(inout) :: p0(0:)
+    real(kind=dp_t)   , intent(inout) :: gam1(0:)
+    real(kind=dp_t)   , intent(in   ) :: prob_lo(:)
+    real(kind=dp_t)   , intent(in   ) :: prob_hi(:)
+    real(kind=dp_t)   , intent(in   ) :: dx(:)
+    integer :: i,j,comp,j_cutoff
 
     real(kind=dp_t) :: r,dr_in,rmax,starting_rad
     real(kind=dp_t) :: d_ambient,t_ambient,p_ambient, xn_ambient(nspec)
@@ -139,9 +139,9 @@ contains
              found = .true.
 
           else
-             do n = 1, nspec
-                if (trim(varnames_stored(j)) == spec_names(n)) then
-                   base_state(i,ispec_model-1+n) = vars_stored(j)
+             do comp = 1, nspec
+                if (trim(varnames_stored(j)) == spec_names(comp)) then
+                   base_state(i,ispec_model-1+comp) = vars_stored(j)
                    found = .true.
                    exit
                 endif
@@ -163,7 +163,7 @@ contains
 
     if ( parallel_IOProcessor() ) then
       print *,'DR , RMAX OF MODEL     ',dr_in, rmax
-      print *,'DR , RMAX OF BASE ARRAY',dr, dble(n_base) * dr
+      print *,'DR , RMAX OF BASE ARRAY',dr(n), dble(nr(n)) * dr(n)
     end if
 
     if (spherical .eq. 0) then
@@ -172,8 +172,8 @@ contains
        starting_rad = ZERO
     end if
 
-    j_cutoff = n_base
-    do j = 0,n_base-1
+    j_cutoff = nr(n)
+    do j = 0,nr(n)-1
 
        if (j .ge. j_cutoff) then
 
@@ -189,7 +189,7 @@ contains
          ! compute the coordinate height at this level
          ! NOTE: we are assuming that the basestate is in the y-direction
          ! and that ymin = 0.0
-         r = starting_rad + (dble(j) + HALF)*dr
+         r = starting_rad + (dble(j) + HALF)*dr(n)
   
          ! here we account for r > rmax of the model.hse array, assuming
          ! that the state stays constant beyond rmax
@@ -200,10 +200,9 @@ contains
          p_ambient = interpolate(r, npts_model, base_r, base_state(:,ipres_model))
 
          sum = ZERO
-         do n = 1, nspec
-            xn_ambient(n) = max(ZERO, &
-                                min(ONE, &
-                                    interpolate(r, npts_model, base_r, base_state(:,ispec_model-1+n))))
+         do comp = 1, nspec
+            xn_ambient(comp) = max(ZERO,min(ONE, &
+                 interpolate(r, npts_model, base_r, base_state(:,ispec_model-1+comp))))
             sum = sum + xn_ambient(n)
          enddo
          xn_ambient(:) = xn_ambient(:)/sum
@@ -237,7 +236,7 @@ contains
          gam1(j) = gam1_eos(1)
   
          ! keep track of the height where we drop below the cutoff density
-         if (s0(j,rho_comp) .lt. cutoff_density .and. j_cutoff .eq. n_base) then
+         if (s0(j,rho_comp) .lt. cutoff_density .and. j_cutoff .eq. nr(n)) then
             if ( parallel_IOProcessor() ) print *,'SETTING J_CUTOFF TO ',j
             j_cutoff = j
          end if
