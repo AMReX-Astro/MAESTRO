@@ -35,9 +35,7 @@ contains
     integer         :: i,j,j_cutoff,comp
     real(kind=dp_t) :: r,dr_in,rmax,starting_rad
     real(kind=dp_t) :: d_ambient,t_ambient,p_ambient,xn_ambient(nspec)
-    real(kind=dp_t) :: sum,integral,temp_term_lo,temp_term_hi
-    real(kind=dp_t) :: temp_min,p0_lo,p0_hi
-    real(kind=dp_t) :: height_of_model,height_of_domain
+    real(kind=dp_t) :: sum
 
     ! these indices define how the initial model is stored in the 
     ! base_state array
@@ -51,8 +49,6 @@ contains
     integer :: npts_model, nvars_model_file
 
     real(kind=dp_t) :: min_dens, max_dens
-
-    real(kind=dp_t) :: x,y,z
 
     real(kind=dp_t), allocatable :: base_state(:,:), base_r(:)
     real(kind=dp_t), allocatable :: vars_stored(:)
@@ -292,7 +288,7 @@ contains
     integer :: npts
     real(kind=dp_t), dimension(npts) :: model_r, model_var
 
-    real(kind=dp_t) :: val, slope, xi, dr_model
+    real(kind=dp_t) :: slope, xi, dr_model
     real(kind=dp_t) :: minvar, maxvar
 
     integer :: i, id

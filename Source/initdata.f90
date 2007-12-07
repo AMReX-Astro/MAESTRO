@@ -263,9 +263,6 @@ contains
     real(kind=dp_t)   , intent(in   ) :: p0(0:)
 
     ! Local variables
-    integer         :: i,j,n
-    real(kind=dp_t) :: x,y,r,r0,r1,r2,temp
-    real(kind=dp_t) :: dens_pert, rhoh_pert, rhoX_pert(nspec), trac_pert(ntrac)
 
     ! initial the velocity
     u = ZERO
@@ -285,9 +282,6 @@ contains
     real(kind=dp_t)   , intent(in   ) :: p0(0:)
 
     ! Local variables
-    integer         :: i,j,k,n
-    real(kind=dp_t) :: x,y,z,r,r0,r1,r2,temp
-    real(kind=dp_t) :: dens_pert, rhoh_pert, rhoX_pert(nspec), trac_pert(ntrac)
 
     ! initial the velocity
     u = ZERO
@@ -308,7 +302,6 @@ contains
 
     real(kind=dp_t) :: temp,t0
     real(kind=dp_t) :: x0, y0, x1, y1, x2, y2
-    integer :: i, j
     real(kind=dp_t) :: r0, r1, r2
 
     t0 = s0(temp_comp)
@@ -384,7 +377,6 @@ contains
 
     real(kind=dp_t) :: temp, t0
     real(kind=dp_t) :: x0, y0, z0, x1, y1, z1, x2, y2, z2
-    integer :: i, j, k
     real(kind=dp_t) :: r0, r1, r2
 
     t0 = s0(temp_comp)

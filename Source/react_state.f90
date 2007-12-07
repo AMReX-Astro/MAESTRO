@@ -41,7 +41,7 @@ contains
     real(kind=dp_t), pointer::   hp(:,:,:,:)
 
     integer :: lo(s_in(1)%dim),hi(s_in(1)%dim),ng,dm
-    integer :: i,n,bc_comp,comp
+    integer :: i,n
 
     ng = s_in(1)%ng
     dm = s_in(1)%dim

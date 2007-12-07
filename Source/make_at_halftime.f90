@@ -79,7 +79,7 @@ contains
      real(kind=dp_t), pointer:: rop(:,:,:,:)
      real(kind=dp_t), pointer:: rnp(:,:,:,:)
      integer   :: lo(phihalf(1)%dim),hi(phihalf(1)%dim)
-     integer   :: ng_h,ng_o,dm,i,n,bc_comp
+     integer   :: ng_h,ng_o,dm,i,n
 
      dm = phihalf(1)%dim
      ng_h = phihalf(1)%ng

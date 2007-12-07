@@ -129,7 +129,6 @@ contains
 
     ! Only needed for spherical.eq.1 
     type(multifab) , allocatable :: div_coeff_3d(:)
-    real(kind=dp_t), pointer     :: dp(:,:,:,:)
 
     real(dp_t) :: halfdt,eps_in
     integer    :: j,n,dm,nlevs,ng_cell,proj_type

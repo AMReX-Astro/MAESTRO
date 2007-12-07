@@ -64,17 +64,13 @@ contains
     real(kind=dp_t), allocatable :: s0_edge_old(:,:)
     real(kind=dp_t), allocatable :: s0_edge_new(:,:)
 
-    real(kind=dp_t), pointer :: s0op(:,:,:,:)
-    real(kind=dp_t), pointer :: s0np(:,:,:,:)
-
     real(dp_t) :: mult
     real(dp_t) :: smin,smax
 
     type(box) :: domain
 
-    integer :: lo(uold(1)%dim),hi(uold(1)%dim)
     integer :: domlo(uold(1)%dim),domhi(uold(1)%dim)
-    integer :: velpred,i,comp,n,bc_comp,dm,ng_cell
+    integer :: velpred,i,comp,n,dm,ng_cell
 
     logical :: is_vel
     

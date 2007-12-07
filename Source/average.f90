@@ -205,7 +205,6 @@ contains
     ! Local variables
     integer                       :: i, j, k, comp, index
     integer                       :: ii, jj, kk
-    integer                       :: nc
     real (kind=dp_t)              :: x,y,z,radius,vol
     real (kind=dp_t)              :: xx, yy, zz
     real (kind=dp_t)              :: xmin, ymin, zmin

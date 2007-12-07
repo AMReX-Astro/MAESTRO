@@ -70,7 +70,7 @@ contains
     real (kind=dp_t), intent(out) :: Source_nph(lo(1)-ng_h:,lo(2)-ng_h:)
     real (kind=dp_t), intent(in ) :: dSdt(lo(1)-ng_o:,lo(2)-ng_o:)
     real (kind=dp_t), intent(in ) :: Source_old(lo(1)-ng_o:,lo(2)-ng_o:)
-    real (kind=dp_t) :: dt, dtold
+    real (kind=dp_t) :: dt
 
     ! Local variables
     integer          :: i, j
@@ -93,7 +93,7 @@ contains
     real (kind=dp_t), intent(out) :: Source_nph(lo(1)-ng_h:,lo(2)-ng_h:,lo(3)-ng_h:)
     real (kind=dp_t), intent(in ) :: dSdt(lo(1)-ng_o:,lo(2)-ng_o:,lo(3)-ng_o:)
     real (kind=dp_t), intent(in ) :: Source_old(lo(1)-ng_o:,lo(2)-ng_o:,lo(3)-ng_o:)
-    real (kind=dp_t) :: dt, dtold
+    real (kind=dp_t) :: dt
 
     ! Local variables
     integer          :: i, j, k
