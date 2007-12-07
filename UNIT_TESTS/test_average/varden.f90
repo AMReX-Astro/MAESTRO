@@ -22,28 +22,19 @@ subroutine varden()
   use network
   use average_module
   use fill_3d_module
+  use probin_module
 
   implicit none
 
-  integer    :: narg, farg
-  integer    :: dm,n_base
-  real(dp_t) :: dr_base
+  integer    :: dm
+  integer    :: n_base
   real(dp_t) :: lenx,leny,lenz,max_dist
-  integer    :: bcx_lo,bcx_hi,bcy_lo,bcy_hi,bcz_lo,bcz_hi
-  integer    :: k,ng_cell,ng_edge,ng_fill
+  integer    :: k,ng_cell
   integer    :: i, j, d, n, nlevs
   integer    :: comp,bc_comp
-  logical    :: pmask_x,pmask_y,pmask_z
-  logical    :: perturb_model
-
-  real(dp_t) :: prob_lo_x,prob_lo_y,prob_lo_z
-  real(dp_t) :: prob_hi_x,prob_hi_y,prob_hi_z
-
-  real(dp_t) :: anelastic_cutoff
-  integer    :: spherical_in
 
   integer     , allocatable :: domain_phys_bc(:,:)
-  logical     :: pmask_xyz(MAX_SPACEDIM)
+
   logical     , allocatable :: pmask(:)
   real(dp_t)  , allocatable :: dx(:,:)
   real(dp_t)  , allocatable :: prob_hi(:)
@@ -62,10 +53,6 @@ subroutine varden()
   real(kind=dp_t), pointer :: nrp(:,:,:,:)
   integer,allocatable      :: lo(:),hi(:)
 
-  character(len=128) :: fname
-  character(len=128) :: probin_env
-  character(len=128) :: test_set
-  character(len=256) :: model_file
   character(len=20), allocatable :: plot_names(:)
   integer :: un, ierr
   logical :: lexist
@@ -90,212 +77,10 @@ subroutine varden()
 
   type(bc_level) ::  bc
 
-  namelist /probin/ model_file
-  namelist /probin/ prob_lo_x
-  namelist /probin/ prob_lo_y
-  namelist /probin/ prob_lo_z
-  namelist /probin/ prob_hi_x
-  namelist /probin/ prob_hi_y
-  namelist /probin/ prob_hi_z
-  namelist /probin/ test_set
-  namelist /probin/ bcx_lo
-  namelist /probin/ bcx_hi
-  namelist /probin/ bcy_lo
-  namelist /probin/ bcy_hi
-  namelist /probin/ bcz_lo
-  namelist /probin/ bcz_hi
-  namelist /probin/ pmask_x
-  namelist /probin/ pmask_y
-  namelist /probin/ pmask_z
-  namelist /probin/ pmask_xyz
-  namelist /probin/ anelastic_cutoff
-  namelist /probin/ spherical_in
-  namelist /probin/ dr_base
 
-  ng_edge = 2
   ng_cell = 3
 
-  narg = command_argument_count()
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! initialize the runtime parameters
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Defaults
-  model_file = "model.hse"
-
-  spherical_in = 0
-  dr_base = -1.d0
-  prob_lo_x = ZERO
-  prob_lo_y = ZERO
-  prob_lo_z = ZERO
-
-  anelastic_cutoff = 3.e6
-
-  need_inputs = .true.
-  test_set = ''
-  
-  bcx_lo = SLIP_WALL
-  bcy_lo = SLIP_WALL
-  bcz_lo = SLIP_WALL
-  bcx_hi = SLIP_WALL
-  bcy_hi = SLIP_WALL
-  bcz_hi = SLIP_WALL
-
-  pmask_x = .false.
-  pmask_y = .false.
-  pmask_z = .false.
-  
-  perturb_model = .false.
-
-  call get_environment_variable('PROBIN', probin_env, status = ierr)
-  if ( need_inputs .AND. ierr == 0 ) then
-     un = unit_new()
-     open(unit=un, file = probin_env, status = 'old', action = 'read')
-     read(unit=un, nml = probin)
-     close(unit=un)
-     need_inputs = .false.
-  end if
-
-  farg = 1
-  if ( need_inputs .AND. narg >= 1 ) then
-     call get_command_argument(farg, value = fname)
-     inquire(file = fname, exist = lexist )
-     if ( lexist ) then
-        farg = farg + 1
-        un = unit_new()
-        open(unit=un, file = fname, status = 'old', action = 'read')
-        read(unit=un, nml = probin)
-        close(unit=un)
-        need_inputs = .false.
-     end if
-  end if
-
-  inquire(file = 'inputs_varden', exist = lexist)
-  if ( need_inputs .AND. lexist ) then
-     un = unit_new()
-     open(unit=un, file = 'inputs_varden', status = 'old', action = 'read')
-     read(unit=un, nml = probin)
-     close(unit=un)
-     need_inputs = .false.
-  end if
-
-  pmask_xyz = (/pmask_x, pmask_y, pmask_z/)
-
-  if ( .true. ) then
-     do while ( farg <= narg )
-        call get_command_argument(farg, value = fname)
-        select case (fname)
-
-        case ('--model_file')
-           farg = farg + 1
-           call get_command_argument(farg, value = model_file)
-
-        case ('--prob_lo_x')
-           farg = farg + 1
-           call get_command_argument(farg, value = fname)
-           read(fname, *) prob_lo_x
-
-        case ('--prob_lo_y')
-           farg = farg + 1
-           call get_command_argument(farg, value = fname)
-           read(fname, *) prob_lo_y
-
-        case ('--prob_lo_z')
-           farg = farg + 1
-           call get_command_argument(farg, value = fname)
-           read(fname, *) prob_lo_z
-
-        case ('--prob_hi_x')
-           farg = farg + 1
-           call get_command_argument(farg, value = fname)
-           read(fname, *) prob_hi_x
-
-        case ('--prob_hi_y')
-           farg = farg + 1
-           call get_command_argument(farg, value = fname)
-           read(fname, *) prob_hi_y
-
-        case ('--prob_hi_z')
-           farg = farg + 1
-           call get_command_argument(farg, value = fname)
-           read(fname, *) prob_hi_z
-
-        case ('--bcx_lo')
-           farg = farg + 1
-           call get_command_argument(farg, value = fname)
-           read(fname, *) bcx_lo
-        case ('--bcy_lo')
-           farg = farg + 1
-           call get_command_argument(farg, value = fname)
-           read(fname, *) bcy_lo
-        case ('--bcz_lo')
-           farg = farg + 1
-           call get_command_argument(farg, value = fname)
-           read(fname, *) bcz_lo
-        case ('--bcx_hi')
-           farg = farg + 1
-           call get_command_argument(farg, value = fname)
-           read(fname, *) bcx_hi
-        case ('--bcy_hi')
-           farg = farg + 1
-           call get_command_argument(farg, value = fname)
-           read(fname, *) bcy_hi
-        case ('--bcz_hi')
-           farg = farg + 1
-           call get_command_argument(farg, value = fname)
-           read(fname, *) bcz_hi
-
-        case ('--pmask_x')
-           farg = farg + 1
-           call get_command_argument(farg, value = fname)
-           read(fname, *) pmask_xyz(1)
-        case ('--pmask_y')
-           farg = farg + 1
-           call get_command_argument(farg, value = fname)
-           read(fname, *) pmask_xyz(2)
-        case ('--pmask_z')
-           farg = farg + 1
-           call get_command_argument(farg, value = fname)
-           read(fname, *) pmask_xyz(3)
-        case ('--pmask_xyz')
-           farg = farg + 1
-           call get_command_argument(farg, value = fname)
-           read(fname, *) pmask_xyz(1)
-           pmask_xyz = pmask_xyz(1)
-
-        case ('--test_set')
-           farg = farg + 1
-           call get_command_argument(farg, value = test_set)
-
-        case ('--anelastic_cutoff')
-           farg = farg + 1
-           call get_command_argument(farg, value = fname)
-           read(fname, *) anelastic_cutoff
-
-        case ('--spherical_in')
-           farg = farg + 1
-           call get_command_argument(farg, value = fname)
-           read(fname, *) spherical_in
-
-        case ('--dr_base')
-           farg = farg + 1
-           call get_command_argument(farg, value = fname)
-           read(fname, *) dr_base
-
-        case ('--')
-           farg = farg + 1
-           exit
-
-        case default
-           if ( .not. parallel_q() ) then
-              write(*,*) 'UNKNOWN option = ', fname
-              call bl_error("MAIN")
-           end if
-        end select
-
-        farg = farg + 1
-     end do
-  end if
+  call probin_init()
 
   call init_spherical(spherical_in)
 
