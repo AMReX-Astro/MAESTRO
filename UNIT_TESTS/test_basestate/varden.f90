@@ -19,32 +19,18 @@ subroutine varden()
   use advect_base_module
   use make_grav_module
   use make_div_coeff_module
+  use probin_module
 
   implicit none
 
   integer :: i
 
-  integer    :: narg, farg
-  integer    :: max_step
-  integer    :: dm,n_base
+  integer    :: dm
 
-  real(dp_t) :: dr_base(1)
-  real(dp_t) :: cflfac
-  real(dp_t) :: stop_time
   real(dp_t) :: time,dt,half_time,dtold
-  real(dp_t) :: prob_lo_x, prob_hi_x
-  real(dp_t) :: anelastic_cutoff
   real(dp_t) :: smin,smax
-  integer    :: spherical_in
-
-  character(len=128) :: fname
-  character(len=128) :: probin_env
-  
-  character(len=256) :: model_file
 
   integer :: un, ierr
-  logical :: lexist
-  logical :: need_inputs
 
   real(dp_t) :: y_0
 
@@ -67,138 +53,13 @@ subroutine varden()
 
   real(dp_t) :: coeff, Hbar
 
-  integer, parameter :: verbose = 0
-
   integer :: nlevs,n
+  integer :: nr_fine
+  real(dp_t) :: max_dist
 
-  namelist /probin/ model_file
-  namelist /probin/ stop_time
-  namelist /probin/ prob_lo_x
-  namelist /probin/ prob_hi_x
-  namelist /probin/ max_step
-  namelist /probin/ cflfac
-  namelist /probin/ anelastic_cutoff
-  namelist /probin/ spherical_in
-  namelist /probin/ n_base
+  call probin_init()
 
   nlevs = 1
-
-  narg = command_argument_count()
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! initialize the runtime parameters
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Defaults
-  model_file = "model.hse"
-
-  spherical_in = 0
-  max_step  = 1
-
-  prob_lo_x = ZERO
-  prob_hi_x = 5.e8_dp_t
-
-  anelastic_cutoff = 3.e6
-
-  ntrac = 1
-  nscal = nspec + ntrac + 2
-
-  n_base = 512
-  cflfac = 0.5_dp_t
-
-
-  need_inputs = .true.
-
-
-  call get_environment_variable('PROBIN', probin_env, status = ierr)
-  if ( need_inputs .AND. ierr == 0 ) then
-     un = unit_new()
-     open(unit=un, file = probin_env, status = 'old', action = 'read')
-     read(unit=un, nml = probin)
-     close(unit=un)
-     need_inputs = .false.
-  end if
-
-  farg = 1
-  if ( need_inputs .AND. narg >= 1 ) then
-     call get_command_argument(farg, value = fname)
-     inquire(file = fname, exist = lexist )
-     if ( lexist ) then
-        farg = farg + 1
-        un = unit_new()
-        open(unit=un, file = fname, status = 'old', action = 'read')
-        read(unit=un, nml = probin)
-        close(unit=un)
-        need_inputs = .false.
-     end if
-  end if
-
-  inquire(file = 'inputs_varden', exist = lexist)
-  if ( need_inputs .AND. lexist ) then
-     un = unit_new()
-     open(unit=un, file = 'inputs_varden', status = 'old', action = 'read')
-     read(unit=un, nml = probin)
-     close(unit=un)
-     need_inputs = .false.
-  end if
-
-  if ( .true. ) then
-     do while ( farg <= narg )
-        call get_command_argument(farg, value = fname)
-        select case (fname)
-
-        case ('--model_file')
-           farg = farg + 1
-           call get_command_argument(farg, value = model_file)
-
-        case ('--prob_lo_x')
-           farg = farg + 1
-           call get_command_argument(farg, value = fname)
-           read(fname, *) prob_lo_x
-
-        case ('--prob_hi_x')
-           farg = farg + 1
-           call get_command_argument(farg, value = fname)
-           read(fname, *) prob_hi_x
-
-        case ('--cfl')
-           farg = farg + 1
-           call get_command_argument(farg, value = fname)
-           read(fname, *) cflfac
-
-        case ('--stop_time')
-           farg = farg + 1
-           call get_command_argument(farg, value = fname)
-           read(fname, *) stop_time
-
-        case ('--max_step')
-           farg = farg + 1
-           call get_command_argument(farg, value = fname)
-           read(fname, *) max_step
-
-        case ('--spherical_in')
-           farg = farg + 1
-           call get_command_argument(farg, value = fname)
-           read(fname, *) spherical_in
-
-        case ('--n_base')
-           farg = farg + 1
-           call get_command_argument(farg, value = fname)
-           read(fname, *) n_base
-
-        case ('--')
-           farg = farg + 1
-           exit
-
-        case default
-           if ( .not. parallel_q() ) then
-              write(*,*) 'UNKNOWN option = ', fname
-              call bl_error("MAIN")
-           end if
-        end select
-
-        farg = farg + 1
-     end do
-  end if
 
   dm = 1
 
@@ -224,24 +85,44 @@ subroutine varden()
 ! allocate storage for the base state
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  dr_base(1) = (prob_hi_x-prob_lo_x) / dble(n_base)
-  dx(1,1) = dr_base(1)
+  if (spherical .eq. 1) then
+    if (dr_base .gt. 0) then
+      max_dist = prob_hi_x - prob_lo_x
+      nr_fine = int(max_dist / dr_base) + 1
+      if ( parallel_IOProcessor() ) then
+         print *,'DISTANCE FROM CENTER TO CORNER IS ',max_dist
+         print *,'DR_BASE IS ',dr_base
+         print *,'SETTING nr_fine TO ',nr_fine
+      end if
+    else
+     if ( parallel_IOProcessor() ) &
+       print *,'NEED TO DEFINE DR_BASE '
+      stop
+    endif
+  else
+     ! NOTE: in the basestate test, we will always use dr_base as the
+     ! input
+     max_dist = prob_hi_x - prob_lo_x
+     nr_fine = int(max_dist / dr_base) + 1
+  end if
 
-  allocate(div_coeff_old(nlevs,0:n_base-1))
-  allocate(    div_coeff(nlevs,0:n_base-1))
+  dx(1,1) = dr_base
 
-  allocate(grav_cell(nlevs,0:n_base-1))
+  allocate(div_coeff_old(nlevs,0:nr_fine-1))
+  allocate(    div_coeff(nlevs,0:nr_fine-1))
 
-  allocate(   gam1(nlevs,0:n_base-1  ))
-  allocate( s0_old(nlevs,0:n_base-1, nscal))
-  allocate(     s0(nlevs,0:n_base-1, nscal))
-  allocate( p0_old(nlevs,0:n_base-1  ))
-  allocate(     p0(nlevs,0:n_base-1  ))
-  allocate( w0_old(nlevs,0:n_base))
-  allocate(     w0(nlevs,0:n_base))
-  allocate(    eta(nlevs,0:n_base,   nscal))
-  allocate(      f(nlevs,0:n_base))
-  allocate(Sbar_in(nlevs,0:n_base-1,1))
+  allocate(grav_cell(nlevs,0:nr_fine-1))
+
+  allocate(   gam1(nlevs,0:nr_fine-1  ))
+  allocate( s0_old(nlevs,0:nr_fine-1, nscal))
+  allocate(     s0(nlevs,0:nr_fine-1, nscal))
+  allocate( p0_old(nlevs,0:nr_fine-1  ))
+  allocate(     p0(nlevs,0:nr_fine-1  ))
+  allocate( w0_old(nlevs,0:nr_fine))
+  allocate(     w0(nlevs,0:nr_fine))
+  allocate(    eta(nlevs,0:nr_fine,   nscal))
+  allocate(      f(nlevs,0:nr_fine))
+  allocate(Sbar_in(nlevs,0:nr_fine-1,1))
 
   w0(:,:) = ZERO
   eta(:,:,:) = ZERO
@@ -250,7 +131,7 @@ subroutine varden()
 ! read in the base state
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  call init_geometry(center,n_base,dr_base(1))
+  call init_geometry(center,nr_fine,dr_base)
 
   do n = 1,nlevs
      call init_base_state(n,model_file,s0(n,:,:),p0(n,:),gam1(n,:),dx(n,:), &
@@ -260,7 +141,7 @@ subroutine varden()
 
   ! output
   open(unit=10,file="base.orig")
-  do i = 0, n_base-1
+  do i = 0, nr_fine-1
      write(10,1000) z(1,i), s0(1,i,rho_comp), s0(1,i,temp_comp), p0(1,i)
   enddo
   close(unit=10)
@@ -287,7 +168,7 @@ subroutine varden()
 
      y_0 = 4.e7
        
-     do i = 0, n_base-1
+     do i = 0, nr_fine-1
 
         Hbar = 1.e16 * exp(-((z(1,i) - y_0)**2)/ 1.e14)
      
@@ -351,7 +232,7 @@ subroutine varden()
      call advect_base(nlevs,w0,Sbar_in,p0_old,p0, &
                       s0_old,s0, &
                       gam1,div_coeff,eta, &
-                      dr_base,dt,anelastic_cutoff)
+                      dx(:,1),dt,anelastic_cutoff)
 
 
      print *, 'new base pressure', p0(1,1)
@@ -363,7 +244,7 @@ subroutine varden()
      time = time + dt
      dtold = dt
 
-     dt = min(1.1*dt,cflfac*dr_base(1)/maxval(abs(w0)))
+     dt = min(1.1*dt,cflfac*dr_base/maxval(abs(w0)))
      if (time+dt > stop_time) dt = stop_time - time
 
      ! store the old velocity
@@ -373,7 +254,7 @@ subroutine varden()
 
   ! output
   open(unit=10,file="base.new")
-  do i = 0, n_base-1
+  do i = 0, nr_fine-1
      write(10,1000) z(1,i), s0(1,i,rho_comp), s0(1,i,temp_comp), p0(1,i)
   enddo
   close(unit=10)

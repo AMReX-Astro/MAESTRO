@@ -1,6 +1,8 @@
 &PROBIN
 
  anelastic_cutoff = 1.e-4
+ base_cutoff_density = 1.e-4
+
  spherical_in = 0
 
  prob_lo_x = 0.0
@@ -13,6 +15,6 @@
  cflfac = 0.5
 
  model_file = "model.hse"
- n_base = 768
+ dr_base = 390625
 
 /
