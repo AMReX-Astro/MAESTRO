@@ -253,9 +253,10 @@ subroutine varden()
   call init_geometry(center,n_base,dr_base(1))
 
   do n = 1,nlevs
-     call init_base_state(n,model_file,s0_old(n,:,:),p0_old(n,:),gam1(n,:),dx(n,:), &
+     call init_base_state(n,model_file,s0(n,:,:),p0(n,:),gam1(n,:),dx(n,:), &
                           prob_lo,prob_hi)
   enddo
+
 
   ! output
   open(unit=10,file="base.orig")
@@ -316,7 +317,6 @@ subroutine varden()
 
         Sbar_in(1,i,1) = coeff*Hbar
      enddo
-
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      ! compute w_0
