@@ -203,7 +203,7 @@ contains
          do comp = 1, nspec
             xn_ambient(comp) = max(ZERO,min(ONE, &
                  interpolate(r, npts_model, base_r, base_state(:,ispec_model-1+comp))))
-            sum = sum + xn_ambient(n)
+            sum = sum + xn_ambient(comp)
          enddo
          xn_ambient(:) = xn_ambient(:)/sum
          
@@ -224,7 +224,8 @@ contains
                   gam1_eos, cs_eos, s_eos, &
                   dsdt_eos, dsdr_eos, &
                   do_diag)
-         
+
+
          s0(j, rho_comp ) = d_ambient
          s0(j,rhoh_comp ) = d_ambient * h_eos(1)
          s0(j,spec_comp:spec_comp+nspec-1) = d_ambient * xn_ambient(1:nspec)
@@ -244,7 +245,7 @@ contains
        end if
 
     end do
-    
+
     deallocate(vars_stored,varnames_stored)
     deallocate(base_state,base_r)
  
