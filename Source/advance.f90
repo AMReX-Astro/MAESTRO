@@ -248,9 +248,7 @@ contains
     
     ! MAC projection !
     if (spherical .eq. 1) then
-       do n = 1, nlevs
-          call fill_3d_data_wrapper(n,div_coeff_3d(n),div_coeff_old(n,:),dx(n,:))
-       end do
+       call fill_3d_data_wrapper(nlevs,div_coeff_3d,div_coeff_old,dx)
        call macproject(mla,umac,macphi,sold,dx,the_bc_tower, &
                        verbose,mg_verbose,cg_verbose,press_comp, &
                        macrhs,div_coeff_3d=div_coeff_3d)
@@ -460,9 +458,7 @@ contains
        
        ! MAC projection !
        if (spherical .eq. 1) then
-          do n = 1, nlevs
-             call fill_3d_data_wrapper(n,div_coeff_3d(n),div_coeff_nph(n,:),dx(n,:))
-          end do
+          call fill_3d_data_wrapper(nlevs,div_coeff_3d,div_coeff_nph,dx)
           call macproject(mla,umac,macphi,rhohalf,dx,the_bc_tower, &
                           verbose,mg_verbose,cg_verbose,&
                           press_comp,macrhs,div_coeff_3d=div_coeff_3d)
@@ -631,9 +627,7 @@ contains
     end if
     
     if (spherical .eq. 1) then
-       do n = 1,nlevs
-          call fill_3d_data_wrapper(n,div_coeff_3d(n),div_coeff_nph(n,:),dx(n,:))
-       end do
+       call fill_3d_data_wrapper(nlevs,div_coeff_3d,div_coeff_nph,dx)
        eps_in = 1.d-12
        call hgproject(proj_type, mla, unew, uold, rhohalf, p, gp, dx, dt, &
                       the_bc_tower, verbose, mg_verbose, cg_verbose, press_comp, &

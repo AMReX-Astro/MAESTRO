@@ -96,18 +96,13 @@ contains
     enddo
 
     do n = 1, nlevs
-    
-       domain = layout_get_pd(uold(n)%la)
-       domlo = lwb(domain)
-       domhi = upb(domain)
-              
        call build(scal_force(n),  ext_scal_force(n)%la, nscal, 1)
        call build(s0_old_cart(n), ext_scal_force(n)%la, nscal, 1)
        call build(s0_new_cart(n), ext_scal_force(n)%la, nscal, 1)
-       
        call setval(scal_force(n), ZERO,all=.true.)
        call setval(s0_old_cart(n),ZERO,all=.true.)
        call setval(s0_new_cart(n),ZERO,all=.true.)
+    enddo
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     Create scalar source term at time n for (rho X)_i and (rho H).  
@@ -118,15 +113,25 @@ contains
 !     that appear as forces when we write it in convective/perturbational form.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-       ! Define s0_old_cart and s0_new_cart
-       if (spherical .eq. 1) then
-          do comp = spec_comp, spec_comp+nspec-1
-             call fill_3d_data_wrapper(n,s0_old_cart(n),s0_old(n,:,comp),dx(n,:),comp)
-             call fill_3d_data_wrapper(n,s0_new_cart(n),s0_new(n,:,comp),dx(n,:),comp)
-          enddo
-          call fill_3d_data_wrapper(n,s0_old_cart(n),s0_old(n,:,rhoh_comp),dx(n,:),rhoh_comp)
-          call fill_3d_data_wrapper(n,s0_new_cart(n),s0_new(n,:,rhoh_comp),dx(n,:),rhoh_comp)
-       end if
+    ! Define s0_old_cart and s0_new_cart
+    if (spherical .eq. 1) then
+       call fill_3d_data_wrapper(nlevs,s0_old_cart,s0_old(:,:,rhoh_comp),dx,rhoh_comp)
+       call fill_3d_data_wrapper(nlevs,s0_new_cart,s0_new(:,:,rhoh_comp),dx,rhoh_comp)
+       do comp = spec_comp, spec_comp+nspec-1
+          call fill_3d_data_wrapper(nlevs,s0_old_cart,s0_old(:,:,comp),dx,comp)
+          call fill_3d_data_wrapper(nlevs,s0_new_cart,s0_new(:,:,comp),dx,comp)
+       enddo
+       do comp = trac_comp, trac_comp+ntrac-1
+          call fill_3d_data_wrapper(nlevs,s0_old_cart,s0_old(:,:,comp),dx,comp)
+          call fill_3d_data_wrapper(nlevs,s0_new_cart,s0_new(:,:,comp),dx,comp)
+       enddo
+    end if
+    
+    do n = 1, nlevs
+   
+       domain = layout_get_pd(uold(n)%la)
+       domlo = lwb(domain)
+       domhi = upb(domain)
 
        ! This can be uncommented if you wish to compute T
        ! call makeTfromRhoH(sold(n),s0_old(n,:,temp_comp))
@@ -266,15 +271,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !     2) Update tracers with convective differencing.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-       ! Define s0_old_cart and s0_new_cart
-       if (spherical .eq. 1) then
-          do comp = trac_comp, trac_comp+ntrac-1
-             call fill_3d_data_wrapper(n,s0_old_cart(n),s0_old(n,:,comp),dx(n,:),comp)
-             call fill_3d_data_wrapper(n,s0_new_cart(n),s0_new(n,:,comp),dx(n,:),comp)
-          enddo
-       end if
-       
+      
        if (ntrac .ge. 1) then
           call update_scal(which_step,trac_comp,trac_comp+ntrac-1,sold(n),snew(n), &
                            umac(n,:),w0(n,:),w0_cart_vec(n),eta(n,:,:),sedge(n,:), &
@@ -297,11 +294,6 @@ contains
 !     2) Update (rho h)' with conservative differencing.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-       ! Define s0_old_cart and s0_new_cart
-       if (spherical .eq. 1) then
-          call fill_3d_data_wrapper(n,s0_old_cart(n),s0_old(n,:,rhoh_comp),dx(n,:),rhoh_comp)
-          call fill_3d_data_wrapper(n,s0_new_cart(n),s0_new(n,:,rhoh_comp),dx(n,:),rhoh_comp)
-       end if
        
        call mkrhohforce(n,scal_force(n),rhoh_comp,umac(n,:),p0_old(n,:),p0_new(n,:), &
                         normal(n),dx(n,:))

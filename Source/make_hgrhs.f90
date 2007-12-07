@@ -54,12 +54,12 @@ contains
        enddo
     endif
     
-    do n = 1, nlevs
+    if (spherical .eq. 1) then
+       call fill_3d_data_wrapper(nlevs,div_coeff_cart,div_coeff,dx)
+       call fill_3d_data_wrapper(nlevs,Sbar_cart,Sbar,dx)
+    end if
 
-       if (spherical .eq. 1) then
-          call fill_3d_data_wrapper(n,div_coeff_cart(n),div_coeff(n,:),dx(n,:))
-          call fill_3d_data_wrapper(n,Sbar_cart(n),Sbar(n,:),dx(n,:))
-       end if
+    do n = 1, nlevs
        
        do i = 1, Source(n)%nboxes
           if ( multifab_remote(Source(n), i) ) cycle

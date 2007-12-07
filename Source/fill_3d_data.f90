@@ -14,24 +14,24 @@ module fill_3d_module
   
 contains
 
-  subroutine fill_3d_data_wrapper(n,s0_cart,s0,dx,in_comp)
+  subroutine fill_3d_data_wrapper(nlevs,s0_cart,s0,dx,in_comp)
 
     ! for spherical problems, this copies the base state onto a multifab
     ! sames as the function fill_3d_data_wrap, excpet we assume
     ! start_comp = 1, num_comp = 1, and the base state only has one component
 
-    integer        , intent(in   )        :: n
-    type(multifab) , intent(inout)        :: s0_cart
-    real(kind=dp_t), intent(in   )        :: s0(0:)
-    real(kind=dp_t), intent(in   )        :: dx(:)
+    integer        , intent(in   )        :: nlevs
+    type(multifab) , intent(inout)        :: s0_cart(:)
+    real(kind=dp_t), intent(in   )        :: s0(:,0:)
+    real(kind=dp_t), intent(in   )        :: dx(:,:)
     integer        , intent(in), optional :: in_comp
 
     ! local
-    integer :: i,comp,ng
-    integer :: lo(s0_cart%dim),hi(s0_cart%dim)
+    integer :: i,comp,ng,n
+    integer :: lo(s0_cart(1)%dim),hi(s0_cart(1)%dim)
     real(kind=dp_t), pointer :: s0p(:,:,:,:)
 
-    ng = s0_cart%ng
+    ng = s0_cart(1)%ng
 
     if ( present(in_comp) ) then
        comp = in_comp
@@ -39,15 +39,17 @@ contains
        comp = 1
     endif
 
-    do i=1,s0_cart%nboxes
-       if ( multifab_remote(s0_cart,i) ) cycle
-       s0p => dataptr(s0_cart,i)
-       lo = lwb(get_box(s0_cart,i))
-       hi = upb(get_box(s0_cart,i))
-       call fill_3d_data(n,s0p(:,:,:,comp),s0(:),lo,hi,dx,ng)
-    end do
-
-    call multifab_fill_boundary_c(s0_cart,comp,1)
+    do n=1,nlevs
+       do i=1,s0_cart(n)%nboxes
+          if ( multifab_remote(s0_cart(n),i) ) cycle
+          s0p => dataptr(s0_cart(n),i)
+          lo = lwb(get_box(s0_cart(n),i))
+          hi = upb(get_box(s0_cart(n),i))
+          call fill_3d_data(n,s0p(:,:,:,comp),s0(n,:),lo,hi,dx(n,:),ng)
+       end do
+       
+       call multifab_fill_boundary_c(s0_cart(n),comp,1)
+    enddo
 
   end subroutine fill_3d_data_wrapper
 
