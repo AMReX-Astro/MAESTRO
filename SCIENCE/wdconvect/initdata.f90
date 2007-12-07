@@ -265,9 +265,6 @@ contains
     real(kind=dp_t), intent(in   ) ::    p0(0:)
 
     !     Local variables
-    integer :: i, j, n
-    real(kind=dp_t) :: x,y,r,r0,r1,r2,temp
-    real(kind=dp_t) :: dens_pert, rhoh_pert, rhoX_pert(nspec), trac_pert(ntrac)
 
     ! initial the velocity
     u = ZERO

@@ -70,7 +70,7 @@ contains
     type(box) :: domain
 
     integer :: domlo(uold(1)%dim),domhi(uold(1)%dim)
-    integer :: velpred,i,comp,n,dm,ng_cell
+    integer :: velpred,comp,n,dm,ng_cell
 
     logical :: is_vel
     

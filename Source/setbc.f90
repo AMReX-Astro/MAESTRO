@@ -21,7 +21,7 @@ contains
 
 !     Local variables
       integer         :: i,j,hi(2)
-      real(kind=dp_t) :: x,dir_val
+      real(kind=dp_t) :: dir_val
 
       hi(1) = lo(1) + size(s,dim=1) - (2*ng+1)
       hi(2) = lo(2) + size(s,dim=2) - (2*ng+1)

@@ -49,7 +49,6 @@ contains
     real(dp_t)                  :: umin,umax,vmin,vmax,wmin,wmax
     integer                     :: stencil_type
     logical                     :: use_div_coeff_1d, use_div_coeff_3d
-    type(bc_level)              ::  bc
     
     ! stencil_type = ST_DENSE
     stencil_type = ST_CROSS
