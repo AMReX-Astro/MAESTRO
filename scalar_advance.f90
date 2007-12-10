@@ -141,7 +141,7 @@ contains
        call multifab_fill_boundary_c(scal_force(n),spec_comp,nspec)
 
        do comp = spec_comp, spec_comp+nspec-1
-          call multifab_physbc(scal_force(n),comp,neumann_comp,1,dx(n,:),the_bc_level(n))
+          call multifab_physbc(scal_force(n),comp,foextrap_comp,1,dx(n,:),the_bc_level(n))
        enddo
        
        if(use_temp_in_mkflux) then
@@ -151,7 +151,7 @@ contains
 
           call multifab_fill_boundary_c(scal_force(n),temp_comp,1)
 
-          call multifab_physbc(scal_force(n),temp_comp,neumann_comp,1,dx(n,:), &
+          call multifab_physbc(scal_force(n),temp_comp,foextrap_comp,1,dx(n,:), &
                                the_bc_level(n))
        else
 
@@ -169,7 +169,7 @@ contains
 
           call multifab_fill_boundary_c(scal_force(n),rhoh_comp,1)
 
-          call multifab_physbc(scal_force(n),rhoh_comp,neumann_comp,1,dx(n,:), &
+          call multifab_physbc(scal_force(n),rhoh_comp,foextrap_comp,1,dx(n,:), &
                                the_bc_level(n))
        endif
        

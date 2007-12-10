@@ -221,7 +221,7 @@ contains
        ! set the boundary conditions for pressure
        do n=1,nlevs
           call multifab_fill_boundary(phi(n))
-          call multifab_physbc(phi(n),1,neumann_comp,1,dx(n,:), &
+          call multifab_physbc(phi(n),1,foextrap_comp,1,dx(n,:), &
                                the_bc_tower%bc_tower_array(n))
        enddo
 
@@ -243,7 +243,7 @@ contains
        enddo
        
        ! applyop to compute resid = del dot pcoeff grad p0
-       call mac_applyop(mla,resid,phi,alpha,beta,dx,the_bc_tower,neumann_comp, &
+       call mac_applyop(mla,resid,phi,alpha,beta,dx,the_bc_tower,foextrap_comp, &
                         stencil_order,mla%mba%rr,mg_verbose,cg_verbose)
        
        ! add residual to thermal
@@ -275,7 +275,7 @@ contains
                                       1,mla%mba%rr(n-1,:), &
                                       the_bc_tower%bc_tower_array(n-1), &
                                       the_bc_tower%bc_tower_array(n  ), &
-                                      1,neumann_comp,1)
+                                      1,foextrap_comp,1)
     enddo
     
     ! Deallocate memory

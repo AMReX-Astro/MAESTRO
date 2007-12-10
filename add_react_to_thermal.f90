@@ -76,7 +76,7 @@ contains
        call multifab_fill_ghost_cells(thermal(n),thermal(n-1), &
                                       1,mla%mba%rr(n-1,:), &
                                       the_bc_level(n-1), the_bc_level(n), &
-                                      1,neumann_comp,1)
+                                      1,foextrap_comp,1)
     enddo
        
   end subroutine add_react_to_thermal

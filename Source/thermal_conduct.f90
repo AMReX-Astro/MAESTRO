@@ -140,7 +140,7 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
   ! set the boundary conditions for p01
   do n=1,nlevs
      call multifab_fill_boundary(p01fab(n))
-     call multifab_physbc(p01fab(n),1,neumann_comp,1,dx(n,:),the_bc_tower%bc_tower_array(n))
+     call multifab_physbc(p01fab(n),1,foextrap_comp,1,dx(n,:),the_bc_tower%bc_tower_array(n))
   enddo
 
   ! create p02fab
@@ -162,7 +162,7 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
   ! set the boundary conditions for p02
   do n=1,nlevs
      call multifab_fill_boundary(p02fab(n))
-     call multifab_physbc(p02fab(n),1,neumann_comp,1,dx(n,:),the_bc_tower%bc_tower_array(n))
+     call multifab_physbc(p02fab(n),1,foextrap_comp,1,dx(n,:),the_bc_tower%bc_tower_array(n))
   enddo
 
   ! lhsalpha = \rho^{(2),*} or \rho^{(2)}
@@ -393,7 +393,7 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
   
   ! apply the operator
   call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
-       neumann_comp,stencil_order,mla%mba%rr, &
+       foextrap_comp,stencil_order,mla%mba%rr, &
        mg_verbose,cg_verbose)
   
   ! add lphi to rhs
@@ -428,7 +428,7 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
   
   ! apply the operator
   call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
-       neumann_comp,stencil_order,mla%mba%rr, &
+       foextrap_comp,stencil_order,mla%mba%rr, &
        mg_verbose,cg_verbose)
   
   ! add lphi to rhs
@@ -658,7 +658,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
   ! set the boundary conditions for p01
   do n=1,nlevs
      call multifab_fill_boundary(p01fab(n))
-     call multifab_physbc(p01fab(n),1,neumann_comp,1,dx(n,:),the_bc_tower%bc_tower_array(n))
+     call multifab_physbc(p01fab(n),1,foextrap_comp,1,dx(n,:),the_bc_tower%bc_tower_array(n))
   enddo
 
   ! create p02fab
@@ -680,7 +680,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
   ! set the boundary conditions for p02
   do n=1,nlevs
      call multifab_fill_boundary(p02fab(n))
-     call multifab_physbc(p02fab(n),1,neumann_comp,1,dx(n,:),the_bc_tower%bc_tower_array(n))
+     call multifab_physbc(p02fab(n),1,foextrap_comp,1,dx(n,:),the_bc_tower%bc_tower_array(n))
   enddo
 
   ! lhsalpha = \rho^{(2)}
@@ -845,8 +845,8 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
   
   ! apply the operator
   call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
-       neumann_comp,stencil_order,mla%mba%rr, &
-       mg_verbose,cg_verbose)  
+                   foextrap_comp,stencil_order,mla%mba%rr, &
+                   mg_verbose,cg_verbose)  
 
   ! add lphi to rhs
   do n=1,nlevs
@@ -1128,8 +1128,8 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
   
   ! apply the operator
   call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
-       neumann_comp,stencil_order,mla%mba%rr, &
-       mg_verbose,cg_verbose)
+                   foextrap_comp,stencil_order,mla%mba%rr, &
+                   mg_verbose,cg_verbose)
   
   ! add lphi to rhs
   do n=1,nlevs
@@ -1163,8 +1163,8 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
   
   ! apply the operator
   call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
-       neumann_comp,stencil_order,mla%mba%rr, &
-       mg_verbose,cg_verbose)
+                   foextrap_comp,stencil_order,mla%mba%rr, &
+                   mg_verbose,cg_verbose)
   
   ! add lphi to rhs
   do n=1,nlevs
