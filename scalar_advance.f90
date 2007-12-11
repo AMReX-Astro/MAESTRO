@@ -180,14 +180,9 @@ contains
     call mkflux(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0,w0_cart_vec,dx,dt,is_vel, &
                 the_bc_level,velpred,spec_comp,dm+spec_comp,nspec)
 
-    do n=1,nlevs
-
-       if(use_temp_in_mkflux) then
-          call makeRhoHfromT(uold(n),sedge(n,:),s0_old(n,:,:),s0_edge_old(n,:,:) &
-                            ,s0_new(n,:,:),s0_edge_new(n,:,:))
-       endif
-
-    end do
+    if(use_temp_in_mkflux) then
+       call makeRhoHfromT(nlevs,uold,sedge,s0_old,s0_edge_old,s0_new,s0_edge_new)
+    endif
 
     if (.not. use_temp_in_mkflux) then
        call put_in_pert_form(nlevs,sold,s0_old,dx,rhoh_comp,1,.false.)

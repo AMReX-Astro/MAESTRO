@@ -22,37 +22,44 @@ module rhoh_vs_t_module
   
 contains
   
-  subroutine makeRhoHfromT(u,sedge,s0_old,s0_edge_old,s0_new,s0_edge_new)
+  subroutine makeRhoHfromT(nlevs,u,sedge,s0_old,s0_edge_old,s0_new,s0_edge_new)
     
-    type(multifab) , intent(in   ) :: u
-    type(multifab) , intent(inout) :: sedge(:)
-    real(kind=dp_t), intent(in   ) :: s0_old(0:,:), s0_edge_old(0:,:)
-    real(kind=dp_t), intent(in   ) :: s0_new(0:,:), s0_edge_new(0:,:)
+    integer        , intent(in   ) :: nlevs
+    type(multifab) , intent(in   ) :: u(:)
+    type(multifab) , intent(inout) :: sedge(:,:)
+    real(kind=dp_t), intent(in   ) :: s0_old(:,0:,:), s0_edge_old(:,0:,:)
+    real(kind=dp_t), intent(in   ) :: s0_new(:,0:,:), s0_edge_new(:,0:,:)
     
     ! local
-    integer :: i,dm
-    integer :: lo(u%dim),hi(u%dim)
+    integer :: i,dm,n
+    integer :: lo(u(1)%dim),hi(u(1)%dim)
     real(kind=dp_t), pointer :: sepx(:,:,:,:)
     real(kind=dp_t), pointer :: sepy(:,:,:,:)
     real(kind=dp_t), pointer :: sepz(:,:,:,:)
     
-    dm = u%dim
+    dm = u(1)%dim
+
+    do n=1,nlevs
     
-    do i=1,u%nboxes
-       if ( multifab_remote(u,i) ) cycle
-       sepx => dataptr(sedge(1), i)
-       sepy => dataptr(sedge(2), i)
-       lo = lwb(get_box(u,i))
-       hi = upb(get_box(u,i))
-       select case (dm)
-       case (2)
-          call makeRhoHfromT_2d(sepx(:,:,1,:), sepy(:,:,1,:), &
-                                s0_old, s0_edge_old, s0_new, s0_edge_new, lo, hi)
-       case (3)
-          sepz => dataptr(sedge(3),i)
-          call makeRhoHfromT_3d(sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
-                                s0_old, s0_edge_old, s0_new, s0_edge_new, lo, hi)
-       end select
+       do i=1,u(n)%nboxes
+          if ( multifab_remote(u(n),i) ) cycle
+          sepx => dataptr(sedge(n,1), i)
+          sepy => dataptr(sedge(n,2), i)
+          lo = lwb(get_box(u(n),i))
+          hi = upb(get_box(u(n),i))
+          select case (dm)
+          case (2)
+             call makeRhoHfromT_2d(sepx(:,:,1,:), sepy(:,:,1,:), &
+                                   s0_old(n,:,:), s0_edge_old(n,:,:), &
+                                   s0_new(n,:,:), s0_edge_new(n,:,:), lo, hi)
+          case (3)
+             sepz => dataptr(sedge(n,3),i)
+             call makeRhoHfromT_3d(sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
+                                   s0_old(n,:,:), s0_edge_old(n,:,:), &
+                                   s0_new(n,:,:), s0_edge_new(n,:,:), lo, hi)
+          end select
+       end do
+
     end do
     
   end subroutine makeRhoHfromT
