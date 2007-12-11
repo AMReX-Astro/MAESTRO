@@ -21,6 +21,7 @@ module scalar_advance_module
   use ml_layout_module
   use multifab_fill_ghost_module
   use modify_scal_force_module
+  use add_thermal_to_force_module
 
   implicit none
 
@@ -144,21 +145,7 @@ contains
                               s0_old_cart,rhoh_comp,1,mla,the_bc_level)
         
        if(use_thermal_diffusion) then
-          do n=1,nlevs
-             call multifab_plus_plus_c(scal_force(n),rhoh_comp,thermal(n),1,1)
-             call multifab_fill_boundary_c(scal_force(n),rhoh_comp,1)
-             call multifab_physbc(scal_force(n),rhoh_comp,foextrap_comp,1,dx(n,:), &
-                                  the_bc_level(n))
-          enddo
-
-          do n=nlevs,2,-1
-             call ml_cc_restriction_c(scal_force(n-1),rhoh_comp,scal_force(n),rhoh_comp, &
-                                      mla%mba%rr(n-1,:),1)
-             call multifab_fill_ghost_cells(scal_force(n),scal_force(n-1), &
-                                            scal_force(n)%ng,mla%mba%rr(n-1,:), &
-                                            the_bc_level(n-1),the_bc_level(n), &
-                                            rhoh_comp,foextrap_comp,1)
-          enddo
+          call add_thermal_to_force(nlevs,scal_force,thermal,the_bc_level,mla,dx)
        endif
 
     endif
