@@ -230,28 +230,36 @@ contains
                         s0_old_cart(n),s0_new_cart(n),domlo,domhi,dx(n,:),dt, &
                         evolve_base_state)
 
-       if (verbose .ge. 1) then
-          do comp = spec_comp,spec_comp+nspec-1
-             call multifab_div_div_c(snew(n),comp,snew(n),rho_comp,1)
+    end do
 
-             smin = multifab_min_c(snew(n),comp) 
-             smax = multifab_max_c(snew(n),comp)
-
-             if (parallel_IOProcessor()) &
-                  write(6,2002) spec_names(comp-spec_comp+1), smin,smax
-             call multifab_mult_mult_c(snew(n),comp,snew(n),rho_comp,1)
-          end do
-
-          smin = multifab_min_c(snew(n),rho_comp) 
-          smax = multifab_max_c(snew(n),rho_comp)
-
+    if (verbose .ge. 1) then
+       do comp = spec_comp,spec_comp+nspec-1
+          call multifab_div_div_c(snew(n),comp,snew(n),rho_comp,1)
+          
+          smin = multifab_min_c(snew(n),comp) 
+          smax = multifab_max_c(snew(n),comp)
+          
           if (parallel_IOProcessor()) &
-               write(6,2000) smin,smax
-       end if
+               write(6,2002) spec_names(comp-spec_comp+1), smin,smax
+          call multifab_mult_mult_c(snew(n),comp,snew(n),rho_comp,1)
+       end do
+       
+       smin = multifab_min_c(snew(n),rho_comp) 
+       smax = multifab_max_c(snew(n),rho_comp)
+       
+       if (parallel_IOProcessor()) &
+            write(6,2000) smin,smax
+    end if
+    
+    !**************************************************************************
+    !     2) Update tracers with convective differencing.
+    !**************************************************************************
+    
+    do n=1,nlevs
 
-       !**************************************************************************
-       !     2) Update tracers with convective differencing.
-       !**************************************************************************
+       domain = layout_get_pd(uold(n)%la)
+       domlo = lwb(domain)
+       domhi = upb(domain)
 
        if (ntrac .ge. 1) then
           call update_scal(which_step,trac_comp,trac_comp+ntrac-1,sold(n),snew(n), &
@@ -268,19 +276,23 @@ contains
           end if
        end if
 
-       !**************************************************************************
-       !     1) Create (rhoh)' force at time n+1/2.
-       !          (NOTE: we don't worry about filling ghost cells of the scal_force
-       !                 because we only need them in valid regions...)     
-       !     2) Update (rho h)' with conservative differencing.
-       !**************************************************************************
-
     end do
+
+    !**************************************************************************
+    !     1) Create (rhoh)' force at time n+1/2.
+    !          (NOTE: we don't worry about filling ghost cells of the scal_force
+    !                 because we only need them in valid regions...)     
+    !     2) Update (rho h)' with conservative differencing.
+    !**************************************************************************
        
     call mkrhohforce(nlevs,scal_force,rhoh_comp,umac,p0_old,p0_new,normal,dx, &
                      mla,the_bc_level)
 
     do n=1,nlevs
+
+       domain = layout_get_pd(uold(n)%la)
+       domlo = lwb(domain)
+       domhi = upb(domain)
 
        call update_scal(which_step,rhoh_comp,rhoh_comp,sold(n),snew(n), &
                         umac(n,:),w0(n,:),w0_cart_vec(n),eta(n,:,:),sedge(n,:), &
@@ -288,9 +300,13 @@ contains
                         s0_edge_new(n,:,:),s0_old_cart(n),s0_new_cart(n),domlo,domhi, &
                         dx(n,:),dt,evolve_base_state)
 
-       if(.not. use_thermal_diffusion) then
-          call makeTfromRhoH(nlevs,snew,s0_new(:,:,temp_comp),mla,the_bc_level,dx)
-       endif
+    end do
+
+    if(.not. use_thermal_diffusion) then
+       call makeTfromRhoH(nlevs,snew,s0_new(:,:,temp_comp),mla,the_bc_level,dx)
+    endif
+
+    do n=1,nlevs
 
        if (verbose .eq. 1) then
           smin = multifab_min_c(snew(n),rhoh_comp) 
