@@ -13,13 +13,14 @@ module mkutrans_module
 
 contains
 
-  subroutine mkutrans(u,utrans,force,dx,dt,the_bc_level)
+  subroutine mkutrans(nlevs,u,utrans,force,dx,dt,the_bc_level)
 
-    type(multifab) , intent(in   ) :: u
-    type(multifab) , intent(inout) :: utrans(:)
-    type(multifab) , intent(in   ) :: force
-    real(kind=dp_t), intent(in   ) :: dx(:),dt
-    type(bc_level) , intent(in   ) :: the_bc_level
+    integer        , intent(in   ) :: nlevs
+    type(multifab) , intent(in   ) :: u(:)
+    type(multifab) , intent(inout) :: utrans(:,:)
+    type(multifab) , intent(in   ) :: force(:)
+    real(kind=dp_t), intent(in   ) :: dx(:,:),dt
+    type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     ! local
     real(kind=dp_t), pointer :: up(:,:,:,:)
@@ -27,37 +28,41 @@ contains
     real(kind=dp_t), pointer :: vtp(:,:,:,:)
     real(kind=dp_t), pointer :: wtp(:,:,:,:)
     real(kind=dp_t), pointer :: fp(:,:,:,:)
-    integer                  :: lo(u%dim)
-    integer                  :: i,dm,ng
+    integer                  :: lo(u(1)%dim)
+    integer                  :: i,dm,ng,n
 
-    dm = u%dim
-    ng = u%ng
+    dm = u(1)%dim
+    ng = u(1)%ng
 
-    do i=1,u%nboxes
-       if ( multifab_remote(u,i) ) cycle
-       up => dataptr(u,i)
-       utp => dataptr(utrans(1),i)
-       vtp => dataptr(utrans(2),i)
-       fp => dataptr(force,i)
-       lo =  lwb(get_box(u,i))
-       select case (dm)
-       case (2)
-          call mkutrans_2d(up(:,:,1,:), &
-                           utp(:,:,1,1), vtp(:,:,1,1), &
-                           fp(:,:,1,:), &
-                           lo,dx,dt,ng,&
-                           the_bc_level%adv_bc_level_array(i,:,:,:), &
-                           the_bc_level%phys_bc_level_array(i,:,:))
-       case (3)
-          wtp => dataptr(utrans(3), i)
-          call mkutrans_3d(up(:,:,:,:), &
-                           utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), &
-                           fp(:,:,:,:), &
-                           lo,dx,dt,ng,&
-                           the_bc_level%adv_bc_level_array(i,:,:,:), &
-                           the_bc_level%phys_bc_level_array(i,:,:))
+    do n=1,nlevs
+
+       do i=1,u(n)%nboxes
+          if ( multifab_remote(u(n),i) ) cycle
+          up => dataptr(u(n),i)
+          utp => dataptr(utrans(n,1),i)
+          vtp => dataptr(utrans(n,2),i)
+          fp => dataptr(force(n),i)
+          lo =  lwb(get_box(u(n),i))
+          select case (dm)
+          case (2)
+             call mkutrans_2d(up(:,:,1,:), &
+                              utp(:,:,1,1), vtp(:,:,1,1), &
+                              fp(:,:,1,:), &
+                              lo,dx(n,:),dt,ng,&
+                              the_bc_level(n)%adv_bc_level_array(i,:,:,:), &
+                              the_bc_level(n)%phys_bc_level_array(i,:,:))
+          case (3)
+             wtp => dataptr(utrans(n,3), i)
+             call mkutrans_3d(up(:,:,:,:), &
+                              utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), &
+                              fp(:,:,:,:), &
+                              lo,dx(n,:),dt,ng,&
+                              the_bc_level(n)%adv_bc_level_array(i,:,:,:), &
+                              the_bc_level(n)%phys_bc_level_array(i,:,:))
        end select
     end do
+
+ enddo
     
   end subroutine mkutrans
 
