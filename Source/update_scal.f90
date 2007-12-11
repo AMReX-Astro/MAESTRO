@@ -17,27 +17,26 @@ module update_scal_module
   
 contains
 
-  subroutine update_scal(which_step,nstart,nstop,sold,snew,umac,w0,w0_cart_vec,eta,sedge, &
-                         scal_force,s0_old,s0_edge_old,s0_new,s0_edge_new, &
-                         s0_old_cart,s0_new_cart,domlo,domhi,dx,dt,evolve_base_state)
+  subroutine update_scal(nlevs,which_step,nstart,nstop,sold,snew,umac,w0,w0_cart_vec,eta, &
+                         sedge,scal_force,s0_old,s0_edge_old,s0_new,s0_edge_new, &
+                         s0_old_cart,s0_new_cart,dx,dt,evolve_base_state)
 
     implicit none
 
-    integer           , intent(in   ) :: which_step, nstart, nstop
-    type(multifab)    , intent(in   ) :: sold
-    type(multifab)    , intent(inout) :: snew
-    type(multifab)    , intent(in   ) :: umac(:)
-    real(kind=dp_t)   , intent(in   ) :: w0(0:)
-    type(multifab)    , intent(in   ) :: w0_cart_vec
-    real(kind=dp_t)   , intent(inout) :: eta(0:,:)
-    type(multifab)    , intent(in   ) :: sedge(:)
-    type(multifab)    , intent(in   ) :: scal_force
-    real(kind = dp_t) , intent(in   ) :: s0_old(0:,:), s0_edge_old(0:,:)
-    real(kind = dp_t) , intent(in   ) :: s0_new(0:,:), s0_edge_new(0:,:)
-    type(multifab)    , intent(in   ) :: s0_old_cart
-    type(multifab)    , intent(in   ) :: s0_new_cart
-    integer           , intent(in   ) :: domlo(:),domhi(:)
-    real(kind = dp_t) , intent(in   ) :: dx(:),dt
+    integer           , intent(in   ) :: nlevs, which_step, nstart, nstop
+    type(multifab)    , intent(in   ) :: sold(:)
+    type(multifab)    , intent(inout) :: snew(:)
+    type(multifab)    , intent(in   ) :: umac(:,:)
+    real(kind=dp_t)   , intent(in   ) :: w0(:,0:)
+    type(multifab)    , intent(in   ) :: w0_cart_vec(:)
+    real(kind=dp_t)   , intent(inout) :: eta(:,0:,:)
+    type(multifab)    , intent(in   ) :: sedge(:,:)
+    type(multifab)    , intent(in   ) :: scal_force(:)
+    real(kind = dp_t) , intent(in   ) :: s0_old(:,0:,:), s0_edge_old(:,0:,:)
+    real(kind = dp_t) , intent(in   ) :: s0_new(:,0:,:), s0_edge_new(:,0:,:)
+    type(multifab)    , intent(in   ) :: s0_old_cart(:)
+    type(multifab)    , intent(in   ) :: s0_new_cart(:)
+    real(kind = dp_t) , intent(in   ) :: dx(:,:),dt
     logical           , intent(in   ) :: evolve_base_state
     
     ! local
@@ -54,61 +53,72 @@ contains
     real(kind=dp_t), pointer :: s0op(:,:,:,:)
     real(kind=dp_t), pointer :: s0np(:,:,:,:)
 
-    integer :: lo(sold%dim),hi(sold%dim)
-    integer :: i,ng,dm
+    type(box) :: domain
 
-    dm = sold%dim
-    ng = sold%ng
+    integer :: domlo(sold(1)%dim),domhi(sold(1)%dim)
+    integer :: lo(sold(1)%dim),hi(sold(1)%dim)
+    integer :: i,ng,dm,n
 
-    do i = 1, sold%nboxes
-       if ( multifab_remote(sold,i) ) cycle
-       sop => dataptr(sold,i)
-       snp => dataptr(snew,i)
-       ump => dataptr(umac(1),i)
-       vmp => dataptr(umac(2),i)
-       sepx => dataptr(sedge(1),i)
-       sepy => dataptr(sedge(2),i)
-       fp => dataptr(scal_force,i)
-       lo =  lwb(get_box(sold,i))
-       hi =  upb(get_box(sold,i))
-       select case (dm)
-       case (2)
-          call update_scal_2d(which_step, nstart, nstop, &
-                              sop(:,:,1,:), snp(:,:,1,:), &
-                              ump(:,:,1,1), vmp(:,:,1,1), w0, eta, &
-                              sepx(:,:,1,:), sepy(:,:,1,:), fp(:,:,1,:), &
-                              s0_old(:,:), s0_edge_old(:,:), &
-                              s0_new(:,:), s0_edge_new(:,:), &
-                              lo, hi, ng, dx, dt, evolve_base_state)
-       case (3)
-          wmp => dataptr(umac(3),i)
-          sepz => dataptr(sedge(3),i)
-          w0p => dataptr(w0_cart_vec,i)
-          if (spherical .eq. 0) then
-             call update_scal_3d_cart(which_step, nstart, nstop, &
-                                      sop(:,:,:,:), snp(:,:,:,:), &
-                                      ump(:,:,:,1), vmp(:,:,:,1), &
-                                      wmp(:,:,:,1), w0, eta, &
-                                      sepx(:,:,:,:), sepy(:,:,:,:), &
-                                      sepz(:,:,:,:), fp(:,:,:,:), &
-                                      s0_old(:,:), s0_edge_old(:,:), &
-                                      s0_new(:,:), s0_edge_new(:,:), &
-                                      lo, hi, ng, dx, dt, evolve_base_state)
-          else
-             s0op => dataptr(s0_old_cart, i)
-             s0np => dataptr(s0_new_cart, i)
-             call update_scal_3d_sphr(which_step, nstart, nstop, &
-                                      sop(:,:,:,:), snp(:,:,:,:), &
-                                      ump(:,:,:,1), vmp(:,:,:,1), &
-                                      wmp(:,:,:,1), w0p(:,:,:,:), &
-                                      sepx(:,:,:,:), sepy(:,:,:,:), &
-                                      sepz(:,:,:,:), fp(:,:,:,:), &
-                                      s0_old(:,:), s0_new(:,:), &
-                                      s0op(:,:,:,:), s0np(:,:,:,:), &
-                                      lo, hi, domlo, domhi, ng, dx, dt, &
-                                      evolve_base_state)
-          end if
-       end select
+    dm = sold(1)%dim
+    ng = sold(1)%ng
+
+    do n=1,nlevs
+
+       domain = layout_get_pd(sold(n)%la)
+       domlo = lwb(domain)
+       domhi = upb(domain)
+       
+       do i = 1, sold(n)%nboxes
+          if ( multifab_remote(sold(n),i) ) cycle
+          sop => dataptr(sold(n),i)
+          snp => dataptr(snew(n),i)
+          ump => dataptr(umac(n,1),i)
+          vmp => dataptr(umac(n,2),i)
+          sepx => dataptr(sedge(n,1),i)
+          sepy => dataptr(sedge(n,2),i)
+          fp => dataptr(scal_force(n),i)
+          lo =  lwb(get_box(sold(n),i))
+          hi =  upb(get_box(sold(n),i))
+          select case (dm)
+          case (2)
+             call update_scal_2d(which_step, nstart, nstop, &
+                                 sop(:,:,1,:), snp(:,:,1,:), &
+                                 ump(:,:,1,1), vmp(:,:,1,1), w0(n,:), eta(n,:,:), &
+                                 sepx(:,:,1,:), sepy(:,:,1,:), fp(:,:,1,:), &
+                                 s0_old(n,:,:), s0_edge_old(n,:,:), &
+                                 s0_new(n,:,:), s0_edge_new(n,:,:), &
+                                 lo, hi, ng, dx(n,:), dt, evolve_base_state)
+          case (3)
+             wmp => dataptr(umac(n,3),i)
+             sepz => dataptr(sedge(n,3),i)
+             w0p => dataptr(w0_cart_vec(n),i)
+             if (spherical .eq. 0) then
+                call update_scal_3d_cart(which_step, nstart, nstop, &
+                                         sop(:,:,:,:), snp(:,:,:,:), &
+                                         ump(:,:,:,1), vmp(:,:,:,1), &
+                                         wmp(:,:,:,1), w0(n,:), eta(n,:,:), &
+                                         sepx(:,:,:,:), sepy(:,:,:,:), &
+                                         sepz(:,:,:,:), fp(:,:,:,:), &
+                                         s0_old(n,:,:), s0_edge_old(n,:,:), &
+                                         s0_new(n,:,:), s0_edge_new(n,:,:), &
+                                         lo, hi, ng, dx(n,:), dt, evolve_base_state)
+             else
+                s0op => dataptr(s0_old_cart(n), i)
+                s0np => dataptr(s0_new_cart(n), i)
+                call update_scal_3d_sphr(which_step, nstart, nstop, &
+                                         sop(:,:,:,:), snp(:,:,:,:), &
+                                         ump(:,:,:,1), vmp(:,:,:,1), &
+                                         wmp(:,:,:,1), w0p(:,:,:,:), &
+                                         sepx(:,:,:,:), sepy(:,:,:,:), &
+                                         sepz(:,:,:,:), fp(:,:,:,:), &
+                                         s0_old(n,:,:), s0_new(n,:,:), &
+                                         s0op(:,:,:,:), s0np(:,:,:,:), &
+                                         lo, hi, domlo, domhi, ng, dx(n,:), dt, &
+                                         evolve_base_state)
+             end if
+          end select
+       end do
+       
     end do
 
   end subroutine update_scal

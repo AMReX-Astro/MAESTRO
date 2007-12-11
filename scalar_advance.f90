@@ -68,9 +68,6 @@ contains
     real(dp_t) :: smin,smax
 
     integer :: velpred,comp,n,dm,ng_cell    
-    integer :: domlo(sold(1)%dim),domhi(sold(1)%dim)    
-
-    type(box) :: domain
 
     logical :: is_vel
 
@@ -205,31 +202,22 @@ contains
 
     call addw0(nlevs,umac,w0,w0_cart_vec,dx,mult=-ONE)
 
+    !**************************************************************************
+    !     1) Set force for (rho X)_i at time n+1/2 = 0.
+    !     2) Update (rho X)'_i with conservative differencing.
+    !     3) Define density as the sum of the (rho X)_i
+    !**************************************************************************
+    
     do n=1,nlevs
-
-       domain = layout_get_pd(uold(n)%la)
-       domlo = lwb(domain)
-       domhi = upb(domain)
-
-       !**************************************************************************
-       !     1) Set force for (rho X)_i at time n+1/2 = 0.
-       !     2) Update (rho X)'_i with conservative differencing.
-       !     3) Define density as the sum of the (rho X)_i
-       !**************************************************************************
-
        call setval(scal_force(n),ZERO)
-
-       call update_scal(which_step,spec_comp,spec_comp+nspec-1,sold(n),snew(n),umac(n,:), &
-                        w0(n,:),w0_cart_vec(n),eta(n,:,:),sedge(n,:),scal_force(n), &
-                        s0_old(n,:,:),s0_edge_old(n,:,:),s0_new(n,:,:),s0_edge_new(n,:,:), &
-                        s0_old_cart(n),s0_new_cart(n),domlo,domhi,dx(n,:),dt, &
-                        evolve_base_state)
-
     end do
 
-    do n=1, nlevs
-
-       if (verbose .ge. 1) then
+    call update_scal(nlevs,which_step,spec_comp,spec_comp+nspec-1,sold,snew,umac,w0, &
+                     w0_cart_vec,eta,sedge,scal_force,s0_old,s0_edge_old,s0_new, &
+                     s0_edge_new,s0_old_cart,s0_new_cart,dx,dt,evolve_base_state)
+    
+    if (verbose .ge. 1) then
+       do n=1, nlevs
           do comp = spec_comp,spec_comp+nspec-1
              call multifab_div_div_c(snew(n),comp,snew(n),rho_comp,1)
              
@@ -246,36 +234,27 @@ contains
           
           if (parallel_IOProcessor()) &
                write(6,2000) smin,smax
-       end if
-    
-    end do
+       end do
+    end if
 
     !**************************************************************************
     !     2) Update tracers with convective differencing.
     !**************************************************************************
     
-    do n=1,nlevs
+    if (ntrac .ge. 1) then
+       call update_scal(nlevs,which_step,trac_comp,trac_comp+ntrac-1,sold,snew,umac,w0, &
+                        w0_cart_vec,eta,sedge,scal_force,s0_old,s0_edge_old,s0_new, &
+                        s0_edge_new,s0_old_cart,s0_new_cart,dx,dt,evolve_base_state)
 
-       domain = layout_get_pd(uold(n)%la)
-       domlo = lwb(domain)
-       domhi = upb(domain)
-
-       if (ntrac .ge. 1) then
-          call update_scal(which_step,trac_comp,trac_comp+ntrac-1,sold(n),snew(n), &
-                           umac(n,:),w0(n,:),w0_cart_vec(n),eta(n,:,:),sedge(n,:), &
-                           scal_force(n),s0_old(n,:,:),s0_edge_old(n,:,:),s0_new(n,:,:), &
-                           s0_edge_new(n,:,:),s0_old_cart(n),s0_new_cart(n),domlo,domhi, &
-                           dx(n,:),dt,evolve_base_state)
-
-          if (verbose .eq. 1) then
+       if (verbose .eq. 1) then
+          do n=1,nlevs
              smin = multifab_min_c(snew(n),trac_comp) 
              smax = multifab_max_c(snew(n),trac_comp)
              if (parallel_IOProcessor()) &
                   write(6,2003) smin,smax
-          end if
+          end do
        end if
-
-    end do
+    end if
 
     !**************************************************************************
     !     1) Create (rhoh)' force at time n+1/2.
@@ -287,47 +266,36 @@ contains
     call mkrhohforce(nlevs,scal_force,rhoh_comp,umac,p0_old,p0_new,normal,dx, &
                      mla,the_bc_level)
 
-    do n=1,nlevs
-
-       domain = layout_get_pd(uold(n)%la)
-       domlo = lwb(domain)
-       domhi = upb(domain)
-
-       call update_scal(which_step,rhoh_comp,rhoh_comp,sold(n),snew(n), &
-                        umac(n,:),w0(n,:),w0_cart_vec(n),eta(n,:,:),sedge(n,:), &
-                        scal_force(n),s0_old(n,:,:),s0_edge_old(n,:,:),s0_new(n,:,:), &
-                        s0_edge_new(n,:,:),s0_old_cart(n),s0_new_cart(n),domlo,domhi, &
-                        dx(n,:),dt,evolve_base_state)
-
-    end do
+    call update_scal(nlevs,which_step,rhoh_comp,rhoh_comp,sold,snew,umac,w0,w0_cart_vec, &
+                     eta,sedge,scal_force,s0_old,s0_edge_old,s0_new,s0_edge_new, &
+                     s0_old_cart,s0_new_cart,dx,dt,evolve_base_state)
 
     if(.not. use_thermal_diffusion) then
        call makeTfromRhoH(nlevs,snew,s0_new(:,:,temp_comp),mla,the_bc_level,dx)
     endif
 
-    do n=1,nlevs
-
-       if (verbose .eq. 1) then
+    if (verbose .eq. 1) then
+       do n=1,nlevs
           smin = multifab_min_c(snew(n),rhoh_comp) 
           smax = multifab_max_c(snew(n),rhoh_comp)
           if (parallel_IOProcessor()) then
              write(6,2001) smin,smax
              write(6,2004) 
           end if
-       end if
-
-       !**************************************************************************
-       !     Call fill_boundary for all components of snew
-       !**************************************************************************
-
+       end do
+    end if
+    
+    !**************************************************************************
+    !     Call fill_boundary for all components of snew
+    !**************************************************************************
+    
+    do n=1,nlevs
        call multifab_fill_boundary(snew(n))
        call multifab_physbc(snew(n),rho_comp,dm+rho_comp,nscal,dx(n,:),the_bc_level(n))
-
-    enddo ! do n = 1, nlevs
+    enddo
 
     do n = nlevs, 2, -1
        call ml_cc_restriction(snew(n-1),snew(n),mla%mba%rr(n-1,:))
-
        call multifab_fill_ghost_cells(snew(n),snew(n-1), &
                                       ng_cell,mla%mba%rr(n-1,:), &
                                       the_bc_level(n-1), the_bc_level(n), &
