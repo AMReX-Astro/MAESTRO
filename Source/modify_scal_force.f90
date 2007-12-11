@@ -5,6 +5,11 @@ module modify_scal_force_module
   use fill_3d_module
   use geometry
   use ml_layout_module
+  use define_bc_module
+  use variables  
+  use multifab_physbc_module
+  use ml_restriction_module
+  use multifab_fill_ghost_module
 
   implicit none
 
@@ -13,26 +18,31 @@ module modify_scal_force_module
 
 contains
 
-  subroutine modify_scal_force(n,force,s,umac,base,base_edge,w0,dx,domlo,domhi,base_cart, &
-                               start_comp,num_comp)
+  subroutine modify_scal_force(nlevs,force,s,umac,base,base_edge,w0,dx,base_cart, &
+                               start_comp,num_comp,mla,the_bc_level)
 
     ! When we write the scalar equation in perturbational and convective
     ! form, the terms other than s'_t + U.grad s' act as source terms.  Add
     ! them to the forces here.
     
-    integer        , intent(in   ) :: n
-    type(multifab) , intent(inout) :: force
-    type(multifab) , intent(in   ) :: s
-    type(multifab) , intent(in   ) :: umac(:)
-    real(kind=dp_t), intent(in   ) :: base(0:,:), base_edge(0:,:), w0(0:)
-    real(kind=dp_t), intent(in   ) :: dx(:)
-    integer        , intent(in   ) :: domlo(:),domhi(:)
-    type(multifab) , intent(in   ) :: base_cart
+    integer        , intent(in   ) :: nlevs
+    type(multifab) , intent(inout) :: force(:)
+    type(multifab) , intent(in   ) :: s(:)
+    type(multifab) , intent(in   ) :: umac(:,:)
+    real(kind=dp_t), intent(in   ) :: base(:,0:,:), base_edge(:,0:,:), w0(:,0:)
+    real(kind=dp_t), intent(in   ) :: dx(:,:)
+    type(multifab) , intent(in   ) :: base_cart(:)
+    type(ml_layout), intent(inout) :: mla
+    type(bc_level) , intent(in   ) :: the_bc_level(:)
     
     ! local
-    integer :: i,ng,dm
+    integer :: i,ng,dm,n
     integer :: comp,start_comp,num_comp
-    integer :: lo(s%dim),hi(s%dim)
+    integer :: lo(s(1)%dim),hi(s(1)%dim)
+    integer :: domlo(s(1)%dim),domhi(s(1)%dim)    
+
+    type(box) :: domain
+
     real(kind=dp_t), pointer :: fp(:,:,:,:)
     real(kind=dp_t), pointer :: sp(:,:,:,:)
     real(kind=dp_t), pointer :: ump(:,:,:,:)
@@ -40,46 +50,72 @@ contains
     real(kind=dp_t), pointer :: wmp(:,:,:,:)
     real(kind=dp_t), pointer :: bcp(:,:,:,:)
     
-    dm = s%dim
-    ng = s%ng
-    
-    do i=1,force%nboxes
-       if ( multifab_remote(force,i) ) cycle
-       fp => dataptr(force,i)
-       sp => dataptr(s,i)
-       ump => dataptr(umac(1),i)
-       vmp => dataptr(umac(2),i)
-       lo = lwb(get_box(s,i))
-       hi = upb(get_box(s,i))
-       select case (dm)
-       case (2)
-          do comp = start_comp, start_comp+num_comp-1
-             call modify_scal_force_2d(fp(:,:,1,comp),sp(:,:,1,comp), lo, hi, &
-                                       ng,ump(:,:,1,1),vmp(:,:,1,1), &
-                                       base(:,comp), base_edge(:,comp), w0, dx)
-          end do
-       case(3)
-          wmp  => dataptr(umac(3), i)
-          if (spherical .eq. 1) then
-             bcp => dataptr(base_cart, i)
+    dm = s(1)%dim
+    ng = s(1)%ng
+
+    do n=1,nlevs
+
+       domain = layout_get_pd(s(n)%la)
+       domlo = lwb(domain)
+       domhi = upb(domain)
+       
+       do i=1,force(n)%nboxes
+          if ( multifab_remote(force(n),i) ) cycle
+          fp => dataptr(force(n),i)
+          sp => dataptr(s(n),i)
+          ump => dataptr(umac(n,1),i)
+          vmp => dataptr(umac(n,2),i)
+          lo = lwb(get_box(s(n),i))
+          hi = upb(get_box(s(n),i))
+          select case (dm)
+          case (2)
              do comp = start_comp, start_comp+num_comp-1
-                call modify_scal_force_3d_sphr(n,fp(:,:,:,comp),sp(:,:,:,comp), &
-                                               lo,hi,domlo,domhi,ng, &
-                                               ump(:,:,:,1),vmp(:,:,:,1), &
-                                               wmp(:,:,:,1),bcp(:,:,:,comp), &
-                                               w0,dx)
+                call modify_scal_force_2d(fp(:,:,1,comp),sp(:,:,1,comp), lo, hi, &
+                                          ng,ump(:,:,1,1),vmp(:,:,1,1), &
+                                          base(n,:,comp),base_edge(n,:,comp),w0(n,:),dx(n,:))
              end do
-          else
-             do comp = start_comp, start_comp+num_comp-1
-                call modify_scal_force_3d_cart(fp(:,:,:,comp),sp(:,:,:,comp), &
-                                               lo,hi,ng,ump(:,:,:,1), &
-                                               vmp(:,:,:,1),wmp(:,:,:,1), &
-                                               base(:,comp),base_edge(:,comp), &
-                                               w0,dx)
-             end do
-          end if
-       end select
-    end do
+          case(3)
+             wmp  => dataptr(umac(n,3), i)
+             if (spherical .eq. 1) then
+                bcp => dataptr(base_cart(n), i)
+                do comp = start_comp, start_comp+num_comp-1
+                   call modify_scal_force_3d_sphr(n,fp(:,:,:,comp),sp(:,:,:,comp), &
+                                                  lo,hi,domlo,domhi,ng, &
+                                                  ump(:,:,:,1),vmp(:,:,:,1), &
+                                                  wmp(:,:,:,1),bcp(:,:,:,comp), &
+                                                  w0(n,:),dx(n,:))
+                end do
+             else
+                do comp = start_comp, start_comp+num_comp-1
+                   call modify_scal_force_3d_cart(fp(:,:,:,comp),sp(:,:,:,comp), &
+                                                  lo,hi,ng,ump(:,:,:,1), &
+                                                  vmp(:,:,:,1),wmp(:,:,:,1), &
+                                                  base(n,:,comp),base_edge(n,:,comp), &
+                                                  w0(n,:),dx(n,:))
+                end do
+             end if
+          end select
+       end do
+       
+       call multifab_fill_boundary_c(force(n),start_comp,num_comp)
+       
+       do comp = start_comp, start_comp+num_comp-1
+          call multifab_physbc(force(n),comp,foextrap_comp,1,dx(n,:),the_bc_level(n))
+       enddo
+       
+    enddo
+
+    do n=nlevs,2,-1
+       call ml_cc_restriction_c(force(n-1),comp,force(n),start_comp,mla%mba%rr(n-1,:), &
+                                num_comp)
+
+       do comp = start_comp, start_comp+num_comp-1
+          call multifab_fill_ghost_cells(force(n),force(n-1), &
+                                         force(n)%ng,mla%mba%rr(n-1,:), &
+                                         the_bc_level(n-1),the_bc_level(n), &
+                                         comp,foextrap_comp,1)
+       enddo
+    enddo
     
   end subroutine modify_scal_force
   

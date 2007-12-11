@@ -61,15 +61,15 @@ contains
     type(multifab), allocatable :: s0_old_cart(:)
     type(multifab), allocatable :: s0_new_cart(:)
 
-    real(kind=dp_t), allocatable :: s0_edge_old(:,:)
-    real(kind=dp_t), allocatable :: s0_edge_new(:,:)
+    real(kind=dp_t), allocatable :: s0_edge_old(:,:,:)
+    real(kind=dp_t), allocatable :: s0_edge_new(:,:,:)
 
     real(dp_t) :: smin,smax
 
-    type(box) :: domain
+    integer :: velpred,comp,n,dm,ng_cell    
+    integer :: domlo(sold(1)%dim),domhi(sold(1)%dim)    
 
-    integer :: domlo(uold(1)%dim),domhi(uold(1)%dim)
-    integer :: velpred,comp,n,dm,ng_cell
+    type(box) :: domain
 
     logical :: is_vel
 
@@ -77,8 +77,8 @@ contains
     allocate(s0_old_cart(nlevs))
     allocate(s0_new_cart(nlevs))
 
-    allocate(s0_edge_old(0:nr(nlevs),nscal))
-    allocate(s0_edge_new(0:nr(nlevs),nscal))
+    allocate(s0_edge_old(nlevs,0:nr(nlevs),nscal))
+    allocate(s0_edge_new(nlevs,0:nr(nlevs),nscal))
 
     velpred = 0    
     is_vel = .false.
@@ -86,8 +86,8 @@ contains
     dm = sold(1)%dim
 
     do n = 1, nlevs
-       call cell_to_edge_allcomps(n,s0_old(n,:,:),s0_edge_old)
-       call cell_to_edge_allcomps(n,s0_new(n,:,:),s0_edge_new)
+       call cell_to_edge_allcomps(n,s0_old(n,:,:),s0_edge_old(n,:,:))
+       call cell_to_edge_allcomps(n,s0_new(n,:,:),s0_edge_new(n,:,:))
     enddo
 
     do n = 1, nlevs
@@ -124,55 +124,48 @@ contains
 
     do n = 1, nlevs
 
-       domain = layout_get_pd(uold(n)%la)
-       domlo = lwb(domain)
-       domhi = upb(domain)
-
        ! This can be uncommented if you wish to compute T
        ! call makeTfromRhoH(sold(n),s0_old(n,:,temp_comp))
        ! call multifab_fill_boundary_c(sold(n),temp_comp,1)
        ! call multifab_physbc(sold(n),temp_comp,dm+temp_comp,1,dx(n,:),the_bc_level(n))
 
-       ! make force for species
-       call modify_scal_force(n,scal_force(n),sold(n),umac(n,:),s0_old(n,:,:),s0_edge_old, &
-                              w0(n,:),dx(n,:),domlo,domhi,s0_old_cart(n),spec_comp,nspec)
+    end do
 
-       call multifab_fill_boundary_c(scal_force(n),spec_comp,nspec)
-
-       do comp = spec_comp, spec_comp+nspec-1
-          call multifab_physbc(scal_force(n),comp,foextrap_comp,1,dx(n,:),the_bc_level(n))
-       enddo
-
-       if(use_temp_in_mkflux) then
-
+    ! make force for species
+    call modify_scal_force(nlevs,scal_force,sold,umac,s0_old,s0_edge_old,w0,dx, &
+                           s0_old_cart,spec_comp,nspec,mla,the_bc_level)
+    
+    if(use_temp_in_mkflux) then
+       do n = 1, nlevs
           ! make force for temperature
-          call mktempforce(n,scal_force(n),temp_comp,sold(n),thermal(n),p0_old(n,:),dx(n,:))
+          call mktempforce(n,scal_force(n),temp_comp,sold(n),thermal(n),p0_old(n,:), &
+                           dx(n,:))
 
           call multifab_fill_boundary_c(scal_force(n),temp_comp,1)
-
           call multifab_physbc(scal_force(n),temp_comp,foextrap_comp,1,dx(n,:), &
                                the_bc_level(n))
-       else
-
+       enddo
+    else
+       
+       do n = 1, nlevs
           ! make force for rhoh
           call mkrhohforce(n,scal_force(n),rhoh_comp,umac(n,:),p0_old(n,:),p0_old(n,:), &
                            normal(n),dx(n,:))
-
-          call modify_scal_force(n,scal_force(n),sold(n),umac(n,:),s0_old(n,:,:), &
-                                 s0_edge_old,w0(n,:),dx(n,:),domlo,domhi,s0_old_cart(n), &
-                                 rhoh_comp,1)
-          
+       enddo
+       
+       call modify_scal_force(nlevs,scal_force,sold,umac,s0_old,s0_edge_old,w0,dx, &
+                              s0_old_cart,rhoh_comp,1,mla,the_bc_level)
+       
+       do n=1,nlevs
           if(use_thermal_diffusion) then
              call multifab_plus_plus_c(scal_force(n),rhoh_comp,thermal(n),1,1)
           endif
-
+          
           call multifab_fill_boundary_c(scal_force(n),rhoh_comp,1)
-
           call multifab_physbc(scal_force(n),rhoh_comp,foextrap_comp,1,dx(n,:), &
                                the_bc_level(n))
-       endif
-
-    end do
+       enddo
+    endif
 
     !**************************************************************************
     !     Add w0 to MAC velocities (trans velocities already have w0).
@@ -210,8 +203,8 @@ contains
     do n=1,nlevs
 
        if(use_temp_in_mkflux) then
-          call makeRhoHfromT(uold(n),sedge(n,:),s0_old(n,:,:),s0_edge_old,s0_new(n,:,:), &
-                             s0_edge_new)
+          call makeRhoHfromT(uold(n),sedge(n,:),s0_old(n,:,:),s0_edge_old(n,:,:) &
+                            ,s0_new(n,:,:),s0_edge_new(n,:,:))
        endif
 
        if (.not. use_temp_in_mkflux) &
@@ -238,6 +231,10 @@ contains
 
     do n=1,nlevs
 
+       domain = layout_get_pd(uold(n)%la)
+       domlo = lwb(domain)
+       domhi = upb(domain)
+
        !**************************************************************************
        !     1) Set force for (rho X)_i at time n+1/2 = 0.
        !     2) Update (rho X)'_i with conservative differencing.
@@ -248,8 +245,9 @@ contains
 
        call update_scal(which_step,spec_comp,spec_comp+nspec-1,sold(n),snew(n),umac(n,:), &
                         w0(n,:),w0_cart_vec(n),eta(n,:,:),sedge(n,:),scal_force(n), &
-                        s0_old(n,:,:),s0_edge_old,s0_new(n,:,:),s0_edge_new,s0_old_cart(n), &
-                        s0_new_cart(n),domlo,domhi,dx(n,:),dt,evolve_base_state)
+                        s0_old(n,:,:),s0_edge_old(n,:,:),s0_new(n,:,:),s0_edge_new(n,:,:), &
+                        s0_old_cart(n),s0_new_cart(n),domlo,domhi,dx(n,:),dt, &
+                        evolve_base_state)
 
        if (verbose .ge. 1) then
           do comp = spec_comp,spec_comp+nspec-1
@@ -277,9 +275,9 @@ contains
        if (ntrac .ge. 1) then
           call update_scal(which_step,trac_comp,trac_comp+ntrac-1,sold(n),snew(n), &
                            umac(n,:),w0(n,:),w0_cart_vec(n),eta(n,:,:),sedge(n,:), &
-                           scal_force(n),s0_old(n,:,:),s0_edge_old,s0_new(n,:,:), &
-                           s0_edge_new,s0_old_cart(n),s0_new_cart(n),domlo,domhi,dx(n,:), &
-                           dt,evolve_base_state)
+                           scal_force(n),s0_old(n,:,:),s0_edge_old(n,:,:),s0_new(n,:,:), &
+                           s0_edge_new(n,:,:),s0_old_cart(n),s0_new_cart(n),domlo,domhi, &
+                           dx(n,:),dt,evolve_base_state)
 
           if (verbose .eq. 1) then
              smin = multifab_min_c(snew(n),trac_comp) 
@@ -302,9 +300,9 @@ contains
 
        call update_scal(which_step,rhoh_comp,rhoh_comp,sold(n),snew(n), &
                         umac(n,:),w0(n,:),w0_cart_vec(n),eta(n,:,:),sedge(n,:), &
-                        scal_force(n),s0_old(n,:,:),s0_edge_old,s0_new(n,:,:),s0_edge_new, &
-                        s0_old_cart(n),s0_new_cart(n),domlo,domhi,dx(n,:),dt, &
-                        evolve_base_state)
+                        scal_force(n),s0_old(n,:,:),s0_edge_old(n,:,:),s0_new(n,:,:), &
+                        s0_edge_new(n,:,:),s0_old_cart(n),s0_new_cart(n),domlo,domhi, &
+                        dx(n,:),dt,evolve_base_state)
 
        if(.not. use_thermal_diffusion) then
           call makeTfromRhoH(snew(n),s0_new(n,:,temp_comp))
