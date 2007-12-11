@@ -47,12 +47,12 @@ module advance_timestep_module
 contains
     
   subroutine advance_timestep(init_mode,mla,uold,sold,s1,s2,unew,snew,umac,uedge,sedge, &
-                              utrans,gp,p,scal_force,normal,s0_old,s0_1,s0_2,s0_new,p0_old, &
-                              p0_1,p0_2,p0_new,gam1,w0,eta,rho_omegadot1,rho_omegadot2, &
-                              rho_Hext,div_coeff_old,div_coeff_new,grav_cell_old,dx,time, &
-                              dt,dtold,the_bc_tower,anelastic_cutoff,verbose,mg_verbose, &
-                              cg_verbose,dSdt,Source_old,Source_new,gamma1_term,sponge, &
-                              do_sponge,hgrhs,istep)
+                              utrans,uflux,sflux,gp,p,scal_force,normal,s0_old,s0_1,s0_2, &
+                              s0_new,p0_old,p0_1,p0_2,p0_new,gam1,w0,eta,rho_omegadot1, &
+                              rho_omegadot2,rho_Hext,div_coeff_old,div_coeff_new, &
+                              grav_cell_old,dx,time,dt,dtold,the_bc_tower,anelastic_cutoff, &
+                              verbose,mg_verbose,cg_verbose,dSdt,Source_old,Source_new, &
+                              gamma1_term,sponge,do_sponge,hgrhs,istep)
     
     implicit none
     
@@ -68,6 +68,8 @@ contains
     type(multifab),  intent(inout) :: uedge(:,:)
     type(multifab),  intent(inout) :: sedge(:,:)
     type(multifab),  intent(inout) :: utrans(:,:)
+    type(multifab),  intent(inout) :: uflux(:,:)
+    type(multifab),  intent(inout) :: sflux(:,:)
     type(multifab),  intent(inout) :: gp(:)
     type(multifab),  intent(inout) :: p(:)
     type(multifab),  intent(inout) :: scal_force(:)
