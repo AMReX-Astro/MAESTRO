@@ -232,25 +232,29 @@ contains
 
     end do
 
-    if (verbose .ge. 1) then
-       do comp = spec_comp,spec_comp+nspec-1
-          call multifab_div_div_c(snew(n),comp,snew(n),rho_comp,1)
+    do n=1, nlevs
+
+       if (verbose .ge. 1) then
+          do comp = spec_comp,spec_comp+nspec-1
+             call multifab_div_div_c(snew(n),comp,snew(n),rho_comp,1)
+             
+             smin = multifab_min_c(snew(n),comp) 
+             smax = multifab_max_c(snew(n),comp)
+             
+             if (parallel_IOProcessor()) &
+                  write(6,2002) spec_names(comp-spec_comp+1), smin,smax
+             call multifab_mult_mult_c(snew(n),comp,snew(n),rho_comp,1)
+          end do
           
-          smin = multifab_min_c(snew(n),comp) 
-          smax = multifab_max_c(snew(n),comp)
+          smin = multifab_min_c(snew(n),rho_comp) 
+          smax = multifab_max_c(snew(n),rho_comp)
           
           if (parallel_IOProcessor()) &
-               write(6,2002) spec_names(comp-spec_comp+1), smin,smax
-          call multifab_mult_mult_c(snew(n),comp,snew(n),rho_comp,1)
-       end do
-       
-       smin = multifab_min_c(snew(n),rho_comp) 
-       smax = multifab_max_c(snew(n),rho_comp)
-       
-       if (parallel_IOProcessor()) &
-            write(6,2000) smin,smax
-    end if
+               write(6,2000) smin,smax
+       end if
     
+    end do
+
     !**************************************************************************
     !     2) Update tracers with convective differencing.
     !**************************************************************************
