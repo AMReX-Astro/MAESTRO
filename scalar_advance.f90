@@ -122,14 +122,8 @@ contains
        enddo
     end if
 
-    do n = 1, nlevs
-
-       ! This can be uncommented if you wish to compute T
-       ! call makeTfromRhoH(sold(n),s0_old(n,:,temp_comp))
-       ! call multifab_fill_boundary_c(sold(n),temp_comp,1)
-       ! call multifab_physbc(sold(n),temp_comp,dm+temp_comp,1,dx(n,:),the_bc_level(n))
-
-    end do
+    ! This can be uncommented if you wish to compute T
+    ! call makeTfromRhoH(nlevs,sold,s0_old(:,:,temp_comp),mla,the_bc_level,dx)
 
     ! make force for species
     call modify_scal_force(nlevs,scal_force,sold,umac,s0_old,s0_edge_old,w0,dx, &
@@ -305,7 +299,7 @@ contains
                         dx(n,:),dt,evolve_base_state)
 
        if(.not. use_thermal_diffusion) then
-          call makeTfromRhoH(snew(n),s0_new(n,:,temp_comp))
+          call makeTfromRhoH(nlevs,snew,s0_new(:,:,temp_comp),mla,the_bc_level,dx)
        endif
 
        if (verbose .eq. 1) then

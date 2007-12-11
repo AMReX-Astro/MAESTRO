@@ -8,6 +8,11 @@ module rhoh_vs_t_module
   use probin_module, ONLY: use_big_h
   use eos_module
   use multifab_module
+  use ml_layout_module
+  use define_bc_module
+  use multifab_physbc_module
+  use ml_restriction_module
+  use multifab_fill_ghost_module
 
   implicit none
 
@@ -19,7 +24,6 @@ contains
   
   subroutine makeRhoHfromT(u,sedge,s0_old,s0_edge_old,s0_new,s0_edge_new)
     
-    implicit none
     type(multifab) , intent(in   ) :: u
     type(multifab) , intent(inout) :: sedge(:)
     real(kind=dp_t), intent(in   ) :: s0_old(0:,:), s0_edge_old(0:,:)
@@ -55,7 +59,6 @@ contains
 
   subroutine makeRhoHfromT_2d (sx,sy,s0_old,s0_edge_old,s0_new,s0_edge_new,lo,hi)
     
-    implicit none
     integer        , intent(in   ) :: lo(:),hi(:)
     real(kind=dp_t), intent(inout) :: sx(lo(1):,lo(2):,:)
     real(kind=dp_t), intent(inout) :: sy(lo(1):,lo(2):,:)
@@ -163,7 +166,6 @@ contains
   
   subroutine makeRhoHfromT_3d (sx,sy,sz,s0_old,s0_edge_old,s0_new,s0_edge_new,lo,hi)
     
-    implicit none
     integer        , intent(in   ) :: lo(:),hi(:)
     real(kind=dp_t), intent(inout) :: sx(lo(1):,lo(2):,lo(3):,:)
     real(kind=dp_t), intent(inout) :: sy(lo(1):,lo(2):,lo(3):,:)
@@ -334,38 +336,56 @@ contains
     
   end subroutine makeRhoHfromT_3d
   
-  subroutine makeTfromRhoH(s,t0)
+  subroutine makeTfromRhoH(nlevs,s,t0,mla,the_bc_level,dx)
 
-    implicit none
-    type(multifab)    , intent(inout) :: s
-    real (kind = dp_t), intent(in   ) :: t0(0:)
+    integer           , intent(in   ) :: nlevs
+    type(multifab)    , intent(inout) :: s(:)
+    real (kind = dp_t), intent(in   ) :: t0(:,0:)
+    type(ml_layout)   , intent(inout) :: mla
+    type(bc_level)    , intent(in   ) :: the_bc_level(:)
+    real(kind=dp_t)   , intent(in   ) :: dx(:,:)
 
     ! local
-    integer                  :: i,ng,dm
-    integer                  :: lo(s%dim),hi(s%dim)
+    integer                  :: i,ng,dm,n
+    integer                  :: lo(s(1)%dim),hi(s(1)%dim)
     real(kind=dp_t), pointer :: snp(:,:,:,:)
 
-    dm = s%dim
-    ng = s%ng
+    dm = s(1)%dim
+    ng = s(1)%ng
 
-    do i=1,s%nboxes
-       if (multifab_remote(s,i)) cycle
-       snp => dataptr(s,i)
-       lo = lwb(get_box(s,i))
-       hi = upb(get_box(s,i))
-       select case (dm)
-       case (2)
-          call makeTfromRhoH_2d(snp(:,:,1,:), lo, hi, 3, t0)
-       case (3)
-          call makeTfromRhoH_3d(snp(:,:,:,:), lo, hi, 3, t0)
-       end select
+    do n=1,nlevs
+
+       do i=1,s(n)%nboxes
+          if (multifab_remote(s(n),i)) cycle
+          snp => dataptr(s(n),i)
+          lo = lwb(get_box(s(n),i))
+          hi = upb(get_box(s(n),i))
+          select case (dm)
+          case (2)
+             call makeTfromRhoH_2d(snp(:,:,1,:), lo, hi, 3, t0(n,:))
+          case (3)
+             call makeTfromRhoH_3d(snp(:,:,:,:), lo, hi, 3, t0(n,:))
+          end select
+       end do
+
+       call multifab_fill_boundary_c(s(n),temp_comp,1)
+       call multifab_physbc(s(n),temp_comp,dm+temp_comp,1,dx(n,:), &
+                            the_bc_level(n))
     end do
+
+  do n=nlevs,2,-1
+     call ml_cc_restriction_c(s(n-1),temp_comp,s(n),temp_comp,mla%mba%rr(n-1,:),1)
+     call multifab_fill_ghost_cells(s(n),s(n-1), &
+                                    ng,mla%mba%rr(n-1,:), &
+                                    the_bc_level(n-1), &
+                                    the_bc_level(n  ), &
+                                    temp_comp,dm+temp_comp,1)
+  enddo
     
   end subroutine makeTfromRhoH
 
   subroutine makeTfromRhoH_2d (state,lo,hi,ng,t0)
     
-    implicit none
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(inout) ::  state(lo(1)-ng:,lo(2)-ng:,:)
     real (kind = dp_t), intent(in   ) ::  t0(0:)
@@ -415,7 +435,6 @@ contains
 
   subroutine makeTfromRhoH_3d (state,lo,hi,ng,t0)
 
-    implicit none
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(inout) ::  state(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind = dp_t), intent(in   ) ::  t0(0:)
