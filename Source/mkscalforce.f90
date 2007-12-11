@@ -9,6 +9,10 @@ module mkscalforce_module
   use geometry
   use eos_module
   use multifab_module
+  use ml_layout_module
+  use define_bc_module
+  use ml_restriction_module
+  use multifab_fill_ghost_module
 
   implicit none
 
@@ -202,50 +206,65 @@ contains
 
   end subroutine mkrhohforce_3d_sphr
 
-  subroutine mktempforce(n,temp_force,comp,s,thermal,p0_old,dx)
+  subroutine mktempforce(nlevs,temp_force,comp,s,thermal,p0_old,dx,mla,the_bc_level)
 
-    integer        , intent(in   ) :: n
-    type(multifab) , intent(inout) :: temp_force
+    integer        , intent(in   ) :: nlevs
+    type(multifab) , intent(inout) :: temp_force(:)
     integer        , intent(in   ) :: comp
-    type(multifab) , intent(in   ) :: s
-    type(multifab) , intent(in   ) :: thermal
-    real(kind=dp_t), intent(in   ) :: p0_old(0:)
-    real(kind=dp_t), intent(in   ) :: dx(:)
+    type(multifab) , intent(in   ) :: s(:)
+    type(multifab) , intent(in   ) :: thermal(:)
+    real(kind=dp_t), intent(in   ) :: p0_old(:,0:)
+    real(kind=dp_t), intent(in   ) :: dx(:,:)
+    type(ml_layout), intent(inout) :: mla
+    type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     ! local
-    integer                  :: i,dm,ng
-    integer                  :: lo(temp_force%dim),hi(temp_force%dim)
+    integer                  :: i,dm,ng,n
+    integer                  :: lo(temp_force(1)%dim),hi(temp_force(1)%dim)
     real(kind=dp_t), pointer :: tp(:,:,:,:)
     real(kind=dp_t), pointer :: sp(:,:,:,:)
     real(kind=dp_t), pointer :: fp(:,:,:,:)
 
-    dm = temp_force%dim
-    ng = s%ng
+    dm = temp_force(1)%dim
+    ng = s(1)%ng
 
-    do i=1,temp_force%nboxes
-       if ( multifab_remote(temp_force,i) ) cycle
-       fp => dataptr(temp_force,i)
-       sp => dataptr(s, i)
-       lo = lwb(get_box(s,i))
-       hi = upb(get_box(s,i))
-       select case (dm)
-       case (2)
-          tp => dataptr(thermal,i)
-          call mktempforce_2d(fp(:,:,1,comp), sp(:,:,1,:), tp(:,:,1,1), lo, hi, &
-                              ng, p0_old)
-       case(3)
-          if (spherical .eq. 1) then
-             tp => dataptr(thermal, i)
-             call mktempforce_3d_sphr(n,fp(:,:,:,comp), sp(:,:,:,:), tp(:,:,:,1), &
-                                      lo, hi, ng, p0_old, dx)
-          else
-             tp => dataptr(thermal, i)
-             call mktempforce_3d(fp(:,:,:,comp), sp(:,:,:,:), tp(:,:,:,1), lo, hi, &
-                                 ng, p0_old)
-          end if
-       end select
-    end do
+    do n=1,nlevs
+
+       do i=1,temp_force(n)%nboxes
+          if ( multifab_remote(temp_force(n),i) ) cycle
+          fp => dataptr(temp_force(n),i)
+          sp => dataptr(s(n),i)
+          lo = lwb(get_box(s(n),i))
+          hi = upb(get_box(s(n),i))
+          tp => dataptr(thermal(n),i)
+          select case (dm)
+          case (2)
+             call mktempforce_2d(fp(:,:,1,comp), sp(:,:,1,:), tp(:,:,1,1), lo, hi, &
+                                 ng, p0_old(n,:))
+          case(3)
+             if (spherical .eq. 1) then
+                call mktempforce_3d_sphr(n,fp(:,:,:,comp), sp(:,:,:,:), tp(:,:,:,1), &
+                                         lo, hi, ng, p0_old(n,:), dx(n,:))
+             else
+                call mktempforce_3d(fp(:,:,:,comp), sp(:,:,:,:), tp(:,:,:,1), lo, hi, &
+                                    ng, p0_old(n,:))
+             end if
+          end select
+       end do
     
+       call multifab_fill_boundary_c(temp_force(n),comp,1)
+       call multifab_physbc(temp_force(n),comp,foextrap_comp,1,dx(n,:),the_bc_level(n))
+
+    end do
+
+    do n=nlevs,2,-1
+       call ml_cc_restriction_c(temp_force(n-1),comp,temp_force(n),comp,mla%mba%rr(n-1,:),1)
+       call multifab_fill_ghost_cells(temp_force(n),temp_force(n-1), &
+                                      temp_force(n)%ng,mla%mba%rr(n-1,:), &
+                                      the_bc_level(n-1),the_bc_level(n), &
+                                      comp,foextrap_comp,1)
+    enddo
+
   end subroutine mktempforce
 
   subroutine mktempforce_2d(temp_force, s, thermal, lo, hi, ng, p0)

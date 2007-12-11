@@ -130,17 +130,12 @@ contains
                            s0_old_cart,spec_comp,nspec,mla,the_bc_level)
     
     if(use_temp_in_mkflux) then
-       do n = 1, nlevs
-          ! make force for temperature
-          call mktempforce(n,scal_force(n),temp_comp,sold(n),thermal(n),p0_old(n,:), &
-                           dx(n,:))
 
-          call multifab_fill_boundary_c(scal_force(n),temp_comp,1)
-          call multifab_physbc(scal_force(n),temp_comp,foextrap_comp,1,dx(n,:), &
-                               the_bc_level(n))
-       enddo
+       ! make force for temperature
+       call mktempforce(nlevs,scal_force,temp_comp,sold,thermal,p0_old,dx,mla,the_bc_level)
+
     else
-       
+
        do n = 1, nlevs
           ! make force for rhoh
           call mkrhohforce(n,scal_force(n),rhoh_comp,umac(n,:),p0_old(n,:),p0_old(n,:), &
@@ -149,18 +144,27 @@ contains
        
        call modify_scal_force(nlevs,scal_force,sold,umac,s0_old,s0_edge_old,w0,dx, &
                               s0_old_cart,rhoh_comp,1,mla,the_bc_level)
-       
-       do n=1,nlevs
-          if(use_thermal_diffusion) then
+        
+       if(use_thermal_diffusion) then
+          do n=1,nlevs
              call multifab_plus_plus_c(scal_force(n),rhoh_comp,thermal(n),1,1)
-          endif
-          
-          call multifab_fill_boundary_c(scal_force(n),rhoh_comp,1)
-          call multifab_physbc(scal_force(n),rhoh_comp,foextrap_comp,1,dx(n,:), &
-                               the_bc_level(n))
-       enddo
-    endif
+             call multifab_fill_boundary_c(scal_force(n),rhoh_comp,1)
+             call multifab_physbc(scal_force(n),rhoh_comp,foextrap_comp,1,dx(n,:), &
+                                  the_bc_level(n))
+          enddo
 
+          do n=nlevs,2,-1
+             call ml_cc_restriction_c(scal_force(n-1),rhoh_comp,scal_force(n),rhoh_comp, &
+                                      mla%mba%rr(n-1,:),1)
+             call multifab_fill_ghost_cells(scal_force(n),scal_force(n-1), &
+                                            scal_force(n)%ng,mla%mba%rr(n-1,:), &
+                                            the_bc_level(n-1),the_bc_level(n), &
+                                            rhoh_comp,foextrap_comp,1)
+          enddo
+       endif
+
+    endif
+      
     !**************************************************************************
     !     Add w0 to MAC velocities (trans velocities already have w0).
     !**************************************************************************

@@ -106,8 +106,8 @@ contains
     enddo
 
     do n=nlevs,2,-1
-       call ml_cc_restriction_c(force(n-1),comp,force(n),start_comp,mla%mba%rr(n-1,:), &
-                                num_comp)
+       call ml_cc_restriction_c(force(n-1),start_comp,force(n),start_comp, &
+                                mla%mba%rr(n-1,:),num_comp)
 
        do comp = start_comp, start_comp+num_comp-1
           call multifab_fill_ghost_cells(force(n),force(n-1), &
