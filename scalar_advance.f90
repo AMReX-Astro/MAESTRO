@@ -156,24 +156,21 @@ contains
 
     call addw0(nlevs,umac,w0,w0_cart_vec,dx,mult=ONE)
 
-    do n = 1, nlevs
+    !**************************************************************************
+    !     Create the edge states of (rho h)' and (rho X)_i.
+    !**************************************************************************
 
-       !**************************************************************************
-       !     Create the edge states of (rho h)' and (rho X)_i.
-       !**************************************************************************
+    if (.not. use_temp_in_mkflux) then
+       call put_in_pert_form(nlevs,sold,s0_old,dx,rhoh_comp,1,.true.)
+    endif
 
-       if (.not. use_temp_in_mkflux) &
-            call put_in_pert_form(n,sold(n),s0_old(n,:,:),dx(n,:),rhoh_comp,1,.true.)
+    call put_in_pert_form(nlevs,sold,s0_old,dx,spec_comp,nspec,.true.)
 
-       call put_in_pert_form(n,sold(n),s0_old(n,:,:),dx(n,:),spec_comp,nspec,.true.)
-
-       if (use_temp_in_mkflux) then
-          comp = temp_comp
-       else
-          comp = rhoh_comp
-       end if
-
-    end do ! end loop over levels
+    if (use_temp_in_mkflux) then
+       comp = temp_comp
+    else
+       comp = rhoh_comp
+    end if
 
     ! create temperature or enthalpy edge states
     call mkflux(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0,w0_cart_vec,dx,dt,is_vel, &
@@ -190,12 +187,13 @@ contains
                             ,s0_new(n,:,:),s0_edge_new(n,:,:))
        endif
 
-       if (.not. use_temp_in_mkflux) &
-            call put_in_pert_form(n,sold(n),s0_old(n,:,:),dx(n,:),rhoh_comp,1,.false.)
-
-       call put_in_pert_form(n,sold(n),s0_old(n,:,:),dx(n,:),spec_comp,nspec,.false.)
-
     end do
+
+    if (.not. use_temp_in_mkflux) then
+       call put_in_pert_form(nlevs,sold,s0_old,dx,rhoh_comp,1,.false.)
+    endif
+    
+    call put_in_pert_form(nlevs,sold,s0_old,dx,spec_comp,nspec,.false.)
 
     !**************************************************************************
     !     Create the edge states of tracers.
