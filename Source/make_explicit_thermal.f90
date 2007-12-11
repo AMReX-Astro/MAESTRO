@@ -258,10 +258,8 @@ contains
        ! this includes periodic domain boundary conditions
        call multifab_fill_boundary(thermal(n))
 
-       ! A call to multifab_physbc for thermal (which may be used as a force in the 
-       ! Godunov step) is not required.  Even though the Godunov step 
-       ! references values of force outside of the domain, the boundary conditions
-       ! ensure that the values of force outside of the domain do not influce the result.
+       call multifab_physbc(thermal(n),1,foextrap_comp,1,dx(n,:), &
+                            the_bc_tower%bc_tower_array(n))
     enddo
 
     do n=nlevs,2,-1

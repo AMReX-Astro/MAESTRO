@@ -21,49 +21,69 @@ module mkscalforce_module
   public :: mktempforce
 contains
 
-  subroutine mkrhohforce(n,scal_force,comp,umac,p0_old,p0_new,normal,dx)
+  subroutine mkrhohforce(nlevs,scal_force,comp,umac,p0_old,p0_new,normal,dx,mla,the_bc_level)
 
-    integer        , intent(in   ) :: n
-    type(multifab) , intent(inout) :: scal_force
+    integer        , intent(in   ) :: nlevs
+    type(multifab) , intent(inout) :: scal_force(:)
     integer        , intent(in   ) :: comp
-    type(multifab) , intent(in   ) :: umac(:)
-    real(kind=dp_t), intent(in   ) :: p0_old(0:)
-    real(kind=dp_t), intent(in   ) :: p0_new(0:)
-    type(multifab) , intent(in   ) :: normal
-    real(kind=dp_t), intent(in   ) :: dx(:)
+    type(multifab) , intent(in   ) :: umac(:,:)
+    real(kind=dp_t), intent(in   ) :: p0_old(:,0:)
+    real(kind=dp_t), intent(in   ) :: p0_new(:,0:)
+    type(multifab) , intent(in   ) :: normal(:)
+    real(kind=dp_t), intent(in   ) :: dx(:,:)
+    type(ml_layout), intent(inout) :: mla
+    type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     ! local
-    integer                  :: i,dm
-    integer                  :: lo(scal_force%dim),hi(scal_force%dim)    
+    integer                  :: i,dm,n
+    integer                  :: lo(scal_force(1)%dim),hi(scal_force(1)%dim)    
     real(kind=dp_t), pointer :: ump(:,:,:,:)
     real(kind=dp_t), pointer :: vmp(:,:,:,:)
     real(kind=dp_t), pointer :: wmp(:,:,:,:)
     real(kind=dp_t), pointer :: np(:,:,:,:)
     real(kind=dp_t), pointer :: fp(:,:,:,:)
 
-    dm = scal_force%dim
+    dm = scal_force(1)%dim
       
-    do i=1,scal_force%nboxes
-       if ( multifab_remote(scal_force,i) ) cycle
-       fp => dataptr(scal_force, i)
-       ump => dataptr(umac(1),i)
-       vmp => dataptr(umac(2),i)
-       lo = lwb(get_box(scal_force,i))
-       hi = upb(get_box(scal_force,i))
-       select case (dm)
-       case (2)
-          call mkrhohforce_2d(n,fp(:,:,1,comp), vmp(:,:,1,1), lo, hi, p0_old, p0_new)
-       case(3)
-          wmp  => dataptr(umac(3), i)
-          if (spherical .eq. 0) then
-             call mkrhohforce_3d(n,fp(:,:,:,comp), wmp(:,:,:,1), lo, hi, p0_old, p0_new)
-          else
-             np => dataptr(normal, i)
-             call mkrhohforce_3d_sphr(n,fp(:,:,:,comp), &
-                                      ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
-                                      lo, hi, dx, np(:,:,:,:), p0_old, p0_new)
-          end if
-       end select
+    do n=1,nlevs
+
+       do i=1,scal_force(n)%nboxes
+          if ( multifab_remote(scal_force(n),i) ) cycle
+          fp => dataptr(scal_force(n), i)
+          ump => dataptr(umac(n,1),i)
+          vmp => dataptr(umac(n,2),i)
+          lo = lwb(get_box(scal_force(n),i))
+          hi = upb(get_box(scal_force(n),i))
+          select case (dm)
+          case (2)
+             call mkrhohforce_2d(n,fp(:,:,1,comp), vmp(:,:,1,1), lo, hi, &
+                                 p0_old(n,:), p0_new(n,:))
+          case(3)
+             wmp  => dataptr(umac(n,3), i)
+             if (spherical .eq. 0) then
+                call mkrhohforce_3d(n,fp(:,:,:,comp), wmp(:,:,:,1), lo, hi, &
+                                    p0_old(n,:), p0_new(n,:))
+             else
+                np => dataptr(normal(n), i)
+                call mkrhohforce_3d_sphr(n,fp(:,:,:,comp), &
+                                         ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
+                                         lo, hi, dx(n,:), np(:,:,:,:), &
+                                         p0_old(n,:), p0_new(n,:))
+             end if
+          end select
+       end do
+
+       call multifab_fill_boundary_c(scal_force(n),comp,1)
+       call multifab_physbc(scal_force(n),comp,foextrap_comp,1,dx(n,:),the_bc_level(n))
+
+    end do
+
+    do n=nlevs,2,-1
+       call ml_cc_restriction_c(scal_force(n-1),comp,scal_force(n),comp,mla%mba%rr(n-1,:),1)
+       call multifab_fill_ghost_cells(scal_force(n),scal_force(n-1), &
+                                      scal_force(n)%ng,mla%mba%rr(n-1,:), &
+                                      the_bc_level(n-1),the_bc_level(n), &
+                                      comp,foextrap_comp,1)      
     end do
     
   end subroutine mkrhohforce

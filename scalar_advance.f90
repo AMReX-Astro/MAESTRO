@@ -136,11 +136,9 @@ contains
 
     else
 
-       do n = 1, nlevs
-          ! make force for rhoh
-          call mkrhohforce(n,scal_force(n),rhoh_comp,umac(n,:),p0_old(n,:),p0_old(n,:), &
-                           normal(n),dx(n,:))
-       enddo
+       ! make force for rhoh
+       call mkrhohforce(nlevs,scal_force,rhoh_comp,umac,p0_old,p0_old,normal,dx, &
+                        mla,the_bc_level)
        
        call modify_scal_force(nlevs,scal_force,sold,umac,s0_old,s0_edge_old,w0,dx, &
                               s0_old_cart,rhoh_comp,1,mla,the_bc_level)
@@ -292,9 +290,12 @@ contains
        !     2) Update (rho h)' with conservative differencing.
        !**************************************************************************
 
+    end do
+       
+    call mkrhohforce(nlevs,scal_force,rhoh_comp,umac,p0_old,p0_new,normal,dx, &
+                     mla,the_bc_level)
 
-       call mkrhohforce(n,scal_force(n),rhoh_comp,umac(n,:),p0_old(n,:),p0_new(n,:), &
-                        normal(n),dx(n,:))
+    do n=1,nlevs
 
        call update_scal(which_step,rhoh_comp,rhoh_comp,sold(n),snew(n), &
                         umac(n,:),w0(n,:),w0_cart_vec(n),eta(n,:,:),sedge(n,:), &

@@ -23,7 +23,7 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine add_react_to_thermal(nlevs,thermal,rho_omegadot,s,the_bc_level,mla)
+  subroutine add_react_to_thermal(nlevs,thermal,rho_omegadot,s,the_bc_level,mla,dx)
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: thermal(:)
@@ -31,6 +31,7 @@ contains
     type(multifab) , intent(in   ) :: s(:)
     type(bc_level) , intent(in   ) :: the_bc_level(:)
     type(ml_layout), intent(inout) :: mla
+    real(kind=dp_t), intent(in   ) :: dx(:,:)
 
     ! local
     real(kind=dp_t), pointer :: sp(:,:,:,:)
@@ -61,10 +62,7 @@ contains
        ! this includes periodic domain boundary conditions
        call multifab_fill_boundary(thermal(n))
        
-       ! A call to setbc for thermal (which may be used as a force in the Godunov step)
-       ! is not required.  Even though the Godunov step 
-       ! references values of force outside of the domain, the boundary conditions
-       ! ensure that the values of force outside of the domain do not influce the result.
+       call multifab_physbc(thermal(n),1,foextrap_comp,1,dx(n,:),the_bc_level(n))
     enddo
 
     do n=nlevs,2,-1
