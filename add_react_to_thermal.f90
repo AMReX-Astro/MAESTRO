@@ -130,7 +130,7 @@ contains
     implicit none
     
     integer         , intent(in   ) :: lo(:),hi(:)
-    real (kind=dp_t), intent(inout) :: thermal(lo(1):,lo(2):,lo(3):)
+    real (kind=dp_t), intent(inout) :: thermal(lo(1)-1:,lo(2)-1:,lo(3)-1:)
     real (kind=dp_t), intent(in   ) :: rho_omegadot(lo(1):,lo(2):,lo(3):,:)
     real (kind=dp_t), intent(in   ) :: s(lo(1)-3:,lo(2)-3:,lo(3):,:)
     
