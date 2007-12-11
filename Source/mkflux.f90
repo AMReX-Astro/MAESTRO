@@ -15,23 +15,23 @@ module mkflux_module
   
 contains
 
-  subroutine mkflux(n,s,u,sedge,umac,utrans,force,w0,w0_cart_vec,dx,dt,is_vel, &
+  subroutine mkflux(nlevs,s,u,sedge,umac,utrans,force,w0,w0_cart_vec,dx,dt,is_vel, &
                     the_bc_level,velpred,start_scomp,start_bccomp,num_comp)
 
-    integer        , intent(in   ) :: n
-    type(multifab) , intent(in   ) :: s,u
-    type(multifab) , intent(inout) :: sedge(:),umac(:)
-    type(multifab) , intent(in   ) :: utrans(:),force
-    real(kind=dp_t), intent(in   ) :: w0(0:)
-    type(multifab) , intent(in   ) :: w0_cart_vec
-    real(kind=dp_t), intent(in   ) :: dx(:),dt
+    integer        , intent(in   ) :: nlevs
+    type(multifab) , intent(in   ) :: s(:),u(:)
+    type(multifab) , intent(inout) :: sedge(:,:),umac(:,:)
+    type(multifab) , intent(in   ) :: utrans(:,:),force(:)
+    real(kind=dp_t), intent(in   ) :: w0(:,0:)
+    type(multifab) , intent(in   ) :: w0_cart_vec(:)
+    real(kind=dp_t), intent(in   ) :: dx(:,:),dt
     logical        , intent(in   ) :: is_vel
-    type(bc_level) , intent(in   ) :: the_bc_level
+    type(bc_level) , intent(in   ) :: the_bc_level(:)
     integer        , intent(in   ) :: velpred,start_scomp,start_bccomp,num_comp
 
     ! local
-    integer                  :: i,scomp,bccomp,ng,dm
-    integer                  :: lo(u%dim)
+    integer                  :: i,scomp,bccomp,ng,dm,n
+    integer                  :: lo(u(1)%dim)
     real(kind=dp_t), pointer :: sop(:,:,:,:)
     real(kind=dp_t), pointer :: uop(:,:,:,:)
     real(kind=dp_t), pointer :: sepx(:,:,:,:)
@@ -46,59 +46,63 @@ contains
     real(kind=dp_t), pointer :: w0p(:,:,:,:)
     real(kind=dp_t), pointer :: fp(:,:,:,:)
 
-    dm = u%dim
-    ng = s%ng
+    dm = u(1)%dim
+    ng = s(1)%ng
     
-    do i = 1, s%nboxes
-       if ( multifab_remote(s,i) ) cycle
-       sop  => dataptr(s,i)
-       uop  => dataptr(u,i)
-       sepx => dataptr(sedge(1),i)
-       sepy => dataptr(sedge(2),i)
-       ump  => dataptr(umac(1),i)
-       vmp  => dataptr(umac(2),i)
-       utp  => dataptr(utrans(1),i)
-       vtp  => dataptr(utrans(2),i)
-       fp  => dataptr(force,i)
-       lo =  lwb(get_box(s,i))
-       select case (dm)
-       case (2)
-          do scomp = start_scomp, start_scomp + num_comp - 1
-             bccomp = start_bccomp + scomp - start_scomp
-             call mkflux_2d(n,sop(:,:,1,:), uop(:,:,1,:), &
-                            sepx(:,:,1,:), sepy(:,:,1,:), &
-                            ump(:,:,1,1), vmp(:,:,1,1), &
-                            utp(:,:,1,1), vtp(:,:,1,1), fp(:,:,1,:), w0, &
-                            lo, dx, dt, is_vel, &
-                            the_bc_level%phys_bc_level_array(i,:,:), &
-                            the_bc_level%adv_bc_level_array(i,:,:,bccomp:), &
-                            velpred, ng, scomp)
-          end do
-       case (3)
-          wmp  => dataptr(  umac(3),i)
-          wtp  => dataptr(utrans(3),i)
-          sepz => dataptr( sedge(3),i)
-          w0p  => dataptr(w0_cart_vec,i)
-          do scomp = start_scomp, start_scomp + num_comp - 1
-             bccomp = start_bccomp + scomp - start_scomp
-             call mkflux_3d(n,sop(:,:,:,:), uop(:,:,:,:), &
-                            sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
-                            ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
-                            utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), fp(:,:,:,:), &
-                            w0, w0p(:,:,:,:), &
-                            lo, dx, dt, is_vel, &
-                            the_bc_level%phys_bc_level_array(i,:,:), &
-                            the_bc_level%adv_bc_level_array(i,:,:,bccomp:), &
-                            velpred, ng, scomp)
-          end do
-       end select
-    end do
+    do n=1,nlevs
+
+       do i = 1, s(n)%nboxes
+          if ( multifab_remote(s(n),i) ) cycle
+          sop  => dataptr(s(n),i)
+          uop  => dataptr(u(n),i)
+          sepx => dataptr(sedge(n,1),i)
+          sepy => dataptr(sedge(n,2),i)
+          ump  => dataptr(umac(n,1),i)
+          vmp  => dataptr(umac(n,2),i)
+          utp  => dataptr(utrans(n,1),i)
+          vtp  => dataptr(utrans(n,2),i)
+          fp  => dataptr(force(n),i)
+          lo =  lwb(get_box(s(n),i))
+          select case (dm)
+          case (2)
+             do scomp = start_scomp, start_scomp + num_comp - 1
+                bccomp = start_bccomp + scomp - start_scomp
+                call mkflux_2d(n,sop(:,:,1,:), uop(:,:,1,:), &
+                               sepx(:,:,1,:), sepy(:,:,1,:), &
+                               ump(:,:,1,1), vmp(:,:,1,1), &
+                               utp(:,:,1,1), vtp(:,:,1,1), fp(:,:,1,:), w0(n,:), &
+                               lo, dx(n,:), dt, is_vel, &
+                               the_bc_level(n)%phys_bc_level_array(i,:,:), &
+                               the_bc_level(n)%adv_bc_level_array(i,:,:,bccomp:), &
+                               velpred, ng, scomp)
+             end do
+          case (3)
+             wmp  => dataptr(  umac(n,3),i)
+             wtp  => dataptr(utrans(n,3),i)
+             sepz => dataptr( sedge(n,3),i)
+             w0p  => dataptr(w0_cart_vec(n),i)
+             do scomp = start_scomp, start_scomp + num_comp - 1
+                bccomp = start_bccomp + scomp - start_scomp
+                call mkflux_3d(n,sop(:,:,:,:), uop(:,:,:,:), &
+                               sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
+                               ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
+                               utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), fp(:,:,:,:), &
+                               w0(n,:), w0p(:,:,:,:), &
+                               lo, dx(n,:), dt, is_vel, &
+                               the_bc_level(n)%phys_bc_level_array(i,:,:), &
+                               the_bc_level(n)%adv_bc_level_array(i,:,:,bccomp:), &
+                               velpred, ng, scomp)
+             end do
+          end select
+       end do
+
+    end do ! end loop over levels
     
   end subroutine mkflux
 
   
-  subroutine mkflux_2d(n,s,u,sedgex,sedgey,uadv,vadv,utrans,vtrans,force,w0,lo,dx,dt,is_vel, &
-                       phys_bc,adv_bc,velpred,ng,comp)
+  subroutine mkflux_2d(n,s,u,sedgex,sedgey,uadv,vadv,utrans,vtrans,force,w0,lo,dx,dt, &
+                       is_vel,phys_bc,adv_bc,velpred,ng,comp)
 
     integer        , intent(in   ) :: n,lo(:)
     real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng:,lo(2)-ng:,:)

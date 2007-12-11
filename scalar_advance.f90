@@ -100,14 +100,14 @@ contains
        call setval(s0_new_cart(n),ZERO,all=.true.)
     enddo
     
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!**************************************************************************
 !     Create scalar source term at time n for (rho X)_i and (rho H).  
 !     The source term for (rho X) is zero.
 !     The source term for (rho h) has only the w dp0/dr term.
-
+!
 !     The call to modify_scal_force is used to add those advective terms 
 !     that appear as forces when we write it in convective/perturbational form.
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!**************************************************************************
 
     ! Define s0_old_cart and s0_new_cart
     if (spherical .eq. 1) then
@@ -173,16 +173,16 @@ contains
                                the_bc_level(n))
        endif
        
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!**************************************************************************
 !     Add w0 to MAC velocities (trans velocities already have w0).
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!**************************************************************************
 
        mult = ONE
        call addw0(umac(n,:),w0(n,:),w0_cart_vec(n),dx(n,:),mult)
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!**************************************************************************
 !     Create the edge states of (rho h)' and (rho X)_i.
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!**************************************************************************
 
        if (.not. use_temp_in_mkflux) &
             call put_in_pert_form(n,sold(n),s0_old(n,:,:),dx(n,:),rhoh_comp,1,.true.)
@@ -194,17 +194,19 @@ contains
        else
           comp = rhoh_comp
        end if
+
+    end do ! end loop over levels
        
-       ! create temperature or enthalpy edge states
-       call mkflux(n,sold(n),uold(n),sedge(n,:),umac(n,:),utrans(n,:),scal_force(n), &
-                   w0(n,:),w0_cart_vec(n),dx(n,:),dt,is_vel,the_bc_level(n),velpred,comp, &
-                   dm+comp,1)
+    ! create temperature or enthalpy edge states
+    call mkflux(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0,w0_cart_vec,dx,dt,is_vel, &
+                the_bc_level,velpred,comp,dm+comp,1)
        
-       ! create species edge states
-       call mkflux(n,sold(n),uold(n),sedge(n,:),umac(n,:),utrans(n,:),scal_force(n), &
-                   w0(n,:),w0_cart_vec(n),dx(n,:),dt,is_vel,the_bc_level(n),velpred, &
-                   spec_comp,dm+spec_comp,nspec)
-       
+    ! create species edge states
+    call mkflux(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0,w0_cart_vec,dx,dt,is_vel, &
+                the_bc_level,velpred,spec_comp,dm+spec_comp,nspec)
+    
+    do n=1,nlevs
+
        if(use_temp_in_mkflux) then
           call makeRhoHfromT(uold(n),sedge(n,:),s0_old(n,:,:),s0_edge_old,s0_new(n,:,:), &
                              s0_edge_new)
@@ -214,29 +216,32 @@ contains
             call put_in_pert_form(n,sold(n),s0_old(n,:,:),dx(n,:),rhoh_comp,1,.false.)
        
        call put_in_pert_form(n,sold(n),s0_old(n,:,:),dx(n,:),spec_comp,nspec,.false.)
-       
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!     Create the edge states of tracers.
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-       if (ntrac .ge. 1) then
-          call mkflux(n,sold(n),uold(n),sedge(n,:),umac(n,:),utrans(n,:),scal_force(n), &
-                      w0(n,:),w0_cart_vec(n),dx(n,:),dt,is_vel,the_bc_level(n),velpred,&
-                      trac_comp,dm+trac_comp,ntrac)
-       end if
+    end do
+       
+!**************************************************************************
+!     Create the edge states of tracers.
+!**************************************************************************
+
+    if (ntrac .ge. 1) then
+       call mkflux(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0,w0_cart_vec,dx,dt, &
+                   is_vel,the_bc_level,velpred,trac_comp,dm+trac_comp,ntrac)
+    end if
     
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    do n=1,nlevs
+    
+!**************************************************************************
 !     Subtract w0 from MAC velocities.
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!**************************************************************************
 
        mult = -ONE
        call addw0(umac(n,:),w0(n,:),w0_cart_vec(n),dx(n,:),mult)
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!**************************************************************************
 !     1) Set force for (rho X)_i at time n+1/2 = 0.
 !     2) Update (rho X)'_i with conservative differencing.
 !     3) Define density as the sum of the (rho X)_i
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!**************************************************************************
 
        call setval(scal_force(n),ZERO)
        
@@ -264,9 +269,9 @@ contains
                write(6,2000) smin,smax
        end if
        
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!**************************************************************************
 !     2) Update tracers with convective differencing.
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!**************************************************************************
       
        if (ntrac .ge. 1) then
           call update_scal(which_step,trac_comp,trac_comp+ntrac-1,sold(n),snew(n), &
@@ -283,12 +288,12 @@ contains
           end if
        end if
        
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!**************************************************************************
 !     1) Create (rhoh)' force at time n+1/2.
 !          (NOTE: we don't worry about filling ghost cells of the scal_force
 !                 because we only need them in valid regions...)     
 !     2) Update (rho h)' with conservative differencing.
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!**************************************************************************
 
        
        call mkrhohforce(n,scal_force(n),rhoh_comp,umac(n,:),p0_old(n,:),p0_new(n,:), &
@@ -313,9 +318,9 @@ contains
           end if
        end if
       
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!**************************************************************************
 !     Call fill_boundary for all components of snew
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!**************************************************************************
        
        call multifab_fill_boundary(snew(n))
        call multifab_physbc(snew(n),rho_comp,dm+rho_comp,nscal,dx(n,:),the_bc_level(n))
