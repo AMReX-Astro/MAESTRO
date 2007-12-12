@@ -23,7 +23,7 @@ module update_scal_module
 contains
 
   subroutine update_scal(nlevs,which_step,nstart,nstop,sold,snew,umac,w0,w0_cart_vec,eta, &
-                         sedge,scal_force,s0_old,s0_edge_old,s0_new,s0_edge_new, &
+                         sedge,sflux,scal_force,s0_old,s0_edge_old,s0_new,s0_edge_new, &
                          s0_old_cart,s0_new_cart,dx,dt,evolve_base_state,the_bc_level,mla)
 
     implicit none
@@ -36,6 +36,7 @@ contains
     type(multifab)    , intent(in   ) :: w0_cart_vec(:)
     real(kind=dp_t)   , intent(inout) :: eta(:,0:,:)
     type(multifab)    , intent(in   ) :: sedge(:,:)
+    type(multifab)    , intent(in   ) :: sflux(:,:)
     type(multifab)    , intent(in   ) :: scal_force(:)
     real(kind = dp_t) , intent(in   ) :: s0_old(:,0:,:), s0_edge_old(:,0:,:)
     real(kind = dp_t) , intent(in   ) :: s0_new(:,0:,:), s0_edge_new(:,0:,:)
@@ -55,6 +56,9 @@ contains
     real(kind=dp_t), pointer :: sepx(:,:,:,:)
     real(kind=dp_t), pointer :: sepy(:,:,:,:)
     real(kind=dp_t), pointer :: sepz(:,:,:,:)
+    real(kind=dp_t), pointer :: sfpx(:,:,:,:)
+    real(kind=dp_t), pointer :: sfpy(:,:,:,:)
+    real(kind=dp_t), pointer :: sfpz(:,:,:,:)
     real(kind=dp_t), pointer :: fp(:,:,:,:)
     real(kind=dp_t), pointer :: w0p(:,:,:,:)
     real(kind=dp_t), pointer :: s0op(:,:,:,:)
@@ -83,6 +87,8 @@ contains
           vmp => dataptr(umac(n,2),i)
           sepx => dataptr(sedge(n,1),i)
           sepy => dataptr(sedge(n,2),i)
+          sfpx => dataptr(sflux(n,1),i)
+          sfpy => dataptr(sflux(n,2),i)
           fp => dataptr(scal_force(n),i)
           lo =  lwb(get_box(sold(n),i))
           hi =  upb(get_box(sold(n),i))
@@ -90,22 +96,27 @@ contains
           case (2)
              call update_scal_2d(which_step, nstart, nstop, &
                                  sop(:,:,1,:), snp(:,:,1,:), &
-                                 ump(:,:,1,1), vmp(:,:,1,1), w0(n,:), eta(n,:,:), &
-                                 sepx(:,:,1,:), sepy(:,:,1,:), fp(:,:,1,:), &
+                                 ump(:,:,1,1), vmp(:,:,1,1), &
+                                 w0(n,:), eta(n,:,:), &
+                                 sepx(:,:,1,:), sepy(:,:,1,:), &
+                                 sfpx(:,:,1,:), sfpy(:,:,1,:), &
+                                 fp(:,:,1,:), &
                                  s0_old(n,:,:), s0_edge_old(n,:,:), &
                                  s0_new(n,:,:), s0_edge_new(n,:,:), &
                                  lo, hi, ng, dx(n,:), dt, evolve_base_state)
           case (3)
              wmp => dataptr(umac(n,3),i)
              sepz => dataptr(sedge(n,3),i)
+             sfpz => dataptr(sflux(n,3),i)
              w0p => dataptr(w0_cart_vec(n),i)
              if (spherical .eq. 0) then
                 call update_scal_3d_cart(which_step, nstart, nstop, &
                                          sop(:,:,:,:), snp(:,:,:,:), &
-                                         ump(:,:,:,1), vmp(:,:,:,1), &
-                                         wmp(:,:,:,1), w0(n,:), eta(n,:,:), &
-                                         sepx(:,:,:,:), sepy(:,:,:,:), &
-                                         sepz(:,:,:,:), fp(:,:,:,:), &
+                                         ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
+                                         w0(n,:), eta(n,:,:), &
+                                         sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
+                                         sfpx(:,:,:,:), sfpy(:,:,:,:), sfpz(:,:,:,:), &
+                                         fp(:,:,:,:), &
                                          s0_old(n,:,:), s0_edge_old(n,:,:), &
                                          s0_new(n,:,:), s0_edge_new(n,:,:), &
                                          lo, hi, ng, dx(n,:), dt, evolve_base_state)
@@ -114,10 +125,11 @@ contains
                 s0np => dataptr(s0_new_cart(n), i)
                 call update_scal_3d_sphr(which_step, nstart, nstop, &
                                          sop(:,:,:,:), snp(:,:,:,:), &
-                                         ump(:,:,:,1), vmp(:,:,:,1), &
-                                         wmp(:,:,:,1), w0p(:,:,:,:), &
-                                         sepx(:,:,:,:), sepy(:,:,:,:), &
-                                         sepz(:,:,:,:), fp(:,:,:,:), &
+                                         ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
+                                         w0p(:,:,:,:), &
+                                         sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
+                                         sfpx(:,:,:,:), sfpy(:,:,:,:), sfpz(:,:,:,:), &
+                                         fp(:,:,:,:), &
                                          s0_old(n,:,:), s0_new(n,:,:), &
                                          s0op(:,:,:,:), s0np(:,:,:,:), &
                                          lo, hi, domlo, domhi, ng, dx(n,:), dt, &
@@ -156,7 +168,7 @@ contains
   end subroutine update_scal
   
   subroutine update_scal_2d(which_step,nstart,nstop,sold,snew,umac,vmac,w0,eta, &
-                            sedgex,sedgey,force,base_old,base_old_edge, &
+                            sedgex,sedgey,sfluxx,sfluxy,force,base_old,base_old_edge, &
                             base_new,base_new_edge,lo,hi,ng,dx,dt,evolve_base_state)
 
     ! update each scalar in time.  Here, it is assumed that the edge
@@ -171,6 +183,8 @@ contains
     real (kind = dp_t), intent(in   ) ::    vmac(lo(1)- 1:,lo(2)- 1:)
     real (kind = dp_t), intent(in   ) ::  sedgex(lo(1)   :,lo(2)   :,:)
     real (kind = dp_t), intent(in   ) ::  sedgey(lo(1)   :,lo(2)   :,:)
+    real (kind = dp_t), intent(in   ) ::  sfluxx(lo(1)   :,lo(2)   :,:)
+    real (kind = dp_t), intent(in   ) ::  sfluxy(lo(1)   :,lo(2)   :,:)
     real (kind = dp_t), intent(in   ) ::   force(lo(1)- 1:,lo(2)- 1:,:)
     real (kind = dp_t), intent(in   ) ::   base_old(0:,:), base_old_edge(0:,:)
     real (kind = dp_t), intent(in   ) ::   base_new(0:,:), base_new_edge(0:,:)
@@ -299,8 +313,9 @@ contains
   end subroutine update_scal_2d
   
   subroutine update_scal_3d_cart(which_step,nstart,nstop,sold,snew,umac,vmac,wmac,w0, &
-                                 eta,sedgex,sedgey,sedgez,force,base_old,base_old_edge, &
-                                 base_new,base_new_edge,lo,hi,ng,dx,dt,evolve_base_state)
+                                 eta,sedgex,sedgey,sedgez,sfluxx,sfluxy,sfluxz,force, &
+                                 base_old,base_old_edge,base_new,base_new_edge,lo,hi, &
+                                 ng,dx,dt,evolve_base_state)
     
     implicit none
     
@@ -313,6 +328,9 @@ contains
     real (kind = dp_t), intent(in   ) ::  sedgex(lo(1)   :,lo(2)   :,lo(3)   :,:)
     real (kind = dp_t), intent(in   ) ::  sedgey(lo(1)   :,lo(2)   :,lo(3)   :,:)
     real (kind = dp_t), intent(in   ) ::  sedgez(lo(1)   :,lo(2)   :,lo(3)   :,:)
+    real (kind = dp_t), intent(in   ) ::  sfluxx(lo(1)   :,lo(2)   :,lo(3)   :,:)
+    real (kind = dp_t), intent(in   ) ::  sfluxy(lo(1)   :,lo(2)   :,lo(3)   :,:)
+    real (kind = dp_t), intent(in   ) ::  sfluxz(lo(1)   :,lo(2)   :,lo(3)   :,:)
     real (kind = dp_t), intent(in   ) ::   force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
     real (kind = dp_t), intent(in   ) ::   base_old(0:,:), base_old_edge(0:,:)
     real (kind = dp_t), intent(in   ) ::   base_new(0:,:), base_new_edge(0:,:)
@@ -442,9 +460,9 @@ contains
   end subroutine update_scal_3d_cart
 
   subroutine update_scal_3d_sphr(which_step,nstart,nstop,sold,snew,umac,vmac,wmac, &
-                                 w0_cart,sedgex,sedgey,sedgez,force,base_old,base_new, &
-                                 base_old_cart,base_new_cart,lo,hi,domlo,domhi,ng,dx,dt, &
-                                 evolve_base_state)
+                                 w0_cart,sedgex,sedgey,sedgez,sfluxx,sfluxy,sfluxz, &
+                                 force,base_old,base_new,base_old_cart,base_new_cart, &
+                                 lo,hi,domlo,domhi,ng,dx,dt,evolve_base_state)
     
     implicit none
     
@@ -458,6 +476,9 @@ contains
     real (kind = dp_t), intent(in   ) ::  sedgex(lo(1)   :,lo(2)   :,lo(3)   :,:)
     real (kind = dp_t), intent(in   ) ::  sedgey(lo(1)   :,lo(2)   :,lo(3)   :,:)
     real (kind = dp_t), intent(in   ) ::  sedgez(lo(1)   :,lo(2)   :,lo(3)   :,:)
+    real (kind = dp_t), intent(in   ) ::  sfluxx(lo(1)   :,lo(2)   :,lo(3)   :,:)
+    real (kind = dp_t), intent(in   ) ::  sfluxy(lo(1)   :,lo(2)   :,lo(3)   :,:)
+    real (kind = dp_t), intent(in   ) ::  sfluxz(lo(1)   :,lo(2)   :,lo(3)   :,:)
     real (kind = dp_t), intent(in   ) ::   force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
     real (kind = dp_t), intent(in   ) ::   base_old(0:,:)
     real (kind = dp_t), intent(in   ) ::   base_new(0:,:)

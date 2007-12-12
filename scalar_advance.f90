@@ -28,7 +28,7 @@ module scalar_advance_module
 contains
 
   subroutine scalar_advance(nlevs,mla,which_step,uold,sold,snew,thermal,umac,w0, &
-                            w0_cart_vec,eta,sedge,utrans,ext_scal_force,normal, &
+                            w0_cart_vec,eta,sedge,sflux,utrans,ext_scal_force,normal, &
                             s0_old,s0_new,p0_old,p0_new,dx,dt,the_bc_level,verbose)
 
     integer        , intent(in   ) :: nlevs
@@ -43,6 +43,7 @@ contains
     type(multifab) , intent(in   ) :: w0_cart_vec(:)
     real(kind=dp_t), intent(inout) :: eta(:,0:,:)
     type(multifab) , intent(inout) :: sedge(:,:)
+    type(multifab) , intent(inout) :: sflux(:,:)
     type(multifab) , intent(inout) :: utrans(:,:)
     type(multifab) , intent(inout) :: ext_scal_force(:)
     type(multifab) , intent(in   ) :: normal(:)
@@ -167,12 +168,12 @@ contains
     end if
 
     ! create temperature or enthalpy edge states
-    call mkflux(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0,w0_cart_vec,dx,dt,is_vel, &
-                the_bc_level,velpred,comp,dm+comp,1)
+    call mkflux(nlevs,sold,uold,sedge,sflux,umac,utrans,scal_force,w0,w0_cart_vec,dx,dt, &
+                is_vel,the_bc_level,velpred,comp,dm+comp,1)
 
     ! create species edge states
-    call mkflux(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0,w0_cart_vec,dx,dt,is_vel, &
-                the_bc_level,velpred,spec_comp,dm+spec_comp,nspec)
+    call mkflux(nlevs,sold,uold,sedge,sflux,umac,utrans,scal_force,w0,w0_cart_vec,dx,dt, &
+                is_vel,the_bc_level,velpred,spec_comp,dm+spec_comp,nspec)
 
     if(use_temp_in_mkflux) then
        call makeRhoHfromT(nlevs,uold,sedge,s0_old,s0_edge_old,s0_new,s0_edge_new)
@@ -189,7 +190,7 @@ contains
     !**************************************************************************
 
     if (ntrac .ge. 1) then
-       call mkflux(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0,w0_cart_vec,dx,dt, &
+       call mkflux(nlevs,sold,uold,sedge,sflux,umac,utrans,scal_force,w0,w0_cart_vec,dx,dt, &
                    is_vel,the_bc_level,velpred,trac_comp,dm+trac_comp,ntrac)
     end if
 
@@ -210,7 +211,7 @@ contains
     end do
 
     call update_scal(nlevs,which_step,spec_comp,spec_comp+nspec-1,sold,snew,umac,w0, &
-                     w0_cart_vec,eta,sedge,scal_force,s0_old,s0_edge_old,s0_new, &
+                     w0_cart_vec,eta,sedge,sflux,scal_force,s0_old,s0_edge_old,s0_new, &
                      s0_edge_new,s0_old_cart,s0_new_cart,dx,dt,evolve_base_state, &
                      the_bc_level,mla)
     
@@ -241,7 +242,7 @@ contains
     
     if (ntrac .ge. 1) then
        call update_scal(nlevs,which_step,trac_comp,trac_comp+ntrac-1,sold,snew,umac,w0, &
-                        w0_cart_vec,eta,sedge,scal_force,s0_old,s0_edge_old,s0_new, &
+                        w0_cart_vec,eta,sedge,sflux,scal_force,s0_old,s0_edge_old,s0_new, &
                         s0_edge_new,s0_old_cart,s0_new_cart,dx,dt,evolve_base_state, &
                         the_bc_level,mla)
 
@@ -266,7 +267,7 @@ contains
                      mla,the_bc_level)
 
     call update_scal(nlevs,which_step,rhoh_comp,rhoh_comp,sold,snew,umac,w0,w0_cart_vec, &
-                     eta,sedge,scal_force,s0_old,s0_edge_old,s0_new,s0_edge_new, &
+                     eta,sedge,sflux,scal_force,s0_old,s0_edge_old,s0_new,s0_edge_new, &
                      s0_old_cart,s0_new_cart,dx,dt,evolve_base_state,the_bc_level,mla)
 
     if(.not. use_thermal_diffusion) then

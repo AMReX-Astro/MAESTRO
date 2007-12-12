@@ -242,7 +242,7 @@ contains
        write(6,*) '<<< STEP  2 : create MAC velocities>>> '
     end if
     
-    call advance_premac(nlevs,uold,sold,umac,uedge,utrans,gp,normal,w0,w0_cart_vec, &
+    call advance_premac(nlevs,uold,sold,umac,uedge,utrans,uflux,gp,normal,w0,w0_cart_vec, &
                         s0_old,grav_cell_old,dx,dt,the_bc_tower%bc_tower_array,mla)
     
     call make_macrhs(nlevs,macrhs,Source_nph,gamma1_term,Sbar(:,:,1),div_coeff_old,dx)
@@ -331,7 +331,7 @@ contains
     endif
     
     call scalar_advance(nlevs,mla,1,uold,s1,s2,thermal,umac,w0,w0_cart_vec,eta, &
-                        sedge,utrans,scal_force,normal,s0_1,s0_2, &
+                        sedge,sflux,utrans,scal_force,normal,s0_1,s0_2, &
                         p0_1,p0_2,dx,dt,the_bc_tower%bc_tower_array,verbose)
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -452,8 +452,9 @@ contains
           write(6,*) '<<< STEP  7 : create MAC velocities >>> '
        end if
        
-       call advance_premac(nlevs,uold,sold,umac,uedge,utrans,gp,normal,w0,w0_cart_vec, &
-                           s0_old,grav_cell_old,dx,dt,the_bc_tower%bc_tower_array,mla)
+       call advance_premac(nlevs,uold,sold,umac,uedge,utrans,uflux,gp,normal,w0, &
+                           w0_cart_vec,s0_old,grav_cell_old,dx,dt, &
+                           the_bc_tower%bc_tower_array,mla)
        
        call make_macrhs(nlevs,macrhs,Source_nph,gamma1_term,Sbar(:,:,1),div_coeff_nph,dx)
        
@@ -509,7 +510,7 @@ contains
        endif
        
        call scalar_advance(nlevs,mla,2,uold,s1,s2,thermal,umac,w0,w0_cart_vec,eta, &
-                           sedge,utrans,scal_force,normal,s0_1,s0_2, &
+                           sedge,sflux,utrans,scal_force,normal,s0_1,s0_2, &
                            p0_1,p0_2,dx,dt,the_bc_tower%bc_tower_array,verbose)
        
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -599,10 +600,10 @@ contains
     call make_at_halftime(nlevs,rhohalf,sold,snew,rho_comp,1,dx, &
                           the_bc_tower%bc_tower_array,mla)
     
-    call velocity_advance(nlevs,mla,uold,unew,sold,rhohalf,umac,uedge,utrans,gp,normal,w0, &
-                          w0_cart_vec,w0_force,w0_force_cart_vec,s0_old,grav_cell_old, &
-                          s0_nph,grav_cell_nph,dx,dt,the_bc_tower%bc_tower_array, &
-                          sponge,do_sponge,verbose)
+    call velocity_advance(nlevs,mla,uold,unew,sold,rhohalf,umac,uedge,utrans,uflux,gp, &
+                          normal,w0,w0_cart_vec,w0_force,w0_force_cart_vec,s0_old, &
+                          grav_cell_old,s0_nph,grav_cell_nph,dx,dt, &
+                          the_bc_tower%bc_tower_array,sponge,do_sponge,verbose)
     
     ! Define beta at half time using the div_coeff_new from step 9!
     do n=1,nlevs
