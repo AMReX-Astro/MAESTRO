@@ -9,6 +9,11 @@ module update_scal_module
   use variables
   use network
   use probin_module, ONLY: evolve_base_state
+  use define_bc_module
+  use ml_layout_module
+  use multifab_physbc_module
+  use ml_restriction_module
+  use multifab_fill_ghost_module
 
   implicit none
 
@@ -19,7 +24,7 @@ contains
 
   subroutine update_scal(nlevs,which_step,nstart,nstop,sold,snew,umac,w0,w0_cart_vec,eta, &
                          sedge,scal_force,s0_old,s0_edge_old,s0_new,s0_edge_new, &
-                         s0_old_cart,s0_new_cart,dx,dt,evolve_base_state)
+                         s0_old_cart,s0_new_cart,dx,dt,evolve_base_state,the_bc_level,mla)
 
     implicit none
 
@@ -38,6 +43,8 @@ contains
     type(multifab)    , intent(in   ) :: s0_new_cart(:)
     real(kind = dp_t) , intent(in   ) :: dx(:,:),dt
     logical           , intent(in   ) :: evolve_base_state
+    type(bc_level)    , intent(in   ) :: the_bc_level(:)
+    type(ml_layout)   , intent(inout) :: mla
     
     ! local
     real(kind=dp_t), pointer :: sop(:,:,:,:)
@@ -119,7 +126,32 @@ contains
           end select
        end do
        
+       call multifab_fill_boundary_c(snew(n),nstart,nstop-nstart+1)
+       call multifab_physbc(snew(n),nstart,dm+nstart,nstop-nstart+1,dx(n,:), &
+                            the_bc_level(n))
+
+       if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
+          call multifab_fill_boundary_c(snew(n),rho_comp,1)
+          call multifab_physbc(snew(n),rho_comp,dm+rho_comp,1,dx(n,:),the_bc_level(n))
+       endif
+
     end do
+
+    do n=nlevs,2,-1
+       call ml_cc_restriction_c(snew(n-1),nstart,snew(n),nstart,mla%mba%rr(n-1,:), &
+                                nstop-nstart+1)
+       call multifab_fill_ghost_cells(snew(n),snew(n-1),ng,mla%mba%rr(n-1,:), &
+                                      the_bc_level(n-1),the_bc_level(n  ), &
+                                      nstart,dm+nstart,nstop-nstart+1)
+
+       if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
+          call ml_cc_restriction_c(snew(n-1),rho_comp,snew(n),rho_comp,mla%mba%rr(n-1,:),1)
+          call multifab_fill_ghost_cells(snew(n),snew(n-1), &
+                                         ng,mla%mba%rr(n-1,:), &
+                                         the_bc_level(n-1), the_bc_level(n), &
+                                         rho_comp,dm+rho_comp,1)
+       endif
+    enddo
 
   end subroutine update_scal
   

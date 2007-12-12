@@ -8,7 +8,6 @@ module scalar_advance_module
   use update_scal_module
   use addw0_module
   use define_bc_module
-  use multifab_physbc_module
   use fill_3d_module
   use pert_form_module
   use cell_to_edge_module
@@ -17,9 +16,7 @@ module scalar_advance_module
   use geometry
   use network
   use probin_module, ONLY: use_temp_in_mkflux, use_thermal_diffusion, evolve_base_state
-  use ml_restriction_module
   use ml_layout_module
-  use multifab_fill_ghost_module
   use modify_scal_force_module
   use add_thermal_to_force_module
 
@@ -214,7 +211,8 @@ contains
 
     call update_scal(nlevs,which_step,spec_comp,spec_comp+nspec-1,sold,snew,umac,w0, &
                      w0_cart_vec,eta,sedge,scal_force,s0_old,s0_edge_old,s0_new, &
-                     s0_edge_new,s0_old_cart,s0_new_cart,dx,dt,evolve_base_state)
+                     s0_edge_new,s0_old_cart,s0_new_cart,dx,dt,evolve_base_state, &
+                     the_bc_level,mla)
     
     if (verbose .ge. 1) then
        do n=1, nlevs
@@ -244,7 +242,8 @@ contains
     if (ntrac .ge. 1) then
        call update_scal(nlevs,which_step,trac_comp,trac_comp+ntrac-1,sold,snew,umac,w0, &
                         w0_cart_vec,eta,sedge,scal_force,s0_old,s0_edge_old,s0_new, &
-                        s0_edge_new,s0_old_cart,s0_new_cart,dx,dt,evolve_base_state)
+                        s0_edge_new,s0_old_cart,s0_new_cart,dx,dt,evolve_base_state, &
+                        the_bc_level,mla)
 
        if (verbose .eq. 1) then
           do n=1,nlevs
@@ -268,7 +267,7 @@ contains
 
     call update_scal(nlevs,which_step,rhoh_comp,rhoh_comp,sold,snew,umac,w0,w0_cart_vec, &
                      eta,sedge,scal_force,s0_old,s0_edge_old,s0_new,s0_edge_new, &
-                     s0_old_cart,s0_new_cart,dx,dt,evolve_base_state)
+                     s0_old_cart,s0_new_cart,dx,dt,evolve_base_state,the_bc_level,mla)
 
     if(.not. use_thermal_diffusion) then
        call makeTfromRhoH(nlevs,snew,s0_new(:,:,temp_comp),mla,the_bc_level,dx)
@@ -284,23 +283,6 @@ contains
           end if
        end do
     end if
-    
-    !**************************************************************************
-    !     Call fill_boundary for all components of snew
-    !**************************************************************************
-    
-    do n=1,nlevs
-       call multifab_fill_boundary(snew(n))
-       call multifab_physbc(snew(n),rho_comp,dm+rho_comp,nscal,dx(n,:),the_bc_level(n))
-    enddo
-
-    do n = nlevs, 2, -1
-       call ml_cc_restriction(snew(n-1),snew(n),mla%mba%rr(n-1,:))
-       call multifab_fill_ghost_cells(snew(n),snew(n-1), &
-                                      ng_cell,mla%mba%rr(n-1,:), &
-                                      the_bc_level(n-1), the_bc_level(n), &
-                                      1,dm+rho_comp,nscal)
-    end do
 
     do n = 1,nlevs
        call multifab_destroy(scal_force(n))
