@@ -2,7 +2,7 @@
    corrections.  
 
 -- deal with the comment "! NOTE NOTE : THIS IS WRONG FOR SPHERICAL !!"
-   in mkflux.f90
+   in make_edge_state.f90
 
 -- make a runtime diagnostic that prints <q> and q_rms for temperature,
    energy generation, and velocity as a function of radius.

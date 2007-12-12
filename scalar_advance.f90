@@ -15,7 +15,7 @@ module scalar_advance_module
   use variables
   use geometry
   use network
-  use probin_module, ONLY: use_temp_in_mkflux, use_thermal_diffusion, evolve_base_state
+  use probin_module, ONLY: predict_temp_at_edges, use_thermal_diffusion, evolve_base_state
   use ml_layout_module
   use modify_scal_force_module
   use add_thermal_to_force_module
@@ -125,7 +125,7 @@ contains
     call modify_scal_force(nlevs,scal_force,sold,umac,s0_old,s0_edge_old,w0,dx, &
                            s0_old_cart,spec_comp,nspec,mla,the_bc_level)
     
-    if(use_temp_in_mkflux) then
+    if(predict_temp_at_edges) then
 
        ! make force for temperature
        call mktempforce(nlevs,scal_force,temp_comp,sold,thermal,p0_old,dx,mla,the_bc_level)
@@ -155,13 +155,13 @@ contains
     !     Create the edge states of (rho h)' and (rho X)_i.
     !**************************************************************************
 
-    if (.not. use_temp_in_mkflux) then
+    if (.not. predict_temp_at_edges) then
        call put_in_pert_form(nlevs,sold,s0_old,dx,rhoh_comp,1,.true.)
     endif
 
     call put_in_pert_form(nlevs,sold,s0_old,dx,spec_comp,nspec,.true.)
 
-    if (use_temp_in_mkflux) then
+    if (predict_temp_at_edges) then
        comp = temp_comp
     else
        comp = rhoh_comp
@@ -176,11 +176,11 @@ contains
                          w0_cart_vec,dx,dt,is_vel,the_bc_level,velpred,spec_comp, &
                          dm+spec_comp,nspec)
 
-    if(use_temp_in_mkflux) then
+    if(predict_temp_at_edges) then
        call makeRhoHfromT(nlevs,uold,sedge,s0_old,s0_edge_old,s0_new,s0_edge_new)
     endif
 
-    if (.not. use_temp_in_mkflux) then
+    if (.not. predict_temp_at_edges) then
        call put_in_pert_form(nlevs,sold,s0_old,dx,rhoh_comp,1,.false.)
     endif
     

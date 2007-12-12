@@ -39,7 +39,7 @@
 
  use_thermal_diffusion = T
  temp_diffusion_formulation = F
- use_temp_in_mkflux = T
+ predict_temp_at_edges = T
  do_half_alg = F
 
  use_big_h = F
