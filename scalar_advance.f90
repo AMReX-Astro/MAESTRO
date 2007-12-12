@@ -153,7 +153,7 @@ contains
     call addw0(nlevs,umac,w0,w0_cart_vec,dx,mult=ONE)
 
     !**************************************************************************
-    !     Create the edge states of (rho h)' and (rho X)_i.
+    !     Create the edge states of (rho h)' (or T) and (rho X)_i.
     !**************************************************************************
 
     if (.not. predict_temp_at_edges) then
@@ -182,14 +182,6 @@ contains
        call makeRhoHfromT(nlevs,uold,sedge,s0_old,s0_edge_old,s0_new,s0_edge_new)
     endif
 
-    ! compute enthalpy fluxes
-    call mkflux(nlevs,sflux,sold,sedge,umac,w0,w0_cart_vec,s0_old,s0_edge_old, &
-                s0_new,s0_edge_new,rhoh_comp,rhoh_comp,which_step,dx,mla)
-
-    ! compute species fluxes
-    call mkflux(nlevs,sflux,sold,sedge,umac,w0,w0_cart_vec,s0_old,s0_edge_old, &
-                s0_new,s0_edge_new,spec_comp,spec_comp+nspec-1,which_step,dx,mla)
-
     if (.not. predict_temp_at_edges) then
        call put_in_pert_form(nlevs,sold,s0_old,dx,rhoh_comp,1,.false.)
     endif
@@ -204,10 +196,6 @@ contains
        call make_edge_state(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0, &
                             w0_cart_vec,dx,dt,is_vel,the_bc_level,velpred,trac_comp, &
                             dm+trac_comp,ntrac)
-
-       ! compute tracer fluxes
-       call mkflux(nlevs,sflux,sold,sedge,umac,w0,w0_cart_vec,s0_old,s0_edge_old, &
-                   s0_new,s0_edge_new,trac_comp,trac_comp+ntrac-1,which_step,dx,mla)
     end if
 
     !**************************************************************************
@@ -215,6 +203,24 @@ contains
     !**************************************************************************
 
     call addw0(nlevs,umac,w0,w0_cart_vec,dx,mult=-ONE)
+
+    !**************************************************************************
+    !     Compute fluxes
+    !**************************************************************************
+
+    ! compute enthalpy fluxes
+    call mkflux(nlevs,sflux,sold,sedge,umac,w0,w0_cart_vec,s0_old,s0_edge_old, &
+                s0_new,s0_edge_new,rhoh_comp,rhoh_comp,which_step,dx,mla)
+
+    ! compute species fluxes
+    call mkflux(nlevs,sflux,sold,sedge,umac,w0,w0_cart_vec,s0_old,s0_edge_old, &
+                s0_new,s0_edge_new,spec_comp,spec_comp+nspec-1,which_step,dx,mla)
+
+    if (ntrac .ge. 1) then
+       ! compute tracer fluxes
+       call mkflux(nlevs,sflux,sold,sedge,umac,w0,w0_cart_vec,s0_old,s0_edge_old, &
+                   s0_new,s0_edge_new,trac_comp,trac_comp+ntrac-1,which_step,dx,mla)
+    end if
 
     !**************************************************************************
     !     1) Set force for (rho X)_i at time n+1/2 = 0.
