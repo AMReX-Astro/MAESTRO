@@ -206,7 +206,6 @@ contains
              do j = lo(2), hi(2)+1
                 do i = lo(1), hi(1)
                    eta(j,comp) = eta(j,comp) + vmac(i,j)*sedgey(i,j,comp)
-                   ! eta(j,comp) = 0.d0
                 end do
                 eta(j,comp) = eta(j,comp) * fac
              end do
@@ -332,19 +331,20 @@ contains
 
     fac = ONE / dble( (hi(1)-lo(1)+1)*(hi(2)-lo(2)+1) )
 
-    if (which_step .eq. 1) then
-       do comp = nstart, nstop
-          do k = lo(3), hi(3)+1
-             eta(k,comp) = ZERO
-             do j = lo(2), hi(2)
-                do i = lo(1), hi(1)
-                   ! eta(k,comp) = eta(k,comp) + wmac(i,j,k)*sedgez(i,j,k,comp)
-                   eta(k,comp) = 0.d0
+    if (evolve_base_state) then
+       if (which_step .eq. 1) then
+          do comp = nstart, nstop
+             eta(:,comp) = ZERO
+             do k = lo(3), hi(3)+1
+                do j = lo(2), hi(2)
+                   do i = lo(1), hi(1)
+                      eta(k,comp) = eta(k,comp) + wmac(i,j,k)*sedgez(i,j,k,comp)
+                   end do
                 end do
+                eta(k,comp) = eta(k,comp) * fac
              end do
-             eta(k,comp) = eta(k,comp) * fac
           end do
-       end do
+       end if
     end if
 
     do comp = nstart, nstop
@@ -363,9 +363,11 @@ contains
                 snew(i,j,k,comp) = sold(i,j,k,comp) + delta_base &
                      - dt * divterm + dt * force(i,j,k,comp)
 
-                if (which_step .eq. 2) then
-                   snew(i,j,k,comp) = snew(i,j,k,comp) &
-                        + dt / dx(3) * (eta(k+1,comp)-eta(k,comp))
+                if (evolve_base_state) then
+                   if (which_step .eq. 2) then
+                      snew(i,j,k,comp) = snew(i,j,k,comp) &
+                           + dt / dx(3) * (eta(k+1,comp)-eta(k,comp))
+                   end if
                 end if
 
              enddo

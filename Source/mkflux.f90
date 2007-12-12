@@ -20,7 +20,7 @@ module mkflux_module
 contains
 
   subroutine mkflux(nlevs,sflux,sold,sedge,umac,w0,w0_cart_vec,s0_old,s0_edge_old, &
-                    s0_new,s0_edge_new, &
+                    s0_old_cart,s0_new,s0_edge_new,s0_new_cart, &
                     startcomp,endcomp,which_step,dx,mla)
 
     integer        , intent(in   ) :: nlevs
@@ -29,7 +29,9 @@ contains
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     type(multifab) , intent(in   ) :: w0_cart_vec(:)
     real(kind=dp_t), intent(in   ) :: s0_old(:,0:,:),s0_edge_old(:,0:,:)
+    type(multifab) , intent(in   ) :: s0_old_cart(:)
     real(kind=dp_t), intent(in   ) :: s0_new(:,0:,:),s0_edge_new(:,0:,:)
+    type(multifab) , intent(in   ) :: s0_new_cart(:)
     integer        , intent(in   ) :: startcomp,endcomp,which_step
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     type(ml_layout), intent(inout) :: mla
@@ -88,7 +90,13 @@ contains
                                     startcomp,endcomp,which_step,lo,hi)
 
              else
-                ! call mkflux_3d_sphr not written yet
+                call mkflux_3d_sphr(sfxp(:,:,:,:), sfyp(:,:,:,:), sfzp(:,:,:,:), &
+                                    sexp(:,:,:,:), seyp(:,:,:,:), sezp(:,:,:,:), &
+                                    ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
+                                    s0_old(n,:,:), s0_edge_old(n,:,:), &
+                                    s0_new(n,:,:), s0_edge_new(n,:,:), &
+                                    w0(n,:), &
+                                    startcomp,endcomp,which_step,lo,hi)
              endif
           end select
        end do
@@ -240,5 +248,31 @@ contains
     end do ! end loop over components
      
   end subroutine mkflux_3d_cart
+
+  subroutine mkflux_3d_sphr(sfluxx,sfluxy,sfluxz,sedgex,sedgey,sedgez,umac,vmac,wmac, &
+                            s0_old,s0_edge_old,s0_new,s0_edge_new,w0,startcomp,endcomp, &
+                            which_step,lo,hi)
+
+    integer        , intent(in   ) :: lo(:),hi(:)
+    real(kind=dp_t), intent(inout) :: sfluxx(lo(1)  :,lo(2)  :,lo(3)  :,:)
+    real(kind=dp_t), intent(inout) :: sfluxy(lo(1)  :,lo(2)  :,lo(3)  :,:)
+    real(kind=dp_t), intent(inout) :: sfluxz(lo(1)  :,lo(2)  :,lo(3)  :,:)
+    real(kind=dp_t), intent(in   ) :: sedgex(lo(1)  :,lo(2)  :,lo(3)  :,:)
+    real(kind=dp_t), intent(in   ) :: sedgey(lo(1)  :,lo(2)  :,lo(3)  :,:)
+    real(kind=dp_t), intent(in   ) :: sedgez(lo(1)  :,lo(2)  :,lo(3)  :,:)
+    real(kind=dp_t), intent(in   ) ::   umac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
+    real(kind=dp_t), intent(in   ) ::   vmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
+    real(kind=dp_t), intent(in   ) ::   wmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
+    real(kind=dp_t), intent(in   ) :: s0_old(0:,:), s0_edge_old(0:,:)
+    real(kind=dp_t), intent(in   ) :: s0_new(0:,:), s0_edge_new(0:,:)
+    real(kind=dp_t), intent(in   ) :: w0(0:)
+    integer        , intent(in   ) :: startcomp,endcomp,which_step
+
+
+
+
+
+     
+  end subroutine mkflux_3d_sphr
    
 end module mkflux_module
