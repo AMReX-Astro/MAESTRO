@@ -8,7 +8,7 @@ module make_w0_module
   use multifab_module
   use variables
   use geometry
-  use mkflux_module
+  use make_edge_state_module
   use make_grav_module
   use cell_to_edge_module
   use probin_module, only: grav_const
@@ -99,7 +99,7 @@ contains
     end do
 
     force = ZERO
-    call mkflux_1d(vel_old_cen,edge,vel_old,force,1,dr(n),dt)
+    call make_edge_state_1d(vel_old_cen,edge,vel_old,force,1,dr(n),dt)
 
     do j = 0,nr(n)-1
        f(j) = (vel_new_cen(j)-vel_old_cen(j)) / (HALF*(dt+dtold)) + &

@@ -3,7 +3,7 @@ module scalar_advance_module
   use bl_types
   use bl_constants_module
   use multifab_module
-  use mkflux_module
+  use make_edge_state_module
   use mkscalforce_module
   use update_scal_module
   use addw0_module
@@ -168,12 +168,13 @@ contains
     end if
 
     ! create temperature or enthalpy edge states
-    call mkflux(nlevs,sold,uold,sedge,sflux,umac,utrans,scal_force,w0,w0_cart_vec,dx,dt, &
-                is_vel,the_bc_level,velpred,comp,dm+comp,1)
+    call make_edge_state(nlevs,sold,uold,sedge,sflux,umac,utrans,scal_force,w0, &
+                         w0_cart_vec,dx,dt,is_vel,the_bc_level,velpred,comp,dm+comp,1)
 
     ! create species edge states
-    call mkflux(nlevs,sold,uold,sedge,sflux,umac,utrans,scal_force,w0,w0_cart_vec,dx,dt, &
-                is_vel,the_bc_level,velpred,spec_comp,dm+spec_comp,nspec)
+    call make_edge_state(nlevs,sold,uold,sedge,sflux,umac,utrans,scal_force,w0, &
+                         w0_cart_vec,dx,dt,is_vel,the_bc_level,velpred,spec_comp, &
+                         dm+spec_comp,nspec)
 
     if(use_temp_in_mkflux) then
        call makeRhoHfromT(nlevs,uold,sedge,s0_old,s0_edge_old,s0_new,s0_edge_new)
@@ -190,8 +191,9 @@ contains
     !**************************************************************************
 
     if (ntrac .ge. 1) then
-       call mkflux(nlevs,sold,uold,sedge,sflux,umac,utrans,scal_force,w0,w0_cart_vec,dx,dt, &
-                   is_vel,the_bc_level,velpred,trac_comp,dm+trac_comp,ntrac)
+       call make_edge_state(nlevs,sold,uold,sedge,sflux,umac,utrans,scal_force,w0, &
+                            w0_cart_vec,dx,dt,is_vel,the_bc_level,velpred,trac_comp, &
+                            dm+trac_comp,ntrac)
     end if
 
     !**************************************************************************
