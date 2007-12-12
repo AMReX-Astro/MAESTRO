@@ -601,8 +601,8 @@ contains
                           the_bc_tower%bc_tower_array,mla)
     
     call velocity_advance(nlevs,mla,uold,unew,sold,rhohalf,umac,uedge,utrans,uflux,gp, &
-                          normal,w0,w0_cart_vec,w0_force,w0_force_cart_vec,s0_old, &
-                          grav_cell_old,s0_nph,grav_cell_nph,dx,dt, &
+                          normal,w0,w0_cart_vec,w0_force,w0_force_cart_vec,s0_old,s0_nph, &
+                          grav_cell_old,grav_cell_nph,dx,dt, &
                           the_bc_tower%bc_tower_array,sponge,do_sponge,verbose)
     
     ! Define beta at half time using the div_coeff_new from step 9!
