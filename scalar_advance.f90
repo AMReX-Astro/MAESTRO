@@ -4,6 +4,7 @@ module scalar_advance_module
   use bl_constants_module
   use multifab_module
   use make_edge_state_module
+  use mkflux_module
   use mkscalforce_module
   use update_scal_module
   use addw0_module
@@ -176,9 +177,18 @@ contains
                          w0_cart_vec,dx,dt,is_vel,the_bc_level,velpred,spec_comp, &
                          dm+spec_comp,nspec)
 
+    ! compute enthalpy edge states
     if(predict_temp_at_edges) then
        call makeRhoHfromT(nlevs,uold,sedge,s0_old,s0_edge_old,s0_new,s0_edge_new)
     endif
+
+    ! compute enthalpy fluxes
+    call mkflux(nlevs,sflux,sold,sedge,umac,w0,w0_cart_vec,s0_old,s0_edge_old, &
+                s0_new,s0_edge_new,rhoh_comp,rhoh_comp,which_step,dx,mla)
+
+    ! compute species fluxes
+    call mkflux(nlevs,sflux,sold,sedge,umac,w0,w0_cart_vec,s0_old,s0_edge_old, &
+                s0_new,s0_edge_new,spec_comp,spec_comp+nspec-1,which_step,dx,mla)
 
     if (.not. predict_temp_at_edges) then
        call put_in_pert_form(nlevs,sold,s0_old,dx,rhoh_comp,1,.false.)
@@ -194,6 +204,10 @@ contains
        call make_edge_state(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0, &
                             w0_cart_vec,dx,dt,is_vel,the_bc_level,velpred,trac_comp, &
                             dm+trac_comp,ntrac)
+
+       ! compute tracer fluxes
+       call mkflux(nlevs,sflux,sold,sedge,umac,w0,w0_cart_vec,s0_old,s0_edge_old, &
+                   s0_new,s0_edge_new,trac_comp,trac_comp+ntrac-1,which_step,dx,mla)
     end if
 
     !**************************************************************************

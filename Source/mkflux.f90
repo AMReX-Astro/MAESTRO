@@ -10,7 +10,6 @@ module mkflux_module
   use ml_layout_module
   use ml_restriction_module
   use variables
-  use cell_to_edge_module
   use network, ONLY: nspec
 
   implicit none
@@ -20,14 +19,18 @@ module mkflux_module
   
 contains
 
-  subroutine mkflux(nlevs,sflux,sold,sedge,umac,w0,w0_cart_vec,s0_old,s0_new,dx,mla)
+  subroutine mkflux(nlevs,sflux,sold,sedge,umac,w0,w0_cart_vec,s0_old,s0_edge_old, &
+                    s0_new,s0_edge_new, &
+                    startcomp,endcomp,which_step,dx,mla)
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: sflux(:,:)
     type(multifab) , intent(in   ) :: sold(:),sedge(:,:),umac(:,:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     type(multifab) , intent(in   ) :: w0_cart_vec(:)
-    real(kind=dp_t), intent(in   ) :: s0_old(:,0:,:),s0_new(:,0:,:)
+    real(kind=dp_t), intent(in   ) :: s0_old(:,0:,:),s0_edge_old(:,0:,:)
+    real(kind=dp_t), intent(in   ) :: s0_new(:,0:,:),s0_edge_new(:,0:,:)
+    integer        , intent(in   ) :: startcomp,endcomp,which_step
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     type(ml_layout), intent(inout) :: mla
 
@@ -48,46 +51,7 @@ contains
     real(kind=dp_t), pointer :: w0op(:,:,:,:)
     real(kind=dp_t), pointer :: w0np(:,:,:,:)
 
-    real(kind=dp_t), allocatable :: s0_edge_old(:,:,:)
-    real(kind=dp_t), allocatable :: s0_edge_new(:,:,:)
-
-    ! for spherical case
-    type(multifab), allocatable :: s0_old_cart(:)
-    type(multifab), allocatable :: s0_new_cart(:)
-
-    allocate(s0_edge_old(nlevs,0:nr(nlevs),nscal))
-    allocate(s0_edge_new(nlevs,0:nr(nlevs),nscal))
-
-    allocate(s0_old_cart(nlevs))
-    allocate(s0_new_cart(nlevs))
-
     dm = sold(1)%dim
-
-    do n = 1, nlevs
-       call cell_to_edge_allcomps(n,s0_old(n,:,:),s0_edge_old(n,:,:))
-       call cell_to_edge_allcomps(n,s0_new(n,:,:),s0_edge_new(n,:,:))
-    enddo
-
-    do n = 1, nlevs
-       call build(s0_old_cart(n), sold(n)%la, nscal, 1)
-       call build(s0_new_cart(n), sold(n)%la, nscal, 1)
-       call setval(s0_old_cart(n),ZERO,all=.true.)
-       call setval(s0_new_cart(n),ZERO,all=.true.)
-    enddo
-
-    ! Define s0_old_cart and s0_new_cart
-    if (spherical .eq. 1) then
-       call fill_3d_data_wrapper(nlevs,s0_old_cart,s0_old(:,:,rhoh_comp),dx,rhoh_comp)
-       call fill_3d_data_wrapper(nlevs,s0_new_cart,s0_new(:,:,rhoh_comp),dx,rhoh_comp)
-       do comp = spec_comp, spec_comp+nspec-1
-          call fill_3d_data_wrapper(nlevs,s0_old_cart,s0_old(:,:,comp),dx,comp)
-          call fill_3d_data_wrapper(nlevs,s0_new_cart,s0_new(:,:,comp),dx,comp)
-       enddo
-       do comp = trac_comp, trac_comp+ntrac-1
-          call fill_3d_data_wrapper(nlevs,s0_old_cart,s0_old(:,:,comp),dx,comp)
-          call fill_3d_data_wrapper(nlevs,s0_new_cart,s0_new(:,:,comp),dx,comp)
-       enddo
-    end if
     
     do n=1,nlevs
 
@@ -108,7 +72,8 @@ contains
                             ump(:,:,1,1), vmp(:,:,1,1), &
                             s0_old(n,:,:), s0_edge_old(n,:,:), &
                             s0_new(n,:,:), s0_edge_new(n,:,:), &
-                            lo,hi)
+                            w0(n,:), &
+                            startcomp,endcomp,which_step,lo,hi)
           case (3)
              sfzp => dataptr(sflux(n,3),i)
              sezp => dataptr(sedge(n,3),i)
@@ -119,7 +84,8 @@ contains
                                     ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
                                     s0_old(n,:,:), s0_edge_old(n,:,:), &
                                     s0_new(n,:,:), s0_edge_new(n,:,:), &
-                                    lo,hi)
+                                    w0(n,:), &
+                                    startcomp,endcomp,which_step,lo,hi)
 
              else
                 ! call mkflux_3d_sphr not written yet
@@ -135,13 +101,11 @@ contains
           call ml_edge_restriction_c(sflux(n-1,i),1,sflux(n,i),1,mla%mba%rr(n-1,:),i,nscal)
        enddo
     enddo
-
-    deallocate(s0_edge_old,s0_edge_new)
     
   end subroutine mkflux
   
-  subroutine mkflux_2d(sfluxx,sfluxy,sedgex,sedgey,umac,vmac, &
-                       s0_old,s0_edge_old,s0_new,s0_edge_new,lo,hi)
+  subroutine mkflux_2d(sfluxx,sfluxy,sedgex,sedgey,umac,vmac,s0_old,s0_edge_old, &
+                       s0_new,s0_edge_new,w0,startcomp,endcomp,which_step,lo,hi)
 
     integer        , intent(in   ) :: lo(:),hi(:)
     real(kind=dp_t), intent(inout) :: sfluxx(lo(1)  :,lo(2)  :,:)
@@ -152,15 +116,54 @@ contains
     real(kind=dp_t), intent(in   ) ::   vmac(lo(1)-1:,lo(2)-1:)
     real(kind=dp_t), intent(in   ) :: s0_old(0:,:), s0_edge_old(0:,:)
     real(kind=dp_t), intent(in   ) :: s0_new(0:,:), s0_edge_new(0:,:)
+    real(kind=dp_t), intent(in   ) :: w0(0:)
+    integer        , intent(in   ) :: startcomp,endcomp,which_step
 
+    ! local
+    integer :: comp
+    integer :: i,j
 
+    ! loop over components
+    do comp = startcomp, endcomp
 
+       ! create x-fluxes
+       do j=lo(2),hi(2)
+          do i=lo(1),hi(1)+1
 
+             if(which_step .eq. 1) then
+                sfluxx(i,j,comp) = umac(i,j)* &
+                     (sedgex(i,j,comp) + s0_old(j,comp))
+             else
+                sfluxx(i,j,comp) = umac(i,j)* &
+                     (sedgex(i,j,comp) + HALF*(s0_old(j,comp)+s0_new(j,comp)))
+             endif
+
+          end do
+       end do
+
+       ! create y-fluxes
+       do j=lo(2),hi(2)+1
+          do i=lo(1),hi(1)
+
+             if(which_step .eq. 1) then
+                sfluxy(i,j,comp) = (vmac(i,j)+w0(j))*sedgey(i,j,comp) &
+                     + vmac(i,j)*(sedgey(i,j,comp) + s0_edge_old(j,comp))
+             else
+                sfluxy(i,j,comp) = (vmac(i,j)+w0(j))*sedgey(i,j,comp) &
+                     + vmac(i,j)* &
+                     (sedgey(i,j,comp) + HALF*(s0_edge_old(j,comp)+s0_edge_new(j,comp)))
+             end if
+
+          end do
+       end do
+
+    end do ! end loop over components
 
   end subroutine mkflux_2d
   
   subroutine mkflux_3d_cart(sfluxx,sfluxy,sfluxz,sedgex,sedgey,sedgez,umac,vmac,wmac, &
-                            s0_old,s0_edge_old,s0_new,s0_edge_new,lo,hi)
+                            s0_old,s0_edge_old,s0_new,s0_edge_new,w0,startcomp,endcomp, &
+                            which_step,lo,hi)
 
     integer        , intent(in   ) :: lo(:),hi(:)
     real(kind=dp_t), intent(inout) :: sfluxx(lo(1)  :,lo(2)  :,lo(3)  :,:)
@@ -174,10 +177,69 @@ contains
     real(kind=dp_t), intent(in   ) ::   wmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
     real(kind=dp_t), intent(in   ) :: s0_old(0:,:), s0_edge_old(0:,:)
     real(kind=dp_t), intent(in   ) :: s0_new(0:,:), s0_edge_new(0:,:)
+    real(kind=dp_t), intent(in   ) :: w0(0:)
+    integer        , intent(in   ) :: startcomp,endcomp,which_step
 
+   ! local
+    integer :: comp
+    integer :: i,j,k
 
+    ! loop over components
+    do comp = startcomp, endcomp
 
+       ! create x-fluxes
+       do k=lo(3),hi(3)
+          do j=lo(2),hi(2)
+             do i=lo(1),hi(1)+1
+                
+                if(which_step .eq. 1) then
+                   sfluxx(i,j,k,comp) = umac(i,j,k)* &
+                        (sedgex(i,j,k,comp) + s0_old(k,comp))
+                else
+                   sfluxx(i,j,k,comp) = umac(i,j,k)* &
+                        (sedgex(i,j,k,comp) + HALF*(s0_old(k,comp)+s0_new(k,comp)))
+                endif
+                
+             end do
+          end do
+       end do
 
+       ! create y-fluxes
+       do k=lo(3),hi(3)
+          do j=lo(2),hi(2)+1
+             do i=lo(1),hi(1)
+                
+                if(which_step .eq. 1) then
+                   sfluxy(i,j,k,comp) = vmac(i,j,k)* &
+                        (sedgey(i,j,k,comp) + s0_old(k,comp))
+                else
+                   sfluxy(i,j,k,comp) = vmac(i,j,k)* &
+                        (sedgey(i,j,k,comp) + HALF*(s0_old(k,comp)+s0_new(k,comp)))
+                endif
+
+             end do
+          end do
+       end do
+
+       ! create z-fluxes
+       do k=lo(3),hi(3)+1
+          do j=lo(2),hi(2)
+             do i=lo(1),hi(1)
+                
+                if(which_step .eq. 1) then
+                   sfluxz(i,j,k,comp) = (wmac(i,j,k)+w0(k))*sedgez(i,j,k,comp) &
+                        + wmac(i,j,k)*(sedgez(i,j,k,comp) + s0_edge_old(k,comp))
+                else
+                   sfluxz(i,j,k,comp) = (wmac(i,j,k)+w0(k))*sedgez(i,j,k,comp) &
+                        + wmac(i,j,k)* &
+                        (sedgez(i,j,k,comp) + HALF*(s0_edge_old(k,comp)+s0_edge_new(k,comp)))
+                end if
+                
+             end do
+          end do
+       end do
+
+    end do ! end loop over components
      
   end subroutine mkflux_3d_cart
    
