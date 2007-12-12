@@ -15,13 +15,13 @@ module make_edge_state_module
   
 contains
 
-  subroutine make_edge_state(nlevs,s,u,sedge,sflux,umac,utrans,force,w0,w0_cart_vec,dx, &
+  subroutine make_edge_state(nlevs,s,u,sedge,umac,utrans,force,w0,w0_cart_vec,dx, &
                              dt,is_vel,the_bc_level,velpred,start_scomp,start_bccomp, &
                              num_comp)
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(in   ) :: s(:),u(:)
-    type(multifab) , intent(inout) :: sedge(:,:),sflux(:,:),umac(:,:)
+    type(multifab) , intent(inout) :: sedge(:,:),umac(:,:)
     type(multifab) , intent(in   ) :: utrans(:,:),force(:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     type(multifab) , intent(in   ) :: w0_cart_vec(:)
@@ -38,9 +38,6 @@ contains
     real(kind=dp_t), pointer :: sepx(:,:,:,:)
     real(kind=dp_t), pointer :: sepy(:,:,:,:)
     real(kind=dp_t), pointer :: sepz(:,:,:,:)
-    real(kind=dp_t), pointer :: sfpx(:,:,:,:)
-    real(kind=dp_t), pointer :: sfpy(:,:,:,:)
-    real(kind=dp_t), pointer :: sfpz(:,:,:,:)
     real(kind=dp_t), pointer :: ump(:,:,:,:)
     real(kind=dp_t), pointer :: vmp(:,:,:,:)
     real(kind=dp_t), pointer :: wmp(:,:,:,:)
@@ -66,8 +63,6 @@ contains
           utp  => dataptr(utrans(n,1),i)
           vtp  => dataptr(utrans(n,2),i)
           fp   => dataptr(force(n),i)
-          sfpx => dataptr(sflux(n,1),i)
-          sfpy => dataptr(sflux(n,2),i)
           lo =  lwb(get_box(s(n),i))
           select case (dm)
           case (2)
@@ -75,7 +70,6 @@ contains
                 bccomp = start_bccomp + scomp - start_scomp
                 call make_edge_state_2d(n,sop(:,:,1,:), uop(:,:,1,:), &
                                         sepx(:,:,1,:), sepy(:,:,1,:), &
-                                        sfpx(:,:,1,:), sfpy(:,:,1,:), &
                                         ump(:,:,1,1), vmp(:,:,1,1), &
                                         utp(:,:,1,1), vtp(:,:,1,1), fp(:,:,1,:), w0(n,:), &
                                         lo, dx(n,:), dt, is_vel, &
@@ -88,12 +82,10 @@ contains
              wtp  => dataptr(utrans(n,3),i)
              sepz => dataptr( sedge(n,3),i)
              w0p  => dataptr(w0_cart_vec(n),i)
-             sfpz => dataptr(sflux(n,3),i)
              do scomp = start_scomp, start_scomp + num_comp - 1
                 bccomp = start_bccomp + scomp - start_scomp
                 call make_edge_state_3d(n,sop(:,:,:,:), uop(:,:,:,:), &
                                         sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
-                                        sfpx(:,:,:,:), sfpy(:,:,:,:), sfpz(:,:,:,:), &
                                         ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
                                         utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), &
                                         fp(:,:,:,:), &
@@ -111,7 +103,7 @@ contains
   end subroutine make_edge_state
 
   
-  subroutine make_edge_state_2d(n,s,u,sedgex,sedgey,sfluxx,sfluxy,uadv,vadv,utrans, &
+  subroutine make_edge_state_2d(n,s,u,sedgex,sedgey,uadv,vadv,utrans, &
                                 vtrans,force,w0,lo,dx,dt,is_vel,phys_bc,adv_bc,velpred, &
                                 ng,comp)
 
@@ -120,8 +112,6 @@ contains
     real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng:,lo(2)-ng:,:)
     real(kind=dp_t), intent(inout) :: sedgex(lo(1)   :,lo(2)   :,:)
     real(kind=dp_t), intent(inout) :: sedgey(lo(1)   :,lo(2)   :,:)
-    real(kind=dp_t), intent(inout) :: sfluxx(lo(1)   :,lo(2)   :,:)
-    real(kind=dp_t), intent(inout) :: sfluxy(lo(1)   :,lo(2)   :,:)
     real(kind=dp_t), intent(inout) ::   uadv(lo(1)- 1:,lo(2)- 1:)
     real(kind=dp_t), intent(inout) ::   vadv(lo(1)- 1:,lo(2)- 1:)
     real(kind=dp_t), intent(in   ) :: utrans(lo(1)- 1:,lo(2)- 1:)
@@ -511,7 +501,7 @@ contains
   end subroutine make_edge_state_2d
   
   
-  subroutine make_edge_state_3d(n,s,u,sedgex,sedgey,sedgez,sfluxx,sfluxy,sfluxz,uadv, &
+  subroutine make_edge_state_3d(n,s,u,sedgex,sedgey,sedgez,uadv, &
                                 vadv,wadv,utrans,vtrans,wtrans,force,w0,w0_cart_vec,lo, &
                                 dx,dt,is_vel,phys_bc,adv_bc,velpred,ng,comp)
 
@@ -521,9 +511,6 @@ contains
     real(kind=dp_t), intent(inout) :: sedgex(lo(1)   :,lo(2)   :,lo(3)   :,:)
     real(kind=dp_t), intent(inout) :: sedgey(lo(1)   :,lo(2)   :,lo(3)   :,:)
     real(kind=dp_t), intent(inout) :: sedgez(lo(1)   :,lo(2)   :,lo(3)   :,:)
-    real(kind=dp_t), intent(inout) :: sfluxx(lo(1)   :,lo(2)   :,lo(3)   :,:)
-    real(kind=dp_t), intent(inout) :: sfluxy(lo(1)   :,lo(2)   :,lo(3)   :,:)
-    real(kind=dp_t), intent(inout) :: sfluxz(lo(1)   :,lo(2)   :,lo(3)   :,:)
     real(kind=dp_t), intent(inout) ::   uadv(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
     real(kind=dp_t), intent(inout) ::   vadv(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
     real(kind=dp_t), intent(inout) ::   wadv(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)

@@ -47,7 +47,7 @@ module advance_timestep_module
 contains
     
   subroutine advance_timestep(init_mode,mla,uold,sold,s1,s2,unew,snew,umac,uedge,sedge, &
-                              utrans,uflux,sflux,gp,p,scal_force,normal,s0_old,s0_1,s0_2, &
+                              utrans,sflux,gp,p,scal_force,normal,s0_old,s0_1,s0_2, &
                               s0_new,p0_old,p0_1,p0_2,p0_new,gam1,w0,eta,rho_omegadot1, &
                               rho_omegadot2,rho_Hext,div_coeff_old,div_coeff_new, &
                               grav_cell_old,dx,time,dt,dtold,the_bc_tower,anelastic_cutoff, &
@@ -68,7 +68,6 @@ contains
     type(multifab),  intent(inout) :: uedge(:,:)
     type(multifab),  intent(inout) :: sedge(:,:)
     type(multifab),  intent(inout) :: utrans(:,:)
-    type(multifab),  intent(inout) :: uflux(:,:)
     type(multifab),  intent(inout) :: sflux(:,:)
     type(multifab),  intent(inout) :: gp(:)
     type(multifab),  intent(inout) :: p(:)
@@ -242,7 +241,7 @@ contains
        write(6,*) '<<< STEP  2 : create MAC velocities>>> '
     end if
     
-    call advance_premac(nlevs,uold,sold,umac,uedge,utrans,uflux,gp,normal,w0,w0_cart_vec, &
+    call advance_premac(nlevs,uold,sold,umac,uedge,utrans,gp,normal,w0,w0_cart_vec, &
                         s0_old,grav_cell_old,dx,dt,the_bc_tower%bc_tower_array,mla)
     
     call make_macrhs(nlevs,macrhs,Source_nph,gamma1_term,Sbar(:,:,1),div_coeff_old,dx)
@@ -452,7 +451,7 @@ contains
           write(6,*) '<<< STEP  7 : create MAC velocities >>> '
        end if
        
-       call advance_premac(nlevs,uold,sold,umac,uedge,utrans,uflux,gp,normal,w0, &
+       call advance_premac(nlevs,uold,sold,umac,uedge,utrans,gp,normal,w0, &
                            w0_cart_vec,s0_old,grav_cell_old,dx,dt, &
                            the_bc_tower%bc_tower_array,mla)
        
@@ -600,7 +599,7 @@ contains
     call make_at_halftime(nlevs,rhohalf,sold,snew,rho_comp,1,dx, &
                           the_bc_tower%bc_tower_array,mla)
     
-    call velocity_advance(nlevs,mla,uold,unew,sold,rhohalf,umac,uedge,utrans,uflux,gp, &
+    call velocity_advance(nlevs,mla,uold,unew,sold,rhohalf,umac,uedge,utrans,gp, &
                           normal,w0,w0_cart_vec,w0_force,w0_force_cart_vec,s0_old,s0_nph, &
                           grav_cell_old,grav_cell_nph,dx,dt, &
                           the_bc_tower%bc_tower_array,sponge,do_sponge,verbose)
