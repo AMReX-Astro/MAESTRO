@@ -1,0 +1,50 @@
+This network is used as a regression test for the DVODE solver.  It models a
+simple reaction network of the form:
+      
+                                  A <--> B
+
+which has the following rate equations:
+
+                   /     \   /              \   /     \
+                d  | X_A |   | -alpha  beta |   | X_A |
+              ---- |     | = |              | * |     |
+               dt  | X_B |   |  alpha -beta |   | X_B |
+                   \     /   \              /   \     /
+
+where X_i is the mass fraction of species i and alpha and beta contain all the
+information about cross-section, density, etc that would appear in a real 
+reaction network.  This network does not care about any thermodynamics and it 
+assumes the rates alpha and beta are constant in time.
+
+This system has an analytic solution for the initial condition X_B(t=0) = 0:
+
+           X_B             exp[(alpha + beta)t] - 1
+          ----- = -------------------------------------------
+           X_A     (beta / alpha) * exp[(alpha + beta)t] + 1
+
+The system of equations in a realistic reaction network are usually very stiff.
+The purpose of this test problem is to test how well DVODE handles solving a 
+stiff set of equations.  As such, alpha and beta will be specified
+parameters which, for a stiff system, should satisfy
+
+                      |max(alpha, beta)|
+                     -------------------- >> ONE
+                      |min(alpha, beta)|
+
+for real-valued alpha and beta.  It is not uncommon for this ratio to be in 
+excess of 10^15 for a realistic network.  These values will be stored in the 
+rates(:,:) array which is passed via the network module.
+
+The tolerances for the DVODE solver are also set to be input parameters.  
+This is important because DVODE calculates the overall error as:
+
+               error(:) = rtol(:) * abs(X(:)) + atol(:)
+
+where rtol and atol are the relative and absolute tolerances, respectively.  
+The initial condition of the analytic solution could cause convergence issues
+if atol were omitted.  Similarly if rtol were omitted, atol could be greater 
+than the value of some early time composition and convergence would be a 
+false-positive.  These values are stored in the tol(:) array, where 
+atol(:) = tol(1) and rtol(:) = tol(2).
+
+The driver for the test problem can be found in ./test/
