@@ -1,5 +1,5 @@
 &PROBIN
- test_set = "gr0_2d_smallscale_2level"
+ test_set = "gr0_2d_smallscale_2levels"
  spherical_in = 0
 
  prob_hi_x = 0.25
@@ -7,7 +7,7 @@
 
  grav_const = 0.e0
 
- max_step  = 300
+ max_step  = 0
  init_iter = 1
 
  stop_time = 2.5
