@@ -108,7 +108,6 @@ contains
              wmp => dataptr(umac(n,3),i)
              sepz => dataptr(sedge(n,3),i)
              sfpz => dataptr(sflux(n,3),i)
-             w0p => dataptr(w0_cart_vec(n),i)
              if (spherical .eq. 0) then
                 call update_scal_3d_cart(which_step, nstart, nstop, &
                                          sop(:,:,:,:), snp(:,:,:,:), &
@@ -123,6 +122,7 @@ contains
              else
                 s0op => dataptr(s0_old_cart(n), i)
                 s0np => dataptr(s0_new_cart(n), i)
+                w0p => dataptr(w0_cart_vec(n),i)
                 call update_scal_3d_sphr(which_step, nstart, nstop, &
                                          sop(:,:,:,:), snp(:,:,:,:), &
                                          ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
@@ -460,7 +460,7 @@ contains
     logical           , intent(in   ) :: evolve_base_state
 
     integer :: i, j, k, comp, comp2
-    real (kind = dp_t) :: divsu,divbaseu,mult
+    real (kind = dp_t) :: divsu,divbaseu,mult,divterm
     real (kind = dp_t) :: delta,frac,sum
     real (kind = dp_t) :: bc_lox,bc_loy,bc_loz
     real (kind = dp_t) :: bc_hix,bc_hiy,bc_hiz
@@ -470,114 +470,23 @@ contains
 
     do comp = nstart, nstop
 
-       ! Note the umac here does NOT have w0 in it
-       if (which_step .eq. 1) then
           do k = lo(3), hi(3)
              do j = lo(2), hi(2)
                 do i = lo(1), hi(1)
 
-                   bc_lox = (base_old_cart(i,j,k,comp)+base_old_cart(i-1,j,k,comp)) * HALF
-                   bc_loy = (base_old_cart(i,j,k,comp)+base_old_cart(i,j-1,k,comp)) * HALF
-                   bc_loz = (base_old_cart(i,j,k,comp)+base_old_cart(i,j,k-1,comp)) * HALF
-                   bc_hix = (base_old_cart(i,j,k,comp)+base_old_cart(i+1,j,k,comp)) * HALF
-                   bc_hiy = (base_old_cart(i,j,k,comp)+base_old_cart(i,j+1,k,comp)) * HALF
-                   bc_hiz = (base_old_cart(i,j,k,comp)+base_old_cart(i,j,k+1,comp)) * HALF
-
-                   if (i.eq.domlo(1)) bc_lox = base_old_cart(i,j,k,comp)
-                   if (j.eq.domlo(2)) bc_loy = base_old_cart(i,j,k,comp)
-                   if (k.eq.domlo(3)) bc_loz = base_old_cart(i,j,k,comp)
-                   if (i.eq.domhi(1)) bc_hix = base_old_cart(i,j,k,comp)
-                   if (j.eq.domhi(2)) bc_hiy = base_old_cart(i,j,k,comp)
-                   if (k.eq.domhi(3)) bc_hiz = base_old_cart(i,j,k,comp)
-
-                   divbaseu =  &
-                        ( bc_hix * umac(i+1,j,k) - bc_lox * umac(i,j,k) ) / dx(1) &
-                        +( bc_hiy * vmac(i,j+1,k) - bc_loy * vmac(i,j,k) ) / dx(2) &
-                        +( bc_hiz * wmac(i,j,k+1) - bc_loz * wmac(i,j,k) ) / dx(3)
+                   divterm = (sfluxx(i+1,j,k,comp) - sfluxx(i,j,k,comp))/dx(1) &
+                        + (sfluxy(i,j+1,k,comp) - sfluxy(i,j,k,comp))/dx(2) &
+                        + (sfluxz(i,j,k+1,comp) - sfluxz(i,j,k,comp))/dx(3)
 
                    snew(i,j,k,comp) = sold(i,j,k,comp) + &
-                        (base_new_cart(i,j,k,comp)-base_old_cart(i,j,k,comp)) - &
-                        dt * divbaseu + dt * force(i,j,k,comp)
+                        (base_new_cart(i,j,k,comp)-base_old_cart(i,j,k,comp)) &
+                        - dt * divterm + dt * force(i,j,k,comp)
 
                 enddo
              enddo
           enddo
-
-       else if (which_step .eq. 2) then
-
-          do k = lo(3), hi(3)
-             do j = lo(2), hi(2)
-                do i = lo(1), hi(1)
-
-                   bc_lox = (base_old_cart(i,j,k,comp)+base_old_cart(i-1,j,k,comp) &
-                        +base_new_cart(i,j,k,comp)+base_new_cart(i-1,j,k,comp) ) * FOURTH
-                   bc_loy = (base_old_cart(i,j,k,comp)+base_old_cart(i,j-1,k,comp) &
-                        +base_new_cart(i,j,k,comp)+base_new_cart(i,j-1,k,comp) ) * FOURTH
-                   bc_loz = (base_old_cart(i,j,k,comp)+base_old_cart(i,j,k-1,comp) &
-                        +base_new_cart(i,j,k,comp)+base_new_cart(i,j,k-1,comp) ) * FOURTH
-                   bc_hix = (base_old_cart(i,j,k,comp)+base_old_cart(i+1,j,k,comp) &
-                        +base_new_cart(i,j,k,comp)+base_new_cart(i+1,j,k,comp) ) * FOURTH
-                   bc_hiy = (base_old_cart(i,j,k,comp)+base_old_cart(i,j+1,k,comp) &
-                        +base_new_cart(i,j,k,comp)+base_new_cart(i,j+1,k,comp) ) * FOURTH
-                   bc_hiz = (base_old_cart(i,j,k,comp)+base_old_cart(i,j,k+1,comp) &
-                        +base_new_cart(i,j,k,comp)+base_new_cart(i,j,k+1,comp) ) * FOURTH
-
-                   if (i.eq.domlo(1)) bc_lox = &
-                        HALF * (base_old_cart(i,j,k,comp)+base_new_cart(i,j,k,comp))
-                   if (j.eq.domlo(2)) bc_loy = &
-                        HALF * (base_old_cart(i,j,k,comp)+base_new_cart(i,j,k,comp))
-                   if (k.eq.domlo(3)) bc_loz = &
-                        HALF * (base_old_cart(i,j,k,comp)+base_new_cart(i,j,k,comp))
-                   if (i.eq.domhi(1)) bc_hix = &
-                        HALF * (base_old_cart(i,j,k,comp)+base_new_cart(i,j,k,comp))
-                   if (j.eq.domhi(2)) bc_hiy = &
-                        HALF * (base_old_cart(i,j,k,comp)+base_new_cart(i,j,k,comp))
-                   if (k.eq.domhi(3)) bc_hiz = &
-                        HALF * (base_old_cart(i,j,k,comp)+base_new_cart(i,j,k,comp))
-
-                   divbaseu =  &
-                        ( bc_hix * umac(i+1,j,k) - bc_lox * umac(i,j,k) ) / dx(1) &
-                        +( bc_hiy * vmac(i,j+1,k) - bc_loy * vmac(i,j,k) ) / dx(2) &
-                        +( bc_hiz * wmac(i,j,k+1) - bc_loz * wmac(i,j,k) ) / dx(3)
-
-                   snew(i,j,k,comp) = sold(i,j,k,comp) &
-                        + (base_new_cart(i,j,k,comp)-base_old_cart(i,j,k,comp)) &
-                        - dt * divbaseu + dt * force(i,j,k,comp)
-
-                enddo
-             enddo
-          enddo
-
-       end if
 
     end do
-
-    mult = ONE
-    call addw0_3d_sphr(umac,vmac,wmac,w0_cart,lo,hi,mult)
-
-    do comp = nstart, nstop
-
-       ! Note the umac here DOES have w0 in it
-       do k = lo(3), hi(3)
-          do j = lo(2), hi(2)
-             do i = lo(1), hi(1)
-
-                divsu = (umac(i+1,j,k) * sedgex(i+1,j,k,comp) &
-                     -umac(i  ,j,k) * sedgex(i  ,j,k,comp) ) / dx(1) + &
-                     (vmac(i,j+1,k) * sedgey(i,j+1,k,comp) &
-                     -vmac(i,j  ,k) * sedgey(i,j  ,k,comp) ) / dx(2) + &
-                     (wmac(i,j,k+1) * sedgez(i,j,k+1,comp) &
-                     -wmac(i,j,k  ) * sedgez(i,j,k  ,comp) ) / dx(3)
-
-                snew(i,j,k,comp) = snew(i,j,k,comp) - dt * divsu
-
-             enddo
-          enddo
-       enddo
-    enddo
-
-    mult = -ONE
-    call addw0_3d_sphr(umac,vmac,wmac,w0_cart,lo,hi,mult)
 
     ! Define the update to rho as the sum of the updates to (rho X)_i
     if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then

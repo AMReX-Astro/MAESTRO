@@ -289,7 +289,6 @@ contains
     integer         :: i,j,k,comp
     real(kind=dp_t) :: mult
     real(kind=dp_t) :: bc_lox,bc_loy,bc_loz
-    real(kind=dp_t) :: bc_hix,bc_hiy,bc_hiz
 
     ! Note the umac here does NOT have w0 in it
 
@@ -303,26 +302,23 @@ contains
                 if (which_step .eq. 1) then
 
                    bc_lox = (s0_old_cart(i,j,k,comp)+s0_old_cart(i-1,j,k,comp)) * HALF
-                   bc_hix = (s0_old_cart(i,j,k,comp)+s0_old_cart(i+1,j,k,comp)) * HALF
                    
                    if (i.eq.domlo(1)) bc_lox = s0_old_cart(i,j,k,comp)
-                   if (i.eq.domhi(1)+1) bc_hix = s0_old_cart(i,j,k,comp)
+                   if (i.eq.domhi(1)+1) bc_lox = s0_old_cart(i-1,j,k,comp)
 
                 else if (which_step .eq. 2) then
 
                    bc_lox = (s0_old_cart(i,j,k,comp)+s0_old_cart(i-1,j,k,comp) &
                         +s0_new_cart(i,j,k,comp)+s0_new_cart(i-1,j,k,comp) ) * FOURTH
-                   bc_hix = (s0_old_cart(i,j,k,comp)+s0_old_cart(i+1,j,k,comp) &
-                        +s0_new_cart(i,j,k,comp)+s0_new_cart(i+1,j,k,comp) ) * FOURTH
 
                    if (i.eq.domlo(1)) bc_lox = &
                         HALF * (s0_old_cart(i,j,k,comp)+s0_new_cart(i,j,k,comp))
-                   if (i.eq.domhi(1)+1) bc_hix = &
-                        HALF * (s0_old_cart(i,j,k,comp)+s0_new_cart(i,j,k,comp))
+                   if (i.eq.domhi(1)+1) bc_lox = &
+                        HALF * (s0_old_cart(i-1,j,k,comp)+s0_new_cart(i-1,j,k,comp))
 
                 end if
 
-                sfluxx(i,j,k,comp) = bc_hix*umac(i+1,j,k) - bc_lox*umac(i,j,k)
+                sfluxx(i,j,k,comp) = bc_lox*umac(i,j,k)
                 
              end do
           end do
@@ -336,26 +332,23 @@ contains
                 if (which_step .eq. 1) then
 
                    bc_loy = (s0_old_cart(i,j,k,comp)+s0_old_cart(i,j-1,k,comp)) * HALF
-                   bc_hiy = (s0_old_cart(i,j,k,comp)+s0_old_cart(i,j+1,k,comp)) * HALF
                    
                    if (j.eq.domlo(2)) bc_loy = s0_old_cart(i,j,k,comp)
-                   if (j.eq.domhi(2)+1) bc_hiy = s0_old_cart(i,j,k,comp)
+                   if (j.eq.domhi(2)+1) bc_loy = s0_old_cart(i,j-1,k,comp)
 
                 else if (which_step .eq. 2) then
 
                    bc_loy = (s0_old_cart(i,j,k,comp)+s0_old_cart(i,j-1,k,comp) &
                         +s0_new_cart(i,j,k,comp)+s0_new_cart(i,j-1,k,comp) ) * FOURTH
-                   bc_hiy = (s0_old_cart(i,j,k,comp)+s0_old_cart(i,j+1,k,comp) &
-                        +s0_new_cart(i,j,k,comp)+s0_new_cart(i,j+1,k,comp) ) * FOURTH
 
                    if (j.eq.domlo(2)) bc_loy = &
                         HALF * (s0_old_cart(i,j,k,comp)+s0_new_cart(i,j,k,comp))
-                   if (j.eq.domhi(2)+1) bc_hiy = &
-                        HALF * (s0_old_cart(i,j,k,comp)+s0_new_cart(i,j,k,comp))
+                   if (j.eq.domhi(2)+1) bc_loy = &
+                        HALF * (s0_old_cart(i,j-1,k,comp)+s0_new_cart(i,j-1,k,comp))
 
                 end if
 
-                sfluxy(i,j,k,comp) = bc_hiy*vmac(i,j+1,k) - bc_loy*vmac(i,j,k)
+                sfluxy(i,j,k,comp) = bc_loy*vmac(i,j,k)
 
              end do
           end do
@@ -369,26 +362,23 @@ contains
                 if (which_step .eq. 1) then
 
                    bc_loz = (s0_old_cart(i,j,k,comp)+s0_old_cart(i,j,k-1,comp)) * HALF
-                   bc_hiz = (s0_old_cart(i,j,k,comp)+s0_old_cart(i,j,k+1,comp)) * HALF
                    
                    if (k.eq.domlo(3)) bc_loz = s0_old_cart(i,j,k,comp)
-                   if (k.eq.domhi(3)+1) bc_hiz = s0_old_cart(i,j,k,comp)
+                   if (k.eq.domhi(3)+1) bc_loz = s0_old_cart(i,j,k-1,comp)
 
                 else if (which_step .eq. 2) then
 
                    bc_loz = (s0_old_cart(i,j,k,comp)+s0_old_cart(i,j,k-1,comp) &
                         +s0_new_cart(i,j,k,comp)+s0_new_cart(i,j,k-1,comp) ) * FOURTH
-                   bc_hiz = (s0_old_cart(i,j,k,comp)+s0_old_cart(i,j,k+1,comp) &
-                        +s0_new_cart(i,j,k,comp)+s0_new_cart(i,j,k+1,comp) ) * FOURTH
 
                    if (k.eq.domlo(3)) bc_loz = &
                         HALF * (s0_old_cart(i,j,k,comp)+s0_new_cart(i,j,k,comp))
-                   if (k.eq.domhi(3)+1) bc_hiz = &
-                        HALF * (s0_old_cart(i,j,k,comp)+s0_new_cart(i,j,k,comp))
+                   if (k.eq.domhi(3)+1) bc_loz = &
+                        HALF * (s0_old_cart(i,j,k-1,comp)+s0_new_cart(i,j,k-1,comp))
 
                 end if
 
-                sfluxz(i,j,k,comp) = bc_hiz*wmac(i,j,k+1) - bc_loz*wmac(i,j,k)
+                sfluxz(i,j,k,comp) = bc_loz*wmac(i,j,k)
 
              end do
           end do
