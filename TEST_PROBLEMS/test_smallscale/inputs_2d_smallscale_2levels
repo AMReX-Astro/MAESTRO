@@ -8,7 +8,7 @@
  grav_const = 0.e0
 
  max_step  = 0
- init_iter = 1
+ init_iter = 0
 
  stop_time = 2.5
 
@@ -31,8 +31,8 @@
  mg_verbose = 1
  cg_verbose = 0
 
- do_initial_projection = 1
- init_divu_iter = 3
+ do_initial_projection = 0
+ init_divu_iter = 0
 
  perturb_model = F
 
