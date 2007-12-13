@@ -7,6 +7,8 @@ module make_edge_state_module
   use fill_3d_module
   use geometry
   use define_bc_module
+  use ml_layout_module
+  use ml_restriction_module
 
   implicit none
 
@@ -17,7 +19,7 @@ contains
 
   subroutine make_edge_state(nlevs,s,u,sedge,umac,utrans,force,w0,w0_cart_vec,dx, &
                              dt,is_vel,the_bc_level,velpred,start_scomp,start_bccomp, &
-                             num_comp)
+                             num_comp,mla)
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(in   ) :: s(:),u(:)
@@ -29,6 +31,7 @@ contains
     logical        , intent(in   ) :: is_vel
     type(bc_level) , intent(in   ) :: the_bc_level(:)
     integer        , intent(in   ) :: velpred,start_scomp,start_bccomp,num_comp
+    type(ml_layout), intent(inout) :: mla
 
     ! local
     integer                  :: i,scomp,bccomp,ng,dm,n
@@ -99,6 +102,24 @@ contains
        end do
 
     end do ! end loop over levels
+
+    ! we call ml_edge_restriction for the output velocity if is_vel .eq. .true.
+    ! we do not call ml_edge_restriction for scalars because instead we will call 
+    ! ml_edge_restriction on the fluxes in mkflux
+    if(is_vel .and. velpred .eq. 1) then
+       do n = nlevs,2,-1
+          do i = 1, dm
+             call ml_edge_restriction_c(umac(n-1,i),1,umac(n,i),1,mla%mba%rr(n-1,:),i,1)
+          enddo
+       enddo
+    end if
+    if(is_vel .and. velpred .eq. 0) then
+       do n = nlevs,2,-1
+          do i = 1, dm
+             call ml_edge_restriction_c(sedge(n-1,i),1,sedge(n,i),1,mla%mba%rr(n-1,:),i,dm)
+          enddo
+       enddo
+    end if
     
   end subroutine make_edge_state
 

@@ -170,12 +170,12 @@ contains
 
     ! create temperature or enthalpy edge states
     call make_edge_state(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0, &
-                         w0_cart_vec,dx,dt,is_vel,the_bc_level,velpred,comp,dm+comp,1)
+                         w0_cart_vec,dx,dt,is_vel,the_bc_level,velpred,comp,dm+comp,1,mla)
 
     ! create species edge states
     call make_edge_state(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0, &
                          w0_cart_vec,dx,dt,is_vel,the_bc_level,velpred,spec_comp, &
-                         dm+spec_comp,nspec)
+                         dm+spec_comp,nspec,mla)
 
     ! compute enthalpy edge states
     if(predict_temp_at_edges) then
@@ -195,7 +195,7 @@ contains
     if (ntrac .ge. 1) then
        call make_edge_state(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0, &
                             w0_cart_vec,dx,dt,is_vel,the_bc_level,velpred,trac_comp, &
-                            dm+trac_comp,ntrac)
+                            dm+trac_comp,ntrac,mla)
     end if
 
     !**************************************************************************
