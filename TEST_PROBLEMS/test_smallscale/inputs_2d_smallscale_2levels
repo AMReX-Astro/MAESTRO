@@ -7,13 +7,15 @@
 
  grav_const = 0.e0
 
- max_step  = 0
- init_iter = 0
-
+ max_step  = 10
  stop_time = 2.5
 
- plot_int  = 10
- chk_int   = 100
+ do_initial_projection = 1
+ init_divu_iter = 3
+ init_iter = 1
+
+ plot_int  = 1
+ chk_int   = -1
 
  cflfac = 0.15
  init_shrink = 0.1
@@ -31,18 +33,8 @@
  mg_verbose = 1
  cg_verbose = 0
 
- do_initial_projection = 0
- init_divu_iter = 0
-
- perturb_model = F
-
  use_thermal_diffusion = T
- temp_diffusion_formulation = F
  predict_temp_at_edges = T
- do_half_alg = F
-
- use_big_h = F
-
  evolve_base_state = F
 
 !restart = 50
