@@ -124,7 +124,7 @@ contains
   end subroutine make_edge_state
 
   
-  subroutine make_edge_state_2d(n,s,u,sedgex,sedgey,uadv,vadv,utrans, &
+  subroutine make_edge_state_2d(n,s,u,sedgex,sedgey,umac,vmac,utrans, &
                                 vtrans,force,w0,lo,dx,dt,is_vel,phys_bc,adv_bc,velpred, &
                                 ng,comp)
 
@@ -133,8 +133,8 @@ contains
     real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng:,lo(2)-ng:,:)
     real(kind=dp_t), intent(inout) :: sedgex(lo(1)   :,lo(2)   :,:)
     real(kind=dp_t), intent(inout) :: sedgey(lo(1)   :,lo(2)   :,:)
-    real(kind=dp_t), intent(inout) ::   uadv(lo(1)- 1:,lo(2)- 1:)
-    real(kind=dp_t), intent(inout) ::   vadv(lo(1)- 1:,lo(2)- 1:)
+    real(kind=dp_t), intent(inout) ::   umac(lo(1)- 1:,lo(2)- 1:)
+    real(kind=dp_t), intent(inout) ::   vmac(lo(1)- 1:,lo(2)- 1:)
     real(kind=dp_t), intent(in   ) :: utrans(lo(1)- 1:,lo(2)- 1:)
     real(kind=dp_t), intent(in   ) :: vtrans(lo(1)- 1:,lo(2)- 1:)
     real(kind=dp_t), intent(in   ) ::  force(lo(1)- 1:,lo(2)- 1:,:)
@@ -206,15 +206,15 @@ contains
        
     else 
        
-       umax = abs(uadv(is,js))
+       umax = abs(umac(is,js))
        do j = js,je
           do i = is,ie+1
-             umax = max(umax,abs(uadv(i,j)))
+             umax = max(umax,abs(umac(i,j)))
           end do
        end do
        do j = js,je+1
           do i = is,ie
-             umax = max(umax,abs(vadv(i,j)))
+             umax = max(umax,abs(vmac(i,j)))
           end do
        end do
 
@@ -306,8 +306,8 @@ contains
                 s_l(i+1)= s(i,j,comp) + (HALF-ubardth)*slopex(i,j,1) + dth*st
                 s_r(i  )= s(i,j,comp) - (HALF+ubardth)*slopex(i,j,1) + dth*st
              else
-                s_l(i+1)= s(i,j,comp) + (HALF-dth*uadv(i+1,j)/hx)*slopex(i,j,1) + dth*st
-                s_r(i  )= s(i,j,comp) - (HALF+dth*uadv(i  ,j)/hx)*slopex(i,j,1) + dth*st
+                s_l(i+1)= s(i,j,comp) + (HALF-dth*umac(i+1,j)/hx)*slopex(i,j,1) + dth*st
+                s_r(i  )= s(i,j,comp) - (HALF+dth*umac(i  ,j)/hx)*slopex(i,j,1) + dth*st
              endif
              
           enddo
@@ -322,9 +322,9 @@ contains
              enddo
           else
              do i = is, ie+1 
-                sedgex(i,j,comp)=merge(s_l(i),s_r(i),uadv(i,j).gt.ZERO)
+                sedgex(i,j,comp)=merge(s_l(i),s_r(i),umac(i,j).gt.ZERO)
                 savg = HALF*(s_r(i) + s_l(i))
-                sedgex(i,j,comp)=merge(savg,sedgex(i,j,comp),abs(uadv(i,j)) .lt. eps)
+                sedgex(i,j,comp)=merge(savg,sedgex(i,j,comp),abs(umac(i,j)) .lt. eps)
              enddo
           endif
           
@@ -365,7 +365,7 @@ contains
           
           if (velpred .eq. 1) then
              do i = is, ie+1 
-                uadv(i,j) = sedgex(i,j,1)
+                umac(i,j) = sedgex(i,j,1)
              enddo
           endif
        enddo
@@ -441,8 +441,8 @@ contains
                 s_b(j+1)= s(i,j,comp) + (HALF-vbardth)*slopey(i,j,1) + dth*st
                 s_t(j  )= s(i,j,comp) - (HALF+vbardth)*slopey(i,j,1) + dth*st
              else
-                s_b(j+1)= s(i,j,comp) + (HALF-dth*vadv(i,j+1)/hy)*slopey(i,j,1) + dth*st
-                s_t(j  )= s(i,j,comp) - (HALF+dth*vadv(i,j  )/hy)*slopey(i,j,1) + dth*st
+                s_b(j+1)= s(i,j,comp) + (HALF-dth*vmac(i,j+1)/hy)*slopey(i,j,1) + dth*st
+                s_t(j  )= s(i,j,comp) - (HALF+dth*vmac(i,j  )/hy)*slopey(i,j,1) + dth*st
              endif
              
           enddo
@@ -459,9 +459,9 @@ contains
           else
              
              do j = js, je+1 
-                sedgey(i,j,comp)=merge(s_b(j),s_t(j),vadv(i,j).gt.ZERO)
+                sedgey(i,j,comp)=merge(s_b(j),s_t(j),vmac(i,j).gt.ZERO)
                 savg = HALF*(s_b(j) + s_t(j))
-                sedgey(i,j,comp)=merge(savg,sedgey(i,j,comp),abs(vadv(i,j)) .lt. eps)
+                sedgey(i,j,comp)=merge(savg,sedgey(i,j,comp),abs(vmac(i,j)) .lt. eps)
              enddo
 
           endif
@@ -504,7 +504,7 @@ contains
           
           if (velpred .eq. 1) then
              do j = js, je+1 
-                vadv(i,j) = sedgey(i,j,2)
+                vmac(i,j) = sedgey(i,j,2)
              enddo
           end if
           
@@ -522,8 +522,8 @@ contains
   end subroutine make_edge_state_2d
   
   
-  subroutine make_edge_state_3d(n,s,u,sedgex,sedgey,sedgez,uadv, &
-                                vadv,wadv,utrans,vtrans,wtrans,force,w0,w0_cart_vec,lo, &
+  subroutine make_edge_state_3d(n,s,u,sedgex,sedgey,sedgez,umac, &
+                                vmac,wmac,utrans,vtrans,wtrans,force,w0,w0_cart_vec,lo, &
                                 dx,dt,is_vel,phys_bc,adv_bc,velpred,ng,comp)
 
     integer        , intent(in   ) :: n,lo(:)
@@ -532,9 +532,9 @@ contains
     real(kind=dp_t), intent(inout) :: sedgex(lo(1)   :,lo(2)   :,lo(3)   :,:)
     real(kind=dp_t), intent(inout) :: sedgey(lo(1)   :,lo(2)   :,lo(3)   :,:)
     real(kind=dp_t), intent(inout) :: sedgez(lo(1)   :,lo(2)   :,lo(3)   :,:)
-    real(kind=dp_t), intent(inout) ::   uadv(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
-    real(kind=dp_t), intent(inout) ::   vadv(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
-    real(kind=dp_t), intent(inout) ::   wadv(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
+    real(kind=dp_t), intent(inout) ::   umac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
+    real(kind=dp_t), intent(inout) ::   vmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
+    real(kind=dp_t), intent(inout) ::   wmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
     real(kind=dp_t), intent(in   ) :: utrans(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
     real(kind=dp_t), intent(in   ) :: vtrans(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
     real(kind=dp_t), intent(in   ) :: wtrans(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
@@ -629,25 +629,25 @@ contains
         
      else 
         
-        umax = abs(uadv(is,js,ks))
+        umax = abs(umac(is,js,ks))
         do k = ks,ke
            do j = js,je
               do i = is,ie+1
-                 umax = max(umax,abs(uadv(i,j,k)))
+                 umax = max(umax,abs(umac(i,j,k)))
               end do
            end do
         end do
         do k = ks,ke
            do j = js,je+1
               do i = is,ie
-                 umax = max(umax,abs(vadv(i,j,k)))
+                 umax = max(umax,abs(vmac(i,j,k)))
               end do
            end do
         end do
         do k = ks,ke+1
            do j = js,je
               do i = is,ie
-                 umax = max(umax,abs(wadv(i,j,k)))
+                 umax = max(umax,abs(wmac(i,j,k)))
               end do
            end do
         end do
@@ -791,9 +791,9 @@ contains
                     s_l(i+1)= s(i,j,k,comp) + (HALF-ubardth)*slopex(i,j,k,1) + dth*st
                     s_r(i  )= s(i,j,k,comp) - (HALF+ubardth)*slopex(i,j,k,1) + dth*st
                  else
-                    s_l(i+1)= s(i,j,k,comp) + (HALF-dth*uadv(i+1,j,k)/hx)*slopex(i,j,k,1) &
+                    s_l(i+1)= s(i,j,k,comp) + (HALF-dth*umac(i+1,j,k)/hx)*slopex(i,j,k,1) &
                          + dth*st
-                    s_r(i  )= s(i,j,k,comp) - (HALF+dth*uadv(i  ,j,k)/hx)*slopex(i,j,k,1) &
+                    s_r(i  )= s(i,j,k,comp) - (HALF+dth*umac(i  ,j,k)/hx)*slopex(i,j,k,1) &
                          + dth*st
                  endif
                  
@@ -809,9 +809,9 @@ contains
                  enddo
               else
                  do i = is, ie+1 
-                    sedgex(i,j,k,comp)=merge(s_l(i),s_r(i),uadv(i,j,k).gt.ZERO)
+                    sedgex(i,j,k,comp)=merge(s_l(i),s_r(i),umac(i,j,k).gt.ZERO)
                     savg = HALF*(s_r(i) + s_l(i))
-                    sedgex(i,j,k,comp)=merge(savg,sedgex(i,j,k,comp),abs(uadv(i,j,k)) .lt. eps)
+                    sedgex(i,j,k,comp)=merge(savg,sedgex(i,j,k,comp),abs(umac(i,j,k)) .lt. eps)
                  enddo
               endif
               
@@ -852,7 +852,7 @@ contains
               
               if (velpred .eq. 1) then
                  do i = is, ie+1 
-                    uadv(i,j,k) = sedgex(i,j,k,1)
+                    umac(i,j,k) = sedgex(i,j,k,1)
                  enddo
               endif
               
@@ -992,9 +992,9 @@ contains
                     s_b(j+1)= s(i,j,k,comp) + (HALF-vbardth)*slopey(i,j,k,1) + dth*st
                     s_t(j  )= s(i,j,k,comp) - (HALF+vbardth)*slopey(i,j,k,1) + dth*st
                  else
-                    s_b(j+1)= s(i,j,k,comp) + (HALF-dth*vadv(i,j+1,k)/hy)*slopey(i,j,k,1) &
+                    s_b(j+1)= s(i,j,k,comp) + (HALF-dth*vmac(i,j+1,k)/hy)*slopey(i,j,k,1) &
                          + dth*st
-                    s_t(j  )= s(i,j,k,comp) - (HALF+dth*vadv(i,j,  k)/hy)*slopey(i,j,k,1) &
+                    s_t(j  )= s(i,j,k,comp) - (HALF+dth*vmac(i,j,  k)/hy)*slopey(i,j,k,1) &
                          + dth*st
                  endif
                  
@@ -1010,9 +1010,9 @@ contains
                  enddo
               else
                  do j = js, je+1 
-                    sedgey(i,j,k,comp)=merge(s_b(j),s_t(j),vadv(i,j,k).gt.ZERO)
+                    sedgey(i,j,k,comp)=merge(s_b(j),s_t(j),vmac(i,j,k).gt.ZERO)
                     savg = HALF*(s_b(j) + s_t(j))
-                    sedgey(i,j,k,comp)=merge(savg,sedgey(i,j,k,comp),abs(vadv(i,j,k)) .lt. eps)
+                    sedgey(i,j,k,comp)=merge(savg,sedgey(i,j,k,comp),abs(vmac(i,j,k)) .lt. eps)
                  enddo
               endif
               
@@ -1054,7 +1054,7 @@ contains
               
               if (velpred .eq. 1) then
                  do j = js, je+1 
-                    vadv(i,j,k) = sedgey(i,j,k,2)
+                    vmac(i,j,k) = sedgey(i,j,k,2)
                  enddo
               endif
               
@@ -1193,9 +1193,9 @@ contains
                     s_d(k+1)= s(i,j,k,comp) + (HALF-wbardth)*slopez(i,j,k,1) + dth*st
                     s_u(k  )= s(i,j,k,comp) - (HALF+wbardth)*slopez(i,j,k,1) + dth*st
                  else
-                    s_d(k+1)= s(i,j,k,comp) + (HALF-dth*wadv(i,j,k+1)/hz)*slopez(i,j,k,1)&
+                    s_d(k+1)= s(i,j,k,comp) + (HALF-dth*wmac(i,j,k+1)/hz)*slopez(i,j,k,1)&
                          + dth*st
-                    s_u(k  )= s(i,j,k,comp) - (HALF+dth*wadv(i,j,k  )/hz)*slopez(i,j,k,1) &
+                    s_u(k  )= s(i,j,k,comp) - (HALF+dth*wmac(i,j,k  )/hz)*slopez(i,j,k,1) &
                          + dth*st
                  endif
                  
@@ -1211,9 +1211,9 @@ contains
                  enddo
               else
                  do k = ks, ke+1 
-                    sedgez(i,j,k,comp)=merge(s_d(k),s_u(k),wadv(i,j,k).gt.ZERO)
+                    sedgez(i,j,k,comp)=merge(s_d(k),s_u(k),wmac(i,j,k).gt.ZERO)
                     savg = HALF*(s_d(k) + s_u(k))
-                    sedgez(i,j,k,comp)=merge(savg,sedgez(i,j,k,comp),abs(wadv(i,j,k)) .lt. eps)
+                    sedgez(i,j,k,comp)=merge(savg,sedgez(i,j,k,comp),abs(wmac(i,j,k)) .lt. eps)
                  enddo
               endif
               
@@ -1255,7 +1255,7 @@ contains
               
               if (velpred .eq. 1) then
                  do k = ks, ke+1 
-                    wadv(i,j,k) = sedgez(i,j,k,3)
+                    wmac(i,j,k) = sedgez(i,j,k,3)
                  enddo
               endif
               
@@ -1276,12 +1276,12 @@ contains
      
    end subroutine make_edge_state_3d
    
-   subroutine make_edge_state_1d(s,sedgex,uadv,force,lo,dx,dt)
+   subroutine make_edge_state_1d(s,sedgex,umac,force,lo,dx,dt)
      
      integer        , intent(in   ) :: lo
      real(kind=dp_t), intent(in   ) ::      s(lo:)
      real(kind=dp_t), intent(inout) :: sedgex(lo:)
-     real(kind=dp_t), intent(in   ) ::   uadv(lo:)
+     real(kind=dp_t), intent(in   ) ::   umac(lo:)
      real(kind=dp_t), intent(in   ) ::  force(lo:)
      real(kind=dp_t), intent(in   ) :: dx,dt
      
@@ -1318,7 +1318,7 @@ contains
      
      umax = ZERO
      do i = is,ie+1
-        umax = max(umax,abs(uadv(i)))
+        umax = max(umax,abs(umac(i)))
      end do
      
      eps = abs_eps * umax
@@ -1351,7 +1351,7 @@ contains
      ! Use fourth-order slopes to compute edge values
      do i = is,ie
         
-        u = HALF * (uadv(i) + uadv(i+1))
+        u = HALF * (umac(i) + umac(i+1))
         ubardth = dth*u/dx
         
         s_l(i+1)= s(i) + (HALF-ubardth)*slopex(i) + dth * force(i)
@@ -1363,9 +1363,9 @@ contains
      sedgex(ie+1) = s_l(ie+1)
      
      do i = is+1, ie 
-        sedgex(i)=merge(s_l(i),s_r(i),uadv(i).gt.ZERO)
+        sedgex(i)=merge(s_l(i),s_r(i),umac(i).gt.ZERO)
         savg = HALF*(s_r(i) + s_l(i))
-        sedgex(i)=merge(savg,sedgex(i),abs(uadv(i)) .lt. eps)
+        sedgex(i)=merge(savg,sedgex(i),abs(umac(i)) .lt. eps)
      enddo
      
      deallocate(s_l)
