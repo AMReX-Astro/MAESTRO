@@ -59,22 +59,17 @@ contains
        
        call multifab_fill_boundary(s(n))
        call multifab_physbc(s(n),rho_comp,dm+rho_comp,nscal,dx(n,:),bc(n))
-       
-       do i = 1, s(n)%nboxes
-          if ( multifab_remote(s(n),i) ) cycle
-          lo =  lwb(get_box(s(n),i))
-          hi =  upb(get_box(s(n),i))
-          select case (dm)
-          case (2)
-             call zerobasestate_2d(lo, hi, ng, dx(n,:), perturb_model, &
-                                   prob_lo, prob_hi, s0(n,:,:))
-          case (3)
-             call zerobasestate_3d(lo, hi, ng, dx(n,:), perturb_model, &
-                                   prob_lo, prob_hi, s0(n,:,:))
-          end select
+ 
+       ! set base state rho, rhoh, and species to zero
+       ! we do not zero base state temperature because it is used as an initial
+       ! guess to the eos later in the code
+       do i=0,nr(n)-1
+          s0(n,i,rho_comp) = 0.d0
+          s0(n,i,rhoh_comp) = 0.d0
+          s0(n,i,spec_comp:spec_comp+nspec-1) = 0.d0
        end do
-
-    enddo
+       
+    end do ! end loop over levels
 
     do n=nlevs,2,-1
        call ml_cc_restriction(s(n-1),s(n),mla%mba%rr(n-1,:))
@@ -158,52 +153,6 @@ contains
     end if
     
   end subroutine initscalardata_3d
-
-  subroutine zerobasestate_2d (lo,hi,ng,dx, perturb_model, &
-                               prob_lo,prob_hi,s0)
-
-    integer, intent(in) :: lo(:), hi(:), ng
-    real (kind = dp_t), intent(in ) :: dx(:)
-    logical,            intent(in ) :: perturb_model
-    real (kind = dp_t), intent(in ) :: prob_lo(:)
-    real (kind = dp_t), intent(in ) :: prob_hi(:)
-    real(kind=dp_t), intent(inout) ::    s0(0:,:)
-
-    !     Local variables
-    integer :: j
-
-    do j = lo(2),hi(2)
-       s0(j,rho_comp)                    = 0.d0
-       s0(j,rhoh_comp)                   = 0.d0
-       s0(j,spec_comp:spec_comp+nspec-1) = 0.d0
-!      s0(j,temp_comp)                   = 0.d0
-    enddo
-    
-  end subroutine zerobasestate_2d
-
-  subroutine zerobasestate_3d(lo,hi,ng,dx, perturb_model, &
-                              prob_lo,prob_hi,s0)
-
-    implicit none
-
-    integer, intent(in) :: lo(:), hi(:), ng
-    real (kind = dp_t), intent(in ) :: dx(:)
-    logical,            intent(in ) :: perturb_model
-    real (kind = dp_t), intent(in ) :: prob_lo(:)
-    real (kind = dp_t), intent(in ) :: prob_hi(:)
-    real(kind=dp_t), intent(inout) ::    s0(0:,:)
-
-    !     Local variables
-    integer :: k
-
-    do k = lo(3),hi(3)
-       s0(k,rho_comp)                    = 0.d0
-       s0(k,rhoh_comp)                   = 0.d0
-       s0(k,spec_comp:spec_comp+nspec-1) = 0.d0
-!      s0(k,temp_comp)                   = 0.d0
-    enddo
-    
-  end subroutine zerobasestate_3d
 
   subroutine initveldata(nlevs,u,s0,p0,dx,prob_lo,prob_hi,bc,mla)
 
