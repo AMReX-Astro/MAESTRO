@@ -7,7 +7,7 @@
 
  grav_const = 0.e0
 
- max_step  = 10
+ max_step  = 200
  stop_time = 2.5
 
  do_initial_projection = 1
