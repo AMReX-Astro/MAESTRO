@@ -4,6 +4,7 @@ module average_module
   use bl_constants_module
   use multifab_module
   use geometry
+  use ml_layout_module
   
   implicit none
   
@@ -34,16 +35,18 @@ contains
   
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine average(phi,phibar,dx,comp,ncomp)
+  subroutine average(mla,phi,phibar,dx,comp,ncomp)
     
+    type(ml_layout), intent(inout) :: mla
     integer        , intent(in   ) :: comp,ncomp
     type(multifab) , intent(inout) :: phi(:)
     real(kind=dp_t), intent(inout) :: phibar(:,0:,:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     
+    ! local
     real(kind=dp_t), pointer     :: pp(:,:,:,:)
     integer                      :: lo(phi(1)%dim),hi(phi(1)%dim)
-    integer                      :: i,k,n,nlevs,ng,dm
+    integer                      :: i,k,n,nlevs,ng,dm,rr
     real(kind=dp_t), allocatable :: vol_grid(:,:),vol_proc(:,:)
     real(kind=dp_t), allocatable :: vol_tot(:,:),phibar_proc(:,:,:)
     real(kind=dp_t), allocatable :: source_buffer(:,:), target_buffer(:,:)
@@ -52,75 +55,98 @@ contains
     ng = phi(1)%ng
     nlevs = size(dx,dim=1)
     
-    phibar(:,:,:) = ZERO
-    
+    phibar(:,:,:) = ZERO    
+
     if (evolve_base) then
        
        if (spherical .eq. 1) then
           allocate(vol_grid(nlevs,0:nr(nlevs)-1))
        end if
        
-       allocate(vol_proc(nlevs,0:nr(nlevs)-1),vol_tot(nlevs,0:nr(nlevs)-1))
+       allocate(   vol_proc(nlevs,0:nr(nlevs)-1))
+       allocate(    vol_tot(nlevs,0:nr(nlevs)-1))
        allocate(phibar_proc(nlevs,0:nr(nlevs)-1,ncomp))
-       allocate(source_buffer(nlevs,ncomp), target_buffer(nlevs,ncomp))
+
+       allocate(source_buffer(nlevs,ncomp))
+       allocate(target_buffer(nlevs,ncomp))
        
        vol_proc(:,:) = ZERO
        vol_tot(:,:)  = ZERO
        
        phibar_proc(:,:,:) = ZERO
        
-       do n = 1, nlevs
-          do i = 1, phi(n)%nboxes
-             if ( multifab_remote(phi(n), i) ) cycle
-             
-             pp => dataptr(phi(n), i)
-             lo =  lwb(get_box(phi(n), i))
-             hi =  upb(get_box(phi(n), i))
-             
+
+       if(spherical .eq. 0) then
+
+          ! the first step is to compute the average as if the coarsest level were the
+          ! only level in existence
+          do i = 1, phi(1)%nboxes
+             if ( multifab_remote(phi(1), i) ) cycle
+             pp => dataptr(phi(1), i)
+             lo =  lwb(get_box(phi(1), i))
+             hi =  upb(get_box(phi(1), i))
              select case (dm)
              case (2)
-                call average_2d(pp(:,:,1,:),phibar_proc(n,:,:),lo,hi,ng,comp,ncomp,dx(n,:))
+                call average_coarsest_2d(pp(:,:,1,:),phibar_proc(1,:,:),lo,hi,ng, &
+                                         comp,ncomp,dx(1,:))
 
-                vol_proc(n,lo(2):hi(2)) = vol_proc(n,lo(2):hi(2)) &
-                     + (hi(1)-lo(1)+1)*dx(n,1)*dx(n,2)
-                
+                vol_proc(1,lo(2):hi(2)) = vol_proc(1,lo(2):hi(2)) &
+                     + (hi(1)-lo(1)+1)*dx(1,1)*dx(1,2)
              case (3)
-                if (spherical .eq. 1) then
-                   vol_grid(n,:) = ZERO
-                   call average_3d_sphr(n,pp(:,:,:,:),phibar_proc(n,:,:),lo,hi,ng,dx(n,:), &
-                                        vol_grid(n,:),comp,ncomp)
-
-                   vol_proc(n,:) = vol_proc(n,:) + vol_grid(n,:)
-                else
-                   call average_3d(pp(:,:,:,:),phibar_proc(n,:,:),lo,hi,ng,comp, &
-                                   ncomp,dx(n,:))
-
-                   vol_proc(n,lo(3):hi(3)) = vol_proc(n,lo(3):hi(3)) &
-                        + (hi(1)-lo(1)+1)*(hi(2)-lo(2)+1)*dx(n,1)*dx(n,2)*dx(n,3)
-                end if
-                
+                   call average_coarsest_3d(pp(:,:,:,:),phibar_proc(1,:,:),lo,hi,ng, &
+                                            comp,ncomp,dx(1,:))
+                   
+                   vol_proc(1,lo(3):hi(3)) = vol_proc(1,lo(3):hi(3)) &
+                        + (hi(1)-lo(1)+1)*(hi(2)-lo(2)+1)*dx(1,1)*dx(1,2)*dx(1,3)
              end select
           end do
+          
+          do k = 0,nr(1)-1
+             call parallel_reduce(vol_tot(1,k),  vol_proc(1,k),      MPI_SUM)
+             
+             ! put all the components for the current k into a buffer arrar and reduce
+             source_buffer(1,:) = phibar_proc(1,k,:)
+             call parallel_reduce(target_buffer(1,:), source_buffer(1,:), MPI_SUM)
+             phibar(1,k,:) = target_buffer(1,:)
+             
+             phibar(1,k,:) = phibar(1,k,:) / vol_tot(1,k)
+          end do
 
-          if (dm .eq. 2 .or. (dm.eq.3.and.spherical.eq.0)) then
-             do k = 0,nr(n)-1
-                call parallel_reduce(vol_tot(n,k),  vol_proc(n,k),      MPI_SUM)
-                
-                ! put all the components for the current k into a buffer array
-                ! and reduce
-                source_buffer(n,:) = phibar_proc(n,k,:)
-                call parallel_reduce(target_buffer(n,:), source_buffer(n,:), MPI_SUM)
-                phibar(n,k,:) = target_buffer(n,:)
-                
-                phibar(n,k,:) = phibar(n,k,:) / vol_tot(n,k)
+          ! done computing the average at the coarsest level
+          ! now we compute the average at the finer levels
+          do n=2,nlevs
+
+             rr = mla%mba%rr(n-1,dm)
+
+             ! we begin by using piecewise linear interpolation to get the average at
+             ! a fine level using the coarser data
+             do k=0,nr(n)-1
+                phibar(n,k,:) = phibar(n-1,int(k/rr),:)
+             end do
+
+          end do
+
+       else if(spherical .eq. 1) then
+
+          ! This does not work for multilevel yet.
+
+          do n = 1, nlevs
+             do i = 1, phi(n)%nboxes
+                if ( multifab_remote(phi(n), i) ) cycle
+                pp => dataptr(phi(n), i)
+                lo =  lwb(get_box(phi(n), i))
+                hi =  upb(get_box(phi(n), i))
+                vol_grid(n,:) = ZERO
+                call average_3d_sphr(n,pp(:,:,:,:),phibar_proc(n,:,:),lo,hi,ng,dx(n,:), &
+                                     vol_grid(n,:),comp,ncomp)
+                      
+                vol_proc(n,:) = vol_proc(n,:) + vol_grid(n,:)
              end do
              
-          else
              do k = 0,nr(n)-1
                 call parallel_reduce(vol_tot(n,k),  vol_proc(n,k),      MPI_SUM)
                 
-                ! put all the components for the current k into a buffer array
-                ! and reduce
+                ! put all the components for the current k into a buffer array and reduce
                 source_buffer(n,:) = phibar_proc(n,k,:)
                 call parallel_reduce(target_buffer(n,:), source_buffer(n,:), MPI_SUM)
                 phibar(n,k,:) = target_buffer(n,:)
@@ -130,11 +156,13 @@ contains
                 else
                    phibar(n,k,:) = ZERO
                 end if
-                
              end do
-             deallocate(vol_grid)
-          end if
-       enddo
+
+          enddo
+
+          deallocate(vol_grid)
+          
+       end if
 
        deallocate(vol_proc,vol_tot,phibar_proc)
        deallocate(source_buffer, target_buffer)
@@ -143,7 +171,7 @@ contains
     
   end subroutine average
   
-  subroutine average_2d (phi,phibar,lo,hi,ng,start_comp,ncomp,dx)
+  subroutine average_coarsest_2d(phi,phibar,lo,hi,ng,start_comp,ncomp,dx)
     
     integer         , intent(in   ) :: lo(:), hi(:), ng, start_comp, ncomp
     real (kind=dp_t), intent(in   ) :: phi(lo(1)-ng:,lo(2)-ng:,:)
@@ -165,9 +193,9 @@ contains
        end do
     end do
     
-  end subroutine average_2d
+  end subroutine average_coarsest_2d
   
-  subroutine average_3d (phi,phibar,lo,hi,ng,start_comp,ncomp,dx)
+  subroutine average_coarsest_3d(phi,phibar,lo,hi,ng,start_comp,ncomp,dx)
     
     integer         , intent(in   ) :: lo(:), hi(:), ng, start_comp, ncomp
     real (kind=dp_t), intent(in   ) :: phi(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
@@ -191,7 +219,7 @@ contains
        end do
     end do
     
-  end subroutine average_3d
+  end subroutine average_coarsest_3d
   
   subroutine average_3d_sphr(n,phi,phibar,lo,hi,ng,dx,sum,start_comp,ncomp)
     

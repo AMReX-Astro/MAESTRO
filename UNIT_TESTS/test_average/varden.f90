@@ -281,7 +281,7 @@ subroutine varden()
   if ( parallel_IOProcessor() ) &
        print *, 'averaging...'
   do n=1,nlevs
-     call average(sold,s0_avg,dx,1,nscal)
+     call average(mla,sold,s0_avg,dx,1,nscal)
   enddo
   if ( parallel_IOProcessor() ) &
        print *, 'done'
