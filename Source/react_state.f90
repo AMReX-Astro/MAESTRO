@@ -26,7 +26,7 @@ contains
   subroutine react_state (nlevs,mla,s_in,s_out,rho_omegadot,rho_Hext,dt,dx,the_bc_level,time)
 
     integer        , intent(in   ) :: nlevs
-    type(ml_layout), intent(inout) :: mla
+    type(ml_layout), intent(in   ) :: mla
     type(multifab) , intent(in   ) :: s_in(:)
     type(multifab) , intent(inout) :: s_out(:)
     type(multifab) , intent(inout) :: rho_omegadot(:)
@@ -68,6 +68,7 @@ contains
 
        ! fill ghost cells for two adjacent grids at the same level
        ! this includes periodic domain boundary conditions
+       ! note: rho_omegadot and rho_Hext have zero ghost cells
        call multifab_fill_boundary(s_out(n))
        
        ! fill physical boundary conditions at domain boundaries
@@ -78,7 +79,9 @@ contains
     do n=nlevs,2,-1
        ! make sure that coarse cells are the average of the fine cells covering it.
        ! the loop over nlevs must count backwards to make sure the finer grids are done first
-       call ml_cc_restriction(s_out(n-1),s_out(n),mla%mba%rr(n-1,:))
+       call ml_cc_restriction(s_out(n-1)       ,s_out(n)       ,mla%mba%rr(n-1,:))
+       call ml_cc_restriction(rho_omegadot(n-1),rho_omegadot(n),mla%mba%rr(n-1,:))
+       call ml_cc_restriction(rho_Hext(n-1)    ,rho_Hext(n)    ,mla%mba%rr(n-1,:))
 
        ! fill fine ghost cells using interpolation from the underlying coarse data
        call multifab_fill_ghost_cells(s_out(n),s_out(n-1), &
