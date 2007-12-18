@@ -98,7 +98,7 @@ contains
     character(len=*) , intent(in   ) :: dirname
     type(multifab)   , intent(inout) :: plotdata(:)
     type(multifab)   , intent(inout) :: u(:)
-    type(multifab)   , intent(in   ) :: s(:)
+    type(multifab)   , intent(inout) :: s(:)
     type(multifab)   , intent(in   ) :: gp(:)
     type(multifab)   , intent(in   ) :: rho_omegadot(:)
     type(multifab)   , intent(in   ) :: Source(:)
