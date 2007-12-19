@@ -1,8 +1,6 @@
 module heating_module
 
   use bl_types
-  use bl_constants_module
-  use multifab_module
 
   implicit none
 
@@ -13,6 +11,8 @@ contains
 
    subroutine get_H_2d (H,lo,hi,dx,time)
 
+     use bl_constants_module
+
       integer, intent(in) :: lo(:), hi(:)
       real(kind=dp_t), intent(inout) :: H(lo(1):,lo(2):)
       real(kind=dp_t), intent(in   ) :: dx(:),time
@@ -22,6 +22,8 @@ contains
    end subroutine get_H_2d
 
    subroutine get_H_3d (H,lo,hi,dx,time)
+
+     use bl_constants_module
 
       integer, intent(in) :: lo(:), hi(:)
       real(kind=dp_t), intent(inout) :: H(lo(1):,lo(2):,lo(3):)

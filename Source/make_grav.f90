@@ -1,22 +1,24 @@
 module make_grav_module
   
   use bl_types
-  use bl_constants_module
-  use multifab_module
-  use variables
-  use geometry
-  use probin_module, only: grav_const
 
   implicit none
 
   real(kind=dp_t), parameter :: Gconst = 6.6725985E-8_dp_t
 
   private
+
   public :: make_grav_cell, make_grav_edge
 
 contains
 
   subroutine make_grav_cell(n,grav_cell,rho0)
+
+    use bl_constants_module
+    use variables
+    use geometry
+    use probin_module, only: grav_const
+
 
     ! compute the base state gravitational acceleration at the cell
     ! centers.  The base state uses 0-based indexing, so grav_cell 
@@ -60,6 +62,12 @@ contains
   end subroutine make_grav_cell
 
   subroutine make_grav_edge(n,grav_edge,rho0)
+
+  use bl_constants_module
+  use variables
+  use geometry
+  use probin_module, only: grav_const
+
 
     ! compute the base state gravity at the cell edges (grav_edge(1)
     ! is the gravitational acceleration at the left edge of zone 1).

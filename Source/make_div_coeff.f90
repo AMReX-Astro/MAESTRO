@@ -1,12 +1,11 @@
 module make_div_coeff_module
 
   use bl_types
-  use bl_constants_module
-  use geometry
 
   implicit none
 
   private
+
   public :: make_div_coeff
 
 contains
@@ -15,6 +14,9 @@ contains
 !  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
    subroutine make_div_coeff(n,div_coeff,rho0,p0,gam1,grav_center,anelastic_cutoff)
+
+     use bl_constants_module
+     use geometry
 
       integer        , intent(in   ) :: n
       real(kind=dp_t), intent(  out) :: div_coeff(0:)

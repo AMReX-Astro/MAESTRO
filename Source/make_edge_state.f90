@@ -1,18 +1,14 @@
 module make_edge_state_module
 
   use bl_types
-  use bl_constants_module
   use multifab_module
-  use slope_module
-  use fill_3d_module
-  use geometry
   use define_bc_module
   use ml_layout_module
-  use ml_restriction_module
 
   implicit none
 
   private
+
   public :: make_edge_state, make_edge_state_1d
   
 contains
@@ -20,6 +16,10 @@ contains
   subroutine make_edge_state(nlevs,s,u,sedge,umac,utrans,force,w0,w0_cart_vec,dx, &
                              dt,is_vel,the_bc_level,velpred,start_scomp,start_bccomp, &
                              num_comp,mla)
+
+    use bl_constants_module
+    use geometry
+    use ml_restriction_module, only : ml_edge_restriction_c
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(in   ) :: s(:),u(:)
@@ -127,6 +127,10 @@ contains
   subroutine make_edge_state_2d(n,s,u,sedgex,sedgey,umac,vmac,utrans, &
                                 vtrans,force,w0,lo,dx,dt,is_vel,phys_bc,adv_bc,velpred, &
                                 ng,comp)
+
+    use bl_constants_module
+    use slope_module
+    use geometry
 
     integer        , intent(in   ) :: n,lo(:)
     real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng:,lo(2)-ng:,:)
@@ -525,6 +529,10 @@ contains
   subroutine make_edge_state_3d(n,s,u,sedgex,sedgey,sedgez,umac, &
                                 vmac,wmac,utrans,vtrans,wtrans,force,w0,w0_cart_vec,lo, &
                                 dx,dt,is_vel,phys_bc,adv_bc,velpred,ng,comp)
+
+    use bl_constants_module
+    use slope_module
+    use geometry
 
     integer        , intent(in   ) :: n,lo(:)
     real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
@@ -1277,6 +1285,9 @@ contains
    end subroutine make_edge_state_3d
    
    subroutine make_edge_state_1d(n,s,sedgex,umac,force,lo,dx,dt)
+
+     use geometry
+     use bl_constants_module
      
      integer        , intent(in   ) :: n, lo
      real(kind=dp_t), intent(in   ) ::      s(lo:)
@@ -1292,7 +1303,7 @@ contains
      real(kind=dp_t) :: dmin,dpls,ds
      real(kind=dp_t) :: ubardth, dth, savg
      real(kind=dp_t) :: abs_eps, eps, umax, u
-     real(kind=dp_t) :: fourthirds,sixth
+     real(kind=dp_t) :: fourthirds
      
      integer :: i,is,ie
      integer :: hi,cen,lim,flag,fromm
@@ -1338,7 +1349,6 @@ contains
      dxscr(ie,fromm) = ZERO
      
      fourthirds = 4.0_dp_t / 3.0_dp_t
-     sixth      = 1.0_dp_t / 6.0_dp_t
      
      do i = is+1,ie-1
         ds = fourthirds * dxscr(i,cen) - sixth * (dxscr(i+1,fromm) + dxscr(i-1,fromm))

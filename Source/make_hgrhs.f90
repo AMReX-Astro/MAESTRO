@@ -1,14 +1,12 @@
 module hgrhs_module
 
   use bl_types
-  use bl_constants_module
   use multifab_module
-  use geometry
-  use fill_3d_module
   
   implicit none
 
   private
+
   public :: make_hgrhs
 
 contains
@@ -16,6 +14,10 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   
   subroutine make_hgrhs(nlevs,hgrhs,Source,gamma1_term,Sbar,div_coeff,dx)
+
+    use bl_constants_module
+    use geometry
+    use fill_3d_module
     
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: hgrhs(:)
@@ -138,6 +140,8 @@ contains
   end subroutine make_rhscc_2d
   
   subroutine make_hgrhs_2d(lo,hi,rhs,rhs_cc)
+
+    use bl_constants_module
     
     implicit none
     
@@ -206,6 +210,8 @@ contains
   end subroutine make_rhscc_3d_sphr
   
   subroutine make_hgrhs_3d(lo,hi,rhs,rhs_cc)
+
+    use bl_constants_module
     
     implicit none
     

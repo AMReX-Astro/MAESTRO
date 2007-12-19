@@ -1,27 +1,14 @@
 module make_explicit_thermal_module
 
   use bl_types
-  use bc_module
-  use define_bc_module
   use multifab_module
-  use boxarray_module
-  use stencil_module
-  use macproject_module
-  use eos_module
-  use fill_3d_module
-  use thermal_conduct_module
-  use ml_restriction_module
-  use multifab_fill_ghost_module
   use ml_layout_module
-  use bl_constants_module
-  use variables
-  use probin_module, ONLY: use_big_h
-  use geometry
-  use multifab_physbc_module
-  
+  use define_bc_module
+
   implicit none
 
   private
+
   public :: make_explicit_thermal
 
 contains 
@@ -33,6 +20,17 @@ contains
 
   subroutine make_explicit_thermal(mla,dx,thermal,s,p0,mg_verbose,cg_verbose, &
                                    the_bc_tower,temperature_diffusion)
+    use bc_module
+    use stencil_module
+    use macproject_module
+    use thermal_conduct_module
+    use eos_module
+    use ml_restriction_module, only : ml_cc_restriction
+    use multifab_fill_ghost_module
+    use bl_constants_module
+    use variables
+    use geometry
+    use multifab_physbc_module
 
     type(ml_layout), intent(inout) :: mla
     real(dp_t)     , intent(in   ) :: dx(:,:)
@@ -298,6 +296,10 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   subroutine make_coeffs_2d(lo,hi,dx,p0,s,Tcoeff,hcoeff,Xkcoeff,pcoeff)
 
+    use variables
+    use eos_module
+    use probin_module, ONLY: use_big_h
+
     integer        , intent(in   ) :: lo(:),hi(:)
     real(dp_t)    ,  intent(in   ) :: dx(:)
     real(kind=dp_t), intent(in   ) :: p0(0:)
@@ -357,6 +359,12 @@ contains
 ! create Tcoeff = -kth, hcoeff = -kth/cp, Xkcoeff = xik*kth/cp, pcoeff = hp*kth/cp
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   subroutine make_coeffs_3d(n,lo,hi,dx,p0,s,Tcoeff,hcoeff,Xkcoeff,pcoeff)
+
+    use variables
+    use eos_module
+    use geometry
+    use probin_module, ONLY: use_big_h
+    use fill_3d_module
     
     integer        , intent(in   ) :: n,lo(:),hi(:)
     real(dp_t)    ,  intent(in   ) :: dx(:)

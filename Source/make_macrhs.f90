@@ -1,23 +1,23 @@
 module macrhs_module
 
   use bl_types
-  use bl_constants_module
   use multifab_module
-  use network
-  use variables
-  use geometry
-  use fill_3d_module
 
   implicit none
 
   private
+
   public :: make_macrhs
+
 contains
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
    subroutine make_macrhs(nlevs,macrhs,Source,gamma1_term,Sbar,div_coeff,dx)
+
+     use bl_constants_module
+     use variables
 
      integer        , intent(in   ) :: nlevs
      type(multifab) , intent(inout) :: macrhs(:)
@@ -81,6 +81,9 @@ contains
    end subroutine make_macrhs_2d
 
    subroutine make_macrhs_3d(n,lo,hi,rhs,Source,gamma1_term,Sbar,div_coeff,dx)
+
+     use geometry
+     use fill_3d_module
 
       implicit none
 
