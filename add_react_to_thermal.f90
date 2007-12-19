@@ -1,4 +1,4 @@
-module add_react_to_thermal_module 
+module add_react_to_thermal_module
 
   use bl_types
   use multifab_module
