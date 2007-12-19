@@ -1,4 +1,4 @@
-&PROBIN 
+&PROBIN
  test_set = "gr0_2d_smallscale"
  spherical_in = 0
 
