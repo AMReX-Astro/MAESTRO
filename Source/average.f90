@@ -49,9 +49,9 @@ contains
     integer                      :: domlo(phi(1)%dim),domhi(phi(1)%dim)
     integer                      :: lo(phi(1)%dim),hi(phi(1)%dim)
     integer                      :: i,k,n,nlevs,ng,dm,rr,ncell
-    real(kind=dp_t), allocatable :: vol_grid(:,:)
-    real(kind=dp_t), allocatable :: vol_proc(:,:)
-    real(kind=dp_t), allocatable :: vol_tot(:,:)
+    real(kind=dp_t), allocatable :: ncell_grid(:,:)
+    real(kind=dp_t), allocatable :: ncell_proc(:,:)
+    real(kind=dp_t), allocatable :: ncell_tot(:,:)
     real(kind=dp_t), allocatable :: phisum_proc(:,:,:)
     real(kind=dp_t), allocatable :: phisum(:,:,:)
     real(kind=dp_t), allocatable :: phipert_proc(:,:,:)
@@ -69,22 +69,23 @@ contains
     if (evolve_base) then
        
        if (spherical .eq. 1) then
-          allocate(vol_grid(nlevs,0:nr(nlevs)-1))
+          allocate(ncell_grid(nlevs,0:nr(nlevs)-1))
        end if
        
-       allocate(vol_proc(nlevs,0:nr(nlevs)-1))
-       allocate( vol_tot(nlevs,0:nr(nlevs)-1))
+       allocate(ncell_proc(nlevs,0:nr(nlevs)-1))
+       allocate( ncell_tot(nlevs,0:nr(nlevs)-1))
 
-       allocate( phisum_proc(nlevs,0:nr(nlevs)-1,ncomp))
-       allocate(      phisum(nlevs,0:nr(nlevs)-1,ncomp))
+       allocate(phisum_proc(nlevs,0:nr(nlevs)-1,ncomp))
+       allocate(     phisum(nlevs,0:nr(nlevs)-1,ncomp))
+
        allocate(phipert_proc(nlevs,0:nr(nlevs)-1,ncomp))
        allocate(     phipert(nlevs,0:nr(nlevs)-1,ncomp))
 
        allocate(source_buffer(nlevs,ncomp))
        allocate(target_buffer(nlevs,ncomp))
        
-       vol_proc(:,:) = ZERO
-       vol_tot(:,:)  = ZERO
+       ncell_proc(:,:) = ZERO
+       ncell_tot(:,:)  = ZERO
        
        phisum_proc(:,:,:) = ZERO
        phisum(:,:,:) = ZERO
@@ -187,23 +188,23 @@ contains
                 pp => dataptr(phi(n), i)
                 lo =  lwb(get_box(phi(n), i))
                 hi =  upb(get_box(phi(n), i))
-                vol_grid(n,:) = ZERO
+                ncell_grid(n,:) = ZERO
                 call average_3d_sphr(n,pp(:,:,:,:),phisum_proc(n,:,:),lo,hi,ng,dx(n,:), &
-                                     vol_grid(n,:),comp,ncomp)
+                                     ncell_grid(n,:),comp,ncomp)
                       
-                vol_proc(n,:) = vol_proc(n,:) + vol_grid(n,:)
+                ncell_proc(n,:) = ncell_proc(n,:) + ncell_grid(n,:)
              end do
              
              do k = 0, nr(n)-1
-                call parallel_reduce(vol_tot(n,k),  vol_proc(n,k),      MPI_SUM)
+                call parallel_reduce(ncell_tot(n,k),  ncell_proc(n,k),      MPI_SUM)
                 
                 ! put all the components for the current k into a buffer array and reduce
                 source_buffer(n,:) = phisum_proc(n,k,:)
                 call parallel_reduce(target_buffer(n,:), source_buffer(n,:), MPI_SUM)
                 phisum(n,k,:) = target_buffer(n,:)
                 
-                if (vol_tot(n,k) .gt. ZERO) then
-                   phibar(n,k,:) = phisum(n,k,:) / vol_tot(n,k)
+                if (ncell_tot(n,k) .gt. ZERO) then
+                   phibar(n,k,:) = phisum(n,k,:) / ncell_tot(n,k)
                 else
                    phibar(n,k,:) = ZERO
                 end if
@@ -211,11 +212,11 @@ contains
 
           enddo
 
-          deallocate(vol_grid)
+          deallocate(ncell_grid)
           
        end if
 
-       deallocate(vol_proc,vol_tot)
+       deallocate(ncell_proc,ncell_tot)
        deallocate(phisum_proc,phisum)
        deallocate(phipert_proc,phipert)
        deallocate(source_buffer,target_buffer)
@@ -353,19 +354,19 @@ contains
   end subroutine compute_phipert_3d
 
   
-  subroutine average_3d_sphr(n,phi,phibar,lo,hi,ng,dx,sum,start_comp,ncomp)
+  subroutine average_3d_sphr(n,phi,phibar,lo,hi,ng,dx,ncell,start_comp,ncomp)
     
     integer         , intent(in   ) :: n
     integer         , intent(in   ) :: lo(:), hi(:), ng, start_comp, ncomp
     real (kind=dp_t), intent(in   ) :: phi(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind=dp_t), intent(inout) :: phibar(0:,:)
     real (kind=dp_t), intent(in   ) :: dx(:)
-    real (kind=dp_t), intent(inout) :: sum(0:)
+    real (kind=dp_t), intent(inout) :: ncell(0:)
     
     ! Local variables
     integer                       :: i, j, k, comp, index
     integer                       :: ii, jj, kk
-    real (kind=dp_t)              :: x,y,z,radius,vol
+    real (kind=dp_t)              :: x,y,z,radius
     real (kind=dp_t)              :: xx, yy, zz
     real (kind=dp_t)              :: xmin, ymin, zmin
     integer :: nsub
@@ -404,14 +405,11 @@ contains
                          stop
                       end if
                       
-                      vol = FOUR3RD*M_PI * dr(n) * &
-                           (zl(n,index+1)**2 + zl(n,index+1)*zl(n,index) + zl(n,index)**2)
-                      
                       do comp = start_comp,start_comp+ncomp-1
-                         phibar(index,comp) = phibar(index,comp) + vol * phi(i,j,k,comp)
+                         phibar(index,comp) = phibar(index,comp) + phi(i,j,k,comp)
                       end do
                       
-                      sum(index) = sum(index) + vol
+                      ncell(index) = ncell(index) + 1.d0
                       
                    enddo
                 enddo
