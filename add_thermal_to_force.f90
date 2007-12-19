@@ -25,6 +25,8 @@ contains
 
   subroutine add_thermal_to_force(nlevs,force,thermal,the_bc_level,mla,dx)
 
+    use multifab_physbc_module
+
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: force(:)
     type(multifab) , intent(in   ) :: thermal(:)

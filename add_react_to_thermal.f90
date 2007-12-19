@@ -25,6 +25,8 @@ contains
 
   subroutine add_react_to_thermal(nlevs,thermal,rho_omegadot,s,the_bc_level,mla,dx)
 
+    use multifab_physbc_module
+
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: thermal(:)
     type(multifab) , intent(in   ) :: rho_omegadot(:)

@@ -22,6 +22,8 @@ contains
   subroutine update_velocity(nlevs,uold,unew,umac,uedge,force,w0,w0_cart,w0_force, &
                              w0_force_cart,dx,dt,sponge,do_sponge,mla,the_bc_level)
 
+    use multifab_physbc_module
+
     implicit none
 
     integer           , intent(in   ) :: nlevs

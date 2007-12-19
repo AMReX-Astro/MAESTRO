@@ -23,6 +23,8 @@ contains
 
   subroutine mkrhohforce(nlevs,scal_force,comp,umac,p0_old,p0_new,normal,dx,mla,the_bc_level)
 
+    use multifab_physbc_module
+
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: scal_force(:)
     integer        , intent(in   ) :: comp
@@ -227,6 +229,8 @@ contains
   end subroutine mkrhohforce_3d_sphr
 
   subroutine mktempforce(nlevs,temp_force,comp,s,thermal,p0_old,dx,mla,the_bc_level)
+
+    use multifab_physbc_module
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: temp_force(:)
