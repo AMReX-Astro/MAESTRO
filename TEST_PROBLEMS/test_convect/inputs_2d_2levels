@@ -1,0 +1,38 @@
+&PROBIN
+ test_set = "gr0_2d_2levels"
+ spherical_in = 0
+
+ prob_hi_x = 2.5e8
+ prob_hi_y = 4.0e8
+
+ max_step  = 100000000
+ init_iter = 4
+
+ stop_time = 10.00
+
+ plot_int  = 25
+ chk_int   = 200
+
+ cflfac = 0.5
+ init_shrink = 1.
+
+ bcx_lo = -1
+ bcx_hi = -1
+ bcy_lo = 14
+ bcy_hi = 12
+
+ pmask_x = T
+ pmask_y = F
+
+    verbose = 1
+ mg_verbose = 1
+ cg_verbose = 0
+
+ do_initial_projection = 1
+ init_divu_iter = 3
+
+ anelastic_cutoff = 3.e6
+ 
+ do_sponge = T
+
+/
