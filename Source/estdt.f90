@@ -1,24 +1,26 @@
+!
 ! the differences between firstdt and estdt are as follows:
 ! firstdt does not use the base state velocity w0 since it's supposed to be 0
 ! firstdt uses the sound speed time step constraint if the velocity is 0
-
+!
 module estdt_module
   
   use bl_types
   use bl_constants_module
   use multifab_module
-  use fill_3d_module
-  use geometry
-  use variables
-  
+
   implicit none
 
   private
+
   public :: estdt
 
 contains
 
   subroutine estdt(n, u, s, force, divU, dSdt, normal, w0, p0, gam1, dx, cflfac, dt)
+
+    use geometry
+    use variables
     
     integer        , intent(in ) :: n
     type(multifab) , intent(in ) :: u
@@ -109,6 +111,9 @@ contains
   
   subroutine estdt_2d(n, u, s, force, divU, dSdt, w0, p0, gam1, lo, hi, &
                       ng, dx, rho_min, dt_adv, dt_divu, cfl)
+
+    use geometry
+    use variables
 
     integer, intent(in) :: n, lo(:), hi(:), ng
     real (kind = dp_t), intent(in   ) :: u(lo(1)-ng:,lo(2)-ng:,:)  
@@ -218,6 +223,9 @@ contains
   
   subroutine estdt_3d_cart(n, u, s, force, divU, dSdt, w0, p0, gam1, lo, hi, &
                            ng, dx, rho_min, dt_adv, dt_divu, cfl)
+
+    use geometry
+    use variables
 
     integer, intent(in) :: n, lo(:), hi(:), ng
     real (kind = dp_t), intent(in   ) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
@@ -341,6 +349,10 @@ contains
   
   subroutine estdt_3d_sphr(n, u, s, force, divU, dSdt, normal, w0, p0, gam1, &
                            lo, hi, ng, dx, rho_min, dt_adv, dt_divu, cfl)
+
+    use fill_3d_module
+    use geometry
+    use variables
     
     integer, intent(in) :: n, lo(:), hi(:), ng
     real (kind = dp_t), intent(in   ) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  

@@ -1,19 +1,19 @@
 module addw0_module
 
   use bl_types
-  use bl_constants_module
   use multifab_module
-  use geometry
-  use fill_3d_module
 
   implicit none
 
   private
+
   public :: addw0, addw0_3d_sphr
 
 contains
 
   subroutine addw0(nlevs,umac,w0,w0_cart,dx,mult)
+
+    use geometry
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: umac(:,:)
@@ -97,6 +97,8 @@ contains
   end subroutine addw0_3d
 
   subroutine addw0_3d_sphr(umac,vmac,wmac,w0_cart,lo,hi,mult)
+
+    use bl_constants_module
 
     integer        , intent(in   ) :: lo(:),hi(:)
     real(kind=dp_t), intent(inout) ::   umac(lo(1)-1:,lo(2)-1:,lo(3)-1:)

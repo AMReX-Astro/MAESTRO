@@ -1,20 +1,21 @@
 module fill_3d_module
 
-  use bl_constants_module
   use bl_types
   use multifab_module
-  use variables
-  use geometry
 
   implicit none
 
   private
-  public :: fill_3d_data_wrapper, fill_3d_data, &
-       make_3d_normal, make_w0_cart, put_w0_on_3d_cells_sphr
+
+  public :: fill_3d_data_wrapper, fill_3d_data
+  public :: make_3d_normal, make_w0_cart, put_w0_on_3d_cells_sphr
   
 contains
 
   subroutine fill_3d_data_wrapper(nlevs,s0_cart,s0,dx,in_comp)
+
+    use bl_constants_module
+    use geometry
 
     ! for spherical problems, this copies the base state onto a multifab
     ! sames as the function fill_3d_data_wrap, excpet we assume
@@ -54,6 +55,9 @@ contains
   end subroutine fill_3d_data_wrapper
 
   subroutine fill_3d_data(n,data,s0,lo,hi,dx,ng)
+
+    use bl_constants_module
+    use geometry, z_geometry => z ! Because there's a local z variable.
     
     integer        , intent(in   ) :: n,lo(:),hi(:),ng
     real(kind=dp_t), intent(  out) :: data(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
@@ -89,6 +93,9 @@ contains
   end subroutine fill_3d_data
   
   subroutine make_3d_normal (normal,lo,hi,dx,ng)
+
+    use bl_constants_module
+    use geometry, z_geometry => z ! Because there's a local z variable.
     
     integer        , intent(in   ) :: lo(:),hi(:),ng
     real(kind=dp_t), intent(in   ) :: dx(:)
@@ -122,6 +129,9 @@ contains
   end subroutine make_3d_normal
 
   subroutine make_w0_cart(nlevs,w0,w0_cart,normal,dx)
+
+    use bl_constants_module
+    use geometry
     
     integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
@@ -163,6 +173,9 @@ contains
   
   subroutine put_w0_on_3d_cells_cart(n,w0,w0_cell,lo,hi,dz,ng)
 
+    use bl_constants_module
+    use geometry
+
     integer        , intent(in   ) :: n,lo(:),hi(:),ng
     real(kind=dp_t), intent(  out) :: w0_cell(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real(kind=dp_t), intent(in   ) :: w0(0:)
@@ -190,6 +203,9 @@ contains
   end subroutine put_w0_on_3d_cells_cart
 
   subroutine put_w0_on_3d_cells_sphr(n,w0,w0_cell,normal,lo,hi,dx,ng)
+
+    use bl_constants_module
+    use geometry, nr_geometry => nr, z_geometry => z ! Because nr & z are local variables.
 
     integer        , intent(in   ) :: n,lo(:),hi(:),ng
     real(kind=dp_t), intent(  out) :: w0_cell(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)

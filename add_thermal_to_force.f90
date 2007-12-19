@@ -1,21 +1,14 @@
 module add_thermal_to_force_module
 
   use bl_types
-  use bl_constants_module
   use multifab_module
-  use eos_module
-  use fill_3d_module
-  use network
-  use geometry
-  use variables
-  use define_bc_module
-  use ml_restriction_module
   use ml_layout_module
-  use multifab_fill_ghost_module
+  use define_bc_module
 
   implicit none
 
   private
+
   public :: add_thermal_to_force
 
 contains
@@ -25,7 +18,11 @@ contains
 
   subroutine add_thermal_to_force(nlevs,force,thermal,the_bc_level,mla,dx)
 
+    use variables
     use multifab_physbc_module
+    use ml_restriction_module, only : ml_cc_restriction_c
+    use multifab_fill_ghost_module
+
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: force(:)

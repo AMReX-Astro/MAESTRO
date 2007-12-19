@@ -1,13 +1,12 @@
 module extraphalf_module
 
   use bl_types
-  use bl_constants_module
-  use variables
   use multifab_module
 
   implicit none
 
   private
+
   public :: extrap_to_halftime
 
 contains
@@ -64,6 +63,8 @@ contains
   subroutine extrap_to_halftime_2d(Source_nph,dSdt,Source_old, &
                                    dt,lo,hi,ng_h,ng_o)
 
+    use bl_constants_module
+
     implicit none
 
     integer         , intent(in ) :: lo(:), hi(:), ng_h, ng_o
@@ -86,6 +87,7 @@ contains
 
   subroutine extrap_to_halftime_3d(Source_nph,dSdt,Source_old, &
                                    dt,lo,hi,ng_h,ng_o)
+    use bl_constants_module
 
     implicit none
 

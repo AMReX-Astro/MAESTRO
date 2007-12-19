@@ -1,20 +1,22 @@
 module base_io_module
 
   use bl_types
-  use bl_constants_module
-  use parallel
-  use variables
-  use network
-  use geometry
 
   implicit none
 
   private
+
   public :: write_base_state, read_base_state
 
 contains
 
   subroutine write_base_state(state_name,w0_name,chk_name,s0,p0,gam1,w0,div_coeff)
+    
+    use bl_constants_module
+    use parallel
+    use variables
+    use network
+    use geometry, only : dr
 
     character(len=10), intent(in) :: state_name
     character(len=7), intent(in) :: w0_name
@@ -63,6 +65,12 @@ contains
 
 
   subroutine read_base_state(state_name,w0_name,chk_name,s0,p0,gam1,w0,div_coeff)
+
+    use bl_constants_module
+    use parallel
+    use variables
+    use network
+    use geometry, only : dr
     
     character(len=10), intent(in   ) :: state_name
     character(len=7) , intent(in   ) :: w0_name

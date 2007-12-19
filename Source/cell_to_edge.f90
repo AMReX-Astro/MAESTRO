@@ -1,17 +1,19 @@
 module cell_to_edge_module
 
   use bl_types
-  use bl_constants_module
-  use geometry
-  
+
   implicit none
   
   private
+
   public :: cell_to_edge, cell_to_edge_allcomps
   
 contains
   
   subroutine cell_to_edge(n,s0_cell,s0_edge)
+
+    use bl_constants_module
+    use geometry
 
     integer        , intent(in   ) :: n
     real(kind=dp_t), intent(in   ) :: s0_cell(0:)

@@ -1,19 +1,11 @@
 module base_state_module
 
   use bl_types
-  use bl_constants_module
-  use bc_module
-  use setbc_module
-  use define_bc_module
-  use multifab_module
-  use eos_module
-  use variables
-  use network
-  use geometry
 
   implicit none
 
   private
+
   public :: init_base_state
 
 contains
@@ -21,6 +13,15 @@ contains
   subroutine init_base_state(n,model_file,s0,p0,gam1,dx,prob_lo,prob_hi)
 
     use probin_module, ONLY: base_cutoff_density, anelastic_cutoff
+
+    use bl_constants_module
+    use bc_module
+    use setbc_module
+    use define_bc_module
+    use multifab_module
+    use eos_module, do_diag_eos => do_diag ! Because there's a local variable do_diag.
+    use variables
+    use geometry
 
     integer           , intent(in   ) :: n
     character(len=256), intent(in   ) :: model_file
@@ -278,6 +279,8 @@ contains
   end subroutine init_base_state
 
   function interpolate(r, npts, model_r, model_var)
+
+    use bl_constants_module
 
     ! given the array of model coordinates (model_r), and variable (model_var),
     ! find the value of model_var at point r using linear interpolation.

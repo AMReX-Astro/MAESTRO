@@ -1,15 +1,7 @@
 module checkpoint_module
 
-  use bl_error_module
-  use bl_string_module
-  use bl_IO_module
   use bl_types
-  use fab_module
-  use fabio_module
-  use boxarray_module
-  use ml_boxarray_module
   use multifab_module
-  use parallel
 
   implicit none
 
@@ -20,6 +12,11 @@ contains
 
   subroutine checkpoint_write(dirname, mfs, mfs_nodal, dSdt, Source_old, &
                               rho_omegadot2, rrs, dx, time_in, dt_in, verbose)
+
+    use parallel
+    use bl_IO_module
+    use fabio_module
+
     type(multifab), intent(in) :: mfs(:), mfs_nodal(:)
     type(multifab), intent(in) :: dSdt(:), Source_old(:)
     type(multifab), intent(in) :: rho_omegadot2(:)
@@ -109,7 +106,11 @@ contains
 
   subroutine checkpoint_read(mfs, mfs_nodal, dSdt, Source_old, rho_omegadot2, &
        dirname, time_out, dt_out, nlevs_out)
+
+    use parallel
     use bl_IO_module
+    use fabio_module
+
     type(multifab  ),                pointer :: mfs(:), mfs_nodal(:)
     type(multifab  ),                pointer :: dSdt(:), Source_old(:), rho_omegadot2(:)
     character(len=*), intent(in   )          :: dirname

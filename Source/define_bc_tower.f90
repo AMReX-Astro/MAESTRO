@@ -3,7 +3,6 @@ module define_bc_module
   use bl_types
   use ml_layout_module
   use bc_module
-  use variables
 
   type bc_level
 
@@ -25,11 +24,14 @@ module define_bc_module
   end type bc_tower
 
   private
+
   public :: bc_level, bc_tower, bc_tower_build, bc_tower_destroy
 
 contains
 
   subroutine bc_tower_build(bct,mla,domain_bc,domain_box,nspec)
+
+    use variables
 
     implicit none
 
@@ -119,6 +121,8 @@ contains
   end subroutine phys_bc_level_build
 
   subroutine adv_bc_level_build(adv_bc_level,phys_bc_level,default_value,nspec)
+
+    use variables
 
     ! define boundary conditions for the advection problem
 
@@ -210,6 +214,8 @@ contains
   end subroutine adv_bc_level_build
 
   subroutine ell_bc_level_build(ell_bc_level,phys_bc_level,default_value,nspec)
+
+    use variables
 
     ! define boundary conditions for the elliptic problem
 

@@ -7,21 +7,20 @@
 module firstdt_module
 
   use bl_types
-  use bl_constants_module
   use multifab_module
-  use eos_module
-  use variables
-  use geometry
-  use fill_3d_module
 
   implicit none
 
   private
+
   public :: firstdt
 
 contains
 
   subroutine firstdt(n,u,s,force,divU,p0,gam1,t0,dx,cflfac,dt,verbose)
+
+    use eos_module
+    use fill_3d_module
 
     integer        , intent(in   ) :: n
     type(multifab) , intent(in   ) :: u,s,force,divU
@@ -70,6 +69,11 @@ contains
   end subroutine firstdt
   
   subroutine firstdt_2d(n,u,s,force,divu,p0,gam1,lo,hi,ng,dx,dt,cfl,verbose)
+
+    use bl_constants_module
+    use eos_module
+    use variables
+    use geometry
     
     integer, intent(in)             :: n, lo(:), hi(:), ng
     real (kind = dp_t), intent(in ) :: u(lo(1)-ng:,lo(2)-ng:,:)  
@@ -176,6 +180,12 @@ contains
   end subroutine firstdt_2d
   
   subroutine firstdt_3d(n,u,s,force,divU,p0,gam1,t0,lo,hi,ng,dx,dt,cfl,verbose)
+
+    use bl_constants_module
+    use eos_module
+    use variables
+    use geometry
+    use fill_3d_module
 
     integer, intent(in)             :: n,lo(:), hi(:), ng
     real (kind = dp_t), intent(in ) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)

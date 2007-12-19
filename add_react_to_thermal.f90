@@ -1,21 +1,14 @@
 module add_react_to_thermal_module
 
   use bl_types
-  use bl_constants_module
   use multifab_module
-  use eos_module
-  use fill_3d_module
-  use network
-  use geometry
-  use variables
-  use define_bc_module
-  use ml_restriction_module
   use ml_layout_module
-  use multifab_fill_ghost_module
+  use define_bc_module
 
   implicit none
 
   private
+
   public :: add_react_to_thermal
 
 contains
@@ -25,7 +18,15 @@ contains
 
   subroutine add_react_to_thermal(nlevs,thermal,rho_omegadot,s,the_bc_level,mla,dx)
 
+    use bl_constants_module
+    use eos_module
+    use variables
+    use fill_3d_module
+    use network
+    use geometry
+    use ml_restriction_module, only : ml_cc_restriction
     use multifab_physbc_module
+    use multifab_fill_ghost_module
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: thermal(:)
@@ -82,6 +83,10 @@ contains
   end subroutine add_react_to_thermal
   
   subroutine add_react_to_thermal_2d(lo,hi,thermal,rho_omegadot,s)
+
+    use variables
+    use eos_module
+    use bl_constants_module
     
     implicit none
     
@@ -128,6 +133,10 @@ contains
   end subroutine add_react_to_thermal_2d
 
   subroutine add_react_to_thermal_3d(lo,hi,thermal,rho_omegadot,s)
+
+    use variables
+    use eos_module
+    use bl_constants_module
     
     implicit none
     

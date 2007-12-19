@@ -1,18 +1,14 @@
 module phihalf_module
 
   use bl_types
-  use bl_constants_module
-  use variables
   use multifab_module
-  use multifab_physbc_module
   use define_bc_module
-  use ml_restriction_module
   use ml_layout_module
-  use multifab_fill_ghost_module
 
   implicit none
   
   private
+
   public :: make_S_at_halftime, make_at_halftime
 
 contains
@@ -65,6 +61,10 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
    subroutine make_at_halftime(nlevs,phihalf,sold,snew,in_comp,out_comp,dx,the_bc_level,mla)
+
+     use multifab_physbc_module
+     use ml_restriction_module, only : ml_cc_restriction
+     use multifab_fill_ghost_module
      
      integer        , intent(in   ) :: nlevs
      type(multifab) , intent(inout) :: phihalf(:)
@@ -128,6 +128,8 @@ contains
 
    subroutine make_at_halftime_2d(phihalf,phiold,phinew,lo,hi,ng_half,ng_old)
 
+     use bl_constants_module
+
      implicit none
      
      integer         , intent(in   ) :: lo(:),hi(:),ng_half,ng_old
@@ -149,6 +151,8 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    
    subroutine make_at_halftime_3d(phihalf,phiold,phinew,lo,hi,ng_half,ng_old)
+
+     use bl_constants_module
      
      implicit none
      

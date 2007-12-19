@@ -1,18 +1,10 @@
 module hgproject_module
 
   use bl_types
-  use bl_constants_module
-  use bc_module
-  use define_bc_module
+  use mg_module
   use multifab_module
-  use boxarray_module
-  use nodal_divu_module
-  use stencil_module
-  use ml_solve_module
-  use ml_restriction_module
-  use proj_parameters
-  use fabio_module
-  use multifab_fill_ghost_module
+  use ml_layout_module
+  use define_bc_module
 
   implicit none
 
@@ -24,6 +16,14 @@ contains
   subroutine hgproject(proj_type,mla,unew,uold,rhohalf,p,gp,dx,dt,the_bc_tower, &
                        verbose,mg_verbose,cg_verbose,press_comp, &
                        divu_rhs,div_coeff_1d,div_coeff_3d,eps_in)
+
+    use bc_module
+    use proj_parameters
+    use nodal_divu_module
+    use stencil_module
+    use ml_solve_module
+    use ml_restriction_module
+    use multifab_fill_ghost_module
 
     integer        , intent(in   ) :: proj_type
     type(ml_layout), intent(inout) :: mla
@@ -438,6 +438,8 @@ contains
 
     subroutine create_uvec_2d(u,rhohalf,gp,dt,phys_bc,ng)
 
+      use proj_parameters
+
       integer        , intent(in   ) :: ng
       real(kind=dp_t), intent(inout) ::       u(-ng:,-ng:,:)
       real(kind=dp_t), intent(in   ) :: rhohalf( -1:, -1:)
@@ -467,6 +469,8 @@ contains
     !   ******************************************************************************** !
 
     subroutine create_uvec_3d(u,rhohalf,gp,dt,phys_bc,ng)
+
+      use proj_parameters
 
       integer        , intent(in   ) :: ng
       real(kind=dp_t), intent(inout) ::       u(-ng:,-ng:,-ng:,:)
@@ -567,6 +571,8 @@ contains
 
     subroutine hg_update_2d(proj_type,unew,uold,gp,gphi,rhohalf,p,phi,ng,dt)
 
+      use proj_parameters
+
       integer        , intent(in   ) :: proj_type
       integer        , intent(in   ) :: ng
       real(kind=dp_t), intent(inout) ::    unew(-ng:,-ng:,:)
@@ -616,6 +622,8 @@ contains
     !   ******************************************************************************* !
 
     subroutine hg_update_3d(proj_type,unew,uold,gp,gphi,rhohalf,p,phi,ng,dt)
+
+      use proj_parameters
 
       integer        , intent(in   ) :: proj_type
       integer        , intent(in   ) :: ng
@@ -672,15 +680,12 @@ contains
 
   subroutine hg_multigrid(mla,unew,rhohalf,phi,dx,the_bc_tower,divu_verbose,mg_verbose, &
                           cg_verbose,press_comp,stencil_type,divu_rhs,eps_in)
-    use BoxLib
-    use omp_module
-    use f2kcli
+
+    use bl_constants_module
     use stencil_module
     use coeffs_module
-    use list_box_module
-    use itsol_module
-    use bl_mem_stat_module
-    use bl_IO_module
+    use ml_solve_module
+    use nodal_divu_module
 
     type(ml_layout), intent(inout) :: mla
     type(multifab ), intent(inout) :: unew(:)
@@ -938,6 +943,8 @@ contains
 
   subroutine mkcoeffs_2d(coeffs,rho,ng)
 
+      use bl_constants_module
+
     integer :: ng
     real(kind=dp_t), intent(inout) :: coeffs(   0:,   0:)
     real(kind=dp_t), intent(in   ) ::  rho(1-ng:,1-ng:)
@@ -959,6 +966,8 @@ contains
   !   ********************************************************************************** !
 
   subroutine mkcoeffs_3d(coeffs,rho,ng)
+
+      use bl_constants_module
 
     integer :: ng
     real(kind=dp_t), intent(inout) :: coeffs(   0:,   0:, 0:)

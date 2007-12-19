@@ -1,47 +1,9 @@
 module advance_timestep_module
 
-  use BoxLib
-  use omp_module
-  use f2kcli
-  use list_box_module
-  use ml_boxarray_module
-  use layout_module
-  use multifab_module
-  use pre_advance_module
-  use velocity_advance_module
-  use scalar_advance_module
-  use macrhs_module
-  use macproject_module
-  use hgrhs_module
-  use hgproject_module
-  use proj_parameters
-  use bc_module
-  use bl_mem_stat_module
-  use bl_timer_module
-  use box_util_module
-  use bl_IO_module
-  use fabio_module
-  use make_div_coeff_module
-  use make_w0_module
-  use advect_base_module
-  use react_base_module
-  use react_state_module
-  use make_S_module
-  use average_module
-  use phihalf_module
-  use extraphalf_module
-  use thermal_conduct_module
-  use make_explicit_thermal_module
-  use add_react_to_thermal_module
-  use variables
-  use network
   use probin_module
-  use make_grav_module
-  use fill_3d_module
-  use cell_to_edge_module
-  use define_bc_module
 
   private
+
   public :: advance_timestep
 
 contains
@@ -53,6 +15,38 @@ contains
                               grav_cell_old,dx,time,dt,dtold,the_bc_tower,anelastic_cutoff, &
                               verbose,mg_verbose,cg_verbose,dSdt,Source_old,Source_new, &
                               gamma1_term,sponge,do_sponge,hgrhs,istep)
+
+    use ml_layout_module
+    use multifab_module
+    use pre_advance_module
+    use velocity_advance_module
+    use scalar_advance_module
+    use macrhs_module
+    use macproject_module
+    use hgrhs_module
+    use hgproject_module
+    use proj_parameters
+    use bc_module
+    use box_util_module
+    use make_div_coeff_module
+    use make_w0_module
+    use advect_base_module
+    use react_base_module
+    use react_state_module
+    use make_S_module
+    use average_module
+    use phihalf_module
+    use extraphalf_module
+    use thermal_conduct_module
+    use make_explicit_thermal_module
+    use add_react_to_thermal_module
+    use variables
+    use geometry
+    use network
+    use make_grav_module
+    use fill_3d_module
+    use cell_to_edge_module
+    use define_bc_module
     
     implicit none
     

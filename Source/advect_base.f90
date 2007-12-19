@@ -1,26 +1,19 @@
 module advect_base_module
 
   use bl_types
-  use bl_constants_module
-  use multifab_module
-  use make_edge_state_module
-  use eos_module
-  use variables
-  use geometry
-  use make_grav_module
-  use cell_to_edge_module
-  use make_div_coeff_module
-  use probin_module, only: grav_const
 
   implicit none
 
   private
+
   public :: advect_base
 
 contains
 
   subroutine advect_base(nlevs,vel,Sbar_in,p0_old,p0_new,s0_old,s0_new,gam1,div_coeff,eta, &
                          dz,dt,anelastic_cutoff)
+
+    use geometry
 
     integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(in   ) :: vel(:,0:)
@@ -50,6 +43,13 @@ contains
   end subroutine advect_base
 
   subroutine advect_base_state_planar(n,vel,p0_old,p0_new,s0_old,s0_new,gam1,eta,dz,dt)
+
+    use bl_constants_module
+    use make_edge_state_module
+    use eos_module
+    use variables
+    use geometry
+    use probin_module, only: grav_const
 
     integer        , intent(in   ) :: n
     real(kind=dp_t), intent(in   ) :: vel(0:)
@@ -168,6 +168,15 @@ contains
   
   subroutine advect_base_state_spherical(n,vel,Sbar_in,p0_old,p0_new,s0_old,s0_new,gam1, &
                                          div_coeff_old,dt,anelastic_cutoff)
+
+    use bl_constants_module
+    use make_edge_state_module
+    use eos_module
+    use variables
+    use geometry
+    use make_grav_module
+    use cell_to_edge_module
+    use make_div_coeff_module
     
     integer        , intent(in   ) :: n
     real(kind=dp_t), intent(in   ) :: vel(0:),Sbar_in(0:)

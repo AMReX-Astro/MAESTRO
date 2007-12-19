@@ -1,17 +1,16 @@
 module average_module
 
   use bl_types
-  use bl_constants_module
   use multifab_module
-  use geometry
   use ml_layout_module
   
   implicit none
-  
+  !
   ! if we set phibar to 0, then the evolution of the base state is effectively 
   ! turned off.  Here we set a parameter that allows us to do that.  We will 
   ! use the routines enable_base_evolution() and disable_base_evolution() to 
   ! control this.  By default, we have base state evolution enabled.
+  !
   logical, private, save :: evolve_base = .true.
   
 contains
@@ -36,6 +35,11 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   subroutine average(mla,phi,phibar,dx,comp,ncomp)
+
+    use geometry
+    use bl_constants_module
+
+    implicit none
     
     type(ml_layout), intent(in   ) :: mla
     integer        , intent(in   ) :: comp,ncomp
@@ -226,6 +230,8 @@ contains
   end subroutine average
   
   subroutine sum_coarsest_2d(phi,phibar,lo,hi,ng,start_comp,ncomp)
+
+    implicit none
     
     integer         , intent(in   ) :: lo(:), hi(:), ng, start_comp, ncomp
     real (kind=dp_t), intent(in   ) :: phi(lo(1)-ng:,lo(2)-ng:,:)
@@ -245,6 +251,8 @@ contains
   end subroutine sum_coarsest_2d
   
   subroutine sum_coarsest_3d(phi,phibar,lo,hi,ng,start_comp,ncomp)
+
+    implicit none
     
     integer         , intent(in   ) :: lo(:), hi(:), ng, start_comp, ncomp
     real (kind=dp_t), intent(in   ) :: phi(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
@@ -266,6 +274,10 @@ contains
   end subroutine sum_coarsest_3d
 
   subroutine compute_phipert_2d(phi,phipert,lo,hi,ng,start_comp,ncomp,rr)
+
+    use bl_constants_module
+
+    implicit none
 
     integer         , intent(in   ) :: lo(:), hi(:), ng, start_comp, ncomp, rr
     real (kind=dp_t), intent(in   ) :: phi(lo(1)-ng:,lo(2)-ng:,:)
@@ -307,6 +319,10 @@ contains
   end subroutine compute_phipert_2d
 
   subroutine compute_phipert_3d(phi,phipert,lo,hi,ng,start_comp,ncomp,rr)
+
+    use bl_constants_module
+
+    implicit none
 
     integer         , intent(in   ) :: lo(:), hi(:), ng, start_comp, ncomp, rr
     real (kind=dp_t), intent(in   ) :: phi(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
@@ -355,6 +371,11 @@ contains
 
   
   subroutine average_3d_sphr(n,phi,phibar,lo,hi,ng,dx,ncell,start_comp,ncomp)
+
+    use geometry
+    use bl_constants_module
+
+    implicit none
     
     integer         , intent(in   ) :: n
     integer         , intent(in   ) :: lo(:), hi(:), ng, start_comp, ncomp
@@ -366,7 +387,7 @@ contains
     ! Local variables
     integer                       :: i, j, k, comp, index
     integer                       :: ii, jj, kk
-    real (kind=dp_t)              :: x,y,z,radius
+    real (kind=dp_t)              :: x,y,radius
     real (kind=dp_t)              :: xx, yy, zz
     real (kind=dp_t)              :: xmin, ymin, zmin
     integer :: nsub
