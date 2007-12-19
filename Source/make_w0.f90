@@ -99,7 +99,7 @@ contains
     end do
 
     force = ZERO
-    call make_edge_state_1d(vel_old_cen,edge,vel_old,force,1,dr(n),dt)
+    call make_edge_state_1d(n,vel_old_cen,edge,vel_old,force,1,dr(n),dt)
 
     do j = 0,nr(n)-1
        f(j) = (vel_new_cen(j)-vel_old_cen(j)) / (HALF*(dt+dtold)) + &

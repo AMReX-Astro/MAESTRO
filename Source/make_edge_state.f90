@@ -1276,9 +1276,9 @@ contains
      
    end subroutine make_edge_state_3d
    
-   subroutine make_edge_state_1d(s,sedgex,umac,force,lo,dx,dt)
+   subroutine make_edge_state_1d(n,s,sedgex,umac,force,lo,dx,dt)
      
-     integer        , intent(in   ) :: lo
+     integer        , intent(in   ) :: n, lo
      real(kind=dp_t), intent(in   ) ::      s(lo:)
      real(kind=dp_t), intent(inout) :: sedgex(lo:)
      real(kind=dp_t), intent(in   ) ::   umac(lo:)
@@ -1302,7 +1302,7 @@ contains
      parameter( flag = 3 )
      parameter( fromm = 4 )
      
-     hi = lo + size(s,dim=1) - 1
+     hi = lo + nr(n) - 1
      
      allocate(s_l(lo-1:hi+2),s_r(lo-1:hi+2))
      allocate(slopex(lo:hi))
@@ -1314,7 +1314,7 @@ contains
      dth = HALF*dt
      
      is = lo
-     ie = lo + size(s,dim=1) - 1
+     ie = lo + nr(n) - 1
      
      umax = ZERO
      do i = is,ie+1

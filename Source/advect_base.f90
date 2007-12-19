@@ -76,7 +76,7 @@ contains
 ! UPDATE P0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     force = ZERO
-    call make_edge_state_1d(p0_old,edge,vel,force,1,dz,dt)
+    call make_edge_state_1d(n,p0_old,edge,vel,force,1,dz,dt)
     do j = 0,nr(n)-1
        p0_new(j) = p0_old(j) &
             - dt / dz * HALF * (vel(j) + vel(j+1)) * (edge(j+1) - edge(j)) &
@@ -91,7 +91,7 @@ contains
           force(j) = -s0_old(j,comp) * (vel(j+1) - vel(j)) / dz
        end do
        
-       call make_edge_state_1d(s0_old(:,comp),edge,vel,force,1,dz,dt)
+       call make_edge_state_1d(n,s0_old(:,comp),edge,vel,force,1,dz,dt)
        
        do j = 0,nr(n)-1
           s0_new(j,comp) = s0_old(j,comp) &
@@ -125,7 +125,7 @@ contains
        force(j) = -s0_old(j,rhoh_comp) * (vel(j+1) - vel(j)) / dz
     end do
     
-    call make_edge_state_1d(s0_old(:,rhoh_comp),edge,vel,force,1,dz,dt)
+    call make_edge_state_1d(n,s0_old(:,rhoh_comp),edge,vel,force,1,dz,dt)
     
     do j = 0,nr(n)-1
        s0_new(j,rhoh_comp) = s0_old(j,rhoh_comp) &
@@ -215,7 +215,7 @@ contains
                2.0_dp_t*s0_old(j,comp)*HALF*(vel(j) + vel(j+1))/z(n,j)
        end do
        
-       call make_edge_state_1d(s0_old(:,comp),edge,vel,force,1,dr(n),dt)
+       call make_edge_state_1d(n,s0_old(:,comp),edge,vel,force,1,dr(n),dt)
        
        do j = 0,nr(n)-1
           s0_new(j,comp) = s0_old(j,comp) - &
@@ -318,7 +318,7 @@ contains
             (Sbar_in(j) - div_w0)
     end do
     
-    call make_edge_state_1d(s0_old(:,rhoh_comp),edge,vel,force,1,dr(n),dt)
+    call make_edge_state_1d(n,s0_old(:,rhoh_comp),edge,vel,force,1,dr(n),dt)
     
     do j = 0,nr(n)-1
        
