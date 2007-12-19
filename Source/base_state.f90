@@ -85,7 +85,7 @@ contains
     ! independent variables and use them to define the thermodynamic state.
 
     ! composition is assumed to be in terms of mass fractions
-    
+
     open(99,file=model_file)
 
     ! the first line has the number of points in the model
@@ -94,7 +94,7 @@ contains
     read (header_line(ipos:),*) npts_model
 
     if ( parallel_IOProcessor() ) &
-      print *, npts_model, '    points found in the initial model file'
+         print *, npts_model, '    points found in the initial model file'
 
     ! now read in the number of variables
     read (99, '(a256)') header_line
@@ -102,7 +102,7 @@ contains
     read (header_line(ipos:),*) nvars_model_file
 
     if ( parallel_IOProcessor() ) &
-      print *, nvars_model_file, ' variables found in the initial model file'
+         print *, nvars_model_file, ' variables found in the initial model file'
 
     allocate (vars_stored(nvars_model_file))
     allocate (varnames_stored(nvars_model_file))
@@ -113,7 +113,7 @@ contains
        ipos = index(header_line, '#') + 1
        varnames_stored(i) = trim(adjustl(header_line(ipos:)))
     enddo
-    
+
     ! allocate storage for the model data
     allocate (base_state(npts_model, nvars_model))
     allocate (base_r(npts_model))
@@ -126,7 +126,7 @@ contains
        do j = 1, nvars_model_file
 
           found = .false.
-       
+
           if (trim(varnames_stored(j)) == "density") then
              base_state(i,idens_model) = vars_stored(j)
              found = .true.
@@ -152,7 +152,7 @@ contains
           if (.NOT. found) then
              print *, 'ERROR: variable not found: ', varnames_stored(j)
           endif
-          
+
        enddo
 
     end do
@@ -181,7 +181,7 @@ contains
        print *, '       cutoff density.'
        call bl_error("anelastic cutoff < base_cutoff_density")
     endif
-       
+
     print *, ' '
     print *, ' '
 
@@ -190,8 +190,8 @@ contains
     rmax = base_r(npts_model)
 
     if ( parallel_IOProcessor() ) then
-      print *,'DR , RMAX OF MODEL     ',dr_in, rmax
-      print *,'DR , RMAX OF BASE ARRAY',dr(n), dble(nr(n)) * dr(n)
+       print *,'DR , RMAX OF MODEL     ',dr_in, rmax
+       print *,'DR , RMAX OF BASE ARRAY',dr(n), dble(nr(n)) * dr(n)
     end if
 
     if (spherical .eq. 0) then
@@ -205,68 +205,68 @@ contains
 
        if (j .ge. j_cutoff) then
 
-         s0(j, rho_comp ) = s0(j_cutoff, rho_comp )
-         s0(j,rhoh_comp ) = s0(j_cutoff,rhoh_comp )
-         s0(j,spec_comp:spec_comp+nspec-1) = s0(j_cutoff,spec_comp:spec_comp+nspec-1)
-         p0(j)            = p0(j_cutoff)
-         s0(j,temp_comp)  = s0(j_cutoff,temp_comp)
+          s0(j, rho_comp ) = s0(j_cutoff, rho_comp )
+          s0(j,rhoh_comp ) = s0(j_cutoff,rhoh_comp )
+          s0(j,spec_comp:spec_comp+nspec-1) = s0(j_cutoff,spec_comp:spec_comp+nspec-1)
+          p0(j)            = p0(j_cutoff)
+          s0(j,temp_comp)  = s0(j_cutoff,temp_comp)
           gam1(j)         =  gam1(j_cutoff)
 
        else
 
-         ! compute the coordinate height at this level
-         ! NOTE: we are assuming that the basestate is in the y-direction
-         ! and that ymin = 0.0
-         r = starting_rad + (dble(j) + HALF)*dr(n)
-  
-         ! here we account for r > rmax of the model.hse array, assuming
-         ! that the state stays constant beyond rmax
-         r = min(r, rmax)
+          ! compute the coordinate height at this level
+          ! NOTE: we are assuming that the basestate is in the y-direction
+          ! and that ymin = 0.0
+          r = starting_rad + (dble(j) + HALF)*dr(n)
 
-         d_ambient = interpolate(r, npts_model, base_r, base_state(:,idens_model))
-         t_ambient = interpolate(r, npts_model, base_r, base_state(:,itemp_model))
-         p_ambient = interpolate(r, npts_model, base_r, base_state(:,ipres_model))
+          ! here we account for r > rmax of the model.hse array, assuming
+          ! that the state stays constant beyond rmax
+          r = min(r, rmax)
 
-         sum = ZERO
-         do comp = 1, nspec
-            xn_ambient(comp) = max(ZERO,min(ONE, &
-                 interpolate(r, npts_model, base_r, base_state(:,ispec_model-1+comp))))
-            sum = sum + xn_ambient(comp)
-         enddo
-         xn_ambient(:) = xn_ambient(:)/sum
-         
-         ! use the EOS to make the state consistent
-         temp_eos(1) = t_ambient
-         den_eos(1)  = d_ambient
-         p_eos(1)    = p_ambient
-         xn_eos(1,:) = xn_ambient(:)
+          d_ambient = interpolate(r, npts_model, base_r, base_state(:,idens_model))
+          t_ambient = interpolate(r, npts_model, base_r, base_state(:,itemp_model))
+          p_ambient = interpolate(r, npts_model, base_r, base_state(:,ipres_model))
 
-         ! (rho,T) --> p,h
-         call eos(eos_input_rt, den_eos, temp_eos, &
-                  npts, nspec, &
-                  xn_eos, &
-                  p_eos, h_eos, e_eos, &
-                  cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                  dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                  dpdX_eos, dhdX_eos, &
-                  gam1_eos, cs_eos, s_eos, &
-                  dsdt_eos, dsdr_eos, &
-                  do_diag)
-         
-         s0(j, rho_comp ) = d_ambient
-         s0(j,rhoh_comp ) = d_ambient * h_eos(1)
-         s0(j,spec_comp:spec_comp+nspec-1) = d_ambient * xn_ambient(1:nspec)
-         p0(j)    = p_eos(1)
+          sum = ZERO
+          do comp = 1, nspec
+             xn_ambient(comp) = max(ZERO,min(ONE, &
+                  interpolate(r, npts_model, base_r, base_state(:,ispec_model-1+comp))))
+             sum = sum + xn_ambient(comp)
+          enddo
+          xn_ambient(:) = xn_ambient(:)/sum
 
-         s0(j,temp_comp) = t_ambient
+          ! use the EOS to make the state consistent
+          temp_eos(1) = t_ambient
+          den_eos(1)  = d_ambient
+          p_eos(1)    = p_ambient
+          xn_eos(1,:) = xn_ambient(:)
 
-         gam1(j) = gam1_eos(1)
-  
-         ! keep track of the height where we drop below the cutoff density
-         if (s0(j,rho_comp) .lt. base_cutoff_density .and. j_cutoff .eq. nr(n)) then
-            if ( parallel_IOProcessor() ) print *,'SETTING J_CUTOFF TO ',j
-            j_cutoff = j
-         end if
+          ! (rho,T) --> p,h
+          call eos(eos_input_rt, den_eos, temp_eos, &
+                   npts, nspec, &
+                   xn_eos, &
+                   p_eos, h_eos, e_eos, &
+                   cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                   dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                   dpdX_eos, dhdX_eos, &
+                   gam1_eos, cs_eos, s_eos, &
+                   dsdt_eos, dsdr_eos, &
+                   do_diag)
+
+          s0(j, rho_comp ) = d_ambient
+          s0(j,rhoh_comp ) = d_ambient * h_eos(1)
+          s0(j,spec_comp:spec_comp+nspec-1) = d_ambient * xn_ambient(1:nspec)
+          p0(j)    = p_eos(1)
+
+          s0(j,temp_comp) = t_ambient
+
+          gam1(j) = gam1_eos(1)
+
+          ! keep track of the height where we drop below the cutoff density
+          if (s0(j,rho_comp) .lt. base_cutoff_density .and. j_cutoff .eq. nr(n)) then
+             if ( parallel_IOProcessor() ) print *,'SETTING J_CUTOFF TO ',j
+             j_cutoff = j
+          end if
 
        end if
 
@@ -274,7 +274,7 @@ contains
 
     deallocate(vars_stored,varnames_stored)
     deallocate(base_state,base_r)
- 
+
   end subroutine init_base_state
 
   function interpolate(r, npts, model_r, model_var)
@@ -297,23 +297,50 @@ contains
     do i = 1, npts
        if (model_r(i) >= r) exit
     enddo
+    if(i .gt. 1 .and. i .lt. npts+1) then
+       if(abs(r-model_r(i-1)) .lt. abs(r-model_r(i))) then
+          i = i-1
+       end if
+    end if
+    if (i == npts+1) then
+       i = npts
+    end if
 
-    if (i == npts+1) i = npts
     id = i
 
     if (id == 1) then
+
        slope = (model_var(id+1) - model_var(id))/(model_r(id+1) - model_r(id))
        interpolate = slope*(r - model_r(id)) + model_var(id)
 
+       ! safety check to make sure interpolate lies within the bounding points
+       minvar = min(model_var(id+1),model_var(id))
+       maxvar = max(model_var(id+1),model_var(id))
+       interpolate = max(interpolate,minvar)
+       interpolate = min(interpolate,maxvar)
+
     else if (id == npts) then
+
        slope = (model_var(id) - model_var(id-1))/(model_r(id) - model_r(id-1))
        interpolate = slope*(r - model_r(id)) + model_var(id)
+
+       ! safety check to make sure interpolate lies within the bounding points
+       minvar = min(model_var(id),model_var(id-1))
+       maxvar = max(model_var(id),model_var(id-1))
+       interpolate = max(interpolate,minvar)
+       interpolate = min(interpolate,maxvar)
 
     else if((model_var(id+1) - model_var(id))*(model_var(id) - model_var(id-1)) <= ZERO) then
 
        ! if we are at a maximum or minimum, then drop to linear interpolation
        slope = (model_var(id+1) - model_var(id-1))/(model_r(id+1) - model_r(id-1))
-       interpolate = slope*(r - model_r(id)) + model_var(id)       
+       interpolate = slope*(r - model_r(id)) + model_var(id)
+
+       ! safety check to make sure interpolate lies within the bounding points
+       minvar = min(model_var(id-1),min(model_var(id),model_var(id+1)))
+       maxvar = max(model_var(id-1),max(model_var(id),model_var(id+1)))
+       interpolate = max(interpolate,minvar)
+       interpolate = min(interpolate,maxvar)
 
     else
 
@@ -325,19 +352,20 @@ contains
             (model_var(id+1) - model_var(id-1))*xi/(2*dr_model) + &
             (-model_var(id+1) + 26*model_var(id) - model_var(id-1))/24.0_dp_t
 
-       ! make sure that we have not under- or overshot 
        minvar = min(model_var(id), min(model_var(id-1), model_var(id+1)))
        maxvar = max(model_var(id), max(model_var(id-1), model_var(id+1)))
 
+       ! if we overshoot or undershoot, use linear interpolation
        if (interpolate > maxvar .OR. interpolate < minvar) then
-          
+
           slope = (model_var(id+1) - model_var(id-1))/(model_r(id+1) - model_r(id-1))
-          interpolate = slope*(r - model_r(id)) + model_var(id)       
-          
+          interpolate = slope*(r - model_r(id)) + model_var(id)      
+          interpolate = max(interpolate,minvar)
+          interpolate = min(interpolate,maxvar)
+
        endif
 
     endif
-
 
     return
 
