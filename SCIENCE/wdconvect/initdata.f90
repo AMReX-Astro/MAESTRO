@@ -18,6 +18,10 @@ module init_module
 
   implicit none
 
+  private
+
+  public :: initscalardata, initveldata
+
 contains
 
   subroutine initscalardata(nlevs,s,s0,p0,dx,perturb_model,prob_lo,prob_hi,bc,mla)
