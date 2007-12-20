@@ -1,29 +1,14 @@
 module scalar_advance_module
 
   use bl_types
-  use bl_constants_module
   use multifab_module
-  use make_edge_state_module
-  use mkflux_module
-  use mkscalforce_module
-  use update_scal_module
-  use addw0_module
-  use define_bc_module
-  use fill_3d_module
-  use pert_form_module
-  use cell_to_edge_module
-  use rhoh_vs_t_module
-  use variables
-  use geometry
-  use network
-  use probin_module, ONLY: predict_temp_at_edges, use_thermal_diffusion, evolve_base_state
   use ml_layout_module
-  use modify_scal_force_module
-  use add_thermal_to_force_module
+  use define_bc_module
 
   implicit none
 
   private
+
   public :: scalar_advance
 
 contains
@@ -31,6 +16,24 @@ contains
   subroutine scalar_advance(nlevs,mla,which_step,uold,sold,snew,thermal,umac,w0, &
                             w0_cart_vec,eta,sedge,sflux,utrans,ext_scal_force,normal, &
                             s0_old,s0_new,p0_old,p0_new,dx,dt,the_bc_level,verbose)
+
+    use bl_constants_module
+    use make_edge_state_module
+    use mkflux_module
+    use mkscalforce_module
+    use update_scal_module
+    use addw0_module
+    use define_bc_module
+    use fill_3d_module
+    use pert_form_module
+    use cell_to_edge_module
+    use rhoh_vs_t_module
+    use variables
+    use geometry
+    use network
+    use probin_module, ONLY: predict_temp_at_edges, use_thermal_diffusion, evolve_base_state
+    use modify_scal_force_module
+    use add_thermal_to_force_module
 
     integer        , intent(in   ) :: nlevs
     type(ml_layout), intent(inout) :: mla

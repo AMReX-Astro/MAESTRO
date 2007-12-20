@@ -1,27 +1,21 @@
 module restart_module
 
-  use bl_error_module
-  use bl_string_module
-  use bl_IO_module
   use bl_types
-  use box_util_module
-  use define_bc_module
-  use setbc_module
-  use fab_module
-  use fabio_module
   use multifab_module
   use ml_layout_module
-  use checkpoint_module
-  use parallel
 
   implicit none
   
   private
+
   public :: fill_restart_data
 
 contains
 
   subroutine fill_restart_data(restart_int,mba,chkdata,chk_p,chk_dsdt,chk_src_old,chk_rho_omegadot2,time,dt)
+
+    use checkpoint_module
+    use parallel
 
     integer          , intent(in   ) :: restart_int
     real(dp_t)       , intent(  out) :: time,dt

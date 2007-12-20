@@ -3,27 +3,24 @@ module react_state_module
   use bl_types
   use multifab_module
   use define_bc_module
-  use multifab_physbc_module
-  use eos_module
-  use network
-  use burner_module
-  use variables
-  use geometry
-  use fill_3d_module
-  use heating_module
-  use probin_module, ONLY: use_big_h
-  use ml_restriction_module
   use ml_layout_module
-  use multifab_fill_ghost_module
 
   implicit none
 
   private
+
   public :: react_state
 
 contains
 
   subroutine react_state (nlevs,mla,s_in,s_out,rho_omegadot,rho_Hext,dt,dx,the_bc_level,time)
+
+    use network
+    use variables
+    use geometry
+    use ml_restriction_module
+    use multifab_physbc_module
+    use multifab_fill_ghost_module
 
     integer        , intent(in   ) :: nlevs
     type(ml_layout), intent(in   ) :: mla
@@ -95,7 +92,13 @@ contains
   subroutine react_state_2d(s_in,s_out,rho_omegadot,rho_Hext, &
                             dt,dx,lo,hi,ng,time)
 
-    implicit none
+    use network
+    use burner_module
+    use variables
+    use geometry
+    use heating_module
+    use probin_module, ONLY: use_big_h
+
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(in   ) :: s_in (lo(1)-ng:,lo(2)-ng:,:)
     real (kind = dp_t), intent(  out) :: s_out(lo(1)-ng:,lo(2)-ng:,:)
@@ -175,7 +178,13 @@ contains
 
   subroutine react_state_3d(s_in,s_out,rho_omegadot,rho_Hext,dt,dx,lo,hi,ng,time)
 
-    implicit none
+    use network
+    use burner_module
+    use variables
+    use geometry
+    use heating_module
+    use probin_module, ONLY: use_big_h
+
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(in   ) :: s_in (lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind = dp_t), intent(  out) :: s_out(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)

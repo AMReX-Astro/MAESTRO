@@ -2,15 +2,8 @@ module update_vel_module
 
   use bl_types
   use multifab_module
-  use bl_constants_module
-  use geometry
-  use sponge_module
-  use variables
-  use network
   use ml_layout_module
   use define_bc_module
-  use ml_restriction_module
-  use multifab_fill_ghost_module
 
   implicit none
 
@@ -22,6 +15,9 @@ contains
   subroutine update_velocity(nlevs,uold,unew,umac,uedge,force,w0,w0_cart,w0_force, &
                              w0_force_cart,dx,dt,sponge,do_sponge,mla,the_bc_level)
 
+    use bl_constants_module
+    use ml_restriction_module
+    use multifab_fill_ghost_module
     use multifab_physbc_module
 
     implicit none
@@ -119,7 +115,7 @@ contains
   subroutine update_velocity_2d(uold,unew,umac,vmac,uedgex,uedgey,force,w0,w0_force, &
                                 lo,hi,ng,dx,dt,sponge,do_sponge)
 
-    implicit none
+    use bl_constants_module
 
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(in   ) ::     uold(lo(1)-ng:,lo(2)-ng:,:)  
@@ -177,7 +173,8 @@ contains
                                 force,w0,w0_cart,w0_force,w0_force_cart,lo,hi,ng,dx,dt, &
                                 sponge,do_sponge)
 
-    implicit none
+    use geometry, only: spherical
+    use bl_constants_module
 
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(in   ) ::     uold(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)

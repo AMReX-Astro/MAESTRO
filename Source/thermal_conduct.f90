@@ -1,28 +1,16 @@
 module thermal_conduct_module
 
   use bl_types
-  use bc_module
+  use multifab_module
   use bl_constants_module
   use define_bc_module
-  use multifab_module
-  use boxarray_module
-  use stencil_module
-  use macproject_module
-  use eos_module
-  use rhoh_vs_t_module
-  use probin_module, ONLY: use_big_h
   use ml_layout_module
   use bndry_reg_module
-  use multifab_physbc_module
-  use variables
-  use geometry
-  use rhoh_vs_t_module
-  use multifab_fill_ghost_module
-  use ml_restriction_module
 
   implicit none
 
   private
+
   public :: thermal_conduct_full_alg, thermal_conduct_half_alg
   public :: put_beta_on_faces_2d, put_beta_on_faces_3d
   public :: put_base_state_on_multifab_2d, put_base_state_on_multifab_3d
@@ -32,8 +20,18 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Crank-Nicholson solve for enthalpy, taking into account only the
 ! enthalpy-diffusion terms in the temperature conduction term.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,t02, &
                                     mg_verbose,cg_verbose,the_bc_tower)
+
+  use variables, only: foextrap_comp, rho_comp, spec_comp, rhoh_comp
+  use macproject_module
+  use eos_module, only: nspec
+  use rhoh_vs_t_module
+  use probin_module, ONLY: use_big_h
+  use multifab_physbc_module
+  use multifab_fill_ghost_module
+  use ml_restriction_module, only: ml_cc_restriction_c
 
   type(ml_layout), intent(inout) :: mla
   real(dp_t)     , intent(in   ) :: dx(:,:),dt
@@ -534,8 +532,18 @@ end subroutine thermal_conduct_full_alg
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Crank-Nicholson solve for enthalpy, taking into account only the
 ! enthalpy-diffusion terms in the temperature conduction term.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
                                     mg_verbose,cg_verbose,the_bc_tower)
+
+  use variables, only: foextrap_comp, rho_comp, spec_comp, rhoh_comp, temp_comp
+  use macproject_module
+  use eos_module, only: nspec
+  use rhoh_vs_t_module
+  use probin_module, ONLY: use_big_h
+  use multifab_physbc_module
+  use multifab_fill_ghost_module
+  use ml_restriction_module, only: ml_cc_restriction_c
 
   type(ml_layout), intent(inout) :: mla
   real(dp_t)     , intent(in   ) :: dx(:,:),dt
@@ -1239,7 +1247,12 @@ end subroutine thermal_conduct_half_alg
 ! hcoeff = -(dt/2)k_{th}/c_p
 ! Xkcoeff = (dt/2)\xi_k k_{th}/c_p
 ! pcoeff = (dt/2)h_p*k_{th}/c_p
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 subroutine compute_thermo_quantities_2d(lo,hi,dt,s,hcoeff,Xkcoeff,pcoeff)
+
+  use variables, only: rho_comp, spec_comp, temp_comp
+  use eos_module
+  use probin_module, ONLY: use_big_h
 
   integer        , intent(in   ) :: lo(:),hi(:)
   real(dp_t)    ,  intent(in   ) :: dt
@@ -1297,7 +1310,13 @@ end subroutine compute_thermo_quantities_2d
 ! hcoeff = -(dt/2)k_{th}/c_p
 ! Xkcoeff = (dt/2)\xi_k k_{th}/c_p
 ! pcoeff = (dt/2)h_p*k_{th}/c_p
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 subroutine compute_thermo_quantities_3d(lo,hi,dt,t0,s,hcoeff,Xkcoeff,pcoeff)
+
+  use variables, only: rho_comp, temp_comp, spec_comp
+  use eos_module
+  use probin_module, ONLY: use_big_h
+  use geometry, only: spherical
 
   integer        , intent(in   ) :: lo(:),hi(:)
   real(dp_t)    ,  intent(in   ) :: dt
@@ -1362,6 +1381,7 @@ end subroutine compute_thermo_quantities_3d
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! put beta on faces
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 subroutine put_beta_on_faces_2d(lo,hi,ccbeta,beta)
 
   integer        , intent(in   ) :: lo(:),hi(:)
@@ -1392,6 +1412,7 @@ end subroutine put_beta_on_faces_2d
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! put beta on faces
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 subroutine put_beta_on_faces_3d(lo,hi,ccbeta,beta)
 
   integer        , intent(in   ) :: lo(:),hi(:)

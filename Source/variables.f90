@@ -1,6 +1,7 @@
-! a module to provide integer indices into the various storage arrays
-! for accessing the different variables by name
-
+!
+! A module to provide integer indices into the various storage arrays
+! for accessing the different variables by name.
+!
 module variables
 
   implicit none

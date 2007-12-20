@@ -1,27 +1,25 @@
 module react_base_module
-
   ! 
   ! This is React Base from paper III.
   ! 
-
   use bl_types
-  use bl_constants_module
-  use multifab_module
-  use variables
-  use eos_module
-  use network
-  use probin_module, ONLY: use_big_h
-  use geometry
 
   implicit none
   
   private
+
   public :: react_base
   
 contains
   
   subroutine react_base(nlevs,p0_in,s0_in,rho_omegadotbar,rho_Hextbar,dt_in,p0_out, &
                         s0_out,gam1_out)
+
+    use variables
+    use eos_module
+    use network
+    use probin_module, ONLY: use_big_h
+    use geometry
      
     integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(in   ) :: p0_in(:,0:), s0_in(:,0:,:)

@@ -1,18 +1,9 @@
 module rhoh_vs_t_module
 
   use bl_types
-  use bl_constants_module
-  use variables
-  use geometry
-  use network
-  use probin_module, ONLY: use_big_h
-  use eos_module
   use multifab_module
   use ml_layout_module
   use define_bc_module
-  use multifab_physbc_module
-  use ml_restriction_module
-  use multifab_fill_ghost_module
 
   implicit none
 
@@ -65,7 +56,12 @@ contains
   end subroutine makeRhoHfromT
 
   subroutine makeRhoHfromT_2d (sx,sy,s0_old,s0_edge_old,s0_new,s0_edge_new,lo,hi)
-    
+
+    use bl_constants_module
+    use variables
+    use eos_module
+    use probin_module, ONLY: use_big_h
+
     integer        , intent(in   ) :: lo(:),hi(:)
     real(kind=dp_t), intent(inout) :: sx(lo(1):,lo(2):,:)
     real(kind=dp_t), intent(inout) :: sy(lo(1):,lo(2):,:)
@@ -172,7 +168,13 @@ contains
   end subroutine makeRhoHfromT_2d
   
   subroutine makeRhoHfromT_3d (sx,sy,sz,s0_old,s0_edge_old,s0_new,s0_edge_new,lo,hi)
-    
+
+    use variables
+    use geometry
+    use eos_module
+    use probin_module, ONLY: use_big_h
+    use bl_constants_module
+
     integer        , intent(in   ) :: lo(:),hi(:)
     real(kind=dp_t), intent(inout) :: sx(lo(1):,lo(2):,lo(3):,:)
     real(kind=dp_t), intent(inout) :: sy(lo(1):,lo(2):,lo(3):,:)
@@ -345,6 +347,11 @@ contains
   
   subroutine makeTfromRhoH(nlevs,s,t0,mla,the_bc_level,dx)
 
+    use variables
+    use ml_restriction_module, only: ml_cc_restriction_c
+    use multifab_physbc_module
+    use multifab_fill_ghost_module
+
     integer           , intent(in   ) :: nlevs
     type(multifab)    , intent(inout) :: s(:)
     real (kind = dp_t), intent(in   ) :: t0(:,0:)
@@ -392,7 +399,11 @@ contains
   end subroutine makeTfromRhoH
 
   subroutine makeTfromRhoH_2d (state,lo,hi,ng,t0)
-    
+
+    use variables
+    use eos_module
+    use probin_module, ONLY: use_big_h
+
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(inout) ::  state(lo(1)-ng:,lo(2)-ng:,:)
     real (kind = dp_t), intent(in   ) ::  t0(0:)
@@ -441,6 +452,10 @@ contains
   end subroutine makeTfromRhoH_2d
 
   subroutine makeTfromRhoH_3d (state,lo,hi,ng,t0)
+
+    use variables
+    use eos_module
+    use probin_module, ONLY: use_big_h
 
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(inout) ::  state(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)

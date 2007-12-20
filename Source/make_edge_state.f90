@@ -128,9 +128,10 @@ contains
                                 vtrans,force,w0,lo,dx,dt,is_vel,phys_bc,adv_bc,velpred, &
                                 ng,comp)
 
-    use bl_constants_module
-    use slope_module
     use geometry
+    use bc_module
+    use slope_module
+    use bl_constants_module
 
     integer        , intent(in   ) :: n,lo(:)
     real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng:,lo(2)-ng:,:)
@@ -529,10 +530,10 @@ contains
   subroutine make_edge_state_3d(n,s,u,sedgex,sedgey,sedgez,umac, &
                                 vmac,wmac,utrans,vtrans,wtrans,force,w0,w0_cart_vec,lo, &
                                 dx,dt,is_vel,phys_bc,adv_bc,velpred,ng,comp)
-
-    use bl_constants_module
-    use slope_module
     use geometry
+    use bc_module
+    use slope_module
+    use bl_constants_module
 
     integer        , intent(in   ) :: n,lo(:)
     real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)

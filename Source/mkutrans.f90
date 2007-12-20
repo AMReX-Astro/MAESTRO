@@ -68,6 +68,7 @@ contains
 
   subroutine mkutrans_2d(vel,utrans,vtrans,force,lo,dx,dt,ng_cell,adv_bc,phys_bc)
 
+    use bc_module
     use slope_module
     
     integer, intent(in) :: lo(2),ng_cell
@@ -198,6 +199,7 @@ contains
   
   subroutine mkutrans_3d(vel,utrans,vtrans,wtrans,force,lo,dx,dt,ng_cell,adv_bc,phys_bc)
 
+    use bc_module
     use slope_module
     
     integer, intent(in) :: lo(3),ng_cell

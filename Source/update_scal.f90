@@ -2,22 +2,13 @@ module update_scal_module
 
   use bl_types
   use multifab_module
-  use bl_constants_module
-  use fill_3d_module
-  use addw0_module
-  use geometry
-  use variables
-  use network
-  use probin_module, ONLY: evolve_base_state
   use define_bc_module
   use ml_layout_module
-  use multifab_physbc_module
-  use ml_restriction_module
-  use multifab_fill_ghost_module
 
   implicit none
 
   private
+
   public :: update_scal
 
 contains
@@ -26,7 +17,13 @@ contains
                          sedge,sflux,scal_force,s0_old,s0_edge_old,s0_new,s0_edge_new, &
                          s0_old_cart,s0_new_cart,dx,dt,evolve_base_state,the_bc_level,mla)
 
-    implicit none
+    use bl_constants_module
+    use geometry,  only: spherical
+    use variables, only: spec_comp, rho_comp
+    use network,   only: nspec
+    use multifab_physbc_module
+    use ml_restriction_module, only: ml_cc_restriction_c
+    use multifab_fill_ghost_module
 
     integer           , intent(in   ) :: nlevs, which_step, nstart, nstop
     type(multifab)    , intent(in   ) :: sold(:)
@@ -170,10 +167,12 @@ contains
                             sedgex,sedgey,sfluxx,sfluxy,force,base_old,base_old_edge, &
                             base_new,base_new_edge,lo,hi,ng,dx,dt,evolve_base_state)
 
+    use network, only: nspec
+    use variables, only: spec_comp, rho_comp
+    use bl_constants_module
+
     ! update each scalar in time.  Here, it is assumed that the edge
     ! states (sedgex and sedgey) are for the perturbational quantities.
-
-    implicit none
 
     integer           , intent(in   ) :: which_step, nstart, nstop, lo(:), hi(:), ng
     real (kind = dp_t), intent(in   ) ::    sold(lo(1)-ng:,lo(2)-ng:,:)
@@ -301,8 +300,9 @@ contains
                                  eta,sedgex,sedgey,sedgez,sfluxx,sfluxy,sfluxz,force, &
                                  base_old,base_old_edge,base_new,base_new_edge,lo,hi, &
                                  ng,dx,dt,evolve_base_state)
-
-    implicit none
+    use network, only: nspec
+    use variables, only: spec_comp, rho_comp
+    use bl_constants_module
 
     integer           , intent(in   ) :: which_step, nstart, nstop, lo(:), hi(:), ng
     real (kind = dp_t), intent(in   ) ::    sold(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
@@ -434,8 +434,9 @@ contains
                                  w0_cart,sedgex,sedgey,sedgez,sfluxx,sfluxy,sfluxz, &
                                  force,base_old,base_new,base_old_cart,base_new_cart, &
                                  lo,hi,domlo,domhi,ng,dx,dt,evolve_base_state)
-
-    implicit none
+    use network, only: nspec
+    use variables, only: spec_comp, rho_comp
+    use bl_constants_module
 
     integer           , intent(in   ) :: which_step, nstart, nstop
     integer           , intent(in   ) :: lo(:), hi(:), domlo(:), domhi(:), ng

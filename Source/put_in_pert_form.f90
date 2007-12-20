@@ -2,10 +2,6 @@ module pert_form_module
 
   ! Put the state into perturbational form
 
-  use bl_constants_module
-  use geometry
-  use variables
-  use fill_3d_module
   use multifab_module
 
   implicit none
@@ -16,6 +12,8 @@ module pert_form_module
 contains
 
   subroutine put_in_pert_form(nlevs,s,base,dx,comp,ncomp,flag)
+
+    use geometry
 
     integer        , intent(in   ) :: nlevs,comp,ncomp
     type(multifab) , intent(inout) :: s(:)
@@ -120,6 +118,8 @@ contains
   end subroutine pert_form_3d_cart
 
   subroutine pert_form_3d_sphr(n,s,s0,lo,hi,ng,dx,incomp,ncomp,flag)
+
+    use fill_3d_module
 
     integer        , intent(in   ) :: n,lo(:),hi(:),ng,incomp,ncomp
     real(kind=dp_t), intent(inout) ::  s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
