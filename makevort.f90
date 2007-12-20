@@ -1,15 +1,13 @@
 module vort_module
 
   use bl_types
-  use bc_module
-  use bl_constants_module
   use define_bc_module
   use multifab_module
-  use variables
 
   implicit none
 
   private
+
   public :: make_vorticity, make_magvel
 
 contains
@@ -48,6 +46,10 @@ contains
    end subroutine make_vorticity
 
    subroutine makevort_2d (vort,u,lo,hi,ng,dx,bc)
+
+      use bc_module
+      use bl_constants_module
+      use variables
 
       integer, intent(in) :: lo(:), hi(:), ng
       real (kind = dp_t), intent(  out) :: vort(lo(1):,lo(2):)  
@@ -110,6 +112,10 @@ contains
    end subroutine makevort_2d
 
    subroutine makevort_3d (vort,u,lo,hi,ng,dx,bc)
+
+      use bc_module
+      use bl_constants_module
+      use variables
 
       integer, intent(in) :: lo(:), hi(:), ng
       real (kind = dp_t), intent(  out) :: vort(lo(1):,lo(2):,lo(3):)
@@ -633,6 +639,10 @@ contains
    end subroutine makevort_3d
 
    subroutine make_magvel (plotdata,comp_magvel,comp_mom,u,s)
+
+      use bc_module
+      use bl_constants_module
+      use variables
 
       integer        , intent(in   ) :: comp_magvel,comp_mom
       type(multifab) , intent(in   ) :: plotdata

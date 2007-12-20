@@ -1,28 +1,27 @@
 module mkscalforce_module
-
+  !
   ! this module contains the 2d and 3d routines that make the 
-  ! forcing term, w dp/dr,  for rho*h .  
-
+  ! forcing term, w dp/dr,  for rho*h .
+  !
   use bl_constants_module
-  use fill_3d_module
-  use variables
-  use geometry
-  use eos_module
   use multifab_module
   use ml_layout_module
   use define_bc_module
-  use ml_restriction_module
-  use multifab_fill_ghost_module
 
   implicit none
 
   private
-  public :: mkrhohforce
-  public :: mktempforce
+
+  public :: mkrhohforce, mktempforce
+
 contains
 
   subroutine mkrhohforce(nlevs,scal_force,comp,umac,p0_old,p0_new,normal,dx,mla,the_bc_level)
 
+    use variables
+    use geometry
+    use ml_restriction_module, only: ml_cc_restriction_c
+    use multifab_fill_ghost_module
     use multifab_physbc_module
 
     integer        , intent(in   ) :: nlevs
@@ -92,6 +91,9 @@ contains
 
   subroutine mkrhohforce_2d(n,rhoh_force,wmac,lo,hi,p0_old,p0_new)
 
+    use variables
+    use geometry
+
     ! compute the source terms for the non-reactive part of the enthalpy equation {w dp0/dr}
     
     ! note, in the prediction of the interface states, we will set
@@ -131,6 +133,9 @@ contains
 
   subroutine mkrhohforce_3d(n,rhoh_force,wmac,lo,hi,p0_old,p0_new)
 
+    use variables
+    use geometry
+
     ! compute the source terms for the non-reactive part of the enthalpy equation {w dp0/dr}
 
     integer,         intent(in   ) :: n,lo(:),hi(:)
@@ -169,6 +174,10 @@ contains
   end subroutine mkrhohforce_3d
 
   subroutine mkrhohforce_3d_sphr(n,rhoh_force,umac,vmac,wmac,lo,hi,dx,normal,p0_old,p0_new)
+
+    use fill_3d_module
+    use variables
+    use geometry
 
     ! compute the source terms for the non-reactive part of the enthalpy equation {w dp0/dr}
 
@@ -230,6 +239,10 @@ contains
 
   subroutine mktempforce(nlevs,temp_force,comp,s,thermal,p0_old,dx,mla,the_bc_level)
 
+    use variables
+    use geometry
+    use ml_restriction_module, only: ml_cc_restriction_c
+    use multifab_fill_ghost_module
     use multifab_physbc_module
 
     integer        , intent(in   ) :: nlevs
@@ -293,6 +306,10 @@ contains
 
   subroutine mktempforce_2d(temp_force, s, thermal, lo, hi, ng, p0)
 
+    use variables
+    use geometry
+    use eos_module
+
     ! compute the source terms for temperature
 
     ! note, in the prediction of the interface states, we will set
@@ -339,6 +356,10 @@ contains
   end subroutine mktempforce_2d
 
   subroutine mktempforce_3d(temp_force, s, thermal, lo, hi, ng, p0)
+
+    use variables
+    use geometry
+    use eos_module
 
     ! compute the source terms for temperature
 
@@ -388,6 +409,11 @@ contains
   end subroutine mktempforce_3d
 
   subroutine mktempforce_3d_sphr(n,temp_force, s, thermal, lo, hi, ng, p0, dx)
+
+    use fill_3d_module
+    use variables
+    use geometry
+    use eos_module
 
     ! compute the source terms for temperature
 

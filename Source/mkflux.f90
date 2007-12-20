@@ -1,21 +1,13 @@
 module mkflux_module
 
   use bl_types
-  use bl_constants_module
   use multifab_module
-  use slope_module
-  use fill_3d_module
-  use geometry
-  use define_bc_module
   use ml_layout_module
-  use ml_restriction_module
-  use variables
-  use network, ONLY: nspec
-  use addw0_module
 
   implicit none
 
   private
+
   public :: mkflux
   
 contains
@@ -23,6 +15,11 @@ contains
   subroutine mkflux(nlevs,sflux,sold,sedge,umac,w0,w0_cart_vec,s0_old,s0_edge_old, &
                     s0_old_cart,s0_new,s0_edge_new,s0_new_cart, &
                     startcomp,endcomp,which_step,dx,mla)
+
+    use bl_constants_module
+    use geometry
+    use ml_restriction_module, only: ml_edge_restriction_c
+    use variables
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: sflux(:,:)
@@ -127,6 +124,9 @@ contains
   subroutine mkflux_2d(sfluxx,sfluxy,sedgex,sedgey,umac,vmac,s0_old,s0_edge_old, &
                        s0_new,s0_edge_new,w0,startcomp,endcomp,which_step,lo,hi)
 
+    use bl_constants_module
+    use variables
+
     integer        , intent(in   ) :: lo(:),hi(:)
     real(kind=dp_t), intent(inout) :: sfluxx(lo(1)  :,lo(2)  :,:)
     real(kind=dp_t), intent(inout) :: sfluxy(lo(1)  :,lo(2)  :,:)
@@ -183,6 +183,9 @@ contains
   subroutine mkflux_3d_cart(sfluxx,sfluxy,sfluxz,sedgex,sedgey,sedgez,umac,vmac,wmac, &
                             s0_old,s0_edge_old,s0_new,s0_edge_new,w0,startcomp,endcomp, &
                             which_step,lo,hi)
+
+    use bl_constants_module
+    use variables
 
     integer        , intent(in   ) :: lo(:),hi(:)
     real(kind=dp_t), intent(inout) :: sfluxx(lo(1)  :,lo(2)  :,lo(3)  :,:)
@@ -264,6 +267,10 @@ contains
   subroutine mkflux_3d_sphr(sfluxx,sfluxy,sfluxz,sedgex,sedgey,sedgez,umac,vmac,wmac, &
                             s0_old,s0_edge_old,s0_old_cart,s0_new,s0_edge_new,s0_new_cart, &
                             w0,w0_cart,startcomp,endcomp,which_step,lo,hi,domlo,domhi)
+
+    use bl_constants_module
+    use variables
+    use addw0_module
 
     integer        , intent(in   ) :: lo(:),hi(:),domlo(:),domhi(:)
     real(kind=dp_t), intent(inout) :: sfluxx(lo(1)  :,lo(2)  :,lo(3)  :,:)

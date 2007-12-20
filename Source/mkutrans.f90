@@ -3,12 +3,12 @@ module mkutrans_module
   use bl_types
   use bl_constants_module
   use multifab_module
-  use slope_module
   use define_bc_module
 
   implicit none
 
   private
+
   public :: mkutrans
 
 contains
@@ -67,6 +67,8 @@ contains
   end subroutine mkutrans
 
   subroutine mkutrans_2d(vel,utrans,vtrans,force,lo,dx,dt,ng_cell,adv_bc,phys_bc)
+
+    use slope_module
     
     integer, intent(in) :: lo(2),ng_cell
     
@@ -195,6 +197,8 @@ contains
   end subroutine mkutrans_2d
   
   subroutine mkutrans_3d(vel,utrans,vtrans,wtrans,force,lo,dx,dt,ng_cell,adv_bc,phys_bc)
+
+    use slope_module
     
     integer, intent(in) :: lo(3),ng_cell
     

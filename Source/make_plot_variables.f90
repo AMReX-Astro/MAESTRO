@@ -3,18 +3,14 @@ module plot_variables_module
 
   use bl_types
   use multifab_module
-  use eos_module
-  use fill_3d_module
-  use network
-  use variables
-  use geometry
-  use probin_module
 
   implicit none
 
   private
-  public :: make_enthalpy, make_tfromH, make_tfromrho, make_XfromrhoX, &
-            make_omegadot, make_deltaT
+
+  public :: make_enthalpy, make_tfromH, make_tfromrho, make_XfromrhoX
+  public :: make_omegadot, make_deltaT
+
 contains
 
   subroutine make_enthalpy (enthalpy,comp,s)
@@ -49,7 +45,9 @@ contains
 
   subroutine make_enthalpy_2d (enthalpy,s,lo,hi,ng)
 
-    implicit none
+    use network
+    use variables
+    use probin_module, ONLY: use_big_h
 
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(  out) :: enthalpy(lo(1):,lo(2):)  
@@ -79,7 +77,9 @@ contains
 
   subroutine make_enthalpy_3d (enthalpy,s,lo,hi,ng)
 
-    implicit none
+    use network
+    use variables
+    use probin_module, ONLY: use_big_h
 
     integer, intent(in)               :: lo(:),hi(:),ng
     real (kind = dp_t), intent(  out) :: enthalpy(lo(1):,lo(2):,lo(3):)  
@@ -110,6 +110,10 @@ contains
   end subroutine make_enthalpy_3d
 
   subroutine make_tfromH(n,plotdata,comp_t,comp_dp,state,p0,t0, dx)
+
+    use network
+    use geometry
+    use variables
 
     integer        , intent(in   ) :: n,comp_t,comp_dp
     type(multifab) , intent(inout) :: plotdata
@@ -151,7 +155,12 @@ contains
 
   subroutine maketfromH_2d (T,deltaP,state,lo,hi,ng,p0,t0,dx)
 
-    implicit none
+    use network
+    use variables
+    use eos_module
+    use probin_module, ONLY: use_big_h
+    use bl_constants_module
+
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(  out) ::      T(lo(1)   :,lo(2):)  
     real (kind = dp_t), intent(  out) :: deltaP(lo(1)   :,lo(2):)  
@@ -222,7 +231,11 @@ contains
 
   subroutine maketfromH_3d_cart (T,deltaP,state,lo,hi,ng,p0,t0)
 
-    implicit none
+    use network
+    use variables
+    use eos_module
+    use probin_module, ONLY: use_big_h
+
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(  out) ::      T(lo(1)   :,lo(2):   ,lo(3):     )  
     real (kind = dp_t), intent(  out) :: deltaP(lo(1)   :,lo(2):   ,lo(3):     )  
@@ -280,7 +293,12 @@ contains
 
   subroutine maketfromH_3d_sphr(n,T,deltaP,state,lo,hi,ng,p0,t0,dx)
 
-    implicit none
+    use network
+    use variables
+    use eos_module
+    use fill_3d_module
+    use probin_module, ONLY: use_big_h
+
     integer, intent(in) :: n, lo(:), hi(:), ng
     real (kind = dp_t), intent(  out) ::      T(lo(1)   :,lo(2):   ,lo(3):     )  
     real (kind = dp_t), intent(  out) :: deltaP(lo(1)   :,lo(2):   ,lo(3):     )  
@@ -343,6 +361,10 @@ contains
   subroutine make_tfromrho(n,plotdata,comp_tfromrho,comp_tpert,comp_rhopert, &
                            comp_machno,comp_deltag,comp_spert,s,u,s0,p0,dx)
 
+    use network
+    use geometry
+    use variables
+
     integer        , intent(in   ) :: n,comp_tfromrho,comp_tpert
     integer        , intent(in   ) :: comp_rhopert, comp_machno
     integer        , intent(in   ) :: comp_deltag, comp_spert
@@ -398,7 +420,9 @@ contains
   subroutine maketfromrho_2d (t,tpert,rhopert,machno,deltagamma,spert, &
                               s,u,lo,hi,ng,s0,p0)
 
-    implicit none
+    use eos_module
+    use network
+    use variables
 
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind=dp_t), intent(  out)     ::      t(lo(1):,lo(2):)  
@@ -490,8 +514,9 @@ contains
 
   subroutine maketfromrho_3d_cart (t,tpert,rhopert,machno,deltagamma,spert, &
                                    s,u,lo,hi,ng,s0,p0)
-
-    implicit none
+    use network
+    use variables
+    use eos_module
 
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind=dp_t), intent(  out) ::          t(lo(1):,lo(2):,lo(3):)  
@@ -582,8 +607,11 @@ contains
 
   subroutine maketfromrho_3d_sphr(n,t,tpert,rhopert,machno,deltagamma,spert, &
                                   s,u,lo,hi,ng,s0,p0,dx)
-
-    implicit none
+    use network
+    use geometry
+    use variables
+    use eos_module
+    use fill_3d_module
 
     integer, intent(in)             :: n,lo(:),hi(:),ng
     real (kind=dp_t), intent(  out) ::          t(lo(1):,lo(2):,lo(3):)  
@@ -696,6 +724,9 @@ contains
 
    subroutine make_XfromrhoX (plotdata,comp,s)
 
+      use network
+      use variables
+
       integer        , intent(in   ) :: comp
       type(multifab) , intent(in   ) :: s
       type(multifab) , intent(inout) :: plotdata
@@ -726,7 +757,8 @@ contains
 
    subroutine makeXfromrhoX_2d (X,rho,rhoX,lo,hi,ng)
 
-      implicit none
+      use network
+      use variables
 
       integer, intent(in) :: lo(:), hi(:), ng
       real (kind = dp_t), intent(  out) ::    X(lo(1)   :,lo(2)   :,:)  
@@ -748,7 +780,8 @@ contains
 
    subroutine makeXfromrhoX_3d (X,rho,rhoX,lo,hi,ng)
 
-      implicit none
+      use network
+      use variables
 
       integer, intent(in) :: lo(:), hi(:), ng
       real (kind = dp_t), intent(  out) ::    X(lo(1)   :,lo(2)   :,lo(3)   :,:)  
@@ -772,6 +805,9 @@ contains
 
 
    subroutine make_omegadot(plotdata,comp,comp_enuc,s,rho_omegadot)
+
+     use network
+     use variables
 
      integer        , intent(in   ) :: comp, comp_enuc
      type(multifab) , intent(in   ) :: s, rho_omegadot
@@ -811,8 +847,10 @@ contains
 
    subroutine makeomega_2d (omegadot,enuc,rho_omegadot,rho,lo,hi,ng_s,ng_o)
 
-     implicit none
-     
+     use network
+     use variables
+     use bl_constants_module
+
      integer, intent(in) :: lo(:), hi(:), ng_s, ng_o
      real (kind = dp_t), intent(  out) :: omegadot(lo(1):,lo(2):,:)
      real (kind = dp_t), intent(  out) :: enuc(lo(1):,lo(2):)
@@ -837,8 +875,10 @@ contains
    
    subroutine makeomega_3d (omegadot,enuc,rho_omegadot,rho,lo,hi,ng_s,ng_o)
 
-     implicit none
-     
+     use network
+     use variables
+     use bl_constants_module
+
      integer, intent(in) :: lo(:), hi(:), ng_s, ng_o
      real (kind = dp_t), intent(  out) :: omegadot(lo(1):,lo(2):,lo(3):,:)  
      real (kind = dp_t), intent(  out) :: enuc(lo(1):,lo(2):,lo(3):)
@@ -891,7 +931,6 @@ contains
 
   subroutine makedeltaT_2d (dT,tfromH,tfromrho,lo,hi)
 
-    implicit none
     integer, intent(in) :: lo(:), hi(:)
     real (kind = dp_t), intent(  out) ::       dT(lo(1):,lo(2):)
     real (kind = dp_t), intent(in   ) ::   tfromH(lo(1):,lo(2):)
@@ -910,7 +949,6 @@ contains
 
   subroutine makedeltaT_3d (dT,tfromH,tfromrho,lo,hi)
 
-    implicit none
     integer, intent(in) :: lo(:), hi(:)
     real (kind = dp_t), intent(  out) ::       dT(lo(1):,lo(2):,lo(3):)
     real (kind = dp_t), intent(in   ) ::   tfromH(lo(1):,lo(2):,lo(3):)

@@ -1,38 +1,24 @@
 module ml_solve_module
 
    use bl_types
-   use bl_constants_module
-   use define_bc_module
    use multifab_module
-   use boxarray_module
-   use stencil_module
-   use mg_module
-   use list_box_module
-   use ml_boxarray_module
-   use itsol_module
-   use sparse_solve_module
-   use bl_mem_stat_module
-   use bl_timer_module
-   use box_util_module
-   use bl_IO_module
-   use fabio_module
-
-   use ml_restriction_module
-   use ml_prolongation_module
-   use ml_interface_stencil_module
-   use ml_util_module
    use bndry_reg_module
-   use ml_cc_module
-   use ml_nd_module
- 
+   use mg_module 
+
    implicit none
 
    private
+
    public :: ml_cc_solve, ml_nd_solve
 
 contains
 
    subroutine ml_cc_solve(mla,mgt,rh,full_soln,fine_flx,ref_ratio,do_diagnostics)
+
+      use bl_constants_module
+      use ml_util_module
+      use ml_cc_module
+      use ml_nd_module
 
       type(ml_layout), intent(inout) :: mla
       type(mg_tower ), intent(inout) :: mgt(:)
@@ -93,6 +79,11 @@ contains
    end subroutine ml_cc_solve
 
    subroutine ml_nd_solve(mla,mgt,rh,full_soln,one_sided_ss,ref_ratio,do_diagnostics,eps_in)
+
+      use bl_constants_module
+      use ml_util_module
+      use ml_cc_module
+      use ml_nd_module
 
        type(ml_layout), intent(inout) :: mla
        type(mg_tower) , intent(inout) :: mgt(:)
@@ -250,39 +241,5 @@ contains
         end subroutine create_nodal_mask_3d
 
    end subroutine ml_nd_solve
-
-! function ml_converged(res, sol, mask, bnorm, Anorm, eps) result(r)
-!    logical :: r
-!    type(multifab), intent(in) :: res(:), sol(:)
-!    type(lmultifab), intent(in) :: mask(:)
-!    real(dp_t), intent(in) :: Anorm, eps, bnorm
-!    real(dp_t) :: ni_res, ni_sol
-!    ni_res = ml_norm_inf(res, mask)
-!    ni_sol = ml_norm_inf(sol, mask)
-!    r =  ni_res <= eps*(Anorm*ni_sol + bnorm) .or. &
-!         ni_res <= spacing(Anorm)
-! end function ml_converged
-
-! function ml_norm_inf(rr, mask) result(r)
-!    real(dp_t)  :: r
-!    type(multifab), intent(in) :: rr(:)
-!    type(lmultifab), intent(in) :: mask(:)
-!    integer :: n
-!    r = 0
-!    do n = 1, size(rr)
-!       r = max(norm_inf(rr(n),mask(n)), r)
-!       end do
-! end function ml_norm_inf
-
-! function ml_norm_l2(rr, mask) result(r)
-!    real(dp_t)  :: r
-!    type(multifab), intent(in) :: rr(:)
-!    type(lmultifab), intent(in) :: mask(:)
-!    integer :: n
-!    r = 0
-!    do n = 1, size(rr)
-!       r = max(norm_l2(rr(n),mask(n)), r)
-!    end do
-! end function ml_norm_l2
 
 end module ml_solve_module

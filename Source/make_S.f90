@@ -1,17 +1,12 @@
 module make_S_module
 
   use bl_types
-  use bl_constants_module
   use multifab_module
-  use eos_module
-  use fill_3d_module
-  use network
-  use geometry
-  use variables
 
   implicit none
 
   private
+
   public :: make_S
 
 contains
@@ -75,7 +70,9 @@ contains
    subroutine make_S_2d (lo,hi,Source,gamma1_term,s, &
                          rho_omegadot,rho_Hext,thermal,ng,gam1,dx)
 
-      implicit none
+      use bl_constants_module
+      use eos_module
+      use variables
 
       integer         , intent(in   ) :: lo(:), hi(:), ng
       real (kind=dp_t), intent(  out) :: Source(lo(1):,lo(2):)
@@ -141,7 +138,11 @@ contains
    subroutine make_S_3d(n,lo,hi,Source,gamma1_term,s, &
                         rho_omegadot,rho_Hext,thermal,ng,t0,gam1,dx)
 
-      implicit none
+      use bl_constants_module
+      use eos_module
+      use fill_3d_module
+      use geometry
+      use variables
 
       integer         , intent(in   ) :: n, lo(:), hi(:), ng
       real (kind=dp_t), intent(  out) :: Source(lo(1):,lo(2):,lo(3):)  

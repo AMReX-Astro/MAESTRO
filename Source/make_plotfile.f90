@@ -1,23 +1,9 @@
 module make_plotfile_module
 
-  use bl_error_module
-  use bl_string_module
-  use bl_IO_module
   use bl_types
-  use fab_module
-  use fabio_module
-  use boxarray_module
-  use ml_boxarray_module
   use multifab_module
-  use parallel
-  use vort_module
-  use geometry
-  use variables
-  use plot_variables_module
-  use probin_module, ONLY: use_big_h
   use define_bc_module
-  use variables
-  use network
+  use ml_boxarray_module
 
   implicit none
 
@@ -27,6 +13,11 @@ module make_plotfile_module
 contains
 
   subroutine get_plot_names(dm,plot_names,plot_spec,plot_trac)
+
+    use plot_variables_module
+    use probin_module, ONLY: use_big_h
+    use variables
+    use network
 
     integer          , intent(in   ) :: dm
     logical          , intent(in   ) :: plot_spec,plot_trac
@@ -94,6 +85,15 @@ contains
 
   subroutine make_plotfile(dirname,plotdata,u,s,gp,rho_omegadot,Source,sponge, &
                            mba,plot_names,time,dx,the_bc_tower,s0,p0,plot_spec,plot_trac)
+
+    use fabio_module
+    use vort_module
+    use geometry
+    use variables
+    use plot_variables_module
+    use probin_module, ONLY: use_big_h
+    use variables
+    use network
 
     character(len=*) , intent(in   ) :: dirname
     type(multifab)   , intent(inout) :: plotdata(:)

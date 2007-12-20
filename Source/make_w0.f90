@@ -4,23 +4,21 @@ module make_w0_module
   ! This is step 3 of ABRZ2.
 
   use bl_types
-  use bl_constants_module
-  use multifab_module
-  use variables
-  use geometry
-  use make_edge_state_module
-  use make_grav_module
-  use cell_to_edge_module
-  use probin_module, only: grav_const
 
   implicit none
 
   private
+
   public :: make_w0
 
 contains
 
   subroutine make_w0(nlevs,vel,vel_old,f,Sbar_in,p0,rho0,gam1,eta,dt,dtold,verbose)
+
+    use parallel
+    use geometry
+    use variables
+    use bl_constants_module
 
     integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(  out) :: vel(:,0:)
@@ -58,7 +56,12 @@ contains
 
   subroutine make_w0_planar(n,vel,vel_old,Sbar_in,p0,gam1,eta,f,dt,dtold)
 
-    implicit none
+    use geometry
+    use variables
+    use make_edge_state_module
+    use bl_constants_module
+    use probin_module, only: grav_const
+
     integer        , intent(in   ) :: n
     real(kind=dp_t), intent(  out) :: vel(0:)
     real(kind=dp_t), intent(in   ) :: vel_old(0:)
@@ -112,8 +115,13 @@ contains
   end subroutine make_w0_planar
 
   subroutine make_w0_spherical(n,vel,Sbar_in,p0,rho0,gam1)
+
+    use geometry
+    use variables
+    use make_grav_module
+    use cell_to_edge_module
+    use bl_constants_module
     
-    implicit none
     integer        , intent(in   ) :: n
     real(kind=dp_t), intent(  out) :: vel(0:)
     real(kind=dp_t), intent(in   ) :: p0(0:),rho0(0:),gam1(0:)

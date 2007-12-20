@@ -2,16 +2,18 @@ module multifab_physbc_module
 
   use multifab_module
   use define_bc_module
-  use setbc_module
 
   implicit none
 
   private
+
   public :: multifab_physbc
 
 contains
 
   subroutine multifab_physbc(s,start_scomp,start_bccomp,num_comp,dx,the_bc_level)
+
+    use setbc_module
 
     type(multifab) , intent(inout) :: s
     integer        , intent(in   ) :: start_scomp,start_bccomp,num_comp
