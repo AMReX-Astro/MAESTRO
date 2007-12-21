@@ -45,8 +45,8 @@ contains
 
   subroutine make_enthalpy_2d (enthalpy,s,lo,hi,ng)
 
-    use network
-    use variables
+    use network, only: nspec, ebin
+    use variables, only: spec_comp, rho_comp, rhoh_comp
     use probin_module, ONLY: use_big_h
 
     integer, intent(in) :: lo(:), hi(:), ng
@@ -77,8 +77,8 @@ contains
 
   subroutine make_enthalpy_3d (enthalpy,s,lo,hi,ng)
 
-    use network
-    use variables
+    use network, only: nspec, ebin
+    use variables, only: spec_comp, rho_comp, rhoh_comp
     use probin_module, ONLY: use_big_h
 
     integer, intent(in)               :: lo(:),hi(:),ng
@@ -111,9 +111,7 @@ contains
 
   subroutine make_tfromH(n,plotdata,comp_t,comp_dp,state,p0,t0, dx)
 
-    use network
-    use geometry
-    use variables
+    use geometry, only: spherical
 
     integer        , intent(in   ) :: n,comp_t,comp_dp
     type(multifab) , intent(inout) :: plotdata
@@ -155,8 +153,7 @@ contains
 
   subroutine maketfromH_2d (T,deltaP,state,lo,hi,ng,p0,t0,dx)
 
-    use network
-    use variables
+    use variables, only: rho_comp, spec_comp, rhoh_comp
     use eos_module
     use probin_module, ONLY: use_big_h
     use bl_constants_module
@@ -231,8 +228,7 @@ contains
 
   subroutine maketfromH_3d_cart (T,deltaP,state,lo,hi,ng,p0,t0)
 
-    use network
-    use variables
+    use variables, only: rho_comp, spec_comp, rhoh_comp
     use eos_module
     use probin_module, ONLY: use_big_h
 
@@ -293,8 +289,7 @@ contains
 
   subroutine maketfromH_3d_sphr(n,T,deltaP,state,lo,hi,ng,p0,t0,dx)
 
-    use network
-    use variables
+    use variables, only: rho_comp, rhoh_comp, spec_comp
     use eos_module
     use fill_3d_module
     use probin_module, ONLY: use_big_h
@@ -361,9 +356,7 @@ contains
   subroutine make_tfromrho(n,plotdata,comp_tfromrho,comp_tpert,comp_rhopert, &
                            comp_machno,comp_deltag,comp_spert,s,u,s0,p0,dx)
 
-    use network
-    use geometry
-    use variables
+    use geometry, only: spherical
 
     integer        , intent(in   ) :: n,comp_tfromrho,comp_tpert
     integer        , intent(in   ) :: comp_rhopert, comp_machno
@@ -421,8 +414,7 @@ contains
                               s,u,lo,hi,ng,s0,p0)
 
     use eos_module
-    use network
-    use variables
+    use variables, only: rho_comp, temp_comp, spec_comp
 
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind=dp_t), intent(  out)     ::      t(lo(1):,lo(2):)  
@@ -514,8 +506,8 @@ contains
 
   subroutine maketfromrho_3d_cart (t,tpert,rhopert,machno,deltagamma,spert, &
                                    s,u,lo,hi,ng,s0,p0)
-    use network
-    use variables
+
+    use variables, only: rho_comp, temp_comp, spec_comp
     use eos_module
 
     integer, intent(in) :: lo(:), hi(:), ng
@@ -607,9 +599,9 @@ contains
 
   subroutine maketfromrho_3d_sphr(n,t,tpert,rhopert,machno,deltagamma,spert, &
                                   s,u,lo,hi,ng,s0,p0,dx)
-    use network
-    use geometry
-    use variables
+
+    use geometry, only: nr
+    use variables, only: rho_comp, temp_comp, spec_comp
     use eos_module
     use fill_3d_module
 
@@ -724,8 +716,8 @@ contains
 
    subroutine make_XfromrhoX (plotdata,comp,s)
 
-      use network
-      use variables
+      use network, only: nspec
+      use variables, only: spec_comp
 
       integer        , intent(in   ) :: comp
       type(multifab) , intent(in   ) :: s
@@ -757,8 +749,7 @@ contains
 
    subroutine makeXfromrhoX_2d (X,rho,rhoX,lo,hi,ng)
 
-      use network
-      use variables
+      use network, only: nspec
 
       integer, intent(in) :: lo(:), hi(:), ng
       real (kind = dp_t), intent(  out) ::    X(lo(1)   :,lo(2)   :,:)  
@@ -780,8 +771,7 @@ contains
 
    subroutine makeXfromrhoX_3d (X,rho,rhoX,lo,hi,ng)
 
-      use network
-      use variables
+      use network, only: nspec
 
       integer, intent(in) :: lo(:), hi(:), ng
       real (kind = dp_t), intent(  out) ::    X(lo(1)   :,lo(2)   :,lo(3)   :,:)  
@@ -806,8 +796,8 @@ contains
 
    subroutine make_omegadot(plotdata,comp,comp_enuc,s,rho_omegadot)
 
-     use network
-     use variables
+     use network, only: nspec
+     use variables, only: rho_comp
 
      integer        , intent(in   ) :: comp, comp_enuc
      type(multifab) , intent(in   ) :: s, rho_omegadot
@@ -847,8 +837,7 @@ contains
 
    subroutine makeomega_2d (omegadot,enuc,rho_omegadot,rho,lo,hi,ng_s,ng_o)
 
-     use network
-     use variables
+     use network, only: nspec, ebin
      use bl_constants_module
 
      integer, intent(in) :: lo(:), hi(:), ng_s, ng_o
@@ -875,8 +864,7 @@ contains
    
    subroutine makeomega_3d (omegadot,enuc,rho_omegadot,rho,lo,hi,ng_s,ng_o)
 
-     use network
-     use variables
+     use network, only: nspec, ebin
      use bl_constants_module
 
      integer, intent(in) :: lo(:), hi(:), ng_s, ng_o

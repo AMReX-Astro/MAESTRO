@@ -16,7 +16,7 @@ contains
   subroutine make_hgrhs(nlevs,hgrhs,Source,gamma1_term,Sbar,div_coeff,dx)
 
     use bl_constants_module
-    use geometry
+    use geometry, only: spherical
     use fill_3d_module
     
     integer        , intent(in   ) :: nlevs
@@ -117,9 +117,7 @@ contains
   end subroutine make_hgrhs
   
   subroutine make_rhscc_2d(lo,hi,rhs_cc,Source,gamma1_term,Sbar,div_coeff,dx)
-    
-    implicit none
-    
+
     integer         , intent(in   ) :: lo(:), hi(:)
     real (kind=dp_t), intent(  out) :: rhs_cc(lo(1)-1:,lo(2)-1:)
     real (kind=dp_t), intent(in   ) :: Source(lo(1):,lo(2):)
@@ -142,9 +140,7 @@ contains
   subroutine make_hgrhs_2d(lo,hi,rhs,rhs_cc)
 
     use bl_constants_module
-    
-    implicit none
-    
+
     integer         , intent(in   ) :: lo(:), hi(:)
     real (kind=dp_t), intent(  out) :: rhs(lo(1):,lo(2):)  
     real (kind=dp_t), intent(in   ) :: rhs_cc(lo(1)-1:,lo(2)-1:)
@@ -162,9 +158,7 @@ contains
   end subroutine make_hgrhs_2d
   
   subroutine make_rhscc_3d_cart(lo,hi,rhs_cc,Source,Sbar,div_coeff,dx)
-    
-    implicit none
-    
+
     integer         , intent(in   ) :: lo(:), hi(:)
     real (kind=dp_t), intent(  out) :: rhs_cc(lo(1)-1:,lo(2)-1:,lo(3)-1:)  
     real (kind=dp_t), intent(in   ) :: Source(lo(1):,lo(2):,lo(3):)  
@@ -186,9 +180,7 @@ contains
   end subroutine make_rhscc_3d_cart
    
   subroutine make_rhscc_3d_sphr(lo,hi,rhs_cc,Source,Sbar_cart,div_coeff_cart)
-    
-    implicit none
-    
+
     integer         , intent(in   ) :: lo(:), hi(:)
     real (kind=dp_t), intent(  out) ::         rhs_cc(lo(1)-1:,lo(2)-1:,lo(3)-1:)  
     real (kind=dp_t), intent(in   ) ::         Source(lo(1)  :,lo(2)  :,lo(3)  :)  
@@ -212,9 +204,7 @@ contains
   subroutine make_hgrhs_3d(lo,hi,rhs,rhs_cc)
 
     use bl_constants_module
-    
-    implicit none
-    
+
     integer         , intent(in   ) :: lo(:), hi(:)
     real (kind=dp_t), intent(  out) ::    rhs(lo(1)  :,lo(2)  :,lo(3)  :)  
     real (kind=dp_t), intent(in   ) :: rhs_cc(lo(1)-1:,lo(2)-1:,lo(3)-1:)  

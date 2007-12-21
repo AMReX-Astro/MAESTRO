@@ -17,7 +17,6 @@ contains
    subroutine make_macrhs(nlevs,macrhs,Source,gamma1_term,Sbar,div_coeff,dx)
 
      use bl_constants_module
-     use variables
 
      integer        , intent(in   ) :: nlevs
      type(multifab) , intent(inout) :: macrhs(:)
@@ -59,8 +58,6 @@ contains
 
    subroutine make_macrhs_2d (lo,hi,rhs,Source,gamma1_term,Sbar,div_coeff,dx)
 
-      implicit none
-
       integer         , intent(in   ) :: lo(:), hi(:)
       real (kind=dp_t), intent(  out) :: rhs(lo(1):,lo(2):)  
       real (kind=dp_t), intent(in   ) :: Source(lo(1):,lo(2):)  
@@ -82,7 +79,7 @@ contains
 
    subroutine make_macrhs_3d(n,lo,hi,rhs,Source,gamma1_term,Sbar,div_coeff,dx)
 
-     use geometry
+     use geometry, only: spherical
      use fill_3d_module
 
       implicit none

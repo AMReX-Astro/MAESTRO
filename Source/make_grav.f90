@@ -15,8 +15,7 @@ contains
   subroutine make_grav_cell(n,grav_cell,rho0)
 
     use bl_constants_module
-    use variables
-    use geometry
+    use geometry, only: spherical, nr, z, zl
     use probin_module, only: grav_const
 
 
@@ -64,8 +63,7 @@ contains
   subroutine make_grav_edge(n,grav_edge,rho0)
 
   use bl_constants_module
-  use variables
-  use geometry
+  use geometry, only: spherical, nr, zl
   use probin_module, only: grav_const
 
 

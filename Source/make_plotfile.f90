@@ -17,7 +17,7 @@ contains
     use plot_variables_module
     use probin_module, ONLY: use_big_h
     use variables
-    use network
+    use network, only: nspec, short_spec_names
 
     integer          , intent(in   ) :: dm
     logical          , intent(in   ) :: plot_spec,plot_trac
@@ -88,12 +88,10 @@ contains
 
     use fabio_module
     use vort_module
-    use geometry
+    use geometry, only: spherical
     use variables
     use plot_variables_module
     use probin_module, ONLY: use_big_h
-    use variables
-    use network
 
     character(len=*) , intent(in   ) :: dirname
     type(multifab)   , intent(inout) :: plotdata(:)

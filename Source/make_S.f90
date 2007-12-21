@@ -72,7 +72,7 @@ contains
 
       use bl_constants_module
       use eos_module
-      use variables
+      use variables, only: rho_comp, temp_comp, spec_comp
 
       integer         , intent(in   ) :: lo(:), hi(:), ng
       real (kind=dp_t), intent(  out) :: Source(lo(1):,lo(2):)
@@ -141,8 +141,8 @@ contains
       use bl_constants_module
       use eos_module
       use fill_3d_module
-      use geometry
-      use variables
+      use geometry, only: spherical
+      use variables, only: rho_comp, temp_comp, spec_comp
 
       integer         , intent(in   ) :: n, lo(:), hi(:), ng
       real (kind=dp_t), intent(  out) :: Source(lo(1):,lo(2):,lo(3):)  
