@@ -4,6 +4,8 @@ module slope_module
 
   implicit none
 
+  integer, private, parameter :: cen = 1, lim = 2, flag = 3, fromm = 4
+
 contains
 
   subroutine slopex_2d(s,slx,lo,ng,nvar,bc,slope_order)
@@ -21,16 +23,11 @@ contains
     integer :: hi(2)
     integer :: is,js,ie,je
     integer :: i,j,comp
-    integer :: cen,lim,flag,fromm
+
     real(kind=dp_t) del,slim,sflag
     real(kind=dp_t) dpls,dmin,ds
 
     real(kind=dp_t), allocatable :: dxscr(:,:)
-
-    parameter( cen = 1 )
-    parameter( lim = 2 )
-    parameter( flag = 3 )
-    parameter( fromm = 4 )
 
     hi(1) = lo(1) + size(s,dim=1) - (2*ng+1)
     hi(2) = lo(2) + size(s,dim=2) - (2*ng+1)
@@ -181,12 +178,6 @@ contains
     real(kind=dp_t) :: del,slim,sflag
     integer :: hi(2)
     integer :: is,js,ie,je,i,j,comp
-
-    integer cen,lim,flag,fromm
-    parameter( cen = 1 )
-    parameter( lim = 2 )
-    parameter( flag = 3 )
-    parameter( fromm = 4 )
 
     hi(1) = lo(1) + size(s,dim=1) - (2*ng+1)
     hi(2) = lo(2) + size(s,dim=2) - (2*ng+1)
@@ -341,12 +332,6 @@ contains
     real(kind=dp_t) :: del,slim,sflag
     integer :: hi(3)
     integer :: is,js,ks,ie,je,ke,i,j,k,comp
-
-    integer cen,lim,flag,fromm
-    parameter( cen = 1 )
-    parameter( lim = 2 )
-    parameter( flag = 3 )
-    parameter( fromm = 4 )
 
     hi(1) = lo(1) + size(s,dim=1) - (2*ng+1)
     hi(2) = lo(2) + size(s,dim=2) - (2*ng+1)

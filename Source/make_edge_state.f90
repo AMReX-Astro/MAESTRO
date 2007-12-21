@@ -1306,13 +1306,8 @@ contains
      real(kind=dp_t) :: abs_eps, eps, umax, u
      real(kind=dp_t) :: fourthirds
      
-     integer :: i,is,ie
-     integer :: hi,cen,lim,flag,fromm
-     
-     parameter( cen = 1 )
-     parameter( lim = 2 )
-     parameter( flag = 3 )
-     parameter( fromm = 4 )
+     integer :: i,is,ie,hi
+     integer, parameter :: cen = 1, lim = 2, flag = 3, fromm = 4
      
      hi = lo + nr(n) - 1
      
