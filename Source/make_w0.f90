@@ -148,7 +148,7 @@ contains
     call make_grav_edge(n,grav_edge,rho0)
 
     do j = 1,nr(n)
-       c(j) = gam1(j-1) * p0(j-1) * zl(n,j-1)**2 / z(n,j-1)**2
+       c(j) = gam1(j-1) * p0(j-1) * base_loedge_loc(n,j-1)**2 / base_cc_loc(n,j-1)**2
        c(j) = c(j) / dr(n)**2
     end do
 
@@ -156,9 +156,10 @@ contains
 
     do j = 1,nr(n)-1
 
-       d(j) = -( gam1(j-1) * p0(j-1) / z(n,j-1)**2 &
-                +gam1(j  ) * p0(j  ) / z(n,j  )**2 ) * (zl(n,j)**2/dr(n)**2) &
-                - four * rho0_edge(j) * grav_edge(j) / zl(n,j)
+       d(j) = -( gam1(j-1) * p0(j-1) / base_cc_loc(n,j-1)**2 &
+                +gam1(j  ) * p0(j  ) / base_cc_loc(n,j  )**2 ) &
+                * (base_loedge_loc(n,j)**2/dr(n)**2) &
+                - four * rho0_edge(j) * grav_edge(j) / base_loedge_loc(n,j)
     end do
 
     do j = 1,nr(n)-1
@@ -167,7 +168,7 @@ contains
     end do
 
     do j = 0,nr(n)-1
-       e(j) = gam1(j) * p0(j) * zl(n,j+1)**2 / z(n,j)**2
+       e(j) = gam1(j) * p0(j) * base_loedge_loc(n,j+1)**2 / base_cc_loc(n,j)**2
        e(j) = e(j) / dr(n)**2
     end do
 

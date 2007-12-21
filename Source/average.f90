@@ -364,7 +364,7 @@ contains
   
   subroutine average_3d_sphr(n,phi,phibar,lo,hi,ng,dx,ncell,start_comp,ncomp)
 
-    use geometry, only: spherical, dr, center, nr, z
+    use geometry, only: spherical, dr, center, nr, base_cc_loc
     use bl_constants_module
 
     implicit none
@@ -379,7 +379,7 @@ contains
     ! Local variables
     integer                       :: i, j, k, comp, index
     integer                       :: ii, jj, kk
-    real (kind=dp_t)              :: x,y,radius
+    real (kind=dp_t)              :: radius
     real (kind=dp_t)              :: xx, yy, zz
     real (kind=dp_t)              :: xmin, ymin, zmin
     integer :: nsub
@@ -414,7 +414,6 @@ contains
                          print *,'BOGUS INDEX IN AVERAGE ',index
                          print *,'NOT IN RANGE 0 TO ',nr(n)-1
                          print *,'I J K ',i,j,k
-                         print *,'X Y Z ',x,y,z
                          stop
                       end if
                       

@@ -173,7 +173,7 @@ contains
     use make_edge_state_module
     use eos_module
     use variables, only: spec_comp, rho_comp, rhoh_comp, temp_comp
-    use geometry, only: nr, z, zl, dr, nr
+    use geometry, only: nr, base_cc_loc, base_loedge_loc, dr, nr
     use make_grav_module
     use cell_to_edge_module
     use make_div_coeff_module
@@ -221,15 +221,15 @@ contains
        ! results from expanding out the spherical divergence
        do j = 0,nr(n)-1
           force(j) = -s0_old(j,comp) * (vel(j+1) - vel(j)) / dr(n) - &
-               2.0_dp_t*s0_old(j,comp)*HALF*(vel(j) + vel(j+1))/z(n,j)
+               2.0_dp_t*s0_old(j,comp)*HALF*(vel(j) + vel(j+1))/base_cc_loc(n,j)
        end do
        
        call make_edge_state_1d(n,s0_old(:,comp),edge,vel,force,1,dr(n),dt)
        
        do j = 0,nr(n)-1
-          s0_new(j,comp) = s0_old(j,comp) - &
-               dtdr / z(n,j)**2 * ( zl(n,j+1)**2 * edge(j+1) * vel(j+1) &
-               -zl(n,j  )**2 * edge(j  ) * vel(j  ))
+          s0_new(j,comp) = s0_old(j,comp) &
+               - dtdr/base_cc_loc(n,j)**2*(base_loedge_loc(n,j+1)**2*edge(j+1)*vel(j+1) &
+               - base_loedge_loc(n,j  )**2 * edge(j  ) * vel(j  ))
        end do
        
     enddo
@@ -254,8 +254,8 @@ contains
     
     ! Update p0 -- predictor
     do j = 0,nr(n)-1
-       divbetaw = one / (z(n,j)**2) * (zl(n,j+1)**2 * beta(j+1) * vel(j+1) - &
-            zl(n,j  )**2 * beta(j  ) * vel(j  ) ) / dr(n)
+       divbetaw = one/(base_cc_loc(n,j)**2)*(base_loedge_loc(n,j+1)**2*beta(j+1)*vel(j+1) - &
+            base_loedge_loc(n,j)**2 * beta(j) * vel(j)) / dr(n)
        betahalf = div_coeff_old(j)
        factor = half * dt * gam1(j) * (Sbar_in(j) - divbetaw / betahalf)
        p0_new(j) = p0_old(j) * (one + factor ) / (one - factor)
@@ -299,8 +299,9 @@ contains
     
     ! Update p0 -- corrector
     do j = 0,nr(n)-1
-       divbetaw = one / (z(n,j)**2) * (zl(n,j+1)**2 * beta_nh(j+1) * vel(j+1) - &
-            zl(n,j  )**2 * beta_nh(j  ) * vel(j  ) ) / dr(n)
+       divbetaw = one / (base_cc_loc(n,j)**2) &
+            * (base_loedge_loc(n,j+1)**2 * beta_nh(j+1) * vel(j+1) - &
+            base_loedge_loc(n,j  )**2 * beta_nh(j  ) * vel(j  ) ) / dr(n)
        betahalf = HALF*(div_coeff_old(j) + div_coeff_new(j))
        factor = half * dt * (Sbar_in(j) - divbetaw / betahalf)
        p0_new(j) = p0_old(j) * (one + factor * gam1_old(j)) / (one - factor * gam1(j))
@@ -316,7 +317,7 @@ contains
        div_w0 = (vel(j+1) - vel(j)) / dr(n)
        
        force(j) = -s0_old(j,rhoh_comp) * div_w0 - &
-            2.0_dp_t*s0_old(j,rhoh_comp)*HALF*(vel(j) + vel(j+1))/z(n,j)
+            2.0_dp_t*s0_old(j,rhoh_comp)*HALF*(vel(j) + vel(j+1))/base_cc_loc(n,j)
        
        ! add eta at time-level n to the force for the prediction
        eta(j) = gam1_old(j) * p0_old(j) * (Sbar_in(j) - div_w0)
@@ -332,8 +333,8 @@ contains
     do j = 0,nr(n)-1
        
        s0_new(j,rhoh_comp) = s0_old(j,rhoh_comp) - &
-            dtdr / z(n,j)**2 * ( zl(n,j+1)**2 * edge(j+1) * vel(j+1) &
-            -zl(n,j  )**2 * edge(j  ) * vel(j  ))
+            dtdr / base_cc_loc(n,j)**2 * ( base_loedge_loc(n,j+1)**2 * edge(j+1) * vel(j+1) &
+            -base_loedge_loc(n,j  )**2 * edge(j  ) * vel(j  ))
        
        s0_new(j,rhoh_comp) = s0_new(j,rhoh_comp) + dt * eta(j)
        

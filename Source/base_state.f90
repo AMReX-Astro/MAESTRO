@@ -17,7 +17,7 @@ contains
     use multifab_module
     use define_bc_module
     use bl_constants_module
-    use eos_module, do_diag_eos => do_diag ! Because there's a local variable do_diag.
+    use eos_module
     use probin_module, ONLY: base_cutoff_density, anelastic_cutoff
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp
     use geometry, only: dr, nr, spherical
@@ -57,8 +57,6 @@ contains
 
     integer :: ipos,dm
     character (len=256) :: header_line
-
-    logical :: do_diag
 
     do_diag = .false.
 
