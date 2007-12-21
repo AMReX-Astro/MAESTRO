@@ -17,6 +17,7 @@ contains
                               gamma1_term,sponge,do_sponge,hgrhs,istep)
 
     use ml_layout_module
+    use bl_constants_module
     use multifab_module
     use pre_advance_module
     use velocity_advance_module

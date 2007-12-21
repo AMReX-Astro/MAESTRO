@@ -185,7 +185,7 @@ contains
   subroutine modify_scal_force_3d_sphr(n,force,s,lo,hi,domlo,domhi,ng, &
                                        umac,vmac,wmac,base_cart,w0,dx)
 
-    use geometry, only: nr, zl, dr, z
+    use geometry, only: nr, base_loedge_loc, dr, base_cc_loc
     use fill_3d_module
     use bl_constants_module
     

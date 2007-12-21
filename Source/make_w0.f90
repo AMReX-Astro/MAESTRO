@@ -115,7 +115,7 @@ contains
 
   subroutine make_w0_spherical(n,vel,Sbar_in,p0,rho0,gam1)
 
-    use geometry, only: z, nr, zl, dr
+    use geometry, only: base_cc_loc, nr, base_loedge_loc, dr
     use make_grav_module
     use cell_to_edge_module
     use bl_constants_module
