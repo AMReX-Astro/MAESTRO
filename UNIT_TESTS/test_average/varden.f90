@@ -23,6 +23,7 @@ subroutine varden()
   use average_module
   use fill_3d_module
   use probin_module
+  use bl_constants_module
 
   implicit none
 
