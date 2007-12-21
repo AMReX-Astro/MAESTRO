@@ -49,6 +49,7 @@ contains
     
     ! local
     real(kind=dp_t), pointer     :: pp(:,:,:,:)
+    logical, pointer             :: mp(:,:,:,:)
     type(box)                    :: domain
     integer                      :: domlo(phi(1)%dim),domhi(phi(1)%dim)
     integer                      :: lo(phi(1)%dim),hi(phi(1)%dim)
@@ -185,37 +186,65 @@ contains
 
        else if(spherical .eq. 1) then
 
-          ! note: spherical does not work for multilevel yet.
+          ! The spherical case is tricky because the base state only exists at one level
+          ! as defined by dr_base in the inputs file.
+          ! Therefore, the goal here is to compute phibar(nlevs,:).
+          ! phisum(nlevs,:,:) will be the volume weighted sum over all levels.
+          ! ncell(nlevs,:) will be the volume weighted number of cells over all levels.
+          ! We make sure to use mla%mask to not double count cells, i.e.,
+          ! we only sum up cells that are not covered by finer cells.
+          ! we use the convention that a cell volume of 1 corresponds to dx(n=1)**3
 
-          do n = 1, nlevs
+          ! First we compute ncell(nlevs,:) and phisum(nlevs,:,:) as if the finest level
+          ! were the only level in existence.
+          ! Then, we add contributions from each coarser cell that is not covered by 
+          ! a finer cell.
+          do n=nlevs,1,-1
+
              do i = 1, phi(n)%nboxes
                 if ( multifab_remote(phi(n), i) ) cycle
                 pp => dataptr(phi(n), i)
+                if(n .ne. nlevs) then
+                   mp => dataptr(mla%mask(n), i)
+                endif
                 lo =  lwb(get_box(phi(n), i))
                 hi =  upb(get_box(phi(n), i))
                 ncell_grid(n,:) = ZERO
-                call average_3d_sphr(n,pp(:,:,:,:),phisum_proc(n,:,:),lo,hi,ng,dx(n,:), &
-                                     ncell_grid(n,:),comp,ncomp)
-                      
+                if(n .eq. nlevs) then
+                   call average_3d_sphr(n,nlevs,pp(:,:,:,:),phisum_proc(n,:,:),lo,hi,ng, &
+                                        dx(n,:),ncell_grid(n,:),comp,ncomp,mla)
+                else
+                   call average_3d_sphr(n,nlevs,pp(:,:,:,:),phisum_proc(n,:,:),lo,hi,ng, &
+                                        dx(n,:),ncell_grid(n,:),comp,ncomp,mla,mp(:,:,:,1))
+                end if
+                
                 ncell_proc(n,:) = ncell_proc(n,:) + ncell_grid(n,:)
              end do
              
-             do k = 0, nr(n)-1
+             do k = 0, nr(nlevs)-1
                 call parallel_reduce(ncell(n,k),  ncell_proc(n,k),      MPI_SUM)
-                
-                ! put all the components for the current k into a buffer array and reduce
+                if(n .ne. nlevs) then
+                   ncell(nlevs,k) = ncell(nlevs,k) + ncell(n,k)
+                end if
+
                 source_buffer(n,:) = phisum_proc(n,k,:)
                 call parallel_reduce(target_buffer(n,:), source_buffer(n,:), MPI_SUM)
                 phisum(n,k,:) = target_buffer(n,:)
-                
-                if (ncell(n,k) .gt. ZERO) then
-                   phibar(n,k,:) = phisum(n,k,:) / ncell(n,k)
-                else
-                   phibar(n,k,:) = ZERO
+                if(n .ne. nlevs) then
+                   phisum(nlevs,k,:) = phisum(nlevs,k,:) + phisum(n,k,:)
                 end if
              end do
 
-          enddo
+          end do
+
+          ! now divide the total phisum by the number of cells to get phibar
+          do k = 0, nr(nlevs)-1
+             if (ncell(nlevs,k) .gt. ZERO) then
+                phibar(nlevs,k,:) = phisum(nlevs,k,:) / ncell(nlevs,k)
+             else
+                phibar(nlevs,k,:) = ZERO
+             end if
+          end do
 
           deallocate(ncell_grid)
           
@@ -362,20 +391,22 @@ contains
 
   end subroutine compute_phipert_3d
 
-  
-  subroutine average_3d_sphr(n,phi,phibar,lo,hi,ng,dx,ncell,start_comp,ncomp)
+  subroutine average_3d_sphr(n,nlevs,phi,phibar,lo,hi,ng,dx,ncell,start_comp,ncomp,mla,mask)
 
     use geometry, only: spherical, dr, center, nr, base_cc_loc
     use bl_constants_module
+    use ml_layout_module
 
     implicit none
     
-    integer         , intent(in   ) :: n
+    integer         , intent(in   ) :: n, nlevs
     integer         , intent(in   ) :: lo(:), hi(:), ng, start_comp, ncomp
     real (kind=dp_t), intent(in   ) :: phi(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind=dp_t), intent(inout) :: phibar(0:,:)
     real (kind=dp_t), intent(in   ) :: dx(:)
     real (kind=dp_t), intent(inout) :: ncell(0:)
+    type(ml_layout) , intent(in   ) :: mla
+    logical         , intent(in   ), optional :: mask(lo(1):,lo(2):,lo(3):)
     
     ! Local variables
     integer                       :: i, j, k, comp, index
@@ -383,11 +414,18 @@ contains
     real (kind=dp_t)              :: radius
     real (kind=dp_t)              :: xx, yy, zz
     real (kind=dp_t)              :: xmin, ymin, zmin
-    integer :: nsub
+    real (kind=dp_t)              :: cell_weight
+    integer                       :: nsub
+    logical                       :: cell_valid
     
     ! compute nsub such that we are always guaranteed to fill each of
     ! the base state radial bins
-    nsub = int(dx(1)/dr(n)) + 1
+    nsub = int(dx(1)/dr(nlevs)) + 1
+
+    cell_weight = 1.d0 / nsub**3
+    do i=2,n
+       cell_weight = cell_weight / (mla%mba%rr(i-1,1))**3
+    end do
     
     do k = lo(3),hi(3)
        zmin = dble(k)*dx(3) - center(3)
@@ -398,35 +436,43 @@ contains
           do i = lo(1),hi(1)
              xmin = dble(i)*dx(1) - center(1)
              
-             do kk = 0, nsub-1
-                zz = zmin + (dble(kk) + HALF)*dx(3)/nsub
+             cell_valid = .true.
+             if(present(mask) .and. (.not. mask(i,j,k)) ) cell_valid = .false.
                 
-                do jj = 0, nsub-1
-                   yy = ymin + (dble(jj) + HALF)*dx(2)/nsub
+             if(cell_valid) then
+                
+                do kk = 0, nsub-1
+                   zz = zmin + (dble(kk) + HALF)*dx(3)/nsub
                    
-                   do ii = 0, nsub-1
-                      xx = xmin + (dble(ii) + HALF)*dx(1)/nsub
+                   do jj = 0, nsub-1
+                      yy = ymin + (dble(jj) + HALF)*dx(2)/nsub
                       
-                      radius = sqrt(xx**2 + yy**2 + zz**2)
-                      index = radius / dr(n) 
-                      
-                      if (index .lt. 0 .or. index .gt. nr(n)-1) then
-                         print *,'RADIUS ',radius
-                         print *,'BOGUS INDEX IN AVERAGE ',index
-                         print *,'NOT IN RANGE 0 TO ',nr(n)-1
-                         print *,'I J K ',i,j,k
-                         stop
-                      end if
-                      
-                      do comp = start_comp,start_comp+ncomp-1
-                         phibar(index,comp) = phibar(index,comp) + phi(i,j,k,comp)
-                      end do
-                      
-                      ncell(index) = ncell(index) + 1.d0
-                      
+                      do ii = 0, nsub-1
+                         xx = xmin + (dble(ii) + HALF)*dx(1)/nsub
+                         
+                         radius = sqrt(xx**2 + yy**2 + zz**2)
+                         index = radius / dr(nlevs)
+                         
+                         if (index .lt. 0 .or. index .gt. nr(nlevs)-1) then
+                            print *,'RADIUS ',radius
+                            print *,'BOGUS INDEX IN AVERAGE ',index
+                            print *,'NOT IN RANGE 0 TO ',nr(nlevs)-1
+                            print *,'I J K ',i,j,k
+                            stop
+                         end if
+                         
+                         do comp = start_comp,start_comp+ncomp-1
+                            phibar(index,comp) = &
+                                 phibar(index,comp) + cell_weight*phi(i,j,k,comp)
+                         end do
+                         
+                         ncell(index) = ncell(index) + cell_weight
+                         
+                      enddo
                    enddo
                 enddo
-             enddo
+                
+             end if
              
           end do
        end do
