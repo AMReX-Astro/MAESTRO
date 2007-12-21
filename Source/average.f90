@@ -52,10 +52,10 @@ contains
     type(box)                    :: domain
     integer                      :: domlo(phi(1)%dim),domhi(phi(1)%dim)
     integer                      :: lo(phi(1)%dim),hi(phi(1)%dim)
-    integer                      :: i,k,n,nlevs,ng,dm,rr,ncell
+    integer                      :: i,k,n,nlevs,ng,dm,rr
     real(kind=dp_t), allocatable :: ncell_grid(:,:)
     real(kind=dp_t), allocatable :: ncell_proc(:,:)
-    real(kind=dp_t), allocatable :: ncell_tot(:,:)
+    real(kind=dp_t), allocatable :: ncell(:,:)
     real(kind=dp_t), allocatable :: phisum_proc(:,:,:)
     real(kind=dp_t), allocatable :: phisum(:,:,:)
     real(kind=dp_t), allocatable :: phipert_proc(:,:,:)
@@ -77,7 +77,7 @@ contains
        end if
        
        allocate(ncell_proc(nlevs,0:nr(nlevs)-1))
-       allocate( ncell_tot(nlevs,0:nr(nlevs)-1))
+       allocate(     ncell(nlevs,0:nr(nlevs)-1))
 
        allocate(phisum_proc(nlevs,0:nr(nlevs)-1,ncomp))
        allocate(     phisum(nlevs,0:nr(nlevs)-1,ncomp))
@@ -89,10 +89,11 @@ contains
        allocate(target_buffer(nlevs,ncomp))
        
        ncell_proc(:,:) = ZERO
-       ncell_tot(:,:)  = ZERO
+       ncell(:,:)  = ZERO
        
        phisum_proc(:,:,:) = ZERO
        phisum(:,:,:) = ZERO
+
        phipert_proc(:,:,:) = ZERO
        phipert(:,:,:) = ZERO
 
@@ -103,9 +104,9 @@ contains
           domhi = upb(domain)
 
           if(dm .eq. 2) then
-             ncell = domhi(1)-domlo(1)+1
+             ncell(1,:) = domhi(1)-domlo(1)+1
           else if(dm .eq. 3) then
-             ncell = (domhi(1)-domlo(1)+1)*(domhi(2)-domlo(2)+1)
+             ncell(1,:) = (domhi(1)-domlo(1)+1)*(domhi(2)-domlo(2)+1)
           end if
 
           ! the first step is to compute phibar assuming the coarsest level 
@@ -129,7 +130,7 @@ contains
              call parallel_reduce(target_buffer(1,:), source_buffer(1,:), MPI_SUM)
              phisum(1,k,:) = target_buffer(1,:)
              
-             phibar(1,k,:) = phisum(1,k,:) / dble(ncell)
+             phibar(1,k,:) = phisum(1,k,:) / dble(ncell(1,k))
           end do
 
           ! now we compute the phibar at the finer levels
@@ -142,9 +143,9 @@ contains
              domhi = upb(domain)
 
              if(dm .eq. 2) then
-                ncell = domhi(1)-domlo(1)+1
+                ncell(n,:) = domhi(1)-domlo(1)+1
              else if(dm .eq. 3) then
-                ncell = (domhi(1)-domlo(1)+1)*(domhi(2)-domlo(2)+1)
+                ncell(n,:) = (domhi(1)-domlo(1)+1)*(domhi(2)-domlo(2)+1)
              end if
 
              ! compute phisum at next finer level
@@ -177,7 +178,7 @@ contains
 
                 ! update phisum and compute phibar
                 phisum(n,k,:) = phisum(n,k,:) + phipert(n,k,:)
-                phibar(n,k,:) = phisum(n,k,:) / dble(ncell)
+                phibar(n,k,:) = phisum(n,k,:) / dble(ncell(n,:))
              end do
 
           end do
@@ -200,15 +201,15 @@ contains
              end do
              
              do k = 0, nr(n)-1
-                call parallel_reduce(ncell_tot(n,k),  ncell_proc(n,k),      MPI_SUM)
+                call parallel_reduce(ncell(n,k),  ncell_proc(n,k),      MPI_SUM)
                 
                 ! put all the components for the current k into a buffer array and reduce
                 source_buffer(n,:) = phisum_proc(n,k,:)
                 call parallel_reduce(target_buffer(n,:), source_buffer(n,:), MPI_SUM)
                 phisum(n,k,:) = target_buffer(n,:)
                 
-                if (ncell_tot(n,k) .gt. ZERO) then
-                   phibar(n,k,:) = phisum(n,k,:) / ncell_tot(n,k)
+                if (ncell(n,k) .gt. ZERO) then
+                   phibar(n,k,:) = phisum(n,k,:) / ncell(n,k)
                 else
                    phibar(n,k,:) = ZERO
                 end if
@@ -220,7 +221,7 @@ contains
           
        end if
 
-       deallocate(ncell_proc,ncell_tot)
+       deallocate(ncell_proc,ncell)
        deallocate(phisum_proc,phisum)
        deallocate(phipert_proc,phipert)
        deallocate(source_buffer,target_buffer)
