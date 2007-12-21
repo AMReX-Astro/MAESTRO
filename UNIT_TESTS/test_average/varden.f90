@@ -28,7 +28,7 @@ subroutine varden()
   implicit none
 
   integer    :: dm
-  integer    :: n_base
+  integer    :: nr_fine
   real(dp_t) :: lenx,leny,lenz,max_dist
   integer    :: k,ng_cell
   integer    :: i, j, d, n, nlevs
@@ -157,11 +157,11 @@ subroutine varden()
       leny = HALF * (prob_hi_y - prob_lo_y)
       lenz = HALF * (prob_hi_z - prob_lo_z)
       max_dist = sqrt(lenx**2 + leny**2 + lenz**2)
-      n_base = int(max_dist / dr_base) + 1
+      nr_fine = int(max_dist / dr_base) + 1
       if ( parallel_IOProcessor() ) then
          print *,'DISTANCE FROM CENTER TO CORNER IS ',max_dist
          print *,'DR_BASE IS ',dr_base
-         print *,'SETTING N_BASE TO ',n_base
+         print *,'SETTING NR_FINE TO ',nr_fine
       end if
     else
      if ( parallel_IOProcessor() ) &
@@ -170,16 +170,16 @@ subroutine varden()
     endif
   else
     ! NOTE: WE ASSUME DR_BASE IS THE RESOLUTION OF THE FINEST LEVEL IN PLANE-PARALLEL!
-    n_base = extent(mba%pd(nlevs),dm)
-    dr_base = (prob_hi(dm)-prob_lo(dm)) / dble(n_base)
+    nr_fine = extent(mba%pd(nlevs),dm)
+    dr_base = (prob_hi(dm)-prob_lo(dm)) / dble(nr_fine)
   end if
 
 
-  allocate(   gam1(nlevs,n_base  ))
-  allocate( s0_old(nlevs,n_base, nscal))
-  allocate( s0_avg(nlevs,n_base, nscal))
-  allocate( p0_old(nlevs,n_base  ))
-  allocate(     w0(nlevs,0:n_base))
+  allocate(   gam1(nlevs,0:nr_fine-1))
+  allocate( s0_old(nlevs,0:nr_fine-1,nscal))
+  allocate( s0_avg(nlevs,0:nr_fine-1,nscal))
+  allocate( p0_old(nlevs,0:nr_fine-1))
+  allocate(     w0(nlevs,0:nr_fine  ))
 
   s0_old(:,:,:) = ZERO
   s0_avg(:,:,:) = ZERO
@@ -240,7 +240,7 @@ subroutine varden()
 
   ! Initialize geometry (IMPT: dr is set in init_base_state)
   center(1:dm) = HALF * (prob_lo(1:dm) + prob_hi(1:dm))
-  call init_geometry(center,n_base,dr_base,nlevs,mla)
+  call init_geometry(center,nr_fine,dr_base,nlevs,mla)
 
   ! Initialize base state at finest level
   do n=1,nlevs
@@ -291,7 +291,7 @@ subroutine varden()
   if ( parallel_IOProcessor() ) then
      open (unit=10, file="dens.error")
      do n=1,nlevs
-        do i = 1, n_base
+        do i = 0, nr(n)-1
            write (10,*) n, i, s0_old(n,i,rho_comp), s0_avg(n,i,rho_comp)
         enddo
      enddo
