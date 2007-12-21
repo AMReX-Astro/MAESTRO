@@ -15,7 +15,6 @@ contains
   subroutine fill_3d_data_wrapper(nlevs,s0_cart,s0,dx,in_comp)
 
     use bl_constants_module
-    use geometry
 
     ! for spherical problems, this copies the base state onto a multifab
     ! sames as the function fill_3d_data_wrap, excpet we assume
@@ -57,7 +56,7 @@ contains
   subroutine fill_3d_data(n,data,s0,lo,hi,dx,ng)
 
     use bl_constants_module
-    use geometry, z_geometry => z ! Because there's a local z variable.
+    use geometry, only: center, dr, nr
     
     integer        , intent(in   ) :: n,lo(:),hi(:),ng
     real(kind=dp_t), intent(  out) :: data(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
@@ -95,7 +94,7 @@ contains
   subroutine make_3d_normal (normal,lo,hi,dx,ng)
 
     use bl_constants_module
-    use geometry, z_geometry => z ! Because there's a local z variable.
+    use geometry, only: spherical, center
     
     integer        , intent(in   ) :: lo(:),hi(:),ng
     real(kind=dp_t), intent(in   ) :: dx(:)
@@ -131,7 +130,7 @@ contains
   subroutine make_w0_cart(nlevs,w0,w0_cart,normal,dx)
 
     use bl_constants_module
-    use geometry
+    use geometry, only: spherical
     
     integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
@@ -174,7 +173,7 @@ contains
   subroutine put_w0_on_3d_cells_cart(n,w0,w0_cell,lo,hi,dz,ng)
 
     use bl_constants_module
-    use geometry
+    use geometry, only: dr
 
     integer        , intent(in   ) :: n,lo(:),hi(:),ng
     real(kind=dp_t), intent(  out) :: w0_cell(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
@@ -205,7 +204,7 @@ contains
   subroutine put_w0_on_3d_cells_sphr(n,w0,w0_cell,normal,lo,hi,dx,ng)
 
     use bl_constants_module
-    use geometry, nr_geometry => nr, z_geometry => z ! Because nr & z are local variables.
+    use geometry, only: center, dr
 
     integer        , intent(in   ) :: n,lo(:),hi(:),ng
     real(kind=dp_t), intent(  out) :: w0_cell(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)

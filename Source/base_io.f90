@@ -12,11 +12,11 @@ contains
 
   subroutine write_base_state(state_name,w0_name,chk_name,s0,p0,gam1,w0,div_coeff)
     
-    use bl_constants_module
     use parallel
-    use variables
-    use network
     use geometry, only : dr
+    use network, only: nspec
+    use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
+    use bl_constants_module
 
     character(len=10), intent(in) :: state_name
     character(len=7), intent(in) :: w0_name
@@ -66,11 +66,12 @@ contains
 
   subroutine read_base_state(state_name,w0_name,chk_name,s0,p0,gam1,w0,div_coeff)
 
-    use bl_constants_module
+
     use parallel
-    use variables
-    use network
+    use variables, only: rho_comp, rhoh_comp, spec_comp, temp_comp
+    use network, only: nspec
     use geometry, only : dr
+    use bl_constants_module
     
     character(len=10), intent(in   ) :: state_name
     character(len=7) , intent(in   ) :: w0_name

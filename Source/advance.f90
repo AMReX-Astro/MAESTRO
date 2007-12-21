@@ -40,9 +40,9 @@ contains
     use thermal_conduct_module
     use make_explicit_thermal_module
     use add_react_to_thermal_module
-    use variables
-    use geometry
-    use network
+    use variables, only: nscal, press_comp, temp_comp, rho_comp
+    use geometry, only: nr, spherical
+    use network, only: nspec
     use make_grav_module
     use fill_3d_module
     use cell_to_edge_module

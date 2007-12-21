@@ -13,7 +13,7 @@ contains
 
   subroutine addw0(nlevs,umac,w0,w0_cart,dx,mult)
 
-    use geometry
+    use geometry, only: spherical
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: umac(:,:)

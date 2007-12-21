@@ -13,7 +13,7 @@ contains
   subroutine advect_base(nlevs,vel,Sbar_in,p0_old,p0_new,s0_old,s0_new,gam1,div_coeff,eta, &
                          dz,dt,anelastic_cutoff)
 
-    use geometry
+    use geometry, only: spherical
 
     integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(in   ) :: vel(:,0:)
@@ -47,8 +47,8 @@ contains
     use bl_constants_module
     use make_edge_state_module
     use eos_module
-    use variables
-    use geometry
+    use variables, only: spec_comp, rho_comp, temp_comp, rhoh_comp
+    use geometry, only: nr
     use probin_module, only: grav_const
 
     integer        , intent(in   ) :: n
@@ -172,8 +172,8 @@ contains
     use bl_constants_module
     use make_edge_state_module
     use eos_module
-    use variables
-    use geometry
+    use variables, only: spec_comp, rho_comp, rhoh_comp, temp_comp
+    use geometry, only: nr, z, zl, dr, nr
     use make_grav_module
     use cell_to_edge_module
     use make_div_coeff_module

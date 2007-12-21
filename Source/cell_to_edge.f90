@@ -13,7 +13,7 @@ contains
   subroutine cell_to_edge(n,s0_cell,s0_edge)
 
     use bl_constants_module
-    use geometry
+    use geometry, only: nr
 
     integer        , intent(in   ) :: n
     real(kind=dp_t), intent(in   ) :: s0_cell(0:)

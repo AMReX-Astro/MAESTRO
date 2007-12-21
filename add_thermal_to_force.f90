@@ -18,11 +18,10 @@ contains
 
   subroutine add_thermal_to_force(nlevs,force,thermal,the_bc_level,mla,dx)
 
-    use variables
     use multifab_physbc_module
-    use ml_restriction_module, only : ml_cc_restriction_c
     use multifab_fill_ghost_module
-
+    use variables, only: rhoh_comp, foextrap_comp 
+    use ml_restriction_module, only : ml_cc_restriction_c
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: force(:)

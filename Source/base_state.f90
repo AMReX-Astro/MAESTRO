@@ -12,16 +12,15 @@ contains
 
   subroutine init_base_state(n,model_file,s0,p0,gam1,dx,prob_lo,prob_hi)
 
-    use probin_module, ONLY: base_cutoff_density, anelastic_cutoff
-
-    use bl_constants_module
     use bc_module
     use setbc_module
-    use define_bc_module
     use multifab_module
+    use define_bc_module
+    use bl_constants_module
     use eos_module, do_diag_eos => do_diag ! Because there's a local variable do_diag.
-    use variables
-    use geometry
+    use probin_module, ONLY: base_cutoff_density, anelastic_cutoff
+    use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp
+    use geometry, only: dr, nr, spherical
 
     integer           , intent(in   ) :: n
     character(len=256), intent(in   ) :: model_file

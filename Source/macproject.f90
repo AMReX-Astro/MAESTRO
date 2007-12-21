@@ -21,8 +21,6 @@ contains
   subroutine macproject(mla,umac,phi,rho,dx,the_bc_tower,verbose,mg_verbose,cg_verbose, &
                         bc_comp,divu_rhs,div_coeff_1d,div_coeff_half_1d,div_coeff_3d)
 
-
-
     type(ml_layout), intent(inout) :: mla
     type(multifab ), intent(inout) :: umac(:,:)
     type(multifab ), intent(inout) :: phi(:)
@@ -1259,8 +1257,8 @@ contains
 
   subroutine mac_multigrid(mla,rh,phi,fine_flx,alpha,beta,dx,the_bc_tower,bc_comp, &
                            stencil_order,ref_ratio,mg_verbose,cg_verbose,umac_norm)
-    use coeffs_module
     use mg_module
+    use coeffs_module
     use ml_solve_module
 
     type(ml_layout),intent(inout) :: mla
@@ -1465,8 +1463,8 @@ contains
 
   subroutine mac_applyop(mla,res,phi,alpha,beta,dx,the_bc_tower,bc_comp,stencil_order, &
                          ref_ratio,mg_verbose,cg_verbose,umac_norm)
-    use coeffs_module
     use mg_module
+    use coeffs_module
     use ml_cc_module, only: ml_cc_applyop
 
     type(ml_layout),intent(inout) :: mla

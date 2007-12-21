@@ -36,7 +36,7 @@ contains
 
   subroutine average(mla,phi,phibar,dx,comp,ncomp)
 
-    use geometry
+    use geometry, only: nr, spherical
     use bl_constants_module
 
     implicit none
@@ -231,8 +231,6 @@ contains
   
   subroutine sum_coarsest_2d(phi,phibar,lo,hi,ng,start_comp,ncomp)
 
-    implicit none
-    
     integer         , intent(in   ) :: lo(:), hi(:), ng, start_comp, ncomp
     real (kind=dp_t), intent(in   ) :: phi(lo(1)-ng:,lo(2)-ng:,:)
     real (kind=dp_t), intent(inout) :: phibar(0:,:)
@@ -252,8 +250,6 @@ contains
   
   subroutine sum_coarsest_3d(phi,phibar,lo,hi,ng,start_comp,ncomp)
 
-    implicit none
-    
     integer         , intent(in   ) :: lo(:), hi(:), ng, start_comp, ncomp
     real (kind=dp_t), intent(in   ) :: phi(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind=dp_t), intent(inout) :: phibar(0:,:)
@@ -276,8 +272,6 @@ contains
   subroutine compute_phipert_2d(phi,phipert,lo,hi,ng,start_comp,ncomp,rr)
 
     use bl_constants_module
-
-    implicit none
 
     integer         , intent(in   ) :: lo(:), hi(:), ng, start_comp, ncomp, rr
     real (kind=dp_t), intent(in   ) :: phi(lo(1)-ng:,lo(2)-ng:,:)
@@ -321,8 +315,6 @@ contains
   subroutine compute_phipert_3d(phi,phipert,lo,hi,ng,start_comp,ncomp,rr)
 
     use bl_constants_module
-
-    implicit none
 
     integer         , intent(in   ) :: lo(:), hi(:), ng, start_comp, ncomp, rr
     real (kind=dp_t), intent(in   ) :: phi(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
@@ -372,7 +364,7 @@ contains
   
   subroutine average_3d_sphr(n,phi,phibar,lo,hi,ng,dx,ncell,start_comp,ncomp)
 
-    use geometry
+    use geometry, only: spherical, dr, center, nr, z
     use bl_constants_module
 
     implicit none

@@ -24,12 +24,11 @@ contains
     use stencil_module
     use macproject_module
     use thermal_conduct_module
-    use eos_module
+    use network, only: nspec
     use ml_restriction_module, only : ml_cc_restriction
     use multifab_fill_ghost_module
     use bl_constants_module
-    use variables
-    use geometry
+    use variables, only: temp_comp, rho_comp, rhoh_comp, spec_comp, foextrap_comp
     use multifab_physbc_module
 
     type(ml_layout), intent(inout) :: mla
@@ -296,7 +295,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   subroutine make_coeffs_2d(lo,hi,dx,p0,s,Tcoeff,hcoeff,Xkcoeff,pcoeff)
 
-    use variables
+    use variables, only: rho_comp, temp_comp, spec_comp
     use eos_module
     use probin_module, ONLY: use_big_h
 
@@ -360,9 +359,9 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   subroutine make_coeffs_3d(n,lo,hi,dx,p0,s,Tcoeff,hcoeff,Xkcoeff,pcoeff)
 
-    use variables
+    use variables, only: rho_comp, temp_comp, spec_comp
     use eos_module
-    use geometry
+    use geometry, only: spherical
     use probin_module, ONLY: use_big_h
     use fill_3d_module
     

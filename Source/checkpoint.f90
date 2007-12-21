@@ -6,6 +6,7 @@ module checkpoint_module
   implicit none
 
   private
+
   public :: checkpoint_write, checkpoint_read
 
 contains

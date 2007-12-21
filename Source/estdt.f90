@@ -19,8 +19,7 @@ contains
 
   subroutine estdt(n, u, s, force, divU, dSdt, normal, w0, p0, gam1, dx, cflfac, dt)
 
-    use geometry
-    use variables
+    use geometry, only: spherical
     
     integer        , intent(in ) :: n
     type(multifab) , intent(in ) :: u
@@ -112,8 +111,8 @@ contains
   subroutine estdt_2d(n, u, s, force, divU, dSdt, w0, p0, gam1, lo, hi, &
                       ng, dx, rho_min, dt_adv, dt_divu, cfl)
 
-    use geometry
-    use variables
+    use geometry, only: nr
+    use variables, only: rho_comp
 
     integer, intent(in) :: n, lo(:), hi(:), ng
     real (kind = dp_t), intent(in   ) :: u(lo(1)-ng:,lo(2)-ng:,:)  
@@ -224,8 +223,8 @@ contains
   subroutine estdt_3d_cart(n, u, s, force, divU, dSdt, w0, p0, gam1, lo, hi, &
                            ng, dx, rho_min, dt_adv, dt_divu, cfl)
 
-    use geometry
-    use variables
+    use geometry, only: nr
+    use variables, only: rho_comp
 
     integer, intent(in) :: n, lo(:), hi(:), ng
     real (kind = dp_t), intent(in   ) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
@@ -350,9 +349,9 @@ contains
   subroutine estdt_3d_sphr(n, u, s, force, divU, dSdt, normal, w0, p0, gam1, &
                            lo, hi, ng, dx, rho_min, dt_adv, dt_divu, cfl)
 
+    use geometry, only: dr, nr
+    use variables, only: rho_comp
     use fill_3d_module
-    use geometry
-    use variables
     
     integer, intent(in) :: n, lo(:), hi(:), ng
     real (kind = dp_t), intent(in   ) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  

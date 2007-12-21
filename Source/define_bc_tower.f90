@@ -31,9 +31,7 @@ contains
 
   subroutine bc_tower_build(bct,mla,domain_bc,domain_box,nspec)
 
-    use variables
-
-    implicit none
+    use variables, only: nscal
 
     type(bc_tower ), intent(  out) :: bct
     type(ml_layout), intent(in   ) :: mla
@@ -74,8 +72,6 @@ contains
 
   subroutine bc_tower_destroy(bct)
 
-    implicit none
-
     type(bc_tower), intent(inout) :: bct
 
     integer :: i
@@ -90,8 +86,6 @@ contains
   end subroutine bc_tower_destroy
 
   subroutine phys_bc_level_build(phys_bc_level,la_level,domain_bc,default_value)
-
-    implicit none
 
     integer     , intent(inout) :: phys_bc_level(0:,:,:)
     integer     , intent(in   ) :: domain_bc(:,:)
@@ -122,11 +116,9 @@ contains
 
   subroutine adv_bc_level_build(adv_bc_level,phys_bc_level,default_value,nspec)
 
-    use variables
+    use variables, only: rho_comp, rhoh_comp, spec_comp, temp_comp, trac_comp, press_comp, foextrap_comp
 
     ! define boundary conditions for the advection problem
-
-    implicit none
 
     integer  , intent(inout) ::  adv_bc_level(0:,:,:,:)
     integer  , intent(in   ) :: phys_bc_level(0:,:,:)
@@ -215,7 +207,7 @@ contains
 
   subroutine ell_bc_level_build(ell_bc_level,phys_bc_level,default_value,nspec)
 
-    use variables
+    use variables, only: rho_comp, rhoh_comp, spec_comp, temp_comp, trac_comp, press_comp, foextrap_comp, ntrac
 
     ! define boundary conditions for the elliptic problem
 

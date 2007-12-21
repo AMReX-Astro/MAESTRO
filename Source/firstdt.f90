@@ -19,9 +19,6 @@ contains
 
   subroutine firstdt(n,u,s,force,divU,p0,gam1,t0,dx,cflfac,dt,verbose)
 
-    use eos_module
-    use fill_3d_module
-
     integer        , intent(in   ) :: n
     type(multifab) , intent(in   ) :: u,s,force,divU
     real(kind=dp_t), intent(in   ) :: p0(0:), cflfac, t0(0:), gam1(0:)
@@ -70,10 +67,10 @@ contains
   
   subroutine firstdt_2d(n,u,s,force,divu,p0,gam1,lo,hi,ng,dx,dt,cfl,verbose)
 
-    use bl_constants_module
     use eos_module
-    use variables
-    use geometry
+    use variables, only: rho_comp, temp_comp, spec_comp
+    use geometry, only: nr
+    use bl_constants_module
     
     integer, intent(in)             :: n, lo(:), hi(:), ng
     real (kind = dp_t), intent(in ) :: u(lo(1)-ng:,lo(2)-ng:,:)  
@@ -181,11 +178,11 @@ contains
   
   subroutine firstdt_3d(n,u,s,force,divU,p0,gam1,t0,lo,hi,ng,dx,dt,cfl,verbose)
 
-    use bl_constants_module
+    use geometry, only: spherical, nr
+    use variables, only: rho_comp, temp_comp, spec_comp
     use eos_module
-    use variables
-    use geometry
     use fill_3d_module
+    use bl_constants_module
 
     integer, intent(in)             :: n,lo(:), hi(:), ng
     real (kind = dp_t), intent(in ) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)

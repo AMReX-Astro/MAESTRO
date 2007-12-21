@@ -18,7 +18,6 @@ contains
                              num_comp,mla)
 
     use bl_constants_module
-    use geometry
     use ml_restriction_module, only : ml_edge_restriction_c
 
     integer        , intent(in   ) :: nlevs
@@ -128,7 +127,7 @@ contains
                                 vtrans,force,w0,lo,dx,dt,is_vel,phys_bc,adv_bc,velpred, &
                                 ng,comp)
 
-    use geometry
+    use geometry, only: nr
     use bc_module
     use slope_module
     use bl_constants_module
@@ -530,10 +529,11 @@ contains
   subroutine make_edge_state_3d(n,s,u,sedgex,sedgey,sedgez,umac, &
                                 vmac,wmac,utrans,vtrans,wtrans,force,w0,w0_cart_vec,lo, &
                                 dx,dt,is_vel,phys_bc,adv_bc,velpred,ng,comp)
-    use geometry
+
     use bc_module
     use slope_module
     use bl_constants_module
+    use geometry, only: spherical, nr
 
     integer        , intent(in   ) :: n,lo(:)
     real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
@@ -1287,7 +1287,7 @@ contains
    
    subroutine make_edge_state_1d(n,s,sedgex,umac,force,lo,dx,dt)
 
-     use geometry
+     use geometry, only: nr
      use bl_constants_module
      
      integer        , intent(in   ) :: n, lo
