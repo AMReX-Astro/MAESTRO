@@ -19,8 +19,7 @@ module init_module
   implicit none
 
   private
-
-  public :: initscalardata, initveldata
+  public :: initscalardata, initveldata, scalar_diags
 
 contains
 

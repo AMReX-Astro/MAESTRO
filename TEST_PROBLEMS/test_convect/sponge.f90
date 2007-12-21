@@ -3,11 +3,7 @@
 module sponge_module
 
   use bl_types
-  use bl_constants_module
   use multifab_module
-  use geometry
-  use variables
-  use ml_restriction_module
   use ml_layout_module
 
   implicit none
@@ -17,11 +13,16 @@ module sponge_module
   real(dp_t), save :: alpha
 
   private
+
   public :: init_sponge, make_sponge
 
 contains
 
   subroutine init_sponge(nlevs,s0,anelastic_cutoff,prob_hi,dx)
+
+    use geometry, only: nr, dr
+    use variables, only: rho_comp
+    use bl_constants_module
 
     integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(in   ) :: s0(0:,:)
@@ -30,7 +31,7 @@ contains
 
     real (kind = dp_t) :: r
     real (kind = dp_t) :: r_top
-    integer            :: j,nr
+    integer            :: j
 
     alpha = 100.d0
 
@@ -46,6 +47,9 @@ contains
   end subroutine init_sponge
 
   subroutine make_sponge(nlevs,sponge,dx,dt,mla)
+
+    use bl_constants_module
+    use ml_restriction_module, only: ml_cc_restriction
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: sponge(:)
@@ -84,6 +88,8 @@ contains
 
   subroutine mk_sponge_2d(sponge,lo,hi,dx,dt)
 
+    use bl_constants_module
+
     integer        , intent(in   ) ::  lo(:),hi(:)
     real(kind=dp_t), intent(inout) :: sponge(lo(1):,lo(2):)
     real(kind=dp_t), intent(in   ) ::     dx(:),dt
@@ -110,6 +116,9 @@ contains
   end subroutine mk_sponge_2d
 
   subroutine mk_sponge_3d(sponge,lo,hi,dx,dt)
+
+    use geometry, only: spherical, center
+    use bl_constants_module
 
     integer        , intent(in   ) :: lo(:),hi(:)
     real(kind=dp_t), intent(inout) :: sponge(lo(1):,lo(2):,lo(3):)
