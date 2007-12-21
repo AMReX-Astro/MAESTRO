@@ -1,6 +1,5 @@
 module vort_module
 
-  use bl_types
   use define_bc_module
   use multifab_module
 
@@ -49,7 +48,6 @@ contains
 
       use bc_module
       use bl_constants_module
-      use variables
 
       integer, intent(in) :: lo(:), hi(:), ng
       real (kind = dp_t), intent(  out) :: vort(lo(1):,lo(2):)  
@@ -115,7 +113,6 @@ contains
 
       use bc_module
       use bl_constants_module
-      use variables
 
       integer, intent(in) :: lo(:), hi(:), ng
       real (kind = dp_t), intent(  out) :: vort(lo(1):,lo(2):,lo(3):)
@@ -642,7 +639,7 @@ contains
 
       use bc_module
       use bl_constants_module
-      use variables
+      use variables, only: rho_comp
 
       integer        , intent(in   ) :: comp_magvel,comp_mom
       type(multifab) , intent(in   ) :: plotdata

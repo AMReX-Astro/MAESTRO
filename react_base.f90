@@ -15,11 +15,10 @@ contains
   subroutine react_base(nlevs,p0_in,s0_in,rho_omegadotbar,rho_Hextbar,dt_in,p0_out, &
                         s0_out,gam1_out)
 
-    use variables
+    use geometry, only: nr
+    use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
     use eos_module
-    use network
     use probin_module, ONLY: use_big_h
-    use geometry
      
     integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(in   ) :: p0_in(:,0:), s0_in(:,0:,:)

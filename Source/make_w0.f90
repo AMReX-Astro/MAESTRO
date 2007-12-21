@@ -16,8 +16,7 @@ contains
   subroutine make_w0(nlevs,vel,vel_old,f,Sbar_in,p0,rho0,gam1,eta,dt,dtold,verbose)
 
     use parallel
-    use geometry
-    use variables
+    use geometry, only: spherical, nr, dr
     use bl_constants_module
 
     integer        , intent(in   ) :: nlevs
@@ -56,8 +55,8 @@ contains
 
   subroutine make_w0_planar(n,vel,vel_old,Sbar_in,p0,gam1,eta,f,dt,dtold)
 
-    use geometry
-    use variables
+    use geometry, only: nr, dr
+    use variables, only: rho_comp
     use make_edge_state_module
     use bl_constants_module
     use probin_module, only: grav_const
@@ -116,8 +115,7 @@ contains
 
   subroutine make_w0_spherical(n,vel,Sbar_in,p0,rho0,gam1)
 
-    use geometry
-    use variables
+    use geometry, only: z, nr, zl, dr
     use make_grav_module
     use cell_to_edge_module
     use bl_constants_module

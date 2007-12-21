@@ -26,7 +26,7 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
 
   use variables, only: foextrap_comp, rho_comp, spec_comp, rhoh_comp
   use macproject_module
-  use eos_module, only: nspec
+  use network, only: nspec
   use rhoh_vs_t_module
   use probin_module, ONLY: use_big_h
   use multifab_physbc_module

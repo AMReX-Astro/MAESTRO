@@ -28,9 +28,9 @@ contains
     use pert_form_module
     use cell_to_edge_module
     use rhoh_vs_t_module
-    use variables
-    use geometry
-    use network
+    use variables, only: nscal, ntrac, spec_comp, trac_comp, temp_comp, rho_comp, rhoh_comp
+    use geometry, only: spherical, nr
+    use network, only: nspec, spec_names
     use probin_module, ONLY: predict_temp_at_edges, use_thermal_diffusion, evolve_base_state
     use modify_scal_force_module
     use add_thermal_to_force_module

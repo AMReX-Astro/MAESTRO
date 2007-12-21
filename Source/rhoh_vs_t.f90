@@ -8,8 +8,8 @@ module rhoh_vs_t_module
   implicit none
 
   private
-  public :: makeRhoHfromT
-  public :: makeTfromRhoH
+
+  public :: makeRhoHfromT, makeTfromRhoH
   
 contains
   
@@ -58,7 +58,7 @@ contains
   subroutine makeRhoHfromT_2d (sx,sy,s0_old,s0_edge_old,s0_new,s0_edge_new,lo,hi)
 
     use bl_constants_module
-    use variables
+    use variables, only: rho_comp, temp_comp, spec_comp, rhoh_comp
     use eos_module
     use probin_module, ONLY: use_big_h
 
@@ -169,8 +169,8 @@ contains
   
   subroutine makeRhoHfromT_3d (sx,sy,sz,s0_old,s0_edge_old,s0_new,s0_edge_new,lo,hi)
 
-    use variables
-    use geometry
+    use variables, only: rho_comp, temp_comp, spec_comp, rhoh_comp
+    use geometry, only: spherical
     use eos_module
     use probin_module, ONLY: use_big_h
     use bl_constants_module
@@ -347,7 +347,7 @@ contains
   
   subroutine makeTfromRhoH(nlevs,s,t0,mla,the_bc_level,dx)
 
-    use variables
+    use variables, only: temp_comp
     use ml_restriction_module, only: ml_cc_restriction_c
     use multifab_physbc_module
     use multifab_fill_ghost_module
@@ -400,7 +400,7 @@ contains
 
   subroutine makeTfromRhoH_2d (state,lo,hi,ng,t0)
 
-    use variables
+    use variables, only: rho_comp, spec_comp, rhoh_comp, temp_comp
     use eos_module
     use probin_module, ONLY: use_big_h
 
@@ -453,7 +453,7 @@ contains
 
   subroutine makeTfromRhoH_3d (state,lo,hi,ng,t0)
 
-    use variables
+    use variables, only: rho_comp, spec_comp, rhoh_comp, temp_comp
     use eos_module
     use probin_module, ONLY: use_big_h
 

@@ -7,13 +7,14 @@ module pert_form_module
   implicit none
 
   private
+
   public :: put_in_pert_form
 
 contains
 
   subroutine put_in_pert_form(nlevs,s,base,dx,comp,ncomp,flag)
 
-    use geometry
+    use geometry, only: spherical
 
     integer        , intent(in   ) :: nlevs,comp,ncomp
     type(multifab) , intent(inout) :: s(:)

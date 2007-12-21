@@ -16,8 +16,8 @@ contains
                                start_comp,num_comp,mla,the_bc_level)
 
     use bl_constants_module
-    use geometry
-    use variables  
+    use geometry, only: spherical
+    use variables, only: foextrap_comp
     use multifab_physbc_module
     use ml_restriction_module
     use multifab_fill_ghost_module
@@ -150,8 +150,6 @@ contains
   end subroutine modify_scal_force_2d
   
   subroutine modify_scal_force_3d_cart(force,s,lo,hi,ng,umac,vmac,wmac,base,base_edge,w0,dx)
-    
-    use geometry
 
     integer        , intent(in   ) :: lo(:),hi(:),ng
     real(kind=dp_t), intent(  out) :: force(lo(1)-1:,lo(2)-1:,lo(3)-1:)
@@ -187,7 +185,7 @@ contains
   subroutine modify_scal_force_3d_sphr(n,force,s,lo,hi,domlo,domhi,ng, &
                                        umac,vmac,wmac,base_cart,w0,dx)
 
-    use geometry
+    use geometry, only: nr, zl, dr, z
     use fill_3d_module
     use bl_constants_module
     

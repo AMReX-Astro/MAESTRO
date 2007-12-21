@@ -18,8 +18,8 @@ contains
 
   subroutine mkrhohforce(nlevs,scal_force,comp,umac,p0_old,p0_new,normal,dx,mla,the_bc_level)
 
-    use variables
-    use geometry
+    use variables, only: foextrap_comp
+    use geometry, only: spherical
     use ml_restriction_module, only: ml_cc_restriction_c
     use multifab_fill_ghost_module
     use multifab_physbc_module
@@ -91,8 +91,7 @@ contains
 
   subroutine mkrhohforce_2d(n,rhoh_force,wmac,lo,hi,p0_old,p0_new)
 
-    use variables
-    use geometry
+    use geometry, only: dr, nr
 
     ! compute the source terms for the non-reactive part of the enthalpy equation {w dp0/dr}
     
@@ -133,8 +132,7 @@ contains
 
   subroutine mkrhohforce_3d(n,rhoh_force,wmac,lo,hi,p0_old,p0_new)
 
-    use variables
-    use geometry
+   use geometry, only: dr, nr
 
     ! compute the source terms for the non-reactive part of the enthalpy equation {w dp0/dr}
 
@@ -176,8 +174,7 @@ contains
   subroutine mkrhohforce_3d_sphr(n,rhoh_force,umac,vmac,wmac,lo,hi,dx,normal,p0_old,p0_new)
 
     use fill_3d_module
-    use variables
-    use geometry
+    use geometry, only: nr, dr
 
     ! compute the source terms for the non-reactive part of the enthalpy equation {w dp0/dr}
 
@@ -239,8 +236,8 @@ contains
 
   subroutine mktempforce(nlevs,temp_force,comp,s,thermal,p0_old,dx,mla,the_bc_level)
 
-    use variables
-    use geometry
+    use variables, only: foextrap_comp
+    use geometry, only: spherical
     use ml_restriction_module, only: ml_cc_restriction_c
     use multifab_fill_ghost_module
     use multifab_physbc_module
@@ -306,8 +303,7 @@ contains
 
   subroutine mktempforce_2d(temp_force, s, thermal, lo, hi, ng, p0)
 
-    use variables
-    use geometry
+    use variables, only: temp_comp, rho_comp, spec_comp
     use eos_module
 
     ! compute the source terms for temperature
@@ -357,8 +353,7 @@ contains
 
   subroutine mktempforce_3d(temp_force, s, thermal, lo, hi, ng, p0)
 
-    use variables
-    use geometry
+    use variables, only: temp_comp, rho_comp, spec_comp
     use eos_module
 
     ! compute the source terms for temperature
@@ -411,8 +406,7 @@ contains
   subroutine mktempforce_3d_sphr(n,temp_force, s, thermal, lo, hi, ng, p0, dx)
 
     use fill_3d_module
-    use variables
-    use geometry
+    use variables, only: temp_comp, rho_comp, spec_comp
     use eos_module
 
     ! compute the source terms for temperature

@@ -15,9 +15,7 @@ contains
 
   subroutine react_state (nlevs,mla,s_in,s_out,rho_omegadot,rho_Hext,dt,dx,the_bc_level,time)
 
-    use network
-    use variables
-    use geometry
+    use variables, only: rho_comp, nscal
     use ml_restriction_module
     use multifab_physbc_module
     use multifab_fill_ghost_module
@@ -92,11 +90,10 @@ contains
   subroutine react_state_2d(s_in,s_out,rho_omegadot,rho_Hext, &
                             dt,dx,lo,hi,ng,time)
 
-    use network
     use burner_module
-    use variables
-    use geometry
     use heating_module
+    use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
+    use network, only: nspec, ebin
     use probin_module, ONLY: use_big_h
 
     integer, intent(in) :: lo(:), hi(:), ng
@@ -178,11 +175,10 @@ contains
 
   subroutine react_state_3d(s_in,s_out,rho_omegadot,rho_Hext,dt,dx,lo,hi,ng,time)
 
-    use network
     use burner_module
-    use variables
-    use geometry
     use heating_module
+    use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
+    use network, only: nspec, ebin
     use probin_module, ONLY: use_big_h
 
     integer, intent(in) :: lo(:), hi(:), ng

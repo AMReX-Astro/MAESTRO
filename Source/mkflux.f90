@@ -17,9 +17,9 @@ contains
                     startcomp,endcomp,which_step,dx,mla)
 
     use bl_constants_module
-    use geometry
+    use geometry, only: spherical
     use ml_restriction_module, only: ml_edge_restriction_c
-    use variables
+    use variables, only: nscal
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: sflux(:,:)
@@ -125,7 +125,6 @@ contains
                        s0_new,s0_edge_new,w0,startcomp,endcomp,which_step,lo,hi)
 
     use bl_constants_module
-    use variables
 
     integer        , intent(in   ) :: lo(:),hi(:)
     real(kind=dp_t), intent(inout) :: sfluxx(lo(1)  :,lo(2)  :,:)
@@ -185,7 +184,6 @@ contains
                             which_step,lo,hi)
 
     use bl_constants_module
-    use variables
 
     integer        , intent(in   ) :: lo(:),hi(:)
     real(kind=dp_t), intent(inout) :: sfluxx(lo(1)  :,lo(2)  :,lo(3)  :,:)
@@ -269,7 +267,6 @@ contains
                             w0,w0_cart,startcomp,endcomp,which_step,lo,hi,domlo,domhi)
 
     use bl_constants_module
-    use variables
     use addw0_module
 
     integer        , intent(in   ) :: lo(:),hi(:),domlo(:),domhi(:)
