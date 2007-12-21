@@ -116,7 +116,7 @@ contains
 
   subroutine adv_bc_level_build(adv_bc_level,phys_bc_level,default_value,nspec)
 
-    use variables, only: rho_comp, rhoh_comp, spec_comp, temp_comp, trac_comp, press_comp, foextrap_comp
+    use variables, only: rho_comp, rhoh_comp, spec_comp, temp_comp, trac_comp, press_comp, foextrap_comp, ntrac
 
     ! define boundary conditions for the advection problem
 

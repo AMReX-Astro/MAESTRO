@@ -1,24 +1,27 @@
 module base_state_module
 
   use bl_types
-  use bl_constants_module
-  use bc_module
-  use setbc_module
-  use define_bc_module
-  use multifab_module
-  use eos_module
-  use variables
-  use network
-  use geometry
 
   implicit none
 
   private
+
   public :: init_base_state
 
 contains
 
   subroutine init_base_state(n,model_file,s0,p0,gam1,dx,prob_lo,prob_hi)
+
+    use bc_module
+    use setbc_module
+    use multifab_module
+    use define_bc_module
+    use bl_constants_module
+    use eos_module
+    use probin_module, ONLY: base_cutoff_density, anelastic_cutoff, use_big_h
+    use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp
+    use geometry, only: dr, nr, spherical
+    use inlet_bc_module
 
     integer,             intent(in   ) :: n
     character(len=256),  intent(in   ) :: model_file ! I'm not using this anymore
@@ -30,15 +33,14 @@ contains
     real(kind=dp_t),     intent(in   ) :: dx(:)
 
     ! local
-    integer ndum,i,dm,nspec,comp
+    integer ndum,i,dm,comp
 
     parameter (ndum = 30)
-    parameter (nspec = 3)
 
     character(len=128) :: lamsolfile
     real(kind=dp_t) :: state1d(ndum),Pamb,temporary
     real(kind=dp_t) :: loloc,hiloc,flameloc,qreact
-    
+
     dm = size(dx)
 
     lamsolfile = 'flame_4.e7_screen_left.out'

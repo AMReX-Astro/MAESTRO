@@ -2,7 +2,7 @@ module inlet_bc_module
 
   use bl_types
   use bl_space
-  
+
   implicit none
 
   real(dp_t), save    :: INLET_VN
