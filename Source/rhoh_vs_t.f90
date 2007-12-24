@@ -189,8 +189,7 @@ contains
     do_diag = .false.
     
     if (spherical .eq. 1) then
-       print *,'MAKERHOHFROMT_3D NOT YET SET UP FOR SPHERICAL '
-       stop
+       call bl_error('MAKERHOHFROMT_3D NOT YET SET UP FOR SPHERICAL')
     end if
     
     do k = lo(3), hi(3)

@@ -194,6 +194,8 @@ contains
 
   subroutine tridiag(a,b,c,r,u,n)
 
+    use bl_error_module
+
     real(kind=dp_t), intent(in   ) :: a(:), b(:), c(:), r(:)
     real(kind=dp_t), intent(  out) :: u(:)
     integer, intent(in)            :: n

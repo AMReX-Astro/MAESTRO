@@ -1331,8 +1331,7 @@ subroutine compute_thermo_quantities_3d(lo,hi,dt,t0,s,hcoeff,Xkcoeff,pcoeff)
   real(dp_t) :: qreact
 
   if(spherical .eq. 1) then
-     print*, "compute_thermo1_quantities_3d spherical case not written!"
-     stop
+     call bl_error("compute_thermo1_quantities_3d spherical case not written!")
   endif
 
   do k=lo(3)-1,hi(3)+1

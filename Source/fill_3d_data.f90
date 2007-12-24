@@ -57,6 +57,7 @@ contains
 
     use bl_constants_module
     use geometry, only: center, dr, nr
+    use bl_error_module
     
     integer        , intent(in   ) :: n,lo(:),hi(:),ng
     real(kind=dp_t), intent(  out) :: data(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
@@ -81,8 +82,7 @@ contains
                 print *,'NOT IN RANGE 0 TO ',nr(n)-1
                 print *,'I J K ',i,j,k
                 print *,'X Y Z ',x,y,z
-                x = 1.0 / 0.0
-                stop
+                call bl_error(' ')
              end if
              data(i,j,k) = s0(index)
           end do
@@ -121,8 +121,7 @@ contains
         end do
       end do
     else 
-      print *,'SHOULDNT CALL MAKE_3D_NORMAL WITH SPHERICAL = 0'
-      stop
+      call bl_error('SHOULDNT CALL MAKE_3D_NORMAL WITH SPHERICAL = 0')
     end if
 
   end subroutine make_3d_normal
@@ -232,15 +231,13 @@ contains
             print *,'NOT IN RANGE 0 TO ',nr-1
             print *,'I J K ',i,j,k
             print *,'X Y Z ',x,y,z
-            x = 1.0 / 0.0
-            stop
+            call bl_error(' ')            
           end if
           rfac = (radius - dble(index)*dr(n)) / dr(n)
           if (rfac .lt. 0.0 .or. rfac .gt. 1.0) then
             print *,'BAD RFAC ',rfac
             print *,'RADIUS, INDEX*DR ',radius, dble(index)*dr(n)
-            x = 1.0 / 0.0
-            stop
+            call bl_error(' ')
           end if
           w0_cell_val = rfac * w0(index) + (ONE-rfac) * w0(index+1)
           w0_cell(i,j,k,1) = w0_cell_val * normal(i,j,k,1)

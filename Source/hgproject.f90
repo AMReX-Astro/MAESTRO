@@ -71,8 +71,7 @@ contains
     if (present(div_coeff_3d)) use_div_coeff_3d = .true.
 
     if (use_div_coeff_1d .and. use_div_coeff_3d) then
-       print *,'CANT HAVE 1D and 3D DIV_COEFF IN HGPROJECT '
-       stop
+       call bl_error('CANT HAVE 1D and 3D DIV_COEFF IN HGPROJECT')
     end if
 
     do n = 1, nlevs

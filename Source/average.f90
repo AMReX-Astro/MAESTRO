@@ -391,7 +391,7 @@ contains
 
   end subroutine compute_phipert_3d
 
-  subroutine average_3d_sphr(n,nlevs,phi,phibar,lo,hi,ng,dx,ncell,start_comp,ncomp,mla,mask)
+  subroutine average_3d_sphr(n,nlevs,phi,phibar,lo,hi,ng,dx,ncell,start_comp,n_comp,mla,mask)
 
     use geometry, only: spherical, dr, center, nr, base_cc_loc
     use bl_constants_module
@@ -400,7 +400,7 @@ contains
     implicit none
     
     integer         , intent(in   ) :: n, nlevs
-    integer         , intent(in   ) :: lo(:), hi(:), ng, start_comp, ncomp
+    integer         , intent(in   ) :: lo(:), hi(:), ng, start_comp, n_comp
     real (kind=dp_t), intent(in   ) :: phi(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind=dp_t), intent(inout) :: phibar(0:,:)
     real (kind=dp_t), intent(in   ) :: dx(:)
@@ -458,10 +458,10 @@ contains
                             print *,'BOGUS INDEX IN AVERAGE ',index
                             print *,'NOT IN RANGE 0 TO ',nr(nlevs)-1
                             print *,'I J K ',i,j,k
-                            stop
+                            call bl_error('average_3d_sphr')
                          end if
                          
-                         do comp = start_comp,start_comp+ncomp-1
+                         do comp = start_comp,start_comp+n_comp-1
                             phibar(index,comp) = &
                                  phibar(index,comp) + cell_weight*phi(i,j,k,comp)
                          end do
