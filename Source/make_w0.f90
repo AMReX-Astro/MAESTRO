@@ -197,20 +197,14 @@ contains
     real(kind=dp_t), intent(in   ) :: a(:), b(:), c(:), r(:)
     real(kind=dp_t), intent(  out) :: u(:)
     integer, intent(in)            :: n
+
+    real(kind=dp_t)              :: bet
+    real(kind=dp_t), allocatable :: gam(:)
+    integer                      :: j
+
+    allocate(gam(n))
     
-    integer, parameter :: nmax = 4098
-    
-    real(kind=dp_t) :: bet, gam(nmax)
-    integer         :: j
-    
-    if (n .gt. nmax ) then
-       print *,'tridiag: size exceeded'
-       stop
-    end if
-    if (b(1) .eq. 0) then
-       print *,'tridiag: CANT HAVE B(1) = ZERO'
-       stop
-    end if
+    if ( b(1) .eq. 0 ) call bl_error('tridiag: CANT HAVE B(1) = ZERO')
     
     bet = b(1)
     u(1) = r(1)/bet
@@ -218,18 +212,13 @@ contains
     do j = 2,n
        gam(j) = c(j-1)/bet
        bet = b(j) - a(j)*gam(j)
-       if (bet .eq. 0) then
-          print *,'tridiag: TRIDIAG FAILED'
-          stop
-       end if
+       if ( bet .eq. 0 ) call bl_error('tridiag: TRIDIAG FAILED')
        u(j) = (r(j)-a(j)*u(j-1))/bet
     end do
     
     do j = n-1,1,-1
        u(j) = u(j) - gam(j+1)*u(j+1)
     end do
-    
-    return
     
   end subroutine tridiag
   
