@@ -160,18 +160,22 @@ contains
     max_dens = maxval(base_state(:,idens_model))
     min_dens = minval(base_state(:,idens_model))
 
-    print *, ' '
-    print *, 'model read in'
-    print *, ' *** maximum density of model =                   ', max_dens
-    print *, ' *** minimum density of model =                   ', min_dens
-    print *, ' *** anelastic cutoff =                           ', anelastic_cutoff
-    print *, ' *** low density cutoff (for mapping the model) = ', base_cutoff_density
-    print *, ' '
+    if ( parallel_IOProcessor() ) then
+       print *, ' '
+       print *, 'model read in'
+       print *, ' *** maximum density of model =                   ', max_dens
+       print *, ' *** minimum density of model =                   ', min_dens
+       print *, ' *** anelastic cutoff =                           ', anelastic_cutoff
+       print *, ' *** low density cutoff (for mapping the model) = ', base_cutoff_density
+       print *, ' '
+    end if
 
     if (min_dens < base_cutoff_density .OR. min_dens < anelastic_cutoff) then
-       print *, 'WARNING: minimum model density is lower than one of the cutoff densities'
-       print *, '         make sure that the cutoff densities are lower than any density'
-       print *, '         of dynamical interest'
+       if ( parallel_IOProcessor() ) then
+          print *, 'WARNING: minimum model density is lower than one of the cutoff densities'
+          print *, '         make sure that the cutoff densities are lower than any density'
+          print *, '         of dynamical interest'
+       end if
     endif
 
     if (anelastic_cutoff < base_cutoff_density) then
