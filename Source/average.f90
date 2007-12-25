@@ -437,7 +437,10 @@ contains
              xmin = dble(i)*dx(1) - center(1)
              
              cell_valid = .true.
-             if(present(mask) .and. (.not. mask(i,j,k)) ) cell_valid = .false.
+
+             if( present(mask) ) then
+                if ( (.not. mask(i,j,k)) ) cell_valid = .false.
+             end if
                 
              if(cell_valid) then
                 
