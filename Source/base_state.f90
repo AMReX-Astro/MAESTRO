@@ -184,9 +184,10 @@ contains
        call bl_error("anelastic cutoff < base_cutoff_density")
     endif
 
-    print *, ' '
-    print *, ' '
-
+    if ( parallel_IOProcessor() ) then
+        print *, ' '
+        print *, ' '
+    end if
 
     dr_in = (base_r(npts_model) - base_r(1)) / dble(npts_model-1)
     rmax = base_r(npts_model)
