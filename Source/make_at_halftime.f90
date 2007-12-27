@@ -17,6 +17,8 @@ contains
 
    subroutine make_S_at_halftime (nlevs,shalf,sold,snew)
 
+     use bl_prof_module
+
      integer        , intent(in   ) :: nlevs
      type(multifab) , intent(inout) :: shalf(:)
      type(multifab) , intent(in   ) :: sold(:)
@@ -27,6 +29,10 @@ contains
      real(kind=dp_t), pointer:: snp(:,:,:,:)
      integer :: lo(shalf(1)%dim),hi(shalf(1)%dim),ng_h,ng_o,dm
      integer :: i,in_comp,out_comp,n
+
+     type(bl_prof_timer), save :: bpt
+
+     call build(bpt, "make_S_at_halftime")
      
      dm = shalf(1)%dim
      ng_h = shalf(1)%ng
@@ -55,6 +61,8 @@ contains
         end do
         
      enddo
+
+     call destroy(bpt)
 
    end subroutine make_S_at_halftime
 

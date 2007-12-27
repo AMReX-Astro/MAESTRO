@@ -16,6 +16,7 @@ contains
   subroutine make_w0(nlevs,vel,vel_old,f,Sbar_in,p0,rho0,gam1,eta,dt,dtold,verbose)
 
     use parallel
+    use bl_prof_module
     use geometry, only: spherical, nr, dr
     use bl_constants_module
 
@@ -31,6 +32,10 @@ contains
 
     integer         :: j,n
     real(kind=dp_t) :: max_vel
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "make_w0")
 
     f(:,:) = ZERO
 
@@ -50,6 +55,8 @@ contains
        if (parallel_IOProcessor() .and. verbose .ge. 1) &
             write(6,*) '... max CFL of w0: ',max_vel * dt / dr(n)
     enddo
+
+    call destroy(bpt)
 
   end subroutine make_w0
 

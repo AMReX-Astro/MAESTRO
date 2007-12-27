@@ -17,6 +17,7 @@ contains
                              dt,is_vel,the_bc_level,velpred,start_scomp,start_bccomp, &
                              num_comp,mla)
 
+    use bl_prof_module
     use bl_constants_module
     use ml_restriction_module, only : ml_edge_restriction_c
 
@@ -48,6 +49,10 @@ contains
     real(kind=dp_t), pointer :: wtp(:,:,:,:)
     real(kind=dp_t), pointer :: w0p(:,:,:,:)
     real(kind=dp_t), pointer :: fp(:,:,:,:)
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "make_edge_state")
 
     dm = u(1)%dim
     ng = s(1)%ng
@@ -119,6 +124,8 @@ contains
           enddo
        enddo
     end if
+
+    call destroy(bpt)
     
   end subroutine make_edge_state
 

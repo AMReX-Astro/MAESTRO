@@ -16,6 +16,7 @@ contains
                     s0_old_cart,s0_new,s0_edge_new,s0_new_cart, &
                     startcomp,endcomp,which_step,dx,mla)
 
+    use bl_prof_module
     use bl_constants_module
     use geometry, only: spherical
     use ml_restriction_module, only: ml_edge_restriction_c
@@ -54,6 +55,10 @@ contains
     real(kind=dp_t), pointer :: w0p(:,:,:,:)
     real(kind=dp_t), pointer :: s0op(:,:,:,:)
     real(kind=dp_t), pointer :: s0np(:,:,:,:)
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "mkflux")
 
     dm = sold(1)%dim
     
@@ -118,6 +123,8 @@ contains
           call ml_edge_restriction_c(sflux(n-1,i),1,sflux(n,i),1,mla%mba%rr(n-1,:),i,nscal)
        enddo
     enddo
+
+    call destroy(bpt)
     
   end subroutine mkflux
   

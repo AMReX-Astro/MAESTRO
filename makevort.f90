@@ -13,6 +13,8 @@ contains
 
    subroutine make_vorticity (vort,comp,u,dx,bc)
 
+      use bl_prof_module
+
       integer        , intent(in   ) :: comp
       type(multifab) , intent(in   ) :: vort
       type(multifab) , intent(inout) :: u
@@ -23,6 +25,10 @@ contains
       real(kind=dp_t), pointer:: vp(:,:,:,:)
       integer :: lo(u%dim),hi(u%dim),ng,dm
       integer :: i
+
+      type(bl_prof_timer), save :: bpt
+
+      call build(bpt, "make_vort")
 
       ng = u%ng
       dm = u%dim
@@ -41,6 +47,8 @@ contains
               call makevort_3d(vp(:,:,:,comp),up(:,:,:,:), lo, hi, ng, dx, bc%phys_bc_level_array(i,:,:))
          end select
       end do
+
+      call destroy(bpt)
 
    end subroutine make_vorticity
 

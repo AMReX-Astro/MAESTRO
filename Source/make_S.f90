@@ -17,6 +17,8 @@ contains
   subroutine make_S(nlevs,Source,gamma1_term,state,rho_omegadot,rho_Hext, &
                     thermal,t0,gam1,dx)
 
+    use bl_prof_module
+
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: Source(:)
     type(multifab) , intent(inout) :: gamma1_term(:)
@@ -33,6 +35,10 @@ contains
     real(kind=dp_t), pointer:: omegap(:,:,:,:), hp(:,:,:,:)
     integer :: lo(state(1)%dim),hi(state(1)%dim),ng,dm
     integer :: i,n
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "make_S")
     
     ng = state(1)%ng
     dm = state(1)%dim
@@ -64,6 +70,8 @@ contains
        call multifab_fill_boundary(Source(n))
 
     enddo
+
+    call destroy(bpt)
 
    end subroutine make_S
 

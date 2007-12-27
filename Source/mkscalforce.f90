@@ -18,6 +18,7 @@ contains
 
   subroutine mkrhohforce(nlevs,scal_force,comp,umac,p0_old,p0_new,normal,dx,mla,the_bc_level)
 
+    use bl_prof_module
     use variables, only: foextrap_comp
     use geometry, only: spherical
     use ml_restriction_module, only: ml_cc_restriction_c
@@ -43,6 +44,10 @@ contains
     real(kind=dp_t), pointer :: wmp(:,:,:,:)
     real(kind=dp_t), pointer :: np(:,:,:,:)
     real(kind=dp_t), pointer :: fp(:,:,:,:)
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "mkrhohforce")
 
     dm = scal_force(1)%dim
       
@@ -86,6 +91,8 @@ contains
                                       the_bc_level(n-1),the_bc_level(n), &
                                       comp,foextrap_comp,1)      
     end do
+
+    call destroy(bpt)
     
   end subroutine mkrhohforce
 
@@ -236,6 +243,7 @@ contains
 
   subroutine mktempforce(nlevs,temp_force,comp,s,thermal,p0_old,dx,mla,the_bc_level)
 
+    use bl_prof_module
     use variables, only: foextrap_comp
     use geometry, only: spherical
     use ml_restriction_module, only: ml_cc_restriction_c
@@ -258,6 +266,10 @@ contains
     real(kind=dp_t), pointer :: tp(:,:,:,:)
     real(kind=dp_t), pointer :: sp(:,:,:,:)
     real(kind=dp_t), pointer :: fp(:,:,:,:)
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "mktempforce")
 
     dm = temp_force(1)%dim
     ng = s(1)%ng
@@ -298,6 +310,8 @@ contains
                                       the_bc_level(n-1),the_bc_level(n), &
                                       comp,foextrap_comp,1)
     enddo
+
+    call destroy(bpt)
 
   end subroutine mktempforce
 

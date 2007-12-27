@@ -16,6 +16,7 @@ contains
 
    subroutine make_macrhs(nlevs,macrhs,Source,gamma1_term,Sbar,div_coeff,dx)
 
+     use bl_prof_module
      use bl_constants_module
 
      integer        , intent(in   ) :: nlevs
@@ -30,6 +31,10 @@ contains
      
      integer :: lo(Source(1)%dim),hi(Source(1)%dim)
      integer :: i,dm,n
+
+     type(bl_prof_timer), save :: bpt
+
+     call build(bpt, "make_macrhs")
      
      dm = Source(1)%dim
      
@@ -53,6 +58,8 @@ contains
         end do
         
      enddo
+
+     call destroy(bpt)
 
    end subroutine make_macrhs
 

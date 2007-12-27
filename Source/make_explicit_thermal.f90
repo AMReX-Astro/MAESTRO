@@ -21,6 +21,7 @@ contains
   subroutine make_explicit_thermal(mla,dx,thermal,s,p0,mg_verbose,cg_verbose, &
                                    the_bc_tower,temperature_diffusion)
     use bc_module
+    use bl_prof_module
     use stencil_module
     use macproject_module
     use thermal_conduct_module
@@ -50,6 +51,10 @@ contains
     real(kind=dp_t), pointer    :: Tcoeffp(:,:,:,:),hcoeffp(:,:,:,:)
     real(kind=dp_t), pointer    :: pcoeffp(:,:,:,:),residp(:,:,:,:)
     type(bc_level)              :: bc
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "make_explicit_thermal")
 
     nlevs = mla%nlevel
     dm = mla%dim
@@ -286,6 +291,8 @@ contains
     enddo
     
     deallocate(phi,alpha,beta,Xkcoeff,Tcoeff,hcoeff,pcoeff,resid)
+
+    call destroy(bpt)
     
   end subroutine make_explicit_thermal
 

@@ -86,6 +86,7 @@ contains
   subroutine make_plotfile(dirname,plotdata,u,s,gp,rho_omegadot,Source,sponge, &
                            mba,plot_names,time,dx,the_bc_tower,s0,p0,plot_spec,plot_trac)
 
+    use bl_prof_module
     use fabio_module
     use vort_module
     use geometry, only: spherical
@@ -110,6 +111,10 @@ contains
     logical          , intent(in   ) :: plot_spec,plot_trac
 
     integer :: n,dm,nlevs
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "make_plotfile")
 
     dm = get_dim(mba)
     nlevs = size(plotdata)
@@ -209,6 +214,8 @@ contains
 
     call fabio_ml_multifab_write_d(plotdata, mba%rr(:,1), dirname, plot_names, &
                                    mba%pd(1), time, dx(1,:))
+
+    call destroy(bpt)
 
   end subroutine make_plotfile
 

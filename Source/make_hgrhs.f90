@@ -15,6 +15,7 @@ contains
   
   subroutine make_hgrhs(nlevs,hgrhs,Source,gamma1_term,Sbar,div_coeff,dx)
 
+    use bl_prof_module
     use bl_constants_module
     use geometry, only: spherical
     use fill_3d_module
@@ -34,6 +35,10 @@ contains
     real(kind=dp_t), pointer:: dp(:,:,:,:),sp(:,:,:,:),sbp(:,:,:,:)
     integer :: lo(Source(1)%dim),hi(Source(1)%dim)
     integer :: i,dm,n
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "make_hgrhs")
     
     dm = Source(1)%dim
 
@@ -113,6 +118,8 @@ contains
           call multifab_destroy(div_coeff_cart(n))
        end if
     enddo
+
+    call destroy(bpt)
     
   end subroutine make_hgrhs
   
