@@ -83,7 +83,7 @@ contains
 
   end subroutine get_plot_names
 
-  subroutine make_plotfile(dirname,plotdata,u,s,gp,rho_omegadot,Source,sponge, &
+  subroutine make_plotfile(dirname,mla,u,s,gp,rho_omegadot,Source,sponge, &
                            mba,plot_names,time,dx,the_bc_tower,s0,p0,plot_spec,plot_trac)
 
     use bl_prof_module
@@ -95,7 +95,7 @@ contains
     use probin_module, ONLY: use_big_h
 
     character(len=*) , intent(in   ) :: dirname
-    type(multifab)   , intent(inout) :: plotdata(:)
+    type(ml_layout)  , intent(in   ) :: mla
     type(multifab)   , intent(inout) :: u(:)
     type(multifab)   , intent(inout) :: s(:)
     type(multifab)   , intent(in   ) :: gp(:)
@@ -110,16 +110,20 @@ contains
     real(dp_t)       , intent(in   ) :: p0(:,0:)
     logical          , intent(in   ) :: plot_spec,plot_trac
 
-    integer :: n,dm,nlevs
+    type(multifab), allocatable :: plotdata(:)
+    integer                     :: n,dm,nlevs
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "make_plotfile")
 
     dm = get_dim(mba)
-    nlevs = size(plotdata)
+    nlevs = size(u)
+    allocate(plotdata(nlevs))
 
     do n = 1,nlevs
+
+       call multifab_build(plotdata(n), mla%la(n), n_plot_comps, 0)
 
        ! VELOCITY 
        call multifab_copy_c(plotdata(n),icomp_vel,u(n),1,dm)
@@ -214,6 +218,10 @@ contains
 
     call fabio_ml_multifab_write_d(plotdata, mba%rr(:,1), dirname, plot_names, &
                                    mba%pd(1), time, dx(1,:))
+    do n = 1,nlevs
+       call multifab_destroy(plotdata(n))
+    end do
+    deallocate(plotdata)
 
     call destroy(bpt)
 
