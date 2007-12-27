@@ -178,7 +178,6 @@ contains
     w0_old = w0
 
     do n = 1, nlevs
-       call multifab_build(rhohalf(n),            mla%la(n), 1    , 1)
        call multifab_build(macrhs(n),             mla%la(n), 1    , 0)
        call multifab_build(macphi(n),             mla%la(n), 1    , 1)
        call multifab_build(hgrhs_old(n),          mla%la(n), 1    , 0, nodal)
@@ -186,7 +185,6 @@ contains
        call multifab_build(thermal(n),            mla%la(n), 1    , 1)
        call multifab_build(s2star(n),             mla%la(n), nscal, ng_cell)
        call multifab_build(rho_omegadot2_hold(n), mla%la(n), nspec, 0)
-       call setval(rhohalf(n)           , ZERO, all=.true.)
        call setval(macrhs(n)            , ZERO, all=.true.)
        call setval(macphi(n)            , ZERO, all=.true.)
        call setval(hgrhs_old(n)         , ZERO, all=.true.)
@@ -387,10 +385,6 @@ contains
                            gam1(n,:),grav_cell_new(n,:),anelastic_cutoff)
     enddo
     
-    ! Define rho at half time !
-    call make_at_halftime(nlevs,rhohalf,sold,snew,rho_comp,1,dx, &
-                          the_bc_tower%bc_tower_array,mla)
-    
     ! Define base state at half time for use in velocity advance!
     do n=1,nlevs
        do j=0,nr(n)-1
@@ -456,6 +450,13 @@ contains
                            the_bc_tower%bc_tower_array,mla)
        
        call make_macrhs(nlevs,macrhs,Source_nph,gamma1_term,Sbar(:,:,1),div_coeff_nph,dx)
+    
+       ! Define rho at half time !
+       do n = 1, nlevs
+          call multifab_build(rhohalf(n), mla%la(n), 1    , 1)
+       end do
+       call make_at_halftime(nlevs,rhohalf,sold,snew,rho_comp,1,dx, &
+                             the_bc_tower%bc_tower_array,mla)
        
        ! MAC projection !
        if (spherical .eq. 1) then
@@ -472,6 +473,9 @@ contains
                           press_comp,macrhs,div_coeff_1d=div_coeff_nph, &
                           div_coeff_half_1d=div_coeff_edge)
        end if
+       do n = 1, nlevs
+          call multifab_destroy(rhohalf(n))
+       end do
         
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 8 -- advect the base state and full state through dt
@@ -596,6 +600,9 @@ contains
     end if
     
     ! Define rho at half time using the new rho from Step 8!
+    do n = 1, nlevs
+       call multifab_build(rhohalf(n), mla%la(n), 1    , 1)
+    end do
     call make_at_halftime(nlevs,rhohalf,sold,snew,rho_comp,1,dx, &
                           the_bc_tower%bc_tower_array,mla)
     
@@ -638,6 +645,10 @@ contains
                       the_bc_tower, verbose, mg_verbose, cg_verbose, press_comp, &
                       hgrhs, div_coeff_1d=div_coeff_nph)
     end if
+
+    do n = 1, nlevs
+       call multifab_destroy(rhohalf(n))
+    end do
     
     ! If doing pressure iterations then put hgrhs_old into hgrhs to be returned to varden.
     if (init_mode) then
@@ -652,7 +663,6 @@ contains
        call destroy(macphi(n))
        call destroy(hgrhs_old(n))
        call destroy(thermal(n))
-       call destroy(rhohalf(n))
        call destroy(s2star(n))
        call destroy(rho_omegadot2_hold(n))
        if (spherical .eq. 1) &
