@@ -36,6 +36,7 @@ contains
 
   subroutine average(mla,phi,phibar,dx,comp,ncomp)
 
+    use bl_prof_module
     use geometry, only: nr, spherical
     use bl_constants_module
 
@@ -64,6 +65,9 @@ contains
     real(kind=dp_t), allocatable :: source_buffer(:,:)
     real(kind=dp_t), allocatable :: target_buffer(:,:)
 
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "average")
 
     dm = phi(1)%dim
     ng = phi(1)%ng
@@ -256,6 +260,8 @@ contains
        deallocate(source_buffer,target_buffer)
        
     endif
+
+    call destroy(bpt)
     
   end subroutine average
   

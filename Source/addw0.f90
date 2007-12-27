@@ -13,6 +13,7 @@ contains
 
   subroutine addw0(nlevs,umac,w0,w0_cart,dx,mult)
 
+    use bl_prof_module
     use geometry, only: spherical
 
     integer        , intent(in   ) :: nlevs
@@ -27,6 +28,10 @@ contains
     real(kind=dp_t), pointer :: vmp(:,:,:,:)
     real(kind=dp_t), pointer :: wmp(:,:,:,:)
     real(kind=dp_t), pointer :: w0p(:,:,:,:)
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "addw0")
 
     dm = umac(1,1)%dim
 
@@ -55,6 +60,8 @@ contains
           end select
        end do
     end do
+
+    call destroy(bpt)
 
   end subroutine addw0
 

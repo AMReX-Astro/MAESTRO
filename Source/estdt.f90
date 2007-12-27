@@ -19,6 +19,7 @@ contains
 
   subroutine estdt(n, u, s, force, divU, dSdt, normal, w0, p0, gam1, dx, cflfac, dt)
 
+    use bl_prof_module
     use geometry, only: spherical
     
     integer        , intent(in ) :: n
@@ -48,6 +49,10 @@ contains
     integer         :: i
     
     real(kind=dp_t), parameter :: rho_min = 1.d-20
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "estdt")
     
     ng = u%ng
     dm = u%dim
@@ -104,6 +109,8 @@ contains
        dt = min(dx(1),dx(2))
        if (dm .eq. 3) dt = min(dt,dx(3))
     end if
+
+    call destroy(bpt)
     
   end subroutine estdt
   

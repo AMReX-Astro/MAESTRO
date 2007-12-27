@@ -17,6 +17,7 @@ contains
     use parallel
     use bl_IO_module
     use fabio_module
+    use bl_prof_module
 
     type(multifab), intent(in) :: mfs(:), mfs_nodal(:)
     type(multifab), intent(in) :: dSdt(:), Source_old(:)
@@ -37,6 +38,10 @@ contains
     namelist /chkpoint/ dt
     namelist /chkpoint/ nlevs
     namelist /chkpoint/ dm
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "checkpoint_write")
 
     if ( parallel_IOProcessor() ) then
        call fabio_mkdir(dirname)
@@ -103,6 +108,8 @@ contains
        close(un)
     end if
 
+    call destroy(bpt)
+
   end subroutine checkpoint_write
 
   subroutine checkpoint_read(mfs, mfs_nodal, dSdt, Source_old, rho_omegadot2, &
@@ -111,6 +118,7 @@ contains
     use parallel
     use bl_IO_module
     use fabio_module
+    use bl_prof_module
 
     type(multifab  ),                pointer :: mfs(:), mfs_nodal(:)
     type(multifab  ),                pointer :: dSdt(:), Source_old(:), rho_omegadot2(:)
@@ -132,6 +140,10 @@ contains
     namelist /chkpoint/ time
     namelist /chkpoint/ dt
     namelist /chkpoint/ dm
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "checkpoint_read")
 
 !   First read the header information
     header = "Header"
@@ -178,6 +190,8 @@ contains
     call fabio_ml_multifab_read_d(rho_omegadot2, sd_name)
 
     deallocate(dx,rrs)
+
+    call destroy(bpt)
 
   end subroutine checkpoint_read
 

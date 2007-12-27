@@ -13,6 +13,7 @@ contains
   subroutine advect_base(nlevs,vel,Sbar_in,p0_old,p0_new,s0_old,s0_new,gam1,div_coeff,eta, &
                          dz,dt,anelastic_cutoff)
 
+    use bl_prof_module
     use geometry, only: spherical
 
     integer        , intent(in   ) :: nlevs
@@ -28,6 +29,10 @@ contains
     
     ! local
     integer :: n
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "advect_base")
     
     do n=1,nlevs
        if (spherical .eq. 0) then
@@ -39,6 +44,8 @@ contains
                                            gam1(n,:),div_coeff(n,:),dt,anelastic_cutoff)
        end if
     enddo
+
+    call destroy(bpt)
        
   end subroutine advect_base
 

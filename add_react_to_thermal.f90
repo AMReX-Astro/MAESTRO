@@ -19,6 +19,7 @@ contains
   subroutine add_react_to_thermal(nlevs,thermal,rho_omegadot,s,the_bc_level,mla,dx)
 
     use fill_3d_module
+    use bl_prof_module
     use bl_constants_module
     use multifab_physbc_module
     use multifab_fill_ghost_module
@@ -39,6 +40,10 @@ contains
     real(kind=dp_t), pointer :: rwp(:,:,:,:)
     integer                  :: lo(thermal(1)%dim),hi(thermal(1)%dim)
     integer                  :: dm,i,n
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "add_react_to_thermal")
     
     dm = thermal(1)%dim
     
@@ -76,6 +81,8 @@ contains
                                       the_bc_level(n-1), the_bc_level(n), &
                                       1,foextrap_comp,1)
     enddo
+
+    call destroy(bpt)
        
   end subroutine add_react_to_thermal
   

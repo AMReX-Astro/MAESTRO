@@ -16,6 +16,7 @@ contains
                               verbose,mg_verbose,cg_verbose,dSdt,Source_old,Source_new, &
                               gamma1_term,sponge,do_sponge,hgrhs,istep)
 
+    use bl_prof_module
     use ml_layout_module
     use bl_constants_module
     use multifab_module
@@ -129,6 +130,10 @@ contains
     real(dp_t) :: halfdt,eps_in
     integer    :: j,n,dm,nlevs,ng_cell,proj_type
     logical    :: nodal(mla%dim)
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "advance_timestep")
 
     dm = mla%dim
     nlevs = size(uold)
@@ -691,6 +696,8 @@ contains
     
     deallocate(lo)
     deallocate(hi)
+
+    call destroy(bpt)
     
   end subroutine advance_timestep
 

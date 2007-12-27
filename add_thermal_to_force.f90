@@ -18,6 +18,7 @@ contains
 
   subroutine add_thermal_to_force(nlevs,force,thermal,the_bc_level,mla,dx)
 
+    use bl_prof_module
     use multifab_physbc_module
     use multifab_fill_ghost_module
     use variables, only: rhoh_comp, foextrap_comp 
@@ -32,6 +33,10 @@ contains
 
     ! local
     integer :: n
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "add_thermal_to_force")
 
     do n=1,nlevs
        call multifab_plus_plus_c(force(n),rhoh_comp,thermal(n),1,1)
@@ -50,6 +55,8 @@ contains
                                       the_bc_level(n-1),the_bc_level(n), &
                                       rhoh_comp,foextrap_comp,1)
     enddo
+
+    call destroy(bpt)
        
   end subroutine add_thermal_to_force
   

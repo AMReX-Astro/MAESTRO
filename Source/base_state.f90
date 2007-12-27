@@ -14,6 +14,7 @@ contains
 
     use bc_module
     use setbc_module
+    use bl_prof_module
     use multifab_module
     use define_bc_module
     use bl_constants_module
@@ -57,6 +58,10 @@ contains
 
     integer :: ipos,dm
     character (len=256) :: header_line
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "init_base_state")
 
     do_diag = .false.
 
@@ -277,6 +282,8 @@ contains
 
     deallocate(vars_stored,varnames_stored)
     deallocate(base_state,base_r)
+
+    call destroy(bpt)
 
   end subroutine init_base_state
 

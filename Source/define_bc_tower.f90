@@ -31,6 +31,7 @@ contains
 
   subroutine bc_tower_build(bct,mla,domain_bc,domain_box,nspec)
 
+    use bl_prof_module
     use variables, only: nscal
 
     type(bc_tower ), intent(  out) :: bct
@@ -41,6 +42,10 @@ contains
 
     integer :: i,ngrids
     integer :: default_value
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "bc_tower_build")
 
     bct%nlevels = mla%nlevel
     bct%dim     = mla%dim
@@ -67,6 +72,8 @@ contains
        call ell_bc_level_build(bct%bc_tower_array(i)%ell_bc_level_array, &
                                bct%bc_tower_array(i)%phys_bc_level_array,default_value,nspec)
     end do
+
+    call destroy(bpt)
 
   end subroutine bc_tower_build
 

@@ -13,6 +13,7 @@ contains
   subroutine write_base_state(state_name,w0_name,chk_name,s0,p0,gam1,w0,div_coeff)
     
     use parallel
+    use bl_prof_module
     use geometry, only : dr
     use network, only: nspec
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
@@ -27,8 +28,11 @@ contains
     character(len=18) :: out_name
     integer :: i, n, nr
 
-    nr = size(s0,dim=1)
+    type(bl_prof_timer), save :: bpt
 
+    call build(bpt, "write_base_state")
+
+    nr = size(s0,dim=1)
 
     if (parallel_IOProcessor()) then
 
@@ -58,6 +62,7 @@ contains
 
     endif
 
+    call destroy(bpt)
 
 1000 format(32(e30.20,1x))
 
@@ -68,6 +73,7 @@ contains
 
 
     use parallel
+    use bl_prof_module
     use variables, only: rho_comp, rhoh_comp, spec_comp, temp_comp
     use network, only: nspec
     use geometry, only : dr
@@ -82,6 +88,10 @@ contains
     real(kind=dp_t) :: r_dummy
     character(len=18) :: out_name
     integer :: i, n, nr
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "read_base_state")
 
     nr = size(s0,dim=1)
     allocate(base_r(nr))
@@ -99,7 +109,6 @@ contains
     end do
     close(99)
 
-
     ! read in w0
     out_name = chk_name // "/" // w0_name
     if (parallel_IOProcessor()) then
@@ -113,6 +122,8 @@ contains
     close(99)
 
     deallocate(base_r)
+
+    call destroy(bpt)
 
   end subroutine read_base_state
 

@@ -18,6 +18,7 @@ contains
                        divu_rhs,div_coeff_1d,div_coeff_3d,eps_in)
 
     use bc_module
+    use bl_prof_module
     use proj_parameters
     use nodal_divu_module
     use stencil_module
@@ -49,6 +50,10 @@ contains
     real(dp_t)                  :: umin,umax,vmin,vmax,wmin,wmax
     integer                     :: stencil_type
     logical                     :: use_div_coeff_1d, use_div_coeff_3d
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "hgproject")
 
     ! stencil_type = ST_DENSE
     stencil_type = ST_CROSS
@@ -189,6 +194,8 @@ contains
     deallocate(gphi)
     deallocate(nodal)
 
+    call destroy(bpt)
+
   contains
 
     subroutine create_uvec_for_projection(nlevs,unew,uold,rhohalf,gp,dt,the_bc_tower,proj_type)
@@ -210,6 +217,10 @@ contains
       real(kind=dp_t), pointer ::  rp(:,:,:,:)
   
       integer :: i,n,dm,ng
+
+      type(bl_prof_timer), save :: bpt
+
+      call build(bpt, "create_uvec_for_projection")
   
       dm = unew(nlevs)%dim
       ng = unew(nlevs)%ng
@@ -234,6 +245,8 @@ contains
          call multifab_fill_boundary(unew(n))
       end do 
 
+      call destroy(bpt)
+
     end subroutine create_uvec_for_projection
 
 
@@ -250,6 +263,10 @@ contains
 
       real(kind=dp_t), pointer :: gph(:,:,:,:) 
       real(kind=dp_t), pointer :: pp(:,:,:,:) 
+
+      type(bl_prof_timer), save :: bpt
+
+      call build(bpt, "mkgphi")
 
       dm = phi(1)%dim
 
@@ -270,6 +287,8 @@ contains
          call multifab_fill_boundary(gphi(n))
 
       end do
+
+      call destroy(bpt)
 
     end subroutine mkgphi
 
@@ -302,6 +321,10 @@ contains
       real(kind=dp_t), pointer ::  rp(:,:,:,:) 
       real(kind=dp_t), pointer ::  ph(:,:,:,:) 
       real(kind=dp_t), pointer ::  pp(:,:,:,:) 
+
+      type(bl_prof_timer), save :: bpt
+
+      call build(bpt, "hg_update")
 
       dm = unew(1)%dim
 
@@ -339,6 +362,8 @@ contains
          call multifab_fill_ghost_cells(unew(n),unew(n-1),ng,mla%mba%rr(n-1,:), &
                                         the_bc_level(n-1),the_bc_level(n),1,1,dm)
       end do
+
+      call destroy(bpt)
 
     end subroutine hg_update
 
@@ -703,6 +728,7 @@ contains
   subroutine hg_multigrid(mla,unew,rhohalf,phi,dx,the_bc_tower,divu_verbose,mg_verbose, &
                           cg_verbose,press_comp,stencil_type,divu_rhs,eps_in)
 
+    use bl_prof_module
     use bl_constants_module
     use stencil_module
     use coeffs_module
@@ -747,6 +773,10 @@ contains
     integer :: verbose
     integer :: do_diagnostics
     logical, allocatable :: nodal(:)
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "hg_multigrid")
 
     !! Defaults:
 
@@ -930,6 +960,8 @@ contains
     deallocate(rh)
     deallocate(nodal)
     deallocate(one_sided_ss)
+
+    call destroy(bpt)
 
   end subroutine hg_multigrid
 
