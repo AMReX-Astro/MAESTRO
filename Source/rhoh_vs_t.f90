@@ -14,6 +14,8 @@ module rhoh_vs_t_module
 contains
   
   subroutine makeRhoHfromT(nlevs,u,sedge,s0_old,s0_edge_old,s0_new,s0_edge_new)
+
+    use bl_prof_module
     
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(in   ) :: u(:)
@@ -27,6 +29,10 @@ contains
     real(kind=dp_t), pointer :: sepx(:,:,:,:)
     real(kind=dp_t), pointer :: sepy(:,:,:,:)
     real(kind=dp_t), pointer :: sepz(:,:,:,:)
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "makeRhoHfromT")
     
     dm = u(1)%dim
 
@@ -52,6 +58,8 @@ contains
        end do
 
     end do
+
+    call destroy(bpt)
     
   end subroutine makeRhoHfromT
 
@@ -347,6 +355,7 @@ contains
   subroutine makeTfromRhoH(nlevs,s,t0,mla,the_bc_level,dx)
 
     use variables, only: temp_comp
+    use bl_prof_module
     use ml_restriction_module, only: ml_cc_restriction_c
     use multifab_physbc_module
     use multifab_fill_ghost_module
@@ -362,6 +371,10 @@ contains
     integer                  :: i,ng,dm,n
     integer                  :: lo(s(1)%dim),hi(s(1)%dim)
     real(kind=dp_t), pointer :: snp(:,:,:,:)
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "makeTfromRhoH")
 
     dm = s(1)%dim
     ng = s(1)%ng
@@ -386,15 +399,17 @@ contains
                             the_bc_level(n))
     end do
 
-  do n=nlevs,2,-1
-     call ml_cc_restriction_c(s(n-1),temp_comp,s(n),temp_comp,mla%mba%rr(n-1,:),1)
-     call multifab_fill_ghost_cells(s(n),s(n-1), &
-                                    ng,mla%mba%rr(n-1,:), &
-                                    the_bc_level(n-1), &
-                                    the_bc_level(n  ), &
-                                    temp_comp,dm+temp_comp,1)
-  enddo
-    
+    do n=nlevs,2,-1
+       call ml_cc_restriction_c(s(n-1),temp_comp,s(n),temp_comp,mla%mba%rr(n-1,:),1)
+       call multifab_fill_ghost_cells(s(n),s(n-1), &
+            ng,mla%mba%rr(n-1,:), &
+            the_bc_level(n-1), &
+            the_bc_level(n  ), &
+            temp_comp,dm+temp_comp,1)
+    enddo
+
+    call destroy(bpt)
+
   end subroutine makeTfromRhoH
 
   subroutine makeTfromRhoH_2d (state,lo,hi,ng,t0)

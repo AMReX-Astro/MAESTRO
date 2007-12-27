@@ -16,6 +16,7 @@ contains
   subroutine react_state (nlevs,mla,s_in,s_out,rho_omegadot,rho_Hext,dt,dx,the_bc_level,time)
 
     use variables, only: rho_comp, nscal
+    use bl_prof_module
     use ml_restriction_module
     use multifab_physbc_module
     use multifab_fill_ghost_module
@@ -37,6 +38,10 @@ contains
 
     integer :: lo(s_in(1)%dim),hi(s_in(1)%dim),ng,dm
     integer :: i,n
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "react_state")
 
     ng = s_in(1)%ng
     dm = s_in(1)%dim
@@ -84,6 +89,8 @@ contains
                                       the_bc_level(n-1), the_bc_level(n), &
                                       rho_comp,dm+rho_comp,nscal)
     enddo
+
+    call destroy(bpt)
 
   end subroutine react_state
 

@@ -29,6 +29,7 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
   use network, only: nspec
   use rhoh_vs_t_module
   use probin_module, ONLY: use_big_h
+  use bl_prof_module
   use multifab_physbc_module
   use multifab_fill_ghost_module
   use ml_restriction_module, only: ml_cc_restriction_c
@@ -60,6 +61,10 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
   integer                     :: i,n,comp,ng
   integer                     :: lo(s1(1)%dim),hi(s1(1)%dim)
   type(bndry_reg), pointer    :: fine_flx(:) => Null()
+
+  type(bl_prof_timer), save :: bpt
+
+  call build(bpt, "therm_cond_full_alg")
 
   nlevs = mla%nlevel
   dm = mla%dim
@@ -527,6 +532,8 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
   deallocate(p01fab,p02fab,fine_flx)
   deallocate(hcoeff1,hcoeff2,Xkcoeff1,Xkcoeff2,pcoeff1,pcoeff2)
 
+  call destroy(bpt)
+
 end subroutine thermal_conduct_full_alg
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -541,6 +548,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
   use eos_module, only: nspec
   use rhoh_vs_t_module
   use probin_module, ONLY: use_big_h
+  use bl_prof_module
   use multifab_physbc_module
   use multifab_fill_ghost_module
   use ml_restriction_module, only: ml_cc_restriction_c
@@ -572,6 +580,10 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
   type(bndry_reg), pointer    :: fine_flx(:) => Null()
 
   type(bc_level) ::  bc
+
+  type(bl_prof_timer), save :: bpt
+
+  call build(bpt, "therm_cond_half_alg")
 
   nlevs = mla%nlevel
   dm = mla%dim
@@ -1238,6 +1250,8 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
   deallocate(rhsalpha,lhsalpha,rhsbeta,lhsbeta,ccbeta,phi,phitemp,Lphi,rhs)
   deallocate(p01fab,p02fab,fine_flx)
   deallocate(hcoeff1,hcoeff2,Xkcoeff1,Xkcoeff2,pcoeff1,pcoeff2)
+
+  call destroy(bpt)
 
 end subroutine thermal_conduct_half_alg
 

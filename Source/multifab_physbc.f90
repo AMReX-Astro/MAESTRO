@@ -14,6 +14,7 @@ contains
   subroutine multifab_physbc(s,start_scomp,start_bccomp,num_comp,dx,the_bc_level)
 
     use setbc_module
+    use bl_prof_module
 
     type(multifab) , intent(inout) :: s
     integer        , intent(in   ) :: start_scomp,start_bccomp,num_comp
@@ -24,6 +25,10 @@ contains
     integer                  :: lo(s%dim)
     integer                  :: n,i,ng,dm,scomp,bccomp
     real(kind=dp_t), pointer :: sp(:,:,:,:)
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "multifab_physbc")
     
     ng = s%ng
     dm = s%dim
@@ -47,6 +52,8 @@ contains
           end do
        end select
     end do
+
+    call destroy(bpt)
  
 end subroutine multifab_physbc
 

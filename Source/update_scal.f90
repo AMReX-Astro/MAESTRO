@@ -17,6 +17,7 @@ contains
                          sedge,sflux,scal_force,s0_old,s0_edge_old,s0_new,s0_edge_new, &
                          s0_old_cart,s0_new_cart,dx,dt,evolve_base_state,the_bc_level,mla)
 
+    use bl_prof_module
     use bl_constants_module
     use geometry,  only: spherical
     use variables, only: spec_comp, rho_comp
@@ -66,6 +67,10 @@ contains
     integer :: domlo(sold(1)%dim),domhi(sold(1)%dim)
     integer :: lo(sold(1)%dim),hi(sold(1)%dim)
     integer :: i,ng,dm,n
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "update_scal")
 
     dm = sold(1)%dim
     ng = sold(1)%ng
@@ -160,6 +165,8 @@ contains
                                          rho_comp,dm+rho_comp,1)
        endif
     enddo
+
+    call destroy(bpt)
 
   end subroutine update_scal
 

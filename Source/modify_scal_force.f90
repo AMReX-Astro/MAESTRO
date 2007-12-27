@@ -15,6 +15,7 @@ contains
   subroutine modify_scal_force(nlevs,force,s,umac,base,base_edge,w0,dx,base_cart, &
                                start_comp,num_comp,mla,the_bc_level)
 
+    use bl_prof_module
     use bl_constants_module
     use geometry, only: spherical
     use variables, only: foextrap_comp
@@ -50,6 +51,10 @@ contains
     real(kind=dp_t), pointer :: vmp(:,:,:,:)
     real(kind=dp_t), pointer :: wmp(:,:,:,:)
     real(kind=dp_t), pointer :: bcp(:,:,:,:)
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "modify_scal_force")
     
     dm = s(1)%dim
     ng = s(1)%ng
@@ -117,6 +122,8 @@ contains
                                          comp,foextrap_comp,1)
        enddo
     enddo
+
+    call destroy(bpt)
     
   end subroutine modify_scal_force
   

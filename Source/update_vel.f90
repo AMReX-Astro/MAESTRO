@@ -15,6 +15,7 @@ contains
   subroutine update_velocity(nlevs,uold,unew,umac,uedge,force,w0,w0_cart,w0_force, &
                              w0_force_cart,dx,dt,sponge,do_sponge,mla,the_bc_level)
 
+    use bl_prof_module
     use bl_constants_module
     use ml_restriction_module
     use multifab_fill_ghost_module
@@ -55,6 +56,10 @@ contains
     real(kind=dp_t), pointer:: fp(:,:,:,:)
     real(kind=dp_t), pointer:: w0p(:,:,:,:)
     real(kind=dp_t), pointer:: w0fp(:,:,:,:)
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "update_velocity")
 
     dm = uold(1)%dim
     ng = uold(1)%ng
@@ -109,6 +114,8 @@ contains
                                       the_bc_level(n-1),the_bc_level(n), &
                                       1,1,dm)
     enddo
+
+    call destroy(bpt)
 
   end subroutine update_velocity
 

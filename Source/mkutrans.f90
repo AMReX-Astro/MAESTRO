@@ -15,6 +15,8 @@ contains
 
   subroutine mkutrans(nlevs,u,utrans,force,dx,dt,the_bc_level)
 
+    use bl_prof_module
+
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(in   ) :: u(:)
     type(multifab) , intent(inout) :: utrans(:,:)
@@ -30,6 +32,10 @@ contains
     real(kind=dp_t), pointer :: fp(:,:,:,:)
     integer                  :: lo(u(1)%dim)
     integer                  :: i,dm,ng,n
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "mkutrans")
 
     dm = u(1)%dim
     ng = u(1)%ng
@@ -61,6 +67,8 @@ contains
                               the_bc_level(n)%phys_bc_level_array(i,:,:))
        end select
     end do
+
+    call destroy(bpt)
 
  enddo
     

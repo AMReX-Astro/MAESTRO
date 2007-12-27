@@ -18,6 +18,7 @@ contains
     use geometry, only: nr
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
     use eos_module
+    use bl_prof_module
     use probin_module, ONLY: use_big_h
      
     integer        , intent(in   ) :: nlevs
@@ -29,6 +30,10 @@ contains
     real(kind=dp_t), intent(inout) :: gam1_out(:,0:)
     
     integer :: n,j,comp
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "react_base")
     
     do n=1,nlevs
 
@@ -84,6 +89,8 @@ contains
        end do
        
     enddo ! end loop over levels
+
+    call destroy(bpt)
 
   end subroutine react_base
 

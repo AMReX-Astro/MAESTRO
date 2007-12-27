@@ -17,6 +17,7 @@ contains
                             w0_cart_vec,eta,sedge,sflux,utrans,ext_scal_force,normal, &
                             s0_old,s0_new,p0_old,p0_new,dx,dt,the_bc_level,verbose)
 
+    use bl_prof_module
     use bl_constants_module
     use make_edge_state_module
     use mkflux_module
@@ -72,6 +73,10 @@ contains
     integer :: velpred,comp,n,dm,ng_cell    
 
     logical :: is_vel
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "scalar_advance")
 
     allocate(scal_force(nlevs))
     allocate(s0_old_cart(nlevs))
@@ -320,6 +325,8 @@ contains
     enddo
 
     deallocate(s0_edge_old,s0_edge_new)
+
+    call destroy(bpt)
 
 2000 format('... new min/max : density           ',e17.10,2x,e17.10)
 2001 format('... new min/max : rho * H           ',e17.10,2x,e17.10)

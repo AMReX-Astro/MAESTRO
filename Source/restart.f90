@@ -14,8 +14,9 @@ contains
 
   subroutine fill_restart_data(restart_int,mba,chkdata,chk_p,chk_dsdt,chk_src_old,chk_rho_omegadot2,time,dt)
 
-    use checkpoint_module
     use parallel
+    use bl_prof_module
+    use checkpoint_module
 
     integer          , intent(in   ) :: restart_int
     real(dp_t)       , intent(  out) :: time,dt
@@ -28,6 +29,10 @@ contains
     type(multifab)   , pointer        :: chk_rho_omegadot2(:)
     character(len=7)                  :: sd_name
     integer                           :: n,nlevs,dm
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "fill_restart_data")
 
     write(unit=sd_name,fmt='("chk",i4.4)') restart_int
     if ( parallel_IOProcessor()) &
@@ -46,6 +51,8 @@ contains
     do n = 1,nlevs
       call boxarray_build_copy(mba%bas(n), get_boxarray(chkdata(n))) 
     end do
+
+    call destroy(bpt)
 
   end subroutine fill_restart_data
 
