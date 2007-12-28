@@ -417,7 +417,7 @@ contains
     integer                       :: i, j, k, comp, index
     integer                       :: ii, jj, kk
     real (kind=dp_t)              :: radius
-    real (kind=dp_t)              :: xx, yy, zz, yysq, zzsq
+    real (kind=dp_t)              :: xx, yy, zz
     real (kind=dp_t)              :: xmin, ymin, zmin
     real (kind=dp_t)              :: cell_weight
     integer                       :: nsub
@@ -443,45 +443,45 @@ contains
              
              cell_valid = .true.
 
-             if( present(mask) ) then
+             if ( present(mask) ) then
                 if ( (.not. mask(i,j,k)) ) cell_valid = .false.
              end if
                 
-             if(cell_valid) then
-                
+             if (cell_valid) then
+
                 do kk = 0, nsub-1
-                   zz   = zmin + (dble(kk) + HALF)*dx(3)/nsub
-                   zzsq = zz**2
-                   
+                   zz = zmin + (dble(kk) + HALF)*dx(3)/nsub
+
                    do jj = 0, nsub-1
-                      yy   = ymin + (dble(jj) + HALF)*dx(2)/nsub
-                      yysq = yy**2
-                      
+                      yy = ymin + (dble(jj) + HALF)*dx(2)/nsub
+
                       do ii = 0, nsub-1
                          xx = xmin + (dble(ii) + HALF)*dx(1)/nsub
-                         
-                         radius = sqrt(xx**2 + yysq + zzsq)
+
+                         radius = sqrt(xx**2 + yy**2 + zz**2)
                          index = radius / dr(nlevs)
-                         
-                         if (index .lt. 0 .or. index .gt. nr(nlevs)-1) then
-                            print *,'RADIUS ',radius
-                            print *,'BOGUS INDEX IN AVERAGE ',index
-                            print *,'NOT IN RANGE 0 TO ',nr(nlevs)-1
-                            print *,'I J K ',i,j,k
-                            call bl_error('average_3d_sphr')
+
+                         if ( .false. ) then
+                            if (index .lt. 0 .or. index .gt. nr(nlevs)-1) then
+                               print *,'RADIUS ',radius
+                               print *,'BOGUS INDEX IN AVERAGE ',index
+                               print *,'NOT IN RANGE 0 TO ',nr(nlevs)-1
+                               print *,'I J K ',i,j,k
+                               call bl_error('average_3d_sphr')
+                            end if
                          end if
-                         
+
                          do comp = start_comp,start_comp+n_comp-1
                             phibar(index,comp) = &
                                  phibar(index,comp) + cell_weight*phi(i,j,k,comp)
                          end do
-                         
+
                          ncell(index) = ncell(index) + cell_weight
-                         
+
                       enddo
                    enddo
                 enddo
-                
+
              end if
              
           end do
