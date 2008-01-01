@@ -32,13 +32,13 @@ contains
 
   subroutine average(mla,phi,phibar,dx,comp,ncomp)
 
-    use geometry, only: nr, spherical
+    use geometry, only: nr, spherical, center, dr
     use bl_prof_module
     use bl_constants_module
 
     type(ml_layout), intent(in   ) :: mla
     integer        , intent(in   ) :: comp,ncomp
-    type(multifab) , intent(in   ) :: phi(:)
+    type(multifab) , intent(inout) :: phi(:)         ! Need the out so layout_aveassoc() can modify the layout.
     real(kind=dp_t), intent(inout) :: phibar(:,0:,:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     
@@ -48,7 +48,7 @@ contains
     type(box)                    :: domain
     integer                      :: domlo(phi(1)%dim),domhi(phi(1)%dim)
     integer                      :: lo(phi(1)%dim),hi(phi(1)%dim)
-    integer                      :: i,k,n,nlevs,ng,dm,rr
+    integer                      :: i,k,n,nlevs,ng,dm,rr,nsub
     real(kind=dp_t), allocatable :: ncell_grid(:,:)
     real(kind=dp_t), allocatable :: ncell_proc(:,:)
     real(kind=dp_t), allocatable :: ncell(:,:)
@@ -58,6 +58,8 @@ contains
     real(kind=dp_t), allocatable :: phipert(:,:,:)
     real(kind=dp_t), allocatable :: source_buffer(:)
     real(kind=dp_t), allocatable :: target_buffer(:)
+
+    type(aveassoc) :: avasc
 
     type(bl_prof_timer), save :: bpt
 
@@ -204,6 +206,10 @@ contains
 
           do n=nlevs,1,-1
 
+             nsub = int(dx(n,1)/dr(nlevs)) + 1  ! This MUST match the nsub in average_3d_sphr().
+
+             avasc = layout_aveassoc(phi(n)%la, nsub, phi(n)%nodal, dx(n,:), center, dr(nlevs))
+
              do i = 1, phi(n)%nboxes
                 if ( multifab_remote(phi(n), i) ) cycle
                 pp => dataptr(phi(n), i)
@@ -211,11 +217,11 @@ contains
                 hi =  upb(get_box(phi(n), i))
                 ncell_grid(n,:) = ZERO
                 if (n .eq. nlevs) then
-                   call average_3d_sphr(n,nlevs,pp(:,:,:,:),phisum_proc(n,:,:),lo,hi,ng, &
+                   call average_3d_sphr(n,nlevs,pp(:,:,:,:),phisum_proc(n,:,:),avasc%fbs(i),lo,hi,ng, &
                                         dx(n,:),ncell_grid(n,:),comp,ncomp,mla)
                 else
                    mp => dataptr(mla%mask(n), i)
-                   call average_3d_sphr(n,nlevs,pp(:,:,:,:),phisum_proc(n,:,:),lo,hi,ng, &
+                   call average_3d_sphr(n,nlevs,pp(:,:,:,:),phisum_proc(n,:,:),avasc%fbs(i),lo,hi,ng, &
                                         dx(n,:),ncell_grid(n,:),comp,ncomp,mla,mp(:,:,:,1))
                 end if
                 
@@ -398,92 +404,53 @@ contains
 
   end subroutine compute_phipert_3d
 
-  subroutine average_3d_sphr(n,nlevs,phi,phibar,lo,hi,ng,dx,ncell,start_comp,n_comp,mla,mask)
+  subroutine average_3d_sphr(n,nlevs,phi,phibar,avfab,lo,hi,ng,dx,ncell,s_comp,n_comp,mla,mask)
 
     use geometry, only: spherical, dr, center, nr, base_cc_loc
     use ml_layout_module
     use bl_constants_module
 
     integer         , intent(in   ) :: n, nlevs
-    integer         , intent(in   ) :: lo(:), hi(:), ng, start_comp, n_comp
+    integer         , intent(in   ) :: lo(:), hi(:), ng, s_comp, n_comp
     real (kind=dp_t), intent(in   ) :: phi(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
+    type(avefab)    , intent(in   ) :: avfab
     real (kind=dp_t), intent(inout) :: phibar(0:,:)
     real (kind=dp_t), intent(in   ) :: dx(:)
     real (kind=dp_t), intent(inout) :: ncell(0:)
     type(ml_layout) , intent(in   ) :: mla
     logical         , intent(in   ), optional :: mask(lo(1):,lo(2):,lo(3):)
     
-    ! Local variables
-    integer                       :: i, j, k, comp, index
-    integer                       :: ii, jj, kk
-    real (kind=dp_t)              :: radius
-    real (kind=dp_t)              :: xx, yy, zz
-    real (kind=dp_t)              :: xmin, ymin, zmin
-    real (kind=dp_t)              :: cell_weight
-    integer                       :: nsub
-    logical                       :: cell_valid
-
-    ! compute nsub such that we are always guaranteed to fill each of
-    ! the base state radial bins
+    integer          :: i, j, k, l, comp, idx, cnt, nsub
+    real (kind=dp_t) :: cell_weight
+    logical          :: cell_valid
+    !
+    ! Compute nsub such that we are always guaranteed to fill each of
+    ! the base state radial bins.
+    !
     nsub = int(dx(1)/dr(nlevs)) + 1
 
     cell_weight = 1.d0 / nsub**3
     do i=2,n
        cell_weight = cell_weight / (mla%mba%rr(i-1,1))**3
     end do
-    
-    do k = lo(3),hi(3)
-       zmin = dble(k)*dx(3) - center(3)
-       
-       do j = lo(2),hi(2)
-          ymin = dble(j)*dx(2) - center(2)
-          
-          do i = lo(1),hi(1)
-             xmin = dble(i)*dx(1) - center(1)
-             
-             cell_valid = .true.
 
+    do k = lo(3),hi(3)
+       do j = lo(2),hi(2)
+          do i = lo(1),hi(1)
+             cell_valid = .true.
              if ( present(mask) ) then
                 if ( (.not. mask(i,j,k)) ) cell_valid = .false.
              end if
-                
              if (cell_valid) then
-
-                do kk = 0, nsub-1
-                   zz = zmin + (dble(kk) + HALF)*dx(3)/nsub
-
-                   do jj = 0, nsub-1
-                      yy = ymin + (dble(jj) + HALF)*dx(2)/nsub
-
-                      do ii = 0, nsub-1
-                         xx = xmin + (dble(ii) + HALF)*dx(1)/nsub
-
-                         radius = sqrt(xx**2 + yy**2 + zz**2)
-                         index = radius / dr(nlevs)
-
-                         if ( .false. ) then
-                            if (index .lt. 0 .or. index .gt. nr(nlevs)-1) then
-                               print *,'RADIUS ',radius
-                               print *,'BOGUS INDEX IN AVERAGE ',index
-                               print *,'NOT IN RANGE 0 TO ',nr(nlevs)-1
-                               print *,'I J K ',i,j,k
-                               call bl_error('average_3d_sphr')
-                            end if
-                         end if
-
-                         do comp = start_comp,start_comp+n_comp-1
-                            phibar(index,comp) = &
-                                 phibar(index,comp) + cell_weight*phi(i,j,k,comp)
-                         end do
-
-                         ncell(index) = ncell(index) + cell_weight
-
-                      enddo
-                   enddo
-                enddo
-
+                do l = 1, size(avfab%p(i,j,k)%v,dim=1)
+                   idx = avfab%p(i,j,k)%v(l,1)
+                   cnt = avfab%p(i,j,k)%v(l,2)
+                   do comp = s_comp,s_comp+n_comp-1
+                      phibar(idx,comp) = phibar(idx,comp) + cnt*cell_weight*phi(i,j,k,comp)
+                   end do
+                   ncell(idx) = ncell(idx) + cnt*cell_weight
+                end do
              end if
-             
           end do
        end do
     end do
