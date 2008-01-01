@@ -807,7 +807,7 @@ contains
     ! Note: put this here to minimize asymmetries - ASA
     eps = 1.d-12
 
-    bottom_solver = 2
+    bottom_solver = 1
     min_width = 2
 
     ! Note: put this here for robustness
