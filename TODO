@@ -11,6 +11,5 @@
    to anelastic_cutoff), and understand what values of this give a valid
    basestate expansion.
 
--- remove input_flag from the EOS module
-
--- change all use probin_module lines to have ONLY
+-- fix restart for test_smallscale -- the inflow boundary is not set
+   right at a restart
