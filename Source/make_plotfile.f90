@@ -83,7 +83,7 @@ contains
 
   end subroutine get_plot_names
 
-  subroutine make_plotfile(dirname,mla,u,s,gp,rho_omegadot,Source,sponge, &
+  subroutine make_plotfile(dirname,mla,u,s,gpres,rho_omegadot,Source,sponge, &
                            mba,plot_names,time,dx,the_bc_tower,s0,p0,plot_spec,plot_trac)
 
     use bl_prof_module
@@ -98,7 +98,7 @@ contains
     type(ml_layout)  , intent(in   ) :: mla
     type(multifab)   , intent(inout) :: u(:)
     type(multifab)   , intent(inout) :: s(:)
-    type(multifab)   , intent(in   ) :: gp(:)
+    type(multifab)   , intent(in   ) :: gpres(:)
     type(multifab)   , intent(in   ) :: rho_omegadot(:)
     type(multifab)   , intent(in   ) :: Source(:)
     type(multifab)   , intent(in   ) :: sponge(:)
@@ -197,7 +197,7 @@ contains
     do n = 1,nlevs
 
        ! PRESSURE GRADIENT
-       call multifab_copy_c(plotdata(n),icomp_gp,gp(n),1,dm)
+       call multifab_copy_c(plotdata(n),icomp_gp,gpres(n),1,dm)
 
     end do
 

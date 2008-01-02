@@ -831,7 +831,7 @@ contains
       real(kind=dp_t), intent(in   ) :: dx(:)
       integer        , intent(in   ) :: press_bc(:,:)
 
-      real(kind=dp_t) :: gpx,gpy
+      real(kind=dp_t) :: gphix,gphiy
       integer :: i,j,nx,ny
 
       nx = size(phi,dim=1) - 2
@@ -876,15 +876,15 @@ contains
 
       do j = 0,ny-1
          do i = 0,nx
-            gpx = (phi(i,j) - phi(i-1,j)) / dx(1)
-            umac(i,j) = umac(i,j) - beta(i,j,1)*gpx
+            gphix = (phi(i,j) - phi(i-1,j)) / dx(1)
+            umac(i,j) = umac(i,j) - beta(i,j,1)*gphix
          end do
       end do
 
       do i = 0,nx-1
          do j = 0,ny
-            gpy = (phi(i,j) - phi(i,j-1)) / dx(2)
-            vmac(i,j) = vmac(i,j) - beta(i,j,2)*gpy
+            gphiy = (phi(i,j) - phi(i,j-1)) / dx(2)
+            vmac(i,j) = vmac(i,j) - beta(i,j,2)*gphiy
          end do
       end do
 
@@ -907,7 +907,7 @@ contains
       real(kind=dp_t), intent(in   ) :: dx(:)
       integer        , intent(in   ) :: press_bc(:,:)
 
-      real(kind=dp_t) :: gpx,gpy
+      real(kind=dp_t) :: gphix,gphiy
       integer :: i,j,nx,ny
 
       nx = size(phi,dim=1) - 2
@@ -954,8 +954,8 @@ contains
          umac( 0,j) = umac( 0,j) - lo_x_flx(1,j) * dx(1)
          umac(nx,j) = umac(nx,j) + hi_x_flx(1,j) * dx(1)
          do i = 1,nx-1
-            gpx = (phi(i,j) - phi(i-1,j)) / dx(1)
-            umac(i,j) = umac(i,j) - beta(i,j,1)*gpx
+            gphix = (phi(i,j) - phi(i-1,j)) / dx(1)
+            umac(i,j) = umac(i,j) - beta(i,j,1)*gphix
          end do
       end do
 
@@ -964,8 +964,8 @@ contains
          vmac(i, 0) = vmac(i, 0) - lo_y_flx(i,1) * dx(2)
          vmac(i,ny) = vmac(i,ny) + hi_y_flx(i,1) * dx(2)
          do j = 1,ny-1
-            gpy = (phi(i,j) - phi(i,j-1)) / dx(2)
-            vmac(i,j) = vmac(i,j) - beta(i,j,2)*gpy
+            gphiy = (phi(i,j) - phi(i,j-1)) / dx(2)
+            vmac(i,j) = vmac(i,j) - beta(i,j,2)*gphiy
          end do
       end do
 
@@ -987,7 +987,7 @@ contains
       real(kind=dp_t), intent(in   ) :: dx(:)
       integer        , intent(in   ) :: press_bc(:,:)
 
-      real(kind=dp_t) :: gpx,gpy,gpz
+      real(kind=dp_t) :: gphix,gphiy,gphiz
       integer :: i,j,k,nx,ny,nz
 
       nx = size(phi,dim=1) - 2
@@ -1076,8 +1076,8 @@ contains
       do k = 0,nz-1
          do j = 0,ny-1
             do i = 0,nx
-               gpx = (phi(i,j,k) - phi(i-1,j,k)) / dx(1)
-               umac(i,j,k) = umac(i,j,k) - beta(i,j,k,1)*gpx
+               gphix = (phi(i,j,k) - phi(i-1,j,k)) / dx(1)
+               umac(i,j,k) = umac(i,j,k) - beta(i,j,k,1)*gphix
             end do
          end do
       end do
@@ -1085,8 +1085,8 @@ contains
       do k = 0,nz-1
          do j = 0,ny
             do i = 0,nx-1
-               gpy = (phi(i,j,k) - phi(i,j-1,k)) / dx(2)
-               vmac(i,j,k) = vmac(i,j,k) - beta(i,j,k,2)*gpy
+               gphiy = (phi(i,j,k) - phi(i,j-1,k)) / dx(2)
+               vmac(i,j,k) = vmac(i,j,k) - beta(i,j,k,2)*gphiy
             end do
          end do
       end do
@@ -1094,8 +1094,8 @@ contains
       do k = 0,nz
          do j = 0,ny-1
             do i = 0,nx-1
-               gpz = (phi(i,j,k) - phi(i,j,k-1)) / dx(3)
-               wmac(i,j,k) = wmac(i,j,k) - beta(i,j,k,3)*gpz
+               gphiz = (phi(i,j,k) - phi(i,j,k-1)) / dx(3)
+               wmac(i,j,k) = wmac(i,j,k) - beta(i,j,k,3)*gphiz
             end do
          end do
       end do
@@ -1123,7 +1123,7 @@ contains
       real(kind=dp_t), intent(in   ) :: dx(:)
       integer        , intent(in   ) :: press_bc(:,:)
 
-      real(kind=dp_t) :: gpx,gpy,gpz
+      real(kind=dp_t) :: gphix,gphiy,gphiz
       integer :: i,j,k,nx,ny,nz
 
       nx = size(phi,dim=1) - 2
@@ -1214,8 +1214,8 @@ contains
             umac( 0,j,k) = umac( 0,j,k) - lo_x_flx(1,j,k) * dx(1)
             umac(nx,j,k) = umac(nx,j,k) + hi_x_flx(1,j,k) * dx(1)
             do i = 1,nx-1
-               gpx = (phi(i,j,k) - phi(i-1,j,k)) / dx(1)
-               umac(i,j,k) = umac(i,j,k) - beta(i,j,k,1)*gpx
+               gphix = (phi(i,j,k) - phi(i-1,j,k)) / dx(1)
+               umac(i,j,k) = umac(i,j,k) - beta(i,j,k,1)*gphix
             end do
          end do
       end do
@@ -1225,8 +1225,8 @@ contains
             vmac(i, 0,k) = vmac(i, 0,k) - lo_y_flx(i,1,k) * dx(2)
             vmac(i,ny,k) = vmac(i,ny,k) + hi_y_flx(i,1,k) * dx(2)
             do j = 1,ny-1
-               gpy = (phi(i,j,k) - phi(i,j-1,k)) / dx(2)
-               vmac(i,j,k) = vmac(i,j,k) - beta(i,j,k,2)*gpy
+               gphiy = (phi(i,j,k) - phi(i,j-1,k)) / dx(2)
+               vmac(i,j,k) = vmac(i,j,k) - beta(i,j,k,2)*gphiy
             end do
          end do
       end do
@@ -1236,8 +1236,8 @@ contains
             wmac(i,j, 0) = wmac(i,j, 0) - lo_z_flx(i,j,1) * dx(3)
             wmac(i,j,nz) = wmac(i,j,nz) + hi_z_flx(i,j,1) * dx(3)
             do k = 1,nz-1
-               gpz = (phi(i,j,k) - phi(i,j,k-1)) / dx(3)
-               wmac(i,j,k) = wmac(i,j,k) - beta(i,j,k,3)*gpz
+               gphiz = (phi(i,j,k) - phi(i,j,k-1)) / dx(3)
+               wmac(i,j,k) = wmac(i,j,k) - beta(i,j,k,3)*gphiz
             end do
          end do
       end do

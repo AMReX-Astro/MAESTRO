@@ -9,7 +9,7 @@ module advance_timestep_module
 contains
     
   subroutine advance_timestep(init_mode,mla,uold,sold,s1,s2,unew,snew, &
-                              gp,p,scal_force,normal,s0_old,s0_1,s0_2, &
+                              gpres,pres,scal_force,normal,s0_old,s0_1,s0_2, &
                               s0_new,p0_old,p0_1,p0_2,p0_new,gam1,w0,eta,rho_omegadot1, &
                               rho_omegadot2,rho_Hext,div_coeff_old,div_coeff_new, &
                               grav_cell_old,dx,time,dt,dtold,the_bc_tower,anelastic_cutoff, &
@@ -60,8 +60,8 @@ contains
     type(multifab),  intent(inout) :: s2(:)
     type(multifab),  intent(inout) :: unew(:)
     type(multifab),  intent(inout) :: snew(:)
-    type(multifab),  intent(inout) :: gp(:)
-    type(multifab),  intent(inout) :: p(:)
+    type(multifab),  intent(inout) :: gpres(:)
+    type(multifab),  intent(inout) :: pres(:)
     type(multifab),  intent(inout) :: scal_force(:)
     type(multifab),  intent(in   ) :: normal(:)
     real(dp_t)    ,  intent(inout) :: s0_old(:,0:,:)
@@ -256,7 +256,7 @@ contains
        end do
     end do
     
-    call advance_premac(nlevs,uold,sold,umac,uedge,utrans,gp,normal,w0,w0_cart_vec, &
+    call advance_premac(nlevs,uold,sold,umac,uedge,utrans,gpres,normal,w0,w0_cart_vec, &
                         s0_old,grav_cell_old,dx,dt,the_bc_tower%bc_tower_array,mla)
     
     call make_macrhs(nlevs,macrhs,Source_nph,gamma1_term,Sbar(:,:,1),div_coeff_old,dx)
@@ -462,7 +462,7 @@ contains
           write(6,*) '<<< STEP  7 : create MAC velocities >>> '
        end if
        
-       call advance_premac(nlevs,uold,sold,umac,uedge,utrans,gp,normal,w0, &
+       call advance_premac(nlevs,uold,sold,umac,uedge,utrans,gpres,normal,w0, &
                            w0_cart_vec,s0_old,grav_cell_old,dx,dt, &
                            the_bc_tower%bc_tower_array,mla)
        
@@ -623,7 +623,7 @@ contains
     call make_at_halftime(nlevs,rhohalf,sold,snew,rho_comp,1,dx, &
                           the_bc_tower%bc_tower_array,mla)
     
-    call velocity_advance(nlevs,mla,uold,unew,sold,rhohalf,umac,uedge,utrans,gp, &
+    call velocity_advance(nlevs,mla,uold,unew,sold,rhohalf,umac,uedge,utrans,gpres, &
                           normal,w0,w0_cart_vec,w0_force,w0_force_cart_vec,s0_old,s0_nph, &
                           grav_cell_old,grav_cell_nph,dx,dt, &
                           the_bc_tower%bc_tower_array,sponge,do_sponge,verbose)
@@ -664,11 +664,11 @@ contains
     if (spherical .eq. 1) then
        call fill_3d_data_wrapper(nlevs,div_coeff_3d,div_coeff_nph,dx)
        eps_in = 1.d-12
-       call hgproject(proj_type, mla, unew, uold, rhohalf, p, gp, dx, dt, &
+       call hgproject(proj_type, mla, unew, uold, rhohalf, pres, gpres, dx, dt, &
                       the_bc_tower, verbose, mg_verbose, cg_verbose, press_comp, &
                       hgrhs, div_coeff_3d=div_coeff_3d, eps_in = eps_in)
     else
-       call hgproject(proj_type, mla, unew, uold, rhohalf, p, gp, dx, dt, &
+       call hgproject(proj_type, mla, unew, uold, rhohalf, pres, gpres, dx, dt, &
                       the_bc_tower, verbose, mg_verbose, cg_verbose, press_comp, &
                       hgrhs, div_coeff_1d=div_coeff_nph)
     end if
