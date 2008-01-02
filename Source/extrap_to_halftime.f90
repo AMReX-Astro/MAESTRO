@@ -65,8 +65,6 @@ contains
 
     use bl_constants_module
 
-    implicit none
-
     integer         , intent(in ) :: lo(:), hi(:), ng_h, ng_o
     real (kind=dp_t), intent(out) :: Source_nph(lo(1)-ng_h:,lo(2)-ng_h:)
     real (kind=dp_t), intent(in ) :: dSdt(lo(1)-ng_o:,lo(2)-ng_o:)
@@ -88,8 +86,6 @@ contains
   subroutine extrap_to_halftime_3d(Source_nph,dSdt,Source_old, &
                                    dt,lo,hi,ng_h,ng_o)
     use bl_constants_module
-
-    implicit none
 
     integer         , intent(in ) :: lo(:), hi(:), ng_h, ng_o
     real (kind=dp_t), intent(out) :: Source_nph(lo(1)-ng_h:,lo(2)-ng_h:,lo(3)-ng_h:)

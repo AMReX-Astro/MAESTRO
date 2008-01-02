@@ -89,8 +89,6 @@ contains
      use geometry, only: spherical
      use fill_3d_module
 
-      implicit none
-
       integer         , intent(in   ) :: n,lo(:), hi(:)
       real (kind=dp_t), intent(  out) :: rhs(lo(1):,lo(2):,lo(3):)  
       real (kind=dp_t), intent(in   ) :: Source(lo(1):,lo(2):,lo(3):)  

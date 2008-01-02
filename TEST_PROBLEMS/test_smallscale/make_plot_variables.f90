@@ -49,8 +49,6 @@ contains
     use variables
     use probin_module, ONLY: use_big_h
 
-    implicit none
-
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(  out) :: enthalpy(lo(1):,lo(2):)  
     real (kind = dp_t), intent(in   ) ::    s(lo(1)-ng:,lo(2)-ng:,:)
@@ -82,8 +80,6 @@ contains
     use network
     use variables
     use probin_module, ONLY: use_big_h
-
-    implicit none
 
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(  out) :: enthalpy(lo(1):,lo(2):, lo(3):)  
@@ -165,7 +161,6 @@ contains
     use probin_module, ONLY: use_big_h
     use bl_constants_module
 
-    implicit none
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(  out) ::      T(lo(1)   :,lo(2):)  
     real (kind = dp_t), intent(  out) :: deltaP(lo(1)   :,lo(2):)  
@@ -227,7 +222,6 @@ contains
     use eos_module
     use probin_module, ONLY: use_big_h
 
-    implicit none
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(  out) ::      T(lo(1)   :,lo(2):   ,lo(3):     )  
     real (kind = dp_t), intent(  out) :: deltaP(lo(1)   :,lo(2):   ,lo(3):     )  
@@ -291,7 +285,6 @@ contains
     use fill_3d_module
     use probin_module, ONLY: use_big_h
 
-    implicit none
     integer, intent(in) :: n, lo(:), hi(:), ng
     real (kind = dp_t), intent(  out) ::      T(lo(1)   :,lo(2):   ,lo(3):     )  
     real (kind = dp_t), intent(  out) :: deltaP(lo(1)   :,lo(2):   ,lo(3):     )  
@@ -512,8 +505,6 @@ contains
     use variables
     use eos_module
 
-    implicit none
-
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind=dp_t), intent(  out) ::          t(lo(1):,lo(2):,lo(3):)  
     real (kind=dp_t), intent(  out) ::      tpert(lo(1):,lo(2):,lo(3):)  
@@ -612,7 +603,6 @@ contains
     use variables
     use eos_module
     use fill_3d_module
-    implicit none
 
     integer, intent(in)             :: n,lo(:),hi(:),ng
     real (kind=dp_t), intent(  out) ::          t(lo(1):,lo(2):,lo(3):)  
@@ -761,7 +751,6 @@ contains
 
     use network
     use variables
-    implicit none
 
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(  out) ::    X(lo(1)   :,lo(2)   :,:)  
@@ -785,7 +774,6 @@ contains
 
     use network
     use variables
-    implicit none
 
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(  out) ::    X(lo(1)   :,lo(2)   :,lo(3)   :,:)  
@@ -854,7 +842,6 @@ contains
     use network
     use variables
     use bl_constants_module
-    implicit none
 
     integer, intent(in) :: lo(:), hi(:), ng_s, ng_o
     real (kind = dp_t), intent(  out) :: omegadot(lo(1):,lo(2):,:)
@@ -883,7 +870,6 @@ contains
     use network
     use variables
     use bl_constants_module
-    implicit none
 
     integer, intent(in) :: lo(:), hi(:), ng_s, ng_o
     real (kind = dp_t), intent(  out) :: omegadot(lo(1):,lo(2):,lo(3):,:)  
@@ -939,7 +925,6 @@ contains
 
   subroutine makedeltaT_2d (dT,tfromH,tfromrho,lo,hi)
 
-    implicit none
     integer, intent(in) :: lo(:), hi(:)
     real (kind = dp_t), intent(  out) ::       dT(lo(1):,lo(2):)
     real (kind = dp_t), intent(in   ) ::   tfromH(lo(1):,lo(2):)
@@ -958,7 +943,6 @@ contains
 
   subroutine makedeltaT_3d (dT,tfromH,tfromrho,lo,hi)
 
-    implicit none
     integer, intent(in) :: lo(:), hi(:)
     real (kind = dp_t), intent(  out) ::       dT(lo(1):,lo(2):,lo(3):)
     real (kind = dp_t), intent(in   ) ::   tfromH(lo(1):,lo(2):,lo(3):)

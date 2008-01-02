@@ -21,8 +21,6 @@ contains
     use multifab_fill_ghost_module
     use multifab_physbc_module
 
-    implicit none
-
     integer           , intent(in   ) :: nlevs
     type(multifab)    , intent(in   ) :: uold(:)
     type(multifab)    , intent(inout) :: unew(:)

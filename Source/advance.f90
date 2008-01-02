@@ -1,6 +1,8 @@
 module advance_timestep_module
 
   use probin_module
+    
+  implicit none
 
   private
 
@@ -49,8 +51,6 @@ contains
     use fill_3d_module
     use cell_to_edge_module
     use define_bc_module
-    
-    implicit none
     
     logical,         intent(in   ) :: init_mode
     type(ml_layout), intent(inout) :: mla

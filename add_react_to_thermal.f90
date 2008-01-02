@@ -92,8 +92,6 @@ contains
     use bl_constants_module
     use variables, only: temp_comp, rho_comp, spec_comp
     
-    implicit none
-    
     integer         , intent(in   ) :: lo(:),hi(:)
     real (kind=dp_t), intent(inout) :: thermal(lo(1)-1:,lo(2)-1:)
     real (kind=dp_t), intent(in   ) :: rho_omegadot(lo(1):,lo(2):,:)
@@ -141,8 +139,6 @@ contains
     use eos_module
     use bl_constants_module
     use variables, only: spec_comp, rho_comp, temp_comp
-    
-    implicit none
     
     integer         , intent(in   ) :: lo(:),hi(:)
     real (kind=dp_t), intent(inout) :: thermal(lo(1)-1:,lo(2)-1:,lo(3)-1:)

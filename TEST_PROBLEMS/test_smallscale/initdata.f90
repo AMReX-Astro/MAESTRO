@@ -113,8 +113,6 @@ contains
 
   subroutine initscalardata_3d(n,s,lo,hi,ng,dx,perturb_model,prob_lo,prob_hi,s0)
 
-    implicit none
-
     integer, intent(in) :: n, lo(:), hi(:), ng
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
     real (kind = dp_t), intent(in ) :: dx(:)
@@ -245,8 +243,6 @@ contains
   end subroutine initveldata_2d
 
   subroutine initveldata_3d(u,lo,hi,ng,dx,prob_lo,prob_hi,s0)
-
-    implicit none
 
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(out) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  

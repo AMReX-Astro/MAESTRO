@@ -138,8 +138,6 @@ contains
 
      use bl_constants_module
 
-     implicit none
-     
      integer         , intent(in   ) :: lo(:),hi(:),ng_half,ng_old
      real (kind=dp_t), intent(  out) :: phihalf(lo(1)-ng_half:,lo(2)-ng_half:)
      real (kind=dp_t), intent(in   ) :: phiold(lo(1)-ng_old:,lo(2)-ng_old:)
@@ -161,8 +159,6 @@ contains
    subroutine make_at_halftime_3d(phihalf,phiold,phinew,lo,hi,ng_half,ng_old)
 
      use bl_constants_module
-     
-     implicit none
      
      integer         , intent(in   ) :: lo(:),hi(:),ng_half,ng_old
      real (kind=dp_t), intent(  out) :: phihalf(lo(1)-ng_half:,lo(2)-ng_half:,lo(3)-ng_half:)
