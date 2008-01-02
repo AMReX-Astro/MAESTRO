@@ -8,7 +8,7 @@ module advance_timestep_module
 
 contains
     
-  subroutine advance_timestep(init_mode,mla,uold,sold,s1,s2,unew,snew,umac,uedge, &
+  subroutine advance_timestep(init_mode,mla,uold,sold,s1,s2,unew,snew,uedge, &
                               utrans,gp,p,scal_force,normal,s0_old,s0_1,s0_2, &
                               s0_new,p0_old,p0_1,p0_2,p0_new,gam1,w0,eta,rho_omegadot1, &
                               rho_omegadot2,rho_Hext,div_coeff_old,div_coeff_new, &
@@ -60,7 +60,6 @@ contains
     type(multifab),  intent(inout) :: s2(:)
     type(multifab),  intent(inout) :: unew(:)
     type(multifab),  intent(inout) :: snew(:)
-    type(multifab),  intent(inout) :: umac(:,:)
     type(multifab),  intent(inout) :: uedge(:,:)
     type(multifab),  intent(inout) :: utrans(:,:)
     type(multifab),  intent(inout) :: gp(:)
@@ -108,6 +107,9 @@ contains
     type(multifab), allocatable :: thermal(:)
     type(multifab), allocatable :: s2star(:)
     type(multifab), allocatable :: rho_omegadot2_hold(:)
+    type(multifab), allocatable :: umac(:,:)
+    
+    logical, allocatable :: umac_nodal_flag(:)
 
     real(dp_t)    , allocatable :: grav_cell_nph(:,:)
     real(dp_t)    , allocatable :: grav_cell_new(:,:)
@@ -126,7 +128,7 @@ contains
     type(multifab) , allocatable :: div_coeff_3d(:)
 
     real(dp_t) :: halfdt,eps_in
-    integer    :: j,n,dm,nlevs,ng_cell,proj_type
+    integer    :: j,n,dm,comp,nlevs,ng_cell,proj_type
     logical    :: nodal(mla%dim)
 
     type(bl_prof_timer), save :: bpt
@@ -135,6 +137,8 @@ contains
 
     dm = mla%dim
     nlevs = size(uold)
+
+    allocate(umac_nodal_flag(dm))
 
     allocate(           rhohalf(nlevs))
     allocate(       w0_cart_vec(nlevs))
@@ -148,7 +152,7 @@ contains
     allocate(rho_omegadot2_hold(nlevs))
     if (spherical.eq.1) then
        allocate(div_coeff_3d(nlevs))
-    endif
+    end if
 
     allocate(   grav_cell_nph(nlevs,0:nr(nlevs)-1))
     allocate(   grav_cell_new(nlevs,0:nr(nlevs)-1))
@@ -175,7 +179,7 @@ contains
     ! Set w0_old to w0 from last time step.
     w0_old = w0
 
-    do n = 1, nlevs
+    do n=1,nlevs
        call multifab_build(macrhs(n),             mla%la(n), 1    , 0)
        call multifab_build(macphi(n),             mla%la(n), 1    , 1)
        call multifab_build(hgrhs_old(n),          mla%la(n), 1    , 0, nodal)
@@ -201,7 +205,7 @@ contains
        if (spherical.eq.1) then
           call multifab_build(div_coeff_3d(n), mla%la(nlevs), 1, 1)
           call setval(div_coeff_3d(n), ZERO, all=.true.)
-       endif
+       end if
     end do
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -217,7 +221,7 @@ contains
        call make_S_at_halftime(nlevs,Source_nph,Source_old,Source_new)
     else
        call extrap_to_halftime(nlevs,Source_nph,dSdt,Source_old,dt)
-    endif
+    end if
     
     call average(mla,Source_nph,Sbar,dx,1,1)
     
@@ -236,6 +240,17 @@ contains
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
        write(6,*) '<<< STEP  2 : create MAC velocities>>> '
     end if
+
+    allocate(umac(nlevs,dm))
+
+    do n=1,nlevs
+       do comp=1,dm
+          umac_nodal_flag = .false.
+          umac_nodal_flag(comp) = .true.
+          call multifab_build(umac(n,comp), mla%la(n), 1, 1, nodal = umac_nodal_flag)
+          call setval( umac(n,comp),ZERO, all=.true.)
+       end do
+    end do
     
     call advance_premac(nlevs,uold,sold,umac,uedge,utrans,gp,normal,w0,w0_cart_vec, &
                         s0_old,grav_cell_old,dx,dt,the_bc_tower%bc_tower_array,mla)
@@ -249,12 +264,12 @@ contains
                        verbose,mg_verbose,cg_verbose,press_comp, &
                        macrhs,div_coeff_3d=div_coeff_3d)
     else
-       do n = 1, nlevs
+       do n=1,nlevs
           call cell_to_edge(n,div_coeff_old(n,:),div_coeff_edge(n,:))
-       enddo
+       end do
        call macproject(mla,umac,macphi,sold,dx,the_bc_tower, &
-            verbose,mg_verbose,cg_verbose,press_comp, &
-            macrhs,div_coeff_1d=div_coeff_old,div_coeff_half_1d=div_coeff_edge)
+                       verbose,mg_verbose,cg_verbose,press_comp, &
+                       macrhs,div_coeff_1d=div_coeff_old,div_coeff_half_1d=div_coeff_edge)
     end if
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -283,7 +298,7 @@ contains
        call make_grav_cell(n,grav_cell_new(n,:),s0_1(n,:,rho_comp))
        call make_div_coeff(n,div_coeff_new(n,:),s0_1(n,:,rho_comp),p0_1(n,:), &
                            gam1(n,:),grav_cell_new(n,:),anelastic_cutoff)
-    enddo
+    end do
     
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -307,10 +322,10 @@ contains
        call make_explicit_thermal(mla,dx,thermal,s1,p0_1,mg_verbose,cg_verbose, &
                                   the_bc_tower,temp_diffusion_formulation)
     else
-       do n = 1,nlevs
+       do n=1,nlevs
           call setval(thermal(n),ZERO,all=.true.)
        end do
-    endif
+    end if
     
     ! thermal is the temperature forcing if we use the temperature godunov predictor
     ! so we add the reaction terms to thermal
@@ -320,10 +335,10 @@ contains
     else
        call add_react_to_thermal(nlevs,thermal,rho_omegadot2,s1, &
                                  the_bc_tower%bc_tower_array,mla,dx)
-       do n=1, nlevs
+       do n=1,nlevs
           call multifab_copy_c(rho_omegadot2_hold(n),1,rho_omegadot2(n),1,3,0)
-       enddo
-    endif
+       end do
+    end if
     
     call scalar_advance(nlevs,mla,1,uold,s1,s2,thermal,umac,w0,w0_cart_vec,eta, &
                         utrans,scal_force,normal,s0_1,s0_2, &
@@ -351,9 +366,9 @@ contains
           ! coefficients in the call to thermal_conduct_full_alg
           do n=1,nlevs
              call multifab_copy_c(s2star(n),1,s2(n),1,nscal,ng_cell)
-          enddo
-       endif
-    endif
+          end do
+       end if
+    end if
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 5 -- react the full state and then base state through dt/2
@@ -381,25 +396,25 @@ contains
        call make_grav_cell(n,grav_cell_new(n,:),s0_new(n,:,rho_comp))
        call make_div_coeff(n,div_coeff_new(n,:),s0_new(n,:,rho_comp),p0_new(n,:), &
                            gam1(n,:),grav_cell_new(n,:),anelastic_cutoff)
-    enddo
+    end do
     
     ! Define base state at half time for use in velocity advance!
     do n=1,nlevs
        do j=0,nr(n)-1
           s0_nph(n,j,:) = HALF * (s0_old(n,j,:) + s0_new(n,j,:))
-       enddo
-    enddo
+       end do
+    end do
     
     do n=1,nlevs
        call make_grav_cell(n,grav_cell_nph(n,:),s0_nph(n,:,rho_comp))
-    enddo
+    end do
     
     ! Define beta at half time !
     do n=1,nlevs
        do j=0,nr(n)-1
           div_coeff_nph(n,j) = HALF * (div_coeff_old(n,j) + div_coeff_new(n,j))
-       enddo
-    enddo
+       end do
+    end do
     
     if(.not. do_half_alg) then
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -414,17 +429,17 @@ contains
           call make_explicit_thermal(mla,dx,thermal,snew,p0_new,mg_verbose,cg_verbose, &
                                      the_bc_tower,temp_diffusion_formulation)
        else
-          do n = 1,nlevs
+          do n=1,nlevs
              call setval(thermal(n),ZERO)
           end do
-       endif
+       end if
        
        call make_S(nlevs,Source_new,gamma1_term,snew,rho_omegadot2,rho_Hext,thermal, &
                    s0_old(:,:,temp_comp),gam1,dx)
        
        call make_S_at_halftime(nlevs,Source_nph,Source_old,Source_new)
        
-       do n = 1, nlevs
+       do n=1,nlevs
           call average(mla,Source_nph,Sbar,dx,1,1)
        end do
        
@@ -450,7 +465,7 @@ contains
        call make_macrhs(nlevs,macrhs,Source_nph,gamma1_term,Sbar(:,:,1),div_coeff_nph,dx)
     
        ! Define rho at half time !
-       do n = 1, nlevs
+       do n=1,nlevs
           call multifab_build(rhohalf(n), mla%la(n), 1    , 1)
        end do
        call make_at_halftime(nlevs,rhohalf,sold,snew,rho_comp,1,dx, &
@@ -463,15 +478,15 @@ contains
                           verbose,mg_verbose,cg_verbose,&
                           press_comp,macrhs,div_coeff_3d=div_coeff_3d)
        else
-          do n = 1, nlevs
+          do n=1,nlevs
              call cell_to_edge(n,div_coeff_nph(n,:),div_coeff_edge(n,:))
-          enddo
+          end do
           call macproject(mla,umac,macphi,rhohalf,dx,the_bc_tower, &
                           verbose,mg_verbose,cg_verbose,&
                           press_comp,macrhs,div_coeff_1d=div_coeff_nph, &
                           div_coeff_half_1d=div_coeff_edge)
        end if
-       do n = 1, nlevs
+       do n=1,nlevs
           call multifab_destroy(rhohalf(n))
        end do
         
@@ -495,10 +510,10 @@ contains
           call make_explicit_thermal(mla,dx,thermal,s1,p0_1,mg_verbose,cg_verbose, &
                                      the_bc_tower,temp_diffusion_formulation)
        else
-          do n = 1,nlevs
+          do n=1,nlevs
              call setval(thermal(n),ZERO)
           end do
-       endif
+       end if
        
        ! thermal is the temperature forcing if we use the temperature godunov predictor
        ! so we add the reaction terms to thermal
@@ -508,7 +523,7 @@ contains
        else
           call add_react_to_thermal(nlevs,thermal,rho_omegadot2_hold,s1, &
                                     the_bc_tower%bc_tower_array,mla,dx)
-       endif
+       end if
        
        call scalar_advance(nlevs,mla,2,uold,s1,s2,thermal,umac,w0,w0_cart_vec,eta, &
                            utrans,scal_force,normal,s0_1,s0_2, &
@@ -527,7 +542,7 @@ contains
                                         s0_1(:,:,temp_comp),s0_2(:,:,temp_comp), &
                                         mg_verbose,cg_verbose,the_bc_tower)
           
-       endif
+       end if
        
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 9 -- react the full state and then base state through dt/2
@@ -555,10 +570,10 @@ contains
           call make_grav_cell(n,grav_cell_new(n,:),s0_new(n,:,rho_comp))
           call make_div_coeff(n,div_coeff_new(n,:),s0_new(n,:,rho_comp),p0_new(n,:), &
                               gam1(n,:),grav_cell_new(n,:),anelastic_cutoff)
-       enddo
+       end do
        
-       ! endif corresponding to .not. do_half_alg
-    endif
+       ! end if corresponding to .not. do_half_alg
+    end if
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 10 -- compute S^{n+1} for the final projection
@@ -572,10 +587,10 @@ contains
        call make_explicit_thermal(mla,dx,thermal,snew,p0_new,mg_verbose,cg_verbose, &
                                   the_bc_tower,temp_diffusion_formulation)
     else
-       do n = 1,nlevs
+       do n=1,nlevs
           call setval(thermal(n),ZERO)
        end do
-    endif
+    end if
     
     call make_S(nlevs,Source_new,gamma1_term,snew,rho_omegadot2,rho_Hext,thermal, &
                 s0_new(:,:,temp_comp),gam1,dx)
@@ -583,7 +598,7 @@ contains
     call average(mla,Source_new,Sbar,dx,1,1)
     
     ! define dSdt = (Source_new - Source_old) / dt
-    do n = 1,nlevs
+    do n=1,nlevs
        call multifab_copy(dSdt(n),Source_new(n))
        call multifab_sub_sub(dSdt(n),Source_old(n))
        call multifab_div_div_s(dSdt(n),dt)
@@ -598,7 +613,7 @@ contains
     end if
     
     ! Define rho at half time using the new rho from Step 8!
-    do n = 1, nlevs
+    do n=1,nlevs
        call multifab_build(rhohalf(n), mla%la(n), 1    , 1)
     end do
     call make_at_halftime(nlevs,rhohalf,sold,snew,rho_comp,1,dx, &
@@ -608,22 +623,30 @@ contains
                           normal,w0,w0_cart_vec,w0_force,w0_force_cart_vec,s0_old,s0_nph, &
                           grav_cell_old,grav_cell_nph,dx,dt, &
                           the_bc_tower%bc_tower_array,sponge,do_sponge,verbose)
+
+    do n=1,nlevs
+       do comp=1,dm
+          call destroy(umac(n,comp))
+       end do
+    end do
+
+    deallocate(umac)
     
     ! Define beta at half time using the div_coeff_new from step 9!
     do n=1,nlevs
        do j=0,nr(n)-1
           div_coeff_nph(n,j) = HALF * (div_coeff_old(n,j) + div_coeff_new(n,j))
        end do
-    enddo
+    end do
        
     ! Project the new velocity field.
     if (init_mode) then
        proj_type = pressure_iters
-       do n = 1, nlevs
+       do n=1,nlevs
           call multifab_copy(hgrhs_old(n),hgrhs(n))
-       enddo
+       end do
        call make_hgrhs(nlevs,hgrhs,Source_new,gamma1_term,Sbar(:,:,1),div_coeff_new,dx)
-       do n = 1, nlevs
+       do n=1,nlevs
           call multifab_sub_sub(hgrhs(n),hgrhs_old(n))
           call multifab_div_div_s(hgrhs(n),dt)
        end do
@@ -644,18 +667,18 @@ contains
                       hgrhs, div_coeff_1d=div_coeff_nph)
     end if
 
-    do n = 1, nlevs
+    do n=1,nlevs
        call multifab_destroy(rhohalf(n))
     end do
     
     ! If doing pressure iterations then put hgrhs_old into hgrhs to be returned to varden.
     if (init_mode) then
-       do n = 1,nlevs
+       do n=1,nlevs
           call multifab_copy(hgrhs(n),hgrhs_old(n))
        end do
     end if
     
-    do n = 1, nlevs
+    do n=1,nlevs
        call destroy(Source_nph(n))
        call destroy(macrhs(n))
        call destroy(macphi(n))
@@ -679,7 +702,7 @@ contains
          deallocate(div_coeff_3d)
     
     if (dm .eq. 3) then
-       do n = 1, nlevs
+       do n=1,nlevs
           call destroy(w0_cart_vec(n))
           call destroy(w0_force_cart_vec(n))
        end do
@@ -704,6 +727,8 @@ contains
     
     deallocate(lo)
     deallocate(hi)
+
+    deallocate(umac_nodal_flag)
 
     call destroy(bpt)
     
