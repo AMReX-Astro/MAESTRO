@@ -14,7 +14,7 @@ module scalar_advance_module
 contains
 
   subroutine scalar_advance(nlevs,mla,which_step,uold,sold,snew,thermal,umac,w0, &
-                            w0_cart_vec,eta,sflux,utrans,ext_scal_force,normal, &
+                            w0_cart_vec,eta,utrans,ext_scal_force,normal, &
                             s0_old,s0_new,p0_old,p0_new,dx,dt,the_bc_level,verbose)
 
     use bl_prof_module
@@ -47,7 +47,6 @@ contains
     real(kind=dp_t), intent(inout) :: w0(:,0:)
     type(multifab) , intent(in   ) :: w0_cart_vec(:)
     real(kind=dp_t), intent(inout) :: eta(:,0:,:)
-    type(multifab) , intent(inout) :: sflux(:,:)
     type(multifab) , intent(inout) :: utrans(:,:)
     type(multifab) , intent(inout) :: ext_scal_force(:)
     type(multifab) , intent(in   ) :: normal(:)
@@ -61,6 +60,7 @@ contains
 
     ! local
     type(multifab), allocatable :: sedge(:,:)
+    type(multifab), allocatable :: sflux(:,:)
     type(multifab), allocatable :: scal_force(:)
     type(multifab), allocatable :: s0_old_cart(:)
     type(multifab), allocatable :: s0_new_cart(:)
@@ -92,10 +92,12 @@ contains
     ng_cell = sold(1)%ng
     dm = sold(1)%dim
 
+    allocate(umac_nodal_flag(dm))
+
     do n = 1, nlevs
        call cell_to_edge_allcomps(n,s0_old(n,:,:),s0_edge_old(n,:,:))
        call cell_to_edge_allcomps(n,s0_new(n,:,:),s0_edge_new(n,:,:))
-    enddo
+    end do
 
     do n = 1, nlevs
        call build(scal_force(n),  ext_scal_force(n)%la, nscal, 1)
@@ -104,7 +106,7 @@ contains
        call setval(scal_force(n), ZERO,all=.true.)
        call setval(s0_old_cart(n),ZERO,all=.true.)
        call setval(s0_new_cart(n),ZERO,all=.true.)
-    enddo
+    end do
 
     !**************************************************************************
     !     Create scalar source term at time n for (rho X)_i and (rho H).  
@@ -122,11 +124,11 @@ contains
        do comp = spec_comp, spec_comp+nspec-1
           call fill_3d_data_wrapper(nlevs,s0_old_cart,s0_old(:,:,comp),dx,comp)
           call fill_3d_data_wrapper(nlevs,s0_new_cart,s0_new(:,:,comp),dx,comp)
-       enddo
+       end do
        do comp = trac_comp, trac_comp+ntrac-1
           call fill_3d_data_wrapper(nlevs,s0_old_cart,s0_old(:,:,comp),dx,comp)
           call fill_3d_data_wrapper(nlevs,s0_new_cart,s0_new(:,:,comp),dx,comp)
-       enddo
+       end do
     end if
 
     ! This can be uncommented if you wish to compute T
@@ -152,9 +154,9 @@ contains
         
        if(use_thermal_diffusion) then
           call add_thermal_to_force(nlevs,scal_force,thermal,the_bc_level,mla,dx)
-       endif
+       end if
 
-    endif
+    end if
       
     !**************************************************************************
     !     Add w0 to MAC velocities (trans velocities already have w0).
@@ -168,25 +170,20 @@ contains
 
     if (.not. predict_temp_at_edges) then
        call put_in_pert_form(nlevs,sold,s0_old,dx,rhoh_comp,1,.true.)
-    endif
+    end if
 
     call put_in_pert_form(nlevs,sold,s0_old,dx,spec_comp,nspec,.true.)
 
     allocate(sedge(nlevs,dm))
-    allocate(umac_nodal_flag(dm))
 
     do n=1,nlevs
        do comp = 1,dm
           umac_nodal_flag = .false.
           umac_nodal_flag(comp) = .true.
           call multifab_build( sedge(n,comp), mla%la(n), nscal, 0, nodal = umac_nodal_flag)
-       end do
-       do comp = 1,dm
           call setval( sedge(n,comp),ZERO, all=.true.)
        end do
     end do
-
-    deallocate(umac_nodal_flag)
 
     if (predict_temp_at_edges) then
        pred_comp = temp_comp
@@ -207,11 +204,11 @@ contains
     ! compute enthalpy edge states
     if(predict_temp_at_edges) then
        call makeRhoHfromT(nlevs,uold,sedge,s0_old,s0_edge_old,s0_new,s0_edge_new)
-    endif
+    end if
 
     if (.not. predict_temp_at_edges) then
        call put_in_pert_form(nlevs,sold,s0_old,dx,rhoh_comp,1,.false.)
-    endif
+    end if
     
     call put_in_pert_form(nlevs,sold,s0_old,dx,spec_comp,nspec,.false.)
 
@@ -234,6 +231,17 @@ contains
     !**************************************************************************
     !     Compute fluxes
     !**************************************************************************
+
+    allocate(sflux(nlevs,dm))
+
+    do n=1,nlevs
+       do comp = 1,dm
+          umac_nodal_flag = .false.
+          umac_nodal_flag(comp) = .true.
+          call multifab_build( sflux(n,comp), mla%la(n), nscal, 0, nodal = umac_nodal_flag)
+          call setval( sflux(n,comp),ZERO, all=.true.)
+       end do
+    end do
 
     ! compute enthalpy fluxes
     call mkflux(nlevs,sflux,sold,sedge,umac,w0,w0_cart_vec,s0_old,s0_edge_old, &
@@ -324,15 +332,16 @@ contains
 
     do n = 1, nlevs
        do comp = 1,dm
-          call destroy(sedge(n,comp))
+          call multifab_destroy(sedge(n,comp))
+          call multifab_destroy(sflux(n,comp))
        end do
     end do
 
-    deallocate(sedge)
+    deallocate(sedge,sflux)
 
     if(.not. use_thermal_diffusion) then
        call makeTfromRhoH(nlevs,snew,s0_new(:,:,temp_comp),mla,the_bc_level,dx)
-    endif
+    end if
 
     if (verbose .eq. 1) then
        do n=1,nlevs
@@ -349,9 +358,10 @@ contains
        call multifab_destroy(scal_force(n))
        call multifab_destroy(s0_old_cart(n))
        call multifab_destroy(s0_new_cart(n))
-    enddo
+    end do
 
     deallocate(s0_edge_old,s0_edge_new)
+    deallocate(umac_nodal_flag)
 
     call destroy(bpt)
 

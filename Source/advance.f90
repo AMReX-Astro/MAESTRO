@@ -9,7 +9,7 @@ module advance_timestep_module
 contains
     
   subroutine advance_timestep(init_mode,mla,uold,sold,s1,s2,unew,snew,umac,uedge, &
-                              utrans,sflux,gp,p,scal_force,normal,s0_old,s0_1,s0_2, &
+                              utrans,gp,p,scal_force,normal,s0_old,s0_1,s0_2, &
                               s0_new,p0_old,p0_1,p0_2,p0_new,gam1,w0,eta,rho_omegadot1, &
                               rho_omegadot2,rho_Hext,div_coeff_old,div_coeff_new, &
                               grav_cell_old,dx,time,dt,dtold,the_bc_tower,anelastic_cutoff, &
@@ -63,7 +63,6 @@ contains
     type(multifab),  intent(inout) :: umac(:,:)
     type(multifab),  intent(inout) :: uedge(:,:)
     type(multifab),  intent(inout) :: utrans(:,:)
-    type(multifab),  intent(inout) :: sflux(:,:)
     type(multifab),  intent(inout) :: gp(:)
     type(multifab),  intent(inout) :: p(:)
     type(multifab),  intent(inout) :: scal_force(:)
@@ -327,7 +326,7 @@ contains
     endif
     
     call scalar_advance(nlevs,mla,1,uold,s1,s2,thermal,umac,w0,w0_cart_vec,eta, &
-                        sflux,utrans,scal_force,normal,s0_1,s0_2, &
+                        utrans,scal_force,normal,s0_1,s0_2, &
                         p0_1,p0_2,dx,dt,the_bc_tower%bc_tower_array,verbose)
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -512,7 +511,7 @@ contains
        endif
        
        call scalar_advance(nlevs,mla,2,uold,s1,s2,thermal,umac,w0,w0_cart_vec,eta, &
-                           sflux,utrans,scal_force,normal,s0_1,s0_2, &
+                           utrans,scal_force,normal,s0_1,s0_2, &
                            p0_1,p0_2,dx,dt,the_bc_tower%bc_tower_array,verbose)
        
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
