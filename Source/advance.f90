@@ -8,7 +8,7 @@ module advance_timestep_module
 
 contains
     
-  subroutine advance_timestep(init_mode,mla,uold,sold,s1,s2,unew,snew, &
+  subroutine advance_timestep(init_mode,mla,uold,sold,unew,snew, &
                               gpres,pres,scal_force,normal,s0_old,s0_1,s0_2, &
                               s0_new,p0_old,p0_1,p0_2,p0_new,gam1,w0,eta,rho_omegadot1, &
                               rho_omegadot2,rho_Hext,div_coeff_old,div_coeff_new, &
@@ -56,8 +56,6 @@ contains
     type(ml_layout), intent(inout) :: mla
     type(multifab),  intent(inout) :: uold(:)
     type(multifab),  intent(inout) :: sold(:)
-    type(multifab),  intent(inout) :: s1(:)
-    type(multifab),  intent(inout) :: s2(:)
     type(multifab),  intent(inout) :: unew(:)
     type(multifab),  intent(inout) :: snew(:)
     type(multifab),  intent(inout) :: gpres(:)
@@ -108,6 +106,8 @@ contains
     type(multifab), allocatable :: umac(:,:)
     type(multifab), allocatable :: utrans(:,:)
     type(multifab), allocatable :: uedge(:,:)
+    type(multifab), allocatable :: s1(:)
+    type(multifab), allocatable :: s2(:)
     
     logical, allocatable :: umac_nodal_flag(:)
 
@@ -285,6 +285,13 @@ contains
        write(6,*) '            : react  base >>> '
     end if
     
+    allocate(s1(nlevs))
+
+    do n = 1,nlevs
+       call multifab_build(s1(n), mla%la(n), nscal, ng_cell)
+       call setval(s1(n), ZERO, all=.true.)
+    end do
+
     call react_state(nlevs,mla,sold,s1,rho_omegadot1,rho_Hext,halfdt,dx, &
                      the_bc_tower%bc_tower_array,time)
     
@@ -343,7 +350,14 @@ contains
           call multifab_copy_c(rho_omegadot2_hold(n),1,rho_omegadot2(n),1,3,0)
        end do
     end if
-    
+            
+    allocate(s2(nlevs))
+
+    do n = 1,nlevs
+       call multifab_build(s2(n), mla%la(n), nscal, ng_cell)
+       call setval(s2(n), ZERO, all=.true.)
+    end do
+
     call scalar_advance(nlevs,mla,1,uold,s1,s2,thermal,umac,w0,w0_cart_vec,eta, &
                         utrans,scal_force,normal,s0_1,s0_2, &
                         p0_1,p0_2,dx,dt,the_bc_tower%bc_tower_array,verbose)
@@ -578,6 +592,13 @@ contains
        
        ! end if corresponding to .not. do_half_alg
     end if
+
+    do n=1,nlevs
+       call destroy(s1(n))
+       call destroy(s2(n))
+    end do
+
+    deallocate(s1,s2)
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 10 -- compute S^{n+1} for the final projection
