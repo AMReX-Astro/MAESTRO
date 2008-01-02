@@ -51,15 +51,15 @@ contains
     do n = 1, nlevs
        call multifab_build(rhs_cc(n),Source(n)%la,1,1)
        call setval(rhs_cc(n),ZERO,all=.true.)
-    enddo
+    end do
     if(spherical .eq. 1) then
        do n = 1, nlevs
           call multifab_build(Sbar_cart(n),Source(n)%la,1,0)
           call multifab_build(div_coeff_cart(n),Source(n)%la,1,0)
           call setval(Sbar_cart(n),ZERO,all=.true.)
           call setval(div_coeff_cart(n),ZERO,all=.true.)
-       enddo
-    endif
+       end do
+    end if
     
     if (spherical .eq. 1) then
        call fill_3d_data_wrapper(nlevs,div_coeff_cart,div_coeff,dx)
@@ -88,7 +88,7 @@ contains
              else
                 call make_rhscc_3d_cart(lo,hi,rp(:,:,:,1),sp(:,:,:,1),Sbar(n,:), &
                                         div_coeff(n,:),dx(n,:))
-             endif
+             end if
           end select
        end do
        call multifab_fill_boundary(rhs_cc(n))
@@ -109,15 +109,15 @@ contains
        end do
        call multifab_fill_boundary(hgrhs(n))
        
-    enddo ! end loop over levels
+    end do ! end loop over levels
     
     do n = 1, nlevs
-       call multifab_destroy(rhs_cc(n))
+       call destroy(rhs_cc(n))
        if (spherical .eq. 1) then
-          call multifab_destroy(Sbar_cart(n))
-          call multifab_destroy(div_coeff_cart(n))
+          call destroy(Sbar_cart(n))
+          call destroy(div_coeff_cart(n))
        end if
-    enddo
+    end do
 
     call destroy(bpt)
     
@@ -159,8 +159,8 @@ contains
        do i = lo(1), hi(1)+1
           rhs(i,j) = FOURTH * ( rhs_cc(i,j  ) + rhs_cc(i-1,j  ) &
                + rhs_cc(i,j-1) + rhs_cc(i-1,j-1) )
-       enddo
-    enddo
+       end do
+    end do
     
   end subroutine make_hgrhs_2d
   
@@ -226,9 +226,9 @@ contains
                   +rhs_cc(i,j-1,k-1) + rhs_cc(i-1,j-1,k-1) &
                   +rhs_cc(i,j  ,k  ) + rhs_cc(i-1,j  ,k  ) &
                   +rhs_cc(i,j-1,k  ) + rhs_cc(i-1,j-1,k  ) )
-          enddo
-       enddo
-    enddo
+          end do
+       end do
+    end do
     
   end subroutine make_hgrhs_3d
   

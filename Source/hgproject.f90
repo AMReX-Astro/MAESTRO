@@ -64,7 +64,7 @@ contains
 
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
        print *,'PROJ_TYPE IN HGPROJECT:',proj_type
-    endif
+    end if
 
     allocate(phi(nlevs), gphi(nlevs), nodal(dm))
     nodal = .true.
@@ -132,7 +132,7 @@ contains
 
     if (present(divu_rhs)) then
        call enforce_outflow_on_divu_rhs(divu_rhs,the_bc_tower)
-    endif
+    end if
 
     if (present(eps_in)) then
        call hg_multigrid(mla,unew,rhohalf,phi,dx,the_bc_tower,verbose, &
@@ -186,8 +186,8 @@ contains
 1104 format(' ')
 
     do n = 1,nlevs
-       call multifab_destroy(phi(n))
-       call multifab_destroy(gphi(n))
+       call destroy(phi(n))
+       call destroy(gphi(n))
     end do
 
     deallocate(phi)
@@ -908,7 +908,7 @@ contains
        end if
 
        do i = mgt(n)%nlevels, 1, -1
-          call multifab_destroy(coeffs(i))
+          call destroy(coeffs(i))
        end do
        deallocate(coeffs)
 
@@ -947,14 +947,14 @@ contains
 
     do n = 1, nlevs
        call mg_tower_destroy(mgt(n))
-       call multifab_destroy(rh(n))
+       call destroy(rh(n))
     end do
 
     if (stencil_type .ne. ST_DENSE) then
        do n = nlevs, 2, -1
-          call multifab_destroy(one_sided_ss(n))
+          call destroy(one_sided_ss(n))
        end do
-    endif
+    end if
 
     deallocate(mgt)
     deallocate(rh)

@@ -36,18 +36,18 @@ contains
        plot_names(icomp_rhoh) = "rhoH"
     else
        plot_names(icomp_rhoh) = "rhoh"
-    endif
+    end if
 
     if (plot_spec) then
        do comp = 1, nspec
           plot_names(icomp_spec+comp-1) = "X(" // trim(short_spec_names(comp)) // ")"
-       enddo
+       end do
     end if
 
     if (plot_trac) then
        do comp = 1, ntrac
           plot_names(icomp_trac+comp-1) = "tracer"
-       enddo
+       end do
     end if
 
     plot_names(icomp_magvel)   = "magvel"
@@ -61,7 +61,7 @@ contains
        plot_names(icomp_tfromH)   = "tfromH"
     else
        plot_names(icomp_tfromH)   = "tfromh"
-    endif
+    end if
     plot_names(icomp_tpert)    = "tpert"
     plot_names(icomp_machno)   = "Machnumber"
     plot_names(icomp_dp)       = "deltap"
@@ -77,7 +77,7 @@ contains
        do comp = 1, nspec
           plot_names(icomp_omegadot+comp-1) = &
                "omegadot(" // trim(short_spec_names(comp)) // ")"
-       enddo
+       end do
        plot_names(icomp_enuc) = "enucdot"
     end if
 
@@ -206,7 +206,7 @@ contains
        ! OMEGADOT
        do n = 1,nlevs
           call make_omegadot(plotdata(n),icomp_omegadot,icomp_enuc,s(n),rho_omegadot(n))
-       enddo
+       end do
     end if
 
     do n = 1,nlevs
@@ -214,12 +214,12 @@ contains
        ! SPONGE
        call multifab_copy_c(plotdata(n),icomp_sponge,sponge(n),1,1)
 
-    enddo
+    end do
 
     call fabio_ml_multifab_write_d(plotdata, mba%rr(:,1), dirname, plot_names, &
                                    mba%pd(1), time, dx(1,:))
     do n = 1,nlevs
-       call multifab_destroy(plotdata(n))
+       call destroy(plotdata(n))
     end do
     deallocate(plotdata)
 

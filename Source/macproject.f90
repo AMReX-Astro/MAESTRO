@@ -142,13 +142,13 @@ contains
     do n = 1, nlevs
        do i=1,dm
           call multifab_fill_boundary(umac(n,i))
-       enddo
-    enddo
+       end do
+    end do
 
     do n = 1, nlevs
-       call multifab_destroy(rh(n))
-       call multifab_destroy(alpha(n))
-       call multifab_destroy(beta(n))
+       call destroy(rh(n))
+       call destroy(alpha(n))
+       call destroy(beta(n))
     end do
 
     do n = 2,nlevs
@@ -1329,7 +1329,7 @@ contains
        rel_eps = 1.d-11
     else
        rel_eps = 1.d-10
-    endif
+    end if
 
     abs_eps = -1.0_dp_t
     if (present(umac_norm)) then
@@ -1428,7 +1428,7 @@ contains
                             mgt(n)%mm(1), mgt(n)%ss(1)%la, stencil_order, mgt(nlevs)%verbose)
        end if
        do i = mgt(n)%nlevels, 1, -1
-          call multifab_destroy(coeffs(i))
+          call destroy(coeffs(i))
        end do
        deallocate(coeffs)
 
@@ -1537,7 +1537,7 @@ contains
        rel_eps = 1.d-11
     else
        rel_eps = 1.d-10
-    endif
+    end if
 
     abs_eps = -1.0_dp_t
     if (present(umac_norm)) then
@@ -1636,7 +1636,7 @@ contains
                             mgt(n)%mm(1), mgt(n)%ss(1)%la, stencil_order, mgt(nlevs)%verbose)
        end if
        do i = mgt(n)%nlevels, 1, -1
-          call multifab_destroy(coeffs(i))
+          call destroy(coeffs(i))
        end do
        deallocate(coeffs)
 

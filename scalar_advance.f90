@@ -332,8 +332,8 @@ contains
 
     do n = 1, nlevs
        do comp = 1,dm
-          call multifab_destroy(sedge(n,comp))
-          call multifab_destroy(sflux(n,comp))
+          call destroy(sedge(n,comp))
+          call destroy(sflux(n,comp))
        end do
     end do
 
@@ -355,9 +355,9 @@ contains
     end if
 
     do n = 1,nlevs
-       call multifab_destroy(scal_force(n))
-       call multifab_destroy(s0_old_cart(n))
-       call multifab_destroy(s0_new_cart(n))
+       call destroy(scal_force(n))
+       call destroy(s0_old_cart(n))
+       call destroy(s0_new_cart(n))
     end do
 
     deallocate(s0_edge_old,s0_edge_new)

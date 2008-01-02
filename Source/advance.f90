@@ -8,8 +8,8 @@ module advance_timestep_module
 
 contains
     
-  subroutine advance_timestep(init_mode,mla,uold,sold,s1,s2,unew,snew,uedge, &
-                              utrans,gp,p,scal_force,normal,s0_old,s0_1,s0_2, &
+  subroutine advance_timestep(init_mode,mla,uold,sold,s1,s2,unew,snew, &
+                              gp,p,scal_force,normal,s0_old,s0_1,s0_2, &
                               s0_new,p0_old,p0_1,p0_2,p0_new,gam1,w0,eta,rho_omegadot1, &
                               rho_omegadot2,rho_Hext,div_coeff_old,div_coeff_new, &
                               grav_cell_old,dx,time,dt,dtold,the_bc_tower,anelastic_cutoff, &
@@ -60,8 +60,6 @@ contains
     type(multifab),  intent(inout) :: s2(:)
     type(multifab),  intent(inout) :: unew(:)
     type(multifab),  intent(inout) :: snew(:)
-    type(multifab),  intent(inout) :: uedge(:,:)
-    type(multifab),  intent(inout) :: utrans(:,:)
     type(multifab),  intent(inout) :: gp(:)
     type(multifab),  intent(inout) :: p(:)
     type(multifab),  intent(inout) :: scal_force(:)
@@ -108,6 +106,8 @@ contains
     type(multifab), allocatable :: s2star(:)
     type(multifab), allocatable :: rho_omegadot2_hold(:)
     type(multifab), allocatable :: umac(:,:)
+    type(multifab), allocatable :: utrans(:,:)
+    type(multifab), allocatable :: uedge(:,:)
     
     logical, allocatable :: umac_nodal_flag(:)
 
@@ -241,14 +241,18 @@ contains
        write(6,*) '<<< STEP  2 : create MAC velocities>>> '
     end if
 
-    allocate(umac(nlevs,dm))
+    allocate(umac(nlevs,dm),utrans(nlevs,dm),uedge(nlevs,dm))
 
     do n=1,nlevs
        do comp=1,dm
           umac_nodal_flag = .false.
           umac_nodal_flag(comp) = .true.
-          call multifab_build(umac(n,comp), mla%la(n), 1, 1, nodal = umac_nodal_flag)
-          call setval( umac(n,comp),ZERO, all=.true.)
+          call multifab_build(  umac(n,comp), mla%la(n),  1, 1, nodal = umac_nodal_flag)
+          call multifab_build(utrans(n,comp), mla%la(n),  1, 1, nodal = umac_nodal_flag)
+          call multifab_build( uedge(n,comp), mla%la(n), dm, 0, nodal = umac_nodal_flag)
+          call setval(  umac(n,comp), ZERO, all=.true.)
+          call setval(utrans(n,comp), ZERO, all=.true.)
+          call setval( uedge(n,comp), ZERO, all=.true.)
        end do
     end do
     
@@ -487,7 +491,7 @@ contains
                           div_coeff_half_1d=div_coeff_edge)
        end if
        do n=1,nlevs
-          call multifab_destroy(rhohalf(n))
+          call destroy(rhohalf(n))
        end do
         
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -627,10 +631,12 @@ contains
     do n=1,nlevs
        do comp=1,dm
           call destroy(umac(n,comp))
+          call destroy(utrans(n,comp))
+          call destroy(uedge(n,comp))
        end do
     end do
 
-    deallocate(umac)
+    deallocate(umac,utrans,uedge)
     
     ! Define beta at half time using the div_coeff_new from step 9!
     do n=1,nlevs
@@ -668,7 +674,7 @@ contains
     end if
 
     do n=1,nlevs
-       call multifab_destroy(rhohalf(n))
+       call destroy(rhohalf(n))
     end do
     
     ! If doing pressure iterations then put hgrhs_old into hgrhs to be returned to varden.
