@@ -10,6 +10,7 @@ f90sources += base_io.f90
 f90sources += cell_to_edge.f90
 f90sources += checkpoint.f90
 f90sources += define_bc_tower.f90
+f90sources += divu_iter.f90
 f90sources += estdt.f90
 f90sources += extrap_to_halftime.f90
 f90sources += fill_3d_data.f90
