@@ -14,7 +14,7 @@ module scalar_advance_module
 contains
 
   subroutine scalar_advance(nlevs,mla,which_step,uold,sold,snew,thermal,umac,w0, &
-                            w0_cart_vec,eta,sedge,sflux,utrans,ext_scal_force,normal, &
+                            w0_cart_vec,eta,sflux,utrans,ext_scal_force,normal, &
                             s0_old,s0_new,p0_old,p0_new,dx,dt,the_bc_level,verbose)
 
     use bl_prof_module
@@ -47,7 +47,6 @@ contains
     real(kind=dp_t), intent(inout) :: w0(:,0:)
     type(multifab) , intent(in   ) :: w0_cart_vec(:)
     real(kind=dp_t), intent(inout) :: eta(:,0:,:)
-    type(multifab) , intent(inout) :: sedge(:,:)
     type(multifab) , intent(inout) :: sflux(:,:)
     type(multifab) , intent(inout) :: utrans(:,:)
     type(multifab) , intent(inout) :: ext_scal_force(:)
@@ -61,6 +60,7 @@ contains
     integer        , intent(in   ) :: verbose
 
     ! local
+    type(multifab), allocatable :: sedge(:,:)
     type(multifab), allocatable :: scal_force(:)
     type(multifab), allocatable :: s0_old_cart(:)
     type(multifab), allocatable :: s0_new_cart(:)
@@ -68,9 +68,11 @@ contains
     real(kind=dp_t), allocatable :: s0_edge_old(:,:,:)
     real(kind=dp_t), allocatable :: s0_edge_new(:,:,:)
 
+    logical, allocatable :: umac_nodal_flag(:)
+
     real(dp_t) :: smin,smax
 
-    integer :: velpred,comp,n,dm,ng_cell    
+    integer :: velpred,comp,pred_comp,n,dm,ng_cell    
 
     logical :: is_vel
 
@@ -170,15 +172,32 @@ contains
 
     call put_in_pert_form(nlevs,sold,s0_old,dx,spec_comp,nspec,.true.)
 
-    if (predict_temp_at_edges) then
-       comp = temp_comp
-    else
-       comp = rhoh_comp
-    end if
+    allocate(sedge(nlevs,dm))
+    allocate(umac_nodal_flag(dm))
 
+    do n=1,nlevs
+       do comp = 1,dm
+          umac_nodal_flag = .false.
+          umac_nodal_flag(comp) = .true.
+          call multifab_build( sedge(n,comp), mla%la(n), nscal, 0, nodal = umac_nodal_flag)
+       end do
+       do comp = 1,dm
+          call setval( sedge(n,comp),ZERO, all=.true.)
+       end do
+    end do
+
+    deallocate(umac_nodal_flag)
+
+    if (predict_temp_at_edges) then
+       pred_comp = temp_comp
+    else
+       pred_comp = rhoh_comp
+    end if
+    
     ! create temperature or enthalpy edge states
     call make_edge_state(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0, &
-                         w0_cart_vec,dx,dt,is_vel,the_bc_level,velpred,comp,dm+comp,1,mla)
+                         w0_cart_vec,dx,dt,is_vel,the_bc_level,velpred,pred_comp, &
+                         dm+pred_comp,1,mla)
 
     ! create species edge states
     call make_edge_state(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0, &
@@ -302,6 +321,14 @@ contains
     call update_scal(nlevs,which_step,rhoh_comp,rhoh_comp,sold,snew,umac,w0,w0_cart_vec, &
                      eta,sedge,sflux,scal_force,s0_old,s0_edge_old,s0_new,s0_edge_new, &
                      s0_old_cart,s0_new_cart,dx,dt,evolve_base_state,the_bc_level,mla)
+
+    do n = 1, nlevs
+       do comp = 1,dm
+          call destroy(sedge(n,comp))
+       end do
+    end do
+
+    deallocate(sedge)
 
     if(.not. use_thermal_diffusion) then
        call makeTfromRhoH(nlevs,snew,s0_new(:,:,temp_comp),mla,the_bc_level,dx)
