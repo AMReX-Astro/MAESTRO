@@ -8,7 +8,7 @@ module initial_proj_module
 contains
 
   subroutine initial_proj(nlevs,uold,sold,pres,gpres,vel_force,normal,rho_Hext,Source_old, &
-                          hgrhs,rho_omegadot1,thermal,div_coeff_3d,rhohalf, &
+                          hgrhs,rho_omegadot1,div_coeff_3d,rhohalf, &
                           div_coeff_old,s0_old,p0_old,gam1,grav_cell,dx,the_bc_tower,mla)
 
     use variables, only: temp_comp, rho_comp, press_comp
@@ -38,7 +38,6 @@ contains
     type(multifab) , intent(inout) :: Source_old(:)
     type(multifab) , intent(inout) :: hgrhs(:)
     type(multifab) , intent(inout) :: rho_omegadot1(:)
-    type(multifab) , intent(inout) :: thermal(:)
     type(multifab) , intent(inout) :: div_coeff_3d(:)
     type(multifab) , intent(inout) :: rhohalf(:)
     real(kind=dp_t), intent(in   ) :: div_coeff_old(:,0:)
@@ -55,6 +54,7 @@ contains
     real(dp_t)                  :: dt_temp
     real(dp_t), allocatable     :: Sbar(:,:,:)  
     type(multifab), allocatable :: gamma1_term(:)
+    type(multifab), allocatable :: thermal(:)
 
     if ( parallel_IOProcessor() ) then
        print *, 'DOING THE INITIAL VELOCITY PROJECTION'
@@ -67,7 +67,13 @@ contains
     do n = 1, nlevs
        ! we don't have a legit timestep yet, so set rho_omegadot1 = 0 to be safe
        call setval(rho_omegadot1(n), ZERO, all=.true.)
-       call setval(thermal(n),       ZERO, all=.true.)
+    end do
+
+    allocate(thermal(nlevs))
+
+    do n=1,nlevs
+       call multifab_build(thermal(n), mla%la(n), 1, 1)
+       call setval(thermal(n), 0.0_dp_t, all=.true.)
     end do
     
     if(use_thermal_diffusion) then
@@ -84,6 +90,12 @@ contains
 
     call make_S(nlevs,Source_old,gamma1_term,sold,rho_omegadot1,rho_Hext,thermal, &
                 s0_old(:,:,temp_comp),gam1,dx)
+
+    do n=1,nlevs
+       call destroy(thermal(n))
+    end do
+
+    deallocate(thermal)
     
     allocate(Sbar(nlevs,nr(nlevs),1))
 
