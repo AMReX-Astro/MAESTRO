@@ -13,7 +13,7 @@ contains
   subroutine advance_timestep(init_mode,mla,uold,sold,unew,snew, &
                               gpres,pres,scal_force,normal,s0_old,s0_1,s0_2, &
                               s0_new,p0_old,p0_1,p0_2,p0_new,gam1,w0,eta, &
-                              rho_omegadot2,rho_Hext,div_coeff_old,div_coeff_new, &
+                              rho_omegadot2,div_coeff_old,div_coeff_new, &
                               grav_cell_old,dx,time,dt,dtold,the_bc_tower,anelastic_cutoff, &
                               verbose,mg_verbose,cg_verbose,dSdt,Source_old,Source_new, &
                               sponge,do_sponge,hgrhs,istep)
@@ -74,7 +74,6 @@ contains
     real(dp_t)    ,  intent(inout) :: w0(:,0:)
     real(dp_t)    ,  intent(inout) :: eta(:,0:,:)
     type(multifab),  intent(inout) :: rho_omegadot2(:)
-    type(multifab),  intent(inout) :: rho_Hext(:)
     real(dp_t)    ,  intent(in   ) :: div_coeff_old(:,0:)
     real(dp_t)    ,  intent(inout) :: div_coeff_new(:,0:)
     real(dp_t)    ,  intent(in   ) :: grav_cell_old(:,0:)
@@ -108,6 +107,7 @@ contains
     type(multifab), allocatable :: s2(:)
     type(multifab), allocatable :: gamma1_term(:)
     type(multifab), allocatable :: rho_omegadot1(:)
+    type(multifab), allocatable :: rho_Hext(:)
     
     logical, allocatable :: umac_nodal_flag(:)
 
@@ -305,11 +305,13 @@ contains
        call setval(s1(n), ZERO, all=.true.)
     end do
 
-    allocate(rho_omegadot1(nlevs))
+    allocate(rho_omegadot1(nlevs),rho_Hext(nlevs))
 
     do n=1,nlevs
        call multifab_build(rho_omegadot1(n), mla%la(n), nspec, 0)
-       call setval(rho_omegadot1(n),ZERO, all=.true.)
+       call multifab_build(rho_Hext(n),      mla%la(n), 1,     0)
+       call setval(rho_omegadot1(n), ZERO, all=.true.)
+       call setval(rho_Hext(n)     , ZERO, all=.true.)
     end do
 
     call react_state(nlevs,mla,sold,s1,rho_omegadot1,rho_Hext,halfdt,dx, &
@@ -660,6 +662,12 @@ contains
 
     call make_S(nlevs,Source_new,gamma1_term,snew,rho_omegadot2,rho_Hext,thermal, &
                 s0_new(:,:,temp_comp),gam1,dx)
+
+    do n=1,nlevs
+       call destroy(rho_Hext(n))
+    end do
+
+    deallocate(rho_Hext)
 
     call average(mla,Source_new,Sbar,dx,1,1)
     
