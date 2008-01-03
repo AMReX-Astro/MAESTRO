@@ -113,11 +113,10 @@ contains
     !     Local variables
     integer :: i, j, comp
     real (kind = dp_t), allocatable :: x_in(:),x_out(:),rhowdot(:)
-    real (kind = dp_t), allocatable :: H(:,:)
     real (kind = dp_t) :: rho,T_in,h_in,h_out,qreact
 
-    allocate(x_in(nspec),x_out(nspec),rhowdot(nspec),H(lo(1):hi(1),lo(2):hi(2)))
-    call get_H_2d(H,lo,hi,dx,time)
+    allocate(x_in(nspec),x_out(nspec),rhowdot(nspec))
+    call get_rho_Hext_2d(rho_Hext,s_in,lo,hi,ng,dx,time)
 
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
@@ -142,7 +141,6 @@ contains
           s_out(i,j,rho_comp) = s_in(i,j,rho_comp)
           s_out(i,j,spec_comp:spec_comp+nspec-1) = x_out(1:nspec) * rho
           
-          rho_Hext(i,j) = s_in(i,j,rho_comp) * H(i,j)
           rho_omegadot(i,j,1:nspec) = rhowdot(1:nspec)
           
           if(use_big_h) then
@@ -176,7 +174,7 @@ contains
        enddo
     enddo
 
-    deallocate(x_in,x_out,rhowdot,H)
+    deallocate(x_in,x_out,rhowdot)
 
   end subroutine react_state_2d
 
@@ -198,11 +196,10 @@ contains
     !     Local variables
     integer :: i, j, k, comp
     real (kind = dp_t), allocatable :: x_in(:),x_out(:),rhowdot(:)
-    real (kind = dp_t), allocatable :: H(:,:,:)
     real (kind = dp_t) :: rho,T_in,h_in,h_out,qreact
 
-    allocate(x_in(nspec),x_out(nspec),rhowdot(nspec),H(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-    call get_H_3d(H,lo,hi,dx,time)
+    allocate(x_in(nspec),x_out(nspec),rhowdot(nspec))
+    call get_rho_Hext_3d(rho_Hext,s_in,lo,hi,ng,dx,time)
 
     do k = lo(3), hi(3)
      do j = lo(2), hi(2)
@@ -228,7 +225,6 @@ contains
           s_out(i,j,k,rho_comp) = s_in(i,j,k,rho_comp)
           s_out(i,j,k,spec_comp:spec_comp+nspec-1) = x_out(1:nspec) * rho
           
-          rho_Hext(i,j,k) = s_in(i,j,k,rho_comp) * H(i,j,k)
           rho_omegadot(i,j,k,1:nspec) = rhowdot(1:nspec)
           
           if(use_big_h) then
@@ -263,7 +259,7 @@ contains
      enddo
     enddo
 
-    deallocate(x_in,x_out,rhowdot,H)
+    deallocate(x_in,x_out,rhowdot)
 
   end subroutine react_state_3d
 
