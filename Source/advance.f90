@@ -186,27 +186,14 @@ contains
     w0_old = w0
 
     do n=1,nlevs
-       call multifab_build(macrhs(n),             mla%la(n), 1    , 0)
-       call multifab_build(macphi(n),             mla%la(n), 1    , 1)
-       call multifab_build(hgrhs_old(n),          mla%la(n), 1    , 0, nodal)
        call multifab_build(Source_nph(n),         mla%la(n), 1    , 0)
        call multifab_build(thermal(n),            mla%la(n), 1    , 1)
        call multifab_build(s2star(n),             mla%la(n), nscal, ng_cell)
        call multifab_build(rho_omegadot2_hold(n), mla%la(n), nspec, 0)
-       call setval(macrhs(n)            , ZERO, all=.true.)
-       call setval(macphi(n)            , ZERO, all=.true.)
-       call setval(hgrhs_old(n)         , ZERO, all=.true.)
        call setval(Source_nph(n)        , ZERO, all=.true.)
        call setval(thermal(n)           , ZERO, all=.true.)
        call setval(s2star(n)            , ZERO, all=.true.)
        call setval(rho_omegadot2_hold(n), ZERO, all=.true.)
-       
-       if (dm.eq.3) then
-          call multifab_build(w0_cart_vec(n)      , mla%la(n), dm, 1)
-          call multifab_build(w0_force_cart_vec(n), mla%la(n), dm, 1)
-          call setval(w0_cart_vec(n)      , ZERO, all=.true.)
-          call setval(w0_force_cart_vec(n), ZERO, all=.true.)
-       end if
 
        if (spherical.eq.1) then
           call multifab_build(div_coeff_3d(n), mla%la(nlevs), 1, 1)
@@ -235,8 +222,14 @@ contains
                  s0_old(:,:,rho_comp),gam1,eta,dt,dtold,verbose)
     
     if (dm .eq. 3) then
-       call make_w0_cart(nlevs,w0      ,w0_cart_vec      ,normal,dx) 
-       call make_w0_cart(nlevs,w0_force,w0_force_cart_vec,normal,dx) 
+
+       do n=1,nlevs
+          call multifab_build(w0_cart_vec(n), mla%la(n), dm, 1)
+          call setval(w0_cart_vec(n), ZERO, all=.true.)
+       end do
+
+       call make_w0_cart(nlevs,w0,w0_cart_vec,normal,dx) 
+
     end if
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -268,10 +261,20 @@ contains
        call setval(gamma1_term(n), 0.0_dp_t, all=.true.)
     end do
 
+    do n=1,nlevs
+       call multifab_build(macrhs(n), mla%la(n), 1, 0)
+       call setval(macrhs(n), ZERO, all=.true.)
+    end do
+
     call make_macrhs(nlevs,macrhs,Source_nph,gamma1_term,Sbar(:,:,1),div_coeff_old,dx)
 
     do n=1,nlevs
        call destroy(gamma1_term(n))
+    end do
+
+    do n=1,nlevs
+       call multifab_build(macphi(n), mla%la(n), 1, 1)
+       call setval(macphi(n), ZERO, all=.true.)
     end do
 
     ! MAC projection !
@@ -288,6 +291,10 @@ contains
                        verbose,mg_verbose,cg_verbose,press_comp, &
                        macrhs,div_coeff_1d=div_coeff_old,div_coeff_half_1d=div_coeff_edge)
     end if
+
+    do n=1,nlevs
+       call destroy(macrhs(n))
+    end do
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 3 -- react the full state and then base state through dt/2
@@ -377,7 +384,7 @@ contains
     call scalar_advance(nlevs,mla,1,uold,s1,s2,thermal,umac,w0,w0_cart_vec,eta, &
                         utrans,scal_force,normal,s0_1,s0_2, &
                         p0_1,p0_2,dx,dt,the_bc_tower%bc_tower_array,verbose)
-    
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 4a (Option I) -- Add thermal conduction (only enthalpy terms)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -486,6 +493,12 @@ contains
                     s0_new(:,:,rho_comp),gam1,eta,dt,dtold,verbose)
        
        if (dm .eq. 3) then
+
+          do n=1,nlevs
+             call multifab_build(w0_force_cart_vec(n), mla%la(n), dm, 1)
+             call setval(w0_force_cart_vec(n), ZERO, all=.true.)
+          end do
+
           call make_w0_cart(nlevs,w0      ,w0_cart_vec      ,normal,dx) 
           call make_w0_cart(nlevs,w0_force,w0_force_cart_vec,normal,dx) 
        end if
@@ -501,6 +514,11 @@ contains
                            w0_cart_vec,s0_old,grav_cell_old,dx,dt, &
                            the_bc_tower%bc_tower_array,mla)
        
+       do n=1,nlevs
+          call multifab_build(macrhs(n), mla%la(n), 1, 0)
+          call setval(macrhs(n), ZERO, all=.true.)
+       end do
+
        call make_macrhs(nlevs,macrhs,Source_nph,gamma1_term,Sbar(:,:,1),div_coeff_nph,dx)
     
        do n=1,nlevs
@@ -511,6 +529,7 @@ contains
        do n=1,nlevs
           call multifab_build(rhohalf(n), mla%la(n), 1    , 1)
        end do
+
        call make_at_halftime(nlevs,rhohalf,sold,snew,rho_comp,1,dx, &
                              the_bc_tower%bc_tower_array,mla)
        
@@ -529,8 +548,10 @@ contains
                           press_comp,macrhs,div_coeff_1d=div_coeff_nph, &
                           div_coeff_half_1d=div_coeff_edge)
        end if
+
        do n=1,nlevs
           call destroy(rhohalf(n))
+          call destroy(macrhs(n))
        end do
         
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -622,6 +643,7 @@ contains
        call destroy(s1(n))
        call destroy(s2(n))
        call destroy(rho_omegadot1(n))
+       call destroy(macphi(n))
     end do
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -674,6 +696,7 @@ contains
     do n=1,nlevs
        call multifab_build(rhohalf(n), mla%la(n), 1    , 1)
     end do
+
     call make_at_halftime(nlevs,rhohalf,sold,snew,rho_comp,1,dx, &
                           the_bc_tower%bc_tower_array,mla)
     
@@ -690,6 +713,13 @@ contains
        end do
     end do
 
+    if (dm .eq. 3) then
+       do n=1,nlevs
+          call destroy(w0_cart_vec(n))
+          call destroy(w0_force_cart_vec(n))
+       end do
+    end if
+
     ! Define beta at half time using the div_coeff_new from step 9!
     do n=1,nlevs
        do j=0,nr(n)-1
@@ -700,6 +730,12 @@ contains
     ! Project the new velocity field.
     if (init_mode) then
        proj_type = pressure_iters_comp
+
+       do n=1,nlevs
+          call multifab_build(hgrhs_old(n), mla%la(n), 1, 0, nodal)
+          call setval(hgrhs_old(n), ZERO, all=.true.)
+       end do
+
        do n=1,nlevs
           call multifab_copy(hgrhs_old(n),hgrhs(n))
        end do
@@ -711,6 +747,7 @@ contains
     else
        proj_type = regular_timestep_comp
        call make_hgrhs(nlevs,hgrhs,Source_new,gamma1_term,Sbar(:,:,1),div_coeff_new,dx)
+
     end if
 
     do n=1,nlevs
@@ -737,27 +774,18 @@ contains
     if (init_mode) then
        do n=1,nlevs
           call multifab_copy(hgrhs(n),hgrhs_old(n))
+          call destroy(hgrhs_old(n))
        end do
     end if
     
     do n=1,nlevs
        call destroy(Source_nph(n))
-       call destroy(macrhs(n))
-       call destroy(macphi(n))
-       call destroy(hgrhs_old(n))
        call destroy(thermal(n))
        call destroy(s2star(n))
        call destroy(rho_omegadot2_hold(n))
        if (spherical .eq. 1) &
             call destroy(div_coeff_3d(n))
     end do
-
-    if (dm .eq. 3) then
-       do n=1,nlevs
-          call destroy(w0_cart_vec(n))
-          call destroy(w0_force_cart_vec(n))
-       end do
-    end if
 
     deallocate(rhohalf,w0_cart_vec,w0_force_cart_vec,macrhs,macphi,hgrhs_old,Source_nph)
     deallocate(thermal,s2star,rho_omegadot2_hold,s1,s2,gamma1_term,rho_omegadot1)
