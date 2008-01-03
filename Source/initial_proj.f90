@@ -27,6 +27,7 @@ contains
     use hgproject_module
     use multifab_module
     use ml_layout_module
+    use heating_module
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: uold(:)

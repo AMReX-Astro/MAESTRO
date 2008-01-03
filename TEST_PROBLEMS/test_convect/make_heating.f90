@@ -5,16 +5,65 @@ module heating_module
   implicit none
 
   private
-  public :: get_H_2d, get_H_3d
+  public :: get_rho_Hext
 
 contains
 
-  subroutine get_H_2d (H,lo,hi,dx,time)
+  subroutine get_rho_Hext(nlevs,mla,s,rho_Hext,dx,time)
+
+    use multifab_module
+    use ml_layout_module
+    use ml_restriction_module
+
+    integer, intent(in) :: nlevs
+    type(ml_layout), intent(in   ) :: mla
+    type(multifab) , intent(in   ) :: s(:)
+    type(multifab) , intent(inout) :: rho_Hext(:)
+    real(kind=dp_t), intent(in   ) :: dx(:,:),time
+
+    ! local
+    integer                  :: n,i,ng,dm
+    integer                  :: lo(s(1)%dim),hi(s(1)%dim)
+    real(kind=dp_t), pointer :: sp(:,:,:,:)
+    real(kind=dp_t), pointer :: hp(:,:,:,:)
+
+    ng = s(1)%ng
+    dm = s(1)%dim
+
+    do n=1,nlevs
+
+       do i = 1, s(n)%nboxes
+          if ( multifab_remote(s(n), i) ) cycle
+          sp => dataptr(s(n) , i)
+          hp => dataptr(rho_Hext(n) , i)
+          lo =  lwb(get_box(s(n), i))
+          hi =  upb(get_box(s(n), i))
+          select case (dm)
+          case (2)
+             call get_rho_Hext_2d(hp(:,:,1,1), sp(:,:,1,:), lo, hi, ng, dx(n,:), time)
+          case (3)
+             call get_rho_Hext_3d(hp(:,:,:,1), sp(:,:,:,:), lo, hi, ng, dx(n,:), time)
+          end select
+       end do
+
+    end do
+
+    do n=nlevs,2,-1
+       ! make sure that coarse cells are the average of the fine cells covering it.
+       ! the loop over nlevs must count backwards to make sure the finer grids are done first
+       call ml_cc_restriction(rho_Hext(n-1), rho_Hext(n), mla%mba%rr(n-1,:))
+    end do
+
+  end subroutine get_rho_Hext
+
+  subroutine get_rho_Hext_2d(rho_Hext,s,lo,hi,ng,dx,time)
 
     use bl_constants_module
+    use variables, only: rho_comp
 
-    integer, intent(in) :: lo(:), hi(:)
-    real(kind=dp_t), intent(inout) :: H(lo(1):,lo(2):)
+    integer, intent(in) :: lo(:), hi(:), ng
+    real(kind=dp_t), intent(inout) :: rho_Hext(lo(1):,lo(2):)
+    real(kind=dp_t), intent(in   ) :: s(lo(1)-ng:,lo(2)-ng:,:)
     real(kind=dp_t), intent(in   ) :: dx(:),time
 
     integer :: i,j
@@ -24,7 +73,7 @@ contains
     real(kind=dp_t) :: ey,Hmax
     real(kind=dp_t) :: pi,L_x
 
-    H = 0.0_dp_t
+    rho_Hext = 0.0_dp_t
     Hmax = 0.0_dp_t
 
     L_x = 2.5d8
@@ -40,12 +89,14 @@ contains
           do i = lo(1),hi(1)
              x =  (dble(i)+HALF)*dx(1)
 
-             H(i,j) = ey*(ONE + &
+             rho_Hext(i,j) = ey*(ONE + &
                   .00625_dp_t * sin(2*pi*x/L_x) &
                   + .01875_dp_t * sin((6*pi*x/L_x) + pi/3.d0) &
                   + .01250_dp_t * sin((8*pi*x/L_x) + pi/5.d0))*2.5d16
 
-             Hmax = max(Hmax,H(i,j))
+             Hmax = max(Hmax,rho_Hext(i,j))
+
+             rho_Hext(i,j) = rho_Hext(i,j) * s(i,j,rho_comp)
           end do
        end do
 
@@ -53,14 +104,16 @@ contains
 
     end if
 
-  end subroutine get_H_2d
+  end subroutine get_rho_Hext_2d
 
-  subroutine get_H_3d (H,lo,hi,dx,time)
+  subroutine get_rho_Hext_3d(rho_Hext,s,lo,hi,ng,dx,time)
 
     use bl_constants_module
+    use variables, only: rho_comp
 
-    integer, intent(in) :: lo(:), hi(:)
-    real(kind=dp_t), intent(inout) :: H(lo(1):,lo(2):,lo(3):)
+    integer, intent(in) :: lo(:), hi(:), ng
+    real(kind=dp_t), intent(inout) :: rho_Hext(lo(1):,lo(2):,lo(3):)
+    real(kind=dp_t), intent(in   ) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real(kind=dp_t), intent(in   ) :: dx(:),time
 
     integer :: i,j,k
@@ -69,7 +122,7 @@ contains
     real(kind=dp_t) :: r0,r1,r2
     real(kind=dp_t) :: ez,Hmax
 
-    H = 0.0_dp_t
+    rho_Hext = 0.0_dp_t
     Hmax = 0.0_dp_t
 
     if (time <= 2.0) then
@@ -100,23 +153,25 @@ contains
                 r1 = sqrt( (x-x1)**2 +(z-z1)**2 ) / 2.5e6
                 r2 = sqrt( (x-x2)**2 +(z-z2)**2 ) / 2.5e6
 
-                ! H(i,j,k) = (ez &
+                ! rho_Hext(i,j,k) = (ez &
                 !             + .00625_dp_t * exp(-((x-x0)**2 +(z-z0)**2)/0.25e14) &
                 !             + .01875_dp_t * exp(-((x-x1)**2 +(z-z1)**2)/0.25e14) &
                 !             + .01250_dp_t * exp(-((x-x2)**2 +(z-z2)**2)/0.25e14) ) * 1.d17
 
-                ! H(i,j,k) = (  .00625_dp_t * exp(-((x-x0)**2 +(z-z0)**2)/0.25e14) &
+                ! rho_Hext(i,j,k) = (  .00625_dp_t * exp(-((x-x0)**2 +(z-z0)**2)/0.25e14) &
                 !             + .01875_dp_t * exp(-((x-x1)**2 +(z-z1)**2)/0.25e14) &
                 !             + .01250_dp_t * exp(-((x-x2)**2 +(z-z2)**2)/0.25e14) ) * 1.d17
 
-                H(i,j,k) = (  .00625_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r0))) &
+                rho_Hext(i,j,k) = (  .00625_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r0))) &
                      + .01875_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r1))) &
                      + .01250_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r2))) ) * 1.d17
 
                 ! HACK NO HEATING
-                H(i,j,k) = ZERO
+                rho_Hext(i,j,k) = ZERO
 
-                Hmax = max(Hmax,H(i,j,k))
+                Hmax = max(Hmax,rho_Hext(i,j,k))
+
+                rho_Hext(i,j,k) = rho_Hext(i,j,k) * s(i,j,k,rho_comp)
              end do
           end do
        end do
@@ -125,5 +180,6 @@ contains
 
     end if
 
-  end subroutine get_H_3d
+  end subroutine get_rho_Hext_3d
+
 end module heating_module

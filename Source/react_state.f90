@@ -20,6 +20,7 @@ contains
     use ml_restriction_module
     use multifab_physbc_module
     use multifab_fill_ghost_module
+    use heating_module
 
     integer        , intent(in   ) :: nlevs
     type(ml_layout), intent(in   ) :: mla
@@ -45,6 +46,8 @@ contains
 
     ng = s_in(1)%ng
     dm = s_in(1)%dim
+
+    call get_rho_Hext(nlevs,mla,s_in,rho_Hext,dx,time)
 
     do n = 1, nlevs
        
@@ -98,7 +101,6 @@ contains
                             dt,dx,lo,hi,ng,time)
 
     use burner_module
-    use heating_module
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
     use network, only: nspec, ebin
     use probin_module, ONLY: use_big_h
@@ -107,7 +109,7 @@ contains
     real (kind = dp_t), intent(in   ) :: s_in (lo(1)-ng:,lo(2)-ng:,:)
     real (kind = dp_t), intent(  out) :: s_out(lo(1)-ng:,lo(2)-ng:,:)
     real (kind = dp_t), intent(  out) :: rho_omegadot(lo(1):,lo(2):,:)
-    real (kind = dp_t), intent(  out) :: rho_Hext(lo(1):,lo(2):)
+    real (kind = dp_t), intent(in   ) :: rho_Hext(lo(1):,lo(2):)
     real (kind = dp_t), intent(in   ) :: dt,dx(:),time
 
     !     Local variables
@@ -116,7 +118,6 @@ contains
     real (kind = dp_t) :: rho,T_in,h_in,h_out,qreact
 
     allocate(x_in(nspec),x_out(nspec),rhowdot(nspec))
-    call get_rho_Hext_2d(rho_Hext,s_in,lo,hi,ng,dx,time)
 
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
@@ -181,7 +182,6 @@ contains
   subroutine react_state_3d(s_in,s_out,rho_omegadot,rho_Hext,dt,dx,lo,hi,ng,time)
 
     use burner_module
-    use heating_module
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
     use network, only: nspec, ebin
     use probin_module, ONLY: use_big_h
@@ -190,7 +190,7 @@ contains
     real (kind = dp_t), intent(in   ) :: s_in (lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind = dp_t), intent(  out) :: s_out(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind = dp_t), intent(  out) :: rho_omegadot(lo(1):,lo(2):,lo(3):,:)
-    real (kind = dp_t), intent(  out) :: rho_Hext(lo(1):,lo(2):,lo(3):)
+    real (kind = dp_t), intent(in   ) :: rho_Hext(lo(1):,lo(2):,lo(3):)
     real (kind = dp_t), intent(in   ) :: dt,dx(:),time
 
     !     Local variables
@@ -199,7 +199,6 @@ contains
     real (kind = dp_t) :: rho,T_in,h_in,h_out,qreact
 
     allocate(x_in(nspec),x_out(nspec),rhowdot(nspec))
-    call get_rho_Hext_3d(rho_Hext,s_in,lo,hi,ng,dx,time)
 
     do k = lo(3), hi(3)
      do j = lo(2), hi(2)
