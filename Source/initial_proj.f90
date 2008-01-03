@@ -16,7 +16,7 @@ contains
     use bl_constants_module
     use probin_module
     use geometry, only: spherical, nr
-    use proj_parameters, only: initial_projection
+    use proj_parameters, only: initial_projection_comp
     use mk_vel_force_module
     use make_explicit_thermal_module
     use make_S_module
@@ -97,12 +97,12 @@ contains
 
     if (spherical .eq. 1) then
        call fill_3d_data_wrapper(nlevs,div_coeff_3d,div_coeff_old,dx)
-       call hgproject(initial_projection,mla,uold,uold,rhohalf,pres,gpres,dx, &
+       call hgproject(initial_projection_comp,mla,uold,uold,rhohalf,pres,gpres,dx, &
                       dt_temp,the_bc_tower,verbose,mg_verbose,cg_verbose,press_comp, &
                       hgrhs,div_coeff_3d=div_coeff_3d,eps_in=1.d-10)
        
     else
-       call hgproject(initial_projection,mla,uold,uold,rhohalf,pres,gpres,dx, &
+       call hgproject(initial_projection_comp,mla,uold,uold,rhohalf,pres,gpres,dx, &
                       dt_temp,the_bc_tower,verbose,mg_verbose,cg_verbose,press_comp, &
                       hgrhs,div_coeff_1d=div_coeff_old)
     end if

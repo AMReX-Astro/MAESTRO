@@ -198,7 +198,8 @@ contains
 
   contains
 
-    subroutine create_uvec_for_projection(nlevs,unew,uold,rhohalf,gpres,dt,the_bc_tower,proj_type)
+    subroutine create_uvec_for_projection(nlevs,unew,uold,rhohalf,gpres,dt,the_bc_tower, &
+                                          proj_type)
 
       integer        , intent(in   ) :: nlevs
       type(multifab) , intent(inout) :: unew(:)
@@ -235,11 +236,11 @@ contains
              rp => dataptr(  rhohalf(n), i)
             select case (dm)
                case (2)
-                 call create_uvec_2d(unp(:,:,1,:), uop(:,:,1,:), rp(:,:,1,1), gpp(:,:,1,:), dt, &
-                                     bc%phys_bc_level_array(i,:,:), ng, proj_type)
+                 call create_uvec_2d(unp(:,:,1,:), uop(:,:,1,:), rp(:,:,1,1), gpp(:,:,1,:), &
+                                     dt,bc%phys_bc_level_array(i,:,:), ng, proj_type)
                case (3)
-                 call create_uvec_3d(unp(:,:,:,:), uop(:,:,:,:), rp(:,:,:,1), gpp(:,:,:,:), dt, &
-                                     bc%phys_bc_level_array(i,:,:), ng, proj_type)
+                 call create_uvec_3d(unp(:,:,:,:), uop(:,:,:,:), rp(:,:,:,1), gpp(:,:,:,:), &
+                                     dt, bc%phys_bc_level_array(i,:,:), ng, proj_type)
             end select
          end do
          call multifab_fill_boundary(unew(n))
@@ -461,22 +462,24 @@ contains
       if (phys_bc(2,2) .eq. INLET) gpres(-1:nx,ny,:) = ZERO
 
       ! quantity projected is U
-      if (proj_type .eq. initial_projection) then
+      if (proj_type .eq. initial_projection_comp) then
 
       ! quantity projected is U
-      else if (proj_type .eq. divu_iters) then
+      else if (proj_type .eq. divu_iters_comp) then
 
       ! quantity projected is (Ustar - Un)
-      else if (proj_type .eq. pressure_iters) then
+      else if (proj_type .eq. pressure_iters_comp) then
 
          unew(-1:nx,-1:ny,1) = ( unew(-1:nx,-1:ny,1) - uold(-1:nx,-1:ny,1) ) / dt
          unew(-1:nx,-1:ny,2) = ( unew(-1:nx,-1:ny,2) - uold(-1:nx,-1:ny,2) ) / dt
      
       ! quantity projected is Ustar + dt * (1/rho) gpres
-      else if (proj_type .eq. regular_timestep) then
+      else if (proj_type .eq. regular_timestep_comp) then
 
-         unew(-1:nx,-1:ny,1) = unew(-1:nx,-1:ny,1) + dt*gpres(-1:nx,-1:ny,1)/rhohalf(-1:nx,-1:ny)
-         unew(-1:nx,-1:ny,2) = unew(-1:nx,-1:ny,2) + dt*gpres(-1:nx,-1:ny,2)/rhohalf(-1:nx,-1:ny)
+         unew(-1:nx,-1:ny,1) = &
+              unew(-1:nx,-1:ny,1) + dt*gpres(-1:nx,-1:ny,1)/rhohalf(-1:nx,-1:ny)
+         unew(-1:nx,-1:ny,2) = &
+              unew(-1:nx,-1:ny,2) + dt*gpres(-1:nx,-1:ny,2)/rhohalf(-1:nx,-1:ny)
 
        else
      
@@ -520,18 +523,19 @@ contains
       if (phys_bc(3,2) .eq. INLET) gpres(-1:nx,-1:ny,nz,:) = ZERO
 
       ! quantity projected is U
-      if (proj_type .eq. initial_projection) then
+      if (proj_type .eq. initial_projection_comp) then
 
       ! quantity projected is U
-      else if (proj_type .eq. divu_iters) then
+      else if (proj_type .eq. divu_iters_comp) then
 
       ! quantity projected is (Ustar - Un)
-      else if (proj_type .eq. pressure_iters) then
+      else if (proj_type .eq. pressure_iters_comp) then
 
-         unew(-1:nx,-1:ny,-1:nz,:) = ( unew(-1:nx,-1:ny,-1:nz,:) - uold(-1:nx,-1:ny,-1:nz,:) ) / dt
+         unew(-1:nx,-1:ny,-1:nz,:) =&
+              ( unew(-1:nx,-1:ny,-1:nz,:) - uold(-1:nx,-1:ny,-1:nz,:) ) / dt
 
       ! quantity projected is Ustar + dt * (1/rho) gpres
-      else if (proj_type .eq. regular_timestep) then
+      else if (proj_type .eq. regular_timestep_comp) then
 
          unew(-1:nx,-1:ny,-1:nz,1) = unew(-1:nx,-1:ny,-1:nz,1) + &
                                     dt*gpres(-1:nx,-1:ny,-1:nz,1)/rhohalf(-1:nx,-1:ny,-1:nz)
@@ -640,22 +644,23 @@ contains
       unew(0:nx,0:ny,1) = unew(0:nx,0:ny,1) - gphi(0:nx,0:ny,1)/rhohalf(0:nx,0:ny) 
       unew(0:nx,0:ny,2) = unew(0:nx,0:ny,2) - gphi(0:nx,0:ny,2)/rhohalf(0:nx,0:ny) 
 
-      if (proj_type .eq. pressure_iters) &    ! unew held the projection of (ustar-uold)
+      if (proj_type .eq. pressure_iters_comp) &    ! unew held the projection of (ustar-uold)
            unew(0:nx,0:ny,:) = uold(0:nx,0:ny,:) + dt * unew(0:nx,0:ny,:)
 
-      if ( (proj_type .eq. initial_projection) .or. (proj_type .eq. divu_iters) ) then
+      if ( (proj_type .eq. initial_projection_comp) .or. &
+           (proj_type .eq. divu_iters_comp) ) then
 
          gpres = ZERO
          pres = ZERO
 
-      else if (proj_type .eq. pressure_iters) then
+      else if (proj_type .eq. pressure_iters_comp) then
 
          !  phi held                 (change in pressure)
          ! gphi held the gradient of (change in pressure)
          gpres(0:nx,0:ny,:) = gpres(0:nx,0:ny,:) + gphi(0:nx,0:ny,:)
          pres(0:nx,0:ny  ) =  pres(0:nx,0:ny  )  +  phi(0:nx,0:ny  )
 
-      else if (proj_type .eq. regular_timestep) then
+      else if (proj_type .eq. regular_timestep_comp) then
 
          !  phi held                 dt * (pressure)
          ! gphi held the gradient of dt * (pressure)
@@ -697,22 +702,23 @@ contains
       unew(0:nx,0:ny,0:nz,3) = &
            unew(0:nx,0:ny,0:nz,3) - gphi(0:nx,0:ny,0:nz,3)/rhohalf(0:nx,0:ny,0:nz) 
 
-      if (proj_type .eq. pressure_iters) &    ! unew held the projection of (ustar-uold)
+      if (proj_type .eq. pressure_iters_comp) &    ! unew held the projection of (ustar-uold)
            unew(0:nx,0:ny,0:nz,:) = uold(0:nx,0:ny,0:nz,:) + dt * unew(0:nx,0:ny,0:nz,:)
 
-      if ( (proj_type .eq. initial_projection) .or. (proj_type .eq. divu_iters) ) then
+      if ( (proj_type .eq. initial_projection_comp) .or. &
+           (proj_type .eq. divu_iters_comp) ) then
 
          gpres = ZERO
          pres = ZERO
 
-      else if (proj_type .eq. pressure_iters) then
+      else if (proj_type .eq. pressure_iters_comp) then
 
          !  phi held                 (change in pressure)
          ! gphi held the gradient of (change in pressure)
          gpres(0:nx,0:ny,0:nz,:) = gpres(0:nx,0:ny,0:nz,:) + gphi(0:nx,0:ny,0:nz,:)
          pres(0:nx,0:ny,0:nz  ) =  pres(0:nx,0:ny,0:nz  )  +  phi(0:nx,0:ny,0:nz  )
 
-      else if (proj_type .eq. regular_timestep) then
+      else if (proj_type .eq. regular_timestep_comp) then
 
          !  phi held                 dt * (pressure)
          ! gphi held the gradient of dt * (pressure)

@@ -668,7 +668,7 @@ contains
        
     ! Project the new velocity field.
     if (init_mode) then
-       proj_type = pressure_iters
+       proj_type = pressure_iters_comp
        do n=1,nlevs
           call multifab_copy(hgrhs_old(n),hgrhs(n))
        end do
@@ -678,7 +678,7 @@ contains
           call multifab_div_div_s(hgrhs(n),dt)
        end do
     else
-       proj_type = regular_timestep
+       proj_type = regular_timestep_comp
        call make_hgrhs(nlevs,hgrhs,Source_new,gamma1_term,Sbar(:,:,1),div_coeff_new,dx)
     end if
     
