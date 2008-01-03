@@ -19,6 +19,7 @@ f90sources += firstdt.f90
 f90sources += geometry.f90
 f90sources += hgproject.f90
 f90sources += initdata.f90
+f90sources += initial_proj.f90
 f90sources += macproject.f90
 f90sources += main.f90
 f90sources += make_at_halftime.f90
