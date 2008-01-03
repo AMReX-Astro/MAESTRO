@@ -12,7 +12,7 @@ contains
     
   subroutine advance_timestep(init_mode,mla,uold,sold,unew,snew, &
                               gpres,pres,scal_force,normal,s0_old,s0_1,s0_2, &
-                              s0_new,p0_old,p0_1,p0_2,p0_new,gam1,w0,eta,rho_omegadot1, &
+                              s0_new,p0_old,p0_1,p0_2,p0_new,gam1,w0,eta, &
                               rho_omegadot2,rho_Hext,div_coeff_old,div_coeff_new, &
                               grav_cell_old,dx,time,dt,dtold,the_bc_tower,anelastic_cutoff, &
                               verbose,mg_verbose,cg_verbose,dSdt,Source_old,Source_new, &
@@ -73,7 +73,6 @@ contains
     real(dp_t)    ,  intent(inout) :: gam1(:,0:)
     real(dp_t)    ,  intent(inout) :: w0(:,0:)
     real(dp_t)    ,  intent(inout) :: eta(:,0:,:)
-    type(multifab),  intent(inout) :: rho_omegadot1(:)
     type(multifab),  intent(inout) :: rho_omegadot2(:)
     type(multifab),  intent(inout) :: rho_Hext(:)
     real(dp_t)    ,  intent(in   ) :: div_coeff_old(:,0:)
@@ -108,6 +107,7 @@ contains
     type(multifab), allocatable :: s1(:)
     type(multifab), allocatable :: s2(:)
     type(multifab), allocatable :: gamma1_term(:)
+    type(multifab), allocatable :: rho_omegadot1(:)
     
     logical, allocatable :: umac_nodal_flag(:)
 
@@ -303,6 +303,13 @@ contains
     do n = 1,nlevs
        call multifab_build(s1(n), mla%la(n), nscal, ng_cell)
        call setval(s1(n), ZERO, all=.true.)
+    end do
+
+    allocate(rho_omegadot1(nlevs))
+
+    do n=1,nlevs
+       call multifab_build(rho_omegadot1(n), mla%la(n), nspec, 0)
+       call setval(rho_omegadot1(n),ZERO, all=.true.)
     end do
 
     call react_state(nlevs,mla,sold,s1,rho_omegadot1,rho_Hext,halfdt,dx, &
@@ -622,9 +629,10 @@ contains
     do n=1,nlevs
        call destroy(s1(n))
        call destroy(s2(n))
+       call destroy(rho_omegadot1(n))
     end do
 
-    deallocate(s1,s2)
+    deallocate(s1,s2,rho_omegadot1)
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 10 -- compute S^{n+1} for the final projection

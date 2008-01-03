@@ -8,10 +8,11 @@ module initial_proj_module
 contains
 
   subroutine initial_proj(nlevs,uold,sold,pres,gpres,vel_force,normal,rho_Hext,Source_old, &
-                          hgrhs,rho_omegadot1,div_coeff_3d, &
+                          hgrhs,div_coeff_3d, &
                           div_coeff_old,s0_old,p0_old,gam1,grav_cell,dx,the_bc_tower,mla)
 
     use variables, only: temp_comp, press_comp
+    use network, only: nspec
     use define_bc_module
     use bl_constants_module
     use probin_module
@@ -37,7 +38,6 @@ contains
     type(multifab) , intent(inout) :: rho_Hext(:)
     type(multifab) , intent(inout) :: Source_old(:)
     type(multifab) , intent(inout) :: hgrhs(:)
-    type(multifab) , intent(inout) :: rho_omegadot1(:)
     type(multifab) , intent(inout) :: div_coeff_3d(:)
     real(kind=dp_t), intent(in   ) :: div_coeff_old(:,0:)
     real(kind=dp_t), intent(in   ) :: s0_old(:,0:,:)
@@ -55,6 +55,7 @@ contains
     type(multifab), allocatable :: gamma1_term(:)
     type(multifab), allocatable :: thermal(:)
     type(multifab), allocatable :: rhohalf(:)
+    type(multifab), allocatable :: rho_omegadot1(:)
 
     if ( parallel_IOProcessor() ) then
        print *, 'DOING THE INITIAL VELOCITY PROJECTION'
@@ -63,11 +64,6 @@ contains
     
     call mk_vel_force(nlevs,vel_force,gpres,sold,normal,s0_old,grav_cell,dx, &
                       the_bc_tower%bc_tower_array,mla)
-    
-    do n = 1, nlevs
-       ! we don't have a legit timestep yet, so set rho_omegadot1 = 0 to be safe
-       call setval(rho_omegadot1(n), ZERO, all=.true.)
-    end do
 
     allocate(thermal(nlevs))
 
@@ -88,14 +84,23 @@ contains
        call setval(gamma1_term(n), 0.0_dp_t, all=.true.)
     end do
 
+    allocate(rho_omegadot1(nlevs))
+
+    do n = 1, nlevs
+       ! we don't have a legit timestep yet, so we set rho_omegadot1 = 0 
+       call multifab_build(rho_omegadot1(n), mla%la(n), nspec, 0)
+       call setval(rho_omegadot1(n), ZERO, all=.true.)
+    end do
+
     call make_S(nlevs,Source_old,gamma1_term,sold,rho_omegadot1,rho_Hext,thermal, &
                 s0_old(:,:,temp_comp),gam1,dx)
 
     do n=1,nlevs
        call destroy(thermal(n))
+       call destroy(rho_omegadot1(n))
     end do
 
-    deallocate(thermal)
+    deallocate(thermal,rho_omegadot1)
     
     allocate(Sbar(nlevs,nr(nlevs),1))
 
