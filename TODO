@@ -13,3 +13,6 @@
 
 -- fix restart for test_smallscale -- the inflow boundary is not set
    right at a restart
+
+-- clean-up the gamma1_term and make it a runtime parameter.
+
