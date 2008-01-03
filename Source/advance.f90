@@ -16,7 +16,7 @@ contains
                               rho_omegadot2,rho_Hext,div_coeff_old,div_coeff_new, &
                               grav_cell_old,dx,time,dt,dtold,the_bc_tower,anelastic_cutoff, &
                               verbose,mg_verbose,cg_verbose,dSdt,Source_old,Source_new, &
-                              gamma1_term,sponge,do_sponge,hgrhs,istep)
+                              sponge,do_sponge,hgrhs,istep)
 
     use bl_prof_module
     use ml_layout_module
@@ -86,7 +86,6 @@ contains
     type(multifab),  intent(inout) :: dSdt(:)
     type(multifab),  intent(inout) :: Source_old(:)
     type(multifab),  intent(inout) :: Source_new(:)
-    type(multifab),  intent(inout) :: gamma1_term(:)
     type(multifab),  intent(in   ) :: sponge(:)
     logical       ,  intent(in   ) :: do_sponge
     type(multifab),  intent(inout) :: hgrhs(:)
@@ -108,6 +107,7 @@ contains
     type(multifab), allocatable :: uedge(:,:)
     type(multifab), allocatable :: s1(:)
     type(multifab), allocatable :: s2(:)
+    type(multifab), allocatable :: gamma1_term(:)
     
     logical, allocatable :: umac_nodal_flag(:)
 
@@ -258,8 +258,21 @@ contains
     
     call advance_premac(nlevs,uold,sold,umac,uedge,utrans,gpres,normal,w0,w0_cart_vec, &
                         s0_old,grav_cell_old,dx,dt,the_bc_tower%bc_tower_array,mla)
+
+    allocate(gamma1_term(nlevs))
     
+    do n=1,nlevs
+       call multifab_build(gamma1_term(n), mla%la(n), 1, 0)
+       call setval(gamma1_term(n), 0.0_dp_t, all=.true.)
+    end do
+
     call make_macrhs(nlevs,macrhs,Source_nph,gamma1_term,Sbar(:,:,1),div_coeff_old,dx)
+
+    do n=1,nlevs
+       call destroy(gamma1_term(n))
+    end do
+
+    deallocate(gamma1_term)
     
     ! MAC projection !
     if (spherical .eq. 1) then
@@ -452,6 +465,13 @@ contains
           end do
        end if
        
+       allocate(gamma1_term(nlevs))
+    
+       do n=1,nlevs
+          call multifab_build(gamma1_term(n), mla%la(n), 1, 0)
+          call setval(gamma1_term(n), 0.0_dp_t, all=.true.)
+       end do
+
        call make_S(nlevs,Source_new,gamma1_term,snew,rho_omegadot2,rho_Hext,thermal, &
                    s0_old(:,:,temp_comp),gam1,dx)
        
@@ -482,6 +502,12 @@ contains
        
        call make_macrhs(nlevs,macrhs,Source_nph,gamma1_term,Sbar(:,:,1),div_coeff_nph,dx)
     
+       do n=1,nlevs
+          call destroy(gamma1_term(n))
+       end do
+
+       deallocate(gamma1_term)
+
        ! Define rho at half time !
        do n=1,nlevs
           call multifab_build(rhohalf(n), mla%la(n), 1    , 1)
@@ -617,6 +643,13 @@ contains
        end do
     end if
     
+    allocate(gamma1_term(nlevs))
+    
+    do n=1,nlevs
+       call multifab_build(gamma1_term(n), mla%la(n), 1, 0)
+       call setval(gamma1_term(n), 0.0_dp_t, all=.true.)
+    end do
+
     call make_S(nlevs,Source_new,gamma1_term,snew,rho_omegadot2,rho_Hext,thermal, &
                 s0_new(:,:,temp_comp),gam1,dx)
 
@@ -681,6 +714,12 @@ contains
        proj_type = regular_timestep_comp
        call make_hgrhs(nlevs,hgrhs,Source_new,gamma1_term,Sbar(:,:,1),div_coeff_new,dx)
     end if
+
+    do n=1,nlevs
+       call destroy(gamma1_term(n))
+    end do
+
+    deallocate(gamma1_term)
     
     if (spherical .eq. 1) then
        call fill_3d_data_wrapper(nlevs,div_coeff_3d,div_coeff_nph,dx)

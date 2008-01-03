@@ -8,7 +8,7 @@ module initial_proj_module
 contains
 
   subroutine initial_proj(nlevs,uold,sold,pres,gpres,vel_force,normal,rho_Hext,Source_old, &
-                          gamma1_term,hgrhs,rho_omegadot1,thermal,div_coeff_3d,rhohalf, &
+                          hgrhs,rho_omegadot1,thermal,div_coeff_3d,rhohalf, &
                           div_coeff_old,s0_old,p0_old,gam1,grav_cell,dx,the_bc_tower,mla)
 
     use variables, only: temp_comp, rho_comp, press_comp
@@ -36,7 +36,6 @@ contains
     type(multifab) , intent(in   ) :: normal(:)
     type(multifab) , intent(inout) :: rho_Hext(:)
     type(multifab) , intent(inout) :: Source_old(:)
-    type(multifab) , intent(inout) :: gamma1_term(:) 
     type(multifab) , intent(inout) :: hgrhs(:)
     type(multifab) , intent(inout) :: rho_omegadot1(:)
     type(multifab) , intent(inout) :: thermal(:)
@@ -52,9 +51,10 @@ contains
     type(ml_layout), intent(inout) :: mla
 
     ! local
-    integer :: n
-    real(dp_t) :: dt_temp
-    real(dp_t), allocatable :: Sbar(:,:,:)
+    integer                     :: n
+    real(dp_t)                  :: dt_temp
+    real(dp_t), allocatable     :: Sbar(:,:,:)  
+    type(multifab), allocatable :: gamma1_term(:)
 
     if ( parallel_IOProcessor() ) then
        print *, 'DOING THE INITIAL VELOCITY PROJECTION'
@@ -75,6 +75,13 @@ contains
                                   the_bc_tower,temp_diffusion_formulation)
     end if
     
+    allocate(gamma1_term(nlevs))
+
+    do n=1,nlevs
+       call multifab_build(gamma1_term(n), mla%la(n), 1, 0)
+       call setval(gamma1_term(n), 0.0_dp_t, all=.true.)
+    end do
+
     call make_S(nlevs,Source_old,gamma1_term,sold,rho_omegadot1,rho_Hext,thermal, &
                 s0_old(:,:,temp_comp),gam1,dx)
     
@@ -90,8 +97,12 @@ contains
     end do
     
     call make_hgrhs(nlevs,hgrhs,Source_old,gamma1_term,Sbar(:,:,1),div_coeff_old,dx)
-    
-    deallocate(Sbar)
+
+    do n=1,nlevs
+       call destroy(gamma1_term(n))
+    end do
+
+    deallocate(gamma1_term,Sbar)
     
     ! dt doesn't matter for the initial projection since we're throwing
     ! away the p and gpres anyway
