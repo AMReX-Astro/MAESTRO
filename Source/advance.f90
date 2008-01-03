@@ -100,16 +100,18 @@ contains
     type(multifab), allocatable :: thermal(:)
     type(multifab), allocatable :: s2star(:)
     type(multifab), allocatable :: rho_omegadot2_hold(:)
-    type(multifab), allocatable :: umac(:,:)
-    type(multifab), allocatable :: utrans(:,:)
-    type(multifab), allocatable :: uedge(:,:)
     type(multifab), allocatable :: s1(:)
     type(multifab), allocatable :: s2(:)
     type(multifab), allocatable :: gamma1_term(:)
     type(multifab), allocatable :: rho_omegadot1(:)
     type(multifab), allocatable :: rho_Hext(:)
+    type(multifab), allocatable :: div_coeff_3d(:) ! Only needed for spherical.eq.1
+
+    type(multifab), allocatable :: umac(:,:)
+    type(multifab), allocatable :: utrans(:,:)
+    type(multifab), allocatable :: uedge(:,:)
     
-    logical, allocatable :: umac_nodal_flag(:)
+    logical       , allocatable :: umac_nodal_flag(:)
 
     real(dp_t)    , allocatable :: grav_cell_nph(:,:)
     real(dp_t)    , allocatable :: grav_cell_new(:,:)
@@ -122,15 +124,12 @@ contains
     real(dp_t)    , allocatable :: rho_omegadotbar1(:,:,:)
     real(dp_t)    , allocatable :: rho_omegadotbar2(:,:,:)
     real(dp_t)    , allocatable :: rho_Hextbar(:,:,:)
+
     integer       , allocatable :: lo(:),hi(:)
 
-    ! Only needed for spherical.eq.1 
-    type(multifab) , allocatable :: div_coeff_3d(:)
-
-    real(dp_t) :: halfdt,eps_in
-    integer    :: j,n,dm,comp,nlevs,ng_cell,proj_type
-    logical    :: nodal(mla%dim)
-
+    real(dp_t)                :: halfdt,eps_in
+    integer                   :: j,n,dm,comp,nlevs,ng_cell,proj_type
+    logical                   :: nodal(mla%dim)
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "advance_timestep")
@@ -138,11 +137,9 @@ contains
     dm = mla%dim
     nlevs = size(uold)
 
-    allocate(umac_nodal_flag(dm))
-
     allocate(           rhohalf(nlevs))
-    allocate(       w0_cart_vec(nlevs))
-    allocate( w0_force_cart_vec(nlevs))
+    allocate(       w0_cart_vec(nlevs))   
+    allocate( w0_force_cart_vec(nlevs))    
     allocate(            macrhs(nlevs))
     allocate(            macphi(nlevs))
     allocate(         hgrhs_old(nlevs))
@@ -150,9 +147,18 @@ contains
     allocate(           thermal(nlevs))
     allocate(            s2star(nlevs))
     allocate(rho_omegadot2_hold(nlevs))
-    if (spherical.eq.1) then
-       allocate(div_coeff_3d(nlevs))
-    end if
+    allocate(                s1(nlevs))
+    allocate(                s2(nlevs))
+    allocate(       gamma1_term(nlevs))
+    allocate(     rho_omegadot1(nlevs))
+    allocate(          rho_Hext(nlevs))
+    allocate(      div_coeff_3d(nlevs))
+    
+    allocate(  umac(nlevs,dm))
+    allocate(utrans(nlevs,dm))
+    allocate( uedge(nlevs,dm))
+
+    allocate(umac_nodal_flag(dm))
 
     allocate(   grav_cell_nph(nlevs,0:nr(nlevs)-1))
     allocate(   grav_cell_new(nlevs,0:nr(nlevs)-1))
@@ -241,8 +247,6 @@ contains
        write(6,*) '<<< STEP  2 : create MAC velocities>>> '
     end if
 
-    allocate(umac(nlevs,dm),utrans(nlevs,dm),uedge(nlevs,dm))
-
     do n=1,nlevs
        do comp=1,dm
           umac_nodal_flag = .false.
@@ -259,8 +263,6 @@ contains
     call advance_premac(nlevs,uold,sold,umac,uedge,utrans,gpres,normal,w0,w0_cart_vec, &
                         s0_old,grav_cell_old,dx,dt,the_bc_tower%bc_tower_array,mla)
 
-    allocate(gamma1_term(nlevs))
-    
     do n=1,nlevs
        call multifab_build(gamma1_term(n), mla%la(n), 1, 0)
        call setval(gamma1_term(n), 0.0_dp_t, all=.true.)
@@ -272,8 +274,6 @@ contains
        call destroy(gamma1_term(n))
     end do
 
-    deallocate(gamma1_term)
-    
     ! MAC projection !
     if (spherical .eq. 1) then
        call fill_3d_data_wrapper(nlevs,div_coeff_3d,div_coeff_old,dx)
@@ -298,14 +298,10 @@ contains
        write(6,*) '            : react  base >>> '
     end if
     
-    allocate(s1(nlevs))
-
     do n = 1,nlevs
        call multifab_build(s1(n), mla%la(n), nscal, ng_cell)
        call setval(s1(n), ZERO, all=.true.)
     end do
-
-    allocate(rho_omegadot1(nlevs),rho_Hext(nlevs))
 
     do n=1,nlevs
        call multifab_build(rho_omegadot1(n), mla%la(n), nspec, 0)
@@ -373,8 +369,6 @@ contains
        end do
     end if
             
-    allocate(s2(nlevs))
-
     do n = 1,nlevs
        call multifab_build(s2(n), mla%la(n), nscal, ng_cell)
        call setval(s2(n), ZERO, all=.true.)
@@ -474,8 +468,6 @@ contains
           end do
        end if
        
-       allocate(gamma1_term(nlevs))
-    
        do n=1,nlevs
           call multifab_build(gamma1_term(n), mla%la(n), 1, 0)
           call setval(gamma1_term(n), 0.0_dp_t, all=.true.)
@@ -514,8 +506,6 @@ contains
        do n=1,nlevs
           call destroy(gamma1_term(n))
        end do
-
-       deallocate(gamma1_term)
 
        ! Define rho at half time !
        do n=1,nlevs
@@ -634,8 +624,6 @@ contains
        call destroy(rho_omegadot1(n))
     end do
 
-    deallocate(s1,s2,rho_omegadot1)
-    
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 10 -- compute S^{n+1} for the final projection
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -653,8 +641,6 @@ contains
        end do
     end if
     
-    allocate(gamma1_term(nlevs))
-    
     do n=1,nlevs
        call multifab_build(gamma1_term(n), mla%la(n), 1, 0)
        call setval(gamma1_term(n), 0.0_dp_t, all=.true.)
@@ -666,8 +652,6 @@ contains
     do n=1,nlevs
        call destroy(rho_Hext(n))
     end do
-
-    deallocate(rho_Hext)
 
     call average(mla,Source_new,Sbar,dx,1,1)
     
@@ -706,8 +690,6 @@ contains
        end do
     end do
 
-    deallocate(umac,utrans,uedge)
-    
     ! Define beta at half time using the div_coeff_new from step 9!
     do n=1,nlevs
        do j=0,nr(n)-1
@@ -735,8 +717,6 @@ contains
        call destroy(gamma1_term(n))
     end do
 
-    deallocate(gamma1_term)
-    
     if (spherical .eq. 1) then
        call fill_3d_data_wrapper(nlevs,div_coeff_3d,div_coeff_nph,dx)
        eps_in = 1.d-12
@@ -771,46 +751,22 @@ contains
        if (spherical .eq. 1) &
             call destroy(div_coeff_3d(n))
     end do
-    deallocate(Source_nph)
-    deallocate(macrhs)
-    deallocate(macphi)
-    deallocate(hgrhs_old)
-    deallocate(thermal)
-    deallocate(rhohalf)
-    deallocate(s2star)
-    deallocate(rho_omegadot2_hold)
-    
-    if (spherical .eq. 1) &
-         deallocate(div_coeff_3d)
-    
+
     if (dm .eq. 3) then
        do n=1,nlevs
           call destroy(w0_cart_vec(n))
           call destroy(w0_force_cart_vec(n))
        end do
     end if
-    
-    deallocate(w0_cart_vec)
-    deallocate(w0_force_cart_vec)
-    
-    deallocate(Sbar)
-    deallocate(s0_nph)
-    deallocate(div_coeff_nph)
-    deallocate(div_coeff_edge)
-    deallocate(grav_cell_nph)
-    deallocate(grav_cell_new)
-    
-    deallocate(rho_omegadotbar1)
-    deallocate(rho_omegadotbar2)
-    deallocate(rho_Hextbar)
-    
-    deallocate(w0_old)
-    deallocate(w0_force)
-    
-    deallocate(lo)
-    deallocate(hi)
 
+    deallocate(rhohalf,w0_cart_vec,w0_force_cart_vec,macrhs,macphi,hgrhs_old,Source_nph)
+    deallocate(thermal,s2star,rho_omegadot2_hold,s1,s2,gamma1_term,rho_omegadot1)
+    deallocate(rho_Hext,div_coeff_3d)
+    deallocate(umac,utrans,uedge)
     deallocate(umac_nodal_flag)
+    deallocate(grav_cell_nph,grav_cell_new,s0_nph,w0_force,w0_old,Sbar)
+    deallocate(div_coeff_nph,div_coeff_edge,rho_omegadotbar1,rho_omegadotbar2,rho_Hextbar)
+    deallocate(lo,hi)
 
     call destroy(bpt)
     
