@@ -8,10 +8,10 @@ module initial_proj_module
 contains
 
   subroutine initial_proj(nlevs,uold,sold,pres,gpres,vel_force,normal,rho_Hext,Source_old, &
-                          hgrhs,rho_omegadot1,div_coeff_3d,rhohalf, &
+                          hgrhs,rho_omegadot1,div_coeff_3d, &
                           div_coeff_old,s0_old,p0_old,gam1,grav_cell,dx,the_bc_tower,mla)
 
-    use variables, only: temp_comp, rho_comp, press_comp
+    use variables, only: temp_comp, press_comp
     use define_bc_module
     use bl_constants_module
     use probin_module
@@ -39,7 +39,6 @@ contains
     type(multifab) , intent(inout) :: hgrhs(:)
     type(multifab) , intent(inout) :: rho_omegadot1(:)
     type(multifab) , intent(inout) :: div_coeff_3d(:)
-    type(multifab) , intent(inout) :: rhohalf(:)
     real(kind=dp_t), intent(in   ) :: div_coeff_old(:,0:)
     real(kind=dp_t), intent(in   ) :: s0_old(:,0:,:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:)
@@ -55,6 +54,7 @@ contains
     real(dp_t), allocatable     :: Sbar(:,:,:)  
     type(multifab), allocatable :: gamma1_term(:)
     type(multifab), allocatable :: thermal(:)
+    type(multifab), allocatable :: rhohalf(:)
 
     if ( parallel_IOProcessor() ) then
        print *, 'DOING THE INITIAL VELOCITY PROJECTION'
@@ -103,8 +103,12 @@ contains
     
     ! Note that we use rhohalf, filled with 1 at this point, as a temporary
     ! in order to do a constant-density initial projection.
+
+    allocate(rhohalf(nlevs))
+
     do n=1,nlevs
-       call setval(rhohalf(n),ONE,rho_comp,1,all=.true.)
+       call multifab_build(rhohalf(n), mla%la(n), 1, 1)
+       call setval(rhohalf(n),ONE,1,1,all=.true.)
        call setval(hgrhs(n),ZERO,all=.true.)
     end do
     
@@ -135,8 +139,11 @@ contains
     do n = 1,nlevs
        call setval( pres(n)  ,0.0_dp_t, all=.true.)
        call setval(gpres(n)  ,0.0_dp_t, all=.true.)
+       call destroy(rhohalf(n))
     end do
     
+    deallocate(rhohalf)
+
   end subroutine initial_proj
 
 end module initial_proj_module
