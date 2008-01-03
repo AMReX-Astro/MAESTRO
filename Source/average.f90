@@ -5,6 +5,10 @@ module average_module
   use ml_layout_module
   
   implicit none
+
+  private
+  public :: enable_base_evolution, disable_base_evolution, average
+
   !
   ! if we set phibar to 0, then the evolution of the base state is effectively 
   ! turned off.  Here we set a parameter that allows us to do that.  We will 

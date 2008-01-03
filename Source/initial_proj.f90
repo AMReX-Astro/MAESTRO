@@ -24,6 +24,8 @@ contains
     use hgrhs_module
     use fill_3d_module
     use hgproject_module
+    use multifab_module
+    use ml_layout_module
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: uold(:)
