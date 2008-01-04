@@ -85,81 +85,10 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
   end do
 
   do n = 1,nlevs
-     call multifab_build(rhsalpha(n), mla%la(n),  1, 1)
-     call multifab_build(lhsalpha(n), mla%la(n),  1, 1)
-     call multifab_build( rhsbeta(n), mla%la(n), dm, 1)
-     call multifab_build( lhsbeta(n), mla%la(n), dm, 1)
-     call multifab_build(     phi(n), mla%la(n),  1, 1)
-     call multifab_build(    Lphi(n), mla%la(n),  1, 0)
-     call multifab_build(     rhs(n), mla%la(n),  1, 0)
-     call multifab_build(  p01fab(n), mla%la(n),  1, 1)
-     call multifab_build(  p02fab(n), mla%la(n),  1, 1)
-
-     call multifab_build( hcoeff1(n), mla%la(n),  1,     1)
-     call multifab_build( hcoeff2(n), mla%la(n),  1,     1)
-     call multifab_build(Xkcoeff1(n), mla%la(n),  nspec, 1)
-     call multifab_build(Xkcoeff2(n), mla%la(n),  nspec, 1)
-     call multifab_build( pcoeff1(n), mla%la(n),  1,     1)
-     call multifab_build( pcoeff2(n), mla%la(n),  1,     1)
-
-     call setval(rhsalpha(n), ZERO, all=.true.)
+     call multifab_build( hcoeff1(n), mla%la(n), 1,     1)
+     call multifab_build(Xkcoeff1(n), mla%la(n), nspec, 1)
+     call multifab_build( pcoeff1(n), mla%la(n), 1,     1)
   end do
-
-  ! create p01fab
-  do n=1,nlevs
-     do i=1,p01fab(n)%nboxes
-        if (multifab_remote(p01fab(n),i)) cycle
-        p01fabp => dataptr(p01fab(n),i)
-        lo = lwb(get_box(p01fab(n), i))
-        hi = upb(get_box(p01fab(n), i))
-        select case (dm)
-        case (2)
-           call put_base_state_on_multifab_2d(lo,hi,p01(n,:),p01fabp(:,:,1,1))
-        case (3)
-           call put_base_state_on_multifab_3d(lo,hi,p01(n,:),p01fabp(:,:,:,1))
-        end select
-     end do
-  enddo
-  
-  ! set the boundary conditions for p01
-  do n=1,nlevs
-     call multifab_fill_boundary(p01fab(n))
-     call multifab_physbc(p01fab(n),1,foextrap_comp,1,dx(n,:),the_bc_tower%bc_tower_array(n))
-  enddo
-
-  ! create p02fab
-  do n=1,nlevs
-     do i=1,p02fab(n)%nboxes
-        if (multifab_remote(p02fab(n),i)) cycle
-        p02fabp => dataptr(p02fab(n),i)
-        lo = lwb(get_box(p02fab(n), i))
-        hi = upb(get_box(p02fab(n), i))
-        select case (dm)
-        case (2)
-           call put_base_state_on_multifab_2d(lo,hi,p02(n,:),p02fabp(:,:,1,1))
-        case (3)
-           call put_base_state_on_multifab_3d(lo,hi,p02(n,:),p02fabp(:,:,:,1))
-        end select
-     end do
-  enddo
-
-  ! set the boundary conditions for p02
-  do n=1,nlevs
-     call multifab_fill_boundary(p02fab(n))
-     call multifab_physbc(p02fab(n),1,foextrap_comp,1,dx(n,:),the_bc_tower%bc_tower_array(n))
-  enddo
-
-  ! lhsalpha = \rho^{(2),*} or \rho^{(2)}
-  ! rhsalpha = 0 (already initialized above)
-  ! thess will be true for this entire subroutine
-  do n=1,nlevs
-     call multifab_copy_c(lhsalpha(n),1,s2(n),rho_comp,1,1)
-  enddo
-
-  ! begin construction of rhs by setting rhs = \rho^{(2)}h^{(2')}
-  do n=1,nlevs
-     call multifab_copy_c(rhs(n),1,s2(n),rhoh_comp,1)
-  enddo
 
   ! compute hcoeff1, Xkcoeff1, and pcoeff1
   ! defined as:
@@ -192,15 +121,21 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
      end do
   enddo
 
-  ! compute hcoeff^new, Xkcoeff^new, and pcoeff^new
+  do n = 1,nlevs
+     call multifab_build( hcoeff2(n), mla%la(n), 1,     1)
+     call multifab_build(Xkcoeff2(n), mla%la(n), nspec, 1)
+     call multifab_build( pcoeff2(n), mla%la(n), 1,     1)
+  end do
+
+  ! compute hcoeff2, Xkcoeff2, and pcoeff2
   ! defined as (if we're in the first call to this function):
-  ! hcoeff1 = -(dt/2)k_{th}^{(1)}/c_p^{(1)}
-  ! Xkcoeff1 = (dt/2)\xi_k^{(1)}k_{th}^{(1)}/c_p^{(1)}
-  ! pcoeff1 =  (dt/2)h_p^{(1)}k_{th}^{(1)}/c_p^{(1)}
+  ! hcoeff2 = -(dt/2)k_{th}^{(1)}/c_p^{(1)}
+  ! Xkcoeff2 = (dt/2)\xi_k^{(1)}k_{th}^{(1)}/c_p^{(1)}
+  ! pcoeff2 =  (dt/2)h_p^{(1)}k_{th}^{(1)}/c_p^{(1)}
   ! or defined as (if we're in the second call to this function):
-  ! hcoeff1 = -(dt/2)k_{th}^{(2),*}/c_p^{(2),*}
-  ! Xkcoeff1 = (dt/2)\xi_k^{(2),*}k_{th}^{(2),*}/c_p^{(2),*}
-  ! pcoeff1 =  (dt/2)h_p^{(2),*}k_{th}^{(2),*}/c_p^{(2),*}
+  ! hcoeff2 = -(dt/2)k_{th}^{(2),*}/c_p^{(2),*}
+  ! Xkcoeff2 = (dt/2)\xi_k^{(2),*}k_{th}^{(2),*}/c_p^{(2),*}
+  ! pcoeff2 =  (dt/2)h_p^{(2),*}k_{th}^{(2),*}/c_p^{(2),*}
   do n=1,nlevs
      do i=1,s_for_new_coeff(n)%nboxes
         if (multifab_remote(s_for_new_coeff(n),i)) cycle
@@ -231,6 +166,10 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
   ! add enthalpy diffusion to rhs
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+  do n=1,nlevs
+     call multifab_build(rhsbeta(n), mla%la(n), dm, 1)
+  end do
+
   ! put beta on faces
   do n=1,nlevs
      do i=1,rhsbeta(n)%nboxes
@@ -250,16 +189,34 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
      end do
   enddo
 
+  do n=1,nlevs
+     call destroy(hcoeff1(n))
+  end do
+
   ! load phi = h^{(1)}
   do n=1,nlevs
+     call multifab_build(phi(n), mla%la(n),  1, 1)
      call multifab_copy_c(phi(n),1,s1(n),rhoh_comp,1,1)
      call multifab_div_div_c(phi(n),1,s1(n),rho_comp,1,1)
   enddo
+
+  do n=1,nlevs
+     call multifab_build(rhsalpha(n), mla%la(n),  1, 1)
+     call multifab_build(    Lphi(n), mla%la(n),  1, 0)
+     call setval(rhsalpha(n), ZERO, all=.true.)
+  end do
 
   ! apply the operator
   call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
                    dm+rhoh_comp,stencil_order,mla%mba%rr, &
                    mg_verbose,cg_verbose)
+
+
+  ! begin construction of rhs by setting rhs = \rho^{(2)}h^{(2')}
+  do n=1,nlevs
+     call multifab_build(rhs(n), mla%la(n),  1, 0)
+     call multifab_copy_c(rhs(n),1,s2(n),rhoh_comp,1)
+  enddo
 
   ! add Lphi to rhs
   do n=1,nlevs
@@ -346,8 +303,13 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
      enddo
   enddo
 
+  do n=1,nlevs
+     call destroy(Xkcoeff1(n))
+     call destroy(Xkcoeff2(n))
+  end do
+
   !!!!!!!!!!!!!!!!!!!!!!!!!!!
-  ! add pressure diffusino to rhs
+  ! add pressure diffusion to rhs
   !!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   ! do p01 term first
@@ -370,10 +332,44 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
      end do
   enddo
 
+  do n=1,nlevs
+     call destroy(pcoeff1(n))
+  end do
+
+  do n=1,nlevs
+     call multifab_build(p01fab(n), mla%la(n),  1, 1)
+  end do
+
+  ! create p01fab
+  do n=1,nlevs
+     do i=1,p01fab(n)%nboxes
+        if (multifab_remote(p01fab(n),i)) cycle
+        p01fabp => dataptr(p01fab(n),i)
+        lo = lwb(get_box(p01fab(n), i))
+        hi = upb(get_box(p01fab(n), i))
+        select case (dm)
+        case (2)
+           call put_base_state_on_multifab_2d(lo,hi,p01(n,:),p01fabp(:,:,1,1))
+        case (3)
+           call put_base_state_on_multifab_3d(lo,hi,p01(n,:),p01fabp(:,:,:,1))
+        end select
+     end do
+  enddo
+  
+  ! set the boundary conditions for p01
+  do n=1,nlevs
+     call multifab_fill_boundary(p01fab(n))
+     call multifab_physbc(p01fab(n),1,foextrap_comp,1,dx(n,:),the_bc_tower%bc_tower_array(n))
+  enddo
+
   ! load phi = p01
   do n=1,nlevs
      call multifab_copy_c(phi(n),1,p01fab(n),1,1,1)
   enddo
+
+  do n=1,nlevs
+     call destroy(p01fab(n))
+  end do
   
   ! apply the operator
   call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
@@ -404,25 +400,72 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
         end select
      end do
   enddo
+
+  do n=1,nlevs
+     call destroy(pcoeff2(n))
+  end do
   
-  ! load phi = -02
+  do n=1,nlevs
+     call multifab_build(p02fab(n), mla%la(n),  1, 1)
+  end do
+
+  ! create p02fab
+  do n=1,nlevs
+     do i=1,p02fab(n)%nboxes
+        if (multifab_remote(p02fab(n),i)) cycle
+        p02fabp => dataptr(p02fab(n),i)
+        lo = lwb(get_box(p02fab(n), i))
+        hi = upb(get_box(p02fab(n), i))
+        select case (dm)
+        case (2)
+           call put_base_state_on_multifab_2d(lo,hi,p02(n,:),p02fabp(:,:,1,1))
+        case (3)
+           call put_base_state_on_multifab_3d(lo,hi,p02(n,:),p02fabp(:,:,:,1))
+        end select
+     end do
+  enddo
+
+  ! set the boundary conditions for p02
+  do n=1,nlevs
+     call multifab_fill_boundary(p02fab(n))
+     call multifab_physbc(p02fab(n),1,foextrap_comp,1,dx(n,:),the_bc_tower%bc_tower_array(n))
+  enddo
+
+  ! load phi = p02
   do n=1,nlevs
      call multifab_copy_c(phi(n),1,p02fab(n),1,1,1)
   enddo
+
+  do n=1,nlevs
+     call destroy(p02fab(n))
+  end do
   
   ! apply the operator
   call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
        foextrap_comp,stencil_order,mla%mba%rr, &
        mg_verbose,cg_verbose)
+
+  do n=1,nlevs
+     call destroy(rhsalpha(n))
+     call destroy(rhsbeta(n))
+  end do
   
   ! add lphi to rhs
   do n=1,nlevs
      call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,1)
   enddo
+
+  do n=1,nlevs
+     call destroy(Lphi(n))
+  end do
   
   !!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! Setup LHS coefficients
   !!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  do n=1,nlevs
+     call multifab_build(lhsbeta(n), mla%la(n), dm, 1)
+  end do
 
   ! create lhsbeta = -hcoeff2 = (dt/2)k_{th}^{(2'')}/c_p^{(2'')}
   ! put beta on faces (remember to scale by -1 afterwards)
@@ -444,6 +487,10 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
      end do
   enddo
 
+  do n=1,nlevs
+     call destroy(hcoeff2(n))
+  end do
+
   ! scale by -1
   do n=1,nlevs
      call multifab_mult_mult_s_c(lhsbeta(n),1,-1.0d0,dm,1)
@@ -460,21 +507,39 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
      call multifab_div_div_c(phi(n),1,s2(n),rho_comp,1,1)
   enddo
 
+  ! lhsalpha = \rho^{(2),*} or \rho^{(2)}
+  do n=1,nlevs
+     call multifab_build(lhsalpha(n), mla%la(n), 1, 1)
+     call multifab_copy_c(lhsalpha(n),1,s2(n),rho_comp,1,1)
+  enddo
+
   ! Call the solver to obtain h^(2) (it will be stored in phi)
   ! solves (alpha - nabla dot beta nabla)phi = rh
   call mac_multigrid(mla,rhs,phi,fine_flx,lhsalpha,lhsbeta,dx,the_bc_tower, &
                      dm+rhoh_comp,stencil_order,mla%mba%rr, &
                      mg_verbose,cg_verbose)
 
+  do n=1,nlevs
+     call destroy(lhsalpha(n))
+     call destroy(lhsbeta(n))
+     call destroy(rhs(n))
+  end do
+
   ! load new rho*h into s2
   do n=1,nlevs
      call multifab_copy_c(s2(n),rhoh_comp,phi(n),1,1)
      call multifab_mult_mult_c(s2(n),rhoh_comp,s2(n),rho_comp,1)
+  enddo
+  
+  do n=1,nlevs
+     call destroy(phi(n))
+  end do
 
+  do n=1,nlevs
      call multifab_fill_boundary_c(s2(n),rhoh_comp,1)
      call multifab_physbc(s2(n),rhoh_comp,dm+rhoh_comp,1,dx(n,:), &
                           the_bc_tower%bc_tower_array(n))
-  enddo
+  end do
 
   do n=nlevs,2,-1
      call ml_cc_restriction_c(s2(n-1),rhoh_comp,s2(n),rhoh_comp,mla%mba%rr(n-1,:),1)
@@ -488,24 +553,6 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
 
   ! compute updated temperature
   call makeTfromRhoH(nlevs,s2,t02,mla,the_bc_tower%bc_tower_array,dx)
-
-  do n = 1,nlevs
-     call destroy(rhsalpha(n))
-     call destroy(lhsalpha(n))
-     call destroy(rhsbeta(n))
-     call destroy(lhsbeta(n))
-     call destroy(phi(n))
-     call destroy(Lphi(n))
-     call destroy(rhs(n))
-     call destroy(p01fab(n))
-     call destroy(p02fab(n))
-     call destroy(hcoeff1(n))
-     call destroy(hcoeff2(n))
-     call destroy(Xkcoeff1(n))
-     call destroy(Xkcoeff2(n))
-     call destroy(pcoeff1(n))
-     call destroy(pcoeff2(n))
-  enddo
 
   deallocate(rhsalpha,lhsalpha,rhsbeta,lhsbeta,phi,Lphi,rhs)
   deallocate(p01fab,p02fab,fine_flx)
@@ -603,50 +650,6 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
 
      call setval(rhsalpha(n), ZERO, all=.true.)
   end do
-
-  ! create p01fab
-  do n=1,nlevs
-     do i=1,p01fab(n)%nboxes
-        if (multifab_remote(p01fab(n),i)) cycle
-        p01fabp => dataptr(p01fab(n),i)
-        lo = lwb(get_box(p01fab(n), i))
-        hi = upb(get_box(p01fab(n), i))
-        select case (dm)
-        case (2)
-           call put_base_state_on_multifab_2d(lo,hi,p01(n,:),p01fabp(:,:,1,1))
-        case (3)
-           call put_base_state_on_multifab_3d(lo,hi,p01(n,:),p01fabp(:,:,:,1))
-        end select
-     end do
-  enddo
-
-  ! set the boundary conditions for p01
-  do n=1,nlevs
-     call multifab_fill_boundary(p01fab(n))
-     call multifab_physbc(p01fab(n),1,foextrap_comp,1,dx(n,:),the_bc_tower%bc_tower_array(n))
-  enddo
-
-  ! create p02fab
-  do n=1,nlevs
-     do i=1,p02fab(n)%nboxes
-        if (multifab_remote(p02fab(n),i)) cycle
-        p02fabp => dataptr(p02fab(n),i)
-        lo = lwb(get_box(p02fab(n), i))
-        hi = upb(get_box(p02fab(n), i))
-        select case (dm)
-        case (2)
-           call put_base_state_on_multifab_2d(lo,hi,p02(n,:),p02fabp(:,:,1,1))
-        case (3)
-           call put_base_state_on_multifab_3d(lo,hi,p02(n,:),p02fabp(:,:,:,1))
-        end select
-     end do
-  enddo
-
-  ! set the boundary conditions for p02
-  do n=1,nlevs
-     call multifab_fill_boundary(p02fab(n))
-     call multifab_physbc(p02fab(n),1,foextrap_comp,1,dx(n,:),the_bc_tower%bc_tower_array(n))
-  enddo
 
   ! lhsalpha = \rho^{(2)}
   ! rhsalpha = 0 (already initialized above)
@@ -800,6 +803,51 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
                                      rhsbetap(:,:,:,:))
         end select
      end do
+  enddo
+
+
+  ! create p01fab
+  do n=1,nlevs
+     do i=1,p01fab(n)%nboxes
+        if (multifab_remote(p01fab(n),i)) cycle
+        p01fabp => dataptr(p01fab(n),i)
+        lo = lwb(get_box(p01fab(n), i))
+        hi = upb(get_box(p01fab(n), i))
+        select case (dm)
+        case (2)
+           call put_base_state_on_multifab_2d(lo,hi,p01(n,:),p01fabp(:,:,1,1))
+        case (3)
+           call put_base_state_on_multifab_3d(lo,hi,p01(n,:),p01fabp(:,:,:,1))
+        end select
+     end do
+  enddo
+
+  ! set the boundary conditions for p01
+  do n=1,nlevs
+     call multifab_fill_boundary(p01fab(n))
+     call multifab_physbc(p01fab(n),1,foextrap_comp,1,dx(n,:),the_bc_tower%bc_tower_array(n))
+  enddo
+
+  ! create p02fab
+  do n=1,nlevs
+     do i=1,p02fab(n)%nboxes
+        if (multifab_remote(p02fab(n),i)) cycle
+        p02fabp => dataptr(p02fab(n),i)
+        lo = lwb(get_box(p02fab(n), i))
+        hi = upb(get_box(p02fab(n), i))
+        select case (dm)
+        case (2)
+           call put_base_state_on_multifab_2d(lo,hi,p02(n,:),p02fabp(:,:,1,1))
+        case (3)
+           call put_base_state_on_multifab_3d(lo,hi,p02(n,:),p02fabp(:,:,:,1))
+        end select
+     end do
+  enddo
+
+  ! set the boundary conditions for p02
+  do n=1,nlevs
+     call multifab_fill_boundary(p02fab(n))
+     call multifab_physbc(p02fab(n),1,foextrap_comp,1,dx(n,:),the_bc_tower%bc_tower_array(n))
   enddo
   
   ! load phi = p01 + p02
