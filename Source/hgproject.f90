@@ -44,30 +44,32 @@ contains
     real(dp_t)     , intent(in   ), optional :: eps_in
 
     ! Local  
-    type(multifab), allocatable :: phi(:),gphi(:)
-    logical,        allocatable :: nodal(:)
-    integer                     :: n,nlevs,dm,ng
-    real(dp_t)                  :: umin,umax,vmin,vmax,wmin,wmax
-    integer                     :: stencil_type
-    logical                     :: use_div_coeff_1d, use_div_coeff_3d
+    type(multifab), allocatable :: phi(:)
+    type(multifab), allocatable :: gphi(:)
+    logical       , allocatable :: nodal(:)
 
+    integer                   :: n,nlevs,dm,ng, stencil_type
+    real(dp_t)                :: umin,umax,vmin,vmax,wmin,wmax
+    logical                   :: use_div_coeff_1d, use_div_coeff_3d
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "hgproject")
 
-    ! stencil_type = ST_DENSE
-    stencil_type = ST_CROSS
-
     nlevs = mla%nlevel
     dm = mla%dim
-    ng = unew(nlevs)%ng
+    ng = unew(1)%ng
+
+    allocate( phi(nlevs))
+    allocate(gphi(nlevs))
+    allocate(nodal(dm))
+    nodal = .true.
+
+    ! stencil_type = ST_DENSE
+    stencil_type = ST_CROSS
 
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
        print *,'PROJ_TYPE IN HGPROJECT:',proj_type
     end if
-
-    allocate(phi(nlevs), gphi(nlevs), nodal(dm))
-    nodal = .true.
 
     use_div_coeff_1d = .false.
     if (present(div_coeff_1d)) use_div_coeff_1d = .true.
@@ -78,13 +80,6 @@ contains
     if (use_div_coeff_1d .and. use_div_coeff_3d) then
        call bl_error('CANT HAVE 1D and 3D DIV_COEFF IN HGPROJECT')
     end if
-
-    do n = 1, nlevs
-       call multifab_build( phi(n), mla%la(n), 1, 1, nodal)
-       call multifab_build(gphi(n), mla%la(n), dm, 0) 
-       call multifab_copy(phi(n),pres(n))
-       call multifab_mult_mult_s(phi(n),dt,phi(n)%ng)
-    end do
 
     if (verbose .ge. 1) then
        umin = 1.d30
@@ -126,13 +121,14 @@ contains
        call mult_by_3d_coeff(nlevs,rhohalf,div_coeff_3d,.false.)
     end if
 
-    do n = 1, nlevs
-       call setval(phi(n),ZERO,all=.true.)
-    end do
-
     if (present(divu_rhs)) then
        call enforce_outflow_on_divu_rhs(divu_rhs,the_bc_tower)
     end if
+
+    do n = 1, nlevs
+       call multifab_build(phi(n), mla%la(n), 1, 1, nodal)
+       call setval(phi(n),ZERO,all=.true.)
+    end do
 
     if (present(eps_in)) then
        call hg_multigrid(mla,unew,rhohalf,phi,dx,the_bc_tower,verbose, &
@@ -150,10 +146,19 @@ contains
        call mult_by_3d_coeff(nlevs,rhohalf,div_coeff_3d,.true.)
     end if
 
+    do n = 1, nlevs
+       call multifab_build(gphi(n), mla%la(n), dm, 0)
+    end do
+
     call mkgphi(nlevs,gphi,phi,dx)
 
     call hg_update(nlevs,proj_type,unew,uold,gpres,gphi,rhohalf,  &
                    pres,phi,ng,dt,mla,the_bc_tower%bc_tower_array)
+
+    do n = 1,nlevs
+       call destroy(phi(n))
+       call destroy(gphi(n))
+    end do
 
     if (verbose .ge. 1) then
        umin = 1.d30
@@ -185,13 +190,7 @@ contains
 1103 format('... z-velocity  after projection ',e17.10,2x,e17.10)
 1104 format(' ')
 
-    do n = 1,nlevs
-       call destroy(phi(n))
-       call destroy(gphi(n))
-    end do
-
-    deallocate(phi)
-    deallocate(gphi)
+    deallocate(phi,gphi)
     deallocate(nodal)
 
     call destroy(bpt)
@@ -753,15 +752,15 @@ contains
 
     type(multifab ), intent(in   ), optional :: divu_rhs(:)
     real(dp_t)     , intent(in)   , optional :: eps_in 
-    !
-    ! Local variables
-    !
 
+    ! Local variables
     type(box     )  :: pd
     type(  layout)  :: la
 
     type(mg_tower), allocatable :: mgt(:)
-    type(multifab), allocatable :: coeffs(:),rh(:)
+
+    type(multifab), allocatable :: coeffs(:)
+    type(multifab), allocatable :: rh(:)
     type(multifab), allocatable :: one_sided_ss(:)
 
     real(dp_t) :: bottom_solver_eps
@@ -963,9 +962,8 @@ contains
     end if
 
     deallocate(mgt)
-    deallocate(rh)
+    deallocate(rh,one_sided_ss)
     deallocate(nodal)
-    deallocate(one_sided_ss)
 
     call destroy(bpt)
 
