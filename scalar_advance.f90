@@ -100,10 +100,8 @@ contains
     end do
 
     do n = 1, nlevs
-       call build(scal_force(n),  ext_scal_force(n)%la, nscal, 1)
        call build(s0_old_cart(n), ext_scal_force(n)%la, nscal, 1)
        call build(s0_new_cart(n), ext_scal_force(n)%la, nscal, 1)
-       call setval(scal_force(n), ZERO,all=.true.)
        call setval(s0_old_cart(n),ZERO,all=.true.)
        call setval(s0_new_cart(n),ZERO,all=.true.)
     end do
@@ -133,6 +131,11 @@ contains
 
     ! This can be uncommented if you wish to compute T
     ! call makeTfromRhoH(nlevs,sold,s0_old(:,:,temp_comp),mla,the_bc_level,dx)
+
+    do n = 1, nlevs
+       call build(scal_force(n), ext_scal_force(n)%la, nscal, 1)
+       call setval(scal_force(n), ZERO,all=.true.)
+    end do
 
     ! make force for species
     call modify_scal_force(nlevs,scal_force,sold,umac,s0_old,s0_edge_old,w0,dx, &
@@ -331,6 +334,9 @@ contains
                      s0_old_cart,s0_new_cart,dx,dt,evolve_base_state,the_bc_level,mla)
 
     do n = 1, nlevs
+       call destroy(scal_force(n))
+       call destroy(s0_old_cart(n))
+       call destroy(s0_new_cart(n))
        do comp = 1,dm
           call destroy(sedge(n,comp))
           call destroy(sflux(n,comp))
@@ -353,12 +359,6 @@ contains
           end if
        end do
     end if
-
-    do n = 1,nlevs
-       call destroy(scal_force(n))
-       call destroy(s0_old_cart(n))
-       call destroy(s0_new_cart(n))
-    end do
 
     deallocate(s0_edge_old,s0_edge_new)
     deallocate(umac_nodal_flag)

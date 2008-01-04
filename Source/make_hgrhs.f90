@@ -48,10 +48,6 @@ contains
        allocate(div_coeff_cart(nlevs))
     end if
 
-    do n = 1, nlevs
-       call multifab_build(rhs_cc(n),Source(n)%la,1,1)
-       call setval(rhs_cc(n),ZERO,all=.true.)
-    end do
     if(spherical .eq. 1) then
        do n = 1, nlevs
           call multifab_build(Sbar_cart(n),Source(n)%la,1,0)
@@ -67,7 +63,11 @@ contains
     end if
 
     do n = 1, nlevs
-       
+       call multifab_build(rhs_cc(n),Source(n)%la,1,1)
+       call setval(rhs_cc(n),ZERO,all=.true.)
+    end do
+
+    do n = 1, nlevs
        do i = 1, Source(n)%nboxes
           if ( multifab_remote(Source(n), i) ) cycle
           rp => dataptr(rhs_cc(n), i)
@@ -108,7 +108,6 @@ contains
           end select
        end do
        call multifab_fill_boundary(hgrhs(n))
-       
     end do ! end loop over levels
     
     do n = 1, nlevs
