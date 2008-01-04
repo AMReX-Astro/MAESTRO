@@ -62,19 +62,13 @@ contains
 
     allocate(phi(nlevs),alpha(nlevs),beta(nlevs),Xkcoeff(nlevs))
     allocate(Tcoeff(nlevs),hcoeff(nlevs),pcoeff(nlevs),resid(nlevs))
-    
+
     do n=1,nlevs
-       call multifab_build( phi(n),     mla%la(n), 1,     1)
-       call multifab_build( alpha(n),   mla%la(n), 1,     1)
-       call multifab_build( beta(n),    mla%la(n), dm,    1)
-       call multifab_build( Xkcoeff(n), mla%la(n), nspec, 1)
-       call multifab_build( Tcoeff(n),  mla%la(n), 1,     1)
-       call multifab_build( hcoeff(n),  mla%la(n), 1,     1)
-       call multifab_build( pcoeff(n),  mla%la(n), 1,     1)
-       call multifab_build( resid(n),   mla%la(n), 1,     0)
-       
-       call setval( alpha(n),   ZERO, all=.true.)
-       call setval( thermal(n), ZERO, all=.true.)
+       call multifab_build(Xkcoeff(n), mla%la(n), nspec, 1)
+       call multifab_build(Tcoeff(n),  mla%la(n), 1,     1)
+       call multifab_build(hcoeff(n),  mla%la(n), 1,     1)
+       call multifab_build(pcoeff(n),  mla%la(n), 1,     1)
+       call setval(thermal(n), ZERO, all=.true.)
     end do
     
     ! create Tcoeff = -kth, hcoeff = -kth/cp, Xkcoeff = xik*kth/cp, pcoeff = hp*kth/cp
@@ -107,6 +101,8 @@ contains
           call destroy(Xkcoeff(n))
           call destroy(hcoeff(n))
           call destroy(pcoeff(n))
+          call multifab_build(phi(n), mla%la(n), 1,  1)
+          call multifab_build(beta(n),mla%la(n), dm, 1)
        end do
 
        do n=1,nlevs
@@ -131,6 +127,9 @@ contains
        
        do n=1,nlevs
           call destroy(Tcoeff(n))
+          call multifab_build(alpha(n), mla%la(n), 1, 1)
+          call multifab_build(resid(n), mla%la(n), 1, 0)
+          call setval(alpha(n), ZERO, all=.true.)
        end do
 
        ! applyop to compute resid = del dot Tcoeff grad T
@@ -156,6 +155,8 @@ contains
        
        do n=1,nlevs
           call destroy(Tcoeff(n))
+          call multifab_build(phi(n),  mla%la(n), 1,  1)
+          call multifab_build(beta(n), mla%la(n), dm, 1)
        end do
 
        do n=1,nlevs
@@ -181,6 +182,9 @@ contains
 
        do n=1,nlevs
           call destroy(hcoeff(n))
+          call multifab_build(alpha(n), mla%la(n), 1, 1)
+          call multifab_build(resid(n), mla%la(n), 1, 0)
+          call setval(alpha(n), ZERO, all=.true.)
        end do
        
        ! applyop to compute resid = del dot hcoeff grad h
