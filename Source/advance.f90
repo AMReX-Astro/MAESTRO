@@ -185,22 +185,6 @@ contains
     ! Set w0_old to w0 from last time step.
     w0_old = w0
 
-    do n=1,nlevs
-       call multifab_build(Source_nph(n),         mla%la(n), 1    , 0)
-       call multifab_build(thermal(n),            mla%la(n), 1    , 1)
-       call multifab_build(s2star(n),             mla%la(n), nscal, ng_cell)
-       call multifab_build(rho_omegadot2_hold(n), mla%la(n), nspec, 0)
-       call setval(Source_nph(n)        , ZERO, all=.true.)
-       call setval(thermal(n)           , ZERO, all=.true.)
-       call setval(s2star(n)            , ZERO, all=.true.)
-       call setval(rho_omegadot2_hold(n), ZERO, all=.true.)
-
-       if (spherical.eq.1) then
-          call multifab_build(div_coeff_3d(n), mla%la(nlevs), 1, 1)
-          call setval(div_coeff_3d(n), ZERO, all=.true.)
-       end if
-    end do
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 1 -- define average expansion at time n+1/2
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -210,6 +194,11 @@ contains
        write(6,*) '<<< STEP  1 : make w0 >>> '
     end if
     
+    do n=1,nlevs
+       call multifab_build(Source_nph(n), mla%la(n), 1, 0)
+       call setval(Source_nph(n), ZERO, all=.true.)
+    end do
+
     if (init_mode) then
        call make_S_at_halftime(nlevs,Source_nph,Source_old,Source_new)
     else
@@ -258,11 +247,8 @@ contains
 
     do n=1,nlevs
        call multifab_build(gamma1_term(n), mla%la(n), 1, 0)
-       call setval(gamma1_term(n), 0.0_dp_t, all=.true.)
-    end do
-
-    do n=1,nlevs
        call multifab_build(macrhs(n), mla%la(n), 1, 0)
+       call setval(gamma1_term(n), ZERO, all=.true.)
        call setval(macrhs(n), ZERO, all=.true.)
     end do
 
@@ -270,6 +256,7 @@ contains
 
     do n=1,nlevs
        call destroy(gamma1_term(n))
+       call destroy(Source_nph(n))
     end do
 
     do n=1,nlevs
@@ -279,10 +266,19 @@ contains
 
     ! MAC projection !
     if (spherical .eq. 1) then
+       do n=1,nlevs
+          call multifab_build(div_coeff_3d(n), mla%la(nlevs), 1, 1)
+          call setval(div_coeff_3d(n), ZERO, all=.true.)
+       end do
+
        call fill_3d_data_wrapper(nlevs,div_coeff_3d,div_coeff_old,dx)
        call macproject(mla,umac,macphi,sold,dx,the_bc_tower, &
                        verbose,mg_verbose,cg_verbose,press_comp, &
                        macrhs,div_coeff_3d=div_coeff_3d)
+
+       do n=1,nlevs
+          call destroy(div_coeff_3d(n))
+       end do
     else
        do n=1,nlevs
           call cell_to_edge(n,div_coeff_old(n,:),div_coeff_edge(n,:))
@@ -304,17 +300,11 @@ contains
        write(6,*) '<<< STEP  3 : react state     '
        write(6,*) '            : react  base >>> '
     end if
-    
-    do n = 1,nlevs
-       call multifab_build(s1(n), mla%la(n), nscal, ng_cell)
-       call setval(s1(n), ZERO, all=.true.)
-    end do
 
     do n=1,nlevs
+       call multifab_build(s1(n), mla%la(n), nscal, ng_cell)
        call multifab_build(rho_omegadot1(n), mla%la(n), nspec, 0)
        call multifab_build(rho_Hext(n),      mla%la(n), 1,     0)
-       call setval(rho_omegadot1(n), ZERO, all=.true.)
-       call setval(rho_Hext(n)     , ZERO, all=.true.)
     end do
 
     call react_state(nlevs,mla,sold,s1,rho_omegadot1,rho_Hext,halfdt,dx, &
@@ -329,6 +319,10 @@ contains
        p0_1 = p0_old
        s0_1 = s0_old
     end if
+
+    do n=1,nlevs
+       call destroy(rho_Hext(n))
+    end do
 
     do n=1,nlevs
        call make_grav_cell(n,grav_cell_new(n,:),s0_1(n,:,rho_comp))
@@ -353,6 +347,10 @@ contains
        p0_2 = p0_1
        s0_2 = s0_1
     end if
+
+    do n=1,nlevs
+       call multifab_build(thermal(n), mla%la(n), 1, 1)
+    end do
     
     if(use_thermal_diffusion) then
        call make_explicit_thermal(mla,dx,thermal,s1,p0_1,mg_verbose,cg_verbose, &
@@ -372,18 +370,22 @@ contains
        call add_react_to_thermal(nlevs,thermal,rho_omegadot2,s1, &
                                  the_bc_tower%bc_tower_array,mla,dx)
        do n=1,nlevs
+          call multifab_build(rho_omegadot2_hold(n), mla%la(n), nspec, 0)
           call multifab_copy_c(rho_omegadot2_hold(n),1,rho_omegadot2(n),1,3,0)
        end do
     end if
             
     do n = 1,nlevs
        call multifab_build(s2(n), mla%la(n), nscal, ng_cell)
-       call setval(s2(n), ZERO, all=.true.)
     end do
 
     call scalar_advance(nlevs,mla,1,uold,s1,s2,thermal,umac,w0,w0_cart_vec,eta, &
                         utrans,scal_force,normal,s0_1,s0_2, &
                         p0_1,p0_2,dx,dt,the_bc_tower%bc_tower_array,verbose)
+
+    do n=1,nlevs
+       call destroy(thermal(n))
+    end do
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 4a (Option I) -- Add thermal conduction (only enthalpy terms)
@@ -406,6 +408,7 @@ contains
           ! make a copy of s2star since these are needed to compute
           ! coefficients in the call to thermal_conduct_full_alg
           do n=1,nlevs
+             call multifab_build(s2star(n), mla%la(n), nscal, ng_cell)
              call multifab_copy_c(s2star(n),1,s2(n),1,nscal,ng_cell)
           end do
        end if
@@ -419,9 +422,17 @@ contains
        write(6,*) '<<< STEP  5 : react state     '
        write(6,*) '            : react  base >>> '
     end if
+
+    do n=1,nlevs
+       call multifab_build(rho_Hext(n), mla%la(n), 1, 0)
+    end do
     
     call react_state(nlevs,mla,s2,snew,rho_omegadot2,rho_Hext,halfdt,dx, &
                      the_bc_tower%bc_tower_array,time)
+
+    do n=1,nlevs
+       call destroy(s2(n))
+    end do
 
     call average(mla,rho_omegadot2,rho_omegadotbar2,dx,1,nspec)
     call average(mla,rho_Hext,rho_Hextbar,dx,1,1)
@@ -462,27 +473,44 @@ contains
 !! STEP 6 -- define a new average expansion rate at n+1/2
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
        
+       do n=1,nlevs
+          do comp=1,dm
+             call destroy(umac(n,comp))
+             call destroy(utrans(n,comp))
+          end do
+       end do
+
        if (parallel_IOProcessor() .and. verbose .ge. 1) then
           write(6,*) '<<< STEP  6 : make new S and new w0 >>> '
        end if
        
+       do n=1,nlevs
+          call multifab_build(thermal(n), mla%la(n), 1, 1)
+       end do
+
        if(use_thermal_diffusion) then
           call make_explicit_thermal(mla,dx,thermal,snew,p0_new,mg_verbose,cg_verbose, &
                                      the_bc_tower,temp_diffusion_formulation)
        else
           do n=1,nlevs
-             call setval(thermal(n),ZERO)
+             call setval(thermal(n),ZERO,all=.true.)
           end do
        end if
        
        do n=1,nlevs
           call multifab_build(gamma1_term(n), mla%la(n), 1, 0)
-          call setval(gamma1_term(n), 0.0_dp_t, all=.true.)
        end do
 
        call make_S(nlevs,Source_new,gamma1_term,snew,rho_omegadot2,rho_Hext,thermal, &
                    s0_old(:,:,temp_comp),gam1,dx)
        
+       do n=1,nlevs
+          call destroy(rho_Hext(n))
+          call destroy(thermal(n))
+          call multifab_build(Source_nph(n), mla%la(n), 1, 0)
+          call setval(Source_nph(n)        , ZERO, all=.true.)
+       end do
+
        call make_S_at_halftime(nlevs,Source_nph,Source_old,Source_new)
        
        do n=1,nlevs
@@ -496,7 +524,6 @@ contains
 
           do n=1,nlevs
              call multifab_build(w0_force_cart_vec(n), mla%la(n), dm, 1)
-             call setval(w0_force_cart_vec(n), ZERO, all=.true.)
           end do
 
           call make_w0_cart(nlevs,w0      ,w0_cart_vec      ,normal,dx) 
@@ -509,6 +536,15 @@ contains
        if (parallel_IOProcessor() .and. verbose .ge. 1) then
           write(6,*) '<<< STEP  7 : create MAC velocities >>> '
        end if
+
+       do n=1,nlevs
+          do comp=1,dm
+             umac_nodal_flag = .false.
+             umac_nodal_flag(comp) = .true.
+             call multifab_build(  umac(n,comp), mla%la(n),  1, 1, nodal = umac_nodal_flag)
+             call multifab_build(utrans(n,comp), mla%la(n),  1, 1, nodal = umac_nodal_flag)
+          end do
+       end do
        
        call advance_premac(nlevs,uold,sold,umac,uedge,utrans,gpres,normal,w0, &
                            w0_cart_vec,s0_old,grav_cell_old,dx,dt, &
@@ -516,13 +552,13 @@ contains
        
        do n=1,nlevs
           call multifab_build(macrhs(n), mla%la(n), 1, 0)
-          call setval(macrhs(n), ZERO, all=.true.)
        end do
 
        call make_macrhs(nlevs,macrhs,Source_nph,gamma1_term,Sbar(:,:,1),div_coeff_nph,dx)
     
        do n=1,nlevs
           call destroy(gamma1_term(n))
+          call destroy(Source_nph(n))
        end do
 
        ! Define rho at half time !
@@ -535,10 +571,18 @@ contains
        
        ! MAC projection !
        if (spherical .eq. 1) then
+          do n=1,nlevs
+             call multifab_build(div_coeff_3d(n), mla%la(nlevs), 1, 1)
+          end do
+
           call fill_3d_data_wrapper(nlevs,div_coeff_3d,div_coeff_nph,dx)
           call macproject(mla,umac,macphi,rhohalf,dx,the_bc_tower, &
                           verbose,mg_verbose,cg_verbose,&
                           press_comp,macrhs,div_coeff_3d=div_coeff_3d)
+
+          do n=1,nlevs
+             call destroy(div_coeff_3d(n))
+          end do
        else
           do n=1,nlevs
              call cell_to_edge(n,div_coeff_nph(n,:),div_coeff_edge(n,:))
@@ -569,13 +613,17 @@ contains
           p0_2 = p0_1
           s0_2 = s0_1
        end if
-       
+              
+       do n=1,nlevs
+          call multifab_build(thermal(n), mla%la(n), 1, 1)
+       end do
+
        if(use_thermal_diffusion) then
           call make_explicit_thermal(mla,dx,thermal,s1,p0_1,mg_verbose,cg_verbose, &
                                      the_bc_tower,temp_diffusion_formulation)
        else
           do n=1,nlevs
-             call setval(thermal(n),ZERO)
+             call setval(thermal(n),ZERO,all=.true.)
           end do
        end if
        
@@ -587,11 +635,23 @@ contains
        else
           call add_react_to_thermal(nlevs,thermal,rho_omegadot2_hold,s1, &
                                     the_bc_tower%bc_tower_array,mla,dx)
+
+          do n=1,nlevs
+             call destroy(rho_omegadot2_hold(n))
+          end do
        end if
        
+       do n = 1,nlevs
+          call multifab_build(s2(n), mla%la(n), nscal, ng_cell)
+       end do
+
        call scalar_advance(nlevs,mla,2,uold,s1,s2,thermal,umac,w0,w0_cart_vec,eta, &
                            utrans,scal_force,normal,s0_1,s0_2, &
                            p0_1,p0_2,dx,dt,the_bc_tower%bc_tower_array,verbose)
+
+       do n=1,nlevs
+          call destroy(thermal(n))
+       end do
        
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 8a (Option I) -- Add thermal conduction (only enthalpy terms)
@@ -605,9 +665,12 @@ contains
           call thermal_conduct_full_alg(mla,dx,dt,s1,s2star,s2,p0_1,p0_2, &
                                         s0_1(:,:,temp_comp),s0_2(:,:,temp_comp), &
                                         mg_verbose,cg_verbose,the_bc_tower)
-          
-       end if
        
+          do n=1,nlevs
+             call destroy(s2star(n))
+          end do
+       end if
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 9 -- react the full state and then base state through dt/2
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -617,8 +680,16 @@ contains
           write(6,*) '            : react  base >>>'
        end if
 
+       do n=1,nlevs
+          call multifab_build(rho_Hext(n), mla%la(n), 1, 0)
+       end do
+       
        call react_state(nlevs,mla,s2,snew,rho_omegadot2,rho_Hext,halfdt,dx,&
                         the_bc_tower%bc_tower_array,time)
+
+       do n=1,nlevs
+          call destroy(s2(n))
+       end do
 
        call average(mla,rho_omegadot2,rho_omegadotbar2,dx,1,nspec)
        call average(mla,rho_Hext,rho_Hextbar,dx,1,1)
@@ -641,7 +712,6 @@ contains
 
     do n=1,nlevs
        call destroy(s1(n))
-       call destroy(s2(n))
        call destroy(rho_omegadot1(n))
        call destroy(macphi(n))
     end do
@@ -653,19 +723,22 @@ contains
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
        write(6,*) '<<< STEP 10 : make new S >>>'
     end if
-    
+          
+    do n=1,nlevs
+       call multifab_build(thermal(n), mla%la(n), 1, 1)
+    end do
+
     if(use_thermal_diffusion) then
        call make_explicit_thermal(mla,dx,thermal,snew,p0_new,mg_verbose,cg_verbose, &
                                   the_bc_tower,temp_diffusion_formulation)
     else
        do n=1,nlevs
-          call setval(thermal(n),ZERO)
+          call setval(thermal(n),ZERO,all=.true.)
        end do
     end if
     
     do n=1,nlevs
        call multifab_build(gamma1_term(n), mla%la(n), 1, 0)
-       call setval(gamma1_term(n), 0.0_dp_t, all=.true.)
     end do
 
     call make_S(nlevs,Source_new,gamma1_term,snew,rho_omegadot2,rho_Hext,thermal, &
@@ -673,6 +746,7 @@ contains
 
     do n=1,nlevs
        call destroy(rho_Hext(n))
+       call destroy(thermal(n))
     end do
 
     call average(mla,Source_new,Sbar,dx,1,1)
@@ -733,7 +807,6 @@ contains
 
        do n=1,nlevs
           call multifab_build(hgrhs_old(n), mla%la(n), 1, 0, nodal)
-          call setval(hgrhs_old(n), ZERO, all=.true.)
        end do
 
        do n=1,nlevs
@@ -747,7 +820,6 @@ contains
     else
        proj_type = regular_timestep_comp
        call make_hgrhs(nlevs,hgrhs,Source_new,gamma1_term,Sbar(:,:,1),div_coeff_new,dx)
-
     end if
 
     do n=1,nlevs
@@ -755,11 +827,19 @@ contains
     end do
 
     if (spherical .eq. 1) then
+       do n=1,nlevs
+          call multifab_build(div_coeff_3d(n), mla%la(nlevs), 1, 1)
+       end do
+       
        call fill_3d_data_wrapper(nlevs,div_coeff_3d,div_coeff_nph,dx)
        eps_in = 1.d-12
        call hgproject(proj_type, mla, unew, uold, rhohalf, pres, gpres, dx, dt, &
                       the_bc_tower, verbose, mg_verbose, cg_verbose, press_comp, &
                       hgrhs, div_coeff_3d=div_coeff_3d, eps_in = eps_in)
+
+       do n=1,nlevs
+          call destroy(div_coeff_3d(n))
+       end do
     else
        call hgproject(proj_type, mla, unew, uold, rhohalf, pres, gpres, dx, dt, &
                       the_bc_tower, verbose, mg_verbose, cg_verbose, press_comp, &
@@ -777,15 +857,6 @@ contains
           call destroy(hgrhs_old(n))
        end do
     end if
-    
-    do n=1,nlevs
-       call destroy(Source_nph(n))
-       call destroy(thermal(n))
-       call destroy(s2star(n))
-       call destroy(rho_omegadot2_hold(n))
-       if (spherical .eq. 1) &
-            call destroy(div_coeff_3d(n))
-    end do
 
     deallocate(rhohalf,w0_cart_vec,w0_force_cart_vec,macrhs,macphi,hgrhs_old,Source_nph)
     deallocate(thermal,s2star,rho_omegadot2_hold,s1,s2,gamma1_term,rho_omegadot1)
