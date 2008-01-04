@@ -45,14 +45,14 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
 
 ! Local
   type(multifab), allocatable :: rhsalpha(:),lhsalpha(:),rhsbeta(:),lhsbeta(:)
-  type(multifab), allocatable :: ccbeta(:),phi(:),phitemp(:),Lphi(:),rhs(:)
+  type(multifab), allocatable :: phi(:),phitemp(:),Lphi(:),rhs(:)
   type(multifab), allocatable :: p01fab(:),p02fab(:)
   type(multifab), allocatable :: hcoeff1(:),hcoeff2(:),Xkcoeff1(:),Xkcoeff2(:)
   type(multifab), allocatable :: pcoeff1(:),pcoeff2(:)
   real(kind=dp_t), pointer    :: s1p(:,:,:,:),s2p(:,:,:,:),rhsalphap(:,:,:,:)
   real(kind=dp_t), pointer    :: s_for_new_coeffp(:,:,:,:)
   real(kind=dp_t), pointer    :: rhsbetap(:,:,:,:),lhsbetap(:,:,:,:)
-  real(kind=dp_t), pointer    :: ccbetap(:,:,:,:),phip(:,:,:,:),rhsp(:,:,:,:)
+  real(kind=dp_t), pointer    :: phip(:,:,:,:),rhsp(:,:,:,:)
   real(kind=dp_t), pointer    :: p01fabp(:,:,:,:),p02fabp(:,:,:,:)
   real(kind=dp_t), pointer    :: hcoeff1p(:,:,:,:),hcoeff2p(:,:,:,:)
   real(kind=dp_t), pointer    :: Xkcoeff1p(:,:,:,:),Xkcoeff2p(:,:,:,:)
@@ -72,8 +72,8 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
   ng = s2(1)%ng
 
   allocate(rhsalpha(nlevs),lhsalpha(nlevs))
-  allocate(rhsbeta(nlevs),lhsbeta(nlevs),ccbeta(nlevs))
-  allocate(phi(nlevs),phitemp(nlevs),Lphi(nlevs),rhs(nlevs))
+  allocate(rhsbeta(nlevs),lhsbeta(nlevs))
+  allocate(phi(nlevs),Lphi(nlevs),rhs(nlevs))
   allocate(p01fab(nlevs),p02fab(nlevs))
   allocate(hcoeff1(nlevs),hcoeff2(nlevs))
   allocate(Xkcoeff1(nlevs),Xkcoeff2(nlevs))
@@ -89,9 +89,7 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
      call multifab_build(lhsalpha(n), mla%la(n),  1, 1)
      call multifab_build( rhsbeta(n), mla%la(n), dm, 1)
      call multifab_build( lhsbeta(n), mla%la(n), dm, 1)
-     call multifab_build(  ccbeta(n), mla%la(n),  1, 1)
      call multifab_build(     phi(n), mla%la(n),  1, 1)
-     call multifab_build( phitemp(n), mla%la(n),  1, 1)
      call multifab_build(    Lphi(n), mla%la(n),  1, 0)
      call multifab_build(     rhs(n), mla%la(n),  1, 0)
      call multifab_build(  p01fab(n), mla%la(n),  1, 1)
@@ -105,23 +103,6 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
      call multifab_build( pcoeff2(n), mla%la(n),  1,     1)
 
      call setval(rhsalpha(n), ZERO, all=.true.)
-     call setval(lhsalpha(n), ZERO, all=.true.)
-     call setval(rhsbeta(n),  ZERO, all=.true.)
-     call setval(lhsbeta(n),  ZERO, all=.true.)
-     call setval(ccbeta(n),   ZERO, all=.true.)
-     call setval(Lphi(n),     ZERO, all=.true.)
-     call setval(phi(n),      ZERO, all=.true.)
-     call setval(phitemp(n),  ZERO, all=.true.)
-     call setval(rhs(n),      ZERO, all=.true.)
-     call setval(p01fab(n),   ZERO, all=.true.)
-     call setval(p02fab(n),   ZERO, all=.true.)
-
-     call setval( hcoeff1(n), ZERO, all=.true.)
-     call setval( hcoeff2(n), ZERO, all=.true.)
-     call setval(Xkcoeff1(n), ZERO, all=.true.)
-     call setval(Xkcoeff2(n), ZERO, all=.true.)
-     call setval( pcoeff1(n), ZERO, all=.true.)
-     call setval( pcoeff2(n), ZERO, all=.true.)
   end do
 
   ! create p01fab
@@ -381,10 +362,10 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
         select case (dm)
         case (2)
            call put_beta_on_faces_2d(lo,hi,pcoeff1p(:,:,1,1), &
-                rhsbetap(:,:,1,:))
+                                     rhsbetap(:,:,1,:))
         case (3)
            call put_beta_on_faces_3d(lo,hi,pcoeff1p(:,:,:,1), &
-                rhsbetap(:,:,:,:))
+                                     rhsbetap(:,:,:,:))
         end select
      end do
   enddo
@@ -416,10 +397,10 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
         select case (dm)
         case (2)
            call put_beta_on_faces_2d(lo,hi,pcoeff2p(:,:,1,1), &
-                rhsbetap(:,:,1,:))
+                                     rhsbetap(:,:,1,:))
         case (3)
            call put_beta_on_faces_3d(lo,hi,pcoeff2p(:,:,:,1), &
-                rhsbetap(:,:,:,:))
+                                     rhsbetap(:,:,:,:))
         end select
      end do
   enddo
@@ -513,9 +494,7 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
      call destroy(lhsalpha(n))
      call destroy(rhsbeta(n))
      call destroy(lhsbeta(n))
-     call destroy(ccbeta(n))
      call destroy(phi(n))
-     call destroy(phitemp(n))
      call destroy(Lphi(n))
      call destroy(rhs(n))
      call destroy(p01fab(n))
@@ -528,7 +507,7 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
      call destroy(pcoeff2(n))
   enddo
 
-  deallocate(rhsalpha,lhsalpha,rhsbeta,lhsbeta,ccbeta,phi,phitemp,Lphi,rhs)
+  deallocate(rhsalpha,lhsalpha,rhsbeta,lhsbeta,phi,Lphi,rhs)
   deallocate(p01fab,p02fab,fine_flx)
   deallocate(hcoeff1,hcoeff2,Xkcoeff1,Xkcoeff2,pcoeff1,pcoeff2)
 
@@ -563,13 +542,13 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
 
 ! Local
   type(multifab), allocatable :: rhsalpha(:),lhsalpha(:),rhsbeta(:),lhsbeta(:)
-  type(multifab), allocatable :: ccbeta(:),phi(:),phitemp(:),Lphi(:),rhs(:)
+  type(multifab), allocatable :: phi(:),phitemp(:),Lphi(:),rhs(:)
   type(multifab), allocatable :: p01fab(:),p02fab(:)
   type(multifab), allocatable :: hcoeff1(:),hcoeff2(:),Xkcoeff1(:),Xkcoeff2(:)
   type(multifab), allocatable :: pcoeff1(:),pcoeff2(:)
   real(kind=dp_t), pointer    :: s1p(:,:,:,:),s2p(:,:,:,:),rhsalphap(:,:,:,:)
   real(kind=dp_t), pointer    :: rhsbetap(:,:,:,:),lhsbetap(:,:,:,:)
-  real(kind=dp_t), pointer    :: ccbetap(:,:,:,:),phip(:,:,:,:),rhsp(:,:,:,:)
+  real(kind=dp_t), pointer    :: phip(:,:,:,:),rhsp(:,:,:,:)
   real(kind=dp_t), pointer    :: p01fabp(:,:,:,:),p02fabp(:,:,:,:)
   real(kind=dp_t), pointer    :: hcoeff1p(:,:,:,:),hcoeff2p(:,:,:,:)
   real(kind=dp_t), pointer    :: Xkcoeff1p(:,:,:,:),Xkcoeff2p(:,:,:,:)
@@ -591,7 +570,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
   ng = s2(1)%ng
 
   allocate(rhsalpha(nlevs),lhsalpha(nlevs))
-  allocate(rhsbeta(nlevs),lhsbeta(nlevs),ccbeta(nlevs))
+  allocate(rhsbeta(nlevs),lhsbeta(nlevs))
   allocate(phi(nlevs),phitemp(nlevs),Lphi(nlevs),rhs(nlevs))
   allocate(p01fab(nlevs),p02fab(nlevs))
   allocate(hcoeff1(nlevs),hcoeff2(nlevs))
@@ -608,7 +587,6 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
      call multifab_build(lhsalpha(n), mla%la(n),  1, 1)
      call multifab_build( rhsbeta(n), mla%la(n), dm, 1)
      call multifab_build( lhsbeta(n), mla%la(n), dm, 1)
-     call multifab_build(  ccbeta(n), mla%la(n),  1, 1)
      call multifab_build(     phi(n), mla%la(n),  1, 1)
      call multifab_build( phitemp(n), mla%la(n),  1, 1)
      call multifab_build(    Lphi(n), mla%la(n),  1, 0)
@@ -624,23 +602,6 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
      call multifab_build( pcoeff2(n), mla%la(n),  1,     1)
 
      call setval(rhsalpha(n), ZERO, all=.true.)
-     call setval(lhsalpha(n), ZERO, all=.true.)
-     call setval(rhsbeta(n),  ZERO, all=.true.)
-     call setval(lhsbeta(n),  ZERO, all=.true.)
-     call setval(ccbeta(n),   ZERO, all=.true.)
-     call setval(Lphi(n),     ZERO, all=.true.)
-     call setval(phi(n),      ZERO, all=.true.)
-     call setval(phitemp(n),  ZERO, all=.true.)
-     call setval(rhs(n),      ZERO, all=.true.)
-     call setval(p01fab(n),   ZERO, all=.true.)
-     call setval(p02fab(n),   ZERO, all=.true.)
-
-     call setval( hcoeff1(n), ZERO, all=.true.)
-     call setval( hcoeff2(n), ZERO, all=.true.)
-     call setval(Xkcoeff1(n), ZERO, all=.true.)
-     call setval(Xkcoeff2(n), ZERO, all=.true.)
-     call setval( pcoeff1(n), ZERO, all=.true.)
-     call setval( pcoeff2(n), ZERO, all=.true.)
   end do
 
   ! create p01fab
@@ -833,10 +794,10 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
         select case (dm)
         case (2)
            call put_beta_on_faces_2d(lo,hi,pcoeff1p(:,:,1,1), &
-                rhsbetap(:,:,1,:))
+                                     rhsbetap(:,:,1,:))
         case (3)
            call put_beta_on_faces_3d(lo,hi,pcoeff1p(:,:,:,1), &
-                rhsbetap(:,:,:,:))
+                                     rhsbetap(:,:,:,:))
         end select
      end do
   enddo
@@ -1101,10 +1062,10 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
         select case (dm)
         case (2)
            call put_beta_on_faces_2d(lo,hi,pcoeff1p(:,:,1,1), &
-                rhsbetap(:,:,1,:))
+                                     rhsbetap(:,:,1,:))
         case (3)
            call put_beta_on_faces_3d(lo,hi,pcoeff1p(:,:,:,1), &
-                rhsbetap(:,:,:,:))
+                                     rhsbetap(:,:,:,:))
         end select
      end do
   enddo
@@ -1136,10 +1097,10 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
         select case (dm)
         case (2)
            call put_beta_on_faces_2d(lo,hi,pcoeff2p(:,:,1,1), &
-                rhsbetap(:,:,1,:))
+                                     rhsbetap(:,:,1,:))
         case (3)
            call put_beta_on_faces_3d(lo,hi,pcoeff2p(:,:,:,1), &
-                rhsbetap(:,:,:,:))
+                                     rhsbetap(:,:,:,:))
         end select
      end do
   enddo
@@ -1232,7 +1193,6 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
      call destroy(lhsalpha(n))
      call destroy(rhsbeta(n))
      call destroy(lhsbeta(n))
-     call destroy(ccbeta(n))
      call destroy(phi(n))
      call destroy(phitemp(n))
      call destroy(Lphi(n))
@@ -1247,7 +1207,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
      call destroy(pcoeff2(n))
   enddo
 
-  deallocate(rhsalpha,lhsalpha,rhsbeta,lhsbeta,ccbeta,phi,phitemp,Lphi,rhs)
+  deallocate(rhsalpha,lhsalpha,rhsbeta,lhsbeta,phi,phitemp,Lphi,rhs)
   deallocate(p01fab,p02fab,fine_flx)
   deallocate(hcoeff1,hcoeff2,Xkcoeff1,Xkcoeff2,pcoeff1,pcoeff2)
 
