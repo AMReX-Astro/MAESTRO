@@ -101,6 +101,9 @@ contains
           call destroy(Xkcoeff(n))
           call destroy(hcoeff(n))
           call destroy(pcoeff(n))
+       end do
+
+       do n=1,nlevs
           call multifab_build(phi(n), mla%la(n), 1,  1)
           call multifab_build(beta(n),mla%la(n), dm, 1)
        end do
@@ -127,6 +130,9 @@ contains
        
        do n=1,nlevs
           call destroy(Tcoeff(n))
+       end do
+
+       do n=1,nlevs
           call multifab_build(alpha(n), mla%la(n), 1, 1)
           call multifab_build(resid(n), mla%la(n), 1, 0)
           call setval(alpha(n), ZERO, all=.true.)
@@ -155,6 +161,9 @@ contains
        
        do n=1,nlevs
           call destroy(Tcoeff(n))
+       end do
+          
+       do n=1,nlevs
           call multifab_build(phi(n),  mla%la(n), 1,  1)
           call multifab_build(beta(n), mla%la(n), dm, 1)
        end do
@@ -182,6 +191,9 @@ contains
 
        do n=1,nlevs
           call destroy(hcoeff(n))
+       end do
+
+       do n=1,nlevs
           call multifab_build(alpha(n), mla%la(n), 1, 1)
           call multifab_build(resid(n), mla%la(n), 1, 0)
           call setval(alpha(n), ZERO, all=.true.)
