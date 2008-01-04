@@ -196,7 +196,6 @@ contains
     
     do n=1,nlevs
        call multifab_build(Source_nph(n), mla%la(n), 1, 0)
-       call setval(Source_nph(n), ZERO, all=.true.)
     end do
 
     if (init_mode) then
@@ -211,14 +210,11 @@ contains
                  s0_old(:,:,rho_comp),gam1,eta,dt,dtold,verbose)
     
     if (dm .eq. 3) then
-
        do n=1,nlevs
           call multifab_build(w0_cart_vec(n), mla%la(n), dm, 1)
-          call setval(w0_cart_vec(n), ZERO, all=.true.)
        end do
 
        call make_w0_cart(nlevs,w0,w0_cart_vec,normal,dx) 
-
     end if
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -236,9 +232,6 @@ contains
           call multifab_build(  umac(n,comp), mla%la(n),  1, 1, nodal = umac_nodal_flag)
           call multifab_build(utrans(n,comp), mla%la(n),  1, 1, nodal = umac_nodal_flag)
           call multifab_build( uedge(n,comp), mla%la(n), dm, 0, nodal = umac_nodal_flag)
-          call setval(  umac(n,comp), ZERO, all=.true.)
-          call setval(utrans(n,comp), ZERO, all=.true.)
-          call setval( uedge(n,comp), ZERO, all=.true.)
        end do
     end do
     
@@ -249,7 +242,6 @@ contains
        call multifab_build(gamma1_term(n), mla%la(n), 1, 0)
        call multifab_build(macrhs(n), mla%la(n), 1, 0)
        call setval(gamma1_term(n), ZERO, all=.true.)
-       call setval(macrhs(n), ZERO, all=.true.)
     end do
 
     call make_macrhs(nlevs,macrhs,Source_nph,gamma1_term,Sbar(:,:,1),div_coeff_old,dx)
@@ -257,9 +249,6 @@ contains
     do n=1,nlevs
        call destroy(gamma1_term(n))
        call destroy(Source_nph(n))
-    end do
-
-    do n=1,nlevs
        call multifab_build(macphi(n), mla%la(n), 1, 1)
        call setval(macphi(n), ZERO, all=.true.)
     end do
@@ -268,7 +257,6 @@ contains
     if (spherical .eq. 1) then
        do n=1,nlevs
           call multifab_build(div_coeff_3d(n), mla%la(nlevs), 1, 1)
-          call setval(div_coeff_3d(n), ZERO, all=.true.)
        end do
 
        call fill_3d_data_wrapper(nlevs,div_coeff_3d,div_coeff_old,dx)
@@ -322,9 +310,6 @@ contains
 
     do n=1,nlevs
        call destroy(rho_Hext(n))
-    end do
-
-    do n=1,nlevs
        call make_grav_cell(n,grav_cell_new(n,:),s0_1(n,:,rho_comp))
        call make_div_coeff(n,div_coeff_new(n,:),s0_1(n,:,rho_comp),p0_1(n,:), &
                            gam1(n,:),grav_cell_new(n,:),anelastic_cutoff)
@@ -375,7 +360,7 @@ contains
        end do
     end if
             
-    do n = 1,nlevs
+    do n=1,nlevs
        call multifab_build(s2(n), mla%la(n), nscal, ng_cell)
     end do
 
@@ -455,14 +440,9 @@ contains
        do j=0,nr(n)-1
           s0_nph(n,j,:) = HALF * (s0_old(n,j,:) + s0_new(n,j,:))
        end do
-    end do
-    
-    do n=1,nlevs
+
        call make_grav_cell(n,grav_cell_nph(n,:),s0_nph(n,:,rho_comp))
-    end do
-    
-    ! Define beta at half time !
-    do n=1,nlevs
+
        do j=0,nr(n)-1
           div_coeff_nph(n,j) = HALF * (div_coeff_old(n,j) + div_coeff_new(n,j))
        end do
@@ -508,7 +488,6 @@ contains
           call destroy(rho_Hext(n))
           call destroy(thermal(n))
           call multifab_build(Source_nph(n), mla%la(n), 1, 0)
-          call setval(Source_nph(n)        , ZERO, all=.true.)
        end do
 
        call make_S_at_halftime(nlevs,Source_nph,Source_old,Source_new)
@@ -559,11 +538,7 @@ contains
        do n=1,nlevs
           call destroy(gamma1_term(n))
           call destroy(Source_nph(n))
-       end do
-
-       ! Define rho at half time !
-       do n=1,nlevs
-          call multifab_build(rhohalf(n), mla%la(n), 1    , 1)
+          call multifab_build(rhohalf(n), mla%la(n), 1, 1)
        end do
 
        call make_at_halftime(nlevs,rhohalf,sold,snew,rho_comp,1,dx, &
@@ -641,7 +616,7 @@ contains
           end do
        end if
        
-       do n = 1,nlevs
+       do n=1,nlevs
           call multifab_build(s2(n), mla%la(n), nscal, ng_cell)
        end do
 
@@ -807,9 +782,6 @@ contains
 
        do n=1,nlevs
           call multifab_build(hgrhs_old(n), mla%la(n), 1, 0, nodal)
-       end do
-
-       do n=1,nlevs
           call multifab_copy(hgrhs_old(n),hgrhs(n))
        end do
        call make_hgrhs(nlevs,hgrhs,Source_new,gamma1_term,Sbar(:,:,1),div_coeff_new,dx)
