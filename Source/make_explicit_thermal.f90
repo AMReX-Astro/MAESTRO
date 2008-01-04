@@ -73,14 +73,7 @@ contains
        call multifab_build( pcoeff(n),  mla%la(n), 1,     1)
        call multifab_build( resid(n),   mla%la(n), 1,     0)
        
-       call setval( phi(n),     ZERO, all=.true.)
        call setval( alpha(n),   ZERO, all=.true.)
-       call setval( beta(n),    ZERO, all=.true.)
-       call setval( Xkcoeff(n), ZERO, all=.true.)
-       call setval( Tcoeff(n),  ZERO, all=.true.)
-       call setval( hcoeff(n),  ZERO, all=.true.)
-       call setval( pcoeff(n),  ZERO, all=.true.)
-       call setval( resid(n),   ZERO, all=.true.)
        call setval( thermal(n), ZERO, all=.true.)
     end do
     
@@ -97,11 +90,11 @@ contains
           hi = upb(get_box(s(n),i))
           select case (dm)
           case (2)
-             call make_coeffs_2d(lo,hi,dx(n,:),p0(n,:),sp(:,:,1,:), &
+             call make_coeffs_2d(lo,hi,dx(n,:),sp(:,:,1,:), &
                                  Tcoeffp(:,:,1,1),hcoeffp(:,:,1,1), &
                                  Xkcoeffp(:,:,1,:),pcoeffp(:,:,1,1))
           case (3)
-             call make_coeffs_3d(n,lo,hi,dx(n,:),p0(n,:),sp(:,:,:,:), &
+             call make_coeffs_3d(n,lo,hi,dx(n,:),sp(:,:,:,:), &
                                  Tcoeffp(:,:,:,1),hcoeffp(:,:,:,1), &
                                  Xkcoeffp(:,:,:,:),pcoeffp(:,:,:,1))
           end select
@@ -109,6 +102,12 @@ contains
     enddo
 
     if(temperature_diffusion) then
+
+       do n=1,nlevs
+          call destroy(Xkcoeff(n))
+          call destroy(hcoeff(n))
+          call destroy(pcoeff(n))
+       end do
 
        do n=1,nlevs
           ! load T into phi
@@ -130,17 +129,35 @@ contains
           end do
        enddo ! end loop over levels
        
+       do n=1,nlevs
+          call destroy(Tcoeff(n))
+       end do
+
        ! applyop to compute resid = del dot Tcoeff grad T
        call mac_applyop(mla,resid,phi,alpha,beta,dx,the_bc_tower,dm+rhoh_comp, &
                         stencil_order,mla%mba%rr,mg_verbose,cg_verbose)
      
+       do n=1,nlevs
+          call destroy(phi(n))
+          call destroy(alpha(n))
+          call destroy(beta(n))
+       end do
+
        ! add residual to thermal
        do n=1,nlevs
           call multifab_plus_plus_c(thermal(n),1,resid(n),1,1,0)
        enddo
 
+       do n = 1,nlevs
+          call destroy(resid(n))
+       enddo
+
     else ! the if(.not. temperature_diffusion) case
        
+       do n=1,nlevs
+          call destroy(Tcoeff(n))
+       end do
+
        do n=1,nlevs
           ! load h into phi
           call multifab_copy_c(phi(n),1,s(n),rhoh_comp,1,1)
@@ -161,6 +178,10 @@ contains
              end select
           end do
        enddo ! end loop over levels
+
+       do n=1,nlevs
+          call destroy(hcoeff(n))
+       end do
        
        ! applyop to compute resid = del dot hcoeff grad h
        call mac_applyop(mla,resid,phi,alpha,beta,dx,the_bc_tower,dm+rhoh_comp, &
@@ -203,6 +224,10 @@ contains
              call multifab_plus_plus_c(thermal(n),1,resid(n),1,1,0)
           enddo
        enddo ! end loop over species
+
+       do n=1,nlevs
+          call destroy(Xkcoeff(n))
+       end do
        
        ! load p0 into phi
        do n=1,nlevs
@@ -243,14 +268,28 @@ contains
              end select
           end do
        enddo
+
+       do n=1,nlevs
+          call destroy(pcoeff(n))
+       end do
        
        ! applyop to compute resid = del dot pcoeff grad p0
        call mac_applyop(mla,resid,phi,alpha,beta,dx,the_bc_tower,foextrap_comp, &
                         stencil_order,mla%mba%rr,mg_verbose,cg_verbose)
        
+       do n=1,nlevs
+          call destroy(phi(n))
+          call destroy(alpha(n))
+          call destroy(beta(n))
+       end do
+
        ! add residual to thermal
        do n=1,nlevs
           call multifab_plus_plus_c(thermal(n),1,resid(n),1,1,0)
+       enddo
+       
+       do n = 1,nlevs
+          call destroy(resid(n))
        enddo
 
     endif ! end if(temperature_diffusion) logic
@@ -278,18 +317,6 @@ contains
                                       1,foextrap_comp,1)
     enddo
     
-    ! Deallocate memory
-    do n = 1,nlevs
-       call destroy(phi(n))
-       call destroy(alpha(n))
-       call destroy(beta(n))
-       call destroy(Xkcoeff(n))
-       call destroy(Tcoeff(n))
-       call destroy(hcoeff(n))
-       call destroy(pcoeff(n))
-       call destroy(resid(n))
-    enddo
-    
     deallocate(phi,alpha,beta,Xkcoeff,Tcoeff,hcoeff,pcoeff,resid)
 
     call destroy(bpt)
@@ -300,7 +327,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! create Tcoeff = -kth, hcoeff = -kth/cp, Xkcoeff = xik*kth/cp, pcoeff = hp*kth/cp
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine make_coeffs_2d(lo,hi,dx,p0,s,Tcoeff,hcoeff,Xkcoeff,pcoeff)
+  subroutine make_coeffs_2d(lo,hi,dx,s,Tcoeff,hcoeff,Xkcoeff,pcoeff)
 
     use variables, only: rho_comp, temp_comp, spec_comp
     use eos_module
@@ -308,7 +335,6 @@ contains
 
     integer        , intent(in   ) :: lo(:),hi(:)
     real(dp_t)    ,  intent(in   ) :: dx(:)
-    real(kind=dp_t), intent(in   ) :: p0(0:)
     real(kind=dp_t), intent(in   ) :: s(lo(1)-3:,lo(2)-3:,:)
     real(kind=dp_t), intent(inout) :: Tcoeff(lo(1)-1:,lo(2)-1:)
     real(kind=dp_t), intent(inout) :: hcoeff(lo(1)-1:,lo(2)-1:)
@@ -364,7 +390,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! create Tcoeff = -kth, hcoeff = -kth/cp, Xkcoeff = xik*kth/cp, pcoeff = hp*kth/cp
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine make_coeffs_3d(n,lo,hi,dx,p0,s,Tcoeff,hcoeff,Xkcoeff,pcoeff)
+  subroutine make_coeffs_3d(n,lo,hi,dx,s,Tcoeff,hcoeff,Xkcoeff,pcoeff)
 
     use variables, only: rho_comp, temp_comp, spec_comp
     use eos_module
@@ -374,7 +400,6 @@ contains
     
     integer        , intent(in   ) :: n,lo(:),hi(:)
     real(dp_t)    ,  intent(in   ) :: dx(:)
-    real(kind=dp_t), intent(in   ) :: p0(0:)
     real(kind=dp_t), intent(in   ) :: s(lo(1)-3:,lo(2)-3:,lo(3)-3:,:)
     real(kind=dp_t), intent(inout) :: Tcoeff(lo(1)-1:,lo(2)-1:,lo(3)-1:)
     real(kind=dp_t), intent(inout) :: hcoeff(lo(1)-1:,lo(2)-1:,lo(3)-1:)
@@ -383,12 +408,6 @@ contains
 
     ! local
     integer :: i,j,k,comp
-    real(kind=dp_t), allocatable :: p0_cart(:,:,:)
-    
-    if (spherical .eq. 1) then
-       allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-       call fill_3d_data(n,p0_cart,p0,lo,hi,dx,0)
-    end if
     
     do k=lo(3)-1,hi(3)+1
        do j=lo(2)-1,hi(2)+1
