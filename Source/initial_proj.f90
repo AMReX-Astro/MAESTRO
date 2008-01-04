@@ -51,12 +51,22 @@ contains
     ! local
     integer                     :: n
     real(dp_t)                  :: dt_temp
+
     real(dp_t), allocatable     :: Sbar(:,:,:)  
+
     type(multifab), allocatable :: gamma1_term(:)
     type(multifab), allocatable :: thermal(:)
     type(multifab), allocatable :: rhohalf(:)
     type(multifab), allocatable :: rho_omegadot1(:)
     type(multifab), allocatable :: rho_Hext(:)
+
+    allocate(Sbar(nlevs,nr(nlevs),1))
+
+    allocate(  gamma1_term(nlevs))
+    allocate(      thermal(nlevs))
+    allocate(      rhohalf(nlevs))
+    allocate(rho_omegadot1(nlevs))
+    allocate(     rho_Hext(nlevs))
 
     if ( parallel_IOProcessor() ) then
        print *, 'DOING THE INITIAL VELOCITY PROJECTION'
@@ -66,33 +76,26 @@ contains
     call mk_vel_force(nlevs,vel_force,gpres,sold,normal,s0_old,grav_cell,dx, &
                       the_bc_tower%bc_tower_array,mla)
 
-    allocate(thermal(nlevs))
-
     do n=1,nlevs
        call multifab_build(thermal(n), mla%la(n), 1, 1)
-       call setval(thermal(n), 0.0_dp_t, all=.true.)
     end do
     
     if(use_thermal_diffusion) then
        call make_explicit_thermal(mla,dx,thermal,sold,p0_old,mg_verbose,cg_verbose, &
                                   the_bc_tower,temp_diffusion_formulation)
+    else
+       do n=1,nlevs
+          call setval(thermal(n), ZERO, all=.true.)
+       end do
     end if
     
-    allocate(gamma1_term(nlevs))
-
     do n=1,nlevs
        call multifab_build(gamma1_term(n), mla%la(n), 1, 0)
-       call setval(gamma1_term(n), 0.0_dp_t, all=.true.)
-    end do
-
-    allocate(rho_omegadot1(nlevs),rho_Hext(nlevs))
-
-    do n = 1, nlevs
-       ! we don't have a legit timestep yet, so we set rho_omegadot1 = 0 
        call multifab_build(rho_omegadot1(n), mla%la(n), nspec, 0)
        call multifab_build(rho_Hext(n),      mla%la(n), 1,     0)
+       ! we don't have a legit timestep yet, so we set rho_omegadot1 and rho_Hext to 0 
        call setval(rho_omegadot1(n), ZERO, all=.true.)
-       call setval(rho_Hext(n)     , ZERO, all=.true.)
+       call setval(     rho_Hext(n), ZERO, all=.true.)
     end do
 
     call make_S(nlevs,Source_old,gamma1_term,sold,rho_omegadot1,rho_Hext,thermal, &
@@ -102,22 +105,15 @@ contains
        call destroy(rho_omegadot1(n))
        call destroy(rho_Hext(n))
     end do
-
-    deallocate(thermal,rho_omegadot1,rho_Hext)
     
-    allocate(Sbar(nlevs,nr(nlevs),1))
-
     call average(mla,Source_old,Sbar,dx,1,1)
     
     ! Note that we use rhohalf, filled with 1 at this point, as a temporary
     ! in order to do a constant-density initial projection.
 
-    allocate(rhohalf(nlevs))
-
     do n=1,nlevs
        call multifab_build(rhohalf(n), mla%la(n), 1, 1)
        call setval(rhohalf(n),ONE,1,1,all=.true.)
-       call setval(hgrhs(n),ZERO,all=.true.)
     end do
     
     call make_hgrhs(nlevs,hgrhs,Source_old,gamma1_term,Sbar(:,:,1),div_coeff_old,dx)
@@ -126,8 +122,6 @@ contains
        call destroy(gamma1_term(n))
     end do
 
-    deallocate(gamma1_term,Sbar)
-    
     ! dt doesn't matter for the initial projection since we're throwing
     ! away the p and gpres anyway
     dt_temp = ONE
@@ -150,7 +144,8 @@ contains
        call destroy(rhohalf(n))
     end do
     
-    deallocate(rhohalf)
+    deallocate(Sbar)
+    deallocate(gamma1_term,thermal,rhohalf,rho_omegadot1,rho_Hext)
 
   end subroutine initial_proj
 
