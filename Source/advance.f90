@@ -11,7 +11,7 @@ module advance_timestep_module
 contains
     
   subroutine advance_timestep(init_mode,mla,uold,sold,unew,snew, &
-                              gpres,pres,scal_force,normal,s0_old,s0_1,s0_2, &
+                              gpres,pres,normal,s0_old,s0_1,s0_2, &
                               s0_new,p0_old,p0_1,p0_2,p0_new,gam1,w0,eta, &
                               rho_omegadot2,div_coeff_old,div_coeff_new, &
                               grav_cell_old,dx,time,dt,dtold,the_bc_tower,anelastic_cutoff, &
@@ -60,7 +60,6 @@ contains
     type(multifab),  intent(inout) :: snew(:)
     type(multifab),  intent(inout) :: gpres(:)
     type(multifab),  intent(inout) :: pres(:)
-    type(multifab),  intent(inout) :: scal_force(:)
     type(multifab),  intent(in   ) :: normal(:)
     real(dp_t)    ,  intent(inout) :: s0_old(:,0:,:)
     real(dp_t)    ,  intent(inout) :: s0_1(:,0:,:)
@@ -365,7 +364,7 @@ contains
     end do
 
     call scalar_advance(nlevs,mla,1,uold,s1,s2,thermal,umac,w0,w0_cart_vec,eta, &
-                        utrans,scal_force,normal,s0_1,s0_2, &
+                        utrans,normal,s0_1,s0_2, &
                         p0_1,p0_2,dx,dt,the_bc_tower%bc_tower_array,verbose)
 
     do n=1,nlevs
@@ -621,7 +620,7 @@ contains
        end do
 
        call scalar_advance(nlevs,mla,2,uold,s1,s2,thermal,umac,w0,w0_cart_vec,eta, &
-                           utrans,scal_force,normal,s0_1,s0_2, &
+                           utrans,normal,s0_1,s0_2, &
                            p0_1,p0_2,dx,dt,the_bc_tower%bc_tower_array,verbose)
 
        do n=1,nlevs

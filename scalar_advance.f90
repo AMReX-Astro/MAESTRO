@@ -14,7 +14,7 @@ module scalar_advance_module
 contains
 
   subroutine scalar_advance(nlevs,mla,which_step,uold,sold,snew,thermal,umac,w0, &
-                            w0_cart_vec,eta,utrans,ext_scal_force,normal, &
+                            w0_cart_vec,eta,utrans,normal, &
                             s0_old,s0_new,p0_old,p0_new,dx,dt,the_bc_level,verbose)
 
     use bl_prof_module
@@ -48,7 +48,6 @@ contains
     type(multifab) , intent(in   ) :: w0_cart_vec(:)
     real(kind=dp_t), intent(inout) :: eta(:,0:,:)
     type(multifab) , intent(inout) :: utrans(:,:)
-    type(multifab) , intent(inout) :: ext_scal_force(:)
     type(multifab) , intent(in   ) :: normal(:)
     real(kind=dp_t), intent(in   ) :: s0_old(:,0:,:)
     real(kind=dp_t), intent(in   ) :: s0_new(:,0:,:)
@@ -100,8 +99,8 @@ contains
     end do
 
     do n = 1, nlevs
-       call build(s0_old_cart(n), ext_scal_force(n)%la, nscal, 1)
-       call build(s0_new_cart(n), ext_scal_force(n)%la, nscal, 1)
+       call build(s0_old_cart(n), sold(n)%la, nscal, 1)
+       call build(s0_new_cart(n), sold(n)%la, nscal, 1)
        call setval(s0_old_cart(n),ZERO,all=.true.)
        call setval(s0_new_cart(n),ZERO,all=.true.)
     end do
@@ -133,7 +132,7 @@ contains
     ! call makeTfromRhoH(nlevs,sold,s0_old(:,:,temp_comp),mla,the_bc_level,dx)
 
     do n = 1, nlevs
-       call build(scal_force(n), ext_scal_force(n)%la, nscal, 1)
+       call build(scal_force(n), sold(n)%la, nscal, 1)
        call setval(scal_force(n), ZERO,all=.true.)
     end do
 
