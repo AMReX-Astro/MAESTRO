@@ -297,6 +297,8 @@ contains
     subroutine hg_update(nlevs,proj_type,unew,uold,gpres,gphi,rhohalf,pres,phi,ng,dt, &
                          mla,the_bc_level)
 
+      use multifab_physbc_module
+
       integer        , intent(in   ) :: nlevs
       integer        , intent(in   ) :: proj_type
       type(multifab) , intent(inout) :: unew(:)
@@ -353,11 +355,13 @@ contains
          call multifab_fill_boundary(gpres(n))
          call multifab_fill_boundary(pres(n))
 
+         call multifab_physbc(unew(n),1,1,dm,dx(n,:),the_bc_level(n))
+
       end do
 
       do n = nlevs, 2, -1
-         call ml_cc_restriction(unew(n-1),unew(n),mla%mba%rr(n-1,:)) 
-         call ml_cc_restriction(  gpres(n-1),  gpres(n),mla%mba%rr(n-1,:))
+         call ml_cc_restriction( unew(n-1),  unew(n), mla%mba%rr(n-1,:)) 
+         call ml_cc_restriction(gpres(n-1), gpres(n), mla%mba%rr(n-1,:))
 
          call multifab_fill_ghost_cells(unew(n),unew(n-1),ng,mla%mba%rr(n-1,:), &
                                         the_bc_level(n-1),the_bc_level(n),1,1,dm)
