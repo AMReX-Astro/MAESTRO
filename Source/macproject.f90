@@ -24,7 +24,7 @@ contains
     type(ml_layout), intent(inout) :: mla
     type(multifab ), intent(inout) :: umac(:,:)
     type(multifab ), intent(inout) :: phi(:)
-    type(multifab ), intent(inout) :: rho(:)
+    type(multifab ), intent(in   ) :: rho(:)
     real(dp_t)     , intent(in   ) :: dx(:,:)
     type(bc_tower ), intent(in   ) :: the_bc_tower
     integer        , intent(in   ) :: bc_comp
@@ -633,28 +633,18 @@ contains
 
       integer        , intent(in   ) :: nlevs
       type(ml_layout), intent(inout) :: mla
-      type(multifab ), intent(inout) :: rho(:)
+      type(multifab ), intent(in   ) :: rho(:)
       type(multifab ), intent(inout) :: beta(:)
       type(bc_tower ), intent(in   ) :: the_bc_tower
 
       real(kind=dp_t), pointer :: bp(:,:,:,:) 
       real(kind=dp_t), pointer :: rp(:,:,:,:) 
-      integer :: i,dm,ng,ng_fill
+      integer :: i,dm,ng
 
       dm = rho(nlevs)%dim
       ng = rho(nlevs)%ng
 
-      ng_fill = 1
-      do n = nlevs, 2, -1
-         call multifab_fill_ghost_cells(rho(n),rho(n-1), &
-                                        ng_fill,mla%mba%rr(n-1,:), &
-                                        the_bc_tower%bc_tower_array(n-1), &
-                                        the_bc_tower%bc_tower_array(n), &
-                                        1,dm+1,1)
-      end do
-
       do n = 1, nlevs
-         call multifab_fill_boundary(rho(n))
          do i = 1, rho(n)%nboxes
             if ( multifab_remote(rho(n), i) ) cycle
             rp => dataptr(rho(n) , i)

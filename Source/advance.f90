@@ -54,8 +54,8 @@ contains
     
     logical,         intent(in   ) :: init_mode
     type(ml_layout), intent(inout) :: mla
-    type(multifab),  intent(inout) :: uold(:)
-    type(multifab),  intent(inout) :: sold(:)
+    type(multifab),  intent(in   ) :: uold(:)
+    type(multifab),  intent(in   ) :: sold(:)
     type(multifab),  intent(inout) :: unew(:)
     type(multifab),  intent(inout) :: snew(:)
     type(multifab),  intent(inout) :: gpres(:)

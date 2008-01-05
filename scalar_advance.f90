@@ -39,7 +39,7 @@ contains
     integer        , intent(in   ) :: nlevs
     type(ml_layout), intent(inout) :: mla
     integer        , intent(in   ) :: which_step
-    type(multifab) , intent(inout) :: uold(:)
+    type(multifab) , intent(in   ) :: uold(:)
     type(multifab) , intent(inout) :: sold(:)
     type(multifab) , intent(inout) :: snew(:)
     type(multifab) , intent(inout) :: thermal(:)
