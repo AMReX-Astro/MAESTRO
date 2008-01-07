@@ -644,12 +644,15 @@ contains
           call thermal_conduct_full_alg(mla,dx,dt,s1,s2star,s2,p0_1,p0_2, &
                                         s0_1(:,:,temp_comp),s0_2(:,:,temp_comp), &
                                         mg_verbose,cg_verbose,the_bc_tower)
-       
+
           do n=1,nlevs
              call destroy(s2star(n))
-             call destroy(s1(n))
           end do
        end if
+
+       do n=1,nlevs
+          call destroy(s1(n))
+       end do
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 9 -- react the full state and then base state through dt/2
