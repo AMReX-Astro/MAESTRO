@@ -354,7 +354,7 @@ contains
     real(kind=dp_t) :: temp, t0
     real(kind=dp_t) :: dist, rad_pert
 
-    real(kind=dp_t), parameter :: pert_factor = 10.01_dp_t
+    real(kind=dp_t), parameter :: pert_factor = 0.01_dp_t
 
     t0 = s0(temp_comp)
 
