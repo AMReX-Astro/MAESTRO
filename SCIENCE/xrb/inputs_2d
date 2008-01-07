@@ -37,7 +37,7 @@
  base_cutoff_density = 1.e3
  anelastic_cutoff = 1.e3
 
-! perturb_model = T
+ perturb_model = T
 
 !restart = 50
 /
