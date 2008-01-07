@@ -169,13 +169,10 @@ contains
     !     Local variables
     integer :: i, j, comp
     real(kind=dp_t) qreact
-    real(kind=dp_t) dp_avg, p_avg
 
     do_diag = .false.
 
     do j = lo(2), hi(2)
-       dp_avg = 0.d0
-        p_avg = 0.d0
        do i = lo(1), hi(1)
 
           ! (rho, H) --> T, p
@@ -209,20 +206,10 @@ contains
 !         T(i,j) = log(temp_eos(1))/log(10.)
           T(i,j) = temp_eos(1)
 
-!         deltaP(i,j) = abs(p_eos(1)-p0(j))/ p0(j)
-          deltaP(i,j) = abs(p_eos(1)-p0(j))
- 
-          dp_avg = dp_avg + deltaP(i,j)
-           p_avg =  p_avg + p_eos(1)
+          deltaP(i,j) = abs(p_eos(1)-p0(j))/ p0(j)
           
        enddo
-       dp_avg = dp_avg / dble(hi(1)-lo(1)+1)
-        p_avg =  p_avg / dble(hi(1)-lo(1)+1)
-       write(98,*)  (dble(j)+HALF)*dx(2),dp_avg
-       write(99,*)  (dble(j)+HALF)*dx(2), p_avg
     enddo
-    write(98,*)  ' '
-    write(99,*)  ' '
 
   end subroutine maketfromH_2d
 
