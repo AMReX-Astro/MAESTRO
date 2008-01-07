@@ -570,6 +570,7 @@ contains
        do n=1,nlevs
           call destroy(rhohalf(n))
           call destroy(macrhs(n))
+          call destroy(macphi(n))
        end do
         
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -614,6 +615,10 @@ contains
              call destroy(rho_omegadot2_hold(n))
           end do
        end if
+
+       do n=1,nlevs
+          call destroy(rho_omegadot1(n))
+       end do
        
        do n=1,nlevs
           call multifab_build(s2(n), mla%la(n), nscal, ng_cell)
@@ -642,6 +647,7 @@ contains
        
           do n=1,nlevs
              call destroy(s2star(n))
+             call destroy(s1(n))
           end do
        end if
 
@@ -684,11 +690,13 @@ contains
        ! end if corresponding to .not. do_half_alg
     end if
 
-    do n=1,nlevs
-       call destroy(s1(n))
-       call destroy(rho_omegadot1(n))
-       call destroy(macphi(n))
-    end do
+    if(do_half_alg) then
+       do n=1,nlevs
+          call destroy(s1(n))
+          call destroy(rho_omegadot1(n))
+          call destroy(macphi(n))
+       end do
+    end if
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 10 -- compute S^{n+1} for the final projection
