@@ -101,7 +101,7 @@ contains
                             dt,dx,lo,hi,ng,time)
 
     use burner_module
-    use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
+    use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp, trac_comp, ntrac
     use network, only: nspec, ebin
     use probin_module, ONLY: use_big_h
 
@@ -172,6 +172,9 @@ contains
 !          s_out(i,j,temp_comp) = temp_eos(1)
           s_out(i,j,temp_comp) = s_in(i,j,temp_comp)
 
+          s_out(i,j,trac_comp:trac_comp+ntrac-1) = &
+               s_in(i,j,trac_comp:trac_comp+ntrac-1)   
+
        enddo
     enddo
 
@@ -182,7 +185,7 @@ contains
   subroutine react_state_3d(s_in,s_out,rho_omegadot,rho_Hext,dt,dx,lo,hi,ng,time)
 
     use burner_module
-    use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
+    use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp, trac_comp, ntrac
     use network, only: nspec, ebin
     use probin_module, ONLY: use_big_h
 
@@ -253,6 +256,9 @@ contains
 !
 !          s_out(i,j,k,temp_comp) = temp_eos(1)
           s_out(i,j,k,temp_comp) = s_in(i,j,k,temp_comp)
+
+          s_out(i,j,k,trac_comp:trac_comp+ntrac-1) = &
+               s_in(i,j,k,trac_comp:trac_comp+ntrac-1)
 
        enddo
      enddo
