@@ -120,7 +120,7 @@ contains
        he4_comp = network_species_index("helium-4")
 
        do j = lo(2), hi(2)
-          if (s0(j,he4_comp) .gt. he4_pert) then
+          if (s0(j,spec_comp+he4_comp-1)/s0(j,rho_comp) .gt. he4_pert) then
              pert_index = j + 1
              exit
           endif
@@ -213,9 +213,9 @@ contains
           ! find the helium layer and perturb near there
           he4_comp = network_species_index("helium-4")
 
-          do j = lo(2), hi(2)
-             if (s0(j,he4_comp) .gt. he4_pert) then
-                pert_index = j + 1
+          do k = lo(3), hi(3)
+             if (s0(k,spec_comp+he4_comp-1)/s0(k,rho_comp) .gt. he4_pert) then
+                pert_index = k + 1
                 exit
              endif
           enddo
@@ -354,7 +354,7 @@ contains
     real(kind=dp_t) :: temp, t0
     real(kind=dp_t) :: dist, rad_pert
 
-    real(kind=dp_t), parameter :: pert_factor = 0.01_dp_t
+    real(kind=dp_t), parameter :: pert_factor = 10.01_dp_t
 
     t0 = s0(temp_comp)
 
