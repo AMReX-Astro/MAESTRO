@@ -98,13 +98,6 @@ contains
        call cell_to_edge_allcomps(n,s0_new(n,:,:),s0_edge_new(n,:,:))
     end do
 
-    do n = 1, nlevs
-       call build(s0_old_cart(n), sold(n)%la, nscal, 1)
-       call build(s0_new_cart(n), sold(n)%la, nscal, 1)
-       call setval(s0_old_cart(n),ZERO,all=.true.)
-       call setval(s0_new_cart(n),ZERO,all=.true.)
-    end do
-
     !**************************************************************************
     !     Create scalar source term at time n for (rho X)_i and (rho H).  
     !     The source term for (rho X) is zero.
@@ -116,6 +109,10 @@ contains
 
     ! Define s0_old_cart and s0_new_cart
     if (spherical .eq. 1) then
+       do n=1,nlevs
+          call build(s0_old_cart(n), sold(n)%la, nscal, 1)
+          call build(s0_new_cart(n), sold(n)%la, nscal, 1)
+       end do
        call fill_3d_data_wrapper(nlevs,s0_old_cart,s0_old(:,:,rhoh_comp),dx,rhoh_comp)
        call fill_3d_data_wrapper(nlevs,s0_new_cart,s0_new(:,:,rhoh_comp),dx,rhoh_comp)
        do comp = spec_comp, spec_comp+nspec-1
@@ -332,17 +329,20 @@ contains
                      eta,sedge,sflux,scal_force,s0_old,s0_edge_old,s0_new,s0_edge_new, &
                      s0_old_cart,s0_new_cart,dx,dt,evolve_base_state,the_bc_level,mla)
 
+    if(spherical .eq. 1) then
+       do n=1,nlevs
+          call destroy(s0_old_cart(n))
+          call destroy(s0_new_cart(n))
+       end do
+    end if
+
     do n = 1, nlevs
        call destroy(scal_force(n))
-       call destroy(s0_old_cart(n))
-       call destroy(s0_new_cart(n))
        do comp = 1,dm
           call destroy(sedge(n,comp))
           call destroy(sflux(n,comp))
        end do
     end do
-
-    deallocate(sedge,sflux)
 
     if(.not. use_thermal_diffusion) then
        call makeTfromRhoH(nlevs,snew,s0_new(:,:,temp_comp),mla,the_bc_level,dx)
@@ -359,6 +359,7 @@ contains
        end do
     end if
 
+    deallocate(sedge,sflux)
     deallocate(s0_edge_old,s0_edge_new)
     deallocate(umac_nodal_flag)
 
