@@ -68,7 +68,6 @@ contains
     
     ! Local variables
     integer :: j,comp
-    real (kind = dp_t) :: temp_a, temp_b
     
     real (kind = dp_t), allocatable :: force(:)
     real (kind = dp_t), allocatable :: edge(:)
@@ -104,12 +103,6 @@ contains
           s0_new(j,comp) = s0_old(j,comp) &
                - dt / dz * (edge(j+1) * vel(j+1) - edge(j) * vel(j)) &
                - dt / dz * (eta(j+1,comp) - eta(j,comp))
-          
-          if (comp.eq.spec_comp) then
-             temp_a = - dt / dz * (edge(j+1) * vel(j+1) - edge(j) * vel(j)) 
-             temp_b = - dt / dz * (eta(j+1,comp) - eta(j,comp))
-             write(88,*) (dble(j)+HALF)*dz,  temp_a, temp_b
-          end if
        end do
        
     enddo
