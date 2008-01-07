@@ -101,6 +101,8 @@ contains
           s(i,j,temp_comp) = s0(j,temp_comp)
           s(i,j,spec_comp:spec_comp+nspec-1) = &
                s0(j,spec_comp:spec_comp+nspec-1)
+          s(i,j,trac_comp:trac_comp+ntrac-1) = &
+               s0(j,trac_comp:trac_comp+ntrac-1)
        enddo
     enddo
     
@@ -157,6 +159,10 @@ contains
           call fill_3d_data(n,s(:,:,:,comp),s0(:,comp),lo,hi,dx,ng)
        end do
 
+       do comp = trac_comp, trac_comp+ntrac-1
+          call fill_3d_data(n,s(:,:,:,comp),s0(:,comp),lo,hi,dx,ng)
+       end do
+
     else 
 
        ! initialize the scalars
@@ -168,6 +174,8 @@ contains
                 s(i,j,k,temp_comp) = s0(k,temp_comp)
                 s(i,j,k,spec_comp:spec_comp+nspec-1) = &
                      s0(k,spec_comp:spec_comp+nspec-1)
+                s(i,j,k,trac_comp:trac_comp+ntrac-1) = &
+                     s0(k,trac_comp:trac_comp+ntrac-1)
              enddo
           enddo
        enddo

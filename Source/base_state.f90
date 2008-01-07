@@ -20,7 +20,7 @@ contains
     use bl_constants_module
     use eos_module
     use probin_module, ONLY: base_cutoff_density, anelastic_cutoff
-    use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp
+    use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp, ntrac
     use geometry, only: dr, nr, spherical
 
     integer           , intent(in   ) :: n
@@ -267,6 +267,8 @@ contains
           p0(j)    = p_eos(1)
 
           s0(j,temp_comp) = t_ambient
+
+          s0(j,trac_comp:trac_comp+ntrac-1) = ZERO
 
           gam1(j) = gam1_eos(1)
 
