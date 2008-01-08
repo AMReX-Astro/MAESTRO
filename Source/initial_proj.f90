@@ -7,8 +7,7 @@ module initial_proj_module
 
 contains
 
-  subroutine initial_proj(nlevs,uold,sold,pres,gpres,vel_force,normal,Source_old, &
-                          hgrhs,div_coeff_3d, &
+  subroutine initial_proj(nlevs,uold,sold,pres,gpres,vel_force,normal,Source_old,hgrhs, &
                           div_coeff_old,s0_old,p0_old,gam1,grav_cell,dx,the_bc_tower,mla)
 
     use variables, only: temp_comp, press_comp
@@ -38,7 +37,6 @@ contains
     type(multifab) , intent(in   ) :: normal(:)
     type(multifab) , intent(inout) :: Source_old(:)
     type(multifab) , intent(inout) :: hgrhs(:)
-    type(multifab) , intent(inout) :: div_coeff_3d(:)
     real(kind=dp_t), intent(in   ) :: div_coeff_old(:,0:)
     real(kind=dp_t), intent(in   ) :: s0_old(:,0:,:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:)
@@ -59,6 +57,7 @@ contains
     type(multifab), allocatable :: rhohalf(:)
     type(multifab), allocatable :: rho_omegadot1(:)
     type(multifab), allocatable :: rho_Hext(:)
+    type(multifab), allocatable :: div_coeff_3d(:)
 
     allocate(Sbar(nlevs,nr(nlevs),1))
 
@@ -67,6 +66,7 @@ contains
     allocate(      rhohalf(nlevs))
     allocate(rho_omegadot1(nlevs))
     allocate(     rho_Hext(nlevs))
+    allocate( div_coeff_3d(nlevs))
 
     if ( parallel_IOProcessor() ) then
        print *, 'DOING THE INITIAL VELOCITY PROJECTION'
@@ -127,6 +127,9 @@ contains
     dt_temp = ONE
 
     if (spherical .eq. 1) then
+       do n=1,nlevs
+          call multifab_build(div_coeff_3d(n), mla%la(n), 1, 0)
+       end do
        call fill_3d_data_wrapper(nlevs,div_coeff_3d,div_coeff_old,dx)
        call hgproject(initial_projection_comp,mla,uold,uold,rhohalf,pres,gpres,dx, &
                       dt_temp,the_bc_tower,verbose,mg_verbose,cg_verbose,press_comp, &
@@ -137,6 +140,12 @@ contains
                       dt_temp,the_bc_tower,verbose,mg_verbose,cg_verbose,press_comp, &
                       hgrhs,div_coeff_1d=div_coeff_old)
     end if
+
+    if(spherical .eq. 1) then
+       do n=1,nlevs
+          call destroy(div_coeff_3d(n))
+       end do
+    end if
     
     do n = 1,nlevs
        call setval( pres(n)  ,0.0_dp_t, all=.true.)
@@ -145,7 +154,7 @@ contains
     end do
     
     deallocate(Sbar)
-    deallocate(gamma1_term,thermal,rhohalf,rho_omegadot1,rho_Hext)
+    deallocate(gamma1_term,thermal,rhohalf,rho_omegadot1,rho_Hext,div_coeff_3d)
 
   end subroutine initial_proj
 
