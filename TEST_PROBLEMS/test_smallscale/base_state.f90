@@ -18,7 +18,8 @@ contains
     use define_bc_module
     use bl_constants_module
     use eos_module
-    use probin_module, ONLY: base_cutoff_density, anelastic_cutoff, use_big_h
+    use probin_module, ONLY: base_cutoff_density, anelastic_cutoff, use_big_h, &
+         prob_lo_y, prob_lo_z
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp
     use geometry, only: dr, nr, spherical
     use inlet_bc_module
@@ -31,7 +32,8 @@ contains
     real(kind=dp_t),     intent(in   ) :: dx(:)
 
     ! local
-    integer ndum,i,dm,comp
+    integer :: ndum,i,dm,comp
+    real(dp_t) :: starting_rad
 
     parameter (ndum = 30)
 
@@ -40,6 +42,12 @@ contains
     real(kind=dp_t) :: loloc,hiloc,flameloc,qreact
 
     dm = size(dx)
+
+    if (dm .eq. 2) then
+       starting_rad = prob_lo_y
+    else if(dm .eq. 3) then
+       starting_rad = prob_lo_z
+    endif
 
     lamsolfile = 'flame_4.e7_screen_left.out'
 
@@ -116,8 +124,8 @@ contains
 
     do i=0,nr(n)-1
 
-       loloc = dble(i)*dx(dm) - flameloc
-       hiloc = (dble(i) + ONE)*dx(dm) - flameloc
+       loloc = starting_rad +  dble(i)     *dx(dm) - flameloc
+       hiloc = starting_rad + (dble(i)+ONE)*dx(dm) - flameloc
 
        call asin1d(lamsolfile, loloc, hiloc, state1d, ndum, .false.)
 
