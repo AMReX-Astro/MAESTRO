@@ -1,6 +1,5 @@
-!
 ! a module for storing the geometric information so we don't have to pass it
-!
+
 module sponge_module
 
   use bl_types
@@ -34,9 +33,11 @@ contains
     real (kind = dp_t) :: r_top
     integer            :: j
 
-    r_top = prob_lo_r + dble(nr(nlevs)) * dr(nlevs)
+    alpha = 10.d0
 
+    r_top = prob_lo_r + dble(nr(nlevs)) * dr(nlevs)
     r_sp = r_top
+
     do j = 0, nr(nlevs)-1
        r = prob_lo_r + (dble(j)+HALF) * dr(nlevs)
        if (s0(j,rho_comp) < 10.d0*anelastic_cutoff) then
@@ -64,15 +65,8 @@ contains
        r_sp_outer = r_tp_outer - 4.d0 * dx(3)
     end if
 
-    alpha = 10.d0
-    !     alpha = 100.d0
-    !     alpha = 1000.d0
-
-    if ( parallel_IOProcessor() ) &
-         write(6,1000)  r_sp, r_tp
-
-    if ( parallel_IOProcessor() ) &
-         write(6,1001)  r_sp_outer, r_tp_outer
+    if ( parallel_IOProcessor() ) write(6,1000) r_sp, r_tp
+    if ( parallel_IOProcessor() ) write(6,1001) r_sp_outer, r_tp_outer
 
 1000 format('inner sponge: r_sp      , r_tp      : ',e20.12,2x,e20.12)
 1001 format('outer sponge: r_sp_outer, r_tp_outer: ',e20.12,2x,e20.12)

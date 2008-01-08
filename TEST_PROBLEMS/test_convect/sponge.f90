@@ -38,11 +38,9 @@ contains
     r_sp = 2.19140625d8
     r_tp = 2.97265625d8
 
-    if ( parallel_IOProcessor() ) &
-         write(6,1000)  r_sp, r_tp
+    if ( parallel_IOProcessor() ) write(6,1000) r_sp, r_tp
 
 1000 format('inner sponge: r_sp      , r_tp      : ',e20.12,2x,e20.12)
-
 
   end subroutine init_sponge
 
@@ -57,7 +55,7 @@ contains
     type(ml_layout), intent(in   ) :: mla
 
     ! Local variables
-    real(kind=dp_t), pointer::  sp(:,:,:,:)
+    real(kind=dp_t), pointer :: sp(:,:,:,:)
     integer :: i,dm,n
     integer :: lo(sponge(1)%dim),hi(sponge(1)%dim)
 
@@ -122,7 +120,6 @@ contains
     use bl_constants_module
     use probin_module, only: prob_lo_x, prob_lo_y, prob_lo_z
 
-
     integer        , intent(in   ) :: lo(:),hi(:)
     real(kind=dp_t), intent(inout) :: sponge(lo(1):,lo(2):,lo(3):)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
@@ -169,7 +166,8 @@ contains
                 ! Outer sponge: damps velocities at edge of domain
                 if (r >= r_sp_outer) then
                    if (r < r_tp_outer) then
-                      smdamp = HALF*(ONE - cos(M_PI*(r - r_sp_outer)/(r_tp_outer - r_sp_outer)))
+                      smdamp = &
+                           HALF*(ONE - cos(M_PI*(r - r_sp_outer)/(r_tp_outer - r_sp_outer)))
                    else
                       smdamp = ONE
                    endif
