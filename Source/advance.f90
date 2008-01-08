@@ -14,7 +14,7 @@ contains
                               gpres,pres,normal,s0_old,s0_1,s0_2, &
                               s0_new,p0_old,p0_1,p0_2,p0_new,gam1,w0,eta, &
                               rho_omegadot2,div_coeff_old,div_coeff_new, &
-                              grav_cell_old,dx,time,dt,dtold,the_bc_tower,anelastic_cutoff, &
+                              grav_cell_old,dx,time,dt,dtold,the_bc_tower, &
                               verbose,mg_verbose,cg_verbose,dSdt,Source_old,Source_new, &
                               sponge,do_sponge,hgrhs,istep)
 
@@ -78,7 +78,6 @@ contains
     real(dp_t)    ,  intent(in   ) :: grav_cell_old(:,0:)
     real(dp_t)    ,  intent(in   ) :: dx(:,:),time,dt,dtold
     type(bc_tower),  intent(in   ) :: the_bc_tower
-    real(dp_t)    ,  intent(in   ) :: anelastic_cutoff
     integer       ,  intent(in   ) :: verbose,mg_verbose,cg_verbose
     type(multifab),  intent(inout) :: dSdt(:)
     type(multifab),  intent(inout) :: Source_old(:)
@@ -317,7 +316,7 @@ contains
     do n=1,nlevs
        call make_grav_cell(n,grav_cell_new(n,:),s0_1(n,:,rho_comp))
        call make_div_coeff(n,div_coeff_new(n,:),s0_1(n,:,rho_comp),p0_1(n,:), &
-                           gam1(n,:),grav_cell_new(n,:),anelastic_cutoff)
+                           gam1(n,:),grav_cell_new(n,:))
     end do
     
     
@@ -332,7 +331,7 @@ contains
     
     if (evolve_base_state) then
        call advect_base(nlevs,w0,Sbar,p0_1,p0_2,s0_1,s0_2,gam1,div_coeff_new,eta, &
-                        dx(:,dm),dt,anelastic_cutoff)
+                        dx(:,dm),dt)
     else
        p0_2 = p0_1
        s0_2 = s0_1
@@ -437,7 +436,7 @@ contains
     do n=1,nlevs
        call make_grav_cell(n,grav_cell_new(n,:),s0_new(n,:,rho_comp))
        call make_div_coeff(n,div_coeff_new(n,:),s0_new(n,:,rho_comp),p0_new(n,:), &
-                           gam1(n,:),grav_cell_new(n,:),anelastic_cutoff)
+                           gam1(n,:),grav_cell_new(n,:))
     end do
     
     ! Define base state at half time for use in velocity advance!
@@ -595,7 +594,7 @@ contains
        end if
        if (evolve_base_state) then
           call advect_base(nlevs,w0,Sbar,p0_1,p0_2,s0_1,s0_2,gam1,div_coeff_nph,eta, &
-                           dx(:,dm),dt,anelastic_cutoff)
+                           dx(:,dm),dt)
        else
           p0_2 = p0_1
           s0_2 = s0_1
@@ -699,7 +698,7 @@ contains
        do n=1,nlevs
           call make_grav_cell(n,grav_cell_new(n,:),s0_new(n,:,rho_comp))
           call make_div_coeff(n,div_coeff_new(n,:),s0_new(n,:,rho_comp),p0_new(n,:), &
-                              gam1(n,:),grav_cell_new(n,:),anelastic_cutoff)
+                              gam1(n,:),grav_cell_new(n,:))
        end do
        
        ! end if corresponding to .not. do_half_alg

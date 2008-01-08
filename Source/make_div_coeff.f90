@@ -13,15 +13,16 @@ contains
 
 !  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-   subroutine make_div_coeff(n,div_coeff,rho0,p0,gam1,grav_center,anelastic_cutoff)
+   subroutine make_div_coeff(n,div_coeff,rho0,p0,gam1,grav_center)
 
      use bl_constants_module
      use geometry, only: dr
+     use probin_module, only: anelastic_cutoff
 
       integer        , intent(in   ) :: n
       real(kind=dp_t), intent(  out) :: div_coeff(0:)
       real(kind=dp_t), intent(in   ) :: rho0(0:), p0(0:), gam1(0:)
-      real(kind=dp_t), intent(in   ) :: grav_center(0:), anelastic_cutoff
+      real(kind=dp_t), intent(in   ) :: grav_center(0:)
 
       integer :: j,ny,j_anel
       real(kind=dp_t) :: integral

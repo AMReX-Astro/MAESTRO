@@ -11,7 +11,7 @@ module advect_base_module
 contains
 
   subroutine advect_base(nlevs,vel,Sbar_in,p0_old,p0_new,s0_old,s0_new,gam1,div_coeff,eta, &
-                         dz,dt,anelastic_cutoff)
+                         dz,dt)
 
     use bl_prof_module
     use geometry, only: spherical
@@ -25,7 +25,7 @@ contains
     real(kind=dp_t), intent(in   ) :: div_coeff(:,0:)
     real(kind=dp_t), intent(in   ) :: eta(:,0:,:)
     real(kind=dp_t), intent(in   ) :: dz(:)
-    real(kind=dp_t), intent(in   ) :: dt,anelastic_cutoff
+    real(kind=dp_t), intent(in   ) :: dt
     
     ! local
     integer :: n
@@ -41,7 +41,7 @@ contains
        else
           call advect_base_state_spherical(n,vel(n,:),Sbar_in(n,:,1),p0_old(n,:), &
                                            p0_new(n,:),s0_old(n,:,:),s0_new(n,:,:), &
-                                           gam1(n,:),div_coeff(n,:),dt,anelastic_cutoff)
+                                           gam1(n,:),div_coeff(n,:),dt)
        end if
     enddo
 
@@ -167,7 +167,7 @@ contains
   end subroutine advect_base_state_planar
   
   subroutine advect_base_state_spherical(n,vel,Sbar_in,p0_old,p0_new,s0_old,s0_new,gam1, &
-                                         div_coeff_old,dt,anelastic_cutoff)
+                                         div_coeff_old,dt)
 
     use bl_constants_module
     use make_edge_state_module
@@ -184,7 +184,7 @@ contains
     real(kind=dp_t), intent(  out) :: p0_new(0:), s0_new(0:,:)
     real(kind=dp_t), intent(inout) :: gam1(0:)
     real(kind=dp_t), intent(in   ) :: div_coeff_old(0:)
-    real(kind=dp_t), intent(in   ) :: dt,anelastic_cutoff
+    real(kind=dp_t), intent(in   ) :: dt
     
     ! Local variables
     integer :: j,comp
@@ -290,8 +290,7 @@ contains
     call make_grav_cell(n,grav_cell,s0_new(:,rho_comp))
     
     ! Define beta^n+1 at cell edges using the new gravity above
-    call make_div_coeff(n,div_coeff_new,s0_new(:,rho_comp),p0_new,gam1,grav_cell, &
-                        anelastic_cutoff)
+    call make_div_coeff(n,div_coeff_new,s0_new(:,rho_comp),p0_new,gam1,grav_cell)
     call cell_to_edge(n,div_coeff_new,beta_new)
     
     ! time-centered beta
