@@ -191,13 +191,15 @@ contains
 
   subroutine initveldata_2d(u,lo,hi,ng,dx,s0)
 
+    use probin_module, only: prob_lo_y
+
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(out) :: u(lo(1)-ng:,lo(2)-ng:,:)  
     real (kind = dp_t), intent(in ) :: dx(:)
     real(kind=dp_t), intent(in   ) ::    s0(0:,:)
 
     ! local
-    integer ndum, i, dm
+    integer ndum, j, dm
     parameter (ndum = 31)
 
     character(len=128) :: lamsolfile
@@ -210,15 +212,15 @@ contains
 
     flameloc = ONE
 
-    do i=lo(2),hi(2)
+    do j=lo(2),hi(2)
 
-       loloc = dble(i)*dx(dm) - flameloc
-       hiloc = (dble(i) + ONE)*dx(dm) - flameloc
+       loloc = prob_lo_y +  dble(j)     *dx(dm) - flameloc
+       hiloc = prob_lo_y + (dble(j)+ONE)*dx(dm) - flameloc
 
        call asin1d(lamsolfile, loloc, hiloc, state1d, ndum, .false.)
 
-       u(lo(1):hi(1),i,1) = 0.0d0
-       u(lo(1):hi(1),i,2) = state1d(2)
+       u(lo(1):hi(1),j,1) = 0.0d0
+       u(lo(1):hi(1),j,2) = state1d(2)
 
     enddo
 
@@ -226,13 +228,15 @@ contains
 
   subroutine initveldata_3d(u,lo,hi,ng,dx,s0)
 
+    use probin_module, only: prob_lo_z
+
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(out) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
     real (kind = dp_t), intent(in ) :: dx(:)
     real(kind=dp_t), intent(in   ) ::    s0(0:,:)
 
     ! local
-    integer ndum, i, dm
+    integer ndum, k, dm
     parameter (ndum = 31)
 
     character(len=128) :: lamsolfile
@@ -243,15 +247,15 @@ contains
 
     lamsolfile = 'flame_4.e7_screen_left.out'
 
-    do i=lo(3),hi(3)
+    do k=lo(3),hi(3)
 
-       loloc = dble(i)*dx(dm)
-       hiloc = (dble(i) + ONE)*dx(dm)
+       loloc = prob_lo_z +  dble(k)     *dx(dm)
+       hiloc = prob_lo_z + (dble(k)+ONE)*dx(dm)
 
        call asin1d(lamsolfile, loloc, hiloc, state1d, ndum, .false.)
 
-       u(lo(1):hi(1),lo(2):hi(2),i,1:2) = 0.0d0
-       u(lo(1):hi(1),lo(2):hi(2),i,3) = state1d(2)
+       u(lo(1):hi(1),lo(2):hi(2),k,1:2) = 0.0d0
+       u(lo(1):hi(1),lo(2):hi(2),k,3) = state1d(2)
 
     enddo
 
