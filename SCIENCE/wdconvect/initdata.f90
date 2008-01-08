@@ -11,7 +11,6 @@ module init_module
   use variables
   use network
   use geometry
-  use probin_module
   use ml_layout_module
   use ml_restriction_module
   use multifab_fill_ghost_module
@@ -23,16 +22,13 @@ module init_module
 
 contains
 
-  subroutine initscalardata(nlevs,s,s0,p0,dx,perturb_model,prob_lo,prob_hi,bc,mla)
+  subroutine initscalardata(nlevs,s,s0,p0,dx,bc,mla)
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: s(:)
     real(kind=dp_t), intent(in   ) :: s0(:,0:,:)
     real(kind=dp_t), intent(in   ) :: p0(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
-    logical,         intent(in   ) :: perturb_model
-    real(kind=dp_t), intent(in   ) :: prob_lo(:)
-    real(kind=dp_t), intent(in   ) :: prob_hi(:)
     type(bc_level) , intent(in   ) :: bc(:)
     type(ml_layout), intent(inout) :: mla
 
@@ -53,11 +49,9 @@ contains
           
           select case (dm)
           case (2)
-             call initscalardata_2d(sop(:,:,1,:), lo, hi, ng, dx(n,:), perturb_model, &
-                                    prob_lo, prob_hi, s0(n,:,:), p0(n,:))
+             call initscalardata_2d(sop(:,:,1,:), lo, hi, ng, dx(n,:), s0(n,:,:), p0(n,:))
           case (3)
-             call initscalardata_3d(n,sop(:,:,:,:), lo, hi, ng, dx(n,:), perturb_model, &
-                                    prob_lo, prob_hi, s0(n,:,:), p0(n,:))
+             call initscalardata_3d(n,sop(:,:,:,:), lo, hi, ng, dx(n,:), s0(n,:,:), p0(n,:))
           end select
        end do
        
@@ -74,17 +68,15 @@ contains
        
   end subroutine initscalardata
 
-  subroutine initscalardata_2d (s,lo,hi,ng,dx, perturb_model, &
-                                prob_lo,prob_hi,s0,p0)
+  subroutine initscalardata_2d(s,lo,hi,ng,dx,s0,p0)
+
+    use probin_module, only: prob_lo_x, prob_lo_y, perturb_model
 
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,:)  
     real (kind = dp_t), intent(in ) :: dx(:)
-    logical,            intent(in ) :: perturb_model
-    real (kind = dp_t), intent(in ) :: prob_lo(:)
-    real (kind = dp_t), intent(in ) :: prob_hi(:)
-    real(kind=dp_t), intent(in   ) ::    s0(0:,:)
-    real(kind=dp_t), intent(in   ) ::    p0(0:)
+    real(kind=dp_t), intent(in   ) :: s0(0:,:)
+    real(kind=dp_t), intent(in   ) :: p0(0:)
 
     !     Local variables
     integer :: i, j, n
@@ -113,10 +105,10 @@ contains
     ! add an optional perturbation
     if (perturb_model) then
        do j = lo(2), hi(2)
-          y = prob_lo(2) + (dble(j)+HALF) * dx(2)
+          y = prob_lo_y + (dble(j)+HALF) * dx(2)
        
           do i = lo(1), hi(1)
-             x = prob_lo(1) + (dble(i)+HALF) * dx(1)
+             x = prob_lo_x + (dble(i)+HALF) * dx(1)
           
              call perturb_2d(x, y, p0(j), s0(j,:), &
                              dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
@@ -132,14 +124,13 @@ contains
     
   end subroutine initscalardata_2d
 
-  subroutine initscalardata_3d(n,s,lo,hi,ng,dx, perturb_model,prob_lo,prob_hi,s0,p0)
+  subroutine initscalardata_3d(n,s,lo,hi,ng,dx,s0,p0)
+
+    use probin_module, only: prob_lo_x, prob_lo_y, prob_lo_z, perturb_model
 
     integer, intent(in) :: n, lo(:), hi(:), ng
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
     real (kind = dp_t), intent(in ) :: dx(:)
-    logical,            intent(in ) :: perturb_model
-    real (kind = dp_t), intent(in ) :: prob_lo(:)
-    real (kind = dp_t), intent(in ) :: prob_hi(:)
     real(kind=dp_t), intent(in   ) ::    s0(0:,:)
     real(kind=dp_t), intent(in   ) ::    p0(0:)
 
@@ -190,13 +181,13 @@ contains
 
           ! add an optional perturbation
           do k = lo(3), hi(3)
-             z = prob_lo(3) + (dble(k)+HALF) * dx(3)
+             z = prob_lo_z + (dble(k)+HALF) * dx(3)
              
              do j = lo(2), hi(2)
-                y = prob_lo(2) + (dble(j)+HALF) * dx(2)
+                y = prob_lo_y + (dble(j)+HALF) * dx(2)
                 
                 do i = lo(1), hi(1)
-                   x = prob_lo(1) + (dble(i)+HALF) * dx(1)
+                   x = prob_lo_x + (dble(i)+HALF) * dx(1)
                    
                    call perturb_3d(x, y, z, p0(k), s0(k,:), &
                                    dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
@@ -215,15 +206,13 @@ contains
     
   end subroutine initscalardata_3d
 
-  subroutine initveldata(nlevs,u,s0,p0,dx,prob_lo,prob_hi,bc,mla)
+  subroutine initveldata(nlevs,u,s0,p0,dx,bc,mla)
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: u(:)
     real(kind=dp_t), intent(in   ) :: s0(:,0:,:)
     real(kind=dp_t), intent(in   ) :: p0(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
-    real(kind=dp_t), intent(in   ) :: prob_lo(:)
-    real(kind=dp_t), intent(in   ) :: prob_hi(:)
     type(bc_level) , intent(in   ) :: bc(:)
     type(ml_layout), intent(inout) :: mla
 
@@ -243,11 +232,9 @@ contains
           hi =  upb(get_box(u(n),i))
           select case (dm)
           case (2)
-             call initveldata_2d(uop(:,:,1,:), lo, hi, ng, dx(n,:), &
-                                 prob_lo, prob_hi, s0(n,:,:), p0(n,:))   
+             call initveldata_2d(uop(:,:,1,:), lo, hi, ng, dx(n,:), s0(n,:,:), p0(n,:))   
           case (3)
-             call initveldata_3d(uop(:,:,:,:), lo, hi, ng, dx(n,:), &
-                                 prob_lo, prob_hi, s0(n,:,:), p0(n,:))
+             call initveldata_3d(uop(:,:,:,:), lo, hi, ng, dx(n,:), s0(n,:,:), p0(n,:))
           end select
        end do
 
@@ -264,14 +251,11 @@ contains
 
   end subroutine initveldata
 
-  subroutine initveldata_2d (u,lo,hi,ng,dx, &
-                             prob_lo,prob_hi,s0,p0)
+  subroutine initveldata_2d (u,lo,hi,ng,dx,s0,p0)
 
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(out) :: u(lo(1)-ng:,lo(2)-ng:,:)  
     real (kind = dp_t), intent(in ) :: dx(:)
-    real (kind = dp_t), intent(in ) :: prob_lo(:)
-    real (kind = dp_t), intent(in ) :: prob_hi(:)
     real(kind=dp_t), intent(in   ) ::    s0(0:,:)
     real(kind=dp_t), intent(in   ) ::    p0(0:)
 
@@ -291,14 +275,15 @@ contains
   ! The steepness of the cutoff is controlled by "velpert_steep".  The
   ! relative amplitude of the modes is controlled by
   ! "velpert_amplitude".
-  subroutine initveldata_3d (u,lo,hi,ng,dx, &
-                             prob_lo,prob_hi,s0,p0)
+  subroutine initveldata_3d(u,lo,hi,ng,dx,s0,p0)
+
+    use probin_module, only: prob_lo_x, prob_lo_y, prob_lo_z, &
+         prob_hi_x, prob_hi_y, prob_hi_z, &
+         velpert_amplitude, velpert_radius, velpert_steep, velpert_scale
 
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(out) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind = dp_t), intent(in ) :: dx(:)
-    real (kind = dp_t), intent(in ) :: prob_lo(:)
-    real (kind = dp_t), intent(in ) :: prob_hi(:)
     real(kind=dp_t), intent(in   ) ::    s0(0:,:)
     real(kind=dp_t), intent(in   ) ::    p0(0:)
 
@@ -374,9 +359,9 @@ contains
 
     ! define where center of star is
     ! this currently assumes the star is at the center of the domain
-    do i=1,3
-       xc(i) = 0.5d0*(prob_lo(i)+prob_hi(i))
-    enddo
+    xc(1) = 0.5d0*(prob_lo_x+prob_hi_x)
+    xc(2) = 0.5d0*(prob_lo_y+prob_hi_y)
+    xc(3) = 0.5d0*(prob_lo_z+prob_hi_z)
 
     ! now do the big loop over all points in the domain
     do iloc = lo(1),hi(1)
@@ -387,9 +372,9 @@ contains
              upert = ZERO
 
              ! compute where we physically are
-             xloc(1) = prob_lo(1) + (dble(iloc)+0.5d0)*dx(1)
-             xloc(2) = prob_lo(2) + (dble(jloc)+0.5d0)*dx(2)
-             xloc(3) = prob_lo(3) + (dble(kloc)+0.5d0)*dx(3)
+             xloc(1) = prob_lo_x + (dble(iloc)+0.5d0)*dx(1)
+             xloc(2) = prob_lo_y + (dble(jloc)+0.5d0)*dx(2)
+             xloc(3) = prob_lo_z + (dble(kloc)+0.5d0)*dx(3)
 
              ! compute distance to the center of the star
              rloc = ZERO

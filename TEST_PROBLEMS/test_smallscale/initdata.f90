@@ -11,7 +11,6 @@ module init_module
   use variables
   use network
   use geometry
-  use probin_module, only: grav_const
   use ml_layout_module
   use ml_restriction_module
   use multifab_fill_ghost_module
@@ -23,16 +22,13 @@ module init_module
 
 contains
 
-  subroutine initscalardata(nlevs,s,s0,p0,dx,perturb_model,prob_lo,prob_hi,bc,mla)
+  subroutine initscalardata(nlevs,s,s0,p0,dx,bc,mla)
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: s(:)
     real(kind=dp_t), intent(inout) :: s0(:,0:,:)
     real(kind=dp_t), intent(in   ) :: p0(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
-    logical,         intent(in   ) :: perturb_model
-    real(kind=dp_t), intent(in   ) :: prob_lo(:)
-    real(kind=dp_t), intent(in   ) :: prob_hi(:)
     type(bc_level) , intent(in   ) :: bc(:)
     type(ml_layout), intent(inout) :: mla
 
@@ -52,11 +48,9 @@ contains
           hi =  upb(get_box(s(n),i))
           select case (dm)
           case (2)
-             call initscalardata_2d(sop(:,:,1,:), lo, hi, ng, dx(n,:), perturb_model, &
-                                    prob_lo, prob_hi, s0(n,:,:))
+             call initscalardata_2d(sop(:,:,1,:), lo, hi, ng, dx(n,:), s0(n,:,:))
           case (3)
-             call initscalardata_3d(n,sop(:,:,:,:), lo, hi, ng, dx(n,:), perturb_model, &
-                                    prob_lo, prob_hi, s0(n,:,:))
+             call initscalardata_3d(n,sop(:,:,:,:), lo, hi, ng, dx(n,:), s0(n,:,:))
           end select
        end do
 
@@ -82,14 +76,11 @@ contains
 
   end subroutine initscalardata
 
-  subroutine initscalardata_2d(s,lo,hi,ng,dx, perturb_model,prob_lo,prob_hi,s0)
+  subroutine initscalardata_2d(s,lo,hi,ng,dx,s0)
 
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,:)  
     real (kind = dp_t), intent(in ) :: dx(:)
-    logical,            intent(in ) :: perturb_model
-    real (kind = dp_t), intent(in ) :: prob_lo(:)
-    real (kind = dp_t), intent(in ) :: prob_hi(:)
     real(kind=dp_t), intent(inout) ::    s0(0:,:)
 
     !     Local variables
@@ -111,14 +102,11 @@ contains
 
   end subroutine initscalardata_2d
 
-  subroutine initscalardata_3d(n,s,lo,hi,ng,dx,perturb_model,prob_lo,prob_hi,s0)
+  subroutine initscalardata_3d(n,s,lo,hi,ng,dx,s0)
 
     integer, intent(in) :: n, lo(:), hi(:), ng
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
     real (kind = dp_t), intent(in ) :: dx(:)
-    logical,            intent(in ) :: perturb_model
-    real (kind = dp_t), intent(in ) :: prob_lo(:)
-    real (kind = dp_t), intent(in ) :: prob_hi(:)
     real(kind=dp_t), intent(inout) ::    s0(0:,:)
 
     !     Local variables
@@ -155,15 +143,13 @@ contains
 
   end subroutine initscalardata_3d
 
-  subroutine initveldata(nlevs,u,s0,p0,dx,prob_lo,prob_hi,bc,mla)
+  subroutine initveldata(nlevs,u,s0,p0,dx,bc,mla)
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: u(:)
     real(kind=dp_t), intent(in   ) :: s0(:,0:,:)
     real(kind=dp_t), intent(in   ) :: p0(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
-    real(kind=dp_t), intent(in   ) :: prob_lo(:)
-    real(kind=dp_t), intent(in   ) :: prob_hi(:)
     type(bc_level) , intent(in   ) :: bc(:)
     type(ml_layout), intent(inout) :: mla
 
@@ -184,11 +170,9 @@ contains
           hi =  upb(get_box(u(n),i))
           select case (dm)
           case (2)
-             call initveldata_2d(uop(:,:,1,:), lo, hi, ng, dx(n,:), &
-                                 prob_lo, prob_hi, s0(n,:,:))
+             call initveldata_2d(uop(:,:,1,:), lo, hi, ng, dx(n,:), s0(n,:,:))
           case (3)
-             call initveldata_3d(uop(:,:,:,:), lo, hi, ng, dx(n,:), &
-                                 prob_lo, prob_hi, s0(n,:,:))
+             call initveldata_3d(uop(:,:,:,:), lo, hi, ng, dx(n,:), s0(n,:,:))
           end select
        end do
 
@@ -205,13 +189,11 @@ contains
 
   end subroutine initveldata
 
-  subroutine initveldata_2d(u,lo,hi,ng,dx,prob_lo,prob_hi,s0)
+  subroutine initveldata_2d(u,lo,hi,ng,dx,s0)
 
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(out) :: u(lo(1)-ng:,lo(2)-ng:,:)  
     real (kind = dp_t), intent(in ) :: dx(:)
-    real (kind = dp_t), intent(in ) :: prob_lo(:)
-    real (kind = dp_t), intent(in ) :: prob_hi(:)
     real(kind=dp_t), intent(in   ) ::    s0(0:,:)
 
     ! local
@@ -242,13 +224,11 @@ contains
 
   end subroutine initveldata_2d
 
-  subroutine initveldata_3d(u,lo,hi,ng,dx,prob_lo,prob_hi,s0)
+  subroutine initveldata_3d(u,lo,hi,ng,dx,s0)
 
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(out) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
     real (kind = dp_t), intent(in ) :: dx(:)
-    real (kind = dp_t), intent(in ) :: prob_lo(:)
-    real (kind = dp_t), intent(in ) :: prob_hi(:)
     real(kind=dp_t), intent(in   ) ::    s0(0:,:)
 
     ! local

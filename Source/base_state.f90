@@ -10,7 +10,7 @@ module base_state_module
 
 contains
 
-  subroutine init_base_state(n,model_file,s0,p0,gam1,dx,prob_lo,prob_hi)
+  subroutine init_base_state(n,model_file,s0,p0,gam1,dx)
 
     use bc_module
     use setbc_module
@@ -19,7 +19,7 @@ contains
     use define_bc_module
     use bl_constants_module
     use eos_module
-    use probin_module, ONLY: base_cutoff_density, anelastic_cutoff
+    use probin_module, ONLY: base_cutoff_density, anelastic_cutoff, prob_lo_z
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp, ntrac
     use geometry, only: dr, nr, spherical
 
@@ -28,8 +28,6 @@ contains
     real(kind=dp_t)   , intent(inout) :: s0(0:,:)
     real(kind=dp_t)   , intent(inout) :: p0(0:)
     real(kind=dp_t)   , intent(inout) :: gam1(0:)
-    real(kind=dp_t)   , intent(in   ) :: prob_lo(:)
-    real(kind=dp_t)   , intent(in   ) :: prob_hi(:)
     real(kind=dp_t)   , intent(in   ) :: dx(:)
 
     ! local
@@ -203,7 +201,7 @@ contains
     end if
 
     if (spherical .eq. 0) then
-       starting_rad = prob_lo(dm)
+       starting_rad = prob_lo_z
     else
        starting_rad = ZERO
     end if

@@ -11,7 +11,6 @@ module init_module
   use variables
   use network
   use geometry
-  use probin_module, only: grav_const
   use ml_layout_module
   use ml_restriction_module
   use multifab_fill_ghost_module
@@ -23,16 +22,13 @@ module init_module
 
 contains
 
-  subroutine initscalardata(nlevs,s,s0,p0,dx,perturb_model,prob_lo,prob_hi,bc,mla)
+  subroutine initscalardata(nlevs,s,s0,p0,dx,bc,mla)
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: s(:)
     real(kind=dp_t), intent(in   ) :: s0(:,0:,:)
     real(kind=dp_t), intent(in   ) :: p0(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
-    logical,         intent(in   ) :: perturb_model
-    real(kind=dp_t), intent(in   ) :: prob_lo(:)
-    real(kind=dp_t), intent(in   ) :: prob_hi(:)
     type(bc_level) , intent(in   ) :: bc(:)
     type(ml_layout), intent(inout) :: mla
 
@@ -53,11 +49,9 @@ contains
           hi =  upb(get_box(s(n),i))
           select case (dm)
           case (2)
-             call initscalardata_2d(sop(:,:,1,:), lo, hi, ng, dx(n,:), perturb_model, &
-                                    prob_lo, prob_hi, s0(n,:,:), p0(n,:))
+             call initscalardata_2d(sop(:,:,1,:), lo, hi, ng, dx(n,:), s0(n,:,:), p0(n,:))
           case (3)
-             call initscalardata_3d(n,sop(:,:,:,:), lo, hi, ng, dx(n,:), perturb_model, &
-                                    prob_lo, prob_hi, s0(n,:,:), p0(n,:))
+             call initscalardata_3d(n,sop(:,:,:,:), lo, hi, ng, dx(n,:), s0(n,:,:), p0(n,:))
           end select
        end do
        
@@ -74,14 +68,13 @@ contains
 
   end subroutine initscalardata
 
-  subroutine initscalardata_2d(s,lo,hi,ng,dx, perturb_model,prob_lo,prob_hi,s0,p0)
+  subroutine initscalardata_2d(s,lo,hi,ng,dx,s0,p0)
+
+    use probin_module, only: prob_lo_x, prob_lo_y, prob_hi_x, prob_hi_y, perturb_model
 
     integer           , intent(in   ) :: lo(:),hi(:),ng
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,:)  
     real (kind = dp_t), intent(in   ) :: dx(:)
-    logical           , intent(in   ) :: perturb_model
-    real (kind = dp_t), intent(in   ) :: prob_lo(:)
-    real (kind = dp_t), intent(in   ) :: prob_hi(:)
     real(kind=dp_t)   , intent(in   ) :: s0(0:,:)
     real(kind=dp_t)   , intent(in   ) :: p0(0:)
 
@@ -114,7 +107,7 @@ contains
     ! add an optional perturbation
     if (perturb_model) then
 
-       xcen = (prob_lo(1) + prob_hi(1)) / TWO
+       xcen = (prob_lo_x + prob_hi_x) / TWO
 
        ! find the helium layer and perturb near there
        he4_comp = network_species_index("helium-4")
@@ -126,15 +119,15 @@ contains
           endif
        enddo
 
-       ycen = prob_lo(2) + (dble(pert_index)+HALF) * dx(2)
+       ycen = prob_lo_y + (dble(pert_index)+HALF) * dx(2)
 
        fwhm = nzones_pert * maxval(dx)
 
        do j = lo(2), hi(2)
-          y = prob_lo(2) + (dble(j)+HALF) * dx(2)
+          y = prob_lo_y + (dble(j)+HALF) * dx(2)
           
           do i = lo(1), hi(1)
-             x = prob_lo(1) + (dble(i)+HALF) * dx(1)
+             x = prob_lo_x + (dble(i)+HALF) * dx(1)
           
              call perturb_2d(x, y, xcen, ycen, fwhm, p0(j), s0(j,:),         &
                              dens_pert, rhoh_pert, rhoX_pert, temp_pert,     &
@@ -151,16 +144,14 @@ contains
     
   end subroutine initscalardata_2d
 
-  subroutine initscalardata_3d(n,s,lo,hi,ng,dx, perturb_model,prob_lo,prob_hi,s0,p0)
+  subroutine initscalardata_3d(n,s,lo,hi,ng,dx,s0,p0)
     
-    implicit none
+    use probin_module, only: prob_lo_x, prob_lo_y, prob_lo_z, &
+         prob_hi_x, prob_hi_y, prob_hi_z, perturb_model
 
     integer           , intent(in   ) :: n,lo(:),hi(:),ng
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
     real (kind = dp_t), intent(in   ) :: dx(:)
-    logical,            intent(in   ) :: perturb_model
-    real (kind = dp_t), intent(in   ) :: prob_lo(:)
-    real (kind = dp_t), intent(in   ) :: prob_hi(:)
     real(kind=dp_t)   , intent(in   ) :: s0(0:,:)
     real(kind=dp_t)   , intent(in   ) :: p0(0:)
 
@@ -207,8 +198,8 @@ contains
        
        if (perturb_model) then
 
-          xcen = (prob_lo(1) + prob_hi(1)) / TWO
-          zcen = (prob_lo(3) + prob_hi(3)) / TWO
+          xcen = (prob_lo_x + prob_hi_x) / TWO
+          zcen = (prob_lo_z + prob_hi_z) / TWO
 
           ! find the helium layer and perturb near there
           he4_comp = network_species_index("helium-4")
@@ -220,19 +211,19 @@ contains
              endif
           enddo
 
-          ycen = prob_lo(2) + (dble(pert_index)+HALF) * dx(2)
+          ycen = prob_lo_y + (dble(pert_index)+HALF) * dx(2)
 
           fwhm = nzones_pert * maxval(dx)
 
           ! add an optional perturbation
           do k = lo(3), hi(3)
-             z = prob_lo(3) + (dble(k)+HALF) * dx(3)
+             z = prob_lo_z + (dble(k)+HALF) * dx(3)
              
              do j = lo(2), hi(2)
-                y = prob_lo(2) + (dble(j)+HALF) * dx(2)
+                y = prob_lo_y + (dble(j)+HALF) * dx(2)
                 
                 do i = lo(1), hi(1)
-                   x = prob_lo(1) + (dble(i)+HALF) * dx(1)
+                   x = prob_lo_x + (dble(i)+HALF) * dx(1)
 
                    call perturb_3d(x, y, z, xcen, ycen, zcen, fwhm,          &
                                    p0(k), s0(k,:),                           &
@@ -253,15 +244,13 @@ contains
     
   end subroutine initscalardata_3d
 
-  subroutine initveldata(nlevs,u,s0,p0,dx,prob_lo,prob_hi,bc,mla)
+  subroutine initveldata(nlevs,u,s0,p0,dx,bc,mla)
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: u(:)
     real(kind=dp_t), intent(in   ) :: s0(:,0:,:)
     real(kind=dp_t), intent(in   ) :: p0(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
-    real(kind=dp_t), intent(in   ) :: prob_lo(:)
-    real(kind=dp_t), intent(in   ) :: prob_hi(:)
     type(bc_level) , intent(in   ) :: bc(:)
     type(ml_layout), intent(inout) :: mla
 
@@ -281,11 +270,9 @@ contains
           hi =  upb(get_box(u(n),i))
           select case (dm)
           case (2)
-             call initveldata_2d(uop(:,:,1,:), lo, hi, ng, dx(n,:), &
-                                 prob_lo, prob_hi, s0(n,:,:), p0(n,:))
+             call initveldata_2d(uop(:,:,1,:), lo, hi, ng, dx(n,:), s0(n,:,:), p0(n,:))
           case (3) 
-             call initveldata_3d(uop(:,:,:,:), lo, hi, ng, dx(n,:), &
-                                 prob_lo, prob_hi, s0(n,:,:), p0(n,:))
+             call initveldata_3d(uop(:,:,:,:), lo, hi, ng, dx(n,:), s0(n,:,:), p0(n,:))
           end select
        end do
 
@@ -302,13 +289,11 @@ contains
 
   end subroutine initveldata
 
-  subroutine initveldata_2d(u,lo,hi,ng,dx,prob_lo,prob_hi,s0,p0)
+  subroutine initveldata_2d(u,lo,hi,ng,dx,s0,p0)
 
     integer           , intent(in   ) :: lo(:),hi(:),ng
     real (kind = dp_t), intent(  out) :: u(lo(1)-ng:,lo(2)-ng:,:)  
     real (kind = dp_t), intent(in   ) :: dx(:)
-    real (kind = dp_t), intent(in   ) :: prob_lo(:)
-    real (kind = dp_t), intent(in   ) :: prob_hi(:)
     real(kind=dp_t)   , intent(in   ) :: s0(0:,:)
     real(kind=dp_t)   , intent(in   ) :: p0(0:)
 
@@ -319,15 +304,11 @@ contains
 
   end subroutine initveldata_2d
 
-  subroutine initveldata_3d(u,lo,hi,ng,dx,prob_lo,prob_hi,s0,p0)
+  subroutine initveldata_3d(u,lo,hi,ng,dx,s0,p0)
 
-    implicit none
-    
     integer           , intent(in   ) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(  out) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
     real (kind = dp_t), intent(in   ) :: dx(:)
-    real (kind = dp_t), intent(in   ) :: prob_lo(:)
-    real (kind = dp_t), intent(in   ) :: prob_hi(:)
     real(kind=dp_t)   , intent(in   ) :: s0(0:,:)
     real(kind=dp_t)   , intent(in   ) :: p0(0:)
 
@@ -486,6 +467,8 @@ contains
   end subroutine scalar_diags
 
   subroutine scalar_diags_2d (istep, s,lo,hi,ng,dx,s0,p0)
+
+    use probin_module, only: grav_const
 
     integer, intent(in) :: istep, lo(:), hi(:), ng
     real (kind = dp_t), intent(in) ::  s(lo(1)-ng:,lo(2)-ng:,:)

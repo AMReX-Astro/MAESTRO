@@ -10,7 +10,7 @@ module base_state_module
 
 contains
 
-  subroutine init_base_state(n,model_file,s0,p0,gam1,dx,prob_lo,prob_hi)
+  subroutine init_base_state(n,model_file,s0,p0,gam1,dx)
 
     use bc_module
     use setbc_module
@@ -28,8 +28,6 @@ contains
     real(kind=dp_t),     intent(inout) :: s0(0:,:)
     real(kind=dp_t),     intent(inout) :: p0(0:)
     real(kind=dp_t),     intent(inout) :: gam1(0:)
-    real(kind=dp_t),     intent(in   ) :: prob_lo(:)
-    real(kind=dp_t),     intent(in   ) :: prob_hi(:)
     real(kind=dp_t),     intent(in   ) :: dx(:)
 
     ! local
