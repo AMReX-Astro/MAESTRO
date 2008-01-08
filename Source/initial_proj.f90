@@ -7,7 +7,7 @@ module initial_proj_module
 
 contains
 
-  subroutine initial_proj(nlevs,uold,sold,pres,gpres,vel_force,normal,Source_old,hgrhs, &
+  subroutine initial_proj(nlevs,uold,sold,pres,gpres,normal,Source_old,hgrhs, &
                           div_coeff_old,s0_old,p0_old,gam1,grav_cell,dx,the_bc_tower,mla)
 
     use variables, only: temp_comp, press_comp
@@ -17,7 +17,6 @@ contains
     use probin_module
     use geometry, only: spherical, nr
     use proj_parameters, only: initial_projection_comp
-    use mk_vel_force_module
     use make_explicit_thermal_module
     use make_S_module
     use average_module
@@ -33,7 +32,6 @@ contains
     type(multifab) , intent(in   ) :: sold(:)
     type(multifab) , intent(inout) :: pres(:)
     type(multifab) , intent(inout) :: gpres(:)
-    type(multifab) , intent(inout) :: vel_force(:)
     type(multifab) , intent(in   ) :: normal(:)
     type(multifab) , intent(inout) :: Source_old(:)
     type(multifab) , intent(inout) :: hgrhs(:)
@@ -72,9 +70,6 @@ contains
        print *, 'DOING THE INITIAL VELOCITY PROJECTION'
        print *, ' '
     end if
-    
-    call mk_vel_force(nlevs,vel_force,gpres,sold,normal,s0_old,grav_cell,dx, &
-                      the_bc_tower%bc_tower_array,mla)
 
     do n=1,nlevs
        call multifab_build(thermal(n), mla%la(n), 1, 1)
