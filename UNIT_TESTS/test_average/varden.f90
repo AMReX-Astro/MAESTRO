@@ -21,6 +21,7 @@ subroutine varden()
   use geometry
   use network
   use average_module
+  use eos_module
   use fill_3d_module
   use probin_module
   use bl_constants_module
@@ -101,7 +102,7 @@ subroutine varden()
   allocate(lo(dm),hi(dm))
   call init_variables(dm, nspec)
   call network_init()
-  call helmeos_init()
+  call eos_init(use_eos_coulomb=use_eos_coulomb)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! allocate storage for the state
