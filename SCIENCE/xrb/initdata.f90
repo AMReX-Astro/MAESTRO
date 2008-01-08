@@ -69,7 +69,9 @@ contains
 
   subroutine initscalardata_2d(s,lo,hi,ng,dx,s0,p0)
 
-    use probin_module, only: prob_lo_x, prob_hi_x, prob_lo_y, perturb_model
+    use probin_module, only: prob_lo_x, prob_hi_x,    &
+                             prob_lo_y,               &
+                             perturb_model
 
     integer           , intent(in   ) :: lo(:),hi(:),ng
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,:)  
@@ -127,8 +129,8 @@ contains
           
              dist = sqrt((x-xcen)**2 + (y-ycen)**2)
 
-             call perturb_2d(dist, p0(j), s0(j,:), &
-                             dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
+             call perturb(dist, p0(j), s0(j,:), &
+                          dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
 
              s(i,j,rho_comp) = dens_pert
              s(i,j,rhoh_comp) = rhoh_pert
@@ -143,7 +145,10 @@ contains
 
   subroutine initscalardata_3d(n,s,lo,hi,ng,dx,s0,p0)
 
-    use probin_module, only: prob_lo_x, prob_hi_x, prob_lo_y, prob_hi_y, prob_lo_z, perturb_model
+    use probin_module, only: prob_lo_x, prob_hi_x,    &
+                             prob_lo_y, prob_hi_y,    &
+                             prob_lo_z,               &
+                             perturb_model
     
     integer           , intent(in   ) :: n,lo(:),hi(:),ng
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
@@ -223,8 +228,8 @@ contains
 
                    dist = sqrt((x-xcen)**2 + (y-ycen)**2 + (z-zcen)**2)
                    
-                   call perturb_3d(dist, p0(k), s0(k,:), &
-                                   dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
+                   call perturb(dist, p0(k), s0(k,:), &
+                                dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
 
                    s(i,j,k,rho_comp) = dens_pert
                    s(i,j,k,rhoh_comp) = rhoh_pert
@@ -318,56 +323,10 @@ contains
   end subroutine initveldata_3d
 
 
-  subroutine perturb_2d(dist, p0, s0, dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
+  subroutine perturb(distance, p0, s0,  &
+                     dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
 
-    use probin_module, ONLY: pert_size, pert_factor
-    ! apply an optional perturbation to the initial temperature field
-    ! to see some bubbles
-
-    real(kind=dp_t), intent(in ) :: dist
-    real(kind=dp_t), intent(in ) :: p0, s0(:)
-    real(kind=dp_t), intent(out) :: dens_pert, rhoh_pert, temp_pert
-    real(kind=dp_t), intent(out) :: rhoX_pert(:)
-    real(kind=dp_t), intent(out) :: trac_pert(:)
-
-    real(kind=dp_t) :: temp,t0, rad_pert
-
-    t0 = s0(temp_comp)
-
-    rad_pert = pert_size**2 / (FOUR * log(TWO))
-
-    temp = t0 * (ONE + pert_factor) * dexp(-dist**2 / rad_pert)
-    temp = max(t0, temp)
-
-    temp_eos(1) = temp
-    p_eos(1) = p0
-    den_eos(1) = s0(rho_comp)
-    xn_eos(1,:) = s0(spec_comp:spec_comp+nspec-1)/s0(rho_comp)
-
-    call eos(eos_input_tp, den_eos, temp_eos, &
-             npts, nspec, &
-             xn_eos, &
-             p_eos, h_eos, e_eos, &
-             cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-             dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-             dpdX_eos, dhdX_eos, &
-             gam1_eos, cs_eos, s_eos, &
-             dsdt_eos, dsdr_eos, &
-             do_diag)
-
-    dens_pert = den_eos(1)
-    rhoh_pert = den_eos(1)*h_eos(1)
-    rhoX_pert(:) = dens_pert*xn_eos(1,:)
-
-    temp_pert = temp
-    
-    trac_pert(:) = ZERO
-
-  end subroutine perturb_2d
-
-  subroutine perturb_3d(distance, p0, s0, dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
-
-    use probin_module, ONLY: pert_size, pert_factor
+    use probin_module, ONLY: pert_size, pert_factor, pert_type
     ! apply an optional perturbation to the initial temperature field
     ! to see some bubbles
 
@@ -377,23 +336,44 @@ contains
     real(kind=dp_t), intent(out) :: rhoX_pert(:)
     real(kind=dp_t), intent(out) :: trac_pert(:)
 
-    real(kind=dp_t) :: temp, t0, rad_pert
+    real(kind=dp_t) :: temp,dens,t0,d0,rad_pert
 
-    t0 = s0(temp_comp)
+    integer, parameter :: perturb_temp = 1, perturb_dens = 2
+    integer :: eos_input_flag
 
     rad_pert = pert_size**2 / (FOUR * log(TWO))
 
-    temp = t0 * (ONE + pert_factor) * dexp(-distance**2 / rad_pert)
-    temp = max(t0, temp)
+    select case (pert_type)
+    case(perturb_temp)
 
-    ! Use the EOS to make this temperature perturbation occur at constant 
-    ! pressure
+       t0 = s0(temp_comp)
+
+       temp = t0 * (ONE + pert_factor) * dexp(-distance**2 / rad_pert)
+       temp = max(t0, temp)
+       
+       dens = s0(rho_comp)
+
+       eos_input_flag = eos_input_tp
+
+    case(perturb_dens)
+          
+       d0 = s0(rho_comp)
+       
+       dens = d0 * (ONE + pert_factor) * dexp(-distance**2 / rad_pert)
+       dens = max(d0, dens)
+       
+       temp = s0(temp_comp)
+
+       eos_input_flag = eos_input_rp
+
+    end select
+
     temp_eos(1) = temp
     p_eos(1) = p0
-    den_eos(1) = s0(rho_comp)
+    den_eos(1) = dens
     xn_eos(1,:) = s0(spec_comp:spec_comp+nspec-1)/s0(rho_comp)
 
-    call eos(eos_input_tp, den_eos, temp_eos, &
+    call eos(eos_input_flag, den_eos, temp_eos, &
              npts, nspec, &
              xn_eos, &
              p_eos, h_eos, e_eos, &
@@ -408,11 +388,12 @@ contains
     rhoh_pert = den_eos(1)*h_eos(1)
     rhoX_pert(:) = dens_pert*xn_eos(1,:)
 
-    temp_pert = temp
-
+    temp_pert = temp_eos(1)
+    
     trac_pert(:) = ZERO
 
-  end subroutine perturb_3d
+  end subroutine perturb
+
 
   subroutine scalar_diags (istep,s,s0,p0,dx)
 
