@@ -35,8 +35,7 @@ contains
     real(kind=dp_t), pointer:: sop(:,:,:,:)
     integer :: lo(s(1)%dim),hi(s(1)%dim),ng,dm
     integer :: i,n
-
-
+    
     ng = s(1)%ng
     dm = s(1)%dim
 
@@ -70,7 +69,7 @@ contains
 
   subroutine initscalardata_2d(s,lo,hi,ng,dx,s0,p0)
 
-    use probin_module, only: prob_lo_x, prob_lo_y, prob_hi_x, prob_hi_y, perturb_model
+    use probin_module, only: prob_lo_x, prob_hi_x, prob_lo_y, perturb_model
 
     integer           , intent(in   ) :: lo(:),hi(:),ng
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,:)  
@@ -80,15 +79,13 @@ contains
 
     ! Local variables
     integer         :: i,j,n
-    real(kind=dp_t) :: x,y,r,r0,r1,r2,temp
+    real(kind=dp_t) :: x,y
     real(kind=dp_t) :: dens_pert, rhoh_pert, temp_pert
     real(kind=dp_t) :: rhoX_pert(nspec), trac_pert(ntrac)
 
-    real(kind=dp_t) :: xcen, ycen
-    real(kind=dp_t) :: fwhm
-    integer        , parameter :: nzones_pert = 10
+    real(kind=dp_t) :: xcen, ycen, dist
     real(kind=dp_t), parameter :: he4_pert = 1.e-2_dp_t
-    integer :: he4_comp, pert_index
+    integer         :: he4_comp, pert_index
 
     ! initial the domain with the base state
     s = ZERO
@@ -101,6 +98,8 @@ contains
           s(i,j,temp_comp) = s0(j,temp_comp)
           s(i,j,spec_comp:spec_comp+nspec-1) = &
                s0(j,spec_comp:spec_comp+nspec-1)
+          s(i,j,trac_comp:trac_comp+ntrac-1) = &
+               s0(j,trac_comp:trac_comp+ntrac-1)
        enddo
     enddo
     
@@ -109,19 +108,16 @@ contains
 
        xcen = (prob_lo_x + prob_hi_x) / TWO
 
-       ! find the helium layer and perturb near there
-       he4_comp = network_species_index("helium-4")
+       he4_comp = network_species_index('helium-4')
 
        do j = lo(2), hi(2)
           if (s0(j,spec_comp+he4_comp-1)/s0(j,rho_comp) .gt. he4_pert) then
-             pert_index = j + 1
+             pert_index = j
              exit
           endif
        enddo
 
        ycen = prob_lo_y + (dble(pert_index)+HALF) * dx(2)
-
-       fwhm = nzones_pert * maxval(dx)
 
        do j = lo(2), hi(2)
           y = prob_lo_y + (dble(j)+HALF) * dx(2)
@@ -129,9 +125,10 @@ contains
           do i = lo(1), hi(1)
              x = prob_lo_x + (dble(i)+HALF) * dx(1)
           
-             call perturb_2d(x, y, xcen, ycen, fwhm, p0(j), s0(j,:),         &
-                             dens_pert, rhoh_pert, rhoX_pert, temp_pert,     &
-                             trac_pert)
+             dist = sqrt((x-xcen)**2 + (y-ycen)**2)
+
+             call perturb_2d(dist, p0(j), s0(j,:), &
+                             dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
 
              s(i,j,rho_comp) = dens_pert
              s(i,j,rhoh_comp) = rhoh_pert
@@ -145,10 +142,9 @@ contains
   end subroutine initscalardata_2d
 
   subroutine initscalardata_3d(n,s,lo,hi,ng,dx,s0,p0)
-    
-    use probin_module, only: prob_lo_x, prob_lo_y, prob_lo_z, &
-         prob_hi_x, prob_hi_y, prob_hi_z, perturb_model
 
+    use probin_module, only: prob_lo_x, prob_lo_y, prob_lo_z, perturb_model
+    
     integer           , intent(in   ) :: n,lo(:),hi(:),ng
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
     real (kind = dp_t), intent(in   ) :: dx(:)
@@ -160,12 +156,6 @@ contains
     real(kind=dp_t) :: x,y,z,r,r0,r1,r2,temp
     real(kind=dp_t) :: dens_pert, rhoh_pert, temp_pert
     real(kind=dp_t) :: rhoX_pert(nspec), trac_pert(ntrac)
-
-    real(kind=dp_t) :: xcen, ycen, zcen
-    real(kind=dp_t) :: fwhm
-    integer        , parameter :: nzones_pert = 10
-    real(kind=dp_t), parameter :: he4_pert = 1.e-2_dp_t
-    integer :: he4_comp, pert_index
 
     ! initial the domain with the base state
     s = ZERO
@@ -181,6 +171,10 @@ contains
           call fill_3d_data(n,s(:,:,:,comp),s0(:,comp),lo,hi,dx,ng)
        end do
 
+       do comp = trac_comp, trac_comp+ntrac-1
+          call fill_3d_data(n,s(:,:,:,comp),s0(:,comp),lo,hi,dx,ng)
+       end do
+
     else 
 
        ! initialize the scalars
@@ -192,28 +186,13 @@ contains
                 s(i,j,k,temp_comp) = s0(k,temp_comp)
                 s(i,j,k,spec_comp:spec_comp+nspec-1) = &
                      s0(k,spec_comp:spec_comp+nspec-1)
+                s(i,j,k,trac_comp:trac_comp+ntrac-1) = &
+                     s0(k,trac_comp:trac_comp+ntrac-1)
              enddo
           enddo
        enddo
        
        if (perturb_model) then
-
-          xcen = (prob_lo_x + prob_hi_x) / TWO
-          zcen = (prob_lo_z + prob_hi_z) / TWO
-
-          ! find the helium layer and perturb near there
-          he4_comp = network_species_index("helium-4")
-
-          do k = lo(3), hi(3)
-             if (s0(k,spec_comp+he4_comp-1)/s0(k,rho_comp) .gt. he4_pert) then
-                pert_index = k + 1
-                exit
-             endif
-          enddo
-
-          ycen = prob_lo_y + (dble(pert_index)+HALF) * dx(2)
-
-          fwhm = nzones_pert * maxval(dx)
 
           ! add an optional perturbation
           do k = lo(3), hi(3)
@@ -224,11 +203,9 @@ contains
                 
                 do i = lo(1), hi(1)
                    x = prob_lo_x + (dble(i)+HALF) * dx(1)
-
-                   call perturb_3d(x, y, z, xcen, ycen, zcen, fwhm,          &
-                                   p0(k), s0(k,:),                           &
-                                   dens_pert, rhoh_pert, rhoX_pert,          &
-                                   temp_pert, trac_pert)
+                   
+                   call perturb_3d(x, y, z, p0(k), s0(k,:), &
+                                   dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
 
                    s(i,j,k,rho_comp) = dens_pert
                    s(i,j,k,rhoh_comp) = rhoh_pert
@@ -270,9 +247,11 @@ contains
           hi =  upb(get_box(u(n),i))
           select case (dm)
           case (2)
-             call initveldata_2d(uop(:,:,1,:), lo, hi, ng, dx(n,:), s0(n,:,:), p0(n,:))
+             call initveldata_2d(uop(:,:,1,:), lo, hi, ng, dx(n,:), &
+                                 s0(n,:,:), p0(n,:))
           case (3) 
-             call initveldata_3d(uop(:,:,:,:), lo, hi, ng, dx(n,:), s0(n,:,:), p0(n,:))
+             call initveldata_3d(uop(:,:,:,:), lo, hi, ng, dx(n,:), &
+                                 s0(n,:,:), p0(n,:))
           end select
        end do
 
@@ -320,37 +299,27 @@ contains
   end subroutine initveldata_3d
 
 
-  subroutine perturb_2d(x, y, xcen, ycen, fwhm, p0, s0,                      &
-                        dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
+  subroutine perturb_2d(dist, p0, s0, dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
 
+    use probin_module, ONLY: pert_size, pert_factor
     ! apply an optional perturbation to the initial temperature field
-    ! to see a bubble
+    ! to see some bubbles
 
-    real(kind=dp_t), intent(in ) :: x, y, xcen, ycen, fwhm
+    real(kind=dp_t), intent(in ) :: dist
     real(kind=dp_t), intent(in ) :: p0, s0(:)
     real(kind=dp_t), intent(out) :: dens_pert, rhoh_pert, temp_pert
     real(kind=dp_t), intent(out) :: rhoX_pert(:)
     real(kind=dp_t), intent(out) :: trac_pert(:)
 
-    real(kind=dp_t) :: temp, t0
-    real(kind=dp_t) :: dist, rad_pert
-
-    real(kind=dp_t), parameter :: pert_factor = 0.01_dp_t
+    real(kind=dp_t) :: temp,t0, rad_pert
 
     t0 = s0(temp_comp)
 
-    ! calculate the distance to the perturbation center
-    dist = sqrt((xcen - x)**2 + (ycen - y)**2)
+    rad_pert = pert_size**2 / (FOUR * log(TWO))
 
-    ! make the perturbation radius
-    rad_pert = fwhm**2 / (FOUR * log(TWO))
-
-    ! perturb
     temp = t0 * (ONE + pert_factor) * dexp(-dist**2 / rad_pert)
-    temp = max(temp, t0)
+    temp = max(t0, temp)
 
-    ! Use the EOS to make this temperature perturbation occur at constant 
-    ! pressure
     temp_eos(1) = temp
     p_eos(1) = p0
     den_eos(1) = s0(rho_comp)
@@ -377,35 +346,50 @@ contains
 
   end subroutine perturb_2d
 
-
-  subroutine perturb_3d(x, y, z, xcen, ycen, zcen, fwhm, p0, s0,             &
-                        dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
+  subroutine perturb_3d(x, y, z, p0, s0, dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
 
     ! apply an optional perturbation to the initial temperature field
     ! to see some bubbles
 
-    real(kind=dp_t), intent(in ) :: x, y, z, xcen, ycen, zcen, fwhm
+    real(kind=dp_t), intent(in ) :: x, y, z
     real(kind=dp_t), intent(in ) :: p0, s0(:)
     real(kind=dp_t), intent(out) :: dens_pert, rhoh_pert, temp_pert
     real(kind=dp_t), intent(out) :: rhoX_pert(:)
     real(kind=dp_t), intent(out) :: trac_pert(:)
 
     real(kind=dp_t) :: temp, t0
-    real(kind=dp_t) :: dist, rad_pert
-
-    real(kind=dp_t), parameter :: pert_factor = 0.01_dp_t
+    real(kind=dp_t) :: x0, y0, z0, x1, y1, z1, x2, y2, z2
+    real(kind=dp_t) :: r0, r1, r2
 
     t0 = s0(temp_comp)
 
-    ! calculate the distance to the perturbation center
-    dist = sqrt((xcen - x)**2 + (ycen - y)**2 + (zcen - z)**2)
+    x0 = 5.0d7
+    y0 = 5.0d7
+    z0 = 6.5d7
+    
+    x1 = 1.2d8
+    y1 = 1.2d8
+    z1 = 8.5d7
+    
+    x2 = 2.0d8
+    y2 = 2.0d8
+    z2 = 7.5d7
 
-    ! make the perturbation radius
-    rad_pert = fwhm**2 / (FOUR * log(TWO))
+!   temp = t0 * (ONE + TWO * ( &
+!        .0625_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r0))) + &
+!        .1875_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r1))) + &
+!        .1250_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r2)))  ) )
 
-    ! perturb
-    temp = t0 * (ONE + pert_factor) * dexp(-dist**2 / rad_pert)
-    temp = max(temp, t0)
+    ! Tanh bubbles from perturb_2d
+    r0 = sqrt( (y-y0)**2 +(z-z0)**2 ) / 2.5e6
+    r1 = sqrt( (y-y1)**2 +(z-z1)**2 ) / 2.5e6
+    r2 = sqrt( (y-y2)**2 +(z-z2)**2 ) / 2.5e6
+    
+    ! This case works
+    temp = t0 * (ONE + TWO * ( &
+         .150_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r0))) + &
+         .300_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r1))) + &
+         .225_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r2)))  ) )
 
     ! Use the EOS to make this temperature perturbation occur at constant 
     ! pressure
@@ -431,7 +415,11 @@ contains
 
     temp_pert = temp
     
-    trac_pert(:) = ZERO
+!   if (r1 .lt. 2.0) then
+!     trac_pert(:) = ONE
+!   else
+      trac_pert(:) = ZERO
+!   end if
 
   end subroutine perturb_3d
 
