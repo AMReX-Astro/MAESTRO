@@ -39,5 +39,8 @@
 
  perturb_model = T
 
+ do_sponge = T
+ sponge_kappa = 1.d6
+
 !restart = 50
 /

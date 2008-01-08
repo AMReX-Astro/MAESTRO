@@ -10,7 +10,6 @@ module sponge_module
 
   real(dp_t), save :: r_sp, r_md, r_tp
   real(dp_t), save :: r_sp_outer, r_tp_outer
-  real(dp_t), save :: alpha
 
   private
 
@@ -32,8 +31,6 @@ contains
     real (kind = dp_t) :: r
     real (kind = dp_t) :: r_top
     integer            :: j
-
-    alpha = 100.d0
 
     r_sp = 2.19140625d8
     r_tp = 2.97265625d8
@@ -87,7 +84,7 @@ contains
   subroutine mk_sponge_2d(sponge,lo,hi,dx,dt)
 
     use bl_constants_module
-    use probin_module, only: prob_lo_y
+    use probin_module, only: prob_lo_y, sponge_kappa
 
     integer        , intent(in   ) ::  lo(:),hi(:)
     real(kind=dp_t), intent(inout) :: sponge(lo(1):,lo(2):)
@@ -107,7 +104,7 @@ contains
           else
              smdamp = ONE
           endif
-          sponge(:,j) = ONE / (ONE + dt * smdamp* alpha)
+          sponge(:,j) = ONE / (ONE + dt * smdamp* sponge_kappa)
        endif
 
     end do
@@ -118,7 +115,7 @@ contains
 
     use geometry, only: spherical, center
     use bl_constants_module
-    use probin_module, only: prob_lo_x, prob_lo_y, prob_lo_z
+    use probin_module, only: prob_lo_x, prob_lo_y, prob_lo_z, sponge_kappa
 
     integer        , intent(in   ) :: lo(:),hi(:)
     real(kind=dp_t), intent(inout) :: sponge(lo(1):,lo(2):,lo(3):)
@@ -138,7 +135,7 @@ contains
              else
                 smdamp = ONE
              endif
-             sponge(:,:,k) = ONE / (ONE + dt * smdamp* alpha)
+             sponge(:,:,k) = ONE / (ONE + dt * smdamp* sponge_kappa)
           end if
        end do
 
@@ -160,7 +157,7 @@ contains
                    else
                       smdamp = ONE
                    endif
-                   sponge(i,j,k) = ONE / (ONE + dt * smdamp * alpha)
+                   sponge(i,j,k) = ONE / (ONE + dt * smdamp * sponge_kappa)
                 endif
 
                 ! Outer sponge: damps velocities at edge of domain
@@ -171,7 +168,7 @@ contains
                    else
                       smdamp = ONE
                    endif
-                   sponge(i,j,k) = sponge(i,j,k) / (ONE + dt * smdamp * 10.d0 * alpha)
+                   sponge(i,j,k) = sponge(i,j,k) / (ONE + dt * smdamp * 10.d0 * sponge_kappa)
                 endif
 
              end do

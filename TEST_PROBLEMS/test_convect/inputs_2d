@@ -34,5 +34,6 @@
  anelastic_cutoff = 3.e6
  
  do_sponge = T
+ sponge_kappa = 100.d0
 
 /
