@@ -248,6 +248,9 @@ contains
     do n=1,nlevs
        call destroy(gamma1_term(n))
        call destroy(Source_nph(n))
+    end do
+
+    do n=1,nlevs
        call multifab_build(macphi(n), mla%la(n), 1, 1)
        call setval(macphi(n), ZERO, all=.true.)
     end do
@@ -309,6 +312,9 @@ contains
 
     do n=1,nlevs
        call destroy(rho_Hext(n))
+    end do
+
+    do n=1,nlevs
        call make_grav_cell(n,grav_cell_new(n,:),s0_1(n,:,rho_comp))
        call make_div_coeff(n,div_coeff_new(n,:),s0_1(n,:,rho_comp),p0_1(n,:), &
                            gam1(n,:),grav_cell_new(n,:),anelastic_cutoff)
@@ -486,6 +492,9 @@ contains
        do n=1,nlevs
           call destroy(rho_Hext(n))
           call destroy(thermal(n))
+       end do
+
+       do n=1,nlevs
           call multifab_build(Source_nph(n), mla%la(n), 1, 0)
        end do
 
@@ -537,6 +546,9 @@ contains
        do n=1,nlevs
           call destroy(gamma1_term(n))
           call destroy(Source_nph(n))
+       end do
+
+       do n=1,nlevs
           call multifab_build(rhohalf(n), mla%la(n), 1, 1)
        end do
 

@@ -147,10 +147,13 @@ contains
        end do
     end if
     
-    do n = 1,nlevs
-       call setval( pres(n)  ,0.0_dp_t, all=.true.)
-       call setval(gpres(n)  ,0.0_dp_t, all=.true.)
+    do n=1,nlevs
        call destroy(rhohalf(n))
+    end do
+
+    do n=1,nlevs
+       call setval( pres(n), 0.0_dp_t, all=.true.)
+       call setval(gpres(n), 0.0_dp_t, all=.true.)
     end do
     
     deallocate(Sbar)
