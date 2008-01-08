@@ -8,101 +8,105 @@ module heating_module
 
 contains
 
-   subroutine get_H_2d (H,lo,hi,dx,time)
+  subroutine get_H_2d (H,lo,hi,dx,time)
 
-      integer, intent(in) :: lo(:), hi(:)
-      real(kind=dp_t), intent(inout) :: H(lo(1):,lo(2):)
-      real(kind=dp_t), intent(in   ) :: dx(:),time
+    use probin_module, only: prob_lo_x, prob_lo_y
 
-      integer :: i,j
-      real(kind=dp_t) :: x,y,y_layer
-      real(kind=dp_t) :: ey,Hmax
-      real(kind=dp_t) :: pi,L_x
+    integer, intent(in) :: lo(:), hi(:)
+    real(kind=dp_t), intent(inout) :: H(lo(1):,lo(2):)
+    real(kind=dp_t), intent(in   ) :: dx(:),time
 
-      H = 0.0_dp_t
-      Hmax = 0.0_dp_t
+    integer :: i,j
+    real(kind=dp_t) :: x,y,y_layer
+    real(kind=dp_t) :: ey,Hmax
+    real(kind=dp_t) :: pi,L_x
 
-      ! HACK -- this is the domain size
-      L_x = 2.5d8
-      pi = 3.1415926535897932384626433d0
+    H = 0.0_dp_t
+    Hmax = 0.0_dp_t
 
-      if (time <= 200.0) then
+    ! HACK -- this is the domain size
+    L_x = 2.5d8
+    pi = 3.1415926535897932384626433d0
 
-        y_layer = 1.25d7
+    if (time <= 200.0) then
 
-        do j = lo(2),hi(2)
-          y = (dble(j)+HALF)*dx(2)
+       y_layer = 1.25d7
+
+       do j = lo(2),hi(2)
+          y = prob_lo_y + (dble(j)+HALF)*dx(2)
           ey = exp(-(y-y_layer)*(y-y_layer)/1.e14)
 
           do i = lo(1),hi(1)
-            x =  (dble(i)+HALF)*dx(1)
+             x = prob_lo_x + (dble(i)+HALF)*dx(1)
 
-! best so far
-            H(i,j) = ey*(ONE + &
-                        .00625_dp_t * sin(2*pi*x/L_x) &
-                      + .01875_dp_t * sin((6*pi*x/L_x) + pi/3.d0) &
-                      + .01250_dp_t * sin((8*pi*x/L_x) + pi/5.d0))*2.5d16
+             ! best so far
+             H(i,j) = ey*(ONE + &
+                  .00625_dp_t * sin(2*pi*x/L_x) &
+                  + .01875_dp_t * sin((6*pi*x/L_x) + pi/3.d0) &
+                  + .01250_dp_t * sin((8*pi*x/L_x) + pi/5.d0))*2.5d16
 
 
-            Hmax = max(Hmax,H(i,j))
+             Hmax = max(Hmax,H(i,j))
           end do
-        end do
+       end do
 
-!       if (parallel_IOProcessor()) print *,'MAX VALUE OF H ',Hmax
+       !       if (parallel_IOProcessor()) print *,'MAX VALUE OF H ',Hmax
 
-      end if
+    end if
 
-   end subroutine get_H_2d
+  end subroutine get_H_2d
 
-   subroutine get_H_3d (H,lo,hi,dx,time)
+  subroutine get_H_3d (H,lo,hi,dx,time)
 
-      integer, intent(in) :: lo(:), hi(:)
-      real(kind=dp_t), intent(inout) :: H(lo(1):,lo(2):,lo(3):)
-      real(kind=dp_t), intent(in   ) :: dx(:),time
+    use probin_module, only: prob_lo_x, prob_lo_y, prob_lo_z
 
-      integer :: i,j,k
+    integer, intent(in) :: lo(:), hi(:)
+    real(kind=dp_t), intent(inout) :: H(lo(1):,lo(2):,lo(3):)
+    real(kind=dp_t), intent(in   ) :: dx(:),time
 
-      real(kind=dp_t) :: x,y,z,z_layer
-      real(kind=dp_t) :: ez,Hmax
-      real(kind=dp_t) :: L_x, L_y, pi
+    integer :: i,j,k
 
-      H = 0.0_dp_t
-      Hmax = 0.0_dp_t
+    real(kind=dp_t) :: x,y,z,z_layer
+    real(kind=dp_t) :: ez,Hmax
+    real(kind=dp_t) :: L_x, L_y, pi
 
-      ! HACK -- these are the domain sizes
-      L_x = 2.5d8
-      L_y = 2.5d8
+    H = 0.0_dp_t
+    Hmax = 0.0_dp_t
 
-      pi = 3.1415926535897932384626433d0
+    ! HACK -- these are the domain sizes
+    L_x = 2.5d8
+    L_y = 2.5d8
 
-      if (time <= 200.0) then
+    pi = 3.1415926535897932384626433d0
 
-        z_layer = 1.25d7
+    if (time <= 200.0) then
 
-        do k = lo(3),hi(3)
-           z = (dble(k)+HALF)*dx(3)
-           ez = exp(-(z-z_layer)*(z-z_layer)/1.e14)
+       z_layer = 1.25d7
 
-           do j = lo(2),hi(2)
-              y =  (dble(j)+HALF)*dx(2)
+       do k = lo(3),hi(3)
+          z = prob_lo_z + (dble(k)+HALF)*dx(3)
+          ez = exp(-(z-z_layer)*(z-z_layer)/1.e14)
 
-              do i = lo(1),hi(1)
-                 x =  (dble(i)+HALF)*dx(1)
+          do j = lo(2),hi(2)
+             y = prob_lo_y + (dble(j)+HALF)*dx(2)
 
-                 H(i,j,k) = ez*(ONE + &
-                        .00625_dp_t * sin(2*pi*x/L_x) * sin(2*pi*y/L_y) &
-                      + .01875_dp_t * sin((6*pi*x/L_x) + pi/3.d0) * sin((6*pi*y/L_y) + pi/3.d0) &
-                      + .01250_dp_t * sin((8*pi*x/L_x) + pi/5.d0) * sin((8*pi*y/L_y) + pi/5.d0))*2.5d16
+             do i = lo(1),hi(1)
+                x = prob_lo_x + (dble(i)+HALF)*dx(1)
 
-                      
-            Hmax = max(Hmax,H(i,j,k))
+                H(i,j,k) = ez*(ONE + &
+                     .00625_dp_t * sin(2*pi*x/L_x) * sin(2*pi*y/L_y) &
+                     + .01875_dp_t * sin((6*pi*x/L_x) + pi/3.d0) * sin((6*pi*y/L_y) + pi/3.d0) &
+                     + .01250_dp_t * sin((8*pi*x/L_x) + pi/5.d0) * sin((8*pi*y/L_y) + pi/5.d0))*2.5d16
+
+
+                Hmax = max(Hmax,H(i,j,k))
+             end do
           end do
-        end do
-        end do
+       end do
 
-!       if (parallel_IOProcessor()) print *,'MAX VALUE OF H ',Hmax
+       !       if (parallel_IOProcessor()) print *,'MAX VALUE OF H ',Hmax
 
-      end if
+    end if
 
-   end subroutine get_H_3d
+  end subroutine get_H_3d
 end module heating_module
