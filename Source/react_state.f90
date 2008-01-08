@@ -103,7 +103,8 @@ contains
     use burner_module
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp, trac_comp, ntrac
     use network, only: nspec, ebin
-    use probin_module, ONLY: use_big_h
+    use probin_module, ONLY: use_big_h, do_burning
+    use bl_constants_module, only: zero
 
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(in   ) :: s_in (lo(1)-ng:,lo(2)-ng:,:)
@@ -136,9 +137,15 @@ contains
           endif
           
           T_in = s_in(i,j,temp_comp)
-          
-          call burner(rho, T_in, x_in, h_in, dt, x_out, h_out, rhowdot)
-          
+
+          if (do_burning) then
+             call burner(rho, T_in, x_in, h_in, dt, x_out, h_out, rhowdot)
+          else
+             x_out(:) = x_in(:)
+             h_out = h_in
+             rhowdot(:) = ZERO
+          endif
+
           s_out(i,j,rho_comp) = s_in(i,j,rho_comp)
           s_out(i,j,spec_comp:spec_comp+nspec-1) = x_out(1:nspec) * rho
           
@@ -187,7 +194,8 @@ contains
     use burner_module
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp, trac_comp, ntrac
     use network, only: nspec, ebin
-    use probin_module, ONLY: use_big_h
+    use probin_module, ONLY: use_big_h, do_burning
+    use bl_constants_module, only: zero
 
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(in   ) :: s_in (lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
@@ -221,8 +229,14 @@ contains
           endif
           
           T_in = s_in(i,j,k,temp_comp)
-          
-          call burner(rho, T_in, x_in, h_in, dt, x_out, h_out, rhowdot)
+
+          if (do_burning) then
+             call burner(rho, T_in, x_in, h_in, dt, x_out, h_out, rhowdot)
+          else
+             x_out(:) = x_in(:)
+             h_out = h_in
+             rhowdot(:) = ZERO
+          endif
           
           s_out(i,j,k,rho_comp) = s_in(i,j,k,rho_comp)
           s_out(i,j,k,spec_comp:spec_comp+nspec-1) = x_out(1:nspec) * rho
