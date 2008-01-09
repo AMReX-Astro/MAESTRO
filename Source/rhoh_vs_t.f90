@@ -13,22 +13,35 @@ module rhoh_vs_t_module
   
 contains
   
-  subroutine makeRhoHfromT(nlevs,u,sedge,s0_old,s0_edge_old,s0_new,s0_edge_new)
+  subroutine makeRhoHfromT(nlevs,u,sedge,s0_old,s0_edge_old,s0_new,s0_edge_new,dx)
 
     use bl_prof_module
+    use bl_constants_module
+    use geometry
+    use variables
+    use network
+    use fill_3d_module, only: fill_3d_data
     
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(in   ) :: u(:)
     type(multifab) , intent(inout) :: sedge(:,:)
     real(kind=dp_t), intent(in   ) :: s0_old(:,0:,:), s0_edge_old(:,0:,:)
     real(kind=dp_t), intent(in   ) :: s0_new(:,0:,:), s0_edge_new(:,0:,:)
+    real(kind=dp_t), intent(in   ) :: dx(:,:)
     
     ! local
-    integer :: i,dm,n
+    integer :: i,k,dm,n,comp
     integer :: lo(u(1)%dim),hi(u(1)%dim)
     real(kind=dp_t), pointer :: sepx(:,:,:,:)
     real(kind=dp_t), pointer :: sepy(:,:,:,:)
     real(kind=dp_t), pointer :: sepz(:,:,:,:)
+    real(kind=dp_t), pointer ::  xnp(:,:,:,:)
+    real(kind=dp_t), pointer ::  rhp(:,:,:,:)
+
+    real(kind=dp_t), allocatable ::   xn0_halftime(:,:)
+    real(kind=dp_t), allocatable :: rhoh0_halftime(:)
+    type(multifab)               :: xn0_cart
+    type(multifab)               :: rhoh0_cart
 
     type(bl_prof_timer), save :: bpt
 
@@ -36,7 +49,34 @@ contains
     
     dm = u(1)%dim
 
+    if (spherical .eq. 1) then
+      allocate(  xn0_halftime(0:nr(nlevs),nspec))
+      allocate(rhoh0_halftime(0:nr(nlevs)))
+      do k = 0,nr(nlevs)
+         xn0_halftime(k,1:nspec) = HALF * (s0_old(nlevs,k,spec_comp:spec_comp+nspec-1) &
+                                         + s0_new(nlevs,k,spec_comp:spec_comp+nspec-1) )
+         rhoh0_halftime(k) = HALF * (s0_old(nlevs,k,rhoh_comp) + s0_new(nlevs,k,rhoh_comp) )
+      end do
+    end if
+
     do n=1,nlevs
+
+       call multifab_build(  xn0_cart,u(n)%la,nspec,2)
+       call multifab_build(rhoh0_cart,u(n)%la,1    ,2)
+
+       do i=1,xn0_cart%nboxes
+         xnp => dataptr(  xn0_cart, i)
+         rhp => dataptr(rhoh0_cart, i)
+         lo = lwb(get_box(xn0_cart,i))
+         hi = upb(get_box(xn0_cart,i))
+         do comp = 1,nspec
+           call fill_3d_data(n,xnp(:,:,:,comp),xn0_halftime(0:,comp),lo,hi,dx(n,:),xn0_cart%ng)
+         end do
+         call fill_3d_data(n,rhp(:,:,:,1),rhoh0_halftime(0:),lo,hi,dx(n,:),rhoh0_cart%ng)
+       enddo
+
+       call multifab_fill_boundary(  xn0_cart)
+       call multifab_fill_boundary(rhoh0_cart)
     
        do i=1,u(n)%nboxes
           if ( multifab_remote(u(n),i) ) cycle
@@ -51,13 +91,25 @@ contains
                                    s0_new(n,:,:), s0_edge_new(n,:,:), lo, hi)
           case (3)
              sepz => dataptr(sedge(n,3),i)
-             call makeRhoHfromT_3d(sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
-                                   s0_old(n,:,:), s0_edge_old(n,:,:), &
-                                   s0_new(n,:,:), s0_edge_new(n,:,:), lo, hi)
+             if (spherical .eq. 1) then
+               xnp  => dataptr(  xn0_cart, i)
+               rhp  => dataptr(rhoh0_cart, i)
+               call makeRhoHfromT_3d_sphr(n,sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
+                                          xnp(:,:,:,:), rhp(:,:,:,1), lo, hi, xn0_cart%ng)
+             else
+               call makeRhoHfromT_3d_cart(sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
+                                          s0_old(n,:,:), s0_edge_old(n,:,:), &
+                                          s0_new(n,:,:), s0_edge_new(n,:,:), lo, hi)
+             end if
           end select
        end do
 
     end do
+
+    if (spherical .eq. 1) then
+      deallocate(xn0_halftime)
+      call destroy(xn0_cart)
+    end if
 
     call destroy(bpt)
     
@@ -175,7 +227,7 @@ contains
     
   end subroutine makeRhoHfromT_2d
   
-  subroutine makeRhoHfromT_3d (sx,sy,sz,s0_old,s0_edge_old,s0_new,s0_edge_new,lo,hi)
+  subroutine makeRhoHfromT_3d_cart (sx,sy,sz,s0_old,s0_edge_old,s0_new,s0_edge_new,lo,hi)
 
     use variables, only: rho_comp, temp_comp, spec_comp, rhoh_comp
     use geometry, only: spherical
@@ -195,10 +247,6 @@ contains
     real(kind=dp_t) qreact
     
     do_diag = .false.
-    
-    if (spherical .eq. 1) then
-       call bl_error('MAKERHOHFROMT_3D NOT YET SET UP FOR SPHERICAL')
-    end if
     
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
@@ -240,7 +288,7 @@ contains
                 do comp=1,nspec
                    qreact = qreact + ebin(comp)*xn_eos(1,comp)
                 enddo
-                sx(i,j,k,rhoh_comp) = sx(i,j,k,rhoh_comp) + sx(i,j,k,rho_comp) * qreact
+                sx(i,j,k,rhoh_comp) = sx(i,j,k,rhoh_comp) + den_eos(1) * qreact
              endif
              
              sx(i,j,k,rhoh_comp) = sx(i,j,k,rhoh_comp) - &
@@ -290,7 +338,7 @@ contains
                 do comp=1,nspec
                    qreact = qreact + ebin(comp)*xn_eos(1,comp)
                 enddo
-                sy(i,j,k,rhoh_comp) = sy(i,j,k,rhoh_comp) + sy(i,j,k,rho_comp) * qreact
+                sy(i,j,k,rhoh_comp) = sy(i,j,k,rhoh_comp) + den_eos(1) * qreact
              endif
              
              sy(i,j,k,rhoh_comp) = sy(i,j,k,rhoh_comp) - &
@@ -340,7 +388,7 @@ contains
                 do comp=1,nspec
                    qreact = qreact + ebin(comp)*xn_eos(1,comp)
                 enddo
-                sz(i,j,k,rhoh_comp) = sz(i,j,k,rhoh_comp) + sz(i,j,k,rho_comp) * qreact
+                sz(i,j,k,rhoh_comp) = sz(i,j,k,rhoh_comp) + den_eos(1) * qreact
              endif
              
              sz(i,j,k,rhoh_comp) = sz(i,j,k,rhoh_comp) - &
@@ -350,7 +398,201 @@ contains
        enddo
     enddo
     
-  end subroutine makeRhoHfromT_3d
+  end subroutine makeRhoHfromT_3d_cart
+
+  subroutine makeRhoHfromT_3d_sphr (n,sx,sy,sz,xn0_cart,rhoh0_cart,lo,hi,ngc)
+
+    use variables, only: rho_comp, temp_comp, spec_comp, rhoh_comp
+    use geometry, only: spherical
+    use eos_module
+    use probin_module, ONLY: use_big_h
+    use bl_constants_module
+
+    integer        , intent(in   ) :: n,ngc
+    integer        , intent(in   ) :: lo(:),hi(:)
+    real(kind=dp_t), intent(inout) :: sx(lo(1):,lo(2):,lo(3):,:)
+    real(kind=dp_t), intent(inout) :: sy(lo(1):,lo(2):,lo(3):,:)
+    real(kind=dp_t), intent(inout) :: sz(lo(1):,lo(2):,lo(3):,:)
+    real(kind=dp_t), intent(in   ) ::   xn0_cart(lo(1)-ngc:,lo(2)-ngc:,lo(3)-ngc:,:)
+    real(kind=dp_t), intent(in   ) :: rhoh0_cart(lo(1)-ngc:,lo(2)-ngc:,lo(3)-ngc:)
+    
+    ! Local variables
+    integer :: i, j, k, comp
+    real(kind=dp_t) qreact
+    real(kind=dp_t) xn0_edge(nspec), xn0min(nspec), xn0max(nspec)
+    real(kind=dp_t) rhoh0_edge, rhoh0min, rhoh0max
+    
+    do_diag = .false.
+    
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)+1
+             
+             temp_eos(1) = sx(i,j,k,temp_comp)
+
+             xn0_edge(:) = 7.d0/12.d0 * (xn0_cart(i  ,j,k,:) + xn0_cart(i-1,j,k,:)) &
+                          -1.d0/12.d0 * (xn0_cart(i+1,j,k,:) + xn0_cart(i-2,j,k,:))
+             xn0min(:) = min(xn0_cart(i,j,k,:),xn0_cart(i-1,j,k,:))
+             xn0max(:) = max(xn0_cart(i,j,k,:),xn0_cart(i-1,j,k,:))
+             xn0_edge(:) = max(xn0_edge(:),xn0min(:))
+             xn0_edge(:) = min(xn0_edge(:),xn0max(:))
+
+             xn_eos(1,:) = sx(i,j,k,spec_comp:spec_comp+nspec-1) + xn0_edge(:)
+
+             den_eos(1) = ZERO
+             do comp = 1,nspec
+               den_eos(1) = den_eos(1) + xn_eos(1,comp)
+             end do
+
+             xn_eos(1,:) = xn_eos(1,:) / den_eos(1)
+             
+             call eos(eos_input_rt, den_eos, temp_eos, &
+                      npts, nspec, &
+                      xn_eos, &
+                      p_eos, h_eos, e_eos, &
+                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                      dpdX_eos, dhdX_eos, &
+                      gam1_eos, cs_eos, s_eos, &
+                      dsdt_eos, dsdr_eos, &
+                      do_diag)
+             
+             sx(i,j,k,rhoh_comp) = den_eos(1)*h_eos(1)
+             
+             qreact = 0.0d0
+             if(use_big_h) then
+                do comp=1,nspec
+                   qreact = qreact + ebin(comp)*xn_eos(1,comp)
+                enddo
+                sx(i,j,k,rhoh_comp) = sx(i,j,k,rhoh_comp) + den_eos(1) * qreact
+             endif
+
+             rhoh0_edge = 7.d0/12.d0 * (rhoh0_cart(i  ,j,k) + rhoh0_cart(i-1,j,k)) &
+                         -1.d0/12.d0 * (rhoh0_cart(i+1,j,k) + rhoh0_cart(i-2,j,k))
+             rhoh0min = min(rhoh0_cart(i,j,k),rhoh0_cart(i-1,j,k))
+             rhoh0max = max(rhoh0_cart(i,j,k),rhoh0_cart(i-1,j,k))
+             rhoh0_edge = max(rhoh0_edge,rhoh0min)
+             rhoh0_edge = min(rhoh0_edge,rhoh0max)
+             
+             sx(i,j,k,rhoh_comp) = sx(i,j,k,rhoh_comp) - rhoh0_edge
+             
+          enddo
+       enddo
+    enddo
+    
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)+1
+          do i = lo(1), hi(1)
+             
+             temp_eos(1) = sy(i,j,k,temp_comp)
+
+             xn0_edge(:) = 7.d0/12.d0 * (xn0_cart(i,j  ,k,:) + xn0_cart(i,j-1,k,:)) &
+                          -1.d0/12.d0 * (xn0_cart(i,j+1,k,:) + xn0_cart(i,j-2,k,:))
+             xn0min(:) = min(xn0_cart(i,j,k,:),xn0_cart(i,j-1,k,:))
+             xn0max(:) = max(xn0_cart(i,j,k,:),xn0_cart(i,j-1,k,:))
+             xn0_edge(:) = max(xn0_edge(:),xn0min(:))
+             xn0_edge(:) = min(xn0_edge(:),xn0max(:))
+
+             xn_eos(1,:) = sy(i,j,k,spec_comp:spec_comp+nspec-1)  + xn0_edge(:)
+
+             den_eos(1) = ZERO
+             do comp = 1,nspec
+               den_eos(1) = den_eos(1) + xn_eos(1,comp)
+             end do
+
+             xn_eos(1,:) = xn_eos(1,:) / den_eos(1)
+             
+             call eos(eos_input_rt, den_eos, temp_eos, &
+                      npts, nspec, &
+                      xn_eos, &
+                      p_eos, h_eos, e_eos, &
+                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                      dpdX_eos, dhdX_eos, &
+                      gam1_eos, cs_eos, s_eos, &
+                      dsdt_eos, dsdr_eos, &
+                      do_diag)
+             
+             sy(i,j,k,rhoh_comp) = den_eos(1)*h_eos(1)
+             
+             qreact = 0.0d0
+             if(use_big_h) then
+                do comp=1,nspec
+                   qreact = qreact + ebin(comp)*xn_eos(1,comp)
+                enddo
+                sy(i,j,k,rhoh_comp) = sy(i,j,k,rhoh_comp) + den_eos(1) * qreact
+             endif
+
+             rhoh0_edge = 7.d0/12.d0 * (rhoh0_cart(i,j  ,k) + rhoh0_cart(i,j-1,k)) &
+                         -1.d0/12.d0 * (rhoh0_cart(i,j+1,k) + rhoh0_cart(i,j-2,k))
+             rhoh0min = min(rhoh0_cart(i,j,k),rhoh0_cart(i,j-1,k))
+             rhoh0max = max(rhoh0_cart(i,j,k),rhoh0_cart(i,j-1,k))
+             rhoh0_edge = max(rhoh0_edge,rhoh0min)
+             rhoh0_edge = min(rhoh0_edge,rhoh0max)
+             
+             sy(i,j,k,rhoh_comp) = sy(i,j,k,rhoh_comp) - rhoh0_edge
+             
+          enddo
+       enddo
+    enddo
+    
+    do k = lo(3), hi(3)+1
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+             
+             temp_eos(1) = sz(i,j,k,temp_comp)
+
+             xn0_edge(:) = 7.d0/12.d0 * (xn0_cart(i,j,k  ,:) + xn0_cart(i,j,k-1,:)) &
+                          -1.d0/12.d0 * (xn0_cart(i,j,k+1,:) + xn0_cart(i,j,k-2,:))
+             xn0min(:) = min(xn0_cart(i,j,k,:),xn0_cart(i,j,k-1,:))
+             xn0max(:) = max(xn0_cart(i,j,k,:),xn0_cart(i,j,k-1,:))
+             xn0_edge(:) = max(xn0_edge(:),xn0min(:))
+             xn0_edge(:) = min(xn0_edge(:),xn0max(:))
+
+             xn_eos(1,:) = sz(i,j,k,spec_comp:spec_comp+nspec-1) + xn0_edge(:)
+
+             den_eos(1) = ZERO
+             do comp = 1,nspec
+               den_eos(1) = den_eos(1) + xn_eos(1,comp)
+             end do
+
+             xn_eos(1,:) = xn_eos(1,:) / den_eos(1)
+
+             call eos(eos_input_rt, den_eos, temp_eos, &
+                      npts, nspec, &
+                      xn_eos, &
+                      p_eos, h_eos, e_eos, &
+                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                      dpdX_eos, dhdX_eos, &
+                      gam1_eos, cs_eos, s_eos, &
+                      dsdt_eos, dsdr_eos, &
+                      do_diag)
+             
+             sz(i,j,k,rhoh_comp) = den_eos(1)*h_eos(1)
+             
+             qreact = 0.0d0
+             if(use_big_h) then
+                do comp=1,nspec
+                   qreact = qreact + ebin(comp)*xn_eos(1,comp)
+                enddo
+                sz(i,j,k,rhoh_comp) = sz(i,j,k,rhoh_comp) + den_eos(1) * qreact
+             endif
+
+             rhoh0_edge = 7.d0/12.d0 * (rhoh0_cart(i,j,k  ) + rhoh0_cart(i,j,k-1)) &
+                         -1.d0/12.d0 * (rhoh0_cart(i,j,k+1) + rhoh0_cart(i,j,k-2))
+             rhoh0min = min(rhoh0_cart(i,j,k),rhoh0_cart(i,j,k-1))
+             rhoh0max = max(rhoh0_cart(i,j,k),rhoh0_cart(i,j,k-1))
+             rhoh0_edge = max(rhoh0_edge,rhoh0min)
+             rhoh0_edge = min(rhoh0_edge,rhoh0max)
+             
+             sz(i,j,k,rhoh_comp) = sz(i,j,k,rhoh_comp) - rhoh0_edge
+             
+          enddo
+       enddo
+    enddo
+    
+  end subroutine makeRhoHfromT_3d_sphr
   
   subroutine makeTfromRhoH(nlevs,s,t0,mla,the_bc_level,dx)
 
