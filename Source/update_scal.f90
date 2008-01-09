@@ -470,8 +470,6 @@ contains
     integer :: i, j, k, comp, comp2
     real (kind = dp_t) :: divsu,divbaseu,mult,divterm
     real (kind = dp_t) :: delta,frac,sum
-    real (kind = dp_t) :: bc_lox,bc_loy,bc_loz
-    real (kind = dp_t) :: bc_hix,bc_hiy,bc_hiz
     real (kind = dp_t), allocatable :: smin(:),smax(:)
 
     ! is spherical
@@ -513,6 +511,7 @@ contains
                         + (snew(i,j,k,comp)-sold(i,j,k,comp))
                    smin(comp) = min(smin(comp),snew(i,j,k,comp))
                    smax(comp) = max(smax(comp),snew(i,j,k,comp))
+
                 enddo
              enddo
           enddo
