@@ -388,9 +388,9 @@ contains
           hi = upb(get_box(s(n),i))
           select case (dm)
           case (2)
-             call makeTfromRhoH_2d(snp(:,:,1,:), lo, hi, 3, t0(n,:))
+             call makeTfromRhoH_2d(snp(:,:,1,:), lo, hi, ng, t0(n,:))
           case (3)
-             call makeTfromRhoH_3d(snp(:,:,:,:), lo, hi, dx(n,:), 3, n, t0(n,:))
+             call makeTfromRhoH_3d(snp(:,:,:,:), lo, hi, dx(n,:), ng, n, t0(n,:))
           end select
        end do
 
