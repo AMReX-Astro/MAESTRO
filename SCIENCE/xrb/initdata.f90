@@ -326,7 +326,7 @@ contains
   subroutine perturb(distance, p0, s0,  &
                      dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
 
-    use probin_module, ONLY: pert_size, pert_factor, pert_type
+    use probin_module, ONLY: xrb_pert_size, xrb_pert_factor, xrb_pert_type
     ! apply an optional perturbation to the initial temperature field
     ! to see some bubbles
 
@@ -341,14 +341,14 @@ contains
     integer, parameter :: perturb_temp = 1, perturb_dens = 2
     integer :: eos_input_flag
 
-    rad_pert = pert_size**2 / (FOUR * log(TWO))
+    rad_pert = xrb_pert_size**2 / (FOUR * log(TWO))
 
-    select case (pert_type)
+    select case (xrb_pert_type)
     case(perturb_temp)
 
        t0 = s0(temp_comp)
 
-       temp = t0 * (ONE + pert_factor) * dexp(-distance**2 / rad_pert)
+       temp = t0 * (ONE + xrb_pert_factor) * dexp(-distance**2 / rad_pert)
        temp = max(t0, temp)
        
        dens = s0(rho_comp)
@@ -359,7 +359,7 @@ contains
           
        d0 = s0(rho_comp)
        
-       dens = d0 * (ONE + pert_factor) * dexp(-distance**2 / rad_pert)
+       dens = d0 * (ONE + xrb_pert_factor) * dexp(-distance**2 / rad_pert)
        dens = max(d0, dens)
        
        temp = s0(temp_comp)

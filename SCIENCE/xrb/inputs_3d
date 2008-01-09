@@ -46,6 +46,9 @@
  anelastic_cutoff = 1.e3
 
  perturb_model = T
+ xrb_pert_size = 50
+ xrb_pert_factor = 1.0d-2
+ xrb_pert_type = 1
 
 !restart = 50
 /
