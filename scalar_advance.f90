@@ -71,7 +71,7 @@ contains
 
     real(dp_t) :: smin,smax
 
-    integer :: velpred,comp,pred_comp,n,dm,ng_cell    
+    integer :: velpred,comp,pred_comp,n,dm
 
     logical :: is_vel
 
@@ -88,7 +88,6 @@ contains
 
     velpred = 0    
     is_vel = .false.
-    ng_cell = sold(1)%ng
     dm = sold(1)%dim
 
     allocate(umac_nodal_flag(dm))

@@ -126,7 +126,7 @@ contains
     integer       , allocatable :: lo(:),hi(:)
 
     real(dp_t)                :: halfdt,eps_in
-    integer                   :: j,n,dm,comp,nlevs,ng_cell,proj_type
+    integer                   :: j,n,dm,comp,nlevs,ng_s,proj_type
     logical                   :: nodal(mla%dim)
     type(bl_prof_timer), save :: bpt
 
@@ -174,7 +174,7 @@ contains
     allocate(hi(dm))
 
     nodal = .true.
-    ng_cell = uold(1)%ng
+    ng_s = sold(1)%ng
     halfdt = half*dt
     
     ! This is always zero at the beginning of a time step
@@ -291,7 +291,7 @@ contains
     end if
 
     do n=1,nlevs
-       call multifab_build(s1(n), mla%la(n), nscal, ng_cell)
+       call multifab_build(s1(n), mla%la(n), nscal, ng_s)
        call multifab_build(rho_omegadot1(n), mla%la(n), nspec, 0)
        call multifab_build(rho_Hext(n),      mla%la(n), 1,     0)
     end do
@@ -365,7 +365,7 @@ contains
     end if
             
     do n=1,nlevs
-       call multifab_build(s2(n), mla%la(n), nscal, ng_cell)
+       call multifab_build(s2(n), mla%la(n), nscal, ng_s)
     end do
 
     call scalar_advance(nlevs,mla,1,uold,s1,s2,thermal,umac,w0,w0_cart_vec,eta, &
@@ -397,8 +397,8 @@ contains
           ! make a copy of s2star since these are needed to compute
           ! coefficients in the call to thermal_conduct_full_alg
           do n=1,nlevs
-             call multifab_build(s2star(n), mla%la(n), nscal, ng_cell)
-             call multifab_copy_c(s2star(n),1,s2(n),1,nscal,ng_cell)
+             call multifab_build(s2star(n), mla%la(n), nscal, ng_s)
+             call multifab_copy_c(s2star(n), 1, s2(n), 1, nscal, ng_s)
           end do
        end if
     end if
@@ -632,7 +632,7 @@ contains
        end do
        
        do n=1,nlevs
-          call multifab_build(s2(n), mla%la(n), nscal, ng_cell)
+          call multifab_build(s2(n), mla%la(n), nscal, ng_s)
        end do
 
        call scalar_advance(nlevs,mla,2,uold,s1,s2,thermal,umac,w0,w0_cart_vec,eta, &
