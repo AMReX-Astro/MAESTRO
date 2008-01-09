@@ -390,7 +390,7 @@ contains
           case (2)
              call makeTfromRhoH_2d(snp(:,:,1,:), lo, hi, 3, t0(n,:))
           case (3)
-             call makeTfromRhoH_3d(snp(:,:,:,:), lo, hi, 3, t0(n,:))
+             call makeTfromRhoH_3d(snp(:,:,:,:), lo, hi, dx(n,:), 3, n, t0(n,:))
           end select
        end do
 
@@ -465,20 +465,29 @@ contains
 
   end subroutine makeTfromRhoH_2d
 
-  subroutine makeTfromRhoH_3d (state,lo,hi,ng,t0)
+  subroutine makeTfromRhoH_3d (state,lo,hi,dx,ng,n,t0)
 
     use variables, only: rho_comp, spec_comp, rhoh_comp, temp_comp
     use eos_module
     use probin_module, ONLY: use_big_h
+    use geometry,  only: spherical
+    use fill_3d_module, only: fill_3d_data
 
-    integer, intent(in) :: lo(:), hi(:), ng
+    integer, intent(in) :: lo(:), hi(:), ng, n
     real (kind = dp_t), intent(inout) ::  state(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind = dp_t), intent(in   ) ::  t0(0:)
+    real(kind=dp_t)   , intent(in   ) :: dx(:)
 
     ! Local variables
     integer :: i, j, k, comp
     real(kind=dp_t) qreact
-    
+    real(kind=dp_t), allocatable :: t0_cart(:,:,:)
+
+    if (spherical .eq. 1) then
+       allocate(t0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+       call fill_3d_data(n,t0_cart,t0,lo,hi,dx,0)
+    endif
+
     do_diag = .false.
     
     do k = lo(3), hi(3)
@@ -488,7 +497,13 @@ contains
              ! (rho, H) --> T, p
              
              den_eos(1)  = state(i,j,k,rho_comp)
-             temp_eos(1) = t0(k)
+
+             if (spherical .eq. 1) then
+                temp_eos(1) = t0_cart(i,j,k)
+             else
+                temp_eos(1) = t0(k)
+             endif
+
              xn_eos(1,:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
              
              qreact = 0.0d0
@@ -517,7 +532,11 @@ contains
           enddo
        enddo
     enddo
-    
+
+    if (spherical .eq. 1) then
+       deallocate(t0_cart)
+    endif
+
   end subroutine makeTfromRhoH_3d
   
 end module rhoh_vs_t_module
