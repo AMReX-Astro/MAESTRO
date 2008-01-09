@@ -58,7 +58,7 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
   real(kind=dp_t), pointer    :: Xkcoeff1p(:,:,:,:),Xkcoeff2p(:,:,:,:)
   real(kind=dp_t), pointer    :: pcoeff1p(:,:,:,:),pcoeff2p(:,:,:,:)
   integer                     :: nlevs,dm,stencil_order
-  integer                     :: i,n,comp,ng
+  integer                     :: i,n,comp,ng_s
   integer                     :: lo(s1(1)%dim),hi(s1(1)%dim)
   type(bndry_reg), pointer    :: fine_flx(:) => Null()
 
@@ -69,7 +69,7 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
   nlevs = mla%nlevel
   dm = mla%dim
   stencil_order = 2
-  ng = s2(1)%ng
+  ng_s = s2(1)%ng
 
   allocate(rhsalpha(nlevs),lhsalpha(nlevs))
   allocate(rhsbeta(nlevs),lhsbeta(nlevs))
@@ -542,7 +542,7 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
      call ml_cc_restriction_c(s2(n-1),rhoh_comp,s2(n),rhoh_comp,mla%mba%rr(n-1,:),1)
        
      call multifab_fill_ghost_cells(s2(n),s2(n-1), &
-                                    ng,mla%mba%rr(n-1,:), &
+                                    ng_s,mla%mba%rr(n-1,:), &
                                     the_bc_tower%bc_tower_array(n-1), &
                                     the_bc_tower%bc_tower_array(n  ), &
                                     rhoh_comp,dm+rhoh_comp,1)
@@ -598,7 +598,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
   real(kind=dp_t), pointer    :: Xkcoeff1p(:,:,:,:),Xkcoeff2p(:,:,:,:)
   real(kind=dp_t), pointer    :: pcoeff1p(:,:,:,:),pcoeff2p(:,:,:,:)
   integer                     :: nlevs,dm,stencil_order
-  integer                     :: i,n,comp,ng
+  integer                     :: i,n,comp,ng_s
   integer                     :: lo(s1(1)%dim),hi(s1(1)%dim)
   type(bndry_reg), pointer    :: fine_flx(:) => Null()
 
@@ -611,7 +611,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
   nlevs = mla%nlevel
   dm = mla%dim
   stencil_order = 2
-  ng = s2(1)%ng
+  ng_s = s2(1)%ng
 
   allocate(rhsalpha(nlevs),lhsalpha(nlevs))
   allocate(rhsbeta(nlevs),lhsbeta(nlevs))
@@ -938,7 +938,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
   do n=nlevs,2,-1
      call ml_cc_restriction_c(s2(n-1),rhoh_comp,s2(n),rhoh_comp,mla%mba%rr(n-1,:),1)
      call multifab_fill_ghost_cells(s2(n),s2(n-1), &
-                                    ng,mla%mba%rr(n-1,:), &
+                                    ng_s,mla%mba%rr(n-1,:), &
                                     the_bc_tower%bc_tower_array(n-1), &
                                     the_bc_tower%bc_tower_array(n  ), &
                                     temp_comp,dm+temp_comp,1)
@@ -1289,7 +1289,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
   do n=nlevs,2,-1
      call ml_cc_restriction_c(s2(n-1),rhoh_comp,s2(n),rhoh_comp,mla%mba%rr(n-1,:),1)
      call multifab_fill_ghost_cells(s2(n),s2(n-1), &
-                                    ng,mla%mba%rr(n-1,:), &
+                                    ng_s,mla%mba%rr(n-1,:), &
                                     the_bc_tower%bc_tower_array(n-1), &
                                     the_bc_tower%bc_tower_array(n  ), &
                                     rhoh_comp,dm+rhoh_comp,1)

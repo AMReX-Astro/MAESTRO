@@ -66,14 +66,14 @@ contains
 
     integer :: domlo(sold(1)%dim),domhi(sold(1)%dim)
     integer :: lo(sold(1)%dim),hi(sold(1)%dim)
-    integer :: i,ng,dm,n
+    integer :: i,ng_s,dm,n
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "update_scal")
 
     dm = sold(1)%dim
-    ng = sold(1)%ng
+    ng_s = sold(1)%ng
 
     do n=1,nlevs
 
@@ -105,7 +105,7 @@ contains
                                  fp(:,:,1,:), &
                                  s0_old(n,:,:), s0_edge_old(n,:,:), &
                                  s0_new(n,:,:), s0_edge_new(n,:,:), &
-                                 lo, hi, ng, dx(n,:), dt, evolve_base_state)
+                                 lo, hi, ng_s, dx(n,:), dt, evolve_base_state)
           case (3)
              wmp => dataptr(umac(n,3),i)
              sepz => dataptr(sedge(n,3),i)
@@ -120,7 +120,7 @@ contains
                                          fp(:,:,:,:), &
                                          s0_old(n,:,:), s0_edge_old(n,:,:), &
                                          s0_new(n,:,:), s0_edge_new(n,:,:), &
-                                         lo, hi, ng, dx(n,:), dt, evolve_base_state)
+                                         lo, hi, ng_s, dx(n,:), dt, evolve_base_state)
              else
                 s0op => dataptr(s0_old_cart(n), i)
                 s0np => dataptr(s0_new_cart(n), i)
@@ -134,7 +134,7 @@ contains
                                          fp(:,:,:,:), &
                                          s0_old(n,:,:), s0_new(n,:,:), &
                                          s0op(:,:,:,:), s0np(:,:,:,:), &
-                                         lo, hi, domlo, domhi, ng, dx(n,:), dt, &
+                                         lo, hi, domlo, domhi, ng_s, dx(n,:), dt, &
                                          evolve_base_state)
              end if
           end select
@@ -154,13 +154,13 @@ contains
     do n=nlevs,2,-1
        call ml_cc_restriction_c(snew(n-1),nstart,snew(n),nstart,mla%mba%rr(n-1,:), &
                                 nstop-nstart+1)
-       call multifab_fill_ghost_cells(snew(n),snew(n-1),ng,mla%mba%rr(n-1,:), &
+       call multifab_fill_ghost_cells(snew(n),snew(n-1),ng_s,mla%mba%rr(n-1,:), &
                                       the_bc_level(n-1),the_bc_level(n  ), &
                                       nstart,dm+nstart,nstop-nstart+1)
 
        if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
           call ml_cc_restriction_c(snew(n-1),rho_comp,snew(n),rho_comp,mla%mba%rr(n-1,:),1)
-          call multifab_fill_ghost_cells(snew(n),snew(n-1),ng,mla%mba%rr(n-1,:), &
+          call multifab_fill_ghost_cells(snew(n),snew(n-1),ng_s,mla%mba%rr(n-1,:), &
                                          the_bc_level(n-1),the_bc_level(n), &
                                          rho_comp,dm+rho_comp,1)
        endif
@@ -172,7 +172,7 @@ contains
 
   subroutine update_scal_2d(which_step,nstart,nstop,sold,snew,umac,vmac,w0,eta, &
                             sedgex,sedgey,sfluxx,sfluxy,force,base_old,base_old_edge, &
-                            base_new,base_new_edge,lo,hi,ng,dx,dt,evolve_base_state)
+                            base_new,base_new_edge,lo,hi,ng_s,dx,dt,evolve_base_state)
 
     use network, only: nspec
     use variables, only: spec_comp, rho_comp
@@ -181,9 +181,9 @@ contains
     ! update each scalar in time.  Here, it is assumed that the edge
     ! states (sedgex and sedgey) are for the perturbational quantities.
 
-    integer           , intent(in   ) :: which_step, nstart, nstop, lo(:), hi(:), ng
-    real (kind = dp_t), intent(in   ) ::    sold(lo(1)-ng:,lo(2)-ng:,:)
-    real (kind = dp_t), intent(  out) ::    snew(lo(1)-ng:,lo(2)-ng:,:)
+    integer           , intent(in   ) :: which_step, nstart, nstop, lo(:), hi(:), ng_s
+    real (kind = dp_t), intent(in   ) ::    sold(lo(1)-ng_s:,lo(2)-ng_s:,:)
+    real (kind = dp_t), intent(  out) ::    snew(lo(1)-ng_s:,lo(2)-ng_s:,:)
     real (kind = dp_t), intent(in   ) ::    umac(lo(1)- 1:,lo(2)- 1:)
     real (kind = dp_t), intent(in   ) ::    vmac(lo(1)- 1:,lo(2)- 1:)
     real (kind = dp_t), intent(in   ) ::  sedgex(lo(1)   :,lo(2)   :,:)
@@ -306,14 +306,14 @@ contains
   subroutine update_scal_3d_cart(which_step,nstart,nstop,sold,snew,umac,vmac,wmac,w0, &
                                  eta,sedgex,sedgey,sedgez,sfluxx,sfluxy,sfluxz,force, &
                                  base_old,base_old_edge,base_new,base_new_edge,lo,hi, &
-                                 ng,dx,dt,evolve_base_state)
+                                 ng_s,dx,dt,evolve_base_state)
     use network, only: nspec
     use variables, only: spec_comp, rho_comp
     use bl_constants_module
 
-    integer           , intent(in   ) :: which_step, nstart, nstop, lo(:), hi(:), ng
-    real (kind = dp_t), intent(in   ) ::    sold(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-    real (kind = dp_t), intent(  out) ::    snew(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
+    integer           , intent(in   ) :: which_step, nstart, nstop, lo(:), hi(:), ng_s
+    real (kind = dp_t), intent(in   ) ::    sold(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
+    real (kind = dp_t), intent(  out) ::    snew(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
     real (kind = dp_t), intent(inout) ::    umac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
     real (kind = dp_t), intent(inout) ::    vmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
     real (kind = dp_t), intent(inout) ::    wmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
@@ -440,15 +440,15 @@ contains
   subroutine update_scal_3d_sphr(which_step,nstart,nstop,sold,snew,umac,vmac,wmac, &
                                  w0_cart,sedgex,sedgey,sedgez,sfluxx,sfluxy,sfluxz, &
                                  force,base_old,base_new,base_old_cart,base_new_cart, &
-                                 lo,hi,domlo,domhi,ng,dx,dt,evolve_base_state)
+                                 lo,hi,domlo,domhi,ng_s,dx,dt,evolve_base_state)
     use network, only: nspec
     use variables, only: spec_comp, rho_comp
     use bl_constants_module
 
     integer           , intent(in   ) :: which_step, nstart, nstop
-    integer           , intent(in   ) :: lo(:), hi(:), domlo(:), domhi(:), ng
-    real (kind = dp_t), intent(in   ) ::    sold(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-    real (kind = dp_t), intent(  out) ::    snew(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
+    integer           , intent(in   ) :: lo(:), hi(:), domlo(:), domhi(:), ng_s
+    real (kind = dp_t), intent(in   ) ::    sold(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
+    real (kind = dp_t), intent(  out) ::    snew(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
     real (kind = dp_t), intent(inout) ::    umac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
     real (kind = dp_t), intent(inout) ::    vmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
     real (kind = dp_t), intent(inout) ::    wmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
