@@ -3,20 +3,21 @@
  model_file = "sorted_xrb.hse"
  spherical_in = 0
 
- prob_lo_y = 1.75e3
+ prob_hi_x = 1.75d3
+ prob_hi_y = 3.5d3
 
- prob_hi_x = 1.75e3
- prob_hi_y = 3.5e3
+ prob_lo_x = 0.0d0
+ prob_lo_y = 1.75d3
 
  grav_const = -2.45e14
 
- max_step  = 100000000
+ max_step  = 1000000
  init_iter = 1
 
  stop_time = 2.5
 
- plot_int  = 10
- chk_int   = 100
+ plot_int  = 1
+ chk_int   = 5
 
  cflfac = 0.9
  init_shrink = 1.
@@ -30,19 +31,23 @@
  pmask_y = F
 
     verbose = 1
- mg_verbose = 1
+ mg_verbose = 0
  cg_verbose = 0
 
  do_initial_projection = 1
  init_divu_iter = 3
 
- base_cutoff_density = 1.e3
- anelastic_cutoff = 1.e3
+ base_cutoff_density = 1.d4
+ anelastic_cutoff = 1.d4
 
  perturb_model = T
+ xrb_pert_size = 100
+ xrb_pert_factor = 1.0d-1
+ xrb_pert_type = 1
 
  do_sponge = T
- sponge_kappa = 1.d6
+ sponge_kappa = 1.d8
 
 !restart = 50
+
 /
