@@ -201,7 +201,7 @@ contains
 
     ! compute enthalpy edge states
     if(predict_temp_at_edges) then
-       call makeRhoHfromT(nlevs,uold,sedge,s0_old,s0_edge_old,s0_new,s0_edge_new,dx)
+       call makeRhoHfromT(nlevs,uold,sedge,s0_old,s0_edge_old,s0_new,s0_edge_new,the_bc_level,dx)
     end if
 
     if (.not. predict_temp_at_edges) then

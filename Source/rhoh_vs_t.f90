@@ -13,7 +13,7 @@ module rhoh_vs_t_module
   
 contains
   
-  subroutine makeRhoHfromT(nlevs,u,sedge,s0_old,s0_edge_old,s0_new,s0_edge_new,dx)
+  subroutine makeRhoHfromT(nlevs,u,sedge,s0_old,s0_edge_old,s0_new,s0_edge_new,the_bc_level,dx)
 
     use bl_prof_module
     use bl_constants_module
@@ -21,12 +21,14 @@ contains
     use variables
     use network
     use fill_3d_module, only: fill_3d_data
+    use multifab_physbc_module
     
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(in   ) :: u(:)
     type(multifab) , intent(inout) :: sedge(:,:)
     real(kind=dp_t), intent(in   ) :: s0_old(:,0:,:), s0_edge_old(:,0:,:)
     real(kind=dp_t), intent(in   ) :: s0_new(:,0:,:), s0_edge_new(:,0:,:)
+    type(bc_level) , intent(in   ) :: the_bc_level(:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     
     ! local
@@ -78,6 +80,12 @@ contains
 
          call multifab_fill_boundary(  xn0_cart)
          call multifab_fill_boundary(rhoh0_cart)
+
+         call multifab_physbc(xn0_cart,1,dm+spec_comp,nspec,dx(n,:), &
+                              the_bc_level(n))
+
+         call multifab_physbc(rhoh0_cart,1,dm+rhoh_comp,1,dx(n,:), &
+                              the_bc_level(n))
       endif
 
        do i=1,u(n)%nboxes
