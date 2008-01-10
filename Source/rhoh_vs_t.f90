@@ -52,32 +52,34 @@ contains
     if (spherical .eq. 1) then
       allocate(  xn0_halftime(0:nr(nlevs),nspec))
       allocate(rhoh0_halftime(0:nr(nlevs)))
-      do k = 0,nr(nlevs)
+      do k = 0,nr(nlevs)-1
          xn0_halftime(k,1:nspec) = HALF * (s0_old(nlevs,k,spec_comp:spec_comp+nspec-1) &
                                          + s0_new(nlevs,k,spec_comp:spec_comp+nspec-1) )
          rhoh0_halftime(k) = HALF * (s0_old(nlevs,k,rhoh_comp) + s0_new(nlevs,k,rhoh_comp) )
       end do
-    end if
+   endif
 
-    do n=1,nlevs
+   do n=1,nlevs
 
-       call multifab_build(  xn0_cart,u(n)%la,nspec,2)
-       call multifab_build(rhoh0_cart,u(n)%la,1    ,2)
+      if (spherical .eq. 1) then
+         call multifab_build(  xn0_cart,u(n)%la,nspec,2)
+         call multifab_build(rhoh0_cart,u(n)%la,1    ,2)
 
-       do i=1,xn0_cart%nboxes
-         xnp => dataptr(  xn0_cart, i)
-         rhp => dataptr(rhoh0_cart, i)
-         lo = lwb(get_box(xn0_cart,i))
-         hi = upb(get_box(xn0_cart,i))
-         do comp = 1,nspec
-           call fill_3d_data(n,xnp(:,:,:,comp),xn0_halftime(0:,comp),lo,hi,dx(n,:),xn0_cart%ng)
-         end do
-         call fill_3d_data(n,rhp(:,:,:,1),rhoh0_halftime(0:),lo,hi,dx(n,:),rhoh0_cart%ng)
-       enddo
+         do i=1,xn0_cart%nboxes
+            xnp => dataptr(  xn0_cart, i)
+            rhp => dataptr(rhoh0_cart, i)
+            lo = lwb(get_box(xn0_cart,i))
+            hi = upb(get_box(xn0_cart,i))
+            do comp = 1,nspec
+               call fill_3d_data(n,xnp(:,:,:,comp),xn0_halftime(0:,comp),lo,hi,dx(n,:),xn0_cart%ng)
+            end do
+            call fill_3d_data(n,rhp(:,:,:,1),rhoh0_halftime(0:),lo,hi,dx(n,:),rhoh0_cart%ng)
+         enddo
 
-       call multifab_fill_boundary(  xn0_cart)
-       call multifab_fill_boundary(rhoh0_cart)
-    
+         call multifab_fill_boundary(  xn0_cart)
+         call multifab_fill_boundary(rhoh0_cart)
+      endif
+
        do i=1,u(n)%nboxes
           if ( multifab_remote(u(n),i) ) cycle
           sepx => dataptr(sedge(n,1), i)
@@ -108,7 +110,10 @@ contains
 
     if (spherical .eq. 1) then
       deallocate(xn0_halftime)
+      deallocate(rhoh0_halftime)
+
       call destroy(xn0_cart)
+      call destroy(rhoh0_cart)
     end if
 
     call destroy(bpt)
@@ -432,9 +437,11 @@ contains
 
              xn0_edge(:) = 7.d0/12.d0 * (xn0_cart(i  ,j,k,:) + xn0_cart(i-1,j,k,:)) &
                           -1.d0/12.d0 * (xn0_cart(i+1,j,k,:) + xn0_cart(i-2,j,k,:))
+
              xn0min(:) = min(xn0_cart(i,j,k,:),xn0_cart(i-1,j,k,:))
              xn0max(:) = max(xn0_cart(i,j,k,:),xn0_cart(i-1,j,k,:))
              xn0_edge(:) = max(xn0_edge(:),xn0min(:))
+
              xn0_edge(:) = min(xn0_edge(:),xn0max(:))
 
              xn_eos(1,:) = sx(i,j,k,spec_comp:spec_comp+nspec-1) + xn0_edge(:)
@@ -445,7 +452,7 @@ contains
              end do
 
              xn_eos(1,:) = xn_eos(1,:) / den_eos(1)
-             
+
              call eos(eos_input_rt, den_eos, temp_eos, &
                       npts, nspec, &
                       xn_eos, &
