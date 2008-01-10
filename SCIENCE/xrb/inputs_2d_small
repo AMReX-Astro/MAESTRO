@@ -11,12 +11,12 @@
 
  grav_const = -2.45e14
 
- max_step  = 1000000
+ max_step  = 5000
  init_iter = 1
 
  stop_time = 2.5
 
- plot_int  = 1
+ plot_int  = 10
  chk_int   = 5
 
  cflfac = 0.9
@@ -36,6 +36,8 @@
 
  do_initial_projection = 1
  init_divu_iter = 3
+
+ use_thermal_diffusion = T
 
  base_cutoff_density = 1.d4
  anelastic_cutoff = 1.d4
