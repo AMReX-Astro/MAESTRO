@@ -13,7 +13,7 @@ module update_vel_module
 contains
 
   subroutine update_velocity(nlevs,uold,unew,umac,uedge,force,w0,w0_cart,w0_force, &
-                             w0_force_cart,dx,dt,sponge,do_sponge,mla,the_bc_level)
+                             w0_force_cart,dx,dt,sponge,mla,the_bc_level)
 
     use bl_prof_module
     use bl_constants_module
@@ -34,7 +34,6 @@ contains
     real (kind = dp_t), intent(in   ) :: dx(:,:)
     real (kind = dp_t), intent(in   ) :: dt
     type(multifab)    , intent(in   ) :: sponge(:)
-    logical           , intent(in   ) :: do_sponge
     type(ml_layout)   , intent(inout) :: mla
     type(bc_level)    , intent(in   ) :: the_bc_level(:)
 
@@ -82,8 +81,7 @@ contains
                                      ump(:,:,1,1), vmp(:,:,1,1), &
                                      uepx(:,:,1,:), uepy(:,:,1,:), &
                                      fp(:,:,1,:), w0(n,:), w0_force(n,:), &
-                                     lo, hi, ng, dx(n,:), dt, spp(:,:,1,1), &
-                                     do_sponge)
+                                     lo, hi, ng, dx(n,:), dt, spp(:,:,1,1))
           case (3)
              wmp   => dataptr(umac(n,3),i)
              uepz  => dataptr(uedge(n,3),i)
@@ -95,8 +93,7 @@ contains
                                      uepy(:,:,:,:), uepz(:,:,:,:), &
                                      fp(:,:,:,:), w0(n,:), w0p(:,:,:,:), &
                                      w0_force(n,:), w0fp(:,:,:,:), &
-                                     lo, hi, ng, dx(n,:), dt, spp(:,:,:,1), &
-                                     do_sponge)
+                                     lo, hi, ng, dx(n,:), dt, spp(:,:,:,1))
           end select
        end do
 
@@ -118,9 +115,10 @@ contains
   end subroutine update_velocity
 
   subroutine update_velocity_2d(uold,unew,umac,vmac,uedgex,uedgey,force,w0,w0_force, &
-                                lo,hi,ng,dx,dt,sponge,do_sponge)
+                                lo,hi,ng,dx,dt,sponge)
 
     use bl_constants_module
+    use probin_module, only: do_sponge
 
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(in   ) ::     uold(lo(1)-ng:,lo(2)-ng:,:)  
@@ -135,7 +133,6 @@ contains
     real (kind = dp_t), intent(in   ) :: w0_force(0:)
     real (kind = dp_t), intent(in   ) :: dx(:)
     real (kind = dp_t), intent(in   ) :: dt
-    logical           , intent(in   ) :: do_sponge
 
     integer :: i, j
     real (kind = dp_t) ubar,vbar
@@ -176,10 +173,11 @@ contains
 
   subroutine update_velocity_3d(uold,unew,umac,vmac,wmac,uedgex,uedgey,uedgez, &
                                 force,w0,w0_cart,w0_force,w0_force_cart,lo,hi,ng,dx,dt, &
-                                sponge,do_sponge)
+                                sponge)
 
     use geometry, only: spherical
     use bl_constants_module
+    use probin_module, only: do_sponge
 
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(in   ) ::     uold(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
@@ -198,7 +196,6 @@ contains
     real (kind = dp_t), intent(in   ) ::  w0_force_cart(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
     real (kind = dp_t), intent(in   ) :: dx(:)
     real (kind = dp_t), intent(in   ) :: dt
-    logical           , intent(in   ) :: do_sponge
 
     integer :: i, j, k
     real (kind = dp_t) ubar,vbar,wbar

@@ -16,7 +16,7 @@ contains
                               rho_omegadot2,div_coeff_old,div_coeff_new, &
                               grav_cell_old,dx,time,dt,dtold,the_bc_tower, &
                               verbose,mg_verbose,cg_verbose,dSdt,Source_old,Source_new, &
-                              sponge,do_sponge,hgrhs,istep)
+                              sponge,hgrhs,istep)
 
     use bl_prof_module
     use ml_layout_module
@@ -83,7 +83,6 @@ contains
     type(multifab),  intent(inout) :: Source_old(:)
     type(multifab),  intent(inout) :: Source_new(:)
     type(multifab),  intent(in   ) :: sponge(:)
-    logical       ,  intent(in   ) :: do_sponge
     type(multifab),  intent(inout) :: hgrhs(:)
     integer       ,  intent(in   ) :: istep
 
@@ -773,7 +772,7 @@ contains
     call velocity_advance(nlevs,mla,uold,unew,sold,rhohalf,umac,uedge,utrans,gpres, &
                           normal,w0,w0_cart_vec,w0_force,w0_force_cart_vec,s0_old,s0_nph, &
                           grav_cell_old,grav_cell_nph,dx,dt, &
-                          the_bc_tower%bc_tower_array,sponge,do_sponge,verbose)
+                          the_bc_tower%bc_tower_array,sponge,verbose)
 
     do n=1,nlevs
        do comp=1,dm
