@@ -1332,6 +1332,9 @@ contains
     bottom_solver = 1
     bottom_solver_eps = 1.d-3
 
+    ! Note: put this here for robustness
+    max_iter = 100
+
     if ( test /= 0 .AND. max_iter == mgt(nlevs)%max_iter ) &
          max_iter = 1000
 
