@@ -64,10 +64,12 @@ contains
    do n=1,nlevs
 
       if (spherical .eq. 1) then
+
          call multifab_build(  xn0_cart,u(n)%la,nspec,2)
          call multifab_build(rhoh0_cart,u(n)%la,1    ,2)
 
          do i=1,xn0_cart%nboxes
+            if ( multifab_remote(u(n),i) ) cycle
             xnp => dataptr(  xn0_cart, i)
             rhp => dataptr(rhoh0_cart, i)
             lo = lwb(get_box(xn0_cart,i))
