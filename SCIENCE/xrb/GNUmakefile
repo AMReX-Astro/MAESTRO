@@ -1,6 +1,6 @@
 NDEBUG :=  
 NDEBUG := t
-MPI    := t
+MPI    :=
 OMP    :=
 
 COMP := Intel
@@ -28,8 +28,8 @@ include $(FPARALLEL)/extern/conducteos/GPackage.mak
 VPATH_LOCATIONS += $(FPARALLEL)/extern/conducteos
 FINCLUDE_LOCATIONS += $(FPARALLEL)/extern/conducteos
 
-include $(FPARALLEL)/extern/networks/triple_alpha/GPackage.mak
-VPATH_LOCATIONS += $(FPARALLEL)/extern/networks/triple_alpha
+include $(FPARALLEL)/extern/networks/fushiki_lamb/GPackage.mak
+VPATH_LOCATIONS += $(FPARALLEL)/extern/networks/fushiki_lamb
 
 include $(FPARALLEL)/extern/VODE/GPackage.mak
 VPATH_LOCATIONS += $(FPARALLEL)/extern/VODE
