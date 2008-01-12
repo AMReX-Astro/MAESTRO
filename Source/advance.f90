@@ -106,7 +106,6 @@ contains
 
     type(multifab), allocatable :: umac(:,:)
     type(multifab), allocatable :: utrans(:,:)
-    type(multifab), allocatable :: uedge(:,:)
     
     logical       , allocatable :: umac_nodal_flag(:)
 
@@ -153,7 +152,6 @@ contains
     
     allocate(  umac(nlevs,dm))
     allocate(utrans(nlevs,dm))
-    allocate( uedge(nlevs,dm))
 
     allocate(umac_nodal_flag(dm))
 
@@ -228,18 +226,11 @@ contains
           umac_nodal_flag(comp) = .true.
           call multifab_build(  umac(n,comp), mla%la(n),  1, 1, nodal = umac_nodal_flag)
           call multifab_build(utrans(n,comp), mla%la(n),  1, 1, nodal = umac_nodal_flag)
-          call multifab_build( uedge(n,comp), mla%la(n), dm, 0, nodal = umac_nodal_flag)
        end do
     end do
     
-    call advance_premac(nlevs,uold,sold,umac,uedge,utrans,gpres,normal,w0,w0_cart_vec, &
+    call advance_premac(nlevs,uold,sold,umac,utrans,gpres,normal,w0,w0_cart_vec, &
                         s0_old,grav_cell_old,dx,dt,the_bc_tower%bc_tower_array,mla)
-
-    do n=1,nlevs
-       do comp=1,dm
-          call destroy(uedge(n,comp))
-       end do
-    end do
 
     do n=1,nlevs
        call multifab_build(gamma1_term(n), mla%la(n), 1, 0)
@@ -557,20 +548,12 @@ contains
              umac_nodal_flag(comp) = .true.
              call multifab_build(  umac(n,comp), mla%la(n),  1, 1, nodal = umac_nodal_flag)
              call multifab_build(utrans(n,comp), mla%la(n),  1, 1, nodal = umac_nodal_flag)
-             call multifab_build( uedge(n,comp), mla%la(n), dm, 0, nodal = umac_nodal_flag)
           end do
        end do
 
-       call advance_premac(nlevs,uold,sold,umac,uedge,utrans,gpres,normal,w0, &
+       call advance_premac(nlevs,uold,sold,umac,utrans,gpres,normal,w0, &
                            w0_cart_vec,s0_old,grav_cell_old,dx,dt, &
                            the_bc_tower%bc_tower_array,mla)
-
-       do n=1,nlevs
-          do comp=1,dm
-             call destroy(uedge(n,comp))
-          end do
-       end do
-
 
        do n=1,nlevs
           call multifab_build(macrhs(n), mla%la(n), 1, 0)
@@ -798,15 +781,7 @@ contains
     call make_at_halftime(nlevs,rhohalf,sold,snew,rho_comp,1,dx, &
                           the_bc_tower%bc_tower_array,mla)
     
-    do n=1,nlevs
-       do comp=1,dm
-          umac_nodal_flag = .false.
-          umac_nodal_flag(comp) = .true.
-          call multifab_build( uedge(n,comp), mla%la(n), dm, 0, nodal = umac_nodal_flag)
-       end do
-    end do
-    
-    call velocity_advance(nlevs,mla,uold,unew,sold,rhohalf,umac,uedge,utrans,gpres, &
+    call velocity_advance(nlevs,mla,uold,unew,sold,rhohalf,umac,utrans,gpres, &
                           normal,w0,w0_cart_vec,w0_force,w0_force_cart_vec,s0_old,s0_nph, &
                           grav_cell_old,grav_cell_nph,dx,dt, &
                           the_bc_tower%bc_tower_array,sponge,verbose)
@@ -815,7 +790,6 @@ contains
        do comp=1,dm
           call destroy(umac(n,comp))
           call destroy(utrans(n,comp))
-          call destroy(uedge(n,comp))
        end do
     end do
 
@@ -890,7 +864,7 @@ contains
     deallocate(rhohalf,w0_cart_vec,w0_force_cart_vec,macrhs,macphi,hgrhs_old,Source_nph)
     deallocate(thermal,s2star,rho_omegadot2_hold,s1,s2,gamma1_term,rho_omegadot1)
     deallocate(rho_Hext,div_coeff_3d)
-    deallocate(umac,utrans,uedge)
+    deallocate(umac,utrans)
     deallocate(umac_nodal_flag)
     deallocate(grav_cell_nph,grav_cell_new,s0_nph,w0_force,w0_old,Sbar)
     deallocate(div_coeff_nph,div_coeff_edge,rho_omegadotbar1,rho_omegadotbar2,rho_Hextbar)
