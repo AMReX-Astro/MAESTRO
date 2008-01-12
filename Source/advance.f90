@@ -282,6 +282,12 @@ contains
                        macrhs,div_coeff_1d=div_coeff_old,div_coeff_half_1d=div_coeff_edge)
     end if
 
+    if(do_half_alg) then
+       do n=1,nlevs
+          call destroy(macphi(n))
+       end do
+    end if
+
     do n=1,nlevs
        call destroy(macrhs(n))
     end do
@@ -363,12 +369,21 @@ contains
     else
        call add_react_to_thermal(nlevs,thermal,rho_omegadot2,s1, &
                                  the_bc_tower%bc_tower_array,mla,dx)
-       do n=1,nlevs
-          call multifab_build(rho_omegadot2_hold(n), mla%la(n), nspec, 0)
-          call multifab_copy_c(rho_omegadot2_hold(n),1,rho_omegadot2(n),1,3,0)
-       end do
+
+       if(.not. do_half_alg) then
+          do n=1,nlevs
+             call multifab_build(rho_omegadot2_hold(n), mla%la(n), nspec, 0)
+             call multifab_copy_c(rho_omegadot2_hold(n),1,rho_omegadot2(n),1,3,0)
+          end do
+       end if
     end if
             
+    if(do_half_alg) then
+       do n=1,nlevs
+          call destroy(rho_omegadot1(n))
+       end do
+    end if
+
     do n=1,nlevs
        call multifab_build(s2(n), mla%la(n), nscal, ng_s)
     end do
@@ -380,6 +395,15 @@ contains
     do n=1,nlevs
        call destroy(thermal(n))
     end do
+
+    if(.not. do_half_alg) then
+       do n=1,nlevs
+          do comp=1,dm
+             call destroy(umac(n,comp))
+             call destroy(utrans(n,comp))
+          end do
+       end do
+    end if
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 4a (Option I) -- Add thermal conduction (only enthalpy terms)
@@ -406,6 +430,12 @@ contains
              call multifab_copy_c(s2star(n), 1, s2(n), 1, nscal, ng_s)
           end do
        end if
+    end if
+
+    if(do_half_alg) then
+       do n=1,nlevs
+          call destroy(s1(n))
+       end do
     end if
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -462,13 +492,6 @@ contains
 !! STEP 6 -- define a new average expansion rate at n+1/2
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
        
-       do n=1,nlevs
-          do comp=1,dm
-             call destroy(umac(n,comp))
-             call destroy(utrans(n,comp))
-          end do
-       end do
-
        if (parallel_IOProcessor() .and. verbose .ge. 1) then
           write(6,*) '<<< STEP  6 : make new S and new w0 >>> '
        end if
@@ -715,14 +738,6 @@ contains
        end do
        
        ! end if corresponding to .not. do_half_alg
-    end if
-
-    if(do_half_alg) then
-       do n=1,nlevs
-          call destroy(s1(n))
-          call destroy(rho_omegadot1(n))
-          call destroy(macphi(n))
-       end do
     end if
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
