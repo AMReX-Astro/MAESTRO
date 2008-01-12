@@ -236,8 +236,14 @@ contains
                         s0_old,grav_cell_old,dx,dt,the_bc_tower%bc_tower_array,mla)
 
     do n=1,nlevs
+       do comp=1,dm
+          call destroy(uedge(n,comp))
+       end do
+    end do
+
+    do n=1,nlevs
        call multifab_build(gamma1_term(n), mla%la(n), 1, 0)
-       call multifab_build(macrhs(n), mla%la(n), 1, 0)
+       call multifab_build(macrhs(n),      mla%la(n), 1, 0)
        call setval(gamma1_term(n), ZERO, all=.true.)
     end do
 
@@ -290,7 +296,7 @@ contains
     end if
 
     do n=1,nlevs
-       call multifab_build(s1(n), mla%la(n), nscal, ng_s)
+       call multifab_build(s1(n),            mla%la(n), nscal, ng_s)
        call multifab_build(rho_omegadot1(n), mla%la(n), nspec, 0)
        call multifab_build(rho_Hext(n),      mla%la(n), 1,     0)
     end do
@@ -528,13 +534,21 @@ contains
              umac_nodal_flag(comp) = .true.
              call multifab_build(  umac(n,comp), mla%la(n),  1, 1, nodal = umac_nodal_flag)
              call multifab_build(utrans(n,comp), mla%la(n),  1, 1, nodal = umac_nodal_flag)
+             call multifab_build( uedge(n,comp), mla%la(n), dm, 0, nodal = umac_nodal_flag)
           end do
        end do
-       
+
        call advance_premac(nlevs,uold,sold,umac,uedge,utrans,gpres,normal,w0, &
                            w0_cart_vec,s0_old,grav_cell_old,dx,dt, &
                            the_bc_tower%bc_tower_array,mla)
-       
+
+       do n=1,nlevs
+          do comp=1,dm
+             call destroy(uedge(n,comp))
+          end do
+       end do
+
+
        do n=1,nlevs
           call multifab_build(macrhs(n), mla%la(n), 1, 0)
        end do
@@ -763,11 +777,19 @@ contains
     
     ! Define rho at half time using the new rho from Step 8!
     do n=1,nlevs
-       call multifab_build(rhohalf(n), mla%la(n), 1    , 1)
+       call multifab_build(rhohalf(n), mla%la(n), 1, 1)
     end do
 
     call make_at_halftime(nlevs,rhohalf,sold,snew,rho_comp,1,dx, &
                           the_bc_tower%bc_tower_array,mla)
+    
+    do n=1,nlevs
+       do comp=1,dm
+          umac_nodal_flag = .false.
+          umac_nodal_flag(comp) = .true.
+          call multifab_build( uedge(n,comp), mla%la(n), dm, 0, nodal = umac_nodal_flag)
+       end do
+    end do
     
     call velocity_advance(nlevs,mla,uold,unew,sold,rhohalf,umac,uedge,utrans,gpres, &
                           normal,w0,w0_cart_vec,w0_force,w0_force_cart_vec,s0_old,s0_nph, &
