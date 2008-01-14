@@ -7,7 +7,7 @@ module initial_proj_module
 
 contains
 
-  subroutine initial_proj(nlevs,uold,sold,pres,gpres,normal,Source_old,hgrhs, &
+  subroutine initial_proj(nlevs,uold,sold,pres,gpres,Source_old,hgrhs, &
                           div_coeff_old,s0_old,p0_old,gam1,grav_cell,dx,the_bc_tower,mla)
 
     use variables, only: temp_comp, press_comp
@@ -32,7 +32,6 @@ contains
     type(multifab) , intent(in   ) :: sold(:)
     type(multifab) , intent(inout) :: pres(:)
     type(multifab) , intent(inout) :: gpres(:)
-    type(multifab) , intent(in   ) :: normal(:)
     type(multifab) , intent(inout) :: Source_old(:)
     type(multifab) , intent(inout) :: hgrhs(:)
     real(kind=dp_t), intent(in   ) :: div_coeff_old(:,0:)
