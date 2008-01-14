@@ -68,6 +68,10 @@ contains
        end select
     end do
 
+    do i=1,dm
+       call multifab_fill_boundary(utrans(n,i))
+    enddo
+
     call destroy(bpt)
 
  enddo
