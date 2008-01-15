@@ -1,3 +1,7 @@
+! This routine returns the externally imposed (i.e. not reactions)
+! heating source term to the enthalpy equation (actually rho * H
+! is returned, where H has units of erg/g/s).
+
 module heating_module
 
   use bl_types
