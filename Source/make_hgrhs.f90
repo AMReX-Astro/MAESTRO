@@ -1,3 +1,12 @@
+! Create the righthand side to the elliptic equation that is solved in
+! the final project step, \beta * (S - \bar{S}).  This quantity is 
+! node-centered.  The computation is done is two steps -- first we 
+! compute it on the cell-centers and then we average to the nodes.
+!
+! Note, we include the gamma1_term here, to (possibly) account for
+! the effect of replacing \Gamma_1 by {\Gamma_1}_0 in the constraint
+! equation (see paper III).
+
 module hgrhs_module
 
   use bl_types

@@ -1,6 +1,9 @@
-! the differences between firstdt and estdt are as follows:
-! firstdt does not use the base state velocity w0 since it's supposed to be 0
-! firstdt uses the sound speed time step constraint if the velocity is 0
+! Compute the initial timestep
+!
+! The differences between firstdt and estdt are as follows:
+!   firstdt does not use the base state velocity w0 since it's supposed to be 0
+!   firstdt uses the sound speed time step constraint if the velocity is 0
+!
 ! After the initial projection, we should have a source term that gives
 ! rise to a velocity field, and we can use the normal estdt.
 

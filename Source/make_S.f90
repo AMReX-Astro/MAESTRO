@@ -1,3 +1,5 @@
+! Compute the source term to the divergence constraint, S.
+
 module make_S_module
 
   use bl_types

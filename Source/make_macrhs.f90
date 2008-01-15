@@ -1,3 +1,11 @@
+! Create the righthand side to the elliptic equation that is solved in 
+! the MAC project step, \beta * (S - \bar{S}).  For the MAC projection, 
+! this quantity is cell-centered.
+!
+! Note, we include the gamma1_term here, to (possibly) account for
+! the effect of replacing \Gamma_1 by {\Gamma_1}_0 in the constraint
+! equation (see paper III).
+
 module macrhs_module
 
   use bl_types

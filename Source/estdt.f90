@@ -1,8 +1,15 @@
+! Compute the timestep.  Here we use several different estimations and take
+! the most restrictive one.  They are (see paper III): 
+!    1. the advective constraint
+!    2. the force constraint
+!    3. a div{U} constraint
+!    4. a dS/dt constraint
 !
 ! the differences between firstdt and estdt are as follows:
-! firstdt does not use the base state velocity w0 since it's supposed to be 0
-! firstdt uses the sound speed time step constraint if the velocity is 0
+!   firstdt does not use the base state velocity w0 since it's supposed to be 0
+!   firstdt uses the sound speed time step constraint if the velocity is 0
 !
+
 module estdt_module
   
   use bl_types
