@@ -25,6 +25,7 @@ f90sources += main.f90
 f90sources += make_at_halftime.f90
 f90sources += make_div_coeff.f90
 f90sources += make_edge_state.f90
+f90sources += make_eta.f90
 f90sources += make_explicit_thermal.f90
 f90sources += make_grav.f90
 f90sources += make_heating.f90

@@ -34,6 +34,7 @@ contains
     use network, only: nspec, spec_names
     use probin_module, ONLY: predict_temp_at_edges, use_thermal_diffusion
     use modify_scal_force_module
+    use make_eta_module
     use add_thermal_to_force_module
 
     integer        , intent(in   ) :: nlevs
@@ -325,6 +326,10 @@ contains
     call update_scal(nlevs,which_step,rhoh_comp,rhoh_comp,sold,snew,umac,w0,w0_cart_vec, &
                      eta,sedge,sflux,scal_force,s0_old,s0_edge_old,s0_new,s0_edge_new, &
                      s0_old_cart,s0_new_cart,dx,dt,the_bc_level,mla)
+
+    if(which_step .eq. 1) then
+       call make_eta(nlevs,eta,sold,umac,sflux,dx,mla)
+    end if
 
     if(spherical .eq. 1) then
        do n=1,nlevs
