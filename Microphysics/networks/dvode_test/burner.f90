@@ -1,3 +1,8 @@
+! This module provides the burner for the dvode test problem.  This burner 
+! should not be used in any real MAESTRO run.
+!
+! More information in the README file
+!
 module burner_module
 
   use bl_types

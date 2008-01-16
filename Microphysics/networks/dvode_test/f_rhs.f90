@@ -1,3 +1,7 @@
+! These routines provide the right-hand-side and a dummy jacobian for the 
+! DVODE solver.  More information about how ODE's can be found in the README 
+! file.
+!
 subroutine f_rhs(n, t, y, ydot, rpar, ipar)
 
   use bl_types

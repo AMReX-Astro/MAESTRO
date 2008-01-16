@@ -1,3 +1,15 @@
+! This program gives a test driver for the DVODE test problem.  
+!
+! Changing the value of max(alpha, beta) / min(alpha, beta) changes the 
+! stiffness of the problem.  A very stiff problem, such as reaction networks,
+! really gives DVODE a nice workout.  Adjusting the atol and rtol parameters
+! can give some insight as to what these values should be to give a reasonable
+! result for some given initial conditions.  More information about this 
+! reaction network and the equations involved can be found in ../README.
+!
+! The function xbxa gives the analytic solution to the system given the 
+! initial condition xb(t=0) = 0 and of course the condition sum_i x_i = 1.
+!
 program testburn
 
   use burner_module
