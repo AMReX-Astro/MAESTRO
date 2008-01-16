@@ -34,6 +34,8 @@ contains
     real(kind=dp_t), allocatable :: ncell(:,:)
     real(kind=dp_t), allocatable :: etasum_proc(:,:,:)
     real(kind=dp_t), allocatable :: etasum(:,:,:)
+    real(kind=dp_t), allocatable :: etapert_proc(:,:,:)
+    real(kind=dp_t), allocatable :: etapert(:,:,:)
     real(kind=dp_t), allocatable :: source_buffer(:)
     real(kind=dp_t), allocatable :: target_buffer(:)
 
@@ -49,18 +51,24 @@ contains
 
     dm = sold(1)%dim
 
-    allocate( ncell_proc(nlevs,0:nr(nlevs)))
-    allocate( ncell     (nlevs,0:nr(nlevs)))
+    allocate(ncell_proc(nlevs,0:nr(nlevs)))
+    allocate(ncell     (nlevs,0:nr(nlevs)))
+
     allocate(etasum_proc(nlevs,0:nr(nlevs),nscal))
     allocate(etasum     (nlevs,0:nr(nlevs),nscal))
+
+    allocate(etapert_proc(nlevs,0:nr(nlevs),nscal))
+    allocate(etapert     (nlevs,0:nr(nlevs),nscal))
 
     allocate(source_buffer(0:nr(nlevs)))
     allocate(target_buffer(0:nr(nlevs)))
 
-    ncell_proc  = ZERO
-    ncell       = ZERO
-    etasum_proc = ZERO
-    etasum      = ZERO
+    ncell_proc   = ZERO
+    ncell        = ZERO
+    etasum_proc  = ZERO
+    etasum       = ZERO
+    etapert_proc = ZERO
+    etapert      = ZERO
 
     if (spherical .eq. 0) then
     
@@ -99,22 +107,93 @@ contains
           etasum(1,:,comp) = target_buffer
        end do
 
-       do comp=spec_comp,spec_comp+nspec-1
-          etasum(1,:,rho_comp) = etasum(1,:,rho_comp) + etasum(1,:,comp)
-       end do
-
        do k=0,nr(1)
           eta(1,k,rhoh_comp) = etasum(1,k,rhoh_comp) / dble(ncell(1,k))
           do comp=spec_comp,spec_comp+nspec-1
              eta(1,k,comp) = etasum(1,k,comp) / dble(ncell(1,k))
+             eta(1,k,rho_comp) = eta(1,k,rho_comp) + eta(1,k,comp)
           end do
-          eta(1,k,rho_comp) = etasum(1,k,rho_comp) / dble(ncell(1,k))
        end do
 
        ! now we compute eta at the finer levels
        do n=2,nlevs
           
-       end do
+          rr = mla%mba%rr(n-1,dm)
+          if(rr .ne. 2) then
+             print*,"Error: in make_eta, refinement ratio must be 2"
+             stop
+          end if
+
+          domain = layout_get_pd(sold(n)%la)
+          domlo  = lwb(domain)
+          domhi  = upb(domain)
+
+          if (dm .eq. 2) then
+             ncell(n,:) = domhi(1)-domlo(1)+1
+          else if (dm .eq. 3) then
+             ncell(n,:) = (domhi(1)-domlo(1)+1)*(domhi(2)-domlo(2)+1)
+          end if
+          
+          ! on faces that exist at the next coarser level, eta is the same since
+          ! the fluxes have been restricted.  We copy these values of eta directly and
+          ! copy scaled values of etasum directly.
+          do k=0,nr(n-1)
+             eta(n,k*rr,rhoh_comp) = eta(n-1,k,rhoh_comp)
+             etasum(n,k*rr,rhoh_comp) = etasum(n-1,k,rhoh_comp)*rr**(dm-1)
+             do comp=spec_comp,spec_comp+nspec-1
+                eta(n,k*rr,comp) = eta(n-1,k,comp)
+                etasum(n,k*rr,comp) = etasum(n-1,k,comp)*rr**(dm-1)
+             end do
+          end do
+
+          ! on faces that do not exist at the next coarser level, we use linear
+          ! interpolation to get etasum at these faces.
+          do k=1,nr(n)-1,2
+             etasum(n,k,rhoh_comp) = HALF*(etasum(n,k-1,rhoh_comp)+etasum(n,k+1,rhoh_comp))
+             do comp=spec_comp,spec_comp+nspec-1
+                etasum(n,k,comp) = HALF*(etasum(n,k-1,comp)+etasum(n,k+1,comp))
+             end do
+          end do
+
+          ! compute etapert_proc on faces that do not exist at the coarser level
+          do i=1,sold(n)%nboxes
+             if ( multifab_remote(sold(n), i) ) cycle
+             fluxrp => dataptr(sflux(n,dm), i)
+             lo =  lwb(get_box(sold(n), i))
+             hi =  upb(get_box(sold(n), i))
+             select case (dm)
+             case (2)
+                call compute_etapert_2d(lo,hi,domhi,fluxrp(:,:,1,:),etasum_proc(1,:,:))
+             case (3)
+                call compute_etapert_3d(lo,hi,domhi,fluxrp(:,:,:,:),etasum_proc(1,:,:))
+             end select
+          end do
+
+          ! gather etapert for rhoh
+          source_buffer = etapert_proc(n,:,rhoh_comp)
+          call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
+          etapert(n,:,rhoh_comp) = target_buffer
+
+          ! gather etapert for rhoX
+          do comp=spec_comp,spec_comp+nspec-1
+             source_buffer = etapert_proc(n,:,comp)
+             call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
+             etapert(n,:,comp) = target_buffer
+          end do
+
+          ! update etasum on faces that do not exist at the coarser level
+          ! then recompute eta on these faces
+          do k=1,nr(n)-1,2
+             etasum(n,k,rhoh_comp) = etasum(n,k,rhoh_comp) + etapert(n,k,rhoh_comp)
+             eta(n,k,rhoh_comp) = etasum(n,k,rhoh_comp) / dble(ncell(n,k))
+             do comp=spec_comp,spec_comp+nspec-1
+                etasum(n,k,comp) = etasum(n,k,comp) + etapert(n,k,comp)
+                eta(n,k,comp) = etasum(n,k,comp) / dble(ncell(n,k))
+                eta(n,k,rho_comp) = eta(n,k,rho_comp) + eta(n,k,comp)
+             end do
+          end do
+
+       end do ! end loop over levels
 
     else
 
@@ -122,8 +201,10 @@ contains
 
     end if
 
-
     deallocate(ncell_proc,ncell)
+    deallocate(etasum_proc,etasum)
+    deallocate(etapert_proc,etapert)
+    deallocate(source_buffer,target_buffer)
 
     call destroy(bpt)
 
@@ -202,5 +283,27 @@ contains
     end if
 
   end subroutine sum_eta_coarsest_3d
+
+  subroutine compute_etapert_2d(lo,hi,domhi,fluxy,etapert)
+
+    integer         , intent(in   ) :: lo(:), hi(:), domhi(:)
+    real (kind=dp_t), intent(in   ) :: fluxy(lo(1):,lo(2):,:)
+    real (kind=dp_t), intent(inout) :: etapert(0:,:)
+    
+
+
+
+  end subroutine compute_etapert_2d
+
+  subroutine compute_etapert_3d(lo,hi,domhi,fluxz,etapert)
+
+    integer         , intent(in   ) :: lo(:), hi(:), domhi(:)
+    real (kind=dp_t), intent(in   ) :: fluxz(lo(1):,lo(2):,lo(3):,:)
+    real (kind=dp_t), intent(inout) :: etapert(0:,:)
+    
+
+
+
+  end subroutine compute_etapert_3d
 
 end module make_eta_module
