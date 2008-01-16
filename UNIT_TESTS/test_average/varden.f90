@@ -245,8 +245,7 @@ subroutine varden()
 
   ! Initialize base state at finest level
   do n=1,nlevs
-     call init_base_state(n,model_file,s0_old(n,:,:),p0_old(n,:),gam1(n,:), &
-                          dx(n,:),prob_lo,prob_hi)
+     call init_base_state(n,model_file,s0_old(n,:,:),p0_old(n,:),gam1(n,:), dx(n,:))
   enddo
 
   ! Create the normal array once we have defined "center"
@@ -263,11 +262,9 @@ subroutine varden()
   end if
 
 
-  call initveldata(nlevs,uold,s0_old,p0_old,dx, &
-                   prob_lo,prob_hi,the_bc_tower%bc_tower_array,mla)
+  call initveldata(nlevs,uold,s0_old,p0_old,dx,the_bc_tower%bc_tower_array,mla)
   
-  call initscalardata(nlevs,sold,s0_old,p0_old,dx,perturb_model, &
-                      prob_lo,prob_hi,the_bc_tower%bc_tower_array,mla)
+  call initscalardata(nlevs,sold,s0_old,p0_old,dx,the_bc_tower%bc_tower_array,mla)
 
   do n = 1,nlevs
 
