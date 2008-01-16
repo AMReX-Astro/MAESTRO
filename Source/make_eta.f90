@@ -28,7 +28,7 @@ contains
     type(ml_layout)   , intent(inout) :: mla
 
     ! local
-    real(kind=dp_t), pointer :: fp(:,:,:,:)
+    real(kind=dp_t), pointer :: fluxrp(:,:,:,:)
     
     real(kind=dp_t), allocatable :: ncell_proc(:,:)
     real(kind=dp_t), allocatable :: ncell(:,:)
@@ -152,7 +152,7 @@ contains
 
   end subroutine sum_eta_coarsest_2d
 
-  subroutine sum_eta_coarsest_3d(lo,hi,fluxy,etasum)
+  subroutine sum_eta_coarsest_3d(lo,hi,fluxz,etasum)
 
     use variables, only: nscal, rho_comp, rhoh_comp, spec_comp
     use network, only: nspec
