@@ -139,7 +139,7 @@ contains
              end if
 
              ! compute phisum at next finer level
-             ! begin by assuming piecewise linear interpolation
+             ! begin by assuming piecewise constant interpolation
              do comp=1,ncomp
                 do k=0,nr(n)-1
                    phisum(n,k,comp) = phisum(n-1,k/rr,comp)*rr**(dm-1)
