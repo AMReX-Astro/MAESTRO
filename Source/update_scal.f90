@@ -206,8 +206,8 @@ contains
     if (evolve_base_state) then
        if (which_step .eq. 1) then
           do comp = nstart, nstop
-             eta(:,comp) = ZERO
              do j = lo(2), hi(2)+1
+                eta(j,comp) = ZERO
                 do i = lo(1), hi(1)
                    eta(j,comp) = eta(j,comp) + vmac(i,j)*sedgey(i,j,comp)
                 end do
@@ -232,7 +232,8 @@ contains
 
              if (evolve_base_state) then
                 if (which_step .eq. 2) then
-                   snew(i,j,comp) = snew(i,j,comp) + dt / dx(2) * (eta(j+1,comp)-eta(j,comp))
+                   snew(i,j,comp) = snew(i,j,comp) &
+                        + dt / dx(2) * (eta(j+1,comp)-eta(j,comp))
                 end if
              end if
 
@@ -260,9 +261,9 @@ contains
        enddo
 
        if (which_step .eq. 1) then
-          eta(:,rho_comp) = ZERO
-          do comp = nstart, nstop
-             do j = lo(2), hi(2)+1
+          do j=lo(2),hi(2)+1
+             eta(j,rho_comp) = ZERO
+             do comp = nstart, nstop
                 eta(j,rho_comp) = eta(j,rho_comp) + eta(j,comp)
              end do
           end do
@@ -339,8 +340,8 @@ contains
     if (evolve_base_state) then
        if (which_step .eq. 1) then
           do comp = nstart, nstop
-             eta(:,comp) = ZERO
              do k = lo(3), hi(3)+1
+                eta(k,comp) = ZERO
                 do j = lo(2), hi(2)
                    do i = lo(1), hi(1)
                       eta(k,comp) = eta(k,comp) + wmac(i,j,k)*sedgez(i,j,k,comp)
@@ -401,6 +402,16 @@ contains
              enddo
           enddo
        enddo
+
+       if (which_step .eq. 1) then
+          do k=lo(3),hi(3)+1
+             eta(k,rho_comp) = ZERO
+             do comp = nstart, nstop
+                eta(k,rho_comp) = eta(k,rho_comp) + eta(k,comp)
+             end do
+          end do
+       end if
+
     end if
 
     ! Do not allow the species to leave here negative.
