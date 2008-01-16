@@ -1,3 +1,8 @@
+! given a multifab of data (phi), average down to a base state quantity,
+! phibar.  If we are in plane-parallel, the averaging is at constant
+! height.  If we are spherical, then the averaging is done at constant
+! radius.  
+
 module average_module
 
   use bl_types
