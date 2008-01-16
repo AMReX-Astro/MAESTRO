@@ -32,7 +32,8 @@ contains
     use variables, only: nscal, ntrac, spec_comp, trac_comp, temp_comp, rho_comp, rhoh_comp
     use geometry, only: spherical, nr
     use network, only: nspec, spec_names
-    use probin_module, ONLY: predict_temp_at_edges, use_thermal_diffusion, verbose
+    use probin_module, ONLY: predict_temp_at_edges, use_thermal_diffusion, verbose, &
+         evolve_base_state
     use modify_scal_force_module
     use make_eta_module
     use add_thermal_to_force_module
@@ -326,7 +327,7 @@ contains
                      eta,sedge,sflux,scal_force,s0_old,s0_edge_old,s0_new,s0_edge_new, &
                      s0_old_cart,s0_new_cart,dx,dt,the_bc_level,mla)
 
-    if(which_step .eq. 1) then
+    if(evolve_base_state .and. which_step .eq. 1) then
        call make_eta(nlevs,eta,sold,umac,sflux,dx,mla)
     end if
 
