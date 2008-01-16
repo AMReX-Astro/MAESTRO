@@ -120,7 +120,7 @@ contains
         do k = lo(3),hi(3)
         do j = lo(2),hi(2)
         do i = lo(1),hi(1)
-          rhs(i,j,k) = div_cart(i,j,k) * (Source(i,j,k) - Sbar_cart(i,j,k))
+          rhs(i,j,k) = div_cart(i,j,k) * (Source(i,j,k) - Sbar_cart(i,j,k) + gamma1_term(i,j,k))
         end do
         end do
         end do
@@ -132,7 +132,7 @@ contains
         do k = lo(3),hi(3)
         do j = lo(2),hi(2)
         do i = lo(1),hi(1)
-          rhs(i,j,k) = div_coeff(k) * (Source(i,j,k) - Sbar(k))
+          rhs(i,j,k) = div_coeff(k) * (Source(i,j,k) - Sbar(k) + gamma1_term(i,j,k))
         end do
         end do
         end do

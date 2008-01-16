@@ -81,21 +81,21 @@ contains
           if ( multifab_remote(Source(n), i) ) cycle
           rp => dataptr(rhs_cc(n), i)
           sp => dataptr(Source(n), i)
+          gp => dataptr(gamma1_term(n), i)
           lo =  lwb(get_box(Source(n), i))
           hi =  upb(get_box(Source(n), i))
           select case (dm)
           case (2)
-             gp => dataptr(gamma1_term(n), i)
              call make_rhscc_2d(lo,hi,rp(:,:,1,1),sp(:,:,1,1),gp(:,:,1,1),Sbar(n,:), &
                                 div_coeff(n,:),dx(n,:))
           case (3)
              if (spherical .eq. 1) then
                 dp => dataptr(div_coeff_cart(n), i)
                 sbp => dataptr(Sbar_cart(n), i)
-                call make_rhscc_3d_sphr(lo,hi,rp(:,:,:,1),sp(:,:,:,1),sbp(:,:,:,1), &
+                call make_rhscc_3d_sphr(lo,hi,rp(:,:,:,1),sp(:,:,:,1),gp(:,:,:,1),sbp(:,:,:,1), &
                                         dp(:,:,:,1))
              else
-                call make_rhscc_3d_cart(lo,hi,rp(:,:,:,1),sp(:,:,:,1),Sbar(n,:), &
+                call make_rhscc_3d_cart(lo,hi,rp(:,:,:,1),sp(:,:,:,1),gp(:,:,:,1),Sbar(n,:), &
                                         div_coeff(n,:),dx(n,:))
              end if
           end select
@@ -172,11 +172,12 @@ contains
     
   end subroutine make_hgrhs_2d
   
-  subroutine make_rhscc_3d_cart(lo,hi,rhs_cc,Source,Sbar,div_coeff,dx)
+  subroutine make_rhscc_3d_cart(lo,hi,rhs_cc,Source,gamma1_term,Sbar,div_coeff,dx)
 
     integer         , intent(in   ) :: lo(:), hi(:)
     real (kind=dp_t), intent(  out) :: rhs_cc(lo(1)-1:,lo(2)-1:,lo(3)-1:)  
     real (kind=dp_t), intent(in   ) :: Source(lo(1):,lo(2):,lo(3):)  
+    real (kind=dp_t), intent(in   ) :: gamma1_term(lo(1):,lo(2):,lo(3):)  
     real (kind=dp_t), intent(in   ) :: Sbar(0:)
     real (kind=dp_t), intent(in   ) :: div_coeff(0:)
     real (kind=dp_t), intent(in   ) :: dx(:)
@@ -187,18 +188,19 @@ contains
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
-             rhs_cc(i,j,k) = div_coeff(k) * (Source(i,j,k) - Sbar(k))
+             rhs_cc(i,j,k) = div_coeff(k) * (Source(i,j,k) - Sbar(k) + gamma1_term(i,j,k))
           end do
        end do
     end do
     
   end subroutine make_rhscc_3d_cart
    
-  subroutine make_rhscc_3d_sphr(lo,hi,rhs_cc,Source,Sbar_cart,div_coeff_cart)
+  subroutine make_rhscc_3d_sphr(lo,hi,rhs_cc,Source,gamma1_term,Sbar_cart,div_coeff_cart)
 
     integer         , intent(in   ) :: lo(:), hi(:)
     real (kind=dp_t), intent(  out) ::         rhs_cc(lo(1)-1:,lo(2)-1:,lo(3)-1:)  
     real (kind=dp_t), intent(in   ) ::         Source(lo(1)  :,lo(2)  :,lo(3)  :)  
+    real (kind=dp_t), intent(in   ) ::    gamma1_term(lo(1)  :,lo(2)  :,lo(3)  :)  
     real (kind=dp_t), intent(in   ) ::      Sbar_cart(lo(1)  :,lo(2)  :,lo(3)  :)  
     real (kind=dp_t), intent(in   ) :: div_coeff_cart(lo(1)  :,lo(2)  :,lo(3)  :)  
     
@@ -208,7 +210,7 @@ contains
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
-             rhs_cc(i,j,k) = div_coeff_cart(i,j,k) * (Source(i,j,k) - Sbar_cart(i,j,k))
+             rhs_cc(i,j,k) = div_coeff_cart(i,j,k) * (Source(i,j,k) - Sbar_cart(i,j,k) + gamma1_term(i,j,k))
              
           end do
        end do
