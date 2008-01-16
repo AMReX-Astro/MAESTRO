@@ -32,7 +32,7 @@ contains
     use variables, only: nscal, ntrac, spec_comp, trac_comp, temp_comp, rho_comp, rhoh_comp
     use geometry, only: spherical, nr
     use network, only: nspec, spec_names
-    use probin_module, ONLY: predict_temp_at_edges, use_thermal_diffusion, evolve_base_state
+    use probin_module, ONLY: predict_temp_at_edges, use_thermal_diffusion
     use modify_scal_force_module
     use add_thermal_to_force_module
 
@@ -270,8 +270,7 @@ contains
 
     call update_scal(nlevs,which_step,spec_comp,spec_comp+nspec-1,sold,snew,umac,w0, &
                      w0_cart_vec,eta,sedge,sflux,scal_force,s0_old,s0_edge_old,s0_new, &
-                     s0_edge_new,s0_old_cart,s0_new_cart,dx,dt,evolve_base_state, &
-                     the_bc_level,mla)
+                     s0_edge_new,s0_old_cart,s0_new_cart,dx,dt,the_bc_level,mla)
     
     if (verbose .ge. 1) then
        do n=1, nlevs
@@ -301,8 +300,7 @@ contains
     if (ntrac .ge. 1) then
        call update_scal(nlevs,which_step,trac_comp,trac_comp+ntrac-1,sold,snew,umac,w0, &
                         w0_cart_vec,eta,sedge,sflux,scal_force,s0_old,s0_edge_old,s0_new, &
-                        s0_edge_new,s0_old_cart,s0_new_cart,dx,dt,evolve_base_state, &
-                        the_bc_level,mla)
+                        s0_edge_new,s0_old_cart,s0_new_cart,dx,dt,the_bc_level,mla)
 
        if (verbose .eq. 1) then
           do n=1,nlevs
@@ -326,7 +324,7 @@ contains
 
     call update_scal(nlevs,which_step,rhoh_comp,rhoh_comp,sold,snew,umac,w0,w0_cart_vec, &
                      eta,sedge,sflux,scal_force,s0_old,s0_edge_old,s0_new,s0_edge_new, &
-                     s0_old_cart,s0_new_cart,dx,dt,evolve_base_state,the_bc_level,mla)
+                     s0_old_cart,s0_new_cart,dx,dt,the_bc_level,mla)
 
     if(spherical .eq. 1) then
        do n=1,nlevs
