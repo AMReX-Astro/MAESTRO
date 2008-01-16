@@ -31,8 +31,8 @@ contains
      type(multifab) , intent(inout) :: macrhs(:)
      type(multifab) , intent(in   ) :: Source(:)
      type(multifab) , intent(in   ) :: gamma1_term(:)
-     real(kind=dp_t), intent(in   ) :: Sbar(:,:)
-     real(kind=dp_t), intent(in   ) :: div_coeff(:,:)
+     real(kind=dp_t), intent(in   ) :: Sbar(:,0:)
+     real(kind=dp_t), intent(in   ) :: div_coeff(:,0:)
      real(kind=dp_t), intent(in   ) :: dx(:,:)
      
      real(kind=dp_t), pointer:: mp(:,:,:,:),sp(:,:,:,:),gp(:,:,:,:)
@@ -77,8 +77,8 @@ contains
       real (kind=dp_t), intent(  out) :: rhs(lo(1):,lo(2):)  
       real (kind=dp_t), intent(in   ) :: Source(lo(1):,lo(2):)  
       real (kind=dp_t), intent(in   ) :: gamma1_term(lo(1):,lo(2):)  
-      real (kind=dp_t), intent(in   ) :: Sbar(lo(2):)  
-      real (kind=dp_t), intent(in   ) :: div_coeff(lo(2):)  
+      real (kind=dp_t), intent(in   ) :: Sbar(0:)  
+      real (kind=dp_t), intent(in   ) :: div_coeff(0:)  
       real (kind=dp_t), intent(in   ) :: dx(:)
 
 !     Local variables
@@ -101,8 +101,8 @@ contains
       real (kind=dp_t), intent(  out) :: rhs(lo(1):,lo(2):,lo(3):)  
       real (kind=dp_t), intent(in   ) :: Source(lo(1):,lo(2):,lo(3):)  
       real (kind=dp_t), intent(in   ) :: gamma1_term(lo(1):,lo(2):,lo(3):)  
-      real (kind=dp_t), intent(in   ) :: Sbar(lo(3):)  
-      real (kind=dp_t), intent(in   ) :: div_coeff(lo(3):)  
+      real (kind=dp_t), intent(in   ) :: Sbar(0:)  
+      real (kind=dp_t), intent(in   ) :: div_coeff(0:)  
       real (kind=dp_t), intent(in   ) :: dx(:)
 
 !     Local variables
