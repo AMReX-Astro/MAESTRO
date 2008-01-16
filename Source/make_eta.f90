@@ -83,9 +83,9 @@ contains
           hi =  upb(get_box(sold(1), i))
           select case (dm)
           case (2)
-            call sum_eta_coarsest_2d(lo,hi,fluxrp(:,:,1,:),etasum_proc(1,:,:))
+            call sum_eta_coarsest_2d(lo,hi,domhi,fluxrp(:,:,1,:),etasum_proc(1,:,:))
           case (3)
-            call sum_eta_coarsest_3d(lo,hi,fluxrp(:,:,:,:),etasum_proc(1,:,:))
+            call sum_eta_coarsest_3d(lo,hi,domhi,fluxrp(:,:,:,:),etasum_proc(1,:,:))
           end select
        end do
 
@@ -129,19 +129,19 @@ contains
 
   end subroutine make_eta
 
-  subroutine sum_eta_coarsest_2d(lo,hi,fluxy,etasum)
+  subroutine sum_eta_coarsest_2d(lo,hi,domhi,fluxy,etasum)
 
     use variables, only: nscal, rho_comp, rhoh_comp, spec_comp
     use network, only: nspec
 
-    integer         , intent(in   ) :: lo(:), hi(:)
+    integer         , intent(in   ) :: lo(:), hi(:), domhi(:)
     real (kind=dp_t), intent(in   ) :: fluxy(lo(1):,lo(2):,:)
     real (kind=dp_t), intent(inout) :: etasum(0:,:)
 
     ! local
     integer :: i,j,comp
 
-    do j=lo(2),hi(2)+1
+    do j=lo(2),hi(2)
        do i=lo(1),hi(1)
           etasum(j,rhoh_comp) = etasum(j,rhoh_comp) + fluxy(i,j,rhoh_comp)
           do comp=spec_comp,spec_comp+nspec-1
@@ -150,21 +150,33 @@ contains
        end do
     end do
 
+    ! we only add the contribution at the top edge if we are at the top of the domain
+    ! this prevents double counting
+    if(hi(2) .eq. domhi(2)) then
+       j=hi(2)+1
+       do i=lo(1),hi(1)
+          etasum(j,rhoh_comp) = etasum(j,rhoh_comp) + fluxy(i,j,rhoh_comp)
+          do comp=spec_comp,spec_comp+nspec-1
+             etasum(j,comp) = etasum(j,comp) + fluxy(i,j,comp)
+          end do
+       end do
+    end if
+
   end subroutine sum_eta_coarsest_2d
 
-  subroutine sum_eta_coarsest_3d(lo,hi,fluxz,etasum)
+  subroutine sum_eta_coarsest_3d(lo,hi,domhi,fluxz,etasum)
 
     use variables, only: nscal, rho_comp, rhoh_comp, spec_comp
     use network, only: nspec
 
-    integer         , intent(in   ) :: lo(:), hi(:)
+    integer         , intent(in   ) :: lo(:), hi(:), domhi(:)
     real (kind=dp_t), intent(in   ) :: fluxz(lo(1):,lo(2):,lo(3):,:)
     real (kind=dp_t), intent(inout) :: etasum(0:,:)
 
     ! local
     integer :: i,j,k,comp
 
-    do k=lo(3),hi(3)+1
+    do k=lo(3),hi(3)
        do j=lo(2),hi(2)
           do i=lo(1),hi(1)
              etasum(k,rhoh_comp) = etasum(k,rhoh_comp) + fluxz(i,j,k,rhoh_comp)
@@ -174,6 +186,20 @@ contains
           end do
        end do
     end do
+
+    ! we only add the contribution at the top edge if we are at the top of the domain
+    ! this prevents double counting
+    if(hi(3) .eq. domhi(3)) then
+       k=hi(3)+1
+       do j=lo(2),hi(2)
+          do i=lo(1),hi(1)
+             etasum(k,rhoh_comp) = etasum(k,rhoh_comp) + fluxz(i,j,k,rhoh_comp)
+             do comp=spec_comp,spec_comp+nspec-1
+                etasum(k,comp) = etasum(k,comp) + fluxz(i,j,k,comp)
+             end do
+          end do
+       end do
+    end if
 
   end subroutine sum_eta_coarsest_3d
 
