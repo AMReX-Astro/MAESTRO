@@ -260,11 +260,11 @@ contains
     
   end subroutine average
   
-  subroutine sum_phi_coarsest_2d(phi,phibar,lo,hi,ng,startcomp,ncomp)
+  subroutine sum_phi_coarsest_2d(phi,phisum,lo,hi,ng,startcomp,ncomp)
 
     integer         , intent(in   ) :: lo(:), hi(:), ng, startcomp, ncomp
     real (kind=dp_t), intent(in   ) :: phi(lo(1)-ng:,lo(2)-ng:,:)
-    real (kind=dp_t), intent(inout) :: phibar(0:,:)
+    real (kind=dp_t), intent(inout) :: phisum(0:,:)
     
     ! Local variables
     integer          :: i, j, comp
@@ -272,18 +272,18 @@ contains
     do comp=startcomp,startcomp+ncomp-1
        do j=lo(2),hi(2)
           do i=lo(1),hi(1)
-             phibar(j,comp) = phibar(j,comp) + phi(i,j,comp)
+             phisum(j,comp) = phisum(j,comp) + phi(i,j,comp)
           end do
        end do
     end do
     
   end subroutine sum_phi_coarsest_2d
   
-  subroutine sum_phi_coarsest_3d(phi,phibar,lo,hi,ng,startcomp,ncomp)
+  subroutine sum_phi_coarsest_3d(phi,phisum,lo,hi,ng,startcomp,ncomp)
 
     integer         , intent(in   ) :: lo(:), hi(:), ng, startcomp, ncomp
     real (kind=dp_t), intent(in   ) :: phi(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-    real (kind=dp_t), intent(inout) :: phibar(0:,:)
+    real (kind=dp_t), intent(inout) :: phisum(0:,:)
     
     ! Local variables
     integer          :: i, j, k, comp
@@ -292,7 +292,7 @@ contains
        do k=lo(3),hi(3)
           do j=lo(2),hi(2)
              do i=lo(1),hi(1)
-                phibar(k,comp) = phibar(k,comp) + phi(i,j,k,comp)
+                phisum(k,comp) = phisum(k,comp) + phi(i,j,k,comp)
              end do
           end do
        end do
@@ -392,7 +392,7 @@ contains
 
   end subroutine compute_phipert_3d
 
-  subroutine average_3d_sphr(n,nlevs,phi,phibar,avfab,lo,hi,ng,dx,ncell,s_comp,n_comp, &
+  subroutine average_3d_sphr(n,nlevs,phi,phisum,avfab,lo,hi,ng,dx,ncell,s_comp,n_comp, &
                              mla,mask)
 
     use geometry, only: spherical, dr, center, nr, base_cc_loc
@@ -403,7 +403,7 @@ contains
     integer         , intent(in   ) :: lo(:), hi(:), ng, s_comp, n_comp
     real (kind=dp_t), intent(in   ) :: phi(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     type(avefab)    , intent(in   ) :: avfab
-    real (kind=dp_t), intent(inout) :: phibar(0:,:)
+    real (kind=dp_t), intent(inout) :: phisum(0:,:)
     real (kind=dp_t), intent(in   ) :: dx(:)
     real (kind=dp_t), intent(inout) :: ncell(0:)
     type(ml_layout) , intent(in   ) :: mla
@@ -435,7 +435,7 @@ contains
                    idx = avfab%p(i,j,k)%v(l,1)
                    cnt = avfab%p(i,j,k)%v(l,2)
                    do comp=s_comp,s_comp+n_comp-1
-                      phibar(idx,comp) = phibar(idx,comp) + cnt*cell_weight*phi(i,j,k,comp)
+                      phisum(idx,comp) = phisum(idx,comp) + cnt*cell_weight*phi(i,j,k,comp)
                    end do
                    ncell(idx) = ncell(idx) + cnt*cell_weight
                 end do
