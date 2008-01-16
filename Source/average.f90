@@ -7,42 +7,21 @@ module average_module
   implicit none
 
   private
-  public :: enable_base_evolution, disable_base_evolution, average
-
-  !
-  ! if we set phibar to 0, then the evolution of the base state is effectively 
-  ! turned off.  Here we set a parameter that allows us to do that.  We will 
-  ! use the routines enable_base_evolution() and disable_base_evolution() to 
-  ! control this.  By default, we have base state evolution enabled.
-  !
-  logical, private, save :: evolve_base = .true.
+  public :: average
   
 contains
   
-  subroutine enable_base_evolution()
-    
-    evolve_base = .true.
-    
-  end subroutine enable_base_evolution
-  
-  
-  subroutine disable_base_evolution()
-    
-    evolve_base = .false.
-    
-  end subroutine disable_base_evolution
-  
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
   subroutine average(mla,phi,phibar,dx,comp,ncomp)
 
     use geometry, only: nr, spherical, center, dr
     use bl_prof_module
     use bl_constants_module
+    use probin_module, only: evolve_base_state
 
     type(ml_layout), intent(in   ) :: mla
     integer        , intent(in   ) :: comp,ncomp
-    type(multifab) , intent(inout) :: phi(:)         ! Need the out so layout_aveassoc() can modify the layout.
+    type(multifab) , intent(inout) :: phi(:)   ! Need the out so layout_aveassoc() can 
+                                               ! modify the layout.
     real(kind=dp_t), intent(inout) :: phibar(:,0:,:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     
@@ -75,7 +54,7 @@ contains
     
     phibar = ZERO    
 
-    if (evolve_base) then
+    if (evolve_base_state) then
        
        if (spherical .eq. 1) allocate(ncell_grid(nlevs,0:nr(nlevs)-1))
        
