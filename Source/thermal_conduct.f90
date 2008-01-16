@@ -22,7 +22,7 @@ contains
 ! enthalpy-diffusion terms in the temperature conduction term.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,t02, &
-                                    mg_verbose,cg_verbose,the_bc_tower)
+                                    the_bc_tower)
 
   use variables, only: foextrap_comp, rho_comp, spec_comp, rhoh_comp
   use macproject_module
@@ -40,7 +40,6 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
   type(multifab) , intent(in   ) :: s_for_new_coeff(:)
   type(multifab) , intent(inout) :: s2(:)
   real(kind=dp_t), intent(in   ) :: p01(:,0:),p02(:,0:),t01(:,0:),t02(:,0:)
-  integer        , intent(in   ) :: mg_verbose,cg_verbose
   type(bc_tower) , intent(in   ) :: the_bc_tower
 
 ! Local
@@ -206,8 +205,7 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
 
   ! apply the operator
   call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
-                   dm+rhoh_comp,stencil_order,mla%mba%rr, &
-                   mg_verbose,cg_verbose)
+                   dm+rhoh_comp,stencil_order,mla%mba%rr)
 
   ! begin construction of rhs by setting rhs = \rho^{(2)}h^{(2')}
   do n=1,nlevs
@@ -255,8 +253,7 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
 
      ! apply the operator
      call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
-                      dm+spec_comp+comp-1,stencil_order,mla%mba%rr, &
-                      mg_verbose,cg_verbose)
+                      dm+spec_comp+comp-1,stencil_order,mla%mba%rr)
      
      ! add lphi to rhs
      do n=1,nlevs
@@ -291,8 +288,7 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
 
      ! apply the operator
      call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
-                      dm+spec_comp+comp-1,stencil_order,mla%mba%rr, &
-                      mg_verbose,cg_verbose)
+                      dm+spec_comp+comp-1,stencil_order,mla%mba%rr)
      
      ! add lphi to rhs
      do n=1,nlevs
@@ -370,8 +366,7 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
   
   ! apply the operator
   call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
-       foextrap_comp,stencil_order,mla%mba%rr, &
-       mg_verbose,cg_verbose)
+       foextrap_comp,stencil_order,mla%mba%rr)
   
   ! add lphi to rhs
   do n=1,nlevs
@@ -439,8 +434,7 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
   
   ! apply the operator
   call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
-       foextrap_comp,stencil_order,mla%mba%rr, &
-       mg_verbose,cg_verbose)
+       foextrap_comp,stencil_order,mla%mba%rr)
 
   do n=1,nlevs
      call destroy(rhsalpha(n))
@@ -513,8 +507,7 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
   ! Call the solver to obtain h^(2) (it will be stored in phi)
   ! solves (alpha - nabla dot beta nabla)phi = rh
   call mac_multigrid(mla,rhs,phi,fine_flx,lhsalpha,lhsbeta,dx,the_bc_tower, &
-                     dm+rhoh_comp,stencil_order,mla%mba%rr, &
-                     mg_verbose,cg_verbose)
+                     dm+rhoh_comp,stencil_order,mla%mba%rr)
 
   do n=1,nlevs
      call destroy(lhsalpha(n))
@@ -563,8 +556,7 @@ end subroutine thermal_conduct_full_alg
 ! Crank-Nicholson solve for enthalpy, taking into account only the
 ! enthalpy-diffusion terms in the temperature conduction term.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
-                                    mg_verbose,cg_verbose,the_bc_tower)
+subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02,the_bc_tower)
 
   use variables, only: foextrap_comp, rho_comp, spec_comp, rhoh_comp, temp_comp
   use macproject_module
@@ -581,7 +573,6 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
   type(multifab) , intent(in   ) :: s1(:)
   type(multifab) , intent(inout) :: s2(:)
   real(kind=dp_t), intent(in   ) :: p01(:,0:),p02(:,0:),t01(:,0:),t02(:,0:)
-  integer        , intent(in   ) :: mg_verbose,cg_verbose
   type(bc_tower) , intent(in   ) :: the_bc_tower
 
 ! Local
@@ -706,8 +697,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
 
   ! apply the operator
   call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
-                   dm+rhoh_comp,stencil_order,mla%mba%rr, &
-                   mg_verbose,cg_verbose)
+                   dm+rhoh_comp,stencil_order,mla%mba%rr)
 
   ! begin construction of rhs by setting rhs = \rho^{(2)}h^{(2')}
   do n=1,nlevs
@@ -762,8 +752,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
 
      ! apply the operator
      call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
-                      dm+spec_comp+comp-1,stencil_order,mla%mba%rr, &
-                      mg_verbose,cg_verbose)
+                      dm+spec_comp+comp-1,stencil_order,mla%mba%rr)
      
      ! add lphi to rhs
      do n=1,nlevs
@@ -854,8 +843,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
   
   ! apply the operator
   call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
-                   foextrap_comp,stencil_order,mla%mba%rr, &
-                   mg_verbose,cg_verbose)  
+                   foextrap_comp,stencil_order,mla%mba%rr)
 
   ! add lphi to rhs
   do n=1,nlevs
@@ -915,8 +903,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
   ! Call the solver to obtain h^(2'') (it will be stored in phi)
   ! solves (alpha - nabla dot beta nabla)phi = rh
   call mac_multigrid(mla,rhs,phi,fine_flx,lhsalpha,lhsbeta,dx,the_bc_tower, &
-                     dm+rhoh_comp,stencil_order,mla%mba%rr, &
-                     mg_verbose,cg_verbose)
+                     dm+rhoh_comp,stencil_order,mla%mba%rr)
 
   ! need to set rhs for second implicit solve to 
   ! rho^{(2)}h^{(2')} before I overwrite s2 with rhoh^{2'}
@@ -986,8 +973,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
 
   ! apply the operator
   call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
-                   dm+rhoh_comp,stencil_order,mla%mba%rr, &
-                   mg_verbose,cg_verbose)
+                   dm+rhoh_comp,stencil_order,mla%mba%rr)
 
   ! add Lphi to rhs
   do n=1,nlevs
@@ -1065,8 +1051,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
 
      ! apply the operator
      call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
-                      dm+spec_comp+comp-1,stencil_order,mla%mba%rr, &
-                      mg_verbose,cg_verbose)
+                      dm+spec_comp+comp-1,stencil_order,mla%mba%rr)
      
      ! add lphi to rhs
      do n=1,nlevs
@@ -1101,8 +1086,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
 
      ! apply the operator
      call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
-                      dm+spec_comp+comp-1,stencil_order,mla%mba%rr, &
-                      mg_verbose,cg_verbose)
+                      dm+spec_comp+comp-1,stencil_order,mla%mba%rr)
      
      ! add lphi to rhs
      do n=1,nlevs
@@ -1154,8 +1138,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
   
   ! apply the operator
   call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
-                   foextrap_comp,stencil_order,mla%mba%rr, &
-                   mg_verbose,cg_verbose)
+                   foextrap_comp,stencil_order,mla%mba%rr)
   
   ! add lphi to rhs
   do n=1,nlevs
@@ -1197,8 +1180,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
   
   ! apply the operator
   call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
-                   foextrap_comp,stencil_order,mla%mba%rr, &
-                   mg_verbose,cg_verbose)
+                   foextrap_comp,stencil_order,mla%mba%rr)
 
   do n=1,nlevs
      call destroy(rhsalpha(n))
@@ -1261,8 +1243,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02, &
   ! Call the solver to obtain h^(2) (it will be stored in phi)
   ! solves (alpha - nabla dot beta nabla)phi = rh
   call mac_multigrid(mla,rhs,phi,fine_flx,lhsalpha,lhsbeta,dx,the_bc_tower, &
-                     dm+rhoh_comp,stencil_order,mla%mba%rr, &
-                     mg_verbose,cg_verbose)
+                     dm+rhoh_comp,stencil_order,mla%mba%rr)
 
   do n=1,nlevs
      call destroy(lhsalpha(n))

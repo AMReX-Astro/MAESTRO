@@ -14,8 +14,7 @@ module hgproject_module
 contains 
 
   subroutine hgproject(proj_type,mla,unew,uold,rhohalf,pres,gpres,dx,dt,the_bc_tower, &
-                       verbose,mg_verbose,cg_verbose,press_comp, &
-                       divu_rhs,div_coeff_1d,div_coeff_3d,eps_in)
+                       press_comp, divu_rhs,div_coeff_1d,div_coeff_3d,eps_in)
 
     use bc_module
     use bl_prof_module
@@ -25,6 +24,7 @@ contains
     use ml_solve_module
     use ml_restriction_module
     use multifab_fill_ghost_module
+    use probin_module, only: verbose, mg_verbose, cg_verbose
 
     integer        , intent(in   ) :: proj_type
     type(ml_layout), intent(inout) :: mla
@@ -35,7 +35,6 @@ contains
     type(multifab ), intent(inout) :: gpres(:)
     real(dp_t)     , intent(in   ) :: dx(:,:),dt
     type(bc_tower ), intent(in   ) :: the_bc_tower
-    integer        , intent(in   ) :: verbose,mg_verbose,cg_verbose
     integer        , intent(in   ) :: press_comp
 
     type(multifab ), intent(inout), optional :: divu_rhs(:)
@@ -131,11 +130,11 @@ contains
     end do
 
     if (present(eps_in)) then
-       call hg_multigrid(mla,unew,rhohalf,phi,dx,the_bc_tower,verbose, &
-                         mg_verbose,cg_verbose,press_comp,stencil_type,divu_rhs,eps_in)
+       call hg_multigrid(mla,unew,rhohalf,phi,dx,the_bc_tower, &
+                         press_comp,stencil_type,divu_rhs,eps_in)
     else
-       call hg_multigrid(mla,unew,rhohalf,phi,dx,the_bc_tower,verbose, &
-                         mg_verbose,cg_verbose,press_comp,stencil_type,divu_rhs)
+       call hg_multigrid(mla,unew,rhohalf,phi,dx,the_bc_tower, &
+                         press_comp,stencil_type,divu_rhs)
     end if
 
     if (use_div_coeff_1d) then
@@ -734,8 +733,8 @@ contains
 
   end subroutine hgproject
 
-  subroutine hg_multigrid(mla,unew,rhohalf,phi,dx,the_bc_tower,divu_verbose,mg_verbose, &
-                          cg_verbose,press_comp,stencil_type,divu_rhs,eps_in)
+  subroutine hg_multigrid(mla,unew,rhohalf,phi,dx,the_bc_tower, &
+                          press_comp,stencil_type,divu_rhs,eps_in)
 
     use bl_prof_module
     use bl_constants_module
@@ -743,6 +742,7 @@ contains
     use coeffs_module
     use ml_solve_module
     use nodal_divu_module
+    use probin_module, only : hg_bottom_solver, verbose, mg_verbose, cg_verbose
 
     type(ml_layout), intent(inout) :: mla
     type(multifab ), intent(inout) :: unew(:)
@@ -750,7 +750,6 @@ contains
     type(multifab ), intent(inout) :: phi(:)
     real(dp_t)     , intent(in)    :: dx(:,:)
     type(bc_tower ), intent(in   ) :: the_bc_tower
-    integer        , intent(in   ) :: divu_verbose,mg_verbose,cg_verbose
     integer        , intent(in   ) :: press_comp
     integer        , intent(in   ) :: stencil_type
 
@@ -779,7 +778,6 @@ contains
     integer :: nu1, nu2, gamma, cycle, smoother
     integer :: n
     integer :: max_nlevel_in
-    integer :: verbose
     integer :: do_diagnostics
     logical, allocatable :: nodal(:)
 
@@ -809,14 +807,12 @@ contains
     bottom_solver_eps = mgt(nlevs)%bottom_solver_eps
     bottom_max_iter   = mgt(nlevs)%bottom_max_iter
     min_width         = mgt(nlevs)%min_width
-    verbose           = mgt(nlevs)%verbose
-
-    verbose = mg_verbose
 
     ! Note: put this here to minimize asymmetries - ASA
     eps = 1.d-12
 
-    bottom_solver = 1
+    if ( hg_bottom_solver >= 0) bottom_solver = hg_bottom_solver
+
     min_width = 2
 
     ! Note: put this here for robustness
@@ -877,7 +873,7 @@ contains
                            max_nlevel = max_nlevel_in, &
                            min_width = min_width, &
                            eps = eps, &
-                           verbose = verbose, &
+                           verbose = mg_verbose, &
                            cg_verbose = cg_verbose, &
                            nodal = nodal)
        
@@ -929,7 +925,7 @@ contains
        call setval(rh(n),ZERO,all=.true.)
     end do
 
-    call divu(nlevs,mgt,unew,rh,mla%mba%rr,divu_verbose,nodal)
+    call divu(nlevs,mgt,unew,rh,mla%mba%rr,verbose,nodal)
 
     ! Do rh = rh - divu_rhs
     if (present(divu_rhs)) then

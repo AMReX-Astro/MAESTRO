@@ -35,6 +35,9 @@
  mg_verbose = 0
  cg_verbose = 0
 
+ hg_bottom_solver = 2  ! CG
+ mg_bottom_solver = 1  ! BiC
+
  do_initial_projection = 1
  init_divu_iter = 3
 

@@ -22,4 +22,6 @@
  pmask_y = F
  pmask_z = F
 
+ hg_bottom_solver = 2  ! CG
+ mg_bottom_solver = 1  ! BiC
 /

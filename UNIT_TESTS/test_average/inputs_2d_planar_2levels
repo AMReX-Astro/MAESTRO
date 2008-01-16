@@ -16,4 +16,7 @@
  pmask_x = F
  pmask_y = F
 
+ hg_bottom_solver = 2  ! CG
+ mg_bottom_solver = 1  ! BiC
+
 /

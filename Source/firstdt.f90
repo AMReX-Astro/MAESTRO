@@ -20,14 +20,13 @@ module firstdt_module
 
 contains
 
-  subroutine firstdt(n,u,s,force,divU,p0,gam1,t0,dx,cflfac,dt,verbose)
+  subroutine firstdt(n,u,s,force,divU,p0,gam1,t0,dx,cflfac,dt)
 
     integer        , intent(in   ) :: n
     type(multifab) , intent(in   ) :: u,s,force,divU
     real(kind=dp_t), intent(in   ) :: p0(0:), cflfac, t0(0:), gam1(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
     real(kind=dp_t), intent(  out) :: dt
-    integer        , intent(in   ) :: verbose
     
     real(kind=dp_t), pointer:: uop(:,:,:,:)
     real(kind=dp_t), pointer:: sop(:,:,:,:)
@@ -55,11 +54,11 @@ contains
        case (2)
           call firstdt_2d(n,uop(:,:,1,:), sop(:,:,1,:), fp(:,:,1,:),&
                           divup(:,:,1,1), p0, gam1, lo, hi, ng, dx, &
-                          dt_grid, cflfac, verbose)
+                          dt_grid, cflfac)
        case (3)
           call firstdt_3d(n,uop(:,:,:,:), sop(:,:,:,:), fp(:,:,:,:),&
                           divup(:,:,:,1), p0, gam1, t0, lo, hi, ng, dx, &
-                          dt_grid, cflfac, verbose)
+                          dt_grid, cflfac)
        end select
        dt_hold_proc = min(dt_hold_proc,dt_grid)
     end do
@@ -68,7 +67,7 @@ contains
     
   end subroutine firstdt
   
-  subroutine firstdt_2d(n,u,s,force,divu,p0,gam1,lo,hi,ng,dx,dt,cfl,verbose)
+  subroutine firstdt_2d(n,u,s,force,divu,p0,gam1,lo,hi,ng,dx,dt,cfl)
 
     use eos_module
     use variables, only: rho_comp, temp_comp, spec_comp
@@ -84,7 +83,6 @@ contains
     real (kind = dp_t), intent(in ) :: dx(:)
     real (kind = dp_t), intent(out) :: dt
     real (kind = dp_t), intent(in ) :: cfl
-    integer           , intent(in ) :: verbose
     
     ! Local variables
     real (kind = dp_t)  :: spdx, spdy
@@ -179,7 +177,7 @@ contains
     
   end subroutine firstdt_2d
   
-  subroutine firstdt_3d(n,u,s,force,divU,p0,gam1,t0,lo,hi,ng,dx,dt,cfl,verbose)
+  subroutine firstdt_3d(n,u,s,force,divU,p0,gam1,t0,lo,hi,ng,dx,dt,cfl)
 
     use geometry, only: spherical, nr
     use variables, only: rho_comp, temp_comp, spec_comp
@@ -196,7 +194,6 @@ contains
     real (kind = dp_t), intent(in ) :: dx(:)
     real (kind = dp_t), intent(out) :: dt
     real (kind = dp_t), intent(in ) :: cfl
-    integer           , intent(in ) :: verbose
     
     ! Local variables
     real (kind = dp_t)  :: spdx, spdy, spdz

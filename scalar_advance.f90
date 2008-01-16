@@ -15,7 +15,7 @@ contains
 
   subroutine scalar_advance(nlevs,mla,which_step,uold,sold,snew,thermal,umac,w0, &
                             w0_cart_vec,eta,utrans,normal, &
-                            s0_old,s0_new,p0_old,p0_new,dx,dt,the_bc_level,verbose)
+                            s0_old,s0_new,p0_old,p0_new,dx,dt,the_bc_level)
 
     use bl_prof_module
     use bl_constants_module
@@ -32,7 +32,7 @@ contains
     use variables, only: nscal, ntrac, spec_comp, trac_comp, temp_comp, rho_comp, rhoh_comp
     use geometry, only: spherical, nr
     use network, only: nspec, spec_names
-    use probin_module, ONLY: predict_temp_at_edges, use_thermal_diffusion
+    use probin_module, ONLY: predict_temp_at_edges, use_thermal_diffusion, verbose
     use modify_scal_force_module
     use make_eta_module
     use add_thermal_to_force_module
@@ -56,7 +56,6 @@ contains
     real(kind=dp_t), intent(in   ) :: p0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:),dt
     type(bc_level) , intent(in   ) :: the_bc_level(:)
-    integer        , intent(in   ) :: verbose
 
     ! local
     type(multifab), allocatable :: sedge(:,:)
@@ -273,7 +272,7 @@ contains
                      w0_cart_vec,eta,sedge,sflux,scal_force,s0_old,s0_edge_old,s0_new, &
                      s0_edge_new,s0_old_cart,s0_new_cart,dx,dt,the_bc_level,mla)
     
-    if (verbose .ge. 1) then
+    if ( verbose .ge. 1 ) then
        do n=1, nlevs
           do comp = spec_comp,spec_comp+nspec-1
              call multifab_div_div_c(snew(n),comp,snew(n),rho_comp,1)
@@ -298,12 +297,12 @@ contains
     !     2) Update tracers with convective differencing.
     !**************************************************************************
     
-    if (ntrac .ge. 1) then
+    if ( ntrac .ge. 1 ) then
        call update_scal(nlevs,which_step,trac_comp,trac_comp+ntrac-1,sold,snew,umac,w0, &
                         w0_cart_vec,eta,sedge,sflux,scal_force,s0_old,s0_edge_old,s0_new, &
                         s0_edge_new,s0_old_cart,s0_new_cart,dx,dt,the_bc_level,mla)
 
-       if (verbose .eq. 1) then
+       if ( verbose .eq. 1 ) then
           do n=1,nlevs
              smin = multifab_min_c(snew(n),trac_comp) 
              smax = multifab_max_c(snew(n),trac_comp)
@@ -350,7 +349,7 @@ contains
        call makeTfromRhoH(nlevs,snew,s0_new(:,:,temp_comp),mla,the_bc_level,dx)
     end if
 
-    if (verbose .eq. 1) then
+    if ( verbose .eq. 1 ) then
        do n=1,nlevs
           smin = multifab_min_c(snew(n),rhoh_comp) 
           smax = multifab_max_c(snew(n),rhoh_comp)

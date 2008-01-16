@@ -18,7 +18,7 @@ contains
 
   ! NOTE: this routine differs from that in varden because phi is passed in/out 
   !       rather than allocated here
-  subroutine macproject(mla,umac,phi,rho,dx,the_bc_tower,verbose,mg_verbose,cg_verbose, &
+  subroutine macproject(mla,umac,phi,rho,dx,the_bc_tower, &
                         bc_comp,divu_rhs,div_coeff_1d,div_coeff_half_1d,div_coeff_3d)
 
     type(ml_layout), intent(inout) :: mla
@@ -28,7 +28,6 @@ contains
     real(dp_t)     , intent(in   ) :: dx(:,:)
     type(bc_tower ), intent(in   ) :: the_bc_tower
     integer        , intent(in   ) :: bc_comp
-    integer        , intent(in   ) :: verbose,mg_verbose,cg_verbose
 
     type(multifab ), intent(inout), optional :: divu_rhs(:)
     real(dp_t)     , intent(in   ), optional :: div_coeff_1d(:,:)
@@ -93,9 +92,9 @@ contains
     end do
 
     if (use_rhs) then
-       call divumac(nlevs,umac,rh,dx,mla%mba%rr,verbose,.true.,divu_rhs)
+       call divumac(nlevs,umac,rh,dx,mla%mba%rr,.true.,divu_rhs)
     else
-       call divumac(nlevs,umac,rh,dx,mla%mba%rr,verbose,.true.)
+       call divumac(nlevs,umac,rh,dx,mla%mba%rr,.true.)
     end if
 
     call mk_mac_coeffs(nlevs,mla,rho,beta,the_bc_tower)
@@ -116,15 +115,14 @@ contains
     end do
 
     call mac_multigrid(mla,rh,phi,fine_flx,alpha,beta,dx,&
-                       the_bc_tower,bc_comp,stencil_order,mla%mba%rr,mg_verbose, &
-                       cg_verbose,umac_norm)
+                       the_bc_tower,bc_comp,stencil_order,mla%mba%rr,umac_norm)
 
     call mkumac(rh,umac,phi,beta,fine_flx,dx,the_bc_tower,bc_comp,mla%mba%rr)
 
     if (use_rhs) then
-       call divumac(nlevs,umac,rh,dx,mla%mba%rr,verbose,.false.,divu_rhs)
+       call divumac(nlevs,umac,rh,dx,mla%mba%rr,.false.,divu_rhs)
     else
-       call divumac(nlevs,umac,rh,dx,mla%mba%rr,verbose,.false.)
+       call divumac(nlevs,umac,rh,dx,mla%mba%rr,.false.)
     end if
 
     if (use_div_coeff_1d) then
@@ -163,16 +161,17 @@ contains
 
   contains
 
-    subroutine divumac(nlevs,umac,rh,dx,ref_ratio,verbose,before,divu_rhs)
+    subroutine divumac(nlevs,umac,rh,dx,ref_ratio,before,divu_rhs)
 
       use ml_restriction_module, only: ml_cc_restriction, ml_edge_restriction
+
+      use probin_module, only: verbose
 
       integer        , intent(in   ) :: nlevs
       type(multifab) , intent(inout) :: umac(:,:)
       type(multifab) , intent(inout) :: rh(:)
       real(kind=dp_t), intent(in   ) :: dx(:,:)
       integer        , intent(in   ) :: ref_ratio(:,:)
-      integer        , intent(in   ) :: verbose
       logical        , intent(in   ) :: before
       type(multifab ), intent(inout), optional :: divu_rhs(:)
 
@@ -1245,15 +1244,15 @@ contains
   end subroutine macproject
 
   subroutine mac_multigrid(mla,rh,phi,fine_flx,alpha,beta,dx,the_bc_tower,bc_comp, &
-                           stencil_order,ref_ratio,mg_verbose,cg_verbose,umac_norm)
+                           stencil_order,ref_ratio,umac_norm)
     use mg_module
     use coeffs_module
     use ml_solve_module
+    use probin_module, only : mg_bottom_solver, mg_verbose, cg_verbose
 
     type(ml_layout),intent(inout) :: mla
     integer        ,intent(in   ) :: stencil_order
     integer        ,intent(in   ) :: ref_ratio(:,:)
-    integer        ,intent(in   ) :: mg_verbose, cg_verbose
 
     real(dp_t), intent(in) :: dx(:,:)
     type(bc_tower), intent(in) :: the_bc_tower
@@ -1329,7 +1328,7 @@ contains
        abs_eps = rel_eps * abs_eps
     end if
 
-    bottom_solver = 1
+    if ( mg_bottom_solver >= 0) bottom_solver = mg_bottom_solver
     bottom_solver_eps = 1.d-3
 
     ! Note: put this here for robustness
@@ -1454,15 +1453,15 @@ contains
   end subroutine mac_multigrid
 
   subroutine mac_applyop(mla,res,phi,alpha,beta,dx,the_bc_tower,bc_comp,stencil_order, &
-                         ref_ratio,mg_verbose,cg_verbose,umac_norm)
+                         ref_ratio,umac_norm)
     use mg_module
     use coeffs_module
     use ml_cc_module, only: ml_cc_applyop
+    use probin_module, only: cg_verbose, mg_verbose
 
     type(ml_layout),intent(inout) :: mla
     integer        ,intent(in   ) :: stencil_order
     integer        ,intent(in   ) :: ref_ratio(:,:)
-    integer        ,intent(in   ) :: mg_verbose, cg_verbose
 
     real(dp_t), intent(in) :: dx(:,:)
     type(bc_tower), intent(in) :: the_bc_tower
@@ -1539,9 +1538,6 @@ contains
        end do
        abs_eps = rel_eps * abs_eps
     end if
-
-    bottom_solver = 2
-    bottom_solver_eps = 1.d-3
 
     if ( test /= 0 .AND. max_iter == mgt(nlevs)%max_iter ) &
          max_iter = 1000

@@ -12,12 +12,13 @@ module checkpoint_module
 contains
 
   subroutine checkpoint_write(dirname, mfs, mfs_nodal, dSdt, Source_old, &
-                              rho_omegadot2, rrs, dx, time_in, dt_in, verbose)
+                              rho_omegadot2, rrs, dx, time_in, dt_in)
 
     use parallel
     use bl_IO_module
     use fabio_module
     use bl_prof_module
+    use probin_module, only: verbose
 
     type(multifab), intent(in) :: mfs(:), mfs_nodal(:)
     type(multifab), intent(in) :: dSdt(:), Source_old(:)
@@ -26,7 +27,6 @@ contains
     real(kind=dp_t), intent(in) :: dx(:,:)
     character(len=*), intent(in) :: dirname
     real(kind=dp_t), intent(in) :: time_in, dt_in
-    integer        , intent(in) :: verbose
     integer :: n, i
     character(len=128) :: header, sd_name, sd_name_nodal
     integer :: un

@@ -13,12 +13,13 @@ module make_w0_module
 
 contains
 
-  subroutine make_w0(nlevs,vel,vel_old,f,Sbar_in,p0,rho0,gam1,eta,dt,dtold,verbose)
+  subroutine make_w0(nlevs,vel,vel_old,f,Sbar_in,p0,rho0,gam1,eta,dt,dtold)
 
     use parallel
     use bl_prof_module
     use geometry, only: spherical, nr, dr
     use bl_constants_module
+    use probin_module, only: verbose
 
     integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(  out) :: vel(:,0:)
@@ -28,7 +29,6 @@ contains
     real(kind=dp_t), intent(in   ) :: p0(:,0:),rho0(:,0:),gam1(:,0:)
     real(kind=dp_t), intent(in   ) :: Sbar_in(:,0:)
     real(kind=dp_t), intent(in   ) :: dt,dtold
-    integer        , intent(in   ) :: verbose
 
     integer         :: j,n
     real(kind=dp_t) :: max_vel

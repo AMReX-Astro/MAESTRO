@@ -75,7 +75,7 @@ contains
     end do
     
     if(use_thermal_diffusion) then
-       call make_explicit_thermal(mla,dx,thermal,sold,p0_old,mg_verbose,cg_verbose, &
+       call make_explicit_thermal(mla,dx,thermal,sold,p0_old, &
                                   the_bc_tower,temp_diffusion_formulation)
     else
        do n=1,nlevs
@@ -126,12 +126,12 @@ contains
        end do
        call fill_3d_data_wrapper(nlevs,div_coeff_3d,div_coeff_old,dx)
        call hgproject(initial_projection_comp,mla,uold,uold,rhohalf,pres,gpres,dx, &
-                      dt_temp,the_bc_tower,verbose,mg_verbose,cg_verbose,press_comp, &
+                      dt_temp,the_bc_tower,press_comp, &
                       hgrhs,div_coeff_3d=div_coeff_3d,eps_in=1.d-10)
        
     else
        call hgproject(initial_projection_comp,mla,uold,uold,rhohalf,pres,gpres,dx, &
-                      dt_temp,the_bc_tower,verbose,mg_verbose,cg_verbose,press_comp, &
+                      dt_temp,the_bc_tower,press_comp, &
                       hgrhs,div_coeff_1d=div_coeff_old)
     end if
 

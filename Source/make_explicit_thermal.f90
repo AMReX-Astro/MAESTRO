@@ -18,7 +18,7 @@ contains
 ! Otherwise, compute thermal with grad h + grad X_k + grad p_0 formulation
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine make_explicit_thermal(mla,dx,thermal,s,p0,mg_verbose,cg_verbose, &
+  subroutine make_explicit_thermal(mla,dx,thermal,s,p0, &
                                    the_bc_tower,temperature_diffusion)
     use bc_module
     use bl_prof_module
@@ -37,7 +37,6 @@ contains
     type(multifab) , intent(inout) :: thermal(:)
     type(multifab) , intent(in   ) :: s(:)
     real(kind=dp_t), intent(in   ) :: p0(:,0:)
-    integer        , intent(in   ) :: mg_verbose,cg_verbose
     type(bc_tower) , intent(in   ) :: the_bc_tower
     logical        , intent(in   ) :: temperature_diffusion
 
@@ -140,7 +139,7 @@ contains
 
        ! applyop to compute resid = del dot Tcoeff grad T
        call mac_applyop(mla,resid,phi,alpha,beta,dx,the_bc_tower,dm+rhoh_comp, &
-                        stencil_order,mla%mba%rr,mg_verbose,cg_verbose)
+                        stencil_order,mla%mba%rr)
      
        do n=1,nlevs
           call destroy(phi(n))
@@ -201,7 +200,7 @@ contains
        
        ! applyop to compute resid = del dot hcoeff grad h
        call mac_applyop(mla,resid,phi,alpha,beta,dx,the_bc_tower,dm+rhoh_comp, &
-                        stencil_order,mla%mba%rr,mg_verbose,cg_verbose)
+                        stencil_order,mla%mba%rr)
        
        ! add residual to thermal
        do n=1,nlevs
@@ -233,7 +232,7 @@ contains
           
           ! applyop to compute resid = del dot Xkcoeff grad X_k
           call mac_applyop(mla,resid,phi,alpha,beta,dx,the_bc_tower,dm+spec_comp+comp-1, &
-                           stencil_order,mla%mba%rr,mg_verbose,cg_verbose)
+                           stencil_order,mla%mba%rr)
           
           ! add residual to thermal
           do n=1,nlevs
@@ -291,7 +290,7 @@ contains
        
        ! applyop to compute resid = del dot pcoeff grad p0
        call mac_applyop(mla,resid,phi,alpha,beta,dx,the_bc_tower,foextrap_comp, &
-                        stencil_order,mla%mba%rr,mg_verbose,cg_verbose)
+                        stencil_order,mla%mba%rr)
        
        do n=1,nlevs
           call destroy(phi(n))
