@@ -11,8 +11,8 @@ module advance_timestep_module
 contains
     
   subroutine advance_timestep(init_mode,mla,uold,sold,unew,snew, &
-                              gpres,pres,normal,s0_old,s0_1,s0_2, &
-                              s0_new,p0_old,p0_1,p0_2,p0_new,gam1,w0,eta, &
+                              gpres,pres,normal,s0_old, &
+                              s0_new,p0_old,p0_new,gam1,w0, &
                               rho_omegadot2,div_coeff_old,div_coeff_new, &
                               grav_cell_old,dx,time,dt,dtold,the_bc_tower, &
                               verbose,mg_verbose,cg_verbose,dSdt,Source_old,Source_new, &
@@ -62,16 +62,11 @@ contains
     type(multifab),  intent(inout) :: pres(:)
     type(multifab),  intent(in   ) :: normal(:)
     real(dp_t)    ,  intent(inout) :: s0_old(:,0:,:)
-    real(dp_t)    ,  intent(inout) :: s0_1(:,0:,:)
-    real(dp_t)    ,  intent(inout) :: s0_2(:,0:,:)
     real(dp_t)    ,  intent(inout) :: s0_new(:,0:,:)
     real(dp_t)    ,  intent(inout) :: p0_old(:,0:)
-    real(dp_t)    ,  intent(inout) :: p0_1(:,0:)
-    real(dp_t)    ,  intent(inout) :: p0_2(:,0:)
     real(dp_t)    ,  intent(inout) :: p0_new(:,0:)
     real(dp_t)    ,  intent(inout) :: gam1(:,0:)
     real(dp_t)    ,  intent(inout) :: w0(:,0:)
-    real(dp_t)    ,  intent(inout) :: eta(:,0:,:)
     type(multifab),  intent(inout) :: rho_omegadot2(:)
     real(dp_t)    ,  intent(in   ) :: div_coeff_old(:,0:)
     real(dp_t)    ,  intent(inout) :: div_coeff_new(:,0:)
@@ -120,6 +115,11 @@ contains
     real(dp_t)    , allocatable :: rho_omegadotbar1(:,:,:)
     real(dp_t)    , allocatable :: rho_omegadotbar2(:,:,:)
     real(dp_t)    , allocatable :: rho_Hextbar(:,:,:)
+    real(dp_t)    , allocatable :: eta(:,:,:)
+    real(dp_t)    , allocatable :: s0_1(:,:,:)
+    real(dp_t)    , allocatable :: s0_2(:,:,:)
+    real(dp_t)    , allocatable :: p0_1(:,:)
+    real(dp_t)    , allocatable :: p0_2(:,:)
 
     integer       , allocatable :: lo(:),hi(:)
 
@@ -159,26 +159,37 @@ contains
     allocate(   grav_cell_new(nlevs,0:nr(nlevs)-1))
     allocate(          s0_nph(nlevs,0:nr(nlevs)-1,nscal))
     allocate(        w0_force(nlevs,0:nr(nlevs)-1))
-    allocate(          w0_old(nlevs,0:nr(nlevs)))
-    allocate(            Sbar(nlevs,0:nr(nlevs)-1,1))
+    allocate(          w0_old(nlevs,0:nr(nlevs)  ))
+    allocate(            Sbar(nlevs,0:nr(nlevs)-1,1    ))
     allocate(   div_coeff_nph(nlevs,0:nr(nlevs)-1))
-    allocate(  div_coeff_edge(nlevs,0:nr(nlevs)))
+    allocate(  div_coeff_edge(nlevs,0:nr(nlevs)  ))
     allocate(rho_omegadotbar1(nlevs,0:nr(nlevs)-1,nspec))
     allocate(rho_omegadotbar2(nlevs,0:nr(nlevs)-1,nspec))
     allocate(     rho_Hextbar(nlevs,0:nr(nlevs)-1,1))
+    allocate(             eta(nlevs,0:nr(nlevs)  ,nscal))
+    allocate(            s0_1(nlevs,0:nr(nlevs)-1,nscal))
+    allocate(            s0_2(nlevs,0:nr(nlevs)-1,nscal))
+    allocate(            p0_1(nlevs,0:nr(nlevs)-1))
+    allocate(            p0_2(nlevs,0:nr(nlevs)-1))
 
     allocate(lo(dm))
     allocate(hi(dm))
-
-    nodal = .true.
-    ng_s = sold(1)%ng
-    halfdt = half*dt
     
     ! This is always zero at the beginning of a time step
     eta(:,:,:) = ZERO
 
+    ! Set these to be safe
+    s0_1(:,:,:) = ZERO
+    s0_2(:,:,:) = ZERO
+    p0_1(:,:)   = ZERO
+    p0_2(:,:)   = ZERO
+
     ! Set w0_old to w0 from last time step.
     w0_old = w0
+
+    nodal = .true.
+    ng_s = sold(1)%ng
+    halfdt = half*dt
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 1 -- define average expansion at time n+1/2
@@ -868,6 +879,7 @@ contains
     deallocate(umac_nodal_flag)
     deallocate(grav_cell_nph,grav_cell_new,s0_nph,w0_force,w0_old,Sbar)
     deallocate(div_coeff_nph,div_coeff_edge,rho_omegadotbar1,rho_omegadotbar2,rho_Hextbar)
+    deallocate(eta,s0_1,s0_2,p0_1,p0_2)
     deallocate(lo,hi)
 
     call destroy(bpt)
