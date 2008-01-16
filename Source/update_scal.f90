@@ -32,7 +32,7 @@ contains
     type(multifab)    , intent(in   ) :: umac(:,:)
     real(kind=dp_t)   , intent(in   ) :: w0(:,0:)
     type(multifab)    , intent(in   ) :: w0_cart_vec(:)
-    real(kind=dp_t)   , intent(inout) :: eta(:,0:,:)
+    real(kind=dp_t)   , intent(in   ) :: eta(:,0:,:)
     type(multifab)    , intent(in   ) :: sedge(:,:)
     type(multifab)    , intent(in   ) :: sflux(:,:)
     type(multifab)    , intent(in   ) :: scal_force(:)
@@ -193,29 +193,13 @@ contains
     real (kind = dp_t), intent(in   ) ::   base_old(0:,:), base_old_edge(0:,:)
     real (kind = dp_t), intent(in   ) ::   base_new(0:,:), base_new_edge(0:,:)
     real (kind = dp_t), intent(in   ) :: w0(0:)
-    real (kind = dp_t), intent(inout) :: eta(0:,:)
+    real (kind = dp_t), intent(in   ) :: eta(0:,:)
     real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
     integer :: i, j, comp, comp2
     real (kind = dp_t) :: delta_base,divterm
-    real (kind = dp_t) :: delta,frac,sum,fac
+    real (kind = dp_t) :: delta,frac,sum
     real (kind = dp_t), allocatable :: smin(:),smax(:)
-
-    fac = ONE / dble(hi(1)-lo(1)+1)
-
-    if (evolve_base_state) then
-       if (which_step .eq. 1) then
-          do comp = nstart, nstop
-             do j = lo(2), hi(2)+1
-                eta(j,comp) = ZERO
-                do i = lo(1), hi(1)
-                   eta(j,comp) = eta(j,comp) + vmac(i,j)*sedgey(i,j,comp)
-                end do
-                eta(j,comp) = eta(j,comp) * fac
-             end do
-          end do
-       end if
-    end if
 
     do comp = nstart, nstop
        do j = lo(2), hi(2)
@@ -230,11 +214,8 @@ contains
              snew(i,j,comp) = sold(i,j,comp) + delta_base &
                   - dt * divterm + dt * force(i,j,comp)
 
-             if (evolve_base_state) then
-                if (which_step .eq. 2) then
-                   snew(i,j,comp) = snew(i,j,comp) &
-                        + dt / dx(2) * (eta(j+1,comp)-eta(j,comp))
-                end if
+             if (evolve_base_state .and. which_step .eq. 2) then
+                snew(i,j,comp) = snew(i,j,comp) + dt/dx(2)*(eta(j+1,comp)-eta(j,comp))
              end if
 
           enddo
@@ -259,15 +240,6 @@ contains
              enddo
           enddo
        enddo
-
-       if (which_step .eq. 1) then
-          do j=lo(2),hi(2)+1
-             eta(j,rho_comp) = ZERO
-             do comp = nstart, nstop
-                eta(j,rho_comp) = eta(j,rho_comp) + eta(j,comp)
-             end do
-          end do
-       end if
 
     end if
 
@@ -327,31 +299,13 @@ contains
     real (kind = dp_t), intent(in   ) ::   base_old(0:,:), base_old_edge(0:,:)
     real (kind = dp_t), intent(in   ) ::   base_new(0:,:), base_new_edge(0:,:)
     real (kind = dp_t), intent(in   ) :: w0(0:)
-    real (kind = dp_t), intent(inout) :: eta(0:,:)
+    real (kind = dp_t), intent(in   ) :: eta(0:,:)
     real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
     integer :: i, j, k, comp, comp2
     real (kind = dp_t) :: divterm
-    real (kind = dp_t) :: delta,frac,sum,delta_base,fac
+    real (kind = dp_t) :: delta,frac,sum,delta_base
     real (kind = dp_t), allocatable :: smin(:),smax(:)
-
-    fac = ONE / dble( (hi(1)-lo(1)+1)*(hi(2)-lo(2)+1) )
-
-    if (evolve_base_state) then
-       if (which_step .eq. 1) then
-          do comp = nstart, nstop
-             do k = lo(3), hi(3)+1
-                eta(k,comp) = ZERO
-                do j = lo(2), hi(2)
-                   do i = lo(1), hi(1)
-                      eta(k,comp) = eta(k,comp) + wmac(i,j,k)*sedgez(i,j,k,comp)
-                   end do
-                end do
-                eta(k,comp) = eta(k,comp) * fac
-             end do
-          end do
-       end if
-    end if
 
     do comp = nstart, nstop
 
@@ -369,11 +323,8 @@ contains
                 snew(i,j,k,comp) = sold(i,j,k,comp) + delta_base &
                      - dt * divterm + dt * force(i,j,k,comp)
 
-                if (evolve_base_state) then
-                   if (which_step .eq. 2) then
-                      snew(i,j,k,comp) = snew(i,j,k,comp) &
-                           + dt / dx(3) * (eta(k+1,comp)-eta(k,comp))
-                   end if
+                if (evolve_base_state .and. which_step .eq. 2) then
+                   snew(i,j,k,comp) = snew(i,j,k,comp) + dt/dx(3)*(eta(k+1,comp)-eta(k,comp))
                 end if
 
              enddo
@@ -402,15 +353,6 @@ contains
              enddo
           enddo
        enddo
-
-       if (which_step .eq. 1) then
-          do k=lo(3),hi(3)+1
-             eta(k,rho_comp) = ZERO
-             do comp = nstart, nstop
-                eta(k,rho_comp) = eta(k,rho_comp) + eta(k,comp)
-             end do
-          end do
-       end if
 
     end if
 

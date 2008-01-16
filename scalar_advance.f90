@@ -328,7 +328,7 @@ contains
                      s0_old_cart,s0_new_cart,dx,dt,the_bc_level,mla)
 
     if(evolve_base_state .and. which_step .eq. 1) then
-       call make_eta(nlevs,eta,sold,umac,sflux,dx,mla)
+       call make_eta(nlevs,eta,sold,sflux,dx,mla)
     end if
 
     if(spherical .eq. 1) then
