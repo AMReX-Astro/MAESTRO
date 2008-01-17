@@ -29,9 +29,7 @@ contains
 
     ! local
     real(kind=dp_t), pointer :: fp(:,:,:,:)
-    real(kind=dp_t), pointer :: fpc(:,:,:,:)
     
-    real(kind=dp_t), allocatable :: ncell_proc(:,:)
     real(kind=dp_t), allocatable :: ncell(:,:)
     real(kind=dp_t), allocatable :: etasum_proc(:,:,:)
     real(kind=dp_t), allocatable :: etasum(:,:,:)
@@ -44,10 +42,7 @@ contains
 
     integer :: domlo(sold(1)%dim),domhi(sold(1)%dim)
     integer :: lo(sold(1)%dim),hi(sold(1)%dim)
-    integer :: i,k,n,dm,rr,comp
-
-    type(layout) :: lasfluxcoarse
-    type(multifab) :: sfluxcoarse
+    integer :: i,r,rpert,n,dm,rr,comp
 
     type(bl_prof_timer), save :: bpt
 
@@ -55,19 +50,15 @@ contains
 
     dm = sold(1)%dim
 
-    allocate(ncell_proc(nlevs,0:nr(nlevs)))
-    allocate(ncell     (nlevs,0:nr(nlevs)))
-
-    allocate(etasum_proc(nlevs,0:nr(nlevs),nscal))
-    allocate(etasum     (nlevs,0:nr(nlevs),nscal))
-
+    allocate(ncell       (nlevs,0:nr(nlevs))) ! ncell is a function of r only for spherical
+    allocate(etasum_proc (nlevs,0:nr(nlevs),nscal))
+    allocate(etasum      (nlevs,0:nr(nlevs),nscal))
     allocate(etapert_proc(nlevs,0:nr(nlevs),nscal))
     allocate(etapert     (nlevs,0:nr(nlevs),nscal))
 
     allocate(source_buffer(0:nr(nlevs)))
     allocate(target_buffer(0:nr(nlevs)))
 
-    ncell_proc   = ZERO
     ncell        = ZERO
     etasum_proc  = ZERO
     etasum       = ZERO
@@ -111,11 +102,11 @@ contains
           etasum(1,:,comp) = target_buffer
        end do
 
-       do k=0,nr(1)
-          eta(1,k,rhoh_comp) = etasum(1,k,rhoh_comp) / dble(ncell(1,k))
+       do r=0,nr(1)
+          eta(1,r,rhoh_comp) = etasum(1,r,rhoh_comp) / dble(ncell(1,r))
           do comp=spec_comp,spec_comp+nspec-1
-             eta(1,k,comp) = etasum(1,k,comp) / dble(ncell(1,k))
-             eta(1,k,rho_comp) = eta(1,k,rho_comp) + eta(1,k,comp)
+             eta(1,r,comp) = etasum(1,r,comp) / dble(ncell(1,r))
+             eta(1,r,rho_comp) = eta(1,r,rho_comp) + eta(1,r,comp)
           end do
        end do
 
@@ -123,10 +114,12 @@ contains
        do n=2,nlevs
           
           rr = mla%mba%rr(n-1,dm)
-          if(rr .ne. 2) then
-             print*,"Error: in make_eta, refinement ratio must be 2"
+
+          if (mla%mba%rr(n-1,1) .ne. mla%mba%rr(n-1,dm) .or. &
+               mla%mba%rr(n-1,2) .ne. mla%mba%rr(n-1,dm)) then
+             print*,"ERROR: In make_eta, refinement ratio in each direction must match"
              stop
-          end if
+          endif
 
           domain = layout_get_pd(sold(n)%la)
           domlo  = lwb(domain)
@@ -141,47 +134,42 @@ contains
           ! on faces that exist at the next coarser level, eta is the same since
           ! the fluxes have been restricted.  We copy these values of eta directly and
           ! copy scaled values of etasum directly.
-          do k=0,nr(n-1)
-             eta(n,k*rr,rhoh_comp) = eta(n-1,k,rhoh_comp)
-             etasum(n,k*rr,rhoh_comp) = etasum(n-1,k,rhoh_comp)*rr**(dm-1)
+          do r=0,nr(n-1)
+             eta   (n,r*rr,rhoh_comp) = eta   (n-1,r,rhoh_comp)
+             etasum(n,r*rr,rhoh_comp) = etasum(n-1,r,rhoh_comp)*rr**(dm-1)
              do comp=spec_comp,spec_comp+nspec-1
-                eta(n,k*rr,comp) = eta(n-1,k,comp)
-                etasum(n,k*rr,comp) = etasum(n-1,k,comp)*rr**(dm-1)
+                eta   (n,r*rr,comp)     = eta   (n-1,r,comp)
+                etasum(n,r*rr,comp)     = etasum(n-1,r,comp)*rr**(dm-1)
+                eta   (n,r*rr,rho_comp) = eta   (n,r*rr,rho_comp) + eta(n,r*rr,comp)
              end do
           end do
 
           ! on faces that do not exist at the next coarser level, we use linear
           ! interpolation to get etasum at these faces.
-          do k=1,nr(n)-1,2
-             etasum(n,k,rhoh_comp) = HALF*(etasum(n,k-1,rhoh_comp)+etasum(n,k+1,rhoh_comp))
-             do comp=spec_comp,spec_comp+nspec-1
-                etasum(n,k,comp) = HALF*(etasum(n,k-1,comp)+etasum(n,k+1,comp))
+          do r=0,nr(n-1)-1
+             do rpert=1,rr-1
+                etasum(n,r*rr+rpert,rhoh_comp) = &
+                     dble(rpert)/dble(rr)*(etasum(n,r*rr,rhoh_comp)) + &
+                     dble(rr-rpert)/dble(rr)*(etasum(n,(r+1)*rr,rhoh_comp))
+                do comp=spec_comp,spec_comp+nspec-1
+                   etasum(n,r*rr+rpert,comp) = &
+                        dble(rpert)/dble(rr)*(etasum(n,r*rr,comp)) + &
+                        dble(rr-rpert)/dble(rr)*(etasum(n,(r+1)*rr,comp))
+                end do
              end do
           end do
-
-          ! create a temporary coarse multifab that corresponds directly to regions 
-          ! where the finer flux, sflux(n,dm), exists
-          call layout_build_coarse(lasfluxcoarse, sflux(n,dm)%la, mla%mba%rr(n-1,:))
-          call multifab_build(sfluxcoarse, lasfluxcoarse, nc=sflux(n,dm)%nc, ng=0, &
-                              nodal=sflux(n,dm)%nodal)
-
-          ! copy data from the coarse multifab into my temporary coarse multifab
-          call copy(sfluxcoarse, 1, sflux(n-1,dm), 1, nscal)
 
           ! compute etapert_proc on faces that do not exist at the coarser level
           do i=1,sold(n)%nboxes
              if ( multifab_remote(sold(n), i) ) cycle
              fp  => dataptr(sflux(n,dm), i)
-             fpc  => dataptr(sfluxcoarse, i)
              lo =  lwb(get_box(sold(n), i))
              hi =  upb(get_box(sold(n), i))
              select case (dm)
              case (2)
-                call compute_etapert_2d(lo,hi,fp(:,:,1,:),fpc(:,:,1,:), &
-                                        etasum_proc(1,:,:),rr)
+                call compute_etapert_2d(n,lo,hi,fp(:,:,1,:),etasum_proc(1,:,:),rr)
              case (3)
-                call compute_etapert_3d(lo,hi,fp(:,:,:,:),fpc(:,:,:,:), &
-                                        etasum_proc(1,:,:),rr)
+                call compute_etapert_3d(n,lo,hi,fp(:,:,:,:),etasum_proc(1,:,:),rr)
              end select
           end do
 
@@ -199,13 +187,20 @@ contains
 
           ! update etasum on faces that do not exist at the coarser level
           ! then recompute eta on these faces
-          do k=1,nr(n)-1,2
-             etasum(n,k,rhoh_comp) = etasum(n,k,rhoh_comp) + etapert(n,k,rhoh_comp)
-             eta(n,k,rhoh_comp) = etasum(n,k,rhoh_comp) / dble(ncell(n,k))
-             do comp=spec_comp,spec_comp+nspec-1
-                etasum(n,k,comp) = etasum(n,k,comp) + etapert(n,k,comp)
-                eta(n,k,comp) = etasum(n,k,comp) / dble(ncell(n,k))
-                eta(n,k,rho_comp) = eta(n,k,rho_comp) + eta(n,k,comp)
+          do r=0,nr(n-1)-1
+             do rpert=1,rr-1
+                etasum(n,r*rr+rpert,rhoh_comp) = &
+                     etasum(n,r*rr+rpert,rhoh_comp) + etapert(n,r*rr+rpert,rhoh_comp)
+                eta(n,r*rr+rpert,rhoh_comp) = &
+                     etasum(n,r*rr+rpert,rhoh_comp)/dble(ncell(n,r*rr+rpert))
+                do comp=spec_comp,spec_comp+nspec-1
+                   etasum(n,r*rr+rpert,comp) = &
+                        etasum(n,r*rr+rpert,comp) + etapert(n,r*rr+rpert,comp)
+                   eta(n,r*rr+rpert,comp) = &
+                        etasum(n,r*rr+rpert,comp)/dble(ncell(n,r*rr+rpert))
+                   eta(n,r*rr+rpert,rho_comp) = &
+                        eta(n,r*rr+rpert,rho_comp) + eta(n,r*rr+rpert,comp)
+                end do
              end do
           end do
 
@@ -217,7 +212,7 @@ contains
 
     end if
 
-    deallocate(ncell_proc,ncell)
+    deallocate(ncell)
     deallocate(etasum_proc,etasum)
     deallocate(etapert_proc,etapert)
     deallocate(source_buffer,target_buffer)
@@ -300,68 +295,123 @@ contains
 
   end subroutine sum_eta_coarsest_3d
 
-  subroutine compute_etapert_2d(lo,hi,fluxr,fluxrc,etapert,rr)
+  subroutine compute_etapert_2d(n,lo,hi,fluxr,etapert,rr)
 
     use variables, only: rhoh_comp, spec_comp
     use network, only: nspec
     use bl_constants_module
+    use geometry, only: nr
 
-    integer         , intent(in   ) :: lo(:), hi(:), rr
-    real (kind=dp_t), intent(in   ) ::  fluxr(lo(1):,lo(2):,:)
-    real (kind=dp_t), intent(in   ) :: fluxrc(lo(1):,lo(2):,:)
+    integer         , intent(in   ) :: n, lo(:), hi(:), rr
+    real (kind=dp_t), intent(in   ) :: fluxr(lo(1):,lo(2):,:)
     real (kind=dp_t), intent(inout) :: etapert(0:,:)
     
     ! local
-    integer         :: i,j,comp
-    real(kind=dp_t) :: crseval
+    integer         :: i,j,ipert,jpert,comp
+    real(kind=dp_t) :: loavg,hiavg,crseavg
 
-    do j=lo(2)+1,hi(2)-1,2
-       do i=lo(1),hi(1)
+    do j=lo(2),hi(2)-rr,rr
+       do jpert=1,rr-1
 
-          crseval = (fluxrc(i/rr,(j-1)/rr,rhoh_comp) + fluxrc(i/rr,(j-1)/rr+1,rhoh_comp))/TWO
-          etapert(j,rhoh_comp) = fluxr(i,j,rhoh_comp) - crseval
+          do i=lo(1),hi(1)-rr,rr
 
-          do comp=spec_comp,spec_comp+nspec-1
-             crseval = (fluxrc(i/rr,(j-1)/rr,comp) + fluxrc(i/rr,(j-1)/rr+1,comp))/TWO
-             etapert(j,comp) = fluxr(i,j,comp) - crseval
+             loavg = ZERO
+             hiavg = ZERO
+             do ipert=0,rr-1
+                loavg = loavg + fluxr(i+ipert,j,   rhoh_comp)
+                hiavg = hiavg + fluxr(i+ipert,j+rr,rhoh_comp)
+             end do
+             loavg = loavg / dble(rr)
+             hiavg = hiavg / dble(rr)
+             crseavg = dble(jpert)/dble(rr)*loavg + dble(rr-jpert)/dble(rr)*hiavg
+             do ipert=0,rr-1
+                etapert(j+jpert,rhoh_comp) = fluxr(i+ipert,j+jpert,rhoh_comp) - crseavg
+             end do
+
+             do comp=spec_comp,spec_comp+nspec-1
+                loavg = ZERO
+                hiavg = ZERO
+                do ipert=0,rr-1
+                   loavg = loavg + fluxr(i+ipert,j,   comp)
+                   hiavg = hiavg + fluxr(i+ipert,j+rr,comp)
+                end do
+                loavg = loavg / dble(rr)
+                hiavg = hiavg / dble(rr)
+                crseavg = dble(jpert)/dble(rr)*loavg + dble(rr-jpert)/dble(rr)*hiavg
+                do ipert=0,rr-1
+                   etapert(j+jpert,comp) = fluxr(i+ipert,j+jpert,comp) - crseavg
+                end do
+             end do
+             
           end do
 
        end do
     end do
 
-
   end subroutine compute_etapert_2d
 
-  subroutine compute_etapert_3d(lo,hi,fluxr,fluxrc,etapert,rr)
+  subroutine compute_etapert_3d(n, lo,hi,fluxr,etapert,rr)
 
     use variables, only: rhoh_comp, spec_comp
     use network, only: nspec
     use bl_constants_module
+    use geometry, only: nr
 
-    integer         , intent(in   ) :: lo(:), hi(:), rr
-    real (kind=dp_t), intent(in   ) ::  fluxr(lo(1):,lo(2):,lo(3):,:)
-    real (kind=dp_t), intent(in   ) :: fluxrc(lo(1):,lo(2):,lo(3):,:)
+    integer         , intent(in   ) :: n, lo(:), hi(:), rr
+    real (kind=dp_t), intent(in   ) :: fluxr(lo(1):,lo(2):,lo(3):,:)
     real (kind=dp_t), intent(inout) :: etapert(0:,:)
     
     ! local
-    integer         :: i,j,k,comp
-    real(kind=dp_t) :: crseval
+    integer         :: i,j,k,ipert,jpert,kpert,comp
+    real(kind=dp_t) :: loavg,hiavg,crseavg
 
-    do k=lo(3)+1,hi(3)-1,2
-       do j=lo(2),hi(2)
-          do i=lo(1),hi(1)
+    do k=lo(3),hi(3)-rr,rr
+       do kpert=1,rr-1
 
-             crseval = (fluxrc(i/rr,j/rr,(k-1)/rr,rhoh_comp) + &
-                  fluxrc(i/rr,j/rr,(k-1)/rr+1,rhoh_comp))/TWO
-             etapert(k,rhoh_comp) = fluxr(i,j,k,rhoh_comp) - crseval
-             
-             do comp=spec_comp,spec_comp+nspec-1
-                crseval = (fluxrc(i/rr,j/rr,(k-1)/rr,comp) + &
-                     fluxrc(i/rr,j/rr,(k-1)/rr+1,comp))/TWO
-                etapert(k,comp) = fluxr(i,j,k,comp) - crseval
+          do j=lo(2),hi(2)-rr,rr
+             do i=lo(1),hi(1)-rr,rr
+
+                loavg = ZERO
+                hiavg = ZERO
+                do ipert=0,rr-1
+                   do jpert=0,rr-1
+                      loavg = loavg + fluxr(i+ipert,j+jpert,k,   rhoh_comp)
+                      hiavg = hiavg + fluxr(i+ipert,j+jpert,k+rr,rhoh_comp)
+                   end do
+                end do
+                loavg = loavg / dble(rr**2)
+                hiavg = hiavg / dble(rr**2)
+                crseavg = dble(kpert)/dble(rr)*loavg + dble(rr-kpert)/dble(rr)*hiavg
+                do ipert=0,rr-1
+                   do jpert=0,rr-1
+                      etapert(k+kpert,rhoh_comp) = &
+                           fluxr(i+ipert,j+jpert,k+kpert,rhoh_comp) - crseavg
+                   end do
+                end do
+
+                do comp=spec_comp,spec_comp+nspec-1
+                   loavg = ZERO
+                   hiavg = ZERO
+                   do ipert=0,rr-1
+                      do jpert=0,rr-1
+                         loavg = loavg + fluxr(i+ipert,j+jpert,k,   comp)
+                         hiavg = hiavg + fluxr(i+ipert,j+jpert,k+rr,comp)
+                      end do
+                   end do
+                   loavg = loavg / dble(rr**2)
+                   hiavg = hiavg / dble(rr**2)
+                   crseavg = dble(kpert)/dble(rr)*loavg + dble(rr-kpert)/dble(rr)*hiavg
+                   do ipert=0,rr-1
+                      do jpert=0,rr-1
+                         etapert(k+kpert,comp) = &
+                              fluxr(i+ipert,j+jpert,k+kpert,comp) - crseavg
+                      end do
+                   end do
+                end do
+
              end do
-             
           end do
+
        end do
     end do
 
