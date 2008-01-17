@@ -513,8 +513,8 @@ contains
           call multifab_build(gamma1_term(n), mla%la(n), 1, 0)
        end do
 
-       call make_S(nlevs,Source_new,gamma1_term,snew,rho_omegadot2,rho_Hext,thermal, &
-                   s0_old(:,:,temp_comp),gam1,dx)
+       call make_S(nlevs,Source_new,gamma1_term,snew,uold,rho_omegadot2,rho_Hext,thermal, &
+                   s0_old(:,:,temp_comp),p0_old,gam1,dx)
        
        do n=1,nlevs
           call destroy(rho_Hext(n))
@@ -568,6 +568,7 @@ contains
           call multifab_build(macrhs(n), mla%la(n), 1, 0)
        end do
 
+       ! note gamma1_term here is not time-centered
        call make_macrhs(nlevs,macrhs,Source_nph,gamma1_term,Sbar(:,:,1),div_coeff_nph,dx)
     
        do n=1,nlevs
@@ -755,8 +756,8 @@ contains
        call multifab_build(gamma1_term(n), mla%la(n), 1, 0)
     end do
 
-    call make_S(nlevs,Source_new,gamma1_term,snew,rho_omegadot2,rho_Hext,thermal, &
-                s0_new(:,:,temp_comp),gam1,dx)
+    call make_S(nlevs,Source_new,gamma1_term,snew,uold,rho_omegadot2,rho_Hext,thermal, &
+                s0_new(:,:,temp_comp),p0_new,gam1,dx)
 
     do n=1,nlevs
        call destroy(rho_Hext(n))

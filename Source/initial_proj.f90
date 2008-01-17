@@ -92,8 +92,8 @@ contains
        call setval(     rho_Hext(n), ZERO, all=.true.)
     end do
 
-    call make_S(nlevs,Source_old,gamma1_term,sold,rho_omegadot1,rho_Hext,thermal, &
-                s0_old(:,:,temp_comp),gam1,dx)
+    call make_S(nlevs,Source_old,gamma1_term,sold,uold,rho_omegadot1,rho_Hext,thermal, &
+                s0_old(:,:,temp_comp),p0_old,gam1,dx)
     do n=1,nlevs
        call destroy(thermal(n))
        call destroy(rho_omegadot1(n))
