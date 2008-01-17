@@ -23,12 +23,13 @@ contains
     integer           , intent(in   ) :: nlevs
     real(kind=dp_t)   , intent(inout) :: eta(:,0:,:)
     type(multifab)    , intent(in   ) :: sold(:)
-    type(multifab)    , intent(in   ) :: sflux(:,:)
+    type(multifab)    , intent(inout) :: sflux(:,:)
     real(kind = dp_t) , intent(in   ) :: dx(:,:)
     type(ml_layout)   , intent(inout) :: mla
 
     ! local
-    real(kind=dp_t), pointer :: fluxrp(:,:,:,:)
+    real(kind=dp_t), pointer :: fp(:,:,:,:)
+    real(kind=dp_t), pointer :: fpc(:,:,:,:)
     
     real(kind=dp_t), allocatable :: ncell_proc(:,:)
     real(kind=dp_t), allocatable :: ncell(:,:)
@@ -44,6 +45,9 @@ contains
     integer :: domlo(sold(1)%dim),domhi(sold(1)%dim)
     integer :: lo(sold(1)%dim),hi(sold(1)%dim)
     integer :: i,k,n,dm,rr,comp
+
+    type(layout) :: lasfluxcoarse
+    type(multifab) :: sfluxcoarse
 
     type(bl_prof_timer), save :: bpt
 
@@ -86,14 +90,14 @@ contains
        ! is the only level in existence
        do i=1,sold(1)%nboxes
           if ( multifab_remote(sold(1), i) ) cycle
-          fluxrp => dataptr(sflux(1,dm), i)
+          fp => dataptr(sflux(1,dm), i)
           lo =  lwb(get_box(sold(1), i))
           hi =  upb(get_box(sold(1), i))
           select case (dm)
           case (2)
-            call sum_eta_coarsest_2d(lo,hi,domhi,fluxrp(:,:,1,:),etasum_proc(1,:,:))
+            call sum_eta_coarsest_2d(lo,hi,domhi,fp(:,:,1,:),etasum_proc(1,:,:))
           case (3)
-            call sum_eta_coarsest_3d(lo,hi,domhi,fluxrp(:,:,:,:),etasum_proc(1,:,:))
+            call sum_eta_coarsest_3d(lo,hi,domhi,fp(:,:,:,:),etasum_proc(1,:,:))
           end select
        end do
 
@@ -155,17 +159,29 @@ contains
              end do
           end do
 
+          ! create a temporary coarse multifab that corresponds directly to regions 
+          ! where the finer flux, sflux(n,dm), exists
+          call layout_build_coarse(lasfluxcoarse, sflux(n,dm)%la, mla%mba%rr(n-1,:))
+          call multifab_build(sfluxcoarse, lasfluxcoarse, nc=sflux(n,dm)%nc, ng=0, &
+                              nodal=sflux(n,dm)%nodal)
+
+          ! copy data from the coarse multifab into my temporary coarse multifab
+          call copy(sfluxcoarse, 1, sflux(n-1,dm), 1, nscal)
+
           ! compute etapert_proc on faces that do not exist at the coarser level
           do i=1,sold(n)%nboxes
              if ( multifab_remote(sold(n), i) ) cycle
-             fluxrp => dataptr(sflux(n,dm), i)
+             fp  => dataptr(sflux(n,dm), i)
+             fpc  => dataptr(sfluxcoarse, i)
              lo =  lwb(get_box(sold(n), i))
              hi =  upb(get_box(sold(n), i))
              select case (dm)
              case (2)
-                call compute_etapert_2d(lo,hi,domhi,fluxrp(:,:,1,:),etasum_proc(1,:,:))
+                call compute_etapert_2d(lo,hi,fp(:,:,1,:),fpc(:,:,1,:), &
+                                        etasum_proc(1,:,:),rr)
              case (3)
-                call compute_etapert_3d(lo,hi,domhi,fluxrp(:,:,:,:),etasum_proc(1,:,:))
+                call compute_etapert_3d(lo,hi,fp(:,:,:,:),fpc(:,:,:,:), &
+                                        etasum_proc(1,:,:),rr)
              end select
           end do
 
@@ -210,13 +226,13 @@ contains
 
   end subroutine make_eta
 
-  subroutine sum_eta_coarsest_2d(lo,hi,domhi,fluxy,etasum)
+  subroutine sum_eta_coarsest_2d(lo,hi,domhi,fluxr,etasum)
 
     use variables, only: nscal, rho_comp, rhoh_comp, spec_comp
     use network, only: nspec
 
     integer         , intent(in   ) :: lo(:), hi(:), domhi(:)
-    real (kind=dp_t), intent(in   ) :: fluxy(lo(1):,lo(2):,:)
+    real (kind=dp_t), intent(in   ) :: fluxr(lo(1):,lo(2):,:)
     real (kind=dp_t), intent(inout) :: etasum(0:,:)
 
     ! local
@@ -224,9 +240,9 @@ contains
 
     do j=lo(2),hi(2)
        do i=lo(1),hi(1)
-          etasum(j,rhoh_comp) = etasum(j,rhoh_comp) + fluxy(i,j,rhoh_comp)
+          etasum(j,rhoh_comp) = etasum(j,rhoh_comp) + fluxr(i,j,rhoh_comp)
           do comp=spec_comp,spec_comp+nspec-1
-             etasum(j,comp) = etasum(j,comp) + fluxy(i,j,comp)
+             etasum(j,comp) = etasum(j,comp) + fluxr(i,j,comp)
           end do
        end do
     end do
@@ -236,22 +252,22 @@ contains
     if(hi(2) .eq. domhi(2)) then
        j=hi(2)+1
        do i=lo(1),hi(1)
-          etasum(j,rhoh_comp) = etasum(j,rhoh_comp) + fluxy(i,j,rhoh_comp)
+          etasum(j,rhoh_comp) = etasum(j,rhoh_comp) + fluxr(i,j,rhoh_comp)
           do comp=spec_comp,spec_comp+nspec-1
-             etasum(j,comp) = etasum(j,comp) + fluxy(i,j,comp)
+             etasum(j,comp) = etasum(j,comp) + fluxr(i,j,comp)
           end do
        end do
     end if
 
   end subroutine sum_eta_coarsest_2d
 
-  subroutine sum_eta_coarsest_3d(lo,hi,domhi,fluxz,etasum)
+  subroutine sum_eta_coarsest_3d(lo,hi,domhi,fluxr,etasum)
 
     use variables, only: nscal, rho_comp, rhoh_comp, spec_comp
     use network, only: nspec
 
     integer         , intent(in   ) :: lo(:), hi(:), domhi(:)
-    real (kind=dp_t), intent(in   ) :: fluxz(lo(1):,lo(2):,lo(3):,:)
+    real (kind=dp_t), intent(in   ) :: fluxr(lo(1):,lo(2):,lo(3):,:)
     real (kind=dp_t), intent(inout) :: etasum(0:,:)
 
     ! local
@@ -260,9 +276,9 @@ contains
     do k=lo(3),hi(3)
        do j=lo(2),hi(2)
           do i=lo(1),hi(1)
-             etasum(k,rhoh_comp) = etasum(k,rhoh_comp) + fluxz(i,j,k,rhoh_comp)
+             etasum(k,rhoh_comp) = etasum(k,rhoh_comp) + fluxr(i,j,k,rhoh_comp)
              do comp=spec_comp,spec_comp+nspec-1
-                etasum(k,comp) = etasum(k,comp) + fluxz(i,j,k,comp)
+                etasum(k,comp) = etasum(k,comp) + fluxr(i,j,k,comp)
              end do
           end do
        end do
@@ -274,9 +290,9 @@ contains
        k=hi(3)+1
        do j=lo(2),hi(2)
           do i=lo(1),hi(1)
-             etasum(k,rhoh_comp) = etasum(k,rhoh_comp) + fluxz(i,j,k,rhoh_comp)
+             etasum(k,rhoh_comp) = etasum(k,rhoh_comp) + fluxr(i,j,k,rhoh_comp)
              do comp=spec_comp,spec_comp+nspec-1
-                etasum(k,comp) = etasum(k,comp) + fluxz(i,j,k,comp)
+                etasum(k,comp) = etasum(k,comp) + fluxr(i,j,k,comp)
              end do
           end do
        end do
@@ -284,25 +300,70 @@ contains
 
   end subroutine sum_eta_coarsest_3d
 
-  subroutine compute_etapert_2d(lo,hi,domhi,fluxy,etapert)
+  subroutine compute_etapert_2d(lo,hi,fluxr,fluxrc,etapert,rr)
 
-    integer         , intent(in   ) :: lo(:), hi(:), domhi(:)
-    real (kind=dp_t), intent(in   ) :: fluxy(lo(1):,lo(2):,:)
+    use variables, only: rhoh_comp, spec_comp
+    use network, only: nspec
+    use bl_constants_module
+
+    integer         , intent(in   ) :: lo(:), hi(:), rr
+    real (kind=dp_t), intent(in   ) ::  fluxr(lo(1):,lo(2):,:)
+    real (kind=dp_t), intent(in   ) :: fluxrc(lo(1):,lo(2):,:)
     real (kind=dp_t), intent(inout) :: etapert(0:,:)
     
+    ! local
+    integer         :: i,j,comp
+    real(kind=dp_t) :: crseval
 
+    do j=lo(2)+1,hi(2)-1,2
+       do i=lo(1),hi(1)
+
+          crseval = (fluxrc(i/rr,(j-1)/rr,rhoh_comp) + fluxrc(i/rr,(j-1)/rr+1,rhoh_comp))/TWO
+          etapert(j,rhoh_comp) = fluxr(i,j,rhoh_comp) - crseval
+
+          do comp=spec_comp,spec_comp+nspec-1
+             crseval = (fluxrc(i/rr,(j-1)/rr,comp) + fluxrc(i/rr,(j-1)/rr+1,comp))/TWO
+             etapert(j,comp) = fluxr(i,j,comp) - crseval
+          end do
+
+       end do
+    end do
 
 
   end subroutine compute_etapert_2d
 
-  subroutine compute_etapert_3d(lo,hi,domhi,fluxz,etapert)
+  subroutine compute_etapert_3d(lo,hi,fluxr,fluxrc,etapert,rr)
 
-    integer         , intent(in   ) :: lo(:), hi(:), domhi(:)
-    real (kind=dp_t), intent(in   ) :: fluxz(lo(1):,lo(2):,lo(3):,:)
+    use variables, only: rhoh_comp, spec_comp
+    use network, only: nspec
+    use bl_constants_module
+
+    integer         , intent(in   ) :: lo(:), hi(:), rr
+    real (kind=dp_t), intent(in   ) ::  fluxr(lo(1):,lo(2):,lo(3):,:)
+    real (kind=dp_t), intent(in   ) :: fluxrc(lo(1):,lo(2):,lo(3):,:)
     real (kind=dp_t), intent(inout) :: etapert(0:,:)
     
+    ! local
+    integer         :: i,j,k,comp
+    real(kind=dp_t) :: crseval
 
+    do k=lo(3)+1,hi(3)-1,2
+       do j=lo(2),hi(2)
+          do i=lo(1),hi(1)
 
+             crseval = (fluxrc(i/rr,j/rr,(k-1)/rr,rhoh_comp) + &
+                  fluxrc(i/rr,j/rr,(k-1)/rr+1,rhoh_comp))/TWO
+             etapert(k,rhoh_comp) = fluxr(i,j,k,rhoh_comp) - crseval
+             
+             do comp=spec_comp,spec_comp+nspec-1
+                crseval = (fluxrc(i/rr,j/rr,(k-1)/rr,comp) + &
+                     fluxrc(i/rr,j/rr,(k-1)/rr+1,comp))/TWO
+                etapert(k,comp) = fluxr(i,j,k,comp) - crseval
+             end do
+             
+          end do
+       end do
+    end do
 
   end subroutine compute_etapert_3d
 
