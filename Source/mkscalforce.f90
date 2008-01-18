@@ -115,8 +115,6 @@ contains
     real(kind=dp_t) :: gradp0, wadv
     integer :: i,j
 
-    rhoh_force = ZERO
-
 !   Add w d(p0)/dz 
     do j = lo(2),hi(2)
        if (j.eq.0) then
@@ -152,8 +150,6 @@ contains
     real(kind=dp_t) :: gradp0,wadv
     integer :: i,j,k
 
-    rhoh_force = ZERO
- 
     do k = lo(3),hi(3)
 
        if (k.eq.0) then
@@ -203,8 +199,6 @@ contains
     allocate(gradp_rad(0:nr(n)-1))
     allocate(gradp_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
  
-    rhoh_force = ZERO
-
     do k = 0, nr(n)-1
        
        if (k.eq.0) then
@@ -334,8 +328,6 @@ contains
 
     integer :: i,j
 
-    temp_force = ZERO
-
 !   HACK HACK HACK 
 !   We ignore the w d(p0) / dz term since p0 is essentially constant
 
@@ -383,8 +375,6 @@ contains
     real(kind=dp_t), intent(in   ) :: p0(0:)
 
     integer :: i,j,k
-
-    temp_force = ZERO
 
 !   HACK HACK HACK 
 !   We ignore the w d(p0) / dz term since p0 is essentially constant
@@ -441,8 +431,6 @@ contains
 
     allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
     call fill_3d_data(n,p0_cart,p0,lo,hi,dx,0)
-
-    temp_force = ZERO
 
 !   HACK HACK HACK 
 !   We ignore the w d(p0) / dz term since p0 is essentially constant

@@ -129,14 +129,14 @@ contains
     ! call makeTfromRhoH(nlevs,sold,s0_old(:,:,temp_comp),mla,the_bc_level,dx)
 
     do n = 1, nlevs
-       call build(scal_force(n), sold(n)%la, nscal, 1)
-       call setval(scal_force(n), ZERO,all=.true.)
+       call build(scal_force(n), sold(n)%la, nscal, 1)       
+       call setval(scal_force(n),ZERO,all=.true.)
     end do
 
     ! make force for species
     call modify_scal_force(nlevs,scal_force,sold,umac,s0_old,s0_edge_old,w0,dx, &
                            s0_old_cart,spec_comp,nspec,mla,the_bc_level)
-    
+
     if(predict_temp_at_edges) then
 
        ! make force for temperature
@@ -180,7 +180,6 @@ contains
           umac_nodal_flag = .false.
           umac_nodal_flag(comp) = .true.
           call multifab_build( sedge(n,comp), mla%la(n), nscal, 0, nodal = umac_nodal_flag)
-          call setval( sedge(n,comp),ZERO, all=.true.)
        end do
     end do
 
@@ -238,7 +237,6 @@ contains
           umac_nodal_flag = .false.
           umac_nodal_flag(comp) = .true.
           call multifab_build( sflux(n,comp), mla%la(n), nscal, 0, nodal = umac_nodal_flag)
-          call setval( sflux(n,comp),ZERO, all=.true.)
        end do
     end do
 
@@ -266,7 +264,7 @@ contains
     !**************************************************************************
     
     do n=1,nlevs
-       call setval(scal_force(n),ZERO)
+       call setval(scal_force(n),ZERO,all=.true.)
     end do
 
     call update_scal(nlevs,which_step,spec_comp,spec_comp+nspec-1,sold,snew,umac,w0, &
