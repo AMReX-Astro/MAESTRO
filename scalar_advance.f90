@@ -168,10 +168,10 @@ contains
     !**************************************************************************
 
     if (.not. predict_temp_at_edges) then
-       call put_in_pert_form(nlevs,sold,s0_old,dx,rhoh_comp,1,.true.)
+       call put_in_pert_form(nlevs,sold,s0_old,dx,rhoh_comp,1,.true.,mla,the_bc_level)
     end if
 
-    call put_in_pert_form(nlevs,sold,s0_old,dx,spec_comp,nspec,.true.)
+    call put_in_pert_form(nlevs,sold,s0_old,dx,spec_comp,nspec,.true.,mla,the_bc_level)
 
     allocate(sedge(nlevs,dm))
 
@@ -205,10 +205,10 @@ contains
     end if
 
     if (.not. predict_temp_at_edges) then
-       call put_in_pert_form(nlevs,sold,s0_old,dx,rhoh_comp,1,.false.)
+       call put_in_pert_form(nlevs,sold,s0_old,dx,rhoh_comp,1,.false.,mla,the_bc_level)
     end if
     
-    call put_in_pert_form(nlevs,sold,s0_old,dx,spec_comp,nspec,.false.)
+    call put_in_pert_form(nlevs,sold,s0_old,dx,spec_comp,nspec,.false.,mla,the_bc_level)
 
     !**************************************************************************
     !     Create the edge states of tracers.

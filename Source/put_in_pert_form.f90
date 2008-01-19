@@ -12,19 +12,26 @@ module pert_form_module
 
 contains
 
-  subroutine put_in_pert_form(nlevs,s,base,dx,comp,ncomp,flag)
+  subroutine put_in_pert_form(nlevs,s,base,dx,startcomp,numcomp,flag,mla,the_bc_level)
 
     use geometry, only: spherical
+    use variables, only: foextrap_comp
+    use ml_layout_module
+    use define_bc_module
+    use ml_restriction_module, only: ml_cc_restriction
+    use multifab_fill_ghost_module
 
-    integer        , intent(in   ) :: nlevs,comp,ncomp
+    integer        , intent(in   ) :: nlevs,startcomp,numcomp
     type(multifab) , intent(inout) :: s(:)
     real(kind=dp_t), intent(in   ) :: base(:,0:,:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     logical        , intent(in   ) :: flag
+    type(ml_layout), intent(inout) :: mla
+    type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     ! Local variables
     real(kind=dp_t), pointer::  sp(:,:,:,:)
-    integer :: i,lo(s(1)%dim),hi(s(1)%dim),ng,dm,n
+    integer :: i,lo(s(1)%dim),hi(s(1)%dim),ng,dm,n,comp
 
     ng = s(1)%ng
     dm = s(1)%dim
@@ -37,26 +44,45 @@ contains
           hi =  upb(get_box(s(n),i))
           select case (dm)
           case (2)
-             call pert_form_2d(sp(:,:,1,:),base(n,:,:),lo,hi,ng,comp,ncomp,flag)
+             call pert_form_2d(sp(:,:,1,:),base(n,:,:),lo,hi,ng,startcomp,numcomp,flag)
           case (3)
              if (spherical .eq. 1) then
                 call pert_form_3d_sphr(n,sp(:,:,:,:),base(n,:,:),lo,hi,ng,dx(n,:), &
-                                       comp,ncomp,flag)
+                                       startcomp,numcomp,flag)
              else
-                call pert_form_3d_cart(sp(:,:,:,:),base(n,:,:),lo,hi,ng,comp,ncomp,flag)
+                call pert_form_3d_cart(sp(:,:,:,:),base(n,:,:),lo,hi,ng,startcomp,numcomp,flag)
              end if
           end select
        end do
 
-       call multifab_fill_boundary_c(s(n),comp,ncomp)
+       call multifab_fill_boundary_c(s(n),startcomp,numcomp)
+
+    end do
+
+    do n=nlevs,2,-1
+       call ml_cc_restriction(s(n-1),s(n),mla%mba%rr(n-1,:))
+
+       if(flag) then
+          do comp=startcomp,startcomp+numcomp-1
+             call multifab_fill_ghost_cells(s(n),s(n-1), &
+                                            s(n)%ng,mla%mba%rr(n-1,:), &
+                                            the_bc_level(n-1),the_bc_level(n), &
+                                            comp,foextrap_comp,1)
+          end do
+       else
+          call multifab_fill_ghost_cells(s(n),s(n-1), &
+                                         s(n)%ng,mla%mba%rr(n-1,:), &
+                                         the_bc_level(n-1),the_bc_level(n), &
+                                         startcomp,dm+startcomp,numcomp)
+       end if
 
     end do
 
   end subroutine put_in_pert_form
 
-  subroutine pert_form_2d(s,s0,lo,hi,ng,incomp,ncomp,flag)
+  subroutine pert_form_2d(s,s0,lo,hi,ng,startcomp,numcomp,flag)
 
-    integer        , intent(in   ) ::  lo(:),hi(:),ng,incomp,ncomp
+    integer        , intent(in   ) ::  lo(:),hi(:),ng,startcomp,numcomp
     real(kind=dp_t), intent(inout) ::  s(lo(1)-ng:,lo(2)-ng:,:)
     real(kind=dp_t), intent(in   ) :: s0(0:,:)
     logical        , intent(in   ) :: flag
@@ -65,7 +91,7 @@ contains
     integer         :: i,j,comp
 
     if (flag) then
-       do comp = incomp, incomp+ncomp-1
+       do comp = startcomp, startcomp+numcomp-1
           do j = lo(2),hi(2)
              do i = lo(1),hi(1)
                 s(i,j,comp) = s(i,j,comp) - s0(j,comp)
@@ -73,7 +99,7 @@ contains
           end do
        end do
     else
-       do comp = incomp, incomp+ncomp-1
+       do comp = startcomp, startcomp+numcomp-1
           do j = lo(2),hi(2)
              do i = lo(1),hi(1)
                 s(i,j,comp) = s(i,j,comp) + s0(j,comp)
@@ -84,9 +110,9 @@ contains
 
   end subroutine pert_form_2d
 
-  subroutine pert_form_3d_cart(s,s0,lo,hi,ng,incomp,ncomp,flag)
+  subroutine pert_form_3d_cart(s,s0,lo,hi,ng,startcomp,numcomp,flag)
 
-    integer        , intent(in   ) ::  lo(:),hi(:),ng,incomp,ncomp
+    integer        , intent(in   ) ::  lo(:),hi(:),ng,startcomp,numcomp
     real(kind=dp_t), intent(inout) ::  s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real(kind=dp_t), intent(in   ) :: s0(0:,:)
     logical        , intent(in   ) :: flag
@@ -95,7 +121,7 @@ contains
     integer         :: i,j,k,comp
 
     if (flag) then
-       do comp = incomp, incomp+ncomp-1
+       do comp = startcomp, startcomp+numcomp-1
           do k = lo(3),hi(3)
              do j = lo(2),hi(2)
                 do i = lo(1),hi(1)
@@ -105,7 +131,7 @@ contains
           end do
        end do
     else
-       do comp = incomp, incomp+ncomp-1
+       do comp = startcomp, startcomp+numcomp-1
           do k = lo(3),hi(3)
              do j = lo(2),hi(2)
                 do i = lo(1),hi(1)
@@ -118,11 +144,11 @@ contains
 
   end subroutine pert_form_3d_cart
 
-  subroutine pert_form_3d_sphr(n,s,s0,lo,hi,ng,dx,incomp,ncomp,flag)
+  subroutine pert_form_3d_sphr(n,s,s0,lo,hi,ng,dx,startcomp,numcomp,flag)
 
     use fill_3d_module
 
-    integer        , intent(in   ) :: n,lo(:),hi(:),ng,incomp,ncomp
+    integer        , intent(in   ) :: n,lo(:),hi(:),ng,startcomp,numcomp
     real(kind=dp_t), intent(inout) ::  s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real(kind=dp_t), intent(in   ) :: s0(0:,:)
     real(kind=dp_t), intent(in   ) :: dx(:)
@@ -134,7 +160,7 @@ contains
     allocate(s0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
 
     if (flag) then
-       do comp = incomp,incomp+ncomp-1
+       do comp = startcomp,startcomp+numcomp-1
           call fill_3d_data(n,s0_cart,s0(0:,comp),lo,hi,dx,0)
           do k = lo(3),hi(3)
              do j = lo(2),hi(2)
@@ -145,7 +171,7 @@ contains
           end do
        end do
     else
-       do comp = incomp,incomp+ncomp-1
+       do comp = startcomp,startcomp+numcomp-1
           call fill_3d_data(n,s0_cart,s0(0:,comp),lo,hi,dx,0)
           do k = lo(3),hi(3)
              do j = lo(2),hi(2)
