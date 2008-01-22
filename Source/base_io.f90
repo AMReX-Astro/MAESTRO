@@ -29,7 +29,7 @@ contains
 
     real(kind=dp_t) :: base_r, problo
     character(len=18) :: out_name
-    integer :: i, comp
+    integer :: i, comp, n
 
     type(bl_prof_timer), save :: bpt
 
@@ -42,11 +42,14 @@ contains
        write(6,*) 'Writing base state to ',out_name
 
        open(unit=99,file=out_name,form = "formatted", access = "sequential",action="write")
-       do i = 1, nr(1)
-          base_r = problo + (dble(i)-HALF) * dr(1)
-          write(99,1000)  base_r,s0(1,i,rho_comp), p0(1,i), gam1(1,i), s0(1,i,rhoh_comp), &
-               (s0(1,i,comp), comp=spec_comp,spec_comp+nspec-1), s0(1,i,temp_comp), &
-               div_coeff(1,i)
+
+       do n=1,nlevs
+          do i=1,nr(n)
+             base_r = problo + (dble(i)-HALF) * dr(n)
+             write(99,1000)  base_r,s0(n,i,rho_comp), p0(n,i), gam1(n,i), s0(n,i,rhoh_comp), &
+                  (s0(n,i,comp), comp=spec_comp,spec_comp+nspec-1), s0(n,i,temp_comp), &
+                  div_coeff(n,i)
+          end do
        end do
        close(99)
 
@@ -56,9 +59,11 @@ contains
        write(6,*) ''
 
        open(unit=99,file=out_name,form = "formatted", access = "sequential",action="write")
-       do i = 1, nr(1)+1
-          base_r = problo + (dble(i)-1) * dr(1)
-          write(99,1000)  base_r,w0(1,i)
+       do n=1,nlevs
+          do i=1,nr(n)+1
+             base_r = problo + (dble(i)-1) * dr(n)
+             write(99,1000)  base_r,w0(n,i)
+          end do
        end do
        close(99)
 
@@ -89,7 +94,7 @@ contains
 
     real(kind=dp_t) :: r_dummy
     character(len=18) :: out_name
-    integer :: i, comp
+    integer :: i, comp, n
 
     type(bl_prof_timer), save :: bpt
 
@@ -104,10 +109,12 @@ contains
     end if
 
     open(unit=99,file=out_name)
-    do i=1,nr(1)
-       read(99,*)  base_r(1,i),s0(1,i,rho_comp), p0(1,i), gam1(1,i),s0(1,i,rhoh_comp), &
-                   (s0(1,i,comp), comp=spec_comp,spec_comp+nspec-1), s0(1,i,temp_comp), &
-                   div_coeff(1,i)
+    do n=1,nlevs
+       do i=1,nr(n)
+          read(99,*)  base_r(n,i),s0(n,i,rho_comp), p0(n,i), gam1(n,i),s0(n,i,rhoh_comp), &
+               (s0(n,i,comp), comp=spec_comp,spec_comp+nspec-1), s0(n,i,temp_comp), &
+               div_coeff(n,i)
+       end do
     end do
     close(99)
 
@@ -118,8 +125,10 @@ contains
     end if
 
     open(unit=99,file=out_name)
-    do i=1,nr(1)+1
-       read(99,*)  r_dummy, w0(1,i)
+    do n=1,nlevs
+       do i=1,nr(n)+1
+          read(99,*)  r_dummy, w0(n,i)
+       end do
     end do
     close(99)
 
