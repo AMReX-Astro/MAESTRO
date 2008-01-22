@@ -12,7 +12,7 @@ module checkpoint_module
 contains
 
   subroutine checkpoint_write(dirname, mfs, mfs_nodal, dSdt, Source_old, &
-                              rho_omegadot2, rrs, dx, time, dt)
+                              rho_omegadot2, rrs, time, dt)
 
     use parallel
     use bl_IO_module
@@ -20,20 +20,18 @@ contains
     use bl_prof_module
     use probin_module, only: verbose
 
-    type(multifab), intent(in) :: mfs(:), mfs_nodal(:)
-    type(multifab), intent(in) :: dSdt(:), Source_old(:)
-    type(multifab), intent(in) :: rho_omegadot2(:)
-    integer        , intent(in) :: rrs(:,:)
-    real(kind=dp_t), intent(in) :: dx(:,:)
+    type(multifab)  , intent(in) :: mfs(:), mfs_nodal(:)
+    type(multifab)  , intent(in) :: dSdt(:), Source_old(:)
+    type(multifab)  , intent(in) :: rho_omegadot2(:)
+    integer         , intent(in) :: rrs(:,:)
     character(len=*), intent(in) :: dirname
-    real(kind=dp_t), intent(in) :: time, dt
-    integer :: n, i
+    real(kind=dp_t) , intent(in) :: time, dt
+
+    ! local
+    integer :: n, i, un, nlevs
     character(len=128) :: header, sd_name, sd_name_nodal
-    integer :: un
-    integer         :: nlevs, dm
 
     namelist /chkpoint/ nlevs
-    namelist /chkpoint/ dm
 
     type(bl_prof_timer), save :: bpt
 
@@ -80,8 +78,6 @@ contains
       write(6,*) 'Writing state to checkpoint file ',trim(sd_name_nodal)
     end if
 
-    dm = size(dx,dim=2)
-
     ! Note: parallel fails on Bassi if this is done on all processors
     if (parallel_IOProcessor()) then
        header = "Header"
@@ -92,12 +88,6 @@ contains
             status = "replace", action = "write")
        nlevs = size(mfs)
        write(unit=un, nml = chkpoint)
-       do n = 1,nlevs
-          write(unit=un,fmt=*) (dx(n,i), i=1,dm)
-       end do
-       do n = 1,nlevs-1
-          write(unit=un,fmt=*) rrs(n,1)
-       end do
        write(unit=un,fmt=1000) dt
        write(unit=un,fmt=1000) time
        close(un)
@@ -123,18 +113,13 @@ contains
     integer         , intent(  out)          :: nlevs_out
     real(kind=dp_t) , intent(  out)          :: time_out, dt_out
 
-    integer         ,                pointer :: rrs(:)
-    real(kind=dp_t) ,                pointer :: dx(:,:)
-
-    integer :: n, i
+    ! local
+    integer            :: n, i, un
     character(len=128) :: header, sd_name
-    integer :: un
-
-    integer         :: nlevs, dm
-    real(kind=dp_t) :: time, dt
+    integer            :: nlevs
+    real(kind=dp_t)    :: time, dt
 
     namelist /chkpoint/ nlevs
-    namelist /chkpoint/ dm
 
     type(bl_prof_timer), save :: bpt
 
@@ -149,15 +134,6 @@ contains
          action = "read")
     read(unit=un, nml = chkpoint)
 
-    allocate( dx(nlevs,dm))
-    allocate(rrs(nlevs-1))
-
-    do n = 1,nlevs
-       read(unit=un,fmt=*) (dx(n,i), i=1,dm)
-    end do
-    do n = 1,nlevs-1
-       read(unit=un,fmt=*) rrs(n)
-    end do
     read(unit=un,fmt=*) dt
     read(unit=un,fmt=*) time
     close(un)
@@ -185,8 +161,6 @@ contains
 !   Read the rho_omegadot2 data into a multilevel multifab.
     write(unit=sd_name, fmt='(a,"/rho_omegadot2")') trim(dirname)
     call fabio_ml_multifab_read_d(rho_omegadot2, sd_name)
-
-    deallocate(dx,rrs)
 
     call destroy(bpt)
 

@@ -12,7 +12,8 @@ module restart_module
 
 contains
 
-  subroutine fill_restart_data(restart_int,mba,chkdata,chk_p,chk_dsdt,chk_src_old,chk_rho_omegadot2,time,dt)
+  subroutine fill_restart_data(restart_int,mba,chkdata,chk_p,chk_dsdt,chk_src_old, &
+                               chk_rho_omegadot2,time,dt)
 
     use parallel
     use bl_prof_module
