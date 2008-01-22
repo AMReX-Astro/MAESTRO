@@ -12,7 +12,7 @@ module checkpoint_module
 contains
 
   subroutine checkpoint_write(dirname, mfs, mfs_nodal, dSdt, Source_old, &
-                              rho_omegadot2, rrs, dx, time_in, dt_in)
+                              rho_omegadot2, rrs, dx, time, dt)
 
     use parallel
     use bl_IO_module
@@ -26,16 +26,12 @@ contains
     integer        , intent(in) :: rrs(:,:)
     real(kind=dp_t), intent(in) :: dx(:,:)
     character(len=*), intent(in) :: dirname
-    real(kind=dp_t), intent(in) :: time_in, dt_in
+    real(kind=dp_t), intent(in) :: time, dt
     integer :: n, i
     character(len=128) :: header, sd_name, sd_name_nodal
     integer :: un
-
     integer         :: nlevs, dm
-    real(kind=dp_t) :: time, dt
 
-    namelist /chkpoint/ time
-    namelist /chkpoint/ dt
     namelist /chkpoint/ nlevs
     namelist /chkpoint/ dm
 
@@ -84,10 +80,7 @@ contains
       write(6,*) 'Writing state to checkpoint file ',trim(sd_name_nodal)
     end if
 
-    time = time_in
-      dt =   dt_in
-
-      dm = size(dx,dim=2)
+    dm = size(dx,dim=2)
 
     ! Note: parallel fails on Bassi if this is done on all processors
     if (parallel_IOProcessor()) then
@@ -105,10 +98,14 @@ contains
        do n = 1,nlevs-1
           write(unit=un,fmt=*) rrs(n,1)
        end do
+       write(unit=un,fmt=1000) dt
+       write(unit=un,fmt=1000) time
        close(un)
     end if
 
     call destroy(bpt)
+
+1000 format(32(e30.20,1x))
 
   end subroutine checkpoint_write
 
@@ -137,8 +134,6 @@ contains
     real(kind=dp_t) :: time, dt
 
     namelist /chkpoint/ nlevs
-    namelist /chkpoint/ time
-    namelist /chkpoint/ dt
     namelist /chkpoint/ dm
 
     type(bl_prof_timer), save :: bpt
@@ -163,6 +158,8 @@ contains
     do n = 1,nlevs-1
        read(unit=un,fmt=*) rrs(n)
     end do
+    read(unit=un,fmt=*) dt
+    read(unit=un,fmt=*) time
     close(un)
 
      time_out = time
