@@ -105,7 +105,7 @@ contains
 
     call build(bpt, "read_base_state")
 
-    allocate(base_r(nlevs,nr(1)))
+    allocate(base_r(nlevs,nr(nlevs)))
 
     ! read in the state variables
     out_name = chk_name // "/" // state_name

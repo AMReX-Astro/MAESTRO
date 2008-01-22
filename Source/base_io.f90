@@ -46,9 +46,10 @@ contains
        do n=1,nlevs
           do i=1,nr(n)
              base_r = problo + (dble(i)-HALF) * dr(n)
-             write(99,1000)  base_r,s0(n,i,rho_comp), p0(n,i), gam1(n,i), s0(n,i,rhoh_comp), &
-                  (s0(n,i,comp), comp=spec_comp,spec_comp+nspec-1), s0(n,i,temp_comp), &
-                  div_coeff(n,i)
+             write(99,1000)  base_r,s0(n,i,rho_comp), p0(n,i), gam1(n,i), &
+                  s0(n,i,rhoh_comp), &
+                  (s0(n,i,comp), comp=spec_comp,spec_comp+nspec-1), &
+                  s0(n,i,temp_comp), div_coeff(n,i)
           end do
        end do
        close(99)
@@ -100,7 +101,7 @@ contains
 
     call build(bpt, "read_base_state")
 
-    allocate(base_r(nlevs,nr(1)))
+    allocate(base_r(nlevs,nr(nlevs)))
 
     ! read in the state variables
     out_name = chk_name // "/" // state_name
@@ -109,9 +110,10 @@ contains
     end if
 
     open(unit=99,file=out_name)
+
     do n=1,nlevs
        do i=1,nr(n)
-          read(99,*)  base_r(n,i),s0(n,i,rho_comp), p0(n,i), gam1(n,i),s0(n,i,rhoh_comp), &
+          read(99,*)  base_r(n,i), s0(n,i,rho_comp), p0(n,i), gam1(n,i), s0(n,i,rhoh_comp), &
                (s0(n,i,comp), comp=spec_comp,spec_comp+nspec-1), s0(n,i,temp_comp), &
                div_coeff(n,i)
        end do
