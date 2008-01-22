@@ -25,11 +25,11 @@ contains
     character(len=10), intent(in) :: state_name
     character(len=7) , intent(in) :: w0_name
     character(len=7) , intent(in) :: chk_name
-    real(kind=dp_t)  , intent(in) :: s0(:,:),p0(:),gam1(:),div_coeff(:), w0(:)
+    real(kind=dp_t)  , intent(in) :: s0(:,:,:),p0(:,:),gam1(:,:),div_coeff(:,:),w0(:,:)
 
     real(kind=dp_t) :: base_r, problo
     character(len=18) :: out_name
-    integer :: i, n
+    integer :: i, comp
 
     type(bl_prof_timer), save :: bpt
 
@@ -44,8 +44,9 @@ contains
        open(unit=99,file=out_name,form = "formatted", access = "sequential",action="write")
        do i = 1, nr(1)
           base_r = problo + (dble(i)-HALF) * dr(1)
-          write(99,1000)  base_r,s0(i,rho_comp), p0(i), gam1(i), s0(i,rhoh_comp), &
-               (s0(i,n), n=spec_comp,spec_comp+nspec-1), s0(i,temp_comp), div_coeff(i)
+          write(99,1000)  base_r,s0(1,i,rho_comp), p0(1,i), gam1(1,i), s0(1,i,rhoh_comp), &
+               (s0(1,i,comp), comp=spec_comp,spec_comp+nspec-1), s0(1,i,temp_comp), &
+               div_coeff(1,i)
        end do
        close(99)
 
@@ -57,7 +58,7 @@ contains
        open(unit=99,file=out_name,form = "formatted", access = "sequential",action="write")
        do i = 1, nr(1)+1
           base_r = problo + (dble(i)-1) * dr(1)
-          write(99,1000)  base_r,w0(i)
+          write(99,1000)  base_r,w0(1,i)
        end do
        close(99)
 
@@ -72,7 +73,6 @@ contains
 
   subroutine read_base_state(nlevs,state_name,w0_name,chk_name,s0,p0,gam1,w0,div_coeff)
 
-
     use parallel
     use bl_prof_module
     use variables, only: rho_comp, rhoh_comp, spec_comp, temp_comp
@@ -84,18 +84,18 @@ contains
     character(len=10), intent(in   ) :: state_name
     character(len=7) , intent(in   ) :: w0_name
     character(len=7) , intent(in   ) :: chk_name    
-    real(kind=dp_t)  , intent(inout) :: s0(:,:),p0(:),gam1(:),div_coeff(:),w0(:)
-    real(kind=dp_t)  , allocatable   :: base_r(:)
+    real(kind=dp_t)  , intent(inout) :: s0(:,:,:),p0(:,:),gam1(:,:),div_coeff(:,:),w0(:,:)
+    real(kind=dp_t)  , allocatable   :: base_r(:,:)
 
     real(kind=dp_t) :: r_dummy
     character(len=18) :: out_name
-    integer :: i, n
+    integer :: i, comp
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "read_base_state")
 
-    allocate(base_r(nr(1)))
+    allocate(base_r(nlevs,nr(1)))
 
     ! read in the state variables
     out_name = chk_name // "/" // state_name
@@ -104,9 +104,10 @@ contains
     end if
 
     open(unit=99,file=out_name)
-    do i = 1, size(s0,dim=1)
-       read(99,*)  base_r(i),s0(i,rho_comp), p0(i), gam1(i),s0(i,rhoh_comp), &
-                   (s0(i,n), n=spec_comp,spec_comp+nspec-1), s0(i,temp_comp), div_coeff(i)
+    do i=1,nr(1)
+       read(99,*)  base_r(1,i),s0(1,i,rho_comp), p0(1,i), gam1(1,i),s0(1,i,rhoh_comp), &
+                   (s0(1,i,comp), comp=spec_comp,spec_comp+nspec-1), s0(1,i,temp_comp), &
+                   div_coeff(1,i)
     end do
     close(99)
 
@@ -117,8 +118,8 @@ contains
     end if
 
     open(unit=99,file=out_name)
-    do i = 1, size(w0,dim=1)
-       read(99,*)  r_dummy, w0(i)
+    do i=1,nr(1)+1
+       read(99,*)  r_dummy, w0(1,i)
     end do
     close(99)
 
