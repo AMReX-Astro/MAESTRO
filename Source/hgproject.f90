@@ -753,11 +753,12 @@ contains
     type(box     )  :: pd
     type(  layout)  :: la
 
-    type(mg_tower), allocatable :: mgt(:)
+    type(mg_tower) :: mgt(mla%nlevel)
+
+    type(multifab) :: rh(mla%nlevel)
+    type(multifab) :: one_sided_ss(2:mla%nlevel)
 
     type(multifab), allocatable :: coeffs(:)
-    type(multifab), allocatable :: rh(:)
-    type(multifab), allocatable :: one_sided_ss(:)
 
     real(dp_t) :: bottom_solver_eps
     real(dp_t) :: eps
@@ -783,8 +784,6 @@ contains
     dm    = mla%dim
     nlevs = mla%nlevel
     nodal = .true.
-
-    allocate(mgt(nlevs), one_sided_ss(2:nlevs))
 
     max_nlevel        = mgt(nlevs)%max_nlevel
     max_iter          = mgt(nlevs)%max_iter
@@ -911,7 +910,6 @@ contains
 
     end do
 
-    allocate(rh(nlevs))
     do n = 1, nlevs
        call multifab_build(rh(n),mla%la(n),1,1,nodal)
        call setval(rh(n),ZERO,all=.true.)

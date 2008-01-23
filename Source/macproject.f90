@@ -34,8 +34,9 @@ contains
     real(dp_t)     , intent(in   ), optional :: div_coeff_half_1d(:,:)
     type(multifab ), intent(in   ), optional :: div_coeff_3d(:)
 
-    type(multifab),  allocatable :: rh(:),alpha(:),beta(:)
-    type(bndry_reg), allocatable :: fine_flx(:)
+    type(multifab)  :: rh(mla%nlevel),alpha(mla%nlevel),beta(mla%nlevel)
+    type(bndry_reg) :: fine_flx(2:mla%nlevel)
+
     real(dp_t)                   :: umac_norm(mla%nlevel)
     integer                      :: dm,stencil_order,i,n,nlevs
     logical                      :: use_rhs, use_div_coeff_1d, use_div_coeff_3d
@@ -52,8 +53,6 @@ contains
     end if
 
     stencil_order = 2
-
-    allocate(rh(nlevs), alpha(nlevs), beta(nlevs))
 
     do n = 1, nlevs
        call multifab_build(   rh(n), mla%la(n),  1, 0)
@@ -101,7 +100,6 @@ contains
        end do
     end if
 
-    allocate(fine_flx(2:nlevs))
     do n = 2,nlevs
        call bndry_reg_build(fine_flx(n),mla%la(n),ml_layout_get_pd(mla,n))
     end do
@@ -1255,9 +1253,9 @@ contains
 
     type( multifab) :: ss
     type(imultifab) :: mm
-    type(sparse) :: sparse_object
-    type(mg_tower), allocatable :: mgt(:)
-    integer        :: i, dm, ns, nlevs, test
+    type(sparse)    :: sparse_object
+    type(mg_tower)  :: mgt(mla%nlevel)
+    integer         :: i, dm, ns, nlevs, test
 
     ! MG solver defaults
     integer :: bottom_solver, bottom_max_iter
@@ -1272,8 +1270,6 @@ contains
 
     nlevs = mla%nlevel
     dm    = mla%dim
-
-    allocate(mgt(nlevs))
 
     test           = 0
 
@@ -1457,10 +1453,10 @@ contains
 
     type( multifab) :: ss
     type(imultifab) :: mm
-    type(sparse) :: sparse_object
-    type(mg_tower), allocatable :: mgt(:)
-    integer        :: i, dm, ns, nlevs
-    integer        :: test
+    type(sparse)    :: sparse_object
+    type(mg_tower)  :: mgt(mla%nlevel)
+    integer         :: i, dm, ns, nlevs
+    integer         :: test
 
     ! MG solver defaults
     integer :: bottom_solver, bottom_max_iter
@@ -1480,10 +1476,7 @@ contains
 
     nlevs = mla%nlevel
     dm    = mla%dim
-
-    allocate(mgt(nlevs))
-
-    test           = 0
+    test  = 0
 
     max_nlevel        = mgt(nlevs)%max_nlevel
     max_iter          = mgt(nlevs)%max_iter
@@ -1651,7 +1644,6 @@ contains
     do n = 1, nlevs
        call mg_tower_destroy(mgt(n))
     end do
-    deallocate(mgt)
 
   end subroutine mac_applyop
 

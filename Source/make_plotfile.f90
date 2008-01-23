@@ -110,8 +110,9 @@ contains
     real(dp_t)       , intent(in   ) :: p0(:,0:)
     logical          , intent(in   ) :: plot_spec,plot_trac
 
-    type(multifab), allocatable :: plotdata(:)
-    integer                     :: n,dm,nlevs
+    type(multifab) :: plotdata(mla%nlevel)
+
+    integer :: n,dm,nlevs
 
     type(bl_prof_timer), save :: bpt
 
@@ -119,7 +120,6 @@ contains
 
     dm = get_dim(mba)
     nlevs = size(u)
-    allocate(plotdata(nlevs))
 
     do n = 1,nlevs
 
@@ -221,7 +221,6 @@ contains
     do n = 1,nlevs
        call destroy(plotdata(n))
     end do
-    deallocate(plotdata)
 
     call destroy(bpt)
 

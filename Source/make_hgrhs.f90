@@ -37,9 +37,10 @@ contains
     real(kind=dp_t), intent(in   ) :: div_coeff(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     
-    type(multifab), allocatable  :: rhs_cc(:)
-    type(multifab), allocatable  :: Sbar_cart(:)
-    type(multifab), allocatable  :: div_coeff_cart(:)
+    type(multifab) :: rhs_cc(nlevs)
+    type(multifab) :: Sbar_cart(nlevs)
+    type(multifab) :: div_coeff_cart(nlevs)
+
     real(kind=dp_t), pointer:: hp(:,:,:,:),gp(:,:,:,:),rp(:,:,:,:)
     real(kind=dp_t), pointer:: dp(:,:,:,:),sp(:,:,:,:),sbp(:,:,:,:)
     integer :: lo(Source(1)%dim),hi(Source(1)%dim)
@@ -50,12 +51,6 @@ contains
     call build(bpt, "make_hgrhs")
     
     dm = Source(1)%dim
-
-    allocate(rhs_cc(nlevs))
-    if (spherical .eq. 1) then
-       allocate(Sbar_cart(nlevs))
-       allocate(div_coeff_cart(nlevs))
-    end if
 
     if(spherical .eq. 1) then
        do n = 1, nlevs
