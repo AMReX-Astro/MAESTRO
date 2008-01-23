@@ -43,9 +43,9 @@ contains
     real(dp_t)     , intent(in   ), optional :: eps_in
 
     ! Local  
-    type(multifab), allocatable :: phi(:)
-    type(multifab), allocatable :: gphi(:)
-    logical       , allocatable :: nodal(:)
+    type(multifab) :: phi(mla%nlevel)
+    type(multifab) :: gphi(mla%nlevel)
+    logical        :: nodal(mla%dim)
 
     integer                   :: n,nlevs,dm,ng, stencil_type
     real(dp_t)                :: umin,umax,vmin,vmax,wmin,wmax
@@ -55,12 +55,8 @@ contains
     call build(bpt, "hgproject")
 
     nlevs = mla%nlevel
-    dm = mla%dim
-    ng = unew(1)%ng
-
-    allocate( phi(nlevs))
-    allocate(gphi(nlevs))
-    allocate(nodal(dm))
+    dm    = mla%dim
+    ng    = unew(1)%ng
     nodal = .true.
 
     ! stencil_type = ST_DENSE
@@ -81,12 +77,12 @@ contains
     end if
 
     if (verbose .ge. 1) then
-       umin = 1.d30
-       vmin = 1.d30
-       wmin = 1.d30
-       umax = -1.d30
-       vmax = -1.d30
-       wmax = -1.d30
+       umin =  HUGE(umin)
+       vmin =  HUGE(vmin)
+       wmin =  HUGE(wmin)
+       umax = -HUGE(umax)
+       vmax = -HUGE(vmax)
+       wmax = -HUGE(wmax)
        do n = 1, nlevs
           umin = min(umin,multifab_min_c(unew(n),1))
           umax = max(umax,multifab_max_c(unew(n),1))
@@ -160,12 +156,12 @@ contains
     end do
 
     if (verbose .ge. 1) then
-       umin = 1.d30
-       vmin = 1.d30
-       wmin = 1.d30
-       umax = -1.d30
-       vmax = -1.d30
-       wmax = -1.d30
+       umin =  HUGE(umin)
+       vmin =  HUGE(vmin)
+       wmin =  HUGE(wmin)
+       umax = -HUGE(umax)
+       vmax = -HUGE(vmax)
+       wmax = -HUGE(wmax)
        do n = 1, nlevs
           umin = min(umin,multifab_min_c(unew(n),1))
           umax = max(umax,multifab_max_c(unew(n),1))
@@ -176,7 +172,7 @@ contains
              wmax = max(wmax,multifab_max_c(unew(n),3))
           end if
        end do
-       if (parallel_IOProcessor() .and. verbose .ge. 1) then
+       if (parallel_IOProcessor()) then
           write(6,1101) umin,umax
           write(6,1102) vmin,vmax
           if (dm .eq. 3) write(6,1103) wmin,wmax
@@ -188,9 +184,6 @@ contains
 1102 format('... y-velocity  after projection ',e17.10,2x,e17.10)
 1103 format('... z-velocity  after projection ',e17.10,2x,e17.10)
 1104 format(' ')
-
-    deallocate(phi,gphi)
-    deallocate(nodal)
 
     call destroy(bpt)
 
@@ -779,7 +772,7 @@ contains
     integer :: n
     integer :: max_nlevel_in
     integer :: do_diagnostics
-    logical, allocatable :: nodal(:)
+    logical :: nodal(mla%dim)
 
     type(bl_prof_timer), save :: bpt
 
@@ -789,10 +782,9 @@ contains
 
     dm    = mla%dim
     nlevs = mla%nlevel
-
-    allocate(mgt(nlevs), nodal(dm))
-    allocate(one_sided_ss(2:nlevs))
     nodal = .true.
+
+    allocate(mgt(nlevs), one_sided_ss(2:nlevs))
 
     max_nlevel        = mgt(nlevs)%max_nlevel
     max_iter          = mgt(nlevs)%max_iter
@@ -960,10 +952,6 @@ contains
           call destroy(one_sided_ss(n))
        end do
     end if
-
-    deallocate(mgt)
-    deallocate(rh,one_sided_ss)
-    deallocate(nodal)
 
     call destroy(bpt)
 
@@ -1172,24 +1160,28 @@ contains
     real(dp_t)     , intent(in   ) :: div_coeff(-ngd:,-ngd:,-ngd:)
     logical        , intent(in   ) :: do_mult
 
-    integer :: i,j,k,nx,ny,nz
+    integer :: i,j,k,m,nx,ny,nz
     nx = size(u,dim=1) - 2*ngu
     ny = size(u,dim=2) - 2*ngu
     nz = size(u,dim=3) - 2*ngu
 
     if (do_mult) then
-       do k = 0,nz-1 
-          do j = 0,ny-1 
-             do i = 0,nx-1 
-                u(i,j,k,:) = u(i,j,k,:) * div_coeff(i,j,k)
+       do m = 1, size(u,dim=4)
+          do k = 0,nz-1 
+             do j = 0,ny-1 
+                do i = 0,nx-1 
+                   u(i,j,k,m) = u(i,j,k,m) * div_coeff(i,j,k)
+                end do
              end do
           end do
        end do
     else
-       do k = 0,nz-1 
-          do j = 0,ny-1 
-             do i = 0,nx-1 
-                u(i,j,k,:) = u(i,j,k,:) / div_coeff(i,j,k)
+       do m = 1, size(u,dim=4)
+          do k = 0,nz-1 
+             do j = 0,ny-1 
+                do i = 0,nx-1 
+                   u(i,j,k,m) = u(i,j,k,m) / div_coeff(i,j,k)
+                end do
              end do
           end do
        end do
