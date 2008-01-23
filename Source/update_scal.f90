@@ -172,10 +172,11 @@ contains
                             sedgex,sedgey,sfluxx,sfluxy,force,base_old,base_old_edge, &
                             base_new,base_new_edge,lo,hi,ng_s,dx,dt)
 
-    use network, only: nspec
-    use variables, only: spec_comp, rho_comp
-    use bl_constants_module
+    use network,       only: nspec
+    use variables,     only: spec_comp, rho_comp
     use probin_module, only: evolve_base_state
+    use bl_constants_module
+
 
     ! update each scalar in time.  Here, it is assumed that the edge
     ! states (sedgex and sedgey) are for the perturbational quantities.
@@ -196,10 +197,10 @@ contains
     real (kind = dp_t), intent(in   ) :: eta(0:,:)
     real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
-    integer :: i, j, comp, comp2
+    integer            :: i, j, comp, comp2
     real (kind = dp_t) :: delta_base,divterm
     real (kind = dp_t) :: delta,frac,sum
-    real (kind = dp_t), allocatable :: smin(:),smax(:)
+    real (kind = dp_t) :: smin(nstart:nstop),smax(nstart:nstop)
 
     do comp = nstart, nstop
        do j = lo(2), hi(2)
@@ -225,9 +226,8 @@ contains
     ! Define the update to rho as the sum of the updates to (rho X)_i
     if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
 
-       allocate(smin(nstart:nstop),smax(nstart:nstop))
-       smin(:) =  1.e20
-       smax(:) = -1.e20
+       smin(:) =  HUGE(smin)
+       smax(:) = -HUGE(smax)
 
        snew(:,:,rho_comp) = sold(:,:,rho_comp)
 
@@ -269,7 +269,6 @@ contains
              enddo
           end if
        enddo
-       deallocate(smin,smax)
     end if
 
   end subroutine update_scal_2d
@@ -278,10 +277,11 @@ contains
                                  eta,sedgex,sedgey,sedgez,sfluxx,sfluxy,sfluxz,force, &
                                  base_old,base_old_edge,base_new,base_new_edge,lo,hi, &
                                  ng_s,dx,dt)
-    use network, only: nspec
-    use variables, only: spec_comp, rho_comp
-    use bl_constants_module
+    use network,       only: nspec
+    use variables,     only: spec_comp, rho_comp
     use probin_module, only: evolve_base_state
+    use bl_constants_module
+
 
     integer           , intent(in   ) :: which_step, nstart, nstop, lo(:), hi(:), ng_s
     real (kind = dp_t), intent(in   ) ::    sold(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
@@ -302,10 +302,10 @@ contains
     real (kind = dp_t), intent(in   ) :: eta(0:,:)
     real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
-    integer :: i, j, k, comp, comp2
+    integer            :: i, j, k, comp, comp2
     real (kind = dp_t) :: divterm
     real (kind = dp_t) :: delta,frac,sum,delta_base
-    real (kind = dp_t), allocatable :: smin(:),smax(:)
+    real (kind = dp_t) :: smin(nstart:nstop),smax(nstart:nstop)
 
     do comp = nstart, nstop
 
@@ -335,9 +335,8 @@ contains
     ! Define the update to rho as the sum of the updates to (rho X)_i
     if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
 
-       allocate(smin(nstart:nstop),smax(nstart:nstop))
-       smin(:) =  1.e20
-       smax(:) = -1.e20
+       smin(:) =  HUGE(smin)
+       smax(:) = -HUGE(smax)
 
        snew(:,:,:,rho_comp) = sold(:,:,:,rho_comp)
 
@@ -383,7 +382,6 @@ contains
              enddo
           end if
        enddo
-       deallocate(smin,smax)
     end if
 
   end subroutine update_scal_3d_cart
@@ -392,10 +390,10 @@ contains
                                  w0_cart,sedgex,sedgey,sedgez,sfluxx,sfluxy,sfluxz, &
                                  force,base_old,base_new,base_old_cart,base_new_cart, &
                                  lo,hi,domlo,domhi,ng_s,dx,dt)
-    use network, only: nspec
-    use variables, only: spec_comp, rho_comp
-    use bl_constants_module
+    use network,       only: nspec
+    use variables,     only: spec_comp, rho_comp
     use probin_module, only: evolve_base_state
+    use bl_constants_module
 
     integer           , intent(in   ) :: which_step, nstart, nstop
     integer           , intent(in   ) :: lo(:), hi(:), domlo(:), domhi(:), ng_s
@@ -418,10 +416,10 @@ contains
     real (kind = dp_t), intent(in   ) :: w0_cart(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
     real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
-    integer :: i, j, k, comp, comp2
+    integer            :: i, j, k, comp, comp2
     real (kind = dp_t) :: divsu,divbaseu,mult,divterm
     real (kind = dp_t) :: delta,frac,sum
-    real (kind = dp_t), allocatable :: smin(:),smax(:)
+    real (kind = dp_t) :: smin(nstart:nstop),smax(nstart:nstop)
 
     ! is spherical
 
@@ -448,9 +446,8 @@ contains
     ! Define the update to rho as the sum of the updates to (rho X)_i
     if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
 
-       allocate(smin(nstart:nstop),smax(nstart:nstop))
-       smin(:) =  1.e20
-       smax(:) = -1.e20
+       smin(:) =  HUGE(smin)
+       smax(:) = -HUGE(smax)
 
        snew(:,:,:,rho_comp) = sold(:,:,:,rho_comp)
 
@@ -496,7 +493,6 @@ contains
              enddo
           end if
        enddo
-       deallocate(smin,smax)
     end if
 
   end subroutine update_scal_3d_sphr
