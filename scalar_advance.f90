@@ -31,7 +31,8 @@ contains
     use rhoh_vs_t_module
     use network,       only: nspec, spec_names
     use geometry,      only: spherical, nr
-    use variables,     only: nscal, ntrac, spec_comp, trac_comp, temp_comp, rho_comp, rhoh_comp
+    use variables,     only: nscal, ntrac, spec_comp, trac_comp, temp_comp, rho_comp, &
+         rhoh_comp
     use probin_module, only: predict_temp_at_edges, use_thermal_diffusion, verbose, &
          evolve_base_state
     use modify_scal_force_module
@@ -58,15 +59,17 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:,:),dt
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
-    type(multifab)               :: scal_force(nlevs)
-    type(multifab)               :: s0_old_cart(nlevs)
-    type(multifab)               :: s0_new_cart(nlevs)
-    type(multifab),  allocatable :: sedge(:,:)
-    type(multifab),  allocatable :: sflux(:,:)
+    type(multifab) :: scal_force(nlevs)
+    type(multifab) :: s0_old_cart(nlevs)
+    type(multifab) :: s0_new_cart(nlevs)
+    type(multifab) :: sedge(nlevs,mla%dim)
+    type(multifab) :: sflux(nlevs,mla%dim)
+
+    integer    :: velpred,comp,pred_comp,n,dm
+    logical    :: umac_nodal_flag(sold(1)%dim), is_vel
+    real(dp_t) :: smin,smax
+
     real(kind=dp_t), allocatable :: s0_edge_old(:,:,:), s0_edge_new(:,:,:)
-    integer                      :: velpred,comp,pred_comp,n,dm
-    logical                      :: umac_nodal_flag(sold(1)%dim), is_vel
-    real(dp_t)                   :: smin,smax
 
     type(bl_prof_timer), save :: bpt
 
@@ -159,8 +162,6 @@ contains
 
     call put_in_pert_form(nlevs,sold,s0_old,dx,spec_comp,nspec,.true.,mla,the_bc_level)
 
-    allocate(sedge(nlevs,dm))
-
     do n=1,nlevs
        do comp = 1,dm
           umac_nodal_flag = .false.
@@ -215,8 +216,6 @@ contains
     !**************************************************************************
     !     Compute fluxes
     !**************************************************************************
-
-    allocate(sflux(nlevs,dm))
 
     do n=1,nlevs
        do comp = 1,dm

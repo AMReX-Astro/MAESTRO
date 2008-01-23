@@ -42,12 +42,15 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
   real(kind=dp_t), intent(in   ) :: p01(:,0:),p02(:,0:),t01(:,0:),t02(:,0:)
   type(bc_tower) , intent(in   ) :: the_bc_tower
 
-! Local
-  type(multifab), allocatable :: rhsalpha(:),lhsalpha(:),rhsbeta(:),lhsbeta(:)
-  type(multifab), allocatable :: phi(:),phitemp(:),Lphi(:),rhs(:)
-  type(multifab), allocatable :: p01fab(:),p02fab(:)
-  type(multifab), allocatable :: hcoeff1(:),hcoeff2(:),Xkcoeff1(:),Xkcoeff2(:)
-  type(multifab), allocatable :: pcoeff1(:),pcoeff2(:)
+  ! Local
+  type(multifab) :: rhsalpha(mla%nlevel),lhsalpha(mla%nlevel)
+  type(multifab) :: rhsbeta(mla%nlevel),lhsbeta(mla%nlevel)
+  type(multifab) :: phi(mla%nlevel),phitemp(mla%nlevel),Lphi(mla%nlevel),rhs(mla%nlevel)
+  type(multifab) :: p01fab(mla%nlevel),p02fab(mla%nlevel)
+  type(multifab) :: hcoeff1(mla%nlevel),hcoeff2(mla%nlevel)
+  type(multifab) :: Xkcoeff1(mla%nlevel),Xkcoeff2(mla%nlevel)
+  type(multifab) :: pcoeff1(mla%nlevel),pcoeff2(mla%nlevel)
+
   real(kind=dp_t), pointer    :: s1p(:,:,:,:),s2p(:,:,:,:),rhsalphap(:,:,:,:)
   real(kind=dp_t), pointer    :: s_for_new_coeffp(:,:,:,:)
   real(kind=dp_t), pointer    :: rhsbetap(:,:,:,:),lhsbetap(:,:,:,:)
@@ -69,14 +72,6 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
   dm = mla%dim
   stencil_order = 2
   ng_s = s2(1)%ng
-
-  allocate(rhsalpha(nlevs),lhsalpha(nlevs))
-  allocate(rhsbeta(nlevs),lhsbeta(nlevs))
-  allocate(phi(nlevs),Lphi(nlevs),rhs(nlevs))
-  allocate(p01fab(nlevs),p02fab(nlevs))
-  allocate(hcoeff1(nlevs),hcoeff2(nlevs))
-  allocate(Xkcoeff1(nlevs),Xkcoeff2(nlevs))
-  allocate(pcoeff1(nlevs),pcoeff2(nlevs))
 
   allocate(fine_flx(2:nlevs))
   do n = 2,nlevs
@@ -550,10 +545,6 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
   ! compute updated temperature
   call makeTfromRhoH(nlevs,s2,t02,mla,the_bc_tower%bc_tower_array,dx)
 
-  deallocate(rhsalpha,lhsalpha,rhsbeta,lhsbeta,phi,Lphi,rhs)
-  deallocate(p01fab,p02fab,fine_flx)
-  deallocate(hcoeff1,hcoeff2,Xkcoeff1,Xkcoeff2,pcoeff1,pcoeff2)
-
   call destroy(bpt)
 
 end subroutine thermal_conduct_full_alg
@@ -581,12 +572,15 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02,the_bc_tower
   real(kind=dp_t), intent(in   ) :: p01(:,0:),p02(:,0:),t01(:,0:),t02(:,0:)
   type(bc_tower) , intent(in   ) :: the_bc_tower
 
-! Local
-  type(multifab), allocatable :: rhsalpha(:),lhsalpha(:),rhsbeta(:),lhsbeta(:)
-  type(multifab), allocatable :: phi(:),phitemp(:),Lphi(:),rhs(:)
-  type(multifab), allocatable :: p01fab(:),p02fab(:)
-  type(multifab), allocatable :: hcoeff1(:),hcoeff2(:),Xkcoeff1(:),Xkcoeff2(:)
-  type(multifab), allocatable :: pcoeff1(:),pcoeff2(:)
+  ! Local
+  type(multifab) :: rhsalpha(mla%nlevel),lhsalpha(mla%nlevel)
+  type(multifab) :: rhsbeta(mla%nlevel),lhsbeta(mla%nlevel)
+  type(multifab) :: phi(mla%nlevel),phitemp(mla%nlevel),Lphi(mla%nlevel),rhs(mla%nlevel)
+  type(multifab) :: p01fab(mla%nlevel),p02fab(mla%nlevel)
+  type(multifab) :: hcoeff1(mla%nlevel),hcoeff2(mla%nlevel)
+  type(multifab) :: Xkcoeff1(mla%nlevel),Xkcoeff2(mla%nlevel)
+  type(multifab) :: pcoeff1(mla%nlevel),pcoeff2(mla%nlevel)
+
   real(kind=dp_t), pointer    :: s1p(:,:,:,:),s2p(:,:,:,:),rhsalphap(:,:,:,:)
   real(kind=dp_t), pointer    :: rhsbetap(:,:,:,:),lhsbetap(:,:,:,:)
   real(kind=dp_t), pointer    :: phip(:,:,:,:),rhsp(:,:,:,:)
@@ -609,14 +603,6 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02,the_bc_tower
   dm = mla%dim
   stencil_order = 2
   ng_s = s2(1)%ng
-
-  allocate(rhsalpha(nlevs),lhsalpha(nlevs))
-  allocate(rhsbeta(nlevs),lhsbeta(nlevs))
-  allocate(phi(nlevs),phitemp(nlevs),Lphi(nlevs),rhs(nlevs))
-  allocate(p01fab(nlevs),p02fab(nlevs))
-  allocate(hcoeff1(nlevs),hcoeff2(nlevs))
-  allocate(Xkcoeff1(nlevs),Xkcoeff2(nlevs))
-  allocate(pcoeff1(nlevs),pcoeff2(nlevs))
 
   allocate(fine_flx(2:nlevs))
   do n = 2,nlevs
@@ -1284,10 +1270,6 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02,the_bc_tower
 
   ! compute updated temperature
   call makeTfromRhoH(nlevs,s2,t02,mla,the_bc_tower%bc_tower_array,dx)
-
-  deallocate(rhsalpha,lhsalpha,rhsbeta,lhsbeta,phi,phitemp,Lphi,rhs)
-  deallocate(p01fab,p02fab,fine_flx)
-  deallocate(hcoeff1,hcoeff2,Xkcoeff1,Xkcoeff2,pcoeff1,pcoeff2)
 
   call destroy(bpt)
 

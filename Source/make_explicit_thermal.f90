@@ -18,8 +18,8 @@ contains
 ! Otherwise, compute thermal with grad h + grad X_k + grad p_0 formulation
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine make_explicit_thermal(mla,dx,thermal,s,p0, &
-                                   the_bc_tower,temperature_diffusion)
+  subroutine make_explicit_thermal(mla,dx,thermal,s,p0,the_bc_tower,temperature_diffusion)
+
     use bc_module
     use bl_prof_module
     use stencil_module
@@ -41,8 +41,10 @@ contains
     logical        , intent(in   ) :: temperature_diffusion
 
     ! Local
-    type(multifab), allocatable :: phi(:),alpha(:),beta(:),Xkcoeff(:)
-    type(multifab), allocatable :: Tcoeff(:),hcoeff(:),pcoeff(:),resid(:)
+    type(multifab) :: phi(mla%nlevel),alpha(mla%nlevel),beta(mla%nlevel),Xkcoeff(mla%nlevel)
+    type(multifab) :: Tcoeff(mla%nlevel),hcoeff(mla%nlevel),pcoeff(mla%nlevel)
+    type(multifab) :: resid(mla%nlevel)
+
     integer                     :: i,comp,n,nlevs,dm,stencil_order
     integer                     :: lo(s(1)%dim),hi(s(1)%dim)
     real(kind=dp_t), pointer    :: sp(:,:,:,:),phip(:,:,:,:)
@@ -58,9 +60,6 @@ contains
     nlevs = mla%nlevel
     dm = mla%dim
     stencil_order = 2
-
-    allocate(phi(nlevs),alpha(nlevs),beta(nlevs),Xkcoeff(nlevs))
-    allocate(Tcoeff(nlevs),hcoeff(nlevs),pcoeff(nlevs),resid(nlevs))
 
     do n=1,nlevs
        call multifab_build(Xkcoeff(n), mla%la(n), nspec, 1)
@@ -332,8 +331,6 @@ contains
                                       1,foextrap_comp,1)
     enddo
     
-    deallocate(phi,alpha,beta,Xkcoeff,Tcoeff,hcoeff,pcoeff,resid)
-
     call destroy(bpt)
     
   end subroutine make_explicit_thermal
