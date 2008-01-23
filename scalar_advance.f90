@@ -29,10 +29,10 @@ contains
     use pert_form_module
     use cell_to_edge_module
     use rhoh_vs_t_module
-    use variables, only: nscal, ntrac, spec_comp, trac_comp, temp_comp, rho_comp, rhoh_comp
-    use geometry, only: spherical, nr
-    use network, only: nspec, spec_names
-    use probin_module, ONLY: predict_temp_at_edges, use_thermal_diffusion, verbose, &
+    use network,       only: nspec, spec_names
+    use geometry,      only: spherical, nr
+    use variables,     only: nscal, ntrac, spec_comp, trac_comp, temp_comp, rho_comp, rhoh_comp
+    use probin_module, only: predict_temp_at_edges, use_thermal_diffusion, verbose, &
          evolve_base_state
     use modify_scal_force_module
     use make_eta_module
@@ -58,40 +58,26 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:,:),dt
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
-    ! local
-    type(multifab), allocatable :: sedge(:,:)
-    type(multifab), allocatable :: sflux(:,:)
-    type(multifab), allocatable :: scal_force(:)
-    type(multifab), allocatable :: s0_old_cart(:)
-    type(multifab), allocatable :: s0_new_cart(:)
-
-    real(kind=dp_t), allocatable :: s0_edge_old(:,:,:)
-    real(kind=dp_t), allocatable :: s0_edge_new(:,:,:)
-
-    logical, allocatable :: umac_nodal_flag(:)
-
-    real(dp_t) :: smin,smax
-
-    integer :: velpred,comp,pred_comp,n,dm
-
-    logical :: is_vel
+    type(multifab)               :: scal_force(nlevs)
+    type(multifab)               :: s0_old_cart(nlevs)
+    type(multifab)               :: s0_new_cart(nlevs)
+    type(multifab),  allocatable :: sedge(:,:)
+    type(multifab),  allocatable :: sflux(:,:)
+    real(kind=dp_t), allocatable :: s0_edge_old(:,:,:), s0_edge_new(:,:,:)
+    integer                      :: velpred,comp,pred_comp,n,dm
+    logical                      :: umac_nodal_flag(sold(1)%dim), is_vel
+    real(dp_t)                   :: smin,smax
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "scalar_advance")
 
-    allocate(scal_force(nlevs))
-    allocate(s0_old_cart(nlevs))
-    allocate(s0_new_cart(nlevs))
-
     allocate(s0_edge_old(nlevs,0:nr(nlevs),nscal))
     allocate(s0_edge_new(nlevs,0:nr(nlevs),nscal))
 
+    dm      = sold(1)%dim
+    is_vel  = .false.
     velpred = 0    
-    is_vel = .false.
-    dm = sold(1)%dim
-
-    allocate(umac_nodal_flag(dm))
 
     do n = 1, nlevs
        call cell_to_edge_allcomps(n,s0_old(n,:,:),s0_edge_old(n,:,:))
@@ -236,7 +222,7 @@ contains
        do comp = 1,dm
           umac_nodal_flag = .false.
           umac_nodal_flag(comp) = .true.
-          call multifab_build( sflux(n,comp), mla%la(n), nscal, 0, nodal = umac_nodal_flag)
+          call multifab_build(sflux(n,comp), mla%la(n), nscal, 0, nodal = umac_nodal_flag)
        end do
     end do
 
@@ -325,11 +311,11 @@ contains
                      eta,sedge,sflux,scal_force,s0_old,s0_edge_old,s0_new,s0_edge_new, &
                      s0_old_cart,s0_new_cart,dx,dt,the_bc_level,mla)
 
-    if(evolve_base_state .and. which_step .eq. 1) then
+    if (evolve_base_state .and. which_step .eq. 1) then
        call make_eta(nlevs,eta,sold,sflux,dx,mla)
     end if
 
-    if(spherical .eq. 1) then
+    if (spherical .eq. 1) then
        do n=1,nlevs
           call destroy(s0_old_cart(n))
           call destroy(s0_new_cart(n))
@@ -344,7 +330,7 @@ contains
        end do
     end do
 
-    if(.not. use_thermal_diffusion) then
+    if (.not. use_thermal_diffusion) then
        call makeTfromRhoH(nlevs,snew,s0_new(:,:,temp_comp),mla,the_bc_level,dx)
     end if
 
@@ -358,10 +344,6 @@ contains
           end if
        end do
     end if
-
-    deallocate(sedge,sflux)
-    deallocate(s0_edge_old,s0_edge_new)
-    deallocate(umac_nodal_flag)
 
     call destroy(bpt)
 
