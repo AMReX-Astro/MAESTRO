@@ -28,7 +28,7 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
   use macproject_module
   use network, only: nspec
   use rhoh_vs_t_module
-  use probin_module, ONLY: use_big_h
+  use probin_module, ONLY: use_big_h, thermal_diffusion_type
   use bl_prof_module
   use multifab_physbc_module
   use multifab_fill_ghost_module
@@ -213,10 +213,12 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
      call multifab_copy_c(rhs(n),1,s2(n),rhoh_comp,1)
   enddo
 
-  ! add Lphi to rhs
-  do n=1,nlevs
-     call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,1)
-  enddo
+  if(thermal_diffusion_type .eq. 1) then
+     ! add Lphi to rhs
+     do n=1,nlevs
+        call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,1)
+     enddo
+  end if
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! add species diffusion to rhs
@@ -255,10 +257,12 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
      call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
                       dm+spec_comp+comp-1,stencil_order,mla%mba%rr)
      
-     ! add lphi to rhs
-     do n=1,nlevs
-        call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,1)
-     enddo
+     if(thermal_diffusion_type .eq. 1) then
+        ! add lphi to rhs
+        do n=1,nlevs
+           call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,1)
+        enddo
+     end if
 
      ! now do X_k^{(2)} term
      ! put beta on faces
@@ -368,10 +372,12 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
   call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
        foextrap_comp,stencil_order,mla%mba%rr)
   
-  ! add lphi to rhs
-  do n=1,nlevs
-     call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,1)
-  enddo
+  if(thermal_diffusion_type .eq. 1) then
+     ! add lphi to rhs
+     do n=1,nlevs
+        call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,1)
+     enddo
+  end if
   
   ! now do p02 term
   ! put beta on faces
@@ -434,7 +440,7 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
   
   ! apply the operator
   call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
-       foextrap_comp,stencil_order,mla%mba%rr)
+                   foextrap_comp,stencil_order,mla%mba%rr)
 
   do n=1,nlevs
      call destroy(rhsalpha(n))
@@ -1298,7 +1304,7 @@ subroutine compute_thermo_quantities_2d(lo,hi,dt,s,hcoeff,Xkcoeff,pcoeff)
 
   use variables, only: rho_comp, spec_comp, temp_comp
   use eos_module
-  use probin_module, ONLY: use_big_h
+  use probin_module, ONLY: use_big_h, thermal_diffusion_type
 
   integer        , intent(in   ) :: lo(:),hi(:)
   real(dp_t)    ,  intent(in   ) :: dt
@@ -1331,24 +1337,34 @@ subroutine compute_thermo_quantities_2d(lo,hi,dt,s,hcoeff,Xkcoeff,pcoeff)
                  dsdt_eos, dsdr_eos, &
                  do_diag, conduct_eos)
 
-        hcoeff(i,j) = -HALF*dt*conduct_eos(1)/cp_eos(1)
-        pcoeff(i,j) = HALF*dt*(conduct_eos(1)/cp_eos(1))* &
-             ((1.0d0/den_eos(1))* &
+        hcoeff(i,j) = -dt*conduct_eos(1)/cp_eos(1)
+        pcoeff(i,j) = dt*(conduct_eos(1)/cp_eos(1))*((1.0d0/den_eos(1))* &
               (1.0d0-p_eos(1)/(den_eos(1)*dpdr_eos(1)))+dedr_eos(1)/dpdr_eos(1))
 
         if(use_big_h) then
            do comp=1,nspec
-              Xkcoeff(i,j,comp) = HALF*dt*conduct_eos(1)* &
-                   (dhdX_eos(1,comp)+ebin(comp))/cp_eos(1)
+              Xkcoeff(i,j,comp) = dt*conduct_eos(1)*(dhdX_eos(1,comp)+ebin(comp))/cp_eos(1)
            enddo
         else
            do comp=1,nspec
-              Xkcoeff(i,j,comp) = HALF*dt*conduct_eos(1)*dhdX_eos(1,comp)/cp_eos(1)
+              Xkcoeff(i,j,comp) = dt*conduct_eos(1)*dhdX_eos(1,comp)/cp_eos(1)
            enddo
         endif
 
      enddo
   enddo
+
+  if(thermal_diffusion_type .eq. 1) then
+     do j=lo(2)-1,hi(2)+1
+        do i=lo(1)-1,hi(1)+1
+           hcoeff(i,j) = HALF*hcoeff(i,j)
+           pcoeff(i,j) = HALF*pcoeff(i,j)
+           do comp=1,nspec
+              Xkcoeff(i,j,comp) = HALF*Xkcoeff(i,j,comp)
+           end do
+        end do
+     end do
+  end if
 
 end subroutine compute_thermo_quantities_2d
 
@@ -1361,7 +1377,7 @@ subroutine compute_thermo_quantities_3d(lo,hi,dt,t0,s,hcoeff,Xkcoeff,pcoeff)
 
   use variables, only: rho_comp, temp_comp, spec_comp
   use eos_module
-  use probin_module, ONLY: use_big_h
+  use probin_module, ONLY: use_big_h, thermal_diffusion_type
   use geometry, only: spherical
 
   integer        , intent(in   ) :: lo(:),hi(:)
@@ -1401,25 +1417,38 @@ subroutine compute_thermo_quantities_3d(lo,hi,dt,t0,s,hcoeff,Xkcoeff,pcoeff)
                            dsdt_eos, dsdr_eos, &
                            do_diag, conduct_eos)
 
-           hcoeff(i,j,k) = -HALF*dt*conduct_eos(1)/cp_eos(1)
-           pcoeff(i,j,k) = HALF*dt*(conduct_eos(1)/cp_eos(1))* &
-                ((1.0d0/den_eos(1))* &
+           hcoeff(i,j,k) = -dt*conduct_eos(1)/cp_eos(1)
+           pcoeff(i,j,k) = dt*(conduct_eos(1)/cp_eos(1))*((1.0d0/den_eos(1))* &
                 (1.0d0-p_eos(1)/(den_eos(1)*dpdr_eos(1)))+dedr_eos(1)/dpdr_eos(1))
 
            if(use_big_h) then
               do comp=1,nspec
-                 Xkcoeff(i,j,k,comp) = HALF*dt*conduct_eos(1)* &
+                 Xkcoeff(i,j,k,comp) = dt*conduct_eos(1)* &
                       (dhdX_eos(1,comp)+ebin(comp))/cp_eos(1)
 
               enddo
            else
               do comp=1,nspec
-                 Xkcoeff(i,j,k,comp) = HALF*dt*conduct_eos(1)*dhdX_eos(1,comp)/cp_eos(1)
+                 Xkcoeff(i,j,k,comp) = dt*conduct_eos(1)*dhdX_eos(1,comp)/cp_eos(1)
               enddo
            endif
         enddo
      enddo
   enddo
+
+  if(thermal_diffusion_type .eq. 1) then
+     do k=lo(3)-1,hi(3)+1
+        do j=lo(2)-1,hi(2)+1
+           do i=lo(1)-1,hi(1)+1
+              hcoeff(i,j,k) = HALF*hcoeff(i,j,k)
+              pcoeff(i,j,k) = HALF*pcoeff(i,j,k)
+              do comp=1,nspec
+                 Xkcoeff(i,j,k,comp) = HALF*Xkcoeff(i,j,k,comp)
+              end do
+           end do
+        end do
+     end do
+  end if
 
 end subroutine compute_thermo_quantities_3d
 
