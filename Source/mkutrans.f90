@@ -91,20 +91,17 @@ contains
     real(kind=dp_t), intent(in   ) ::   force(lo(1)-1:,lo(2)-1:,:)
     
     real(kind=dp_t),intent(in) :: dt,dx(:)
-    integer        ,intent(in) ::  adv_bc(:,:,:)
+    integer        ,intent(in) :: adv_bc(:,:,:)
     integer        ,intent(in) :: phys_bc(:,:  )
     
-    real(kind=dp_t), allocatable::  velx(:,:,:)
-    real(kind=dp_t), allocatable::  vely(:,:,:)
+    real(kind=dp_t), allocatable ::  velx(:,:,:), vely(:,:,:)
     
-    ! Local variables
     real(kind=dp_t) hx, hy, dth, umax
-    real(kind=dp_t) ulft,urgt,vbot,vtop
-    real(kind=dp_t) :: eps, abs_eps
+    real(kind=dp_t) ulft,urgt,vbot,vtop, eps, abs_eps
 
-    integer :: hi(2)
-    integer :: i,j,is,js,ie,je
-    integer :: slope_order = 4
+    integer :: hi(2), i,j,is,js,ie,je
+
+    integer, parameter :: slope_order = 4
     
     logical :: test
     
@@ -120,14 +117,14 @@ contains
     
     ! Compute eps, which is relative to the max velocity
     umax = abs(vel(is,js,1))
-    do j = js,je
-       do i = is,ie
-          umax = max(umax,abs(vel(i,j,1)))
-          umax = max(umax,abs(vel(i,j,2)))
-       end do
-    end do
+    do j = js,je; do i = is,ie
+       umax = max(umax,abs(vel(i,j,1)))
+    end do; end do
+    do j = js,je; do i = is,ie
+       umax = max(umax,abs(vel(i,j,2)))
+    end do; end do
     
-    if(umax .eq. 0.d0) then
+    if (umax .eq. 0.d0) then
        eps = abs_eps
     else
        eps = abs_eps * umax
@@ -204,9 +201,7 @@ contains
           vtrans(i,j) = merge(ZERO,vtrans(i,j),test)
        enddo
     enddo
-    
-    deallocate(velx,vely)
-    
+
   end subroutine mkutrans_2d
   
   subroutine mkutrans_3d(vel,utrans,vtrans,wtrans,force,lo,dx,dt,ng_s,adv_bc,phys_bc)
@@ -228,17 +223,15 @@ contains
     
     real(kind=dp_t), allocatable::  velx(:,:,:,:),vely(:,:,:,:),velz(:,:,:,:)
     
-    ! Local variables
     real(kind=dp_t) ulft,urgt,vbot,vtop,wbot,wtop
-    real(kind=dp_t) hx, hy, hz, dth, umax
-    real(kind=dp_t) :: eps, abs_eps
+    real(kind=dp_t) hx, hy, hz, dth, umax, eps, abs_eps
     
     logical :: test
     
     integer :: hi(3)
     integer :: i,j,k,is,js,ks,ie,je,ke
     
-    integer :: slope_order = 4
+    integer, parameter :: slope_order = 4
     
     hi(1) = lo(1) + size(vel,dim=1) - (2*ng_s+1)
     hi(2) = lo(2) + size(vel,dim=2) - (2*ng_s+1)
@@ -255,17 +248,17 @@ contains
     
     ! Compute eps, which is relative to the max velocity
     umax = abs(vel(is,js,ks,1))
-    do k = ks,ke
-       do j = js,je
-          do i = is,ie
-             umax = max(umax,abs(vel(i,j,k,1)))
-             umax = max(umax,abs(vel(i,j,k,2)))
-             umax = max(umax,abs(vel(i,j,k,3)))
-          end do
-       end do
-    end do
+    do k = ks,ke; do j = js,je; do i = is,ie
+       umax = max(umax,abs(vel(i,j,k,1)))
+    end do; end do; end do
+    do k = ks,ke; do j = js,je; do i = is,ie
+       umax = max(umax,abs(vel(i,j,k,2)))
+    end do; end do; end do
+    do k = ks,ke; do j = js,je; do i = is,ie
+       umax = max(umax,abs(vel(i,j,k,3)))
+    end do; end do; end do
     
-    if(umax .eq. 0.d0) then
+    if (umax .eq. 0.d0) then
        eps = abs_eps
     else
        eps = abs_eps * umax
@@ -384,9 +377,7 @@ contains
           enddo
        enddo
     enddo
-    
-    deallocate(velx,vely,velz)
-    
+
   end subroutine mkutrans_3d
   
 end module mkutrans_module
