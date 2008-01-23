@@ -120,8 +120,7 @@ contains
     real(dp_t)    , allocatable :: p0_1(:,:)
     real(dp_t)    , allocatable :: p0_2(:,:)
 
-    integer       , allocatable :: lo(:),hi(:)
-
+    integer                   :: lo(mla%dim),hi(mla%dim)
     real(dp_t)                :: halfdt,eps_in
     integer                   :: j,n,dm,comp,nlevs,ng_s,proj_type
     logical                   :: nodal(mla%dim)
@@ -171,9 +170,6 @@ contains
     allocate(            p0_1(nlevs,0:nr(nlevs)-1))
     allocate(            p0_2(nlevs,0:nr(nlevs)-1))
 
-    allocate(lo(dm))
-    allocate(hi(dm))
-    
     ! This is always zero at the beginning of a time step
     eta(:,:,:) = ZERO
 
@@ -868,16 +864,6 @@ contains
           call destroy(hgrhs_old(n))
        end do
     end if
-
-    deallocate(rhohalf,w0_cart_vec,w0_force_cart_vec,macrhs,macphi,hgrhs_old,Source_nph)
-    deallocate(thermal,s2star,rho_omegadot2_hold,s1,s2,gamma1_term,rho_omegadot1)
-    deallocate(rho_Hext,div_coeff_3d)
-    deallocate(umac,utrans)
-    deallocate(umac_nodal_flag)
-    deallocate(grav_cell_nph,grav_cell_new,s0_nph,w0_force,w0_old,Sbar)
-    deallocate(div_coeff_nph,div_coeff_edge,rho_omegadotbar1,rho_omegadotbar2,rho_Hextbar)
-    deallocate(eta,s0_1,s0_2,p0_1,p0_2)
-    deallocate(lo,hi)
 
     call destroy(bpt)
     
