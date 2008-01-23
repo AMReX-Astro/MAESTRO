@@ -34,25 +34,18 @@ contains
     real(dp_t)     , intent(in   ), optional :: div_coeff_half_1d(:,:)
     type(multifab ), intent(in   ), optional :: div_coeff_3d(:)
 
-    ! Local  
-    type(multifab), allocatable :: rh(:),alpha(:),beta(:)
-    type(bndry_reg), pointer    :: fine_flx(:) => Null()
-    real(dp_t)     ,allocatable :: umac_norm(:)
-    integer                     :: dm,stencil_order,i,n
-    integer                     :: nlevs
-    logical                     :: use_rhs, use_div_coeff_1d, use_div_coeff_3d
+    type(multifab),  allocatable :: rh(:),alpha(:),beta(:)
+    type(bndry_reg), allocatable :: fine_flx(:)
+    real(dp_t)                   :: umac_norm(mla%nlevel)
+    integer                      :: dm,stencil_order,i,n,nlevs
+    logical                      :: use_rhs, use_div_coeff_1d, use_div_coeff_3d
 
     nlevs = mla%nlevel
-    dm = umac(nlevs,1)%dim
+    dm    = umac(nlevs,1)%dim
 
-    use_rhs = .false.
-    if (present(divu_rhs)) use_rhs = .true.
-
-    use_div_coeff_1d = .false.
-    if (present(div_coeff_1d)) use_div_coeff_1d = .true.
-
-    use_div_coeff_3d = .false.
-    if (present(div_coeff_3d)) use_div_coeff_3d = .true.
+    use_rhs          = .false. ; if (present(divu_rhs)    ) use_rhs          = .true.
+    use_div_coeff_1d = .false. ; if (present(div_coeff_1d)) use_div_coeff_1d = .true.
+    use_div_coeff_3d = .false. ; if (present(div_coeff_3d)) use_div_coeff_3d = .true.
 
     if (use_div_coeff_1d .and. use_div_coeff_3d) then
        call bl_error('CANT HAVE 1D and 3D DIV_COEFF IN MACPROJECT')
@@ -61,7 +54,6 @@ contains
     stencil_order = 2
 
     allocate(rh(nlevs), alpha(nlevs), beta(nlevs))
-    allocate(umac_norm(nlevs))
 
     do n = 1, nlevs
        call multifab_build(   rh(n), mla%la(n),  1, 0)
@@ -152,12 +144,6 @@ contains
     do n = 2,nlevs
        call bndry_reg_destroy(fine_flx(n))
     end do
-    deallocate(fine_flx)
-
-    deallocate(rh)
-    deallocate(alpha)
-    deallocate(beta)
-    deallocate(umac_norm)
 
   contains
 
@@ -1250,14 +1236,16 @@ contains
     use ml_solve_module
     use probin_module, only : mg_bottom_solver, mg_verbose, cg_verbose
 
-    type(ml_layout),intent(inout) :: mla
-    integer        ,intent(in   ) :: stencil_order
-    integer        ,intent(in   ) :: ref_ratio(:,:)
-
-    real(dp_t), intent(in) :: dx(:,:)
-    type(bc_tower), intent(in) :: the_bc_tower
-    integer     ,intent(in   ) :: bc_comp
-    real(dp_t), intent(in), optional :: umac_norm(:)
+    type(ml_layout), intent(inout)        :: mla
+    integer        , intent(in   )        :: stencil_order
+    integer        , intent(in   )        :: ref_ratio(:,:)
+    real(dp_t)     , intent(in)           :: dx(:,:)
+    type(bc_tower) , intent(in)           :: the_bc_tower
+    integer        , intent(in   )        :: bc_comp
+    type(multifab) , intent(in   )        :: alpha(:), beta(:)
+    type(multifab) , intent(inout)        ::    rh(:),  phi(:)
+    type(bndry_reg), intent(inout)        :: fine_flx(2:)
+    real(dp_t)     , intent(in), optional :: umac_norm(:)
 
     type(layout  ) :: la
     type(boxarray) :: pdv
@@ -1265,22 +1253,15 @@ contains
 
     type(multifab), allocatable :: coeffs(:)
 
-    type(multifab) , intent(in   ) :: alpha(:), beta(:)
-    type(multifab) , intent(inout) ::    rh(:),  phi(:)
-    type(bndry_reg), intent(inout) :: fine_flx(2:)
-
     type( multifab) :: ss
     type(imultifab) :: mm
     type(sparse) :: sparse_object
     type(mg_tower), allocatable :: mgt(:)
-    integer        :: i, dm, ns, nlevs
-    integer        :: test
+    integer        :: i, dm, ns, nlevs, test
 
     ! MG solver defaults
     integer :: bottom_solver, bottom_max_iter
-    integer    :: max_iter
-    integer    :: min_width
-    integer    :: max_nlevel
+    integer    :: max_iter, min_width, max_nlevel
     integer    :: n, nu1, nu2, gamma, cycle, smoother
     integer    :: max_nlevel_in,do_diagnostics
     real(dp_t) :: rel_eps,abs_eps,omega,bottom_solver_eps
@@ -1448,7 +1429,6 @@ contains
     do n = 1, nlevs
        call mg_tower_destroy(mgt(n))
     end do
-    deallocate(mgt)
 
   end subroutine mac_multigrid
 
@@ -1459,23 +1439,21 @@ contains
     use ml_cc_module, only: ml_cc_applyop
     use probin_module, only: cg_verbose, mg_verbose
 
-    type(ml_layout),intent(inout) :: mla
-    integer        ,intent(in   ) :: stencil_order
-    integer        ,intent(in   ) :: ref_ratio(:,:)
-
-    real(dp_t), intent(in) :: dx(:,:)
-    type(bc_tower), intent(in) :: the_bc_tower
-    integer     ,intent(in   ) :: bc_comp
-    real(dp_t), intent(in), optional :: umac_norm(:)
+    type(ml_layout), intent(inout) :: mla
+    integer        , intent(in   ) :: stencil_order
+    integer        , intent(in   ) :: ref_ratio(:,:)
+    real(dp_t)     , intent(in)    :: dx(:,:)
+    type(bc_tower) , intent(in)    :: the_bc_tower
+    integer        , intent(in   ) :: bc_comp
+    type(multifab) , intent(in   ) :: alpha(:), beta(:)
+    type(multifab) , intent(inout) :: res(:), phi(:)
+    real(dp_t)     , intent(in), optional :: umac_norm(:)
 
     type(layout  ) :: la
     type(boxarray) :: pdv
     type(box     ) :: pd
 
     type(multifab), allocatable :: coeffs(:)
-
-    type(multifab) , intent(in   ) :: alpha(:), beta(:)
-    type(multifab) , intent(inout) ::    res(:), phi(:)
 
     type( multifab) :: ss
     type(imultifab) :: mm
