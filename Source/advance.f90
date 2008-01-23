@@ -81,77 +81,56 @@ contains
     integer       ,  intent(in   ) :: istep
 
     ! local
-    type(multifab), allocatable :: rhohalf(:)
-    type(multifab), allocatable :: w0_cart_vec(:)
-    type(multifab), allocatable :: w0_force_cart_vec(:)
-    type(multifab), allocatable :: macrhs(:)
-    type(multifab), allocatable :: macphi(:)
-    type(multifab), allocatable :: hgrhs_old(:)
-    type(multifab), allocatable :: Source_nph(:)
-    type(multifab), allocatable :: thermal(:)
-    type(multifab), allocatable :: s2star(:)
-    type(multifab), allocatable :: rho_omegadot2_hold(:)
-    type(multifab), allocatable :: s1(:)
-    type(multifab), allocatable :: s2(:)
-    type(multifab), allocatable :: gamma1_term(:)
-    type(multifab), allocatable :: rho_omegadot1(:)
-    type(multifab), allocatable :: rho_Hext(:)
-    type(multifab), allocatable :: div_coeff_3d(:) ! Only needed for spherical.eq.1
+    type(multifab) :: rhohalf(mla%nlevel)
+    type(multifab) :: w0_cart_vec(mla%nlevel)
+    type(multifab) :: w0_force_cart_vec(mla%nlevel)
+    type(multifab) :: macrhs(mla%nlevel)
+    type(multifab) :: macphi(mla%nlevel)
+    type(multifab) :: hgrhs_old(mla%nlevel)
+    type(multifab) :: Source_nph(mla%nlevel)
+    type(multifab) :: thermal(mla%nlevel)
+    type(multifab) :: s2star(mla%nlevel)
+    type(multifab) :: rho_omegadot2_hold(mla%nlevel)
+    type(multifab) :: s1(mla%nlevel)
+    type(multifab) :: s2(mla%nlevel)
+    type(multifab) :: gamma1_term(mla%nlevel)
+    type(multifab) :: rho_omegadot1(mla%nlevel)
+    type(multifab) :: rho_Hext(mla%nlevel)
+    type(multifab) :: div_coeff_3d(mla%nlevel) ! Only needed for spherical.eq.1
 
-    type(multifab), allocatable :: umac(:,:)
-    type(multifab), allocatable :: utrans(:,:)
+    type(multifab) :: umac(mla%nlevel,mla%dim)
+    type(multifab) :: utrans(mla%nlevel,mla%dim)
     
-    logical       , allocatable :: umac_nodal_flag(:)
+    logical :: umac_nodal_flag(mla%dim)
 
-    real(dp_t)    , allocatable :: grav_cell_nph(:,:)
-    real(dp_t)    , allocatable :: grav_cell_new(:,:)
-    real(dp_t)    , allocatable :: s0_nph(:,:,:)
-    real(dp_t)    , allocatable :: w0_force(:,:)
-    real(dp_t)    , allocatable :: w0_old(:,:)
-    real(dp_t)    , allocatable :: Sbar(:,:,:)
-    real(dp_t)    , allocatable :: div_coeff_nph(:,:)
-    real(dp_t)    , allocatable :: div_coeff_edge(:,:)
-    real(dp_t)    , allocatable :: rho_omegadotbar1(:,:,:)
-    real(dp_t)    , allocatable :: rho_omegadotbar2(:,:,:)
-    real(dp_t)    , allocatable :: rho_Hextbar(:,:,:)
-    real(dp_t)    , allocatable :: eta(:,:,:)
-    real(dp_t)    , allocatable :: s0_1(:,:,:)
-    real(dp_t)    , allocatable :: s0_2(:,:,:)
-    real(dp_t)    , allocatable :: p0_1(:,:)
-    real(dp_t)    , allocatable :: p0_2(:,:)
+    real(dp_t), allocatable :: grav_cell_nph(:,:)
+    real(dp_t), allocatable :: grav_cell_new(:,:)
+    real(dp_t), allocatable :: s0_nph(:,:,:)
+    real(dp_t), allocatable :: w0_force(:,:)
+    real(dp_t), allocatable :: w0_old(:,:)
+    real(dp_t), allocatable :: Sbar(:,:,:)
+    real(dp_t), allocatable :: div_coeff_nph(:,:)
+    real(dp_t), allocatable :: div_coeff_edge(:,:)
+    real(dp_t), allocatable :: rho_omegadotbar1(:,:,:)
+    real(dp_t), allocatable :: rho_omegadotbar2(:,:,:)
+    real(dp_t), allocatable :: rho_Hextbar(:,:,:)
+    real(dp_t), allocatable :: eta(:,:,:)
+    real(dp_t), allocatable :: s0_1(:,:,:)
+    real(dp_t), allocatable :: s0_2(:,:,:)
+    real(dp_t), allocatable :: p0_1(:,:)
+    real(dp_t), allocatable :: p0_2(:,:)
 
-    integer                   :: lo(mla%dim),hi(mla%dim)
-    real(dp_t)                :: halfdt,eps_in
-    integer                   :: j,n,dm,comp,nlevs,ng_s,proj_type
-    logical                   :: nodal(mla%dim)
+    integer    :: lo(mla%dim),hi(mla%dim)
+    integer    :: j,n,dm,comp,nlevs,ng_s,proj_type
+    real(dp_t) :: halfdt,eps_in
+    logical    :: nodal(mla%dim)
+
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "advance_timestep")
 
     dm = mla%dim
-    nlevs = size(uold)
-
-    allocate(           rhohalf(nlevs))
-    allocate(       w0_cart_vec(nlevs))   
-    allocate( w0_force_cart_vec(nlevs))    
-    allocate(            macrhs(nlevs))
-    allocate(            macphi(nlevs))
-    allocate(         hgrhs_old(nlevs))
-    allocate(        Source_nph(nlevs))
-    allocate(           thermal(nlevs))
-    allocate(            s2star(nlevs))
-    allocate(rho_omegadot2_hold(nlevs))
-    allocate(                s1(nlevs))
-    allocate(                s2(nlevs))
-    allocate(       gamma1_term(nlevs))
-    allocate(     rho_omegadot1(nlevs))
-    allocate(          rho_Hext(nlevs))
-    allocate(      div_coeff_3d(nlevs))
-    
-    allocate(  umac(nlevs,dm))
-    allocate(utrans(nlevs,dm))
-
-    allocate(umac_nodal_flag(dm))
+    nlevs = mla%nlevel
 
     allocate(   grav_cell_nph(nlevs,0:nr(nlevs)-1))
     allocate(   grav_cell_new(nlevs,0:nr(nlevs)-1))

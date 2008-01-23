@@ -44,26 +44,19 @@ contains
     type(ml_layout), intent(inout) :: mla
 
     ! local
-    integer                     :: n
-    real(dp_t)                  :: dt_temp
+    integer    :: n
+    real(dp_t) :: dt_temp
 
-    real(dp_t), allocatable     :: Sbar(:,:,:)  
+    type(multifab) :: gamma1_term(nlevs)
+    type(multifab) :: thermal(nlevs)
+    type(multifab) :: rhohalf(nlevs)
+    type(multifab) :: rho_omegadot1(nlevs)
+    type(multifab) :: rho_Hext(nlevs)
+    type(multifab) :: div_coeff_3d(nlevs)
 
-    type(multifab), allocatable :: gamma1_term(:)
-    type(multifab), allocatable :: thermal(:)
-    type(multifab), allocatable :: rhohalf(:)
-    type(multifab), allocatable :: rho_omegadot1(:)
-    type(multifab), allocatable :: rho_Hext(:)
-    type(multifab), allocatable :: div_coeff_3d(:)
+    real(dp_t), allocatable :: Sbar(:,:,:)  
 
     allocate(Sbar(nlevs,nr(nlevs),1))
-
-    allocate(  gamma1_term(nlevs))
-    allocate(      thermal(nlevs))
-    allocate(      rhohalf(nlevs))
-    allocate(rho_omegadot1(nlevs))
-    allocate(     rho_Hext(nlevs))
-    allocate( div_coeff_3d(nlevs))
 
     if ( parallel_IOProcessor() ) then
        print *, 'DOING THE INITIAL VELOCITY PROJECTION'
@@ -151,7 +144,6 @@ contains
     end do
     
     deallocate(Sbar)
-    deallocate(gamma1_term,thermal,rhohalf,rho_omegadot1,rho_Hext,div_coeff_3d)
 
   end subroutine initial_proj
 
