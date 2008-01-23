@@ -48,7 +48,7 @@ contains
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "makeRhoHfromT")
-    
+
     dm = u(1)%dim
 
     if (spherical .eq. 1) then
@@ -133,9 +133,9 @@ contains
   subroutine makeRhoHfromT_2d (sx,sy,s0_old,s0_edge_old,s0_new,s0_edge_new,lo,hi)
 
     use bl_constants_module
-    use variables, only: rho_comp, temp_comp, spec_comp, rhoh_comp
+    use variables,     only: rho_comp, temp_comp, spec_comp, rhoh_comp
     use eos_module
-    use probin_module, ONLY: use_big_h
+    use probin_module, only: use_big_h
 
     integer        , intent(in   ) :: lo(:),hi(:)
     real(kind=dp_t), intent(inout) :: sx(lo(1):,lo(2):,:)
@@ -143,16 +143,16 @@ contains
     real(kind=dp_t), intent(in   ) :: s0_old(0:,:), s0_edge_old(0:,:)
     real(kind=dp_t), intent(in   ) :: s0_new(0:,:), s0_edge_new(0:,:)
     
-    ! Local variables
     integer :: i, j, comp
     real(kind=dp_t) qreact
     
     do_diag = .false.
-    
-    do j = lo(2), hi(2)
-       do i = lo(1), hi(1)+1
-          sx(i,j,rho_comp) = 0.d0
-          do comp = 1,nspec
+
+    sx(lo(1):hi(1)+1, lo(2):hi(2), rho_comp) = ZERO
+
+    do comp = 1,nspec    
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)+1
              sx(i,j,rho_comp) = sx(i,j,rho_comp) + sx(i,j,spec_comp+comp-1)
           end do
        end do
@@ -162,7 +162,7 @@ contains
        do i = lo(1), hi(1)+1
           
           temp_eos(1) = sx(i,j,temp_comp)
-          den_eos(1) = sx(i,j,rho_comp) + HALF * (s0_old(j,rho_comp) + s0_new(j,rho_comp))
+          den_eos(1)  = sx(i,j,rho_comp) + HALF * (s0_old(j,rho_comp) + s0_new(j,rho_comp))
           xn_eos(1,:) = (sx(i,j,spec_comp:spec_comp+nspec-1)  + &
                HALF * ( s0_old(j,spec_comp:spec_comp+nspec-1) + &
                s0_new(j,spec_comp:spec_comp+nspec-1) ) ) /den_eos(1) 
@@ -181,7 +181,7 @@ contains
           sx(i,j,rhoh_comp) = den_eos(1)*h_eos(1)
           
           qreact = 0.0d0
-          if(use_big_h) then
+          if (use_big_h) then
              do comp=1,nspec
                 qreact = qreact + ebin(comp)*xn_eos(1,comp)
              enddo
@@ -193,11 +193,12 @@ contains
           
        enddo
     enddo
-    
-    do j = lo(2), hi(2)+1
-       do i = lo(1), hi(1)
-          sy(i,j,rho_comp) = 0.d0
-          do comp = 1,nspec
+
+    sy(lo(1):hi(1), lo(2):hi(2)+1, rho_comp) = ZERO
+
+    do comp = 1,nspec    
+       do j = lo(2), hi(2)+1
+          do i = lo(1), hi(1)
              sy(i,j,rho_comp) = sy(i,j,rho_comp) + sy(i,j,spec_comp+comp-1)
           end do
        end do
@@ -207,7 +208,7 @@ contains
        do i = lo(1), hi(1)
           
           temp_eos(1) = sy(i,j,temp_comp)
-          den_eos(1) = sy(i,j,rho_comp) + &
+          den_eos(1)  = sy(i,j,rho_comp) + &
                HALF * (s0_edge_old(j,rho_comp) + s0_edge_new(j,rho_comp))
           xn_eos(1,:) = (sy(i,j,spec_comp:spec_comp+nspec-1)  + &
                HALF * ( s0_edge_old(j,spec_comp:spec_comp+nspec-1) + &
@@ -227,7 +228,7 @@ contains
           sy(i,j,rhoh_comp) = den_eos(1)*h_eos(1) 
           
           qreact = 0.0d0
-          if(use_big_h) then
+          if (use_big_h) then
              do comp=1,nspec
                 qreact = qreact + ebin(comp)*xn_eos(1,comp)
              enddo
@@ -244,10 +245,10 @@ contains
   
   subroutine makeRhoHfromT_3d_cart (sx,sy,sz,s0_old,s0_edge_old,s0_new,s0_edge_new,lo,hi)
 
-    use variables, only: rho_comp, temp_comp, spec_comp, rhoh_comp
-    use geometry, only: spherical
+    use variables,     only: rho_comp, temp_comp, spec_comp, rhoh_comp
+    use geometry,      only: spherical
     use eos_module
-    use probin_module, ONLY: use_big_h
+    use probin_module, only: use_big_h
     use bl_constants_module
 
     integer        , intent(in   ) :: lo(:),hi(:)
@@ -257,17 +258,17 @@ contains
     real(kind=dp_t), intent(in   ) :: s0_old(0:,:), s0_edge_old(0:,:)
     real(kind=dp_t), intent(in   ) :: s0_new(0:,:), s0_edge_new(0:,:)
     
-    ! Local variables
     integer :: i, j, k, comp
     real(kind=dp_t) qreact
     
     do_diag = .false.
-    
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)+1
-             sx(i,j,k,rho_comp) = 0.d0
-             do comp = 1,nspec
+
+    sx(lo(1):hi(1)+1, lo(2):hi(2), lo(3):hi(3), rho_comp) = ZERO
+
+    do comp = 1,nspec    
+       do k = lo(3), hi(3)
+          do j = lo(2), hi(2)
+             do i = lo(1), hi(1)+1
                 sx(i,j,k,rho_comp) = sx(i,j,k,rho_comp) + sx(i,j,k,spec_comp+comp-1)
              end do
           end do
@@ -312,12 +313,13 @@ contains
           enddo
        enddo
     enddo
-    
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)+1
-          do i = lo(1), hi(1)
-             sy(i,j,k,rho_comp) = 0.d0
-             do comp = 1,nspec
+
+    sy(lo(1):hi(1), lo(2):hi(2)+1, lo(3):hi(3), rho_comp) = ZERO
+
+    do comp = 1,nspec    
+       do k = lo(3), hi(3)
+          do j = lo(2), hi(2)+1
+             do i = lo(1), hi(1)
                 sy(i,j,k,rho_comp) = sy(i,j,k,rho_comp) + sy(i,j,k,spec_comp+comp-1)
              end do
           end do
@@ -329,7 +331,7 @@ contains
           do i = lo(1), hi(1)
              
              temp_eos(1) = sy(i,j,k,temp_comp)
-             den_eos(1) = sy(i,j,k,rho_comp) + &
+             den_eos(1)  = sy(i,j,k,rho_comp) + &
                   HALF * (s0_old(k,rho_comp) + s0_new(k,rho_comp))
              xn_eos(1,:) = (sy(i,j,k,spec_comp:spec_comp+nspec-1)  + &
                   HALF * ( s0_old(k,spec_comp:spec_comp+nspec-1) + &
@@ -349,7 +351,7 @@ contains
              sy(i,j,k,rhoh_comp) = den_eos(1)*h_eos(1)
              
              qreact = 0.0d0
-             if(use_big_h) then
+             if (use_big_h) then
                 do comp=1,nspec
                    qreact = qreact + ebin(comp)*xn_eos(1,comp)
                 enddo
@@ -362,12 +364,13 @@ contains
           enddo
        enddo
     enddo
-    
-    do k = lo(3), hi(3)+1
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-             sz(i,j,k,rho_comp) = 0.d0
-             do comp = 1,nspec
+
+    sz(lo(1):hi(1), lo(2):hi(2), lo(3):hi(3)+1, rho_comp) = ZERO
+
+    do comp = 1,nspec    
+       do k = lo(3), hi(3)+1
+          do j = lo(2), hi(2)
+             do i = lo(1), hi(1)
                 sz(i,j,k,rho_comp) = sz(i,j,k,rho_comp) + sz(i,j,k,spec_comp+comp-1)
              end do
           end do
@@ -417,10 +420,10 @@ contains
 
   subroutine makeRhoHfromT_3d_sphr (n,sx,sy,sz,xn0_cart,rhoh0_cart,lo,hi,ngc)
 
-    use variables, only: rho_comp, temp_comp, spec_comp, rhoh_comp
-    use geometry, only: spherical
+    use variables,     only: rho_comp, temp_comp, spec_comp, rhoh_comp
+    use geometry,      only: spherical
     use eos_module
-    use probin_module, ONLY: use_big_h
+    use probin_module, only: use_big_h
     use bl_constants_module
 
     integer        , intent(in   ) :: n,ngc
@@ -613,7 +616,7 @@ contains
   
   subroutine makeTfromRhoH(nlevs,s,t0,mla,the_bc_level,dx)
 
-    use variables, only: temp_comp
+    use variables,             only: temp_comp
     use bl_prof_module
     use ml_restriction_module, only: ml_cc_restriction_c
     use multifab_physbc_module
@@ -673,9 +676,9 @@ contains
 
   subroutine makeTfromRhoH_2d (state,lo,hi,ng,t0)
 
-    use variables, only: rho_comp, spec_comp, rhoh_comp, temp_comp
+    use variables,     only: rho_comp, spec_comp, rhoh_comp, temp_comp
     use eos_module
-    use probin_module, ONLY: use_big_h
+    use probin_module, only: use_big_h
 
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(inout) ::  state(lo(1)-ng:,lo(2)-ng:,:)
@@ -726,10 +729,10 @@ contains
 
   subroutine makeTfromRhoH_3d (state,lo,hi,dx,ng,n,t0)
 
-    use variables, only: rho_comp, spec_comp, rhoh_comp, temp_comp
+    use variables,      only: rho_comp, spec_comp, rhoh_comp, temp_comp
     use eos_module
-    use probin_module, ONLY: use_big_h
-    use geometry,  only: spherical
+    use probin_module,  only: use_big_h
+    use geometry,       only: spherical
     use fill_3d_module, only: fill_3d_data
 
     integer, intent(in) :: lo(:), hi(:), ng, n
