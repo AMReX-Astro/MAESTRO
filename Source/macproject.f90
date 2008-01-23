@@ -29,7 +29,7 @@ contains
     type(bc_tower ), intent(in   ) :: the_bc_tower
     integer        , intent(in   ) :: bc_comp
 
-    type(multifab ), intent(inout), optional :: divu_rhs(:)
+    type(multifab ), intent(in   ), optional :: divu_rhs(:)
     real(dp_t)     , intent(in   ), optional :: div_coeff_1d(:,:)
     real(dp_t)     , intent(in   ), optional :: div_coeff_half_1d(:,:)
     type(multifab ), intent(in   ), optional :: div_coeff_3d(:)
@@ -159,7 +159,7 @@ contains
       real(kind=dp_t), intent(in   ) :: dx(:,:)
       integer        , intent(in   ) :: ref_ratio(:,:)
       logical        , intent(in   ) :: before
-      type(multifab ), intent(inout), optional :: divu_rhs(:)
+      type(multifab ), intent(in   ), optional :: divu_rhs(:)
 
       real(kind=dp_t), pointer :: ump(:,:,:,:) 
       real(kind=dp_t), pointer :: vmp(:,:,:,:) 
