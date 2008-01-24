@@ -1,0 +1,49 @@
+&PROBIN
+ test_set = "gr0_2d"
+ spherical_in = 0
+
+ prob_hi_x = 5.0e8
+
+ prob_lo_y = 0.5e8
+ prob_hi_y = 4.0e8
+
+ max_step  = 100000
+ init_iter = 4
+
+ stop_time = 60.0
+ stop_time = 40.0
+ stop_time = 20.0
+ stop_time = 15.0
+
+ plot_int  = 20
+ chk_int   = 20
+
+ cflfac = 0.9
+ init_shrink = 0.2
+
+ bcx_lo = -1
+ bcx_hi = -1
+ bcy_lo = 14
+ bcy_hi = 12
+
+ pmask_x = T
+ pmask_y = F
+
+    verbose = 1
+ mg_verbose = 1
+ cg_verbose = 0
+
+ hg_bottom_solver = 2  ! CG
+ mg_bottom_solver = 1  ! BiC
+
+ do_initial_projection = 1
+ init_divu_iter = 3
+
+ anelastic_cutoff = 3.e6
+ 
+ do_sponge = T
+ sponge_kappa = 100.d0
+
+!restart = 200
+
+/
