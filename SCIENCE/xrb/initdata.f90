@@ -14,6 +14,7 @@ module init_module
   use ml_layout_module
   use ml_restriction_module
   use multifab_fill_ghost_module
+  use probin_module, only: prob_lo_y, prob_lo_z
 
   implicit none
 
@@ -34,10 +35,29 @@ contains
 
     real(kind=dp_t), pointer:: sop(:,:,:,:)
     integer :: lo(s(1)%dim),hi(s(1)%dim),ng,dm
-    integer :: i,n
+    integer :: i,n,r
+
+    real(kind=dp_t), parameter :: he4_pert = 1.d-3
+    real(kind=dp_t)            :: pert_height
+    integer                    :: he4_comp, pert_index
     
     ng = s(1)%ng
     dm = s(1)%dim
+
+    ! compute the perturbation r location based on where the concentration of He
+    ! becomes greater than he4_pert at the finest level
+    he4_comp = network_species_index('helium-4')
+    do r=0,nr(nlevs)-1
+       if (s0(nlevs,r,spec_comp+he4_comp-1)/s0(nlevs,r,rho_comp) .gt. he4_pert) then
+          pert_index = r
+          exit
+       end if
+    end do
+    if(dm .eq. 2) then
+       pert_height = prob_lo_y + (dble(pert_index)+HALF)*dx(nlevs,dm)
+    else if(dm .eq. 3) then
+       pert_height = prob_lo_z + (dble(pert_index)+HALF)*dx(nlevs,dm)
+    end if
 
     do n=1,nlevs
 
@@ -48,9 +68,11 @@ contains
           hi =  upb(get_box(s(n),i))
           select case (dm)
           case (2)
-             call initscalardata_2d(sop(:,:,1,:), lo, hi, ng, dx(n,:), s0(n,:,:), p0(n,:))
+             call initscalardata_2d(sop(:,:,1,:), lo, hi, ng, dx(n,:), s0(n,:,:), p0(n,:), &
+                                    pert_height)
           case (3)
-             call initscalardata_3d(n,sop(:,:,:,:), lo, hi, ng, dx(n,:), s0(n,:,:), p0(n,:))
+             call initscalardata_3d(n,sop(:,:,:,:), lo, hi, ng, dx(n,:), s0(n,:,:), p0(n,:), &
+                                    pert_height)
           end select
        end do
        
@@ -67,7 +89,7 @@ contains
 
   end subroutine initscalardata
 
-  subroutine initscalardata_2d(s,lo,hi,ng,dx,s0,p0)
+  subroutine initscalardata_2d(s,lo,hi,ng,dx,s0,p0,pert_height)
 
     use probin_module, only: prob_lo_x, prob_hi_x,    &
                              prob_lo_y,               &
@@ -78,6 +100,8 @@ contains
     real (kind = dp_t), intent(in   ) :: dx(:)
     real(kind=dp_t)   , intent(in   ) :: s0(0:,:)
     real(kind=dp_t)   , intent(in   ) :: p0(0:)
+    real (kind = dp_t), intent(in   ) :: pert_height
+    
 
     ! Local variables
     integer         :: i,j,n
@@ -86,8 +110,6 @@ contains
     real(kind=dp_t) :: rhoX_pert(nspec), trac_pert(ntrac)
 
     real(kind=dp_t) :: xcen, ycen, dist
-    real(kind=dp_t), parameter :: he4_pert = 1.e-2_dp_t
-    integer         :: he4_comp, pert_index
 
     ! initial the domain with the base state
     s = ZERO
@@ -109,17 +131,7 @@ contains
     if (perturb_model) then
 
        xcen = (prob_lo_x + prob_hi_x) / TWO
-
-       he4_comp = network_species_index('helium-4')
-
-       do j = lo(2), hi(2)
-          if (s0(j,spec_comp+he4_comp-1)/s0(j,rho_comp) .gt. he4_pert) then
-             pert_index = j
-             exit
-          endif
-       enddo
-
-       ycen = prob_lo_y + (dble(pert_index)+HALF) * dx(2)
+       ycen = pert_height
 
        do j = lo(2), hi(2)
           y = prob_lo_y + (dble(j)+HALF) * dx(2)
@@ -143,7 +155,7 @@ contains
     
   end subroutine initscalardata_2d
 
-  subroutine initscalardata_3d(n,s,lo,hi,ng,dx,s0,p0)
+  subroutine initscalardata_3d(n,s,lo,hi,ng,dx,s0,p0,pert_height)
 
     use probin_module, only: prob_lo_x, prob_hi_x,    &
                              prob_lo_y, prob_hi_y,    &
@@ -155,6 +167,7 @@ contains
     real (kind = dp_t), intent(in   ) :: dx(:)
     real(kind=dp_t)   , intent(in   ) :: s0(0:,:)
     real(kind=dp_t)   , intent(in   ) :: p0(0:)
+    real (kind = dp_t), intent(in   ) :: pert_height
 
     !     Local variables
     integer         :: i,j,k,comp
@@ -163,8 +176,6 @@ contains
     real(kind=dp_t) :: rhoX_pert(nspec), trac_pert(ntrac)
 
     real(kind=dp_t)            :: xcen, ycen, zcen, dist
-    real(kind=dp_t), parameter :: he4_pert = 1.e-2
-    integer                    :: he4_comp, pert_index
 
     ! initial the domain with the base state
     s = ZERO
@@ -205,16 +216,7 @@ contains
 
           xcen = (prob_lo_x + prob_hi_x) / TWO
           ycen = (prob_lo_y + prob_hi_y) / TWO
-
-          he4_comp = network_species_index('helium-4')
-          do k = lo(3), hi(3)
-             if (s0(k,spec_comp+he4_comp-1)/s0(j,rho_comp) .gt. he4_pert) then
-                pert_index = j
-                exit
-             endif
-          enddo
-
-          zcen = prob_lo_z + (dble(pert_index)+HALF)*dx(3)
+          zcen = pert_height
 
           ! add an optional perturbation
           do k = lo(3), hi(3)
