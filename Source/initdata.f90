@@ -315,12 +315,6 @@ contains
          .15_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r0))) + &
          .3_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r1))) + &
          .225_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r2)))  ) )
-
-    ! This case breaks
-!   temp = t0 * (ONE + FOUR * ( &
-!        .15_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r0))) + &
-!        .3_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r1))) + &
-!        .225_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r2)))  ) )
           
     ! Use the EOS to make this temperature perturbation occur at constant 
     ! pressure
