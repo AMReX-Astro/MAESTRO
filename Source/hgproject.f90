@@ -24,7 +24,7 @@ contains
     use ml_solve_module
     use ml_restriction_module
     use multifab_fill_ghost_module
-    use probin_module, only: verbose, mg_verbose, cg_verbose
+    use probin_module, only: verbose, mg_verbose, cg_verbose, hg_dense_stencil
 
     integer        , intent(in   ) :: proj_type
     type(ml_layout), intent(inout) :: mla
@@ -58,12 +58,17 @@ contains
     dm    = mla%dim
     ng    = unew(1)%ng
     nodal = .true.
-
-    ! stencil_type = ST_DENSE
-    stencil_type = ST_CROSS
+    
+    stencil_type = ST_CROSS; if (hg_dense_stencil) stencil_type = ST_DENSE
 
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
        print *,'PROJ_TYPE IN HGPROJECT:',proj_type
+       select case (stencil_type)
+       case (ST_CROSS)
+          print *,'PROJ_TYPE IN HGPROJECT: ST_CROSS'
+       case (ST_DENSE)
+          print *,'PROJ_TYPE IN HGPROJECT: ST_DENSE'
+       end select
     end if
 
     use_div_coeff_1d = .false.
