@@ -52,8 +52,6 @@ contains
 
     call build(bpt, "make_edge_state")
 
-    print*, 'make_edge_state: start_scomp = ', start_scomp
-
     dm = u(1)%dim
     ng = s(1)%ng
     
