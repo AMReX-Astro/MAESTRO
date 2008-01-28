@@ -33,9 +33,7 @@ contains
     integer        , intent(in   ) :: velpred,start_scomp,start_bccomp,num_comp
     type(ml_layout), intent(inout) :: mla
 
-    ! local
-    integer                  :: i,scomp,bccomp,ng,dm,n
-    integer                  :: lo(u(1)%dim)
+    integer                  :: i,scomp,bccomp,ng,dm,n,lo(u(1)%dim)
     real(kind=dp_t), pointer :: sop(:,:,:,:)
     real(kind=dp_t), pointer :: uop(:,:,:,:)
     real(kind=dp_t), pointer :: sepx(:,:,:,:)
@@ -54,6 +52,8 @@ contains
 
     call build(bpt, "make_edge_state")
 
+    print*, 'make_edge_state: start_scomp = ', start_scomp
+
     dm = u(1)%dim
     ng = s(1)%ng
     
@@ -70,7 +70,7 @@ contains
           utp  => dataptr(utrans(n,1),i)
           vtp  => dataptr(utrans(n,2),i)
           fp   => dataptr(force(n),i)
-          lo =  lwb(get_box(s(n),i))
+          lo   =  lwb(get_box(s(n),i))
           select case (dm)
           case (2)
              do scomp = start_scomp, start_scomp + num_comp - 1
@@ -105,19 +105,21 @@ contains
           end select
        end do
 
-    end do ! end loop over levels
-
-    ! we call ml_edge_restriction for the output velocity if is_vel .eq. .true.
-    ! we do not call ml_edge_restriction for scalars because instead we will call 
-    ! ml_edge_restriction on the fluxes in mkflux
-    if(is_vel .and. velpred .eq. 1) then
+    end do
+    !
+    ! We call ml_edge_restriction for the output velocity if is_vel .eq. .true.
+    ! we do not call ml_edge_restriction for scalars because instead we will call
+    ! ml_edge_restriction on the fluxes in mkflux.
+    !
+    if (is_vel .and. velpred .eq. 1) then
        do n = nlevs,2,-1
           do i = 1, dm
              call ml_edge_restriction_c(umac(n-1,i),1,umac(n,i),1,mla%mba%rr(n-1,:),i,1)
           enddo
        enddo
     end if
-    if(is_vel .and. velpred .eq. 0) then
+
+    if (is_vel .and. velpred .eq. 0) then
        do n = nlevs,2,-1
           do i = 1, dm
              call ml_edge_restriction_c(sedge(n-1,i),1,sedge(n,i),1,mla%mba%rr(n-1,:),i,dm)
@@ -204,34 +206,28 @@ contains
     if (velpred .eq. 1) then
        
        umax = abs(utrans(is,js))
-       do j = js,je
-          do i = is,ie+1
-             umax = max(umax,abs(utrans(i,j)))
-          end do
-       end do
-       do j = js,je+1
-          do i = is,ie
-             umax = max(umax,abs(vtrans(i,j)))
-          end do
-       end do
+
+       do j = js,je; do i = is,ie+1
+          umax = max(umax,abs(utrans(i,j)))
+       end do; end do
+       do j = js,je+1; do i = is,ie
+          umax = max(umax,abs(vtrans(i,j)))
+       end do; end do
        
     else 
        
        umax = abs(umac(is,js))
-       do j = js,je
-          do i = is,ie+1
-             umax = max(umax,abs(umac(i,j)))
-          end do
-       end do
-       do j = js,je+1
-          do i = is,ie
-             umax = max(umax,abs(vmac(i,j)))
-          end do
-       end do
+
+       do j = js,je; do i = is,ie+1
+          umax = max(umax,abs(umac(i,j)))
+       end do; end do
+       do j = js,je+1; do i = is,ie
+          umax = max(umax,abs(vmac(i,j)))
+       end do; end do
 
     end if
     
-    if(umax .eq. 0.d0) then
+    if (umax .eq. 0.d0) then
        eps = abs_eps
     else
        eps = abs_eps * umax
@@ -522,14 +518,6 @@ contains
        enddo
     end if
     
-    deallocate(s_l)
-    deallocate(s_r)
-    deallocate(s_b)
-    deallocate(s_t)
-    
-    deallocate(slopex)
-    deallocate(slopey)
-    
   end subroutine make_edge_state_2d
   
   
@@ -564,20 +552,16 @@ contains
     integer        , intent(in   ) :: velpred
     integer        , intent(in   ) :: ng,comp
 
-    ! Local variables
     real(kind=dp_t), allocatable :: slopex(:,:,:,:),slopey(:,:,:,:),slopez(:,:,:,:)
     real(kind=dp_t), allocatable :: s_l(:),s_r(:),s_b(:),s_t(:),s_u(:),s_d(:)
     
     real(kind=dp_t) :: ubardth, vbardth, wbardth
-    real(kind=dp_t) :: hx, hy, hz, dth
-    real(kind=dp_t) :: splus,sminus
-    real(kind=dp_t) :: savg,st
-    real(kind=dp_t) :: ulo,uhi,vlo,vhi,wlo,whi
+    real(kind=dp_t) :: hx, hy, hz, dth, splus, sminus
+    real(kind=dp_t) :: savg,st,ulo,uhi,vlo,vhi,wlo,whi
     real(kind=dp_t) :: sptop,spbot,smtop,smbot,splft,sprgt,smlft,smrgt
     real(kind=dp_t) :: abs_eps, eps, umax
     
-    integer :: hi(3),slope_order
-    integer :: i,j,k,is,js,ie,je,ks,ke
+    integer :: hi(3),slope_order,i,j,k,is,js,ie,je,ks,ke
     logical :: test
     
     slope_order = 4
@@ -621,56 +605,34 @@ contains
     if (velpred .eq. 1) then
        
        umax = abs(utrans(is,js,ks))
-       do k = ks,ke
-          do j = js,je
-             do i = is,ie+1
-                umax = max(umax,abs(utrans(i,j,k)))
-             end do
-          end do
-       end do
-       do k = ks,ke
-          do j = js,je+1
-             do i = is,ie
-                umax = max(umax,abs(vtrans(i,j,k)))
-             end do
-          end do
-        end do
-        do k = ks,ke+1
-           do j = js,je
-              do i = is,ie
-                 umax = max(umax,abs(wtrans(i,j,k)))
-              end do
-           end do
-        end do
+
+       do k = ks,ke; do j = js,je; do i = is,ie+1
+          umax = max(umax,abs(utrans(i,j,k)))
+       end do; end do; end do
+       do k = ks,ke; do j = js,je+1; do i = is,ie
+          umax = max(umax,abs(vtrans(i,j,k)))
+       end do; end do; end do
+       do k = ks,ke+1; do j = js,je; do i = is,ie
+          umax = max(umax,abs(wtrans(i,j,k)))
+       end do; end do; end do
         
      else 
         
         umax = abs(umac(is,js,ks))
-        do k = ks,ke
-           do j = js,je
-              do i = is,ie+1
-                 umax = max(umax,abs(umac(i,j,k)))
-              end do
-           end do
-        end do
-        do k = ks,ke
-           do j = js,je+1
-              do i = is,ie
-                 umax = max(umax,abs(vmac(i,j,k)))
-              end do
-           end do
-        end do
-        do k = ks,ke+1
-           do j = js,je
-              do i = is,ie
-                 umax = max(umax,abs(wmac(i,j,k)))
-              end do
-           end do
-        end do
+
+        do k = ks,ke; do j = js,je; do i = is,ie+1
+           umax = max(umax,abs(umac(i,j,k)))
+        end do; end do; end do
+        do k = ks,ke; do j = js,je+1; do i = is,ie
+           umax = max(umax,abs(vmac(i,j,k)))
+        end do; end do; end do
+        do k = ks,ke+1; do j = js,je; do i = is,ie
+           umax = max(umax,abs(wmac(i,j,k)))
+        end do; end do; end do
 
      end if
      
-     if(umax .eq. 0.d0) then
+     if (umax .eq. 0.d0) then
         eps = abs_eps
      else
         eps = abs_eps * umax
@@ -803,7 +765,7 @@ contains
                  
                  ubardth = dth/hx * ( u(i,j,k,1) + w0_cart_vec(i,j,k,1))
                  
-                 if(velpred .eq. 1) then
+                 if (velpred .eq. 1) then
                     s_l(i+1)= s(i,j,k,comp) + (HALF-ubardth)*slopex(i,j,k,1) + dth*st
                     s_r(i  )= s(i,j,k,comp) - (HALF+ubardth)*slopex(i,j,k,1) + dth*st
                  else
@@ -1279,17 +1241,6 @@ contains
         enddo
      endif
      
-     deallocate(s_l)
-     deallocate(s_r)
-     deallocate(s_b)
-     deallocate(s_t)
-     deallocate(s_d)
-     deallocate(s_u)
-     
-     deallocate(slopex)
-     deallocate(slopey)
-     deallocate(slopez)
-     
    end subroutine make_edge_state_3d
    
    subroutine make_edge_state_1d(n,s,sedgex,umac,force,lo,dx,dt)
@@ -1304,7 +1255,6 @@ contains
      real(kind=dp_t), intent(in   ) ::  force(lo:)
      real(kind=dp_t), intent(in   ) :: dx,dt
      
-     ! Local variables
      real(kind=dp_t), allocatable::  slopex(:)
      real(kind=dp_t), allocatable::  s_l(:),s_r(:)
      real(kind=dp_t), allocatable:: dxscr(:,:)
@@ -1320,7 +1270,6 @@ contains
      
      allocate(s_l(lo-1:hi+2),s_r(lo-1:hi+2))
      allocate(slopex(lo:hi))
-     
      allocate(dxscr(lo:hi,4))
      
      abs_eps = 1.0d-8
@@ -1380,11 +1329,6 @@ contains
         savg = HALF*(s_r(i) + s_l(i))
         sedgex(i)=merge(savg,sedgex(i),abs(umac(i)) .lt. eps)
      enddo
-     
-     deallocate(s_l)
-     deallocate(s_r)
-     deallocate(slopex)
-     deallocate(dxscr)
      
    end subroutine make_edge_state_1d
    
