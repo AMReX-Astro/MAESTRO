@@ -159,7 +159,7 @@ contains
           adv_bc_level(n,d,i, rho_comp+dm)                     = HOEXTRAP      ! density
           adv_bc_level(n,d,i,rhoh_comp+dm)                     = HOEXTRAP      ! (rho h)
           adv_bc_level(n,d,i,spec_comp+dm:spec_comp+dm+nspec-1)= HOEXTRAP      ! (rho X)_i
-          adv_bc_level(n,d,i,temp_comp+dm)                     = HOEXTRAP      ! temperature
+          adv_bc_level(n,d,i,temp_comp+dm)                     = FOEXTRAP      ! temperature
           adv_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= HOEXTRAP      ! tracers
           adv_bc_level(n,d,i,press_comp)                       = FOEXTRAP      ! pressure
           adv_bc_level(n,d,i,foextrap_comp)                    = FOEXTRAP      ! first order extrap
@@ -169,7 +169,7 @@ contains
           adv_bc_level(n,d,i, rho_comp+dm)                     = HOEXTRAP      ! density
           adv_bc_level(n,d,i,rhoh_comp+dm)                     = HOEXTRAP      ! (rho h)
           adv_bc_level(n,d,i,spec_comp+dm:spec_comp+dm+nspec-1)= HOEXTRAP      ! (rho X)_i
-          adv_bc_level(n,d,i,temp_comp+dm)                     = HOEXTRAP      ! temperature
+          adv_bc_level(n,d,i,temp_comp+dm)                     = FOEXTRAP      ! temperature
           adv_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= HOEXTRAP      ! tracers
           adv_bc_level(n,d,i,press_comp)                       = FOEXTRAP      ! pressure
           adv_bc_level(n,d,i,foextrap_comp)                    = FOEXTRAP      ! first order extrap
