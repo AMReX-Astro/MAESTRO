@@ -64,6 +64,8 @@ contains
     type(multifab) :: s0_new_cart(nlevs)
     type(multifab) :: sedge(nlevs,mla%dim)
     type(multifab) :: sflux(nlevs,mla%dim)
+    type(multifab) :: etaflux(nlevs)
+
 
     integer    :: velpred,comp,pred_comp,n,dm
     logical    :: umac_nodal_flag(sold(1)%dim), is_vel
@@ -223,21 +225,25 @@ contains
           umac_nodal_flag(comp) = .true.
           call multifab_build(sflux(n,comp), mla%la(n), nscal, 0, nodal = umac_nodal_flag)
        end do
+
+       umac_nodal_flag = .false.
+       umac_nodal_flag(dm) = .true.
+       call multifab_build(etaflux(n), mla%la(n), nscal, 0, nodal = umac_nodal_flag)
     end do
 
     ! compute enthalpy fluxes
-    call mkflux(nlevs,sflux,sold,sedge,umac,w0,w0_cart_vec,s0_old,s0_edge_old, &
+    call mkflux(nlevs,sflux,etaflux,sold,sedge,umac,w0,w0_cart_vec,s0_old,s0_edge_old, &
                 s0_old_cart,s0_new,s0_edge_new,s0_new_cart,rhoh_comp,rhoh_comp, &
                 which_step,dx,mla)
 
     ! compute species fluxes
-    call mkflux(nlevs,sflux,sold,sedge,umac,w0,w0_cart_vec,s0_old,s0_edge_old, &
+    call mkflux(nlevs,sflux,etaflux,sold,sedge,umac,w0,w0_cart_vec,s0_old,s0_edge_old, &
                 s0_old_cart,s0_new,s0_edge_new,s0_new_cart,spec_comp, &
                 spec_comp+nspec-1,which_step,dx,mla)
 
     if (ntrac .ge. 1) then
        ! compute tracer fluxes
-       call mkflux(nlevs,sflux,sold,sedge,umac,w0,w0_cart_vec,s0_old,s0_edge_old, &
+       call mkflux(nlevs,sflux,etaflux,sold,sedge,umac,w0,w0_cart_vec,s0_old,s0_edge_old, &
                    s0_old_cart,s0_new,s0_edge_new,s0_new_cart,trac_comp, &
                    trac_comp+ntrac-1,which_step,dx,mla)
     end if
@@ -311,7 +317,7 @@ contains
                      s0_old_cart,s0_new_cart,dx,dt,the_bc_level,mla)
 
     if (evolve_base_state .and. which_step .eq. 1) then
-       call make_eta(nlevs,eta,sold,sflux,dx,mla)
+       call make_eta(nlevs,eta,sold,etaflux,dx,mla)
     end if
 
     if (spherical .eq. 1) then
@@ -323,6 +329,7 @@ contains
 
     do n = 1, nlevs
        call destroy(scal_force(n))
+       call destroy(etaflux(n))
        do comp = 1,dm
           call destroy(sedge(n,comp))
           call destroy(sflux(n,comp))

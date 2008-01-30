@@ -13,7 +13,7 @@ module make_eta_module
 
 contains
 
-  subroutine make_eta(nlevs,eta,sold,sflux,dx,mla)
+  subroutine make_eta(nlevs,eta,sold,etaflux,dx,mla)
 
     use bl_constants_module
     use geometry, only: spherical, nr
@@ -23,12 +23,12 @@ contains
     integer           , intent(in   ) :: nlevs
     real(kind=dp_t)   , intent(inout) :: eta(:,0:,:)
     type(multifab)    , intent(in   ) :: sold(:)
-    type(multifab)    , intent(inout) :: sflux(:,:)
+    type(multifab)    , intent(inout) :: etaflux(:)
     real(kind = dp_t) , intent(in   ) :: dx(:,:)
     type(ml_layout)   , intent(inout) :: mla
 
     ! local
-    real(kind=dp_t), pointer :: fp(:,:,:,:)
+    real(kind=dp_t), pointer :: efp(:,:,:,:)
     
     real(kind=dp_t), allocatable :: ncell(:,:)
     real(kind=dp_t), allocatable :: etasum_proc(:,:,:)
@@ -81,14 +81,14 @@ contains
        ! is the only level in existence
        do i=1,sold(1)%nboxes
           if ( multifab_remote(sold(1), i) ) cycle
-          fp => dataptr(sflux(1,dm), i)
+          efp => dataptr(etaflux(1), i)
           lo =  lwb(get_box(sold(1), i))
           hi =  upb(get_box(sold(1), i))
           select case (dm)
           case (2)
-            call sum_eta_coarsest_2d(lo,hi,domhi,fp(:,:,1,:),etasum_proc(1,:,:))
+            call sum_eta_coarsest_2d(lo,hi,domhi,efp(:,:,1,:),etasum_proc(1,:,:))
           case (3)
-            call sum_eta_coarsest_3d(lo,hi,domhi,fp(:,:,:,:),etasum_proc(1,:,:))
+            call sum_eta_coarsest_3d(lo,hi,domhi,efp(:,:,:,:),etasum_proc(1,:,:))
           end select
        end do
 
@@ -162,14 +162,14 @@ contains
           ! compute etapert_proc on faces that do not exist at the coarser level
           do i=1,sold(n)%nboxes
              if ( multifab_remote(sold(n), i) ) cycle
-             fp  => dataptr(sflux(n,dm), i)
+             efp  => dataptr(etaflux(n), i)
              lo =  lwb(get_box(sold(n), i))
              hi =  upb(get_box(sold(n), i))
              select case (dm)
              case (2)
-                call compute_etapert_2d(n,lo,hi,fp(:,:,1,:),etasum_proc(1,:,:),rr)
+                call compute_etapert_2d(n,lo,hi,efp(:,:,1,:),etasum_proc(1,:,:),rr)
              case (3)
-                call compute_etapert_3d(n,lo,hi,fp(:,:,:,:),etasum_proc(1,:,:),rr)
+                call compute_etapert_3d(n,lo,hi,efp(:,:,:,:),etasum_proc(1,:,:),rr)
              end select
           end do
 
@@ -221,13 +221,13 @@ contains
 
   end subroutine make_eta
 
-  subroutine sum_eta_coarsest_2d(lo,hi,domhi,fluxr,etasum)
+  subroutine sum_eta_coarsest_2d(lo,hi,domhi,etaflux,etasum)
 
     use variables, only: nscal, rho_comp, rhoh_comp, spec_comp
     use network, only: nspec
 
     integer         , intent(in   ) :: lo(:), hi(:), domhi(:)
-    real (kind=dp_t), intent(in   ) :: fluxr(lo(1):,lo(2):,:)
+    real (kind=dp_t), intent(in   ) :: etaflux(lo(1):,lo(2):,:)
     real (kind=dp_t), intent(inout) :: etasum(0:,:)
 
     ! local
@@ -235,9 +235,9 @@ contains
 
     do j=lo(2),hi(2)
        do i=lo(1),hi(1)
-          etasum(j,rhoh_comp) = etasum(j,rhoh_comp) + fluxr(i,j,rhoh_comp)
+          etasum(j,rhoh_comp) = etasum(j,rhoh_comp) + etaflux(i,j,rhoh_comp)
           do comp=spec_comp,spec_comp+nspec-1
-             etasum(j,comp) = etasum(j,comp) + fluxr(i,j,comp)
+             etasum(j,comp) = etasum(j,comp) + etaflux(i,j,comp)
           end do
        end do
     end do
@@ -247,22 +247,22 @@ contains
     if(hi(2) .eq. domhi(2)) then
        j=hi(2)+1
        do i=lo(1),hi(1)
-          etasum(j,rhoh_comp) = etasum(j,rhoh_comp) + fluxr(i,j,rhoh_comp)
+          etasum(j,rhoh_comp) = etasum(j,rhoh_comp) + etaflux(i,j,rhoh_comp)
           do comp=spec_comp,spec_comp+nspec-1
-             etasum(j,comp) = etasum(j,comp) + fluxr(i,j,comp)
+             etasum(j,comp) = etasum(j,comp) + etaflux(i,j,comp)
           end do
        end do
     end if
 
   end subroutine sum_eta_coarsest_2d
 
-  subroutine sum_eta_coarsest_3d(lo,hi,domhi,fluxr,etasum)
+  subroutine sum_eta_coarsest_3d(lo,hi,domhi,etaflux,etasum)
 
     use variables, only: nscal, rho_comp, rhoh_comp, spec_comp
     use network, only: nspec
 
     integer         , intent(in   ) :: lo(:), hi(:), domhi(:)
-    real (kind=dp_t), intent(in   ) :: fluxr(lo(1):,lo(2):,lo(3):,:)
+    real (kind=dp_t), intent(in   ) :: etaflux(lo(1):,lo(2):,lo(3):,:)
     real (kind=dp_t), intent(inout) :: etasum(0:,:)
 
     ! local
@@ -271,9 +271,9 @@ contains
     do k=lo(3),hi(3)
        do j=lo(2),hi(2)
           do i=lo(1),hi(1)
-             etasum(k,rhoh_comp) = etasum(k,rhoh_comp) + fluxr(i,j,k,rhoh_comp)
+             etasum(k,rhoh_comp) = etasum(k,rhoh_comp) + etaflux(i,j,k,rhoh_comp)
              do comp=spec_comp,spec_comp+nspec-1
-                etasum(k,comp) = etasum(k,comp) + fluxr(i,j,k,comp)
+                etasum(k,comp) = etasum(k,comp) + etaflux(i,j,k,comp)
              end do
           end do
        end do
@@ -285,9 +285,9 @@ contains
        k=hi(3)+1
        do j=lo(2),hi(2)
           do i=lo(1),hi(1)
-             etasum(k,rhoh_comp) = etasum(k,rhoh_comp) + fluxr(i,j,k,rhoh_comp)
+             etasum(k,rhoh_comp) = etasum(k,rhoh_comp) + etaflux(i,j,k,rhoh_comp)
              do comp=spec_comp,spec_comp+nspec-1
-                etasum(k,comp) = etasum(k,comp) + fluxr(i,j,k,comp)
+                etasum(k,comp) = etasum(k,comp) + etaflux(i,j,k,comp)
              end do
           end do
        end do
@@ -295,7 +295,7 @@ contains
 
   end subroutine sum_eta_coarsest_3d
 
-  subroutine compute_etapert_2d(n,lo,hi,fluxr,etapert,rr)
+  subroutine compute_etapert_2d(n,lo,hi,etaflux,etapert,rr)
 
     use variables, only: rhoh_comp, spec_comp
     use network, only: nspec
@@ -303,7 +303,7 @@ contains
     use geometry, only: nr
 
     integer         , intent(in   ) :: n, lo(:), hi(:), rr
-    real (kind=dp_t), intent(in   ) :: fluxr(lo(1):,lo(2):,:)
+    real (kind=dp_t), intent(in   ) :: etaflux(lo(1):,lo(2):,:)
     real (kind=dp_t), intent(inout) :: etapert(0:,:)
     
     ! local
@@ -318,28 +318,28 @@ contains
              loavg = ZERO
              hiavg = ZERO
              do ipert=0,rr-1
-                loavg = loavg + fluxr(i+ipert,j,   rhoh_comp)
-                hiavg = hiavg + fluxr(i+ipert,j+rr,rhoh_comp)
+                loavg = loavg + etaflux(i+ipert,j,   rhoh_comp)
+                hiavg = hiavg + etaflux(i+ipert,j+rr,rhoh_comp)
              end do
              loavg = loavg / dble(rr)
              hiavg = hiavg / dble(rr)
              crseavg = dble(jpert)/dble(rr)*loavg + dble(rr-jpert)/dble(rr)*hiavg
              do ipert=0,rr-1
-                etapert(j+jpert,rhoh_comp) = fluxr(i+ipert,j+jpert,rhoh_comp) - crseavg
+                etapert(j+jpert,rhoh_comp) = etaflux(i+ipert,j+jpert,rhoh_comp) - crseavg
              end do
 
              do comp=spec_comp,spec_comp+nspec-1
                 loavg = ZERO
                 hiavg = ZERO
                 do ipert=0,rr-1
-                   loavg = loavg + fluxr(i+ipert,j,   comp)
-                   hiavg = hiavg + fluxr(i+ipert,j+rr,comp)
+                   loavg = loavg + etaflux(i+ipert,j,   comp)
+                   hiavg = hiavg + etaflux(i+ipert,j+rr,comp)
                 end do
                 loavg = loavg / dble(rr)
                 hiavg = hiavg / dble(rr)
                 crseavg = dble(jpert)/dble(rr)*loavg + dble(rr-jpert)/dble(rr)*hiavg
                 do ipert=0,rr-1
-                   etapert(j+jpert,comp) = fluxr(i+ipert,j+jpert,comp) - crseavg
+                   etapert(j+jpert,comp) = etaflux(i+ipert,j+jpert,comp) - crseavg
                 end do
              end do
              
@@ -350,7 +350,7 @@ contains
 
   end subroutine compute_etapert_2d
 
-  subroutine compute_etapert_3d(n, lo,hi,fluxr,etapert,rr)
+  subroutine compute_etapert_3d(n, lo,hi,etaflux,etapert,rr)
 
     use variables, only: rhoh_comp, spec_comp
     use network, only: nspec
@@ -358,7 +358,7 @@ contains
     use geometry, only: nr
 
     integer         , intent(in   ) :: n, lo(:), hi(:), rr
-    real (kind=dp_t), intent(in   ) :: fluxr(lo(1):,lo(2):,lo(3):,:)
+    real (kind=dp_t), intent(in   ) :: etaflux(lo(1):,lo(2):,lo(3):,:)
     real (kind=dp_t), intent(inout) :: etapert(0:,:)
     
     ! local
@@ -375,8 +375,8 @@ contains
                 hiavg = ZERO
                 do ipert=0,rr-1
                    do jpert=0,rr-1
-                      loavg = loavg + fluxr(i+ipert,j+jpert,k,   rhoh_comp)
-                      hiavg = hiavg + fluxr(i+ipert,j+jpert,k+rr,rhoh_comp)
+                      loavg = loavg + etaflux(i+ipert,j+jpert,k,   rhoh_comp)
+                      hiavg = hiavg + etaflux(i+ipert,j+jpert,k+rr,rhoh_comp)
                    end do
                 end do
                 loavg = loavg / dble(rr**2)
@@ -385,7 +385,7 @@ contains
                 do ipert=0,rr-1
                    do jpert=0,rr-1
                       etapert(k+kpert,rhoh_comp) = &
-                           fluxr(i+ipert,j+jpert,k+kpert,rhoh_comp) - crseavg
+                           etaflux(i+ipert,j+jpert,k+kpert,rhoh_comp) - crseavg
                    end do
                 end do
 
@@ -394,8 +394,8 @@ contains
                    hiavg = ZERO
                    do ipert=0,rr-1
                       do jpert=0,rr-1
-                         loavg = loavg + fluxr(i+ipert,j+jpert,k,   comp)
-                         hiavg = hiavg + fluxr(i+ipert,j+jpert,k+rr,comp)
+                         loavg = loavg + etaflux(i+ipert,j+jpert,k,   comp)
+                         hiavg = hiavg + etaflux(i+ipert,j+jpert,k+rr,comp)
                       end do
                    end do
                    loavg = loavg / dble(rr**2)
@@ -404,7 +404,7 @@ contains
                    do ipert=0,rr-1
                       do jpert=0,rr-1
                          etapert(k+kpert,comp) = &
-                              fluxr(i+ipert,j+jpert,k+kpert,comp) - crseavg
+                              etaflux(i+ipert,j+jpert,k+kpert,comp) - crseavg
                       end do
                    end do
                 end do

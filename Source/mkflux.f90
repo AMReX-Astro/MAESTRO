@@ -12,7 +12,7 @@ module mkflux_module
   
 contains
 
-  subroutine mkflux(nlevs,sflux,sold,sedge,umac,w0,w0_cart_vec,s0_old,s0_edge_old, &
+  subroutine mkflux(nlevs,sflux,etaflux,sold,sedge,umac,w0,w0_cart_vec,s0_old,s0_edge_old, &
                     s0_old_cart,s0_new,s0_edge_new,s0_new_cart, &
                     startcomp,endcomp,which_step,dx,mla)
 
@@ -24,6 +24,7 @@ contains
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: sflux(:,:)
+    type(multifab) , intent(inout) :: etaflux(:)
     type(multifab) , intent(in   ) :: sold(:),sedge(:,:)
     type(multifab) , intent(inout) :: umac(:,:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
@@ -46,6 +47,7 @@ contains
     real(kind=dp_t), pointer :: sfxp(:,:,:,:)
     real(kind=dp_t), pointer :: sfyp(:,:,:,:)
     real(kind=dp_t), pointer :: sfzp(:,:,:,:)
+    real(kind=dp_t), pointer :: efp(:,:,:,:)
     real(kind=dp_t), pointer :: sexp(:,:,:,:)
     real(kind=dp_t), pointer :: seyp(:,:,:,:)
     real(kind=dp_t), pointer :: sezp(:,:,:,:)
@@ -72,6 +74,7 @@ contains
           if ( multifab_remote(sold(n),i) ) cycle
           sfxp => dataptr(sflux(n,1),i)
           sfyp => dataptr(sflux(n,2),i)
+          efp  => dataptr(etaflux(n),i)
           sexp => dataptr(sedge(n,1),i)
           seyp => dataptr(sedge(n,2),i)
           ump  => dataptr(umac(n,1),i)
@@ -81,6 +84,7 @@ contains
           select case (dm)
           case (2)
              call mkflux_2d(sfxp(:,:,1,:), sfyp(:,:,1,:), &
+                            efp(:,:,1,:), &
                             sexp(:,:,1,:), seyp(:,:,1,:), &
                             ump(:,:,1,1), vmp(:,:,1,1), &
                             s0_old(n,:,:), s0_edge_old(n,:,:), &
@@ -93,6 +97,7 @@ contains
              wmp  => dataptr(umac(n,3),i)
              if(spherical .eq. 0) then
                 call mkflux_3d_cart(sfxp(:,:,:,:), sfyp(:,:,:,:), sfzp(:,:,:,:), &
+                                    efp(:,:,:,:), &
                                     sexp(:,:,:,:), seyp(:,:,:,:), sezp(:,:,:,:), &
                                     ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
                                     s0_old(n,:,:), s0_edge_old(n,:,:), &
@@ -105,6 +110,7 @@ contains
                 s0np => dataptr(s0_new_cart(n), i)
                 w0p => dataptr(w0_cart_vec(n),i)
                 call mkflux_3d_sphr(sfxp(:,:,:,:), sfyp(:,:,:,:), sfzp(:,:,:,:), &
+                                    efp(:,:,:,:), &
                                     sexp(:,:,:,:), seyp(:,:,:,:), sezp(:,:,:,:), &
                                     ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
                                     s0_old(n,:,:), s0_edge_old(n,:,:), s0op(:,:,:,:), &
@@ -122,24 +128,28 @@ contains
        do i = 1, dm
           call ml_edge_restriction_c(sflux(n-1,i),1,sflux(n,i),1,mla%mba%rr(n-1,:),i,nscal)
        enddo
+
+       call ml_edge_restriction_c(etaflux(n-1),1,etaflux(n),1,mla%mba%rr(n-1,:),dm,nscal)
+
     enddo
 
     call destroy(bpt)
     
   end subroutine mkflux
   
-  subroutine mkflux_2d(sfluxx,sfluxy,sedgex,sedgey,umac,vmac,s0_old,s0_edge_old, &
+  subroutine mkflux_2d(sfluxx,sfluxy,etaflux,sedgex,sedgey,umac,vmac,s0_old,s0_edge_old, &
                        s0_new,s0_edge_new,w0,startcomp,endcomp,which_step,lo,hi)
 
     use bl_constants_module
 
     integer        , intent(in   ) :: lo(:),hi(:)
-    real(kind=dp_t), intent(inout) :: sfluxx(lo(1)  :,lo(2)  :,:)
-    real(kind=dp_t), intent(inout) :: sfluxy(lo(1)  :,lo(2)  :,:)
-    real(kind=dp_t), intent(in   ) :: sedgex(lo(1)  :,lo(2)  :,:)
-    real(kind=dp_t), intent(in   ) :: sedgey(lo(1)  :,lo(2)  :,:)
-    real(kind=dp_t), intent(in   ) ::   umac(lo(1)-1:,lo(2)-1:)
-    real(kind=dp_t), intent(in   ) ::   vmac(lo(1)-1:,lo(2)-1:)
+    real(kind=dp_t), intent(inout) ::  sfluxx(lo(1)  :,lo(2)  :,:)
+    real(kind=dp_t), intent(inout) ::  sfluxy(lo(1)  :,lo(2)  :,:)
+    real(kind=dp_t), intent(inout) :: etaflux(lo(1)  :,lo(2)  :,:)
+    real(kind=dp_t), intent(in   ) ::  sedgex(lo(1)  :,lo(2)  :,:)
+    real(kind=dp_t), intent(in   ) ::  sedgey(lo(1)  :,lo(2)  :,:)
+    real(kind=dp_t), intent(in   ) ::    umac(lo(1)-1:,lo(2)-1:)
+    real(kind=dp_t), intent(in   ) ::    vmac(lo(1)-1:,lo(2)-1:)
     real(kind=dp_t), intent(in   ) :: s0_old(0:,:), s0_edge_old(0:,:)
     real(kind=dp_t), intent(in   ) :: s0_new(0:,:), s0_edge_new(0:,:)
     real(kind=dp_t), intent(in   ) :: w0(0:)
@@ -174,6 +184,8 @@ contains
              if(which_step .eq. 1) then
                 sfluxy(i,j,comp) = (vmac(i,j)+w0(j))*sedgey(i,j,comp) &
                      + vmac(i,j)*(s0_edge_old(j,comp))
+
+                etaflux(i,j,comp) = vmac(i,j)*sedgey(i,j,comp)
              else
                 sfluxy(i,j,comp) = (vmac(i,j)+w0(j))*sedgey(i,j,comp) &
                      + vmac(i,j)*(HALF*(s0_edge_old(j,comp)+s0_edge_new(j,comp)))
@@ -186,22 +198,24 @@ contains
 
   end subroutine mkflux_2d
   
-  subroutine mkflux_3d_cart(sfluxx,sfluxy,sfluxz,sedgex,sedgey,sedgez,umac,vmac,wmac, &
+  subroutine mkflux_3d_cart(sfluxx,sfluxy,sfluxz,etaflux,sedgex,sedgey,sedgez, &
+                            umac,vmac,wmac, &
                             s0_old,s0_edge_old,s0_new,s0_edge_new,w0,startcomp,endcomp, &
                             which_step,lo,hi)
 
     use bl_constants_module
 
     integer        , intent(in   ) :: lo(:),hi(:)
-    real(kind=dp_t), intent(inout) :: sfluxx(lo(1)  :,lo(2)  :,lo(3)  :,:)
-    real(kind=dp_t), intent(inout) :: sfluxy(lo(1)  :,lo(2)  :,lo(3)  :,:)
-    real(kind=dp_t), intent(inout) :: sfluxz(lo(1)  :,lo(2)  :,lo(3)  :,:)
-    real(kind=dp_t), intent(in   ) :: sedgex(lo(1)  :,lo(2)  :,lo(3)  :,:)
-    real(kind=dp_t), intent(in   ) :: sedgey(lo(1)  :,lo(2)  :,lo(3)  :,:)
-    real(kind=dp_t), intent(in   ) :: sedgez(lo(1)  :,lo(2)  :,lo(3)  :,:)
-    real(kind=dp_t), intent(in   ) ::   umac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-    real(kind=dp_t), intent(in   ) ::   vmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-    real(kind=dp_t), intent(in   ) ::   wmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
+    real(kind=dp_t), intent(inout) ::  sfluxx(lo(1)  :,lo(2)  :,lo(3)  :,:)
+    real(kind=dp_t), intent(inout) ::  sfluxy(lo(1)  :,lo(2)  :,lo(3)  :,:)
+    real(kind=dp_t), intent(inout) ::  sfluxz(lo(1)  :,lo(2)  :,lo(3)  :,:)
+    real(kind=dp_t), intent(inout) :: etaflux(lo(1)  :,lo(2)  :,lo(3)  :,:)
+    real(kind=dp_t), intent(in   ) ::  sedgex(lo(1)  :,lo(2)  :,lo(3)  :,:)
+    real(kind=dp_t), intent(in   ) ::  sedgey(lo(1)  :,lo(2)  :,lo(3)  :,:)
+    real(kind=dp_t), intent(in   ) ::  sedgez(lo(1)  :,lo(2)  :,lo(3)  :,:)
+    real(kind=dp_t), intent(in   ) ::    umac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
+    real(kind=dp_t), intent(in   ) ::    vmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
+    real(kind=dp_t), intent(in   ) ::    wmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
     real(kind=dp_t), intent(in   ) :: s0_old(0:,:), s0_edge_old(0:,:)
     real(kind=dp_t), intent(in   ) :: s0_new(0:,:), s0_edge_new(0:,:)
     real(kind=dp_t), intent(in   ) :: w0(0:)
@@ -256,6 +270,8 @@ contains
                 if(which_step .eq. 1) then
                    sfluxz(i,j,k,comp) = (wmac(i,j,k)+w0(k))*sedgez(i,j,k,comp) &
                         + wmac(i,j,k)*s0_edge_old(k,comp)
+
+                   etaflux(i,j,k,comp) = wmac(i,j,k)*sedgez(i,j,k,comp)
                 else
                    sfluxz(i,j,k,comp) = (wmac(i,j,k)+w0(k))*sedgez(i,j,k,comp) &
                         + wmac(i,j,k)*HALF*(s0_edge_old(k,comp)+s0_edge_new(k,comp))
@@ -269,7 +285,8 @@ contains
      
   end subroutine mkflux_3d_cart
 
-  subroutine mkflux_3d_sphr(sfluxx,sfluxy,sfluxz,sedgex,sedgey,sedgez,umac,vmac,wmac, &
+  subroutine mkflux_3d_sphr(sfluxx,sfluxy,sfluxz,etaflux,sedgex,sedgey,sedgez, &
+                            umac,vmac,wmac, &
                             s0_old,s0_edge_old,s0_old_cart,s0_new,s0_edge_new,s0_new_cart, &
                             w0,w0_cart,startcomp,endcomp,which_step,lo,hi,domlo,domhi)
 
@@ -280,6 +297,7 @@ contains
     real(kind=dp_t), intent(inout) :: sfluxx(lo(1)  :,lo(2)  :,lo(3)  :,:)
     real(kind=dp_t), intent(inout) :: sfluxy(lo(1)  :,lo(2)  :,lo(3)  :,:)
     real(kind=dp_t), intent(inout) :: sfluxz(lo(1)  :,lo(2)  :,lo(3)  :,:)
+    real(kind=dp_t), intent(inout) :: etaflux(lo(1)  :,lo(2)  :,lo(3)  :,:)
     real(kind=dp_t), intent(in   ) :: sedgex(lo(1)  :,lo(2)  :,lo(3)  :,:)
     real(kind=dp_t), intent(in   ) :: sedgey(lo(1)  :,lo(2)  :,lo(3)  :,:)
     real(kind=dp_t), intent(in   ) :: sedgez(lo(1)  :,lo(2)  :,lo(3)  :,:)
