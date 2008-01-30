@@ -52,7 +52,7 @@
  xrb_pert_type = 1
 
  do_sponge = T
- sponge_kappa = 1.d4
+ sponge_kappa = 1.d7
 
 !restart = 50
 
