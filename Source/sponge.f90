@@ -28,26 +28,26 @@ contains
     real(kind=dp_t), intent(in   ) :: s0(0:,:),prob_lo_r
     real(kind=dp_t), intent(in   ) :: prob_hi(:),dx(:)
 
-    real (kind = dp_t) :: r
+    real (kind = dp_t) :: rloc
     real (kind = dp_t) :: r_top
-    integer            :: j
+    integer            :: r
 
     r_top = prob_lo_r + dble(nr(nlevs)) * dr(nlevs)
     r_sp = r_top
 
-    do j = 0, nr(nlevs)-1
-       r = prob_lo_r + (dble(j)+HALF) * dr(nlevs)
-       if (s0(j,rho_comp) < 10.d0*anelastic_cutoff) then
-          r_sp = r
+    do r = 0,nr(nlevs)-1
+       rloc = prob_lo_r + (dble(r)+HALF) * dr(nlevs)
+       if (s0(r,rho_comp) < 10.d0*anelastic_cutoff) then
+          r_sp = rloc
           exit
        endif
     enddo
 
     r_md = r_top
-    do j = 0,nr(nlevs)-1
-       r = prob_lo_r + (dble(j)+HALF) * dr(nlevs)
-       if (s0(j,rho_comp) < anelastic_cutoff) then
-          r_md = r
+    do r = 0,nr(nlevs)-1
+       rloc = prob_lo_r + (dble(r)+HALF) * dr(nlevs)
+       if (s0(r,rho_comp) < anelastic_cutoff) then
+          r_md = rloc
           exit
        endif
     enddo

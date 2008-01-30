@@ -28,7 +28,7 @@ contains
     real(kind=dp_t), intent(in   ) :: rho0(0:)
 
     ! Local variables
-    integer                      :: k
+    integer                      :: r
     real(kind=dp_t), allocatable :: m(:)
 
     if (spherical .eq. 0) then
@@ -42,18 +42,18 @@ contains
        m(0) = FOUR3RD*M_PI*rho0(0)*base_cc_loc(n,0)**3
        grav_cell(0) = -Gconst * m(0) / base_cc_loc(n,0)**2
 
-       do k = 1, nr(n)-1
+       do r = 1, nr(n)-1
           ! the mass is defined at the cell-centers, so to compute the
           ! mass at the current center, we need to add the contribution of
           ! the upper half of the zone below us and the lower half of the
           ! current zone.
-          m(k) = m(k-1) + FOUR3RD*M_PI*rho0(k-1)*(base_loedge_loc(n,k) - &
-               base_cc_loc(n,k-1))*(base_loedge_loc(n,k)**2 + &
-               base_loedge_loc(n,k)* base_cc_loc(n,k-1) +  base_cc_loc(n,k-1)**2) &
-               + FOUR3RD*M_PI*rho0(k  )*&
-               ( base_cc_loc(n,k) - base_loedge_loc(n,k  ))*( base_cc_loc(n,k)**2 + &
-               base_cc_loc(n,k)*base_loedge_loc(n,k  ) + base_loedge_loc(n,k  )**2)
-          grav_cell(k) = -Gconst * m(k) / base_cc_loc(n,k)**2
+          m(r) = m(r-1) + FOUR3RD*M_PI*rho0(r-1)*(base_loedge_loc(n,r) - &
+               base_cc_loc(n,r-1))*(base_loedge_loc(n,r)**2 + &
+               base_loedge_loc(n,r)* base_cc_loc(n,r-1) +  base_cc_loc(n,r-1)**2) &
+               + FOUR3RD*M_PI*rho0(r  )*&
+               ( base_cc_loc(n,r) - base_loedge_loc(n,r  ))*( base_cc_loc(n,r)**2 + &
+               base_cc_loc(n,r)*base_loedge_loc(n,r  ) + base_loedge_loc(n,r  )**2)
+          grav_cell(r) = -Gconst * m(r) / base_cc_loc(n,r)**2
        enddo
 
        deallocate(m)
@@ -78,7 +78,7 @@ contains
     real(kind=dp_t), intent(in   ) :: rho0(0:)
 
     ! Local variables
-    integer                      :: j,k
+    integer                      :: r,r2
     real(kind=dp_t)              :: mencl
     
     if (spherical .eq. 0) then
@@ -88,18 +88,18 @@ contains
     else
        
        grav_edge(0) = zero 
-       do k = 1,nr(n)-1
+       do r = 1,nr(n)-1
           
           mencl = zero 
-          do j = 1, k
+          do r2 = 1,r
              mencl = mencl + FOUR3RD*M_PI * &
-                  (base_loedge_loc(n,j) - base_loedge_loc(n,j-1)) &
-                  * (base_loedge_loc(n,j)**2 &
-                  + base_loedge_loc(n,j)*base_loedge_loc(n,j-1) &
-                  + base_loedge_loc(n,j-1)**2) * rho0(j-1)
+                  (base_loedge_loc(n,r2) - base_loedge_loc(n,r2-1)) &
+                  * (base_loedge_loc(n,r2)**2 &
+                  + base_loedge_loc(n,r2)*base_loedge_loc(n,r2-1) &
+                  + base_loedge_loc(n,r2-1)**2) * rho0(r2-1)
           end do
           
-          grav_edge(k) = -Gconst * mencl / base_loedge_loc(n,k)**2
+          grav_edge(r) = -Gconst * mencl / base_loedge_loc(n,r)**2
        end do
        
     end if

@@ -67,7 +67,7 @@ contains
     real(kind=dp_t), intent(in   ) :: dz,dt
     
     ! Local variables
-    integer :: j,comp
+    integer :: r,comp
     
     real (kind = dp_t), allocatable :: force(:)
     real (kind = dp_t), allocatable :: edge(:)
@@ -83,26 +83,26 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     force = ZERO
     call make_edge_state_1d(n,p0_old,edge,vel,force,1,dz,dt)
-    do j = 0,nr(n)-1
-       p0_new(j) = p0_old(j) &
-            - dt / dz * HALF * (vel(j) + vel(j+1)) * (edge(j+1) - edge(j)) &
-            + HALF * dt * (eta(j,rho_comp)+eta(j+1,rho_comp))*abs(grav_const)
+    do r = 0,nr(n)-1
+       p0_new(r) = p0_old(r) &
+            - dt / dz * HALF * (vel(r) + vel(r+1)) * (edge(r+1) - edge(r)) &
+            + HALF * dt * (eta(r,rho_comp)+eta(r+1,rho_comp))*abs(grav_const)
     end do
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! UPDATE RHOX0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     do comp = spec_comp,spec_comp+nspec-1
-       do j = 0,nr(n)-1
-          force(j) = -s0_old(j,comp) * (vel(j+1) - vel(j)) / dz
+       do r = 0,nr(n)-1
+          force(r) = -s0_old(r,comp) * (vel(r+1) - vel(r)) / dz
        end do
        
        call make_edge_state_1d(n,s0_old(:,comp),edge,vel,force,1,dz,dt)
        
-       do j = 0,nr(n)-1
-          s0_new(j,comp) = s0_old(j,comp) &
-               - dt / dz * (edge(j+1) * vel(j+1) - edge(j) * vel(j)) &
-               - dt / dz * (eta(j+1,comp) - eta(j,comp))
+       do r = 0,nr(n)-1
+          s0_new(r,comp) = s0_old(r,comp) &
+               - dt / dz * (edge(r+1) * vel(r+1) - edge(r) * vel(r)) &
+               - dt / dz * (eta(r+1,comp) - eta(r,comp))
        end do
        
     enddo
@@ -110,10 +110,10 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! UPDATE RHO0 FROM RHOX0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    do j = 0,nr(n)-1
-       s0_new(j,rho_comp) =  s0_old(j,rho_comp)
+    do r = 0,nr(n)-1
+       s0_new(r,rho_comp) =  s0_old(r,rho_comp)
        do comp = spec_comp,spec_comp+nspec-1
-          s0_new(j,rho_comp) =  s0_new(j,rho_comp) + (s0_new(j,comp)-s0_old(j,comp))
+          s0_new(r,rho_comp) =  s0_new(r,rho_comp) + (s0_new(r,comp)-s0_old(r,comp))
        end do
     end do
     
@@ -121,29 +121,29 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! UPDATE RHOH0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    do j = 0,nr(n)-1
-       force(j) = -s0_old(j,rhoh_comp) * (vel(j+1) - vel(j)) / dz
+    do r = 0,nr(n)-1
+       force(r) = -s0_old(r,rhoh_comp) * (vel(r+1) - vel(r)) / dz
     end do
     
     call make_edge_state_1d(n,s0_old(:,rhoh_comp),edge,vel,force,1,dz,dt)
     
-    do j = 0,nr(n)-1
-       s0_new(j,rhoh_comp) = s0_old(j,rhoh_comp) &
-            - dt / dz * (edge(j+1) * vel(j+1) - edge(j) * vel(j)) &
-            + HALF * dt * (eta(j,rho_comp)+eta(j+1,rho_comp))*abs(grav_const) &
-            - dt / dz * (eta(j+1,rhoh_comp) - eta(j,rhoh_comp))
+    do r = 0,nr(n)-1
+       s0_new(r,rhoh_comp) = s0_old(r,rhoh_comp) &
+            - dt / dz * (edge(r+1) * vel(r+1) - edge(r) * vel(r)) &
+            + HALF * dt * (eta(r,rho_comp)+eta(r+1,rho_comp))*abs(grav_const) &
+            - dt / dz * (eta(r+1,rhoh_comp) - eta(r,rhoh_comp))
     end do
     
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! MAKE TEMP0 AND GAM1 FROM P0 AND RHO0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    do j = 0,nr(n)-1
+    do r = 0,nr(n)-1
        
-       den_eos(1)  = s0_new(j,rho_comp)
-       temp_eos(1) = s0_old(j,temp_comp)
-       p_eos(1)    = p0_new(j)
-       xn_eos(1,:) = s0_new(j,spec_comp:spec_comp+nspec-1)/s0_new(j,rho_comp)
+       den_eos(1)  = s0_new(r,rho_comp)
+       temp_eos(1) = s0_old(r,temp_comp)
+       p_eos(1)    = p0_new(r)
+       xn_eos(1,:) = s0_new(r,spec_comp:spec_comp+nspec-1)/s0_new(r,rho_comp)
        
        ! (rho,P) --> T, h
        call eos(eos_input_rp, den_eos, temp_eos, &
@@ -157,8 +157,8 @@ contains
                 dsdt_eos, dsdr_eos, &
                 do_diag)
        
-       s0_new(j,temp_comp) = temp_eos(1)
-       gam1(j) = gam1_eos(1)
+       s0_new(r,temp_comp) = temp_eos(1)
+       gam1(r) = gam1_eos(1)
        
     end do
     
@@ -187,7 +187,7 @@ contains
     real(kind=dp_t), intent(in   ) :: dt
     
     ! Local variables
-    integer :: j,comp
+    integer :: r,comp
     real(kind=dp_t) :: dtdr,divbetaw,betahalf,factor
     real(kind=dp_t) :: div_w0
 
@@ -219,17 +219,17 @@ contains
        
        ! compute the force -- include the geometric source term that
        ! results from expanding out the spherical divergence
-       do j = 0,nr(n)-1
-          force(j) = -s0_old(j,comp) * (vel(j+1) - vel(j)) / dr(n) - &
-               2.0_dp_t*s0_old(j,comp)*HALF*(vel(j) + vel(j+1))/base_cc_loc(n,j)
+       do r = 0,nr(n)-1
+          force(r) = -s0_old(r,comp) * (vel(r+1) - vel(r)) / dr(n) - &
+               2.0_dp_t*s0_old(r,comp)*HALF*(vel(r) + vel(r+1))/base_cc_loc(n,r)
        end do
        
        call make_edge_state_1d(n,s0_old(:,comp),edge,vel,force,1,dr(n),dt)
        
-       do j = 0,nr(n)-1
-          s0_new(j,comp) = s0_old(j,comp) &
-               - dtdr/base_cc_loc(n,j)**2*(base_loedge_loc(n,j+1)**2*edge(j+1)*vel(j+1) &
-               - base_loedge_loc(n,j  )**2 * edge(j  ) * vel(j  ))
+       do r = 0,nr(n)-1
+          s0_new(r,comp) = s0_old(r,comp) &
+               - dtdr/base_cc_loc(n,r)**2*(base_loedge_loc(n,r+1)**2*edge(r+1)*vel(r+1) &
+               - base_loedge_loc(n,r  )**2 * edge(r  ) * vel(r  ))
        end do
        
     enddo
@@ -238,10 +238,10 @@ contains
 ! UPDATE RHO0 FROM RHOX0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     
-    do j = 0,nr(n)-1
-       s0_new(j,rho_comp) =  s0_old(j,rho_comp)
+    do r = 0,nr(n)-1
+       s0_new(r,rho_comp) =  s0_old(r,rho_comp)
        do comp = spec_comp,spec_comp+nspec-1
-          s0_new(j,rho_comp) =  s0_new(j,rho_comp) + (s0_new(j,comp)-s0_old(j,comp))
+          s0_new(r,rho_comp) =  s0_new(r,rho_comp) + (s0_new(r,comp)-s0_old(r,comp))
        end do
     end do
     
@@ -253,24 +253,24 @@ contains
     call cell_to_edge(n,div_coeff_old,beta)
     
     ! Update p0 -- predictor
-    do j = 0,nr(n)-1
-       divbetaw = one/(base_cc_loc(n,j)**2)*(base_loedge_loc(n,j+1)**2*beta(j+1)*vel(j+1) - &
-            base_loedge_loc(n,j)**2 * beta(j) * vel(j)) / dr(n)
-       betahalf = div_coeff_old(j)
-       factor = half * dt * gam1(j) * (Sbar_in(j) - divbetaw / betahalf)
-       p0_new(j) = p0_old(j) * (one + factor ) / (one - factor)
+    do r = 0,nr(n)-1
+       divbetaw = one/(base_cc_loc(n,r)**2)*(base_loedge_loc(n,r+1)**2*beta(r+1)*vel(r+1) - &
+            base_loedge_loc(n,r)**2 * beta(r) * vel(r)) / dr(n)
+       betahalf = div_coeff_old(r)
+       factor = half * dt * gam1(r) * (Sbar_in(r) - divbetaw / betahalf)
+       p0_new(r) = p0_old(r) * (one + factor ) / (one - factor)
        
     end do
     
-    do j = 0,nr(n)-1
+    do r = 0,nr(n)-1
        ! (rho, p) --> T,h, etc
        
-       den_eos(1)  = s0_new(j,rho_comp)
-       temp_eos(1) = s0_old(j,temp_comp) 
-       p_eos(1)    = p0_new(j)
-       xn_eos(1,:) = s0_new(j,spec_comp:spec_comp+nspec-1)/s0_new(j,rho_comp)
+       den_eos(1)  = s0_new(r,rho_comp)
+       temp_eos(1) = s0_old(r,temp_comp) 
+       p_eos(1)    = p0_new(r)
+       xn_eos(1,:) = s0_new(r,spec_comp:spec_comp+nspec-1)/s0_new(r,rho_comp)
        
-       gam1_old(j) = gam1(j)
+       gam1_old(r) = gam1(r)
        
        call eos(eos_input_rp, den_eos, temp_eos, & 
                 npts, nspec, & 
@@ -283,8 +283,8 @@ contains
                 dsdt_eos, dsdr_eos, &
                 do_diag) 
        
-       gam1(j) = gam1_eos(1)
-       s0_new(j,temp_comp) = temp_eos(1)
+       gam1(r) = gam1_eos(1)
+       s0_new(r,temp_comp) = temp_eos(1)
     end do
     
     call make_grav_cell(n,grav_cell,s0_new(:,rho_comp))
@@ -297,13 +297,13 @@ contains
     beta_nh = HALF*(beta + beta_new)
     
     ! Update p0 -- corrector
-    do j = 0,nr(n)-1
-       divbetaw = one / (base_cc_loc(n,j)**2) &
-            * (base_loedge_loc(n,j+1)**2 * beta_nh(j+1) * vel(j+1) - &
-            base_loedge_loc(n,j  )**2 * beta_nh(j  ) * vel(j  ) ) / dr(n)
-       betahalf = HALF*(div_coeff_old(j) + div_coeff_new(j))
-       factor = half * dt * (Sbar_in(j) - divbetaw / betahalf)
-       p0_new(j) = p0_old(j) * (one + factor * gam1_old(j)) / (one - factor * gam1(j))
+    do r = 0,nr(n)-1
+       divbetaw = one / (base_cc_loc(n,r)**2) &
+            * (base_loedge_loc(n,r+1)**2 * beta_nh(r+1) * vel(r+1) - &
+            base_loedge_loc(n,r  )**2 * beta_nh(r  ) * vel(r  ) ) / dr(n)
+       betahalf = HALF*(div_coeff_old(r) + div_coeff_new(r))
+       factor = half * dt * (Sbar_in(r) - divbetaw / betahalf)
+       p0_new(r) = p0_old(r) * (one + factor * gam1_old(r)) / (one - factor * gam1(r))
        
     end do
     
@@ -311,31 +311,31 @@ contains
 ! UPDATE RHOH0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    do j = 0,nr(n)-1
+    do r = 0,nr(n)-1
        
-       div_w0 = (vel(j+1) - vel(j)) / dr(n)
+       div_w0 = (vel(r+1) - vel(r)) / dr(n)
        
-       force(j) = -s0_old(j,rhoh_comp) * div_w0 - &
-            2.0_dp_t*s0_old(j,rhoh_comp)*HALF*(vel(j) + vel(j+1))/base_cc_loc(n,j)
+       force(r) = -s0_old(r,rhoh_comp) * div_w0 - &
+            2.0_dp_t*s0_old(r,rhoh_comp)*HALF*(vel(r) + vel(r+1))/base_cc_loc(n,r)
        
        ! add eta at time-level n to the force for the prediction
-       eta(j) = gam1_old(j) * p0_old(j) * (Sbar_in(j) - div_w0)
-       force(j) = force(j) + eta(j)
+       eta(r) = gam1_old(r) * p0_old(r) * (Sbar_in(r) - div_w0)
+       force(r) = force(r) + eta(r)
        
        ! construct a new, time-centered eta for the final update
-       eta(j) = HALF*(gam1(j)*p0_new(j) + gam1_old(j)*p0_old(j))* &
-            (Sbar_in(j) - div_w0)
+       eta(r) = HALF*(gam1(r)*p0_new(r) + gam1_old(r)*p0_old(r))* &
+            (Sbar_in(r) - div_w0)
     end do
     
     call make_edge_state_1d(n,s0_old(:,rhoh_comp),edge,vel,force,1,dr(n),dt)
     
-    do j = 0,nr(n)-1
+    do r = 0,nr(n)-1
        
-       s0_new(j,rhoh_comp) = s0_old(j,rhoh_comp) - &
-            dtdr / base_cc_loc(n,j)**2 * ( base_loedge_loc(n,j+1)**2 * edge(j+1) * vel(j+1) &
-            -base_loedge_loc(n,j  )**2 * edge(j  ) * vel(j  ))
+       s0_new(r,rhoh_comp) = s0_old(r,rhoh_comp) - &
+            dtdr / base_cc_loc(n,r)**2 * ( base_loedge_loc(n,r+1)**2 * edge(r+1) * vel(r+1) &
+            -base_loedge_loc(n,r  )**2 * edge(r  ) * vel(r  ))
        
-       s0_new(j,rhoh_comp) = s0_new(j,rhoh_comp) + dt * eta(j)
+       s0_new(r,rhoh_comp) = s0_new(r,rhoh_comp) + dt * eta(r)
        
     end do
     
@@ -343,12 +343,12 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! MAKE TEMP0 AND GAM1 FROM P0 AND RHO0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    do j = 0,nr(n)-1
+    do r = 0,nr(n)-1
        
-       den_eos(1)  = s0_new(j,rho_comp)
-       temp_eos(1) = s0_new(j,temp_comp)
-       p_eos(1)    = p0_new(j)
-       xn_eos(1,:) = s0_new(j,spec_comp:spec_comp+nspec-1)/s0_new(j,rho_comp)
+       den_eos(1)  = s0_new(r,rho_comp)
+       temp_eos(1) = s0_new(r,temp_comp)
+       p_eos(1)    = p0_new(r)
+       xn_eos(1,:) = s0_new(r,spec_comp:spec_comp+nspec-1)/s0_new(r,rho_comp)
        
        ! (rho,P) --> T, h
        call eos(eos_input_rp, den_eos, temp_eos, &
@@ -362,8 +362,8 @@ contains
                 dsdt_eos, dsdr_eos, &
                 do_diag)
        
-       s0_new(j,temp_comp) = temp_eos(1)
-       gam1(j) = gam1_eos(1)
+       s0_new(r,temp_comp) = temp_eos(1)
+       gam1(r) = gam1_eos(1)
        
     end do
     

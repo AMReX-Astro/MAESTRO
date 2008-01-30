@@ -208,7 +208,7 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:)
     
     ! Local variables
-    integer :: i,j,k
+    integer :: i,j,k,r
     real(kind=dp_t) :: divumac,divbaseu
     real(kind=dp_t) :: base_xlo,base_xhi
     real(kind=dp_t) :: base_ylo,base_yhi
@@ -219,9 +219,9 @@ contains
     allocate(divu(0:nr(n)-1))
     allocate(divu_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
     
-    do k = 0,nr(n)-1
-       divu(k) = (base_loedge_loc(n,k+1)**2 &
-            * w0(k+1)- base_loedge_loc(n,k)**2 * w0(k))/(dr(n)*base_cc_loc(n,k)**2)
+    do r = 0,nr(n)-1
+       divu(r) = (base_loedge_loc(n,r+1)**2 &
+            * w0(r+1)- base_loedge_loc(n,r)**2 * w0(r))/(dr(n)*base_cc_loc(n,r)**2)
     end do
     call fill_3d_data(n,divu_cart,divu,lo,hi,dx,0)
     

@@ -31,8 +31,8 @@ contains
     real(kind=dp_t)   , intent(in   ) :: dx(:)
 
     ! local
-    integer         :: i,j,j_cutoff,comp
-    real(kind=dp_t) :: r,dr_in,rmax,starting_rad
+    integer         :: i,j,r,r_cutoff,comp
+    real(kind=dp_t) :: rloc,dr_in,rmax,starting_rad
     real(kind=dp_t) :: d_ambient,t_ambient,p_ambient,xn_ambient(nspec)
     real(kind=dp_t) :: sum
 
@@ -124,7 +124,7 @@ contains
 
        base_state(i,:) = ZERO
 
-       do j = 1, nvars_model_file
+       do j = 1,nvars_model_file
 
           found = .false.
 
@@ -206,37 +206,37 @@ contains
        starting_rad = prob_lo_z
     endif
 
-    j_cutoff = nr(n)
-    do j = 0,nr(n)-1
+    r_cutoff = nr(n)
+    do r = 0,nr(n)-1
 
-       if (j .ge. j_cutoff) then
+       if (r .ge. r_cutoff) then
 
-          s0(j, rho_comp ) = s0(j_cutoff, rho_comp )
-          s0(j,rhoh_comp ) = s0(j_cutoff,rhoh_comp )
-          s0(j,spec_comp:spec_comp+nspec-1) = s0(j_cutoff,spec_comp:spec_comp+nspec-1)
-          p0(j)            = p0(j_cutoff)
-          s0(j,temp_comp)  = s0(j_cutoff,temp_comp)
-          gam1(j)         =  gam1(j_cutoff)
+          s0(r, rho_comp ) = s0(r_cutoff, rho_comp )
+          s0(r,rhoh_comp ) = s0(r_cutoff,rhoh_comp )
+          s0(r,spec_comp:spec_comp+nspec-1) = s0(r_cutoff,spec_comp:spec_comp+nspec-1)
+          p0(r)            = p0(r_cutoff)
+          s0(r,temp_comp)  = s0(r_cutoff,temp_comp)
+          gam1(r)         =  gam1(r_cutoff)
 
        else
 
           ! compute the coordinate height at this level
           ! NOTE: we are assuming that the basestate is in the y-direction
           ! and that ymin = 0.0
-          r = starting_rad + (dble(j) + HALF)*dr(n)
+          rloc = starting_rad + (dble(r) + HALF)*dr(n)
 
           ! here we account for r > rmax of the model.hse array, assuming
           ! that the state stays constant beyond rmax
-          r = min(r, rmax)
+          rloc = min(rloc, rmax)
 
-          d_ambient = interpolate(r, npts_model, base_r, base_state(:,idens_model))
-          t_ambient = interpolate(r, npts_model, base_r, base_state(:,itemp_model))
-          p_ambient = interpolate(r, npts_model, base_r, base_state(:,ipres_model))
+          d_ambient = interpolate(rloc, npts_model, base_r, base_state(:,idens_model))
+          t_ambient = interpolate(rloc, npts_model, base_r, base_state(:,itemp_model))
+          p_ambient = interpolate(rloc, npts_model, base_r, base_state(:,ipres_model))
 
           sum = ZERO
           do comp = 1, nspec
              xn_ambient(comp) = max(ZERO,min(ONE, &
-                  interpolate(r, npts_model, base_r, base_state(:,ispec_model-1+comp))))
+                  interpolate(rloc, npts_model, base_r, base_state(:,ispec_model-1+comp))))
              sum = sum + xn_ambient(comp)
           enddo
           xn_ambient(:) = xn_ambient(:)/sum
@@ -259,21 +259,21 @@ contains
                    dsdt_eos, dsdr_eos, &
                    do_diag)
 
-          s0(j, rho_comp ) = d_ambient
-          s0(j,rhoh_comp ) = d_ambient * h_eos(1)
-          s0(j,spec_comp:spec_comp+nspec-1) = d_ambient * xn_ambient(1:nspec)
-          p0(j)    = p_eos(1)
+          s0(r, rho_comp ) = d_ambient
+          s0(r,rhoh_comp ) = d_ambient * h_eos(1)
+          s0(r,spec_comp:spec_comp+nspec-1) = d_ambient * xn_ambient(1:nspec)
+          p0(r)    = p_eos(1)
 
-          s0(j,temp_comp) = t_ambient
+          s0(r,temp_comp) = t_ambient
 
-          s0(j,trac_comp:trac_comp+ntrac-1) = ZERO
+          s0(r,trac_comp:trac_comp+ntrac-1) = ZERO
 
-          gam1(j) = gam1_eos(1)
+          gam1(r) = gam1_eos(1)
 
           ! keep track of the height where we drop below the cutoff density
-          if (s0(j,rho_comp) .lt. base_cutoff_density .and. j_cutoff .eq. nr(n)) then
-             if ( parallel_IOProcessor() ) print *,'SETTING J_CUTOFF TO ',j
-             j_cutoff = j
+          if (s0(r,rho_comp) .lt. base_cutoff_density .and. r_cutoff .eq. nr(n)) then
+             if ( parallel_IOProcessor() ) print *,'SETTING R_CUTOFF TO ',r
+             r_cutoff = r
           end if
 
        end if

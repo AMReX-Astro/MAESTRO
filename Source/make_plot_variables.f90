@@ -606,7 +606,7 @@ contains
     real (kind=dp_t), intent(in   ) :: dx(:)
 
     !     Local variables
-    integer          :: i, j, k
+    integer          :: i, j, k, r
     real (kind=dp_t) :: vel
     real (kind=dp_t), allocatable :: gam10(:), entr0(:)
     real (kind=dp_t), allocatable ::  rho0_cart(:,:,:)
@@ -622,11 +622,11 @@ contains
 
     ! We now assume that the temperature coming in in the base state is correct, but
     !   we do this eos call to get gam10 and entr0.
-    do k = 0, nr(n)-1
-        den_eos(1) = s0(k,rho_comp)
-       temp_eos(1) = s0(k,temp_comp)
-          p_eos(1) = p0(k)
-        xn_eos(1,:) = s0(k,spec_comp:spec_comp+nspec-1)/den_eos(1)
+    do r = 0, nr(n)-1
+        den_eos(1) = s0(r,rho_comp)
+       temp_eos(1) = s0(r,temp_comp)
+          p_eos(1) = p0(r)
+        xn_eos(1,:) = s0(r,spec_comp:spec_comp+nspec-1)/den_eos(1)
 
        ! (rho,P) --> T,h
        call eos(eos_input_rp, den_eos, temp_eos, &
@@ -639,8 +639,8 @@ contains
                 gam1_eos, cs_eos, s_eos, &
                 dsdt_eos, dsdr_eos, &
                 do_diag)
-     gam10(k) = gam1_eos(1)
-     entr0(k) = s_eos(1)
+     gam10(r) = gam1_eos(1)
+     entr0(r) = s_eos(1)
     end do
 
     allocate(rho0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))

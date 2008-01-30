@@ -388,7 +388,7 @@ contains
     real (kind = dp_t), allocatable :: gp0(:)
     real (kind = dp_t)  :: spdx, spdy, spdz, spdr, gp_dot_u, gam1_p_avg
     real (kind = dp_t)  :: fx, fy, fz, eps, denom, a, b, c
-    integer             :: i,j,k
+    integer             :: i,j,k,r
     
     eps = 1.0d-8
     
@@ -454,9 +454,9 @@ contains
     
     ! divU constraint
     allocate(gp0(0:nr(n)))
-    do k = 1,nr(n)-1
-       gam1_p_avg = HALF * (gam1(k)*p0(k) + gam1(k-1)*p0(k-1))
-       gp0(k) = ( (p0(k) - p0(k-1))/dr(n) ) / gam1_p_avg
+    do r = 1,nr(n)-1
+       gam1_p_avg = HALF * (gam1(r)*p0(r) + gam1(r-1)*p0(r-1))
+       gp0(r) = ( (p0(r) - p0(r-1))/dr(n) ) / gam1_p_avg
     end do
     gp0(nr(n)) = gp0(nr(n)-1)
     gp0(    0) = gp0(      1)

@@ -20,7 +20,7 @@ contains
     real(kind=dp_t), intent(inout) :: s0_edge(0:)
     
     real(kind=dp_t)                ::  s0min,s0max,tmp
-    integer                        ::  k
+    integer                        ::  r
     
     s0_edge(    0) = s0_cell(      0)
     s0_edge(nr(n)) = s0_cell(nr(n)-1)
@@ -28,12 +28,12 @@ contains
     s0_edge(      1) = HALF * (s0_cell(      0) + s0_cell(      1))
     s0_edge(nr(n)-1) = HALF * (s0_cell(nr(n)-1) + s0_cell(nr(n)-2))
     
-    do k = 2, nr(n)-2
-       tmp = 7.d0/12.d0 * (s0_cell(k  ) + s0_cell(k-1)) &
-            -1.d0/12.d0 * (s0_cell(k+1) + s0_cell(k-2))
-       s0min      = min(s0_cell(k),s0_cell(k-1))
-       s0max      = max(s0_cell(k),s0_cell(k-1))
-       s0_edge(k) = min(max(tmp,s0min),s0max)
+    do r = 2,nr(n)-2
+       tmp = 7.d0/12.d0 * (s0_cell(r  ) + s0_cell(r-1)) &
+            -1.d0/12.d0 * (s0_cell(r+1) + s0_cell(r-2))
+       s0min      = min(s0_cell(r),s0_cell(r-1))
+       s0max      = max(s0_cell(r),s0_cell(r-1))
+       s0_edge(r) = min(max(tmp,s0min),s0max)
     end do
     
   end subroutine cell_to_edge

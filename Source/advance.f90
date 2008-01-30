@@ -121,7 +121,7 @@ contains
     real(dp_t), allocatable :: p0_2(:,:)
 
     integer    :: lo(mla%dim),hi(mla%dim)
-    integer    :: j,n,dm,comp,nlevs,ng_s,proj_type
+    integer    :: r,n,dm,comp,nlevs,ng_s,proj_type
     real(dp_t) :: halfdt,eps_in
     logical    :: nodal(mla%dim)
 
@@ -451,14 +451,14 @@ contains
     
     ! Define base state at half time for use in velocity advance!
     do n=1,nlevs
-       do j=0,nr(n)-1
-          s0_nph(n,j,:) = HALF * (s0_old(n,j,:) + s0_new(n,j,:))
+       do r=0,nr(n)-1
+          s0_nph(n,r,:) = HALF * (s0_old(n,r,:) + s0_new(n,r,:))
        end do
 
        call make_grav_cell(n,grav_cell_nph(n,:),s0_nph(n,:,rho_comp))
 
-       do j=0,nr(n)-1
-          div_coeff_nph(n,j) = HALF * (div_coeff_old(n,j) + div_coeff_new(n,j))
+       do r=0,nr(n)-1
+          div_coeff_nph(n,r) = HALF * (div_coeff_old(n,r) + div_coeff_new(n,r))
        end do
     end do
     
@@ -785,8 +785,8 @@ contains
 
     ! Define beta at half time using the div_coeff_new from step 9!
     do n=1,nlevs
-       do j=0,nr(n)-1
-          div_coeff_nph(n,j) = HALF * (div_coeff_old(n,j) + div_coeff_new(n,j))
+       do r=0,nr(n)-1
+          div_coeff_nph(n,r) = HALF * (div_coeff_old(n,r) + div_coeff_new(n,r))
        end do
     end do
        

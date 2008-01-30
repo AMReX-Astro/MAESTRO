@@ -13,7 +13,8 @@ module rhoh_vs_t_module
   
 contains
   
-  subroutine makeRhoHfromT(nlevs,u,sedge,s0_old,s0_edge_old,s0_new,s0_edge_new,the_bc_level,dx)
+  subroutine makeRhoHfromT(nlevs,u,sedge,s0_old,s0_edge_old,s0_new,s0_edge_new, &
+                           the_bc_level,dx)
 
     use bl_prof_module
     use bl_constants_module
@@ -32,7 +33,7 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     
     ! local
-    integer :: i,k,dm,n,comp
+    integer :: i,k,r,dm,n,comp
     integer :: lo(u(1)%dim),hi(u(1)%dim)
     real(kind=dp_t), pointer :: sepx(:,:,:,:)
     real(kind=dp_t), pointer :: sepy(:,:,:,:)
@@ -54,10 +55,10 @@ contains
     if (spherical .eq. 1) then
       allocate(  xn0_halftime(0:nr(nlevs),nspec))
       allocate(rhoh0_halftime(0:nr(nlevs)))
-      do k = 0,nr(nlevs)-1
-         xn0_halftime(k,1:nspec) = HALF * (s0_old(nlevs,k,spec_comp:spec_comp+nspec-1) &
-                                         + s0_new(nlevs,k,spec_comp:spec_comp+nspec-1) )
-         rhoh0_halftime(k) = HALF * (s0_old(nlevs,k,rhoh_comp) + s0_new(nlevs,k,rhoh_comp) )
+      do r = 0,nr(nlevs)-1
+         xn0_halftime(r,1:nspec) = HALF * (s0_old(nlevs,r,spec_comp:spec_comp+nspec-1) &
+                                         + s0_new(nlevs,r,spec_comp:spec_comp+nspec-1) )
+         rhoh0_halftime(r) = HALF * (s0_old(nlevs,r,rhoh_comp) + s0_new(nlevs,r,rhoh_comp) )
       end do
    endif
 

@@ -36,7 +36,7 @@ contains
     type(box)                    :: domain
     integer                      :: domlo(phi(1)%dim),domhi(phi(1)%dim)
     integer                      :: lo(phi(1)%dim),hi(phi(1)%dim)
-    integer                      :: i,k,n,nlevs,ng,dm,rr,nsub,comp
+    integer                      :: i,r,n,nlevs,ng,dm,rr,nsub,comp
     real(kind=dp_t), allocatable :: ncell_grid(:,:)
     real(kind=dp_t), allocatable :: ncell_proc(:,:)
     real(kind=dp_t), allocatable :: ncell(:,:)
@@ -118,8 +118,8 @@ contains
              phisum(1,:,comp) = target_buffer
           end do
           do comp=1,ncomp
-             do k=0,nr(1)-1
-                phibar(1,k,comp) = phisum(1,k,comp) / dble(ncell(1,k))
+             do r=0,nr(1)-1
+                phibar(1,r,comp) = phisum(1,r,comp) / dble(ncell(1,r))
              end do
           end do
 
@@ -141,8 +141,8 @@ contains
              ! compute phisum at next finer level
              ! begin by assuming piecewise constant interpolation
              do comp=1,ncomp
-                do k=0,nr(n)-1
-                   phisum(n,k,comp) = phisum(n-1,k/rr,comp)*rr**(dm-1)
+                do r=0,nr(n)-1
+                   phisum(n,r,comp) = phisum(n-1,r/rr,comp)*rr**(dm-1)
                 end do
              end do
 
@@ -170,9 +170,9 @@ contains
              end do
              ! update phisum and compute phibar
              do comp=1,ncomp
-                do k=0,nr(n)-1
-                   phisum(n,k,comp) = phisum(n,k,comp) + phipert(n,k,comp)
-                   phibar(n,k,comp) = phisum(n,k,comp) / dble(ncell(n,k))
+                do r=0,nr(n)-1
+                   phisum(n,r,comp) = phisum(n,r,comp) + phipert(n,r,comp)
+                   phibar(n,r,comp) = phisum(n,r,comp) / dble(ncell(n,r))
                 end do
              end do
 
@@ -231,8 +231,8 @@ contains
              if (n .ne. nlevs) then
                 ncell(nlevs,:) = ncell(nlevs,:) + ncell(n,:)
                 do comp=1,ncomp
-                   do k=0,nr(nlevs)-1
-                      phisum(nlevs,k,comp) = phisum(nlevs,k,comp) + phisum(n,k,comp)
+                   do r=0,nr(nlevs)-1
+                      phisum(nlevs,r,comp) = phisum(nlevs,r,comp) + phisum(n,r,comp)
                    end do
                 end do
              end if
@@ -241,11 +241,11 @@ contains
 
           ! now divide the total phisum by the number of cells to get phibar
           do comp=1,ncomp
-             do k=0,nr(nlevs)-1
-                if (ncell(nlevs,k) .gt. ZERO) then
-                   phibar(nlevs,k,comp) = phisum(nlevs,k,comp) / ncell(nlevs,k)
+             do r=0,nr(nlevs)-1
+                if (ncell(nlevs,r) .gt. ZERO) then
+                   phibar(nlevs,r,comp) = phisum(nlevs,r,comp) / ncell(nlevs,r)
                 else
-                   phibar(nlevs,k,comp) = ZERO
+                   phibar(nlevs,r,comp) = ZERO
                 end if
              end do
           end do

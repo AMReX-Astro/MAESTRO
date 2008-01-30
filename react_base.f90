@@ -29,7 +29,7 @@ contains
     real(kind=dp_t), intent(  out) :: p0_out(:,0:), s0_out(:,0:,:)
     real(kind=dp_t), intent(inout) :: gam1_out(:,0:)
     
-    integer :: n,j,comp
+    integer :: n,r,comp
 
     type(bl_prof_timer), save :: bpt
 
@@ -37,36 +37,36 @@ contains
     
     do n=1,nlevs
 
-       do j = 0,nr(n)-1
+       do r = 0,nr(n)-1
           
           ! (rho X)_out = (rho X)_in + dt_in * (rho omegadotbar)_in
           do comp = spec_comp,spec_comp+nspec-1
-             s0_out(n,j,comp) = s0_in(n,j,comp) &
-                  + dt_in * rho_omegadotbar(n,j,comp-spec_comp+1) 
+             s0_out(n,r,comp) = s0_in(n,r,comp) &
+                  + dt_in * rho_omegadotbar(n,r,comp-spec_comp+1) 
           end do
           
           ! p_out = p_in
-          p0_out(n,j) = p0_in(n,j)
+          p0_out(n,r) = p0_in(n,r)
           
           ! rho_out = rho_in
-          s0_out(n,j,rho_comp) = s0_in(n,j,rho_comp)
+          s0_out(n,r,rho_comp) = s0_in(n,r,rho_comp)
           
-          den_eos(1)  = s0_in(n,j,rho_comp)
-          temp_eos(1) = s0_in(n,j,temp_comp)
-          p_eos(1)    = p0_in(n,j)
+          den_eos(1)  = s0_in(n,r,rho_comp)
+          temp_eos(1) = s0_in(n,r,temp_comp)
+          p_eos(1)    = p0_in(n,r)
           
           do comp = spec_comp,spec_comp+nspec-1
-             xn_eos(1,comp-spec_comp+1) = s0_out(n,j,comp)/s0_out(n,j,rho_comp)
+             xn_eos(1,comp-spec_comp+1) = s0_out(n,r,comp)/s0_out(n,r,rho_comp)
           end do
           
-          s0_out(n,j,rhoh_comp) = s0_in(n,j,rhoh_comp)
+          s0_out(n,r,rhoh_comp) = s0_in(n,r,rhoh_comp)
           if(.not. use_big_h) then
              do comp = spec_comp,spec_comp+nspec-1
-                s0_out(n,j,rhoh_comp) = s0_out(n,j,rhoh_comp) &
-                     -dt_in*rho_omegadotbar(n,j,comp-spec_comp+1)*ebin(comp-spec_comp+1)
+                s0_out(n,r,rhoh_comp) = s0_out(n,r,rhoh_comp) &
+                     -dt_in*rho_omegadotbar(n,r,comp-spec_comp+1)*ebin(comp-spec_comp+1)
              end do
           endif
-          s0_out(n,j,rhoh_comp) = s0_out(n,j,rhoh_comp) + dt_in * rho_Hextbar(n,j)
+          s0_out(n,r,rhoh_comp) = s0_out(n,r,rhoh_comp) + dt_in * rho_Hextbar(n,r)
           
           ! Only do this to evaluate a new Gamma.
           ! (rho,P,X) --> T, h
@@ -82,9 +82,9 @@ contains
                    do_diag)
           
           ! We shouldn't update temp here since we don't update it in react-state.
-          s0_out(n,j,temp_comp) = s0_in(n,j,temp_comp)
+          s0_out(n,r,temp_comp) = s0_in(n,r,temp_comp)
           
-          gam1_out(n,j) = gam1_eos(1)
+          gam1_out(n,r) = gam1_eos(1)
           
        end do
        

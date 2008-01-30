@@ -194,22 +194,22 @@ contains
     real(kind=dp_t) :: uadv,vadv,wadv,normal_vel
     real(kind=dp_t), allocatable :: gradp_rad(:)
     real(kind=dp_t), allocatable :: gradp_cart(:,:,:)
-    integer :: i,j,k
+    integer :: i,j,k,r
 
     allocate(gradp_rad(0:nr(n)-1))
     allocate(gradp_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
  
-    do k = 0, nr(n)-1
+    do r = 0, nr(n)-1
        
-       if (k.eq.0) then
-          gradp_rad(k) = HALF * ( p0_old(k+1) + p0_new(k+1) &
-                                 -p0_old(k  ) - p0_new(k  ) ) / dr(n)
-       else if (k.eq.nr(n)-1) then 
-          gradp_rad(k) = HALF * ( p0_old(k  ) + p0_new(k  ) &
-                                 -p0_old(k-1) - p0_new(k-1) ) / dr(n)
+       if (r.eq.0) then
+          gradp_rad(r) = HALF * ( p0_old(r+1) + p0_new(r+1) &
+                                 -p0_old(r  ) - p0_new(r  ) ) / dr(n)
+       else if (r.eq.nr(n)-1) then 
+          gradp_rad(r) = HALF * ( p0_old(r  ) + p0_new(r  ) &
+                                 -p0_old(r-1) - p0_new(r-1) ) / dr(n)
        else
-          gradp_rad(k) = FOURTH * ( p0_old(k+1) + p0_new(k+1) &
-                                   -p0_old(k-1) - p0_new(k-1) ) / dr(n)
+          gradp_rad(r) = FOURTH * ( p0_old(r+1) + p0_new(r+1) &
+                                   -p0_old(r-1) - p0_new(r-1) ) / dr(n)
        end if
     end do
 

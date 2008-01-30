@@ -30,7 +30,7 @@ contains
     real(kind=dp_t), intent(in   ) :: Sbar_in(:,0:)
     real(kind=dp_t), intent(in   ) :: dt,dtold
 
-    integer         :: j,n
+    integer         :: r,n
     real(kind=dp_t) :: max_vel
 
     type(bl_prof_timer), save :: bpt
@@ -48,8 +48,8 @@ contains
        endif
 
        max_vel = zero
-       do j = 0,nr(n)
-          max_vel = max(max_vel, abs(vel(n,j)))
+       do r = 0,nr(n)
+          max_vel = max(max_vel, abs(vel(n,r)))
        end do
 
        if (parallel_IOProcessor() .and. verbose .ge. 1) &
@@ -77,7 +77,7 @@ contains
     real(kind=dp_t), intent(in   ) :: dt,dtold
 
     ! Local variables
-    integer                      :: j
+    integer                      :: r
     real(kind=dp_t), allocatable :: vel_old_cen(:)
     real(kind=dp_t), allocatable :: vel_new_cen(:)
     real(kind=dp_t), allocatable ::   force(:)
@@ -94,25 +94,25 @@ contains
 
     ! Initialize new velocity to zero.
     vel(0) = ZERO
-    do j = 1,nr(n)
-       eta_avg = HALF * (eta(j,rho_comp)+eta(j-1,rho_comp))
-       vel(j) = vel(j-1) + Sbar_in(j-1) * dr(n) - &
-                         ( eta_avg * abs(grav_const) / (gam1(j-1)*p0(j-1)) ) * dr(n)
+    do r = 1,nr(n)
+       eta_avg = HALF * (eta(r,rho_comp)+eta(r-1,rho_comp))
+       vel(r) = vel(r-1) + Sbar_in(r-1) * dr(n) - &
+                         ( eta_avg * abs(grav_const) / (gam1(r-1)*p0(r-1)) ) * dr(n)
     end do
 
     ! Compute the 1/rho0 grad pi0 term.
 
-    do j = 0,nr(n)-1
-       vel_old_cen(j) = HALF * (vel_old(j) + vel_old(j+1))
-       vel_new_cen(j) = HALF * (vel    (j) + vel    (j+1))
+    do r = 0,nr(n)-1
+       vel_old_cen(r) = HALF * (vel_old(r) + vel_old(r+1))
+       vel_new_cen(r) = HALF * (vel    (r) + vel    (r+1))
     end do
 
     force = ZERO
     call make_edge_state_1d(n,vel_old_cen,edge,vel_old,force,1,dr(n),dt)
 
-    do j = 0,nr(n)-1
-       f(j) = (vel_new_cen(j)-vel_old_cen(j)) / (HALF*(dt+dtold)) + &
-            HALF*(vel_old_cen(j)+vel_new_cen(j)) * (edge(j+1)-edge(j)) / dr(n)
+    do r = 0,nr(n)-1
+       f(r) = (vel_new_cen(r)-vel_old_cen(r)) / (HALF*(dt+dtold)) + &
+            HALF*(vel_old_cen(r)+vel_new_cen(r)) * (edge(r+1)-edge(r)) / dr(n)
     end do
 
     deallocate(edge)
@@ -133,7 +133,7 @@ contains
     real(kind=dp_t), intent(in   ) :: Sbar_in(0:)
 
     ! Local variables
-    integer                      :: j
+    integer                      :: r
     real(kind=dp_t), allocatable :: c(:),d(:),e(:),u(:),rhs(:)
     real(kind=dp_t), allocatable :: m(:),grav_edge(:),rho0_edge(:)
     
@@ -152,29 +152,29 @@ contains
    
     call make_grav_edge(n,grav_edge,rho0)
 
-    do j = 1,nr(n)
-       c(j) = gam1(j-1) * p0(j-1) * base_loedge_loc(n,j-1)**2 / base_cc_loc(n,j-1)**2
-       c(j) = c(j) / dr(n)**2
+    do r = 1,nr(n)
+       c(r) = gam1(r-1) * p0(r-1) * base_loedge_loc(n,r-1)**2 / base_cc_loc(n,r-1)**2
+       c(r) = c(r) / dr(n)**2
     end do
 
     call cell_to_edge(n,rho0,rho0_edge)
 
-    do j = 1,nr(n)-1
+    do r = 1,nr(n)-1
 
-       d(j) = -( gam1(j-1) * p0(j-1) / base_cc_loc(n,j-1)**2 &
-                +gam1(j  ) * p0(j  ) / base_cc_loc(n,j  )**2 ) &
-                * (base_loedge_loc(n,j)**2/dr(n)**2) &
-                - four * rho0_edge(j) * grav_edge(j) / base_loedge_loc(n,j)
+       d(r) = -( gam1(r-1) * p0(r-1) / base_cc_loc(n,r-1)**2 &
+                +gam1(r  ) * p0(r  ) / base_cc_loc(n,r  )**2 ) &
+                * (base_loedge_loc(n,r)**2/dr(n)**2) &
+                - four * rho0_edge(r) * grav_edge(r) / base_loedge_loc(n,r)
     end do
 
-    do j = 1,nr(n)-1
-       rhs(j) = ( gam1(j  )*p0(j  )*Sbar_in(j) - gam1(j-1)*p0(j-1)*Sbar_in(j-1) ) 
-       rhs(j) = rhs(j) / dr(n)
+    do r = 1,nr(n)-1
+       rhs(r) = ( gam1(r  )*p0(r  )*Sbar_in(r) - gam1(r-1)*p0(r-1)*Sbar_in(r-1) ) 
+       rhs(r) = rhs(r) / dr(n)
     end do
 
-    do j = 0,nr(n)-1
-       e(j) = gam1(j) * p0(j) * base_loedge_loc(n,j+1)**2 / base_cc_loc(n,j)**2
-       e(j) = e(j) / dr(n)**2
+    do r = 0,nr(n)-1
+       e(r) = gam1(r) * p0(r) * base_loedge_loc(n,r+1)**2 / base_cc_loc(n,r)**2
+       e(r) = e(r) / dr(n)**2
     end do
 
     ! Lower boundary
@@ -190,8 +190,8 @@ contains
     ! Call the tridiagonal solver
     call tridiag(c, d, e, rhs, u, nr(n)+1)
 
-    do j = 0,nr(n)
-       vel(j) = u(j)
+    do r = 0,nr(n)
+       vel(r) = u(r)
     end do
 
     deallocate(c,d,e,rhs,u)
