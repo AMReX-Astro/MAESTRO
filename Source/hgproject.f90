@@ -59,7 +59,11 @@ contains
     ng    = unew(1)%ng
     nodal = .true.
     
-    stencil_type = ST_CROSS; if (hg_dense_stencil) stencil_type = ST_DENSE
+    if (hg_dense_stencil) then
+       stencil_type = ST_DENSE
+    else
+       stencil_type = ST_CROSS
+    end if
 
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
        print *,'PROJ_TYPE IN HGPROJECT:',proj_type
