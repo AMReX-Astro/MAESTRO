@@ -17,6 +17,4 @@
  model_file = "model.hse"
  dr_base = 390625
 
- hg_bottom_solver = 2  ! CG
- mg_bottom_solver = 1  ! BiC
 /

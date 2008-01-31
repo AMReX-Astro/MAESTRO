@@ -17,6 +17,4 @@
  model_file = "model.sph.768"
  dr_base = 651041.666667
 
- hg_bottom_solver = 2  ! CG
- mg_bottom_solver = 1  ! BiC
 /

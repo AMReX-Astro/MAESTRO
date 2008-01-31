@@ -33,9 +33,6 @@
  mg_verbose = 1
  cg_verbose = 0
 
- hg_bottom_solver = 2  ! CG
- mg_bottom_solver = 2  ! CG
-
  use_thermal_diffusion = T
  predict_temp_at_edges = T
  evolve_base_state = F
