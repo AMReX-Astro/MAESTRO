@@ -28,14 +28,14 @@ contains
     type(multifab)   , pointer        :: chk_dSdt(:)
     type(multifab)   , pointer        :: chk_src_old(:)
     type(multifab)   , pointer        :: chk_rho_omegadot2(:)
-    character(len=7)                  :: sd_name
+    character(len=8)                  :: sd_name
     integer                           :: n,nlevs,dm
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "fill_restart_data")
 
-    write(unit=sd_name,fmt='("chk",i4.4)') restart_int
+    write(unit=sd_name,fmt='("chk",i5.5)') restart_int
     if ( parallel_IOProcessor()) &
       print *,'Reading ',sd_name,' to get state data for restart'
     call checkpoint_read(chkdata, chk_p, chk_dsdt, chk_src_old, &

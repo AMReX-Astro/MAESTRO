@@ -22,13 +22,13 @@ contains
     use probin_module, only: prob_lo_y, prob_lo_z
 
     integer          , intent(in) :: nlevs
-    character(len=10), intent(in) :: state_name
-    character(len=7) , intent(in) :: w0_name
-    character(len=7) , intent(in) :: chk_name
+    character(len=11), intent(in) :: state_name
+    character(len=8) , intent(in) :: w0_name
+    character(len=8) , intent(in) :: chk_name
     real(kind=dp_t)  , intent(in) :: s0(:,:,:),p0(:,:),gam1(:,:),div_coeff(:,:),w0(:,:)
 
     real(kind=dp_t) :: base_r, problo
-    character(len=18) :: out_name
+    character(len=20) :: out_name
     integer :: i, comp, n
 
     type(bl_prof_timer), save :: bpt
@@ -36,6 +36,9 @@ contains
     call build(bpt, "write_base_state")
 
     if (parallel_IOProcessor()) then
+
+       print*,"chk_name",chk_name
+       print*,"state_name",state_name
 
        ! write out the base state quantities
        out_name = chk_name // "/" // state_name
@@ -87,14 +90,14 @@ contains
     use bl_constants_module
     
     integer          , intent(in   ) :: nlevs
-    character(len=10), intent(in   ) :: state_name
-    character(len=7) , intent(in   ) :: w0_name
-    character(len=7) , intent(in   ) :: chk_name    
+    character(len=11), intent(in   ) :: state_name
+    character(len=8) , intent(in   ) :: w0_name
+    character(len=8) , intent(in   ) :: chk_name    
     real(kind=dp_t)  , intent(inout) :: s0(:,:,:),p0(:,:),gam1(:,:),div_coeff(:,:),w0(:,:)
     real(kind=dp_t)  , allocatable   :: base_r(:,:)
 
     real(kind=dp_t) :: r_dummy
-    character(len=18) :: out_name
+    character(len=20) :: out_name
     integer :: i, comp, n
 
     type(bl_prof_timer), save :: bpt
