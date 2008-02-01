@@ -1,5 +1,5 @@
 &PROBIN
- test_set = "gr0_3d"
+ test_set = "gr0_3d_small"
  model_file = "sorted_xrb.hse"
  spherical_in = 0
 
