@@ -45,6 +45,8 @@
 
  use_thermal_diffusion = T
 
+ use_eta = F
+
  base_cutoff_density = 1.d4
  anelastic_cutoff = 1.d4
 
