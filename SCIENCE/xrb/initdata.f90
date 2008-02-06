@@ -352,8 +352,6 @@ contains
 
        temp = t0 * (ONE + xrb_pert_factor * dexp(-10.0d0*distance**2 / rad_pert) )
 
-       temp = max(t0, temp)
-       
        dens = s0(rho_comp)
 
        eos_input_flag = eos_input_tp
@@ -363,7 +361,6 @@ contains
        d0 = s0(rho_comp)
        
        dens = d0 * (ONE + xrb_pert_factor * dexp(-10.0d0*distance**2 / rad_pert) )
-       dens = max(d0, dens)
        
        temp = s0(temp_comp)
 
