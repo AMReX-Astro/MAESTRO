@@ -71,12 +71,24 @@ contains
     
     real (kind = dp_t), allocatable :: force(:)
     real (kind = dp_t), allocatable :: edge(:)
+
+    real (kind = dp_t), allocatable :: dpdroverrho(:)
     
     ! Cell-centered
     allocate(force(0:nr(n)-1))
     
     ! Edge-centered
     allocate(edge(0:nr(n)))
+
+    ! Cell-centered
+    allocate(dpdroverrho(0:nr(n)-1))
+   
+    dpdroverrho(      0) = abs(p0_old(r+1)-p0_old(r)) / dz /  s0_old(r,rho_comp)
+    dpdroverrho(nr(n)-1) = abs(p0_old(r)-p0_old(r-1)) / dz /  s0_old(r,rho_comp)
+    do r = 1, nr(n)-2
+       dpdroverrho(r) = HALF*abs(p0_old(r+1)-p0_old(r-1)) / dz /  s0_old(r,rho_comp)
+       dpdroverrho(r) = min(dpdroverrho(r), abs(grav_const))
+    end do
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! UPDATE P0
@@ -86,7 +98,8 @@ contains
     do r = 0,nr(n)-1
        p0_new(r) = p0_old(r) &
             - dt / dz * HALF * (vel(r) + vel(r+1)) * (edge(r+1) - edge(r)) &
-            + HALF * dt * (eta(r,rho_comp)+eta(r+1,rho_comp))*abs(grav_const)
+!           + HALF * dt * (eta(r,rho_comp)+eta(r+1,rho_comp))*abs(grav_const)
+            + HALF * dt * (eta(r,rho_comp)+eta(r+1,rho_comp))*dpdroverrho(r)
     end do
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -130,8 +143,9 @@ contains
     do r = 0,nr(n)-1
        s0_new(r,rhoh_comp) = s0_old(r,rhoh_comp) &
             - dt / dz * (edge(r+1) * vel(r+1) - edge(r) * vel(r)) &
-            + HALF * dt * (eta(r,rho_comp)+eta(r+1,rho_comp))*abs(grav_const) &
-            - dt / dz * (eta(r+1,rhoh_comp) - eta(r,rhoh_comp))
+            - dt / dz * (eta(r+1,rhoh_comp) - eta(r,rhoh_comp)) &
+!           + HALF * dt * (eta(r,rho_comp)+eta(r+1,rho_comp))*abs(grav_const) &
+            + HALF * dt * (eta(r,rho_comp)+eta(r+1,rho_comp))*dpdroverrho(r)
     end do
     
     
@@ -163,6 +177,7 @@ contains
     end do
     
     deallocate(force,edge)
+    deallocate(dpdroverrho)
     
   end subroutine advect_base_state_planar
   

@@ -32,9 +32,9 @@ contains
     use network,       only: nspec, spec_names
     use geometry,      only: spherical, nr
     use variables,     only: nscal, ntrac, spec_comp, trac_comp, temp_comp, rho_comp, &
-         rhoh_comp
+                             rhoh_comp
     use probin_module, only: predict_temp_at_edges, use_thermal_diffusion, verbose, &
-         evolve_base_state, use_eta
+                             evolve_base_state, use_eta
     use modify_scal_force_module
     use make_eta_module
     use add_thermal_to_force_module
@@ -65,7 +65,6 @@ contains
     type(multifab) :: sedge(nlevs,mla%dim)
     type(multifab) :: sflux(nlevs,mla%dim)
     type(multifab) :: etaflux(nlevs)
-
 
     integer    :: velpred,comp,pred_comp,n,dm
     logical    :: umac_nodal_flag(sold(1)%dim), is_vel
@@ -316,7 +315,7 @@ contains
                      eta,sedge,sflux,scal_force,s0_old,s0_edge_old,s0_new,s0_edge_new, &
                      s0_old_cart,s0_new_cart,dx,dt,the_bc_level,mla)
 
-    if (use_eta .and. evolve_base_state .and. which_step .eq. 1) then
+    if (use_eta .and. evolve_base_state) then
        call make_eta(nlevs,eta,sold,etaflux,dx,mla)
     end if
 

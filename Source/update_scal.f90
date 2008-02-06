@@ -210,12 +210,12 @@ contains
           do i = lo(1), hi(1)
 
              divterm = (sfluxx(i+1,j,comp) - sfluxx(i,j,comp))/dx(1) &
-                  + (sfluxy(i,j+1,comp) - sfluxy(i,j,comp))/dx(2)
+                     + (sfluxy(i,j+1,comp) - sfluxy(i,j,comp))/dx(2)
 
              snew(i,j,comp) = sold(i,j,comp) + delta_base &
                   - dt * divterm + dt * force(i,j,comp)
 
-             if (evolve_base_state .and. which_step .eq. 2) then
+             if (evolve_base_state) then
                 snew(i,j,comp) = snew(i,j,comp) + dt/dx(2)*(eta(j+1,comp)-eta(j,comp))
              end if
 
@@ -323,7 +323,7 @@ contains
                 snew(i,j,k,comp) = sold(i,j,k,comp) + delta_base &
                      - dt * divterm + dt * force(i,j,k,comp)
 
-                if (evolve_base_state .and. which_step .eq. 2) then
+                if (evolve_base_state) then
                    snew(i,j,k,comp) = snew(i,j,k,comp) + dt/dx(3)*(eta(k+1,comp)-eta(k,comp))
                 end if
 

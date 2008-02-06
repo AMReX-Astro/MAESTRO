@@ -15,7 +15,7 @@ contains
                               s0_new,p0_old,p0_new,gam1,w0, &
                               rho_omegadot2,div_coeff_old,div_coeff_new, &
                               grav_cell_old,dx,time,dt,dtold,the_bc_tower, &
-                              dSdt,Source_old,Source_new, sponge,hgrhs,istep)
+                              dSdt,Source_old,Source_new,eta,sponge,hgrhs,istep)
 
     use bl_prof_module
     use ml_layout_module
@@ -76,6 +76,7 @@ contains
     type(multifab),  intent(inout) :: dSdt(:)
     type(multifab),  intent(inout) :: Source_old(:)
     type(multifab),  intent(inout) :: Source_new(:)
+    real(dp_t)    ,  intent(inout) :: eta(:,0:,:)
     type(multifab),  intent(in   ) :: sponge(:)
     type(multifab),  intent(inout) :: hgrhs(:)
     integer       ,  intent(in   ) :: istep
@@ -114,7 +115,6 @@ contains
     real(dp_t), allocatable :: rho_omegadotbar1(:,:,:)
     real(dp_t), allocatable :: rho_omegadotbar2(:,:,:)
     real(dp_t), allocatable :: rho_Hextbar(:,:,:)
-    real(dp_t), allocatable :: eta(:,:,:)
     real(dp_t), allocatable :: s0_1(:,:,:)
     real(dp_t), allocatable :: s0_2(:,:,:)
     real(dp_t), allocatable :: p0_1(:,:)
@@ -143,14 +143,10 @@ contains
     allocate(rho_omegadotbar1(nlevs,0:nr(nlevs)-1,nspec))
     allocate(rho_omegadotbar2(nlevs,0:nr(nlevs)-1,nspec))
     allocate(     rho_Hextbar(nlevs,0:nr(nlevs)-1,1))
-    allocate(             eta(nlevs,0:nr(nlevs)  ,nscal))
     allocate(            s0_1(nlevs,0:nr(nlevs)-1,nscal))
     allocate(            s0_2(nlevs,0:nr(nlevs)-1,nscal))
     allocate(            p0_1(nlevs,0:nr(nlevs)-1))
     allocate(            p0_2(nlevs,0:nr(nlevs)-1))
-
-    ! This is always zero at the beginning of a time step
-    eta(:,:,:) = ZERO
 
     ! Set these to be safe
     s0_1(:,:,:) = ZERO

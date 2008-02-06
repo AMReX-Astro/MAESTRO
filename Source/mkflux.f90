@@ -184,12 +184,12 @@ contains
              if(which_step .eq. 1) then
                 sfluxy(i,j,comp) = (vmac(i,j)+w0(j))*sedgey(i,j,comp) &
                      + vmac(i,j)*(s0_edge_old(j,comp))
-
-                etaflux(i,j,comp) = vmac(i,j)*sedgey(i,j,comp)
              else
                 sfluxy(i,j,comp) = (vmac(i,j)+w0(j))*sedgey(i,j,comp) &
                      + vmac(i,j)*(HALF*(s0_edge_old(j,comp)+s0_edge_new(j,comp)))
              end if
+
+             etaflux(i,j,comp) = vmac(i,j)*sedgey(i,j,comp)
 
           end do
        end do
@@ -270,12 +270,12 @@ contains
                 if(which_step .eq. 1) then
                    sfluxz(i,j,k,comp) = (wmac(i,j,k)+w0(k))*sedgez(i,j,k,comp) &
                         + wmac(i,j,k)*s0_edge_old(k,comp)
-
-                   etaflux(i,j,k,comp) = wmac(i,j,k)*sedgez(i,j,k,comp)
                 else
                    sfluxz(i,j,k,comp) = (wmac(i,j,k)+w0(k))*sedgez(i,j,k,comp) &
                         + wmac(i,j,k)*HALF*(s0_edge_old(k,comp)+s0_edge_new(k,comp))
                 end if
+
+                etaflux(i,j,k,comp) = wmac(i,j,k)*sedgez(i,j,k,comp)
                 
              end do
           end do
