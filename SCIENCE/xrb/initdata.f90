@@ -343,14 +343,14 @@ contains
     integer, parameter :: perturb_temp = 1, perturb_dens = 2
     integer :: eos_input_flag
 
-    rad_pert = xrb_pert_size**2 / (FOUR * log(TWO))
+    rad_pert = -xrb_pert_size**2 / (FOUR*log(HALF))
 
     select case (xrb_pert_type)
     case(perturb_temp)
 
        t0 = s0(temp_comp)
 
-       temp = t0 * (ONE + xrb_pert_factor * dexp(-10.0d0*distance**2 / rad_pert) )
+       temp = t0 * (ONE + xrb_pert_factor * dexp(-distance**2 / rad_pert) )
 
        dens = s0(rho_comp)
 
@@ -360,7 +360,7 @@ contains
           
        d0 = s0(rho_comp)
        
-       dens = d0 * (ONE + xrb_pert_factor * dexp(-10.0d0*distance**2 / rad_pert) )
+       dens = d0 * (ONE + xrb_pert_factor * dexp(-distance**2 / rad_pert) )
        
        temp = s0(temp_comp)
 
