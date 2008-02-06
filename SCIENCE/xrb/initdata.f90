@@ -37,7 +37,7 @@ contains
     integer :: lo(s(1)%dim),hi(s(1)%dim),ng,dm
     integer :: i,n,r
 
-    real(kind=dp_t), parameter :: he4_pert = 1.d-3
+    real(kind=dp_t), parameter :: he4_pert = 0.99d0
     real(kind=dp_t)            :: pert_height
     integer                    :: he4_comp, pert_index
     
@@ -54,9 +54,9 @@ contains
        end if
     end do
     if(dm .eq. 2) then
-       pert_height = prob_lo_y + (dble(pert_index)+HALF)*dx(nlevs,dm)
+       pert_height = prob_lo_y + (dble(pert_index)+HALF)*dx(nlevs,dm) + 50.0d0
     else if(dm .eq. 3) then
-       pert_height = prob_lo_z + (dble(pert_index)+HALF)*dx(nlevs,dm)
+       pert_height = prob_lo_z + (dble(pert_index)+HALF)*dx(nlevs,dm) + 50.0d0
     end if
 
     do n=1,nlevs

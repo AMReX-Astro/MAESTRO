@@ -52,8 +52,8 @@
 
  perturb_model = T
  xrb_pert_size = 50
- xrb_pert_factor = 1.0d-1
- xrb_pert_type = 1
+ xrb_pert_factor = -1.0d-6
+ xrb_pert_type = 2
 
  do_sponge = T
  sponge_kappa = 1.d7
