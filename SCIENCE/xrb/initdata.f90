@@ -350,7 +350,8 @@ contains
 
        t0 = s0(temp_comp)
 
-       temp = t0 * (ONE + xrb_pert_factor) * dexp(-distance**2 / rad_pert)
+       temp = t0 * (ONE + xrb_pert_factor * dexp(-10.0d0*distance**2 / rad_pert) )
+
        temp = max(t0, temp)
        
        dens = s0(rho_comp)
@@ -361,7 +362,7 @@ contains
           
        d0 = s0(rho_comp)
        
-       dens = d0 * (ONE + xrb_pert_factor) * dexp(-distance**2 / rad_pert)
+       dens = d0 * (ONE + xrb_pert_factor * dexp(-10.0d0*distance**2 / rad_pert) )
        dens = max(d0, dens)
        
        temp = s0(temp_comp)
