@@ -142,6 +142,11 @@ contains
     spdx = spdx / dx(1)
     spdy = spdy / dx(2)
     
+    if(max(ux,uy) > max(spdx,spdy)) then
+       print*,"Error: initial velocity greater than sound speed"
+       stop
+    end if
+
     if (spdx < eps .and. spdy < eps) then
        dt_sound = min(dx(1),dx(2))
     else
@@ -294,6 +299,11 @@ contains
     spdx = spdx / dx(1)
     spdy = spdy / dx(2)
     spdz = spdz / dx(3)
+
+    if(max(ux,uy,uz) > max(spdx,spdy,spdz)) then
+       print*,"Error: initial velocity greater than sound speed"
+       stop
+    end if
     
     if (spdx < eps .and. spdy < eps .and. spdz < eps) then
        dt_sound = min(dx(1),dx(2),dx(3))
