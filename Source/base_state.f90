@@ -204,14 +204,12 @@ contains
        print *,'DR , RMAX OF BASE ARRAY',dr(n), dble(nr(n)) * dr(n)
 
        if (mod(dr(n),dr_in) .gt. TINY) then
-          if ( parallel_IOProcessor() ) then
-             print *, ''
-             print *, "WARNING: resolution of base state array is not an integer"
-             print *, "         multiple of the initial model's resolution.     "
-             print *, "         make sure this is a desired property as this    "
-             print *, "         could lead to aliasing when performing the      "
-             print *, "         interpolation.                                  "
-          end if
+          print *, ''
+          print *, "WARNING: resolution of base state array is not an integer"
+          print *, "         multiple of the initial model's resolution.     "
+          print *, "         make sure this is a desired property as this    "
+          print *, "         could lead to aliasing when performing the      "
+          print *, "         interpolation.                                  "
        endif
     end if
 
