@@ -83,8 +83,8 @@ contains
     ! Cell-centered
     allocate(dpdroverrho(0:nr(n)-1))
    
-    dpdroverrho(      0) = abs(p0_old(r+1)-p0_old(r)) / dz /  s0_old(r,rho_comp)
-    dpdroverrho(nr(n)-1) = abs(p0_old(r)-p0_old(r-1)) / dz /  s0_old(r,rho_comp)
+    dpdroverrho(      0) = abs(p0_old(1)-p0_old(0)) / dz /  s0_old(0,rho_comp)
+    dpdroverrho(nr(n)-1) = abs(p0_old(nr(n)-1)-p0_old(nr(n)-2)) / dz /  s0_old(nr(n)-1,rho_comp)
     do r = 1, nr(n)-2
        dpdroverrho(r) = HALF*abs(p0_old(r+1)-p0_old(r-1)) / dz /  s0_old(r,rho_comp)
        dpdroverrho(r) = min(dpdroverrho(r), abs(grav_const))
