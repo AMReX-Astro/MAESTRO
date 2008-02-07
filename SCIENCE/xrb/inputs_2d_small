@@ -1,23 +1,23 @@
 &PROBIN
  test_set = "gr0_2d_small"
- model_file = "sorted_xrb.hse"
+ model_file = "sorted_xrb_2cm.hse"
  spherical_in = 0
 
- prob_hi_x = 1.75d3
- prob_hi_y = 3.5d3
+ prob_hi_x = 3300.0d0
+ prob_hi_y = 3300.0d0
 
- prob_lo_x = 0.0d0
- prob_lo_y = 1.75d3
+ prob_lo_x = 740.0d0
+ prob_lo_y = 740.0d0
 
  grav_const = -2.45e14
 
- max_step  = 5000
+ max_step  = 1500
  init_iter = 3
 
  stop_time = 2.5
 
- plot_int  = 10
- chk_int   = 10
+ plot_int  = 100
+ chk_int   = 100
 
  cflfac = 0.7
  init_shrink = 0.1
