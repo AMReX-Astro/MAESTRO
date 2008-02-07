@@ -58,6 +58,8 @@ contains
     character (len=256) :: header_line
 
     type(bl_prof_timer), save :: bpt
+    
+    real(kind=dp_t), parameter :: TINY = 1.0e-10
 
     call build(bpt, "init_base_state")
 
@@ -198,6 +200,15 @@ contains
     if ( parallel_IOProcessor() ) then
        print *,'DR , RMAX OF MODEL     ',dr_in, rmax
        print *,'DR , RMAX OF BASE ARRAY',dr(n), dble(nr(n)) * dr(n)
+
+       if (mod(dr(n),dr_in) .gt. TINY) then
+          print *, ''
+          print *, "WARNING: resolution of base state array is not an integer"
+          print *, "         multiple of the initial model's resolution.     "
+          print *, "         make sure this is a desired property as this    "
+          print *, "         could lead to aliasing when performing the      "
+          print *, "         interpolation.                                  "
+       endif
     end if
 
     if (dm .eq. 2) then
