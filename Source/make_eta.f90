@@ -64,6 +64,7 @@ contains
     etasum       = ZERO
     etapert_proc = ZERO
     etapert      = ZERO
+    eta          = ZERO
 
     if (spherical .eq. 0) then
     
