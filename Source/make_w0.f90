@@ -110,7 +110,7 @@ contains
        do r = 1,nr(n)
           eta_avg = HALF * (eta(r,rho_comp)+eta(r-1,rho_comp))
           vel(r) = vel(r-1) + Sbar_in(r-1) * dr(n) - &
-               ( eta_avg * dpdroverrho(r) / (gam1(r-1)*p0(r-1)) ) * dr(n)
+               ( eta_avg * dpdroverrho(r-1) / (gam1(r-1)*p0(r-1)) ) * dr(n)
        end do
     else
        do r = 1,nr(n)
