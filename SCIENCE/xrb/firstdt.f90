@@ -136,14 +136,18 @@ contains
 
     if (ux .ne. ZERO .or. uy .ne. ZERO) then
        dt = cfl / max(ux,uy)
-       print*,"setting firstdt to advective constraint"
+       if (parallel_IOProcessor()) then
+          print*,"setting firstdt to advective constraint"
+       end if
     end if
     
     spdx = spdx / dx(1)
     spdy = spdy / dx(2)
     
     if(max(ux,uy) > max(spdx,spdy)) then
-       print*,"Error: initial velocity greater than sound speed"
+       if (parallel_IOProcessor()) then  
+          print*,"Error: initial velocity greater than sound speed"
+       end if
        stop
     end if
 
@@ -155,20 +159,26 @@ contains
 
     if(dt_sound < dt) then
        dt = min(dt,dt_sound)
-       print*,"setting firstdt to sound speed constraint"
+       if (parallel_IOProcessor()) then
+          print*,"setting firstdt to sound speed constraint"
+       end if
     end if
     
     if (pforcex > eps) then
        if(sqrt(2.0D0*dx(1)/pforcex) < dt) then
           dt = sqrt(2.0D0*dx(1)/pforcex)
-          print*,"setting firstdt to pforcex contraint"
+          if (parallel_IOProcessor()) then
+             print*,"setting firstdt to pforcex contraint"
+          end if
        end if
     end if
 
     if (pforcey > eps) then
        if(sqrt(2.0D0*dx(2)/pforcey) < dt) then
           dt = sqrt(2.0D0*dx(2)/pforcey)
-          print*,"setting firstdt to pforcey contraint"
+          if (parallel_IOProcessor()) then
+             print*,"setting firstdt to pforcey contraint"
+          end if
        end if
     end if
     
@@ -194,7 +204,9 @@ contains
 
     if(dt_divu < dt) then
        dt = dt_divu
-       print*,"setting firstdt to divu constraint"
+       if (parallel_IOProcessor()) then
+          print*,"setting firstdt to divu constraint"
+       end if
     end if
     
   end subroutine firstdt_2d
@@ -293,7 +305,9 @@ contains
 
     if (ux .ne. ZERO .or. uy .ne. ZERO .or. uz .ne. ZERO) then
        dt = cfl / max(ux,uy,uz)
-       print*,"setting firstdt to advective constraint"
+       if (parallel_IOProcessor()) then
+          print*,"setting firstdt to advective constraint"
+       end if
     end if
 
     spdx = spdx / dx(1)
@@ -301,7 +315,9 @@ contains
     spdz = spdz / dx(3)
 
     if(max(ux,uy,uz) > max(spdx,spdy,spdz)) then
-       print*,"Error: initial velocity greater than sound speed"
+       if (parallel_IOProcessor()) then
+          print*,"Error: initial velocity greater than sound speed"
+       end if
        stop
     end if
     
@@ -313,27 +329,35 @@ contains
 
     if(dt_sound < dt) then
        dt = min(dt,dt_sound)
-       print*,"setting firstdt to sound speed constraint"
+       if (parallel_IOProcessor()) then
+          print*,"setting firstdt to sound speed constraint"
+       end if
     end if
 
     if (pforcex > eps) then
        if(sqrt(2.0D0*dx(1)/pforcex) < dt) then
           dt = sqrt(2.0D0*dx(1)/pforcex)
-          print*,"setting firstdt to pforcex contraint"
+          if (parallel_IOProcessor()) then
+             print*,"setting firstdt to pforcex contraint"
+          end if
        end if
     end if
 
     if (pforcey > eps) then
        if(sqrt(2.0D0*dx(2)/pforcey) < dt) then
           dt = sqrt(2.0D0*dx(2)/pforcey)
-          print*,"setting firstdt to pforcey contraint"
+          if (parallel_IOProcessor()) then
+             print*,"setting firstdt to pforcey contraint"
+          end if
        end if
     end if
 
     if (pforcez > eps) then
        if(sqrt(2.0D0*dx(3)/pforcez) < dt) then
           dt = sqrt(2.0D0*dx(3)/pforcez)
-          print*,"setting firstdt to pforcez contraint"
+          if (parallel_IOProcessor()) then
+             print*,"setting firstdt to pforcez contraint"
+          end if
        end if
     end if
     
@@ -361,7 +385,9 @@ contains
 
     if(dt_divu < dt) then
        dt = dt_divu
-       print*,"setting firstdt to divu constraint"
+       if (parallel_IOProcessor()) then
+          print*,"setting firstdt to divu constraint"
+       end if
     end if
     
     if (spherical == 1) then
