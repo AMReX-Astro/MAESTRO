@@ -136,9 +136,6 @@ contains
 
     if (ux .ne. ZERO .or. uy .ne. ZERO) then
        dt = cfl / max(ux,uy)
-       if (parallel_IOProcessor()) then
-          print*,"setting firstdt to advective constraint"
-       end if
     end if
     
     spdx = spdx / dx(1)
@@ -159,26 +156,17 @@ contains
 
     if(dt_sound < dt) then
        dt = min(dt,dt_sound)
-       if (parallel_IOProcessor()) then
-          print*,"setting firstdt to sound speed constraint"
-       end if
     end if
     
     if (pforcex > eps) then
        if(sqrt(2.0D0*dx(1)/pforcex) < dt) then
           dt = sqrt(2.0D0*dx(1)/pforcex)
-          if (parallel_IOProcessor()) then
-             print*,"setting firstdt to pforcex contraint"
-          end if
        end if
     end if
 
     if (pforcey > eps) then
        if(sqrt(2.0D0*dx(2)/pforcey) < dt) then
           dt = sqrt(2.0D0*dx(2)/pforcey)
-          if (parallel_IOProcessor()) then
-             print*,"setting firstdt to pforcey contraint"
-          end if
        end if
     end if
     
@@ -204,9 +192,6 @@ contains
 
     if(dt_divu < dt) then
        dt = dt_divu
-       if (parallel_IOProcessor()) then
-          print*,"setting firstdt to divu constraint"
-       end if
     end if
     
   end subroutine firstdt_2d
@@ -305,9 +290,6 @@ contains
 
     if (ux .ne. ZERO .or. uy .ne. ZERO .or. uz .ne. ZERO) then
        dt = cfl / max(ux,uy,uz)
-       if (parallel_IOProcessor()) then
-          print*,"setting firstdt to advective constraint"
-       end if
     end if
 
     spdx = spdx / dx(1)
@@ -329,35 +311,23 @@ contains
 
     if(dt_sound < dt) then
        dt = min(dt,dt_sound)
-       if (parallel_IOProcessor()) then
-          print*,"setting firstdt to sound speed constraint"
-       end if
     end if
 
     if (pforcex > eps) then
        if(sqrt(2.0D0*dx(1)/pforcex) < dt) then
           dt = sqrt(2.0D0*dx(1)/pforcex)
-          if (parallel_IOProcessor()) then
-             print*,"setting firstdt to pforcex contraint"
-          end if
        end if
     end if
 
     if (pforcey > eps) then
        if(sqrt(2.0D0*dx(2)/pforcey) < dt) then
           dt = sqrt(2.0D0*dx(2)/pforcey)
-          if (parallel_IOProcessor()) then
-             print*,"setting firstdt to pforcey contraint"
-          end if
        end if
     end if
 
     if (pforcez > eps) then
        if(sqrt(2.0D0*dx(3)/pforcez) < dt) then
           dt = sqrt(2.0D0*dx(3)/pforcez)
-          if (parallel_IOProcessor()) then
-             print*,"setting firstdt to pforcez contraint"
-          end if
        end if
     end if
     
@@ -385,9 +355,6 @@ contains
 
     if(dt_divu < dt) then
        dt = dt_divu
-       if (parallel_IOProcessor()) then
-          print*,"setting firstdt to divu constraint"
-       end if
     end if
     
     if (spherical == 1) then
