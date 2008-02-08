@@ -291,7 +291,7 @@ contains
                         w0_cart_vec,eta,sedge,sflux,scal_force,s0_old,s0_edge_old,s0_new, &
                         s0_edge_new,s0_old_cart,s0_new_cart,dx,dt,the_bc_level,mla)
 
-       if ( verbose .eq. 1 ) then
+       if ( verbose .ge. 1 ) then
           do n=1,nlevs
              smin = multifab_min_c(snew(n),trac_comp) 
              smax = multifab_max_c(snew(n),trac_comp)
@@ -339,7 +339,7 @@ contains
        call makeTfromRhoH(nlevs,snew,s0_new(:,:,temp_comp),mla,the_bc_level,dx)
     end if
 
-    if ( verbose .eq. 1 ) then
+    if ( verbose .ge. 1 ) then
        do n=1,nlevs
           smin = multifab_min_c(snew(n),rhoh_comp) 
           smax = multifab_max_c(snew(n),rhoh_comp)
