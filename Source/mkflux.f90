@@ -14,7 +14,7 @@ contains
 
   subroutine mkflux(nlevs,sflux,etaflux,sold,sedge,umac,w0,w0_cart_vec,s0_old,s0_edge_old, &
                     s0_old_cart,s0_new,s0_edge_new,s0_new_cart, &
-                    startcomp,endcomp,which_step,dx,mla)
+                    startcomp,endcomp,which_step,mla)
 
     use bl_prof_module
     use bl_constants_module
@@ -34,7 +34,6 @@ contains
     real(kind=dp_t), intent(in   ) :: s0_new(:,0:,:),s0_edge_new(:,0:,:)
     type(multifab) , intent(in   ) :: s0_new_cart(:)
     integer        , intent(in   ) :: startcomp,endcomp,which_step
-    real(kind=dp_t), intent(in   ) :: dx(:,:)
     type(ml_layout), intent(inout) :: mla
 
     ! local    

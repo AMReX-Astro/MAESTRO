@@ -233,18 +233,18 @@ contains
     ! compute enthalpy fluxes
     call mkflux(nlevs,sflux,etaflux,sold,sedge,umac,w0,w0_cart_vec,s0_old,s0_edge_old, &
                 s0_old_cart,s0_new,s0_edge_new,s0_new_cart,rhoh_comp,rhoh_comp, &
-                which_step,dx,mla)
+                which_step,mla)
 
     ! compute species fluxes
     call mkflux(nlevs,sflux,etaflux,sold,sedge,umac,w0,w0_cart_vec,s0_old,s0_edge_old, &
                 s0_old_cart,s0_new,s0_edge_new,s0_new_cart,spec_comp, &
-                spec_comp+nspec-1,which_step,dx,mla)
+                spec_comp+nspec-1,which_step,mla)
 
     if (ntrac .ge. 1) then
        ! compute tracer fluxes
        call mkflux(nlevs,sflux,etaflux,sold,sedge,umac,w0,w0_cart_vec,s0_old,s0_edge_old, &
                    s0_old_cart,s0_new,s0_edge_new,s0_new_cart,trac_comp, &
-                   trac_comp+ntrac-1,which_step,dx,mla)
+                   trac_comp+ntrac-1,which_step,mla)
     end if
 
     !**************************************************************************
