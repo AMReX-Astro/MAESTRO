@@ -8,7 +8,7 @@ module initial_proj_module
 contains
 
   subroutine initial_proj(nlevs,uold,sold,pres,gpres,Source_old,hgrhs, &
-                          div_coeff_old,s0_old,p0_old,gam1,grav_cell,dx,the_bc_tower,mla)
+                          div_coeff_old,s0_old,p0_old,gam1,dx,the_bc_tower,mla)
 
     use variables, only: temp_comp, press_comp
     use network, only: nspec
@@ -38,7 +38,6 @@ contains
     real(kind=dp_t), intent(in   ) :: s0_old(:,0:,:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:)
     real(kind=dp_t), intent(in   ) :: gam1(:,0:)
-    real(kind=dp_t), intent(in   ) :: grav_cell(:,:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     type(bc_tower) , intent(in   ) :: the_bc_tower
     type(ml_layout), intent(inout) :: mla
