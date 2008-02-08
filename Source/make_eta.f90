@@ -167,9 +167,9 @@ contains
              hi =  upb(get_box(sold(n), i))
              select case (dm)
              case (2)
-                call compute_etapert_2d(n,lo,hi,efp(:,:,1,:),etasum_proc(1,:,:),rr)
+                call compute_etapert_2d(lo,hi,efp(:,:,1,:),etasum_proc(1,:,:),rr)
              case (3)
-                call compute_etapert_3d(n,lo,hi,efp(:,:,:,:),etasum_proc(1,:,:),rr)
+                call compute_etapert_3d(lo,hi,efp(:,:,:,:),etasum_proc(1,:,:),rr)
              end select
           end do
 
@@ -295,14 +295,14 @@ contains
 
   end subroutine sum_eta_coarsest_3d
 
-  subroutine compute_etapert_2d(n,lo,hi,etaflux,etapert,rr)
+  subroutine compute_etapert_2d(lo,hi,etaflux,etapert,rr)
 
     use variables, only: rhoh_comp, spec_comp
     use network, only: nspec
     use bl_constants_module
     use geometry, only: nr
 
-    integer         , intent(in   ) :: n, lo(:), hi(:), rr
+    integer         , intent(in   ) :: lo(:), hi(:), rr
     real (kind=dp_t), intent(in   ) :: etaflux(lo(1):,lo(2):,:)
     real (kind=dp_t), intent(inout) :: etapert(0:,:)
     
@@ -350,14 +350,14 @@ contains
 
   end subroutine compute_etapert_2d
 
-  subroutine compute_etapert_3d(n, lo,hi,etaflux,etapert,rr)
+  subroutine compute_etapert_3d(lo,hi,etaflux,etapert,rr)
 
     use variables, only: rhoh_comp, spec_comp
     use network, only: nspec
     use bl_constants_module
     use geometry, only: nr
 
-    integer         , intent(in   ) :: n, lo(:), hi(:), rr
+    integer         , intent(in   ) :: lo(:), hi(:), rr
     real (kind=dp_t), intent(in   ) :: etaflux(lo(1):,lo(2):,lo(3):,:)
     real (kind=dp_t), intent(inout) :: etapert(0:,:)
     
