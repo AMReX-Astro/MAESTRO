@@ -316,7 +316,7 @@ contains
                      s0_old_cart,s0_new_cart,dx,dt,the_bc_level,mla)
 
     if (use_eta .and. evolve_base_state) then
-       call make_eta(nlevs,eta,sold,etaflux,dx,mla)
+       call make_eta(nlevs,eta,sold,etaflux,mla)
     end if
 
     if (spherical .eq. 1) then

@@ -13,7 +13,7 @@ module make_eta_module
 
 contains
 
-  subroutine make_eta(nlevs,eta,sold,etaflux,dx,mla)
+  subroutine make_eta(nlevs,eta,sold,etaflux,mla)
 
     use bl_constants_module
     use geometry, only: spherical, nr
@@ -24,7 +24,6 @@ contains
     real(kind=dp_t)   , intent(inout) :: eta(:,0:,:)
     type(multifab)    , intent(in   ) :: sold(:)
     type(multifab)    , intent(inout) :: etaflux(:)
-    real(kind = dp_t) , intent(in   ) :: dx(:,:)
     type(ml_layout)   , intent(inout) :: mla
 
     ! local
