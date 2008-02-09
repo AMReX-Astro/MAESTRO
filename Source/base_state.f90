@@ -19,7 +19,8 @@ contains
     use define_bc_module
     use bl_constants_module
     use eos_module
-    use probin_module, ONLY: base_cutoff_density, anelastic_cutoff, prob_lo_y, prob_lo_z
+    use probin_module, ONLY: base_cutoff_density, anelastic_cutoff, prob_lo_y, prob_lo_z, &
+                             small_temp, small_dens
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp, ntrac
     use geometry, only: dr, nr, spherical
 
@@ -47,7 +48,7 @@ contains
     integer, parameter :: MAX_VARNAME_LENGTH=80
     integer :: npts_model, nvars_model_file
 
-    real(kind=dp_t) :: min_dens, max_dens
+    real(kind=dp_t) :: min_dens, max_dens, min_temp, max_temp
 
     real(kind=dp_t), allocatable :: base_state(:,:), base_r(:)
     real(kind=dp_t), allocatable :: vars_stored(:)
@@ -167,23 +168,49 @@ contains
     max_dens = maxval(base_state(:,idens_model))
     min_dens = minval(base_state(:,idens_model))
 
+    max_temp = maxval(base_state(:,itemp_model))
+    min_temp = minval(base_state(:,itemp_model))
+
     if ( parallel_IOProcessor() ) then
        print *, ' '
-       print *, 'model read in'
-       print *, ' *** maximum density of model =                   ', max_dens
-       print *, ' *** minimum density of model =                   ', min_dens
-       print *, ' *** anelastic cutoff =                           ', anelastic_cutoff
-       print *, ' *** low density cutoff (for mapping the model) = ', base_cutoff_density
+       print *, 'model read in:'
+       print *, '    maximum density of model =                   ', max_dens
+       print *, '    minimum density of model =                   ', min_dens
+       print *, '    maximum temperature of model =               ', max_temp
+       print *, '    minimum temperature of model =               ', min_temp
+       print *, '    anelastic cutoff =                           ', anelastic_cutoff
+       print *, '    low density cutoff (for mapping the model) = ', base_cutoff_density
        print *, ' '
     end if
 
     if (min_dens < base_cutoff_density .OR. min_dens < anelastic_cutoff) then
        if ( parallel_IOProcessor() ) then
+          print *, ' '
           print *, 'WARNING: minimum model density is lower than one of the cutoff densities'
           print *, '         make sure that the cutoff densities are lower than any density'
           print *, '         of dynamical interest'
+          print *, ' '
        end if
     endif
+
+    if (min_temp < small_temp) then
+       if ( parallel_IOProcessor() ) then
+          print *, ' '
+          print *, 'WARNING: minimum model temperature is lower than the EOS cutoff'
+          print *, '         temperature, small_temp'
+          print *, ' '
+       endif
+    endif
+
+    if (min_dens < small_dens) then
+       if ( parallel_IOProcessor() ) then
+          print *, ' '
+          print *, 'WARNING: minimum model density is lower than the EOS cutoff'
+          print *, '         density, small_dens'
+          print *, ' '
+       endif
+    endif
+
 
     if (anelastic_cutoff < base_cutoff_density) then
        print *, 'ERROR: anelastic cutoff should be at a higher density than the base state'
