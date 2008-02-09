@@ -20,6 +20,7 @@ subroutine varden()
   use make_grav_module
   use make_div_coeff_module
   use probin_module
+  use bl_constants_module
 
   implicit none
 
@@ -134,15 +135,14 @@ subroutine varden()
   call init_geometry(center,nr_fine,dr_base)
 
   do n = 1,nlevs
-     call init_base_state(n,model_file,s0(n,:,:),p0(n,:),gam1(n,:),dx(n,:), &
-                          prob_lo,prob_hi)
+     call init_base_state(n,model_file,s0(n,:,:),p0(n,:),gam1(n,:),dx(n,:))
   enddo
 
 
   ! output
   open(unit=10,file="base.orig")
   do i = 0, nr_fine-1
-     write(10,1000) z(1,i), s0(1,i,rho_comp), s0(1,i,temp_comp), p0(1,i)
+     write(10,1000) base_cc_loc(1,i), s0(1,i,rho_comp), s0(1,i,temp_comp), p0(1,i)
   enddo
   close(unit=10)
 
@@ -170,7 +170,7 @@ subroutine varden()
        
      do i = 0, nr_fine-1
 
-        Hbar = 1.e16 * exp(-((z(1,i) - y_0)**2)/ 1.e14)
+        Hbar = 1.e16 * exp(-((base_cc_loc(1,i) - y_0)**2)/ 1.e14)
      
         ! (rho, T) --> p,h, etc
         den_eos(1)  = s0(1,i,rho_comp)
@@ -205,7 +205,7 @@ subroutine varden()
      w0(:,:) = ZERO
 
      call make_w0(nlevs,w0,w0_old,f,Sbar_in(:,:,1),p0,s0(:,:,rho_comp), &
-                  gam1,eta,dt,dtold,verbose)
+                  gam1,eta,dt,dtold)
   
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -214,7 +214,7 @@ subroutine varden()
      do n=1,nlevs
         call make_grav_cell(n,grav_cell(n,:),s0(n,:,rho_comp))
         call make_div_coeff(n,div_coeff(n,:),s0(n,:,rho_comp),p0(n,:), &
-                            gam1(n,:),grav_cell(n,:),anelastic_cutoff)     
+                            gam1(n,:),grav_cell(n,:))     
      enddo
 
 
@@ -232,7 +232,7 @@ subroutine varden()
      call advect_base(nlevs,w0,Sbar_in,p0_old,p0, &
                       s0_old,s0, &
                       gam1,div_coeff,eta, &
-                      dx(:,1),dt,anelastic_cutoff)
+                      dx(:,1),dt)
 
 
      print *, 'new base pressure', p0(1,1)
@@ -255,7 +255,7 @@ subroutine varden()
   ! output
   open(unit=10,file="base.new")
   do i = 0, nr_fine-1
-     write(10,1000) z(1,i), s0(1,i,rho_comp), s0(1,i,temp_comp), p0(1,i)
+     write(10,1000) base_cc_loc(1,i), s0(1,i,rho_comp), s0(1,i,temp_comp), p0(1,i)
   enddo
   close(unit=10)
 1000 format(1x,5(g20.10))
