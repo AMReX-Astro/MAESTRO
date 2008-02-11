@@ -10,8 +10,8 @@ module base_io_module
 
 contains
 
-  subroutine write_base_state(nlevs,state_name,w0_name,chk_name,s0,p0,gam1,w0, &
-                              div_coeff,problo)
+  subroutine write_base_state(nlevs,state_name,w0_name,eta_name,chk_name, &
+                              s0,p0,gam1,w0,eta,div_coeff,problo)
     
     use parallel
     use bl_prof_module
@@ -24,8 +24,10 @@ contains
     integer          , intent(in) :: nlevs
     character(len=11), intent(in) :: state_name
     character(len=8) , intent(in) :: w0_name
+    character(len=9) , intent(in) :: eta_name
     character(len=8) , intent(in) :: chk_name
-    real(kind=dp_t)  , intent(in) :: s0(:,:,:),p0(:,:),gam1(:,:),div_coeff(:,:),w0(:,:)
+    real(kind=dp_t)  , intent(in) :: s0(:,:,:),p0(:,:),gam1(:,:),div_coeff(:,:)
+    real(kind=dp_t)  , intent(in) :: w0(:,:),eta(:,:,:)
 
     real(kind=dp_t) :: base_r, problo
     character(len=20) :: out_name
@@ -57,7 +59,7 @@ contains
        end do
        close(99)
 
-       ! write out w0 (it is nodal, so it gets a separate file)
+       ! write out w0 (it is edge-based, so it gets a separate file)
        out_name = chk_name // "/" // w0_name
        write(6,*) 'Writing w0 state to ',out_name
        write(6,*) ''
@@ -71,6 +73,22 @@ contains
        end do
        close(99)
 
+       ! write out eta (it is edge-based, so it gets a separate file)
+       out_name = chk_name // "/" // eta_name
+       write(6,*) 'Writing eta on edges to ',out_name
+       write(6,*) ''
+
+       open(unit=99,file=out_name,form = "formatted", access = "sequential",action="write")
+       do n=1,nlevs
+          do i=1,nr(n)+1
+             base_r = problo + (dble(i)-1) * dr(n)
+             write(99,1000)  base_r,eta(n,i,rho_comp), eta(n,i,rhoh_comp), &
+                             (eta(n,i,comp), comp=spec_comp,spec_comp+nspec-1)
+                               
+          end do
+       end do
+       close(99)
+
     endif
 
     call destroy(bpt)
@@ -80,7 +98,8 @@ contains
   end subroutine write_base_state
 
 
-  subroutine read_base_state(nlevs,state_name,w0_name,chk_name,s0,p0,gam1,w0,div_coeff)
+  subroutine read_base_state(nlevs,state_name,w0_name,eta_name,chk_name, &
+                             s0,p0,gam1,w0,eta,div_coeff)
 
     use parallel
     use bl_prof_module
@@ -92,8 +111,10 @@ contains
     integer          , intent(in   ) :: nlevs
     character(len=11), intent(in   ) :: state_name
     character(len=8) , intent(in   ) :: w0_name
+    character(len=9) , intent(in   ) :: eta_name
     character(len=8) , intent(in   ) :: chk_name    
-    real(kind=dp_t)  , intent(inout) :: s0(:,:,:),p0(:,:),gam1(:,:),div_coeff(:,:),w0(:,:)
+    real(kind=dp_t)  , intent(inout) :: s0(:,:,:),p0(:,:),gam1(:,:),div_coeff(:,:)
+    real(kind=dp_t)  , intent(inout) :: w0(:,:),eta(:,:,:)
     real(kind=dp_t)  , allocatable   :: base_r(:,:)
 
     real(kind=dp_t) :: r_dummy
@@ -133,6 +154,21 @@ contains
     do n=1,nlevs
        do i=1,nr(n)+1
           read(99,*)  r_dummy, w0(n,i)
+       end do
+    end do
+    close(99)
+
+    ! read in eta
+    out_name = chk_name // "/" // eta_name
+    if (parallel_IOProcessor()) then
+      print *,'Reading eta state from ',out_name
+    end if
+
+    open(unit=99,file=out_name)
+    do n=1,nlevs
+       do i=1,nr(n)+1
+          read(99,*)  r_dummy,eta(n,i,rho_comp), eta(n,i,rhoh_comp), &
+                     (eta(n,i,comp), comp=spec_comp,spec_comp+nspec-1)
        end do
     end do
     close(99)
