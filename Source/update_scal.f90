@@ -174,7 +174,7 @@ contains
 
     use network,       only: nspec
     use variables,     only: spec_comp, rho_comp
-    use probin_module, only: evolve_base_state
+    use probin_module, only: evolve_base_state, anelastic_cutoff
     use bl_constants_module
 
 
@@ -198,9 +198,20 @@ contains
     real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
     integer            :: i, j, comp, comp2
+    integer            :: nr, r, r_anel
     real (kind = dp_t) :: delta_base,divterm
     real (kind = dp_t) :: delta,frac,sum
     real (kind = dp_t) :: smin(nstart:nstop),smax(nstart:nstop)
+
+    ! This is used to zero the eta contribution above the anelastic_cutoff
+    nr = size(base_old,dim=1)
+    r_anel = nr-1
+    do r = 0,nr-1
+       if (base_old(r,rho_comp) .lt. anelastic_cutoff .and. r_anel .eq. nr-1) then
+          r_anel = r
+          exit
+       end if
+    end do
 
     do comp = nstart, nstop
        do j = lo(2), hi(2)
@@ -215,7 +226,7 @@ contains
              snew(i,j,comp) = sold(i,j,comp) + delta_base &
                   - dt * divterm + dt * force(i,j,comp)
 
-             if (evolve_base_state) then
+             if (evolve_base_state .and. j .lt. r_anel) then
                 snew(i,j,comp) = snew(i,j,comp) + dt/dx(2)*(eta(j+1,comp)-eta(j,comp))
              end if
 

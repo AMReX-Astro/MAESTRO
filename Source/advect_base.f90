@@ -56,7 +56,7 @@ contains
     use eos_module
     use variables, only: spec_comp, rho_comp, temp_comp, rhoh_comp
     use geometry, only: nr
-    use probin_module, only: grav_const
+    use probin_module, only: grav_const, anelastic_cutoff
 
     integer        , intent(in   ) :: n
     real(kind=dp_t), intent(in   ) :: vel(0:)
@@ -68,26 +68,25 @@ contains
     
     ! Local variables
     integer :: r,comp
+    integer :: r_anel
+    real(kind=dp_t) :: eta_avg
     
     real (kind = dp_t), allocatable :: force(:)
     real (kind = dp_t), allocatable :: edge(:)
-
-    real (kind = dp_t), allocatable :: dpdroverrho(:)
     
     ! Cell-centered
     allocate(force(0:nr(n)-1))
     
     ! Edge-centered
     allocate(edge(0:nr(n)))
-
-    ! Cell-centered
-    allocate(dpdroverrho(0:nr(n)-1))
    
-    dpdroverrho(      0) = abs(grav_const)
-    dpdroverrho(nr(n)-1) = abs(p0_old(nr(n)-1)-p0_old(nr(n)-2)) / dz /  s0_old(nr(n)-1,rho_comp)
-    do r = 1, nr(n)-2
-       dpdroverrho(r) = HALF*abs(p0_old(r+1)-p0_old(r-1)) / dz /  s0_old(r,rho_comp)
-       dpdroverrho(r) = min(dpdroverrho(r), abs(grav_const))
+    ! This is used to zero the eta contribution above the anelastic_cutoff
+    r_anel = nr(1)-1
+    do r = 0,nr(1)-1
+       if (s0_old(r,rho_comp) .lt. anelastic_cutoff .and. r_anel .eq. nr(1)-1) then
+          r_anel = r
+          exit
+       end if
     end do
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -97,9 +96,11 @@ contains
     call make_edge_state_1d(n,p0_old,edge,vel,force,1,dz,dt)
     do r = 0,nr(n)-1
        p0_new(r) = p0_old(r) &
-            - dt / dz * HALF * (vel(r) + vel(r+1)) * (edge(r+1) - edge(r)) &
-!           + HALF * dt * (eta(r,rho_comp)+eta(r+1,rho_comp))*abs(grav_const)
-            + HALF * dt * (eta(r,rho_comp)+eta(r+1,rho_comp))*dpdroverrho(r)
+            - dt / dz * HALF * (vel(r) + vel(r+1)) * (edge(r+1) - edge(r)) 
+       if (r .lt. r_anel) then
+         eta_avg = HALF * (eta(r,rho_comp)+eta(r+1,rho_comp))
+         p0_new(r) = p0_new(r) + dt * eta_avg * abs(grav_const)
+       end if
     end do
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -114,8 +115,10 @@ contains
        
        do r = 0,nr(n)-1
           s0_new(r,comp) = s0_old(r,comp) &
-               - dt / dz * (edge(r+1) * vel(r+1) - edge(r) * vel(r)) &
-               - dt / dz * (eta(r+1,comp) - eta(r,comp))
+               - dt / dz * (edge(r+1) * vel(r+1) - edge(r) * vel(r)) 
+          if (r .lt. r_anel) then
+            s0_new(r,comp) = s0_new(r,comp) - dt/dz*(eta(r+1,comp) - eta(r,comp))
+          end if
        end do
        
     enddo
@@ -142,12 +145,14 @@ contains
     
     do r = 0,nr(n)-1
        s0_new(r,rhoh_comp) = s0_old(r,rhoh_comp) &
-            - dt / dz * (edge(r+1) * vel(r+1) - edge(r) * vel(r)) &
-            - dt / dz * (eta(r+1,rhoh_comp) - eta(r,rhoh_comp)) &
-!           + HALF * dt * (eta(r,rho_comp)+eta(r+1,rho_comp))*abs(grav_const) &
-            + HALF * dt * (eta(r,rho_comp)+eta(r+1,rho_comp))*dpdroverrho(r)
+            - dt / dz * (edge(r+1) * vel(r+1) - edge(r) * vel(r)) 
+       if (r .lt. r_anel) then
+         eta_avg = HALF * (eta(r,rho_comp)+eta(r+1,rho_comp))
+         s0_new(r,rhoh_comp) = s0_new(r,rhoh_comp) &
+            - dt/dz * (eta(r+1,rhoh_comp) - eta(r,rhoh_comp)) &
+            + dt    *  eta_avg * abs(grav_const) 
+       end if
     end do
-    
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! MAKE TEMP0 AND GAM1 FROM P0 AND RHO0
@@ -177,7 +182,6 @@ contains
     end do
     
     deallocate(force,edge)
-    deallocate(dpdroverrho)
     
   end subroutine advect_base_state_planar
   
@@ -218,7 +222,6 @@ contains
     
     ! Cell-centered
     allocate(force(0:nr(n)-1))
-    allocate(eta(0:nr(n)-1))
     allocate(gam1_old(0:nr(n)-1))
     allocate(grav_cell(0:nr(n)-1))
     allocate(div_coeff_new(0:nr(n)-1))
