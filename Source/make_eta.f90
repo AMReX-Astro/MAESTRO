@@ -13,18 +13,16 @@ module make_eta_module
 
 contains
 
-  subroutine make_eta(nlevs,eta,sold,s0,etaflux,mla)
+  subroutine make_eta(nlevs,eta,sold,etaflux,mla)
 
     use bl_constants_module
     use geometry, only: spherical, nr
     use variables, only: nscal, rho_comp, rhoh_comp, spec_comp
     use network, only: nspec
-    use probin_module, only: anelastic_cutoff
 
     integer           , intent(in   ) :: nlevs
     real(kind=dp_t)   , intent(inout) :: eta(:,0:,:)
     type(multifab)    , intent(in   ) :: sold(:)
-    real(kind=dp_t)   , intent(in   ) :: s0(:,0:,:)
     type(multifab)    , intent(inout) :: etaflux(:)
     type(ml_layout)   , intent(inout) :: mla
 
@@ -44,7 +42,6 @@ contains
     integer :: domlo(sold(1)%dim),domhi(sold(1)%dim)
     integer :: lo(sold(1)%dim),hi(sold(1)%dim)
     integer :: i,r,rpert,n,dm,rr,comp
-    integer :: r_anel
 
     type(bl_prof_timer), save :: bpt
 
@@ -105,40 +102,13 @@ contains
           etasum(1,:,comp) = target_buffer
        end do
 
-       ! This is the version with eta not set to zero
-       do r=0,nr(1)-1
+       do r=0,nr(1)
           eta(1,r,rhoh_comp) = etasum(1,r,rhoh_comp) / dble(ncell(1,r))
           do comp=spec_comp,spec_comp+nspec-1
              eta(1,r,comp) = etasum(1,r,comp) / dble(ncell(1,r))
              eta(1,r,rho_comp) = eta(1,r,rho_comp) + eta(1,r,comp)
           end do
        end do
-
-       ! This is the version with eta set to zero above the anelastic cutoff.
-!      r_anel = nr(1)-1
-!      do r = 0,nr(1)-1
-!         if (s0(1,r,rho_comp) .lt. anelastic_cutoff .and. r_anel .eq. nr(1)-1) then
-!            r_anel = r
-!            exit
-!         end if
-!      end do
-!      if (parallel_IOProcessor()) print *,'R_ANEL FOR ETA ',r_anel
-
-!      do r=0,r_anel-1
-!         eta(1,r,rhoh_comp) = etasum(1,r,rhoh_comp) / dble(ncell(1,r))
-!         do comp=spec_comp,spec_comp+nspec-1
-!            eta(1,r,comp) = etasum(1,r,comp) / dble(ncell(1,r))
-!            eta(1,r,rho_comp) = eta(1,r,rho_comp) + eta(1,r,comp)
-!         end do
-!      end do
-
-!      do r=r_anel,nr(1)
-!         eta(1,r,rhoh_comp) = 0.d0
-!         eta(1,r, rho_comp) = 0.d0
-!         do comp=spec_comp,spec_comp+nspec-1
-!            eta(1,r,comp) = 0.d0
-!         end do
-!      end do
 
        ! now we compute eta at the finer levels
        do n=2,nlevs
