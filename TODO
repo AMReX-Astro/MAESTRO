@@ -14,4 +14,6 @@
 -- fix restart for test_smallscale -- the inflow boundary is not set
    right at a restart
 
+-- add the  w d(p0) / dz term into mkscalforce.f90 for the temperature
+   equation.
 
