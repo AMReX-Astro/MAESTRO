@@ -225,6 +225,7 @@ contains
     allocate(gam1_old(0:nr(n)-1))
     allocate(grav_cell(0:nr(n)-1))
     allocate(div_coeff_new(0:nr(n)-1))
+    allocate(eta(0:nr(n)-1))
     
     ! Edge-centered
     allocate(edge(0:nr(n)))
