@@ -81,8 +81,11 @@ contains
             integral = abs(grav_center(j))*rho0(j)*dr(n)/(p0(j)*gam1(j))
 
          else if (nu .eq. ZERO .or. mu .eq. ZERO .or. &
-                  ((gam1(j) + HALF*mu*dr(n))/(gam1(j) - HALF*mu*dr(n))) .le. ZERO .or. &
-                  ((p0(j) + HALF*nu*dr(n))/(p0(j) - HALF*nu*dr(n))) .le. ZERO) then
+                  (nu*gam1(j) - mu*p0(j)) .eq. ZERO .or. &
+                  ((gam1(j) + HALF*mu*dr(n))/ &
+                   (gam1(j) - HALF*mu*dr(n))) .le. ZERO .or. &
+                  ((p0(j) + HALF*nu*dr(n))/ &
+                   (p0(j) - HALF*nu*dr(n))) .le. ZERO) then
 
             integral = abs(grav_center(j))*rho0(j)*dr(n)/(p0(j)*gam1(j))
 
