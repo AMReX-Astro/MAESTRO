@@ -1,7 +1,10 @@
-module make_w0_module
+! compute w0 -- the base state velocity.  This is based on the average 
+! heating in a layer (Sbar) and the mixing (the eta quantities).  The
+! computation of w0 for plane-parallel atmospheres was first described
+! in paper II, with modifications due to mixing in paper III.  For 
+! spherical geometry, it was first described in paper III.
 
-  ! adjust the base state quantities in response to the heating.
-  ! This is step 3 of ABRZ2.
+module make_w0_module
 
   use bl_types
 
