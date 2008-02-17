@@ -20,3 +20,5 @@
 
 -- make_w0 for spherical force not return the velocity force f,
    (1/rho0) grad pi_0
+
+-- add the eta stuff in for spherical.
