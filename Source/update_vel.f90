@@ -303,14 +303,14 @@ contains
                            HALF*(wmac(i,j,k) + wmac(i,j,k+1)) * normal(i,j,k,3)
 
 
-                !unew(i,j,k,1) = unew(i,j,k,1) - &
-                !     dt * U_dot_er * gradw0_cart(i,j,k) * normal(i,j,k,1)
+                unew(i,j,k,1) = unew(i,j,k,1) - &
+                     dt * U_dot_er * gradw0_cart(i,j,k) * normal(i,j,k,1)
 
-                !unew(i,j,k,2) = unew(i,j,k,2) - &
-                !     dt * U_dot_er * gradw0_cart(i,j,k) * normal(i,j,k,2)
+                unew(i,j,k,2) = unew(i,j,k,2) - &
+                     dt * U_dot_er * gradw0_cart(i,j,k) * normal(i,j,k,2)
 
-                !unew(i,j,k,3) = unew(i,j,k,3) - &
-                !     dt * U_dot_er * gradw0_cart(i,j,k) * normal(i,j,k,3)
+                unew(i,j,k,3) = unew(i,j,k,3) - &
+                     dt * U_dot_er * gradw0_cart(i,j,k) * normal(i,j,k,3)
 
 
                 ! B) Subtract (w0 dot grad) U term from new Utilde
