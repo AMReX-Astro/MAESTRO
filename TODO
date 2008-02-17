@@ -22,3 +22,7 @@
    (1/rho0) grad pi_0
 
 -- add the eta stuff in for spherical.
+
+-- some places (like in rhoh_vs_t.f90), we loop over 1, nr(nlevs)-1
+   when dealing with the base state, but in others, we loop over
+   1, nr(n)-1 -- which should we be doing?
