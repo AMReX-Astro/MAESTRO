@@ -130,7 +130,8 @@ contains
     if(predict_temp_at_edges) then
 
        ! make force for temperature
-       call mktempforce(nlevs,scal_force,temp_comp,sold,thermal,p0_old,dx,mla,the_bc_level)
+       call mktempforce(nlevs,scal_force,temp_comp,umac,sold,thermal,p0_old,p0_old,normal, &
+                        dx,mla,the_bc_level)
 
     else
 
