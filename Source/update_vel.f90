@@ -75,7 +75,6 @@ contains
           uepy => dataptr(uedge(n,2),i)
           spp  => dataptr(sponge(n),i)
           fp   =>  dataptr(force(n),i)
-          np   =>  dataptr(normal(n),i)
           lo = lwb(get_box(uold(n),i))
           hi = upb(get_box(uold(n),i))
           select case (dm)
@@ -90,6 +89,7 @@ contains
              uepz  => dataptr(uedge(n,3),i)
              w0p   => dataptr(w0_cart(n),i)
              w0fp  => dataptr(w0_force_cart(n),i)
+             np   =>  dataptr(normal(n),i)
              call update_velocity_3d(n, &
                                      uop(:,:,:,:), unp(:,:,:,:), &
                                      ump(:,:,:,1), vmp(:,:,:,1), &
