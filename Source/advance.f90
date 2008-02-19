@@ -50,7 +50,7 @@ contains
     use fill_3d_module
     use cell_to_edge_module
     use define_bc_module
-    use probin_module, only: verbose
+    use probin_module, only: verbose, predict_temp_at_edges
     
     logical,         intent(in   ) :: init_mode
     type(ml_layout), intent(inout) :: mla
@@ -323,6 +323,7 @@ contains
        call multifab_build(thermal(n), mla%la(n), 1, 1)
     end do
     
+    ! thermal is the forcing for rhoh or temperature
     if(use_thermal_diffusion) then
        call make_explicit_thermal(mla,dx,thermal,s1,p0_1, &
                                   the_bc_tower,temp_diffusion_formulation)
@@ -332,20 +333,22 @@ contains
        end do
     end if
     
-    ! thermal is the temperature forcing if we use the temperature godunov predictor
-    ! so we add the reaction terms to thermal
-    if(istep .le. 1) then
-       call add_react_to_thermal(nlevs,thermal,rho_omegadot1,s1, &
-                                 the_bc_tower%bc_tower_array,mla,dx)
-    else
-       call add_react_to_thermal(nlevs,thermal,rho_omegadot2,s1, &
-                                 the_bc_tower%bc_tower_array,mla,dx)
-
-       if(.not. do_half_alg) then
-          do n=1,nlevs
-             call multifab_build(rho_omegadot2_hold(n), mla%la(n), nspec, 0)
-             call multifab_copy_c(rho_omegadot2_hold(n),1,rho_omegadot2(n),1,3,0)
-          end do
+    ! if we are predicting temperature at edges, we need to add the reaction 
+    ! terms to thermal
+    if(predict_temp_at_edges) then
+       if(istep .le. 1) then
+          call add_react_to_thermal(nlevs,thermal,rho_omegadot1,s1, &
+                                    the_bc_tower%bc_tower_array,mla,dx)
+       else
+          call add_react_to_thermal(nlevs,thermal,rho_omegadot2,s1, &
+                                    the_bc_tower%bc_tower_array,mla,dx)
+          
+          if(.not. do_half_alg) then
+             do n=1,nlevs
+                call multifab_build(rho_omegadot2_hold(n), mla%la(n), nspec, 0)
+                call multifab_copy_c(rho_omegadot2_hold(n),1,rho_omegadot2(n),1,3,0)
+             end do
+          end if
        end if
     end if
             
@@ -602,6 +605,7 @@ contains
           call multifab_build(thermal(n), mla%la(n), 1, 1)
        end do
 
+       ! thermal is the forcing for rhoh or temperature
        if(use_thermal_diffusion) then
           call make_explicit_thermal(mla,dx,thermal,s1,p0_1, &
                                      the_bc_tower,temp_diffusion_formulation)
@@ -611,18 +615,20 @@ contains
           end do
        end if
        
-       ! thermal is the temperature forcing if we use the temperature godunov predictor
-       ! so we add the reaction terms to thermal
-       if(istep .le. 1) then
-          call add_react_to_thermal(nlevs,thermal,rho_omegadot1,s1, &
-                                    the_bc_tower%bc_tower_array,mla,dx)
-       else
-          call add_react_to_thermal(nlevs,thermal,rho_omegadot2_hold,s1, &
-                                    the_bc_tower%bc_tower_array,mla,dx)
+       ! if we are predicting temperature at edges, we need to add the reaction 
+       ! terms to thermal
+       if(predict_temp_at_edges) then
+          if(istep .le. 1) then
+             call add_react_to_thermal(nlevs,thermal,rho_omegadot1,s1, &
+                                       the_bc_tower%bc_tower_array,mla,dx)
+          else
+             call add_react_to_thermal(nlevs,thermal,rho_omegadot2_hold,s1, &
+                                       the_bc_tower%bc_tower_array,mla,dx)
 
-          do n=1,nlevs
-             call destroy(rho_omegadot2_hold(n))
-          end do
+             do n=1,nlevs
+                call destroy(rho_omegadot2_hold(n))
+             end do
+          end if
        end if
 
        do n=1,nlevs
