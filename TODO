@@ -12,9 +12,6 @@
    to anelastic_cutoff), and understand what values of this give a valid
    basestate expansion.
 
--- fix restart for test_smallscale -- the inflow boundary is not set
-   right at a restart
-
 -- make_w0 for spherical force not return the velocity force f,
    (1/rho0) grad pi_0
 
