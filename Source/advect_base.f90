@@ -211,7 +211,7 @@ contains
     real(kind=dp_t) :: div_w0
 
     real (kind = dp_t), allocatable :: force(:)
-    real (kind = dp_t), allocatable :: eta(:)
+    real (kind = dp_t), allocatable :: psi(:)
     real (kind = dp_t), allocatable :: edge(:)
     real (kind = dp_t), allocatable :: div_coeff_new(:)
     real (kind = dp_t), allocatable :: beta(:),beta_new(:),beta_nh(:)
@@ -225,7 +225,7 @@ contains
     allocate(gam1_old(0:nr(n)-1))
     allocate(grav_cell(0:nr(n)-1))
     allocate(div_coeff_new(0:nr(n)-1))
-    allocate(eta(0:nr(n)-1))
+    allocate(psi(0:nr(n)-1))
     
     ! Edge-centered
     allocate(edge(0:nr(n)))
@@ -337,12 +337,12 @@ contains
        force(r) = -s0_old(r,rhoh_comp) * div_w0 - &
             2.0_dp_t*s0_old(r,rhoh_comp)*HALF*(vel(r) + vel(r+1))/base_cc_loc(n,r)
        
-       ! add eta at time-level n to the force for the prediction
-       eta(r) = gam1_old(r) * p0_old(r) * (Sbar_in(r) - div_w0)
-       force(r) = force(r) + eta(r)
+       ! add psi at time-level n to the force for the prediction
+       psi(r) = gam1_old(r) * p0_old(r) * (Sbar_in(r) - div_w0)
+       force(r) = force(r) + psi(r)
        
-       ! construct a new, time-centered eta for the final update
-       eta(r) = HALF*(gam1(r)*p0_new(r) + gam1_old(r)*p0_old(r))* &
+       ! construct a new, time-centered psi for the final update
+       psi(r) = HALF*(gam1(r)*p0_new(r) + gam1_old(r)*p0_old(r))* &
             (Sbar_in(r) - div_w0)
     end do
     
@@ -354,7 +354,7 @@ contains
             dtdr / base_cc_loc(n,r)**2 * ( base_loedge_loc(n,r+1)**2 * edge(r+1) * vel(r+1) &
             -base_loedge_loc(n,r  )**2 * edge(r  ) * vel(r  ))
        
-       s0_new(r,rhoh_comp) = s0_new(r,rhoh_comp) + dt * eta(r)
+       s0_new(r,rhoh_comp) = s0_new(r,rhoh_comp) + dt * psi(r)
        
     end do
     
@@ -386,7 +386,7 @@ contains
        
     end do
     
-    deallocate(force,eta,edge,beta,beta_new,beta_nh,div_coeff_new,gam1_old,grav_cell)
+    deallocate(force,psi,edge,beta,beta_new,beta_nh,div_coeff_new,gam1_old,grav_cell)
     
   end subroutine advect_base_state_spherical
   
