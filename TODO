@@ -13,9 +13,12 @@
    basestate expansion.
 
 -- make_w0 for spherical force not return the velocity force f,
-   (1/rho0) grad pi_0
+   (1/rho0) grad pi_0.  Also, change the sign convention -- the
+   force should be the positive force, but what we are computing
+   for plane-parallel in make_w0 is actually -F, but we are calling
+   it F, so that's confusing.
 
--- add the eta stuff in for spherical.
+-- add the eta stuff in for spherical (also in the predictor)
 
 -- some places (like in rhoh_vs_t.f90), we loop over 1, nr(nlevs)-1
    when dealing with the base state, but in others, we loop over
