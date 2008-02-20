@@ -12,7 +12,7 @@ module modify_scal_force_module
 
 contains
 
-  subroutine modify_scal_force(nlevs,force,s,umac,base,base_edge,w0,dx,base_cart, &
+  subroutine modify_scal_force(nlevs,force,s,umac,base,base_edge,w0,eta,dx,base_cart, &
                                start_comp,num_comp,mla,the_bc_level)
 
     use bl_prof_module
@@ -32,6 +32,7 @@ contains
     type(multifab) , intent(in   ) :: s(:)
     type(multifab) , intent(in   ) :: umac(:,:)
     real(kind=dp_t), intent(in   ) :: base(:,0:,:), base_edge(:,0:,:), w0(:,0:)
+    real(kind=dp_t), intent(in   ) :: eta(:,0:,:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     type(multifab) , intent(in   ) :: base_cart(:)
     type(ml_layout), intent(inout) :: mla
@@ -78,7 +79,8 @@ contains
              do comp = start_comp, start_comp+num_comp-1
                 call modify_scal_force_2d(fp(:,:,1,comp),sp(:,:,1,comp), lo, hi, &
                                           ng,ump(:,:,1,1),vmp(:,:,1,1), &
-                                          base(n,:,comp),base_edge(n,:,comp),w0(n,:),dx(n,:))
+                                          base(n,:,comp),base_edge(n,:,comp), &
+                                          w0(n,:),eta(n,:,comp),dx(n,:))
              end do
           case(3)
              wmp  => dataptr(umac(n,3), i)
@@ -97,7 +99,7 @@ contains
                                                   lo,hi,ng,ump(:,:,:,1), &
                                                   vmp(:,:,:,1),wmp(:,:,:,1), &
                                                   base(n,:,comp),base_edge(n,:,comp), &
-                                                  w0(n,:),dx(n,:))
+                                                  w0(n,:),eta(n,:,comp),dx(n,:))
                 end do
              end if
           end select
@@ -127,7 +129,7 @@ contains
     
   end subroutine modify_scal_force
   
-  subroutine modify_scal_force_2d(force,s,lo,hi,ng,umac,vmac,base,base_edge,w0,dx)
+  subroutine modify_scal_force_2d(force,s,lo,hi,ng,umac,vmac,base,base_edge,w0,eta,dx)
 
     integer        , intent(in   ) :: lo(:),hi(:),ng
     real(kind=dp_t), intent(  out) :: force(lo(1)-1:,lo(2)-1:)
@@ -136,6 +138,7 @@ contains
     real(kind=dp_t), intent(in   ) ::  vmac(lo(1)-1:,lo(2)-1:)
     real(kind=dp_t), intent(in   ) ::  base(0:), base_edge(0:)
     real(kind=dp_t), intent(in   ) ::    w0(0:)
+    real(kind=dp_t), intent(in   ) ::  eta(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
     
     integer :: i,j
@@ -150,13 +153,14 @@ contains
                +(vmac(i,j+1) * base_edge(j+1) &
                - vmac(i,j  ) * base_edge(j  ) )/ dx(2)
           
-          force(i,j) = force(i,j) - (s(i,j)-base(j))*divu - divbaseu
+          force(i,j) = force(i,j) - (s(i,j)-base(j))*divu - divbaseu + &
+               (eta(j+1) - eta(j))/dx(2)
        end do
     end do
     
   end subroutine modify_scal_force_2d
   
-  subroutine modify_scal_force_3d_cart(force,s,lo,hi,ng,umac,vmac,wmac,base,base_edge,w0,dx)
+  subroutine modify_scal_force_3d_cart(force,s,lo,hi,ng,umac,vmac,wmac,base,base_edge,w0,eta,dx)
 
     integer        , intent(in   ) :: lo(:),hi(:),ng
     real(kind=dp_t), intent(  out) :: force(lo(1)-1:,lo(2)-1:,lo(3)-1:)
@@ -166,6 +170,7 @@ contains
     real(kind=dp_t), intent(in   ) ::  wmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
     real(kind=dp_t), intent(in   ) :: base(0:), base_edge(0:)
     real(kind=dp_t), intent(in   ) ::   w0(0:)
+    real(kind=dp_t), intent(in   ) ::  eta(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
     
     integer :: i,j,k
@@ -182,7 +187,8 @@ contains
                   +(wmac(i,j,k+1) * base_edge(k+1) &
                   - wmac(i,j,k  ) * base_edge(k  ))/ dx(3)
              divu = divu + (w0(k+1)-w0(k))/dx(3)
-             force(i,j,k) = force(i,j,k) - (s(i,j,k)-base(k))*divu - divbaseu
+             force(i,j,k) = force(i,j,k) - (s(i,j,k)-base(k))*divu - divbaseu + &
+                  (eta(k+1) - eta(k))/dx(3)
           end do
        end do
     end do
