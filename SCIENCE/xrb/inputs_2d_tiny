@@ -31,8 +31,6 @@
  pmask_x = T
  pmask_y = F
 
- hg_dense_stencil = F
-
     verbose = 1
  mg_verbose = 0
  cg_verbose = 0
