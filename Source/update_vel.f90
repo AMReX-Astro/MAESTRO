@@ -20,6 +20,7 @@ contains
     use ml_restriction_module
     use multifab_fill_ghost_module
     use multifab_physbc_module
+    use geometry, only: spherical
 
     integer           , intent(in   ) :: nlevs
     type(multifab)    , intent(in   ) :: uold(:)
@@ -89,7 +90,9 @@ contains
              uepz  => dataptr(uedge(n,3),i)
              w0p   => dataptr(w0_cart(n),i)
              w0fp  => dataptr(w0_force_cart(n),i)
-             np   =>  dataptr(normal(n),i)
+             if(spherical .eq. 1) then
+                np   =>  dataptr(normal(n),i)
+             end if
              call update_velocity_3d(n, &
                                      uop(:,:,:,:), unp(:,:,:,:), &
                                      ump(:,:,:,1), vmp(:,:,:,1), &
