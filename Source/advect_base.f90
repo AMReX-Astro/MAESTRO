@@ -93,22 +93,38 @@ contains
 ! UPDATE P0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     force = ZERO
+    do r = 0, nr(n)-1
+       if (r .lt. r_anel) then
+          force(r) = HALF * (eta(r,rho_comp)+eta(r+1,rho_comp)) * abs(grav_const)
+       endif
+    enddo
+
     call make_edge_state_1d(n,p0_old,edge,vel,force,1,dz,dt)
-    do r = 0,nr(n)-1
+
+    do r = 0, nr(n)-1
        p0_new(r) = p0_old(r) &
             - dt / dz * HALF * (vel(r) + vel(r+1)) * (edge(r+1) - edge(r)) 
+
        if (r .lt. r_anel) then
          eta_avg = HALF * (eta(r,rho_comp)+eta(r+1,rho_comp))
          p0_new(r) = p0_new(r) + dt * eta_avg * abs(grav_const)
        end if
+
     end do
+
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! UPDATE RHOX0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     do comp = spec_comp,spec_comp+nspec-1
+
        do r = 0,nr(n)-1
-          force(r) = -s0_old(r,comp) * (vel(r+1) - vel(r)) / dz
+          force(r) = -s0_old(r,comp) * (vel(r+1) - vel(r)) / dz 
+
+          if (r .lt. r_anel) then
+             force(r) = force(r) - (eta(r+1,comp) - eta(r,comp))/dz
+          endif
+
        end do
        
        call make_edge_state_1d(n,s0_old(:,comp),edge,vel,force,1,dz,dt)
@@ -116,12 +132,15 @@ contains
        do r = 0,nr(n)-1
           s0_new(r,comp) = s0_old(r,comp) &
                - dt / dz * (edge(r+1) * vel(r+1) - edge(r) * vel(r)) 
+
           if (r .lt. r_anel) then
             s0_new(r,comp) = s0_new(r,comp) - dt/dz*(eta(r+1,comp) - eta(r,comp))
           end if
+
        end do
        
     enddo
+
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! UPDATE RHO0 FROM RHOX0
@@ -139,6 +158,13 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     do r = 0,nr(n)-1
        force(r) = -s0_old(r,rhoh_comp) * (vel(r+1) - vel(r)) / dz
+
+       if (r .lt. r_anel) then
+          eta_avg = HALF * (eta(r,rho_comp)+eta(r+1,rho_comp))
+          force(r) = force(r) - (eta(r+1,rhoh_comp) - eta(r,rhoh_comp))/dz + &
+               eta_avg * abs(grav_const)
+       endif
+
     end do
     
     call make_edge_state_1d(n,s0_old(:,rhoh_comp),edge,vel,force,1,dz,dt)
@@ -146,13 +172,16 @@ contains
     do r = 0,nr(n)-1
        s0_new(r,rhoh_comp) = s0_old(r,rhoh_comp) &
             - dt / dz * (edge(r+1) * vel(r+1) - edge(r) * vel(r)) 
+
        if (r .lt. r_anel) then
          eta_avg = HALF * (eta(r,rho_comp)+eta(r+1,rho_comp))
          s0_new(r,rhoh_comp) = s0_new(r,rhoh_comp) &
             - dt/dz * (eta(r+1,rhoh_comp) - eta(r,rhoh_comp)) &
             + dt    *  eta_avg * abs(grav_const) 
        end if
+
     end do
+
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! MAKE TEMP0 AND GAM1 FROM P0 AND RHO0
