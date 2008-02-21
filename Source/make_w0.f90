@@ -87,9 +87,7 @@ contains
     real(kind=dp_t), allocatable ::    edge(:)
     real(kind=dp_t), allocatable :: dpdroverrho(:)
     real(kind=dp_t)              :: eta_avg
-
-    ! Edge-centered
-    allocate(edge(0:nr(n)))
+    real(kind=dp_t)              :: vel_avg, div_avg, dt_avg
 
     ! Cell-centered
     allocate(vel_old_cen(0:nr(n)-1))
@@ -124,21 +122,16 @@ contains
     end if
 
     ! Compute the 1/rho0 grad pi0 term.
-
+    dt_avg = HALF * (dt + dtold)
     do r = 0,nr(n)-1
        vel_old_cen(r) = HALF * (vel_old(r) + vel_old(r+1))
        vel_new_cen(r) = HALF * (vel    (r) + vel    (r+1))
+       vel_avg = HALF * (dt *  vel_old_cen(r)           + dtold *  vel_new_cen(r)  ) / dt_avg
+       div_avg = HALF * (dt * (vel_old(r+1)-vel_old(r)) + dtold * (vel(r+1)-vel(r))) / dt_avg
+       f(r) = (vel_new_cen(r)-vel_old_cen(r)) / dt_avg + &
+               vel_avg * div_avg / dr(n)
     end do
 
-    force = ZERO
-    call make_edge_state_1d(n,vel_old_cen,edge,vel_old,force,1,dr(n),dt)
-
-    do r = 0,nr(n)-1
-       f(r) = (vel_new_cen(r)-vel_old_cen(r)) / (HALF*(dt+dtold)) + &
-            HALF*(vel_old_cen(r)+vel_new_cen(r)) * (edge(r+1)-edge(r)) / dr(n)
-    end do
-
-    deallocate(edge)
     deallocate(vel_old_cen,vel_new_cen,force)
 
   end subroutine make_w0_planar
