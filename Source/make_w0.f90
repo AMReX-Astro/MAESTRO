@@ -67,7 +67,6 @@ contains
 
     use geometry, only: nr, dr
     use variables, only: rho_comp
-    use make_edge_state_module
     use bl_constants_module
     use probin_module, only: grav_const, evolve_base_state
 
