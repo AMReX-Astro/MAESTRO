@@ -148,7 +148,7 @@ contains
        do i = lo(1),hi(1)
           divu =  (umac(i+1,j) - umac(i,j)) / dx(1) &
                +( (vmac(i,j+1) + w0(j+1)) &
-               -(vmac(i,j)   + w0(j)  ) ) / dx(2)
+                 -(vmac(i,j)   + w0(j)  ) ) / dx(2)
           divbaseu = base(j)*(umac(i+1,j) - umac(i,j))/dx(1) &
                +(vmac(i,j+1) * base_edge(j+1) &
                - vmac(i,j  ) * base_edge(j  ) )/ dx(2)
@@ -180,12 +180,12 @@ contains
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
              divu = (umac(i+1,j,k) - umac(i,j,k)) / dx(1) &
-                  +(vmac(i,j+1,k) - vmac(i,j,k)) / dx(2) &
-                  +(wmac(i,j,k+1) - wmac(i,j,k)) / dx(3)
+                   +(vmac(i,j+1,k) - vmac(i,j,k)) / dx(2) &
+                   +(wmac(i,j,k+1) - wmac(i,j,k)) / dx(3)
              divbaseu = base(k)*( (umac(i+1,j,k) - umac(i,j,k))/dx(1) &
-                  +(vmac(i,j+1,k) - vmac(i,j,k))/dx(2) ) &
-                  +(wmac(i,j,k+1) * base_edge(k+1) &
-                  - wmac(i,j,k  ) * base_edge(k  ))/ dx(3)
+                                 +(vmac(i,j+1,k) - vmac(i,j,k))/dx(2) ) &
+                                 +(wmac(i,j,k+1) * base_edge(k+1) &
+                                 - wmac(i,j,k  ) * base_edge(k  ))/ dx(3)
              divu = divu + (w0(k+1)-w0(k))/dx(3)
              force(i,j,k) = force(i,j,k) - (s(i,j,k)-base(k))*divu - divbaseu + &
                   (eta(k+1) - eta(k))/dx(3)
@@ -271,11 +271,11 @@ contains
              end if
              
              divbaseu =  (umac(i+1,j,k) * base_xhi &
-                  - umac(i  ,j,k) * base_xlo)/ dx(3) &
-                  +(vmac(i,j+1,k) * base_yhi &
-                  -vmac(i,j  ,k) * base_ylo)/ dx(3) &
-                  +(wmac(i,j,k+1) * base_zhi &
-                  -wmac(i,j,k  ) * base_zlo)/ dx(3)
+                        - umac(i  ,j,k) * base_xlo)/ dx(1) &
+                        +(vmac(i,j+1,k) * base_yhi &
+                         -vmac(i,j  ,k) * base_ylo)/ dx(2) &
+                        +(wmac(i,j,k+1) * base_zhi &
+                         -wmac(i,j,k  ) * base_zlo)/ dx(3)
              
              force(i,j,k) = force(i,j,k) - divbaseu &
                   -(s(i,j,k)-base_cart(i,j,k))*(divumac+divu_cart(i,j,k)) 
