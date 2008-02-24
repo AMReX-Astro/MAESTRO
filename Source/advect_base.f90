@@ -36,8 +36,8 @@ contains
     
     do n=1,nlevs
        if (spherical .eq. 0) then
-          call advect_base_state_planar(n,vel(n,:),p0_old(n,:),p0_new(n,:),s0_old(n,:,:), &
-                                        s0_new(n,:,:),gam1(n,:),eta(n,:,:),dz(n),dt)
+          call advect_base_state_planar(n,vel(n,0:),p0_old(n,0:),p0_new(n,0:),s0_old(n,0:,:), &
+                                        s0_new(n,0:,:),gam1(n,0:),eta(n,0:,:),dz(n),dt)
        else
           call advect_base_state_spherical(n,vel(n,:),Sbar_in(n,:,1),p0_old(n,:), &
                                            p0_new(n,:),s0_old(n,:,:),s0_new(n,:,:), &
