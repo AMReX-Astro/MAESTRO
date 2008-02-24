@@ -135,7 +135,7 @@ contains
 
     else
 
-       ! make force for rhoh
+       ! Make force for rhoh -- just use p0_old
        call mkrhohforce(nlevs,scal_force,rhoh_comp,umac,p0_old,p0_old,normal,dx, &
                         mla,the_bc_level)
        
@@ -309,8 +309,15 @@ contains
     !     2) Update (rho h)' with conservative differencing.
     !**************************************************************************
        
-    call mkrhohforce(nlevs,scal_force,rhoh_comp,umac,p0_old,p0_new,normal,dx, &
-                     mla,the_bc_level)
+    if (which_step .eq. 1) then
+      ! Here just send p0_old and p0_old
+      call mkrhohforce(nlevs,scal_force,rhoh_comp,umac,p0_old,p0_old,normal,dx, &
+                       mla,the_bc_level)
+    else
+      ! Here send p0_old and p0_new
+      call mkrhohforce(nlevs,scal_force,rhoh_comp,umac,p0_old,p0_new,normal,dx, &
+                       mla,the_bc_level)
+    end if
 
     call update_scal(nlevs,rhoh_comp,rhoh_comp,sold,snew,umac,w0,w0_cart_vec, &
                      eta,sedge,sflux,scal_force,s0_old,s0_edge_old,s0_new,s0_edge_new, &
