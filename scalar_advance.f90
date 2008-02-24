@@ -258,7 +258,7 @@ contains
        call setval(scal_force(n),ZERO,all=.true.)
     end do
 
-    call update_scal(nlevs,which_step,spec_comp,spec_comp+nspec-1,sold,snew,umac,w0, &
+    call update_scal(nlevs,spec_comp,spec_comp+nspec-1,sold,snew,umac,w0, &
                      w0_cart_vec,eta,sedge,sflux,scal_force,s0_old,s0_edge_old,s0_new, &
                      s0_edge_new,s0_old_cart,s0_new_cart,dx,dt,the_bc_level,mla)
     
@@ -288,7 +288,7 @@ contains
     !**************************************************************************
     
     if ( ntrac .ge. 1 ) then
-       call update_scal(nlevs,which_step,trac_comp,trac_comp+ntrac-1,sold,snew,umac,w0, &
+       call update_scal(nlevs,trac_comp,trac_comp+ntrac-1,sold,snew,umac,w0, &
                         w0_cart_vec,eta,sedge,sflux,scal_force,s0_old,s0_edge_old,s0_new, &
                         s0_edge_new,s0_old_cart,s0_new_cart,dx,dt,the_bc_level,mla)
 
@@ -312,7 +312,7 @@ contains
     call mkrhohforce(nlevs,scal_force,rhoh_comp,umac,p0_old,p0_new,normal,dx, &
                      mla,the_bc_level)
 
-    call update_scal(nlevs,which_step,rhoh_comp,rhoh_comp,sold,snew,umac,w0,w0_cart_vec, &
+    call update_scal(nlevs,rhoh_comp,rhoh_comp,sold,snew,umac,w0,w0_cart_vec, &
                      eta,sedge,sflux,scal_force,s0_old,s0_edge_old,s0_new,s0_edge_new, &
                      s0_old_cart,s0_new_cart,dx,dt,the_bc_level,mla)
 

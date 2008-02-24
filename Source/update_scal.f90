@@ -13,7 +13,7 @@ module update_scal_module
 
 contains
 
-  subroutine update_scal(nlevs,which_step,nstart,nstop,sold,snew,umac,w0,w0_cart_vec,eta, &
+  subroutine update_scal(nlevs,nstart,nstop,sold,snew,umac,w0,w0_cart_vec,eta, &
                          sedge,sflux,scal_force,s0_old,s0_edge_old,s0_new,s0_edge_new, &
                          s0_old_cart,s0_new_cart,dx,dt,the_bc_level,mla)
 
@@ -26,7 +26,7 @@ contains
     use ml_restriction_module, only: ml_cc_restriction_c
     use multifab_fill_ghost_module
 
-    integer           , intent(in   ) :: nlevs, which_step, nstart, nstop
+    integer           , intent(in   ) :: nlevs, nstart, nstop
     type(multifab)    , intent(in   ) :: sold(:)
     type(multifab)    , intent(inout) :: snew(:)
     type(multifab)    , intent(in   ) :: umac(:,:)
@@ -95,7 +95,7 @@ contains
           hi =  upb(get_box(sold(n),i))
           select case (dm)
           case (2)
-             call update_scal_2d(which_step, nstart, nstop, &
+             call update_scal_2d(nstart, nstop, &
                                  sop(:,:,1,:), snp(:,:,1,:), &
                                  ump(:,:,1,1), vmp(:,:,1,1), &
                                  w0(n,:), eta(n,:,:), &
@@ -110,7 +110,7 @@ contains
              sepz => dataptr(sedge(n,3),i)
              sfpz => dataptr(sflux(n,3),i)
              if (spherical .eq. 0) then
-                call update_scal_3d_cart(which_step, nstart, nstop, &
+                call update_scal_3d_cart(nstart, nstop, &
                                          sop(:,:,:,:), snp(:,:,:,:), &
                                          ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
                                          w0(n,:), eta(n,:,:), &
@@ -124,7 +124,7 @@ contains
                 s0op => dataptr(s0_old_cart(n), i)
                 s0np => dataptr(s0_new_cart(n), i)
                 w0p => dataptr(w0_cart_vec(n),i)
-                call update_scal_3d_sphr(which_step, nstart, nstop, &
+                call update_scal_3d_sphr(nstart, nstop, &
                                          sop(:,:,:,:), snp(:,:,:,:), &
                                          ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
                                          w0p(:,:,:,:), &
@@ -168,7 +168,7 @@ contains
 
   end subroutine update_scal
 
-  subroutine update_scal_2d(which_step,nstart,nstop,sold,snew,umac,vmac,w0,eta, &
+  subroutine update_scal_2d(nstart,nstop,sold,snew,umac,vmac,w0,eta, &
                             sedgex,sedgey,sfluxx,sfluxy,force,base_old,base_old_edge, &
                             base_new,base_new_edge,lo,hi,ng_s,dx,dt)
 
@@ -181,7 +181,7 @@ contains
     ! update each scalar in time.  Here, it is assumed that the edge
     ! states (sedgex and sedgey) are for the perturbational quantities.
 
-    integer           , intent(in   ) :: which_step, nstart, nstop, lo(:), hi(:), ng_s
+    integer           , intent(in   ) :: nstart, nstop, lo(:), hi(:), ng_s
     real (kind = dp_t), intent(in   ) ::    sold(lo(1)-ng_s:,lo(2)-ng_s:,:)
     real (kind = dp_t), intent(  out) ::    snew(lo(1)-ng_s:,lo(2)-ng_s:,:)
     real (kind = dp_t), intent(in   ) ::    umac(lo(1)- 1:,lo(2)- 1:)
@@ -284,7 +284,7 @@ contains
 
   end subroutine update_scal_2d
 
-  subroutine update_scal_3d_cart(which_step,nstart,nstop,sold,snew,umac,vmac,wmac,w0, &
+  subroutine update_scal_3d_cart(nstart,nstop,sold,snew,umac,vmac,wmac,w0, &
                                  eta,sedgex,sedgey,sedgez,sfluxx,sfluxy,sfluxz,force, &
                                  base_old,base_old_edge,base_new,base_new_edge,lo,hi, &
                                  ng_s,dx,dt)
@@ -294,7 +294,7 @@ contains
     use bl_constants_module
 
 
-    integer           , intent(in   ) :: which_step, nstart, nstop, lo(:), hi(:), ng_s
+    integer           , intent(in   ) :: nstart, nstop, lo(:), hi(:), ng_s
     real (kind = dp_t), intent(in   ) ::    sold(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
     real (kind = dp_t), intent(  out) ::    snew(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
     real (kind = dp_t), intent(inout) ::    umac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
@@ -397,7 +397,7 @@ contains
 
   end subroutine update_scal_3d_cart
 
-  subroutine update_scal_3d_sphr(which_step,nstart,nstop,sold,snew,umac,vmac,wmac, &
+  subroutine update_scal_3d_sphr(nstart,nstop,sold,snew,umac,vmac,wmac, &
                                  w0_cart,sedgex,sedgey,sedgez,sfluxx,sfluxy,sfluxz, &
                                  force,base_old,base_new,base_old_cart,base_new_cart, &
                                  lo,hi,domlo,domhi,ng_s,dx,dt)
@@ -406,7 +406,7 @@ contains
     use probin_module, only: evolve_base_state
     use bl_constants_module
 
-    integer           , intent(in   ) :: which_step, nstart, nstop
+    integer           , intent(in   ) :: nstart, nstop
     integer           , intent(in   ) :: lo(:), hi(:), domlo(:), domhi(:), ng_s
     real (kind = dp_t), intent(in   ) ::    sold(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
     real (kind = dp_t), intent(  out) ::    snew(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
