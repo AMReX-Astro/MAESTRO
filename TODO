@@ -23,3 +23,14 @@
 -- some places (like in rhoh_vs_t.f90), we loop over 1, nr(nlevs)-1
    when dealing with the base state, but in others, we loop over
    1, nr(n)-1 -- which should we be doing?
+
+-- in modify_scal_force, for spherical, why do we compute divu for  
+   the base state in the radial geom and then put it on the Cart 
+   grid, instead of putting w0 onto the Cart grid first and then
+   computing div{U + w_0} together?  This is more along the lines
+   of how we treat the div{w_0} stuff in update_vel.f90
+
+-- check to make sure that we are filling all the ghostcells we
+   should be in fill_3d_data_wrapper, since in modify_scal_force
+   we put the base_cart onto interfaces by straight averaging.
+
