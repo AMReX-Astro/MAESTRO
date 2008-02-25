@@ -43,7 +43,7 @@ contains
     use thermal_conduct_module
     use make_explicit_thermal_module
     use add_react_to_thermal_module
-    use variables, only: nscal, press_comp, temp_comp, rho_comp
+    use variables, only: nscal, press_comp, temp_comp, rho_comp, foextrap_comp
     use geometry, only: nr, spherical
     use network, only: nspec
     use make_grav_module
@@ -237,7 +237,8 @@ contains
           call multifab_build(div_coeff_3d(n), mla%la(nlevs), 1, 1)
        end do
 
-       call fill_3d_data_wrapper(nlevs,div_coeff_3d,div_coeff_old,dx)
+       call fill_3d_data_c(nlevs,dx,the_bc_tower%bc_tower_array,mla, &
+                           div_coeff_3d,div_coeff_old,1,foextrap_comp)
        call macproject(mla,umac,macphi,sold,dx,the_bc_tower, &
                        press_comp, macrhs,div_coeff_3d=div_coeff_3d)
 
@@ -563,7 +564,8 @@ contains
              call multifab_build(div_coeff_3d(n), mla%la(nlevs), 1, 1)
           end do
 
-          call fill_3d_data_wrapper(nlevs,div_coeff_3d,div_coeff_nph,dx)
+          call fill_3d_data_c(nlevs,dx,the_bc_tower%bc_tower_array,mla, &
+                              div_coeff_3d,div_coeff_nph,1,foextrap_comp)
           call macproject(mla,umac,macphi,rhohalf,dx,the_bc_tower, &
                           press_comp,macrhs,div_coeff_3d=div_coeff_3d)
 
@@ -800,14 +802,16 @@ contains
           call multifab_build(hgrhs_old(n), mla%la(n), 1, 0, nodal)
           call multifab_copy(hgrhs_old(n),hgrhs(n))
        end do
-       call make_hgrhs(nlevs,hgrhs,Source_new,gamma1_term,Sbar(:,:,1),div_coeff_new,dx)
+       call make_hgrhs(nlevs,the_bc_tower,mla,hgrhs,Source_new,gamma1_term, &
+                       Sbar(:,:,1),div_coeff_new,dx)
        do n=1,nlevs
           call multifab_sub_sub(hgrhs(n),hgrhs_old(n))
           call multifab_div_div_s(hgrhs(n),dt)
        end do
     else
        proj_type = regular_timestep_comp
-       call make_hgrhs(nlevs,hgrhs,Source_new,gamma1_term,Sbar(:,:,1),div_coeff_new,dx)
+       call make_hgrhs(nlevs,the_bc_tower,mla,hgrhs,Source_new,gamma1_term, &
+                       Sbar(:,:,1),div_coeff_new,dx)
     end if
 
     do n=1,nlevs
@@ -819,7 +823,8 @@ contains
           call multifab_build(div_coeff_3d(n), mla%la(nlevs), 1, 1)
        end do
        
-       call fill_3d_data_wrapper(nlevs,div_coeff_3d,div_coeff_nph,dx)
+       call fill_3d_data_c(nlevs,dx,the_bc_tower%bc_tower_array,mla, &
+                           div_coeff_3d,div_coeff_nph,1,foextrap_comp)
        eps_in = 1.d-12
        call hgproject(proj_type, mla, unew, uold, rhohalf, pres, gpres, dx, dt, &
                       the_bc_tower, press_comp, &

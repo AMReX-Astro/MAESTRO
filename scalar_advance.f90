@@ -103,15 +103,21 @@ contains
           call build(s0_old_cart(n), sold(n)%la, nscal, 1)
           call build(s0_new_cart(n), sold(n)%la, nscal, 1)
        end do
-       call fill_3d_data_wrapper(nlevs,s0_old_cart,s0_old(:,:,rhoh_comp),dx,rhoh_comp)
-       call fill_3d_data_wrapper(nlevs,s0_new_cart,s0_new(:,:,rhoh_comp),dx,rhoh_comp)
+       call fill_3d_data_c(nlevs,dx,the_bc_level,mla, &
+                           s0_old_cart,s0_old(:,:,rhoh_comp),rhoh_comp,dm+rhoh_comp)
+       call fill_3d_data_c(nlevs,dx,the_bc_level,mla, &
+                           s0_new_cart,s0_new(:,:,rhoh_comp),rhoh_comp,dm+rhoh_comp)
        do comp = spec_comp, spec_comp+nspec-1
-          call fill_3d_data_wrapper(nlevs,s0_old_cart,s0_old(:,:,comp),dx,comp)
-          call fill_3d_data_wrapper(nlevs,s0_new_cart,s0_new(:,:,comp),dx,comp)
+          call fill_3d_data_c(nlevs,dx,the_bc_level,mla, &
+                              s0_old_cart,s0_old(:,:,comp),comp,dm+comp)
+          call fill_3d_data_c(nlevs,dx,the_bc_level,mla, &
+                              s0_new_cart,s0_new(:,:,comp),comp,dm+comp)
        end do
        do comp = trac_comp, trac_comp+ntrac-1
-          call fill_3d_data_wrapper(nlevs,s0_old_cart,s0_old(:,:,comp),dx,comp)
-          call fill_3d_data_wrapper(nlevs,s0_new_cart,s0_new(:,:,comp),dx,comp)
+          call fill_3d_data_c(nlevs,dx,the_bc_level,mla, &
+                              s0_old_cart,s0_old(:,:,comp),comp,dm+comp)
+          call fill_3d_data_c(nlevs,dx,the_bc_level,mla, &
+                              s0_new_cart,s0_new(:,:,comp),comp,dm+comp)
        end do
     end if
 

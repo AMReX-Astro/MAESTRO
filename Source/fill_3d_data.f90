@@ -7,37 +7,42 @@ module fill_3d_module
 
   private
 
-  public :: fill_3d_data_wrapper, fill_3d_data
+  public :: fill_3d_data_c, fill_3d_data
   public :: make_3d_normal, make_w0_cart, put_w0_on_3d_cells_sphr
   
 contains
 
-  subroutine fill_3d_data_wrapper(nlevs,s0_cart,s0,dx,in_comp)
+  subroutine fill_3d_data_c(nlevs,dx,the_bc_level,mla,s0_cart,s0,in_comp,bc_comp)
 
     use bl_prof_module
     use bl_constants_module
+    use define_bc_module
+    use ml_layout_module
+    use multifab_physbc_module
+    use ml_restriction_module, only: ml_cc_restriction_c
+    use multifab_fill_ghost_module
     !
     ! for spherical problems, this copies the base state onto a multifab
     ! sames as the function fill_3d_data_wrap, except we assume
     ! start_comp = 1, num_comp = 1, and the base state only has one component
     !
-    integer        , intent(in   )        :: nlevs
-    type(multifab) , intent(inout)        :: s0_cart(:)
-    real(kind=dp_t), intent(in   )        :: s0(:,0:)
-    real(kind=dp_t), intent(in   )        :: dx(:,:)
-    integer        , intent(in), optional :: in_comp
+    integer        , intent(in   ) :: nlevs
+    real(kind=dp_t), intent(in   ) :: dx(:,:)
+    type(bc_level) , intent(in   ) :: the_bc_level(:)
+    type(ml_layout), intent(inout) :: mla
+    type(multifab) , intent(inout) :: s0_cart(:)
+    real(kind=dp_t), intent(in   ) :: s0(:,0:)
+    integer        , intent(in   ) :: in_comp,bc_comp
 
-    integer                  :: i,comp,ng,n
+    integer                  :: i,ng,n
     integer                  :: lo(s0_cart(1)%dim),hi(s0_cart(1)%dim)
     real(kind=dp_t), pointer :: s0p(:,:,:,:)
 
     type(bl_prof_timer), save :: bpt
 
-    call build(bpt, "fill_3d_data_wrapper")
+    call build(bpt, "fill_3d_data_c")
 
     ng = s0_cart(1)%ng
-
-    comp = 1; if ( present(in_comp) ) comp = in_comp
 
     do n=1,nlevs
        do i=1,s0_cart(n)%nboxes
@@ -45,15 +50,23 @@ contains
           s0p => dataptr(s0_cart(n),i)
           lo = lwb(get_box(s0_cart(n),i))
           hi = upb(get_box(s0_cart(n),i))
-          call fill_3d_data(n,s0p(:,:,:,comp),s0(n,:),lo,hi,dx(n,:),ng)
+          call fill_3d_data(n,s0p(:,:,:,in_comp),s0(n,:),lo,hi,dx(n,:),ng)
        end do
        
-       call multifab_fill_boundary_c(s0_cart(n),comp,1)
+       call multifab_fill_boundary_c(s0_cart(n),in_comp,1)
+       call multifab_physbc(s0_cart(n),in_comp,bc_comp,1,dx(n,:),the_bc_level(n))
     enddo
+
+    do n=nlevs,2,-1
+       call ml_cc_restriction_c(s0_cart(n-1),in_comp,s0_cart(n),in_comp,mla%mba%rr(n-1,:),1)
+       call multifab_fill_ghost_cells(s0_cart(n),s0_cart(n-1),ng,mla%mba%rr(n-1,:), &
+                                      the_bc_level(n-1),the_bc_level(n), &
+                                      in_comp,bc_comp,1)
+    end do
 
     call destroy(bpt)
 
-  end subroutine fill_3d_data_wrapper
+  end subroutine fill_3d_data_c
 
   subroutine fill_3d_data(n,data,s0,lo,hi,dx,ng)
 

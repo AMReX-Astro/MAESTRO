@@ -22,14 +22,19 @@ contains
   
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   
-  subroutine make_hgrhs(nlevs,hgrhs,Source,gamma1_term,Sbar,div_coeff,dx)
+  subroutine make_hgrhs(nlevs,the_bc_tower,mla,hgrhs,Source,gamma1_term,Sbar,div_coeff,dx)
 
+    use define_bc_module
+    use ml_layout_module
     use bl_prof_module
     use bl_constants_module
     use geometry, only: spherical
     use fill_3d_module
+    use variables, only: foextrap_comp
     
     integer        , intent(in   ) :: nlevs
+    type(bc_tower),  intent(in   ) :: the_bc_tower
+    type(ml_layout), intent(inout) :: mla
     type(multifab) , intent(inout) :: hgrhs(:)
     type(multifab) , intent(in   ) :: Source(:)
     type(multifab) , intent(in   ) :: gamma1_term(:)
@@ -62,8 +67,10 @@ contains
     end if
     
     if (spherical .eq. 1) then
-       call fill_3d_data_wrapper(nlevs,div_coeff_cart,div_coeff,dx)
-       call fill_3d_data_wrapper(nlevs,Sbar_cart,Sbar,dx)
+       call fill_3d_data_c(nlevs,dx,the_bc_tower%bc_tower_array,mla, &
+                           div_coeff_cart,div_coeff,1,foextrap_comp)
+       call fill_3d_data_c(nlevs,dx,the_bc_tower%bc_tower_array,mla, &
+                           Sbar_cart,Sbar,1,foextrap_comp)
     end if
 
     do n = 1, nlevs

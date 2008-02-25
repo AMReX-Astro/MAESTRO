@@ -10,7 +10,7 @@ contains
   subroutine initial_proj(nlevs,uold,sold,pres,gpres,Source_old,hgrhs, &
                           div_coeff_old,s0_old,p0_old,gam1,dx,the_bc_tower,mla)
 
-    use variables, only: temp_comp, press_comp
+    use variables, only: temp_comp, press_comp, foextrap_comp
     use network, only: nspec
     use define_bc_module
     use bl_constants_module
@@ -102,7 +102,8 @@ contains
        call setval(rhohalf(n),ONE,1,1,all=.true.)
     end do
     
-    call make_hgrhs(nlevs,hgrhs,Source_old,gamma1_term,Sbar(:,:,1),div_coeff_old,dx)
+    call make_hgrhs(nlevs,the_bc_tower,mla,hgrhs,Source_old,gamma1_term,Sbar(:,:,1), &
+                    div_coeff_old,dx)
 
     do n=1,nlevs
        call destroy(gamma1_term(n))
@@ -116,7 +117,8 @@ contains
        do n=1,nlevs
           call multifab_build(div_coeff_3d(n), mla%la(n), 1, 0)
        end do
-       call fill_3d_data_wrapper(nlevs,div_coeff_3d,div_coeff_old,dx)
+       call fill_3d_data_c(nlevs,dx,the_bc_tower%bc_tower_array,mla, &
+                           div_coeff_3d,div_coeff_old,1,foextrap_comp)
        call hgproject(initial_projection_comp,mla,uold,uold,rhohalf,pres,gpres,dx, &
                       dt_temp,the_bc_tower,press_comp, &
                       hgrhs,div_coeff_3d=div_coeff_3d,eps_in=1.d-10)
