@@ -100,8 +100,6 @@ contains
     real(kind=dp_t) ulft,urgt,vbot,vtop, eps, abs_eps
 
     integer :: hi(2), i,j,is,js,ie,je
-
-    integer, parameter :: slope_order = 4
     
     logical :: test
     
@@ -138,8 +136,8 @@ contains
     allocate(velx(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1))
     allocate(vely(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1))
     
-    call slopex_2d(vel(:,:,1:),velx,lo,ng_s,1,adv_bc,slope_order)
-    call slopey_2d(vel(:,:,2:),vely,lo,ng_s,1,adv_bc,slope_order)
+    call slopex_2d(vel(:,:,1:),velx,lo,ng_s,1,adv_bc)
+    call slopey_2d(vel(:,:,2:),vely,lo,ng_s,1,adv_bc)
     
     ! Create the x-velocity to be used for transverse derivatives.
     do j = js-1,je+1 
@@ -231,8 +229,6 @@ contains
     integer :: hi(3)
     integer :: i,j,k,is,js,ks,ie,je,ke
     
-    integer, parameter :: slope_order = 4
-    
     hi(1) = lo(1) + size(vel,dim=1) - (2*ng_s+1)
     hi(2) = lo(2) + size(vel,dim=2) - (2*ng_s+1)
     hi(3) = lo(3) + size(vel,dim=3) - (2*ng_s+1)
@@ -275,10 +271,10 @@ contains
     allocate(velz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1))
     
     do k = lo(3)-1,hi(3)+1
-       call slopex_2d(vel(:,:,k,1:),velx(:,:,k,:),lo,ng_s,1,adv_bc,slope_order)
-       call slopey_2d(vel(:,:,k,2:),vely(:,:,k,:),lo,ng_s,1,adv_bc,slope_order)
+       call slopex_2d(vel(:,:,k,1:),velx(:,:,k,:),lo,ng_s,1,adv_bc)
+       call slopey_2d(vel(:,:,k,2:),vely(:,:,k,:),lo,ng_s,1,adv_bc)
     end do
-    call slopez_3d(vel(:,:,:,3:),velz,lo,ng_s,1,adv_bc,slope_order)
+    call slopez_3d(vel(:,:,:,3:),velz,lo,ng_s,1,adv_bc)
     
     ! Create the x-velocity to be used for transverse derivatives.
     do k = ks-1,ke+1

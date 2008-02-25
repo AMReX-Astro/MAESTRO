@@ -185,11 +185,9 @@ contains
     real(kind=dp_t) :: sptop,spbot,smtop,smbot,splft,sprgt,smlft,smrgt
     real(kind=dp_t) :: abs_eps, eps, umax
     
-    integer :: hi(2),slope_order
+    integer :: hi(2)
     integer :: i,j,is,js,ie,je
     logical :: test
-    
-    slope_order = 4
     
     hi(1) = lo(1) + size(s,dim=1) - (2*ng+1)
     hi(2) = lo(2) + size(s,dim=2) - (2*ng+1)
@@ -207,8 +205,8 @@ contains
     allocate(slopex(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1))
     allocate(slopey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1))
     
-    call slopex_2d(s(:,:,comp:),slopex,lo,ng,1,adv_bc,slope_order)
-    call slopey_2d(s(:,:,comp:),slopey,lo,ng,1,adv_bc,slope_order)
+    call slopex_2d(s(:,:,comp:),slopex,lo,ng,1,adv_bc)
+    call slopey_2d(s(:,:,comp:),slopey,lo,ng,1,adv_bc)
     
     abs_eps = 1.0d-8
     
@@ -575,10 +573,8 @@ contains
     real(kind=dp_t) :: sptop,spbot,smtop,smbot,splft,sprgt,smlft,smrgt
     real(kind=dp_t) :: abs_eps, eps, umax
     
-    integer :: hi(3),slope_order,i,j,k,is,js,ie,je,ks,ke
+    integer :: hi(3),i,j,k,is,js,ie,je,ks,ke
     logical :: test
-    
-    slope_order = 4
     
     hi(1) = lo(1) + size(s,dim=1) - (2*ng+1)
     hi(2) = lo(2) + size(s,dim=2) - (2*ng+1)
@@ -603,10 +599,10 @@ contains
     allocate(slopez(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1))
     
     do k = lo(3)-1,hi(3)+1
-       call slopex_2d(s(:,:,k,comp:),slopex(:,:,k,:),lo,ng,1,adv_bc,slope_order)
-       call slopey_2d(s(:,:,k,comp:),slopey(:,:,k,:),lo,ng,1,adv_bc,slope_order)
+       call slopex_2d(s(:,:,k,comp:),slopex(:,:,k,:),lo,ng,1,adv_bc)
+       call slopey_2d(s(:,:,k,comp:),slopey(:,:,k,:),lo,ng,1,adv_bc)
     end do
-    call slopez_3d(s(:,:,:,comp:),slopez,lo,ng,1,adv_bc,slope_order)
+    call slopez_3d(s(:,:,:,comp:),slopez,lo,ng,1,adv_bc)
     
     abs_eps = 1.0d-8
     
@@ -1260,6 +1256,7 @@ contains
    subroutine make_edge_state_1d(n,s,sedgex,umac,force,lo,dx,dt)
 
      use geometry, only: nr
+     use probin_module, only: slope_order
      use bl_constants_module
      
      integer        , intent(in   ) :: n, lo
@@ -1272,13 +1269,13 @@ contains
      real(kind=dp_t), allocatable::  slopex(:)
      real(kind=dp_t), allocatable::  s_l(:),s_r(:)
      real(kind=dp_t), allocatable:: dxscr(:,:)
-     real(kind=dp_t) :: dmin,dpls,ds
+     real(kind=dp_t) :: dmin,dpls,ds,del,slim,sflag
      real(kind=dp_t) :: ubardth, dth, savg
      real(kind=dp_t) :: abs_eps, eps, umax, u
-     real(kind=dp_t) :: fourthirds
      
      integer :: i,is,ie,hi
-     integer, parameter :: cen = 1, lim = 2, flag = 3, fromm = 4
+     integer        , parameter :: cen = 1, lim = 2, flag = 3, fromm = 4
+     real(kind=dp_t), parameter :: fourthirds = 4.0_dp_t / 3.0_dp_t
      
      hi = lo + nr(n) - 1
      
@@ -1299,32 +1296,52 @@ contains
      end do
      
      eps = abs_eps * umax
+
+     if (slope_order .eq. 0) then
+
+        slopex = ZERO
+
+     else if (slope_order .eq. 2) then
+
+        do i = is-1,ie+1
+           del = half*(s(i+1) - s(i-1))
+           dpls = two*(s(i+1) - s(i  ))
+           dmin = two*(s(i  ) - s(i-1))
+           slim = min(abs(dpls), abs(dmin))
+           slim = merge(slim, zero, dpls*dmin.gt.ZERO)
+           sflag = sign(one,del)
+           slopex(i)= sflag*min(slim,abs(del))
+        enddo
      
-     ! Compute fourth-order slopes
-     do i = is+1,ie-1
-        dxscr(i,cen) = half*(s(i+1)-s(i-1))
-        dmin = two*(s(i  )-s(i-1))
-        dpls = two*(s(i+1)-s(i  ))
-        dxscr(i,lim)= min(abs(dmin),abs(dpls))
-        dxscr(i,lim) = merge(dxscr(i,lim),zero,dpls*dmin.gt.ZERO)
-        dxscr(i,flag) = sign(one,dxscr(i,cen))
-        dxscr(i,fromm)= dxscr(i,flag)*min(dxscr(i,lim),abs(dxscr(i,cen)))
-     enddo
+        slopex(is) = ZERO
+        slopex(ie) = ZERO
+
+     else if (slope_order .eq. 4) then
      
-     dxscr(is,fromm) = ZERO
-     dxscr(ie,fromm) = ZERO
+        do i = is+1,ie-1
+           dxscr(i,cen) = half*(s(i+1)-s(i-1))
+           dpls = two*(s(i+1)-s(i  ))
+           dmin = two*(s(i  )-s(i-1))
+           dxscr(i,lim)= min(abs(dmin),abs(dpls))
+           dxscr(i,lim) = merge(dxscr(i,lim),zero,dpls*dmin.gt.ZERO)
+           dxscr(i,flag) = sign(one,dxscr(i,cen))
+           dxscr(i,fromm)= dxscr(i,flag)*min(dxscr(i,lim),abs(dxscr(i,cen)))
+        enddo
      
-     fourthirds = 4.0_dp_t / 3.0_dp_t
+        dxscr(is,fromm) = ZERO
+        dxscr(ie,fromm) = ZERO
      
-     do i = is+1,ie-1
-        ds = fourthirds * dxscr(i,cen) - sixth * (dxscr(i+1,fromm) + dxscr(i-1,fromm))
-        slopex(i) = dxscr(i,flag)*min(abs(ds),dxscr(i,lim))
-     enddo
+        do i = is+1,ie-1
+           ds = fourthirds * dxscr(i,cen) - sixth * (dxscr(i+1,fromm) + dxscr(i-1,fromm))
+           slopex(i) = dxscr(i,flag)*min(abs(ds),dxscr(i,lim))
+        enddo
      
-     slopex(is) = ZERO
-     slopex(ie) = ZERO
-     
-     ! Use fourth-order slopes to compute edge values
+        slopex(is) = ZERO
+        slopex(ie) = ZERO
+
+     end if
+        
+     ! Compute edge values using slopes and forcing terms.
      do i = is,ie
         
         u = HALF * (umac(i) + umac(i+1))

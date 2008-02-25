@@ -8,16 +8,16 @@ module slope_module
 
 contains
 
-  subroutine slopex_2d(s,slx,lo,ng,nvar,bc,slope_order)
+  subroutine slopex_2d(s,slx,lo,ng,nvar,bc)
 
     use bc_module
     use bl_constants_module
+    use probin_module, only : slope_order
 
     integer        , intent(in   ) :: lo(2),ng,nvar
     real(kind=dp_t), intent(in   ) ::   s(lo(1)-ng:, lo(2)-ng:,:)
     real(kind=dp_t), intent(  out) :: slx(lo(1)- 1:, lo(2)- 1:,:) 
     integer, intent(in) ::  bc(:,:,:)
-    integer, intent(in) ::  slope_order
 
     !     Local variables
     integer :: hi(2)
@@ -161,14 +161,14 @@ contains
 
   end subroutine slopex_2d
 
-  subroutine slopey_2d(s,sly,lo,ng,nvar,bc,slope_order)
+  subroutine slopey_2d(s,sly,lo,ng,nvar,bc)
 
     use bc_module
     use bl_constants_module
+    use probin_module, only : slope_order
 
     integer, intent(in) :: lo(:),ng,nvar
     integer, intent(in) :: bc(:,:,:)
-    integer, intent(in) :: slope_order
 
     real(kind=dp_t), intent( in) ::     s(lo(1)-ng:,lo(2)-ng:,:)
     real(kind=dp_t), intent(out) ::   sly(lo(1)- 1:,lo(2)- 1:,:)
@@ -315,14 +315,14 @@ contains
 
   end subroutine slopey_2d
 
-  subroutine slopez_3d(s,slz,lo,ng,nvar,bc,slope_order)
+  subroutine slopez_3d(s,slz,lo,ng,nvar,bc)
 
     use bc_module
     use bl_constants_module
+    use probin_module, only : slope_order
 
     integer, intent(in) :: lo(:),ng,nvar
     integer, intent(in) :: bc(:,:,:)
-    integer, intent(in) :: slope_order
 
     real(kind=dp_t), intent( in) ::     s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real(kind=dp_t), intent(out) ::   slz(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
