@@ -124,7 +124,7 @@ contains
     end do
 
     ! make force for species
-    call modify_scal_force(nlevs,scal_force,sold,umac,s0_old,s0_edge_old,w0,eta,dx, &
+    call modify_scal_force(which_step,nlevs,scal_force,sold,umac,s0_old,s0_edge_old,w0,eta,dx, &
                            s0_old_cart,spec_comp,nspec,mla,the_bc_level)
 
     if(predict_temp_at_edges) then
@@ -139,7 +139,7 @@ contains
        call mkrhohforce(nlevs,scal_force,rhoh_comp,umac,p0_old,p0_old,normal,dx, &
                         mla,the_bc_level)
        
-       call modify_scal_force(nlevs,scal_force,sold,umac,s0_old,s0_edge_old,w0,eta,dx, &
+       call modify_scal_force(which_step,nlevs,scal_force,sold,umac,s0_old,s0_edge_old,w0,eta,dx, &
                               s0_old_cart,rhoh_comp,1,mla,the_bc_level)
         
        if(use_thermal_diffusion) then

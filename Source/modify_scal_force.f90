@@ -12,7 +12,7 @@ module modify_scal_force_module
 
 contains
 
-  subroutine modify_scal_force(nlevs,force,s,umac,base,base_edge,w0,eta,dx,base_cart, &
+  subroutine modify_scal_force(which_step,nlevs,force,s,umac,base,base_edge,w0,eta,dx,base_cart, &
                                start_comp,num_comp,mla,the_bc_level)
 
     use bl_prof_module
@@ -27,7 +27,7 @@ contains
     ! form, the terms other than s'_t + U.grad s' act as source terms.  Add
     ! them to the forces here.
     
-    integer        , intent(in   ) :: nlevs
+    integer        , intent(in   ) :: which_step, nlevs
     type(multifab) , intent(inout) :: force(:)
     type(multifab) , intent(in   ) :: s(:)
     type(multifab) , intent(in   ) :: umac(:,:)
@@ -77,7 +77,7 @@ contains
           select case (dm)
           case (2)
              do comp = start_comp, start_comp+num_comp-1
-                call modify_scal_force_2d(fp(:,:,1,comp),sp(:,:,1,comp), lo, hi, &
+                call modify_scal_force_2d(which_step,fp(:,:,1,comp),sp(:,:,1,comp), lo, hi, &
                                           ng,ump(:,:,1,1),vmp(:,:,1,1), &
                                           base(n,:,comp),base_edge(n,:,comp), &
                                           w0(n,:),eta(n,:,comp),dx(n,:))
@@ -129,9 +129,9 @@ contains
     
   end subroutine modify_scal_force
   
-  subroutine modify_scal_force_2d(force,s,lo,hi,ng,umac,vmac,base,base_edge,w0,eta,dx)
+  subroutine modify_scal_force_2d(which_step,force,s,lo,hi,ng,umac,vmac,base,base_edge,w0,eta,dx)
 
-    integer        , intent(in   ) :: lo(:),hi(:),ng
+    integer        , intent(in   ) :: which_step,lo(:),hi(:),ng
     real(kind=dp_t), intent(  out) :: force(lo(1)-1:,lo(2)-1:)
     real(kind=dp_t), intent(in   ) ::     s(lo(1)-ng:,lo(2)-ng:)
     real(kind=dp_t), intent(in   ) ::  umac(lo(1)-1:,lo(2)-1:)
@@ -153,10 +153,17 @@ contains
                +(vmac(i,j+1) * base_edge(j+1) &
                - vmac(i,j  ) * base_edge(j  ) )/ dx(2)
           
-          force(i,j) = force(i,j) - (s(i,j)-base(j))*divu - divbaseu + &
-               (eta(j+1) - eta(j))/dx(2)
+          force(i,j) = force(i,j) - (s(i,j)-base(j))*divu - divbaseu 
        end do
     end do
+          
+    if (which_step .eq. 2) then
+       do j = lo(2),hi(2)
+       do i = lo(1),hi(1)
+          force(i,j) = force(i,j) + (eta(j+1) - eta(j))/dx(2)
+       end do
+       end do
+    end if
     
   end subroutine modify_scal_force_2d
   

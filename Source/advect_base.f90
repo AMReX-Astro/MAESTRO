@@ -10,13 +10,13 @@ module advect_base_module
 
 contains
 
-  subroutine advect_base(nlevs,vel,Sbar_in,p0_old,p0_new,s0_old,s0_new,gam1,div_coeff,eta, &
+  subroutine advect_base(which_step,nlevs,vel,Sbar_in,p0_old,p0_new,s0_old,s0_new,gam1,div_coeff,eta, &
                          dz,dt)
 
     use bl_prof_module
     use geometry, only: spherical
 
-    integer        , intent(in   ) :: nlevs
+    integer        , intent(in   ) :: which_step,nlevs
     real(kind=dp_t), intent(in   ) :: vel(:,0:)
     real(kind=dp_t), intent(in   ) :: Sbar_in(:,0:,:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:), s0_old(:,0:,:)
@@ -36,7 +36,7 @@ contains
     
     do n=1,nlevs
        if (spherical .eq. 0) then
-          call advect_base_state_planar(n,vel(n,0:),p0_old(n,0:),p0_new(n,0:),s0_old(n,0:,:), &
+          call advect_base_state_planar(which_step,n,vel(n,0:),p0_old(n,0:),p0_new(n,0:),s0_old(n,0:,:), &
                                         s0_new(n,0:,:),gam1(n,0:),eta(n,0:,:),dz(n),dt)
        else
           call advect_base_state_spherical(n,vel(n,:),Sbar_in(n,:,1),p0_old(n,:), &
@@ -49,7 +49,7 @@ contains
        
   end subroutine advect_base
 
-  subroutine advect_base_state_planar(n,vel,p0_old,p0_new,s0_old,s0_new,gam1,eta,dz,dt)
+  subroutine advect_base_state_planar(which_step,n,vel,p0_old,p0_new,s0_old,s0_new,gam1,eta,dz,dt)
 
     use bl_constants_module
     use make_edge_state_module
@@ -58,7 +58,7 @@ contains
     use geometry, only: nr
     use probin_module, only: grav_const, anelastic_cutoff
 
-    integer        , intent(in   ) :: n
+    integer        , intent(in   ) :: which_step,n
     real(kind=dp_t), intent(in   ) :: vel(0:)
     real(kind=dp_t), intent(in   ) :: p0_old(0:), s0_old(0:,:)
     real(kind=dp_t), intent(  out) :: p0_new(0:), s0_new(0:,:)
@@ -93,9 +93,11 @@ contains
 ! UPDATE P0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     force = ZERO
+    if (which_step .eq. 2) then
     do r = 0, r_anel-1
        force(r) = HALF * (eta(r,rho_comp)+eta(r+1,rho_comp)) * abs(grav_const)
     enddo
+    end if
 
     call make_edge_state_1d(n,p0_old,edge,vel,force,1,dz,dt)
 
@@ -119,9 +121,11 @@ contains
           force(r) = -s0_old(r,comp) * (vel(r+1) - vel(r)) / dz 
        end do
 
+       if (which_step .eq. 2) then
        do r = 0, r_anel-1
           force(r) = force(r) - (eta(r+1,comp) - eta(r,comp))/dz
        end do
+       end if
        
        call make_edge_state_1d(n,s0_old(:,comp),edge,vel,force,1,dz,dt)
        
@@ -155,11 +159,13 @@ contains
        force(r) = -s0_old(r,rhoh_comp) * (vel(r+1) - vel(r)) / dz
     end do
 
+    if (which_step .eq. 2) then
     do r = 0, r_anel-1
        eta_avg = HALF * (eta(r,rho_comp)+eta(r+1,rho_comp))
        force(r) = force(r) - (eta(r+1,rhoh_comp) - eta(r,rhoh_comp))/dz + &
             eta_avg * abs(grav_const)
     end do
+    end if
     
     call make_edge_state_1d(n,s0_old(:,rhoh_comp),edge,vel,force,1,dz,dt)
     
