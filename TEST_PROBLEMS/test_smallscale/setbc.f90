@@ -28,9 +28,7 @@ contains
     integer         :: i,j,hi(2)
     real(kind=dp_t) :: x,dir_val
 
-    if(ng .eq. 0) then
-       call bl_error('ng = 0 in setbc; this is not allowed!')
-    end if
+    if (ng == 0) return
 
     hi(1) = lo(1) + size(s,dim=1) - (2*ng+1)
     hi(2) = lo(2) + size(s,dim=2) - (2*ng+1)
@@ -219,9 +217,7 @@ contains
     !     Local variables
     integer :: i,j,k,hi(3)
 
-    if(ng .eq. 0) then
-       call bl_error('ng = 0 in setbc; this is not allowed!')
-    end if
+    if (ng == 0) return
 
     hi(1) = lo(1) + size(s,dim=1) - (2*ng+1)
     hi(2) = lo(2) + size(s,dim=2) - (2*ng+1)

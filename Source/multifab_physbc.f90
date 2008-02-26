@@ -32,6 +32,8 @@ contains
     
     ng = s%ng
     dm = s%dim
+
+    if (ng == 0) return
     
     do i=1,s%nboxes
        if ( multifab_remote(s,i) ) cycle
