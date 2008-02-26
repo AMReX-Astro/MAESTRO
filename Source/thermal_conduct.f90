@@ -45,16 +45,15 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
   ! Local
   type(multifab) :: rhsalpha(mla%nlevel),lhsalpha(mla%nlevel)
   type(multifab) :: rhsbeta(mla%nlevel),lhsbeta(mla%nlevel)
-  type(multifab) :: phi(mla%nlevel),phitemp(mla%nlevel),Lphi(mla%nlevel),rhs(mla%nlevel)
+  type(multifab) :: phi(mla%nlevel),Lphi(mla%nlevel),rhs(mla%nlevel)
   type(multifab) :: p01fab(mla%nlevel),p02fab(mla%nlevel)
   type(multifab) :: hcoeff1(mla%nlevel),hcoeff2(mla%nlevel)
   type(multifab) :: Xkcoeff1(mla%nlevel),Xkcoeff2(mla%nlevel)
   type(multifab) :: pcoeff1(mla%nlevel),pcoeff2(mla%nlevel)
 
-  real(kind=dp_t), pointer    :: s1p(:,:,:,:),s2p(:,:,:,:),rhsalphap(:,:,:,:)
+  real(kind=dp_t), pointer    :: s1p(:,:,:,:)
   real(kind=dp_t), pointer    :: s_for_new_coeffp(:,:,:,:)
   real(kind=dp_t), pointer    :: rhsbetap(:,:,:,:),lhsbetap(:,:,:,:)
-  real(kind=dp_t), pointer    :: phip(:,:,:,:),rhsp(:,:,:,:)
   real(kind=dp_t), pointer    :: p01fabp(:,:,:,:),p02fabp(:,:,:,:)
   real(kind=dp_t), pointer    :: hcoeff1p(:,:,:,:),hcoeff2p(:,:,:,:)
   real(kind=dp_t), pointer    :: Xkcoeff1p(:,:,:,:),Xkcoeff2p(:,:,:,:)
@@ -580,9 +579,8 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02,the_bc_tower
   type(multifab) :: Xkcoeff1(mla%nlevel),Xkcoeff2(mla%nlevel)
   type(multifab) :: pcoeff1(mla%nlevel),pcoeff2(mla%nlevel)
 
-  real(kind=dp_t), pointer    :: s1p(:,:,:,:),s2p(:,:,:,:),rhsalphap(:,:,:,:)
+  real(kind=dp_t), pointer    :: s1p(:,:,:,:),s2p(:,:,:,:)
   real(kind=dp_t), pointer    :: rhsbetap(:,:,:,:),lhsbetap(:,:,:,:)
-  real(kind=dp_t), pointer    :: phip(:,:,:,:),rhsp(:,:,:,:)
   real(kind=dp_t), pointer    :: p01fabp(:,:,:,:),p02fabp(:,:,:,:)
   real(kind=dp_t), pointer    :: hcoeff1p(:,:,:,:),hcoeff2p(:,:,:,:)
   real(kind=dp_t), pointer    :: Xkcoeff1p(:,:,:,:),Xkcoeff2p(:,:,:,:)
@@ -591,8 +589,6 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02,the_bc_tower
   integer                     :: i,n,comp,ng_s
   integer                     :: lo(s1(1)%dim),hi(s1(1)%dim)
   type(bndry_reg), pointer    :: fine_flx(:) => Null()
-
-  type(bc_level) ::  bc
 
   type(bl_prof_timer), save :: bpt
 
@@ -1294,7 +1290,6 @@ subroutine compute_thermo_quantities_2d(lo,hi,dt,s,hcoeff,Xkcoeff,pcoeff)
 
   ! Local
   integer :: i,j,comp
-  real(dp_t) :: qreact
 
   do j=lo(2)-1,hi(2)+1
      do i=lo(1)-1,hi(1)+1
@@ -1369,7 +1364,6 @@ subroutine compute_thermo_quantities_3d(lo,hi,dt,t0,s,hcoeff,Xkcoeff,pcoeff)
 
   ! Local
   integer :: i,j,k,comp
-  real(dp_t) :: qreact
 
   if(spherical .eq. 1) then
      call bl_error("compute_thermo1_quantities_3d spherical case not written!")

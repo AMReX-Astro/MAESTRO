@@ -40,7 +40,7 @@ contains
     type(box) :: domain
 
     integer :: domlo(sold(1)%dim),domhi(sold(1)%dim)
-    integer :: i,dm,n,comp
+    integer :: i,dm,n
     integer :: lo(sold(1)%dim),hi(sold(1)%dim)
 
     real(kind=dp_t), pointer :: sfxp(:,:,:,:)

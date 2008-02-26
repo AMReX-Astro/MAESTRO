@@ -83,7 +83,6 @@ contains
     real(kind=dp_t), allocatable :: vel_old_cen(:)
     real(kind=dp_t), allocatable :: vel_new_cen(:)
     real(kind=dp_t), allocatable ::   force(:)
-    real(kind=dp_t), allocatable ::    edge(:)
     real(kind=dp_t), allocatable :: dpdroverrho(:)
     real(kind=dp_t)              :: eta_avg
     real(kind=dp_t)              :: vel_avg, div_avg, dt_avg

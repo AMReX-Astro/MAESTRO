@@ -120,7 +120,6 @@ contains
     real(dp_t), allocatable :: p0_1(:,:)
     real(dp_t), allocatable :: p0_2(:,:)
 
-    integer    :: lo(mla%dim),hi(mla%dim)
     integer    :: r,n,dm,comp,nlevs,ng_s,proj_type
     real(dp_t) :: halfdt,eps_in
     logical    :: nodal(mla%dim)

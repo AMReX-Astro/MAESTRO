@@ -428,7 +428,7 @@ contains
     real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
     integer            :: i, j, k, comp, comp2
-    real (kind = dp_t) :: divsu,divbaseu,mult,divterm
+    real (kind = dp_t) :: divterm
     real (kind = dp_t) :: delta,frac,sum
     real (kind = dp_t) :: smin(nstart:nstop),smax(nstart:nstop)
 

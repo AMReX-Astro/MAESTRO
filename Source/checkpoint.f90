@@ -28,7 +28,7 @@ contains
     real(kind=dp_t) , intent(in) :: time, dt
 
     ! local
-    integer :: n, i, un, nlevs
+    integer :: un, nlevs
     character(len=128) :: header, sd_name, sd_name_nodal
 
     namelist /chkpoint/ nlevs
@@ -114,7 +114,7 @@ contains
     real(kind=dp_t) , intent(  out)          :: time_out, dt_out
 
     ! local
-    integer            :: n, i, un
+    integer            :: un
     character(len=128) :: header, sd_name
     integer            :: nlevs
     real(kind=dp_t)    :: time, dt

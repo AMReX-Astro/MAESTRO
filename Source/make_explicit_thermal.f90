@@ -50,7 +50,7 @@ contains
     real(kind=dp_t), pointer    :: sp(:,:,:,:),phip(:,:,:,:)
     real(kind=dp_t), pointer    :: betap(:,:,:,:),Xkcoeffp(:,:,:,:)
     real(kind=dp_t), pointer    :: Tcoeffp(:,:,:,:),hcoeffp(:,:,:,:)
-    real(kind=dp_t), pointer    :: pcoeffp(:,:,:,:),residp(:,:,:,:)
+    real(kind=dp_t), pointer    :: pcoeffp(:,:,:,:)
     type(bc_level)              :: bc
 
     type(bl_prof_timer), save :: bpt
