@@ -79,8 +79,8 @@ contains
     real(kind=dp_t), intent(in   ) :: p0(0:)
 
     !     Local variables
-    integer :: i, j, n
-    real(kind=dp_t) :: x,y,r,r0,r1,r2,temp
+    integer :: i, j
+    real(kind=dp_t) :: x,y,r0,r2
     real(kind=dp_t) :: dens_pert, rhoh_pert, temp_pert
     real(kind=dp_t) :: rhoX_pert(nspec), trac_pert(ntrac)
 
@@ -136,7 +136,7 @@ contains
 
     !     Local variables
     integer :: i, j, k, comp
-    real(kind=dp_t) :: x,y,z,r,r0,r1,r2,temp
+    real(kind=dp_t) :: x,y,z,r1,r2
     real(kind=dp_t) :: dens_pert, rhoh_pert, temp_pert
     real(kind=dp_t) :: rhoX_pert(nspec), trac_pert(ntrac)
 
@@ -451,7 +451,6 @@ contains
 
     real(kind=dp_t) :: temp,t0
     real(kind=dp_t) :: x0, y0, x1, y1, x2, y2
-    integer :: i, j
     real(kind=dp_t) :: r0, r1, r2
 
     t0 = s0(temp_comp)
@@ -516,7 +515,7 @@ contains
 
   end subroutine perturb_2d
 
-  subroutine perturb_3d(x, y, z, p0, s0, dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
+  subroutine perturb_3d(x,y,z,p0,s0,dens_pert,rhoh_pert,rhoX_pert,temp_pert,trac_pert)
 
     ! apply an optional perturbation to the initial temperature field
     ! to see some bubbles
@@ -529,7 +528,6 @@ contains
 
     real(kind=dp_t) :: temp, t0
     real(kind=dp_t) :: x0, y0, z0, x1, y1, z1, x2, y2, z2
-    integer :: i, j, k
     real(kind=dp_t) :: r0, r1, r2
 
     t0 = s0(temp_comp)
@@ -605,7 +603,7 @@ contains
 
     real(kind=dp_t), pointer:: sop(:,:,:,:)
     integer :: lo(s%dim),hi(s%dim),ng,dm
-    integer :: i,n
+    integer :: i
     
     ng = s%ng
     dm = s%dim
@@ -634,7 +632,7 @@ contains
     real(kind=dp_t)   , intent(in) :: s0(0:,:)
 
     ! Local variables
-    integer :: i, j, n
+    integer :: i, j
     real(kind=dp_t) :: fac, stot, smax
     character(len=11) :: file_name
 
