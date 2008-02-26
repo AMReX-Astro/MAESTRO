@@ -137,7 +137,7 @@ contains
        select case (dm)
        case (2)
           call maketfromH_2d(tp(:,:,1,comp_t),tp(:,:,1,comp_dp),sp(:,:,1,:), lo, hi, &
-                             ng, p0, t0, dx)
+                             ng, p0, t0)
        case (3)
           if (spherical .eq. 1) then
             call maketfromH_3d_sphr(n,tp(:,:,:,comp_t),tp(:,:,:,comp_dp),sp(:,:,:,:), &
@@ -151,7 +151,7 @@ contains
 
   end subroutine make_tfromH
 
-  subroutine maketfromH_2d (T,deltaP,state,lo,hi,ng,p0,t0,dx)
+  subroutine maketfromH_2d (T,deltaP,state,lo,hi,ng,p0,t0)
 
     use variables, only: rho_comp, spec_comp, rhoh_comp
     use eos_module
@@ -164,7 +164,6 @@ contains
     real (kind = dp_t), intent(in   ) ::  state(lo(1)-ng:,lo(2)-ng:,:)
     real (kind = dp_t), intent(in   ) ::  p0(0:)
     real (kind = dp_t), intent(in   ) ::  t0(0:)
-    real (kind = dp_t), intent(in   ) ::  dx(:)
 
     !     Local variables
     integer :: i, j, comp
