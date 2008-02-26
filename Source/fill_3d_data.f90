@@ -53,15 +53,19 @@ contains
           call fill_3d_data(n,s0p(:,:,:,in_comp),s0(n,:),lo,hi,dx(n,:),ng)
        end do
        
-       call multifab_fill_boundary_c(s0_cart(n),in_comp,1)
-       call multifab_physbc(s0_cart(n),in_comp,bc_comp,1,dx(n,:),the_bc_level(n))
+       if (ng .gt. 0) then
+          call multifab_fill_boundary_c(s0_cart(n),in_comp,1)
+          call multifab_physbc(s0_cart(n),in_comp,bc_comp,1,dx(n,:),the_bc_level(n))
+       end if
     enddo
 
     do n=nlevs,2,-1
        call ml_cc_restriction_c(s0_cart(n-1),in_comp,s0_cart(n),in_comp,mla%mba%rr(n-1,:),1)
-       call multifab_fill_ghost_cells(s0_cart(n),s0_cart(n-1),ng,mla%mba%rr(n-1,:), &
-                                      the_bc_level(n-1),the_bc_level(n), &
-                                      in_comp,bc_comp,1)
+       if (ng .gt. 0) then
+          call multifab_fill_ghost_cells(s0_cart(n),s0_cart(n-1),ng,mla%mba%rr(n-1,:), &
+                                         the_bc_level(n-1),the_bc_level(n), &
+                                         in_comp,bc_comp,1)
+       end if
     end do
 
     call destroy(bpt)
