@@ -114,7 +114,7 @@ contains
         
         if(ng_h .gt. 0) then
            call multifab_fill_boundary(phihalf(n))
-           call multifab_physbc(phihalf(n),out_comp,dm+in_comp,1,dx(n,:),the_bc_level(n))
+           call multifab_physbc(phihalf(n),out_comp,dm+in_comp,1,the_bc_level(n))
         endif
         
      enddo ! end loop over nlevs

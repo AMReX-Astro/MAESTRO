@@ -75,7 +75,7 @@ contains
        call multifab_fill_boundary(s_out(n))
        
        ! fill physical boundary conditions at domain boundaries
-       call multifab_physbc(s_out(n),rho_comp,dm+rho_comp,nscal,dx(n,:),the_bc_level(n))
+       call multifab_physbc(s_out(n),rho_comp,dm+rho_comp,nscal,the_bc_level(n))
        
     enddo
 

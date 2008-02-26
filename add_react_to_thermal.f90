@@ -67,7 +67,7 @@ contains
        ! this includes periodic domain boundary conditions
        call multifab_fill_boundary(thermal(n))
        
-       call multifab_physbc(thermal(n),1,foextrap_comp,1,dx(n,:),the_bc_level(n))
+       call multifab_physbc(thermal(n),1,foextrap_comp,1,the_bc_level(n))
     enddo
 
     do n=nlevs,2,-1

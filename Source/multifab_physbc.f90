@@ -11,14 +11,13 @@ module multifab_physbc_module
 
 contains
 
-  subroutine multifab_physbc(s,start_scomp,start_bccomp,num_comp,dx,the_bc_level)
+  subroutine multifab_physbc(s,start_scomp,start_bccomp,num_comp,the_bc_level)
 
     use setbc_module
     use bl_prof_module
 
     type(multifab) , intent(inout) :: s
     integer        , intent(in   ) :: start_scomp,start_bccomp,num_comp
-    real(kind=dp_t), intent(in   ) :: dx(:)
     type(bc_level) , intent(in   ) :: the_bc_level
 
     ! Local
@@ -44,13 +43,13 @@ contains
           do scomp = start_scomp,start_scomp+num_comp-1
              bccomp = start_bccomp + scomp - start_scomp
              call setbc_2d(sp(:,:,1,scomp), lo, ng, &
-                           the_bc_level%adv_bc_level_array(i,:,:,bccomp),dx,bccomp)
+                           the_bc_level%adv_bc_level_array(i,:,:,bccomp),bccomp)
           end do
        case (3)
           do scomp = start_scomp,start_scomp+num_comp-1
              bccomp = start_bccomp + scomp - start_scomp
              call setbc_3d(sp(:,:,:,scomp), lo, ng, &
-                           the_bc_level%adv_bc_level_array(i,:,:,bccomp),dx,bccomp)
+                           the_bc_level%adv_bc_level_array(i,:,:,bccomp),bccomp)
           end do
        end select
     end do

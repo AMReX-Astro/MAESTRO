@@ -42,8 +42,7 @@ contains
        call multifab_plus_plus_c(force(n),rhoh_comp,thermal(n),1,1)
 
        call multifab_fill_boundary_c(force(n),rhoh_comp,1)
-       call multifab_physbc(force(n),rhoh_comp,foextrap_comp,1,dx(n,:), &
-                            the_bc_level(n))
+       call multifab_physbc(force(n),rhoh_comp,foextrap_comp,1,the_bc_level(n))
     enddo
     
     do n=nlevs,2,-1

@@ -108,7 +108,7 @@ contains
        call multifab_fill_boundary_c(force(n),start_comp,num_comp)
        
        do comp = start_comp, start_comp+num_comp-1
-          call multifab_physbc(force(n),comp,foextrap_comp,1,dx(n,:),the_bc_level(n))
+          call multifab_physbc(force(n),comp,foextrap_comp,1,the_bc_level(n))
        enddo
        
     enddo

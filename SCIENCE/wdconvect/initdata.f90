@@ -56,7 +56,7 @@ contains
        end do
        
        call multifab_fill_boundary(s(n))
-       call multifab_physbc(s(n),rho_comp,dm+rho_comp,nscal,dx(n,:),bc(n))
+       call multifab_physbc(s(n),rho_comp,dm+rho_comp,nscal,bc(n))
 
     enddo
 
@@ -239,7 +239,7 @@ contains
        end do
 
        call multifab_fill_boundary(u(n))
-       call multifab_physbc(u(n),1,1,dm,dx(n,:),bc(n))
+       call multifab_physbc(u(n),1,1,dm,bc(n))
     
     enddo
 

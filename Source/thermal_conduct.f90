@@ -351,7 +351,7 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
   ! set the boundary conditions for p01
   do n=1,nlevs
      call multifab_fill_boundary(p01fab(n))
-     call multifab_physbc(p01fab(n),1,foextrap_comp,1,dx(n,:),the_bc_tower%bc_tower_array(n))
+     call multifab_physbc(p01fab(n),1,foextrap_comp,1,the_bc_tower%bc_tower_array(n))
   enddo
 
   ! load phi = p01
@@ -421,7 +421,7 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
   ! set the boundary conditions for p02
   do n=1,nlevs
      call multifab_fill_boundary(p02fab(n))
-     call multifab_physbc(p02fab(n),1,foextrap_comp,1,dx(n,:),the_bc_tower%bc_tower_array(n))
+     call multifab_physbc(p02fab(n),1,foextrap_comp,1,the_bc_tower%bc_tower_array(n))
   enddo
 
   ! load phi = p02
@@ -528,8 +528,7 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
 
   do n=1,nlevs
      call multifab_fill_boundary_c(s2(n),rhoh_comp,1)
-     call multifab_physbc(s2(n),rhoh_comp,dm+rhoh_comp,1,dx(n,:), &
-                          the_bc_tower%bc_tower_array(n))
+     call multifab_physbc(s2(n),rhoh_comp,dm+rhoh_comp,1,the_bc_tower%bc_tower_array(n))
   end do
 
   do n=nlevs,2,-1
@@ -798,7 +797,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02,the_bc_tower
   ! set the boundary conditions for p01
   do n=1,nlevs
      call multifab_fill_boundary(p01fab(n))
-     call multifab_physbc(p01fab(n),1,foextrap_comp,1,dx(n,:),the_bc_tower%bc_tower_array(n))
+     call multifab_physbc(p01fab(n),1,foextrap_comp,1,the_bc_tower%bc_tower_array(n))
   enddo
 
   do n = 1,nlevs
@@ -824,7 +823,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02,the_bc_tower
   ! set the boundary conditions for p02
   do n=1,nlevs
      call multifab_fill_boundary(p02fab(n))
-     call multifab_physbc(p02fab(n),1,foextrap_comp,1,dx(n,:),the_bc_tower%bc_tower_array(n))
+     call multifab_physbc(p02fab(n),1,foextrap_comp,1,the_bc_tower%bc_tower_array(n))
   enddo
   
   ! load phi = p01 + p02
@@ -910,8 +909,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02,the_bc_tower
 
 
      call multifab_fill_boundary_c(s2(n),rhoh_comp,1)
-     call multifab_physbc(s2(n),rhoh_comp,dm+rhoh_comp,1,dx(n,:), &
-                          the_bc_tower%bc_tower_array(n))
+     call multifab_physbc(s2(n),rhoh_comp,dm+rhoh_comp,1,the_bc_tower%bc_tower_array(n))
   enddo
 
   do n=nlevs,2,-1
@@ -1255,8 +1253,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02,the_bc_tower
 
   do n=1,nlevs
      call multifab_fill_boundary_c(s2(n),rhoh_comp,1)
-     call multifab_physbc(s2(n),rhoh_comp,dm+rhoh_comp,1,dx(n,:), &
-                          the_bc_tower%bc_tower_array(n))
+     call multifab_physbc(s2(n),rhoh_comp,dm+rhoh_comp,1,the_bc_tower%bc_tower_array(n))
   enddo
 
   do n=nlevs,2,-1

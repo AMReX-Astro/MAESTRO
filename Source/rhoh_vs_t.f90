@@ -84,11 +84,9 @@ contains
          call multifab_fill_boundary(  xn0_cart)
          call multifab_fill_boundary(rhoh0_cart)
 
-         call multifab_physbc(xn0_cart,1,dm+spec_comp,nspec,dx(n,:), &
-                              the_bc_level(n))
+         call multifab_physbc(xn0_cart,1,dm+spec_comp,nspec,the_bc_level(n))
 
-         call multifab_physbc(rhoh0_cart,1,dm+rhoh_comp,1,dx(n,:), &
-                              the_bc_level(n))
+         call multifab_physbc(rhoh0_cart,1,dm+rhoh_comp,1,the_bc_level(n))
       endif
 
        do i=1,u(n)%nboxes
@@ -658,8 +656,7 @@ contains
        end do
 
        call multifab_fill_boundary_c(s(n),temp_comp,1)
-       call multifab_physbc(s(n),temp_comp,dm+temp_comp,1,dx(n,:), &
-                            the_bc_level(n))
+       call multifab_physbc(s(n),temp_comp,dm+temp_comp,1,the_bc_level(n))
     end do
 
     do n=nlevs,2,-1

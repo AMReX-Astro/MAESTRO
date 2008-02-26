@@ -54,7 +54,7 @@ contains
        end do
        
        call multifab_fill_boundary_c(s0_cart(n),in_comp,1)
-       call multifab_physbc(s0_cart(n),in_comp,bc_comp,1,dx(n,:),the_bc_level(n))
+       call multifab_physbc(s0_cart(n),in_comp,bc_comp,1,the_bc_level(n))
     enddo
 
     do n=nlevs,2,-1

@@ -139,12 +139,12 @@ contains
        end do
 
        call multifab_fill_boundary_c(snew(n),nstart,nstop-nstart+1)
-       call multifab_physbc(snew(n),nstart,dm+nstart,nstop-nstart+1,dx(n,:), &
+       call multifab_physbc(snew(n),nstart,dm+nstart,nstop-nstart+1, &
                             the_bc_level(n))
 
        if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
           call multifab_fill_boundary_c(snew(n),rho_comp,1)
-          call multifab_physbc(snew(n),rho_comp,dm+rho_comp,1,dx(n,:),the_bc_level(n))
+          call multifab_physbc(snew(n),rho_comp,dm+rho_comp,1,the_bc_level(n))
        endif
 
     end do

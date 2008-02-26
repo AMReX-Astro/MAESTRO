@@ -106,7 +106,7 @@ contains
        end do
 
        call multifab_fill_boundary(unew(n))
-       call multifab_physbc(unew(n),1,1,dm,dx(n,:),the_bc_level(n))
+       call multifab_physbc(unew(n),1,1,dm,the_bc_level(n))
 
     enddo ! end loop over levels
 

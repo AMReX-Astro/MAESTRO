@@ -356,7 +356,7 @@ contains
          call multifab_fill_boundary(gpres(n))
          call multifab_fill_boundary(pres(n))
 
-         call multifab_physbc(unew(n),1,1,dm,dx(n,:),the_bc_level(n))
+         call multifab_physbc(unew(n),1,1,dm,the_bc_level(n))
 
       end do
 

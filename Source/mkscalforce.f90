@@ -80,7 +80,7 @@ contains
        end do
 
        call multifab_fill_boundary_c(scal_force(n),comp,1)
-       call multifab_physbc(scal_force(n),comp,foextrap_comp,1,dx(n,:),the_bc_level(n))
+       call multifab_physbc(scal_force(n),comp,foextrap_comp,1,the_bc_level(n))
 
     end do
 
@@ -307,7 +307,7 @@ contains
        end do
     
        call multifab_fill_boundary_c(temp_force(n),comp,1)
-       call multifab_physbc(temp_force(n),comp,foextrap_comp,1,dx(n,:),the_bc_level(n))
+       call multifab_physbc(temp_force(n),comp,foextrap_comp,1,the_bc_level(n))
 
     end do
 

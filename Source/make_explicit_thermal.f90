@@ -262,8 +262,7 @@ contains
        ! set the boundary conditions for pressure
        do n=1,nlevs
           call multifab_fill_boundary(phi(n))
-          call multifab_physbc(phi(n),1,foextrap_comp,1,dx(n,:), &
-                               the_bc_tower%bc_tower_array(n))
+          call multifab_physbc(phi(n),1,foextrap_comp,1,the_bc_tower%bc_tower_array(n))
        enddo
 
        ! setup beta = pcoeff on faces
@@ -313,8 +312,7 @@ contains
        ! this includes periodic domain boundary conditions
        call multifab_fill_boundary(thermal(n))
 
-       call multifab_physbc(thermal(n),1,foextrap_comp,1,dx(n,:), &
-                            the_bc_tower%bc_tower_array(n))
+       call multifab_physbc(thermal(n),1,foextrap_comp,1,the_bc_tower%bc_tower_array(n))
     enddo
 
     do n=nlevs,2,-1
