@@ -56,6 +56,8 @@ subroutine varden()
 
   integer :: nlevs,n
   integer :: nr_fine
+  integer :: which_step
+
   real(dp_t) :: max_dist
 
   call probin_init()
@@ -229,7 +231,9 @@ subroutine varden()
      s0_old(:,:,:) = s0(:,:,:)
      p0_old(:,:) = p0(:,:)
 
-     call advect_base(nlevs,w0,Sbar_in,p0_old,p0, &
+     which_step = 1
+
+     call advect_base(which_step,nlevs,w0,Sbar_in,p0_old,p0, &
                       s0_old,s0, &
                       gam1,div_coeff,eta, &
                       dx(:,1),dt)
