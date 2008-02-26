@@ -1303,7 +1303,7 @@ contains
 
      else if (slope_order .eq. 2) then
 
-        do i = is-1,ie+1
+        do i = is+1,ie-1
            del = half*(s(i+1) - s(i-1))
            dpls = two*(s(i+1) - s(i  ))
            dmin = two*(s(i  ) - s(i-1))
