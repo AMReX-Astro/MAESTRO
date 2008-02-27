@@ -82,12 +82,10 @@ contains
           hi = upb(get_box(s(n),i))
           select case (dm)
           case (2)
-             call make_coeffs_2d(lo,hi,dx(n,:),sp(:,:,1,:), &
-                                 Tcoeffp(:,:,1,1),hcoeffp(:,:,1,1), &
+             call make_coeffs_2d(lo,hi,sp(:,:,1,:),Tcoeffp(:,:,1,1),hcoeffp(:,:,1,1), &
                                  Xkcoeffp(:,:,1,:),pcoeffp(:,:,1,1))
           case (3)
-             call make_coeffs_3d(n,lo,hi,dx(n,:),sp(:,:,:,:), &
-                                 Tcoeffp(:,:,:,1),hcoeffp(:,:,:,1), &
+             call make_coeffs_3d(lo,hi,sp(:,:,:,:),Tcoeffp(:,:,:,1),hcoeffp(:,:,:,1), &
                                  Xkcoeffp(:,:,:,:),pcoeffp(:,:,:,1))
           end select
        end do
@@ -337,14 +335,13 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! create Tcoeff = -kth, hcoeff = -kth/cp, Xkcoeff = xik*kth/cp, pcoeff = hp*kth/cp
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine make_coeffs_2d(lo,hi,dx,s,Tcoeff,hcoeff,Xkcoeff,pcoeff)
+  subroutine make_coeffs_2d(lo,hi,s,Tcoeff,hcoeff,Xkcoeff,pcoeff)
 
     use variables, only: rho_comp, temp_comp, spec_comp
     use eos_module
     use probin_module, ONLY: use_big_h
 
     integer        , intent(in   ) :: lo(:),hi(:)
-    real(dp_t)    ,  intent(in   ) :: dx(:)
     real(kind=dp_t), intent(in   ) :: s(lo(1)-3:,lo(2)-3:,:)
     real(kind=dp_t), intent(inout) :: Tcoeff(lo(1)-1:,lo(2)-1:)
     real(kind=dp_t), intent(inout) :: hcoeff(lo(1)-1:,lo(2)-1:)
@@ -400,7 +397,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! create Tcoeff = -kth, hcoeff = -kth/cp, Xkcoeff = xik*kth/cp, pcoeff = hp*kth/cp
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine make_coeffs_3d(n,lo,hi,dx,s,Tcoeff,hcoeff,Xkcoeff,pcoeff)
+  subroutine make_coeffs_3d(lo,hi,s,Tcoeff,hcoeff,Xkcoeff,pcoeff)
 
     use variables, only: rho_comp, temp_comp, spec_comp
     use eos_module
@@ -408,8 +405,7 @@ contains
     use probin_module, ONLY: use_big_h
     use fill_3d_module
     
-    integer        , intent(in   ) :: n,lo(:),hi(:)
-    real(dp_t)    ,  intent(in   ) :: dx(:)
+    integer        , intent(in   ) :: lo(:),hi(:)
     real(kind=dp_t), intent(in   ) :: s(lo(1)-3:,lo(2)-3:,lo(3)-3:,:)
     real(kind=dp_t), intent(inout) :: Tcoeff(lo(1)-1:,lo(2)-1:,lo(3)-1:)
     real(kind=dp_t), intent(inout) :: hcoeff(lo(1)-1:,lo(2)-1:,lo(3)-1:)
