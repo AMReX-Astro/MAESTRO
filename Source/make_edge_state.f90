@@ -28,7 +28,7 @@ module make_edge_state_module
   
 contains
 
-  subroutine make_edge_state(nlevs,s,u,sedge,umac,utrans,force,normal,w0,w0_cart_vec,dx, &
+  subroutine make_edge_state(nlevs,s,u,sedge,umac,utrans,force,w0,w0_cart_vec,dx, &
                              dt,is_vel,the_bc_level,velpred,start_scomp,start_bccomp, &
                              num_comp,mla)
 
@@ -40,7 +40,6 @@ contains
     type(multifab) , intent(in   ) :: s(:),u(:)
     type(multifab) , intent(inout) :: sedge(:,:),umac(:,:)
     type(multifab) , intent(in   ) :: utrans(:,:),force(:)
-    type(multifab) , intent(in   ) :: normal(:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     type(multifab) , intent(in   ) :: w0_cart_vec(:)
     real(kind=dp_t), intent(in   ) :: dx(:,:),dt
