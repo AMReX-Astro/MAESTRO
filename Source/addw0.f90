@@ -11,7 +11,7 @@ module addw0_module
 
 contains
 
-  subroutine addw0(nlevs,umac,w0,w0_cart,dx,mult)
+  subroutine addw0(nlevs,umac,w0,w0_cart,mult)
 
     use bl_prof_module
     use geometry, only: spherical
@@ -20,7 +20,7 @@ contains
     type(multifab) , intent(inout) :: umac(:,:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     type(multifab) , intent(in   ) :: w0_cart(:)
-    real(kind=dp_t), intent(in   ) :: dx(:,:),mult
+    real(kind=dp_t), intent(in   ) :: mult
 
     ! Local variables
     integer :: i,lo(umac(1,1)%dim),hi(umac(1,1)%dim),dm,n
@@ -43,10 +43,10 @@ contains
           hi =  upb(get_box(umac(n,dm), i))
           select case(dm)
           case(2)
-             call addw0_2d(wmp(:,:,1,1),w0(n,:),lo,hi,dx(n,:),mult)
+             call addw0_2d(wmp(:,:,1,1),w0(n,:),lo,hi,mult)
           case(3)
              if (spherical .eq. 0) then
-                call addw0_3d(wmp(:,:,:,1),w0(n,:),lo,hi,dx(n,:),mult)
+                call addw0_3d(wmp(:,:,:,1),w0(n,:),lo,hi,mult)
              else
                 ump  => dataptr(umac(n,1), i)
                 vmp  => dataptr(umac(n,2), i)
@@ -65,13 +65,12 @@ contains
 
   end subroutine addw0
 
-  subroutine addw0_2d(vmac,w0,lo,hi,dx,mult)
+  subroutine addw0_2d(vmac,w0,lo,hi,mult)
 
     integer        , intent(in   ) :: lo(:),hi(:)
     real(kind=dp_t), intent(inout) :: vmac(lo(1)- 1:,lo(2)- 1:)
     real(kind=dp_t), intent(in   ) ::   w0(0:)
     real(kind=dp_t), intent(in   ) :: mult
-    real(kind=dp_t), intent(in   ) :: dx(:)
 
     integer :: i,j
 
@@ -83,13 +82,12 @@ contains
 
   end subroutine addw0_2d
 
-  subroutine addw0_3d(wmac,w0,lo,hi,dx,mult)
+  subroutine addw0_3d(wmac,w0,lo,hi,mult)
 
     integer        , intent(in   ) :: lo(:),hi(:)
     real(kind=dp_t), intent(inout) :: wmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
     real(kind=dp_t), intent(in   ) ::   w0(0:)
     real(kind=dp_t), intent(in   ) :: mult
-    real(kind=dp_t), intent(in   ) :: dx(:)
 
     integer :: i,j,k
 

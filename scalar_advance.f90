@@ -158,7 +158,7 @@ contains
     !     Add w0 to MAC velocities (trans velocities already have w0).
     !**************************************************************************
 
-    call addw0(nlevs,umac,w0,w0_cart_vec,dx,mult=ONE)
+    call addw0(nlevs,umac,w0,w0_cart_vec,mult=ONE)
 
     !**************************************************************************
     !     Create the edge states of (rho h)' (or T) and (rho X)_i.
@@ -219,7 +219,7 @@ contains
     !     Subtract w0 from MAC velocities.
     !**************************************************************************
 
-    call addw0(nlevs,umac,w0,w0_cart_vec,dx,mult=-ONE)
+    call addw0(nlevs,umac,w0,w0_cart_vec,mult=-ONE)
 
     !**************************************************************************
     !     Compute fluxes
