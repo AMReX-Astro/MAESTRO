@@ -554,7 +554,7 @@ contains
           call multifab_build(rhohalf(n), mla%la(n), 1, 1)
        end do
 
-       call make_at_halftime(nlevs,rhohalf,sold,snew,rho_comp,1,dx, &
+       call make_at_halftime(nlevs,rhohalf,sold,snew,rho_comp,1, &
                              the_bc_tower%bc_tower_array,mla)
        
        ! MAC projection !
@@ -764,8 +764,7 @@ contains
        call multifab_build(rhohalf(n), mla%la(n), 1, 1)
     end do
 
-    call make_at_halftime(nlevs,rhohalf,sold,snew,rho_comp,1,dx, &
-                          the_bc_tower%bc_tower_array,mla)
+    call make_at_halftime(nlevs,rhohalf,sold,snew,rho_comp,1,the_bc_tower%bc_tower_array,mla)
     
     call velocity_advance(nlevs,mla,uold,unew,sold,rhohalf,umac,utrans,gpres, &
                           normal,w0,w0_cart_vec,w0_force,w0_force_cart_vec,s0_old,s0_nph, &
