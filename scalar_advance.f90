@@ -149,7 +149,7 @@ contains
                               s0_old_cart,rhoh_comp,1,mla,the_bc_level)
         
        if(use_thermal_diffusion) then
-          call add_thermal_to_force(nlevs,scal_force,thermal,the_bc_level,mla,dx)
+          call add_thermal_to_force(nlevs,scal_force,thermal,the_bc_level,mla)
        end if
 
     end if

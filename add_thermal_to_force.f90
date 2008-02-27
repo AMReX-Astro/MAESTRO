@@ -16,7 +16,7 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine add_thermal_to_force(nlevs,force,thermal,the_bc_level,mla,dx)
+  subroutine add_thermal_to_force(nlevs,force,thermal,the_bc_level,mla)
 
     use bl_prof_module
     use multifab_physbc_module
@@ -29,7 +29,6 @@ contains
     type(multifab) , intent(in   ) :: thermal(:)
     type(bc_level) , intent(in   ) :: the_bc_level(:)
     type(ml_layout), intent(inout) :: mla
-    real(kind=dp_t), intent(in   ) :: dx(:,:)
 
     ! local
     integer :: n
