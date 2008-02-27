@@ -119,9 +119,9 @@ contains
              hi = upb(get_box(s(n),i))
              select case (dm)
              case (2)
-                call put_beta_on_faces_2d(lo,hi,Tcoeffp(:,:,1,1),betap(:,:,1,:))
+                call put_beta_on_faces_2d(lo,Tcoeffp(:,:,1,1),betap(:,:,1,:))
              case (3)
-                call put_beta_on_faces_3d(lo,hi,Tcoeffp(:,:,:,1),betap(:,:,:,:))
+                call put_beta_on_faces_3d(lo,Tcoeffp(:,:,:,1),betap(:,:,:,:))
              end select
           end do
        enddo ! end loop over levels
@@ -180,9 +180,9 @@ contains
              hi =  upb(get_box(s(n),i))
              select case (dm)
              case (2)
-                call put_beta_on_faces_2d(lo,hi,hcoeffp(:,:,1,1),betap(:,:,1,:))
+                call put_beta_on_faces_2d(lo,hcoeffp(:,:,1,1),betap(:,:,1,:))
              case (3)
-                call put_beta_on_faces_3d(lo,hi,hcoeffp(:,:,:,1),betap(:,:,:,:))
+                call put_beta_on_faces_3d(lo,hcoeffp(:,:,:,1),betap(:,:,:,:))
              end select
           end do
        enddo ! end loop over levels
@@ -222,9 +222,9 @@ contains
                 hi = upb(get_box(s(n),i))
                 select case (dm)
                 case (2)
-                   call put_beta_on_faces_2d(lo,hi,Xkcoeffp(:,:,1,comp),betap(:,:,1,:))
+                   call put_beta_on_faces_2d(lo,Xkcoeffp(:,:,1,comp),betap(:,:,1,:))
                 case (3)
-                   call put_beta_on_faces_3d(lo,hi,Xkcoeffp(:,:,:,comp),betap(:,:,:,:))
+                   call put_beta_on_faces_3d(lo,Xkcoeffp(:,:,:,comp),betap(:,:,:,:))
                 end select
              end do
           enddo ! end loop over levels
@@ -275,9 +275,9 @@ contains
              hi = upb(get_box(beta(n),i))
              select case (dm)
              case (2)
-                call put_beta_on_faces_2d(lo,hi,pcoeffp(:,:,1,1),betap(:,:,1,:))
+                call put_beta_on_faces_2d(lo,pcoeffp(:,:,1,1),betap(:,:,1,:))
              case (3)
-                call put_beta_on_faces_3d(lo,hi,pcoeffp(:,:,:,1),betap(:,:,:,:))
+                call put_beta_on_faces_3d(lo,pcoeffp(:,:,:,1),betap(:,:,:,:))
              end select
           end do
        enddo

@@ -105,7 +105,7 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
                                              Xkcoeff1p(:,:,1,:), &
                                              pcoeff1p(:,:,1,1))
         case (3)
-           call compute_thermo_quantities_3d(lo,hi,dt,t01(n,:), &
+           call compute_thermo_quantities_3d(lo,hi,dt, &
                                              s1p(:,:,:,:), &
                                              hcoeff1p(:,:,:,1), &
                                              Xkcoeff1p(:,:,:,:), &
@@ -146,7 +146,7 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
                                              Xkcoeff2p(:,:,1,:), &
                                              pcoeff2p(:,:,1,1))
         case (3)
-           call compute_thermo_quantities_3d(lo,hi,dt,t02(n,:), &
+           call compute_thermo_quantities_3d(lo,hi,dt, &
                                              s_for_new_coeffp(:,:,:,:), &
                                              hcoeff2p(:,:,:,1), &
                                              Xkcoeff2p(:,:,:,:), &
@@ -173,11 +173,9 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
         hi = upb(get_box(rhsbeta(n), i))
         select case (dm)
         case (2)
-           call put_beta_on_faces_2d(lo,hi,hcoeff1p(:,:,1,1), &
-                                     rhsbetap(:,:,1,:))
+           call put_beta_on_faces_2d(lo,hcoeff1p(:,:,1,1),rhsbetap(:,:,1,:))
         case (3)
-           call put_beta_on_faces_3d(lo,hi,hcoeff1p(:,:,:,1), &
-                                     rhsbetap(:,:,:,:))
+           call put_beta_on_faces_3d(lo,hcoeff1p(:,:,:,1),rhsbetap(:,:,:,:))
         end select
      end do
   enddo
@@ -232,11 +230,9 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
            hi = upb(get_box(rhsbeta(n), i))
            select case (dm)
            case (2)
-              call put_beta_on_faces_2d(lo,hi,Xkcoeff1p(:,:,1,comp), &
-                                        rhsbetap(:,:,1,:))
+              call put_beta_on_faces_2d(lo,Xkcoeff1p(:,:,1,comp),rhsbetap(:,:,1,:))
            case (3)
-              call put_beta_on_faces_3d(lo,hi,Xkcoeff1p(:,:,:,comp), &
-                                        rhsbetap(:,:,:,:))
+              call put_beta_on_faces_3d(lo,Xkcoeff1p(:,:,:,comp),rhsbetap(:,:,:,:))
            end select
         end do
      enddo
@@ -269,11 +265,9 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
            hi = upb(get_box(rhsbeta(n), i))
            select case (dm)
            case (2)
-              call put_beta_on_faces_2d(lo,hi,Xkcoeff2p(:,:,1,comp), &
-                                        rhsbetap(:,:,1,:))
+              call put_beta_on_faces_2d(lo,Xkcoeff2p(:,:,1,comp),rhsbetap(:,:,1,:))
            case (3)
-              call put_beta_on_faces_3d(lo,hi,Xkcoeff2p(:,:,:,comp), &
-                                        rhsbetap(:,:,:,:))
+              call put_beta_on_faces_3d(lo,Xkcoeff2p(:,:,:,comp),rhsbetap(:,:,:,:))
            end select
         end do
      enddo
@@ -314,11 +308,9 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
         hi = upb(get_box(rhsbeta(n), i))
         select case (dm)
         case (2)
-           call put_beta_on_faces_2d(lo,hi,pcoeff1p(:,:,1,1), &
-                                     rhsbetap(:,:,1,:))
+           call put_beta_on_faces_2d(lo,pcoeff1p(:,:,1,1),rhsbetap(:,:,1,:))
         case (3)
-           call put_beta_on_faces_3d(lo,hi,pcoeff1p(:,:,:,1), &
-                                     rhsbetap(:,:,:,:))
+           call put_beta_on_faces_3d(lo,pcoeff1p(:,:,:,1),rhsbetap(:,:,:,:))
         end select
      end do
   enddo
@@ -384,11 +376,9 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
         hi = upb(get_box(rhsbeta(n), i))
         select case (dm)
         case (2)
-           call put_beta_on_faces_2d(lo,hi,pcoeff2p(:,:,1,1), &
-                                     rhsbetap(:,:,1,:))
+           call put_beta_on_faces_2d(lo,pcoeff2p(:,:,1,1),rhsbetap(:,:,1,:))
         case (3)
-           call put_beta_on_faces_3d(lo,hi,pcoeff2p(:,:,:,1), &
-                                     rhsbetap(:,:,:,:))
+           call put_beta_on_faces_3d(lo,pcoeff2p(:,:,:,1),rhsbetap(:,:,:,:))
         end select
      end do
   enddo
@@ -469,11 +459,9 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
         hi = upb(get_box(lhsbeta(n), i))
         select case (dm)
         case (2)
-           call put_beta_on_faces_2d(lo,hi,hcoeff2p(:,:,1,1), &
-                                     lhsbetap(:,:,1,:))
+           call put_beta_on_faces_2d(lo,hcoeff2p(:,:,1,1),lhsbetap(:,:,1,:))
         case (3)
-           call put_beta_on_faces_3d(lo,hi,hcoeff2p(:,:,:,1), &
-                                     lhsbetap(:,:,:,:))
+           call put_beta_on_faces_3d(lo,hcoeff2p(:,:,:,1),lhsbetap(:,:,:,:))
         end select
      end do
   enddo
@@ -635,7 +623,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02,the_bc_tower
                                              Xkcoeff1p(:,:,1,:), &
                                              pcoeff1p(:,:,1,1))
         case (3)
-           call compute_thermo_quantities_3d(lo,hi,dt,t01(n,:), &
+           call compute_thermo_quantities_3d(lo,hi,dt, &
                                              s1p(:,:,:,:), &
                                              hcoeff1p(:,:,:,1), &
                                              Xkcoeff1p(:,:,:,:), &
@@ -662,11 +650,9 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02,the_bc_tower
         hi = upb(get_box(rhsbeta(n), i))
         select case (dm)
         case (2)
-           call put_beta_on_faces_2d(lo,hi,hcoeff1p(:,:,1,1), &
-                                     rhsbetap(:,:,1,:))
+           call put_beta_on_faces_2d(lo,hcoeff1p(:,:,1,1),rhsbetap(:,:,1,:))
         case (3)
-           call put_beta_on_faces_3d(lo,hi,hcoeff1p(:,:,:,1), &
-                                     rhsbetap(:,:,:,:))
+           call put_beta_on_faces_3d(lo,hcoeff1p(:,:,:,1),rhsbetap(:,:,:,:))
         end select
      end do
   enddo
@@ -714,11 +700,9 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02,the_bc_tower
            hi = upb(get_box(rhsbeta(n), i))
            select case (dm)
            case (2)
-              call put_beta_on_faces_2d(lo,hi,Xkcoeff1p(:,:,1,comp), &
-                                        rhsbetap(:,:,1,:))
+              call put_beta_on_faces_2d(lo,Xkcoeff1p(:,:,1,comp),rhsbetap(:,:,1,:))
            case (3)
-              call put_beta_on_faces_3d(lo,hi,Xkcoeff1p(:,:,:,comp), &
-                                        rhsbetap(:,:,:,:))
+              call put_beta_on_faces_3d(lo,Xkcoeff1p(:,:,:,comp),rhsbetap(:,:,:,:))
            end select
         end do
      enddo
@@ -761,11 +745,9 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02,the_bc_tower
         hi = upb(get_box(rhsbeta(n), i))
         select case (dm)
         case (2)
-           call put_beta_on_faces_2d(lo,hi,pcoeff1p(:,:,1,1), &
-                                     rhsbetap(:,:,1,:))
+           call put_beta_on_faces_2d(lo,pcoeff1p(:,:,1,1),rhsbetap(:,:,1,:))
         case (3)
-           call put_beta_on_faces_3d(lo,hi,pcoeff1p(:,:,:,1), &
-                                     rhsbetap(:,:,:,:))
+           call put_beta_on_faces_3d(lo,pcoeff1p(:,:,:,1),rhsbetap(:,:,:,:))
         end select
      end do
   enddo
@@ -856,11 +838,9 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02,the_bc_tower
         hi = upb(get_box(lhsbeta(n), i))
         select case (dm)
         case (2)
-           call put_beta_on_faces_2d(lo,hi,hcoeff1p(:,:,1,1), &
-                                     lhsbetap(:,:,1,:))
+           call put_beta_on_faces_2d(lo,hcoeff1p(:,:,1,1),lhsbetap(:,:,1,:))
         case (3)
-           call put_beta_on_faces_3d(lo,hi,hcoeff1p(:,:,:,1), &
-                                     lhsbetap(:,:,:,:))
+           call put_beta_on_faces_3d(lo,hcoeff1p(:,:,:,1),lhsbetap(:,:,:,:))
         end select
      end do
   enddo
@@ -938,11 +918,9 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02,the_bc_tower
         hi = upb(get_box(rhsbeta(n), i))
         select case (dm)
         case (2)
-           call put_beta_on_faces_2d(lo,hi,hcoeff1p(:,:,1,1), &
-                                     rhsbetap(:,:,1,:))
+           call put_beta_on_faces_2d(lo,hcoeff1p(:,:,1,1),rhsbetap(:,:,1,:))
         case (3)
-           call put_beta_on_faces_3d(lo,hi,hcoeff1p(:,:,:,1), &
-                                     rhsbetap(:,:,:,:))
+           call put_beta_on_faces_3d(lo,hcoeff1p(:,:,:,1),rhsbetap(:,:,:,:))
         end select
      end do
   enddo
@@ -993,7 +971,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02,the_bc_tower
                                              Xkcoeff2p(:,:,1,:), &
                                              pcoeff2p(:,:,1,1))
         case (3)
-           call compute_thermo_quantities_3d(lo,hi,dt,t02(n,:), &
+           call compute_thermo_quantities_3d(lo,hi,dt, &
                                              s2p(:,:,:,:), &
                                              hcoeff2p(:,:,:,1), &
                                              Xkcoeff2p(:,:,:,:), &
@@ -1020,11 +998,9 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02,the_bc_tower
            hi = upb(get_box(rhsbeta(n), i))
            select case (dm)
            case (2)
-              call put_beta_on_faces_2d(lo,hi,Xkcoeff1p(:,:,1,comp), &
-                                        rhsbetap(:,:,1,:))
+              call put_beta_on_faces_2d(lo,Xkcoeff1p(:,:,1,comp),rhsbetap(:,:,1,:))
            case (3)
-              call put_beta_on_faces_3d(lo,hi,Xkcoeff1p(:,:,:,comp), &
-                                        rhsbetap(:,:,:,:))
+              call put_beta_on_faces_3d(lo,Xkcoeff1p(:,:,:,comp),rhsbetap(:,:,:,:))
            end select
         end do
      enddo
@@ -1055,11 +1031,9 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02,the_bc_tower
            hi = upb(get_box(rhsbeta(n), i))
            select case (dm)
            case (2)
-              call put_beta_on_faces_2d(lo,hi,Xkcoeff2p(:,:,1,comp), &
-                                        rhsbetap(:,:,1,:))
+              call put_beta_on_faces_2d(lo,Xkcoeff2p(:,:,1,comp),rhsbetap(:,:,1,:))
            case (3)
-              call put_beta_on_faces_3d(lo,hi,Xkcoeff2p(:,:,:,comp), &
-                                        rhsbetap(:,:,:,:))
+              call put_beta_on_faces_3d(lo,Xkcoeff2p(:,:,:,comp),rhsbetap(:,:,:,:))
            end select
         end do
      enddo
@@ -1100,11 +1074,9 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02,the_bc_tower
         hi = upb(get_box(rhsbeta(n), i))
         select case (dm)
         case (2)
-           call put_beta_on_faces_2d(lo,hi,pcoeff1p(:,:,1,1), &
-                                     rhsbetap(:,:,1,:))
+           call put_beta_on_faces_2d(lo,pcoeff1p(:,:,1,1),rhsbetap(:,:,1,:))
         case (3)
-           call put_beta_on_faces_3d(lo,hi,pcoeff1p(:,:,:,1), &
-                                     rhsbetap(:,:,:,:))
+           call put_beta_on_faces_3d(lo,pcoeff1p(:,:,:,1),rhsbetap(:,:,:,:))
         end select
      end do
   enddo
@@ -1142,11 +1114,9 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02,the_bc_tower
         hi = upb(get_box(rhsbeta(n), i))
         select case (dm)
         case (2)
-           call put_beta_on_faces_2d(lo,hi,pcoeff2p(:,:,1,1), &
-                                     rhsbetap(:,:,1,:))
+           call put_beta_on_faces_2d(lo,pcoeff2p(:,:,1,1),rhsbetap(:,:,1,:))
         case (3)
-           call put_beta_on_faces_3d(lo,hi,pcoeff2p(:,:,:,1), &
-                                     rhsbetap(:,:,:,:))
+           call put_beta_on_faces_3d(lo,pcoeff2p(:,:,:,1),rhsbetap(:,:,:,:))
         end select
      end do
   enddo
@@ -1197,11 +1167,9 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02,the_bc_tower
         hi = upb(get_box(lhsbeta(n), i))
         select case (dm)
         case (2)
-           call put_beta_on_faces_2d(lo,hi,hcoeff2p(:,:,1,1), &
-                                     lhsbetap(:,:,1,:))
+           call put_beta_on_faces_2d(lo,hcoeff2p(:,:,1,1),lhsbetap(:,:,1,:))
         case (3)
-           call put_beta_on_faces_3d(lo,hi,hcoeff2p(:,:,:,1), &
-                                     lhsbetap(:,:,:,:))
+           call put_beta_on_faces_3d(lo,hcoeff2p(:,:,:,1),lhsbetap(:,:,:,:))
         end select
      end do
   enddo
@@ -1347,7 +1315,7 @@ end subroutine compute_thermo_quantities_2d
 ! Xkcoeff = (dt/2)\xi_k k_{th}/c_p
 ! pcoeff = (dt/2)h_p*k_{th}/c_p
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-subroutine compute_thermo_quantities_3d(lo,hi,dt,t0,s,hcoeff,Xkcoeff,pcoeff)
+subroutine compute_thermo_quantities_3d(lo,hi,dt,s,hcoeff,Xkcoeff,pcoeff)
 
   use variables, only: rho_comp, temp_comp, spec_comp
   use eos_module
@@ -1356,7 +1324,6 @@ subroutine compute_thermo_quantities_3d(lo,hi,dt,t0,s,hcoeff,Xkcoeff,pcoeff)
 
   integer        , intent(in   ) :: lo(:),hi(:)
   real(dp_t)    ,  intent(in   ) :: dt
-  real(kind=dp_t), intent(in   ) :: t0(0:)
   real(kind=dp_t), intent(in   ) :: s(lo(1)-3:,lo(2)-3:,lo(3)-3:,:)
   real(kind=dp_t), intent(inout) :: hcoeff(lo(1)-1:,lo(2)-1:,lo(3)-1:)
   real(kind=dp_t), intent(inout) :: Xkcoeff(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)
@@ -1429,9 +1396,9 @@ end subroutine compute_thermo_quantities_3d
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! put beta on faces
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-subroutine put_beta_on_faces_2d(lo,hi,ccbeta,beta)
+subroutine put_beta_on_faces_2d(lo,ccbeta,beta)
 
-  integer        , intent(in   ) :: lo(:),hi(:)
+  integer        , intent(in   ) :: lo(:)
   real(kind=dp_t), intent(in   ) :: ccbeta(lo(1)-1:,lo(2)-1:)
   real(kind=dp_t), intent(inout) :: beta(lo(1)-1:,lo(2)-1:,:)
 
@@ -1460,9 +1427,9 @@ end subroutine put_beta_on_faces_2d
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! put beta on faces
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-subroutine put_beta_on_faces_3d(lo,hi,ccbeta,beta)
+subroutine put_beta_on_faces_3d(lo,ccbeta,beta)
 
-  integer        , intent(in   ) :: lo(:),hi(:)
+  integer        , intent(in   ) :: lo(:)
   real(kind=dp_t), intent(in   ) :: ccbeta(lo(1)-1:,lo(2)-1:,lo(3)-1:)
   real(kind=dp_t), intent(inout) :: beta(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)
 
