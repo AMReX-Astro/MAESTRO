@@ -58,7 +58,7 @@ contains
            select case (dm)
            case (2)
               call make_macrhs_2d(lo,hi,mp(:,:,1,1),sp(:,:,1,1),gp(:,:,1,1),Sbar(n,:), &
-                                  div_coeff(n,:),dx(n,:))
+                                  div_coeff(n,:))
            case (3)
               call make_macrhs_3d(n,lo,hi,mp(:,:,:,1),sp(:,:,:,1),gp(:,:,:,1),Sbar(n,:), &
                                   div_coeff(n,:),dx(n,:))
@@ -71,7 +71,7 @@ contains
 
    end subroutine make_macrhs
 
-   subroutine make_macrhs_2d (lo,hi,rhs,Source,gamma1_term,Sbar,div_coeff,dx)
+   subroutine make_macrhs_2d (lo,hi,rhs,Source,gamma1_term,Sbar,div_coeff)
 
       integer         , intent(in   ) :: lo(:), hi(:)
       real (kind=dp_t), intent(  out) :: rhs(lo(1):,lo(2):)  
@@ -79,7 +79,6 @@ contains
       real (kind=dp_t), intent(in   ) :: gamma1_term(lo(1):,lo(2):)  
       real (kind=dp_t), intent(in   ) :: Sbar(0:)  
       real (kind=dp_t), intent(in   ) :: div_coeff(0:)  
-      real (kind=dp_t), intent(in   ) :: dx(:)
 
 !     Local variables
       integer :: i, j
