@@ -89,16 +89,16 @@ contains
           select case (dm)
           case (2)
              call make_rhscc_2d(lo,hi,rp(:,:,1,1),sp(:,:,1,1),gp(:,:,1,1),Sbar(n,:), &
-                                div_coeff(n,:),dx(n,:))
+                                div_coeff(n,:))
           case (3)
              if (spherical .eq. 1) then
                 dp => dataptr(div_coeff_cart(n), i)
                 sbp => dataptr(Sbar_cart(n), i)
-                call make_rhscc_3d_sphr(lo,hi,rp(:,:,:,1),sp(:,:,:,1),gp(:,:,:,1),sbp(:,:,:,1), &
-                                        dp(:,:,:,1))
+                call make_rhscc_3d_sphr(lo,hi,rp(:,:,:,1),sp(:,:,:,1),gp(:,:,:,1), &
+                                        sbp(:,:,:,1),dp(:,:,:,1))
              else
                 call make_rhscc_3d_cart(lo,hi,rp(:,:,:,1),sp(:,:,:,1),gp(:,:,:,1),Sbar(n,:), &
-                                        div_coeff(n,:),dx(n,:))
+                                        div_coeff(n,:))
              end if
           end select
        end do
@@ -133,7 +133,7 @@ contains
     
   end subroutine make_hgrhs
   
-  subroutine make_rhscc_2d(lo,hi,rhs_cc,Source,gamma1_term,Sbar,div_coeff,dx)
+  subroutine make_rhscc_2d(lo,hi,rhs_cc,Source,gamma1_term,Sbar,div_coeff)
 
     integer         , intent(in   ) :: lo(:), hi(:)
     real (kind=dp_t), intent(  out) :: rhs_cc(lo(1)-1:,lo(2)-1:)
@@ -141,7 +141,6 @@ contains
     real (kind=dp_t), intent(in   ) :: gamma1_term(lo(1):,lo(2):)  
     real (kind=dp_t), intent(in   ) ::      Sbar(0:)
     real (kind=dp_t), intent(in   ) :: div_coeff(0:)
-    real (kind=dp_t), intent(in   ) :: dx(:)
     
     ! Local variables
     integer :: i, j
@@ -174,7 +173,7 @@ contains
     
   end subroutine make_hgrhs_2d
   
-  subroutine make_rhscc_3d_cart(lo,hi,rhs_cc,Source,gamma1_term,Sbar,div_coeff,dx)
+  subroutine make_rhscc_3d_cart(lo,hi,rhs_cc,Source,gamma1_term,Sbar,div_coeff)
 
     integer         , intent(in   ) :: lo(:), hi(:)
     real (kind=dp_t), intent(  out) :: rhs_cc(lo(1)-1:,lo(2)-1:,lo(3)-1:)  
@@ -182,7 +181,6 @@ contains
     real (kind=dp_t), intent(in   ) :: gamma1_term(lo(1):,lo(2):,lo(3):)  
     real (kind=dp_t), intent(in   ) :: Sbar(0:)
     real (kind=dp_t), intent(in   ) :: div_coeff(0:)
-    real (kind=dp_t), intent(in   ) :: dx(:)
     
     ! Local variables
     integer :: i,j,k
