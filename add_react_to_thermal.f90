@@ -16,7 +16,7 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine add_react_to_thermal(nlevs,thermal,rho_omegadot,s,the_bc_level,mla,dx)
+  subroutine add_react_to_thermal(nlevs,thermal,rho_omegadot,s,the_bc_level,mla)
 
     use fill_3d_module
     use bl_prof_module
@@ -32,7 +32,6 @@ contains
     type(multifab) , intent(in   ) :: s(:)
     type(bc_level) , intent(in   ) :: the_bc_level(:)
     type(ml_layout), intent(inout) :: mla
-    real(kind=dp_t), intent(in   ) :: dx(:,:)
 
     ! local
     real(kind=dp_t), pointer :: sp(:,:,:,:)

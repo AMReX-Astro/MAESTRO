@@ -338,10 +338,10 @@ contains
     if(predict_temp_at_edges) then
        if(istep .le. 1) then
           call add_react_to_thermal(nlevs,thermal,rho_omegadot1,s1, &
-                                    the_bc_tower%bc_tower_array,mla,dx)
+                                    the_bc_tower%bc_tower_array,mla)
        else
           call add_react_to_thermal(nlevs,thermal,rho_omegadot2,s1, &
-                                    the_bc_tower%bc_tower_array,mla,dx)
+                                    the_bc_tower%bc_tower_array,mla)
           
           if(.not. do_half_alg) then
              do n=1,nlevs
@@ -621,10 +621,10 @@ contains
        if(predict_temp_at_edges) then
           if(istep .le. 1) then
              call add_react_to_thermal(nlevs,thermal,rho_omegadot1,s1, &
-                                       the_bc_tower%bc_tower_array,mla,dx)
+                                       the_bc_tower%bc_tower_array,mla)
           else
              call add_react_to_thermal(nlevs,thermal,rho_omegadot2_hold,s1, &
-                                       the_bc_tower%bc_tower_array,mla,dx)
+                                       the_bc_tower%bc_tower_array,mla)
 
              do n=1,nlevs
                 call destroy(rho_omegadot2_hold(n))
