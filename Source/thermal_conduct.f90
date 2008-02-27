@@ -21,7 +21,7 @@ contains
 ! Crank-Nicholson solve for enthalpy, taking into account only the
 ! enthalpy-diffusion terms in the temperature conduction term.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,t02, &
+subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t0, &
                                     the_bc_tower)
 
   use variables, only: foextrap_comp, rho_comp, spec_comp, rhoh_comp
@@ -39,7 +39,7 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
   type(multifab) , intent(in   ) :: s1(:)
   type(multifab) , intent(in   ) :: s_for_new_coeff(:)
   type(multifab) , intent(inout) :: s2(:)
-  real(kind=dp_t), intent(in   ) :: p01(:,0:),p02(:,0:),t01(:,0:),t02(:,0:)
+  real(kind=dp_t), intent(in   ) :: p01(:,0:),p02(:,0:),t0(:,0:)
   type(bc_tower) , intent(in   ) :: the_bc_tower
 
   ! Local
@@ -529,7 +529,7 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t01,
   enddo
 
   ! compute updated temperature
-  call makeTfromRhoH(nlevs,s2,t02,mla,the_bc_tower%bc_tower_array,dx)
+  call makeTfromRhoH(nlevs,s2,t0,mla,the_bc_tower%bc_tower_array,dx)
 
   call destroy(bpt)
 
@@ -539,7 +539,7 @@ end subroutine thermal_conduct_full_alg
 ! Crank-Nicholson solve for enthalpy, taking into account only the
 ! enthalpy-diffusion terms in the temperature conduction term.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02,the_bc_tower)
+subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t0,the_bc_tower)
 
   use variables, only: foextrap_comp, rho_comp, spec_comp, rhoh_comp, temp_comp
   use macproject_module
@@ -555,7 +555,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02,the_bc_tower
   real(dp_t)     , intent(in   ) :: dx(:,:),dt
   type(multifab) , intent(in   ) :: s1(:)
   type(multifab) , intent(inout) :: s2(:)
-  real(kind=dp_t), intent(in   ) :: p01(:,0:),p02(:,0:),t01(:,0:),t02(:,0:)
+  real(kind=dp_t), intent(in   ) :: p01(:,0:),p02(:,0:),t0(:,0:)
   type(bc_tower) , intent(in   ) :: the_bc_tower
 
   ! Local
@@ -898,7 +898,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02,the_bc_tower
   enddo
 
   ! compute updated temperature
-  call makeTfromRhoH(nlevs,s2,t02,mla,the_bc_tower%bc_tower_array,dx)
+  call makeTfromRhoH(nlevs,s2,t0,mla,the_bc_tower%bc_tower_array,dx)
 
   !!!!!!!!!!!!!!!!!!!!!!!
   ! Second implicit solve
@@ -1230,7 +1230,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t01,t02,the_bc_tower
   enddo
 
   ! compute updated temperature
-  call makeTfromRhoH(nlevs,s2,t02,mla,the_bc_tower%bc_tower_array,dx)
+  call makeTfromRhoH(nlevs,s2,t0,mla,the_bc_tower%bc_tower_array,dx)
 
   call destroy(bpt)
 

@@ -390,12 +390,10 @@ contains
        
        if(do_half_alg) then
           call thermal_conduct_half_alg(mla,dx,dt,s1,s2,p0_1,p0_2, &
-                                        s0_1(:,:,temp_comp), s0_2(:,:,temp_comp), &
-                                        the_bc_tower)
+                                        s0_2(:,:,temp_comp),the_bc_tower)
        else
           call thermal_conduct_full_alg(mla,dx,dt,s1,s1,s2,p0_1,p0_2, &
-                                        s0_1(:,:,temp_comp),s0_2(:,:,temp_comp), &
-                                        the_bc_tower)
+                                        s0_2(:,:,temp_comp),the_bc_tower)
           
           ! make a copy of s2star since these are needed to compute
           ! coefficients in the call to thermal_conduct_full_alg
@@ -658,8 +656,7 @@ contains
           end if
           
           call thermal_conduct_full_alg(mla,dx,dt,s1,s2star,s2,p0_1,p0_2, &
-                                        s0_1(:,:,temp_comp),s0_2(:,:,temp_comp), &
-                                        the_bc_tower)
+                                        s0_2(:,:,temp_comp),the_bc_tower)
 
           do n=1,nlevs
              call destroy(s2star(n))
