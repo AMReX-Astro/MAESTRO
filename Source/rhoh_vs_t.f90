@@ -33,7 +33,7 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     
     ! local
-    integer :: i,k,r,dm,n,comp
+    integer :: i,r,dm,n,comp
     integer :: lo(u(1)%dim),hi(u(1)%dim)
     real(kind=dp_t), pointer :: sepx(:,:,:,:)
     real(kind=dp_t), pointer :: sepy(:,:,:,:)
@@ -105,7 +105,7 @@ contains
              if (spherical .eq. 1) then
                xnp  => dataptr(  xn0_cart, i)
                rhp  => dataptr(rhoh0_cart, i)
-               call makeRhoHfromT_3d_sphr(n,sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
+               call makeRhoHfromT_3d_sphr(sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
                                           xnp(:,:,:,:), rhp(:,:,:,1), lo, hi, xn0_cart%ng)
              else
                call makeRhoHfromT_3d_cart(sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
@@ -417,7 +417,7 @@ contains
     
   end subroutine makeRhoHfromT_3d_cart
 
-  subroutine makeRhoHfromT_3d_sphr (n,sx,sy,sz,xn0_cart,rhoh0_cart,lo,hi,ngc)
+  subroutine makeRhoHfromT_3d_sphr(sx,sy,sz,xn0_cart,rhoh0_cart,lo,hi,ngc)
 
     use variables,     only: rho_comp, temp_comp, spec_comp, rhoh_comp
     use geometry,      only: spherical
@@ -425,7 +425,7 @@ contains
     use probin_module, only: use_big_h
     use bl_constants_module
 
-    integer        , intent(in   ) :: n,ngc
+    integer        , intent(in   ) :: ngc
     integer        , intent(in   ) :: lo(:),hi(:)
     real(kind=dp_t), intent(inout) :: sx(lo(1):,lo(2):,lo(3):,:)
     real(kind=dp_t), intent(inout) :: sy(lo(1):,lo(2):,lo(3):,:)
