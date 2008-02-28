@@ -17,9 +17,6 @@ module variables
   integer, save :: n_plot_comps
   integer, save :: ntrac,nscal
 
-  logical, save, allocatable :: is_pert_form(:)
-  logical, save, allocatable :: is_rhoX(:)
-
 contains
 
   subroutine init_variables(dm, nspec)
@@ -40,19 +37,6 @@ contains
     press_comp  = dm + nscal + 1
 
     foextrap_comp = press_comp+1
-
-    ! keep track of whether the variables are in full form or 
-    ! perturbational form (i.e. S or S')
-    allocate(is_pert_form(nscal))
-    is_pert_form(:) = .false.
-
-    ! keep track of whether the species are (rho X) or just
-    ! X (we start out with them being defined as rho X)
-    ! Note, here this array is dim nscal, so we can index
-    ! it the same as other state arrays.
-    allocate(is_rhoX(nscal))
-    is_rhoX(spec_comp:spec_comp+nspec-1) = .true.
-
 
   end subroutine init_variables
 
