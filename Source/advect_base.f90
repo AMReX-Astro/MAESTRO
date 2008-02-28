@@ -65,7 +65,7 @@ contains
     use eos_module
     use variables, only: spec_comp, rho_comp, temp_comp, rhoh_comp
     use geometry, only: nr
-    use probin_module, only: grav_const, anelastic_cutoff
+    use probin_module, only: grav_const, anelastic_cutoff, predict_X_at_edges
 
     integer        , intent(in   ) :: which_step,n
     real(kind=dp_t), intent(in   ) :: vel(0:)
@@ -83,10 +83,12 @@ contains
     
     real (kind = dp_t), allocatable :: force(:)
     real (kind = dp_t), allocatable :: edge(:)
-    
+    real (kind = dp_t), allocatable :: X0(:)
+
     ! Cell-centered
     allocate(force(0:nr(n)-1))
-    
+    allocate(   X0(0:nr(n)-1))
+
     ! Edge-centered
     allocate(edge(0:nr(n)))
    
@@ -98,7 +100,9 @@ contains
           exit
        end if
     end do
-    
+
+    s0_predicted_edge(:,:) = ZERO
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! UPDATE P0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -125,21 +129,63 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! UPDATE RHOX0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    if (predict_X_at_edges) then
+
+       ! we need rho0 on the edges
+       do r = 0,nr(n)-1
+          force(r) = -s0_old(r,rho_comp) * (vel(r+1) - vel(r)) / dz 
+       end do
+       
+       call make_edge_state_1d(n,s0_old(:,rho_comp),edge,vel,force,1,dz,dt)
+
+       s0_predicted_edge(:,rho_comp) = edge(:)       
+
+    endif
+
     do comp = spec_comp,spec_comp+nspec-1
 
-       do r = 0,nr(n)-1
-          force(r) = -s0_old(r,comp) * (vel(r+1) - vel(r)) / dz 
-       end do
+       if (predict_X_at_edges) then
 
-       if (which_step .eq. 2) then
-       do r = 0, r_anel-1
-          force(r) = force(r) - (eta(r+1,comp) - eta(r,comp))/dz
-       end do
-       end if
+          ! here we predict X_0 on the edges
+          X0(:) = s0_old(:,comp)/s0_old(:,rho_comp)
+
+          do r = 0,nr(n)-1
+             force(r) = ZERO
+          end do
        
-       call make_edge_state_1d(n,s0_old(:,comp),edge,vel,force,1,dz,dt)
+          call make_edge_state_1d(n,X0,edge,vel,force,1,dz,dt)
 
-       s0_predicted_edge(:,comp) = edge(:)
+          ! s0_predicted_edge will store X_0 on the edges -- we need
+          ! that later
+          s0_predicted_edge(:,comp) = edge(:)
+          
+          ! our final update needs (rho X)_0 on the edges, so compute
+          ! that now
+          edge(:) = s0_predicted_edge(:,rho_comp)*edge(:)
+
+       else
+
+          ! here we predict (rho X)_0 on the edges
+          do r = 0,nr(n)-1
+             force(r) = -s0_old(r,comp) * (vel(r+1) - vel(r)) / dz 
+          end do
+
+          if (which_step .eq. 2) then
+             do r = 0, r_anel-1
+                force(r) = force(r) - (eta(r+1,comp) - eta(r,comp))/dz
+             end do
+          end if
+       
+          call make_edge_state_1d(n,s0_old(:,comp),edge,vel,force,1,dz,dt)
+
+          ! s0_predicted_edge will store (rho X)_0 on the edges
+          s0_predicted_edge(:,comp) = edge(:)
+
+          ! compute rho_0 on the edges for completeness
+          s0_predicted_edge(:,rho_comp) = s0_predicted_edge(:,rho_comp) + &
+                                          s0_predicted_edge(:,comp)
+
+       endif
 
        do r = 0,nr(n)-1
           s0_new(r,comp) = s0_old(r,comp) &
@@ -222,7 +268,7 @@ contains
        
     end do
     
-    deallocate(force,edge)
+    deallocate(force,edge,X0)
     
   end subroutine advect_base_state_planar
 
