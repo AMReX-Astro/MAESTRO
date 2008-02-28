@@ -52,17 +52,34 @@ contains
           hi = upb(get_box(s0_cart(n),i))
           call fill_3d_data(n,s0p(:,:,:,in_comp),s0(n,:),lo,hi,dx(n,:),ng)
        end do
-       
-       call multifab_fill_boundary_c(s0_cart(n),in_comp,1)
-       call multifab_physbc(s0_cart(n),in_comp,bc_comp,1,the_bc_level(n))
-    enddo
-
-    do n=nlevs,2,-1
-       call ml_cc_restriction_c(s0_cart(n-1),in_comp,s0_cart(n),in_comp,mla%mba%rr(n-1,:),1)
-       call multifab_fill_ghost_cells(s0_cart(n),s0_cart(n-1),ng,mla%mba%rr(n-1,:), &
-                                      the_bc_level(n-1),the_bc_level(n), &
-                                      in_comp,bc_comp,1)
     end do
+
+    if (nlevs .eq. 1) then
+
+       ! fill ghost cells for two adjacent grids at the same level
+       ! this includes periodic domain boundary ghost cells
+       call multifab_fill_boundary_c(s0_cart(nlevs),in_comp,1)
+
+       ! fill non-periodic domain boundary ghost cells
+       call multifab_physbc(s0_cart(nlevs),in_comp,bc_comp,1,the_bc_level(nlevs))
+
+    else
+
+       ! the loop over nlevs must count backwards to make sure the finer grids are done first
+       do n=nlevs,2,-1
+
+          ! set level n-1 data to be the average of the level n data covering it
+          call ml_cc_restriction_c(s0_cart(n-1),in_comp,s0_cart(n), &
+                                   in_comp,mla%mba%rr(n-1,:),1)
+
+          ! fill level n ghost cells using interpolation from level n-1 data
+          ! note that multifab_fill_boundary and multifab_physbc are called for
+          ! both levels n-1 and n
+          call multifab_fill_ghost_cells(s0_cart(n),s0_cart(n-1),ng,mla%mba%rr(n-1,:), &
+                                         the_bc_level(n-1),the_bc_level(n),in_comp,bc_comp,1)
+    end do
+
+ end if
 
     call destroy(bpt)
 

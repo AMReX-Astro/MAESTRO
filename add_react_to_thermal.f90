@@ -83,10 +83,9 @@ contains
           ! fill level n ghost cells using interpolation from level n-1 data
           ! note that multifab_fill_boundary and multifab_physbc are called for
           ! both levels n-1 and n
-          call multifab_fill_ghost_cells(thermal(n),thermal(n-1), &
-                                         1,mla%mba%rr(n-1,:), &
-                                         the_bc_level(n-1), the_bc_level(n), &
-                                         1,foextrap_comp,1)
+          call multifab_fill_ghost_cells(thermal(n),thermal(n-1),1,mla%mba%rr(n-1,:), &
+                                         the_bc_level(n-1), the_bc_level(n),1, &
+                                         foextrap_comp,1)
        enddo
 
     end if
