@@ -91,9 +91,9 @@ contains
     allocate(edge(0:nr(n)))
    
     ! This is used to zero the eta contribution above the anelastic_cutoff
-    r_anel = nr(1)-1
-    do r = 0,nr(1)-1
-       if (s0_old(r,rho_comp) .lt. anelastic_cutoff .and. r_anel .eq. nr(1)-1) then
+    r_anel = nr(n)-1
+    do r = 0,nr(n)-1
+       if (s0_old(r,rho_comp) .lt. anelastic_cutoff .and. r_anel .eq. nr(n)-1) then
           r_anel = r
           exit
        end if
