@@ -1,6 +1,15 @@
-module pert_form_module
+! If flag = .true. then put the state into perturbational form.  That
+! is, construct S' = S - S_0 for each of the desired state variables.
+! Here, the base state, S_0, is left unchanged.
+!
+! If flag = .false. then convert from perturbational form to full 
+! state form (S = S' + S_0)
+!
+! Note: the form of any state variable can be found by looking at the
+! is_pert_form() array for that variable's index.  This array is
+! managed by the variables module.
 
-  ! Put the state into perturbational form
+module pert_form_module
 
   use multifab_module
 
