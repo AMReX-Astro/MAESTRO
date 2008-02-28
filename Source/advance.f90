@@ -119,6 +119,7 @@ contains
     real(dp_t), allocatable :: s0_2(:,:,:)
     real(dp_t), allocatable :: p0_1(:,:)
     real(dp_t), allocatable :: p0_2(:,:)
+    real(dp_t), allocatable :: s0_predicted_edge(:,:,:)
 
     integer    :: r,n,dm,comp,nlevs,ng_s,proj_type
     real(dp_t) :: halfdt,eps_in
@@ -131,27 +132,29 @@ contains
     dm = mla%dim
     nlevs = mla%nlevel
 
-    allocate(   grav_cell_nph(nlevs,0:nr(nlevs)-1))
-    allocate(   grav_cell_new(nlevs,0:nr(nlevs)-1))
-    allocate(          s0_nph(nlevs,0:nr(nlevs)-1,nscal))
-    allocate(        w0_force(nlevs,0:nr(nlevs)-1))
-    allocate(          w0_old(nlevs,0:nr(nlevs)  ))
-    allocate(            Sbar(nlevs,0:nr(nlevs)-1,1    ))
-    allocate(   div_coeff_nph(nlevs,0:nr(nlevs)-1))
-    allocate(  div_coeff_edge(nlevs,0:nr(nlevs)  ))
-    allocate(rho_omegadotbar1(nlevs,0:nr(nlevs)-1,nspec))
-    allocate(rho_omegadotbar2(nlevs,0:nr(nlevs)-1,nspec))
-    allocate(     rho_Hextbar(nlevs,0:nr(nlevs)-1,1))
-    allocate(            s0_1(nlevs,0:nr(nlevs)-1,nscal))
-    allocate(            s0_2(nlevs,0:nr(nlevs)-1,nscal))
-    allocate(            p0_1(nlevs,0:nr(nlevs)-1))
-    allocate(            p0_2(nlevs,0:nr(nlevs)-1))
+    allocate(    grav_cell_nph(nlevs,0:nr(nlevs)-1))
+    allocate(    grav_cell_new(nlevs,0:nr(nlevs)-1))
+    allocate(           s0_nph(nlevs,0:nr(nlevs)-1,nscal))
+    allocate(         w0_force(nlevs,0:nr(nlevs)-1))
+    allocate(           w0_old(nlevs,0:nr(nlevs)  ))
+    allocate(             Sbar(nlevs,0:nr(nlevs)-1,1    ))
+    allocate(    div_coeff_nph(nlevs,0:nr(nlevs)-1))
+    allocate(   div_coeff_edge(nlevs,0:nr(nlevs)  ))
+    allocate( rho_omegadotbar1(nlevs,0:nr(nlevs)-1,nspec))
+    allocate( rho_omegadotbar2(nlevs,0:nr(nlevs)-1,nspec))
+    allocate(      rho_Hextbar(nlevs,0:nr(nlevs)-1,1))
+    allocate(             s0_1(nlevs,0:nr(nlevs)-1,nscal))
+    allocate(             s0_2(nlevs,0:nr(nlevs)-1,nscal))
+    allocate(             p0_1(nlevs,0:nr(nlevs)-1))
+    allocate(             p0_2(nlevs,0:nr(nlevs)-1))
+    allocate(s0_predicted_edge(nlevs,0:nr(nlevs)  ,nscal))
 
     ! Set these to be safe
     s0_1(:,:,:) = ZERO
     s0_2(:,:,:) = ZERO
     p0_1(:,:)   = ZERO
     p0_2(:,:)   = ZERO
+    s0_predicted_edge(:,:,:) = ZERO
 
     ! Set w0_old to w0 from last time step.
     w0_old = w0
@@ -313,7 +316,7 @@ contains
     
     if (evolve_base_state) then
        call advect_base(1,nlevs,w0,Sbar,p0_1,p0_2,s0_1,s0_2,gam1,div_coeff_new,eta, &
-                        dx(:,dm),dt)
+                        s0_predicted_edge,dx(:,dm),dt)
     else
        p0_2 = p0_1
        s0_2 = s0_1
@@ -362,9 +365,10 @@ contains
        call multifab_build(s2(n), mla%la(n), nscal, ng_s)
     end do
 
-    call scalar_advance(nlevs,mla,1,uold,s1,s2,thermal,umac,w0,w0_cart_vec,eta, &
-                        utrans,normal,s0_1,s0_2, &
-                        p0_1,p0_2,dx,dt,the_bc_tower%bc_tower_array)
+    call scalar_advance(nlevs,mla,1,uold,s1,s2,thermal, &
+                        umac,w0,w0_cart_vec,eta,utrans,normal, &
+                        s0_1,s0_2,p0_1,p0_2,s0_predicted_edge, &
+                        dx,dt,the_bc_tower%bc_tower_array)
 
     do n=1,nlevs
        call destroy(thermal(n))
@@ -594,7 +598,7 @@ contains
        end if
        if (evolve_base_state) then
           call advect_base(2,nlevs,w0,Sbar,p0_1,p0_2,s0_1,s0_2,gam1,div_coeff_nph,eta, &
-                           dx(:,dm),dt)
+                           s0_predicted_edge,dx(:,dm),dt)
        else
           p0_2 = p0_1
           s0_2 = s0_1
@@ -638,9 +642,10 @@ contains
           call multifab_build(s2(n), mla%la(n), nscal, ng_s)
        end do
 
-       call scalar_advance(nlevs,mla,2,uold,s1,s2,thermal,umac,w0,w0_cart_vec,eta, &
-                           utrans,normal,s0_1,s0_2, &
-                           p0_1,p0_2,dx,dt,the_bc_tower%bc_tower_array)
+       call scalar_advance(nlevs,mla,2,uold,s1,s2,thermal, &
+                           umac,w0,w0_cart_vec,eta,utrans,normal, &
+                           s0_1,s0_2,p0_1,p0_2,s0_predicted_edge, &
+                           dx,dt,the_bc_tower%bc_tower_array)
 
        do n=1,nlevs
           call destroy(thermal(n))

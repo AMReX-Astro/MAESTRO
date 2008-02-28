@@ -13,9 +13,10 @@ module scalar_advance_module
 
 contains
 
-  subroutine scalar_advance(nlevs,mla,which_step,uold,sold,snew,thermal,umac,w0, &
-                            w0_cart_vec,eta,utrans,normal, &
-                            s0_old,s0_new,p0_old,p0_new,dx,dt,the_bc_level)
+  subroutine scalar_advance(nlevs,mla,which_step,uold,sold,snew,thermal, &
+                            umac,w0,w0_cart_vec,eta,utrans,normal, &
+                            s0_old,s0_new,p0_old,p0_new,s0_predicted_edge, &
+                            dx,dt,the_bc_level)
 
     use bl_prof_module
     use bl_constants_module
@@ -56,6 +57,7 @@ contains
     real(kind=dp_t), intent(in   ) :: s0_new(:,0:,:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_new(:,0:)
+    real(kind=dp_t), intent(in   ) :: s0_predicted_edge(:,0:,:)
     real(kind=dp_t), intent(in   ) :: dx(:,:),dt
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
@@ -202,8 +204,9 @@ contains
     if (.not. predict_temp_at_edges) then
        call put_in_pert_form(nlevs,sold,s0_old,dx,rhoh_comp,1,.false.,mla,the_bc_level)
     end if
-    
+
     call put_in_pert_form(nlevs,sold,s0_old,dx,spec_comp,nspec,.false.,mla,the_bc_level)
+
 
     !**************************************************************************
     !     Create the edge states of tracers.
@@ -242,10 +245,12 @@ contains
                 s0_old_cart,s0_new,s0_edge_new,s0_new_cart,rhoh_comp,rhoh_comp, &
                 which_step,mla)
 
+
     ! compute species fluxes
     call mkflux(nlevs,sflux,etaflux,sold,sedge,umac,w0,w0_cart_vec,s0_old,s0_edge_old, &
                 s0_old_cart,s0_new,s0_edge_new,s0_new_cart,spec_comp, &
                 spec_comp+nspec-1,which_step,mla)
+
 
     if (ntrac .ge. 1) then
        ! compute tracer fluxes

@@ -10,7 +10,9 @@ module advect_base_module
 
 contains
 
-  subroutine advect_base(which_step,nlevs,vel,Sbar_in,p0_old,p0_new,s0_old,s0_new,gam1,div_coeff,eta, &
+  subroutine advect_base(which_step,nlevs,vel,Sbar_in,p0_old,p0_new, &
+                         s0_old,s0_new,gam1,div_coeff,eta, &
+                         s0_predicted_edge, &
                          dz,dt)
 
     use bl_prof_module
@@ -24,6 +26,7 @@ contains
     real(kind=dp_t), intent(inout) :: gam1(:,0:)
     real(kind=dp_t), intent(in   ) :: div_coeff(:,0:)
     real(kind=dp_t), intent(in   ) :: eta(:,0:,:)
+    real(kind=dp_t), intent(  out) :: s0_predicted_edge(:,0:,:)
     real(kind=dp_t), intent(in   ) :: dz(:)
     real(kind=dp_t), intent(in   ) :: dt
     
@@ -36,12 +39,15 @@ contains
     
     do n=1,nlevs
        if (spherical .eq. 0) then
-          call advect_base_state_planar(which_step,n,vel(n,0:),p0_old(n,0:),p0_new(n,0:),s0_old(n,0:,:), &
-                                        s0_new(n,0:,:),gam1(n,0:),eta(n,0:,:),dz(n),dt)
+          call advect_base_state_planar(which_step,n,vel(n,0:),p0_old(n,0:),p0_new(n,0:), &
+                                        s0_old(n,0:,:),s0_new(n,0:,:),gam1(n,0:),eta(n,0:,:), &
+                                        s0_predicted_edge(n,0:,:),dz(n),dt)
        else
-          call advect_base_state_spherical(n,vel(n,:),Sbar_in(n,:,1),p0_old(n,:), &
-                                           p0_new(n,:),s0_old(n,:,:),s0_new(n,:,:), &
-                                           gam1(n,:),div_coeff(n,:),dt)
+          call advect_base_state_spherical(which_step,n,vel(n,:),Sbar_in(n,:,1), &
+                                           p0_old(n,:),p0_new(n,:), &
+                                           s0_old(n,:,:),s0_new(n,:,:), &
+                                           gam1(n,:),eta(n,0:,:), &
+                                           s0_predicted_edge(n,0:,:),div_coeff(n,:),dt)
        end if
     enddo
 
@@ -49,7 +55,10 @@ contains
        
   end subroutine advect_base
 
-  subroutine advect_base_state_planar(which_step,n,vel,p0_old,p0_new,s0_old,s0_new,gam1,eta,dz,dt)
+
+  subroutine advect_base_state_planar(which_step,n,vel,p0_old,p0_new, &
+                                      s0_old,s0_new,gam1,eta, &
+                                      s0_predicted_edge,dz,dt)
 
     use bl_constants_module
     use make_edge_state_module
@@ -64,6 +73,7 @@ contains
     real(kind=dp_t), intent(  out) :: p0_new(0:), s0_new(0:,:)
     real(kind=dp_t), intent(inout) :: gam1(0:)
     real(kind=dp_t), intent(in   ) :: eta(0:,:)
+    real(kind=dp_t), intent(  out) :: s0_predicted_edge(0:,:)
     real(kind=dp_t), intent(in   ) :: dz,dt
     
     ! Local variables
@@ -128,7 +138,9 @@ contains
        end if
        
        call make_edge_state_1d(n,s0_old(:,comp),edge,vel,force,1,dz,dt)
-       
+
+       s0_predicted_edge(:,comp) = edge(:)
+
        do r = 0,nr(n)-1
           s0_new(r,comp) = s0_old(r,comp) &
                - dt / dz * (edge(r+1) * vel(r+1) - edge(r) * vel(r)) 
@@ -168,7 +180,9 @@ contains
     end if
     
     call make_edge_state_1d(n,s0_old(:,rhoh_comp),edge,vel,force,1,dz,dt)
-    
+
+    s0_predicted_edge(:,rhoh_comp) = edge(:)
+
     do r = 0,nr(n)-1
        s0_new(r,rhoh_comp) = s0_old(r,rhoh_comp) &
             - dt / dz * (edge(r+1) * vel(r+1) - edge(r) * vel(r)) 
@@ -211,9 +225,13 @@ contains
     deallocate(force,edge)
     
   end subroutine advect_base_state_planar
+
   
-  subroutine advect_base_state_spherical(n,vel,Sbar_in,p0_old,p0_new,s0_old,s0_new,gam1, &
-                                         div_coeff_old,dt)
+  subroutine advect_base_state_spherical(which_step,n,vel,Sbar_in, &
+                                         p0_old,p0_new, &
+                                         s0_old,s0_new, &
+                                         gam1,eta, &
+                                         s0_predicted_edge,div_coeff_old,dt)
 
     use bl_constants_module
     use make_edge_state_module
@@ -224,11 +242,13 @@ contains
     use cell_to_edge_module
     use make_div_coeff_module
     
-    integer        , intent(in   ) :: n
+    integer        , intent(in   ) :: which_step,n
     real(kind=dp_t), intent(in   ) :: vel(0:),Sbar_in(0:)
     real(kind=dp_t), intent(in   ) :: p0_old(0:), s0_old(0:,:)
     real(kind=dp_t), intent(  out) :: p0_new(0:), s0_new(0:,:)
     real(kind=dp_t), intent(inout) :: gam1(0:)
+    real(kind=dp_t), intent(in   ) :: eta(0:,:)
+    real(kind=dp_t), intent(  out) :: s0_predicted_edge(0:,:)
     real(kind=dp_t), intent(in   ) :: div_coeff_old(0:)
     real(kind=dp_t), intent(in   ) :: dt
     
@@ -271,7 +291,9 @@ contains
        end do
        
        call make_edge_state_1d(n,s0_old(:,comp),edge,vel,force,1,dr(n),dt)
-       
+
+       s0_predicted_edge(:,comp) = edge(:)
+
        do r = 0,nr(n)-1
           s0_new(r,comp) = s0_old(r,comp) &
                - dtdr/base_cc_loc(n,r)**2*(base_loedge_loc(n,r+1)**2*edge(r+1)*vel(r+1) &
@@ -374,6 +396,8 @@ contains
     end do
     
     call make_edge_state_1d(n,s0_old(:,rhoh_comp),edge,vel,force,1,dr(n),dt)
+
+    s0_predicted_edge(:,rhoh_comp) = edge(:)
     
     do r = 0,nr(n)-1
        
