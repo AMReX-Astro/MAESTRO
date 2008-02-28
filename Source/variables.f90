@@ -7,7 +7,7 @@ module variables
   implicit none
 
   integer, save :: rho_comp, rhoh_comp, spec_comp, temp_comp, trac_comp, press_comp
-  integer, save :: foextrap_comp, first_derive_comp
+  integer, save :: foextrap_comp, hoextrap_comp
   integer, save :: icomp_vel, icomp_rho, icomp_rhoh, icomp_spec, icomp_trac
   integer, save :: icomp_magvel, icomp_mom, icomp_vort, icomp_divu
   integer, save :: icomp_enthalpy,icomp_tfromrho,icomp_tpert,icomp_rhopert
@@ -36,7 +36,8 @@ contains
 
     press_comp  = dm + nscal + 1
 
-    foextrap_comp = press_comp+1
+    foextrap_comp = press_comp + 1
+    hoextrap_comp = foextrap_copm + 1
 
   end subroutine init_variables
 
@@ -44,6 +45,8 @@ contains
 
     integer, intent(in) :: dm, nspec
     logical, intent(in) :: plot_spec,plot_trac
+
+    integer :: first_derive_comp
 
     icomp_vel      = 1
     icomp_rho      = dm+1

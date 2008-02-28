@@ -123,7 +123,8 @@ contains
 
   subroutine adv_bc_level_build(adv_bc_level,phys_bc_level,default_value,nspec)
 
-    use variables, only: rho_comp, rhoh_comp, spec_comp, temp_comp, trac_comp, press_comp, foextrap_comp, ntrac
+    use variables, only: rho_comp, rhoh_comp, spec_comp, temp_comp, trac_comp, press_comp, &
+         foextrap_comp, hoextrap_comp, ntrac
 
     ! define boundary conditions for the advection problem
 
@@ -163,7 +164,7 @@ contains
           adv_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= HOEXTRAP      ! tracers
           adv_bc_level(n,d,i,press_comp)                       = FOEXTRAP      ! pressure
           adv_bc_level(n,d,i,foextrap_comp)                    = FOEXTRAP      ! first order extrap
-
+          adv_bc_level(n,d,i,hoextrap_comp)                    = HOEXTRAP      ! higher order extrap
        else if (phys_bc_level(n,d,i) == NO_SLIP_WALL) then
           adv_bc_level(n,d,i,     1:dm)                        = EXT_DIR       ! velocity
           adv_bc_level(n,d,i, rho_comp+dm)                     = HOEXTRAP      ! density
@@ -173,7 +174,7 @@ contains
           adv_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= HOEXTRAP      ! tracers
           adv_bc_level(n,d,i,press_comp)                       = FOEXTRAP      ! pressure
           adv_bc_level(n,d,i,foextrap_comp)                    = FOEXTRAP      ! first order extrap
-   
+          adv_bc_level(n,d,i,hoextrap_comp)                    = HOEXTRAP      ! higher order extrap
        else if (phys_bc_level(n,d,i) == INLET) then
           adv_bc_level(n,d,i,     1:dm)                        = EXT_DIR       ! velocity
           adv_bc_level(n,d,i, rho_comp+dm)                     = EXT_DIR       ! density
@@ -183,7 +184,7 @@ contains
           adv_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= EXT_DIR       ! tracers
           adv_bc_level(n,d,i,press_comp)                       = FOEXTRAP      ! pressure
           adv_bc_level(n,d,i,foextrap_comp)                    = FOEXTRAP      ! first order extrap
-
+          adv_bc_level(n,d,i,hoextrap_comp)                    = HOEXTRAP      ! higher order extrap
        else if (phys_bc_level(n,d,i) == OUTLET) then
           adv_bc_level(n,d,i,     1:dm)                        = FOEXTRAP      ! velocity
           adv_bc_level(n,d,i, rho_comp+dm)                     = FOEXTRAP      ! density
@@ -193,7 +194,7 @@ contains
           adv_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= FOEXTRAP      ! tracers
           adv_bc_level(n,d,i,press_comp)                       = EXT_DIR       ! pressure
           adv_bc_level(n,d,i,foextrap_comp)                    = FOEXTRAP      ! first order extrap
-
+          adv_bc_level(n,d,i,hoextrap_comp)                    = HOEXTRAP      ! higher order extrap
        else if (phys_bc_level(n,d,i) == SYMMETRY) then
           adv_bc_level(n,d,i,     1:dm)                        = REFLECT_EVEN  ! tangential vel
           adv_bc_level(n,d,i,        d)                        = REFLECT_ODD   ! normal vel
@@ -204,7 +205,7 @@ contains
           adv_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= REFLECT_EVEN  ! tracers
           adv_bc_level(n,d,i,press_comp)                       = REFLECT_EVEN  ! pressure
           adv_bc_level(n,d,i,foextrap_comp)                    = FOEXTRAP      ! first order extrap
-
+          adv_bc_level(n,d,i,hoextrap_comp)                    = HOEXTRAP      ! higher order extrap
        end if
     end do
     end do
@@ -214,7 +215,8 @@ contains
 
   subroutine ell_bc_level_build(ell_bc_level,phys_bc_level,default_value,nspec)
 
-    use variables, only: rho_comp, rhoh_comp, spec_comp, temp_comp, trac_comp, press_comp, foextrap_comp, ntrac
+    use variables, only: rho_comp, rhoh_comp, spec_comp, temp_comp, trac_comp, press_comp, &
+         foextrap_comp, hoextrap_comp, ntrac
 
     ! define boundary conditions for the elliptic problem
 
@@ -256,6 +258,7 @@ contains
           ell_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= BC_NEU   ! tracers
           ell_bc_level(n,d,i,press_comp)                       = BC_NEU   ! pressure
           ell_bc_level(n,d,i,foextrap_comp)                    = BC_NEU   ! first order extrap
+          ell_bc_level(n,d,i,hoextrap_comp)                    = BC_NEU   ! higher order extrap
        else if (phys_bc_level(n,d,i) == NO_SLIP_WALL) then
           ell_bc_level(n,d,i,                      1:dm)       = BC_DIR   ! vel.
           ell_bc_level(n,d,i,rho_comp+dm)                      = BC_NEU   ! density
@@ -265,6 +268,7 @@ contains
           ell_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= BC_NEU   ! tracers
           ell_bc_level(n,d,i,press_comp)                       = BC_NEU   ! pressure
           ell_bc_level(n,d,i,foextrap_comp)                    = BC_NEU   ! first order extrap
+          ell_bc_level(n,d,i,hoextrap_comp)                    = BC_NEU   ! higher order extrap
        else if (phys_bc_level(n,d,i) == INLET) then
           ell_bc_level(n,d,i,                      1:dm)       = BC_DIR   ! vel.
           ell_bc_level(n,d,i,rho_comp+dm)                      = BC_DIR   ! density
@@ -274,6 +278,7 @@ contains
           ell_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= BC_DIR   ! tracers
           ell_bc_level(n,d,i,press_comp)                       = BC_NEU   ! pressure
           ell_bc_level(n,d,i,foextrap_comp)                    = BC_NEU   ! first order extrap
+          ell_bc_level(n,d,i,hoextrap_comp)                    = BC_NEU   ! higher order extrap
        else if (phys_bc_level(n,d,i) == OUTLET) then
           ell_bc_level(n,d,i,                      1:dm)       = BC_NEU   ! tangential vel.
           ell_bc_level(n,d,i,rho_comp+dm)                      = BC_NEU   ! density
@@ -283,6 +288,7 @@ contains
           ell_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= BC_NEU   ! tracers
           ell_bc_level(n,d,i,press_comp)                       = BC_DIR   ! pressure
           ell_bc_level(n,d,i,foextrap_comp)                    = BC_NEU   ! first order extrap
+          ell_bc_level(n,d,i,hoextrap_comp)                    = BC_NEU   ! higher order extrap
        else if (phys_bc_level(n,d,i) == SYMMETRY) then
           ell_bc_level(n,d,i,                      1:dm)       = BC_NEU   ! tangential vel.
           ell_bc_level(n,d,i,                         d)       = BC_DIR   ! normal vel.
@@ -293,6 +299,7 @@ contains
           ell_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= BC_NEU   ! tracers
           ell_bc_level(n,d,i,press_comp)                       = BC_NEU   ! pressure
           ell_bc_level(n,d,i,foextrap_comp)                    = BC_NEU   ! first order extrap
+          ell_bc_level(n,d,i,hoextrap_comp)                    = BC_NEU   ! higher order extrap
        else if (phys_bc_level(n,d,i) == PERIODIC) then
           ell_bc_level(n,d,i,                      1:dm      ) = BC_PER   ! vel.
           ell_bc_level(n,d,i,rho_comp+dm)                      = BC_PER   ! density
@@ -302,6 +309,7 @@ contains
           ell_bc_level(n,d,i,trac_comp+dm:trac_comp+dm+ntrac-1)= BC_PER   ! tracers
           ell_bc_level(n,d,i,press_comp)                       = BC_PER   ! pressure
           ell_bc_level(n,d,i,foextrap_comp)                    = BC_PER   ! first order extrap
+          ell_bc_level(n,d,i,hoextrap_comp)                    = BC_NEU   ! higher order extrap
        end if
     end do
     end do
