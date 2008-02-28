@@ -18,6 +18,7 @@ module variables
   integer, save :: ntrac,nscal
 
   logical, save, allocatable :: is_pert_form(:)
+  logical, save, allocatable :: is_rhoX(:)
 
 contains
 
@@ -44,6 +45,14 @@ contains
     ! perturbational form (i.e. S or S')
     allocate(is_pert_form(nscal))
     is_pert_form(:) = .false.
+
+    ! keep track of whether the species are (rho X) or just
+    ! X (we start out with them being defined as rho X)
+    ! Note, here this array is dim nscal, so we can index
+    ! it the same as other state arrays.
+    allocate(is_rhoX(nscal))
+    is_rhoX(spec_comp:spec_comp+nspec-1) = .true.
+
 
   end subroutine init_variables
 
