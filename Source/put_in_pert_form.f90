@@ -10,12 +10,13 @@ module pert_form_module
 
   public :: put_in_pert_form
 
+  
 contains
 
   subroutine put_in_pert_form(nlevs,s,base,dx,startcomp,numcomp,flag,mla,the_bc_level)
 
     use geometry, only: spherical
-    use variables, only: foextrap_comp
+    use variables, only: foextrap_comp, nscal, is_pert_form
     use ml_layout_module
     use define_bc_module
     use ml_restriction_module, only: ml_cc_restriction
@@ -35,7 +36,15 @@ contains
 
     ng = s(1)%ng
     dm = s(1)%dim
-    
+
+    ! sanity checks -- if we are attempting to go into pert form and any of those
+    ! variables are already in pert form, abort.  Likewise, if we are going out of
+    ! pert form, make sure that all of the variable are in pert form to begin with.
+    if ( (      flag .and.       any(is_pert_form(startcomp:startcomp+numcomp-1)) ) .or. &
+         (.not. flag .and. .not. all(is_pert_form(startcomp:startcomp+numcomp-1)) ) ) then
+       call bl_error('Illegal call to put_in_pert_form')
+    endif
+
     do n=1,nlevs
        do i = 1, s(n)%nboxes
           if ( multifab_remote(s(n),i) ) cycle
@@ -58,6 +67,14 @@ contains
        call multifab_fill_boundary_c(s(n),startcomp,numcomp)
 
     end do
+
+    ! is_pert_form is .true. is the state is now in perturbational form
+    if (flag) then
+       is_pert_form(startcomp:startcomp+numcomp-1) = .true.
+    else
+       is_pert_form(startcomp:startcomp+numcomp-1) = .false.
+    endif
+
 
     do n=nlevs,2,-1
        call ml_cc_restriction(s(n-1),s(n),mla%mba%rr(n-1,:))

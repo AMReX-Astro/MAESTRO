@@ -17,6 +17,8 @@ module variables
   integer, save :: n_plot_comps
   integer, save :: ntrac,nscal
 
+  logical, save, allocatable :: is_pert_form(:)
+
 contains
 
   subroutine init_variables(dm, nspec)
@@ -31,12 +33,17 @@ contains
 
     ntrac = 1
 
-  ! The "3" here refers to rho, rhoh, and temp
+    ! The "3" here refers to rho, rhoh, and temp
     nscal = nspec + ntrac + 3
 
     press_comp  = dm + nscal + 1
 
     foextrap_comp = press_comp+1
+
+    ! keep track of whether the variables are in full form or 
+    ! perturbational form (i.e. S or S')
+    allocate(is_pert_form(nscal))
+    is_pert_form(:) = .false.
 
   end subroutine init_variables
 
