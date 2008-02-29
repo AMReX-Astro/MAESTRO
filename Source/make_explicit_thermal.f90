@@ -305,27 +305,35 @@ contains
 
     endif ! end if(temperature_diffusion) logic
     
-    do n=1,nlevs
+    if (nlevs .eq. 1) then
+
        ! fill ghost cells for two adjacent grids at the same level
-       ! this includes periodic domain boundary conditions
-       call multifab_fill_boundary(thermal(n))
+       ! this includes periodic domain boundary ghost cells
+       call multifab_fill_boundary(thermal(nlevs))
 
-       call multifab_physbc(thermal(n),1,foextrap_comp,1,the_bc_tower%bc_tower_array(n))
-    enddo
+       ! fill non-periodic domain boundary ghost cells
+       call multifab_physbc(thermal(nlevs),1,foextrap_comp,1, &
+                            the_bc_tower%bc_tower_array(nlevs))
+    else
 
-    do n=nlevs,2,-1
-       ! make sure that coarse cells are the average of the fine cells covering it.
        ! the loop over nlevs must count backwards to make sure the finer grids are done first
-       call ml_cc_restriction(thermal(n-1),thermal(n),mla%mba%rr(n-1,:))
+       do n=nlevs,2,-1
 
-       ! fill fine ghost cells using interpolation from the underlying coarse data
-       bc = the_bc_tower%bc_tower_array(n-1)
-       call multifab_fill_ghost_cells(thermal(n),thermal(n-1), &
-                                      1,mla%mba%rr(n-1,:), &
-                                      the_bc_tower%bc_tower_array(n-1), &
-                                      the_bc_tower%bc_tower_array(n  ), &
-                                      1,foextrap_comp,1)
-    enddo
+          ! set level n-1 data to be the average of the level n data covering it
+          call ml_cc_restriction(thermal(n-1),thermal(n),mla%mba%rr(n-1,:))
+          
+          ! fill level n ghost cells using interpolation from level n-1 data
+          ! note that multifab_fill_boundary and multifab_physbc are called for
+          ! both levels n-1 and n
+          bc = the_bc_tower%bc_tower_array(n-1)
+          call multifab_fill_ghost_cells(thermal(n),thermal(n-1), &
+                                         1,mla%mba%rr(n-1,:), &
+                                         the_bc_tower%bc_tower_array(n-1), &
+                                         the_bc_tower%bc_tower_array(n  ), &
+                                         1,foextrap_comp,1)
+       end do
+          
+    end if
     
     call destroy(bpt)
     
