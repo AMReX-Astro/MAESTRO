@@ -364,7 +364,6 @@ contains
 
          ! set level n-1 data to be the average of the level n data covering it
          call ml_cc_restriction(gpres(n-1),gpres(n),mla%mba%rr(n-1,:))
-         call ml_cc_restriction(pres(n-1),pres(n),mla%mba%rr(n-1,:))
 
       end do
 
