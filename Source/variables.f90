@@ -37,7 +37,7 @@ contains
     press_comp  = dm + nscal + 1
 
     foextrap_comp = press_comp + 1
-    hoextrap_comp = foextrap_copm + 1
+    hoextrap_comp = foextrap_comp + 1
 
   end subroutine init_variables
 
