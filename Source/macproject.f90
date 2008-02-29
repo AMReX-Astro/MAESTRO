@@ -209,7 +209,9 @@ contains
       end do
 
       rhmax = norm_inf(rh(nlevs))
+      ! the loop over nlevs must count backwards to make sure the finer grids are done first
       do n = nlevs,2,-1
+         ! set level n-1 data to be the average of the level n data covering it
          call ml_cc_restriction(rh(n-1),rh(n),ref_ratio(n-1,:))
          rhmax = max(rhmax,norm_inf(rh(n-1)))
       end do

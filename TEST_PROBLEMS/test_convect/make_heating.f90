@@ -52,9 +52,9 @@ contains
 
     end do
 
+    ! the loop over nlevs must count backwards to make sure the finer grids are done first
     do n=nlevs,2,-1
-       ! make sure that coarse cells are the average of the fine cells covering it.
-       ! the loop over nlevs must count backwards to make sure the finer grids are done first
+       ! set level n-1 data to be the average of the level n data covering it
        call ml_cc_restriction(rho_Hext(n-1), rho_Hext(n), mla%mba%rr(n-1,:))
     end do
 
