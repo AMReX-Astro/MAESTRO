@@ -513,20 +513,35 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t0, 
      call destroy(phi(n))
   end do
 
-  do n=1,nlevs
-     call multifab_fill_boundary_c(s2(n),rhoh_comp,1)
-     call multifab_physbc(s2(n),rhoh_comp,dm+rhoh_comp,1,the_bc_tower%bc_tower_array(n))
-  end do
+  if (nlevs .eq. 1) then
 
-  do n=nlevs,2,-1
-     call ml_cc_restriction_c(s2(n-1),rhoh_comp,s2(n),rhoh_comp,mla%mba%rr(n-1,:),1)
+     ! fill ghost cells for two adjacent grids at the same level
+     ! this includes periodic domain boundary ghost cells
+     call multifab_fill_boundary_c(s2(nlevs),rhoh_comp,1)
+
+     ! fill non-periodic domain boundary ghost cells
+     call multifab_physbc(s2(nlevs),rhoh_comp,dm+rhoh_comp,1, &
+                          the_bc_tower%bc_tower_array(nlevs))
+
+  else
+             
+     ! the loop over nlevs must count backwards to make sure the finer grids are done first
+     do n=nlevs,2,-1
+        
+        ! set level n-1 data to be the average of the level n data covering it
+        call ml_cc_restriction_c(s2(n-1),rhoh_comp,s2(n),rhoh_comp,mla%mba%rr(n-1,:),1)
        
-     call multifab_fill_ghost_cells(s2(n),s2(n-1), &
-                                    ng_s,mla%mba%rr(n-1,:), &
-                                    the_bc_tower%bc_tower_array(n-1), &
-                                    the_bc_tower%bc_tower_array(n  ), &
-                                    rhoh_comp,dm+rhoh_comp,1)
-  enddo
+        ! fill level n ghost cells using interpolation from level n-1 data
+        ! note that multifab_fill_boundary and multifab_physbc are called for
+        ! both levels n-1 and n
+        call multifab_fill_ghost_cells(s2(n),s2(n-1), &
+                                       ng_s,mla%mba%rr(n-1,:), &
+                                       the_bc_tower%bc_tower_array(n-1), &
+                                       the_bc_tower%bc_tower_array(n  ), &
+                                       rhoh_comp,dm+rhoh_comp,1)
+     enddo
+
+  end if
 
   ! compute updated temperature
   call makeTfromRhoH(nlevs,s2,t0,mla,the_bc_tower%bc_tower_array,dx)
@@ -882,20 +897,37 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t0,the_bc_tower)
   do n=1,nlevs
      call multifab_copy_c(s2(n),rhoh_comp,phi(n),1,1)
      call multifab_mult_mult_c(s2(n),rhoh_comp,s2(n),rho_comp,1)
+  end do
 
+  if (nlevs .eq. 1) then
 
-     call multifab_fill_boundary_c(s2(n),rhoh_comp,1)
-     call multifab_physbc(s2(n),rhoh_comp,dm+rhoh_comp,1,the_bc_tower%bc_tower_array(n))
-  enddo
+     ! fill ghost cells for two adjacent grids at the same level
+     ! this includes periodic domain boundary ghost cells
+     call multifab_fill_boundary_c(s2(nlevs),rhoh_comp,1)
 
-  do n=nlevs,2,-1
-     call ml_cc_restriction_c(s2(n-1),rhoh_comp,s2(n),rhoh_comp,mla%mba%rr(n-1,:),1)
-     call multifab_fill_ghost_cells(s2(n),s2(n-1), &
-                                    ng_s,mla%mba%rr(n-1,:), &
-                                    the_bc_tower%bc_tower_array(n-1), &
-                                    the_bc_tower%bc_tower_array(n  ), &
-                                    temp_comp,dm+temp_comp,1)
-  enddo
+     ! fill non-periodic domain boundary ghost cells
+     call multifab_physbc(s2(nlevs),rhoh_comp,dm+rhoh_comp,1, &
+                          the_bc_tower%bc_tower_array(nlevs))
+
+  else
+     
+     ! the loop over nlevs must count backwards to make sure the finer grids are done first
+     do n=nlevs,2,-1
+     
+        ! set level n-1 data to be the average of the level n data covering it
+        call ml_cc_restriction_c(s2(n-1),rhoh_comp,s2(n),rhoh_comp,mla%mba%rr(n-1,:),1)
+
+        ! fill level n ghost cells using interpolation from level n-1 data
+        ! note that multifab_fill_boundary and multifab_physbc are called for
+        ! both levels n-1 and n
+        call multifab_fill_ghost_cells(s2(n),s2(n-1), &
+                                       ng_s,mla%mba%rr(n-1,:), &
+                                       the_bc_tower%bc_tower_array(n-1), &
+                                       the_bc_tower%bc_tower_array(n  ), &
+                                       temp_comp,dm+temp_comp,1)
+     enddo
+
+  end if
 
   ! compute updated temperature
   call makeTfromRhoH(nlevs,s2,t0,mla,the_bc_tower%bc_tower_array,dx)
@@ -1215,19 +1247,34 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t0,the_bc_tower)
      call destroy(phi(n))
   end do
 
-  do n=1,nlevs
-     call multifab_fill_boundary_c(s2(n),rhoh_comp,1)
-     call multifab_physbc(s2(n),rhoh_comp,dm+rhoh_comp,1,the_bc_tower%bc_tower_array(n))
-  enddo
+  if (nlevs .eq. 1) then
 
-  do n=nlevs,2,-1
-     call ml_cc_restriction_c(s2(n-1),rhoh_comp,s2(n),rhoh_comp,mla%mba%rr(n-1,:),1)
-     call multifab_fill_ghost_cells(s2(n),s2(n-1), &
-                                    ng_s,mla%mba%rr(n-1,:), &
-                                    the_bc_tower%bc_tower_array(n-1), &
-                                    the_bc_tower%bc_tower_array(n  ), &
-                                    rhoh_comp,dm+rhoh_comp,1)
-  enddo
+     ! fill ghost cells for two adjacent grids at the same level
+     ! this includes periodic domain boundary ghost cells
+     call multifab_fill_boundary_c(s2(nlevs),rhoh_comp,1)
+
+     ! fill non-periodic domain boundary ghost cells
+     call multifab_physbc(s2(nlevs),rhoh_comp,dm+rhoh_comp,1, &
+                          the_bc_tower%bc_tower_array(nlevs))
+  else
+     
+     ! the loop over nlevs must count backwards to make sure the finer grids are done first
+     do n=nlevs,2,-1
+
+        ! set level n-1 data to be the average of the level n data covering it
+        call ml_cc_restriction_c(s2(n-1),rhoh_comp,s2(n),rhoh_comp,mla%mba%rr(n-1,:),1)
+
+        ! fill level n ghost cells using interpolation from level n-1 data
+        ! note that multifab_fill_boundary and multifab_physbc are called for
+        ! both levels n-1 and n
+        call multifab_fill_ghost_cells(s2(n),s2(n-1), &
+                                       ng_s,mla%mba%rr(n-1,:), &
+                                       the_bc_tower%bc_tower_array(n-1), &
+                                       the_bc_tower%bc_tower_array(n  ), &
+                                       rhoh_comp,dm+rhoh_comp,1)
+     enddo
+
+  end if
 
   ! compute updated temperature
   call makeTfromRhoH(nlevs,s2,t0,mla,the_bc_tower%bc_tower_array,dx)

@@ -50,7 +50,6 @@ contains
     call get_rho_Hext(nlevs,mla,s_in,rho_Hext,dx,time)
 
     do n = 1, nlevs
-       
        do i = 1, s_in(n)%nboxes
           if ( multifab_remote(s_in(n), i) ) cycle
           sinp => dataptr(s_in(n) , i)
@@ -68,30 +67,37 @@ contains
                                  hp(:,:,:,1),dt,lo,hi,ng,time)
           end select
        end do
+    end do
+
+    if (nlevs .eq. 1) then
 
        ! fill ghost cells for two adjacent grids at the same level
-       ! this includes periodic domain boundary conditions
-       ! note: rho_omegadot and rho_Hext have zero ghost cells
-       call multifab_fill_boundary(s_out(n))
-       
-       ! fill physical boundary conditions at domain boundaries
-       call multifab_physbc(s_out(n),rho_comp,dm+rho_comp,nscal,the_bc_level(n))
-       
-    enddo
+       ! this includes periodic domain boundary ghost cells
+       call multifab_fill_boundary(s_out(nlevs))
 
-    do n=nlevs,2,-1
-       ! make sure that coarse cells are the average of the fine cells covering it.
+       ! fill non-periodic domain boundary ghost cells
+       call multifab_physbc(s_out(nlevs),rho_comp,dm+rho_comp,nscal,the_bc_level(nlevs))
+
+    else
+
        ! the loop over nlevs must count backwards to make sure the finer grids are done first
-       call ml_cc_restriction(s_out(n-1)       ,s_out(n)       ,mla%mba%rr(n-1,:))
-       call ml_cc_restriction(rho_omegadot(n-1),rho_omegadot(n),mla%mba%rr(n-1,:))
-       call ml_cc_restriction(rho_Hext(n-1)    ,rho_Hext(n)    ,mla%mba%rr(n-1,:))
+       do n=nlevs,2,-1
 
-       ! fill fine ghost cells using interpolation from the underlying coarse data
-       call multifab_fill_ghost_cells(s_out(n),s_out(n-1), &
-                                      ng,mla%mba%rr(n-1,:), &
-                                      the_bc_level(n-1), the_bc_level(n), &
-                                      rho_comp,dm+rho_comp,nscal)
-    enddo
+          ! set level n-1 data to be the average of the level n data covering it
+          call ml_cc_restriction(s_out(n-1)       ,s_out(n)       ,mla%mba%rr(n-1,:))
+          call ml_cc_restriction(rho_omegadot(n-1),rho_omegadot(n),mla%mba%rr(n-1,:))
+          call ml_cc_restriction(rho_Hext(n-1)    ,rho_Hext(n)    ,mla%mba%rr(n-1,:))
+
+          ! fill level n ghost cells using interpolation from level n-1 data
+          ! note that multifab_fill_boundary and multifab_physbc are called for
+          ! both levels n-1 and n
+          call multifab_fill_ghost_cells(s_out(n),s_out(n-1), &
+                                         ng,mla%mba%rr(n-1,:), &
+                                         the_bc_level(n-1), the_bc_level(n), &
+                                         rho_comp,dm+rho_comp,nscal)
+       enddo
+
+    end if
 
     call destroy(bpt)
 
@@ -156,8 +162,9 @@ contains
              s_out(i,j,rhoh_comp) = rho * h_out + dt * rho_Hext(i,j)
           endif
 
-          ! now compute temperature and put it into s_out
-          ! dens, enthalpy, and xmass are inputs
+!**********************************************
+! option to compute temperature and put it into s_out
+! dens, enthalpy, and xmass are inputs
 !
 !          den_eos(1) = rho
 !          h_eos(1) = h_out
@@ -176,6 +183,8 @@ contains
 !               do_diag)
 !
 !          s_out(i,j,temp_comp) = temp_eos(1)
+!**********************************************
+
           s_out(i,j,temp_comp) = s_in(i,j,temp_comp)
 
           s_out(i,j,trac_comp:trac_comp+ntrac-1) = &
@@ -247,9 +256,10 @@ contains
           else
              s_out(i,j,k,rhoh_comp) = rho * h_out + dt * rho_Hext(i,j,k)
           endif
-  
-          ! now compute temperature and put it into s_out
-          ! dens, enthalpy, and xmass are inputs
+
+!**********************************************
+! option to compute temperature and put it into s_out
+! dens, enthalpy, and xmass are inputs
 !
 !          den_eos(1) = rho
 !          h_eos(1) = h_out
@@ -268,6 +278,8 @@ contains
 !               do_diag)
 !
 !          s_out(i,j,k,temp_comp) = temp_eos(1)
+!**********************************************
+
           s_out(i,j,k,temp_comp) = s_in(i,j,k,temp_comp)
 
           s_out(i,j,k,trac_comp:trac_comp+ntrac-1) = &

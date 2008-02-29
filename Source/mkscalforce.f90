@@ -66,7 +66,6 @@ contains
     dm = scal_force(1)%dim
       
     do n=1,nlevs
-
        do i=1,scal_force(n)%nboxes
           if ( multifab_remote(scal_force(n),i) ) cycle
           fp => dataptr(scal_force(n), i)
@@ -92,19 +91,36 @@ contains
              end if
           end select
        end do
-
-       call multifab_fill_boundary_c(scal_force(n),comp,1)
-       call multifab_physbc(scal_force(n),comp,foextrap_comp,1,the_bc_level(n))
-
     end do
 
-    do n=nlevs,2,-1
-       call ml_cc_restriction_c(scal_force(n-1),comp,scal_force(n),comp,mla%mba%rr(n-1,:),1)
-       call multifab_fill_ghost_cells(scal_force(n),scal_force(n-1), &
-                                      scal_force(n)%ng,mla%mba%rr(n-1,:), &
-                                      the_bc_level(n-1),the_bc_level(n), &
-                                      comp,foextrap_comp,1)      
-    end do
+    if (nlevs .eq. 1) then
+
+       ! fill ghost cells for two adjacent grids at the same level
+       ! this includes periodic domain boundary ghost cells
+       call multifab_fill_boundary_c(scal_force(nlevs),comp,1)
+
+       ! fill non-periodic domain boundary ghost cells
+       call multifab_physbc(scal_force(nlevs),comp,foextrap_comp,1,the_bc_level(nlevs))
+
+    else
+
+       ! the loop over nlevs must count backwards to make sure the finer grids are done first
+       do n=nlevs,2,-1
+
+          ! set level n-1 data to be the average of the level n data covering it
+          call ml_cc_restriction_c(scal_force(n-1),comp,scal_force(n),comp, &
+                                   mla%mba%rr(n-1,:),1)
+
+          ! fill level n ghost cells using interpolation from level n-1 data
+          ! note that multifab_fill_boundary and multifab_physbc are called for
+          ! both levels n-1 and n
+          call multifab_fill_ghost_cells(scal_force(n),scal_force(n-1), &
+                                         scal_force(n)%ng,mla%mba%rr(n-1,:), &
+                                         the_bc_level(n-1),the_bc_level(n), &
+                                         comp,foextrap_comp,1)      
+       end do
+
+    end if
 
     call destroy(bpt)
     
@@ -321,19 +337,37 @@ contains
              end if
           end select
        end do
-    
-       call multifab_fill_boundary_c(temp_force(n),comp,1)
-       call multifab_physbc(temp_force(n),comp,foextrap_comp,1,the_bc_level(n))
-
+   
     end do
 
-    do n=nlevs,2,-1
-       call ml_cc_restriction_c(temp_force(n-1),comp,temp_force(n),comp,mla%mba%rr(n-1,:),1)
-       call multifab_fill_ghost_cells(temp_force(n),temp_force(n-1), &
-                                      temp_force(n)%ng,mla%mba%rr(n-1,:), &
-                                      the_bc_level(n-1),the_bc_level(n), &
-                                      comp,foextrap_comp,1)
-    enddo
+    if (nlevs .eq. 1) then
+
+       ! fill ghost cells for two adjacent grids at the same level
+       ! this includes periodic domain boundary ghost cells
+       call multifab_fill_boundary_c(temp_force(nlevs),comp,1)
+
+       ! fill non-periodic domain boundary ghost cells
+       call multifab_physbc(temp_force(nlevs),comp,foextrap_comp,1,the_bc_level(nlevs))
+
+    else
+
+       ! the loop over nlevs must count backwards to make sure the finer grids are done first
+       do n=nlevs,2,-1
+
+          ! set level n-1 data to be the average of the level n data covering it
+          call ml_cc_restriction_c(temp_force(n-1),comp,temp_force(n),comp, &
+                                   mla%mba%rr(n-1,:),1)
+
+          ! fill level n ghost cells using interpolation from level n-1 data
+          ! note that multifab_fill_boundary and multifab_physbc are called for
+          ! both levels n-1 and n
+          call multifab_fill_ghost_cells(temp_force(n),temp_force(n-1), &
+                                         temp_force(n)%ng,mla%mba%rr(n-1,:), &
+                                         the_bc_level(n-1),the_bc_level(n), &
+                                         comp,foextrap_comp,1)
+       enddo
+
+    end if
 
     call destroy(bpt)
 
@@ -653,22 +687,44 @@ contains
           end select
        end do
 
-       do comp = startcomp, startcomp+numcomp-1
-          call multifab_fill_boundary_c(scal_force(n),comp,1)
-          call multifab_physbc(scal_force(n),comp,foextrap_comp,1,the_bc_level(n))
-       enddo
-
     end do
 
-    do comp = startcomp, startcomp+numcomp-1
+    if (nlevs .eq. 1) then
+
+       do comp = startcomp, startcomp+numcomp-1
+
+          ! fill ghost cells for two adjacent grids at the same level
+          ! this includes periodic domain boundary ghost cells
+          call multifab_fill_boundary_c(scal_force(nlevs),comp,1)
+
+          ! fill non-periodic domain boundary ghost cells
+          call multifab_physbc(scal_force(nlevs),comp,foextrap_comp,1,the_bc_level(nlevs))
+
+       enddo
+
+    else
+
+       ! the loop over nlevs must count backwards to make sure the finer grids are done first
        do n=nlevs,2,-1
-          call ml_cc_restriction_c(scal_force(n-1),comp,scal_force(n),comp,mla%mba%rr(n-1,:),1)
-          call multifab_fill_ghost_cells(scal_force(n),scal_force(n-1), &
-                                         scal_force(n)%ng,mla%mba%rr(n-1,:), &
-                                         the_bc_level(n-1),the_bc_level(n), &
-                                         comp,foextrap_comp,1)      
-       end do
-    enddo
+
+          do comp = startcomp, startcomp+numcomp-1
+ 
+             ! set level n-1 data to be the average of the level n data covering it
+             call ml_cc_restriction_c(scal_force(n-1),comp,scal_force(n),comp, &
+                                      mla%mba%rr(n-1,:),1)
+
+             ! fill level n ghost cells using interpolation from level n-1 data
+             ! note that multifab_fill_boundary and multifab_physbc are called for
+             ! both levels n-1 and n
+             call multifab_fill_ghost_cells(scal_force(n),scal_force(n-1), &
+                                            scal_force(n)%ng,mla%mba%rr(n-1,:), &
+                                            the_bc_level(n-1),the_bc_level(n), &
+                                            comp,foextrap_comp,1)      
+          end do
+
+       enddo
+
+    end if
 
     call destroy(bpt)
     

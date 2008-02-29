@@ -105,25 +105,41 @@ contains
           end select
        end do
        
-       call multifab_fill_boundary_c(force(n),start_comp,num_comp)
-       
-       do comp = start_comp, start_comp+num_comp-1
-          call multifab_physbc(force(n),comp,foextrap_comp,1,the_bc_level(n))
-       enddo
-       
     enddo
 
-    do n=nlevs,2,-1
-       call ml_cc_restriction_c(force(n-1),start_comp,force(n),start_comp, &
-                                mla%mba%rr(n-1,:),num_comp)
+    if (nlevs .eq. 1) then
 
+       ! fill ghost cells for two adjacent grids at the same level
+       ! this includes periodic domain boundary ghost cells
+       call multifab_fill_boundary_c(force(nlevs),start_comp,num_comp)
+       
+       ! fill non-periodic domain boundary ghost cells
        do comp = start_comp, start_comp+num_comp-1
-          call multifab_fill_ghost_cells(force(n),force(n-1), &
-                                         force(n)%ng,mla%mba%rr(n-1,:), &
-                                         the_bc_level(n-1),the_bc_level(n), &
-                                         comp,foextrap_comp,1)
+          call multifab_physbc(force(nlevs),comp,foextrap_comp,1,the_bc_level(nlevs))
        enddo
-    enddo
+
+    else
+
+       ! the loop over nlevs must count backwards to make sure the finer grids are done first
+       do n=nlevs,2,-1
+
+          ! set level n-1 data to be the average of the level n data covering it
+          call ml_cc_restriction_c(force(n-1),start_comp,force(n),start_comp, &
+                                   mla%mba%rr(n-1,:),num_comp)
+
+          ! fill level n ghost cells using interpolation from level n-1 data
+          ! note that multifab_fill_boundary and multifab_physbc are called for
+          ! both levels n-1 and n
+          do comp = start_comp, start_comp+num_comp-1
+             call multifab_fill_ghost_cells(force(n),force(n-1), &
+                                            force(n)%ng,mla%mba%rr(n-1,:), &
+                                            the_bc_level(n-1),the_bc_level(n), &
+                                            comp,foextrap_comp,1)
+          enddo
+
+       enddo
+
+    end if
 
     call destroy(bpt)
     
