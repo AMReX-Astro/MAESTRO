@@ -339,11 +339,33 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t0, 
      end do
   enddo
   
-  ! set the boundary conditions for p01
-  do n=1,nlevs
-     call multifab_fill_boundary(p01fab(n))
-     call multifab_physbc(p01fab(n),1,foextrap_comp,1,the_bc_tower%bc_tower_array(n))
-  enddo
+  if (nlevs .eq. 1) then
+
+     ! fill ghost cells for two adjacent grids at the same level
+     ! this includes periodic domain boundary ghost cells
+     call multifab_fill_boundary(p01fab(nlevs))
+
+     ! fill non-periodic domain boundary ghost cells
+     call multifab_physbc(p01fab(nlevs),1,foextrap_comp,1,the_bc_tower%bc_tower_array(nlevs))
+
+  else
+
+     do n=nlevs,2,-1
+
+        ! we shouldn't need a call to ml_cc_restriction here
+        ! as long as the coarse p01fab under fine cells is reasonably valued,
+        ! the results of mac_applyop are identical
+
+        ! fill level n ghost cells using interpolation from level n-1 data
+        ! note that multifab_fill_boundary and multifab_physbc are called for
+        ! both levels n-1 and n
+        call multifab_fill_ghost_cells(p01fab(n),p01fab(n-1),1,mla%mba%rr(n-1,:), &
+                                       the_bc_tower%bc_tower_array(n-1), &
+                                       the_bc_tower%bc_tower_array(n), &
+                                       1,foextrap_comp,1)
+     end do
+
+  end if
 
   ! load phi = p01
   do n=1,nlevs
@@ -407,11 +429,33 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t0, 
      end do
   enddo
 
-  ! set the boundary conditions for p02
-  do n=1,nlevs
-     call multifab_fill_boundary(p02fab(n))
-     call multifab_physbc(p02fab(n),1,foextrap_comp,1,the_bc_tower%bc_tower_array(n))
-  enddo
+  if (nlevs .eq. 1) then
+
+     ! fill ghost cells for two adjacent grids at the same level
+     ! this includes periodic domain boundary ghost cells
+     call multifab_fill_boundary(p02fab(nlevs))
+
+     ! fill non-periodic domain boundary ghost cells
+     call multifab_physbc(p02fab(nlevs),1,foextrap_comp,1,the_bc_tower%bc_tower_array(nlevs))
+
+  else
+
+     do n=nlevs,2,-1
+
+        ! we shouldn't need a call to ml_cc_restriction here
+        ! as long as the coarse p02fab under fine cells is reasonably valued,
+        ! the results of mac_applyop are identical
+
+        ! fill level n ghost cells using interpolation from level n-1 data
+        ! note that multifab_fill_boundary and multifab_physbc are called for
+        ! both levels n-1 and n
+        call multifab_fill_ghost_cells(p02fab(n),p02fab(n-1),1,mla%mba%rr(n-1,:), &
+                                       the_bc_tower%bc_tower_array(n-1), &
+                                       the_bc_tower%bc_tower_array(n), &
+                                       1,foextrap_comp,1)
+     end do
+
+  end if
 
   ! load phi = p02
   do n=1,nlevs
@@ -787,11 +831,33 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t0,the_bc_tower)
      end do
   enddo
 
-  ! set the boundary conditions for p01
-  do n=1,nlevs
-     call multifab_fill_boundary(p01fab(n))
-     call multifab_physbc(p01fab(n),1,foextrap_comp,1,the_bc_tower%bc_tower_array(n))
-  enddo
+  if (nlevs .eq. 1) then
+
+     ! fill ghost cells for two adjacent grids at the same level
+     ! this includes periodic domain boundary ghost cells
+     call multifab_fill_boundary(p01fab(nlevs))
+
+     ! fill non-periodic domain boundary ghost cells
+     call multifab_physbc(p01fab(nlevs),1,foextrap_comp,1,the_bc_tower%bc_tower_array(nlevs))
+
+  else
+
+     do n=nlevs,2,-1
+
+        ! we shouldn't need a call to ml_cc_restriction here
+        ! as long as the coarse p01fab under fine cells is reasonably valued,
+        ! the results of mac_applyop are identical
+
+        ! fill level n ghost cells using interpolation from level n-1 data
+        ! note that multifab_fill_boundary and multifab_physbc are called for
+        ! both levels n-1 and n
+        call multifab_fill_ghost_cells(p01fab(n),p01fab(n-1),1,mla%mba%rr(n-1,:), &
+                                       the_bc_tower%bc_tower_array(n-1), &
+                                       the_bc_tower%bc_tower_array(n), &
+                                       1,foextrap_comp,1)
+     end do
+
+  end if
 
   do n = 1,nlevs
      call multifab_build(p02fab(n), mla%la(n),  1, 1)
@@ -813,11 +879,33 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t0,the_bc_tower)
      end do
   enddo
 
-  ! set the boundary conditions for p02
-  do n=1,nlevs
-     call multifab_fill_boundary(p02fab(n))
-     call multifab_physbc(p02fab(n),1,foextrap_comp,1,the_bc_tower%bc_tower_array(n))
-  enddo
+  if (nlevs .eq. 1) then
+
+     ! fill ghost cells for two adjacent grids at the same level
+     ! this includes periodic domain boundary ghost cells
+     call multifab_fill_boundary(p02fab(nlevs))
+
+     ! fill non-periodic domain boundary ghost cells
+     call multifab_physbc(p02fab(nlevs),1,foextrap_comp,1,the_bc_tower%bc_tower_array(nlevs))
+
+  else
+
+     do n=nlevs,2,-1
+
+        ! we shouldn't need a call to ml_cc_restriction here
+        ! as long as the coarse p02fab under fine cells is reasonably valued,
+        ! the results of mac_applyop are identical
+
+        ! fill level n ghost cells using interpolation from level n-1 data
+        ! note that multifab_fill_boundary and multifab_physbc are called for
+        ! both levels n-1 and n
+        call multifab_fill_ghost_cells(p02fab(n),p02fab(n-1),1,mla%mba%rr(n-1,:), &
+                                       the_bc_tower%bc_tower_array(n-1), &
+                                       the_bc_tower%bc_tower_array(n), &
+                                       1,foextrap_comp,1)
+     end do
+
+  end if
   
   ! load phi = p01 + p02
   do n=1,nlevs
@@ -1530,7 +1618,7 @@ subroutine put_base_state_on_multifab_2d(lo,hi,p0,phi)
   integer :: i,j
 
   do j=lo(2),hi(2)
-     do i=lo(1)-1,hi(1)+1
+     do i=lo(1),hi(1)
         phi(i,j) = p0(j)
      enddo
   enddo
@@ -1550,8 +1638,8 @@ subroutine put_base_state_on_multifab_3d(lo,hi,p0,phi)
   integer :: i,j,k
 
   do k=lo(3),hi(3)
-     do j=lo(2)-1,hi(2)+1
-        do i=lo(1)-1,hi(1)+1
+     do j=lo(2),hi(2)
+        do i=lo(1),hi(1)
            phi(i,j,k) = p0(k)
         enddo
      enddo
