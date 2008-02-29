@@ -76,17 +76,21 @@ contains
             lo = lwb(get_box(xn0_cart,i))
             hi = upb(get_box(xn0_cart,i))
             do comp = 1,nspec
-               call fill_3d_data(n,xnp(:,:,:,comp),xn0_halftime(0:,comp),lo,hi,dx(n,:),xn0_cart%ng)
+               call fill_3d_data(n,xnp(:,:,:,comp),xn0_halftime(0:,comp),lo,hi,dx(n,:), &
+                                 xn0_cart%ng)
             end do
             call fill_3d_data(n,rhp(:,:,:,1),rhoh0_halftime(0:),lo,hi,dx(n,:),rhoh0_cart%ng)
          enddo
 
+         ! fill ghost cells for two adjacent grids at the same level
+         ! this includes periodic domain boundary ghost cells
          call multifab_fill_boundary(  xn0_cart)
          call multifab_fill_boundary(rhoh0_cart)
 
+         ! fill non-periodic domain boundary ghost cells
          call multifab_physbc(xn0_cart,1,dm+spec_comp,nspec,the_bc_level(n))
-
          call multifab_physbc(rhoh0_cart,1,dm+rhoh_comp,1,the_bc_level(n))
+
       endif
 
        do i=1,u(n)%nboxes
