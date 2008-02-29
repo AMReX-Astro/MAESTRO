@@ -375,7 +375,7 @@ contains
          call multifab_fill_boundary(unew(nlevs))
 
          ! fill non-periodic domain boundary ghost cells
-         call multifab_physbc(unew(n),1,1,dm,the_bc_level(nlevs))
+         call multifab_physbc(unew(nlevs),1,1,dm,the_bc_level(nlevs))
 
       else
 
