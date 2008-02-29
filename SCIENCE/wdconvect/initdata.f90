@@ -40,7 +40,6 @@ contains
     dm = s(1)%dim
 
     do n=1,nlevs
-
        do i = 1, s(n)%nboxes
           if ( multifab_remote(s(n),i) ) cycle
           sop => dataptr(s(n),i)
@@ -54,17 +53,34 @@ contains
              call initscalardata_3d(n,sop(:,:,:,:), lo, hi, ng, dx(n,:), s0(n,:,:), p0(n,:))
           end select
        end do
-       
-       call multifab_fill_boundary(s(n))
-       call multifab_physbc(s(n),rho_comp,dm+rho_comp,nscal,bc(n))
-
     enddo
 
-    do n=nlevs,2,-1
-       call ml_cc_restriction(s(n-1),s(n),mla%mba%rr(n-1,:))
-       call multifab_fill_ghost_cells(s(n),s(n-1),ng,mla%mba%rr(n-1,:), &
-                                       bc(n-1),bc(n),1,dm+rho_comp,nscal)
-    enddo
+    if (nlevs .eq. 1) then
+
+       ! fill ghost cells for two adjacent grids at the same level
+       ! this includes periodic domain boundary ghost cells
+       call multifab_fill_boundary(s(nlevs))
+
+       ! fill non-periodic domain boundary ghost cells
+       call multifab_physbc(s(nlevs),rho_comp,dm+rho_comp,nscal,bc(nlevs))
+
+    else
+
+       ! the loop over nlevs must count backwards to make sure the finer grids are done first
+       do n=nlevs,2,-1
+
+          ! set level n-1 data to be the average of the level n data covering it
+          call ml_cc_restriction(s(n-1),s(n),mla%mba%rr(n-1,:))
+
+          ! fill level n ghost cells using interpolation from level n-1 data
+          ! note that multifab_fill_boundary and multifab_physbc are called for
+          ! both levels n-1 and n
+          call multifab_fill_ghost_cells(s(n),s(n-1),ng,mla%mba%rr(n-1,:), &
+                                         bc(n-1),bc(n),1,dm+rho_comp,nscal)
+
+       enddo
+
+    end if
        
   end subroutine initscalardata
 
@@ -237,17 +253,34 @@ contains
              call initveldata_3d(uop(:,:,:,:), lo, hi, ng, dx(n,:), s0(n,:,:), p0(n,:))
           end select
        end do
-
-       call multifab_fill_boundary(u(n))
-       call multifab_physbc(u(n),1,1,dm,bc(n))
     
     enddo
 
-    do n=nlevs,2,-1
-       call ml_cc_restriction(u(n-1),u(n),mla%mba%rr(n-1,:))
-       call multifab_fill_ghost_cells(u(n),u(n-1),ng,mla%mba%rr(n-1,:), &
-                                      bc(n-1),bc(n),1,1,dm)
-    enddo
+    if (nlevs .eq. 1) then
+
+       ! fill ghost cells for two adjacent grids at the same level
+       ! this includes periodic domain boundary ghost cells
+       call multifab_fill_boundary(u(nlevs))
+
+       ! fill non-periodic domain boundary ghost cells
+       call multifab_physbc(u(nlevs),1,1,dm,bc(nlevs))
+
+    else
+
+       ! the loop over nlevs must count backwards to make sure the finer grids are done first
+       do n=nlevs,2,-1
+
+          ! set level n-1 data to be the average of the level n data covering it
+          call ml_cc_restriction(u(n-1),u(n),mla%mba%rr(n-1,:))
+
+          ! fill level n ghost cells using interpolation from level n-1 data
+          ! note that multifab_fill_boundary and multifab_physbc are called for
+          ! both levels n-1 and n
+          call multifab_fill_ghost_cells(u(n),u(n-1),ng,mla%mba%rr(n-1,:), &
+                                         bc(n-1),bc(n),1,1,dm)
+       enddo
+       
+    end if
 
   end subroutine initveldata
 
