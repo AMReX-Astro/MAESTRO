@@ -304,7 +304,7 @@ contains
        call multifab_fill_boundary(u(nlevs))
 
        ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(u(n),1,1,dm,bc(nlevs))
+       call multifab_physbc(u(nlevs),1,1,dm,bc(nlevs))
     else
     
        ! the loop over nlevs must count backwards to make sure the finer grids are done first
