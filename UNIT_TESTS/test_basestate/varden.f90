@@ -51,6 +51,7 @@ subroutine varden()
   real(dp_t), allocatable :: eta(:,:,:)
   real(dp_t), allocatable :: f(:,:)
   real(dp_t), allocatable :: Sbar_in(:,:,:)
+  real(dp_t), allocatable :: s0_predicted_edge(:,:,:)
 
   real(dp_t) :: coeff, Hbar
 
@@ -116,16 +117,18 @@ subroutine varden()
 
   allocate(grav_cell(nlevs,0:nr_fine-1))
 
-  allocate(   gam1(nlevs,0:nr_fine-1  ))
-  allocate( s0_old(nlevs,0:nr_fine-1, nscal))
-  allocate(     s0(nlevs,0:nr_fine-1, nscal))
-  allocate( p0_old(nlevs,0:nr_fine-1  ))
-  allocate(     p0(nlevs,0:nr_fine-1  ))
-  allocate( w0_old(nlevs,0:nr_fine))
-  allocate(     w0(nlevs,0:nr_fine))
-  allocate(    eta(nlevs,0:nr_fine,   nscal))
-  allocate(      f(nlevs,0:nr_fine))
-  allocate(Sbar_in(nlevs,0:nr_fine-1,1))
+  allocate(             gam1(nlevs,0:nr_fine-1  ))
+  allocate(           s0_old(nlevs,0:nr_fine-1, nscal))
+  allocate(               s0(nlevs,0:nr_fine-1, nscal))
+  allocate(           p0_old(nlevs,0:nr_fine-1  ))
+  allocate(               p0(nlevs,0:nr_fine-1  ))
+  allocate(           w0_old(nlevs,0:nr_fine))
+  allocate(               w0(nlevs,0:nr_fine))
+  allocate(              eta(nlevs,0:nr_fine,   nscal))
+  allocate(                f(nlevs,0:nr_fine))
+  allocate(          Sbar_in(nlevs,0:nr_fine-1,1))
+  allocate(s0_predicted_edge(nlevs,0:nr(nlevs)  ,nscal))
+
 
   w0(:,:) = ZERO
   eta(:,:,:) = ZERO
@@ -236,6 +239,7 @@ subroutine varden()
      call advect_base(which_step,nlevs,w0,Sbar_in,p0_old,p0, &
                       s0_old,s0, &
                       gam1,div_coeff,eta, &
+                      s0_predicted_edge, &
                       dx(:,1),dt)
 
 
@@ -266,6 +270,6 @@ subroutine varden()
 
   deallocate(div_coeff_old,div_coeff,grav_cell)
   deallocate(gam1,s0_old,s0,p0_old,p0,w0,f)
-  
+  deallocate(s0_predicted_edge)
 
 end subroutine varden
