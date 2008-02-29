@@ -104,7 +104,9 @@ contains
 
     end do
 
+    ! the loop over nlevs must count backwards to make sure the finer grids are done first
     do n=nlevs,2,-1
+       ! set level n-1 data to be the average of the level n data covering it
        call ml_cc_restriction(sponge(n-1),sponge(n),mla%mba%rr(n-1,:))
     end do
 

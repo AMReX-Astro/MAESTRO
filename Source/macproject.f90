@@ -274,8 +274,6 @@ contains
 
     subroutine mult_umac_by_1d_coeff(umac,div_coeff,div_coeff_half,do_mult)
 
-      use ml_restriction_module, only: ml_edge_restriction
-
       type(multifab) , intent(inout) :: umac(:)
       real(dp_t)     , intent(in   ) :: div_coeff(0:)
       real(dp_t)     , intent(in   ) :: div_coeff_half(0:)
@@ -405,8 +403,6 @@ contains
     end subroutine mult_by_1d_coeff_3d
 
     subroutine mult_umac_by_3d_coeff(umac,div_coeff,domain,do_mult)
-
-      use ml_restriction_module, only: ml_edge_restriction
 
       type(multifab) , intent(inout) :: umac(:)
       type(multifab) , intent(in   ) :: div_coeff
@@ -611,8 +607,6 @@ contains
     end subroutine mult_by_3d_coeff_3d
 
     subroutine mk_mac_coeffs(nlevs,mla,rho,beta,the_bc_tower)
-
-      use multifab_fill_ghost_module
 
       integer        , intent(in   ) :: nlevs
       type(ml_layout), intent(inout) :: mla

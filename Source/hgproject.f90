@@ -299,6 +299,7 @@ contains
                          mla,the_bc_level)
 
       use multifab_physbc_module
+      use variables, only: foextrap_comp
 
       integer        , intent(in   ) :: nlevs
       integer        , intent(in   ) :: proj_type
@@ -354,16 +355,7 @@ contains
 
          ! fill ghost cells for two adjacent grids at the same level
          ! this includes periodic domain boundary ghost cells
-         call multifab_fill_boundary(gpres(n))
          call multifab_fill_boundary(pres(n))
-
-      end do
-
-      ! the loop over nlevs must count backwards to make sure the finer grids are done first
-      do n = nlevs, 2, -1
-
-         ! set level n-1 data to be the average of the level n data covering it
-         call ml_cc_restriction(gpres(n-1),gpres(n),mla%mba%rr(n-1,:))
 
       end do
 
@@ -372,9 +364,13 @@ contains
          ! fill ghost cells for two adjacent grids at the same level
          ! this includes periodic domain boundary ghost cells
          call multifab_fill_boundary(unew(nlevs))
+         call multifab_fill_boundary(gpres(nlevs))
 
          ! fill non-periodic domain boundary ghost cells
          call multifab_physbc(unew(nlevs),1,1,dm,the_bc_level(nlevs))
+         do i=1,dm
+            call multifab_physbc(gpres(nlevs),i,foextrap_comp,1,the_bc_level(nlevs))
+         end do
 
       else
 
@@ -384,12 +380,19 @@ contains
 
             ! set level n-1 data to be the average of the level n data covering it
             call ml_cc_restriction(unew(n-1),unew(n),mla%mba%rr(n-1,:)) 
+            call ml_cc_restriction(gpres(n-1),gpres(n),mla%mba%rr(n-1,:))
 
             ! fill level n ghost cells using interpolation from level n-1 data
             ! note that multifab_fill_boundary and multifab_physbc are called for
             ! both levels n-1 and n
             call multifab_fill_ghost_cells(unew(n),unew(n-1),ng,mla%mba%rr(n-1,:), &
                                            the_bc_level(n-1),the_bc_level(n),1,1,dm)
+            do i=1,dm
+               call multifab_fill_ghost_cells(gpres(n),gpres(n-1),1,mla%mba%rr(n-1,:), &
+                                              the_bc_level(n-1),the_bc_level(n),i, &
+                                              foextrap_comp,1)
+            end do
+
          end do
 
       end if
