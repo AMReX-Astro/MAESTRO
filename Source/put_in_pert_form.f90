@@ -27,6 +27,7 @@ contains
     use define_bc_module
     use ml_restriction_module, only: ml_cc_restriction
     use multifab_fill_ghost_module
+    use multifab_physbc_module
 
     integer        , intent(in   ) :: nlevs,startcomp,numcomp
     type(multifab) , intent(inout) :: s(:)
@@ -38,7 +39,8 @@ contains
 
     ! Local variables
     real(kind=dp_t), pointer::  sp(:,:,:,:)
-    integer :: i,lo(s(1)%dim),hi(s(1)%dim),ng,dm,n,comp
+    integer :: lo(s(1)%dim),hi(s(1)%dim)
+    integer :: i,ng,dm,n,comp,bc_comp
 
     ng = s(1)%ng
     dm = s(1)%dim
@@ -61,30 +63,52 @@ contains
              end if
           end select
        end do
-
-       call multifab_fill_boundary_c(s(n),startcomp,numcomp)
-
     end do
 
+    if (nlevs .eq. 1) then
 
-    do n=nlevs,2,-1
-       call ml_cc_restriction(s(n-1),s(n),mla%mba%rr(n-1,:))
+       ! fill ghost cells for two adjacent grids at the same level
+       ! this includes periodic domain boundary ghost cells
+       call multifab_fill_boundary_c(s(nlevs),startcomp,numcomp)
 
-       if(flag) then
-          do comp=startcomp,startcomp+numcomp-1
+       do comp = startcomp,startcomp+numcomp-1
+          if (flag) then
+             bc_comp = foextrap_comp
+          else
+             bc_comp = dm+comp
+          end if
+
+          ! fill non-periodic domain boundary ghost cells
+          call multifab_physbc(s(nlevs),comp,bc_comp,1,the_bc_level(nlevs))
+       end do
+
+    else
+
+       ! the loop over nlevs must count backwards to make sure the finer grids are done first
+       do n=nlevs,2,-1
+
+          ! set level n-1 data to be the average of the level n data covering it
+          call ml_cc_restriction(s(n-1),s(n),mla%mba%rr(n-1,:))
+          
+          do comp = startcomp,startcomp+numcomp-1
+             if (flag) then
+                bc_comp = foextrap_comp
+             else
+                bc_comp = dm+comp
+             end if
+             
+             ! fill level n ghost cells using interpolation from level n-1 data
+             ! note that multifab_fill_boundary and multifab_physbc are called for
+             ! both levels n-1 and n
              call multifab_fill_ghost_cells(s(n),s(n-1), &
                                             s(n)%ng,mla%mba%rr(n-1,:), &
                                             the_bc_level(n-1),the_bc_level(n), &
-                                            comp,foextrap_comp,1)
+                                            comp,bc_comp,1)
           end do
-       else
-          call multifab_fill_ghost_cells(s(n),s(n-1), &
-                                         s(n)%ng,mla%mba%rr(n-1,:), &
-                                         the_bc_level(n-1),the_bc_level(n), &
-                                         startcomp,dm+startcomp,numcomp)
-       end if
+          
+       end do
 
-    end do
+    end if
 
   end subroutine put_in_pert_form
 
