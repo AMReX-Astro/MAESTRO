@@ -261,7 +261,6 @@ contains
   subroutine makeRhoHfromT_3d_cart (sx,sy,sz,s0_old,s0_edge_old,s0_new,s0_edge_new,lo,hi)
 
     use variables,     only: rho_comp, temp_comp, spec_comp, rhoh_comp
-    use geometry,      only: spherical
     use eos_module
     use probin_module, only: use_big_h
     use bl_constants_module
