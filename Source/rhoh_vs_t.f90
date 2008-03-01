@@ -20,6 +20,7 @@ contains
     use bl_constants_module
     use geometry
     use variables
+    use probin_module, only: predict_X_at_edges
     use network
     use fill_3d_module, only: fill_3d_data
     use multifab_physbc_module
@@ -52,13 +53,24 @@ contains
 
     dm = u(1)%dim
 
+    ! NOTE: if we predicted X at edges, we need to rewrite this routine to
+    ! properly deal with X' on the edges -- at the moment, we don't do this.
+    ! Also note, that we would need to ensure that s0_old and s0_new that come
+    ! in are X0 and not (rho X)_0.
+    if (predict_X_at_edges) then
+       call bl_error("rhoh_vs_t does not yet know how to deal with X' edge states'")
+    endif
+
     if (spherical .eq. 1) then
       allocate(  xn0_halftime(0:nr(nlevs),nspec))
       allocate(rhoh0_halftime(0:nr(nlevs)))
       do r = 0,nr(nlevs)-1
-         xn0_halftime(r,1:nspec) = HALF * (s0_old(nlevs,r,spec_comp:spec_comp+nspec-1) &
-                                         + s0_new(nlevs,r,spec_comp:spec_comp+nspec-1) )
-         rhoh0_halftime(r) = HALF * (s0_old(nlevs,r,rhoh_comp) + s0_new(nlevs,r,rhoh_comp) )
+         xn0_halftime(r,1:nspec) = &
+              HALF * (s0_old(nlevs,r,spec_comp:spec_comp+nspec-1) &
+                    + s0_new(nlevs,r,spec_comp:spec_comp+nspec-1) )
+
+         rhoh0_halftime(r) = HALF * (s0_old(nlevs,r,rhoh_comp) + &
+                                     s0_new(nlevs,r,rhoh_comp) )
       end do
    endif
 
