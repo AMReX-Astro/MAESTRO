@@ -285,8 +285,6 @@ contains
             end select
          end do
 
-         call multifab_fill_boundary(gphi(n))
-
       end do
 
       call destroy(bpt)
@@ -480,7 +478,7 @@ contains
       real(kind=dp_t), intent(inout) ::    unew(-ng:,-ng:,:)
       real(kind=dp_t), intent(in   ) ::    uold(-ng:,-ng:,:)
       real(kind=dp_t), intent(in   ) :: rhohalf( -1:, -1:)
-      real(kind=dp_t), intent(inout) ::      gpres( -1:, -1:,:)
+      real(kind=dp_t), intent(inout) ::   gpres( -1:, -1:,:)
       real(kind=dp_t), intent(in   ) :: dt
       integer        , intent(in   ) :: phys_bc(:,:)
       integer        , intent(in   ) :: proj_type
