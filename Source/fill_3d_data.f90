@@ -162,17 +162,24 @@ contains
 
   end subroutine make_3d_normal
 
-  subroutine make_w0_cart(nlevs,w0,w0_cart,normal,dx)
+  subroutine make_w0_cart(nlevs,w0,w0_cart,normal,dx,the_bc_level,mla)
 
     use bl_prof_module
     use bl_constants_module
+    use define_bc_module
     use geometry, only: spherical
+    use ml_layout_module
+    use multifab_physbc_module
+    use ml_restriction_module, only: ml_cc_restriction_c
+    use multifab_fill_ghost_module
     
     integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     type(multifab) , intent(inout) :: w0_cart(:)
     type(multifab) , intent(in   ) :: normal(:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
+    type(bc_level) , intent(in   ) :: the_bc_level(:)
+    type(ml_layout), intent(inout) :: mla
     
     integer :: lo(w0_cart(1)%dim),hi(w0_cart(1)%dim)
     integer :: i,n,dm,ng
@@ -202,10 +209,35 @@ contains
              call put_w0_on_3d_cells_cart(n,w0(n,:),wp(:,:,:,:),lo,hi,dx(n,dm),ng)
           end if
        end do
-       
-       call multifab_fill_boundary(w0_cart(n))
 
     enddo
+
+    if (nlevs .eq. 1) then
+
+       ! fill ghost cells for two adjacent grids at the same level
+       ! this includes periodic domain boundary ghost cells
+       call multifab_fill_boundary(w0_cart(nlevs))
+
+       ! fill non-periodic domain boundary ghost cells
+       call multifab_physbc(w0_cart(nlevs),1,dm,1,the_bc_level(nlevs))
+
+    else
+
+       ! the loop over nlevs must count backwards to make sure the finer grids are done first
+       do n=nlevs,2,-1
+
+          ! set level n-1 data to be the average of the level n data covering it
+          call ml_cc_restriction_c(w0_cart(n-1),1,w0_cart(n),1,mla%mba%rr(n-1,:),1)
+
+          ! fill level n ghost cells using interpolation from level n-1 data
+          ! note that multifab_fill_boundary and multifab_physbc are called for
+          ! both levels n-1 and n
+          call multifab_fill_ghost_cells(w0_cart(n),w0_cart(n-1),ng,mla%mba%rr(n-1,:), &
+                                         the_bc_level(n-1),the_bc_level(n),1,dm,1)
+
+       end do
+
+    end if
 
     call destroy(bpt)
     

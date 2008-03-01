@@ -192,7 +192,7 @@ contains
           call multifab_build(w0_cart_vec(n), mla%la(n), dm, 1)
        end do
 
-       call make_w0_cart(nlevs,w0,w0_cart_vec,normal,dx) 
+       call make_w0_cart(nlevs,w0,w0_cart_vec,normal,dx,the_bc_tower%bc_tower_array,mla)
     end if
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -516,8 +516,10 @@ contains
              call multifab_build(w0_force_cart_vec(n), mla%la(n), dm, 1)
           end do
 
-          call make_w0_cart(nlevs,w0      ,w0_cart_vec      ,normal,dx) 
-          call make_w0_cart(nlevs,w0_force,w0_force_cart_vec,normal,dx) 
+          call make_w0_cart(nlevs,w0      ,w0_cart_vec      ,normal,dx, &
+                            the_bc_tower%bc_tower_array,mla) 
+          call make_w0_cart(nlevs,w0_force,w0_force_cart_vec,normal,dx, &
+                            the_bc_tower%bc_tower_array,mla) 
        end if
        
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
