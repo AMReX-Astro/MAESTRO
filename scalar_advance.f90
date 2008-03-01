@@ -132,23 +132,22 @@ contains
     end do
 
     ! make force for species
-    call modify_scal_force(which_step,nlevs,scal_force,sold,umac,s0_old,s0_edge_old,w0,eta,dx, &
-                           s0_old_cart,spec_comp,nspec,mla,the_bc_level)
+    call modify_scal_force(which_step,nlevs,scal_force,sold,umac,s0_old,s0_edge_old,w0,eta, &
+                           dx,s0_old_cart,spec_comp,nspec,mla,the_bc_level)
 
     if(predict_temp_at_edges) then
 
        ! make force for temperature
-       call mktempforce(nlevs,scal_force,temp_comp,umac,sold,thermal,p0_old,p0_old,normal, &
-                        dx,mla,the_bc_level)
+       call mktempforce(nlevs,scal_force,umac,sold,thermal,p0_old,p0_old,normal,dx,mla, &
+                        the_bc_level)
 
     else
 
        ! Make force for rhoh -- just use p0_old
-       call mkrhohforce(nlevs,scal_force,rhoh_comp,umac,p0_old,p0_old,normal,dx, &
-                        mla,the_bc_level)
+       call mkrhohforce(nlevs,scal_force,umac,p0_old,p0_old,normal,dx,mla,the_bc_level)
        
-       call modify_scal_force(which_step,nlevs,scal_force,sold,umac,s0_old,s0_edge_old,w0,eta,dx, &
-                              s0_old_cart,rhoh_comp,1,mla,the_bc_level)
+       call modify_scal_force(which_step,nlevs,scal_force,sold,umac,s0_old,s0_edge_old,w0, &
+                              eta,dx,s0_old_cart,rhoh_comp,1,mla,the_bc_level)
         
        if(use_thermal_diffusion) then
           call add_thermal_to_force(nlevs,scal_force,thermal,the_bc_level,mla)
@@ -198,7 +197,8 @@ contains
 
     ! compute enthalpy edge states
     if(predict_temp_at_edges) then
-       call makeRhoHfromT(nlevs,uold,sedge,s0_old,s0_edge_old,s0_new,s0_edge_new,the_bc_level,dx)
+       call makeRhoHfromT(nlevs,uold,sedge,s0_old,s0_edge_old,s0_new,s0_edge_new, &
+                          the_bc_level,dx)
     end if
 
     if (.not. predict_temp_at_edges) then
@@ -322,12 +322,10 @@ contains
        
     if (which_step .eq. 1) then
       ! Here just send p0_old and p0_old
-      call mkrhohforce(nlevs,scal_force,rhoh_comp,umac,p0_old,p0_old,normal,dx, &
-                       mla,the_bc_level)
+      call mkrhohforce(nlevs,scal_force,umac,p0_old,p0_old,normal,dx,mla,the_bc_level)
     else
       ! Here send p0_old and p0_new
-      call mkrhohforce(nlevs,scal_force,rhoh_comp,umac,p0_old,p0_new,normal,dx, &
-                       mla,the_bc_level)
+      call mkrhohforce(nlevs,scal_force,umac,p0_old,p0_new,normal,dx,mla,the_bc_level)
     end if
 
     call update_scal(nlevs,rhoh_comp,rhoh_comp,sold,snew,umac,w0,w0_cart_vec, &

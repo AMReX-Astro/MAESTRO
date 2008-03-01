@@ -30,10 +30,10 @@ module mkscalforce_module
 
 contains
 
-  subroutine mkrhohforce(nlevs,scal_force,comp,umac,p0_old,p0_new,normal,dx,mla,the_bc_level)
+  subroutine mkrhohforce(nlevs,scal_force,umac,p0_old,p0_new,normal,dx,mla,the_bc_level)
 
     use bl_prof_module
-    use variables, only: foextrap_comp
+    use variables, only: foextrap_comp, rhoh_comp
     use geometry, only: spherical
     use ml_restriction_module, only: ml_cc_restriction_c
     use multifab_fill_ghost_module
@@ -41,7 +41,6 @@ contains
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: scal_force(:)
-    integer        , intent(in   ) :: comp
     type(multifab) , intent(in   ) :: umac(:,:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_new(:,0:)
@@ -75,16 +74,16 @@ contains
           hi = upb(get_box(scal_force(n),i))
           select case (dm)
           case (2)
-             call mkrhohforce_2d(n,fp(:,:,1,comp), vmp(:,:,1,1), lo, hi, &
+             call mkrhohforce_2d(n,fp(:,:,1,rhoh_comp), vmp(:,:,1,1), lo, hi, &
                                  p0_old(n,:), p0_new(n,:))
           case(3)
              wmp  => dataptr(umac(n,3), i)
              if (spherical .eq. 0) then
-                call mkrhohforce_3d(n,fp(:,:,:,comp), wmp(:,:,:,1), lo, hi, &
+                call mkrhohforce_3d(n,fp(:,:,:,rhoh_comp), wmp(:,:,:,1), lo, hi, &
                                     p0_old(n,:), p0_new(n,:))
              else
                 np => dataptr(normal(n), i)
-                call mkrhohforce_3d_sphr(n,fp(:,:,:,comp), &
+                call mkrhohforce_3d_sphr(n,fp(:,:,:,rhoh_comp), &
                                          ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
                                          lo, hi, dx(n,:), np(:,:,:,:), &
                                          p0_old(n,:), p0_new(n,:))
@@ -97,10 +96,10 @@ contains
 
        ! fill ghost cells for two adjacent grids at the same level
        ! this includes periodic domain boundary ghost cells
-       call multifab_fill_boundary_c(scal_force(nlevs),comp,1)
+       call multifab_fill_boundary_c(scal_force(nlevs),rhoh_comp,1)
 
        ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(scal_force(nlevs),comp,foextrap_comp,1,the_bc_level(nlevs))
+       call multifab_physbc(scal_force(nlevs),rhoh_comp,foextrap_comp,1,the_bc_level(nlevs))
 
     else
 
@@ -108,7 +107,7 @@ contains
        do n=nlevs,2,-1
 
           ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction_c(scal_force(n-1),comp,scal_force(n),comp, &
+          call ml_cc_restriction_c(scal_force(n-1),rhoh_comp,scal_force(n),rhoh_comp, &
                                    mla%mba%rr(n-1,:),1)
 
           ! fill level n ghost cells using interpolation from level n-1 data
@@ -117,7 +116,7 @@ contains
           call multifab_fill_ghost_cells(scal_force(n),scal_force(n-1), &
                                          scal_force(n)%ng,mla%mba%rr(n-1,:), &
                                          the_bc_level(n-1),the_bc_level(n), &
-                                         comp,foextrap_comp,1)      
+                                         rhoh_comp,foextrap_comp,1)      
        end do
 
     end if
@@ -267,11 +266,11 @@ contains
 
 
 
-  subroutine mktempforce(nlevs,temp_force,comp,umac,s,thermal,p0_old,p0_new,normal, &
+  subroutine mktempforce(nlevs,temp_force,umac,s,thermal,p0_old,p0_new,normal, &
                          dx,mla,the_bc_level)
 
     use bl_prof_module
-    use variables, only: foextrap_comp
+    use variables, only: foextrap_comp, temp_comp
     use geometry, only: spherical
     use ml_restriction_module, only: ml_cc_restriction_c
     use multifab_fill_ghost_module
@@ -279,7 +278,6 @@ contains
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: temp_force(:)
-    integer        , intent(in   ) :: comp
     type(multifab) , intent(in   ) :: umac(:,:)
     type(multifab) , intent(in   ) :: s(:)
     type(multifab) , intent(in   ) :: thermal(:)
@@ -321,18 +319,18 @@ contains
           tp  => dataptr(thermal(n),i)
           select case (dm)
           case (2)
-             call mktempforce_2d(n, fp(:,:,1,comp), sp(:,:,1,:), vmp(:,:,1,1), tp(:,:,1,1),&
-                                 lo, hi, ng, p0_old(n,:), p0_new(n,:))
+             call mktempforce_2d(n, fp(:,:,1,temp_comp), sp(:,:,1,:), vmp(:,:,1,1), &
+                                 tp(:,:,1,1), lo, hi, ng, p0_old(n,:), p0_new(n,:))
           case(3)
              wmp => dataptr(umac(n,3),i)
              if (spherical .eq. 1) then
                 np => dataptr(normal(n),i)
-                call mktempforce_3d_sphr(n,fp(:,:,:,comp), sp(:,:,:,:), &
+                call mktempforce_3d_sphr(n,fp(:,:,:,temp_comp), sp(:,:,:,:), &
                                          ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
                                          tp(:,:,:,1), lo, hi, ng, &
                                          p0_old(n,:), p0_new(n,:), np(:,:,:,:), dx(n,:))
              else
-                call mktempforce_3d(n, fp(:,:,:,comp), sp(:,:,:,:), wmp(:,:,:,1), &
+                call mktempforce_3d(n, fp(:,:,:,temp_comp), sp(:,:,:,:), wmp(:,:,:,1), &
                                     tp(:,:,:,1), lo, hi, ng, p0_old(n,:), p0_new(n,:))
              end if
           end select
@@ -344,10 +342,10 @@ contains
 
        ! fill ghost cells for two adjacent grids at the same level
        ! this includes periodic domain boundary ghost cells
-       call multifab_fill_boundary_c(temp_force(nlevs),comp,1)
+       call multifab_fill_boundary_c(temp_force(nlevs),temp_comp,1)
 
        ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(temp_force(nlevs),comp,foextrap_comp,1,the_bc_level(nlevs))
+       call multifab_physbc(temp_force(nlevs),temp_comp,foextrap_comp,1,the_bc_level(nlevs))
 
     else
 
@@ -355,7 +353,7 @@ contains
        do n=nlevs,2,-1
 
           ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction_c(temp_force(n-1),comp,temp_force(n),comp, &
+          call ml_cc_restriction_c(temp_force(n-1),temp_comp,temp_force(n),temp_comp, &
                                    mla%mba%rr(n-1,:),1)
 
           ! fill level n ghost cells using interpolation from level n-1 data
@@ -364,7 +362,7 @@ contains
           call multifab_fill_ghost_cells(temp_force(n),temp_force(n-1), &
                                          temp_force(n)%ng,mla%mba%rr(n-1,:), &
                                          the_bc_level(n-1),the_bc_level(n), &
-                                         comp,foextrap_comp,1)
+                                         temp_comp,foextrap_comp,1)
        enddo
 
     end if
@@ -611,7 +609,7 @@ contains
   end subroutine mktempforce_3d_sphr
 
 
-  subroutine mkXforce(nlevs,scal_force,startcomp,numcomp,umac,s0,normal,dx,mla,the_bc_level)
+  subroutine mkXforce(nlevs,scal_force,umac,s0,normal,dx,mla,the_bc_level)
 
     ! compute the source terms for the mass fraction equation
     !
@@ -628,7 +626,8 @@ contains
     !
 
     use bl_prof_module
-    use variables, only: foextrap_comp
+    use variables, only: foextrap_comp, spec_comp
+    use network, only: nspec
     use geometry, only: spherical
     use ml_restriction_module, only: ml_cc_restriction_c
     use multifab_fill_ghost_module
@@ -636,7 +635,6 @@ contains
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: scal_force(:)
-    integer        , intent(in   ) :: startcomp, numcomp
     type(multifab) , intent(in   ) :: umac(:,:)
     real(kind=dp_t), intent(in   ) :: s0(:,0:,:)
     type(multifab) , intent(in   ) :: normal(:)
@@ -670,19 +668,18 @@ contains
           hi = upb(get_box(scal_force(n),i))
           select case (dm)
           case (2)
-             call mkXforce_2d(n,fp(:,:,1,:), vmp(:,:,1,1), s0(n,:,:), startcomp, numcomp, lo, hi)
+             call mkXforce_2d(n,fp(:,:,1,:), vmp(:,:,1,1), s0(n,:,:), lo, hi)
 
           case(3)
              wmp  => dataptr(umac(n,3), i)
              if (spherical .eq. 0) then
-                call mkXforce_3d(n,fp(:,:,:,:), wmp(:,:,:,1), s0(n,:,:), startcomp, numcomp, lo, hi)
+                call mkXforce_3d(n,fp(:,:,:,:), wmp(:,:,:,1), s0(n,:,:), lo, hi)
 
              else
                 np => dataptr(normal(n), i)
                 call mkXforce_3d_sphr(n,fp(:,:,:,:), &
                                       ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
-                                      s0(n,:,:), startcomp, numcomp, &
-                                      lo, hi, dx(n,:), np(:,:,:,:))
+                                      s0(n,:,:), lo, hi, dx(n,:), np(:,:,:,:))
              end if
           end select
        end do
@@ -691,7 +688,7 @@ contains
 
     if (nlevs .eq. 1) then
 
-       do comp = startcomp, startcomp+numcomp-1
+       do comp = spec_comp, spec_comp+nspec-1
 
           ! fill ghost cells for two adjacent grids at the same level
           ! this includes periodic domain boundary ghost cells
@@ -707,7 +704,7 @@ contains
        ! the loop over nlevs must count backwards to make sure the finer grids are done first
        do n=nlevs,2,-1
 
-          do comp = startcomp, startcomp+numcomp-1
+          do comp = spec_comp,spec_comp+nspec-1
  
              ! set level n-1 data to be the average of the level n data covering it
              call ml_cc_restriction_c(scal_force(n-1),comp,scal_force(n),comp, &
@@ -730,20 +727,21 @@ contains
     
   end subroutine mkXforce
 
-  subroutine mkXforce_2d(n,X_force,wmac,base,startcomp,numcomp,lo,hi)
+  subroutine mkXforce_2d(n,X_force,wmac,base,lo,hi)
 
     use geometry, only: dr, nr
+    use variables, only: spec_comp
+    use network, only: nspec
 
     integer,         intent(in   ) :: n,lo(:),hi(:)
     real(kind=dp_t), intent(  out) :: X_force(lo(1)-1:,lo(2)-1:,:)
     real(kind=dp_t), intent(in   ) :: wmac(lo(1)-1:,lo(2)-1:)
     real(kind=dp_t), intent(in   ) :: base(0:,:)
-    integer,         intent(in   ) :: startcomp, numcomp
     
     real(kind=dp_t) :: gradX0, wadv
     integer :: i,j, comp
 
-    do comp = startcomp, startcomp+numcomp-1
+    do comp = spec_comp, spec_comp+nspec-1
 
        do j = lo(2),hi(2)
        
@@ -768,9 +766,11 @@ contains
 
   end subroutine mkXforce_2d
 
-  subroutine mkXforce_3d(n,X_force,wmac,base,startcomp,numcomp,lo,hi)
+  subroutine mkXforce_3d(n,X_force,wmac,base,lo,hi)
 
    use geometry, only: dr, nr
+   use variables, only: spec_comp
+   use network, only: nspec
 
     ! compute the source terms for the mass fraction equation
 
@@ -778,12 +778,11 @@ contains
     real(kind=dp_t), intent(  out) :: X_force(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)
     real(kind=dp_t), intent(in   ) :: wmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
     real(kind=dp_t), intent(in   ) :: base(0:,:)
-    integer,         intent(in   ) :: startcomp, numcomp
 
     real(kind=dp_t) :: gradX0, wadv
     integer :: i,j,k,comp
 
-    do comp = startcomp, startcomp+numcomp-1
+    do comp = spec_comp, spec_comp+nspec-1
 
        do k = lo(3),hi(3)
 
@@ -810,10 +809,12 @@ contains
 
   end subroutine mkXforce_3d
 
-  subroutine mkXforce_3d_sphr(n,X_force,umac,vmac,wmac,base,startcomp,numcomp,lo,hi,dx,normal)
+  subroutine mkXforce_3d_sphr(n,X_force,umac,vmac,wmac,base,lo,hi,dx,normal)
 
     use fill_3d_module
     use geometry, only: nr, dr
+    use variables, only: spec_comp
+    use network, only: nspec
 
     ! compute the source terms for the non-reactive part of the enthalpy equation {w dp0/dr}
 
@@ -825,7 +826,6 @@ contains
     real(kind=dp_t), intent(in   ) :: base(0:,:)
     real(kind=dp_t), intent(in   ) :: normal(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)
     real(kind=dp_t), intent(in   ) :: dx(:)
-    integer,         intent(in   ) :: startcomp, numcomp
 
     real(kind=dp_t) :: uadv,vadv,wadv,normal_vel
     real(kind=dp_t), allocatable :: gradX0_rad(:)
@@ -835,7 +835,7 @@ contains
     allocate(gradX0_rad(0:nr(n)-1))
     allocate(gradX0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
 
-    do comp = startcomp, startcomp+numcomp-1
+    do comp = spec_comp, spec_comp+nspec-1
 
        do r = 0, nr(n)-1
 
