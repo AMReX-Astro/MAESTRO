@@ -11,7 +11,7 @@ module convert_rhoX_to_X_module
 
   private
 
-  public :: convert_rhoX_to_X
+  public :: convert_rhoX_to_X, make_edge_rhoX_from_X
   
 contains
 
@@ -63,6 +63,7 @@ contains
        call multifab_fill_boundary_c(s(nlevs),spec_comp,nspec)
 
        do comp = spec_comp,spec_comp+nspec-1
+
           if (flag) then
              bc_comp = foextrap_comp
           else
@@ -186,5 +187,214 @@ contains
     end if
 
   end subroutine convert_rhoX_to_X_3d
+
+
+
+  subroutine make_edge_rhoX_from_X(nlevs,u,sedge, &
+                                   s0_predicted_edge, &
+                                   the_bc_level,dx)
+
+
+    ! here we take the edge states of X' and rho', and together with the base
+    ! edges states (s0_predicted_edge, as returned from advect_base) rho0 and
+    ! X_0, we construct the edge state for (rho X)'.  Note, the base state 
+    ! quantity X_0 is really the favre average, (rho X)_0/rho_0.
+    !
+    ! here, (rho X)' = (rho_0 + rho')X' + (rho' X_0) on edges.
+
+    use bl_prof_module
+    use bl_constants_module
+    use geometry
+    use variables
+    use probin_module, only: predict_X_at_edges
+    use network, only: nspec
+    use fill_3d_module, only: fill_3d_data
+    use define_bc_module
+    use multifab_physbc_module
+    
+    integer        , intent(in   ) :: nlevs
+    type(multifab) , intent(in   ) :: u(:)
+    type(multifab) , intent(inout) :: sedge(:,:)
+    real(kind=dp_t), intent(in   ) :: s0_predicted_edge(:,0:,:)
+    type(bc_level) , intent(in   ) :: the_bc_level(:)
+    real(kind=dp_t), intent(in   ) :: dx(:,:)
+    
+    ! local
+    integer :: i,r,dm,n,comp
+    integer :: lo(u(1)%dim),hi(u(1)%dim)
+    real(kind=dp_t), pointer :: sepx(:,:,:,:)
+    real(kind=dp_t), pointer :: sepy(:,:,:,:)
+    real(kind=dp_t), pointer :: sepz(:,:,:,:)
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "make_edge_rhoX_from_X")
+
+    dm = u(1)%dim
+
+
+    do n=1,nlevs
+
+       do i=1,u(n)%nboxes
+          if ( multifab_remote(u(n),i) ) cycle
+          sepx => dataptr(sedge(n,1), i)
+          sepy => dataptr(sedge(n,2), i)
+          lo = lwb(get_box(u(n),i))
+          hi = upb(get_box(u(n),i))
+          select case (dm)
+          case (2)
+             call make_edge_rhoX_from_X_2d(sepx(:,:,1,:), sepy(:,:,1,:), &
+                                           s0_predicted_edge(n,:,:), &
+                                           lo, hi)
+
+          case (3)
+             sepz => dataptr(sedge(n,3),i)
+             if (spherical .eq. 1) then
+
+               ! for spherical, we need to create a routine that takes 
+               ! s0_predicted_edge (the edge-centered, predicted 1/2 time 
+               ! base state quantities, and put these onto a Cartesian grid, 
+               ! on the edges.
+
+               if (spherical .eq. 1) &
+                    call bl_error("ERROR: spherical not yet implemented in make_edge_rhoX_from_X")
+
+             else
+               call make_edge_rhoX_from_X_3d_cart(sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
+                                                  s0_predicted_edge(n,:,:), &
+                                                  lo, hi)
+             end if
+          end select
+       end do
+
+    end do
+
+    call destroy(bpt)
+    
+  end subroutine make_edge_rhoX_from_X
+
+  subroutine make_edge_rhoX_from_X_2d(sx,sy, &
+                                      s0_predicted_edge, &
+                                      lo,hi)
+
+    use bl_constants_module
+    use variables,     only: rho_comp, spec_comp
+    use network, only: nspec
+
+    integer        , intent(in   ) :: lo(:),hi(:)
+    real(kind=dp_t), intent(inout) :: sx(lo(1):,lo(2):,:)
+    real(kind=dp_t), intent(inout) :: sy(lo(1):,lo(2):,:)
+    real(kind=dp_t), intent(in   ) :: s0_predicted_edge(0:,:)
+
+    real(kind=dp_t) :: rho0_edge, X0_edge
+    integer :: i, j, comp    
+
+    ! x-interfaces
+    do comp = spec_comp, spec_comp+nspec-1
+
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)+1
+                    
+             ! s0_predicted_edge is on the y-edges.  Here, we simply average
+             ! the two vertical edge states to find the edge state on the
+             ! x-edges
+             X0_edge = HALF*(s0_predicted_edge(j,  comp) + &
+                             s0_predicted_edge(j+1,comp))
+
+             rho0_edge = HALF*(s0_predicted_edge(j,  rho_comp) + &
+                               s0_predicted_edge(j+1,rho_comp))
+
+             sx(i,j,comp) = (rho0_edge + sx(i,j,rho_comp))*sx(i,j,comp) - &
+                            rho0_edge*X0_edge
+                    
+          enddo
+       enddo
+
+    enddo
+
+
+    ! y-interfaces
+    do comp = spec_comp, spec_comp+nspec-1
+
+       do j = lo(2), hi(2)+1
+          do i = lo(1), hi(1)
+          
+             ! s0_predicted_edge is on the y-edges, so we use them directly.
+             sy(i,j,comp) = (s0_predicted_edge(j,rho_comp) + &
+                             sy(i,j,rho_comp))*sy(i,j,comp) - &
+                            (s0_predicted_edge(j,rho_comp)*s0_predicted_edge(j,comp))
+             
+          enddo
+       enddo
+
+    enddo
+    
+  end subroutine make_edge_rhoX_from_X_2d
+  
+
+  subroutine make_edge_rhoX_from_X_3d_cart(sx,sy,sz, &
+                                           s0_predicted_edge, &
+                                           lo,hi)
+
+    use variables,     only: rho_comp, spec_comp
+    use network, only: nspec
+    use bl_constants_module
+
+    integer        , intent(in   ) :: lo(:),hi(:)
+    real(kind=dp_t), intent(inout) :: sx(lo(1):,lo(2):,lo(3):,:)
+    real(kind=dp_t), intent(inout) :: sy(lo(1):,lo(2):,lo(3):,:)
+    real(kind=dp_t), intent(inout) :: sz(lo(1):,lo(2):,lo(3):,:)
+    real(kind=dp_t), intent(in   ) :: s0_predicted_edge(0:,:)
+    
+    integer :: i, j, k, comp
+    
+    ! x edge
+    do comp = spec_comp, spec_comp+nspec-1
+
+       do k = lo(3), hi(3)
+          do j = lo(2), hi(2)
+             do i = lo(1), hi(1)+1
+                
+                sx(i,j,k,comp) = ZERO
+                
+             enddo
+          enddo
+       enddo
+
+    enddo
+
+
+    ! y edge
+    do comp = spec_comp, spec_comp+nspec-1
+
+       do k = lo(3), hi(3)
+          do j = lo(2), hi(2)+1
+             do i = lo(1), hi(1)
+                
+                sy(i,j,k,comp) = ZERO
+                
+             enddo
+          enddo
+       enddo
+
+    enddo
+
+
+    ! z edge
+    do comp = spec_comp, spec_comp+nspec-1
+
+       do k = lo(3), hi(3)+1
+          do j = lo(2), hi(2)
+             do i = lo(1), hi(1)
+                
+                sz(i,j,k,comp) = ZERO
+             
+             enddo
+          enddo
+       enddo
+    
+    enddo
+
+  end subroutine make_edge_rhoX_from_X_3d_cart
 
 end module convert_rhoX_to_X_module
