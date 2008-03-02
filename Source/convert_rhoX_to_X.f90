@@ -304,8 +304,8 @@ contains
              rho0_edge = HALF*(s0_predicted_edge(j,  rho_comp) + &
                                s0_predicted_edge(j+1,rho_comp))
 
-             sx(i,j,comp) = (rho0_edge + sx(i,j,rho_comp))*sx(i,j,comp) - &
-                            rho0_edge*X0_edge
+             sx(i,j,comp) = (rho0_edge + sx(i,j,rho_comp))*sx(i,j,comp) + &
+                            sx(i,j,rho_comp)*X0_edge
                     
           enddo
        enddo
@@ -321,9 +321,8 @@ contains
           
              ! s0_predicted_edge is on the y-edges, so we use them directly.
              sy(i,j,comp) = (s0_predicted_edge(j,rho_comp) + &
-                             sy(i,j,rho_comp))*sy(i,j,comp) - &
-                            (s0_predicted_edge(j,rho_comp)* &
-                             s0_predicted_edge(j,comp))
+                             sy(i,j,rho_comp))*sy(i,j,comp) + &
+                            (sy(i,j,rho_comp)*s0_predicted_edge(j,comp))
              
           enddo
        enddo
@@ -367,8 +366,8 @@ contains
                                   s0_predicted_edge(k+1,rho_comp))
 
                 sx(i,j,k,comp) = (rho0_edge + &
-                                  sx(i,j,k,rho_comp))*sx(i,j,k,comp) - &
-                                 rho0_edge*X0_edge
+                                  sx(i,j,k,rho_comp))*sx(i,j,k,comp) + &
+                                 sx(i,j,k,rho_comp)*X0_edge
                 
                 
              enddo
@@ -395,8 +394,8 @@ contains
                                   s0_predicted_edge(k+1,rho_comp))
 
                 sy(i,j,k,comp) = (rho0_edge + &
-                                  sy(i,j,k,rho_comp))*sy(i,j,k,comp) - &
-                                 rho0_edge*X0_edge
+                                  sy(i,j,k,rho_comp))*sy(i,j,k,comp) + &
+                                 sy(i,j,k,rho_comp)*X0_edge
                 
              enddo
           enddo
@@ -414,9 +413,8 @@ contains
 
                 ! s0_predicted_edge is on the z-edges, so we use them directly.
                 sz(i,j,k,comp) = (s0_predicted_edge(k,rho_comp) + &
-                                  sz(i,j,k,rho_comp))*sz(i,j,k,comp) - &
-                                 (s0_predicted_edge(k,rho_comp)* &
-                                  s0_predicted_edge(k,comp))
+                                  sz(i,j,k,rho_comp))*sz(i,j,k,comp) + &
+                                 (sz(i,j,k,rho_comp)*s0_predicted_edge(k,comp))
              
              enddo
           enddo
