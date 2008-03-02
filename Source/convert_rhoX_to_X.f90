@@ -220,7 +220,7 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     
     ! local
-    integer :: i,r,dm,n,comp
+    integer :: i,dm,n
     integer :: lo(u(1)%dim),hi(u(1)%dim)
     real(kind=dp_t), pointer :: sepx(:,:,:,:)
     real(kind=dp_t), pointer :: sepy(:,:,:,:)
@@ -322,7 +322,8 @@ contains
              ! s0_predicted_edge is on the y-edges, so we use them directly.
              sy(i,j,comp) = (s0_predicted_edge(j,rho_comp) + &
                              sy(i,j,rho_comp))*sy(i,j,comp) - &
-                            (s0_predicted_edge(j,rho_comp)*s0_predicted_edge(j,comp))
+                            (s0_predicted_edge(j,rho_comp)* &
+                             s0_predicted_edge(j,comp))
              
           enddo
        enddo
@@ -345,7 +346,8 @@ contains
     real(kind=dp_t), intent(inout) :: sy(lo(1):,lo(2):,lo(3):,:)
     real(kind=dp_t), intent(inout) :: sz(lo(1):,lo(2):,lo(3):,:)
     real(kind=dp_t), intent(in   ) :: s0_predicted_edge(0:,:)
-    
+
+    real(kind=dp_t) :: rho0_edge, X0_edge    
     integer :: i, j, k, comp
     
     ! x edge
@@ -354,8 +356,20 @@ contains
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)+1
+
+                ! s0_predicted_edge is on the z-edges.  Here, we simply average
+                ! the two vertical edge states to find the edge state on the
+                ! x-edges
+                X0_edge = HALF*(s0_predicted_edge(k,  comp) + &
+                                s0_predicted_edge(k+1,comp))
+
+                rho0_edge = HALF*(s0_predicted_edge(k,  rho_comp) + &
+                                  s0_predicted_edge(k+1,rho_comp))
+
+                sx(i,j,k,comp) = (rho0_edge + &
+                                  sx(i,j,k,rho_comp))*sx(i,j,k,comp) - &
+                                 rho0_edge*X0_edge
                 
-                sx(i,j,k,comp) = ZERO
                 
              enddo
           enddo
@@ -370,8 +384,19 @@ contains
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)+1
              do i = lo(1), hi(1)
-                
-                sy(i,j,k,comp) = ZERO
+
+                ! s0_predicted_edge is on the z-edges.  Here, we simply average
+                ! the two vertical edge states to find the edge state on the
+                ! y-edges
+                X0_edge = HALF*(s0_predicted_edge(k,  comp) + &
+                                s0_predicted_edge(k+1,comp))
+
+                rho0_edge = HALF*(s0_predicted_edge(k,  rho_comp) + &
+                                  s0_predicted_edge(k+1,rho_comp))
+
+                sy(i,j,k,comp) = (rho0_edge + &
+                                  sy(i,j,k,rho_comp))*sy(i,j,k,comp) - &
+                                 rho0_edge*X0_edge
                 
              enddo
           enddo
@@ -386,8 +411,12 @@ contains
        do k = lo(3), hi(3)+1
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
-                
-                sz(i,j,k,comp) = ZERO
+
+                ! s0_predicted_edge is on the z-edges, so we use them directly.
+                sz(i,j,k,comp) = (s0_predicted_edge(k,rho_comp) + &
+                                  sz(i,j,k,rho_comp))*sz(i,j,k,comp) - &
+                                 (s0_predicted_edge(k,rho_comp)* &
+                                  s0_predicted_edge(k,comp))
              
              enddo
           enddo
