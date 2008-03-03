@@ -29,3 +29,9 @@
    grid, instead of putting w0 onto the Cart grid first and then
    computing div{U + w_0} together?  This is more along the lines
    of how we treat the div{w_0} stuff in update_vel.f90
+
+-- generalize make_w0_cart to work with any edge-centered base state
+   quantity, not just w0.  This, for example, would allow us to put	
+   s0_predicted_edge on a Cartesian edge-centered grid.
+
+-- make predict_X_at_edges work for spherical
