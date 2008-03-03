@@ -953,12 +953,10 @@ contains
 
     call divu(nlevs,mgt,unew,rh,mla%mba%rr,verbose,nodal)
 
-    ! Do rh = rh - divu_rhs
-    if (present(divu_rhs)) then
-       do n = 1, nlevs
-          call multifab_sub_sub(rh(n),divu_rhs(n))
-       end do
-    end if
+    ! Do rh = rh - divu_rhs (this routine preserves rh=0 on
+    !  nodes which have bc_dirichlet = true.
+    if (present(divu_rhs)) &
+       call subtract_divu_from_rh(nlevs,mgt,rh,divu_rhs)
 
     if ( mg_verbose >= 3 ) then
        do_diagnostics = 1
