@@ -32,13 +32,15 @@ contains
     use rhoh_vs_t_module
     use network,       only: nspec, spec_names
     use geometry,      only: spherical, nr
-    use variables,     only: nscal, ntrac, spec_comp, trac_comp, temp_comp, rho_comp, &
-                             rhoh_comp
-    use probin_module, only: predict_temp_at_edges, use_thermal_diffusion, verbose, &
-                             evolve_base_state, use_eta
+    use variables,     only: nscal, ntrac, spec_comp, trac_comp, temp_comp, &
+                             rho_comp, rhoh_comp
+    use probin_module, only: predict_temp_at_edges, predict_X_at_edges, &
+                             use_thermal_diffusion, &
+                             verbose, evolve_base_state, use_eta
     use modify_scal_force_module
     use make_eta_module
     use add_thermal_to_force_module
+    use convert_rhoX_to_X_module
 
     integer        , intent(in   ) :: nlevs
     type(ml_layout), intent(inout) :: mla
@@ -53,7 +55,7 @@ contains
     real(kind=dp_t), intent(inout) :: eta(:,0:,:)
     type(multifab) , intent(in   ) :: utrans(:,:)
     type(multifab) , intent(in   ) :: normal(:)
-    real(kind=dp_t), intent(in   ) :: s0_old(:,0:,:)
+    real(kind=dp_t), intent(inout) :: s0_old(:,0:,:)
     real(kind=dp_t), intent(in   ) :: s0_new(:,0:,:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_new(:,0:)
@@ -90,31 +92,28 @@ contains
        call cell_to_edge_allcomps(n,s0_new(n,:,:),s0_edge_new(n,:,:))
     end do
 
-    !**************************************************************************
-    !     Create scalar source term at time n for (rho X)_i and (rho H).  
-    !     The source term for (rho X) is zero.
-    !     The source term for (rho h) has only the w dp0/dr term.
-    !
-    !     The call to modify_scal_force is used to add those advective terms 
-    !     that appear as forces when we write it in convective/perturbational form.
-    !**************************************************************************
-
     ! Define s0_old_cart and s0_new_cart
     if (spherical .eq. 1) then
        do n=1,nlevs
           call build(s0_old_cart(n), sold(n)%la, nscal, 1)
           call build(s0_new_cart(n), sold(n)%la, nscal, 1)
        end do
+
        call fill_3d_data_c(nlevs,dx,the_bc_level,mla, &
-                           s0_old_cart,s0_old(:,:,rhoh_comp),rhoh_comp,dm+rhoh_comp)
+                           s0_old_cart,s0_old(:,:,rhoh_comp), &
+                           rhoh_comp,dm+rhoh_comp)
+
        call fill_3d_data_c(nlevs,dx,the_bc_level,mla, &
-                           s0_new_cart,s0_new(:,:,rhoh_comp),rhoh_comp,dm+rhoh_comp)
+                           s0_new_cart,s0_new(:,:,rhoh_comp), &
+                           rhoh_comp,dm+rhoh_comp)
+
        do comp = spec_comp, spec_comp+nspec-1
           call fill_3d_data_c(nlevs,dx,the_bc_level,mla, &
                               s0_old_cart,s0_old(:,:,comp),comp,dm+comp)
           call fill_3d_data_c(nlevs,dx,the_bc_level,mla, &
                               s0_new_cart,s0_new(:,:,comp),comp,dm+comp)
        end do
+
        do comp = trac_comp, trac_comp+ntrac-1
           call fill_3d_data_c(nlevs,dx,the_bc_level,mla, &
                               s0_old_cart,s0_old(:,:,comp),comp,dm+comp)
@@ -122,6 +121,23 @@ contains
                               s0_new_cart,s0_new(:,:,comp),comp,dm+comp)
        end do
     end if
+
+
+    !**************************************************************************
+    !     Create scalar source term at time n for (rho X)' and (rho h)'.  
+    !     The source term for (rho X)' is zero.
+    !     The source term for (rho h)' has only the w dp0/dr term.
+    !
+    !     Note: if predict_X_at_edges is true, the we predict the interface
+    !     states using X', not (rho X)', and then convert to (rho X)'.  
+    !
+    !     If predict_temp_at_edges is true then we predict temp at edges and
+    !     then convert to (rho h)'.
+    ! 
+    !     The call to modify_scal_force is used to add those advective terms 
+    !     that appear as forces when we write it in convective/perturbational 
+    !     form.
+    !**************************************************************************
 
     ! This can be uncommented if you wish to compute T
     ! call makeTfromRhoH(nlevs,sold,s0_old(:,:,temp_comp),mla,the_bc_level,dx)
@@ -131,25 +147,64 @@ contains
        call setval(scal_force(n),ZERO,all=.true.)
     end do
 
-    ! make force for species
-    call modify_scal_force(which_step,nlevs,scal_force,sold,umac,s0_old,s0_edge_old,w0,eta, &
-                           dx,s0_old_cart,spec_comp,nspec,mla,the_bc_level)
+    ! If we are predicting X on the edges, then convert the state arrays
+    ! (and base state) from (rho X) to X.  Note, only the time-level n
+    ! stuff need be converted, since that's all the prediction uses
+    if (predict_X_at_edges) then
+       call convert_rhoX_to_X(nlevs,sold,       dx,.true.,mla,the_bc_level)
 
-    if(predict_temp_at_edges) then
+       if (spherical .eq. 1) &
+            call convert_rhoX_to_X(nlevs,s0_old_cart,dx,.true.,mla,the_bc_level)
+
+       do comp = spec_comp, spec_comp + nspec - 1
+          s0_old(:,:,comp) = s0_old(:,:,comp)/s0_old(:,:,rho_comp)
+
+          s0_edge_old(:,:,comp) = s0_edge_old(:,:,comp)/ &
+                                  s0_edge_old(:,:,rho_comp)
+       enddo
+
+    endif
+
+    if (predict_X_at_edges) then
+
+       ! make the forces for the DX'/Dt equation and for the mass
+       ! continuity equation
+       
+       ! X' force
+       call mkXforce(nlevs,scal_force,umac,s0_old,normal,dx,mla,the_bc_level)
+
+
+       ! rho force
+       call modify_scal_force(which_step,nlevs,scal_force,sold,umac, &
+                              s0_old,s0_edge_old,w0,eta, &
+                              dx,s0_old_cart,rho_comp,1,mla,the_bc_level)
+
+    else
+
+       ! make force for species (rho X)' continuity equation
+       call modify_scal_force(which_step,nlevs,scal_force,sold,umac, &
+                              s0_old,s0_edge_old,w0,eta, &
+                              dx,s0_old_cart,spec_comp,nspec,mla,the_bc_level)
+    endif
+
+    if (predict_temp_at_edges) then
 
        ! make force for temperature
-       call mktempforce(nlevs,scal_force,umac,sold,thermal,p0_old,p0_old,normal,dx,mla, &
+       call mktempforce(nlevs,scal_force,umac,sold,thermal, &
+                        p0_old,p0_old,normal,dx,mla, &
                         the_bc_level)
 
     else
 
        ! Make force for rhoh -- just use p0_old
-       call mkrhohforce(nlevs,scal_force,umac,p0_old,p0_old,normal,dx,mla,the_bc_level)
+       call mkrhohforce(nlevs,scal_force,umac,p0_old,p0_old,normal, &
+                        dx,mla,the_bc_level)
        
-       call modify_scal_force(which_step,nlevs,scal_force,sold,umac,s0_old,s0_edge_old,w0, &
-                              eta,dx,s0_old_cart,rhoh_comp,1,mla,the_bc_level)
+       call modify_scal_force(which_step,nlevs,scal_force,sold,umac, &
+                              s0_old,s0_edge_old,w0,eta, &
+                              dx,s0_old_cart,rhoh_comp,1,mla,the_bc_level)
         
-       if(use_thermal_diffusion) then
+       if (use_thermal_diffusion) then
           call add_thermal_to_force(nlevs,scal_force,thermal,the_bc_level,mla)
        end if
 
@@ -162,50 +217,116 @@ contains
     call addw0(nlevs,umac,w0,w0_cart_vec,mult=ONE)
 
     !**************************************************************************
-    !     Create the edge states of (rho h)' (or T) and (rho X)_i.
+    !     Create the edge states of (rho h)' (or T) and (rho X)' (or X')
     !**************************************************************************
 
+    ! switch the enthalpy to perturbation form (except if we are predicting T
     if (.not. predict_temp_at_edges) then
-       call put_in_pert_form(nlevs,sold,s0_old,dx,rhoh_comp,1,.true.,mla,the_bc_level)
+       call put_in_pert_form(nlevs,sold,s0_old,dx,rhoh_comp,1,.true., &
+                             mla,the_bc_level)
     end if
 
-    call put_in_pert_form(nlevs,sold,s0_old,dx,spec_comp,nspec,.true.,mla,the_bc_level)
+    ! switch (rho X) to (rho X') or X to X' (if we are predicting X')
+    call put_in_pert_form(nlevs,sold,s0_old,dx,spec_comp,nspec,.true., &
+                          mla,the_bc_level)
+
+    ! if we are predicting X' on the edges, then we also need to predict rho',
+    ! so make the perturbational form of density now
+    if (predict_X_at_edges) &
+         call put_in_pert_form(nlevs,sold,s0_old,dx,rho_comp,1,.true., &
+                               mla,the_bc_level)
+
 
     do n=1,nlevs
        do comp = 1,dm
           umac_nodal_flag = .false.
           umac_nodal_flag(comp) = .true.
-          call multifab_build( sedge(n,comp), mla%la(n), nscal, 0, nodal = umac_nodal_flag)
+          call multifab_build(sedge(n,comp), mla%la(n), nscal, 0, &
+                              nodal = umac_nodal_flag)
        end do
     end do
 
+    ! create temperature or (rho h)' edge states
     if (predict_temp_at_edges) then
        pred_comp = temp_comp
     else
        pred_comp = rhoh_comp
     end if
     
-    ! create temperature or enthalpy edge states
     call make_edge_state(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0, &
-                         w0_cart_vec,dx,dt,is_vel,the_bc_level,velpred,pred_comp, &
-                         dm+pred_comp,1,mla)
+                         w0_cart_vec,dx,dt,is_vel,the_bc_level,velpred, &
+                         pred_comp,dm+pred_comp,1,mla)
+
 
     ! create species edge states
-    call make_edge_state(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0, &
-                         w0_cart_vec,dx,dt,is_vel,the_bc_level,velpred,spec_comp, &
-                         dm+spec_comp,nspec,mla)
+    if (predict_X_at_edges) then
 
-    ! compute enthalpy edge states
-    if(predict_temp_at_edges) then
-       call makeRhoHfromT(nlevs,uold,sedge,s0_old,s0_edge_old,s0_new,s0_edge_new, &
+       ! first predict rho' at the edges
+       call make_edge_state(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0, &
+                            w0_cart_vec,dx,dt,is_vel,the_bc_level,velpred, &
+                            rho_comp,dm+rho_comp,1,mla)
+
+
+       ! now compute X' at the edges
+       call make_edge_state(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0, &
+                            w0_cart_vec,dx,dt,is_vel,the_bc_level,velpred, &
+                            spec_comp,dm+spec_comp,nspec,mla)
+
+
+       ! finally, convert X' at the edges to (rho X)'
+       call make_edge_rhoX_from_X(nlevs,uold,sedge, &
+                                  s0_predicted_edge, &
+                                  the_bc_level,dx)
+
+    else
+       call make_edge_state(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0, &
+                            w0_cart_vec,dx,dt,is_vel,the_bc_level,velpred, &
+                            spec_comp,dm+spec_comp,nspec,mla)
+    endif
+
+
+    ! Now that we have the species edge states, compute enthalpy edge states
+    ! if we were predicting temperature.
+    if (predict_temp_at_edges) then
+       call makeRhoHfromT(nlevs,uold,sedge, &
+                          s0_old,s0_edge_old,s0_new,s0_edge_new, &
                           the_bc_level,dx)
     end if
 
+
+    ! switch back from perturbation for to full state form (where necessary)
     if (.not. predict_temp_at_edges) then
-       call put_in_pert_form(nlevs,sold,s0_old,dx,rhoh_comp,1,.false.,mla,the_bc_level)
+       call put_in_pert_form(nlevs,sold,s0_old,dx,rhoh_comp,1,.false., &
+                             mla,the_bc_level)
     end if
 
-    call put_in_pert_form(nlevs,sold,s0_old,dx,spec_comp,nspec,.false.,mla,the_bc_level)
+    call put_in_pert_form(nlevs,sold,s0_old,dx,spec_comp,nspec,.false., &
+                          mla,the_bc_level)
+
+    if (predict_X_at_edges) &
+         call put_in_pert_form(nlevs,sold,s0_old,dx,rho_comp,1,.false., &
+                               mla,the_bc_level)
+
+
+    ! if we were predicting X at the edges, restore the state arrays to
+    ! X from (rho X)
+    if (predict_X_at_edges) then
+       call convert_rhoX_to_X(nlevs,sold,       dx,.false.,mla,the_bc_level)
+
+       if (spherical .eq. 1) &
+          call convert_rhoX_to_X(nlevs,s0_old_cart,dx,.false.,mla,the_bc_level)
+
+       ! convert the base state species back to (rho X)_0.  Note, we can't
+       ! do the full state yet because we are still in pert form.  
+       do comp = spec_comp, spec_comp + nspec - 1
+          s0_old(:,:,comp) = s0_old(:,:,rho_comp)*s0_old(:,:,comp)
+
+          s0_edge_old(:,:,comp) = s0_edge_old(:,:,rho_comp)* &
+                                  s0_edge_old(:,:,comp)
+       enddo
+
+    endif
+
 
 
     !**************************************************************************
@@ -214,8 +335,8 @@ contains
 
     if (ntrac .ge. 1) then
        call make_edge_state(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0, &
-                            w0_cart_vec,dx,dt,is_vel,the_bc_level,velpred,trac_comp, &
-                            dm+trac_comp,ntrac,mla)
+                            w0_cart_vec,dx,dt,is_vel,the_bc_level,velpred, &
+                            trac_comp,dm+trac_comp,ntrac,mla)
     end if
 
     !**************************************************************************
@@ -232,36 +353,41 @@ contains
        do comp = 1,dm
           umac_nodal_flag = .false.
           umac_nodal_flag(comp) = .true.
-          call multifab_build(sflux(n,comp), mla%la(n), nscal, 0, nodal = umac_nodal_flag)
+          call multifab_build(sflux(n,comp), mla%la(n), nscal, 0, &
+                              nodal = umac_nodal_flag)
        end do
 
        umac_nodal_flag = .false.
        umac_nodal_flag(dm) = .true.
-       call multifab_build(etaflux(n), mla%la(n), nscal, 0, nodal = umac_nodal_flag)
+       call multifab_build(etaflux(n), mla%la(n), nscal, 0, &
+                           nodal = umac_nodal_flag)
     end do
 
     ! compute enthalpy fluxes
-    call mkflux(nlevs,sflux,etaflux,sold,sedge,umac,w0,w0_cart_vec,s0_old,s0_edge_old, &
-                s0_old_cart,s0_new,s0_edge_new,s0_new_cart,rhoh_comp,rhoh_comp, &
-                which_step,mla)
+    call mkflux(nlevs,sflux,etaflux,sold,sedge,umac,w0,w0_cart_vec, &
+                s0_old,s0_edge_old,s0_old_cart, &
+                s0_new,s0_edge_new,s0_new_cart, &
+                rhoh_comp,rhoh_comp,which_step,mla)
 
 
     ! compute species fluxes
-    call mkflux(nlevs,sflux,etaflux,sold,sedge,umac,w0,w0_cart_vec,s0_old,s0_edge_old, &
-                s0_old_cart,s0_new,s0_edge_new,s0_new_cart,spec_comp, &
-                spec_comp+nspec-1,which_step,mla)
+    call mkflux(nlevs,sflux,etaflux,sold,sedge,umac,w0,w0_cart_vec, &
+                s0_old,s0_edge_old,s0_old_cart, &
+                s0_new,s0_edge_new,s0_new_cart, &
+                spec_comp,spec_comp+nspec-1,which_step,mla)
 
 
     if (ntrac .ge. 1) then
        ! compute tracer fluxes
-       call mkflux(nlevs,sflux,etaflux,sold,sedge,umac,w0,w0_cart_vec,s0_old,s0_edge_old, &
-                   s0_old_cart,s0_new,s0_edge_new,s0_new_cart,trac_comp, &
-                   trac_comp+ntrac-1,which_step,mla)
+       call mkflux(nlevs,sflux,etaflux,sold,sedge,umac,w0,w0_cart_vec, &
+                   s0_old,s0_edge_old,s0_old_cart, &
+                   s0_new,s0_edge_new,s0_new_cart, &
+                   trac_comp,trac_comp+ntrac-1,which_step,mla)
     end if
 
     !**************************************************************************
-    !     1) Set force for (rho X)_i at time n+1/2 = 0.
-    !     2) Update (rho X)'_i with conservative differencing.
+    !     1) Set force for (rho X)'_i at time n+1/2 = 0.
+    !     2) Update (rho X)_i with conservative differencing.
     !     3) Define density as the sum of the (rho X)_i
     !**************************************************************************
     
@@ -295,7 +421,7 @@ contains
     end if
 
     !**************************************************************************
-    !     2) Update tracers with convective differencing.
+    !     Update tracers with convective differencing.
     !**************************************************************************
     
     if ( ntrac .ge. 1 ) then
