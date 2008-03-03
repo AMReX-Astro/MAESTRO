@@ -48,7 +48,6 @@ contains
     dm = state(1)%dim
 
     do n = 1, nlevs
-
        do i = 1, state(n)%nboxes
           if ( multifab_remote(state(n), i) ) cycle
           srcp => dataptr(Source(n), i)
@@ -71,9 +70,6 @@ contains
                             tp(:,:,:,1), ng, t0(n,:), p0(n,:), gam1(n,:), dx(n,:))
           end select
        end do
-
-       call multifab_fill_boundary(Source(n))
-
     enddo
 
     call destroy(bpt)
