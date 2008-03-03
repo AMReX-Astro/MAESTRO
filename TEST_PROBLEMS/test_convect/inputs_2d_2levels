@@ -1,9 +1,13 @@
 &PROBIN
+ model_file = "model.hse"
+
  test_set = "gr0_2d_2levels"
  spherical_in = 0
 
  prob_hi_x = 2.5e8
  prob_hi_y = 4.0e8
+
+ grav_const = -1.5e10
 
  max_step  = 100000000
  init_iter = 4
