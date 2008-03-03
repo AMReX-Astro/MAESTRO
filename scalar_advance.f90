@@ -80,17 +80,23 @@ contains
 
     call build(bpt, "scalar_advance")
 
-    allocate(s0_edge_old(nlevs,0:nr(nlevs),nscal))
-    allocate(s0_edge_new(nlevs,0:nr(nlevs),nscal))
-
     dm      = sold(1)%dim
     is_vel  = .false.
     velpred = 0    
+
+
+    ! create edge-centered base state quantities.  Note: s0_edge_{old,new} 
+    ! contain edge-centered quantities created via interpolation.  This is
+    ! to be contrasted to s0_predicted_edge which is the n+1/2 edge state
+    ! created in advect_base.
+    allocate(s0_edge_old(nlevs,0:nr(nlevs),nscal))
+    allocate(s0_edge_new(nlevs,0:nr(nlevs),nscal))
 
     do n = 1, nlevs
        call cell_to_edge_allcomps(n,s0_old(n,:,:),s0_edge_old(n,:,:))
        call cell_to_edge_allcomps(n,s0_new(n,:,:),s0_edge_new(n,:,:))
     end do
+
 
     ! Define s0_old_cart and s0_new_cart
     if (spherical .eq. 1) then
@@ -129,7 +135,8 @@ contains
     !     The source term for (rho h)' has only the w dp0/dr term.
     !
     !     Note: if predict_X_at_edges is true, the we predict the interface
-    !     states using X', not (rho X)', and then convert to (rho X)'.  
+    !     states using X', not (rho X)', and then convert to (rho X)'.  In
+    !     this case, we also make the forces for rho'.
     !
     !     If predict_temp_at_edges is true then we predict temp at edges and
     !     then convert to (rho h)'.
@@ -151,7 +158,7 @@ contains
     ! (and base state) from (rho X) to X.  Note, only the time-level n
     ! stuff need be converted, since that's all the prediction uses
     if (predict_X_at_edges) then
-       call convert_rhoX_to_X(nlevs,sold,       dx,.true.,mla,the_bc_level)
+       call convert_rhoX_to_X(nlevs,sold,dx,.true.,mla,the_bc_level)
 
        if (spherical .eq. 1) &
             call convert_rhoX_to_X(nlevs,s0_old_cart,dx,.true.,mla,the_bc_level)
@@ -165,6 +172,8 @@ contains
 
     endif
 
+
+    ! species forces
     if (predict_X_at_edges) then
 
        ! make the forces for the DX'/Dt equation and for the mass
@@ -187,6 +196,8 @@ contains
                               dx,s0_old_cart,spec_comp,nspec,mla,the_bc_level)
     endif
 
+
+    ! enthalpy/temperature forces
     if (predict_temp_at_edges) then
 
        ! make force for temperature
@@ -210,11 +221,13 @@ contains
 
     end if
       
+
     !**************************************************************************
     !     Add w0 to MAC velocities (trans velocities already have w0).
     !**************************************************************************
 
     call addw0(nlevs,umac,w0,w0_cart_vec,mult=ONE)
+
 
     !**************************************************************************
     !     Create the edge states of (rho h)' (or T) and (rho X)' (or X')
@@ -440,10 +453,10 @@ contains
     end if
 
     !**************************************************************************
-    !     1) Create (rhoh)' force at time n+1/2.
+    !     1) Create (rho h)' force at time n+1/2.
     !          (NOTE: we don't worry about filling ghost cells of the scal_force
     !                 because we only need them in valid regions...)     
-    !     2) Update (rho h)' with conservative differencing.
+    !     2) Update (rho h) with conservative differencing.
     !**************************************************************************
        
     if (which_step .eq. 1) then
@@ -457,6 +470,22 @@ contains
     call update_scal(nlevs,rhoh_comp,rhoh_comp,sold,snew,umac,w0,w0_cart_vec, &
                      eta,sedge,sflux,scal_force,s0_old,s0_edge_old,s0_new,s0_edge_new, &
                      s0_old_cart,s0_new_cart,dx,dt,the_bc_level,mla)
+
+    if ( verbose .ge. 1 ) then
+       do n=1,nlevs
+          smin = multifab_min_c(snew(n),rhoh_comp) 
+          smax = multifab_max_c(snew(n),rhoh_comp)
+          if (parallel_IOProcessor()) then
+             write(6,2001) smin,smax
+             write(6,2004) 
+          end if
+       end do
+    end if
+
+
+    !**************************************************************************
+    !     Create the new eta
+    !**************************************************************************
 
     if (use_eta .and. evolve_base_state) then
        call make_eta(nlevs,eta,sold,etaflux,mla)
@@ -482,16 +511,6 @@ contains
        call makeTfromRhoH(nlevs,snew,s0_new(:,:,temp_comp),mla,the_bc_level,dx)
     end if
 
-    if ( verbose .ge. 1 ) then
-       do n=1,nlevs
-          smin = multifab_min_c(snew(n),rhoh_comp) 
-          smax = multifab_max_c(snew(n),rhoh_comp)
-          if (parallel_IOProcessor()) then
-             write(6,2001) smin,smax
-             write(6,2004) 
-          end if
-       end do
-    end if
 
     call destroy(bpt)
 
