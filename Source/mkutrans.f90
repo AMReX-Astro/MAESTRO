@@ -68,9 +68,15 @@ contains
        end select
     end do
 
+    ! fill ghost cells for two adjacent grids at the same level
+    ! this includes periodic domain boundary ghost cells
     do i=1,dm
        call multifab_fill_boundary(utrans(n,i))
     enddo
+
+    ! we don't need calls to multifab_physbc or multifab_fill_ghost cells since the boundary 
+    ! conditions are handled within mkutrans_2d and _3d.
+    ! I don't think a call to ml_edge_restriction makes sense here
 
     call destroy(bpt)
 
