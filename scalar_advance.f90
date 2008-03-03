@@ -183,7 +183,7 @@ contains
        call mkXforce(nlevs,scal_force,umac,s0_old,normal,dx,mla,the_bc_level)
 
 
-       ! rho force
+       ! rho' force
        call modify_scal_force(which_step,nlevs,scal_force,sold,umac, &
                               s0_old,s0_edge_old,w0,eta, &
                               dx,s0_old_cart,rho_comp,1,mla,the_bc_level)
@@ -298,15 +298,6 @@ contains
     endif
 
 
-    ! Now that we have the species edge states, compute enthalpy edge states
-    ! if we were predicting temperature.
-    if (predict_temp_at_edges) then
-       call makeRhoHfromT(nlevs,uold,sedge, &
-                          s0_old,s0_edge_old,s0_new,s0_edge_new, &
-                          the_bc_level,dx)
-    end if
-
-
     ! switch back from perturbation for to full state form (where necessary)
     if (.not. predict_temp_at_edges) then
        call put_in_pert_form(nlevs,sold,s0_old,dx,rhoh_comp,1,.false., &
@@ -339,6 +330,15 @@ contains
        enddo
 
     endif
+
+    ! Compute enthalpy edge states if we were predicting temperature.  This
+    ! needs to be done after the state was returned to the full state, and 
+    ! the species are back to (rho X) instead of X.
+    if (predict_temp_at_edges) then
+       call makeRhoHfromT(nlevs,uold,sedge, &
+                          s0_old,s0_edge_old,s0_new,s0_edge_new, &
+                          the_bc_level,dx)
+    end if
 
 
 
