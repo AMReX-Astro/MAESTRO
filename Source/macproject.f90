@@ -1406,10 +1406,6 @@ contains
     end if
     call ml_cc_solve(mla, mgt, rh, phi, fine_flx,ref_ratio,do_diagnostics)
 
-    do n = 1,nlevs
-       call multifab_fill_boundary(phi(n))
-    end do
-
     if ( test == 3 ) then
        call sparse_destroy(sparse_object)
     end if
@@ -1624,10 +1620,6 @@ contains
        call lmultifab_destroy(fine_mask(n))
     end do
     deallocate(fine_mask)
-
-    do n = 1,nlevs
-       call multifab_fill_boundary(phi(n))
-    end do
 
     if ( test == 3 ) then
        call sparse_destroy(sparse_object)
