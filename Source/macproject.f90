@@ -41,6 +41,10 @@ contains
     integer                      :: dm,stencil_order,i,n,nlevs
     logical                      :: use_rhs, use_div_coeff_1d, use_div_coeff_3d
 
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "macproject")
+
     nlevs = mla%nlevel
     dm    = umac(nlevs,1)%dim
 
@@ -142,6 +146,8 @@ contains
     do n = 2,nlevs
        call bndry_reg_destroy(fine_flx(n))
     end do
+
+    call destroy(bpt)
 
   contains
 
@@ -1262,6 +1268,10 @@ contains
     real(dp_t) ::  xa(mla%dim),  xb(mla%dim)
     real(dp_t) :: pxa(mla%dim), pxb(mla%dim)
 
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "mac_multigrid")
+
     !! Defaults:
 
     nlevs = mla%nlevel
@@ -1418,6 +1428,8 @@ contains
        call mg_tower_destroy(mgt(n))
     end do
 
+    call destroy(bpt)
+
   end subroutine mac_multigrid
 
   subroutine mac_applyop(mla,res,phi,alpha,beta,dx,the_bc_tower,bc_comp,stencil_order, &
@@ -1463,6 +1475,10 @@ contains
 
     type(lmultifab), pointer     :: fine_mask(:) => Null()
     type(boxarray) :: bac
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "mac_applyop")
 
     !! Defaults:
 
@@ -1632,6 +1648,8 @@ contains
     do n = 1, nlevs
        call mg_tower_destroy(mgt(n))
     end do
+
+    call destroy(bpt)
 
   end subroutine mac_applyop
 
