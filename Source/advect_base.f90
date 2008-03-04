@@ -159,9 +159,7 @@ contains
           ! here we predict X_0 on the edges
           X0(:) = s0_old(:,comp)/s0_old(:,rho_comp)
 
-          do r = 0,nr(n)-1
-             force(r) = ZERO
-          end do
+          force = ZERO
        
           call make_edge_state_1d(n,X0,edge,vel,force,1,dz,dt)
 
