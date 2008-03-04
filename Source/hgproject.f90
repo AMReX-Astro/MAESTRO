@@ -198,6 +198,8 @@ contains
 
   contains
 
+    ! ******************************************************************************* !
+
     subroutine create_uvec_for_projection(nlevs,unew,uold,rhohalf,gpres,dt,the_bc_tower, &
                                           proj_type)
 
@@ -250,8 +252,129 @@ contains
 
     end subroutine create_uvec_for_projection
 
+    !   ******************************************************************************** !
 
-    !   ******************************************************************************* !
+    subroutine create_uvec_2d(unew,uold,rhohalf,gpres,dt,phys_bc,ng,proj_type)
+
+      use proj_parameters
+
+      integer        , intent(in   ) :: ng
+      real(kind=dp_t), intent(inout) ::    unew(-ng:,-ng:,:)
+      real(kind=dp_t), intent(in   ) ::    uold(-ng:,-ng:,:)
+      real(kind=dp_t), intent(in   ) :: rhohalf( -1:, -1:)
+      real(kind=dp_t), intent(inout) ::   gpres( -1:, -1:,:)
+      real(kind=dp_t), intent(in   ) :: dt
+      integer        , intent(in   ) :: phys_bc(:,:)
+      integer        , intent(in   ) :: proj_type
+
+      integer :: nx,ny
+      nx = size(gpres,dim=1) - 2
+      ny = size(gpres,dim=2) - 2
+
+      if (phys_bc(1,1) .eq. INLET) gpres(-1,-1:ny,:) = ZERO
+      if (phys_bc(1,2) .eq. INLET) gpres(nx,-1:ny,:) = ZERO
+      if (phys_bc(2,1) .eq. INLET) gpres(-1:nx,-1,:) = ZERO
+      if (phys_bc(2,2) .eq. INLET) gpres(-1:nx,ny,:) = ZERO
+
+      ! quantity projected is U
+      if (proj_type .eq. initial_projection_comp) then
+
+      ! quantity projected is U
+      else if (proj_type .eq. divu_iters_comp) then
+
+      ! quantity projected is (Ustar - Un)
+      else if (proj_type .eq. pressure_iters_comp) then
+
+         unew(-1:nx,-1:ny,1) = ( unew(-1:nx,-1:ny,1) - uold(-1:nx,-1:ny,1) ) / dt
+         unew(-1:nx,-1:ny,2) = ( unew(-1:nx,-1:ny,2) - uold(-1:nx,-1:ny,2) ) / dt
+     
+      ! quantity projected is Ustar + dt * (1/rho) gpres
+      else if (proj_type .eq. regular_timestep_comp) then
+
+         unew(-1:nx,-1:ny,1) = &
+              unew(-1:nx,-1:ny,1) + dt*gpres(-1:nx,-1:ny,1)/rhohalf(-1:nx,-1:ny)
+         unew(-1:nx,-1:ny,2) = &
+              unew(-1:nx,-1:ny,2) + dt*gpres(-1:nx,-1:ny,2)/rhohalf(-1:nx,-1:ny)
+
+       else
+     
+          call bl_error('No proj_type by this number ')
+
+      end if
+
+      if (phys_bc(1,1)==SLIP_WALL .or. phys_bc(1,1)==NO_SLIP_WALL) unew(-1,:,:) = ZERO
+      if (phys_bc(1,2)==SLIP_WALL .or. phys_bc(1,2)==NO_SLIP_WALL) unew(nx,:,:) = ZERO
+      if (phys_bc(2,1)==SLIP_WALL .or. phys_bc(2,1)==NO_SLIP_WALL) unew(:,-1,:) = ZERO
+      if (phys_bc(2,2)==SLIP_WALL .or. phys_bc(2,2)==NO_SLIP_WALL) unew(:,ny,:) = ZERO
+
+    end subroutine create_uvec_2d
+
+    !  *********************************************************************************** !
+
+    subroutine create_uvec_3d(unew,uold,rhohalf,gpres,dt,phys_bc,ng,proj_type)
+
+      use proj_parameters
+
+      integer        , intent(in   ) :: ng
+      real(kind=dp_t), intent(inout) ::    unew(-ng:,-ng:,-ng:,:)
+      real(kind=dp_t), intent(in   ) ::    uold(-ng:,-ng:,-ng:,:)
+      real(kind=dp_t), intent(inout) ::      gpres( -1:, -1:, -1:,:)
+      real(kind=dp_t), intent(in   ) :: rhohalf( -1:, -1:, -1:)
+      real(kind=dp_t), intent(in   ) :: dt
+      integer        , intent(in   ) :: phys_bc(:,:)
+      integer        , intent(in   ) :: proj_type
+
+      integer :: nx,ny,nz
+
+      nx = size(gpres,dim=1) - 2
+      ny = size(gpres,dim=2) - 2
+      nz = size(gpres,dim=3) - 2
+
+      if (phys_bc(1,1) .eq. INLET) gpres(-1,-1:ny,-1:nz,:) = ZERO
+      if (phys_bc(1,2) .eq. INLET) gpres(nx,-1:ny,-1:nz,:) = ZERO
+      if (phys_bc(2,1) .eq. INLET) gpres(-1:nx,-1,-1:nz,:) = ZERO
+      if (phys_bc(2,2) .eq. INLET) gpres(-1:nx,ny,-1:nz,:) = ZERO
+      if (phys_bc(3,1) .eq. INLET) gpres(-1:nx,-1:ny,-1,:) = ZERO
+      if (phys_bc(3,2) .eq. INLET) gpres(-1:nx,-1:ny,nz,:) = ZERO
+
+      ! quantity projected is U
+      if (proj_type .eq. initial_projection_comp) then
+
+      ! quantity projected is U
+      else if (proj_type .eq. divu_iters_comp) then
+
+      ! quantity projected is (Ustar - Un)
+      else if (proj_type .eq. pressure_iters_comp) then
+
+         unew(-1:nx,-1:ny,-1:nz,:) =&
+              ( unew(-1:nx,-1:ny,-1:nz,:) - uold(-1:nx,-1:ny,-1:nz,:) ) / dt
+
+      ! quantity projected is Ustar + dt * (1/rho) gpres
+      else if (proj_type .eq. regular_timestep_comp) then
+
+         unew(-1:nx,-1:ny,-1:nz,1) = unew(-1:nx,-1:ny,-1:nz,1) + &
+                                    dt*gpres(-1:nx,-1:ny,-1:nz,1)/rhohalf(-1:nx,-1:ny,-1:nz)
+         unew(-1:nx,-1:ny,-1:nz,2) = unew(-1:nx,-1:ny,-1:nz,2) + &
+                                    dt*gpres(-1:nx,-1:ny,-1:nz,2)/rhohalf(-1:nx,-1:ny,-1:nz)
+         unew(-1:nx,-1:ny,-1:nz,3) = unew(-1:nx,-1:ny,-1:nz,3) + &
+                                    dt*gpres(-1:nx,-1:ny,-1:nz,3)/rhohalf(-1:nx,-1:ny,-1:nz)
+
+      else
+
+          call bl_error('No proj_type by this number ')
+
+      end if
+
+      if (phys_bc(1,1)==SLIP_WALL .or. phys_bc(1,1)==NO_SLIP_WALL) unew(-1,:,:,:) = ZERO
+      if (phys_bc(1,2)==SLIP_WALL .or. phys_bc(1,2)==NO_SLIP_WALL) unew(nx,:,:,:) = ZERO
+      if (phys_bc(2,1)==SLIP_WALL .or. phys_bc(2,1)==NO_SLIP_WALL) unew(:,-1,:,:) = ZERO
+      if (phys_bc(2,2)==SLIP_WALL .or. phys_bc(2,2)==NO_SLIP_WALL) unew(:,ny,:,:) = ZERO
+      if (phys_bc(3,1)==SLIP_WALL .or. phys_bc(3,1)==NO_SLIP_WALL) unew(:,:,-1,:) = ZERO
+      if (phys_bc(3,2)==SLIP_WALL .or. phys_bc(3,2)==NO_SLIP_WALL) unew(:,:,nz,:) = ZERO
+
+    end subroutine create_uvec_3d
+
+    ! ******************************************************************************* !
 
     subroutine mkgphi(nlevs,gphi,phi,dx)
 
@@ -291,7 +414,66 @@ contains
 
     end subroutine mkgphi
 
-    !   ********************************************************************************** !
+    !   ********************************************************************************* !
+
+    subroutine mkgphi_2d(gphi,phi,dx)
+
+      real(kind=dp_t), intent(inout) ::  gphi(0:,0:,:)
+      real(kind=dp_t), intent(inout) :: phi(-1:,-1:)
+      real(kind=dp_t), intent(in   ) :: dx(:)
+
+      integer :: i,j,nx,ny
+
+      nx = size(gphi,dim=1)
+      ny = size(gphi,dim=2)
+
+      do j = 0,ny-1
+         do i = 0,nx-1
+            gphi(i,j,1) = HALF*(phi(i+1,j) + phi(i+1,j+1) - &
+                 phi(i  ,j) - phi(i  ,j+1) ) /dx(1)
+            gphi(i,j,2) = HALF*(phi(i,j+1) + phi(i+1,j+1) - &
+                 phi(i,j  ) - phi(i+1,j  ) ) /dx(2)
+         end do
+      end do
+
+    end subroutine mkgphi_2d
+
+    !   ******************************************************************************** !
+
+    subroutine mkgphi_3d(gphi,phi,dx)
+
+      real(kind=dp_t), intent(inout) ::  gphi(0:,0:,0:,1:)
+      real(kind=dp_t), intent(inout) :: phi(-1:,-1:,-1:)
+      real(kind=dp_t), intent(in   ) :: dx(:)
+
+      integer :: i,j,k,nx,ny,nz
+
+      nx = size(gphi,dim=1)
+      ny = size(gphi,dim=2)
+      nz = size(gphi,dim=3)
+
+      do k = 0,nz-1
+         do j = 0,ny-1
+            do i = 0,nx-1
+               gphi(i,j,k,1) = FOURTH*(phi(i+1,j,k  ) + phi(i+1,j+1,k  ) &
+                    +phi(i+1,j,k+1) + phi(i+1,j+1,k+1) & 
+                    -phi(i  ,j,k  ) - phi(i  ,j+1,k  ) &
+                    -phi(i  ,j,k+1) - phi(i  ,j+1,k+1) ) /dx(1)
+               gphi(i,j,k,2) = FOURTH*(phi(i,j+1,k  ) + phi(i+1,j+1,k  ) &
+                    +phi(i,j+1,k+1) + phi(i+1,j+1,k+1) & 
+                    -phi(i,j  ,k  ) - phi(i+1,j  ,k  ) &
+                    -phi(i,j  ,k+1) - phi(i+1,j  ,k+1) ) /dx(2)
+               gphi(i,j,k,3) = FOURTH*(phi(i,j  ,k+1) + phi(i+1,j  ,k+1) &
+                    +phi(i,j+1,k+1) + phi(i+1,j+1,k+1) & 
+                    -phi(i,j  ,k  ) - phi(i+1,j  ,k  ) &
+                    -phi(i,j+1,k  ) - phi(i+1,j+1,k  ) ) /dx(3)
+            end do
+         end do
+      end do
+
+    end subroutine mkgphi_3d
+
+    ! ******************************************************************************* !
 
     subroutine hg_update(nlevs,proj_type,unew,uold,gpres,gphi,rhohalf,pres,phi,ng,dt, &
                          mla,the_bc_level)
@@ -398,256 +580,6 @@ contains
       call destroy(bpt)
 
     end subroutine hg_update
-
-    !   ********************************************************************************** !
-
-    subroutine enforce_outflow_on_divu_rhs(divu_rhs,the_bc_tower)
-
-      type(multifab) , intent(inout) :: divu_rhs(:)
-      type(bc_tower) , intent(in   ) :: the_bc_tower
-
-      integer        :: i,n,dm,ng,nlevs
-      type(bc_level) :: bc
-      real(kind=dp_t), pointer :: divp(:,:,:,:) 
-
-      nlevs = size(divu_rhs,dim=1)
-      dm = divu_rhs(1)%dim
-
-      do n = 1, nlevs
-         bc = the_bc_tower%bc_tower_array(n)
-         do i = 1, divu_rhs(n)%nboxes
-            if ( multifab_remote(divu_rhs(n), i) ) cycle
-            divp => dataptr(divu_rhs(n)     , i)
-            select case (dm)
-            case (2)
-               call enforce_outflow_2d(divp(:,:,1,1), bc%phys_bc_level_array(i,:,:))
-            case (3)
-               call enforce_outflow_3d(divp(:,:,:,1), bc%phys_bc_level_array(i,:,:))
-            end select
-         end do
-      end do
-
-    end subroutine enforce_outflow_on_divu_rhs
-
-    !   ******************************************************************************** !
-
-    subroutine enforce_outflow_2d(divu_rhs,phys_bc)
-
-      real(kind=dp_t), intent(inout) :: divu_rhs(0:,0:)
-      integer        , intent(in   ) :: phys_bc(:,:)
-
-      integer :: nx,ny
-      nx = size(divu_rhs,dim=1)-1
-      ny = size(divu_rhs,dim=2)-1
-
-      if (phys_bc(1,1) .eq. OUTLET) divu_rhs(0,  :) = ZERO
-      if (phys_bc(1,2) .eq. OUTLET) divu_rhs(nx, :) = ZERO
-      if (phys_bc(2,1) .eq. OUTLET) divu_rhs(: , 0) = ZERO
-      if (phys_bc(2,2) .eq. OUTLET) divu_rhs(: ,ny) = ZERO
-
-    end subroutine enforce_outflow_2d
-
-    !   ******************************************************************************** !
-
-    subroutine enforce_outflow_3d(divu_rhs,phys_bc)
-
-      real(kind=dp_t), intent(inout) :: divu_rhs(0:,0:,0:)
-      integer        , intent(in   ) :: phys_bc(:,:)
-
-      integer :: nx,ny,nz
-      nx = size(divu_rhs,dim=1)-1
-      ny = size(divu_rhs,dim=2)-1
-      nz = size(divu_rhs,dim=3)-1
-
-      if (phys_bc(1,1) .eq. OUTLET) divu_rhs(0,  :, :) = ZERO
-      if (phys_bc(1,2) .eq. OUTLET) divu_rhs(nx, :, :) = ZERO
-      if (phys_bc(2,1) .eq. OUTLET) divu_rhs( :, 0, :) = ZERO
-      if (phys_bc(2,2) .eq. OUTLET) divu_rhs( :,ny, :) = ZERO
-      if (phys_bc(3,1) .eq. OUTLET) divu_rhs( :,: , 0) = ZERO
-      if (phys_bc(3,2) .eq. OUTLET) divu_rhs( :,: ,nz) = ZERO
-
-    end subroutine enforce_outflow_3d
-
-    !   ******************************************************************************** !
-
-    subroutine create_uvec_2d(unew,uold,rhohalf,gpres,dt,phys_bc,ng,proj_type)
-
-      use proj_parameters
-
-      integer        , intent(in   ) :: ng
-      real(kind=dp_t), intent(inout) ::    unew(-ng:,-ng:,:)
-      real(kind=dp_t), intent(in   ) ::    uold(-ng:,-ng:,:)
-      real(kind=dp_t), intent(in   ) :: rhohalf( -1:, -1:)
-      real(kind=dp_t), intent(inout) ::   gpres( -1:, -1:,:)
-      real(kind=dp_t), intent(in   ) :: dt
-      integer        , intent(in   ) :: phys_bc(:,:)
-      integer        , intent(in   ) :: proj_type
-
-      integer :: nx,ny
-      nx = size(gpres,dim=1) - 2
-      ny = size(gpres,dim=2) - 2
-
-      if (phys_bc(1,1) .eq. INLET) gpres(-1,-1:ny,:) = ZERO
-      if (phys_bc(1,2) .eq. INLET) gpres(nx,-1:ny,:) = ZERO
-      if (phys_bc(2,1) .eq. INLET) gpres(-1:nx,-1,:) = ZERO
-      if (phys_bc(2,2) .eq. INLET) gpres(-1:nx,ny,:) = ZERO
-
-      ! quantity projected is U
-      if (proj_type .eq. initial_projection_comp) then
-
-      ! quantity projected is U
-      else if (proj_type .eq. divu_iters_comp) then
-
-      ! quantity projected is (Ustar - Un)
-      else if (proj_type .eq. pressure_iters_comp) then
-
-         unew(-1:nx,-1:ny,1) = ( unew(-1:nx,-1:ny,1) - uold(-1:nx,-1:ny,1) ) / dt
-         unew(-1:nx,-1:ny,2) = ( unew(-1:nx,-1:ny,2) - uold(-1:nx,-1:ny,2) ) / dt
-     
-      ! quantity projected is Ustar + dt * (1/rho) gpres
-      else if (proj_type .eq. regular_timestep_comp) then
-
-         unew(-1:nx,-1:ny,1) = &
-              unew(-1:nx,-1:ny,1) + dt*gpres(-1:nx,-1:ny,1)/rhohalf(-1:nx,-1:ny)
-         unew(-1:nx,-1:ny,2) = &
-              unew(-1:nx,-1:ny,2) + dt*gpres(-1:nx,-1:ny,2)/rhohalf(-1:nx,-1:ny)
-
-       else
-     
-          call bl_error('No proj_type by this number ')
-
-      end if
-
-      if (phys_bc(1,1)==SLIP_WALL .or. phys_bc(1,1)==NO_SLIP_WALL) unew(-1,:,:) = ZERO
-      if (phys_bc(1,2)==SLIP_WALL .or. phys_bc(1,2)==NO_SLIP_WALL) unew(nx,:,:) = ZERO
-      if (phys_bc(2,1)==SLIP_WALL .or. phys_bc(2,1)==NO_SLIP_WALL) unew(:,-1,:) = ZERO
-      if (phys_bc(2,2)==SLIP_WALL .or. phys_bc(2,2)==NO_SLIP_WALL) unew(:,ny,:) = ZERO
-
-    end subroutine create_uvec_2d
-
-!   *************************************************************************************** !
-
-    subroutine create_uvec_3d(unew,uold,rhohalf,gpres,dt,phys_bc,ng,proj_type)
-
-      use proj_parameters
-
-      integer        , intent(in   ) :: ng
-      real(kind=dp_t), intent(inout) ::    unew(-ng:,-ng:,-ng:,:)
-      real(kind=dp_t), intent(in   ) ::    uold(-ng:,-ng:,-ng:,:)
-      real(kind=dp_t), intent(inout) ::      gpres( -1:, -1:, -1:,:)
-      real(kind=dp_t), intent(in   ) :: rhohalf( -1:, -1:, -1:)
-      real(kind=dp_t), intent(in   ) :: dt
-      integer        , intent(in   ) :: phys_bc(:,:)
-      integer        , intent(in   ) :: proj_type
-
-      integer :: nx,ny,nz
-
-      nx = size(gpres,dim=1) - 2
-      ny = size(gpres,dim=2) - 2
-      nz = size(gpres,dim=3) - 2
-
-      if (phys_bc(1,1) .eq. INLET) gpres(-1,-1:ny,-1:nz,:) = ZERO
-      if (phys_bc(1,2) .eq. INLET) gpres(nx,-1:ny,-1:nz,:) = ZERO
-      if (phys_bc(2,1) .eq. INLET) gpres(-1:nx,-1,-1:nz,:) = ZERO
-      if (phys_bc(2,2) .eq. INLET) gpres(-1:nx,ny,-1:nz,:) = ZERO
-      if (phys_bc(3,1) .eq. INLET) gpres(-1:nx,-1:ny,-1,:) = ZERO
-      if (phys_bc(3,2) .eq. INLET) gpres(-1:nx,-1:ny,nz,:) = ZERO
-
-      ! quantity projected is U
-      if (proj_type .eq. initial_projection_comp) then
-
-      ! quantity projected is U
-      else if (proj_type .eq. divu_iters_comp) then
-
-      ! quantity projected is (Ustar - Un)
-      else if (proj_type .eq. pressure_iters_comp) then
-
-         unew(-1:nx,-1:ny,-1:nz,:) =&
-              ( unew(-1:nx,-1:ny,-1:nz,:) - uold(-1:nx,-1:ny,-1:nz,:) ) / dt
-
-      ! quantity projected is Ustar + dt * (1/rho) gpres
-      else if (proj_type .eq. regular_timestep_comp) then
-
-         unew(-1:nx,-1:ny,-1:nz,1) = unew(-1:nx,-1:ny,-1:nz,1) + &
-                                    dt*gpres(-1:nx,-1:ny,-1:nz,1)/rhohalf(-1:nx,-1:ny,-1:nz)
-         unew(-1:nx,-1:ny,-1:nz,2) = unew(-1:nx,-1:ny,-1:nz,2) + &
-                                    dt*gpres(-1:nx,-1:ny,-1:nz,2)/rhohalf(-1:nx,-1:ny,-1:nz)
-         unew(-1:nx,-1:ny,-1:nz,3) = unew(-1:nx,-1:ny,-1:nz,3) + &
-                                    dt*gpres(-1:nx,-1:ny,-1:nz,3)/rhohalf(-1:nx,-1:ny,-1:nz)
-
-      else
-
-          call bl_error('No proj_type by this number ')
-
-      end if
-
-      if (phys_bc(1,1)==SLIP_WALL .or. phys_bc(1,1)==NO_SLIP_WALL) unew(-1,:,:,:) = ZERO
-      if (phys_bc(1,2)==SLIP_WALL .or. phys_bc(1,2)==NO_SLIP_WALL) unew(nx,:,:,:) = ZERO
-      if (phys_bc(2,1)==SLIP_WALL .or. phys_bc(2,1)==NO_SLIP_WALL) unew(:,-1,:,:) = ZERO
-      if (phys_bc(2,2)==SLIP_WALL .or. phys_bc(2,2)==NO_SLIP_WALL) unew(:,ny,:,:) = ZERO
-      if (phys_bc(3,1)==SLIP_WALL .or. phys_bc(3,1)==NO_SLIP_WALL) unew(:,:,-1,:) = ZERO
-      if (phys_bc(3,2)==SLIP_WALL .or. phys_bc(3,2)==NO_SLIP_WALL) unew(:,:,nz,:) = ZERO
-
-    end subroutine create_uvec_3d
-
-    !   ********************************************************************************* !
-
-    subroutine mkgphi_2d(gphi,phi,dx)
-
-      real(kind=dp_t), intent(inout) ::  gphi(0:,0:,:)
-      real(kind=dp_t), intent(inout) :: phi(-1:,-1:)
-      real(kind=dp_t), intent(in   ) :: dx(:)
-
-      integer :: i,j,nx,ny
-
-      nx = size(gphi,dim=1)
-      ny = size(gphi,dim=2)
-
-      do j = 0,ny-1
-         do i = 0,nx-1
-            gphi(i,j,1) = HALF*(phi(i+1,j) + phi(i+1,j+1) - &
-                 phi(i  ,j) - phi(i  ,j+1) ) /dx(1)
-            gphi(i,j,2) = HALF*(phi(i,j+1) + phi(i+1,j+1) - &
-                 phi(i,j  ) - phi(i+1,j  ) ) /dx(2)
-         end do
-      end do
-
-    end subroutine mkgphi_2d
-
-    !   ******************************************************************************** !
-
-    subroutine mkgphi_3d(gphi,phi,dx)
-
-      real(kind=dp_t), intent(inout) ::  gphi(0:,0:,0:,1:)
-      real(kind=dp_t), intent(inout) :: phi(-1:,-1:,-1:)
-      real(kind=dp_t), intent(in   ) :: dx(:)
-
-      integer :: i,j,k,nx,ny,nz
-
-      nx = size(gphi,dim=1)
-      ny = size(gphi,dim=2)
-      nz = size(gphi,dim=3)
-
-      do k = 0,nz-1
-         do j = 0,ny-1
-            do i = 0,nx-1
-               gphi(i,j,k,1) = FOURTH*(phi(i+1,j,k  ) + phi(i+1,j+1,k  ) &
-                    +phi(i+1,j,k+1) + phi(i+1,j+1,k+1) & 
-                    -phi(i  ,j,k  ) - phi(i  ,j+1,k  ) &
-                    -phi(i  ,j,k+1) - phi(i  ,j+1,k+1) ) /dx(1)
-               gphi(i,j,k,2) = FOURTH*(phi(i,j+1,k  ) + phi(i+1,j+1,k  ) &
-                    +phi(i,j+1,k+1) + phi(i+1,j+1,k+1) & 
-                    -phi(i,j  ,k  ) - phi(i+1,j  ,k  ) &
-                    -phi(i,j  ,k+1) - phi(i+1,j  ,k+1) ) /dx(2)
-               gphi(i,j,k,3) = FOURTH*(phi(i,j  ,k+1) + phi(i+1,j  ,k+1) &
-                    +phi(i,j+1,k+1) + phi(i+1,j+1,k+1) & 
-                    -phi(i,j  ,k  ) - phi(i+1,j  ,k  ) &
-                    -phi(i,j+1,k  ) - phi(i+1,j+1,k  ) ) /dx(3)
-            end do
-         end do
-      end do
-
-    end subroutine mkgphi_3d
 
     !   ****************************************************************************** !
 
@@ -760,7 +692,80 @@ contains
 
     end subroutine hg_update_3d
 
+    ! ********************************************************************************** !
+
+    subroutine enforce_outflow_on_divu_rhs(divu_rhs,the_bc_tower)
+
+      type(multifab) , intent(inout) :: divu_rhs(:)
+      type(bc_tower) , intent(in   ) :: the_bc_tower
+
+      integer        :: i,n,dm,ng,nlevs
+      type(bc_level) :: bc
+      real(kind=dp_t), pointer :: divp(:,:,:,:) 
+
+      nlevs = size(divu_rhs,dim=1)
+      dm = divu_rhs(1)%dim
+
+      do n = 1, nlevs
+         bc = the_bc_tower%bc_tower_array(n)
+         do i = 1, divu_rhs(n)%nboxes
+            if ( multifab_remote(divu_rhs(n), i) ) cycle
+            divp => dataptr(divu_rhs(n)     , i)
+            select case (dm)
+            case (2)
+               call enforce_outflow_2d(divp(:,:,1,1), bc%phys_bc_level_array(i,:,:))
+            case (3)
+               call enforce_outflow_3d(divp(:,:,:,1), bc%phys_bc_level_array(i,:,:))
+            end select
+         end do
+      end do
+
+    end subroutine enforce_outflow_on_divu_rhs
+
+    ! ******************************************************************************** !
+
+    subroutine enforce_outflow_2d(divu_rhs,phys_bc)
+
+      real(kind=dp_t), intent(inout) :: divu_rhs(0:,0:)
+      integer        , intent(in   ) :: phys_bc(:,:)
+
+      integer :: nx,ny
+      nx = size(divu_rhs,dim=1)-1
+      ny = size(divu_rhs,dim=2)-1
+
+      if (phys_bc(1,1) .eq. OUTLET) divu_rhs(0,  :) = ZERO
+      if (phys_bc(1,2) .eq. OUTLET) divu_rhs(nx, :) = ZERO
+      if (phys_bc(2,1) .eq. OUTLET) divu_rhs(: , 0) = ZERO
+      if (phys_bc(2,2) .eq. OUTLET) divu_rhs(: ,ny) = ZERO
+
+    end subroutine enforce_outflow_2d
+
+    ! ******************************************************************************** !
+
+    subroutine enforce_outflow_3d(divu_rhs,phys_bc)
+
+      real(kind=dp_t), intent(inout) :: divu_rhs(0:,0:,0:)
+      integer        , intent(in   ) :: phys_bc(:,:)
+
+      integer :: nx,ny,nz
+      nx = size(divu_rhs,dim=1)-1
+      ny = size(divu_rhs,dim=2)-1
+      nz = size(divu_rhs,dim=3)-1
+
+      if (phys_bc(1,1) .eq. OUTLET) divu_rhs(0,  :, :) = ZERO
+      if (phys_bc(1,2) .eq. OUTLET) divu_rhs(nx, :, :) = ZERO
+      if (phys_bc(2,1) .eq. OUTLET) divu_rhs( :, 0, :) = ZERO
+      if (phys_bc(2,2) .eq. OUTLET) divu_rhs( :,ny, :) = ZERO
+      if (phys_bc(3,1) .eq. OUTLET) divu_rhs( :,: , 0) = ZERO
+      if (phys_bc(3,2) .eq. OUTLET) divu_rhs( :,: ,nz) = ZERO
+
+    end subroutine enforce_outflow_3d
+
+    ! ******************************************************************************** !
+
   end subroutine hgproject
+
+  ! ******************************************************************************** !
 
   subroutine hg_multigrid(mla,unew,rhohalf,phi,dx,the_bc_tower, &
                           press_comp,stencil_type,divu_rhs,eps_in)
@@ -1109,6 +1114,8 @@ contains
 
   end subroutine mult_by_1d_coeff
 
+  !   ********************************************************************************** !
+
   subroutine mult_by_1d_coeff_2d(u,div_coeff,lo,hi,ng,do_mult)
 
     integer        , intent(in   ) :: lo(:),hi(:),ng
@@ -1129,6 +1136,8 @@ contains
     end if
 
   end subroutine mult_by_1d_coeff_2d
+
+  !   ********************************************************************************** !
 
   subroutine mult_by_1d_coeff_3d(u,div_coeff,lo,hi,ng,do_mult)
 
@@ -1185,6 +1194,8 @@ contains
 
   end subroutine mult_by_3d_coeff
 
+  !   ********************************************************************************** !
+  
   subroutine mult_by_3d_coeff_3d(u,ngu,div_coeff,ngd,do_mult)
 
     integer        , intent(in   ) :: ngu,ngd
@@ -1220,5 +1231,7 @@ contains
     end if
 
   end subroutine mult_by_3d_coeff_3d
+
+  !   ********************************************************************************** !
 
 end module hgproject_module
