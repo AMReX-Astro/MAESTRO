@@ -14,6 +14,7 @@ contains
 
   subroutine mkflux(nlevs,sflux,etaflux,sold,sedge,umac,w0,w0_cart_vec,s0_old,s0_edge_old, &
                     s0_old_cart,s0_new,s0_edge_new,s0_new_cart, &
+                    s0_predicted_edge, s0_predicted_x_edge, &
                     startcomp,endcomp,which_step,mla)
 
     use bl_prof_module
@@ -33,6 +34,8 @@ contains
     type(multifab) , intent(in   ) :: s0_old_cart(:)
     real(kind=dp_t), intent(in   ) :: s0_new(:,0:,:),s0_edge_new(:,0:,:)
     type(multifab) , intent(in   ) :: s0_new_cart(:)
+    real(kind=dp_t), intent(in   ) :: s0_predicted_edge(:,0:,:)
+    real(kind=dp_t), intent(in   ) :: s0_predicted_x_edge(:,0:,:)
     integer        , intent(in   ) :: startcomp,endcomp,which_step
     type(ml_layout), intent(inout) :: mla
 
@@ -88,6 +91,8 @@ contains
                             ump(:,:,1,1), vmp(:,:,1,1), &
                             s0_old(n,:,:), s0_edge_old(n,:,:), &
                             s0_new(n,:,:), s0_edge_new(n,:,:), &
+                            s0_predicted_edge(n,:,:), &
+                            s0_predicted_x_edge(n,:,:), &
                             w0(n,:), &
                             startcomp,endcomp,which_step,lo,hi)
           case (3)
@@ -137,9 +142,12 @@ contains
   end subroutine mkflux
   
   subroutine mkflux_2d(sfluxx,sfluxy,etaflux,sedgex,sedgey,umac,vmac,s0_old,s0_edge_old, &
-                       s0_new,s0_edge_new,w0,startcomp,endcomp,which_step,lo,hi)
+                       s0_new,s0_edge_new,s0_pred_edge,s0_pred_x_edge,w0,startcomp,endcomp,which_step,lo,hi)
 
     use bl_constants_module
+    use variables, only : spec_comp, rho_comp
+    use network, only : nspec
+    use probin_module, only: predict_X_at_edges
 
     integer        , intent(in   ) :: lo(:),hi(:)
     real(kind=dp_t), intent(inout) ::  sfluxx(lo(1)  :,lo(2)  :,:)
@@ -151,12 +159,15 @@ contains
     real(kind=dp_t), intent(in   ) ::    vmac(lo(1)-1:,lo(2)-1:)
     real(kind=dp_t), intent(in   ) :: s0_old(0:,:), s0_edge_old(0:,:)
     real(kind=dp_t), intent(in   ) :: s0_new(0:,:), s0_edge_new(0:,:)
+    real(kind=dp_t), intent(in   ) :: s0_pred_edge(0:,:)
+    real(kind=dp_t), intent(in   ) :: s0_pred_x_edge(0:,:)
     real(kind=dp_t), intent(in   ) :: w0(0:)
     integer        , intent(in   ) :: startcomp,endcomp,which_step
 
     ! local
     integer :: comp
     integer :: i,j
+    real(kind=dp_t) :: s0_edge
 
     ! loop over components
     do comp = startcomp, endcomp
@@ -165,13 +176,25 @@ contains
        do j=lo(2),hi(2)
           do i=lo(1),hi(1)+1
 
-             if(which_step .eq. 1) then
-                sfluxx(i,j,comp) = umac(i,j)* &
-                     (sedgex(i,j,comp) + s0_old(j,comp))
+             if ( (comp .ge. spec_comp) .and. (comp .le.  spec_comp+nspec-1) ) then
+
+                if (predict_X_at_edges) then
+                  s0_edge = s0_pred_x_edge(j,comp) * s0_pred_x_edge(j  ,rho_comp) 
+                else
+                  s0_edge = s0_pred_x_edge(j,comp)
+                end if
+
              else
-                sfluxx(i,j,comp) = umac(i,j)* &
-                     (sedgex(i,j,comp) + HALF*(s0_old(j,comp)+s0_new(j,comp)))
-             endif
+
+                if (which_step .eq. 1) then
+                   s0_edge = s0_old(j,comp)
+                else
+                   s0_edge = HALF*(s0_old(j,comp)+s0_new(j,comp))
+                end if
+
+             end if
+
+             sfluxx(i,j,comp) = umac(i,j)*(sedgex(i,j,comp) + s0_edge)
 
           end do
        end do
@@ -180,13 +203,26 @@ contains
        do j=lo(2),hi(2)+1
           do i=lo(1),hi(1)
 
-             if(which_step .eq. 1) then
-                sfluxy(i,j,comp) = (vmac(i,j)+w0(j))*sedgey(i,j,comp) &
-                     + vmac(i,j)*(s0_edge_old(j,comp))
+
+             if ( (comp .ge. spec_comp) .and. (comp .le.  spec_comp+nspec-1) ) then
+
+                if (predict_X_at_edges) then
+                  s0_edge = s0_pred_edge(j,comp) * s0_pred_edge(j,rho_comp)
+                else
+                  s0_edge = s0_pred_edge(j,comp)
+                end if
+
              else
-                sfluxy(i,j,comp) = (vmac(i,j)+w0(j))*sedgey(i,j,comp) &
-                     + vmac(i,j)*(HALF*(s0_edge_old(j,comp)+s0_edge_new(j,comp)))
+
+                if(which_step .eq. 1) then
+                   s0_edge = s0_edge_old(j,comp)
+                else
+                   s0_edge = HALF*(s0_edge_old(j,comp)+s0_edge_new(j,comp))
+                end if
+
              end if
+
+             sfluxy(i,j,comp) = (vmac(i,j)+w0(j))*sedgey(i,j,comp) + vmac(i,j)*s0_edge
 
              etaflux(i,j,comp) = vmac(i,j)*sedgey(i,j,comp)
 

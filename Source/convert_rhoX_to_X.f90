@@ -192,6 +192,7 @@ contains
 
   subroutine make_edge_rhoX_from_X(nlevs,u,sedge, &
                                    s0_predicted_edge, &
+                                   s0_predicted_x_edge, &
                                    the_bc_level,dx)
 
 
@@ -216,6 +217,7 @@ contains
     type(multifab) , intent(in   ) :: u(:)
     type(multifab) , intent(inout) :: sedge(:,:)
     real(kind=dp_t), intent(in   ) :: s0_predicted_edge(:,0:,:)
+    real(kind=dp_t), intent(in   ) :: s0_predicted_x_edge(:,0:,:)
     type(bc_level) , intent(in   ) :: the_bc_level(:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     
@@ -245,6 +247,7 @@ contains
           case (2)
              call make_edge_rhoX_from_X_2d(sepx(:,:,1,:), sepy(:,:,1,:), &
                                            s0_predicted_edge(n,:,:), &
+                                           s0_predicted_x_edge(n,:,:), &
                                            lo, hi)
 
           case (3)
@@ -275,6 +278,7 @@ contains
 
   subroutine make_edge_rhoX_from_X_2d(sx,sy, &
                                       s0_predicted_edge, &
+                                      s0_predicted_x_edge, &
                                       lo,hi)
 
     use bl_constants_module
@@ -285,6 +289,7 @@ contains
     real(kind=dp_t), intent(inout) :: sx(lo(1):,lo(2):,:)
     real(kind=dp_t), intent(inout) :: sy(lo(1):,lo(2):,:)
     real(kind=dp_t), intent(in   ) :: s0_predicted_edge(0:,:)
+    real(kind=dp_t), intent(in   ) :: s0_predicted_x_edge(0:,:)
 
     real(kind=dp_t) :: rho0_edge, X0_edge
     integer :: i, j, comp    
@@ -295,14 +300,8 @@ contains
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)+1
                     
-             ! s0_predicted_edge is on the y-edges.  Here, we simply average
-             ! the two vertical edge states to find the edge state on the
-             ! x-edges
-             X0_edge = HALF*(s0_predicted_edge(j,  comp) + &
-                             s0_predicted_edge(j+1,comp))
-
-             rho0_edge = HALF*(s0_predicted_edge(j,  rho_comp) + &
-                               s0_predicted_edge(j+1,rho_comp))
+               X0_edge = s0_predicted_x_edge(j,    comp)
+             rho0_edge = s0_predicted_x_edge(j,rho_comp)
 
              sx(i,j,comp) = (rho0_edge + sx(i,j,rho_comp))*sx(i,j,comp) + &
                             sx(i,j,rho_comp)*X0_edge
@@ -312,7 +311,6 @@ contains
 
     enddo
 
-
     ! y-interfaces
     do comp = spec_comp, spec_comp+nspec-1
 
@@ -320,10 +318,11 @@ contains
           do i = lo(1), hi(1)
           
              ! s0_predicted_edge is on the y-edges, so we use them directly.
+
              sy(i,j,comp) = (s0_predicted_edge(j,rho_comp) + &
                              sy(i,j,rho_comp))*sy(i,j,comp) + &
                             (sy(i,j,rho_comp)*s0_predicted_edge(j,comp))
-             
+
           enddo
        enddo
 

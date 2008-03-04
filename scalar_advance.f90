@@ -14,8 +14,10 @@ module scalar_advance_module
 contains
 
   subroutine scalar_advance(nlevs,mla,which_step,uold,sold,snew,thermal, &
-                            umac,w0,w0_cart_vec,eta,utrans,normal, &
-                            s0_old,s0_new,p0_old,p0_new,s0_predicted_edge, &
+                            umac,w0,w0_cart_vec,eta,eta2,utrans,normal, &
+                            s0_old,s0_new,p0_old,p0_new, &
+                            s0_predicted_edge, &
+                            s0_predicted_x_edge, &
                             dx,dt,the_bc_level)
 
     use bl_prof_module
@@ -52,7 +54,8 @@ contains
     type(multifab) , intent(inout) :: umac(:,:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     type(multifab) , intent(in   ) :: w0_cart_vec(:)
-    real(kind=dp_t), intent(inout) :: eta(:,0:,:)
+    real(kind=dp_t), intent(inout) ::  eta(:,0:,:)
+    real(kind=dp_t), intent(inout) :: eta2(:,0:,:)
     type(multifab) , intent(in   ) :: utrans(:,:)
     type(multifab) , intent(in   ) :: normal(:)
     real(kind=dp_t), intent(inout) :: s0_old(:,0:,:)
@@ -60,6 +63,7 @@ contains
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: s0_predicted_edge(:,0:,:)
+    real(kind=dp_t), intent(in   ) :: s0_predicted_x_edge(:,0:,:)
     real(kind=dp_t), intent(in   ) :: dx(:,:),dt
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
@@ -289,6 +293,7 @@ contains
        ! finally, convert X' at the edges to (rho X)'
        call make_edge_rhoX_from_X(nlevs,uold,sedge, &
                                   s0_predicted_edge, &
+                                  s0_predicted_x_edge, &
                                   the_bc_level,dx)
 
     else
@@ -380,6 +385,8 @@ contains
     call mkflux(nlevs,sflux,etaflux,sold,sedge,umac,w0,w0_cart_vec, &
                 s0_old,s0_edge_old,s0_old_cart, &
                 s0_new,s0_edge_new,s0_new_cart, &
+                s0_predicted_edge, &
+                s0_predicted_x_edge, &
                 rhoh_comp,rhoh_comp,which_step,mla)
 
 
@@ -387,6 +394,8 @@ contains
     call mkflux(nlevs,sflux,etaflux,sold,sedge,umac,w0,w0_cart_vec, &
                 s0_old,s0_edge_old,s0_old_cart, &
                 s0_new,s0_edge_new,s0_new_cart, &
+                s0_predicted_edge, &
+                s0_predicted_x_edge, &
                 spec_comp,spec_comp+nspec-1,which_step,mla)
 
 
@@ -395,6 +404,8 @@ contains
        call mkflux(nlevs,sflux,etaflux,sold,sedge,umac,w0,w0_cart_vec, &
                    s0_old,s0_edge_old,s0_old_cart, &
                    s0_new,s0_edge_new,s0_new_cart, &
+                   s0_predicted_edge, &
+                   s0_predicted_x_edge, &
                    trac_comp,trac_comp+ntrac-1,which_step,mla)
     end if
 
@@ -488,7 +499,9 @@ contains
     !**************************************************************************
 
     if (use_eta .and. evolve_base_state) then
-       call make_eta(nlevs,eta,sold,etaflux,mla)
+       call make_eta(nlevs,eta2,sold,etaflux,mla)
+    else
+       eta2 = 0.d0
     end if
 
     if (spherical .eq. 1) then

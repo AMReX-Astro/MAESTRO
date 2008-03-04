@@ -34,6 +34,7 @@ contains
     use make_div_coeff_module
     use make_w0_module
     use advect_base_module
+    use correct_base_module
     use react_base_module
     use react_state_module
     use make_S_module
@@ -120,6 +121,9 @@ contains
     real(dp_t), allocatable :: p0_1(:,:)
     real(dp_t), allocatable :: p0_2(:,:)
     real(dp_t), allocatable :: s0_predicted_edge(:,:,:)
+    real(dp_t), allocatable :: s0_predicted_x_edge(:,:,:)
+
+    real(dp_t), allocatable :: eta2(:,:,:)
 
     integer    :: r,n,dm,comp,nlevs,ng_s,proj_type
     real(dp_t) :: halfdt,eps_in
@@ -147,7 +151,12 @@ contains
     allocate(             s0_2(nlevs,0:nr(nlevs)-1,nscal))
     allocate(             p0_1(nlevs,0:nr(nlevs)-1))
     allocate(             p0_2(nlevs,0:nr(nlevs)-1))
-    allocate(s0_predicted_edge(nlevs,0:nr(nlevs)  ,nscal))
+    allocate(s0_predicted_edge  (nlevs,0:nr(nlevs)  ,nscal))
+    allocate(s0_predicted_x_edge(nlevs,0:nr(nlevs)-1,nscal))
+
+    allocate(             eta2(nlevs,0:nr(nlevs)  ,nscal))
+
+
 
     ! Set these to be safe
     s0_1(:,:,:) = ZERO
@@ -155,6 +164,7 @@ contains
     p0_1(:,:)   = ZERO
     p0_2(:,:)   = ZERO
     s0_predicted_edge(:,:,:) = ZERO
+    s0_predicted_x_edge(:,:,:) = ZERO
 
     ! Set w0_old to w0 from last time step.
     w0_old = w0
@@ -316,7 +326,7 @@ contains
     
     if (evolve_base_state) then
        call advect_base(1,nlevs,w0,Sbar,p0_1,p0_2,s0_1,s0_2,gam1,div_coeff_new,eta, &
-                        s0_predicted_edge,dx(:,dm),dt)
+                        s0_predicted_edge,s0_predicted_x_edge,dx(:,dm),dt)
     else
        p0_2 = p0_1
        s0_2 = s0_1
@@ -366,8 +376,9 @@ contains
     end do
 
     call scalar_advance(nlevs,mla,1,uold,s1,s2,thermal, &
-                        umac,w0,w0_cart_vec,eta,utrans,normal, &
+                        umac,w0,w0_cart_vec,eta,eta2,utrans,normal, &
                         s0_1,s0_2,p0_1,p0_2,s0_predicted_edge, &
+                        s0_predicted_x_edge, &
                         dx,dt,the_bc_tower%bc_tower_array)
 
     do n=1,nlevs
@@ -600,7 +611,7 @@ contains
        end if
        if (evolve_base_state) then
           call advect_base(2,nlevs,w0,Sbar,p0_1,p0_2,s0_1,s0_2,gam1,div_coeff_nph,eta, &
-                           s0_predicted_edge,dx(:,dm),dt)
+                           s0_predicted_edge,s0_predicted_x_edge,dx(:,dm),dt)
        else
           p0_2 = p0_1
           s0_2 = s0_1
@@ -645,9 +656,13 @@ contains
        end do
 
        call scalar_advance(nlevs,mla,2,uold,s1,s2,thermal, &
-                           umac,w0,w0_cart_vec,eta,utrans,normal, &
+                           umac,w0,w0_cart_vec,eta,eta2,utrans,normal, &
                            s0_1,s0_2,p0_1,p0_2,s0_predicted_edge, &
+                           s0_predicted_x_edge, &
                            dx,dt,the_bc_tower%bc_tower_array)
+
+       call correct_base(2,nlevs,p0_1,p0_2,s0_1,s0_2, &
+                         gam1,div_coeff_nph,eta2,dx(:,dm),dt)
 
        do n=1,nlevs
           call destroy(thermal(n))

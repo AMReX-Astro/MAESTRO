@@ -12,7 +12,7 @@ contains
 
   subroutine advect_base(which_step,nlevs,vel,Sbar_in,p0_old,p0_new, &
                          s0_old,s0_new,gam1,div_coeff,eta, &
-                         s0_predicted_edge, &
+                         s0_predicted_edge,s0_predicted_x_edge, &
                          dz,dt)
 
     use bl_prof_module
@@ -27,6 +27,7 @@ contains
     real(kind=dp_t), intent(in   ) :: div_coeff(:,0:)
     real(kind=dp_t), intent(in   ) :: eta(:,0:,:)
     real(kind=dp_t), intent(  out) :: s0_predicted_edge(:,0:,:)
+    real(kind=dp_t), intent(  out) :: s0_predicted_x_edge(:,:,:)
     real(kind=dp_t), intent(in   ) :: dz(:)
     real(kind=dp_t), intent(in   ) :: dt
     
@@ -41,7 +42,8 @@ contains
        if (spherical .eq. 0) then
           call advect_base_state_planar(which_step,n,vel(n,0:),p0_old(n,0:),p0_new(n,0:), &
                                         s0_old(n,0:,:),s0_new(n,0:,:),gam1(n,0:),eta(n,0:,:), &
-                                        s0_predicted_edge(n,0:,:),dz(n),dt)
+                                        s0_predicted_edge(n,0:,:), &
+                                        s0_predicted_x_edge(n,:,:),dz(n),dt)
        else
           call advect_base_state_spherical(which_step,n,vel(n,:),Sbar_in(n,:,1), &
                                            p0_old(n,:),p0_new(n,:), &
@@ -58,7 +60,8 @@ contains
 
   subroutine advect_base_state_planar(which_step,n,vel,p0_old,p0_new, &
                                       s0_old,s0_new,gam1,eta, &
-                                      s0_predicted_edge,dz,dt)
+                                      s0_predicted_edge,&
+                                      s0_predicted_x_edge,dz,dt)
 
     use bl_constants_module
     use make_edge_state_module
@@ -74,12 +77,13 @@ contains
     real(kind=dp_t), intent(inout) :: gam1(0:)
     real(kind=dp_t), intent(in   ) :: eta(0:,:)
     real(kind=dp_t), intent(  out) :: s0_predicted_edge(0:,:)
+    real(kind=dp_t), intent(  out) :: s0_predicted_x_edge(0:,:)
     real(kind=dp_t), intent(in   ) :: dz,dt
     
     ! Local variables
     integer :: r,comp
     integer :: r_anel
-    real(kind=dp_t) :: eta_avg
+    real(kind=dp_t) :: eta_avg, vel_avg
     
     real (kind = dp_t), allocatable :: force(:)
     real (kind = dp_t), allocatable :: edge(:)
@@ -102,6 +106,7 @@ contains
     end do
 
     s0_predicted_edge(:,:) = ZERO
+    s0_predicted_x_edge(:,:) = ZERO
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! UPDATE P0
@@ -129,16 +134,21 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! UPDATE RHOX0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
     if (predict_X_at_edges) then
 
-       ! we need rho0 on the edges
+       ! Predict to vertical edges
        do r = 0,nr(n)-1
           force(r) = -s0_old(r,rho_comp) * (vel(r+1) - vel(r)) / dz 
        end do
-       
        call make_edge_state_1d(n,s0_old(:,rho_comp),edge,vel,force,1,dz,dt)
-
        s0_predicted_edge(:,rho_comp) = edge(:)       
+
+       ! Predict to lateral edges
+       do r = 0,nr(n)-1
+          s0_predicted_x_edge(r,rho_comp) = s0_old(r,rho_comp) - &
+              HALF * dt * ( vel(r+1)*edge(r+1) - vel(r)*edge(r) ) / dz 
+       end do
 
     endif
 
@@ -155,9 +165,17 @@ contains
        
           call make_edge_state_1d(n,X0,edge,vel,force,1,dz,dt)
 
-          ! s0_predicted_edge will store X_0 on the edges -- we need
+          ! s0_predicted_edge will store X_0 on the vertical edges -- we need
           ! that later
           s0_predicted_edge(:,comp) = edge(:)
+
+          ! s0_predicted_x_edge will store X_0 on the horizontal edges -- we need
+          ! that later
+          do r = 0,nr(n)-1
+             vel_avg = HALF * (vel(r)+vel(r+1))
+             s0_predicted_x_edge(r,comp) = X0(r) - HALF * dt * vel_avg * &
+                                                   (edge(r+1)-edge(r)) / dz
+          end do
           
           ! our final update needs (rho X)_0 on the edges, so compute
           ! that now
@@ -184,6 +202,10 @@ contains
           ! compute rho_0 on the edges for completeness
           s0_predicted_edge(:,rho_comp) = s0_predicted_edge(:,rho_comp) + &
                                           s0_predicted_edge(:,comp)
+
+          do r = 0,nr(n)-1
+             s0_predicted_x_edge(r,comp) = s0_old(r,comp) + HALF*dt*force(r)
+          end do
 
        endif
 
