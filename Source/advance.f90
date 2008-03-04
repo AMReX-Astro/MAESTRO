@@ -661,8 +661,9 @@ contains
                            s0_predicted_x_edge, &
                            dx,dt,the_bc_tower%bc_tower_array)
 
-       call correct_base(2,nlevs,p0_1,p0_2,s0_1,s0_2, &
-                         gam1,div_coeff_nph,eta2,dx(:,dm),dt)
+       if (evolve_base_state) then
+          call correct_base(2,nlevs,p0_1,p0_2,s0_1,s0_2,gam1,div_coeff_nph,eta2,dx(:,dm),dt)
+       end if
 
        do n=1,nlevs
           call destroy(thermal(n))
