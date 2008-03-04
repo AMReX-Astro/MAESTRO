@@ -26,13 +26,13 @@ contains
     real(kind=dp_t), pointer :: sp(:,:,:,:)
 
     type(bl_prof_timer), save :: bpt
-
-    call build(bpt, "multifab_physbc")
     
     ng = s%ng
     dm = s%dim
 
     if (ng == 0) return
+
+    call build(bpt, "multifab_physbc")
     
     do i=1,s%nboxes
        if ( multifab_remote(s,i) ) cycle
