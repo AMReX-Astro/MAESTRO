@@ -176,16 +176,15 @@ contains
        do j=lo(2),hi(2)
           do i=lo(1),hi(1)+1
 
-!IF YOU UNCOMMENT THESE LINES AND THE LINES BELOW THE CODE GOES BAD
-!            if ( (comp .ge. spec_comp) .and. (comp .le.  spec_comp+nspec-1) ) then
+             if ( (comp .ge. spec_comp) .and. (comp .le.  spec_comp+nspec-1) ) then
 
-!               if (predict_X_at_edges) then
-!                 s0_edge = s0_pred_x_edge(j,comp) * s0_pred_x_edge(j  ,rho_comp) 
-!               else
-!                 s0_edge = s0_pred_x_edge(j,comp)
-!               end if
+                if (predict_X_at_edges) then
+                  s0_edge = s0_pred_x_edge(j,comp) * s0_pred_x_edge(j  ,rho_comp) 
+                else
+                  s0_edge = s0_pred_x_edge(j,comp)
+                end if
 
-!            else
+             else
 
                 if (which_step .eq. 1) then
                    s0_edge = s0_old(j,comp)
@@ -193,7 +192,7 @@ contains
                    s0_edge = HALF*(s0_old(j,comp)+s0_new(j,comp))
                 end if
 
-!            end if
+             end if
 
              sfluxx(i,j,comp) = umac(i,j)*(sedgex(i,j,comp) + s0_edge)
 
@@ -204,8 +203,7 @@ contains
        do j=lo(2),hi(2)+1
           do i=lo(1),hi(1)
 
-
-!IF YOU UNCOMMENT THESE LINES AND THE LINES ABOVE THE CODE GOES BAD
+!            IF YOU UNCOMMENT THESE LINES THE CODE GOES BAD
 !            if ( (comp .ge. spec_comp) .and. (comp .le.  spec_comp+nspec-1) ) then
 
 !               if (predict_X_at_edges) then
