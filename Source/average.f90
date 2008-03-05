@@ -100,9 +100,11 @@ contains
           hi =  upb(get_box(phi(1), i))
           select case (dm)
           case (2)
-             call sum_phi_coarsest_2d(pp(:,:,1,:),phisum_proc(1,:,:),lo,hi,ng,startcomp,ncomp)
+             call sum_phi_coarsest_2d(pp(:,:,1,:),phisum_proc(1,:,:),lo,hi,ng, &
+                                      startcomp,ncomp)
           case (3)
-             call sum_phi_coarsest_3d(pp(:,:,:,:),phisum_proc(1,:,:),lo,hi,ng,startcomp,ncomp)
+             call sum_phi_coarsest_3d(pp(:,:,:,:),phisum_proc(1,:,:),lo,hi,ng, &
+                                      startcomp,ncomp)
           end select
        end do
 
@@ -263,11 +265,13 @@ contains
     real (kind=dp_t), intent(in   ) :: phi(lo(1)-ng:,lo(2)-ng:,:)
     real (kind=dp_t), intent(inout) :: phisum(0:,:)
 
-    integer :: j, comp
+    integer :: i,j,comp
 
     do comp=startcomp,startcomp+ncomp-1
        do j=lo(2),hi(2)
-          phisum(j,comp) = phisum(j,comp) + sum(phi(:,j,comp))
+          do i=lo(1),hi(1)
+             phisum(j,comp) = phisum(j,comp) + phi(i,j,comp)
+          end do
        end do
     end do
 
@@ -279,11 +283,15 @@ contains
     real (kind=dp_t), intent(in   ) :: phi(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind=dp_t), intent(inout) :: phisum(0:,:)
 
-    integer :: k, comp
+    integer :: i,j,k,comp
 
     do comp=startcomp,startcomp+ncomp-1
        do k=lo(3),hi(3)
-          phisum(k,comp) = phisum(k,comp) + sum(phi(:,:,k,comp))
+          do j=lo(2),hi(2)
+             do i=lo(1),hi(1)
+                phisum(k,comp) = phisum(k,comp) + phi(i,j,k,comp)
+             end do
+          end do
        end do
     end do
 
