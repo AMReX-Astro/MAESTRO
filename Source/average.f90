@@ -108,13 +108,13 @@ contains
           end select
        end do
 
-       do comp=1,ncomp
+       do comp=startcomp,startcomp+ncomp-1
           ! gather phisum
           source_buffer = phisum_proc(1,:,comp)
           call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
           phisum(1,:,comp) = target_buffer
        end do
-       do comp=1,ncomp
+       do comp=startcomp,startcomp+ncomp-1
           do r=0,nr(1)-1
              phibar(1,r,comp) = phisum(1,r,comp) / dble(ncell(1,r))
           end do
@@ -137,7 +137,7 @@ contains
 
           ! compute phisum at next finer level
           ! begin by assuming piecewise constant interpolation
-          do comp=1,ncomp
+          do comp=startcomp,startcomp+ncomp-1
              do r=0,nr(n)-1
                 phisum(n,r,comp) = phisum(n-1,r/rr,comp)*rr**(dm-1)
              end do
@@ -159,14 +159,14 @@ contains
              end select
           end do
 
-          do comp=1,ncomp
+          do comp=startcomp,startcomp+ncomp-1
              ! gather phipert
              source_buffer = phipert_proc(n,:,comp)
              call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
              phipert(n,:,comp) = target_buffer
           end do
           ! update phisum and compute phibar
-          do comp=1,ncomp
+          do comp=startcomp,startcomp+ncomp-1
              do r=0,nr(n)-1
                 phisum(n,r,comp) = phisum(n,r,comp) + phipert(n,r,comp)
                 phibar(n,r,comp) = phisum(n,r,comp) / dble(ncell(n,r))
@@ -219,14 +219,14 @@ contains
 
           call parallel_reduce(ncell(n,:), ncell_proc(n,:), MPI_SUM)
 
-          do comp=1,ncomp
+          do comp=startcomp,startcomp+ncomp-1
              source_buffer = phisum_proc(n,:,comp)
              call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
              phisum(n,:,comp) = target_buffer
           end do
           if (n .ne. nlevs) then
              ncell(nlevs,:) = ncell(nlevs,:) + ncell(n,:)
-             do comp=1,ncomp
+             do comp=startcomp,startcomp+ncomp-1
                 do r=0,nr(nlevs)-1
                    phisum(nlevs,r,comp) = phisum(nlevs,r,comp) + phisum(n,r,comp)
                 end do
@@ -236,7 +236,7 @@ contains
        end do
 
        ! now divide the total phisum by the number of cells to get phibar
-       do comp=1,ncomp
+       do comp=startcomp,startcomp+ncomp-1
           do r=0,nr(nlevs)-1
              if (ncell(nlevs,r) .gt. ZERO) then
                 phibar(nlevs,r,comp) = phisum(nlevs,r,comp) / ncell(nlevs,r)
