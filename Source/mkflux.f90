@@ -176,7 +176,7 @@ contains
        do j=lo(2),hi(2)
           do i=lo(1),hi(1)+1
 
-IF YOU UNCOMMENT THESE LINES AND THE LINES BELOW THE CODE GOES BAD
+!IF YOU UNCOMMENT THESE LINES AND THE LINES BELOW THE CODE GOES BAD
 !            if ( (comp .ge. spec_comp) .and. (comp .le.  spec_comp+nspec-1) ) then
 
 !               if (predict_X_at_edges) then
@@ -205,7 +205,7 @@ IF YOU UNCOMMENT THESE LINES AND THE LINES BELOW THE CODE GOES BAD
           do i=lo(1),hi(1)
 
 
-IF YOU UNCOMMENT THESE LINES AND THE LINES ABOVE THE CODE GOES BAD
+!IF YOU UNCOMMENT THESE LINES AND THE LINES ABOVE THE CODE GOES BAD
 !            if ( (comp .ge. spec_comp) .and. (comp .le.  spec_comp+nspec-1) ) then
 
 !               if (predict_X_at_edges) then
