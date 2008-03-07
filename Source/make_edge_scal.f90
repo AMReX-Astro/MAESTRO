@@ -32,7 +32,8 @@ contains
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(in   ) :: s(:)
-    type(multifab) , intent(inout) :: sedge(:,:),umac(:,:)
+    type(multifab) , intent(inout) :: sedge(:,:)
+    type(multifab) , intent(in   ) :: umac(:,:)
     type(multifab) , intent(in   ) :: force(:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     type(multifab) , intent(in   ) :: w0_cart_vec(:)
@@ -76,32 +77,30 @@ contains
           case (2)
              do scomp = start_scomp, start_scomp + num_comp - 1
                 bccomp = start_bccomp + scomp - start_scomp
-                call make_edge_scal_2d(n,sop(:,:,1,:), &
-                                        sepx(:,:,1,:), sepy(:,:,1,:), &
-                                        ump(:,:,1,1), vmp(:,:,1,1), &
-                                        fp(:,:,1,:), w0(n,:), &
-                                        lo, dx(n,:), dt, is_vel, &
-                                        the_bc_level(n)%phys_bc_level_array(i,:,:), &
-                                        the_bc_level(n)%adv_bc_level_array(i,:,:,bccomp:), &
-                                        ng, scomp)
+                call make_edge_scal_2d(n, sop(:,:,1,:), &
+                                       sepx(:,:,1,:), sepy(:,:,1,:), &
+                                       ump(:,:,1,1), vmp(:,:,1,1), &
+                                       fp(:,:,1,:), w0(n,:), &
+                                       lo, dx(n,:), dt, is_vel, &
+                                       the_bc_level(n)%phys_bc_level_array(i,:,:), &
+                                       the_bc_level(n)%adv_bc_level_array(i,:,:,bccomp:), &
+                                       ng, scomp)
              end do
           case (3)
-!            wmp  => dataptr(  umac(n,3),i)
-!            sepz => dataptr( sedge(n,3),i)
-!            w0p  => dataptr(w0_cart_vec(n),i)
-!            do scomp = start_scomp, start_scomp + num_comp - 1
-!               bccomp = start_bccomp + scomp - start_scomp
-!               call make_edge_scal_3d(n,sop(:,:,:,:), &
-!                                       sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
-!                                       ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
-!                                       utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), &
-!                                       fp(:,:,:,:), &
-!                                       w0(n,:), w0p(:,:,:,:), &
-!                                       lo, dx(n,:), dt, &
-!                                       the_bc_level(n)%phys_bc_level_array(i,:,:), &
-!                                       the_bc_level(n)%adv_bc_level_array(i,:,:,bccomp:), &
-!                                       ng, scomp)
-!            end do
+            wmp  => dataptr(  umac(n,3),i)
+            sepz => dataptr( sedge(n,3),i)
+            w0p  => dataptr(w0_cart_vec(n),i)
+            do scomp = start_scomp, start_scomp + num_comp - 1
+               bccomp = start_bccomp + scomp - start_scomp
+               call make_edge_scal_3d(n, sop(:,:,:,:), &
+                                      sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
+                                      ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
+                                      fp(:,:,:,:), w0(n,:), w0p(:,:,:,:), &
+                                      lo, dx(n,:), dt, is_vel, &
+                                      the_bc_level(n)%phys_bc_level_array(i,:,:), &
+                                      the_bc_level(n)%adv_bc_level_array(i,:,:,bccomp:), &
+                                      ng, scomp)
+            end do
           end select
        end do
 
@@ -125,7 +124,7 @@ contains
 
   
   subroutine make_edge_scal_2d(n,s,sedgex,sedgey,umac,vmac,force,w0,lo,dx,dt,is_vel, &
-                               phys_bc,adv_bc,ng,comp)
+       phys_bc,adv_bc,ng,comp)
 
     use geometry, only: nr
     use bc_module
@@ -136,8 +135,8 @@ contains
     real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng:,lo(2)-ng:,:)
     real(kind=dp_t), intent(inout) :: sedgex(lo(1)   :,lo(2)   :,:)
     real(kind=dp_t), intent(inout) :: sedgey(lo(1)   :,lo(2)   :,:)
-    real(kind=dp_t), intent(inout) ::   umac(lo(1)- 1:,lo(2)- 1:)
-    real(kind=dp_t), intent(inout) ::   vmac(lo(1)- 1:,lo(2)- 1:)
+    real(kind=dp_t), intent(in   ) ::   umac(lo(1)- 1:,lo(2)- 1:)
+    real(kind=dp_t), intent(in   ) ::   vmac(lo(1)- 1:,lo(2)- 1:)
     real(kind=dp_t), intent(in   ) ::  force(lo(1)- 1:,lo(2)- 1:,:)
     real(kind=dp_t), intent(in   ) ::     w0(0:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
@@ -145,49 +144,46 @@ contains
     integer        , intent(in   ) :: phys_bc(:,:)
     integer        , intent(in   ) :: adv_bc(:,:,:)
     integer        , intent(in   ) :: ng,comp
-    
+
     ! Local variables
     real(kind=dp_t), allocatable :: slopex(:,:,:),slopey(:,:,:)
     real(kind=dp_t), allocatable :: s_l(:),s_r(:),s_b(:),s_t(:)
-    
-    real(kind=dp_t) :: hx, hy, dth
-    real(kind=dp_t) :: splus,sminus
+
+    real(kind=dp_t) :: hx,hy,dth,splus,sminus
     real(kind=dp_t) :: savg,st
-    real(kind=dp_t) :: uedge,vedge
     real(kind=dp_t) :: sptop,spbot,smtop,smbot,splft,sprgt,smlft,smrgt
-    real(kind=dp_t) :: abs_eps, eps, umax
-    
+    real(kind=dp_t) :: abs_eps,eps,umax
+
     integer :: hi(2)
     integer :: i,j,is,js,ie,je
     logical :: test
-    
+
     hi(1) = lo(1) + size(s,dim=1) - (2*ng+1)
     hi(2) = lo(2) + size(s,dim=2) - (2*ng+1)
-    
+
     is = lo(1)
     ie = hi(1)
     js = lo(2)
     je = hi(2)
-    
+
     allocate(s_l(lo(1)-1:hi(1)+2))
     allocate(s_r(lo(1)-1:hi(1)+2))
     allocate(s_b(lo(2)-1:hi(2)+2))
     allocate(s_t(lo(2)-1:hi(2)+2))
-    
+
     allocate(slopex(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1))
     allocate(slopey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1))
-    
+
     call slopex_2d(s(:,:,comp:),slopex,lo,ng,1,adv_bc)
     call slopey_2d(s(:,:,comp:),slopey,lo,ng,1,adv_bc)
-    
+
     abs_eps = 1.0d-8
-    
+
     dth = HALF*dt
-    
+
     hx = dx(1)
     hy = dx(2)
-    
-       
+
     umax = abs(umac(is,js))
 
     do j = js,je; do i = is,ie+1
@@ -196,77 +192,77 @@ contains
     do j = js,je+1; do i = is,ie
        umax = max(umax,abs(vmac(i,j)))
     end do; end do
-    
+
     if (umax .eq. 0.d0) then
        eps = abs_eps
     else
        eps = abs_eps * umax
     endif
-    
+
     !********************************
     ! Loop for edge states on x-edges.
     !********************************
 
     do j = js,je 
        do i = is-1,ie+1 
-             
-             spbot = s(i,j  ,comp) + (HALF - dth*vmac(i,j+1)/hy) * slopey(i,j  ,1)
-             sptop = s(i,j+1,comp) - (HALF + dth*vmac(i,j+1)/hy) * slopey(i,j+1,1)
-             
-             sptop = merge(s(i,je+1,comp),sptop,j.eq.je .and. phys_bc(2,2) .eq. INLET)
-             spbot = merge(s(i,je+1,comp),spbot,j.eq.je .and. phys_bc(2,2) .eq. INLET)
-             
-             if (j .eq. je .and. &
-                  (phys_bc(2,2).eq.SLIP_WALL.or.phys_bc(2,2).eq.NO_SLIP_WALL)) then
-                if (is_vel .and. comp .eq. 2) then
-                   sptop = ZERO
-                   spbot = ZERO
-                elseif (is_vel .and. comp .eq. 1) then
-                   sptop = merge(ZERO,spbot,phys_bc(2,2).eq.NO_SLIP_WALL)
-                   spbot = merge(ZERO,spbot,phys_bc(2,2).eq.NO_SLIP_WALL)
-                else
-                   sptop = spbot
-                endif
-             endif
-             
-             splus = merge(spbot,sptop,vmac(i,j+1).gt.ZERO)
-             savg  = HALF * (spbot + sptop)
-             splus = merge(splus, savg, abs(vmac(i,j+1)) .gt. eps)
-             
-             smtop = s(i,j  ,comp) - (HALF + dth*vmac(i,j)/hy) * slopey(i,j  ,1)
-             smbot = s(i,j-1,comp) + (HALF - dth*vmac(i,j)/hy) * slopey(i,j-1,1)
-             
-             smtop = merge(s(i,js-1,comp),smtop,j.eq.js .and. phys_bc(2,1) .eq. INLET)
-             smbot = merge(s(i,js-1,comp),smbot,j.eq.js .and. phys_bc(2,1) .eq. INLET)
-             
-             if (j .eq. js .and. &
-                  (phys_bc(2,1).eq.SLIP_WALL.or.phys_bc(2,1).eq.NO_SLIP_WALL)) then
-                if (is_vel .and. (comp .eq. 2)) then
-                   smtop = ZERO
-                   smbot = ZERO
-                elseif (is_vel .and. (comp .ne. 2)) then
-                   smbot = merge(ZERO,smtop,phys_bc(2,1).eq.NO_SLIP_WALL)
-                   smtop = merge(ZERO,smtop,phys_bc(2,1).eq.NO_SLIP_WALL)
-                else
-                   smbot = smtop
-                endif
-             endif
 
-             sminus = merge(smbot,smtop,vmac(i,j).gt.ZERO)
-             savg   = HALF * (smbot + smtop)
-             sminus = merge(sminus, savg, abs(vmac(i,j)) .gt. eps)
-             
-             st = force(i,j,comp) - HALF * (vmac(i,j)+vmac(i,j+1))*(splus - sminus) / hy
-             
+          spbot = s(i,j  ,comp) + (HALF - dth*vmac(i,j+1)/hy) * slopey(i,j  ,1)
+          sptop = s(i,j+1,comp) - (HALF + dth*vmac(i,j+1)/hy) * slopey(i,j+1,1)
+
+          sptop = merge(s(i,je+1,comp),sptop,j.eq.je .and. phys_bc(2,2) .eq. INLET)
+          spbot = merge(s(i,je+1,comp),spbot,j.eq.je .and. phys_bc(2,2) .eq. INLET)
+
+          if (j .eq. je .and. &
+               (phys_bc(2,2).eq.SLIP_WALL.or.phys_bc(2,2).eq.NO_SLIP_WALL)) then
              if (is_vel .and. comp .eq. 2) then
-                st = st - HALF * (vmac(i,j)+vmac(i,j+1)-w0(j+1)-w0(j))*(w0(j+1)-w0(j))/hy
-             end if
+                sptop = ZERO
+                spbot = ZERO
+             elseif (is_vel .and. comp .eq. 1) then
+                sptop = merge(ZERO,spbot,phys_bc(2,2).eq.NO_SLIP_WALL)
+                spbot = merge(ZERO,spbot,phys_bc(2,2).eq.NO_SLIP_WALL)
+             else
+                sptop = spbot
+             endif
+          endif
 
-             s_l(i+1)= s(i,j,comp) + (HALF-dth*umac(i+1,j)/hx)*slopex(i,j,1) + dth*st
-             s_r(i  )= s(i,j,comp) - (HALF+dth*umac(i  ,j)/hx)*slopex(i,j,1) + dth*st
-             
+          splus = merge(spbot,sptop,vmac(i,j+1).gt.ZERO)
+          savg  = HALF * (spbot + sptop)
+          splus = merge(splus, savg, abs(vmac(i,j+1)) .gt. eps)
+
+          smtop = s(i,j  ,comp) - (HALF + dth*vmac(i,j)/hy) * slopey(i,j  ,1)
+          smbot = s(i,j-1,comp) + (HALF - dth*vmac(i,j)/hy) * slopey(i,j-1,1)
+
+          smtop = merge(s(i,js-1,comp),smtop,j.eq.js .and. phys_bc(2,1) .eq. INLET)
+          smbot = merge(s(i,js-1,comp),smbot,j.eq.js .and. phys_bc(2,1) .eq. INLET)
+
+          if (j .eq. js .and. &
+               (phys_bc(2,1).eq.SLIP_WALL.or.phys_bc(2,1).eq.NO_SLIP_WALL)) then
+             if (is_vel .and. (comp .eq. 2)) then
+                smtop = ZERO
+                smbot = ZERO
+             elseif (is_vel .and. (comp .ne. 2)) then
+                smbot = merge(ZERO,smtop,phys_bc(2,1).eq.NO_SLIP_WALL)
+                smtop = merge(ZERO,smtop,phys_bc(2,1).eq.NO_SLIP_WALL)
+             else
+                smbot = smtop
+             endif
+          endif
+
+          sminus = merge(smbot,smtop,vmac(i,j).gt.ZERO)
+          savg   = HALF * (smbot + smtop)
+          sminus = merge(sminus, savg, abs(vmac(i,j)) .gt. eps)
+
+          st = force(i,j,comp) - HALF * (vmac(i,j)+vmac(i,j+1))*(splus - sminus) / hy
+
+          if (is_vel .and. comp .eq. 2) then
+             st = st - HALF * (vmac(i,j)+vmac(i,j+1)-w0(j+1)-w0(j))*(w0(j+1)-w0(j))/hy
+          end if
+
+          s_l(i+1)= s(i,j,comp) + (HALF-dth*umac(i+1,j)/hx)*slopex(i,j,1) + dth*st
+          s_r(i  )= s(i,j,comp) - (HALF+dth*umac(i  ,j)/hx)*slopex(i,j,1) + dth*st
+
        enddo
-          
+
        do i = is, ie+1 
           sedgex(i,j,comp)=merge(s_l(i),s_r(i),umac(i,j).gt.ZERO)
           savg = HALF*(s_r(i) + s_l(i))
@@ -307,22 +303,22 @@ contains
              sedgex(ie+1,j,comp) = s_l(ie+1)
           end if
        endif
-       
+
     enddo
-    
+
     !********************************
     ! Loop for edge states on y-edges.
     !********************************
 
     do i = is, ie 
        do j = js-1, je+1 
-             
+
           splft = s(i,j  ,comp) + (HALF - dth*umac(i+1,j)/hx) * slopex(i  ,j,1)
           sprgt = s(i+1,j,comp) - (HALF + dth*umac(i+1,j)/hx) * slopex(i+1,j,1)
-          
+
           sprgt = merge(s(ie+1,j,comp),sprgt,i.eq.ie .and. phys_bc(1,2) .eq. INLET)
           splft = merge(s(ie+1,j,comp),splft,i.eq.ie .and. phys_bc(1,2) .eq. INLET)
-          
+
           if (i .eq. ie .and. &
                (phys_bc(1,2).eq.SLIP_WALL.or.phys_bc(1,2).eq.NO_SLIP_WALL)) then
              if (is_vel .and. comp .eq. 1) then
@@ -335,7 +331,7 @@ contains
                 sprgt = splft
              endif
           endif
-          
+
           splus = merge(splft,sprgt,umac(i+1,j).gt.ZERO)
           savg  = HALF * (splft + sprgt)
           splus = merge(splus, savg, abs(umac(i+1,j)) .gt. eps)
@@ -399,5 +395,271 @@ contains
     enddo
     
   end subroutine make_edge_scal_2d
+
+  subroutine make_edge_scal_3d(n,s,sedgex,sedgey,sedgez,umac,vmac,wmac,force,w0,w0_cart_vec, &
+                               lo,dx,dt,is_vel,phys_bc,adv_bc,ng,comp)
+
+    use geometry, only: nr, spherical
+    use bc_module
+    use slope_module
+    use bl_constants_module
+
+    integer        , intent(in   ) :: n,lo(:)
+    real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
+    real(kind=dp_t), intent(inout) :: sedgex(lo(1)   :,lo(2)   :,lo(3)   :,:)
+    real(kind=dp_t), intent(inout) :: sedgey(lo(1)   :,lo(2)   :,lo(3)   :,:)
+    real(kind=dp_t), intent(inout) :: sedgez(lo(1)   :,lo(2)   :,lo(3)   :,:)
+    real(kind=dp_t), intent(in   ) ::   umac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
+    real(kind=dp_t), intent(in   ) ::   vmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
+    real(kind=dp_t), intent(in   ) ::   wmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
+    real(kind=dp_t), intent(in   ) ::  force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
+    real(kind=dp_t), intent(in   ) :: w0(0:)
+    real(kind=dp_t), intent(in   ) :: w0_cart_vec(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)
+    real(kind=dp_t), intent(in   ) :: dx(:),dt
+    logical        , intent(in   ) :: is_vel
+    integer        , intent(in   ) :: phys_bc(:,:)
+    integer        , intent(in   ) :: adv_bc(:,:,:)
+    integer        , intent(in   ) :: ng,comp
+
+    ! Local variables
+    real(kind=dp_t), allocatable :: slopex(:,:,:,:),slopey(:,:,:,:),slopez(:,:,:,:)
+    real(kind=dp_t), allocatable :: s_l(:),s_r(:),s_b(:),s_t(:),s_u(:),s_d(:)
+
+    real(kind=dp_t) :: hx,hy,hz,dth,splus,sminus
+    real(kind=dp_t) :: savg,st
+    real(kind=dp_t) :: sptop,spbot,smtop,smbot,splft,sprgt,smlft,smrgt
+    real(kind=dp_t) :: abs_eps,eps,umax
+
+    integer :: hi(3)
+    integer :: i,j,k,is,js,ks,ie,je,ke
+    logical :: test
+
+    hi(1) = lo(1) + size(s,dim=1) - (2*ng+1)
+    hi(2) = lo(2) + size(s,dim=2) - (2*ng+1)
+    hi(3) = lo(3) + size(s,dim=3) - (2*ng+1)
+    
+    is = lo(1)
+    ie = hi(1)
+    js = lo(2)
+    je = hi(2)
+    ks = lo(3)
+    ke = hi(3)
+
+    allocate(s_l(lo(1)-1:hi(1)+2))
+    allocate(s_r(lo(1)-1:hi(1)+2))
+    allocate(s_b(lo(2)-1:hi(2)+2))
+    allocate(s_t(lo(2)-1:hi(2)+2))
+    allocate(s_d(lo(3)-1:hi(3)+2))
+    allocate(s_u(lo(3)-1:hi(3)+2))
+
+    allocate(slopex(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1))
+    allocate(slopey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1))
+    allocate(slopez(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1))
+
+    do k = lo(3)-1,hi(3)+1
+       call slopex_2d(s(:,:,k,comp:),slopex(:,:,k,:),lo,ng,1,adv_bc)
+       call slopey_2d(s(:,:,k,comp:),slopey(:,:,k,:),lo,ng,1,adv_bc)
+    end do
+    call slopez_3d(s(:,:,:,comp:),slopez,lo,ng,1,adv_bc)
+
+    abs_eps = 1.0d-8
+    
+    dth = HALF*dt
+    
+    hx = dx(1)
+    hy = dx(2)
+    hz = dx(3)
+
+    umax = abs(umac(is,js,ks))
+
+    do k = ks,ke; do j = js,je; do i = is,ie+1
+       umax = max(umax,abs(umac(i,j,k)))
+    end do; end do; end do
+    do k = ks,ke; do j = js,je+1; do i = is,ie
+       umax = max(umax,abs(vmac(i,j,k)))
+    end do; end do; end do
+    do k = ks,ke+1; do j = js,je; do i = is,ie
+       umax = max(umax,abs(wmac(i,j,k)))
+    end do; end do; end do
+
+    if (umax .eq. 0.d0) then
+       eps = abs_eps
+    else
+       eps = abs_eps * umax
+    endif
+
+    !********************************
+    ! Loop for edge states on x-edges.
+    !********************************
+
+    do k = ks,ke
+       do j=js,je
+          do i = is-1,ie+1
+
+             spbot = s(i,j  ,k,comp) + (HALF - dth*vmac(i,j+1,k)/hy) * slopey(i,j  ,k,1)
+             sptop = s(i,j+1,k,comp) - (HALF + dth*vmac(i,j+1,k)/hy) * slopey(i,j+1,k,1)
+
+             sptop = merge(s(i,je+1,k,comp),sptop,j.eq.je .and. phys_bc(2,2) .eq. INLET)
+             spbot = merge(s(i,je+1,k,comp),spbot,j.eq.je .and. phys_bc(2,2) .eq. INLET)
+
+             if (j .eq. je .and. &
+                  (phys_bc(2,2).eq.SLIP_WALL.or.phys_bc(2,2).eq.NO_SLIP_WALL)) then
+                if (is_vel .and. comp.eq.2) then
+                   sptop = ZERO
+                   spbot = ZERO
+                elseif (is_vel .and. comp.ne.2) then
+                   sptop = merge(ZERO,spbot,phys_bc(2,2).eq.NO_SLIP_WALL)
+                   spbot = merge(ZERO,spbot,phys_bc(2,2).eq.NO_SLIP_WALL)
+                else
+                   sptop = spbot
+                endif
+             endif
+
+             splus = merge(spbot,sptop,vmac(i,j+1,k).gt.ZERO)
+             savg  = HALF * (spbot + sptop)
+             splus = merge(splus, savg, abs(vmac(i,j+1,k)) .gt. eps)
+
+             smtop = s(i,j  ,k,comp) - (HALF + dth*vmac(i,j,k)/hy) * slopey(i,j  ,k,1)
+             smbot = s(i,j-1,k,comp) + (HALF - dth*vmac(i,j,k)/hy) * slopey(i,j-1,k,1)
+
+             smtop = merge(s(i,js-1,k,comp),smtop,j.eq.js .and. phys_bc(2,1) .eq. INLET)
+             smbot = merge(s(i,js-1,k,comp),smbot,j.eq.js .and. phys_bc(2,1) .eq. INLET)
+
+             if (j .eq. js .and. &
+                  (phys_bc(2,1).eq.SLIP_WALL.or.phys_bc(2,1).eq.NO_SLIP_WALL)) then
+                if (is_vel .and. (comp .eq. 2)) then
+                   smtop = ZERO
+                   smbot = ZERO
+                elseif (is_vel .and. (comp .ne. 2)) then
+                   smbot = merge(ZERO,smtop,phys_bc(2,1).eq.NO_SLIP_WALL)
+                   smtop = merge(ZERO,smtop,phys_bc(2,1).eq.NO_SLIP_WALL)
+                else
+                   smbot = smtop
+                endif
+             endif
+
+             sminus = merge(smbot,smtop,vmac(i,j,k).gt.ZERO)
+             savg   = HALF * (smbot + smtop)
+             sminus = merge(sminus, savg, abs(vmac(i,j,k)) .gt. eps)
+
+             st = force(i,j,k,comp) - HALF * (vmac(i,j,k)+vmac(i,j+1,k))*(splus - sminus) / hy
+
+             spbot = s(i,j,k  ,comp) + (HALF - dth*wmac(i,j,k+1)/hz) * slopez(i,j,k  ,1)
+             sptop = s(i,j,k+1,comp) - (HALF + dth*wmac(i,j,k+1)/hz) * slopez(i,j,k+1,1)
+             
+             sptop = merge(s(i,j,ke+1,comp),sptop,k.eq.ke .and. phys_bc(3,2) .eq. INLET)
+             spbot = merge(s(i,j,ke+1,comp),spbot,k.eq.ke .and. phys_bc(3,2) .eq. INLET)
+                 
+             if (k .eq. ke .and. &
+                  (phys_bc(3,2).eq.SLIP_WALL.or.phys_bc(3,2).eq.NO_SLIP_WALL)) then
+                if (is_vel .and. comp .eq. 3) then
+                   sptop = ZERO
+                   spbot = ZERO
+                elseif (is_vel .and. (comp.ne.3)) then
+                   sptop = merge(ZERO,spbot,phys_bc(3,2).eq.NO_SLIP_WALL)
+                   spbot = merge(ZERO,spbot,phys_bc(3,2).eq.NO_SLIP_WALL)
+                else
+                   sptop = spbot
+                endif
+             endif
+                 
+             splus = merge(spbot,sptop,wmac(i,j,k+1).gt.ZERO)
+             savg  = HALF * (spbot + sptop)
+             splus = merge(splus, savg, abs(wmac(i,j,k+1)) .gt. eps)
+                 
+             smtop = s(i,j,k  ,comp) - (HALF + dth*wmac(i,j,k)/hz) * slopez(i,j,k  ,1)
+             smbot = s(i,j,k-1,comp) + (HALF - dth*wmac(i,j,k)/hz) * slopez(i,j,k-1,1)
+                 
+             smtop = merge(s(i,j,ks-1,comp),smtop,k.eq.ks .and. phys_bc(3,1) .eq. INLET)
+             smbot = merge(s(i,j,ks-1,comp),smbot,k.eq.ks .and. phys_bc(3,1) .eq. INLET)
+             
+             if (k .eq. ks .and. &
+                  (phys_bc(3,1).eq.SLIP_WALL.or.phys_bc(3,1).eq.NO_SLIP_WALL)) then
+                if (is_vel .and. (comp.eq.3)) then
+                   smtop = ZERO
+                   smbot = ZERO
+                elseif (is_vel .and. (comp.ne.3)) then
+                   smbot = merge(ZERO,smtop,phys_bc(3,1).eq.NO_SLIP_WALL)
+                   smtop = merge(ZERO,smtop,phys_bc(3,1).eq.NO_SLIP_WALL)
+                else
+                   smbot = smtop
+                endif
+             endif
+             
+             sminus = merge(smbot,smtop,wmac(i,j,k).gt.ZERO)
+             savg   = HALF * (smbot + smtop)
+             sminus = merge(sminus, savg, abs(wmac(i,j,k)) .gt. eps)
+
+             st = st - HALF * (wmac(i,j,k)+wmac(i,j,k+1))*(splus - sminus) / hz
+
+             ! NOTE NOTE : THIS IS WRONG FOR SPHERICAL !!
+             if (spherical .eq. 0 .and. is_vel .and. comp .eq. 3) then
+                ! wmac contains w0 so we need to subtract it off
+                st = st - HALF*(wmac(i,j,k)+wmac(i,j,k+1)-w0(k+1)-w0(k)) * (w0(k+1)-w0(k))/hz
+             end if
+
+             s_l(i+1) = s(i,j,k,comp) + (HALF-dth*umac(i+1,j,k)/hx)*slopex(i,j,k,1) + dth*st
+             s_r(i  ) = s(i,j,k,comp) - (HALF+dth*umac(i  ,j,k)/hx)*slopex(i,j,k,1) + dth*st
+
+          end do
+
+          do i = is, ie+1 
+             sedgex(i,j,k,comp)=merge(s_l(i),s_r(i),umac(i,j,k).gt.ZERO)
+             savg = HALF*(s_r(i) + s_l(i))
+             sedgex(i,j,k,comp)=merge(savg,sedgex(i,j,k,comp),abs(umac(i,j,k)) .lt. eps)
+          enddo
+              
+          if (phys_bc(1,1) .eq. SLIP_WALL .or. phys_bc(1,1) .eq. NO_SLIP_WALL) then
+             if (is_vel .and. comp .eq. 1) then
+                sedgex(is,j,k,comp) = ZERO
+             elseif (is_vel .and. comp .ne. 1) then
+                sedgex(is,j,k,comp) = merge(ZERO,s_r(is),phys_bc(1,1).eq.NO_SLIP_WALL)
+             else 
+                sedgex(is,j,k,comp) = s_r(is)
+             endif
+          elseif (phys_bc(1,1) .eq. INLET) then
+             sedgex(is,j,k,comp) = s(is-1,j,k,comp)
+          elseif (phys_bc(1,1) .eq. OUTLET) then
+             if (is_vel .and. comp.eq.1) then
+                sedgex(is,j,k,comp) = MIN(s_r(is),ZERO)
+             else
+                sedgex(is,j,k,comp) = s_r(is)
+             end if
+          endif
+          if (phys_bc(1,2) .eq. SLIP_WALL .or. phys_bc(1,2) .eq. NO_SLIP_WALL) then
+             if (is_vel .and. comp .eq. 1) then
+                sedgex(ie+1,j,k,comp) = ZERO
+             else if (is_vel .and. comp .ne. 1) then
+                sedgex(ie+1,j,k,comp) = merge(ZERO,s_l(ie+1),phys_bc(1,2).eq.NO_SLIP_WALL)
+             else 
+                sedgex(ie+1,j,k,comp) = s_l(ie+1)
+             endif
+          elseif (phys_bc(1,2) .eq. INLET) then
+             sedgex(ie+1,j,k,comp) = s(ie+1,j,k,comp)
+          elseif (phys_bc(1,2) .eq. OUTLET) then
+             if (is_vel .and. comp.eq.1) then
+                sedgex(ie+1,j,k,comp) = MAX(s_l(ie+1),ZERO)
+             else
+                sedgex(ie+1,j,k,comp) = s_l(ie+1)
+             end if
+          endif
+          
+       end do
+    end do
+
+    !********************************
+    ! Loop for edge states on y-edges.
+    !********************************
+
+
+
+    !********************************
+    ! Loop for edge states on z-edges.
+    !********************************
+
+
+
+  end subroutine make_edge_scal_3d
    
  end module make_edge_scal_module
+ 
