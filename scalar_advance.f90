@@ -278,7 +278,7 @@ contains
 !                        pred_comp,dm+pred_comp,1,mla)
 
     call make_edge_scal(nlevs,sold,sedge,umac,scal_force,w0, &
-                        w0_cart_vec,dx,dt,the_bc_level,&
+                        w0_cart_vec,dx,dt,is_vel,the_bc_level,&
                         pred_comp,dm+pred_comp,1,mla)
 
 
@@ -290,7 +290,7 @@ contains
 !                           w0_cart_vec,dx,dt,is_vel,the_bc_level,velpred, &
 !                           rho_comp,dm+rho_comp,1,mla)
        call make_edge_scal(nlevs,sold,sedge,umac,scal_force,w0, &
-                           w0_cart_vec,dx,dt,the_bc_level,&
+                           w0_cart_vec,dx,dt,is_vel,the_bc_level,&
                            rho_comp,dm+rho_comp,1,mla)
 
 
@@ -299,7 +299,7 @@ contains
 !                           w0_cart_vec,dx,dt,is_vel,the_bc_level,velpred, &
 !                           spec_comp,dm+spec_comp,nspec,mla)
        call make_edge_scal(nlevs,sold,sedge,umac,scal_force,w0, &
-                           w0_cart_vec,dx,dt,the_bc_level,&
+                           w0_cart_vec,dx,dt,is_vel,the_bc_level,&
                            spec_comp,dm+spec_comp,nspec,mla)
 
     else
