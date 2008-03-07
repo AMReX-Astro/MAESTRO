@@ -302,15 +302,6 @@ contains
                            w0_cart_vec,dx,dt,the_bc_level,&
                            spec_comp,dm+spec_comp,nspec,mla)
 
-
-       ! finally, convert X' at the edges to (rho X)'
-!      call make_edge_rhoX_from_X(nlevs,which_step,uold,sedge,umac,w0, &
-!                                 s0_old,s0_new, &
-!                                 s0_edge_old,s0_edge_new, &
-!                                 s0_predicted_edge, &
-!                                 s0_predicted_x_edge, &
-!                                 the_bc_level,dx,dt)
-
     else
        call make_edge_state(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0, &
                             w0_cart_vec,dx,dt,is_vel,the_bc_level,velpred, &
