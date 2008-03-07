@@ -315,8 +315,7 @@ contains
              st = force(i,j,comp) - HALF * (vtrans(i,j)+vtrans(i,j+1))*(splus - sminus) / hy
              
              if (is_vel .and. comp.eq.2) then
-!               st = st - HALF * (vtrans(i,j)+vtrans(i,j+1))*(w0(j+1)-w0(j))/hy
-!           john and andy n. changed this
+                ! vtrans contains w0 so we need to subtract it off
                 st = st - HALF * (vtrans(i,j)+vtrans(i,j+1)-w0(j+1)-w0(j))*(w0(j+1)-w0(j))/hy
              end if
              
@@ -771,7 +770,9 @@ contains
                  
                  ! NOTE NOTE : THIS IS WRONG FOR SPHERICAL !!
                  if (spherical .eq. 0 .and. is_vel .and. comp.eq.3) then
-                    st = st - HALF * (wtrans(i,j,k)+wtrans(i,j,k+1))*(w0(k+1)-w0(k))/hz
+                    ! wtrans contains w0 so we need to subtract it off
+                    st = st - HALF * (wtrans(i,j,k)+wtrans(i,j,k+1)-w0(k+1)-w0(k))* &
+                         (w0(k+1)-w0(k))/hz
                  end if
                  
                  ubardth = dth/hx * ( u(i,j,k,1) + w0_cart_vec(i,j,k,1))
@@ -967,12 +968,13 @@ contains
                  savg   = HALF * (smlft + smrgt)
                  sminus = merge(sminus, savg, abs(wtrans(i,j,k)) .gt. eps)
                  
-                 
                  st = st - HALF * (wtrans(i,j,k)+wtrans(i,j,k+1))*(splus - sminus) / hz
                  
                  ! NOTE NOTE : THIS IS WRONG FOR SPHERICAL !!
                  if (spherical .eq. 0 .and. is_vel .and. comp.eq.3) then
-                    st = st - HALF * (wtrans(i,j,k)+wtrans(i,j,k+1))*(w0(k+1)-w0(k))/hz
+                    ! wtrans contains w0 so we need to subtract it off
+                    st = st - HALF * (wtrans(i,j,k)+wtrans(i,j,k+1)-w0(k+1)-w0(k))* &
+                         (w0(k+1)-w0(k))/hz
                  end if
                  
                  vbardth = dth/hy * ( u(i,j,k,2) + w0_cart_vec(i,j,k,2))
