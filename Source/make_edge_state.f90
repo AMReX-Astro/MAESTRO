@@ -315,7 +315,9 @@ contains
              st = force(i,j,comp) - HALF * (vtrans(i,j)+vtrans(i,j+1))*(splus - sminus) / hy
              
              if (is_vel .and. comp.eq.2) then
-                st = st - HALF * (vtrans(i,j)+vtrans(i,j+1))*(w0(j+1)-w0(j))/hy
+!               st = st - HALF * (vtrans(i,j)+vtrans(i,j+1))*(w0(j+1)-w0(j))/hy
+!           john and andy n. changed this
+                st = st - HALF * (vtrans(i,j)+vtrans(i,j+1)-w0(j+1)-w0(j))*(w0(j+1)-w0(j))/hy
              end if
              
              ubardth = dth*u(i,j,1)/hx
