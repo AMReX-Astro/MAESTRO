@@ -11,7 +11,7 @@ module advect_base_module
 contains
 
   subroutine advect_base(which_step,nlevs,vel,Sbar_in,p0_old,p0_new, &
-                         s0_old,s0_new,gam1,div_coeff,eta, &
+                         s0_old,s0_new,gam1,div_coeff, &
                          s0_predicted_edge,s0_predicted_x_edge, &
                          dz,dt)
 
@@ -25,7 +25,6 @@ contains
     real(kind=dp_t), intent(  out) :: p0_new(:,0:), s0_new(:,0:,:)
     real(kind=dp_t), intent(inout) :: gam1(:,0:)
     real(kind=dp_t), intent(in   ) :: div_coeff(:,0:)
-    real(kind=dp_t), intent(in   ) :: eta(:,0:,:)
     real(kind=dp_t), intent(  out) :: s0_predicted_edge(:,0:,:)
     real(kind=dp_t), intent(  out) :: s0_predicted_x_edge(:,:,:)
     real(kind=dp_t), intent(in   ) :: dz(:)
@@ -41,14 +40,14 @@ contains
     do n=1,nlevs
        if (spherical .eq. 0) then
           call advect_base_state_planar(which_step,n,vel(n,0:),p0_old(n,0:),p0_new(n,0:), &
-                                        s0_old(n,0:,:),s0_new(n,0:,:),gam1(n,0:),eta(n,0:,:), &
+                                        s0_old(n,0:,:),s0_new(n,0:,:),gam1(n,0:), &
                                         s0_predicted_edge(n,0:,:), &
                                         s0_predicted_x_edge(n,:,:),dz(n),dt)
        else
           call advect_base_state_spherical(which_step,n,vel(n,:),Sbar_in(n,:,1), &
                                            p0_old(n,:),p0_new(n,:), &
                                            s0_old(n,:,:),s0_new(n,:,:), &
-                                           gam1(n,:),eta(n,0:,:), &
+                                           gam1(n,:), &
                                            s0_predicted_edge(n,0:,:),div_coeff(n,:),dt)
        end if
     enddo
@@ -59,7 +58,7 @@ contains
 
 
   subroutine advect_base_state_planar(which_step,n,vel,p0_old,p0_new, &
-                                      s0_old,s0_new,gam1,eta, &
+                                      s0_old,s0_new,gam1, &
                                       s0_predicted_edge,&
                                       s0_predicted_x_edge,dz,dt)
 
@@ -75,7 +74,6 @@ contains
     real(kind=dp_t), intent(in   ) :: p0_old(0:), s0_old(0:,:)
     real(kind=dp_t), intent(  out) :: p0_new(0:), s0_new(0:,:)
     real(kind=dp_t), intent(inout) :: gam1(0:)
-    real(kind=dp_t), intent(in   ) :: eta(0:,:)
     real(kind=dp_t), intent(  out) :: s0_predicted_edge(0:,:)
     real(kind=dp_t), intent(  out) :: s0_predicted_x_edge(0:,:)
     real(kind=dp_t), intent(in   ) :: dz,dt
@@ -83,7 +81,7 @@ contains
     ! Local variables
     integer :: r,comp
     integer :: r_anel
-    real(kind=dp_t) :: eta_avg, vel_avg
+    real(kind=dp_t) :: vel_avg
     
     real (kind = dp_t), allocatable :: force(:)
     real (kind = dp_t), allocatable :: edge(:)
@@ -96,15 +94,6 @@ contains
     ! Edge-centered
     allocate(edge(0:nr(n)))
    
-    ! This is used to zero the eta contribution above the anelastic_cutoff
-    r_anel = nr(n)-1
-    do r = 0,nr(n)-1
-       if (s0_old(r,rho_comp) .lt. anelastic_cutoff .and. r_anel .eq. nr(n)-1) then
-          r_anel = r
-          exit
-       end if
-    end do
-
     s0_predicted_edge(:,:) = ZERO
     s0_predicted_x_edge(:,:) = ZERO
 
@@ -112,11 +101,6 @@ contains
 ! UPDATE P0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     force = ZERO
-    if (which_step .eq. 2) then
-    do r = 0, r_anel-1
-       force(r) = HALF * (eta(r,rho_comp)+eta(r+1,rho_comp)) * abs(grav_const)
-    enddo
-    end if
 
     call make_edge_state_1d(n,p0_old,edge,vel,force,1,dz,dt)
 
@@ -124,12 +108,6 @@ contains
        p0_new(r) = p0_old(r) &
             - dt / dz * HALF * (vel(r) + vel(r+1)) * (edge(r+1) - edge(r)) 
     end do
-
-    do r = 0, r_anel-1
-      eta_avg = HALF * (eta(r,rho_comp)+eta(r+1,rho_comp))
-      p0_new(r) = p0_new(r) + dt * eta_avg * abs(grav_const)
-    end do
-
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! UPDATE RHOX0
@@ -189,12 +167,6 @@ contains
              force(r) = -s0_old(r,comp) * (vel(r+1) - vel(r)) / dz 
           end do
 
-          if (which_step .eq. 2) then
-             do r = 0, r_anel-1
-                force(r) = force(r) - (eta(r+1,comp) - eta(r,comp))/dz
-             end do
-          end if
-       
           call make_edge_state_1d(n,s0_old(:,comp),edge,vel,force,1,dz,dt)
 
           ! s0_predicted_edge will store (rho X)_0 on the edges
@@ -214,10 +186,6 @@ contains
           s0_new(r,comp) = s0_old(r,comp) &
                - dt / dz * (edge(r+1) * vel(r+1) - edge(r) * vel(r)) 
        end do
-
-       do r = 0, r_anel-1
-         s0_new(r,comp) = s0_new(r,comp) - dt/dz*(eta(r+1,comp) - eta(r,comp))
-       end do
        
     enddo
 
@@ -228,7 +196,7 @@ contains
     do r = 0,nr(n)-1
        s0_new(r,rho_comp) =  s0_old(r,rho_comp)
        do comp = spec_comp,spec_comp+nspec-1
-          s0_new(r,rho_comp) =  s0_new(r,rho_comp) + (s0_new(r,comp)-s0_old(r,comp))
+          s0_new(r,rho_comp) =  s0_new(r,rho_comp) + (s0_new(r,comp)-s0_old(r,comp)) 
        end do
     end do
     
@@ -240,14 +208,6 @@ contains
        force(r) = -s0_old(r,rhoh_comp) * (vel(r+1) - vel(r)) / dz
     end do
 
-    if (which_step .eq. 2) then
-    do r = 0, r_anel-1
-       eta_avg = HALF * (eta(r,rho_comp)+eta(r+1,rho_comp))
-       force(r) = force(r) - (eta(r+1,rhoh_comp) - eta(r,rhoh_comp))/dz + &
-            eta_avg * abs(grav_const)
-    end do
-    end if
-    
     call make_edge_state_1d(n,s0_old(:,rhoh_comp),edge,vel,force,1,dz,dt)
 
     s0_predicted_edge(:,rhoh_comp) = edge(:)
@@ -257,13 +217,6 @@ contains
             - dt / dz * (edge(r+1) * vel(r+1) - edge(r) * vel(r)) 
     end do
 
-    do r = 0, r_anel-1
-      eta_avg = HALF * (eta(r,rho_comp)+eta(r+1,rho_comp))
-      s0_new(r,rhoh_comp) = s0_new(r,rhoh_comp) &
-         - dt/dz * (eta(r+1,rhoh_comp) - eta(r,rhoh_comp)) &
-         + dt    *  eta_avg * abs(grav_const) 
-    end do
-    
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! MAKE TEMP0 AND GAM1 FROM P0 AND RHO0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -299,7 +252,7 @@ contains
   subroutine advect_base_state_spherical(which_step,n,vel,Sbar_in, &
                                          p0_old,p0_new, &
                                          s0_old,s0_new, &
-                                         gam1,eta, &
+                                         gam1, &
                                          s0_predicted_edge,div_coeff_old,dt)
 
     use bl_constants_module
@@ -316,7 +269,6 @@ contains
     real(kind=dp_t), intent(in   ) :: p0_old(0:), s0_old(0:,:)
     real(kind=dp_t), intent(  out) :: p0_new(0:), s0_new(0:,:)
     real(kind=dp_t), intent(inout) :: gam1(0:)
-    real(kind=dp_t), intent(in   ) :: eta(0:,:)
     real(kind=dp_t), intent(  out) :: s0_predicted_edge(0:,:)
     real(kind=dp_t), intent(in   ) :: div_coeff_old(0:)
     real(kind=dp_t), intent(in   ) :: dt

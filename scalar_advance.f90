@@ -191,14 +191,14 @@ contains
 
        ! rho' force
        call modify_scal_force(which_step,nlevs,scal_force,sold,umac, &
-                              s0_old,s0_edge_old,w0,eta, &
+                              s0_old,s0_edge_old,w0,&
                               dx,s0_old_cart,rho_comp,1,mla,the_bc_level)
 
     else
 
        ! make force for species (rho X)' continuity equation
        call modify_scal_force(which_step,nlevs,scal_force,sold,umac, &
-                              s0_old,s0_edge_old,w0,eta, &
+                              s0_old,s0_edge_old,w0,&
                               dx,s0_old_cart,spec_comp,nspec,mla,the_bc_level)
     endif
 
@@ -218,7 +218,7 @@ contains
                         dx,mla,the_bc_level)
        
        call modify_scal_force(which_step,nlevs,scal_force,sold,umac, &
-                              s0_old,s0_edge_old,w0,eta, &
+                              s0_old,s0_edge_old,w0,&
                               dx,s0_old_cart,rhoh_comp,1,mla,the_bc_level)
         
        if (use_thermal_diffusion) then
@@ -427,7 +427,7 @@ contains
     end do
 
     call update_scal(nlevs,spec_comp,spec_comp+nspec-1,sold,snew,umac,w0, &
-                     w0_cart_vec,eta,sedge,sflux,scal_force,s0_old,s0_edge_old,s0_new, &
+                     w0_cart_vec,sedge,sflux,scal_force,s0_old,s0_edge_old,s0_new, &
                      s0_edge_new,s0_old_cart,s0_new_cart,dx,dt,the_bc_level,mla)
     
     if ( verbose .ge. 1 ) then
@@ -457,7 +457,7 @@ contains
     
     if ( ntrac .ge. 1 ) then
        call update_scal(nlevs,trac_comp,trac_comp+ntrac-1,sold,snew,umac,w0, &
-                        w0_cart_vec,eta,sedge,sflux,scal_force,s0_old,s0_edge_old,s0_new, &
+                        w0_cart_vec,sedge,sflux,scal_force,s0_old,s0_edge_old,s0_new, &
                         s0_edge_new,s0_old_cart,s0_new_cart,dx,dt,the_bc_level,mla)
 
        if ( verbose .ge. 1 ) then
@@ -486,7 +486,7 @@ contains
     end if
 
     call update_scal(nlevs,rhoh_comp,rhoh_comp,sold,snew,umac,w0,w0_cart_vec, &
-                     eta,sedge,sflux,scal_force,s0_old,s0_edge_old,s0_new,s0_edge_new, &
+                     sedge,sflux,scal_force,s0_old,s0_edge_old,s0_new,s0_edge_new, &
                      s0_old_cart,s0_new_cart,dx,dt,the_bc_level,mla)
 
     if ( verbose .ge. 1 ) then

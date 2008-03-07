@@ -13,7 +13,7 @@ module update_scal_module
 
 contains
 
-  subroutine update_scal(nlevs,nstart,nstop,sold,snew,umac,w0,w0_cart_vec,eta, &
+  subroutine update_scal(nlevs,nstart,nstop,sold,snew,umac,w0,w0_cart_vec, &
                          sedge,sflux,scal_force,s0_old,s0_edge_old,s0_new,s0_edge_new, &
                          s0_old_cart,s0_new_cart,dx,dt,the_bc_level,mla)
 
@@ -32,7 +32,6 @@ contains
     type(multifab)    , intent(in   ) :: umac(:,:)
     real(kind=dp_t)   , intent(in   ) :: w0(:,0:)
     type(multifab)    , intent(in   ) :: w0_cart_vec(:)
-    real(kind=dp_t)   , intent(in   ) :: eta(:,0:,:)
     type(multifab)    , intent(in   ) :: sedge(:,:)
     type(multifab)    , intent(in   ) :: sflux(:,:)
     type(multifab)    , intent(in   ) :: scal_force(:)
@@ -98,7 +97,7 @@ contains
              call update_scal_2d(nstart, nstop, &
                                  sop(:,:,1,:), snp(:,:,1,:), &
                                  ump(:,:,1,1), vmp(:,:,1,1), &
-                                 w0(n,:), eta(n,:,:), &
+                                 w0(n,:), &
                                  sepx(:,:,1,:), sepy(:,:,1,:), &
                                  sfpx(:,:,1,:), sfpy(:,:,1,:), &
                                  fp(:,:,1,:), &
@@ -113,7 +112,7 @@ contains
                 call update_scal_3d_cart(nstart, nstop, &
                                          sop(:,:,:,:), snp(:,:,:,:), &
                                          ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
-                                         w0(n,:), eta(n,:,:), &
+                                         w0(n,:), &
                                          sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
                                          sfpx(:,:,:,:), sfpy(:,:,:,:), sfpz(:,:,:,:), &
                                          fp(:,:,:,:), &
@@ -190,13 +189,12 @@ contains
 
   end subroutine update_scal
 
-  subroutine update_scal_2d(nstart,nstop,sold,snew,umac,vmac,w0,eta, &
+  subroutine update_scal_2d(nstart,nstop,sold,snew,umac,vmac,w0, &
                             sedgex,sedgey,sfluxx,sfluxy,force,base_old,base_old_edge, &
                             base_new,base_new_edge,lo,hi,ng_s,dx,dt)
 
     use network,       only: nspec
     use variables,     only: spec_comp, rho_comp
-    use probin_module, only: evolve_base_state, anelastic_cutoff
     use bl_constants_module
 
 
@@ -216,24 +214,12 @@ contains
     real (kind = dp_t), intent(in   ) ::   base_old(0:,:), base_old_edge(0:,:)
     real (kind = dp_t), intent(in   ) ::   base_new(0:,:), base_new_edge(0:,:)
     real (kind = dp_t), intent(in   ) :: w0(0:)
-    real (kind = dp_t), intent(in   ) :: eta(0:,:)
     real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
     integer            :: i, j, comp, comp2
-    integer            :: nr, r, r_anel
     real (kind = dp_t) :: delta_base,divterm
-    real (kind = dp_t) :: delta,frac,sum,temp
+    real (kind = dp_t) :: delta,frac,sum
     real (kind = dp_t) :: smin(nstart:nstop),smax(nstart:nstop)
-
-    ! This is used to zero the eta contribution above the anelastic_cutoff
-    nr = size(base_old,dim=1)
-    r_anel = nr-1
-    do r = 0,nr-1
-       if (base_old(r,rho_comp) .lt. anelastic_cutoff .and. r_anel .eq. nr-1) then
-          r_anel = r
-          exit
-       end if
-    end do
 
     do comp = nstart, nstop
        do j = lo(2), hi(2)
@@ -251,10 +237,6 @@ contains
 
              snew(i,j,comp) = sold(i,j,comp) + delta_base &
                   - dt * divterm + dt * force(i,j,comp)
-
-             if (evolve_base_state .and. j .lt. r_anel) then
-                snew(i,j,comp) = snew(i,j,comp) + dt/dx(2)*(eta(j+1,comp)-eta(j,comp))
-             end if
 
           enddo
        enddo
@@ -313,12 +295,11 @@ contains
   end subroutine update_scal_2d
 
   subroutine update_scal_3d_cart(nstart,nstop,sold,snew,umac,vmac,wmac,w0, &
-                                 eta,sedgex,sedgey,sedgez,sfluxx,sfluxy,sfluxz,force, &
+                                 sedgex,sedgey,sedgez,sfluxx,sfluxy,sfluxz,force, &
                                  base_old,base_old_edge,base_new,base_new_edge,lo,hi, &
                                  ng_s,dx,dt)
     use network,       only: nspec
     use variables,     only: spec_comp, rho_comp
-    use probin_module, only: evolve_base_state
     use bl_constants_module
 
 
@@ -338,7 +319,6 @@ contains
     real (kind = dp_t), intent(in   ) ::   base_old(0:,:), base_old_edge(0:,:)
     real (kind = dp_t), intent(in   ) ::   base_new(0:,:), base_new_edge(0:,:)
     real (kind = dp_t), intent(in   ) :: w0(0:)
-    real (kind = dp_t), intent(in   ) :: eta(0:,:)
     real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
     integer            :: i, j, k, comp, comp2
@@ -350,21 +330,21 @@ contains
 
        do k = lo(3), hi(3)
 
-          delta_base = base_new(k,comp) - base_old(k,comp)
+          if (comp .ge. spec_comp .and. comp .le. spec_comp+nspec-1) then
+            delta_base = ZERO
+          else
+            delta_base = base_new(k,comp) - base_old(k,comp)
+          end if
 
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
 
                 divterm = (sfluxx(i+1,j,k,comp) - sfluxx(i,j,k,comp))/dx(1) &
-                     + (sfluxy(i,j+1,k,comp) - sfluxy(i,j,k,comp))/dx(2) &
-                     + (sfluxz(i,j,k+1,comp) - sfluxz(i,j,k,comp))/dx(3)
+                        + (sfluxy(i,j+1,k,comp) - sfluxy(i,j,k,comp))/dx(2) &
+                        + (sfluxz(i,j,k+1,comp) - sfluxz(i,j,k,comp))/dx(3)
 
                 snew(i,j,k,comp) = sold(i,j,k,comp) + delta_base &
                      - dt * divterm + dt * force(i,j,k,comp)
-
-                if (evolve_base_state) then
-                   snew(i,j,k,comp) = snew(i,j,k,comp) + dt/dx(3)*(eta(k+1,comp)-eta(k,comp))
-                end if
 
              enddo
           enddo
@@ -431,7 +411,6 @@ contains
                                  lo,hi,domlo,domhi,ng_s,dx,dt)
     use network,       only: nspec
     use variables,     only: spec_comp, rho_comp
-    use probin_module, only: evolve_base_state
     use bl_constants_module
 
     integer           , intent(in   ) :: nstart, nstop
@@ -456,7 +435,7 @@ contains
     real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
     integer            :: i, j, k, comp, comp2
-    real (kind = dp_t) :: divterm
+    real (kind = dp_t) :: divterm,delta_base
     real (kind = dp_t) :: delta,frac,sum
     real (kind = dp_t) :: smin(nstart:nstop),smax(nstart:nstop)
 
@@ -468,12 +447,17 @@ contains
              do j = lo(2), hi(2)
                 do i = lo(1), hi(1)
 
-                   divterm = (sfluxx(i+1,j,k,comp) - sfluxx(i,j,k,comp))/dx(1) &
-                        + (sfluxy(i,j+1,k,comp) - sfluxy(i,j,k,comp))/dx(2) &
-                        + (sfluxz(i,j,k+1,comp) - sfluxz(i,j,k,comp))/dx(3)
+                   if (comp .ge. spec_comp .and. comp .le. spec_comp+nspec-1) then
+                     delta_base = ZERO
+                   else
+                     delta_base = base_new_cart(i,j,k,comp) - base_old_cart(i,j,k,comp)
+                   end if
 
-                   snew(i,j,k,comp) = sold(i,j,k,comp) + &
-                        (base_new_cart(i,j,k,comp)-base_old_cart(i,j,k,comp)) &
+                   divterm = (sfluxx(i+1,j,k,comp) - sfluxx(i,j,k,comp))/dx(1) &
+                           + (sfluxy(i,j+1,k,comp) - sfluxy(i,j,k,comp))/dx(2) &
+                           + (sfluxz(i,j,k+1,comp) - sfluxz(i,j,k,comp))/dx(3)
+
+                   snew(i,j,k,comp) = sold(i,j,k,comp) + delta_base &
                         - dt * divterm + dt * force(i,j,k,comp)
 
                 enddo
