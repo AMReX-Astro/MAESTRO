@@ -23,6 +23,7 @@ contains
     use bl_prof_module
     use bl_constants_module
     use make_edge_state_module
+    use make_edge_scal_module
     use mkflux_module
     use mkscalforce_module
     use update_scal_module
@@ -162,6 +163,7 @@ contains
     ! (and base state) from (rho X) to X.  Note, only the time-level n
     ! stuff need be converted, since that's all the prediction uses
     if (predict_X_at_edges) then
+
        call convert_rhoX_to_X(nlevs,sold,dx,.true.,mla,the_bc_level)
 
        if (spherical .eq. 1) &
@@ -184,8 +186,8 @@ contains
        ! continuity equation
        
        ! X' force
+!      Set force to zero because we are not doing perturbational form 
        call mkXforce(nlevs,scal_force,umac,s0_old,normal,dx,mla,the_bc_level)
-
 
        ! rho' force
        call modify_scal_force(which_step,nlevs,scal_force,sold,umac, &
@@ -244,8 +246,9 @@ contains
     end if
 
     ! switch (rho X) to (rho X') or X to X' (if we are predicting X')
-    call put_in_pert_form(nlevs,sold,s0_old,dx,spec_comp,nspec,.true., &
-                          mla,the_bc_level)
+!   DONT PUT X IN PERT FORM 
+!   call put_in_pert_form(nlevs,sold,s0_old,dx,spec_comp,nspec,.true., &
+!                         mla,the_bc_level)
 
     ! if we are predicting X' on the edges, then we also need to predict rho',
     ! so make the perturbational form of density now
@@ -270,31 +273,43 @@ contains
        pred_comp = rhoh_comp
     end if
     
-    call make_edge_state(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0, &
-                         w0_cart_vec,dx,dt,is_vel,the_bc_level,velpred, &
-                         pred_comp,dm+pred_comp,1,mla)
+!   call make_edge_state(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0, &
+!                        w0_cart_vec,dx,dt,is_vel,the_bc_level,velpred, &
+!                        pred_comp,dm+pred_comp,1,mla)
+
+    call make_edge_scal(nlevs,sold,sedge,umac,scal_force,w0, &
+                        w0_cart_vec,dx,dt,the_bc_level,&
+                        pred_comp,dm+pred_comp,1,mla)
 
 
     ! create species edge states
     if (predict_X_at_edges) then
 
        ! first predict rho' at the edges
-       call make_edge_state(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0, &
-                            w0_cart_vec,dx,dt,is_vel,the_bc_level,velpred, &
-                            rho_comp,dm+rho_comp,1,mla)
+!      call make_edge_state(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0, &
+!                           w0_cart_vec,dx,dt,is_vel,the_bc_level,velpred, &
+!                           rho_comp,dm+rho_comp,1,mla)
+       call make_edge_scal(nlevs,sold,sedge,umac,scal_force,w0, &
+                           w0_cart_vec,dx,dt,the_bc_level,&
+                           rho_comp,dm+rho_comp,1,mla)
 
 
        ! now compute X' at the edges
-       call make_edge_state(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0, &
-                            w0_cart_vec,dx,dt,is_vel,the_bc_level,velpred, &
-                            spec_comp,dm+spec_comp,nspec,mla)
+!      call make_edge_state(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0, &
+!                           w0_cart_vec,dx,dt,is_vel,the_bc_level,velpred, &
+!                           spec_comp,dm+spec_comp,nspec,mla)
+       call make_edge_scal(nlevs,sold,sedge,umac,scal_force,w0, &
+                           w0_cart_vec,dx,dt,the_bc_level,&
+                           spec_comp,dm+spec_comp,nspec,mla)
 
 
        ! finally, convert X' at the edges to (rho X)'
-       call make_edge_rhoX_from_X(nlevs,uold,sedge, &
-                                  s0_predicted_edge, &
-                                  s0_predicted_x_edge, &
-                                  the_bc_level,dx)
+!      call make_edge_rhoX_from_X(nlevs,which_step,uold,sedge,umac,w0, &
+!                                 s0_old,s0_new, &
+!                                 s0_edge_old,s0_edge_new, &
+!                                 s0_predicted_edge, &
+!                                 s0_predicted_x_edge, &
+!                                 the_bc_level,dx,dt)
 
     else
        call make_edge_state(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0, &
@@ -309,8 +324,9 @@ contains
                              mla,the_bc_level)
     end if
 
-    call put_in_pert_form(nlevs,sold,s0_old,dx,spec_comp,nspec,.false., &
-                          mla,the_bc_level)
+!   DONT NEED TO REVERSE BECAUSE DIDNT PUT X IN PERT FORM 
+!   call put_in_pert_form(nlevs,sold,s0_old,dx,spec_comp,nspec,.false., &
+!                         mla,the_bc_level)
 
     if (predict_X_at_edges) &
          call put_in_pert_form(nlevs,sold,s0_old,dx,rho_comp,1,.false., &
@@ -387,7 +403,7 @@ contains
                 s0_new,s0_edge_new,s0_new_cart, &
                 s0_predicted_edge, &
                 s0_predicted_x_edge, &
-                rhoh_comp,rhoh_comp,which_step,mla)
+                rhoh_comp,rhoh_comp,which_step,mla,dx,dt)
 
 
     ! compute species fluxes
@@ -396,7 +412,7 @@ contains
                 s0_new,s0_edge_new,s0_new_cart, &
                 s0_predicted_edge, &
                 s0_predicted_x_edge, &
-                spec_comp,spec_comp+nspec-1,which_step,mla)
+                spec_comp,spec_comp+nspec-1,which_step,mla,dx,dt)
 
 
     if (ntrac .ge. 1) then
@@ -406,7 +422,7 @@ contains
                    s0_new,s0_edge_new,s0_new_cart, &
                    s0_predicted_edge, &
                    s0_predicted_x_edge, &
-                   trac_comp,trac_comp+ntrac-1,which_step,mla)
+                   trac_comp,trac_comp+ntrac-1,which_step,mla,dx,dt)
     end if
 
     !**************************************************************************

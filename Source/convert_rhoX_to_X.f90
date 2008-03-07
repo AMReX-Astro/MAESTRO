@@ -190,10 +190,12 @@ contains
 
 
 
-  subroutine make_edge_rhoX_from_X(nlevs,u,sedge, &
+  subroutine make_edge_rhoX_from_X(nlevs,which_step,u,sedge,umac,w0, &
+                                   s0_old, s0_new, &
+                                   s0_edge_old, s0_edge_new, &
                                    s0_predicted_edge, &
                                    s0_predicted_x_edge, &
-                                   the_bc_level,dx)
+                                   the_bc_level,dx,dt)
 
 
     ! here we take the edge states of X' and rho', and together with the base
@@ -213,13 +215,19 @@ contains
     use define_bc_module
     use multifab_physbc_module
     
-    integer        , intent(in   ) :: nlevs
+    integer        , intent(in   ) :: nlevs, which_step
     type(multifab) , intent(in   ) :: u(:)
     type(multifab) , intent(inout) :: sedge(:,:)
+    type(multifab) , intent(in   ) :: umac(:,:)
+    real(kind=dp_t), intent(in   ) :: w0(:,0:)
+    real(kind=dp_t), intent(in   ) :: s0_old(:,0:,:)
+    real(kind=dp_t), intent(in   ) :: s0_new(:,0:,:)
+    real(kind=dp_t), intent(in   ) :: s0_edge_old(:,0:,:)
+    real(kind=dp_t), intent(in   ) :: s0_edge_new(:,0:,:)
     real(kind=dp_t), intent(in   ) :: s0_predicted_edge(:,0:,:)
     real(kind=dp_t), intent(in   ) :: s0_predicted_x_edge(:,0:,:)
     type(bc_level) , intent(in   ) :: the_bc_level(:)
-    real(kind=dp_t), intent(in   ) :: dx(:,:)
+    real(kind=dp_t), intent(in   ) :: dx(:,:),dt
     
     ! local
     integer :: i,dm,n
@@ -227,6 +235,7 @@ contains
     real(kind=dp_t), pointer :: sepx(:,:,:,:)
     real(kind=dp_t), pointer :: sepy(:,:,:,:)
     real(kind=dp_t), pointer :: sepz(:,:,:,:)
+    real(kind=dp_t), pointer ::  vmp(:,:,:,:)
 
     type(bl_prof_timer), save :: bpt
 
@@ -241,14 +250,18 @@ contains
           if ( multifab_remote(u(n),i) ) cycle
           sepx => dataptr(sedge(n,1), i)
           sepy => dataptr(sedge(n,2), i)
+          vmp  => dataptr(umac(n,2), i)
           lo = lwb(get_box(u(n),i))
           hi = upb(get_box(u(n),i))
           select case (dm)
           case (2)
-             call make_edge_rhoX_from_X_2d(sepx(:,:,1,:), sepy(:,:,1,:), &
+             call make_edge_rhoX_from_X_2d(which_step,sepx(:,:,1,:), sepy(:,:,1,:), &
+                                           vmp(:,:,1,1), w0(n,:), &
+                                           s0_old(n,:,:), s0_new(n,:,:), &
+                                           s0_edge_old(n,:,:), s0_edge_new(n,:,:), &
                                            s0_predicted_edge(n,:,:), &
                                            s0_predicted_x_edge(n,:,:), &
-                                           lo, hi)
+                                           lo, hi, dx(n,dm), dt)
 
           case (3)
              sepz => dataptr(sedge(n,3),i)
@@ -276,35 +289,66 @@ contains
     
   end subroutine make_edge_rhoX_from_X
 
-  subroutine make_edge_rhoX_from_X_2d(sx,sy, &
+  subroutine make_edge_rhoX_from_X_2d(which_step,sx,sy,vmac,w0, &
+                                      s0_old, s0_new, &
+                                      s0_edge_old, s0_edge_new, &
                                       s0_predicted_edge, &
                                       s0_predicted_x_edge, &
-                                      lo,hi)
+                                      lo,hi,dz,dt)
 
     use bl_constants_module
     use variables,     only: rho_comp, spec_comp
     use network, only: nspec
+    use make_edge_state_module, only: make_edge_state_1d
 
+    integer        , intent(in   ) :: which_step
     integer        , intent(in   ) :: lo(:),hi(:)
     real(kind=dp_t), intent(inout) :: sx(lo(1):,lo(2):,:)
     real(kind=dp_t), intent(inout) :: sy(lo(1):,lo(2):,:)
+    real(kind=dp_t), intent(in   ) ::    vmac(lo(1)-1:,lo(2)-1:)
+    real(kind=dp_t), intent(in   ) :: s0_old(0:,:)
+    real(kind=dp_t), intent(in   ) :: s0_new(0:,:)
+    real(kind=dp_t), intent(in   ) :: s0_edge_old(0:,:)
+    real(kind=dp_t), intent(in   ) :: s0_edge_new(0:,:)
     real(kind=dp_t), intent(in   ) :: s0_predicted_edge(0:,:)
     real(kind=dp_t), intent(in   ) :: s0_predicted_x_edge(0:,:)
+    real(kind=dp_t), intent(in   ) :: w0(0:)
+    real(kind=dp_t), intent(in   ) :: dz,dt
 
-    real(kind=dp_t) :: rho0_edge, X0_edge
+    real(kind=dp_t) :: rho0_edge, X0_edge, rho_prime, X_prime
+    real(kind=dp_t), allocatable :: vel(:),edge(:),X0(:),force(:)
     integer :: i, j, comp    
+
+    ! edge-based
+    allocate( vel(lo(2):hi(2)+1))
+    allocate(edge(lo(2):hi(2)+1))
+
+    ! cell-based
+    allocate(   X0(lo(2):hi(2)  ))
+    allocate(force(lo(2):hi(2)  ))
 
     ! x-interfaces
     do comp = spec_comp, spec_comp+nspec-1
 
        do j = lo(2), hi(2)
-          do i = lo(1), hi(1)+1
                     
-               X0_edge = s0_predicted_x_edge(j,    comp)
-             rho0_edge = s0_predicted_x_edge(j,rho_comp)
+!         rho0_edge = s0_predicted_x_edge(j,rho_comp)
 
-             sx(i,j,comp) = (rho0_edge + sx(i,j,rho_comp))*sx(i,j,comp) + &
-                            sx(i,j,rho_comp)*X0_edge
+          if (which_step .eq. 1) then
+            rho0_edge = s0_old(j,rho_comp)
+          else
+            rho0_edge = HALF * (s0_old(j,rho_comp)+s0_new(j,rho_comp))
+          end if
+
+          X0_edge = s0_predicted_x_edge(j,    comp)
+
+          do i = lo(1), hi(1)+1
+
+             rho_prime = sx(i,j,rho_comp)
+               X_prime = sx(i,j,    comp)
+
+             sx(i,j,comp) = (rho0_edge + rho_prime) * X_prime + &
+                                         rho_prime  * X0_edge
                     
           enddo
        enddo
@@ -314,14 +358,34 @@ contains
     ! y-interfaces
     do comp = spec_comp, spec_comp+nspec-1
 
-       do j = lo(2), hi(2)+1
-          do i = lo(1), hi(1)
-          
-             ! s0_predicted_edge is on the y-edges, so we use them directly.
+       X0(:) = s0_old(:,comp)
+       force = ZERO
 
-             sy(i,j,comp) = (s0_predicted_edge(j,rho_comp) + &
-                             sy(i,j,rho_comp))*sy(i,j,comp) + &
-                            (sy(i,j,rho_comp)*s0_predicted_edge(j,comp))
+       do i = lo(1), hi(1)
+
+          do j=lo(2),hi(2)+1
+            vel(j) = w0(j) + vmac(i,j)
+          end do
+          call make_edge_spec_1d(X0,edge,vel,force,dz,dt)
+
+          do j = lo(2), hi(2)+1
+          
+!            rho0_edge = s0_predicted_edge(j,rho_comp)
+
+             if (which_step .eq. 1) then
+               rho0_edge = s0_edge_old(j,rho_comp)
+             else
+               rho0_edge = HALF * (s0_edge_old(j,rho_comp)+s0_edge_new(j,rho_comp))
+             end if
+
+!              X0_edge = s0_predicted_edge(j,    comp)
+               X0_edge = edge(j)
+
+             rho_prime = sy(i,j,rho_comp)
+               X_prime = sy(i,j,    comp)
+
+             sy(i,j,comp) = (rho0_edge + rho_prime) * X_prime + &
+                                         rho_prime  * X0_edge 
 
           enddo
        enddo
@@ -329,6 +393,116 @@ contains
     enddo
     
   end subroutine make_edge_rhoX_from_X_2d
+
+  subroutine make_edge_spec_1d(s,sedgex,umac,force,dx,dt)
+
+     use geometry, only: nr
+     use probin_module, only: slope_order
+     use bl_constants_module
+     
+     real(kind=dp_t), intent(in   ) ::      s(:)
+     real(kind=dp_t), intent(inout) :: sedgex(:)
+     real(kind=dp_t), intent(in   ) ::   umac(:)
+     real(kind=dp_t), intent(in   ) ::  force(:)
+     real(kind=dp_t), intent(in   ) :: dx,dt
+     
+     real(kind=dp_t), allocatable::  slopex(:)
+     real(kind=dp_t), allocatable::  s_l(:),s_r(:)
+     real(kind=dp_t), allocatable:: dxscr(:,:)
+     real(kind=dp_t) :: dmin,dpls,ds,del,slim,sflag
+     real(kind=dp_t) :: ubardth, dth, savg
+     real(kind=dp_t) :: abs_eps, eps, umax, u
+     
+     integer :: i,is,ie,hi,lo
+     integer        , parameter :: cen = 1, lim = 2, flag = 3, fromm = 4
+     real(kind=dp_t), parameter :: fourthirds = 4.0_dp_t / 3.0_dp_t
+     
+     lo = 1
+     hi = lo + size(force,dim=1) - 1
+     
+     allocate(s_l(lo-1:hi+2),s_r(lo-1:hi+2))
+     allocate(slopex(lo:hi))
+     allocate(dxscr(lo:hi,4))
+     
+     abs_eps = 1.0d-8
+     
+     dth = HALF*dt
+     
+     is = lo
+     ie = hi
+     
+     umax = ZERO
+     do i = is,ie+1
+        umax = max(umax,abs(umac(i)))
+     end do
+     
+     eps = abs_eps * umax
+
+     if (slope_order .eq. 0) then
+
+        slopex = ZERO
+
+     else if (slope_order .eq. 2) then
+
+        do i = is+1,ie-1
+           del = half*(s(i+1) - s(i-1))
+           dpls = two*(s(i+1) - s(i  ))
+           dmin = two*(s(i  ) - s(i-1))
+           slim = min(abs(dpls), abs(dmin))
+           slim = merge(slim, zero, dpls*dmin.gt.ZERO)
+           sflag = sign(one,del)
+           slopex(i)= sflag*min(slim,abs(del))
+        enddo
+     
+        slopex(is) = ZERO
+        slopex(ie) = ZERO
+
+     else if (slope_order .eq. 4) then
+     
+        do i = is+1,ie-1
+           dxscr(i,cen) = half*(s(i+1)-s(i-1))
+           dpls = two*(s(i+1)-s(i  ))
+           dmin = two*(s(i  )-s(i-1))
+           dxscr(i,lim)= min(abs(dmin),abs(dpls))
+           dxscr(i,lim) = merge(dxscr(i,lim),zero,dpls*dmin.gt.ZERO)
+           dxscr(i,flag) = sign(one,dxscr(i,cen))
+           dxscr(i,fromm)= dxscr(i,flag)*min(dxscr(i,lim),abs(dxscr(i,cen)))
+        enddo
+     
+        dxscr(is,fromm) = ZERO
+        dxscr(ie,fromm) = ZERO
+     
+        do i = is+1,ie-1
+           ds = fourthirds * dxscr(i,cen) - sixth * (dxscr(i+1,fromm) + dxscr(i-1,fromm))
+           slopex(i) = dxscr(i,flag)*min(abs(ds),dxscr(i,lim))
+        enddo
+     
+        slopex(is) = ZERO
+        slopex(ie) = ZERO
+
+     end if
+        
+     ! Compute edge values using slopes and forcing terms.
+     do i = is,ie
+        
+        u = HALF * (umac(i) + umac(i+1))
+        ubardth = dth*u/dx
+        
+        s_l(i+1)= s(i) + (HALF-ubardth)*slopex(i) + dth * force(i)
+        s_r(i  )= s(i) - (HALF+ubardth)*slopex(i) + dth * force(i)
+        
+     enddo
+     
+     sedgex(is  ) = s_r(is  )
+     sedgex(ie+1) = s_l(ie+1)
+     
+     do i = is+1, ie 
+        sedgex(i)=merge(s_l(i),s_r(i),umac(i).gt.ZERO)
+        savg = HALF*(s_r(i) + s_l(i))
+        sedgex(i)=merge(savg,sedgex(i),abs(umac(i)) .lt. eps)
+     enddo
+     
+  end subroutine make_edge_spec_1d
   
 
   subroutine make_edge_rhoX_from_X_3d_cart(sx,sy,sz, &

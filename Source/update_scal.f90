@@ -222,7 +222,7 @@ contains
     integer            :: i, j, comp, comp2
     integer            :: nr, r, r_anel
     real (kind = dp_t) :: delta_base,divterm
-    real (kind = dp_t) :: delta,frac,sum
+    real (kind = dp_t) :: delta,frac,sum,temp
     real (kind = dp_t) :: smin(nstart:nstop),smax(nstart:nstop)
 
     ! This is used to zero the eta contribution above the anelastic_cutoff
@@ -238,7 +238,11 @@ contains
     do comp = nstart, nstop
        do j = lo(2), hi(2)
 
-          delta_base = base_new(j,comp) - base_old(j,comp)
+          if (comp .ge. spec_comp .and. comp .le. spec_comp+nspec-1) then
+            delta_base = ZERO
+          else
+            delta_base = base_new(j,comp) - base_old(j,comp)
+          end if
 
           do i = lo(1), hi(1)
 
@@ -277,6 +281,7 @@ contains
     end if
 
     ! Do not allow the species to leave here negative.
+    if(0.eq.1)then
     if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
        do comp = nstart, nstop
           if (smin(comp) .lt. ZERO) then 
@@ -302,6 +307,7 @@ contains
              enddo
           end if
        enddo
+    end if
     end if
 
   end subroutine update_scal_2d

@@ -15,7 +15,7 @@ contains
   subroutine mkflux(nlevs,sflux,etaflux,sold,sedge,umac,w0,w0_cart_vec,s0_old,s0_edge_old, &
                     s0_old_cart,s0_new,s0_edge_new,s0_new_cart, &
                     s0_predicted_edge, s0_predicted_x_edge, &
-                    startcomp,endcomp,which_step,mla)
+                    startcomp,endcomp,which_step,mla,dx,dt)
 
     use bl_prof_module
     use bl_constants_module
@@ -38,6 +38,7 @@ contains
     real(kind=dp_t), intent(in   ) :: s0_predicted_x_edge(:,0:,:)
     integer        , intent(in   ) :: startcomp,endcomp,which_step
     type(ml_layout), intent(inout) :: mla
+    real(kind=dp_t), intent(in   ) :: dx(:,:),dt
 
     ! local    
     type(box) :: domain
@@ -94,7 +95,7 @@ contains
                             s0_predicted_edge(n,:,:), &
                             s0_predicted_x_edge(n,:,:), &
                             w0(n,:), &
-                            startcomp,endcomp,which_step,lo,hi)
+                            startcomp,endcomp,which_step,lo,hi,dx(n,:),dt)
           case (3)
              sfzp => dataptr(sflux(n,3),i)
              sezp => dataptr(sedge(n,3),i)
@@ -142,7 +143,8 @@ contains
   end subroutine mkflux
   
   subroutine mkflux_2d(sfluxx,sfluxy,etaflux,sedgex,sedgey,umac,vmac,s0_old,s0_edge_old, &
-                       s0_new,s0_edge_new,s0_pred_edge,s0_pred_x_edge,w0,startcomp,endcomp,which_step,lo,hi)
+                       s0_new,s0_edge_new,s0_pred_edge,s0_pred_x_edge,w0,startcomp,endcomp,which_step,lo,hi, &
+                       dx,dt)
 
     use bl_constants_module
     use variables, only : spec_comp, rho_comp
@@ -163,75 +165,273 @@ contains
     real(kind=dp_t), intent(in   ) :: s0_pred_x_edge(0:,:)
     real(kind=dp_t), intent(in   ) :: w0(0:)
     integer        , intent(in   ) :: startcomp,endcomp,which_step
+    real(kind=dp_t), intent(in   ) :: dx(:),dt
 
     ! local
     integer :: comp
     integer :: i,j
-    real(kind=dp_t) :: s0_edge
+    real(kind=dp_t) :: vel_avg,w0_avg,s0_edge
+    real(kind=dp_t) :: rho_prime, rho0_edge
+
+    ! NOTE NOTE NOTE ! NOTE NOTE NOTE ! NOTE NOTE NOTE ! NOTE NOTE NOTE 
+    !
+    !  !!!!!!!!!!!!!!! THE EDGE STATES ARE NOW COMING IN AS FULL X !!!!!!!!!!!!!
+    !
+    ! NOTE NOTE NOTE ! NOTE NOTE NOTE ! NOTE NOTE NOTE ! NOTE NOTE NOTE 
 
     ! loop over components
     do comp = startcomp, endcomp
 
        ! create x-fluxes
-       do j=lo(2),hi(2)
-          do i=lo(1),hi(1)+1
+       do i=lo(1),hi(1)+1
 
-             if ( (comp .ge. spec_comp) .and. (comp .le.  spec_comp+nspec-1) ) then
+          if ( (comp .ge. spec_comp) .and. (comp .le.  spec_comp+nspec-1) ) then
+
+             do j=lo(2),hi(2)
 
                 if (predict_X_at_edges) then
-                  s0_edge = s0_pred_x_edge(j,comp) * s0_pred_x_edge(j  ,rho_comp) 
+
+                  if (which_step .eq. 1) then
+                     rho0_edge = s0_old(j,rho_comp)
+                  else
+                     rho0_edge = HALF*(s0_old(j,rho_comp)+s0_new(j,rho_comp))
+                  end if
+
+                  rho_prime = sedgex(i,j,rho_comp)
+
+                  sfluxx(i,j,comp) = umac(i,j)*(rho0_edge+rho_prime)*sedgex(i,j,comp)
+
                 else
-                  s0_edge = s0_pred_x_edge(j,comp)
+                  if (which_step .eq. 1) then
+                     s0_edge = s0_old(j,comp)
+                  else
+                     s0_edge = HALF*(s0_old(j,comp)+s0_new(j,comp))
+                  end if
+                  sfluxx(i,j,comp) = umac(i,j)*(s0_edge + sedgex(i,j,comp))
                 end if
 
-             else
+
+             end do
+
+          else
+
+             do j=lo(2),hi(2)
 
                 if (which_step .eq. 1) then
                    s0_edge = s0_old(j,comp)
                 else
                    s0_edge = HALF*(s0_old(j,comp)+s0_new(j,comp))
                 end if
+                sfluxx(i,j,comp) = umac(i,j)*(s0_edge + sedgex(i,j,comp))
 
-             end if
+             end do
 
-             sfluxx(i,j,comp) = umac(i,j)*(sedgex(i,j,comp) + s0_edge)
+          end if
 
-          end do
        end do
 
        ! create y-fluxes
-       do j=lo(2),hi(2)+1
-          do i=lo(1),hi(1)
 
-!            IF YOU UNCOMMENT THESE LINES THE CODE GOES BAD
-!            if ( (comp .ge. spec_comp) .and. (comp .le.  spec_comp+nspec-1) ) then
+       if ( (comp .ge. spec_comp) .and. (comp .le.  spec_comp+nspec-1) ) then
 
-!               if (predict_X_at_edges) then
-!                 s0_edge = s0_pred_edge(j,comp) * s0_pred_edge(j,rho_comp)
-!               else
-!                 s0_edge = s0_pred_edge(j,comp)
-!               end if
+         do i=lo(1),hi(1)
 
-!            else
+             do j=lo(2),hi(2)+1
 
-                if(which_step .eq. 1) then
-                   s0_edge = s0_edge_old(j,comp)
+                if (which_step .eq. 1) then
+                   rho0_edge = s0_edge_old(j,rho_comp)
                 else
-                   s0_edge = HALF*(s0_edge_old(j,comp)+s0_edge_new(j,comp))
+                   rho0_edge = HALF*(s0_edge_old(j,rho_comp)+s0_edge_new(j,rho_comp))
                 end if
 
-!            end if
+                if (predict_X_at_edges) then
+  
+                  rho_prime = sedgey(i,j,rho_comp)
+  
+                  sfluxy(i,j,comp) = (vmac(i,j)+w0(j))*(rho0_edge+rho_prime)*sedgey(i,j,comp)
+  
+                  etaflux(i,j,comp) = sfluxy(i,j,comp) - &
+                       w0(j)*s0_pred_edge(j,comp)*s0_pred_edge(j,rho_comp)
 
-             sfluxy(i,j,comp) = (vmac(i,j)+w0(j))*sedgey(i,j,comp) + vmac(i,j)*s0_edge
+                else
 
-             etaflux(i,j,comp) = vmac(i,j)*sedgey(i,j,comp)
+                  if(which_step .eq. 1) then
+                     s0_edge = s0_edge_old(j,comp)
+                  else
+                     s0_edge = HALF*(s0_edge_old(j,comp)+s0_edge_new(j,comp))
+                  end if
+                  sfluxy(i,j,comp) = (vmac(i,j)+w0(j))*(s0_edge + sedgey(i,j,comp))
+
+                  etaflux(i,j,comp) = sfluxy(i,j,comp) - &
+                       w0(j)*s0_pred_edge(j,comp)*s0_pred_edge(j,rho_comp)
+
+                end if
+
+             end do
+          end do
+
+       else
+
+          do j=lo(2),hi(2)+1
+
+             if(which_step .eq. 1) then
+                s0_edge = s0_edge_old(j,comp)
+             else
+                s0_edge = HALF*(s0_edge_old(j,comp)+s0_edge_new(j,comp))
+             end if
+
+             do i=lo(1),hi(1)
+                sfluxy(i,j,comp) = (vmac(i,j)+w0(j))*sedgey(i,j,comp) + vmac(i,j)*s0_edge
+                etaflux(i,j,comp) = sfluxy(i,j,comp)
+             end do
 
           end do
-       end do
+
+       end if
 
     end do ! end loop over components
 
   end subroutine mkflux_2d
+
+  subroutine make_edge_spec_1d(lo,s,sedgex,umac,dx,dt)
+
+     use probin_module, only: slope_order
+     use bl_constants_module
+     
+     integer        , intent(in   ) :: lo
+     real(kind=dp_t), intent(in   ) ::      s( 0  :)
+     real(kind=dp_t), intent(inout) :: sedgex(lo  :)
+     real(kind=dp_t), intent(in   ) ::   umac(lo-1:)
+     real(kind=dp_t), intent(in   ) :: dx,dt
+     
+     real(kind=dp_t), allocatable::  slopex(:)
+     real(kind=dp_t), allocatable::  s_l(:),s_r(:)
+     real(kind=dp_t), allocatable:: dxscr(:,:)
+     real(kind=dp_t) :: dmin,dpls,ds,del,slim,sflag
+     real(kind=dp_t) :: ubardth, dth, savg
+     real(kind=dp_t) :: abs_eps, eps, umax, u
+     
+     integer :: i,is,ie,hi,nx,nr
+     integer :: istart,iend
+     integer        , parameter :: cen = 1, lim = 2, flag = 3, fromm = 4
+     real(kind=dp_t), parameter :: fourthirds = 4.0_dp_t / 3.0_dp_t
+     
+     nr = size(s,dim=1)
+     nx = size(sedgex,dim=1)-1
+     hi = lo + (nx-1)
+     
+     allocate(s_l(lo-1:hi+2),s_r(lo-1:hi+2))
+     allocate(slopex(lo-1:hi+1))
+     allocate(dxscr(lo-2:hi+2,4))
+
+     ! Default to zero for physical boundaries and slope_order = 0.
+     slopex = ZERO
+     sedgex = ZERO
+
+     ! Default to zero for physical boundaries
+     dxscr(:,:) = ZERO
+
+     abs_eps = 1.0d-8
+     
+     dth = HALF*dt
+     
+     is = lo
+     ie = hi
+     
+     umax = ZERO
+     do i = is,ie+1
+        umax = max(umax,abs(umac(i)))
+     end do
+     
+     eps = abs_eps * umax
+
+     if (slope_order .eq. 2) then
+
+        if (is .eq. 0) then
+          istart = is+1
+        else 
+          istart = is-1
+        end if
+        if (hi .eq. nr-1) then
+          iend = ie-1
+        else 
+          iend = ie+1
+        end if
+
+        do i = istart,iend
+           del = half*(s(i+1) - s(i-1))
+           dpls = two*(s(i+1) - s(i  ))
+           dmin = two*(s(i  ) - s(i-1))
+           slim = min(abs(dpls), abs(dmin))
+           slim = merge(slim, zero, dpls*dmin.gt.ZERO)
+           sflag = sign(one,del)
+           slopex(i)= sflag*min(slim,abs(del))
+        enddo
+
+     else if (slope_order .eq. 4) then
+
+        if (is .eq. 0) then
+          istart = is+1
+        else 
+          istart = is-2
+        end if
+        if (hi .eq. nr-1) then
+          iend = ie-1
+        else 
+          iend = ie+2
+        end if
+     
+        do i = istart,iend
+           dxscr(i,cen) = half*(s(i+1)-s(i-1))
+           dpls = two*(s(i+1)-s(i  ))
+           dmin = two*(s(i  )-s(i-1))
+           dxscr(i,lim)= min(abs(dmin),abs(dpls))
+           dxscr(i,lim) = merge(dxscr(i,lim),zero,dpls*dmin.gt.ZERO)
+           dxscr(i,flag) = sign(one,dxscr(i,cen))
+           dxscr(i,fromm)= dxscr(i,flag)*min(dxscr(i,lim),abs(dxscr(i,cen)))
+        enddo
+     
+        istart = min(istart+1,is+1)
+        iend   = max(iend  -1,ie-1)
+        do i = istart,iend
+           ds = fourthirds * dxscr(i,cen) - sixth * (dxscr(i+1,fromm) + dxscr(i-1,fromm))
+           slopex(i) = dxscr(i,flag)*min(abs(ds),dxscr(i,lim))
+        enddo
+
+     end if
+        
+     ! Compute edge values using slopes and forcing terms.
+     if (is .eq. 0) then
+       istart = is
+     else 
+       istart = is-1
+     end if
+     if (hi .eq. nr-1) then
+       iend = ie
+     else 
+       iend = ie+1
+     end if
+
+     do i = istart,iend
+        
+        u = HALF * (umac(i) + umac(i+1))
+        ubardth = dth*u/dx
+        
+        s_l(i+1)= s(i) + (HALF-ubardth)*slopex(i)
+        s_r(i  )= s(i) - (HALF+ubardth)*slopex(i)
+        
+     enddo
+     
+     if (is .eq.    0) sedgex(is  ) = s_r(is  )
+     if (hi .eq. nr-1) sedgex(ie+1) = s_l(ie+1)
+     
+     do i = istart+1, iend
+        sedgex(i)=merge(s_l(i),s_r(i),umac(i).gt.ZERO)
+        savg = HALF*(s_r(i) + s_l(i))
+        sedgex(i)=merge(savg,sedgex(i),abs(umac(i)) .lt. eps)
+     enddo
+     
+  end subroutine make_edge_spec_1d
   
   subroutine mkflux_3d_cart(sfluxx,sfluxy,sfluxz,etaflux,sedgex,sedgey,sedgez, &
                             umac,vmac,wmac, &

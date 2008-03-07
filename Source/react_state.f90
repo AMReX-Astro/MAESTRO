@@ -129,7 +129,7 @@ contains
        do i = lo(1), hi(1)
 
           rho = s_in(i,j,rho_comp)
-          x_in(:) = s_in(i,j,spec_comp:spec_comp+nspec-1) / rho
+          x_in(1:nspec) = s_in(i,j,spec_comp:spec_comp+nspec-1) / rho
 
           qreact = 0.0d0
           if(use_big_h) then

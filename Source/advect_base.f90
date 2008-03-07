@@ -158,6 +158,9 @@ contains
 
           ! here we predict X_0 on the edges
           X0(:) = s0_old(:,comp)/s0_old(:,rho_comp)
+          do r = 0,nr(n)-1
+            X0(r) = max(X0(r),ZERO)
+          end do
 
           force = ZERO
        

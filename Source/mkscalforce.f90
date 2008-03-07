@@ -786,6 +786,7 @@ contains
           do i = lo(1),hi(1)
              wadv = HALF*(wmac(i,j)+wmac(i,j+1))
              X_force(i,j,comp) = -wadv * gradX0
+             X_force(i,j,comp) = ZERO
           end do
 
        end do
