@@ -236,7 +236,7 @@ contains
 
 
     !**************************************************************************
-    !     Create the edge states of (rho h)' (or T) and (rho X)' (or X')
+    !     Create the edge states of (rho h)' (or T) and (rho X)' (or X)
     !**************************************************************************
 
     ! switch the enthalpy to perturbation form (except if we are predicting T
@@ -245,12 +245,14 @@ contains
                              mla,the_bc_level)
     end if
 
-    ! switch (rho X) to (rho X') or X to X' (if we are predicting X')
-!   DONT PUT X IN PERT FORM 
-!   call put_in_pert_form(nlevs,sold,s0_old,dx,spec_comp,nspec,.true., &
-!                         mla,the_bc_level)
+    ! switch (rho X) to (rho X)' (except if we are predicting X on edges)
+    if (.not. predict_X_at_edges) then
+       call put_in_pert_form(nlevs,sold,s0_old,dx,spec_comp,nspec,.true., &
+                             mla,the_bc_level)
+    endif
 
-    ! if we are predicting X' on the edges, then we also need to predict rho',
+
+    ! if we are predicting X on the edges, then we also need to predict rho',
     ! so make the perturbational form of density now
     if (predict_X_at_edges) &
          call put_in_pert_form(nlevs,sold,s0_old,dx,rho_comp,1,.true., &
@@ -294,7 +296,7 @@ contains
                            rho_comp,dm+rho_comp,1,mla)
 
 
-       ! now compute X' at the edges
+       ! now compute X at the edges
 !      call make_edge_state(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0, &
 !                           w0_cart_vec,dx,dt,is_vel,the_bc_level,velpred, &
 !                           spec_comp,dm+spec_comp,nspec,mla)
@@ -303,9 +305,13 @@ contains
                            spec_comp,dm+spec_comp,nspec,mla)
 
     else
-       call make_edge_state(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0, &
-                            w0_cart_vec,dx,dt,is_vel,the_bc_level,velpred, &
-                            spec_comp,dm+spec_comp,nspec,mla)
+!       call make_edge_state(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0, &
+!                            w0_cart_vec,dx,dt,is_vel,the_bc_level,velpred, &
+!                            spec_comp,dm+spec_comp,nspec,mla)
+
+       call make_edge_scal(nlevs,sold,sedge,umac,scal_force,w0, &
+                           w0_cart_vec,dx,dt,is_vel,the_bc_level, &
+                           spec_comp,dm+spec_comp,nspec,mla)
     endif
 
 
@@ -315,9 +321,11 @@ contains
                              mla,the_bc_level)
     end if
 
-!   DONT NEED TO REVERSE BECAUSE DIDNT PUT X IN PERT FORM 
-!   call put_in_pert_form(nlevs,sold,s0_old,dx,spec_comp,nspec,.false., &
-!                         mla,the_bc_level)
+
+    if (.not. predict_X_at_edges) then
+       call put_in_pert_form(nlevs,sold,s0_old,dx,spec_comp,nspec,.false., &
+                             mla,the_bc_level)
+    endif
 
     if (predict_X_at_edges) &
          call put_in_pert_form(nlevs,sold,s0_old,dx,rho_comp,1,.false., &
