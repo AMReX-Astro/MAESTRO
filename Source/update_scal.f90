@@ -268,7 +268,6 @@ contains
     end if
 
     ! Do not allow the species to leave here negative.
-    if(0.eq.1)then
     if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
        do comp = nstart, nstop
           if (smin(comp) .lt. ZERO) then 
@@ -294,7 +293,6 @@ contains
              enddo
           end if
        enddo
-    end if
     end if
 
   end subroutine update_scal_2d
