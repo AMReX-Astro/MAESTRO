@@ -46,4 +46,8 @@
  velpert_radius = 1.d7
  velpert_scale = 1.d7
  velpert_steep = 1.d5
+
+ predict_X_at_edges = F
+ predict_temp_at_edges = F
+
 /
