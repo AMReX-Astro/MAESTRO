@@ -194,6 +194,7 @@ contains
                             base_new,base_new_edge,lo,hi,ng_s,dx,dt)
 
     use network,       only: nspec
+    use probin_module, only: predict_X_at_edges
     use variables,     only: spec_comp, rho_comp
     use bl_constants_module
 
@@ -224,8 +225,12 @@ contains
     do comp = nstart, nstop
        do j = lo(2), hi(2)
 
-          if (comp .ge. spec_comp .and. comp .le. spec_comp+nspec-1) then
+          if (comp .ge. spec_comp .and. &
+              comp .le. spec_comp+nspec-1 .and. &
+              predict_X_at_edges) then
+
             delta_base = ZERO
+
           else
             delta_base = base_new(j,comp) - base_old(j,comp)
           end if
@@ -299,6 +304,7 @@ contains
                                  base_old,base_old_edge,base_new,base_new_edge,lo,hi, &
                                  ng_s,dx,dt)
     use network,       only: nspec
+    use probin_module, only: predict_X_at_edges
     use variables,     only: spec_comp, rho_comp
     use bl_constants_module
 
@@ -330,8 +336,12 @@ contains
 
        do k = lo(3), hi(3)
 
-          if (comp .ge. spec_comp .and. comp .le. spec_comp+nspec-1) then
+          if (comp .ge. spec_comp .and. &
+              comp .le. spec_comp+nspec-1 .and. &
+              predict_X_at_edges) then
+5~
             delta_base = ZERO
+
           else
             delta_base = base_new(k,comp) - base_old(k,comp)
           end if
@@ -410,6 +420,7 @@ contains
                                  force,base_old,base_new,base_old_cart,base_new_cart, &
                                  lo,hi,domlo,domhi,ng_s,dx,dt)
     use network,       only: nspec
+    use probin_module, only: predict_X_at_edges
     use variables,     only: spec_comp, rho_comp
     use bl_constants_module
 
@@ -447,8 +458,12 @@ contains
              do j = lo(2), hi(2)
                 do i = lo(1), hi(1)
 
-                   if (comp .ge. spec_comp .and. comp .le. spec_comp+nspec-1) then
+                   if (comp .ge. spec_comp .and. &
+                       comp .le. spec_comp+nspec-1 .and. &
+                       predict_X_at_edges) then
+
                      delta_base = ZERO
+
                    else
                      delta_base = base_new_cart(i,j,k,comp) - base_old_cart(i,j,k,comp)
                    end if
