@@ -7,15 +7,15 @@
 
  grav_const = 0.e0
 
- max_step  = 200
+ max_step  = 300
  stop_time = 2.5
 
  do_initial_projection = 1
  init_divu_iter = 3
  init_iter = 1
 
- plot_int  = 1
- chk_int   = -1
+ plot_int  = 10
+ chk_int   = 100
 
  cflfac = 0.15
  init_shrink = 0.1
@@ -34,7 +34,9 @@
  cg_verbose = 0
 
  use_thermal_diffusion = T
+
  predict_temp_at_edges = T
+ predict_X_at_edges = F
  evolve_base_state = F
 
 !restart = 50
