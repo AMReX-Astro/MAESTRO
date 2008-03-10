@@ -260,7 +260,7 @@ contains
                   else
                      s0_edge = HALF*(s0_edge_old(j,comp)+s0_edge_new(j,comp))
                   end if
-                  sfluxy(i,j,comp) = (vmac(i,j)+w0(j))*(s0_edge + sedgey(i,j,comp))
+                  sfluxy(i,j,comp) = (vmac(i,j)+w0(j))*sedgey(i,j,comp) + vmac(i,j)*s0_edge
 
                   etaflux(i,j,comp) = sfluxy(i,j,comp) - &
                        w0(j)*s0_pred_edge(j,comp)*s0_pred_edge(j,rho_comp)
