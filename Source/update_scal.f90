@@ -339,7 +339,7 @@ contains
           if (comp .ge. spec_comp .and. &
               comp .le. spec_comp+nspec-1 .and. &
               predict_X_at_edges) then
-5~
+
             delta_base = ZERO
 
           else
