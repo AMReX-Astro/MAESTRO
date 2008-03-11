@@ -67,7 +67,8 @@ contains
     use eos_module
     use variables, only: spec_comp, rho_comp, temp_comp, rhoh_comp
     use geometry, only: nr
-    use probin_module, only: grav_const, anelastic_cutoff, predict_X_at_edges
+    use probin_module, only: grav_const, anelastic_cutoff, &
+                             predict_X_at_edges, predict_h_at_edges
 
     integer        , intent(in   ) :: which_step,n
     real(kind=dp_t), intent(in   ) :: vel(0:)
@@ -98,7 +99,7 @@ contains
     s0_predicted_x_edge(:,:) = ZERO
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! UPDATE P0
+! Update p_0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     force = ZERO
 
@@ -110,25 +111,31 @@ contains
     end do
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! UPDATE RHOX0
+! Predict rho_0 to vertical and lateral edges
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    if (predict_X_at_edges) then
+    if (predict_X_at_edges .or. predict_h_at_edges) then
 
-       ! Predict to vertical edges
+       ! Predict rho_0 to vertical edges
        do r = 0,nr(n)-1
           force(r) = -s0_old(r,rho_comp) * (vel(r+1) - vel(r)) / dz 
        end do
+
        call make_edge_state_1d(n,s0_old(:,rho_comp),edge,vel,force,1,dz,dt)
+
        s0_predicted_edge(:,rho_comp) = edge(:)       
 
-       ! Predict to lateral edges
+       ! Predict rho_0 to lateral edges
        do r = 0,nr(n)-1
           s0_predicted_x_edge(r,rho_comp) = s0_old(r,rho_comp) - &
               HALF * dt * ( vel(r+1)*edge(r+1) - vel(r)*edge(r) ) / dz 
        end do
 
     endif
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Update (rho X)_0
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     do comp = spec_comp,spec_comp+nspec-1
 
@@ -169,48 +176,53 @@ contains
 
           call make_edge_state_1d(n,s0_old(:,comp),edge,vel,force,1,dz,dt)
 
-          ! s0_predicted_edge will store (rho X)_0 on the edges
+          ! s0_predicted_edge will store (rho X)_0 on the vertical edges
           s0_predicted_edge(:,comp) = edge(:)
 
-          ! compute rho_0 on the edges for completeness
-          s0_predicted_edge(:,rho_comp) = s0_predicted_edge(:,rho_comp) + &
-                                          s0_predicted_edge(:,comp)
-
+          ! s0_predicted_edge will store (rho X)_0 on the horizontal edges
           do r = 0,nr(n)-1
              s0_predicted_x_edge(r,comp) = s0_old(r,comp) + HALF*dt*force(r)
           end do
 
        endif
-
+       
+       ! update (rho X)_0
        do r = 0,nr(n)-1
-          s0_new(r,comp) = s0_old(r,comp) &
-               - dt / dz * (edge(r+1) * vel(r+1) - edge(r) * vel(r)) 
+          s0_new(r,comp) = s0_old(r,comp) - (dt/dz) * (edge(r+1)*vel(r+1) - edge(r)*vel(r)) 
        end do
        
     enddo
 
-    
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! UPDATE RHO0 FROM RHOX0
+! Update rho_0 from (rho X)_0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
     do r = 0,nr(n)-1
        s0_new(r,rho_comp) =  s0_old(r,rho_comp)
        do comp = spec_comp,spec_comp+nspec-1
           s0_new(r,rho_comp) =  s0_new(r,rho_comp) + (s0_new(r,comp)-s0_old(r,comp)) 
        end do
     end do
-    
-    
+       
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! UPDATE RHOH0
+! Update (rho h)_0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    do r = 0,nr(n)-1
-       force(r) = -s0_old(r,rhoh_comp) * (vel(r+1) - vel(r)) / dz
-    end do
 
-    call make_edge_state_1d(n,s0_old(:,rhoh_comp),edge,vel,force,1,dz,dt)
+    if (predict_h_at_edges) then
 
-    s0_predicted_edge(:,rhoh_comp) = edge(:)
+    else
+
+       ! here we predict (rho h)_0 on the edges
+       do r = 0,nr(n)-1
+          force(r) = -s0_old(r,rhoh_comp) * (vel(r+1) - vel(r)) / dz
+       end do
+       
+       call make_edge_state_1d(n,s0_old(:,rhoh_comp),edge,vel,force,1,dz,dt)
+       
+       ! s0_predicted_edge will store (rho X)_0 on the vertical edges
+       s0_predicted_edge(:,rhoh_comp) = edge(:)
+       
+    end if
 
     do r = 0,nr(n)-1
        s0_new(r,rhoh_comp) = s0_old(r,rhoh_comp) &
@@ -218,8 +230,9 @@ contains
     end do
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! MAKE TEMP0 AND GAM1 FROM P0 AND RHO0
+! Make Temp_0 and Gam1 from p_0 and rho_0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
     do r = 0,nr(n)-1
        
        den_eos(1)  = s0_new(r,rho_comp)
