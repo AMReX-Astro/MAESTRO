@@ -236,7 +236,7 @@ contains
                 divterm = (sfluxx(i+1,j,comp) - sfluxx(i,j,comp))/dx(1) &
                         + (sfluxy(i,j+1,comp) - sfluxy(i,j,comp))/dx(2)
 
-                snew(i,j,comp) = sold(i,j,comp) - dt*divterm + dt*force(i,j,comp)
+                snew(i,j,comp) = sold(i,j,comp) + dt*(-divterm + force(i,j,comp))
 
              end do
           end do
@@ -253,7 +253,7 @@ contains
                         + (sfluxy(i,j+1,comp) - sfluxy(i,j,comp))/dx(2)
 
                 snew(i,j,comp) = sold(i,j,comp) &
-                     + delta_base - dt*divterm + dt*force(i,j,comp)
+                     + delta_base + dt*(-divterm + force(i,j,comp))
                 
              end do
           end do
@@ -316,8 +316,8 @@ contains
                                  base_old,base_old_edge,base_new,base_new_edge,lo,hi, &
                                  ng_s,dx,dt)
     use network,       only: nspec
-    use probin_module, only: predict_X_at_edges
-    use variables,     only: spec_comp, rho_comp
+    use probin_module, only: predict_X_at_edges, predict_h_at_edges
+    use variables,     only: spec_comp, rho_comp, rhoh_comp
     use bl_constants_module
 
 
@@ -343,34 +343,51 @@ contains
     real (kind = dp_t) :: divterm
     real (kind = dp_t) :: delta,frac,sum,delta_base
     real (kind = dp_t) :: smin(nstart:nstop),smax(nstart:nstop)
+    logical            :: test
 
     do comp = nstart, nstop
+    
+       test = (comp.ge.spec_comp.and.comp.le.spec_comp+nspec-1.and.predict_X_at_edges) &
+         .or. (comp.eq.rhoh_comp.and.predict_h_at_edges)
 
-       do k = lo(3), hi(3)
+       if (test) then
 
-          if (comp .ge. spec_comp .and. &
-              comp .le. spec_comp+nspec-1 .and. &
-              predict_X_at_edges) then
-
-            delta_base = ZERO
-
-          else
-            delta_base = base_new(k,comp) - base_old(k,comp)
-          end if
-
-          do j = lo(2), hi(2)
-             do i = lo(1), hi(1)
-
-                divterm = (sfluxx(i+1,j,k,comp) - sfluxx(i,j,k,comp))/dx(1) &
-                        + (sfluxy(i,j+1,k,comp) - sfluxy(i,j,k,comp))/dx(2) &
-                        + (sfluxz(i,j,k+1,comp) - sfluxz(i,j,k,comp))/dx(3)
-
-                snew(i,j,k,comp) = sold(i,j,k,comp) + delta_base &
-                     - dt * divterm + dt * force(i,j,k,comp)
-
+          do k = lo(3), hi(3)
+             do j = lo(2), hi(2)
+                do i = lo(1), hi(1)
+   
+                   divterm = (sfluxx(i+1,j,k,comp) - sfluxx(i,j,k,comp))/dx(1) &
+                           + (sfluxy(i,j+1,k,comp) - sfluxy(i,j,k,comp))/dx(2) &
+                           + (sfluxz(i,j,k+1,comp) - sfluxz(i,j,k,comp))/dx(3)
+   
+                   snew(i,j,k,comp) = sold(i,j,k,comp) &
+                        + dt * (-divterm + force(i,j,k,comp))
+   
+                enddo
              enddo
           enddo
-       enddo
+
+       else
+
+          do k = lo(3), hi(3)
+
+             delta_base = base_new(k,comp) - base_old(k,comp)
+
+             do j = lo(2), hi(2)
+                do i = lo(1), hi(1)
+
+                   divterm = (sfluxx(i+1,j,k,comp) - sfluxx(i,j,k,comp))/dx(1) &
+                           + (sfluxy(i,j+1,k,comp) - sfluxy(i,j,k,comp))/dx(2) &
+                           + (sfluxz(i,j,k+1,comp) - sfluxz(i,j,k,comp))/dx(3)
+   
+                   snew(i,j,k,comp) = sold(i,j,k,comp) + delta_base &
+                        + dt * (-divterm + force(i,j,k,comp))
+   
+                enddo
+             enddo
+          enddo
+
+       end if
     end do
 
     ! Define the update to rho as the sum of the updates to (rho X)_i
@@ -432,8 +449,8 @@ contains
                                  force,base_old,base_new,base_old_cart,base_new_cart, &
                                  lo,hi,domlo,domhi,ng_s,dx,dt)
     use network,       only: nspec
-    use probin_module, only: predict_X_at_edges
-    use variables,     only: spec_comp, rho_comp
+    use probin_module, only: predict_X_at_edges, predict_h_at_edges
+    use variables,     only: spec_comp, rho_comp, rhoh_comp
     use bl_constants_module
 
     integer           , intent(in   ) :: nstart, nstop
@@ -461,36 +478,51 @@ contains
     real (kind = dp_t) :: divterm,delta_base
     real (kind = dp_t) :: delta,frac,sum
     real (kind = dp_t) :: smin(nstart:nstop),smax(nstart:nstop)
+    logical            :: test
 
     ! is spherical
 
     do comp = nstart, nstop
+    
+       test = (comp.ge.spec_comp.and.comp.le.spec_comp+nspec-1.and.predict_X_at_edges) &
+         .or. (comp.eq.rhoh_comp.and.predict_h_at_edges)
+
+       if (test) then
 
           do k = lo(3), hi(3)
              do j = lo(2), hi(2)
                 do i = lo(1), hi(1)
 
-                   if (comp .ge. spec_comp .and. &
-                       comp .le. spec_comp+nspec-1 .and. &
-                       predict_X_at_edges) then
+                   divterm = (sfluxx(i+1,j,k,comp) - sfluxx(i,j,k,comp))/dx(1) &
+                           + (sfluxy(i,j+1,k,comp) - sfluxy(i,j,k,comp))/dx(2) &
+                           + (sfluxz(i,j,k+1,comp) - sfluxz(i,j,k,comp))/dx(3)
 
-                     delta_base = ZERO
+                   snew(i,j,k,comp) = sold(i,j,k,comp) &
+                        + dt * (-divterm + force(i,j,k,comp))
+                enddo
+             enddo
+          enddo
 
-                   else
-                     delta_base = base_new_cart(i,j,k,comp) - base_old_cart(i,j,k,comp)
-                   end if
+       else
+
+          do k = lo(3), hi(3)
+             do j = lo(2), hi(2)
+                do i = lo(1), hi(1)
+
+                   delta_base = base_new_cart(i,j,k,comp) - base_old_cart(i,j,k,comp)
 
                    divterm = (sfluxx(i+1,j,k,comp) - sfluxx(i,j,k,comp))/dx(1) &
                            + (sfluxy(i,j+1,k,comp) - sfluxy(i,j,k,comp))/dx(2) &
                            + (sfluxz(i,j,k+1,comp) - sfluxz(i,j,k,comp))/dx(3)
 
                    snew(i,j,k,comp) = sold(i,j,k,comp) + delta_base &
-                        - dt * divterm + dt * force(i,j,k,comp)
+                        + dt * (-divterm + force(i,j,k,comp))
 
                 enddo
              enddo
           enddo
 
+       end if
     end do
 
     ! Define the update to rho as the sum of the updates to (rho X)_i
