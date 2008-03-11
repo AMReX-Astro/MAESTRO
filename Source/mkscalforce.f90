@@ -159,7 +159,6 @@ contains
        do i = lo(1),hi(1)
           wadv = HALF*(wmac(i,j)+wmac(i,j+1))
           rhoh_force(i,j) =  wadv * gradp0 
-          if (i.eq.209 .and. j.eq.143) print *,'MAKING FORCE ',rhoh_force(i,j)
        end do
     end do
 
