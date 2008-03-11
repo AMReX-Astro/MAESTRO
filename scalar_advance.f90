@@ -201,7 +201,7 @@ contains
        ! do this by calling mkrhohforce then dividing by rho
        call mkrhohforce(nlevs,scal_force,umac,p0_old,p0_old,normal,dx,mla,the_bc_level)
        do n=1,nlevs
-          call multifab_div_div_c(scal_force(n),1,sold(n),rho_comp,1,1)
+          call multifab_div_div_c(scal_force(n),rhoh_comp,sold(n),rho_comp,1,1)
        end do
 
        ! add the thermal diffusion term
