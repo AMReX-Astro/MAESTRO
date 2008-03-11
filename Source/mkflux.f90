@@ -103,6 +103,7 @@ contains
                                     ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
                                     s0_old(n,:,:), s0_edge_old(n,:,:), &
                                     s0_new(n,:,:), s0_edge_new(n,:,:), &
+                                    s0_predicted_edge(n,:,:), &
                                     w0(n,:),startcomp,endcomp,lo,hi)
 
              else
@@ -141,8 +142,8 @@ contains
                        lo,hi,dx,dt)
 
     use bl_constants_module
-    use variables, only : spec_comp, rho_comp, rhoh_comp
     use network, only : nspec
+    use variables, only : spec_comp, rho_comp, rhoh_comp
     use probin_module, only: predict_X_at_edges, predict_h_at_edges
 
     integer        , intent(in   ) :: lo(:),hi(:)
@@ -163,7 +164,7 @@ contains
     ! local
     integer :: comp
     integer :: i,j
-    real(kind=dp_t) :: vel_avg,w0_avg,s0_edge
+    real(kind=dp_t) :: s0_edge
     real(kind=dp_t) :: rho_prime, rho0_edge
     logical :: test
     
@@ -256,9 +257,12 @@ contains
 
   subroutine mkflux_3d_cart(sfluxx,sfluxy,sfluxz,etaflux,sedgex,sedgey,sedgez, &
                             umac,vmac,wmac,s0_old,s0_edge_old,s0_new,s0_edge_new, &
-                            w0,startcomp,endcomp,lo,hi)
+                            s0_pred_edge,w0,startcomp,endcomp,lo,hi)
 
     use bl_constants_module
+    use network, only : nspec
+    use variables, only : spec_comp, rho_comp, rhoh_comp
+    use probin_module, only: predict_X_at_edges, predict_h_at_edges
 
     integer        , intent(in   ) :: lo(:),hi(:)
     real(kind=dp_t), intent(inout) ::  sfluxx(lo(1)  :,lo(2)  :,lo(3)  :,:)
@@ -273,55 +277,129 @@ contains
     real(kind=dp_t), intent(in   ) ::    wmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
     real(kind=dp_t), intent(in   ) :: s0_old(0:,:), s0_edge_old(0:,:)
     real(kind=dp_t), intent(in   ) :: s0_new(0:,:), s0_edge_new(0:,:)
+    real(kind=dp_t), intent(in   ) :: s0_pred_edge(0:,:)
     real(kind=dp_t), intent(in   ) :: w0(0:)
     integer        , intent(in   ) :: startcomp,endcomp
 
    ! local
-    integer :: comp
-    integer :: i,j,k
-
+    real(kind=dp_t) :: s0_edge
+    real(kind=dp_t) :: rho_prime, rho0_edge
+    integer         :: comp,i,j,k
+    logical         :: test
+    
     ! loop over components
     do comp = startcomp, endcomp
 
-       ! create x-fluxes
-       do k=lo(3),hi(3)
-          do j=lo(2),hi(2)
-             do i=lo(1),hi(1)+1
+       test = ((comp.ge.spec_comp).and.(comp.le.spec_comp+nspec-1).and.predict_X_at_edges) &
+         .or. ((comp.eq.rhoh_comp).and.predict_h_at_edges)
+       
+       ! create x-fluxes and y-fluxes
+       if (test) then
+
+          do k=lo(3),hi(3)
+             
+             rho0_edge = HALF*(s0_old(k,rho_comp)+s0_new(k,rho_comp))
+             
+             do j=lo(2),hi(2)
+                do i=lo(1),hi(1)+1
                 
-                sfluxx(i,j,k,comp) = &
-                     umac(i,j,k)*(sedgex(i,j,k,comp) + HALF*(s0_old(k,comp)+s0_new(k,comp)))
-
+                   rho_prime = sedgex(i,j,k,rho_comp)
+                   
+                   ! sedgex is either h or X at edges
+                   sfluxx(i,j,k,comp) = umac(i,j,k)*(rho0_edge+rho_prime)*sedgex(i,j,k,comp)
+                   
+                end do
              end do
-          end do
-       end do
-
-       ! create y-fluxes
-       do k=lo(3),hi(3)
-          do j=lo(2),hi(2)+1
-             do i=lo(1),hi(1)
+             
+             do j=lo(2),hi(2)+1
+                do i=lo(1),hi(1)
                 
-                sfluxy(i,j,k,comp) = &
-                     vmac(i,j,k)*(sedgey(i,j,k,comp) + HALF*(s0_old(k,comp)+s0_new(k,comp)))
-
+                   rho_prime = sedgey(i,j,k,rho_comp)
+                   
+                   ! sedgey is either h or X at edges
+                   sfluxy(i,j,k,comp) = vmac(i,j,k)*(rho0_edge+rho_prime)*sedgey(i,j,k,comp)
+                   
+                end do
              end do
+             
           end do
-       end do
-
+                
+       else
+              
+          do k=lo(3),hi(3)
+             
+             s0_edge = HALF*(s0_old(k,comp)+s0_new(k,comp))
+             
+             do j=lo(2),hi(2)
+                do i=lo(1),hi(1)+1
+                
+                   ! s0_edge is either (rho h)_0, (rho X)_0, or (rho trac)_0 at edges
+                   ! sedgex is either (rho h)', (rho X)', or (rho trac)' at edges
+                   sfluxx(i,j,k,comp) = umac(i,j,k)*(s0_edge + sedgex(i,j,k,comp))
+                   
+                end do
+             end do
+             
+             do j=lo(2),hi(2)+1
+                do i=lo(1),hi(1)
+                
+                   ! s0_edge is either (rho h)_0, (rho X)_0, or (rho trac)_0 at edges
+                   ! sedgex is either (rho h)', (rho X)', or (rho trac)' at edges
+                   sfluxy(i,j,k,comp) = vmac(i,j,k)*(s0_edge + sedgey(i,j,k,comp))
+                   
+                end do
+             end do
+             
+          end do
+          
+       end if
+        
        ! create z-fluxes
-       do k=lo(3),hi(3)+1
-          do j=lo(2),hi(2)
-             do i=lo(1),hi(1)
+       if (test) then
+       
+          do k=lo(3),hi(3)+1
+             
+             rho0_edge = HALF*(s0_edge_old(k,rho_comp)+s0_edge_new(k,rho_comp))
+             
+             do j=lo(2),hi(2)
+                do i=lo(1),hi(1)
                 
-                sfluxz(i,j,k,comp) = (wmac(i,j,k)+w0(k))*sedgez(i,j,k,comp) &
-                     + wmac(i,j,k)*HALF*(s0_edge_old(k,comp)+s0_edge_new(k,comp))
-
-                etaflux(i,j,k,comp) = wmac(i,j,k)*sedgez(i,j,k,comp)
+                   rho_prime = sedgez(i,j,k,rho_comp)
                 
+                   ! sedgez is either h or X at edges
+                   sfluxz(i,j,k,comp) = (wmac(i,j,k)+w0(k))*(rho0_edge+rho_prime)*sedgez(i,j,k,comp)
+                   
+                   etaflux(i,j,k,comp) = &
+                        sfluxz(i,j,k,comp) - w0(k)*s0_pred_edge(k,comp)*s0_pred_edge(k,rho_comp)
+                
+                end do
              end do
-          end do
-       end do
 
-    end do ! end loop over components
+          end do
+          
+       else
+          
+          do k=lo(3),hi(3)+1
+             
+             s0_edge = HALF*(s0_edge_old(k,comp)+s0_edge_new(k,comp))
+             
+             do j=lo(2),hi(2)
+                do i=lo(1),hi(1)
+                
+                ! s0_edge is either (rho h)_0, (rho X)_0, or (rho trac)_0 at edges
+                ! sedgey is either (rho h)', (rho X)', or (rho trac)' at edges
+                sfluxz(i,j,k,comp) = (wmac(i,j,k)+w0(k))*sedgez(i,j,k,comp) + wmac(i,j,k)*s0_edge
+                
+                etaflux(i,j,k,comp) = sfluxz(i,j,k,comp)
+                
+                end do
+             end do
+
+          end do
+
+       end if
+    end do
+
      
   end subroutine mkflux_3d_cart
 
