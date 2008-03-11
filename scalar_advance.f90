@@ -47,7 +47,7 @@ contains
     type(multifab) , intent(in   ) :: uold(:)
     type(multifab) , intent(inout) :: sold(:)
     type(multifab) , intent(inout) :: snew(:)
-    type(multifab) , intent(in   ) :: thermal(:)
+    type(multifab) , intent(inout) :: thermal(:)
     type(multifab) , intent(inout) :: umac(:,:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     type(multifab) , intent(in   ) :: w0_cart_vec(:)
@@ -198,8 +198,23 @@ contains
     if (predict_h_at_edges) then
 
        ! make force for h
+       ! do this by calling mkrhohforce then dividing by rho
+       call mkrhohforce(nlevs,scal_force,umac,p0_old,p0_old,normal,dx,mla,the_bc_level)
+       do n=1,nlevs
+          call multifab_div_div_c(scal_force(n),1,sold(n),rho_comp,1,1)
+       end do
 
-       !*** NEED TO WRITE THIS ***!
+       ! add the thermal diffusion term
+       ! make sure thermal is scaled by 1/rho
+       if (use_thermal_diffusion) then
+          do n=1,nlevs
+             call multifab_div_div_c(thermal(n),1,sold(n),rho_comp,1)
+          end do
+          call add_thermal_to_force(nlevs,scal_force,thermal,the_bc_level,mla)
+          do n=1,nlevs
+             call multifab_mult_mult_c(thermal(n),1,sold(n),rho_comp,1)
+          end do
+       end if
 
     else if (predict_temp_at_edges) then
 
@@ -212,13 +227,14 @@ contains
        ! make force for (rho h)'
        call mkrhohforce(nlevs,scal_force,umac,p0_old,p0_old,normal,dx,mla,the_bc_level)
 
-       call modify_scal_force(which_step,nlevs,scal_force,sold,umac,s0_old,s0_edge_old,w0,&
-                              dx,s0_old_cart,rhoh_comp,1,mla,the_bc_level)
-        
+       ! add the thermal diffusion term
        if (use_thermal_diffusion) then
           call add_thermal_to_force(nlevs,scal_force,thermal,the_bc_level,mla)
        end if
 
+       call modify_scal_force(which_step,nlevs,scal_force,sold,umac,s0_old,s0_edge_old,w0,&
+                              dx,s0_old_cart,rhoh_comp,1,mla,the_bc_level)
+        
     end if
 
     if (predict_X_at_edges .or. predict_h_at_edges) then
@@ -258,7 +274,7 @@ contains
        end do
     end do
 
-    !    predict T at edges (if predict_temp_at_edges = T)
+    ! predict T at edges (if predict_temp_at_edges = T)
     ! OR predict h at edges (if predict_h_at_edges = T)
     ! OR predict (rho h)' at edges (if predict_temp_at_edges = F and predict_h_at_edges = F)
     if (predict_temp_at_edges) then
