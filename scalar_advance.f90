@@ -17,7 +17,6 @@ contains
                             umac,w0,w0_cart_vec,eta,utrans,normal, &
                             s0_old,s0_new,p0_old,p0_new, &
                             s0_predicted_edge, &
-                            s0_predicted_x_edge, &
                             dx,dt,the_bc_level)
 
     use bl_prof_module
@@ -62,7 +61,6 @@ contains
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: s0_predicted_edge(:,0:,:)
-    real(kind=dp_t), intent(in   ) :: s0_predicted_x_edge(:,0:,:)
     real(kind=dp_t), intent(in   ) :: dx(:,:),dt
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
@@ -411,21 +409,18 @@ contains
     ! compute enthalpy fluxes
        call mkflux(nlevs,sflux,etaflux,sold,sedge,umac,w0,w0_cart_vec, &
                    s0_old,s0_edge_old,s0_old_cart,s0_old,s0_edge_old,s0_old_cart, &
-                   s0_predicted_edge,s0_predicted_x_edge, &
-                   rhoh_comp,rhoh_comp,mla,dx,dt)
+                   s0_predicted_edge,rhoh_comp,rhoh_comp,mla,dx,dt)
 
        ! compute species fluxes
        call mkflux(nlevs,sflux,etaflux,sold,sedge,umac,w0,w0_cart_vec, &
                    s0_old,s0_edge_old,s0_old_cart,s0_old,s0_edge_old,s0_old_cart, &
-                   s0_predicted_edge,s0_predicted_x_edge, &
-                   spec_comp,spec_comp+nspec-1,mla,dx,dt)
+                   s0_predicted_edge,spec_comp,spec_comp+nspec-1,mla,dx,dt)
 
        if (ntrac .ge. 1) then
           ! compute tracer fluxes
           call mkflux(nlevs,sflux,etaflux,sold,sedge,umac,w0,w0_cart_vec, &
                       s0_old,s0_edge_old,s0_old_cart,s0_old,s0_edge_old,s0_old_cart, &
-                      s0_predicted_edge,s0_predicted_x_edge, &
-                      trac_comp,trac_comp+ntrac-1,mla,dx,dt)
+                      s0_predicted_edge,trac_comp,trac_comp+ntrac-1,mla,dx,dt)
        end if
 
     else if (which_step .eq. 2) then
@@ -433,21 +428,18 @@ contains
        ! compute enthalpy fluxes
        call mkflux(nlevs,sflux,etaflux,sold,sedge,umac,w0,w0_cart_vec, &
                    s0_old,s0_edge_old,s0_old_cart,s0_new,s0_edge_new,s0_new_cart, &
-                   s0_predicted_edge,s0_predicted_x_edge, &
-                   rhoh_comp,rhoh_comp,mla,dx,dt)
+                   s0_predicted_edge,rhoh_comp,rhoh_comp,mla,dx,dt)
 
        ! compute species fluxes
        call mkflux(nlevs,sflux,etaflux,sold,sedge,umac,w0,w0_cart_vec, &
                    s0_old,s0_edge_old,s0_old_cart,s0_new,s0_edge_new,s0_new_cart, &
-                   s0_predicted_edge,s0_predicted_x_edge, &
-                   spec_comp,spec_comp+nspec-1,mla,dx,dt)
+                   s0_predicted_edge,spec_comp,spec_comp+nspec-1,mla,dx,dt)
 
        if (ntrac .ge. 1) then
           ! compute tracer fluxes
           call mkflux(nlevs,sflux,etaflux,sold,sedge,umac,w0,w0_cart_vec, &
                       s0_old,s0_edge_old,s0_old_cart,s0_new,s0_edge_new,s0_new_cart, &
-                      s0_predicted_edge,s0_predicted_x_edge, &
-                      trac_comp,trac_comp+ntrac-1,mla,dx,dt)
+                      s0_predicted_edge,trac_comp,trac_comp+ntrac-1,mla,dx,dt)
        end if
 
     end if

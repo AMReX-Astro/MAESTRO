@@ -121,7 +121,6 @@ contains
     real(dp_t), allocatable :: p0_1(:,:)
     real(dp_t), allocatable :: p0_2(:,:)
     real(dp_t), allocatable :: s0_predicted_edge(:,:,:)
-    real(dp_t), allocatable :: s0_predicted_x_edge(:,:,:)
 
     integer    :: r,n,dm,comp,nlevs,ng_s,proj_type
     real(dp_t) :: halfdt,eps_in
@@ -150,7 +149,6 @@ contains
     allocate(             p0_1(nlevs,0:nr(nlevs)-1))
     allocate(             p0_2(nlevs,0:nr(nlevs)-1))
     allocate(s0_predicted_edge  (nlevs,0:nr(nlevs)  ,nscal))
-    allocate(s0_predicted_x_edge(nlevs,0:nr(nlevs)-1,nscal))
 
     ! Set these to be safe
     s0_1(:,:,:) = ZERO
@@ -158,7 +156,6 @@ contains
     p0_1(:,:)   = ZERO
     p0_2(:,:)   = ZERO
     s0_predicted_edge(:,:,:) = ZERO
-    s0_predicted_x_edge(:,:,:) = ZERO
 
     ! Set Sbar to zero so if evolve_base_state = F then we don't need to reset it.
     w0_old = w0
@@ -326,7 +323,7 @@ contains
     
     if (evolve_base_state) then
        call advect_base(1,nlevs,w0,Sbar,p0_1,p0_2,s0_1,s0_2,gam1,div_coeff_new, &
-                        s0_predicted_edge,s0_predicted_x_edge,dx(:,dm),dt)
+                        s0_predicted_edge,dx(:,dm),dt)
     else
        p0_2 = p0_1
        s0_2 = s0_1
@@ -378,7 +375,6 @@ contains
     call scalar_advance(nlevs,mla,1,uold,s1,s2,thermal, &
                         umac,w0,w0_cart_vec,eta,utrans,normal, &
                         s0_1,s0_2,p0_1,p0_2,s0_predicted_edge, &
-                        s0_predicted_x_edge, &
                         dx,dt,the_bc_tower%bc_tower_array)
 
     if (evolve_base_state) then
@@ -616,7 +612,7 @@ contains
 
        if (evolve_base_state) then
           call advect_base(2,nlevs,w0,Sbar,p0_1,p0_2,s0_1,s0_2,gam1,div_coeff_nph, &
-                           s0_predicted_edge,s0_predicted_x_edge,dx(:,dm),dt)
+                           s0_predicted_edge,dx(:,dm),dt)
        else
           p0_2 = p0_1
           s0_2 = s0_1
@@ -663,7 +659,6 @@ contains
        call scalar_advance(nlevs,mla,2,uold,s1,s2,thermal, &
                            umac,w0,w0_cart_vec,eta,utrans,normal, &
                            s0_1,s0_2,p0_1,p0_2,s0_predicted_edge, &
-                           s0_predicted_x_edge, &
                            dx,dt,the_bc_tower%bc_tower_array)
 
        if (evolve_base_state) then

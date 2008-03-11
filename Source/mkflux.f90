@@ -14,7 +14,7 @@ contains
 
   subroutine mkflux(nlevs,sflux,etaflux,sold,sedge,umac,w0,w0_cart_vec,s0_old,s0_edge_old, &
                     s0_old_cart,s0_new,s0_edge_new,s0_new_cart, &
-                    s0_predicted_edge,s0_predicted_x_edge,startcomp,endcomp,mla,dx,dt)
+                    s0_predicted_edge,startcomp,endcomp,mla,dx,dt)
 
     use bl_prof_module
     use bl_constants_module
@@ -34,7 +34,6 @@ contains
     real(kind=dp_t), intent(in   ) :: s0_new(:,0:,:),s0_edge_new(:,0:,:)
     type(multifab) , intent(in   ) :: s0_new_cart(:)
     real(kind=dp_t), intent(in   ) :: s0_predicted_edge(:,0:,:)
-    real(kind=dp_t), intent(in   ) :: s0_predicted_x_edge(:,0:,:)
     integer        , intent(in   ) :: startcomp,endcomp
     type(ml_layout), intent(inout) :: mla
     real(kind=dp_t), intent(in   ) :: dx(:,:),dt
@@ -92,7 +91,6 @@ contains
                             s0_old(n,:,:), s0_edge_old(n,:,:), &
                             s0_new(n,:,:), s0_edge_new(n,:,:), &
                             s0_predicted_edge(n,:,:), &
-                            s0_predicted_x_edge(n,:,:), &
                             w0(n,:),startcomp,endcomp,lo,hi,dx(n,:),dt)
           case (3)
              sfzp => dataptr(sflux(n,3),i)
@@ -139,7 +137,7 @@ contains
   end subroutine mkflux
   
   subroutine mkflux_2d(sfluxx,sfluxy,etaflux,sedgex,sedgey,umac,vmac,s0_old,s0_edge_old, &
-                       s0_new,s0_edge_new,s0_pred_edge,s0_pred_x_edge,w0,startcomp,endcomp, &
+                       s0_new,s0_edge_new,s0_pred_edge,w0,startcomp,endcomp, &
                        lo,hi,dx,dt)
 
     use bl_constants_module
@@ -158,7 +156,6 @@ contains
     real(kind=dp_t), intent(in   ) :: s0_old(0:,:), s0_edge_old(0:,:)
     real(kind=dp_t), intent(in   ) :: s0_new(0:,:), s0_edge_new(0:,:)
     real(kind=dp_t), intent(in   ) :: s0_pred_edge(0:,:)
-    real(kind=dp_t), intent(in   ) :: s0_pred_x_edge(0:,:)
     real(kind=dp_t), intent(in   ) :: w0(0:)
     integer        , intent(in   ) :: startcomp,endcomp
     real(kind=dp_t), intent(in   ) :: dx(:),dt

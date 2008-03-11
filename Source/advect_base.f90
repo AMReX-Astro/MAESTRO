@@ -12,8 +12,7 @@ contains
 
   subroutine advect_base(which_step,nlevs,vel,Sbar_in,p0_old,p0_new, &
                          s0_old,s0_new,gam1,div_coeff, &
-                         s0_predicted_edge,s0_predicted_x_edge, &
-                         dz,dt)
+                         s0_predicted_edge,dz,dt)
 
     use bl_prof_module
     use geometry, only: spherical
@@ -26,7 +25,6 @@ contains
     real(kind=dp_t), intent(inout) :: gam1(:,0:)
     real(kind=dp_t), intent(in   ) :: div_coeff(:,0:)
     real(kind=dp_t), intent(  out) :: s0_predicted_edge(:,0:,:)
-    real(kind=dp_t), intent(  out) :: s0_predicted_x_edge(:,:,:)
     real(kind=dp_t), intent(in   ) :: dz(:)
     real(kind=dp_t), intent(in   ) :: dt
     
@@ -41,8 +39,7 @@ contains
        if (spherical .eq. 0) then
           call advect_base_state_planar(which_step,n,vel(n,0:),p0_old(n,0:),p0_new(n,0:), &
                                         s0_old(n,0:,:),s0_new(n,0:,:),gam1(n,0:), &
-                                        s0_predicted_edge(n,0:,:), &
-                                        s0_predicted_x_edge(n,:,:),dz(n),dt)
+                                        s0_predicted_edge(n,0:,:),dz(n),dt)
        else
           call advect_base_state_spherical(which_step,n,vel(n,:),Sbar_in(n,:,1), &
                                            p0_old(n,:),p0_new(n,:), &
@@ -59,8 +56,7 @@ contains
 
   subroutine advect_base_state_planar(which_step,n,vel,p0_old,p0_new, &
                                       s0_old,s0_new,gam1, &
-                                      s0_predicted_edge,&
-                                      s0_predicted_x_edge,dz,dt)
+                                      s0_predicted_edge,dz,dt)
 
     use bl_constants_module
     use make_edge_state_module
@@ -76,7 +72,6 @@ contains
     real(kind=dp_t), intent(  out) :: p0_new(0:), s0_new(0:,:)
     real(kind=dp_t), intent(inout) :: gam1(0:)
     real(kind=dp_t), intent(  out) :: s0_predicted_edge(0:,:)
-    real(kind=dp_t), intent(  out) :: s0_predicted_x_edge(0:,:)
     real(kind=dp_t), intent(in   ) :: dz,dt
     
     ! Local variables
@@ -96,7 +91,6 @@ contains
     allocate(edge(0:nr(n)))
    
     s0_predicted_edge(:,:) = ZERO
-    s0_predicted_x_edge(:,:) = ZERO
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Update p_0
@@ -125,12 +119,6 @@ contains
 
        s0_predicted_edge(:,rho_comp) = edge(:)       
 
-       ! Predict rho_0 to lateral edges
-       do r = 0,nr(n)-1
-          s0_predicted_x_edge(r,rho_comp) = s0_old(r,rho_comp) - &
-              HALF * dt * ( vel(r+1)*edge(r+1) - vel(r)*edge(r) ) / dz 
-       end do
-
     endif
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -155,14 +143,6 @@ contains
           ! that later
           s0_predicted_edge(:,comp) = edge(:)
 
-          ! s0_predicted_x_edge will store X_0 on the horizontal edges -- we need
-          ! that later
-          do r = 0,nr(n)-1
-             vel_avg = HALF * (vel(r)+vel(r+1))
-             s0_predicted_x_edge(r,comp) = X0(r) - HALF * dt * vel_avg * &
-                                                   (edge(r+1)-edge(r)) / dz
-          end do
-          
           ! our final update needs (rho X)_0 on the edges, so compute
           ! that now
           edge(:) = s0_predicted_edge(:,rho_comp)*edge(:)
@@ -178,11 +158,6 @@ contains
 
           ! s0_predicted_edge will store (rho X)_0 on the vertical edges
           s0_predicted_edge(:,comp) = edge(:)
-
-          ! s0_predicted_edge will store (rho X)_0 on the horizontal edges
-          do r = 0,nr(n)-1
-             s0_predicted_x_edge(r,comp) = s0_old(r,comp) + HALF*dt*force(r)
-          end do
 
        endif
        
