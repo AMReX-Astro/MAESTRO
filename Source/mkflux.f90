@@ -242,8 +242,7 @@ contains
                 ! sedgey is either (rho h)', (rho X)', or (rho trac)' at edges
                 sfluxy(i,j,comp) = (vmac(i,j)+w0(j))*sedgey(i,j,comp) + vmac(i,j)*s0_edge
                 
-                etaflux(i,j,comp) = &
-                     sfluxy(i,j,comp) - w0(j)*s0_pred_edge(j,comp)*s0_pred_edge(j,rho_comp)
+                etaflux(i,j,comp) = sfluxy(i,j,comp)
                 
              end do
              
