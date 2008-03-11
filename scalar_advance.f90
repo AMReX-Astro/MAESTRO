@@ -128,8 +128,7 @@ contains
     ! This can be uncommented if you wish to compute T
     ! call makeTfromRhoH(nlevs,sold,s0_old(:,:,temp_comp),mla,the_bc_level,dx)
 
-
-    ! If we are predicting X on the edges, then convert the state arrays
+    ! if we are predicting X on the edges, then convert the state arrays
     ! (and base state) from (rho X) to X.  Note, only the time-level n
     ! stuff need be converted, since that's all the prediction uses
     if (predict_X_at_edges) then
@@ -147,6 +146,9 @@ contains
 
     endif
 
+    ! if we are predicting h on the edges, then convert the state arrays
+    ! (and base state) from (rho h) to h.  Note, only the time-level n
+    ! stuff need be converted, since that's all the prediction uses
     if (predict_h_at_edges) then
 
        call convert_rhoh_to_h(nlevs,sold,dx,.true.,mla,the_bc_level)
@@ -182,11 +184,15 @@ contains
 
     ! species forces
     if (predict_X_at_edges) then
+
        ! X force is zero - do nothing
+
     else
+
        ! make force for (rho X)'
        call modify_scal_force(which_step,nlevs,scal_force,sold,umac,s0_old,s0_edge_old,w0,&
                               dx,s0_old_cart,spec_comp,nspec,mla,the_bc_level)
+
     endif
 
     if (predict_h_at_edges) then
@@ -203,7 +209,7 @@ contains
 
     else
 
-       ! make force for rhoh
+       ! make force for (rho h)'
        call mkrhohforce(nlevs,scal_force,umac,p0_old,p0_old,normal,dx,mla,the_bc_level)
 
        call modify_scal_force(which_step,nlevs,scal_force,sold,umac,s0_old,s0_edge_old,w0,&
@@ -228,7 +234,7 @@ contains
     call addw0(nlevs,umac,w0,w0_cart_vec,mult=ONE)
 
     !**************************************************************************
-    !     Create the edge states of (rho h)' (or T) and (rho X)' (or X)
+    !     Create the edge states of (rho h)' or h or T and (rho X)' or X and rho'
     !**************************************************************************
 
     if (.not. predict_temp_at_edges .and. .not. predict_h_at_edges) then
@@ -252,9 +258,9 @@ contains
        end do
     end do
 
-    ! predict T at edges (if predict_temp_at_edges = T)
-    ! predict h at edges (if predict_h_at_edges = T)
-    ! predict (rho h)' at edges (if predict_temp_at_edges = F and predict_h_at_edges = F)
+    !    predict T at edges (if predict_temp_at_edges = T)
+    ! OR predict h at edges (if predict_h_at_edges = T)
+    ! OR predict (rho h)' at edges (if predict_temp_at_edges = F and predict_h_at_edges = F)
     if (predict_temp_at_edges) then
        pred_comp = temp_comp
     else
@@ -294,7 +300,6 @@ contains
 
     end if
 
-
     if (.not. predict_temp_at_edges .and. .not. predict_h_at_edges) then
        ! convert (rho h)' -> (rho h)
        call put_in_pert_form(nlevs,sold,s0_old,dx,rhoh_comp,1,.false.,mla,the_bc_level)
@@ -308,8 +313,8 @@ contains
        call put_in_pert_form(nlevs,sold,s0_old,dx,spec_comp,nspec,.false.,mla,the_bc_level)
     end if
 
-    ! if we were predicting X at the edges, restore the state arrays to
-    ! X from (rho X)
+    ! if we were predicting X at the edges, then restore the state arrays 
+    ! (and base state) from X to (rho X)
     if (predict_X_at_edges) then
 
        call convert_rhoX_to_X(nlevs,sold,dx,.false.,mla,the_bc_level)
@@ -318,8 +323,6 @@ contains
           call convert_rhoX_to_X(nlevs,s0_old_cart,dx,.false.,mla,the_bc_level)
        end if
 
-       ! convert the base state species back to (rho X)_0.  Note, we can't
-       ! do the full state yet because we are still in pert form.  
        do comp = spec_comp, spec_comp + nspec - 1
           s0_old(:,:,comp) = s0_old(:,:,rho_comp)*s0_old(:,:,comp)
           s0_edge_old(:,:,comp) = s0_edge_old(:,:,rho_comp)*s0_edge_old(:,:,comp)
@@ -327,6 +330,8 @@ contains
 
     endif
 
+    ! if we are predicing h at the edges, then restore the state arrays
+    ! (and base state) from h to (rho h)
     if (predict_h_at_edges) then
 
        call convert_rhoh_to_h(nlevs,sold,dx,.false.,mla,the_bc_level)
