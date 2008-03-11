@@ -68,7 +68,7 @@ contains
     use geometry, only: nr, dr
     use variables, only: rho_comp
     use bl_constants_module
-    use probin_module, only: grav_const, evolve_base_state
+    use probin_module, only: grav_const
 
     integer        , intent(in   ) :: n
     real(kind=dp_t), intent(  out) :: vel(0:)
@@ -105,19 +105,12 @@ contains
     ! Initialize new velocity to zero.
     vel(0) = ZERO
     
-    if (evolve_base_state) then
-       do r = 1,nr(n)
-          eta_avg = HALF * (eta(r,rho_comp)+eta(r-1,rho_comp))
-          vel(r) = vel(r-1) + Sbar_in(r-1) * dr(n) - &
-               ( eta_avg * dpdroverrho(r-1) / (gam1(r-1)*p0(r-1)) ) * dr(n)
-       end do
-    else
-       do r = 1,nr(n)
-          eta_avg = HALF * (eta(r,rho_comp)+eta(r-1,rho_comp))
-          vel(r) = vel(r-1) + Sbar_in(r-1) * dr(n) - &
-               ( eta_avg * abs(grav_const) / (gam1(r-1)*p0(r-1)) ) * dr(n)
-       end do
-    end if
+    do r = 1,nr(n)
+       eta_avg = HALF * (eta(r,rho_comp)+eta(r-1,rho_comp))
+
+       vel(r) = vel(r-1) + Sbar_in(r-1) * dr(n) &
+          - ( eta_avg * dpdroverrho(r-1) / (gam1(r-1)*p0(r-1)) ) * dr(n)
+    end do
 
     ! Compute the 1/rho0 grad pi0 term.
     dt_avg = HALF * (dt + dtold)

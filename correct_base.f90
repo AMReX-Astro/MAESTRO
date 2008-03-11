@@ -10,13 +10,13 @@ module correct_base_module
 
 contains
 
-  subroutine correct_base(which_step,nlevs,p0_old,p0_new,s0_old,s0_new, &
+  subroutine correct_base(nlevs,p0_old,p0_new,s0_old,s0_new, &
                          gam1,div_coeff,eta,dz,dt)
 
     use bl_prof_module
     use geometry, only: spherical
 
-    integer        , intent(in   ) :: which_step,nlevs
+    integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:), s0_old(:,0:,:)
     real(kind=dp_t), intent(  out) :: p0_new(:,0:), s0_new(:,0:,:)
     real(kind=dp_t), intent(inout) :: gam1(:,0:)
@@ -34,7 +34,7 @@ contains
     
     do n=1,nlevs
        if (spherical .eq. 0) then
-          call correct_base_state_planar(which_step,n,p0_old(n,0:),p0_new(n,0:),s0_old(n,0:,:), &
+          call correct_base_state_planar(n,p0_old(n,0:),p0_new(n,0:),s0_old(n,0:,:), &
                                         s0_new(n,0:,:),gam1(n,0:),eta(n,0:,:),dz(n),dt)
        end if
     enddo
@@ -43,7 +43,7 @@ contains
        
   end subroutine correct_base
 
-  subroutine correct_base_state_planar(which_step,n,p0_old,p0_new,s0_old,s0_new,gam1,eta,dz,dt)
+  subroutine correct_base_state_planar(n,p0_old,p0_new,s0_old,s0_new,gam1,eta,dz,dt)
 
     use bl_constants_module
     use make_edge_state_module
@@ -52,7 +52,7 @@ contains
     use geometry, only: nr
     use probin_module, only: grav_const, anelastic_cutoff
 
-    integer        , intent(in   ) :: which_step,n
+    integer        , intent(in   ) :: n
     real(kind=dp_t), intent(in   ) :: p0_old(0:), s0_old(0:,:)
     real(kind=dp_t), intent(  out) :: p0_new(0:), s0_new(0:,:)
     real(kind=dp_t), intent(inout) :: gam1(0:)

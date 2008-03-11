@@ -123,8 +123,6 @@ contains
     real(dp_t), allocatable :: s0_predicted_edge(:,:,:)
     real(dp_t), allocatable :: s0_predicted_x_edge(:,:,:)
 
-    real(dp_t), allocatable :: eta2(:,:,:)
-
     integer    :: r,n,dm,comp,nlevs,ng_s,proj_type
     real(dp_t) :: halfdt,eps_in
     logical    :: nodal(mla%dim)
@@ -154,10 +152,6 @@ contains
     allocate(s0_predicted_edge  (nlevs,0:nr(nlevs)  ,nscal))
     allocate(s0_predicted_x_edge(nlevs,0:nr(nlevs)-1,nscal))
 
-    allocate(             eta2(nlevs,0:nr(nlevs)  ,nscal))
-
-
-
     ! Set these to be safe
     s0_1(:,:,:) = ZERO
     s0_2(:,:,:) = ZERO
@@ -165,6 +159,9 @@ contains
     p0_2(:,:)   = ZERO
     s0_predicted_edge(:,:,:) = ZERO
     s0_predicted_x_edge(:,:,:) = ZERO
+
+    ! Set Sbar to zero so if evolve_base_state = F then we don't need to reset it.
+    w0_old = w0
 
     ! Set w0_old to w0 from last time step.
     w0_old = w0
@@ -192,17 +189,20 @@ contains
        call extrap_to_halftime(nlevs,Source_nph,dSdt,Source_old,dt)
     end if
     
-    call average(mla,Source_nph,Sbar,dx,1,1)
-    
-    call make_w0(nlevs,w0,w0_old,w0_force,Sbar(:,:,1),p0_old, &
-                 s0_old(:,:,rho_comp),gam1,eta,dt,dtold)
-    
-    if (dm .eq. 3) then
-       do n=1,nlevs
-          call multifab_build(w0_cart_vec(n), mla%la(n), dm, 1)
-       end do
+    if (evolve_base_state) then
 
-       call make_w0_cart(nlevs,w0,w0_cart_vec,normal,dx,the_bc_tower%bc_tower_array,mla)
+       call average(mla,Source_nph,Sbar,dx,1,1)
+
+       call make_w0(nlevs,w0,w0_old,w0_force,Sbar(:,:,1),p0_old, &
+                    s0_old(:,:,rho_comp),gam1,eta,dt,dtold)
+
+       if (dm .eq. 3) then
+          do n=1,nlevs
+             call multifab_build(w0_cart_vec(n), mla%la(n), dm, 1)
+          end do
+          call make_w0_cart(nlevs,w0,w0_cart_vec,normal,dx,the_bc_tower%bc_tower_array,mla)
+       end if
+
     end if
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -376,10 +376,14 @@ contains
     end do
 
     call scalar_advance(nlevs,mla,1,uold,s1,s2,thermal, &
-                        umac,w0,w0_cart_vec,eta,eta2,utrans,normal, &
+                        umac,w0,w0_cart_vec,eta,utrans,normal, &
                         s0_1,s0_2,p0_1,p0_2,s0_predicted_edge, &
                         s0_predicted_x_edge, &
                         dx,dt,the_bc_tower%bc_tower_array)
+
+    if (evolve_base_state) then
+       call correct_base(nlevs,p0_1,p0_2,s0_1,s0_2,gam1,div_coeff_nph,eta,dx(:,dm),dt)
+    end if
 
     do n=1,nlevs
        call destroy(thermal(n))
@@ -514,23 +518,23 @@ contains
 
        call make_S_at_halftime(nlevs,Source_nph,Source_old,Source_new)
        
-       do n=1,nlevs
+       if (evolve_base_state) then
+       
           call average(mla,Source_nph,Sbar,dx,1,1)
-       end do
-       
-       call make_w0(nlevs,w0,w0_old,w0_force,Sbar(:,:,1),p0_new, &
-                    s0_new(:,:,rho_comp),gam1,eta,dt,dtold)
-       
-       if (dm .eq. 3) then
 
-          do n=1,nlevs
-             call multifab_build(w0_force_cart_vec(n), mla%la(n), dm, 1)
-          end do
+          call make_w0(nlevs,w0,w0_old,w0_force,Sbar(:,:,1),p0_new, &
+                       s0_new(:,:,rho_comp),gam1,eta,dt,dtold)
+       
+          if (dm .eq. 3) then
 
-          call make_w0_cart(nlevs,w0      ,w0_cart_vec      ,normal,dx, &
-                            the_bc_tower%bc_tower_array,mla) 
-          call make_w0_cart(nlevs,w0_force,w0_force_cart_vec,normal,dx, &
-                            the_bc_tower%bc_tower_array,mla) 
+             do n=1,nlevs
+                call multifab_build(w0_force_cart_vec(n), mla%la(n), dm, 1)
+             end do
+             call make_w0_cart(nlevs,w0      ,w0_cart_vec      ,normal,dx, &
+                               the_bc_tower%bc_tower_array,mla) 
+             call make_w0_cart(nlevs,w0_force,w0_force_cart_vec,normal,dx, &
+                               the_bc_tower%bc_tower_array,mla) 
+          end if
        end if
        
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -609,6 +613,7 @@ contains
           write(6,*) '<<< STEP  8 : advect base   '
           write(6,*) '            : scalar_advance >>>'
        end if
+
        if (evolve_base_state) then
           call advect_base(2,nlevs,w0,Sbar,p0_1,p0_2,s0_1,s0_2,gam1,div_coeff_nph, &
                            s0_predicted_edge,s0_predicted_x_edge,dx(:,dm),dt)
@@ -656,13 +661,13 @@ contains
        end do
 
        call scalar_advance(nlevs,mla,2,uold,s1,s2,thermal, &
-                           umac,w0,w0_cart_vec,eta,eta2,utrans,normal, &
+                           umac,w0,w0_cart_vec,eta,utrans,normal, &
                            s0_1,s0_2,p0_1,p0_2,s0_predicted_edge, &
                            s0_predicted_x_edge, &
                            dx,dt,the_bc_tower%bc_tower_array)
 
        if (evolve_base_state) then
-          call correct_base(2,nlevs,p0_1,p0_2,s0_1,s0_2,gam1,div_coeff_nph,eta2,dx(:,dm),dt)
+          call correct_base(nlevs,p0_1,p0_2,s0_1,s0_2,gam1,div_coeff_nph,eta,dx(:,dm),dt)
        end if
 
        do n=1,nlevs

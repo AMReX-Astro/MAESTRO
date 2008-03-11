@@ -13,9 +13,12 @@ module scalar_advance_module
 
 contains
 
-  subroutine scalar_advance(nlevs,mla,which_step,uold,sold,snew,thermal,umac,w0, &
-                            w0_cart_vec,eta,eta2,utrans,normal,s0_old,s0_new,p0_old,p0_new, &
-                            s0_predicted_edge,s0_predicted_x_edge,dx,dt,the_bc_level)
+  subroutine scalar_advance(nlevs,mla,which_step,uold,sold,snew,thermal, &
+                            umac,w0,w0_cart_vec,eta,utrans,normal, &
+                            s0_old,s0_new,p0_old,p0_new, &
+                            s0_predicted_edge, &
+                            s0_predicted_x_edge, &
+                            dx,dt,the_bc_level)
 
     use bl_prof_module
     use bl_constants_module
@@ -52,7 +55,6 @@ contains
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     type(multifab) , intent(in   ) :: w0_cart_vec(:)
     real(kind=dp_t), intent(inout) :: eta(:,0:,:)
-    real(kind=dp_t), intent(inout) :: eta2(:,0:,:)
     type(multifab) , intent(in   ) :: utrans(:,:)
     type(multifab) , intent(in   ) :: normal(:)
     real(kind=dp_t), intent(inout) :: s0_old(:,0:,:)
@@ -519,9 +521,7 @@ contains
     !**************************************************************************
 
     if (use_eta .and. evolve_base_state) then
-       call make_eta(nlevs,eta2,sold,etaflux,mla)
-    else
-       eta2 = 0.d0
+       call make_eta(nlevs,eta,sold,etaflux,mla)
     end if
 
     if (spherical .eq. 1) then
