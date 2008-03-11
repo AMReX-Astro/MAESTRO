@@ -28,6 +28,7 @@ subroutine varden()
   use eos_module
   use divu_iter_module
   use initial_proj_module
+  use ml_restriction_module
 
   implicit none
 
@@ -36,7 +37,7 @@ subroutine varden()
   integer    :: ng_s,i,n,nlevs,n_chk_comps
   integer    :: last_plt_written,last_chk_written
   real(dp_t) :: lenx,leny,lenz,max_dist,smin,smax
-  real(dp_t) :: time,dt,dtold,dt_hold,dt_temp,dt_lev,halfdt
+  real(dp_t) :: time,dt,dtold,dt_lev
 
   integer     , allocatable :: domain_phys_bc(:,:)
   integer     , allocatable :: lo(:), hi(:)
@@ -67,11 +68,12 @@ subroutine varden()
 
   real(kind=dp_t), pointer :: nop(:,:,:,:)
 
-  character(len=7)               :: sd_name
-  character(len=4)               :: plot_index
+  character(len=8)               :: sd_name
+  character(len=5)               :: plot_index
   character(len=256)             :: plot_file_name
-  character(len=10)              :: base_state_name
-  character(len=7)               :: base_w0_name
+  character(len=11)              :: base_state_name
+  character(len=8)               :: base_w0_name
+  character(len=9)               :: base_eta_name
   character(len=20), allocatable :: plot_names(:)
 
   real, parameter :: SMALL = 1.d-13
@@ -89,6 +91,7 @@ subroutine varden()
   real(dp_t), allocatable :: s0_new(:,:,:)
   real(dp_t), allocatable :: p0_old(:,:)
   real(dp_t), allocatable :: p0_new(:,:)
+  real(dp_t), allocatable :: eta(:,:,:) 
   real(dp_t), allocatable :: w0(:,:)
 
   type(bc_tower) ::  the_bc_tower
@@ -168,13 +171,13 @@ subroutine varden()
   do n = 1,nlevs
      call multifab_build(      uold(n),    mla%la(n),    dm, ng_s)
      call multifab_build(      sold(n),    mla%la(n), nscal, ng_s)
-     call multifab_build(     gpres(n),    mla%la(n),    dm,       1)
-     call multifab_build(      pres(n),    mla%la(n),     1,       1, nodal)
-     call multifab_build(     hgrhs(n),    mla%la(n),     1,       0, nodal)
-     call multifab_build(      dSdt(n),    mla%la(n),     1,       0)
-     call multifab_build(Source_old(n),    mla%la(n),     1,       0)
-     call multifab_build(Source_new(n),    mla%la(n),     1,       0)
-     call multifab_build(rho_omegadot2(n), mla%la(n), nspec,       0)
+     call multifab_build(     gpres(n),    mla%la(n),    dm,    1)
+     call multifab_build(      pres(n),    mla%la(n),     1,    1, nodal)
+     call multifab_build(     hgrhs(n),    mla%la(n),     1,    0, nodal)
+     call multifab_build(      dSdt(n),    mla%la(n),     1,    0)
+     call multifab_build(Source_old(n),    mla%la(n),     1,    0)
+     call multifab_build(Source_new(n),    mla%la(n),     1,    0)
+     call multifab_build(rho_omegadot2(n), mla%la(n), nspec,    0)
 
      call setval(       uold(n), 0.0_dp_t, all=.true.)
      call setval(       sold(n), 0.0_dp_t, all=.true.)
@@ -196,7 +199,7 @@ subroutine varden()
      end do
         
      do n=1,nlevs
-        call multifab_copy_c( pres(n),1,chk_p(n), 1, 1)       
+        call multifab_copy_c(pres(n),1,chk_p(n),1,1)       
         call destroy(chk_p(n))
      end do
 
@@ -246,8 +249,7 @@ subroutine varden()
   if(spherical .eq. 1) then
      do i=1,dm
         if(prob_lo(i) .ne. ZERO) then
-           print*,"Error: prob_lo for spherical is not zero"
-           stop
+           call bl_error('Error: prob_lo for spherical is not zero')
         end if
      end do
   end if
@@ -307,6 +309,7 @@ subroutine varden()
   allocate(p0_old       (nlevs,0:nr_fine-1))
   allocate(p0_new       (nlevs,0:nr_fine-1))
   allocate(w0           (nlevs,0:nr_fine))
+  allocate(eta          (nlevs,0:nr_fine,nscal))
 
   div_coeff_old(:,:) = ZERO
   div_coeff_new(:,:) = ZERO
@@ -315,6 +318,8 @@ subroutine varden()
 
   s0_old(:,:,:) = ZERO
   s0_new(:,:,:) = ZERO
+
+  eta(:,:,:) = ZERO
 
   p0_old(:,:) = ZERO
   p0_new(:,:) = ZERO
@@ -385,15 +390,47 @@ subroutine varden()
   ! now that we have the_bc_tower, we can fill the ghost cells outside of the
   ! domain for the read-in checkpoint data
   if(restart >= 0) then
-     do n=1,nlevs
-        call multifab_fill_boundary(sold(n))
-        call multifab_fill_boundary(uold(n))
+     
+     if (nlevs .eq. 1) then
+        
+       ! fill ghost cells for two adjacent grids at the same level
+       ! this includes periodic domain boundary ghost cells
+        call multifab_fill_boundary(sold(nlevs))
+        call multifab_fill_boundary(uold(nlevs))
 
-        call multifab_physbc(sold(n),rho_comp,dm+rho_comp,nscal,dx(n,:), &
-                             the_bc_tower%bc_tower_array(n))
-        call multifab_physbc(uold(n),       1,          1,   dm,dx(n,:), &
-                             the_bc_tower%bc_tower_array(n))
-     end do
+        ! fill non-periodic domain boundary ghost cells
+        call multifab_physbc(sold(nlevs),rho_comp,dm+rho_comp,nscal, &
+                             the_bc_tower%bc_tower_array(nlevs))
+        call multifab_physbc(uold(nlevs),       1,          1,   dm, &
+                             the_bc_tower%bc_tower_array(nlevs))
+
+     else
+
+        ! the loop over nlevs must count backwards to make sure the finer grids are 
+        ! done first
+        do n = nlevs,2,-1
+
+           ! set level n-1 data to be the average of the level n data covering it
+           call ml_cc_restriction(uold(n-1),uold(n),mla%mba%rr(n-1,:))
+           call ml_cc_restriction(sold(n-1),sold(n),mla%mba%rr(n-1,:))
+
+           ! fill level n ghost cells using interpolation from level n-1 data
+           ! note that multifab_fill_boundary and multifab_physbc are called for
+           ! both levels n-1 and n
+           call multifab_fill_ghost_cells(uold(n),uold(n-1), &
+                                          ng_s,mla%mba%rr(n-1,:), &
+                                          the_bc_tower%bc_tower_array(n-1), &
+                                          the_bc_tower%bc_tower_array(n  ), &
+                                          1,1,dm)
+           call multifab_fill_ghost_cells(sold(n),sold(n-1), &
+                                          ng_s,mla%mba%rr(n-1,:), &
+                                          the_bc_tower%bc_tower_array(n-1), &
+                                          the_bc_tower%bc_tower_array(n  ), &
+                                          1,dm+rho_comp,nscal)
+        end do
+
+     end if
+
   end if
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -413,13 +450,14 @@ subroutine varden()
      do n = 1,nlevs
         call init_base_state(n,model_file,s0_old(n,:,:),p0_old(n,:),gam1(n,:),dx(n,:))
      end do
-  else 
-     write(unit=sd_name,fmt='("chk",i4.4)') restart
-     write(unit=base_state_name,fmt='("model_",i4.4)') restart
-     write(unit=base_w0_name,fmt='("w0_",i4.4)') restart
+  else
+     write(unit=sd_name,fmt='("chk",i5.5)') restart
+     write(unit=base_state_name,fmt='("model_",i5.5)') restart
+     write(unit=base_w0_name,fmt='("w0_",i5.5)') restart
+     write(unit=base_eta_name,fmt='("eta_",i5.5)') restart
 
-     call read_base_state(base_state_name, base_w0_name, sd_name, &
-                          s0_old(1,:,:), p0_old(1,:), gam1(1,:), w0(1,:), div_coeff_old(1,:))
+     call read_base_state(nlevs, base_state_name, base_w0_name, base_eta_name, sd_name, &
+                          s0_old, p0_old, gam1, w0, eta, div_coeff_old)
   end if
 
   ! Create the normal array once we have defined "center"
@@ -466,7 +504,7 @@ subroutine varden()
 
      if(do_initial_projection > 0) then
         call initial_proj(nlevs,uold,sold,pres,gpres,Source_old,hgrhs, &
-                          div_coeff_old,s0_old,p0_old,gam1,grav_cell,dx,the_bc_tower,mla)
+                          div_coeff_old,s0_old,p0_old,gam1,dx,the_bc_tower,mla)
      end if
     
      do n=1,nlevs
@@ -537,7 +575,7 @@ subroutine varden()
 
      if ( plot_int > 0 ) then
 
-        write(unit=plot_index,fmt='(i4.4)') restart
+        write(unit=plot_index,fmt='(i5.5)') restart
         plot_file_name = trim(plot_base_name) // plot_index
         call make_plotfile(plot_file_name,mla,uold,sold,gpres,rho_omegadot2,&
                            Source_old,sponge,mba,plot_names,time,dx,&
@@ -548,24 +586,11 @@ subroutine varden()
 
   end if
 
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  ! set the boundary conditions
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
   do n = 1,nlevs
 
-     call multifab_fill_boundary(sold(n))
-     call multifab_fill_boundary(uold(n))
-
-     call multifab_physbc(sold(n),rho_comp,dm+rho_comp,nscal,dx(n,:), &
-                          the_bc_tower%bc_tower_array(n))
-     call multifab_physbc(uold(n),       1,          1,   dm,dx(n,:), &
-                          the_bc_tower%bc_tower_array(n))
-
-     !    This is done to impose any Dirichlet bc's on unew or snew.
-     call multifab_copy_c(unew(n),1,uold(n),1,dm   ,ng=unew(n)%ng)
-     call multifab_copy_c(snew(n),1,sold(n),1,nscal,ng=snew(n)%ng)
+     ! This is done to impose any Dirichlet bc's on unew or snew.
+     call multifab_copy_c(unew(n),1,uold(n),1,dm   ,ng=ng_s)
+     call multifab_copy_c(snew(n),1,sold(n),1,nscal,ng=ng_s)
 
   end do
 
@@ -592,6 +617,10 @@ subroutine varden()
         call multifab_copy_c(Source_new(n),1,Source_old(n),1,1)
      end do
 
+     if (do_sponge) then
+        call make_sponge(nlevs,sponge,dx,dt,mla)
+     end if
+
      if (init_iter > 0) then
         if (parallel_IOProcessor() .and. verbose .ge. 1) then
            print*,'DOING',init_iter,'INITIAL PRESSURE ITERATIONS'
@@ -603,22 +632,6 @@ subroutine varden()
         !----------------------------------------------------------------------
 
         do istep_init_iter = 1,init_iter
-           do n = nlevs, 2, -1
-              call multifab_fill_ghost_cells(uold(n),uold(n-1), &
-                                             ng_s,mla%mba%rr(n-1,:), &
-                                             the_bc_tower%bc_tower_array(n-1), &
-                                             the_bc_tower%bc_tower_array(n  ), &
-                                             1,1,dm)
-              call multifab_fill_ghost_cells(sold(n),sold(n-1), &
-                                             ng_s,mla%mba%rr(n-1,:), &
-                                             the_bc_tower%bc_tower_array(n-1), &
-                                             the_bc_tower%bc_tower_array(n  ), &
-                                             1,dm+rho_comp,nscal)
-           end do
-
-           if (do_sponge) then
-              call make_sponge(nlevs,sponge,dx,dt,mla)
-           end if
 
            ! Advance a single timestep at all levels.
            init_mode = .true.
@@ -627,8 +640,10 @@ subroutine varden()
                                  s0_new,p0_old,p0_new,gam1,w0, &
                                  rho_omegadot2,div_coeff_old, &
                                  div_coeff_new,grav_cell,dx,time,dt,dtold,the_bc_tower, &
-                                 dSdt,Source_old,Source_new,sponge,hgrhs,istep)
+                                 dSdt,Source_old,Source_new,eta,sponge,hgrhs,istep)
+
         end do ! end do istep_init_iter = 1,init_iter
+
      end if ! end if (init_iter > 0)
 
      !------------------------------------------------------------------------
@@ -640,22 +655,22 @@ subroutine varden()
         allocate(chkdata(nlevs))
         do n = 1,nlevs
            call multifab_build(chkdata(n), mla%la(n), n_chk_comps, 0)
-           call multifab_copy_c(chkdata(n),1                ,uold(n),1,dm)
-           call multifab_copy_c(chkdata(n),rho_comp+dm      ,sold(n),1,nscal)
+           call multifab_copy_c(chkdata(n),1                ,uold(n), 1,dm)
+           call multifab_copy_c(chkdata(n),rho_comp+dm      ,sold(n), 1,nscal)
            call multifab_copy_c(chkdata(n),rho_comp+dm+nscal,gpres(n),1,dm)
         end do
-        write(unit=sd_name,fmt='("chk",i4.4)') istep
+        write(unit=sd_name,fmt='("chk",i5.5)') istep
 
         call checkpoint_write(sd_name, chkdata, pres, dSdt, Source_old, &
-                              rho_omegadot2, mba%rr, dx, time, dt)
+                              rho_omegadot2, mba%rr, time, dt)
 
         last_chk_written = istep
 
-        write(unit=base_state_name,fmt='("model_",i4.4)') istep
-        write(unit=base_w0_name,fmt='("w0_",i4.4)') istep
-        call write_base_state(base_state_name, base_w0_name, sd_name, &
-                              s0_old(1,:,:), p0_old(1,:), &
-                              gam1(1,:), w0(1,:), div_coeff_old(1,:),prob_lo(dm))
+        write(unit=base_state_name,fmt='("model_",i5.5)') istep
+        write(unit=base_w0_name,fmt='("w0_",i5.5)') istep
+        write(unit=base_eta_name,fmt='("eta_",i5.5)') istep
+        call write_base_state(nlevs, base_state_name, base_w0_name, base_eta_name, sd_name, &
+                              s0_old, p0_old, gam1, w0, eta, div_coeff_old,prob_lo(dm))
         do n = 1,nlevs
            call destroy(chkdata(n))
         end do
@@ -663,7 +678,7 @@ subroutine varden()
      end if
 
      if ( plot_int > 0 ) then
-        write(unit=plot_index,fmt='(i4.4)') istep
+        write(unit=plot_index,fmt='(i5.5)') istep
         plot_file_name = trim(plot_base_name) // plot_index
         call make_plotfile(plot_file_name,mla,uold,sold,gpres,rho_omegadot2,Source_new, &
                            sponge,mba,plot_names,time,dx,&
@@ -699,7 +714,7 @@ subroutine varden()
 
      do istep = init_step,max_step
 
-        if ( verbose > 0 ) then
+        if ( verbose .ge. 1 ) then
            if ( parallel_IOProcessor() ) then
               print *, 'MEMORY STATS AT START OF TIMESTEP ', istep
               print*, ' '
@@ -718,14 +733,6 @@ subroutine varden()
         end if
 
         do n = 1,nlevs
-
-           call multifab_fill_boundary(sold(n))
-           call multifab_fill_boundary(uold(n))
-
-           call multifab_physbc(sold(n),rho_comp,dm+rho_comp,nscal,dx(n,:), &
-                                the_bc_tower%bc_tower_array(n))
-           call multifab_physbc(uold(n),       1,          1,   dm,dx(n,:), &
-                                the_bc_tower%bc_tower_array(n))
 
            if ( verbose .ge. 1 ) then
               smax = norm_inf(uold(n),1,1)
@@ -825,7 +832,8 @@ subroutine varden()
                               s0_new,p0_old,p0_new,gam1,w0, &
                               rho_omegadot2,div_coeff_old,div_coeff_new, &
                               grav_cell,dx,time,dt,dtold,the_bc_tower, &
-                              dSdt,Source_old,Source_new,sponge,hgrhs,istep)
+                              dSdt,Source_old,Source_new,eta,&
+                              sponge,hgrhs,istep)
         r2 = parallel_wtime() - r1
         call parallel_reduce(r1, r2, MPI_MAX, proc = parallel_IOProcessorNode())
         if (parallel_IOProcessor()) print*, 'Time to advance timestep: ', r1, ' seconds'
@@ -834,7 +842,7 @@ subroutine varden()
 
         time = time + dt
 
-        if ( verbose .eq. 1 ) then
+        if ( verbose .ge. 1 ) then
 
            if ( parallel_IOProcessor() ) then
               print *, 'MEMORY STATS AT END OF TIMESTEP ', istep
@@ -903,8 +911,8 @@ subroutine varden()
         !---------------------------------------------------------------------
 
         do n = 1,nlevs
-           call multifab_copy_c(uold(n),1,unew(n),1,dm)
-           call multifab_copy_c(sold(n),1,snew(n),1,nscal)
+           call multifab_copy_c(uold(n),      1,unew(n),      1,dm,   ng_s)
+           call multifab_copy_c(sold(n),      1,snew(n),      1,nscal,ng_s)
            call multifab_copy_c(Source_old(n),1,Source_new(n),1,1)
         end do
 
@@ -928,16 +936,17 @@ subroutine varden()
                  call multifab_copy_c(chkdata(n),rho_comp+dm,snew(n),1,nscal)
                  call multifab_copy_c(chkdata(n),rho_comp+dm+nscal,gpres(n),1,dm)
               end do
-              write(unit=sd_name,fmt='("chk",i4.4)') istep
+              write(unit=sd_name,fmt='("chk",i5.5)') istep
               call checkpoint_write(sd_name, chkdata, pres, dSdt,Source_old, &
-                                    rho_omegadot2, mba%rr, dx, time, dt)
+                                    rho_omegadot2, mba%rr, time, dt)
               last_chk_written = istep
 
-              write(unit=base_state_name,fmt='("model_",i4.4)') istep
-              write(unit=base_w0_name,fmt='("w0_",i4.4)') istep
-              call write_base_state(base_state_name, base_w0_name, sd_name, &
-                                    s0_new(1,:,:), p0_new(1,:), gam1(1,:), w0(1,:), &
-                                    div_coeff_old(1,:),prob_lo(dm))
+              write(unit=base_state_name,fmt='("model_",i5.5)') istep
+              write(unit=base_w0_name,fmt='("w0_",i5.5)') istep
+              write(unit=base_eta_name,fmt='("eta_",i5.5)') istep
+              call write_base_state(nlevs, base_state_name, base_w0_name, &
+                                    base_eta_name, sd_name, &
+                                    s0_new, p0_new, gam1, w0, eta, div_coeff_old, prob_lo(dm))
               do n = 1,nlevs
                  call destroy(chkdata(n))
               end do
@@ -948,7 +957,7 @@ subroutine varden()
 
         if (plot_int > 0) then
            if (mod(istep,plot_int) .eq. 0) then
-              write(unit=plot_index,fmt='(i4.4)') istep
+              write(unit=plot_index,fmt='(i5.5)') istep
               plot_file_name = trim(plot_base_name) // plot_index
               call make_plotfile(plot_file_name,mla,unew,snew,gpres,&
                                  rho_omegadot2,Source_new,sponge, &
@@ -971,7 +980,7 @@ subroutine varden()
 999  continue
      if (istep > max_step) istep = max_step
 
-1000 format('STEP = ',i4,1x,' TIME = ',f16.10,1x,'DT = ',f14.9)
+1000 format('STEP = ',i5,1x,' TIME = ',f16.10,1x,'DT = ',f14.9)
 
      if ( chk_int > 0 .and. last_chk_written .ne. istep ) then
         !       This writes a checkpoint file.
@@ -982,23 +991,24 @@ subroutine varden()
            call multifab_copy_c(chkdata(n),rho_comp+dm,snew(n),1,nscal)
            call multifab_copy_c(chkdata(n),rho_comp+dm+nscal,gpres(n),1,dm)
         end do
-        write(unit=sd_name,fmt='("chk",i4.4)') istep
+        write(unit=sd_name,fmt='("chk",i5.5)') istep
         call checkpoint_write(sd_name, chkdata, pres, dSdt, Source_old, &
-                              rho_omegadot2, mba%rr, dx, time, dt)
+                              rho_omegadot2, mba%rr, time, dt)
         do n = 1,nlevs
            call destroy(chkdata(n))
         end do
         deallocate(chkdata)
 
-        write(unit=base_state_name,fmt='("model_",i4.4)') istep
-        write(unit=base_w0_name,fmt='("w0_",i4.4)') istep
-        call write_base_state(base_state_name, base_w0_name, sd_name, &
-                              s0_new(1,:,:), p0_new(1,:), gam1(1,:), w0(1,:), &
-                              div_coeff_old(1,:),prob_lo(dm))
+        write(unit=base_state_name,fmt='("model_",i5.5)') istep
+        write(unit=base_w0_name,fmt='("w0_",i5.5)') istep
+        write(unit=base_eta_name,fmt='("eta_",i5.5)') istep
+        call write_base_state(nlevs, base_state_name, base_w0_name, &
+                              base_eta_name, sd_name, &
+                              s0_new, p0_new, gam1, w0, eta, div_coeff_old, prob_lo(dm))
      end if
 
      if ( plot_int > 0 .and. last_plt_written .ne. istep ) then
-        write(unit=plot_index,fmt='(i4.4)') istep
+        write(unit=plot_index,fmt='(i5.5)') istep
         plot_file_name = trim(plot_base_name) // plot_index
         call make_plotfile(plot_file_name,mla,unew,snew,gpres, &
                            rho_omegadot2,Source_new,sponge, &
@@ -1037,7 +1047,7 @@ subroutine varden()
 
   deallocate(uold,unew,sold,snew)
   deallocate(div_coeff_old,div_coeff_new,grav_cell)
-  deallocate(gam1,s0_old,s0_new,p0_old,p0_new,w0)
+  deallocate(gam1,s0_old,s0_new,p0_old,p0_new,w0,eta)
   deallocate(dSdt,Source_old,Source_new)
   deallocate(rho_omegadot2)
   deallocate(vel_force,sponge,normal)
