@@ -1,6 +1,9 @@
-! the differences between firstdt and estdt are as follows:
-! firstdt does not use the base state velocity w0 since it's supposed to be 0
-! firstdt uses the sound speed time step constraint if the velocity is 0
+! Compute the initial timestep
+!
+! The differences between firstdt and estdt are as follows:
+!   firstdt does not use the base state velocity w0 since it's supposed to be 0
+!   firstdt uses the sound speed time step constraint if the velocity is 0
+!
 ! After the initial projection, we should have a source term that gives
 ! rise to a velocity field, and we can use the normal estdt.
 
@@ -29,24 +32,23 @@ contains
     real(kind=dp_t), pointer:: sop(:,:,:,:)
     real(kind=dp_t), pointer:: fp(:,:,:,:)
     real(kind=dp_t), pointer:: divup(:,:,:,:)
-    integer :: lo(u%dim),hi(u%dim),ng,dm
+    integer :: lo(u%dim),hi(u%dim),ng,dm,i
     real(kind=dp_t) :: dt_hold_proc,dt_grid
-    integer         :: i
     
     ng = u%ng
     dm = u%dim
     
-    dt_hold_proc  = 1.d20
-    dt_grid       = 1.d20
+    dt_hold_proc = HUGE(dt_hold_proc)
+    dt_grid      = HUGE(dt_grid)
     
     do i = 1, u%nboxes
        if ( multifab_remote(u, i) ) cycle
-       uop => dataptr(u, i)
-       sop => dataptr(s, i)
-       fp => dataptr(force, i)
+       uop   => dataptr(u, i)
+       sop   => dataptr(s, i)
+       fp    => dataptr(force, i)
        divup => dataptr(divU,i)
-       lo =  lwb(get_box(u, i))
-       hi =  upb(get_box(u, i))
+       lo    =  lwb(get_box(u, i))
+       hi    =  upb(get_box(u, i))
        select case (dm)
        case (2)
           call firstdt_2d(n,uop(:,:,1,:), sop(:,:,1,:), fp(:,:,1,:),&
@@ -70,7 +72,7 @@ contains
 
     use eos_module
     use variables, only: rho_comp, temp_comp, spec_comp
-    use geometry, only: nr
+    use geometry,  only: nr
     use bl_constants_module
     
     integer, intent(in)             :: n, lo(:), hi(:), ng
@@ -83,7 +85,6 @@ contains
     real (kind = dp_t), intent(out) :: dt
     real (kind = dp_t), intent(in ) :: cfl
     
-    ! Local variables
     real (kind = dp_t)  :: spdx, spdy
     real (kind = dp_t)  :: pforcex, pforcey
     real (kind = dp_t)  :: ux, uy
@@ -94,18 +95,18 @@ contains
     
     eps = 1.0d-8
     
-    spdx    = 0.0D0 
-    spdy    = 0.0D0
-    pforcex = 0.0D0 
-    pforcey = 0.0D0 
-    ux      = 0.0D0
-    uy      = 0.0D0
+    spdx    = ZERO
+    spdy    = ZERO
+    pforcex = ZERO
+    pforcey = ZERO
+    ux      = ZERO
+    uy      = ZERO
     
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
           
           ! compute the sound speed from rho and p0
-          den_eos(1) = s(i,j,rho_comp)
+          den_eos(1)  = s(i,j,rho_comp)
           temp_eos(1) = s(i,j,temp_comp)
           xn_eos(1,:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
           
@@ -121,12 +122,12 @@ contains
                    dsdt_eos, dsdr_eos, &
                    do_diag)
           
-          spdx = max(spdx,cs_eos(1))
-          spdy = max(spdy,cs_eos(1))
+          spdx    = max(spdx,cs_eos(1))
+          spdy    = max(spdy,cs_eos(1))
           pforcex = max(pforcex,abs(force(i,j,1)))
           pforcey = max(pforcey,abs(force(i,j,2)))
-          ux = max(ux,abs(u(i,j,1)))
-          uy = max(uy,abs(u(i,j,2)))
+          ux      = max(ux,abs(u(i,j,1)))
+          uy      = max(uy,abs(u(i,j,2)))
        enddo
     enddo
     
@@ -138,7 +139,7 @@ contains
     
     ! if ux or uy is non-zero use it
     ! otherwise, use soundspeed
-    if(ux .ne. ZERO .or. uy .ne. ZERO) then
+    if (ux .ne. ZERO .or. uy .ne. ZERO) then
        dt = cfl / max(ux,uy)
     else if (spdx < eps .and. spdy < eps) then
        dt = min(dx(1),dx(2))
@@ -146,16 +147,12 @@ contains
        dt = cfl / max(spdx,spdy)
     endif
     
-    if (pforcex > eps) then
-       dt = min(dt,sqrt(2.0D0*dx(1)/pforcex))
-    endif
+    if (pforcex > eps) dt = min(dt,sqrt(2.0D0*dx(1)/pforcex))
     
-    if (pforcey > eps) then
-       dt = min(dt,sqrt(2.0D0*dx(2)/pforcey))
-    endif
+    if (pforcey > eps) dt = min(dt,sqrt(2.0D0*dx(2)/pforcey))
     
     ! divU constraint
-    dt_divu = 1.d30
+    dt_divu = HUGE(dt_divu)
     
     do j = lo(2), hi(2)
        if (j .eq. 0) then
@@ -178,7 +175,7 @@ contains
   
   subroutine firstdt_3d(n,u,s,force,divU,p0,gam1,t0,lo,hi,ng,dx,dt,cfl)
 
-    use geometry, only: spherical, nr
+    use geometry,  only: spherical, nr
     use variables, only: rho_comp, temp_comp, spec_comp
     use eos_module
     use fill_3d_module
@@ -194,7 +191,6 @@ contains
     real (kind = dp_t), intent(out) :: dt
     real (kind = dp_t), intent(in ) :: cfl
     
-    ! Local variables
     real (kind = dp_t)  :: spdx, spdy, spdz
     real (kind = dp_t)  :: pforcex, pforcey, pforcez
     real (kind = dp_t)  :: ux, uy, uz
@@ -273,7 +269,7 @@ contains
     
     ! if ux, uy, or uz is non-zero use it
     ! otherwise, use soundspeed
-    if(ux .ne. ZERO .or. uy .ne. ZERO .or. uz .ne. ZERO) then
+    if (ux .ne. ZERO .or. uy .ne. ZERO .or. uz .ne. ZERO) then
        dt = cfl / max(ux,uy,uz)
     else if (spdx < eps .and. spdy < eps .and. spdz < eps) then
        dt = min(dx(1),dx(2),dx(3))
@@ -281,20 +277,14 @@ contains
        dt = cfl / max(spdx,spdy,spdz)
     endif
     
-    if (pforcex > eps) then
-       dt = min(dt,sqrt(2.0D0*dx(1)/pforcex))
-    endif
+    if (pforcex > eps) dt = min(dt,sqrt(2.0D0*dx(1)/pforcex))
     
-    if (pforcey > eps) then
-       dt = min(dt,sqrt(2.0D0*dx(2)/pforcey))
-    endif
+    if (pforcey > eps) dt = min(dt,sqrt(2.0D0*dx(2)/pforcey))
     
-    if (pforcez > eps) then
-       dt = min(dt,sqrt(2.0D0*dx(3)/pforcez))
-    endif
+    if (pforcez > eps) dt = min(dt,sqrt(2.0D0*dx(3)/pforcez))
     
     ! divU constraint
-    dt_divu = 1.d30
+    dt_divu = HUGE(dt_divu)
     
     do k = lo(3), hi(3)
        if (k .eq. 0) then

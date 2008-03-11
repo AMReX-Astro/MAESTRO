@@ -1,8 +1,15 @@
+! Compute the timestep.  Here we use several different estimations and take
+! the most restrictive one.  They are (see paper III): 
+!    1. the advective constraint
+!    2. the force constraint
+!    3. a div{U} constraint
+!    4. a dS/dt constraint
 !
 ! the differences between firstdt and estdt are as follows:
-! firstdt does not use the base state velocity w0 since it's supposed to be 0
-! firstdt uses the sound speed time step constraint if the velocity is 0
+!   firstdt does not use the base state velocity w0 since it's supposed to be 0
+!   firstdt uses the sound speed time step constraint if the velocity is 0
 !
+
 module estdt_module
   
   use bl_types
@@ -34,7 +41,6 @@ contains
     real(kind=dp_t), intent(in ) :: cflfac
     real(kind=dp_t), intent(out) :: dt
     
-    ! Local
     real(kind=dp_t), pointer:: uop(:,:,:,:)
     real(kind=dp_t), pointer:: sop(:,:,:,:)
     real(kind=dp_t), pointer:: fp(:,:,:,:)
@@ -42,11 +48,10 @@ contains
     real(kind=dp_t), pointer:: dUp(:,:,:,:)
     real(kind=dp_t), pointer:: dSdtp(:,:,:,:)
     
-    integer :: lo(u%dim),hi(u%dim),ng,dm
+    integer :: lo(u%dim),hi(u%dim),ng,dm,i
     
     real(kind=dp_t) :: dt_adv,dt_adv_grid,dt_adv_proc,dt_start
     real(kind=dp_t) :: dt_divu,dt_divu_grid,dt_divu_proc
-    integer         :: i
     
     real(kind=dp_t), parameter :: rho_min = 1.d-20
 
@@ -57,9 +62,9 @@ contains
     ng = u%ng
     dm = u%dim
     
-    dt_adv_proc   = 1.d20
-    dt_divu_proc  = 1.d20
-    dt_start      = 1.d20
+    dt_adv_proc   = HUGE(dt_adv_proc)
+    dt_divu_proc  = HUGE(dt_divu_proc)
+    dt_start      = HUGE(dt_start)
     
     do i = 1, u%nboxes
        if ( multifab_remote(u, i) ) cycle
@@ -71,8 +76,8 @@ contains
        lo =  lwb(get_box(u, i))
        hi =  upb(get_box(u, i))
 
-       dt_adv_grid   = 1.d20
-       dt_divu_grid  = 1.d20
+       dt_adv_grid   = HUGE(dt_adv_grid)
+       dt_divu_grid  = HUGE(dt_divu_grid)
 
        select case (dm)
        case (2)
@@ -110,9 +115,9 @@ contains
        if (dm .eq. 3) dt = min(dt,dx(3))
     end if
 
-    call destroy(bpt)
-
     dt = min(dt,0.05d0)
+
+    call destroy(bpt)
     
   end subroutine estdt
   
@@ -120,7 +125,7 @@ contains
   subroutine estdt_2d(n, u, s, force, divU, dSdt, w0, p0, gam1, lo, hi, &
                       ng, dx, rho_min, dt_adv, dt_divu, cfl)
 
-    use geometry, only: nr
+    use geometry,  only: nr
     use variables, only: rho_comp
 
     integer, intent(in) :: n, lo(:), hi(:), ng
@@ -134,7 +139,6 @@ contains
     real (kind = dp_t), intent(in   ) :: rho_min,cfl
     real (kind = dp_t), intent(inout) :: dt_adv,dt_divu
     
-    ! Local variables
     real (kind = dp_t)  :: spdx, spdy, spdr
     real (kind = dp_t)  :: fx, fy
     real (kind = dp_t)  :: eps
@@ -145,17 +149,18 @@ contains
     eps = 1.0d-8
     
     ! advective constraints
-    spdx  = 0.0D0 
-    spdy  = 0.0D0 
-    
-    do j = lo(2), hi(2)
-       do i = lo(1), hi(1)
-          spdx = max(spdx ,abs(u(i,j,1)))
-          spdy = max(spdy ,abs(u(i,j,2)+w0(j)))
-       enddo
-    enddo
-    
+    spdx = ZERO
+    spdy = ZERO
     spdr = ZERO 
+    
+    do j = lo(2), hi(2); do i = lo(1), hi(1)
+       spdx = max(spdx ,abs(u(i,j,1)))
+    enddo; enddo
+
+    do j = lo(2), hi(2); do i = lo(1), hi(1)
+       spdy = max(spdy ,abs(u(i,j,2)+w0(j)))
+    enddo; enddo
+    
     do j = lo(2),hi(2)
        spdr = max(spdr ,abs(w0(j)))
     enddo
@@ -167,15 +172,16 @@ contains
     dt_adv = dt_adv * cfl
     
     ! force constraints
-    fx = 0.0D0 
-    fy = 0.0D0 
+    fx = ZERO
+    fy = ZERO
     
-    do j = lo(2), hi(2)
-       do i = lo(1), hi(1)
-          fx = max(fx,abs(force(i,j,1)))
-          fy = max(fy,abs(force(i,j,2)))
-       enddo
-    enddo
+    do j = lo(2), hi(2); do i = lo(1), hi(1)
+       fx = max(fx,abs(force(i,j,1)))
+    enddo; enddo
+
+    do j = lo(2), hi(2); do i = lo(1), hi(1)
+       fy = max(fy,abs(force(i,j,2)))
+    enddo; enddo
     
     if (fx > eps) &
        dt_adv = min(dt_adv,sqrt(2.0D0 *dx(1)/fx))
@@ -209,15 +215,16 @@ contains
     
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)           
-          
-          ! an additional dS/dt timestep constraint originally
+          !
+          ! An additional dS/dt timestep constraint originally
           ! used in nova
           ! solve the quadratic equation
           ! (rho - rho_min)/(rho dt) = S + (dt/2)*(dS/dt)
           ! which is equivalent to
           ! (rho/2)*dS/dt*dt^2 + rho*S*dt + (rho_min-rho) = 0
           ! which has solution dt = 2.0d0*c/(-b-sqrt(b**2-4.0d0*a*c))
-          if(dSdt(i,j) .gt. 1.d-20) then
+          !
+          if (dSdt(i,j) .gt. 1.d-20) then
              a = HALF*s(i,j,rho_comp)*dSdt(i,j)
              b = s(i,j,rho_comp)*divU(i,j)
              c = rho_min - s(i,j,rho_comp)
@@ -232,7 +239,7 @@ contains
   subroutine estdt_3d_cart(n, u, s, force, divU, dSdt, w0, p0, gam1, lo, hi, &
                            ng, dx, rho_min, dt_adv, dt_divu, cfl)
 
-    use geometry, only: nr
+    use geometry,  only: nr
     use variables, only: rho_comp
 
     integer, intent(in) :: n, lo(:), hi(:), ng
@@ -246,7 +253,6 @@ contains
     real (kind = dp_t), intent(in   ) :: rho_min,cfl
     real (kind = dp_t), intent(inout) :: dt_adv, dt_divu
     
-    ! Local variables
     real (kind = dp_t)  :: spdx, spdy, spdz, spdr
     real (kind = dp_t)  :: fx, fy, fz
     real (kind = dp_t)  :: eps,denom,gradp0
@@ -258,19 +264,21 @@ contains
     spdx = ZERO
     spdy = ZERO 
     spdz = ZERO 
+    spdr = ZERO 
     
     ! Limit dt based on velocity terms
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-             spdx = max(spdx ,abs(u(i,j,k,1)))
-             spdy = max(spdy ,abs(u(i,j,k,2)))
-             spdz = max(spdz ,abs(u(i,j,k,3)+w0(k)))
-          enddo
-       enddo
-    enddo
+    do k = lo(3), hi(3); do j = lo(2), hi(2); do i = lo(1), hi(1)
+       spdx = max(spdx ,abs(u(i,j,k,1)))
+    enddo; enddo; enddo
+
+    do k = lo(3), hi(3); do j = lo(2), hi(2); do i = lo(1), hi(1)
+       spdy = max(spdy ,abs(u(i,j,k,2)))
+    enddo; enddo; enddo
+
+    do k = lo(3), hi(3); do j = lo(2), hi(2); do i = lo(1), hi(1)
+       spdz = max(spdz ,abs(u(i,j,k,3)+w0(k)))
+    enddo; enddo; enddo
     
-    spdr = ZERO 
     do k = lo(3),hi(3)
        spdr = max(spdr ,abs(w0(k)))
     enddo
@@ -287,15 +295,17 @@ contains
     fy = ZERO 
     fz = ZERO 
     
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-             fx = max(fx,abs(force(i,j,k,1)))
-             fy = max(fy,abs(force(i,j,k,2)))
-             fz = max(fz,abs(force(i,j,k,3)))
-          enddo
-       enddo
-    enddo
+    do k = lo(3), hi(3); do j = lo(2), hi(2); do i = lo(1), hi(1)
+       fx = max(fx,abs(force(i,j,k,1)))
+    enddo; enddo; enddo
+
+    do k = lo(3), hi(3); do j = lo(2), hi(2); do i = lo(1), hi(1)
+       fy = max(fy,abs(force(i,j,k,2)))
+    enddo; enddo; enddo
+
+    do k = lo(3), hi(3); do j = lo(2), hi(2); do i = lo(1), hi(1)
+       fz = max(fz,abs(force(i,j,k,3)))
+    enddo; enddo; enddo
     
     if (fx > eps) &
        dt_adv = min(dt_adv,sqrt(2.0D0*dx(1)/fx))
@@ -334,15 +344,16 @@ contains
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)           
-             
-             ! an additional dS/dt timestep constraint originally
+             !
+             ! An additional dS/dt timestep constraint originally
              ! used in nova
              ! solve the quadratic equation
              ! (rho - rho_min)/(rho dt) = S + (dt/2)*(dS/dt)
              ! which is equivalent to
              ! (rho/2)*dS/dt*dt^2 + rho*S*dt + (rho_min-rho) = 0
              ! which has solution dt = 2.0d0*c/(-b-sqrt(b**2-4.0d0*a*c))
-             if(dSdt(i,j,k) .gt. 1.d-20) then
+             !
+             if (dSdt(i,j,k) .gt. 1.d-20) then
                 a = HALF*s(i,j,k,rho_comp)*dSdt(i,j,k)
                 b = s(i,j,k,rho_comp)*divU(i,j,k)
                 c = rho_min - s(i,j,k,rho_comp)
@@ -358,7 +369,7 @@ contains
   subroutine estdt_3d_sphr(n, u, s, force, divU, dSdt, normal, w0, p0, gam1, &
                            lo, hi, ng, dx, rho_min, dt_adv, dt_divu, cfl)
 
-    use geometry, only: dr, nr
+    use geometry,  only: dr, nr
     use variables, only: rho_comp
     use fill_3d_module
     
@@ -374,39 +385,38 @@ contains
     real (kind = dp_t), intent(in   ) :: rho_min, cfl
     real (kind = dp_t), intent(inout) :: dt_adv, dt_divu
     
-    ! Local variables
     real (kind = dp_t), allocatable ::  w0_cart(:,:,:,:)
     real (kind = dp_t), allocatable :: gp0_cart(:,:,:,:)
     real (kind = dp_t), allocatable :: gp0(:)
     real (kind = dp_t)  :: spdx, spdy, spdz, spdr, gp_dot_u, gam1_p_avg
-    real (kind = dp_t)  :: fx, fy, fz
-    real (kind = dp_t)  :: eps,denom
-    real (kind = dp_t)  :: a, b, c
-    integer             :: i,j,k
+    real (kind = dp_t)  :: fx, fy, fz, eps, denom, a, b, c
+    integer             :: i,j,k,r
     
     eps = 1.0d-8
     
     spdx = ZERO
     spdy = ZERO 
     spdz = ZERO 
+    spdr = ZERO 
     
     allocate( w0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),3))
     call put_w0_on_3d_cells_sphr(n,w0(0:),w0_cart,normal,lo,hi,dx,0)
     
     ! Limit dt based on velocity terms
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-             spdx = max(spdx ,abs(u(i,j,k,1)+w0_cart(i,j,k,1)))
-             spdy = max(spdy ,abs(u(i,j,k,2)+w0_cart(i,j,k,2)))
-             spdz = max(spdz ,abs(u(i,j,k,3)+w0_cart(i,j,k,3)))
-          enddo
-       enddo
-    enddo
+    do k = lo(3), hi(3); do j = lo(2), hi(2); do i = lo(1), hi(1)
+       spdx = max(spdx ,abs(u(i,j,k,1)+w0_cart(i,j,k,1)))
+    enddo; enddo; enddo
+
+    do k = lo(3), hi(3); do j = lo(2), hi(2); do i = lo(1), hi(1)
+       spdy = max(spdy ,abs(u(i,j,k,2)+w0_cart(i,j,k,2)))
+    enddo; enddo; enddo
+
+    do k = lo(3), hi(3); do j = lo(2), hi(2); do i = lo(1), hi(1)
+       spdz = max(spdz ,abs(u(i,j,k,3)+w0_cart(i,j,k,3)))
+    enddo; enddo; enddo
     
     deallocate(w0_cart)
-    
-    spdr = ZERO 
+
     do k = 0,size(w0,dim=1)-1
        spdr = max(spdr ,abs(w0(k)))
     enddo
@@ -423,15 +433,17 @@ contains
     fy = ZERO 
     fz = ZERO 
     
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-             fx = max(fx,abs(force(i,j,k,1)))
-             fy = max(fy,abs(force(i,j,k,2)))
-             fz = max(fz,abs(force(i,j,k,3)))
-          enddo
-       enddo
-    enddo
+    do k = lo(3), hi(3); do j = lo(2), hi(2); do i = lo(1), hi(1)
+       fx = max(fx,abs(force(i,j,k,1)))
+    enddo; enddo; enddo
+
+    do k = lo(3), hi(3); do j = lo(2), hi(2); do i = lo(1), hi(1)
+       fy = max(fy,abs(force(i,j,k,2)))
+    enddo; enddo; enddo
+
+    do k = lo(3), hi(3); do j = lo(2), hi(2); do i = lo(1), hi(1)
+       fz = max(fz,abs(force(i,j,k,3)))
+    enddo; enddo; enddo
     
     if (fx > eps) &
        dt_adv = min(dt_adv,sqrt(2.0D0*dx(1)/fx))
@@ -444,10 +456,9 @@ contains
     
     ! divU constraint
     allocate(gp0(0:nr(n)))
-    do k = 1,nr(n)-1
-       gp0(k) = (p0(k) - p0(k-1))/dr(n)
-       gam1_p_avg = HALF * (gam1(k)*p0(k) + gam1(k-1)*p0(k-1))
-       gp0(k) = gp0(k) / gam1_p_avg
+    do r = 1,nr(n)-1
+       gam1_p_avg = HALF * (gam1(r)*p0(r) + gam1(r-1)*p0(r-1))
+       gp0(r) = ( (p0(r) - p0(r-1))/dr(n) ) / gam1_p_avg
     end do
     gp0(nr(n)) = gp0(nr(n)-1)
     gp0(    0) = gp0(      1)
@@ -476,15 +487,16 @@ contains
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)           
-             
-             ! an additional dS/dt timestep constraint originally
+             !
+             ! An additional dS/dt timestep constraint originally
              ! used in nova
              ! solve the quadratic equation
              ! (rho - rho_min)/(rho dt) = S + (dt/2)*(dS/dt)
              ! which is equivalent to
              ! (rho/2)*dS/dt*dt^2 + rho*S*dt + (rho_min-rho) = 0
              ! which has solution dt = 2.0d0*c/(-b-sqrt(b**2-4.0d0*a*c))
-             if(dSdt(i,j,k) .gt. 1.d-20) then
+             !
+             if (dSdt(i,j,k) .gt. 1.d-20) then
                 a = HALF*s(i,j,k,rho_comp)*dSdt(i,j,k)
                 b = s(i,j,k,rho_comp)*divU(i,j,k)
                 c = rho_min - s(i,j,k,rho_comp)
@@ -494,10 +506,7 @@ contains
           enddo
        enddo
     enddo
-    
-    deallocate(gp0)
-    deallocate(gp0_cart)
-    
+
   end subroutine estdt_3d_sphr
   
 end module estdt_module
