@@ -178,17 +178,18 @@ contains
        
        ! create x-fluxes
        if ( (comp .ge. spec_comp) .and. (comp .le.  spec_comp+nspec-1) ) then
-          
-          do i=lo(1),hi(1)+1
-             do j=lo(2),hi(2)
+
+          do j=lo(2),hi(2)
+             
+             if (predict_X_at_edges) then
                 
-                if (predict_X_at_edges) then
-                   
-                   if (which_step .eq. 1) then
-                      rho0_edge = s0_old(j,rho_comp)
-                   else
-                      rho0_edge = HALF*(s0_old(j,rho_comp)+s0_new(j,rho_comp))
-                   end if
+                if (which_step .eq. 1) then
+                   rho0_edge = s0_old(j,rho_comp)
+                else
+                   rho0_edge = HALF*(s0_old(j,rho_comp)+s0_new(j,rho_comp))
+                end if
+                
+                do i=lo(1),hi(1)+1
                    
                    rho_prime = sedgex(i,j,rho_comp)
                    
@@ -197,21 +198,26 @@ contains
                    ! sedgex is X at edges
                    sfluxx(i,j,comp) = umac(i,j)*(rho0_edge+rho_prime)*sedgex(i,j,comp)
                    
+                end do
+                
+             else
+                
+                if (which_step .eq. 1) then
+                   s0_edge = s0_old(j,comp)
                 else
-                   
-                   if (which_step .eq. 1) then
-                      s0_edge = s0_old(j,comp)
-                   else
-                      s0_edge = HALF*(s0_old(j,comp)+s0_new(j,comp))
-                   end if
+                   s0_edge = HALF*(s0_old(j,comp)+s0_new(j,comp))
+                end if
+                
+                do i=lo(1),hi(1)+1
                    
                    ! s0_edge is (rho X)_0 at edges
                    ! sedgex is (rho X)' at edges
                    sfluxx(i,j,comp) = umac(i,j)*(s0_edge + sedgex(i,j,comp))
                    
-                end if
+                end do
                 
-             end do
+             end if
+             
           end do
           
        else
@@ -234,35 +240,40 @@ contains
        ! create y-fluxes
        if ( (comp .ge. spec_comp) .and. (comp .le.  spec_comp+nspec-1) ) then
           
-          do i=lo(1),hi(1)
-             do j=lo(2),hi(2)+1
+          do j=lo(2),hi(2)+1
+             
+             if (which_step .eq. 1) then
+                rho0_edge = s0_edge_old(j,rho_comp)
+             else
+                rho0_edge = HALF*(s0_edge_old(j,rho_comp)+s0_edge_new(j,rho_comp))
+             end if
+             
+             if (predict_X_at_edges) then
                 
-                if (which_step .eq. 1) then
-                   rho0_edge = s0_edge_old(j,rho_comp)
-                else
-                   rho0_edge = HALF*(s0_edge_old(j,rho_comp)+s0_edge_new(j,rho_comp))
-                end if
-                
-                if (predict_X_at_edges) then
+                do i=lo(1),hi(1)
                    
                    rho_prime = sedgey(i,j,rho_comp)
                    
                    ! rho0_edge is rho_0 at edges
                    ! rho_prime is rho' at edges
                    ! sedgey is X at edges
-                   sfluxy(i,j,comp) = (vmac(i,j)+w0(j))*(rho0_edge+rho_prime)*sedgey(i,j,comp)
+                   sfluxy(i,j,comp) = &
+                        (vmac(i,j)+w0(j))*(rho0_edge+rho_prime)*sedgey(i,j,comp)
                    
                    etaflux(i,j,comp) = sfluxy(i,j,comp) - &
                         w0(j)*s0_pred_edge(j,comp)*s0_pred_edge(j,rho_comp)
                    
+                end do
+                
+             else
+                
+                if(which_step .eq. 1) then
+                   s0_edge = s0_edge_old(j,comp)
                 else
-                   
-                   if(which_step .eq. 1) then
-                      s0_edge = s0_edge_old(j,comp)
-                   else
-                      s0_edge = HALF*(s0_edge_old(j,comp)+s0_edge_new(j,comp))
-                   end if
-                   
+                   s0_edge = HALF*(s0_edge_old(j,comp)+s0_edge_new(j,comp))
+                end if
+                
+                do i=lo(1),hi(1)
                    ! s0_edge is (rho X)_0 at edges
                    ! sedgey is (rho X)' at edges
                    sfluxy(i,j,comp) = (vmac(i,j)+w0(j))*sedgey(i,j,comp) + vmac(i,j)*s0_edge
@@ -270,11 +281,12 @@ contains
                    etaflux(i,j,comp) = sfluxy(i,j,comp) - &
                         w0(j)*s0_pred_edge(j,comp)*s0_pred_edge(j,rho_comp)
                    
-                end if
+                end do
                 
-             end do
+             end if
+             
           end do
-          
+
        else
 
           do j=lo(2),hi(2)+1
