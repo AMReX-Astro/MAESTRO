@@ -159,6 +159,12 @@ contains
           ! s0_predicted_edge will store (rho X)_0 on the vertical edges
           s0_predicted_edge(:,comp) = edge(:)
 
+          ! compute rho_0 on the edges for completeness
+          if (.not. predict_h_at_edges) then
+             s0_predicted_edge(:,rho_comp) = s0_predicted_edge(:,rho_comp) + &
+                  s0_predicted_edge(:,comp) 
+          end if
+
        endif
        
        ! update (rho X)_0
