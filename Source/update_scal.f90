@@ -194,8 +194,8 @@ contains
                             base_new,base_new_edge,lo,hi,ng_s,dx,dt)
 
     use network,       only: nspec
-    use probin_module, only: predict_X_at_edges
-    use variables,     only: spec_comp, rho_comp
+    use probin_module, only: predict_X_at_edges, predict_h_at_edges
+    use variables,     only: spec_comp, rho_comp, rhoh_comp
     use bl_constants_module
 
 
@@ -221,30 +221,44 @@ contains
     real (kind = dp_t) :: delta_base,divterm
     real (kind = dp_t) :: delta,frac,sum
     real (kind = dp_t) :: smin(nstart:nstop),smax(nstart:nstop)
+    logical :: test
 
     do comp = nstart, nstop
-       do j = lo(2), hi(2)
+    
+       test = (comp.ge.spec_comp.and.comp.le.spec_comp+nspec-1.and.predict_X_at_edges) &
+            .or. (comp.eq.rhoh_comp.and.predict_h_at_edges)
 
-          if (comp .ge. spec_comp .and. &
-              comp .le. spec_comp+nspec-1 .and. &
-              predict_X_at_edges) then
+       if (test) then
 
-            delta_base = ZERO
+          do j=lo(2),hi(2)
+             do i=lo(1),hi(1)
 
-          else
-            delta_base = base_new(j,comp) - base_old(j,comp)
-          end if
+                divterm = (sfluxx(i+1,j,comp) - sfluxx(i,j,comp))/dx(1) &
+                        + (sfluxy(i,j+1,comp) - sfluxy(i,j,comp))/dx(2)
 
-          do i = lo(1), hi(1)
+                snew(i,j,comp) = sold(i,j,comp) - dt*divterm + dt*force(i,j,comp)
 
-             divterm = (sfluxx(i+1,j,comp) - sfluxx(i,j,comp))/dx(1) &
-                     + (sfluxy(i,j+1,comp) - sfluxy(i,j,comp))/dx(2)
+             end do
+          end do
 
-             snew(i,j,comp) = sold(i,j,comp) + delta_base &
-                  - dt * divterm + dt * force(i,j,comp)
+       else
 
-          enddo
-       enddo
+          do j=lo(2),hi(2)
+
+             delta_base = base_new(j,comp) - base_old(j,comp)
+
+             do i = lo(1), hi(1)
+
+                divterm = (sfluxx(i+1,j,comp) - sfluxx(i,j,comp))/dx(1) &
+                        + (sfluxy(i,j+1,comp) - sfluxy(i,j,comp))/dx(2)
+
+                snew(i,j,comp) = sold(i,j,comp) &
+                     + delta_base - dt*divterm + dt*force(i,j,comp)
+                
+             end do
+          end do
+
+       end if
     enddo
 
     ! Define the update to rho as the sum of the updates to (rho X)_i
