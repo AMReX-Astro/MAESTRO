@@ -11,8 +11,7 @@ module advect_base_module
 contains
 
   subroutine advect_base(which_step,nlevs,vel,Sbar_in,p0_old,p0_new, &
-                         s0_old,s0_new,gam1,div_coeff, &
-                         s0_predicted_edge,dz,dt)
+                         s0_old,s0_new,gam1,div_coeff,s0_predicted_edge,dz,dt)
 
     use bl_prof_module
     use geometry, only: spherical
@@ -55,8 +54,7 @@ contains
 
 
   subroutine advect_base_state_planar(which_step,n,vel,p0_old,p0_new, &
-                                      s0_old,s0_new,gam1, &
-                                      s0_predicted_edge,dz,dt)
+                                      s0_old,s0_new,gam1,s0_predicted_edge,dz,dt)
 
     use bl_constants_module
     use make_edge_state_module
@@ -82,10 +80,12 @@ contains
     real (kind = dp_t), allocatable :: force(:)
     real (kind = dp_t), allocatable :: edge(:)
     real (kind = dp_t), allocatable :: X0(:)
+    real (kind = dp_t), allocatable :: h0(:)
 
     ! Cell-centered
     allocate(force(0:nr(n)-1))
     allocate(   X0(0:nr(n)-1))
+    allocate(   h0(0:nr(n)-1))
 
     ! Edge-centered
     allocate(edge(0:nr(n)))
@@ -95,6 +95,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Update p_0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
     force = ZERO
 
     call make_edge_state_1d(n,p0_old,edge,vel,force,1,dz,dt)
@@ -105,12 +106,11 @@ contains
     end do
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Predict rho_0 to vertical and lateral edges
+! Predict rho_0 to vertical edges
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     if (predict_X_at_edges .or. predict_h_at_edges) then
 
-       ! Predict rho_0 to vertical edges
        do r = 0,nr(n)-1
           force(r) = -s0_old(r,rho_comp) * (vel(r+1) - vel(r)) / dz 
        end do
@@ -163,7 +163,8 @@ contains
        
        ! update (rho X)_0
        do r = 0,nr(n)-1
-          s0_new(r,comp) = s0_old(r,comp) - (dt/dz) * (edge(r+1)*vel(r+1) - edge(r)*vel(r)) 
+          s0_new(r,comp) = s0_old(r,comp) &
+               - dt / dz * (edge(r+1) * vel(r+1) - edge(r) * vel(r)) 
        end do
        
     enddo
@@ -185,6 +186,21 @@ contains
 
     if (predict_h_at_edges) then
 
+       ! here we predict h_0 on the edges
+       h0(:) = s0_old(:,rhoh_comp)/s0_old(:,rho_comp)
+
+       force = ZERO
+
+       call make_edge_state_1d(n,h0,edge,vel,force,1,dz,dt)
+
+       ! s0_predicted_edge will store h_0 on the vertical edges -- we need
+       ! that later
+       s0_predicted_edge(:,rhoh_comp) = edge(:)
+
+       ! our final update needs (rho X)_0 on the edges, so compute
+       ! that now
+       edge(:) = s0_predicted_edge(:,rho_comp)*edge(:)
+
     else
 
        ! here we predict (rho h)_0 on the edges
@@ -194,18 +210,19 @@ contains
        
        call make_edge_state_1d(n,s0_old(:,rhoh_comp),edge,vel,force,1,dz,dt)
        
-       ! s0_predicted_edge will store (rho X)_0 on the vertical edges
+       ! s0_predicted_edge will store (rho h)_0 on the vertical edges
        s0_predicted_edge(:,rhoh_comp) = edge(:)
        
     end if
 
+    ! update (rho h)_0
     do r = 0,nr(n)-1
        s0_new(r,rhoh_comp) = s0_old(r,rhoh_comp) &
             - dt / dz * (edge(r+1) * vel(r+1) - edge(r) * vel(r)) 
     end do
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Make Temp_0 and Gam1 from p_0 and rho_0
+! Make t_0 and gam1 from p_0 and rho_0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     do r = 0,nr(n)-1
