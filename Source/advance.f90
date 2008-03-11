@@ -158,7 +158,7 @@ contains
     s0_predicted_edge(:,:,:) = ZERO
 
     ! Set Sbar to zero so if evolve_base_state = F then we don't need to reset it.
-    w0_old = w0
+    Sbar(:,:,:) = ZERO
 
     ! Set w0_old to w0 from last time step.
     w0_old = w0
