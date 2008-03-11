@@ -403,33 +403,55 @@ contains
        call multifab_build(etaflux(n), mla%la(n), nscal, 0, nodal = umac_nodal_flag)
     end do
 
+    ! for which_step .eq. 1, we pass in only the old base state quantities
+    ! (s0_old, s0_edge_old, s0_old_cart)
+    ! for which_step .eq. 2, we pass in the old and new for averaging within mkflux
+    if (which_step .eq. 1) then
+
     ! compute enthalpy fluxes
-    call mkflux(nlevs,sflux,etaflux,sold,sedge,umac,w0,w0_cart_vec, &
-                s0_old,s0_edge_old,s0_old_cart, &
-                s0_new,s0_edge_new,s0_new_cart, &
-                s0_predicted_edge, &
-                s0_predicted_x_edge, &
-                rhoh_comp,rhoh_comp,which_step,mla,dx,dt)
-
-
-    ! compute species fluxes
-    call mkflux(nlevs,sflux,etaflux,sold,sedge,umac,w0,w0_cart_vec, &
-                s0_old,s0_edge_old,s0_old_cart, &
-                s0_new,s0_edge_new,s0_new_cart, &
-                s0_predicted_edge, &
-                s0_predicted_x_edge, &
-                spec_comp,spec_comp+nspec-1,which_step,mla,dx,dt)
-
-
-    if (ntrac .ge. 1) then
-       ! compute tracer fluxes
        call mkflux(nlevs,sflux,etaflux,sold,sedge,umac,w0,w0_cart_vec, &
-                   s0_old,s0_edge_old,s0_old_cart, &
-                   s0_new,s0_edge_new,s0_new_cart, &
-                   s0_predicted_edge, &
-                   s0_predicted_x_edge, &
-                   trac_comp,trac_comp+ntrac-1,which_step,mla,dx,dt)
+                   s0_old,s0_edge_old,s0_old_cart,s0_old,s0_edge_old,s0_old_cart, &
+                   s0_predicted_edge,s0_predicted_x_edge, &
+                   rhoh_comp,rhoh_comp,mla,dx,dt)
+
+       ! compute species fluxes
+       call mkflux(nlevs,sflux,etaflux,sold,sedge,umac,w0,w0_cart_vec, &
+                   s0_old,s0_edge_old,s0_old_cart,s0_old,s0_edge_old,s0_old_cart, &
+                   s0_predicted_edge,s0_predicted_x_edge, &
+                   spec_comp,spec_comp+nspec-1,mla,dx,dt)
+
+       if (ntrac .ge. 1) then
+          ! compute tracer fluxes
+          call mkflux(nlevs,sflux,etaflux,sold,sedge,umac,w0,w0_cart_vec, &
+                      s0_old,s0_edge_old,s0_old_cart,s0_old,s0_edge_old,s0_old_cart, &
+                      s0_predicted_edge,s0_predicted_x_edge, &
+                      trac_comp,trac_comp+ntrac-1,mla,dx,dt)
+       end if
+
+    else if (which_step .eq. 2) then
+
+       ! compute enthalpy fluxes
+       call mkflux(nlevs,sflux,etaflux,sold,sedge,umac,w0,w0_cart_vec, &
+                   s0_old,s0_edge_old,s0_old_cart,s0_new,s0_edge_new,s0_new_cart, &
+                   s0_predicted_edge,s0_predicted_x_edge, &
+                   rhoh_comp,rhoh_comp,mla,dx,dt)
+
+       ! compute species fluxes
+       call mkflux(nlevs,sflux,etaflux,sold,sedge,umac,w0,w0_cart_vec, &
+                   s0_old,s0_edge_old,s0_old_cart,s0_new,s0_edge_new,s0_new_cart, &
+                   s0_predicted_edge,s0_predicted_x_edge, &
+                   spec_comp,spec_comp+nspec-1,mla,dx,dt)
+
+       if (ntrac .ge. 1) then
+          ! compute tracer fluxes
+          call mkflux(nlevs,sflux,etaflux,sold,sedge,umac,w0,w0_cart_vec, &
+                      s0_old,s0_edge_old,s0_old_cart,s0_new,s0_edge_new,s0_new_cart, &
+                      s0_predicted_edge,s0_predicted_x_edge, &
+                      trac_comp,trac_comp+ntrac-1,mla,dx,dt)
+       end if
+
     end if
+
 
     !**************************************************************************
     !     1) Set force for (rho X)'_i at time n+1/2 = 0.
