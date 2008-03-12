@@ -148,7 +148,7 @@ contains
     allocate(             s0_2(nlevs,0:nr(nlevs)-1,nscal))
     allocate(             p0_1(nlevs,0:nr(nlevs)-1))
     allocate(             p0_2(nlevs,0:nr(nlevs)-1))
-    allocate(s0_predicted_edge  (nlevs,0:nr(nlevs)  ,nscal))
+    allocate(s0_predicted_edge(nlevs,0:nr(nlevs)  ,nscal))
 
     ! Set these to be safe
     s0_1(:,:,:) = ZERO
@@ -156,6 +156,7 @@ contains
     p0_1(:,:)   = ZERO
     p0_2(:,:)   = ZERO
     s0_predicted_edge(:,:,:) = ZERO
+    w0_force(:,:) = ZERO
 
     ! Set Sbar to zero so if evolve_base_state = F then we don't need to reset it.
     Sbar(:,:,:) = ZERO
