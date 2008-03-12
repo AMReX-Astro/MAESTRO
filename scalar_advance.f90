@@ -237,7 +237,7 @@ contains
         
     end if
 
-    if (predict_X_at_edges .or. predict_h_at_edges) then
+    if (predict_X_at_edges) then
        ! make force for rho'
        call modify_scal_force(which_step,nlevs,scal_force,sold,umac,s0_old,s0_edge_old,w0,&
                               dx,s0_old_cart,rho_comp,1,mla,the_bc_level)
@@ -274,9 +274,7 @@ contains
        end do
     end do
 
-    ! predict T at edges (if predict_temp_at_edges = T)
-    ! OR predict h at edges (if predict_h_at_edges = T)
-    ! OR predict (rho h)' at edges (if predict_temp_at_edges = F and predict_h_at_edges = F)
+    ! predict either T, h, or (rho h)' at the edges
     if (predict_temp_at_edges) then
        pred_comp = temp_comp
     else
@@ -287,33 +285,18 @@ contains
     call make_edge_scal(nlevs,sold,sedge,umac,scal_force,w0,w0_cart_vec,dx,dt,is_vel, &
                         the_bc_level,pred_comp,dm+pred_comp,1,mla)
 
-    if (predict_X_at_edges) then
-
-       ! predict X at the edges
+    ! predict either X or (rho X)' at the edges
 !      call make_edge_state(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0,w0_cart_vec,dx, &
 !                           dt,is_vel,the_bc_level,velpred,spec_comp,dm+spec_comp,nspec,mla)
        call make_edge_scal(nlevs,sold,sedge,umac,scal_force,w0,w0_cart_vec,dx,dt,is_vel, &
                            the_bc_level,spec_comp,dm+spec_comp,nspec,mla)
 
-    else
-
-       ! predict (rho X)' at the edges
-!       call make_edge_state(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0,w0_cart_vec, &
-!                            dx,dt,is_vel,the_bc_level,velpred,spec_comp,dm+spec_comp, &
-!                            nspec,mla)
-       call make_edge_scal(nlevs,sold,sedge,umac,scal_force,w0,w0_cart_vec,dx,dt,is_vel, &
-                           the_bc_level,spec_comp,dm+spec_comp,nspec,mla)
-
-    endif
-
-    if (predict_X_at_edges .or. predict_h_at_edges) then
-
+    if (predict_X_at_edges) then
        ! predict rho' at the edges
 !      call make_edge_state(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0,w0_cart_vec,dx, &
 !                           dt,is_vel,the_bc_level,velpred,rho_comp,dm+rho_comp,1,mla)
        call make_edge_scal(nlevs,sold,sedge,umac,scal_force,w0,w0_cart_vec,dx,dt,is_vel, &
                            the_bc_level,rho_comp,dm+rho_comp,1,mla)
-
     end if
 
     if (.not. predict_temp_at_edges .and. .not. predict_h_at_edges) then
