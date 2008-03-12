@@ -202,8 +202,11 @@ contains
                    dsdt_eos, dsdr_eos, &
                    do_diag)
           
-!         sx(i,j,rhoh_comp) = den_eos(1)*h_eos(1)
-          sx(i,j,rhoh_comp) = h_eos(1)
+          if (predict_X_at_edges) then
+             sx(i,j,rhoh_comp) = h_eos(1)
+          else
+             sx(i,j,rhoh_comp) = den_eos(1)*h_eos(1)
+          end if
           
 !         This isn't right any more
 !         qreact = 0.0d0
@@ -214,9 +217,9 @@ contains
 !            sx(i,j,rhoh_comp) = sx(i,j,rhoh_comp) + den_eos(1) * qreact
 !         endif
           
-!         Don't put this in perturbational form any more.
-!         sx(i,j,rhoh_comp) = sx(i,j,rhoh_comp) - &
-!              HALF * (s0_old(j,rhoh_comp) + s0_new(j,rhoh_comp))
+          if (.not. predict_X_at_edges) &
+             sx(i,j,rhoh_comp) = sx(i,j,rhoh_comp) - &
+                  HALF * (s0_old(j,rhoh_comp) + s0_new(j,rhoh_comp))
           
        enddo
     enddo
@@ -264,8 +267,11 @@ contains
                    dsdt_eos, dsdr_eos, &
                    do_diag)
           
-!         sy(i,j,rhoh_comp) = den_eos(1)*h_eos(1) 
-          sy(i,j,rhoh_comp) = h_eos(1) 
+          if (predict_X_at_edges) then
+             sy(i,j,rhoh_comp) = h_eos(1) 
+          else
+             sy(i,j,rhoh_comp) = den_eos(1)*h_eos(1) 
+          end if
           
 !         This isn't right any more
 !         qreact = 0.0d0
@@ -276,9 +282,9 @@ contains
 !            sy(i,j,rhoh_comp) = sy(i,j,rhoh_comp) + den_eos(1) * qreact
 !         endif
           
-!         Don't put this in perturbational form any more.
-!         sy(i,j,rhoh_comp) = sy(i,j,rhoh_comp) - &
-!              HALF * (s0_edge_old(j,rhoh_comp) + s0_edge_new(j,rhoh_comp))
+          if (.not. predict_X_at_edges) &
+             sy(i,j,rhoh_comp) = sy(i,j,rhoh_comp) - &
+                  HALF * (s0_edge_old(j,rhoh_comp) + s0_edge_new(j,rhoh_comp))
           
        enddo
     enddo
