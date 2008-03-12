@@ -182,10 +182,16 @@ contains
        call setval(scal_force(n),ZERO,all=.true.)
     end do
 
-    ! species forces
+    ! make force for rho', X, and/or (rho X)'
     if (predict_X_at_edges) then
 
        ! X force is zero - do nothing
+
+       ! make force for rho'
+       if (predict_X_at_edges) then
+          call modify_scal_force(which_step,nlevs,scal_force,sold,umac,s0_old,s0_edge_old, &
+                                 w0,dx,s0_old_cart,rho_comp,1,mla,the_bc_level)
+       end if
 
     else
 
@@ -195,17 +201,16 @@ contains
 
     endif
 
+    ! make force for either h, T, or (rho h)'
     if (predict_h_at_edges) then
 
-       ! make force for h
-       ! do this by calling mkrhohforce then dividing by rho
+       ! make force for h by calling mkrhohforce then dividing by rho
        call mkrhohforce(nlevs,scal_force,umac,p0_old,p0_old,normal,dx,mla,the_bc_level)
        do n=1,nlevs
           call multifab_div_div_c(scal_force(n),rhoh_comp,sold(n),rho_comp,1,1)
        end do
 
-       ! add the thermal diffusion term
-       ! make sure thermal is scaled by 1/rho
+       ! add the thermal diffusion term, scaled by 1/rho, to the h force
        if (use_thermal_diffusion) then
           do n=1,nlevs
              call multifab_div_div_c(thermal(n),1,sold(n),rho_comp,1)
@@ -235,12 +240,6 @@ contains
        call modify_scal_force(which_step,nlevs,scal_force,sold,umac,s0_old,s0_edge_old,w0,&
                               dx,s0_old_cart,rhoh_comp,1,mla,the_bc_level)
         
-    end if
-
-    if (predict_X_at_edges) then
-       ! make force for rho'
-       call modify_scal_force(which_step,nlevs,scal_force,sold,umac,s0_old,s0_edge_old,w0,&
-                              dx,s0_old_cart,rho_comp,1,mla,the_bc_level)
     end if
       
     !**************************************************************************
