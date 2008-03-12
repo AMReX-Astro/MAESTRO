@@ -172,7 +172,8 @@ contains
     do comp = startcomp, endcomp
 
        test = ( (comp.ge.spec_comp).and.(comp.le.spec_comp+nspec-1).and.predict_X_at_edges) &
-         .or. ( (comp.eq.rhoh_comp).and.(predict_h_at_edges.or.predict_temp_at_edges) )
+         .or. ( (comp.eq.rhoh_comp).and. &
+                     (predict_h_at_edges.or.(predict_temp_at_edges.and.predict_X_at_edges)) )
        
        ! create x-fluxes
        if (test) then
