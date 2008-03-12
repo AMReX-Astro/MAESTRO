@@ -150,8 +150,8 @@ contains
     real(kind=dp_t), intent(inout) ::  sfluxx(lo(1)  :,lo(2)  :,:)
     real(kind=dp_t), intent(inout) ::  sfluxy(lo(1)  :,lo(2)  :,:)
     real(kind=dp_t), intent(inout) :: etaflux(lo(1)  :,lo(2)  :,:)
-    real(kind=dp_t), intent(in   ) ::  sedgex(lo(1)  :,lo(2)  :,:)
-    real(kind=dp_t), intent(in   ) ::  sedgey(lo(1)  :,lo(2)  :,:)
+    real(kind=dp_t), intent(inout) ::  sedgex(lo(1)  :,lo(2)  :,:)
+    real(kind=dp_t), intent(inout) ::  sedgey(lo(1)  :,lo(2)  :,:)
     real(kind=dp_t), intent(in   ) ::    umac(lo(1)-1:,lo(2)-1:)
     real(kind=dp_t), intent(in   ) ::    vmac(lo(1)-1:,lo(2)-1:)
     real(kind=dp_t), intent(in   ) :: s0_old(0:,:), s0_edge_old(0:,:)
@@ -162,19 +162,46 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:),dt
 
     ! local
-    integer :: comp
+    integer :: comp,spec
     integer :: i,j
     real(kind=dp_t) :: s0_edge
     real(kind=dp_t) :: rho_prime, rho0_edge
-    logical :: test
+    logical :: test,needrhoprime
     
     ! loop over components
     do comp = startcomp, endcomp
 
-       test = ( (comp.ge.spec_comp).and.(comp.le.spec_comp+nspec-1).and.predict_X_at_edges) &
-         .or. ( (comp.eq.rhoh_comp).and. &
-                     (predict_h_at_edges.or.(predict_temp_at_edges.and.predict_X_at_edges)) )
+       test = ((comp.ge.spec_comp).and.(comp.le.spec_comp+nspec-1).and.predict_X_at_edges) &
+         .or. ((comp.eq.rhoh_comp).and. &
+                     (predict_h_at_edges.or.(predict_temp_at_edges.and.predict_X_at_edges)))
        
+       needrhoprime = ((comp.eq.rhoh_comp).and. &
+            predict_h_at_edges.and.(.not.predict_X_at_edges))
+
+       if (needrhoprime) then
+
+          ! compute rho' on x-faces
+          sedgex(lo(1):hi(1)+1,lo(2):hi(2),rho_comp) = ZERO
+          do spec = 1,nspec    
+             do j = lo(2), hi(2)
+                do i = lo(1), hi(1)+1
+                   sedgex(i,j,rho_comp) = sedgex(i,j,rho_comp)+sedgex(i,j,spec_comp+spec-1)
+                end do
+             end do
+          end do
+          
+          ! compute rho' on y-faces
+          sedgey(lo(1):hi(1),lo(2):hi(2)+1,rho_comp) = ZERO
+          do spec = 1,nspec    
+             do j = lo(2), hi(2)+1
+                do i = lo(1), hi(1)
+                   sedgey(i,j,rho_comp) = sedgey(i,j,rho_comp) + sedgey(i,j,spec_comp+spec-1)
+                end do
+             end do
+          end do
+          
+       end if
+
        ! create x-fluxes
        if (test) then
 
