@@ -40,7 +40,6 @@ contains
                              use_thermal_diffusion, verbose, evolve_base_state, use_eta
     use modify_scal_force_module
     use make_eta_module
-    use add_thermal_to_force_module
     use convert_rhoX_to_X_module
 
     integer        , intent(in   ) :: nlevs
