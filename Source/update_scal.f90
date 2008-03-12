@@ -194,7 +194,7 @@ contains
                             base_new,base_new_edge,lo,hi,ng_s,dx,dt)
 
     use network,       only: nspec
-    use probin_module, only: predict_X_at_edges, predict_h_at_edges
+    use probin_module, only: predict_X_at_edges, predict_h_at_edges, predict_temp_at_edges
     use variables,     only: spec_comp, rho_comp, rhoh_comp
     use bl_constants_module
 
@@ -225,8 +225,8 @@ contains
 
     do comp = nstart, nstop
     
-       test = (comp.ge.spec_comp.and.comp.le.spec_comp+nspec-1.and.predict_X_at_edges) &
-         .or. (comp.eq.rhoh_comp.and.predict_h_at_edges)
+       test =   (comp.ge.spec_comp.and.comp.le.spec_comp+nspec-1.and.predict_X_at_edges) &
+         .or. ( (comp.eq.rhoh_comp).and.(predict_h_at_edges.or.predict_temp_at_edges) )
 
        if (test) then
 

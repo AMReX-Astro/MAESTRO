@@ -53,14 +53,6 @@ contains
 
     dm = u(1)%dim
 
-    ! NOTE: if we predicted X at edges, we need to rewrite this routine to
-    ! properly deal with X' on the edges -- at the moment, we don't do this.
-    ! Also note, that we would need to ensure that s0_old and s0_new that come
-    ! in are X0 and not (rho X)_0.
-    if (predict_X_at_edges) then
-       call bl_error("rhoh_vs_t does not yet know how to deal with X' edge states'")
-    endif
-
     if (spherical .eq. 1) then
       allocate(  xn0_halftime(0:nr(nlevs),nspec))
       allocate(rhoh0_halftime(0:nr(nlevs)))
@@ -150,7 +142,7 @@ contains
     use bl_constants_module
     use variables,     only: rho_comp, temp_comp, spec_comp, rhoh_comp
     use eos_module
-    use probin_module, only: use_big_h
+    use probin_module, only: use_big_h, predict_X_at_edges
 
     integer        , intent(in   ) :: lo(:),hi(:)
     real(kind=dp_t), intent(inout) :: sx(lo(1):,lo(2):,:)
@@ -163,24 +155,41 @@ contains
     
     do_diag = .false.
 
-    sx(lo(1):hi(1)+1, lo(2):hi(2), rho_comp) = ZERO
 
-    do comp = 1,nspec    
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)+1
-             sx(i,j,rho_comp) = sx(i,j,rho_comp) + sx(i,j,spec_comp+comp-1)
+    ! if (predict_X_at_edges) then sx(i,j,rho_comp) already holds (rho)'
+    !                         else sx(i,j,    comp) holds (rho X)', 
+    !                           so sx(i,j,rho_comp) will hold (rho)'
+    if (.not. predict_X_at_edges) then
+
+       sx(lo(1):hi(1)+1, lo(2):hi(2), rho_comp) = ZERO
+       do comp = 1,nspec    
+          do j = lo(2), hi(2)
+             do i = lo(1), hi(1)+1
+                sx(i,j,rho_comp) = sx(i,j,rho_comp) + sx(i,j,spec_comp+comp-1)
+             end do
           end do
        end do
-    end do
+
+    end if
     
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)+1
           
           temp_eos(1) = sx(i,j,temp_comp)
           den_eos(1)  = sx(i,j,rho_comp) + HALF * (s0_old(j,rho_comp) + s0_new(j,rho_comp))
-          xn_eos(1,:) = (sx(i,j,spec_comp:spec_comp+nspec-1)  + &
-               HALF * ( s0_old(j,spec_comp:spec_comp+nspec-1) + &
-               s0_new(j,spec_comp:spec_comp+nspec-1) ) ) /den_eos(1) 
+
+          ! if (predict_X_at_edges) then sx(i,j,comp) holds X
+          if (predict_X_at_edges) then
+
+             xn_eos(1,:) = sx(i,j,spec_comp:spec_comp+nspec-1)
+
+          ! else then sx(i,j,comp) holds (rho X)'
+          else
+
+             xn_eos(1,:) = (sx(i,j,spec_comp:spec_comp+nspec-1)  + &
+                  HALF * ( s0_old(j,spec_comp:spec_comp+nspec-1) + &
+                  s0_new(j,spec_comp:spec_comp+nspec-1) ) ) /den_eos(1) 
+          end if
           
           call eos(eos_input_rt, den_eos, temp_eos, &
                    npts, nspec, &
@@ -193,31 +202,40 @@ contains
                    dsdt_eos, dsdr_eos, &
                    do_diag)
           
-          sx(i,j,rhoh_comp) = den_eos(1)*h_eos(1)
+!         sx(i,j,rhoh_comp) = den_eos(1)*h_eos(1)
+          sx(i,j,rhoh_comp) = h_eos(1)
           
-          qreact = 0.0d0
-          if (use_big_h) then
-             do comp=1,nspec
-                qreact = qreact + ebin(comp)*xn_eos(1,comp)
-             enddo
-             sx(i,j,rhoh_comp) = sx(i,j,rhoh_comp) + den_eos(1) * qreact
-          endif
+!         This isn't right any more
+!         qreact = 0.0d0
+!         if (use_big_h) then
+!            do comp=1,nspec
+!               qreact = qreact + ebin(comp)*xn_eos(1,comp)
+!            enddo
+!            sx(i,j,rhoh_comp) = sx(i,j,rhoh_comp) + den_eos(1) * qreact
+!         endif
           
-          sx(i,j,rhoh_comp) = sx(i,j,rhoh_comp) - &
-               HALF * (s0_old(j,rhoh_comp) + s0_new(j,rhoh_comp))
+!         Don't put this in perturbational form any more.
+!         sx(i,j,rhoh_comp) = sx(i,j,rhoh_comp) - &
+!              HALF * (s0_old(j,rhoh_comp) + s0_new(j,rhoh_comp))
           
        enddo
     enddo
 
-    sy(lo(1):hi(1), lo(2):hi(2)+1, rho_comp) = ZERO
+    ! if (predict_X_at_edges) then sy(i,j,rho_comp) already holds (rho)'
+    !                         else sy(i,j,    comp) holds (rho X)', 
+    !                           so sy(i,j,rho_comp) will hold (rho)'
+    if (.not. predict_X_at_edges) then
 
-    do comp = 1,nspec    
-       do j = lo(2), hi(2)+1
-          do i = lo(1), hi(1)
-             sy(i,j,rho_comp) = sy(i,j,rho_comp) + sy(i,j,spec_comp+comp-1)
+       sy(lo(1):hi(1), lo(2):hi(2)+1, rho_comp) = ZERO
+       do comp = 1,nspec    
+          do j = lo(2), hi(2)+1
+             do i = lo(1), hi(1)
+                sy(i,j,rho_comp) = sy(i,j,rho_comp) + sy(i,j,spec_comp+comp-1)
+             end do
           end do
        end do
-    end do
+
+    end if
     
     do j = lo(2), hi(2)+1
        do i = lo(1), hi(1)
@@ -225,9 +243,15 @@ contains
           temp_eos(1) = sy(i,j,temp_comp)
           den_eos(1)  = sy(i,j,rho_comp) + &
                HALF * (s0_edge_old(j,rho_comp) + s0_edge_new(j,rho_comp))
-          xn_eos(1,:) = (sy(i,j,spec_comp:spec_comp+nspec-1)  + &
-               HALF * ( s0_edge_old(j,spec_comp:spec_comp+nspec-1) + &
-               s0_edge_new(j,spec_comp:spec_comp+nspec-1) ) ) /den_eos(1) 
+
+          ! if (predict_X_at_edges) then sy(i,j,comp) holds X
+          if (predict_X_at_edges) then
+             xn_eos(1,:) = sy(i,j,spec_comp:spec_comp+nspec-1)
+          else
+             xn_eos(1,:) = (sy(i,j,spec_comp:spec_comp+nspec-1)  + &
+                  HALF * ( s0_edge_old(j,spec_comp:spec_comp+nspec-1) + &
+                  s0_edge_new(j,spec_comp:spec_comp+nspec-1) ) ) /den_eos(1) 
+          end if
           
           call eos(eos_input_rt, den_eos, temp_eos, &
                    npts, nspec, &
@@ -240,18 +264,21 @@ contains
                    dsdt_eos, dsdr_eos, &
                    do_diag)
           
-          sy(i,j,rhoh_comp) = den_eos(1)*h_eos(1) 
+!         sy(i,j,rhoh_comp) = den_eos(1)*h_eos(1) 
+          sy(i,j,rhoh_comp) = h_eos(1) 
           
-          qreact = 0.0d0
-          if (use_big_h) then
-             do comp=1,nspec
-                qreact = qreact + ebin(comp)*xn_eos(1,comp)
-             enddo
-             sy(i,j,rhoh_comp) = sy(i,j,rhoh_comp) + den_eos(1) * qreact
-          endif
+!         This isn't right any more
+!         qreact = 0.0d0
+!         if (use_big_h) then
+!            do comp=1,nspec
+!               qreact = qreact + ebin(comp)*xn_eos(1,comp)
+!            enddo
+!            sy(i,j,rhoh_comp) = sy(i,j,rhoh_comp) + den_eos(1) * qreact
+!         endif
           
-          sy(i,j,rhoh_comp) = sy(i,j,rhoh_comp) - &
-               HALF * (s0_edge_old(j,rhoh_comp) + s0_edge_new(j,rhoh_comp))
+!         Don't put this in perturbational form any more.
+!         sy(i,j,rhoh_comp) = sy(i,j,rhoh_comp) - &
+!              HALF * (s0_edge_old(j,rhoh_comp) + s0_edge_new(j,rhoh_comp))
           
        enddo
     enddo
