@@ -144,7 +144,7 @@ contains
     use bl_constants_module
     use network, only : nspec
     use variables, only : spec_comp, rho_comp, rhoh_comp
-    use probin_module, only: predict_X_at_edges, predict_h_at_edges, predict_temp_at_edges
+    use probin_module, only: predict_X_at_edges, enthalpy_pred_type
 
     integer        , intent(in   ) :: lo(:),hi(:)
     real(kind=dp_t), intent(inout) ::  sfluxx(lo(1)  :,lo(2)  :,:)
@@ -173,10 +173,11 @@ contains
 
        test = ((comp.ge.spec_comp).and.(comp.le.spec_comp+nspec-1).and.predict_X_at_edges) &
          .or. ((comp.eq.rhoh_comp).and. &
-                     (predict_h_at_edges.or.(predict_temp_at_edges.and.predict_X_at_edges)))
+                     (enthalpy_pred_type.eq.2 .or. &
+                     (enthalpy_pred_type.eq.3.and.predict_X_at_edges)))
        
        needrhoprime = ((comp.eq.rhoh_comp).and. &
-            predict_h_at_edges.and.(.not.predict_X_at_edges))
+            enthalpy_pred_type.eq.2.and.(.not.predict_X_at_edges))
 
        if (needrhoprime) then
 
@@ -290,7 +291,7 @@ contains
     use bl_constants_module
     use network, only : nspec
     use variables, only : spec_comp, rho_comp, rhoh_comp
-    use probin_module, only: predict_X_at_edges, predict_h_at_edges
+    use probin_module, only: predict_X_at_edges, enthalpy_pred_type
 
     integer        , intent(in   ) :: lo(:),hi(:)
     real(kind=dp_t), intent(inout) ::  sfluxx(lo(1)  :,lo(2)  :,lo(3)  :,:)
@@ -319,7 +320,7 @@ contains
     do comp = startcomp, endcomp
 
        test = ((comp.ge.spec_comp).and.(comp.le.spec_comp+nspec-1).and.predict_X_at_edges) &
-         .or. ((comp.eq.rhoh_comp).and.predict_h_at_edges)
+         .or. ((comp.eq.rhoh_comp).and.enthalpy_pred_type.eq.2)
        
        ! create x-fluxes and y-fluxes
        if (test) then

@@ -62,7 +62,7 @@ contains
     use variables, only: spec_comp, rho_comp, temp_comp, rhoh_comp
     use geometry, only: nr
     use probin_module, only: grav_const, anelastic_cutoff, &
-                             predict_X_at_edges, predict_h_at_edges
+                             predict_X_at_edges, enthalpy_pred_type
 
     integer        , intent(in   ) :: which_step,n
     real(kind=dp_t), intent(in   ) :: vel(0:)
@@ -109,7 +109,7 @@ contains
 ! Predict rho_0 to vertical edges
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    if (predict_X_at_edges .or. predict_h_at_edges) then
+    if (predict_X_at_edges) then
 
        do r = 0,nr(n)-1
           force(r) = -s0_old(r,rho_comp) * (vel(r+1) - vel(r)) / dz 
@@ -160,12 +160,11 @@ contains
           s0_predicted_edge(:,comp) = edge(:)
 
           ! compute rho_0 on the edges for completeness
-          if (.not. predict_h_at_edges) then
-             s0_predicted_edge(:,rho_comp) = s0_predicted_edge(:,rho_comp) + &
-                  s0_predicted_edge(:,comp) 
-          end if
+          s0_predicted_edge(:,rho_comp) = s0_predicted_edge(:,rho_comp) + &
+               s0_predicted_edge(:,comp) 
 
-       endif
+       end if
+
        
        ! update (rho X)_0
        do r = 0,nr(n)-1
@@ -190,7 +189,7 @@ contains
 ! Update (rho h)_0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    if (predict_h_at_edges) then
+    if (enthalpy_pred_type .eq. 2) then
 
        ! here we predict h_0 on the edges
        h0(:) = s0_old(:,rhoh_comp)/s0_old(:,rho_comp)

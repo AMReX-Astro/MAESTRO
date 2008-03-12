@@ -36,7 +36,7 @@ contains
     use geometry,      only: spherical, nr
     use variables,     only: nscal, ntrac, spec_comp, trac_comp, temp_comp, &
                              rho_comp, rhoh_comp
-    use probin_module, only: predict_temp_at_edges, predict_X_at_edges, predict_h_at_edges, &
+    use probin_module, only: predict_X_at_edges, enthalpy_pred_type, &
                              use_thermal_diffusion, verbose, evolve_base_state, use_eta
     use modify_scal_force_module
     use make_eta_module
@@ -148,7 +148,7 @@ contains
     ! if we are predicting h on the edges, then convert the state arrays
     ! (and base state) from (rho h) to h.  Note, only the time-level n
     ! stuff need be converted, since that's all the prediction uses
-    if (predict_h_at_edges) then
+    if (enthalpy_pred_type .eq. 2) then
 
        call convert_rhoh_to_h(nlevs,sold,dx,.true.,mla,the_bc_level)
 
@@ -163,17 +163,6 @@ contains
 
     !**************************************************************************
     ! Create scalar source term at time n
-    ! if predict_X_at_edges is true, we compute a source term for X
-    ! if predict_X_at_edges is false, we compute a source term for (rho X)'
-    ! if predict_h_at_edges is true, we compute a source term for h
-    ! if predict_temp_at_edges is true, we compute a source term for temperature
-    ! if predict_h_at_edges and predict_temp_at_edges are both false, we compute a
-    !    source term for (rho h)'
-    ! if either predict_X_at_edges or predic_h_at_edges is true, we compute a source
-    !    term for rho'
-    ! 
-    ! The call to modify_scal_force is used to add those advective terms 
-    ! that appear as forces when we write it in convective/perturbational form.
     !**************************************************************************
 
     do n = 1, nlevs
@@ -201,7 +190,16 @@ contains
     endif
 
     ! make force for either h, T, or (rho h)'
-    if (predict_h_at_edges) then
+    if (enthalpy_pred_type .eq. 1) then
+       
+       ! make force for (rho h)'
+       call mkrhohforce(nlevs,scal_force,thermal,umac,p0_old,p0_old,normal,dx,.true., &
+                        mla,the_bc_level)
+
+       call modify_scal_force(which_step,nlevs,scal_force,sold,umac,s0_old,s0_edge_old,w0,&
+                              dx,s0_old_cart,rhoh_comp,1,mla,the_bc_level)
+
+    else if (enthalpy_pred_type .eq. 2) then
 
        ! make force for h by calling mkrhohforce then dividing by rho
        call mkrhohforce(nlevs,scal_force,thermal,umac,p0_old,p0_old,normal,dx,.true., &
@@ -210,22 +208,14 @@ contains
           call multifab_div_div_c(scal_force(n),rhoh_comp,sold(n),rho_comp,1,1)
        end do
 
-    else if (predict_temp_at_edges) then
+    else if (enthalpy_pred_type .eq. 3) then
 
        ! make force for temperature
        call mktempforce(nlevs,scal_force,umac,sold,thermal,p0_old,p0_old,normal,dx,mla, &
                         the_bc_level)
 
-    else
-
-       ! make force for (rho h)'
-       call mkrhohforce(nlevs,scal_force,thermal,umac,p0_old,p0_old,normal,dx,.true., &
-                        mla,the_bc_level)
-
-       call modify_scal_force(which_step,nlevs,scal_force,sold,umac,s0_old,s0_edge_old,w0,&
-                              dx,s0_old_cart,rhoh_comp,1,mla,the_bc_level)
-        
     end if
+        
       
     !**************************************************************************
     !     Add w0 to MAC velocities (trans velocities already have w0).
@@ -237,7 +227,7 @@ contains
     !     Create the edge states of (rho h)' or h or T and (rho X)' or X and rho'
     !**************************************************************************
 
-    if (.not. predict_temp_at_edges .and. .not. predict_h_at_edges) then
+    if (enthalpy_pred_type .eq. 1) then
        ! convert (rho h) -> (rho h)'
        call put_in_pert_form(nlevs,sold,s0_old,dx,rhoh_comp,1,.true.,mla,the_bc_level)
     end if
@@ -259,7 +249,7 @@ contains
     end do
 
     ! predict either T, h, or (rho h)' at the edges
-    if (predict_temp_at_edges) then
+    if (enthalpy_pred_type .eq. 3) then
        pred_comp = temp_comp
     else
        pred_comp = rhoh_comp
@@ -283,7 +273,7 @@ contains
                            the_bc_level,rho_comp,dm+rho_comp,1,mla)
     end if
 
-    if (.not. predict_temp_at_edges .and. .not. predict_h_at_edges) then
+    if (enthalpy_pred_type .eq. 1) then
        ! convert (rho h)' -> (rho h)
        call put_in_pert_form(nlevs,sold,s0_old,dx,rhoh_comp,1,.false.,mla,the_bc_level)
     end if
@@ -315,7 +305,7 @@ contains
 
     ! if we are predicing h at the edges, then restore the state arrays
     ! (and base state) from h to (rho h)
-    if (predict_h_at_edges) then
+    if (enthalpy_pred_type .eq. 2) then
 
        call convert_rhoh_to_h(nlevs,sold,dx,.false.,mla,the_bc_level)
 
@@ -331,7 +321,7 @@ contains
     ! Compute enthalpy edge states if we were predicting temperature.  This
     ! needs to be done after the state was returned to the full state, and 
     ! the species are back to (rho X) instead of X.
-    if (predict_temp_at_edges) then
+    if (enthalpy_pred_type .eq. 3) then
        call makeRhoHfromT(nlevs,uold,sedge,s0_old,s0_edge_old,s0_new,s0_edge_new, &
                           the_bc_level,dx)
     end if

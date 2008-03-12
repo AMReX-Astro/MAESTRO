@@ -51,7 +51,7 @@ contains
     use fill_3d_module
     use cell_to_edge_module
     use define_bc_module
-    use probin_module, only: verbose, predict_temp_at_edges
+    use probin_module, only: verbose, enthalpy_pred_type
     
     logical,         intent(in   ) :: init_mode
     type(ml_layout), intent(inout) :: mla
@@ -346,7 +346,7 @@ contains
     
     ! if we are predicting temperature at edges, we need to add the reaction 
     ! terms to thermal
-    if(predict_temp_at_edges) then
+    if(enthalpy_pred_type .eq. 3) then
        if(istep .le. 1) then
           call add_react_to_thermal(nlevs,thermal,rho_omegadot1,s1, &
                                     the_bc_tower%bc_tower_array,mla)
@@ -635,7 +635,7 @@ contains
        
        ! if we are predicting temperature at edges, we need to add the reaction 
        ! terms to thermal
-       if(predict_temp_at_edges) then
+       if(enthalpy_pred_type .eq. 3) then
           if(istep .le. 1) then
              call add_react_to_thermal(nlevs,thermal,rho_omegadot1,s1, &
                                        the_bc_tower%bc_tower_array,mla)
