@@ -1,5 +1,4 @@
 f90sources += add_react_to_thermal.f90
-f90sources += add_thermal_to_force.f90
 f90sources += addw0.f90
 f90sources += advance.f90
 f90sources += advance_premac.f90

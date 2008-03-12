@@ -25,7 +25,8 @@ module mkscalforce_module
 
 contains
 
-  subroutine mkrhohforce(nlevs,scal_force,umac,p0_old,p0_new,normal,dx,mla,the_bc_level)
+  subroutine mkrhohforce(nlevs,scal_force,thermal,umac,p0_old,p0_new,normal,dx,add_thermal, &
+                         mla,the_bc_level)
 
     use bl_prof_module
     use variables, only: foextrap_comp, rhoh_comp
@@ -36,11 +37,13 @@ contains
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: scal_force(:)
+    type(multifab) , intent(in   ) :: thermal(:)
     type(multifab) , intent(in   ) :: umac(:,:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_new(:,0:)
     type(multifab) , intent(in   ) :: normal(:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
+    logical        , intent(in   ) :: add_thermal
     type(ml_layout), intent(inout) :: mla
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
@@ -52,6 +55,7 @@ contains
     real(kind=dp_t), pointer :: wmp(:,:,:,:)
     real(kind=dp_t), pointer :: np(:,:,:,:)
     real(kind=dp_t), pointer :: fp(:,:,:,:)
+    real(kind=dp_t), pointer :: tp(:,:,:,:)
 
     type(bl_prof_timer), save :: bpt
 
@@ -65,23 +69,24 @@ contains
           fp => dataptr(scal_force(n), i)
           ump => dataptr(umac(n,1),i)
           vmp => dataptr(umac(n,2),i)
+          tp  => dataptr(thermal(n),i)
           lo = lwb(get_box(scal_force(n),i))
           hi = upb(get_box(scal_force(n),i))
           select case (dm)
           case (2)
-             call mkrhohforce_2d(n,fp(:,:,1,rhoh_comp), vmp(:,:,1,1), lo, hi, &
-                                 p0_old(n,:), p0_new(n,:))
+             call mkrhohforce_2d(n,fp(:,:,1,rhoh_comp), vmp(:,:,1,1), tp(:,:,1,1), lo, hi, &
+                                 p0_old(n,:), p0_new(n,:), add_thermal)
           case(3)
              wmp  => dataptr(umac(n,3), i)
              if (spherical .eq. 0) then
-                call mkrhohforce_3d(n,fp(:,:,:,rhoh_comp), wmp(:,:,:,1), lo, hi, &
-                                    p0_old(n,:), p0_new(n,:))
+                call mkrhohforce_3d(n,fp(:,:,:,rhoh_comp), wmp(:,:,:,1), tp(:,:,:,1), &
+                                    lo, hi, p0_old(n,:), p0_new(n,:), add_thermal)
              else
                 np => dataptr(normal(n), i)
                 call mkrhohforce_3d_sphr(n,fp(:,:,:,rhoh_comp), &
                                          ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
-                                         lo, hi, dx(n,:), np(:,:,:,:), &
-                                         p0_old(n,:), p0_new(n,:))
+                                         tp(:,:,:,1), lo, hi, dx(n,:), np(:,:,:,:), &
+                                         p0_old(n,:), p0_new(n,:), add_thermal)
              end if
           end select
        end do
@@ -120,7 +125,7 @@ contains
     
   end subroutine mkrhohforce
 
-  subroutine mkrhohforce_2d(n,rhoh_force,wmac,lo,hi,p0_old,p0_new)
+  subroutine mkrhohforce_2d(n,rhoh_force,wmac,thermal,lo,hi,p0_old,p0_new,add_thermal)
 
     use geometry, only: dr, nr
 
@@ -133,8 +138,10 @@ contains
     integer,         intent(in   ) :: n,lo(:),hi(:)
     real(kind=dp_t), intent(  out) :: rhoh_force(lo(1)-1:,lo(2)-1:)
     real(kind=dp_t), intent(in   ) :: wmac(lo(1)-1:,lo(2)-1:)
+    real(kind=dp_t), intent(in   ) :: thermal(lo(1)-1:,lo(2)-1:)
     real(kind=dp_t), intent(in   ) :: p0_old(0:)
     real(kind=dp_t), intent(in   ) :: p0_new(0:)
+    logical        , intent(in   ) :: add_thermal
 
     real(kind=dp_t) :: gradp0, wadv
     integer :: i,j
@@ -157,9 +164,17 @@ contains
        end do
     end do
 
+    if (add_thermal) then
+       do j=lo(2),hi(2)
+          do i=lo(1),hi(1)
+             rhoh_force(i,j) = rhoh_force(i,j) + thermal(i,j)
+          end do
+       end do
+    end if
+
   end subroutine mkrhohforce_2d
 
-  subroutine mkrhohforce_3d(n,rhoh_force,wmac,lo,hi,p0_old,p0_new)
+  subroutine mkrhohforce_3d(n,rhoh_force,wmac,thermal,lo,hi,p0_old,p0_new,add_thermal)
 
    use geometry, only: dr, nr
 
@@ -168,8 +183,10 @@ contains
     integer,         intent(in   ) :: n,lo(:),hi(:)
     real(kind=dp_t), intent(  out) :: rhoh_force(lo(1)-1:,lo(2)-1:,lo(3)-1:)
     real(kind=dp_t), intent(in   ) :: wmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
+    real(kind=dp_t), intent(in   ) :: thermal(lo(1)-1:,lo(2)-1:,lo(3)-1:)
     real(kind=dp_t), intent(in   ) :: p0_old(0:)
     real(kind=dp_t), intent(in   ) :: p0_new(0:)
+    logical        , intent(in   ) :: add_thermal
 
     real(kind=dp_t) :: gradp0,wadv
     integer :: i,j,k
@@ -196,9 +213,20 @@ contains
 
     end do
 
+    if (add_thermal) then
+       do k=lo(3),hi(3)
+          do j=lo(2),hi(2)
+             do i=lo(1),hi(1)
+                rhoh_force(i,j,k) = rhoh_force(i,j,k) + thermal(i,j,k)
+             end do
+          end do
+       end do
+    end if
+
   end subroutine mkrhohforce_3d
 
-  subroutine mkrhohforce_3d_sphr(n,rhoh_force,umac,vmac,wmac,lo,hi,dx,normal,p0_old,p0_new)
+  subroutine mkrhohforce_3d_sphr(n,rhoh_force,umac,vmac,wmac,thermal,lo,hi,dx,normal, &
+                                 p0_old,p0_new,add_thermal)
 
     use fill_3d_module
     use geometry, only: nr, dr
@@ -210,10 +238,12 @@ contains
     real(kind=dp_t), intent(in   ) :: umac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
     real(kind=dp_t), intent(in   ) :: vmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
     real(kind=dp_t), intent(in   ) :: wmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
+    real(kind=dp_t), intent(in   ) :: thermal(lo(1)-1:,lo(2)-1:,lo(3)-1:)
     real(kind=dp_t), intent(in   ) :: normal(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)
     real(kind=dp_t), intent(in   ) :: dx(:)
     real(kind=dp_t), intent(in   ) :: p0_old(0:)
     real(kind=dp_t), intent(in   ) :: p0_new(0:)
+    logical        , intent(in   ) :: add_thermal
 
     real(kind=dp_t) :: uadv,vadv,wadv,normal_vel
     real(kind=dp_t), allocatable :: gradp_rad(:)
@@ -254,6 +284,16 @@ contains
           end do
        end do
     end do
+
+    if (add_thermal) then
+       do k=lo(3),hi(3)
+          do j=lo(2),hi(2)
+             do i=lo(1),hi(1)
+                rhoh_force(i,j,k) = rhoh_force(i,j,k) + thermal(i,j,k)
+             end do
+          end do
+       end do
+    end if
 
     deallocate(gradp_rad, gradp_cart)
 
