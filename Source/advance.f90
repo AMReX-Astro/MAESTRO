@@ -48,6 +48,7 @@ contains
     use geometry, only: nr, spherical
     use network, only: nspec
     use make_grav_module
+    use make_eta_module
     use fill_3d_module
     use cell_to_edge_module
     use define_bc_module
@@ -102,8 +103,7 @@ contains
 
     type(multifab) :: umac(mla%nlevel,mla%dim)
     type(multifab) :: utrans(mla%nlevel,mla%dim)
-    
-    logical :: umac_nodal_flag(mla%dim)
+    type(multifab) :: etaflux(mla%nlevel)
 
     real(dp_t), allocatable :: grav_cell_nph(:,:)
     real(dp_t), allocatable :: grav_cell_new(:,:)
@@ -124,7 +124,7 @@ contains
 
     integer    :: r,n,dm,comp,nlevs,ng_s,proj_type
     real(dp_t) :: halfdt,eps_in
-    logical    :: nodal(mla%dim)
+    logical    :: nodal(mla%dim),umac_nodal_flag(mla%dim)
 
     type(bl_prof_timer), save :: bpt
 
@@ -167,6 +167,13 @@ contains
     nodal = .true.
     ng_s = sold(1)%ng
     halfdt = half*dt
+
+!   Build etaflux here so that we can call correct_base before make_eta.
+    umac_nodal_flag = .false.
+    umac_nodal_flag(dm) = .true.
+    do n=1,nlevs
+       call multifab_build(etaflux(n), mla%la(n), nscal, 0, nodal = umac_nodal_flag)
+    end do
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 1 -- define average expansion at time n+1/2
@@ -379,12 +386,14 @@ contains
     end do
 
     call scalar_advance(nlevs,mla,1,uold,s1,s2,thermal, &
-                        umac,w0,w0_cart_vec,eta,utrans,normal, &
+                        umac,w0,w0_cart_vec,etaflux,utrans,normal, &
                         s0_1,s0_2,p0_1,p0_2,s0_predicted_edge, &
                         dx,dt,the_bc_tower%bc_tower_array)
 
-    if (evolve_base_state) then
+    ! We now call make_eta after correct_base so all eta effects are lagged.
+    if (use_eta .and. evolve_base_state) then
        call correct_base(nlevs,p0_1,p0_2,s0_1,s0_2,gam1,div_coeff_nph,eta,dx(:,dm),dt)
+       call make_eta(nlevs,eta,sold,etaflux,mla)
     end if
 
     do n=1,nlevs
@@ -667,16 +676,19 @@ contains
        end do
 
        call scalar_advance(nlevs,mla,2,uold,s1,s2,thermal, &
-                           umac,w0,w0_cart_vec,eta,utrans,normal, &
+                           umac,w0,w0_cart_vec,etaflux,utrans,normal, &
                            s0_1,s0_2,p0_1,p0_2,s0_predicted_edge, &
                            dx,dt,the_bc_tower%bc_tower_array)
 
-       if (evolve_base_state) then
+       ! We now call make_eta after correct_base so all eta effects are lagged.
+       if (use_eta .and. evolve_base_state) then
           call correct_base(nlevs,p0_1,p0_2,s0_1,s0_2,gam1,div_coeff_nph,eta,dx(:,dm),dt)
+          call make_eta(nlevs,eta,sold,etaflux,mla)
        end if
 
        do n=1,nlevs
           call destroy(thermal(n))
+          call destroy(etaflux(n))
        end do
        
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

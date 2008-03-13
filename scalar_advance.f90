@@ -14,7 +14,7 @@ module scalar_advance_module
 contains
 
   subroutine scalar_advance(nlevs,mla,which_step,uold,sold,snew,thermal, &
-                            umac,w0,w0_cart_vec,eta,utrans,normal, &
+                            umac,w0,w0_cart_vec,etaflux,utrans,normal, &
                             s0_old,s0_new,p0_old,p0_new, &
                             s0_predicted_edge, &
                             dx,dt,the_bc_level)
@@ -37,10 +37,9 @@ contains
     use variables,     only: nscal, ntrac, spec_comp, trac_comp, temp_comp, &
                              rho_comp, rhoh_comp
     use probin_module, only: predict_X_at_edges, enthalpy_pred_type, &
-                             use_thermal_diffusion, verbose, evolve_base_state, use_eta
+                             use_thermal_diffusion, verbose, evolve_base_state
     use pred_parameters
     use modify_scal_force_module
-    use make_eta_module
     use convert_rhoX_to_X_module
 
     integer        , intent(in   ) :: nlevs
@@ -53,7 +52,7 @@ contains
     type(multifab) , intent(inout) :: umac(:,:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     type(multifab) , intent(in   ) :: w0_cart_vec(:)
-    real(kind=dp_t), intent(inout) :: eta(:,0:,:)
+    type(multifab) , intent(inout) :: etaflux(:)
     type(multifab) , intent(in   ) :: utrans(:,:)
     type(multifab) , intent(in   ) :: normal(:)
     real(kind=dp_t), intent(inout) :: s0_old(:,0:,:)
@@ -69,7 +68,6 @@ contains
     type(multifab) :: s0_new_cart(nlevs)
     type(multifab) :: sedge(nlevs,mla%dim)
     type(multifab) :: sflux(nlevs,mla%dim)
-    type(multifab) :: etaflux(nlevs)
 
     integer    :: velpred,comp,pred_comp,n,dm
     logical    :: umac_nodal_flag(sold(1)%dim), is_vel
@@ -355,16 +353,12 @@ contains
     !     Compute fluxes
     !**************************************************************************
 
-    do n=1,nlevs
-       do comp = 1,dm
-          umac_nodal_flag = .false.
-          umac_nodal_flag(comp) = .true.
+    do comp = 1,dm
+       umac_nodal_flag = .false.
+       umac_nodal_flag(comp) = .true.
+       do n=1,nlevs
           call multifab_build(sflux(n,comp), mla%la(n), nscal, 0, nodal = umac_nodal_flag)
        end do
-
-       umac_nodal_flag = .false.
-       umac_nodal_flag(dm) = .true.
-       call multifab_build(etaflux(n), mla%la(n), nscal, 0, nodal = umac_nodal_flag)
     end do
 
     ! for which_step .eq. 1, we pass in only the old base state quantities
@@ -497,15 +491,6 @@ contains
        end do
     end if
 
-
-    !**************************************************************************
-    !     Create the new eta
-    !**************************************************************************
-
-    if (use_eta .and. evolve_base_state) then
-       call make_eta(nlevs,eta,sold,etaflux,mla)
-    end if
-
     if (spherical .eq. 1) then
        do n=1,nlevs
           call destroy(s0_old_cart(n))
@@ -515,7 +500,6 @@ contains
 
     do n = 1, nlevs
        call destroy(scal_force(n))
-       call destroy(etaflux(n))
        do comp = 1,dm
           call destroy(sedge(n,comp))
           call destroy(sflux(n,comp))
