@@ -186,6 +186,13 @@ contains
     else
        call extrap_to_halftime(nlevs,Source_nph,dSdt,Source_old,dt)
     end if
+
+    if (dm .eq. 3) then
+       do n=1,nlevs
+          call multifab_build(w0_cart_vec(n), mla%la(n), dm, 1)
+          call setval(w0_cart_vec(n), ZERO, all=.true.)
+       end do
+    end if
     
     if (evolve_base_state) then
 
@@ -195,9 +202,6 @@ contains
                     s0_old(:,:,rho_comp),gam1,eta,dt,dtold)
 
        if (dm .eq. 3) then
-          do n=1,nlevs
-             call multifab_build(w0_cart_vec(n), mla%la(n), dm, 1)
-          end do
           call make_w0_cart(nlevs,w0,w0_cart_vec,normal,dx,the_bc_tower%bc_tower_array,mla)
        end if
 
@@ -515,7 +519,14 @@ contains
        end do
 
        call make_S_at_halftime(nlevs,Source_nph,Source_old,Source_new)
-       
+
+       if (dm .eq. 3) then
+          do n=1,nlevs
+             call multifab_build(w0_force_cart_vec(n), mla%la(n), dm, 1)
+             call setval(w0_force_cart_vec(n),ZERO,all=.true.)
+          end do
+       end if
+
        if (evolve_base_state) then
        
           call average(mla,Source_nph,Sbar,dx,1,1)
@@ -524,10 +535,6 @@ contains
                        s0_new(:,:,rho_comp),gam1,eta,dt,dtold)
        
           if (dm .eq. 3) then
-
-             do n=1,nlevs
-                call multifab_build(w0_force_cart_vec(n), mla%la(n), dm, 1)
-             end do
              call make_w0_cart(nlevs,w0      ,w0_cart_vec      ,normal,dx, &
                                the_bc_tower%bc_tower_array,mla) 
              call make_w0_cart(nlevs,w0_force,w0_force_cart_vec,normal,dx, &
