@@ -465,8 +465,7 @@ contains
     integer         :: i,j,k,comp
     real(kind=dp_t) :: mult
     real(kind=dp_t) :: bc_lox,bc_loy,bc_loz
-
-    ! Note the umac here does NOT have w0 in it
+    real(kind=dp_t) :: w0_edgex, w0_edgey, w0_edgez
 
     do comp = startcomp, endcomp
 
@@ -485,11 +484,15 @@ contains
                    bc_lox = HALF * (s0_old_cart(i-1,j,k,comp)+s0_new_cart(i-1,j,k,comp))
                 end if
 
-                sfluxx(i,j,k,comp) = bc_lox*umac(i,j,k)
+                w0_edgex = HALF * ( w0_cart(i  ,j,k,1) +w0_cart(i-1,j,k,1) )
+
+                sfluxx(i,j,k,comp) = bc_lox*umac(i,j,k) + &
+                     (umac(i,j,k) + w0_edgex)*sedgex(i,j,k,comp)
                 
              end do
           end do
        end do
+
 
        ! loop for y-fluxes
        do k = lo(3), hi(3)
@@ -506,11 +509,15 @@ contains
                    bc_loy = HALF * (s0_old_cart(i,j-1,k,comp)+s0_new_cart(i,j-1,k,comp))
                 end if
 
-                sfluxy(i,j,k,comp) = bc_loy*vmac(i,j,k)
+                w0_edgey = HALF * ( w0_cart(i,j  ,k,2) + w0_cart(i,j-1,k,2) )
+
+                sfluxy(i,j,k,comp) = bc_loy*vmac(i,j,k) + &
+                     (vmac(i,j,k) + w0_edgey)*sedgey(i,j,k,comp)
 
              end do
           end do
        end do
+
 
        ! loop for z-fluxes
        do k = lo(3), hi(3)+1
@@ -527,52 +534,16 @@ contains
                    bc_loz = HALF * (s0_old_cart(i,j,k-1,comp)+s0_new_cart(i,j,k-1,comp))
                 end if
 
-                sfluxz(i,j,k,comp) = bc_loz*wmac(i,j,k)
+                w0_edgez = HALF * ( w0_cart(i,j,k  ,3) + w0_cart(i,j,k-1,3) )
+
+                sfluxz(i,j,k,comp) = bc_loz*wmac(i,j,k) + &
+                     (wmac(i,j,k) + w0_edgez)*sedgez(i,j,k,comp)
 
              end do
           end do
        end do
 
     end do ! end loop over components
-
-    mult = ONE
-    call addw0_3d_sphr(umac,vmac,wmac,w0_cart,lo,hi,mult)
-
-    ! Note the umac here DOES have w0 in it
-
-    do comp = startcomp, endcomp
-
-       ! loop for x-fluxes
-       do k = lo(3), hi(3)
-          do j = lo(2), hi(2)
-             do i = lo(1), hi(1)+1
-                sfluxx(i,j,k,comp) = sfluxx(i,j,k,comp) + umac(i,j,k)*sedgex(i,j,k,comp)
-             end do
-          end do
-       end do
-
-       ! loop for y-fluxes
-       do k = lo(3), hi(3)
-          do j = lo(2), hi(2)+1
-             do i = lo(1), hi(1)
-                sfluxy(i,j,k,comp) = sfluxy(i,j,k,comp) + vmac(i,j,k)*sedgey(i,j,k,comp)
-             end do
-          end do
-       end do
-
-       ! loop for z-fluxes
-       do k = lo(3), hi(3)+1
-          do j = lo(2), hi(2)
-             do i = lo(1), hi(1)
-                sfluxz(i,j,k,comp) = sfluxz(i,j,k,comp) + wmac(i,j,k)*sedgez(i,j,k,comp)
-             end do
-          end do
-       end do
-
-    end do ! end loop over components
-
-    mult = -ONE
-    call addw0_3d_sphr(umac,vmac,wmac,w0_cart,lo,hi,mult)
      
   end subroutine mkflux_3d_sphr
    
