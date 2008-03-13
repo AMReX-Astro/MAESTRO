@@ -145,6 +145,7 @@ contains
     use network, only : nspec
     use variables, only : spec_comp, rho_comp, rhoh_comp
     use probin_module, only: predict_X_at_edges, enthalpy_pred_type
+    use pred_parameters
 
     integer        , intent(in   ) :: lo(:),hi(:)
     real(kind=dp_t), intent(inout) ::  sfluxx(lo(1)  :,lo(2)  :,:)
@@ -162,8 +163,8 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:),dt
 
     ! local
-    integer :: comp,spec
-    integer :: i,j
+    integer         :: comp,spec
+    integer         :: i,j
     real(kind=dp_t) :: s0_edge
     real(kind=dp_t) :: rho_prime, rho0_edge
     logical :: test,needrhoprime
@@ -171,13 +172,14 @@ contains
     ! loop over components
     do comp = startcomp, endcomp
 
-       test = ((comp.ge.spec_comp).and.(comp.le.spec_comp+nspec-1).and.predict_X_at_edges) &
-         .or. ((comp.eq.rhoh_comp).and. &
-                     (enthalpy_pred_type.eq.2 .or. &
-                     (enthalpy_pred_type.eq.3.and.predict_X_at_edges)))
+       test = ( (comp.ge.spec_comp).and.(comp.le.spec_comp+nspec-1).and.predict_X_at_edges ) &
+         .or. ( (comp.eq.rhoh_comp).and. &
+                     ( enthalpy_pred_type.eq.predict_h .or. &
+                       enthalpy_pred_type.eq.predict_T_then_h ) )
        
-       needrhoprime = ((comp.eq.rhoh_comp).and. &
-            enthalpy_pred_type.eq.2.and.(.not.predict_X_at_edges))
+       needrhoprime = ( (comp.eq.rhoh_comp) .and. (.not.predict_X_at_edges) .and.  &
+                        ( enthalpy_pred_type.eq.predict_h .or.  &
+                          enthalpy_pred_type.eq.predict_T_then_h ) )
 
        if (needrhoprime) then
 
@@ -292,15 +294,16 @@ contains
     use network, only : nspec
     use variables, only : spec_comp, rho_comp, rhoh_comp
     use probin_module, only: predict_X_at_edges, enthalpy_pred_type
+    use pred_parameters
 
     integer        , intent(in   ) :: lo(:),hi(:)
     real(kind=dp_t), intent(inout) ::  sfluxx(lo(1)  :,lo(2)  :,lo(3)  :,:)
     real(kind=dp_t), intent(inout) ::  sfluxy(lo(1)  :,lo(2)  :,lo(3)  :,:)
     real(kind=dp_t), intent(inout) ::  sfluxz(lo(1)  :,lo(2)  :,lo(3)  :,:)
     real(kind=dp_t), intent(inout) :: etaflux(lo(1)  :,lo(2)  :,lo(3)  :,:)
-    real(kind=dp_t), intent(in   ) ::  sedgex(lo(1)  :,lo(2)  :,lo(3)  :,:)
-    real(kind=dp_t), intent(in   ) ::  sedgey(lo(1)  :,lo(2)  :,lo(3)  :,:)
-    real(kind=dp_t), intent(in   ) ::  sedgez(lo(1)  :,lo(2)  :,lo(3)  :,:)
+    real(kind=dp_t), intent(inout) ::  sedgex(lo(1)  :,lo(2)  :,lo(3)  :,:)
+    real(kind=dp_t), intent(inout) ::  sedgey(lo(1)  :,lo(2)  :,lo(3)  :,:)
+    real(kind=dp_t), intent(inout) ::  sedgez(lo(1)  :,lo(2)  :,lo(3)  :,:)
     real(kind=dp_t), intent(in   ) ::    umac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
     real(kind=dp_t), intent(in   ) ::    vmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
     real(kind=dp_t), intent(in   ) ::    wmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
@@ -311,16 +314,64 @@ contains
     integer        , intent(in   ) :: startcomp,endcomp
 
    ! local
+    integer         :: comp,spec
+    integer         :: i,j,k
     real(kind=dp_t) :: s0_edge
     real(kind=dp_t) :: rho_prime, rho0_edge
-    integer         :: comp,i,j,k
-    logical         :: test
+    logical         :: test, needrhoprime
     
     ! loop over components
     do comp = startcomp, endcomp
 
-       test = ((comp.ge.spec_comp).and.(comp.le.spec_comp+nspec-1).and.predict_X_at_edges) &
-         .or. ((comp.eq.rhoh_comp).and.enthalpy_pred_type.eq.2)
+       test = ( (comp.ge.spec_comp).and.(comp.le.spec_comp+nspec-1).and.predict_X_at_edges ) &
+         .or. ( (comp.eq.rhoh_comp).and. &
+                     ( enthalpy_pred_type.eq.predict_h .or. &
+                       enthalpy_pred_type.eq.predict_T_then_h ) )
+       
+       needrhoprime = ( (comp.eq.rhoh_comp) .and. (.not.predict_X_at_edges) .and.  &
+                        ( enthalpy_pred_type.eq.predict_h .or.  &
+                          enthalpy_pred_type.eq.predict_T_then_h ) )
+
+       if (needrhoprime) then
+ 
+          ! compute rho' on x-faces
+          sedgex(lo(1):hi(1)+1,lo(2):hi(2),lo(3):hi(3),rho_comp) = ZERO
+          do spec = 1,nspec
+             do k = lo(3), hi(3)
+             do j = lo(2), hi(2)
+             do i = lo(1), hi(1)+1
+                sedgex(i,j,k,rho_comp) = sedgex(i,j,k,rho_comp)+sedgex(i,j,k,spec_comp+spec-1)
+             end do
+             end do
+             end do
+          end do
+ 
+          ! compute rho' on y-faces
+          sedgey(lo(1):hi(1),lo(2):hi(2)+1,lo(3):hi(3),rho_comp) = ZERO
+          do spec = 1,nspec
+             do k = lo(3), hi(3)
+             do j = lo(2), hi(2)+1
+             do i = lo(1), hi(1)
+                sedgey(i,j,k,rho_comp) = sedgey(i,j,k,rho_comp) + sedgey(i,j,k,spec_comp+spec-1)
+             end do
+             end do
+             end do
+          end do
+ 
+          ! compute rho' on z-faces
+          sedgey(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)+1,rho_comp) = ZERO
+          do spec = 1,nspec
+             do k = lo(3), hi(3)+1
+             do j = lo(2), hi(2)
+             do i = lo(1), hi(1)
+                sedgez(i,j,k,rho_comp) = sedgez(i,j,k,rho_comp) + sedgez(i,j,k,spec_comp+spec-1)
+             end do
+             end do
+             end do
+          end do
+ 
+       end if
+
        
        ! create x-fluxes and y-fluxes
        if (test) then
@@ -439,15 +490,16 @@ contains
 
     use bl_constants_module
     use addw0_module
+    use pred_parameters
 
     integer        , intent(in   ) :: lo(:),hi(:),domlo(:),domhi(:)
     real(kind=dp_t), intent(inout) :: sfluxx(lo(1)  :,lo(2)  :,lo(3)  :,:)
     real(kind=dp_t), intent(inout) :: sfluxy(lo(1)  :,lo(2)  :,lo(3)  :,:)
     real(kind=dp_t), intent(inout) :: sfluxz(lo(1)  :,lo(2)  :,lo(3)  :,:)
     real(kind=dp_t), intent(inout) :: etaflux(lo(1)  :,lo(2)  :,lo(3)  :,:)
-    real(kind=dp_t), intent(in   ) :: sedgex(lo(1)  :,lo(2)  :,lo(3)  :,:)
-    real(kind=dp_t), intent(in   ) :: sedgey(lo(1)  :,lo(2)  :,lo(3)  :,:)
-    real(kind=dp_t), intent(in   ) :: sedgez(lo(1)  :,lo(2)  :,lo(3)  :,:)
+    real(kind=dp_t), intent(inout) :: sedgex(lo(1)  :,lo(2)  :,lo(3)  :,:)
+    real(kind=dp_t), intent(inout) :: sedgey(lo(1)  :,lo(2)  :,lo(3)  :,:)
+    real(kind=dp_t), intent(inout) :: sedgez(lo(1)  :,lo(2)  :,lo(3)  :,:)
     real(kind=dp_t), intent(inout) ::   umac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
     real(kind=dp_t), intent(inout) ::   vmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
     real(kind=dp_t), intent(inout) ::   wmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
@@ -462,7 +514,8 @@ contains
     integer        , intent(in   ) :: startcomp,endcomp
 
     ! local
-    integer         :: i,j,k,comp
+    integer         :: comp,spec
+    integer         :: i,j,k
     real(kind=dp_t) :: mult
     real(kind=dp_t) :: bc_lox,bc_loy,bc_loz
     real(kind=dp_t) :: w0_edgex, w0_edgey, w0_edgez

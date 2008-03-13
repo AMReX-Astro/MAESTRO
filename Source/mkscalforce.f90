@@ -8,8 +8,8 @@ module mkscalforce_module
   ! mktempforce computes the source terms that appear in the
   ! temperature evolution equation.  Note, this formulation is only
   ! used in the prediction of the temperature on the edges, when
-  ! enthalpy_pred_type = 3.  The edge temperatures are then
-  ! converted to enthalpy for the full update.
+  ! enthalpy_pred_type = predict_T_then_rhohprime or predict_T_then_h.  
+  ! The edge temperatures are then converted to enthalpy for the full update.
   !
 
   use bl_constants_module

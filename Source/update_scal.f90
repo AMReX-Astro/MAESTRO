@@ -196,6 +196,7 @@ contains
     use network,       only: nspec
     use probin_module, only: predict_X_at_edges, enthalpy_pred_type
     use variables,     only: spec_comp, rho_comp, rhoh_comp
+    use pred_parameters
     use bl_constants_module
 
 
@@ -224,11 +225,11 @@ contains
     logical :: test
 
     do comp = nstart, nstop
-    
-       test = ( (comp.ge.spec_comp).and.(comp.le.spec_comp+nspec-1).and.predict_X_at_edges) &
+
+       test = ( (comp.ge.spec_comp).and.(comp.le.spec_comp+nspec-1).and.predict_X_at_edges ) &
          .or. ( (comp.eq.rhoh_comp).and. &
-                     (enthalpy_pred_type.eq.2 .or. &
-                     (enthalpy_pred_type.eq.3.and.predict_X_at_edges)) )
+                     ( enthalpy_pred_type.eq.predict_h .or. &
+                       enthalpy_pred_type.eq.predict_T_then_h ) )
 
        if (test) then
 
@@ -320,6 +321,7 @@ contains
     use network,       only: nspec
     use probin_module, only: predict_X_at_edges, enthalpy_pred_type
     use variables,     only: spec_comp, rho_comp, rhoh_comp
+    use pred_parameters
     use bl_constants_module
 
 
@@ -349,8 +351,10 @@ contains
 
     do comp = nstart, nstop
     
-       test = (comp.ge.spec_comp.and.comp.le.spec_comp+nspec-1.and.predict_X_at_edges) &
-         .or. (comp.eq.rhoh_comp.and.enthalpy_pred_type.eq.2)
+       test = ( (comp.ge.spec_comp).and.(comp.le.spec_comp+nspec-1).and.predict_X_at_edges ) &
+         .or. ( (comp.eq.rhoh_comp).and. &
+                     ( enthalpy_pred_type.eq.predict_h .or. &
+                       enthalpy_pred_type.eq.predict_T_then_h ) )
 
        if (test) then
 
@@ -453,6 +457,7 @@ contains
     use network,       only: nspec
     use probin_module, only: predict_X_at_edges, enthalpy_pred_type
     use variables,     only: spec_comp, rho_comp, rhoh_comp
+    use pred_parameters
     use bl_constants_module
 
     integer           , intent(in   ) :: nstart, nstop
@@ -486,8 +491,10 @@ contains
 
     do comp = nstart, nstop
     
-       test = (comp.ge.spec_comp.and.comp.le.spec_comp+nspec-1.and.predict_X_at_edges) &
-         .or. (comp.eq.rhoh_comp.and.enthalpy_pred_type.eq.2)
+       test = ( (comp.ge.spec_comp).and.(comp.le.spec_comp+nspec-1).and.predict_X_at_edges ) &
+         .or. ( (comp.eq.rhoh_comp).and. &
+                     ( enthalpy_pred_type.eq.predict_h .or. &
+                       enthalpy_pred_type.eq.predict_T_then_h ) )
 
        if (test) then
 

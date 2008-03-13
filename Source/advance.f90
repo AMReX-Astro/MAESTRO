@@ -346,7 +346,8 @@ contains
     
     ! if we are predicting temperature at edges, we need to add the reaction 
     ! terms to thermal
-    if(enthalpy_pred_type .eq. 3) then
+    if ( (enthalpy_pred_type .eq. predict_T_then_rhohprime) .or. &
+         (enthalpy_pred_type .eq. predict_T_then_h        ) ) then
        if(istep .le. 1) then
           call add_react_to_thermal(nlevs,thermal,rho_omegadot1,s1, &
                                     the_bc_tower%bc_tower_array,mla)
@@ -635,7 +636,8 @@ contains
        
        ! if we are predicting temperature at edges, we need to add the reaction 
        ! terms to thermal
-       if(enthalpy_pred_type .eq. 3) then
+       if ( (enthalpy_pred_type .eq. predict_T_then_rhohprime) .or. &
+            (enthalpy_pred_type .eq. predict_T_then_h        ) ) then
           if(istep .le. 1) then
              call add_react_to_thermal(nlevs,thermal,rho_omegadot1,s1, &
                                        the_bc_tower%bc_tower_array,mla)

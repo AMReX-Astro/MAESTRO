@@ -20,7 +20,6 @@ contains
     use bl_constants_module
     use geometry
     use variables
-    use probin_module, only: predict_X_at_edges
     use network
     use fill_3d_module, only: fill_3d_data
     use multifab_physbc_module
@@ -142,7 +141,8 @@ contains
     use bl_constants_module
     use variables,     only: rho_comp, temp_comp, spec_comp, rhoh_comp
     use eos_module
-    use probin_module, only: use_big_h, predict_X_at_edges, small_temp
+    use probin_module, only: use_big_h, predict_X_at_edges, enthalpy_pred_type, small_temp
+    use pred_parameters
 
     integer        , intent(in   ) :: lo(:),hi(:)
     real(kind=dp_t), intent(inout) :: sx(lo(1):,lo(2):,:)
@@ -201,9 +201,9 @@ contains
                    dsdt_eos, dsdr_eos, &
                    do_diag)
           
-          if (predict_X_at_edges) then
+          if (enthalpy_pred_type .eq. predict_T_then_h) then
              sx(i,j,rhoh_comp) = h_eos(1)
-          else
+          else if (enthalpy_pred_type .eq. predict_T_then_rhohprime) then
              sx(i,j,rhoh_comp) = den_eos(1)*h_eos(1)
           end if
           
@@ -216,7 +216,7 @@ contains
 !            sx(i,j,rhoh_comp) = sx(i,j,rhoh_comp) + den_eos(1) * qreact
 !         endif
           
-          if (.not. predict_X_at_edges) &
+          if (enthalpy_pred_type .eq. predict_T_then_rhohprime) &
              sx(i,j,rhoh_comp) = sx(i,j,rhoh_comp) - &
                   HALF * (s0_old(j,rhoh_comp) + s0_new(j,rhoh_comp))
           
@@ -266,9 +266,9 @@ contains
                    dsdt_eos, dsdr_eos, &
                    do_diag)
           
-          if (predict_X_at_edges) then
+          if (enthalpy_pred_type .eq. predict_T_then_h) then
              sy(i,j,rhoh_comp) = h_eos(1) 
-          else
+          else if (enthalpy_pred_type .eq. predict_T_then_rhohprime) then
              sy(i,j,rhoh_comp) = den_eos(1)*h_eos(1) 
           end if
           
@@ -281,7 +281,7 @@ contains
 !            sy(i,j,rhoh_comp) = sy(i,j,rhoh_comp) + den_eos(1) * qreact
 !         endif
           
-          if (.not. predict_X_at_edges) &
+          if (enthalpy_pred_type .eq. predict_T_then_rhohprime) &
              sy(i,j,rhoh_comp) = sy(i,j,rhoh_comp) - &
                   HALF * (s0_edge_old(j,rhoh_comp) + s0_edge_new(j,rhoh_comp))
           
@@ -294,7 +294,8 @@ contains
 
     use variables,     only: rho_comp, temp_comp, spec_comp, rhoh_comp
     use eos_module
-    use probin_module, only: use_big_h, predict_X_at_edges, small_temp
+    use probin_module, only: use_big_h, predict_X_at_edges, enthalpy_pred_type, small_temp
+    use pred_parameters
     use bl_constants_module
 
     integer        , intent(in   ) :: lo(:),hi(:)
@@ -355,9 +356,9 @@ contains
                       dsdt_eos, dsdr_eos, &
                       do_diag)
              
-             if (predict_X_at_edges) then
+             if (enthalpy_pred_type .eq. predict_T_then_h) then
                 sx(i,j,k,rhoh_comp) = h_eos(1)
-             else
+             else if (enthalpy_pred_type .eq. predict_T_then_rhohprime) then
                 sx(i,j,k,rhoh_comp) = den_eos(1)*h_eos(1)
              end if
              
@@ -370,7 +371,7 @@ contains
 !               sx(i,j,k,rhoh_comp) = sx(i,j,k,rhoh_comp) + den_eos(1) * qreact
 !            endif
              
-             if (.not. predict_X_at_edges) &
+             if (enthalpy_pred_type .eq. predict_T_then_rhohprime) &
                 sx(i,j,k,rhoh_comp) = sx(i,j,k,rhoh_comp) - &
                      HALF * (s0_old(k,rhoh_comp) + s0_new(k,rhoh_comp))
              
@@ -427,9 +428,9 @@ contains
                       dsdt_eos, dsdr_eos, &
                       do_diag)
              
-             if (predict_X_at_edges) then
+             if (enthalpy_pred_type .eq. predict_T_then_h) then
                 sy(i,j,k,rhoh_comp) = h_eos(1)
-             else
+             else if (enthalpy_pred_type .eq. predict_T_then_rhohprime) then
                 sy(i,j,k,rhoh_comp) = den_eos(1)*h_eos(1)
              end if
              
@@ -442,7 +443,7 @@ contains
 !               sy(i,j,k,rhoh_comp) = sy(i,j,k,rhoh_comp) + den_eos(1) * qreact
 !            endif
              
-             if (.not. predict_X_at_edges) &
+             if (enthalpy_pred_type .eq. predict_T_then_rhohprime) &
                 sy(i,j,k,rhoh_comp) = sy(i,j,k,rhoh_comp) - &
                      HALF * (s0_old(k,rhoh_comp) + s0_new(k,rhoh_comp))
              
@@ -496,9 +497,9 @@ contains
                       dsdt_eos, dsdr_eos, &
                       do_diag)
              
-             if (predict_X_at_edges) then
+             if (enthalpy_pred_type .eq. predict_T_then_h) then
                 sz(i,j,k,rhoh_comp) = h_eos(1)
-             else
+             else if (enthalpy_pred_type .eq. predict_T_then_rhohprime) then
                 sz(i,j,k,rhoh_comp) = den_eos(1)*h_eos(1)
              end if
              
@@ -511,7 +512,7 @@ contains
 !               sz(i,j,k,rhoh_comp) = sz(i,j,k,rhoh_comp) + den_eos(1) * qreact
 !            endif
              
-             if (.not. predict_X_at_edges) &
+             if (enthalpy_pred_type .eq. predict_T_then_rhohprime) &
                 sz(i,j,k,rhoh_comp) = sz(i,j,k,rhoh_comp) - &
                      HALF * (s0_edge_old(k,rhoh_comp) + s0_edge_new(k,rhoh_comp))
              
@@ -526,7 +527,8 @@ contains
     use variables,     only: rho_comp, temp_comp, spec_comp, rhoh_comp
     use geometry,      only: spherical
     use eos_module
-    use probin_module, only: use_big_h
+    use probin_module, only: use_big_h, predict_X_at_edges, enthalpy_pred_type, small_temp
+    use pred_parameters
     use bl_constants_module
 
     integer        , intent(in   ) :: ngc
@@ -544,6 +546,23 @@ contains
     real(kind=dp_t) rhoh0_edge, rhoh0min, rhoh0max
     
     do_diag = .false.
+
+    ! if (predict_X_at_edges) then sx(i,j,k,rho_comp) already holds (rho)'
+    !                         else sx(i,j,k,    comp) holds (rho X)',
+    !                           so sx(i,j,k,rho_comp) will hold (rho)'
+    if (.not. predict_X_at_edges) then
+       sx(lo(1):hi(1)+1, lo(2):hi(2), lo(3):hi(3), rho_comp) = ZERO
+       do comp = 1,nspec
+          do k = lo(3), hi(3)
+             do j = lo(2), hi(2)
+                do i = lo(1), hi(1)+1
+                   sx(i,j,k,rho_comp) = sx(i,j,k,rho_comp) + sx(i,j,k,spec_comp+comp-1)
+                end do
+             end do
+          end do
+       end do
+    end if
+
     
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
@@ -580,28 +599,51 @@ contains
                       dsdt_eos, dsdr_eos, &
                       do_diag)
              
-             sx(i,j,k,rhoh_comp) = den_eos(1)*h_eos(1)
+             if (enthalpy_pred_type .eq. predict_T_then_h) then
+                sx(i,j,k,rhoh_comp) = h_eos(1)
+             else if (enthalpy_pred_type .eq. predict_T_then_rhohprime) then
+                sx(i,j,k,rhoh_comp) = den_eos(1)*h_eos(1)
+             end if
              
-             qreact = 0.0d0
-             if(use_big_h) then
-                do comp=1,nspec
-                   qreact = qreact + ebin(comp)*xn_eos(1,comp)
-                enddo
-                sx(i,j,k,rhoh_comp) = sx(i,j,k,rhoh_comp) + den_eos(1) * qreact
-             endif
+!            Not sure if this is up to date
+!            qreact = 0.0d0
+!            if(use_big_h) then
+!               do comp=1,nspec
+!                  qreact = qreact + ebin(comp)*xn_eos(1,comp)
+!               enddo
+!               sx(i,j,k,rhoh_comp) = sx(i,j,k,rhoh_comp) + den_eos(1) * qreact
+!            endif
 
-             rhoh0_edge = 7.d0/12.d0 * (rhoh0_cart(i  ,j,k) + rhoh0_cart(i-1,j,k)) &
-                         -1.d0/12.d0 * (rhoh0_cart(i+1,j,k) + rhoh0_cart(i-2,j,k))
-             rhoh0min = min(rhoh0_cart(i,j,k),rhoh0_cart(i-1,j,k))
-             rhoh0max = max(rhoh0_cart(i,j,k),rhoh0_cart(i-1,j,k))
-             rhoh0_edge = max(rhoh0_edge,rhoh0min)
-             rhoh0_edge = min(rhoh0_edge,rhoh0max)
+             if (enthalpy_pred_type .eq. predict_T_then_rhohprime) then
+                rhoh0_edge = 7.d0/12.d0 * (rhoh0_cart(i  ,j,k) + rhoh0_cart(i-1,j,k)) &
+                            -1.d0/12.d0 * (rhoh0_cart(i+1,j,k) + rhoh0_cart(i-2,j,k))
+                rhoh0min = min(rhoh0_cart(i,j,k),rhoh0_cart(i-1,j,k))
+                rhoh0max = max(rhoh0_cart(i,j,k),rhoh0_cart(i-1,j,k))
+                rhoh0_edge = max(rhoh0_edge,rhoh0min)
+                rhoh0_edge = min(rhoh0_edge,rhoh0max)
              
-             sx(i,j,k,rhoh_comp) = sx(i,j,k,rhoh_comp) - rhoh0_edge
+                sx(i,j,k,rhoh_comp) = sx(i,j,k,rhoh_comp) - rhoh0_edge
+             end if
              
           enddo
        enddo
     enddo
+
+    ! if (predict_X_at_edges) then sy(i,j,k,rho_comp) already holds (rho)'
+    !                         else sy(i,j,k,    comp) holds (rho X)',
+    !                           so sy(i,j,k,rho_comp) will hold (rho)'
+    if (.not. predict_X_at_edges) then
+       sy(lo(1):hi(1), lo(2):hi(2)+1, lo(3):hi(3), rho_comp) = ZERO
+       do comp = 1,nspec
+          do k = lo(3), hi(3)
+             do j = lo(2), hi(2)+1
+                do i = lo(1), hi(1)
+                   sy(i,j,k,rho_comp) = sy(i,j,k,rho_comp) + sy(i,j,k,spec_comp+comp-1)
+                end do
+             end do
+          end do
+       end do
+    end if
     
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)+1
@@ -636,28 +678,51 @@ contains
                       dsdt_eos, dsdr_eos, &
                       do_diag)
              
-             sy(i,j,k,rhoh_comp) = den_eos(1)*h_eos(1)
+             if (enthalpy_pred_type .eq. predict_T_then_h) then
+                sy(i,j,k,rhoh_comp) = h_eos(1)
+             else if (enthalpy_pred_type .eq. predict_T_then_rhohprime) then
+                sy(i,j,k,rhoh_comp) = den_eos(1)*h_eos(1)
+             end if
              
-             qreact = 0.0d0
-             if(use_big_h) then
-                do comp=1,nspec
-                   qreact = qreact + ebin(comp)*xn_eos(1,comp)
-                enddo
-                sy(i,j,k,rhoh_comp) = sy(i,j,k,rhoh_comp) + den_eos(1) * qreact
-             endif
+!            Not sure if this is up to date
+!            qreact = 0.0d0
+!            if(use_big_h) then
+!               do comp=1,nspec
+!                  qreact = qreact + ebin(comp)*xn_eos(1,comp)
+!               enddo
+!               sy(i,j,k,rhoh_comp) = sy(i,j,k,rhoh_comp) + den_eos(1) * qreact
+!            endif
 
-             rhoh0_edge = 7.d0/12.d0 * (rhoh0_cart(i,j  ,k) + rhoh0_cart(i,j-1,k)) &
-                         -1.d0/12.d0 * (rhoh0_cart(i,j+1,k) + rhoh0_cart(i,j-2,k))
-             rhoh0min = min(rhoh0_cart(i,j,k),rhoh0_cart(i,j-1,k))
-             rhoh0max = max(rhoh0_cart(i,j,k),rhoh0_cart(i,j-1,k))
-             rhoh0_edge = max(rhoh0_edge,rhoh0min)
-             rhoh0_edge = min(rhoh0_edge,rhoh0max)
-             
-             sy(i,j,k,rhoh_comp) = sy(i,j,k,rhoh_comp) - rhoh0_edge
+             if (enthalpy_pred_type .eq. predict_T_then_rhohprime) then
+                rhoh0_edge = 7.d0/12.d0 * (rhoh0_cart(i,j  ,k) + rhoh0_cart(i,j-1,k)) &
+                            -1.d0/12.d0 * (rhoh0_cart(i,j+1,k) + rhoh0_cart(i,j-2,k))
+                rhoh0min = min(rhoh0_cart(i,j,k),rhoh0_cart(i,j-1,k))
+                rhoh0max = max(rhoh0_cart(i,j,k),rhoh0_cart(i,j-1,k))
+                rhoh0_edge = max(rhoh0_edge,rhoh0min)
+                rhoh0_edge = min(rhoh0_edge,rhoh0max)
+
+                sy(i,j,k,rhoh_comp) = sy(i,j,k,rhoh_comp) - rhoh0_edge
+             end if
              
           enddo
        enddo
     enddo
+
+    ! if (predict_X_at_edges) then sz(i,j,k,rho_comp) already holds (rho)'
+    !                         else sz(i,j,k,    comp) holds (rho X)',
+    !                           so sz(i,j,k,rho_comp) will hold (rho)'
+    if (.not. predict_X_at_edges) then
+       sz(lo(1):hi(1), lo(2):hi(2), lo(3):hi(3)+1, rho_comp) = ZERO
+       do comp = 1,nspec
+          do k = lo(3), hi(3)+1
+             do j = lo(2), hi(2)
+                do i = lo(1), hi(1)
+                   sz(i,j,k,rho_comp) = sz(i,j,k,rho_comp) + sz(i,j,k,spec_comp+comp-1)
+                end do
+             end do
+          end do
+       end do
+    end if
     
     do k = lo(3), hi(3)+1
        do j = lo(2), hi(2)
@@ -692,24 +757,31 @@ contains
                       dsdt_eos, dsdr_eos, &
                       do_diag)
              
-             sz(i,j,k,rhoh_comp) = den_eos(1)*h_eos(1)
+             if (enthalpy_pred_type .eq. predict_T_then_h) then
+                sz(i,j,k,rhoh_comp) = h_eos(1)
+             else if (enthalpy_pred_type .eq. predict_T_then_rhohprime) then
+                sz(i,j,k,rhoh_comp) = den_eos(1)*h_eos(1)
+             end if
              
-             qreact = 0.0d0
-             if(use_big_h) then
-                do comp=1,nspec
-                   qreact = qreact + ebin(comp)*xn_eos(1,comp)
-                enddo
-                sz(i,j,k,rhoh_comp) = sz(i,j,k,rhoh_comp) + den_eos(1) * qreact
-             endif
+!            Not sure if this is up to date
+!            qreact = 0.0d0
+!            if(use_big_h) then
+!               do comp=1,nspec
+!                  qreact = qreact + ebin(comp)*xn_eos(1,comp)
+!               enddo
+!               sz(i,j,k,rhoh_comp) = sz(i,j,k,rhoh_comp) + den_eos(1) * qreact
+!            endif
 
-             rhoh0_edge = 7.d0/12.d0 * (rhoh0_cart(i,j,k  ) + rhoh0_cart(i,j,k-1)) &
-                         -1.d0/12.d0 * (rhoh0_cart(i,j,k+1) + rhoh0_cart(i,j,k-2))
-             rhoh0min = min(rhoh0_cart(i,j,k),rhoh0_cart(i,j,k-1))
-             rhoh0max = max(rhoh0_cart(i,j,k),rhoh0_cart(i,j,k-1))
-             rhoh0_edge = max(rhoh0_edge,rhoh0min)
-             rhoh0_edge = min(rhoh0_edge,rhoh0max)
-             
-             sz(i,j,k,rhoh_comp) = sz(i,j,k,rhoh_comp) - rhoh0_edge
+             if (enthalpy_pred_type .eq. predict_T_then_rhohprime) then
+                rhoh0_edge = 7.d0/12.d0 * (rhoh0_cart(i,j,k  ) + rhoh0_cart(i,j,k-1)) &
+                            -1.d0/12.d0 * (rhoh0_cart(i,j,k+1) + rhoh0_cart(i,j,k-2))
+                rhoh0min = min(rhoh0_cart(i,j,k),rhoh0_cart(i,j,k-1))
+                rhoh0max = max(rhoh0_cart(i,j,k),rhoh0_cart(i,j,k-1))
+                rhoh0_edge = max(rhoh0_edge,rhoh0min)
+                rhoh0_edge = min(rhoh0_edge,rhoh0max)
+
+                sz(i,j,k,rhoh_comp) = sz(i,j,k,rhoh_comp) - rhoh0_edge
+             end if
              
           enddo
        enddo

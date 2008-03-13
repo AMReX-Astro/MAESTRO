@@ -63,6 +63,7 @@ contains
     use geometry, only: nr
     use probin_module, only: grav_const, anelastic_cutoff, &
                              predict_X_at_edges, enthalpy_pred_type
+    use pred_parameters
 
     integer        , intent(in   ) :: which_step,n
     real(kind=dp_t), intent(in   ) :: vel(0:)
@@ -189,7 +190,8 @@ contains
 ! Update (rho h)_0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    if (enthalpy_pred_type .eq. 2) then
+    if ( (enthalpy_pred_type .eq. predict_h       ) .or. &
+         (enthalpy_pred_type .eq. predict_T_then_h) ) then
 
        ! here we predict h_0 on the edges
        h0(:) = s0_old(:,rhoh_comp)/s0_old(:,rho_comp)
