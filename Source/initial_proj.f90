@@ -57,6 +57,8 @@ contains
 
     allocate(Sbar(nlevs,nr(nlevs),1))
 
+    Sbar(:,:,:) = ZERO
+
     if ( parallel_IOProcessor() ) then
        print *, 'DOING THE INITIAL VELOCITY PROJECTION'
        print *, ' '
@@ -92,7 +94,9 @@ contains
        call destroy(rho_Hext(n))
     end do
     
-    call average(mla,Source_old,Sbar,dx,1,1)
+    if (evolve_base_state) then
+       call average(mla,Source_old,Sbar,dx,1,1)
+    end if
     
     ! Note that we use rhohalf, filled with 1 at this point, as a temporary
     ! in order to do a constant-density initial projection.

@@ -292,9 +292,9 @@ contains
     call react_state(nlevs,mla,sold,s1,rho_omegadot1,rho_Hext,halfdt,dx, &
                      the_bc_tower%bc_tower_array,time)
     
-    call average(mla,rho_omegadot1,rho_omegadotbar1,dx,1,nspec)
-    call average(mla,rho_Hext,rho_Hextbar,dx,1,1)
     if (evolve_base_state) then
+       call average(mla,rho_omegadot1,rho_omegadotbar1,dx,1,nspec)
+       call average(mla,rho_Hext,rho_Hextbar,dx,1,1)
        call react_base(nlevs,p0_old,s0_old,rho_omegadotbar1,rho_Hextbar(:,:,1),halfdt, &
                        p0_1,s0_1,gam1)
     else
@@ -446,9 +446,9 @@ contains
        call destroy(s2(n))
     end do
 
-    call average(mla,rho_omegadot2,rho_omegadotbar2,dx,1,nspec)
-    call average(mla,rho_Hext,rho_Hextbar,dx,1,1)
     if (evolve_base_state) then
+       call average(mla,rho_omegadot2,rho_omegadotbar2,dx,1,nspec)
+       call average(mla,rho_Hext,rho_Hextbar,dx,1,1)
        call react_base(nlevs,p0_2,s0_2,rho_omegadotbar2,rho_Hextbar(:,:,1),halfdt, &
                        p0_new,s0_new,gam1)
     else
@@ -711,9 +711,9 @@ contains
           call destroy(s2(n))
        end do
 
-       call average(mla,rho_omegadot2,rho_omegadotbar2,dx,1,nspec)
-       call average(mla,rho_Hext,rho_Hextbar,dx,1,1)
        if (evolve_base_state) then
+          call average(mla,rho_omegadot2,rho_omegadotbar2,dx,1,nspec)
+          call average(mla,rho_Hext,rho_Hextbar,dx,1,1)
           call react_base(nlevs,p0_2,s0_2,rho_omegadotbar2,rho_Hextbar(:,:,1),halfdt, &
                           p0_new,s0_new,gam1)
        else
@@ -763,7 +763,9 @@ contains
        call destroy(thermal(n))
     end do
 
-    call average(mla,Source_new,Sbar,dx,1,1)
+    if (evolve_base_state) then
+       call average(mla,Source_new,Sbar,dx,1,1)
+    end if
     
     ! define dSdt = (Source_new - Source_old) / dt
     do n=1,nlevs
