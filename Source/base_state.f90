@@ -240,12 +240,16 @@ contains
        endif
     end if
 
-    if (dm .eq. 1) then
-       starting_rad = prob_lo_x
-    else if (dm .eq. 2) then
-       starting_rad = prob_lo_y
-    else if(dm .eq. 3) then
-       starting_rad = prob_lo_z
+    if (spherical .eq. 0) then
+       if (dm .eq. 1) then
+          starting_rad = prob_lo_x
+       else if (dm .eq. 2) then
+          starting_rad = prob_lo_y
+       else if(dm .eq. 3) then
+          starting_rad = prob_lo_z
+       endif
+    else
+       starting_rad = ZERO
     endif
 
     r_cutoff = nr(n)
@@ -263,8 +267,6 @@ contains
        else
 
           ! compute the coordinate height at this level
-          ! NOTE: we are assuming that the basestate is in the y-direction
-          ! and that ymin = 0.0
           rloc = starting_rad + (dble(r) + HALF)*dr(n)
 
           ! here we account for r > rmax of the model.hse array, assuming
