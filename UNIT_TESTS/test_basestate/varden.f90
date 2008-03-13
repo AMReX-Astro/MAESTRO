@@ -127,7 +127,7 @@ subroutine varden()
   allocate(              eta(nlevs,0:nr_fine,   nscal))
   allocate(                f(nlevs,0:nr_fine))
   allocate(          Sbar_in(nlevs,0:nr_fine-1,1))
-  allocate(s0_predicted_edge(nlevs,0:nr(nlevs)  ,nscal))
+  allocate(s0_predicted_edge(nlevs,0:nr_fine  ,nscal))
 
 
   w0(:,:) = ZERO
@@ -238,7 +238,7 @@ subroutine varden()
 
      call advect_base(which_step,nlevs,w0,Sbar_in,p0_old,p0, &
                       s0_old,s0, &
-                      gam1,div_coeff,eta, &
+                      gam1,div_coeff, &
                       s0_predicted_edge, &
                       dx(:,1),dt)
 
