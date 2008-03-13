@@ -254,7 +254,7 @@ contains
        
     end do
     
-    deallocate(force,edge,X0)
+    deallocate(force,edge,X0,h0)
     
   end subroutine advect_base_state_planar
 
