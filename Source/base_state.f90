@@ -19,7 +19,7 @@ contains
     use define_bc_module
     use bl_constants_module
     use eos_module
-    use probin_module, ONLY: base_cutoff_density, anelastic_cutoff, prob_lo_y, prob_lo_z, &
+    use probin_module, ONLY: base_cutoff_density, anelastic_cutoff, prob_lo_x, prob_lo_y, prob_lo_z, &
                              small_temp, small_dens
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp, ntrac
     use geometry, only: dr, nr, spherical
@@ -240,7 +240,9 @@ contains
        endif
     end if
 
-    if (dm .eq. 2) then
+    if (dm .eq. 1) then
+       starting_rad = prob_lo_x
+    else if (dm .eq. 2) then
        starting_rad = prob_lo_y
     else if(dm .eq. 3) then
        starting_rad = prob_lo_z
