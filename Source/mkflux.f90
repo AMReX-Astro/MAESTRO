@@ -489,7 +489,9 @@ contains
                             w0,w0_cart,startcomp,endcomp,lo,hi,domlo,domhi)
 
     use bl_constants_module
-    use addw0_module
+    use network, only: nspec
+    use variables, only: spec_comp, rho_comp
+    use probin_module, only: predict_X_at_edges
     use pred_parameters
 
     integer        , intent(in   ) :: lo(:),hi(:),domlo(:),domhi(:)
@@ -500,9 +502,9 @@ contains
     real(kind=dp_t), intent(inout) :: sedgex(lo(1)  :,lo(2)  :,lo(3)  :,:)
     real(kind=dp_t), intent(inout) :: sedgey(lo(1)  :,lo(2)  :,lo(3)  :,:)
     real(kind=dp_t), intent(inout) :: sedgez(lo(1)  :,lo(2)  :,lo(3)  :,:)
-    real(kind=dp_t), intent(inout) ::   umac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-    real(kind=dp_t), intent(inout) ::   vmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-    real(kind=dp_t), intent(inout) ::   wmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
+    real(kind=dp_t), intent(in   ) ::   umac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
+    real(kind=dp_t), intent(in   ) ::   vmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
+    real(kind=dp_t), intent(in   ) ::   wmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
     real(kind=dp_t), intent(in   ) ::      s0_old(0:,:)
     real(kind=dp_t), intent(in   ) :: s0_edge_old(0:,:)
     real(kind=dp_t), intent(in   ) :: s0_old_cart(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)
@@ -519,82 +521,172 @@ contains
     real(kind=dp_t) :: mult
     real(kind=dp_t) :: bc_lox,bc_loy,bc_loz
     real(kind=dp_t) :: w0_edgex, w0_edgey, w0_edgez
+    real(kind=dp_t) :: rho0_edge, rho0_prime
+    logical         :: test
+    
 
     do comp = startcomp, endcomp
 
+       test = ((comp.ge.spec_comp).and.(comp.le.spec_comp+nspec-1).and.predict_X_at_edges)
+
        ! loop for x-fluxes
-       do k = lo(3), hi(3)
-          do j = lo(2), hi(2)
-             do i = lo(1), hi(1)+1
+       if (test) then
 
-                bc_lox = (s0_old_cart(i,j,k,comp)+s0_old_cart(i-1,j,k,comp) &
-                     +s0_new_cart(i,j,k,comp)+s0_new_cart(i-1,j,k,comp) ) * FOURTH
+          do k = lo(3), hi(3)
+             do j = lo(2), hi(2)
+                do i = lo(1), hi(1)+1
 
-                if (i.eq.domlo(1)) then
-                   bc_lox = HALF * (s0_old_cart(i,j,k,comp)+s0_new_cart(i,j,k,comp))
-                end if
-                if (i.eq.domhi(1)+1) then
-                   bc_lox = HALF * (s0_old_cart(i-1,j,k,comp)+s0_new_cart(i-1,j,k,comp))
-                end if
+                   rho0_edge = (s0_old_cart(i,j,k,rho_comp)+s0_old_cart(i-1,j,k,rho_comp) + &
+                                s0_new_cart(i,j,k,rho_comp)+s0_new_cart(i-1,j,k,rho_comp) ) * FOURTH
 
-                w0_edgex = HALF * ( w0_cart(i  ,j,k,1) +w0_cart(i-1,j,k,1) )
+                   if (i.eq.domlo(1)) then
+                      rho0_edge = HALF * (s0_old_cart(i,j,k,rho_comp)+s0_new_cart(i,j,k,rho_comp))
+                   end if
+                   if (i.eq.domhi(1)+1) then
+                      rho0_edge = HALF * (s0_old_cart(i-1,j,k,rho_comp)+s0_new_cart(i-1,j,k,rho_comp))
+                   end if
 
-                sfluxx(i,j,k,comp) = bc_lox*umac(i,j,k) + &
-                     (umac(i,j,k) + w0_edgex)*sedgex(i,j,k,comp)
+                   w0_edgex = HALF * ( w0_cart(i  ,j,k,1) +w0_cart(i-1,j,k,1) )
+
+                   sfluxx(i,j,k,comp) = (umac(i,j,k) + w0_edgex)*(rho0_edge + sedgex(i,j,k,rho_comp))*sedgex(i,j,k,comp)
                 
+                end do
              end do
           end do
-       end do
+
+       else
+
+          do k = lo(3), hi(3)
+             do j = lo(2), hi(2)
+                do i = lo(1), hi(1)+1
+
+                   bc_lox = (s0_old_cart(i,j,k,comp)+s0_old_cart(i-1,j,k,comp) + &
+                             s0_new_cart(i,j,k,comp)+s0_new_cart(i-1,j,k,comp) ) * FOURTH
+
+                   if (i.eq.domlo(1)) then
+                      bc_lox = HALF * (s0_old_cart(i,j,k,comp)+s0_new_cart(i,j,k,comp))
+                   end if
+                   if (i.eq.domhi(1)+1) then
+                      bc_lox = HALF * (s0_old_cart(i-1,j,k,comp)+s0_new_cart(i-1,j,k,comp))
+                   end if
+
+                   w0_edgex = HALF * ( w0_cart(i  ,j,k,1) +w0_cart(i-1,j,k,1) )
+
+                   sfluxx(i,j,k,comp) = bc_lox*umac(i,j,k) + &
+                        (umac(i,j,k) + w0_edgex)*sedgex(i,j,k,comp)
+                
+                end do
+             end do
+          end do
+
+       endif
 
 
        ! loop for y-fluxes
-       do k = lo(3), hi(3)
-          do j = lo(2), hi(2)+1
-             do i = lo(1), hi(1)
+       if (test) then
 
-                bc_loy = (s0_old_cart(i,j,k,comp)+s0_old_cart(i,j-1,k,comp) &
-                     +s0_new_cart(i,j,k,comp)+s0_new_cart(i,j-1,k,comp) ) * FOURTH
+          do k = lo(3), hi(3)
+             do j = lo(2), hi(2)+1
+                do i = lo(1), hi(1)
+                   
+                   rho0_edge = (s0_old_cart(i,j,k,rho_comp)+s0_old_cart(i,j-1,k,rho_comp) + &
+                                s0_new_cart(i,j,k,rho_comp)+s0_new_cart(i,j-1,k,rho_comp) ) * FOURTH
                 
-                if (j.eq.domlo(2)) then
-                   bc_loy = HALF * (s0_old_cart(i,j,k,comp)+s0_new_cart(i,j,k,comp))
-                end if
-                if (j.eq.domhi(2)+1) then
-                   bc_loy = HALF * (s0_old_cart(i,j-1,k,comp)+s0_new_cart(i,j-1,k,comp))
-                end if
+                   if (j.eq.domlo(2)) then
+                      rho0_edge = HALF * (s0_old_cart(i,j,k,rho_comp)+s0_new_cart(i,j,k,rho_comp))
+                   end if
+                   if (j.eq.domhi(2)+1) then
+                      rho0_edge = HALF * (s0_old_cart(i,j-1,k,rho_comp)+s0_new_cart(i,j-1,k,rho_comp))
+                   end if
+                   
+                   w0_edgey = HALF * ( w0_cart(i,j  ,k,2) + w0_cart(i,j-1,k,2) )
+                   
+                   sfluxy(i,j,k,comp) = (vmac(i,j,k) + w0_edgey)*(rho0_edge + sedgey(i,j,k,rho_comp))*sedgey(i,j,k,comp)
 
-                w0_edgey = HALF * ( w0_cart(i,j  ,k,2) + w0_cart(i,j-1,k,2) )
-
-                sfluxy(i,j,k,comp) = bc_loy*vmac(i,j,k) + &
-                     (vmac(i,j,k) + w0_edgey)*sedgey(i,j,k,comp)
-
+                end do
              end do
           end do
-       end do
+
+       else
+
+          do k = lo(3), hi(3)
+             do j = lo(2), hi(2)+1
+                do i = lo(1), hi(1)
+                   
+                   bc_loy = (s0_old_cart(i,j,k,comp)+s0_old_cart(i,j-1,k,comp) + &
+                             s0_new_cart(i,j,k,comp)+s0_new_cart(i,j-1,k,comp) ) * FOURTH
+                
+                   if (j.eq.domlo(2)) then
+                      bc_loy = HALF * (s0_old_cart(i,j,k,comp)+s0_new_cart(i,j,k,comp))
+                   end if
+                   if (j.eq.domhi(2)+1) then
+                      bc_loy = HALF * (s0_old_cart(i,j-1,k,comp)+s0_new_cart(i,j-1,k,comp))
+                   end if
+                   
+                   w0_edgey = HALF * ( w0_cart(i,j  ,k,2) + w0_cart(i,j-1,k,2) )
+                   
+                   sfluxy(i,j,k,comp) = bc_loy*vmac(i,j,k) + &
+                        (vmac(i,j,k) + w0_edgey)*sedgey(i,j,k,comp)
+
+                end do
+             end do
+          end do
+
+       endif
 
 
        ! loop for z-fluxes
-       do k = lo(3), hi(3)+1
-          do j = lo(2), hi(2)
-             do i = lo(1), hi(1)
+       if (test) then
 
-                bc_loz = (s0_old_cart(i,j,k,comp)+s0_old_cart(i,j,k-1,comp) &
-                     +s0_new_cart(i,j,k,comp)+s0_new_cart(i,j,k-1,comp) ) * FOURTH
+          do k = lo(3), hi(3)+1
+             do j = lo(2), hi(2)
+                do i = lo(1), hi(1)
 
-                if (k.eq.domlo(3)) then
-                   bc_loz = HALF * (s0_old_cart(i,j,k,comp)+s0_new_cart(i,j,k,comp))
-                end if
-                if (k.eq.domhi(3)+1) then
-                   bc_loz = HALF * (s0_old_cart(i,j,k-1,comp)+s0_new_cart(i,j,k-1,comp))
-                end if
+                   rho0_edge = (s0_old_cart(i,j,k,rho_comp)+s0_old_cart(i,j,k-1,rho_comp) + &
+                             s0_new_cart(i,j,k,rho_comp)+s0_new_cart(i,j,k-1,rho_comp) ) * FOURTH
+                   
+                   if (k.eq.domlo(3)) then
+                      rho0_edge = HALF * (s0_old_cart(i,j,k,rho_comp)+s0_new_cart(i,j,k,rho_comp))
+                   end if
+                   if (k.eq.domhi(3)+1) then
+                      rho0_edge = HALF * (s0_old_cart(i,j,k-1,rho_comp)+s0_new_cart(i,j,k-1,rho_comp))
+                   end if
+                   
+                   w0_edgez = HALF * ( w0_cart(i,j,k  ,3) + w0_cart(i,j,k-1,3) )
+                   
+                   sfluxz(i,j,k,comp) = (wmac(i,j,k) + w0_edgez)*(rho0_edge + sedgez(i,j,k,rho_comp))*sedgez(i,j,k,comp)
 
-                w0_edgez = HALF * ( w0_cart(i,j,k  ,3) + w0_cart(i,j,k-1,3) )
-
-                sfluxz(i,j,k,comp) = bc_loz*wmac(i,j,k) + &
-                     (wmac(i,j,k) + w0_edgez)*sedgez(i,j,k,comp)
-
+                end do
              end do
           end do
-       end do
+
+       else
+
+          do k = lo(3), hi(3)+1
+             do j = lo(2), hi(2)
+                do i = lo(1), hi(1)
+
+                   bc_loz = (s0_old_cart(i,j,k,comp)+s0_old_cart(i,j,k-1,comp) + &
+                             s0_new_cart(i,j,k,comp)+s0_new_cart(i,j,k-1,comp) ) * FOURTH
+
+                   if (k.eq.domlo(3)) then
+                      bc_loz = HALF * (s0_old_cart(i,j,k,comp)+s0_new_cart(i,j,k,comp))
+                   end if
+                   if (k.eq.domhi(3)+1) then
+                      bc_loz = HALF * (s0_old_cart(i,j,k-1,comp)+s0_new_cart(i,j,k-1,comp))
+                   end if
+                   
+                   w0_edgez = HALF * ( w0_cart(i,j,k  ,3) + w0_cart(i,j,k-1,3) )
+                   
+                   sfluxz(i,j,k,comp) = bc_loz*wmac(i,j,k) + &
+                        (wmac(i,j,k) + w0_edgez)*sedgez(i,j,k,comp)
+
+                end do
+             end do
+          end do
+
+       endif
+
 
     end do ! end loop over components
      
