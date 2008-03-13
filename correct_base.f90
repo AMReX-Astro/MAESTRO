@@ -92,17 +92,22 @@ contains
     end do
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! UPDATE RHOX0 AND RHO0
+! UPDATE RHOX0 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     do comp = spec_comp,spec_comp+nspec-1
-
        do r = 0, r_anel-1
-         s0_new(r,    comp) = s0_new(r,    comp) - dt/dz*(eta(r+1,comp) - eta(r,comp))
-         s0_new(r,rho_comp) = s0_new(r,rho_comp) - dt/dz*(eta(r+1,comp) - eta(r,comp))
+         s0_new(r,comp) = s0_new(r,comp) - dt/dz*(eta(r+1,comp) - eta(r,comp))
        end do
-       
     enddo
+    
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! UPDATE RHO0
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    do r = 0, r_anel-1
+      s0_new(r,rho_comp) = s0_new(r,rho_comp) - dt/dz*(eta(r+1,rho_comp) - eta(r,rho_comp))
+    end do
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! UPDATE RHOH0
