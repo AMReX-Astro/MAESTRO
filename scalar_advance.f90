@@ -110,6 +110,11 @@ contains
        call fill_3d_data_c(nlevs,dx,the_bc_level,mla,s0_new_cart,s0_new(:,:,rhoh_comp), &
                            rhoh_comp,dm+rhoh_comp)
 
+       call fill_3d_data_c(nlevs,dx,the_bc_level,mla,s0_old_cart,s0_old(:,:,rho_comp), &
+                           rho_comp,dm+rho_comp)
+       call fill_3d_data_c(nlevs,dx,the_bc_level,mla,s0_new_cart,s0_new(:,:,rho_comp), &
+                           rho_comp,dm+rho_comp)
+
        do comp = spec_comp, spec_comp+nspec-1
           call fill_3d_data_c(nlevs,dx,the_bc_level,mla,s0_old_cart,s0_old(:,:,comp), &
                               comp,dm+comp)
