@@ -270,6 +270,7 @@ contains
     use eos_module
     use variables, only: spec_comp, rho_comp, rhoh_comp, temp_comp
     use geometry, only: nr, base_cc_loc, base_loedge_loc, dr, nr
+    use probin_module, only: predict_X_at_edges
     use make_grav_module
     use cell_to_edge_module
     use make_div_coeff_module
@@ -291,6 +292,7 @@ contains
     real (kind = dp_t), allocatable :: force(:)
     real (kind = dp_t), allocatable :: psi(:)
     real (kind = dp_t), allocatable :: edge(:)
+    real (kind = dp_t), allocatable :: X0(:)
     real (kind = dp_t), allocatable :: div_coeff_new(:)
     real (kind = dp_t), allocatable :: beta(:),beta_new(:),beta_nh(:)
     real (kind = dp_t), allocatable :: gam1_old(:)
@@ -304,27 +306,77 @@ contains
     allocate(grav_cell(0:nr(n)-1))
     allocate(div_coeff_new(0:nr(n)-1))
     allocate(psi(0:nr(n)-1))
+    allocate(   X0(0:nr(n)-1))
     
     ! Edge-centered
     allocate(edge(0:nr(n)))
     allocate(beta(0:nr(n)),beta_new(0:nr(n)),beta_nh(0:nr(n)))
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Predict rho_0 to vertical edges
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    if (predict_X_at_edges) then
+
+       do r = 0,nr(n)-1
+          force(r) = -s0_old(r,rho_comp) * (vel(r+1) - vel(r)) / dr(n) - &
+               2.0_dp_t*s0_old(r,rho_comp)*HALF*(vel(r) + vel(r+1))/base_cc_loc(n,r)
+       end do
+
+       call make_edge_state_1d(n,s0_old(:,rho_comp),edge,vel,force,1,dr(n),dt)
+
+       s0_predicted_edge(:,rho_comp) = edge(:)
+
+    endif
+
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! UPDATE RHOX0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     do comp = spec_comp,spec_comp+nspec-1
        
-       ! compute the force -- include the geometric source term that
-       ! results from expanding out the spherical divergence
-       do r = 0,nr(n)-1
-          force(r) = -s0_old(r,comp) * (vel(r+1) - vel(r)) / dr(n) - &
-               2.0_dp_t*s0_old(r,comp)*HALF*(vel(r) + vel(r+1))/base_cc_loc(n,r)
-       end do
+       if (predict_X_at_edges) then
+
+          ! here we predict X_0 on the edges
+          X0(:) = s0_old(:,comp)/s0_old(:,rho_comp)
+          do r = 0,nr(n)-1
+            X0(r) = max(X0(r),ZERO)
+          end do
+
+          force = ZERO
+
+          call make_edge_state_1d(n,X0,edge,vel,force,1,dr(n),dt)
+
+          ! s0_predicted_edge will store X_0 on the vertical edges -- we need
+          ! that later
+          s0_predicted_edge(:,comp) = edge(:)
+
+          ! our final update needs (rho X)_0 on the edges, so compute
+          ! that now
+          edge(:) = s0_predicted_edge(:,rho_comp)*edge(:)
+
+       else
+
+          ! compute the force -- include the geometric source term that
+          ! results from expanding out the spherical divergence
+          do r = 0,nr(n)-1
+             force(r) = -s0_old(r,comp) * (vel(r+1) - vel(r)) / dr(n) - &
+                  2.0_dp_t*s0_old(r,comp)*HALF*(vel(r) + vel(r+1))/base_cc_loc(n,r)
+          end do
        
-       call make_edge_state_1d(n,s0_old(:,comp),edge,vel,force,1,dr(n),dt)
+          call make_edge_state_1d(n,s0_old(:,comp),edge,vel,force,1,dr(n),dt)
 
-       s0_predicted_edge(:,comp) = edge(:)
+          ! s0_predicted_edge will store (rho X)_0 on the vertical edges
+          s0_predicted_edge(:,comp) = edge(:)
 
+          ! compute rho_0 on the edges for completeness
+          s0_predicted_edge(:,rho_comp) = s0_predicted_edge(:,rho_comp) + &
+               s0_predicted_edge(:,comp)
+
+       endif
+
+       ! update (rho X)_0
        do r = 0,nr(n)-1
           s0_new(r,comp) = s0_old(r,comp) &
                - dtdr/base_cc_loc(n,r)**2*(base_loedge_loc(n,r+1)**2*edge(r+1)*vel(r+1) &
@@ -468,7 +520,7 @@ contains
        
     end do
     
-    deallocate(force,psi,edge,beta,beta_new,beta_nh,div_coeff_new,gam1_old,grav_cell)
+    deallocate(force,psi,edge,beta,beta_new,beta_nh,div_coeff_new,gam1_old,grav_cell,X0)
     
   end subroutine advect_base_state_spherical
   
