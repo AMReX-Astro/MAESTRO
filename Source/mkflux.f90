@@ -114,9 +114,8 @@ contains
                                     efp(:,:,:,:), &
                                     sexp(:,:,:,:), seyp(:,:,:,:), sezp(:,:,:,:), &
                                     ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
-                                    s0_old(n,:,:), s0_edge_old(n,:,:), s0op(:,:,:,:), &
-                                    s0_new(n,:,:), s0_edge_new(n,:,:), s0np(:,:,:,:), &
-                                    w0(n,:),w0p(:,:,:,:),startcomp,endcomp,lo,hi,domlo,domhi)
+                                    s0op(:,:,:,:), s0np(:,:,:,:), &
+                                    w0p(:,:,:,:),startcomp,endcomp,lo,hi,domlo,domhi)
              endif
           end select
        end do
@@ -485,8 +484,8 @@ contains
 
   subroutine mkflux_3d_sphr(sfluxx,sfluxy,sfluxz,etaflux,sedgex,sedgey,sedgez, &
                             umac,vmac,wmac, &
-                            s0_old,s0_edge_old,s0_old_cart,s0_new,s0_edge_new,s0_new_cart, &
-                            w0,w0_cart,startcomp,endcomp,lo,hi,domlo,domhi)
+                            s0_old_cart,s0_new_cart, &
+                            w0_cart,startcomp,endcomp,lo,hi,domlo,domhi)
 
     use bl_constants_module
     use network, only: nspec
@@ -505,13 +504,8 @@ contains
     real(kind=dp_t), intent(in   ) ::   umac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
     real(kind=dp_t), intent(in   ) ::   vmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
     real(kind=dp_t), intent(in   ) ::   wmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-    real(kind=dp_t), intent(in   ) ::      s0_old(0:,:)
-    real(kind=dp_t), intent(in   ) :: s0_edge_old(0:,:)
     real(kind=dp_t), intent(in   ) :: s0_old_cart(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)
-    real(kind=dp_t), intent(in   ) ::      s0_new(0:,:)
-    real(kind=dp_t), intent(in   ) :: s0_edge_new(0:,:)
     real(kind=dp_t), intent(in   ) :: s0_new_cart(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)
-    real(kind=dp_t), intent(in   ) ::          w0(0:)
     real(kind=dp_t), intent(in   ) ::     w0_cart(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)
     integer        , intent(in   ) :: startcomp,endcomp
 
