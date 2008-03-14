@@ -25,7 +25,7 @@ module mkscalforce_module
 
 contains
 
-  subroutine mkrhohforce(nlevs,scal_force,thermal,umac,p0_old,p0_new,normal,dx,add_thermal, &
+  subroutine mkrhohforce(nlevs,scal_force,thermal,umac,p0_old,p0_new,psi,normal,dx,add_thermal, &
                          mla,the_bc_level)
 
     use bl_prof_module
@@ -41,6 +41,7 @@ contains
     type(multifab) , intent(in   ) :: umac(:,:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_new(:,0:)
+    real(kind=dp_t), intent(in   ) :: psi(:,0:)
     type(multifab) , intent(in   ) :: normal(:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     logical        , intent(in   ) :: add_thermal
@@ -75,18 +76,18 @@ contains
           select case (dm)
           case (2)
              call mkrhohforce_2d(n,fp(:,:,1,rhoh_comp), vmp(:,:,1,1), tp(:,:,1,1), lo, hi, &
-                                 p0_old(n,:), p0_new(n,:), add_thermal)
+                                 p0_old(n,:), p0_new(n,:), psi(n,:), add_thermal)
           case(3)
              wmp  => dataptr(umac(n,3), i)
              if (spherical .eq. 0) then
                 call mkrhohforce_3d(n,fp(:,:,:,rhoh_comp), wmp(:,:,:,1), tp(:,:,:,1), &
-                                    lo, hi, p0_old(n,:), p0_new(n,:), add_thermal)
+                                    lo, hi, p0_old(n,:), p0_new(n,:), psi(n,:), add_thermal)
              else
                 np => dataptr(normal(n), i)
                 call mkrhohforce_3d_sphr(n,fp(:,:,:,rhoh_comp), &
                                          ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
                                          tp(:,:,:,1), lo, hi, dx(n,:), np(:,:,:,:), &
-                                         p0_old(n,:), p0_new(n,:), add_thermal)
+                                         p0_old(n,:), p0_new(n,:), psi(n,:), add_thermal)
              end if
           end select
        end do
@@ -125,7 +126,7 @@ contains
     
   end subroutine mkrhohforce
 
-  subroutine mkrhohforce_2d(n,rhoh_force,wmac,thermal,lo,hi,p0_old,p0_new,add_thermal)
+  subroutine mkrhohforce_2d(n,rhoh_force,wmac,thermal,lo,hi,p0_old,p0_new,psi,add_thermal)
 
     use geometry, only: dr, nr
 
@@ -141,6 +142,7 @@ contains
     real(kind=dp_t), intent(in   ) :: thermal(lo(1)-1:,lo(2)-1:)
     real(kind=dp_t), intent(in   ) :: p0_old(0:)
     real(kind=dp_t), intent(in   ) :: p0_new(0:)
+    real(kind=dp_t), intent(in   ) :: psi(0:)
     logical        , intent(in   ) :: add_thermal
 
     real(kind=dp_t) :: gradp0, wadv
@@ -160,7 +162,7 @@ contains
        end if
        do i = lo(1),hi(1)
           wadv = HALF*(wmac(i,j)+wmac(i,j+1))
-          rhoh_force(i,j) =  wadv * gradp0 
+          rhoh_force(i,j) =  wadv * gradp0  + psi(j)
        end do
     end do
 
@@ -174,7 +176,7 @@ contains
 
   end subroutine mkrhohforce_2d
 
-  subroutine mkrhohforce_3d(n,rhoh_force,wmac,thermal,lo,hi,p0_old,p0_new,add_thermal)
+  subroutine mkrhohforce_3d(n,rhoh_force,wmac,thermal,lo,hi,p0_old,p0_new,psi,add_thermal)
 
    use geometry, only: dr, nr
 
@@ -186,6 +188,7 @@ contains
     real(kind=dp_t), intent(in   ) :: thermal(lo(1)-1:,lo(2)-1:,lo(3)-1:)
     real(kind=dp_t), intent(in   ) :: p0_old(0:)
     real(kind=dp_t), intent(in   ) :: p0_new(0:)
+    real(kind=dp_t), intent(in   ) :: psi(0:)
     logical        , intent(in   ) :: add_thermal
 
     real(kind=dp_t) :: gradp0,wadv
@@ -207,7 +210,7 @@ contains
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
              wadv = HALF*(wmac(i,j,k)+wmac(i,j,k+1))
-             rhoh_force(i,j,k) = wadv * gradp0 
+             rhoh_force(i,j,k) = wadv * gradp0 + psi(k)
           end do
        end do
 
@@ -226,7 +229,7 @@ contains
   end subroutine mkrhohforce_3d
 
   subroutine mkrhohforce_3d_sphr(n,rhoh_force,umac,vmac,wmac,thermal,lo,hi,dx,normal, &
-                                 p0_old,p0_new,add_thermal)
+                                 p0_old,p0_new,psi,add_thermal)
 
     use fill_3d_module
     use geometry, only: nr, dr
@@ -243,6 +246,7 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:)
     real(kind=dp_t), intent(in   ) :: p0_old(0:)
     real(kind=dp_t), intent(in   ) :: p0_new(0:)
+    real(kind=dp_t), intent(in   ) :: psi(0:)
     logical        , intent(in   ) :: add_thermal
 
     real(kind=dp_t) :: uadv,vadv,wadv,normal_vel
@@ -265,6 +269,7 @@ contains
           gradp_rad(r) = FOURTH * ( p0_old(r+1) + p0_new(r+1) &
                                    -p0_old(r-1) - p0_new(r-1) ) / dr(n)
        end if
+       gradp_rad(r) = gradp_rad(r)
     end do
 
     call fill_3d_data(n,gradp_cart,gradp_rad,lo,hi,dx,0)
@@ -301,7 +306,7 @@ contains
 
 
 
-  subroutine mktempforce(nlevs,temp_force,umac,s,thermal,p0_old,p0_new,normal, &
+  subroutine mktempforce(nlevs,temp_force,umac,s,thermal,p0_old,p0_new,psi,normal, &
                          dx,mla,the_bc_level)
 
     use bl_prof_module
@@ -318,6 +323,7 @@ contains
     type(multifab) , intent(in   ) :: thermal(:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_new(:,0:)
+    real(kind=dp_t), intent(in   ) :: psi(:,0:)
     type(multifab) , intent(in   ) :: normal(:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     type(ml_layout), intent(inout) :: mla
@@ -355,7 +361,7 @@ contains
           select case (dm)
           case (2)
              call mktempforce_2d(n, fp(:,:,1,temp_comp), sp(:,:,1,:), vmp(:,:,1,1), &
-                                 tp(:,:,1,1), lo, hi, ng, p0_old(n,:), p0_new(n,:))
+                                 tp(:,:,1,1), lo, hi, ng, p0_old(n,:), p0_new(n,:), psi(n,:))
           case(3)
              wmp => dataptr(umac(n,3),i)
              if (spherical .eq. 1) then
@@ -363,10 +369,11 @@ contains
                 call mktempforce_3d_sphr(n,fp(:,:,:,temp_comp), sp(:,:,:,:), &
                                          ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
                                          tp(:,:,:,1), lo, hi, ng, &
-                                         p0_old(n,:), p0_new(n,:), np(:,:,:,:), dx(n,:))
+                                         p0_old(n,:), p0_new(n,:), psi(n,:), &
+                                         np(:,:,:,:), dx(n,:))
              else
                 call mktempforce_3d(n, fp(:,:,:,temp_comp), sp(:,:,:,:), wmp(:,:,:,1), &
-                                    tp(:,:,:,1), lo, hi, ng, p0_old(n,:), p0_new(n,:))
+                                    tp(:,:,:,1), lo, hi, ng, p0_old(n,:), p0_new(n,:), psi(n,:))
              end if
           end select
        end do
@@ -406,7 +413,7 @@ contains
 
   end subroutine mktempforce
 
-  subroutine mktempforce_2d(n, temp_force, s, wmac, thermal, lo, hi, ng, p0_old, p0_new)
+  subroutine mktempforce_2d(n, temp_force, s, wmac, thermal, lo, hi, ng, p0_old, p0_new, psi)
 
     use geometry, only: dr, nr
     use variables, only: temp_comp, rho_comp, spec_comp
@@ -425,7 +432,7 @@ contains
     real(kind=dp_t), intent(in   ) :: s(lo(1)-ng:,lo(2)-ng:,:)
     real(kind=dp_t), intent(in   ) :: wmac(lo(1)-1:, lo(2)-1:)
     real(kind=dp_t), intent(in   ) :: thermal(lo(1)-1:,lo(2)-1:)
-    real(kind=dp_t), intent(in   ) :: p0_old(0:), p0_new(0:)
+    real(kind=dp_t), intent(in   ) :: p0_old(0:), p0_new(0:), psi(0:)
 
     integer :: i,j
 
@@ -478,7 +485,8 @@ contains
 
          wadv = HALF*(wmac(i,j)+wmac(i,j+1))
 
-         temp_force(i,j) =  thermal(i,j) + (ONE - s(i,j,rho_comp) * dhdp) * wadv * gradp0
+         temp_force(i,j) =  thermal(i,j) + (ONE - s(i,j,rho_comp) * dhdp) * &
+                            (wadv * gradp0 + psi(j))
          temp_force(i,j) = temp_force(i,j) / (cp_eos(1) * s(i,j,rho_comp))
 
        end do
@@ -486,7 +494,7 @@ contains
 
   end subroutine mktempforce_2d
 
-  subroutine mktempforce_3d(n, temp_force, s, wmac, thermal, lo, hi, ng, p0_old, p0_new)
+  subroutine mktempforce_3d(n, temp_force, s, wmac, thermal, lo, hi, ng, p0_old, p0_new, psi)
 
     use geometry,  only: dr, nr
     use variables, only: temp_comp, rho_comp, spec_comp
@@ -504,7 +512,7 @@ contains
     real(kind=dp_t), intent(in   ) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real(kind=dp_t), intent(in   ) :: wmac(lo(1)-1:, lo(2)-1:, lo(3)-1:)
     real(kind=dp_t), intent(in   ) :: thermal(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-    real(kind=dp_t), intent(in   ) :: p0_old(0:), p0_new(0:)
+    real(kind=dp_t), intent(in   ) :: p0_old(0:), p0_new(0:), psi(0:)
 
     integer         :: i,j,k
     real(kind=dp_t) :: dhdp, gradp0, wadv
@@ -557,7 +565,8 @@ contains
          wadv = HALF * (wmac(i,j,k+1) + wmac(i,j,k))
 
          temp_force(i,j,k) =  thermal(i,j,k) + &
-                              (ONE - s(i,j,k,rho_comp) * dhdp) * wadv * gradp0
+                              (ONE - s(i,j,k,rho_comp) * dhdp) * &
+                              (wadv * gradp0 + psi(k))
 
          temp_force(i,j,k) = temp_force(i,j,k) / (cp_eos(1) * s(i,j,k,rho_comp))
 
@@ -568,7 +577,7 @@ contains
   end subroutine mktempforce_3d
 
   subroutine mktempforce_3d_sphr(n,temp_force, s, umac, vmac, wmac, thermal, &
-                                 lo, hi, ng, p0_old, p0_new, normal, dx)
+                                 lo, hi, ng, p0_old, p0_new, psi, normal, dx)
 
     use fill_3d_module
     use variables, only: temp_comp, rho_comp, spec_comp
@@ -589,7 +598,7 @@ contains
     real(kind=dp_t), intent(in   ) :: vmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
     real(kind=dp_t), intent(in   ) :: wmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
     real(kind=dp_t), intent(in   ) :: thermal(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-    real(kind=dp_t), intent(in   ) :: p0_old(0:), p0_new(0:)
+    real(kind=dp_t), intent(in   ) :: p0_old(0:), p0_new(0:), psi(0:)
     real(kind=dp_t), intent(in   ) :: normal(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)
     real(kind=dp_t), intent(in   ) :: dx(:)
 

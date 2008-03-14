@@ -15,7 +15,7 @@ contains
 
   subroutine scalar_advance(nlevs,mla,which_step,uold,sold,snew,thermal, &
                             umac,w0,w0_cart_vec,etaflux,utrans,normal, &
-                            s0_old,s0_new,p0_old,p0_new, &
+                            s0_old,s0_new,p0_old,p0_new,psi, &
                             s0_predicted_edge, &
                             dx,dt,the_bc_level)
 
@@ -59,6 +59,7 @@ contains
     real(kind=dp_t), intent(in   ) :: s0_new(:,0:,:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_new(:,0:)
+    real(kind=dp_t), intent(in   ) :: psi(:,0:)
     real(kind=dp_t), intent(in   ) :: s0_predicted_edge(:,0:,:)
     real(kind=dp_t), intent(in   ) :: dx(:,:),dt
     type(bc_level) , intent(in   ) :: the_bc_level(:)
@@ -197,7 +198,7 @@ contains
     if (enthalpy_pred_type .eq. predict_rhohprime) then
        
        ! make force for (rho h)'
-       call mkrhohforce(nlevs,scal_force,thermal,umac,p0_old,p0_old,normal,dx,.true., &
+       call mkrhohforce(nlevs,scal_force,thermal,umac,p0_old,p0_old,psi,normal,dx,.true., &
                         mla,the_bc_level)
 
        call modify_scal_force(which_step,nlevs,scal_force,sold,umac,s0_old,s0_edge_old,w0,&
@@ -206,7 +207,7 @@ contains
     else if (enthalpy_pred_type .eq. predict_h) then
 
        ! make force for h by calling mkrhohforce then dividing by rho
-       call mkrhohforce(nlevs,scal_force,thermal,umac,p0_old,p0_old,normal,dx,.true., &
+       call mkrhohforce(nlevs,scal_force,thermal,umac,p0_old,p0_old,psi,normal,dx,.true., &
                         mla,the_bc_level)
        do n=1,nlevs
           call multifab_div_div_c(scal_force(n),rhoh_comp,sold(n),rho_comp,1,1)
@@ -216,8 +217,8 @@ contains
               (enthalpy_pred_type .eq. predict_T_then_h        ) ) then
 
        ! make force for temperature
-       call mktempforce(nlevs,scal_force,umac,sold,thermal,p0_old,p0_old,normal,dx,mla, &
-                        the_bc_level)
+       call mktempforce(nlevs,scal_force,umac,sold,thermal,p0_old,p0_old,psi, &
+                        normal,dx,mla,the_bc_level)
 
     end if
         
@@ -468,11 +469,11 @@ contains
        
     if (which_step .eq. 1) then
       ! Here just send p0_old and p0_old
-      call mkrhohforce(nlevs,scal_force,thermal,umac,p0_old,p0_old,normal,dx,.false., &
+      call mkrhohforce(nlevs,scal_force,thermal,umac,p0_old,p0_old,psi,normal,dx,.false., &
                        mla,the_bc_level)
     else
       ! Here send p0_old and p0_new
-      call mkrhohforce(nlevs,scal_force,thermal,umac,p0_old,p0_new,normal,dx,.false., &
+      call mkrhohforce(nlevs,scal_force,thermal,umac,p0_old,p0_new,psi,normal,dx,.false., &
                        mla,the_bc_level)
     end if
 

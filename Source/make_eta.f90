@@ -13,7 +13,7 @@ module make_eta_module
 
 contains
 
-  subroutine make_eta(nlevs,eta,sold,etaflux,mla)
+  subroutine make_eta(nlevs,eta,etaflux,mla)
 
     use bl_constants_module
     use geometry, only: spherical, nr
@@ -22,7 +22,6 @@ contains
 
     integer           , intent(in   ) :: nlevs
     real(kind=dp_t)   , intent(inout) :: eta(:,0:,:)
-    type(multifab)    , intent(in   ) :: sold(:)
     type(multifab)    , intent(inout) :: etaflux(:)
     type(ml_layout)   , intent(inout) :: mla
 
@@ -39,15 +38,15 @@ contains
 
     type(box) :: domain
 
-    integer :: domlo(sold(1)%dim),domhi(sold(1)%dim)
-    integer :: lo(sold(1)%dim),hi(sold(1)%dim)
+    integer :: domlo(mla%dim),domhi(mla%dim)
+    integer :: lo(mla%dim),hi(mla%dim)
     integer :: i,r,rpert,n,dm,rr,comp
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "make_eta")
 
-    dm = sold(1)%dim
+    dm = mla%dim
 
     allocate(ncell       (nlevs,0:nr(nlevs))) ! ncell is a function of r only for spherical
     allocate(etasum_proc (nlevs,0:nr(nlevs),nscal))
@@ -67,7 +66,7 @@ contains
 
     if (spherical .eq. 0) then
     
-       domain = layout_get_pd(sold(1)%la)
+       domain = layout_get_pd(mla%la(1))
        domlo = lwb(domain)
        domhi = upb(domain)
 
@@ -79,11 +78,11 @@ contains
        
        ! the first step is to compute eta assuming the coarsest level 
        ! is the only level in existence
-       do i=1,sold(1)%nboxes
-          if ( multifab_remote(sold(1), i) ) cycle
+       do i=1,layout_nboxes(mla%la(1))
+          if ( multifab_remote(etaflux(1), i) ) cycle
           efp => dataptr(etaflux(1), i)
-          lo =  lwb(get_box(sold(1), i))
-          hi =  upb(get_box(sold(1), i))
+          lo =  lwb(get_box(mla%la(1), i))
+          hi =  upb(get_box(mla%la(1), i))
           select case (dm)
           case (2)
             call sum_eta_coarsest_2d(lo,hi,domhi,efp(:,:,1,:),etasum_proc(1,:,:))
@@ -121,7 +120,7 @@ contains
              stop
           endif
 
-          domain = layout_get_pd(sold(n)%la)
+          domain = layout_get_pd(mla%la(n))
           domlo  = lwb(domain)
           domhi  = upb(domain)
 
@@ -160,11 +159,11 @@ contains
           end do
 
           ! compute etapert_proc on faces that do not exist at the coarser level
-          do i=1,sold(n)%nboxes
-             if ( multifab_remote(sold(n), i) ) cycle
+          do i=1,layout_nboxes(mla%la(n))
+             if ( multifab_remote(etaflux(n), i) ) cycle
              efp  => dataptr(etaflux(n), i)
-             lo =  lwb(get_box(sold(n), i))
-             hi =  upb(get_box(sold(n), i))
+             lo =  lwb(get_box(mla%la(n), i))
+             hi =  upb(get_box(mla%la(n), i))
              select case (dm)
              case (2)
                 call compute_etapert_2d(lo,hi,efp(:,:,1,:),etasum_proc(1,:,:),rr)

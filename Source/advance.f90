@@ -15,7 +15,7 @@ contains
                               s0_new,p0_old,p0_new,gam1,w0, &
                               rho_omegadot2,div_coeff_old,div_coeff_new, &
                               grav_cell_old,dx,time,dt,dtold,the_bc_tower, &
-                              dSdt,Source_old,Source_new,eta,sponge,hgrhs,istep)
+                              dSdt,Source_old,Source_new,eta,psi,sponge,hgrhs,istep)
 
     use bl_prof_module
     use ml_layout_module
@@ -49,6 +49,7 @@ contains
     use network, only: nspec
     use make_grav_module
     use make_eta_module
+    use make_psi_module
     use fill_3d_module
     use cell_to_edge_module
     use define_bc_module
@@ -79,6 +80,7 @@ contains
     type(multifab),  intent(inout) :: Source_old(:)
     type(multifab),  intent(inout) :: Source_new(:)
     real(dp_t)    ,  intent(inout) :: eta(:,0:,:)
+    real(dp_t)    ,  intent(inout) :: psi(:,0:)
     type(multifab),  intent(in   ) :: sponge(:)
     type(multifab),  intent(inout) :: hgrhs(:)
     integer       ,  intent(in   ) :: istep
@@ -206,7 +208,7 @@ contains
        call average(mla,Source_nph,Sbar,dx,1,1)
 
        call make_w0(nlevs,w0,w0_old,w0_force,Sbar(:,:,1),p0_old, &
-                    s0_old(:,:,rho_comp),gam1,eta,dt,dtold)
+                    s0_old(:,:,rho_comp),gam1,psi,dt,dtold)
 
        if (dm .eq. 3) then
           call make_w0_cart(nlevs,w0,w0_cart_vec,normal,dx,the_bc_tower%bc_tower_array,mla)
@@ -387,13 +389,18 @@ contains
 
     call scalar_advance(nlevs,mla,1,uold,s1,s2,thermal, &
                         umac,w0,w0_cart_vec,etaflux,utrans,normal, &
-                        s0_1,s0_2,p0_1,p0_2,s0_predicted_edge, &
+                        s0_1,s0_2,p0_1,p0_2,psi,s0_predicted_edge, &
                         dx,dt,the_bc_tower%bc_tower_array)
 
-    ! We now call make_eta after correct_base so all eta effects are lagged.
+    ! Correct the base state using the lagged eta and psi
     if (use_eta .and. evolve_base_state) then
-       call correct_base(nlevs,p0_1,p0_2,s0_1,s0_2,gam1,div_coeff_nph,eta,dx(:,dm),dt)
-       call make_eta(nlevs,eta,sold,etaflux,mla)
+       call correct_base(nlevs,p0_1,p0_2,s0_1,s0_2,gam1,div_coeff_nph,eta,psi,dx(:,dm),dt)
+    end if
+
+    ! Now compute the new eta and psi
+    if (use_eta .and. evolve_base_state) then
+       call make_eta(nlevs,eta,etaflux,mla)
+       call make_psi(nlevs,eta,psi,s0_1)
     end if
 
     do n=1,nlevs
@@ -541,7 +548,7 @@ contains
           call average(mla,Source_nph,Sbar,dx,1,1)
 
           call make_w0(nlevs,w0,w0_old,w0_force,Sbar(:,:,1),p0_new, &
-                       s0_new(:,:,rho_comp),gam1,eta,dt,dtold)
+                       s0_new(:,:,rho_comp),gam1,psi,dt,dtold)
        
           if (dm .eq. 3) then
              call make_w0_cart(nlevs,w0      ,w0_cart_vec      ,normal,dx, &
@@ -677,13 +684,18 @@ contains
 
        call scalar_advance(nlevs,mla,2,uold,s1,s2,thermal, &
                            umac,w0,w0_cart_vec,etaflux,utrans,normal, &
-                           s0_1,s0_2,p0_1,p0_2,s0_predicted_edge, &
+                           s0_1,s0_2,p0_1,p0_2,psi,s0_predicted_edge, &
                            dx,dt,the_bc_tower%bc_tower_array)
 
-       ! We now call make_eta after correct_base so all eta effects are lagged.
+       ! Correct the base state using the lagged eta and psi
        if (use_eta .and. evolve_base_state) then
-          call correct_base(nlevs,p0_1,p0_2,s0_1,s0_2,gam1,div_coeff_nph,eta,dx(:,dm),dt)
-          call make_eta(nlevs,eta,sold,etaflux,mla)
+          call correct_base(nlevs,p0_1,p0_2,s0_1,s0_2,gam1,div_coeff_nph,eta,psi,dx(:,dm),dt)
+       end if
+
+       ! Now compute the new eta and psi
+       if (use_eta .and. evolve_base_state) then
+          call make_eta(nlevs,eta,etaflux,mla)
+          call make_psi(nlevs,eta,psi,s0_1)
        end if
 
        do n=1,nlevs

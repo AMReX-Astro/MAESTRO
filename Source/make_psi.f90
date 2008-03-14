@@ -7,22 +7,21 @@ module make_psi_module
 
 contains
 
-  subroutine make_psi(eta,psi,s0_old)
+  subroutine make_psi(nlevs,eta,psi,s0_old)
 
     use bl_prof_module
     use geometry, only: spherical
 
+    integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(in   ) :: eta(:,0:,:)
     real(kind=dp_t), intent(inout) :: psi(:,0:)
     real(kind=dp_t), intent(in   ) :: s0_old(:,0:,:)
     
     ! local
-    integer :: n,nlevs
+    integer :: n
 
     type(bl_prof_timer), save :: bpt
     call build(bpt, "make_psi")
-
-    nlevs = size(psi,dim=1)
     
     if (spherical .eq. 0) then
        do n = 1,nlevs

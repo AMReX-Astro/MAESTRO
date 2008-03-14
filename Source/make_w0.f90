@@ -16,7 +16,7 @@ module make_w0_module
 
 contains
 
-  subroutine make_w0(nlevs,vel,vel_old,f,Sbar_in,p0,rho0,gam1,eta,dt,dtold)
+  subroutine make_w0(nlevs,vel,vel_old,f,Sbar_in,p0,rho0,gam1,psi,dt,dtold)
 
     use parallel
     use bl_prof_module
@@ -27,7 +27,7 @@ contains
     integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(  out) :: vel(:,0:)
     real(kind=dp_t), intent(in   ) :: vel_old(:,0:)
-    real(kind=dp_t), intent(in   ) :: eta(:,0:,:)
+    real(kind=dp_t), intent(in   ) :: psi(:,0:)
     real(kind=dp_t), intent(inout) :: f(:,0:)
     real(kind=dp_t), intent(in   ) :: p0(:,0:),rho0(:,0:),gam1(:,0:)
     real(kind=dp_t), intent(in   ) :: Sbar_in(:,0:)
@@ -44,8 +44,8 @@ contains
 
     do n=1,nlevs
        if (spherical .eq. 0) then
-          call make_w0_planar(n,vel(n,:),vel_old(n,:),Sbar_in(n,:),p0(n,:),rho0(n,:), &
-                              gam1(n,:),eta(n,:,:),f(n,:),dt,dtold)
+          call make_w0_planar(n,vel(n,0:),vel_old(n,0:),Sbar_in(n,0:),p0(n,0:),rho0(n,0:), &
+                              gam1(n,0:),psi(n,0:),f(n,0:),dt,dtold)
        else
           call make_w0_spherical(n,vel(n,:),Sbar_in(n,:),p0(n,:),rho0(n,:),gam1(n,:))
        endif
@@ -63,7 +63,7 @@ contains
 
   end subroutine make_w0
 
-  subroutine make_w0_planar(n,vel,vel_old,Sbar_in,p0,rho0,gam1,eta,f,dt,dtold)
+  subroutine make_w0_planar(n,vel,vel_old,Sbar_in,p0,rho0,gam1,psi,f,dt,dtold)
 
     use geometry, only: nr, dr
     use variables, only: rho_comp
@@ -74,7 +74,7 @@ contains
     real(kind=dp_t), intent(  out) :: vel(0:)
     real(kind=dp_t), intent(in   ) :: vel_old(0:)
     real(kind=dp_t), intent(in   ) :: Sbar_in(0:)
-    real(kind=dp_t), intent(in   ) :: p0(0:),rho0(0:),gam1(0:),eta(0:,:)
+    real(kind=dp_t), intent(in   ) :: p0(0:),rho0(0:),gam1(0:),psi(0:)
     real(kind=dp_t), intent(inout) ::   f(0:)
     real(kind=dp_t), intent(in   ) :: dt,dtold
 
@@ -84,7 +84,6 @@ contains
     real(kind=dp_t), allocatable :: vel_new_cen(:)
     real(kind=dp_t), allocatable ::   force(:)
     real(kind=dp_t), allocatable :: dpdroverrho(:)
-    real(kind=dp_t)              :: eta_avg
     real(kind=dp_t)              :: vel_avg, div_avg, dt_avg
 
     ! Cell-centered
@@ -92,24 +91,12 @@ contains
     allocate(vel_new_cen(0:nr(n)-1))
     allocate(      force(0:nr(n)-1))
 
-    ! Cell-centered
-    allocate(dpdroverrho(0:nr(n)-1))
- 
-    dpdroverrho(      0) = abs(grav_const)
-    dpdroverrho(nr(n)-1) = abs(p0(nr(n)-1)-p0(nr(n)-2)) / dr(n) /  rho0(nr(n)-1)
-    do r = 1, nr(n)-2
-       dpdroverrho(r) = HALF*abs(p0(r+1)-p0(r-1)) / dr(n) /  rho0(r)
-       dpdroverrho(r) = min(dpdroverrho(r), abs(grav_const))
-    end do
-
     ! Initialize new velocity to zero.
     vel(0) = ZERO
     
     do r = 1,nr(n)
-       eta_avg = HALF * (eta(r,rho_comp)+eta(r-1,rho_comp))
-
        vel(r) = vel(r-1) + Sbar_in(r-1) * dr(n) &
-          - ( eta_avg * dpdroverrho(r-1) / (gam1(r-1)*p0(r-1)) ) * dr(n)
+          - ( psi(r-1) / (gam1(r-1)*p0(r-1)) ) * dr(n)
     end do
 
     ! Compute the 1/rho0 grad pi0 term.

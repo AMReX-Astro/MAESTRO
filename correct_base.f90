@@ -11,7 +11,7 @@ module correct_base_module
 contains
 
   subroutine correct_base(nlevs,p0_old,p0_new,s0_old,s0_new, &
-                         gam1,div_coeff,eta,dz,dt)
+                         gam1,div_coeff,eta,psi,dz,dt)
 
     use bl_prof_module
     use geometry, only: spherical
@@ -22,6 +22,7 @@ contains
     real(kind=dp_t), intent(inout) :: gam1(:,0:)
     real(kind=dp_t), intent(in   ) :: div_coeff(:,0:)
     real(kind=dp_t), intent(in   ) :: eta(:,0:,:)
+    real(kind=dp_t), intent(in   ) :: psi(:,0:)
     real(kind=dp_t), intent(in   ) :: dz(:)
     real(kind=dp_t), intent(in   ) :: dt
     
@@ -35,7 +36,7 @@ contains
     do n=1,nlevs
        if (spherical .eq. 0) then
           call correct_base_state_planar(n,p0_old(n,0:),p0_new(n,0:),s0_old(n,0:,:), &
-                                        s0_new(n,0:,:),gam1(n,0:),eta(n,0:,:),dz(n),dt)
+                                        s0_new(n,0:,:),gam1(n,0:),eta(n,0:,:),psi(n,0:),dz(n),dt)
        end if
     enddo
 
@@ -43,7 +44,7 @@ contains
        
   end subroutine correct_base
 
-  subroutine correct_base_state_planar(n,p0_old,p0_new,s0_old,s0_new,gam1,eta,dz,dt)
+  subroutine correct_base_state_planar(n,p0_old,p0_new,s0_old,s0_new,gam1,eta,psi,dz,dt)
 
     use bl_constants_module
     use make_edge_state_module
@@ -57,6 +58,7 @@ contains
     real(kind=dp_t), intent(  out) :: p0_new(0:), s0_new(0:,:)
     real(kind=dp_t), intent(inout) :: gam1(0:)
     real(kind=dp_t), intent(in   ) :: eta(0:,:)
+    real(kind=dp_t), intent(in   ) :: psi(0:)
     real(kind=dp_t), intent(in   ) :: dz,dt
     
     ! Local variables
@@ -87,8 +89,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     do r = 0, r_anel-1
-      eta_avg = HALF * (eta(r,rho_comp)+eta(r+1,rho_comp))
-      p0_new(r) = p0_new(r) + dt * eta_avg * abs(grav_const)
+      p0_new(r) = p0_new(r) + dt * psi(r)
     end do
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -114,10 +115,9 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     do r = 0, r_anel-1
-      eta_avg = HALF * (eta(r,rho_comp)+eta(r+1,rho_comp))
       s0_new(r,rhoh_comp) = s0_new(r,rhoh_comp) &
          - dt/dz * (eta(r+1,rhoh_comp) - eta(r,rhoh_comp)) &
-         + dt    *  eta_avg * abs(grav_const) 
+         + dt    *  psi(r)
     end do
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
