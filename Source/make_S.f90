@@ -16,14 +16,14 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine make_S(nlevs,Source,gamma1_term,state,u,rho_omegadot,rho_Hext, &
+  subroutine make_S(nlevs,Source,delta_gamma1_term,state,u,rho_omegadot,rho_Hext, &
                     thermal,t0,p0,gam1,dx)
 
     use bl_prof_module
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: Source(:)
-    type(multifab) , intent(inout) :: gamma1_term(:)
+    type(multifab) , intent(inout) :: delta_gamma1_term(:)
     type(multifab) , intent(in   ) :: state(:)
     type(multifab) , intent(in   ) :: u(:)
     type(multifab) , intent(in   ) :: rho_omegadot(:)
@@ -51,7 +51,7 @@ contains
        do i = 1, state(n)%nboxes
           if ( multifab_remote(state(n), i) ) cycle
           srcp => dataptr(Source(n), i)
-          gp     => dataptr(gamma1_term(n), i)
+          gp     => dataptr(delta_gamma1_term(n), i)
           sp     => dataptr(state(n), i)
           up     => dataptr(u(n), i)
           omegap => dataptr(rho_omegadot(n), i)
@@ -76,17 +76,17 @@ contains
 
    end subroutine make_S
 
-   subroutine make_S_2d (lo,hi,Source,gamma1_term,s,u, &
+   subroutine make_S_2d (lo,hi,Source,delta_gamma1_term,s,u, &
                          rho_omegadot,rho_Hext,thermal,ng,p0,gam1,dx)
 
       use bl_constants_module
       use eos_module
       use variables, only: rho_comp, temp_comp, spec_comp
-      use probin_module, only: use_gamma1_term
+      use probin_module, only: use_delta_gamma1_term
 
       integer         , intent(in   ) :: lo(:), hi(:), ng
       real (kind=dp_t), intent(  out) :: Source(lo(1):,lo(2):)
-      real (kind=dp_t), intent(  out) :: gamma1_term(lo(1):,lo(2):)
+      real (kind=dp_t), intent(  out) :: delta_gamma1_term(lo(1):,lo(2):)
       real (kind=dp_t), intent(in   ) :: s(lo(1)-ng:,lo(2)-ng:,:)
       real (kind=dp_t), intent(in   ) :: u(lo(1)-ng:,lo(2)-ng:,:)
       real (kind=dp_t), intent(in   ) :: rho_omegadot(lo(1):,lo(2):,:)
@@ -142,7 +142,7 @@ contains
                         + sigma*react_term &
                         + pres_term/(den_eos(1)*dpdr_eos(1))
 
-           if (use_gamma1_term) then
+           if (use_delta_gamma1_term) then
               if (j .eq. 0) then
                  gradp0 = (p0(j+1) - p0(j))/dx(2)
               else if (j .eq. nr-1) then
@@ -151,9 +151,10 @@ contains
                  gradp0 = HALF*(p0(j+1) - p0(j-1))/dx(2)
               endif
 
-              gamma1_term(i,j) = (gam1_eos(1) - gam1(j))*u(i,j,2)*gradp0/(gam1(j)*gam1(j)*p0(j))
+              delta_gamma1_term(i,j) = &
+                   (gam1_eos(1) - gam1(j))*u(i,j,2)*gradp0/(gam1(j)*gam1(j)*p0(j))
            else
-              gamma1_term(i,j) = 0.0_dp_t
+              delta_gamma1_term(i,j) = 0.0_dp_t
            endif
 
         enddo
@@ -161,7 +162,7 @@ contains
  
    end subroutine make_S_2d
 
-   subroutine make_S_3d(n,lo,hi,Source,gamma1_term,s,u, &
+   subroutine make_S_3d(n,lo,hi,Source,delta_gamma1_term,s,u, &
                         rho_omegadot,rho_Hext,thermal,ng,t0,p0,gam1,dx)
 
       use bl_constants_module
@@ -169,11 +170,11 @@ contains
       use fill_3d_module
       use geometry, only: spherical
       use variables, only: rho_comp, temp_comp, spec_comp
-      use probin_module, only: use_gamma1_term
+      use probin_module, only: use_delta_gamma1_term
      
       integer         , intent(in   ) :: n, lo(:), hi(:), ng
       real (kind=dp_t), intent(  out) :: Source(lo(1):,lo(2):,lo(3):)  
-      real (kind=dp_t), intent(  out) :: gamma1_term(lo(1):,lo(2):,lo(3):)  
+      real (kind=dp_t), intent(  out) :: delta_gamma1_term(lo(1):,lo(2):,lo(3):)  
       real (kind=dp_t), intent(in   ) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
       real (kind=dp_t), intent(in   ) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
       real (kind=dp_t), intent(in   ) :: rho_omegadot(lo(1):,lo(2):,lo(3):,:)
@@ -242,9 +243,9 @@ contains
                            + pres_term/(den_eos(1)*dpdr_eos(1))
 
 
-              if (use_gamma1_term) then
+              if (use_delta_gamma1_term) then
                  if (spherical .eq. 1) then
-                    call bl_error("ERROR: use_gamma1_term not implemented for spherical in make_S")
+                    call bl_error("ERROR: use_delta_gamma1_term not implemented for spherical in make_S")
                  else
                     if (k .eq. 0) then
                        gradp0 = (p0(k+1) - p0(k))/dx(3)
@@ -254,10 +255,11 @@ contains
                        gradp0 = HALF*(p0(k+1) - p0(k-1))/dx(3)
                     endif
 
-                    gamma1_term(i,j,k) = (gam1_eos(1) - gam1(k))*u(i,j,k,3)*gradp0/(gam1(k)*gam1(k)*p0(k))
+                    delta_gamma1_term(i,j,k) = &
+                         (gam1_eos(1) - gam1(k))*u(i,j,k,3)*gradp0/(gam1(k)*gam1(k)*p0(k))
                  endif
               else
-                 gamma1_term(i,j,k) = 0.0_dp_t
+                 delta_gamma1_term(i,j,k) = 0.0_dp_t
               endif
 
            enddo

@@ -98,7 +98,7 @@ contains
     type(multifab) :: rho_omegadot2_hold(mla%nlevel)
     type(multifab) :: s1(mla%nlevel)
     type(multifab) :: s2(mla%nlevel)
-    type(multifab) :: gamma1_term(mla%nlevel)
+    type(multifab) :: delta_gamma1_term(mla%nlevel)
     type(multifab) :: rho_omegadot1(mla%nlevel)
     type(multifab) :: rho_Hext(mla%nlevel)
     type(multifab) :: div_coeff_3d(mla%nlevel) ! Only needed for spherical.eq.1
@@ -237,15 +237,15 @@ contains
                         s0_old,grav_cell_old,dx,dt,the_bc_tower%bc_tower_array,mla)
 
     do n=1,nlevs
-       call multifab_build(gamma1_term(n), mla%la(n), 1, 0)
-       call multifab_build(macrhs(n),      mla%la(n), 1, 0)
-       call setval(gamma1_term(n), ZERO, all=.true.)
+       call multifab_build(delta_gamma1_term(n), mla%la(n), 1, 0)
+       call multifab_build(macrhs(n),            mla%la(n), 1, 0)
+       call setval(delta_gamma1_term(n), ZERO, all=.true.)
     end do
 
-    call make_macrhs(nlevs,macrhs,Source_nph,gamma1_term,Sbar(:,:,1),div_coeff_old,dx)
+    call make_macrhs(nlevs,macrhs,Source_nph,delta_gamma1_term,Sbar(:,:,1),div_coeff_old,dx)
 
     do n=1,nlevs
-       call destroy(gamma1_term(n))
+       call destroy(delta_gamma1_term(n))
        call destroy(Source_nph(n))
     end do
 
@@ -519,11 +519,11 @@ contains
        end if
        
        do n=1,nlevs
-          call multifab_build(gamma1_term(n), mla%la(n), 1, 0)
+          call multifab_build(delta_gamma1_term(n), mla%la(n), 1, 0)
        end do
 
-       call make_S(nlevs,Source_new,gamma1_term,snew,uold,rho_omegadot2,rho_Hext,thermal, &
-                   s0_old(:,:,temp_comp),p0_old,gam1,dx)
+       call make_S(nlevs,Source_new,delta_gamma1_term,snew,uold,rho_omegadot2,rho_Hext, &
+                   thermal,s0_old(:,:,temp_comp),p0_old,gam1,dx)
        
        do n=1,nlevs
           call destroy(rho_Hext(n))
@@ -582,11 +582,12 @@ contains
           call multifab_build(macrhs(n), mla%la(n), 1, 0)
        end do
 
-       ! note gamma1_term here is not time-centered
-       call make_macrhs(nlevs,macrhs,Source_nph,gamma1_term,Sbar(:,:,1),div_coeff_nph,dx)
+       ! note delta_gamma1_term here is not time-centered
+       call make_macrhs(nlevs,macrhs,Source_nph,delta_gamma1_term,Sbar(:,:,1), &
+                        div_coeff_nph,dx)
     
        do n=1,nlevs
-          call destroy(gamma1_term(n))
+          call destroy(delta_gamma1_term(n))
           call destroy(Source_nph(n))
        end do
 
@@ -785,11 +786,11 @@ contains
     end if
     
     do n=1,nlevs
-       call multifab_build(gamma1_term(n), mla%la(n), 1, 0)
+       call multifab_build(delta_gamma1_term(n), mla%la(n), 1, 0)
     end do
 
-    call make_S(nlevs,Source_new,gamma1_term,snew,uold,rho_omegadot2,rho_Hext,thermal, &
-                s0_new(:,:,temp_comp),p0_new,gam1,dx)
+    call make_S(nlevs,Source_new,delta_gamma1_term,snew,uold,rho_omegadot2,rho_Hext, &
+                thermal,s0_new(:,:,temp_comp),p0_new,gam1,dx)
 
     do n=1,nlevs
        call destroy(rho_Hext(n))
@@ -856,7 +857,7 @@ contains
           call multifab_build(hgrhs_old(n), mla%la(n), 1, 0, nodal)
           call multifab_copy(hgrhs_old(n),hgrhs(n))
        end do
-       call make_hgrhs(nlevs,the_bc_tower,mla,hgrhs,Source_new,gamma1_term, &
+       call make_hgrhs(nlevs,the_bc_tower,mla,hgrhs,Source_new,delta_gamma1_term, &
                        Sbar(:,:,1),div_coeff_new,dx)
        do n=1,nlevs
           call multifab_sub_sub(hgrhs(n),hgrhs_old(n))
@@ -864,12 +865,12 @@ contains
        end do
     else
        proj_type = regular_timestep_comp
-       call make_hgrhs(nlevs,the_bc_tower,mla,hgrhs,Source_new,gamma1_term, &
+       call make_hgrhs(nlevs,the_bc_tower,mla,hgrhs,Source_new,delta_gamma1_term, &
                        Sbar(:,:,1),div_coeff_new,dx)
     end if
 
     do n=1,nlevs
-       call destroy(gamma1_term(n))
+       call destroy(delta_gamma1_term(n))
     end do
 
     if (spherical .eq. 1) then

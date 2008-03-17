@@ -46,7 +46,7 @@ contains
     integer    :: n
     real(dp_t) :: dt_temp
 
-    type(multifab) :: gamma1_term(nlevs)
+    type(multifab) :: delta_gamma1_term(nlevs)
     type(multifab) :: thermal(nlevs)
     type(multifab) :: rhohalf(nlevs)
     type(multifab) :: rho_omegadot1(nlevs)
@@ -78,7 +78,7 @@ contains
     end if
     
     do n=1,nlevs
-       call multifab_build(gamma1_term(n), mla%la(n), 1, 0)
+       call multifab_build(delta_gamma1_term(n), mla%la(n), 1, 0)
        call multifab_build(rho_omegadot1(n), mla%la(n), nspec, 0)
        call multifab_build(rho_Hext(n),      mla%la(n), 1,     0)
        ! we don't have a legit timestep yet, so we set rho_omegadot1 and rho_Hext to 0 
@@ -86,7 +86,7 @@ contains
        call setval(     rho_Hext(n), ZERO, all=.true.)
     end do
 
-    call make_S(nlevs,Source_old,gamma1_term,sold,uold,rho_omegadot1,rho_Hext,thermal, &
+    call make_S(nlevs,Source_old,delta_gamma1_term,sold,uold,rho_omegadot1,rho_Hext,thermal, &
                 s0_old(:,:,temp_comp),p0_old,gam1,dx)
     do n=1,nlevs
        call destroy(thermal(n))
@@ -106,11 +106,11 @@ contains
        call setval(rhohalf(n),ONE,1,1,all=.true.)
     end do
     
-    call make_hgrhs(nlevs,the_bc_tower,mla,hgrhs,Source_old,gamma1_term,Sbar(:,:,1), &
+    call make_hgrhs(nlevs,the_bc_tower,mla,hgrhs,Source_old,delta_gamma1_term,Sbar(:,:,1), &
                     div_coeff_old,dx)
 
     do n=1,nlevs
-       call destroy(gamma1_term(n))
+       call destroy(delta_gamma1_term(n))
     end do
 
     ! dt doesn't matter for the initial projection since we're throwing

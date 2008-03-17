@@ -2,7 +2,7 @@
 ! the MAC project step, \beta * (S - \bar{S}).  For the MAC projection, 
 ! this quantity is cell-centered.
 !
-! Note, we include the gamma1_term here, to (possibly) account for
+! Note, we include the delta_gamma1_term here, to (possibly) account for
 ! the effect of replacing \Gamma_1 by {\Gamma_1}_0 in the constraint
 ! equation (see paper III).
 
@@ -22,7 +22,7 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-   subroutine make_macrhs(nlevs,macrhs,Source,gamma1_term,Sbar,div_coeff,dx)
+   subroutine make_macrhs(nlevs,macrhs,Source,delta_gamma1_term,Sbar,div_coeff,dx)
 
      use bl_prof_module
      use bl_constants_module
@@ -30,7 +30,7 @@ contains
      integer        , intent(in   ) :: nlevs
      type(multifab) , intent(inout) :: macrhs(:)
      type(multifab) , intent(in   ) :: Source(:)
-     type(multifab) , intent(in   ) :: gamma1_term(:)
+     type(multifab) , intent(in   ) :: delta_gamma1_term(:)
      real(kind=dp_t), intent(in   ) :: Sbar(:,0:)
      real(kind=dp_t), intent(in   ) :: div_coeff(:,0:)
      real(kind=dp_t), intent(in   ) :: dx(:,:)
@@ -52,7 +52,7 @@ contains
            if ( multifab_remote(Source(n), i) ) cycle
            mp => dataptr(macrhs(n), i)
            sp => dataptr(Source(n), i)
-           gp => dataptr(gamma1_term(n), i)
+           gp => dataptr(delta_gamma1_term(n), i)
            lo =  lwb(get_box(Source(n), i))
            hi =  upb(get_box(Source(n), i))
            select case (dm)
@@ -71,13 +71,13 @@ contains
 
    end subroutine make_macrhs
 
-   subroutine make_macrhs_2d (lo,hi,rhs,Source,gamma1_term,Sbar,div_coeff)
+   subroutine make_macrhs_2d (lo,hi,rhs,Source,delta_gamma1_term,Sbar,div_coeff)
 
       integer         , intent(in   ) :: lo(:), hi(:)
-      real (kind=dp_t), intent(  out) :: rhs(lo(1):,lo(2):)  
-      real (kind=dp_t), intent(in   ) :: Source(lo(1):,lo(2):)  
-      real (kind=dp_t), intent(in   ) :: gamma1_term(lo(1):,lo(2):)  
-      real (kind=dp_t), intent(in   ) :: Sbar(0:)  
+      real (kind=dp_t), intent(  out) ::               rhs(lo(1):,lo(2):)  
+      real (kind=dp_t), intent(in   ) ::            Source(lo(1):,lo(2):)  
+      real (kind=dp_t), intent(in   ) :: delta_gamma1_term(lo(1):,lo(2):)  
+      real (kind=dp_t), intent(in   ) ::      Sbar(0:)  
       real (kind=dp_t), intent(in   ) :: div_coeff(0:)  
 
 !     Local variables
@@ -85,22 +85,22 @@ contains
 
       do j = lo(2),hi(2)
       do i = lo(1),hi(1)
-        rhs(i,j) = div_coeff(j) * (Source(i,j) - Sbar(j) + gamma1_term(i,j))
+        rhs(i,j) = div_coeff(j) * (Source(i,j) - Sbar(j) + delta_gamma1_term(i,j))
       end do
       end do
  
    end subroutine make_macrhs_2d
 
-   subroutine make_macrhs_3d(n,lo,hi,rhs,Source,gamma1_term,Sbar,div_coeff,dx)
+   subroutine make_macrhs_3d(n,lo,hi,rhs,Source,delta_gamma1_term,Sbar,div_coeff,dx)
 
      use geometry, only: spherical
      use fill_3d_module
 
       integer         , intent(in   ) :: n,lo(:), hi(:)
-      real (kind=dp_t), intent(  out) :: rhs(lo(1):,lo(2):,lo(3):)  
-      real (kind=dp_t), intent(in   ) :: Source(lo(1):,lo(2):,lo(3):)  
-      real (kind=dp_t), intent(in   ) :: gamma1_term(lo(1):,lo(2):,lo(3):)  
-      real (kind=dp_t), intent(in   ) :: Sbar(0:)  
+      real (kind=dp_t), intent(  out) ::               rhs(lo(1):,lo(2):,lo(3):)  
+      real (kind=dp_t), intent(in   ) ::            Source(lo(1):,lo(2):,lo(3):)  
+      real (kind=dp_t), intent(in   ) :: delta_gamma1_term(lo(1):,lo(2):,lo(3):)  
+      real (kind=dp_t), intent(in   ) ::      Sbar(0:)  
       real (kind=dp_t), intent(in   ) :: div_coeff(0:)  
       real (kind=dp_t), intent(in   ) :: dx(:)
 
@@ -119,7 +119,8 @@ contains
         do k = lo(3),hi(3)
         do j = lo(2),hi(2)
         do i = lo(1),hi(1)
-          rhs(i,j,k) = div_cart(i,j,k) * (Source(i,j,k) - Sbar_cart(i,j,k) + gamma1_term(i,j,k))
+          rhs(i,j,k) = div_cart(i,j,k) * (Source(i,j,k) - Sbar_cart(i,j,k) + &
+               delta_gamma1_term(i,j,k))
         end do
         end do
         end do
@@ -131,7 +132,7 @@ contains
         do k = lo(3),hi(3)
         do j = lo(2),hi(2)
         do i = lo(1),hi(1)
-          rhs(i,j,k) = div_coeff(k) * (Source(i,j,k) - Sbar(k) + gamma1_term(i,j,k))
+          rhs(i,j,k) = div_coeff(k) * (Source(i,j,k) - Sbar(k) + delta_gamma1_term(i,j,k))
         end do
         end do
         end do
