@@ -40,7 +40,6 @@
  use_thermal_diffusion = T
 
  enthalpy_pred_type = 4
- predict_X_at_edges = T
  evolve_base_state = F
 
 !restart = 50
