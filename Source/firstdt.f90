@@ -20,11 +20,11 @@ module firstdt_module
 
 contains
 
-  subroutine firstdt(n,u,s,force,divU,p0,gam1,t0,dx,cflfac,dt)
+  subroutine firstdt(n,u,s,force,divU,p0,gamma10,t0,dx,cflfac,dt)
 
     integer        , intent(in   ) :: n
     type(multifab) , intent(in   ) :: u,s,force,divU
-    real(kind=dp_t), intent(in   ) :: p0(0:), cflfac, t0(0:), gam1(0:)
+    real(kind=dp_t), intent(in   ) :: p0(0:), cflfac, t0(0:), gamma10(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
     real(kind=dp_t), intent(  out) :: dt
     
@@ -52,11 +52,11 @@ contains
        select case (dm)
        case (2)
           call firstdt_2d(n,uop(:,:,1,:), sop(:,:,1,:), fp(:,:,1,:),&
-                          divup(:,:,1,1), p0, gam1, lo, hi, ng, dx, &
+                          divup(:,:,1,1), p0, gamma10, lo, hi, ng, dx, &
                           dt_grid, cflfac)
        case (3)
           call firstdt_3d(n,uop(:,:,:,:), sop(:,:,:,:), fp(:,:,:,:),&
-                          divup(:,:,:,1), p0, gam1, t0, lo, hi, ng, dx, &
+                          divup(:,:,:,1), p0, gamma10, t0, lo, hi, ng, dx, &
                           dt_grid, cflfac)
        end select
        dt_hold_proc = min(dt_hold_proc,dt_grid)
@@ -66,7 +66,7 @@ contains
     
   end subroutine firstdt
   
-  subroutine firstdt_2d(n,u,s,force,divu,p0,gam1,lo,hi,ng,dx,dt,cfl)
+  subroutine firstdt_2d(n,u,s,force,divu,p0,gamma10,lo,hi,ng,dx,dt,cfl)
 
     use eos_module
     use variables, only: rho_comp, temp_comp, spec_comp
@@ -78,7 +78,7 @@ contains
     real (kind = dp_t), intent(in ) :: s(lo(1)-ng:,lo(2)-ng:,:)  
     real (kind = dp_t), intent(in ) :: force(lo(1)- 1:,lo(2)- 1:,:)
     real (kind = dp_t), intent(in ) :: divu(lo(1):,lo(2):)
-    real (kind = dp_t), intent(in ) :: p0(0:), gam1(0:)
+    real (kind = dp_t), intent(in ) :: p0(0:), gamma10(0:)
     real (kind = dp_t), intent(in ) :: dx(:)
     real (kind = dp_t), intent(out) :: dt
     real (kind = dp_t), intent(in ) :: cfl
@@ -162,7 +162,7 @@ contains
        endif
        
        do i = lo(1), hi(1)
-          denom = divU(i,j) - u(i,j,2)*gradp0/(gam1(j)*p0(j))
+          denom = divU(i,j) - u(i,j,2)*gradp0/(gamma10(j)*p0(j))
           if (denom > ZERO) then
              dt_divu = min(dt_divu,0.4d0*(ONE - rho_min/s(i,j,rho_comp))/denom)
           endif
@@ -171,7 +171,7 @@ contains
     
   end subroutine firstdt_2d
   
-  subroutine firstdt_3d(n,u,s,force,divU,p0,gam1,t0,lo,hi,ng,dx,dt,cfl)
+  subroutine firstdt_3d(n,u,s,force,divU,p0,gamma10,t0,lo,hi,ng,dx,dt,cfl)
 
     use geometry,  only: spherical, nr
     use variables, only: rho_comp, temp_comp, spec_comp
@@ -184,7 +184,7 @@ contains
     real (kind = dp_t), intent(in ) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind = dp_t), intent(in ) :: force(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)
     real (kind = dp_t), intent(in ) :: divU(lo(1):,lo(2):,lo(3):)  
-    real (kind = dp_t), intent(in ) :: p0(0:), t0(0:), gam1(0:)
+    real (kind = dp_t), intent(in ) :: p0(0:), t0(0:), gamma10(0:)
     real (kind = dp_t), intent(in ) :: dx(:)
     real (kind = dp_t), intent(out) :: dt
     real (kind = dp_t), intent(in ) :: cfl
@@ -295,7 +295,7 @@ contains
        
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
-             denom = divU(i,j,k) - u(i,j,k,3)*gradp0/(gam1(k)*p0(k))
+             denom = divU(i,j,k) - u(i,j,k,3)*gradp0/(gamma10(k)*p0(k))
              if (denom > ZERO) then
                 dt_divu = min(dt_divu,0.4d0*(ONE - rho_min/s(i,j,k,rho_comp))/denom)
              endif

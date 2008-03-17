@@ -8,7 +8,7 @@ module initial_proj_module
 contains
 
   subroutine initial_proj(nlevs,uold,sold,pres,gpres,Source_old,hgrhs, &
-                          div_coeff_old,s0_old,p0_old,gam1,dx,the_bc_tower,mla)
+                          div_coeff_old,s0_old,p0_old,gamma10,dx,the_bc_tower,mla)
 
     use variables, only: temp_comp, press_comp, foextrap_comp
     use network, only: nspec
@@ -37,7 +37,7 @@ contains
     real(kind=dp_t), intent(in   ) :: div_coeff_old(:,0:)
     real(kind=dp_t), intent(in   ) :: s0_old(:,0:,:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:)
-    real(kind=dp_t), intent(in   ) :: gam1(:,0:)
+    real(kind=dp_t), intent(in   ) :: gamma10(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     type(bc_tower) , intent(in   ) :: the_bc_tower
     type(ml_layout), intent(inout) :: mla
@@ -87,7 +87,7 @@ contains
     end do
 
     call make_S(nlevs,Source_old,delta_gamma1_term,sold,uold,rho_omegadot1,rho_Hext,thermal, &
-                s0_old(:,:,temp_comp),p0_old,gam1,dx)
+                s0_old(:,:,temp_comp),p0_old,gamma10,dx)
     do n=1,nlevs
        call destroy(thermal(n))
        call destroy(rho_omegadot1(n))

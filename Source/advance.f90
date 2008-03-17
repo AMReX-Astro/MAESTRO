@@ -12,7 +12,7 @@ contains
     
   subroutine advance_timestep(init_mode,mla,uold,sold,unew,snew, &
                               gpres,pres,normal,s0_old, &
-                              s0_new,p0_old,p0_new,gam1,w0, &
+                              s0_new,p0_old,p0_new,gamma10,w0, &
                               rho_omegadot2,div_coeff_old,div_coeff_new, &
                               grav_cell_old,dx,time,dt,dtold,the_bc_tower, &
                               dSdt,Source_old,Source_new,eta,psi,sponge,hgrhs,istep)
@@ -68,7 +68,7 @@ contains
     real(dp_t)    ,  intent(inout) :: s0_new(:,0:,:)
     real(dp_t)    ,  intent(inout) :: p0_old(:,0:)
     real(dp_t)    ,  intent(inout) :: p0_new(:,0:)
-    real(dp_t)    ,  intent(inout) :: gam1(:,0:)
+    real(dp_t)    ,  intent(inout) :: gamma10(:,0:)
     real(dp_t)    ,  intent(inout) :: w0(:,0:)
     type(multifab),  intent(inout) :: rho_omegadot2(:)
     real(dp_t)    ,  intent(in   ) :: div_coeff_old(:,0:)
@@ -208,7 +208,7 @@ contains
        call average(mla,Source_nph,Sbar,dx,1,1)
 
        call make_w0(nlevs,w0,w0_old,w0_force,Sbar(:,:,1),p0_old, &
-                    s0_old(:,:,rho_comp),gam1,psi,dt,dtold)
+                    s0_old(:,:,rho_comp),gamma10,psi,dt,dtold)
 
        if (dm .eq. 3) then
           call make_w0_cart(nlevs,w0,w0_cart_vec,normal,dx,the_bc_tower%bc_tower_array,mla)
@@ -309,7 +309,7 @@ contains
        call average(mla,rho_omegadot1,rho_omegadotbar1,dx,1,nspec)
        call average(mla,rho_Hext,rho_Hextbar,dx,1,1)
        call react_base(nlevs,p0_old,s0_old,rho_omegadotbar1,rho_Hextbar(:,:,1),halfdt, &
-                       p0_1,s0_1,gam1)
+                       p0_1,s0_1,gamma10)
     else
        p0_1 = p0_old
        s0_1 = s0_old
@@ -322,7 +322,7 @@ contains
     do n=1,nlevs
        call make_grav_cell(n,grav_cell_new(n,:),s0_1(n,:,rho_comp))
        call make_div_coeff(n,div_coeff_new(n,:),s0_1(n,:,rho_comp),p0_1(n,:), &
-                           gam1(n,:),grav_cell_new(n,:))
+                           gamma10(n,:),grav_cell_new(n,:))
     end do
     
     
@@ -336,7 +336,7 @@ contains
     end if
     
     if (evolve_base_state) then
-       call advect_base(1,nlevs,w0,Sbar,p0_1,p0_2,s0_1,s0_2,gam1,div_coeff_new, &
+       call advect_base(1,nlevs,w0,Sbar,p0_1,p0_2,s0_1,s0_2,gamma10,div_coeff_new, &
                         s0_predicted_edge,dx(:,dm),dt)
     else
        p0_2 = p0_1
@@ -394,7 +394,7 @@ contains
 
     ! Correct the base state using the lagged eta and psi
     if (use_eta .and. evolve_base_state) then
-       call correct_base(nlevs,p0_1,p0_2,s0_1,s0_2,gam1,div_coeff_nph,eta,psi,dx(:,dm),dt)
+       call correct_base(nlevs,p0_1,p0_2,s0_1,s0_2,gamma10,div_coeff_nph,eta,psi,dx(:,dm),dt)
     end if
 
     ! Now compute the new eta and psi
@@ -471,7 +471,7 @@ contains
        call average(mla,rho_omegadot2,rho_omegadotbar2,dx,1,nspec)
        call average(mla,rho_Hext,rho_Hextbar,dx,1,1)
        call react_base(nlevs,p0_2,s0_2,rho_omegadotbar2,rho_Hextbar(:,:,1),halfdt, &
-                       p0_new,s0_new,gam1)
+                       p0_new,s0_new,gamma10)
     else
        p0_new = p0_2
        s0_new = s0_2
@@ -480,7 +480,7 @@ contains
     do n=1,nlevs
        call make_grav_cell(n,grav_cell_new(n,:),s0_new(n,:,rho_comp))
        call make_div_coeff(n,div_coeff_new(n,:),s0_new(n,:,rho_comp),p0_new(n,:), &
-                           gam1(n,:),grav_cell_new(n,:))
+                           gamma10(n,:),grav_cell_new(n,:))
     end do
     
     ! Define base state at half time for use in velocity advance!
@@ -523,7 +523,7 @@ contains
        end do
 
        call make_S(nlevs,Source_new,delta_gamma1_term,snew,uold,rho_omegadot2,rho_Hext, &
-                   thermal,s0_old(:,:,temp_comp),p0_old,gam1,dx)
+                   thermal,s0_old(:,:,temp_comp),p0_old,gamma10,dx)
        
        do n=1,nlevs
           call destroy(rho_Hext(n))
@@ -548,7 +548,7 @@ contains
           call average(mla,Source_nph,Sbar,dx,1,1)
 
           call make_w0(nlevs,w0,w0_old,w0_force,Sbar(:,:,1),p0_new, &
-                       s0_new(:,:,rho_comp),gam1,psi,dt,dtold)
+                       s0_new(:,:,rho_comp),gamma10,psi,dt,dtold)
        
           if (dm .eq. 3) then
              call make_w0_cart(nlevs,w0      ,w0_cart_vec      ,normal,dx, &
@@ -637,7 +637,7 @@ contains
        end if
 
        if (evolve_base_state) then
-          call advect_base(2,nlevs,w0,Sbar,p0_1,p0_2,s0_1,s0_2,gam1,div_coeff_nph, &
+          call advect_base(2,nlevs,w0,Sbar,p0_1,p0_2,s0_1,s0_2,gamma10,div_coeff_nph, &
                            s0_predicted_edge,dx(:,dm),dt)
        else
           p0_2 = p0_1
@@ -690,7 +690,7 @@ contains
 
        ! Correct the base state using the lagged eta and psi
        if (use_eta .and. evolve_base_state) then
-          call correct_base(nlevs,p0_1,p0_2,s0_1,s0_2,gam1,div_coeff_nph,eta,psi,dx(:,dm),dt)
+          call correct_base(nlevs,p0_1,p0_2,s0_1,s0_2,gamma10,div_coeff_nph,eta,psi,dx(:,dm),dt)
        end if
 
        ! Now compute the new eta and psi
@@ -749,7 +749,7 @@ contains
           call average(mla,rho_omegadot2,rho_omegadotbar2,dx,1,nspec)
           call average(mla,rho_Hext,rho_Hextbar,dx,1,1)
           call react_base(nlevs,p0_2,s0_2,rho_omegadotbar2,rho_Hextbar(:,:,1),halfdt, &
-                          p0_new,s0_new,gam1)
+                          p0_new,s0_new,gamma10)
        else
           p0_new = p0_2
           s0_new = s0_2
@@ -758,7 +758,7 @@ contains
        do n=1,nlevs
           call make_grav_cell(n,grav_cell_new(n,:),s0_new(n,:,rho_comp))
           call make_div_coeff(n,div_coeff_new(n,:),s0_new(n,:,rho_comp),p0_new(n,:), &
-                              gam1(n,:),grav_cell_new(n,:))
+                              gamma10(n,:),grav_cell_new(n,:))
        end do
        
        ! end if corresponding to .not. do_half_alg
@@ -790,7 +790,7 @@ contains
     end do
 
     call make_S(nlevs,Source_new,delta_gamma1_term,snew,uold,rho_omegadot2,rho_Hext, &
-                thermal,s0_new(:,:,temp_comp),p0_new,gam1,dx)
+                thermal,s0_new(:,:,temp_comp),p0_new,gamma10,dx)
 
     do n=1,nlevs
        call destroy(rho_Hext(n))

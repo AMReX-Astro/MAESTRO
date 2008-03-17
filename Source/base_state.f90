@@ -10,7 +10,7 @@ module base_state_module
 
 contains
 
-  subroutine init_base_state(n,model_file,s0,p0,gam1,dx)
+  subroutine init_base_state(n,model_file,s0,p0,gamma10,dx)
 
     use bc_module
     use setbc_module
@@ -19,8 +19,8 @@ contains
     use define_bc_module
     use bl_constants_module
     use eos_module
-    use probin_module, ONLY: base_cutoff_density, anelastic_cutoff, prob_lo_x, prob_lo_y, prob_lo_z, &
-                             small_temp, small_dens
+    use probin_module, ONLY: base_cutoff_density, anelastic_cutoff, prob_lo_x, prob_lo_y, &
+                             prob_lo_z, small_temp, small_dens
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp, ntrac
     use geometry, only: dr, nr, spherical
 
@@ -28,7 +28,7 @@ contains
     character(len=256), intent(in   ) :: model_file
     real(kind=dp_t)   , intent(inout) :: s0(0:,:)
     real(kind=dp_t)   , intent(inout) :: p0(0:)
-    real(kind=dp_t)   , intent(inout) :: gam1(0:)
+    real(kind=dp_t)   , intent(inout) :: gamma10(0:)
     real(kind=dp_t)   , intent(in   ) :: dx(:)
 
     ! local
@@ -262,7 +262,7 @@ contains
           s0(r,spec_comp:spec_comp+nspec-1) = s0(r_cutoff,spec_comp:spec_comp+nspec-1)
           p0(r)            = p0(r_cutoff)
           s0(r,temp_comp)  = s0(r_cutoff,temp_comp)
-          gam1(r)         =  gam1(r_cutoff)
+          gamma10(r)       =  gamma10(r_cutoff)
 
        else
 
@@ -312,7 +312,7 @@ contains
 
           s0(r,trac_comp:trac_comp+ntrac-1) = ZERO
 
-          gam1(r) = gam1_eos(1)
+          gamma10(r) = gam1_eos(1)
 
           ! keep track of the height where we drop below the cutoff density
           if (s0(r,rho_comp) .lt. base_cutoff_density .and. r_cutoff .eq. nr(n)) then

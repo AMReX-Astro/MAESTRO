@@ -10,7 +10,7 @@ module base_state_module
 
 contains
 
-  subroutine init_base_state(n,model_file,s0,p0,gam1,dx)
+  subroutine init_base_state(n,model_file,s0,p0,gamma10,dx)
 
     use bc_module
     use setbc_module
@@ -28,7 +28,7 @@ contains
     character(len=256),  intent(in   ) :: model_file ! I'm not using this anymore
     real(kind=dp_t),     intent(inout) :: s0(0:,:)
     real(kind=dp_t),     intent(inout) :: p0(0:)
-    real(kind=dp_t),     intent(inout) :: gam1(0:)
+    real(kind=dp_t),     intent(inout) :: gamma10(0:)
     real(kind=dp_t),     intent(in   ) :: dx(:)
 
     ! local
@@ -183,7 +183,7 @@ contains
        s0(i,trac_comp) = 0.0d0
        s0(i,temp_comp) = temp_eos(1)
        p0(i) = pamb
-       gam1(i) = gam1_eos(1)
+       gamma10(i) = gam1_eos(1)
 
     enddo
 
