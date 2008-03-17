@@ -143,7 +143,7 @@ contains
     use bl_constants_module
     use network, only : nspec
     use variables, only : spec_comp, rho_comp, rhoh_comp
-    use probin_module, only: predict_X_at_edges, enthalpy_pred_type
+    use probin_module, only: enthalpy_pred_type
     use pred_parameters
 
     integer        , intent(in   ) :: lo(:),hi(:)
@@ -166,43 +166,15 @@ contains
     integer         :: i,j
     real(kind=dp_t) :: s0_edge
     real(kind=dp_t) :: rho_prime, rho0_edge
-    logical :: test,needrhoprime
+    logical :: test
     
     ! loop over components
     do comp = startcomp, endcomp
 
-       test = ( (comp.ge.spec_comp).and.(comp.le.spec_comp+nspec-1).and.predict_X_at_edges ) &
+       test = ( (comp.ge.spec_comp).and.(comp.le.spec_comp+nspec-1) ) &
          .or. ( (comp.eq.rhoh_comp).and. &
                      ( enthalpy_pred_type.eq.predict_h .or. &
                        enthalpy_pred_type.eq.predict_T_then_h ) )
-       
-       needrhoprime = ( (comp.eq.rhoh_comp) .and. (.not.predict_X_at_edges) .and.  &
-                        ( enthalpy_pred_type.eq.predict_h .or.  &
-                          enthalpy_pred_type.eq.predict_T_then_h ) )
-
-       if (needrhoprime) then
-
-          ! compute rho' on x-faces
-          sedgex(lo(1):hi(1)+1,lo(2):hi(2),rho_comp) = ZERO
-          do spec = 1,nspec    
-             do j = lo(2), hi(2)
-                do i = lo(1), hi(1)+1
-                   sedgex(i,j,rho_comp) = sedgex(i,j,rho_comp)+sedgex(i,j,spec_comp+spec-1)
-                end do
-             end do
-          end do
-          
-          ! compute rho' on y-faces
-          sedgey(lo(1):hi(1),lo(2):hi(2)+1,rho_comp) = ZERO
-          do spec = 1,nspec    
-             do j = lo(2), hi(2)+1
-                do i = lo(1), hi(1)
-                   sedgey(i,j,rho_comp) = sedgey(i,j,rho_comp) + sedgey(i,j,spec_comp+spec-1)
-                end do
-             end do
-          end do
-          
-       end if
 
        ! create x-fluxes
        if (test) then
@@ -292,7 +264,7 @@ contains
     use bl_constants_module
     use network, only : nspec
     use variables, only : spec_comp, rho_comp, rhoh_comp
-    use probin_module, only: predict_X_at_edges, enthalpy_pred_type
+    use probin_module, only: enthalpy_pred_type
     use pred_parameters
 
     integer        , intent(in   ) :: lo(:),hi(:)
@@ -317,60 +289,15 @@ contains
     integer         :: i,j,k
     real(kind=dp_t) :: s0_edge
     real(kind=dp_t) :: rho_prime, rho0_edge
-    logical         :: test, needrhoprime
+    logical         :: test
     
     ! loop over components
     do comp = startcomp, endcomp
 
-       test = ( (comp.ge.spec_comp).and.(comp.le.spec_comp+nspec-1).and.predict_X_at_edges ) &
+       test = ( (comp.ge.spec_comp).and.(comp.le.spec_comp+nspec-1) ) &
          .or. ( (comp.eq.rhoh_comp).and. &
                      ( enthalpy_pred_type.eq.predict_h .or. &
                        enthalpy_pred_type.eq.predict_T_then_h ) )
-       
-       needrhoprime = ( (comp.eq.rhoh_comp) .and. (.not.predict_X_at_edges) .and.  &
-                        ( enthalpy_pred_type.eq.predict_h .or.  &
-                          enthalpy_pred_type.eq.predict_T_then_h ) )
-
-       if (needrhoprime) then
- 
-          ! compute rho' on x-faces
-          sedgex(lo(1):hi(1)+1,lo(2):hi(2),lo(3):hi(3),rho_comp) = ZERO
-          do spec = 1,nspec
-             do k = lo(3), hi(3)
-             do j = lo(2), hi(2)
-             do i = lo(1), hi(1)+1
-                sedgex(i,j,k,rho_comp) = sedgex(i,j,k,rho_comp)+sedgex(i,j,k,spec_comp+spec-1)
-             end do
-             end do
-             end do
-          end do
- 
-          ! compute rho' on y-faces
-          sedgey(lo(1):hi(1),lo(2):hi(2)+1,lo(3):hi(3),rho_comp) = ZERO
-          do spec = 1,nspec
-             do k = lo(3), hi(3)
-             do j = lo(2), hi(2)+1
-             do i = lo(1), hi(1)
-                sedgey(i,j,k,rho_comp) = sedgey(i,j,k,rho_comp) + sedgey(i,j,k,spec_comp+spec-1)
-             end do
-             end do
-             end do
-          end do
- 
-          ! compute rho' on z-faces
-          sedgey(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)+1,rho_comp) = ZERO
-          do spec = 1,nspec
-             do k = lo(3), hi(3)+1
-             do j = lo(2), hi(2)
-             do i = lo(1), hi(1)
-                sedgez(i,j,k,rho_comp) = sedgez(i,j,k,rho_comp) + sedgez(i,j,k,spec_comp+spec-1)
-             end do
-             end do
-             end do
-          end do
- 
-       end if
-
        
        ! create x-fluxes and y-fluxes
        if (test) then
@@ -490,7 +417,6 @@ contains
     use bl_constants_module
     use network, only: nspec
     use variables, only: spec_comp, rho_comp
-    use probin_module, only: predict_X_at_edges
     use pred_parameters
 
     integer        , intent(in   ) :: lo(:),hi(:),domlo(:),domhi(:)
@@ -521,7 +447,7 @@ contains
 
     do comp = startcomp, endcomp
 
-       test = ((comp.ge.spec_comp).and.(comp.le.spec_comp+nspec-1).and.predict_X_at_edges)
+       test = ((comp.ge.spec_comp).and.(comp.le.spec_comp+nspec-1))
 
        ! loop for x-fluxes
        if (test) then

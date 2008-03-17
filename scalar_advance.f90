@@ -36,8 +36,8 @@ contains
     use geometry,      only: spherical, nr
     use variables,     only: nscal, ntrac, spec_comp, trac_comp, temp_comp, &
                              rho_comp, rhoh_comp
-    use probin_module, only: predict_X_at_edges, enthalpy_pred_type, &
-                             use_thermal_diffusion, verbose, evolve_base_state
+    use probin_module, only: enthalpy_pred_type, use_thermal_diffusion, verbose, &
+                             evolve_base_state
     use pred_parameters
     use modify_scal_force_module
     use convert_rhoX_to_X_module
@@ -135,20 +135,16 @@ contains
     ! if we are predicting X on the edges, then convert the state arrays
     ! (and base state) from (rho X) to X.  Note, only the time-level n
     ! stuff need be converted, since that's all the prediction uses
-    if (predict_X_at_edges) then
-
-       call convert_rhoX_to_X(nlevs,sold,dx,.true.,mla,the_bc_level)
-
-       if (spherical .eq. 1) then
-          call convert_rhoX_to_X(nlevs,s0_old_cart,dx,.true.,mla,the_bc_level)
-       end if
-
-       do comp = spec_comp, spec_comp + nspec - 1
-          s0_old(:,:,comp) = s0_old(:,:,comp)/s0_old(:,:,rho_comp)
-          s0_edge_old(:,:,comp) = s0_edge_old(:,:,comp)/s0_edge_old(:,:,rho_comp)
-       enddo
-
-    endif
+    call convert_rhoX_to_X(nlevs,sold,dx,.true.,mla,the_bc_level)
+    
+    if (spherical .eq. 1) then
+       call convert_rhoX_to_X(nlevs,s0_old_cart,dx,.true.,mla,the_bc_level)
+    end if
+    
+    do comp = spec_comp, spec_comp + nspec - 1
+       s0_old(:,:,comp) = s0_old(:,:,comp)/s0_old(:,:,rho_comp)
+       s0_edge_old(:,:,comp) = s0_edge_old(:,:,comp)/s0_edge_old(:,:,rho_comp)
+    enddo
 
     ! if we are predicting h on the edges, then convert the state arrays
     ! (and base state) from (rho h) to h.  Note, only the time-level n
@@ -175,24 +171,11 @@ contains
        call setval(scal_force(n),ZERO,all=.true.)
     end do
 
-    ! make force for rho', X, and/or (rho X)'
-    if (predict_X_at_edges) then
+    ! X force is zero - do nothing
 
-       ! X force is zero - do nothing
-
-       ! make force for rho'
-       if (predict_X_at_edges) then
-          call modify_scal_force(which_step,nlevs,scal_force,sold,umac,s0_old,s0_edge_old, &
-                                 w0,dx,s0_old_cart,rho_comp,1,mla,the_bc_level)
-       end if
-
-    else
-
-       ! make force for (rho X)'
-       call modify_scal_force(which_step,nlevs,scal_force,sold,umac,s0_old,s0_edge_old,w0,&
-                              dx,s0_old_cart,spec_comp,nspec,mla,the_bc_level)
-
-    endif
+    ! make force for rho'
+    call modify_scal_force(which_step,nlevs,scal_force,sold,umac,s0_old,s0_edge_old, &
+                           w0,dx,s0_old_cart,rho_comp,1,mla,the_bc_level)
 
     ! make force for either h, T, or (rho h)'
     if (enthalpy_pred_type .eq. predict_rhohprime) then
@@ -238,13 +221,8 @@ contains
        call put_in_pert_form(nlevs,sold,s0_old,dx,rhoh_comp,1,.true.,mla,the_bc_level)
     end if
 
-    if (predict_X_at_edges) then
-       ! convert rho -> rho'
-       call put_in_pert_form(nlevs,sold,s0_old,dx,rho_comp,1,.true.,mla,the_bc_level)
-    else
-       ! convert (rho X) -> (rho X)'
-       call put_in_pert_form(nlevs,sold,s0_old,dx,spec_comp,nspec,.true.,mla,the_bc_level)
-    end if
+    ! convert rho -> rho'
+    call put_in_pert_form(nlevs,sold,s0_old,dx,rho_comp,1,.true.,mla,the_bc_level)
 
     do n=1,nlevs
        do comp = 1,dm
@@ -267,48 +245,37 @@ contains
                         the_bc_level,pred_comp,dm+pred_comp,1,mla)
 
     ! predict either X or (rho X)' at the edges
-!      call make_edge_state(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0,w0_cart_vec,dx, &
-!                           dt,is_vel,the_bc_level,velpred,spec_comp,dm+spec_comp,nspec,mla)
-       call make_edge_scal(nlevs,sold,sedge,umac,scal_force,w0,w0_cart_vec,dx,dt,is_vel, &
-                           the_bc_level,spec_comp,dm+spec_comp,nspec,mla)
+!    call make_edge_state(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0,w0_cart_vec,dx, &
+!                         dt,is_vel,the_bc_level,velpred,spec_comp,dm+spec_comp,nspec,mla)
+    call make_edge_scal(nlevs,sold,sedge,umac,scal_force,w0,w0_cart_vec,dx,dt,is_vel, &
+                        the_bc_level,spec_comp,dm+spec_comp,nspec,mla)
 
-    if (predict_X_at_edges) then
-       ! predict rho' at the edges
-!      call make_edge_state(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0,w0_cart_vec,dx, &
-!                           dt,is_vel,the_bc_level,velpred,rho_comp,dm+rho_comp,1,mla)
-       call make_edge_scal(nlevs,sold,sedge,umac,scal_force,w0,w0_cart_vec,dx,dt,is_vel, &
-                           the_bc_level,rho_comp,dm+rho_comp,1,mla)
-    end if
+    ! predict rho' at the edges
+!    call make_edge_state(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0,w0_cart_vec,dx, &
+!                         dt,is_vel,the_bc_level,velpred,rho_comp,dm+rho_comp,1,mla)
+    call make_edge_scal(nlevs,sold,sedge,umac,scal_force,w0,w0_cart_vec,dx,dt,is_vel, &
+                        the_bc_level,rho_comp,dm+rho_comp,1,mla)
 
     if (enthalpy_pred_type .eq. predict_rhohprime) then
        ! convert (rho h)' -> (rho h)
        call put_in_pert_form(nlevs,sold,s0_old,dx,rhoh_comp,1,.false.,mla,the_bc_level)
     end if
 
-    if (predict_X_at_edges) then
-       ! convert rho' -> rho
-       call put_in_pert_form(nlevs,sold,s0_old,dx,rho_comp,1,.false.,mla,the_bc_level)
-    else
-       ! convert (rho X)' -> (rho X)
-       call put_in_pert_form(nlevs,sold,s0_old,dx,spec_comp,nspec,.false.,mla,the_bc_level)
-    end if
+    ! convert rho' -> rho
+    call put_in_pert_form(nlevs,sold,s0_old,dx,rho_comp,1,.false.,mla,the_bc_level)
 
     ! if we were predicting X at the edges, then restore the state arrays 
     ! (and base state) from X to (rho X)
-    if (predict_X_at_edges) then
+    call convert_rhoX_to_X(nlevs,sold,dx,.false.,mla,the_bc_level)
 
-       call convert_rhoX_to_X(nlevs,sold,dx,.false.,mla,the_bc_level)
-
-       if (spherical .eq. 1) then
-          call convert_rhoX_to_X(nlevs,s0_old_cart,dx,.false.,mla,the_bc_level)
-       end if
-
-       do comp = spec_comp, spec_comp + nspec - 1
-          s0_old(:,:,comp) = s0_old(:,:,rho_comp)*s0_old(:,:,comp)
-          s0_edge_old(:,:,comp) = s0_edge_old(:,:,rho_comp)*s0_edge_old(:,:,comp)
-       enddo
-
-    endif
+    if (spherical .eq. 1) then
+       call convert_rhoX_to_X(nlevs,s0_old_cart,dx,.false.,mla,the_bc_level)
+    end if
+    
+    do comp = spec_comp, spec_comp + nspec - 1
+       s0_old(:,:,comp) = s0_old(:,:,rho_comp)*s0_old(:,:,comp)
+       s0_edge_old(:,:,comp) = s0_edge_old(:,:,rho_comp)*s0_edge_old(:,:,comp)
+    enddo
 
     ! if we are predicting h at the edges, then restore the state arrays
     ! (and base state) from h to (rho h)

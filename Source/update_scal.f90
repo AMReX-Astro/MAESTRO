@@ -194,7 +194,7 @@ contains
                             base_new,base_new_edge,lo,hi,ng_s,dx,dt)
 
     use network,       only: nspec
-    use probin_module, only: predict_X_at_edges, enthalpy_pred_type
+    use probin_module, only: enthalpy_pred_type
     use variables,     only: spec_comp, rho_comp, rhoh_comp
     use pred_parameters
     use bl_constants_module
@@ -226,7 +226,7 @@ contains
 
     do comp = nstart, nstop
 
-       test = ( (comp.ge.spec_comp).and.(comp.le.spec_comp+nspec-1).and.predict_X_at_edges ) &
+       test = ( (comp.ge.spec_comp).and.(comp.le.spec_comp+nspec-1) ) &
          .or. ( (comp.eq.rhoh_comp).and. &
                      ( enthalpy_pred_type.eq.predict_h .or. &
                        enthalpy_pred_type.eq.predict_T_then_h ) )
@@ -319,7 +319,7 @@ contains
                                  base_old,base_old_edge,base_new,base_new_edge,lo,hi, &
                                  ng_s,dx,dt)
     use network,       only: nspec
-    use probin_module, only: predict_X_at_edges, enthalpy_pred_type
+    use probin_module, only: enthalpy_pred_type
     use variables,     only: spec_comp, rho_comp, rhoh_comp
     use pred_parameters
     use bl_constants_module
@@ -351,7 +351,7 @@ contains
 
     do comp = nstart, nstop
     
-       test = ( (comp.ge.spec_comp).and.(comp.le.spec_comp+nspec-1).and.predict_X_at_edges ) &
+       test = ( (comp.ge.spec_comp).and.(comp.le.spec_comp+nspec-1) ) &
          .or. ( (comp.eq.rhoh_comp).and. &
                      ( enthalpy_pred_type.eq.predict_h .or. &
                        enthalpy_pred_type.eq.predict_T_then_h ) )
@@ -455,7 +455,7 @@ contains
                                  force,base_old,base_new,base_old_cart,base_new_cart, &
                                  lo,hi,domlo,domhi,ng_s,dx,dt)
     use network,       only: nspec
-    use probin_module, only: predict_X_at_edges, enthalpy_pred_type
+    use probin_module, only: enthalpy_pred_type
     use variables,     only: spec_comp, rho_comp, rhoh_comp
     use pred_parameters
     use bl_constants_module
@@ -491,7 +491,7 @@ contains
 
     do comp = nstart, nstop
     
-       test = ( (comp.ge.spec_comp).and.(comp.le.spec_comp+nspec-1).and.predict_X_at_edges ) &
+       test = ( (comp.ge.spec_comp).and.(comp.le.spec_comp+nspec-1) ) &
          .or. ( (comp.eq.rhoh_comp).and. &
                      ( enthalpy_pred_type.eq.predict_h .or. &
                        enthalpy_pred_type.eq.predict_T_then_h ) )

@@ -418,7 +418,6 @@ contains
     use geometry, only: dr, nr
     use variables, only: temp_comp, rho_comp, spec_comp
     use eos_module
-    use probin_module, only: predict_X_at_edges
 
     ! compute the source terms for temperature
 
@@ -456,16 +455,7 @@ contains
 
           temp_eos(1) = s(i,j,temp_comp)
           den_eos(1) = s(i,j,rho_comp)
-
-          if (predict_X_at_edges) then
-             
-             ! the species come in as mass fractions
-             xn_eos(1,:) = s(i,j,spec_comp:spec_comp+nspec-1)
-          else
-
-             ! the species come in as partial densities (rho X)
-             xn_eos(1,:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
-          endif
+          xn_eos(1,:) = s(i,j,spec_comp:spec_comp+nspec-1)
 
           ! dens, temp, xmass inputs
          call eos(eos_input_rt, den_eos, temp_eos, &
@@ -499,7 +489,6 @@ contains
     use geometry,  only: dr, nr
     use variables, only: temp_comp, rho_comp, spec_comp
     use eos_module
-    use probin_module, only: predict_X_at_edges
 
     ! compute the source terms for temperature
 
@@ -535,16 +524,7 @@ contains
 
           temp_eos(1) = s(i,j,k,temp_comp)
           den_eos(1) = s(i,j,k,rho_comp)
-
-          if (predict_X_at_edges) then
-
-             ! the species come in as mass fractions
-             xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)
-          else
-
-             ! the species come in as partial densities (rho X)
-             xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
-          endif
+          xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)
              
           ! dens, temp, xmass inputs
          call eos(eos_input_rt, den_eos, temp_eos, &
@@ -583,7 +563,6 @@ contains
     use variables, only: temp_comp, rho_comp, spec_comp
     use eos_module
     use geometry,  only: dr, nr
-    use probin_module, only: predict_X_at_edges
 
     ! compute the source terms for temperature
 
@@ -633,16 +612,7 @@ contains
         
           temp_eos(1) = s(i,j,k,temp_comp)
           den_eos(1) = s(i,j,k,rho_comp)
-
-          if (predict_X_at_edges) then
-
-             ! the species come in as mass fractions
-             xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)
-          else
-
-             ! the species come in as partial densities (rho X)
-             xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
-          endif
+          xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)
 
           ! dens, temp, xmass inputs
          call eos(eos_input_rt, den_eos, temp_eos, &

@@ -141,7 +141,7 @@ contains
     use bl_constants_module
     use variables,     only: rho_comp, temp_comp, spec_comp, rhoh_comp
     use eos_module
-    use probin_module, only: use_big_h, predict_X_at_edges, enthalpy_pred_type, small_temp
+    use probin_module, only: use_big_h, enthalpy_pred_type, small_temp
     use pred_parameters
 
     integer        , intent(in   ) :: lo(:),hi(:)
@@ -154,41 +154,17 @@ contains
     real(kind=dp_t) qreact
     
     do_diag = .false.
-
-    ! if (predict_X_at_edges) then sx(i,j,rho_comp) already holds (rho)'
-    !                         else sx(i,j,    comp) holds (rho X)', 
-    !                           so sx(i,j,rho_comp) will hold (rho)'
-    if (.not. predict_X_at_edges) then
-
-       sx(lo(1):hi(1)+1, lo(2):hi(2), rho_comp) = ZERO
-       do comp = 1,nspec    
-          do j = lo(2), hi(2)
-             do i = lo(1), hi(1)+1
-                sx(i,j,rho_comp) = sx(i,j,rho_comp) + sx(i,j,spec_comp+comp-1)
-             end do
-          end do
-       end do
-
-    end if
     
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)+1
           
           temp_eos(1) = max(sx(i,j,temp_comp),small_temp)
+
+          ! sx(i,j,rho_comp) already holds (rho)'
           den_eos(1)  = sx(i,j,rho_comp) + HALF * (s0_old(j,rho_comp) + s0_new(j,rho_comp))
 
-          ! if (predict_X_at_edges) then sx(i,j,comp) holds X
-          if (predict_X_at_edges) then
-
-             xn_eos(1,:) = sx(i,j,spec_comp:spec_comp+nspec-1)
-
-          ! else then sx(i,j,comp) holds (rho X)'
-          else
-
-             xn_eos(1,:) = (sx(i,j,spec_comp:spec_comp+nspec-1)  + &
-                  HALF * ( s0_old(j,spec_comp:spec_comp+nspec-1) + &
-                  s0_new(j,spec_comp:spec_comp+nspec-1) ) ) /den_eos(1) 
-          end if
+          !  sx(i,j,comp) holds X
+          xn_eos(1,:) = sx(i,j,spec_comp:spec_comp+nspec-1)
           
           call eos(eos_input_rt, den_eos, temp_eos, &
                    npts, nspec, &
@@ -222,38 +198,18 @@ contains
           
        enddo
     enddo
-
-    ! if (predict_X_at_edges) then sy(i,j,rho_comp) already holds (rho)'
-    !                         else sy(i,j,    comp) holds (rho X)', 
-    !                           so sy(i,j,rho_comp) will hold (rho)'
-    if (.not. predict_X_at_edges) then
-
-       sy(lo(1):hi(1), lo(2):hi(2)+1, rho_comp) = ZERO
-       do comp = 1,nspec    
-          do j = lo(2), hi(2)+1
-             do i = lo(1), hi(1)
-                sy(i,j,rho_comp) = sy(i,j,rho_comp) + sy(i,j,spec_comp+comp-1)
-             end do
-          end do
-       end do
-
-    end if
     
     do j = lo(2), hi(2)+1
        do i = lo(1), hi(1)
           
           temp_eos(1) = max(sy(i,j,temp_comp),small_temp)
+
+          !  sy(i,j,rho_comp) already holds (rho)'
           den_eos(1)  = sy(i,j,rho_comp) + &
                HALF * (s0_edge_old(j,rho_comp) + s0_edge_new(j,rho_comp))
 
-          ! if (predict_X_at_edges) then sy(i,j,comp) holds X
-          if (predict_X_at_edges) then
-             xn_eos(1,:) = sy(i,j,spec_comp:spec_comp+nspec-1)
-          else
-             xn_eos(1,:) = (sy(i,j,spec_comp:spec_comp+nspec-1)  + &
-                  HALF * ( s0_edge_old(j,spec_comp:spec_comp+nspec-1) + &
-                  s0_edge_new(j,spec_comp:spec_comp+nspec-1) ) ) /den_eos(1) 
-          end if
+          !  sy(i,j,comp) holds X
+          xn_eos(1,:) = sy(i,j,spec_comp:spec_comp+nspec-1)
           
           call eos(eos_input_rt, den_eos, temp_eos, &
                    npts, nspec, &
@@ -294,7 +250,7 @@ contains
 
     use variables,     only: rho_comp, temp_comp, spec_comp, rhoh_comp
     use eos_module
-    use probin_module, only: use_big_h, predict_X_at_edges, enthalpy_pred_type, small_temp
+    use probin_module, only: use_big_h, enthalpy_pred_type, small_temp
     use pred_parameters
     use bl_constants_module
 
@@ -309,41 +265,19 @@ contains
     real(kind=dp_t) qreact
     
     do_diag = .false.
-
-    ! if (predict_X_at_edges) then sx(i,j,k,rho_comp) already holds (rho)'
-    !                         else sx(i,j,k,    comp) holds (rho X)', 
-    !                           so sx(i,j,k,rho_comp) will hold (rho)'
-    if (.not. predict_X_at_edges) then
-       sx(lo(1):hi(1)+1, lo(2):hi(2), lo(3):hi(3), rho_comp) = ZERO
-       do comp = 1,nspec    
-          do k = lo(3), hi(3)
-             do j = lo(2), hi(2)
-                do i = lo(1), hi(1)+1
-                   sx(i,j,k,rho_comp) = sx(i,j,k,rho_comp) + sx(i,j,k,spec_comp+comp-1)
-                end do
-             end do
-          end do
-       end do
-    end if
     
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)+1
              
              temp_eos(1) = max(sx(i,j,k,temp_comp),small_temp)
+
+             ! sx(i,j,k,rho_comp) already holds (rho)'
              den_eos(1) = sx(i,j,k,rho_comp) + &
                   HALF * (s0_old(k,rho_comp) + s0_new(k,rho_comp))
 
-             ! if (predict_X_at_edges) then sx(i,j,k,comp) holds X
-             if (predict_X_at_edges) then
-                xn_eos(1,:) = sx(i,j,k,spec_comp:spec_comp+nspec-1)
-             ! else then sx(i,j,k,comp) holds (rho X)'
-             else
-                xn_eos(1,:) = (sx(i,j,k,spec_comp:spec_comp+nspec-1)  + &
-                     HALF * ( s0_old(k,spec_comp:spec_comp+nspec-1) + &
-                              s0_new(k,spec_comp:spec_comp+nspec-1) )  &
-                              ) /den_eos(1)
-             end if
+             ! then sx(i,j,k,comp) holds X
+             xn_eos(1,:) = sx(i,j,k,spec_comp:spec_comp+nspec-1)
              
              call eos(eos_input_rt, den_eos, temp_eos, &
                       npts, nspec, &
@@ -378,40 +312,19 @@ contains
           enddo
        enddo
     enddo
-
-    ! if (predict_X_at_edges) then sy(i,j,k,rho_comp) already holds (rho)'
-    !                         else sy(i,j,k,    comp) holds (rho X)', 
-    !                           so sy(i,j,k,rho_comp) will hold (rho)'
-    if (.not. predict_X_at_edges) then
-       sy(lo(1):hi(1), lo(2):hi(2)+1, lo(3):hi(3), rho_comp) = ZERO
-       do comp = 1,nspec    
-          do k = lo(3), hi(3)
-             do j = lo(2), hi(2)+1
-                do i = lo(1), hi(1)
-                   sy(i,j,k,rho_comp) = sy(i,j,k,rho_comp) + sy(i,j,k,spec_comp+comp-1)
-                end do
-             end do
-          end do
-       end do
-    end if
     
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)+1
           do i = lo(1), hi(1)
              
              temp_eos(1) = max(sy(i,j,k,temp_comp),small_temp)
+
+             ! sy(i,j,k,rho_comp) already holds (rho)'
              den_eos(1)  = sy(i,j,k,rho_comp) + &
                   HALF * (s0_old(k,rho_comp) + s0_new(k,rho_comp))
 
-             ! if (predict_X_at_edges) then sy(i,j,k,comp) holds X
-             if (predict_X_at_edges) then
-                xn_eos(1,:) = sy(i,j,k,spec_comp:spec_comp+nspec-1)
-             else
-                xn_eos(1,:) = (sy(i,j,k,spec_comp:spec_comp+nspec-1)  + &
-                     HALF * ( s0_edge_old(k,spec_comp:spec_comp+nspec-1) + &
-                              s0_edge_new(k,spec_comp:spec_comp+nspec-1) ) &
-                               ) /den_eos(1)
-             end if
+             !  sy(i,j,k,comp) holds X
+             xn_eos(1,:) = sy(i,j,k,spec_comp:spec_comp+nspec-1)
 
              xn_eos(1,:) = (sy(i,j,k,spec_comp:spec_comp+nspec-1)  + &
                   HALF * ( s0_old(k,spec_comp:spec_comp+nspec-1) + &
@@ -451,40 +364,18 @@ contains
        enddo
     enddo
 
-    ! if (predict_X_at_edges) then sz(i,j,k,rho_comp) already holds (rho)'
-    !                         else sz(i,j,k,    comp) holds (rho X)', 
-    !                           so sz(i,j,k,rho_comp) will hold (rho)'
-    if (.not. predict_X_at_edges) then
-       sz(lo(1):hi(1), lo(2):hi(2), lo(3):hi(3)+1, rho_comp) = ZERO
-       do comp = 1,nspec    
-          do k = lo(3), hi(3)+1
-             do j = lo(2), hi(2)
-                do i = lo(1), hi(1)
-                   sz(i,j,k,rho_comp) = sz(i,j,k,rho_comp) + sz(i,j,k,spec_comp+comp-1)
-                end do
-             end do
-          end do
-       end do
-    end if
-    
     do k = lo(3), hi(3)+1
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
              
              temp_eos(1) = max(sz(i,j,k,temp_comp),small_temp)
+
+             ! sz(i,j,k,rho_comp) already holds (rho)'
              den_eos(1) = sz(i,j,k,rho_comp) + &
                   HALF * (s0_edge_old(k,rho_comp) + s0_edge_new(k,rho_comp))
 
-             ! if (predict_X_at_edges) then sz(i,j,k,comp) holds X
-             if (predict_X_at_edges) then
-                xn_eos(1,:) = sz(i,j,k,spec_comp:spec_comp+nspec-1)
-             ! else then sz(i,j,k,comp) holds (rho X)'
-             else
-                xn_eos(1,:) = (sz(i,j,k,spec_comp:spec_comp+nspec-1)  + &
-                     HALF * ( s0_old(k,spec_comp:spec_comp+nspec-1) + &
-                              s0_new(k,spec_comp:spec_comp+nspec-1) )  &
-                              ) /den_eos(1)
-             end if
+             ! sz(i,j,k,comp) holds X
+             xn_eos(1,:) = sz(i,j,k,spec_comp:spec_comp+nspec-1)
 
              call eos(eos_input_rt, den_eos, temp_eos, &
                       npts, nspec, &
@@ -527,7 +418,7 @@ contains
     use variables,     only: rho_comp, temp_comp, spec_comp, rhoh_comp
     use geometry,      only: spherical
     use eos_module
-    use probin_module, only: use_big_h, predict_X_at_edges, enthalpy_pred_type, small_temp
+    use probin_module, only: use_big_h, enthalpy_pred_type, small_temp
     use pred_parameters
     use bl_constants_module
 
@@ -547,22 +438,7 @@ contains
     
     do_diag = .false.
 
-    ! if (predict_X_at_edges) then sx(i,j,k,rho_comp) already holds (rho)'
-    !                         else sx(i,j,k,    comp) holds (rho X)',
-    !                           so sx(i,j,k,rho_comp) will hold (rho)'
-    if (.not. predict_X_at_edges) then
-       sx(lo(1):hi(1)+1, lo(2):hi(2), lo(3):hi(3), rho_comp) = ZERO
-       do comp = 1,nspec
-          do k = lo(3), hi(3)
-             do j = lo(2), hi(2)
-                do i = lo(1), hi(1)+1
-                   sx(i,j,k,rho_comp) = sx(i,j,k,rho_comp) + sx(i,j,k,spec_comp+comp-1)
-                end do
-             end do
-          end do
-       end do
-    end if
-
+    ! sx(i,j,k,rho_comp) already holds (rho)'
     
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
@@ -629,21 +505,7 @@ contains
        enddo
     enddo
 
-    ! if (predict_X_at_edges) then sy(i,j,k,rho_comp) already holds (rho)'
-    !                         else sy(i,j,k,    comp) holds (rho X)',
-    !                           so sy(i,j,k,rho_comp) will hold (rho)'
-    if (.not. predict_X_at_edges) then
-       sy(lo(1):hi(1), lo(2):hi(2)+1, lo(3):hi(3), rho_comp) = ZERO
-       do comp = 1,nspec
-          do k = lo(3), hi(3)
-             do j = lo(2), hi(2)+1
-                do i = lo(1), hi(1)
-                   sy(i,j,k,rho_comp) = sy(i,j,k,rho_comp) + sy(i,j,k,spec_comp+comp-1)
-                end do
-             end do
-          end do
-       end do
-    end if
+    ! sy(i,j,k,rho_comp) already holds (rho)'
     
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)+1
@@ -708,21 +570,7 @@ contains
        enddo
     enddo
 
-    ! if (predict_X_at_edges) then sz(i,j,k,rho_comp) already holds (rho)'
-    !                         else sz(i,j,k,    comp) holds (rho X)',
-    !                           so sz(i,j,k,rho_comp) will hold (rho)'
-    if (.not. predict_X_at_edges) then
-       sz(lo(1):hi(1), lo(2):hi(2), lo(3):hi(3)+1, rho_comp) = ZERO
-       do comp = 1,nspec
-          do k = lo(3), hi(3)+1
-             do j = lo(2), hi(2)
-                do i = lo(1), hi(1)
-                   sz(i,j,k,rho_comp) = sz(i,j,k,rho_comp) + sz(i,j,k,spec_comp+comp-1)
-                end do
-             end do
-          end do
-       end do
-    end if
+    ! sz(i,j,k,rho_comp) already holds (rho)'
     
     do k = lo(3), hi(3)+1
        do j = lo(2), hi(2)

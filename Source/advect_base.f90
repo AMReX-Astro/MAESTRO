@@ -61,8 +61,7 @@ contains
     use eos_module
     use variables, only: spec_comp, rho_comp, temp_comp, rhoh_comp
     use geometry, only: nr
-    use probin_module, only: grav_const, anelastic_cutoff, &
-                             predict_X_at_edges, enthalpy_pred_type
+    use probin_module, only: grav_const, anelastic_cutoff, enthalpy_pred_type
     use pred_parameters
 
     integer        , intent(in   ) :: which_step,n
@@ -110,17 +109,13 @@ contains
 ! Predict rho_0 to vertical edges
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    if (predict_X_at_edges) then
-
-       do r = 0,nr(n)-1
-          force(r) = -s0_old(r,rho_comp) * (vel(r+1) - vel(r)) / dz 
-       end do
-
-       call make_edge_state_1d(n,s0_old(:,rho_comp),edge,vel,force,1,dz,dt)
-
-       s0_predicted_edge(:,rho_comp) = edge(:)       
-
-    endif
+    do r = 0,nr(n)-1
+       force(r) = -s0_old(r,rho_comp) * (vel(r+1) - vel(r)) / dz 
+    end do
+    
+    call make_edge_state_1d(n,s0_old(:,rho_comp),edge,vel,force,1,dz,dt)
+    
+    s0_predicted_edge(:,rho_comp) = edge(:)       
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Update (rho X)_0
@@ -128,44 +123,23 @@ contains
 
     do comp = spec_comp,spec_comp+nspec-1
 
-       if (predict_X_at_edges) then
-
-          ! here we predict X_0 on the edges
-          X0(:) = s0_old(:,comp)/s0_old(:,rho_comp)
-          do r = 0,nr(n)-1
-            X0(r) = max(X0(r),ZERO)
-          end do
-
-          force = ZERO
+       ! here we predict X_0 on the edges
+       X0(:) = s0_old(:,comp)/s0_old(:,rho_comp)
+       do r = 0,nr(n)-1
+          X0(r) = max(X0(r),ZERO)
+       end do
        
-          call make_edge_state_1d(n,X0,edge,vel,force,1,dz,dt)
-
-          ! s0_predicted_edge will store X_0 on the vertical edges -- we need
-          ! that later
-          s0_predicted_edge(:,comp) = edge(:)
-
-          ! our final update needs (rho X)_0 on the edges, so compute
-          ! that now
-          edge(:) = s0_predicted_edge(:,rho_comp)*edge(:)
-
-       else
-
-          ! here we predict (rho X)_0 on the edges
-          do r = 0,nr(n)-1
-             force(r) = -s0_old(r,comp) * (vel(r+1) - vel(r)) / dz 
-          end do
-
-          call make_edge_state_1d(n,s0_old(:,comp),edge,vel,force,1,dz,dt)
-
-          ! s0_predicted_edge will store (rho X)_0 on the vertical edges
-          s0_predicted_edge(:,comp) = edge(:)
-
-          ! compute rho_0 on the edges for completeness
-          s0_predicted_edge(:,rho_comp) = s0_predicted_edge(:,rho_comp) + &
-               s0_predicted_edge(:,comp) 
-
-       end if
-
+       force = ZERO
+       
+       call make_edge_state_1d(n,X0,edge,vel,force,1,dz,dt)
+       
+       ! s0_predicted_edge will store X_0 on the vertical edges -- we need
+       ! that later
+       s0_predicted_edge(:,comp) = edge(:)
+       
+       ! our final update needs (rho X)_0 on the edges, so compute
+       ! that now
+       edge(:) = s0_predicted_edge(:,rho_comp)*edge(:)
        
        ! update (rho X)_0
        do r = 0,nr(n)-1
@@ -275,7 +249,6 @@ contains
     use eos_module
     use variables, only: spec_comp, rho_comp, rhoh_comp, temp_comp
     use geometry, only: nr, base_cc_loc, base_loedge_loc, dr, nr
-    use probin_module, only: predict_X_at_edges
     use make_grav_module
     use cell_to_edge_module
     use make_div_coeff_module
@@ -322,65 +295,38 @@ contains
 ! Predict rho_0 to vertical edges
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    if (predict_X_at_edges) then
-
-       do r = 0,nr(n)-1
-          force(r) = -s0_old(r,rho_comp) * (vel(r+1) - vel(r)) / dr(n) - &
-               2.0_dp_t*s0_old(r,rho_comp)*HALF*(vel(r) + vel(r+1))/base_cc_loc(n,r)
-       end do
-
-       call make_edge_state_1d(n,s0_old(:,rho_comp),edge,vel,force,1,dr(n),dt)
-
-       s0_predicted_edge(:,rho_comp) = edge(:)
-
-    endif
-
+    do r = 0,nr(n)-1
+       force(r) = -s0_old(r,rho_comp) * (vel(r+1) - vel(r)) / dr(n) - &
+            2.0_dp_t*s0_old(r,rho_comp)*HALF*(vel(r) + vel(r+1))/base_cc_loc(n,r)
+    end do
+    
+    call make_edge_state_1d(n,s0_old(:,rho_comp),edge,vel,force,1,dr(n),dt)
+    
+    s0_predicted_edge(:,rho_comp) = edge(:)
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! UPDATE RHOX0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     do comp = spec_comp,spec_comp+nspec-1
        
-       if (predict_X_at_edges) then
-
-          ! here we predict X_0 on the edges
-          X0(:) = s0_old(:,comp)/s0_old(:,rho_comp)
-          do r = 0,nr(n)-1
-            X0(r) = max(X0(r),ZERO)
-          end do
-
-          force = ZERO
-
-          call make_edge_state_1d(n,X0,edge,vel,force,1,dr(n),dt)
-
-          ! s0_predicted_edge will store X_0 on the vertical edges -- we need
-          ! that later
-          s0_predicted_edge(:,comp) = edge(:)
-
-          ! our final update needs (rho X)_0 on the edges, so compute
-          ! that now
-          edge(:) = s0_predicted_edge(:,rho_comp)*edge(:)
-
-       else
-
-          ! compute the force -- include the geometric source term that
-          ! results from expanding out the spherical divergence
-          do r = 0,nr(n)-1
-             force(r) = -s0_old(r,comp) * (vel(r+1) - vel(r)) / dr(n) - &
-                  2.0_dp_t*s0_old(r,comp)*HALF*(vel(r) + vel(r+1))/base_cc_loc(n,r)
-          end do
+       ! here we predict X_0 on the edges
+       X0(:) = s0_old(:,comp)/s0_old(:,rho_comp)
+       do r = 0,nr(n)-1
+          X0(r) = max(X0(r),ZERO)
+       end do
        
-          call make_edge_state_1d(n,s0_old(:,comp),edge,vel,force,1,dr(n),dt)
-
-          ! s0_predicted_edge will store (rho X)_0 on the vertical edges
-          s0_predicted_edge(:,comp) = edge(:)
-
-          ! compute rho_0 on the edges for completeness
-          s0_predicted_edge(:,rho_comp) = s0_predicted_edge(:,rho_comp) + &
-               s0_predicted_edge(:,comp)
-
-       endif
-
+       force = ZERO
+       
+       call make_edge_state_1d(n,X0,edge,vel,force,1,dr(n),dt)
+       
+       ! s0_predicted_edge will store X_0 on the vertical edges -- we need
+       ! that later
+       s0_predicted_edge(:,comp) = edge(:)
+       
+       ! our final update needs (rho X)_0 on the edges, so compute
+       ! that now
+       edge(:) = s0_predicted_edge(:,rho_comp)*edge(:)
+       
        ! update (rho X)_0
        do r = 0,nr(n)-1
           s0_new(r,comp) = s0_old(r,comp) &
