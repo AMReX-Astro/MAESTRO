@@ -1,4 +1,4 @@
-! Compute the source term to the divergence constraint, S.
+! compute gamma1 for the full state.
 
 module make_gamma_module
 
