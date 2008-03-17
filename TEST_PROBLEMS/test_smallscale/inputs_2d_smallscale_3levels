@@ -1,21 +1,21 @@
 &PROBIN
- test_set = "gr0_2d_smallscale_3levels"
+ test_set = "gr0_2d_smallscale"
  spherical_in = 0
 
- prob_hi_x = 0.5
+ prob_hi_x = 0.25
  prob_hi_y = 2.0
 
  grav_const = 0.e0
 
- max_step  = 300
+ max_step  = 3
  stop_time = 2.5
 
  do_initial_projection = 1
  init_divu_iter = 3
  init_iter = 1
 
- plot_int  = 10
- chk_int   = 100
+ plot_int  = 1
+ chk_int   = 1
 
  cflfac = 0.15
  init_shrink = 0.1
@@ -35,8 +35,7 @@
 
  use_thermal_diffusion = T
 
- enthalpy_pred_type = 3
- predict_X_at_edges = F
+ enthalpy_pred_type = 4
  evolve_base_state = F
 
 !restart = 50
