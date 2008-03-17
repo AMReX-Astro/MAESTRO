@@ -35,7 +35,6 @@
 
  use_thermal_diffusion = T
 
- enthalpy_pred_type = 4
  evolve_base_state = F
 
 !restart = 50
