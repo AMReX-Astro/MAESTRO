@@ -52,7 +52,7 @@ contains
     use eos_module
     use variables, only: spec_comp, rho_comp, temp_comp, rhoh_comp
     use geometry, only: nr
-    use probin_module, only: grav_const, anelastic_cutoff
+    use probin_module, only: grav_const, anelastic_cutoff, enthalpy_pred_type
 
     integer        , intent(in   ) :: n
     real(kind=dp_t), intent(in   ) :: p0_old(0:), s0_old(0:,:)
@@ -144,7 +144,10 @@ contains
                 do_diag)
        
        s0_new(r,temp_comp) = temp_eos(1)
-       gamma10(r) = gam1_eos(1)
+
+       if(enthalpy_pred_type .eq. 1) then
+          gamma10(r) = gam1_eos(1)
+       end if
        
     end do
     

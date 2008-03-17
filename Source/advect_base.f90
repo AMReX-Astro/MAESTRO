@@ -252,7 +252,10 @@ contains
                 do_diag)
        
        s0_new(r,temp_comp) = temp_eos(1)
-       gamma10(r) = gam1_eos(1)
+
+       if (enthalpy_pred_type .eq. 1) then
+          gamma10(r) = gam1_eos(1)
+       end if
        
     end do
     

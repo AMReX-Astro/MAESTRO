@@ -19,7 +19,7 @@ contains
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
     use eos_module
     use bl_prof_module
-    use probin_module, ONLY: use_big_h
+    use probin_module, ONLY: use_big_h, enthalpy_pred_type
      
     integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(in   ) :: p0_in(:,0:), s0_in(:,0:,:)
@@ -68,23 +68,26 @@ contains
           endif
           s0_out(n,r,rhoh_comp) = s0_out(n,r,rhoh_comp) + dt_in * rho_Hextbar(n,r)
           
-          ! Only do this to evaluate a new Gamma.
-          ! (rho,P,X) --> T, h
-          call eos(eos_input_rp, den_eos, temp_eos, &
-                   npts, nspec, &
-                   xn_eos, &
-                   p_eos, h_eos, e_eos, &
-                   cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                   dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                   dpdX_eos, dhdX_eos, &
-                   gam1_eos, cs_eos, s_eos, &
-                   dsdt_eos, dsdr_eos, &
-                   do_diag)
-          
           ! We shouldn't update temp here since we don't update it in react-state.
           s0_out(n,r,temp_comp) = s0_in(n,r,temp_comp)
           
-          gamma10_out(n,r) = gam1_eos(1)
+          if (enthalpy_pred_type .eq. 1) then
+             ! Only do this to evaluate a new Gamma.
+             ! (rho,P,X) --> T, h
+             call eos(eos_input_rp, den_eos, temp_eos, &
+                      npts, nspec, &
+                      xn_eos, &
+                      p_eos, h_eos, e_eos, &
+                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                      dpdX_eos, dhdX_eos, &
+                      gam1_eos, cs_eos, s_eos, &
+                      dsdt_eos, dsdr_eos, &
+                      do_diag)
+
+             gamma10_out(n,r) = gam1_eos(1)
+
+          end if
           
        end do
        

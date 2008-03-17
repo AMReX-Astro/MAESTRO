@@ -53,6 +53,7 @@ contains
     use fill_3d_module
     use cell_to_edge_module
     use define_bc_module
+    use make_gamma_module
     use probin_module, only: verbose, enthalpy_pred_type
     
     logical,         intent(in   ) :: init_mode
@@ -68,7 +69,7 @@ contains
     real(dp_t)    ,  intent(inout) :: s0_new(:,0:,:)
     real(dp_t)    ,  intent(inout) :: p0_old(:,0:)
     real(dp_t)    ,  intent(inout) :: p0_new(:,0:)
-    real(dp_t)    ,  intent(inout) :: gamma10(:,0:)
+    real(dp_t)    ,  intent(inout) :: gamma10(:,0:,:)
     real(dp_t)    ,  intent(inout) :: w0(:,0:)
     type(multifab),  intent(inout) :: rho_omegadot2(:)
     real(dp_t)    ,  intent(in   ) :: div_coeff_old(:,0:)
@@ -102,7 +103,7 @@ contains
     type(multifab) :: rho_omegadot1(mla%nlevel)
     type(multifab) :: rho_Hext(mla%nlevel)
     type(multifab) :: div_coeff_3d(mla%nlevel) ! Only needed for spherical.eq.1
-
+    type(multifab) :: gamma1(mla%nlevel)
     type(multifab) :: umac(mla%nlevel,mla%dim)
     type(multifab) :: utrans(mla%nlevel,mla%dim)
     type(multifab) :: etaflux(mla%nlevel)
@@ -208,7 +209,7 @@ contains
        call average(mla,Source_nph,Sbar,dx,1,1)
 
        call make_w0(nlevs,w0,w0_old,w0_force,Sbar(:,:,1),p0_old, &
-                    s0_old(:,:,rho_comp),gamma10,psi,dt,dtold)
+                    s0_old(:,:,rho_comp),gamma10(:,:,1),psi,dt,dtold)
 
        if (dm .eq. 3) then
           call make_w0_cart(nlevs,w0,w0_cart_vec,normal,dx,the_bc_tower%bc_tower_array,mla)
@@ -309,10 +310,23 @@ contains
        call average(mla,rho_omegadot1,rho_omegadotbar1,dx,1,nspec)
        call average(mla,rho_Hext,rho_Hextbar,dx,1,1)
        call react_base(nlevs,p0_old,s0_old,rho_omegadotbar1,rho_Hextbar(:,:,1),halfdt, &
-                       p0_1,s0_1,gamma10)
+                       p0_1,s0_1,gamma10(:,:,1))
     else
        p0_1 = p0_old
        s0_1 = s0_old
+    end if
+
+    if (enthalpy_pred_type .ne. 1 .and. evolve_base_state) then
+       do n=1,nlevs
+          call multifab_build(gamma1(n), mla%la(n), 1, 0)
+       end do
+       
+       call make_gamma(nlevs,gamma1,s1,p0_1)
+       call average(mla,gamma1,gamma10,dx,1,1)
+
+       do n=1,nlevs
+          call destroy(gamma1(n))
+       end do
     end if
 
     do n=1,nlevs
@@ -322,7 +336,7 @@ contains
     do n=1,nlevs
        call make_grav_cell(n,grav_cell_new(n,:),s0_1(n,:,rho_comp))
        call make_div_coeff(n,div_coeff_new(n,:),s0_1(n,:,rho_comp),p0_1(n,:), &
-                           gamma10(n,:),grav_cell_new(n,:))
+                           gamma10(n,:,1),grav_cell_new(n,:))
     end do
     
     
@@ -336,7 +350,7 @@ contains
     end if
     
     if (evolve_base_state) then
-       call advect_base(1,nlevs,w0,Sbar,p0_1,p0_2,s0_1,s0_2,gamma10,div_coeff_new, &
+       call advect_base(1,nlevs,w0,Sbar,p0_1,p0_2,s0_1,s0_2,gamma10(:,:,1),div_coeff_new, &
                         s0_predicted_edge,dx(:,dm),dt)
     else
        p0_2 = p0_1
@@ -392,9 +406,36 @@ contains
                         s0_1,s0_2,p0_1,p0_2,psi,s0_predicted_edge, &
                         dx,dt,the_bc_tower%bc_tower_array)
 
+    if (enthalpy_pred_type .ne. 1 .and. evolve_base_state) then
+       do n=1,nlevs
+          call multifab_build(gamma1(n), mla%la(n), 1, 0)
+       end do
+       
+       call make_gamma(nlevs,gamma1,s2,p0_2)
+       call average(mla,gamma1,gamma10,dx,1,1)
+       
+       do n=1,nlevs
+          call destroy(gamma1(n))
+       end do
+    end if
+
     ! Correct the base state using the lagged eta and psi
     if (use_eta .and. evolve_base_state) then
-       call correct_base(nlevs,p0_1,p0_2,s0_1,s0_2,gamma10,div_coeff_nph,eta,psi,dx(:,dm),dt)
+       call correct_base(nlevs,p0_1,p0_2,s0_1,s0_2,gamma10(:,:,1),div_coeff_nph,eta,psi, &
+                         dx(:,dm),dt)
+
+       if (enthalpy_pred_type .ne. 1) then
+          do n=1,nlevs
+             call multifab_build(gamma1(n), mla%la(n), 1, 0)
+          end do
+          
+          call make_gamma(nlevs,gamma1,s2,p0_2)
+          call average(mla,gamma1,gamma10,dx,1,1)
+          
+          do n=1,nlevs
+             call destroy(gamma1(n))
+          end do
+       end if
     end if
 
     ! Now compute the new eta and psi
@@ -471,16 +512,29 @@ contains
        call average(mla,rho_omegadot2,rho_omegadotbar2,dx,1,nspec)
        call average(mla,rho_Hext,rho_Hextbar,dx,1,1)
        call react_base(nlevs,p0_2,s0_2,rho_omegadotbar2,rho_Hextbar(:,:,1),halfdt, &
-                       p0_new,s0_new,gamma10)
+                       p0_new,s0_new,gamma10(:,:,1))
     else
        p0_new = p0_2
        s0_new = s0_2
     end if
 
+    if (enthalpy_pred_type .ne. 1 .and. evolve_base_state) then
+       do n=1,nlevs
+          call multifab_build(gamma1(n), mla%la(n), 1, 0)
+       end do
+       
+       call make_gamma(nlevs,gamma1,snew,p0_new)
+       call average(mla,gamma1,gamma10,dx,1,1)
+
+       do n=1,nlevs
+          call destroy(gamma1(n))
+       end do
+    end if
+
     do n=1,nlevs
        call make_grav_cell(n,grav_cell_new(n,:),s0_new(n,:,rho_comp))
        call make_div_coeff(n,div_coeff_new(n,:),s0_new(n,:,rho_comp),p0_new(n,:), &
-                           gamma10(n,:),grav_cell_new(n,:))
+                           gamma10(n,:,1),grav_cell_new(n,:))
     end do
     
     ! Define base state at half time for use in velocity advance!
@@ -523,7 +577,7 @@ contains
        end do
 
        call make_S(nlevs,Source_new,delta_gamma1_term,snew,uold,rho_omegadot2,rho_Hext, &
-                   thermal,s0_old(:,:,temp_comp),p0_old,gamma10,dx)
+                   thermal,s0_old(:,:,temp_comp),p0_old,gamma10(:,:,1),dx)
        
        do n=1,nlevs
           call destroy(rho_Hext(n))
@@ -548,7 +602,7 @@ contains
           call average(mla,Source_nph,Sbar,dx,1,1)
 
           call make_w0(nlevs,w0,w0_old,w0_force,Sbar(:,:,1),p0_new, &
-                       s0_new(:,:,rho_comp),gamma10,psi,dt,dtold)
+                       s0_new(:,:,rho_comp),gamma10(:,:,1),psi,dt,dtold)
        
           if (dm .eq. 3) then
              call make_w0_cart(nlevs,w0      ,w0_cart_vec      ,normal,dx, &
@@ -637,7 +691,7 @@ contains
        end if
 
        if (evolve_base_state) then
-          call advect_base(2,nlevs,w0,Sbar,p0_1,p0_2,s0_1,s0_2,gamma10,div_coeff_nph, &
+          call advect_base(2,nlevs,w0,Sbar,p0_1,p0_2,s0_1,s0_2,gamma10(:,:,1),div_coeff_nph, &
                            s0_predicted_edge,dx(:,dm),dt)
        else
           p0_2 = p0_1
@@ -688,9 +742,36 @@ contains
                            s0_1,s0_2,p0_1,p0_2,psi,s0_predicted_edge, &
                            dx,dt,the_bc_tower%bc_tower_array)
 
+       if (enthalpy_pred_type .ne. 1 .and. evolve_base_state) then
+          do n=1,nlevs
+             call multifab_build(gamma1(n), mla%la(n), 1, 0)
+          end do
+          
+          call make_gamma(nlevs,gamma1,s2,p0_2)
+          call average(mla,gamma1,gamma10,dx,1,1)
+          
+          do n=1,nlevs
+             call destroy(gamma1(n))
+          end do
+       end if
+
        ! Correct the base state using the lagged eta and psi
        if (use_eta .and. evolve_base_state) then
-          call correct_base(nlevs,p0_1,p0_2,s0_1,s0_2,gamma10,div_coeff_nph,eta,psi,dx(:,dm),dt)
+          call correct_base(nlevs,p0_1,p0_2,s0_1,s0_2,gamma10(:,:,1),div_coeff_nph, &
+                            eta,psi,dx(:,dm),dt)
+
+          if (enthalpy_pred_type .ne. 1) then
+             do n=1,nlevs
+                call multifab_build(gamma1(n), mla%la(n), 1, 0)
+             end do
+             
+             call make_gamma(nlevs,gamma1,s2,p0_2)
+             call average(mla,gamma1,gamma10,dx,1,1)
+             
+             do n=1,nlevs
+                call destroy(gamma1(n))
+             end do
+          end if
        end if
 
        ! Now compute the new eta and psi
@@ -749,16 +830,29 @@ contains
           call average(mla,rho_omegadot2,rho_omegadotbar2,dx,1,nspec)
           call average(mla,rho_Hext,rho_Hextbar,dx,1,1)
           call react_base(nlevs,p0_2,s0_2,rho_omegadotbar2,rho_Hextbar(:,:,1),halfdt, &
-                          p0_new,s0_new,gamma10)
+                          p0_new,s0_new,gamma10(:,:,1))
        else
           p0_new = p0_2
           s0_new = s0_2
        end if
 
+       if (enthalpy_pred_type .ne. 1 .and. evolve_base_state) then
+          do n=1,nlevs
+             call multifab_build(gamma1(n), mla%la(n), 1, 0)
+          end do
+          
+          call make_gamma(nlevs,gamma1,snew,p0_new)
+          call average(mla,gamma1,gamma10,dx,1,1)
+          
+          do n=1,nlevs
+             call destroy(gamma1(n))
+          end do
+       end if
+       
        do n=1,nlevs
           call make_grav_cell(n,grav_cell_new(n,:),s0_new(n,:,rho_comp))
           call make_div_coeff(n,div_coeff_new(n,:),s0_new(n,:,rho_comp),p0_new(n,:), &
-                              gamma10(n,:),grav_cell_new(n,:))
+                              gamma10(n,:,1),grav_cell_new(n,:))
        end do
        
        ! end if corresponding to .not. do_half_alg
@@ -790,7 +884,7 @@ contains
     end do
 
     call make_S(nlevs,Source_new,delta_gamma1_term,snew,uold,rho_omegadot2,rho_Hext, &
-                thermal,s0_new(:,:,temp_comp),p0_new,gamma10,dx)
+                thermal,s0_new(:,:,temp_comp),p0_new,gamma10(:,:,1),dx)
 
     do n=1,nlevs
        call destroy(rho_Hext(n))

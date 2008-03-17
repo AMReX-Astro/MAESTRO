@@ -21,7 +21,7 @@ contains
     use bl_prof_module
 
     integer        , intent(in   ) :: nlevs
-    type(multifab) , intent(  out) :: gamma(:)
+    type(multifab) , intent(inout) :: gamma(:)
     type(multifab) , intent(in   ) :: s(:)
     real(kind=dp_t), intent(in   ) :: p0(:,0:)
     
