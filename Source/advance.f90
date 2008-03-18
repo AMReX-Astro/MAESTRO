@@ -406,36 +406,10 @@ contains
                         s0_1,s0_2,p0_1,p0_2,psi,s0_predicted_edge, &
                         dx,dt,the_bc_tower%bc_tower_array)
 
-    if (enthalpy_pred_type .ne. 1 .and. evolve_base_state) then
-       do n=1,nlevs
-          call multifab_build(gamma1(n), mla%la(n), 1, 0)
-       end do
-       
-       call make_gamma(nlevs,gamma1,s2,p0_2)
-       call average(mla,gamma1,gamma10,dx,1,1)
-       
-       do n=1,nlevs
-          call destroy(gamma1(n))
-       end do
-    end if
-
     ! Correct the base state using the lagged eta and psi
     if (use_eta .and. evolve_base_state) then
        call correct_base(nlevs,p0_1,p0_2,s0_1,s0_2,gamma10(:,:,1),div_coeff_nph,eta,psi, &
                          dx(:,dm),dt)
-
-       if (enthalpy_pred_type .ne. 1) then
-          do n=1,nlevs
-             call multifab_build(gamma1(n), mla%la(n), 1, 0)
-          end do
-          
-          call make_gamma(nlevs,gamma1,s2,p0_2)
-          call average(mla,gamma1,gamma10,dx,1,1)
-          
-          do n=1,nlevs
-             call destroy(gamma1(n))
-          end do
-       end if
     end if
 
     ! Now compute the new eta and psi
@@ -551,6 +525,7 @@ contains
     end do
     
     if(.not. do_half_alg) then
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 6 -- define a new average expansion rate at n+1/2
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -615,6 +590,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 7 -- redo the construction of the advective velocity using the current w0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
        if (parallel_IOProcessor() .and. verbose .ge. 1) then
           write(6,*) '<<< STEP  7 : create MAC velocities >>> '
        end if
@@ -742,36 +718,10 @@ contains
                            s0_1,s0_2,p0_1,p0_2,psi,s0_predicted_edge, &
                            dx,dt,the_bc_tower%bc_tower_array)
 
-       if (enthalpy_pred_type .ne. 1 .and. evolve_base_state) then
-          do n=1,nlevs
-             call multifab_build(gamma1(n), mla%la(n), 1, 0)
-          end do
-          
-          call make_gamma(nlevs,gamma1,s2,p0_2)
-          call average(mla,gamma1,gamma10,dx,1,1)
-          
-          do n=1,nlevs
-             call destroy(gamma1(n))
-          end do
-       end if
-
        ! Correct the base state using the lagged eta and psi
        if (use_eta .and. evolve_base_state) then
           call correct_base(nlevs,p0_1,p0_2,s0_1,s0_2,gamma10(:,:,1),div_coeff_nph, &
                             eta,psi,dx(:,dm),dt)
-
-          if (enthalpy_pred_type .ne. 1) then
-             do n=1,nlevs
-                call multifab_build(gamma1(n), mla%la(n), 1, 0)
-             end do
-             
-             call make_gamma(nlevs,gamma1,s2,p0_2)
-             call average(mla,gamma1,gamma10,dx,1,1)
-             
-             do n=1,nlevs
-                call destroy(gamma1(n))
-             end do
-          end if
        end if
 
        ! Now compute the new eta and psi
