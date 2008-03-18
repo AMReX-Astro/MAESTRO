@@ -48,7 +48,7 @@ subroutine varden()
   real(dp_t), allocatable :: p0(:,:)
   real(dp_t), allocatable :: w0(:,:)
   real(dp_t), allocatable :: w0_old(:,:)
-  real(dp_t), allocatable :: eta(:,:,:)
+  real(dp_t), allocatable :: psi(:,:)
   real(dp_t), allocatable :: f(:,:)
   real(dp_t), allocatable :: Sbar_in(:,:,:)
   real(dp_t), allocatable :: s0_predicted_edge(:,:,:)
@@ -124,14 +124,14 @@ subroutine varden()
   allocate(               p0(nlevs,0:nr_fine-1  ))
   allocate(           w0_old(nlevs,0:nr_fine))
   allocate(               w0(nlevs,0:nr_fine))
-  allocate(              eta(nlevs,0:nr_fine,   nscal))
+  allocate(              psi(nlevs,0:nr_fine))
   allocate(                f(nlevs,0:nr_fine))
   allocate(          Sbar_in(nlevs,0:nr_fine-1,1))
   allocate(s0_predicted_edge(nlevs,0:nr_fine  ,nscal))
 
 
   w0(:,:) = ZERO
-  eta(:,:,:) = ZERO
+  psi(:,:) = ZERO
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! read in the base state
@@ -210,7 +210,7 @@ subroutine varden()
      w0(:,:) = ZERO
 
      call make_w0(nlevs,w0,w0_old,f,Sbar_in(:,:,1),p0,s0(:,:,rho_comp), &
-                  gam1,eta,dt,dtold)
+                  gam1,psi,dt,dtold)
   
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
