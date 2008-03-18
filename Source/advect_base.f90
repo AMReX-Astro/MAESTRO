@@ -37,7 +37,7 @@ contains
     do n=1,nlevs
        if (spherical .eq. 0) then
           call advect_base_state_planar(which_step,n,vel(n,0:),p0_old(n,0:),p0_new(n,0:), &
-                                        s0_old(n,0:,:),s0_new(n,0:,:),gamma10(n,0:), &
+                                        s0_old(n,0:,:),s0_new(n,0:,:), &
                                         s0_predicted_edge(n,0:,:),dz(n),dt)
        else
           call advect_base_state_spherical(which_step,n,vel(n,:),Sbar_in(n,:,1), &
@@ -54,7 +54,7 @@ contains
 
 
   subroutine advect_base_state_planar(which_step,n,vel,p0_old,p0_new, &
-                                      s0_old,s0_new,gamma10,s0_predicted_edge,dz,dt)
+                                      s0_old,s0_new,s0_predicted_edge,dz,dt)
 
     use bl_constants_module
     use make_edge_state_module
@@ -68,7 +68,6 @@ contains
     real(kind=dp_t), intent(in   ) :: vel(0:)
     real(kind=dp_t), intent(in   ) :: p0_old(0:), s0_old(0:,:)
     real(kind=dp_t), intent(  out) :: p0_new(0:), s0_new(0:,:)
-    real(kind=dp_t), intent(inout) :: gamma10(0:)
     real(kind=dp_t), intent(  out) :: s0_predicted_edge(0:,:)
     real(kind=dp_t), intent(in   ) :: dz,dt
     
@@ -203,7 +202,7 @@ contains
     end do
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Make t_0 and gamma10 from p_0 and rho_0
+! Make t_0 from p_0 and rho_0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     do r = 0,nr(n)-1
@@ -227,10 +226,6 @@ contains
        
        s0_new(r,temp_comp) = temp_eos(1)
 
-       if (enthalpy_pred_type .eq. 1) then
-          gamma10(r) = gam1_eos(1)
-       end if
-       
     end do
     
     deallocate(force,edge,X0,h0)
@@ -445,7 +440,7 @@ contains
     
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! MAKE TEMP0 AND GAMMA10 FROM P0 AND RHO0
+! MAKE TEMP0 FROM P0 AND RHO0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     do r = 0,nr(n)-1
        
@@ -467,7 +462,6 @@ contains
                 do_diag)
        
        s0_new(r,temp_comp) = temp_eos(1)
-       gamma10(r) = gam1_eos(1)
        
     end do
     
