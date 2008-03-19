@@ -103,7 +103,7 @@ contains
 
     do r = 0, nr(n)-1
        p0_new(r) = p0_old(r) &
-            - dt / dz * HALF * (vel(r) + vel(r+1)) * (edge(r+1) - edge(r)) 
+            - dt / dz * HALF * (vel(r) + vel(r+1)) * (edge(r+1) - edge(r))  &
             + dt * psi(j)
     end do
     
