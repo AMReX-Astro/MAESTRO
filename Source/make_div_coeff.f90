@@ -1,3 +1,6 @@
+! compute beta_0, the coefficient in our constraint equation,
+! div{beta_0 U} = beta_0 S
+
 module make_div_coeff_module
 
   use bl_types
