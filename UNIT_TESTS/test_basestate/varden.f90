@@ -209,7 +209,7 @@ subroutine varden()
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      w0(:,:) = ZERO
 
-     call make_w0(nlevs,w0,w0_old,f,Sbar_in(:,:,1),s0(:,:,rho_comp),p0_old,p0_old, &
+     call make_w0(nlevs,w0,w0_old,f,Sbar_in(:,:,1),s0(:,:,rho_comp),p0,p0, &
                   gam1,gam1,psi,dt,dtold)
   
 
