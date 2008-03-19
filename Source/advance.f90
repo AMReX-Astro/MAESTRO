@@ -124,6 +124,7 @@ contains
     real(dp_t), allocatable :: p0_1(:,:)
     real(dp_t), allocatable :: p0_2(:,:)
     real(dp_t), allocatable :: s0_predicted_edge(:,:,:)
+    real(dp_t), allocatable :: gamma1bar_old(:,:,:)
 
     integer    :: r,n,dm,comp,nlevs,ng_s,proj_type
     real(dp_t) :: halfdt,eps_in
@@ -152,6 +153,7 @@ contains
     allocate(             p0_1(nlevs,0:nr(nlevs)-1))
     allocate(             p0_2(nlevs,0:nr(nlevs)-1))
     allocate(s0_predicted_edge(nlevs,0:nr(nlevs)  ,nscal))
+    allocate(gamma1bar_old    (nlevs,0:nr(nlevs)-1,1))
 
     ! Set these to be safe
     s0_1(:,:,:) = ZERO
@@ -160,6 +162,8 @@ contains
     p0_2(:,:)   = ZERO
     s0_predicted_edge(:,:,:) = ZERO
     w0_force(:,:) = ZERO
+
+    gamma1bar_old(:,:,:) = gamma1bar(:,:,:)
 
     ! Set Sbar to zero so if evolve_base_state = F then we don't need to reset it.
     Sbar(:,:,:) = ZERO
@@ -208,8 +212,8 @@ contains
 
        call average(mla,Source_nph,Sbar,dx,1,1)
 
-       call make_w0(nlevs,w0,w0_old,w0_force,Sbar(:,:,1),p0_old, &
-                    s0_old(:,:,rho_comp),gamma1bar(:,:,1),psi,dt,dtold)
+       call make_w0(nlevs,w0,w0_old,w0_force,Sbar(:,:,1),s0_old(:,:,rho_comp), &
+                    p0_old,p0_old,gamma1bar(:,:,1),gamma1bar(:,:,1),psi,dt,dtold)
 
        if (dm .eq. 3) then
           call make_w0_cart(nlevs,w0,w0_cart_vec,normal,dx,the_bc_tower%bc_tower_array,mla)
@@ -575,8 +579,8 @@ contains
        
           call average(mla,Source_nph,Sbar,dx,1,1)
 
-          call make_w0(nlevs,w0,w0_old,w0_force,Sbar(:,:,1),p0_new, &
-                       s0_new(:,:,rho_comp),gamma1bar(:,:,1),psi,dt,dtold)
+          call make_w0(nlevs,w0,w0_old,w0_force,Sbar(:,:,1),s0_new(:,:,rho_comp), &
+                       p0_old,p0_new,gamma1bar_old(:,:,1),gamma1bar(:,:,1),psi,dt,dtold)
        
           if (dm .eq. 3) then
              call make_w0_cart(nlevs,w0      ,w0_cart_vec      ,normal,dx, &
