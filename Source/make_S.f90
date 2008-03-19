@@ -17,7 +17,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   subroutine make_S(nlevs,Source,delta_gamma1_term,state,u,rho_omegadot,rho_Hext, &
-                    thermal,t0,p0,gamma10,dx)
+                    thermal,t0,p0,gamma1bar,dx)
 
     use bl_prof_module
 
@@ -31,7 +31,7 @@ contains
     type(multifab) , intent(in   ) :: thermal(:)
     real(kind=dp_t), intent(in   ) :: t0(:,0:)
     real(kind=dp_t), intent(in   ) :: p0(:,0:)
-    real(kind=dp_t), intent(in   ) :: gamma10(:,0:)
+    real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     
     real(kind=dp_t), pointer:: srcp(:,:,:,:),gp(:,:,:,:),sp(:,:,:,:),up(:,:,:,:)
@@ -63,11 +63,11 @@ contains
           case (2)
              call make_S_2d(lo,hi,srcp(:,:,1,1),gp(:,:,1,1),sp(:,:,1,:),up(:,:,1,:), &
                             omegap(:,:,1,:), hp(:,:,1,1), &
-                            tp(:,:,1,1), ng, p0(n,:), gamma10(n,:), dx(n,:))
+                            tp(:,:,1,1), ng, p0(n,:), gamma1bar(n,:), dx(n,:))
           case (3)
              call make_S_3d(n,lo,hi,srcp(:,:,:,1),gp(:,:,:,1),sp(:,:,:,:),up(:,:,:,:), &
                             omegap(:,:,:,:), hp(:,:,:,1), &
-                            tp(:,:,:,1), ng, t0(n,:), p0(n,:), gamma10(n,:), dx(n,:))
+                            tp(:,:,:,1), ng, t0(n,:), p0(n,:), gamma1bar(n,:), dx(n,:))
           end select
        end do
     enddo
@@ -77,7 +77,7 @@ contains
    end subroutine make_S
 
    subroutine make_S_2d (lo,hi,Source,delta_gamma1_term,s,u, &
-                         rho_omegadot,rho_Hext,thermal,ng,p0,gamma10,dx)
+                         rho_omegadot,rho_Hext,thermal,ng,p0,gamma1bar,dx)
 
       use bl_constants_module
       use eos_module
@@ -93,7 +93,7 @@ contains
       real (kind=dp_t), intent(in   ) :: rho_Hext(lo(1):,lo(2):)
       real (kind=dp_t), intent(in   ) :: thermal(lo(1)-1:,lo(2)-1:)
       real (kind=dp_t), intent(in   ) ::   p0(0:)
-      real (kind=dp_t), intent(in   ) :: gamma10(0:)
+      real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
       real (kind=dp_t), intent(in   ) :: dx(:)
 
 !     Local variables
@@ -152,7 +152,8 @@ contains
               endif
 
               delta_gamma1_term(i,j) = &
-                   (gam1_eos(1) - gamma10(j))*u(i,j,2)*gradp0/(gamma10(j)*gamma10(j)*p0(j))
+                   (gam1_eos(1) - gamma1bar(j))*u(i,j,2)* &
+                   gradp0/(gamma1bar(j)*gamma1bar(j)*p0(j))
            else
               delta_gamma1_term(i,j) = 0.0_dp_t
            endif
@@ -163,7 +164,7 @@ contains
    end subroutine make_S_2d
 
    subroutine make_S_3d(n,lo,hi,Source,delta_gamma1_term,s,u, &
-                        rho_omegadot,rho_Hext,thermal,ng,t0,p0,gamma10,dx)
+                        rho_omegadot,rho_Hext,thermal,ng,t0,p0,gamma1bar,dx)
 
       use bl_constants_module
       use eos_module
@@ -182,7 +183,7 @@ contains
       real (kind=dp_t), intent(in   ) :: thermal(lo(1)-1:,lo(2)-1:,lo(3)-1:)
       real (kind=dp_t), intent(in   ) ::   t0(0:)
       real (kind=dp_t), intent(in   ) ::   p0(0:)
-      real (kind=dp_t), intent(in   ) :: gamma10(0:)
+      real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
       real (kind=dp_t), intent(in   ) :: dx(:)
 
 !     Local variables
@@ -256,7 +257,7 @@ contains
                     endif
 
                     delta_gamma1_term(i,j,k) = (gam1_eos(1) - &
-                         gamma10(k))*u(i,j,k,3)*gradp0/(gamma10(k)*gamma10(k)*p0(k))
+                         gamma1bar(k))*u(i,j,k,3)*gradp0/(gamma1bar(k)*gamma1bar(k)*p0(k))
                  endif
               else
                  delta_gamma1_term(i,j,k) = 0.0_dp_t

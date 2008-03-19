@@ -424,15 +424,15 @@ contains
     !     Local variables
     integer          :: i, j
     real (kind=dp_t) :: vel
-    !   real (kind=dp_t), allocatable :: gamma10(:), entr0(:)
+    !   real (kind=dp_t), allocatable :: gamma1bar(:), entr0(:)
 
-    !   allocate(gamma10(lo(2):hi(2)))
+    !   allocate(gamma1bar(lo(2):hi(2)))
     !   allocate(entr0(lo(2):hi(2)))
 
     do_diag = .false.
 
     ! We now assume that the temperature coming in in the base state is correct, but
-    !   we do this eos call to get gamma10 and entr0.
+    !   we do this eos call to get gamma1bar and entr0.
     !   do j = lo(2), hi(2)
     !       den_eos(1) = s0(j,rho_comp)
     !      temp_eos(1) = s0(j,temp_comp)
@@ -451,7 +451,7 @@ contains
     !               gam1_eos, cs_eos, s_eos, &
     !               dsdt_eos, dsdr_eos, &
     !               do_diag)
-    !    gamma10(j) = gam1_eos(1)
+    !    gamma1bar(j) = gam1_eos(1)
     !    entr0(j) = s_eos(1)
 
     !   end do
@@ -485,7 +485,7 @@ contains
           vel = sqrt(u(i,j,1)*u(i,j,1) + u(i,j,2)*u(i,j,2))
           machno(i,j) = vel / cs_eos(1)
 
-          !         deltagamma(i,j) = gam1_eos(1) - gamma10(j)
+          !         deltagamma(i,j) = gam1_eos(1) - gamma1bar(j)
           !         spert(i,j) = s_eos(1) - entr0(j)
 
        enddo
@@ -494,7 +494,7 @@ contains
     deltagamma = 0.d0
     spert = 0.d0
 
-    !   deallocate(gamma10)
+    !   deallocate(gamma1bar)
     !   deallocate(entr0)
 
   end subroutine maketfromrho_2d
@@ -520,15 +520,15 @@ contains
     !     Local variables
     integer          :: i, j, k
     real (kind=dp_t) :: vel
-    !    real (kind=dp_t), allocatable :: gamma10(:), entr0(:)
+    !    real (kind=dp_t), allocatable :: gamma1bar(:), entr0(:)
 
-    !    allocate(gamma10(lo(3):hi(3)))
+    !    allocate(gamma1bar(lo(3):hi(3)))
     !    allocate(entr0(lo(3):hi(3)))
 
     do_diag = .false.
 
     ! We now assume that the temperature coming in in the base state is correct, but
-    !   we do this eos call to get gamma10 and entr0.
+    !   we do this eos call to get gamma1bar and entr0.
     !    do k = lo(3), hi(3)
     !        den_eos(1) = s0(k,rho_comp)
     !       temp_eos(1) = s0(k,temp_comp)
@@ -546,7 +546,7 @@ contains
     !                gam1_eos, cs_eos, s_eos, &
     !                dsdt_eos, dsdr_eos, &
     !                do_diag)
-    !     gamma10(k) = gam1_eos(1)
+    !     gamma1bar(k) = gam1_eos(1)
     !     entr0(k) = s_eos(1)
     !    end do
 
@@ -582,7 +582,7 @@ contains
                   + u(i,j,k,3)*u(i,j,k,3))
              machno(i,j,k) = vel / cs_eos(1)
 
-             !             deltagamma(i,j,k) = gam1_eos(1) - gamma10(k)
+             !             deltagamma(i,j,k) = gam1_eos(1) - gamma1bar(k)
              !             spert(i,j,k) = s_eos(1) - entr0(k)
           enddo
        enddo
@@ -591,7 +591,7 @@ contains
     deltagamma = 0.d0
     spert = 0.d0
 
-    !    deallocate(gamma10)
+    !    deallocate(gamma1bar)
 
   end subroutine maketfromrho_3d_cart
 
@@ -620,20 +620,20 @@ contains
     !     Local variables
     integer          :: i, j, k
     real (kind=dp_t) :: vel
-    real (kind=dp_t), allocatable :: gamma10(:), entr0(:)
+    real (kind=dp_t), allocatable :: gamma1bar(:), entr0(:)
     real (kind=dp_t), allocatable ::  rho0_cart(:,:,:)
     real (kind=dp_t), allocatable ::    t0_cart(:,:,:)
     real (kind=dp_t), allocatable ::    p0_cart(:,:,:)
     real (kind=dp_t), allocatable ::  gam0_cart(:,:,:)
     real (kind=dp_t), allocatable :: entr0_cart(:,:,:)
 
-    allocate(gamma10(0:nr(n)-1))
+    allocate(gamma1bar(0:nr(n)-1))
     allocate(entr0(0:nr(n)-1))
 
     do_diag = .false.
 
     ! We now assume that the temperature coming in in the base state is correct, but
-    !   we do this eos call to get gamma10 and entr0.
+    !   we do this eos call to get gamma1bar and entr0.
     do k = 0, nr(n)-1
        den_eos(1) = s0(k,rho_comp)
        temp_eos(1) = s0(k,temp_comp)
@@ -651,7 +651,7 @@ contains
                 gam1_eos, cs_eos, s_eos, &
                 dsdt_eos, dsdr_eos, &
                 do_diag)
-       gamma10(k) = gam1_eos(1)
+       gamma1bar(k) = gam1_eos(1)
        entr0(k) = s_eos(1)
     end do
 
@@ -665,7 +665,7 @@ contains
     call fill_3d_data(n,p0_cart,p0,lo,hi,dx,0)
 
     allocate(gam0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-    call fill_3d_data(n,gam0_cart,gamma10,lo,hi,dx,0)
+    call fill_3d_data(n,gam0_cart,gamma1bar,lo,hi,dx,0)
 
     allocate(entr0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
     call fill_3d_data(n,entr0_cart,entr0,lo,hi,dx,0)
@@ -709,7 +709,7 @@ contains
        enddo
     enddo
 
-    deallocate(gamma10,entr0)
+    deallocate(gamma1bar,entr0)
     deallocate(rho0_cart,t0_cart,p0_cart,gam0_cart,entr0_cart)
 
   end subroutine maketfromrho_3d_sphr

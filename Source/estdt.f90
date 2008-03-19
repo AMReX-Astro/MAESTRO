@@ -24,7 +24,7 @@ module estdt_module
 
 contains
 
-  subroutine estdt(n, u, s, force, divU, dSdt, normal, w0, p0, gamma10, dx, cflfac, dt)
+  subroutine estdt(n, u, s, force, divU, dSdt, normal, w0, p0, gamma1bar, dx, cflfac, dt)
 
     use bl_prof_module
     use geometry, only: spherical
@@ -36,7 +36,7 @@ contains
     type(multifab) , intent(in ) :: divU
     type(multifab) , intent(in ) :: dSdt
     type(multifab) , intent(in ) :: normal
-    real(kind=dp_t), intent(in ) :: w0(0:), p0(0:), gamma10(0:)
+    real(kind=dp_t), intent(in ) :: w0(0:), p0(0:), gamma1bar(0:)
     real(kind=dp_t), intent(in ) :: dx(:)
     real(kind=dp_t), intent(in ) :: cflfac
     real(kind=dp_t), intent(out) :: dt
@@ -82,19 +82,19 @@ contains
        select case (dm)
        case (2)
           call estdt_2d(n, uop(:,:,1,:), sop(:,:,1,:), fp(:,:,1,:), &
-                        dUp(:,:,1,1), dSdtp(:,:,1,1), w0, p0, gamma10, lo, hi, ng, &
+                        dUp(:,:,1,1), dSdtp(:,:,1,1), w0, p0, gamma1bar, lo, hi, ng, &
                         dx, rho_min, dt_adv_grid, dt_divu_grid, cflfac)
        case (3)
           if (spherical .eq. 1) then
              np => dataptr(normal, i)
              call estdt_3d_sphr(n, uop(:,:,:,:), sop(:,:,:,:), fp(:,:,:,:), &
                                 dUp(:,:,:,1), dSdtp(:,:,:,1), &
-                                np(:,:,:,:), w0, p0, gamma10, lo, hi, ng, dx, &
+                                np(:,:,:,:), w0, p0, gamma1bar, lo, hi, ng, dx, &
                                 rho_min, dt_adv_grid, dt_divu_grid, cflfac)
           else
              call estdt_3d_cart(n, uop(:,:,:,:), sop(:,:,:,:), fp(:,:,:,:), &
                                 dUp(:,:,:,1), dSdtp(:,:,:,1), &
-                                w0, p0, gamma10, lo, hi, ng, dx, rho_min, &
+                                w0, p0, gamma1bar, lo, hi, ng, dx, rho_min, &
                                 dt_adv_grid, dt_divu_grid, cflfac)
           end if
        end select
@@ -120,7 +120,7 @@ contains
   end subroutine estdt
   
   
-  subroutine estdt_2d(n, u, s, force, divU, dSdt, w0, p0, gamma10, lo, hi, &
+  subroutine estdt_2d(n, u, s, force, divU, dSdt, w0, p0, gamma1bar, lo, hi, &
                       ng, dx, rho_min, dt_adv, dt_divu, cfl)
 
     use geometry,  only: nr
@@ -132,7 +132,7 @@ contains
     real (kind = dp_t), intent(in   ) :: force(lo(1)-1:,lo(2)-1:,:)  
     real (kind = dp_t), intent(in   ) :: divU(lo(1):,lo(2):)
     real (kind = dp_t), intent(in   ) :: dSdt(lo(1):,lo(2):)
-    real (kind = dp_t), intent(in   ) :: w0(0:), p0(0:), gamma10(0:)
+    real (kind = dp_t), intent(in   ) :: w0(0:), p0(0:), gamma1bar(0:)
     real (kind = dp_t), intent(in   ) :: dx(:)
     real (kind = dp_t), intent(in   ) :: rho_min,cfl
     real (kind = dp_t), intent(inout) :: dt_adv,dt_divu
@@ -200,7 +200,7 @@ contains
        
        do i = lo(1), hi(1)
           
-          denom = divU(i,j) - u(i,j,2)*gradp0/(gamma10(j)*p0(j))
+          denom = divU(i,j) - u(i,j,2)*gradp0/(gamma1bar(j)*p0(j))
           
           if (denom > ZERO) then
              
@@ -234,7 +234,7 @@ contains
     
   end subroutine estdt_2d
   
-  subroutine estdt_3d_cart(n, u, s, force, divU, dSdt, w0, p0, gamma10, lo, hi, &
+  subroutine estdt_3d_cart(n, u, s, force, divU, dSdt, w0, p0, gamma1bar, lo, hi, &
                            ng, dx, rho_min, dt_adv, dt_divu, cfl)
 
     use geometry,  only: nr
@@ -246,7 +246,7 @@ contains
     real (kind = dp_t), intent(in   ) :: force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
     real (kind = dp_t), intent(in   ) :: divU(lo(1):,lo(2):,lo(3):)
     real (kind = dp_t), intent(in   ) :: dSdt(lo(1):,lo(2):,lo(3):)
-    real (kind = dp_t), intent(in   ) :: w0(0:), p0(0:), gamma10(0:)
+    real (kind = dp_t), intent(in   ) :: w0(0:), p0(0:), gamma1bar(0:)
     real (kind = dp_t), intent(in   ) :: dx(:)
     real (kind = dp_t), intent(in   ) :: rho_min,cfl
     real (kind = dp_t), intent(inout) :: dt_adv, dt_divu
@@ -328,7 +328,7 @@ contains
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
              
-             denom = divU(i,j,k) - u(i,j,k,3)*gradp0/(gamma10(k)*p0(k))
+             denom = divU(i,j,k) - u(i,j,k,3)*gradp0/(gamma1bar(k)*p0(k))
              
              if (denom > ZERO) then
                 dt_divu = min(dt_divu, &
@@ -364,7 +364,7 @@ contains
     
   end subroutine estdt_3d_cart
   
-  subroutine estdt_3d_sphr(n, u, s, force, divU, dSdt, normal, w0, p0, gamma10, &
+  subroutine estdt_3d_sphr(n, u, s, force, divU, dSdt, normal, w0, p0, gamma1bar, &
                            lo, hi, ng, dx, rho_min, dt_adv, dt_divu, cfl)
 
     use geometry,  only: dr, nr
@@ -378,7 +378,7 @@ contains
     real (kind = dp_t), intent(in   ) :: divU(lo(1):,lo(2):,lo(3):)
     real (kind = dp_t), intent(in   ) :: dSdt(lo(1):,lo(2):,lo(3):)
     real (kind = dp_t), intent(in   ) :: normal(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)
-    real (kind = dp_t), intent(in   ) :: w0(0:), p0(0:), gamma10(0:)
+    real (kind = dp_t), intent(in   ) :: w0(0:), p0(0:), gamma1bar(0:)
     real (kind = dp_t), intent(in   ) :: dx(:)
     real (kind = dp_t), intent(in   ) :: rho_min, cfl
     real (kind = dp_t), intent(inout) :: dt_adv, dt_divu
@@ -386,7 +386,7 @@ contains
     real (kind = dp_t), allocatable ::  w0_cart(:,:,:,:)
     real (kind = dp_t), allocatable :: gp0_cart(:,:,:,:)
     real (kind = dp_t), allocatable :: gp0(:)
-    real (kind = dp_t)  :: spdx, spdy, spdz, spdr, gp_dot_u, gamma10_p_avg
+    real (kind = dp_t)  :: spdx, spdy, spdz, spdr, gp_dot_u, gamma1bar_p_avg
     real (kind = dp_t)  :: fx, fy, fz, eps, denom, a, b, c
     integer             :: i,j,k,r
     
@@ -455,8 +455,8 @@ contains
     ! divU constraint
     allocate(gp0(0:nr(n)))
     do r = 1,nr(n)-1
-       gamma10_p_avg = HALF * (gamma10(r)*p0(r) + gamma10(r-1)*p0(r-1))
-       gp0(r) = ( (p0(r) - p0(r-1))/dr(n) ) / gamma10_p_avg
+       gamma1bar_p_avg = HALF * (gamma1bar(r)*p0(r) + gamma1bar(r-1)*p0(r-1))
+       gp0(r) = ( (p0(r) - p0(r-1))/dr(n) ) / gamma1bar_p_avg
     end do
     gp0(nr(n)) = gp0(nr(n)-1)
     gp0(    0) = gp0(      1)

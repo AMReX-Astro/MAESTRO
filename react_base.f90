@@ -13,7 +13,7 @@ module react_base_module
 contains
   
   subroutine react_base(nlevs,p0_in,s0_in,rho_omegadotbar,rho_Hextbar,dt_in,p0_out, &
-                        s0_out,gamma10_out)
+                        s0_out,gamma1bar_out)
 
     use geometry, only: nr
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
@@ -27,7 +27,7 @@ contains
     real(kind=dp_t), intent(in   ) :: rho_Hextbar(:,0:)
     real(kind=dp_t), intent(in   ) :: dt_in
     real(kind=dp_t), intent(  out) :: p0_out(:,0:), s0_out(:,0:,:)
-    real(kind=dp_t), intent(inout) :: gamma10_out(:,0:)
+    real(kind=dp_t), intent(inout) :: gamma1bar_out(:,0:)
     
     integer :: n,r,comp
 
@@ -85,7 +85,7 @@ contains
                       dsdt_eos, dsdr_eos, &
                       do_diag)
 
-             gamma10_out(n,r) = gam1_eos(1)
+             gamma1bar_out(n,r) = gam1_eos(1)
 
           end if
           

@@ -11,7 +11,7 @@ module advect_base_module
 contains
 
   subroutine advect_base(which_step,nlevs,vel,Sbar_in,p0_old,p0_new, &
-                         s0_old,s0_new,gamma10,div_coeff,s0_predicted_edge,psi,dz,dt)
+                         s0_old,s0_new,gamma1bar,div_coeff,s0_predicted_edge,psi,dz,dt)
 
     use bl_prof_module
     use geometry, only: spherical
@@ -21,7 +21,7 @@ contains
     real(kind=dp_t), intent(in   ) :: Sbar_in(:,0:,:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:), s0_old(:,0:,:)
     real(kind=dp_t), intent(  out) :: p0_new(:,0:), s0_new(:,0:,:)
-    real(kind=dp_t), intent(inout) :: gamma10(:,0:)
+    real(kind=dp_t), intent(inout) :: gamma1bar(:,0:)
     real(kind=dp_t), intent(in   ) :: div_coeff(:,0:)
     real(kind=dp_t), intent(  out) :: s0_predicted_edge(:,0:,:)
     real(kind=dp_t), intent(in   ) :: psi(:,0:)
@@ -44,7 +44,7 @@ contains
           call advect_base_state_spherical(which_step,n,vel(n,:),Sbar_in(n,:,1), &
                                            p0_old(n,:),p0_new(n,:), &
                                            s0_old(n,:,:),s0_new(n,:,:), &
-                                           gamma10(n,:), &
+                                           gamma1bar(n,:), &
                                            s0_predicted_edge(n,0:,:),div_coeff(n,:),dt)
        end if
     enddo
@@ -239,7 +239,7 @@ contains
   subroutine advect_base_state_spherical(which_step,n,vel,Sbar_in, &
                                          p0_old,p0_new, &
                                          s0_old,s0_new, &
-                                         gamma10, &
+                                         gamma1bar, &
                                          s0_predicted_edge,div_coeff_old,dt)
 
     use bl_constants_module
@@ -255,7 +255,7 @@ contains
     real(kind=dp_t), intent(in   ) :: vel(0:),Sbar_in(0:)
     real(kind=dp_t), intent(in   ) :: p0_old(0:), s0_old(0:,:)
     real(kind=dp_t), intent(  out) :: p0_new(0:), s0_new(0:,:)
-    real(kind=dp_t), intent(inout) :: gamma10(0:)
+    real(kind=dp_t), intent(inout) :: gamma1bar(0:)
     real(kind=dp_t), intent(  out) :: s0_predicted_edge(0:,:)
     real(kind=dp_t), intent(in   ) :: div_coeff_old(0:)
     real(kind=dp_t), intent(in   ) :: dt
@@ -271,14 +271,14 @@ contains
     real (kind = dp_t), allocatable :: X0(:)
     real (kind = dp_t), allocatable :: div_coeff_new(:)
     real (kind = dp_t), allocatable :: beta(:),beta_new(:),beta_nh(:)
-    real (kind = dp_t), allocatable :: gamma10_old(:)
+    real (kind = dp_t), allocatable :: gamma1bar_old(:)
     real (kind = dp_t), allocatable :: grav_cell(:)
     
     dtdr = dt / dr(n)
     
     ! Cell-centered
     allocate(force(0:nr(n)-1))
-    allocate(gamma10_old(0:nr(n)-1))
+    allocate(gamma1bar_old(0:nr(n)-1))
     allocate(grav_cell(0:nr(n)-1))
     allocate(div_coeff_new(0:nr(n)-1))
     allocate(psi(0:nr(n)-1))
@@ -357,7 +357,7 @@ contains
        divbetaw = one/(base_cc_loc(n,r)**2)*(base_loedge_loc(n,r+1)**2*beta(r+1)*vel(r+1) - &
             base_loedge_loc(n,r)**2 * beta(r) * vel(r)) / dr(n)
        betahalf = div_coeff_old(r)
-       factor = half * dt * gamma10(r) * (Sbar_in(r) - divbetaw / betahalf)
+       factor = half * dt * gamma1bar(r) * (Sbar_in(r) - divbetaw / betahalf)
        p0_new(r) = p0_old(r) * (one + factor ) / (one - factor)
        
     end do
@@ -370,7 +370,7 @@ contains
        p_eos(1)    = p0_new(r)
        xn_eos(1,:) = s0_new(r,spec_comp:spec_comp+nspec-1)/s0_new(r,rho_comp)
        
-       gamma10_old(r) = gamma10(r)
+       gamma1bar_old(r) = gamma1bar(r)
        
        call eos(eos_input_rp, den_eos, temp_eos, & 
                 npts, nspec, & 
@@ -383,14 +383,14 @@ contains
                 dsdt_eos, dsdr_eos, &
                 do_diag) 
        
-       gamma10(r) = gam1_eos(1)
+       gamma1bar(r) = gam1_eos(1)
        s0_new(r,temp_comp) = temp_eos(1)
     end do
     
     call make_grav_cell(n,grav_cell,s0_new(:,rho_comp))
     
     ! Define beta^n+1 at cell edges using the new gravity above
-    call make_div_coeff(n,div_coeff_new,s0_new(:,rho_comp),p0_new,gamma10,grav_cell)
+    call make_div_coeff(n,div_coeff_new,s0_new(:,rho_comp),p0_new,gamma1bar,grav_cell)
     call cell_to_edge(n,div_coeff_new,beta_new)
     
     ! time-centered beta
@@ -403,7 +403,8 @@ contains
             base_loedge_loc(n,r  )**2 * beta_nh(r  ) * vel(r  ) ) / dr(n)
        betahalf = HALF*(div_coeff_old(r) + div_coeff_new(r))
        factor = half * dt * (Sbar_in(r) - divbetaw / betahalf)
-       p0_new(r) = p0_old(r) * (one + factor * gamma10_old(r)) / (one - factor * gamma10(r))
+       p0_new(r) = p0_old(r) * &
+            (one + factor * gamma1bar_old(r)) / (one - factor * gamma1bar(r))
        
     end do
     
@@ -419,11 +420,11 @@ contains
             2.0_dp_t*s0_old(r,rhoh_comp)*HALF*(vel(r) + vel(r+1))/base_cc_loc(n,r)
        
        ! add psi at time-level n to the force for the prediction
-       psi(r) = gamma10_old(r) * p0_old(r) * (Sbar_in(r) - div_w0)
+       psi(r) = gamma1bar_old(r) * p0_old(r) * (Sbar_in(r) - div_w0)
        force(r) = force(r) + psi(r)
        
        ! construct a new, time-centered psi for the final update
-       psi(r) = HALF*(gamma10(r)*p0_new(r) + gamma10_old(r)*p0_old(r))* &
+       psi(r) = HALF*(gamma1bar(r)*p0_new(r) + gamma1bar_old(r)*p0_old(r))* &
             (Sbar_in(r) - div_w0)
     end do
     
@@ -468,7 +469,7 @@ contains
        
     end do
     
-    deallocate(force,psi,edge,beta,beta_new,beta_nh,div_coeff_new,gamma10_old,grav_cell,X0)
+    deallocate(force,psi,edge,beta,beta_new,beta_nh,div_coeff_new,gamma1bar_old,grav_cell,X0)
     
   end subroutine advect_base_state_spherical
   

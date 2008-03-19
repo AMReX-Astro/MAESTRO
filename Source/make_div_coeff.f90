@@ -16,7 +16,7 @@ contains
 
 !  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-   subroutine make_div_coeff(n,div_coeff,rho0,p0,gamma10,grav_center)
+   subroutine make_div_coeff(n,div_coeff,rho0,p0,gamma1bar,grav_center)
 
      use bl_constants_module
      use geometry, only: dr
@@ -24,7 +24,7 @@ contains
 
       integer        , intent(in   ) :: n
       real(kind=dp_t), intent(  out) :: div_coeff(0:)
-      real(kind=dp_t), intent(in   ) :: rho0(0:), p0(0:), gamma10(0:)
+      real(kind=dp_t), intent(in   ) :: rho0(0:), p0(0:), gamma1bar(0:)
       real(kind=dp_t), intent(in   ) :: grav_center(0:)
 
       integer :: j,ny,j_anel
@@ -61,9 +61,9 @@ contains
             sflag  = sign(ONE,del)
             lambda = sflag*min(slim,abs(del))
 
-            del   = HALF* (gamma10(j+1) - gamma10(j-1))/dr(n)
-            dpls  = TWO * (gamma10(j+1) - gamma10(j  ))/dr(n)
-            dmin  = TWO * (gamma10(j  ) - gamma10(j-1))/dr(n)
+            del   = HALF* (gamma1bar(j+1) - gamma1bar(j-1))/dr(n)
+            dpls  = TWO * (gamma1bar(j+1) - gamma1bar(j  ))/dr(n)
+            dmin  = TWO * (gamma1bar(j  ) - gamma1bar(j-1))/dr(n)
             slim  = min(abs(dpls), abs(dmin))
             slim  = merge(slim, zero, dpls*dmin.gt.ZERO)
             sflag = sign(ONE,del)
@@ -81,26 +81,26 @@ contains
 
          if (j == 0 .or. j == ny-1) then
 
-            integral = abs(grav_center(j))*rho0(j)*dr(n)/(p0(j)*gamma10(j))
+            integral = abs(grav_center(j))*rho0(j)*dr(n)/(p0(j)*gamma1bar(j))
 
          else if (nu .eq. ZERO .or. mu .eq. ZERO .or. &
-                  (nu*gamma10(j) - mu*p0(j)) .eq. ZERO .or. &
-                  ((gamma10(j) + HALF*mu*dr(n))/ &
-                   (gamma10(j) - HALF*mu*dr(n))) .le. ZERO .or. &
+                  (nu*gamma1bar(j) - mu*p0(j)) .eq. ZERO .or. &
+                  ((gamma1bar(j) + HALF*mu*dr(n))/ &
+                   (gamma1bar(j) - HALF*mu*dr(n))) .le. ZERO .or. &
                   ((p0(j) + HALF*nu*dr(n))/ &
                    (p0(j) - HALF*nu*dr(n))) .le. ZERO) then
 
-            integral = abs(grav_center(j))*rho0(j)*dr(n)/(p0(j)*gamma10(j))
+            integral = abs(grav_center(j))*rho0(j)*dr(n)/(p0(j)*gamma1bar(j))
 
          else 
-            denom = nu*gamma10(j) - mu*p0(j)
+            denom = nu*gamma1bar(j) - mu*p0(j)
 
-            coeff1 = lambda*gamma10(j)/mu - rho0(j)
+            coeff1 = lambda*gamma1bar(j)/mu - rho0(j)
             coeff2 = lambda*p0(j)/nu - rho0(j)
  
             integral = (abs(grav_center(j))/denom)* &
-                 (coeff1*log( (gamma10(j) + HALF*mu*dr(n))/ &
-                              (gamma10(j) - HALF*mu*dr(n))) - &
+                 (coeff1*log( (gamma1bar(j) + HALF*mu*dr(n))/ &
+                              (gamma1bar(j) - HALF*mu*dr(n))) - &
                   coeff2*log( (p0(j) + HALF*nu*dr(n))/ &
                               (p0(j) - HALF*nu*dr(n))) )
 

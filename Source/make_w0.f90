@@ -16,7 +16,7 @@ module make_w0_module
 
 contains
 
-  subroutine make_w0(nlevs,vel,vel_old,f,Sbar_in,p0,rho0,gamma10,psi,dt,dtold)
+  subroutine make_w0(nlevs,vel,vel_old,f,Sbar_in,p0,rho0,gamma1bar,psi,dt,dtold)
 
     use parallel
     use bl_prof_module
@@ -29,7 +29,7 @@ contains
     real(kind=dp_t), intent(in   ) :: vel_old(:,0:)
     real(kind=dp_t), intent(in   ) :: psi(:,0:)
     real(kind=dp_t), intent(inout) :: f(:,0:)
-    real(kind=dp_t), intent(in   ) :: p0(:,0:),rho0(:,0:),gamma10(:,0:)
+    real(kind=dp_t), intent(in   ) :: p0(:,0:),rho0(:,0:),gamma1bar(:,0:)
     real(kind=dp_t), intent(in   ) :: Sbar_in(:,0:)
     real(kind=dp_t), intent(in   ) :: dt,dtold
 
@@ -45,9 +45,9 @@ contains
     do n=1,nlevs
        if (spherical .eq. 0) then
           call make_w0_planar(n,vel(n,0:),vel_old(n,0:),Sbar_in(n,0:),p0(n,0:),rho0(n,0:), &
-                              gamma10(n,0:),psi(n,0:),f(n,0:),dt,dtold)
+                              gamma1bar(n,0:),psi(n,0:),f(n,0:),dt,dtold)
        else
-          call make_w0_spherical(n,vel(n,:),Sbar_in(n,:),p0(n,:),rho0(n,:),gamma10(n,:))
+          call make_w0_spherical(n,vel(n,:),Sbar_in(n,:),p0(n,:),rho0(n,:),gamma1bar(n,:))
        endif
 
        max_vel = zero
@@ -63,7 +63,7 @@ contains
 
   end subroutine make_w0
 
-  subroutine make_w0_planar(n,vel,vel_old,Sbar_in,p0,rho0,gamma10,psi,f,dt,dtold)
+  subroutine make_w0_planar(n,vel,vel_old,Sbar_in,p0,rho0,gamma1bar,psi,f,dt,dtold)
 
     use geometry, only: nr, dr
     use variables, only: rho_comp
@@ -74,7 +74,7 @@ contains
     real(kind=dp_t), intent(  out) :: vel(0:)
     real(kind=dp_t), intent(in   ) :: vel_old(0:)
     real(kind=dp_t), intent(in   ) :: Sbar_in(0:)
-    real(kind=dp_t), intent(in   ) :: p0(0:),rho0(0:),gamma10(0:),psi(0:)
+    real(kind=dp_t), intent(in   ) :: p0(0:),rho0(0:),gamma1bar(0:),psi(0:)
     real(kind=dp_t), intent(inout) ::   f(0:)
     real(kind=dp_t), intent(in   ) :: dt,dtold
 
@@ -96,7 +96,7 @@ contains
     
     do r = 1,nr(n)
        vel(r) = vel(r-1) + Sbar_in(r-1) * dr(n) &
-          - ( psi(r-1) / (gamma10(r-1)*p0(r-1)) ) * dr(n)
+          - ( psi(r-1) / (gamma1bar(r-1)*p0(r-1)) ) * dr(n)
     end do
 
     ! Compute the 1/rho0 grad pi0 term.
@@ -114,7 +114,7 @@ contains
 
   end subroutine make_w0_planar
 
-  subroutine make_w0_spherical(n,vel,Sbar_in,p0,rho0,gamma10)
+  subroutine make_w0_spherical(n,vel,Sbar_in,p0,rho0,gamma1bar)
 
     use geometry, only: base_cc_loc, nr, base_loedge_loc, dr
     use make_grav_module
@@ -123,7 +123,7 @@ contains
     
     integer        , intent(in   ) :: n
     real(kind=dp_t), intent(  out) :: vel(0:)
-    real(kind=dp_t), intent(in   ) :: p0(0:),rho0(0:),gamma10(0:)
+    real(kind=dp_t), intent(in   ) :: p0(0:),rho0(0:),gamma1bar(0:)
     real(kind=dp_t), intent(in   ) :: Sbar_in(0:)
 
     ! Local variables
@@ -147,7 +147,7 @@ contains
     call make_grav_edge(n,grav_edge,rho0)
 
     do r = 1,nr(n)
-       c(r) = gamma10(r-1) * p0(r-1) * base_loedge_loc(n,r-1)**2 / base_cc_loc(n,r-1)**2
+       c(r) = gamma1bar(r-1) * p0(r-1) * base_loedge_loc(n,r-1)**2 / base_cc_loc(n,r-1)**2
        c(r) = c(r) / dr(n)**2
     end do
 
@@ -155,19 +155,19 @@ contains
 
     do r = 1,nr(n)-1
 
-       d(r) = -( gamma10(r-1) * p0(r-1) / base_cc_loc(n,r-1)**2 &
-                +gamma10(r  ) * p0(r  ) / base_cc_loc(n,r  )**2 ) &
+       d(r) = -( gamma1bar(r-1) * p0(r-1) / base_cc_loc(n,r-1)**2 &
+                +gamma1bar(r  ) * p0(r  ) / base_cc_loc(n,r  )**2 ) &
                 * (base_loedge_loc(n,r)**2/dr(n)**2) &
                 - four * rho0_edge(r) * grav_edge(r) / base_loedge_loc(n,r)
     end do
 
     do r = 1,nr(n)-1
-       rhs(r) = ( gamma10(r  )*p0(r  )*Sbar_in(r) - gamma10(r-1)*p0(r-1)*Sbar_in(r-1) ) 
+       rhs(r) = ( gamma1bar(r  )*p0(r  )*Sbar_in(r) - gamma1bar(r-1)*p0(r-1)*Sbar_in(r-1) ) 
        rhs(r) = rhs(r) / dr(n)
     end do
 
     do r = 0,nr(n)-1
-       e(r) = gamma10(r) * p0(r) * base_loedge_loc(n,r+1)**2 / base_cc_loc(n,r)**2
+       e(r) = gamma1bar(r) * p0(r) * base_loedge_loc(n,r+1)**2 / base_cc_loc(n,r)**2
        e(r) = e(r) / dr(n)**2
     end do
 
