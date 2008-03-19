@@ -209,8 +209,8 @@ subroutine varden()
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      w0(:,:) = ZERO
 
-     call make_w0(nlevs,w0,w0_old,f,Sbar_in(:,:,1),p0,s0(:,:,rho_comp), &
-                  gam1,psi,dt,dtold)
+     call make_w0(nlevs,w0,w0_old,f,Sbar_in(:,:,1),s0(:,:,rho_comp),p0_old,p0_old, &
+                  gam1,gam1,psi,dt,dtold)
   
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -239,7 +239,7 @@ subroutine varden()
      call advect_base(which_step,nlevs,w0,Sbar_in,p0_old,p0, &
                       s0_old,s0, &
                       gam1,div_coeff, &
-                      s0_predicted_edge, &
+                      s0_predicted_edge,psi, &
                       dx(:,1),dt)
 
 
