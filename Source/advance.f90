@@ -874,6 +874,11 @@ contains
                           grav_cell_old,grav_cell_nph,dx,dt, &
                           the_bc_tower%bc_tower_array,sponge)
 
+    if (init_mode) then
+       ! throw away w0 by setting w0 = w0_old
+       w0 = w0_old
+    end if
+
     do n=1,nlevs
        do comp=1,dm
           call destroy(umac(n,comp))
