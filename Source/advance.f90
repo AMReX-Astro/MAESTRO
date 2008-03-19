@@ -408,7 +408,7 @@ contains
 
     ! Correct the base state using the lagged eta and psi
     if (use_eta .and. evolve_base_state) then
-       call correct_base(nlevs,p0_1,p0_2,s0_1,s0_2,div_coeff_nph,eta,psi,dx(:,dm),dt)
+       call correct_base(nlevs,s0_1,s0_2,eta,dx(:,dm),dt)
     end if
 
     ! Now compute the new eta and psi
@@ -719,7 +719,7 @@ contains
 
        ! Correct the base state using the lagged eta and psi
        if (use_eta .and. evolve_base_state) then
-          call correct_base(nlevs,p0_1,p0_2,s0_1,s0_2,div_coeff_nph,eta,psi,dx(:,dm),dt)
+          call correct_base(nlevs,s0_1,s0_2,eta,dx(:,dm),dt)
        end if
 
        ! Now compute the new eta and psi
