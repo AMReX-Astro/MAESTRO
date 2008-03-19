@@ -94,7 +94,7 @@ contains
 !            xn_eos(1,:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
 !               
 !            ! dens, enthalpy, and xmass are inputs
-!            call eos(eos_input_rp, den_eos, temp_eos, &
+!            call eos(eos_input_rh, den_eos, temp_eos, &
 !                     npts, nspec, &
 !                     xn_eos, &
 !                     p_eos, h_eos, e_eos, & 
@@ -150,7 +150,7 @@ contains
 !               xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
 !               
 !               ! dens, enthalpy, and xmass are inputs
-!               call eos(eos_input_rp, den_eos, temp_eos, &
+!               call eos(eos_input_rh, den_eos, temp_eos, &
 !                        npts, nspec, &
 !                        xn_eos, &
 !                        p_eos, h_eos, e_eos, & 
