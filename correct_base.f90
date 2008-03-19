@@ -110,8 +110,7 @@ contains
 !               do_diag)
 !      
 !      s0_new(r,temp_comp) = temp_eos(1)
-
-    end do
+!   end do
     
   end subroutine correct_base_state_planar
   
