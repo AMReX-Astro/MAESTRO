@@ -263,7 +263,7 @@ contains
     ! Local variables
     integer :: r,comp
     real(kind=dp_t) :: dtdr,divbetaw,betahalf,factor
-    real(kind=dp_t) :: div_w0
+    real(kind=dp_t) :: div_w0, div_w0_cart, div_w0_sph
 
     real (kind = dp_t), allocatable :: force(:)
     real (kind = dp_t), allocatable :: psi(:)
@@ -414,18 +414,20 @@ contains
 
     do r = 0,nr(n)-1
        
-       div_w0 = (vel(r+1) - vel(r)) / dr(n)
-       
-       force(r) = -s0_old(r,rhoh_comp) * div_w0 - &
+       div_w0_cart = (vel(r+1) - vel(r)) / dr(n)
+       div_w0_sph = one/(base_cc_loc(n,r)**2)*(base_loedge_loc(n,r+1)**2 * vel(r+1) - &
+                                               base_loedge_loc(n,r  )**2 * vel(r  )) / dr(n)
+
+       force(r) = -s0_old(r,rhoh_comp) * div_w0_cart - &
             2.0_dp_t*s0_old(r,rhoh_comp)*HALF*(vel(r) + vel(r+1))/base_cc_loc(n,r)
        
        ! add psi at time-level n to the force for the prediction
-       psi(r) = gamma1bar_old(r) * p0_old(r) * (Sbar_in(r) - div_w0)
+       psi(r) = gamma1bar_old(r) * p0_old(r) * (Sbar_in(r) - div_w0_sph)
        force(r) = force(r) + psi(r)
        
        ! construct a new, time-centered psi for the final update
        psi(r) = HALF*(gamma1bar(r)*p0_new(r) + gamma1bar_old(r)*p0_old(r))* &
-            (Sbar_in(r) - div_w0)
+            (Sbar_in(r) - div_w0_sph)
     end do
     
     call make_edge_state_1d(n,s0_old(:,rhoh_comp),edge,vel,force,1,dr(n),dt)
