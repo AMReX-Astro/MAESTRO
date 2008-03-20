@@ -201,7 +201,7 @@ contains
     ! update (rho h)_0
     do r = 0,nr(n)-1
        s0_new(r,rhoh_comp) = s0_old(r,rhoh_comp) &
-            - dt / dz * (edge(r+1) * vel(r+1) - edge(r) * vel(r)) 
+            - dt / dz * (edge(r+1) * vel(r+1) - edge(r) * vel(r)) + dt*psi(r)
     end do
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
