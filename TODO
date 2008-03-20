@@ -37,3 +37,5 @@
    s0_predicted_edge on a Cartesian edge-centered grid.
 
 -- make rhoh_vs_t do the right thing for spherical
+
+-- make_psi needs to compute psi for spherical
