@@ -129,6 +129,8 @@ contains
   subroutine mkrhohforce_2d(n,rhoh_force,wmac,thermal,lo,hi,p0_old,p0_new,psi,add_thermal)
 
     use geometry, only: dr, nr
+    use probin_module, only: enthalpy_pred_type
+    use pred_parameters
 
     ! compute the source terms for the non-reactive part of the enthalpy equation {w dp0/dr}
     
@@ -162,8 +164,18 @@ contains
        end if
        do i = lo(1),hi(1)
           wadv = HALF*(wmac(i,j)+wmac(i,j+1))
-          rhoh_force(i,j) =  wadv * gradp0  + psi(j)
+          rhoh_force(i,j) =  wadv * gradp0           
        end do
+
+       ! add psi as a force only if we are dealing with the full (rho h) or h,
+       ! not the perturbational form.
+       if ((enthalpy_pred_type .eq. predict_h) .or. &
+           (enthalpy_pred_type .eq. predict_T_then_h)) then
+          do i = lo(1),hi(1)
+             rhoh_force(i,j) =  rhoh_force(i,j)  + psi(j)
+          end do
+       endif
+
     end do
 
     if (add_thermal) then
@@ -178,7 +190,9 @@ contains
 
   subroutine mkrhohforce_3d(n,rhoh_force,wmac,thermal,lo,hi,p0_old,p0_new,psi,add_thermal)
 
-   use geometry, only: dr, nr
+    use geometry, only: dr, nr
+    use probin_module, only: enthalpy_pred_type
+    use pred_parameters
 
     ! compute the source terms for the non-reactive part of the enthalpy equation {w dp0/dr}
 
@@ -210,10 +224,21 @@ contains
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
              wadv = HALF*(wmac(i,j,k)+wmac(i,j,k+1))
-             rhoh_force(i,j,k) = wadv * gradp0 + psi(k)
+             rhoh_force(i,j,k) = wadv * gradp0 
           end do
        end do
 
+       ! add psi as a force only if we are dealing with the full (rho h) or h,
+       ! not the perturbational form.
+       if ((enthalpy_pred_type .eq. predict_h) .or. &
+           (enthalpy_pred_type .eq. predict_T_then_h)) then
+          do j = lo(2),hi(2)
+             do i = lo(1),hi(1)
+                rhoh_force(i,j,k) = rhoh_force(i,j,k) + psi(k)
+             end do
+          end do
+       endif
+       
     end do
 
     if (add_thermal) then
@@ -233,6 +258,8 @@ contains
 
     use fill_3d_module
     use geometry, only: nr, dr
+    use probin_module, only: enthalpy_pred_type
+    use pred_parameters
 
     ! compute the source terms for the non-reactive part of the enthalpy equation {w dp0/dr}
 
@@ -252,11 +279,15 @@ contains
     real(kind=dp_t) :: uadv,vadv,wadv,normal_vel
     real(kind=dp_t), allocatable :: gradp_rad(:)
     real(kind=dp_t), allocatable :: gradp_cart(:,:,:)
+    real(kind=dp_t), allocatable :: psi_cart(:,:,:)
     integer :: i,j,k,r
 
     allocate(gradp_rad(0:nr(n)-1))
     allocate(gradp_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
- 
+
+    allocate(psi_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+    call fill_3d_data(n,psi_cart,psi,lo,hi,dx,0)
+
     do r = 0, nr(n)-1
        
        if (r.eq.0) then
@@ -290,6 +321,21 @@ contains
        end do
     end do
 
+    ! add psi as a force only if we are dealing with the full (rho h) or h,
+    ! not the perturbational form.
+    if ((enthalpy_pred_type .eq. predict_h) .or. &
+        (enthalpy_pred_type .eq. predict_T_then_h)) then 
+
+       do k = lo(3),hi(3)
+          do j = lo(2),hi(2)
+             do i = lo(1),hi(1)
+                rhoh_force(i,j,k) = rhoh_force(i,j,k) + psi_cart(i,j,k)
+             enddo
+          enddo
+       enddo
+       
+    endif
+
     if (add_thermal) then
        do k=lo(3),hi(3)
           do j=lo(2),hi(2)
@@ -300,7 +346,7 @@ contains
        end do
     end if
 
-    deallocate(gradp_rad, gradp_cart)
+    deallocate(gradp_rad, gradp_cart, psi_cart)
 
   end subroutine mkrhohforce_3d_sphr
 
