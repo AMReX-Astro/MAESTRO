@@ -631,10 +631,14 @@ contains
     real(kind=dp_t) :: uadv,vadv,wadv,normal_vel,dhdp
     real(kind=dp_t), allocatable :: gradp_rad(:)
     real(kind=dp_t), allocatable :: gradp_cart(:,:,:)
+    real(kind=dp_t), allocatable :: psi_cart(:,:,:)
 
     allocate(gradp_rad(0:nr(n)-1))
     allocate(gradp_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
- 
+
+    allocate(psi_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+    call fill_3d_data(n,psi_cart,psi,lo,hi,dx,0)
+
     do r = 0, nr(n)-1
        
        if (r.eq.0) then
@@ -684,7 +688,7 @@ contains
 
          temp_force(i,j,k) =  thermal(i,j,k) + &
                               (ONE - s(i,j,k,rho_comp) * dhdp) * &
-                              normal_vel * gradp_cart(i,j,k)
+                              (normal_vel * gradp_cart(i,j,k) + psi_cart(i,j,k))
 
          temp_force(i,j,k) = temp_force(i,j,k) / (cp_eos(1) * s(i,j,k,rho_comp))
 
@@ -692,7 +696,7 @@ contains
      end do
     end do
 
-    deallocate(gradp_rad, gradp_cart)
+    deallocate(gradp_rad, gradp_cart, psi_cart)
 
   end subroutine mktempforce_3d_sphr
 
