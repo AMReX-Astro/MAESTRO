@@ -92,6 +92,7 @@ subroutine varden()
   real(dp_t), allocatable :: p0_old(:,:)
   real(dp_t), allocatable :: p0_new(:,:)
   real(dp_t), allocatable :: eta(:,:,:) 
+  real(dp_t), allocatable :: psi(:,:) 
   real(dp_t), allocatable :: w0(:,:)
 
   type(bc_tower) ::  the_bc_tower
@@ -310,6 +311,7 @@ subroutine varden()
   allocate(p0_new       (nlevs,0:nr_fine-1))
   allocate(w0           (nlevs,0:nr_fine))
   allocate(eta          (nlevs,0:nr_fine,nscal))
+  allocate(psi          (nlevs,0:nr_fine))
 
   div_coeff_old(:,:) = ZERO
   div_coeff_new(:,:) = ZERO
@@ -320,6 +322,7 @@ subroutine varden()
   s0_new(:,:,:) = ZERO
 
   eta(:,:,:) = ZERO
+  psi(:,:) = ZERO
 
   p0_old(:,:) = ZERO
   p0_new(:,:) = ZERO
@@ -640,7 +643,7 @@ subroutine varden()
                                  s0_new,p0_old,p0_new,gam1,w0, &
                                  rho_omegadot2,div_coeff_old, &
                                  div_coeff_new,grav_cell,dx,time,dt,dtold,the_bc_tower, &
-                                 dSdt,Source_old,Source_new,eta,sponge,hgrhs,istep)
+                                 dSdt,Source_old,Source_new,eta,psi,sponge,hgrhs,istep)
 
         end do ! end do istep_init_iter = 1,init_iter
 
@@ -670,7 +673,7 @@ subroutine varden()
         write(unit=base_w0_name,fmt='("w0_",i5.5)') istep
         write(unit=base_eta_name,fmt='("eta_",i5.5)') istep
         call write_base_state(nlevs, base_state_name, base_w0_name, base_eta_name, sd_name, &
-                              s0_old, p0_old, gam1, w0, eta, div_coeff_old,prob_lo(dm))
+                              s0_old, p0_old, gam1(:,:,1), w0, eta, div_coeff_old,prob_lo(dm))
         do n = 1,nlevs
            call destroy(chkdata(n))
         end do
@@ -832,7 +835,7 @@ subroutine varden()
                               s0_new,p0_old,p0_new,gam1,w0, &
                               rho_omegadot2,div_coeff_old,div_coeff_new, &
                               grav_cell,dx,time,dt,dtold,the_bc_tower, &
-                              dSdt,Source_old,Source_new,eta,&
+                              dSdt,Source_old,Source_new,eta,psi,&
                               sponge,hgrhs,istep)
         r2 = parallel_wtime() - r1
         call parallel_reduce(r1, r2, MPI_MAX, proc = parallel_IOProcessorNode())
@@ -946,7 +949,8 @@ subroutine varden()
               write(unit=base_eta_name,fmt='("eta_",i5.5)') istep
               call write_base_state(nlevs, base_state_name, base_w0_name, &
                                     base_eta_name, sd_name, &
-                                    s0_new, p0_new, gam1, w0, eta, div_coeff_old, prob_lo(dm))
+                                    s0_new, p0_new, gam1(:,:,1), w0, eta, div_coeff_old, &
+                                    prob_lo(dm))
               do n = 1,nlevs
                  call destroy(chkdata(n))
               end do
@@ -1004,7 +1008,7 @@ subroutine varden()
         write(unit=base_eta_name,fmt='("eta_",i5.5)') istep
         call write_base_state(nlevs, base_state_name, base_w0_name, &
                               base_eta_name, sd_name, &
-                              s0_new, p0_new, gam1, w0, eta, div_coeff_old, prob_lo(dm))
+                              s0_new, p0_new, gam1(:,:,1), w0, eta, div_coeff_old, prob_lo(dm))
      end if
 
      if ( plot_int > 0 .and. last_plt_written .ne. istep ) then
