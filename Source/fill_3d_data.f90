@@ -88,7 +88,7 @@ contains
   subroutine fill_3d_data(n,data,s0,lo,hi,dx,ng)
 
     use bl_constants_module
-    use geometry, only: center, dr, nr
+    use geometry, only: center, dr, nr, base_cc_loc
     use bl_error_module
     
     integer        , intent(in   ) :: n,lo(:),hi(:),ng
@@ -99,6 +99,9 @@ contains
     integer         :: i,j,k,index
     real(kind=dp_t) :: x,y,z
     real(kind=dp_t) :: radius
+    logical         :: use_linear_interp
+
+    use_linear_interp = .false.
     
     do k = lo(3),hi(3)
        z = (dble(k)+HALF)*dx(3) - center(3)
@@ -120,7 +123,26 @@ contains
                 end if
              end if
 
-             data(i,j,k) = s0(index)
+             if (use_linear_interp) then
+                if(radius .ge. base_cc_loc(n,index)) then
+                   if (index .eq. nr(n)-1) then
+                      data(i,j,k) = s0(index)
+                   else
+                      data(i,j,k) = s0(index+1)*(radius-base_cc_loc(n,index))/dr(n) &
+                           + s0(index)*(base_cc_loc(n,index+1)-radius)/dr(n)
+                   end if
+                else
+                   if (index .eq. 0) then
+                      data(i,j,k) = s0(index)
+                   else
+                      data(i,j,k) = s0(index)*(radius-base_cc_loc(n,index-1))/dr(n) &
+                           + s0(index-1)*(base_cc_loc(n,index)-radius)/dr(n)
+                   end if
+                end if
+             else
+                data(i,j,k) = s0(index)
+             end if
+
           end do
        end do
     end do
