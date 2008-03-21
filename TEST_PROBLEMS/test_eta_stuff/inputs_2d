@@ -2,6 +2,8 @@
  test_set = "gr0_2d"
  spherical_in = 0
 
+ enthalpy_pred_type = 4
+
  prob_lo_x = 0.0
  prob_hi_x = 0.3e8
 
@@ -11,10 +13,8 @@
 
  max_step  = 100000000
  max_step  = 500
- max_step  = 222
 
  stop_time =  0.85
- stop_time =  0.9
 
  plot_int  = 2000
  chk_int   = 2000
@@ -45,10 +45,10 @@
  
  do_sponge = T
 
- restart = 221
+!restart = 221
 
-max_dt_growth = 1.05
+ max_dt_growth = 1.05
 
-sponge_kappa = 10.d0
+ sponge_kappa = 10.d0
 
 /
