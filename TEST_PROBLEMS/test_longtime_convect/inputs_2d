@@ -11,9 +11,6 @@
  init_iter = 4
 
  stop_time = 60.0
- stop_time = 40.0
- stop_time = 20.0
- stop_time = 15.0
 
  plot_int  = 20
  chk_int   = 20
@@ -42,5 +39,7 @@
  sponge_kappa = 100.d0
 
 !restart = 200
+
+ enthalpy_pred_type = 4
 
 /
