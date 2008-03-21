@@ -100,6 +100,7 @@ contains
     type(multifab) :: s1(mla%nlevel)
     type(multifab) :: s2(mla%nlevel)
     type(multifab) :: delta_gamma1_term(mla%nlevel)
+    type(multifab) :: delta_gamma1(mla%nlevel)
     type(multifab) :: rho_omegadot1(mla%nlevel)
     type(multifab) :: rho_Hext(mla%nlevel)
     type(multifab) :: div_coeff_3d(mla%nlevel) ! Only needed for spherical.eq.1
@@ -125,6 +126,7 @@ contains
     real(dp_t), allocatable :: p0_2(:,:)
     real(dp_t), allocatable :: s0_predicted_edge(:,:,:)
     real(dp_t), allocatable :: gamma1bar_old(:,:,:)
+    real(dp_t), allocatable :: delta_gamma1_termbar(:,:,:)
 
     integer    :: r,n,dm,comp,nlevs,ng_s,proj_type
     real(dp_t) :: halfdt,eps_in
@@ -153,7 +155,8 @@ contains
     allocate(             p0_1(nlevs,0:nr(nlevs)-1))
     allocate(             p0_2(nlevs,0:nr(nlevs)-1))
     allocate(s0_predicted_edge(nlevs,0:nr(nlevs)  ,nscal))
-    allocate(gamma1bar_old    (nlevs,0:nr(nlevs)-1,1))
+    allocate(gamma1bar_old    (nlevs,0:nr(nlevs)-1,1))    
+    allocate(delta_gamma1_termbar(nlevs,0:nr(nlevs)-1,1))
 
     ! Set these to be safe
     s0_1(:,:,:) = ZERO
@@ -162,8 +165,8 @@ contains
     p0_2(:,:)   = ZERO
     s0_predicted_edge(:,:,:) = ZERO
     w0_force(:,:) = ZERO
-
     gamma1bar_old(:,:,:) = gamma1bar(:,:,:)
+    delta_gamma1_termbar(:,:,:) = ZERO
 
     ! Set Sbar to zero so if evolve_base_state = F then we don't need to reset it.
     Sbar(:,:,:) = ZERO
@@ -552,14 +555,17 @@ contains
        
        do n=1,nlevs
           call multifab_build(delta_gamma1_term(n), mla%la(n), 1, 0)
+          call multifab_build(delta_gamma1(n), mla%la(n), 1, 0)
        end do
 
-       call make_S(nlevs,Source_new,delta_gamma1_term,snew,uold,rho_omegadot2,rho_Hext, &
-                   thermal,s0_old(:,:,temp_comp),p0_old,gamma1bar(:,:,1),dx)
+       call make_S(nlevs,Source_new,delta_gamma1_term,delta_gamma1,snew,uold,rho_omegadot2, &
+                   rho_Hext,thermal,s0_old(:,:,temp_comp),p0_old,gamma1bar(:,:,1), &
+                   delta_gamma1_termbar,psi,dx,mla)
        
        do n=1,nlevs
           call destroy(rho_Hext(n))
           call destroy(thermal(n))
+          call destroy(delta_gamma1(n))
        end do
 
        do n=1,nlevs
@@ -578,6 +584,11 @@ contains
        if (evolve_base_state) then
        
           call average(mla,Source_nph,Sbar,dx,1,1)
+
+          if(use_delta_gamma1_term) then
+             ! add delta_gamma1_termbar to Sbar
+             Sbar = Sbar + delta_gamma1_termbar
+          end if
 
           call make_w0(nlevs,w0,w0_old,w0_force,Sbar(:,:,1),s0_new(:,:,rho_comp), &
                        p0_old,p0_new,gamma1bar_old(:,:,1),gamma1bar(:,:,1),psi,dt,dtold)
@@ -833,18 +844,27 @@ contains
     
     do n=1,nlevs
        call multifab_build(delta_gamma1_term(n), mla%la(n), 1, 0)
+       call multifab_build(delta_gamma1(n), mla%la(n), 1, 0)
     end do
 
-    call make_S(nlevs,Source_new,delta_gamma1_term,snew,uold,rho_omegadot2,rho_Hext, &
-                thermal,s0_new(:,:,temp_comp),p0_new,gamma1bar(:,:,1),dx)
+    call make_S(nlevs,Source_new,delta_gamma1_term,delta_gamma1,snew,uold,rho_omegadot2, &
+                rho_Hext,thermal,s0_new(:,:,temp_comp),p0_new,gamma1bar(:,:,1), &
+                delta_gamma1_termbar,psi,dx,mla)
 
     do n=1,nlevs
        call destroy(rho_Hext(n))
        call destroy(thermal(n))
+       call destroy(delta_gamma1(n))
     end do
 
     if (evolve_base_state) then
        call average(mla,Source_new,Sbar,dx,1,1)
+
+       if(use_delta_gamma1_term) then
+          ! add delta_gamma1_termbar to Sbar
+          Sbar = Sbar + delta_gamma1_termbar
+       end if
+
     end if
     
     ! define dSdt = (Source_new - Source_old) / dt

@@ -16,14 +16,20 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine make_S(nlevs,Source,delta_gamma1_term,state,u,rho_omegadot,rho_Hext, &
-                    thermal,t0,p0,gamma1bar,dx)
+  subroutine make_S(nlevs,Source,delta_gamma1_term,delta_gamma1,state,u,rho_omegadot, &
+                    rho_Hext,thermal,t0,p0,gamma1bar,delta_gamma1_termbar,psi,dx,mla)
 
+    use bl_constants_module
     use bl_prof_module
+    use probin_module, only: use_delta_gamma1_term
+    use geometry, only: nr
+    use ml_layout_module
+    use average_module
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: Source(:)
     type(multifab) , intent(inout) :: delta_gamma1_term(:)
+    type(multifab) , intent(inout) :: delta_gamma1(:)
     type(multifab) , intent(in   ) :: state(:)
     type(multifab) , intent(in   ) :: u(:)
     type(multifab) , intent(in   ) :: rho_omegadot(:)
@@ -32,18 +38,22 @@ contains
     real(kind=dp_t), intent(in   ) :: t0(:,0:)
     real(kind=dp_t), intent(in   ) :: p0(:,0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
+    real(kind=dp_t), intent(inout) :: delta_gamma1_termbar(:,0:,:)
+    real(kind=dp_t), intent(in   ) :: psi(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
+    type(ml_layout), intent(inout) :: mla
     
-    real(kind=dp_t), pointer:: srcp(:,:,:,:),gp(:,:,:,:),sp(:,:,:,:),up(:,:,:,:)
-    real(kind=dp_t), pointer:: tp(:,:,:,:)
+    real(kind=dp_t), pointer:: srcp(:,:,:,:),dgtp(:,:,:,:),sp(:,:,:,:),up(:,:,:,:)
+    real(kind=dp_t), pointer:: tp(:,:,:,:),dgp(:,:,:,:)
     real(kind=dp_t), pointer:: omegap(:,:,:,:), hp(:,:,:,:)
+
     integer :: lo(state(1)%dim),hi(state(1)%dim),ng,dm
     integer :: i,n
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "make_S")
-    
+
     ng = state(1)%ng
     dm = state(1)%dim
 
@@ -51,7 +61,8 @@ contains
        do i = 1, state(n)%nboxes
           if ( multifab_remote(state(n), i) ) cycle
           srcp => dataptr(Source(n), i)
-          gp     => dataptr(delta_gamma1_term(n), i)
+          dgtp     => dataptr(delta_gamma1_term(n), i)
+          dgp    => dataptr(delta_gamma1(n), i)
           sp     => dataptr(state(n), i)
           up     => dataptr(u(n), i)
           omegap => dataptr(rho_omegadot(n), i)
@@ -61,22 +72,47 @@ contains
           hi = upb(get_box(state(n), i))
           select case (dm)
           case (2)
-             call make_S_2d(lo,hi,srcp(:,:,1,1),gp(:,:,1,1),sp(:,:,1,:),up(:,:,1,:), &
+             call make_S_2d(lo,hi,srcp(:,:,1,1),dgtp(:,:,1,1),dgp(:,:,1,1), &
+                            sp(:,:,1,:),up(:,:,1,:), &
                             omegap(:,:,1,:), hp(:,:,1,1), &
                             tp(:,:,1,1), ng, p0(n,:), gamma1bar(n,:), dx(n,:))
           case (3)
-             call make_S_3d(n,lo,hi,srcp(:,:,:,1),gp(:,:,:,1),sp(:,:,:,:),up(:,:,:,:), &
+             call make_S_3d(n,lo,hi,srcp(:,:,:,1),dgtp(:,:,:,1),dgp(:,:,:,1), &
+                            sp(:,:,:,:),up(:,:,:,:), &
                             omegap(:,:,:,:), hp(:,:,:,1), &
                             tp(:,:,:,1), ng, t0(n,:), p0(n,:), gamma1bar(n,:), dx(n,:))
           end select
        end do
     enddo
 
+    if (use_delta_gamma1_term) then
+
+       call average(mla,delta_gamma1_term,delta_gamma1_termbar,dx,1,1)
+       
+       do n = 1, nlevs
+          do i = 1, state(n)%nboxes
+             if ( multifab_remote(state(n), i) ) cycle
+             select case (dm)
+             case (2)
+                dgtp   => dataptr(delta_gamma1_term(n), i)
+                dgp    => dataptr(delta_gamma1(n), i)
+                call correct_delta_gamma1_term_2d(lo,hi,ng,dgtp(:,:,1,1),dgp(:,:,1,1), &
+                                                  gamma1bar(n,:),psi(n,:), &
+                                                  delta_gamma1_termbar(n,:,1),p0(n,:))
+             case (3)
+       
+             end select
+          end do
+       enddo
+       
+    end if
+
     call destroy(bpt)
 
    end subroutine make_S
 
-   subroutine make_S_2d (lo,hi,Source,delta_gamma1_term,s,u, &
+
+   subroutine make_S_2d (lo,hi,Source,delta_gamma1_term,delta_gamma1,s,u, &
                          rho_omegadot,rho_Hext,thermal,ng,p0,gamma1bar,dx)
 
       use bl_constants_module
@@ -87,6 +123,7 @@ contains
       integer         , intent(in   ) :: lo(:), hi(:), ng
       real (kind=dp_t), intent(  out) :: Source(lo(1):,lo(2):)
       real (kind=dp_t), intent(  out) :: delta_gamma1_term(lo(1):,lo(2):)
+      real (kind=dp_t), intent(  out) :: delta_gamma1(lo(1):,lo(2):)
       real (kind=dp_t), intent(in   ) :: s(lo(1)-ng:,lo(2)-ng:,:)
       real (kind=dp_t), intent(in   ) :: u(lo(1)-ng:,lo(2)-ng:,:)
       real (kind=dp_t), intent(in   ) :: rho_omegadot(lo(1):,lo(2):,:)
@@ -151,6 +188,8 @@ contains
                  gradp0 = HALF*(p0(j+1) - p0(j-1))/dx(2)
               endif
 
+              delta_gamma1(i,j) = gam1_eos(1) - gamma1bar(j)
+
               delta_gamma1_term(i,j) = &
                    (gam1_eos(1) - gamma1bar(j))*u(i,j,2)* &
                    gradp0/(gamma1bar(j)*gamma1bar(j)*p0(j))
@@ -163,7 +202,7 @@ contains
  
    end subroutine make_S_2d
 
-   subroutine make_S_3d(n,lo,hi,Source,delta_gamma1_term,s,u, &
+   subroutine make_S_3d(n,lo,hi,Source,delta_gamma1_term,delta_gamma1,s,u, &
                         rho_omegadot,rho_Hext,thermal,ng,t0,p0,gamma1bar,dx)
 
       use bl_constants_module
@@ -176,6 +215,7 @@ contains
       integer         , intent(in   ) :: n, lo(:), hi(:), ng
       real (kind=dp_t), intent(  out) :: Source(lo(1):,lo(2):,lo(3):)  
       real (kind=dp_t), intent(  out) :: delta_gamma1_term(lo(1):,lo(2):,lo(3):)  
+      real (kind=dp_t), intent(  out) :: delta_gamma1(lo(1):,lo(2):,lo(3):) 
       real (kind=dp_t), intent(in   ) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
       real (kind=dp_t), intent(in   ) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
       real (kind=dp_t), intent(in   ) :: rho_omegadot(lo(1):,lo(2):,lo(3):,:)
@@ -256,6 +296,8 @@ contains
                        gradp0 = HALF*(p0(k+1) - p0(k-1))/dx(3)
                     endif
 
+                    delta_gamma1(i,j,k) = gam1_eos(1) - gamma1bar(k)
+
                     delta_gamma1_term(i,j,k) = (gam1_eos(1) - &
                          gamma1bar(k))*u(i,j,k,3)*gradp0/(gamma1bar(k)*gamma1bar(k)*p0(k))
                  endif
@@ -272,5 +314,29 @@ contains
       end if
  
    end subroutine make_S_3d
+
+   subroutine correct_delta_gamma1_term_2d(lo,hi,ng,delta_gamma1_term,delta_gamma1, &
+                                           gamma1bar,psi,delta_gamma1_termbar,p0)
+
+     integer         , intent(in   ) :: lo(:), hi(:), ng
+     real (kind=dp_t), intent(inout) :: delta_gamma1_term(lo(1):,lo(2):)
+     real (kind=dp_t), intent(in   ) :: delta_gamma1(lo(1):,lo(2):)
+     real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
+     real (kind=dp_t), intent(in   ) :: psi(0:)
+     real (kind=dp_t), intent(in   ) :: delta_gamma1_termbar(0:)
+     real (kind=dp_t), intent(in   ) :: p0(0:)
+     
+     integer :: i, j
+     
+     do j = lo(2), hi(2)
+        do i = lo(1), hi(1)
+           
+           delta_gamma1_term(i,j) = delta_gamma1_term(i,j) - delta_gamma1_termbar(j) &
+                + delta_gamma1(i,j)*psi(j)/(gamma1bar(j)**2*p0(j))
+           
+        end do
+     end do
+     
+   end subroutine correct_delta_gamma1_term_2d
 
 end module make_S_module

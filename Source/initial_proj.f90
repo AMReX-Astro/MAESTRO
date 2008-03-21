@@ -46,7 +46,10 @@ contains
     integer    :: n
     real(dp_t) :: dt_temp
 
+    real(dp_t), allocatable :: psi(:,:) 
+
     type(multifab) :: delta_gamma1_term(nlevs)
+    type(multifab) :: delta_gamma1(nlevs)
     type(multifab) :: thermal(nlevs)
     type(multifab) :: rhohalf(nlevs)
     type(multifab) :: rho_omegadot1(nlevs)
@@ -54,10 +57,14 @@ contains
     type(multifab) :: div_coeff_3d(nlevs)
 
     real(dp_t), allocatable :: Sbar(:,:,:)  
+    real(dp_t), allocatable :: delta_gamma1_termbar(:,:,:)
 
     allocate(Sbar(nlevs,nr(nlevs),1))
+    allocate(psi (nlevs,0:nr(nlevs)))
+    allocate(delta_gamma1_termbar(nlevs,0:nr(nlevs)-1,1))
 
     Sbar(:,:,:) = ZERO
+    psi(:,:) = ZERO
 
     if ( parallel_IOProcessor() ) then
        print *, 'DOING THE INITIAL VELOCITY PROJECTION'
@@ -79,6 +86,7 @@ contains
     
     do n=1,nlevs
        call multifab_build(delta_gamma1_term(n), mla%la(n), 1, 0)
+       call multifab_build(delta_gamma1(n), mla%la(n), 1, 0)
        call multifab_build(rho_omegadot1(n), mla%la(n), nspec, 0)
        call multifab_build(rho_Hext(n),      mla%la(n), 1,     0)
        ! we don't have a legit timestep yet, so we set rho_omegadot1 and rho_Hext to 0 
@@ -86,12 +94,14 @@ contains
        call setval(     rho_Hext(n), ZERO, all=.true.)
     end do
 
-    call make_S(nlevs,Source_old,delta_gamma1_term,sold,uold,rho_omegadot1,rho_Hext,thermal, &
-                s0_old(:,:,temp_comp),p0_old,gamma1bar,dx)
+    call make_S(nlevs,Source_old,delta_gamma1_term,delta_gamma1,sold,uold,rho_omegadot1, &
+                rho_Hext,thermal,s0_old(:,:,temp_comp),p0_old,gamma1bar, &
+                delta_gamma1_termbar,psi,dx,mla)
     do n=1,nlevs
        call destroy(thermal(n))
        call destroy(rho_omegadot1(n))
        call destroy(rho_Hext(n))
+       call destroy(delta_gamma1(n))
     end do
     
     if (evolve_base_state) then
