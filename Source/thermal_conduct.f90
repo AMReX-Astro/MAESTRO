@@ -590,6 +590,8 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,t0, 
   ! compute updated temperature
   call makeTfromRhoH(nlevs,s2,t0,mla,the_bc_tower%bc_tower_array,dx)
 
+  deallocate(fine_flx)
+
   call destroy(bpt)
 
 end subroutine thermal_conduct_full_alg
@@ -1366,6 +1368,8 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,t0,the_bc_tower)
 
   ! compute updated temperature
   call makeTfromRhoH(nlevs,s2,t0,mla,the_bc_tower%bc_tower_array,dx)
+
+  deallocate(fine_flx)
 
   call destroy(bpt)
 
