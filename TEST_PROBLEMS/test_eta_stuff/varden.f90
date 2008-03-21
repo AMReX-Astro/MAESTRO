@@ -86,7 +86,7 @@ subroutine varden()
   real(dp_t), allocatable :: div_coeff_old(:,:)
   real(dp_t), allocatable :: div_coeff_new(:,:)
   real(dp_t), allocatable :: grav_cell(:,:)
-  real(dp_t), allocatable :: gam1(:,:)
+  real(dp_t), allocatable :: gam1(:,:,:)
   real(dp_t), allocatable :: s0_old(:,:,:)
   real(dp_t), allocatable :: s0_new(:,:,:)
   real(dp_t), allocatable :: p0_old(:,:)
@@ -303,7 +303,7 @@ subroutine varden()
   ! allocate the base state quantities -- these all use 0-based indexing
   allocate(div_coeff_old(nlevs,0:nr_fine-1))
   allocate(div_coeff_new(nlevs,0:nr_fine-1))
-  allocate(gam1         (nlevs,0:nr_fine-1))
+  allocate(gam1         (nlevs,0:nr_fine-1,1))
   allocate(s0_old       (nlevs,0:nr_fine-1,nscal))
   allocate(s0_new       (nlevs,0:nr_fine-1,nscal))
   allocate(p0_old       (nlevs,0:nr_fine-1))
@@ -314,7 +314,7 @@ subroutine varden()
   div_coeff_old(:,:) = ZERO
   div_coeff_new(:,:) = ZERO
 
-  gam1(:,:) = ZERO
+  gam1(:,:,:) = ZERO
 
   s0_old(:,:,:) = ZERO
   s0_new(:,:,:) = ZERO
@@ -448,7 +448,7 @@ subroutine varden()
   ! Initialize base state at each level independently
   if (restart < 0) then
      do n = 1,nlevs
-        call init_base_state(n,model_file,s0_old(n,:,:),p0_old(n,:),gam1(n,:),dx(n,:))
+        call init_base_state(n,model_file,s0_old(n,:,:),p0_old(n,:),gam1(n,:,1),dx(n,:))
      end do
   else
      write(unit=sd_name,fmt='("chk",i5.5)') restart
@@ -457,7 +457,7 @@ subroutine varden()
      write(unit=base_eta_name,fmt='("eta_",i5.5)') restart
 
      call read_base_state(nlevs, base_state_name, base_w0_name, base_eta_name, sd_name, &
-                          s0_old, p0_old, gam1, w0, eta, div_coeff_old)
+                          s0_old, p0_old, gam1(:,:,1), w0, eta, div_coeff_old)
   end if
 
   ! Create the normal array once we have defined "center"
@@ -489,7 +489,7 @@ subroutine varden()
 
      do n=1,nlevs
         call make_div_coeff(n,div_coeff_old(n,:),s0_old(n,:,rho_comp),p0_old(n,:), &
-                            gam1(n,:),grav_cell(n,:))
+                            gam1(n,:,1),grav_cell(n,:))
      end do
 
      time = ZERO
@@ -504,7 +504,7 @@ subroutine varden()
 
      if(do_initial_projection > 0) then
         call initial_proj(nlevs,uold,sold,pres,gpres,Source_old,hgrhs, &
-                          div_coeff_old,s0_old,p0_old,gam1,dx,the_bc_tower,mla)
+                          div_coeff_old,s0_old,p0_old,gam1(:,:,1),dx,the_bc_tower,mla)
      end if
     
      do n=1,nlevs
@@ -516,7 +516,7 @@ subroutine varden()
 
      do n=1,nlevs
         call firstdt(n,uold(n),sold(n),vel_force(n),Source_old(n), &
-                     p0_old(n,:),gam1(n,:),s0_old(n,:,temp_comp),dx(n,:),cflfac, &
+                     p0_old(n,:),gam1(n,:,1),s0_old(n,:,temp_comp),dx(n,:),cflfac, &
                      dt_lev)
 
         if (parallel_IOProcessor() .and. verbose .ge. 1) then
@@ -775,7 +775,7 @@ subroutine varden()
 
            do n = 1,nlevs
               call estdt(n,uold(n),sold(n),vel_force(n),Source_old(n),dSdt(n),normal(n), &
-                         w0(n,:),p0_old(n,:),gam1(n,:),dx(n,:),cflfac,dt_lev)
+                         w0(n,:),p0_old(n,:),gam1(n,:,1),dx(n,:),cflfac,dt_lev)
 
               dt = min(dt,dt_lev)
            end do
