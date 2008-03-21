@@ -40,4 +40,5 @@
  do_sponge = T
  sponge_kappa = 100.d0
 
+ enthalpy_pred_type = 4
 /
