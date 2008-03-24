@@ -3,90 +3,99 @@ module init_module
   use bl_types
   use bl_constants_module
   use bc_module
-  use setbc_module
   use define_bc_module
   use multifab_module
-  use make_div_coeff_module
-  use make_grav_module
   use fill_3d_module
   use eos_module
   use variables
   use network
+  use geometry
+  use ml_layout_module
+  use ml_restriction_module
+  use multifab_fill_ghost_module
 
   implicit none
+  public :: initscalardata, initveldata
 
 contains
 
-  subroutine initscalardata (s,s0,p0,temp0,dx,perturb_model, &
-                             prob_lo,prob_hi,bc,nscal,ntrac)
+  subroutine initscalardata(nlevs,s,s0,p0,dx,bc,mla)
 
-    type(multifab) , intent(inout) :: s
-    real(kind=dp_t), intent(in   ) ::    s0(:,:)
-    real(kind=dp_t), intent(in   ) ::    p0(:)
-    real(kind=dp_t), intent(in   ) :: temp0(:)
-    real(kind=dp_t), intent(in   ) :: dx(:)
-    logical,         intent(in   ) :: perturb_model
-    real(kind=dp_t), intent(in   ) :: prob_lo(:)
-    real(kind=dp_t), intent(in   ) :: prob_hi(:)
-    type(bc_level) , intent(in   ) :: bc
-    integer        , intent(in   ) :: nscal,ntrac
+    integer        , intent(in   ) :: nlevs
+    type(multifab) , intent(inout) :: s(:)
+    real(kind=dp_t), intent(in   ) :: s0(:,0:,:)
+    real(kind=dp_t), intent(in   ) :: p0(:,0:)
+    real(kind=dp_t), intent(in   ) :: dx(:,:)
+    type(bc_level) , intent(in   ) :: bc(:)
+    type(ml_layout), intent(inout) :: mla
 
     real(kind=dp_t), pointer:: sop(:,:,:,:)
-    integer :: lo(s%dim),hi(s%dim),ng,dm
+    integer :: lo(s(1)%dim),hi(s(1)%dim),ng,dm
     integer :: i,n
     
-    ng = s%ng
-    dm = s%dim
+    ng = s(1)%ng
+    dm = s(1)%dim
 
-    do i = 1, s%nboxes
-       if ( multifab_remote(s, i) ) cycle
-       sop => dataptr(s, i)
-       lo =  lwb(get_box(s, i))
-       hi =  upb(get_box(s, i))
+    do n=1,nlevs
 
-       select case (dm)
-       case (2)
-          call initscalardata_2d(sop(:,:,1,:), lo, hi, ng, dx, perturb_model, &
-                                 prob_lo, prob_hi, s0, p0, temp0, ntrac)
+       do i = 1, s(n)%nboxes
+          if ( multifab_remote(s(n), i) ) cycle
+          sop => dataptr(s(n), i)
+          lo =  lwb(get_box(s(n), i))
+          hi =  upb(get_box(s(n), i))
+          select case (dm)
+          case (2)
+             call initscalardata_2d(sop(:,:,1,:), lo, hi, ng, dx(n,:), s0(n,:,:), p0(n,:))
+          case (3)
 
-          do n = 1,nscal
-             call setbc_2d(sop(:,:,1,n), lo, ng, &
-                           bc%adv_bc_level_array(i,:,:,dm+n),dx,dm+n)
-          end do
+          end select
+       end do
 
-       case (3)
-          call initscalardata_3d(sop(:,:,:,:), lo, hi, ng, dx, perturb_model, &
-                                 prob_lo, prob_hi, s0, p0, temp0, ntrac)
-
-          do n = 1, nscal
-             call setbc_3d(sop(:,:,:,n), lo, ng, &
-                           bc%adv_bc_level_array(i,:,:,dm+n),dx,dm+n)
-          end do
-       end select
     end do
 
-    call multifab_fill_boundary(s)
+    if (nlevs .eq. 1) then
+
+       ! fill ghost cells for two adjacent grids at the same level
+       ! this includes periodic domain boundary ghost cells
+       call multifab_fill_boundary(s(nlevs))
+
+       ! fill non-periodic domain boundary ghost cells
+       call multifab_physbc(s(nlevs),rho_comp,dm+rho_comp,nscal,bc(nlevs))
+
+    else
+
+       ! the loop over nlevs must count backwards to make sure the finer grids are done first
+       do n=nlevs,2,-1
+
+          ! set level n-1 data to be the average of the level n data covering it
+          call ml_cc_restriction(s(n-1),s(n),mla%mba%rr(n-1,:))
+
+          ! fill level n ghost cells using interpolation from level n-1 data
+          ! note that multifab_fill_boundary and multifab_physbc are called for
+          ! both levels n-1 and n
+          call multifab_fill_ghost_cells(s(n),s(n-1),ng,mla%mba%rr(n-1,:), &
+                                         bc(n-1),bc(n),1,dm+rho_comp,nscal)
+
+       enddo
+
+    end if
 
   end subroutine initscalardata
 
-  subroutine initscalardata_2d (s,lo,hi,ng,dx, perturb_model, &
-                                prob_lo,prob_hi,s0,p0,temp0,ntrac)
+  subroutine initscalardata_2d(s,lo,hi,ng,dx,s0,p0)
 
-    integer, intent(in) :: lo(:), hi(:), ng, ntrac
-    real (kind = dp_t), intent(out) :: s(lo(1)-ng:,lo(2)-ng:,:)  
-    real (kind = dp_t), intent(in ) :: dx(:)
-    logical,            intent(in ) :: perturb_model
-    real (kind = dp_t), intent(in ) :: prob_lo(:)
-    real (kind = dp_t), intent(in ) :: prob_hi(:)
-    real(kind=dp_t), intent(in   ) ::    s0(0:,:)
-    real(kind=dp_t), intent(in   ) ::    p0(0:)
-    real(kind=dp_t), intent(in   ) :: temp0(0:)
+    use probin_module, only: prob_lo_x, prob_lo_y, perturb_model
+
+    integer           , intent(in   ) :: lo(:),hi(:),ng
+    real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,:)  
+    real (kind = dp_t), intent(in   ) :: dx(:)
+    real(kind=dp_t)   , intent(in   ) :: s0(0:,:)
+    real(kind=dp_t)   , intent(in   ) :: p0(0:)
 
     !     Local variables
     integer :: i, j, n
     real(kind=dp_t) :: x,y,r,r0,r1,r2,temp
     real(kind=dp_t) :: dens_pert, rhoh_pert, rhoX_pert(nspec), trac_pert(ntrac)
-
 
     ! initial the domain with the base state
     s = ZERO
@@ -103,12 +112,12 @@ contains
     ! add an optional perturbation
     if (perturb_model) then
        do j = lo(2), hi(2)
-          y = prob_lo(2) + (dble(j)+HALF) * dx(2)
+          y = prob_lo_y + (dble(j)+HALF) * dx(2)
        
           do i = lo(1), hi(1)
-             x = prob_lo(1) + (dble(i)+HALF) * dx(1)
+             x = prob_lo_x + (dble(i)+HALF) * dx(1)
           
-             call perturb_2d(x, y, temp0(j), p0(j), s0(j,:), &
+             call perturb_2d(x, y, s0(j,temp_comp), p0(j), s0(j,:), &
                              dens_pert, rhoh_pert, rhoX_pert, trac_pert)
 
              s(i,j,rho_comp) = dens_pert
@@ -121,173 +130,79 @@ contains
     
   end subroutine initscalardata_2d
 
-  subroutine initscalardata_3d (s,lo,hi,ng,dx, perturb_model, &
-                                prob_lo,prob_hi,s0,p0,temp0,ntrac)
+  subroutine initveldata(nlevs,u,s0,p0,dx,bc,mla)
 
-    implicit none
-
-    integer, intent(in) :: lo(:), hi(:), ng, ntrac
-    real (kind = dp_t), intent(out) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
-    real (kind = dp_t), intent(in ) :: dx(:)
-    logical,            intent(in ) :: perturb_model
-    real (kind = dp_t), intent(in ) :: prob_lo(:)
-    real (kind = dp_t), intent(in ) :: prob_hi(:)
-    real(kind=dp_t), intent(in   ) ::    s0(0:,:)
-    real(kind=dp_t), intent(in   ) ::    p0(0:)
-    real(kind=dp_t), intent(in   ) :: temp0(0:)
-
-    !     Local variables
-    integer :: i, j, k, n
-    real(kind=dp_t) :: x,y,z,r,r0,r1,r2,temp
-    real(kind=dp_t) :: dens_pert, rhoh_pert, rhoX_pert(nspec), trac_pert(ntrac)
-
-    ! initial the domain with the base state
-    s = ZERO
-  
-    if (spherical .eq. 1) then
-
-       do n = rho_comp, spec_comp+nspec-1
-          call fill_3d_data (s(:,:,:,n),s0(:,n),lo,hi,dx,ng)
-       end do
-
-    else 
-
-       ! initialize the scalars
-       do n = rho_comp,spec_comp+nspec-1
-          do k = lo(3), hi(3)
-             do j = lo(2), hi(2)
-                do i = lo(1), hi(1)
-                   s(i,j,k,n) = s0(k,n)
-                enddo
-             enddo
-          enddo
-       enddo
-       
-       if (perturb_model) then
-
-          ! add an optional perturbation
-          do k = lo(3), hi(3)
-             z = prob_lo(3) + (dble(k)+HALF) * dx(3)
-             
-             do j = lo(2), hi(2)
-                y = prob_lo(2) + (dble(j)+HALF) * dx(2)
-                
-                do i = lo(1), hi(1)
-                   x = prob_lo(1) + (dble(i)+HALF) * dx(1)
-                   
-                   call perturb_3d(x, y, z, temp0(k), p0(k), s0(k,:), &
-                                   dens_pert, rhoh_pert, rhoX_pert, trac_pert)
-
-                   s(i,j,k,rho_comp) = dens_pert
-                   s(i,j,k,rhoh_comp) = rhoh_pert
-                   s(i,j,k,spec_comp:spec_comp+nspec-1) = rhoX_pert(:)
-                   s(i,j,k,trac_comp:trac_comp+ntrac-1) = trac_pert(:)
-                enddo
-             enddo
-          enddo
-       endif
-
-    end if
-    
-  end subroutine initscalardata_3d
-
-  subroutine initveldata (u,s0,p0,temp0,dx,prob_lo,prob_hi,bc,nscal,ntrac)
-
-    type(multifab) , intent(inout) :: u
-    real(kind=dp_t), intent(in   ) ::    s0(:,:)
-    real(kind=dp_t), intent(in   ) ::    p0(:)
-    real(kind=dp_t), intent(in   ) :: temp0(:)
-    real(kind=dp_t), intent(in   ) :: dx(:)
-    real(kind=dp_t), intent(in   ) :: prob_lo(:)
-    real(kind=dp_t), intent(in   ) :: prob_hi(:)
-    type(bc_level) , intent(in   ) :: bc
-    integer        , intent(in   ) :: nscal,ntrac
+    integer        , intent(in   ) :: nlevs
+    type(multifab) , intent(inout) :: u(:)
+    real(kind=dp_t), intent(in   ) :: s0(:,0:,:)
+    real(kind=dp_t), intent(in   ) :: p0(:,0:)
+    real(kind=dp_t), intent(in   ) :: dx(:,:)
+    type(bc_level) , intent(in   ) :: bc(:)
+    type(ml_layout), intent(inout) :: mla
 
     real(kind=dp_t), pointer:: uop(:,:,:,:)
-    integer :: lo(u%dim),hi(u%dim),ng,dm
+    integer :: lo(u(1)%dim),hi(u(1)%dim),ng,dm
     integer :: i,n
     
-    ng = u%ng
-    dm = u%dim
+    ng = u(1)%ng
+    dm = u(1)%dim
 
-    do i = 1, u%nboxes
-       if ( multifab_remote(u, i) ) cycle
-       uop => dataptr(u, i)
-       lo =  lwb(get_box(u, i))
-       hi =  upb(get_box(u, i))
+    do n=1,nlevs
 
-       select case (dm)
-       case (2)
-          call initveldata_2d(uop(:,:,1,:), lo, hi, ng, dx, &
-                              prob_lo, prob_hi, s0, p0, temp0, ntrac)
-   
-          do n = 1,dm
-             call setbc_2d(uop(:,:,1,n), lo, ng, &
-                           bc%adv_bc_level_array(i,:,:,   n),dx,   n)
-          end do
-
-       case (3)
-          call initveldata_3d(uop(:,:,:,:), lo, hi, ng, dx, &
-                              prob_lo, prob_hi, s0, p0, temp0, ntrac)
-
-          do n = 1, dm
-             call setbc_3d(uop(:,:,:,n), lo, ng, &
-                           bc%adv_bc_level_array(i,:,:,   n),dx,   n)
-          end do
-
-       end select
+       do i = 1, u(n)%nboxes
+          if ( multifab_remote(u(n), i) ) cycle
+          uop => dataptr(u(n), i)
+          lo =  lwb(get_box(u(n), i))
+          hi =  upb(get_box(u(n), i))
+          select case (dm)
+          case (2)
+             call initveldata_2d(uop(:,:,1,:), lo, hi, ng, dx(n,:), s0(n,:,:), p0(n,:))
+          case (3)
+          end select
+       end do
+       
     end do
 
-    call multifab_fill_boundary(u)
+    if (nlevs .eq. 1) then
+
+       ! fill ghost cells for two adjacent grids at the same level
+       ! this includes periodic domain boundary ghost cells
+       call multifab_fill_boundary(u(nlevs))
+
+       ! fill non-periodic domain boundary ghost cells
+       call multifab_physbc(u(nlevs),1,1,dm,bc(nlevs))
+    else
+    
+       ! the loop over nlevs must count backwards to make sure the finer grids are done first
+       do n=nlevs,2,-1
+
+          ! set level n-1 data to be the average of the level n data covering it
+          call ml_cc_restriction(u(n-1),u(n),mla%mba%rr(n-1,:))
+
+          ! fill level n ghost cells using interpolation from level n-1 data
+          ! note that multifab_fill_boundary and multifab_physbc are called for
+          ! both levels n-1 and n
+          call multifab_fill_ghost_cells(u(n),u(n-1),ng,mla%mba%rr(n-1,:), &
+                                         bc(n-1),bc(n),1,1,dm)
+       enddo
+       
+    end if
 
   end subroutine initveldata
 
-  subroutine initveldata_2d (u,lo,hi,ng,dx, &
-                             prob_lo,prob_hi,s0,p0,temp0,ntrac)
+  subroutine initveldata_2d(u,lo,hi,ng,dx,s0,p0)
 
-    integer, intent(in) :: lo(:), hi(:), ng, ntrac
-    real (kind = dp_t), intent(out) :: u(lo(1)-ng:,lo(2)-ng:,:)  
-    real (kind = dp_t), intent(in ) :: dx(:)
-    real (kind = dp_t), intent(in ) :: prob_lo(:)
-    real (kind = dp_t), intent(in ) :: prob_hi(:)
-    real(kind=dp_t), intent(in   ) ::    s0(0:,:)
-    real(kind=dp_t), intent(in   ) ::    p0(0:)
-    real(kind=dp_t), intent(in   ) :: temp0(0:)
-
-    !     Local variables
-    integer :: i, j, n
-    real(kind=dp_t) :: x,y,r,r0,r1,r2,temp
-    real(kind=dp_t) :: dens_pert, rhoh_pert, rhoX_pert(nspec), trac_pert(ntrac)
+    integer           , intent(in   ) :: lo(:),hi(:),ng
+    real (kind = dp_t), intent(  out) :: u(lo(1)-ng:,lo(2)-ng:,:)  
+    real (kind = dp_t), intent(in   ) :: dx(:)
+    real(kind=dp_t)   , intent(in   ) :: s0(0:,:)
+    real(kind=dp_t)   , intent(in   ) :: p0(0:)
 
     ! initial the velocity
     u(:,:,1) = ZERO
     u(:,:,2) = ZERO
 
   end subroutine initveldata_2d
-
-  subroutine initveldata_3d (u,lo,hi,ng,dx, &
-                             prob_lo,prob_hi,s0,p0,temp0,ntrac)
-
-    implicit none
-
-    integer, intent(in) :: lo(:), hi(:), ng, ntrac
-    real (kind = dp_t), intent(out) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
-    real (kind = dp_t), intent(in ) :: dx(:)
-    real (kind = dp_t), intent(in ) :: prob_lo(:)
-    real (kind = dp_t), intent(in ) :: prob_hi(:)
-    real(kind=dp_t), intent(in   ) ::    s0(0:,:)
-    real(kind=dp_t), intent(in   ) ::    p0(0:)
-    real(kind=dp_t), intent(in   ) :: temp0(0:)
-
-    !     Local variables
-    integer :: i, j, k, n
-    real(kind=dp_t) :: x,y,z,r,r0,r1,r2,temp
-    real(kind=dp_t) :: dens_pert, rhoh_pert, rhoX_pert(nspec), trac_pert(ntrac)
-
-    ! initial the velocity
-    u = ZERO
-    
-  end subroutine initveldata_3d
 
 
   subroutine perturb_2d(x, y, t0, p0, s0, dens_pert, rhoh_pert, rhoX_pert, trac_pert)
@@ -319,27 +234,25 @@ contains
           
     ! Use the EOS to make this temperature perturbation occur at constant 
     ! pressure
-    temp_row(1) = temp
-    p_row(1) = p0
-    den_row(1) = s0(rho_comp)
-    xn_zone(:) = s0(spec_comp:)/s0(rho_comp)
+    temp_eos(1) = temp
+    p_eos(1) = p0
+    den_eos(1) = s0(rho_comp)
+    xn_eos(1,:) = s0(spec_comp:)/s0(rho_comp)
 
-    input_flag = 3      ! (t, p) -> (rho, h)
-
-    call eos(input_flag, den_row, temp_row, &
+    call eos(eos_input_tp, den_eos, temp_eos, &
              npts, nspec, &
-             xn_zone, aion, zion, &
-             p_row, h_row, e_row, &
-             cv_row, cp_row, xne_row, eta_row, pele_row, &
-             dpdt_row, dpdr_row, dedt_row, dedr_row, &
-             dpdX_row, dhdX_row, &
-             gam1_row, cs_row, s_row, &
-             dsdt_row, dsdr_row, &
+             xn_eos, &
+             p_eos, h_eos, e_eos, &
+             cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+             dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+             dpdX_eos, dhdX_eos, &
+             gam1_eos, cs_eos, s_eos, &
+             dsdt_eos, dsdr_eos, &
              do_diag)
 
-    dens_pert = den_row(1)
-    rhoh_pert = den_row(1)*h_row(1)
-    rhoX_pert(:) = dens_pert*xn_zone(:)
+    dens_pert = den_eos(1)
+    rhoh_pert = den_eos(1)*h_eos(1)
+    rhoX_pert(:) = dens_pert*xn_eos(1,:)
     
     if ( (r1 .lt. 2.0) ) then
       trac_pert(:) = ONE
@@ -348,73 +261,6 @@ contains
     end if
 
   end subroutine perturb_2d
-
-  subroutine perturb_3d(x, y, z, t0, p0, s0, dens_pert, rhoh_pert, rhoX_pert, trac_pert)
-
-    ! apply an optional perturbation to the initial temperature field
-    ! to see some bubbles
-
-    real(kind=dp_t), intent(in ) :: x, y, z
-    real(kind=dp_t), intent(in ) :: t0, p0, s0(:)
-    real(kind=dp_t), intent(out) :: dens_pert, rhoh_pert
-    real(kind=dp_t), intent(out) :: rhoX_pert(:)
-    real(kind=dp_t), intent(out) :: trac_pert(:)
-
-    real(kind=dp_t) :: temp
-    real(kind=dp_t) :: x0, y0, z0, x1, y1, z1, x2, y2, z2
-    integer :: i, j, k
-    real(kind=dp_t) :: r0, r1, r2
-
-    y0 = 5.0d7
-    z0 = 6.5d7
-    
-    y1 = 1.2d8
-    z1 = 8.5d7
-    
-    y2 = 2.0d8
-    z2 = 7.5d7
-
-    ! Tanh bubbles
-    r0 = sqrt( (y-y0)**2 +(z-z0)**2 ) / 2.5e6
-    r1 = sqrt( (y-y1)**2 +(z-z1)**2 ) / 2.5e6
-    r2 = sqrt( (y-y2)**2 +(z-z2)**2 ) / 2.5e6
-    
-    temp = t0 * (ONE + TWO * ( &
-         .0625_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r0))) + &
-         .1875_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r1))) + &
-         .1250_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r2)))  ) )
-          
-    ! Use the EOS to make this temperature perturbation occur at constant 
-    ! pressure
-    temp_row(1) = temp
-    p_row(1) = p0
-    den_row(1) = s0(rho_comp)
-    xn_zone(spec_comp:) = s0(spec_comp:)/s0(rho_comp)
-
-    input_flag = 3      ! (t, p) -> (rho, h)
-
-    call eos(input_flag, den_row, temp_row, &
-             npts, nspec, &
-             xn_zone, aion, zion, &
-             p_row, h_row, e_row, &
-             cv_row, cp_row, xne_row, eta_row, pele_row, &
-             dpdt_row, dpdr_row, dedt_row, dedr_row, &
-             dpdX_row, dhdX_row, &
-             gam1_row, cs_row, s_row, &
-             dsdt_row, dsdr_row, &
-             do_diag)
-
-    dens_pert = den_row(1)
-    rhoh_pert = den_row(1)*h_row(1)
-    rhoX_pert(:) = dens_pert*xn_zone(:)
-    
-    if (r1 .lt. 2.0) then
-      trac_pert(:) = ONE
-    else
-      trac_pert(:) = ZERO
-    end if
-
-  end subroutine perturb_3d
 
   subroutine init_base_state (n_base,s0,temp0,p0,gam1,dx,prob_lo,prob_hi)
 
@@ -622,28 +468,25 @@ contains
        enddo
 
        ! use the EOS to make the state consistent
-       temp_row(1) = t_ambient
-       den_row(1)  = d_ambient
-       p_row(1)    = p_ambient
+       temp_eos(1) = t_ambient
+       den_eos(1)  = d_ambient
+       p_eos(1)    = p_ambient
 
-       ! (rho,T) --> p,h
-       input_flag = 1
-
-       call eos(input_flag, den_row, temp_row, &
+       call eos(eos_input_rt, den_eos, temp_eos, &
                 npts, nspec, &
-                xn_ambient, aion, zion, &
-                p_row, h_row, e_row, &
-                cv_row, cp_row, xne_row, eta_row, pele_row, &
-                dpdt_row, dpdr_row, dedt_row, dedr_row, &
-                dpdX_row, dhdX_row, &
-                gam1_row, cs_row, s_row, &
-                dsdt_row, dsdr_row, &
+                xn_ambient, &
+                p_eos, h_eos, e_eos, &
+                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                dpdX_eos, dhdX_eos, &
+                gam1_eos, cs_eos, s_eos, &
+                dsdt_eos, dsdr_eos, &
                 do_diag)
        
        s0(j, rho_comp ) = d_ambient
-       s0(j,rhoh_comp ) = d_ambient * h_row(1)
+       s0(j,rhoh_comp ) = d_ambient * h_eos(1)
        s0(j,spec_comp:spec_comp+nspec-1) = d_ambient * xn_ambient(1:nspec)
-       p0(j)    = p_row(1)
+       p0(j)    = p_eos(1)
        temp0(j) = t_ambient
 
        ! keep track of the height where we drop below the cutoff density
@@ -667,28 +510,25 @@ contains
 
     do j = 0,n_base-1
 
-       den_row(1)  = s0(j,rho_comp)
-       xn_ambient(1:nspec) = s0(j,spec_comp:spec_comp-1+nspec)/den_row(1)
-       temp_row(1) = temp0(j)
-       p_row(1)    =   p0(j)
+       den_eos(1)  = s0(j,rho_comp)
+       xn_ambient(1:nspec) = s0(j,spec_comp:spec_comp-1+nspec)/den_eos(1)
+       temp_eos(1) = temp0(j)
+       p_eos(1)    =   p0(j)
 
-!       (rho, p) --> T, h
-       input_flag = 4
-
-       call eos(input_flag, den_row, temp_row, &
+       call eos(eos_input_rp, den_eos, temp_eos, &
                 npts, nspec, &
-                xn_ambient, aion, zion, &
-                p_row, h_row, e_row, &
-                cv_row, cp_row, xne_row, eta_row, pele_row, &
-                dpdt_row, dpdr_row, dedt_row, dedr_row, &
-                dpdX_row, dhdX_row, &
-                gam1_row, cs_row, s_row, &
-                dsdt_row, dsdr_row, &
+                xn_ambient, &
+                p_eos, h_eos, e_eos, &
+                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                dpdX_eos, dhdX_eos, &
+                gam1_eos, cs_eos, s_eos, &
+                dsdt_eos, dsdr_eos, &
                 do_diag)
        
-       temp0(j) = temp_row(1)
-       gam1(j)  = gam1_row(1)
-       s0(j,rhoh_comp) = h_row(1) * s0(j,rho_comp)
+       temp0(j) = temp_eos(1)
+       gam1(j)  = gam1_eos(1)
+       s0(j,rhoh_comp) = h_eos(1) * s0(j,rho_comp)
 
        s0(j,trac_comp:) = ZERO
        
