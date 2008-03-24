@@ -10,7 +10,7 @@
  max_step  = 100000000
  init_iter = 1
 
- stop_time = 2.5
+ stop_time = 1.0
 
  plot_int  = 10
  chk_int   = -1
