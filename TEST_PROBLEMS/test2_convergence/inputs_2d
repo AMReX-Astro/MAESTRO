@@ -2,8 +2,11 @@
  test_set = "gr0_2d"
  spherical_in = 0
 
- prob_hi_x = 1.44e8
- prob_hi_y = 1.44e8
+ prob_lo_x = 4.8e7
+ prob_lo_y = 3.9e7
+
+ prob_hi_x = 1.92e8
+ prob_hi_y = 1.83e8
 
  grav_const = -1.5e10
 
