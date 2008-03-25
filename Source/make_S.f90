@@ -17,7 +17,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   subroutine make_S(nlevs,Source,delta_gamma1_term,delta_gamma1,state,u,rho_omegadot, &
-                    rho_Hext,thermal,t0,p0,gamma1bar,delta_gamma1_termbar,psi,dx,mla)
+                    rho_Hext,thermal,t0,p0,rho0,gamma1bar,delta_gamma1_termbar,psi,dx,mla)
 
     use bl_constants_module
     use bl_prof_module
@@ -37,6 +37,7 @@ contains
     type(multifab) , intent(in   ) :: thermal(:)
     real(kind=dp_t), intent(in   ) :: t0(:,0:)
     real(kind=dp_t), intent(in   ) :: p0(:,0:)
+    real(kind=dp_t), intent(in   ) :: rho0(:,0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
     real(kind=dp_t), intent(inout) :: delta_gamma1_termbar(:,0:,:)
     real(kind=dp_t), intent(in   ) :: psi(:,0:)
@@ -75,7 +76,7 @@ contains
              call make_S_2d(lo,hi,srcp(:,:,1,1),dgtp(:,:,1,1),dgp(:,:,1,1), &
                             sp(:,:,1,:),up(:,:,1,:), &
                             omegap(:,:,1,:), hp(:,:,1,1), &
-                            tp(:,:,1,1), ng, p0(n,:), gamma1bar(n,:), dx(n,:))
+                            tp(:,:,1,1), ng, p0(n,:), rho0(n,:), gamma1bar(n,:), dx(n,:))
           case (3)
              call make_S_3d(n,lo,hi,srcp(:,:,:,1),dgtp(:,:,:,1),dgp(:,:,:,1), &
                             sp(:,:,:,:),up(:,:,:,:), &
@@ -113,12 +114,12 @@ contains
 
 
    subroutine make_S_2d (lo,hi,Source,delta_gamma1_term,delta_gamma1,s,u, &
-                         rho_omegadot,rho_Hext,thermal,ng,p0,gamma1bar,dx)
+                         rho_omegadot,rho_Hext,thermal,ng,p0,rho0,gamma1bar,dx)
 
       use bl_constants_module
       use eos_module
       use variables, only: rho_comp, temp_comp, spec_comp
-      use probin_module, only: use_delta_gamma1_term
+      use probin_module, only: use_delta_gamma1_term, anelastic_cutoff
 
       integer         , intent(in   ) :: lo(:), hi(:), ng
       real (kind=dp_t), intent(  out) :: Source(lo(1):,lo(2):)
@@ -130,11 +131,12 @@ contains
       real (kind=dp_t), intent(in   ) :: rho_Hext(lo(1):,lo(2):)
       real (kind=dp_t), intent(in   ) :: thermal(lo(1)-1:,lo(2)-1:)
       real (kind=dp_t), intent(in   ) ::   p0(0:)
+      real (kind=dp_t), intent(in   ) ::  rho0(0:)
       real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
       real (kind=dp_t), intent(in   ) :: dx(:)
 
 !     Local variables
-      integer :: i, j, comp, nr
+      integer :: i, j, comp, nr, r, r_anel
 
       real(kind=dp_t) :: sigma, react_term, pres_term, gradp0
 
@@ -143,6 +145,16 @@ contains
       Source = zero
 
       do_diag = .false.
+
+      ! This is used to zero the delta_gamma1_term stuff above anelastic_cutoff
+      r_anel = nr-1
+      do r = 0,nr-1
+         if (rho0(r) .lt. anelastic_cutoff .and. r_anel .eq. nr-1) then
+            r_anel = r
+            exit
+         endif
+      enddo
+
 
       do j = lo(2), hi(2)
         do i = lo(1), hi(1)
@@ -179,7 +191,7 @@ contains
                         + sigma*react_term &
                         + pres_term/(den_eos(1)*dpdr_eos(1))
 
-           if (use_delta_gamma1_term) then
+           if (use_delta_gamma1_term .and. j < r_anel) then
               if (j .eq. 0) then
                  gradp0 = (p0(j+1) - p0(j))/dx(2)
               else if (j .eq. nr-1) then
@@ -194,7 +206,8 @@ contains
                    (gam1_eos(1) - gamma1bar(j))*u(i,j,2)* &
                    gradp0/(gamma1bar(j)*gamma1bar(j)*p0(j))
            else
-              delta_gamma1_term(i,j) = 0.0_dp_t
+              delta_gamma1_term(i,j) = ZERO
+              delta_gamma1(i,j) = ZERO
            endif
 
         enddo

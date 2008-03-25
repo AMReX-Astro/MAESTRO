@@ -10,7 +10,7 @@ contains
   subroutine initial_proj(nlevs,uold,sold,pres,gpres,Source_old,hgrhs, &
                           div_coeff_old,s0_old,p0_old,gamma1bar,dx,the_bc_tower,mla)
 
-    use variables, only: temp_comp, press_comp, foextrap_comp
+    use variables, only: temp_comp, press_comp, foextrap_comp, rho_comp
     use network, only: nspec
     use define_bc_module
     use bl_constants_module
@@ -95,7 +95,7 @@ contains
     end do
 
     call make_S(nlevs,Source_old,delta_gamma1_term,delta_gamma1,sold,uold,rho_omegadot1, &
-                rho_Hext,thermal,s0_old(:,:,temp_comp),p0_old,gamma1bar, &
+                rho_Hext,thermal,s0_old(:,:,temp_comp),p0_old,s0_old(:,:,rho_comp),gamma1bar, &
                 delta_gamma1_termbar,psi,dx,mla)
     do n=1,nlevs
        call destroy(thermal(n))

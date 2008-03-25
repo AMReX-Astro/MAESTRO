@@ -559,7 +559,7 @@ contains
        end do
 
        call make_S(nlevs,Source_new,delta_gamma1_term,delta_gamma1,snew,uold,rho_omegadot2, &
-                   rho_Hext,thermal,s0_old(:,:,temp_comp),p0_old,gamma1bar(:,:,1), &
+                   rho_Hext,thermal,s0_old(:,:,temp_comp),p0_old,s0_old(:,:,rho_comp),gamma1bar(:,:,1), &
                    delta_gamma1_termbar,psi,dx,mla)
        
        do n=1,nlevs
@@ -848,7 +848,7 @@ contains
     end do
 
     call make_S(nlevs,Source_new,delta_gamma1_term,delta_gamma1,snew,uold,rho_omegadot2, &
-                rho_Hext,thermal,s0_new(:,:,temp_comp),p0_new,gamma1bar(:,:,1), &
+                rho_Hext,thermal,s0_new(:,:,temp_comp),p0_new,s0_new(:,:,rho_comp),gamma1bar(:,:,1), &
                 delta_gamma1_termbar,psi,dx,mla)
 
     do n=1,nlevs
