@@ -89,7 +89,6 @@ contains
     use bl_prof_module
     use fabio_module
     use vort_module
-    use geometry, only: spherical
     use variables
     use plot_variables_module
     use probin_module, ONLY: use_big_h
@@ -154,53 +153,25 @@ contains
        ! ENTHALPY 
        call make_enthalpy(plotdata(n),icomp_enthalpy,s(n))
 
-    end do
+       ! RHOPERT & TEMP (FROM RHO) & TPERT & MACHNO & (GAM1 - GAM10)
+       call make_tfromrho(n,plotdata(n),icomp_tfromrho,icomp_tpert,icomp_rhopert, &
+                          icomp_machno,icomp_dg,icomp_spert, &
+                          s(n),u(n),s0(n,:,:),p0(n,:),dx(n,:))
 
-    if (spherical .eq. 1) then
-
-       do n = 1,nlevs
-
-          ! RHOPERT & TEMP (FROM RHO) & TPERT & MACHNO & (GAM1 - GAM10)
-          call make_tfromrho(n,plotdata(n),icomp_tfromrho,icomp_tpert,icomp_rhopert, &
-                             icomp_machno,icomp_dg,icomp_spert, &
-                             s(n),u(n),s0(n,:,:),p0(n,:),dx(n,:))
-
-          ! TEMP (FROM H) & DELTA_P
-          call make_tfromH(n,plotdata(n),icomp_tfromH,icomp_dp,s(n),p0(n,:), &
-                           s0(n,:,temp_comp),dx(n,:))
-
-          ! DIFF BETWEEN TFROMRHO AND TFROMH
-          call make_deltaT (plotdata(n),icomp_dT,icomp_tfromrho,icomp_tfromH)
-
-       end do
-
-    else
-
-       do n = 1,nlevs
-
-          ! RHOPERT & TEMP (FROM RHO) & TPERT & MACHNO & (GAM1 - GAM10)
-          call make_tfromrho(n,plotdata(n),icomp_tfromrho,icomp_tpert,icomp_rhopert, &
-                             icomp_machno,icomp_dg,icomp_spert, &
-                             s(n),u(n),s0(n,:,:),p0(n,:),dx(n,:))
-
-          ! TEMP (FROM H) & DELTA_P
-          call make_tfromH(n,plotdata(n),icomp_tfromH,icomp_dp,s(n),p0(n,:), &
-                           s0(n,:,temp_comp),dx(n,:))
-
-          ! DIFF BETWEEN TFROMRHO AND TFROMH
-          call make_deltaT (plotdata(n),icomp_dT,icomp_tfromrho,icomp_tfromH)
-
-       end do
-
-    end if
-
-    do n = 1,nlevs
+       ! TEMP (FROM H) & DELTA_P
+       call make_tfromH(n,plotdata(n),icomp_tfromH,icomp_dp,s(n),p0(n,:), &
+                        s0(n,:,temp_comp),dx(n,:))
+       
+       ! DIFF BETWEEN TFROMRHO AND TFROMH
+       call make_deltaT (plotdata(n),icomp_dT,icomp_tfromrho,icomp_tfromH)
 
        ! PRESSURE GRADIENT
        call multifab_copy_c(plotdata(n),icomp_gp,gpres(n),1,dm)
 
-    end do
+       ! SPONGE
+       call multifab_copy_c(plotdata(n),icomp_sponge,sponge(n),1,1)
 
+    end do
 
     if (plot_spec) then
        ! OMEGADOT
@@ -208,13 +179,6 @@ contains
           call make_omegadot(plotdata(n),icomp_omegadot,icomp_enuc,s(n),rho_omegadot(n))
        end do
     end if
-
-    do n = 1,nlevs
-
-       ! SPONGE
-       call multifab_copy_c(plotdata(n),icomp_sponge,sponge(n),1,1)
-
-    end do
 
     call fabio_ml_multifab_write_d(plotdata, mba%rr(:,1), dirname, plot_names, &
                                    mba%pd(1), time, dx(1,:))
