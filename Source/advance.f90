@@ -127,6 +127,7 @@ contains
     real(dp_t), allocatable :: s0_predicted_edge(:,:,:)
     real(dp_t), allocatable :: gamma1bar_old(:,:,:)
     real(dp_t), allocatable :: delta_gamma1_termbar(:,:,:)
+    real(dp_t), allocatable :: tbar(:,:,:)
 
     integer    :: r,n,dm,comp,nlevs,ng_s,proj_type
     real(dp_t) :: halfdt,eps_in
@@ -139,24 +140,25 @@ contains
     dm = mla%dim
     nlevs = mla%nlevel
 
-    allocate(    grav_cell_nph(nlevs,0:nr(nlevs)-1))
-    allocate(    grav_cell_new(nlevs,0:nr(nlevs)-1))
-    allocate(           s0_nph(nlevs,0:nr(nlevs)-1,nscal))
-    allocate(         w0_force(nlevs,0:nr(nlevs)-1))
-    allocate(           w0_old(nlevs,0:nr(nlevs)  ))
-    allocate(             Sbar(nlevs,0:nr(nlevs)-1,1    ))
-    allocate(    div_coeff_nph(nlevs,0:nr(nlevs)-1))
-    allocate(   div_coeff_edge(nlevs,0:nr(nlevs)  ))
-    allocate( rho_omegadotbar1(nlevs,0:nr(nlevs)-1,nspec))
-    allocate( rho_omegadotbar2(nlevs,0:nr(nlevs)-1,nspec))
-    allocate(      rho_Hextbar(nlevs,0:nr(nlevs)-1,1))
-    allocate(             s0_1(nlevs,0:nr(nlevs)-1,nscal))
-    allocate(             s0_2(nlevs,0:nr(nlevs)-1,nscal))
-    allocate(             p0_1(nlevs,0:nr(nlevs)-1))
-    allocate(             p0_2(nlevs,0:nr(nlevs)-1))
-    allocate(s0_predicted_edge(nlevs,0:nr(nlevs)  ,nscal))
-    allocate(gamma1bar_old    (nlevs,0:nr(nlevs)-1,1))    
+    allocate(       grav_cell_nph(nlevs,0:nr(nlevs)-1))
+    allocate(       grav_cell_new(nlevs,0:nr(nlevs)-1))
+    allocate(              s0_nph(nlevs,0:nr(nlevs)-1,nscal))
+    allocate(            w0_force(nlevs,0:nr(nlevs)-1))
+    allocate(              w0_old(nlevs,0:nr(nlevs)  ))
+    allocate(                Sbar(nlevs,0:nr(nlevs)-1,1))
+    allocate(       div_coeff_nph(nlevs,0:nr(nlevs)-1))
+    allocate(      div_coeff_edge(nlevs,0:nr(nlevs)  ))
+    allocate(    rho_omegadotbar1(nlevs,0:nr(nlevs)-1,nspec))
+    allocate(    rho_omegadotbar2(nlevs,0:nr(nlevs)-1,nspec))
+    allocate(         rho_Hextbar(nlevs,0:nr(nlevs)-1,1))
+    allocate(                s0_1(nlevs,0:nr(nlevs)-1,nscal))
+    allocate(                s0_2(nlevs,0:nr(nlevs)-1,nscal))
+    allocate(                p0_1(nlevs,0:nr(nlevs)-1))
+    allocate(                p0_2(nlevs,0:nr(nlevs)-1))
+    allocate(   s0_predicted_edge(nlevs,0:nr(nlevs)  ,nscal))
+    allocate(       gamma1bar_old(nlevs,0:nr(nlevs)-1,1))    
     allocate(delta_gamma1_termbar(nlevs,0:nr(nlevs)-1,1))
+    allocate(                tbar(nlevs,0:nr(nlevs)-1,1))
 
     ! Set these to be safe
     s0_1(:,:,:) = ZERO
@@ -184,6 +186,8 @@ contains
     do n=1,nlevs
        call multifab_build(etaflux(n), mla%la(n), nscal, 0, nodal = umac_nodal_flag)
     end do
+
+    call average(mla,sold,tbar,dx,temp_comp,1,1)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 1 -- define average expansion at time n+1/2
