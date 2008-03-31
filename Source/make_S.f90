@@ -88,7 +88,7 @@ contains
 
     if (use_delta_gamma1_term) then
 
-       call average(mla,delta_gamma1_term,delta_gamma1_termbar,dx,1,1)
+       call average(mla,delta_gamma1_term,delta_gamma1_termbar,dx,1,1,1)
        
        do n = 1, nlevs
           do i = 1, state(n)%nboxes

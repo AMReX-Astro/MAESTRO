@@ -105,7 +105,7 @@ contains
     end do
     
     if (evolve_base_state) then
-       call average(mla,Source_old,Sbar,dx,1,1)
+       call average(mla,Source_old,Sbar,dx,1,1,1)
     end if
     
     ! Note that we use rhohalf, filled with 1 at this point, as a temporary

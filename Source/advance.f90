@@ -213,7 +213,7 @@ contains
     
     if (evolve_base_state) then
 
-       call average(mla,Source_nph,Sbar,dx,1,1)
+       call average(mla,Source_nph,Sbar,dx,1,1,1)
 
        call make_w0(nlevs,w0,w0_old,w0_force,Sbar(:,:,1),s0_old(:,:,rho_comp), &
                     p0_old,p0_old,gamma1bar(:,:,1),gamma1bar(:,:,1),psi,dt,dtold)
@@ -314,8 +314,8 @@ contains
                      the_bc_tower%bc_tower_array,time)
     
     if (evolve_base_state) then
-       call average(mla,rho_omegadot1,rho_omegadotbar1,dx,1,nspec)
-       call average(mla,rho_Hext,rho_Hextbar,dx,1,1)
+       call average(mla,rho_omegadot1,rho_omegadotbar1,dx,1,1,nspec)
+       call average(mla,rho_Hext,rho_Hextbar,dx,1,1,1)
        call react_base(nlevs,p0_old,s0_old,rho_omegadotbar1,rho_Hextbar(:,:,1),halfdt, &
                        p0_1,s0_1,gamma1bar(:,:,1))
     else
@@ -329,7 +329,7 @@ contains
        end do
        
        call make_gamma(nlevs,gamma1,s1,p0_1)
-       call average(mla,gamma1,gamma1bar,dx,1,1)
+       call average(mla,gamma1,gamma1bar,dx,1,1,1)
 
        do n=1,nlevs
           call destroy(gamma1(n))
@@ -489,8 +489,8 @@ contains
     end do
 
     if (evolve_base_state) then
-       call average(mla,rho_omegadot2,rho_omegadotbar2,dx,1,nspec)
-       call average(mla,rho_Hext,rho_Hextbar,dx,1,1)
+       call average(mla,rho_omegadot2,rho_omegadotbar2,dx,1,1,nspec)
+       call average(mla,rho_Hext,rho_Hextbar,dx,1,1,1)
        call react_base(nlevs,p0_2,s0_2,rho_omegadotbar2,rho_Hextbar(:,:,1),halfdt, &
                        p0_new,s0_new,gamma1bar(:,:,1))
     else
@@ -504,7 +504,7 @@ contains
        end do
        
        call make_gamma(nlevs,gamma1,snew,p0_new)
-       call average(mla,gamma1,gamma1bar,dx,1,1)
+       call average(mla,gamma1,gamma1bar,dx,1,1,1)
 
        do n=1,nlevs
           call destroy(gamma1(n))
@@ -583,7 +583,7 @@ contains
 
        if (evolve_base_state) then
        
-          call average(mla,Source_nph,Sbar,dx,1,1)
+          call average(mla,Source_nph,Sbar,dx,1,1,1)
 
           if(use_delta_gamma1_term) then
              ! add delta_gamma1_termbar to Sbar
@@ -790,8 +790,8 @@ contains
        end do
 
        if (evolve_base_state) then
-          call average(mla,rho_omegadot2,rho_omegadotbar2,dx,1,nspec)
-          call average(mla,rho_Hext,rho_Hextbar,dx,1,1)
+          call average(mla,rho_omegadot2,rho_omegadotbar2,dx,1,1,nspec)
+          call average(mla,rho_Hext,rho_Hextbar,dx,1,1,1)
           call react_base(nlevs,p0_2,s0_2,rho_omegadotbar2,rho_Hextbar(:,:,1),halfdt, &
                           p0_new,s0_new,gamma1bar(:,:,1))
        else
@@ -805,7 +805,7 @@ contains
           end do
           
           call make_gamma(nlevs,gamma1,snew,p0_new)
-          call average(mla,gamma1,gamma1bar,dx,1,1)
+          call average(mla,gamma1,gamma1bar,dx,1,1,1)
           
           do n=1,nlevs
              call destroy(gamma1(n))
@@ -858,7 +858,7 @@ contains
     end do
 
     if (evolve_base_state) then
-       call average(mla,Source_new,Sbar,dx,1,1)
+       call average(mla,Source_new,Sbar,dx,1,1,1)
 
        if(use_delta_gamma1_term) then
           ! add delta_gamma1_termbar to Sbar
