@@ -20,11 +20,11 @@ module firstdt_module
 
 contains
 
-  subroutine firstdt(n,u,s,force,divU,p0,gamma1bar,t0,dx,cflfac,dt)
+  subroutine firstdt(n,u,s,force,divU,p0,gamma1bar,dx,cflfac,dt)
 
     integer        , intent(in   ) :: n
     type(multifab) , intent(in   ) :: u,s,force,divU
-    real(kind=dp_t), intent(in   ) :: p0(0:), cflfac, t0(0:), gamma1bar(0:)
+    real(kind=dp_t), intent(in   ) :: p0(0:), cflfac, gamma1bar(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
     real(kind=dp_t), intent(  out) :: dt
     
@@ -51,13 +51,11 @@ contains
        hi    =  upb(get_box(u, i))
        select case (dm)
        case (2)
-          call firstdt_2d(n,uop(:,:,1,:), sop(:,:,1,:), fp(:,:,1,:),&
-                          divup(:,:,1,1), p0, gamma1bar, lo, hi, ng, dx, &
-                          dt_grid, cflfac)
+          call firstdt_2d(n, uop(:,:,1,:), sop(:,:,1,:), fp(:,:,1,:), divup(:,:,1,1), &
+                          p0, gamma1bar, lo, hi, ng, dx, dt_grid, cflfac)
        case (3)
-          call firstdt_3d(n,uop(:,:,:,:), sop(:,:,:,:), fp(:,:,:,:),&
-                          divup(:,:,:,1), p0, gamma1bar, t0, lo, hi, ng, dx, &
-                          dt_grid, cflfac)
+          call firstdt_3d(n, uop(:,:,:,:), sop(:,:,:,:), fp(:,:,:,:), divup(:,:,:,1), &
+                          p0, gamma1bar, lo, hi, ng, dx, dt_grid, cflfac)
        end select
        dt_hold_proc = min(dt_hold_proc,dt_grid)
     end do
@@ -171,7 +169,7 @@ contains
     
   end subroutine firstdt_2d
   
-  subroutine firstdt_3d(n,u,s,force,divU,p0,gamma1bar,t0,lo,hi,ng,dx,dt,cfl)
+  subroutine firstdt_3d(n,u,s,force,divU,p0,gamma1bar,lo,hi,ng,dx,dt,cfl)
 
     use geometry,  only: spherical, nr
     use variables, only: rho_comp, temp_comp, spec_comp
@@ -184,7 +182,7 @@ contains
     real (kind = dp_t), intent(in ) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind = dp_t), intent(in ) :: force(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)
     real (kind = dp_t), intent(in ) :: divU(lo(1):,lo(2):,lo(3):)  
-    real (kind = dp_t), intent(in ) :: p0(0:), t0(0:), gamma1bar(0:)
+    real (kind = dp_t), intent(in ) :: p0(0:), gamma1bar(0:)
     real (kind = dp_t), intent(in ) :: dx(:)
     real (kind = dp_t), intent(out) :: dt
     real (kind = dp_t), intent(in ) :: cfl
@@ -194,9 +192,6 @@ contains
     real (kind = dp_t)  :: ux, uy, uz
     real (kind = dp_t)  :: eps, dt_divu, gradp0, denom, rho_min
     integer             :: i,j,k
-    
-    real (kind=dp_t), allocatable :: t0_cart(:,:,:)
-    real (kind=dp_t), allocatable :: p0_cart(:,:,:)
     
     eps = 1.0d-8
     
@@ -212,24 +207,12 @@ contains
     uy      = ZERO
     uz      = ZERO
     
-    if (spherical == 1) then
-       allocate(t0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-       call fill_3d_data(n,t0_cart,t0,lo,hi,dx,0)
-       
-       allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-       call fill_3d_data(n,p0_cart,p0,lo,hi,dx,0)
-    endif
-    
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
              
              den_eos(1) = s(i,j,k,rho_comp)
-             if (spherical == 1) then
-                temp_eos(1) = t0_cart(i,j,k)
-             else
-                temp_eos(1) = s(i,j,k,temp_comp)
-             endif
+             temp_eos(1) = s(i,j,k,temp_comp)
              xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
              
              ! dens, temp, and xmass are inputs
@@ -302,9 +285,6 @@ contains
           enddo
        enddo
     enddo
-    
-    if (spherical == 1) &
-         deallocate(t0_cart,p0_cart)
     
   end subroutine firstdt_3d
   
