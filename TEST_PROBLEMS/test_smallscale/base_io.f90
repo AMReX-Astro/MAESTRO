@@ -11,7 +11,7 @@ module base_io_module
 contains
 
   subroutine write_base_state(nlevs,state_name,w0_name,eta_name,chk_name, &
-                              s0,p0,gamma1bar,w0,eta,div_coeff,problo)
+                              s0,p0,gamma1bar,w0,eta,div_coeff,psi,problo)
     
     use parallel
     use bl_prof_module
@@ -25,7 +25,8 @@ contains
     character(len=8) , intent(in) :: w0_name
     character(len=9) , intent(in) :: eta_name
     character(len=8) , intent(in) :: chk_name
-    real(kind=dp_t)  , intent(in) :: s0(:,:,:),p0(:,:),gamma1bar(:,:),div_coeff(:,:)
+    real(kind=dp_t)  , intent(in) :: s0(:,:,:),p0(:,:),gamma1bar(:,:)
+    real(kind=dp_t)  , intent(in) :: div_coeff(:,:), psi(:,:)
     real(kind=dp_t)  , intent(in) :: w0(:,:), eta(:,:,:)
 
     real(kind=dp_t) :: base_r, problo
@@ -50,7 +51,7 @@ contains
              write(99,1000)  base_r,s0(n,i,rho_comp), p0(n,i), gamma1bar(n,i), &
                   s0(n,i,rhoh_comp), &
                   (s0(n,i,comp), comp=spec_comp,spec_comp+nspec-1), &
-                  s0(n,i,temp_comp), div_coeff(n,i)
+                  s0(n,i,temp_comp), div_coeff(n,i), psi(n,i)
           end do
        end do
        close(99)
@@ -95,7 +96,7 @@ contains
 
 
   subroutine read_base_state(nlevs,state_name,w0_name,eta_name,chk_name, &
-                             s0,p0,gamma1bar,w0,eta,div_coeff)
+                             s0,p0,gamma1bar,w0,eta,div_coeff,psi)
 
     use parallel
     use bl_prof_module
@@ -112,7 +113,8 @@ contains
     character(len=8) , intent(in   ) :: w0_name
     character(len=9) , intent(in   ) :: eta_name    
     character(len=8) , intent(in   ) :: chk_name    
-    real(kind=dp_t)  , intent(inout) :: s0(:,:,:),p0(:,:),gamma1bar(:,:),div_coeff(:,:)
+    real(kind=dp_t)  , intent(inout) :: s0(:,:,:),p0(:,:),gamma1bar(:,:)
+    real(kind=dp_t)  , intent(inout) :: div_coeff(:,:), psi(:,:)
     real(kind=dp_t)  , intent(inout) :: w0(:,:),eta(:,:,:)
     real(kind=dp_t)  , allocatable   :: base_r(:,:)
 
@@ -142,7 +144,7 @@ contains
        do i=1,nr(n)
           read(99,*)  base_r(n,i),s0(n,i,rho_comp), p0(n,i), gamma1bar(n,i), &
                s0(n,i,rhoh_comp), (s0(n,i,comp), comp=spec_comp,spec_comp+nspec-1), &
-               s0(n,i,temp_comp), div_coeff(n,i)
+               s0(n,i,temp_comp), div_coeff(n,i), psi(n,i)
        end do
     end do
     close(99)
