@@ -421,7 +421,7 @@ contains
     ! Now compute the new eta and psi
     if (use_eta .and. evolve_base_state) then
        call make_eta(nlevs,eta,etaflux,mla)
-       call make_psi(nlevs,eta,psi,s0_1)
+       call make_psi(nlevs,eta,psi,s0_1,w0,gamma1bar(:,:,1),p0_1,Sbar(:,:,1))
     end if
 
     do n=1,nlevs
@@ -740,7 +740,7 @@ contains
        ! Now compute the new eta and psi
        if (use_eta .and. evolve_base_state) then
           call make_eta(nlevs,eta,etaflux,mla)
-          call make_psi(nlevs,eta,psi,s0_1)
+          call make_psi(nlevs,eta,psi,s0_1,w0,gamma1bar(:,:,1),p0_1,Sbar(:,:,1))
        end if
 
        do n=1,nlevs
