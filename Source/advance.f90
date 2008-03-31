@@ -59,7 +59,7 @@ contains
     logical,         intent(in   ) :: init_mode
     type(ml_layout), intent(inout) :: mla
     type(multifab),  intent(in   ) :: uold(:)
-    type(multifab),  intent(in   ) :: sold(:)
+    type(multifab),  intent(inout) :: sold(:) ! the out is needed only for calls to average
     type(multifab),  intent(inout) :: unew(:)
     type(multifab),  intent(inout) :: snew(:)
     type(multifab),  intent(inout) :: gpres(:)
@@ -160,33 +160,28 @@ contains
     allocate(delta_gamma1_termbar(nlevs,0:nr(nlevs)-1,1))
     allocate(                tbar(nlevs,0:nr(nlevs)-1,1))
 
-    ! Set these to be safe
-    s0_1(:,:,:) = ZERO
-    s0_2(:,:,:) = ZERO
-    p0_1(:,:)   = ZERO
-    p0_2(:,:)   = ZERO
-    s0_predicted_edge(:,:,:) = ZERO
+    ! Set this to zero so if evolve_base_state = F there is no effect in update_vel
     w0_force(:,:) = ZERO
-    gamma1bar_old(:,:,:) = gamma1bar(:,:,:)
-    delta_gamma1_termbar(:,:,:) = ZERO
 
-    ! Set Sbar to zero so if evolve_base_state = F then we don't need to reset it.
+    ! Set Sbar to zero so if evolve_base_state = F then it doesn't affect rhs of projections
     Sbar(:,:,:) = ZERO
 
-    ! Set w0_old to w0 from last time step.
+    ! Set these to results from last
     w0_old = w0
+    gamma1bar_old(:,:,:) = gamma1bar(:,:,:)
 
     nodal = .true.
     ng_s = sold(1)%ng
     halfdt = half*dt
 
-!   Build etaflux here so that we can call correct_base before make_eta.
+    ! Build etaflux here so that we can call correct_base before make_eta.
     umac_nodal_flag = .false.
     umac_nodal_flag(dm) = .true.
     do n=1,nlevs
        call multifab_build(etaflux(n), mla%la(n), nscal, 0, nodal = umac_nodal_flag)
     end do
 
+    ! tbar is only used as an initial guess for eos calls
     call average(mla,sold,tbar,dx,temp_comp,1,1)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -452,10 +447,10 @@ contains
        
        if(do_half_alg) then
           call thermal_conduct_half_alg(mla,dx,dt,s1,s2,p0_1,p0_2, &
-                                        s0_2(:,:,temp_comp),the_bc_tower)
+                                        tbar(:,:,1),the_bc_tower)
        else
           call thermal_conduct_full_alg(mla,dx,dt,s1,s1,s2,p0_1,p0_2, &
-                                        s0_2(:,:,temp_comp),the_bc_tower)
+                                        tbar(:,:,1),the_bc_tower)
           
           ! make a copy of s2star since these are needed to compute
           ! coefficients in the call to thermal_conduct_full_alg
@@ -762,7 +757,7 @@ contains
           end if
           
           call thermal_conduct_full_alg(mla,dx,dt,s1,s2star,s2,p0_1,p0_2, &
-                                        s0_2(:,:,temp_comp),the_bc_tower)
+                                        tbar(:,:,1),the_bc_tower)
 
           do n=1,nlevs
              call destroy(s2star(n))
