@@ -12,7 +12,7 @@ contains
     
   subroutine advance_timestep(init_mode,mla,uold,sold,unew,snew, &
                               gpres,pres,normal,s0_old, &
-                              s0_new,p0_old,p0_new,gamma1bar,w0, &
+                              s0_new,p0_old,p0_new,tbar,gamma1bar,w0, &
                               rho_omegadot2,div_coeff_old,div_coeff_new, &
                               grav_cell_old,dx,time,dt,dtold,the_bc_tower, &
                               dSdt,Source_old,Source_new,eta,psi,sponge,hgrhs,istep)
@@ -69,6 +69,7 @@ contains
     real(dp_t)    ,  intent(inout) :: s0_new(:,0:,:)
     real(dp_t)    ,  intent(inout) :: p0_old(:,0:)
     real(dp_t)    ,  intent(inout) :: p0_new(:,0:)
+    real(dp_t)    ,  intent(inout) :: tbar(:,0:,:)
     real(dp_t)    ,  intent(inout) :: gamma1bar(:,0:,:)
     real(dp_t)    ,  intent(inout) :: w0(:,0:)
     type(multifab),  intent(inout) :: rho_omegadot2(:)
@@ -127,7 +128,6 @@ contains
     real(dp_t), allocatable :: s0_predicted_edge(:,:,:)
     real(dp_t), allocatable :: gamma1bar_old(:,:,:)
     real(dp_t), allocatable :: delta_gamma1_termbar(:,:,:)
-    real(dp_t), allocatable :: tbar(:,:,:)
 
     integer    :: r,n,dm,comp,nlevs,ng_s,proj_type
     real(dp_t) :: halfdt,eps_in
@@ -158,7 +158,6 @@ contains
     allocate(   s0_predicted_edge(nlevs,0:nr(nlevs)  ,nscal))
     allocate(       gamma1bar_old(nlevs,0:nr(nlevs)-1,1))    
     allocate(delta_gamma1_termbar(nlevs,0:nr(nlevs)-1,1))
-    allocate(                tbar(nlevs,0:nr(nlevs)-1,1))
 
     ! Set this to zero so if evolve_base_state = F there is no effect in update_vel
     w0_force(:,:) = ZERO
