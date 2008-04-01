@@ -31,7 +31,7 @@ contains
     
     do n=1,nlevs
        if (spherical .eq. 1) then
-!         call correct_base_state_spherical(n,s0_old(n,0:,:),s0_new(n,0:,:),eta(n,0:,:),dz(n),dt)
+
        else
           call correct_base_state_planar(n,s0_old(n,0:,:),s0_new(n,0:,:),eta(n,0:,:),dz(n),dt)
        end if
@@ -70,47 +70,12 @@ contains
     end do
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! UPDATE RHOX0 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-    do comp = spec_comp,spec_comp+nspec-1
-       do r = 0, r_anel-1
-         s0_new(r,comp) = s0_new(r,comp) - dt/dz*(eta(r+1,comp) - eta(r,comp))
-       end do
-    enddo
-    
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! UPDATE RHO0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     do r = 0, r_anel-1
       s0_new(r,rho_comp) = s0_new(r,rho_comp) - dt/dz*(eta(r+1,rho_comp) - eta(r,rho_comp))
     end do
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! MAKE TEMP0 FROM P0 AND RHO0
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!   do r = 0,nr(n)-1
-!      
-!      den_eos(1)  = s0_new(r,rho_comp)
-!      temp_eos(1) = s0_old(r,temp_comp)
-!      p_eos(1)    = p0_new(r)
-!      xn_eos(1,:) = s0_new(r,spec_comp:spec_comp+nspec-1)/s0_new(r,rho_comp)
-!      
-!      ! (rho,P) --> T, h
-!      call eos(eos_input_rp, den_eos, temp_eos, &
-!               npts, nspec, &
-!               xn_eos, &
-!               p_eos, h_eos, e_eos, &
-!               cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-!               dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-!               dpdX_eos, dhdX_eos, &
-!               gam1_eos, cs_eos, s_eos, &
-!               dsdt_eos, dsdr_eos, &
-!               do_diag)
-!      
-!      s0_new(r,temp_comp) = temp_eos(1)
-!   end do
     
   end subroutine correct_base_state_planar
   
