@@ -158,7 +158,7 @@ contains
        ! RHOPERT & TEMP (FROM RHO) & TPERT & MACHNO & (GAM1 - GAM10)
        call make_tfromrho(n,plotdata(n),icomp_tfromrho,icomp_tpert,icomp_rhopert, &
                           icomp_machno,icomp_dg,icomp_spert, &
-                          s(n),u(n),s0(n,:,:),p0(n,:),dx(n,:))
+                          s(n),u(n),s0(n,:,:),tempbar(n,:,1),p0(n,:),dx(n,:))
 
        ! TEMP (FROM H) & DELTA_P
        call make_tfromH(n,plotdata(n),icomp_tfromH,icomp_dp,s(n),p0(n,:), &
