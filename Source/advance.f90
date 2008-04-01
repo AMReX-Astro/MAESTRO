@@ -329,7 +329,7 @@ contains
        s0_1 = s0_old
     end if
 
-    if (enthalpy_pred_type .ne. 1 .and. evolve_base_state) then
+    if (evolve_base_state) then
        do n=1,nlevs
           call multifab_build(gamma1(n), mla%la(n), 1, 0)
        end do
@@ -504,7 +504,7 @@ contains
        s0_new = s0_2
     end if
 
-    if (enthalpy_pred_type .ne. 1 .and. evolve_base_state) then
+    if (evolve_base_state) then
        do n=1,nlevs
           call multifab_build(gamma1(n), mla%la(n), 1, 0)
        end do
@@ -805,7 +805,7 @@ contains
           s0_new = s0_2
        end if
 
-       if (enthalpy_pred_type .ne. 1 .and. evolve_base_state) then
+       if (evolve_base_state) then
           do n=1,nlevs
              call multifab_build(gamma1(n), mla%la(n), 1, 0)
           end do
