@@ -12,7 +12,7 @@ contains
     
   subroutine advance_timestep(init_mode,mla,uold,sold,unew,snew, &
                               gpres,pres,normal,s0_old, &
-                              s0_new,p0_old,p0_new,tbar,gamma1bar,w0, &
+                              s0_new,p0_old,p0_new,tempbar,gamma1bar,w0, &
                               rho_omegadot2,div_coeff_old,div_coeff_new, &
                               grav_cell_old,dx,time,dt,dtold,the_bc_tower, &
                               dSdt,Source_old,Source_new,eta,psi,sponge,hgrhs,istep)
@@ -69,7 +69,7 @@ contains
     real(dp_t)    ,  intent(inout) :: s0_new(:,0:,:)
     real(dp_t)    ,  intent(inout) :: p0_old(:,0:)
     real(dp_t)    ,  intent(inout) :: p0_new(:,0:)
-    real(dp_t)    ,  intent(inout) :: tbar(:,0:,:)
+    real(dp_t)    ,  intent(inout) :: tempbar(:,0:,:)
     real(dp_t)    ,  intent(inout) :: gamma1bar(:,0:,:)
     real(dp_t)    ,  intent(inout) :: w0(:,0:)
     type(multifab),  intent(inout) :: rho_omegadot2(:)
@@ -180,8 +180,8 @@ contains
        call multifab_build(etaflux(n), mla%la(n), nscal, 0, nodal = umac_nodal_flag)
     end do
 
-    ! tbar is only used as an initial guess for eos calls
-    call average(mla,sold,tbar,dx,temp_comp,1,1)
+    ! tempbar is only used as an initial guess for eos calls
+    call average(mla,sold,tempbar,dx,temp_comp,1,1)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 1 -- define average expansion at time n+1/2
@@ -326,7 +326,7 @@ contains
           call multifab_build(gamma1(n), mla%la(n), 1, 0)
        end do
        
-       call make_gamma(nlevs,gamma1,s1,p0_1)
+       call make_gamma(nlevs,gamma1,s1,p0_1,tempbar)
        call average(mla,gamma1,gamma1bar,dx,1,1,1)
 
        do n=1,nlevs
@@ -446,10 +446,10 @@ contains
        
        if(do_half_alg) then
           call thermal_conduct_half_alg(mla,dx,dt,s1,s2,p0_1,p0_2, &
-                                        tbar(:,:,1),the_bc_tower)
+                                        tempbar(:,:,1),the_bc_tower)
        else
           call thermal_conduct_full_alg(mla,dx,dt,s1,s1,s2,p0_1,p0_2, &
-                                        tbar(:,:,1),the_bc_tower)
+                                        tempbar(:,:,1),the_bc_tower)
           
           ! make a copy of s2star since these are needed to compute
           ! coefficients in the call to thermal_conduct_full_alg
@@ -501,7 +501,7 @@ contains
           call multifab_build(gamma1(n), mla%la(n), 1, 0)
        end do
        
-       call make_gamma(nlevs,gamma1,snew,p0_new)
+       call make_gamma(nlevs,gamma1,snew,p0_new,tempbar)
        call average(mla,gamma1,gamma1bar,dx,1,1,1)
 
        do n=1,nlevs
@@ -756,7 +756,7 @@ contains
           end if
           
           call thermal_conduct_full_alg(mla,dx,dt,s1,s2star,s2,p0_1,p0_2, &
-                                        tbar(:,:,1),the_bc_tower)
+                                        tempbar(:,:,1),the_bc_tower)
 
           do n=1,nlevs
              call destroy(s2star(n))
@@ -802,7 +802,7 @@ contains
              call multifab_build(gamma1(n), mla%la(n), 1, 0)
           end do
           
-          call make_gamma(nlevs,gamma1,snew,p0_new)
+          call make_gamma(nlevs,gamma1,snew,p0_new,tempbar)
           call average(mla,gamma1,gamma1bar,dx,1,1,1)
           
           do n=1,nlevs
