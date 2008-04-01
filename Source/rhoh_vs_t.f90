@@ -38,14 +38,11 @@ contains
     real(kind=dp_t), pointer :: sepx(:,:,:,:)
     real(kind=dp_t), pointer :: sepy(:,:,:,:)
     real(kind=dp_t), pointer :: sepz(:,:,:,:)
-    real(kind=dp_t), pointer ::  xnp(:,:,:,:)
     real(kind=dp_t), pointer ::   rp(:,:,:,:)
     real(kind=dp_t), pointer ::  rhp(:,:,:,:)
 
-    real(kind=dp_t), allocatable ::   xn0_halftime(:,:)
     real(kind=dp_t), allocatable ::  rho0_halftime(:)
     real(kind=dp_t), allocatable :: rhoh0_halftime(:)
-    type(multifab)               ::   xn0_cart
     type(multifab)               ::  rho0_cart
     type(multifab)               :: rhoh0_cart
 
@@ -56,14 +53,9 @@ contains
     dm = u(1)%dim
 
     if (spherical .eq. 1) then
-      allocate(  xn0_halftime(0:nr(nlevs),nspec))
       allocate( rho0_halftime(0:nr(nlevs)))
       allocate(rhoh0_halftime(0:nr(nlevs)))
       do r = 0,nr(nlevs)-1
-         xn0_halftime(r,1:nspec) = &
-              HALF * (s0_old(nlevs,r,spec_comp:spec_comp+nspec-1) &
-                    + s0_new(nlevs,r,spec_comp:spec_comp+nspec-1) )
-
          rho0_halftime(r)  = HALF * (s0_old(nlevs,r,rho_comp) + &
                                      s0_new(nlevs,r,rho_comp) )
 
@@ -76,33 +68,26 @@ contains
 
       if (spherical .eq. 1) then
 
-         call multifab_build(  xn0_cart,u(n)%la,nspec,2)
          call multifab_build( rho0_cart,u(n)%la,1    ,2)
          call multifab_build(rhoh0_cart,u(n)%la,1    ,2)
 
-         do i=1,xn0_cart%nboxes
+         do i=1,rho0_cart%nboxes
             if ( multifab_remote(u(n),i) ) cycle
-            xnp => dataptr(  xn0_cart, i)
             rp  => dataptr( rho0_cart, i)
             rhp => dataptr(rhoh0_cart, i)
-            lo = lwb(get_box(xn0_cart,i))
-            hi = upb(get_box(xn0_cart,i))
-            do comp = 1,nspec
-               call fill_3d_data(n,xnp(:,:,:,comp),xn0_halftime(0:,comp),lo,hi,dx(n,:), &
-                                 xn0_cart%ng)
-            end do
+            lo = lwb(get_box(rho0_cart,i))
+            hi = upb(get_box(rho0_cart,i))
+
             call fill_3d_data(n, rp(:,:,:,1), rho0_halftime(0:),lo,hi,dx(n,:),rho0_cart%ng)
             call fill_3d_data(n,rhp(:,:,:,1),rhoh0_halftime(0:),lo,hi,dx(n,:),rhoh0_cart%ng)
          enddo
 
          ! fill ghost cells for two adjacent grids at the same level
          ! this includes periodic domain boundary ghost cells
-         call multifab_fill_boundary(  xn0_cart)
          call multifab_fill_boundary( rho0_cart)
          call multifab_fill_boundary(rhoh0_cart)
 
          ! fill non-periodic domain boundary ghost cells
-         call multifab_physbc(  xn0_cart,1,dm+spec_comp,nspec,the_bc_level(n))
          call multifab_physbc( rho0_cart,1,dm+rhoh_comp,1,the_bc_level(n))
          call multifab_physbc(rhoh0_cart,1,dm+rhoh_comp,1,the_bc_level(n))
 
@@ -122,11 +107,10 @@ contains
           case (3)
              sepz => dataptr(sedge(n,3),i)
              if (spherical .eq. 1) then
-               xnp  => dataptr(  xn0_cart, i)
                rp   => dataptr( rho0_cart, i)
                rhp  => dataptr(rhoh0_cart, i)
                call makeRhoHfromT_3d_sphr(sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
-                                          xnp(:,:,:,:), rp(:,:,:,1), rhp(:,:,:,1), lo, hi, xn0_cart%ng)
+                                          rp(:,:,:,1), rhp(:,:,:,1), lo, hi, rho0_cart%ng)
              else
                call makeRhoHfromT_3d_cart(sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
                                           s0_old(n,:,:), s0_edge_old(n,:,:), &
@@ -138,11 +122,9 @@ contains
     end do
 
     if (spherical .eq. 1) then
-      deallocate(  xn0_halftime)
       deallocate( rho0_halftime)
       deallocate(rhoh0_halftime)
 
-      call destroy(  xn0_cart)
       call destroy( rho0_cart)
       call destroy(rhoh0_cart)
     end if
@@ -428,7 +410,7 @@ contains
     
   end subroutine makeRhoHfromT_3d_cart
 
-  subroutine makeRhoHfromT_3d_sphr(sx,sy,sz,xn0_cart,rho0_cart,rhoh0_cart,lo,hi,ngc)
+  subroutine makeRhoHfromT_3d_sphr(sx,sy,sz,rho0_cart,rhoh0_cart,lo,hi,ngc)
 
     use variables,     only: rho_comp, temp_comp, spec_comp, rhoh_comp
     use geometry,      only: spherical
@@ -442,7 +424,6 @@ contains
     real(kind=dp_t), intent(inout) :: sx(lo(1):,lo(2):,lo(3):,:)
     real(kind=dp_t), intent(inout) :: sy(lo(1):,lo(2):,lo(3):,:)
     real(kind=dp_t), intent(inout) :: sz(lo(1):,lo(2):,lo(3):,:)
-    real(kind=dp_t), intent(in   ) ::   xn0_cart(lo(1)-ngc:,lo(2)-ngc:,lo(3)-ngc:,:)
     real(kind=dp_t), intent(in   ) ::  rho0_cart(lo(1)-ngc:,lo(2)-ngc:,lo(3)-ngc:)
     real(kind=dp_t), intent(in   ) :: rhoh0_cart(lo(1)-ngc:,lo(2)-ngc:,lo(3)-ngc:)
     
