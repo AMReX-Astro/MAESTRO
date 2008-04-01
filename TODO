@@ -26,5 +26,5 @@
 
 -- generalize make_w0_cart to work with any edge-centered base state
    quantity, not just w0.  This, for example, would allow us to put	
-   s0_predicted_edge on a Cartesian edge-centered grid.
+   rho0_predicted_edge on a Cartesian edge-centered grid.
 
