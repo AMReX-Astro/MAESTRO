@@ -16,14 +16,14 @@ module average_module
 
 contains
 
-  subroutine average(mla,phi,phibar,dx,incomp,outcomp,ncomp)
+  subroutine average(mla,phi,phibar,dx,incomp,outcomp,numcomp)
 
     use geometry, only: nr, spherical, center, dr
     use bl_prof_module
     use bl_constants_module
 
     type(ml_layout), intent(in   ) :: mla
-    integer        , intent(in   ) :: incomp,outcomp,ncomp
+    integer        , intent(in   ) :: incomp,outcomp,numcomp
     type(multifab) , intent(inout) :: phi(:)   ! Need the out so layout_aveassoc() can 
                                                ! modify the layout.
     real(kind=dp_t), intent(inout) :: phibar(:,0:,:)
@@ -63,11 +63,11 @@ contains
     allocate(ncell_proc(nlevs,0:nr(nlevs)-1))
     allocate(     ncell(nlevs,0:nr(nlevs)-1))
 
-    allocate(phisum_proc(nlevs,0:nr(nlevs)-1,ncomp))
-    allocate(     phisum(nlevs,0:nr(nlevs)-1,ncomp))
+    allocate(phisum_proc(nlevs,0:nr(nlevs)-1,numcomp))
+    allocate(     phisum(nlevs,0:nr(nlevs)-1,numcomp))
 
-    allocate(phipert_proc(nlevs,0:nr(nlevs)-1,ncomp))
-    allocate(     phipert(nlevs,0:nr(nlevs)-1,ncomp))
+    allocate(phipert_proc(nlevs,0:nr(nlevs)-1,numcomp))
+    allocate(     phipert(nlevs,0:nr(nlevs)-1,numcomp))
 
     allocate(source_buffer(nr(nlevs)))
     allocate(target_buffer(nr(nlevs)))
@@ -101,20 +101,20 @@ contains
           select case (dm)
           case (2)
              call sum_phi_coarsest_2d(pp(:,:,1,:),phisum_proc(1,:,:),lo,hi,ng, &
-                                      incomp,ncomp)
+                                      incomp,numcomp)
           case (3)
              call sum_phi_coarsest_3d(pp(:,:,:,:),phisum_proc(1,:,:),lo,hi,ng, &
-                                      incomp,ncomp)
+                                      incomp,numcomp)
           end select
        end do
 
-       do comp=1,ncomp
+       do comp=1,numcomp
           ! gather phisum
           source_buffer = phisum_proc(1,:,comp)
           call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
           phisum(1,:,comp) = target_buffer
        end do
-       do comp=1,ncomp
+       do comp=1,numcomp
           do r=0,nr(1)-1
              phibar(1,r,outcomp+comp-1) = phisum(1,r,comp) / dble(ncell(1,r))
           end do
@@ -137,7 +137,7 @@ contains
 
           ! compute phisum at next finer level
           ! begin by assuming piecewise constant interpolation
-          do comp=1,ncomp
+          do comp=1,numcomp
              do r=0,nr(n)-1
                 phisum(n,r,comp) = phisum(n-1,r/rr,comp)*rr**(dm-1)
              end do
@@ -152,21 +152,21 @@ contains
              select case (dm)
              case (2)
                 call compute_phipert_2d(pp(:,:,1,:),phipert_proc(n,:,:),lo,hi,ng,incomp, &
-                                        ncomp,rr)
+                                        numcomp,rr)
              case (3)
                 call compute_phipert_3d(pp(:,:,:,:),phipert_proc(n,:,:),lo,hi,ng,incomp, &
-                                        ncomp,rr)
+                                        numcomp,rr)
              end select
           end do
 
-          do comp=1,ncomp
+          do comp=1,numcomp
              ! gather phipert
              source_buffer = phipert_proc(n,:,comp)
              call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
              phipert(n,:,comp) = target_buffer
           end do
           ! update phisum and compute phibar
-          do comp=1,ncomp
+          do comp=1,numcomp
              do r=0,nr(n)-1
                 phisum(n,r,comp) = phisum(n,r,comp) + phipert(n,r,comp)
                 phibar(n,r,outcomp+comp-1) = phisum(n,r,comp) / dble(ncell(n,r))
@@ -206,11 +206,11 @@ contains
              ncell_grid(n,:) = ZERO
              if (n .eq. nlevs) then
                 call average_3d_sphr(n,nlevs,pp(:,:,:,:),phisum_proc(n,:,:),avasc%fbs(i), &
-                                     lo,hi,ng,dx(n,:),ncell_grid(n,:),incomp,ncomp,mla)
+                                     lo,hi,ng,dx(n,:),ncell_grid(n,:),incomp,numcomp,mla)
              else
                 mp => dataptr(mla%mask(n), i)
                 call average_3d_sphr(n,nlevs,pp(:,:,:,:),phisum_proc(n,:,:),avasc%fbs(i), &
-                                     lo,hi,ng,dx(n,:),ncell_grid(n,:),incomp,ncomp,mla, &
+                                     lo,hi,ng,dx(n,:),ncell_grid(n,:),incomp,numcomp,mla, &
                                      mp(:,:,:,1))
              end if
 
@@ -219,14 +219,14 @@ contains
 
           call parallel_reduce(ncell(n,:), ncell_proc(n,:), MPI_SUM)
 
-          do comp=1,ncomp
+          do comp=1,numcomp
              source_buffer = phisum_proc(n,:,comp)
              call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
              phisum(n,:,comp) = target_buffer
           end do
           if (n .ne. nlevs) then
              ncell(nlevs,:) = ncell(nlevs,:) + ncell(n,:)
-             do comp=1,ncomp
+             do comp=1,numcomp
                 do r=0,nr(nlevs)-1
                    phisum(nlevs,r,comp) = phisum(nlevs,r,comp) + phisum(n,r,comp)
                 end do
@@ -236,7 +236,7 @@ contains
        end do
 
        ! now divide the total phisum by the number of cells to get phibar
-       do comp=1,ncomp
+       do comp=1,numcomp
           do r=0,nr(nlevs)-1
              if (ncell(nlevs,r) .gt. ZERO) then
                 phibar(nlevs,r,outcomp+comp-1) = phisum(nlevs,r,comp) / ncell(nlevs,r)
@@ -259,15 +259,15 @@ contains
 
   end subroutine average
 
-  subroutine sum_phi_coarsest_2d(phi,phisum,lo,hi,ng,incomp,ncomp)
+  subroutine sum_phi_coarsest_2d(phi,phisum,lo,hi,ng,incomp,numcomp)
 
-    integer         , intent(in   ) :: lo(:), hi(:), ng, incomp, ncomp
+    integer         , intent(in   ) :: lo(:), hi(:), ng, incomp, numcomp
     real (kind=dp_t), intent(in   ) :: phi(lo(1)-ng:,lo(2)-ng:,:)
     real (kind=dp_t), intent(inout) :: phisum(0:,:)
 
     integer :: i,j,comp
 
-    do comp=1,ncomp
+    do comp=1,numcomp
        do j=lo(2),hi(2)
           do i=lo(1),hi(1)
              phisum(j,comp) = phisum(j,comp) + phi(i,j,incomp+comp-1)
@@ -277,15 +277,15 @@ contains
 
   end subroutine sum_phi_coarsest_2d
 
-  subroutine sum_phi_coarsest_3d(phi,phisum,lo,hi,ng,incomp,ncomp)
+  subroutine sum_phi_coarsest_3d(phi,phisum,lo,hi,ng,incomp,numcomp)
 
-    integer         , intent(in   ) :: lo(:), hi(:), ng, incomp, ncomp
+    integer         , intent(in   ) :: lo(:), hi(:), ng, incomp, numcomp
     real (kind=dp_t), intent(in   ) :: phi(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind=dp_t), intent(inout) :: phisum(0:,:)
 
     integer :: i,j,k,comp
 
-    do comp=1,ncomp
+    do comp=1,numcomp
        do k=lo(3),hi(3)
           do j=lo(2),hi(2)
              do i=lo(1),hi(1)
@@ -297,11 +297,11 @@ contains
 
   end subroutine sum_phi_coarsest_3d
 
-  subroutine compute_phipert_2d(phi,phipert,lo,hi,ng,incomp,ncomp,rr)
+  subroutine compute_phipert_2d(phi,phipert,lo,hi,ng,incomp,numcomp,rr)
 
     use bl_constants_module
 
-    integer         , intent(in   ) :: lo(:), hi(:), ng, incomp, ncomp, rr
+    integer         , intent(in   ) :: lo(:), hi(:), ng, incomp, numcomp, rr
     real (kind=dp_t), intent(in   ) :: phi(lo(1)-ng:,lo(2)-ng:,:)
     real (kind=dp_t), intent(inout) :: phipert(0:,:)
 
@@ -309,7 +309,7 @@ contains
     integer          :: i, j, icrse, jcrse, comp
     real (kind=dp_t) :: crseval
 
-    do comp=1,ncomp
+    do comp=1,numcomp
 
        ! loop over coarse cell index
        do jcrse=lo(2)/rr,hi(2)/rr
@@ -340,11 +340,11 @@ contains
 
   end subroutine compute_phipert_2d
 
-  subroutine compute_phipert_3d(phi,phipert,lo,hi,ng,incomp,ncomp,rr)
+  subroutine compute_phipert_3d(phi,phipert,lo,hi,ng,incomp,numcomp,rr)
 
     use bl_constants_module
 
-    integer         , intent(in   ) :: lo(:), hi(:), ng, incomp, ncomp, rr
+    integer         , intent(in   ) :: lo(:), hi(:), ng, incomp, numcomp, rr
     real (kind=dp_t), intent(in   ) :: phi(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind=dp_t), intent(inout) :: phipert(0:,:)
 
@@ -352,7 +352,7 @@ contains
     integer          :: i, j, k, icrse, jcrse, kcrse, comp
     real (kind=dp_t) :: crseval
 
-    do comp=1,ncomp
+    do comp=1,numcomp
 
        ! loop over coarse cell index
        do kcrse=lo(3)/rr,hi(3)/rr
@@ -390,7 +390,7 @@ contains
 
   end subroutine compute_phipert_3d
 
-  subroutine average_3d_sphr(n,nlevs,phi,phisum,avfab,lo,hi,ng,dx,ncell,incomp,ncomp, &
+  subroutine average_3d_sphr(n,nlevs,phi,phisum,avfab,lo,hi,ng,dx,ncell,incomp,numcomp, &
        mla,mask)
 
     use geometry, only: spherical, dr, center, nr, base_cc_loc
@@ -398,7 +398,7 @@ contains
     use bl_constants_module
 
     integer         , intent(in   ) :: n, nlevs
-    integer         , intent(in   ) :: lo(:), hi(:), ng, incomp, ncomp
+    integer         , intent(in   ) :: lo(:), hi(:), ng, incomp, numcomp
     real (kind=dp_t), intent(in   ) :: phi(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     type(avefab)    , intent(in   ) :: avfab
     real (kind=dp_t), intent(inout) :: phisum(0:,:)
@@ -432,7 +432,7 @@ contains
                 do l=1,size(avfab%p(i,j,k)%v,dim=1)
                    idx = avfab%p(i,j,k)%v(l,1)
                    cnt = avfab%p(i,j,k)%v(l,2)
-                   do comp=1,ncomp
+                   do comp=1,numcomp
                       phisum(idx,comp) = phisum(idx,comp) &
                            + cnt*cell_weight*phi(i,j,k,incomp+comp-1)
                    end do
