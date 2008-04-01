@@ -502,7 +502,7 @@ contains
        do j = lo(2), hi(2)+1
           do i = lo(1), hi(1)
              
-             temp_eos(1) = sy(i,j,k,temp_comp)
+             temp_eos(1) = max(sy(i,j,k,temp_comp),small_temp)
 
              ! sy(i,j,k,rho_comp) already holds (rho)'
              rho0_edge = 7.d0/12.d0 * (rho0_cart(i,j  ,k) + rho0_cart(i,j-1,k)) &
@@ -564,7 +564,7 @@ contains
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
              
-             temp_eos(1) = sz(i,j,k,temp_comp)
+             temp_eos(1) = max(sz(i,j,k,temp_comp),small_temp)
 
              ! sz(i,j,k,rho_comp) already holds (rho)'
              rho0_edge = 7.d0/12.d0 * (rho0_cart(i,j,k  ) + rho0_cart(i,j,k-1)) &
