@@ -101,7 +101,7 @@ contains
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
           
-          ! compute the sound speed from rho and p0
+          ! compute the sound speed from rho and temp
           den_eos(1)  = s(i,j,rho_comp)
           temp_eos(1) = s(i,j,temp_comp)
           xn_eos(1,:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
@@ -210,7 +210,8 @@ contains
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
-             
+
+             ! compute the sound speed from rho and temp
              den_eos(1) = s(i,j,k,rho_comp)
              temp_eos(1) = s(i,j,k,temp_comp)
              xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
