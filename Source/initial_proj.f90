@@ -10,7 +10,7 @@ contains
   subroutine initial_proj(nlevs,uold,sold,pres,gpres,Source_old,hgrhs, &
                           div_coeff_old,s0_old,p0_old,gamma1bar,dx,the_bc_tower,mla)
 
-    use variables, only: temp_comp, press_comp, foextrap_comp, rho_comp
+    use variables, only: press_comp, foextrap_comp, rho_comp
     use network, only: nspec
     use define_bc_module
     use bl_constants_module

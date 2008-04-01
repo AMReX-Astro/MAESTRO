@@ -45,7 +45,7 @@ contains
 
     use bl_constants_module
     use eos_module
-    use variables, only: spec_comp, rho_comp, temp_comp, rhoh_comp
+    use variables, only: spec_comp, rho_comp, rhoh_comp
     use geometry, only: nr
     use probin_module, only: grav_const, anelastic_cutoff, enthalpy_pred_type
 
