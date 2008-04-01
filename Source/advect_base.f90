@@ -306,29 +306,7 @@ contains
        
     end do
     
-    do r = 0,nr(n)-1
-       ! (rho, p) --> T,h, etc
-       
-       den_eos(1)  = s0_new(r,rho_comp)
-       temp_eos(1) = tempbar(r)
-       p_eos(1)    = p0_new(r)
-       xn_eos(1,:) = s0_new(r,spec_comp:spec_comp+nspec-1)/s0_new(r,rho_comp)
-       
-       gamma1bar_old(r) = gamma1bar(r)
-       
-!       call eos(eos_input_rp, den_eos, temp_eos, & 
-!                npts, nspec, & 
-!                xn_eos, & 
-!                p_eos, h_eos, e_eos, & 
-!                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-!                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-!                dpdX_eos, dhdX_eos, &
-!                gam1_eos, cs_eos, s_eos, & 
-!                dsdt_eos, dsdr_eos, &
-!                do_diag) 
-       
-!       gamma1bar(r) = gam1_eos(1)
-    end do
+    gamma1bar_old(:) = gamma1bar(:)
     
     call make_grav_cell(n,grav_cell,s0_new(:,rho_comp))
     
