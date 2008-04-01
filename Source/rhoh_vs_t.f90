@@ -157,10 +157,10 @@ contains
           
           temp_eos(1) = max(sx(i,j,temp_comp),small_temp)
 
-          ! sx(i,j,rho_comp) already holds (rho)'
+          ! sx(i,j,rho_comp) holds (rho)'
           den_eos(1)  = sx(i,j,rho_comp) + HALF * (s0_old(j,rho_comp) + s0_new(j,rho_comp))
 
-          !  sx(i,j,comp) holds X
+          ! sx(i,j,spec_comp:spec_comp+nspec-1) holds X
           xn_eos(1,:) = sx(i,j,spec_comp:spec_comp+nspec-1)
           
           call eos(eos_input_rt, den_eos, temp_eos, &
@@ -201,11 +201,11 @@ contains
           
           temp_eos(1) = max(sy(i,j,temp_comp),small_temp)
 
-          !  sy(i,j,rho_comp) already holds (rho)'
+          ! sy(i,j,rho_comp) holds (rho)'
           den_eos(1)  = sy(i,j,rho_comp) + &
                HALF * (s0_edge_old(j,rho_comp) + s0_edge_new(j,rho_comp))
 
-          !  sy(i,j,comp) holds X
+          ! sy(i,j,spec_comp:spec_comp+nspec-1) holds X
           xn_eos(1,:) = sy(i,j,spec_comp:spec_comp+nspec-1)
           
           call eos(eos_input_rt, den_eos, temp_eos, &
@@ -269,11 +269,11 @@ contains
              
              temp_eos(1) = max(sx(i,j,k,temp_comp),small_temp)
 
-             ! sx(i,j,k,rho_comp) already holds (rho)'
+             ! sx(i,j,k,rho_comp) holds (rho)'
              den_eos(1) = sx(i,j,k,rho_comp) + &
                   HALF * (s0_old(k,rho_comp) + s0_new(k,rho_comp))
 
-             ! then sx(i,j,k,comp) holds X
+             ! sx(i,j,k,spec_comp:spec_comp+nspec-1) holds X
              xn_eos(1,:) = sx(i,j,k,spec_comp:spec_comp+nspec-1)
              
              call eos(eos_input_rt, den_eos, temp_eos, &
@@ -316,16 +316,12 @@ contains
              
              temp_eos(1) = max(sy(i,j,k,temp_comp),small_temp)
 
-             ! sy(i,j,k,rho_comp) already holds (rho)'
+             ! sy(i,j,k,rho_comp) holds (rho)'
              den_eos(1)  = sy(i,j,k,rho_comp) + &
                   HALF * (s0_old(k,rho_comp) + s0_new(k,rho_comp))
 
-             !  sy(i,j,k,comp) holds X
+             ! sy(i,j,k,spec_comp:spec_comp+nspec-1) holds X
              xn_eos(1,:) = sy(i,j,k,spec_comp:spec_comp+nspec-1)
-
-             xn_eos(1,:) = (sy(i,j,k,spec_comp:spec_comp+nspec-1)  + &
-                  HALF * ( s0_old(k,spec_comp:spec_comp+nspec-1) + &
-                  s0_new(k,spec_comp:spec_comp+nspec-1) ) ) /den_eos(1) 
              
              call eos(eos_input_rt, den_eos, temp_eos, &
                       npts, nspec, &
@@ -367,11 +363,11 @@ contains
              
              temp_eos(1) = max(sz(i,j,k,temp_comp),small_temp)
 
-             ! sz(i,j,k,rho_comp) already holds (rho)'
+             ! sz(i,j,k,rho_comp) holds (rho)'
              den_eos(1) = sz(i,j,k,rho_comp) + &
                   HALF * (s0_edge_old(k,rho_comp) + s0_edge_new(k,rho_comp))
 
-             ! sz(i,j,k,comp) holds X
+             ! sz(i,j,k,spec_comp:spec_comp+nspec-1) X
              xn_eos(1,:) = sz(i,j,k,spec_comp:spec_comp+nspec-1)
 
              call eos(eos_input_rt, den_eos, temp_eos, &
@@ -441,7 +437,7 @@ contains
              
              temp_eos(1) = max(sx(i,j,k,temp_comp),small_temp)
 
-             ! sx(i,j,k,rho_comp) already hold (rho)'
+             ! sx(i,j,k,rho_comp) holds (rho)'
              rho0_edge = 7.d0/12.d0 * (rho0_cart(i  ,j,k) + rho0_cart(i-1,j,k)) &
                         -1.d0/12.d0 * (rho0_cart(i+1,j,k) + rho0_cart(i-2,j,k))
 
@@ -453,7 +449,7 @@ contains
 
              den_eos(1) = sx(i,j,k,rho_comp) + rho0_edge
 
-             ! sx(i,j,k,comp) holds X
+             ! sx(i,j,k,spec_comp:spec_comp+nspec-1) holds X
              xn_eos(1,:) = sx(i,j,k,spec_comp:spec_comp+nspec-1)
 
              call eos(eos_input_rt, den_eos, temp_eos, &
@@ -504,7 +500,7 @@ contains
              
              temp_eos(1) = max(sy(i,j,k,temp_comp),small_temp)
 
-             ! sy(i,j,k,rho_comp) already holds (rho)'
+             ! sy(i,j,k,rho_comp) holds (rho)'
              rho0_edge = 7.d0/12.d0 * (rho0_cart(i,j  ,k) + rho0_cart(i,j-1,k)) &
                         -1.d0/12.d0 * (rho0_cart(i,j+1,k) + rho0_cart(i,j-2,k))
 
@@ -516,7 +512,7 @@ contains
 
              den_eos(1) = sy(i,j,k,rho_comp) + rho0_edge
 
-             ! sy(i,j,k,comp) holds X
+             ! sy(i,j,k,spec_comp:spec_comp+nspec-1) holds X
              xn_eos(1,:) = sy(i,j,k,spec_comp:spec_comp+nspec-1) 
 
              call eos(eos_input_rt, den_eos, temp_eos, &
@@ -566,7 +562,7 @@ contains
              
              temp_eos(1) = max(sz(i,j,k,temp_comp),small_temp)
 
-             ! sz(i,j,k,rho_comp) already holds (rho)'
+             ! sz(i,j,k,rho_comp) holds (rho)'
              rho0_edge = 7.d0/12.d0 * (rho0_cart(i,j,k  ) + rho0_cart(i,j,k-1)) &
                         -1.d0/12.d0 * (rho0_cart(i,j,k+1) + rho0_cart(i,j,k-2))
 
@@ -578,7 +574,7 @@ contains
              
              den_eos(1) = sz(i,j,k,rho_comp) + rho0_edge
              
-             ! sz(i,j,k,comp) holds X
+             ! sz(i,j,k,spec_comp:spec_comp+nspec-1) holds X
              xn_eos(1,:) = sz(i,j,k,spec_comp:spec_comp+nspec-1) 
 
              call eos(eos_input_rt, den_eos, temp_eos, &
