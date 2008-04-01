@@ -159,6 +159,14 @@ contains
     allocate(       gamma1bar_old(nlevs,0:nr(nlevs)-1,1))    
     allocate(delta_gamma1_termbar(nlevs,0:nr(nlevs)-1,1))
 
+    ! Set these to zero to be safe
+    s0_1(:,:,:) = ZERO
+    s0_2(:,:,:) = ZERO
+    p0_1(:,:)   = ZERO
+    p0_2(:,:)   = ZERO
+    s0_predicted_edge(:,:,:) = ZERO
+    delta_gamma1_termbar(:,:,:) = ZERO
+
     ! Set this to zero so if evolve_base_state = F there is no effect in update_vel
     w0_force(:,:) = ZERO
 
