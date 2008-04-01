@@ -15,7 +15,7 @@ contains
 
   subroutine scalar_advance(nlevs,mla,which_step,uold,sold,snew,thermal, &
                             umac,w0,w0_cart_vec,etaflux,utrans,normal, &
-                            s0_old,s0_new,p0_old,p0_new,psi, &
+                            s0_old,s0_new,p0_old,p0_new,tempbar,psi, &
                             s0_predicted_edge, &
                             dx,dt,the_bc_level)
 
@@ -59,6 +59,7 @@ contains
     real(kind=dp_t), intent(in   ) :: s0_new(:,0:,:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_new(:,0:)
+    real(kind=dp_t), intent(in   ) :: tempbar(:,0:,:)
     real(kind=dp_t), intent(in   ) :: psi(:,0:)
     real(kind=dp_t), intent(in   ) :: s0_predicted_edge(:,0:,:)
     real(kind=dp_t), intent(in   ) :: dx(:,:),dt
@@ -130,7 +131,7 @@ contains
     end if
 
     ! This can be uncommented if you wish to compute T
-    ! call makeTfromRhoH(nlevs,sold,s0_old(:,:,temp_comp),mla,the_bc_level,dx)
+    ! call makeTfromRhoH(nlevs,sold,tempbar(:,:,1),mla,the_bc_level,dx)
 
     ! if we are predicting X on the edges, then convert the state arrays
     ! (and base state) from (rho X) to X.  Note, only the time-level n
@@ -475,7 +476,7 @@ contains
     end do
 
     if (.not. use_thermal_diffusion) then
-       call makeTfromRhoH(nlevs,snew,s0_new(:,:,temp_comp),mla,the_bc_level,dx)
+       call makeTfromRhoH(nlevs,snew,tempbar(:,:,1),mla,the_bc_level,dx)
     end if
 
     call destroy(bpt)
