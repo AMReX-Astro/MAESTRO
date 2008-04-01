@@ -195,7 +195,7 @@ contains
 
     use network,       only: nspec
     use probin_module, only: enthalpy_pred_type
-    use variables,     only: spec_comp, rho_comp, rhoh_comp
+    use variables,     only: spec_comp, rho_comp, rhoh_comp, trac_comp, ntrac
     use pred_parameters
     use bl_constants_module
 
@@ -226,10 +226,12 @@ contains
 
     do comp = nstart, nstop
 
+       ! test = T means the edge states are NOT in perturbational form
        test = ( (comp.ge.spec_comp).and.(comp.le.spec_comp+nspec-1) ) &
          .or. ( (comp.eq.rhoh_comp).and. &
                      ( enthalpy_pred_type.eq.predict_h .or. &
-                       enthalpy_pred_type.eq.predict_T_then_h ) )
+                       enthalpy_pred_type.eq.predict_T_then_h ) ) &
+         .or. ( (comp.ge.trac_comp).and.(comp.le.trac_comp+ntrac-1) )
 
        if (test) then
 
@@ -320,7 +322,7 @@ contains
                                  ng_s,dx,dt)
     use network,       only: nspec
     use probin_module, only: enthalpy_pred_type
-    use variables,     only: spec_comp, rho_comp, rhoh_comp
+    use variables,     only: spec_comp, rho_comp, rhoh_comp, trac_comp, ntrac
     use pred_parameters
     use bl_constants_module
 
@@ -351,10 +353,12 @@ contains
 
     do comp = nstart, nstop
     
+       ! test = T means the edge states are NOT in perturbational form
        test = ( (comp.ge.spec_comp).and.(comp.le.spec_comp+nspec-1) ) &
          .or. ( (comp.eq.rhoh_comp).and. &
                      ( enthalpy_pred_type.eq.predict_h .or. &
-                       enthalpy_pred_type.eq.predict_T_then_h ) )
+                       enthalpy_pred_type.eq.predict_T_then_h ) ) &
+         .or. ( (comp.ge.trac_comp).and.(comp.le.trac_comp+ntrac-1) )
 
        if (test) then
 
@@ -456,7 +460,7 @@ contains
                                  lo,hi,domlo,domhi,ng_s,dx,dt)
     use network,       only: nspec
     use probin_module, only: enthalpy_pred_type
-    use variables,     only: spec_comp, rho_comp, rhoh_comp
+    use variables,     only: spec_comp, rho_comp, rhoh_comp, trac_comp, ntrac
     use pred_parameters
     use bl_constants_module
 
@@ -491,10 +495,12 @@ contains
 
     do comp = nstart, nstop
     
+       ! test = T means the edge states are NOT in perturbational form
        test = ( (comp.ge.spec_comp).and.(comp.le.spec_comp+nspec-1) ) &
          .or. ( (comp.eq.rhoh_comp).and. &
                      ( enthalpy_pred_type.eq.predict_h .or. &
-                       enthalpy_pred_type.eq.predict_T_then_h ) )
+                       enthalpy_pred_type.eq.predict_T_then_h ) ) &
+         .or. ( (comp.ge.trac_comp).and.(comp.le.trac_comp+ntrac-1) )
 
        if (test) then
 
