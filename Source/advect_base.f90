@@ -118,50 +118,19 @@ contains
     
     call make_edge_state_1d(n,s0_old(:,rho_comp),edge,vel,force,1,dz,dt)
     
-    s0_predicted_edge(:,rho_comp) = edge(:)       
+    s0_predicted_edge(:,rho_comp) = edge(:)
+
+    ! update rho_0
+    do r = 0,nr(n)-1
+       s0_new(r,rho_comp) = s0_old(r,rho_comp) &
+            - dt / dz * (edge(r+1) * vel(r+1) - edge(r) * vel(r)) 
+    end do
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Update (rho X)_0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    do comp = spec_comp,spec_comp+nspec-1
-
-       ! here we predict X_0 on the edges
-       X0(:) = s0_old(:,comp)/s0_old(:,rho_comp)
-       do r = 0,nr(n)-1
-          X0(r) = max(X0(r),ZERO)
-       end do
-       
-       force = ZERO
-       
-       call make_edge_state_1d(n,X0,edge,vel,force,1,dz,dt)
-       
-       ! s0_predicted_edge will store X_0 on the vertical edges -- we need
-       ! that later
-       s0_predicted_edge(:,comp) = edge(:)
-       
-       ! our final update needs (rho X)_0 on the edges, so compute
-       ! that now
-       edge(:) = s0_predicted_edge(:,rho_comp)*edge(:)
-       
-       ! update (rho X)_0
-       do r = 0,nr(n)-1
-          s0_new(r,comp) = s0_old(r,comp) &
-               - dt / dz * (edge(r+1) * vel(r+1) - edge(r) * vel(r)) 
-       end do
-       
-    enddo
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Update rho_0 from (rho X)_0
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-    do r = 0,nr(n)-1
-       s0_new(r,rho_comp) =  s0_old(r,rho_comp)
-       do comp = spec_comp,spec_comp+nspec-1
-          s0_new(r,rho_comp) =  s0_new(r,rho_comp) + (s0_new(r,comp)-s0_old(r,comp)) 
-       end do
-    end do
+    s0_new(:,spec_comp:spec_comp+nspec-1) = s0_old(:,spec_comp:spec_comp+nspec-1)    
        
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Update (rho h)_0
