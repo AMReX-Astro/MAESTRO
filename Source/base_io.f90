@@ -17,7 +17,7 @@ contains
     use bl_prof_module
     use geometry, only : dr, nr
     use network, only: nspec
-    use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
+    use variables, only: rho_comp, spec_comp, rhoh_comp
     use bl_constants_module
     use probin_module, only: prob_lo_y, prob_lo_z
 
@@ -53,9 +53,8 @@ contains
           do i=1,nr(n)
              base_r = problo + (dble(i)-HALF) * dr(n)
              write(99,1000)  base_r,s0(n,i,rho_comp), p0(n,i), gamma1bar(n,i), &
-                  s0(n,i,rhoh_comp), &
-                  (s0(n,i,comp), comp=spec_comp,spec_comp+nspec-1), &
-                  s0(n,i,temp_comp), div_coeff(n,i), psi(n,i)
+                  s0(n,i,rhoh_comp), (s0(n,i,comp), comp=spec_comp,spec_comp+nspec-1), &
+                  div_coeff(n,i), psi(n,i)
           end do
        end do
        close(99)
@@ -104,7 +103,7 @@ contains
 
     use parallel
     use bl_prof_module
-    use variables, only: rho_comp, rhoh_comp, spec_comp, temp_comp
+    use variables, only: rho_comp, rhoh_comp, spec_comp
     use network, only: nspec
     use geometry, only : dr, nr
     use bl_constants_module
@@ -140,8 +139,8 @@ contains
     do n=1,nlevs
        do i=1,nr(n)
           read(99,*)  base_r(n,i), s0(n,i,rho_comp), p0(n,i), gamma1bar(n,i), &
-               s0(n,i,rhoh_comp),(s0(n,i,comp), comp=spec_comp,spec_comp+nspec-1), &
-               s0(n,i,temp_comp), div_coeff(n,i), psi(n,i)
+               s0(n,i,rhoh_comp),(s0(n,i,comp), comp=spec_comp,spec_comp+nspec-1),&
+               div_coeff(n,i), psi(n,i)
        end do
     end do
     close(99)
