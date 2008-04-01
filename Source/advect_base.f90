@@ -61,7 +61,7 @@ contains
     use bl_constants_module
     use make_edge_state_module
     use eos_module
-    use variables, only: spec_comp, rho_comp, temp_comp, rhoh_comp
+    use variables, only: spec_comp, rho_comp, rhoh_comp
     use geometry, only: nr
     use probin_module, only: grav_const, anelastic_cutoff, enthalpy_pred_type
     use pred_parameters
@@ -173,9 +173,6 @@ contains
        s0_new(r,rhoh_comp) = s0_old(r,rhoh_comp) &
             - dt / dz * (edge(r+1) * vel(r+1) - edge(r) * vel(r)) + dt*psi(r)
     end do
-
-    ! temp_new = temp_old
-    s0_new(:,temp_comp) = s0_old(:,temp_comp)
     
     deallocate(force,edge,X0,h0)
     
@@ -191,7 +188,7 @@ contains
     use bl_constants_module
     use make_edge_state_module
     use eos_module
-    use variables, only: spec_comp, rho_comp, rhoh_comp, temp_comp
+    use variables, only: spec_comp, rho_comp, rhoh_comp
     use geometry, only: nr, base_cc_loc, base_loedge_loc, dr, nr
     use make_grav_module
     use cell_to_edge_module
@@ -389,9 +386,6 @@ contains
        s0_new(r,rhoh_comp) = s0_new(r,rhoh_comp) + dt * psi(r)
        
     end do
-
-    ! temp_new = temp_old
-    s0_new(:,temp_comp) = s0_old(:,temp_comp)
     
     deallocate(force,psi,edge,beta,beta_new,beta_nh,div_coeff_new,gamma1bar_old,grav_cell,X0)
     

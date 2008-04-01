@@ -16,7 +16,7 @@ contains
                         s0_out,gamma1bar_out)
 
     use geometry, only: nr
-    use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
+    use variables, only: rho_comp, spec_comp, rhoh_comp
     use eos_module
     use bl_prof_module
     use probin_module, ONLY: use_big_h, enthalpy_pred_type
@@ -60,10 +60,7 @@ contains
              end do
           endif
           s0_out(n,r,rhoh_comp) = s0_out(n,r,rhoh_comp) + dt_in * rho_Hextbar(n,r)
-          
-          ! temp_out = temp_in
-          s0_out(n,r,temp_comp) = s0_in(n,r,temp_comp)
-          
+
        end do
        
     enddo ! end loop over levels
