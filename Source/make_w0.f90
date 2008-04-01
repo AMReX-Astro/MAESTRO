@@ -52,8 +52,10 @@ contains
                               gamma1bar_old(n,0:),gamma1bar_new(n,0:), &
                               psi(n,0:),f(n,0:),dt,dtold)
        else
-          call make_w0_spherical(n,vel(n,:),Sbar_in(n,:),rho0(n,:),p0_old(n,:), &
-                                 gamma1bar_old(n,:))
+          call make_w0_spherical(n,vel(n,:),vel_old(n,0:),Sbar_in(n,:), &
+                                 rho0(n,:),p0_old(n,:), &
+                                 gamma1bar_old(n,:), &
+                                 f(n,0:),dt,dtold)
        endif
 
        max_vel = zero
@@ -92,7 +94,6 @@ contains
     real(kind=dp_t), allocatable :: vel_old_cen(:)
     real(kind=dp_t), allocatable :: vel_new_cen(:)
     real(kind=dp_t), allocatable ::   force(:)
-    real(kind=dp_t), allocatable :: dpdroverrho(:)
     real(kind=dp_t)              :: vel_avg, div_avg, dt_avg, gamma1bar_p0_avg
 
     ! Cell-centered
@@ -111,7 +112,7 @@ contains
           - ( psi(r-1) / gamma1bar_p0_avg ) * dr(n)
     end do
 
-    ! Compute the 1/rho0 grad pi0 term.
+    ! Compute the forcing term in the base state velocity equation, - 1/rho0 grad pi0 
     dt_avg = HALF * (dt + dtold)
     do r = 0,nr(n)-1
        vel_old_cen(r) = HALF * (vel_old(r) + vel_old(r+1))
@@ -126,7 +127,7 @@ contains
 
   end subroutine make_w0_planar
 
-  subroutine make_w0_spherical(n,vel,Sbar_in,rho0,p0,gamma1bar)
+  subroutine make_w0_spherical(n,vel,vel_old,Sbar_in,rho0,p0,gamma1bar,f,dt,dtold)
 
     use geometry, only: base_cc_loc, nr, base_loedge_loc, dr
     use make_grav_module
@@ -135,16 +136,24 @@ contains
     
     integer        , intent(in   ) :: n
     real(kind=dp_t), intent(  out) :: vel(0:)
-    real(kind=dp_t), intent(in   ) :: rho0(0:),p0(0:),gamma1bar(0:)
+    real(kind=dp_t), intent(in   ) :: vel_old(0:)
     real(kind=dp_t), intent(in   ) :: Sbar_in(0:)
+    real(kind=dp_t), intent(in   ) :: rho0(0:),p0(0:),gamma1bar(0:)
+    real(kind=dp_t), intent(inout) ::   f(0:)
+    real(kind=dp_t), intent(in   ) :: dt,dtold
 
     ! Local variables
     integer                      :: r
+    real(kind=dp_t), allocatable :: vel_old_cen(:)
+    real(kind=dp_t), allocatable :: vel_new_cen(:)
     real(kind=dp_t), allocatable :: c(:),d(:),e(:),u(:),rhs(:)
     real(kind=dp_t), allocatable :: m(:),grav_edge(:),rho0_edge(:)
+    real(kind=dp_t)              :: vel_avg, div_avg, dt_avg
     
     ! Cell-centered
     allocate(m(0:nr(n)-1))
+    allocate(vel_old_cen(0:nr(n)-1))
+    allocate(vel_new_cen(0:nr(n)-1))
 
     ! Edge-centered
     allocate(c(0:nr(n)),d(0:nr(n)),e(0:nr(n)),rhs(0:nr(n)),u(0:nr(n)))
@@ -200,8 +209,21 @@ contains
        vel(r) = u(r)
     end do
 
+
+    ! Compute the forcing term in the base state velocity equation, - 1/rho0 grad pi0 
+    dt_avg = HALF * (dt + dtold)
+    do r = 0,nr(n)-1
+       vel_old_cen(r) = HALF * (vel_old(r) + vel_old(r+1))
+       vel_new_cen(r) = HALF * (vel    (r) + vel    (r+1))
+       vel_avg = HALF * (dt *  vel_old_cen(r)           + dtold *  vel_new_cen(r)  ) / dt_avg
+       div_avg = HALF * (dt * (vel_old(r+1)-vel_old(r)) + dtold * (vel(r+1)-vel(r))) / dt_avg
+       f(r) = (vel_new_cen(r)-vel_old_cen(r)) / dt_avg + &
+               vel_avg * div_avg / dr(n)
+    end do
+
     deallocate(c,d,e,rhs,u)
     deallocate(m,grav_edge,rho0_edge)
+    deallocate(vel_old_cen,vel_new_cen)
 
   end subroutine make_w0_spherical
 
