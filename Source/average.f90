@@ -244,6 +244,16 @@ contains
                 phibar(nlevs,r,outcomp+comp-1) = ZERO
              end if
           end do
+
+          ! temporary hack for the case where the outermost radial bin average to zero
+          ! because there is no contribution from any Cartesian cell that lies in this bin.
+          ! this needs to be addressed - perhaps in the definition of nr_fine in varden.f90
+          ! for spherical problems.
+          if (ncell(nlevs,nr(nlevs)-1) .eq. ZERO) then
+             phibar(nlevs,nr(nlevs)-1,outcomp+comp-1) = &
+                  phibar(nlevs,nr(nlevs)-2,outcomp+comp-1)
+          end if
+
        end do
 
        deallocate(ncell_grid)
