@@ -624,7 +624,7 @@ contains
     
   end subroutine makeRhoHfromT_3d_sphr
   
-  subroutine makeTfromRhoH(nlevs,s,tbar,mla,the_bc_level,dx)
+  subroutine makeTfromRhoH(nlevs,s,tempbar,mla,the_bc_level,dx)
 
     use variables,             only: temp_comp
     use bl_prof_module
@@ -634,7 +634,7 @@ contains
 
     integer           , intent(in   ) :: nlevs
     type(multifab)    , intent(inout) :: s(:)
-    real (kind = dp_t), intent(in   ) :: tbar(:,0:)
+    real (kind = dp_t), intent(in   ) :: tempbar(:,0:)
     type(ml_layout)   , intent(inout) :: mla
     type(bc_level)    , intent(in   ) :: the_bc_level(:)
     real(kind=dp_t)   , intent(in   ) :: dx(:,:)
@@ -660,9 +660,9 @@ contains
           hi = upb(get_box(s(n),i))
           select case (dm)
           case (2)
-             call makeTfromRhoH_2d(snp(:,:,1,:), lo, hi, ng, tbar(n,:))
+             call makeTfromRhoH_2d(snp(:,:,1,:), lo, hi, ng, tempbar(n,:))
           case (3)
-             call makeTfromRhoH_3d(snp(:,:,:,:), lo, hi, ng, tbar(n,:), dx(n,:), n)
+             call makeTfromRhoH_3d(snp(:,:,:,:), lo, hi, ng, tempbar(n,:), dx(n,:), n)
           end select
        end do
 
@@ -699,7 +699,7 @@ contains
 
   end subroutine makeTfromRhoH
 
-  subroutine makeTfromRhoH_2d (state,lo,hi,ng,tbar)
+  subroutine makeTfromRhoH_2d (state,lo,hi,ng,tempbar)
 
     use variables,     only: rho_comp, spec_comp, rhoh_comp, temp_comp
     use eos_module
@@ -707,7 +707,7 @@ contains
 
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(inout) ::  state(lo(1)-ng:,lo(2)-ng:,:)
-    real (kind = dp_t), intent(in   ) ::  tbar(0:)
+    real (kind = dp_t), intent(in   ) ::  tempbar(0:)
     
     ! Local variables
     integer :: i, j, comp
@@ -721,7 +721,7 @@ contains
           ! (rho, H) --> T, p
           
           den_eos(1)  = state(i,j,rho_comp)
-          temp_eos(1) = tbar(j)
+          temp_eos(1) = tempbar(j)
           xn_eos(1,:) = state(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
 
           qreact = 0.0d0
@@ -752,7 +752,7 @@ contains
 
   end subroutine makeTfromRhoH_2d
 
-  subroutine makeTfromRhoH_3d (state,lo,hi,ng,tbar,dx,n)
+  subroutine makeTfromRhoH_3d (state,lo,hi,ng,tempbar,dx,n)
 
     use variables,      only: rho_comp, spec_comp, rhoh_comp, temp_comp
     use eos_module
@@ -762,17 +762,17 @@ contains
 
     integer, intent(in) :: lo(:), hi(:), ng, n
     real (kind = dp_t), intent(inout) ::  state(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-    real (kind = dp_t), intent(in   ) ::  tbar(0:)
+    real (kind = dp_t), intent(in   ) ::  tempbar(0:)
     real(kind=dp_t)   , intent(in   ) :: dx(:)
 
     ! Local variables
     integer :: i, j, k, comp
     real(kind=dp_t) qreact
-    real(kind=dp_t), allocatable :: tbar_cart(:,:,:)
+    real(kind=dp_t), allocatable :: tempbar_cart(:,:,:)
 
     if (spherical .eq. 1) then
-       allocate(tbar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-       call fill_3d_data(n,tbar_cart,tbar,lo,hi,dx,0)
+       allocate(tempbar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+       call fill_3d_data(n,tempbar_cart,tempbar,lo,hi,dx,0)
     endif
 
     do_diag = .false.
@@ -786,9 +786,9 @@ contains
              den_eos(1)  = state(i,j,k,rho_comp)
 
              if (spherical .eq. 1) then
-                temp_eos(1) = tbar_cart(i,j,k)
+                temp_eos(1) = tempbar_cart(i,j,k)
              else
-                temp_eos(1) = tbar(k)
+                temp_eos(1) = tempbar(k)
              endif
 
              xn_eos(1,:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
@@ -821,7 +821,7 @@ contains
     enddo
 
     if (spherical .eq. 1) then
-       deallocate(tbar_cart)
+       deallocate(tempbar_cart)
     endif
 
   end subroutine makeTfromRhoH_3d

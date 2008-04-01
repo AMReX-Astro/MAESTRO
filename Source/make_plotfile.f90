@@ -84,7 +84,7 @@ contains
   end subroutine get_plot_names
 
   subroutine make_plotfile(dirname,mla,u,s,gpres,rho_omegadot,Source,sponge, &
-                           mba,plot_names,time,dx,the_bc_tower,s0,p0,tbar, &
+                           mba,plot_names,time,dx,the_bc_tower,s0,p0,tempbar, &
                            plot_spec,plot_trac)
 
     use bl_prof_module
@@ -108,7 +108,7 @@ contains
     type(bc_tower)   , intent(in   ) :: the_bc_tower
     real(dp_t)       , intent(in   ) :: s0(:,0:,:)
     real(dp_t)       , intent(in   ) :: p0(:,0:)
-    real(dp_t)       , intent(in   ) :: tbar(:,0:,:)
+    real(dp_t)       , intent(in   ) :: tempbar(:,0:,:)
     logical          , intent(in   ) :: plot_spec,plot_trac
 
     type(multifab) :: plotdata(mla%nlevel)
