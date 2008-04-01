@@ -363,8 +363,8 @@ contains
     end if
     
     if (evolve_base_state) then
-       call advect_base(1,nlevs,w0,Sbar,p0_1,p0_2,s0_1,s0_2,gamma1bar(:,:,1),div_coeff_new, &
-                        s0_predicted_edge,psi,dx(:,dm),dt)
+       call advect_base(1,nlevs,w0,Sbar,p0_1,p0_2,s0_1,s0_2,tempbar(:,:,1), &
+                        gamma1bar(:,:,1),div_coeff_new,s0_predicted_edge,psi,dx(:,dm),dt)
     else
        p0_2 = p0_1
        s0_2 = s0_1
@@ -687,8 +687,8 @@ contains
        end if
 
        if (evolve_base_state) then
-          call advect_base(2,nlevs,w0,Sbar,p0_1,p0_2,s0_1,s0_2,gamma1bar(:,:,1), &
-                           div_coeff_nph,s0_predicted_edge,psi,dx(:,dm),dt)
+          call advect_base(2,nlevs,w0,Sbar,p0_1,p0_2,s0_1,s0_2,tempbar(:,:,1), &
+                           gamma1bar(:,:,1),div_coeff_nph,s0_predicted_edge,psi,dx(:,dm),dt)
        else
           p0_2 = p0_1
           s0_2 = s0_1
