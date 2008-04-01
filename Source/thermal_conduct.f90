@@ -1014,7 +1014,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,tempbar,the_bc_tower
                                        ng_s,mla%mba%rr(n-1,:), &
                                        the_bc_tower%bc_tower_array(n-1), &
                                        the_bc_tower%bc_tower_array(n  ), &
-                                       temp_comp,dm+temp_comp,1)
+                                       rhoh_comp,dm+rhoh_comp,1)
      enddo
 
   end if
