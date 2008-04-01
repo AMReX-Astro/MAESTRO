@@ -162,7 +162,7 @@ contains
 
        ! TEMP (FROM H) & DELTA_P
        call make_tfromH(n,plotdata(n),icomp_tfromH,icomp_dp,s(n),p0(n,:), &
-                        s0(n,:,temp_comp),dx(n,:))
+                        tempbar(n,:,1),dx(n,:))
        
        ! DIFF BETWEEN TFROMRHO AND TFROMH
        call make_deltaT (plotdata(n),icomp_dT,icomp_tfromrho,icomp_tfromH)

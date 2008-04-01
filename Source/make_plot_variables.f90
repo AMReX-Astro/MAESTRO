@@ -109,7 +109,7 @@ contains
     
   end subroutine make_enthalpy_3d
 
-  subroutine make_tfromH(n,plotdata,comp_t,comp_dp,state,p0,t0, dx)
+  subroutine make_tfromH(n,plotdata,comp_t,comp_dp,state,p0,tempbar,dx)
 
     use geometry, only: spherical
 
@@ -117,7 +117,7 @@ contains
     type(multifab) , intent(inout) :: plotdata
     type(multifab) , intent(in   ) :: state
     real(kind=dp_t), intent(in   ) :: p0(0:)
-    real(kind=dp_t), intent(in   ) :: t0(0:)
+    real(kind=dp_t), intent(in   ) :: tempbar(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
 
     real(kind=dp_t), pointer:: sp(:,:,:,:)
@@ -137,21 +137,21 @@ contains
        select case (dm)
        case (2)
           call maketfromH_2d(tp(:,:,1,comp_t),tp(:,:,1,comp_dp),sp(:,:,1,:), lo, hi, &
-                             ng, p0, t0)
+                             ng, p0, tempbar)
        case (3)
           if (spherical .eq. 1) then
             call maketfromH_3d_sphr(n,tp(:,:,:,comp_t),tp(:,:,:,comp_dp),sp(:,:,:,:), &
-                                    lo, hi, ng, p0, t0, dx)
+                                    lo, hi, ng, p0, tempbar, dx)
           else
             call maketfromH_3d_cart(tp(:,:,:,comp_t),tp(:,:,:,comp_dp),sp(:,:,:,:), &
-                                    lo, hi, ng, p0, t0)
+                                    lo, hi, ng, p0, tempbar)
           end if
        end select
     end do
 
   end subroutine make_tfromH
 
-  subroutine maketfromH_2d (T,deltaP,state,lo,hi,ng,p0,t0)
+  subroutine maketfromH_2d (T,deltaP,state,lo,hi,ng,p0,tempbar)
 
     use variables, only: rho_comp, spec_comp, rhoh_comp
     use eos_module
@@ -163,7 +163,7 @@ contains
     real (kind = dp_t), intent(  out) :: deltaP(lo(1)   :,lo(2):)  
     real (kind = dp_t), intent(in   ) ::  state(lo(1)-ng:,lo(2)-ng:,:)
     real (kind = dp_t), intent(in   ) ::  p0(0:)
-    real (kind = dp_t), intent(in   ) ::  t0(0:)
+    real (kind = dp_t), intent(in   ) ::  tempbar(0:)
 
     !     Local variables
     integer :: i, j, comp
@@ -178,7 +178,7 @@ contains
             
           den_eos(1)  = state(i,j,rho_comp)
           p_eos(1)    = p0(j)
-          temp_eos(1) = t0(j)
+          temp_eos(1) = tempbar(j)
           xn_eos(1,:) = state(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
 
           qreact = 0.0d0
@@ -212,7 +212,7 @@ contains
 
   end subroutine maketfromH_2d
 
-  subroutine maketfromH_3d_cart (T,deltaP,state,lo,hi,ng,p0,t0)
+  subroutine maketfromH_3d_cart (T,deltaP,state,lo,hi,ng,p0,tempbar)
 
     use variables, only: rho_comp, spec_comp, rhoh_comp
     use eos_module
@@ -223,7 +223,7 @@ contains
     real (kind = dp_t), intent(  out) :: deltaP(lo(1)   :,lo(2):   ,lo(3):     )  
     real (kind = dp_t), intent(in   ) :: state(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind = dp_t), intent(in   ) :: p0(0:)
-    real (kind = dp_t), intent(in   ) :: t0(0:)
+    real (kind = dp_t), intent(in   ) :: tempbar(0:)
 
     !     Local variables
     integer :: i, j, k, comp
@@ -238,7 +238,7 @@ contains
              ! (rho, H) --> T, p
               den_eos(1)  = state(i,j,k,rho_comp)
              p_eos(1)    = p0(k)
-             temp_eos(1) = t0(k)
+             temp_eos(1) = tempbar(k)
              xn_eos(1,:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
 
              qreact = 0.0d0
@@ -273,7 +273,7 @@ contains
 
   end subroutine maketfromH_3d_cart
 
-  subroutine maketfromH_3d_sphr(n,T,deltaP,state,lo,hi,ng,p0,t0,dx)
+  subroutine maketfromH_3d_sphr(n,T,deltaP,state,lo,hi,ng,p0,tempbar,dx)
 
     use variables, only: rho_comp, rhoh_comp, spec_comp
     use eos_module
@@ -285,16 +285,16 @@ contains
     real (kind = dp_t), intent(  out) :: deltaP(lo(1)   :,lo(2):   ,lo(3):     )  
     real (kind = dp_t), intent(in   ) :: state(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind = dp_t), intent(in   ) ::    p0(0:)
-    real (kind = dp_t), intent(in   ) ::    t0(0:)
+    real (kind = dp_t), intent(in   ) ::    tempbar(0:)
     real (kind = dp_t), intent(in   ) :: dx(:)
 
     !     Local variables
     integer :: i, j, k
-    real (kind=dp_t), allocatable :: t0_cart(:,:,:)
+    real (kind=dp_t), allocatable :: tempbar_cart(:,:,:)
     real (kind=dp_t), allocatable :: p0_cart(:,:,:)
 
-    allocate(t0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-    call fill_3d_data(n,t0_cart,t0,lo,hi,dx,0)
+    allocate(tempbar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+    call fill_3d_data(n,tempbar_cart,tempbar,lo,hi,dx,0)
 
     allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
     call fill_3d_data(n,p0_cart,p0,lo,hi,dx,0)
@@ -311,7 +311,7 @@ contains
                print*,"WARNING: H conversion not defined in maketfromH_3d_sphr"
              endif
              p_eos(1)    = p0_cart(i,j,k)
-             temp_eos(1) = t0_cart(i,j,k)
+             temp_eos(1) = tempbar_cart(i,j,k)
              xn_eos(1,:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
 
              ! (rho, H) --> T, p
@@ -335,7 +335,7 @@ contains
        enddo
     enddo
    
-    deallocate(t0_cart,p0_cart)
+    deallocate(tempbar_cart,p0_cart)
 
   end subroutine maketfromH_3d_sphr
 
