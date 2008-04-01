@@ -237,11 +237,33 @@ subroutine varden()
      which_step = 1
 
      call advect_base(which_step,nlevs,w0,Sbar_in,p0_old,p0, &
-                      s0_old,s0, &
+                      s0_old,s0,s0(:,:,temp_comp), &
                       gam1,div_coeff, &
                       s0_predicted_edge,psi, &
                       dx(:,1),dt)
 
+
+     ! update the temperature -- advect base does not do this
+     do i = 0, nr_fine-1
+
+        ! (rho, T) --> p,h, etc
+        den_eos(1)  = s0(1,i,rho_comp)
+        temp_eos(1) = s0(1,i,temp_comp)
+        p_eos(1)    = p0(1,i)
+        xn_eos(1,:) = s0(1,i,spec_comp:spec_comp-1+nspec)/s0(1,i,rho_comp)
+        
+        call eos(eos_input_rp, den_eos, temp_eos, NP, nspec, &
+                 xn_eos, &
+                 p_eos, h_eos, e_eos, &
+                 cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                 dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                 dpdX_eos, dhdX_eos, &
+                 gam1_eos, cs_eos, s_eos, &
+                 dsdt_eos, dsdr_eos, &
+                 do_diag)
+
+        s0(1,i,temp_comp) = temp_eos(1)
+     enddo
 
      print *, 'new base pressure', p0(1,1)
      print *, 'new base density', s0(1,1,rho_comp)
