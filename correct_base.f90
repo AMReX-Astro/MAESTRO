@@ -33,7 +33,7 @@ contains
        if (spherical .eq. 1) then
           ! spherical is not yet implemented, but we still need to return a valid
           ! base state.
-          s0_new(:) = s0_old(:)
+          s0_new(:,:,:) = s0_old(:,:,:)
        else
           call correct_base_state_planar(n,s0_old(n,0:,:),s0_new(n,0:,:),etarho(n,0:), &
                                          dz(n),dt)
