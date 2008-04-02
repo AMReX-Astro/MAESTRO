@@ -73,7 +73,7 @@ subroutine varden()
   character(len=256)             :: plot_file_name
   character(len=11)              :: base_state_name
   character(len=8)               :: base_w0_name
-  character(len=9)               :: base_eta_name
+  character(len=9)               :: base_etarho_name
   character(len=20), allocatable :: plot_names(:)
 
   real, parameter :: SMALL = 1.d-13
@@ -86,14 +86,15 @@ subroutine varden()
   real(dp_t), allocatable :: div_coeff_old(:,:)
   real(dp_t), allocatable :: div_coeff_new(:,:)
   real(dp_t), allocatable :: grav_cell(:,:)
-  real(dp_t), allocatable :: gam1(:,:,:)
+  real(dp_t), allocatable :: gamma1bar(:,:,:)
   real(dp_t), allocatable :: s0_old(:,:,:)
   real(dp_t), allocatable :: s0_new(:,:,:)
   real(dp_t), allocatable :: p0_old(:,:)
   real(dp_t), allocatable :: p0_new(:,:)
-  real(dp_t), allocatable :: eta(:,:,:) 
+  real(dp_t), allocatable :: etarho(:,:)
   real(dp_t), allocatable :: psi(:,:) 
   real(dp_t), allocatable :: w0(:,:)
+  real(dp_t), allocatable :: tempbar(:,:,:)
 
   type(bc_tower) ::  the_bc_tower
 
@@ -304,30 +305,32 @@ subroutine varden()
   ! allocate the base state quantities -- these all use 0-based indexing
   allocate(div_coeff_old(nlevs,0:nr_fine-1))
   allocate(div_coeff_new(nlevs,0:nr_fine-1))
-  allocate(gam1         (nlevs,0:nr_fine-1,1))
+  allocate(gamma1bar    (nlevs,0:nr_fine-1,1))
   allocate(s0_old       (nlevs,0:nr_fine-1,nscal))
   allocate(s0_new       (nlevs,0:nr_fine-1,nscal))
   allocate(p0_old       (nlevs,0:nr_fine-1))
   allocate(p0_new       (nlevs,0:nr_fine-1))
   allocate(w0           (nlevs,0:nr_fine))
-  allocate(eta          (nlevs,0:nr_fine,nscal))
+  allocate(etarho       (nlevs,0:nr_fine))
   allocate(psi          (nlevs,0:nr_fine))
+  allocate(tempbar      (nlevs,0:nr_fine-1,1))
 
   div_coeff_old(:,:) = ZERO
   div_coeff_new(:,:) = ZERO
 
-  gam1(:,:,:) = ZERO
+  gamma1bar(:,:,:) = ZERO
 
   s0_old(:,:,:) = ZERO
   s0_new(:,:,:) = ZERO
 
-  eta(:,:,:) = ZERO
+  etarho(:,:) = ZERO
   psi(:,:) = ZERO
 
   p0_old(:,:) = ZERO
   p0_new(:,:) = ZERO
 
   w0(:,:) = ZERO
+  tempbar(:,:,:) = ZERO
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! Initialize all remaining arrays
@@ -451,16 +454,16 @@ subroutine varden()
   ! Initialize base state at each level independently
   if (restart < 0) then
      do n = 1,nlevs
-        call init_base_state(n,model_file,s0_old(n,:,:),p0_old(n,:),gam1(n,:,1),dx(n,:))
+        call init_base_state(n,model_file,s0_old(n,:,:),p0_old(n,:),gamma1bar(n,:,1),dx(n,:))
      end do
   else
      write(unit=sd_name,fmt='("chk",i5.5)') restart
      write(unit=base_state_name,fmt='("model_",i5.5)') restart
      write(unit=base_w0_name,fmt='("w0_",i5.5)') restart
-     write(unit=base_eta_name,fmt='("eta_",i5.5)') restart
+     write(unit=base_etarho_name,fmt='("eta_",i5.5)') restart
 
-     call read_base_state(nlevs, base_state_name, base_w0_name, base_eta_name, sd_name, &
-                          s0_old, p0_old, gam1(:,:,1), w0, eta, div_coeff_old)
+     call read_base_state(nlevs, base_state_name, base_w0_name, base_etarho_name, sd_name, &
+                          s0_old, p0_old, gamma1bar(:,:,1), w0, etarho, div_coeff_old, psi)
   end if
 
   ! Create the normal array once we have defined "center"
@@ -492,7 +495,7 @@ subroutine varden()
 
      do n=1,nlevs
         call make_div_coeff(n,div_coeff_old(n,:),s0_old(n,:,rho_comp),p0_old(n,:), &
-                            gam1(n,:,1),grav_cell(n,:))
+                            gamma1bar(n,:,1),grav_cell(n,:))
      end do
 
      time = ZERO
@@ -507,7 +510,7 @@ subroutine varden()
 
      if(do_initial_projection > 0) then
         call initial_proj(nlevs,uold,sold,pres,gpres,Source_old,hgrhs, &
-                          div_coeff_old,s0_old,p0_old,gam1(:,:,1),dx,the_bc_tower,mla)
+                          div_coeff_old,s0_old,p0_old,gamma1bar(:,:,1),dx,the_bc_tower,mla)
      end if
     
      do n=1,nlevs
@@ -519,8 +522,7 @@ subroutine varden()
 
      do n=1,nlevs
         call firstdt(n,uold(n),sold(n),vel_force(n),Source_old(n), &
-                     p0_old(n,:),gam1(n,:,1),s0_old(n,:,temp_comp),dx(n,:),cflfac, &
-                     dt_lev)
+                     p0_old(n,:),gamma1bar(n,:,1),dx(n,:),cflfac,dt_lev)
 
         if (parallel_IOProcessor() .and. verbose .ge. 1) then
            print*,"Call to firstdt for level",n,"gives dt_lev =",dt_lev
@@ -565,7 +567,7 @@ subroutine varden()
      do istep_divu_iter=1,init_divu_iter
 
         call divu_iter(nlevs,istep_divu_iter,uold,sold,pres,gpres,vel_force,normal, &
-                       Source_old,hgrhs,dSdt,div_coeff_old,s0_old,p0_old,gam1,w0, &
+                       Source_old,hgrhs,dSdt,div_coeff_old,s0_old,p0_old,gamma1bar,w0, &
                        grav_cell,dx,dt,time,the_bc_tower,mla)
 
      end do
@@ -578,11 +580,14 @@ subroutine varden()
 
      if ( plot_int > 0 ) then
 
+        ! tempbar is only used as an initial guess for eos calls
+        call average(mla,sold,tempbar,dx,temp_comp,1,1)
+
         write(unit=plot_index,fmt='(i5.5)') restart
         plot_file_name = trim(plot_base_name) // plot_index
         call make_plotfile(plot_file_name,mla,uold,sold,gpres,rho_omegadot2,&
                            Source_old,sponge,mba,plot_names,time,dx,&
-                           the_bc_tower,s0_old,p0_old,plot_spec,plot_trac)
+                           the_bc_tower,s0_old,p0_old,tempbar,plot_spec,plot_trac)
 
         call write_job_info(plot_file_name)
      end if
@@ -640,10 +645,10 @@ subroutine varden()
            init_mode = .true.
            call advance_timestep(init_mode,mla,uold,sold,unew,snew, &
                                  gpres,pres,normal,s0_old, &
-                                 s0_new,p0_old,p0_new,gam1,w0, &
+                                 s0_new,p0_old,p0_new,tempbar,gamma1bar,w0, &
                                  rho_omegadot2,div_coeff_old, &
                                  div_coeff_new,grav_cell,dx,time,dt,dtold,the_bc_tower, &
-                                 dSdt,Source_old,Source_new,eta,psi,sponge,hgrhs,istep)
+                                 dSdt,Source_old,Source_new,etarho,psi,sponge,hgrhs,istep)
 
         end do ! end do istep_init_iter = 1,init_iter
 
@@ -671,9 +676,10 @@ subroutine varden()
 
         write(unit=base_state_name,fmt='("model_",i5.5)') istep
         write(unit=base_w0_name,fmt='("w0_",i5.5)') istep
-        write(unit=base_eta_name,fmt='("eta_",i5.5)') istep
-        call write_base_state(nlevs, base_state_name, base_w0_name, base_eta_name, sd_name, &
-                              s0_old, p0_old, gam1(:,:,1), w0, eta, div_coeff_old,prob_lo(dm))
+        write(unit=base_etarho_name,fmt='("eta_",i5.5)') istep
+        call write_base_state(nlevs,base_state_name,base_w0_name,base_etarho_name,sd_name, &
+                              s0_old,p0_old,gamma1bar(:,:,1),w0,etarho, &
+                              div_coeff_old,psi,prob_lo(dm))
         do n = 1,nlevs
            call destroy(chkdata(n))
         end do
@@ -686,7 +692,7 @@ subroutine varden()
         call make_plotfile(plot_file_name,mla,uold,sold,gpres,rho_omegadot2,Source_new, &
                            sponge,mba,plot_names,time,dx,&
                            the_bc_tower, &
-                           s0_old,p0_old,plot_spec,plot_trac)
+                           s0_old,p0_old,tempbar,plot_spec,plot_trac)
 
         call scalar_diags (istep,sold(1),s0_old(1,:,:),p0_old(1,:),dx(1,:))
 
@@ -778,7 +784,7 @@ subroutine varden()
 
            do n = 1,nlevs
               call estdt(n,uold(n),sold(n),vel_force(n),Source_old(n),dSdt(n),normal(n), &
-                         w0(n,:),p0_old(n,:),gam1(n,:,1),dx(n,:),cflfac,dt_lev)
+                         w0(n,:),p0_old(n,:),gamma1bar(n,:,1),dx(n,:),cflfac,dt_lev)
 
               dt = min(dt,dt_lev)
            end do
@@ -832,10 +838,10 @@ subroutine varden()
         r1 = parallel_wtime()
         call advance_timestep(init_mode,mla,uold,sold,unew,snew, &
                               gpres,pres,normal,s0_old, &
-                              s0_new,p0_old,p0_new,gam1,w0, &
+                              s0_new,p0_old,p0_new,tempbar,gamma1bar,w0, &
                               rho_omegadot2,div_coeff_old,div_coeff_new, &
                               grav_cell,dx,time,dt,dtold,the_bc_tower, &
-                              dSdt,Source_old,Source_new,eta,psi,&
+                              dSdt,Source_old,Source_new,etarho,psi,&
                               sponge,hgrhs,istep)
         r2 = parallel_wtime() - r1
         call parallel_reduce(r1, r2, MPI_MAX, proc = parallel_IOProcessorNode())
@@ -946,10 +952,11 @@ subroutine varden()
 
               write(unit=base_state_name,fmt='("model_",i5.5)') istep
               write(unit=base_w0_name,fmt='("w0_",i5.5)') istep
-              write(unit=base_eta_name,fmt='("eta_",i5.5)') istep
+              write(unit=base_etarho_name,fmt='("eta_",i5.5)') istep
               call write_base_state(nlevs, base_state_name, base_w0_name, &
-                                    base_eta_name, sd_name, &
-                                    s0_new, p0_new, gam1(:,:,1), w0, eta, div_coeff_old, &
+                                    base_etarho_name, sd_name, &
+                                    s0_new, p0_new, gamma1bar(:,:,1), w0, etarho, &
+                                    div_coeff_old,psi, &
                                     prob_lo(dm))
               do n = 1,nlevs
                  call destroy(chkdata(n))
@@ -966,7 +973,7 @@ subroutine varden()
               call make_plotfile(plot_file_name,mla,unew,snew,gpres,&
                                  rho_omegadot2,Source_new,sponge, &
                                  mba,plot_names,time,dx,the_bc_tower, &
-                                 s0_new,p0_new,plot_spec,plot_trac)
+                                 s0_new,p0_new,tempbar,plot_spec,plot_trac)
 
               call write_job_info(plot_file_name)
               last_plt_written = istep
@@ -1005,10 +1012,11 @@ subroutine varden()
 
         write(unit=base_state_name,fmt='("model_",i5.5)') istep
         write(unit=base_w0_name,fmt='("w0_",i5.5)') istep
-        write(unit=base_eta_name,fmt='("eta_",i5.5)') istep
+        write(unit=base_etarho_name,fmt='("eta_",i5.5)') istep
         call write_base_state(nlevs, base_state_name, base_w0_name, &
-                              base_eta_name, sd_name, &
-                              s0_new, p0_new, gam1(:,:,1), w0, eta, div_coeff_old, prob_lo(dm))
+                              base_etarho_name, sd_name, &
+                              s0_new, p0_new, gamma1bar(:,:,1), w0, etarho, &
+                              div_coeff_old, psi,prob_lo(dm))
      end if
 
      if ( plot_int > 0 .and. last_plt_written .ne. istep ) then
@@ -1017,7 +1025,7 @@ subroutine varden()
         call make_plotfile(plot_file_name,mla,unew,snew,gpres, &
                            rho_omegadot2,Source_new,sponge, &
                            mba,plot_names,time,dx,the_bc_tower, &
-                           s0_new,p0_new,plot_spec,plot_trac)
+                           s0_new,p0_new,tempbar,plot_spec,plot_trac)
         
         call write_job_info(plot_file_name)
 
@@ -1051,7 +1059,7 @@ subroutine varden()
 
   deallocate(uold,unew,sold,snew)
   deallocate(div_coeff_old,div_coeff_new,grav_cell)
-  deallocate(gam1,s0_old,s0_new,p0_old,p0_new,w0,eta)
+  deallocate(gamma1bar,s0_old,s0_new,p0_old,p0_new,w0,etarho)
   deallocate(dSdt,Source_old,Source_new)
   deallocate(rho_omegadot2)
   deallocate(vel_force,sponge,normal)
