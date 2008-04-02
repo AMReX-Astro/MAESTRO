@@ -14,7 +14,7 @@ module scalar_advance_module
 contains
 
   subroutine scalar_advance(nlevs,mla,which_step,uold,sold,snew,thermal, &
-                            umac,w0,w0_cart_vec,etaflux,utrans,normal, &
+                            umac,w0,w0_cart_vec,etarhoflux,utrans,normal, &
                             s0_old,s0_new,p0_old,p0_new,tempbar,psi, &
                             s0_predicted_edge, &
                             dx,dt,the_bc_level)
@@ -52,7 +52,7 @@ contains
     type(multifab) , intent(inout) :: umac(:,:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     type(multifab) , intent(in   ) :: w0_cart_vec(:)
-    type(multifab) , intent(inout) :: etaflux(:)
+    type(multifab) , intent(inout) :: etarhoflux(:)
     type(multifab) , intent(in   ) :: utrans(:,:)
     type(multifab) , intent(in   ) :: normal(:)
     real(kind=dp_t), intent(inout) :: s0_old(:,0:,:)
@@ -336,18 +336,18 @@ contains
     if (which_step .eq. 1) then
 
     ! compute enthalpy fluxes
-       call mkflux(nlevs,sflux,etaflux,sold,sedge,umac,w0,w0_cart_vec, &
+       call mkflux(nlevs,sflux,etarhoflux,sold,sedge,umac,w0,w0_cart_vec, &
                    s0_old,s0_edge_old,s0_old_cart,s0_old,s0_edge_old,s0_old_cart, &
                    s0_predicted_edge,rhoh_comp,rhoh_comp,mla,dx,dt)
 
        ! compute species fluxes
-       call mkflux(nlevs,sflux,etaflux,sold,sedge,umac,w0,w0_cart_vec, &
+       call mkflux(nlevs,sflux,etarhoflux,sold,sedge,umac,w0,w0_cart_vec, &
                    s0_old,s0_edge_old,s0_old_cart,s0_old,s0_edge_old,s0_old_cart, &
                    s0_predicted_edge,spec_comp,spec_comp+nspec-1,mla,dx,dt)
 
        if (ntrac .ge. 1) then
           ! compute tracer fluxes
-          call mkflux(nlevs,sflux,etaflux,sold,sedge,umac,w0,w0_cart_vec, &
+          call mkflux(nlevs,sflux,etarhoflux,sold,sedge,umac,w0,w0_cart_vec, &
                       s0_old,s0_edge_old,s0_old_cart,s0_old,s0_edge_old,s0_old_cart, &
                       s0_predicted_edge,trac_comp,trac_comp+ntrac-1,mla,dx,dt)
        end if
@@ -355,18 +355,18 @@ contains
     else if (which_step .eq. 2) then
 
        ! compute enthalpy fluxes
-       call mkflux(nlevs,sflux,etaflux,sold,sedge,umac,w0,w0_cart_vec, &
+       call mkflux(nlevs,sflux,etarhoflux,sold,sedge,umac,w0,w0_cart_vec, &
                    s0_old,s0_edge_old,s0_old_cart,s0_new,s0_edge_new,s0_new_cart, &
                    s0_predicted_edge,rhoh_comp,rhoh_comp,mla,dx,dt)
 
        ! compute species fluxes
-       call mkflux(nlevs,sflux,etaflux,sold,sedge,umac,w0,w0_cart_vec, &
+       call mkflux(nlevs,sflux,etarhoflux,sold,sedge,umac,w0,w0_cart_vec, &
                    s0_old,s0_edge_old,s0_old_cart,s0_new,s0_edge_new,s0_new_cart, &
                    s0_predicted_edge,spec_comp,spec_comp+nspec-1,mla,dx,dt)
 
        if (ntrac .ge. 1) then
           ! compute tracer fluxes
-          call mkflux(nlevs,sflux,etaflux,sold,sedge,umac,w0,w0_cart_vec, &
+          call mkflux(nlevs,sflux,etarhoflux,sold,sedge,umac,w0,w0_cart_vec, &
                       s0_old,s0_edge_old,s0_old_cart,s0_new,s0_edge_new,s0_new_cart, &
                       s0_predicted_edge,trac_comp,trac_comp+ntrac-1,mla,dx,dt)
        end if

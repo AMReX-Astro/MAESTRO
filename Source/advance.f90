@@ -15,7 +15,7 @@ contains
                               s0_new,p0_old,p0_new,tempbar,gamma1bar,w0, &
                               rho_omegadot2,div_coeff_old,div_coeff_new, &
                               grav_cell_old,dx,time,dt,dtold,the_bc_tower, &
-                              dSdt,Source_old,Source_new,eta,psi,sponge,hgrhs,istep)
+                              dSdt,Source_old,Source_new,etarho,psi,sponge,hgrhs,istep)
 
     use bl_prof_module
     use ml_layout_module
@@ -81,7 +81,7 @@ contains
     type(multifab),  intent(inout) :: dSdt(:)
     type(multifab),  intent(inout) :: Source_old(:)
     type(multifab),  intent(inout) :: Source_new(:)
-    real(dp_t)    ,  intent(inout) :: eta(:,0:,:)
+    real(dp_t)    ,  intent(inout) :: etarho(:,0:)
     real(dp_t)    ,  intent(inout) :: psi(:,0:)
     type(multifab),  intent(in   ) :: sponge(:)
     type(multifab),  intent(inout) :: hgrhs(:)
@@ -108,7 +108,7 @@ contains
     type(multifab) :: gamma1(mla%nlevel)
     type(multifab) :: umac(mla%nlevel,mla%dim)
     type(multifab) :: utrans(mla%nlevel,mla%dim)
-    type(multifab) :: etaflux(mla%nlevel)
+    type(multifab) :: etarhoflux(mla%nlevel)
 
     real(dp_t), allocatable :: grav_cell_nph(:,:)
     real(dp_t), allocatable :: grav_cell_new(:,:)
@@ -181,11 +181,12 @@ contains
     ng_s = sold(1)%ng
     halfdt = half*dt
 
-    ! Build etaflux here so that we can call correct_base before make_eta.
+    ! Build etarhoflux here so that we can call correct_base before make_etarho.
     umac_nodal_flag = .false.
     umac_nodal_flag(dm) = .true.
     do n=1,nlevs
-       call multifab_build(etaflux(n), mla%la(n), nscal, 0, nodal = umac_nodal_flag)
+       call multifab_build(etarhoflux(n), mla%la(n), 1, nodal = umac_nodal_flag)
+       call setval(etarhoflux(n),ZERO,all=.true.)
     end do
 
     ! tempbar is only used as an initial guess for eos calls
@@ -415,19 +416,19 @@ contains
     end do
 
     call scalar_advance(nlevs,mla,1,uold,s1,s2,thermal, &
-                        umac,w0,w0_cart_vec,etaflux,utrans,normal, &
+                        umac,w0,w0_cart_vec,etarhoflux,utrans,normal, &
                         s0_1,s0_2,p0_1,p0_2,tempbar,psi,s0_predicted_edge, &
                         dx,dt,the_bc_tower%bc_tower_array)
 
-    ! Correct the base state using the lagged eta and psi
-    if (use_eta .and. evolve_base_state) then
-       call correct_base(nlevs,s0_1,s0_2,eta,dx(:,dm),dt)
+    ! Correct the base state using the lagged etarho and psi
+    if (use_etarho .and. evolve_base_state) then
+       call correct_base(nlevs,s0_1,s0_2,etarho,dx(:,dm),dt)
     end if
 
-    ! Now compute the new eta and psi
-    if (use_eta .and. evolve_base_state) then
-       call make_eta(nlevs,eta,etaflux,mla)
-       call make_psi(nlevs,eta,psi,s0_1,w0,gamma1bar(:,:,1),p0_1,Sbar(:,:,1))
+    ! Now compute the new etarho and psi
+    if (use_etarho .and. evolve_base_state) then
+       call make_etarho(nlevs,etarho,etarhoflux,mla)
+       call make_psi(nlevs,etarho,psi,s0_1,w0,gamma1bar(:,:,1),p0_1,Sbar(:,:,1))
     end if
 
     do n=1,nlevs
@@ -731,27 +732,28 @@ contains
        
        do n=1,nlevs
           call multifab_build(s2(n), mla%la(n), nscal, ng_s)
+          call setval(etarhoflux(n),ZERO,all=.true.)
        end do
 
        call scalar_advance(nlevs,mla,2,uold,s1,s2,thermal, &
-                           umac,w0,w0_cart_vec,etaflux,utrans,normal, &
+                           umac,w0,w0_cart_vec,etarhoflux,utrans,normal, &
                            s0_1,s0_2,p0_1,p0_2,tempbar,psi,s0_predicted_edge, &
                            dx,dt,the_bc_tower%bc_tower_array)
 
-       ! Correct the base state using the lagged eta and psi
-       if (use_eta .and. evolve_base_state) then
-          call correct_base(nlevs,s0_1,s0_2,eta,dx(:,dm),dt)
+       ! Correct the base state using the lagged etarho and psi
+       if (use_etarho .and. evolve_base_state) then
+          call correct_base(nlevs,s0_1,s0_2,etarho,dx(:,dm),dt)
        end if
 
-       ! Now compute the new eta and psi
-       if (use_eta .and. evolve_base_state) then
-          call make_eta(nlevs,eta,etaflux,mla)
-          call make_psi(nlevs,eta,psi,s0_1,w0,gamma1bar(:,:,1),p0_1,Sbar(:,:,1))
+       ! Now compute the new etarho and psi
+       if (use_etarho .and. evolve_base_state) then
+          call make_etarho(nlevs,etarho,etarhoflux,mla)
+          call make_psi(nlevs,etarho,psi,s0_1,w0,gamma1bar(:,:,1),p0_1,Sbar(:,:,1))
        end if
 
        do n=1,nlevs
           call destroy(thermal(n))
-          call destroy(etaflux(n))
+          call destroy(etarhoflux(n))
        end do
        
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

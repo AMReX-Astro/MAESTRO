@@ -9,13 +9,13 @@ module make_psi_module
 
 contains
 
-  subroutine make_psi(nlevs,eta,psi,s0,w0,gamma1bar,p0,Sbar_in)
+  subroutine make_psi(nlevs,etarho,psi,s0,w0,gamma1bar,p0,Sbar_in)
 
     use bl_prof_module
     use geometry, only: spherical
 
     integer        , intent(in   ) :: nlevs
-    real(kind=dp_t), intent(in   ) :: eta(:,0:,:)
+    real(kind=dp_t), intent(in   ) :: etarho(:,0:)
     real(kind=dp_t), intent(inout) :: psi(:,0:)
     real(kind=dp_t), intent(in   ) :: s0(:,0:,:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
@@ -32,11 +32,12 @@ contains
     
     if (spherical .eq. 0) then 
        do n = 1,nlevs
-          call make_psi_planar(n,eta(n,0:,:),psi(n,0:),s0(n,0:,:))
+          call make_psi_planar(n,etarho(n,0:),psi(n,0:),s0(n,0:,:))
        end do
     else
        do n = 1,nlevs
-          call make_psi_spherical(n,psi(n,0:),s0(n,0:,:),w0(n,0:),gamma1bar(n,0:),p0(n,0:),Sbar_in(n,0:))
+          call make_psi_spherical(n,psi(n,0:),s0(n,0:,:),w0(n,0:),gamma1bar(n,0:), &
+                                  p0(n,0:),Sbar_in(n,0:))
        end do
     endif
 
@@ -45,7 +46,7 @@ contains
        
   end subroutine make_psi
 
-  subroutine make_psi_planar(n,eta,psi,s0)
+  subroutine make_psi_planar(n,etarho,psi,s0)
 
     use bl_constants_module
     use variables, only: rho_comp
@@ -53,15 +54,15 @@ contains
     use probin_module, only: grav_const, anelastic_cutoff
 
     integer        , intent(in   ) :: n
-    real(kind=dp_t), intent(in   ) :: eta(0:,:)
+    real(kind=dp_t), intent(in   ) :: etarho(0:)
     real(kind=dp_t), intent(inout) :: psi(0:)
     real(kind=dp_t), intent(in   ) :: s0(0:,:)
     
     ! Local variables
     integer         :: r,r_anel
-    real(kind=dp_t) :: eta_avg
+    real(kind=dp_t) :: etarho_avg
    
-    ! This is used to zero the eta contribution above the anelastic_cutoff
+    ! This is used to zero the etarho contribution above the anelastic_cutoff
     r_anel = nr(n)-1
     do r = 0,nr(n)-1
        if (s0(r,rho_comp) .lt. anelastic_cutoff .and. r_anel .eq. nr(n)-1) then
@@ -73,8 +74,8 @@ contains
     psi(:) = ZERO
 
     do r = 0, r_anel-1
-      eta_avg = HALF * (eta(r,rho_comp)+eta(r+1,rho_comp))
-      psi(r) = eta_avg * abs(grav_const)
+      etarho_avg = HALF * (etarho(r)+etarho(r+1))
+      psi(r) = etarho_avg * abs(grav_const)
     end do
     
   end subroutine make_psi_planar

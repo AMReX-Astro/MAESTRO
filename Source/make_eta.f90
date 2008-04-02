@@ -1,4 +1,4 @@
-! Compute eta_{X_k}, eta_{rho h}, and eta_{rho}
+! Compute etarho
 
 module make_eta_module
 
@@ -9,11 +9,11 @@ module make_eta_module
 
   private
 
-  public :: make_eta
+  public :: make_etarho
 
 contains
 
-  subroutine make_eta(nlevs,eta,etaflux,mla)
+  subroutine make_etarho(nlevs,etarho,etarhoflux,mla)
 
     use bl_constants_module
     use geometry, only: spherical, nr
@@ -21,18 +21,18 @@ contains
     use network, only: nspec
 
     integer           , intent(in   ) :: nlevs
-    real(kind=dp_t)   , intent(inout) :: eta(:,0:,:)
-    type(multifab)    , intent(inout) :: etaflux(:)
+    real(kind=dp_t)   , intent(inout) :: etarho(:,0:)
+    type(multifab)    , intent(inout) :: etarhoflux(:)
     type(ml_layout)   , intent(inout) :: mla
 
     ! local
     real(kind=dp_t), pointer :: efp(:,:,:,:)
     
     real(kind=dp_t), allocatable :: ncell(:,:)
-    real(kind=dp_t), allocatable :: etasum_proc(:,:,:)
-    real(kind=dp_t), allocatable :: etasum(:,:,:)
-    real(kind=dp_t), allocatable :: etapert_proc(:,:,:)
-    real(kind=dp_t), allocatable :: etapert(:,:,:)
+    real(kind=dp_t), allocatable :: etarhosum_proc(:,:)
+    real(kind=dp_t), allocatable :: etarhosum(:,:)
+    real(kind=dp_t), allocatable :: etarhopert_proc(:,:)
+    real(kind=dp_t), allocatable :: etarhopert(:,:)
     real(kind=dp_t), allocatable :: source_buffer(:)
     real(kind=dp_t), allocatable :: target_buffer(:)
 
@@ -44,25 +44,25 @@ contains
 
     type(bl_prof_timer), save :: bpt
 
-    call build(bpt, "make_eta")
+    call build(bpt, "make_etarho")
 
     dm = mla%dim
 
     allocate(ncell       (nlevs,0:nr(nlevs))) ! ncell is a function of r only for spherical
-    allocate(etasum_proc (nlevs,0:nr(nlevs),nscal))
-    allocate(etasum      (nlevs,0:nr(nlevs),nscal))
-    allocate(etapert_proc(nlevs,0:nr(nlevs),nscal))
-    allocate(etapert     (nlevs,0:nr(nlevs),nscal))
+    allocate(etarhosum_proc (nlevs,0:nr(nlevs)))
+    allocate(etarhosum      (nlevs,0:nr(nlevs)))
+    allocate(etarhopert_proc(nlevs,0:nr(nlevs)))
+    allocate(etarhopert     (nlevs,0:nr(nlevs)))
 
     allocate(source_buffer(0:nr(nlevs)))
     allocate(target_buffer(0:nr(nlevs)))
 
     ncell        = ZERO
-    etasum_proc  = ZERO
-    etasum       = ZERO
-    etapert_proc = ZERO
-    etapert      = ZERO
-    eta          = ZERO
+    etarhosum_proc  = ZERO
+    etarhosum       = ZERO
+    etarhopert_proc = ZERO
+    etarhopert      = ZERO
+    etarho          = ZERO
 
     if (spherical .eq. 0) then
     
@@ -76,47 +76,37 @@ contains
           ncell(1,:) = (domhi(1)-domlo(1)+1)*(domhi(2)-domlo(2)+1)
        end if
        
-       ! the first step is to compute eta assuming the coarsest level 
+       ! the first step is to compute etarho assuming the coarsest level 
        ! is the only level in existence
        do i=1,layout_nboxes(mla%la(1))
-          if ( multifab_remote(etaflux(1), i) ) cycle
-          efp => dataptr(etaflux(1), i)
+          if ( multifab_remote(etarhoflux(1), i) ) cycle
+          efp => dataptr(etarhoflux(1), i)
           lo =  lwb(get_box(mla%la(1), i))
           hi =  upb(get_box(mla%la(1), i))
           select case (dm)
           case (2)
-            call sum_eta_coarsest_2d(lo,hi,domhi,efp(:,:,1,:),etasum_proc(1,:,:))
+            call sum_etarho_coarsest_2d(lo,hi,domhi,efp(:,:,1,1),etarhosum_proc(1,:))
           case (3)
-            call sum_eta_coarsest_3d(lo,hi,domhi,efp(:,:,:,:),etasum_proc(1,:,:))
+            call sum_etarho_coarsest_3d(lo,hi,domhi,efp(:,:,:,1),etarhosum_proc(1,:))
           end select
        end do
 
-       source_buffer = etasum_proc(1,:,rhoh_comp)
+       source_buffer = etarhosum_proc(1,:)
        call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
-       etasum(1,:,rhoh_comp) = target_buffer
-
-       do comp=spec_comp,spec_comp+nspec-1
-          source_buffer = etasum_proc(1,:,comp)
-          call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
-          etasum(1,:,comp) = target_buffer
-       end do
+       etarhosum(1,:) = target_buffer
 
        do r=0,nr(1)
-          eta(1,r,rhoh_comp) = etasum(1,r,rhoh_comp) / dble(ncell(1,r))
-          do comp=spec_comp,spec_comp+nspec-1
-             eta(1,r,comp) = etasum(1,r,comp) / dble(ncell(1,r))
-             eta(1,r,rho_comp) = eta(1,r,rho_comp) + eta(1,r,comp)
-          end do
+          etarho(1,r) = etarhosum(1,r) / dble(ncell(1,r))
        end do
 
-       ! now we compute eta at the finer levels
+       ! now we compute etarho at the finer levels
        do n=2,nlevs
           
           rr = mla%mba%rr(n-1,dm)
 
           if (mla%mba%rr(n-1,1) .ne. mla%mba%rr(n-1,dm) .or. &
                mla%mba%rr(n-1,2) .ne. mla%mba%rr(n-1,dm)) then
-             print*,"ERROR: In make_eta, refinement ratio in each direction must match"
+             print*,"ERROR: In make_etarho, refinement ratio in each direction must match"
              stop
           endif
 
@@ -130,76 +120,51 @@ contains
              ncell(n,:) = (domhi(1)-domlo(1)+1)*(domhi(2)-domlo(2)+1)
           end if
           
-          ! on faces that exist at the next coarser level, eta is the same since
-          ! the fluxes have been restricted.  We copy these values of eta directly and
-          ! copy scaled values of etasum directly.
+          ! on faces that exist at the next coarser level, etarho is the same since
+          ! the fluxes have been restricted.  We copy these values of etarho directly and
+          ! copy scaled values of etarhosum directly.
           do r=0,nr(n-1)
-             eta   (n,r*rr,rhoh_comp) = eta   (n-1,r,rhoh_comp)
-             etasum(n,r*rr,rhoh_comp) = etasum(n-1,r,rhoh_comp)*rr**(dm-1)
-             do comp=spec_comp,spec_comp+nspec-1
-                eta   (n,r*rr,comp)     = eta   (n-1,r,comp)
-                etasum(n,r*rr,comp)     = etasum(n-1,r,comp)*rr**(dm-1)
-                eta   (n,r*rr,rho_comp) = eta   (n,r*rr,rho_comp) + eta(n,r*rr,comp)
-             end do
+             etarho   (n,r*rr) = etarho   (n-1,r)
+             etarhosum(n,r*rr) = etarhosum(n-1,r)*rr**(dm-1)
           end do
 
           ! on faces that do not exist at the next coarser level, we use linear
-          ! interpolation to get etasum at these faces.
+          ! interpolation to get etarhosum at these faces.
           do r=0,nr(n-1)-1
              do rpert=1,rr-1
-                etasum(n,r*rr+rpert,rhoh_comp) = &
-                     dble(rpert)/dble(rr)*(etasum(n,r*rr,rhoh_comp)) + &
-                     dble(rr-rpert)/dble(rr)*(etasum(n,(r+1)*rr,rhoh_comp))
-                do comp=spec_comp,spec_comp+nspec-1
-                   etasum(n,r*rr+rpert,comp) = &
-                        dble(rpert)/dble(rr)*(etasum(n,r*rr,comp)) + &
-                        dble(rr-rpert)/dble(rr)*(etasum(n,(r+1)*rr,comp))
-                end do
+                etarhosum(n,r*rr+rpert) = &
+                     dble(rpert)/dble(rr)*(etarhosum(n,r*rr)) + &
+                     dble(rr-rpert)/dble(rr)*(etarhosum(n,(r+1)*rr))
              end do
           end do
 
-          ! compute etapert_proc on faces that do not exist at the coarser level
+          ! compute etarhopert_proc on faces that do not exist at the coarser level
           do i=1,layout_nboxes(mla%la(n))
-             if ( multifab_remote(etaflux(n), i) ) cycle
-             efp  => dataptr(etaflux(n), i)
+             if ( multifab_remote(etarhoflux(n), i) ) cycle
+             efp  => dataptr(etarhoflux(n), i)
              lo =  lwb(get_box(mla%la(n), i))
              hi =  upb(get_box(mla%la(n), i))
              select case (dm)
              case (2)
-                call compute_etapert_2d(lo,hi,efp(:,:,1,:),etasum_proc(1,:,:),rr)
+                call compute_etarhopert_2d(lo,hi,efp(:,:,1,1),etarhosum_proc(1,:),rr)
              case (3)
-                call compute_etapert_3d(lo,hi,efp(:,:,:,:),etasum_proc(1,:,:),rr)
+                call compute_etarhopert_3d(lo,hi,efp(:,:,:,1),etarhosum_proc(1,:),rr)
              end select
           end do
 
-          ! gather etapert for rhoh
-          source_buffer = etapert_proc(n,:,rhoh_comp)
+          ! gather etarhopert for rhoh
+          source_buffer = etarhopert_proc(n,:)
           call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
-          etapert(n,:,rhoh_comp) = target_buffer
-
-          ! gather etapert for rhoX
-          do comp=spec_comp,spec_comp+nspec-1
-             source_buffer = etapert_proc(n,:,comp)
-             call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
-             etapert(n,:,comp) = target_buffer
-          end do
+          etarhopert(n,:) = target_buffer
 
           ! update etasum on faces that do not exist at the coarser level
           ! then recompute eta on these faces
           do r=0,nr(n-1)-1
              do rpert=1,rr-1
-                etasum(n,r*rr+rpert,rhoh_comp) = &
-                     etasum(n,r*rr+rpert,rhoh_comp) + etapert(n,r*rr+rpert,rhoh_comp)
-                eta(n,r*rr+rpert,rhoh_comp) = &
-                     etasum(n,r*rr+rpert,rhoh_comp)/dble(ncell(n,r*rr+rpert))
-                do comp=spec_comp,spec_comp+nspec-1
-                   etasum(n,r*rr+rpert,comp) = &
-                        etasum(n,r*rr+rpert,comp) + etapert(n,r*rr+rpert,comp)
-                   eta(n,r*rr+rpert,comp) = &
-                        etasum(n,r*rr+rpert,comp)/dble(ncell(n,r*rr+rpert))
-                   eta(n,r*rr+rpert,rho_comp) = &
-                        eta(n,r*rr+rpert,rho_comp) + eta(n,r*rr+rpert,comp)
-                end do
+                etarhosum(n,r*rr+rpert) = &
+                     etarhosum(n,r*rr+rpert) + etarhopert(n,r*rr+rpert)
+                etarho(n,r*rr+rpert) = &
+                     etarhosum(n,r*rr+rpert)/dble(ncell(n,r*rr+rpert))
              end do
           end do
 
@@ -212,32 +177,29 @@ contains
     end if
 
     deallocate(ncell)
-    deallocate(etasum_proc,etasum)
-    deallocate(etapert_proc,etapert)
+    deallocate(etarhosum_proc,etarhosum)
+    deallocate(etarhopert_proc,etarhopert)
     deallocate(source_buffer,target_buffer)
 
     call destroy(bpt)
 
-  end subroutine make_eta
+  end subroutine make_etarho
 
-  subroutine sum_eta_coarsest_2d(lo,hi,domhi,etaflux,etasum)
+  subroutine sum_etarho_coarsest_2d(lo,hi,domhi,etarhoflux,etarhosum)
 
     use variables, only: nscal, rho_comp, rhoh_comp, spec_comp
     use network, only: nspec
 
     integer         , intent(in   ) :: lo(:), hi(:), domhi(:)
-    real (kind=dp_t), intent(in   ) :: etaflux(lo(1):,lo(2):,:)
-    real (kind=dp_t), intent(inout) :: etasum(0:,:)
+    real (kind=dp_t), intent(in   ) :: etarhoflux(lo(1):,lo(2):)
+    real (kind=dp_t), intent(inout) :: etarhosum(0:)
 
     ! local
     integer :: i,j,comp
 
     do j=lo(2),hi(2)
        do i=lo(1),hi(1)
-          etasum(j,rhoh_comp) = etasum(j,rhoh_comp) + etaflux(i,j,rhoh_comp)
-          do comp=spec_comp,spec_comp+nspec-1
-             etasum(j,comp) = etasum(j,comp) + etaflux(i,j,comp)
-          end do
+          etarhosum(j) = etarhosum(j) + etarhoflux(i,j)
        end do
     end do
 
@@ -246,23 +208,20 @@ contains
     if(hi(2) .eq. domhi(2)) then
        j=hi(2)+1
        do i=lo(1),hi(1)
-          etasum(j,rhoh_comp) = etasum(j,rhoh_comp) + etaflux(i,j,rhoh_comp)
-          do comp=spec_comp,spec_comp+nspec-1
-             etasum(j,comp) = etasum(j,comp) + etaflux(i,j,comp)
-          end do
+          etarhosum(j) = etarhosum(j) + etarhoflux(i,j)
        end do
     end if
 
-  end subroutine sum_eta_coarsest_2d
+  end subroutine sum_etarho_coarsest_2d
 
-  subroutine sum_eta_coarsest_3d(lo,hi,domhi,etaflux,etasum)
+  subroutine sum_etarho_coarsest_3d(lo,hi,domhi,etarhoflux,etarhosum)
 
     use variables, only: nscal, rho_comp, rhoh_comp, spec_comp
     use network, only: nspec
 
     integer         , intent(in   ) :: lo(:), hi(:), domhi(:)
-    real (kind=dp_t), intent(in   ) :: etaflux(lo(1):,lo(2):,lo(3):,:)
-    real (kind=dp_t), intent(inout) :: etasum(0:,:)
+    real (kind=dp_t), intent(in   ) :: etarhoflux(lo(1):,lo(2):,lo(3):)
+    real (kind=dp_t), intent(inout) :: etarhosum(0:)
 
     ! local
     integer :: i,j,k,comp
@@ -270,10 +229,7 @@ contains
     do k=lo(3),hi(3)
        do j=lo(2),hi(2)
           do i=lo(1),hi(1)
-             etasum(k,rhoh_comp) = etasum(k,rhoh_comp) + etaflux(i,j,k,rhoh_comp)
-             do comp=spec_comp,spec_comp+nspec-1
-                etasum(k,comp) = etasum(k,comp) + etaflux(i,j,k,comp)
-             end do
+             etarhosum(k) = etarhosum(k) + etarhoflux(i,j,k)
           end do
        end do
     end do
@@ -284,17 +240,14 @@ contains
        k=hi(3)+1
        do j=lo(2),hi(2)
           do i=lo(1),hi(1)
-             etasum(k,rhoh_comp) = etasum(k,rhoh_comp) + etaflux(i,j,k,rhoh_comp)
-             do comp=spec_comp,spec_comp+nspec-1
-                etasum(k,comp) = etasum(k,comp) + etaflux(i,j,k,comp)
-             end do
+             etarhosum(k) = etarhosum(k) + etarhoflux(i,j,k)
           end do
        end do
     end if
 
-  end subroutine sum_eta_coarsest_3d
+  end subroutine sum_etarho_coarsest_3d
 
-  subroutine compute_etapert_2d(lo,hi,etaflux,etapert,rr)
+  subroutine compute_etarhopert_2d(lo,hi,etarhoflux,etarhopert,rr)
 
     use variables, only: rhoh_comp, spec_comp
     use network, only: nspec
@@ -302,8 +255,8 @@ contains
     use geometry, only: nr
 
     integer         , intent(in   ) :: lo(:), hi(:), rr
-    real (kind=dp_t), intent(in   ) :: etaflux(lo(1):,lo(2):,:)
-    real (kind=dp_t), intent(inout) :: etapert(0:,:)
+    real (kind=dp_t), intent(in   ) :: etarhoflux(lo(1):,lo(2):)
+    real (kind=dp_t), intent(inout) :: etarhopert(0:)
     
     ! local
     integer         :: i,j,ipert,jpert,comp
@@ -317,29 +270,14 @@ contains
              loavg = ZERO
              hiavg = ZERO
              do ipert=0,rr-1
-                loavg = loavg + etaflux(i+ipert,j,   rhoh_comp)
-                hiavg = hiavg + etaflux(i+ipert,j+rr,rhoh_comp)
+                loavg = loavg + etarhoflux(i+ipert,j)
+                hiavg = hiavg + etarhoflux(i+ipert,j+rr)
              end do
              loavg = loavg / dble(rr)
              hiavg = hiavg / dble(rr)
              crseavg = dble(jpert)/dble(rr)*loavg + dble(rr-jpert)/dble(rr)*hiavg
              do ipert=0,rr-1
-                etapert(j+jpert,rhoh_comp) = etaflux(i+ipert,j+jpert,rhoh_comp) - crseavg
-             end do
-
-             do comp=spec_comp,spec_comp+nspec-1
-                loavg = ZERO
-                hiavg = ZERO
-                do ipert=0,rr-1
-                   loavg = loavg + etaflux(i+ipert,j,   comp)
-                   hiavg = hiavg + etaflux(i+ipert,j+rr,comp)
-                end do
-                loavg = loavg / dble(rr)
-                hiavg = hiavg / dble(rr)
-                crseavg = dble(jpert)/dble(rr)*loavg + dble(rr-jpert)/dble(rr)*hiavg
-                do ipert=0,rr-1
-                   etapert(j+jpert,comp) = etaflux(i+ipert,j+jpert,comp) - crseavg
-                end do
+                etarhopert(j+jpert) = etarhoflux(i+ipert,j+jpert) - crseavg
              end do
              
           end do
@@ -347,9 +285,9 @@ contains
        end do
     end do
 
-  end subroutine compute_etapert_2d
+  end subroutine compute_etarhopert_2d
 
-  subroutine compute_etapert_3d(lo,hi,etaflux,etapert,rr)
+  subroutine compute_etarhopert_3d(lo,hi,etarhoflux,etarhopert,rr)
 
     use variables, only: rhoh_comp, spec_comp
     use network, only: nspec
@@ -357,8 +295,8 @@ contains
     use geometry, only: nr
 
     integer         , intent(in   ) :: lo(:), hi(:), rr
-    real (kind=dp_t), intent(in   ) :: etaflux(lo(1):,lo(2):,lo(3):,:)
-    real (kind=dp_t), intent(inout) :: etapert(0:,:)
+    real (kind=dp_t), intent(in   ) :: etarhoflux(lo(1):,lo(2):,lo(3):)
+    real (kind=dp_t), intent(inout) :: etarhopert(0:)
     
     ! local
     integer         :: i,j,k,ipert,jpert,kpert,comp
@@ -374,8 +312,8 @@ contains
                 hiavg = ZERO
                 do ipert=0,rr-1
                    do jpert=0,rr-1
-                      loavg = loavg + etaflux(i+ipert,j+jpert,k,   rhoh_comp)
-                      hiavg = hiavg + etaflux(i+ipert,j+jpert,k+rr,rhoh_comp)
+                      loavg = loavg + etarhoflux(i+ipert,j+jpert,k)
+                      hiavg = hiavg + etarhoflux(i+ipert,j+jpert,k+rr)
                    end do
                 end do
                 loavg = loavg / dble(rr**2)
@@ -383,28 +321,8 @@ contains
                 crseavg = dble(kpert)/dble(rr)*loavg + dble(rr-kpert)/dble(rr)*hiavg
                 do ipert=0,rr-1
                    do jpert=0,rr-1
-                      etapert(k+kpert,rhoh_comp) = &
-                           etaflux(i+ipert,j+jpert,k+kpert,rhoh_comp) - crseavg
-                   end do
-                end do
-
-                do comp=spec_comp,spec_comp+nspec-1
-                   loavg = ZERO
-                   hiavg = ZERO
-                   do ipert=0,rr-1
-                      do jpert=0,rr-1
-                         loavg = loavg + etaflux(i+ipert,j+jpert,k,   comp)
-                         hiavg = hiavg + etaflux(i+ipert,j+jpert,k+rr,comp)
-                      end do
-                   end do
-                   loavg = loavg / dble(rr**2)
-                   hiavg = hiavg / dble(rr**2)
-                   crseavg = dble(kpert)/dble(rr)*loavg + dble(rr-kpert)/dble(rr)*hiavg
-                   do ipert=0,rr-1
-                      do jpert=0,rr-1
-                         etapert(k+kpert,comp) = &
-                              etaflux(i+ipert,j+jpert,k+kpert,comp) - crseavg
-                      end do
+                      etarhopert(k+kpert) = &
+                           etarhoflux(i+ipert,j+jpert,k+kpert) - crseavg
                    end do
                 end do
 
@@ -414,6 +332,6 @@ contains
        end do
     end do
 
-  end subroutine compute_etapert_3d
+  end subroutine compute_etarhopert_3d
 
 end module make_eta_module

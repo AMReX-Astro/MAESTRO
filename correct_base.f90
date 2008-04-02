@@ -10,7 +10,7 @@ module correct_base_module
 
 contains
 
-  subroutine correct_base(nlevs,s0_old,s0_new,eta,dz,dt)
+  subroutine correct_base(nlevs,s0_old,s0_new,etarho,dz,dt)
 
     use bl_prof_module
     use geometry, only: spherical
@@ -18,7 +18,7 @@ contains
     integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(in   ) :: s0_old(:,0:,:)
     real(kind=dp_t), intent(inout) :: s0_new(:,0:,:)
-    real(kind=dp_t), intent(in   ) :: eta(:,0:,:)
+    real(kind=dp_t), intent(in   ) :: etarho(:,0:)
     real(kind=dp_t), intent(in   ) :: dz(:)
     real(kind=dp_t), intent(in   ) :: dt
     
@@ -33,7 +33,8 @@ contains
        if (spherical .eq. 1) then
 
        else
-          call correct_base_state_planar(n,s0_old(n,0:,:),s0_new(n,0:,:),eta(n,0:,:),dz(n),dt)
+          call correct_base_state_planar(n,s0_old(n,0:,:),s0_new(n,0:,:),etarho(n,0:), &
+                                         dz(n),dt)
        end if
     enddo
 
@@ -41,7 +42,7 @@ contains
        
   end subroutine correct_base
 
-  subroutine correct_base_state_planar(n,s0_old,s0_new,eta,dz,dt)
+  subroutine correct_base_state_planar(n,s0_old,s0_new,etarho,dz,dt)
 
     use bl_constants_module
     use eos_module
@@ -52,15 +53,14 @@ contains
     integer        , intent(in   ) :: n
     real(kind=dp_t), intent(in   ) :: s0_old(0:,:)
     real(kind=dp_t), intent(inout) :: s0_new(0:,:)
-    real(kind=dp_t), intent(in   ) :: eta(0:,:)
+    real(kind=dp_t), intent(in   ) :: etarho(0:)
     real(kind=dp_t), intent(in   ) :: dz,dt
     
     ! Local variables
     integer :: r,comp
     integer :: r_anel
-    real(kind=dp_t) :: eta_avg
    
-    ! This is used to zero the eta contribution above the anelastic_cutoff
+    ! This is used to zero the etarho contribution above the anelastic_cutoff
     r_anel = nr(1)-1
     do r = 0,nr(1)-1
        if (s0_old(r,rho_comp) .lt. anelastic_cutoff .and. r_anel .eq. nr(1)-1) then
@@ -74,7 +74,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     do r = 0, r_anel-1
-      s0_new(r,rho_comp) = s0_new(r,rho_comp) - dt/dz*(eta(r+1,rho_comp) - eta(r,rho_comp))
+      s0_new(r,rho_comp) = s0_new(r,rho_comp) - dt/dz*(etarho(r+1) - etarho(r))
     end do
     
   end subroutine correct_base_state_planar
