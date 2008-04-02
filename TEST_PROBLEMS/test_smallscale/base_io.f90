@@ -27,7 +27,7 @@ contains
     character(len=8) , intent(in) :: chk_name
     real(kind=dp_t)  , intent(in) :: s0(:,:,:),p0(:,:),gamma1bar(:,:)
     real(kind=dp_t)  , intent(in) :: div_coeff(:,:), psi(:,:)
-    real(kind=dp_t)  , intent(in) :: w0(:,:), etarho(:,:)
+    real(kind=dp_t)  , intent(in) :: w0(:,:),etarho(:,:)
 
     real(kind=dp_t) :: base_r, problo
     character(len=20) :: out_name
@@ -38,6 +38,9 @@ contains
     call build(bpt, "write_base_state")
 
     if (parallel_IOProcessor()) then
+
+       print*,"chk_name",chk_name
+       print*,"state_name",state_name
 
        ! write out the base state quantities
        out_name = chk_name // "/" // state_name
@@ -79,7 +82,6 @@ contains
           do i=1,nr(n)+1
              base_r = problo + (dble(i)-1) * dr(n)
              write(99,1000)  base_r,etarho(n,i)
-
           end do
        end do
        close(99)
@@ -108,7 +110,7 @@ contains
     integer          , intent(in   ) :: nlevs
     character(len=11), intent(in   ) :: state_name
     character(len=8) , intent(in   ) :: w0_name
-    character(len=9) , intent(in   ) :: etarho_name    
+    character(len=9) , intent(in   ) :: etarho_name
     character(len=8) , intent(in   ) :: chk_name    
     real(kind=dp_t)  , intent(inout) :: s0(:,:,:),p0(:,:),gamma1bar(:,:)
     real(kind=dp_t)  , intent(inout) :: div_coeff(:,:), psi(:,:)
@@ -117,13 +119,14 @@ contains
 
     real(kind=dp_t) :: r_dummy
     character(len=20) :: out_name
-    integer :: i, comp, ndum, n
+    integer :: i, comp, n
+    integer :: ndum
+    character(len=128) :: lamsolfile
+    real(kind=dp_t) :: state1d(ndum),Pamb
+
     parameter (ndum = 30)
 
     type(bl_prof_timer), save :: bpt
-
-    character(len=128) :: lamsolfile
-    real(kind=dp_t) :: state1d(ndum),Pamb
 
     call build(bpt, "read_base_state")
 
@@ -139,7 +142,7 @@ contains
 
     do n=1,nlevs
        do i=1,nr(n)
-          read(99,*)  base_r(n,i),s0(n,i,rho_comp), p0(n,i), gamma1bar(n,i), &
+          read(99,*)  base_r(n,i), s0(n,i,rho_comp), p0(n,i), gamma1bar(n,i), &
                s0(n,i,rhoh_comp), (s0(n,i,comp), comp=spec_comp,spec_comp+nspec-1), &
                div_coeff(n,i), psi(n,i)
        end do
@@ -169,7 +172,7 @@ contains
     open(unit=99,file=out_name)
     do n=1,nlevs
        do i=1,nr(n)+1
-          read(99,*)  r_dummy,etarho(n,i)
+          read(99,*)  r_dummy, etarho(n,i)
        end do
     end do
     close(99)

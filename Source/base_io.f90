@@ -19,7 +19,6 @@ contains
     use network, only: nspec
     use variables, only: rho_comp, spec_comp, rhoh_comp
     use bl_constants_module
-    use probin_module, only: prob_lo_y, prob_lo_z
 
     integer          , intent(in) :: nlevs
     character(len=11), intent(in) :: state_name
@@ -137,7 +136,7 @@ contains
     do n=1,nlevs
        do i=1,nr(n)
           read(99,*)  base_r(n,i), s0(n,i,rho_comp), p0(n,i), gamma1bar(n,i), &
-               s0(n,i,rhoh_comp),(s0(n,i,comp), comp=spec_comp,spec_comp+nspec-1),&
+               s0(n,i,rhoh_comp), (s0(n,i,comp), comp=spec_comp,spec_comp+nspec-1), &
                div_coeff(n,i), psi(n,i)
        end do
     end do
