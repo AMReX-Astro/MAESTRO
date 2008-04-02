@@ -138,7 +138,7 @@ contains
     use bl_constants_module
     use variables,     only: rho_comp, temp_comp, spec_comp, rhoh_comp
     use eos_module
-    use probin_module, only: use_big_h, enthalpy_pred_type, small_temp
+    use probin_module, only: enthalpy_pred_type, small_temp
     use pred_parameters
 
     integer        , intent(in   ) :: lo(:),hi(:)
@@ -148,7 +148,6 @@ contains
     real(kind=dp_t), intent(in   ) :: s0_new(0:,:), s0_edge_new(0:,:)
     
     integer :: i, j, comp
-    real(kind=dp_t) qreact
     
     do_diag = .false.
     
@@ -179,15 +178,6 @@ contains
           else if (enthalpy_pred_type .eq. predict_T_then_rhohprime) then
              sx(i,j,rhoh_comp) = den_eos(1)*h_eos(1)
           end if
-          
-!         This isn't right any more
-!         qreact = 0.0d0
-!         if (use_big_h) then
-!            do comp=1,nspec
-!               qreact = qreact + ebin(comp)*xn_eos(1,comp)
-!            enddo
-!            sx(i,j,rhoh_comp) = sx(i,j,rhoh_comp) + den_eos(1) * qreact
-!         endif
           
           if (enthalpy_pred_type .eq. predict_T_then_rhohprime) &
              sx(i,j,rhoh_comp) = sx(i,j,rhoh_comp) - &
@@ -225,15 +215,6 @@ contains
              sy(i,j,rhoh_comp) = den_eos(1)*h_eos(1) 
           end if
           
-!         This isn't right any more
-!         qreact = 0.0d0
-!         if (use_big_h) then
-!            do comp=1,nspec
-!               qreact = qreact + ebin(comp)*xn_eos(1,comp)
-!            enddo
-!            sy(i,j,rhoh_comp) = sy(i,j,rhoh_comp) + den_eos(1) * qreact
-!         endif
-          
           if (enthalpy_pred_type .eq. predict_T_then_rhohprime) &
              sy(i,j,rhoh_comp) = sy(i,j,rhoh_comp) - &
                   HALF * (s0_edge_old(j,rhoh_comp) + s0_edge_new(j,rhoh_comp))
@@ -247,7 +228,7 @@ contains
 
     use variables,     only: rho_comp, temp_comp, spec_comp, rhoh_comp
     use eos_module
-    use probin_module, only: use_big_h, enthalpy_pred_type, small_temp
+    use probin_module, only: enthalpy_pred_type, small_temp
     use pred_parameters
     use bl_constants_module
 
@@ -259,7 +240,6 @@ contains
     real(kind=dp_t), intent(in   ) :: s0_new(0:,:), s0_edge_new(0:,:)
     
     integer :: i, j, k, comp
-    real(kind=dp_t) qreact
     
     do_diag = .false.
     
@@ -292,15 +272,6 @@ contains
              else if (enthalpy_pred_type .eq. predict_T_then_rhohprime) then
                 sx(i,j,k,rhoh_comp) = den_eos(1)*h_eos(1)
              end if
-             
-!            Not sure if this is up to date
-!            qreact = 0.0d0
-!            if(use_big_h) then
-!               do comp=1,nspec
-!                  qreact = qreact + ebin(comp)*xn_eos(1,comp)
-!               enddo
-!               sx(i,j,k,rhoh_comp) = sx(i,j,k,rhoh_comp) + den_eos(1) * qreact
-!            endif
              
              if (enthalpy_pred_type .eq. predict_T_then_rhohprime) &
                 sx(i,j,k,rhoh_comp) = sx(i,j,k,rhoh_comp) - &
@@ -340,15 +311,6 @@ contains
                 sy(i,j,k,rhoh_comp) = den_eos(1)*h_eos(1)
              end if
              
-!            Not sure if this is up to date
-!            qreact = 0.0d0
-!            if (use_big_h) then
-!               do comp=1,nspec
-!                  qreact = qreact + ebin(comp)*xn_eos(1,comp)
-!               enddo
-!               sy(i,j,k,rhoh_comp) = sy(i,j,k,rhoh_comp) + den_eos(1) * qreact
-!            endif
-             
              if (enthalpy_pred_type .eq. predict_T_then_rhohprime) &
                 sy(i,j,k,rhoh_comp) = sy(i,j,k,rhoh_comp) - &
                      HALF * (s0_old(k,rhoh_comp) + s0_new(k,rhoh_comp))
@@ -387,15 +349,6 @@ contains
                 sz(i,j,k,rhoh_comp) = den_eos(1)*h_eos(1)
              end if
              
-!            Not sure if this is up to date
-!            qreact = 0.0d0
-!            if(use_big_h) then
-!               do comp=1,nspec
-!                  qreact = qreact + ebin(comp)*xn_eos(1,comp)
-!               enddo
-!               sz(i,j,k,rhoh_comp) = sz(i,j,k,rhoh_comp) + den_eos(1) * qreact
-!            endif
-             
              if (enthalpy_pred_type .eq. predict_T_then_rhohprime) &
                 sz(i,j,k,rhoh_comp) = sz(i,j,k,rhoh_comp) - &
                      HALF * (s0_edge_old(k,rhoh_comp) + s0_edge_new(k,rhoh_comp))
@@ -411,7 +364,7 @@ contains
     use variables,     only: rho_comp, temp_comp, spec_comp, rhoh_comp
     use geometry,      only: spherical
     use eos_module
-    use probin_module, only: use_big_h, enthalpy_pred_type, small_temp
+    use probin_module, only: enthalpy_pred_type, small_temp
     use pred_parameters
     use bl_constants_module
 
@@ -425,7 +378,6 @@ contains
     
     ! Local variables
     integer :: i, j, k, comp
-    real(kind=dp_t) qreact
     real(kind=dp_t) rho0_edge, rho0min, rho0max
     real(kind=dp_t) rhoh0_edge, rhoh0min, rhoh0max
     
@@ -469,15 +421,6 @@ contains
                 sx(i,j,k,rhoh_comp) = den_eos(1)*h_eos(1)
              end if
              
-!            Not sure if this is up to date
-!            qreact = 0.0d0
-!            if(use_big_h) then
-!               do comp=1,nspec
-!                  qreact = qreact + ebin(comp)*xn_eos(1,comp)
-!               enddo
-!               sx(i,j,k,rhoh_comp) = sx(i,j,k,rhoh_comp) + den_eos(1) * qreact
-!            endif
-
              if (enthalpy_pred_type .eq. predict_T_then_rhohprime) then
                 rhoh0_edge = 7.d0/12.d0 * (rhoh0_cart(i  ,j,k) + rhoh0_cart(i-1,j,k)) &
                             -1.d0/12.d0 * (rhoh0_cart(i+1,j,k) + rhoh0_cart(i-2,j,k))
@@ -532,15 +475,6 @@ contains
                 sy(i,j,k,rhoh_comp) = den_eos(1)*h_eos(1)
              end if
              
-!            Not sure if this is up to date
-!            qreact = 0.0d0
-!            if(use_big_h) then
-!               do comp=1,nspec
-!                  qreact = qreact + ebin(comp)*xn_eos(1,comp)
-!               enddo
-!               sy(i,j,k,rhoh_comp) = sy(i,j,k,rhoh_comp) + den_eos(1) * qreact
-!            endif
-
              if (enthalpy_pred_type .eq. predict_T_then_rhohprime) then
                 rhoh0_edge = 7.d0/12.d0 * (rhoh0_cart(i,j  ,k) + rhoh0_cart(i,j-1,k)) &
                             -1.d0/12.d0 * (rhoh0_cart(i,j+1,k) + rhoh0_cart(i,j-2,k))
@@ -594,15 +528,6 @@ contains
                 sz(i,j,k,rhoh_comp) = den_eos(1)*h_eos(1)
              end if
              
-!            Not sure if this is up to date
-!            qreact = 0.0d0
-!            if(use_big_h) then
-!               do comp=1,nspec
-!                  qreact = qreact + ebin(comp)*xn_eos(1,comp)
-!               enddo
-!               sz(i,j,k,rhoh_comp) = sz(i,j,k,rhoh_comp) + den_eos(1) * qreact
-!            endif
-
              if (enthalpy_pred_type .eq. predict_T_then_rhohprime) then
                 rhoh0_edge = 7.d0/12.d0 * (rhoh0_cart(i,j,k  ) + rhoh0_cart(i,j,k-1)) &
                             -1.d0/12.d0 * (rhoh0_cart(i,j,k+1) + rhoh0_cart(i,j,k-2))
@@ -699,7 +624,6 @@ contains
 
     use variables,     only: rho_comp, spec_comp, rhoh_comp, temp_comp
     use eos_module
-    use probin_module, only: use_big_h
 
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(inout) ::  state(lo(1)-ng:,lo(2)-ng:,:)
@@ -707,7 +631,6 @@ contains
     
     ! Local variables
     integer :: i, j, comp
-    real(kind=dp_t) qreact
     
     do_diag = .false.
 
@@ -720,15 +643,7 @@ contains
           temp_eos(1) = tempbar(j)
           xn_eos(1,:) = state(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
 
-          qreact = 0.0d0
-          if(use_big_h) then
-             do comp=1,nspec
-                qreact = qreact + ebin(comp)*xn_eos(1,comp)
-             enddo
-             h_eos(1) = state(i,j,rhoh_comp) / state(i,j,rho_comp) - qreact
-          else
-             h_eos(1) = state(i,j,rhoh_comp) / state(i,j,rho_comp)
-          endif
+          h_eos(1) = state(i,j,rhoh_comp) / state(i,j,rho_comp)
 
           call eos(eos_input_rh, den_eos, temp_eos, &
                    npts, nspec, &
@@ -752,7 +667,6 @@ contains
 
     use variables,      only: rho_comp, spec_comp, rhoh_comp, temp_comp
     use eos_module
-    use probin_module,  only: use_big_h
     use geometry,       only: spherical
     use fill_3d_module, only: fill_3d_data
 
@@ -763,7 +677,6 @@ contains
 
     ! Local variables
     integer :: i, j, k, comp
-    real(kind=dp_t) qreact
     real(kind=dp_t), allocatable :: tempbar_cart(:,:,:)
 
     if (spherical .eq. 1) then
@@ -788,16 +701,7 @@ contains
              endif
 
              xn_eos(1,:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
-             
-             qreact = 0.0d0
-             if(use_big_h) then
-                do comp=1,nspec
-                   qreact = qreact + ebin(comp)*xn_eos(1,comp)
-                enddo
-                h_eos(1) = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp) - qreact
-             else
-                h_eos(1) = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp)
-             endif
+             h_eos(1) = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp)
              
              call eos(eos_input_rh, den_eos, temp_eos, &
                       npts, nspec, &

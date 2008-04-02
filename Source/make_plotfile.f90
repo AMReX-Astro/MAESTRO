@@ -15,7 +15,6 @@ contains
   subroutine get_plot_names(dm,plot_names,plot_spec,plot_trac)
 
     use plot_variables_module
-    use probin_module, ONLY: use_big_h
     use variables
     use network, only: nspec, short_spec_names
 
@@ -32,11 +31,7 @@ contains
        plot_names(icomp_vel+2) = "z_vel"
     end if
     plot_names(icomp_rho)  = "density"
-    if(use_big_h) then
-       plot_names(icomp_rhoh) = "rhoH"
-    else
-       plot_names(icomp_rhoh) = "rhoh"
-    end if
+    plot_names(icomp_rhoh) = "rhoh"
 
     if (plot_spec) then
        do comp = 1, nspec
@@ -57,11 +52,7 @@ contains
     plot_names(icomp_enthalpy) = "enthalpy"
     plot_names(icomp_rhopert)  = "rhopert"
     plot_names(icomp_tfromrho) = "tfromrho"
-    if(use_big_h) then
-       plot_names(icomp_tfromH)   = "tfromH"
-    else
-       plot_names(icomp_tfromH)   = "tfromh"
-    end if
+    plot_names(icomp_tfromH)   = "tfromh"
     plot_names(icomp_tpert)    = "tpert"
     plot_names(icomp_machno)   = "Machnumber"
     plot_names(icomp_dp)       = "deltap"
@@ -92,7 +83,6 @@ contains
     use vort_module
     use variables
     use plot_variables_module
-    use probin_module, ONLY: use_big_h
 
     character(len=*) , intent(in   ) :: dirname
     type(ml_layout)  , intent(in   ) :: mla

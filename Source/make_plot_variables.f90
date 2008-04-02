@@ -47,29 +47,17 @@ contains
 
     use network, only: nspec, ebin
     use variables, only: spec_comp, rho_comp, rhoh_comp
-    use probin_module, ONLY: use_big_h
 
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(  out) :: enthalpy(lo(1):,lo(2):)  
     real (kind = dp_t), intent(in   ) ::    s(lo(1)-ng:,lo(2)-ng:,:)
 
-!     Local variables
+    ! Local variables
     integer :: i, j, comp
-    real(kind=dp_t) :: qreact
 
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
-
-          qreact = 0.0d0
-          if(use_big_h) then
-             do comp=1,nspec
-                qreact = qreact + ebin(comp)*s(i,j,spec_comp+comp-1)/s(i,j,rho_comp)
-             enddo
-             enthalpy(i,j) = s(i,j,rhoh_comp)/s(i,j,rho_comp) - qreact
-          else
-             enthalpy(i,j) = s(i,j,rhoh_comp)/s(i,j,rho_comp)
-          endif
-
+          enthalpy(i,j) = s(i,j,rhoh_comp)/s(i,j,rho_comp)
        enddo
     enddo
 
@@ -79,7 +67,6 @@ contains
 
     use network, only: nspec, ebin
     use variables, only: spec_comp, rho_comp, rhoh_comp
-    use probin_module, ONLY: use_big_h
 
     integer, intent(in)               :: lo(:),hi(:),ng
     real (kind = dp_t), intent(  out) :: enthalpy(lo(1):,lo(2):,lo(3):)  
@@ -87,22 +74,11 @@ contains
     
     ! Local variables
     integer         :: i,j,k,comp
-    real(kind=dp_t) :: qreact
     
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
-
-             qreact = 0.0d0
-             if(use_big_h) then
-                do comp=1,nspec
-                   qreact = qreact + ebin(comp)*s(i,j,k,spec_comp+comp-1)/s(i,j,k,rho_comp)
-                enddo
-                enthalpy(i,j,k) = s(i,j,k,rhoh_comp)/s(i,j,k,rho_comp) - qreact
-             else
-                enthalpy(i,j,k) = s(i,j,k,rhoh_comp)/s(i,j,k,rho_comp)
-             endif
-
+             enthalpy(i,j,k) = s(i,j,k,rhoh_comp)/s(i,j,k,rho_comp)
           enddo
        enddo
     end do
@@ -155,7 +131,6 @@ contains
 
     use variables, only: rho_comp, spec_comp, rhoh_comp
     use eos_module
-    use probin_module, ONLY: use_big_h
     use bl_constants_module
 
     integer, intent(in) :: lo(:), hi(:), ng
@@ -167,7 +142,6 @@ contains
 
     !     Local variables
     integer :: i, j, comp
-    real(kind=dp_t) qreact
 
     do_diag = .false.
 
@@ -180,16 +154,7 @@ contains
           p_eos(1)    = p0(j)
           temp_eos(1) = tempbar(j)
           xn_eos(1,:) = state(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
-
-          qreact = 0.0d0
-          if(use_big_h) then
-             do comp=1,nspec
-                qreact = qreact + ebin(comp)*xn_eos(1,comp)
-             enddo
-             h_eos(1) = state(i,j,rhoh_comp) / state(i,j,rho_comp) - qreact
-          else
-             h_eos(1) = state(i,j,rhoh_comp) / state(i,j,rho_comp)
-          endif
+          h_eos(1) = state(i,j,rhoh_comp) / state(i,j,rho_comp)
 
           call eos(eos_input_rh, den_eos, temp_eos, &
                    npts, nspec, &
@@ -216,7 +181,6 @@ contains
 
     use variables, only: rho_comp, spec_comp, rhoh_comp
     use eos_module
-    use probin_module, ONLY: use_big_h
 
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(  out) ::      T(lo(1)   :,lo(2):   ,lo(3):     )  
@@ -227,7 +191,6 @@ contains
 
     !     Local variables
     integer :: i, j, k, comp
-    real(kind=dp_t) qreact
 
     do_diag = .false.
 
@@ -240,16 +203,7 @@ contains
              p_eos(1)    = p0(k)
              temp_eos(1) = tempbar(k)
              xn_eos(1,:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
-
-             qreact = 0.0d0
-             if(use_big_h) then
-                do comp=1,nspec
-                   qreact = qreact + ebin(comp)*xn_eos(1,comp)
-                enddo
-                h_eos(1) = state(i,j,k,rhoh_comp)/state(i,j,k,rho_comp) - qreact
-             else
-                h_eos(1) = state(i,j,k,rhoh_comp)/state(i,j,k,rho_comp)
-             endif
+             h_eos(1) = state(i,j,k,rhoh_comp)/state(i,j,k,rho_comp)
 
              call eos(eos_input_rh, den_eos, temp_eos, &
                       npts, nspec, &
@@ -278,7 +232,6 @@ contains
     use variables, only: rho_comp, rhoh_comp, spec_comp
     use eos_module
     use fill_3d_module
-    use probin_module, ONLY: use_big_h
 
     integer, intent(in) :: n, lo(:), hi(:), ng
     real (kind = dp_t), intent(  out) ::      T(lo(1)   :,lo(2):   ,lo(3):     )  
@@ -307,9 +260,6 @@ contains
             
              den_eos(1)  = state(i,j,k,rho_comp)
              h_eos(1)    = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp)
-             if(use_big_h) then
-               print*,"WARNING: H conversion not defined in make_tfromH_3d_sphr"
-             endif
              p_eos(1)    = p0_cart(i,j,k)
              temp_eos(1) = tempbar_cart(i,j,k)
              xn_eos(1,:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)

@@ -18,8 +18,7 @@ contains
     use define_bc_module
     use bl_constants_module
     use eos_module
-    use probin_module, ONLY: base_cutoff_density, anelastic_cutoff, use_big_h, &
-         prob_lo_y, prob_lo_z
+    use probin_module, ONLY: base_cutoff_density, anelastic_cutoff, prob_lo_y, prob_lo_z
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp
     use geometry, only: dr, nr, spherical
     use inlet_bc_module
@@ -39,7 +38,7 @@ contains
 
     character(len=128) :: lamsolfile
     real(kind=dp_t) :: state1d(ndum),Pamb,temporary
-    real(kind=dp_t) :: loloc,hiloc,flameloc,qreact
+    real(kind=dp_t) :: loloc,hiloc,flameloc
 
     dm = size(dx)
 
@@ -98,15 +97,8 @@ contains
     INLET_VN = 0.0d0
     INLET_VT = 0.0d0
     INLET_RHO = den_eos(1)
-    if(use_big_h) then
-       qreact = 0.0d0
-       do comp=1,nspec
-          qreact = qreact + ebin(comp)*xn_eos(1,comp)
-       enddo
-       INLET_RHOH = den_eos(1)*(h_eos(1) + qreact)
-    else
-       INLET_RHOH = den_eos(1)*h_eos(1)
-    endif
+    INLET_RHOH = den_eos(1)*h_eos(1)
+
     do comp=1,nspec
        if(spec_names(comp) .eq. "carbon-12") then
           INLET_RHOC12 = den_eos(1)*xn_eos(1,comp)
@@ -167,16 +159,8 @@ contains
                 do_diag)
 
        s0(i,rho_comp) = den_eos(1)
-       if(use_big_h) then
-          qreact = ZERO
-          do comp=1,nspec
-             qreact = qreact + ebin(comp)*xn_eos(1,comp)
-          enddo
-          temporary = h_eos(1) + qreact
-          s0(i,rhoh_comp) = den_eos(1)*temporary
-       else
-          s0(i,rhoh_comp) = den_eos(1)*h_eos(1)
-       endif
+       s0(i,rhoh_comp) = den_eos(1)*h_eos(1)
+
        do comp=1,nspec
           s0(i,spec_comp+comp-1) = den_eos(1)*xn_eos(1,comp)
        enddo

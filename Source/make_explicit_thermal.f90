@@ -371,7 +371,6 @@ contains
 
     use variables, only: rho_comp, temp_comp, spec_comp
     use eos_module
-    use probin_module, ONLY: use_big_h
 
     integer        , intent(in   ) :: lo(:),hi(:)
     real(kind=dp_t), intent(in   ) :: s(lo(1)-3:,lo(2)-3:,:)
@@ -410,16 +409,10 @@ contains
                ((1.0d0/den_eos(1))* &
                (1.0d0-p_eos(1)/(den_eos(1)*dpdr_eos(1)))+dedr_eos(1)/dpdr_eos(1))
           
-          if(use_big_h) then
-             do comp=1,nspec
-                Xkcoeff(i,j,comp) = (conduct_eos(1)/cp_eos(1))*(dhdX_eos(1,comp) &
-                     + ebin(comp))
-             enddo
-          else
-             do comp=1,nspec
-                Xkcoeff(i,j,comp) = (conduct_eos(1)/cp_eos(1))*dhdX_eos(1,comp)
-             enddo
-          endif
+          do comp=1,nspec
+             Xkcoeff(i,j,comp) = (conduct_eos(1)/cp_eos(1))*dhdX_eos(1,comp)
+          enddo
+
        enddo
     enddo
     
@@ -434,7 +427,6 @@ contains
     use variables, only: rho_comp, temp_comp, spec_comp
     use eos_module
     use geometry, only: spherical
-    use probin_module, ONLY: use_big_h
     use fill_3d_module
     
     integer        , intent(in   ) :: lo(:),hi(:)
@@ -475,16 +467,10 @@ contains
                   ((1.0d0/den_eos(1))* &
                   (1.0d0-p_eos(1)/(den_eos(1)*dpdr_eos(1)))+dedr_eos(1)/dpdr_eos(1))
              
-             if(use_big_h) then
-                do comp=1,nspec
-                   Xkcoeff(i,j,k,comp) = (conduct_eos(1)/cp_eos(1))*(dhdX_eos(1,comp) &
-                        + ebin(comp))
-                enddo
-             else
-                do comp=1,nspec
-                   Xkcoeff(i,j,k,comp) = (conduct_eos(1)/cp_eos(1))*dhdX_eos(1,comp)
-                enddo
-             endif
+             do comp=1,nspec
+                Xkcoeff(i,j,k,comp) = (conduct_eos(1)/cp_eos(1))*dhdX_eos(1,comp)
+             enddo
+
           enddo
        enddo
     enddo

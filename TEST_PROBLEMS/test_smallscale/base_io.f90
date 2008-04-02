@@ -104,7 +104,6 @@ contains
     use bl_constants_module
     use eos_module
     use inlet_bc_module
-    use probin_module, ONLY: use_big_h
     
     integer          , intent(in   ) :: nlevs
     character(len=11), intent(in   ) :: state_name
@@ -124,7 +123,7 @@ contains
     type(bl_prof_timer), save :: bpt
 
     character(len=128) :: lamsolfile
-    real(kind=dp_t) :: state1d(ndum),Pamb,qreact
+    real(kind=dp_t) :: state1d(ndum),Pamb
 
     call build(bpt, "read_base_state")
 
@@ -228,15 +227,8 @@ contains
     INLET_VN = 0.0d0
     INLET_VT = 0.0d0
     INLET_RHO = den_eos(1)
-    if(use_big_h) then
-       qreact = 0.0d0
-       do comp=1,nspec
-          qreact = qreact + ebin(comp)*xn_eos(1,comp)
-       enddo
-       INLET_RHOH = den_eos(1)*(h_eos(1) + qreact)
-    else
-       INLET_RHOH = den_eos(1)*h_eos(1)
-    endif
+    INLET_RHOH = den_eos(1)*h_eos(1)
+
     do comp=1,nspec
        if(spec_names(comp) .eq. "carbon-12") then
           INLET_RHOC12 = den_eos(1)*xn_eos(1,comp)

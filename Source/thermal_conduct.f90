@@ -28,7 +28,7 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,temp
   use macproject_module
   use network, only: nspec
   use rhoh_vs_t_module
-  use probin_module, ONLY: use_big_h, thermal_diffusion_type
+  use probin_module, ONLY: thermal_diffusion_type
   use bl_prof_module
   use multifab_physbc_module
   use multifab_fill_ghost_module
@@ -606,7 +606,6 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,tempbar,the_bc_tower
   use macproject_module
   use eos_module, only: nspec
   use rhoh_vs_t_module
-  use probin_module, ONLY: use_big_h
   use bl_prof_module
   use multifab_physbc_module
   use multifab_fill_ghost_module
@@ -1386,7 +1385,7 @@ subroutine compute_thermo_quantities_2d(lo,hi,dt,s,hcoeff,Xkcoeff,pcoeff)
 
   use variables, only: rho_comp, spec_comp, temp_comp
   use eos_module
-  use probin_module, ONLY: use_big_h, thermal_diffusion_type
+  use probin_module, ONLY: thermal_diffusion_type
 
   integer        , intent(in   ) :: lo(:),hi(:)
   real(dp_t)    ,  intent(in   ) :: dt
@@ -1422,15 +1421,9 @@ subroutine compute_thermo_quantities_2d(lo,hi,dt,s,hcoeff,Xkcoeff,pcoeff)
         pcoeff(i,j) = dt*(conduct_eos(1)/cp_eos(1))*((1.0d0/den_eos(1))* &
               (1.0d0-p_eos(1)/(den_eos(1)*dpdr_eos(1)))+dedr_eos(1)/dpdr_eos(1))
 
-        if(use_big_h) then
-           do comp=1,nspec
-              Xkcoeff(i,j,comp) = dt*conduct_eos(1)*(dhdX_eos(1,comp)+ebin(comp))/cp_eos(1)
-           enddo
-        else
-           do comp=1,nspec
-              Xkcoeff(i,j,comp) = dt*conduct_eos(1)*dhdX_eos(1,comp)/cp_eos(1)
-           enddo
-        endif
+        do comp=1,nspec
+           Xkcoeff(i,j,comp) = dt*conduct_eos(1)*dhdX_eos(1,comp)/cp_eos(1)
+        enddo
 
      enddo
   enddo
@@ -1458,7 +1451,7 @@ subroutine compute_thermo_quantities_3d(lo,hi,dt,s,hcoeff,Xkcoeff,pcoeff)
 
   use variables, only: rho_comp, temp_comp, spec_comp
   use eos_module
-  use probin_module, ONLY: use_big_h, thermal_diffusion_type
+  use probin_module, ONLY: thermal_diffusion_type
   use geometry, only: spherical
 
   integer        , intent(in   ) :: lo(:),hi(:)
@@ -1500,17 +1493,10 @@ subroutine compute_thermo_quantities_3d(lo,hi,dt,s,hcoeff,Xkcoeff,pcoeff)
            pcoeff(i,j,k) = dt*(conduct_eos(1)/cp_eos(1))*((1.0d0/den_eos(1))* &
                 (1.0d0-p_eos(1)/(den_eos(1)*dpdr_eos(1)))+dedr_eos(1)/dpdr_eos(1))
 
-           if(use_big_h) then
-              do comp=1,nspec
-                 Xkcoeff(i,j,k,comp) = dt*conduct_eos(1)* &
-                      (dhdX_eos(1,comp)+ebin(comp))/cp_eos(1)
+           do comp=1,nspec
+              Xkcoeff(i,j,k,comp) = dt*conduct_eos(1)*dhdX_eos(1,comp)/cp_eos(1)
+           enddo
 
-              enddo
-           else
-              do comp=1,nspec
-                 Xkcoeff(i,j,k,comp) = dt*conduct_eos(1)*dhdX_eos(1,comp)/cp_eos(1)
-              enddo
-           endif
         enddo
      enddo
   enddo

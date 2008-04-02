@@ -108,7 +108,7 @@ contains
     use burner_module
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp, trac_comp, ntrac
     use network, only: nspec, ebin
-    use probin_module, ONLY: use_big_h, do_burning
+    use probin_module, ONLY: do_burning
     use bl_constants_module, only: zero
 
     integer, intent(in) :: lo(:), hi(:), ng
@@ -121,7 +121,7 @@ contains
     !     Local variables
     integer :: i, j, comp
     real (kind = dp_t), allocatable :: x_in(:),x_out(:),rhowdot(:)
-    real (kind = dp_t) :: rho,T_in,h_in,h_out,qreact
+    real (kind = dp_t) :: rho,T_in,h_in,h_out
 
     allocate(x_in(nspec),x_out(nspec),rhowdot(nspec))
 
@@ -130,17 +130,7 @@ contains
 
           rho = s_in(i,j,rho_comp)
           x_in(1:nspec) = s_in(i,j,spec_comp:spec_comp+nspec-1) / rho
-
-          qreact = 0.0d0
-          if(use_big_h) then
-             do comp = 1, nspec
-                qreact = qreact + x_in(comp)*ebin(comp)
-             enddo
-             h_in = s_in(i,j,rhoh_comp) / rho - qreact
-          else
-             h_in = s_in(i,j,rhoh_comp) / rho
-          endif
-          
+          h_in = s_in(i,j,rhoh_comp) / rho
           T_in = s_in(i,j,temp_comp)
 
           if (do_burning) then
@@ -156,11 +146,7 @@ contains
           
           rho_omegadot(i,j,1:nspec) = rhowdot(1:nspec)
           
-          if(use_big_h) then
-             s_out(i,j,rhoh_comp) = s_in(i,j,rhoh_comp) + dt * rho_Hext(i,j)
-          else
-             s_out(i,j,rhoh_comp) = rho * h_out + dt * rho_Hext(i,j)
-          endif
+          s_out(i,j,rhoh_comp) = rho * h_out + dt * rho_Hext(i,j)
 
 !**********************************************
 ! option to compute temperature and put it into s_out
@@ -202,7 +188,7 @@ contains
     use burner_module
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp, trac_comp, ntrac
     use network, only: nspec, ebin
-    use probin_module, ONLY: use_big_h, do_burning
+    use probin_module, ONLY: do_burning
     use bl_constants_module, only: zero
 
     integer, intent(in) :: lo(:), hi(:), ng
@@ -215,7 +201,7 @@ contains
     !     Local variables
     integer :: i, j, k, comp
     real (kind = dp_t), allocatable :: x_in(:),x_out(:),rhowdot(:)
-    real (kind = dp_t) :: rho,T_in,h_in,h_out,qreact
+    real (kind = dp_t) :: rho,T_in,h_in,h_out
 
     allocate(x_in(nspec),x_out(nspec),rhowdot(nspec))
 
@@ -225,17 +211,7 @@ contains
        do i = lo(1), hi(1)
           rho = s_in(i,j,k,rho_comp)
           x_in(:) = s_in(i,j,k,spec_comp:spec_comp+nspec-1) / rho
-
-          qreact = 0.0d0
-          if(use_big_h) then
-             do comp = 1, nspec
-                qreact = qreact + x_in(comp)*ebin(comp)
-             enddo
-             h_in = s_in(i,j,k,rhoh_comp) / rho - qreact
-          else
-             h_in = s_in(i,j,k,rhoh_comp) / rho
-          endif
-          
+          h_in = s_in(i,j,k,rhoh_comp) / rho
           T_in = s_in(i,j,k,temp_comp)
 
           if (do_burning) then
@@ -248,14 +224,10 @@ contains
           
           s_out(i,j,k,rho_comp) = s_in(i,j,k,rho_comp)
           s_out(i,j,k,spec_comp:spec_comp+nspec-1) = x_out(1:nspec) * rho
-          
+
           rho_omegadot(i,j,k,1:nspec) = rhowdot(1:nspec)
-          
-          if(use_big_h) then
-             s_out(i,j,k,rhoh_comp) = s_in(i,j,k,rhoh_comp) + dt * rho_Hext(i,j,k)
-          else
-             s_out(i,j,k,rhoh_comp) = rho * h_out + dt * rho_Hext(i,j,k)
-          endif
+
+          s_out(i,j,k,rhoh_comp) = rho * h_out + dt * rho_Hext(i,j,k)
 
 !**********************************************
 ! option to compute temperature and put it into s_out

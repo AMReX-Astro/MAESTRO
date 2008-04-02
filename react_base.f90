@@ -19,7 +19,6 @@ contains
     use variables, only: rho_comp, spec_comp, rhoh_comp
     use eos_module
     use bl_prof_module
-    use probin_module, ONLY: use_big_h, enthalpy_pred_type
      
     integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(in   ) :: p0_in(:,0:), s0_in(:,0:,:)
@@ -53,12 +52,10 @@ contains
           
           ! update enthalpy
           s0_out(n,r,rhoh_comp) = s0_in(n,r,rhoh_comp)
-          if(.not. use_big_h) then
-             do comp = spec_comp,spec_comp+nspec-1
-                s0_out(n,r,rhoh_comp) = s0_out(n,r,rhoh_comp) &
-                     -dt_in*rho_omegadotbar(n,r,comp-spec_comp+1)*ebin(comp-spec_comp+1)
-             end do
-          endif
+          do comp = spec_comp,spec_comp+nspec-1
+             s0_out(n,r,rhoh_comp) = s0_out(n,r,rhoh_comp) &
+                  -dt_in*rho_omegadotbar(n,r,comp-spec_comp+1)*ebin(comp-spec_comp+1)
+          end do
           s0_out(n,r,rhoh_comp) = s0_out(n,r,rhoh_comp) + dt_in * rho_Hextbar(n,r)
 
        end do
