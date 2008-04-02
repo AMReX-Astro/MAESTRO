@@ -11,7 +11,7 @@ module advect_base_module
 contains
 
   subroutine advect_base(which_step,nlevs,vel,Sbar_in,p0_old,p0_new,s0_old,s0_new,tempbar, &
-                         gamma1bar,div_coeff,s0_predicted_edge,psi,dz,dt)
+                         gamma1bar,div_coeff,rho0_predicted_edge,psi,dz,dt)
 
     use bl_prof_module
     use geometry, only: spherical
@@ -24,7 +24,7 @@ contains
     real(kind=dp_t), intent(in   ) :: tempbar(:,0:)
     real(kind=dp_t), intent(inout) :: gamma1bar(:,0:)
     real(kind=dp_t), intent(in   ) :: div_coeff(:,0:)
-    real(kind=dp_t), intent(  out) :: s0_predicted_edge(:,0:,:)
+    real(kind=dp_t), intent(  out) :: rho0_predicted_edge(:,0:)
     real(kind=dp_t), intent(in   ) :: psi(:,0:)
     real(kind=dp_t), intent(in   ) :: dz(:)
     real(kind=dp_t), intent(in   ) :: dt
@@ -40,13 +40,13 @@ contains
        if (spherical .eq. 0) then
           call advect_base_state_planar(which_step,n,vel(n,0:),p0_old(n,0:),p0_new(n,0:), &
                                         s0_old(n,0:,:),s0_new(n,0:,:), &
-                                        s0_predicted_edge(n,0:,:),psi(n,:),dz(n),dt)
+                                        rho0_predicted_edge(n,0:),psi(n,:),dz(n),dt)
        else
           call advect_base_state_spherical(which_step,n,vel(n,:),Sbar_in(n,:,1), &
                                            p0_old(n,:),p0_new(n,:), &
                                            s0_old(n,:,:),s0_new(n,:,:), &
                                            tempbar(n,:),gamma1bar(n,:), &
-                                           s0_predicted_edge(n,0:,:),div_coeff(n,:),dt)
+                                           rho0_predicted_edge(n,0:),div_coeff(n,:),dt)
        end if
     enddo
 
@@ -56,7 +56,7 @@ contains
 
 
   subroutine advect_base_state_planar(which_step,n,vel,p0_old,p0_new, &
-                                      s0_old,s0_new,s0_predicted_edge,psi,dz,dt)
+                                      s0_old,s0_new,rho0_predicted_edge,psi,dz,dt)
 
     use bl_constants_module
     use make_edge_state_module
@@ -70,7 +70,7 @@ contains
     real(kind=dp_t), intent(in   ) :: vel(0:)
     real(kind=dp_t), intent(in   ) :: p0_old(0:), s0_old(0:,:)
     real(kind=dp_t), intent(  out) :: p0_new(0:), s0_new(0:,:)
-    real(kind=dp_t), intent(  out) :: s0_predicted_edge(0:,:)
+    real(kind=dp_t), intent(  out) :: rho0_predicted_edge(0:)
     real(kind=dp_t), intent(in   ) :: psi(0:)
     real(kind=dp_t), intent(in   ) :: dz,dt
     
@@ -92,7 +92,7 @@ contains
     ! Edge-centered
     allocate(edge(0:nr(n)))
    
-    s0_predicted_edge(:,:) = ZERO
+    rho0_predicted_edge(:) = ZERO
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Update p_0
@@ -118,7 +118,7 @@ contains
     
     call make_edge_state_1d(n,s0_old(:,rho_comp),edge,vel,force,1,dz,dt)
     
-    s0_predicted_edge(:,rho_comp) = edge(:)
+    rho0_predicted_edge(:) = edge(:)
 
     ! update rho_0
     do r = 0,nr(n)-1
@@ -146,13 +146,9 @@ contains
 
        call make_edge_state_1d(n,h0,edge,vel,force,1,dz,dt)
 
-       ! s0_predicted_edge will store h_0 on the vertical edges -- we need
-       ! that later
-       s0_predicted_edge(:,rhoh_comp) = edge(:)
-
        ! our final update needs (rho X)_0 on the edges, so compute
        ! that now
-       edge(:) = s0_predicted_edge(:,rho_comp)*edge(:)
+       edge(:) = rho0_predicted_edge(:)*edge(:)
 
     else
 
@@ -162,9 +158,6 @@ contains
        end do
        
        call make_edge_state_1d(n,s0_old(:,rhoh_comp),edge,vel,force,1,dz,dt)
-       
-       ! s0_predicted_edge will store (rho h)_0 on the vertical edges
-       s0_predicted_edge(:,rhoh_comp) = edge(:)
        
     end if
 
@@ -183,7 +176,7 @@ contains
                                          p0_old,p0_new, &
                                          s0_old,s0_new, &
                                          tempbar,gamma1bar, &
-                                         s0_predicted_edge,div_coeff_old,dt)
+                                         rho0_predicted_edge,div_coeff_old,dt)
 
     use bl_constants_module
     use make_edge_state_module
@@ -200,7 +193,7 @@ contains
     real(kind=dp_t), intent(  out) :: p0_new(0:), s0_new(0:,:)
     real(kind=dp_t), intent(in   ) :: tempbar(0:)
     real(kind=dp_t), intent(inout) :: gamma1bar(0:)
-    real(kind=dp_t), intent(  out) :: s0_predicted_edge(0:,:)
+    real(kind=dp_t), intent(  out) :: rho0_predicted_edge(0:)
     real(kind=dp_t), intent(in   ) :: div_coeff_old(0:)
     real(kind=dp_t), intent(in   ) :: dt
     
@@ -244,7 +237,7 @@ contains
     
     call make_edge_state_1d(n,s0_old(:,rho_comp),edge,vel,force,1,dr(n),dt)
     
-    s0_predicted_edge(:,rho_comp) = edge(:)
+    rho0_predicted_edge(:) = edge(:)
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! UPDATE RHOX0
@@ -261,13 +254,9 @@ contains
        
        call make_edge_state_1d(n,X0,edge,vel,force,1,dr(n),dt)
        
-       ! s0_predicted_edge will store X_0 on the vertical edges -- we need
-       ! that later
-       s0_predicted_edge(:,comp) = edge(:)
-       
        ! our final update needs (rho X)_0 on the edges, so compute
        ! that now
-       edge(:) = s0_predicted_edge(:,rho_comp)*edge(:)
+       edge(:) = rho0_predicted_edge(:)*edge(:)
        
        ! update (rho X)_0
        do r = 0,nr(n)-1
@@ -353,8 +342,6 @@ contains
     
     call make_edge_state_1d(n,s0_old(:,rhoh_comp),edge,vel,force,1,dr(n),dt)
 
-    s0_predicted_edge(:,rhoh_comp) = edge(:)
-    
     do r = 0,nr(n)-1
        
        s0_new(r,rhoh_comp) = s0_old(r,rhoh_comp) - &

@@ -125,7 +125,7 @@ contains
     real(dp_t), allocatable :: s0_2(:,:,:)
     real(dp_t), allocatable :: p0_1(:,:)
     real(dp_t), allocatable :: p0_2(:,:)
-    real(dp_t), allocatable :: s0_predicted_edge(:,:,:)
+    real(dp_t), allocatable :: rho0_predicted_edge(:,:)
     real(dp_t), allocatable :: gamma1bar_old(:,:,:)
     real(dp_t), allocatable :: delta_gamma1_termbar(:,:,:)
 
@@ -155,7 +155,7 @@ contains
     allocate(                s0_2(nlevs,0:nr(nlevs)-1,nscal))
     allocate(                p0_1(nlevs,0:nr(nlevs)-1))
     allocate(                p0_2(nlevs,0:nr(nlevs)-1))
-    allocate(   s0_predicted_edge(nlevs,0:nr(nlevs)  ,nscal))
+    allocate( rho0_predicted_edge(nlevs,0:nr(nlevs)  ))
     allocate(       gamma1bar_old(nlevs,0:nr(nlevs)-1,1))    
     allocate(delta_gamma1_termbar(nlevs,0:nr(nlevs)-1,1))
 
@@ -164,7 +164,7 @@ contains
     s0_2(:,:,:) = ZERO
     p0_1(:,:)   = ZERO
     p0_2(:,:)   = ZERO
-    s0_predicted_edge(:,:,:) = ZERO
+    rho0_predicted_edge(:,:) = ZERO
     delta_gamma1_termbar(:,:,:) = ZERO
 
     ! Set this to zero so if evolve_base_state = F there is no effect in update_vel
@@ -365,7 +365,7 @@ contains
     
     if (evolve_base_state) then
        call advect_base(1,nlevs,w0,Sbar,p0_1,p0_2,s0_1,s0_2,tempbar(:,:,1), &
-                        gamma1bar(:,:,1),div_coeff_new,s0_predicted_edge,psi,dx(:,dm),dt)
+                        gamma1bar(:,:,1),div_coeff_new,rho0_predicted_edge,psi,dx(:,dm),dt)
     else
        p0_2 = p0_1
        s0_2 = s0_1
@@ -417,7 +417,7 @@ contains
 
     call scalar_advance(nlevs,mla,1,uold,s1,s2,thermal, &
                         umac,w0,w0_cart_vec,etarhoflux,utrans,normal, &
-                        s0_1,s0_2,p0_1,p0_2,tempbar,psi,s0_predicted_edge, &
+                        s0_1,s0_2,p0_1,p0_2,tempbar,psi,rho0_predicted_edge, &
                         dx,dt,the_bc_tower%bc_tower_array)
 
     ! Correct the base state using the lagged etarho and psi
@@ -689,7 +689,8 @@ contains
 
        if (evolve_base_state) then
           call advect_base(2,nlevs,w0,Sbar,p0_1,p0_2,s0_1,s0_2,tempbar(:,:,1), &
-                           gamma1bar(:,:,1),div_coeff_nph,s0_predicted_edge,psi,dx(:,dm),dt)
+                           gamma1bar(:,:,1),div_coeff_nph,rho0_predicted_edge, &
+                           psi,dx(:,dm),dt)
        else
           p0_2 = p0_1
           s0_2 = s0_1
@@ -737,7 +738,7 @@ contains
 
        call scalar_advance(nlevs,mla,2,uold,s1,s2,thermal, &
                            umac,w0,w0_cart_vec,etarhoflux,utrans,normal, &
-                           s0_1,s0_2,p0_1,p0_2,tempbar,psi,s0_predicted_edge, &
+                           s0_1,s0_2,p0_1,p0_2,tempbar,psi,rho0_predicted_edge, &
                            dx,dt,the_bc_tower%bc_tower_array)
 
        ! Correct the base state using the lagged etarho and psi

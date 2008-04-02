@@ -14,7 +14,7 @@ contains
 
   subroutine mkflux(nlevs,sflux,etarhoflux,sold,sedge,umac,w0,w0_cart_vec, &
                     s0_old,s0_edge_old,s0_old_cart,s0_new,s0_edge_new,s0_new_cart, &
-                    s0_predicted_edge,startcomp,endcomp,mla,dx,dt)
+                    rho0_predicted_edge,startcomp,endcomp,mla,dx,dt)
 
     use bl_prof_module
     use bl_constants_module
@@ -33,7 +33,7 @@ contains
     type(multifab) , intent(in   ) :: s0_old_cart(:)
     real(kind=dp_t), intent(in   ) :: s0_new(:,0:,:),s0_edge_new(:,0:,:)
     type(multifab) , intent(in   ) :: s0_new_cart(:)
-    real(kind=dp_t), intent(in   ) :: s0_predicted_edge(:,0:,:)
+    real(kind=dp_t), intent(in   ) :: rho0_predicted_edge(:,0:)
     integer        , intent(in   ) :: startcomp,endcomp
     type(ml_layout), intent(inout) :: mla
     real(kind=dp_t), intent(in   ) :: dx(:,:),dt
@@ -90,7 +90,7 @@ contains
                             ump(:,:,1,1), vmp(:,:,1,1), &
                             s0_old(n,:,:), s0_edge_old(n,:,:), &
                             s0_new(n,:,:), s0_edge_new(n,:,:), &
-                            s0_predicted_edge(n,:,:), &
+                            rho0_predicted_edge(n,:), &
                             w0(n,:),startcomp,endcomp,lo,hi,dx(n,:),dt)
           case (3)
              sfzp => dataptr(sflux(n,3),i)
@@ -103,7 +103,7 @@ contains
                                     ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
                                     s0_old(n,:,:), s0_edge_old(n,:,:), &
                                     s0_new(n,:,:), s0_edge_new(n,:,:), &
-                                    s0_predicted_edge(n,:,:), &
+                                    rho0_predicted_edge(n,:), &
                                     w0(n,:),startcomp,endcomp,lo,hi)
 
              else
@@ -137,7 +137,7 @@ contains
   end subroutine mkflux
   
   subroutine mkflux_2d(sfluxx,sfluxy,etarhoflux,sedgex,sedgey,umac,vmac,s0_old,s0_edge_old, &
-                       s0_new,s0_edge_new,s0_pred_edge,w0,startcomp,endcomp, &
+                       s0_new,s0_edge_new,rho0_predicted_edge,w0,startcomp,endcomp, &
                        lo,hi,dx,dt)
 
     use bl_constants_module
@@ -156,7 +156,7 @@ contains
     real(kind=dp_t), intent(in   ) ::    vmac(lo(1)-1:,lo(2)-1:)
     real(kind=dp_t), intent(in   ) :: s0_old(0:,:), s0_edge_old(0:,:)
     real(kind=dp_t), intent(in   ) :: s0_new(0:,:), s0_edge_new(0:,:)
-    real(kind=dp_t), intent(in   ) :: s0_pred_edge(0:,:)
+    real(kind=dp_t), intent(in   ) :: rho0_predicted_edge(0:)
     real(kind=dp_t), intent(in   ) :: w0(0:)
     integer        , intent(in   ) :: startcomp,endcomp
     real(kind=dp_t), intent(in   ) :: dx(:),dt
@@ -233,7 +233,7 @@ contains
                    etarhoflux(i,j) = etarhoflux(i,j) + sfluxy(i,j,comp)
 
                    if ( comp.eq.spec_comp+nspec-1) then
-                      etarhoflux(i,j) = etarhoflux(i,j) - w0(j)*s0_pred_edge(j,rho_comp)
+                      etarhoflux(i,j) = etarhoflux(i,j) - w0(j)*rho0_predicted_edge(j)
                    end if
 
                 end if
@@ -266,7 +266,7 @@ contains
 
   subroutine mkflux_3d_cart(sfluxx,sfluxy,sfluxz,etarhoflux,sedgex,sedgey,sedgez, &
                             umac,vmac,wmac,s0_old,s0_edge_old,s0_new,s0_edge_new, &
-                            s0_pred_edge,w0,startcomp,endcomp,lo,hi)
+                            rho0_predicted_edge,w0,startcomp,endcomp,lo,hi)
 
     use bl_constants_module
     use network, only : nspec
@@ -287,7 +287,7 @@ contains
     real(kind=dp_t), intent(in   ) ::    wmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
     real(kind=dp_t), intent(in   ) :: s0_old(0:,:), s0_edge_old(0:,:)
     real(kind=dp_t), intent(in   ) :: s0_new(0:,:), s0_edge_new(0:,:)
-    real(kind=dp_t), intent(in   ) :: s0_pred_edge(0:,:)
+    real(kind=dp_t), intent(in   ) :: rho0_predicted_edge(0:)
     real(kind=dp_t), intent(in   ) :: w0(0:)
     integer        , intent(in   ) :: startcomp,endcomp
 
@@ -391,7 +391,7 @@ contains
                       
                       if ( comp.eq.spec_comp+nspec-1) then
                          etarhoflux(i,j,k) = &
-                              etarhoflux(i,j,k) - w0(k)*s0_pred_edge(k,rho_comp)
+                              etarhoflux(i,j,k) - w0(k)*rho0_predicted_edge(k)
                       end if
                       
                    end if
