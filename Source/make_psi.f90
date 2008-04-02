@@ -9,7 +9,7 @@ module make_psi_module
 
 contains
 
-  subroutine make_psi(nlevs,etarho,psi,s0,w0,gamma1bar,p0,Sbar_in)
+  subroutine make_psi(nlevs,etarho,psi,s0,w0,gamma1bar,p0_old,p0_new,Sbar_in)
 
     use bl_prof_module
     use geometry, only: spherical
@@ -20,7 +20,7 @@ contains
     real(kind=dp_t), intent(in   ) :: s0(:,0:,:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
-    real(kind=dp_t), intent(in   ) :: p0(:,0:)
+    real(kind=dp_t), intent(in   ) :: p0_old(:,0:), p0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: Sbar_in(:,0:)
 
     
@@ -37,7 +37,7 @@ contains
     else
        do n = 1,nlevs
           call make_psi_spherical(n,psi(n,0:),s0(n,0:,:),w0(n,0:),gamma1bar(n,0:), &
-                                  p0(n,0:),Sbar_in(n,0:))
+                                  p0_old(n,0:),p0_new(n,0:),Sbar_in(n,0:))
        end do
     endif
 
@@ -80,7 +80,7 @@ contains
     
   end subroutine make_psi_planar
 
-  subroutine make_psi_spherical(n,psi,s0,w0,gamma1bar,p0,Sbar_in)
+  subroutine make_psi_spherical(n,psi,s0,w0,gamma1bar,p0_old,p0_new,Sbar_in)
 
     use bl_constants_module
     use variables, only: rho_comp
@@ -92,7 +92,7 @@ contains
     real(kind=dp_t), intent(in   ) :: s0(0:,:)
     real(kind=dp_t), intent(in   ) :: w0(0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar(0:)
-    real(kind=dp_t), intent(in   ) :: p0(0:)
+    real(kind=dp_t), intent(in   ) :: p0_old(0:), p0_new(0:)
     real(kind=dp_t), intent(in   ) :: Sbar_in(0:)
     
     ! local variables
@@ -105,7 +105,7 @@ contains
             (base_loedge_loc(n,r+1)**2 * w0(r+1) - &
              base_loedge_loc(n,r  )**2 * w0(r  )) / dr(n)
 
-       psi(r) = gamma1bar(r) * p0(r) * (Sbar_in(r) - div_w0_sph)
+       psi(r) = gamma1bar(r) * HALF*(p0_old(r) + p0_new(r)) * (Sbar_in(r) - div_w0_sph)
 
     enddo
 

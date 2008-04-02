@@ -428,7 +428,7 @@ contains
     ! Now compute the new etarho and psi
     if (use_etarho .and. evolve_base_state) then
        call make_etarho(nlevs,etarho,etarhoflux,mla)
-       call make_psi(nlevs,etarho,psi,s0_1,w0,gamma1bar(:,:,1),p0_1,Sbar(:,:,1))
+       call make_psi(nlevs,etarho,psi,s0_1,w0,gamma1bar(:,:,1),p0_1,p0_2,Sbar(:,:,1))
     end if
 
     do n=1,nlevs
@@ -748,7 +748,7 @@ contains
        ! Now compute the new etarho and psi
        if (use_etarho .and. evolve_base_state) then
           call make_etarho(nlevs,etarho,etarhoflux,mla)
-          call make_psi(nlevs,etarho,psi,s0_1,w0,gamma1bar(:,:,1),p0_1,Sbar(:,:,1))
+          call make_psi(nlevs,etarho,psi,s0_1,w0,gamma1bar(:,:,1),p0_1,p0_2,Sbar(:,:,1))
        end if
 
        do n=1,nlevs
