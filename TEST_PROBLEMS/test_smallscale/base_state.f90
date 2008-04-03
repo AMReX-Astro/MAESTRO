@@ -10,7 +10,7 @@ module base_state_module
 
 contains
 
-  subroutine init_base_state(n,model_file,s0,p0,dx)
+  subroutine init_base_state(n,model_file,s0_init,p0_init,dx)
 
     use bc_module
     use setbc_module
@@ -25,8 +25,8 @@ contains
 
     integer,             intent(in   ) :: n
     character(len=256),  intent(in   ) :: model_file ! I'm not using this anymore
-    real(kind=dp_t),     intent(inout) :: s0(0:,:)
-    real(kind=dp_t),     intent(inout) :: p0(0:)
+    real(kind=dp_t),     intent(inout) :: s0_init(0:,:)
+    real(kind=dp_t),     intent(inout) :: p0_init(0:)
     real(kind=dp_t),     intent(in   ) :: dx(:)
 
     ! local
@@ -157,15 +157,15 @@ contains
                 dsdt_eos, dsdr_eos, &
                 do_diag)
 
-       s0(i,rho_comp) = den_eos(1)
-       s0(i,rhoh_comp) = den_eos(1)*h_eos(1)
+       s0_init(i,rho_comp) = den_eos(1)
+       s0_init(i,rhoh_comp) = den_eos(1)*h_eos(1)
 
        do comp=1,nspec
-          s0(i,spec_comp+comp-1) = den_eos(1)*xn_eos(1,comp)
+          s0_init(i,spec_comp+comp-1) = den_eos(1)*xn_eos(1,comp)
        enddo
-       s0(i,trac_comp) = 0.0d0
-       s0(i,temp_comp) = temp_eos(1)
-       p0(i) = pamb
+       s0_init(i,trac_comp) = 0.0d0
+       s0_init(i,temp_comp) = temp_eos(1)
+       p0_init(i) = pamb
 
     enddo
 

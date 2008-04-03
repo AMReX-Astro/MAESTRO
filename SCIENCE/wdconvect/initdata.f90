@@ -22,12 +22,12 @@ module init_module
 
 contains
 
-  subroutine initscalardata(nlevs,s,s0,p0,dx,bc,mla)
+  subroutine initscalardata(nlevs,s,s0_init,p0_init,dx,bc,mla)
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: s(:)
-    real(kind=dp_t), intent(in   ) :: s0(:,0:,:)
-    real(kind=dp_t), intent(in   ) :: p0(:,0:)
+    real(kind=dp_t), intent(in   ) :: s0_init(:,0:,:)
+    real(kind=dp_t), intent(in   ) :: p0_init(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     type(bc_level) , intent(in   ) :: bc(:)
     type(ml_layout), intent(inout) :: mla
@@ -48,9 +48,9 @@ contains
           
           select case (dm)
           case (2)
-             call initscalardata_2d(sop(:,:,1,:), lo, hi, ng, dx(n,:), s0(n,:,:), p0(n,:))
+             call initscalardata_2d(sop(:,:,1,:), lo, hi, ng, dx(n,:), s0_init(n,:,:), p0_init(n,:))
           case (3)
-             call initscalardata_3d(n,sop(:,:,:,:), lo, hi, ng, dx(n,:), s0(n,:,:), p0(n,:))
+             call initscalardata_3d(n,sop(:,:,:,:), lo, hi, ng, dx(n,:), s0_init(n,:,:), p0_init(n,:))
           end select
        end do
     enddo
@@ -84,15 +84,15 @@ contains
        
   end subroutine initscalardata
 
-  subroutine initscalardata_2d(s,lo,hi,ng,dx,s0,p0)
+  subroutine initscalardata_2d(s,lo,hi,ng,dx,s0_init,p0_init)
 
     use probin_module, only: prob_lo_x, prob_lo_y, perturb_model
 
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,:)  
     real (kind = dp_t), intent(in ) :: dx(:)
-    real(kind=dp_t), intent(in   ) :: s0(0:,:)
-    real(kind=dp_t), intent(in   ) :: p0(0:)
+    real(kind=dp_t), intent(in   ) :: s0_init(0:,:)
+    real(kind=dp_t), intent(in   ) :: p0_init(0:)
 
     !     Local variables
     integer :: i, j
@@ -106,15 +106,15 @@ contains
     ! initialize the scalars
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
-          s(i,j,rho_comp)  = s0(j,rho_comp)
-          s(i,j,rhoh_comp) = s0(j,rhoh_comp)
-          s(i,j,temp_comp) = s0(j,temp_comp)
+          s(i,j,rho_comp)  = s0_init(j,rho_comp)
+          s(i,j,rhoh_comp) = s0_init(j,rhoh_comp)
+          s(i,j,temp_comp) = s0_init(j,temp_comp)
 
           s(i,j,spec_comp:spec_comp+nspec-1) = &
-               s0(j,spec_comp:spec_comp+nspec-1)
+               s0_init(j,spec_comp:spec_comp+nspec-1)
 
           s(i,j,trac_comp:trac_comp+ntrac-1) = &
-               s0(j,trac_comp:trac_comp+ntrac-1)
+               s0_init(j,trac_comp:trac_comp+ntrac-1)
        enddo
     enddo
     
@@ -126,7 +126,7 @@ contains
           do i = lo(1), hi(1)
              x = prob_lo_x + (dble(i)+HALF) * dx(1)
           
-             call perturb_2d(x, y, p0(j), s0(j,:), &
+             call perturb_2d(x, y, p0_init(j), s0_init(j,:), &
                              dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
 
              s(i,j,rho_comp) = dens_pert
@@ -140,15 +140,15 @@ contains
     
   end subroutine initscalardata_2d
 
-  subroutine initscalardata_3d(n,s,lo,hi,ng,dx,s0,p0)
+  subroutine initscalardata_3d(n,s,lo,hi,ng,dx,s0_init,p0_init)
 
     use probin_module, only: prob_lo_x, prob_lo_y, prob_lo_z, perturb_model
 
     integer, intent(in) :: n, lo(:), hi(:), ng
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
     real (kind = dp_t), intent(in ) :: dx(:)
-    real(kind=dp_t), intent(in   ) ::    s0(0:,:)
-    real(kind=dp_t), intent(in   ) ::    p0(0:)
+    real(kind=dp_t), intent(in   ) ::    s0_init(0:,:)
+    real(kind=dp_t), intent(in   ) ::    p0_init(0:)
 
     !     Local variables
     integer :: i, j, k, comp
@@ -162,16 +162,16 @@ contains
     if (spherical .eq. 1) then
 
        ! initialize the scalars
-       call fill_3d_data(n,s(:,:,:,rho_comp), s0(:,rho_comp), lo,hi,dx,ng)
-       call fill_3d_data(n,s(:,:,:,rhoh_comp),s0(:,rhoh_comp),lo,hi,dx,ng)
-       call fill_3d_data(n,s(:,:,:,temp_comp),s0(:,temp_comp),lo,hi,dx,ng)
+       call fill_3d_data(n,s(:,:,:,rho_comp), s0_init(:,rho_comp), lo,hi,dx,ng)
+       call fill_3d_data(n,s(:,:,:,rhoh_comp),s0_init(:,rhoh_comp),lo,hi,dx,ng)
+       call fill_3d_data(n,s(:,:,:,temp_comp),s0_init(:,temp_comp),lo,hi,dx,ng)
 
        do comp = spec_comp, spec_comp+nspec-1
-          call fill_3d_data(n,s(:,:,:,comp),s0(:,comp),lo,hi,dx,ng)
+          call fill_3d_data(n,s(:,:,:,comp),s0_init(:,comp),lo,hi,dx,ng)
        end do
 
        do comp = trac_comp, trac_comp+ntrac-1
-          call fill_3d_data(n,s(:,:,:,comp),s0(:,comp),lo,hi,dx,ng)
+          call fill_3d_data(n,s(:,:,:,comp),s0_init(:,comp),lo,hi,dx,ng)
        end do
 
     else 
@@ -180,15 +180,15 @@ contains
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
-                s(i,j,k,rho_comp)  = s0(k,rho_comp)
-                s(i,j,k,rhoh_comp) = s0(k,rhoh_comp)
-                s(i,j,k,temp_comp) = s0(k,temp_comp)
+                s(i,j,k,rho_comp)  = s0_init(k,rho_comp)
+                s(i,j,k,rhoh_comp) = s0_init(k,rhoh_comp)
+                s(i,j,k,temp_comp) = s0_init(k,temp_comp)
 
                 s(i,j,k,spec_comp:spec_comp+nspec-1) = &
-                     s0(k,spec_comp:spec_comp+nspec-1)
+                     s0_init(k,spec_comp:spec_comp+nspec-1)
 
                 s(i,j,k,trac_comp:trac_comp+ntrac-1) = &
-                     s0(k,trac_comp:trac_comp+ntrac-1)
+                     s0_init(k,trac_comp:trac_comp+ntrac-1)
              enddo
           enddo
        enddo
@@ -205,7 +205,7 @@ contains
                 do i = lo(1), hi(1)
                    x = prob_lo_x + (dble(i)+HALF) * dx(1)
                    
-                   call perturb_3d(x, y, z, p0(k), s0(k,:), &
+                   call perturb_3d(x, y, z, p0_init(k), s0_init(k,:), &
                                    dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
 
                    s(i,j,k,rho_comp) = dens_pert
@@ -222,12 +222,12 @@ contains
     
   end subroutine initscalardata_3d
 
-  subroutine initveldata(nlevs,u,s0,p0,dx,bc,mla)
+  subroutine initveldata(nlevs,u,s0_init,p0_init,dx,bc,mla)
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: u(:)
-    real(kind=dp_t), intent(in   ) :: s0(:,0:,:)
-    real(kind=dp_t), intent(in   ) :: p0(:,0:)
+    real(kind=dp_t), intent(in   ) :: s0_init(:,0:,:)
+    real(kind=dp_t), intent(in   ) :: p0_init(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     type(bc_level) , intent(in   ) :: bc(:)
     type(ml_layout), intent(inout) :: mla
@@ -248,9 +248,9 @@ contains
           hi =  upb(get_box(u(n),i))
           select case (dm)
           case (2)
-             call initveldata_2d(uop(:,:,1,:), lo, hi, ng, dx(n,:), s0(n,:,:), p0(n,:))   
+             call initveldata_2d(uop(:,:,1,:), lo, hi, ng, dx(n,:), s0_init(n,:,:), p0_init(n,:))   
           case (3)
-             call initveldata_3d(uop(:,:,:,:), lo, hi, ng, dx(n,:), s0(n,:,:), p0(n,:))
+             call initveldata_3d(uop(:,:,:,:), lo, hi, ng, dx(n,:), s0_init(n,:,:), p0_init(n,:))
           end select
        end do
     
@@ -284,13 +284,13 @@ contains
 
   end subroutine initveldata
 
-  subroutine initveldata_2d (u,lo,hi,ng,dx,s0,p0)
+  subroutine initveldata_2d (u,lo,hi,ng,dx,s0_init,p0_init)
 
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(out) :: u(lo(1)-ng:,lo(2)-ng:,:)  
     real (kind = dp_t), intent(in ) :: dx(:)
-    real(kind=dp_t), intent(in   ) ::    s0(0:,:)
-    real(kind=dp_t), intent(in   ) ::    p0(0:)
+    real(kind=dp_t), intent(in   ) ::    s0_init(0:,:)
+    real(kind=dp_t), intent(in   ) ::    p0_init(0:)
 
     !     Local variables
 
@@ -308,7 +308,7 @@ contains
   ! The steepness of the cutoff is controlled by "velpert_steep".  The
   ! relative amplitude of the modes is controlled by
   ! "velpert_amplitude".
-  subroutine initveldata_3d(u,lo,hi,ng,dx,s0,p0)
+  subroutine initveldata_3d(u,lo,hi,ng,dx,s0_init,p0_init)
 
     use probin_module, only: prob_lo_x, prob_lo_y, prob_lo_z, &
          prob_hi_x, prob_hi_y, prob_hi_z, &
@@ -317,8 +317,8 @@ contains
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(out) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind = dp_t), intent(in ) :: dx(:)
-    real(kind=dp_t), intent(in   ) ::    s0(0:,:)
-    real(kind=dp_t), intent(in   ) ::    p0(0:)
+    real(kind=dp_t), intent(in   ) ::    s0_init(0:,:)
+    real(kind=dp_t), intent(in   ) ::    p0_init(0:)
 
     ! Local variables
     integer :: i, j, k
@@ -471,13 +471,13 @@ contains
   end subroutine initveldata_3d
 
 
-  subroutine perturb_2d(x, y, p0, s0, dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
+  subroutine perturb_2d(x, y, p0_init, s0_init, dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
 
     ! apply an optional perturbation to the initial temperature field
     ! to see some bubbles
 
     real(kind=dp_t), intent(in ) :: x, y
-    real(kind=dp_t), intent(in ) :: p0, s0(:)
+    real(kind=dp_t), intent(in ) :: p0_init, s0_init(:)
     real(kind=dp_t), intent(out) :: dens_pert, rhoh_pert, temp_pert
     real(kind=dp_t), intent(out) :: rhoX_pert(:)
     real(kind=dp_t), intent(out) :: trac_pert(:)
@@ -486,7 +486,7 @@ contains
     real(kind=dp_t) :: x0, y0, x1, y1, x2, y2
     real(kind=dp_t) :: r0, r1, r2
 
-    t0 = s0(temp_comp)
+    t0 = s0_init(temp_comp)
 
     x0 = 5.0d7
     y0 = 6.5d7
@@ -517,9 +517,9 @@ contains
     ! Use the EOS to make this temperature perturbation occur at constant 
     ! pressure
     temp_eos(1) = temp
-    p_eos(1) = p0
-    den_eos(1) = s0(rho_comp)
-    xn_eos(1,:) = s0(spec_comp:spec_comp+nspec-1)/s0(rho_comp)
+    p_eos(1) = p0_init
+    den_eos(1) = s0_init(rho_comp)
+    xn_eos(1,:) = s0_init(spec_comp:spec_comp+nspec-1)/s0_init(rho_comp)
 
     ! (t, p) -> (rho, h)
 
@@ -548,13 +548,13 @@ contains
 
   end subroutine perturb_2d
 
-  subroutine perturb_3d(x,y,z,p0,s0,dens_pert,rhoh_pert,rhoX_pert,temp_pert,trac_pert)
+  subroutine perturb_3d(x,y,z,p0_init,s0_init,dens_pert,rhoh_pert,rhoX_pert,temp_pert,trac_pert)
 
     ! apply an optional perturbation to the initial temperature field
     ! to see some bubbles
 
     real(kind=dp_t), intent(in ) :: x, y, z
-    real(kind=dp_t), intent(in ) :: p0, s0(:)
+    real(kind=dp_t), intent(in ) :: p0_init, s0_init(:)
     real(kind=dp_t), intent(out) :: dens_pert, rhoh_pert, temp_pert
     real(kind=dp_t), intent(out) :: rhoX_pert(:)
     real(kind=dp_t), intent(out) :: trac_pert(:)
@@ -563,7 +563,7 @@ contains
     real(kind=dp_t) :: x0, y0, z0, x1, y1, z1, x2, y2, z2
     real(kind=dp_t) :: r0, r1, r2
 
-    t0 = s0(temp_comp)
+    t0 = s0_init(temp_comp)
 
     x0 = 5.0d7
     y0 = 5.0d7
@@ -596,9 +596,9 @@ contains
     ! Use the EOS to make this temperature perturbation occur at constant 
     ! pressure
     temp_eos(1) = temp
-    p_eos(1) = p0
-    den_eos(1) = s0(rho_comp)
-    xn_eos(1,:) = s0(spec_comp:spec_comp+nspec-1)/s0(rho_comp)
+    p_eos(1) = p0_init
+    den_eos(1) = s0_init(rho_comp)
+    xn_eos(1,:) = s0_init(spec_comp:spec_comp+nspec-1)/s0_init(rho_comp)
 
     ! (t, p) -> (rho, h)
 
@@ -627,11 +627,11 @@ contains
 
   end subroutine perturb_3d
 
-  subroutine scalar_diags (istep,s,s0,dx)
+  subroutine scalar_diags (istep,s,s0_init,dx)
 
     integer        , intent(in   ) :: istep
     type(multifab) , intent(inout) :: s
-    real(kind=dp_t), intent(in)    :: s0(:,:)
+    real(kind=dp_t), intent(in)    :: s0_init(:,:)
     real(kind=dp_t), intent(in)    :: dx(:)
 
     real(kind=dp_t), pointer:: sop(:,:,:,:)
@@ -649,20 +649,20 @@ contains
 
        select case (dm)
        case (2)
-          call scalar_diags_2d(istep, sop(:,:,1,:), lo, hi, ng, dx, s0)
+          call scalar_diags_2d(istep, sop(:,:,1,:), lo, hi, ng, dx, s0_init)
        case (3)
-!         call scalar_diags_3d(istep, sop(:,:,:,:), lo, hi, ng, dx, s0)
+!         call scalar_diags_3d(istep, sop(:,:,:,:), lo, hi, ng, dx, s0_init)
        end select
     end do
 
   end subroutine scalar_diags
 
-  subroutine scalar_diags_2d (istep, s,lo,hi,ng,dx,s0)
+  subroutine scalar_diags_2d (istep, s,lo,hi,ng,dx,s0_init)
 
     integer, intent(in) :: istep, lo(:), hi(:), ng
     real (kind = dp_t), intent(in) ::  s(lo(1)-ng:,lo(2)-ng:,:)  
     real (kind = dp_t), intent(in) :: dx(:)
-    real(kind=dp_t)   , intent(in) :: s0(0:,:)
+    real(kind=dp_t)   , intent(in) :: s0_init(0:,:)
 
     ! Local variables
     integer :: i, j
@@ -677,10 +677,10 @@ contains
       stot = ZERO
       smax = ZERO
       do i = lo(1), hi(1)
-         stot = stot + (s(i,j,rho_comp) - s0(j,rho_comp))
-         smax = max(smax,abs(s(i,j,rho_comp) - s0(j,rho_comp)))
+         stot = stot + (s(i,j,rho_comp) - s0_init(j,rho_comp))
+         smax = max(smax,abs(s(i,j,rho_comp) - s0_init(j,rho_comp)))
       enddo
-      write(90,*) j,stot*fac/ s0(j,rho_comp), smax / s0(j,rho_comp)
+      write(90,*) j,stot*fac/ s0_init(j,rho_comp), smax / s0_init(j,rho_comp)
     enddo
     
   end subroutine scalar_diags_2d

@@ -10,7 +10,7 @@ module base_state_module
 
 contains
 
-  subroutine init_base_state(n,model_file,s0,p0,dx)
+  subroutine init_base_state(n,model_file,s0_init,p0_init,dx)
 
     use bc_module
     use setbc_module
@@ -19,15 +19,15 @@ contains
     use define_bc_module
     use bl_constants_module
     use eos_module
-    use probin_module, ONLY: base_cutoff_density, anelastic_cutoff, prob_lo_x, prob_lo_y, &
+    use probin_module, only: base_cutoff_density, anelastic_cutoff, prob_lo_x, prob_lo_y, &
                              prob_lo_z, small_temp, small_dens
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp, ntrac
     use geometry, only: dr, nr, spherical
 
     integer           , intent(in   ) :: n
     character(len=256), intent(in   ) :: model_file
-    real(kind=dp_t)   , intent(inout) :: s0(0:,:)
-    real(kind=dp_t)   , intent(inout) :: p0(0:)
+    real(kind=dp_t)   , intent(inout) :: s0_init(0:,:)
+    real(kind=dp_t)   , intent(inout) :: p0_init(0:)
     real(kind=dp_t)   , intent(in   ) :: dx(:)
 
     ! local
@@ -256,11 +256,12 @@ contains
 
        if (r .ge. r_cutoff) then
 
-          s0(r, rho_comp ) = s0(r_cutoff, rho_comp )
-          s0(r,rhoh_comp ) = s0(r_cutoff,rhoh_comp )
-          s0(r,spec_comp:spec_comp+nspec-1) = s0(r_cutoff,spec_comp:spec_comp+nspec-1)
-          p0(r)            = p0(r_cutoff)
-          s0(r,temp_comp)  = s0(r_cutoff,temp_comp)
+          s0_init(r, rho_comp ) = s0_init(r_cutoff, rho_comp )
+          s0_init(r,rhoh_comp ) = s0_init(r_cutoff,rhoh_comp )
+          s0_init(r,spec_comp:spec_comp+nspec-1) = &
+               s0_init(r_cutoff,spec_comp:spec_comp+nspec-1)
+          p0_init(r)            = p0_init(r_cutoff)
+          s0_init(r,temp_comp)  = s0_init(r_cutoff,temp_comp)
 
        else
 
@@ -301,17 +302,18 @@ contains
                    dsdt_eos, dsdr_eos, &
                    do_diag)
 
-          s0(r, rho_comp ) = d_ambient
-          s0(r,rhoh_comp ) = d_ambient * h_eos(1)
-          s0(r,spec_comp:spec_comp+nspec-1) = d_ambient * xn_ambient(1:nspec)
-          p0(r)    = p_eos(1)
+          s0_init(r, rho_comp ) = d_ambient
+          s0_init(r,rhoh_comp ) = d_ambient * h_eos(1)
+          s0_init(r,spec_comp:spec_comp+nspec-1) = d_ambient * xn_ambient(1:nspec)
+          p0_init(r)    = p_eos(1)
 
-          s0(r,temp_comp) = t_ambient
+          s0_init(r,temp_comp) = t_ambient
 
-          s0(r,trac_comp:trac_comp+ntrac-1) = ZERO
+          s0_init(r,trac_comp:trac_comp+ntrac-1) = ZERO
 
           ! keep track of the height where we drop below the cutoff density
-          if (s0(r,rho_comp) .lt. base_cutoff_density .and. r_cutoff .eq. nr(n)) then
+          if (s0_init(r,rho_comp) .lt. base_cutoff_density &
+               .and. r_cutoff .eq. nr(n)) then
              if ( parallel_IOProcessor() ) print *,'SETTING R_CUTOFF TO ',r
              r_cutoff = r
           end if

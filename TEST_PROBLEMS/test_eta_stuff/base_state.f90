@@ -10,7 +10,7 @@ module base_state_module
 
 contains
 
-  subroutine init_base_state (n,model_file,s0,p0,dx)
+  subroutine init_base_state(n,model_file,s0_init,p0_init,dx)
 
     use bc_module
     use setbc_module
@@ -19,14 +19,15 @@ contains
     use define_bc_module
     use bl_constants_module
     use eos_module
-    use probin_module, ONLY: base_cutoff_density, anelastic_cutoff, grav_const, prob_lo_y, prob_lo_z
+    use probin_module, only: base_cutoff_density, anelastic_cutoff, grav_const, &
+                             prob_lo_y, prob_lo_z
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp, ntrac
     use geometry, only: dr, nr, spherical
 
     integer            , intent(in   ) :: n
     character (len=256), intent(in   ) :: model_file
-    real(kind=dp_t)    , intent(inout) ::    s0(0:,:)
-    real(kind=dp_t)    , intent(inout) ::    p0(0:)
+    real(kind=dp_t)    , intent(inout) ::    s0_init(0:,:)
+    real(kind=dp_t)    , intent(inout) ::    p0_init(0:)
     real(kind=dp_t)    , intent(in   ) :: dx(:)
 
     ! local
@@ -35,9 +36,9 @@ contains
     real(kind=dp_t) :: d_ambient,t_ambient,p_ambient, xn_ambient(nspec)
     real(kind=dp_t) :: sum
     real(kind=dp_t) :: integral, temp_term_lo, temp_term_hi
-    real(kind=dp_t) :: temp_save,temp_min,p0_lo,p0_hi
+    real(kind=dp_t) :: temp_save,temp_min,p0_init_lo,p0_init_hi
     real(kind=dp_t) :: height_of_model, height_of_domain
-    real(kind=dp_t) :: s0_save(0:1000)
+    real(kind=dp_t) :: s0_init_save(0:1000)
 
     ! these indices define how the initial model is stored in the 
     ! base_state array
@@ -251,75 +252,76 @@ contains
                   dsdt_eos, dsdr_eos, &
                   do_diag)
          
-         s0(j, rho_comp ) = d_ambient
-         s0(j,rhoh_comp ) = d_ambient * h_eos(1)
-         s0(j,spec_comp:spec_comp+nspec-1) = d_ambient * xn_ambient(1:nspec)
-         p0(j)    = p_eos(1)
+         s0_init(j, rho_comp ) = d_ambient
+         s0_init(j,rhoh_comp ) = d_ambient * h_eos(1)
+         s0_init(j,spec_comp:spec_comp+nspec-1) = d_ambient * xn_ambient(1:nspec)
+         p0_init(j)    = p_eos(1)
 
-         s0(j,temp_comp) = t_ambient
-         s0(j,temp_comp) = t_ambient
+         s0_init(j,temp_comp) = t_ambient
+         s0_init(j,temp_comp) = t_ambient
 
     end do
 
 !   if (0.eq.1) then
 
 !   do j = nr(n)-1,64,-1
-!      s0(j, rho_comp) = s0(j-64, rho_comp)
-!      s0(j,temp_comp) = s0(j-64,temp_comp)
-!      p0(j)           = p0(j-64)
+!      s0_init(j, rho_comp) = s0_init(j-64, rho_comp)
+!      s0_init(j,temp_comp) = s0_init(j-64,temp_comp)
+!      p0_init(j)           = p0_init(j-64)
 !      do n = 1,nspec
-!         s0(j,spec_comp+n-1) = s0(j-64,spec_comp+n-1)
+!         s0_init(j,spec_comp+n-1) = s0_init(j-64,spec_comp+n-1)
 !      end do
 !   end do
 !   do j = 63,0,-1
-!      s0(j, rho_comp) = s0(127-j,rho_comp)
-!      s0(j,temp_comp) = s0(127-j,temp_comp)
-!      p0(j)           = p0(127-j)
+!      s0_init(j, rho_comp) = s0_init(127-j,rho_comp)
+!      s0_init(j,temp_comp) = s0_init(127-j,temp_comp)
+!      p0_init(j)           = p0_init(127-j)
 !      do n = 1,nspec
-!         s0(j,spec_comp+n-1) = s0(127-j,spec_comp+n-1)
+!         s0_init(j,spec_comp+n-1) = s0_init(127-j,spec_comp+n-1)
 !      end do
 !   end do
 
 !   else 
        do j = nr(n)-1,128,-1
-          s0(j, rho_comp) = s0(j-128, rho_comp)
-          s0(j,temp_comp) = s0(j-128,temp_comp)
-          p0(j)           = p0(j-128)
+          s0_init(j, rho_comp) = s0_init(j-128, rho_comp)
+          s0_init(j,temp_comp) = s0_init(j-128,temp_comp)
+          p0_init(j)           = p0_init(j-128)
           do comp = 1,nspec
-             s0(j,spec_comp+comp-1) = s0(j-128,spec_comp+comp-1)
+             s0_init(j,spec_comp+comp-1) = s0_init(j-128,spec_comp+comp-1)
           end do
        end do
        do j = 127,64,-1
-          s0(j, rho_comp) = s0(255-j,rho_comp)
-          s0(j,temp_comp) = s0(255-j,temp_comp)
-          p0(j)           = p0(255-j)
+          s0_init(j, rho_comp) = s0_init(255-j,rho_comp)
+          s0_init(j,temp_comp) = s0_init(255-j,temp_comp)
+          p0_init(j)           = p0_init(255-j)
           do comp = 1,nspec
-             s0(j,spec_comp+comp-1) = s0(255-j,spec_comp+comp-1)
+             s0_init(j,spec_comp+comp-1) = s0_init(255-j,spec_comp+comp-1)
           end do
        end do
        do j = 63,0,-1
-          s0(j, rho_comp) = s0(j+128,rho_comp)
-          s0(j,temp_comp) = s0(j+128,temp_comp)
-          p0(j)           = p0(j+128)
+          s0_init(j, rho_comp) = s0_init(j+128,rho_comp)
+          s0_init(j,temp_comp) = s0_init(j+128,temp_comp)
+          p0_init(j)           = p0_init(j+128)
           do comp = 1,nspec
-             s0(j,spec_comp+comp-1) = s0(j+128,spec_comp+comp-1)
+             s0_init(j,spec_comp+comp-1) = s0_init(j+128,spec_comp+comp-1)
           end do
        end do
 !   end if
 
     do j = nr(n)-2,0,-1
-      p0(j) = p0(j+1) + 0.5d0 * (s0(j+1,rho_comp) + s0(j,rho_comp))*abs(grav_const)*dr(1)
+      p0_init(j) = p0_init(j+1) + 0.5d0 * &
+           (s0_init(j+1,rho_comp) + s0_init(j,rho_comp))*abs(grav_const)*dr(1)
     end do
 
     do j = 0,nr(n)-1
       ! use the EOS to make the state consistent
-      temp_eos(1) = s0(j,temp_comp)
-      den_eos(1)  = s0(j,rho_comp)
-      p_eos(1)    = p0(j)
+      temp_eos(1) = s0_init(j,temp_comp)
+      den_eos(1)  = s0_init(j,rho_comp)
+      p_eos(1)    = p0_init(j)
 
-      temp_save = s0(j,temp_comp)
+      temp_save = s0_init(j,temp_comp)
       do comp = 1, nspec
-         xn_eos(1,comp) = s0(j,spec_comp+comp-1) / s0(j,rho_comp)
+         xn_eos(1,comp) = s0_init(j,spec_comp+comp-1) / s0_init(j,rho_comp)
       end do
 
       ! (rho,P) --> T,h
@@ -334,9 +336,10 @@ contains
                dsdt_eos, dsdr_eos, &
                do_diag)
          
-      s0(j,rhoh_comp ) = s0(j,rho_comp) * h_eos(1)
-      s0(j,spec_comp:spec_comp+nspec-1) = s0(j,rho_comp) * xn_eos(1,1:nspec)
-      s0(j,temp_comp) = temp_eos(1)
+      s0_init(j,rhoh_comp ) = s0_init(j,rho_comp) * h_eos(1)
+      s0_init(j,spec_comp:spec_comp+nspec-1) = &
+           s0_init(j,rho_comp) * xn_eos(1,1:nspec)
+      s0_init(j,temp_comp) = temp_eos(1)
     end do
  
     deallocate(vars_stored,varnames_stored)
