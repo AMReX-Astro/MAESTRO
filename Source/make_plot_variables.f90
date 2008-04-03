@@ -285,7 +285,7 @@ contains
   end subroutine make_tfromH_3d_sphr
 
   subroutine make_tfromrho(n,plotdata,comp_tfromrho,comp_tpert,comp_rhopert, &
-                           comp_machno,comp_deltag,s,u,s0,tempbar,gamma1bar,p0,dx)
+                           comp_machno,comp_deltag,s,u,rho0,tempbar,gamma1bar,p0,dx)
 
     use geometry, only: spherical
 
@@ -295,7 +295,7 @@ contains
     type(multifab) , intent(inout) :: plotdata
     type(multifab) , intent(in   ) :: s
     type(multifab) , intent(in   ) :: u
-    real(kind=dp_t), intent(in   ) :: s0(0:,:)
+    real(kind=dp_t), intent(in   ) :: rho0(0:)
     real(kind=dp_t), intent(in   ) :: tempbar(0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar(0:)
     real(kind=dp_t), intent(in   ) :: p0(0:)
@@ -320,27 +320,27 @@ contains
                                 tp(:,:,1,comp_rhopert ), &
                                 tp(:,:,1,comp_machno  ),tp(:,:,1,comp_deltag), &
                                 sp(:,:,1,:), up(:,:,1,:), &
-                                lo, hi, ng, s0, tempbar, gamma1bar, p0)
+                                lo, hi, ng, rho0, tempbar, gamma1bar, p0)
        case (3)
           if (spherical .eq. 1) then
              call make_tfromrho_3d_sphr(n,tp(:,:,:,comp_tfromrho),tp(:,:,:,comp_tpert), &
                                         tp(:,:,:,comp_rhopert ), &
                                         tp(:,:,:,comp_machno  ),tp(:,:,:,comp_deltag), &
                                         sp(:,:,:,:), up(:,:,:,:), &
-                                        lo, hi, ng, s0, tempbar, gamma1bar, p0, dx)
+                                        lo, hi, ng, rho0, tempbar, gamma1bar, p0, dx)
           else
              call make_tfromrho_3d_cart(tp(:,:,:,comp_tfromrho),tp(:,:,:,comp_tpert), &
                                         tp(:,:,:,comp_rhopert ), &
                                         tp(:,:,:,comp_machno  ),tp(:,:,:,comp_deltag), &
                                         sp(:,:,:,:), up(:,:,:,:), &
-                                        lo, hi, ng, s0, tempbar, gamma1bar, p0)
+                                        lo, hi, ng, rho0, tempbar, gamma1bar, p0)
           endif
        end select
     end do
 
   end subroutine make_tfromrho
 
-  subroutine make_tfromrho_2d(t,tpert,rhopert,machno,deltagamma,s,u,lo,hi,ng,s0,tempbar, &
+  subroutine make_tfromrho_2d(t,tpert,rhopert,machno,deltagamma,s,u,lo,hi,ng,rho0,tempbar, &
                               gamma1bar,p0)
 
     use eos_module
@@ -354,7 +354,7 @@ contains
     real (kind=dp_t), intent(  out) :: deltagamma(lo(1):,lo(2):)  
     real (kind=dp_t), intent(in   ) ::  s(lo(1)-ng:,lo(2)-ng:,:)
     real (kind=dp_t), intent(in   ) ::  u(lo(1)-ng:,lo(2)-ng:,:)
-    real (kind=dp_t), intent(in   ) :: s0(0:,:)
+    real (kind=dp_t), intent(in   ) :: rho0(0:)
     real (kind=dp_t), intent(in   ) :: tempbar(0:)
     real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
     real (kind=dp_t), intent(in   ) :: p0(0:)
@@ -389,7 +389,7 @@ contains
           t(i,j) = temp_eos(1)
           tpert(i,j) = temp_eos(1) - tempbar(j)
 
-          rhopert(i,j) = s(i,j,rho_comp) - s0(j,rho_comp)
+          rhopert(i,j) = s(i,j,rho_comp) - rho0(j)
 
           vel = sqrt(u(i,j,1)*u(i,j,1) + u(i,j,2)*u(i,j,2))
           machno(i,j) = vel / cs_eos(1)
@@ -401,7 +401,7 @@ contains
   end subroutine make_tfromrho_2d
 
   subroutine make_tfromrho_3d_cart(t,tpert,rhopert,machno,deltagamma,s,u,lo,hi, &
-                                   ng,s0,tempbar,gamma1bar,p0)
+                                   ng,rho0,tempbar,gamma1bar,p0)
 
     use variables, only: rho_comp, spec_comp
     use eos_module
@@ -414,7 +414,7 @@ contains
     real (kind=dp_t), intent(  out) :: deltagamma(lo(1):,lo(2):,lo(3):)  
     real (kind=dp_t), intent(in   ) ::  s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind=dp_t), intent(in   ) ::  u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-    real (kind=dp_t), intent(in   ) :: s0(0:,:)
+    real (kind=dp_t), intent(in   ) :: rho0(0:)
     real (kind=dp_t), intent(in   ) :: tempbar(0:)
     real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
     real (kind=dp_t), intent(in   ) :: p0(0:)
@@ -450,7 +450,7 @@ contains
              t(i,j,k) = temp_eos(1)
              tpert(i,j,k) = temp_eos(1) - tempbar(k)
 
-             rhopert(i,j,k) = s(i,j,k,rho_comp) - s0(k,rho_comp)
+             rhopert(i,j,k) = s(i,j,k,rho_comp) - rho0(k)
 
              vel = sqrt(u(i,j,k,1)*u(i,j,k,1) + u(i,j,k,2)*u(i,j,k,2) + u(i,j,k,3)*u(i,j,k,3))
              machno(i,j,k) = vel / cs_eos(1)
@@ -463,7 +463,7 @@ contains
   end subroutine make_tfromrho_3d_cart
 
   subroutine make_tfromrho_3d_sphr(n,t,tpert,rhopert,machno,deltagamma, &
-                                   s,u,lo,hi,ng,s0,tempbar,gamma1bar,p0,dx)
+                                   s,u,lo,hi,ng,rho0,tempbar,gamma1bar,p0,dx)
 
     use geometry, only: nr
     use variables, only: rho_comp, spec_comp
@@ -478,7 +478,7 @@ contains
     real (kind=dp_t), intent(  out) :: deltagamma(lo(1):,lo(2):,lo(3):)  
     real (kind=dp_t), intent(in   ) ::  s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind=dp_t), intent(in   ) ::  u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-    real (kind=dp_t), intent(in   ) :: s0(0:,:)
+    real (kind=dp_t), intent(in   ) :: rho0(0:)
     real (kind=dp_t), intent(in   ) :: tempbar(0:)
     real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
     real (kind=dp_t), intent(in   ) :: p0(0:)
@@ -495,7 +495,7 @@ contains
     do_diag = .false.
 
     allocate(rho0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-    call fill_3d_data(n,rho0_cart,s0(:,rho_comp),lo,hi,dx,0)
+    call fill_3d_data(n,rho0_cart,rho0,lo,hi,dx,0)
 
     allocate(tempbar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
     call fill_3d_data(n,tempbar_cart,tempbar,lo,hi,dx,0)

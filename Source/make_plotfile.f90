@@ -74,7 +74,7 @@ contains
   end subroutine get_plot_names
 
   subroutine make_plotfile(dirname,mla,u,s,gpres,rho_omegadot,Source,sponge, &
-                           mba,plot_names,time,dx,the_bc_tower,s0,p0,tempbar, &
+                           mba,plot_names,time,dx,the_bc_tower,rho0,p0,tempbar, &
                            gamma1bar,plot_spec,plot_trac)
 
     use bl_prof_module
@@ -95,7 +95,7 @@ contains
     character(len=20), intent(in   ) :: plot_names(:)
     real(dp_t)       , intent(in   ) :: time,dx(:,:)
     type(bc_tower)   , intent(in   ) :: the_bc_tower
-    real(dp_t)       , intent(in   ) :: s0(:,0:,:)
+    real(dp_t)       , intent(in   ) :: rho0(:,0:)
     real(dp_t)       , intent(in   ) :: p0(:,0:)
     real(dp_t)       , intent(in   ) :: tempbar(:,0:,:)
     real(dp_t)       , intent(in   ) :: gamma1bar(:,0:,:)
@@ -147,7 +147,7 @@ contains
 
        ! RHOPERT & TEMP (FROM RHO) & TPERT & MACHNO & (GAM1 - GAM10)
        call make_tfromrho(n,plotdata(n),icomp_tfromrho,icomp_tpert,icomp_rhopert, &
-                          icomp_machno,icomp_dg,s(n),u(n),s0(n,:,:), &
+                          icomp_machno,icomp_dg,s(n),u(n),rho0(n,:), &
                           tempbar(n,:,1),gamma1bar(n,:,1),p0(n,:),dx(n,:))
 
        ! TEMP (FROM H) & DELTA_P
