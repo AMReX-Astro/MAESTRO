@@ -25,9 +25,9 @@ contains
 
     !     Local variables
     integer         :: i,j,hi(2)
-    real(kind=dp_t) :: x,dir_val
+    real(kind=dp_t) :: dir_val
 
-    if (ng == 0) return
+    if(ng == 0) return
 
     hi(1) = lo(1) + size(s,dim=1) - (2*ng+1)
     hi(2) = lo(2) + size(s,dim=2) - (2*ng+1)
@@ -63,7 +63,6 @@ contains
        print *,'*******************************************'
        print *,''
     else if (bc(1,1) .eq. INTERIOR) then
-
     else
        print *,''
        print *,'*******************************************'
@@ -103,7 +102,6 @@ contains
        print *,'*******************************************'
        print *,''
     else if (bc(1,2) .eq. INTERIOR) then
-
     else 
        print *,''
        print *,'*******************************************'
@@ -151,7 +149,6 @@ contains
        print *,'*******************************************'
        print *,''
     else if (bc(2,1) .eq. INTERIOR) then
-
     else 
        print *,''
        print *,'*******************************************'
@@ -189,7 +186,6 @@ contains
        print *,'*******************************************'
        print *,''
     else if (bc(2,2) .eq. INTERIOR) then
-
     else 
        print *,''
        print *,'*******************************************'
@@ -252,7 +248,6 @@ contains
        print *,'*******************************************'
        print *,'' 
     else if (bc(1,1) .eq. INTERIOR) then
-
     else
        print *,''
        print *,'*******************************************'
@@ -292,7 +287,6 @@ contains
        print *,'*******************************************'
        print *,''         
     else if (bc(1,2) .eq. INTERIOR) then
-
     else 
        print *,''
        print *,'*******************************************'
@@ -332,7 +326,6 @@ contains
        print *,'*******************************************'
        print *,''         
     else if (bc(2,1) .eq. INTERIOR) then
-
     else
        print *,''
        print *,'*******************************************'
@@ -372,7 +365,6 @@ contains
        print *,'*******************************************'
        print *,''         
     else if (bc(2,2) .eq. INTERIOR) then
-
     else 
        print *,''
        print *,'*******************************************'
@@ -429,7 +421,6 @@ contains
        print *,'*******************************************'
        print *,''         
     else if (bc(3,1) .eq. INTERIOR) then
-
     else 
        print *,''
        print *,'*******************************************'
@@ -469,7 +460,6 @@ contains
        print *,'*******************************************'
        print *,''
     else if (bc(3,2) .eq. INTERIOR) then
-
     else 
        print *,''
        print *,'*******************************************'
