@@ -10,7 +10,8 @@ module advect_base_module
 
 contains
 
-  subroutine advect_base(which_step,nlevs,vel,Sbar_in,p0_old,p0_new,s0_old,s0_new,tempbar, &
+  subroutine advect_base(which_step,nlevs,vel,Sbar_in,p0_old,p0_new,rho0_old,rho0_new, &
+                         rhoh0_old,rhoh0_new,tempbar, &
                          gamma1bar,div_coeff,rho0_predicted_edge,psi,dz,dt)
 
     use bl_prof_module
@@ -19,8 +20,8 @@ contains
     integer        , intent(in   ) :: which_step,nlevs
     real(kind=dp_t), intent(in   ) :: vel(:,0:)
     real(kind=dp_t), intent(in   ) :: Sbar_in(:,0:,:)
-    real(kind=dp_t), intent(in   ) :: p0_old(:,0:), s0_old(:,0:,:)
-    real(kind=dp_t), intent(  out) :: p0_new(:,0:), s0_new(:,0:,:)
+    real(kind=dp_t), intent(in   ) :: p0_old(:,0:), rho0_old(:,0:), rhoh0_old(:,0:)
+    real(kind=dp_t), intent(  out) :: p0_new(:,0:), rho0_new(:,0:), rhoh0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: tempbar(:,0:)
     real(kind=dp_t), intent(inout) :: gamma1bar(:,0:)
     real(kind=dp_t), intent(in   ) :: div_coeff(:,0:)
@@ -39,12 +40,14 @@ contains
     do n=1,nlevs
        if (spherical .eq. 0) then
           call advect_base_state_planar(which_step,n,vel(n,0:),p0_old(n,0:),p0_new(n,0:), &
-                                        s0_old(n,0:,:),s0_new(n,0:,:), &
+                                        rho0_old(n,0:),rho0_new(n,0:), &
+                                        rhoh0_old(n,0:),rhoh0_new(n,0:), &
                                         rho0_predicted_edge(n,0:),psi(n,:),dz(n),dt)
        else
           call advect_base_state_spherical(which_step,n,vel(n,:),Sbar_in(n,:,1), &
                                            p0_old(n,:),p0_new(n,:), &
-                                           s0_old(n,:,:),s0_new(n,:,:), &
+                                           rho0_old(n,:),rho0_new(n,:), &
+                                           rhoh0_old(n,:),rhoh0_new(n,:), &
                                            tempbar(n,:),gamma1bar(n,:), &
                                            rho0_predicted_edge(n,0:),div_coeff(n,:),dt)
        end if
@@ -56,7 +59,8 @@ contains
 
 
   subroutine advect_base_state_planar(which_step,n,vel,p0_old,p0_new, &
-                                      s0_old,s0_new,rho0_predicted_edge,psi,dz,dt)
+                                      rho0_old,rho0_new,rhoh0_old,rhoh0_new, &
+                                      rho0_predicted_edge,psi,dz,dt)
 
     use bl_constants_module
     use make_edge_state_module
@@ -68,8 +72,8 @@ contains
 
     integer        , intent(in   ) :: which_step,n
     real(kind=dp_t), intent(in   ) :: vel(0:)
-    real(kind=dp_t), intent(in   ) :: p0_old(0:), s0_old(0:,:)
-    real(kind=dp_t), intent(  out) :: p0_new(0:), s0_new(0:,:)
+    real(kind=dp_t), intent(in   ) :: p0_old(0:), rho0_old(0:), rhoh0_old(0:)
+    real(kind=dp_t), intent(  out) :: p0_new(0:), rho0_new(0:), rhoh0_new(0:)
     real(kind=dp_t), intent(  out) :: rho0_predicted_edge(0:)
     real(kind=dp_t), intent(in   ) :: psi(0:)
     real(kind=dp_t), intent(in   ) :: dz,dt
@@ -113,16 +117,16 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     do r = 0,nr(n)-1
-       force(r) = -s0_old(r,rho_comp) * (vel(r+1) - vel(r)) / dz 
+       force(r) = -rho0_old(r) * (vel(r+1) - vel(r)) / dz 
     end do
     
-    call make_edge_state_1d(n,s0_old(:,rho_comp),edge,vel,force,1,dz,dt)
+    call make_edge_state_1d(n,rho0_old(:),edge,vel,force,1,dz,dt)
     
     rho0_predicted_edge(:) = edge(:)
 
     ! update rho_0
     do r = 0,nr(n)-1
-       s0_new(r,rho_comp) = s0_old(r,rho_comp) &
+       rho0_new(r) = rho0_old(r) &
             - dt / dz * (edge(r+1) * vel(r+1) - edge(r) * vel(r)) 
     end do
 
@@ -134,7 +138,7 @@ contains
          (enthalpy_pred_type .eq. predict_T_then_h) ) then
 
        ! here we predict h_0 on the edges
-       h0(:) = s0_old(:,rhoh_comp)/s0_old(:,rho_comp)
+       h0(:) = rhoh0_old(:)/rho0_old(:)
 
        force = ZERO
 
@@ -148,16 +152,16 @@ contains
 
        ! here we predict (rho h)_0 on the edges
        do r = 0,nr(n)-1
-          force(r) = -s0_old(r,rhoh_comp) * (vel(r+1) - vel(r)) / dz
+          force(r) = -rhoh0_old(r) * (vel(r+1) - vel(r)) / dz
        end do
        
-       call make_edge_state_1d(n,s0_old(:,rhoh_comp),edge,vel,force,1,dz,dt)
+       call make_edge_state_1d(n,rhoh0_old(:),edge,vel,force,1,dz,dt)
        
     end if
 
     ! update (rho h)_0
     do r = 0,nr(n)-1
-       s0_new(r,rhoh_comp) = s0_old(r,rhoh_comp) &
+       rhoh0_new(r) = rhoh0_old(r) &
             - dt / dz * (edge(r+1) * vel(r+1) - edge(r) * vel(r)) + dt*psi(r)
     end do
     
@@ -168,7 +172,7 @@ contains
   
   subroutine advect_base_state_spherical(which_step,n,vel,Sbar_in, &
                                          p0_old,p0_new, &
-                                         s0_old,s0_new, &
+                                         rho0_old,rho0_new,rhoh0_old,rhoh0_new, &
                                          tempbar,gamma1bar, &
                                          rho0_predicted_edge,div_coeff_old,dt)
 
@@ -183,8 +187,8 @@ contains
     
     integer        , intent(in   ) :: which_step,n
     real(kind=dp_t), intent(in   ) :: vel(0:),Sbar_in(0:)
-    real(kind=dp_t), intent(in   ) :: p0_old(0:), s0_old(0:,:)
-    real(kind=dp_t), intent(  out) :: p0_new(0:), s0_new(0:,:)
+    real(kind=dp_t), intent(in   ) :: p0_old(0:), rho0_old(0:), rhoh0_old(0:)
+    real(kind=dp_t), intent(  out) :: p0_new(0:), rho0_new(0:), rhoh0_new(0:)
     real(kind=dp_t), intent(in   ) :: tempbar(0:)
     real(kind=dp_t), intent(inout) :: gamma1bar(0:)
     real(kind=dp_t), intent(  out) :: rho0_predicted_edge(0:)
@@ -225,17 +229,17 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     do r = 0,nr(n)-1
-       force(r) = -s0_old(r,rho_comp) * (vel(r+1) - vel(r)) / dr(n) - &
-            2.0_dp_t*s0_old(r,rho_comp)*HALF*(vel(r) + vel(r+1))/base_cc_loc(n,r)
+       force(r) = -rho0_old(r) * (vel(r+1) - vel(r)) / dr(n) - &
+            2.0_dp_t*rho0_old(r)*HALF*(vel(r) + vel(r+1))/base_cc_loc(n,r)
     end do
     
-    call make_edge_state_1d(n,s0_old(:,rho_comp),edge,vel,force,1,dr(n),dt)
+    call make_edge_state_1d(n,rho0_old,edge,vel,force,1,dr(n),dt)
     
     rho0_predicted_edge(:) = edge(:)
 
     ! update rho_0
     do r = 0,nr(n)-1
-       s0_new(r,rho_comp) = s0_old(r,rho_comp) &
+       rho0_new(r) = rho0_old(r) &
             - dtdr/base_cc_loc(n,r)**2*(base_loedge_loc(n,r+1)**2*edge(r+1)*vel(r+1) &
             - base_loedge_loc(n,r  )**2 * edge(r  ) * vel(r  ))
     end do
@@ -259,10 +263,10 @@ contains
     
     gamma1bar_old(:) = gamma1bar(:)
     
-    call make_grav_cell(n,grav_cell,s0_new(:,rho_comp))
+    call make_grav_cell(n,grav_cell,rho0_new)
     
     ! Define beta^n+1 at cell edges using the new gravity above
-    call make_div_coeff(n,div_coeff_new,s0_new(:,rho_comp),p0_new,gamma1bar,grav_cell)
+    call make_div_coeff(n,div_coeff_new,rho0_new,p0_new,gamma1bar,grav_cell)
     call cell_to_edge(n,div_coeff_new,beta_new)
     
     ! time-centered beta
@@ -290,8 +294,8 @@ contains
        div_w0_sph = one/(base_cc_loc(n,r)**2)*(base_loedge_loc(n,r+1)**2 * vel(r+1) - &
                                                base_loedge_loc(n,r  )**2 * vel(r  )) / dr(n)
 
-       force(r) = -s0_old(r,rhoh_comp) * div_w0_cart - &
-            2.0_dp_t*s0_old(r,rhoh_comp)*HALF*(vel(r) + vel(r+1))/base_cc_loc(n,r)
+       force(r) = -rhoh0_old(r) * div_w0_cart - &
+            2.0_dp_t*rhoh0_old(r)*HALF*(vel(r) + vel(r+1))/base_cc_loc(n,r)
        
        ! add psi at time-level n to the force for the prediction
        psi(r) = gamma1bar_old(r) * p0_old(r) * (Sbar_in(r) - div_w0_sph)
@@ -302,15 +306,15 @@ contains
             (Sbar_in(r) - div_w0_sph)
     end do
     
-    call make_edge_state_1d(n,s0_old(:,rhoh_comp),edge,vel,force,1,dr(n),dt)
+    call make_edge_state_1d(n,rhoh0_old,edge,vel,force,1,dr(n),dt)
 
     do r = 0,nr(n)-1
        
-       s0_new(r,rhoh_comp) = s0_old(r,rhoh_comp) - &
+       rhoh0_new(r) = rhoh0_old(r) - &
             dtdr / base_cc_loc(n,r)**2 * ( base_loedge_loc(n,r+1)**2 * edge(r+1) * vel(r+1) &
             -base_loedge_loc(n,r  )**2 * edge(r  ) * vel(r  ))
        
-       s0_new(r,rhoh_comp) = s0_new(r,rhoh_comp) + dt * psi(r)
+       rhoh0_new(r) = rhoh0_new(r) + dt * psi(r)
        
     end do
     
