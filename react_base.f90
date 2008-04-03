@@ -38,12 +38,6 @@ contains
 
        do r = 0,nr(n)-1
           
-          ! (rho X)_out = (rho X)_in + dt_in * (rho omegadotbar)_in
-          do comp = spec_comp,spec_comp+nspec-1
-             s0_out(n,r,comp) = s0_in(n,r,comp) &
-                  + dt_in * rho_omegadotbar(n,r,comp-spec_comp+1) 
-          end do
-          
           ! p_out = p_in
           p0_out(n,r) = p0_in(n,r)
           
