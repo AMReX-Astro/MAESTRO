@@ -10,7 +10,7 @@ module base_state_module
 
 contains
 
-  subroutine init_base_state (n,model_file,s0,p0,gam1,dx)
+  subroutine init_base_state (n,model_file,s0,p0,dx)
 
     use bc_module
     use setbc_module
@@ -27,7 +27,6 @@ contains
     character (len=256), intent(in   ) :: model_file
     real(kind=dp_t)    , intent(inout) ::    s0(0:,:)
     real(kind=dp_t)    , intent(inout) ::    p0(0:)
-    real(kind=dp_t)    , intent(inout) ::  gam1(0:)
     real(kind=dp_t)    , intent(in   ) :: dx(:)
 
     ! local
@@ -260,8 +259,6 @@ contains
          s0(j,temp_comp) = t_ambient
          s0(j,temp_comp) = t_ambient
 
-         gam1(j) = gam1_eos(1)
-
     end do
 
 !   if (0.eq.1) then
@@ -340,8 +337,6 @@ contains
       s0(j,rhoh_comp ) = s0(j,rho_comp) * h_eos(1)
       s0(j,spec_comp:spec_comp+nspec-1) = s0(j,rho_comp) * xn_eos(1,1:nspec)
       s0(j,temp_comp) = temp_eos(1)
-
-      gam1(j) = gam1_eos(1)
     end do
  
     deallocate(vars_stored,varnames_stored)

@@ -49,6 +49,7 @@ subroutine varden()
   type(multifab), allocatable ::       sold(:)
   type(multifab), allocatable ::       snew(:)
   type(multifab), allocatable ::     normal(:)
+  type(multifab), allocatable ::     gamma1(:)
 
   real(kind=dp_t), pointer :: uop(:,:,:,:)
   real(kind=dp_t), pointer :: sop(:,:,:,:)
@@ -73,6 +74,7 @@ subroutine varden()
   real(dp_t), allocatable :: s0_avg(:,:,:)
   real(dp_t), allocatable :: p0_old(:,:)
   real(dp_t), allocatable :: w0(:,:)
+  real(dp_t), allocatable :: tempbar(:,:,:)
 
 
   type(bc_tower) ::  the_bc_tower
@@ -181,18 +183,19 @@ subroutine varden()
   allocate( s0_avg(nlevs,0:nr_fine-1,nscal))
   allocate( p0_old(nlevs,0:nr_fine-1))
   allocate(     w0(nlevs,0:nr_fine  ))
+  allocate(tempbar(nlevs,0:nr_fine-1,1))
 
   s0_old(:,:,:) = ZERO
   s0_avg(:,:,:) = ZERO
   w0(:,:) = ZERO
+  tempbar(:,:,:) = ZERO
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Initialize all remaining arrays
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   allocate(unew(nlevs),snew(nlevs))
-  allocate(normal(nlevs))
-
+  allocate(normal(nlevs),gamma1(nlevs))
 
   do n = nlevs,1,-1
      call multifab_build(   unew(n), mla%la(n),    dm, ng_cell)
@@ -263,8 +266,21 @@ subroutine varden()
 
 
   call initveldata(nlevs,uold,s0_old,p0_old,dx,the_bc_tower%bc_tower_array,mla)
-  
   call initscalardata(nlevs,sold,s0_old,p0_old,dx,the_bc_tower%bc_tower_array,mla)
+
+  do n=1,nlevs
+     call multifab_build(gamma1(n), mla%la(n), 1, 0)
+  end do
+  
+  ! tempbar is only used as an initial guess for eos calls
+  call average(mla,sold,tempbar,dx,temp_comp,1,1)
+  
+  call make_gamma(nlevs,gamma1,sold,p0_old,tempbar)
+  call average(mla,gamma1,gamma1bar,dx,1,1,1)
+  
+  do n=1,nlevs
+     call destroy(gamma1(n))
+  end do
 
   do n = 1,nlevs
 

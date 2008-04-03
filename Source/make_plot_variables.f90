@@ -285,7 +285,7 @@ contains
   end subroutine make_tfromH_3d_sphr
 
   subroutine make_tfromrho(n,plotdata,comp_tfromrho,comp_tpert,comp_rhopert, &
-                           comp_machno,comp_deltag,s,u,s0,tempbar,p0,dx)
+                           comp_machno,comp_deltag,s,u,s0,tempbar,gamma1bar,p0,dx)
 
     use geometry, only: spherical
 
@@ -297,6 +297,7 @@ contains
     type(multifab) , intent(in   ) :: u
     real(kind=dp_t), intent(in   ) :: s0(0:,:)
     real(kind=dp_t), intent(in   ) :: tempbar(0:)
+    real(kind=dp_t), intent(in   ) :: gamma1bar(0:)
     real(kind=dp_t), intent(in   ) :: p0(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
     real(kind=dp_t), pointer:: sp(:,:,:,:),tp(:,:,:,:),up(:,:,:,:)
@@ -319,27 +320,28 @@ contains
                                 tp(:,:,1,comp_rhopert ), &
                                 tp(:,:,1,comp_machno  ),tp(:,:,1,comp_deltag), &
                                 sp(:,:,1,:), up(:,:,1,:), &
-                                lo, hi, ng, s0, tempbar, p0)
+                                lo, hi, ng, s0, tempbar, gamma1bar, p0)
        case (3)
           if (spherical .eq. 1) then
              call make_tfromrho_3d_sphr(n,tp(:,:,:,comp_tfromrho),tp(:,:,:,comp_tpert), &
                                         tp(:,:,:,comp_rhopert ), &
                                         tp(:,:,:,comp_machno  ),tp(:,:,:,comp_deltag), &
                                         sp(:,:,:,:), up(:,:,:,:), &
-                                        lo, hi, ng, s0, tempbar, p0, dx)
+                                        lo, hi, ng, s0, tempbar, gamma1bar, p0, dx)
           else
              call make_tfromrho_3d_cart(tp(:,:,:,comp_tfromrho),tp(:,:,:,comp_tpert), &
                                         tp(:,:,:,comp_rhopert ), &
                                         tp(:,:,:,comp_machno  ),tp(:,:,:,comp_deltag), &
                                         sp(:,:,:,:), up(:,:,:,:), &
-                                        lo, hi, ng, s0, tempbar, p0)
+                                        lo, hi, ng, s0, tempbar, gamma1bar, p0)
           endif
        end select
     end do
 
   end subroutine make_tfromrho
 
-  subroutine make_tfromrho_2d(t,tpert,rhopert,machno,deltagamma,s,u,lo,hi,ng,s0,tempbar,p0)
+  subroutine make_tfromrho_2d(t,tpert,rhopert,machno,deltagamma,s,u,lo,hi,ng,s0,tempbar, &
+                              gamma1bar,p0)
 
     use eos_module
     use variables, only: rho_comp, spec_comp
@@ -354,41 +356,14 @@ contains
     real (kind=dp_t), intent(in   ) ::  u(lo(1)-ng:,lo(2)-ng:,:)
     real (kind=dp_t), intent(in   ) :: s0(0:,:)
     real (kind=dp_t), intent(in   ) :: tempbar(0:)
+    real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
     real (kind=dp_t), intent(in   ) :: p0(0:)
 
     !     Local variables
     integer          :: i, j
     real (kind=dp_t) :: vel
-    real (kind=dp_t), allocatable :: gamma1bar(:)
-
-    allocate(gamma1bar(lo(2):hi(2)))
 
     do_diag = .false.
-
-    ! We now assume that the temperature coming in in the base state is correct, but
-    !   we do this eos call to get gamma1bar
-    do j = lo(2), hi(2)
-
-       den_eos(1) = s0(j,rho_comp)
-       temp_eos(1) = tempbar(j)
-       p_eos(1) = p0(j)
-       xn_eos(1,:) = s0(j,spec_comp:spec_comp+nspec-1)/den_eos(1)
-
-       ! (rho,P) --> T,h
-       call eos(eos_input_rp, den_eos, temp_eos, &
-                npts, nspec, &
-                xn_eos, &
-                p_eos, h_eos, e_eos, & 
-                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                dpdX_eos, dhdX_eos, &
-                gam1_eos, cs_eos, s_eos, &
-                dsdt_eos, dsdr_eos, &
-                do_diag)
-
-       gamma1bar(j) = gam1_eos(1)
-
-    end do
 
     ! Then compute the perturbation
     do j = lo(2), hi(2)
@@ -423,12 +398,10 @@ contains
        enddo
     enddo
 
-    deallocate(gamma1bar)
-
   end subroutine make_tfromrho_2d
 
   subroutine make_tfromrho_3d_cart(t,tpert,rhopert,machno,deltagamma,s,u,lo,hi, &
-                                   ng,s0,tempbar,p0)
+                                   ng,s0,tempbar,gamma1bar,p0)
 
     use variables, only: rho_comp, spec_comp
     use eos_module
@@ -443,38 +416,14 @@ contains
     real (kind=dp_t), intent(in   ) ::  u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind=dp_t), intent(in   ) :: s0(0:,:)
     real (kind=dp_t), intent(in   ) :: tempbar(0:)
+    real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
     real (kind=dp_t), intent(in   ) :: p0(0:)
 
-    !     Local variables
+    ! Local variables
     integer          :: i, j, k
     real (kind=dp_t) :: vel
-    real (kind=dp_t), allocatable :: gamma1bar(:)
-
-    allocate(gamma1bar(lo(3):hi(3)))
 
     do_diag = .false.
-
-    ! We now assume that the temperature coming in in the base state is correct, but
-    !   we do this eos call to get gamma1bar
-    do k = lo(3), hi(3)
-       den_eos(1) = s0(k,rho_comp)
-       temp_eos(1) = tempbar(k)
-       p_eos(1) = p0(k)
-       xn_eos(1,:) = s0(k,spec_comp:spec_comp+nspec-1)/den_eos(1)
-
-       ! (rho,P) --> T,h
-       call eos(eos_input_rp, den_eos, temp_eos, &
-                npts, nspec, &
-                xn_eos, &
-                p_eos, h_eos, e_eos, & 
-                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                dpdX_eos, dhdX_eos, &
-                gam1_eos, cs_eos, s_eos, &
-                dsdt_eos, dsdr_eos, &
-                do_diag)
-       gamma1bar(k) = gam1_eos(1)
-    end do
 
     ! Then compute the perturbation and Mach number
     do k = lo(3), hi(3)
@@ -511,12 +460,10 @@ contains
        enddo
     enddo
 
-    deallocate(gamma1bar)
-
   end subroutine make_tfromrho_3d_cart
 
   subroutine make_tfromrho_3d_sphr(n,t,tpert,rhopert,machno,deltagamma, &
-                                   s,u,lo,hi,ng,s0,tempbar,p0,dx)
+                                   s,u,lo,hi,ng,s0,tempbar,gamma1bar,p0,dx)
 
     use geometry, only: nr
     use variables, only: rho_comp, spec_comp
@@ -533,43 +480,19 @@ contains
     real (kind=dp_t), intent(in   ) ::  u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind=dp_t), intent(in   ) :: s0(0:,:)
     real (kind=dp_t), intent(in   ) :: tempbar(0:)
+    real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
     real (kind=dp_t), intent(in   ) :: p0(0:)
     real (kind=dp_t), intent(in   ) :: dx(:)
 
     !     Local variables
     integer          :: i, j, k, r
     real (kind=dp_t) :: vel
-    real (kind=dp_t), allocatable :: gamma1bar(:)
     real (kind=dp_t), allocatable ::  rho0_cart(:,:,:)
     real (kind=dp_t), allocatable ::    tempbar_cart(:,:,:)
     real (kind=dp_t), allocatable ::    p0_cart(:,:,:)
     real (kind=dp_t), allocatable ::  gam0_cart(:,:,:)
 
-    allocate(gamma1bar(0:nr(n)-1))
-
     do_diag = .false.
-
-    ! We now assume that the temperature coming in in the base state is correct, but
-    !   we do this eos call to get gamma1bar
-    do r = 0, nr(n)-1
-       den_eos(1) = s0(r,rho_comp)
-       temp_eos(1) = tempbar(r)
-       p_eos(1) = p0(r)
-       xn_eos(1,:) = s0(r,spec_comp:spec_comp+nspec-1)/den_eos(1)
-
-       ! (rho,P) --> T,h
-       call eos(eos_input_rp, den_eos, temp_eos, &
-                npts, nspec, &
-                xn_eos, &
-                p_eos, h_eos, e_eos, & 
-                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                dpdX_eos, dhdX_eos, &
-                gam1_eos, cs_eos, s_eos, &
-                dsdt_eos, dsdr_eos, &
-                do_diag)
-       gamma1bar(r) = gam1_eos(1)
-    end do
 
     allocate(rho0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
     call fill_3d_data(n,rho0_cart,s0(:,rho_comp),lo,hi,dx,0)
@@ -618,7 +541,6 @@ contains
        enddo
     enddo
 
-    deallocate(gamma1bar)
     deallocate(rho0_cart,tempbar_cart,p0_cart,gam0_cart)
 
   end subroutine make_tfromrho_3d_sphr

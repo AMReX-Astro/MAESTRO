@@ -285,7 +285,7 @@ contains
   end subroutine make_tfromH_3d_sphr
 
   subroutine make_tfromrho(n,plotdata,comp_tfromrho,comp_tpert,comp_rhopert, &
-                           comp_machno,comp_deltag,s,u,s0,tempbar,p0,dx)
+                           comp_machno,comp_deltag,s,u,s0,tempbar,gamma1bar,p0,dx)
 
     use geometry, only: spherical
 
@@ -297,6 +297,7 @@ contains
     type(multifab) , intent(in   ) :: u
     real(kind=dp_t), intent(in   ) :: s0(0:,:)
     real(kind=dp_t), intent(in   ) :: tempbar(0:)
+    real(kind=dp_t), intent(in   ) :: gamma1bar(0:)
     real(kind=dp_t), intent(in   ) :: p0(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
     real(kind=dp_t), pointer:: sp(:,:,:,:),tp(:,:,:,:),up(:,:,:,:)
@@ -319,27 +320,28 @@ contains
                                 tp(:,:,1,comp_rhopert ), &
                                 tp(:,:,1,comp_machno  ),tp(:,:,1,comp_deltag), &
                                 sp(:,:,1,:), up(:,:,1,:), &
-                                lo, hi, ng, s0, tempbar, p0)
+                                lo, hi, ng, s0, tempbar, gamma1bar, p0)
        case (3)
           if (spherical .eq. 1) then
              call make_tfromrho_3d_sphr(n,tp(:,:,:,comp_tfromrho),tp(:,:,:,comp_tpert), &
                                         tp(:,:,:,comp_rhopert ), &
                                         tp(:,:,:,comp_machno  ),tp(:,:,:,comp_deltag), &
                                         sp(:,:,:,:), up(:,:,:,:), &
-                                        lo, hi, ng, s0, tempbar, p0, dx)
+                                        lo, hi, ng, s0, tempbar, gamma1bar, p0, dx)
           else
              call make_tfromrho_3d_cart(tp(:,:,:,comp_tfromrho),tp(:,:,:,comp_tpert), &
                                         tp(:,:,:,comp_rhopert ), &
                                         tp(:,:,:,comp_machno  ),tp(:,:,:,comp_deltag), &
                                         sp(:,:,:,:), up(:,:,:,:), &
-                                        lo, hi, ng, s0, tempbar, p0)
+                                        lo, hi, ng, s0, tempbar, gamma1bar, p0)
           endif
        end select
     end do
 
   end subroutine make_tfromrho
 
-  subroutine make_tfromrho_2d(t,tpert,rhopert,machno,deltagamma,s,u,lo,hi,ng,s0,tempbar,p0)
+  subroutine make_tfromrho_2d(t,tpert,rhopert,machno,deltagamma,s,u,lo,hi,ng,s0,tempbar, &
+                              gamma1bar,p0)
 
     use eos_module
     use variables, only: rho_comp, spec_comp
@@ -354,6 +356,7 @@ contains
     real (kind=dp_t), intent(in   ) ::  u(lo(1)-ng:,lo(2)-ng:,:)
     real (kind=dp_t), intent(in   ) :: s0(0:,:)
     real (kind=dp_t), intent(in   ) :: tempbar(0:)
+    real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
     real (kind=dp_t), intent(in   ) :: p0(0:)
 
     !     Local variables

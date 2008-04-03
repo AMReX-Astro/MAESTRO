@@ -75,7 +75,7 @@ contains
 
   subroutine make_plotfile(dirname,mla,u,s,gpres,rho_omegadot,Source,sponge, &
                            mba,plot_names,time,dx,the_bc_tower,s0,p0,tempbar, &
-                           plot_spec,plot_trac)
+                           gamma1bar,plot_spec,plot_trac)
 
     use bl_prof_module
     use fabio_module
@@ -98,6 +98,7 @@ contains
     real(dp_t)       , intent(in   ) :: s0(:,0:,:)
     real(dp_t)       , intent(in   ) :: p0(:,0:)
     real(dp_t)       , intent(in   ) :: tempbar(:,0:,:)
+    real(dp_t)       , intent(in   ) :: gamma1bar(:,0:,:)
     logical          , intent(in   ) :: plot_spec,plot_trac
 
     type(multifab) :: plotdata(mla%nlevel)
@@ -146,8 +147,8 @@ contains
 
        ! RHOPERT & TEMP (FROM RHO) & TPERT & MACHNO & (GAM1 - GAM10)
        call make_tfromrho(n,plotdata(n),icomp_tfromrho,icomp_tpert,icomp_rhopert, &
-                          icomp_machno,icomp_dg, &
-                          s(n),u(n),s0(n,:,:),tempbar(n,:,1),p0(n,:),dx(n,:))
+                          icomp_machno,icomp_dg,s(n),u(n),s0(n,:,:), &
+                          tempbar(n,:,1),gamma1bar(n,:,1),p0(n,:),dx(n,:))
 
        ! TEMP (FROM H) & DELTA_P
        call make_tfromH(n,plotdata(n),icomp_tfromH,icomp_dp,s(n),p0(n,:), &

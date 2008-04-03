@@ -10,7 +10,7 @@ module base_state_module
 
 contains
 
-  subroutine init_base_state(n,model_file,s0,p0,gam1,dx)
+  subroutine init_base_state(n,model_file,s0,p0,dx)
 
     use bc_module
     use setbc_module
@@ -27,7 +27,6 @@ contains
     character(len=256), intent(in   ) :: model_file
     real(kind=dp_t)   , intent(inout) :: s0(0:,:)
     real(kind=dp_t)   , intent(inout) :: p0(0:)
-    real(kind=dp_t)   , intent(inout) :: gam1(0:)
     real(kind=dp_t)   , intent(in   ) :: dx(:)
 
     real(kind=dp_t)   :: max_speed
@@ -219,7 +218,6 @@ contains
           s0(j,spec_comp:spec_comp+nspec-1) = s0(j_cutoff,spec_comp:spec_comp+nspec-1)
           p0(j)            = p0(j_cutoff)
           s0(j,temp_comp)  = s0(j_cutoff,temp_comp)
-          gam1(j)         =  gam1(j_cutoff)
 
        else
 
@@ -272,8 +270,6 @@ contains
           s0(j,temp_comp) = t_ambient
 
           s0(j,trac_comp:trac_comp+ntrac-1) = ZERO
-
-          gam1(j) = gam1_eos(1)
 
           ! keep track of the height where we drop below the cutoff density
           if (s0(j,rho_comp) .lt. base_cutoff_density .and. j_cutoff .eq. nr(n)) then
