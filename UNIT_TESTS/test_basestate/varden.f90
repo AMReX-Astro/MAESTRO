@@ -19,12 +19,14 @@ subroutine varden()
   use advect_base_module
   use make_grav_module
   use make_div_coeff_module
+  use make_edge_state_module
   use probin_module
   use bl_constants_module
 
   implicit none
 
-  integer :: i
+  integer :: i, comp
+  integer :: iter
 
   integer    :: dm
 
@@ -52,6 +54,9 @@ subroutine varden()
   real(dp_t), allocatable :: f(:,:)
   real(dp_t), allocatable :: Sbar_in(:,:,:)
   real(dp_t), allocatable :: rho0_predicted_edge(:,:)
+  real(dp_t), allocatable :: force(:)
+  real(dp_t), allocatable :: X0(:)
+  real(dp_t), allocatable :: edge(:)
 
   real(dp_t) :: coeff, Hbar
 
@@ -128,6 +133,10 @@ subroutine varden()
   allocate(                  f(nlevs,0:nr_fine))
   allocate(            Sbar_in(nlevs,0:nr_fine-1,1))
   allocate(rho0_predicted_edge(nlevs,0:nr_fine))
+
+  allocate(force(0:nr_fine-1))
+  allocate(   X0(0:nr_fine-1))
+  allocate(edge(0:nr_fine))
 
   gam1(:,:) = ZERO
   w0(:,:) = ZERO
@@ -240,6 +249,37 @@ subroutine varden()
                       dx(:,1),dt)
 
 
+     ! update the species.  In the real code, this will be done
+     ! for the full state.  Here we are faking a 1-d star, so
+     ! we need to do this manually, since the species are not
+     ! part of the base state
+     do comp = spec_comp,spec_comp+nspec-1
+
+        ! here we predict X_0 on the edges
+        X0(:) = s0_old(1,:,comp)/s0_old(1,:,rho_comp)
+        do i = 0,nr_fine-1
+           X0(i) = max(X0(i),ZERO)
+        end do
+
+        force = ZERO
+
+        call make_edge_state_1d(1,X0,edge,w0(1,:),force,1,dr(1),dt)
+        
+        ! our final update needs (rho X)_0 on the edges, so compute
+        ! that now
+        edge(:) = rho0_predicted_edge(1,:)*edge(:)
+
+        ! update (rho X)_0
+        do i = 0,nr_fine-1
+           s0(1,i,comp) = s0_old(1,i,comp) &
+                - (dt/dr(1))/base_cc_loc(1,i)**2* &
+                (base_loedge_loc(1,i+1)**2 * edge(i+1) * w0(1,i+1) - &
+                 base_loedge_loc(1,i  )**2 * edge(i  ) * w0(1,i  ))
+        end do
+        
+        enddo
+
+
      ! update the temperature -- advect base does not do this
      do i = 0, nr_fine-1
 
@@ -264,6 +304,7 @@ subroutine varden()
 
      print *, 'new base pressure', p0(1,1)
      print *, 'new base density', s0(1,1,rho_comp)
+
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      ! compute the new timestep
