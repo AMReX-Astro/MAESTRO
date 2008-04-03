@@ -88,7 +88,7 @@ contains
          call multifab_fill_boundary(rhoh0_cart)
 
          ! fill non-periodic domain boundary ghost cells
-         call multifab_physbc( rho0_cart,1,dm+rhoh_comp,1,the_bc_level(n))
+         call multifab_physbc( rho0_cart,1,dm+rho_comp ,1,the_bc_level(n))
          call multifab_physbc(rhoh0_cart,1,dm+rhoh_comp,1,the_bc_level(n))
 
       endif
