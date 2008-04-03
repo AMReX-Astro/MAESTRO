@@ -175,14 +175,6 @@ contains
     ng_s = sold(1)%ng
     halfdt = half*dt
 
-    ! Build etarhoflux here so that we can call correct_base before make_etarho.
-    umac_nodal_flag = .false.
-    umac_nodal_flag(dm) = .true.
-    do n=1,nlevs
-       call multifab_build(etarhoflux(n), mla%la(n), 1, nodal = umac_nodal_flag)
-       call setval(etarhoflux(n),ZERO,all=.true.)
-    end do
-
     ! tempbar is only used as an initial guess for eos calls
     call average(mla,sold,tempbar,dx,temp_comp,1,1)
 
@@ -412,6 +404,14 @@ contains
        call multifab_build(s2(n), mla%la(n), nscal, ng_s)
     end do
 
+    ! Build etarhoflux here so that we can call correct_base before make_etarho.
+    umac_nodal_flag = .false.
+    umac_nodal_flag(dm) = .true.
+    do n=1,nlevs
+       call multifab_build(etarhoflux(n), mla%la(n), 1, nodal = umac_nodal_flag)
+       call setval(etarhoflux(n),ZERO,all=.true.)
+    end do
+
     call scalar_advance(nlevs,mla,1,uold,s1,s2,thermal, &
                         umac,w0,w0_cart_vec,etarhoflux,utrans,normal, &
                         s0_1,s0_2,p0_old,p0_new,tempbar,psi,rho0_predicted_edge, &
@@ -420,7 +420,7 @@ contains
     ! Correct the base state using the lagged etarho and psi
     if (use_etarho .and. evolve_base_state) then
        ! s0_1 is only passed in to compute anelastic cutoff
-       call correct_base(nlevs,s0_1,s0_2,etarho,dx(:,dm),dt)
+       call correct_base(nlevs,s0_1(:,:,rho_comp),s0_2(:,:,rho_comp),etarho,dx(:,dm),dt)
     end if
 
     ! Now compute the new etarho and psi
@@ -745,7 +745,7 @@ contains
        ! Correct the base state using the lagged etarho and psi
        if (use_etarho .and. evolve_base_state) then
           ! s0_1 is only passed in to compute anelastic cutoff
-          call correct_base(nlevs,s0_1,s0_2,etarho,dx(:,dm),dt)
+          call correct_base(nlevs,s0_1(:,:,rho_comp),s0_2(:,:,rho_comp),etarho,dx(:,dm),dt)
        end if
 
        ! Now compute the new etarho and psi
