@@ -11,13 +11,13 @@ module base_io_module
 contains
 
   subroutine write_base_state(nlevs,state_name,w0_name,etarho_name,chk_name, &
-                              s0,p0,gamma1bar,w0,etarho,div_coeff,psi,problo)
+                              rho0,rhoh0,p0,gamma1bar,w0,etarho,div_coeff,psi,problo)
     
     use parallel
     use bl_prof_module
     use geometry, only : dr, nr
     use network, only: nspec
-    use variables, only: rho_comp, spec_comp, rhoh_comp
+    use variables, only: rho_comp, rhoh_comp
     use bl_constants_module
 
     integer          , intent(in) :: nlevs
@@ -25,7 +25,8 @@ contains
     character(len=8) , intent(in) :: w0_name
     character(len=9) , intent(in) :: etarho_name
     character(len=8) , intent(in) :: chk_name
-    real(kind=dp_t)  , intent(in) :: s0(:,:,:),p0(:,:),gamma1bar(:,:)
+    real(kind=dp_t)  , intent(in) :: rho0(:,:),rhoh0(:,:)
+    real(kind=dp_t)  , intent(in) :: p0(:,:),gamma1bar(:,:)
     real(kind=dp_t)  , intent(in) :: div_coeff(:,:), psi(:,:)
     real(kind=dp_t)  , intent(in) :: w0(:,:),etarho(:,:)
 
@@ -51,9 +52,8 @@ contains
        do n=1,nlevs
           do i=1,nr(n)
              base_r = problo + (dble(i)-HALF) * dr(n)
-             write(99,1000)  base_r,s0(n,i,rho_comp), p0(n,i), gamma1bar(n,i), &
-                  s0(n,i,rhoh_comp), (s0(n,i,comp), comp=spec_comp,spec_comp+nspec-1), &
-                  div_coeff(n,i), psi(n,i)
+             write(99,1000)  base_r, rho0(n,i), p0(n,i), gamma1bar(n,i), &
+                  rhoh0(n,i), div_coeff(n,i), psi(n,i)
           end do
        end do
        close(99)
@@ -96,11 +96,11 @@ contains
 
 
   subroutine read_base_state(nlevs,state_name,w0_name,etarho_name,chk_name, &
-                             s0,p0,gamma1bar,w0,etarho,div_coeff,psi)
+                             rho0,rhoh0,p0,gamma1bar,w0,etarho,div_coeff,psi)
 
     use parallel
     use bl_prof_module
-    use variables, only: rho_comp, rhoh_comp, spec_comp
+    use variables, only: rho_comp, rhoh_comp
     use network, only: nspec
     use geometry, only : dr, nr
     use bl_constants_module
@@ -112,7 +112,8 @@ contains
     character(len=8) , intent(in   ) :: w0_name
     character(len=9) , intent(in   ) :: etarho_name
     character(len=8) , intent(in   ) :: chk_name    
-    real(kind=dp_t)  , intent(inout) :: s0(:,:,:),p0(:,:),gamma1bar(:,:)
+    real(kind=dp_t)  , intent(inout) :: rho0(:,:),rhoh0(:,:)
+    real(kind=dp_t)  , intent(inout) :: p0(:,:),gamma1bar(:,:)
     real(kind=dp_t)  , intent(inout) :: div_coeff(:,:), psi(:,:)
     real(kind=dp_t)  , intent(inout) :: w0(:,:),etarho(:,:)
     real(kind=dp_t)  , allocatable   :: base_r(:,:)
@@ -141,9 +142,8 @@ contains
 
     do n=1,nlevs
        do i=1,nr(n)
-          read(99,*)  base_r(n,i), s0(n,i,rho_comp), p0(n,i), gamma1bar(n,i), &
-               s0(n,i,rhoh_comp), (s0(n,i,comp), comp=spec_comp,spec_comp+nspec-1), &
-               div_coeff(n,i), psi(n,i)
+          read(99,*)  base_r(n,i), rho0(n,i), p0(n,i), gamma1bar(n,i), &
+               rhoh0(n,i), div_coeff(n,i), psi(n,i)
        end do
     end do
     close(99)
