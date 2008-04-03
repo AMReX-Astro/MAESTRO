@@ -12,7 +12,7 @@ module react_base_module
   
 contains
   
-  subroutine react_base(nlevs,p0_in,s0_in,rho_omegadotbar,rho_Hextbar,dt_in,p0_out, &
+  subroutine react_base(nlevs,s0_in,rho_omegadotbar,rho_Hextbar,dt_in, &
                         s0_out,gamma1bar_out)
 
     use geometry, only: nr
@@ -21,11 +21,11 @@ contains
     use bl_prof_module
      
     integer        , intent(in   ) :: nlevs
-    real(kind=dp_t), intent(in   ) :: p0_in(:,0:), s0_in(:,0:,:)
+    real(kind=dp_t), intent(in   ) :: s0_in(:,0:,:)
     real(kind=dp_t), intent(in   ) :: rho_omegadotbar(:,0:,:)
     real(kind=dp_t), intent(in   ) :: rho_Hextbar(:,0:)
     real(kind=dp_t), intent(in   ) :: dt_in
-    real(kind=dp_t), intent(  out) :: p0_out(:,0:), s0_out(:,0:,:)
+    real(kind=dp_t), intent(  out) :: s0_out(:,0:,:)
     real(kind=dp_t), intent(inout) :: gamma1bar_out(:,0:)
     
     integer :: n,r,comp
@@ -37,9 +37,6 @@ contains
     do n=1,nlevs
 
        do r = 0,nr(n)-1
-          
-          ! p_out = p_in
-          p0_out(n,r) = p0_in(n,r)
           
           ! rho_out = rho_in
           s0_out(n,r,rho_comp) = s0_in(n,r,rho_comp)

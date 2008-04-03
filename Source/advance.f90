@@ -123,8 +123,6 @@ contains
     real(dp_t), allocatable :: rho_Hextbar(:,:,:)
     real(dp_t), allocatable :: s0_1(:,:,:)
     real(dp_t), allocatable :: s0_2(:,:,:)
-    real(dp_t), allocatable :: p0_1(:,:)
-    real(dp_t), allocatable :: p0_2(:,:)
     real(dp_t), allocatable :: rho0_predicted_edge(:,:)
     real(dp_t), allocatable :: gamma1bar_old(:,:,:)
     real(dp_t), allocatable :: delta_gamma1_termbar(:,:,:)
@@ -153,8 +151,6 @@ contains
     allocate(         rho_Hextbar(nlevs,0:nr(nlevs)-1,1))
     allocate(                s0_1(nlevs,0:nr(nlevs)-1,nscal))
     allocate(                s0_2(nlevs,0:nr(nlevs)-1,nscal))
-    allocate(                p0_1(nlevs,0:nr(nlevs)-1))
-    allocate(                p0_2(nlevs,0:nr(nlevs)-1))
     allocate( rho0_predicted_edge(nlevs,0:nr(nlevs)  ))
     allocate(       gamma1bar_old(nlevs,0:nr(nlevs)-1,1))    
     allocate(delta_gamma1_termbar(nlevs,0:nr(nlevs)-1,1))
@@ -162,8 +158,6 @@ contains
     ! Set these to zero to be safe
     s0_1(:,:,:) = ZERO
     s0_2(:,:,:) = ZERO
-    p0_1(:,:)   = ZERO
-    p0_2(:,:)   = ZERO
     rho0_predicted_edge(:,:) = ZERO
     delta_gamma1_termbar(:,:,:) = ZERO
 
@@ -323,10 +317,9 @@ contains
     if (evolve_base_state) then
        call average(mla,rho_omegadot1,rho_omegadotbar1,dx,1,1,nspec)
        call average(mla,rho_Hext,rho_Hextbar,dx,1,1,1)
-       call react_base(nlevs,p0_old,s0_old,rho_omegadotbar1,rho_Hextbar(:,:,1),halfdt, &
-                       p0_1,s0_1,gamma1bar(:,:,1))
+       call react_base(nlevs,s0_old,rho_omegadotbar1,rho_Hextbar(:,:,1),halfdt, &
+                       s0_1,gamma1bar(:,:,1))
     else
-       p0_1 = p0_old
        s0_1 = s0_old
     end if
 
@@ -335,7 +328,7 @@ contains
           call multifab_build(gamma1(n), mla%la(n), 1, 0)
        end do
        
-       call make_gamma(nlevs,gamma1,s1,p0_1,tempbar)
+       call make_gamma(nlevs,gamma1,s1,p0_old,tempbar)
        call average(mla,gamma1,gamma1bar,dx,1,1,1)
 
        do n=1,nlevs
@@ -349,7 +342,7 @@ contains
 
     do n=1,nlevs
        call make_grav_cell(n,grav_cell_new(n,:),s0_1(n,:,rho_comp))
-       call make_div_coeff(n,div_coeff_new(n,:),s0_1(n,:,rho_comp),p0_1(n,:), &
+       call make_div_coeff(n,div_coeff_new(n,:),s0_1(n,:,rho_comp),p0_old(n,:), &
                            gamma1bar(n,:,1),grav_cell_new(n,:))
     end do
     
@@ -364,10 +357,10 @@ contains
     end if
     
     if (evolve_base_state) then
-       call advect_base(1,nlevs,w0,Sbar,p0_1,p0_2,s0_1,s0_2,tempbar(:,:,1), &
+       call advect_base(1,nlevs,w0,Sbar,p0_old,p0_new,s0_1,s0_2,tempbar(:,:,1), &
                         gamma1bar(:,:,1),div_coeff_new,rho0_predicted_edge,psi,dx(:,dm),dt)
     else
-       p0_2 = p0_1
+       p0_new = p0_old
        s0_2 = s0_1
     end if
 
@@ -377,7 +370,7 @@ contains
     
     ! thermal is the forcing for rhoh or temperature
     if(use_thermal_diffusion) then
-       call make_explicit_thermal(mla,dx,thermal,s1,p0_1, &
+       call make_explicit_thermal(mla,dx,thermal,s1,p0_old, &
                                   the_bc_tower,temp_diffusion_formulation)
     else
        do n=1,nlevs
@@ -417,18 +410,19 @@ contains
 
     call scalar_advance(nlevs,mla,1,uold,s1,s2,thermal, &
                         umac,w0,w0_cart_vec,etarhoflux,utrans,normal, &
-                        s0_1,s0_2,p0_1,p0_2,tempbar,psi,rho0_predicted_edge, &
+                        s0_1,s0_2,p0_old,p0_new,tempbar,psi,rho0_predicted_edge, &
                         dx,dt,the_bc_tower%bc_tower_array)
 
     ! Correct the base state using the lagged etarho and psi
     if (use_etarho .and. evolve_base_state) then
+       ! s0_1 is only passed in to compute anelastic cutoff
        call correct_base(nlevs,s0_1,s0_2,etarho,dx(:,dm),dt)
     end if
 
     ! Now compute the new etarho and psi
     if (use_etarho .and. evolve_base_state) then
        call make_etarho(nlevs,etarho,etarhoflux,mla)
-       call make_psi(nlevs,etarho,psi,s0_1,w0,gamma1bar(:,:,1),p0_1,p0_2,Sbar(:,:,1))
+       call make_psi(nlevs,etarho,psi,s0_1,w0,gamma1bar(:,:,1),p0_old,p0_new,Sbar(:,:,1))
     end if
 
     do n=1,nlevs
@@ -454,10 +448,10 @@ contains
        end if
        
        if(do_half_alg) then
-          call thermal_conduct_half_alg(mla,dx,dt,s1,s2,p0_1,p0_2, &
+          call thermal_conduct_half_alg(mla,dx,dt,s1,s2,p0_old,p0_new, &
                                         tempbar(:,:,1),the_bc_tower)
        else
-          call thermal_conduct_full_alg(mla,dx,dt,s1,s1,s2,p0_1,p0_2, &
+          call thermal_conduct_full_alg(mla,dx,dt,s1,s1,s2,p0_old,p0_new, &
                                         tempbar(:,:,1),the_bc_tower)
           
           ! make a copy of s2star since these are needed to compute
@@ -498,10 +492,9 @@ contains
     if (evolve_base_state) then
        call average(mla,rho_omegadot2,rho_omegadotbar2,dx,1,1,nspec)
        call average(mla,rho_Hext,rho_Hextbar,dx,1,1,1)
-       call react_base(nlevs,p0_2,s0_2,rho_omegadotbar2,rho_Hextbar(:,:,1),halfdt, &
-                       p0_new,s0_new,gamma1bar(:,:,1))
+       call react_base(nlevs,s0_2,rho_omegadotbar2,rho_Hextbar(:,:,1),halfdt, &
+                       s0_new,gamma1bar(:,:,1))
     else
-       p0_new = p0_2
        s0_new = s0_2
     end if
 
@@ -565,6 +558,8 @@ contains
           call multifab_build(delta_gamma1(n), mla%la(n), 1, 0)
        end do
 
+       ! p0 is only used for the delta_gamma1_term
+       ! rho0 is only used for computing the anelastic cutoff
        call make_S(nlevs,Source_new,delta_gamma1_term,delta_gamma1,snew,uold,rho_omegadot2, &
                    rho_Hext,thermal,p0_old,s0_old(:,:,rho_comp),gamma1bar(:,:,1), &
                    delta_gamma1_termbar,psi,dx,mla)
@@ -688,11 +683,11 @@ contains
        end if
 
        if (evolve_base_state) then
-          call advect_base(2,nlevs,w0,Sbar,p0_1,p0_2,s0_1,s0_2,tempbar(:,:,1), &
+          call advect_base(2,nlevs,w0,Sbar,p0_old,p0_new,s0_1,s0_2,tempbar(:,:,1), &
                            gamma1bar(:,:,1),div_coeff_nph,rho0_predicted_edge, &
                            psi,dx(:,dm),dt)
        else
-          p0_2 = p0_1
+          p0_new = p0_old
           s0_2 = s0_1
        end if
               
@@ -702,7 +697,7 @@ contains
 
        ! thermal is the forcing for rhoh or temperature
        if(use_thermal_diffusion) then
-          call make_explicit_thermal(mla,dx,thermal,s1,p0_1, &
+          call make_explicit_thermal(mla,dx,thermal,s1,p0_old, &
                                      the_bc_tower,temp_diffusion_formulation)
        else
           do n=1,nlevs
@@ -738,18 +733,19 @@ contains
 
        call scalar_advance(nlevs,mla,2,uold,s1,s2,thermal, &
                            umac,w0,w0_cart_vec,etarhoflux,utrans,normal, &
-                           s0_1,s0_2,p0_1,p0_2,tempbar,psi,rho0_predicted_edge, &
+                           s0_1,s0_2,p0_old,p0_new,tempbar,psi,rho0_predicted_edge, &
                            dx,dt,the_bc_tower%bc_tower_array)
 
        ! Correct the base state using the lagged etarho and psi
        if (use_etarho .and. evolve_base_state) then
+          ! s0_1 is only passed in to compute anelastic cutoff
           call correct_base(nlevs,s0_1,s0_2,etarho,dx(:,dm),dt)
        end if
 
        ! Now compute the new etarho and psi
        if (use_etarho .and. evolve_base_state) then
           call make_etarho(nlevs,etarho,etarhoflux,mla)
-          call make_psi(nlevs,etarho,psi,s0_1,w0,gamma1bar(:,:,1),p0_1,p0_2,Sbar(:,:,1))
+          call make_psi(nlevs,etarho,psi,s0_1,w0,gamma1bar(:,:,1),p0_old,p0_new,Sbar(:,:,1))
        end if
 
        do n=1,nlevs
@@ -766,7 +762,7 @@ contains
              write(6,*) '<<< STEP  8a: thermal conduct >>>'
           end if
           
-          call thermal_conduct_full_alg(mla,dx,dt,s1,s2star,s2,p0_1,p0_2, &
+          call thermal_conduct_full_alg(mla,dx,dt,s1,s2star,s2,p0_old,p0_new, &
                                         tempbar(:,:,1),the_bc_tower)
 
           do n=1,nlevs
@@ -801,10 +797,9 @@ contains
        if (evolve_base_state) then
           call average(mla,rho_omegadot2,rho_omegadotbar2,dx,1,1,nspec)
           call average(mla,rho_Hext,rho_Hextbar,dx,1,1,1)
-          call react_base(nlevs,p0_2,s0_2,rho_omegadotbar2,rho_Hextbar(:,:,1),halfdt, &
-                          p0_new,s0_new,gamma1bar(:,:,1))
+          call react_base(nlevs,s0_2,rho_omegadotbar2,rho_Hextbar(:,:,1),halfdt, &
+                          s0_new,gamma1bar(:,:,1))
        else
-          p0_new = p0_2
           s0_new = s0_2
        end if
 
@@ -856,6 +851,8 @@ contains
        call multifab_build(delta_gamma1(n), mla%la(n), 1, 0)
     end do
 
+    ! p0 is only used for the delta_gamma1_term
+    ! rho0 is only used for computing the anelastic cutoff
     call make_S(nlevs,Source_new,delta_gamma1_term,delta_gamma1,snew,uold,rho_omegadot2, &
                 rho_Hext,thermal,p0_new,s0_new(:,:,rho_comp),gamma1bar(:,:,1), &
                 delta_gamma1_termbar,psi,dx,mla)
