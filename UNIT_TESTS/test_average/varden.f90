@@ -49,7 +49,6 @@ subroutine varden()
   type(multifab), allocatable ::       sold(:)
   type(multifab), allocatable ::       snew(:)
   type(multifab), allocatable ::     normal(:)
-  type(multifab), allocatable ::     gamma1(:)
 
   real(kind=dp_t), pointer :: uop(:,:,:,:)
   real(kind=dp_t), pointer :: sop(:,:,:,:)
@@ -69,18 +68,14 @@ subroutine varden()
   type(box)       :: fine_domain
   type(ml_boxarray) :: mba
 
-  real(dp_t), allocatable :: gam1(:,:)
   real(dp_t), allocatable :: s0_old(:,:,:)
   real(dp_t), allocatable :: s0_avg(:,:,:)
   real(dp_t), allocatable :: p0_old(:,:)
   real(dp_t), allocatable :: w0(:,:)
-  real(dp_t), allocatable :: tempbar(:,:,:)
-
 
   type(bc_tower) ::  the_bc_tower
 
   type(bc_level) ::  bc
-
 
   ng_cell = 3
 
@@ -88,16 +83,14 @@ subroutine varden()
 
   call init_spherical(spherical_in)
 
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Initialize the arrays and read the restart data if restart >= 0
+  ! Initialize the arrays and read the restart data if restart >= 0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   call read_a_hgproj_grid(mba, test_set)
 
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Initialize the variable index pointers and the reaction network
+  ! Initialize the variable index pointers and the reaction network
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   dm = get_dim(mba)
@@ -107,14 +100,14 @@ subroutine varden()
   call eos_init(use_eos_coulomb=use_eos_coulomb)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! allocate storage for the state
+  ! allocate storage for the state
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   allocate(prob_lo(dm), prob_hi(dm), pmask(dm))
   pmask = pmask_xyz(1:dm)
 
   if ( parallel_IOProcessor() ) &
-    print *, 'pmask = ', pmask
+       print *, 'pmask = ', pmask
 
   nlevs = mba%nlevel
   call ml_layout_build(mla,mba,pmask)
@@ -131,7 +124,7 @@ subroutine varden()
   end do
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! define the grid spacing on all levels
+  ! define the grid spacing on all levels
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   allocate(dx(nlevs,dm))
@@ -144,58 +137,54 @@ subroutine varden()
   if (dm > 2) prob_hi(3) = prob_hi_z
 
   do i = 1, dm
-    dx(1,i) = (prob_hi(i)-prob_lo(i)) / real(extent(mba%pd(1),i),kind=dp_t)
+     dx(1,i) = (prob_hi(i)-prob_lo(i)) / real(extent(mba%pd(1),i),kind=dp_t)
   end do
   do n = 2,nlevs
-    dx(n,:) = dx(n-1,:) / mba%rr(n-1,:)
+     dx(n,:) = dx(n-1,:) / mba%rr(n-1,:)
   end do
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! allocate storage for the base state
+  ! allocate storage for the base state
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   if (spherical .eq. 1) then
-    if (dr_base .gt. 0) then
-      lenx = HALF * (prob_hi_x - prob_lo_x)
-      leny = HALF * (prob_hi_y - prob_lo_y)
-      lenz = HALF * (prob_hi_z - prob_lo_z)
-      max_dist = sqrt(lenx**2 + leny**2 + lenz**2)
-      nr_fine = int(max_dist / dr_base) + 1
-      if ( parallel_IOProcessor() ) then
-         print *,'DISTANCE FROM CENTER TO CORNER IS ',max_dist
-         print *,'DR_BASE IS ',dr_base
-         print *,'SETTING NR_FINE TO ',nr_fine
-      end if
-    else
-     if ( parallel_IOProcessor() ) &
-       print *,'NEED TO DEFINE DR_BASE '
-      stop
-    endif
+     if (dr_base .gt. 0) then
+        lenx = HALF * (prob_hi_x - prob_lo_x)
+        leny = HALF * (prob_hi_y - prob_lo_y)
+        lenz = HALF * (prob_hi_z - prob_lo_z)
+        max_dist = sqrt(lenx**2 + leny**2 + lenz**2)
+        nr_fine = int(max_dist / dr_base) + 1
+        if ( parallel_IOProcessor() ) then
+           print *,'DISTANCE FROM CENTER TO CORNER IS ',max_dist
+           print *,'DR_BASE IS ',dr_base
+           print *,'SETTING NR_FINE TO ',nr_fine
+        end if
+     else
+        if ( parallel_IOProcessor() ) &
+             print *,'NEED TO DEFINE DR_BASE '
+        stop
+     endif
   else
-    ! NOTE: WE ASSUME DR_BASE IS THE RESOLUTION OF THE FINEST LEVEL IN PLANE-PARALLEL!
-    nr_fine = extent(mba%pd(nlevs),dm)
-    dr_base = (prob_hi(dm)-prob_lo(dm)) / dble(nr_fine)
+     ! NOTE: WE ASSUME DR_BASE IS THE RESOLUTION OF THE FINEST LEVEL IN PLANE-PARALLEL!
+     nr_fine = extent(mba%pd(nlevs),dm)
+     dr_base = (prob_hi(dm)-prob_lo(dm)) / dble(nr_fine)
   end if
 
-
-  allocate(   gam1(nlevs,0:nr_fine-1))
   allocate( s0_old(nlevs,0:nr_fine-1,nscal))
   allocate( s0_avg(nlevs,0:nr_fine-1,nscal))
   allocate( p0_old(nlevs,0:nr_fine-1))
   allocate(     w0(nlevs,0:nr_fine  ))
-  allocate(tempbar(nlevs,0:nr_fine-1,1))
 
   s0_old(:,:,:) = ZERO
   s0_avg(:,:,:) = ZERO
   w0(:,:) = ZERO
-  tempbar(:,:,:) = ZERO
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Initialize all remaining arrays
+  ! Initialize all remaining arrays
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   allocate(unew(nlevs),snew(nlevs))
-  allocate(normal(nlevs),gamma1(nlevs))
+  allocate(normal(nlevs))
 
   do n = nlevs,1,-1
      call multifab_build(   unew(n), mla%la(n),    dm, ng_cell)
@@ -209,7 +198,7 @@ subroutine varden()
   la = mla%la(1)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Allocate the arrays for the boundary conditions at the physical boundaries.
+  ! Allocate the arrays for the boundary conditions at the physical boundaries.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   allocate(domain_phys_bc(dm,2))
@@ -219,7 +208,7 @@ subroutine varden()
      domain_boxes(n) = layout_get_pd(mla%la(n))
   end do
 
-! Put the bc values from the inputs file into domain_phys_bc
+  ! Put the bc values from the inputs file into domain_phys_bc
   domain_phys_bc(1,1) = bcx_lo
   domain_phys_bc(1,2) = bcx_hi
   if (dm > 1) then
@@ -235,7 +224,7 @@ subroutine varden()
      if ( pmask(i) ) domain_phys_bc(i,:) = BC_PER
   end do
 
-! Build the arrays for each grid from the domain_bc arrays.
+  ! Build the arrays for each grid from the domain_bc arrays.
   call bc_tower_build(the_bc_tower,mla,domain_phys_bc,domain_boxes,nspec)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -248,48 +237,30 @@ subroutine varden()
 
   ! Initialize base state at finest level
   do n=1,nlevs
-     call init_base_state(n,model_file,s0_old(n,:,:),p0_old(n,:),gam1(n,:), dx(n,:))
+     call init_base_state(n,model_file,s0_old(n,:,:),p0_old(n,:),dx(n,:))
   enddo
 
   ! Create the normal array once we have defined "center"
   if (spherical .eq. 1) then
-    do n = 1,nlevs
-       do i = 1, normal(n)%nboxes
-         if ( multifab_remote(normal(n), i) ) cycle
-         nrp => dataptr(normal(n), i)
-          lo =  lwb(get_box(normal(n), i))
-          hi =  upb(get_box(normal(n), i))
-         call make_3d_normal(nrp(:,:,:,:),lo,hi,dx(n,:),1)
+     do n = 1,nlevs
+        do i = 1, normal(n)%nboxes
+           if ( multifab_remote(normal(n), i) ) cycle
+           nrp => dataptr(normal(n), i)
+           lo =  lwb(get_box(normal(n), i))
+           hi =  upb(get_box(normal(n), i))
+           call make_3d_normal(nrp(:,:,:,:),lo,hi,dx(n,:),1)
         end do
-    end do
+     end do
   end if
-
 
   call initveldata(nlevs,uold,s0_old,p0_old,dx,the_bc_tower%bc_tower_array,mla)
   call initscalardata(nlevs,sold,s0_old,p0_old,dx,the_bc_tower%bc_tower_array,mla)
 
-  do n=1,nlevs
-     call multifab_build(gamma1(n), mla%la(n), 1, 0)
-  end do
-  
-  ! tempbar is only used as an initial guess for eos calls
-  call average(mla,sold,tempbar,dx,temp_comp,1,1)
-  
-  call make_gamma(nlevs,gamma1,sold,p0_old,tempbar)
-  call average(mla,gamma1,gamma1bar,dx,1,1,1)
-  
-  do n=1,nlevs
-     call destroy(gamma1(n))
-  end do
-
   do n = 1,nlevs
-
-!    This is done to impose any Dirichlet bc's on unew or snew.
+     ! This is done to impose any Dirichlet bc's on unew or snew.
      call multifab_copy_c(unew(n),1,uold(n),1,dm   ,ng=unew(n)%ng)
      call multifab_copy_c(snew(n),1,sold(n),1,nscal,ng=snew(n)%ng)
-
   end do
-
 
   ! now that we are initialized, try averaging the state to 1-d
   ! and compare to the base state
@@ -324,7 +295,7 @@ subroutine varden()
   call destroy(mba)
 
   deallocate(uold,unew,sold,snew)
-  deallocate(gam1,s0_old,s0_avg,p0_old,w0)
+  deallocate(s0_old,s0_avg,p0_old,w0)
 
   deallocate(lo,hi)
 

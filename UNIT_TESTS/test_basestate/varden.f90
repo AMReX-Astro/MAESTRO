@@ -129,7 +129,7 @@ subroutine varden()
   allocate(            Sbar_in(nlevs,0:nr_fine-1,1))
   allocate(rho0_predicted_edge(nlevs,0:nr_fine))
 
-
+  gam1(:,:) = ZERO
   w0(:,:) = ZERO
   psi(:,:) = ZERO
 
@@ -140,7 +140,7 @@ subroutine varden()
   call init_geometry(center,nr_fine,dr_base)
 
   do n = 1,nlevs
-     call init_base_state(n,model_file,s0(n,:,:),p0(n,:),gam1(n,:),dx(n,:))
+     call init_base_state(n,model_file,s0(n,:,:),p0(n,:),dx(n,:))
   enddo
 
 
@@ -221,9 +221,6 @@ subroutine varden()
         call make_div_coeff(n,div_coeff(n,:),s0(n,:,rho_comp),p0(n,:), &
                             gam1(n,:),grav_cell(n,:))     
      enddo
-
-
-
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      ! compute the new base state
