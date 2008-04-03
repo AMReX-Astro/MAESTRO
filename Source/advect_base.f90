@@ -61,7 +61,7 @@ contains
     use bl_constants_module
     use make_edge_state_module
     use eos_module
-    use variables, only: spec_comp, rho_comp, rhoh_comp
+    use variables, only: rho_comp, rhoh_comp
     use geometry, only: nr
     use probin_module, only: grav_const, anelastic_cutoff, enthalpy_pred_type
     use pred_parameters
@@ -127,12 +127,6 @@ contains
     end do
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Update (rho X)_0
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-    s0_new(:,spec_comp:spec_comp+nspec-1) = s0_old(:,spec_comp:spec_comp+nspec-1)    
-       
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Update (rho h)_0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -181,7 +175,7 @@ contains
     use bl_constants_module
     use make_edge_state_module
     use eos_module
-    use variables, only: spec_comp, rho_comp, rhoh_comp
+    use variables, only: rho_comp, rhoh_comp
     use geometry, only: nr, base_cc_loc, base_loedge_loc, dr, nr
     use make_grav_module
     use cell_to_edge_module
@@ -238,46 +232,14 @@ contains
     call make_edge_state_1d(n,s0_old(:,rho_comp),edge,vel,force,1,dr(n),dt)
     
     rho0_predicted_edge(:) = edge(:)
-    
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! UPDATE RHOX0
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    do comp = spec_comp,spec_comp+nspec-1
-       
-       ! here we predict X_0 on the edges
-       X0(:) = s0_old(:,comp)/s0_old(:,rho_comp)
-       do r = 0,nr(n)-1
-          X0(r) = max(X0(r),ZERO)
-       end do
-       
-       force = ZERO
-       
-       call make_edge_state_1d(n,X0,edge,vel,force,1,dr(n),dt)
-       
-       ! our final update needs (rho X)_0 on the edges, so compute
-       ! that now
-       edge(:) = rho0_predicted_edge(:)*edge(:)
-       
-       ! update (rho X)_0
-       do r = 0,nr(n)-1
-          s0_new(r,comp) = s0_old(r,comp) &
-               - dtdr/base_cc_loc(n,r)**2*(base_loedge_loc(n,r+1)**2*edge(r+1)*vel(r+1) &
-               - base_loedge_loc(n,r  )**2 * edge(r  ) * vel(r  ))
-       end do
-       
-    enddo
-    
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! UPDATE RHO0 FROM RHOX0
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    
+
+    ! update rho_0
     do r = 0,nr(n)-1
-       s0_new(r,rho_comp) =  s0_old(r,rho_comp)
-       do comp = spec_comp,spec_comp+nspec-1
-          s0_new(r,rho_comp) =  s0_new(r,rho_comp) + (s0_new(r,comp)-s0_old(r,comp))
-       end do
+       s0_new(r,rho_comp) = s0_old(r,rho_comp) &
+            - dtdr/base_cc_loc(n,r)**2*(base_loedge_loc(n,r+1)**2*edge(r+1)*vel(r+1) &
+            - base_loedge_loc(n,r  )**2 * edge(r  ) * vel(r  ))
     end do
-    
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! UPDATE P0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
