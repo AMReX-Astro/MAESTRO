@@ -21,7 +21,7 @@ contains
 ! Crank-Nicholson solve for enthalpy, taking into account only the
 ! enthalpy-diffusion terms in the temperature conduction term.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,tempbar, &
+subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p0_old,p0_new,tempbar, &
                                     the_bc_tower)
 
   use variables, only: foextrap_comp, rho_comp, spec_comp, rhoh_comp
@@ -39,14 +39,14 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,temp
   type(multifab) , intent(in   ) :: s1(:)
   type(multifab) , intent(in   ) :: s_for_new_coeff(:)
   type(multifab) , intent(inout) :: s2(:)
-  real(kind=dp_t), intent(in   ) :: p01(:,0:),p02(:,0:),tempbar(:,0:)
+  real(kind=dp_t), intent(in   ) :: p0_old(:,0:),p0_new(:,0:),tempbar(:,0:)
   type(bc_tower) , intent(in   ) :: the_bc_tower
 
   ! Local
   type(multifab) :: rhsalpha(mla%nlevel),lhsalpha(mla%nlevel)
   type(multifab) :: rhsbeta(mla%nlevel),lhsbeta(mla%nlevel)
   type(multifab) :: phi(mla%nlevel),Lphi(mla%nlevel),rhs(mla%nlevel)
-  type(multifab) :: p01fab(mla%nlevel),p02fab(mla%nlevel)
+  type(multifab) :: p0_oldfab(mla%nlevel),p0_newfab(mla%nlevel)
   type(multifab) :: hcoeff1(mla%nlevel),hcoeff2(mla%nlevel)
   type(multifab) :: Xkcoeff1(mla%nlevel),Xkcoeff2(mla%nlevel)
   type(multifab) :: pcoeff1(mla%nlevel),pcoeff2(mla%nlevel)
@@ -54,7 +54,7 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,temp
   real(kind=dp_t), pointer    :: s1p(:,:,:,:)
   real(kind=dp_t), pointer    :: s_for_new_coeffp(:,:,:,:)
   real(kind=dp_t), pointer    :: rhsbetap(:,:,:,:),lhsbetap(:,:,:,:)
-  real(kind=dp_t), pointer    :: p01fabp(:,:,:,:),p02fabp(:,:,:,:)
+  real(kind=dp_t), pointer    :: p0_oldfabp(:,:,:,:),p0_newfabp(:,:,:,:)
   real(kind=dp_t), pointer    :: hcoeff1p(:,:,:,:),hcoeff2p(:,:,:,:)
   real(kind=dp_t), pointer    :: Xkcoeff1p(:,:,:,:),Xkcoeff2p(:,:,:,:)
   real(kind=dp_t), pointer    :: pcoeff1p(:,:,:,:),pcoeff2p(:,:,:,:)
@@ -297,7 +297,7 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,temp
   ! add pressure diffusion to rhs
   !!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  ! do p01 term first
+  ! do p0_old term first
   ! put beta on faces
   do n=1,nlevs
      do i=1,rhsbeta(n)%nboxes
@@ -320,21 +320,21 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,temp
   end do
 
   do n=1,nlevs
-     call multifab_build(p01fab(n), mla%la(n),  1, 1)
+     call multifab_build(p0_oldfab(n), mla%la(n),  1, 1)
   end do
 
-  ! create p01fab
+  ! create p0_oldfab
   do n=1,nlevs
-     do i=1,p01fab(n)%nboxes
-        if (multifab_remote(p01fab(n),i)) cycle
-        p01fabp => dataptr(p01fab(n),i)
-        lo = lwb(get_box(p01fab(n), i))
-        hi = upb(get_box(p01fab(n), i))
+     do i=1,p0_oldfab(n)%nboxes
+        if (multifab_remote(p0_oldfab(n),i)) cycle
+        p0_oldfabp => dataptr(p0_oldfab(n),i)
+        lo = lwb(get_box(p0_oldfab(n), i))
+        hi = upb(get_box(p0_oldfab(n), i))
         select case (dm)
         case (2)
-           call put_base_state_on_multifab_2d(lo,hi,p01(n,:),p01fabp(:,:,1,1))
+           call put_base_state_on_multifab_2d(lo,hi,p0_old(n,:),p0_oldfabp(:,:,1,1))
         case (3)
-           call put_base_state_on_multifab_3d(lo,hi,p01(n,:),p01fabp(:,:,:,1))
+           call put_base_state_on_multifab_3d(lo,hi,p0_old(n,:),p0_oldfabp(:,:,:,1))
         end select
      end do
   enddo
@@ -343,23 +343,23 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,temp
 
      ! fill ghost cells for two adjacent grids at the same level
      ! this includes periodic domain boundary ghost cells
-     call multifab_fill_boundary(p01fab(nlevs))
+     call multifab_fill_boundary(p0_oldfab(nlevs))
 
      ! fill non-periodic domain boundary ghost cells
-     call multifab_physbc(p01fab(nlevs),1,foextrap_comp,1,the_bc_tower%bc_tower_array(nlevs))
+     call multifab_physbc(p0_oldfab(nlevs),1,foextrap_comp,1,the_bc_tower%bc_tower_array(nlevs))
 
   else
 
      do n=nlevs,2,-1
 
         ! we shouldn't need a call to ml_cc_restriction here
-        ! as long as the coarse p01fab under fine cells is reasonably valued,
+        ! as long as the coarse p0_oldfab under fine cells is reasonably valued,
         ! the results of mac_applyop are identical
 
         ! fill level n ghost cells using interpolation from level n-1 data
         ! note that multifab_fill_boundary and multifab_physbc are called for
         ! both levels n-1 and n
-        call multifab_fill_ghost_cells(p01fab(n),p01fab(n-1),1,mla%mba%rr(n-1,:), &
+        call multifab_fill_ghost_cells(p0_oldfab(n),p0_oldfab(n-1),1,mla%mba%rr(n-1,:), &
                                        the_bc_tower%bc_tower_array(n-1), &
                                        the_bc_tower%bc_tower_array(n), &
                                        1,foextrap_comp,1)
@@ -367,13 +367,13 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,temp
 
   end if
 
-  ! load phi = p01
+  ! load phi = p0_old
   do n=1,nlevs
-     call multifab_copy_c(phi(n),1,p01fab(n),1,1,1)
+     call multifab_copy_c(phi(n),1,p0_oldfab(n),1,1,1)
   enddo
 
   do n=1,nlevs
-     call destroy(p01fab(n))
+     call destroy(p0_oldfab(n))
   end do
   
   ! apply the operator
@@ -387,7 +387,7 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,temp
      enddo
   end if
   
-  ! now do p02 term
+  ! now do p0_new term
   ! put beta on faces
   do n=1,nlevs
      do i=1,rhsbeta(n)%nboxes
@@ -410,21 +410,21 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,temp
   end do
   
   do n=1,nlevs
-     call multifab_build(p02fab(n), mla%la(n),  1, 1)
+     call multifab_build(p0_newfab(n), mla%la(n),  1, 1)
   end do
 
-  ! create p02fab
+  ! create p0_newfab
   do n=1,nlevs
-     do i=1,p02fab(n)%nboxes
-        if (multifab_remote(p02fab(n),i)) cycle
-        p02fabp => dataptr(p02fab(n),i)
-        lo = lwb(get_box(p02fab(n), i))
-        hi = upb(get_box(p02fab(n), i))
+     do i=1,p0_newfab(n)%nboxes
+        if (multifab_remote(p0_newfab(n),i)) cycle
+        p0_newfabp => dataptr(p0_newfab(n),i)
+        lo = lwb(get_box(p0_newfab(n), i))
+        hi = upb(get_box(p0_newfab(n), i))
         select case (dm)
         case (2)
-           call put_base_state_on_multifab_2d(lo,hi,p02(n,:),p02fabp(:,:,1,1))
+           call put_base_state_on_multifab_2d(lo,hi,p0_new(n,:),p0_newfabp(:,:,1,1))
         case (3)
-           call put_base_state_on_multifab_3d(lo,hi,p02(n,:),p02fabp(:,:,:,1))
+           call put_base_state_on_multifab_3d(lo,hi,p0_new(n,:),p0_newfabp(:,:,:,1))
         end select
      end do
   enddo
@@ -433,23 +433,23 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,temp
 
      ! fill ghost cells for two adjacent grids at the same level
      ! this includes periodic domain boundary ghost cells
-     call multifab_fill_boundary(p02fab(nlevs))
+     call multifab_fill_boundary(p0_newfab(nlevs))
 
      ! fill non-periodic domain boundary ghost cells
-     call multifab_physbc(p02fab(nlevs),1,foextrap_comp,1,the_bc_tower%bc_tower_array(nlevs))
+     call multifab_physbc(p0_newfab(nlevs),1,foextrap_comp,1,the_bc_tower%bc_tower_array(nlevs))
 
   else
 
      do n=nlevs,2,-1
 
         ! we shouldn't need a call to ml_cc_restriction here
-        ! as long as the coarse p02fab under fine cells is reasonably valued,
+        ! as long as the coarse p0_newfab under fine cells is reasonably valued,
         ! the results of mac_applyop are identical
 
         ! fill level n ghost cells using interpolation from level n-1 data
         ! note that multifab_fill_boundary and multifab_physbc are called for
         ! both levels n-1 and n
-        call multifab_fill_ghost_cells(p02fab(n),p02fab(n-1),1,mla%mba%rr(n-1,:), &
+        call multifab_fill_ghost_cells(p0_newfab(n),p0_newfab(n-1),1,mla%mba%rr(n-1,:), &
                                        the_bc_tower%bc_tower_array(n-1), &
                                        the_bc_tower%bc_tower_array(n), &
                                        1,foextrap_comp,1)
@@ -457,13 +457,13 @@ subroutine thermal_conduct_full_alg(mla,dx,dt,s1,s_for_new_coeff,s2,p01,p02,temp
 
   end if
 
-  ! load phi = p02
+  ! load phi = p0_new
   do n=1,nlevs
-     call multifab_copy_c(phi(n),1,p02fab(n),1,1,1)
+     call multifab_copy_c(phi(n),1,p0_newfab(n),1,1,1)
   enddo
 
   do n=1,nlevs
-     call destroy(p02fab(n))
+     call destroy(p0_newfab(n))
   end do
   
   ! apply the operator
@@ -600,7 +600,7 @@ end subroutine thermal_conduct_full_alg
 ! Crank-Nicholson solve for enthalpy, taking into account only the
 ! enthalpy-diffusion terms in the temperature conduction term.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,tempbar,the_bc_tower)
+subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p0_old,p0_new,tempbar,the_bc_tower)
 
   use variables, only: foextrap_comp, rho_comp, spec_comp, rhoh_comp, temp_comp
   use macproject_module
@@ -615,21 +615,21 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,tempbar,the_bc_tower
   real(dp_t)     , intent(in   ) :: dx(:,:),dt
   type(multifab) , intent(in   ) :: s1(:)
   type(multifab) , intent(inout) :: s2(:)
-  real(kind=dp_t), intent(in   ) :: p01(:,0:),p02(:,0:),tempbar(:,0:)
+  real(kind=dp_t), intent(in   ) :: p0_old(:,0:),p0_new(:,0:),tempbar(:,0:)
   type(bc_tower) , intent(in   ) :: the_bc_tower
 
   ! Local
   type(multifab) :: rhsalpha(mla%nlevel),lhsalpha(mla%nlevel)
   type(multifab) :: rhsbeta(mla%nlevel),lhsbeta(mla%nlevel)
   type(multifab) :: phi(mla%nlevel),phitemp(mla%nlevel),Lphi(mla%nlevel),rhs(mla%nlevel)
-  type(multifab) :: p01fab(mla%nlevel),p02fab(mla%nlevel)
+  type(multifab) :: p0_oldfab(mla%nlevel),p0_newfab(mla%nlevel)
   type(multifab) :: hcoeff1(mla%nlevel),hcoeff2(mla%nlevel)
   type(multifab) :: Xkcoeff1(mla%nlevel),Xkcoeff2(mla%nlevel)
   type(multifab) :: pcoeff1(mla%nlevel),pcoeff2(mla%nlevel)
 
   real(kind=dp_t), pointer    :: s1p(:,:,:,:),s2p(:,:,:,:)
   real(kind=dp_t), pointer    :: rhsbetap(:,:,:,:),lhsbetap(:,:,:,:)
-  real(kind=dp_t), pointer    :: p01fabp(:,:,:,:),p02fabp(:,:,:,:)
+  real(kind=dp_t), pointer    :: p0_oldfabp(:,:,:,:),p0_newfabp(:,:,:,:)
   real(kind=dp_t), pointer    :: hcoeff1p(:,:,:,:),hcoeff2p(:,:,:,:)
   real(kind=dp_t), pointer    :: Xkcoeff1p(:,:,:,:),Xkcoeff2p(:,:,:,:)
   real(kind=dp_t), pointer    :: pcoeff1p(:,:,:,:),pcoeff2p(:,:,:,:)
@@ -813,21 +813,21 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,tempbar,the_bc_tower
   enddo
 
   do n=1,nlevs
-     call multifab_build(p01fab(n), mla%la(n),  1, 1)
+     call multifab_build(p0_oldfab(n), mla%la(n),  1, 1)
   end do
 
-  ! create p01fab
+  ! create p0_oldfab
   do n=1,nlevs
-     do i=1,p01fab(n)%nboxes
-        if (multifab_remote(p01fab(n),i)) cycle
-        p01fabp => dataptr(p01fab(n),i)
-        lo = lwb(get_box(p01fab(n), i))
-        hi = upb(get_box(p01fab(n), i))
+     do i=1,p0_oldfab(n)%nboxes
+        if (multifab_remote(p0_oldfab(n),i)) cycle
+        p0_oldfabp => dataptr(p0_oldfab(n),i)
+        lo = lwb(get_box(p0_oldfab(n), i))
+        hi = upb(get_box(p0_oldfab(n), i))
         select case (dm)
         case (2)
-           call put_base_state_on_multifab_2d(lo,hi,p01(n,:),p01fabp(:,:,1,1))
+           call put_base_state_on_multifab_2d(lo,hi,p0_old(n,:),p0_oldfabp(:,:,1,1))
         case (3)
-           call put_base_state_on_multifab_3d(lo,hi,p01(n,:),p01fabp(:,:,:,1))
+           call put_base_state_on_multifab_3d(lo,hi,p0_old(n,:),p0_oldfabp(:,:,:,1))
         end select
      end do
   enddo
@@ -836,23 +836,23 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,tempbar,the_bc_tower
 
      ! fill ghost cells for two adjacent grids at the same level
      ! this includes periodic domain boundary ghost cells
-     call multifab_fill_boundary(p01fab(nlevs))
+     call multifab_fill_boundary(p0_oldfab(nlevs))
 
      ! fill non-periodic domain boundary ghost cells
-     call multifab_physbc(p01fab(nlevs),1,foextrap_comp,1,the_bc_tower%bc_tower_array(nlevs))
+     call multifab_physbc(p0_oldfab(nlevs),1,foextrap_comp,1,the_bc_tower%bc_tower_array(nlevs))
 
   else
 
      do n=nlevs,2,-1
 
         ! we shouldn't need a call to ml_cc_restriction here
-        ! as long as the coarse p01fab under fine cells is reasonably valued,
+        ! as long as the coarse p0_oldfab under fine cells is reasonably valued,
         ! the results of mac_applyop are identical
 
         ! fill level n ghost cells using interpolation from level n-1 data
         ! note that multifab_fill_boundary and multifab_physbc are called for
         ! both levels n-1 and n
-        call multifab_fill_ghost_cells(p01fab(n),p01fab(n-1),1,mla%mba%rr(n-1,:), &
+        call multifab_fill_ghost_cells(p0_oldfab(n),p0_oldfab(n-1),1,mla%mba%rr(n-1,:), &
                                        the_bc_tower%bc_tower_array(n-1), &
                                        the_bc_tower%bc_tower_array(n), &
                                        1,foextrap_comp,1)
@@ -861,21 +861,21 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,tempbar,the_bc_tower
   end if
 
   do n = 1,nlevs
-     call multifab_build(p02fab(n), mla%la(n),  1, 1)
+     call multifab_build(p0_newfab(n), mla%la(n),  1, 1)
   end do
 
-  ! create p02fab
+  ! create p0_newfab
   do n=1,nlevs
-     do i=1,p02fab(n)%nboxes
-        if (multifab_remote(p02fab(n),i)) cycle
-        p02fabp => dataptr(p02fab(n),i)
-        lo = lwb(get_box(p02fab(n), i))
-        hi = upb(get_box(p02fab(n), i))
+     do i=1,p0_newfab(n)%nboxes
+        if (multifab_remote(p0_newfab(n),i)) cycle
+        p0_newfabp => dataptr(p0_newfab(n),i)
+        lo = lwb(get_box(p0_newfab(n), i))
+        hi = upb(get_box(p0_newfab(n), i))
         select case (dm)
         case (2)
-           call put_base_state_on_multifab_2d(lo,hi,p02(n,:),p02fabp(:,:,1,1))
+           call put_base_state_on_multifab_2d(lo,hi,p0_new(n,:),p0_newfabp(:,:,1,1))
         case (3)
-           call put_base_state_on_multifab_3d(lo,hi,p02(n,:),p02fabp(:,:,:,1))
+           call put_base_state_on_multifab_3d(lo,hi,p0_new(n,:),p0_newfabp(:,:,:,1))
         end select
      end do
   enddo
@@ -884,23 +884,23 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,tempbar,the_bc_tower
 
      ! fill ghost cells for two adjacent grids at the same level
      ! this includes periodic domain boundary ghost cells
-     call multifab_fill_boundary(p02fab(nlevs))
+     call multifab_fill_boundary(p0_newfab(nlevs))
 
      ! fill non-periodic domain boundary ghost cells
-     call multifab_physbc(p02fab(nlevs),1,foextrap_comp,1,the_bc_tower%bc_tower_array(nlevs))
+     call multifab_physbc(p0_newfab(nlevs),1,foextrap_comp,1,the_bc_tower%bc_tower_array(nlevs))
 
   else
 
      do n=nlevs,2,-1
 
         ! we shouldn't need a call to ml_cc_restriction here
-        ! as long as the coarse p02fab under fine cells is reasonably valued,
+        ! as long as the coarse p0_newfab under fine cells is reasonably valued,
         ! the results of mac_applyop are identical
 
         ! fill level n ghost cells using interpolation from level n-1 data
         ! note that multifab_fill_boundary and multifab_physbc are called for
         ! both levels n-1 and n
-        call multifab_fill_ghost_cells(p02fab(n),p02fab(n-1),1,mla%mba%rr(n-1,:), &
+        call multifab_fill_ghost_cells(p0_newfab(n),p0_newfab(n-1),1,mla%mba%rr(n-1,:), &
                                        the_bc_tower%bc_tower_array(n-1), &
                                        the_bc_tower%bc_tower_array(n), &
                                        1,foextrap_comp,1)
@@ -908,10 +908,10 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,tempbar,the_bc_tower
 
   end if
   
-  ! load phi = p01 + p02
+  ! load phi = p0_old + p0_new
   do n=1,nlevs
-     call multifab_copy_c(phi(n),1,p01fab(n),1,1,1)
-     call multifab_plus_plus_c(phi(n),1,p02fab(n),1,1,1)
+     call multifab_copy_c(phi(n),1,p0_oldfab(n),1,1,1)
+     call multifab_plus_plus_c(phi(n),1,p0_newfab(n),1,1,1)
   enddo
   
   ! apply the operator
@@ -1184,7 +1184,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,tempbar,the_bc_tower
   ! add pressure diffusion to rhs
   !!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  ! do p01 term first
+  ! do p0_old term first
   ! put beta on faces
   do n=1,nlevs
      do i=1,rhsbeta(n)%nboxes
@@ -1206,13 +1206,13 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,tempbar,the_bc_tower
      call destroy(pcoeff1(n))
   end do
 
-  ! load phi = p01
+  ! load phi = p0_old
   do n=1,nlevs
-     call multifab_copy_c(phi(n),1,p01fab(n),1,1,1)
+     call multifab_copy_c(phi(n),1,p0_oldfab(n),1,1,1)
   enddo
 
   do n=1,nlevs
-     call destroy(p01fab(n))
+     call destroy(p0_oldfab(n))
   end do
   
   ! apply the operator
@@ -1224,7 +1224,7 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,tempbar,the_bc_tower
      call multifab_plus_plus_c(rhs(n),1,Lphi(n),1,1)
   enddo
   
-  ! now do p02 term
+  ! now do p0_new term
   ! put beta on faces
   do n=1,nlevs
      do i=1,rhsbeta(n)%nboxes
@@ -1248,11 +1248,11 @@ subroutine thermal_conduct_half_alg(mla,dx,dt,s1,s2,p01,p02,tempbar,the_bc_tower
   
   ! load phi = -02
   do n=1,nlevs
-     call multifab_copy_c(phi(n),1,p02fab(n),1,1,1)
+     call multifab_copy_c(phi(n),1,p0_newfab(n),1,1,1)
   enddo
 
   do n=1,nlevs
-     call destroy(p02fab(n))
+     call destroy(p0_newfab(n))
   end do
   
   ! apply the operator
