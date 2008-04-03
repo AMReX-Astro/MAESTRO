@@ -67,7 +67,7 @@ contains
     use eos_module
     use variables, only: rho_comp, rhoh_comp
     use geometry, only: nr
-    use probin_module, only: grav_const, anelastic_cutoff, enthalpy_pred_type
+    use probin_module, only: grav_const, enthalpy_pred_type
     use pred_parameters
 
     integer        , intent(in   ) :: which_step,n
