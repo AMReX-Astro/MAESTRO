@@ -17,15 +17,14 @@ module sponge_module
  
 contains
 
-  subroutine init_sponge (nlevs,s0,prob_hi,dx,prob_lo_r)
+  subroutine init_sponge (nlevs,rho0,prob_hi,dx,prob_lo_r)
 
     use geometry, only: nr, dr
-    use variables, only: rho_comp
     use bl_constants_module
     use probin_module, only: anelastic_cutoff
 
     integer        , intent(in   ) :: nlevs
-    real(kind=dp_t), intent(in   ) :: s0(0:,:),prob_lo_r
+    real(kind=dp_t), intent(in   ) :: rho0(0:),prob_lo_r
     real(kind=dp_t), intent(in   ) :: prob_hi(:),dx(:)
 
     real (kind = dp_t) :: r
@@ -37,7 +36,7 @@ contains
 
     do j = 0, nr(nlevs)-1
        r = prob_lo_r + (dble(j)+HALF) * dr(nlevs)
-       if (s0(j,rho_comp) < 10.d0*anelastic_cutoff) then
+       if (rho0(j) < 10.d0*anelastic_cutoff) then
           r_sp = r
           exit
        endif
@@ -46,7 +45,7 @@ contains
     r_md = r_top
     do j = 0,nr(nlevs)-1
        r = prob_lo_r + (dble(j)+HALF) * dr(nlevs)
-       if (s0(j,rho_comp) < anelastic_cutoff) then
+       if (rho0(j) < anelastic_cutoff) then
           r_md = r
           exit
        endif

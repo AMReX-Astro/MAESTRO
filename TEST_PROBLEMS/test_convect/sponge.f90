@@ -17,14 +17,10 @@ module sponge_module
 
 contains
 
-  subroutine init_sponge(nlevs,s0,prob_hi,dx,prob_lo_r)
-
-    use geometry, only: nr, dr
-    use variables, only: rho_comp
-    use bl_constants_module
+  subroutine init_sponge(nlevs,rho0,prob_hi,dx,prob_lo_r)
 
     integer        , intent(in   ) :: nlevs
-    real(kind=dp_t), intent(in   ) :: s0(0:,:),prob_lo_r
+    real(kind=dp_t), intent(in   ) :: rho0(0:),prob_lo_r
     real(kind=dp_t), intent(in   ) :: prob_hi(:),dx(:)
 
     real (kind = dp_t) :: r
