@@ -12,8 +12,7 @@ module react_base_module
   
 contains
   
-  subroutine react_base(nlevs,s0_in,rho_omegadotbar,rho_Hextbar,dt_in, &
-                        s0_out,gamma1bar_out)
+  subroutine react_base(nlevs,rhoh0_in,rho_omegadotbar,rho_Hextbar,halfdt_in,rhoh0_out)
 
     use geometry, only: nr
     use variables, only: rho_comp, spec_comp, rhoh_comp
@@ -21,12 +20,11 @@ contains
     use bl_prof_module
      
     integer        , intent(in   ) :: nlevs
-    real(kind=dp_t), intent(in   ) :: s0_in(:,0:,:)
+    real(kind=dp_t), intent(in   ) :: rhoh0_in(:,0:)
     real(kind=dp_t), intent(in   ) :: rho_omegadotbar(:,0:,:)
     real(kind=dp_t), intent(in   ) :: rho_Hextbar(:,0:)
-    real(kind=dp_t), intent(in   ) :: dt_in
-    real(kind=dp_t), intent(  out) :: s0_out(:,0:,:)
-    real(kind=dp_t), intent(inout) :: gamma1bar_out(:,0:)
+    real(kind=dp_t), intent(in   ) :: halfdt_in
+    real(kind=dp_t), intent(  out) :: rhoh0_out(:,0:)
     
     integer :: n,r,comp
 
@@ -38,16 +36,13 @@ contains
 
        do r = 0,nr(n)-1
           
-          ! rho_out = rho_in
-          s0_out(n,r,rho_comp) = s0_in(n,r,rho_comp)
-          
           ! update enthalpy
-          s0_out(n,r,rhoh_comp) = s0_in(n,r,rhoh_comp)
+          rhoh0_out(n,r) = rhoh0_in(n,r)
           do comp = spec_comp,spec_comp+nspec-1
-             s0_out(n,r,rhoh_comp) = s0_out(n,r,rhoh_comp) &
-                  -dt_in*rho_omegadotbar(n,r,comp-spec_comp+1)*ebin(comp-spec_comp+1)
+             rhoh0_out(n,r) = rhoh0_out(n,r) &
+                  -halfdt_in*rho_omegadotbar(n,r,comp-spec_comp+1)*ebin(comp-spec_comp+1)
           end do
-          s0_out(n,r,rhoh_comp) = s0_out(n,r,rhoh_comp) + dt_in * rho_Hextbar(n,r)
+          rhoh0_out(n,r) = rhoh0_out(n,r) + halfdt_in * rho_Hextbar(n,r)
 
        end do
        

@@ -44,7 +44,7 @@ contains
     use thermal_conduct_module
     use make_explicit_thermal_module
     use add_react_to_thermal_module
-    use variables, only: nscal, press_comp, temp_comp, rho_comp, foextrap_comp
+    use variables, only: nscal, press_comp, temp_comp, rho_comp, rhoh_comp, foextrap_comp
     use geometry, only: nr, spherical
     use network, only: nspec
     use make_grav_module
@@ -243,7 +243,8 @@ contains
     end do
     
     call advance_premac(nlevs,uold,sold,umac,utrans,gpres,normal,w0,w0_cart_vec, &
-                        s0_old,grav_cell_old,dx,dt,the_bc_tower%bc_tower_array,mla)
+                        s0_old(:,:,rho_comp),grav_cell_old,dx,dt, &
+                        the_bc_tower%bc_tower_array,mla)
 
     do n=1,nlevs
        call multifab_build(delta_gamma1_term(n), mla%la(n), 1, 0)
@@ -317,10 +318,10 @@ contains
     if (evolve_base_state) then
        call average(mla,rho_omegadot1,rho_omegadotbar1,dx,1,1,nspec)
        call average(mla,rho_Hext,rho_Hextbar,dx,1,1,1)
-       call react_base(nlevs,s0_old,rho_omegadotbar1,rho_Hextbar(:,:,1),halfdt, &
-                       s0_1,gamma1bar(:,:,1))
-    else
-       s0_1 = s0_old
+       call react_base(nlevs,s0_old(:,:,rhoh_comp),rho_omegadotbar1,rho_Hextbar(:,:,1), &
+                       halfdt,s0_1(:,:,rhoh_comp))
+
+       s0_1(:,:,rho_comp) = s0_old(:,:,rho_comp)
     end if
 
     if (evolve_base_state) then
@@ -492,10 +493,10 @@ contains
     if (evolve_base_state) then
        call average(mla,rho_omegadot2,rho_omegadotbar2,dx,1,1,nspec)
        call average(mla,rho_Hext,rho_Hextbar,dx,1,1,1)
-       call react_base(nlevs,s0_2,rho_omegadotbar2,rho_Hextbar(:,:,1),halfdt, &
-                       s0_new,gamma1bar(:,:,1))
-    else
-       s0_new = s0_2
+       call react_base(nlevs,s0_2(:,:,rhoh_comp),rho_omegadotbar2,rho_Hextbar(:,:,1), &
+                       halfdt,s0_new(:,:,rhoh_comp))
+
+       s0_new(:,:,rho_comp) = s0_2(:,:,rho_comp)
     end if
 
     if (evolve_base_state) then
@@ -621,7 +622,7 @@ contains
        end do
 
        call advance_premac(nlevs,uold,sold,umac,utrans,gpres,normal,w0, &
-                           w0_cart_vec,s0_old,grav_cell_old,dx,dt, &
+                           w0_cart_vec,s0_old(:,:,rho_comp),grav_cell_old,dx,dt, &
                            the_bc_tower%bc_tower_array,mla)
 
        do n=1,nlevs
@@ -797,10 +798,10 @@ contains
        if (evolve_base_state) then
           call average(mla,rho_omegadot2,rho_omegadotbar2,dx,1,1,nspec)
           call average(mla,rho_Hext,rho_Hextbar,dx,1,1,1)
-          call react_base(nlevs,s0_2,rho_omegadotbar2,rho_Hextbar(:,:,1),halfdt, &
-                          s0_new,gamma1bar(:,:,1))
-       else
-          s0_new = s0_2
+          call react_base(nlevs,s0_2(:,:,rhoh_comp),rho_omegadotbar2,rho_Hextbar(:,:,1), &
+                          halfdt,s0_new(:,:,rhoh_comp))
+
+          s0_new(:,:,rho_comp) = s0_2(:,:,rho_comp)
        end if
 
        if (evolve_base_state) then
