@@ -121,10 +121,9 @@ contains
     character(len=20) :: out_name
     integer :: i, comp, n
     integer :: ndum
+    parameter (ndum = 30)
     character(len=128) :: lamsolfile
     real(kind=dp_t) :: state1d(ndum),Pamb
-
-    parameter (ndum = 30)
 
     type(bl_prof_timer), save :: bpt
 
