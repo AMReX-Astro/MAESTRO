@@ -387,7 +387,7 @@ contains
                    
                    if ( (comp.ge.spec_comp).and.(comp.le.spec_comp+nspec-1) ) then
                       
-                      etarhoflux(i,j,k) = etarhoflux(i,j,k) + sfluxy(i,j,k,comp)
+                      etarhoflux(i,j,k) = etarhoflux(i,j,k) + sfluxz(i,j,k,comp)
                       
                       if ( comp.eq.spec_comp+nspec-1) then
                          etarhoflux(i,j,k) = &
