@@ -8,7 +8,7 @@ module initial_proj_module
 contains
 
   subroutine initial_proj(nlevs,uold,sold,pres,gpres,Source_old,hgrhs, &
-                          div_coeff_old,s0_old,p0_old,gamma1bar,dx,the_bc_tower,mla)
+                          div_coeff_old,rho0,p0,gamma1bar,dx,the_bc_tower,mla)
 
     use variables, only: press_comp, foextrap_comp, rho_comp
     use network, only: nspec
@@ -35,8 +35,8 @@ contains
     type(multifab) , intent(inout) :: Source_old(:)
     type(multifab) , intent(inout) :: hgrhs(:)
     real(kind=dp_t), intent(in   ) :: div_coeff_old(:,0:)
-    real(kind=dp_t), intent(in   ) :: s0_old(:,0:,:)
-    real(kind=dp_t), intent(in   ) :: p0_old(:,0:)
+    real(kind=dp_t), intent(in   ) :: rho0(:,0:)
+    real(kind=dp_t), intent(in   ) :: p0(:,0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     type(bc_tower) , intent(in   ) :: the_bc_tower
@@ -76,7 +76,7 @@ contains
     end do
     
     if(use_thermal_diffusion) then
-       call make_explicit_thermal(mla,dx,thermal,sold,p0_old, &
+       call make_explicit_thermal(mla,dx,thermal,sold,p0, &
                                   the_bc_tower,temp_diffusion_formulation)
     else
        do n=1,nlevs
@@ -95,7 +95,7 @@ contains
     end do
 
     call make_S(nlevs,Source_old,delta_gamma1_term,delta_gamma1,sold,uold,rho_omegadot1, &
-                rho_Hext,thermal,p0_old,s0_old(:,:,rho_comp),gamma1bar, &
+                rho_Hext,thermal,p0,rho0,gamma1bar, &
                 delta_gamma1_termbar,psi,dx,mla)
     do n=1,nlevs
        call destroy(thermal(n))
