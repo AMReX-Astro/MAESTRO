@@ -6,7 +6,7 @@ module cell_to_edge_module
   
   private
 
-  public :: cell_to_edge, cell_to_edge_allcomps
+  public :: cell_to_edge
   
 contains
   
@@ -37,20 +37,5 @@ contains
     end do
     
   end subroutine cell_to_edge
-  
-  subroutine cell_to_edge_allcomps(n,s0_cell,s0_edge)
-    
-    integer        , intent(in   ) :: n
-    real(kind=dp_t), intent(in   ) :: s0_cell(0:,:)
-    real(kind=dp_t), intent(inout) :: s0_edge(0:,:)
-    
-    ! local
-    integer                        ::  comp
-    
-    do comp = 1,size(s0_edge,dim=2)
-       call cell_to_edge(n,s0_cell(:,comp),s0_edge(:,comp))
-    end do
-    
-  end subroutine cell_to_edge_allcomps
   
 end module cell_to_edge_module
