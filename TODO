@@ -32,3 +32,4 @@
    quantity, not just w0.  This, for example, would allow us to put	
    rho0_predicted_edge on a Cartesian edge-centered grid.
 
+-- make firstdt do the divu estimator correctly for spherical
