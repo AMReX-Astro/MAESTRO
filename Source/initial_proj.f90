@@ -95,8 +95,7 @@ contains
     end do
 
     call make_S(nlevs,Source_old,delta_gamma1_term,delta_gamma1,sold,uold,rho_omegadot1, &
-                rho_Hext,thermal,p0,rho0,gamma1bar, &
-                delta_gamma1_termbar,psi,dx,mla)
+                rho_Hext,thermal,p0,gamma1bar,delta_gamma1_termbar,psi,dx,mla)
     do n=1,nlevs
        call destroy(thermal(n))
        call destroy(rho_omegadot1(n))

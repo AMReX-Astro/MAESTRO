@@ -243,7 +243,9 @@ subroutine varden()
      which_step = 1
 
      call advect_base(which_step,nlevs,w0,Sbar_in,p0_old,p0, &
-                      s0_old,s0,s0(:,:,temp_comp), &
+                      s0_old(:,:,rho_comp),s0(:,:,rho_comp), &
+                      s0_old(:,:,rhoh_comp),s0(:,:,rhoh_comp), &
+                      s0(:,:,temp_comp), &
                       gam1,div_coeff, &
                       rho0_predicted_edge,psi, &
                       dx(:,1),dt)

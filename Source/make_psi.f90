@@ -49,9 +49,8 @@ contains
   subroutine make_psi_planar(n,etarho,psi,s0)
 
     use bl_constants_module
-    use variables, only: rho_comp
-    use geometry, only: nr, r_anel
-    use probin_module, only: grav_const, anelastic_cutoff
+    use geometry, only: r_anel
+    use probin_module, only: grav_const
 
     integer        , intent(in   ) :: n
     real(kind=dp_t), intent(in   ) :: etarho(0:)
@@ -74,9 +73,7 @@ contains
   subroutine make_psi_spherical(n,psi,s0,w0,gamma1bar,p0_old,p0_new,Sbar_in)
 
     use bl_constants_module
-    use variables, only: rho_comp
     use geometry, only: nr, dr, base_cc_loc, base_loedge_loc
-    use probin_module, only: grav_const, anelastic_cutoff
 
     integer        , intent(in   ) :: n
     real(kind=dp_t), intent(inout) :: psi(0:)

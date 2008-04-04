@@ -17,14 +17,13 @@ contains
 
     use bl_constants_module
     use geometry, only: dr
-    use probin_module, only: anelastic_cutoff
 
     integer        , intent(in   ) :: n
     real(kind=dp_t), intent(  out) :: div_coeff(0:)
     real(kind=dp_t), intent(in   ) :: rho0(0:), p0(0:), gamma1bar(0:)
     real(kind=dp_t), intent(in   ) :: grav_center(0:)
 
-    integer :: r,nr,r_anel
+    integer :: r,nr
     real(kind=dp_t) :: integral
 
     real(kind=dp_t) :: beta0_edge_lo, beta0_edge_hi
@@ -34,7 +33,6 @@ contains
     real(kind=dp_t) :: del,dpls,dmin,slim,sflag
 
     nr = size(div_coeff,dim=1)
-    r_anel = nr-1
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! compute beta0 on the edges and average to the center      
@@ -104,19 +102,9 @@ contains
 
        div_coeff(r) = HALF*(beta0_edge_lo + beta0_edge_hi)
 
-
-       if (rho0(r) .lt. anelastic_cutoff .and. r_anel .eq. nr-1) then
-          r_anel = r
-          exit
-       end if
-
        beta0_edge_lo = beta0_edge_hi
 
     end do
-
-    !      do r = r_anel,nr-1
-    !        div_coeff(r) = div_coeff(r-1) * (rho0(r)/rho0(r-1))
-    !      end do 
 
     ! HACK HACK HACK
     do r = 0,nr-1

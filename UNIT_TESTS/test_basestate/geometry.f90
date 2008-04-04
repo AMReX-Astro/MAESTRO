@@ -15,11 +15,12 @@ module geometry
   real(dp_t), save :: center(3)
   real(dp_t), allocatable, save :: dr(:)
   integer   , allocatable, save :: nr(:)
+  integer   , allocatable, save :: r_anel(:)
   real(dp_t), allocatable, save :: base_cc_loc(:,:), base_loedge_loc(:,:)
 
   private
 
-  public :: spherical, center, dr, base_cc_loc, base_loedge_loc, nr
+  public :: spherical, center, dr, base_cc_loc, base_loedge_loc, nr, r_anel
   public :: init_spherical, init_geometry, destroy_geometry
 
 contains
@@ -50,6 +51,7 @@ contains
 
     allocate(dr(nlevs))
     allocate(nr(nlevs))
+    allocate(r_anel(nlevs))
 
     nr(1) = nr_in
     dr(1) = dr_in
@@ -70,7 +72,7 @@ contains
   subroutine destroy_geometry()
 
     deallocate(base_cc_loc,base_loedge_loc)
-    deallocate(dr)
+    deallocate(dr,r_anel)
 
   end subroutine destroy_geometry
 

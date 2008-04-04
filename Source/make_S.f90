@@ -17,7 +17,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   subroutine make_S(nlevs,Source,delta_gamma1_term,delta_gamma1,state,u,rho_omegadot, &
-                    rho_Hext,thermal,p0,rho0,gamma1bar,delta_gamma1_termbar,psi,dx,mla)
+                    rho_Hext,thermal,p0,gamma1bar,delta_gamma1_termbar,psi,dx,mla)
 
     use bl_constants_module
     use bl_prof_module
@@ -36,7 +36,6 @@ contains
     type(multifab) , intent(in   ) :: rho_Hext(:)
     type(multifab) , intent(in   ) :: thermal(:)
     real(kind=dp_t), intent(in   ) :: p0(:,0:)
-    real(kind=dp_t), intent(in   ) :: rho0(:,0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
     real(kind=dp_t), intent(inout) :: delta_gamma1_termbar(:,0:,:)
     real(kind=dp_t), intent(in   ) :: psi(:,0:)
@@ -74,11 +73,11 @@ contains
           case (2)
              call make_S_2d(n,lo, hi, srcp(:,:,1,1), dgtp(:,:,1,1), dgp(:,:,1,1), &
                             sp(:,:,1,:), up(:,:,1,:), omegap(:,:,1,:), hp(:,:,1,1), &
-                            tp(:,:,1,1), ng, p0(n,:), rho0(n,:), gamma1bar(n,:), dx(n,:))
+                            tp(:,:,1,1), ng, p0(n,:), gamma1bar(n,:), dx(n,:))
           case (3)
              call make_S_3d(n,lo, hi, srcp(:,:,:,1), dgtp(:,:,:,1), dgp(:,:,:,1), &
                             sp(:,:,:,:), up(:,:,:,:), omegap(:,:,:,:), hp(:,:,:,1), &
-                            tp(:,:,:,1), ng, p0(n,:), rho0(n,:), gamma1bar(n,:), dx(n,:))
+                            tp(:,:,:,1), ng, p0(n,:), gamma1bar(n,:), dx(n,:))
           end select
        end do
     enddo
@@ -113,12 +112,12 @@ contains
 
 
    subroutine make_S_2d (n,lo,hi,Source,delta_gamma1_term,delta_gamma1,s,u, &
-                         rho_omegadot,rho_Hext,thermal,ng,p0,rho0,gamma1bar,dx)
+                         rho_omegadot,rho_Hext,thermal,ng,p0,gamma1bar,dx)
 
       use bl_constants_module
       use eos_module
       use variables, only: rho_comp, temp_comp, spec_comp
-      use probin_module, only: use_delta_gamma1_term, anelastic_cutoff
+      use probin_module, only: use_delta_gamma1_term
       use geometry, only: r_anel, nr
 
       integer         , intent(in   ) :: n,lo(:), hi(:), ng
@@ -131,7 +130,6 @@ contains
       real (kind=dp_t), intent(in   ) :: rho_Hext(lo(1):,lo(2):)
       real (kind=dp_t), intent(in   ) :: thermal(lo(1)-1:,lo(2)-1:)
       real (kind=dp_t), intent(in   ) :: p0(0:)
-      real (kind=dp_t), intent(in   ) :: rho0(0:)
       real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
       real (kind=dp_t), intent(in   ) :: dx(:)
 
@@ -203,13 +201,13 @@ contains
    end subroutine make_S_2d
 
    subroutine make_S_3d(n,lo,hi,Source,delta_gamma1_term,delta_gamma1,s,u, &
-                        rho_omegadot,rho_Hext,thermal,ng,p0,rho0,gamma1bar,dx)
+                        rho_omegadot,rho_Hext,thermal,ng,p0,gamma1bar,dx)
 
       use bl_constants_module
       use eos_module
       use geometry, only: spherical
       use variables, only: rho_comp, temp_comp, spec_comp
-      use probin_module, only: use_delta_gamma1_term, anelastic_cutoff
+      use probin_module, only: use_delta_gamma1_term
       use geometry, only: r_anel, nr
      
       integer         , intent(in   ) :: n,lo(:), hi(:), ng
@@ -222,7 +220,6 @@ contains
       real (kind=dp_t), intent(in   ) :: rho_Hext(lo(1):,lo(2):,lo(3):)
       real (kind=dp_t), intent(in   ) :: thermal(lo(1)-1:,lo(2)-1:,lo(3)-1:)
       real (kind=dp_t), intent(in   ) :: p0(0:)
-      real (kind=dp_t), intent(in   ) :: rho0(0:)
       real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
       real (kind=dp_t), intent(in   ) :: dx(:)
 

@@ -574,9 +574,8 @@ contains
        end do
 
        ! p0 is only used for the delta_gamma1_term
-       ! rho0 is only used for computing the anelastic cutoff
        call make_S(nlevs,Source_new,delta_gamma1_term,delta_gamma1,snew,uold,rho_omegadot2, &
-                   rho_Hext,thermal,p0_old,s0_old(:,:,rho_comp),gamma1bar(:,:,1), &
+                   rho_Hext,thermal,p0_old,gamma1bar(:,:,1), &
                    delta_gamma1_termbar,psi,dx,mla)
        
        do n=1,nlevs
@@ -868,10 +867,8 @@ contains
     end do
 
     ! p0 is only used for the delta_gamma1_term
-    ! rho0 is only used for computing the anelastic cutoff
     call make_S(nlevs,Source_new,delta_gamma1_term,delta_gamma1,snew,uold,rho_omegadot2, &
-                rho_Hext,thermal,p0_new,s0_new(:,:,rho_comp),gamma1bar(:,:,1), &
-                delta_gamma1_termbar,psi,dx,mla)
+                rho_Hext,thermal,p0_new,gamma1bar(:,:,1),delta_gamma1_termbar,psi,dx,mla)
 
     do n=1,nlevs
        call destroy(rho_Hext(n))

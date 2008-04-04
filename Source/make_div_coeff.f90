@@ -20,7 +20,6 @@ contains
 
      use bl_constants_module
      use geometry, only: dr, r_anel, nr
-     use probin_module, only: anelastic_cutoff
 
       integer        , intent(in   ) :: n
       real(kind=dp_t), intent(  out) :: div_coeff(0:)

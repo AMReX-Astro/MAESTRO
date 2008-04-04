@@ -18,7 +18,7 @@ contains
     use define_bc_module
     use bl_constants_module
     use eos_module
-    use probin_module, ONLY: base_cutoff_density, anelastic_cutoff, prob_lo_y, prob_lo_z
+    use probin_module, ONLY: base_cutoff_density, prob_lo_y, prob_lo_z
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp
     use geometry, only: dr, nr, spherical
     use inlet_bc_module
