@@ -16,7 +16,7 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine make_gamma(nlevs,gamma,s,p0,tempbar)
+  subroutine make_gamma(nlevs,gamma,s,p0,tempbar,dx)
 
     use bl_prof_module
 
@@ -25,7 +25,8 @@ contains
     type(multifab) , intent(in   ) :: s(:)
     real(kind=dp_t), intent(in   ) :: p0(:,0:)
     real(kind=dp_t), intent(in   ) :: tempbar(:,0:,:)
-    
+    real(kind=dp_t), intent(in   ) :: dx(:,:)
+
     real(kind=dp_t), pointer:: gamp(:,:,:,:),sp(:,:,:,:)
     integer :: lo(s(1)%dim),hi(s(1)%dim),dm
     integer :: i,n
@@ -47,7 +48,7 @@ contains
           case (2)
              call make_gamma_2d(lo,hi,gamp(:,:,1,1),sp(:,:,1,:),p0(n,:),tempbar(n,:,1))
           case (3)
-             call make_gamma_3d(lo,hi,gamp(:,:,:,1),sp(:,:,:,:),p0(n,:),tempbar(n,:,1))
+             call make_gamma_3d(n,lo,hi,gamp(:,:,:,1),sp(:,:,:,:),p0(n,:),tempbar(n,:,1),dx(n,:))
           end select
        end do
     end do
@@ -99,28 +100,51 @@ contains
  
    end subroutine make_gamma_2d
 
-    subroutine make_gamma_3d(lo,hi,gamma,s,p0,tempbar)
+    subroutine make_gamma_3d(n,lo,hi,gamma,s,p0,tempbar,dx)
 
       use eos_module
       use variables, only: rho_comp, rhoh_comp, spec_comp
+      use fill_3d_module
+      use geometry, only: spherical
 
+      integer         , intent(in   ) :: n
       integer         , intent(in   ) :: lo(:), hi(:)
       real (kind=dp_t), intent(  out) :: gamma(lo(1)  :,lo(2)  :,lo(3)  :)
       real (kind=dp_t), intent(in   ) ::     s(lo(1)-3:,lo(2)-3:,lo(3)-3:,:)
       real (kind=dp_t), intent(in   ) :: p0(0:)
       real (kind=dp_t), intent(in   ) :: tempbar(0:)
+      real (kind=dp_t), intent(in   ) :: dx(:)
 
       ! local variables
       integer :: i, j, k
+
+      real (kind=dp_t), allocatable :: tempbar_cart(:,:,:)
+      real (kind=dp_t), allocatable :: p0_cart(:,:,:)
+
+      if (spherical .eq. 1) then
+         allocate(tempbar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+         call fill_3d_data(n,tempbar_cart,tempbar,lo,hi,dx,0)
+         
+         allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+         call fill_3d_data(n,p0_cart,p0,lo,hi,dx,0)
+      endif
 
       do k = lo(3), hi(3)
          do j = lo(2), hi(2)
             do i = lo(1), hi(1)
                
                den_eos(1) = s(i,j,k,rho_comp)
-               p_eos(1) = p0(k)
+
+               if (spherical .eq. 1) then
+                  p_eos(1) = p0_cart(i,j,k)
+                  temp_eos(1) = tempbar_cart(i,j,k)
+               else
+                  p_eos(1) = p0(k)
+                  temp_eos(1) = tempbar(k)
+               endif
+
                xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
-               temp_eos(1) = tempbar(k)
+
                
                ! dens, pres, and xmass are inputs
                call eos(eos_input_rp, den_eos, temp_eos, &
@@ -155,7 +179,11 @@ contains
             end do
          end do
       end do
- 
+
+      if (spherical .eq. 1) then
+         deallocate(tempbar_cart, p0_cart)
+      endif
+
    end subroutine make_gamma_3d
 
 end module make_gamma_module
