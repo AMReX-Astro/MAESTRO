@@ -104,29 +104,18 @@ contains
           call build(s0_new_cart(n), sold(n)%la, nscal, 1)
        end do
 
-       call fill_3d_data_c(nlevs,dx,the_bc_level,mla,s0_old_cart,s0_old(:,:,rhoh_comp), &
-                           rhoh_comp,dm+rhoh_comp)
-       call fill_3d_data_c(nlevs,dx,the_bc_level,mla,s0_new_cart,s0_new(:,:,rhoh_comp), &
-                           rhoh_comp,dm+rhoh_comp)
+       if (enthalpy_pred_type .eq. predict_T_then_rhohprime .or. &
+            enthalpy_pred_type .eq. predict_rhohprime) then
+          call fill_3d_data_c(nlevs,dx,the_bc_level,mla,s0_old_cart,s0_old(:,:,rhoh_comp), &
+                              rhoh_comp,dm+rhoh_comp)
+          call fill_3d_data_c(nlevs,dx,the_bc_level,mla,s0_new_cart,s0_new(:,:,rhoh_comp), &
+                              rhoh_comp,dm+rhoh_comp)
+       end if
 
        call fill_3d_data_c(nlevs,dx,the_bc_level,mla,s0_old_cart,s0_old(:,:,rho_comp), &
                            rho_comp,dm+rho_comp)
        call fill_3d_data_c(nlevs,dx,the_bc_level,mla,s0_new_cart,s0_new(:,:,rho_comp), &
                            rho_comp,dm+rho_comp)
-
-       do comp = spec_comp, spec_comp+nspec-1
-          call fill_3d_data_c(nlevs,dx,the_bc_level,mla,s0_old_cart,s0_old(:,:,comp), &
-                              comp,dm+comp)
-          call fill_3d_data_c(nlevs,dx,the_bc_level,mla,s0_new_cart,s0_new(:,:,comp), &
-                              comp,dm+comp)
-       end do
-
-       do comp = trac_comp, trac_comp+ntrac-1
-          call fill_3d_data_c(nlevs,dx,the_bc_level,mla,s0_old_cart,s0_old(:,:,comp), &
-                              comp,dm+comp)
-          call fill_3d_data_c(nlevs,dx,the_bc_level,mla,s0_new_cart,s0_new(:,:,comp), &
-                              comp,dm+comp)
-       end do
     end if
 
     ! This can be uncommented if you wish to compute T
@@ -136,30 +125,12 @@ contains
     ! (and base state) from (rho X) to X.  Note, only the time-level n
     ! stuff need be converted, since that's all the prediction uses
     call convert_rhoX_to_X(nlevs,sold,dx,.true.,mla,the_bc_level)
-    
-    if (spherical .eq. 1) then
-       call convert_rhoX_to_X(nlevs,s0_old_cart,dx,.true.,mla,the_bc_level)
-    end if
-    
-    do comp = spec_comp, spec_comp + nspec - 1
-       s0_old(:,:,comp) = s0_old(:,:,comp)/s0_old(:,:,rho_comp)
-       s0_edge_old(:,:,comp) = s0_edge_old(:,:,comp)/s0_edge_old(:,:,rho_comp)
-    enddo
 
     ! if we are predicting h on the edges, then convert the state arrays
     ! (and base state) from (rho h) to h.  Note, only the time-level n
     ! stuff need be converted, since that's all the prediction uses
     if (enthalpy_pred_type .eq. predict_h) then
-
        call convert_rhoh_to_h(nlevs,sold,dx,.true.,mla,the_bc_level)
-
-       if (spherical .eq. 1) then
-          call convert_rhoh_to_h(nlevs,s0_old_cart,dx,.true.,mla,the_bc_level)
-       end if
-
-       s0_old(:,:,rhoh_comp) = s0_old(:,:,rhoh_comp)/s0_old(:,:,rho_comp)
-       s0_edge_old(:,:,rhoh_comp) = s0_edge_old(:,:,rhoh_comp)/s0_edge_old(:,:,rho_comp)
-
     end if
 
     !**************************************************************************
@@ -268,28 +239,10 @@ contains
     ! (and base state) from X to (rho X)
     call convert_rhoX_to_X(nlevs,sold,dx,.false.,mla,the_bc_level)
 
-    if (spherical .eq. 1) then
-       call convert_rhoX_to_X(nlevs,s0_old_cart,dx,.false.,mla,the_bc_level)
-    end if
-    
-    do comp = spec_comp, spec_comp + nspec - 1
-       s0_old(:,:,comp) = s0_old(:,:,rho_comp)*s0_old(:,:,comp)
-       s0_edge_old(:,:,comp) = s0_edge_old(:,:,rho_comp)*s0_edge_old(:,:,comp)
-    enddo
-
     ! if we are predicting h at the edges, then restore the state arrays
     ! (and base state) from h to (rho h)
     if (enthalpy_pred_type .eq. predict_h) then
-
        call convert_rhoh_to_h(nlevs,sold,dx,.false.,mla,the_bc_level)
-
-       if (spherical .eq. 1) then
-          call convert_rhoh_to_h(nlevs,s0_old_cart,dx,.false.,mla,the_bc_level)
-       end if
-
-       s0_old(:,:,rhoh_comp) = s0_old(:,:,rho_comp)*s0_old(:,:,rhoh_comp)
-       s0_edge_old(:,:,rhoh_comp) = s0_edge_old(:,:,rho_comp)*s0_edge_old(:,:,rhoh_comp)
-
     end if
 
     ! Compute enthalpy edge states if we were predicting temperature.  This
