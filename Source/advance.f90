@@ -112,7 +112,7 @@ contains
 
     real(dp_t), allocatable :: grav_cell_nph(:,:)
     real(dp_t), allocatable :: grav_cell_new(:,:)
-    real(dp_t), allocatable :: s0_nph(:,:,:)
+    real(dp_t), allocatable :: rho0_nph(:,:)
     real(dp_t), allocatable :: w0_force(:,:)
     real(dp_t), allocatable :: w0_old(:,:)
     real(dp_t), allocatable :: Sbar(:,:,:)
@@ -140,7 +140,7 @@ contains
 
     allocate(       grav_cell_nph(nlevs,0:nr(nlevs)-1))
     allocate(       grav_cell_new(nlevs,0:nr(nlevs)-1))
-    allocate(              s0_nph(nlevs,0:nr(nlevs)-1,nscal))
+    allocate(            rho0_nph(nlevs,0:nr(nlevs)-1))
     allocate(            w0_force(nlevs,0:nr(nlevs)-1))
     allocate(              w0_old(nlevs,0:nr(nlevs)  ))
     allocate(                Sbar(nlevs,0:nr(nlevs)-1,1))
@@ -535,10 +535,10 @@ contains
     ! Define base state at half time for use in velocity advance!
     do n=1,nlevs
        do r=0,nr(n)-1
-          s0_nph(n,r,:) = HALF * (s0_old(n,r,:) + s0_new(n,r,:))
+          rho0_nph(n,r) = HALF * (s0_old(n,r,rho_comp) + s0_new(n,r,rho_comp))
        end do
 
-       call make_grav_cell(n,grav_cell_nph(n,:),s0_nph(n,:,rho_comp))
+       call make_grav_cell(n,grav_cell_nph(n,:),rho0_nph(n,:))
 
        do r=0,nr(n)-1
           div_coeff_nph(n,r) = HALF * (div_coeff_old(n,r) + div_coeff_new(n,r))
@@ -909,7 +909,7 @@ contains
     call make_at_halftime(nlevs,rhohalf,sold,snew,rho_comp,1,the_bc_tower%bc_tower_array,mla)
     
     call velocity_advance(nlevs,mla,uold,unew,sold,rhohalf,umac,utrans,gpres, &
-                          normal,w0,w0_cart_vec,w0_force,w0_force_cart_vec,s0_old,s0_nph, &
+                          normal,w0,w0_cart_vec,w0_force,w0_force_cart_vec,s0_old,rho0_nph, &
                           grav_cell_old,grav_cell_nph,dx,dt, &
                           the_bc_tower%bc_tower_array,sponge)
 
