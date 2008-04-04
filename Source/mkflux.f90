@@ -13,7 +13,10 @@ module mkflux_module
 contains
 
   subroutine mkflux(nlevs,sflux,etarhoflux,sold,sedge,umac,w0,w0_cart_vec, &
-                    s0_old,s0_edge_old,s0_old_cart,s0_new,s0_edge_new,s0_new_cart, &
+                    rho0_old,rho0_edge_old,rho0_old_cart, &
+                    rho0_new,rho0_edge_new,rho0_new_cart, &
+                    rhoh0_old,rhoh0_edge_old,rhoh0_old_cart, &
+                    rhoh0_new,rhoh0_edge_new,rhoh0_new_cart, &
                     rho0_predicted_edge,startcomp,endcomp,mla,dx,dt)
 
     use bl_prof_module
@@ -29,10 +32,14 @@ contains
     type(multifab) , intent(inout) :: umac(:,:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     type(multifab) , intent(in   ) :: w0_cart_vec(:)
-    real(kind=dp_t), intent(in   ) :: s0_old(:,0:,:),s0_edge_old(:,0:,:)
-    type(multifab) , intent(in   ) :: s0_old_cart(:)
-    real(kind=dp_t), intent(in   ) :: s0_new(:,0:,:),s0_edge_new(:,0:,:)
-    type(multifab) , intent(in   ) :: s0_new_cart(:)
+    real(kind=dp_t), intent(in   ) :: rho0_old(:,0:),rho0_edge_old(:,0:)
+    type(multifab) , intent(in   ) :: rho0_old_cart(:)
+    real(kind=dp_t), intent(in   ) :: rho0_new(:,0:),rho0_edge_new(:,0:)
+    type(multifab) , intent(in   ) :: rho0_new_cart(:)
+    real(kind=dp_t), intent(in   ) :: rhoh0_old(:,0:),rhoh0_edge_old(:,0:)
+    type(multifab) , intent(in   ) :: rhoh0_old_cart(:)
+    real(kind=dp_t), intent(in   ) :: rhoh0_new(:,0:),rhoh0_edge_new(:,0:)
+    type(multifab) , intent(in   ) :: rhoh0_new_cart(:)
     real(kind=dp_t), intent(in   ) :: rho0_predicted_edge(:,0:)
     integer        , intent(in   ) :: startcomp,endcomp
     type(ml_layout), intent(inout) :: mla
@@ -56,8 +63,10 @@ contains
     real(kind=dp_t), pointer :: vmp(:,:,:,:)
     real(kind=dp_t), pointer :: wmp(:,:,:,:)
     real(kind=dp_t), pointer :: w0p(:,:,:,:)
-    real(kind=dp_t), pointer :: s0op(:,:,:,:)
-    real(kind=dp_t), pointer :: s0np(:,:,:,:)
+    real(kind=dp_t), pointer :: rho0op(:,:,:,:)
+    real(kind=dp_t), pointer :: rho0np(:,:,:,:)
+    real(kind=dp_t), pointer :: rhoh0op(:,:,:,:)
+    real(kind=dp_t), pointer :: rhoh0np(:,:,:,:)
 
     type(bl_prof_timer), save :: bpt
 
@@ -88,8 +97,10 @@ contains
                             efp(:,:,1,1), &
                             sexp(:,:,1,:), seyp(:,:,1,:), &
                             ump(:,:,1,1), vmp(:,:,1,1), &
-                            s0_old(n,:,:), s0_edge_old(n,:,:), &
-                            s0_new(n,:,:), s0_edge_new(n,:,:), &
+                            rho0_old(n,:), rho0_edge_old(n,:), &
+                            rho0_new(n,:), rho0_edge_new(n,:), &
+                            rhoh0_old(n,:), rhoh0_edge_old(n,:), &
+                            rhoh0_new(n,:), rhoh0_edge_new(n,:), &
                             rho0_predicted_edge(n,:), &
                             w0(n,:),startcomp,endcomp,lo,hi,dx(n,:),dt)
           case (3)
@@ -101,20 +112,25 @@ contains
                                     efp(:,:,:,1), &
                                     sexp(:,:,:,:), seyp(:,:,:,:), sezp(:,:,:,:), &
                                     ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
-                                    s0_old(n,:,:), s0_edge_old(n,:,:), &
-                                    s0_new(n,:,:), s0_edge_new(n,:,:), &
+                                    rho0_old(n,:), rho0_edge_old(n,:), &
+                                    rho0_new(n,:), rho0_edge_new(n,:), &
+                                    rhoh0_old(n,:), rhoh0_edge_old(n,:), &
+                                    rhoh0_new(n,:), rhoh0_edge_new(n,:), &
                                     rho0_predicted_edge(n,:), &
                                     w0(n,:),startcomp,endcomp,lo,hi)
 
              else
-                s0op => dataptr(s0_old_cart(n), i)
-                s0np => dataptr(s0_new_cart(n), i)
+                rho0op => dataptr(rho0_old_cart(n), i)
+                rho0np => dataptr(rho0_new_cart(n), i)
+                rhoh0op => dataptr(rhoh0_old_cart(n), i)
+                rhoh0np => dataptr(rhoh0_new_cart(n), i)
                 w0p => dataptr(w0_cart_vec(n),i)
                 call mkflux_3d_sphr(sfxp(:,:,:,:), sfyp(:,:,:,:), sfzp(:,:,:,:), &
                                     efp(:,:,:,1), &
                                     sexp(:,:,:,:), seyp(:,:,:,:), sezp(:,:,:,:), &
                                     ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
-                                    s0op(:,:,:,:), s0np(:,:,:,:), &
+                                    rho0op(:,:,:,1), rho0np(:,:,:,1), &
+                                    rhoh0op(:,:,:,1), rhoh0np(:,:,:,1), &
                                     w0p(:,:,:,:),startcomp,endcomp,lo,hi,domlo,domhi)
              endif
           end select
@@ -136,8 +152,10 @@ contains
     
   end subroutine mkflux
   
-  subroutine mkflux_2d(sfluxx,sfluxy,etarhoflux,sedgex,sedgey,umac,vmac,s0_old,s0_edge_old, &
-                       s0_new,s0_edge_new,rho0_predicted_edge,w0,startcomp,endcomp, &
+  subroutine mkflux_2d(sfluxx,sfluxy,etarhoflux,sedgex,sedgey,umac,vmac, &
+                       rho0_old,rho0_edge_old,rho0_new,rho0_edge_new, &
+                       rhoh0_old,rhoh0_edge_old,rhoh0_new,rhoh0_edge_new, &
+                       rho0_predicted_edge,w0,startcomp,endcomp, &
                        lo,hi,dx,dt)
 
     use bl_constants_module
@@ -154,8 +172,10 @@ contains
     real(kind=dp_t), intent(inout) ::  sedgey(lo(1)  :,lo(2)  :,:)
     real(kind=dp_t), intent(in   ) ::    umac(lo(1)-1:,lo(2)-1:)
     real(kind=dp_t), intent(in   ) ::    vmac(lo(1)-1:,lo(2)-1:)
-    real(kind=dp_t), intent(in   ) :: s0_old(0:,:), s0_edge_old(0:,:)
-    real(kind=dp_t), intent(in   ) :: s0_new(0:,:), s0_edge_new(0:,:)
+    real(kind=dp_t), intent(in   ) :: rho0_old(0:), rho0_edge_old(0:)
+    real(kind=dp_t), intent(in   ) :: rho0_new(0:), rho0_edge_new(0:)
+    real(kind=dp_t), intent(in   ) :: rhoh0_old(0:), rhoh0_edge_old(0:)
+    real(kind=dp_t), intent(in   ) :: rhoh0_new(0:), rhoh0_edge_new(0:)
     real(kind=dp_t), intent(in   ) :: rho0_predicted_edge(0:)
     real(kind=dp_t), intent(in   ) :: w0(0:)
     integer        , intent(in   ) :: startcomp,endcomp
@@ -164,8 +184,7 @@ contains
     ! local
     integer         :: comp,spec
     integer         :: i,j
-    real(kind=dp_t) :: s0_edge
-    real(kind=dp_t) :: rho_prime, rho0_edge
+    real(kind=dp_t) :: rho_prime, rho0_edge, rhoh0_edge
     logical :: test
     
     ! loop over components
@@ -183,13 +202,12 @@ contains
 
           do j=lo(2),hi(2)
              
-             rho0_edge = HALF*(s0_old(j,rho_comp)+s0_new(j,rho_comp))
+             rho0_edge = HALF*(rho0_old(j)+rho0_new(j))
              
              do i=lo(1),hi(1)+1
                 
                 rho_prime = sedgex(i,j,rho_comp)
                 
-                ! sedgex is either h or X at edges
                 sfluxx(i,j,comp) = umac(i,j)*(rho0_edge+rho_prime)*sedgex(i,j,comp)
                 
              end do
@@ -200,13 +218,11 @@ contains
               
           do j=lo(2),hi(2)
              
-             s0_edge = HALF*(s0_old(j,comp)+s0_new(j,comp))
+             rhoh0_edge = HALF*(rhoh0_old(j)+rhoh0_new(j))
              
              do i=lo(1),hi(1)+1
                 
-                ! s0_edge is either (rho h)_0, (rho X)_0, or (rho trac)_0 at edges
-                ! sedgex is either (rho h)', (rho X)', or (rho trac)' at edges
-                sfluxx(i,j,comp) = umac(i,j)*(s0_edge + sedgex(i,j,comp))
+                sfluxx(i,j,comp) = umac(i,j)*(rhoh0_edge + sedgex(i,j,comp))
                 
              end do
              
@@ -219,13 +235,12 @@ contains
        
           do j=lo(2),hi(2)+1
              
-             rho0_edge = HALF*(s0_edge_old(j,rho_comp)+s0_edge_new(j,rho_comp))
+             rho0_edge = HALF*(rho0_edge_old(j)+rho0_edge_new(j))
              
              do i=lo(1),hi(1)
                 
                 rho_prime = sedgey(i,j,rho_comp)
                 
-                ! sedgey is either h or X at edges
                 sfluxy(i,j,comp) = (vmac(i,j)+w0(j))*(rho0_edge+rho_prime)*sedgey(i,j,comp)
                 
                 if ( (comp.ge.spec_comp).and.(comp.le.spec_comp+nspec-1) ) then
@@ -246,13 +261,11 @@ contains
           
           do j=lo(2),hi(2)+1
              
-             s0_edge = HALF*(s0_edge_old(j,comp)+s0_edge_new(j,comp))
+             rhoh0_edge = HALF*(rhoh0_edge_old(j)+rhoh0_edge_new(j))
              
              do i=lo(1),hi(1)
                 
-                ! s0_edge is either (rho h)_0, (rho X)_0, or (rho trac)_0 at edges
-                ! sedgey is either (rho h)', (rho X)', or (rho trac)' at edges
-                sfluxy(i,j,comp) = (vmac(i,j)+w0(j))*sedgey(i,j,comp) + vmac(i,j)*s0_edge
+                sfluxy(i,j,comp) = (vmac(i,j)+w0(j))*sedgey(i,j,comp) + vmac(i,j)*rhoh0_edge
                 
              end do
              
@@ -265,7 +278,9 @@ contains
   end subroutine mkflux_2d
 
   subroutine mkflux_3d_cart(sfluxx,sfluxy,sfluxz,etarhoflux,sedgex,sedgey,sedgez, &
-                            umac,vmac,wmac,s0_old,s0_edge_old,s0_new,s0_edge_new, &
+                            umac,vmac,wmac, &
+                            rho0_old,rho0_edge_old,rho0_new,rho0_edge_new, &
+                            rhoh0_old,rhoh0_edge_old,rhoh0_new,rhoh0_edge_new, &
                             rho0_predicted_edge,w0,startcomp,endcomp,lo,hi)
 
     use bl_constants_module
@@ -285,8 +300,10 @@ contains
     real(kind=dp_t), intent(in   ) ::    umac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
     real(kind=dp_t), intent(in   ) ::    vmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
     real(kind=dp_t), intent(in   ) ::    wmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-    real(kind=dp_t), intent(in   ) :: s0_old(0:,:), s0_edge_old(0:,:)
-    real(kind=dp_t), intent(in   ) :: s0_new(0:,:), s0_edge_new(0:,:)
+    real(kind=dp_t), intent(in   ) :: rho0_old(0:), rho0_edge_old(0:)
+    real(kind=dp_t), intent(in   ) :: rho0_new(0:), rho0_edge_new(0:)
+    real(kind=dp_t), intent(in   ) :: rhoh0_old(0:), rhoh0_edge_old(0:)
+    real(kind=dp_t), intent(in   ) :: rhoh0_new(0:), rhoh0_edge_new(0:)
     real(kind=dp_t), intent(in   ) :: rho0_predicted_edge(0:)
     real(kind=dp_t), intent(in   ) :: w0(0:)
     integer        , intent(in   ) :: startcomp,endcomp
@@ -294,8 +311,7 @@ contains
    ! local
     integer         :: comp,spec
     integer         :: i,j,k
-    real(kind=dp_t) :: s0_edge
-    real(kind=dp_t) :: rho_prime, rho0_edge
+    real(kind=dp_t) :: rho_prime, rho0_edge, rhoh0_edge
     logical         :: test
     
     ! loop over components
@@ -313,7 +329,7 @@ contains
 
           do k=lo(3),hi(3)
              
-             rho0_edge = HALF*(s0_old(k,rho_comp)+s0_new(k,rho_comp))
+             rho0_edge = HALF*(rho0_old(k)+rho0_new(k))
              
              do j=lo(2),hi(2)
                 do i=lo(1),hi(1)+1
@@ -343,14 +359,12 @@ contains
               
           do k=lo(3),hi(3)
              
-             s0_edge = HALF*(s0_old(k,comp)+s0_new(k,comp))
+             rhoh0_edge = HALF*(rhoh0_old(k)+rhoh0_new(k))
              
              do j=lo(2),hi(2)
                 do i=lo(1),hi(1)+1
                 
-                   ! s0_edge is either (rho h)_0, (rho X)_0, or (rho trac)_0 at edges
-                   ! sedgex is either (rho h)', (rho X)', or (rho trac)' at edges
-                   sfluxx(i,j,k,comp) = umac(i,j,k)*(s0_edge + sedgex(i,j,k,comp))
+                   sfluxx(i,j,k,comp) = umac(i,j,k)*(rhoh0_edge + sedgex(i,j,k,comp))
                    
                 end do
              end do
@@ -358,9 +372,7 @@ contains
              do j=lo(2),hi(2)+1
                 do i=lo(1),hi(1)
                 
-                   ! s0_edge is either (rho h)_0, (rho X)_0, or (rho trac)_0 at edges
-                   ! sedgex is either (rho h)', (rho X)', or (rho trac)' at edges
-                   sfluxy(i,j,k,comp) = vmac(i,j,k)*(s0_edge + sedgey(i,j,k,comp))
+                   sfluxy(i,j,k,comp) = vmac(i,j,k)*(rhoh0_edge + sedgey(i,j,k,comp))
                    
                 end do
              end do
@@ -374,7 +386,7 @@ contains
        
           do k=lo(3),hi(3)+1
              
-             rho0_edge = HALF*(s0_edge_old(k,rho_comp)+s0_edge_new(k,rho_comp))
+             rho0_edge = HALF*(rho0_edge_old(k)+rho0_edge_new(k))
              
              do j=lo(2),hi(2)
                 do i=lo(1),hi(1)
@@ -405,15 +417,13 @@ contains
           
           do k=lo(3),hi(3)+1
              
-             s0_edge = HALF*(s0_edge_old(k,comp)+s0_edge_new(k,comp))
+             rhoh0_edge = HALF*(rhoh0_edge_old(k)+rhoh0_edge_new(k))
              
              do j=lo(2),hi(2)
                 do i=lo(1),hi(1)
                 
-                ! s0_edge is either (rho h)_0, (rho X)_0, or (rho trac)_0 at edges
-                ! sedgey is either (rho h)', (rho X)', or (rho trac)' at edges
                 sfluxz(i,j,k,comp) = &
-                     (wmac(i,j,k)+w0(k))*sedgez(i,j,k,comp) + wmac(i,j,k)*s0_edge
+                     (wmac(i,j,k)+w0(k))*sedgez(i,j,k,comp) + wmac(i,j,k)*rhoh0_edge
                                 
                 end do
              end do
@@ -428,7 +438,8 @@ contains
 
   subroutine mkflux_3d_sphr(sfluxx,sfluxy,sfluxz,etarhoflux,sedgex,sedgey,sedgez, &
                             umac,vmac,wmac, &
-                            s0_old_cart,s0_new_cart, &
+                            rho0_old_cart,rho0_new_cart, &
+                            rhoh0_old_cart,rhoh0_new_cart, &
                             w0_cart,startcomp,endcomp,lo,hi,domlo,domhi)
 
     use bl_constants_module
@@ -448,8 +459,10 @@ contains
     real(kind=dp_t), intent(in   ) ::   umac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
     real(kind=dp_t), intent(in   ) ::   vmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
     real(kind=dp_t), intent(in   ) ::   wmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-    real(kind=dp_t), intent(in   ) :: s0_old_cart(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)
-    real(kind=dp_t), intent(in   ) :: s0_new_cart(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)
+    real(kind=dp_t), intent(in   ) :: rho0_old_cart(lo(1)-1:,lo(2)-1:,lo(3)-1:)
+    real(kind=dp_t), intent(in   ) :: rho0_new_cart(lo(1)-1:,lo(2)-1:,lo(3)-1:)
+    real(kind=dp_t), intent(in   ) :: rhoh0_old_cart(lo(1)-1:,lo(2)-1:,lo(3)-1:)
+    real(kind=dp_t), intent(in   ) :: rhoh0_new_cart(lo(1)-1:,lo(2)-1:,lo(3)-1:)
     real(kind=dp_t), intent(in   ) ::     w0_cart(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)
     integer        , intent(in   ) :: startcomp,endcomp
 
@@ -478,17 +491,17 @@ contains
              do j = lo(2), hi(2)
                 do i = lo(1), hi(1)+1
 
-                   rho0_edge = (s0_old_cart(i,j,k,rho_comp)+s0_old_cart(i-1,j,k,rho_comp) + &
-                                s0_new_cart(i,j,k,rho_comp)+s0_new_cart(i-1,j,k,rho_comp) ) &
+                   rho0_edge = (rho0_old_cart(i,j,k)+rho0_old_cart(i-1,j,k) + &
+                                rho0_new_cart(i,j,k)+rho0_new_cart(i-1,j,k) ) &
                                 * FOURTH
 
                    if (i.eq.domlo(1)) then
                       rho0_edge = HALF * &
-                           (s0_old_cart(i,j,k,rho_comp)+s0_new_cart(i,j,k,rho_comp))
+                           (rho0_old_cart(i,j,k)+rho0_new_cart(i,j,k))
                    end if
                    if (i.eq.domhi(1)+1) then
                       rho0_edge = HALF * &
-                           (s0_old_cart(i-1,j,k,rho_comp)+s0_new_cart(i-1,j,k,rho_comp))
+                           (rho0_old_cart(i-1,j,k)+rho0_new_cart(i-1,j,k))
                    end if
 
                    w0_edgex = HALF * ( w0_cart(i  ,j,k,1) +w0_cart(i-1,j,k,1) )
@@ -506,14 +519,14 @@ contains
              do j = lo(2), hi(2)
                 do i = lo(1), hi(1)+1
 
-                   bc_lox = (s0_old_cart(i,j,k,comp)+s0_old_cart(i-1,j,k,comp) + &
-                             s0_new_cart(i,j,k,comp)+s0_new_cart(i-1,j,k,comp) ) * FOURTH
+                   bc_lox = (rhoh0_old_cart(i,j,k)+rhoh0_old_cart(i-1,j,k) + &
+                             rhoh0_new_cart(i,j,k)+rhoh0_new_cart(i-1,j,k) ) * FOURTH
 
                    if (i.eq.domlo(1)) then
-                      bc_lox = HALF * (s0_old_cart(i,j,k,comp)+s0_new_cart(i,j,k,comp))
+                      bc_lox = HALF * (rhoh0_old_cart(i,j,k)+rhoh0_new_cart(i,j,k))
                    end if
                    if (i.eq.domhi(1)+1) then
-                      bc_lox = HALF * (s0_old_cart(i-1,j,k,comp)+s0_new_cart(i-1,j,k,comp))
+                      bc_lox = HALF * (rhoh0_old_cart(i-1,j,k)+rhoh0_new_cart(i-1,j,k))
                    end if
 
                    w0_edgex = HALF * ( w0_cart(i  ,j,k,1) +w0_cart(i-1,j,k,1) )
@@ -535,17 +548,17 @@ contains
              do j = lo(2), hi(2)+1
                 do i = lo(1), hi(1)
                    
-                   rho0_edge = (s0_old_cart(i,j,k,rho_comp)+s0_old_cart(i,j-1,k,rho_comp) + &
-                                s0_new_cart(i,j,k,rho_comp)+s0_new_cart(i,j-1,k,rho_comp) ) &
+                   rho0_edge = (rho0_old_cart(i,j,k)+rho0_old_cart(i,j-1,k) + &
+                                rho0_new_cart(i,j,k)+rho0_new_cart(i,j-1,k) ) &
                                 * FOURTH
                 
                    if (j.eq.domlo(2)) then
                       rho0_edge = HALF * &
-                           (s0_old_cart(i,j,k,rho_comp)+s0_new_cart(i,j,k,rho_comp))
+                           (rho0_old_cart(i,j,k)+rho0_new_cart(i,j,k))
                    end if
                    if (j.eq.domhi(2)+1) then
                       rho0_edge = HALF * &
-                           (s0_old_cart(i,j-1,k,rho_comp)+s0_new_cart(i,j-1,k,rho_comp))
+                           (rho0_old_cart(i,j-1,k)+rho0_new_cart(i,j-1,k))
                    end if
                    
                    w0_edgey = HALF * ( w0_cart(i,j  ,k,2) + w0_cart(i,j-1,k,2) )
@@ -563,14 +576,14 @@ contains
              do j = lo(2), hi(2)+1
                 do i = lo(1), hi(1)
                    
-                   bc_loy = (s0_old_cart(i,j,k,comp)+s0_old_cart(i,j-1,k,comp) + &
-                             s0_new_cart(i,j,k,comp)+s0_new_cart(i,j-1,k,comp) ) * FOURTH
+                   bc_loy = (rhoh0_old_cart(i,j,k)+rhoh0_old_cart(i,j-1,k) + &
+                             rhoh0_new_cart(i,j,k)+rhoh0_new_cart(i,j-1,k) ) * FOURTH
                 
                    if (j.eq.domlo(2)) then
-                      bc_loy = HALF * (s0_old_cart(i,j,k,comp)+s0_new_cart(i,j,k,comp))
+                      bc_loy = HALF * (rhoh0_old_cart(i,j,k)+rhoh0_new_cart(i,j,k))
                    end if
                    if (j.eq.domhi(2)+1) then
-                      bc_loy = HALF * (s0_old_cart(i,j-1,k,comp)+s0_new_cart(i,j-1,k,comp))
+                      bc_loy = HALF * (rhoh0_old_cart(i,j-1,k)+rhoh0_new_cart(i,j-1,k))
                    end if
                    
                    w0_edgey = HALF * ( w0_cart(i,j  ,k,2) + w0_cart(i,j-1,k,2) )
@@ -592,17 +605,17 @@ contains
              do j = lo(2), hi(2)
                 do i = lo(1), hi(1)
 
-                   rho0_edge = (s0_old_cart(i,j,k,rho_comp)+s0_old_cart(i,j,k-1,rho_comp) + &
-                             s0_new_cart(i,j,k,rho_comp)+s0_new_cart(i,j,k-1,rho_comp) ) &
+                   rho0_edge = (rho0_old_cart(i,j,k)+rho0_old_cart(i,j,k-1) + &
+                             rho0_new_cart(i,j,k)+rho0_new_cart(i,j,k-1) ) &
                              * FOURTH
                    
                    if (k.eq.domlo(3)) then
                       rho0_edge = HALF * &
-                           (s0_old_cart(i,j,k,rho_comp)+s0_new_cart(i,j,k,rho_comp))
+                           (rho0_old_cart(i,j,k)+rho0_new_cart(i,j,k))
                    end if
                    if (k.eq.domhi(3)+1) then
                       rho0_edge = HALF * &
-                           (s0_old_cart(i,j,k-1,rho_comp)+s0_new_cart(i,j,k-1,rho_comp))
+                           (rho0_old_cart(i,j,k-1)+rho0_new_cart(i,j,k-1))
                    end if
                    
                    w0_edgez = HALF * ( w0_cart(i,j,k  ,3) + w0_cart(i,j,k-1,3) )
@@ -620,14 +633,14 @@ contains
              do j = lo(2), hi(2)
                 do i = lo(1), hi(1)
 
-                   bc_loz = (s0_old_cart(i,j,k,comp)+s0_old_cart(i,j,k-1,comp) + &
-                             s0_new_cart(i,j,k,comp)+s0_new_cart(i,j,k-1,comp) ) * FOURTH
+                   bc_loz = (rhoh0_old_cart(i,j,k)+rhoh0_old_cart(i,j,k-1) + &
+                             rhoh0_new_cart(i,j,k)+rhoh0_new_cart(i,j,k-1) ) * FOURTH
 
                    if (k.eq.domlo(3)) then
-                      bc_loz = HALF * (s0_old_cart(i,j,k,comp)+s0_new_cart(i,j,k,comp))
+                      bc_loz = HALF * (rhoh0_old_cart(i,j,k)+rhoh0_new_cart(i,j,k))
                    end if
                    if (k.eq.domhi(3)+1) then
-                      bc_loz = HALF * (s0_old_cart(i,j,k-1,comp)+s0_new_cart(i,j,k-1,comp))
+                      bc_loz = HALF * (rhoh0_old_cart(i,j,k-1)+rhoh0_new_cart(i,j,k-1))
                    end if
                    
                    w0_edgez = HALF * ( w0_cart(i,j,k  ,3) + w0_cart(i,j,k-1,3) )
@@ -640,7 +653,6 @@ contains
           end do
 
        endif
-
 
     end do ! end loop over components
      

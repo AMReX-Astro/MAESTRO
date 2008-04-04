@@ -14,8 +14,8 @@ module update_scal_module
 contains
 
   subroutine update_scal(nlevs,nstart,nstop,sold,snew,umac,w0,w0_cart_vec, &
-                         sedge,sflux,scal_force,s0_old,s0_edge_old,s0_new,s0_edge_new, &
-                         s0_old_cart,s0_new_cart,dx,dt,the_bc_level,mla)
+                         sedge,sflux,scal_force,rhoh0_old,rhoh0_new, &
+                         rhoh0_old_cart,rhoh0_new_cart,dx,dt,the_bc_level,mla)
 
     use bl_prof_module
     use bl_constants_module
@@ -35,10 +35,10 @@ contains
     type(multifab)    , intent(in   ) :: sedge(:,:)
     type(multifab)    , intent(in   ) :: sflux(:,:)
     type(multifab)    , intent(in   ) :: scal_force(:)
-    real(kind = dp_t) , intent(in   ) :: s0_old(:,0:,:), s0_edge_old(:,0:,:)
-    real(kind = dp_t) , intent(in   ) :: s0_new(:,0:,:), s0_edge_new(:,0:,:)
-    type(multifab)    , intent(in   ) :: s0_old_cart(:)
-    type(multifab)    , intent(in   ) :: s0_new_cart(:)
+    real(kind = dp_t) , intent(in   ) :: rhoh0_old(:,0:)
+    real(kind = dp_t) , intent(in   ) :: rhoh0_new(:,0:)
+    type(multifab)    , intent(in   ) :: rhoh0_old_cart(:)
+    type(multifab)    , intent(in   ) :: rhoh0_new_cart(:)
     real(kind = dp_t) , intent(in   ) :: dx(:,:),dt
     type(bc_level)    , intent(in   ) :: the_bc_level(:)
     type(ml_layout)   , intent(inout) :: mla
@@ -57,8 +57,8 @@ contains
     real(kind=dp_t), pointer :: sfpz(:,:,:,:)
     real(kind=dp_t), pointer :: fp(:,:,:,:)
     real(kind=dp_t), pointer :: w0p(:,:,:,:)
-    real(kind=dp_t), pointer :: s0op(:,:,:,:)
-    real(kind=dp_t), pointer :: s0np(:,:,:,:)
+    real(kind=dp_t), pointer :: rhoh0op(:,:,:,:)
+    real(kind=dp_t), pointer :: rhoh0np(:,:,:,:)
 
     type(box) :: domain
 
@@ -101,8 +101,8 @@ contains
                                  sepx(:,:,1,:), sepy(:,:,1,:), &
                                  sfpx(:,:,1,:), sfpy(:,:,1,:), &
                                  fp(:,:,1,:), &
-                                 s0_old(n,:,:), s0_edge_old(n,:,:), &
-                                 s0_new(n,:,:), s0_edge_new(n,:,:), &
+                                 rhoh0_old(n,:), &
+                                 rhoh0_new(n,:), &
                                  lo, hi, ng_s, dx(n,:), dt)
           case (3)
              wmp => dataptr(umac(n,3),i)
@@ -116,12 +116,12 @@ contains
                                          sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
                                          sfpx(:,:,:,:), sfpy(:,:,:,:), sfpz(:,:,:,:), &
                                          fp(:,:,:,:), &
-                                         s0_old(n,:,:), s0_edge_old(n,:,:), &
-                                         s0_new(n,:,:), s0_edge_new(n,:,:), &
+                                         rhoh0_old(n,:), &
+                                         rhoh0_new(n,:), &
                                          lo, hi, ng_s, dx(n,:), dt)
              else
-                s0op => dataptr(s0_old_cart(n), i)
-                s0np => dataptr(s0_new_cart(n), i)
+                rhoh0op => dataptr(rhoh0_old_cart(n), i)
+                rhoh0np => dataptr(rhoh0_new_cart(n), i)
                 w0p => dataptr(w0_cart_vec(n),i)
                 call update_scal_3d_sphr(nstart, nstop, &
                                          sop(:,:,:,:), snp(:,:,:,:), &
@@ -130,8 +130,7 @@ contains
                                          sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
                                          sfpx(:,:,:,:), sfpy(:,:,:,:), sfpz(:,:,:,:), &
                                          fp(:,:,:,:), &
-                                         s0_old(n,:,:), s0_new(n,:,:), &
-                                         s0op(:,:,:,:), s0np(:,:,:,:), &
+                                         rhoh0op(:,:,:,1), rhoh0np(:,:,:,1), &
                                          lo, hi, domlo, domhi, ng_s, dx(n,:), dt)
              end if
           end select
@@ -190,8 +189,8 @@ contains
   end subroutine update_scal
 
   subroutine update_scal_2d(nstart,nstop,sold,snew,umac,vmac,w0, &
-                            sedgex,sedgey,sfluxx,sfluxy,force,base_old,base_old_edge, &
-                            base_new,base_new_edge,lo,hi,ng_s,dx,dt)
+                            sedgex,sedgey,sfluxx,sfluxy,force,rhoh0_old, &
+                            rhoh0_new,lo,hi,ng_s,dx,dt)
 
     use network,       only: nspec
     use probin_module, only: enthalpy_pred_type
@@ -213,13 +212,13 @@ contains
     real (kind = dp_t), intent(in   ) ::  sfluxx(lo(1)   :,lo(2)   :,:)
     real (kind = dp_t), intent(in   ) ::  sfluxy(lo(1)   :,lo(2)   :,:)
     real (kind = dp_t), intent(in   ) ::   force(lo(1)- 1:,lo(2)- 1:,:)
-    real (kind = dp_t), intent(in   ) ::   base_old(0:,:), base_old_edge(0:,:)
-    real (kind = dp_t), intent(in   ) ::   base_new(0:,:), base_new_edge(0:,:)
+    real (kind = dp_t), intent(in   ) ::   rhoh0_old(0:)
+    real (kind = dp_t), intent(in   ) ::   rhoh0_new(0:)
     real (kind = dp_t), intent(in   ) :: w0(0:)
     real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
     integer            :: i, j, comp, comp2
-    real (kind = dp_t) :: delta_base,divterm
+    real (kind = dp_t) :: delta_rhoh0,divterm
     real (kind = dp_t) :: delta,frac,sum
     real (kind = dp_t) :: smin(nstart:nstop),smax(nstart:nstop)
     logical :: test
@@ -250,7 +249,7 @@ contains
 
           do j=lo(2),hi(2)
 
-             delta_base = base_new(j,comp) - base_old(j,comp)
+             delta_rhoh0 = rhoh0_new(j) - rhoh0_old(j)
 
              do i = lo(1), hi(1)
 
@@ -258,7 +257,7 @@ contains
                         + (sfluxy(i,j+1,comp) - sfluxy(i,j,comp))/dx(2)
 
                 snew(i,j,comp) = sold(i,j,comp) &
-                     + delta_base + dt*(-divterm + force(i,j,comp))
+                     + delta_rhoh0 + dt*(-divterm + force(i,j,comp))
                 
              end do
           end do
@@ -318,7 +317,7 @@ contains
 
   subroutine update_scal_3d_cart(nstart,nstop,sold,snew,umac,vmac,wmac,w0, &
                                  sedgex,sedgey,sedgez,sfluxx,sfluxy,sfluxz,force, &
-                                 base_old,base_old_edge,base_new,base_new_edge,lo,hi, &
+                                 rhoh0_old,rhoh0_new,lo,hi, &
                                  ng_s,dx,dt)
     use network,       only: nspec
     use probin_module, only: enthalpy_pred_type
@@ -340,14 +339,14 @@ contains
     real (kind = dp_t), intent(in   ) ::  sfluxy(lo(1)   :,lo(2)   :,lo(3)   :,:)
     real (kind = dp_t), intent(in   ) ::  sfluxz(lo(1)   :,lo(2)   :,lo(3)   :,:)
     real (kind = dp_t), intent(in   ) ::   force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
-    real (kind = dp_t), intent(in   ) ::   base_old(0:,:), base_old_edge(0:,:)
-    real (kind = dp_t), intent(in   ) ::   base_new(0:,:), base_new_edge(0:,:)
+    real (kind = dp_t), intent(in   ) ::   rhoh0_old(0:)
+    real (kind = dp_t), intent(in   ) ::   rhoh0_new(0:)
     real (kind = dp_t), intent(in   ) :: w0(0:)
     real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
     integer            :: i, j, k, comp, comp2
     real (kind = dp_t) :: divterm
-    real (kind = dp_t) :: delta,frac,sum,delta_base
+    real (kind = dp_t) :: delta,frac,sum,delta_rhoh0
     real (kind = dp_t) :: smin(nstart:nstop),smax(nstart:nstop)
     logical            :: test
 
@@ -381,7 +380,7 @@ contains
 
           do k = lo(3), hi(3)
 
-             delta_base = base_new(k,comp) - base_old(k,comp)
+             delta_rhoh0 = rhoh0_new(k) - rhoh0_old(k)
 
              do j = lo(2), hi(2)
                 do i = lo(1), hi(1)
@@ -390,7 +389,7 @@ contains
                            + (sfluxy(i,j+1,k,comp) - sfluxy(i,j,k,comp))/dx(2) &
                            + (sfluxz(i,j,k+1,comp) - sfluxz(i,j,k,comp))/dx(3)
    
-                   snew(i,j,k,comp) = sold(i,j,k,comp) + delta_base &
+                   snew(i,j,k,comp) = sold(i,j,k,comp) + delta_rhoh0 &
                         + dt * (-divterm + force(i,j,k,comp))
    
                 enddo
@@ -456,7 +455,7 @@ contains
 
   subroutine update_scal_3d_sphr(nstart,nstop,sold,snew,umac,vmac,wmac, &
                                  w0_cart,sedgex,sedgey,sedgez,sfluxx,sfluxy,sfluxz, &
-                                 force,base_old,base_new,base_old_cart,base_new_cart, &
+                                 force,rhoh0_old_cart,rhoh0_new_cart, &
                                  lo,hi,domlo,domhi,ng_s,dx,dt)
     use network,       only: nspec
     use probin_module, only: enthalpy_pred_type
@@ -478,15 +477,13 @@ contains
     real (kind = dp_t), intent(in   ) ::  sfluxy(lo(1)   :,lo(2)   :,lo(3)   :,:)
     real (kind = dp_t), intent(in   ) ::  sfluxz(lo(1)   :,lo(2)   :,lo(3)   :,:)
     real (kind = dp_t), intent(in   ) ::   force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
-    real (kind = dp_t), intent(in   ) ::   base_old(0:,:)
-    real (kind = dp_t), intent(in   ) ::   base_new(0:,:)
-    real (kind = dp_t), intent(in   ) ::   base_old_cart(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
-    real (kind = dp_t), intent(in   ) ::   base_new_cart(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
+    real (kind = dp_t), intent(in   ) ::   rhoh0_old_cart(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
+    real (kind = dp_t), intent(in   ) ::   rhoh0_new_cart(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
     real (kind = dp_t), intent(in   ) :: w0_cart(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
     real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
     integer            :: i, j, k, comp, comp2
-    real (kind = dp_t) :: divterm,delta_base
+    real (kind = dp_t) :: divterm,delta_rhoh0
     real (kind = dp_t) :: delta,frac,sum
     real (kind = dp_t) :: smin(nstart:nstop),smax(nstart:nstop)
     logical            :: test
@@ -524,13 +521,13 @@ contains
              do j = lo(2), hi(2)
                 do i = lo(1), hi(1)
 
-                   delta_base = base_new_cart(i,j,k,comp) - base_old_cart(i,j,k,comp)
+                   delta_rhoh0 = rhoh0_new_cart(i,j,k) - rhoh0_old_cart(i,j,k)
 
                    divterm = (sfluxx(i+1,j,k,comp) - sfluxx(i,j,k,comp))/dx(1) &
                            + (sfluxy(i,j+1,k,comp) - sfluxy(i,j,k,comp))/dx(2) &
                            + (sfluxz(i,j,k+1,comp) - sfluxz(i,j,k,comp))/dx(3)
 
-                   snew(i,j,k,comp) = sold(i,j,k,comp) + delta_base &
+                   snew(i,j,k,comp) = sold(i,j,k,comp) + delta_rhoh0 &
                         + dt * (-divterm + force(i,j,k,comp))
 
                 enddo

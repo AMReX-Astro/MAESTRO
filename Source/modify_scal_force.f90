@@ -13,7 +13,7 @@ module modify_scal_force_module
 contains
 
   subroutine modify_scal_force(which_step,nlevs,force,s,umac,base,base_edge,w0,dx,base_cart, &
-                               start_comp,num_comp,mla,the_bc_level)
+                               comp,mla,the_bc_level)
 
     use bl_prof_module
     use bl_constants_module
@@ -31,15 +31,15 @@ contains
     type(multifab) , intent(inout) :: force(:)
     type(multifab) , intent(in   ) :: s(:)
     type(multifab) , intent(in   ) :: umac(:,:)
-    real(kind=dp_t), intent(in   ) :: base(:,0:,:), base_edge(:,0:,:), w0(:,0:)
+    real(kind=dp_t), intent(in   ) :: base(:,0:), base_edge(:,0:), w0(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     type(multifab) , intent(in   ) :: base_cart(:)
+    integer        , intent(in   ) :: comp
     type(ml_layout), intent(inout) :: mla
     type(bc_level) , intent(in   ) :: the_bc_level(:)
     
     ! local
     integer :: i,ng,dm,n
-    integer :: comp,start_comp,num_comp
     integer :: lo(s(1)%dim),hi(s(1)%dim)
     integer :: domlo(s(1)%dim),domhi(s(1)%dim)    
 
@@ -75,31 +75,24 @@ contains
           hi = upb(get_box(s(n),i))
           select case (dm)
           case (2)
-             do comp = start_comp, start_comp+num_comp-1
-                call modify_scal_force_2d(which_step,fp(:,:,1,comp),sp(:,:,1,comp), lo, hi, &
-                                          ng,ump(:,:,1,1),vmp(:,:,1,1), &
-                                          base(n,:,comp),base_edge(n,:,comp), &
-                                          w0(n,:),dx(n,:))
-             end do
+             call modify_scal_force_2d(which_step,fp(:,:,1,comp),sp(:,:,1,comp), lo, hi, &
+                                       ng,ump(:,:,1,1),vmp(:,:,1,1),base(n,:), &
+                                       base_edge(n,:),w0(n,:),dx(n,:))
           case(3)
              wmp  => dataptr(umac(n,3), i)
              if (spherical .eq. 1) then
                 bcp => dataptr(base_cart(n), i)
-                do comp = start_comp, start_comp+num_comp-1
-                   call modify_scal_force_3d_sphr(n,fp(:,:,:,comp),sp(:,:,:,comp), &
-                                                  lo,hi,domlo,domhi,ng, &
-                                                  ump(:,:,:,1),vmp(:,:,:,1), &
-                                                  wmp(:,:,:,1),bcp(:,:,:,comp), &
-                                                  w0(n,:),dx(n,:))
-                end do
+                call modify_scal_force_3d_sphr(n,fp(:,:,:,comp),sp(:,:,:,comp), &
+                                               lo,hi,domlo,domhi,ng, &
+                                               ump(:,:,:,1),vmp(:,:,:,1), &
+                                               wmp(:,:,:,1),bcp(:,:,:,1), &
+                                               w0(n,:),dx(n,:))
              else
-                do comp = start_comp, start_comp+num_comp-1
-                   call modify_scal_force_3d_cart(fp(:,:,:,comp),sp(:,:,:,comp), &
-                                                  lo,hi,ng,ump(:,:,:,1), &
-                                                  vmp(:,:,:,1),wmp(:,:,:,1), &
-                                                  base(n,:,comp),base_edge(n,:,comp), &
-                                                  w0(n,:),dx(n,:))
-                end do
+                call modify_scal_force_3d_cart(fp(:,:,:,comp),sp(:,:,:,comp), &
+                                               lo,hi,ng,ump(:,:,:,1), &
+                                               vmp(:,:,:,1),wmp(:,:,:,1), &
+                                               base(n,:),base_edge(n,:), &
+                                               w0(n,:),dx(n,:))
              end if
           end select
        end do
@@ -110,12 +103,10 @@ contains
 
        ! fill ghost cells for two adjacent grids at the same level
        ! this includes periodic domain boundary ghost cells
-       call multifab_fill_boundary_c(force(nlevs),start_comp,num_comp)
+       call multifab_fill_boundary_c(force(nlevs),comp,1)
        
        ! fill non-periodic domain boundary ghost cells
-       do comp = start_comp, start_comp+num_comp-1
-          call multifab_physbc(force(nlevs),comp,foextrap_comp,1,the_bc_level(nlevs))
-       enddo
+       call multifab_physbc(force(nlevs),comp,foextrap_comp,1,the_bc_level(nlevs))
 
     else
 
@@ -123,18 +114,15 @@ contains
        do n=nlevs,2,-1
 
           ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction_c(force(n-1),start_comp,force(n),start_comp, &
-                                   mla%mba%rr(n-1,:),num_comp)
+          call ml_cc_restriction_c(force(n-1),comp,force(n),comp,mla%mba%rr(n-1,:),1)
 
           ! fill level n ghost cells using interpolation from level n-1 data
           ! note that multifab_fill_boundary and multifab_physbc are called for
           ! both levels n-1 and n
-          do comp = start_comp, start_comp+num_comp-1
-             call multifab_fill_ghost_cells(force(n),force(n-1), &
-                                            force(n)%ng,mla%mba%rr(n-1,:), &
-                                            the_bc_level(n-1),the_bc_level(n), &
-                                            comp,foextrap_comp,1)
-          enddo
+          call multifab_fill_ghost_cells(force(n),force(n-1), &
+                                         force(n)%ng,mla%mba%rr(n-1,:), &
+                                         the_bc_level(n-1),the_bc_level(n), &
+                                         comp,foextrap_comp,1)
 
        enddo
 

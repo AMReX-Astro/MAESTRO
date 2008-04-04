@@ -65,8 +65,10 @@ contains
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     type(multifab) :: scal_force(nlevs)
-    type(multifab) :: s0_old_cart(nlevs)
-    type(multifab) :: s0_new_cart(nlevs)
+    type(multifab) :: rho0_old_cart(nlevs)
+    type(multifab) :: rho0_new_cart(nlevs)
+    type(multifab) :: rhoh0_old_cart(nlevs)
+    type(multifab) :: rhoh0_new_cart(nlevs)
     type(multifab) :: sedge(nlevs,mla%dim)
     type(multifab) :: sflux(nlevs,mla%dim)
 
@@ -74,8 +76,10 @@ contains
     logical    :: umac_nodal_flag(sold(1)%dim), is_vel
     real(dp_t) :: smin,smax
 
-    real(kind=dp_t), allocatable :: s0_edge_old(:,:,:)
-    real(kind=dp_t), allocatable :: s0_edge_new(:,:,:)
+    real(kind=dp_t), allocatable :: rho0_edge_old(:,:)
+    real(kind=dp_t), allocatable :: rho0_edge_new(:,:)
+    real(kind=dp_t), allocatable :: rhoh0_edge_old(:,:)
+    real(kind=dp_t), allocatable :: rhoh0_edge_new(:,:)
 
     type(bl_prof_timer), save :: bpt
 
@@ -85,37 +89,45 @@ contains
     is_vel  = .false.
     velpred = 0    
 
-    ! create edge-centered base state quantities.  Note: s0_edge_{old,new} 
+    ! create edge-centered base state quantities.
+    ! Note: rho0_edge_{old,new} and rhoh0_edge_{old,new}
     ! contain edge-centered quantities created via spatial interpolation.
     ! This is to be contrasted to rho0_predicted_edge which is the half-time
     ! edge state created in advect_base.
-    allocate(s0_edge_old(nlevs,0:nr(nlevs),nscal))
-    allocate(s0_edge_new(nlevs,0:nr(nlevs),nscal))
+    allocate(rho0_edge_old(nlevs,0:nr(nlevs)))
+    allocate(rho0_edge_new(nlevs,0:nr(nlevs)))
+    allocate(rhoh0_edge_old(nlevs,0:nr(nlevs)))
+    allocate(rhoh0_edge_new(nlevs,0:nr(nlevs)))
 
     do n = 1, nlevs
-       call cell_to_edge_allcomps(n,s0_old(n,:,:),s0_edge_old(n,:,:))
-       call cell_to_edge_allcomps(n,s0_new(n,:,:),s0_edge_new(n,:,:))
+       call cell_to_edge(n,s0_old(n,:,rho_comp),rho0_edge_old(n,:))
+       call cell_to_edge(n,s0_new(n,:,rho_comp),rho0_edge_new(n,:))
+       call cell_to_edge(n,s0_old(n,:,rhoh_comp),rhoh0_edge_old(n,:))
+       call cell_to_edge(n,s0_new(n,:,rhoh_comp),rhoh0_edge_new(n,:))
     end do
 
-    ! Define s0_old_cart and s0_new_cart
+    ! Define rho0_old_cart and rho0_new_cart
+    ! Define rhoh0_old_cart and rhoh0_new_cart
     if (spherical .eq. 1) then
        do n=1,nlevs
-          call build(s0_old_cart(n), sold(n)%la, nscal, 1)
-          call build(s0_new_cart(n), sold(n)%la, nscal, 1)
+          call build(rho0_old_cart(n), sold(n)%la, 1, 1)
+          call build(rho0_new_cart(n), sold(n)%la, 1, 1)
+          call build(rhoh0_old_cart(n), sold(n)%la, 1, 1)
+          call build(rhoh0_new_cart(n), sold(n)%la, 1, 1)
        end do
+
+       call fill_3d_data_c(nlevs,dx,the_bc_level,mla,rho0_old_cart, &
+                           s0_old(:,:,rho_comp),1,dm+rho_comp)
+       call fill_3d_data_c(nlevs,dx,the_bc_level,mla,rho0_new_cart, &
+                           s0_new(:,:,rho_comp),1,dm+rho_comp)
 
        if (enthalpy_pred_type .eq. predict_T_then_rhohprime .or. &
             enthalpy_pred_type .eq. predict_rhohprime) then
-          call fill_3d_data_c(nlevs,dx,the_bc_level,mla,s0_old_cart,s0_old(:,:,rhoh_comp), &
-                              rhoh_comp,dm+rhoh_comp)
-          call fill_3d_data_c(nlevs,dx,the_bc_level,mla,s0_new_cart,s0_new(:,:,rhoh_comp), &
-                              rhoh_comp,dm+rhoh_comp)
+          call fill_3d_data_c(nlevs,dx,the_bc_level,mla,rhoh0_old_cart, &
+                              s0_old(:,:,rhoh_comp),1,dm+rhoh_comp)
+          call fill_3d_data_c(nlevs,dx,the_bc_level,mla,rhoh0_new_cart, &
+                              s0_new(:,:,rhoh_comp),1,dm+rhoh_comp)
        end if
-
-       call fill_3d_data_c(nlevs,dx,the_bc_level,mla,s0_old_cart,s0_old(:,:,rho_comp), &
-                           rho_comp,dm+rho_comp)
-       call fill_3d_data_c(nlevs,dx,the_bc_level,mla,s0_new_cart,s0_new(:,:,rho_comp), &
-                           rho_comp,dm+rho_comp)
     end if
 
     ! This can be uncommented if you wish to compute T
@@ -145,8 +157,8 @@ contains
     ! X force is zero - do nothing
 
     ! make force for rho'
-    call modify_scal_force(which_step,nlevs,scal_force,sold,umac,s0_old,s0_edge_old, &
-                           w0,dx,s0_old_cart,rho_comp,1,mla,the_bc_level)
+    call modify_scal_force(which_step,nlevs,scal_force,sold,umac,s0_old(:,:,rho_comp), &
+                           rho0_edge_old,w0,dx,rho0_old_cart,rho_comp,mla,the_bc_level)
 
     ! make force for either h, T, or (rho h)'
     if (enthalpy_pred_type .eq. predict_rhohprime) then
@@ -155,8 +167,8 @@ contains
        call mkrhohforce(nlevs,scal_force,thermal,umac,p0_old,p0_old,psi,normal,dx,.true., &
                         mla,the_bc_level)
 
-       call modify_scal_force(which_step,nlevs,scal_force,sold,umac,s0_old,s0_edge_old,w0,&
-                              dx,s0_old_cart,rhoh_comp,1,mla,the_bc_level)
+       call modify_scal_force(which_step,nlevs,scal_force,sold,umac,s0_old(:,:,rhoh_comp), &
+                              rhoh0_edge_old,w0,dx,rhoh0_old_cart,rhoh_comp,mla,the_bc_level)
 
     else if (enthalpy_pred_type .eq. predict_h) then
 
@@ -189,11 +201,13 @@ contains
 
     if (enthalpy_pred_type .eq. predict_rhohprime) then
        ! convert (rho h) -> (rho h)'
-       call put_in_pert_form(nlevs,sold,s0_old,dx,rhoh_comp,1,.true.,mla,the_bc_level)
+       call put_in_pert_form(nlevs,sold,s0_old(:,:,rhoh_comp),dx,rhoh_comp, &
+                             .true.,mla,the_bc_level)
     end if
 
     ! convert rho -> rho'
-    call put_in_pert_form(nlevs,sold,s0_old,dx,rho_comp,1,.true.,mla,the_bc_level)
+    call put_in_pert_form(nlevs,sold,s0_old(:,:,rho_comp),dx,rho_comp, &
+                          .true.,mla,the_bc_level)
 
     do n=1,nlevs
        do comp = 1,dm
@@ -229,11 +243,13 @@ contains
 
     if (enthalpy_pred_type .eq. predict_rhohprime) then
        ! convert (rho h)' -> (rho h)
-       call put_in_pert_form(nlevs,sold,s0_old,dx,rhoh_comp,1,.false.,mla,the_bc_level)
+       call put_in_pert_form(nlevs,sold,s0_old(:,:,rhoh_comp),dx,rhoh_comp, &
+                             .false.,mla,the_bc_level)
     end if
 
     ! convert rho' -> rho
-    call put_in_pert_form(nlevs,sold,s0_old,dx,rho_comp,1,.false.,mla,the_bc_level)
+    call put_in_pert_form(nlevs,sold,s0_old(:,:,rho_comp),dx,rho_comp, &
+                          .false.,mla,the_bc_level)
 
     ! if we were predicting X at the edges, then restore the state arrays 
     ! (and base state) from X to (rho X)
@@ -250,8 +266,10 @@ contains
     ! the species are back to (rho X) instead of X.
     if ( (enthalpy_pred_type .eq. predict_T_then_rhohprime) .or. &
          (enthalpy_pred_type .eq. predict_T_then_h        ) ) then
-       call makeRhoHfromT(nlevs,uold,sedge,s0_old,s0_edge_old,s0_new,s0_edge_new, &
-                          the_bc_level,dx)
+       call makeRhoHfromT(nlevs,uold,sedge,s0_old(:,:,rho_comp),s0_old(:,:,rhoh_comp), &
+                          rho0_edge_old,rhoh0_edge_old, &
+                          s0_new(:,:,rho_comp),s0_new(:,:,rhoh_comp), &
+                          rho0_edge_new,rhoh0_edge_new,the_bc_level,dx)
     end if
 
     !**************************************************************************
@@ -283,24 +301,32 @@ contains
     end do
 
     ! for which_step .eq. 1, we pass in only the old base state quantities
-    ! (s0_old, s0_edge_old, s0_old_cart)
     ! for which_step .eq. 2, we pass in the old and new for averaging within mkflux
     if (which_step .eq. 1) then
 
     ! compute enthalpy fluxes
        call mkflux(nlevs,sflux,etarhoflux,sold,sedge,umac,w0,w0_cart_vec, &
-                   s0_old,s0_edge_old,s0_old_cart,s0_old,s0_edge_old,s0_old_cart, &
+                   s0_old(:,:,rho_comp),rho0_edge_old,rho0_old_cart, &
+                   s0_old(:,:,rho_comp),rho0_edge_old,rho0_old_cart, &
+                   s0_old(:,:,rhoh_comp),rhoh0_edge_old,rhoh0_old_cart, &
+                   s0_old(:,:,rhoh_comp),rhoh0_edge_old,rhoh0_old_cart, &
                    rho0_predicted_edge,rhoh_comp,rhoh_comp,mla,dx,dt)
 
        ! compute species fluxes
        call mkflux(nlevs,sflux,etarhoflux,sold,sedge,umac,w0,w0_cart_vec, &
-                   s0_old,s0_edge_old,s0_old_cart,s0_old,s0_edge_old,s0_old_cart, &
+                   s0_old(:,:,rho_comp),rho0_edge_old,rho0_old_cart, &
+                   s0_old(:,:,rho_comp),rho0_edge_old,rho0_old_cart, &
+                   s0_old(:,:,rhoh_comp),rhoh0_edge_old,rhoh0_old_cart, &
+                   s0_old(:,:,rhoh_comp),rhoh0_edge_old,rhoh0_old_cart, &
                    rho0_predicted_edge,spec_comp,spec_comp+nspec-1,mla,dx,dt)
 
        if (ntrac .ge. 1) then
           ! compute tracer fluxes
           call mkflux(nlevs,sflux,etarhoflux,sold,sedge,umac,w0,w0_cart_vec, &
-                      s0_old,s0_edge_old,s0_old_cart,s0_old,s0_edge_old,s0_old_cart, &
+                      s0_old(:,:,rho_comp),rho0_edge_old,rho0_old_cart, &
+                      s0_old(:,:,rho_comp),rho0_edge_old,rho0_old_cart, &
+                      s0_old(:,:,rhoh_comp),rhoh0_edge_old,rhoh0_old_cart, &
+                      s0_old(:,:,rhoh_comp),rhoh0_edge_old,rhoh0_old_cart, &
                       rho0_predicted_edge,trac_comp,trac_comp+ntrac-1,mla,dx,dt)
        end if
 
@@ -308,18 +334,27 @@ contains
 
        ! compute enthalpy fluxes
        call mkflux(nlevs,sflux,etarhoflux,sold,sedge,umac,w0,w0_cart_vec, &
-                   s0_old,s0_edge_old,s0_old_cart,s0_new,s0_edge_new,s0_new_cart, &
+                   s0_old(:,:,rho_comp),rho0_edge_old,rho0_old_cart, &
+                   s0_new(:,:,rho_comp),rho0_edge_new,rho0_new_cart, &
+                   s0_old(:,:,rhoh_comp),rhoh0_edge_old,rhoh0_old_cart, &
+                   s0_new(:,:,rhoh_comp),rhoh0_edge_new,rhoh0_new_cart, &
                    rho0_predicted_edge,rhoh_comp,rhoh_comp,mla,dx,dt)
 
        ! compute species fluxes
        call mkflux(nlevs,sflux,etarhoflux,sold,sedge,umac,w0,w0_cart_vec, &
-                   s0_old,s0_edge_old,s0_old_cart,s0_new,s0_edge_new,s0_new_cart, &
+                   s0_old(:,:,rho_comp),rho0_edge_old,rho0_old_cart, &
+                   s0_new(:,:,rho_comp),rho0_edge_new,rho0_new_cart, &
+                   s0_old(:,:,rhoh_comp),rhoh0_edge_old,rhoh0_old_cart, &
+                   s0_new(:,:,rhoh_comp),rhoh0_edge_new,rhoh0_new_cart, &
                    rho0_predicted_edge,spec_comp,spec_comp+nspec-1,mla,dx,dt)
 
        if (ntrac .ge. 1) then
           ! compute tracer fluxes
           call mkflux(nlevs,sflux,etarhoflux,sold,sedge,umac,w0,w0_cart_vec, &
-                      s0_old,s0_edge_old,s0_old_cart,s0_new,s0_edge_new,s0_new_cart, &
+                      s0_old(:,:,rho_comp),rho0_edge_old,rho0_old_cart, &
+                      s0_new(:,:,rho_comp),rho0_edge_new,rho0_new_cart, &
+                      s0_old(:,:,rhoh_comp),rhoh0_edge_old,rhoh0_old_cart, &
+                      s0_new(:,:,rhoh_comp),rhoh0_edge_new,rhoh0_new_cart, &
                       rho0_predicted_edge,trac_comp,trac_comp+ntrac-1,mla,dx,dt)
        end if
 
@@ -337,8 +372,9 @@ contains
     end do
 
     call update_scal(nlevs,spec_comp,spec_comp+nspec-1,sold,snew,umac,w0, &
-                     w0_cart_vec,sedge,sflux,scal_force,s0_old,s0_edge_old,s0_new, &
-                     s0_edge_new,s0_old_cart,s0_new_cart,dx,dt,the_bc_level,mla)
+                     w0_cart_vec,sedge,sflux,scal_force, &
+                     s0_old(:,:,rhoh_comp),s0_new(:,:,rhoh_comp), &
+                     rhoh0_old_cart,rhoh0_new_cart,dx,dt,the_bc_level,mla)
     
     if ( verbose .ge. 1 ) then
        do n=1, nlevs
@@ -366,9 +402,9 @@ contains
     !**************************************************************************
     
     if ( ntrac .ge. 1 ) then
-       call update_scal(nlevs,trac_comp,trac_comp+ntrac-1,sold,snew,umac,w0, &
-                        w0_cart_vec,sedge,sflux,scal_force,s0_old,s0_edge_old,s0_new, &
-                        s0_edge_new,s0_old_cart,s0_new_cart,dx,dt,the_bc_level,mla)
+       call update_scal(nlevs,trac_comp,trac_comp+ntrac-1,sold,snew,umac,w0,w0_cart_vec, &
+                        sedge,sflux,scal_force,s0_old(:,:,rhoh_comp),s0_new(:,:,rhoh_comp), &
+                        rhoh0_old_cart,rhoh0_new_cart,dx,dt,the_bc_level,mla)
 
        if ( verbose .ge. 1 ) then
           do n=1,nlevs
@@ -398,8 +434,8 @@ contains
     end if
 
     call update_scal(nlevs,rhoh_comp,rhoh_comp,sold,snew,umac,w0,w0_cart_vec, &
-                     sedge,sflux,scal_force,s0_old,s0_edge_old,s0_new,s0_edge_new, &
-                     s0_old_cart,s0_new_cart,dx,dt,the_bc_level,mla)
+                     sedge,sflux,scal_force,s0_old(:,:,rhoh_comp),s0_new(:,:,rhoh_comp), &
+                     rhoh0_old_cart,rhoh0_new_cart,dx,dt,the_bc_level,mla)
 
     if ( verbose .ge. 1 ) then
        do n=1,nlevs
@@ -414,8 +450,10 @@ contains
 
     if (spherical .eq. 1) then
        do n=1,nlevs
-          call destroy(s0_old_cart(n))
-          call destroy(s0_new_cart(n))
+          call destroy(rho0_old_cart(n))
+          call destroy(rho0_new_cart(n))
+          call destroy(rhoh0_old_cart(n))
+          call destroy(rhoh0_new_cart(n))
        end do
     end if
 
