@@ -9,7 +9,7 @@ module make_psi_module
 
 contains
 
-  subroutine make_psi(nlevs,etarho,psi,s0,w0,gamma1bar,p0_old,p0_new,Sbar_in)
+  subroutine make_psi(nlevs,etarho,psi,w0,gamma1bar,p0_old,p0_new,Sbar_in)
 
     use bl_prof_module
     use geometry, only: spherical
@@ -17,7 +17,6 @@ contains
     integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(in   ) :: etarho(:,0:)
     real(kind=dp_t), intent(inout) :: psi(:,0:)
-    real(kind=dp_t), intent(in   ) :: s0(:,0:,:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:), p0_new(:,0:)
@@ -32,11 +31,11 @@ contains
     
     if (spherical .eq. 0) then 
        do n = 1,nlevs
-          call make_psi_planar(n,etarho(n,0:),psi(n,0:),s0(n,0:,:))
+          call make_psi_planar(n,etarho(n,0:),psi(n,0:))
        end do
     else
        do n = 1,nlevs
-          call make_psi_spherical(n,psi(n,0:),s0(n,0:,:),w0(n,0:),gamma1bar(n,0:), &
+          call make_psi_spherical(n,psi(n,0:),w0(n,0:),gamma1bar(n,0:), &
                                   p0_old(n,0:),p0_new(n,0:),Sbar_in(n,0:))
        end do
     endif
@@ -46,7 +45,7 @@ contains
        
   end subroutine make_psi
 
-  subroutine make_psi_planar(n,etarho,psi,s0)
+  subroutine make_psi_planar(n,etarho,psi)
 
     use bl_constants_module
     use geometry, only: r_anel
@@ -55,7 +54,6 @@ contains
     integer        , intent(in   ) :: n
     real(kind=dp_t), intent(in   ) :: etarho(0:)
     real(kind=dp_t), intent(inout) :: psi(0:)
-    real(kind=dp_t), intent(in   ) :: s0(0:,:)
     
     ! Local variables
     integer         :: r
@@ -70,14 +68,13 @@ contains
     
   end subroutine make_psi_planar
 
-  subroutine make_psi_spherical(n,psi,s0,w0,gamma1bar,p0_old,p0_new,Sbar_in)
+  subroutine make_psi_spherical(n,psi,w0,gamma1bar,p0_old,p0_new,Sbar_in)
 
     use bl_constants_module
     use geometry, only: nr, dr, base_cc_loc, base_loedge_loc
 
     integer        , intent(in   ) :: n
     real(kind=dp_t), intent(inout) :: psi(0:)
-    real(kind=dp_t), intent(in   ) :: s0(0:,:)
     real(kind=dp_t), intent(in   ) :: w0(0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar(0:)
     real(kind=dp_t), intent(in   ) :: p0_old(0:), p0_new(0:)
