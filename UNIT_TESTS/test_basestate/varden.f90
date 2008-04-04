@@ -162,6 +162,7 @@ subroutine varden()
 
 
 
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! main timestepping loop
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!    
@@ -174,6 +175,15 @@ subroutine varden()
   do while (time < stop_time)
 
      print *, 'time = ', time
+
+     ! compute the anelastic cutoff
+     r_anel(1) = nr_fine
+     do i = 0, nr_fine-1
+        if (s0(1,i,rho_comp) .lt. anelastic_cutoff .and. r_anel(1) .eq. nr_fine-1) then
+           r_anel(1) = i
+           exit
+        endif
+     enddo
 
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
