@@ -12,7 +12,7 @@ module fill_3d_module
   
 contains
 
-  subroutine fill_3d_data_c(nlevs,dx,the_bc_level,mla,s0_cart,s0,in_comp,bc_comp)
+  subroutine fill_3d_data_c(nlevs,dx,the_bc_level,mla,s0_cart,s0,out_comp,bc_comp)
 
     use bl_prof_module
     use bl_constants_module
@@ -32,7 +32,7 @@ contains
     type(ml_layout), intent(inout) :: mla
     type(multifab) , intent(inout) :: s0_cart(:)
     real(kind=dp_t), intent(in   ) :: s0(:,0:)
-    integer        , intent(in   ) :: in_comp,bc_comp
+    integer        , intent(in   ) :: out_comp,bc_comp
 
     integer                  :: i,ng,n
     integer                  :: lo(s0_cart(1)%dim),hi(s0_cart(1)%dim)
@@ -50,7 +50,7 @@ contains
           s0p => dataptr(s0_cart(n),i)
           lo = lwb(get_box(s0_cart(n),i))
           hi = upb(get_box(s0_cart(n),i))
-          call fill_3d_data(n,s0p(:,:,:,in_comp),s0(n,:),lo,hi,dx(n,:),ng)
+          call fill_3d_data(n,s0p(:,:,:,out_comp),s0(n,:),lo,hi,dx(n,:),ng)
        end do
     end do
 
@@ -58,10 +58,10 @@ contains
 
        ! fill ghost cells for two adjacent grids at the same level
        ! this includes periodic domain boundary ghost cells
-       call multifab_fill_boundary_c(s0_cart(nlevs),in_comp,1)
+       call multifab_fill_boundary_c(s0_cart(nlevs),out_comp,1)
 
        ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(s0_cart(nlevs),in_comp,bc_comp,1,the_bc_level(nlevs))
+       call multifab_physbc(s0_cart(nlevs),out_comp,bc_comp,1,the_bc_level(nlevs))
 
     else
 
@@ -69,14 +69,14 @@ contains
        do n=nlevs,2,-1
 
           ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction_c(s0_cart(n-1),in_comp,s0_cart(n), &
-                                   in_comp,mla%mba%rr(n-1,:),1)
+          call ml_cc_restriction_c(s0_cart(n-1),out_comp,s0_cart(n), &
+                                   out_comp,mla%mba%rr(n-1,:),1)
 
           ! fill level n ghost cells using interpolation from level n-1 data
           ! note that multifab_fill_boundary and multifab_physbc are called for
           ! both levels n-1 and n
           call multifab_fill_ghost_cells(s0_cart(n),s0_cart(n-1),ng,mla%mba%rr(n-1,:), &
-                                         the_bc_level(n-1),the_bc_level(n),in_comp,bc_comp,1)
+                                         the_bc_level(n-1),the_bc_level(n),out_comp,bc_comp,1)
     end do
 
  end if
