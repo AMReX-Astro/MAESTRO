@@ -909,7 +909,8 @@ contains
     call make_at_halftime(nlevs,rhohalf,sold,snew,rho_comp,1,the_bc_tower%bc_tower_array,mla)
     
     call velocity_advance(nlevs,mla,uold,unew,sold,rhohalf,umac,utrans,gpres, &
-                          normal,w0,w0_cart_vec,w0_force,w0_force_cart_vec,s0_old,rho0_nph, &
+                          normal,w0,w0_cart_vec,w0_force,w0_force_cart_vec, &
+                          s0_old(:,:,rho_comp),rho0_nph, &
                           grav_cell_old,grav_cell_nph,dx,dt, &
                           the_bc_tower%bc_tower_array,sponge)
 
