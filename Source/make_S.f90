@@ -72,11 +72,11 @@ contains
           hi = upb(get_box(state(n), i))
           select case (dm)
           case (2)
-             call make_S_2d(lo, hi, srcp(:,:,1,1), dgtp(:,:,1,1), dgp(:,:,1,1), &
+             call make_S_2d(n,lo, hi, srcp(:,:,1,1), dgtp(:,:,1,1), dgp(:,:,1,1), &
                             sp(:,:,1,:), up(:,:,1,:), omegap(:,:,1,:), hp(:,:,1,1), &
                             tp(:,:,1,1), ng, p0(n,:), rho0(n,:), gamma1bar(n,:), dx(n,:))
           case (3)
-             call make_S_3d(lo, hi, srcp(:,:,:,1), dgtp(:,:,:,1), dgp(:,:,:,1), &
+             call make_S_3d(n,lo, hi, srcp(:,:,:,1), dgtp(:,:,:,1), dgp(:,:,:,1), &
                             sp(:,:,:,:), up(:,:,:,:), omegap(:,:,:,:), hp(:,:,:,1), &
                             tp(:,:,:,1), ng, p0(n,:), rho0(n,:), gamma1bar(n,:), dx(n,:))
           end select
@@ -112,15 +112,16 @@ contains
    end subroutine make_S
 
 
-   subroutine make_S_2d (lo,hi,Source,delta_gamma1_term,delta_gamma1,s,u, &
+   subroutine make_S_2d (n,lo,hi,Source,delta_gamma1_term,delta_gamma1,s,u, &
                          rho_omegadot,rho_Hext,thermal,ng,p0,rho0,gamma1bar,dx)
 
       use bl_constants_module
       use eos_module
       use variables, only: rho_comp, temp_comp, spec_comp
       use probin_module, only: use_delta_gamma1_term, anelastic_cutoff
+      use geometry, only: r_anel, nr
 
-      integer         , intent(in   ) :: lo(:), hi(:), ng
+      integer         , intent(in   ) :: n,lo(:), hi(:), ng
       real (kind=dp_t), intent(  out) :: Source(lo(1):,lo(2):)
       real (kind=dp_t), intent(  out) :: delta_gamma1_term(lo(1):,lo(2):)
       real (kind=dp_t), intent(  out) :: delta_gamma1(lo(1):,lo(2):)
@@ -135,23 +136,12 @@ contains
       real (kind=dp_t), intent(in   ) :: dx(:)
 
 !     Local variables
-      integer         :: i, j, comp, nr, r, r_anel
+      integer         :: i, j, comp, r
       real(kind=dp_t) :: sigma, react_term, pres_term, gradp0
-
-      nr = size(p0,dim=1)
 
       Source = zero
 
       do_diag = .false.
-
-      ! This is used to zero the delta_gamma1_term stuff above anelastic_cutoff
-      r_anel = nr-1
-      do r = 0,nr-1
-         if (rho0(r) .lt. anelastic_cutoff .and. r_anel .eq. nr-1) then
-            r_anel = r
-            exit
-         endif
-      enddo
 
       do j = lo(2), hi(2)
         do i = lo(1), hi(1)
@@ -188,10 +178,10 @@ contains
                         + sigma*react_term &
                         + pres_term/(den_eos(1)*dpdr_eos(1))
 
-           if (use_delta_gamma1_term .and. j < r_anel) then
+           if (use_delta_gamma1_term .and. j < r_anel(n)) then
               if (j .eq. 0) then
                  gradp0 = (p0(j+1) - p0(j))/dx(2)
-              else if (j .eq. nr-1) then
+              else if (j .eq. nr(n)-1) then
                  gradp0 = (p0(j) - p0(j-1))/dx(2)
               else
                  gradp0 = HALF*(p0(j+1) - p0(j-1))/dx(2)
@@ -212,7 +202,7 @@ contains
  
    end subroutine make_S_2d
 
-   subroutine make_S_3d(lo,hi,Source,delta_gamma1_term,delta_gamma1,s,u, &
+   subroutine make_S_3d(n,lo,hi,Source,delta_gamma1_term,delta_gamma1,s,u, &
                         rho_omegadot,rho_Hext,thermal,ng,p0,rho0,gamma1bar,dx)
 
       use bl_constants_module
@@ -220,8 +210,9 @@ contains
       use geometry, only: spherical
       use variables, only: rho_comp, temp_comp, spec_comp
       use probin_module, only: use_delta_gamma1_term, anelastic_cutoff
+      use geometry, only: r_anel, nr
      
-      integer         , intent(in   ) :: lo(:), hi(:), ng
+      integer         , intent(in   ) :: n,lo(:), hi(:), ng
       real (kind=dp_t), intent(  out) :: Source(lo(1):,lo(2):,lo(3):)  
       real (kind=dp_t), intent(  out) :: delta_gamma1_term(lo(1):,lo(2):,lo(3):)  
       real (kind=dp_t), intent(  out) :: delta_gamma1(lo(1):,lo(2):,lo(3):) 
@@ -236,23 +227,12 @@ contains
       real (kind=dp_t), intent(in   ) :: dx(:)
 
 !     Local variables
-      integer         :: i, j, k, comp, nr, r, r_anel
+      integer         :: i, j, k, comp, r
       real(kind=dp_t) :: sigma, react_term, pres_term, gradp0
-
-      nr = size(p0,dim=1)
 
       Source = zero
 
       do_diag = .false.
-
-      ! This is used to zero the delta_gamma1_term stuff above anelastic_cutoff
-      r_anel = nr-1
-      do r = 0,nr-1
-         if (rho0(r) .lt. anelastic_cutoff .and. r_anel .eq. nr-1) then
-            r_anel = r
-            exit
-         endif
-      enddo
 
       do k = lo(3), hi(3)
         do j = lo(2), hi(2)
@@ -295,10 +275,10 @@ contains
                  call bl_error("ERROR: use_delta_gamma1_term not implemented for spherical in make_S")
               end if
 
-              if (use_delta_gamma1_term .and. k < r_anel) then
+              if (use_delta_gamma1_term .and. k < r_anel(n)) then
                  if (k .eq. 0) then
                     gradp0 = (p0(k+1) - p0(k))/dx(3)
-                 else if (k .eq. nr-1) then
+                 else if (k .eq. nr(n)-1) then
                     gradp0 = (p0(k) - p0(k-1))/dx(3)
                  else
                     gradp0 = HALF*(p0(k+1) - p0(k-1))/dx(3)

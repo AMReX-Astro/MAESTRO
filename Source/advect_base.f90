@@ -80,7 +80,6 @@ contains
     
     ! Local variables
     integer :: r,comp
-    integer :: r_anel
     real(kind=dp_t) :: vel_avg
     
     real (kind = dp_t), allocatable :: force(:)

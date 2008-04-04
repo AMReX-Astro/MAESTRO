@@ -297,7 +297,7 @@ contains
   subroutine put_w0_on_3d_cells_sphr(n,w0,w0_cell,normal,lo,hi,dx,ng)
 
     use bl_constants_module
-    use geometry, only: center, dr
+    use geometry, only: center, dr, nr
 
     integer        , intent(in   ) :: n,lo(:),hi(:),ng
     real(kind=dp_t), intent(  out) :: w0_cell(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
@@ -305,11 +305,9 @@ contains
     real(kind=dp_t), intent(in   ) :: w0(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
 
-    integer         :: i,j,k,nr,index
+    integer         :: i,j,k,index
     real(kind=dp_t) :: x,y,z
     real(kind=dp_t) :: radius,rfac,w0_cell_val
-
-    nr = size(w0,dim=1)
 
     do k = lo(3),hi(3)
       z = (dble(k)+HALF)*dx(3) - center(3)
@@ -321,10 +319,10 @@ contains
           index  = int(radius / dr(n))
 
           if ( .false. ) then
-             if (index .lt. 0 .or. index .gt. nr-1) then
+             if (index .lt. 0 .or. index .gt. nr(n)) then
                 print *,'RADIUS ',radius
                 print *,'BOGUS INDEX IN PUT_ON_CELLS: ',index
-                print *,'NOT IN RANGE 0 TO ',nr-1
+                print *,'NOT IN RANGE 0 TO ',nr(n)
                 print *,'I J K ',i,j,k
                 print *,'X Y Z ',x,y,z
                 call bl_error(' ')            

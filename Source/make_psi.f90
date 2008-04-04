@@ -50,7 +50,7 @@ contains
 
     use bl_constants_module
     use variables, only: rho_comp
-    use geometry, only: nr
+    use geometry, only: nr, r_anel
     use probin_module, only: grav_const, anelastic_cutoff
 
     integer        , intent(in   ) :: n
@@ -59,21 +59,12 @@ contains
     real(kind=dp_t), intent(in   ) :: s0(0:,:)
     
     ! Local variables
-    integer         :: r,r_anel
+    integer         :: r
     real(kind=dp_t) :: etarho_avg
    
-    ! This is used to zero the etarho contribution above the anelastic_cutoff
-    r_anel = nr(n)-1
-    do r = 0,nr(n)-1
-       if (s0(r,rho_comp) .lt. anelastic_cutoff .and. r_anel .eq. nr(n)-1) then
-          r_anel = r
-          exit
-       end if
-    end do
-
     psi(:) = ZERO
 
-    do r = 0, r_anel-1
+    do r = 0, r_anel(n)-1
       etarho_avg = HALF * (etarho(r)+etarho(r+1))
       psi(r) = etarho_avg * abs(grav_const)
     end do

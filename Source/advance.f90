@@ -45,7 +45,7 @@ contains
     use make_explicit_thermal_module
     use add_react_to_thermal_module
     use variables, only: nscal, press_comp, temp_comp, rho_comp, rhoh_comp, foextrap_comp
-    use geometry, only: nr, spherical
+    use geometry, only: nr, spherical, r_anel
     use network, only: nspec
     use make_grav_module
     use make_eta_module
@@ -174,6 +174,18 @@ contains
     nodal = .true.
     ng_s = sold(1)%ng
     halfdt = half*dt
+
+    ! compute the coordinates of the anelastic cutoff
+    r_anel(1) = nr(1)-1
+    do r=0,nr(1)-1
+       if (s0_old(1,r,rho_comp) .lt. anelastic_cutoff .and. r_anel(1) .eq. nr(1)-1) then
+          r_anel(1) = r
+          exit
+       end if
+    end do
+    do n=2,nlevs
+       r_anel(n) = 2*r_anel(n-1)
+    end do
 
     ! tempbar is only used as an initial guess for eos calls
     call average(mla,sold,tempbar,dx,temp_comp,1,1)
@@ -419,8 +431,7 @@ contains
 
     ! Correct the base state using the lagged etarho and psi
     if (use_etarho .and. evolve_base_state) then
-       ! s0_1 is only passed in to compute anelastic cutoff
-       call correct_base(nlevs,s0_1(:,:,rho_comp),s0_2(:,:,rho_comp),etarho,dx(:,dm),dt)
+       call correct_base(nlevs,s0_2(:,:,rho_comp),etarho,dx(:,dm),dt)
     end if
 
     ! Now compute the new etarho and psi
@@ -744,8 +755,7 @@ contains
 
        ! Correct the base state using the lagged etarho and psi
        if (use_etarho .and. evolve_base_state) then
-          ! s0_1 is only passed in to compute anelastic cutoff
-          call correct_base(nlevs,s0_1(:,:,rho_comp),s0_2(:,:,rho_comp),etarho,dx(:,dm),dt)
+          call correct_base(nlevs,s0_2(:,:,rho_comp),etarho,dx(:,dm),dt)
        end if
 
        ! Now compute the new etarho and psi
