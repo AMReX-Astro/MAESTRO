@@ -13,8 +13,7 @@ module update_scal_module
 
 contains
 
-  subroutine update_scal(nlevs,nstart,nstop,sold,snew,umac, &
-                         sedge,sflux,scal_force,rhoh0_old,rhoh0_new, &
+  subroutine update_scal(nlevs,nstart,nstop,sold,snew,sflux,scal_force,rhoh0_old,rhoh0_new, &
                          rhoh0_old_cart,rhoh0_new_cart,dx,dt,the_bc_level,mla)
 
     use bl_prof_module
@@ -29,8 +28,6 @@ contains
     integer           , intent(in   ) :: nlevs, nstart, nstop
     type(multifab)    , intent(in   ) :: sold(:)
     type(multifab)    , intent(inout) :: snew(:)
-    type(multifab)    , intent(in   ) :: umac(:,:)
-    type(multifab)    , intent(in   ) :: sedge(:,:)
     type(multifab)    , intent(in   ) :: sflux(:,:)
     type(multifab)    , intent(in   ) :: scal_force(:)
     real(kind = dp_t) , intent(in   ) :: rhoh0_old(:,0:)
@@ -44,12 +41,6 @@ contains
     ! local
     real(kind=dp_t), pointer :: sop(:,:,:,:)
     real(kind=dp_t), pointer :: snp(:,:,:,:)
-    real(kind=dp_t), pointer :: ump(:,:,:,:)
-    real(kind=dp_t), pointer :: vmp(:,:,:,:)
-    real(kind=dp_t), pointer :: wmp(:,:,:,:)
-    real(kind=dp_t), pointer :: sepx(:,:,:,:)
-    real(kind=dp_t), pointer :: sepy(:,:,:,:)
-    real(kind=dp_t), pointer :: sepz(:,:,:,:)
     real(kind=dp_t), pointer :: sfpx(:,:,:,:)
     real(kind=dp_t), pointer :: sfpy(:,:,:,:)
     real(kind=dp_t), pointer :: sfpz(:,:,:,:)
@@ -80,10 +71,6 @@ contains
           if ( multifab_remote(sold(n),i) ) cycle
           sop => dataptr(sold(n),i)
           snp => dataptr(snew(n),i)
-          ump => dataptr(umac(n,1),i)
-          vmp => dataptr(umac(n,2),i)
-          sepx => dataptr(sedge(n,1),i)
-          sepy => dataptr(sedge(n,2),i)
           sfpx => dataptr(sflux(n,1),i)
           sfpy => dataptr(sflux(n,2),i)
           fp => dataptr(scal_force(n),i)
@@ -93,34 +80,24 @@ contains
           case (2)
              call update_scal_2d(nstart, nstop, &
                                  sop(:,:,1,:), snp(:,:,1,:), &
-                                 ump(:,:,1,1), vmp(:,:,1,1), &
-                                 sepx(:,:,1,:), sepy(:,:,1,:), &
                                  sfpx(:,:,1,:), sfpy(:,:,1,:), &
                                  fp(:,:,1,:), &
-                                 rhoh0_old(n,:), &
-                                 rhoh0_new(n,:), &
+                                 rhoh0_old(n,:), rhoh0_new(n,:), &
                                  lo, hi, ng_s, dx(n,:), dt)
           case (3)
-             wmp => dataptr(umac(n,3),i)
-             sepz => dataptr(sedge(n,3),i)
              sfpz => dataptr(sflux(n,3),i)
              if (spherical .eq. 0) then
                 call update_scal_3d_cart(nstart, nstop, &
                                          sop(:,:,:,:), snp(:,:,:,:), &
-                                         ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
-                                         sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
                                          sfpx(:,:,:,:), sfpy(:,:,:,:), sfpz(:,:,:,:), &
                                          fp(:,:,:,:), &
-                                         rhoh0_old(n,:), &
-                                         rhoh0_new(n,:), &
+                                         rhoh0_old(n,:), rhoh0_new(n,:), &
                                          lo, hi, ng_s, dx(n,:), dt)
              else
                 rhoh0op => dataptr(rhoh0_old_cart(n), i)
                 rhoh0np => dataptr(rhoh0_new_cart(n), i)
                 call update_scal_3d_sphr(nstart, nstop, &
                                          sop(:,:,:,:), snp(:,:,:,:), &
-                                         ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
-                                         sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
                                          sfpx(:,:,:,:), sfpy(:,:,:,:), sfpz(:,:,:,:), &
                                          fp(:,:,:,:), &
                                          rhoh0op(:,:,:,1), rhoh0np(:,:,:,1), &
@@ -166,11 +143,14 @@ contains
 
           ! do the same for density if we updated the species
           if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
+
              call ml_cc_restriction_c(snew(n-1),rho_comp,snew(n),rho_comp, &
                                       mla%mba%rr(n-1,:),1)
+
              call multifab_fill_ghost_cells(snew(n),snew(n-1),ng_s,mla%mba%rr(n-1,:), &
                                             the_bc_level(n-1),the_bc_level(n), &
                                             rho_comp,dm+rho_comp,1)
+
           endif
 
        enddo
@@ -181,8 +161,7 @@ contains
 
   end subroutine update_scal
 
-  subroutine update_scal_2d(nstart,nstop,sold,snew,umac,vmac, &
-                            sedgex,sedgey,sfluxx,sfluxy,force,rhoh0_old, &
+  subroutine update_scal_2d(nstart,nstop,sold,snew,sfluxx,sfluxy,force,rhoh0_old, &
                             rhoh0_new,lo,hi,ng_s,dx,dt)
 
     use network,       only: nspec
@@ -191,17 +170,9 @@ contains
     use pred_parameters
     use bl_constants_module
 
-
-    ! update each scalar in time.  Here, it is assumed that the edge
-    ! states (sedgex and sedgey) are for the perturbational quantities.
-
     integer           , intent(in   ) :: nstart, nstop, lo(:), hi(:), ng_s
     real (kind = dp_t), intent(in   ) ::    sold(lo(1)-ng_s:,lo(2)-ng_s:,:)
     real (kind = dp_t), intent(  out) ::    snew(lo(1)-ng_s:,lo(2)-ng_s:,:)
-    real (kind = dp_t), intent(in   ) ::    umac(lo(1)- 1:,lo(2)- 1:)
-    real (kind = dp_t), intent(in   ) ::    vmac(lo(1)- 1:,lo(2)- 1:)
-    real (kind = dp_t), intent(in   ) ::  sedgex(lo(1)   :,lo(2)   :,:)
-    real (kind = dp_t), intent(in   ) ::  sedgey(lo(1)   :,lo(2)   :,:)
     real (kind = dp_t), intent(in   ) ::  sfluxx(lo(1)   :,lo(2)   :,:)
     real (kind = dp_t), intent(in   ) ::  sfluxy(lo(1)   :,lo(2)   :,:)
     real (kind = dp_t), intent(in   ) ::   force(lo(1)- 1:,lo(2)- 1:,:)
@@ -307,10 +278,9 @@ contains
 
   end subroutine update_scal_2d
 
-  subroutine update_scal_3d_cart(nstart,nstop,sold,snew,umac,vmac,wmac, &
-                                 sedgex,sedgey,sedgez,sfluxx,sfluxy,sfluxz,force, &
-                                 rhoh0_old,rhoh0_new,lo,hi, &
-                                 ng_s,dx,dt)
+  subroutine update_scal_3d_cart(nstart,nstop,sold,snew,sfluxx,sfluxy,sfluxz,force, &
+                                 rhoh0_old,rhoh0_new,lo,hi,ng_s,dx,dt)
+
     use network,       only: nspec
     use probin_module, only: enthalpy_pred_type
     use variables,     only: spec_comp, rho_comp, rhoh_comp, trac_comp, ntrac
@@ -321,12 +291,6 @@ contains
     integer           , intent(in   ) :: nstart, nstop, lo(:), hi(:), ng_s
     real (kind = dp_t), intent(in   ) ::    sold(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
     real (kind = dp_t), intent(  out) ::    snew(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
-    real (kind = dp_t), intent(inout) ::    umac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
-    real (kind = dp_t), intent(inout) ::    vmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
-    real (kind = dp_t), intent(inout) ::    wmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
-    real (kind = dp_t), intent(in   ) ::  sedgex(lo(1)   :,lo(2)   :,lo(3)   :,:)
-    real (kind = dp_t), intent(in   ) ::  sedgey(lo(1)   :,lo(2)   :,lo(3)   :,:)
-    real (kind = dp_t), intent(in   ) ::  sedgez(lo(1)   :,lo(2)   :,lo(3)   :,:)
     real (kind = dp_t), intent(in   ) ::  sfluxx(lo(1)   :,lo(2)   :,lo(3)   :,:)
     real (kind = dp_t), intent(in   ) ::  sfluxy(lo(1)   :,lo(2)   :,lo(3)   :,:)
     real (kind = dp_t), intent(in   ) ::  sfluxz(lo(1)   :,lo(2)   :,lo(3)   :,:)
@@ -444,10 +408,9 @@ contains
 
   end subroutine update_scal_3d_cart
 
-  subroutine update_scal_3d_sphr(nstart,nstop,sold,snew,umac,vmac,wmac, &
-                                 sedgex,sedgey,sedgez,sfluxx,sfluxy,sfluxz, &
-                                 force,rhoh0_old_cart,rhoh0_new_cart, &
-                                 lo,hi,domlo,domhi,ng_s,dx,dt)
+  subroutine update_scal_3d_sphr(nstart,nstop,sold,snew,sfluxx,sfluxy,sfluxz,force, &
+                                 rhoh0_old_cart,rhoh0_new_cart,lo,hi,domlo,domhi,ng_s,dx,dt)
+
     use network,       only: nspec
     use probin_module, only: enthalpy_pred_type
     use variables,     only: spec_comp, rho_comp, rhoh_comp, trac_comp, ntrac
@@ -458,12 +421,6 @@ contains
     integer           , intent(in   ) :: lo(:), hi(:), domlo(:), domhi(:), ng_s
     real (kind = dp_t), intent(in   ) ::    sold(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
     real (kind = dp_t), intent(  out) ::    snew(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
-    real (kind = dp_t), intent(inout) ::    umac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
-    real (kind = dp_t), intent(inout) ::    vmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
-    real (kind = dp_t), intent(inout) ::    wmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
-    real (kind = dp_t), intent(in   ) ::  sedgex(lo(1)   :,lo(2)   :,lo(3)   :,:)
-    real (kind = dp_t), intent(in   ) ::  sedgey(lo(1)   :,lo(2)   :,lo(3)   :,:)
-    real (kind = dp_t), intent(in   ) ::  sedgez(lo(1)   :,lo(2)   :,lo(3)   :,:)
     real (kind = dp_t), intent(in   ) ::  sfluxx(lo(1)   :,lo(2)   :,lo(3)   :,:)
     real (kind = dp_t), intent(in   ) ::  sfluxy(lo(1)   :,lo(2)   :,lo(3)   :,:)
     real (kind = dp_t), intent(in   ) ::  sfluxz(lo(1)   :,lo(2)   :,lo(3)   :,:)
