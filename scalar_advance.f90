@@ -138,13 +138,13 @@ contains
     ! if we are predicting X on the edges, then convert the state arrays
     ! (and base state) from (rho X) to X.  Note, only the time-level n
     ! stuff need be converted, since that's all the prediction uses
-    call convert_rhoX_to_X(nlevs,sold,dx,.true.,mla,the_bc_level)
+    call convert_rhoX_to_X(nlevs,sold,.true.,mla,the_bc_level)
 
     ! if we are predicting h on the edges, then convert the state arrays
     ! (and base state) from (rho h) to h.  Note, only the time-level n
     ! stuff need be converted, since that's all the prediction uses
     if (enthalpy_pred_type .eq. predict_h) then
-       call convert_rhoh_to_h(nlevs,sold,dx,.true.,mla,the_bc_level)
+       call convert_rhoh_to_h(nlevs,sold,.true.,mla,the_bc_level)
     end if
 
     !**************************************************************************
@@ -159,7 +159,7 @@ contains
     ! X force is zero - do nothing
 
     ! make force for rho'
-    call modify_scal_force(which_step,nlevs,scal_force,sold,umac,rho0_old, &
+    call modify_scal_force(nlevs,scal_force,sold,umac,rho0_old, &
                            rho0_edge_old,w0,dx,rho0_old_cart,rho_comp,mla,the_bc_level)
 
     ! make force for either h, T, or (rho h)'
@@ -169,7 +169,7 @@ contains
        call mkrhohforce(nlevs,scal_force,thermal,umac,p0_old,p0_old,psi,normal,dx,.true., &
                         mla,the_bc_level)
 
-       call modify_scal_force(which_step,nlevs,scal_force,sold,umac,rhoh0_old, &
+       call modify_scal_force(nlevs,scal_force,sold,umac,rhoh0_old, &
                               rhoh0_edge_old,w0,dx,rhoh0_old_cart,rhoh_comp,mla,the_bc_level)
 
     else if (enthalpy_pred_type .eq. predict_h) then
@@ -255,12 +255,12 @@ contains
 
     ! if we were predicting X at the edges, then restore the state arrays 
     ! (and base state) from X to (rho X)
-    call convert_rhoX_to_X(nlevs,sold,dx,.false.,mla,the_bc_level)
+    call convert_rhoX_to_X(nlevs,sold,.false.,mla,the_bc_level)
 
     ! if we are predicting h at the edges, then restore the state arrays
     ! (and base state) from h to (rho h)
     if (enthalpy_pred_type .eq. predict_h) then
-       call convert_rhoh_to_h(nlevs,sold,dx,.false.,mla,the_bc_level)
+       call convert_rhoh_to_h(nlevs,sold,.false.,mla,the_bc_level)
     end if
 
     ! Compute enthalpy edge states if we were predicting temperature.  This

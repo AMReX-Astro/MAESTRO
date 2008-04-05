@@ -12,7 +12,7 @@ module modify_scal_force_module
 
 contains
 
-  subroutine modify_scal_force(which_step,nlevs,force,s,umac,base,base_edge,w0,dx,base_cart, &
+  subroutine modify_scal_force(nlevs,force,s,umac,base,base_edge,w0,dx,base_cart, &
                                comp,mla,the_bc_level)
 
     use bl_prof_module
@@ -27,7 +27,7 @@ contains
     ! form, the terms other than s'_t + U.grad s' act as source terms.  Add
     ! them to the forces here.
     
-    integer        , intent(in   ) :: which_step, nlevs
+    integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: force(:)
     type(multifab) , intent(in   ) :: s(:)
     type(multifab) , intent(in   ) :: umac(:,:)
@@ -75,7 +75,7 @@ contains
           hi = upb(get_box(s(n),i))
           select case (dm)
           case (2)
-             call modify_scal_force_2d(which_step,fp(:,:,1,comp),sp(:,:,1,comp), lo, hi, &
+             call modify_scal_force_2d(fp(:,:,1,comp),sp(:,:,1,comp), lo, hi, &
                                        ng,ump(:,:,1,1),vmp(:,:,1,1),base(n,:), &
                                        base_edge(n,:),w0(n,:),dx(n,:))
           case(3)
@@ -132,9 +132,9 @@ contains
     
   end subroutine modify_scal_force
   
-  subroutine modify_scal_force_2d(which_step,force,s,lo,hi,ng,umac,vmac,base,base_edge,w0,dx)
+  subroutine modify_scal_force_2d(force,s,lo,hi,ng,umac,vmac,base,base_edge,w0,dx)
 
-    integer        , intent(in   ) :: which_step,lo(:),hi(:),ng
+    integer        , intent(in   ) :: lo(:),hi(:),ng
     real(kind=dp_t), intent(  out) :: force(lo(1)-1:,lo(2)-1:)
     real(kind=dp_t), intent(in   ) ::     s(lo(1)-ng:,lo(2)-ng:)
     real(kind=dp_t), intent(in   ) ::  umac(lo(1)-1:,lo(2)-1:)

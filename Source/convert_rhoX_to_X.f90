@@ -15,7 +15,7 @@ module convert_rhoX_to_X_module
   
 contains
 
-  subroutine convert_rhoX_to_X(nlevs,s,dx,flag,mla,the_bc_level)
+  subroutine convert_rhoX_to_X(nlevs,s,flag,mla,the_bc_level)
 
     use network, only: nspec
     use variables, only: spec_comp, foextrap_comp, rho_comp
@@ -27,7 +27,6 @@ contains
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: s(:)
-    real(kind=dp_t), intent(in   ) :: dx(:,:)
     logical        , intent(in   ) :: flag
     type(ml_layout), intent(inout) :: mla
     type(bc_level) , intent(in   ) :: the_bc_level(:)
@@ -99,7 +98,7 @@ contains
     
   end subroutine convert_rhoX_to_X
 
-  subroutine convert_rhoh_to_h(nlevs,s,dx,flag,mla,the_bc_level)
+  subroutine convert_rhoh_to_h(nlevs,s,flag,mla,the_bc_level)
 
     use variables, only: rho_comp, rhoh_comp, foextrap_comp
     use ml_layout_module
@@ -110,7 +109,6 @@ contains
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: s(:)
-    real(kind=dp_t), intent(in   ) :: dx(:,:)
     logical        , intent(in   ) :: flag
     type(ml_layout), intent(inout) :: mla
     type(bc_level) , intent(in   ) :: the_bc_level(:)

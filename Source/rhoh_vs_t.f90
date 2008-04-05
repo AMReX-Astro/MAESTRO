@@ -644,7 +644,7 @@ contains
     real (kind = dp_t), intent(in   ) ::  tempbar(0:)
     
     ! Local variables
-    integer :: i, j, comp
+    integer :: i, j
     
     do_diag = .false.
 

@@ -48,9 +48,6 @@ contains
     real(kind=dp_t), pointer :: rhoh0op(:,:,:,:)
     real(kind=dp_t), pointer :: rhoh0np(:,:,:,:)
 
-    type(box) :: domain
-
-    integer :: domlo(sold(1)%dim),domhi(sold(1)%dim)
     integer :: lo(sold(1)%dim),hi(sold(1)%dim)
     integer :: i,ng_s,dm,n
 
@@ -62,10 +59,6 @@ contains
     ng_s = sold(1)%ng
 
     do n=1,nlevs
-
-       domain = layout_get_pd(sold(n)%la)
-       domlo = lwb(domain)
-       domhi = upb(domain)
 
        do i = 1, sold(n)%nboxes
           if ( multifab_remote(sold(n),i) ) cycle
@@ -101,7 +94,7 @@ contains
                                          sfpx(:,:,:,:), sfpy(:,:,:,:), sfpz(:,:,:,:), &
                                          fp(:,:,:,:), &
                                          rhoh0op(:,:,:,1), rhoh0np(:,:,:,1), &
-                                         lo, hi, domlo, domhi, ng_s, dx(n,:), dt)
+                                         lo, hi, ng_s, dx(n,:), dt)
              end if
           end select
        end do
@@ -409,7 +402,7 @@ contains
   end subroutine update_scal_3d_cart
 
   subroutine update_scal_3d_sphr(nstart,nstop,sold,snew,sfluxx,sfluxy,sfluxz,force, &
-                                 rhoh0_old_cart,rhoh0_new_cart,lo,hi,domlo,domhi,ng_s,dx,dt)
+                                 rhoh0_old_cart,rhoh0_new_cart,lo,hi,ng_s,dx,dt)
 
     use network,       only: nspec
     use probin_module, only: enthalpy_pred_type
@@ -418,7 +411,7 @@ contains
     use bl_constants_module
 
     integer           , intent(in   ) :: nstart, nstop
-    integer           , intent(in   ) :: lo(:), hi(:), domlo(:), domhi(:), ng_s
+    integer           , intent(in   ) :: lo(:), hi(:), ng_s
     real (kind = dp_t), intent(in   ) ::    sold(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
     real (kind = dp_t), intent(  out) ::    snew(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
     real (kind = dp_t), intent(in   ) ::  sfluxx(lo(1)   :,lo(2)   :,lo(3)   :,:)

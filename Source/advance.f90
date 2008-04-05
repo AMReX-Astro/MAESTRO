@@ -361,10 +361,8 @@ contains
     end if
     
     if (evolve_base_state) then
-       call advect_base(1,nlevs,w0,Sbar,p0_old,p0_new, &
-                        rho0_old,rho0_new,rhoh0_1,rhoh0_2, &
-                        tempbar(:,:,1),gamma1bar(:,:,1),div_coeff_new, &
-                        rho0_predicted_edge,psi,dx(:,dm),dt)
+       call advect_base(nlevs,w0,Sbar,p0_old,p0_new,rho0_old,rho0_new,rhoh0_1,rhoh0_2, &
+                        gamma1bar(:,:,1),div_coeff_new,rho0_predicted_edge,psi,dx(:,dm),dt)
     else
        rho0_new = rho0_old
        rhoh0_2 = rhoh0_1
@@ -696,11 +694,8 @@ contains
        end if
 
        if (evolve_base_state) then
-          call advect_base(2,nlevs,w0,Sbar,p0_old,p0_new, &
-                           rho0_old,rho0_new, &
-                           rhoh0_1,rhoh0_2, &
-                           tempbar(:,:,1),gamma1bar(:,:,1),div_coeff_nph, &
-                           rho0_predicted_edge,psi,dx(:,dm),dt)
+          call advect_base(nlevs,w0,Sbar,p0_old,p0_new,rho0_old,rho0_new,rhoh0_1,rhoh0_2, &
+                           gamma1bar(:,:,1),div_coeff_nph,rho0_predicted_edge,psi,dx(:,dm),dt)
        else
           rho0_new = rho0_old
           rhoh0_2 = rhoh0_1

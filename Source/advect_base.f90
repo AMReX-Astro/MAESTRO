@@ -10,19 +10,18 @@ module advect_base_module
 
 contains
 
-  subroutine advect_base(which_step,nlevs,vel,Sbar_in,p0_old,p0_new,rho0_old,rho0_new, &
-                         rhoh0_old,rhoh0_new,tempbar, &
+  subroutine advect_base(nlevs,vel,Sbar_in,p0_old,p0_new,rho0_old,rho0_new, &
+                         rhoh0_old,rhoh0_new, &
                          gamma1bar,div_coeff,rho0_predicted_edge,psi,dz,dt)
 
     use bl_prof_module
     use geometry, only: spherical
 
-    integer        , intent(in   ) :: which_step,nlevs
+    integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(in   ) :: vel(:,0:)
     real(kind=dp_t), intent(in   ) :: Sbar_in(:,0:,:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:), rho0_old(:,0:), rhoh0_old(:,0:)
     real(kind=dp_t), intent(  out) :: p0_new(:,0:), rho0_new(:,0:), rhoh0_new(:,0:)
-    real(kind=dp_t), intent(in   ) :: tempbar(:,0:)
     real(kind=dp_t), intent(inout) :: gamma1bar(:,0:)
     real(kind=dp_t), intent(in   ) :: div_coeff(:,0:)
     real(kind=dp_t), intent(  out) :: rho0_predicted_edge(:,0:)
@@ -39,16 +38,16 @@ contains
     
     do n=1,nlevs
        if (spherical .eq. 0) then
-          call advect_base_state_planar(which_step,n,vel(n,0:),p0_old(n,0:),p0_new(n,0:), &
+          call advect_base_state_planar(n,vel(n,0:),p0_old(n,0:),p0_new(n,0:), &
                                         rho0_old(n,0:),rho0_new(n,0:), &
                                         rhoh0_old(n,0:),rhoh0_new(n,0:), &
                                         rho0_predicted_edge(n,0:),psi(n,:),dz(n),dt)
        else
-          call advect_base_state_spherical(which_step,n,vel(n,:),Sbar_in(n,:,1), &
+          call advect_base_state_spherical(n,vel(n,:),Sbar_in(n,:,1), &
                                            p0_old(n,:),p0_new(n,:), &
                                            rho0_old(n,:),rho0_new(n,:), &
                                            rhoh0_old(n,:),rhoh0_new(n,:), &
-                                           tempbar(n,:),gamma1bar(n,:), &
+                                           gamma1bar(n,:), &
                                            rho0_predicted_edge(n,0:),div_coeff(n,:),dt)
        end if
     enddo
@@ -58,7 +57,7 @@ contains
   end subroutine advect_base
 
 
-  subroutine advect_base_state_planar(which_step,n,vel,p0_old,p0_new, &
+  subroutine advect_base_state_planar(n,vel,p0_old,p0_new, &
                                       rho0_old,rho0_new,rhoh0_old,rhoh0_new, &
                                       rho0_predicted_edge,psi,dz,dt)
 
@@ -70,7 +69,7 @@ contains
     use probin_module, only: grav_const, enthalpy_pred_type
     use pred_parameters
 
-    integer        , intent(in   ) :: which_step,n
+    integer        , intent(in   ) :: n
     real(kind=dp_t), intent(in   ) :: vel(0:)
     real(kind=dp_t), intent(in   ) :: p0_old(0:), rho0_old(0:), rhoh0_old(0:)
     real(kind=dp_t), intent(  out) :: p0_new(0:), rho0_new(0:), rhoh0_new(0:)
@@ -168,11 +167,9 @@ contains
   end subroutine advect_base_state_planar
 
   
-  subroutine advect_base_state_spherical(which_step,n,vel,Sbar_in, &
-                                         p0_old,p0_new, &
+  subroutine advect_base_state_spherical(n,vel,Sbar_in,p0_old,p0_new, &
                                          rho0_old,rho0_new,rhoh0_old,rhoh0_new, &
-                                         tempbar,gamma1bar, &
-                                         rho0_predicted_edge,div_coeff_old,dt)
+                                         gamma1bar,rho0_predicted_edge,div_coeff_old,dt)
 
     use bl_constants_module
     use make_edge_state_module
@@ -183,11 +180,10 @@ contains
     use cell_to_edge_module
     use make_div_coeff_module
     
-    integer        , intent(in   ) :: which_step,n
+    integer        , intent(in   ) :: n
     real(kind=dp_t), intent(in   ) :: vel(0:),Sbar_in(0:)
     real(kind=dp_t), intent(in   ) :: p0_old(0:), rho0_old(0:), rhoh0_old(0:)
     real(kind=dp_t), intent(  out) :: p0_new(0:), rho0_new(0:), rhoh0_new(0:)
-    real(kind=dp_t), intent(in   ) :: tempbar(0:)
     real(kind=dp_t), intent(inout) :: gamma1bar(0:)
     real(kind=dp_t), intent(  out) :: rho0_predicted_edge(0:)
     real(kind=dp_t), intent(in   ) :: div_coeff_old(0:)
