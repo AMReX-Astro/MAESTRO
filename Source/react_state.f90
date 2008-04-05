@@ -61,10 +61,10 @@ contains
           select case (dm)
           case (2)
              call react_state_2d(sinp(:,:,1,:),sotp(:,:,1,:),rp(:,:,1,:), &
-                                 hp(:,:,1,1),dt,lo,hi,ng,time)
+                                 hp(:,:,1,1),dt,lo,hi,ng)
           case (3)
              call react_state_3d(sinp(:,:,:,:),sotp(:,:,:,:),rp(:,:,:,:), &
-                                 hp(:,:,:,1),dt,lo,hi,ng,time)
+                                 hp(:,:,:,1),dt,lo,hi,ng)
           end select
        end do
     end do
@@ -103,7 +103,7 @@ contains
 
   end subroutine react_state
 
-  subroutine react_state_2d(s_in,s_out,rho_omegadot,rho_Hext,dt,lo,hi,ng,time)
+  subroutine react_state_2d(s_in,s_out,rho_omegadot,rho_Hext,dt,lo,hi,ng)
 
     use burner_module
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp, trac_comp, ntrac
@@ -116,10 +116,10 @@ contains
     real (kind = dp_t), intent(  out) :: s_out(lo(1)-ng:,lo(2)-ng:,:)
     real (kind = dp_t), intent(  out) :: rho_omegadot(lo(1):,lo(2):,:)
     real (kind = dp_t), intent(in   ) :: rho_Hext(lo(1):,lo(2):)
-    real (kind = dp_t), intent(in   ) :: dt,time
+    real (kind = dp_t), intent(in   ) :: dt
 
     !     Local variables
-    integer :: i, j, comp
+    integer :: i, j
     real (kind = dp_t), allocatable :: x_in(:),x_out(:),rhowdot(:)
     real (kind = dp_t) :: rho,T_in,h_in,h_out
 
@@ -183,7 +183,7 @@ contains
 
   end subroutine react_state_2d
 
-  subroutine react_state_3d(s_in,s_out,rho_omegadot,rho_Hext,dt,lo,hi,ng,time)
+  subroutine react_state_3d(s_in,s_out,rho_omegadot,rho_Hext,dt,lo,hi,ng)
 
     use burner_module
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp, trac_comp, ntrac
@@ -196,10 +196,10 @@ contains
     real (kind = dp_t), intent(  out) :: s_out(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind = dp_t), intent(  out) :: rho_omegadot(lo(1):,lo(2):,lo(3):,:)
     real (kind = dp_t), intent(in   ) :: rho_Hext(lo(1):,lo(2):,lo(3):)
-    real (kind = dp_t), intent(in   ) :: dt,time
+    real (kind = dp_t), intent(in   ) :: dt
 
     !     Local variables
-    integer :: i, j, k, comp
+    integer :: i, j, k
     real (kind = dp_t), allocatable :: x_in(:),x_out(:),rhowdot(:)
     real (kind = dp_t) :: rho,T_in,h_in,h_out
 

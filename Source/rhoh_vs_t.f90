@@ -35,7 +35,7 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     
     ! local
-    integer :: i,r,dm,n,comp
+    integer :: i,r,dm,n
     integer :: lo(u(1)%dim),hi(u(1)%dim)
     real(kind=dp_t), pointer :: sepx(:,:,:,:)
     real(kind=dp_t), pointer :: sepy(:,:,:,:)
@@ -158,7 +158,7 @@ contains
     real(kind=dp_t), intent(in   ) :: rho0_new(0:),      rhoh0_new(0:)
     real(kind=dp_t), intent(in   ) :: rho0_edge_new(0:), rhoh0_edge_new(0:)
  
-    integer :: i, j, comp
+    integer :: i, j
     
     do_diag = .false.
     
@@ -253,7 +253,7 @@ contains
     real(kind=dp_t), intent(in   ) :: rho0_new(0:),      rhoh0_new(0:)
     real(kind=dp_t), intent(in   ) :: rho0_edge_new(0:), rhoh0_edge_new(0:)
     
-    integer :: i, j, k, comp
+    integer :: i, j, k
     
     do_diag = .false.
     
@@ -391,7 +391,7 @@ contains
     real(kind=dp_t), intent(in   ) :: rhoh0_cart(lo(1)-ngc:,lo(2)-ngc:,lo(3)-ngc:)
     
     ! Local variables
-    integer :: i, j, k, comp
+    integer :: i, j, k
     real(kind=dp_t) rho0_edge, rho0min, rho0max
     real(kind=dp_t) rhoh0_edge, rhoh0min, rhoh0max
     
@@ -690,7 +690,7 @@ contains
     real(kind=dp_t)   , intent(in   ) :: dx(:)
 
     ! Local variables
-    integer :: i, j, k, comp
+    integer :: i, j, k
     real(kind=dp_t), allocatable :: tempbar_cart(:,:,:)
 
     if (spherical .eq. 1) then

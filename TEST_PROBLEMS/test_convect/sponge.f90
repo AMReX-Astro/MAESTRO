@@ -23,10 +23,6 @@ contains
     real(kind=dp_t), intent(in   ) :: rho0(0:),prob_lo_r
     real(kind=dp_t), intent(in   ) :: prob_hi(:),dx(:)
 
-    real (kind = dp_t) :: r
-    real (kind = dp_t) :: r_top
-    integer            :: j
-
     r_sp = 2.19140625d8
     r_tp = 2.97265625d8
 

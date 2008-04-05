@@ -134,7 +134,7 @@ contains
       real (kind=dp_t), intent(in   ) :: dx(:)
 
 !     Local variables
-      integer         :: i, j, comp, r
+      integer         :: i, j, comp
       real(kind=dp_t) :: sigma, react_term, pres_term, gradp0
 
       Source = zero
@@ -224,7 +224,7 @@ contains
       real (kind=dp_t), intent(in   ) :: dx(:)
 
 !     Local variables
-      integer         :: i, j, k, comp, r
+      integer         :: i, j, k, comp
       real(kind=dp_t) :: sigma, react_term, pres_term, gradp0
 
       Source = zero

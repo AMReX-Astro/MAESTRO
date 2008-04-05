@@ -94,8 +94,8 @@ contains
     real(kind=dp_t)   , intent(in   ) :: p0_background(0:)
 
     ! Local variables
-    integer         :: i,j,n
-    real(kind=dp_t) :: x,y,r,r0,r1,r2,temp
+    integer         :: i,j
+    real(kind=dp_t) :: x,y
     real(kind=dp_t) :: dens_pert, rhoh_pert, temp_pert
     real(kind=dp_t) :: rhoX_pert(nspec), trac_pert(ntrac)
 
@@ -149,7 +149,7 @@ contains
 
     !     Local variables
     integer         :: i,j,k,comp
-    real(kind=dp_t) :: x,y,z,r,r0,r1,r2,temp
+    real(kind=dp_t) :: x,y,z
     real(kind=dp_t) :: dens_pert, rhoh_pert, temp_pert
     real(kind=dp_t) :: rhoX_pert(nspec), trac_pert(ntrac)
 
@@ -378,7 +378,8 @@ contains
 
   end subroutine perturb_2d
 
-  subroutine perturb_3d(x, y, z, p0_background, s_background, dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
+  subroutine perturb_3d(x, y, z, p0_background, s_background, dens_pert, rhoh_pert, &
+                        rhoX_pert, temp_pert, trac_pert)
 
     ! apply an optional perturbation to the initial temperature field
     ! to see some bubbles
@@ -465,7 +466,7 @@ contains
 
     real(kind=dp_t), pointer:: sop(:,:,:,:)
     integer :: lo(s%dim),hi(s%dim),ng,dm
-    integer :: i,n
+    integer :: i
     
     ng = s%ng
     dm = s%dim
@@ -497,7 +498,7 @@ contains
     real(kind=dp_t)   , intent(in) :: p0_background(0:)
 
     ! Local variables
-    integer :: i, j, n
+    integer :: i, j
     real(kind=dp_t) :: fac, mass, mass0
     real(kind=dp_t), allocatable ::  rhoavg(:)
     real(kind=dp_t), allocatable :: rhopert(:)

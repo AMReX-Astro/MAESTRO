@@ -8,7 +8,7 @@ module initial_proj_module
 contains
 
   subroutine initial_proj(nlevs,uold,sold,pres,gpres,Source_old,hgrhs, &
-                          div_coeff_old,rho0,p0,gamma1bar,dx,the_bc_tower,mla)
+                          div_coeff_old,p0,gamma1bar,dx,the_bc_tower,mla)
 
     use variables, only: press_comp, foextrap_comp, rho_comp
     use network, only: nspec
@@ -35,7 +35,6 @@ contains
     type(multifab) , intent(inout) :: Source_old(:)
     type(multifab) , intent(inout) :: hgrhs(:)
     real(kind=dp_t), intent(in   ) :: div_coeff_old(:,0:)
-    real(kind=dp_t), intent(in   ) :: rho0(:,0:)
     real(kind=dp_t), intent(in   ) :: p0(:,0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)

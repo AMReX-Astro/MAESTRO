@@ -32,7 +32,7 @@ contains
 
     real(kind=dp_t) :: base_r, problo
     character(len=20) :: out_name
-    integer :: i, comp, n
+    integer :: i, n
 
     type(bl_prof_timer), save :: bpt
 
@@ -118,7 +118,7 @@ contains
 
     real(kind=dp_t) :: r_dummy
     character(len=20) :: out_name
-    integer :: i, comp, n
+    integer :: i, n
 
     type(bl_prof_timer), save :: bpt
 

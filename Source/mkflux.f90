@@ -182,7 +182,7 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:),dt
 
     ! local
-    integer         :: comp,spec
+    integer         :: comp
     integer         :: i,j
     real(kind=dp_t) :: rho_prime, rho0_edge, rhoh0_edge
     logical :: test
@@ -309,7 +309,7 @@ contains
     integer        , intent(in   ) :: startcomp,endcomp
 
    ! local
-    integer         :: comp,spec
+    integer         :: comp
     integer         :: i,j,k
     real(kind=dp_t) :: rho_prime, rho0_edge, rhoh0_edge
     logical         :: test
@@ -467,12 +467,11 @@ contains
     integer        , intent(in   ) :: startcomp,endcomp
 
     ! local
-    integer         :: comp,spec
+    integer         :: comp
     integer         :: i,j,k
-    real(kind=dp_t) :: mult
     real(kind=dp_t) :: bc_lox,bc_loy,bc_loz
     real(kind=dp_t) :: w0_edgex, w0_edgey, w0_edgez
-    real(kind=dp_t) :: rho0_edge, rho0_prime
+    real(kind=dp_t) :: rho0_edge
     logical         :: test
     
     do comp = startcomp, endcomp

@@ -51,7 +51,7 @@ contains
     real (kind = dp_t), intent(in   ) ::    s(lo(1)-ng:,lo(2)-ng:,:)
 
     ! Local variables
-    integer :: i, j, comp
+    integer :: i, j
 
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
@@ -70,7 +70,7 @@ contains
     real (kind = dp_t), intent(in   ) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
 
     ! Local variables
-    integer :: i, j, k, comp
+    integer :: i, j, k
 
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
@@ -138,7 +138,7 @@ contains
     real (kind = dp_t), intent(in   ) ::  tempbar(0:)
 
     ! Local variables
-    integer :: i, j, comp
+    integer :: i, j
 
     do_diag = .false.
 
@@ -186,7 +186,7 @@ contains
     real (kind = dp_t), intent(in   ) :: tempbar(0:)
 
     ! Local variables
-    integer :: i, j, k, comp
+    integer :: i, j, k
 
     do_diag = .false.
 
@@ -485,7 +485,7 @@ contains
     real (kind=dp_t), intent(in   ) :: dx(:)
 
     !     Local variables
-    integer          :: i, j, k, r
+    integer          :: i, j, k
     real (kind=dp_t) :: vel
     real (kind=dp_t), allocatable ::  rho0_cart(:,:,:)
     real (kind=dp_t), allocatable ::    tempbar_cart(:,:,:)

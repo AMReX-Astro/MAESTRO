@@ -79,8 +79,7 @@ contains
     real(kind=dp_t), intent(in   ) :: dz,dt
     
     ! Local variables
-    integer :: r,comp
-    real(kind=dp_t) :: vel_avg
+    integer :: r
     
     real (kind = dp_t), allocatable :: force(:)
     real (kind = dp_t), allocatable :: edge(:)
@@ -195,9 +194,9 @@ contains
     real(kind=dp_t), intent(in   ) :: dt
     
     ! Local variables
-    integer :: r,comp
+    integer :: r
     real(kind=dp_t) :: dtdr,divbetaw,betahalf,factor
-    real(kind=dp_t) :: div_w0, div_w0_cart, div_w0_sph
+    real(kind=dp_t) :: div_w0_cart, div_w0_sph
 
     real (kind = dp_t), allocatable :: force(:)
     real (kind = dp_t), allocatable :: psi(:)

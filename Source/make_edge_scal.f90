@@ -51,7 +51,6 @@ contains
     real(kind=dp_t), pointer :: ump(:,:,:,:)
     real(kind=dp_t), pointer :: vmp(:,:,:,:)
     real(kind=dp_t), pointer :: wmp(:,:,:,:)
-    real(kind=dp_t), pointer :: wtp(:,:,:,:)
     real(kind=dp_t), pointer :: w0p(:,:,:,:)
     real(kind=dp_t), pointer :: fp(:,:,:,:)
 
@@ -156,7 +155,6 @@ contains
 
     integer :: hi(2)
     integer :: i,j,is,js,ie,je
-    logical :: test
 
     hi(1) = lo(1) + size(s,dim=1) - (2*ng+1)
     hi(2) = lo(2) + size(s,dim=2) - (2*ng+1)
@@ -433,7 +431,6 @@ contains
 
     integer :: hi(3)
     integer :: i,j,k,is,js,ks,ie,je,ke
-    logical :: test
 
     hi(1) = lo(1) + size(s,dim=1) - (2*ng+1)
     hi(2) = lo(2) + size(s,dim=2) - (2*ng+1)

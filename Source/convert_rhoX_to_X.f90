@@ -33,8 +33,6 @@ contains
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     ! Local variables
-    real(kind=dp_t), pointer::  sp(:,:,:,:)
-    integer :: lo(s(1)%dim),hi(s(1)%dim)
     integer :: dm,n,comp,bc_comp
 
     dm = s(1)%dim
@@ -118,8 +116,6 @@ contains
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     ! Local variables
-    real(kind=dp_t), pointer::  sp(:,:,:,:)
-    integer :: lo(s(1)%dim),hi(s(1)%dim)
     integer :: dm,n,bc_comp
 
     dm = s(1)%dim
