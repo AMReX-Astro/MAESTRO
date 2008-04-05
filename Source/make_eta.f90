@@ -17,8 +17,6 @@ contains
 
     use bl_constants_module
     use geometry, only: spherical, nr
-    use variables, only: nscal, rho_comp, rhoh_comp, spec_comp
-    use network, only: nspec
 
     integer           , intent(in   ) :: nlevs
     real(kind=dp_t)   , intent(inout) :: etarho(:,0:)
@@ -40,7 +38,7 @@ contains
 
     integer :: domlo(mla%dim),domhi(mla%dim)
     integer :: lo(mla%dim),hi(mla%dim)
-    integer :: i,r,rpert,n,dm,rr,comp
+    integer :: i,r,rpert,n,dm,rr
 
     type(bl_prof_timer), save :: bpt
 
@@ -187,15 +185,12 @@ contains
 
   subroutine sum_etarho_coarsest_2d(lo,hi,domhi,etarhoflux,etarhosum)
 
-    use variables, only: nscal, rho_comp, rhoh_comp, spec_comp
-    use network, only: nspec
-
     integer         , intent(in   ) :: lo(:), hi(:), domhi(:)
     real (kind=dp_t), intent(in   ) :: etarhoflux(lo(1):,lo(2):)
     real (kind=dp_t), intent(inout) :: etarhosum(0:)
 
     ! local
-    integer :: i,j,comp
+    integer :: i,j
 
     do j=lo(2),hi(2)
        do i=lo(1),hi(1)
@@ -216,15 +211,12 @@ contains
 
   subroutine sum_etarho_coarsest_3d(lo,hi,domhi,etarhoflux,etarhosum)
 
-    use variables, only: nscal, rho_comp, rhoh_comp, spec_comp
-    use network, only: nspec
-
     integer         , intent(in   ) :: lo(:), hi(:), domhi(:)
     real (kind=dp_t), intent(in   ) :: etarhoflux(lo(1):,lo(2):,lo(3):)
     real (kind=dp_t), intent(inout) :: etarhosum(0:)
 
     ! local
-    integer :: i,j,k,comp
+    integer :: i,j,k
 
     do k=lo(3),hi(3)
        do j=lo(2),hi(2)
@@ -249,17 +241,14 @@ contains
 
   subroutine compute_etarhopert_2d(lo,hi,etarhoflux,etarhopert,rr)
 
-    use variables, only: rhoh_comp, spec_comp
-    use network, only: nspec
     use bl_constants_module
-    use geometry, only: nr
 
     integer         , intent(in   ) :: lo(:), hi(:), rr
     real (kind=dp_t), intent(in   ) :: etarhoflux(lo(1):,lo(2):)
     real (kind=dp_t), intent(inout) :: etarhopert(0:)
     
     ! local
-    integer         :: i,j,ipert,jpert,comp
+    integer         :: i,j,ipert,jpert
     real(kind=dp_t) :: loavg,hiavg,crseavg
 
     do j=lo(2),hi(2)-rr,rr
@@ -289,17 +278,14 @@ contains
 
   subroutine compute_etarhopert_3d(lo,hi,etarhoflux,etarhopert,rr)
 
-    use variables, only: rhoh_comp, spec_comp
-    use network, only: nspec
     use bl_constants_module
-    use geometry, only: nr
 
     integer         , intent(in   ) :: lo(:), hi(:), rr
     real (kind=dp_t), intent(in   ) :: etarhoflux(lo(1):,lo(2):,lo(3):)
     real (kind=dp_t), intent(inout) :: etarhopert(0:)
     
     ! local
-    integer         :: i,j,k,ipert,jpert,kpert,comp
+    integer         :: i,j,k,ipert,jpert,kpert
     real(kind=dp_t) :: loavg,hiavg,crseavg
 
     do k=lo(3),hi(3)-rr,rr

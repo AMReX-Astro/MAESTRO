@@ -373,8 +373,8 @@ contains
        call setval(scal_force(n),ZERO,all=.true.)
     end do
 
-    call update_scal(nlevs,spec_comp,spec_comp+nspec-1,sold,snew,umac,w0, &
-                     w0_cart_vec,sedge,sflux,scal_force, &
+    call update_scal(nlevs,spec_comp,spec_comp+nspec-1,sold,snew,umac, &
+                     sedge,sflux,scal_force, &
                      rhoh0_old,rhoh0_new, &
                      rhoh0_old_cart,rhoh0_new_cart,dx,dt,the_bc_level,mla)
     
@@ -404,7 +404,7 @@ contains
     !**************************************************************************
     
     if ( ntrac .ge. 1 ) then
-       call update_scal(nlevs,trac_comp,trac_comp+ntrac-1,sold,snew,umac,w0,w0_cart_vec, &
+       call update_scal(nlevs,trac_comp,trac_comp+ntrac-1,sold,snew,umac, &
                         sedge,sflux,scal_force,rhoh0_old,rhoh0_new, &
                         rhoh0_old_cart,rhoh0_new_cart,dx,dt,the_bc_level,mla)
 
@@ -435,7 +435,7 @@ contains
                        mla,the_bc_level)
     end if
 
-    call update_scal(nlevs,rhoh_comp,rhoh_comp,sold,snew,umac,w0,w0_cart_vec, &
+    call update_scal(nlevs,rhoh_comp,rhoh_comp,sold,snew,umac, &
                      sedge,sflux,scal_force,rhoh0_old,rhoh0_new, &
                      rhoh0_old_cart,rhoh0_new_cart,dx,dt,the_bc_level,mla)
 

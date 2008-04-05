@@ -13,7 +13,7 @@ module update_scal_module
 
 contains
 
-  subroutine update_scal(nlevs,nstart,nstop,sold,snew,umac,w0,w0_cart_vec, &
+  subroutine update_scal(nlevs,nstart,nstop,sold,snew,umac, &
                          sedge,sflux,scal_force,rhoh0_old,rhoh0_new, &
                          rhoh0_old_cart,rhoh0_new_cart,dx,dt,the_bc_level,mla)
 
@@ -30,8 +30,6 @@ contains
     type(multifab)    , intent(in   ) :: sold(:)
     type(multifab)    , intent(inout) :: snew(:)
     type(multifab)    , intent(in   ) :: umac(:,:)
-    real(kind=dp_t)   , intent(in   ) :: w0(:,0:)
-    type(multifab)    , intent(in   ) :: w0_cart_vec(:)
     type(multifab)    , intent(in   ) :: sedge(:,:)
     type(multifab)    , intent(in   ) :: sflux(:,:)
     type(multifab)    , intent(in   ) :: scal_force(:)
@@ -56,7 +54,6 @@ contains
     real(kind=dp_t), pointer :: sfpy(:,:,:,:)
     real(kind=dp_t), pointer :: sfpz(:,:,:,:)
     real(kind=dp_t), pointer :: fp(:,:,:,:)
-    real(kind=dp_t), pointer :: w0p(:,:,:,:)
     real(kind=dp_t), pointer :: rhoh0op(:,:,:,:)
     real(kind=dp_t), pointer :: rhoh0np(:,:,:,:)
 
@@ -97,7 +94,6 @@ contains
              call update_scal_2d(nstart, nstop, &
                                  sop(:,:,1,:), snp(:,:,1,:), &
                                  ump(:,:,1,1), vmp(:,:,1,1), &
-                                 w0(n,:), &
                                  sepx(:,:,1,:), sepy(:,:,1,:), &
                                  sfpx(:,:,1,:), sfpy(:,:,1,:), &
                                  fp(:,:,1,:), &
@@ -112,7 +108,6 @@ contains
                 call update_scal_3d_cart(nstart, nstop, &
                                          sop(:,:,:,:), snp(:,:,:,:), &
                                          ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
-                                         w0(n,:), &
                                          sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
                                          sfpx(:,:,:,:), sfpy(:,:,:,:), sfpz(:,:,:,:), &
                                          fp(:,:,:,:), &
@@ -122,11 +117,9 @@ contains
              else
                 rhoh0op => dataptr(rhoh0_old_cart(n), i)
                 rhoh0np => dataptr(rhoh0_new_cart(n), i)
-                w0p => dataptr(w0_cart_vec(n),i)
                 call update_scal_3d_sphr(nstart, nstop, &
                                          sop(:,:,:,:), snp(:,:,:,:), &
                                          ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
-                                         w0p(:,:,:,:), &
                                          sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
                                          sfpx(:,:,:,:), sfpy(:,:,:,:), sfpz(:,:,:,:), &
                                          fp(:,:,:,:), &
@@ -188,7 +181,7 @@ contains
 
   end subroutine update_scal
 
-  subroutine update_scal_2d(nstart,nstop,sold,snew,umac,vmac,w0, &
+  subroutine update_scal_2d(nstart,nstop,sold,snew,umac,vmac, &
                             sedgex,sedgey,sfluxx,sfluxy,force,rhoh0_old, &
                             rhoh0_new,lo,hi,ng_s,dx,dt)
 
@@ -214,7 +207,6 @@ contains
     real (kind = dp_t), intent(in   ) ::   force(lo(1)- 1:,lo(2)- 1:,:)
     real (kind = dp_t), intent(in   ) ::   rhoh0_old(0:)
     real (kind = dp_t), intent(in   ) ::   rhoh0_new(0:)
-    real (kind = dp_t), intent(in   ) :: w0(0:)
     real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
     integer            :: i, j, comp, comp2
@@ -315,7 +307,7 @@ contains
 
   end subroutine update_scal_2d
 
-  subroutine update_scal_3d_cart(nstart,nstop,sold,snew,umac,vmac,wmac,w0, &
+  subroutine update_scal_3d_cart(nstart,nstop,sold,snew,umac,vmac,wmac, &
                                  sedgex,sedgey,sedgez,sfluxx,sfluxy,sfluxz,force, &
                                  rhoh0_old,rhoh0_new,lo,hi, &
                                  ng_s,dx,dt)
@@ -341,7 +333,6 @@ contains
     real (kind = dp_t), intent(in   ) ::   force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
     real (kind = dp_t), intent(in   ) ::   rhoh0_old(0:)
     real (kind = dp_t), intent(in   ) ::   rhoh0_new(0:)
-    real (kind = dp_t), intent(in   ) :: w0(0:)
     real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
     integer            :: i, j, k, comp, comp2
@@ -454,7 +445,7 @@ contains
   end subroutine update_scal_3d_cart
 
   subroutine update_scal_3d_sphr(nstart,nstop,sold,snew,umac,vmac,wmac, &
-                                 w0_cart,sedgex,sedgey,sedgez,sfluxx,sfluxy,sfluxz, &
+                                 sedgex,sedgey,sedgez,sfluxx,sfluxy,sfluxz, &
                                  force,rhoh0_old_cart,rhoh0_new_cart, &
                                  lo,hi,domlo,domhi,ng_s,dx,dt)
     use network,       only: nspec
@@ -479,7 +470,6 @@ contains
     real (kind = dp_t), intent(in   ) ::   force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
     real (kind = dp_t), intent(in   ) ::   rhoh0_old_cart(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
     real (kind = dp_t), intent(in   ) ::   rhoh0_new_cart(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
-    real (kind = dp_t), intent(in   ) :: w0_cart(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
     real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
     integer            :: i, j, k, comp, comp2

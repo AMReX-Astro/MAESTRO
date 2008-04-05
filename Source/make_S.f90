@@ -93,11 +93,11 @@ contains
              dgp    => dataptr(delta_gamma1(n), i)
              select case (dm)
              case (2)
-                call correct_delta_gamma1_term_2d(lo,hi,ng,dgtp(:,:,1,1),dgp(:,:,1,1), &
+                call correct_delta_gamma1_term_2d(lo,hi,dgtp(:,:,1,1),dgp(:,:,1,1), &
                                                   gamma1bar(n,:),psi(n,:), &
                                                   delta_gamma1_termbar(n,:,1),p0(n,:))
              case (3)
-                call correct_delta_gamma1_term_3d(lo,hi,ng,dgtp(:,:,:,1),dgp(:,:,:,1), &
+                call correct_delta_gamma1_term_3d(lo,hi,dgtp(:,:,:,1),dgp(:,:,:,1), &
                                                   gamma1bar(n,:),psi(n,:), &
                                                   delta_gamma1_termbar(n,:,1),p0(n,:))
              end select
@@ -111,8 +111,8 @@ contains
    end subroutine make_S
 
 
-   subroutine make_S_2d (n,lo,hi,Source,delta_gamma1_term,delta_gamma1,s,u, &
-                         rho_omegadot,rho_Hext,thermal,ng,p0,gamma1bar,dx)
+   subroutine make_S_2d(n,lo,hi,Source,delta_gamma1_term,delta_gamma1,s,u, &
+                        rho_omegadot,rho_Hext,thermal,ng,p0,gamma1bar,dx)
 
       use bl_constants_module
       use eos_module
@@ -297,10 +297,10 @@ contains
  
    end subroutine make_S_3d
 
-   subroutine correct_delta_gamma1_term_2d(lo,hi,ng,delta_gamma1_term,delta_gamma1, &
+   subroutine correct_delta_gamma1_term_2d(lo,hi,delta_gamma1_term,delta_gamma1, &
                                            gamma1bar,psi,delta_gamma1_termbar,p0)
 
-     integer         , intent(in   ) :: lo(:), hi(:), ng
+     integer         , intent(in   ) :: lo(:), hi(:)
      real (kind=dp_t), intent(inout) :: delta_gamma1_term(lo(1):,lo(2):)
      real (kind=dp_t), intent(in   ) :: delta_gamma1(lo(1):,lo(2):)
      real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
@@ -321,10 +321,10 @@ contains
      
    end subroutine correct_delta_gamma1_term_2d
 
-   subroutine correct_delta_gamma1_term_3d(lo,hi,ng,delta_gamma1_term,delta_gamma1, &
+   subroutine correct_delta_gamma1_term_3d(lo,hi,delta_gamma1_term,delta_gamma1, &
                                            gamma1bar,psi,delta_gamma1_termbar,p0)
 
-     integer         , intent(in   ) :: lo(:), hi(:), ng
+     integer         , intent(in   ) :: lo(:), hi(:)
      real (kind=dp_t), intent(inout) :: delta_gamma1_term(lo(1):,lo(2):,lo(3):)
      real (kind=dp_t), intent(in   ) :: delta_gamma1(lo(1):,lo(2):,lo(3):)
      real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
