@@ -152,6 +152,10 @@ contains
 ! option to compute temperature and put it into s_out
 ! dens, enthalpy, and xmass are inputs
 !
+! NOTE: if you update the temperature here, then you should not add the
+! reaction term explicitly to the temperature equation force returned 
+! by mktempforce in scalar advance, since you will be double counting.
+!
 !          den_eos(1) = rho
 !          h_eos(1) = h_out
 !          xn_eos(1,:) = x_out(1:nspec)
@@ -232,6 +236,10 @@ contains
 !**********************************************
 ! option to compute temperature and put it into s_out
 ! dens, enthalpy, and xmass are inputs
+!
+! NOTE: if you update the temperature here, then you should not add the
+! reaction term explicitly to the temperature equation force returned 
+! by mktempforce in scalar advance, since you will be double counting.
 !
 !          den_eos(1) = rho
 !          h_eos(1) = h_out
