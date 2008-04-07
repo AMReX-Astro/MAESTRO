@@ -33,3 +33,13 @@
    rho0_predicted_edge on a Cartesian edge-centered grid.
 
 -- make firstdt do the divu estimator correctly for spherical
+
+-- in advance, we do:
+
+             call make_w0_cart(nlevs,w0_force,w0_force_cart_vec,normal,dx, &
+                               the_bc_tower%bc_tower_array,mla)
+
+   but w0_force is cell-centered, not edge-centered, and make_w0_cart expects
+   that we pass in an edge-centered quantity.  This causes an out-of-bounds
+   error if we run with a dr_base that is 2x dx.
+
