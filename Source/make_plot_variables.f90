@@ -682,7 +682,7 @@ contains
     ! Local variables
     integer :: i, j, comp
 
-    enuc(:,:) = ZERO
+    enuc = ZERO
 
     do comp = 1, nspec
        do j = lo(2), hi(2)
@@ -709,7 +709,7 @@ contains
     ! Local variables
     integer :: i, j, k, comp
 
-    enuc(:,:,:) = ZERO
+    enuc = ZERO
 
     do comp = 1, nspec
        do k = lo(3), hi(3)

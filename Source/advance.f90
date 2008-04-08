@@ -158,20 +158,20 @@ contains
     allocate(delta_gamma1_termbar(nlevs,0:nr(nlevs)-1))
 
     ! Set these to zero to be safe
-    rhoh0_1(:,:) = ZERO
-    rhoh0_2(:,:) = ZERO
-    rho0_predicted_edge(:,:) = ZERO
-    delta_gamma1_termbar(:,:) = ZERO
+    rhoh0_1 = ZERO
+    rhoh0_2 = ZERO
+    rho0_predicted_edge = ZERO
+    delta_gamma1_termbar = ZERO
 
     ! Set this to zero so if evolve_base_state = F there is no effect in update_vel
-    w0_force(:,:) = ZERO
+    w0_force = ZERO
 
     ! Set Sbar to zero so if evolve_base_state = F then it doesn't affect rhs of projections
-    Sbar(:,:) = ZERO
+    Sbar = ZERO
 
     ! Set these to results from last
     w0_old = w0
-    gamma1bar_old(:,:) = gamma1bar(:,:)
+    gamma1bar_old = gamma1bar
 
     nodal = .true.
     ng_s = sold(1)%ng

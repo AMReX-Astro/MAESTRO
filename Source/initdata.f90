@@ -366,14 +366,14 @@ contains
 
     dens_pert = den_eos(1)
     rhoh_pert = den_eos(1)*h_eos(1)
-    rhoX_pert(:) = dens_pert*xn_eos(1,:)
+    rhoX_pert = dens_pert*xn_eos(1,:)
 
     temp_pert = temp
     
 !   if ( (r0 .lt. 2.0) .or. (r1 .lt. 2.0) .or. (r2 .lt. 2.0) ) then
-!     trac_pert(:) = ONE
+!     trac_pert = ONE
 !   else
-      trac_pert(:) = ZERO
+      trac_pert = ZERO
 !   end if
 
   end subroutine perturb_2d
@@ -444,14 +444,14 @@ contains
 
     dens_pert = den_eos(1)
     rhoh_pert = den_eos(1)*h_eos(1)
-    rhoX_pert(:) = dens_pert*xn_eos(1,:)
+    rhoX_pert = dens_pert*xn_eos(1,:)
 
     temp_pert = temp
     
 !   if (r1 .lt. 2.0) then
-!     trac_pert(:) = ONE
+!     trac_pert = ONE
 !   else
-      trac_pert(:) = ZERO
+      trac_pert = ZERO
 !   end if
 
   end subroutine perturb_3d

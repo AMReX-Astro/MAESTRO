@@ -59,7 +59,7 @@ contains
     integer         :: r
     real(kind=dp_t) :: etarho_avg
    
-    psi(:) = ZERO
+    psi = ZERO
 
     do r = 0, r_anel(n)-1
       etarho_avg = HALF * (etarho(r)+etarho(r+1))

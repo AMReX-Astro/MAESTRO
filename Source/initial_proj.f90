@@ -62,8 +62,8 @@ contains
     allocate(psi (nlevs,0:nr(nlevs)))
     allocate(delta_gamma1_termbar(nlevs,0:nr(nlevs)-1))
 
-    Sbar(:,:) = ZERO
-    psi(:,:) = ZERO
+    Sbar = ZERO
+    psi = ZERO
 
     if ( parallel_IOProcessor() ) then
        print *, 'DOING THE INITIAL VELOCITY PROJECTION'

@@ -136,9 +136,9 @@ contains
           if (do_burning) then
              call burner(rho, T_in, x_in, h_in, dt, x_out, h_out, rhowdot)
           else
-             x_out(:) = x_in(:)
+             x_out = x_in
              h_out = h_in
-             rhowdot(:) = ZERO
+             rhowdot = ZERO
           endif
 
           s_out(i,j,rho_comp) = s_in(i,j,rho_comp)
@@ -214,16 +214,16 @@ contains
 
        do i = lo(1), hi(1)
           rho = s_in(i,j,k,rho_comp)
-          x_in(:) = s_in(i,j,k,spec_comp:spec_comp+nspec-1) / rho
+          x_in = s_in(i,j,k,spec_comp:spec_comp+nspec-1) / rho
           h_in = s_in(i,j,k,rhoh_comp) / rho
           T_in = s_in(i,j,k,temp_comp)
 
           if (do_burning) then
              call burner(rho, T_in, x_in, h_in, dt, x_out, h_out, rhowdot)
           else
-             x_out(:) = x_in(:)
+             x_out = x_in
              h_out = h_in
-             rhowdot(:) = ZERO
+             rhowdot = ZERO
           endif
           
           s_out(i,j,k,rho_comp) = s_in(i,j,k,rho_comp)

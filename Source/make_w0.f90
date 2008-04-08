@@ -43,7 +43,7 @@ contains
 
     call build(bpt, "make_w0")
 
-    f(:,:) = ZERO
+    f = ZERO
 
     do n=1,nlevs
        if (spherical .eq. 0) then
@@ -159,11 +159,11 @@ contains
     allocate(c(0:nr(n)),d(0:nr(n)),e(0:nr(n)),rhs(0:nr(n)),u(0:nr(n)))
     allocate(grav_edge(0:nr(n)),rho0_edge(0:nr(n)))
 
-    c(:)   = ZERO
-    d(:)   = ZERO
-    e(:)   = ZERO
-    rhs(:) = ZERO
-    u(:)   = ZERO
+    c   = ZERO
+    d   = ZERO
+    e   = ZERO
+    rhs = ZERO
+    u   = ZERO
    
     call make_grav_edge(n,grav_edge,rho0)
 

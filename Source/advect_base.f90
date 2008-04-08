@@ -93,7 +93,7 @@ contains
     ! Edge-centered
     allocate(edge(0:nr(n)))
    
-    rho0_predicted_edge(:) = ZERO
+    rho0_predicted_edge = ZERO
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Update p_0
@@ -119,7 +119,7 @@ contains
     
     call make_edge_state_1d(n,rho0_old(:),edge,vel,force,1,dz,dt)
     
-    rho0_predicted_edge(:) = edge(:)
+    rho0_predicted_edge = edge
 
     ! update rho_0
     do r = 0,nr(n)-1
@@ -135,7 +135,7 @@ contains
          (enthalpy_pred_type .eq. predict_T_then_h) ) then
 
        ! here we predict h_0 on the edges
-       h0(:) = rhoh0_old(:)/rho0_old(:)
+       h0 = rhoh0_old/rho0_old
 
        force = ZERO
 
@@ -143,7 +143,7 @@ contains
 
        ! our final update needs (rho X)_0 on the edges, so compute
        ! that now
-       edge(:) = rho0_predicted_edge(:)*edge(:)
+       edge = rho0_predicted_edge*edge
 
     else
 
@@ -229,7 +229,7 @@ contains
     
     call make_edge_state_1d(n,rho0_old,edge,vel,force,1,dr(n),dt)
     
-    rho0_predicted_edge(:) = edge(:)
+    rho0_predicted_edge = edge
 
     ! update rho_0
     do r = 0,nr(n)-1
@@ -255,7 +255,7 @@ contains
        
     end do
     
-    gamma1bar_old(:) = gamma1bar(:)
+    gamma1bar_old = gamma1bar
     
     call make_grav_cell(n,grav_cell,rho0_new)
     

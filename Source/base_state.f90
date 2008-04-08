@@ -282,7 +282,7 @@ contains
                   interpolate(rloc, npts_model, base_r, base_state(:,ispec_model-1+comp))))
              sum = sum + xn_ambient(comp)
           enddo
-          xn_ambient(:) = xn_ambient(:)/sum
+          xn_ambient = xn_ambient/sum
 
           ! use the EOS to make the state consistent
           temp_eos(1) = t_ambient

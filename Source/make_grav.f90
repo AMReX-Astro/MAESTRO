@@ -33,7 +33,7 @@ contains
 
     if (spherical .eq. 0) then
 
-       grav_cell(:) = grav_const
+       grav_cell = grav_const
        
     else
 
@@ -83,7 +83,7 @@ contains
     
     if (spherical .eq. 0) then
        
-       grav_edge(:) = grav_const
+       grav_edge = grav_const
        
     else
        
