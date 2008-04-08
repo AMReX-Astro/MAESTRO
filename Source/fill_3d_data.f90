@@ -173,7 +173,7 @@ contains
   
 
 
-  subroutine put_1d_vector_on_3d_cells(nlevs,w0,w0_cart,normal,dx,bc_comp,is_edge_centered, &
+  subroutine put_1d_vector_on_3d_cells(nlevs,s0,s0_cart,normal,dx,bc_comp,is_edge_centered, &
                                        the_bc_level,mla)
 
     use bl_prof_module
@@ -184,10 +184,11 @@ contains
     use multifab_physbc_module
     use ml_restriction_module, only: ml_cc_restriction_c
     use multifab_fill_ghost_module
+    use variables, only: foextrap_comp
     
     integer        , intent(in   ) :: nlevs
-    real(kind=dp_t), intent(in   ) :: w0(:,0:)
-    type(multifab) , intent(inout) :: w0_cart(:)
+    real(kind=dp_t), intent(in   ) :: s0(:,0:)
+    type(multifab) , intent(inout) :: s0_cart(:)
     type(multifab) , intent(in   ) :: normal(:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     integer        , intent(in   ) :: bc_comp
@@ -195,8 +196,8 @@ contains
     type(bc_level) , intent(in   ) :: the_bc_level(:)
     type(ml_layout), intent(inout) :: mla
     
-    integer :: lo(w0_cart(1)%dim),hi(w0_cart(1)%dim)
-    integer :: i,n,dm,ng
+    integer :: lo(s0_cart(1)%dim),hi(s0_cart(1)%dim)
+    integer :: i,n,dm,ng,comp
     real(kind=dp_t), pointer :: wp(:,:,:,:)
     real(kind=dp_t), pointer :: np(:,:,:,:)
 
@@ -204,54 +205,61 @@ contains
 
     call build(bpt, "put_1d_vector_on_3d_cells")
     
-    dm = w0_cart(1)%dim
-    ng = w0_cart(1)%ng
+    dm = s0_cart(1)%dim
+    ng = s0_cart(1)%ng
     
     do n = 1, nlevs
     
-       call setval(w0_cart(n),ZERO,all=.true.)
+       call setval(s0_cart(n),ZERO,all=.true.)
        
-       do i = 1, w0_cart(n)%nboxes
-          if ( multifab_remote(w0_cart(n), i) ) cycle
-          wp => dataptr(w0_cart(n), i)
-          lo =  lwb(get_box(w0_cart(n), i))
-          hi =  upb(get_box(w0_cart(n), i))
+       do i = 1, s0_cart(n)%nboxes
+          if ( multifab_remote(s0_cart(n), i) ) cycle
+          wp => dataptr(s0_cart(n), i)
+          lo =  lwb(get_box(s0_cart(n), i))
+          hi =  upb(get_box(s0_cart(n), i))
           if (spherical .eq. 1) then
              np => dataptr(normal(n), i)
-             call put_1d_vector_on_3d_cells_sphr(n,is_edge_centered,w0(n,:),wp(:,:,:,:), &
+             call put_1d_vector_on_3d_cells_sphr(n,is_edge_centered,s0(n,:),wp(:,:,:,:), &
                                                  np(:,:,:,:),lo,hi,dx(n,:),ng)
           else
-             call put_1d_vector_on_3d_cells_cart(n,is_edge_centered,w0(n,:),wp(:,:,:,:), &
+             call put_1d_vector_on_3d_cells_cart(n,is_edge_centered,s0(n,:),wp(:,:,:,:), &
                                                  lo,hi,dx(n,dm),ng)
           end if
        end do
 
     enddo
 
-    if (nlevs .eq. 1) then
-
-       ! fill ghost cells for two adjacent grids at the same level
-       ! this includes periodic domain boundary ghost cells
-       call multifab_fill_boundary(w0_cart(nlevs))
-
-       ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(w0_cart(nlevs),1,bc_comp,1,the_bc_level(nlevs))
+    if (bc_comp .eq. foextrap_comp) then
+       
+       ! Here we fill each of the dm components using foextrap
+       do comp=1,dm
+          if (nlevs .eq. 1) then
+             call multifab_fill_boundary_c(s0_cart(nlevs),comp,1)
+             call multifab_physbc(s0_cart(nlevs),comp,bc_comp,1,the_bc_level(nlevs))
+          else
+             do n=nlevs,2,-1
+                call ml_cc_restriction_c(s0_cart(n-1),comp,s0_cart(n),comp, &
+                                         mla%mba%rr(n-1,:),1)
+                call multifab_fill_ghost_cells(s0_cart(n),s0_cart(n-1),ng, &
+                                               mla%mba%rr(n-1,:),the_bc_level(n-1), &
+                                               the_bc_level(n),comp,bc_comp,1)
+             end do
+          end if
+       end do
 
     else
 
-       ! the loop over nlevs must count backwards to make sure the finer grids are done first
-       do n=nlevs,2,-1
-
-          ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction_c(w0_cart(n-1),1,w0_cart(n),1,mla%mba%rr(n-1,:),1)
-
-          ! fill level n ghost cells using interpolation from level n-1 data
-          ! note that multifab_fill_boundary and multifab_physbc are called for
-          ! both levels n-1 and n
-          call multifab_fill_ghost_cells(w0_cart(n),w0_cart(n-1),ng,mla%mba%rr(n-1,:), &
-                                         the_bc_level(n-1),the_bc_level(n),1,bc_comp,1)
-
-       end do
+       ! Here we fill each of the dm components using bc_comp+comp
+       if (nlevs .eq. 1) then
+          call multifab_fill_boundary_c(s0_cart(nlevs),1,dm)
+          call multifab_physbc(s0_cart(nlevs),1,bc_comp,dm,the_bc_level(nlevs))
+       else
+          do n=nlevs,2,-1
+             call ml_cc_restriction_c(s0_cart(n-1),1,s0_cart(n),1,mla%mba%rr(n-1,:),dm)
+             call multifab_fill_ghost_cells(s0_cart(n),s0_cart(n-1),ng,mla%mba%rr(n-1,:), &
+                                            the_bc_level(n-1),the_bc_level(n),1,bc_comp,dm)
+          end do
+       end if
 
     end if
 
@@ -259,15 +267,15 @@ contains
     
   end subroutine put_1d_vector_on_3d_cells
   
-  subroutine put_1d_vector_on_3d_cells_cart(n,is_edge_centered,w0,w0_cell,lo,hi,dz,ng)
+  subroutine put_1d_vector_on_3d_cells_cart(n,is_edge_centered,s0,s0_cell,lo,hi,dz,ng)
 
     use bl_constants_module
     use geometry, only: dr
 
     integer        , intent(in   ) :: n,lo(:),hi(:),ng
     logical        , intent(in   ) :: is_edge_centered
-    real(kind=dp_t), intent(  out) :: w0_cell(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-    real(kind=dp_t), intent(in   ) :: w0(0:)
+    real(kind=dp_t), intent(  out) :: s0_cell(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
+    real(kind=dp_t), intent(in   ) :: s0(0:)
     real(kind=dp_t), intent(in   ) :: dz
 
     integer :: i,j,k
@@ -275,7 +283,7 @@ contains
 
     rr = int( dz / dr(n) + 1.d-12)
 
-    w0_cell = ZERO
+    s0_cell = ZERO
 
     if (is_edge_centered) then
 
@@ -285,7 +293,7 @@ contains
           if (khi .gt. hi(3)) khi = klo
           do j = lo(2),hi(2)
              do i = lo(1),hi(1)
-                w0_cell(i,j,k,3) =  HALF * (w0(klo) + w0(khi))
+                s0_cell(i,j,k,3) =  HALF * (s0(klo) + s0(khi))
              end do
           end do
        end do
@@ -295,7 +303,7 @@ contains
        do k = lo(3),hi(3)
           do j = lo(2),hi(2)
              do i = lo(1),hi(1)
-                w0_cell(i,j,k,3) = w0(k)
+                s0_cell(i,j,k,3) = s0(k)
              end do
           end do
        end do
@@ -305,21 +313,21 @@ contains
 
   end subroutine put_1d_vector_on_3d_cells_cart
 
-  subroutine put_1d_vector_on_3d_cells_sphr(n,is_edge_centered,w0,w0_cell,normal,lo,hi,dx,ng)
+  subroutine put_1d_vector_on_3d_cells_sphr(n,is_edge_centered,s0,s0_cell,normal,lo,hi,dx,ng)
 
     use bl_constants_module
     use geometry, only: center, dr, nr, base_cc_loc
 
     integer        , intent(in   ) :: n,lo(:),hi(:),ng
     logical        , intent(in   ) :: is_edge_centered
-    real(kind=dp_t), intent(  out) :: w0_cell(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
+    real(kind=dp_t), intent(  out) :: s0_cell(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real(kind=dp_t), intent(in   ) ::  normal(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
-    real(kind=dp_t), intent(in   ) :: w0(0:)
+    real(kind=dp_t), intent(in   ) :: s0(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
 
     integer         :: i,j,k,index
     real(kind=dp_t) :: x,y,z
-    real(kind=dp_t) :: radius,rfac,w0_cell_val
+    real(kind=dp_t) :: radius,rfac,s0_cell_val
 
     if (is_edge_centered) then
 
@@ -336,10 +344,10 @@ contains
                 
                 rfac = (radius - dble(index)*dr(n)) / dr(n)
                  
-                w0_cell_val      = rfac * w0(index) + (ONE-rfac) * w0(index+1)
-                w0_cell(i,j,k,1) = w0_cell_val * normal(i,j,k,1)
-                w0_cell(i,j,k,2) = w0_cell_val * normal(i,j,k,2)
-                w0_cell(i,j,k,3) = w0_cell_val * normal(i,j,k,3)
+                s0_cell_val      = rfac * s0(index) + (ONE-rfac) * s0(index+1)
+                s0_cell(i,j,k,1) = s0_cell_val * normal(i,j,k,1)
+                s0_cell(i,j,k,2) = s0_cell_val * normal(i,j,k,2)
+                s0_cell(i,j,k,3) = s0_cell_val * normal(i,j,k,3)
              end do
           end do
        end do
@@ -359,23 +367,23 @@ contains
                 
                 if (radius .ge. base_cc_loc(n,index)) then
                    if (index .eq. nr(n)-1) then
-                      w0_cell_val = w0(index)
+                      s0_cell_val = s0(index)
                    else
-                      w0_cell_val = w0(index+1)*(radius-base_cc_loc(n,index))/dr(n) &
-                           + w0(index)*(base_cc_loc(n,index+1)-radius)/dr(n)
+                      s0_cell_val = s0(index+1)*(radius-base_cc_loc(n,index))/dr(n) &
+                           + s0(index)*(base_cc_loc(n,index+1)-radius)/dr(n)
                    endif
                 else
                    if (index .eq. 0) then
-                      w0_cell_val = w0(index)
+                      s0_cell_val = s0(index)
                    else
-                      w0_cell_val = w0(index)*(radius-base_cc_loc(n,index-1))/dr(n) &
-                           + w0(index-1)*(base_cc_loc(n,index)-radius)/dr(n)
+                      s0_cell_val = s0(index)*(radius-base_cc_loc(n,index-1))/dr(n) &
+                           + s0(index-1)*(base_cc_loc(n,index)-radius)/dr(n)
                    end if
                 end if
 
-                w0_cell(i,j,k,1) = w0_cell_val * normal(i,j,k,1)
-                w0_cell(i,j,k,2) = w0_cell_val * normal(i,j,k,2)
-                w0_cell(i,j,k,3) = w0_cell_val * normal(i,j,k,3)
+                s0_cell(i,j,k,1) = s0_cell_val * normal(i,j,k,1)
+                s0_cell(i,j,k,2) = s0_cell_val * normal(i,j,k,2)
+                s0_cell(i,j,k,3) = s0_cell_val * normal(i,j,k,3)
              end do
           end do
        end do
