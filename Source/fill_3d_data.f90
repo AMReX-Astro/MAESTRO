@@ -112,16 +112,14 @@ contains
              radius = sqrt(x**2 + y**2 + z**2)
              index = int(radius / dr(n))
 
-             if ( .false. ) then
-                if (index .lt. 0 .or. index .gt. nr(n)-1) then
-                   print *,'RADIUS ',radius
-                   print *,'BOGUS INDEX IN FILL_3D: ',index
-                   print *,'NOT IN RANGE 0 TO ',nr(n)-1
-                   print *,'I J K ',i,j,k
-                   print *,'X Y Z ',x,y,z
-                   call bl_error(' ')
-                end if
-             end if
+!             if (index .lt. 0 .or. index .gt. nr(n)-1) then
+!                print *,'RADIUS ',radius
+!                print *,'BOGUS INDEX IN FILL_3D: ',index
+!                print *,'NOT IN RANGE 0 TO ',nr(n)-1
+!                print *,'I J K ',i,j,k
+!                print *,'X Y Z ',x,y,z
+!                call bl_error(' ')
+!             end if
 
              if (use_linear_interp) then
                 if(radius .ge. base_cc_loc(n,index)) then
@@ -149,7 +147,7 @@ contains
     
   end subroutine fill_3d_data
   
-  subroutine make_3d_normal (normal,lo,hi,dx,ng)
+  subroutine make_3d_normal(normal,lo,hi,dx,ng)
 
     use bl_constants_module
     use geometry, only: spherical, center
@@ -184,7 +182,8 @@ contains
 
   end subroutine make_3d_normal
 
-  subroutine put_1d_vector_on_3d_cells(nlevs,w0,w0_cart,normal,dx,bc_comp,the_bc_level,mla)
+  subroutine put_1d_vector_on_3d_cells(nlevs,w0,w0_cart,normal,dx,bc_comp,is_edge_centered, &
+                                       the_bc_level,mla)
 
     use bl_prof_module
     use bl_constants_module
@@ -201,6 +200,7 @@ contains
     type(multifab) , intent(in   ) :: normal(:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     integer        , intent(in   ) :: bc_comp
+    logical        , intent(in   ) :: is_edge_centered
     type(bc_level) , intent(in   ) :: the_bc_level(:)
     type(ml_layout), intent(inout) :: mla
     
@@ -227,10 +227,11 @@ contains
           hi =  upb(get_box(w0_cart(n), i))
           if (spherical .eq. 1) then
              np => dataptr(normal(n), i)
-             call put_1d_vector_on_3d_cells_sphr(n,w0(n,:),wp(:,:,:,:),np(:,:,:,:), &
-                                                 lo,hi,dx(n,:),ng)
+             call put_1d_vector_on_3d_cells_sphr(n,is_edge_centered,w0(n,:),wp(:,:,:,:), &
+                                                 np(:,:,:,:),lo,hi,dx(n,:),ng)
           else
-             call put_1d_vector_on_3d_cells_cart(n,w0(n,:),wp(:,:,:,:),lo,hi,dx(n,dm),ng)
+             call put_1d_vector_on_3d_cells_cart(n,is_edge_centered,w0(n,:),wp(:,:,:,:), &
+                                                 lo,hi,dx(n,dm),ng)
           end if
        end do
 
@@ -267,12 +268,13 @@ contains
     
   end subroutine put_1d_vector_on_3d_cells
   
-  subroutine put_1d_vector_on_3d_cells_cart(n,w0,w0_cell,lo,hi,dz,ng)
+  subroutine put_1d_vector_on_3d_cells_cart(n,is_edge_centered,w0,w0_cell,lo,hi,dz,ng)
 
     use bl_constants_module
     use geometry, only: dr
 
     integer        , intent(in   ) :: n,lo(:),hi(:),ng
+    logical        , intent(in   ) :: is_edge_centered
     real(kind=dp_t), intent(  out) :: w0_cell(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real(kind=dp_t), intent(in   ) :: w0(0:)
     real(kind=dp_t), intent(in   ) :: dz
@@ -283,25 +285,42 @@ contains
     rr = int( dz / dr(n) + 1.d-12)
 
     w0_cell = ZERO
-    do k = lo(3),hi(3)
-       klo = rr*k
-       khi = rr*(k+1)
-       if (khi .gt. hi(3)) khi = klo
-       do j = lo(2),hi(2)
-          do i = lo(1),hi(1)
-             w0_cell(i,j,k,3) =  HALF * (w0(klo) + w0(khi))
+
+    if (is_edge_centered) then
+
+       do k = lo(3),hi(3)
+          klo = rr*k
+          khi = rr*(k+1)
+          if (khi .gt. hi(3)) khi = klo
+          do j = lo(2),hi(2)
+             do i = lo(1),hi(1)
+                w0_cell(i,j,k,3) =  HALF * (w0(klo) + w0(khi))
+             end do
           end do
        end do
-    end do
+
+    else
+
+       do k = lo(3),hi(3)
+          do j = lo(2),hi(2)
+             do i = lo(1),hi(1)
+                w0_cell(i,j,k,3) = w0(k)
+             end do
+          end do
+       end do
+
+    end if
+
 
   end subroutine put_1d_vector_on_3d_cells_cart
 
-  subroutine put_1d_vector_on_3d_cells_sphr(n,w0,w0_cell,normal,lo,hi,dx,ng)
+  subroutine put_1d_vector_on_3d_cells_sphr(n,is_edge_centered,w0,w0_cell,normal,lo,hi,dx,ng)
 
     use bl_constants_module
-    use geometry, only: center, dr, nr
+    use geometry, only: center, dr, nr, base_cc_loc
 
     integer        , intent(in   ) :: n,lo(:),hi(:),ng
+    logical        , intent(in   ) :: is_edge_centered
     real(kind=dp_t), intent(  out) :: w0_cell(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real(kind=dp_t), intent(in   ) ::  normal(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
     real(kind=dp_t), intent(in   ) :: w0(0:)
@@ -311,43 +330,81 @@ contains
     real(kind=dp_t) :: x,y,z
     real(kind=dp_t) :: radius,rfac,w0_cell_val
 
-    do k = lo(3),hi(3)
-      z = (dble(k)+HALF)*dx(3) - center(3)
-      do j = lo(2),hi(2)
-        y = (dble(j)+HALF)*dx(2) - center(2)
-        do i = lo(1),hi(1)
-          x = (dble(i)+HALF)*dx(1) - center(1)
-          radius = sqrt(x**2 + y**2 + z**2)
-          index  = int(radius / dr(n))
+    if (is_edge_centered) then
 
-          if ( .false. ) then
-             if (index .lt. 0 .or. index .gt. nr(n)) then
-                print *,'RADIUS ',radius
-                print *,'BOGUS INDEX IN PUT_ON_CELLS: ',index
-                print *,'NOT IN RANGE 0 TO ',nr(n)
-                print *,'I J K ',i,j,k
-                print *,'X Y Z ',x,y,z
-                call bl_error(' ')            
-             end if
-          end if
+       ! use linear interpolation between two nearest edge-centered values
 
-          rfac = (radius - dble(index)*dr(n)) / dr(n)
+       do k = lo(3),hi(3)
+          z = (dble(k)+HALF)*dx(3) - center(3)
+          do j = lo(2),hi(2)
+             y = (dble(j)+HALF)*dx(2) - center(2)
+             do i = lo(1),hi(1)
+                x = (dble(i)+HALF)*dx(1) - center(1)
+                radius = sqrt(x**2 + y**2 + z**2)
+                index  = int(radius / dr(n))
+                
+!                if (index .lt. 0 .or. index .gt. nr(n)) then
+!                   print *,'RADIUS ',radius
+!                   print *,'BOGUS INDEX IN PUT_ON_CELLS: ',index
+!                   print *,'NOT IN RANGE 0 TO ',nr(n)
+!                   print *,'I J K ',i,j,k
+!                   print *,'X Y Z ',x,y,z
+!                   call bl_error(' ')            
+!                end if
+                
+                rfac = (radius - dble(index)*dr(n)) / dr(n)
+                
+!                if (rfac .lt. 0.0 .or. rfac .gt. 1.0) then
+!                   print *,'BAD RFAC ',rfac
+!                   print *,'RADIUS, INDEX*DR ',radius, dble(index)*dr(n)
+!                   call bl_error(' ')
+!                end if
+                 
+                w0_cell_val      = rfac * w0(index) + (ONE-rfac) * w0(index+1)
+                w0_cell(i,j,k,1) = w0_cell_val * normal(i,j,k,1)
+                w0_cell(i,j,k,2) = w0_cell_val * normal(i,j,k,2)
+                w0_cell(i,j,k,3) = w0_cell_val * normal(i,j,k,3)
+             end do
+          end do
+       end do
 
-          if ( .false. ) then
-             if (rfac .lt. 0.0 .or. rfac .gt. 1.0) then
-                print *,'BAD RFAC ',rfac
-                print *,'RADIUS, INDEX*DR ',radius, dble(index)*dr(n)
-                call bl_error(' ')
-             end if
-          end if
-          
-          w0_cell_val      = rfac * w0(index) + (ONE-rfac) * w0(index+1)
-          w0_cell(i,j,k,1) = w0_cell_val * normal(i,j,k,1)
-          w0_cell(i,j,k,2) = w0_cell_val * normal(i,j,k,2)
-          w0_cell(i,j,k,3) = w0_cell_val * normal(i,j,k,3)
-        end do
-      end do
-    end do
+    else
+
+       ! use linear interpolation between two nearest cell-centered values
+
+       do k = lo(3),hi(3)
+          z = (dble(k)+HALF)*dx(3) - center(3)
+          do j = lo(2),hi(2)
+             y = (dble(j)+HALF)*dx(2) - center(2)
+             do i = lo(1),hi(1)
+                x = (dble(i)+HALF)*dx(1) - center(1)
+                radius = sqrt(x**2 + y**2 + z**2)
+                index  = int(radius / dr(n))
+                
+                if (radius .ge. base_cc_loc(n,index)) then
+                   if (index .eq. nr(n)-1) then
+                      w0_cell_val = w0(index)
+                   else
+                      w0_cell_val = w0(index+1)*(radius-base_cc_loc(n,index))/dr(n) &
+                           + w0(index)*(base_cc_loc(n,index+1)-radius)/dr(n)
+                   endif
+                else
+                   if (index .eq. 0) then
+                      w0_cell_val = w0(index)
+                   else
+                      w0_cell_val = w0(index)*(radius-base_cc_loc(n,index-1))/dr(n) &
+                           + w0(index-1)*(base_cc_loc(n,index)-radius)/dr(n)
+                   end if
+                end if
+
+                w0_cell(i,j,k,1) = w0_cell_val * normal(i,j,k,1)
+                w0_cell(i,j,k,2) = w0_cell_val * normal(i,j,k,2)
+                w0_cell(i,j,k,3) = w0_cell_val * normal(i,j,k,3)
+             end do
+          end do
+       end do
+
+    end if
 
   end subroutine put_1d_vector_on_3d_cells_sphr
 

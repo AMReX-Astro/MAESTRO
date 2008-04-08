@@ -226,7 +226,7 @@ contains
                     p0_old,p0_old,gamma1bar(:,:,1),gamma1bar(:,:,1),psi,dt,dtold)
 
        if (dm .eq. 3) then
-          call put_1d_vector_on_3d_cells(nlevs,w0,w0_cart_vec,normal,dx,dm, &
+          call put_1d_vector_on_3d_cells(nlevs,w0,w0_cart_vec,normal,dx,dm,.true., &
                                          the_bc_tower%bc_tower_array,mla)
        end if
 
@@ -609,9 +609,10 @@ contains
        
           if (dm .eq. 3) then
              call put_1d_vector_on_3d_cells(nlevs,w0      ,w0_cart_vec      ,normal,dx, &
-                                            dm,the_bc_tower%bc_tower_array,mla) 
+                                            dm,.true.,the_bc_tower%bc_tower_array,mla) 
              call put_1d_vector_on_3d_cells(nlevs,w0_force,w0_force_cart_vec,normal,dx, &
-                                            foextrap_comp,the_bc_tower%bc_tower_array,mla) 
+                                            foextrap_comp,.false., &
+                                            the_bc_tower%bc_tower_array,mla) 
           end if
        end if
        
