@@ -37,7 +37,7 @@ contains
     type(multifab) , intent(in   ) :: thermal(:)
     real(kind=dp_t), intent(in   ) :: p0(:,0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
-    real(kind=dp_t), intent(inout) :: delta_gamma1_termbar(:,0:,:)
+    real(kind=dp_t), intent(inout) :: delta_gamma1_termbar(:,0:)
     real(kind=dp_t), intent(in   ) :: psi(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     type(ml_layout), intent(inout) :: mla
@@ -84,7 +84,7 @@ contains
 
     if (use_delta_gamma1_term) then
 
-       call average(mla,delta_gamma1_term,delta_gamma1_termbar,dx,1,1,1)
+       call average(mla,delta_gamma1_term,delta_gamma1_termbar,dx,1)
        
        do n = 1, nlevs
           do i = 1, state(n)%nboxes
@@ -95,11 +95,11 @@ contains
              case (2)
                 call correct_delta_gamma1_term_2d(lo,hi,dgtp(:,:,1,1),dgp(:,:,1,1), &
                                                   gamma1bar(n,:),psi(n,:), &
-                                                  delta_gamma1_termbar(n,:,1),p0(n,:))
+                                                  delta_gamma1_termbar(n,:),p0(n,:))
              case (3)
                 call correct_delta_gamma1_term_3d(lo,hi,dgtp(:,:,:,1),dgp(:,:,:,1), &
                                                   gamma1bar(n,:),psi(n,:), &
-                                                  delta_gamma1_termbar(n,:,1),p0(n,:))
+                                                  delta_gamma1_termbar(n,:),p0(n,:))
              end select
           end do
        enddo

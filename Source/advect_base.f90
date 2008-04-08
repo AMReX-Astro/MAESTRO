@@ -19,7 +19,7 @@ contains
 
     integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(in   ) :: vel(:,0:)
-    real(kind=dp_t), intent(in   ) :: Sbar_in(:,0:,:)
+    real(kind=dp_t), intent(in   ) :: Sbar_in(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:), rho0_old(:,0:), rhoh0_old(:,0:)
     real(kind=dp_t), intent(  out) :: p0_new(:,0:), rho0_new(:,0:), rhoh0_new(:,0:)
     real(kind=dp_t), intent(inout) :: gamma1bar(:,0:)
@@ -43,7 +43,7 @@ contains
                                         rhoh0_old(n,0:),rhoh0_new(n,0:), &
                                         rho0_predicted_edge(n,0:),psi(n,:),dz(n),dt)
        else
-          call advect_base_state_spherical(n,vel(n,:),Sbar_in(n,:,1), &
+          call advect_base_state_spherical(n,vel(n,:),Sbar_in(n,:), &
                                            p0_old(n,:),p0_new(n,:), &
                                            rho0_old(n,:),rho0_new(n,:), &
                                            rhoh0_old(n,:),rhoh0_new(n,:), &

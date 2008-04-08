@@ -71,8 +71,8 @@ contains
     real(dp_t)    ,  intent(inout) :: rhoh0_new(:,0:)
     real(dp_t)    ,  intent(inout) :: p0_old(:,0:)
     real(dp_t)    ,  intent(inout) :: p0_new(:,0:)
-    real(dp_t)    ,  intent(inout) :: tempbar(:,0:,:)
-    real(dp_t)    ,  intent(inout) :: gamma1bar(:,0:,:)
+    real(dp_t)    ,  intent(inout) :: tempbar(:,0:)
+    real(dp_t)    ,  intent(inout) :: gamma1bar(:,0:)
     real(dp_t)    ,  intent(inout) :: w0(:,0:)
     type(multifab),  intent(inout) :: rho_omegadot2(:)
     real(dp_t)    ,  intent(in   ) :: div_coeff_old(:,0:)
@@ -117,17 +117,17 @@ contains
     real(dp_t), allocatable :: rho0_nph(:,:)
     real(dp_t), allocatable :: w0_force(:,:)
     real(dp_t), allocatable :: w0_old(:,:)
-    real(dp_t), allocatable :: Sbar(:,:,:)
+    real(dp_t), allocatable :: Sbar(:,:)
     real(dp_t), allocatable :: div_coeff_nph(:,:)
     real(dp_t), allocatable :: div_coeff_edge(:,:)
     real(dp_t), allocatable :: rho_omegadotbar1(:,:,:)
     real(dp_t), allocatable :: rho_omegadotbar2(:,:,:)
-    real(dp_t), allocatable :: rho_Hextbar(:,:,:)
+    real(dp_t), allocatable :: rho_Hextbar(:,:)
     real(dp_t), allocatable :: rhoh0_1(:,:)
     real(dp_t), allocatable :: rhoh0_2(:,:)
     real(dp_t), allocatable :: rho0_predicted_edge(:,:)
-    real(dp_t), allocatable :: gamma1bar_old(:,:,:)
-    real(dp_t), allocatable :: delta_gamma1_termbar(:,:,:)
+    real(dp_t), allocatable :: gamma1bar_old(:,:)
+    real(dp_t), allocatable :: delta_gamma1_termbar(:,:)
 
     integer    :: r,n,dm,comp,nlevs,ng_s,proj_type
     real(dp_t) :: halfdt,eps_in
@@ -145,33 +145,33 @@ contains
     allocate(            rho0_nph(nlevs,0:nr(nlevs)-1))
     allocate(            w0_force(nlevs,0:nr(nlevs)-1))
     allocate(              w0_old(nlevs,0:nr(nlevs)  ))
-    allocate(                Sbar(nlevs,0:nr(nlevs)-1,1))
+    allocate(                Sbar(nlevs,0:nr(nlevs)-1))
     allocate(       div_coeff_nph(nlevs,0:nr(nlevs)-1))
     allocate(      div_coeff_edge(nlevs,0:nr(nlevs)  ))
     allocate(    rho_omegadotbar1(nlevs,0:nr(nlevs)-1,nspec))
     allocate(    rho_omegadotbar2(nlevs,0:nr(nlevs)-1,nspec))
-    allocate(         rho_Hextbar(nlevs,0:nr(nlevs)-1,1))
+    allocate(         rho_Hextbar(nlevs,0:nr(nlevs)-1))
     allocate(             rhoh0_1(nlevs,0:nr(nlevs)-1))
     allocate(             rhoh0_2(nlevs,0:nr(nlevs)-1))
     allocate( rho0_predicted_edge(nlevs,0:nr(nlevs)  ))
-    allocate(       gamma1bar_old(nlevs,0:nr(nlevs)-1,1))    
-    allocate(delta_gamma1_termbar(nlevs,0:nr(nlevs)-1,1))
+    allocate(       gamma1bar_old(nlevs,0:nr(nlevs)-1))
+    allocate(delta_gamma1_termbar(nlevs,0:nr(nlevs)-1))
 
     ! Set these to zero to be safe
     rhoh0_1(:,:) = ZERO
     rhoh0_2(:,:) = ZERO
     rho0_predicted_edge(:,:) = ZERO
-    delta_gamma1_termbar(:,:,:) = ZERO
+    delta_gamma1_termbar(:,:) = ZERO
 
     ! Set this to zero so if evolve_base_state = F there is no effect in update_vel
     w0_force(:,:) = ZERO
 
     ! Set Sbar to zero so if evolve_base_state = F then it doesn't affect rhs of projections
-    Sbar(:,:,:) = ZERO
+    Sbar(:,:) = ZERO
 
     ! Set these to results from last
     w0_old = w0
-    gamma1bar_old(:,:,:) = gamma1bar(:,:,:)
+    gamma1bar_old(:,:) = gamma1bar(:,:)
 
     nodal = .true.
     ng_s = sold(1)%ng
@@ -190,7 +190,7 @@ contains
     end do
 
     ! tempbar is only used as an initial guess for eos calls
-    call average(mla,sold,tempbar,dx,temp_comp,1,1)
+    call average(mla,sold,tempbar,dx,temp_comp)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 1 -- define average expansion at time n+1/2
@@ -220,10 +220,10 @@ contains
     
     if (evolve_base_state) then
 
-       call average(mla,Source_nph,Sbar,dx,1,1,1)
+       call average(mla,Source_nph,Sbar,dx,1)
 
-       call make_w0(nlevs,w0,w0_old,w0_force,Sbar(:,:,1),rho0_old, &
-                    p0_old,p0_old,gamma1bar(:,:,1),gamma1bar(:,:,1),psi,dt,dtold)
+       call make_w0(nlevs,w0,w0_old,w0_force,Sbar,rho0_old, &
+                    p0_old,p0_old,gamma1bar,gamma1bar,psi,dt,dtold)
 
        if (dm .eq. 3) then
           call put_1d_vector_on_3d_cells(nlevs,w0,w0_cart_vec,normal,dx,dm,.true., &
@@ -259,7 +259,7 @@ contains
        call setval(delta_gamma1_term(n), ZERO, all=.true.)
     end do
 
-    call make_macrhs(nlevs,macrhs,Source_nph,delta_gamma1_term,Sbar(:,:,1),div_coeff_old,dx)
+    call make_macrhs(nlevs,macrhs,Source_nph,delta_gamma1_term,Sbar,div_coeff_old,dx)
 
     do n=1,nlevs
        call destroy(delta_gamma1_term(n))
@@ -323,9 +323,11 @@ contains
                      the_bc_tower%bc_tower_array,time)
     
     if (evolve_base_state) then
-       call average(mla,rho_omegadot1,rho_omegadotbar1,dx,1,1,nspec)
-       call average(mla,rho_Hext,rho_Hextbar,dx,1,1,1)
-       call react_base(nlevs,rhoh0_old,rho_omegadotbar1,rho_Hextbar(:,:,1),halfdt,rhoh0_1)
+       do comp=1,nspec
+          call average(mla,rho_omegadot1,rho_omegadotbar1(:,:,comp),dx,comp)
+       end do
+       call average(mla,rho_Hext,rho_Hextbar,dx,1)
+       call react_base(nlevs,rhoh0_old,rho_omegadotbar1,rho_Hextbar,halfdt,rhoh0_1)
     end if
 
     if (evolve_base_state) then
@@ -334,7 +336,7 @@ contains
        end do
        
        call make_gamma(nlevs,gamma1,s1,p0_old,tempbar,dx)
-       call average(mla,gamma1,gamma1bar,dx,1,1,1)
+       call average(mla,gamma1,gamma1bar,dx,1)
 
        do n=1,nlevs
           call destroy(gamma1(n))
@@ -348,7 +350,7 @@ contains
     do n=1,nlevs
        call make_grav_cell(n,grav_cell_new(n,:),rho0_old(n,:))
        call make_div_coeff(n,div_coeff_new(n,:),rho0_old(n,:),p0_old(n,:), &
-                           gamma1bar(n,:,1),grav_cell_new(n,:))
+                           gamma1bar(n,:),grav_cell_new(n,:))
     end do
     
     
@@ -363,7 +365,7 @@ contains
     
     if (evolve_base_state) then
        call advect_base(nlevs,w0,Sbar,p0_old,p0_new,rho0_old,rho0_new,rhoh0_1,rhoh0_2, &
-                        gamma1bar(:,:,1),div_coeff_new,rho0_predicted_edge,psi,dx(:,dm),dt)
+                        gamma1bar,div_coeff_new,rho0_predicted_edge,psi,dx(:,dm),dt)
     else
        rho0_new = rho0_old
        rhoh0_2 = rhoh0_1
@@ -437,7 +439,7 @@ contains
     ! Now compute the new etarho and psi
     if (use_etarho .and. evolve_base_state) then
        call make_etarho(nlevs,etarho,etarhoflux,mla)
-       call make_psi(nlevs,etarho,psi,w0,gamma1bar(:,:,1),p0_old,p0_new,Sbar(:,:,1))
+       call make_psi(nlevs,etarho,psi,w0,gamma1bar,p0_old,p0_new,Sbar)
     end if
 
     do n=1,nlevs
@@ -464,10 +466,10 @@ contains
        
        if(do_half_alg) then
           call thermal_conduct_half_alg(mla,dx,dt,s1,s2,p0_old,p0_new, &
-                                        tempbar(:,:,1),the_bc_tower)
+                                        tempbar,the_bc_tower)
        else
           call thermal_conduct_full_alg(mla,dx,dt,s1,s1,s2,p0_old,p0_new, &
-                                        tempbar(:,:,1),the_bc_tower)
+                                        tempbar,the_bc_tower)
           
           ! make a copy of s2star since these are needed to compute
           ! coefficients in the call to thermal_conduct_full_alg
@@ -505,9 +507,11 @@ contains
     end do
 
     if (evolve_base_state) then
-       call average(mla,rho_omegadot2,rho_omegadotbar2,dx,1,1,nspec)
-       call average(mla,rho_Hext,rho_Hextbar,dx,1,1,1)
-       call react_base(nlevs,rhoh0_2,rho_omegadotbar2,rho_Hextbar(:,:,1), &
+       do comp=1,nspec
+          call average(mla,rho_omegadot2,rho_omegadotbar2(:,:,comp),dx,comp)
+       end do
+       call average(mla,rho_Hext,rho_Hextbar,dx,1)
+       call react_base(nlevs,rhoh0_2,rho_omegadotbar2,rho_Hextbar, &
                        halfdt,rhoh0_new)
     end if
 
@@ -517,7 +521,7 @@ contains
        end do
        
        call make_gamma(nlevs,gamma1,snew,p0_new,tempbar,dx)
-       call average(mla,gamma1,gamma1bar,dx,1,1,1)
+       call average(mla,gamma1,gamma1bar,dx,1)
 
        do n=1,nlevs
           call destroy(gamma1(n))
@@ -527,7 +531,7 @@ contains
     do n=1,nlevs
        call make_grav_cell(n,grav_cell_new(n,:),rho0_new(n,:))
        call make_div_coeff(n,div_coeff_new(n,:),rho0_new(n,:),p0_new(n,:), &
-                           gamma1bar(n,:,1),grav_cell_new(n,:))
+                           gamma1bar(n,:),grav_cell_new(n,:))
     end do
     
     ! Define base state at half time for use in velocity advance!
@@ -573,8 +577,7 @@ contains
 
        ! p0 is only used for the delta_gamma1_term
        call make_S(nlevs,Source_new,delta_gamma1_term,delta_gamma1,snew,uold,rho_omegadot2, &
-                   rho_Hext,thermal,p0_old,gamma1bar(:,:,1), &
-                   delta_gamma1_termbar,psi,dx,mla)
+                   rho_Hext,thermal,p0_old,gamma1bar,delta_gamma1_termbar,psi,dx,mla)
        
        do n=1,nlevs
           call destroy(rho_Hext(n))
@@ -597,15 +600,15 @@ contains
 
        if (evolve_base_state) then
        
-          call average(mla,Source_nph,Sbar,dx,1,1,1)
+          call average(mla,Source_nph,Sbar,dx,1)
 
           if(use_delta_gamma1_term) then
              ! add delta_gamma1_termbar to Sbar
              Sbar = Sbar + delta_gamma1_termbar
           end if
 
-          call make_w0(nlevs,w0,w0_old,w0_force,Sbar(:,:,1),rho0_new, &
-                       p0_old,p0_new,gamma1bar_old(:,:,1),gamma1bar(:,:,1),psi,dt,dtold)
+          call make_w0(nlevs,w0,w0_old,w0_force,Sbar,rho0_new, &
+                       p0_old,p0_new,gamma1bar_old,gamma1bar,psi,dt,dtold)
        
           if (dm .eq. 3) then
              call put_1d_vector_on_3d_cells(nlevs,w0      ,w0_cart_vec      ,normal,dx, &
@@ -642,7 +645,7 @@ contains
        end do
 
        ! note delta_gamma1_term here is not time-centered
-       call make_macrhs(nlevs,macrhs,Source_nph,delta_gamma1_term,Sbar(:,:,1), &
+       call make_macrhs(nlevs,macrhs,Source_nph,delta_gamma1_term,Sbar, &
                         div_coeff_nph,dx)
     
        do n=1,nlevs
@@ -697,7 +700,7 @@ contains
 
        if (evolve_base_state) then
           call advect_base(nlevs,w0,Sbar,p0_old,p0_new,rho0_old,rho0_new,rhoh0_1,rhoh0_2, &
-                           gamma1bar(:,:,1),div_coeff_nph,rho0_predicted_edge,psi,dx(:,dm),dt)
+                           gamma1bar,div_coeff_nph,rho0_predicted_edge,psi,dx(:,dm),dt)
        else
           rho0_new = rho0_old
           rhoh0_2 = rhoh0_1
@@ -759,7 +762,7 @@ contains
        ! Now compute the new etarho and psi
        if (use_etarho .and. evolve_base_state) then
           call make_etarho(nlevs,etarho,etarhoflux,mla)
-          call make_psi(nlevs,etarho,psi,w0,gamma1bar(:,:,1),p0_old,p0_new,Sbar(:,:,1))
+          call make_psi(nlevs,etarho,psi,w0,gamma1bar,p0_old,p0_new,Sbar)
        end if
 
        do n=1,nlevs
@@ -777,7 +780,7 @@ contains
           end if
           
           call thermal_conduct_full_alg(mla,dx,dt,s1,s2star,s2,p0_old,p0_new, &
-                                        tempbar(:,:,1),the_bc_tower)
+                                        tempbar,the_bc_tower)
 
           do n=1,nlevs
              call destroy(s2star(n))
@@ -809,9 +812,11 @@ contains
        end do
 
        if (evolve_base_state) then
-          call average(mla,rho_omegadot2,rho_omegadotbar2,dx,1,1,nspec)
-          call average(mla,rho_Hext,rho_Hextbar,dx,1,1,1)
-          call react_base(nlevs,rhoh0_2,rho_omegadotbar2,rho_Hextbar(:,:,1), &
+          do comp=1,nspec
+             call average(mla,rho_omegadot2,rho_omegadotbar2(:,:,comp),dx,comp)
+          end do
+          call average(mla,rho_Hext,rho_Hextbar,dx,1)
+          call react_base(nlevs,rhoh0_2,rho_omegadotbar2,rho_Hextbar, &
                           halfdt,rhoh0_new)
        end if
 
@@ -821,7 +826,7 @@ contains
           end do
           
           call make_gamma(nlevs,gamma1,snew,p0_new,tempbar,dx)
-          call average(mla,gamma1,gamma1bar,dx,1,1,1)
+          call average(mla,gamma1,gamma1bar,dx,1)
           
           do n=1,nlevs
              call destroy(gamma1(n))
@@ -831,7 +836,7 @@ contains
        do n=1,nlevs
           call make_grav_cell(n,grav_cell_new(n,:),rho0_new(n,:))
           call make_div_coeff(n,div_coeff_new(n,:),rho0_new(n,:),p0_new(n,:), &
-                              gamma1bar(n,:,1),grav_cell_new(n,:))
+                              gamma1bar(n,:),grav_cell_new(n,:))
        end do
        
        ! end if corresponding to .not. do_half_alg
@@ -865,7 +870,7 @@ contains
 
     ! p0 is only used for the delta_gamma1_term
     call make_S(nlevs,Source_new,delta_gamma1_term,delta_gamma1,snew,uold,rho_omegadot2, &
-                rho_Hext,thermal,p0_new,gamma1bar(:,:,1),delta_gamma1_termbar,psi,dx,mla)
+                rho_Hext,thermal,p0_new,gamma1bar,delta_gamma1_termbar,psi,dx,mla)
 
     do n=1,nlevs
        call destroy(rho_Hext(n))
@@ -874,7 +879,7 @@ contains
     end do
 
     if (evolve_base_state) then
-       call average(mla,Source_new,Sbar,dx,1,1,1)
+       call average(mla,Source_new,Sbar,dx,1)
 
        if(use_delta_gamma1_term) then
           ! add delta_gamma1_termbar to Sbar
@@ -946,7 +951,7 @@ contains
           call multifab_copy(hgrhs_old(n),hgrhs(n))
        end do
        call make_hgrhs(nlevs,the_bc_tower,mla,hgrhs,Source_new,delta_gamma1_term, &
-                       Sbar(:,:,1),div_coeff_new,dx)
+                       Sbar,div_coeff_new,dx)
        do n=1,nlevs
           call multifab_sub_sub(hgrhs(n),hgrhs_old(n))
           call multifab_div_div_s(hgrhs(n),dt)
@@ -954,7 +959,7 @@ contains
     else
        proj_type = regular_timestep_comp
        call make_hgrhs(nlevs,the_bc_tower,mla,hgrhs,Source_new,delta_gamma1_term, &
-                       Sbar(:,:,1),div_coeff_new,dx)
+                       Sbar,div_coeff_new,dx)
     end if
 
     do n=1,nlevs

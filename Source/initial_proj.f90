@@ -55,14 +55,14 @@ contains
     type(multifab) :: rho_Hext(nlevs)
     type(multifab) :: div_coeff_3d(nlevs)
 
-    real(dp_t), allocatable :: Sbar(:,:,:)  
-    real(dp_t), allocatable :: delta_gamma1_termbar(:,:,:)
+    real(dp_t), allocatable :: Sbar(:,:)
+    real(dp_t), allocatable :: delta_gamma1_termbar(:,:)
 
-    allocate(Sbar(nlevs,nr(nlevs),1))
+    allocate(Sbar(nlevs,nr(nlevs)))
     allocate(psi (nlevs,0:nr(nlevs)))
-    allocate(delta_gamma1_termbar(nlevs,0:nr(nlevs)-1,1))
+    allocate(delta_gamma1_termbar(nlevs,0:nr(nlevs)-1))
 
-    Sbar(:,:,:) = ZERO
+    Sbar(:,:) = ZERO
     psi(:,:) = ZERO
 
     if ( parallel_IOProcessor() ) then
@@ -103,7 +103,7 @@ contains
     end do
     
     if (evolve_base_state) then
-       call average(mla,Source_old,Sbar,dx,1,1,1)
+       call average(mla,Source_old,Sbar,dx,1)
     end if
     
     ! Note that we use rhohalf, filled with 1 at this point, as a temporary
@@ -114,7 +114,7 @@ contains
        call setval(rhohalf(n),ONE,1,1,all=.true.)
     end do
     
-    call make_hgrhs(nlevs,the_bc_tower,mla,hgrhs,Source_old,delta_gamma1_term,Sbar(:,:,1), &
+    call make_hgrhs(nlevs,the_bc_tower,mla,hgrhs,Source_old,delta_gamma1_term,Sbar, &
                     div_coeff_old,dx)
 
     do n=1,nlevs

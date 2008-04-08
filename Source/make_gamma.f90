@@ -24,7 +24,7 @@ contains
     type(multifab) , intent(inout) :: gamma(:)
     type(multifab) , intent(in   ) :: s(:)
     real(kind=dp_t), intent(in   ) :: p0(:,0:)
-    real(kind=dp_t), intent(in   ) :: tempbar(:,0:,:)
+    real(kind=dp_t), intent(in   ) :: tempbar(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
 
     real(kind=dp_t), pointer:: gamp(:,:,:,:),sp(:,:,:,:)
@@ -46,9 +46,9 @@ contains
           hi = upb(get_box(s(n), i))
           select case (dm)
           case (2)
-             call make_gamma_2d(lo,hi,gamp(:,:,1,1),sp(:,:,1,:),p0(n,:),tempbar(n,:,1))
+             call make_gamma_2d(lo,hi,gamp(:,:,1,1),sp(:,:,1,:),p0(n,:),tempbar(n,:))
           case (3)
-             call make_gamma_3d(n,lo,hi,gamp(:,:,:,1),sp(:,:,:,:),p0(n,:),tempbar(n,:,1),dx(n,:))
+             call make_gamma_3d(n,lo,hi,gamp(:,:,:,1),sp(:,:,:,:),p0(n,:),tempbar(n,:),dx(n,:))
           end select
        end do
     end do

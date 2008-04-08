@@ -97,8 +97,8 @@ contains
     type(bc_tower)   , intent(in   ) :: the_bc_tower
     real(dp_t)       , intent(in   ) :: rho0(:,0:)
     real(dp_t)       , intent(in   ) :: p0(:,0:)
-    real(dp_t)       , intent(in   ) :: tempbar(:,0:,:)
-    real(dp_t)       , intent(in   ) :: gamma1bar(:,0:,:)
+    real(dp_t)       , intent(in   ) :: tempbar(:,0:)
+    real(dp_t)       , intent(in   ) :: gamma1bar(:,0:)
     logical          , intent(in   ) :: plot_spec,plot_trac
 
     type(multifab) :: plotdata(mla%nlevel)
@@ -148,11 +148,11 @@ contains
        ! RHOPERT & TEMP (FROM RHO) & TPERT & MACHNO & (GAM1 - GAM10)
        call make_tfromrho(n,plotdata(n),icomp_tfromrho,icomp_tpert,icomp_rhopert, &
                           icomp_machno,icomp_dg,s(n),u(n),rho0(n,:), &
-                          tempbar(n,:,1),gamma1bar(n,:,1),p0(n,:),dx(n,:))
+                          tempbar(n,:),gamma1bar(n,:),p0(n,:),dx(n,:))
 
        ! TEMP (FROM H) & DELTA_P
        call make_tfromH(n,plotdata(n),icomp_tfromH,icomp_dp,s(n),p0(n,:), &
-                        tempbar(n,:,1),dx(n,:))
+                        tempbar(n,:),dx(n,:))
        
        ! DIFF BETWEEN TFROMRHO AND TFROMH
        call make_deltaT (plotdata(n),icomp_dT,icomp_tfromrho,icomp_tfromH)
