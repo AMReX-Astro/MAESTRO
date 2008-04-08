@@ -13,7 +13,6 @@
  prob_hi_z = 4.e8
 
  max_step  = 100
- init_iter = 0
 
  stop_time = 1000.
 
@@ -39,6 +38,8 @@
  cg_verbose = 0
 
  do_initial_projection = 1
+ init_divu_iter = 3
+ init_iter = 1
 
 !restart = 50
 
@@ -46,5 +47,7 @@
  velpert_radius = 1.d7
  velpert_scale = 1.d7
  velpert_steep = 1.d5
+
+ enthalpy_pred_type = 4
 
 /
