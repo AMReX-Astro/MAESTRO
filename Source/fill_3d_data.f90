@@ -8,7 +8,8 @@ module fill_3d_module
   private
 
   public :: fill_3d_data_c, fill_3d_data
-  public :: make_3d_normal, make_w0_cart, put_w0_on_3d_cells_sphr
+  public :: make_3d_normal
+  public :: put_1d_vector_on_3d_cells, put_1d_vector_on_3d_cells_sphr
   
 contains
 
@@ -23,8 +24,6 @@ contains
     use multifab_fill_ghost_module
     !
     ! for spherical problems, this copies the base state onto a multifab
-    ! sames as the function fill_3d_data_wrap, except we assume
-    ! start_comp = 1, num_comp = 1, and the base state only has one component
     !
     integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(in   ) :: dx(:,:)
@@ -76,7 +75,8 @@ contains
           ! note that multifab_fill_boundary and multifab_physbc are called for
           ! both levels n-1 and n
           call multifab_fill_ghost_cells(s0_cart(n),s0_cart(n-1),ng,mla%mba%rr(n-1,:), &
-                                         the_bc_level(n-1),the_bc_level(n),out_comp,bc_comp,1)
+                                         the_bc_level(n-1),the_bc_level(n),out_comp, &
+                                         bc_comp,1)
     end do
 
  end if
@@ -184,7 +184,7 @@ contains
 
   end subroutine make_3d_normal
 
-  subroutine make_w0_cart(nlevs,w0,w0_cart,normal,dx,the_bc_level,mla)
+  subroutine put_1d_vector_on_3d_cells(nlevs,w0,w0_cart,normal,dx,bc_comp,the_bc_level,mla)
 
     use bl_prof_module
     use bl_constants_module
@@ -200,6 +200,7 @@ contains
     type(multifab) , intent(inout) :: w0_cart(:)
     type(multifab) , intent(in   ) :: normal(:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
+    integer        , intent(in   ) :: bc_comp
     type(bc_level) , intent(in   ) :: the_bc_level(:)
     type(ml_layout), intent(inout) :: mla
     
@@ -210,7 +211,7 @@ contains
 
     type(bl_prof_timer), save :: bpt
 
-    call build(bpt, "make_w0_cart")
+    call build(bpt, "put_1d_vector_on_3d_cells")
     
     dm = w0_cart(1)%dim
     ng = w0_cart(1)%ng
@@ -226,9 +227,10 @@ contains
           hi =  upb(get_box(w0_cart(n), i))
           if (spherical .eq. 1) then
              np => dataptr(normal(n), i)
-             call put_w0_on_3d_cells_sphr(n,w0(n,:),wp(:,:,:,:),np(:,:,:,:),lo,hi,dx(n,:),ng)
+             call put_1d_vector_on_3d_cells_sphr(n,w0(n,:),wp(:,:,:,:),np(:,:,:,:), &
+                                                 lo,hi,dx(n,:),ng)
           else
-             call put_w0_on_3d_cells_cart(n,w0(n,:),wp(:,:,:,:),lo,hi,dx(n,dm),ng)
+             call put_1d_vector_on_3d_cells_cart(n,w0(n,:),wp(:,:,:,:),lo,hi,dx(n,dm),ng)
           end if
        end do
 
@@ -241,7 +243,7 @@ contains
        call multifab_fill_boundary(w0_cart(nlevs))
 
        ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(w0_cart(nlevs),1,dm,1,the_bc_level(nlevs))
+       call multifab_physbc(w0_cart(nlevs),1,bc_comp,1,the_bc_level(nlevs))
 
     else
 
@@ -255,7 +257,7 @@ contains
           ! note that multifab_fill_boundary and multifab_physbc are called for
           ! both levels n-1 and n
           call multifab_fill_ghost_cells(w0_cart(n),w0_cart(n-1),ng,mla%mba%rr(n-1,:), &
-                                         the_bc_level(n-1),the_bc_level(n),1,dm,1)
+                                         the_bc_level(n-1),the_bc_level(n),1,bc_comp,1)
 
        end do
 
@@ -263,9 +265,9 @@ contains
 
     call destroy(bpt)
     
-  end subroutine make_w0_cart
+  end subroutine put_1d_vector_on_3d_cells
   
-  subroutine put_w0_on_3d_cells_cart(n,w0,w0_cell,lo,hi,dz,ng)
+  subroutine put_1d_vector_on_3d_cells_cart(n,w0,w0_cell,lo,hi,dz,ng)
 
     use bl_constants_module
     use geometry, only: dr
@@ -292,9 +294,9 @@ contains
        end do
     end do
 
-  end subroutine put_w0_on_3d_cells_cart
+  end subroutine put_1d_vector_on_3d_cells_cart
 
-  subroutine put_w0_on_3d_cells_sphr(n,w0,w0_cell,normal,lo,hi,dx,ng)
+  subroutine put_1d_vector_on_3d_cells_sphr(n,w0,w0_cell,normal,lo,hi,dx,ng)
 
     use bl_constants_module
     use geometry, only: center, dr, nr
@@ -347,6 +349,6 @@ contains
       end do
     end do
 
-  end subroutine put_w0_on_3d_cells_sphr
+  end subroutine put_1d_vector_on_3d_cells_sphr
 
 end module fill_3d_module
