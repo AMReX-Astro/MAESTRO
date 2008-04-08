@@ -278,7 +278,7 @@ contains
        end do
 
        call fill_3d_data_c(nlevs,dx,the_bc_tower%bc_tower_array,mla, &
-                           div_coeff_3d,div_coeff_old,1,foextrap_comp)
+                           div_coeff_3d,div_coeff_old,foextrap_comp)
        call macproject(mla,umac,macphi,sold,dx,the_bc_tower, &
                        press_comp, macrhs,div_coeff_3d=div_coeff_3d)
 
@@ -667,7 +667,7 @@ contains
           end do
 
           call fill_3d_data_c(nlevs,dx,the_bc_tower%bc_tower_array,mla, &
-                              div_coeff_3d,div_coeff_nph,1,foextrap_comp)
+                              div_coeff_3d,div_coeff_nph,foextrap_comp)
           call macproject(mla,umac,macphi,rhohalf,dx,the_bc_tower, &
                           press_comp,macrhs,div_coeff_3d=div_coeff_3d)
 
@@ -972,7 +972,7 @@ contains
        end do
        
        call fill_3d_data_c(nlevs,dx,the_bc_tower%bc_tower_array,mla, &
-                           div_coeff_3d,div_coeff_nph,1,foextrap_comp)
+                           div_coeff_3d,div_coeff_nph,foextrap_comp)
        eps_in = 1.d-12
        call hgproject(proj_type, mla, unew, uold, rhohalf, pres, gpres, dx, dt, &
                       the_bc_tower, press_comp, &

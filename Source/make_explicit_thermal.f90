@@ -242,7 +242,7 @@ contains
           call destroy(Xkcoeff(n))
        end do
        
-       call put_1d_array_on_cart(nlevs,p0,phi,1,foextrap_comp,.false.,.false., &
+       call put_1d_array_on_cart(nlevs,p0,phi,foextrap_comp,.false.,.false., &
                                  dx,the_bc_tower%bc_tower_array,mla)       
 
        if (nlevs .eq. 1) then

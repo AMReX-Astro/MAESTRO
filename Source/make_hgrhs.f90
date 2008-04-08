@@ -72,9 +72,9 @@ contains
     
     if (spherical .eq. 1) then
        call fill_3d_data_c(nlevs,dx,the_bc_tower%bc_tower_array,mla, &
-                           div_coeff_cart,div_coeff,1,foextrap_comp)
+                           div_coeff_cart,div_coeff,foextrap_comp)
        call fill_3d_data_c(nlevs,dx,the_bc_tower%bc_tower_array,mla, &
-                           Sbar_cart,Sbar,1,foextrap_comp)
+                           Sbar_cart,Sbar,foextrap_comp)
     end if
 
     do n = 1, nlevs

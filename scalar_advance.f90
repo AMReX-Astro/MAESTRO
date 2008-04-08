@@ -118,17 +118,15 @@ contains
           call build(rhoh0_new_cart(n), sold(n)%la, 1, 1)
        end do
 
-       call fill_3d_data_c(nlevs,dx,the_bc_level,mla,rho0_old_cart, &
-                           rho0_old,1,dm+rho_comp)
-       call fill_3d_data_c(nlevs,dx,the_bc_level,mla,rho0_new_cart, &
-                           rho0_new,1,dm+rho_comp)
+       call fill_3d_data_c(nlevs,dx,the_bc_level,mla,rho0_old_cart,rho0_old,dm+rho_comp)
+       call fill_3d_data_c(nlevs,dx,the_bc_level,mla,rho0_new_cart,rho0_new,dm+rho_comp)
 
        if (enthalpy_pred_type .eq. predict_T_then_rhohprime .or. &
             enthalpy_pred_type .eq. predict_rhohprime) then
           call fill_3d_data_c(nlevs,dx,the_bc_level,mla,rhoh0_old_cart, &
-                              rhoh0_old,1,dm+rhoh_comp)
+                              rhoh0_old,dm+rhoh_comp)
           call fill_3d_data_c(nlevs,dx,the_bc_level,mla,rhoh0_new_cart, &
-                              rhoh0_new,1,dm+rhoh_comp)
+                              rhoh0_new,dm+rhoh_comp)
        end if
     end if
 

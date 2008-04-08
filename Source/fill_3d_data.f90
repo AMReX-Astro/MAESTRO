@@ -49,7 +49,7 @@ contains
   end subroutine make_3d_normal
 
 
-  subroutine fill_3d_data_c(nlevs,dx,the_bc_level,mla,s0_cart,s0,out_comp,bc_comp)
+  subroutine fill_3d_data_c(nlevs,dx,the_bc_level,mla,s0_cart,s0,bc_comp)
 
     use bl_prof_module
     use bl_constants_module
@@ -66,7 +66,7 @@ contains
     type(ml_layout), intent(inout) :: mla
     type(multifab) , intent(inout) :: s0_cart(:)
     real(kind=dp_t), intent(in   ) :: s0(:,0:)
-    integer        , intent(in   ) :: out_comp,bc_comp
+    integer        , intent(in   ) :: bc_comp
 
     integer                  :: i,ng,n
     integer                  :: lo(s0_cart(1)%dim),hi(s0_cart(1)%dim)
@@ -84,7 +84,7 @@ contains
           s0p => dataptr(s0_cart(n),i)
           lo = lwb(get_box(s0_cart(n),i))
           hi = upb(get_box(s0_cart(n),i))
-          call fill_3d_data(n,s0p(:,:,:,out_comp),s0(n,:),lo,hi,dx(n,:),ng)
+          call fill_3d_data(n,s0p(:,:,:,1),s0(n,:),lo,hi,dx(n,:),ng)
        end do
     end do
 
@@ -92,10 +92,10 @@ contains
 
        ! fill ghost cells for two adjacent grids at the same level
        ! this includes periodic domain boundary ghost cells
-       call multifab_fill_boundary_c(s0_cart(nlevs),out_comp,1)
+       call multifab_fill_boundary_c(s0_cart(nlevs),1,1)
 
        ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(s0_cart(nlevs),out_comp,bc_comp,1,the_bc_level(nlevs))
+       call multifab_physbc(s0_cart(nlevs),1,bc_comp,1,the_bc_level(nlevs))
 
     else
 
@@ -103,15 +103,13 @@ contains
        do n=nlevs,2,-1
 
           ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction_c(s0_cart(n-1),out_comp,s0_cart(n), &
-                                   out_comp,mla%mba%rr(n-1,:),1)
+          call ml_cc_restriction_c(s0_cart(n-1),1,s0_cart(n),1,mla%mba%rr(n-1,:),1)
 
           ! fill level n ghost cells using interpolation from level n-1 data
           ! note that multifab_fill_boundary and multifab_physbc are called for
           ! both levels n-1 and n
           call multifab_fill_ghost_cells(s0_cart(n),s0_cart(n-1),ng,mla%mba%rr(n-1,:), &
-                                         the_bc_level(n-1),the_bc_level(n),out_comp, &
-                                         bc_comp,1)
+                                         the_bc_level(n-1),the_bc_level(n),1,bc_comp,1)
     end do
 
  end if
@@ -387,8 +385,8 @@ contains
   end subroutine put_1d_vector_on_3d_cells_sphr
 
 
-  subroutine put_1d_array_on_cart(nlevs,s0,s0_cart,out_comp,bc_comp,is_edge_centered, &
-                                  is_vector,dx,the_bc_level,mla,interp_type,normal)
+  subroutine put_1d_array_on_cart(nlevs,s0,s0_cart,bc_comp,is_edge_centered,is_vector, &
+                                  dx,the_bc_level,mla,interp_type,normal)
 
     use bl_prof_module
     use bl_constants_module
@@ -402,7 +400,7 @@ contains
     integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(in   ) :: s0(:,0:)
     type(multifab) , intent(inout) :: s0_cart(:)
-    integer        , intent(in   ) :: out_comp,bc_comp
+    integer        , intent(in   ) :: bc_comp
     logical        , intent(in   ) :: is_edge_centered,is_vector
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     type(bc_level) , intent(in   ) :: the_bc_level(:)
@@ -440,17 +438,17 @@ contains
           hi =  upb(get_box(s0_cart(n), i))
           select case (dm)
           case (2)
-             call put_1d_array_on_cart_2d(n,out_comp,is_edge_centered,is_vector, &
+             call put_1d_array_on_cart_2d(n,is_edge_centered,is_vector, &
                                           s0(n,:),sp(:,:,1,:),lo,hi,ng)
           case (3)
              if (spherical .eq. 0) then
-                call put_1d_array_on_cart_3d(n,out_comp,is_edge_centered,is_vector, &
-                                                  s0(n,:),sp(:,:,:,:),lo,hi,ng)
+                call put_1d_array_on_cart_3d(n,is_edge_centered,is_vector, &
+                                             s0(n,:),sp(:,:,:,:),lo,hi,ng)
              else
                 if (is_vector) then
                    np => dataptr(normal(n), i)
                 end if
-!                call put_1d_array_on_cart_3d_sphr(n,out_comp,is_edge_centered, &
+!                call put_1d_array_on_cart_3d_sphr(n,is_edge_centered, &
 !                                                  is_vector,interp_type, &
 !                                                  s0(n,:),sp(:,:,:,:),np(:,:,:,:), &
 !                                                  lo,hi,dx(n,:),ng)
@@ -494,13 +492,12 @@ contains
     
   end subroutine put_1d_array_on_cart
 
-  subroutine put_1d_array_on_cart_2d(n,out_comp,is_edge_centered,is_vector,s0,s0_cart, &
-                                     lo,hi,ng)
+  subroutine put_1d_array_on_cart_2d(n,is_edge_centered,is_vector,s0,s0_cart,lo,hi,ng)
 
     use bl_constants_module
     use geometry, only: dr
 
-    integer        , intent(in   ) :: n,out_comp
+    integer        , intent(in   ) :: n
     integer        , intent(in   ) :: lo(:),hi(:),ng
     logical        , intent(in   ) :: is_edge_centered,is_vector
     real(kind=dp_t), intent(in   ) :: s0(0:)
@@ -516,7 +513,7 @@ contains
 
           do j=lo(2),hi(2)
              do i=lo(1),hi(1)
-                s0_cart(i,j,out_comp+2) = HALF * (s0(j) + s0(j+1))
+                s0_cart(i,j,2) = HALF * (s0(j) + s0(j+1))
              end do
           end do
 
@@ -524,7 +521,7 @@ contains
 
           do j=lo(2),hi(2)
              do i=lo(1),hi(1)
-                s0_cart(i,j,out_comp) = HALF * (s0(j) + s0(j+1))
+                s0_cart(i,j,1) = HALF * (s0(j) + s0(j+1))
              end do
           end do
 
@@ -536,7 +533,7 @@ contains
 
           do j=lo(2),hi(2)
              do i=lo(1),hi(1)
-                s0_cart(i,j,out_comp+2) = s0(j)
+                s0_cart(i,j,2) = s0(j)
              end do
           end do
 
@@ -544,7 +541,7 @@ contains
 
           do j=lo(2),hi(2)
              do i=lo(1),hi(1)
-                s0_cart(i,j,out_comp) = s0(j)
+                s0_cart(i,j,1) = s0(j)
              end do
           end do
 
@@ -554,13 +551,12 @@ contains
 
   end subroutine put_1d_array_on_cart_2d
 
-  subroutine put_1d_array_on_cart_3d(n,out_comp,is_edge_centered,is_vector,s0,s0_cart, &
-                                     lo,hi,ng)
+  subroutine put_1d_array_on_cart_3d(n,is_edge_centered,is_vector,s0,s0_cart,lo,hi,ng)
 
     use bl_constants_module
     use geometry, only: dr
 
-    integer        , intent(in   ) :: n,out_comp
+    integer        , intent(in   ) :: n
     integer        , intent(in   ) :: lo(:),hi(:),ng
     logical        , intent(in   ) :: is_edge_centered,is_vector
     real(kind=dp_t), intent(in   ) :: s0(0:)
@@ -577,7 +573,7 @@ contains
           do k=lo(3),hi(3)
              do j=lo(2),hi(2)
                 do i=lo(1),hi(1)
-                   s0_cart(i,j,k,out_comp+3) = HALF * (s0(k) + s0(k+1))
+                   s0_cart(i,j,k,3) = HALF * (s0(k) + s0(k+1))
                 end do
              end do
           end do
@@ -587,7 +583,7 @@ contains
           do k=lo(3),hi(3)
              do j=lo(2),hi(2)
                 do i=lo(1),hi(1)
-                   s0_cart(i,j,k,out_comp) = HALF * (s0(k) + s0(k+1))
+                   s0_cart(i,j,k,1) = HALF * (s0(k) + s0(k+1))
                 end do
              end do
           end do
@@ -601,7 +597,7 @@ contains
           do k=lo(3),hi(3)
              do j=lo(2),hi(2)
                 do i=lo(1),hi(1)
-                   s0_cart(i,j,k,out_comp+3) = s0(k)
+                   s0_cart(i,j,k,3) = s0(k)
                 end do
              end do
           end do
@@ -611,7 +607,7 @@ contains
           do k=lo(3),hi(3)
              do j=lo(2),hi(2)
                 do i=lo(1),hi(1)
-                   s0_cart(i,j,k,out_comp) = s0(k)
+                   s0_cart(i,j,k,1) = s0(k)
                 end do
              end do
           end do
