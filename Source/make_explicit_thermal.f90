@@ -24,13 +24,14 @@ contains
     use bl_prof_module
     use stencil_module
     use macproject_module
-    use thermal_conduct_module
     use network, only: nspec
     use ml_restriction_module, only : ml_cc_restriction
     use multifab_fill_ghost_module
     use bl_constants_module
     use variables, only: temp_comp, rho_comp, rhoh_comp, spec_comp, foextrap_comp
     use multifab_physbc_module
+    use fill_3d_module
+    use thermal_conduct_module
 
     type(ml_layout), intent(inout) :: mla
     real(dp_t)     , intent(in   ) :: dx(:,:)
@@ -47,7 +48,7 @@ contains
 
     integer                     :: i,comp,n,nlevs,dm,stencil_order
     integer                     :: lo(s(1)%dim),hi(s(1)%dim)
-    real(kind=dp_t), pointer    :: sp(:,:,:,:),phip(:,:,:,:)
+    real(kind=dp_t), pointer    :: sp(:,:,:,:)
     real(kind=dp_t), pointer    :: betap(:,:,:,:),Xkcoeffp(:,:,:,:)
     real(kind=dp_t), pointer    :: Tcoeffp(:,:,:,:),hcoeffp(:,:,:,:)
     real(kind=dp_t), pointer    :: pcoeffp(:,:,:,:)
@@ -241,22 +242,8 @@ contains
           call destroy(Xkcoeff(n))
        end do
        
-       ! load p0 into phi
-       do n=1,nlevs
-          do i=1,s(n)%nboxes
-             if (multifab_remote(phi(n),i)) cycle
-             phip => dataptr(phi(n),i)
-             lo = lwb(get_box(phi(n),i))
-             hi = upb(get_box(phi(n),i))
-             select case (dm)
-             case (2)
-                call put_base_state_on_multifab_2d(lo,hi,p0(n,:),phip(:,:,1,1))
-             case (3)
-                call put_base_state_on_multifab_3d(lo,hi,p0(n,:),phip(:,:,:,1))
-             end select
-          end do
-       enddo
-       
+       call put_1d_array_on_cart(nlevs,p0,phi,1,foextrap_comp,.false.,.false., &
+                                 dx,the_bc_tower%bc_tower_array,mla)       
 
        if (nlevs .eq. 1) then
 
