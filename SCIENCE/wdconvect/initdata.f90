@@ -162,16 +162,21 @@ contains
     if (spherical .eq. 1) then
 
        ! initialize the scalars
-       call fill_3d_data(n,s(:,:,:,rho_comp), s0_init(:,rho_comp), lo,hi,dx,ng)
-       call fill_3d_data(n,s(:,:,:,rhoh_comp),s0_init(:,rhoh_comp),lo,hi,dx,ng)
-       call fill_3d_data(n,s(:,:,:,temp_comp),s0_init(:,temp_comp),lo,hi,dx,ng)
+       call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,s0_init(:,rho_comp), &
+                                         s(:,:,:,rho_comp:),lo,hi,dx,ng)
+       call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,s0_init(:,rhoh_comp), &
+                                         s(:,:,:,rhoh_comp:),lo,hi,dx,ng)
+       call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,s0_init(:,temp_comp), &
+                                         s(:,:,:,temp_comp:),lo,hi,dx,ng)
 
        do comp = spec_comp, spec_comp+nspec-1
-          call fill_3d_data(n,s(:,:,:,comp),s0_init(:,comp),lo,hi,dx,ng)
+          call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,s0_init(:,comp), &
+                                            s(:,:,:,comp:),lo,hi,dx,ng)
        end do
 
        do comp = trac_comp, trac_comp+ntrac-1
-          call fill_3d_data(n,s(:,:,:,comp),s0_init(:,comp),lo,hi,dx,ng)
+          call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,s0_init(:,comp), &
+                                            s(:,:,:,comp:),lo,hi,dx,ng)
        end do
 
     else 
