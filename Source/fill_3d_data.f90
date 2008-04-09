@@ -102,7 +102,7 @@ contains
     call build(bpt, "put_1d_array_on_cart")
 
     if (spherical .eq. 1 .and. is_vector .and. (.not. present(normal)) ) then
-       call bl_error('Error: Calling put_1d_array_on_cart for spherical with an input vector and without normal')
+       call bl_error('Error: Calling put_1d_array_on_cart for spherical with is_vector=T and without normal')
     end if
 
     if (spherical .eq. 1 .and. (.not. present(interp_type)) ) then
@@ -133,8 +133,8 @@ contains
                 end if
                 call put_1d_array_on_cart_3d_sphr(n,is_edge_centered, &
                                                   is_vector,interp_type, &
-                                                  s0(n,:),sp(:,:,:,:),np(:,:,:,:), &
-                                                  lo,hi,dx(n,:),ng)
+                                                  s0(n,:),sp(:,:,:,:), &
+                                                  lo,hi,dx(n,:),ng,np(:,:,:,:))
              end if
           end select
        end do
@@ -326,7 +326,7 @@ contains
   end subroutine put_1d_array_on_cart_3d
 
   subroutine put_1d_array_on_cart_3d_sphr(n,is_edge_centered,is_vector,interp_type, &
-                                          s0,s0_cart,normal,lo,hi,dx,ng)
+                                          s0,s0_cart,lo,hi,dx,ng,normal)
 
     use bl_constants_module
     use geometry, only: dr, center, base_cc_loc, nr
@@ -337,12 +337,16 @@ contains
     integer        , intent(in   ) :: interp_type
     real(kind=dp_t), intent(in   ) :: s0(0:)
     real(kind=dp_t), intent(inout) :: s0_cart(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-    real(kind=dp_t), intent(in   ) ::  normal(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
     real(kind=dp_t), intent(in   ) :: dx(:)
+    real(kind=dp_t), intent(in   ), optional :: normal(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)
 
     integer         :: i,j,k,index
     real(kind=dp_t) :: x,y,z
     real(kind=dp_t) :: radius,rfac,s0_cart_val
+
+    if (is_vector .and. (.not. present(normal)) ) then
+       call bl_error('Error: Calling put_1d_array_on_cart_3d_sphr with is_vector=T and without normal')
+    end if
 
     s0_cart = ZERO
 
