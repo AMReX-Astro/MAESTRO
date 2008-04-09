@@ -25,8 +25,8 @@ module mkscalforce_module
 
 contains
 
-  subroutine mkrhohforce(nlevs,scal_force,thermal,umac,p0_old,p0_new,psi,normal,dx,add_thermal, &
-                         mla,the_bc_level)
+  subroutine mkrhohforce(nlevs,scal_force,thermal,umac,p0_old,p0_new,psi,normal,dx, &
+                         add_thermal,mla,the_bc_level)
 
     use bl_prof_module
     use variables, only: foextrap_comp, rhoh_comp
@@ -278,15 +278,16 @@ contains
 
     real(kind=dp_t) :: uadv,vadv,wadv,normal_vel
     real(kind=dp_t), allocatable :: gradp_rad(:)
-    real(kind=dp_t), allocatable :: gradp_cart(:,:,:)
-    real(kind=dp_t), allocatable :: psi_cart(:,:,:)
+    real(kind=dp_t), allocatable :: gradp_cart(:,:,:,:)
+    real(kind=dp_t), allocatable :: psi_cart(:,:,:,:)
     integer :: i,j,k,r
 
     allocate(gradp_rad(0:nr(n)-1))
-    allocate(gradp_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+    allocate(gradp_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
 
-    allocate(psi_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-    call fill_3d_data(n,psi_cart,psi,lo,hi,dx,0)
+    allocate(psi_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
+    call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,psi,psi_cart, &
+                                      lo,hi,dx,0)
 
     do r = 0, nr(n)-1
        
@@ -304,6 +305,8 @@ contains
     end do
 
     call fill_3d_data(n,gradp_cart,gradp_rad,lo,hi,dx,0)
+    call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,gradp_rad,gradp_cart, &
+                                      lo,hi,dx,0)
 
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
@@ -315,7 +318,7 @@ contains
 
              normal_vel = uadv*normal(i,j,k,1)+vadv*normal(i,j,k,2)+wadv*normal(i,j,k,3)
 
-             rhoh_force(i,j,k) = gradp_cart(i,j,k) * normal_vel
+             rhoh_force(i,j,k) = gradp_cart(i,j,k,1) * normal_vel
 
           end do
        end do
@@ -329,7 +332,7 @@ contains
        do k = lo(3),hi(3)
           do j = lo(2),hi(2)
              do i = lo(1),hi(1)
-                rhoh_force(i,j,k) = rhoh_force(i,j,k) + psi_cart(i,j,k)
+                rhoh_force(i,j,k) = rhoh_force(i,j,k) + psi_cart(i,j,k,1)
              enddo
           enddo
        enddo
@@ -630,14 +633,15 @@ contains
     integer :: i,j,k,r
     real(kind=dp_t) :: uadv,vadv,wadv,normal_vel,dhdp
     real(kind=dp_t), allocatable :: gradp_rad(:)
-    real(kind=dp_t), allocatable :: gradp_cart(:,:,:)
-    real(kind=dp_t), allocatable :: psi_cart(:,:,:)
+    real(kind=dp_t), allocatable :: gradp_cart(:,:,:,:)
+    real(kind=dp_t), allocatable :: psi_cart(:,:,:,:)
 
     allocate(gradp_rad(0:nr(n)-1))
-    allocate(gradp_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+    allocate(gradp_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
 
-    allocate(psi_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-    call fill_3d_data(n,psi_cart,psi,lo,hi,dx,0)
+    allocate(psi_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
+    call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,psi,psi_cart, &
+                                      lo,hi,dx,0)
 
     do r = 0, nr(n)-1
        
@@ -654,7 +658,8 @@ contains
     end do
 
     call fill_3d_data(n,gradp_cart,gradp_rad,lo,hi,dx,0)
-
+    call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,gradp_rad,gradp_cart, &
+                                      lo,hi,dx,0)
 
     do k = lo(3),hi(3)
      do j = lo(2),hi(2)
@@ -688,7 +693,7 @@ contains
 
          temp_force(i,j,k) =  thermal(i,j,k) + &
                               (ONE - s(i,j,k,rho_comp) * dhdp) * &
-                              (normal_vel * gradp_cart(i,j,k) + psi_cart(i,j,k))
+                              (normal_vel * gradp_cart(i,j,k,1) + psi_cart(i,j,k,1))
 
          temp_force(i,j,k) = temp_force(i,j,k) / (cp_eos(1) * s(i,j,k,rho_comp))
 
