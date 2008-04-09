@@ -28,18 +28,8 @@
    computing div{U + w_0} together?  This is more along the lines
    of how we treat the div{w_0} stuff in update_vel.f90
 
--- generalize make_w0_cart to work with any edge-centered base state
-   quantity, not just w0.  This, for example, would allow us to put	
-   rho0_predicted_edge on a Cartesian edge-centered grid.
+-- generalize put_1d_array_on_cart in fill_3d.f90 to be able to 
+   copy a 1D cell-centered or edge-centered array onto Cartesian edges
 
 -- make firstdt do the divu estimator correctly for spherical
-
--- in advance, we do:
-
-             call make_w0_cart(nlevs,w0_force,w0_force_cart_vec,normal,dx, &
-                               the_bc_tower%bc_tower_array,mla)
-
-   but w0_force is cell-centered, not edge-centered, and make_w0_cart expects
-   that we pass in an edge-centered quantity.  This causes an out-of-bounds
-   error if we run with a dr_base that is 2x dx.
 
