@@ -8,64 +8,9 @@ module fill_3d_module
   private
   
   public :: put_1d_array_on_cart, put_1d_array_on_cart_3d_sphr
-  public :: fill_3d_data
   public :: make_3d_normal
   
-contains
-
-  subroutine fill_3d_data(n,data,s0,lo,hi,dx,ng)
-
-    use bl_constants_module
-    use geometry, only: center, dr, nr, base_cc_loc
-    use bl_error_module
-    
-    integer        , intent(in   ) :: n,lo(:),hi(:),ng
-    real(kind=dp_t), intent(  out) :: data(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
-    real(kind=dp_t), intent(in   ) ::   s0(0:)
-    real(kind=dp_t), intent(in   ) :: dx(:)
-    
-    integer         :: i,j,k,index
-    real(kind=dp_t) :: x,y,z
-    real(kind=dp_t) :: radius
-    logical         :: use_linear_interp
-
-    use_linear_interp = .false.
-    
-    do k = lo(3),hi(3)
-       z = (dble(k)+HALF)*dx(3) - center(3)
-       do j = lo(2),hi(2)
-          y = (dble(j)+HALF)*dx(2) - center(2)
-          do i = lo(1),hi(1)
-             x = (dble(i)+HALF)*dx(1) - center(1)
-             radius = sqrt(x**2 + y**2 + z**2)
-             index = int(radius / dr(n))
-
-             if (use_linear_interp) then
-                if(radius .ge. base_cc_loc(n,index)) then
-                   if (index .eq. nr(n)-1) then
-                      data(i,j,k) = s0(index)
-                   else
-                      data(i,j,k) = s0(index+1)*(radius-base_cc_loc(n,index))/dr(n) &
-                           + s0(index)*(base_cc_loc(n,index+1)-radius)/dr(n)
-                   end if
-                else
-                   if (index .eq. 0) then
-                      data(i,j,k) = s0(index)
-                   else
-                      data(i,j,k) = s0(index)*(radius-base_cc_loc(n,index-1))/dr(n) &
-                           + s0(index-1)*(base_cc_loc(n,index)-radius)/dr(n)
-                   end if
-                end if
-             else
-                data(i,j,k) = s0(index)
-             end if
-
-          end do
-       end do
-    end do
-    
-  end subroutine fill_3d_data
-  
+contains  
 
   subroutine put_1d_array_on_cart(nlevs,s0,s0_cart,bc_comp,is_edge_centered,is_vector, &
                                   dx,the_bc_level,mla,interp_type,normal)

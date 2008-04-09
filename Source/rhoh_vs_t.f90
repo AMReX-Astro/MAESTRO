@@ -21,7 +21,7 @@ contains
     use geometry
     use variables
     use network
-    use fill_3d_module, only: fill_3d_data
+    use fill_3d_module
     use multifab_physbc_module
     
     integer        , intent(in   ) :: nlevs
@@ -70,8 +70,8 @@ contains
 
       if (spherical .eq. 1) then
 
-         call multifab_build( rho0_cart,u(n)%la,1    ,2)
-         call multifab_build(rhoh0_cart,u(n)%la,1    ,2)
+         call multifab_build( rho0_cart,u(n)%la,1,2)
+         call multifab_build(rhoh0_cart,u(n)%la,1,2)
 
          do i=1,rho0_cart%nboxes
             if ( multifab_remote(u(n),i) ) cycle
@@ -80,8 +80,10 @@ contains
             lo = lwb(get_box(rho0_cart,i))
             hi = upb(get_box(rho0_cart,i))
 
-            call fill_3d_data(n, rp(:,:,:,1), rho0_halftime(0:),lo,hi,dx(n,:),rho0_cart%ng)
-            call fill_3d_data(n,rhp(:,:,:,1),rhoh0_halftime(0:),lo,hi,dx(n,:),rhoh0_cart%ng)
+            call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,rho0_halftime,rp, &
+                                              lo,hi,dx(n,:),2)
+            call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,rhoh0_halftime,rhp, &
+                                              lo,hi,dx(n,:),2)
          enddo
 
          ! fill ghost cells for two adjacent grids at the same level
@@ -682,7 +684,7 @@ contains
     use variables,      only: rho_comp, spec_comp, rhoh_comp, temp_comp
     use eos_module
     use geometry,       only: spherical
-    use fill_3d_module, only: fill_3d_data
+    use fill_3d_module
 
     integer, intent(in) :: lo(:), hi(:), ng, n
     real (kind = dp_t), intent(inout) ::  state(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
@@ -691,11 +693,12 @@ contains
 
     ! Local variables
     integer :: i, j, k
-    real(kind=dp_t), allocatable :: tempbar_cart(:,:,:)
+    real(kind=dp_t), allocatable :: tempbar_cart(:,:,:,:)
 
     if (spherical .eq. 1) then
-       allocate(tempbar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-       call fill_3d_data(n,tempbar_cart,tempbar,lo,hi,dx,0)
+       allocate(tempbar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
+       call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,tempbar,tempbar_cart, &
+                                           lo,hi,dx,0)
     endif
 
     do_diag = .false.
@@ -709,7 +712,7 @@ contains
              den_eos(1)  = state(i,j,k,rho_comp)
 
              if (spherical .eq. 1) then
-                temp_eos(1) = tempbar_cart(i,j,k)
+                temp_eos(1) = tempbar_cart(i,j,k,1)
              else
                 temp_eos(1) = tempbar(k)
              endif

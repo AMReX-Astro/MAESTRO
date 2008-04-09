@@ -172,26 +172,27 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:)
     logical        , intent(in   ) :: flag
 
-    real(kind=dp_t), allocatable :: s0_cart(:,:,:)
+    real(kind=dp_t), allocatable :: s0_cart(:,:,:,:)
     integer                      :: i,j,k
 
-    allocate(s0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+    allocate(s0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
+
+    call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,s0,s0_cart, &
+                                      lo,hi,dx,0)
 
     if (flag) then
-       call fill_3d_data(n,s0_cart,s0(0:),lo,hi,dx,0)
        do k = lo(3),hi(3)
           do j = lo(2),hi(2)
              do i = lo(1),hi(1)
-                s(i,j,k,comp) = s(i,j,k,comp) - s0_cart(i,j,k)
+                s(i,j,k,comp) = s(i,j,k,comp) - s0_cart(i,j,k,1)
              end do
           end do
        end do
     else
-       call fill_3d_data(n,s0_cart,s0(0:),lo,hi,dx,0)
        do k = lo(3),hi(3)
           do j = lo(2),hi(2)
              do i = lo(1),hi(1)
-                s(i,j,k,comp) = s(i,j,k,comp) + s0_cart(i,j,k)
+                s(i,j,k,comp) = s(i,j,k,comp) + s0_cart(i,j,k,1)
              end do
           end do
        end do

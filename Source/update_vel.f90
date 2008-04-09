@@ -232,7 +232,7 @@ contains
     real (kind = dp_t) :: gradw0
     real (kind = dp_t) :: U_dot_er
     real (kind = dp_t), allocatable :: gradw0_rad(:)
-    real (kind = dp_t), allocatable :: gradw0_cart(:,:,:)
+    real (kind = dp_t), allocatable :: gradw0_cart(:,:,:,:)
 
     ! 1) Subtract (Utilde dot grad) Utilde term from old Utilde
     ! 2) Add forcing term to new Utilde
@@ -303,13 +303,14 @@ contains
     else
 
        allocate(gradw0_rad(0:nr(n)-1))
-       allocate(gradw0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+       allocate(gradw0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
 
        do r = 0, nr(n)-1
           gradw0_rad(r) = (w0(r+1) - w0(r)) / dr(n)
        enddo
 
-       call fill_3d_data(n,gradw0_cart,gradw0_rad,lo,hi,dx,0)
+       call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,gradw0_rad,gradw0_cart, &
+                                         lo,hi,dx,0)
 
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
@@ -322,13 +323,13 @@ contains
 
 
                 unew(i,j,k,1) = unew(i,j,k,1) - &
-                     dt * U_dot_er * gradw0_cart(i,j,k) * normal(i,j,k,1)
+                     dt * U_dot_er * gradw0_cart(i,j,k,1) * normal(i,j,k,1)
 
                 unew(i,j,k,2) = unew(i,j,k,2) - &
-                     dt * U_dot_er * gradw0_cart(i,j,k) * normal(i,j,k,2)
+                     dt * U_dot_er * gradw0_cart(i,j,k,1) * normal(i,j,k,2)
 
                 unew(i,j,k,3) = unew(i,j,k,3) - &
-                     dt * U_dot_er * gradw0_cart(i,j,k) * normal(i,j,k,3)
+                     dt * U_dot_er * gradw0_cart(i,j,k,1) * normal(i,j,k,3)
 
 
                 ! B) Subtract (w0 dot grad) U term from new Utilde

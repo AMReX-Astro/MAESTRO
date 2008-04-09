@@ -219,16 +219,18 @@ contains
     real(kind=dp_t) :: base_ylo,base_yhi
     real(kind=dp_t) :: base_zlo,base_zhi
     
-    real(kind=dp_t), allocatable :: divu(:),divu_cart(:,:,:)
+    real(kind=dp_t), allocatable :: divu(:),divu_cart(:,:,:,:)
     
     allocate(divu(0:nr(n)-1))
-    allocate(divu_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
+    allocate(divu_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
     
     do r = 0,nr(n)-1
        divu(r) = (base_loedge_loc(n,r+1)**2 &
             * w0(r+1)- base_loedge_loc(n,r)**2 * w0(r))/(dr(n)*base_cc_loc(n,r)**2)
     end do
-    call fill_3d_data(n,divu_cart,divu,lo,hi,dx,0)
+
+    call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,divu,divu_cart, &
+                                      lo,hi,dx,0)
     
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
@@ -277,7 +279,7 @@ contains
                          -wmac(i,j,k  ) * base_zlo)/ dx(3)
              
              force(i,j,k) = force(i,j,k) - divbaseu &
-                  -(s(i,j,k)-base_cart(i,j,k))*(divumac+divu_cart(i,j,k)) 
+                  -(s(i,j,k)-base_cart(i,j,k))*(divumac+divu_cart(i,j,k,1)) 
           end do
        end do
     end do
