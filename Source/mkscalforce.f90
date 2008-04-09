@@ -304,7 +304,6 @@ contains
        gradp_rad(r) = gradp_rad(r)
     end do
 
-    call fill_3d_data(n,gradp_cart,gradp_rad,lo,hi,dx,0)
     call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,gradp_rad,gradp_cart, &
                                       lo,hi,dx,0)
 
@@ -657,7 +656,6 @@ contains
        end if
     end do
 
-    call fill_3d_data(n,gradp_cart,gradp_rad,lo,hi,dx,0)
     call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,gradp_rad,gradp_cart, &
                                       lo,hi,dx,0)
 
