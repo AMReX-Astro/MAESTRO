@@ -18,7 +18,6 @@ contains
 
   subroutine add_react_to_thermal(nlevs,thermal,rho_omegadot,s,the_bc_level,mla)
 
-    use fill_3d_module
     use bl_prof_module
     use bl_constants_module
     use multifab_physbc_module
