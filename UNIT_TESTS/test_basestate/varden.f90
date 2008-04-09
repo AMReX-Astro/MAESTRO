@@ -52,7 +52,7 @@ subroutine varden()
   real(dp_t), allocatable :: w0_old(:,:)
   real(dp_t), allocatable :: psi(:,:)
   real(dp_t), allocatable :: f(:,:)
-  real(dp_t), allocatable :: Sbar_in(:,:,:)
+  real(dp_t), allocatable :: Sbar_in(:,:)
   real(dp_t), allocatable :: rho0_predicted_edge(:,:)
   real(dp_t), allocatable :: force(:)
   real(dp_t), allocatable :: X0(:)
@@ -131,7 +131,7 @@ subroutine varden()
   allocate(                 w0(nlevs,0:nr_fine))
   allocate(                psi(nlevs,0:nr_fine))
   allocate(                  f(nlevs,0:nr_fine))
-  allocate(            Sbar_in(nlevs,0:nr_fine-1,1))
+  allocate(            Sbar_in(nlevs,0:nr_fine-1))
   allocate(rho0_predicted_edge(nlevs,0:nr_fine))
 
   allocate(force(0:nr_fine-1))
@@ -220,7 +220,7 @@ subroutine varden()
 
         coeff = dpdt_eos(1)/ (den_eos(1) * cp_eos(1) * dpdr_eos(1))
 
-        Sbar_in(1,i,1) = coeff*Hbar
+        Sbar_in(1,i) = coeff*Hbar
      enddo
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -228,7 +228,7 @@ subroutine varden()
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      w0(:,:) = ZERO
 
-     call make_w0(nlevs,w0,w0_old,f,Sbar_in(:,:,1),s0(:,:,rho_comp),p0,p0, &
+     call make_w0(nlevs,w0,w0_old,f,Sbar_in,s0(:,:,rho_comp),p0,p0, &
                   gam1,gam1,psi,dt,dtold)
   
 
@@ -252,10 +252,9 @@ subroutine varden()
 
      which_step = 1
 
-     call advect_base(which_step,nlevs,w0,Sbar_in,p0_old,p0, &
+     call advect_base(nlevs,w0,Sbar_in,p0_old,p0, &
                       s0_old(:,:,rho_comp),s0(:,:,rho_comp), &
                       s0_old(:,:,rhoh_comp),s0(:,:,rhoh_comp), &
-                      s0(:,:,temp_comp), &
                       gam1,div_coeff, &
                       rho0_predicted_edge,psi, &
                       dx(:,1),dt)
