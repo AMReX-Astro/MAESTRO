@@ -266,9 +266,11 @@ subroutine varden()
   ! and compare to the base state
   if ( parallel_IOProcessor() ) &
        print *, 'averaging...'
-  do n=1,nlevs
-     call average(mla,sold,s0_avg,dx,1,1,nscal)
-  enddo
+
+  do i=1,nscal
+     call average(mla,sold,s0_avg(:,:,i),dx,i)
+  end do
+
   if ( parallel_IOProcessor() ) &
        print *, 'done'
 
