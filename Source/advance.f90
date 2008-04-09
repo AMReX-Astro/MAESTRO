@@ -226,8 +226,8 @@ contains
                     p0_old,p0_old,gamma1bar,gamma1bar,psi,dt,dtold)
 
        if (dm .eq. 3) then
-          call put_1d_vector_on_3d_cells(nlevs,w0,w0_cart_vec,normal,dx,dm,.true., &
-                                         the_bc_tower%bc_tower_array,mla)
+          call put_1d_array_on_cart(nlevs,w0,w0_cart_vec,1,.true.,.true.,dx, &
+                                    the_bc_tower%bc_tower_array,mla,2,normal)
        end if
 
     end if
@@ -611,11 +611,11 @@ contains
                        p0_old,p0_new,gamma1bar_old,gamma1bar,psi,dt,dtold)
        
           if (dm .eq. 3) then
-             call put_1d_vector_on_3d_cells(nlevs,w0      ,w0_cart_vec      ,normal,dx, &
-                                            dm,.true.,the_bc_tower%bc_tower_array,mla) 
-             call put_1d_vector_on_3d_cells(nlevs,w0_force,w0_force_cart_vec,normal,dx, &
-                                            foextrap_comp,.false., &
-                                            the_bc_tower%bc_tower_array,mla) 
+             call put_1d_array_on_cart(nlevs,w0,w0_cart_vec,1,.true.,.true.,dx, &
+                                       the_bc_tower%bc_tower_array,mla,2,normal)
+             call put_1d_array_on_cart(nlevs,w0_force,w0_force_cart_vec,foextrap_comp, &
+                                       .false.,.true.,dx,the_bc_tower%bc_tower_array,mla, &
+                                       2,normal)
           end if
        end if
        
