@@ -71,10 +71,10 @@ contains
     end if
     
     if (spherical .eq. 1) then
-       call fill_3d_data_c(nlevs,dx,the_bc_tower%bc_tower_array,mla, &
-                           div_coeff_cart,div_coeff,foextrap_comp)
-       call fill_3d_data_c(nlevs,dx,the_bc_tower%bc_tower_array,mla, &
-                           Sbar_cart,Sbar,foextrap_comp)
+       call put_1d_array_on_cart(nlevs,div_coeff,div_coeff_cart,foextrap_comp,.false., &
+                                 .false.,dx,the_bc_tower%bc_tower_array,mla,1)
+       call put_1d_array_on_cart(nlevs,Sbar,Sbar_cart,foextrap_comp,.false., &
+                                 .false.,dx,the_bc_tower%bc_tower_array,mla,1)
     end if
 
     do n = 1, nlevs

@@ -129,8 +129,10 @@ contains
        do n=1,nlevs
           call multifab_build(div_coeff_3d(n), mla%la(n), 1, 0)
        end do
-       call fill_3d_data_c(nlevs,dx,the_bc_tower%bc_tower_array,mla, &
-                           div_coeff_3d,div_coeff_old,foextrap_comp)
+
+       call put_1d_array_on_cart(nlevs,div_coeff_old,div_coeff_3d,foextrap_comp,.false., &
+                                 .false.,dx,the_bc_tower%bc_tower_array,mla,1)
+
        call hgproject(initial_projection_comp,mla,uold,uold,rhohalf,pres,gpres,dx, &
                       dt_temp,the_bc_tower,press_comp, &
                       hgrhs,div_coeff_3d=div_coeff_3d,eps_in=1.d-10)
