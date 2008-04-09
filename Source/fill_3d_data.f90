@@ -348,8 +348,6 @@ contains
        call bl_error('Error: Calling put_1d_array_on_cart_3d_sphr with is_vector=T and without normal')
     end if
 
-    s0_cart = ZERO
-
     if (is_edge_centered) then
 
        ! interpolate from radial bin edge values
