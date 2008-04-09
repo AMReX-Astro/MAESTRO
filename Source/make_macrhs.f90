@@ -106,20 +106,22 @@ contains
 
 !     Local variables
       integer :: i, j, k
-      real (kind=dp_t), allocatable :: div_cart(:,:,:),Sbar_cart(:,:,:)
+      real (kind=dp_t), allocatable :: div_cart(:,:,:,:),Sbar_cart(:,:,:,:)
 
       if (spherical .eq. 1) then
 
-        allocate(div_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-        call fill_3d_data(n,div_cart,div_coeff,lo,hi,dx,0)
+        allocate(div_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
+        call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,div_coeff,div_cart, &
+                                          lo,hi,dx,0)
 
-        allocate(Sbar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-        call fill_3d_data(n,Sbar_cart,Sbar,lo,hi,dx,0)
+        allocate(Sbar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
+        call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,Sbar,Sbar_cart, &
+                                          lo,hi,dx,0)
 
         do k = lo(3),hi(3)
         do j = lo(2),hi(2)
         do i = lo(1),hi(1)
-          rhs(i,j,k) = div_cart(i,j,k) * (Source(i,j,k) - Sbar_cart(i,j,k) + &
+          rhs(i,j,k) = div_cart(i,j,k,1) * (Source(i,j,k) - Sbar_cart(i,j,k,1) + &
                delta_gamma1_term(i,j,k))
         end do
         end do

@@ -239,15 +239,16 @@ contains
 
     ! Local variables
     integer :: i, j, k
-    real (kind=dp_t), allocatable :: tempbar_cart(:,:,:)
-    real (kind=dp_t), allocatable :: p0_cart(:,:,:)
+    real (kind=dp_t), allocatable :: tempbar_cart(:,:,:,:)
+    real (kind=dp_t), allocatable :: p0_cart(:,:,:,:)
 
-    allocate(tempbar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-    call fill_3d_data(n,tempbar_cart,tempbar,lo,hi,dx,0)
+    allocate(tempbar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
+    call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,tempbar,tempbar_cart, &
+                                      lo,hi,dx,0)
 
-    allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-    call fill_3d_data(n,p0_cart,p0,lo,hi,dx,0)
-
+    allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
+    call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,p0,p0_cart, &
+                                      lo,hi,dx,0)
     do_diag = .false.
 
     do k = lo(3), hi(3)
@@ -256,8 +257,8 @@ contains
 
              den_eos(1)  = state(i,j,k,rho_comp)
              h_eos(1)    = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp)
-             p_eos(1)    = p0_cart(i,j,k)
-             temp_eos(1) = tempbar_cart(i,j,k)
+             p_eos(1)    = p0_cart(i,j,k,1)
+             temp_eos(1) = tempbar_cart(i,j,k,1)
              xn_eos(1,:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
 
              ! (rho, H) --> T, p
@@ -274,7 +275,7 @@ contains
 
              T(i,j,k) = temp_eos(1)
 
-             deltaP(i,j,k) = (p_eos(1)-p0_cart(i,j,k))/ p0_cart(i,j,k)
+             deltaP(i,j,k) = (p_eos(1)-p0_cart(i,j,k,1))/ p0_cart(i,j,k,1)
 
           enddo
        enddo
@@ -487,24 +488,28 @@ contains
     !     Local variables
     integer          :: i, j, k
     real (kind=dp_t) :: vel
-    real (kind=dp_t), allocatable ::  rho0_cart(:,:,:)
-    real (kind=dp_t), allocatable ::    tempbar_cart(:,:,:)
-    real (kind=dp_t), allocatable ::    p0_cart(:,:,:)
-    real (kind=dp_t), allocatable ::  gam0_cart(:,:,:)
+    real (kind=dp_t), allocatable ::  rho0_cart(:,:,:,:)
+    real (kind=dp_t), allocatable ::  tempbar_cart(:,:,:,:)
+    real (kind=dp_t), allocatable ::  p0_cart(:,:,:,:)
+    real (kind=dp_t), allocatable ::  gamma1bar_cart(:,:,:,:)
 
     do_diag = .false.
 
-    allocate(rho0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-    call fill_3d_data(n,rho0_cart,rho0,lo,hi,dx,0)
+    allocate(rho0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
+    call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,rho0,rho0_cart, &
+                                      lo,hi,dx,0)
 
-    allocate(tempbar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-    call fill_3d_data(n,tempbar_cart,tempbar,lo,hi,dx,0)
+    allocate(tempbar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
+    call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,tempbar,tempbar_cart, &
+                                      lo,hi,dx,0)
 
-    allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-    call fill_3d_data(n,p0_cart,p0,lo,hi,dx,0)
+    allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1)) 
+    call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,p0,p0_cart, &
+                                      lo,hi,dx,0)
 
-    allocate(gam0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)))
-    call fill_3d_data(n,gam0_cart,gamma1bar,lo,hi,dx,0)
+    allocate(gamma1bar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1)) 
+    call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,gamma1bar,gamma1bar_cart, &
+                                      lo,hi,dx,0)
 
     ! Then compute the perturbation and Mach number
     do k = lo(3), hi(3)
@@ -512,8 +517,8 @@ contains
           do i = lo(1), hi(1)
 
              den_eos(1) = s(i,j,k,rho_comp)
-             temp_eos(1) = tempbar_cart(i,j,k)
-             p_eos(1) = p0_cart(i,j,k)
+             temp_eos(1) = tempbar_cart(i,j,k,1)
+             p_eos(1) = p0_cart(i,j,k,1)
              xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
 
              ! (rho,P) --> T,h
@@ -529,19 +534,19 @@ contains
                       do_diag)
 
              t(i,j,k) = temp_eos(1)
-             tpert(i,j,k) = temp_eos(1) - tempbar_cart(i,j,k)
+             tpert(i,j,k) = temp_eos(1) - tempbar_cart(i,j,k,1)
 
-             rhopert(i,j,k) = s(i,j,k,rho_comp) - rho0_cart(i,j,k)
+             rhopert(i,j,k) = s(i,j,k,rho_comp) - rho0_cart(i,j,k,1)
 
              vel = sqrt(u(i,j,k,1)*u(i,j,k,1)+u(i,j,k,2)*u(i,j,k,2)+u(i,j,k,3)*u(i,j,k,3))
              machno(i,j,k) = vel / cs_eos(1)
 
-             deltagamma(i,j,k) = gam1_eos(1) - gam0_cart(i,j,k)
+             deltagamma(i,j,k) = gam1_eos(1) - gamma1bar_cart(i,j,k,1)
           enddo
        enddo
     enddo
 
-    deallocate(rho0_cart,tempbar_cart,p0_cart,gam0_cart)
+    deallocate(rho0_cart,tempbar_cart,p0_cart,gamma1bar_cart)
 
   end subroutine make_tfromrho_3d_sphr
 
