@@ -6,7 +6,6 @@ module init_module
   use multifab_physbc_module
   use define_bc_module
   use multifab_module
-  use fill_3d_module
   use eos_module
   use variables
   use network
@@ -198,18 +197,7 @@ contains
   
     if (spherical .eq. 1) then
 
-       ! initialize the scalars
-       call fill_3d_data(n,s(:,:,:,rho_comp), s0_init(:,rho_comp), lo,hi,dx,ng)
-       call fill_3d_data(n,s(:,:,:,rhoh_comp),s0_init(:,rhoh_comp),lo,hi,dx,ng)
-       call fill_3d_data(n,s(:,:,:,temp_comp),s0_init(:,temp_comp),lo,hi,dx,ng)
-
-       do comp = spec_comp, spec_comp+nspec-1
-          call fill_3d_data(n,s(:,:,:,comp),s0_init(:,comp),lo,hi,dx,ng)
-       end do
-
-       do comp = trac_comp, trac_comp+ntrac-1
-          call fill_3d_data(n,s(:,:,:,comp),s0_init(:,comp),lo,hi,dx,ng)
-       end do
+       call bl_error('Error: initdata does not handle the spherical case')
 
     else 
 

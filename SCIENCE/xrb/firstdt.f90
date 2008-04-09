@@ -201,7 +201,6 @@ contains
     use geometry,  only: spherical, nr
     use variables, only: rho_comp, temp_comp, spec_comp
     use eos_module
-    use fill_3d_module
     use bl_constants_module
 
     integer, intent(in)             :: n,lo(:), hi(:), ng
