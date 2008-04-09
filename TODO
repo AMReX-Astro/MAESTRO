@@ -1,7 +1,3 @@
--- test_basestate currently should not work since gamma1bar is not
-   initialized in init_base_state anymore.  We need a temporary hack
-   to compute gamma1bar from the base state for this example only
-
 -- rebase the EOS to Frank's latest and turn on the Coulomb
    corrections.  
 
