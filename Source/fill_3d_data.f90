@@ -306,8 +306,16 @@ contains
                 radius = sqrt(x**2 + y**2 + z**2)
                 index  = int(radius / dr(n))
                 
-                rfac = (radius - dble(index)*dr(n)) / dr(n)
-                s0_cart_val      = rfac * s0(index) + (ONE-rfac) * s0(index+1)
+                if (interp_type .eq. 1) then
+
+                   call bl_error('Error: No such thing as interp_type=1 (piecewise constant) for an edge_centered 1D array')
+
+                else
+
+                   rfac = (radius - dble(index)*dr(n)) / dr(n)
+                   s0_cart_val      = rfac * s0(index) + (ONE-rfac) * s0(index+1)
+
+                end if
                    
                 if (is_vector) then
                    s0_cart(i,j,k,1) = s0_cart_val * normal(i,j,k,1)
