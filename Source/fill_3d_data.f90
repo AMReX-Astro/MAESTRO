@@ -65,9 +65,11 @@ contains
           lo =  lwb(get_box(s0_cart(n), i))
           hi =  upb(get_box(s0_cart(n), i))
           select case (dm)
+
           case (2)
              call put_1d_array_on_cart_2d(n,is_edge_centered,is_vector, &
                                           s0(n,:),sp(:,:,1,:),lo,hi,ng)
+
           case (3)
              if (spherical .eq. 0) then
                 call put_1d_array_on_cart_3d(n,is_edge_centered,is_vector, &
@@ -75,12 +77,19 @@ contains
              else
                 if (is_vector) then
                    np => dataptr(normal(n), i)
+
+                   call put_1d_array_on_cart_3d_sphr(n,is_edge_centered, &
+                                                     is_vector,interp_type, &
+                                                     s0(n,:),sp(:,:,:,:), &
+                                                     lo,hi,dx(n,:),ng,np(:,:,:,:))
+                else
+                   call put_1d_array_on_cart_3d_sphr(n,is_edge_centered, &
+                                                     is_vector,interp_type, &
+                                                     s0(n,:),sp(:,:,:,:), &
+                                                     lo,hi,dx(n,:),ng)
                 end if
-                call put_1d_array_on_cart_3d_sphr(n,is_edge_centered, &
-                                                  is_vector,interp_type, &
-                                                  s0(n,:),sp(:,:,:,:), &
-                                                  lo,hi,dx(n,:),ng,np(:,:,:,:))
-             end if
+             endif
+
           end select
        end do
 
