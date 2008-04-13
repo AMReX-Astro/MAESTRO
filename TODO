@@ -2,8 +2,7 @@
    corrections.  
 
 -- deal with the comment "! NOTE NOTE : THIS IS WRONG FOR SPHERICAL !!"
-   in make_edge_state.f90.  Note that this same U.e_r dw_0/dr e_r term
-   is missing from mkforce.f90 as well for spherical.
+   in make_edge_state.f90.  
 
 -- make a runtime diagnostic that prints <q> and q_rms for temperature,
    energy generation, and velocity as a function of radius.
