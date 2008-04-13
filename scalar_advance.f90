@@ -279,8 +279,9 @@ contains
     !**************************************************************************
 
     if (ntrac .ge. 1) then
-       call make_edge_state(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0, &
-                            w0_cart_vec,dx,dt,is_vel,the_bc_level,velpred, &
+       call make_edge_state(nlevs,sold,uold,sedge,umac,utrans,scal_force, &
+                            normal,w0,w0_cart_vec, &
+                            dx,dt,is_vel,the_bc_level,velpred, &
                             trac_comp,dm+trac_comp,ntrac,mla)
     end if
 
