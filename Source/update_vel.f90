@@ -230,7 +230,7 @@ contains
     real (kind = dp_t) :: gradwx,gradwy,gradwz
     real (kind = dp_t) :: w0_gradur,w0_gradvr,w0_gradwr
     real (kind = dp_t) :: gradw0
-    real (kind = dp_t) :: U_dot_er
+    real (kind = dp_t) :: Utilde_dot_er
     real (kind = dp_t), allocatable :: gradw0_rad(:)
     real (kind = dp_t), allocatable :: gradw0_cart(:,:,:,:)
 
@@ -317,16 +317,16 @@ contains
              do i = lo(1), hi(1)
 
                 ! A) Subtract (Utilde dot er) grad w0 er term from new Utilde.
-                U_dot_er = HALF*(umac(i,j,k) + umac(i+1,j,k)) * normal(i,j,k,1) + &
-                           HALF*(vmac(i,j,k) + vmac(i,j+1,k)) * normal(i,j,k,2) + &
-                           HALF*(wmac(i,j,k) + wmac(i,j,k+1)) * normal(i,j,k,3)
+                Utilde_dot_er = HALF*(umac(i,j,k) + umac(i+1,j,k)) * normal(i,j,k,1) + &
+                                HALF*(vmac(i,j,k) + vmac(i,j+1,k)) * normal(i,j,k,2) + &
+                                HALF*(wmac(i,j,k) + wmac(i,j,k+1)) * normal(i,j,k,3)
 
 
-                unew(i,j,k,1) = unew(i,j,k,1) - dt * U_dot_er * gradw0_cart(i,j,k,1)
+                unew(i,j,k,1) = unew(i,j,k,1) - dt * Utilde_dot_er * gradw0_cart(i,j,k,1)
 
-                unew(i,j,k,2) = unew(i,j,k,2) - dt * U_dot_er * gradw0_cart(i,j,k,2)
+                unew(i,j,k,2) = unew(i,j,k,2) - dt * Utilde_dot_er * gradw0_cart(i,j,k,2)
 
-                unew(i,j,k,3) = unew(i,j,k,3) - dt * U_dot_er * gradw0_cart(i,j,k,3)
+                unew(i,j,k,3) = unew(i,j,k,3) - dt * Utilde_dot_er * gradw0_cart(i,j,k,3)
 
 
                 ! B) Subtract (w0 dot grad) U term from new Utilde
