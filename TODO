@@ -25,3 +25,6 @@
 
 -- make firstdt do the divu estimator correctly for spherical
 
+-- make_psi is called after scalar_advance, but we need psi in the
+   enthalpy update for spherical, so we are using an old one -- this 
+   is probably not consistent.
