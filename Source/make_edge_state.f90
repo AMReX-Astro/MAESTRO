@@ -69,6 +69,7 @@ contains
     real(kind=dp_t), pointer :: wtp(:,:,:,:)
     real(kind=dp_t), pointer :: w0p(:,:,:,:)
     real(kind=dp_t), pointer :: fp(:,:,:,:)
+    real(kind=dp_t), pointer :: np(:,:,:,:)
     real(kind=dp_t), pointer :: gw0p(:,:,:,:)
 
     real(kind=dp_t), allocatable :: gradw0_rad(:)
@@ -93,8 +94,9 @@ contains
 
     do n=1,nlevs
 
+       call multifab_build(gradw0_cart, u(n)%la,1,1)
+
        if (spherical .eq. 1 .and. is_vel) then
-          call multifab_build(gradw0_cart, u(n)%la,1,1)
 
           do i = 1, gradw0_cart%nboxes
              if ( multifab_remote(u(n),i) ) cycle
@@ -116,6 +118,9 @@ contains
           ! NOTE: not sure what the BC should be for gradw0_cart.  Right
           ! now I am just using foextrap_comp.
           call multifab_physbc(gradw0_cart,1,foextrap_comp,1,the_bc_level(n))
+
+       else
+          call setval(gradw0_cart, ZERO, all=.true.)
        endif
        
 
@@ -151,14 +156,17 @@ contains
              wtp  => dataptr(utrans(n,3),i)
              sepz => dataptr( sedge(n,3),i)
              w0p  => dataptr(w0_cart_vec(n),i)
+             gw0p => dataptr(gradw0_cart,i)
+             np   => dataptr(normal(n),i)
+
              do scomp = start_scomp, start_scomp + num_comp - 1
                 bccomp = start_bccomp + scomp - start_scomp
                 call make_edge_state_3d(n,sop(:,:,:,:), uop(:,:,:,:), &
                                         sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
                                         ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
                                         utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), &
-                                        fp(:,:,:,:), &
-                                        w0(n,:), w0p(:,:,:,:), &
+                                        fp(:,:,:,:), np(:,:,:,:), &
+                                        w0(n,:), w0p(:,:,:,:), gw0p(:,:,:,1), &
                                         lo, dx(n,:), dt, is_vel, &
                                         the_bc_level(n)%phys_bc_level_array(i,:,:), &
                                         the_bc_level(n)%adv_bc_level_array(i,:,:,bccomp:), &
@@ -191,8 +199,10 @@ contains
 
     if (spherical .eq. 1 .and. is_vel) then
        deallocate(gradw0_rad)
-       call destroy(gradw0_cart)
     endif
+
+    call destroy(gradw0_cart)
+
 
     call destroy(bpt)
     
@@ -587,9 +597,15 @@ contains
   end subroutine make_edge_state_2d
   
   
-  subroutine make_edge_state_3d(n,s,u,sedgex,sedgey,sedgez,umac, &
-                                vmac,wmac,utrans,vtrans,wtrans,force,w0,w0_cart_vec,lo, &
-                                dx,dt,is_vel,phys_bc,adv_bc,velpred,ng,comp)
+  subroutine make_edge_state_3d(n,s,u, &
+                                sedgex,sedgey,sedgez, &
+                                umac,vmac,wmac, &
+                                utrans,vtrans,wtrans, &
+                                force, normal, &
+                                w0,w0_cart_vec,gradw0_cart, &
+                                lo,dx,dt,is_vel, &
+                                phys_bc,adv_bc, &
+                                velpred,ng,comp)
 
     use bc_module
     use slope_module
@@ -609,8 +625,10 @@ contains
     real(kind=dp_t), intent(in   ) :: vtrans(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
     real(kind=dp_t), intent(in   ) :: wtrans(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
     real(kind=dp_t), intent(in   ) ::  force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
+    real(kind=dp_t), intent(in   ) :: normal(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
     real(kind=dp_t), intent(in   ) ::     w0(0:)
     real(kind=dp_t), intent(in   ) :: w0_cart_vec(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
+    real(kind=dp_t), intent(in   ) :: gradw0_cart(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
     logical        , intent(in   ) :: is_vel
     integer        , intent(in   ) :: phys_bc(:,:)
@@ -626,7 +644,9 @@ contains
     real(kind=dp_t) :: savg,st,ulo,uhi,vlo,vhi,wlo,whi
     real(kind=dp_t) :: sptop,spbot,smtop,smbot,splft,sprgt,smlft,smrgt
     real(kind=dp_t) :: abs_eps, eps, umax
-    
+
+    real(kind=dp_t) :: Ut_dot_er
+
     integer :: hi(3),i,j,k,is,js,ie,je,ks,ke
     logical :: test
     
@@ -822,11 +842,36 @@ contains
                  
                  st = st - HALF * (wtrans(i,j,k)+wtrans(i,j,k+1))*(splus - sminus) / hz
                  
-                 ! NOTE NOTE : THIS IS WRONG FOR SPHERICAL !!
-                 if (spherical .eq. 0 .and. is_vel .and. comp.eq.3) then
-                    ! wtrans contains w0 so we need to subtract it off
-                    st = st - HALF * (wtrans(i,j,k)+wtrans(i,j,k+1)-w0(k+1)-w0(k))* &
-                         (w0(k+1)-w0(k))/hz
+                 if (is_vel) then
+                    ! add the (Utilde . e_r) d w_0 /dr e_r term here
+
+                    if (spherical .eq. 0 .and. comp.eq.3) then
+
+                       ! wtrans contains w0 so we need to subtract it off
+                       st = st - HALF * (wtrans(i,j,k)+wtrans(i,j,k+1)-w0(k+1)-w0(k))* &
+                            (w0(k+1)-w0(k))/hz
+
+                    else if (spherical .eq. 1) then
+
+                       ! u/v/wtrans contain w0, so we need to subtract it off.  
+                       ! Note w0_cart_vec is cell-centered
+                       Ut_dot_er = (HALF*(utrans(i,j,k) + utrans(i+1,j,k)) - &
+                                          w0_cart_vec(i,j,k,1))*normal(i,j,k,1) + &
+                                   (HALF*(vtrans(i,j,k) + vtrans(i,j+1,k)) - &
+                                          w0_cart_vec(i,j,k,2))*normal(i,j,k,2) + &
+                                   (HALF*(wtrans(i,j,k) + wtrans(i,j,k+1)) - &
+                                          w0_cart_vec(i,j,k,3))*normal(i,j,k,3)
+                       
+                       if (comp .eq. 1) then
+                          st = st - Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,1)
+                       else if (comp .eq. 2) then
+                          st = st - Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,2)
+                       else if (comp .eq. 3) then
+                          st = st - Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,3)
+                       endif
+                                        
+                    endif
+
                  end if
                  
                  ubardth = dth/hx * ( u(i,j,k,1) + w0_cart_vec(i,j,k,1))
@@ -1024,13 +1069,39 @@ contains
                  
                  st = st - HALF * (wtrans(i,j,k)+wtrans(i,j,k+1))*(splus - sminus) / hz
                  
-                 ! NOTE NOTE : THIS IS WRONG FOR SPHERICAL !!
-                 if (spherical .eq. 0 .and. is_vel .and. comp.eq.3) then
-                    ! wtrans contains w0 so we need to subtract it off
-                    st = st - HALF * (wtrans(i,j,k)+wtrans(i,j,k+1)-w0(k+1)-w0(k))* &
-                         (w0(k+1)-w0(k))/hz
+
+                 if (is_vel) then
+                    ! add the (Utilde . e_r) d w_0 /dr e_r term here
+
+                    if (spherical .eq. 0 .and. comp.eq.3) then
+
+                       ! wtrans contains w0 so we need to subtract it off
+                       st = st - HALF * (wtrans(i,j,k)+wtrans(i,j,k+1)-w0(k+1)-w0(k))* &
+                            (w0(k+1)-w0(k))/hz
+
+                    else if (spherical .eq. 1) then
+
+                       ! u/v/wtrans contain w0, so we need to subtract it off.  
+                       ! Note w0_cart_vec is cell-centered
+                       Ut_dot_er = (HALF*(utrans(i,j,k) + utrans(i+1,j,k)) - &
+                                          w0_cart_vec(i,j,k,1))*normal(i,j,k,1) + &
+                                   (HALF*(vtrans(i,j,k) + vtrans(i,j+1,k)) - &
+                                          w0_cart_vec(i,j,k,2))*normal(i,j,k,2) + &
+                                   (HALF*(wtrans(i,j,k) + wtrans(i,j,k+1)) - &
+                                          w0_cart_vec(i,j,k,3))*normal(i,j,k,3)
+
+                       if (comp .eq. 1) then
+                          st = st - Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,1)
+                       else if (comp .eq. 2) then
+                          st = st - Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,2)
+                       else if (comp .eq. 3) then
+                          st = st - Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,3)
+                       endif
+                                        
+                    endif
+
                  end if
-                 
+
                  vbardth = dth/hy * ( u(i,j,k,2) + w0_cart_vec(i,j,k,2))
                  
                  if(velpred .eq. 1) then
@@ -1227,11 +1298,37 @@ contains
                  
                  st = st - HALF * (vtrans(i,j,k)+vtrans(i,j+1,k))*(splus - sminus) / hy
                  
-                 ! NOTE NOTE : THIS IS WRONG FOR SPHERICAL !!
-                 if (spherical.eq.0.and.is_vel.and.comp.eq.3.and.k.ge.0.and.k.lt.nr(n)) then
-                    st = st - HALF * s(i,j,k,comp)*(w0(k+1)-w0(k))/hz
+                 if (is_vel) then
+                    ! add the (Utilde . e_r) d w_0 /dr e_r term here
+
+                    if (spherical .eq. 0 .and. comp.eq.3 .and. k .ge. 0 .and. k .lt. nr(n)) then
+
+                       ! wtrans contains w0 so we need to subtract it off
+                       st = st - HALF * s(i,j,k,comp)*(w0(k+1)-w0(k))/hz
+
+                    else if (spherical .eq. 1) then
+
+                       ! u/v/wtrans contain w0, so we need to subtract it off.  
+                       ! Note w0_cart_vec is cell-centered
+                       Ut_dot_er = (HALF*(utrans(i,j,k) + utrans(i+1,j,k)) - &
+                                          w0_cart_vec(i,j,k,1))*normal(i,j,k,1) + &
+                                   (HALF*(vtrans(i,j,k) + vtrans(i,j+1,k)) - &
+                                          w0_cart_vec(i,j,k,2))*normal(i,j,k,2) + &
+                                   (HALF*(wtrans(i,j,k) + wtrans(i,j,k+1)) - &
+                                          w0_cart_vec(i,j,k,3))*normal(i,j,k,3)
+                       
+                       if (comp .eq. 1) then
+                          st = st - Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,1)
+                       else if (comp .eq. 2) then
+                          st = st - Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,2)
+                       else if (comp .eq. 3) then
+                          st = st - Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,3)
+                       endif
+                                        
+                    endif
+
                  end if
-                 
+
                  wbardth = dth/hz * ( u(i,j,k,3) + w0_cart_vec(i,j,k,3))
                  
                  if(velpred .eq. 1) then
