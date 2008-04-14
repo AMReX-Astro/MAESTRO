@@ -228,20 +228,26 @@ contains
     end if
 !   call make_edge_state(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0,w0_cart_vec,dx,dt, &
 !                        is_vel,the_bc_level,velpred,pred_comp,dm+pred_comp,1,mla)
-    call make_edge_scal(nlevs,sold,sedge,umac,scal_force,w0,w0_cart_vec,dx,dt,is_vel, &
-                        the_bc_level,pred_comp,dm+pred_comp,1,mla)
+    call make_edge_scal(nlevs,sold,sedge,umac,scal_force, &
+                        normal,w0,w0_cart_vec, &
+                        dx,dt,is_vel,the_bc_level, &
+                        pred_comp,dm+pred_comp,1,mla)
 
     ! predict either X or (rho X)' at the edges
 !    call make_edge_state(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0,w0_cart_vec,dx, &
 !                         dt,is_vel,the_bc_level,velpred,spec_comp,dm+spec_comp,nspec,mla)
-    call make_edge_scal(nlevs,sold,sedge,umac,scal_force,w0,w0_cart_vec,dx,dt,is_vel, &
-                        the_bc_level,spec_comp,dm+spec_comp,nspec,mla)
+    call make_edge_scal(nlevs,sold,sedge,umac,scal_force, &
+                        normal,w0,w0_cart_vec, &
+                        dx,dt,is_vel,the_bc_level, &
+                        spec_comp,dm+spec_comp,nspec,mla)
 
     ! predict rho' at the edges
 !    call make_edge_state(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0,w0_cart_vec,dx, &
 !                         dt,is_vel,the_bc_level,velpred,rho_comp,dm+rho_comp,1,mla)
-    call make_edge_scal(nlevs,sold,sedge,umac,scal_force,w0,w0_cart_vec,dx,dt,is_vel, &
-                        the_bc_level,rho_comp,dm+rho_comp,1,mla)
+    call make_edge_scal(nlevs,sold,sedge,umac,scal_force, &
+                        normal,w0,w0_cart_vec, &
+                        dx,dt,is_vel,the_bc_level, &
+                        rho_comp,dm+rho_comp,1,mla)
 
     if (enthalpy_pred_type .eq. predict_rhohprime) then
        ! convert (rho h)' -> (rho h)

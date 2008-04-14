@@ -22,12 +22,17 @@ module make_edge_scal_module
   
 contains
 
-  subroutine make_edge_scal(nlevs,s,sedge,umac,force,w0,w0_cart_vec,dx, &
-                             dt,is_vel,the_bc_level,start_scomp,start_bccomp, &
-                             num_comp,mla)
+  subroutine make_edge_scal(nlevs,s,sedge,umac,force, &
+                            normal,w0,w0_cart_vec, &
+                            dx,dt,is_vel,the_bc_level, &
+                            start_scomp,start_bccomp,num_comp,mla)
 
     use bl_prof_module
     use bl_constants_module
+    use geometry
+    use variables, only: foextrap_comp
+    use fill_3d_module
+    use multifab_physbc_module
     use ml_restriction_module, only : ml_edge_restriction_c
 
     integer        , intent(in   ) :: nlevs
@@ -35,6 +40,7 @@ contains
     type(multifab) , intent(inout) :: sedge(:,:)
     type(multifab) , intent(in   ) :: umac(:,:)
     type(multifab) , intent(in   ) :: force(:)
+    type(multifab) , intent(in   ) :: normal(:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     type(multifab) , intent(in   ) :: w0_cart_vec(:)
     real(kind=dp_t), intent(in   ) :: dx(:,:),dt
@@ -43,7 +49,8 @@ contains
     integer        , intent(in   ) :: start_scomp,start_bccomp,num_comp
     type(ml_layout), intent(inout) :: mla
 
-    integer                  :: i,scomp,bccomp,ng,dm,n,lo(s(1)%dim)
+    integer                  :: i,r,scomp,bccomp,ng,dm,n
+    integer                  :: lo(s(1)%dim), hi(s(1)%dim)
     real(kind=dp_t), pointer :: sop(:,:,:,:)
     real(kind=dp_t), pointer :: sepx(:,:,:,:)
     real(kind=dp_t), pointer :: sepy(:,:,:,:)
@@ -53,6 +60,11 @@ contains
     real(kind=dp_t), pointer :: wmp(:,:,:,:)
     real(kind=dp_t), pointer :: w0p(:,:,:,:)
     real(kind=dp_t), pointer :: fp(:,:,:,:)
+    real(kind=dp_t), pointer :: gw0p(:,:,:,:)
+
+    real(kind=dp_t), allocatable :: gradw0_rad(:)
+    type(multifab) :: gradw0_cart
+
 
     type(bl_prof_timer), save :: bpt
 
@@ -60,9 +72,44 @@ contains
 
     dm = s(1)%dim
     ng = s(1)%ng
-    
+
+    if (spherical .eq. 1) then
+       allocate (gradw0_rad(0:nr(nlevs)-1))
+
+       ! NOTE: here we are doing the computation at the finest level
+       do r = 0, nr(nlevs)-1
+          gradw0_rad(r) = (w0(nlevs,r+1) - w0(nlevs,r)) / dr(nlevs)
+       enddo
+    endif
+
     do n=1,nlevs
 
+       if (spherical .eq. 1 .and. is_vel) then
+          call multifab_build(gradw0_cart, s(n)%la,1,1)
+
+          do i = 1, gradw0_cart%nboxes
+             if ( multifab_remote(s(n),i) ) cycle
+             gw0p => dataptr(gradw0_cart, i)
+             lo = lwb(get_box(gradw0_cart,i))
+             hi = upb(get_box(gradw0_cart,i))
+             
+             call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,gradw0_rad,gw0p, &
+                                               lo,hi,dx(n,:),gradw0_cart%ng)
+             
+          enddo
+          
+          
+          ! fill ghost cells for two adjacent grids at the same level
+          ! this includes periodic domain boundary ghost cells 
+          call multifab_fill_boundary(gradw0_cart)
+
+          ! fill non-periodic domain boundary ghost cells.
+          ! NOTE: not sure what the BC should be for gradw0_cart.  Right
+          ! now I am just using foextrap_comp.
+          call multifab_physbc(gradw0_cart,1,foextrap_comp,1,the_bc_level(n))
+       endif
+
+ 
        do i = 1, s(n)%nboxes
           if ( multifab_remote(s(n),i) ) cycle
           sop  => dataptr(s(n),i)
@@ -85,16 +132,18 @@ contains
                                        the_bc_level(n)%adv_bc_level_array(i,:,:,bccomp:), &
                                        ng, scomp)
              end do
+
           case (3)
             wmp  => dataptr(  umac(n,3),i)
             sepz => dataptr( sedge(n,3),i)
             w0p  => dataptr(w0_cart_vec(n),i)
             do scomp = start_scomp, start_scomp + num_comp - 1
                bccomp = start_bccomp + scomp - start_scomp
-               call make_edge_scal_3d(n, sop(:,:,:,:), &
+               call make_edge_scal_3d(n,sop(:,:,:,:), &
                                       sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
                                       ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
-                                      fp(:,:,:,:), w0(n,:), w0p(:,:,:,:), &
+                                      fp(:,:,:,:), &
+                                      w0(n,:), w0p(:,:,:,:), &
                                       lo, dx(n,:), dt, is_vel, &
                                       the_bc_level(n)%phys_bc_level_array(i,:,:), &
                                       the_bc_level(n)%adv_bc_level_array(i,:,:,bccomp:), &
@@ -117,13 +166,19 @@ contains
        enddo
     end if
 
+    if (spherical .eq. 1 .and. is_vel) then
+       deallocate(gradw0_rad)
+       call destroy(gradw0_cart)
+    endif
+
     call destroy(bpt)
     
   end subroutine make_edge_scal
 
   
-  subroutine make_edge_scal_2d(n,s,sedgex,sedgey,umac,vmac,force,w0,lo,dx,dt,is_vel, &
-       phys_bc,adv_bc,ng,comp)
+  subroutine make_edge_scal_2d(n,s,sedgex,sedgey,umac,vmac, &
+                               force,w0,lo,dx,dt,is_vel,phys_bc,adv_bc, &
+                               ng,comp)
 
     use geometry, only: nr
     use bc_module
