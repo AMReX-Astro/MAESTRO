@@ -2,10 +2,7 @@
    corrections.  
 
 -- deal with the comment "! NOTE NOTE : THIS IS WRONG FOR SPHERICAL !!"
-   in make_edge_state.f90.  
-
--- make a runtime diagnostic that prints <q> and q_rms for temperature,
-   energy generation, and velocity as a function of radius.
+   in make_edge_scal.f90 (already implemented in make_edge_state.f90)
 
 -- figure out what density_cutoff should be in initdata.f90 (in relation
    to anelastic_cutoff), and understand what values of this give a valid
