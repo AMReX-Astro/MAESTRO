@@ -31,7 +31,7 @@
 
 These are working notes for the Godunov step in {\tt MAESTRO}.
 
-\section{Computing $\Ub^{\trans}$}
+\section{Computing $\Ubt^{\trans}$}
 In {\tt advance\_premac.f90}, we call the function {\tt mkutrans}, which computes the edge-centered transverse velocities, $\Ubt^{\trans}$.  These transverse velocities do not contain $w_0$, so immediately following the call to {\tt mkutrans}, we call {\tt addw0} to compute $\Ub^{\trans}$ from $\Ubt^{\trans}$.  We will only compute the normal component of velocity at each face.\\
 
 The evolution equation for the perturbational velocity is:
@@ -78,7 +78,7 @@ We pick the final edge states using:
 \wt_R, & w_L + w_R < 0, \\
 \end{cases}
 \end{equation}
-where $w_L = \wt_L + w_{0,r-\half}$ and $w_R = \wt_R + w_{0,r-\half}$.  Finally, we call {\tt addw0} to compute $\wt^{\trans}$ from $w^{\trans}.$
+where $w_L = \wt_L + w_{0,r-\half}$ and $w_R = \wt_R + w_{0,r-\half}$.  Finally, we call {\tt addw0} to compute $w^{\trans}$ from $\wt^{\trans}.$
 \subsection{3D Cartesian Case}
 For the rest of this paper, for 3D Cartesian problems, $\Ub = (u,v,w)$ and $\Ubt = (u,v,\wt)$.  We will use the shorthand $\ib = (i,j,r)$.\\
 
@@ -98,16 +98,16 @@ v_R, & v_L + v_R < 0. \\
 \subsection{3D Spherical Case}
 For the rest of this paper, for 3D spherical problems, $\Ub = (u,v,w)$ and $\Ubt = (\ut,\vt,\wt)$.  We will use the shorthand $\ib = (i,j,k)$.\\
 
-For spherical problems, we first construct $\Ub$ by mapping $w_0$ onto a Cartesian array and adding it to $\Ubt$.  This is a spherical generalization of equation (\ref{Total Radial Velocity}).  We also map $\partial w_0/\partial r$ onto a Cartesian array.  This is a spherical generalization of equation (\ref{Radial Derivative of w_0}).  Then we use an extrapolation analogous to equations equations (\ref{Radial utrans_L}) and (\ref{Radial utrans_R}).  For example, for x-faces:
+We first construct $\Ub$ by mapping $w_0$ onto a Cartesian array and adding it to $\Ubt$.  This is a spherical generalization of equation (\ref{Total Radial Velocity}).  We also map $\partial w_0/\partial r$ onto a Cartesian array.  This is a spherical generalization of equation (\ref{Radial Derivative of w_0}).  Then we use an extrapolation analogous to equations equations (\ref{Radial utrans_L}) and (\ref{Radial utrans_R}).  For example, for x-faces:
 \begin{eqnarray}
 \ut_L &=& \ut_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{h}u_{\ib-\eb_x}^n\right)\Delta_x\ut_{\ib-\eb_x}^n + \frac{\dt}{2}\left[(\Ubt^n\cdot\eb_r)\left(\frac{\partial w_0}{\partial r}\right)(\eb_r\cdot\eb_x)\right]_{\ib-\eb_x}, \\
 \ut_R &=& \ut_{\ib}^n + \left(\half - \frac{\dt}{h}u_{\ib}^n\right)\Delta_x\ut_{\ib}^n + \frac{\dt}{2}\left[(\Ubt^n\cdot\eb_r)\left(\frac{\partial w_0}{\partial r}\right)(\eb_r\cdot\eb_x)\right]_{\ib}.
 \end{eqnarray}
-Then, we use the same Riemann solver as the Cartesian case to obtain $\ut^{\trans}$.  To compute $\vt^{\trans}$ or $\wt^{\trans}$, simply replace all instaces of $\ut$ with $\vt$ (or $\wt$) and all instaces of $x$ with $y$ (or $z$).  Finally, we call {\tt addw0} to compute $\Ubt^{\trans}$ fromm $\Ub^{\trans}$.
-\section{Computing $\Ub^{\mac}$}
-In {\tt advance\_premac.f90}, we call {\tt make\_edge\_state} to compute $\Ubt^{\mac}$.
+Then, we use the same Riemann solver as the Cartesian case to obtain $\ut^{\trans}$.  To compute $\vt^{\trans}$ or $\wt^{\trans}$, simply replace all instaces of $\ut$ with $\vt$ (or $\wt$) and all instaces of $x$ with $y$ (or $z$).  Finally, we call {\tt addw0} to compute $\Ub^{\trans}$ from $\Ubt^{\trans}$.
+\section{Computing $\Ubt^{\mac,*}$}
+In {\tt advance\_premac.f90}, we call {\tt make\_edge\_state} to compute $\Ubt^{\mac,*}$.  We will only compute the normal component of velocity at each face.\\
 \subsection{2D Cartesian Case}
-Here are the steps to create $u^{\mac}$ for 2D Cartesian problems.  First, we need to compute a time-centered $u$ at transverse faces using a 1D Taylor series extrapolation:
+To compute $u^{\mac,*}$, first we need to compute a time-centered $u$ at transverse faces using a 1D Taylor series extrapolation:
 \begin{eqnarray}
 u_L^{1D} &=& u_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\eb_r}^n\right)\Delta_r u_{\ib-\eb_r}^n, \\
 u_R^{1D} &=& u_{\ib} - \left(\half + \frac{\dt}{2h}w_{\ib}^n\right)\Delta_r u_{\ib}^n.
@@ -139,7 +139,7 @@ f_w \\
 \end{equation}
 Finally, we solve a Riemann problem:
 \begin{equation}
-u_{\ib-\half\eb_x}^{\mac} =
+u_{\ib-\half\eb_x}^{\mac,*} =
 \begin{cases}
 0, & \left(u_L \le 0 ~ {\rm AND} ~ u_R \ge 0\right) ~ {\rm OR} ~ \left|u_L + u_R\right| < \epsilon, \\
 u_L, & u_L + u_R > 0, \\
@@ -147,7 +147,7 @@ u_R, & u_L + u_R < 0.
 \end{cases}
 \end{equation}
 
-To compute $\wt^{\mac}$, we use an analogous procedure for computing $u^{\mac}$, except that we need to incorporate the terms in equation (\ref{Perturbational Velocity Equation}) proportional to $w_0$ and $\partial w_0/\partial r$.  But first, we need to compute a time-centered $\wt$ at transverse faces using a 1D Taylor seriex extrapolation:
+To compute $\wt^{\mac,*}$, we use an analogous procedure for computing $u^{\mac,*}$, except that we need to incorporate the terms in equation (\ref{Perturbational Velocity Equation}) proportional to $w_0$ and $\partial w_0/\partial r$.  But first, we need to compute a time-centered $\wt$ at transverse faces using a 1D Taylor series extrapolation:
 \begin{eqnarray}
 \wt_L^{1D} &=& \wt_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\eb_x}^n\right)\Delta_x \wt_{\ib-\eb_x}^n, \\
 \wt_R^{1D} &=& \wt_{\ib} - \left(\half + \frac{\dt}{2h}u_{\ib}^n\right)\Delta_x \wt_{\ib}^n.
@@ -161,7 +161,7 @@ Then we solve a Riemann problem:
 \wt_R^{1D}, & u^{\trans}_{\ib-\half\eb_x} < 0. \\
 \end{cases}
 \end{equation}
-Then, we extrapolate the normal velocity to normal faces, incorporating the extra term proportional to $w_0$ by using $w$ instead of $\wt$ as the advection velocity and the extra term proportional to $\partial w_0/\partial r$ as a separate term\footnote{The underbraced terms could be replaced by the average of the neighboring $w^{\trans}$.  We still don't know what the best option is.}:
+Then, we extrapolate the normal velocity to normal faces, incorporating the extra term proportional to $w_0$ by using $w$ instead of $\wt$ as the advection velocity and the extra term proportional to $\partial w_0/\partial r$ as a separate term:\footnote{The underbraced terms could be replaced by the average of the neighboring $w^{\trans}$.  We still don't know what the best option is.}
 \begin{eqnarray}
 \wt_L &=& \wt_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\eb_r}\right)\Delta_r \wt_{\ib-\eb_r}^n + \frac{\dt}{2}f_{w,\ib-\eb_r} \nonumber \\
 && - \frac{\dt}{4h}\left(u_{\ib+\half\eb_x-\eb_r}^{\trans}+u_{\ib-\half\eb_x-\eb_r}^{\trans}\right)\left(\wt_{\ib+\half\eb_x-\eb_r}^{1D} - \wt_{\ib-\half\eb_x-\eb_r}^{1D}\right) \nonumber \\
@@ -172,27 +172,28 @@ Then, we extrapolate the normal velocity to normal faces, incorporating the extr
 \end{eqnarray}
 Next, we solve a Riemann problem:
 \begin{equation}
-\wt_{\ib-\half\eb_r}^{\mac} =
+\wt_{\ib-\half\eb_r}^{\mac,*} =
 \begin{cases}
 0, & \left(w_L \le 0 ~ {\rm AND} ~ w_R \ge 0\right) ~ {\rm OR} ~ \left|w_L + w_R\right| < \epsilon, \\
 \wt_L, & w_L + w_R > 0, \\
 \wt_R, & w_L + w_R < 0. 
 \end{cases}
 \end{equation}
-Finally, we call {\tt addw0} to compute $\Ub^{\mac}$ from $\Ubt^{\mac}$.
+Finally, we call {\tt addw0} to compute $\Ub^{\mac,*}$ from $\Ubt^{\mac,*}$.
 \subsection{3D Cartesian Case}
 \subsection{3D Spherical Case}
-\section{Computing $s^{\edge}$}
+\section{Computing $\rho^{'\edge}, X_k^{\edge}, h^{\edge},$ and $T^{\edge}$}
 \subsection{2D Cartesian Case}
 \subsection{3D Cartesian Case}
 \subsection{3D Spherical Case}
-\section{Computing $\Ub^{\edge}$}
+\section{Computing $\Ubt^{\edge}$}
+In {\tt velocity\_advance.f90}, we call {\tt make\_edge\_state} to compute $\Ubt^{\edge}$.  Unlike when we computed $\Ubt^{\trans}$ and $\Ubt^{\mac,*}$, we need all components of velocity at each face.
 \subsection{2D Cartesian Case}
+To 
 \subsection{3D Cartesian Case}
 \subsection{3D Spherical Case}
-\section{Forces}
-
 \cleardoublepage
+\section{Forces}
 \begin{table*}
 \begin{center}
 \caption{Forcing term into make edge scal \newline}
