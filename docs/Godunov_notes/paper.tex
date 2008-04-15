@@ -31,6 +31,16 @@
 
 These are working notes for the Godunov step in {\tt MAESTRO}.
 
+\section{Differences Between These Notes and the Code}
+\begin{enumerate}
+\item In both equations (\ref{Radial utrans_L}) and (\ref{Radial utrans_R}), we are omitting the terms in equation (\ref{Perturbational Velocity Equation}) proportional to $w_0$ (by using $\wt$ rather than $w$ as the advection speed) and $(\Ubt\cdot\eb_r)$ (by omitting the term altogether).
+\item In equation (\ref{Force Term}), we do not include the term proportional to $\partial\pi_0/\partial r$.
+\end{enumerate}
+\section{Questions}
+\begin{enumerate}
+\item We need to re-examine when to include the term proportional to $(\Ubt\cdot\eb_r)$ in equation (\ref{Perturbational Velocity Equation}) when we do a 1D extrapolation of the radial velocity.  For example, equations (\ref{Radial utrans_L}) and (\ref{Radial utrans_R}) include it, but the equations for the 1D extrapolation in the radial direction used for computing $\Ubt^{\edge}$ do not.
+\item In equations (\ref{wt_L Extrapolation}) and (\ref{wt_R Extrapolation}), we could also compute the term proportional to $\partial w_0/\partial r$ by averaging $w^{\trans}$.
+\end{enumerate}
 \section{Computing $\Ubt^{\trans}$}
 In {\tt advance\_premac.f90}, we call the function {\tt mkutrans}, which computes the edge-centered transverse velocities, $\Ubt^{\trans}$.  These transverse velocities do not contain $w_0$, so immediately following the call to {\tt mkutrans}, we call {\tt addw0} to compute $\Ub^{\trans}$ from $\Ubt^{\trans}$.  We will only compute the normal component of velocity at each face.\\
 
@@ -121,21 +131,21 @@ u_L^{1D}, & w^{\trans}_{\ib-\half\eb_r} > 0, \\
 u_R^{1D}, & w^{\trans}_{\ib-\half\eb_r} < 0. \\
 \end{cases}
 \end{equation}
-Then, we extrapolate the normal velocity to normal faces:
+Then, we extrapolate the $u$ to normal faces:
 \begin{eqnarray}
 u_L &=& u_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\eb_x}\right)\Delta_x u_{\ib-\eb_x}^n + \frac{\dt}{2}f_{u,\ib-\eb_x} \nonumber \\
 && - \frac{\dt}{4h}\left(w_{\ib-\eb_x+\half\eb_r}^{\trans}+w_{\ib-\eb_x-\half\eb_r}^{\trans}\right)\left(u_{\ib-\eb_x+\half\eb_r}^{1D} - u_{\ib-\eb_x-\half\eb_r}^{1D}\right), \\
 u_R &=& u_{\ib}^n + \left(\half - \frac{\dt}{2h}u_{\ib}\right)\Delta_x u_{\ib}^n + \frac{\dt}{2}f_{u,\ib} \nonumber \\
 && - \frac{\dt}{4h}\left(w_{\ib+\half\eb_r}^{\trans}+w_{\ib-\half\eb_r}^{\trans}\right)\left(u_{\ib+\half\eb_r}^{1D} - u_{\ib-\half\eb_r}^{1D}\right),
 \end{eqnarray}
-where the force term is given by:\footnote{The code currently does not include the $\pi_0$ term.}
+where the force term is given by:
 \begin{equation}
 \fb =
 \left(\begin{array}{c}
 f_u \\
 f_w \\
 \end{array}\right)
-= \frac{1}{\rho}\nabla\pi + \frac{1}{\rho_0}\frac{\partial\pi_0}{\partial r}\eb_r - \frac{(\rho-\rho_0)}{\rho}g\eb_r.
+= \frac{1}{\rho}\nabla\pi + \frac{1}{\rho_0}\frac{\partial\pi_0}{\partial r}\eb_r - \frac{(\rho-\rho_0)}{\rho}g\eb_r.\label{Force Term}
 \end{equation}
 Finally, we solve a Riemann problem:
 \begin{equation}
@@ -161,14 +171,14 @@ Then we solve a Riemann problem:
 \wt_R^{1D}, & u^{\trans}_{\ib-\half\eb_x} < 0. \\
 \end{cases}
 \end{equation}
-Then, we extrapolate the normal velocity to normal faces, incorporating the extra term proportional to $w_0$ by using $w$ instead of $\wt$ as the advection velocity and the extra term proportional to $\partial w_0/\partial r$ as a separate term:\footnote{The underbraced terms could be replaced by the average of the neighboring $w^{\trans}$.  We still don't know what the best option is.}
+Then, we extrapolate $\wt$ to normal faces, incorporating the extra term proportional to $w_0$ by using $w$ instead of $\wt$ as the advection velocity and the extra term proportional to $\partial w_0/\partial r$ as a separate term:
 \begin{eqnarray}
 \wt_L &=& \wt_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\eb_r}\right)\Delta_r \wt_{\ib-\eb_r}^n + \frac{\dt}{2}f_{w,\ib-\eb_r} \nonumber \\
 && - \frac{\dt}{4h}\left(u_{\ib+\half\eb_x-\eb_r}^{\trans}+u_{\ib-\half\eb_x-\eb_r}^{\trans}\right)\left(\wt_{\ib+\half\eb_x-\eb_r}^{1D} - \wt_{\ib-\half\eb_x-\eb_r}^{1D}\right) \nonumber \\
-&& - \frac{\dt}{2h}\underbrace{\wt_{\ib-\eb_r}}_{?}(w_{0,j-\half} - w_{0,j-\frac{3}{2}}), \\
+&& - \frac{\dt}{2h}\wt_{\ib-\eb_r}(w_{0,j-\half} - w_{0,j-\frac{3}{2}}),\label{wt_L Extrapolation} \\
 \wt_R &=& \wt_{\ib}^n + \left(\half - \frac{\dt}{2h}w_{\ib}\right)\Delta_r \wt_{\ib}^n + \frac{\dt}{2}f_{w,\ib} \nonumber \\
 && - \frac{\dt}{4h}\left(u_{\ib+\half\eb_x}^{\trans}+u_{\ib-\half\eb_x}^{\trans}\right)\left(\wt_{\ib+\half\eb_x}^{1D} - \wt_{\ib-\half\eb_x}^{1D}\right) \nonumber \\
-&& - \frac{\dt}{2h}\underbrace{\wt_{\ib}}_{?}(w_{0,j+\half} - w_{0,j-\half}).
+&& - \frac{\dt}{2h}\wt_{\ib}(w_{0,j+\half} - w_{0,j-\half}).\label{wt_R Extrapolation}
 \end{eqnarray}
 Next, we solve a Riemann problem:
 \begin{equation}
