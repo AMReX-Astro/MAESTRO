@@ -32,7 +32,7 @@
 These are working notes for the Godunov step in {\tt MAESTRO}.
 
 \section{Computing $\Ub^{\trans}$}
-In {\tt advance\_premac.f90}, we call the function {\tt mkutrans}, which computes the edge-centered transverse velocities, $\Ubt^{\trans}$.  These transverse velocities do not contain $w_0$, so immediately following the call to {\tt mkutrans}, we call {\tt addw0} to compute $\Ub^{\trans}$ from $\Ubt^{\trans}$..  We will only compute the normal component of velocity at each face.\\
+In {\tt advance\_premac.f90}, we call the function {\tt mkutrans}, which computes the edge-centered transverse velocities, $\Ubt^{\trans}$.  These transverse velocities do not contain $w_0$, so immediately following the call to {\tt mkutrans}, we call {\tt addw0} to compute $\Ub^{\trans}$ from $\Ubt^{\trans}$.  We will only compute the normal component of velocity at each face.\\
 
 The evolution equation for the perturbational velocity is:
 \begin{equation}
@@ -78,7 +78,7 @@ We pick the final edge states using:
 \wt_R, & w_L + w_R < 0, \\
 \end{cases}
 \end{equation}
-where $w_L = \wt_L + w_{0,r-\half}$ and $w_R = \wt_R + w_{0,r-\half}$.  As mentioned before, we now call {\tt addw0} to compute $\wt^{\trans}$ from $w^{\trans}.$
+where $w_L = \wt_L + w_{0,r-\half}$ and $w_R = \wt_R + w_{0,r-\half}$.  Finally, we call {\tt addw0} to compute $\wt^{\trans}$ from $w^{\trans}.$
 \subsection{3D Cartesian Case}
 For the rest of this paper, for 3D Cartesian problems, $\Ub = (u,v,w)$ and $\Ubt = (u,v,\wt)$.  We will use the shorthand $\ib = (i,j,r)$.\\
 
@@ -109,24 +109,24 @@ In {\tt advance\_premac.f90}, we call {\tt make\_edge\_state} to compute $\Ubt^{
 \subsection{2D Cartesian Case}
 Here are the steps to create $u^{\mac}$ for 2D Cartesian problems.  First, we need to compute a time-centered $u$ at transverse faces using a 1D Taylor series extrapolation:
 \begin{eqnarray}
-u_L^{1D} &=& u_{\ib-\eb_y}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\eb_y}^n\right)\Delta_y u_{\ib-\eb_y}^n, \\
-u_R^{1D} &=& u_{\ib} - \left(\half + \frac{\dt}{2h}w_{\ib}^n\right)\Delta_y u_{\ib}^n.
+u_L^{1D} &=& u_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\eb_r}^n\right)\Delta_r u_{\ib-\eb_r}^n, \\
+u_R^{1D} &=& u_{\ib} - \left(\half + \frac{\dt}{2h}w_{\ib}^n\right)\Delta_r u_{\ib}^n.
 \end{eqnarray}
 Then we solve a Riemann problem:
 \begin{equation}
-u_{\ib-\half\eb_y}^{1D} =
+u_{\ib-\half\eb_r}^{1D} =
 \begin{cases}
-\half(u_L^{1D} + u_R^{1D}), & \left|w^{\trans}_{\ib-\half\eb_y}\right| < \epsilon \\
-u_L^{1D}, & w^{\trans}_{\ib-\half\eb_y} > 0, \\
-u_R^{1D}, & w^{\trans}_{\ib-\half\eb_y} < 0. \\
+\half(u_L^{1D} + u_R^{1D}), & \left|w^{\trans}_{\ib-\half\eb_r}\right| < \epsilon \\
+u_L^{1D}, & w^{\trans}_{\ib-\half\eb_r} > 0, \\
+u_R^{1D}, & w^{\trans}_{\ib-\half\eb_r} < 0. \\
 \end{cases}
 \end{equation}
 Then, we extrapolate the normal velocity to normal faces:
 \begin{eqnarray}
 u_L &=& u_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\eb_x}\right)\Delta_x u_{\ib-\eb_x}^n + \frac{\dt}{2}f_{\ib-\eb_x} \nonumber \\
-&& - \frac{\dt}{4h}\left(w_{\ib-\eb_x+\half\eb_y}^{\trans}+w_{\ib-\eb_x-\half\eb_y}^{\trans}\right)\left(u_{\ib-\eb_x+\half\eb_y}^{1D} - u_{\ib-\eb_x-\half\eb_y}^{1D}\right), \\
+&& - \frac{\dt}{4h}\left(w_{\ib-\eb_x+\half\eb_r}^{\trans}+w_{\ib-\eb_x-\half\eb_r}^{\trans}\right)\left(u_{\ib-\eb_x+\half\eb_r}^{1D} - u_{\ib-\eb_x-\half\eb_r}^{1D}\right), \\
 u_R &=& u_{\ib}^n + \left(\half - \frac{\dt}{2h}u_{\ib}\right)\Delta_x u_{\ib}^n + \frac{\dt}{2}f_{\ib} \nonumber \\
-&& - \frac{\dt}{4h}\left(w_{\ib+\half\eb_y}^{\trans}+w_{\ib-\half\eb_y}^{\trans}\right)\left(u_{\ib+\half\eb_y}^{1D} - u_{\ib-\half\eb_y}^{1D}\right).
+&& - \frac{\dt}{4h}\left(w_{\ib+\half\eb_r}^{\trans}+w_{\ib-\half\eb_r}^{\trans}\right)\left(u_{\ib+\half\eb_r}^{1D} - u_{\ib-\half\eb_r}^{1D}\right).
 \end{eqnarray}
 Finally, we solve a Riemann problem:
 \begin{equation}
@@ -154,23 +154,23 @@ Then we solve a Riemann problem:
 \end{equation}
 Then, we extrapolate the normal velocity to normal faces, incorporating the extra term proportional to $w_0$ by using $w$ instead of $\wt$ as the advection velocity and the extra term proportional to $\partial w_0/\partial r$ as a separate term\footnote{The underbraced terms could be replaced by the average of the neighboring $w^{\trans}$.  We still don't know what the best option is.}:
 \begin{eqnarray}
-\wt_L &=& \wt_{\ib-\eb_y}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\eb_y}\right)\Delta_y \wt_{\ib-\eb_y}^n + \frac{\dt}{2}f_{\ib-\eb_y} \nonumber \\
-&& - \frac{\dt}{4h}\left(u_{\ib+\half\eb_x-\eb_y}^{\trans}+u_{\ib-\half\eb_x-\eb_y}^{\trans}\right)\left(\wt_{\ib+\half\eb_x-\eb_y}^{1D} - \wt_{\ib-\half\eb_x-\eb_y}^{1D}\right) \nonumber \\
-&& - \frac{\dt}{2h}\underbrace{\wt_{\ib-\eb_y}}_{?}(w_{0,j-\half} - w_{0,j-\frac{3}{2}}), \\
-\wt_R &=& \wt_{\ib}^n + \left(\half - \frac{\dt}{2h}w_{\ib}\right)\Delta_y \wt_{\ib}^n + \frac{\dt}{2}f_{\ib} \nonumber \\
+\wt_L &=& \wt_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\eb_r}\right)\Delta_r \wt_{\ib-\eb_r}^n + \frac{\dt}{2}f_{\ib-\eb_r} \nonumber \\
+&& - \frac{\dt}{4h}\left(u_{\ib+\half\eb_x-\eb_r}^{\trans}+u_{\ib-\half\eb_x-\eb_r}^{\trans}\right)\left(\wt_{\ib+\half\eb_x-\eb_r}^{1D} - \wt_{\ib-\half\eb_x-\eb_r}^{1D}\right) \nonumber \\
+&& - \frac{\dt}{2h}\underbrace{\wt_{\ib-\eb_r}}_{?}(w_{0,j-\half} - w_{0,j-\frac{3}{2}}), \\
+\wt_R &=& \wt_{\ib}^n + \left(\half - \frac{\dt}{2h}w_{\ib}\right)\Delta_r \wt_{\ib}^n + \frac{\dt}{2}f_{\ib} \nonumber \\
 && - \frac{\dt}{4h}\left(u_{\ib+\half\eb_x}^{\trans}+u_{\ib-\half\eb_x}^{\trans}\right)\left(\wt_{\ib+\half\eb_x}^{1D} - \wt_{\ib-\half\eb_x}^{1D}\right) \nonumber \\
 && - \frac{\dt}{2h}\underbrace{\wt_{\ib}}_{?}(w_{0,j+\half} - w_{0,j-\half}).
 \end{eqnarray}
 Next, we solve a Riemann problem:
 \begin{equation}
-\wt_{\ib-\half\eb_y}^{\mac} =
+\wt_{\ib-\half\eb_r}^{\mac} =
 \begin{cases}
 0, & \left(w_L \le 0 ~ {\rm AND} ~ w_R \ge 0\right) ~ {\rm OR} ~ \left|w_L + w_R\right| < \epsilon, \\
 \wt_L, & w_L + w_R > 0, \\
 \wt_R, & w_L + w_R < 0. 
 \end{cases}
 \end{equation}
-Finally, we call {\tt addw0} to compute $\Ub^{\mac}$ from $\Ubt^{\trans}$.
+Finally, we call {\tt addw0} to compute $\Ub^{\mac}$ from $\Ubt^{\mac}$.
 \subsection{3D Cartesian Case}
 \subsection{3D Spherical Case}
 \section{Computing $s^{\edge}$}
