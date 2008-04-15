@@ -15,9 +15,9 @@
 \def\trans {\rm TRANS}
 
 \def\eb    {{\bf e}}
+\def\fb    {{\bf f}}
 \def\ib    {{\bf i}}
 \def\Ub    {{\bf U}}
-\def\er    {{\bf e}_r}
 
 \def\Ubt   {\widetilde{\bf U}}
 \def\ut    {\tilde{u}}
@@ -123,11 +123,20 @@ u_R^{1D}, & w^{\trans}_{\ib-\half\eb_r} < 0. \\
 \end{equation}
 Then, we extrapolate the normal velocity to normal faces:
 \begin{eqnarray}
-u_L &=& u_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\eb_x}\right)\Delta_x u_{\ib-\eb_x}^n + \frac{\dt}{2}f_{\ib-\eb_x} \nonumber \\
+u_L &=& u_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\eb_x}\right)\Delta_x u_{\ib-\eb_x}^n + \frac{\dt}{2}f_{u,\ib-\eb_x} \nonumber \\
 && - \frac{\dt}{4h}\left(w_{\ib-\eb_x+\half\eb_r}^{\trans}+w_{\ib-\eb_x-\half\eb_r}^{\trans}\right)\left(u_{\ib-\eb_x+\half\eb_r}^{1D} - u_{\ib-\eb_x-\half\eb_r}^{1D}\right), \\
-u_R &=& u_{\ib}^n + \left(\half - \frac{\dt}{2h}u_{\ib}\right)\Delta_x u_{\ib}^n + \frac{\dt}{2}f_{\ib} \nonumber \\
-&& - \frac{\dt}{4h}\left(w_{\ib+\half\eb_r}^{\trans}+w_{\ib-\half\eb_r}^{\trans}\right)\left(u_{\ib+\half\eb_r}^{1D} - u_{\ib-\half\eb_r}^{1D}\right).
+u_R &=& u_{\ib}^n + \left(\half - \frac{\dt}{2h}u_{\ib}\right)\Delta_x u_{\ib}^n + \frac{\dt}{2}f_{u,\ib} \nonumber \\
+&& - \frac{\dt}{4h}\left(w_{\ib+\half\eb_r}^{\trans}+w_{\ib-\half\eb_r}^{\trans}\right)\left(u_{\ib+\half\eb_r}^{1D} - u_{\ib-\half\eb_r}^{1D}\right),
 \end{eqnarray}
+where the force term is given by:\footnote{The code currently does not include the $\pi_0$ term.}
+\begin{equation}
+\fb =
+\left(\begin{array}{c}
+f_u \\
+f_w \\
+\end{array}\right)
+= \frac{1}{\rho}\nabla\pi + \frac{1}{\rho_0}\frac{\partial\pi_0}{\partial r}\eb_r - \frac{(\rho-\rho_0)}{\rho}g\eb_r.
+\end{equation}
 Finally, we solve a Riemann problem:
 \begin{equation}
 u_{\ib-\half\eb_x}^{\mac} =
@@ -154,10 +163,10 @@ Then we solve a Riemann problem:
 \end{equation}
 Then, we extrapolate the normal velocity to normal faces, incorporating the extra term proportional to $w_0$ by using $w$ instead of $\wt$ as the advection velocity and the extra term proportional to $\partial w_0/\partial r$ as a separate term\footnote{The underbraced terms could be replaced by the average of the neighboring $w^{\trans}$.  We still don't know what the best option is.}:
 \begin{eqnarray}
-\wt_L &=& \wt_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\eb_r}\right)\Delta_r \wt_{\ib-\eb_r}^n + \frac{\dt}{2}f_{\ib-\eb_r} \nonumber \\
+\wt_L &=& \wt_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\eb_r}\right)\Delta_r \wt_{\ib-\eb_r}^n + \frac{\dt}{2}f_{w,\ib-\eb_r} \nonumber \\
 && - \frac{\dt}{4h}\left(u_{\ib+\half\eb_x-\eb_r}^{\trans}+u_{\ib-\half\eb_x-\eb_r}^{\trans}\right)\left(\wt_{\ib+\half\eb_x-\eb_r}^{1D} - \wt_{\ib-\half\eb_x-\eb_r}^{1D}\right) \nonumber \\
 && - \frac{\dt}{2h}\underbrace{\wt_{\ib-\eb_r}}_{?}(w_{0,j-\half} - w_{0,j-\frac{3}{2}}), \\
-\wt_R &=& \wt_{\ib}^n + \left(\half - \frac{\dt}{2h}w_{\ib}\right)\Delta_r \wt_{\ib}^n + \frac{\dt}{2}f_{\ib} \nonumber \\
+\wt_R &=& \wt_{\ib}^n + \left(\half - \frac{\dt}{2h}w_{\ib}\right)\Delta_r \wt_{\ib}^n + \frac{\dt}{2}f_{w,\ib} \nonumber \\
 && - \frac{\dt}{4h}\left(u_{\ib+\half\eb_x}^{\trans}+u_{\ib-\half\eb_x}^{\trans}\right)\left(\wt_{\ib+\half\eb_x}^{1D} - \wt_{\ib-\half\eb_x}^{1D}\right) \nonumber \\
 && - \frac{\dt}{2h}\underbrace{\wt_{\ib}}_{?}(w_{0,j+\half} - w_{0,j-\half}).
 \end{eqnarray}
@@ -193,7 +202,7 @@ Finally, we call {\tt addw0} to compute $\Ub^{\mac}$ from $\Ubt^{\mac}$.
   &   \\
 T $(X)$ & $0$ \\
   &   \\
-T $(\rho^\prime)$ & $-\rho^\prime \; \nabla \cdot (\ut+w_0 \er) - \nabla \cdot (\ut \rho_0) $  \\
+T $(\rho^\prime)$ & $-\rho^\prime \; \nabla \cdot (\ut+w_0 \eb_r) - \nabla \cdot (\ut \rho_0) $  \\
   &   \\
 \hline
 \end{tabular}
@@ -203,7 +212,7 @@ T $(\rho^\prime)$ & $-\rho^\prime \; \nabla \cdot (\ut+w_0 \er) - \nabla \cdot (
 \multicolumn{1}{c}{H PRED TYPE}   & \multicolumn{1}{c}{Force} \\
 \hline
    & \\
- 1 $((\rho h)^\prime)$ &  $(\tilde{w} \frac{\partial p_0}{\partial r}) - (\rho h)^\prime \; \nabla \cdot (\ut+w_0 \er) - \nabla \cdot (\ut (\rho h)_0) $  \\
+ 1 $((\rho h)^\prime)$ &  $(\tilde{w} \frac{\partial p_0}{\partial r}) - (\rho h)^\prime \; \nabla \cdot (\ut+w_0 \eb_r) - \nabla \cdot (\ut (\rho h)_0) $  \\
    & \\
  2 $(h)$ & $\frac{1}{\rho} (\psi + \tilde{w} \frac{\partial p_0}{\partial r})$  \\
    & \\
