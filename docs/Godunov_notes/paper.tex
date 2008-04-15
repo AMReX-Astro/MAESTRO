@@ -104,7 +104,7 @@ For spherical problems, we first construct $\Ub$ by mapping $w_0$ onto a Cartesi
 \ut_L &=& \ut_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{h}u_{\ib-\eb_x}^n\right)\Delta_x\ut_{\ib-\eb_x}^n + \frac{\dt}{2}\left[(\Ubt^n\cdot\eb_r)\left(\frac{\partial w_0}{\partial r}\right)(\eb_r\cdot\eb_x)\right]_{\ib-\eb_x}, \\
 \ut_R &=& \ut_{\ib}^n + \left(\half - \frac{\dt}{h}u_{\ib}^n\right)\Delta_x\ut_{\ib}^n + \frac{\dt}{2}\left[(\Ubt^n\cdot\eb_r)\left(\frac{\partial w_0}{\partial r}\right)(\eb_r\cdot\eb_x)\right]_{\ib}.
 \end{eqnarray}
-Then, we use the same Riemann solver as the Cartesian case.  Finally, we call {\tt addw0} to convert $\Ubt^{\trans}$ to $\Ub^{\trans}$.  To compute $\vt^{\trans}$ or $\wt^{\trans}$, simply replace all instaces of $\ut$ with $\vt$ (or $\wt$) and all instaces of $x$ with $y$ (or $z$).
+Then, we use the same Riemann solver as the Cartesian case to obtain $\ut^{\trans}$.  To compute $\vt^{\trans}$ or $\wt^{\trans}$, simply replace all instaces of $\ut$ with $\vt$ (or $\wt$) and all instaces of $x$ with $y$ (or $z$).  Finally, we call {\tt addw0} to convert $\Ubt^{\trans}$ to $\Ub^{\trans}$.
 \section{Computing $\Ub^{\mac}$}
 In {\tt advance\_premac.f90}, we call {\tt make\_edge\_state} to compute $\Ubt^{\mac}$.
 \subsection{2D Cartesian Case}
@@ -153,7 +153,7 @@ Then we solve a Riemann problem:
 \vt_R, & u^{\trans}_{\ib-\half\eb_x} < 0. \\
 \end{cases}
 \end{equation}
-Then, we extrapolate the normal velocity to normal faces, incorporating the extra term proportional to $\partial w_0/\partial r$\footnote{The underbraced terms could be replaced by the average of the neighboring $v^{\trans}$}:
+Then, we extrapolate the normal velocity to normal faces, incorporating the extra term proportional to $\partial w_0/\partial r$\footnote{The underbraced terms could be replaced by the average of the neighboring $v^{\trans}$.  We still don't know what the best option is.}:
 \begin{eqnarray}
 \vt_L^{\edge} &=& \vt_{\ib-\eb_y}^n + \left(\half - \frac{\dt}{2h}v_{\ib-\eb_y}\right)\Delta_y \vt_{\ib-\eb_y}^n + \frac{\dt}{2}f_{\ib-\eb_y} \nonumber \\
 && - \frac{\dt}{4h}\left(u_{\ib+\half\eb_x-\eb_y}^{\trans}+u_{\ib-\half\eb_x-\eb_y}^{\trans}\right)\left(\vt_{\ib+\half\eb_x-\eb_y}+\vt_{\ib-\half\eb_x-\eb_y}\right) \nonumber \\
