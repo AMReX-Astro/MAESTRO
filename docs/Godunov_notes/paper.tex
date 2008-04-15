@@ -1,0 +1,108 @@
+\documentclass[11pt]{article} 
+
+\tolerance=600
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{epsfig}
+\usepackage{color}
+
+% Margins
+\usepackage[lmargin=1.0in,rmargin=1.0in,tmargin=0.75in,bmargin=0.75in]{geometry}
+
+\newcommand{\sfrac}[2]{\mathchoice
+  {\kern0em\raise.5ex\hbox{\the\scriptfont0 #1}\kern-.15em/
+   \kern-.15em\lower.25ex\hbox{\the\scriptfont0 #2}}
+  {\kern0em\raise.5ex\hbox{\the\scriptfont0 #1}\kern-.15em/
+   \kern-.15em\lower.25ex\hbox{\the\scriptfont0 #2}}
+  {\kern0em\raise.5ex\hbox{\the\scriptscriptfont0 #1}\kern-.2em/
+   \kern-.15em\lower.25ex\hbox{\the\scriptscriptfont0 #2}}
+  {#1\!/#2}}
+
+\def\half  {\frac{1}{2}}
+\def\dt    {\Delta t}
+
+\def\edge  {\rm EDGE}
+\def\mac   {\rm MAC}
+\def\trans {\rm TRANS}
+
+\def\eb    {{\bf e}}
+\def\ib    {{\bf i}}
+\def\ub    {{\bf u}}
+\def\Ub    {{\bf U}}
+
+\def\Ubt   {\widetilde{\bf U}}
+\def\wt    {\tilde{w}}
+
+\title{Notes on the Godunov Step in {\tt MAESTRO}}
+
+\begin{document}
+\maketitle
+
+These are working notes for the Godunov step in {\tt MAESTRO}.
+
+\section{Computing $\ub^{\trans}$}
+In {\tt advance\_premac.f90}, we call the function {\tt mkutrans}, which computes the edge-centered transverse velocities, $\ub^{\trans}$.  These transverse velocities do not contain $w_0$, so immediately following the call to {\tt mkutrans}, we call {\tt addw0}.  We only compute the normal component of velocity at each face.\\
+
+The evolution equation for the perturbational velocity is:
+\begin{equation}
+\frac{\partial\Ubt}{\partial t} = -\Ubt\cdot\nabla\Ubt - w_0\frac{\partial\Ubt}{\partial r} - \wt\frac{\partial w_0}{\partial r}\eb_r - \frac{1}{\rho}\nabla\pi + \frac{1}{\rho_0}\frac{\partial\pi_0}{\partial r}\eb_r - \frac{(\rho-\rho_0)}{\rho}g\eb_r.
+\end{equation}
+We are going to use a 1D Taylor series extrapolation in space and time to compute face-centered normal velocities.  By 1D, we mean that we omit any spatial derivatives that are not in the direction of the extrapolation.  We first compute ``left'' and ``right'' states, and then use a Riemann solver to pick the final state.\\
+
+For the x-faces, the extrapolation is as follows:
+\begin{eqnarray}
+u_L &=& u_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{h}u_{\ib-\eb_x}^n\right)\Delta_x u_{\ib-\eb_x}^n, \\
+u_R &=& u_{\ib}^n - \left(\half + \frac{\dt}{h}u_{\ib}^n\right)\Delta_x u_{\ib}^n,
+\end{eqnarray}
+where $\ib = (i,r)$ in 2D and $\ib = (i,j,r)$ in 3D.  For 3D problems only, for the y-faces, the extrapolation follows analogously:
+\begin{eqnarray}
+v_L &=& u_{\ib-\eb_y}^n + \left(\half - \frac{\dt}{h}u_{\ib-\eb_y}^n\right)\Delta_y u_{\ib-\eb_y}^n, \\
+v_R &=& u_{\ib}^n - \left(\half + \frac{\dt}{h}u_{\ib}^n\right)\Delta_y u_{\ib}^n.
+\end{eqnarray}
+We pick the final edge states using:
+\begin{equation}
+u^{\trans}_{\ib-\half\eb_x} =
+\begin{cases}
+0, & (u_L \le 0 ~ {\rm AND} ~ u_R \ge 0) ~ {\rm OR} ~ |u_L + u_R| < \epsilon, \\
+u_L, & u_L + u_R > 0, \\
+u_R, & u_L + u_R < 0, \\
+\end{cases}
+\end{equation}
+\begin{equation}
+v^{\trans}_{\ib-\half\eb_y} =
+\begin{cases}
+0, & (v_L \le 0 ~ {\rm AND} ~ v_R \ge 0) ~ {\rm OR} ~ |v_L + v_R| < \epsilon, \\
+v_L, & v_L + v_R > 0, \\
+v_R, & v_L + v_R < 0. \\
+\end{cases}
+\end{equation}
+
+For the radial faces, the extrapolation is more complicated due to the radial spatial derivatives in the velocity equation:
+\begin{eqnarray}
+\wt_L &=& \wt_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{h}(\wt_{\ib-\eb_r}^n+w_{0,r-1})\right)\Delta_r \wt_{\ib-\eb_r}^n + \frac{\dt}{2}\wt_{\ib-\eb_r}^n\left(\frac{\partial w_0}{\partial r}\right)_{r-1}, \\
+\wt_R &=& \wt_{\ib}^n + \left(\half - \frac{\dt}{h}(\wt_{\ib}^n+w_{0,r})\right)\Delta_r \wt_{\ib}^n + \frac{\dt}{2}\wt_{\ib}^n\left(\frac{\partial w_0}{\partial r}\right)_r.
+\end{eqnarray}
+Note that $w_0$ is edge-centered, so we define:
+\begin{equation}
+w_{0,r} = \frac{w_{0,r+\half}+w_{0,r-\half}}{2}.
+\end{equation}
+The spatial derivatives of $w_0$ are two point differences:
+\begin{equation}
+\left(\frac{\partial w_0}{\partial r}\right)_r = \frac{w_{0,r+\half}-w_{0,r-\half}}{h}.
+\end{equation}
+We pick the final edge states using:
+\begin{equation}
+\wt^{\trans}_{\ib-\half\eb_r} =
+\begin{cases}
+0, & (w_L \le 0 ~ {\rm AND} ~ w_R \ge 0) ~ {\rm OR} ~ |w_L + w_R| < \epsilon, \\
+\wt_L, & w_L + w_R > 0, \\
+\wt_R, & w_L + w_R < 0, \\
+\end{cases}
+\end{equation}
+where $w_L = \wt_L + w_{0,r-\half}$ and $w_R = \wt_R + w_{0,r-\half}$.  As mentioned before, we now call {\tt addw0} to convert $\wt^{\trans}$ to $w^{\trans}.$
+\section{Computing $\ub^{\mac}$}
+In {\tt advance\_premac.f90}, we call {\tt make\_edge\_state} to compute $\Ubt^{\mac}$.
+\section{Computing $s^{\edge}$}
+\section{Computing $\ub^{\edge}$}
+\end{document}
