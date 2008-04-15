@@ -82,16 +82,16 @@ v_R, & v_L + v_R < 0. \\
 
 For Cartesian problems, for the radial faces, we must include the radial derivative terms proportional to $w_0$ and $(\Ubt\cdot\eb_r) = \wt$:
 \begin{eqnarray}
-\wt_L &=& \wt_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{h}(\wt_{\ib-\eb_r}^n+w_{0,r-1})\right)\Delta_r \wt_{\ib-\eb_r}^n + \frac{\dt}{2}\wt_{\ib-\eb_r}^n\left(\frac{\partial w_0}{\partial r}\right)_{r-1},\label{Radial utrans_L} \\
-\wt_R &=& \wt_{\ib}^n + \left(\half - \frac{\dt}{h}(\wt_{\ib}^n+w_{0,r})\right)\Delta_r \wt_{\ib}^n + \frac{\dt}{2}\wt_{\ib}^n\left(\frac{\partial w_0}{\partial r}\right)_r.\label{Radial utrans_R}
+\wt_L &=& \wt_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{h}w_{\ib-\eb_r}^n\right)\Delta_r \wt_{\ib-\eb_r}^n + \frac{\dt}{2}\wt_{\ib-\eb_r}^n\left(\frac{\partial w_0}{\partial r}\right)_{\ib-\eb_r},\label{Radial utrans_L} \\
+\wt_R &=& \wt_{\ib}^n + \left(\half - \frac{\dt}{h}w_{\ib}^n\right)\Delta_r \wt_{\ib}^n + \frac{\dt}{2}\wt_{\ib}^n\left(\frac{\partial w_0}{\partial r}\right)_{\ib},\label{Radial utrans_R}
 \end{eqnarray}
-Note that $w_0$ is edge-centered, so we define:
+where the total radial velocity is defined as:
 \begin{equation}
-w_{0,r} = \frac{w_{0,r+\half}+w_{0,r-\half}}{2}.
+w_{\ib}^n = \wt_{\ib}^n + \frac{w_{0,r+\half}+w_{0,r-\half}}{2}
 \end{equation}
 The spatial derivatives of $w_0$ are two point differences:
 \begin{equation}
-\left(\frac{\partial w_0}{\partial r}\right)_r = \frac{w_{0,r+\half}-w_{0,r-\half}}{h}.
+\left(\frac{\partial w_0}{\partial r}\right)_{\ib} = \frac{w_{0,r+\half}-w_{0,r-\half}}{h}.
 \end{equation}
 We pick the final edge states using:
 \begin{equation}
@@ -104,13 +104,13 @@ We pick the final edge states using:
 \end{equation}
 where $w_L = \wt_L + w_{0,r-\half}$ and $w_R = \wt_R + w_{0,r-\half}$.  As mentioned before, we now call {\tt addw0} to convert $\wt^{\trans}$ to $w^{\trans}.$\\
 
-For spherical problems, we first construct $\Ub$ by mapping $w_0$ onto a Cartesian array and adding it to $\Ubt$.  Then we use an extrapolation analogous to equations equations (\ref{Radial utrans_L}) and (\ref{Radial utrans_R}).  For example, for x-faces:
+For spherical problems, we first construct $\Ub$ by mapping $w_0$ onto a Cartesian array and adding it to $\Ubt$.  We also map $\partial w_0/\partial r$ onto a Cartesian array.  Then we use an extrapolation analogous to equations equations (\ref{Radial utrans_L}) and (\ref{Radial utrans_R}).  For example, for x-faces:
 
 \begin{eqnarray}
-\ut_L &=& \ut_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{h}u_{\ib-\eb_x}\right)\Delta_x\ut_{\ib-\eb_x}^n + \frac{\dt}{2}(\Ubt\cdot\eb_r)_{\ib-\eb_x}\left(\frac{\partial w_0}{\partial r}\right)_{\ib-\eb_x}n_x, \\
-\ut_R &=& \ut_{\ib}^n + \left(\half - \frac{\dt}{h}u_{\ib}\right)\Delta_x\ut_{\ib}^n + \frac{\dt}{2}(\Ubt\cdot\eb_r)_{\ib}\left(\frac{\partial w_0}{\partial r}\right)_{\ib}n_x,
+\ut_L &=& \ut_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{h}u_{\ib-\eb_x}^n\right)\Delta_x\ut_{\ib-\eb_x}^n + \frac{\dt}{2}(\Ubt\cdot\eb_r)_{\ib-\eb_x}^n\left(\frac{\partial w_0}{\partial r}\right)_{\ib-\eb_x}(\eb_r\cdot\eb_x)_{\ib-\eb_x}, \\
+\ut_R &=& \ut_{\ib}^n + \left(\half - \frac{\dt}{h}u_{\ib}^n\right)\Delta_x\ut_{\ib}^n + \frac{\dt}{2}(\Ubt\cdot\eb_r)_{\ib}^n\left(\frac{\partial w_0}{\partial r}\right)_{\ib}(\eb_r\cdot\eb_x)_{\ib}.
 \end{eqnarray}
-where $n_i = (\eb_r\cdot\eb_i)$.  For the y and z-faces, simply replace each instance of ``x'' with ``y'' or ``z''.
+For the y and z-faces, simply replace each instance of ``x'' with ``y'' or ``z''.  Finally, we call {\tt addw0} to convert $\Ubt^{\trans}$ to $\Ub^{\trans}$.
 \section{Computing $\ub^{\mac}$}
 In {\tt advance\_premac.f90}, we call {\tt make\_edge\_state} to compute $\Ubt^{\mac}$.
 \section{Computing $s^{\edge}$}
