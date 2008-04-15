@@ -79,7 +79,6 @@ v_L, & v_L + v_R > 0, \\
 v_R, & v_L + v_R < 0. \\
 \end{cases}
 \end{equation}
-
 For Cartesian problems, for the radial faces, we must include the radial derivative terms proportional to $w_0$ and $(\Ubt\cdot\eb_r) = \wt$:
 \begin{eqnarray}
 \wt_L &=& \wt_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{h}w_{\ib-\eb_r}^n\right)\Delta_r \wt_{\ib-\eb_r}^n + \frac{\dt}{2}\wt_{\ib-\eb_r}^n\left(\frac{\partial w_0}{\partial r}\right)_{\ib-\eb_r},\label{Radial utrans_L} \\
@@ -87,11 +86,11 @@ For Cartesian problems, for the radial faces, we must include the radial derivat
 \end{eqnarray}
 where the total radial velocity is defined as:
 \begin{equation}
-w_{\ib}^n = \wt_{\ib}^n + \frac{w_{0,r+\half}+w_{0,r-\half}}{2}
+w_{\ib}^n = \wt_{\ib}^n + \frac{w_{0,r+\half}+w_{0,r-\half}}{2}\label{Total Radial Velocity}
 \end{equation}
 The spatial derivatives of $w_0$ are two point differences:
 \begin{equation}
-\left(\frac{\partial w_0}{\partial r}\right)_{\ib} = \frac{w_{0,r+\half}-w_{0,r-\half}}{h}.
+\left(\frac{\partial w_0}{\partial r}\right)_{\ib} = \frac{w_{0,r+\half}-w_{0,r-\half}}{h}.\label{Radial Derivative of w_0}
 \end{equation}
 We pick the final edge states using:
 \begin{equation}
@@ -104,8 +103,7 @@ We pick the final edge states using:
 \end{equation}
 where $w_L = \wt_L + w_{0,r-\half}$ and $w_R = \wt_R + w_{0,r-\half}$.  As mentioned before, we now call {\tt addw0} to convert $\wt^{\trans}$ to $w^{\trans}.$\\
 
-For spherical problems, we first construct $\Ub$ by mapping $w_0$ onto a Cartesian array and adding it to $\Ubt$.  We also map $\partial w_0/\partial r$ onto a Cartesian array.  Then we use an extrapolation analogous to equations equations (\ref{Radial utrans_L}) and (\ref{Radial utrans_R}).  For example, for x-faces:
-
+For spherical problems, we first construct $\Ub$ by mapping $w_0$ onto a Cartesian array and adding it to $\Ubt$.  This is a spherical generalization of equation (\ref{Total Radial Velocity}).  We also map $\partial w_0/\partial r$ onto a Cartesian array.  This is a spherical generalization of equation (\ref{Radial Derivative of w_0}).  Then we use an extrapolation analogous to equations equations (\ref{Radial utrans_L}) and (\ref{Radial utrans_R}).  For example, for x-faces:
 \begin{eqnarray}
 \ut_L &=& \ut_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{h}u_{\ib-\eb_x}^n\right)\Delta_x\ut_{\ib-\eb_x}^n + \frac{\dt}{2}\left[(\Ubt^n\cdot\eb_r)\left(\frac{\partial w_0}{\partial r}\right)(\eb_r\cdot\eb_x)\right]_{\ib-\eb_x}, \\
 \ut_R &=& \ut_{\ib}^n + \left(\half - \frac{\dt}{h}u_{\ib}^n\right)\Delta_x\ut_{\ib}^n + \frac{\dt}{2}\left[(\Ubt^n\cdot\eb_r)\left(\frac{\partial w_0}{\partial r}\right)(\eb_r\cdot\eb_x)\right]_{\ib}.
