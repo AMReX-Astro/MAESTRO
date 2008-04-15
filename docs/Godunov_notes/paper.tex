@@ -16,7 +16,6 @@
 
 \def\eb    {{\bf e}}
 \def\ib    {{\bf i}}
-\def\ub    {{\bf u}}
 \def\Ub    {{\bf U}}
 \def\er    {{\bf e}_r}
 
@@ -32,26 +31,23 @@
 
 These are working notes for the Godunov step in {\tt MAESTRO}.
 
-\section{Computing $\ub^{\trans}$}
-In {\tt advance\_premac.f90}, we call the function {\tt mkutrans}, which computes the edge-centered transverse velocities, $\ub^{\trans}$.  These transverse velocities do not contain $w_0$, so immediately following the call to {\tt mkutrans}, we call {\tt addw0}.  We only compute the normal component of velocity at each face.\\
+\section{Computing $\Ub^{\trans}$}
+In {\tt advance\_premac.f90}, we call the function {\tt mkutrans}, which computes the edge-centered transverse velocities, $\Ubt^{\trans}$.  These transverse velocities do not contain $w_0$, so immediately following the call to {\tt mkutrans}, we call {\tt addw0} to compute $\Ub^{\trans}$.  We will only compute the normal component of velocity at each face.\\
 
 The evolution equation for the perturbational velocity is:
 \begin{equation}
-\frac{\partial\Ubt}{\partial t} = -\Ubt\cdot\nabla\Ubt - w_0\frac{\partial\Ubt}{\partial r} - (\Ubt\cdot\eb_r)\frac{\partial w_0}{\partial r}\eb_r - \frac{1}{\rho}\nabla\pi + \frac{1}{\rho_0}\frac{\partial\pi_0}{\partial r}\eb_r - \frac{(\rho-\rho_0)}{\rho}g\eb_r.
+\frac{\partial\Ubt}{\partial t} = -\Ubt\cdot\nabla\Ubt - w_0\frac{\partial\Ubt}{\partial r} - (\Ubt\cdot\eb_r)\frac{\partial w_0}{\partial r}\eb_r - \frac{1}{\rho}\nabla\pi + \frac{1}{\rho_0}\frac{\partial\pi_0}{\partial r}\eb_r - \frac{(\rho-\rho_0)}{\rho}g\eb_r.\label{Perturbational Velocity Equation}
 \end{equation}
-We are going to use a 1D Taylor series extrapolation in space and time to compute the normal components of $\Ubt$ at face-centers.  (Note that for Cartesian problems, $\Ubt = (u,v,\wt)$ and for spherical problems, $\Ubt = (\ut,\vt,\wt)$.)  By 1D, we mean that we omit any spatial derivatives that are not in the direction of the extrapolation.  We first compute ``left'' and ``right'' states, and then use a Riemann solver to pick the final state.\\
+We are going to use a 1D Taylor series extrapolation in space and time to compute time-centered normal components of $\Ubt^{\trans}$ at face-centers.  By 1D, we mean that we omit any spatial derivatives that are not in the direction of the extrapolation.  We first compute ``left/right'' states, and then use a Riemann solver to pick the final state.\\
+\subsection{2D Cartesian Case}
+For the rest of this paper, for 2D Cartesian problems, $\Ub = (u,w)$ and $\Ubt = (u,\wt)$.  We will use the shorthand $\ib = (i,r)$.\\
 
-For Cartesian problems, for the x-faces, the extrapolation is as follows:
+For the x-faces, the extrapolation is as follows:
 \begin{eqnarray}
 u_L &=& u_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{h}u_{\ib-\eb_x}^n\right)\Delta_x u_{\ib-\eb_x}^n, \\
-u_R &=& u_{\ib}^n - \left(\half + \frac{\dt}{h}u_{\ib}^n\right)\Delta_x u_{\ib}^n,
+u_R &=& u_{\ib}^n - \left(\half + \frac{\dt}{h}u_{\ib}^n\right)\Delta_x u_{\ib}^n.
 \end{eqnarray}
-where $\ib = (i,r)$ in 2D and $\ib = (i,j,r)$ in 3D.  For 3D Cartesian problems, for the y-faces, the extrapolation follows analogously:
-\begin{eqnarray}
-v_L &=& u_{\ib-\eb_y}^n + \left(\half - \frac{\dt}{h}u_{\ib-\eb_y}^n\right)\Delta_y u_{\ib-\eb_y}^n, \\
-v_R &=& u_{\ib}^n - \left(\half + \frac{\dt}{h}u_{\ib}^n\right)\Delta_y u_{\ib}^n.
-\end{eqnarray}
-We pick the final edge states using:
+We pick the final edge states using a Riemann solver:
 \begin{equation}
 u^{\trans}_{\ib-\half\eb_x} =
 \begin{cases}
@@ -60,24 +56,16 @@ u_L, & u_L + u_R > 0, \\
 u_R, & u_L + u_R < 0, \\
 \end{cases}
 \end{equation}
-\begin{equation}
-v^{\trans}_{\ib-\half\eb_y} =
-\begin{cases}
-0, & (v_L \le 0 ~ {\rm AND} ~ v_R \ge 0) ~ {\rm OR} ~ |v_L + v_R| < \epsilon, \\
-v_L, & v_L + v_R > 0, \\
-v_R, & v_L + v_R < 0. \\
-\end{cases}
-\end{equation}
-For Cartesian problems, for the radial faces, we must include the radial derivative terms proportional to $w_0$ and $(\Ubt\cdot\eb_r) = \wt$:
+For the radial faces, we must include the radial derivative terms proportional to $w_0$ and $(\Ubt\cdot\eb_r) = \wt$.  The term proportional to $w_0$ is included by using $w$ rather than $\wt$ as the advection speed.  The term proportional to $\wt$ is an additional term:
 \begin{eqnarray}
 \wt_L &=& \wt_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{h}w_{\ib-\eb_r}^n\right)\Delta_r \wt_{\ib-\eb_r}^n + \frac{\dt}{2}\wt_{\ib-\eb_r}^n\left(\frac{\partial w_0}{\partial r}\right)_{\ib-\eb_r},\label{Radial utrans_L} \\
-\wt_R &=& \wt_{\ib}^n + \left(\half - \frac{\dt}{h}w_{\ib}^n\right)\Delta_r \wt_{\ib}^n + \frac{\dt}{2}\wt_{\ib}^n\left(\frac{\partial w_0}{\partial r}\right)_{\ib},\label{Radial utrans_R}
+\wt_R &=& \wt_{\ib}^n + \left(\half - \frac{\dt}{h}w_{\ib}^n\right)\Delta_r \wt_{\ib}^n + \frac{\dt}{2}\wt_{\ib}^n\left(\frac{\partial w_0}{\partial r}\right)_{\ib}.\label{Radial utrans_R}
 \end{eqnarray}
-where the total radial velocity is defined as:
+The total radial velocity is defined as:
 \begin{equation}
-w_{\ib}^n = \wt_{\ib}^n + \frac{w_{0,r+\half}+w_{0,r-\half}}{2}\label{Total Radial Velocity}
+w_{\ib}^n = \wt_{\ib}^n + \frac{w_{0,r+\half}+w_{0,r-\half}}{2}.\label{Total Radial Velocity}
 \end{equation}
-The spatial derivatives of $w_0$ are two point differences:
+The spatial derivatives of $w_0$ are given by the two-point centered difference:
 \begin{equation}
 \left(\frac{\partial w_0}{\partial r}\right)_{\ib} = \frac{w_{0,r+\half}-w_{0,r-\half}}{h}.\label{Radial Derivative of w_0}
 \end{equation}
@@ -90,26 +78,110 @@ We pick the final edge states using:
 \wt_R, & w_L + w_R < 0, \\
 \end{cases}
 \end{equation}
-where $w_L = \wt_L + w_{0,r-\half}$ and $w_R = \wt_R + w_{0,r-\half}$.  As mentioned before, we now call {\tt addw0} to convert $\wt^{\trans}$ to $w^{\trans}.$\\
+where $w_L = \wt_L + w_{0,r-\half}$ and $w_R = \wt_R + w_{0,r-\half}$.  As mentioned before, we now call {\tt addw0} to convert $\wt^{\trans}$ to $w^{\trans}.$
+\subsection{3D Cartesian Case}
+For the rest of this paper, for 3D Cartesian problems, $\Ub = (u,v,w)$ and $\Ubt = (u,v,\wt)$.  We will use the shorthand $\ib = (i,j,r)$.\\
+
+The only difference between the 2D and 3D Cartesian cases is that we must also compute $v^{\trans}$.  The procedure is analogous to computing $u^{\trans}$:
+\begin{eqnarray}
+v_L &=& v_{\ib-\eb_y}^n + \left(\half - \frac{\dt}{h}v_{\ib-\eb_y}^n\right)\Delta_y v_{\ib-\eb_y}^n, \\
+v_R &=& v_{\ib}^n - \left(\half + \frac{\dt}{h}v_{\ib}^n\right)\Delta_y v_{\ib}^n,
+\end{eqnarray}
+\begin{equation}
+v^{\trans}_{\ib-\half\eb_y} =
+\begin{cases}
+0, & (v_L \le 0 ~ {\rm AND} ~ v_R \ge 0) ~ {\rm OR} ~ |v_L + v_R| < \epsilon, \\
+v_L, & v_L + v_R > 0, \\
+v_R, & v_L + v_R < 0. \\
+\end{cases}
+\end{equation}
+
+\subsection{3D Spherical Case}
+For the rest of this paper, for 3D spherical problems, $\Ub = (u,v,w)$ and $\Ubt = (\ut,\vt,\wt)$.  We will use the shorthand $\ib = (i,j,k)$.\\
 
 For spherical problems, we first construct $\Ub$ by mapping $w_0$ onto a Cartesian array and adding it to $\Ubt$.  This is a spherical generalization of equation (\ref{Total Radial Velocity}).  We also map $\partial w_0/\partial r$ onto a Cartesian array.  This is a spherical generalization of equation (\ref{Radial Derivative of w_0}).  Then we use an extrapolation analogous to equations equations (\ref{Radial utrans_L}) and (\ref{Radial utrans_R}).  For example, for x-faces:
 \begin{eqnarray}
 \ut_L &=& \ut_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{h}u_{\ib-\eb_x}^n\right)\Delta_x\ut_{\ib-\eb_x}^n + \frac{\dt}{2}\left[(\Ubt^n\cdot\eb_r)\left(\frac{\partial w_0}{\partial r}\right)(\eb_r\cdot\eb_x)\right]_{\ib-\eb_x}, \\
 \ut_R &=& \ut_{\ib}^n + \left(\half - \frac{\dt}{h}u_{\ib}^n\right)\Delta_x\ut_{\ib}^n + \frac{\dt}{2}\left[(\Ubt^n\cdot\eb_r)\left(\frac{\partial w_0}{\partial r}\right)(\eb_r\cdot\eb_x)\right]_{\ib}.
 \end{eqnarray}
-Finally, we call {\tt addw0} to convert $\Ubt^{\trans}$ to $\Ub^{\trans}$.
-\section{Computing $\ub^{\mac}$}
+Then, we use the same Riemann solver as the Cartesian case.  Finally, we call {\tt addw0} to convert $\Ubt^{\trans}$ to $\Ub^{\trans}$.  To compute $\vt^{\trans}$ or $\wt^{\trans}$, simply replace all instaces of $\ut$ with $\vt$ (or $\wt$) and all instaces of $x$ with $y$ (or $z$).
+\section{Computing $\Ub^{\mac}$}
 In {\tt advance\_premac.f90}, we call {\tt make\_edge\_state} to compute $\Ubt^{\mac}$.
+\subsection{2D Cartesian Case}
+Here are the steps to create $u^{\mac}$ for 2D Cartesian problems.  First, we need to compute a time-centered $u$ at transverse faces:
+\begin{eqnarray}
+u_L &=& u_{\ib-\eb_y}^n + \left(\half - \frac{\dt}{2h}v_{\ib-\eb_y}^n\right)\Delta_y u_{\ib-\eb_y}^n, \\
+u_R &=& u_{\ib} - \left(\half + \frac{\dt}{2h}v_{\ib}^n\right)\Delta_y u_{\ib}^n.
+\end{eqnarray}
+Then we solve a Riemann problem:
+\begin{equation}
+u_{\ib-\half\eb_y} =
+\begin{cases}
+\half(u_L + u_R), & \left|v^{\trans}_{\ib-\half\eb_y}\right| < \epsilon \\
+u_L, & v^{\trans}_{\ib-\half\eb_y} > 0, \\
+u_R, & v^{\trans}_{\ib-\half\eb_y} < 0. \\
+\end{cases}
+\end{equation}
+Then, we extrapolate the normal velocity to normal faces:
+\begin{eqnarray}
+u_L^{\edge} &=& u_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\eb_x}\right)\Delta_x u_{\ib-\eb_x}^n + \frac{\dt}{2}f_{\ib-\eb_x} \nonumber \\
+&& - \frac{\dt}{4h}\left(v_{\ib-\eb_x+\half\eb_y}^{\trans}+v_{\ib-\eb_x-\half\eb_y}^{\trans}\right)\left(u_{\ib-\eb_x+\half\eb_y}+u_{\ib-\eb_x-\half\eb_y}\right), \\
+u_R^{\edge} &=& u_{\ib}^n + \left(\half - \frac{\dt}{2h}u_{\ib}\right)\Delta_x u_{\ib}^n + \frac{\dt}{2}f_{\ib} \nonumber \\
+&& - \frac{\dt}{4h}\left(v_{\ib+\half\eb_y}^{\trans}+v_{\ib-\half\eb_y}^{\trans}\right)\left(u_{\ib+\half\eb_y}+u_{\ib-\half\eb_y}\right). \\
+\end{eqnarray}
+Finally, we solve a Riemann problem:
+\begin{equation}
+u_{\ib-\half\eb_x}^{\mac} =
+\begin{cases}
+0, & \left(u_L^{\edge} \le 0 ~ {\rm AND} ~ u_R^{\edge} \ge 0\right) ~ {\rm OR} ~ \left|u_L^{\edge} + u_R^{\edge}\right| < \epsilon, \\
+u_L^{\edge}, & u_L^{\edge} + u_R^{\edge} > 0, \\
+u_R^{\edge}, & u_L^{\edge} + u_R^{\edge} < 0. 
+\end{cases}
+\end{equation}
+
+To compute $\vt^{\mac}$, we use an analogous procedure for computing $u^{\mac}$, except that we need to incorporate the terms in equation (\ref{Perturbational Velocity Equation}) proportional to $\partial w_0/\partial r$.  First, we need to compute a time-centered $\vt$ at transverse faces:
+\begin{eqnarray}
+\vt_L &=& \vt_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\eb_x}^n\right)\Delta_x \vt_{\ib-\eb_x}^n, \\
+\vt_R &=& \vt_{\ib} - \left(\half + \frac{\dt}{2h}u_{\ib}^n\right)\Delta_x \vt_{\ib}^n.
+\end{eqnarray}
+Then we solve a Riemann problem:
+\begin{equation}
+\vt_{\ib-\half\eb_x} =
+\begin{cases}
+\half(\vt_L + \vt_R), & \left|u^{\trans}_{\ib-\half\eb_x}\right| < \epsilon \\
+\vt_L, & u^{\trans}_{\ib-\half\eb_x} > 0, \\
+\vt_R, & u^{\trans}_{\ib-\half\eb_x} < 0. \\
+\end{cases}
+\end{equation}
+Then, we extrapolate the normal velocity to normal faces, incorporating the extra term proportional to $\partial w_0/\partial r$\footnote{The underbraced terms could be replaced by the average of the neighboring $v^{\trans}$}:
+\begin{eqnarray}
+\vt_L^{\edge} &=& \vt_{\ib-\eb_y}^n + \left(\half - \frac{\dt}{2h}v_{\ib-\eb_y}\right)\Delta_y \vt_{\ib-\eb_y}^n + \frac{\dt}{2}f_{\ib-\eb_y} \nonumber \\
+&& - \frac{\dt}{4h}\left(u_{\ib+\half\eb_x-\eb_y}^{\trans}+u_{\ib-\half\eb_x-\eb_y}^{\trans}\right)\left(\vt_{\ib+\half\eb_x-\eb_y}+\vt_{\ib-\half\eb_x-\eb_y}\right) \nonumber \\
+&& - \frac{\dt}{2h}\underbrace{\vt_{\ib-\eb_y}}_{?}(w_{0,j-\half} - w_{0,j-\frac{3}{2}}), \\
+\vt_R^{\edge} &=& \vt_{\ib}^n + \left(\half - \frac{\dt}{2h}v_{\ib}\right)\Delta_y \vt_{\ib}^n + \frac{\dt}{2}f_{\ib} \nonumber \\
+&& - \frac{\dt}{4h}\left(u_{\ib+\half\eb_x}^{\trans}+u_{\ib-\half\eb_x}^{\trans}\right)\left(\vt_{\ib+\half\eb_x}+\vt_{\ib-\half\eb_x}\right) \nonumber \\
+&& - \frac{\dt}{2h}\underbrace{\vt_{\ib}}_{?}(w_{0,j+\half} - w_{0,j-\half}).
+\end{eqnarray}
+Finally, we solve a Riemann problem:
+\begin{equation}
+\vt_{\ib-\half\eb_y}^{\mac} =
+\begin{cases}
+0, & \left(v_L^{\edge} \le 0 ~ {\rm AND} ~ v_R^{\edge} \ge 0\right) ~ {\rm OR} ~ \left|v_L^{\edge} + v_R^{\edge}\right| < \epsilon, \\
+\vt_L^{\edge}, & v_L^{\edge} + v_R^{\edge} > 0, \\
+\vt_R^{\edge}, & v_L^{\edge} + v_R^{\edge} < 0. 
+\end{cases}
+\end{equation}
 
 
 \section{Computing $s^{\edge}$}
 
 
-\section{Computing $\ub^{\edge}$}
+\section{Computing $\Ub^{\edge}$}
 
 
 \section{Forces}
 
+\cleardoublepage
 \begin{table*}
 \begin{center}
 \caption{Forcing term into make edge scal \newline}
