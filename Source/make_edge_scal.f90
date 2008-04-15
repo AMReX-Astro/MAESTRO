@@ -416,7 +416,8 @@ contains
           st = force(i,j,comp) - HALF * (umac(i,j)+umac(i+1,j))*(splus - sminus) / hx
           
           if (is_vel .and. comp .eq. 2 .and. j .ge. 0 .and. j .lt. nr(n)) then
-             st = st - HALF * s(i,j,comp)*(w0(j+1)-w0(j))/hy
+             ! vmac contains w0 so we need to subtract it off
+             st = st - HALF * (vmac(i,j)+vmac(i,j+1)-w0(j+1)-w0(j))*(w0(j+1)-w0(j))/hy
           end if
           
           s_b(j+1)= s(i,j,comp) + (HALF-dth*vmac(i,j+1)/hy)*slopey(i,j,1) + dth*st
@@ -967,7 +968,8 @@ contains
              
              ! NOTE NOTE : THIS IS WRONG FOR SPHERICAL !!
              if (spherical.eq.0.and.is_vel.and.comp.eq.3.and.k.ge.0.and.k.lt.nr(n)) then
-                st = st - HALF * s(i,j,k,comp)*(w0(k+1)-w0(k))/hz
+                ! wmac contains w0 so we need to subtract it off
+                st = st - HALF*(wmac(i,j,k)+wmac(i,j,k+1)-w0(k+1)-w0(k)) * (w0(k+1)-w0(k))/hz
              end if
                  
              s_d(k+1)= s(i,j,k,comp) + (HALF-dth*wmac(i,j,k+1)/hz)*slopez(i,j,k,1) + dth*st

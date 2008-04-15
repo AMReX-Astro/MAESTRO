@@ -511,7 +511,8 @@ contains
              st = force(i,j,comp) - HALF * (utrans(i,j)+utrans(i+1,j))*(splus - sminus) / hx
              
              if (is_vel .and. comp .eq. 2 .and. j .ge. 0 .and. j .lt. nr(n)) then
-                st = st - HALF * s(i,j,comp)*(w0(j+1)-w0(j))/hy
+                ! vtrans contains w0 so we need to subtract it off
+                st = st - HALF * (vtrans(i,j)+vtrans(i,j+1)-w0(j+1)-w0(j))*(w0(j+1)-w0(j))/hy
              end if
              
              if (j .ge. 0 .and. j.lt.nr(n)) then
@@ -1304,7 +1305,8 @@ contains
                     if (spherical .eq. 0 .and. comp.eq.3 .and. k .ge. 0 .and. k .lt. nr(n)) then
 
                        ! wtrans contains w0 so we need to subtract it off
-                       st = st - HALF * s(i,j,k,comp)*(w0(k+1)-w0(k))/hz
+                       st = st - HALF * (wtrans(i,j,k)+wtrans(i,j,k+1)-w0(k+1)-w0(k))* &
+                            (w0(k+1)-w0(k))/hz
 
                     else if (spherical .eq. 1) then
 
