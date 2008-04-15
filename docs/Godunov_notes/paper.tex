@@ -32,6 +32,8 @@
 \def\Ub    {{\bf U}}
 
 \def\Ubt   {\widetilde{\bf U}}
+\def\ut    {\tilde{u}}
+\def\vt    {\tilde{v}}
 \def\wt    {\tilde{w}}
 
 \title{Notes on the Godunov Step in {\tt MAESTRO}}
@@ -46,16 +48,16 @@ In {\tt advance\_premac.f90}, we call the function {\tt mkutrans}, which compute
 
 The evolution equation for the perturbational velocity is:
 \begin{equation}
-\frac{\partial\Ubt}{\partial t} = -\Ubt\cdot\nabla\Ubt - w_0\frac{\partial\Ubt}{\partial r} - \wt\frac{\partial w_0}{\partial r}\eb_r - \frac{1}{\rho}\nabla\pi + \frac{1}{\rho_0}\frac{\partial\pi_0}{\partial r}\eb_r - \frac{(\rho-\rho_0)}{\rho}g\eb_r.
+\frac{\partial\Ubt}{\partial t} = -\Ubt\cdot\nabla\Ubt - w_0\frac{\partial\Ubt}{\partial r} - (\Ubt\cdot\eb_r)\frac{\partial w_0}{\partial r}\eb_r - \frac{1}{\rho}\nabla\pi + \frac{1}{\rho_0}\frac{\partial\pi_0}{\partial r}\eb_r - \frac{(\rho-\rho_0)}{\rho}g\eb_r.
 \end{equation}
-We are going to use a 1D Taylor series extrapolation in space and time to compute face-centered normal velocities.  By 1D, we mean that we omit any spatial derivatives that are not in the direction of the extrapolation.  We first compute ``left'' and ``right'' states, and then use a Riemann solver to pick the final state.\\
+We are going to use a 1D Taylor series extrapolation in space and time to compute the normal components of $\Ubt$ at face-centers.  (Note that for Cartesian problems, $\Ubt = (u,v,\wt)$ and for spherical problems, $\Ubt = (\ut,\vt,\wt)$.)  By 1D, we mean that we omit any spatial derivatives that are not in the direction of the extrapolation.  We first compute ``left'' and ``right'' states, and then use a Riemann solver to pick the final state.\\
 
-For the x-faces, the extrapolation is as follows:
+For Cartesian problems, for the x-faces, the extrapolation is as follows:
 \begin{eqnarray}
 u_L &=& u_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{h}u_{\ib-\eb_x}^n\right)\Delta_x u_{\ib-\eb_x}^n, \\
 u_R &=& u_{\ib}^n - \left(\half + \frac{\dt}{h}u_{\ib}^n\right)\Delta_x u_{\ib}^n,
 \end{eqnarray}
-where $\ib = (i,r)$ in 2D and $\ib = (i,j,r)$ in 3D.  For 3D problems only, for the y-faces, the extrapolation follows analogously:
+where $\ib = (i,r)$ in 2D and $\ib = (i,j,r)$ in 3D.  For 3D Cartesian problems, for the y-faces, the extrapolation follows analogously:
 \begin{eqnarray}
 v_L &=& u_{\ib-\eb_y}^n + \left(\half - \frac{\dt}{h}u_{\ib-\eb_y}^n\right)\Delta_y u_{\ib-\eb_y}^n, \\
 v_R &=& u_{\ib}^n - \left(\half + \frac{\dt}{h}u_{\ib}^n\right)\Delta_y u_{\ib}^n.
@@ -78,10 +80,10 @@ v_R, & v_L + v_R < 0. \\
 \end{cases}
 \end{equation}
 
-For the radial faces, the extrapolation is more complicated due to the radial spatial derivatives in the velocity equation:
+For Cartesian problems, for the radial faces, we must include the radial derivative terms proportional to $w_0$ and $(\Ubt\cdot\eb_r) = \wt$:
 \begin{eqnarray}
-\wt_L &=& \wt_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{h}(\wt_{\ib-\eb_r}^n+w_{0,r-1})\right)\Delta_r \wt_{\ib-\eb_r}^n + \frac{\dt}{2}\wt_{\ib-\eb_r}^n\left(\frac{\partial w_0}{\partial r}\right)_{r-1}, \\
-\wt_R &=& \wt_{\ib}^n + \left(\half - \frac{\dt}{h}(\wt_{\ib}^n+w_{0,r})\right)\Delta_r \wt_{\ib}^n + \frac{\dt}{2}\wt_{\ib}^n\left(\frac{\partial w_0}{\partial r}\right)_r.
+\wt_L &=& \wt_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{h}(\wt_{\ib-\eb_r}^n+w_{0,r-1})\right)\Delta_r \wt_{\ib-\eb_r}^n + \frac{\dt}{2}\wt_{\ib-\eb_r}^n\left(\frac{\partial w_0}{\partial r}\right)_{r-1},\label{Radial utrans_L} \\
+\wt_R &=& \wt_{\ib}^n + \left(\half - \frac{\dt}{h}(\wt_{\ib}^n+w_{0,r})\right)\Delta_r \wt_{\ib}^n + \frac{\dt}{2}\wt_{\ib}^n\left(\frac{\partial w_0}{\partial r}\right)_r.\label{Radial utrans_R}
 \end{eqnarray}
 Note that $w_0$ is edge-centered, so we define:
 \begin{equation}
@@ -100,7 +102,15 @@ We pick the final edge states using:
 \wt_R, & w_L + w_R < 0, \\
 \end{cases}
 \end{equation}
-where $w_L = \wt_L + w_{0,r-\half}$ and $w_R = \wt_R + w_{0,r-\half}$.  As mentioned before, we now call {\tt addw0} to convert $\wt^{\trans}$ to $w^{\trans}.$
+where $w_L = \wt_L + w_{0,r-\half}$ and $w_R = \wt_R + w_{0,r-\half}$.  As mentioned before, we now call {\tt addw0} to convert $\wt^{\trans}$ to $w^{\trans}.$\\
+
+For spherical problems, we first construct $\Ub$ by mapping $w_0$ onto a Cartesian array and adding it to $\Ubt$.  Then we use an extrapolation analogous to equations equations (\ref{Radial utrans_L}) and (\ref{Radial utrans_R}).  For example, for x-faces:
+
+\begin{eqnarray}
+\ut_L &=& \ut_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{h}u_{\ib-\eb_x}\right)\Delta_x\ut_{\ib-\eb_x}^n + \frac{\dt}{2}(\Ubt\cdot\eb_r)_{\ib-\eb_x}\left(\frac{\partial w_0}{\partial r}\right)_{\ib-\eb_x}n_x, \\
+\ut_R &=& \ut_{\ib}^n + \left(\half - \frac{\dt}{h}u_{\ib}\right)\Delta_x\ut_{\ib}^n + \frac{\dt}{2}(\Ubt\cdot\eb_r)_{\ib}\left(\frac{\partial w_0}{\partial r}\right)_{\ib}n_x,
+\end{eqnarray}
+where $n_i = (\eb_r\cdot\eb_i)$.  For the y and z-faces, simply replace each instance of ``x'' with ``y'' or ``z''.
 \section{Computing $\ub^{\mac}$}
 In {\tt advance\_premac.f90}, we call {\tt make\_edge\_state} to compute $\Ubt^{\mac}$.
 \section{Computing $s^{\edge}$}
