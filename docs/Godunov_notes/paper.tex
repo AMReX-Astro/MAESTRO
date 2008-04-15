@@ -108,67 +108,67 @@ Then, we use the same Riemann solver as the Cartesian case to obtain $\ut^{\tran
 \section{Computing $\Ub^{\mac}$}
 In {\tt advance\_premac.f90}, we call {\tt make\_edge\_state} to compute $\Ubt^{\mac}$.
 \subsection{2D Cartesian Case}
-Here are the steps to create $u^{\mac}$ for 2D Cartesian problems.  First, we need to compute a time-centered $u$ at transverse faces:
+Here are the steps to create $u^{\mac}$ for 2D Cartesian problems.  First, we need to compute a time-centered $u$ at transverse faces using a 1D Taylor series extrapolation:
 \begin{eqnarray}
-u_L &=& u_{\ib-\eb_y}^n + \left(\half - \frac{\dt}{2h}v_{\ib-\eb_y}^n\right)\Delta_y u_{\ib-\eb_y}^n, \\
-u_R &=& u_{\ib} - \left(\half + \frac{\dt}{2h}v_{\ib}^n\right)\Delta_y u_{\ib}^n.
+u_L^{1D} &=& u_{\ib-\eb_y}^n + \left(\half - \frac{\dt}{2h}v_{\ib-\eb_y}^n\right)\Delta_y u_{\ib-\eb_y}^n, \\
+u_R^{1D} &=& u_{\ib} - \left(\half + \frac{\dt}{2h}v_{\ib}^n\right)\Delta_y u_{\ib}^n.
 \end{eqnarray}
 Then we solve a Riemann problem:
 \begin{equation}
-u_{\ib-\half\eb_y} =
+u_{\ib-\half\eb_y}^{1D} =
 \begin{cases}
-\half(u_L + u_R), & \left|v^{\trans}_{\ib-\half\eb_y}\right| < \epsilon \\
-u_L, & v^{\trans}_{\ib-\half\eb_y} > 0, \\
-u_R, & v^{\trans}_{\ib-\half\eb_y} < 0. \\
+\half(u_L^{1D} + u_R^{1D}), & \left|v^{\trans}_{\ib-\half\eb_y}\right| < \epsilon \\
+u_L^{1D}, & v^{\trans}_{\ib-\half\eb_y} > 0, \\
+u_R^{1D}, & v^{\trans}_{\ib-\half\eb_y} < 0. \\
 \end{cases}
 \end{equation}
 Then, we extrapolate the normal velocity to normal faces:
 \begin{eqnarray}
-u_L^{\edge} &=& u_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\eb_x}\right)\Delta_x u_{\ib-\eb_x}^n + \frac{\dt}{2}f_{\ib-\eb_x} \nonumber \\
-&& - \frac{\dt}{4h}\left(v_{\ib-\eb_x+\half\eb_y}^{\trans}+v_{\ib-\eb_x-\half\eb_y}^{\trans}\right)\left(u_{\ib-\eb_x+\half\eb_y}+u_{\ib-\eb_x-\half\eb_y}\right), \\
-u_R^{\edge} &=& u_{\ib}^n + \left(\half - \frac{\dt}{2h}u_{\ib}\right)\Delta_x u_{\ib}^n + \frac{\dt}{2}f_{\ib} \nonumber \\
-&& - \frac{\dt}{4h}\left(v_{\ib+\half\eb_y}^{\trans}+v_{\ib-\half\eb_y}^{\trans}\right)\left(u_{\ib+\half\eb_y}+u_{\ib-\half\eb_y}\right). \\
+u_L &=& u_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\eb_x}\right)\Delta_x u_{\ib-\eb_x}^n + \frac{\dt}{2}f_{\ib-\eb_x} \nonumber \\
+&& - \frac{\dt}{4h}\left(v_{\ib-\eb_x+\half\eb_y}^{\trans}+v_{\ib-\eb_x-\half\eb_y}^{\trans}\right)\left(u_{\ib-\eb_x+\half\eb_y}^{1D} - u_{\ib-\eb_x-\half\eb_y}^{1D}\right), \\
+u_R &=& u_{\ib}^n + \left(\half - \frac{\dt}{2h}u_{\ib}\right)\Delta_x u_{\ib}^n + \frac{\dt}{2}f_{\ib} \nonumber \\
+&& - \frac{\dt}{4h}\left(v_{\ib+\half\eb_y}^{\trans}+v_{\ib-\half\eb_y}^{\trans}\right)\left(u_{\ib+\half\eb_y}^{1D} - u_{\ib-\half\eb_y}^{1D}\right). \\
 \end{eqnarray}
 Finally, we solve a Riemann problem:
 \begin{equation}
 u_{\ib-\half\eb_x}^{\mac} =
 \begin{cases}
-0, & \left(u_L^{\edge} \le 0 ~ {\rm AND} ~ u_R^{\edge} \ge 0\right) ~ {\rm OR} ~ \left|u_L^{\edge} + u_R^{\edge}\right| < \epsilon, \\
-u_L^{\edge}, & u_L^{\edge} + u_R^{\edge} > 0, \\
-u_R^{\edge}, & u_L^{\edge} + u_R^{\edge} < 0. 
+0, & \left(u_L \le 0 ~ {\rm AND} ~ u_R \ge 0\right) ~ {\rm OR} ~ \left|u_L + u_R\right| < \epsilon, \\
+u_L, & u_L + u_R > 0, \\
+u_R, & u_L + u_R < 0. 
 \end{cases}
 \end{equation}
 
 To compute $\vt^{\mac}$, we use an analogous procedure for computing $u^{\mac}$, except that we need to incorporate the terms in equation (\ref{Perturbational Velocity Equation}) proportional to $\partial w_0/\partial r$.  First, we need to compute a time-centered $\vt$ at transverse faces:
 \begin{eqnarray}
-\vt_L &=& \vt_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\eb_x}^n\right)\Delta_x \vt_{\ib-\eb_x}^n, \\
-\vt_R &=& \vt_{\ib} - \left(\half + \frac{\dt}{2h}u_{\ib}^n\right)\Delta_x \vt_{\ib}^n.
+\vt_L^{1D} &=& \vt_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\eb_x}^n\right)\Delta_x \vt_{\ib-\eb_x}^n, \\
+\vt_R^{1D} &=& \vt_{\ib} - \left(\half + \frac{\dt}{2h}u_{\ib}^n\right)\Delta_x \vt_{\ib}^n.
 \end{eqnarray}
 Then we solve a Riemann problem:
 \begin{equation}
-\vt_{\ib-\half\eb_x} =
+\vt_{\ib-\half\eb_x}^{1D} =
 \begin{cases}
-\half(\vt_L + \vt_R), & \left|u^{\trans}_{\ib-\half\eb_x}\right| < \epsilon \\
-\vt_L, & u^{\trans}_{\ib-\half\eb_x} > 0, \\
-\vt_R, & u^{\trans}_{\ib-\half\eb_x} < 0. \\
+\half(\vt_L^{1D} + \vt_R^{1D}), & \left|u^{\trans}_{\ib-\half\eb_x}\right| < \epsilon \\
+\vt_L^{1D}, & u^{\trans}_{\ib-\half\eb_x} > 0, \\
+\vt_R^{1D}, & u^{\trans}_{\ib-\half\eb_x} < 0. \\
 \end{cases}
 \end{equation}
 Then, we extrapolate the normal velocity to normal faces, incorporating the extra term proportional to $\partial w_0/\partial r$\footnote{The underbraced terms could be replaced by the average of the neighboring $v^{\trans}$.  We still don't know what the best option is.}:
 \begin{eqnarray}
-\vt_L^{\edge} &=& \vt_{\ib-\eb_y}^n + \left(\half - \frac{\dt}{2h}v_{\ib-\eb_y}\right)\Delta_y \vt_{\ib-\eb_y}^n + \frac{\dt}{2}f_{\ib-\eb_y} \nonumber \\
-&& - \frac{\dt}{4h}\left(u_{\ib+\half\eb_x-\eb_y}^{\trans}+u_{\ib-\half\eb_x-\eb_y}^{\trans}\right)\left(\vt_{\ib+\half\eb_x-\eb_y}+\vt_{\ib-\half\eb_x-\eb_y}\right) \nonumber \\
+\vt_L &=& \vt_{\ib-\eb_y}^n + \left(\half - \frac{\dt}{2h}v_{\ib-\eb_y}\right)\Delta_y \vt_{\ib-\eb_y}^n + \frac{\dt}{2}f_{\ib-\eb_y} \nonumber \\
+&& - \frac{\dt}{4h}\left(u_{\ib+\half\eb_x-\eb_y}^{\trans}+u_{\ib-\half\eb_x-\eb_y}^{\trans}\right)\left(\vt_{\ib+\half\eb_x-\eb_y}^{1D} - \vt_{\ib-\half\eb_x-\eb_y}^{1D}\right) \nonumber \\
 && - \frac{\dt}{2h}\underbrace{\vt_{\ib-\eb_y}}_{?}(w_{0,j-\half} - w_{0,j-\frac{3}{2}}), \\
-\vt_R^{\edge} &=& \vt_{\ib}^n + \left(\half - \frac{\dt}{2h}v_{\ib}\right)\Delta_y \vt_{\ib}^n + \frac{\dt}{2}f_{\ib} \nonumber \\
-&& - \frac{\dt}{4h}\left(u_{\ib+\half\eb_x}^{\trans}+u_{\ib-\half\eb_x}^{\trans}\right)\left(\vt_{\ib+\half\eb_x}+\vt_{\ib-\half\eb_x}\right) \nonumber \\
+\vt_R &=& \vt_{\ib}^n + \left(\half - \frac{\dt}{2h}v_{\ib}\right)\Delta_y \vt_{\ib}^n + \frac{\dt}{2}f_{\ib} \nonumber \\
+&& - \frac{\dt}{4h}\left(u_{\ib+\half\eb_x}^{\trans}+u_{\ib-\half\eb_x}^{\trans}\right)\left(\vt_{\ib+\half\eb_x}^{1D} - \vt_{\ib-\half\eb_x}^{1D}\right) \nonumber \\
 && - \frac{\dt}{2h}\underbrace{\vt_{\ib}}_{?}(w_{0,j+\half} - w_{0,j-\half}).
 \end{eqnarray}
 Finally, we solve a Riemann problem:
 \begin{equation}
 \vt_{\ib-\half\eb_y}^{\mac} =
 \begin{cases}
-0, & \left(v_L^{\edge} \le 0 ~ {\rm AND} ~ v_R^{\edge} \ge 0\right) ~ {\rm OR} ~ \left|v_L^{\edge} + v_R^{\edge}\right| < \epsilon, \\
-\vt_L^{\edge}, & v_L^{\edge} + v_R^{\edge} > 0, \\
-\vt_R^{\edge}, & v_L^{\edge} + v_R^{\edge} < 0. 
+0, & \left(v_L \le 0 ~ {\rm AND} ~ v_R \ge 0\right) ~ {\rm OR} ~ \left|v_L + v_R\right| < \epsilon, \\
+\vt_L, & v_L + v_R > 0, \\
+\vt_R, & v_L + v_R < 0. 
 \end{cases}
 \end{equation}
 
