@@ -127,7 +127,7 @@ Then, we extrapolate the normal velocity to normal faces:
 u_L &=& u_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\eb_x}\right)\Delta_x u_{\ib-\eb_x}^n + \frac{\dt}{2}f_{\ib-\eb_x} \nonumber \\
 && - \frac{\dt}{4h}\left(v_{\ib-\eb_x+\half\eb_y}^{\trans}+v_{\ib-\eb_x-\half\eb_y}^{\trans}\right)\left(u_{\ib-\eb_x+\half\eb_y}^{1D} - u_{\ib-\eb_x-\half\eb_y}^{1D}\right), \\
 u_R &=& u_{\ib}^n + \left(\half - \frac{\dt}{2h}u_{\ib}\right)\Delta_x u_{\ib}^n + \frac{\dt}{2}f_{\ib} \nonumber \\
-&& - \frac{\dt}{4h}\left(v_{\ib+\half\eb_y}^{\trans}+v_{\ib-\half\eb_y}^{\trans}\right)\left(u_{\ib+\half\eb_y}^{1D} - u_{\ib-\half\eb_y}^{1D}\right). \\
+&& - \frac{\dt}{4h}\left(v_{\ib+\half\eb_y}^{\trans}+v_{\ib-\half\eb_y}^{\trans}\right)\left(u_{\ib+\half\eb_y}^{1D} - u_{\ib-\half\eb_y}^{1D}\right).
 \end{eqnarray}
 Finally, we solve a Riemann problem:
 \begin{equation}
@@ -139,7 +139,7 @@ u_R, & u_L + u_R < 0.
 \end{cases}
 \end{equation}
 
-To compute $\vt^{\mac}$, we use an analogous procedure for computing $u^{\mac}$, except that we need to incorporate the terms in equation (\ref{Perturbational Velocity Equation}) proportional to $\partial w_0/\partial r$.  First, we need to compute a time-centered $\vt$ at transverse faces:
+To compute $\vt^{\mac}$, we use an analogous procedure for computing $u^{\mac}$, except that we need to incorporate the terms in equation (\ref{Perturbational Velocity Equation}) proportional to $w_0$ and $\partial w_0/\partial r$.  But first, we need to compute a time-centered $\vt$ at transverse faces using a 1D Taylor seriex extrapolation:
 \begin{eqnarray}
 \vt_L^{1D} &=& \vt_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\eb_x}^n\right)\Delta_x \vt_{\ib-\eb_x}^n, \\
 \vt_R^{1D} &=& \vt_{\ib} - \left(\half + \frac{\dt}{2h}u_{\ib}^n\right)\Delta_x \vt_{\ib}^n.
@@ -153,7 +153,7 @@ Then we solve a Riemann problem:
 \vt_R^{1D}, & u^{\trans}_{\ib-\half\eb_x} < 0. \\
 \end{cases}
 \end{equation}
-Then, we extrapolate the normal velocity to normal faces, incorporating the extra term proportional to $\partial w_0/\partial r$\footnote{The underbraced terms could be replaced by the average of the neighboring $v^{\trans}$.  We still don't know what the best option is.}:
+Then, we extrapolate the normal velocity to normal faces, incorporating the extra term proportional to $w_0$ by using $v$ instead of $\vt$ as the advection velocity and the extra term proportional to $\partial w_0/\partial r$ as a separate term\footnote{The underbraced terms could be replaced by the average of the neighboring $v^{\trans}$.  We still don't know what the best option is.}:
 \begin{eqnarray}
 \vt_L &=& \vt_{\ib-\eb_y}^n + \left(\half - \frac{\dt}{2h}v_{\ib-\eb_y}\right)\Delta_y \vt_{\ib-\eb_y}^n + \frac{\dt}{2}f_{\ib-\eb_y} \nonumber \\
 && - \frac{\dt}{4h}\left(u_{\ib+\half\eb_x-\eb_y}^{\trans}+u_{\ib-\half\eb_x-\eb_y}^{\trans}\right)\left(\vt_{\ib+\half\eb_x-\eb_y}^{1D} - \vt_{\ib-\half\eb_x-\eb_y}^{1D}\right) \nonumber \\
