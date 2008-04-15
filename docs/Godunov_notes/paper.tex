@@ -110,7 +110,7 @@ For spherical problems, we first construct $\Ub$ by mapping $w_0$ onto a Cartesi
 \ut_L &=& \ut_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{h}u_{\ib-\eb_x}^n\right)\Delta_x\ut_{\ib-\eb_x}^n + \frac{\dt}{2}\left[(\Ubt^n\cdot\eb_r)\left(\frac{\partial w_0}{\partial r}\right)(\eb_r\cdot\eb_x)\right]_{\ib-\eb_x}, \\
 \ut_R &=& \ut_{\ib}^n + \left(\half - \frac{\dt}{h}u_{\ib}^n\right)\Delta_x\ut_{\ib}^n + \frac{\dt}{2}\left[(\Ubt^n\cdot\eb_r)\left(\frac{\partial w_0}{\partial r}\right)(\eb_r\cdot\eb_x)\right]_{\ib}.
 \end{eqnarray}
-For the y and z-faces, simply replace each instance of ``x'' with ``y'' or ``z''.  Finally, we call {\tt addw0} to convert $\Ubt^{\trans}$ to $\Ub^{\trans}$.
+Finally, we call {\tt addw0} to convert $\Ubt^{\trans}$ to $\Ub^{\trans}$.
 \section{Computing $\ub^{\mac}$}
 In {\tt advance\_premac.f90}, we call {\tt make\_edge\_state} to compute $\Ubt^{\mac}$.
 \section{Computing $s^{\edge}$}
