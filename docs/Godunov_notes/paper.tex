@@ -107,8 +107,8 @@ where $w_L = \wt_L + w_{0,r-\half}$ and $w_R = \wt_R + w_{0,r-\half}$.  As menti
 For spherical problems, we first construct $\Ub$ by mapping $w_0$ onto a Cartesian array and adding it to $\Ubt$.  We also map $\partial w_0/\partial r$ onto a Cartesian array.  Then we use an extrapolation analogous to equations equations (\ref{Radial utrans_L}) and (\ref{Radial utrans_R}).  For example, for x-faces:
 
 \begin{eqnarray}
-\ut_L &=& \ut_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{h}u_{\ib-\eb_x}^n\right)\Delta_x\ut_{\ib-\eb_x}^n + \frac{\dt}{2}(\Ubt\cdot\eb_r)_{\ib-\eb_x}^n\left(\frac{\partial w_0}{\partial r}\right)_{\ib-\eb_x}(\eb_r\cdot\eb_x)_{\ib-\eb_x}, \\
-\ut_R &=& \ut_{\ib}^n + \left(\half - \frac{\dt}{h}u_{\ib}^n\right)\Delta_x\ut_{\ib}^n + \frac{\dt}{2}(\Ubt\cdot\eb_r)_{\ib}^n\left(\frac{\partial w_0}{\partial r}\right)_{\ib}(\eb_r\cdot\eb_x)_{\ib}.
+\ut_L &=& \ut_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{h}u_{\ib-\eb_x}^n\right)\Delta_x\ut_{\ib-\eb_x}^n + \frac{\dt}{2}\left[(\Ubt^n\cdot\eb_r)\left(\frac{\partial w_0}{\partial r}\right)(\eb_r\cdot\eb_x)\right]_{\ib-\eb_x}, \\
+\ut_R &=& \ut_{\ib}^n + \left(\half - \frac{\dt}{h}u_{\ib}^n\right)\Delta_x\ut_{\ib}^n + \frac{\dt}{2}\left[(\Ubt^n\cdot\eb_r)\left(\frac{\partial w_0}{\partial r}\right)(\eb_r\cdot\eb_x)\right]_{\ib}.
 \end{eqnarray}
 For the y and z-faces, simply replace each instance of ``x'' with ``y'' or ``z''.  Finally, we call {\tt addw0} to convert $\Ubt^{\trans}$ to $\Ub^{\trans}$.
 \section{Computing $\ub^{\mac}$}
