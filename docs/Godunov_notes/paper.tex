@@ -2,7 +2,7 @@
 
 \tolerance=600
 
-\usepackage{amsmath}
+\usepackage{amsmath,color}
 
 % Margins
 \usepackage[lmargin=1.0in,rmargin=1.0in,tmargin=0.75in,bmargin=0.75in]{geometry}
@@ -25,6 +25,12 @@
 \def\wt    {\tilde{w}}
 
 \title{Notes on the Godunov Step in {\tt MAESTRO}}
+
+\setlength{\marginparwidth}{0.75in}
+\newcommand{\MarginPar}[1]{\marginpar{%
+\vskip-\baselineskip %raise the marginpar a bit
+\raggedright\tiny\sffamily
+\hrule\smallskip{\color{red}#1}\par\smallskip\hrule}}
 
 \begin{document}
 \maketitle
@@ -56,7 +62,7 @@ For the x-faces, the 1D extrapolation of $u$ is:
 \begin{eqnarray}
 u_L &=& u_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{h}u_{\ib-\eb_x}^n\right)\Delta_x u_{\ib-\eb_x}^n, \\
 u_R &=& u_{\ib}^n - \left(\half + \frac{\dt}{h}u_{\ib}^n\right)\Delta_x u_{\ib}^n.
-\end{eqnarray}
+\end{eqnarray} \MarginPar{should be $\dt/2h$}
 We pick the final edge states using a Riemann solver:
 \begin{equation}
 u^{\trans}_{\ib-\half\eb_x} =
@@ -70,7 +76,7 @@ For the radial faces, we must include the radial derivative terms proportional t
 \begin{eqnarray}
 \wt_L &=& \wt_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{h}w_{\ib-\eb_r}^n\right)\Delta_r \wt_{\ib-\eb_r}^n + \frac{\dt}{2}\wt_{\ib-\eb_r}^n\left(\frac{\partial w_0}{\partial r}\right)_{\ib-\eb_r},\label{Radial utrans_L} \\
 \wt_R &=& \wt_{\ib}^n + \left(\half - \frac{\dt}{h}w_{\ib}^n\right)\Delta_r \wt_{\ib}^n + \frac{\dt}{2}\wt_{\ib}^n\left(\frac{\partial w_0}{\partial r}\right)_{\ib}.\label{Radial utrans_R}
-\end{eqnarray}
+\end{eqnarray} \MarginPar{should be $\dt / 2h$}
 The total radial velocity is defined as:
 \begin{equation}
 w_{\ib}^n = \wt_{\ib}^n + \frac{w_{0,r+\half}+w_{0,r-\half}}{2}.\label{Total Radial Velocity}
@@ -96,7 +102,7 @@ The only difference between the 2D and 3D Cartesian cases is that we must also c
 \begin{eqnarray}
 v_L &=& v_{\ib-\eb_y}^n + \left(\half - \frac{\dt}{h}v_{\ib-\eb_y}^n\right)\Delta_y v_{\ib-\eb_y}^n, \\
 v_R &=& v_{\ib}^n - \left(\half + \frac{\dt}{h}v_{\ib}^n\right)\Delta_y v_{\ib}^n,
-\end{eqnarray}
+\end{eqnarray} \MarginPar{should be $\dt / 2h$}
 \begin{equation}
 v^{\trans}_{\ib-\half\eb_y} =
 \begin{cases}
@@ -112,8 +118,10 @@ We first construct $\Ub$ by mapping $w_0$ onto a Cartesian array and adding it t
 \begin{eqnarray}
 \ut_L &=& \ut_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{h}u_{\ib-\eb_x}^n\right)\Delta_x\ut_{\ib-\eb_x}^n + \frac{\dt}{2}\left[(\Ubt^n\cdot\eb_r)\left(\frac{\partial w_0}{\partial r}\right)(\eb_r\cdot\eb_x)\right]_{\ib-\eb_x}, \\
 \ut_R &=& \ut_{\ib}^n + \left(\half - \frac{\dt}{h}u_{\ib}^n\right)\Delta_x\ut_{\ib}^n + \frac{\dt}{2}\left[(\Ubt^n\cdot\eb_r)\left(\frac{\partial w_0}{\partial r}\right)(\eb_r\cdot\eb_x)\right]_{\ib}.
-\end{eqnarray}
+\end{eqnarray} \MarginPar{should be $\dt / 2h$}
 Then, we use the same Riemann solver as the Cartesian case to obtain $\ut^{\trans}$.  To compute $\vt^{\trans}$ or $\wt^{\trans}$, simply replace all instaces of $\ut$ with $\vt$ (or $\wt$) and all instaces of $x$ with $y$ (or $z$).  Finally, we call {\tt addw0} to compute $\Ub^{\trans}$ from $\Ubt^{\trans}$.
+
+
 \section{Computing $\Ubt^{\mac,*}$}
 In {\tt advance\_premac.f90}, we call {\tt make\_edge\_state} to compute $\Ubt^{\mac,*}$.  We will only compute the normal component of velocity at each face.\\
 \subsection{2D Cartesian Case}
@@ -338,7 +346,6 @@ T $(\rho^\prime)$ & $-\rho^\prime \; \nabla \cdot (\ut+w_0 \eb_r) - \nabla \cdot
    & \\
  4 $(T)$ & $\frac{1}{\rho c_p} \left[ (1 - \rho h_p) (\psi + \tilde{w} \frac{\partial p_0}{\partial r}) \right]$ \\
    & \\
-\hline
 \hline
 \end{tabular}
 \end{center}
