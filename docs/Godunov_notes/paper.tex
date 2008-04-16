@@ -74,7 +74,7 @@ u_R, & u_L + u_R < 0, \\
 \end{equation}
 For the radial faces, we must include the radial derivative terms proportional to $w_0$ and $(\Ubt\cdot\eb_r) = \wt$.  The term proportional to $w_0$ is included by using $w$ rather than $\wt$ as the advection speed.  The term proportional to $\wt$ is an additional term.  For the radial faces, the 1D extrapolation of $\wt$ is:
 \begin{eqnarray}
-\wt_L &=& \wt_{\ib-\eb_r}^n + \left(\half - \frac{\dt}2{h}w_{\ib-\eb_r}^n\right)\Delta_r \wt_{\ib-\eb_r}^n + \frac{\dt}{2}\wt_{\ib-\eb_r}^n\left(\frac{\partial w_0}{\partial r}\right)_{\ib-\eb_r},\label{Radial utrans_L} \\
+\wt_L &=& \wt_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\eb_r}^n\right)\Delta_r \wt_{\ib-\eb_r}^n + \frac{\dt}{2}\wt_{\ib-\eb_r}^n\left(\frac{\partial w_0}{\partial r}\right)_{\ib-\eb_r},\label{Radial utrans_L} \\
 \wt_R &=& \wt_{\ib}^n + \left(\half - \frac{\dt}{2h}w_{\ib}^n\right)\Delta_r \wt_{\ib}^n + \frac{\dt}{2}\wt_{\ib}^n\left(\frac{\partial w_0}{\partial r}\right)_{\ib}.\label{Radial utrans_R}
 \end{eqnarray}
 The total radial velocity is defined as:
