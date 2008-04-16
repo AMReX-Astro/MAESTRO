@@ -312,7 +312,16 @@ Then, we upwind based on $u^{\mac}$:
 \end{cases}
 \end{equation}
 The full-dimensional extrapolation of $\wt$ to r-faces is:
-
+\begin{eqnarray}
+\wt_{L,\ib-\half\eb_r}^{\edge} &=& \wt_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\half\eb_r}^{\mac}\right)\Delta_r \wt_{\ib-\eb_r}^n + \frac{\dt}{2}f_{w,\ib-\eb_r} \nonumber \\
+&& - \frac{\dt}{4h}\left(u_{\ib+\half\eb_x-\eb_r}^{\trans}+u_{\ib-\half\eb_x-\eb_r}^{\trans}\right)\left(\wt_{\ib+\half\eb_x-\eb_r}^{1D} - \wt_{\ib-\half\eb_x-\eb_r}^{1D}\right) \nonumber \\
+&& -
+\frac{\dt}{4h}\left(\wt_{\ib-\frac{3}{2}\eb_r}^{\trans}+\wt_{\ib-\half\eb_r}^{\trans}\right)\left(w_{0,\ib-\frac{3}{2}\eb_r}-w_{0,\ib-\half\eb_r}\right),\\
+\wt_{R,\ib-\half\eb_r}^{\edge} &=& \wt_{\ib}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\half\eb_r}^{\mac}\right)\Delta_r \wt_{\ib}^n + \frac{\dt}{2}f_{w,\ib} \nonumber \\
+&& - \frac{\dt}{4h}\left(u_{\ib+\half\eb_x}^{\trans}+u_{\ib-\half\eb_x}^{\trans}\right)\left(\wt_{\ib+\half\eb_x}^{1D} - \wt_{\ib-\half\eb_x}^{1D}\right) \nonumber \\
+&& -
+\frac{\dt}{4h}\left(\wt_{\ib-\half\eb_r}^{\trans}+\wt_{\ib+\half\eb_r}^{\trans}\right)\left(w_{0,\ib-\half\eb_r}-w_{0,\ib+\half\eb_r}\right), \\
+\end{eqnarray}
 \subsection{3D Cartesian Case}
 \subsection{3D Spherical Case}
 \cleardoublepage
