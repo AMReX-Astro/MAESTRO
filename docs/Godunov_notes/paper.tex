@@ -228,6 +228,7 @@ f_{(\rho h)'} &=& (\Ubt\cdot\eb_r)\frac{\partial p_0}{\partial r} -(\rho h)'\nab
 f_h &=& \frac{1}{\rho}\left(\psi + (\Ubt\cdot\eb_r)\frac{\partial p_0}{\partial r} + \nabla\cdot\kth\nabla T \right), \\
 f_T &=& \frac{1}{\rho c_p}\left\{(1-\rho h_p)\left[\psi + (\Ubt\cdot\eb_r)\frac{\partial p_0}{\partial r}\right] - \sum_k\rho\xi_k\dot\omega_k + \rho H_{\rm nuc} + \rho H_{\rm ext} + \nabla\cdot\kth\nabla T \right\}.
 \end{eqnarray}
+If {\tt enthalpy\_pred\_type} = 3 or 4, we convert $T^{\edge}$ to $h^{\edge}$ using $h^{\edge} = h^{\edge}(\rho^{\edge},T^{\edge},X_k^{\edge})$, where $\rho^{\edge} = \rho^{'\edge} + \rho_0$.  Furthermore, if {\tt enthalpy\_pred\_type} = 3, we compute $(\rho h)^{'\edge} = (\rho h)^{\edge} - (\rho h)_0$.
 \subsection{2D Cartesian Case}
 We begin by computing a time-centered 1D extrapolation of $s$ to all faces.  The extrapolation of $s$ to x-faces is:
 \begin{eqnarray}
@@ -505,61 +506,4 @@ Then, we upwind based on $u^{\mac}$.
 \end{cases}
 \end{equation}
 %\subsection{3D Cartesian Case}
-\cleardoublepage
-\section{Notes on {\tt enthalpy\_pred\_type} in {\tt MAESTRO}}
-
-\begin{table*}
-\begin{center}
-\caption{When predicting temp ... \newline}
-\begin{tabular}{|c|c|c|c|c|}
-\multicolumn{1}{c}{PRED X} & \multicolumn{1}{c}{type} & \multicolumn{1}{c}{Inputs } & 
-\multicolumn{1}{c}{EOS inputs} & \multicolumn{1}{c}{output} \\
-\hline
-T & 3 & $X$ and $\rho^\prime$ & $\rho = \rho_0 + \rho^\prime$ &  $(\rho h)^\prime = \rho h - (\rho h)_0$ \\
-  &   &                   & $   X = $ given & \\
-  &   &                   &                 & \\
-T & 4 & $X$ and $\rho^\prime$ & $\rho = \rho_0 + \rho^\prime$ & $h$ \\
-  &   &                   & $   X = $ given & \\
-  &   &                   &                 & \\
-\hline
-\end{tabular}
-\end{center}
-\end{table*}
-
-\begin{table*}
-\begin{center}
-\caption{Quantity that goes into mkflux on edges \newline}
-\begin{tabular}{|c|c|c|c|c|}
-\multicolumn{2}{c}{PREDICT} & \multicolumn{1}{c}{} & \multicolumn{1}{c}{} \\
-\multicolumn{1}{c}{X} & \multicolumn{1}{c}{h pred type} & \multicolumn{1}{c}{Species } & \multicolumn{1}{c}{h/T } & \multicolumn{1}{c}{$\rho^\prime$} \\
-\hline
-T & 1 & $X$ and $\rho^\prime$ & $(\rho h)^\prime$ & \\
-T & 2 & $X$ and $\rho^\prime$ & $h$ & \\
-T & 3 & $X$ and $\rho^\prime$ & $(\rho h)^\prime$ & \\
-T & 4 & $X$ and $\rho^\prime$ & $h$ & \\
-\hline
-\end{tabular}
-\end{center}
-\end{table*}
-
-\begin{table*}
-\begin{center}
-\caption{Quantity that is created in mkflux and passed into update scal\newline}
-\begin{tabular}{|c|c|c|c|c|c|c|c|}
-\multicolumn{2}{c}{PREDICT}   & 
-\multicolumn{1}{c}{} & \multicolumn{1}{c}{}  
-& \multicolumn{2}{c}{Add db?} & \multicolumn{2}{c}{Forcing term }\\
-\multicolumn{1}{c}{X}   & \multicolumn{1}{c}{type} &
-\multicolumn{1}{c}{Species } & \multicolumn{1}{c}{$(\rho h)$} 
-& \multicolumn{1}{c}{X} & \multicolumn{1}{c}{h} & \multicolumn{1}{c}{$(\rho X)$} & \multicolumn{1}{c}{$(\rho h)$} \\
-\hline
-T & 1 & $(\ut+w_0)(\rho_0+\rho^\prime) X          $ & $(\ut+w_0)(\rho h)^\prime + \ut (\rho h)_0$ & N & Y & 0 & $ (\tilde{w} \frac{\partial p_0}{\partial r}) $ \\
-T & 2 & $(\ut+w_0)(\rho_0+\rho^\prime) X          $ & $(\ut+w_0) (\rho_0+\rho^\prime) h$ & N & N & 0 & $ (\psi + \tilde{w} \frac{\partial p_0}{\partial r}) $ \\
-T & 3 & $(\ut+w_0)(\rho_0+\rho^\prime) X          $ & $(\ut+w_0)(\rho h)^\prime + \ut (\rho h)_0$ & N & Y & 0 & $ (\tilde{w} \frac{\partial p_0}{\partial r}) $ \\
-T & 4 & $(\ut+w_0)(\rho_0+\rho^\prime) X          $ & $(\ut+w_0) (\rho_0+\rho^\prime) h$ & N & N & 0 & $ (\psi + \tilde{w} \frac{\partial p_0}{\partial r}) $ \\
-\hline
-\end{tabular}
-\end{center}
-\end{table*}
-
 \end{document}
