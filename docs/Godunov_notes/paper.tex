@@ -209,7 +209,7 @@ Next, we solve a Riemann problem:
 \wt_{R,\ib-\half\eb_r}^{\mac,*}, & w_L^{\mac,*} + w_R^{\mac,*} < 0. 
 \end{cases}
 \end{equation}
-We then project $\Ub^{\mac,*}$ to obtain $\Ub^{\mac}$ and we call {\tt addw0} to compute $\Ub^{\mac}$ from $\Ubt^{\mac}$.
+We then project $\Ubt^{\mac,*}$ to obtain $\Ubt^{\mac}$ and we call {\tt addw0} to compute $\Ub^{\mac}$ from $\Ubt^{\mac}$.
 %\subsection{3D Cartesian Case}
 %\subsection{3D Spherical Case}
 \cleardoublepage
@@ -429,7 +429,7 @@ Then, we upwind based on $w^{\mac}$:
 \subsection{2D Cartesian Case}
 We do a 1D Taylor series extrapolation to get both components of velocity at the x-face:
 \begin{eqnarray}
-\Ub_{L,\ib-\half\eb_x}^{1D} &=& \Ub_{\ib-\eb_x} + \left(\half - \frac{\dt}{2h}u_{\ib-\eb_x}\right){\rm max}(0,\Delta_x\Ub_{\ib-\eb_x}), \\
+\Ub_{L,\ib-\half\eb_x}^{1D} &=& \Ub_{\ib-\eb_x} + \left(\half - \frac{\dt}{2h}u_{\ib-\eb_x}\right){\rm max}(0,\Delta_x\Ub_{\ib-\eb_x}), \label{varden U_L^1D} \\
 \Ub_{R,\ib-\half\eb_x}^{1D} &=& \Ub_{\ib} + \left(\half - \frac{\dt}{2h}u_{\ib}\right){\rm min}(0,\Delta_x\Ub_{\ib}).
 \end{eqnarray}
 The normal velocity Riemann problem is:
@@ -448,7 +448,7 @@ v_{\ib-\half\eb_x}^{1D} =
 \half\left(v_{L,\ib-\half\eb_x}^{1D} + v_{R,\ib-\half\eb_x}^{1D}\right), & \left|u_{\ib-\half\eb_x}^{1D}\right| < \epsilon \\
 v_{L,\ib-\half\eb_x}^{1D}, & u_{\ib-\half\eb_x}^{1D} > 0, \\
 v_{R,\ib-\half\eb_x}^{1D}, & u_{\ib-\half\eb_x}^{1D} < 0.
-\end{cases}
+\end{cases}\label{Transverse Velocity Riemann Problem}
 \end{equation}
 Do the exact analogous thing to get both components of velocity at the y-face, $\Ub_{\ib-\half\eb_y}^{1D}$. \\
 
@@ -466,18 +466,42 @@ u_{\ib-\half\eb_x}^{\mac,*} =
 0, & \left(u_{L,\ib-\half\eb_x}^{\mac,*} \le 0 ~ {\rm AND} ~ u_{R,\ib-\half\eb_x}^{\mac,*} \ge 0\right) ~ {\rm OR} ~ \left|u_{L,\ib-\half\eb_x}^{\mac,*} + u_{R,\ib-\half\eb_x}^{\mac,*}\right| < \epsilon, \\
 u_{L,\ib-\half\eb_x}^{\mac,*}, & u_{L,\ib-\half\eb_x}^{\mac,*} + u_{R,\ib-\half\eb_x}^{\mac,*} > 0, \\
 u_{R,\ib-\half\eb_x}^{\mac,*}, & u_{L,\ib-\half\eb_x}^{\mac,*} + u_{R,\ib-\half\eb_x}^{\mac,*} < 0.
-\end{cases}
+\end{cases}\label{umac Riemann Problem}
 \end{equation}
 Use the exact analogous procedure to obtain $v^{\mac,*}_{\ib-\half\eb_y}$.
-%\subsection{3D Cartesian Case}
+\subsection{3D Cartesian Case}
+This is more complicated than the 2D case because we include corner coupling.  We compute $\Ub_{\ib-\half\eb_x}, \Ub_{\ib-\half\eb_y}$, and $\Ub_{\ib-\half\eb_z}$ in an analogous manner as equations (\ref{varden U_L^1D})-(\ref{Transverse Velocity Riemann Problem}).  Then, we compute an intermediate state, $u_{\ib-\half\eb_y}^{y|z}$, which is described as ``state $u_{\ib-\half\eb_y}^{1D}$ that has been updated to account for the transverse fluxes in the z direction'', using:
+\begin{eqnarray}
+u_{L,\ib-\half\eb_y}^{y|z} &=& u_{L,\ib-\half\eb_y}^{1D} - \frac{\dt}{6h}\left(w_{\ib-\eb_y+\half\eb_z}^{1D}+w_{\ib-\eb_y-\half\eb_z}^{1D}\right)\left(u_{\ib-\eb_y+\half\eb_z}^{1D}-u_{\ib-\eb_y-\half\eb_z}^{1D}\right), \\
+u_{R,\ib-\half\eb_y}^{y|z} &=& u_{R,\ib-\half\eb_y}^{1D} - \frac{\dt}{6h}\left(w_{\ib+\half\eb_z}^{1D}+w_{\ib-\half\eb_z}^{1D}\right)\left(u_{\ib+\half\eb_z}^{1D}-u_{\ib-\half\eb_z}^{1D}\right).
+\end{eqnarray}
+Then, upwind based on $v_{\ib-\half\eb_y}^{1D}$:
+\begin{equation}
+u_{\ib-\half\eb_y}^{y|z} =
+\begin{cases}
+\half\left(u_{L,\ib-\half\eb_y}^{y|z} + u_{R,\ib-\half\eb_y}^{y|z}\right), & \left|v_{\ib-\half\eb_y}^{1D}\right| < \epsilon \\
+u_{L,\ib-\half\eb_y}^{y|z}, & v_{\ib-\half\eb_y}^{1D} > 0, \\
+u_{R,\ib-\half\eb_y}^{y|z}, & v_{\ib-\half\eb_y}^{1D} < 0.
+\end{cases}
+\end{equation}
+We use an analogous procedure to compute five more intemediate states, $u_{\ib-\half\eb_z}^{z|y}, v_{\ib-\half\eb_x}^{x|z}, v_{\ib-\half\eb_z}^{z|x}, w_{\ib-\half\eb_x}^{x|y}$, and $w_{\ib-\half\eb_y}^{y|x}$.  Then we do a full-dimensional extrapolation to get the MAC velocities at normal faces:
+\begin{eqnarray}
+u_{L,\ib-\half\eb_x}^{\mac,*} &=& u_{L,\ib-\half\eb_x}^{1D} + \frac{\dt}{2}f_{u,\ib-\eb_x} \nonumber \\
+&& - \frac{\dt}{4h}\left(v_{\ib-\eb_x+\half\eb_y}^{1D}+v_{\ib-\eb_x-\half\eb_y}^{1D}\right)\left(u_{\ib-\eb_x+\half\eb_y}^{y|z}-u_{\ib-\eb_x-\half\eb_y}^{y|z}\right) \nonumber \\
+&& - \frac{\dt}{4h}\left(w_{\ib-\eb_x+\half\eb_z}^{1D}+v_{\ib-\eb_x-\half\eb_z}^{1D}\right)\left(u_{\ib-\eb_x+\half\eb_z}^{z|y}-u_{\ib-\eb_x-\half\eb_z}^{z|y}\right), \\
+u_{R,\ib-\half\eb_x}^{\mac,*} &=& u_{R,\ib-\half\eb_x}^{1D} + \frac{\dt}{2}f_{u,\ib} \nonumber \\
+&& - \frac{\dt}{4h}\left(v_{\ib+\half\eb_y}^{1D}+v_{\ib-\half\eb_y}^{1D}\right)\left(u_{\ib+\half\eb_y}^{y|z}-u_{\ib-\half\eb_y}^{y|z}\right) \nonumber \\
+&& - \frac{\dt}{4h}\left(w_{\ib+\half\eb_z}^{1D}+v_{\ib-\half\eb_z}^{1D}\right)\left(u_{\ib+\half\eb_z}^{z|y}-u_{\ib-\half\eb_z}^{z|y}\right).
+\end{eqnarray}
+Then, we use the Riemann solver given above for the 2D case (equation [\ref{umac Riemann Problem}]) to compute $u_{\ib-\half\eb_x}^{\mac,*}$.  We use an analogous procedure to obtain $v_{\ib-\half\eb_y}^{\mac,*}$ and $w_{\ib-\half\eb_z}^{\mac,*}$.
 \cleardoublepage
 \section{Computing $\Ub^{\edge}$ and $\rho^{\edge}$ in {\tt VARDEN}}
 To compute $\Ub^{\edge}$, {\tt VARDEN} uses the exact same algorithm as the $s^{\edge}$ case in {\tt MAESTRO}.  To the algorithm for $\rho^{\edge}$ in {\tt VARDEN} is slightly different than the $s^{\edge}$ case in {\tt MAESTRO} since it uses a ``conservative'' formulation.  
 \subsection{2D Cartesian Case}
 The 1D extrapolation is:
 \begin{eqnarray}
-\rho_{L,\ib-\half\eb_x}^{1D} &=& s_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x \rho_{\ib-\eb_x}^n, \\
-\rho_{R,\ib-\half\eb_x}^{1D} &=& s_{\ib} - \left(\half + \frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x \rho_{\ib}^n.
+\rho_{L,\ib-\half\eb_x}^{1D} &=& s_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x \rho_{\ib-\eb_x}^n, \label{varden rho_L^1D}\\
+\rho_{R,\ib-\half\eb_x}^{1D} &=& s_{\ib} - \left(\half + \frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x \rho_{\ib}^n. \label{varden rho_R^1D}
 \end{eqnarray}
 Then we upwind based on $u^{\mac}$:
 \begin{equation}
@@ -488,7 +512,7 @@ Then we upwind based on $u^{\mac}$:
 \rho_{R,\ib-\half\eb_x}^{1D}, & u^{\mac}_{\ib-\half\eb_x} < 0. \\
 \end{cases}
 \end{equation}
-Now we do a full-dimensional extrapolation of $\rho$ to each face.  The extrapolation of $\rho$ to x-faces is:
+The procedure to obtain $\rho_{\ib-\half\eb_y}^{1D}$ is completely analogous.  Now we do a full-dimensional extrapolation of $\rho$ to each face.  The extrapolation of $\rho$ to x-faces is:
 \begin{eqnarray}
 \rho_{L,\ib-\half\eb_x}^{\edge} &=& \rho_{L,\ib-\half\eb_x}^{1D} + \frac{\dt}{2}f_{\ib-\eb_x} - (\rho\nabla\cdot\Ub^{\mac})_{\ib-\eb_x} \nonumber \\
 &&- \frac{\dt}{2h}\left[(\rho^{1D} v^{\mac})_{\ib-\eb_x+\half\eb_y} - (\rho^{1D} v^{\mac})_{\ib-\eb_x-\half\eb_y}\right] + \frac{\dt}{2h}\rho_{\ib-\eb_x}\left(v_{\ib-\eb_x+\half\eb_y}^{\mac} - v_{\ib-\eb_x-\half\eb_y}^{\mac}\right), \nonumber \\
@@ -505,5 +529,7 @@ Then, we upwind based on $u^{\mac}$.
 \rho_{R,\ib-\half\eb_x}^{\edge}, & u^{\mac}_{\ib-\half\eb_x} < 0.
 \end{cases}
 \end{equation}
-%\subsection{3D Cartesian Case}
+The procedure to obtain $\rho_{\ib-\half\eb_y}^{\edge}$ is completely analogous.
+\subsection{3D Cartesian Case}
+This is more complicated than the 2D case because we include corner coupling.  We compute $\rho_{\ib-\half\eb_x}^{1D}$, $\rho_{\ib-\half\eb_y}^{1D}$, and $\rho_{\ib-\half\eb_z}^{1D}$ in a completely analogous manner to equations (\ref{varden rho_L^1D}) and (\ref{varden rho_R^1D}).
 \end{document}
