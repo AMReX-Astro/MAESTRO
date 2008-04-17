@@ -55,6 +55,7 @@ These are working notes for the Godunov step in {\tt MAESTRO} and {\tt VARDEN}.
 \item {\tt VARDEN} does not use the concept of $\Ub^{\trans}$, but rather in {\tt advance\_premac}, the function {\tt velpred} computes $\Ub^{\mac,*}$ directly.
 \item {\tt VARDEN} uses characteristic tracing in the Taylor series extrapolation for $\Ub^{\mac,*}$.
 \item {\tt VARDEN} uses an ``FPU'' type algorithm to get both $\Ub^{\edge}$ and $s^{\edge}$, whereas {\tt MAESTRO} uses the ``FPU'' algorithm for $s^{\edge}$, but not $\Ub^{\edge}$
+\item The transverse derivative terms in {\tt VARDEN} are done in a conservative formulation, rather than advective.
 \end{enumerate}
 \cleardoublepage
 \section{Computing $\Ubt^{\trans}$ in {\tt MAESTRO}}
@@ -445,8 +446,22 @@ v_{R,\ib-\half\eb_x}^{1D}, & u_{\ib-\half\eb_x}^{1D} < 0.
 Do the exact analogous thing to get both components of velocity at the y-face, $\Ub_{\ib-\half\eb_y}^{1D}$. \\
 
 Now we do a full-dimensional extrapolation to get only the normal velocity at each face:
-
-
+\begin{eqnarray}
+u_L^{\mac} &=& \Ub_{L,\ib-\half\eb_x}^{1D} + \frac{\dt}{2}f_{u,\ib-\eb_x} \nonumber \\
+&-& \frac{\dt}{4h}\left(v_{\ib-\eb_x+\half\eb_y}^{1D}+v_{\ib-\eb_x-\half\eb_y}^{1D}\right)\left(u_{\ib-\eb_x+\half\eb_y}^{1D} - u_{\ib-\eb_x-\half\eb_y}^{1D}\right), \\
+u_R^{\mac} &=& \Ub_{R,\ib-\half\eb_x}^{1D} + \frac{\dt}{2}f_{u,\ib} \nonumber \\
+&-& \frac{\dt}{4h}\left(v_{\ib+\half\eb_y}^{1D}+v_{\ib-\half\eb_y}^{1D}\right)\left(u_{\ib+\half\eb_y}^{1D} - u_{\ib-\half\eb_y}^{1D}\right).
+\end{eqnarray}
+Then, solve a Riemann problem:
+\begin{equation}
+u_{\ib-\half\eb_x}^{\mac} =
+\begin{cases}
+0, & (u_L^{\mac} \le 0 ~ {\rm AND} ~ u_R^{\mac} \ge 0 ~ {\rm OR} ~ |u_L^{\mac} + u_R^{\mac}| < \epsilon, \\
+u_L^{\mac}, & u_L^{\mac} + u_R^{\mac} > 0, \\
+u_R^{\mac}, & u_L^{\mac} + u_R^{\mac} < 0.
+\end{cases}
+\end{equation}
+Use the exact analogous procedure to obtain $v^{\mac}_{\ib-\half\eb_y}$.
 \subsection{3D Cartesian Case}
 \cleardoublepage
 \section{Computing $\Ub^{\edge}$ and $s^{\edge}$ in {\tt VARDEN}}
