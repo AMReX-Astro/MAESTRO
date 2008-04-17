@@ -38,7 +38,7 @@
 \tableofcontents
 \cleardoublepage
 
-These are working notes for the Godunov step in {\tt MAESTRO}.
+These are working notes for the Godunov step in {\tt MAESTRO} and {\tt VARDEN}.
 \section{Differences Between These Notes and the Code}
 \begin{enumerate}
 \item In both equations (\ref{Radial utrans_L}) and (\ref{Radial utrans_R}), we are omitting the terms in equation (\ref{Perturbational Velocity Equation}) proportional to $w_0$ (by using $\wt$ rather than $w$ as the advection speed) and $(\Ubt\cdot\eb_r)$ (by omitting the term altogether).
@@ -48,6 +48,13 @@ These are working notes for the Godunov step in {\tt MAESTRO}.
 \begin{enumerate}
 \item We need to re-examine when to include the term proportional to $(\Ubt\cdot\eb_r)$ in equation (\ref{Perturbational Velocity Equation}) when we do a 1D extrapolation of the radial velocity.  For example, equations (\ref{Radial utrans_L}) and (\ref{Radial utrans_R}) include it, but equations (\ref{1D wt_L extrap}) and (\ref{1D wt_R extrap}) do not.
 \item In equations (\ref{wt_L Extrapolation}) and (\ref{wt_R Extrapolation}), we could also compute the term proportional to $\partial w_0/\partial r$ by averaging $w^{\trans}$.
+\end{enumerate}
+\section{Differences Between {\tt MAESTRO} and {\tt VARDEN}}
+\begin{enumerate}
+\item {\tt VARDEN} does not use the concept of $w_0$, so there is no such thing as $\Ubt$ either.  {\tt VARDEN} only does Cartesian problems.
+\item {\tt VARDEN} does not use the concept of $\Ub^{\trans}$, but rather in {\tt advance\_premac}, the function {\tt velpred} computes $\Ub^{\mac,*}$ directly.
+\item {\tt VARDEN} uses characteristic tracing in the Taylor series extrapolation for $\Ub^{\mac,*}$.
+\item {\tt VARDEN} uses an ``FPU'' type algorithm to get both $\Ub^{\edge}$ and $s^{\edge}$, whereas {\tt MAESTRO} uses the ``FPU'' algorithm for $s^{\edge}$, but not $\Ub^{\edge}$
 \end{enumerate}
 \cleardoublepage
 \section{Computing $\Ubt^{\trans}$ in {\tt MAESTRO}}
