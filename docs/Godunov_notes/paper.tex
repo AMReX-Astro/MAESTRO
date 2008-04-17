@@ -48,7 +48,7 @@ These are working notes for the Godunov step in {\tt MAESTRO} and {\tt VARDEN}.
 \section{Questions}
 \begin{enumerate}
 \item We need to re-examine when to include the term proportional to $(\Ubt\cdot\eb_r)$ in equation (\ref{Perturbational Velocity Equation}) when we do a 1D extrapolation of the radial velocity to r-faces.  For example, equations (\ref{Radial utrans_L}) and (\ref{Radial utrans_R}) include it, but equations (\ref{1D wt_L extrap}) and (\ref{1D wt_R extrap}) do not.
-\item In equations (\ref{wt_L Extrapolation}) and (\ref{wt_R Extrapolation}), (\ref{wt_L x-edge}) and (\ref{wt_R x-edge}), (\ref{wt_L r-edge}) and (\ref{wt_R r-edge}), we could also compute the term proportional to $\partial w_0/\partial r$ by using the cell-centered $\wt$.
+\item In equations (\ref{wt_L Extrapolation}) and (\ref{wt_R Extrapolation}), (\ref{wt_L x-edge}) and (\ref{wt_R x-edge}), (\ref{wt_L r-edge}) and (\ref{wt_R r-edge}), we could also compute the term proportional to $\partial w_0/\partial r$ by using the cell-centered $\wt$ rather than the average of the neighboring $\wt^{\trans}$.
 \end{enumerate}
 \section{Differences Between {\tt MAESTRO} and {\tt VARDEN}}
 \begin{enumerate}
@@ -226,7 +226,7 @@ f_{\rho'} &=& -\rho'\nabla\cdot\Ub^{\mac} - \nabla\cdot(\rho_0\Ubt^{\mac}), \\
 f_{X_k} &=& 0, \\
 f_{(\rho h)'} &=& (\Ubt\cdot\eb_r)\frac{\partial p_0}{\partial r} -(\rho h)'\nabla\cdot\Ub^{\mac} - \nabla\cdot\left[(\rho h)_0\Ubt^{\mac}\right] + \nabla\cdot\kth\nabla T \\
 f_h &=& \frac{1}{\rho}\left(\psi + (\Ubt\cdot\eb_r)\frac{\partial p_0}{\partial r} + \nabla\cdot\kth\nabla T \right), \\
-f_T &=& \frac{1}{\rho c_p}\left\{(1-\rho h_p)\left[\psi + (\Ubt\cdot\eb_r)\frac{\partial p_0}{\partial r}\right] - \sum_k\rho\xi_k\dot\omega_k + \rho H_{\rm nuc} + \rho H_{\rm ext} + \nabla\cdot\kth\nabla T \right\}.
+f_T &=& \frac{1}{\rho c_p}\left\{(1-\rho h_p)\left[\psi + (\Ubt\cdot\eb_r)\frac{\partial p_0}{\partial r}\right] - \sum_k\rho\xi_k\dot\omega_k + \rho H_{\rm nuc} + \rho H_{\rm ext} + \nabla\cdot\kth\nabla T \right\}.\nonumber \\
 \end{eqnarray}
 If {\tt enthalpy\_pred\_type} = 3 or 4, we convert $T^{\edge}$ to $h^{\edge}$ using $h^{\edge} = h^{\edge}(\rho^{\edge},T^{\edge},X_k^{\edge})$, where $\rho^{\edge} = \rho^{'\edge} + \rho_0$.  Furthermore, if {\tt enthalpy\_pred\_type} = 3, we compute $(\rho h)^{'\edge} = (\rho h)^{\edge} - (\rho h)_0$.
 \subsection{2D Cartesian Case}
