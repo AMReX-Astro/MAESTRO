@@ -42,13 +42,13 @@
 These are working notes for the Godunov step in {\tt MAESTRO} and {\tt VARDEN}.
 \section{Differences Between These Notes and the Code}
 \begin{enumerate}
-\item In both equations (\ref{Radial utrans_L}) and (\ref{Radial utrans_R}), we are omitting the terms in equation (\ref{Perturbational Velocity Equation}) proportional to $w_0$ (by using $\wt$ rather than $w$ as the advection speed) and $(\Ubt\cdot\eb_r)$ (by omitting the term altogether).
-\item In equation (\ref{Force Term}), we do not include the term proportional to $\partial\pi_0/\partial r$.
+\item Concerning both equations (\ref{Radial utrans_L}) and (\ref{Radial utrans_R}), in the code we are omitting the terms in equation (\ref{Perturbational Velocity Equation}) proportional to $w_0$ (by using $\wt$ rather than $w$ as the advection speed) and $(\Ubt\cdot\eb_r)$ (by omitting the term altogether).
+\item Concerning (\ref{Force Term}), in the code we are not including the term proportional to $\partial\pi_0/\partial r$.
 \end{enumerate}
 \section{Questions}
 \begin{enumerate}
-\item We need to re-examine when to include the term proportional to $(\Ubt\cdot\eb_r)$ in equation (\ref{Perturbational Velocity Equation}) when we do a 1D extrapolation of the radial velocity.  For example, equations (\ref{Radial utrans_L}) and (\ref{Radial utrans_R}) include it, but equations (\ref{1D wt_L extrap}) and (\ref{1D wt_R extrap}) do not.
-\item In equations (\ref{wt_L Extrapolation}) and (\ref{wt_R Extrapolation}), we could also compute the term proportional to $\partial w_0/\partial r$ by averaging $w^{\trans}$.
+\item We need to re-examine when to include the term proportional to $(\Ubt\cdot\eb_r)$ in equation (\ref{Perturbational Velocity Equation}) when we do a 1D extrapolation of the radial velocity to r-faces.  For example, equations (\ref{Radial utrans_L}) and (\ref{Radial utrans_R}) include it, but equations (\ref{1D wt_L extrap}) and (\ref{1D wt_R extrap}) do not.
+\item In equations (\ref{wt_L Extrapolation}) and (\ref{wt_R Extrapolation}), (\ref{wt_L x-edge}) and (\ref{wt_R x-edge}), (\ref{wt_L r-edge}) and (\ref{wt_R r-edge}), we could also compute the term proportional to $\partial w_0/\partial r$ by using the cell-centered $\wt$.
 \end{enumerate}
 \section{Differences Between {\tt MAESTRO} and {\tt VARDEN}}
 \begin{enumerate}
@@ -195,10 +195,10 @@ Then, we do a full-dimensional extrapolation of $\wt$ to r-faces, incorporating 
 \begin{eqnarray}
 \wt_{L,\ib-\half\eb_r}^{\mac} &=& \wt_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\eb_r}\right)\Delta_r \wt_{\ib-\eb_r}^n + \frac{\dt}{2}f_{w,\ib-\eb_r} \nonumber \\
 && - \frac{\dt}{4h}\left(u_{\ib+\half\eb_x-\eb_r}^{\trans}+u_{\ib-\half\eb_x-\eb_r}^{\trans}\right)\left(\wt_{\ib+\half\eb_x-\eb_r}^{1D} - \wt_{\ib-\half\eb_x-\eb_r}^{1D}\right) \nonumber \\
-&& - \frac{\dt}{2h}\wt_{\ib-\eb_r}(w_{0,j-\half} - w_{0,j-\frac{3}{2}}),\label{wt_L Extrapolation} \\
+&& - \frac{\dt}{4h}\left(\wt_{\ib-\half\eb_r}^{\trans}+\wt_{\ib-\frac{3}{2}\eb_r}^{\trans}\right)(w_{0,\ib-\half\eb_r} - w_{0,\ib-\frac{3}{2}\eb_r}),\label{wt_L Extrapolation} \\
 \wt_{R,\ib-\half\eb_r}^{\mac} &=& \wt_{\ib}^n - \left(\half + \frac{\dt}{2h}w_{\ib}\right)\Delta_r \wt_{\ib}^n + \frac{\dt}{2}f_{w,\ib} \nonumber \\
 && - \frac{\dt}{4h}\left(u_{\ib+\half\eb_x}^{\trans}+u_{\ib-\half\eb_x}^{\trans}\right)\left(\wt_{\ib+\half\eb_x}^{1D} - \wt_{\ib-\half\eb_x}^{1D}\right) \nonumber \\
-&& - \frac{\dt}{2h}\wt_{\ib}(w_{0,j+\half} - w_{0,j-\half}).\label{wt_R Extrapolation}
+&& - \frac{\dt}{4h}\left(\wt_{\ib+\half\eb_r}^{\trans}+\wt_{\ib-\half\eb_r}^{\trans}\right)(w_{0,\ib+\half\eb_r} - w_{0,\ib-\half\eb_r}).\label{wt_R Extrapolation}
 \end{eqnarray}
 Next, we solve a Riemann problem:
 \begin{equation}
@@ -388,10 +388,10 @@ Now we do a full-dimensional extrapolatino of $\wt$ to each face.  This is diffe
 \begin{eqnarray}
 \wt_{L,\ib-\half\eb_x}^{\edge} &=& \wt_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x \wt_{\ib-\eb_x}^n + \frac{\dt}{2}f_{w,\ib-\eb_x} \nonumber \\
 && - \frac{\dt}{4h}\left(w_{\ib-\eb_x+\half\eb_r}^{\trans}+w_{\ib-\eb_x-\half\eb_r}^{\trans}\right)\left(\wt_{\ib-\eb_x+\half\eb_r}^{1D} - \wt_{\ib-\eb_x-\half\eb_r}^{1D}\right) \nonumber \\
-&& - \frac{\dt}{4h}\left(\wt_{\ib-\eb_x+\half\eb_r}^{\trans}+\wt_{\ib-\eb_x-\half\eb_r}^{\trans}\right)\left(w_{0,\ib-\eb_x+\half\eb_r}-w_{0,\ib-\eb_x-\half\eb_r}\right), \\
+&& - \frac{\dt}{4h}\left(\wt_{\ib-\eb_x+\half\eb_r}^{\trans}+\wt_{\ib-\eb_x-\half\eb_r}^{\trans}\right)\left(w_{0,\ib-\eb_x+\half\eb_r}-w_{0,\ib-\eb_x-\half\eb_r}\right), \label{wt_L x-edge} \\
 \wt_{R,\ib-\half\eb_x}^{\edge} &=& \wt_{\ib}^n - \left(\half + \frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x \wt_{\ib}^n + \frac{\dt}{2}f_{w,\ib} \nonumber \\
 && - \frac{\dt}{4h}\left(w_{\ib+\half\eb_r}^{\trans}+w_{\ib-\half\eb_r}^{\trans}\right)\left(\wt_{\ib+\half\eb_r}^{1D} - \wt_{\ib-\half\eb_r}^{1D}\right) \nonumber \\
-&& - \frac{\dt}{4h}\left(\wt_{\ib+\half\eb_r}^{\trans}+\wt_{\ib-\half\eb_r}^{\trans}\right)\left(w_{0,\ib+\half\eb_r}-w_{0,\ib-\half\eb_r}\right).
+&& - \frac{\dt}{4h}\left(\wt_{\ib+\half\eb_r}^{\trans}+\wt_{\ib-\half\eb_r}^{\trans}\right)\left(w_{0,\ib+\half\eb_r}-w_{0,\ib-\half\eb_r}\right). \label{wt_R x-edge}
 \end{eqnarray}
 Then, we upwind based on $u^{\mac}$:
 \begin{equation}
@@ -407,11 +407,11 @@ The full-dimensional extrapolation of $\wt$ to r-faces is:
 \wt_{L,\ib-\half\eb_r}^{\edge} &=& \wt_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\half\eb_r}^{\mac}\right)\Delta_r \wt_{\ib-\eb_r}^n + \frac{\dt}{2}f_{w,\ib-\eb_r} \nonumber \\
 && - \frac{\dt}{4h}\left(u_{\ib+\half\eb_x-\eb_r}^{\trans}+u_{\ib-\half\eb_x-\eb_r}^{\trans}\right)\left(\wt_{\ib+\half\eb_x-\eb_r}^{1D} - \wt_{\ib-\half\eb_x-\eb_r}^{1D}\right) \nonumber \\
 && -
-\frac{\dt}{4h}\left(\wt_{\ib-\half\eb_r}^{\trans}+\wt_{\ib-\frac{3}{2}\eb_r}^{\trans}\right)\left(w_{0,\ib-\half\eb_r}-w_{0,\ib-\frac{3}{2}\eb_r}\right),\\
+\frac{\dt}{4h}\left(\wt_{\ib-\half\eb_r}^{\trans}+\wt_{\ib-\frac{3}{2}\eb_r}^{\trans}\right)\left(w_{0,\ib-\half\eb_r}-w_{0,\ib-\frac{3}{2}\eb_r}\right), \label{wt_L r-edge} \\
 \wt_{R,\ib-\half\eb_r}^{\edge} &=& \wt_{\ib}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\half\eb_r}^{\mac}\right)\Delta_r \wt_{\ib}^n + \frac{\dt}{2}f_{w,\ib} \nonumber \\
 && - \frac{\dt}{4h}\left(u_{\ib+\half\eb_x}^{\trans}+u_{\ib-\half\eb_x}^{\trans}\right)\left(\wt_{\ib+\half\eb_x}^{1D} - \wt_{\ib-\half\eb_x}^{1D}\right) \nonumber \\
 && -
-\frac{\dt}{4h}\left(\wt_{\ib-\half\eb_r}^{\trans}+\wt_{\ib+\half\eb_r}^{\trans}\right)\left(w_{0,\ib+\half\eb_r}-w_{0,\ib-\half\eb_r}\right).
+\frac{\dt}{4h}\left(\wt_{\ib+\half\eb_r}^{\trans}+\wt_{\ib-\half\eb_r}^{\trans}\right)\left(w_{0,\ib+\half\eb_r}-w_{0,\ib-\half\eb_r}\right). \label{wt_R r-edge}
 \end{eqnarray}
 Then, we upwind based on $w^{\mac}$:
 \begin{equation}
