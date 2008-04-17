@@ -419,6 +419,34 @@ Then, we upwind based on $w^{\mac}$:
 \cleardoublepage
 \section{Computing $\Ub^{\mac}$ in {\tt VARDEN}}
 \subsection{2D Cartesian Case}
+We do a 1D Taylor series extrapolation to get both components of velocity at the x-face:
+\begin{eqnarray}
+\Ub_{L,\ib-\half\eb_x}^{1D} &=& \Ub_{\ib-\eb_x} + \left(\half - \frac{\dt}{2h}u_{\ib-\eb_x}\right){\rm max}(0,\Delta_x\Ub_{\ib-\eb_x}), \\
+\Ub_{R,\ib-\half\eb_x}^{1D} &=& \Ub_{\ib} + \left(\half - \frac{\dt}{2h}u_{\ib}\right){\rm min}(0,\Delta_x\Ub_{\ib}).
+\end{eqnarray}
+The normal velocity Riemann problem is:
+\begin{equation}
+u_{\ib-\half\eb_x}^{1D} =
+\begin{cases}
+0, & (u_{L,\ib-\half\eb_x}^{1D} \le 0 ~ {\rm AND} ~ u_{R,\ib-\half\eb_x}^{1D} \ge 0 ~ {\rm OR} ~ |u_{L,\ib-\half\eb_x}^{1D} + u_{R,\ib-\half\eb_x}^{1D}| < \epsilon, \\
+u_{L,\ib-\half\eb_x}^{1D}, & u_{L,\ib-\half\eb_x}^{1D} + u_{R,\ib-\half\eb_x}^{1D} > 0, \\
+u_{R,\ib-\half\eb_x}^{1D}, & u_{L,\ib-\half\eb_x}^{1D} + u_{R,\ib-\half\eb_x}^{1D} < 0.
+\end{cases}
+\end{equation}
+We obtain the transverse velocity by upwinding based on $u_{\ib-\half\eb_x}^{1D}$:
+\begin{equation}
+v_{\ib-\half\eb_x}^{1D} =
+\begin{cases}
+\half(v_{L,\ib-\half\eb_x}^{1D} + v_{R,\ib-\half\eb_x}^{1D}), & \left|u_{\ib-\half\eb_x}^{1D}\right| < \epsilon \\
+v_{L,\ib-\half\eb_x}^{1D}, & u_{\ib-\half\eb_x}^{1D} > 0, \\
+v_{R,\ib-\half\eb_x}^{1D}, & u_{\ib-\half\eb_x}^{1D} < 0.
+\end{cases}
+\end{equation}
+Do the exact analogous thing to get both components of velocity at the y-face, $\Ub_{\ib-\half\eb_y}^{1D}$. \\
+
+Now we do a full-dimensional extrapolation to get only the normal velocity at each face:
+
+
 \subsection{3D Cartesian Case}
 \cleardoublepage
 \section{Computing $\Ub^{\edge}$ and $s^{\edge}$ in {\tt VARDEN}}
