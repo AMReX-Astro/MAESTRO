@@ -9,6 +9,7 @@
 
 \def\half  {\frac{1}{2}}
 \def\dt    {\Delta t}
+\def\kth   {k_{\rm th}}
 
 \def\edge  {\rm EDGE}
 \def\mac   {\rm MAC}
@@ -209,18 +210,23 @@ Next, we solve a Riemann problem:
 \end{cases}
 \end{equation}
 Finally, we call {\tt addw0} to compute $\Ub^{\mac,*}$ from $\Ubt^{\mac,*}$.
-\subsection{3D Cartesian Case}
-\subsection{3D Spherical Case}
+%\subsection{3D Cartesian Case}
+%\subsection{3D Spherical Case}
 \cleardoublepage
 \section{Computing $\rho^{'\edge}, X_k^{\edge}, h^{\edge},$ and $T^{\edge}$ in {\tt MAESTRO}}
-In {\tt scalar\_advance}, we call {\tt make\_edge\_scal} to compute $\rho^{'\edge}, X_k^{\edge}, h^{\edge},$ and $T^{\edge}$ at each edge.  The procedure is the same for each scalar, so we shall simply denote the scalar as $s$. \\
-
+In {\tt scalar\_advance}, we call {\tt make\_edge\_scal} to compute $\rho^{'\edge}, X_k^{\edge}, h^{\edge},$ and $T^{\edge}$ at each edge.  The procedure is the same for each scalar, so we shall simply denote the scalar as $s$.  We always need to compute $\rho'$ and $X_k$ to edges.
+\begin{itemize}
+\item For {\tt enthalpy\_pred\_type} = 1, we predict $(\rho h)'$ to edges.
+\item For {\tt enthalpy\_pred\_type} = 2, we predict $h$ to edges.
+\item For {\tt enthalpy\_pred\_type} = 3 and 4, we predict $T$ to edges.
+\end{itemize}
 The force terms are:
 \begin{eqnarray}
 f_{\rho'} &=& -\rho'\nabla\cdot\Ub^{\mac} - \nabla\cdot(\rho_0\Ubt^{\mac}), \\
 f_{X_k} &=& 0, \\
-f_h &=& \frac{1}{\rho}\left(\psi + (\Ubt\cdot\eb_r)\frac{\partial p_0}{\partial r} \right), \\
-f_T &=& \frac{1}{\rho c_p}\left\{(1-\rho h_p)\left[\psi + (\Ubt\cdot\eb_r)\frac{\partial p_0}{\partial r}\right] - \sum_k\rho\xi_k\dot\omega_k + \rho H_{\rm nuc} + \rho H_{\rm ext}\right\}.
+f_{(\rho h)'} &=& (\Ubt\cdot\eb_r)\frac{\partial p_0}{\partial r} -(\rho h)'\nabla\cdot\Ub^{\mac} - \nabla\cdot\left[(\rho h)_0\Ubt^{\mac}\right] + \nabla\cdot\kth\nabla T \\
+f_h &=& \frac{1}{\rho}\left(\psi + (\Ubt\cdot\eb_r)\frac{\partial p_0}{\partial r} + \nabla\cdot\kth\nabla T \right), \\
+f_T &=& \frac{1}{\rho c_p}\left\{(1-\rho h_p)\left[\psi + (\Ubt\cdot\eb_r)\frac{\partial p_0}{\partial r}\right] - \sum_k\rho\xi_k\dot\omega_k + \rho H_{\rm nuc} + \rho H_{\rm ext} + \nabla\cdot\kth\nabla T \right\}.
 \end{eqnarray}
 \subsection{2D Cartesian Case}
 We begin by computing a time-centered 1D extrapolation of $s$ to all faces.  The extrapolation of $s$ to x-faces is:
@@ -283,8 +289,8 @@ s_{L,\ib-\half\eb_r}^{\edge}, & u^{\mac}_{\ib-\half\eb_r} > 0, \\
 s_{R,\ib-\half\eb_r}^{\edge}, & u^{\mac}_{\ib-\half\eb_r} < 0.
 \end{cases}
 \end{equation}
-\subsection{3D Cartesian Case}
-\subsection{3D Spherical Case}
+%\subsection{3D Cartesian Case}
+%\subsection{3D Spherical Case}
 \cleardoublepage
 \section{Computing $\Ubt^{\edge}$ in {\tt MAESTRO}}
 In {\tt velocity\_advance}, we call {\tt make\_edge\_state} to compute $\Ubt^{\edge}$.  Unlike when we computed $\Ubt^{\trans}$ and $\Ubt^{\mac,*}$, we need all components of velocity at each face.
@@ -415,8 +421,8 @@ Then, we upwind based on $w^{\mac}$:
 \wt_{R,\ib-\half\eb_r}^{\edge}, & w^{\mac}_{\ib-\half\eb_r} < 0.
 \end{cases}
 \end{equation}
-\subsection{3D Cartesian Case}
-\subsection{3D Spherical Case}
+%\subsection{3D Cartesian Case}
+%\subsection{3D Spherical Case}
 \cleardoublepage
 \section{Computing $\Ub^{\mac}$ in {\tt VARDEN}}
 \subsection{2D Cartesian Case}
@@ -462,10 +468,12 @@ u_{R,\ib-\half\eb_x}^{\mac}, & u_{L,\ib-\half\eb_x}^{\mac} + u_{R,\ib-\half\eb_x
 \end{cases}
 \end{equation}
 Use the exact analogous procedure to obtain $v^{\mac}_{\ib-\half\eb_y}$.
-\subsection{3D Cartesian Case}
+%\subsection{3D Cartesian Case}
 \cleardoublepage
 \section{Computing $\Ub^{\edge}$ and $\rho^{\edge}$ in {\tt VARDEN}}
-To compute $\Ub^{\edge}$, {\tt VARDEN} uses the exact same algorithm as the $s^{\edge}$ case in {\tt MAESTRO}.  To the algorithm for $\rho^{\edge}$ in {\tt VARDEN} is slightly different than the $s^{\edge}$ case in {\tt MAESTRO} since it uses a ``conservative'' formulation.  In particular:
+To compute $\Ub^{\edge}$, {\tt VARDEN} uses the exact same algorithm as the $s^{\edge}$ case in {\tt MAESTRO}.  To the algorithm for $\rho^{\edge}$ in {\tt VARDEN} is slightly different than the $s^{\edge}$ case in {\tt MAESTRO} since it uses a ``conservative'' formulation.  
+\subsection{2D Cartesian Case}
+The 1D extrapolation is:
 \begin{eqnarray}
 \rho_{L,\ib-\half\eb_x}^{1D} &=& s_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x \rho_{\ib-\eb_x}^n, \\
 \rho_{R,\ib-\half\eb_x}^{1D} &=& s_{\ib} - \left(\half + \frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x \rho_{\ib}^n.
@@ -496,58 +504,9 @@ Then, we upwind based on $u^{\mac}$.
 \rho_{R,\ib-\half\eb_x}^{\edge}, & u^{\mac}_{\ib-\half\eb_x} < 0.
 \end{cases}
 \end{equation}
-\subsection{2D Cartesian Case}
-\subsection{3D Cartesian Case}
+%\subsection{3D Cartesian Case}
 \cleardoublepage
 \section{Notes on {\tt enthalpy\_pred\_type} in {\tt MAESTRO}}
-\begin{table*}
-\begin{center}
-\caption{Forcing term into make edge scal \newline}
-\begin{tabular}{|c|c|c|}
-\multicolumn{1}{c}{PRED X}   & \multicolumn{1}{c}{Force} \\
-\hline
-  &   \\
-T $(X)$ & $0$ \\
-  &   \\
-T $(\rho^\prime)$ & $-\rho^\prime \; \nabla \cdot (\ut+w_0 \eb_r) - \nabla \cdot (\ut \rho_0) $  \\
-  &   \\
-\hline
-\end{tabular}
-\end{center}
-\begin{center}
-\begin{tabular}{|c|c|}
-\multicolumn{1}{c}{H PRED TYPE}   & \multicolumn{1}{c}{Force} \\
-\hline
-   & \\
- 1 $((\rho h)^\prime)$ &  $(\tilde{w} \frac{\partial p_0}{\partial r}) - (\rho h)^\prime \; \nabla \cdot (\ut+w_0 \eb_r) - \nabla \cdot (\ut (\rho h)_0) $  \\
-   & \\
- 2 $(h)$ & $\frac{1}{\rho} (\psi + \tilde{w} \frac{\partial p_0}{\partial r})$  \\
-   & \\
- 3 $(T)$ & $\frac{1}{\rho c_p} \left[ (1 - \rho h_p) (\psi + \tilde{w} \frac{\partial p_0}{\partial r}) \right]$ \\
-   & \\
- 4 $(T)$ & $\frac{1}{\rho c_p} \left[ (1 - \rho h_p) (\psi + \tilde{w} \frac{\partial p_0}{\partial r}) \right]$ \\
-   & \\
-\hline
-\end{tabular}
-\end{center}
-\end{table*}
-
-
-\begin{table*}
-\begin{center}
-\caption{Quantity that goes into and out of make edge scal \newline}
-\begin{tabular}{|c|c|c|c|}
-\multicolumn{2}{c}{PREDICT} & \multicolumn{1}{c}{} & \multicolumn{1}{c}{} \\
-\multicolumn{1}{c}{X} & \multicolumn{1}{c}{h pred type} & \multicolumn{1}{c}{Species } & \multicolumn{1}{c}{h/T } \\
-\hline
-T & 1 & $X$ and $\rho^\prime$ & $(\rho h)^\prime$ \\
-T & 2 & $X$ and $\rho^\prime$ & $h$  \\
-T & 3 & $X$ and $\rho^\prime$ & $T$  \\
-T & 4 & $X$ and $\rho^\prime$ & $T$  \\
-\hline
-\end{tabular}
-\end{center}
-\end{table*}
 
 \begin{table*}
 \begin{center}
