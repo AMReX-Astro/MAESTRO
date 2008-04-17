@@ -24,7 +24,7 @@
 \def\vt    {\tilde{v}}
 \def\wt    {\tilde{w}}
 
-\title{Notes on the Godunov Step in {\tt MAESTRO}}
+\title{Notes on the Godunov Step in {\tt MAESTRO} and {\tt VARDEN}}
 
 \setlength{\marginparwidth}{0.75in}
 \newcommand{\MarginPar}[1]{\marginpar{%
@@ -35,6 +35,8 @@
 \begin{document}
 
 \maketitle
+\tableofcontents
+\cleardoublepage
 
 These are working notes for the Godunov step in {\tt MAESTRO}.
 \section{Differences Between These Notes and the Code}
@@ -47,7 +49,8 @@ These are working notes for the Godunov step in {\tt MAESTRO}.
 \item We need to re-examine when to include the term proportional to $(\Ubt\cdot\eb_r)$ in equation (\ref{Perturbational Velocity Equation}) when we do a 1D extrapolation of the radial velocity.  For example, equations (\ref{Radial utrans_L}) and (\ref{Radial utrans_R}) include it, but equations (\ref{1D wt_L extrap}) and (\ref{1D wt_R extrap}) do not.
 \item In equations (\ref{wt_L Extrapolation}) and (\ref{wt_R Extrapolation}), we could also compute the term proportional to $\partial w_0/\partial r$ by averaging $w^{\trans}$.
 \end{enumerate}
-\section{Computing $\Ubt^{\trans}$}
+\cleardoublepage
+\section{Computing $\Ubt^{\trans}$ in {\tt MAESTRO}}
 In {\tt advance\_premac}, we call the function {\tt mkutrans}, which computes the edge-centered transverse velocities, $\Ubt^{\trans}$.  These transverse velocities do not contain $w_0$, so immediately following the call to {\tt mkutrans}, we call {\tt addw0} to compute $\Ub^{\trans}$ from $\Ubt^{\trans}$.  We will only compute the normal component of velocity at each face.\\
 
 The evolution equation for the perturbational velocity is:
@@ -120,7 +123,8 @@ We first construct $\Ub$ by mapping $w_0$ onto a Cartesian array and adding it t
 \ut_R &=& \ut_{\ib}^n - \left(\half + \frac{\dt}{2h}u_{\ib}^n\right)\Delta_x\ut_{\ib}^n - \frac{\dt}{2}\left[(\Ubt^n\cdot\eb_r)\left(\frac{\partial w_0}{\partial r}\right)(\eb_r\cdot\eb_x)\right]_{\ib}.
 \end{eqnarray}
 Then, we use the same Riemann solver as the Cartesian case to obtain $\ut^{\trans}$.  To compute $\vt^{\trans}$ (or $\wt^{\trans}$), simply replace all instaces of $\ut$ with $\vt$ (or $\wt$) and all instaces of $x$ with $y$ (or $z$).  Finally, we call {\tt addw0} to compute $\Ub^{\trans}$ from $\Ubt^{\trans}$.
-\section{Computing $\Ubt^{\mac,*}$}
+\cleardoublepage
+\section{Computing $\Ubt^{\mac,*}$ in {\tt MAESTRO}}
 In {\tt advance\_premac}, we call {\tt make\_edge\_state} to compute $\Ubt^{\mac,*}$.  We will only compute the normal component of velocity at each face.\\
 
 The force terms are:
@@ -199,7 +203,8 @@ Next, we solve a Riemann problem:
 Finally, we call {\tt addw0} to compute $\Ub^{\mac,*}$ from $\Ubt^{\mac,*}$.
 \subsection{3D Cartesian Case}
 \subsection{3D Spherical Case}
-\section{Computing $\rho^{'\edge}, X_k^{\edge}, h^{\edge},$ and $T^{\edge}$}
+\cleardoublepage
+\section{Computing $\rho^{'\edge}, X_k^{\edge}, h^{\edge},$ and $T^{\edge}$ in {\tt MAESTRO}}
 In {\tt scalar\_advance}, we call {\tt make\_edge\_scal} to compute $\rho^{'\edge}, X_k^{\edge}, h^{\edge},$ and $T^{\edge}$ at each edge.  The procedure is the same for each scalar, so we shall simply denote the scalar as $s$. \\
 
 The force terms are:
@@ -272,7 +277,8 @@ s_{R,\ib-\half\eb_r}^{\edge}, & u^{\mac}_{\ib-\half\eb_r} < 0.
 \end{equation}
 \subsection{3D Cartesian Case}
 \subsection{3D Spherical Case}
-\section{Computing $\Ubt^{\edge}$}
+\cleardoublepage
+\section{Computing $\Ubt^{\edge}$ in {\tt MAESTRO}}
 In {\tt velocity\_advance}, we call {\tt make\_edge\_state} to compute $\Ubt^{\edge}$.  Unlike when we computed $\Ubt^{\trans}$ and $\Ubt^{\mac,*}$, we need all components of velocity at each face.
 \subsection{2D Cartesian Case}
 We begin by computing a time-centered 1D extrapolation of $u$ to all faces.  The extrapolation of $u$ to x-faces is:
@@ -404,7 +410,15 @@ Then, we upwind based on $w^{\mac}$:
 \subsection{3D Cartesian Case}
 \subsection{3D Spherical Case}
 \cleardoublepage
-\section{Forces}
+\section{Computing $\Ub^{\mac}$ in {\tt VARDEN}}
+\subsection{2D Cartesian Case}
+\subsection{3D Cartesian Case}
+\cleardoublepage
+\section{Computing $\Ub^{\edge}$ and $s^{\edge}$ in {\tt VARDEN}}
+\subsection{2D Cartesian Case}
+\subsection{3D Cartesian Case}
+\cleardoublepage
+\section{Notes on {\tt enthalpy\_pred\_type} in {\tt MAESTRO}}
 \begin{table*}
 \begin{center}
 \caption{Forcing term into make edge scal \newline}
