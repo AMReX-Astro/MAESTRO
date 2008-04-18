@@ -244,7 +244,7 @@ s_{L,\ib-\half\eb_x}^{1D}, & u^{\mac}_{\ib-\half\eb_x} > 0, \\
 s_{R,\ib-\half\eb_x}^{1D}, & u^{\mac}_{\ib-\half\eb_x} < 0. \\
 \end{cases}
 \end{equation}
-The extrapolation of $u$ to r-faces is completely analogous to the x-faces:
+The extrapolation of $u$ to r-faces is analogous to the extrapolation to x-faces:
 \begin{eqnarray}
 s_{L,\ib-\half\eb_r}^{1D} &=& s_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\half\eb_r}^{\mac}\right)\Delta_r s_{\ib-\eb_r}^n, \\
 s_{R,\ib-\half\eb_r}^{1D} &=& s_{\ib} - \left(\half + \frac{\dt}{2h}w_{\ib-\half\eb_r}^{\mac}\right)\Delta_r s_{\ib}^n.
@@ -274,7 +274,7 @@ s_{L,\ib-\half\eb_x}^{\edge}, & u^{\mac}_{\ib-\half\eb_x} > 0, \\
 s_{R,\ib-\half\eb_x}^{\edge}, & u^{\mac}_{\ib-\half\eb_x} < 0.
 \end{cases}
 \end{equation}
-The full-dimensional extrapolation of $s$ to r-faces is completely analogous to the x-faces:
+The full-dimensional extrapolation of $s$ to r-faces is analogous to the extrapolation to x-faces:
 \begin{eqnarray}
 s_{L,\ib-\half\eb_r}^{\edge} &=& s_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\half\eb_r}^{\mac}\right)\Delta_r s_{\ib-\eb_r}^n + \frac{\dt}{2}f_{s,\ib-\eb_r} \nonumber \\
 && - \frac{\dt}{4h}\left(u_{\ib+\half\eb_x-\eb_r}^{\mac}+u_{\ib-\half\eb_x-\eb_r}^{\mac}\right)\left(s_{\ib+\half\eb_x-\eb_r}^{1D} - s_{\ib-\half\eb_x-\eb_r}^{1D}\right),  \\
@@ -432,7 +432,7 @@ We do a 1D Taylor series extrapolation to get both components of velocity at the
 \Ub_{L,\ib-\half\eb_x}^{1D} &=& \Ub_{\ib-\eb_x} + \left(\half - \frac{\dt}{2h}u_{\ib-\eb_x}\right){\rm max}(0,\Delta_x\Ub_{\ib-\eb_x}), \label{varden U_L^1D} \\
 \Ub_{R,\ib-\half\eb_x}^{1D} &=& \Ub_{\ib} + \left(\half - \frac{\dt}{2h}u_{\ib}\right){\rm min}(0,\Delta_x\Ub_{\ib}).
 \end{eqnarray}
-The normal velocity Riemann problem is:
+We obtain the normal velocity using the Riemann problem:
 \begin{equation}
 u_{\ib-\half\eb_x}^{1D} =
 \begin{cases}
@@ -450,16 +450,16 @@ v_{L,\ib-\half\eb_x}^{1D}, & u_{\ib-\half\eb_x}^{1D} > 0, \\
 v_{R,\ib-\half\eb_x}^{1D}, & u_{\ib-\half\eb_x}^{1D} < 0.
 \end{cases}\label{Transverse Velocity Riemann Problem}
 \end{equation}
-Do the exact analogous thing to get both components of velocity at the y-face, $\Ub_{\ib-\half\eb_y}^{1D}$. \\
+We perform analogous operations to compute both components of velocity at the y-faces, $\Ub_{\ib-\half\eb_y}^{1D}$. \\
 
-Now we do a full-dimensional extrapolation to get only the normal velocity at each face:
+Now we do a full-dimensional extrapolation to get the MAC velocity at the x-faces (note that we only compute the normal components):
 \begin{eqnarray}
 u_{L,\ib-\half\eb_x}^{\mac,*} &=& \Ub_{L,\ib-\half\eb_x}^{1D} + \frac{\dt}{2}f_{u,\ib-\eb_x} \nonumber \\
 &-& \frac{\dt}{4h}\left(v_{\ib-\eb_x+\half\eb_y}^{1D}+v_{\ib-\eb_x-\half\eb_y}^{1D}\right)\left(u_{\ib-\eb_x+\half\eb_y}^{1D} - u_{\ib-\eb_x-\half\eb_y}^{1D}\right), \\
 u_{R,\ib-\half\eb_x}^{\mac,*} &=& \Ub_{R,\ib-\half\eb_x}^{1D} + \frac{\dt}{2}f_{u,\ib} \nonumber \\
 &-& \frac{\dt}{4h}\left(v_{\ib+\half\eb_y}^{1D}+v_{\ib-\half\eb_y}^{1D}\right)\left(u_{\ib+\half\eb_y}^{1D} - u_{\ib-\half\eb_y}^{1D}\right).
 \end{eqnarray}
-Then, solve a Riemann problem:
+Then, we solve a Riemann problem:
 \begin{equation}
 u_{\ib-\half\eb_x}^{\mac,*} =
 \begin{cases}
@@ -468,9 +468,9 @@ u_{L,\ib-\half\eb_x}^{\mac,*}, & u_{L,\ib-\half\eb_x}^{\mac,*} + u_{R,\ib-\half\
 u_{R,\ib-\half\eb_x}^{\mac,*}, & u_{L,\ib-\half\eb_x}^{\mac,*} + u_{R,\ib-\half\eb_x}^{\mac,*} < 0.
 \end{cases}\label{umac Riemann Problem}
 \end{equation}
-Use the exact analogous procedure to obtain $v^{\mac,*}_{\ib-\half\eb_y}$.
+We perform analogous operations to compute the normal velocity at the y-faces, $v^{\mac,*}_{\ib-\half\eb_y}$.
 \subsection{3D Cartesian Case}
-This is more complicated than the 2D case because we include corner coupling.  We compute $\Ub_{\ib-\half\eb_x}, \Ub_{\ib-\half\eb_y}$, and $\Ub_{\ib-\half\eb_z}$ in an analogous manner as equations (\ref{varden U_L^1D})-(\ref{Transverse Velocity Riemann Problem}).  Then, we compute an intermediate state, $u_{\ib-\half\eb_y}^{y|z}$, which is described as ``state $u_{\ib-\half\eb_y}^{1D}$ that has been updated to account for the transverse fluxes in the z direction'', using:
+This is more complicated than the 2D case because we include corner coupling.  We compute $\Ub_{\ib-\half\eb_x}^{1D}, \Ub_{\ib-\half\eb_y}^{1D}$, and $\Ub_{\ib-\half\eb_z}^{1D}$ in an analogous manner as equations (\ref{varden U_L^1D})-(\ref{Transverse Velocity Riemann Problem}).  Then, we compute an intermediate state, $u_{\ib-\half\eb_y}^{y|z}$, which is described as ``state $u_{\ib-\half\eb_y}^{1D}$ that has been updated to account for the transverse derivatives in the z direction'', using:
 \begin{eqnarray}
 u_{L,\ib-\half\eb_y}^{y|z} &=& u_{L,\ib-\half\eb_y}^{1D} - \frac{\dt}{6h}\left(w_{\ib-\eb_y+\half\eb_z}^{1D}+w_{\ib-\eb_y-\half\eb_z}^{1D}\right)\left(u_{\ib-\eb_y+\half\eb_z}^{1D}-u_{\ib-\eb_y-\half\eb_z}^{1D}\right), \\
 u_{R,\ib-\half\eb_y}^{y|z} &=& u_{R,\ib-\half\eb_y}^{1D} - \frac{\dt}{6h}\left(w_{\ib+\half\eb_z}^{1D}+w_{\ib-\half\eb_z}^{1D}\right)\left(u_{\ib+\half\eb_z}^{1D}-u_{\ib-\half\eb_z}^{1D}\right).
@@ -491,45 +491,51 @@ u_{L,\ib-\half\eb_x}^{\mac,*} &=& u_{L,\ib-\half\eb_x}^{1D} + \frac{\dt}{2}f_{u,
 && - \frac{\dt}{4h}\left(w_{\ib-\eb_x+\half\eb_z}^{1D}+v_{\ib-\eb_x-\half\eb_z}^{1D}\right)\left(u_{\ib-\eb_x+\half\eb_z}^{z|y}-u_{\ib-\eb_x-\half\eb_z}^{z|y}\right), \\
 u_{R,\ib-\half\eb_x}^{\mac,*} &=& u_{R,\ib-\half\eb_x}^{1D} + \frac{\dt}{2}f_{u,\ib} \nonumber \\
 && - \frac{\dt}{4h}\left(v_{\ib+\half\eb_y}^{1D}+v_{\ib-\half\eb_y}^{1D}\right)\left(u_{\ib+\half\eb_y}^{y|z}-u_{\ib-\half\eb_y}^{y|z}\right) \nonumber \\
-&& - \frac{\dt}{4h}\left(w_{\ib+\half\eb_z}^{1D}+v_{\ib-\half\eb_z}^{1D}\right)\left(u_{\ib+\half\eb_z}^{z|y}-u_{\ib-\half\eb_z}^{z|y}\right).
+&& - \frac{\dt}{4h}\left(w_{\ib+\half\eb_z}^{1D}+w_{\ib-\half\eb_z}^{1D}\right)\left(u_{\ib+\half\eb_z}^{z|y}-u_{\ib-\half\eb_z}^{z|y}\right).
 \end{eqnarray}
 Then, we use the Riemann solver given above for the 2D case (equation [\ref{umac Riemann Problem}]) to compute $u_{\ib-\half\eb_x}^{\mac,*}$.  We use an analogous procedure to obtain $v_{\ib-\half\eb_y}^{\mac,*}$ and $w_{\ib-\half\eb_z}^{\mac,*}$.
 \cleardoublepage
 \section{Computing $\Ub^{\edge}$ and $\rho^{\edge}$ in {\tt VARDEN}}
-To compute $\Ub^{\edge}$, {\tt VARDEN} uses the exact same algorithm as the $s^{\edge}$ case in {\tt MAESTRO}.  To the algorithm for $\rho^{\edge}$ in {\tt VARDEN} is slightly different than the $s^{\edge}$ case in {\tt MAESTRO} since it uses a ``conservative'' formulation.  
+To compute $\Ub^{\edge}$, {\tt VARDEN} uses the exact same algorithm as the $s^{\edge}$ case in {\tt MAESTRO}.  The algorithm for $\rho^{\edge}$ in {\tt VARDEN} is slightly different than the $s^{\edge}$ case in {\tt MAESTRO} since it uses a ``conservative'' formulation.  Here, $s$ is used in place of either $\rho, u, v$, or $w$ (in 3D).
 \subsection{2D Cartesian Case}
 The 1D extrapolation is:
 \begin{eqnarray}
-\rho_{L,\ib-\half\eb_x}^{1D} &=& s_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x \rho_{\ib-\eb_x}^n, \label{varden rho_L^1D}\\
-\rho_{R,\ib-\half\eb_x}^{1D} &=& s_{\ib} - \left(\half + \frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x \rho_{\ib}^n. \label{varden rho_R^1D}
+s_{L,\ib-\half\eb_x}^{1D} &=& s_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x s_{\ib-\eb_x}^n, \label{varden s_L^1D}\\
+s_{R,\ib-\half\eb_x}^{1D} &=& s_{\ib} - \left(\half + \frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x s_{\ib}^n. \label{varden s_R^1D}
 \end{eqnarray}
 Then we upwind based on $u^{\mac}$:
 \begin{equation}
-\rho_{\ib-\half\eb_x}^{1D} =
+s_{\ib-\half\eb_x}^{1D} =
 \begin{cases}
-\half\left(\rho_{L,\ib-\half\eb_x}^{1D} + \rho_{R,\ib-\half\eb_x}^{1D}\right), & \left|u^{\mac}_{\ib-\half\eb_x}\right| < \epsilon \\
-\rho_{L,\ib-\half\eb_x}^{1D}, & u^{\mac}_{\ib-\half\eb_x} > 0, \\
-\rho_{R,\ib-\half\eb_x}^{1D}, & u^{\mac}_{\ib-\half\eb_x} < 0. \\
+\half\left(s_{L,\ib-\half\eb_x}^{1D} + s_{R,\ib-\half\eb_x}^{1D}\right), & \left|u^{\mac}_{\ib-\half\eb_x}\right| < \epsilon \\
+s_{L,\ib-\half\eb_x}^{1D}, & u^{\mac}_{\ib-\half\eb_x} > 0, \\
+s_{R,\ib-\half\eb_x}^{1D}, & u^{\mac}_{\ib-\half\eb_x} < 0. \\
 \end{cases}
 \end{equation}
-The procedure to obtain $\rho_{\ib-\half\eb_y}^{1D}$ is completely analogous.  Now we do a full-dimensional extrapolation of $\rho$ to each face.  The extrapolation of $\rho$ to x-faces is:
+We use an analogous procedure to obtain $s_{\ib-\half\eb_y}^{1D}$.  Now we do a full-dimensional extrapolation of $s$ to each face.  The extrapolation of a ``conserved'' $s$ to x-faces is:
 \begin{eqnarray}
-\rho_{L,\ib-\half\eb_x}^{\edge} &=& \rho_{L,\ib-\half\eb_x}^{1D} + \frac{\dt}{2}f_{\ib-\eb_x} - (\rho\nabla\cdot\Ub^{\mac})_{\ib-\eb_x} \nonumber \\
-&&- \frac{\dt}{2h}\left[(\rho^{1D} v^{\mac})_{\ib-\eb_x+\half\eb_y} - (\rho^{1D} v^{\mac})_{\ib-\eb_x-\half\eb_y}\right] + \frac{\dt}{2h}\rho_{\ib-\eb_x}\left(v_{\ib-\eb_x+\half\eb_y}^{\mac} - v_{\ib-\eb_x-\half\eb_y}^{\mac}\right), \nonumber \\
+s_{L,\ib-\half\eb_x}^{\edge} &=& s_{L,\ib-\half\eb_x}^{1D} + \frac{\dt}{2}f_{s,\ib-\eb_x} - (s\nabla\cdot\Ub^{\mac})_{\ib-\eb_x} \nonumber \\
+&&- \frac{\dt}{2h}\left[(s^{1D} v^{\mac})_{\ib-\eb_x+\half\eb_y} - (s^{1D} v^{\mac})_{\ib-\eb_x-\half\eb_y}\right] + \frac{\dt}{2h}s_{\ib-\eb_x}\left(v_{\ib-\eb_x+\half\eb_y}^{\mac} - v_{\ib-\eb_x-\half\eb_y}^{\mac}\right), \nonumber \\
 && \\
-\rho_{R,\ib-\half\eb_x}^{\edge} &=& \rho_{R,\ib-\half\eb_x}^{1D} + \frac{\dt}{2}f_{\ib} - (\rho\nabla\cdot\Ub^{\mac})_{\ib} \nonumber \\
-&&- \frac{\dt}{2h}\left[(\rho^{1D} v^{\mac})_{\ib+\half\eb_y} - (\rho^{1D} v^{\mac})_{\ib-\half\eb_y}\right] + \frac{\dt}{2h}\rho_{\ib}\left(v_{\ib+\half\eb_y}^{\mac} - v_{\ib-\half\eb_y}^{\mac}\right).
+s_{R,\ib-\half\eb_x}^{\edge} &=& s_{R,\ib-\half\eb_x}^{1D} + \frac{\dt}{2}f_{s,\ib} - (s\nabla\cdot\Ub^{\mac})_{\ib} \nonumber \\
+&&- \frac{\dt}{2h}\left[(s^{1D} v^{\mac})_{\ib+\half\eb_y} - (s^{1D} v^{\mac})_{\ib-\half\eb_y}\right] + \frac{\dt}{2h}s_{\ib}\left(v_{\ib+\half\eb_y}^{\mac} - v_{\ib-\half\eb_y}^{\mac}\right).
+\end{eqnarray}
+The extrapolation of a ``non-conserved'' $s$ to x-faces is:
+\begin{eqnarray}
+s_{L,\ib-\half\eb_x}^{\edge} &=& s_{L,\ib-\half\eb_x}^{1D} + \frac{\dt}{2}f_{s,\ib-\eb_x} - \frac{\dt}{4h}\left(v_{\ib-\eb_x+\half\eb_y}^{\mac}+v_{\ib-\eb_x-\half\eb_y}^{\mac}\right)\left(s_{\ib-\eb_x+\half\eb_y}^{1D} - s_{\ib-\eb_x-\half\eb_y}^{1D}\right), \nonumber \\
+&& \\
+s_{R,\ib-\half\eb_x}^{\edge} &=& s_{R,\ib-\half\eb_x}^{1D} + \frac{\dt}{2}f_{s,\ib} - \frac{\dt}{4h}\left(v_{\ib+\half\eb_y}^{\mac}+v_{\ib-\half\eb_y}^{\mac}\right)\left(s_{\ib+\half\eb_y}^{1D} - s_{\ib-\half\eb_y}^{1D}\right).
 \end{eqnarray}
 Then, we upwind based on $u^{\mac}$.
 \begin{equation}
-\rho_{\ib-\half\eb_x}^{\edge} =
+s_{\ib-\half\eb_x}^{\edge} =
 \begin{cases}
-\half\left(\rho_{L,\ib-\half\eb_x}^{\edge} + \rho_{R,\ib-\half\eb_x}^{\edge}\right), & \left|u^{\mac}_{\ib-\half\eb_x}\right| < \epsilon \\
-\rho_{L,\ib-\half\eb_x}^{\edge}, & u^{\mac}_{\ib-\half\eb_x} > 0, \\
-\rho_{R,\ib-\half\eb_x}^{\edge}, & u^{\mac}_{\ib-\half\eb_x} < 0.
+\half\left(s_{L,\ib-\half\eb_x}^{\edge} + s_{R,\ib-\half\eb_x}^{\edge}\right), & \left|u^{\mac}_{\ib-\half\eb_x}\right| < \epsilon \\
+s_{L,\ib-\half\eb_x}^{\edge}, & u^{\mac}_{\ib-\half\eb_x} > 0, \\
+s_{R,\ib-\half\eb_x}^{\edge}, & u^{\mac}_{\ib-\half\eb_x} < 0.
 \end{cases}
 \end{equation}
-The procedure to obtain $\rho_{\ib-\half\eb_y}^{\edge}$ is completely analogous.
+We use an analogous procedure to compute $s_{\ib-\half\eb_y}^{\edge}$.
 \subsection{3D Cartesian Case}
-This is more complicated than the 2D case because we include corner coupling.  We compute $\rho_{\ib-\half\eb_x}^{1D}$, $\rho_{\ib-\half\eb_y}^{1D}$, and $\rho_{\ib-\half\eb_z}^{1D}$ in a completely analogous manner to equations (\ref{varden rho_L^1D}) and (\ref{varden rho_R^1D}).
+This is more complicated than the 2D case because we include corner coupling.  We compute $s_{\ib-\half\eb_x}^{1D}$, $s_{\ib-\half\eb_y}^{1D}$, and $s_{\ib-\half\eb_z}^{1D}$ in an analogous manner to equations (\ref{varden s_L^1D}) and (\ref{varden s_R^1D}).
 \end{document}
