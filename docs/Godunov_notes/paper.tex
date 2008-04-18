@@ -509,18 +509,18 @@ s_{L,\ib-\half\eb_x}^{1D}, & u^{\mac}_{\ib-\half\eb_x} > 0, \\
 s_{R,\ib-\half\eb_x}^{1D}, & u^{\mac}_{\ib-\half\eb_x} < 0. \\
 \end{cases}
 \end{equation}
-We use an analogous procedure to obtain $s_{\ib-\half\eb_y}^{1D}$.  Now we do a full-dimensional extrapolation of $s$ to each face.  The extrapolation of a ``conserved'' $s$ to x-faces is:
-\begin{eqnarray}
-s_{L,\ib-\half\eb_x}^{\edge} = s_{L,\ib-\half\eb_x}^{1D} &-& \frac{\dt}{2}s_{\ib-\eb_x}(\nabla\cdot\Ub^{\mac})_{\ib-\eb_x} + \frac{\dt}{2h}s_{\ib-\eb_x}\left(v_{\ib-\eb_x+\half\eb_y}^{\mac} - v_{\ib-\eb_x-\half\eb_y}^{\mac}\right) \nonumber \\
-&-& \frac{\dt}{2h}\left[(s^{1D} v^{\mac})_{\ib-\eb_x+\half\eb_y} - (s^{1D} v^{\mac})_{\ib-\eb_x-\half\eb_y}\right] + \frac{\dt}{2}f_{s,\ib-\eb_x}, \\
-s_{R,\ib-\half\eb_x}^{\edge} = s_{R,\ib-\half\eb_x}^{1D} &-& \frac{\dt}{2}s_{\ib}(\nabla\cdot\Ub^{\mac})_{\ib} + \frac{\dt}{2h}s_{\ib}\left(v_{\ib+\half\eb_y}^{\mac} - v_{\ib-\half\eb_y}^{\mac}\right) \nonumber \\
-&-& \frac{\dt}{2h}\left[(s^{1D} v^{\mac})_{\ib+\half\eb_y} - (s^{1D} v^{\mac})_{\ib-\half\eb_y}\right] + \frac{\dt}{2}f_{s,\ib}.
-\end{eqnarray}
-The extrapolation of a ``non-conserved'' $s$ to x-faces is:
+We use an analogous procedure to obtain $s_{\ib-\half\eb_y}^{1D}$.  Now we do a full-dimensional extrapolation of $s$ to each face.  The extrapolation of a ``non-conserved'' $s$ to x-faces is:
 \begin{eqnarray}
 s_{L,\ib-\half\eb_x}^{\edge} &=& s_{L,\ib-\half\eb_x}^{1D} - \frac{\dt}{4h}\left(v_{\ib-\eb_x+\half\eb_y}^{\mac}+v_{\ib-\eb_x-\half\eb_y}^{\mac}\right)\left(s_{\ib-\eb_x+\half\eb_y}^{1D} - s_{\ib-\eb_x-\half\eb_y}^{1D}\right) + \frac{\dt}{2}f_{s,\ib-\eb_x}, \nonumber \\
 && \\
 s_{R,\ib-\half\eb_x}^{\edge} &=& s_{R,\ib-\half\eb_x}^{1D} - \frac{\dt}{4h}\left(v_{\ib+\half\eb_y}^{\mac}+v_{\ib-\half\eb_y}^{\mac}\right)\left(s_{\ib+\half\eb_y}^{1D} - s_{\ib-\half\eb_y}^{1D}\right) + \frac{\dt}{2}f_{s,\ib}.
+\end{eqnarray}
+The extrapolation of a ``conserved'' $s$ to x-faces is:
+\begin{eqnarray}
+s_{L,\ib-\half\eb_x}^{\edge} = s_{L,\ib-\half\eb_x}^{1D} &-& \frac{\dt}{2h}\left[(s^{1D} v^{\mac})_{\ib-\eb_x+\half\eb_y} - (s^{1D} v^{\mac})_{\ib-\eb_x-\half\eb_y}\right] \nonumber \\
+&-& \frac{\dt}{2}s_{\ib-\eb_x}(\nabla\cdot\Ub^{\mac})_{\ib-\eb_x} + \frac{\dt}{2h}s_{\ib-\eb_x}\left(v_{\ib-\eb_x+\half\eb_y}^{\mac} - v_{\ib-\eb_x-\half\eb_y}^{\mac}\right) + \frac{\dt}{2}f_{s,\ib-\eb_x}, \\
+s_{R,\ib-\half\eb_x}^{\edge} = s_{R,\ib-\half\eb_x}^{1D} &-& \frac{\dt}{2h}\left[(s^{1D} v^{\mac})_{\ib+\half\eb_y} - (s^{1D} v^{\mac})_{\ib-\half\eb_y}\right] \nonumber \\
+&-& \frac{\dt}{2}s_{\ib}(\nabla\cdot\Ub^{\mac})_{\ib} + \frac{\dt}{2h}s_{\ib}\left(v_{\ib+\half\eb_y}^{\mac} - v_{\ib-\half\eb_y}^{\mac}\right) + \frac{\dt}{2}f_{s,\ib}.
 \end{eqnarray}
 Then, we upwind based on $u^{\mac}$.
 \begin{equation}
@@ -529,9 +529,46 @@ s_{\ib-\half\eb_x}^{\edge} =
 \half\left(s_{L,\ib-\half\eb_x}^{\edge} + s_{R,\ib-\half\eb_x}^{\edge}\right), & \left|u^{\mac}_{\ib-\half\eb_x}\right| < \epsilon \\
 s_{L,\ib-\half\eb_x}^{\edge}, & u^{\mac}_{\ib-\half\eb_x} > 0, \\
 s_{R,\ib-\half\eb_x}^{\edge}, & u^{\mac}_{\ib-\half\eb_x} < 0.
-\end{cases}
+\end{cases}\label{varden s^edge upwind}
 \end{equation}
 We use an analogous procedure to compute $s_{\ib-\half\eb_y}^{\edge}$.
 \subsection{3D Cartesian Case}
-This is more complicated than the 2D case because we include corner coupling.  We first compute $s_{\ib-\half\eb_x}^{1D}$, $s_{\ib-\half\eb_y}^{1D}$, and $s_{\ib-\half\eb_z}^{1D}$ in an analogous manner to equations (\ref{varden s_L^1D}) and (\ref{varden s_R^1D}).
+This is more complicated than the 2D case because we include corner coupling.  We first compute $s_{\ib-\half\eb_x}^{1D}$, $s_{\ib-\half\eb_y}^{1D}$, and $s_{\ib-\half\eb_z}^{1D}$ in an analogous manner to equations (\ref{varden s_L^1D}) and (\ref{varden s_R^1D}).  Then we compute six intermediate states, $s_{\ib-\half\eb_x}^{x|y}, s_{\ib-\half\eb_x}^{x|z}, s_{\ib-\half\eb_y}^{y|x}, s_{\ib-\half\eb_y}^{y|z}, s_{\ib-\half\eb_z}^{z|x}$, and $s_{\ib-\half\eb_z}^{z|y}$.  For the ``non-conservative case'', we use, for example:
+\begin{eqnarray}
+s_{L,\ib-\half\eb_x}^{x|y} &=& s_{L,\ib-\half\eb_x}^{1D} - \frac{\dt}{6h}\left(v_{\ib-\eb_x+\half\eb_y}^{\mac} + v_{\ib-\eb_x-\half\eb_y}^{\mac}\right)\left(s_{\ib-\eb_x+\half\eb_y}^{1D} - s_{\ib-\eb_x-\half\eb_y}^{1D}\right), \\
+s_{R,\ib-\half\eb_x}^{x|y} &=& s_{R,\ib-\half\eb_x}^{1D} - \frac{\dt}{6h}\left(v_{\ib+\half\eb_y}^{\mac} + v_{\ib-\half\eb_y}^{\mac}\right)\left(s_{\ib+\half\eb_y}^{1D} - s_{\ib-\half\eb_y}^{1D}\right).
+\end{eqnarray}
+For the ``conservative'' case, we use, for example:
+\begin{eqnarray}
+s_{L,\ib-\half\eb_x}^{x|y} &=& s_{L,\ib-\half\eb_x}^{1D} - \frac{\dt}{3h}\left[(sv^{\mac})_{\ib-\eb_x+\half\eb_y}-(sv^{\mac})_{\ib-\eb_x-\half\eb_y}\right], \\
+s_{R,\ib-\half\eb_x}^{x|y} &=& s_{R,\ib-\half\eb_x}^{1D} - \frac{\dt}{3h}\left[(sv^{\mac})_{\ib+\half\eb_y}-(sv^{\mac})_{\ib-\half\eb_y}\right].
+\end{eqnarray}
+Then, we upwind based on $u^{\mac}$:
+\begin{equation}
+s_{\ib-\half\eb_x}^{\edge} =
+\begin{cases}
+\half\left(s_{L,\ib-\half\eb_x}^{x|y} + s_{R,\ib-\half\eb_x}^{x|y}\right), & \left|u^{\mac}_{\ib-\half\eb_x}\right| < \epsilon \\
+s_{L,\ib-\half\eb_x}^{x|y}, & u^{\mac}_{\ib-\half\eb_x} > 0, \\
+s_{R,\ib-\half\eb_x}^{x|y}, & u^{\mac}_{\ib-\half\eb_x} < 0.
+\end{cases}
+\end{equation}
+We use an analogous procedure to compute the other five intermediate states.  Now we do a full-dimensional extrapolation of $s$ to each face.  The extrapolation of a ``non-conserved'' $s$ to x-faces is:
+\begin{eqnarray}
+s_{L,\ib-\half\eb_x}^{\edge} = s_{L,\ib-\half\eb_x}^{1D} &-& \frac{\dt}{4h}\left(v_{\ib-\eb_x+\half\eb_y}^{\mac}+v_{\ib-\eb_x-\half\eb_y}^{\mac}\right)\left(s_{\ib-\eb_x+\half\eb_y}^{y|z}-s_{\ib-\eb_x-\half\eb_y}^{y|z}\right) \nonumber \\
+&-& \frac{\dt}{4h}\left(w_{\ib-\eb_x+\half\eb_z}^{\mac}+w_{\ib-\eb_x-\half\eb_z}^{\mac}\right)\left(s_{\ib-\eb_x+\half\eb_z}^{z|y}-s_{\ib-\eb_x-\half\eb_z}^{z|y}\right) + \frac{\dt}{2}f_{s,\ib-\eb_x}, \\
+s_{R,\ib-\half\eb_x}^{\edge} = s_{R,\ib-\half\eb_x}^{1D} &-& \frac{\dt}{4h}\left(v_{\ib+\half\eb_y}^{\mac}+v_{\ib-\half\eb_y}^{\mac}\right)\left(s_{\ib+\half\eb_y}^{y|z}-s_{\ib-\half\eb_y}^{y|z}\right) \nonumber \\
+&-& \frac{\dt}{4h}\left(w_{\ib+\half\eb_z}^{\mac}+w_{\ib-\half\eb_z}^{\mac}\right)\left(s_{\ib+\half\eb_z}^{z|y}-s_{\ib-\half\eb_z}^{z|y}\right) + \frac{\dt}{2}f_{s,\ib}.
+\end{eqnarray}
+The extrapolation of a ``conserved'' $s$ to x-faces is:
+\begin{eqnarray}
+s_{L,\ib-\half\eb_x}^{\edge} = s_{L,\ib-\half\eb_x}^{1D} &-& \frac{\dt}{2h}\left[(s^{y|z}v^{\mac})_{\ib-\eb_x+\half\eb_y}-({s^{y|z}v^{\mac})_{\ib-\eb_x-\half\eb_y}}\right] \nonumber \\
+&-& \frac{\dt}{2h}\left[(s^{z|y}w^{\mac})_{\ib-\eb_x+\half\eb_z}-({s^{z|y}w^{\mac})_{\ib-\eb_x-\half\eb_z}}\right] \nonumber \\
+&-& \frac{\dt}{2}s_{\ib-\eb_x}(\nabla\cdot\Ub^{\mac})_{\ib-\eb_x} + \frac{\dt}{2h}s_{\ib-\eb_x}\left(v_{\ib-\eb_x+\half\eb_y}^{\mac}-v_{\ib-\eb_x-\half\eb_y}^{\mac}+w_{\ib-\eb_x+\half\eb_z}^{\mac}-w_{\ib-\eb_x-\half\eb_z}^{\mac}\right) \nonumber \\
+&+& \frac{\dt}{2}f_{s,\ib-\eb_x}, \\
+s_{R,\ib-\half\eb_x}^{\edge} = s_{R,\ib-\half\eb_x}^{1D} &-& \frac{\dt}{2h}\left[(s^{y|z}v^{\mac})_{\ib+\half\eb_y}-({s^{y|z}v^{\mac})_{\ib-\half\eb_y}}\right] \nonumber \\
+&-& \frac{\dt}{2h}\left[(s^{z|y}w^{\mac})_{\ib+\half\eb_z}-({s^{z|y}w^{\mac})_{\ib-\half\eb_z}}\right] \nonumber \\
+&-& \frac{\dt}{2}s_{\ib}(\nabla\cdot\Ub^{\mac})_{\ib} + \frac{\dt}{2h}s_{\ib}\left(v_{\ib+\half\eb_y}^{\mac}-v_{\ib-\half\eb_y}^{\mac}+w_{\ib+\half\eb_z}^{\mac}-w_{\ib-\half\eb_z}^{\mac}\right) \nonumber \\
+&+& \frac{\dt}{2}f_{s,\ib}.
+\end{eqnarray}
+Then we upwind based on $u^{\mac}$, as in equation (\ref{varden s^edge upwind}).  We use an analogous procedure to compute both $s_{\ib-\half\eb_y}^{\edge}$ and $s_{\ib-\half\eb_z}$.
 \end{document}
