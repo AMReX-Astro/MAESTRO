@@ -79,7 +79,7 @@ We pick the final edge states using a Riemann solver:
 \begin{equation}
 u^{\trans}_{\ib-\half\eb_x} =
 \begin{cases}
-0, & \left(u_{L,\ib-\half\eb_x}^{\trans} \le 0 ~ {\rm AND} ~ u_{R,\ib-\half\eb_x}^{\trans} \ge 0\right) ~ {\rm OR} ~ \left|u_{L,\ib-\half\eb_x}^{\trans} + u_{R,\ib-\half\eb_x}^{\trans}\right| < \epsilon, \\
+0, & \left(u_{L,\ib-\half\eb_x}^{\trans} \le 0 ~~ {\rm AND} ~~ u_{R,\ib-\half\eb_x}^{\trans} \ge 0\right) ~~ {\rm OR} ~~ \left|u_{L,\ib-\half\eb_x}^{\trans} + u_{R,\ib-\half\eb_x}^{\trans}\right| < \epsilon, \\
 u_{L,\ib-\half\eb_x}^{\trans}, & u_{L,\ib-\half\eb_x}^{\trans} + u_{R,\ib-\half\eb_x}^{\trans} > 0, \\
 u_{R,\ib-\half\eb_x}^{\trans}, & u_{L,\ib-\half\eb_x}^{\trans} + u_{R,\ib-\half\eb_x}^{\trans} < 0, \\
 \end{cases}
@@ -101,7 +101,7 @@ We pick the final edge states using:
 \begin{equation}
 \wt^{\trans}_{\ib-\half\eb_r} =
 \begin{cases}
-0, & \left(w_L^{\trans} \le 0 ~ {\rm AND} ~ w_R^{\trans} \ge 0\right) ~ {\rm OR} ~ \left|w_L^{\trans} + w_R^{\trans}\right| < \epsilon, \\
+0, & \left(w_L^{\trans} \le 0 ~~ {\rm AND} ~~ w_R^{\trans} \ge 0\right) ~~ {\rm OR} ~~ \left|w_L^{\trans} + w_R^{\trans}\right| < \epsilon, \\
 \wt_{L,\ib-\half\eb_r}^{\trans}, & w_L^{\trans} + w_R^{\trans} > 0, \\
 \wt_{R,\ib-\half\eb_r}^{\trans}, & w_L^{\trans} + w_R^{\trans} < 0, \\
 \end{cases}
@@ -118,7 +118,7 @@ v_{R,\ib-\half\eb_y}^{\trans} &=& v_{\ib}^n - \left(\half + \frac{\dt}{2h}v_{\ib
 \begin{equation}
 v^{\trans}_{\ib-\half\eb_y} =
 \begin{cases}
-0, & \left(v_{L,\ib-\half\eb_y}^{\trans} \le 0 ~ {\rm AND} ~ v_{R,\ib-\half\eb_y}^{\trans} \ge 0\right) ~ {\rm OR} ~ \left|v_{L,\ib-\half\eb_y}^{\trans} + v_{R,\ib-\half\eb_y}^{\trans}\right| < \epsilon, \\
+0, & \left(v_{L,\ib-\half\eb_y}^{\trans} \le 0 ~~ {\rm AND} ~~ v_{R,\ib-\half\eb_y}^{\trans} \ge 0\right) ~~ {\rm OR} ~~ \left|v_{L,\ib-\half\eb_y}^{\trans} + v_{R,\ib-\half\eb_y}^{\trans}\right| < \epsilon, \\
 v_{L,\ib-\half\eb_y}^{\trans}, & v_{L,\ib-\half\eb_y}^{\trans} + v_{R,\ib-\half\eb_y}^{\trans} > 0, \\
 v_{R,\ib-\half\eb_y}^{\trans}, & v_{L,\ib-\half\eb_y}^{\trans} + v_{R,\ib-\half\eb_y}^{\trans} < 0. \\
 \end{cases}
@@ -162,16 +162,16 @@ u_{R,\ib-\half\eb_r}^{1D}, & w^{\trans}_{\ib-\half\eb_r} < 0. \\
 \end{equation}
 Then, we do a full-dimensional extrapolation of $u$ to x-faces:
 \begin{eqnarray}
-u_{L,\ib-\half\eb_x}^{\mac,*} &=& u_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\eb_x}\right)\Delta_x u_{\ib-\eb_x}^n \nonumber \\
-&& - \frac{\dt}{4h}\left(w_{\ib-\eb_x+\half\eb_r}^{\trans}+w_{\ib-\eb_x-\half\eb_r}^{\trans}\right)\left(u_{\ib-\eb_x+\half\eb_r}^{1D} - u_{\ib-\eb_x-\half\eb_r}^{1D}\right) + \frac{\dt}{2}f_{u,\ib-\eb_x}, \\
-u_{R,\ib-\half\eb_x}^{\mac,*} &=& u_{\ib}^n - \left(\half + \frac{\dt}{2h}u_{\ib}\right)\Delta_x u_{\ib}^n \nonumber \\
-&& - \frac{\dt}{4h}\left(w_{\ib+\half\eb_r}^{\trans}+w_{\ib-\half\eb_r}^{\trans}\right)\left(u_{\ib+\half\eb_r}^{1D} - u_{\ib-\half\eb_r}^{1D}\right) + \frac{\dt}{2}f_{u,\ib}.
+u_{L,\ib-\half\eb_x}^{\mac,*} = u_{\ib-\eb_x}^n &+& \left(\half - \frac{\dt}{2h}u_{\ib-\eb_x}\right)\Delta_x u_{\ib-\eb_x}^n \nonumber \\
+&-& \frac{\dt}{4h}\left(w_{\ib-\eb_x+\half\eb_r}^{\trans}+w_{\ib-\eb_x-\half\eb_r}^{\trans}\right)\left(u_{\ib-\eb_x+\half\eb_r}^{1D} - u_{\ib-\eb_x-\half\eb_r}^{1D}\right) + \frac{\dt}{2}f_{u,\ib-\eb_x}, \\
+u_{R,\ib-\half\eb_x}^{\mac,*} = u_{\ib}^n &-& \left(\half + \frac{\dt}{2h}u_{\ib}\right)\Delta_x u_{\ib}^n \nonumber \\
+&-& \frac{\dt}{4h}\left(w_{\ib+\half\eb_r}^{\trans}+w_{\ib-\half\eb_r}^{\trans}\right)\left(u_{\ib+\half\eb_r}^{1D} - u_{\ib-\half\eb_r}^{1D}\right) + \frac{\dt}{2}f_{u,\ib}.
 \end{eqnarray}
 Finally, we solve a Riemann problem:
 \begin{equation}
 u_{\ib-\half\eb_x}^{\mac,*} =
 \begin{cases}
-0, & \left(u_{L,\ib-\half\eb_x}^{\mac,*} \le 0 ~ {\rm AND} ~ u_{R,\ib-\half\eb_x}^{\mac,*} \ge 0\right) ~ {\rm OR} ~ \left|u_{L,\ib-\half\eb_x}^{\mac,*} + u_{R,\ib-\half\eb_x}^{\mac,*}\right| < \epsilon, \\
+0, & \left(u_{L,\ib-\half\eb_x}^{\mac,*} \le 0 ~~ {\rm AND} ~~ u_{R,\ib-\half\eb_x}^{\mac,*} \ge 0\right) ~~ {\rm OR} ~~ \left|u_{L,\ib-\half\eb_x}^{\mac,*} + u_{R,\ib-\half\eb_x}^{\mac,*}\right| < \epsilon, \\
 u_{L,\ib-\half\eb_x}^{\mac,*}, & u_{L,\ib-\half\eb_x}^{\mac,*} + u_{R,\ib-\half\eb_x}^{\mac,*} > 0, \\
 u_{R,\ib-\half\eb_x}^{\mac,*}, & u_{L,\ib-\half\eb_x}^{\mac,*} + u_{R,\ib-\half\eb_x}^{\mac,*} < 0. 
 \end{cases}
@@ -193,18 +193,18 @@ Then we upwind based on $u^{\trans}$:
 \end{equation}
 Then, we do a full-dimensional extrapolation of $\wt$ to r-faces, incorporating the extra term proportional to $w_0$ by using $w$ instead of $\wt$ as the advection velocity and the extra term proportional to $\partial w_0/\partial r$ as a separate term:
 \begin{eqnarray}
-\wt_{L,\ib-\half\eb_r}^{\mac,*} &=& \wt_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\eb_r}\right)\Delta_r \wt_{\ib-\eb_r}^n \nonumber \\
-&& - \frac{\dt}{4h}\left(u_{\ib+\half\eb_x-\eb_r}^{\trans}+u_{\ib-\half\eb_x-\eb_r}^{\trans}\right)\left(\wt_{\ib+\half\eb_x-\eb_r}^{1D} - \wt_{\ib-\half\eb_x-\eb_r}^{1D}\right) \nonumber \\
-&& - \frac{\dt}{4h}\left(\wt_{\ib-\half\eb_r}^{\trans}+\wt_{\ib-\frac{3}{2}\eb_r}^{\trans}\right)(w_{0,\ib-\half\eb_r} - w_{0,\ib-\frac{3}{2}\eb_r}) + \frac{\dt}{2}f_{w,\ib-\eb_r},\label{wt_L Extrapolation} \\
-\wt_{R,\ib-\half\eb_r}^{\mac,*} &=& \wt_{\ib}^n - \left(\half + \frac{\dt}{2h}w_{\ib}\right)\Delta_r \wt_{\ib}^n \nonumber \\
-&& - \frac{\dt}{4h}\left(u_{\ib+\half\eb_x}^{\trans}+u_{\ib-\half\eb_x}^{\trans}\right)\left(\wt_{\ib+\half\eb_x}^{1D} - \wt_{\ib-\half\eb_x}^{1D}\right) \nonumber \\
-&& - \frac{\dt}{4h}\left(\wt_{\ib+\half\eb_r}^{\trans}+\wt_{\ib-\half\eb_r}^{\trans}\right)(w_{0,\ib+\half\eb_r} - w_{0,\ib-\half\eb_r}) + \frac{\dt}{2}f_{w,\ib}.\label{wt_R Extrapolation}
+\wt_{L,\ib-\half\eb_r}^{\mac,*} = \wt_{\ib-\eb_r}^n &+& \left(\half - \frac{\dt}{2h}w_{\ib-\eb_r}\right)\Delta_r \wt_{\ib-\eb_r}^n \nonumber \\
+&-& \frac{\dt}{4h}\left(u_{\ib+\half\eb_x-\eb_r}^{\trans}+u_{\ib-\half\eb_x-\eb_r}^{\trans}\right)\left(\wt_{\ib+\half\eb_x-\eb_r}^{1D} - \wt_{\ib-\half\eb_x-\eb_r}^{1D}\right) \nonumber \\
+&-& \frac{\dt}{4h}\left(\wt_{\ib-\half\eb_r}^{\trans}+\wt_{\ib-\frac{3}{2}\eb_r}^{\trans}\right)(w_{0,\ib-\half\eb_r} - w_{0,\ib-\frac{3}{2}\eb_r}) + \frac{\dt}{2}f_{w,\ib-\eb_r},\label{wt_L Extrapolation} \\
+\wt_{R,\ib-\half\eb_r}^{\mac,*} = \wt_{\ib}^n &-& \left(\half + \frac{\dt}{2h}w_{\ib}\right)\Delta_r \wt_{\ib}^n \nonumber \\
+&-& \frac{\dt}{4h}\left(u_{\ib+\half\eb_x}^{\trans}+u_{\ib-\half\eb_x}^{\trans}\right)\left(\wt_{\ib+\half\eb_x}^{1D} - \wt_{\ib-\half\eb_x}^{1D}\right) \nonumber \\
+&-& \frac{\dt}{4h}\left(\wt_{\ib+\half\eb_r}^{\trans}+\wt_{\ib-\half\eb_r}^{\trans}\right)(w_{0,\ib+\half\eb_r} - w_{0,\ib-\half\eb_r}) + \frac{\dt}{2}f_{w,\ib}.\label{wt_R Extrapolation}
 \end{eqnarray}
 Next, we solve a Riemann problem:
 \begin{equation}
 \wt_{\ib-\half\eb_r}^{\mac,*} =
 \begin{cases}
-0, & \left(w_L^{\mac,*} \le 0 ~ {\rm AND} ~ w_R^{\mac,*} \ge 0\right) ~ {\rm OR} ~ \left|w_L^{\mac,*} + w_R^{\mac,*}\right| < \epsilon, \\
+0, & \left(w_L^{\mac,*} \le 0 ~~ {\rm AND} ~~ w_R^{\mac,*} \ge 0\right) ~~ {\rm OR} ~~ \left|w_L^{\mac,*} + w_R^{\mac,*}\right| < \epsilon, \\
 \wt_{L,\ib-\half\eb_r}^{\mac,*}, & w_L^{\mac,*} + w_R^{\mac,*} > 0, \\
 \wt_{R,\ib-\half\eb_r}^{\mac,*}, & w_L^{\mac,*} + w_R^{\mac,*} < 0. 
 \end{cases}
@@ -274,10 +274,10 @@ s_{R,\ib-\half\eb_x}^{\edge}, & u^{\mac}_{\ib-\half\eb_x} < 0.
 \end{equation}
 The full-dimensional extrapolation of $s$ to r-faces is analogous to the extrapolation to x-faces:
 \begin{eqnarray}
-s_{L,\ib-\half\eb_r}^{\edge} &=& s_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\half\eb_r}^{\mac}\right)\Delta_r s_{\ib-\eb_r}^n \nonumber \\
-&& - \frac{\dt}{4h}\left(u_{\ib+\half\eb_x-\eb_r}^{\mac}+u_{\ib-\half\eb_x-\eb_r}^{\mac}\right)\left(s_{\ib+\half\eb_x-\eb_r}^{1D} - s_{\ib-\half\eb_x-\eb_r}^{1D}\right) + \frac{\dt}{2}f_{s,\ib-\eb_r},  \\
-s_{R,\ib-\half\eb_r}^{\edge} &=& s_{\ib}^n - \left(\half + \frac{\dt}{2h}w_{\ib-\half\eb_r}^{\mac}\right)\Delta_r s_{\ib}^n \nonumber \\
-&& - \frac{\dt}{4h}\left(u_{\ib+\half\eb_x}^{\mac}+u_{\ib-\half\eb_x}^{\mac}\right)\left(s_{\ib+\half\eb_x}^{1D} - s_{\ib-\half\eb_x}^{1D}\right) + \frac{\dt}{2}f_{s,\ib}. 
+s_{L,\ib-\half\eb_r}^{\edge} = s_{\ib-\eb_r}^n &+& \left(\half - \frac{\dt}{2h}w_{\ib-\half\eb_r}^{\mac}\right)\Delta_r s_{\ib-\eb_r}^n \nonumber \\
+&-& \frac{\dt}{4h}\left(u_{\ib+\half\eb_x-\eb_r}^{\mac}+u_{\ib-\half\eb_x-\eb_r}^{\mac}\right)\left(s_{\ib+\half\eb_x-\eb_r}^{1D} - s_{\ib-\half\eb_x-\eb_r}^{1D}\right) + \frac{\dt}{2}f_{s,\ib-\eb_r},  \\
+s_{R,\ib-\half\eb_r}^{\edge} = s_{\ib}^n &-& \left(\half + \frac{\dt}{2h}w_{\ib-\half\eb_r}^{\mac}\right)\Delta_r s_{\ib}^n \nonumber \\
+&-& \frac{\dt}{4h}\left(u_{\ib+\half\eb_x}^{\mac}+u_{\ib-\half\eb_x}^{\mac}\right)\left(s_{\ib+\half\eb_x}^{1D} - s_{\ib-\half\eb_x}^{1D}\right) + \frac{\dt}{2}f_{s,\ib}. 
 \end{eqnarray}
 Then, we upwind based on $w^{\mac}$.
 \begin{equation}
@@ -352,10 +352,10 @@ Then we upwind based on $w^{\trans}$:
 \end{equation}
 Now we do a full-dimensional extrapolation of $u$ to each face.  The extrapolation of $u$ to x-faces is:
 \begin{eqnarray}
-u_{L,\ib-\half\eb_x}^{\edge} &=& u_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x u_{\ib-\eb_x}^n \nonumber \\
-&& - \frac{\dt}{4h}\left(w_{\ib-\eb_x+\half\eb_r}^{\trans}+w_{\ib-\eb_x-\half\eb_r}^{\trans}\right)\left(u_{\ib-\eb_x+\half\eb_r}^{1D} - u_{\ib-\eb_x-\half\eb_r}^{1D}\right) + \frac{\dt}{2}f_{u,\ib-\eb_x}, \\
-u_{R,\ib-\half\eb_x}^{\edge} &=& u_{\ib}^n - \left(\half + \frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x u_{\ib}^n \nonumber \\
-&& - \frac{\dt}{4h}\left(w_{\ib+\half\eb_r}^{\trans}+w_{\ib-\half\eb_r}^{\trans}\right)\left(u_{\ib+\half\eb_r}^{1D} - u_{\ib-\half\eb_r}^{1D}\right) + \frac{\dt}{2}f_{u,\ib}.
+u_{L,\ib-\half\eb_x}^{\edge} = u_{\ib-\eb_x}^n &+& \left(\half - \frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x u_{\ib-\eb_x}^n \nonumber \\
+&-& \frac{\dt}{4h}\left(w_{\ib-\eb_x+\half\eb_r}^{\trans}+w_{\ib-\eb_x-\half\eb_r}^{\trans}\right)\left(u_{\ib-\eb_x+\half\eb_r}^{1D} - u_{\ib-\eb_x-\half\eb_r}^{1D}\right) + \frac{\dt}{2}f_{u,\ib-\eb_x}, \\
+u_{R,\ib-\half\eb_x}^{\edge} = u_{\ib}^n &-& \left(\half + \frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x u_{\ib}^n \nonumber \\
+&-& \frac{\dt}{4h}\left(w_{\ib+\half\eb_r}^{\trans}+w_{\ib-\half\eb_r}^{\trans}\right)\left(u_{\ib+\half\eb_r}^{1D} - u_{\ib-\half\eb_r}^{1D}\right) + \frac{\dt}{2}f_{u,\ib}.
 \end{eqnarray}
 Then, we upwind based on $u^{\mac}$.
 \begin{equation}
@@ -368,10 +368,10 @@ u_{R,\ib-\half\eb_x}^{\edge}, & u^{\mac}_{\ib-\half\eb_x} < 0.
 \end{equation}
 The full-dimensional extrapolation of $u$ to r-faces is:
 \begin{eqnarray}
-u_{L,\ib-\half\eb_r}^{\edge} &=& u_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\half\eb_r}^{\mac}\right)\Delta_r u_{\ib-\eb_r}^n \nonumber \\
-&& - \frac{\dt}{4h}\left(u_{\ib+\half\eb_x-\eb_r}^{\trans}+u_{\ib-\half\eb_x-\eb_r}^{\trans}\right)\left(u_{\ib+\half\eb_x-\eb_r}^{1D} - u_{\ib-\half\eb_x-\eb_r}^{1D}\right) + \frac{\dt}{2}f_{u,\ib-\eb_r},  \\
-u_{R,\ib-\half\eb_r}^{\edge} &=& u_{\ib}^n - \left(\half + \frac{\dt}{2h}w_{\ib-\half\eb_r}^{\mac}\right)\Delta_r u_{\ib}^n \nonumber \\
-&& - \frac{\dt}{4h}\left(u_{\ib+\half\eb_x}^{\trans}+u_{\ib-\half\eb_x}^{\trans}\right)\left(u_{\ib+\half\eb_x}^{1D} - u_{\ib-\half\eb_x}^{1D}\right) + \frac{\dt}{2}f_{u,\ib}. 
+u_{L,\ib-\half\eb_r}^{\edge} = u_{\ib-\eb_r}^n &+& \left(\half - \frac{\dt}{2h}w_{\ib-\half\eb_r}^{\mac}\right)\Delta_r u_{\ib-\eb_r}^n \nonumber \\
+&-& \frac{\dt}{4h}\left(u_{\ib+\half\eb_x-\eb_r}^{\trans}+u_{\ib-\half\eb_x-\eb_r}^{\trans}\right)\left(u_{\ib+\half\eb_x-\eb_r}^{1D} - u_{\ib-\half\eb_x-\eb_r}^{1D}\right) + \frac{\dt}{2}f_{u,\ib-\eb_r},  \\
+u_{R,\ib-\half\eb_r}^{\edge} = u_{\ib}^n &-& \left(\half + \frac{\dt}{2h}w_{\ib-\half\eb_r}^{\mac}\right)\Delta_r u_{\ib}^n \nonumber \\
+&-& \frac{\dt}{4h}\left(u_{\ib+\half\eb_x}^{\trans}+u_{\ib-\half\eb_x}^{\trans}\right)\left(u_{\ib+\half\eb_x}^{1D} - u_{\ib-\half\eb_x}^{1D}\right) + \frac{\dt}{2}f_{u,\ib}. 
 \end{eqnarray}
 Then, we upwind based on $w^{\mac}$.
 \begin{equation}
@@ -384,12 +384,12 @@ u_{R,\ib-\half\eb_r}^{\edge}, & u^{\mac}_{\ib-\half\eb_r} < 0.
 \end{equation}
 Now we do a full-dimensional extrapolatino of $\wt$ to each face.  This is different from the extrapolation of $u$ to faces because we must include the term proportional to $\partial w_0/\partial r$ in equation (\ref{Perturbational Velocity Equation}).  The full-dimensional extrapolation of $\wt$ to x-faces is:
 \begin{eqnarray}
-\wt_{L,\ib-\half\eb_x}^{\edge} &=& \wt_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x \wt_{\ib-\eb_x}^n \nonumber \\
-&& - \frac{\dt}{4h}\left(w_{\ib-\eb_x+\half\eb_r}^{\trans}+w_{\ib-\eb_x-\half\eb_r}^{\trans}\right)\left(\wt_{\ib-\eb_x+\half\eb_r}^{1D} - \wt_{\ib-\eb_x-\half\eb_r}^{1D}\right) \nonumber \\
-&& - \frac{\dt}{4h}\left(\wt_{\ib-\eb_x+\half\eb_r}^{\trans}+\wt_{\ib-\eb_x-\half\eb_r}^{\trans}\right)\left(w_{0,\ib-\eb_x+\half\eb_r}-w_{0,\ib-\eb_x-\half\eb_r}\right) + \frac{\dt}{2}f_{w,\ib-\eb_x}, \label{wt_L x-edge} \\
-\wt_{R,\ib-\half\eb_x}^{\edge} &=& \wt_{\ib}^n - \left(\half + \frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x \wt_{\ib}^n \nonumber \\
-&& - \frac{\dt}{4h}\left(w_{\ib+\half\eb_r}^{\trans}+w_{\ib-\half\eb_r}^{\trans}\right)\left(\wt_{\ib+\half\eb_r}^{1D} - \wt_{\ib-\half\eb_r}^{1D}\right) \nonumber \\
-&& - \frac{\dt}{4h}\left(\wt_{\ib+\half\eb_r}^{\trans}+\wt_{\ib-\half\eb_r}^{\trans}\right)\left(w_{0,\ib+\half\eb_r}-w_{0,\ib-\half\eb_r}\right) + \frac{\dt}{2}f_{w,\ib}. \label{wt_R x-edge}
+\wt_{L,\ib-\half\eb_x}^{\edge} = \wt_{\ib-\eb_x}^n &+& \left(\half - \frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x \wt_{\ib-\eb_x}^n \nonumber \\
+&-& \frac{\dt}{4h}\left(w_{\ib-\eb_x+\half\eb_r}^{\trans}+w_{\ib-\eb_x-\half\eb_r}^{\trans}\right)\left(\wt_{\ib-\eb_x+\half\eb_r}^{1D} - \wt_{\ib-\eb_x-\half\eb_r}^{1D}\right) \nonumber \\
+&-& \frac{\dt}{4h}\left(\wt_{\ib-\eb_x+\half\eb_r}^{\trans}+\wt_{\ib-\eb_x-\half\eb_r}^{\trans}\right)\left(w_{0,\ib-\eb_x+\half\eb_r}-w_{0,\ib-\eb_x-\half\eb_r}\right) + \frac{\dt}{2}f_{w,\ib-\eb_x}, \label{wt_L x-edge} \\
+\wt_{R,\ib-\half\eb_x}^{\edge} = \wt_{\ib}^n &-& \left(\half + \frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x \wt_{\ib}^n \nonumber \\
+&-& \frac{\dt}{4h}\left(w_{\ib+\half\eb_r}^{\trans}+w_{\ib-\half\eb_r}^{\trans}\right)\left(\wt_{\ib+\half\eb_r}^{1D} - \wt_{\ib-\half\eb_r}^{1D}\right) \nonumber \\
+&-& \frac{\dt}{4h}\left(\wt_{\ib+\half\eb_r}^{\trans}+\wt_{\ib-\half\eb_r}^{\trans}\right)\left(w_{0,\ib+\half\eb_r}-w_{0,\ib-\half\eb_r}\right) + \frac{\dt}{2}f_{w,\ib}. \label{wt_R x-edge}
 \end{eqnarray}
 Then, we upwind based on $u^{\mac}$:
 \begin{equation}
@@ -402,14 +402,12 @@ Then, we upwind based on $u^{\mac}$:
 \end{equation}
 The full-dimensional extrapolation of $\wt$ to r-faces is:
 \begin{eqnarray}
-\wt_{L,\ib-\half\eb_r}^{\edge} &=& \wt_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\half\eb_r}^{\mac}\right)\Delta_r \wt_{\ib-\eb_r}^n \nonumber \\
-&& - \frac{\dt}{4h}\left(u_{\ib+\half\eb_x-\eb_r}^{\trans}+u_{\ib-\half\eb_x-\eb_r}^{\trans}\right)\left(\wt_{\ib+\half\eb_x-\eb_r}^{1D} - \wt_{\ib-\half\eb_x-\eb_r}^{1D}\right) \nonumber \\
-&& -
-\frac{\dt}{4h}\left(\wt_{\ib-\half\eb_r}^{\trans}+\wt_{\ib-\frac{3}{2}\eb_r}^{\trans}\right)\left(w_{0,\ib-\half\eb_r}-w_{0,\ib-\frac{3}{2}\eb_r}\right) + \frac{\dt}{2}f_{w,\ib-\eb_r}, \label{wt_L r-edge} \\
-\wt_{R,\ib-\half\eb_r}^{\edge} &=& \wt_{\ib}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\half\eb_r}^{\mac}\right)\Delta_r \wt_{\ib}^n \nonumber \\
-&& - \frac{\dt}{4h}\left(u_{\ib+\half\eb_x}^{\trans}+u_{\ib-\half\eb_x}^{\trans}\right)\left(\wt_{\ib+\half\eb_x}^{1D} - \wt_{\ib-\half\eb_x}^{1D}\right) \nonumber \\
-&& -
-\frac{\dt}{4h}\left(\wt_{\ib+\half\eb_r}^{\trans}+\wt_{\ib-\half\eb_r}^{\trans}\right)\left(w_{0,\ib+\half\eb_r}-w_{0,\ib-\half\eb_r}\right) + \frac{\dt}{2}f_{w,\ib}. \label{wt_R r-edge}
+\wt_{L,\ib-\half\eb_r}^{\edge} = \wt_{\ib-\eb_r}^n &+& \left(\half - \frac{\dt}{2h}w_{\ib-\half\eb_r}^{\mac}\right)\Delta_r \wt_{\ib-\eb_r}^n \nonumber \\
+&-& \frac{\dt}{4h}\left(u_{\ib+\half\eb_x-\eb_r}^{\trans}+u_{\ib-\half\eb_x-\eb_r}^{\trans}\right)\left(\wt_{\ib+\half\eb_x-\eb_r}^{1D} - \wt_{\ib-\half\eb_x-\eb_r}^{1D}\right) \nonumber \\
+&-& \frac{\dt}{4h}\left(\wt_{\ib-\half\eb_r}^{\trans}+\wt_{\ib-\frac{3}{2}\eb_r}^{\trans}\right)\left(w_{0,\ib-\half\eb_r}-w_{0,\ib-\frac{3}{2}\eb_r}\right) + \frac{\dt}{2}f_{w,\ib-\eb_r}, \label{wt_L r-edge} \\
+\wt_{R,\ib-\half\eb_r}^{\edge} = \wt_{\ib}^n &+& \left(\half - \frac{\dt}{2h}w_{\ib-\half\eb_r}^{\mac}\right)\Delta_r \wt_{\ib}^n \nonumber \\
+&-& \frac{\dt}{4h}\left(u_{\ib+\half\eb_x}^{\trans}+u_{\ib-\half\eb_x}^{\trans}\right)\left(\wt_{\ib+\half\eb_x}^{1D} - \wt_{\ib-\half\eb_x}^{1D}\right) \nonumber \\
+&-& \frac{\dt}{4h}\left(\wt_{\ib+\half\eb_r}^{\trans}+\wt_{\ib-\half\eb_r}^{\trans}\right)\left(w_{0,\ib+\half\eb_r}-w_{0,\ib-\half\eb_r}\right) + \frac{\dt}{2}f_{w,\ib}. \label{wt_R r-edge}
 \end{eqnarray}
 Then, we upwind based on $w^{\mac}$:
 \begin{equation}
@@ -427,18 +425,18 @@ Then, we upwind based on $w^{\mac}$:
 \subsection{2D Cartesian Case}
 We do a 1D Taylor series extrapolation to get both components of velocity at the x-face:
 \begin{eqnarray}
-u_{L,\ib-\half\eb_x}^{1D} &=& u_{\ib-\eb_x} + \left(\half - \frac{\dt}{2h}{\rm max}(0,u_{\ib-\eb_x})\right)\Delta_xu_{\ib-\eb_x}, \label{varden U_L^1D} \\
-u_{R,\ib-\half\eb_x}^{1D} &=& u_{\ib} + \left(\half - \frac{\dt}{2h}{\rm min}(0,u_{\ib})\right)\Delta_xu_{\ib}.
+u_{L,\ib-\half\eb_x}^{1D} &=& u_{\ib-\eb_x} + \left[\half - \frac{\dt}{2h}{\rm max}(0,u_{\ib-\eb_x})\right]\Delta_xu_{\ib-\eb_x}, \label{varden U_L^1D} \\
+u_{R,\ib-\half\eb_x}^{1D} &=& u_{\ib} + \left[\half - \frac{\dt}{2h}{\rm min}(0,u_{\ib})\right]\Delta_xu_{\ib}.
 \end{eqnarray}
 \begin{eqnarray}
-v_{L,\ib-\half\eb_x}^{1D} &=& v_{\ib-\eb_x} + \left(\half - \frac{\dt}{2h}{\rm max}(0,v_{\ib-\eb_x})\right)\Delta_xv_{\ib-\eb_x}, \label{varden U_L^1D} \\
-v_{R,\ib-\half\eb_x}^{1D} &=& v_{\ib} + \left(\half - \frac{\dt}{2h}{\rm min}(0,v_{\ib})\right)\Delta_xv_{\ib}.
+v_{L,\ib-\half\eb_x}^{1D} &=& v_{\ib-\eb_x} + \left[\half - \frac{\dt}{2h}{\rm max}(0,v_{\ib-\eb_x})\right]\Delta_xv_{\ib-\eb_x}, \label{varden U_L^1D} \\
+v_{R,\ib-\half\eb_x}^{1D} &=& v_{\ib} + \left[\half - \frac{\dt}{2h}{\rm min}(0,v_{\ib})\right]\Delta_xv_{\ib}.
 \end{eqnarray}
 We obtain the normal velocity using the Riemann problem:
 \begin{equation}
 u_{\ib-\half\eb_x}^{1D} =
 \begin{cases}
-0, & \left(u_{L,\ib-\half\eb_x}^{1D} \le 0 ~ {\rm AND} ~ u_{R,\ib-\half\eb_x}^{1D} \ge 0\right) ~ {\rm OR} ~ \left|u_{L,\ib-\half\eb_x}^{1D} + u_{R,\ib-\half\eb_x}^{1D}\right| < \epsilon, \\
+0, & \left(u_{L,\ib-\half\eb_x}^{1D} \le 0 ~~ {\rm AND} ~~ u_{R,\ib-\half\eb_x}^{1D} \ge 0\right) ~~ {\rm OR} ~~ \left|u_{L,\ib-\half\eb_x}^{1D} + u_{R,\ib-\half\eb_x}^{1D}\right| < \epsilon, \\
 u_{L,\ib-\half\eb_x}^{1D}, & u_{L,\ib-\half\eb_x}^{1D} + u_{R,\ib-\half\eb_x}^{1D} > 0, \\
 u_{R,\ib-\half\eb_x}^{1D}, & u_{L,\ib-\half\eb_x}^{1D} + u_{R,\ib-\half\eb_x}^{1D} < 0.
 \end{cases}
@@ -464,7 +462,7 @@ Then, we solve a Riemann problem:
 \begin{equation}
 u_{\ib-\half\eb_x}^{\mac,*} =
 \begin{cases}
-0, & \left(u_{L,\ib-\half\eb_x}^{\mac,*} \le 0 ~ {\rm AND} ~ u_{R,\ib-\half\eb_x}^{\mac,*} \ge 0\right) ~ {\rm OR} ~ \left|u_{L,\ib-\half\eb_x}^{\mac,*} + u_{R,\ib-\half\eb_x}^{\mac,*}\right| < \epsilon, \\
+0, & \left(u_{L,\ib-\half\eb_x}^{\mac,*} \le 0 ~~ {\rm AND} ~~ u_{R,\ib-\half\eb_x}^{\mac,*} \ge 0\right) ~~ {\rm OR} ~~ \left|u_{L,\ib-\half\eb_x}^{\mac,*} + u_{R,\ib-\half\eb_x}^{\mac,*}\right| < \epsilon, \\
 u_{L,\ib-\half\eb_x}^{\mac,*}, & u_{L,\ib-\half\eb_x}^{\mac,*} + u_{R,\ib-\half\eb_x}^{\mac,*} > 0, \\
 u_{R,\ib-\half\eb_x}^{\mac,*}, & u_{L,\ib-\half\eb_x}^{\mac,*} + u_{R,\ib-\half\eb_x}^{\mac,*} < 0.
 \end{cases}\label{umac Riemann Problem}
@@ -485,12 +483,12 @@ u_{L,\ib-\half\eb_y}^{y|z}, & v_{\ib-\half\eb_y}^{1D} > 0, \\
 u_{R,\ib-\half\eb_y}^{y|z}, & v_{\ib-\half\eb_y}^{1D} < 0.
 \end{cases}
 \end{equation}
-We use an analogous procedure to compute five more intemediate states, $u_{\ib-\half\eb_z}^{z|y}, v_{\ib-\half\eb_x}^{x|z}, v_{\ib-\half\eb_z}^{z|x}, w_{\ib-\half\eb_x}^{x|y}$, and $w_{\ib-\half\eb_y}^{y|x}$.  Then we do a full-dimensional extrapolation to get the MAC velocities at normal faces:
+We use an analogous procedure to compute five more intemediate states, $u_{\ib-\half\eb_z}^{z|y}, v_{\ib-\half\eb_x}^{x|z}, v_{\ib-\half\eb_z}^{z|x}, w_{\ib-\half\eb_x}^{x|y}$, and $w_{\ib-\half\eb_y}^{y|x}$.  Then, we do a full-dimensional extrapolation to get the MAC velocities at normal faces:
 \begin{eqnarray}
-u_{L,\ib-\half\eb_x}^{\mac,*} &=& u_{L,\ib-\half\eb_x}^{1D} - \frac{\dt}{4h}\left(v_{\ib-\eb_x+\half\eb_y}^{1D}+v_{\ib-\eb_x-\half\eb_y}^{1D}\right)\left(u_{\ib-\eb_x+\half\eb_y}^{y|z}-u_{\ib-\eb_x-\half\eb_y}^{y|z}\right) \nonumber \\
-&& - \frac{\dt}{4h}\left(w_{\ib-\eb_x+\half\eb_z}^{1D}+v_{\ib-\eb_x-\half\eb_z}^{1D}\right)\left(u_{\ib-\eb_x+\half\eb_z}^{z|y}-u_{\ib-\eb_x-\half\eb_z}^{z|y}\right) + \frac{\dt}{2}f_{u,\ib-\eb_x}, \\
-u_{R,\ib-\half\eb_x}^{\mac,*} &=& u_{R,\ib-\half\eb_x}^{1D} - \frac{\dt}{4h}\left(v_{\ib+\half\eb_y}^{1D}+v_{\ib-\half\eb_y}^{1D}\right)\left(u_{\ib+\half\eb_y}^{y|z}-u_{\ib-\half\eb_y}^{y|z}\right) \nonumber \\
-&& - \frac{\dt}{4h}\left(w_{\ib+\half\eb_z}^{1D}+w_{\ib-\half\eb_z}^{1D}\right)\left(u_{\ib+\half\eb_z}^{z|y}-u_{\ib-\half\eb_z}^{z|y}\right) + \frac{\dt}{2}f_{u,\ib}.
+u_{L,\ib-\half\eb_x}^{\mac,*} = u_{L,\ib-\half\eb_x}^{1D} &-& \frac{\dt}{4h}\left(v_{\ib-\eb_x+\half\eb_y}^{1D}+v_{\ib-\eb_x-\half\eb_y}^{1D}\right)\left(u_{\ib-\eb_x+\half\eb_y}^{y|z}-u_{\ib-\eb_x-\half\eb_y}^{y|z}\right) \nonumber \\
+&-& \frac{\dt}{4h}\left(w_{\ib-\eb_x+\half\eb_z}^{1D}+v_{\ib-\eb_x-\half\eb_z}^{1D}\right)\left(u_{\ib-\eb_x+\half\eb_z}^{z|y}-u_{\ib-\eb_x-\half\eb_z}^{z|y}\right) + \frac{\dt}{2}f_{u,\ib-\eb_x}, \\
+u_{R,\ib-\half\eb_x}^{\mac,*} = u_{R,\ib-\half\eb_x}^{1D} &-& \frac{\dt}{4h}\left(v_{\ib+\half\eb_y}^{1D}+v_{\ib-\half\eb_y}^{1D}\right)\left(u_{\ib+\half\eb_y}^{y|z}-u_{\ib-\half\eb_y}^{y|z}\right) \nonumber \\
+&-& \frac{\dt}{4h}\left(w_{\ib+\half\eb_z}^{1D}+w_{\ib-\half\eb_z}^{1D}\right)\left(u_{\ib+\half\eb_z}^{z|y}-u_{\ib-\half\eb_z}^{z|y}\right) + \frac{\dt}{2}f_{u,\ib}.
 \end{eqnarray}
 Then, we use the Riemann solver given above for the 2D case (equation [\ref{umac Riemann Problem}]) to compute $u_{\ib-\half\eb_x}^{\mac,*}$.  We use an analogous procedure to obtain $v_{\ib-\half\eb_y}^{\mac,*}$ and $w_{\ib-\half\eb_z}^{\mac,*}$.
 \cleardoublepage
@@ -513,10 +511,10 @@ s_{R,\ib-\half\eb_x}^{1D}, & u^{\mac}_{\ib-\half\eb_x} < 0. \\
 \end{equation}
 We use an analogous procedure to obtain $s_{\ib-\half\eb_y}^{1D}$.  Now we do a full-dimensional extrapolation of $s$ to each face.  The extrapolation of a ``conserved'' $s$ to x-faces is:
 \begin{eqnarray}
-s_{L,\ib-\half\eb_x}^{\edge} &=& s_{L,\ib-\half\eb_x}^{1D} - s_{\ib-\eb_x}(\nabla\cdot\Ub^{\mac})_{\ib-\eb_x} + \frac{\dt}{2h}s_{\ib-\eb_x}\left(v_{\ib-\eb_x+\half\eb_y}^{\mac} - v_{\ib-\eb_x-\half\eb_y}^{\mac}\right) \nonumber \\
-&&- \frac{\dt}{2h}\left[(s^{1D} v^{\mac})_{\ib-\eb_x+\half\eb_y} - (s^{1D} v^{\mac})_{\ib-\eb_x-\half\eb_y}\right] + \frac{\dt}{2}f_{s,\ib-\eb_x}, \\
-s_{R,\ib-\half\eb_x}^{\edge} &=& s_{R,\ib-\half\eb_x}^{1D} - s_{\ib}(\nabla\cdot\Ub^{\mac})_{\ib} + \frac{\dt}{2h}s_{\ib}\left(v_{\ib+\half\eb_y}^{\mac} - v_{\ib-\half\eb_y}^{\mac}\right) \nonumber \\
-&&- \frac{\dt}{2h}\left[(s^{1D} v^{\mac})_{\ib+\half\eb_y} - (s^{1D} v^{\mac})_{\ib-\half\eb_y}\right] + \frac{\dt}{2}f_{s,\ib}.
+s_{L,\ib-\half\eb_x}^{\edge} = s_{L,\ib-\half\eb_x}^{1D} &-& \frac{\dt}{2}s_{\ib-\eb_x}(\nabla\cdot\Ub^{\mac})_{\ib-\eb_x} + \frac{\dt}{2h}s_{\ib-\eb_x}\left(v_{\ib-\eb_x+\half\eb_y}^{\mac} - v_{\ib-\eb_x-\half\eb_y}^{\mac}\right) \nonumber \\
+&-& \frac{\dt}{2h}\left[(s^{1D} v^{\mac})_{\ib-\eb_x+\half\eb_y} - (s^{1D} v^{\mac})_{\ib-\eb_x-\half\eb_y}\right] + \frac{\dt}{2}f_{s,\ib-\eb_x}, \\
+s_{R,\ib-\half\eb_x}^{\edge} = s_{R,\ib-\half\eb_x}^{1D} &-& \frac{\dt}{2}s_{\ib}(\nabla\cdot\Ub^{\mac})_{\ib} + \frac{\dt}{2h}s_{\ib}\left(v_{\ib+\half\eb_y}^{\mac} - v_{\ib-\half\eb_y}^{\mac}\right) \nonumber \\
+&-& \frac{\dt}{2h}\left[(s^{1D} v^{\mac})_{\ib+\half\eb_y} - (s^{1D} v^{\mac})_{\ib-\half\eb_y}\right] + \frac{\dt}{2}f_{s,\ib}.
 \end{eqnarray}
 The extrapolation of a ``non-conserved'' $s$ to x-faces is:
 \begin{eqnarray}
