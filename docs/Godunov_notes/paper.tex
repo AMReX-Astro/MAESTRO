@@ -244,7 +244,7 @@ s_{L,\ib-\half\eb_x}^{1D}, & u^{\mac}_{\ib-\half\eb_x} > 0, \\
 s_{R,\ib-\half\eb_x}^{1D}, & u^{\mac}_{\ib-\half\eb_x} < 0. \\
 \end{cases}
 \end{equation}
-The extrapolation of $u$ to r-faces is analogous to the extrapolation to x-faces:
+The extrapolation of $s$ to r-faces is analogous to the extrapolation to x-faces:
 \begin{eqnarray}
 s_{L,\ib-\half\eb_r}^{1D} &=& s_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\half\eb_r}^{\mac}\right)\Delta_r s_{\ib-\eb_r}^n, \\
 s_{R,\ib-\half\eb_r}^{1D} &=& s_{\ib} - \left(\half + \frac{\dt}{2h}w_{\ib-\half\eb_r}^{\mac}\right)\Delta_r s_{\ib}^n.
@@ -486,7 +486,7 @@ u_{R,\ib-\half\eb_y}^{y|z}, & v_{\ib-\half\eb_y}^{1D} < 0.
 We use an analogous procedure to compute five more intemediate states, $u_{\ib-\half\eb_z}^{z|y}, v_{\ib-\half\eb_x}^{x|z}, v_{\ib-\half\eb_z}^{z|x}, w_{\ib-\half\eb_x}^{x|y}$, and $w_{\ib-\half\eb_y}^{y|x}$.  Then, we do a full-dimensional extrapolation to get the MAC velocities at normal faces:
 \begin{eqnarray}
 u_{L,\ib-\half\eb_x}^{\mac,*} = u_{L,\ib-\half\eb_x}^{1D} &-& \frac{\dt}{4h}\left(v_{\ib-\eb_x+\half\eb_y}^{1D}+v_{\ib-\eb_x-\half\eb_y}^{1D}\right)\left(u_{\ib-\eb_x+\half\eb_y}^{y|z}-u_{\ib-\eb_x-\half\eb_y}^{y|z}\right) \nonumber \\
-&-& \frac{\dt}{4h}\left(w_{\ib-\eb_x+\half\eb_z}^{1D}+v_{\ib-\eb_x-\half\eb_z}^{1D}\right)\left(u_{\ib-\eb_x+\half\eb_z}^{z|y}-u_{\ib-\eb_x-\half\eb_z}^{z|y}\right) + \frac{\dt}{2}f_{u,\ib-\eb_x}, \\
+&-& \frac{\dt}{4h}\left(w_{\ib-\eb_x+\half\eb_z}^{1D}+w_{\ib-\eb_x-\half\eb_z}^{1D}\right)\left(u_{\ib-\eb_x+\half\eb_z}^{z|y}-u_{\ib-\eb_x-\half\eb_z}^{z|y}\right) + \frac{\dt}{2}f_{u,\ib-\eb_x}, \\
 u_{R,\ib-\half\eb_x}^{\mac,*} = u_{R,\ib-\half\eb_x}^{1D} &-& \frac{\dt}{4h}\left(v_{\ib+\half\eb_y}^{1D}+v_{\ib-\half\eb_y}^{1D}\right)\left(u_{\ib+\half\eb_y}^{y|z}-u_{\ib-\half\eb_y}^{y|z}\right) \nonumber \\
 &-& \frac{\dt}{4h}\left(w_{\ib+\half\eb_z}^{1D}+w_{\ib-\half\eb_z}^{1D}\right)\left(u_{\ib+\half\eb_z}^{z|y}-u_{\ib-\half\eb_z}^{z|y}\right) + \frac{\dt}{2}f_{u,\ib}.
 \end{eqnarray}
@@ -533,5 +533,5 @@ s_{R,\ib-\half\eb_x}^{\edge}, & u^{\mac}_{\ib-\half\eb_x} < 0.
 \end{equation}
 We use an analogous procedure to compute $s_{\ib-\half\eb_y}^{\edge}$.
 \subsection{3D Cartesian Case}
-This is more complicated than the 2D case because we include corner coupling.  We compute $s_{\ib-\half\eb_x}^{1D}$, $s_{\ib-\half\eb_y}^{1D}$, and $s_{\ib-\half\eb_z}^{1D}$ in an analogous manner to equations (\ref{varden s_L^1D}) and (\ref{varden s_R^1D}).
+This is more complicated than the 2D case because we include corner coupling.  We first compute $s_{\ib-\half\eb_x}^{1D}$, $s_{\ib-\half\eb_y}^{1D}$, and $s_{\ib-\half\eb_z}^{1D}$ in an analogous manner to equations (\ref{varden s_L^1D}) and (\ref{varden s_R^1D}).
 \end{document}
