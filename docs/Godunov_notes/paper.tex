@@ -429,8 +429,8 @@ Then, we upwind based on $w^{\mac}$:
 \subsection{2D Cartesian Case}
 We do a 1D Taylor series extrapolation to get both components of velocity at the x-face:
 \begin{eqnarray}
-\Ub_{L,\ib-\half\eb_x}^{1D} &=& \Ub_{\ib-\eb_x} + \left(\half - \frac{\dt}{2h}u_{\ib-\eb_x}\right){\rm max}(0,\Delta_x\Ub_{\ib-\eb_x}), \label{varden U_L^1D} \\
-\Ub_{R,\ib-\half\eb_x}^{1D} &=& \Ub_{\ib} + \left(\half - \frac{\dt}{2h}u_{\ib}\right){\rm min}(0,\Delta_x\Ub_{\ib}).
+\Ub_{L,\ib-\half\eb_x}^{1D} &=& \Ub_{\ib-\eb_x} + \left(\half - \frac{\dt}{2h}{\rm max}(0,u_{\ib-\eb_x})\right)\Delta_x\Ub_{\ib-\eb_x}, \label{varden U_L^1D} \\
+\Ub_{R,\ib-\half\eb_x}^{1D} &=& \Ub_{\ib} + \left(\half - \frac{\dt}{2h}{\rm min}(0,u_{\ib})\right)\Delta_x\Ub_{\ib}.
 \end{eqnarray}
 We obtain the normal velocity using the Riemann problem:
 \begin{equation}
