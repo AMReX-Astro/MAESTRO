@@ -13,13 +13,15 @@ module mkutrans_module
 
 contains
 
-  subroutine mkutrans(nlevs,u,utrans,dx,dt,the_bc_level)
+  subroutine mkutrans(nlevs,u,utrans,w0,w0_cart_vec,dx,dt,the_bc_level)
 
     use bl_prof_module
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(in   ) :: u(:)
     type(multifab) , intent(inout) :: utrans(:,:)
+    real(kind=dp_t), intent(in   ) :: w0(:,0:)
+    type(multifab) , intent(in   ) :: w0_cart_vec(:)
     real(kind=dp_t), intent(in   ) :: dx(:,:),dt
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
@@ -28,6 +30,7 @@ contains
     real(kind=dp_t), pointer :: utp(:,:,:,:)
     real(kind=dp_t), pointer :: vtp(:,:,:,:)
     real(kind=dp_t), pointer :: wtp(:,:,:,:)
+    real(kind=dp_t), pointer :: w0p(:,:,:,:)
     integer                  :: lo(u(1)%dim)
     integer                  :: i,dm,ng,n
 
@@ -48,15 +51,16 @@ contains
           lo =  lwb(get_box(u(n),i))
           select case (dm)
           case (2)
-             call mkutrans_2d(up(:,:,1,:), &
-                              utp(:,:,1,1), vtp(:,:,1,1), &
+             call mkutrans_2d(n,up(:,:,1,:), &
+                              utp(:,:,1,1), vtp(:,:,1,1), w0(n,:), &
                               lo,dx(n,:),dt,ng,&
                               the_bc_level(n)%adv_bc_level_array(i,:,:,:), &
                               the_bc_level(n)%phys_bc_level_array(i,:,:))
           case (3)
              wtp => dataptr(utrans(n,3), i)
+             w0p => dataptr(w0_cart_vec(n), i)
              call mkutrans_3d(up(:,:,:,:), &
-                              utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), &
+                              utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), w0p(:,:,:,:), &
                               lo,dx(n,:),dt,ng,&
                               the_bc_level(n)%adv_bc_level_array(i,:,:,:), &
                               the_bc_level(n)%phys_bc_level_array(i,:,:))
@@ -79,25 +83,25 @@ contains
     
   end subroutine mkutrans
 
-  subroutine mkutrans_2d(vel,utrans,vtrans,lo,dx,dt,ng_s,adv_bc,phys_bc)
+  subroutine mkutrans_2d(n,vel,utrans,vtrans,w0,lo,dx,dt,ng_s,adv_bc,phys_bc)
 
     use bc_module
     use slope_module
+    use geometry, only: nr
     
-    integer, intent(in) :: lo(2),ng_s
-    
-    real(kind=dp_t), intent(in   ) ::     vel(lo(1)-ng_s:,lo(2)-ng_s:,:)
-    real(kind=dp_t), intent(inout) ::  utrans(lo(1)-1:,lo(2)-1:)
-    real(kind=dp_t), intent(inout) ::  vtrans(lo(1)-1:,lo(2)-1:)
-    
-    real(kind=dp_t),intent(in) :: dt,dx(:)
-    integer        ,intent(in) :: adv_bc(:,:,:)
-    integer        ,intent(in) :: phys_bc(:,:  )
+    integer,         intent(in   ) :: n,lo(2),ng_s
+    real(kind=dp_t), intent(in   ) :: vel(lo(1)-ng_s:,lo(2)-ng_s:,:)
+    real(kind=dp_t), intent(inout) :: utrans(lo(1)-1:,lo(2)-1:)
+    real(kind=dp_t), intent(inout) :: vtrans(lo(1)-1:,lo(2)-1:)
+    real(kind=dp_t), intent(in   ) :: w0(0:)    
+    real(kind=dp_t), intent(in   ) :: dt,dx(:)
+    integer        , intent(in   ) :: adv_bc(:,:,:)
+    integer        , intent(in   ) :: phys_bc(:,:)
     
     real(kind=dp_t), allocatable ::  velx(:,:,:), vely(:,:,:)
     
     real(kind=dp_t) hx, hy, dth, umax
-    real(kind=dp_t) ulft,urgt,vbot,vtop, eps, abs_eps
+    real(kind=dp_t) ulft,urgt,vbot,vtop,vlo,vhi,eps,abs_eps
 
     integer :: hi(2), i,j,is,js,ie,je
     
@@ -172,8 +176,20 @@ contains
     do j = js,je+1 
        do i = is-1,ie+1 
 
-          vtop = vel(i,j  ,2) - (HALF + dth*vel(i,j  ,2)/hy) * vely(i,j  ,1)
-          vbot = vel(i,j-1,2) + (HALF - dth*vel(i,j-1,2)/hy) * vely(i,j-1,1)
+          if (j+1 .gt. nr(n)) then
+             vhi = vel(i,j,2) + w0(j)
+          else
+             vhi = vel(i,j,2) + HALF*(w0(j+1) + w0(j))
+          end if
+
+          if (j-1 .lt. ZERO) then
+             vlo = vel(i,j-1,2) + w0(j)
+          else
+             vlo = vel(i,j-1,2) + HALF*(w0(j) + w0(j-1))
+          end if
+         
+          vtop = vel(i,j  ,2) - (HALF + dth*vhi/hy) * vely(i,j  ,1)
+          vbot = vel(i,j-1,2) + (HALF - dth*vlo/hy) * vely(i,j-1,1)
 
           vtop = merge(vel(i,js-1,2),vtop,j.eq.js   .and. phys_bc(2,1) .eq. INLET)
           vtop = merge(vel(i,je+1,2),vtop,j.eq.je+1 .and. phys_bc(2,2) .eq. INLET)
@@ -198,7 +214,7 @@ contains
 
   end subroutine mkutrans_2d
   
-  subroutine mkutrans_3d(vel,utrans,vtrans,wtrans,lo,dx,dt,ng_s,adv_bc,phys_bc)
+  subroutine mkutrans_3d(vel,utrans,vtrans,wtrans,w0_cart_vec,lo,dx,dt,ng_s,adv_bc,phys_bc)
 
     use bc_module
     use slope_module
@@ -209,14 +225,15 @@ contains
     real(kind=dp_t), intent(inout) :: utrans(lo(1)-   1:,lo(2)-   1:,lo(3)-   1:)
     real(kind=dp_t), intent(inout) :: vtrans(lo(1)-   1:,lo(2)-   1:,lo(3)-   1:)
     real(kind=dp_t), intent(inout) :: wtrans(lo(1)-   1:,lo(2)-   1:,lo(3)-   1:)
-    
-    real(kind=dp_t),intent(in) :: dt,dx(:)
-    integer        ,intent(in) ::  adv_bc(:,:,:)
-    integer        ,intent(in) :: phys_bc(:,:  )
+    real(kind=dp_t), intent(in   ) :: w0_cart_vec(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)    
+    real(kind=dp_t), intent(in   ) :: dt,dx(:)
+    integer        , intent(in   ) :: adv_bc(:,:,:)
+    integer        , intent(in   ) :: phys_bc(:,:)
     
     real(kind=dp_t), allocatable::  velx(:,:,:,:),vely(:,:,:,:),velz(:,:,:,:)
     
     real(kind=dp_t) ulft,urgt,vbot,vtop,wbot,wtop
+    real(kind=dp_t) uhi,ulo,vhi,vlo,whi,wlo
     real(kind=dp_t) hx, hy, hz, dth, umax, eps, abs_eps
     
     logical :: test
@@ -275,9 +292,12 @@ contains
     do k = ks-1,ke+1
        do j = js-1,je+1
           do i = is,ie+1
+
+             uhi = vel(i  ,j,k,1) + w0_cart_vec(i  ,j,k,1)
+             ulo = vel(i-1,j,k,1) + w0_cart_vec(i-1,j,k,1)
              
-             urgt = vel(i,j,k  ,1) - (HALF + dth*vel(i  ,j,k,1)/hx) * velx(i  ,j,k,1)
-             ulft = vel(i-1,j,k,1) + (HALF - dth*vel(i-1,j,k,1)/hx) * velx(i-1,j,k,1)
+             urgt = vel(i,j,k  ,1) - (HALF + dth*uhi/hx) * velx(i  ,j,k,1)
+             ulft = vel(i-1,j,k,1) + (HALF - dth*ulo/hx) * velx(i-1,j,k,1)
 
              urgt = merge(vel(is-1,j,k,1),urgt,i.eq.is   .and. phys_bc(1,1) .eq. INLET)
              urgt = merge(vel(ie+1,j,k,1),urgt,i.eq.ie+1 .and. phys_bc(1,2) .eq. INLET)
@@ -305,9 +325,12 @@ contains
     do j = js,je+1
        do k = ks-1,ke+1
           do i = is-1,ie+1
+
+             vhi = vel(i,j  ,k,2) + w0_cart_vec(i,j  ,k,2)
+             vlo = vel(i,j-1,k,2) + w0_cart_vec(i,j-1,k,2)
              
-             vtop = vel(i,j  ,k,2) - (HALF + dth*vel(i,j  ,k,2)/hy) * vely(i,j  ,k,1)
-             vbot = vel(i,j-1,k,2) + (HALF - dth*vel(i,j-1,k,2)/hy) * vely(i,j-1,k,1)
+             vtop = vel(i,j  ,k,2) - (HALF + dth*vhi/hy) * vely(i,j  ,k,1)
+             vbot = vel(i,j-1,k,2) + (HALF - dth*vlo/hy) * vely(i,j-1,k,1)
 
              vtop = merge(vel(i,js-1,k,2),vtop,j.eq.js   .and. phys_bc(2,1) .eq. INLET)
              vtop = merge(vel(i,je+1,k,2),vtop,j.eq.je+1 .and. phys_bc(2,2) .eq. INLET)
@@ -337,8 +360,11 @@ contains
        do j = js-1,je+1
           do i = is-1,ie+1
              
-             wtop = vel(i,j,k  ,3) - (HALF + dth*vel(i,j,k  ,3)/hz) * velz(i,j,k  ,1)
-             wbot = vel(i,j,k-1,3) + (HALF - dth*vel(i,j,k-1,3)/hz) * velz(i,j,k-1,1)
+             whi = vel(i,j,k  ,3) + w0_cart_vec(i,j,k  ,3)
+             wlo = vel(i,j,k-1,3) + w0_cart_vec(i,j,k-1,3)
+
+             wtop = vel(i,j,k  ,3) - (HALF + dth*whi/hz) * velz(i,j,k  ,1)
+             wbot = vel(i,j,k-1,3) + (HALF - dth*wlo/hz) * velz(i,j,k-1,1)
              
              wtop = merge(vel(i,j,ks-1,3),wtop,k.eq.ks   .and. phys_bc(3,1) .eq. INLET)
              wtop = merge(vel(i,j,ke+1,3),wtop,k.eq.ke+1 .and. phys_bc(3,2) .eq. INLET)
