@@ -100,7 +100,7 @@ contains
                                      uepy(:,:,:,:), uepz(:,:,:,:), &
                                      fp(:,:,:,:), np(:,:,:,:), &
                                      w0(n,:), w0p(:,:,:,:), &
-                                     w0_force(n,:), w0fp(:,:,:,:), &
+                                     w0fp(:,:,:,:), &
                                      lo, hi, ng, dx(n,:), dt, spp(:,:,:,1))
           end select
        end do
@@ -195,7 +195,7 @@ contains
   end subroutine update_velocity_2d
 
   subroutine update_velocity_3d(n,uold,unew,umac,vmac,wmac,uedgex,uedgey,uedgez,force, &
-                                normal,w0,w0_cart,w0_force,w0_force_cart,lo,hi,ng,dx,dt, &
+                                normal,w0,w0_cart,w0_force_cart,lo,hi,ng,dx,dt, &
                                 sponge)
 
     use fill_3d_module
@@ -217,7 +217,6 @@ contains
     real (kind = dp_t), intent(in   ) ::   sponge(lo(1)   :,lo(2)   :,lo(3)   :  ) 
     real (kind = dp_t), intent(in   ) ::       w0(0:)
     real (kind = dp_t), intent(in   ) ::  w0_cart(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
-    real (kind = dp_t), intent(in   ) :: w0_force(0:)
     real (kind = dp_t), intent(in   ) ::  w0_force_cart(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
     real (kind = dp_t), intent(in   ) :: dx(:)
     real (kind = dp_t), intent(in   ) :: dt
@@ -290,7 +289,7 @@ contains
                      - uedgez(i,j,k,:))/dx(3)
 
                 ! Add in the pi0 term.
-                unew(i,j,k,3) = unew(i,j,k,3) - dt * w0_force(k)
+                unew(i,j,k,3) = unew(i,j,k,3) - dt * w0_force_cart(i,j,k,3)
 
                 ! Add the sponge
                 if (do_sponge) unew(i,j,k,:) = unew(i,j,k,:) * sponge(i,j,k)
