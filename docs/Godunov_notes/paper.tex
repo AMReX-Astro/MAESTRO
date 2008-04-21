@@ -42,13 +42,14 @@
 These are working notes for the Godunov step in {\tt MAESTRO} and {\tt VARDEN}.
 \section{Differences Between These Notes and the Code}
 \begin{enumerate}
-\item Concerning both equations (\ref{Radial utrans_L}) and (\ref{Radial utrans_R}), in the code we are omitting the terms in equation (\ref{Perturbational Velocity Equation}) proportional to $w_0$ (by using $\wt$ rather than $w$ as the advection speed) and $(\Ubt\cdot\eb_r)$ (by omitting the term altogether).
+\item Concerning equations (\ref{Radial utrans_L}), (\ref{Radial utrans_R}), (\ref{1D wt_L extrap}) and (\ref{1D wt_R extrap}), in the code we are omitting the term in equation (\ref{Perturbational Velocity Equation}) proportional to $(\Ubt\cdot\eb_r)$.
 \item Concerning (\ref{Force Term}), in the code we are not including the term proportional to $\partial\pi_0/\partial r$ in the edge-state prediction.  However, this term is present in the cell-update.
 \end{enumerate}
 \section{Questions}
 \begin{enumerate}
-\item We need to re-examine when to include the term proportional to $(\Ubt\cdot\eb_r)$ in equation (\ref{Perturbational Velocity Equation}) when we do a 1D extrapolation of the radial velocity to r-faces.  For example, equations (\ref{Radial utrans_L}) and (\ref{Radial utrans_R}) include it, but equations (\ref{1D wt_L extrap}) and (\ref{1D wt_R extrap}) do not.
-\item In equations (\ref{wt_L Extrapolation}) and (\ref{wt_R Extrapolation}), (\ref{wt_L x-edge}) and (\ref{wt_R x-edge}), (\ref{wt_L r-edge}) and (\ref{wt_R r-edge}), we could also compute the term proportional to $\partial w_0/\partial r$ by using the cell-centered $\wt$ rather than the average of the neighboring $\wt^{\trans}$.
+\item Concerning equations (\ref{Radial utrans_L}), (\ref{Radial utrans_R}), (\ref{1D wt_L extrap}) and (\ref{1D wt_R extrap}), do we really need to include the term proportional to $(\Ubt\cdot\eb_r)$?
+\item Concerning (\ref{Force Term}), do we really need to include the term proportional to $\partial\pi_0/\partial r$ in the edge-state prediction?  If so, do we use the $\pi_0$ or $w_0$ formulation (refer to Paper III equation [38])?
+\item Concerning equations (\ref{wt_L Extrapolation}) and (\ref{wt_R Extrapolation}), (\ref{wt_L x-edge}) and (\ref{wt_R x-edge}), (\ref{wt_L r-edge}) and (\ref{wt_R r-edge}), we could also compute the term proportional to $\partial w_0/\partial r$ by using the cell-centered $\wt$ rather than the average of the neighboring $\wt^{\trans}$.
 \end{enumerate}
 \section{Differences Between {\tt MAESTRO} and {\tt VARDEN}}
 \begin{enumerate}
@@ -340,8 +341,8 @@ Then we upwind based on $u^{\trans}$:
 \end{equation}
 The extrapolation of $\wt$ to r-faces is:
 \begin{eqnarray}
-\wt_{L,\ib-\half\eb_r}^{1D} &=& \wt_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\eb_r}^n\right)\Delta_r \wt_{\ib-\eb_r}^n, \label{1D wt_L extrap} \\
-\wt_{R,\ib-\half\eb_r}^{1D} &=& \wt_{\ib} - \left(\half + \frac{\dt}{2h}w_{\ib}^n\right)\Delta_r \wt_{\ib}^n. \label{1D wt_R extrap}
+\wt_{L,\ib-\half\eb_r}^{1D} &=& \wt_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\eb_r}^n\right)\Delta_r \wt_{\ib-\eb_r}^n - \frac{\dt}{2}\wt_{\ib-\eb_r}^n\left(\frac{\partial w_0}{\partial r}\right)_{\ib-\eb_r}, \label{1D wt_L extrap} \\
+\wt_{R,\ib-\half\eb_r}^{1D} &=& \wt_{\ib} - \left(\half + \frac{\dt}{2h}w_{\ib}^n\right)\Delta_r \wt_{\ib}^n - \frac{\dt}{2}\wt_{\ib}^n\left(\frac{\partial w_0}{\partial r}\right)_{\ib}. \label{1D wt_R extrap}
 \end{eqnarray}
 Then we upwind based on $w^{\trans}$:
 \begin{equation}
