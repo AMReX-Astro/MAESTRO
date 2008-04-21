@@ -166,7 +166,7 @@ contains
                                         ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
                                         utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), &
                                         fp(:,:,:,:), np(:,:,:,:), &
-                                        w0(n,:), w0p(:,:,:,:), gw0p(:,:,:,1), &
+                                        w0p(:,:,:,:), gw0p(:,:,:,1), &
                                         lo, dx(n,:), dt, is_vel, &
                                         the_bc_level(n)%phys_bc_level_array(i,:,:), &
                                         the_bc_level(n)%adv_bc_level_array(i,:,:,bccomp:), &
@@ -603,7 +603,7 @@ contains
                                 umac,vmac,wmac, &
                                 utrans,vtrans,wtrans, &
                                 force, normal, &
-                                w0,w0_cart_vec,gradw0_cart, &
+                                w0_cart_vec,gradw0_cart, &
                                 lo,dx,dt,is_vel, &
                                 phys_bc,adv_bc, &
                                 velpred,ng,comp)
@@ -627,7 +627,6 @@ contains
     real(kind=dp_t), intent(in   ) :: wtrans(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
     real(kind=dp_t), intent(in   ) ::  force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
     real(kind=dp_t), intent(in   ) :: normal(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
-    real(kind=dp_t), intent(in   ) ::     w0(0:)
     real(kind=dp_t), intent(in   ) :: w0_cart_vec(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
     real(kind=dp_t), intent(in   ) :: gradw0_cart(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
@@ -849,8 +848,9 @@ contains
                     if (spherical .eq. 0 .and. comp.eq.3) then
 
                        ! wtrans contains w0 so we need to subtract it off
-                       st = st - HALF * (wtrans(i,j,k)+wtrans(i,j,k+1)-w0(k+1)-w0(k))* &
-                            (w0(k+1)-w0(k))/hz
+                       st = st - HALF * (wtrans(i,j,k)+wtrans(i,j,k+1)- &
+                            w0_cart_vec(i,j,k+1,3)-w0_cart_vec(i,j,k,3))* &
+                            (w0_cart_vec(i,j,k+1,3)-w0_cart_vec(i,j,k,3))/hz
 
                     else if (spherical .eq. 1) then
 
@@ -1077,8 +1077,9 @@ contains
                     if (spherical .eq. 0 .and. comp.eq.3) then
 
                        ! wtrans contains w0 so we need to subtract it off
-                       st = st - HALF * (wtrans(i,j,k)+wtrans(i,j,k+1)-w0(k+1)-w0(k))* &
-                            (w0(k+1)-w0(k))/hz
+                       st = st - HALF * (wtrans(i,j,k)+wtrans(i,j,k+1)- &
+                            w0_cart_vec(i,j,k+1,3)-w0_cart_vec(i,j,k,3))* &
+                            (w0_cart_vec(i,j,k+1,3)-w0_cart_vec(i,j,k,3))/hz
 
                     else if (spherical .eq. 1) then
 
@@ -1305,8 +1306,9 @@ contains
                     if (spherical .eq. 0 .and. comp.eq.3 .and. k .ge. 0 .and. k .lt. nr(n)) then
 
                        ! wtrans contains w0 so we need to subtract it off
-                       st = st - HALF * (wtrans(i,j,k)+wtrans(i,j,k+1)-w0(k+1)-w0(k))* &
-                            (w0(k+1)-w0(k))/hz
+                       st = st - HALF * (wtrans(i,j,k)+wtrans(i,j,k+1)- &
+                            w0_cart_vec(i,j,k+1,3)-w0_cart_vec(i,j,k,3))* &
+                            (w0_cart_vec(i,j,k+1,3)-w0_cart_vec(i,j,k,3))/hz
 
                     else if (spherical .eq. 1) then
 

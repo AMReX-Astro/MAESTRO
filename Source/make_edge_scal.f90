@@ -139,11 +139,10 @@ contains
             w0p  => dataptr(w0_cart_vec(n),i)
             do scomp = start_scomp, start_scomp + num_comp - 1
                bccomp = start_bccomp + scomp - start_scomp
-               call make_edge_scal_3d(n,sop(:,:,:,:), &
+               call make_edge_scal_3d(n, sop(:,:,:,:), &
                                       sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
                                       ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
-                                      fp(:,:,:,:), &
-                                      w0(n,:), w0p(:,:,:,:), &
+                                      fp(:,:,:,:), w0p(:,:,:,:), &
                                       lo, dx(n,:), dt, is_vel, &
                                       the_bc_level(n)%phys_bc_level_array(i,:,:), &
                                       the_bc_level(n)%adv_bc_level_array(i,:,:,bccomp:), &
@@ -451,7 +450,7 @@ contains
     
   end subroutine make_edge_scal_2d
 
-  subroutine make_edge_scal_3d(n,s,sedgex,sedgey,sedgez,umac,vmac,wmac,force,w0,w0_cart_vec, &
+  subroutine make_edge_scal_3d(n,s,sedgex,sedgey,sedgez,umac,vmac,wmac,force,w0_cart_vec, &
                                lo,dx,dt,is_vel,phys_bc,adv_bc,ng,comp)
 
     use geometry, only: nr, spherical
@@ -468,7 +467,6 @@ contains
     real(kind=dp_t), intent(in   ) ::   vmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
     real(kind=dp_t), intent(in   ) ::   wmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
     real(kind=dp_t), intent(in   ) ::  force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
-    real(kind=dp_t), intent(in   ) :: w0(0:)
     real(kind=dp_t), intent(in   ) :: w0_cart_vec(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
     logical        , intent(in   ) :: is_vel
@@ -649,7 +647,9 @@ contains
              ! NOTE NOTE : THIS IS WRONG FOR SPHERICAL !!
              if (spherical .eq. 0 .and. is_vel .and. comp .eq. 3) then
                 ! wmac contains w0 so we need to subtract it off
-                st = st - HALF*(wmac(i,j,k)+wmac(i,j,k+1)-w0(k+1)-w0(k)) * (w0(k+1)-w0(k))/hz
+                st = st - HALF*(wmac(i,j,k)+wmac(i,j,k+1)- &
+                     w0_cart_vec(i,j,k+1,3)-w0_cart_vec(i,j,k,3)) &
+                     * (w0_cart_vec(i,j,k+1,3)-w0_cart_vec(i,j,k,3))/hz
              end if
 
              s_l(i+1) = s(i,j,k,comp) + (HALF-dth*umac(i+1,j,k)/hx)*slopex(i,j,k,1) + dth*st
@@ -808,8 +808,9 @@ contains
              ! NOTE NOTE : THIS IS WRONG FOR SPHERICAL !!
              if (spherical .eq. 0 .and. is_vel .and. comp.eq.3) then
                 ! wmac contains w0 so we need to subtract it off
-                st = st - HALF * (wmac(i,j,k)+wmac(i,j,k+1)-w0(k+1)-w0(k))* &
-                     (w0(k+1)-w0(k))/hz
+                st = st - HALF * (wmac(i,j,k)+wmac(i,j,k+1)- &
+                     w0_cart_vec(i,j,k+1,3)-w0_cart_vec(i,j,k,3))* &
+                     (w0_cart_vec(i,j,k+1,3)-w0_cart_vec(i,j,k,3))/hz
              end if
                  
              s_b(j+1)= s(i,j,k,comp) + (HALF-dth*vmac(i,j+1,k)/hy)*slopey(i,j,k,1) + dth*st
@@ -969,7 +970,9 @@ contains
              ! NOTE NOTE : THIS IS WRONG FOR SPHERICAL !!
              if (spherical.eq.0.and.is_vel.and.comp.eq.3.and.k.ge.0.and.k.lt.nr(n)) then
                 ! wmac contains w0 so we need to subtract it off
-                st = st - HALF*(wmac(i,j,k)+wmac(i,j,k+1)-w0(k+1)-w0(k)) * (w0(k+1)-w0(k))/hz
+                st = st - HALF*(wmac(i,j,k)+wmac(i,j,k+1)- &
+                     w0_cart_vec(i,j,k+1,3)-w0_cart_vec(i,j,k,3)) * &
+                     (w0_cart_vec(i,j,k+1,3)-w0_cart_vec(i,j,k,3))/hz
              end if
                  
              s_d(k+1)= s(i,j,k,comp) + (HALF-dth*wmac(i,j,k+1)/hz)*slopez(i,j,k,1) + dth*st
