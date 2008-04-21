@@ -151,9 +151,10 @@ contains
           divu =  (umac(i+1,j) - umac(i,j)) / dx(1) &
                +( (vmac(i,j+1) + w0(j+1)) &
                  -(vmac(i,j)   + w0(j)  ) ) / dx(2)
+
           divbaseu = base(j)*(umac(i+1,j) - umac(i,j))/dx(1) &
-               +(vmac(i,j+1) * base_edge(j+1) &
-               - vmac(i,j  ) * base_edge(j  ) )/ dx(2)
+                            +(vmac(i,j+1) * base_edge(j+1) - &
+                              vmac(i,j  ) * base_edge(j  ) )/ dx(2)
           
           force(i,j) = force(i,j) - (s(i,j)-base(j))*divu - divbaseu 
        end do
@@ -182,11 +183,14 @@ contains
              divu = (umac(i+1,j,k) - umac(i,j,k)) / dx(1) &
                    +(vmac(i,j+1,k) - vmac(i,j,k)) / dx(2) &
                    +(wmac(i,j,k+1) - wmac(i,j,k)) / dx(3)
+
+             divu = divu + (w0(k+1)-w0(k))/dx(3)
+
              divbaseu = base(k)*( (umac(i+1,j,k) - umac(i,j,k))/dx(1) &
                                  +(vmac(i,j+1,k) - vmac(i,j,k))/dx(2) ) &
                                  +(wmac(i,j,k+1) * base_edge(k+1) &
                                  - wmac(i,j,k  ) * base_edge(k  ))/ dx(3)
-             divu = divu + (w0(k+1)-w0(k))/dx(3)
+
              force(i,j,k) = force(i,j,k) - (s(i,j,k)-base(k))*divu - divbaseu 
           end do
        end do
@@ -225,8 +229,9 @@ contains
     allocate(divu_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
     
     do r = 0,nr(n)-1
-       divu(r) = (base_loedge_loc(n,r+1)**2 &
-            * w0(r+1)- base_loedge_loc(n,r)**2 * w0(r))/(dr(n)*base_cc_loc(n,r)**2)
+       divu(r) = (base_loedge_loc(n,r+1)**2 * w0(r+1) - &
+                  base_loedge_loc(n,r  )**2 * w0(r  ) ) / &
+                 (dr(n)*base_cc_loc(n,r)**2)
     end do
 
     call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,divu,divu_cart, &
@@ -237,8 +242,8 @@ contains
           do i = lo(1),hi(1)
              
              divumac = (umac(i+1,j,k) - umac(i,j,k)) / dx(1) &
-                  +(vmac(i,j+1,k) - vmac(i,j,k)) / dx(2) &
-                  +(wmac(i,j,k+1) - wmac(i,j,k)) / dx(3)
+                      +(vmac(i,j+1,k) - vmac(i,j,k)) / dx(2) &
+                      +(wmac(i,j,k+1) - wmac(i,j,k)) / dx(3)
              
              if (i.lt.domhi(1)) then
                 base_xhi = HALF * (base_cart(i,j,k) + base_cart(i+1,j,k))
@@ -250,6 +255,7 @@ contains
              else
                 base_xlo = base_cart(i,j,k)
              end if
+
              if (j.lt.domhi(2)) then
                 base_yhi = HALF * (base_cart(i,j,k) + base_cart(i,j+1,k))
              else
@@ -260,6 +266,7 @@ contains
              else
                 base_ylo = base_cart(i,j,k)
              end if
+
              if (k.lt.domhi(3)) then
                 base_zhi = HALF * (base_cart(i,j,k) + base_cart(i,j,k+1))
              else
@@ -271,12 +278,9 @@ contains
                 base_zlo = base_cart(i,j,k)
              end if
              
-             divbaseu =  (umac(i+1,j,k) * base_xhi &
-                        - umac(i  ,j,k) * base_xlo)/ dx(1) &
-                        +(vmac(i,j+1,k) * base_yhi &
-                         -vmac(i,j  ,k) * base_ylo)/ dx(2) &
-                        +(wmac(i,j,k+1) * base_zhi &
-                         -wmac(i,j,k  ) * base_zlo)/ dx(3)
+             divbaseu = (umac(i+1,j,k)*base_xhi - umac(i,j,k)*base_xlo)/dx(1) + &
+                        (vmac(i,j+1,k)*base_yhi - vmac(i,j,k)*base_ylo)/dx(2) + &
+                        (wmac(i,j,k+1)*base_zhi - wmac(i,j,k)*base_zlo)/dx(3)
              
              force(i,j,k) = force(i,j,k) - divbaseu &
                   -(s(i,j,k)-base_cart(i,j,k))*(divumac+divu_cart(i,j,k,1)) 
