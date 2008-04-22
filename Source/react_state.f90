@@ -158,8 +158,8 @@ contains
 ! by mktempforce in scalar advance, since you will be double counting.
 !
 !          den_eos(1)  = s_out(i,j,rho_comp)
-!          h_eos(1)    = s_out(i,j,rhoh_comp)
-!          xn_eos(1,:) = s_out(i,j,spec_comp:spec_comp+nspec-1)
+!          h_eos(1)    = s_out(i,j,rhoh_comp)/s_out(i,j,rho_comp)
+!          xn_eos(1,:) = s_out(i,j,spec_comp:spec_comp+nspec-1)/s_out(i,j,rho_comp)
 !          temp_eos(1) = T_in
 !
 !          call eos(eos_input_rh, den_eos, temp_eos, &
@@ -244,8 +244,8 @@ contains
 ! by mktempforce in scalar advance, since you will be double counting.
 !
 !          den_eos(1)  = s_out(i,j,k,rho_comp)
-!          h_eos(1)    = s_out(i,j,k,rhoh_comp)
-!          xn_eos(1,:) = s_out(i,j,k,spec_comp:spec_comp+nspec-1)
+!          h_eos(1)    = s_out(i,j,k,rhoh_comp)/s_out(i,j,k,rho_comp)
+!          xn_eos(1,:) = s_out(i,j,k,spec_comp:spec_comp+nspec-1)/s_out(i,j,k,rho_comp)
 !          temp_eos(1) = T_in
 !
 !          call eos(eos_input_rh, den_eos, temp_eos, &
