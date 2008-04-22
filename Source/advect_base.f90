@@ -234,8 +234,9 @@ contains
     ! update rho_0
     do r = 0,nr(n)-1
        rho0_new(r) = rho0_old(r) &
-            - dtdr/base_cc_loc(n,r)**2*(base_loedge_loc(n,r+1)**2*edge(r+1)*vel(r+1) &
-            - base_loedge_loc(n,r  )**2 * edge(r  ) * vel(r  ))
+            - dtdr/base_cc_loc(n,r)**2 * &
+                (base_loedge_loc(n,r+1)**2 * edge(r+1) * vel(r+1) - &
+                 base_loedge_loc(n,r  )**2 * edge(r  ) * vel(r  ))
     end do
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -247,8 +248,10 @@ contains
     
     ! Update p0 -- predictor
     do r = 0,nr(n)-1
-       divbetaw = one/(base_cc_loc(n,r)**2)*(base_loedge_loc(n,r+1)**2*beta(r+1)*vel(r+1) - &
-            base_loedge_loc(n,r)**2 * beta(r) * vel(r)) / dr(n)
+       divbetaw = one/(base_cc_loc(n,r)**2) * &
+            (base_loedge_loc(n,r+1)**2 * beta(r+1) * vel(r+1) - &
+             base_loedge_loc(n,r  )**2 * beta(r  ) * vel(r  )) / dr(n)
+
        betahalf = div_coeff_old(r)
        factor = half * dt * gamma1bar(r) * (Sbar_in(r) - divbetaw / betahalf)
        p0_new(r) = p0_old(r) * (one + factor ) / (one - factor)
@@ -268,9 +271,10 @@ contains
     
     ! Update p0 -- corrector
     do r = 0,nr(n)-1
-       divbetaw = one / (base_cc_loc(n,r)**2) &
-            * (base_loedge_loc(n,r+1)**2 * beta_nh(r+1) * vel(r+1) - &
-            base_loedge_loc(n,r  )**2 * beta_nh(r  ) * vel(r  ) ) / dr(n)
+       divbetaw = one / (base_cc_loc(n,r)**2) * &
+            (base_loedge_loc(n,r+1)**2 * beta_nh(r+1) * vel(r+1) - &
+             base_loedge_loc(n,r  )**2 * beta_nh(r  ) * vel(r  )) / dr(n)
+
        betahalf = HALF*(div_coeff_old(r) + div_coeff_new(r))
        factor = half * dt * (Sbar_in(r) - divbetaw / betahalf)
        p0_new(r) = p0_old(r) * &
@@ -285,8 +289,9 @@ contains
     do r = 0,nr(n)-1
        
        div_w0_cart = (vel(r+1) - vel(r)) / dr(n)
-       div_w0_sph = one/(base_cc_loc(n,r)**2)*(base_loedge_loc(n,r+1)**2 * vel(r+1) - &
-                                               base_loedge_loc(n,r  )**2 * vel(r  )) / dr(n)
+       div_w0_sph = one/(base_cc_loc(n,r)**2) * &
+            (base_loedge_loc(n,r+1)**2 * vel(r+1) - &
+             base_loedge_loc(n,r  )**2 * vel(r  )) / dr(n)
 
        force(r) = -rhoh0_old(r) * div_w0_cart - &
             2.0_dp_t*rhoh0_old(r)*HALF*(vel(r) + vel(r+1))/base_cc_loc(n,r)
@@ -305,8 +310,9 @@ contains
     do r = 0,nr(n)-1
        
        rhoh0_new(r) = rhoh0_old(r) - &
-            dtdr / base_cc_loc(n,r)**2 * ( base_loedge_loc(n,r+1)**2 * edge(r+1) * vel(r+1) &
-            -base_loedge_loc(n,r  )**2 * edge(r  ) * vel(r  ))
+            dtdr / base_cc_loc(n,r)**2 * &
+            (base_loedge_loc(n,r+1)**2 * edge(r+1) * vel(r+1) - &
+             base_loedge_loc(n,r  )**2 * edge(r  ) * vel(r  ))
        
        rhoh0_new(r) = rhoh0_new(r) + dt * psi(r)
        
