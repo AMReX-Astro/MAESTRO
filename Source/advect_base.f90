@@ -63,7 +63,6 @@ contains
 
     use bl_constants_module
     use make_edge_state_module
-    use eos_module
     use variables, only: rho_comp, rhoh_comp
     use geometry, only: nr
     use probin_module, only: grav_const, enthalpy_pred_type
@@ -173,7 +172,6 @@ contains
 
     use bl_constants_module
     use make_edge_state_module
-    use eos_module
     use variables, only: rho_comp, rhoh_comp
     use geometry, only: nr, base_cc_loc, base_loedge_loc, dr, nr
     use make_grav_module

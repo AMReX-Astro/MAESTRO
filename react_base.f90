@@ -15,8 +15,9 @@ contains
   subroutine react_base(nlevs,rhoh0_in,rho_omegadotbar,rho_Hextbar,halfdt_in,rhoh0_out)
 
     use geometry, only: nr
+    use network, only: nspec
+    use eos_module, only: ebin
     use variables, only: rho_comp, spec_comp, rhoh_comp
-    use eos_module
     use bl_prof_module
      
     integer        , intent(in   ) :: nlevs

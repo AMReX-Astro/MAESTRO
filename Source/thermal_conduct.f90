@@ -568,7 +568,7 @@ contains
 
     use variables, only: foextrap_comp, rho_comp, spec_comp, rhoh_comp, temp_comp
     use macproject_module
-    use eos_module, only: nspec
+    use network, only: nspec
     use rhoh_vs_t_module
     use bl_prof_module
     use multifab_physbc_module
