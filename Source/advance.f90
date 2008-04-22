@@ -391,12 +391,17 @@ contains
     ! terms to thermal
     if ( (enthalpy_pred_type .eq. predict_T_then_rhohprime) .or. &
          (enthalpy_pred_type .eq. predict_T_then_h        ) ) then
+
+       do n=1,nlevs
+          call multifab_build(rho_Hext(n), mla%la(n), 1, 0)
+       end do
+
        if(istep .le. 1) then
-          call add_react_to_thermal(nlevs,thermal,rho_omegadot1,s1, &
-                                    the_bc_tower%bc_tower_array,mla)
+          call add_react_to_thermal(nlevs,thermal,rho_omegadot1,s1,rho_Hext, &
+                                    the_bc_tower%bc_tower_array,mla,dx,time)
        else
-          call add_react_to_thermal(nlevs,thermal,rho_omegadot2,s1, &
-                                    the_bc_tower%bc_tower_array,mla)
+          call add_react_to_thermal(nlevs,thermal,rho_omegadot2,s1,rho_Hext, &
+                                    the_bc_tower%bc_tower_array,mla,dx,time)
           
           if(.not. do_half_alg) then
              do n=1,nlevs
@@ -405,6 +410,11 @@ contains
              end do
           end if
        end if
+
+       do n=1,nlevs
+          call destroy(rho_Hext(n))
+       end do
+
     end if
             
     if(do_half_alg) then
@@ -727,17 +737,28 @@ contains
        ! terms to thermal
        if ( (enthalpy_pred_type .eq. predict_T_then_rhohprime) .or. &
             (enthalpy_pred_type .eq. predict_T_then_h        ) ) then
+
+          do n=1,nlevs
+             call multifab_build(rho_Hext(n), mla%la(n), 1, 0)
+          end do
+
           if(istep .le. 1) then
-             call add_react_to_thermal(nlevs,thermal,rho_omegadot1,s1, &
-                                       the_bc_tower%bc_tower_array,mla)
+             call add_react_to_thermal(nlevs,thermal,rho_omegadot1,s1,rho_Hext, &
+                                       the_bc_tower%bc_tower_array,mla,dx,time)
           else
-             call add_react_to_thermal(nlevs,thermal,rho_omegadot2_hold,s1, &
-                                       the_bc_tower%bc_tower_array,mla)
+             call add_react_to_thermal(nlevs,thermal,rho_omegadot2_hold,s1,rho_Hext, &
+                                       the_bc_tower%bc_tower_array,mla,dx,time)
 
              do n=1,nlevs
                 call destroy(rho_omegadot2_hold(n))
              end do
           end if
+
+          do n=1,nlevs
+             call destroy(rho_Hext(n))
+          end do
+
+
        end if
 
        do n=1,nlevs

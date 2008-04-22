@@ -16,7 +16,8 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine add_react_to_thermal(nlevs,thermal,rho_omegadot,s,the_bc_level,mla)
+  subroutine add_react_to_thermal(nlevs,thermal,rho_omegadot,s,rho_Hext,the_bc_level,mla, &
+                                  dx,time)
 
     use bl_prof_module
     use bl_constants_module
@@ -24,18 +25,22 @@ contains
     use multifab_fill_ghost_module
     use variables, only: foextrap_comp
     use ml_restriction_module, only : ml_cc_restriction
+    use heating_module
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: thermal(:)
     type(multifab) , intent(in   ) :: rho_omegadot(:)
     type(multifab) , intent(in   ) :: s(:)
+    type(multifab) , intent(inout) :: rho_Hext(:)
     type(bc_level) , intent(in   ) :: the_bc_level(:)
     type(ml_layout), intent(inout) :: mla
+    real(kind=dp_t), intent(in   ) :: dx(:,:),time
 
     ! local
     real(kind=dp_t), pointer :: sp(:,:,:,:)
     real(kind=dp_t), pointer :: tp(:,:,:,:)
     real(kind=dp_t), pointer :: rwp(:,:,:,:)
+    real(kind=dp_t), pointer :: hep(:,:,:,:)
     integer                  :: lo(thermal(1)%dim),hi(thermal(1)%dim)
     integer                  :: dm,i,n
 
@@ -44,6 +49,8 @@ contains
     call build(bpt, "add_react_to_thermal")
     
     dm = thermal(1)%dim
+
+    call get_rho_Hext(nlevs,mla,s,rho_Hext,dx,time)
     
     do n=1,nlevs
        do i=1,thermal(n)%nboxes
@@ -51,13 +58,16 @@ contains
           tp  => dataptr(thermal(n),i)
           rwp => dataptr(rho_omegadot(n),i)
           sp  => dataptr(s(n),i)
+          hep => dataptr(rho_Hext(n), i)
           lo = lwb(get_box(thermal(n), i))
           hi = upb(get_box(thermal(n), i))
           select case (dm)
           case (2)
-             call add_react_to_thermal_2d(lo,hi,tp(:,:,1,1),rwp(:,:,1,:),sp(:,:,1,:))
+             call add_react_to_thermal_2d(lo,hi,tp(:,:,1,1),rwp(:,:,1,:),sp(:,:,1,:), &
+                                          hep(:,:,1,1))
           case (3)
-             call add_react_to_thermal_3d(lo,hi,tp(:,:,:,1),rwp(:,:,:,:),sp(:,:,:,:))
+             call add_react_to_thermal_3d(lo,hi,tp(:,:,:,1),rwp(:,:,:,:),sp(:,:,:,:), &
+                                          hep(:,:,:,1))
           end select
        end do
     enddo
@@ -93,7 +103,7 @@ contains
        
   end subroutine add_react_to_thermal
   
-  subroutine add_react_to_thermal_2d(lo,hi,thermal,rho_omegadot,s)
+  subroutine add_react_to_thermal_2d(lo,hi,thermal,rho_omegadot,s,rho_Hext)
 
     use eos_module
     use bl_constants_module
@@ -103,6 +113,7 @@ contains
     real (kind=dp_t), intent(inout) :: thermal(lo(1)-1:,lo(2)-1:)
     real (kind=dp_t), intent(in   ) :: rho_omegadot(lo(1):,lo(2):,:)
     real (kind=dp_t), intent(in   ) :: s(lo(1)-3:,lo(2)-3:,:)
+    real (kind=dp_t), intent(in   ) :: rho_Hext(lo(1):,lo(2):)
     
     ! Local variables
     integer         :: i,j,comp
@@ -135,13 +146,13 @@ contains
                   (dhdX_eos(1,comp) + ebin(comp))*rho_omegadot(i,j,comp)
           enddo
           
-          thermal(i,j) = thermal(i,j) + react_term
+          thermal(i,j) = thermal(i,j) + react_term + rho_Hext(i,j)
        enddo
     enddo
     
   end subroutine add_react_to_thermal_2d
 
-  subroutine add_react_to_thermal_3d(lo,hi,thermal,rho_omegadot,s)
+  subroutine add_react_to_thermal_3d(lo,hi,thermal,rho_omegadot,s,rho_Hext)
 
     use eos_module
     use bl_constants_module
@@ -151,6 +162,7 @@ contains
     real (kind=dp_t), intent(inout) :: thermal(lo(1)-1:,lo(2)-1:,lo(3)-1:)
     real (kind=dp_t), intent(in   ) :: rho_omegadot(lo(1):,lo(2):,lo(3):,:)
     real (kind=dp_t), intent(in   ) :: s(lo(1)-3:,lo(2)-3:,lo(3):,:)
+    real (kind=dp_t), intent(in   ) :: rho_Hext(lo(1):,lo(2):,lo(3):)
     
     ! Local variables
     integer :: i,j,k,comp
@@ -184,7 +196,7 @@ contains
                      (dhdX_eos(1,comp) + ebin(comp))*rho_omegadot(i,j,k,comp)
              enddo
              
-             thermal(i,j,k) = thermal(i,j,k) + react_term
+             thermal(i,j,k) = thermal(i,j,k) + react_term + rho_Hext(i,j,k)
           enddo
        enddo
     enddo
