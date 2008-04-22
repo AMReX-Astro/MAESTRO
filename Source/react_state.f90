@@ -156,9 +156,9 @@ contains
 ! reaction term explicitly to the temperature equation force returned 
 ! by mktempforce in scalar advance, since you will be double counting.
 !
-!          den_eos(1) = rho
-!          h_eos(1) = h_out
-!          xn_eos(1,:) = x_out(1:nspec)
+!          den_eos(1)  = s_out(i,j,rho_comp)
+!          h_eos(1)    = s_out(i,j,rhoh_comp)
+!          xn_eos(1,:) = s_out(i,j,spec_comp:spec_comp+nspec-1)
 !          temp_eos(1) = T_in
 !
 !          call eos(eos_input_rh, den_eos, temp_eos, &
