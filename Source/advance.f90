@@ -250,7 +250,7 @@ contains
     end do
     
     call advance_premac(nlevs,uold,sold,umac,utrans,gpres,normal,w0,w0_cart_vec, &
-                        rho0_old,grav_cell_old,dx,dt, &
+                        w0_force,w0_force_cart_vec,rho0_old,grav_cell_old,dx,dt, &
                         the_bc_tower%bc_tower_array,mla)
 
     do n=1,nlevs
@@ -637,8 +637,8 @@ contains
           end do
        end do
 
-       call advance_premac(nlevs,uold,sold,umac,utrans,gpres,normal,w0, &
-                           w0_cart_vec,rho0_old,grav_cell_old,dx,dt, &
+       call advance_premac(nlevs,uold,sold,umac,utrans,gpres,normal,w0,w0_cart_vec, &
+                           w0_force,w0_force_cart_vec,rho0_old,grav_cell_old,dx,dt, &
                            the_bc_tower%bc_tower_array,mla)
 
        do n=1,nlevs
