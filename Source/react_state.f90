@@ -110,6 +110,7 @@ contains
     use network, only: nspec, ebin
     use probin_module, ONLY: do_burning
     use bl_constants_module, only: zero
+    use eos_module
 
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(in   ) :: s_in (lo(1)-ng:,lo(2)-ng:,:)
@@ -194,6 +195,7 @@ contains
     use network, only: nspec, ebin
     use probin_module, ONLY: do_burning
     use bl_constants_module, only: zero
+    use eos_module
 
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(in   ) :: s_in (lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
@@ -241,9 +243,9 @@ contains
 ! reaction term explicitly to the temperature equation force returned 
 ! by mktempforce in scalar advance, since you will be double counting.
 !
-!          den_eos(1) = rho
-!          h_eos(1) = h_out
-!          xn_eos(1,:) = x_out(1:nspec)
+!          den_eos(1)  = s_out(i,j,k,rho_comp)
+!          h_eos(1)    = s_out(i,j,k,rhoh_comp)
+!          xn_eos(1,:) = s_out(i,j,k,spec_comp:spec_comp+nspec-1)
 !          temp_eos(1) = T_in
 !
 !          call eos(eos_input_rh, den_eos, temp_eos, &
