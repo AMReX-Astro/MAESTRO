@@ -246,6 +246,11 @@ contains
           umac_nodal_flag(comp) = .true.
           call multifab_build(  umac(n,comp), mla%la(n),  1, 1, nodal = umac_nodal_flag)
           call multifab_build(utrans(n,comp), mla%la(n),  1, 1, nodal = umac_nodal_flag)
+
+          ! we call this setval so the conservative edge state prediction doesn't grab
+          ! any uninitizlied values, even though they don't enter the stencil.
+          ! don't want to risk the chance of any nans floating in intermediate places
+          call setval(  umac(n,comp),ZERO, all=.true.)
        end do
     end do
     

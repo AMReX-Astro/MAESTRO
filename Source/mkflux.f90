@@ -161,7 +161,7 @@ contains
     use bl_constants_module
     use network, only : nspec
     use variables, only : spec_comp, rho_comp, rhoh_comp, trac_comp, ntrac
-    use probin_module, only: enthalpy_pred_type
+    use probin_module, only: enthalpy_pred_type, predict_rho
     use pred_parameters
 
     integer        , intent(in   ) :: lo(:),hi(:)
@@ -207,8 +207,12 @@ contains
              do i=lo(1),hi(1)+1
                 
                 rho_prime = sedgex(i,j,rho_comp)
-                
-                sfluxx(i,j,comp) = umac(i,j)*(rho0_edge+rho_prime)*sedgex(i,j,comp)
+
+                if (predict_rho) then
+                   sfluxx(i,j,comp) = umac(i,j)*rho_prime*sedgex(i,j,comp)
+                else
+                   sfluxx(i,j,comp) = umac(i,j)*(rho0_edge+rho_prime)*sedgex(i,j,comp)
+                end if
                 
              end do
              
@@ -241,7 +245,12 @@ contains
                 
                 rho_prime = sedgey(i,j,rho_comp)
                 
-                sfluxy(i,j,comp) = (vmac(i,j)+w0(j))*(rho0_edge+rho_prime)*sedgey(i,j,comp)
+                if (predict_rho) then
+                   sfluxy(i,j,comp) = (vmac(i,j)+w0(j))*rho_prime*sedgey(i,j,comp)
+                else
+                   sfluxy(i,j,comp) = &
+                        (vmac(i,j)+w0(j))*(rho0_edge+rho_prime)*sedgey(i,j,comp)
+                end if
                 
                 if ( (comp.ge.spec_comp).and.(comp.le.spec_comp+nspec-1) ) then
 
@@ -286,7 +295,7 @@ contains
     use bl_constants_module
     use network, only : nspec
     use variables, only : spec_comp, rho_comp, rhoh_comp, trac_comp, ntrac
-    use probin_module, only: enthalpy_pred_type
+    use probin_module, only: enthalpy_pred_type, predict_rho
     use pred_parameters
 
     integer        , intent(in   ) :: lo(:),hi(:)
@@ -337,7 +346,12 @@ contains
                    rho_prime = sedgex(i,j,k,rho_comp)
                    
                    ! sedgex is either h or X at edges
-                   sfluxx(i,j,k,comp) = umac(i,j,k)*(rho0_edge+rho_prime)*sedgex(i,j,k,comp)
+                   if (predict_rho) then
+                      sfluxx(i,j,k,comp) = umac(i,j,k)*rho_prime*sedgex(i,j,k,comp)
+                   else
+                      sfluxx(i,j,k,comp) = &
+                           umac(i,j,k)*(rho0_edge+rho_prime)*sedgex(i,j,k,comp)
+                   end if
                    
                 end do
              end do
@@ -348,8 +362,13 @@ contains
                    rho_prime = sedgey(i,j,k,rho_comp)
                    
                    ! sedgey is either h or X at edges
-                   sfluxy(i,j,k,comp) = vmac(i,j,k)*(rho0_edge+rho_prime)*sedgey(i,j,k,comp)
-                   
+                   if (predict_rho) then
+                      sfluxy(i,j,k,comp) = vmac(i,j,k)*rho_prime*sedgey(i,j,k,comp)
+                   else
+                      sfluxy(i,j,k,comp) =&
+                           vmac(i,j,k)*(rho0_edge+rho_prime)*sedgey(i,j,k,comp)
+                   end if
+
                 end do
              end do
              
@@ -394,9 +413,14 @@ contains
                    rho_prime = sedgez(i,j,k,rho_comp)
                 
                    ! sedgez is either h or X at edges
-                   sfluxz(i,j,k,comp) = &
-                        (wmac(i,j,k)+w0(k))*(rho0_edge+rho_prime)*sedgez(i,j,k,comp)
-                   
+                   if (predict_rho) then
+                      sfluxz(i,j,k,comp) = &
+                           (wmac(i,j,k)+w0(k))*rho_prime*sedgez(i,j,k,comp)
+                   else
+                      sfluxz(i,j,k,comp) = &
+                           (wmac(i,j,k)+w0(k))*(rho0_edge+rho_prime)*sedgez(i,j,k,comp)
+                   end if
+
                    if ( (comp.ge.spec_comp).and.(comp.le.spec_comp+nspec-1) ) then
                       
                       etarhoflux(i,j,k) = etarhoflux(i,j,k) + sfluxz(i,j,k,comp)
@@ -446,7 +470,7 @@ contains
     use network, only: nspec
     use variables, only: spec_comp, rho_comp, rhoh_comp, trac_comp, ntrac
     use pred_parameters
-    use probin_module, only: enthalpy_pred_type
+    use probin_module, only: enthalpy_pred_type, predict_rho
 
     integer        , intent(in   ) :: lo(:),hi(:),domlo(:),domhi(:)
     real(kind=dp_t), intent(inout) :: sfluxx(lo(1)  :,lo(2)  :,lo(3)  :,:)
@@ -489,24 +513,32 @@ contains
           do k = lo(3), hi(3)
              do j = lo(2), hi(2)
                 do i = lo(1), hi(1)+1
-
-                   rho0_edge = (rho0_old_cart(i,j,k)+rho0_old_cart(i-1,j,k) + &
-                                rho0_new_cart(i,j,k)+rho0_new_cart(i-1,j,k) ) &
-                                * FOURTH
-
-                   if (i.eq.domlo(1)) then
-                      rho0_edge = HALF * &
-                           (rho0_old_cart(i,j,k)+rho0_new_cart(i,j,k))
-                   end if
-                   if (i.eq.domhi(1)+1) then
-                      rho0_edge = HALF * &
-                           (rho0_old_cart(i-1,j,k)+rho0_new_cart(i-1,j,k))
-                   end if
-
+                   
                    w0_edgex = HALF * ( w0_cart(i  ,j,k,1) +w0_cart(i-1,j,k,1) )
+                   
+                   if (predict_rho) then
+                   
+                      sfluxx(i,j,k,comp) = (umac(i,j,k) + w0_edgex) * &
+                           (sedgex(i,j,k,rho_comp))*sedgex(i,j,k,comp)
 
-                   sfluxx(i,j,k,comp) = (umac(i,j,k) + w0_edgex) * &
-                        (rho0_edge + sedgex(i,j,k,rho_comp))*sedgex(i,j,k,comp)
+                   else
+
+                      rho0_edge = (rho0_old_cart(i,j,k)+rho0_old_cart(i-1,j,k) + &
+                           rho0_new_cart(i,j,k)+rho0_new_cart(i-1,j,k) ) * FOURTH
+
+                      if (i.eq.domlo(1)) then
+                         rho0_edge = HALF * &
+                              (rho0_old_cart(i,j,k)+rho0_new_cart(i,j,k))
+                      end if
+                      if (i.eq.domhi(1)+1) then
+                         rho0_edge = HALF * &
+                              (rho0_old_cart(i-1,j,k)+rho0_new_cart(i-1,j,k))
+                      end if
+                      
+                      sfluxx(i,j,k,comp) = (umac(i,j,k) + w0_edgex) * &
+                           (rho0_edge + sedgex(i,j,k,rho_comp))*sedgex(i,j,k,comp)
+                      
+                   end if
                 
                 end do
              end do
@@ -547,23 +579,31 @@ contains
              do j = lo(2), hi(2)+1
                 do i = lo(1), hi(1)
                    
-                   rho0_edge = (rho0_old_cart(i,j,k)+rho0_old_cart(i,j-1,k) + &
-                                rho0_new_cart(i,j,k)+rho0_new_cart(i,j-1,k) ) &
-                                * FOURTH
-                
-                   if (j.eq.domlo(2)) then
-                      rho0_edge = HALF * &
-                           (rho0_old_cart(i,j,k)+rho0_new_cart(i,j,k))
-                   end if
-                   if (j.eq.domhi(2)+1) then
-                      rho0_edge = HALF * &
-                           (rho0_old_cart(i,j-1,k)+rho0_new_cart(i,j-1,k))
-                   end if
-                   
                    w0_edgey = HALF * ( w0_cart(i,j  ,k,2) + w0_cart(i,j-1,k,2) )
                    
-                   sfluxy(i,j,k,comp) = (vmac(i,j,k) + w0_edgey) * &
-                        (rho0_edge + sedgey(i,j,k,rho_comp))*sedgey(i,j,k,comp)
+                   if (predict_rho) then
+
+                      sfluxy(i,j,k,comp) = (vmac(i,j,k) + w0_edgey) * &
+                           (sedgey(i,j,k,rho_comp))*sedgey(i,j,k,comp)
+
+                   else
+
+                      rho0_edge = (rho0_old_cart(i,j,k)+rho0_old_cart(i,j-1,k) + &
+                           rho0_new_cart(i,j,k)+rho0_new_cart(i,j-1,k) ) * FOURTH
+                
+                      if (j.eq.domlo(2)) then
+                         rho0_edge = HALF * &
+                              (rho0_old_cart(i,j,k)+rho0_new_cart(i,j,k))
+                      end if
+                      if (j.eq.domhi(2)+1) then
+                         rho0_edge = HALF * &
+                              (rho0_old_cart(i,j-1,k)+rho0_new_cart(i,j-1,k))
+                      end if
+
+                      sfluxy(i,j,k,comp) = (vmac(i,j,k) + w0_edgey) * &
+                           (rho0_edge + sedgey(i,j,k,rho_comp))*sedgey(i,j,k,comp)
+                      
+                   end if
 
                 end do
              end do
@@ -604,23 +644,31 @@ contains
              do j = lo(2), hi(2)
                 do i = lo(1), hi(1)
 
-                   rho0_edge = (rho0_old_cart(i,j,k)+rho0_old_cart(i,j,k-1) + &
-                             rho0_new_cart(i,j,k)+rho0_new_cart(i,j,k-1) ) &
-                             * FOURTH
-                   
-                   if (k.eq.domlo(3)) then
-                      rho0_edge = HALF * &
-                           (rho0_old_cart(i,j,k)+rho0_new_cart(i,j,k))
-                   end if
-                   if (k.eq.domhi(3)+1) then
-                      rho0_edge = HALF * &
-                           (rho0_old_cart(i,j,k-1)+rho0_new_cart(i,j,k-1))
-                   end if
-                   
                    w0_edgez = HALF * ( w0_cart(i,j,k  ,3) + w0_cart(i,j,k-1,3) )
                    
-                   sfluxz(i,j,k,comp) = (wmac(i,j,k) + w0_edgez) * &
-                        (rho0_edge + sedgez(i,j,k,rho_comp))*sedgez(i,j,k,comp)
+                   if (predict_rho) then
+
+                      sfluxz(i,j,k,comp) = (wmac(i,j,k) + w0_edgez) * &
+                           (sedgez(i,j,k,rho_comp))*sedgez(i,j,k,comp)
+
+                   else
+
+                      rho0_edge = (rho0_old_cart(i,j,k)+rho0_old_cart(i,j,k-1) + &
+                           rho0_new_cart(i,j,k)+rho0_new_cart(i,j,k-1) ) * FOURTH
+                      
+                      if (k.eq.domlo(3)) then
+                         rho0_edge = HALF * &
+                              (rho0_old_cart(i,j,k)+rho0_new_cart(i,j,k))
+                      end if
+                      if (k.eq.domhi(3)+1) then
+                         rho0_edge = HALF * &
+                              (rho0_old_cart(i,j,k-1)+rho0_new_cart(i,j,k-1))
+                      end if
+                      
+                      sfluxz(i,j,k,comp) = (wmac(i,j,k) + w0_edgez) * &
+                           (rho0_edge + sedgez(i,j,k,rho_comp))*sedgez(i,j,k,comp)
+                      
+                   end if
 
                 end do
              end do

@@ -36,7 +36,7 @@ contains
     use variables,     only: nscal, ntrac, spec_comp, trac_comp, temp_comp, &
                              rho_comp, rhoh_comp
     use probin_module, only: enthalpy_pred_type, use_thermal_diffusion, verbose, &
-                             evolve_base_state
+                             evolve_base_state, predict_rho
     use pred_parameters
     use modify_scal_force_module
     use convert_rhoX_to_X_module
@@ -159,8 +159,10 @@ contains
     ! X force is zero - do nothing
 
     ! make force for rho'
-    call modify_scal_force(nlevs,scal_force,sold,umac,rho0_old, &
-                           rho0_edge_old,w0,dx,rho0_old_cart,rho_comp,mla,the_bc_level)
+    if (.not. predict_rho) then
+       call modify_scal_force(nlevs,scal_force,sold,umac,rho0_old, &
+                              rho0_edge_old,w0,dx,rho0_old_cart,rho_comp,mla,the_bc_level)
+    end if
 
     ! make force for either h, T, or (rho h)'
     if (enthalpy_pred_type .eq. predict_rhohprime) then
@@ -208,8 +210,9 @@ contains
     end if
 
     ! convert rho -> rho'
-    call put_in_pert_form(nlevs,sold,rho0_old,dx,rho_comp, &
-                          .true.,mla,the_bc_level)
+    if (.not. predict_rho) then
+       call put_in_pert_form(nlevs,sold,rho0_old,dx,rho_comp,.true.,mla,the_bc_level)
+    end if
 
     do n=1,nlevs
        do comp = 1,dm
@@ -231,7 +234,7 @@ contains
     call make_edge_scal(nlevs,sold,sedge,umac,scal_force, &
                         normal,w0,w0_cart_vec, &
                         dx,dt,is_vel,the_bc_level, &
-                        pred_comp,dm+pred_comp,1,mla)
+                        pred_comp,dm+pred_comp,1,.false.,mla)
 
     ! predict either X or (rho X)' at the edges
 !    call make_edge_state(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0,w0_cart_vec,dx, &
@@ -239,7 +242,7 @@ contains
     call make_edge_scal(nlevs,sold,sedge,umac,scal_force, &
                         normal,w0,w0_cart_vec, &
                         dx,dt,is_vel,the_bc_level, &
-                        spec_comp,dm+spec_comp,nspec,mla)
+                        spec_comp,dm+spec_comp,nspec,.false.,mla)
 
     ! predict rho' at the edges
 !    call make_edge_state(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0,w0_cart_vec,dx, &
@@ -247,7 +250,7 @@ contains
     call make_edge_scal(nlevs,sold,sedge,umac,scal_force, &
                         normal,w0,w0_cart_vec, &
                         dx,dt,is_vel,the_bc_level, &
-                        rho_comp,dm+rho_comp,1,mla)
+                        rho_comp,dm+rho_comp,1,.true.,mla)
 
     if (enthalpy_pred_type .eq. predict_rhohprime) then
        ! convert (rho h)' -> (rho h)
@@ -256,8 +259,9 @@ contains
     end if
 
     ! convert rho' -> rho
-    call put_in_pert_form(nlevs,sold,rho0_old,dx,rho_comp, &
-                          .false.,mla,the_bc_level)
+    if (.not. predict_rho) then
+       call put_in_pert_form(nlevs,sold,rho0_old,dx,rho_comp,.false.,mla,the_bc_level)
+    end if
 
     ! if we were predicting X at the edges, then restore the state arrays 
     ! (and base state) from X to (rho X)

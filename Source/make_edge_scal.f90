@@ -25,7 +25,7 @@ contains
   subroutine make_edge_scal(nlevs,s,sedge,umac,force, &
                             normal,w0,w0_cart_vec, &
                             dx,dt,is_vel,the_bc_level, &
-                            start_scomp,start_bccomp,num_comp,mla)
+                            start_scomp,start_bccomp,num_comp,is_conservative,mla)
 
     use bl_prof_module
     use bl_constants_module
@@ -47,6 +47,7 @@ contains
     logical        , intent(in   ) :: is_vel
     type(bc_level) , intent(in   ) :: the_bc_level(:)
     integer        , intent(in   ) :: start_scomp,start_bccomp,num_comp
+    logical        , intent(in   ) :: is_conservative
     type(ml_layout), intent(inout) :: mla
 
     integer                  :: i,r,scomp,bccomp,ng,dm,n
@@ -130,7 +131,7 @@ contains
                                        lo, dx(n,:), dt, is_vel, &
                                        the_bc_level(n)%phys_bc_level_array(i,:,:), &
                                        the_bc_level(n)%adv_bc_level_array(i,:,:,bccomp:), &
-                                       ng, scomp)
+                                       ng, scomp, is_conservative)
              end do
 
           case (3)
@@ -146,7 +147,7 @@ contains
                                       lo, dx(n,:), dt, is_vel, &
                                       the_bc_level(n)%phys_bc_level_array(i,:,:), &
                                       the_bc_level(n)%adv_bc_level_array(i,:,:,bccomp:), &
-                                      ng, scomp)
+                                      ng, scomp, is_conservative)
             end do
           end select
        end do
@@ -177,7 +178,7 @@ contains
   
   subroutine make_edge_scal_2d(n,s,sedgex,sedgey,umac,vmac, &
                                force,w0,lo,dx,dt,is_vel,phys_bc,adv_bc, &
-                               ng,comp)
+                               ng,comp,is_conservative)
 
     use geometry, only: nr
     use bc_module
@@ -197,6 +198,7 @@ contains
     integer        , intent(in   ) :: phys_bc(:,:)
     integer        , intent(in   ) :: adv_bc(:,:,:)
     integer        , intent(in   ) :: ng,comp
+    logical        , intent(in   ) :: is_conservative
 
     ! Local variables
     real(kind=dp_t), allocatable :: slopex(:,:,:),slopey(:,:,:)
@@ -304,7 +306,12 @@ contains
           savg   = HALF * (smbot + smtop)
           sminus = merge(sminus, savg, abs(vmac(i,j)) .gt. eps)
 
-          st = force(i,j,comp) - HALF * (vmac(i,j)+vmac(i,j+1))*(splus - sminus) / hy
+          if (is_conservative) then
+             st = force(i,j,comp) - ( vmac(i,j+1)*splus-vmac(i,j)*sminus ) / hy &
+                  + s(i,j,comp)*(umac(i+1,j)-umac(i,j)) / hx
+          else
+             st = force(i,j,comp) - HALF * (vmac(i,j)+vmac(i,j+1))*(splus - sminus) / hy
+          end if
 
           if (is_vel .and. comp .eq. 2) then
              ! vmac contains w0 so we need to subtract it off
@@ -412,7 +419,12 @@ contains
           savg   = HALF * (smlft + smrgt)
           sminus = merge(sminus, savg, abs(umac(i,j)) .gt. eps)
           
-          st = force(i,j,comp) - HALF * (umac(i,j)+umac(i+1,j))*(splus - sminus) / hx
+          if (is_conservative) then
+             st = force(i,j,comp) - ( umac(i+1,j)*splus-umac(i,j)*sminus ) /hx &
+                  + s(i,j,comp)*(vmac(i,j+1)-vmac(i,j)) / hy
+          else
+             st = force(i,j,comp) - HALF * (umac(i,j)+umac(i+1,j))*(splus - sminus) / hx
+          end if
           
           if (is_vel .and. comp .eq. 2 .and. j .ge. 0 .and. j .lt. nr(n)) then
              ! vmac contains w0 so we need to subtract it off
@@ -451,7 +463,7 @@ contains
   end subroutine make_edge_scal_2d
 
   subroutine make_edge_scal_3d(n,s,sedgex,sedgey,sedgez,umac,vmac,wmac,force,w0_cart_vec, &
-                               lo,dx,dt,is_vel,phys_bc,adv_bc,ng,comp)
+                               lo,dx,dt,is_vel,phys_bc,adv_bc,ng,comp,is_conservative)
 
     use geometry, only: nr, spherical
     use bc_module
@@ -473,6 +485,7 @@ contains
     integer        , intent(in   ) :: phys_bc(:,:)
     integer        , intent(in   ) :: adv_bc(:,:,:)
     integer        , intent(in   ) :: ng,comp
+    logical        , intent(in   ) :: is_conservative
 
     ! Local variables
     real(kind=dp_t), allocatable :: slopex(:,:,:,:),slopey(:,:,:,:),slopez(:,:,:,:)
@@ -594,7 +607,12 @@ contains
              savg   = HALF * (smbot + smtop)
              sminus = merge(sminus, savg, abs(vmac(i,j,k)) .gt. eps)
 
-             st = force(i,j,k,comp) - HALF * (vmac(i,j,k)+vmac(i,j+1,k))*(splus - sminus) / hy
+             if (is_conservative) then
+                st = force(i,j,k,comp) - ( vmac(i,j+1,k)*splus-vmac(i,j,k)*sminus )  / hy
+             else
+                st = force(i,j,k,comp) &
+                     - HALF * (vmac(i,j,k)+vmac(i,j+1,k))*(splus - sminus) / hy
+             end if
 
              spbot = s(i,j,k  ,comp) + (HALF - dth*wmac(i,j,k+1)/hz) * slopez(i,j,k  ,1)
              sptop = s(i,j,k+1,comp) - (HALF + dth*wmac(i,j,k+1)/hz) * slopez(i,j,k+1,1)
@@ -642,7 +660,12 @@ contains
              savg   = HALF * (smbot + smtop)
              sminus = merge(sminus, savg, abs(wmac(i,j,k)) .gt. eps)
 
-             st = st - HALF * (wmac(i,j,k)+wmac(i,j,k+1))*(splus - sminus) / hz
+             if (is_conservative) then
+                st = st - ( wmac(i,j,k+1)*splus-wmac(i,j,k)*sminus ) / hz &
+                     + s(i,j,k,comp)*(umac(i+1,j,k)-umac(i,j,k)) / hx
+             else
+                st = st - HALF * (wmac(i,j,k)+wmac(i,j,k+1))*(splus - sminus) / hz
+             end if
 
              ! NOTE NOTE : THIS IS WRONG FOR SPHERICAL !!
              if (spherical .eq. 0 .and. is_vel .and. comp .eq. 3) then
@@ -755,7 +778,12 @@ contains
              savg   = HALF * (smlft + smrgt)
              sminus = merge(sminus, savg, abs(umac(i,j,k)) .gt. eps)
 
-             st = force(i,j,k,comp) - HALF*(umac(i,j,k)+umac(i+1,j,k)) * (splus - sminus) / hx
+             if (is_conservative) then
+                st = force(i,j,k,comp) - ( umac(i+1,j,k)*splus-umac(i,j,k)*sminus ) / hx
+             else
+                st = force(i,j,k,comp) &
+                     - HALF*(umac(i,j,k)+umac(i+1,j,k)) * (splus - sminus) / hx
+             end if
 
              splft = s(i,j,k  ,comp) + (HALF - dth*wmac(i,j,k+1)/hz) * slopez(i,j,k  ,1)
              sprgt = s(i,j,k+1,comp) - (HALF + dth*wmac(i,j,k+1)/hz) * slopez(i,j,k+1,1)
@@ -803,7 +831,12 @@ contains
              savg   = HALF * (smlft + smrgt)
              sminus = merge(sminus, savg, abs(wmac(i,j,k)) .gt. eps)
                  
-             st = st - HALF * (wmac(i,j,k)+wmac(i,j,k+1))*(splus - sminus) / hz
+             if (is_conservative) then
+                st = st - ( wmac(i,j,k+1)*splus-wmac(i,j,k)*sminus ) / hz &
+                  + s(i,j,k,comp)*(vmac(i,j+1,k)-vmac(i,j,k)) / hy
+             else
+                st = st - HALF * (wmac(i,j,k)+wmac(i,j,k+1))*(splus - sminus) / hz
+             end if
                  
              ! NOTE NOTE : THIS IS WRONG FOR SPHERICAL !!
              if (spherical .eq. 0 .and. is_vel .and. comp.eq.3) then
@@ -917,7 +950,12 @@ contains
              savg   = HALF * (smlft + smrgt)
              sminus = merge(sminus, savg, abs(umac(i,j,k)) .gt. eps)
                  
-             st = force(i,j,k,comp) - HALF * (umac(i,j,k)+umac(i+1,j,k))*(splus - sminus) / hx
+             if (is_conservative) then
+                st = force(i,j,k,comp) - ( umac(i+1,j,k)*splus - umac(i,j,k)*sminus ) / hx
+             else
+                st = force(i,j,k,comp) &
+                     - HALF * (umac(i,j,k)+umac(i+1,j,k))*(splus - sminus) / hx
+             end if
                  
              spbot = s(i,j  ,k,comp) + (HALF - dth*vmac(i,j+1,k)/hy) * slopey(i,j  ,k,1)
              sptop = s(i,j+1,k,comp) - (HALF + dth*vmac(i,j+1,k)/hy) * slopey(i,j+1,k,1)
@@ -965,7 +1003,12 @@ contains
              savg   = HALF * (smbot + smtop)
              sminus = merge(sminus, savg, abs(vmac(i,j,k)) .gt. eps)
                  
-             st = st - HALF * (vmac(i,j,k)+vmac(i,j+1,k))*(splus - sminus) / hy
+             if (is_conservative) then
+                st = st - ( vmac(i,j+1,k)*splus-vmac(i,j,k)*sminus ) / hy &
+                  + s(i,j,k,comp)*(wmac(i,j,k+1)-wmac(i,j,k)) / hz
+             else
+                st = st - HALF * (vmac(i,j,k)+vmac(i,j+1,k))*(splus - sminus) / hy
+             end if
              
              ! NOTE NOTE : THIS IS WRONG FOR SPHERICAL !!
              if (spherical.eq.0.and.is_vel.and.comp.eq.3.and.k.ge.0.and.k.lt.nr(n)) then
@@ -1026,6 +1069,6 @@ contains
     end do
 
   end subroutine make_edge_scal_3d
-   
- end module make_edge_scal_module
+
+end module make_edge_scal_module
  
