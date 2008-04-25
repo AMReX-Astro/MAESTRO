@@ -1304,7 +1304,7 @@ contains
                  if (is_vel) then
                     ! add the (Utilde . e_r) d w_0 /dr e_r term here
 
-                    if (spherical .eq. 0 .and. comp .eq. 3 .and. k .ge. ks .and. k .lt. ke-1) then
+                    if (spherical .eq. 0 .and. comp .eq. 3 .and. k .ge. ks .and. k .lt. ke+1) then
 
                        ! wtrans contains w0 so we need to subtract it off
                        st = st - HALF * (wtrans(i,j,k)+wtrans(i,j,k+1)- &
