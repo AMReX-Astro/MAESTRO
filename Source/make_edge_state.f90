@@ -157,8 +157,9 @@ contains
              sepz => dataptr( sedge(n,3),i)
              w0p  => dataptr(w0_cart_vec(n),i)
              gw0p => dataptr(gradw0_cart,i)
-             np   => dataptr(normal(n),i)
-
+             if (spherical .eq. 1) then
+                np => dataptr(normal(n),i)
+             end if
              do scomp = start_scomp, start_scomp + num_comp - 1
                 bccomp = start_bccomp + scomp - start_scomp
                 call make_edge_state_3d(n,sop(:,:,:,:), uop(:,:,:,:), &
