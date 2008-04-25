@@ -1011,7 +1011,7 @@ contains
              end if
              
              ! NOTE NOTE : THIS IS WRONG FOR SPHERICAL !!
-             if (spherical.eq.0.and.is_vel.and.comp.eq.3.and.k.ge.0.and.k.lt.nr(n)) then
+             if (spherical.eq.0.and.is_vel.and.comp.eq.3.and.k.ge.ks.and.k.lt.ke-1) then
                 ! wmac contains w0 so we need to subtract it off
                 st = st - HALF*(wmac(i,j,k)+wmac(i,j,k+1)- &
                      w0_cart_vec(i,j,k+1,3)-w0_cart_vec(i,j,k,3)) * &
