@@ -250,7 +250,13 @@ contains
           ! we call this setval so the conservative edge state prediction doesn't grab
           ! any uninitizlied values, even though they don't enter the stencil.
           ! don't want to risk the chance of any nans floating in intermediate places
-          call setval(  umac(n,comp),ZERO, all=.true.)
+          call setval(  umac(n,comp), ZERO, all=.true.)
+
+          ! we call this setval so when we compute the wtilde*dw0/dr term in the 
+          ! radial direction we don't grab any uninitialized values, even though 
+          ! they don't enter the stencil.  don't want to risk the chance of any 
+          ! nans floating in intermediate places
+          call setval(utrans(n,comp), ZERO, all=.true.)
        end do
     end do
     
