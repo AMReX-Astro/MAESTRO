@@ -308,7 +308,7 @@ contains
 
           if (is_conservative) then
              st = force(i,j,comp) - ( vmac(i,j+1)*splus-vmac(i,j)*sminus ) / hy &
-                  + s(i,j,comp)*(umac(i+1,j)-umac(i,j)) / hx
+                  - s(i,j,comp)*(umac(i+1,j)-umac(i,j)) / hx
           else
              st = force(i,j,comp) - HALF * (vmac(i,j)+vmac(i,j+1))*(splus - sminus) / hy
           end if
@@ -421,7 +421,7 @@ contains
           
           if (is_conservative) then
              st = force(i,j,comp) - ( umac(i+1,j)*splus-umac(i,j)*sminus ) /hx &
-                  + s(i,j,comp)*(vmac(i,j+1)-vmac(i,j)) / hy
+                  - s(i,j,comp)*(vmac(i,j+1)-vmac(i,j)) / hy
           else
              st = force(i,j,comp) - HALF * (umac(i,j)+umac(i+1,j))*(splus - sminus) / hx
           end if
@@ -662,7 +662,7 @@ contains
 
              if (is_conservative) then
                 st = st - ( wmac(i,j,k+1)*splus-wmac(i,j,k)*sminus ) / hz &
-                     + s(i,j,k,comp)*(umac(i+1,j,k)-umac(i,j,k)) / hx
+                     - s(i,j,k,comp)*(umac(i+1,j,k)-umac(i,j,k)) / hx
              else
                 st = st - HALF * (wmac(i,j,k)+wmac(i,j,k+1))*(splus - sminus) / hz
              end if
@@ -833,7 +833,7 @@ contains
                  
              if (is_conservative) then
                 st = st - ( wmac(i,j,k+1)*splus-wmac(i,j,k)*sminus ) / hz &
-                  + s(i,j,k,comp)*(vmac(i,j+1,k)-vmac(i,j,k)) / hy
+                  - s(i,j,k,comp)*(vmac(i,j+1,k)-vmac(i,j,k)) / hy
              else
                 st = st - HALF * (wmac(i,j,k)+wmac(i,j,k+1))*(splus - sminus) / hz
              end if
@@ -1005,7 +1005,7 @@ contains
                  
              if (is_conservative) then
                 st = st - ( vmac(i,j+1,k)*splus-vmac(i,j,k)*sminus ) / hy &
-                  + s(i,j,k,comp)*(wmac(i,j,k+1)-wmac(i,j,k)) / hz
+                  - s(i,j,k,comp)*(wmac(i,j,k+1)-wmac(i,j,k)) / hz
              else
                 st = st - HALF * (vmac(i,j,k)+vmac(i,j+1,k))*(splus - sminus) / hy
              end if
