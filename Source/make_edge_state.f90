@@ -628,7 +628,7 @@ contains
     real(kind=dp_t), intent(in   ) :: wtrans(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
     real(kind=dp_t), intent(in   ) ::  force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
     real(kind=dp_t), intent(in   ) :: normal(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
-    real(kind=dp_t), intent(in   ) :: w0_cart_vec(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
+    real(kind=dp_t), intent(in   ) :: w0_cart_vec(lo(1)- 2:,lo(2)- 2:,lo(3)- 2:,:)
     real(kind=dp_t), intent(in   ) :: gradw0_cart(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
     logical        , intent(in   ) :: is_vel
@@ -1304,7 +1304,7 @@ contains
                  if (is_vel) then
                     ! add the (Utilde . e_r) d w_0 /dr e_r term here
 
-                    if (spherical .eq. 0 .and. comp .eq. 3 .and. k .ge. ks .and. k .lt. ke+1) then
+                    if (spherical .eq. 0 .and. comp .eq. 3) then
 
                        ! wtrans contains w0 so we need to subtract it off
                        st = st - HALF * (wtrans(i,j,k)+wtrans(i,j,k+1)- &

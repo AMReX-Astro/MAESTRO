@@ -479,7 +479,7 @@ contains
     real(kind=dp_t), intent(in   ) ::   vmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
     real(kind=dp_t), intent(in   ) ::   wmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
     real(kind=dp_t), intent(in   ) ::  force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
-    real(kind=dp_t), intent(in   ) :: w0_cart_vec(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)
+    real(kind=dp_t), intent(in   ) :: w0_cart_vec(lo(1)-2:,lo(2)-2:,lo(3)-2:,:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
     logical        , intent(in   ) :: is_vel
     integer        , intent(in   ) :: phys_bc(:,:)
@@ -1011,7 +1011,7 @@ contains
              end if
              
              ! NOTE NOTE : THIS IS WRONG FOR SPHERICAL !!
-             if (spherical.eq.0.and.is_vel.and.comp.eq.3.and.k.ge.ks.and.k.lt.ke+1) then
+             if (spherical .eq. 0 .and. is_vel .and. comp .eq. 3) then
                 ! wmac contains w0 so we need to subtract it off
                 st = st - HALF*(wmac(i,j,k)+wmac(i,j,k+1)- &
                      w0_cart_vec(i,j,k+1,3)-w0_cart_vec(i,j,k,3)) * &

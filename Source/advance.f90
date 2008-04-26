@@ -213,7 +213,7 @@ contains
 
     if (dm .eq. 3) then
        do n=1,nlevs
-          call multifab_build(w0_cart_vec(n), mla%la(n), dm, 1)
+          call multifab_build(w0_cart_vec(n), mla%la(n), dm, 2)
           call setval(w0_cart_vec(n), ZERO, all=.true.)
        end do
     end if

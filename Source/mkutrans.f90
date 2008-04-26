@@ -225,7 +225,7 @@ contains
     real(kind=dp_t), intent(inout) :: utrans(lo(1)-   1:,lo(2)-   1:,lo(3)-   1:)
     real(kind=dp_t), intent(inout) :: vtrans(lo(1)-   1:,lo(2)-   1:,lo(3)-   1:)
     real(kind=dp_t), intent(inout) :: wtrans(lo(1)-   1:,lo(2)-   1:,lo(3)-   1:)
-    real(kind=dp_t), intent(in   ) :: w0_cart_vec(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)    
+    real(kind=dp_t), intent(in   ) :: w0_cart_vec(lo(1)- 2:,lo(2)- 2:,lo(3)- 2:,:)    
     real(kind=dp_t), intent(in   ) :: dt,dx(:)
     integer        , intent(in   ) :: adv_bc(:,:,:)
     integer        , intent(in   ) :: phys_bc(:,:)

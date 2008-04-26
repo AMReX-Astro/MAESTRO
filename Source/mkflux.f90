@@ -487,7 +487,7 @@ contains
     real(kind=dp_t), intent(in   ) :: rho0_new_cart(lo(1)-1:,lo(2)-1:,lo(3)-1:)
     real(kind=dp_t), intent(in   ) :: rhoh0_old_cart(lo(1)-1:,lo(2)-1:,lo(3)-1:)
     real(kind=dp_t), intent(in   ) :: rhoh0_new_cart(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-    real(kind=dp_t), intent(in   ) ::     w0_cart(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)
+    real(kind=dp_t), intent(in   ) ::     w0_cart(lo(1)-2:,lo(2)-2:,lo(3)-2:,:)
     integer        , intent(in   ) :: startcomp,endcomp
 
     ! local

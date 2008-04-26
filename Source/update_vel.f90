@@ -207,7 +207,7 @@ contains
     real (kind = dp_t), intent(in   ) ::   normal(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
     real (kind = dp_t), intent(in   ) ::   sponge(lo(1)   :,lo(2)   :,lo(3)   :  ) 
     real (kind = dp_t), intent(in   ) ::       w0(0:)
-    real (kind = dp_t), intent(in   ) ::  w0_cart(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
+    real (kind = dp_t), intent(in   ) ::  w0_cart(lo(1)- 2:,lo(2)- 2:,lo(3)- 2:,:)
     real (kind = dp_t), intent(in   ) :: dx(:)
     real (kind = dp_t), intent(in   ) :: dt
 
