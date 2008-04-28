@@ -136,11 +136,14 @@ contains
        ! here we predict h_0 on the edges
        h0 = rhoh0_old/rho0_old
 
+       ! The force should be Dp_0/Dt = psi, but since in plane-parallel
+       ! this is equal to eta, and therefore only depends on compositional
+       ! mixing, we defer this to correct_base.
        force = ZERO
 
        call make_edge_state_1d(n,h0,edge,vel,force,1,dz,dt)
 
-       ! our final update needs (rho X)_0 on the edges, so compute
+       ! our final update needs (rho h)_0 on the edges, so compute
        ! that now
        edge = rho0_predicted_edge*edge
 
@@ -177,6 +180,8 @@ contains
     use make_grav_module
     use cell_to_edge_module
     use make_div_coeff_module
+    use probin_module, only: grav_const, enthalpy_pred_type
+    use pred_parameters
     
     integer        , intent(in   ) :: n
     real(kind=dp_t), intent(in   ) :: vel(0:),Sbar_in(0:)
@@ -196,6 +201,7 @@ contains
     real (kind = dp_t), allocatable :: psi(:)
     real (kind = dp_t), allocatable :: edge(:)
     real (kind = dp_t), allocatable :: X0(:)
+    real (kind = dp_t), allocatable :: h0(:)
     real (kind = dp_t), allocatable :: div_coeff_new(:)
     real (kind = dp_t), allocatable :: beta(:),beta_new(:),beta_nh(:)
     real (kind = dp_t), allocatable :: gamma1bar_old(:)
@@ -210,6 +216,7 @@ contains
     allocate(div_coeff_new(0:nr(n)-1))
     allocate(psi(0:nr(n)-1))
     allocate(   X0(0:nr(n)-1))
+    allocate(   h0(0:nr(n)-1))
     
     ! Edge-centered
     allocate(edge(0:nr(n)))
@@ -284,27 +291,60 @@ contains
 ! UPDATE RHOH0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    do r = 0,nr(n)-1
-       
-       div_w0_cart = (vel(r+1) - vel(r)) / dr(n)
-       div_w0_sph = one/(base_cc_loc(n,r)**2) * &
-            (base_loedge_loc(n,r+1)**2 * vel(r+1) - &
-             base_loedge_loc(n,r  )**2 * vel(r  )) / dr(n)
+    if ( (enthalpy_pred_type .eq. predict_h       ) .or. &
+         (enthalpy_pred_type .eq. predict_T_then_h) ) then
 
-       force(r) = -rhoh0_old(r) * div_w0_cart - &
-            2.0_dp_t*rhoh0_old(r)*HALF*(vel(r) + vel(r+1))/base_cc_loc(n,r)
+       ! here we predict h_0 on the edges
+       h0 = rhoh0_old/rho0_old
+
+       do r = 0,nr(n)-1
+
+          div_w0_sph = one/(base_cc_loc(n,r)**2) * &
+               (base_loedge_loc(n,r+1)**2 * vel(r+1) - &
+                base_loedge_loc(n,r  )**2 * vel(r  )) / dr(n)
+              
+          ! add psi at time-level n to the force for the prediction
+          psi(r) = gamma1bar_old(r) * p0_old(r) * (Sbar_in(r) - div_w0_sph)
+          force(r) = psi(r)
+          
+          ! construct a new, time-centered psi for the final update
+          psi(r) = HALF*(gamma1bar(r)*p0_new(r) + gamma1bar_old(r)*p0_old(r))* &
+               (Sbar_in(r) - div_w0_sph)
+       end do
+
+       call make_edge_state_1d(n,h0,edge,vel,force,1,dr(n),dt)
+
+       ! our final update needs (rho h)_0 on the edges, so compute
+       ! that now
+       edge = rho0_predicted_edge*edge
+
+    else
+
+       ! here we predict (rho h)_0 on the edges
+       do r = 0,nr(n)-1
        
-       ! add psi at time-level n to the force for the prediction
-       psi(r) = gamma1bar_old(r) * p0_old(r) * (Sbar_in(r) - div_w0_sph)
-       force(r) = force(r) + psi(r)
+          div_w0_cart = (vel(r+1) - vel(r)) / dr(n)
+          div_w0_sph = one/(base_cc_loc(n,r)**2) * &
+               (base_loedge_loc(n,r+1)**2 * vel(r+1) - &
+                base_loedge_loc(n,r  )**2 * vel(r  )) / dr(n)
+
+          force(r) = -rhoh0_old(r) * div_w0_cart - &
+               2.0_dp_t*rhoh0_old(r)*HALF*(vel(r) + vel(r+1))/base_cc_loc(n,r)
        
-       ! construct a new, time-centered psi for the final update
-       psi(r) = HALF*(gamma1bar(r)*p0_new(r) + gamma1bar_old(r)*p0_old(r))* &
-            (Sbar_in(r) - div_w0_sph)
-    end do
+          ! add psi at time-level n to the force for the prediction
+          psi(r) = gamma1bar_old(r) * p0_old(r) * (Sbar_in(r) - div_w0_sph)
+          force(r) = force(r) + psi(r)
+          
+          ! construct a new, time-centered psi for the final update
+          psi(r) = HALF*(gamma1bar(r)*p0_new(r) + gamma1bar_old(r)*p0_old(r))* &
+               (Sbar_in(r) - div_w0_sph)
+       end do
     
-    call make_edge_state_1d(n,rhoh0_old,edge,vel,force,1,dr(n),dt)
+       call make_edge_state_1d(n,rhoh0_old,edge,vel,force,1,dr(n),dt)
 
+    endif
+
+    ! update (rho h)_0
     do r = 0,nr(n)-1
        
        rhoh0_new(r) = rhoh0_old(r) - &
@@ -316,7 +356,7 @@ contains
        
     end do
     
-    deallocate(force,psi,edge,beta,beta_new,beta_nh,div_coeff_new,gamma1bar_old,grav_cell,X0)
+    deallocate(force,psi,edge,beta,beta_new,beta_nh,div_coeff_new,gamma1bar_old,grav_cell,X0,h0)
     
   end subroutine advect_base_state_spherical
   
