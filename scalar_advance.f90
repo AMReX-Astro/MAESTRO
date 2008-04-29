@@ -317,7 +317,7 @@ contains
     ! for which_step .eq. 2, we pass in the old and new for averaging within mkflux
     if (which_step .eq. 1) then
 
-    ! compute enthalpy fluxes
+       ! compute enthalpy fluxes
        call mkflux(nlevs,sflux,etarhoflux,sold,sedge,umac,w0,w0_cart_vec, &
                    rho0_old,rho0_edge_old,rho0_old_cart, &
                    rho0_old,rho0_edge_old,rho0_old_cart, &
