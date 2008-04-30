@@ -17,7 +17,7 @@ contains
                     rho0_new,rho0_edge_new,rho0_new_cart, &
                     rhoh0_old,rhoh0_edge_old,rhoh0_old_cart, &
                     rhoh0_new,rhoh0_edge_new,rhoh0_new_cart, &
-                    rho0_predicted_edge,startcomp,endcomp,mla,dx,dt)
+                    rho0_predicted_edge,startcomp,endcomp,mla,dx)
 
     use bl_prof_module
     use bl_constants_module
@@ -43,7 +43,7 @@ contains
     real(kind=dp_t), intent(in   ) :: rho0_predicted_edge(:,0:)
     integer        , intent(in   ) :: startcomp,endcomp
     type(ml_layout), intent(inout) :: mla
-    real(kind=dp_t), intent(in   ) :: dx(:,:),dt
+    real(kind=dp_t), intent(in   ) :: dx(:,:)
 
     ! local    
     type(box) :: domain
@@ -102,7 +102,7 @@ contains
                             rhoh0_old(n,:), rhoh0_edge_old(n,:), &
                             rhoh0_new(n,:), rhoh0_edge_new(n,:), &
                             rho0_predicted_edge(n,:), &
-                            w0(n,:),startcomp,endcomp,lo,hi,dx(n,:),dt)
+                            w0(n,:),startcomp,endcomp,lo,hi,dx(n,:))
           case (3)
              sfzp => dataptr(sflux(n,3),i)
              sezp => dataptr(sedge(n,3),i)
@@ -156,7 +156,7 @@ contains
                        rho0_old,rho0_edge_old,rho0_new,rho0_edge_new, &
                        rhoh0_old,rhoh0_edge_old,rhoh0_new,rhoh0_edge_new, &
                        rho0_predicted_edge,w0,startcomp,endcomp, &
-                       lo,hi,dx,dt)
+                       lo,hi,dx)
 
     use bl_constants_module
     use network, only : nspec
@@ -179,7 +179,7 @@ contains
     real(kind=dp_t), intent(in   ) :: rho0_predicted_edge(0:)
     real(kind=dp_t), intent(in   ) :: w0(0:)
     integer        , intent(in   ) :: startcomp,endcomp
-    real(kind=dp_t), intent(in   ) :: dx(:),dt
+    real(kind=dp_t), intent(in   ) :: dx(:)
 
     ! local
     integer         :: comp

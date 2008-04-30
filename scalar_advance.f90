@@ -323,7 +323,7 @@ contains
                    rho0_old,rho0_edge_old,rho0_old_cart, &
                    rhoh0_old,rhoh0_edge_old,rhoh0_old_cart, &
                    rhoh0_old,rhoh0_edge_old,rhoh0_old_cart, &
-                   rho0_predicted_edge,rhoh_comp,rhoh_comp,mla,dx,dt)
+                   rho0_predicted_edge,rhoh_comp,rhoh_comp,mla,dx)
 
        ! compute species fluxes
        call mkflux(nlevs,sflux,etarhoflux,sold,sedge,umac,w0,w0_cart_vec, &
@@ -331,7 +331,7 @@ contains
                    rho0_old,rho0_edge_old,rho0_old_cart, &
                    rhoh0_old,rhoh0_edge_old,rhoh0_old_cart, &
                    rhoh0_old,rhoh0_edge_old,rhoh0_old_cart, &
-                   rho0_predicted_edge,spec_comp,spec_comp+nspec-1,mla,dx,dt)
+                   rho0_predicted_edge,spec_comp,spec_comp+nspec-1,mla,dx)
 
        if (ntrac .ge. 1) then
           ! compute tracer fluxes
@@ -340,7 +340,7 @@ contains
                       rho0_old,rho0_edge_old,rho0_old_cart, &
                       rhoh0_old,rhoh0_edge_old,rhoh0_old_cart, &
                       rhoh0_old,rhoh0_edge_old,rhoh0_old_cart, &
-                      rho0_predicted_edge,trac_comp,trac_comp+ntrac-1,mla,dx,dt)
+                      rho0_predicted_edge,trac_comp,trac_comp+ntrac-1,mla,dx)
        end if
 
     else if (which_step .eq. 2) then
@@ -351,7 +351,7 @@ contains
                    rho0_new,rho0_edge_new,rho0_new_cart, &
                    rhoh0_old,rhoh0_edge_old,rhoh0_old_cart, &
                    rhoh0_new,rhoh0_edge_new,rhoh0_new_cart, &
-                   rho0_predicted_edge,rhoh_comp,rhoh_comp,mla,dx,dt)
+                   rho0_predicted_edge,rhoh_comp,rhoh_comp,mla,dx)
 
        ! compute species fluxes
        call mkflux(nlevs,sflux,etarhoflux,sold,sedge,umac,w0,w0_cart_vec, &
@@ -359,7 +359,7 @@ contains
                    rho0_new,rho0_edge_new,rho0_new_cart, &
                    rhoh0_old,rhoh0_edge_old,rhoh0_old_cart, &
                    rhoh0_new,rhoh0_edge_new,rhoh0_new_cart, &
-                   rho0_predicted_edge,spec_comp,spec_comp+nspec-1,mla,dx,dt)
+                   rho0_predicted_edge,spec_comp,spec_comp+nspec-1,mla,dx)
 
        if (ntrac .ge. 1) then
           ! compute tracer fluxes
@@ -368,7 +368,7 @@ contains
                       rho0_new,rho0_edge_new,rho0_new_cart, &
                       rhoh0_old,rhoh0_edge_old,rhoh0_old_cart, &
                       rhoh0_new,rhoh0_edge_new,rhoh0_new_cart, &
-                      rho0_predicted_edge,trac_comp,trac_comp+ntrac-1,mla,dx,dt)
+                      rho0_predicted_edge,trac_comp,trac_comp+ntrac-1,mla,dx)
        end if
 
     end if
