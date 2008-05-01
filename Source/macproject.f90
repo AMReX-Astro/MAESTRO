@@ -253,7 +253,7 @@ contains
       do j = lo(2),hi(2)
          do i = lo(1),hi(1)
             rh(i,j) = (umac(i+1,j) - umac(i,j)) / dx(1) + &
-                 (vmac(i,j+1) - vmac(i,j)) / dx(2)
+                      (vmac(i,j+1) - vmac(i,j)) / dx(2)
          end do
       end do
 
@@ -274,8 +274,8 @@ contains
          do j = lo(2),hi(2)
             do i = lo(1),hi(1)
                rh(i,j,k) = (umac(i+1,j,k) - umac(i,j,k)) / dx(1) + &
-                    (vmac(i,j+1,k) - vmac(i,j,k)) / dx(2) + &
-                    (wmac(i,j,k+1) - wmac(i,j,k)) / dx(3)
+                           (vmac(i,j+1,k) - vmac(i,j,k)) / dx(2) + &
+                           (wmac(i,j,k+1) - wmac(i,j,k)) / dx(3)
             end do
          end do
       end do
