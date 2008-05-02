@@ -35,22 +35,21 @@ contains
 
     do r = 0,nr(nlevs)-1
        rloc = prob_lo_r + (dble(r)+HALF) * dr(nlevs)
-       if (rho0(r) < 10.d0*anelastic_cutoff) then
+       if (rho0(r) < 25.d0*anelastic_cutoff) then
           r_sp = rloc
           exit
        endif
     enddo
 
-    r_md = r_top
     do r = 0,nr(nlevs)-1
        rloc = prob_lo_r + (dble(r)+HALF) * dr(nlevs)
        if (rho0(r) < anelastic_cutoff) then
-          r_md = rloc
+          r_tp = rloc
           exit
        endif
     enddo
 
-    r_tp = 2.d0 * r_md - r_sp
+    r_md = 0.5d0 * (r_sp + r_tp)
 
     if ( parallel_IOProcessor() ) write(6,1000) r_sp, r_tp
 
@@ -112,7 +111,7 @@ contains
     integer         :: j
     real(kind=dp_t) :: y,spongemin
 
-    spongemin = 0.1d0
+    spongemin = 0.01d0
 
     do j = lo(2),hi(2)
        y = prob_lo_y + (dble(j)+HALF)*dx(2)
@@ -140,7 +139,7 @@ contains
     integer         :: k
     real(kind=dp_t) :: z,spongemin
 
-    spongemin = 0.1d0
+    spongemin = 0.01d0
 
     do k = lo(3),hi(3)
        z = prob_lo_z + (dble(k)+HALF)*dx(3)
