@@ -7,7 +7,7 @@ module vort_module
 
   private
 
-  public :: make_vorticity, make_magvel
+  public :: make_vorticity, make_magvel, make_velplusw0
 
 contains
 
@@ -720,5 +720,122 @@ contains
     enddo
 
   end subroutine makemagvel_3d
+
+  subroutine make_velplusw0(n,plotdata,comp_velplusw0,u,w0,normal,dx)
+
+    use bc_module
+    use bl_constants_module
+
+    use geometry, only : spherical
+
+    integer        , intent(in   ) :: n,comp_velplusw0
+    type(multifab) , intent(inout) :: plotdata
+    type(multifab) , intent(in   ) :: u
+    real(kind=dp_t), intent(in   ) :: w0(0:)
+    type(multifab) , intent(in   ) :: normal
+    real(kind=dp_t), intent(in   ) :: dx(:)
+
+    real(kind=dp_t), pointer:: pp(:,:,:,:)
+    real(kind=dp_t), pointer:: up(:,:,:,:)
+    real(kind=dp_t), pointer:: np(:,:,:,:)
+    integer :: lo(u%dim),hi(u%dim),ng,dm
+    integer :: i
+
+    ng = u%ng
+    dm = u%dim
+
+    do i = 1, u%nboxes
+       if ( multifab_remote(u, i) ) cycle
+       pp => dataptr(plotdata, i)
+       up => dataptr(u, i)
+       lo =  lwb(get_box(u, i))
+       hi =  upb(get_box(u, i))
+       select case (dm)
+       case (2)
+          call makevelplusw0_2d(pp(:,:,1,comp_velplusw0),up(:,:,1,:), w0, lo, hi, ng)
+       case (3)
+          if (spherical .eq. 1) then
+             np => dataptr(normal, i)
+             call makevelplusw0_3d_sphr(pp(:,:,:,comp_velplusw0),up(:,:,:,:), w0, lo, hi, ng, &
+                                        np(:,:,:,:),dx,n)
+          else
+             call makevelplusw0_3d_cart(pp(:,:,:,comp_velplusw0),up(:,:,:,:), w0, lo, hi, ng)
+          end if
+       end select
+    end do
+
+  end subroutine make_velplusw0
+
+  subroutine makevelplusw0_2d (velplusw0,u,w0,lo,hi,ng)
+
+    integer           , intent(in   ) :: lo(:), hi(:), ng
+    real (kind = dp_t), intent(  out) :: velplusw0(lo(1)   :,lo(2)   :)
+    real (kind = dp_t), intent(in   ) ::      u(lo(1)-ng:,lo(2)-ng:,:)  
+    real (kind = dp_t), intent(in   ) ::     w0(0:)
+
+    !     Local variables
+    integer :: i, j
+
+    do j = lo(2), hi(2)
+       do i = lo(1), hi(1)
+          velplusw0(i,j) = sqrt(u(i,j,1)**2 + (u(i,j,2)+w0(j))**2)
+       enddo
+    enddo
+
+  end subroutine makevelplusw0_2d
+
+  subroutine makevelplusw0_3d_cart (velplusw0,u,w0,lo,hi,ng)
+
+    use geometry, only : spherical
+
+    integer           , intent(in   ) :: lo(:), hi(:), ng
+    real (kind = dp_t), intent(  out) :: velplusw0(lo(1)   :,lo(2)   :,lo(3)   :)
+    real (kind = dp_t), intent(in   ) ::         u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
+    real (kind = dp_t), intent(in   ) :: w0(0:)
+
+    !     Local variables
+    integer :: i, j, k
+
+    do k = lo(3), hi(3)
+    do j = lo(2), hi(2)
+    do i = lo(1), hi(1)
+       velplusw0(i,j,k) = sqrt(u(i,j,k,1)**2 + u(i,j,k,2)**2 + (u(i,j,k,3)+w0(k))**2)
+    enddo
+    enddo
+    enddo
+
+  end subroutine makevelplusw0_3d_cart
+
+  subroutine makevelplusw0_3d_sphr (velplusw0,u,w0,lo,hi,ng,normal,dx,n)
+
+    use fill_3d_module
+
+    integer           , intent(in   ) :: lo(:), hi(:), ng, n
+    real (kind = dp_t), intent(  out) :: velplusw0(lo(1)   :,lo(2)   :,lo(3)   :)
+    real (kind = dp_t), intent(in   ) ::  u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
+    real (kind = dp_t), intent(in   ) :: normal(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)
+    real (kind = dp_t), intent(in   ) :: w0(0:)
+    real (kind = dp_t), intent(in   ) :: dx(:)
+
+    !     Local variables
+    integer :: i, j, k
+    real (kind = dp_t), allocatable :: w0_cart(:,:,:,:)
+
+    allocate(w0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),3))
+    call put_1d_array_on_cart_3d_sphr(n,.true.,.true.,2,w0,w0_cart,lo,hi,dx,0,normal)
+
+    do k = lo(3), hi(3)
+    do j = lo(2), hi(2)
+    do i = lo(1), hi(1)
+       velplusw0(i,j,k) = sqrt( (u(i,j,k,1)+w0_cart(i,j,k,1))**2 + &
+                                (u(i,j,k,2)+w0_cart(i,j,k,2))**2 + &
+                                (u(i,j,k,3)+w0_cart(i,j,k,3))**2)
+    enddo
+    enddo
+    enddo
+
+    deallocate(w0_cart)
+
+  end subroutine makevelplusw0_3d_sphr
 
 end module vort_module

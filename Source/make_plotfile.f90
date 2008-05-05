@@ -46,6 +46,7 @@ contains
     end if
 
     plot_names(icomp_magvel)   = "magvel"
+    plot_names(icomp_velplusw0) = "velplusw0"
     plot_names(icomp_mom)      = "momentum"
     plot_names(icomp_vort)     = "vort"
     plot_names(icomp_divu)     = "divu"
@@ -73,9 +74,9 @@ contains
 
   end subroutine get_plot_names
 
-  subroutine make_plotfile(dirname,mla,u,s,gpres,rho_omegadot,Source,sponge, &
-                           mba,plot_names,time,dx,the_bc_tower,rho0,p0,tempbar, &
-                           gamma1bar,plot_spec,plot_trac)
+  subroutine make_plotfile(dirname,mla,u,s,gpres,rho_omegadot,Source,sponge,&
+                           mba,plot_names,time,dx,the_bc_tower,w0,rho0,p0,tempbar, &
+                           gamma1bar,normal,plot_spec,plot_trac)
 
     use bl_prof_module
     use fabio_module
@@ -95,10 +96,12 @@ contains
     character(len=20), intent(in   ) :: plot_names(:)
     real(dp_t)       , intent(in   ) :: time,dx(:,:)
     type(bc_tower)   , intent(in   ) :: the_bc_tower
+    real(dp_t)       , intent(in   ) :: w0(:,0:)
     real(dp_t)       , intent(in   ) :: rho0(:,0:)
     real(dp_t)       , intent(in   ) :: p0(:,0:)
     real(dp_t)       , intent(in   ) :: tempbar(:,0:)
     real(dp_t)       , intent(in   ) :: gamma1bar(:,0:)
+    type(multifab)   , intent(in   ) :: normal(:)
     logical          , intent(in   ) :: plot_spec,plot_trac
 
     type(multifab) :: plotdata(mla%nlevel)
@@ -134,6 +137,9 @@ contains
 
        ! MAGVEL & MOMENTUM
        call make_magvel (plotdata(n),icomp_magvel,icomp_mom,u(n),s(n))
+
+       ! VEL_PLUS_W0
+       call make_velplusw0 (n,plotdata(n),icomp_velplusw0,u(n),w0(n,:),normal(n),dx(n,:))
 
        ! VORTICITY
        call make_vorticity(plotdata(n),icomp_vort,u(n),dx(n,:), &
