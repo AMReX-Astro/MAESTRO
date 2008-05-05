@@ -9,7 +9,7 @@ module variables
   integer, save :: rho_comp, rhoh_comp, spec_comp, temp_comp, trac_comp, press_comp
   integer, save :: foextrap_comp, hoextrap_comp
   integer, save :: icomp_vel, icomp_rho, icomp_rhoh, icomp_spec, icomp_trac
-  integer, save :: icomp_magvel, icomp_mom, icomp_vort, icomp_divu
+  integer, save :: icomp_magvel, icomp_velplusw0, icomp_mom, icomp_vort, icomp_divu
   integer, save :: icomp_enthalpy,icomp_tfromrho,icomp_tpert,icomp_rhopert
   integer, save :: icomp_machno,icomp_dg,icomp_gp
   integer, save :: icomp_tfromH,icomp_dp,icomp_dT
@@ -61,6 +61,9 @@ contains
       icomp_trac  = first_derive_comp
       first_derive_comp = first_derive_comp + ntrac
     end if
+
+    icomp_velplusw0   = first_derive_comp
+    first_derive_comp = first_derive_comp + 1
 
     icomp_magvel   = first_derive_comp
     icomp_mom      = first_derive_comp+1
