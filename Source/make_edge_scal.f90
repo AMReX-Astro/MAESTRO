@@ -184,6 +184,7 @@ contains
     use bc_module
     use slope_module
     use bl_constants_module
+    use probin_module, only: use_new_godunov
 
     integer        , intent(in   ) :: n,lo(:)
     real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng:,lo(2)-ng:,:)
@@ -207,7 +208,7 @@ contains
     real(kind=dp_t) :: hx,hy,dth,splus,sminus
     real(kind=dp_t) :: savg,st
     real(kind=dp_t) :: sptop,spbot,smtop,smbot,splft,sprgt,smlft,smrgt
-    real(kind=dp_t) :: abs_eps,eps,umax
+    real(kind=dp_t) :: abs_eps,eps,umax,dw0drhi,dw0drlo,vtilde
 
     integer :: hi(2)
     integer :: i,j,is,js,ie,je
@@ -263,6 +264,27 @@ contains
           spbot = s(i,j  ,comp) + (HALF - dth*vmac(i,j+1)/hy) * slopey(i,j  ,1)
           sptop = s(i,j+1,comp) - (HALF + dth*vmac(i,j+1)/hy) * slopey(i,j+1,1)
 
+          if (use_new_godunov .and. is_vel .and. comp .eq. 2) then
+
+             if ((j+2).le.nr(n)) then
+                dw0drhi = (w0(j+2)-w0(j+1))/dx(2)
+             else
+                dw0drhi = (w0(j+1)-w0(j))/dx(2)
+             end if
+
+             if(j .ge. 0) then
+                dw0drlo = (w0(j+1)-w0(j))/dx(2)
+             else
+                dw0drlo = (w0(j+2)-w0(j+1))/dx(2)
+             end if
+
+             vtilde = vmac(i,j+1) - w0(j+1)
+
+             spbot = spbot - dth*vtilde*dw0drlo
+             sptop = sptop - dth*vtilde*dw0drhi
+
+          end if
+
           sptop = merge(s(i,je+1,comp),sptop,j.eq.je .and. phys_bc(2,2) .eq. INLET)
           spbot = merge(s(i,je+1,comp),spbot,j.eq.je .and. phys_bc(2,2) .eq. INLET)
 
@@ -285,6 +307,27 @@ contains
 
           smtop = s(i,j  ,comp) - (HALF + dth*vmac(i,j)/hy) * slopey(i,j  ,1)
           smbot = s(i,j-1,comp) + (HALF - dth*vmac(i,j)/hy) * slopey(i,j-1,1)
+
+          if (use_new_godunov .and. is_vel .and. comp .eq. 2) then
+
+             if ((j+1).le.nr(n)) then
+                dw0drhi = (w0(j+1)-w0(j))/dx(2)
+             else
+                dw0drhi = (w0(j+2)-w0(j+1))/dx(2)
+             end if
+
+             if(j-1 .ge. 0) then
+                dw0drlo = (w0(j)-w0(j-1))/dx(2)
+             else
+                dw0drlo = (w0(j+1)-w0(j))/dx(2)
+             end if
+
+             vtilde = vmac(i,j) - w0(j)
+
+             smbot = smbot - dth*vtilde*dw0drlo
+             smtop = smtop - dth*vtilde*dw0drhi
+
+          end if
 
           smtop = merge(s(i,js-1,comp),smtop,j.eq.js .and. phys_bc(2,1) .eq. INLET)
           smbot = merge(s(i,js-1,comp),smbot,j.eq.js .and. phys_bc(2,1) .eq. INLET)

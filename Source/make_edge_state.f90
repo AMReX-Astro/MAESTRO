@@ -218,6 +218,7 @@ contains
     use bc_module
     use slope_module
     use bl_constants_module
+    use probin_module, only: use_new_godunov
 
     integer        , intent(in   ) :: n,lo(:)
     real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng:,lo(2)-ng:,:)
@@ -324,8 +325,13 @@ contains
                 vhi = u(i,j+1,2) + w0(j+1)
              end if
              
-             spbot = s(i,j  ,comp) + (HALF - dth*vlo/hy) * slopey(i,j  ,1)
-             sptop = s(i,j+1,comp) - (HALF + dth*vhi/hy) * slopey(i,j+1,1)
+             if (use_new_godunov) then
+                spbot = s(i,j  ,comp) + (HALF - dth*max(ZERO,vlo)/hy) * slopey(i,j  ,1)
+                sptop = s(i,j+1,comp) - (HALF + dth*min(ZERO,vhi)/hy) * slopey(i,j+1,1)
+             else
+                spbot = s(i,j  ,comp) + (HALF - dth*vlo/hy) * slopey(i,j  ,1)
+                sptop = s(i,j+1,comp) - (HALF + dth*vhi/hy) * slopey(i,j+1,1)
+             end if
              
              sptop = merge(s(i,je+1,comp),sptop,j.eq.je .and. phys_bc(2,2) .eq. INLET)
              spbot = merge(s(i,je+1,comp),spbot,j.eq.je .and. phys_bc(2,2) .eq. INLET)
@@ -354,8 +360,13 @@ contains
              end if
              vhi = u(i,j  ,2) + HALF * (w0(j  )+w0(j+1))
              
-             smtop = s(i,j  ,comp) - (HALF + dth*vhi/hy) * slopey(i,j  ,1)
-             smbot = s(i,j-1,comp) + (HALF - dth*vlo/hy) * slopey(i,j-1,1)
+             if (use_new_godunov) then
+                smtop = s(i,j  ,comp) - (HALF + dth*min(ZERO,vhi)/hy) * slopey(i,j  ,1)
+                smbot = s(i,j-1,comp) + (HALF - dth*max(ZERO,vlo)/hy) * slopey(i,j-1,1)
+             else
+                smtop = s(i,j  ,comp) - (HALF + dth*vhi/hy) * slopey(i,j  ,1)
+                smbot = s(i,j-1,comp) + (HALF - dth*vlo/hy) * slopey(i,j-1,1)
+             end if
              
              smtop = merge(s(i,js-1,comp),smtop,j.eq.js .and. phys_bc(2,1) .eq. INLET)
              smbot = merge(s(i,js-1,comp),smbot,j.eq.js .and. phys_bc(2,1) .eq. INLET)
@@ -387,8 +398,13 @@ contains
              ubardth = dth*u(i,j,1)/hx
              
              if(velpred .eq. 1) then
-                s_l(i+1)= s(i,j,comp) + (HALF-ubardth)*slopex(i,j,1) + dth*st
-                s_r(i  )= s(i,j,comp) - (HALF+ubardth)*slopex(i,j,1) + dth*st
+                if (use_new_godunov) then
+                   s_l(i+1)= s(i,j,comp) + (HALF-max(ZERO,ubardth))*slopex(i,j,1) + dth*st
+                   s_r(i  )= s(i,j,comp) - (HALF+min(ZERO,ubardth))*slopex(i,j,1) + dth*st
+                else
+                   s_l(i+1)= s(i,j,comp) + (HALF-ubardth)*slopex(i,j,1) + dth*st
+                   s_r(i  )= s(i,j,comp) - (HALF+ubardth)*slopex(i,j,1) + dth*st
+                end if
              else
                 s_l(i+1)= s(i,j,comp) + (HALF-dth*umac(i+1,j)/hx)*slopex(i,j,1) + dth*st
                 s_r(i  )= s(i,j,comp) - (HALF+dth*umac(i  ,j)/hx)*slopex(i,j,1) + dth*st
@@ -463,8 +479,13 @@ contains
        do i = is, ie 
           do j = js-1, je+1 
              
-             splft = s(i,j  ,comp) + (HALF - dth*u(i  ,j,1)/hx) * slopex(i  ,j,1)
-             sprgt = s(i+1,j,comp) - (HALF + dth*u(i+1,j,1)/hx) * slopex(i+1,j,1)
+             if (use_new_godunov) then
+                splft = s(i,j  ,comp) + (HALF - dth*max(ZERO,u(i  ,j,1))/hx) * slopex(i  ,j,1)
+                sprgt = s(i+1,j,comp) - (HALF + dth*min(ZERO,u(i+1,j,1))/hx) * slopex(i+1,j,1)
+             else
+                splft = s(i,j  ,comp) + (HALF - dth*u(i  ,j,1)/hx) * slopex(i  ,j,1)
+                sprgt = s(i+1,j,comp) - (HALF + dth*u(i+1,j,1)/hx) * slopex(i+1,j,1)
+             end if
              
              sprgt = merge(s(ie+1,j,comp),sprgt,i.eq.ie .and. phys_bc(1,2) .eq. INLET)
              splft = merge(s(ie+1,j,comp),splft,i.eq.ie .and. phys_bc(1,2) .eq. INLET)
@@ -486,8 +507,13 @@ contains
              savg  = HALF * (splft + sprgt)
              splus = merge(splus, savg, abs(utrans(i+1,j)) .gt. eps)
              
-             smrgt = s(i  ,j,comp) - (HALF + dth*u(i  ,j,1)/hx) * slopex(i  ,j,1)
-             smlft = s(i-1,j,comp) + (HALF - dth*u(i-1,j,1)/hx) * slopex(i-1,j,1)
+             if (use_new_godunov) then
+                smrgt = s(i  ,j,comp) - (HALF + dth*min(ZERO,u(i  ,j,1))/hx) * slopex(i  ,j,1)
+                smlft = s(i-1,j,comp) + (HALF - dth*max(ZERO,u(i-1,j,1))/hx) * slopex(i-1,j,1)
+             else
+                smrgt = s(i  ,j,comp) - (HALF + dth*u(i  ,j,1)/hx) * slopex(i  ,j,1)
+                smlft = s(i-1,j,comp) + (HALF - dth*u(i-1,j,1)/hx) * slopex(i-1,j,1)
+             end if
              
              smrgt = merge(s(is-1,j,comp),smrgt,i.eq.is .and. phys_bc(1,1) .eq. INLET)
              smlft = merge(s(is-1,j,comp),smlft,i.eq.is .and. phys_bc(1,1) .eq. INLET)
@@ -523,8 +549,13 @@ contains
              end if
              
              if(velpred .eq. 1) then
-                s_b(j+1)= s(i,j,comp) + (HALF-vbardth)*slopey(i,j,1) + dth*st
-                s_t(j  )= s(i,j,comp) - (HALF+vbardth)*slopey(i,j,1) + dth*st
+                if (use_new_godunov) then
+                   s_b(j+1)= s(i,j,comp) + (HALF-max(ZERO,vbardth))*slopey(i,j,1) + dth*st
+                   s_t(j  )= s(i,j,comp) - (HALF+min(ZERO,vbardth))*slopey(i,j,1) + dth*st
+                else
+                   s_b(j+1)= s(i,j,comp) + (HALF-vbardth)*slopey(i,j,1) + dth*st
+                   s_t(j  )= s(i,j,comp) - (HALF+vbardth)*slopey(i,j,1) + dth*st
+                end if
              else
                 s_b(j+1)= s(i,j,comp) + (HALF-dth*vmac(i,j+1)/hy)*slopey(i,j,1) + dth*st
                 s_t(j  )= s(i,j,comp) - (HALF+dth*vmac(i,j  )/hy)*slopey(i,j,1) + dth*st
