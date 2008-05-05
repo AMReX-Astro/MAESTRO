@@ -775,10 +775,13 @@ contains
 
     !     Local variables
     integer :: i, j
+    real (kind = dp_t) :: w0_cent
 
+    ! Recall w0 is edge-centered
     do j = lo(2), hi(2)
+       w0_cent = 0.5d0 * (w0(j) + w0(j+1))
        do i = lo(1), hi(1)
-          velplusw0(i,j) = sqrt(u(i,j,1)**2 + (u(i,j,2)+w0(j))**2)
+          velplusw0(i,j) = sqrt( u(i,j,1)**2 + (u(i,j,2)+w0_cent)**2 )
        enddo
     enddo
 
@@ -795,13 +798,16 @@ contains
 
     !     Local variables
     integer :: i, j, k
+    real (kind = dp_t) :: w0_cent
 
+    ! Recall w0 is edge-centered
     do k = lo(3), hi(3)
-    do j = lo(2), hi(2)
-    do i = lo(1), hi(1)
-       velplusw0(i,j,k) = sqrt(u(i,j,k,1)**2 + u(i,j,k,2)**2 + (u(i,j,k,3)+w0(k))**2)
-    enddo
-    enddo
+       w0_cent = 0.5d0 * (w0(k) + w0(k+1))
+       do j = lo(2), hi(2)
+       do i = lo(1), hi(1)
+          velplusw0(i,j,k) = sqrt(u(i,j,k,1)**2 + u(i,j,k,2)**2 + (u(i,j,k,3)+w0_cent)**2)
+       enddo
+       enddo
     enddo
 
   end subroutine makevelplusw0_3d_cart
