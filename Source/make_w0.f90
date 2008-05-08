@@ -147,13 +147,16 @@ contains
     real(kind=dp_t), allocatable :: vel_old_cen(:)
     real(kind=dp_t), allocatable :: vel_new_cen(:)
     real(kind=dp_t), allocatable :: c(:),d(:),e(:),u(:),rhs(:)
-    real(kind=dp_t), allocatable :: m(:),grav_edge(:),rho0_edge(:)
+    real(kind=dp_t), allocatable :: m(:),grav_edge(:),rho0_edge(:),rho0star(:)
     real(kind=dp_t)              :: vel_avg, div_avg, dt_avg
-    
+
+    real(kind=dp_t), parameter :: eps = 1.d-8
+
     ! Cell-centered
     allocate(m(0:nr(n)-1))
     allocate(vel_old_cen(0:nr(n)-1))
     allocate(vel_new_cen(0:nr(n)-1))
+    allocate(rho0star(0:nr(n)-1))
 
     ! Edge-centered
     allocate(c(0:nr(n)),d(0:nr(n)),e(0:nr(n)),rhs(0:nr(n)),u(0:nr(n)))
@@ -165,14 +168,39 @@ contains
     rhs = ZERO
     u   = ZERO
    
+    ! rho0star is defined as (dp_0/dr)/g -- i.e. it should be rho0 except
+    ! outside the star where we hold density constant (and therefore are not
+    ! in HSE).  In that region, rho0star = 0
+    rho0star(0) = rho0(0)
+    rho0star(nr(n)-1) = ZERO
+    
+    do r = 1, nr(n)-2
+       if ( (p0(r-1)-p0(r+1))/p0(r) < eps) then
+          rho0star(r) = ZERO
+       else
+          rho0star(r) = rho0(r)
+       endif
+    enddo
+
+!    do r = 0, nr(n)-1
+!       print *, r, rho0(r), rho0star(r)
+!    enddo
+!    stop
+
     call make_grav_edge(n,grav_edge,rho0)
 
+!    do r = 0, nr(n)-1
+!       print *, r, rho0star(r), grav_edge(r)
+!    enddo
+!    print *, grav_edge(nr(n))
+!    stop
+    
     do r = 1,nr(n)
        c(r) = gamma1bar(r-1) * p0(r-1) * base_loedge_loc(n,r-1)**2 / base_cc_loc(n,r-1)**2
        c(r) = c(r) / dr(n)**2
     end do
 
-    call cell_to_edge(n,rho0,rho0_edge)
+    call cell_to_edge(n,rho0star,rho0_edge)
 
     do r = 1,nr(n)-1
 
@@ -222,7 +250,7 @@ contains
     end do
 
     deallocate(c,d,e,rhs,u)
-    deallocate(m,grav_edge,rho0_edge)
+    deallocate(m,grav_edge,rho0_edge,rho0star)
     deallocate(vel_old_cen,vel_new_cen)
 
   end subroutine make_w0_spherical
