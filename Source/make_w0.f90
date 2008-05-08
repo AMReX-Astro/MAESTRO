@@ -182,21 +182,13 @@ contains
        endif
     enddo
 
-!    do r = 0, nr(n)-1
-!       print *, r, rho0(r), rho0star(r)
-!    enddo
-!    stop
-
     call make_grav_edge(n,grav_edge,rho0)
 
-!    do r = 0, nr(n)-1
-!       print *, r, rho0star(r), grav_edge(r)
-!    enddo
-!    print *, grav_edge(nr(n))
-!    stop
-    
+    ! Note that we are solving for (r^2 w0), not just w0. 
+
     do r = 1,nr(n)
-       c(r) = gamma1bar(r-1) * p0(r-1) * base_loedge_loc(n,r-1)**2 / base_cc_loc(n,r-1)**2
+!      c(r) = gamma1bar(r-1) * p0(r-1) * base_loedge_loc(n,r-1)**2 / base_cc_loc(n,r-1)**2
+       c(r) = gamma1bar(r-1) * p0(r-1)                             / base_cc_loc(n,r-1)**2
        c(r) = c(r) / dr(n)**2
     end do
 
@@ -204,20 +196,25 @@ contains
 
     do r = 1,nr(n)-1
 
+!      d(r) = -( gamma1bar(r-1) * p0(r-1) / base_cc_loc(n,r-1)**2 &
+!               +gamma1bar(r  ) * p0(r  ) / base_cc_loc(n,r  )**2 ) &
+!               * (base_loedge_loc(n,r)**2/dr(n)**2) &
+!               - four * rho0_edge(r) * grav_edge(r) / base_loedge_loc(n,r)
+
        d(r) = -( gamma1bar(r-1) * p0(r-1) / base_cc_loc(n,r-1)**2 &
-                +gamma1bar(r  ) * p0(r  ) / base_cc_loc(n,r  )**2 ) &
-                * (base_loedge_loc(n,r)**2/dr(n)**2) &
-                - four * rho0_edge(r) * grav_edge(r) / base_loedge_loc(n,r)
+                +gamma1bar(r  ) * p0(r  ) / base_cc_loc(n,r  )**2 ) / dr(n)**2 &
+                - four * rho0_edge(r) * grav_edge(r) / (base_loedge_loc(n,r))**3
+    end do
+
+    do r = 0,nr(n)-1
+!      e(r) = gamma1bar(r) * p0(r) * base_loedge_loc(n,r+1)**2 / base_cc_loc(n,r)**2
+       e(r) = gamma1bar(r) * p0(r)                             / base_cc_loc(n,r)**2
+       e(r) = e(r) / dr(n)**2
     end do
 
     do r = 1,nr(n)-1
        rhs(r) = ( gamma1bar(r  )*p0(r  )*Sbar_in(r) - gamma1bar(r-1)*p0(r-1)*Sbar_in(r-1) ) 
        rhs(r) = rhs(r) / dr(n)
-    end do
-
-    do r = 0,nr(n)-1
-       e(r) = gamma1bar(r) * p0(r) * base_loedge_loc(n,r+1)**2 / base_cc_loc(n,r)**2
-       e(r) = e(r) / dr(n)**2
     end do
 
     ! Lower boundary
@@ -226,17 +223,17 @@ contains
      rhs(0) = zero
 
     ! Upper boundary
-       c(nr(n)) = zero
-       d(nr(n)) = one
+       c(nr(n)) = -one
+       d(nr(n)) =  one
      rhs(nr(n)) = zero
 
     ! Call the tridiagonal solver
     call tridiag(c, d, e, rhs, u, nr(n)+1)
 
-    do r = 0,nr(n)
-       vel(r) = u(r)
+    vel(0) = ZERO
+    do r = 1,nr(n)
+       vel(r) = u(r) / base_loedge_loc(n,r)**2
     end do
-
 
     ! Compute the forcing term in the base state velocity equation, - 1/rho0 grad pi0 
     dt_avg = HALF * (dt + dtold)
