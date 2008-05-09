@@ -227,7 +227,7 @@ contains
 
     if ( parallel_IOProcessor() ) then
        print *,'DR , RMAX OF MODEL     ',dr_in, rmax
-       print *,'DR , RMAX OF BASE ARRAY',dr(n), dble(nr(n)) * dr(n)
+       print *,'DR , RMAX OF BASE ARRAY',dr(n), dble(nr(n)-HALF) * dr(n)
 
        if (mod(dr(n),dr_in) .gt. TINY) then
           print *, ''
