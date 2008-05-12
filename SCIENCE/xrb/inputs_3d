@@ -3,13 +3,13 @@
  model_file = "sorted_xrb_1cm.hse"
  spherical_in = 0
 
- prob_lo_x = 1400.0d0
- prob_lo_y = 1400.0d0
- prob_lo_z = 1400.0d0
+ prob_lo_x = 600.0d0
+ prob_lo_y = 600.0d0
+ prob_lo_z = 600.0d0
 
- prob_hi_x = 3960.0d0
- prob_hi_y = 3960.0d0
- prob_hi_z = 3960.0d0
+ prob_hi_x = 3160.0d0
+ prob_hi_y = 3160.0d0
+ prob_hi_z = 3160.0d0
 
  grav_const = -2.45e14
 
