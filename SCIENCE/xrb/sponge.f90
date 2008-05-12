@@ -8,7 +8,7 @@ module sponge_module
 
   implicit none
 
-  real(dp_t), save :: r_sp, r_md, r_tp
+  real(dp_t), save :: topsponge_lo_r, topsponge_hi_r, botsponge_lo_r, botsponge_hi_r
 
   private
 
@@ -31,12 +31,12 @@ contains
     integer            :: r
 
     r_top = prob_lo_r + dble(nr(nlevs)) * dr(nlevs)
-    r_sp = r_top
+    topsponge_lo_r = r_top
 
     do r = 0,nr(nlevs)-1
        rloc = prob_lo_r + (dble(r)+HALF) * dr(nlevs)
        if (rho0(r) < 25.d0*anelastic_cutoff) then
-          r_sp = rloc
+          topsponge_lo_r = rloc
           exit
        endif
     enddo
@@ -44,16 +44,31 @@ contains
     do r = 0,nr(nlevs)-1
        rloc = prob_lo_r + (dble(r)+HALF) * dr(nlevs)
        if (rho0(r) < anelastic_cutoff) then
-          r_tp = rloc
+          topsponge_hi_r = rloc
           exit
        endif
     enddo
 
-    r_md = 0.5d0 * (r_sp + r_tp)
+    do r = 0,nr(nlevs)-1
+       rloc = prob_lo_r + (dble(r)+HALF) * dr(nlevs)
+       if (rho0(r) < 6.d7) then
+          botsponge_lo_r = rloc
+          exit
+       endif
+    enddo
 
-    if ( parallel_IOProcessor() ) write(6,1000) r_sp, r_tp
+    do r = 0,nr(nlevs)-1
+       rloc = prob_lo_r + (dble(r)+HALF) * dr(nlevs)
+       if (rho0(r) < 5.d7) then
+          botsponge_hi_r = rloc
+          exit
+       endif
+    enddo
 
-1000 format('inner sponge: r_sp      , r_tp      : ',e20.12,2x,e20.12)
+
+    if ( parallel_IOProcessor() ) write(6,1000) topsponge_lo_r, topsponge_hi_r
+
+1000 format('inner sponge: topsponge_lo_r      , topsponge_hi_r      : ',e20.12,2x,e20.12)
 
   end subroutine init_sponge
 
@@ -115,10 +130,17 @@ contains
 
     do j = lo(2),hi(2)
        y = prob_lo_y + (dble(j)+HALF)*dx(2)
-       if(y <= r_sp) then
+       if(y .le. botsponge_lo_r) then
+          sponge(:,j) = spongemin
+       else if(y .le. botsponge_hi_r) then
+          sponge(:,j) = -HALF*(ONE-spongemin) &
+               * cos(M_PI*(y-botsponge_lo_r)/(botsponge_hi_r-botsponge_lo_r)) &
+               + HALF*(ONE+spongemin)
+       else if(y .le. topsponge_lo_r) then
           sponge(:,j) = ONE
-       else if (y <= r_tp) then
-          sponge(:,j) = HALF*(ONE-spongemin)*cos(M_PI*(y-r_sp)/(r_tp-r_sp))&
+       else if (y .le. topsponge_hi_r) then
+          sponge(:,j) = HALF*(ONE-spongemin) &
+               * cos(M_PI*(y-topsponge_lo_r)/(topsponge_hi_r-topsponge_lo_r)) &
                + HALF*(ONE+spongemin)
        else
           sponge(:,j) = spongemin
@@ -143,10 +165,17 @@ contains
 
     do k = lo(3),hi(3)
        z = prob_lo_z + (dble(k)+HALF)*dx(3)
-       if(z <= r_sp) then
+       if(z .le. botsponge_lo_r) then
+          sponge(:,:,k) = spongemin
+       else if(z .le. botsponge_hi_r) then
+          sponge(:,:,k) = -HALF*(ONE-spongemin) &
+               * cos(M_PI*(z-botsponge_lo_r)/(botsponge_hi_r-botsponge_lo_r)) &
+               + HALF*(ONE+spongemin)
+       else if(z .le. topsponge_lo_r) then
           sponge(:,:,k) = ONE
-       else if (z <= r_tp) then
-          sponge(:,:,k) = HALF*(ONE-spongemin)*cos(M_PI*(z-r_sp)/(r_tp-r_sp))&
+       else if (z .le. topsponge_hi_r) then
+          sponge(:,:,k) = HALF*(ONE-spongemin) &
+               * cos(M_PI*(z-topsponge_lo_r)/(topsponge_hi_r-topsponge_lo_r)) &
                + HALF*(ONE+spongemin)
        else
           sponge(:,:,k) = spongemin
