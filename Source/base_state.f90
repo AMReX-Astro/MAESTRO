@@ -23,7 +23,7 @@ contains
                              prob_lo_z, small_temp, small_dens
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp, ntrac
     use geometry, only: dr, nr, spherical
-
+    
     integer           , intent(in   ) :: n
     character(len=256), intent(in   ) :: model_file
     real(kind=dp_t)   , intent(inout) :: s0_init(0:,:)
@@ -60,6 +60,10 @@ contains
     type(bl_prof_timer), save :: bpt
     
     real(kind=dp_t), parameter :: TINY = 1.0e-10
+
+    real(kind=dp_t), parameter :: Gconst = 6.6725985E-8_dp_t
+    real(kind=dp_t) :: mencl, g, dr_base, r_l, r_r, dpdr, rhog
+    real(kind=dp_t) :: max_hse_error
 
     call build(bpt, "init_base_state")
 
@@ -322,6 +326,33 @@ contains
 
     end do
 
+    ! check whether we are in HSE
+    mencl = four3rd*m_pi*dr(n)**3*s0_init(0,rho_comp)
+    
+    max_hse_error = -1.d30
+
+    do r = 1, r_cutoff
+       r_r = dble(r+1)*dr(n)
+       r_l = dble(r)*dr(n)
+
+       g = -Gconst*mencl/r_l**2
+
+       mencl = mencl + four3rd*m_pi*dr(n)*(r_l**2 + r_l*r_r + r_r**2)*s0_init(r,rho_comp)
+       dpdr = (p0_init(r) - p0_init(r-1))/dr(n)
+       rhog = HALF*(s0_init(r,rho_comp) + s0_init(r-1,rho_comp))*g
+
+       !write(*,1000) r, dpdr, rhog, abs(dpdr - rhog)/abs(dpdr), s0_init(r,rho_comp)
+1000   format(1x,6(g20.10))
+
+       max_hse_error = max(max_hse_error, abs(dpdr - rhog)/abs(dpdr))
+    enddo
+
+    print *, " " 
+    print *, "Maximum HSE Error = ", max_hse_error
+    print *, "   (after putting initial model into base state arrays, and"
+    print *, "    for density < base_cutoff_density)"
+    print *, " "
+
     deallocate(vars_stored,varnames_stored)
     deallocate(base_state,base_r)
 
@@ -332,6 +363,7 @@ contains
   function interpolate(r, npts, model_r, model_var)
 
     use bl_constants_module
+    use probin_module, ONLY: quadratic_interpolation
 
     ! given the array of model coordinates (model_r), and variable (model_var),
     ! find the value of model_var at point r using linear interpolation.
@@ -384,7 +416,9 @@ contains
        interpolate = max(interpolate,minvar)
        interpolate = min(interpolate,maxvar)
 
-    else if((model_var(id+1) - model_var(id))*(model_var(id) - model_var(id-1)) <= ZERO) then
+    else if ( ((model_var(id+1) - model_var(id))*(model_var(id) - model_var(id-1)) <= ZERO .and. &
+               quadratic_interpolation .eq. .true.) .or. &
+              quadratic_interpolation .eq. .false.) then
 
        ! if we are at a maximum or minimum, then drop to linear interpolation
        slope = (model_var(id+1) - model_var(id-1))/(model_r(id+1) - model_r(id-1))
