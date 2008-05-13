@@ -147,20 +147,35 @@ contains
     real(kind=dp_t), allocatable :: vel_old_cen(:)
     real(kind=dp_t), allocatable :: vel_new_cen(:)
     real(kind=dp_t), allocatable :: c(:),d(:),e(:),u(:),rhs(:)
-    real(kind=dp_t), allocatable :: m(:),grav_edge(:),rho0_edge(:),rho0star(:)
+    real(kind=dp_t), allocatable :: m(:)
     real(kind=dp_t)              :: vel_avg, div_avg, dt_avg
+    real(kind=dp_t), allocatable :: vel_bar(:)
 
     real(kind=dp_t), parameter :: eps = 1.d-8
+
+    real(kind=dp_t) :: dpdr
 
     ! Cell-centered
     allocate(m(0:nr(n)-1))
     allocate(vel_old_cen(0:nr(n)-1))
     allocate(vel_new_cen(0:nr(n)-1))
-    allocate(rho0star(0:nr(n)-1))
 
     ! Edge-centered
     allocate(c(0:nr(n)),d(0:nr(n)),e(0:nr(n)),rhs(0:nr(n)),u(0:nr(n)))
-    allocate(grav_edge(0:nr(n)),rho0_edge(0:nr(n)))
+    allocate(vel_bar(0:nr(n)))
+
+    ! NOTE:  we first solve for the w0 resulting only from Sbar -- then we will
+    ! solve for the update to w0.  We integrate d/dr (r^2 w0) = (r^2 Sbar)
+
+    vel_bar = ZERO
+    do r = 1,nr(n)
+       vel_bar(r) = vel_bar(r-1) + dr(n) * Sbar_in(r-1) * base_cc_loc(n,r-1)**2
+    end do
+    do r = 1,nr(n)
+       vel_bar(r) = vel_bar(r) / base_loedge_loc(n,r)**2
+    end do
+
+    ! NOTE:  now we solve for the remainder of (r^2 * w0)
 
     c   = ZERO
     d   = ZERO
@@ -168,53 +183,30 @@ contains
     rhs = ZERO
     u   = ZERO
    
-    ! rho0star is defined as (dp_0/dr)/g -- i.e. it should be rho0 except
-    ! outside the star where we hold density constant (and therefore are not
-    ! in HSE).  In that region, rho0star = 0
-    rho0star(0) = rho0(0)
-    rho0star(nr(n)-1) = ZERO
-    
-    do r = 1, nr(n)-2
-       if ( (p0(r-1)-p0(r+1))/p0(r) < eps) then
-          rho0star(r) = ZERO
-       else
-          rho0star(r) = rho0(r)
-       endif
-    enddo
-
-    call make_grav_edge(n,grav_edge,rho0)
-
     ! Note that we are solving for (r^2 w0), not just w0. 
 
     do r = 1,nr(n)
-!      c(r) = gamma1bar(r-1) * p0(r-1) * base_loedge_loc(n,r-1)**2 / base_cc_loc(n,r-1)**2
-       c(r) = gamma1bar(r-1) * p0(r-1)                             / base_cc_loc(n,r-1)**2
+       c(r) = gamma1bar(r-1) * p0(r-1) / base_cc_loc(n,r-1)**2
        c(r) = c(r) / dr(n)**2
     end do
 
-    call cell_to_edge(n,rho0star,rho0_edge)
-
     do r = 1,nr(n)-1
 
-!      d(r) = -( gamma1bar(r-1) * p0(r-1) / base_cc_loc(n,r-1)**2 &
-!               +gamma1bar(r  ) * p0(r  ) / base_cc_loc(n,r  )**2 ) &
-!               * (base_loedge_loc(n,r)**2/dr(n)**2) &
-!               - four * rho0_edge(r) * grav_edge(r) / base_loedge_loc(n,r)
-
        d(r) = -( gamma1bar(r-1) * p0(r-1) / base_cc_loc(n,r-1)**2 &
-                +gamma1bar(r  ) * p0(r  ) / base_cc_loc(n,r  )**2 ) / dr(n)**2 &
-                - four * rho0_edge(r) * grav_edge(r) / (base_loedge_loc(n,r))**3
+                +gamma1bar(r  ) * p0(r  ) / base_cc_loc(n,r  )**2 ) / dr(n)**2 
+
+       dpdr = (p0(r)-p0(r-1))/dr(n)
+       d(r) = d(r) - four * dpdr / (base_loedge_loc(n,r))**3
     end do
 
     do r = 0,nr(n)-1
-!      e(r) = gamma1bar(r) * p0(r) * base_loedge_loc(n,r+1)**2 / base_cc_loc(n,r)**2
-       e(r) = gamma1bar(r) * p0(r)                             / base_cc_loc(n,r)**2
+       e(r) = gamma1bar(r) * p0(r) / base_cc_loc(n,r)**2
        e(r) = e(r) / dr(n)**2
     end do
 
     do r = 1,nr(n)-1
-       rhs(r) = ( gamma1bar(r  )*p0(r  )*Sbar_in(r) - gamma1bar(r-1)*p0(r-1)*Sbar_in(r-1) ) 
-       rhs(r) = rhs(r) / dr(n)
+       dpdr = (p0(r)-p0(r-1))/dr(n)
+       rhs(r) = four * dpdr * vel_bar(r) / base_loedge_loc(n,r)
     end do
 
     ! Lower boundary
@@ -223,7 +215,8 @@ contains
      rhs(0) = zero
 
     ! Upper boundary
-       c(nr(n)) = -one
+!      c(nr(n)) = -one
+       c(nr(n)) = zero
        d(nr(n)) =  one
      rhs(nr(n)) = zero
 
@@ -233,6 +226,10 @@ contains
     vel(0) = ZERO
     do r = 1,nr(n)
        vel(r) = u(r) / base_loedge_loc(n,r)**2
+    end do
+
+    do r = 0,nr(n)
+       vel(r) = vel(r) + vel_bar(r)
     end do
 
     ! Compute the forcing term in the base state velocity equation, - 1/rho0 grad pi0 
@@ -247,7 +244,7 @@ contains
     end do
 
     deallocate(c,d,e,rhs,u)
-    deallocate(m,grav_edge,rho0_edge,rho0star)
+    deallocate(m)
     deallocate(vel_old_cen,vel_new_cen)
 
   end subroutine make_w0_spherical
