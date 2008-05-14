@@ -324,7 +324,7 @@ contains
           s0_init(r,trac_comp:trac_comp+ntrac-1) = ZERO
 
           ! keep track of the height where we drop below the cutoff density
-          if (s0_init(r,rho_comp) .lt. base_cutoff_density &
+          if (s0_init(r,rho_comp) .le. base_cutoff_density &
                .and. r_cutoff .eq. nr(n)) then
              if ( parallel_IOProcessor() ) print *,'SETTING R_CUTOFF TO ',r
              r_cutoff = r
