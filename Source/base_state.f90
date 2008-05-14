@@ -32,7 +32,7 @@ contains
 
     ! local
     integer         :: i,j,r,r_cutoff,comp
-    real(kind=dp_t) :: rloc,dr_in,rmax,starting_rad
+    real(kind=dp_t) :: rloc,dr_in,rmax,starting_rad,mod_dr
     real(kind=dp_t) :: d_ambient,t_ambient,p_ambient,xn_ambient(nspec)
     real(kind=dp_t) :: sum
 
@@ -233,13 +233,21 @@ contains
        print *,'DR , RMAX OF MODEL     ',dr_in, rmax
        print *,'DR , RMAX OF BASE ARRAY',dr(n), dble(nr(n)-HALF) * dr(n)
 
-       if (mod(dr(n),dr_in) .gt. TINY) then
+       if (dr(n) .lt. dr_in) then
+          mod_dr = mod(dr_in,dr(n))
+       else
+          mod_dr = mod(dr(n),dr_in)
+       endif
+
+       if (mod_dr .gt. TINY) then
           print *, ''
           print *, "WARNING: resolution of base state array is not an integer"
           print *, "         multiple of the initial model's resolution.     "
           print *, "         make sure this is a desired property as this    "
           print *, "         could lead to aliasing when performing the      "
           print *, "         interpolation.                                  "
+          print *, " "
+          print *, "modulus = ", mod_dr
        endif
     end if
 
