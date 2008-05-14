@@ -4,6 +4,8 @@ module base_state_module
 
   implicit none
 
+  real(dp_t), save :: r_cutoff_loc
+
   private
 
   public :: init_base_state
@@ -20,7 +22,8 @@ contains
     use bl_constants_module
     use eos_module
     use probin_module, only: base_cutoff_density, anelastic_cutoff, prob_lo_x, prob_lo_y, &
-                             prob_lo_z, small_temp, small_dens, grav_const
+                             prob_lo_z, prob_hi_x, prob_hi_y, prob_hi_z, &
+                             small_temp, small_dens, grav_const
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp, ntrac
     use geometry, only: dr, nr, spherical
     
@@ -31,10 +34,10 @@ contains
     real(kind=dp_t)   , intent(in   ) :: dx(:)
 
     ! local
-    integer         :: i,j,r,r_cutoff,comp
+    integer         :: i,j,r,comp
     real(kind=dp_t) :: rloc,dr_in,rmax,starting_rad,mod_dr
     real(kind=dp_t) :: d_ambient,t_ambient,p_ambient,xn_ambient(nspec)
-    real(kind=dp_t) :: sum
+    real(kind=dp_t) :: sum,prob_hi_r
 
     ! these indices define how the initial model is stored in the 
     ! base_state array
@@ -256,82 +259,84 @@ contains
           starting_rad = prob_lo_x
        else if (dm .eq. 2) then
           starting_rad = prob_lo_y
-       else if(dm .eq. 3) then
+       else if (dm .eq. 3) then
           starting_rad = prob_lo_z
        endif
     else
        starting_rad = ZERO
     endif
 
-    r_cutoff = nr(n)
+    if (n .eq. 1) then
+       if (dm .eq. 1) then
+          r_cutoff_loc = prob_hi_x
+       else if (dm .eq. 2) then
+          r_cutoff_loc = prob_hi_y
+       else if (dm .eq. 3) then
+          r_cutoff_loc = prob_hi_z
+       end if
+       prob_hi_r = r_cutoff_loc
+    end if
+
     do r = 0,nr(n)-1
 
-       if (r .ge. r_cutoff) then
+       rloc = starting_rad + (dble(r) + HALF)*dr(n)
+       rloc = min(rloc, rmax)
 
-          s0_init(r, rho_comp ) = s0_init(r_cutoff, rho_comp )
-          s0_init(r,rhoh_comp ) = s0_init(r_cutoff,rhoh_comp )
-          s0_init(r,spec_comp:spec_comp+nspec-1) = &
-               s0_init(r_cutoff,spec_comp:spec_comp+nspec-1)
-          p0_init(r)            = p0_init(r_cutoff)
-          s0_init(r,temp_comp)  = s0_init(r_cutoff,temp_comp)
-
-       else
-
-          ! compute the coordinate height at this level
-          rloc = starting_rad + (dble(r) + HALF)*dr(n)
-
-          ! here we account for r > rmax of the model.hse array, assuming
-          ! that the state stays constant beyond rmax
-          rloc = min(rloc, rmax)
-
-          d_ambient = interpolate(rloc, npts_model, base_r, base_state(:,idens_model))
-          t_ambient = interpolate(rloc, npts_model, base_r, base_state(:,itemp_model))
-          p_ambient = interpolate(rloc, npts_model, base_r, base_state(:,ipres_model))
-
-          sum = ZERO
-          do comp = 1, nspec
-             xn_ambient(comp) = max(ZERO,min(ONE, &
-                  interpolate(rloc, npts_model, base_r, base_state(:,ispec_model-1+comp))))
-             sum = sum + xn_ambient(comp)
-          enddo
-          xn_ambient = xn_ambient/sum
-
-          ! use the EOS to make the state consistent
-          temp_eos(1) = t_ambient
-          den_eos(1)  = d_ambient
-          p_eos(1)    = p_ambient
-          xn_eos(1,:) = xn_ambient(:)
-
-          ! (rho,T) --> p,h
-          call eos(eos_input_rt, den_eos, temp_eos, &
-                   npts, nspec, &
-                   xn_eos, &
-                   p_eos, h_eos, e_eos, &
-                   cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                   dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                   dpdX_eos, dhdX_eos, &
-                   gam1_eos, cs_eos, s_eos, &
-                   dsdt_eos, dsdr_eos, &
-                   do_diag)
-
-          s0_init(r, rho_comp ) = d_ambient
-          s0_init(r,rhoh_comp ) = d_ambient * h_eos(1)
-          s0_init(r,spec_comp:spec_comp+nspec-1) = d_ambient * xn_ambient(1:nspec)
-          p0_init(r)    = p_eos(1)
-
-          s0_init(r,temp_comp) = t_ambient
-
-          s0_init(r,trac_comp:trac_comp+ntrac-1) = ZERO
-
-          ! keep track of the height where we drop below the cutoff density
-          if (s0_init(r,rho_comp) .le. base_cutoff_density &
-               .and. r_cutoff .eq. nr(n)) then
-             if ( parallel_IOProcessor() ) print *,'SETTING R_CUTOFF TO ',r
-             r_cutoff = r
-          end if
-          
+       if (rloc .gt. r_cutoff_loc) then
+          rloc = r_cutoff_loc
        end if
 
+       d_ambient = interpolate(rloc, npts_model, base_r, base_state(:,idens_model))
+       t_ambient = interpolate(rloc, npts_model, base_r, base_state(:,itemp_model))
+       p_ambient = interpolate(rloc, npts_model, base_r, base_state(:,ipres_model))
+       
+       sum = ZERO
+       do comp = 1, nspec
+          xn_ambient(comp) = max(ZERO,min(ONE, &
+               interpolate(rloc, npts_model, base_r, base_state(:,ispec_model-1+comp))))
+          sum = sum + xn_ambient(comp)
+       enddo
+       xn_ambient = xn_ambient/sum
+       
+       ! use the EOS to make the state consistent
+       temp_eos(1) = t_ambient
+       den_eos(1)  = d_ambient
+       p_eos(1)    = p_ambient
+       xn_eos(1,:) = xn_ambient(:)
+       
+       ! (rho,T) --> p,h
+       call eos(eos_input_rt, den_eos, temp_eos, &
+                npts, nspec, &
+                xn_eos, &
+                p_eos, h_eos, e_eos, &
+                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                dpdX_eos, dhdX_eos, &
+                gam1_eos, cs_eos, s_eos, &
+                dsdt_eos, dsdr_eos, &
+                do_diag)
+       
+       s0_init(r, rho_comp ) = d_ambient
+       s0_init(r,rhoh_comp ) = d_ambient * h_eos(1)
+       s0_init(r,spec_comp:spec_comp+nspec-1) = d_ambient * xn_ambient(1:nspec)
+       p0_init(r) = p_eos(1)
+       
+       s0_init(r,temp_comp) = t_ambient
+       
+       s0_init(r,trac_comp:trac_comp+ntrac-1) = ZERO
+       
+       ! keep track of the height where we drop below the cutoff density
+       if (s0_init(r,rho_comp) .le. base_cutoff_density .and. r_cutoff_loc .eq. prob_hi_r &
+            .and. n .eq. 1 ) then
+
+          if ( parallel_IOProcessor() ) then
+             print *,'SETTING R_CUTOFF TO ',r
+          end if
+
+          r_cutoff_loc = rloc
+
+       end if
+       
     end do
 
     ! check whether we are in HSE
@@ -342,24 +347,33 @@ contains
 
     max_hse_error = -1.d30
 
-    do r = 1, r_cutoff-1
-       r_r = dble(r+1)*dr(n)
-       r_l = dble(r)*dr(n)
+    do r = 1, nr(n)-1
 
-       if (spherical .eq. 1) then
-          g = -Gconst*mencl/r_l**2
-          mencl = mencl + four3rd*m_pi*dr(n)*(r_l**2 + r_l*r_r + r_r**2)*s0_init(r,rho_comp)
-       else
-          g = grav_const
-       endif
+       rloc = starting_rad + (dble(r) + HALF)*dr(n)
+       rloc = min(rloc, rmax)
 
-       dpdr = (p0_init(r) - p0_init(r-1))/dr(n)
-       rhog = HALF*(s0_init(r,rho_comp) + s0_init(r-1,rho_comp))*g
+       if (rloc .lt. r_cutoff_loc) then
 
-       !write(*,1000) r, dpdr, rhog, abs(dpdr - rhog)/abs(dpdr), s0_init(r,rho_comp)
-1000   format(1x,6(g20.10))
+          r_r = dble(r+1)*dr(n)
+          r_l = dble(r)*dr(n)
+          
+          if (spherical .eq. 1) then
+             g = -Gconst*mencl/r_l**2
+             mencl = mencl + four3rd*m_pi*dr(n)*(r_l**2 + r_l*r_r + r_r**2)*s0_init(r,rho_comp)
+          else
+             g = grav_const
+          endif
+          
+          dpdr = (p0_init(r) - p0_init(r-1))/dr(n)
+          rhog = HALF*(s0_init(r,rho_comp) + s0_init(r-1,rho_comp))*g
+          
+          !write(*,1000) r, dpdr, rhog, abs(dpdr - rhog)/abs(dpdr), s0_init(r,rho_comp)
+1000      format(1x,6(g20.10))
+          
+          max_hse_error = max(max_hse_error, abs(dpdr - rhog)/abs(dpdr))
+          
+       end if
 
-       max_hse_error = max(max_hse_error, abs(dpdr - rhog)/abs(dpdr))
     enddo
 
     print *, " " 
@@ -431,9 +445,8 @@ contains
        interpolate = max(interpolate,minvar)
        interpolate = min(interpolate,maxvar)
 
-    else if ( ((model_var(id+1) - model_var(id))*(model_var(id) - model_var(id-1)) <= ZERO .and. &
-               quadratic_interpolation .eq. .true.) .or. &
-              quadratic_interpolation .eq. .false.) then
+    else if ( ((model_var(id+1) - model_var(id))*(model_var(id) - model_var(id-1)) <= ZERO &
+         .and. quadratic_interpolation) .or. (.not. quadratic_interpolation) ) then
 
        ! if we are at a maximum or minimum, then drop to linear interpolation
        slope = (model_var(id+1) - model_var(id-1))/(model_r(id+1) - model_r(id-1))
