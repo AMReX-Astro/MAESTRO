@@ -20,7 +20,7 @@ contains
     use bl_constants_module
     use eos_module
     use probin_module, only: base_cutoff_density, anelastic_cutoff, prob_lo_x, prob_lo_y, &
-                             prob_lo_z, small_temp, small_dens
+                             prob_lo_z, small_temp, small_dens, grav_const
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp, ntrac
     use geometry, only: dr, nr, spherical
     
@@ -321,23 +321,30 @@ contains
              if ( parallel_IOProcessor() ) print *,'SETTING R_CUTOFF TO ',r
              r_cutoff = r
           end if
-
+          
        end if
 
     end do
 
     ! check whether we are in HSE
-    mencl = four3rd*m_pi*dr(n)**3*s0_init(0,rho_comp)
     
+    if (spherical .eq. 1) then
+       mencl = four3rd*m_pi*dr(n)**3*s0_init(0,rho_comp)
+    endif
+
     max_hse_error = -1.d30
 
-    do r = 1, r_cutoff
+    do r = 1, r_cutoff-1
        r_r = dble(r+1)*dr(n)
        r_l = dble(r)*dr(n)
 
-       g = -Gconst*mencl/r_l**2
+       if (spherical .eq. 1) then
+          g = -Gconst*mencl/r_l**2
+          mencl = mencl + four3rd*m_pi*dr(n)*(r_l**2 + r_l*r_r + r_r**2)*s0_init(r,rho_comp)
+       else
+          g = grav_const
+       endif
 
-       mencl = mencl + four3rd*m_pi*dr(n)*(r_l**2 + r_l*r_r + r_r**2)*s0_init(r,rho_comp)
        dpdr = (p0_init(r) - p0_init(r-1))/dr(n)
        rhog = HALF*(s0_init(r,rho_comp) + s0_init(r-1,rho_comp))*g
 
