@@ -1,5 +1,5 @@
 &PROBIN
- model_file = "model_6.e8.hse"
+ model_file = "model_6.e8.hse.320"
 
  test_set = "gr0_3d.test"
 
@@ -49,5 +49,8 @@
  velpert_steep = 1.d5
 
  enthalpy_pred_type = 4
+ evolve_base_state = T
+ predict_rho = F
 
+ quadratic_interpolation = F
 /
