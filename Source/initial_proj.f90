@@ -58,9 +58,10 @@ contains
     real(dp_t), allocatable :: Sbar(:,:)
     real(dp_t), allocatable :: delta_gamma1_termbar(:,:)
 
-    allocate(Sbar(nlevs,nr(nlevs)))
-    allocate(psi (nlevs,0:nr(nlevs)))
+    allocate(Sbar                (nlevs,0:nr(nlevs)-1))
     allocate(delta_gamma1_termbar(nlevs,0:nr(nlevs)-1))
+
+    allocate(psi(nlevs,0:nr(nlevs)))
 
     Sbar = ZERO
     psi = ZERO
