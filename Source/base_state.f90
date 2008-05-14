@@ -280,8 +280,13 @@ contains
     do r = 0,nr(n)-1
 
        rloc = starting_rad + (dble(r) + HALF)*dr(n)
+
+       ! here we account for r > rmax of the model.hse array, assuming
+       ! that the state stays constant beyond rmax
        rloc = min(rloc, rmax)
 
+       ! also, if we've falled below the cutoff density, just keep the
+       ! model constant
        if (rloc .gt. r_cutoff_loc) then
           rloc = r_cutoff_loc
        end if
@@ -376,11 +381,13 @@ contains
 
     enddo
 
-    print *, " " 
-    print *, "Maximum HSE Error = ", max_hse_error
-    print *, "   (after putting initial model into base state arrays, and"
-    print *, "    for density < base_cutoff_density)"
-    print *, " "
+    if ( parallel_IOProcessor() ) then
+       print *, " " 
+       print *, "Maximum HSE Error = ", max_hse_error
+       print *, "   (after putting initial model into base state arrays, and"
+       print *, "    for density < base_cutoff_density)"
+       print *, " "
+    endif
 
     deallocate(vars_stored,varnames_stored)
     deallocate(base_state,base_r)
