@@ -18,7 +18,7 @@ contains
     use bl_IO_module
     use fabio_module
     use bl_prof_module
-    use probin_module, only: verbose
+    use probin_module, only: verbose, nOutFiles, lUsingNFiles
 
     type(multifab)  , intent(in) :: mfs(:), mfs_nodal(:)
     type(multifab)  , intent(in) :: dSdt(:), Source_old(:)
@@ -44,35 +44,35 @@ contains
     call parallel_barrier()
 
     write(unit=sd_name, fmt='(a,"/State")') trim(dirname)
-    call fabio_ml_multifab_write_d(mfs, rrs(:,1), sd_name)
+    call fabio_ml_multifab_write_d(mfs, rrs(:,1), sd_name, nOutFiles = nOutFiles, lUsingNFiles = lUsingNFiles)
 
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
       write(6,*) 'Writing    state to checkpoint file ',trim(sd_name)
     end if
 
     write(unit=sd_name, fmt='(a,"/dSdt")') trim(dirname)
-    call fabio_ml_multifab_write_d(dSdt, rrs(:,1), sd_name)
+    call fabio_ml_multifab_write_d(dSdt, rrs(:,1), sd_name, nOutFiles = nOutFiles, lUsingNFiles = lUsingNFiles)
 
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
       write(6,*) 'Writing    state to checkpoint file ',trim(sd_name)
     end if
 
     write(unit=sd_name, fmt='(a,"/Source_old")') trim(dirname)
-    call fabio_ml_multifab_write_d(Source_old, rrs(:,1), sd_name)
+    call fabio_ml_multifab_write_d(Source_old, rrs(:,1), sd_name, nOutFiles = nOutFiles, lUsingNFiles = lUsingNFiles)
 
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
       write(6,*) 'Writing    state to checkpoint file ',trim(sd_name)
     end if
 
     write(unit=sd_name, fmt='(a,"/rho_omegadot2")') trim(dirname)
-    call fabio_ml_multifab_write_d(rho_omegadot2, rrs(:,1), sd_name)
+    call fabio_ml_multifab_write_d(rho_omegadot2, rrs(:,1), sd_name, nOutFiles = nOutFiles, lUsingNFiles = lUsingNFiles)
 
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
       write(6,*) 'Writing    state to checkpoint file ',trim(sd_name)
     end if
 
     write(unit=sd_name_nodal, fmt='(a,"/Pressure")') trim(dirname)
-    call fabio_ml_multifab_write_d(mfs_nodal, rrs(:,1), sd_name_nodal)
+    call fabio_ml_multifab_write_d(mfs_nodal, rrs(:,1), sd_name_nodal, nOutFiles = nOutFiles, lUsingNFiles = lUsingNFiles)
 
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
       write(6,*) 'Writing state to checkpoint file ',trim(sd_name_nodal)

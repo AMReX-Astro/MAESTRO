@@ -83,6 +83,7 @@ contains
     use vort_module
     use variables
     use plot_variables_module
+    use probin_module, only: nOutFiles, lUsingNFiles
 
     character(len=*) , intent(in   ) :: dirname
     type(ml_layout)  , intent(in   ) :: mla
@@ -179,7 +180,7 @@ contains
     end if
 
     call fabio_ml_multifab_write_d(plotdata, mba%rr(:,1), dirname, plot_names, &
-                                   mba%pd(1), time, dx(1,:))
+                                   mba%pd(1), time, dx(1,:), nOutFiles = nOutFiles, lUsingNFiles = lUsingNFiles)
     do n = 1,nlevs
        call destroy(plotdata(n))
     end do
