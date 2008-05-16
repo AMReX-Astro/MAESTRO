@@ -1,6 +1,6 @@
 &PROBIN
  test_set = "gr0_3d_tiny"
- model_file = "sorted_xrb_4cm.hse"
+ model_file = "sorted_xrb_lo_4cm.hse"
  spherical_in = 0
 
  prob_lo_x = 600.0d0
