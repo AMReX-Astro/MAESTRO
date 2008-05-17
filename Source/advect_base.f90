@@ -197,6 +197,9 @@ contains
     real(kind=dp_t) :: dtdr,divbetaw,betahalf,factor
     real(kind=dp_t) :: div_w0_cart, div_w0_sph
 
+    real(kind=dp_t) :: rho0_avg,divw,p0_avg
+    real(kind=dp_t) :: w0dpdr_avg,w0dpdr_avg_1,w0dpdr_avg_2
+
     real (kind = dp_t), allocatable :: force(:)
     real (kind = dp_t), allocatable :: psi(:)
     real (kind = dp_t), allocatable :: edge(:)
@@ -206,6 +209,7 @@ contains
     real (kind = dp_t), allocatable :: beta(:),beta_new(:),beta_nh(:)
     real (kind = dp_t), allocatable :: gamma1bar_old(:)
     real (kind = dp_t), allocatable :: grav_cell(:)
+    real (kind = dp_t), allocatable :: grav_edge(:)
     
     dtdr = dt / dr(n)
     
@@ -219,6 +223,7 @@ contains
     allocate(   h0(0:nr(n)-1))
     
     ! Edge-centered
+    allocate(grav_edge(0:nr(n)))
     allocate(edge(0:nr(n)))
     allocate(beta(0:nr(n)),beta_new(0:nr(n)),beta_nh(0:nr(n)))
 
@@ -236,7 +241,6 @@ contains
     
     rho0_predicted_edge = edge
 
-    ! update rho_0
     do r = 0,nr(n)-1
        rho0_new(r) = rho0_old(r) &
             - dtdr/base_cc_loc(n,r)**2 * &
@@ -248,45 +252,82 @@ contains
 ! UPDATE P0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     
-    ! Put beta_old on edges
-    call cell_to_edge(n,div_coeff_old,beta)
-    
-    ! Update p0 -- predictor
-    do r = 0,nr(n)-1
-       divbetaw = one/(base_cc_loc(n,r)**2) * &
-            (base_loedge_loc(n,r+1)**2 * beta(r+1) * vel(r+1) - &
-             base_loedge_loc(n,r  )**2 * beta(r  ) * vel(r  )) / dr(n)
+!   Put beta_old on edges
+!   call cell_to_edge(n,div_coeff_old,beta)
+!   Update p0 -- predictor
+!   do r = 0,nr(n)-1
+!      divbetaw = one/(base_cc_loc(n,r)**2) * &
+!           (base_loedge_loc(n,r+1)**2 * beta(r+1) * vel(r+1) - &
+!            base_loedge_loc(n,r  )**2 * beta(r  ) * vel(r  )) / dr(n)
+!      betahalf = div_coeff_old(r)
+!      factor = half * dt * gamma1bar(r) * (Sbar_in(r) - divbetaw / betahalf)
+!      p0_new(r) = p0_old(r) * (one + factor ) / (one - factor)
+!   end do
 
-       betahalf = div_coeff_old(r)
-       factor = half * dt * gamma1bar(r) * (Sbar_in(r) - divbetaw / betahalf)
-       p0_new(r) = p0_old(r) * (one + factor ) / (one - factor)
-       
+    do r = 0,nr(n)-1
+       divw = one/(base_cc_loc(n,r)**2) * &
+            (base_loedge_loc(n,r+1)**2 * vel(r+1) - &
+             base_loedge_loc(n,r  )**2 * vel(r  )) / dr(n)
+
+       if (r .eq. 0) then
+         w0dpdr_avg_2 =  vel(2) * (p0_old(2)-p0_old(1)) / dr(n)
+         w0dpdr_avg_1 =  vel(1) * (p0_old(1)-p0_old(0)) / dr(n)
+         w0dpdr_avg =  1.5d0 * w0dpdr_avg_1 - 0.5d0 * w0dpdr_avg_2
+       else 
+         w0dpdr_avg =  HALF * ( vel(r+1)*(p0_old(r+1)-p0_old(r)) + vel(r)*(p0_old(r)-p0_old(r-1))) / dr(n)
+       end if
+
+       factor = Sbar_in(r) - divw - 1.d0 / (gamma1bar(r)*p0_old(r)) * w0dpdr_avg
+       factor = half * dt * factor
+
+       p0_new(r) = p0_old(r) * (one + gamma1bar(r)*factor ) / (one - gamma1bar(r)*factor)
+
     end do
     
     gamma1bar_old = gamma1bar
     
-    call make_grav_cell(n,grav_cell,rho0_new)
-    
-    ! Define beta^n+1 at cell edges using the new gravity above
-    call make_div_coeff(n,div_coeff_new,rho0_new,p0_new,gamma1bar,grav_cell)
-    call cell_to_edge(n,div_coeff_new,beta_new)
-    
-    ! time-centered beta
-    beta_nh = HALF*(beta + beta_new)
-    
-    ! Update p0 -- corrector
-    do r = 0,nr(n)-1
-       divbetaw = one / (base_cc_loc(n,r)**2) * &
-            (base_loedge_loc(n,r+1)**2 * beta_nh(r+1) * vel(r+1) - &
-             base_loedge_loc(n,r  )**2 * beta_nh(r  ) * vel(r  )) / dr(n)
+!   Define beta^n+1 at cell edges using the new gravity above
+!   call make_grav_cell(n,grav_cell,rho0_new)
+!   call make_div_coeff(n,div_coeff_new,rho0_new,p0_new,gamma1bar,grav_cell)
+!   call cell_to_edge(n,div_coeff_new,beta_new)
+!   beta_nh = HALF*(beta + beta_new)
+!   Update p0 -- corrector
+!   do r = 0,nr(n)-1
+!      divbetaw = one / (base_cc_loc(n,r)**2) * &
+!           (base_loedge_loc(n,r+1)**2 * beta_nh(r+1) * vel(r+1) - &
+!            base_loedge_loc(n,r  )**2 * beta_nh(r  ) * vel(r  )) / dr(n)
 
-       betahalf = HALF*(div_coeff_old(r) + div_coeff_new(r))
-       factor = half * dt * (Sbar_in(r) - divbetaw / betahalf)
-       p0_new(r) = p0_old(r) * &
-            (one + factor * gamma1bar_old(r)) / (one - factor * gamma1bar(r))
-       
+!      betahalf = HALF*(div_coeff_old(r) + div_coeff_new(r))
+!      factor = half * dt * (Sbar_in(r) - divbetaw / betahalf)
+!      p0_new(r) = p0_old(r) * &
+!           (one + factor * gamma1bar_old(r)) / (one - factor * gamma1bar(r))
+!   end do
+
+    do r = 0,nr(n)-1
+       divw = one/(base_cc_loc(n,r)**2) * &
+            (base_loedge_loc(n,r+1)**2 * vel(r+1) - &
+             base_loedge_loc(n,r  )**2 * vel(r  )) / dr(n)
+
+       if (r .eq. 0) then
+         w0dpdr_avg_2 =  HALF * vel(2) * ( (p0_old(2)-p0_old(1)) &
+                                          +(p0_new(2)-p0_new(1)) ) / dr(n)
+         w0dpdr_avg_1 =  HALF * vel(1) * ( (p0_old(1)-p0_old(0)) &
+                                          +(p0_new(1)-p0_new(0)) ) / dr(n)
+         w0dpdr_avg =  1.5d0 * w0dpdr_avg_1 - 0.5d0 * w0dpdr_avg_2
+       else
+          w0dpdr_avg = HALF * HALF * &
+                      ( vel(r+1)*(p0_old(r+1)-p0_old(r)) + vel(r)*(p0_old(r)-p0_old(r-1)) + &
+                        vel(r+1)*(p0_new(r+1)-p0_new(r)) + vel(r)*(p0_new(r)-p0_new(r-1)) ) / dr(n)
+       end if
+
+       p0_avg = HALF * (p0_old(r) + p0_new(r))
+       factor = Sbar_in(r) - divw - 1.d0 / (gamma1bar(r)*p0_avg) * w0dpdr_avg
+       factor = half * dt * factor
+
+       p0_new(r) = p0_old(r) * (one + gamma1bar(r)*factor ) / (one - gamma1bar(r)*factor)
+
     end do
-    
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! UPDATE RHOH0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -356,7 +397,7 @@ contains
        
     end do
     
-    deallocate(force,psi,edge,beta,beta_new,beta_nh,div_coeff_new,gamma1bar_old,grav_cell,X0,h0)
+    deallocate(force,psi,edge,beta,beta_new,beta_nh,div_coeff_new,gamma1bar_old,grav_cell,grav_edge,X0,h0)
     
   end subroutine advect_base_state_spherical
   
