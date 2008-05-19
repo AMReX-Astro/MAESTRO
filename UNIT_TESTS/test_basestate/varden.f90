@@ -25,9 +25,10 @@ subroutine varden()
 
   implicit none
 
-  integer :: i, comp
+  integer :: i, comp,comp2
   integer :: iter
 
+  real(dp_t) :: frac, delta, sum
   integer    :: dm
 
   real(dp_t) :: time,dt,half_time,dtold
@@ -65,6 +66,8 @@ subroutine varden()
   integer :: which_step
 
   real(dp_t) :: max_dist
+
+  character (len=10) base_state_name
 
   call probin_init()
 
@@ -172,6 +175,7 @@ subroutine varden()
 
   w0_old(:,:) = ZERO
 
+  iter = 0
   do while (time < stop_time)
 
      print *, 'time = ', time
@@ -179,7 +183,7 @@ subroutine varden()
      ! compute the anelastic cutoff
      r_anel(1) = nr_fine
      do i = 0, nr_fine-1
-        if (s0(1,i,rho_comp) .lt. anelastic_cutoff .and. r_anel(1) .eq. nr_fine-1) then
+        if (s0(1,i,rho_comp) .le. anelastic_cutoff .and. r_anel(1) .eq. nr_fine-1) then
            r_anel(1) = i
            exit
         endif
@@ -190,17 +194,19 @@ subroutine varden()
      ! compute the heating term
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-     y_0 = 4.e7
-       
+     y_0 = 4.d7
+
+     print *, 'calling the eos', nr_fine
      do i = 0, nr_fine-1
 
-        Hbar = 1.e16 * exp(-((base_cc_loc(1,i) - y_0)**2)/ 1.e14)
+        Hbar = 1.d16 * exp(-((base_cc_loc(1,i) - y_0)**2)/ 1.d14)
      
         ! (rho, T) --> p,h, etc
         den_eos(1)  = s0(1,i,rho_comp)
         temp_eos(1) = s0(1,i,temp_comp)
         xn_eos(1,:) = s0(1,i,spec_comp:spec_comp-1+nspec)/s0(1,i,rho_comp)
         
+        !print *, 'calling EOS: ', i, den_eos(1), temp_eos(1), xn_eos(1,:)
         call eos(eos_input_rt, den_eos, temp_eos, NP, nspec, &
                  xn_eos, &
                  p_eos, h_eos, e_eos, &
@@ -222,6 +228,7 @@ subroutine varden()
 
         Sbar_in(1,i) = coeff*Hbar
      enddo
+
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      ! compute w_0
@@ -287,8 +294,35 @@ subroutine varden()
                 (base_loedge_loc(1,i+1)**2 * edge(i+1) * w0(1,i+1) - &
                  base_loedge_loc(1,i  )**2 * edge(i  ) * w0(1,i  ))
         end do
+
+     enddo
+
+     ! don't let the species leave here negative
+     do comp = spec_comp, spec_comp+nspec-1
         
-        enddo
+        if (minval(s0(1,:,comp)) .lt. ZERO) then
+           do i = 0, nr_fine-1
+              if (s0(1,i,comp) .lt. ZERO) then
+                 delta = -s0(1,i,comp)
+                 sum = ZERO
+                 do comp2 = spec_comp, spec_comp+nspec-1
+                    if (comp2 .ne. comp .and. s0(1,i,comp2) .ge. ZERO) then
+                       sum = sum + s0(1,i,comp2)
+                    endif
+                 enddo
+                 do comp2 = spec_comp, spec_comp+nspec-1
+                    if (comp2 .ne. comp .and. s0(1,i,comp2) .ge. ZERO) then
+                       frac = s0(1,i,comp2) / sum
+                       s0(1,i,comp2) = s0(1,i,comp2) - frac * delta
+                    endif
+                 enddo
+                 s0(1,i,comp) = ZERO
+              endif
+           enddo
+        endif
+     enddo
+        
+        
 
 
      ! update the temperature -- advect base does not do this
@@ -323,21 +357,30 @@ subroutine varden()
      time = time + dt
      dtold = dt
 
+     ! output
+     !write(unit=base_state_name,fmt='("base_",i5.5)') iter
+     !open(unit=10,file=base_state_name)
+     !do i = 0, nr_fine-1
+     !   write(10,1000) base_cc_loc(1,i), s0(1,i,rho_comp), s0(1,i,temp_comp), p0(1,i), w0(1,i)
+     !enddo
+     !close(unit=10)
+
      dt = min(1.1*dt,cflfac*dr_base/maxval(abs(w0)))
      if (time+dt > stop_time) dt = stop_time - time
 
      ! store the old velocity
      w0_old(:,:) = w0(:,:)
 
+     iter = iter + 1
   enddo
 
   ! output
   open(unit=10,file="base.new")
   do i = 0, nr_fine-1
-     write(10,1000) base_cc_loc(1,i), s0(1,i,rho_comp), s0(1,i,temp_comp), p0(1,i)
+     write(10,1000) base_cc_loc(1,i), s0(1,i,rho_comp), s0(1,i,temp_comp), p0(1,i), w0(1,i)
   enddo
   close(unit=10)
-1000 format(1x,5(g20.10))
+1000 format(1x,6(g20.10))
 
   deallocate(div_coeff_old,div_coeff,grav_cell)
   deallocate(gam1,s0_old,s0,p0_old,p0,w0,f)
