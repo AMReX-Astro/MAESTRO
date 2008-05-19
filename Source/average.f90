@@ -45,6 +45,7 @@ contains
     real(kind=dp_t), allocatable :: phipert(:,:)
     real(kind=dp_t), allocatable :: source_buffer(:)
     real(kind=dp_t), allocatable :: target_buffer(:)
+    logical                      :: fine_grids_span_domain_width
 
     type(aveassoc) :: avasc
 
@@ -56,7 +57,7 @@ contains
     ng = phi(1)%ng
     nlevs = size(dx,dim=1)
 
-    phibar = ZERO    
+    phibar = ZERO
 
     if (spherical .eq. 1) allocate(ncell_grid(nlevs,0:nr(nlevs)-1))
 
@@ -81,87 +82,131 @@ contains
 
     if (spherical .eq. 0) then
 
-       domain = layout_get_pd(phi(1)%la)
-       domlo  = lwb(domain)
-       domhi  = upb(domain)
+       fine_grids_span_domain_width = .true.
 
-       if (dm .eq. 2) then
-          ncell(1,:) = domhi(1)-domlo(1)+1
-       else if (dm .eq. 3) then
-          ncell(1,:) = (domhi(1)-domlo(1)+1)*(domhi(2)-domlo(2)+1)
-       end if
+       if (fine_grids_span_domain_width) then
 
-       ! the first step is to compute phibar assuming the coarsest level 
-       ! is the only level in existence
-       do i=1,phi(1)%nboxes
-          if ( multifab_remote(phi(1), i) ) cycle
-          pp => dataptr(phi(1), i)
-          lo =  lwb(get_box(phi(1), i))
-          hi =  upb(get_box(phi(1), i))
-          select case (dm)
-          case (2)
-             call sum_phi_coarsest_2d(pp(:,:,1,:),phisum_proc(1,:),lo,hi,ng,incomp)
-          case (3)
-             call sum_phi_coarsest_3d(pp(:,:,:,:),phisum_proc(1,:),lo,hi,ng,incomp)
-          end select
-       end do
+          do n=1,nlevs
 
-       ! gather phisum
-       source_buffer = phisum_proc(1,:)
-       call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
-       phisum(1,:) = target_buffer
-       do r=0,nr(1)-1
-          phibar(1,r) = phisum(1,r) / dble(ncell(1,r))
-       end do
+             domain = layout_get_pd(phi(n)%la)
+             domlo  = lwb(domain)
+             domhi  = upb(domain)
+             
+             if (dm .eq. 2) then
+                ncell(n,:) = domhi(1)-domlo(1)+1
+             else if (dm .eq. 3) then
+                ncell(n,:) = (domhi(1)-domlo(1)+1)*(domhi(2)-domlo(2)+1)
+             end if
+             
+             ! the first step is to compute phibar assuming the coarsest level 
+             ! is the only level in existence
+             do i=1,phi(n)%nboxes
+                if ( multifab_remote(phi(n), i) ) cycle
+                pp => dataptr(phi(n), i)
+                lo =  lwb(get_box(phi(n), i))
+                hi =  upb(get_box(phi(n), i))
+                select case (dm)
+                case (2)
+                   call sum_phi_coarsest_2d(pp(:,:,1,:),phisum_proc(n,:),lo,hi,ng,incomp)
+                case (3)
+                   call sum_phi_coarsest_3d(pp(:,:,:,:),phisum_proc(n,:),lo,hi,ng,incomp)
+                end select
+             end do
+             
+             ! gather phisum
+             source_buffer = phisum_proc(n,:)
+             call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
+             phisum(n,:) = target_buffer
+             do r=0,nr(n)-1
+                phibar(n,r) = phisum(n,r) / dble(ncell(n,r))
+             end do
+             
+          end do
 
-       ! now we compute the phibar at the finer levels
-       do n=2,nlevs
+       else
 
-          rr = mla%mba%rr(n-1,dm)
-
-          domain = layout_get_pd(phi(n)%la)
+          domain = layout_get_pd(phi(1)%la)
           domlo  = lwb(domain)
           domhi  = upb(domain)
-
+          
           if (dm .eq. 2) then
-             ncell(n,:) = domhi(1)-domlo(1)+1
+             ncell(1,:) = domhi(1)-domlo(1)+1
           else if (dm .eq. 3) then
-             ncell(n,:) = (domhi(1)-domlo(1)+1)*(domhi(2)-domlo(2)+1)
+             ncell(1,:) = (domhi(1)-domlo(1)+1)*(domhi(2)-domlo(2)+1)
           end if
-
-          ! compute phisum at next finer level
-          ! begin by assuming piecewise constant interpolation
-          do r=0,nr(n)-1
-             phisum(n,r) = phisum(n-1,r/rr)*rr**(dm-1)
-          end do
-
-          ! compute phipert_proc
-          do i=1,phi(n)%nboxes
-             if ( multifab_remote(phi(n), i) ) cycle
-             pp => dataptr(phi(n), i)
-             lo =  lwb(get_box(phi(n), i))
-             hi =  upb(get_box(phi(n), i))
+          
+          ! the first step is to compute phibar assuming the coarsest level 
+          ! is the only level in existence
+          do i=1,phi(1)%nboxes
+             if ( multifab_remote(phi(1), i) ) cycle
+             pp => dataptr(phi(1), i)
+             lo =  lwb(get_box(phi(1), i))
+             hi =  upb(get_box(phi(1), i))
              select case (dm)
              case (2)
-                call compute_phipert_2d(pp(:,:,1,:),phipert_proc(n,:),lo,hi,ng,incomp,rr)
+                call sum_phi_coarsest_2d(pp(:,:,1,:),phisum_proc(1,:),lo,hi,ng,incomp)
              case (3)
-                call compute_phipert_3d(pp(:,:,:,:),phipert_proc(n,:),lo,hi,ng,incomp,rr)
+                call sum_phi_coarsest_3d(pp(:,:,:,:),phisum_proc(1,:),lo,hi,ng,incomp)
              end select
           end do
-
-          ! gather phipert
-          source_buffer = phipert_proc(n,:)
+          
+          ! gather phisum
+          source_buffer = phisum_proc(1,:)
           call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
-          phipert(n,:) = target_buffer
+          phisum(1,:) = target_buffer
+          do r=0,nr(1)-1
+             phibar(1,r) = phisum(1,r) / dble(ncell(1,r))
+          end do
+          
+          ! now we compute the phibar at the finer levels
+          do n=2,nlevs
+             
+             rr = mla%mba%rr(n-1,dm)
+             
+             domain = layout_get_pd(phi(n)%la)
+             domlo  = lwb(domain)
+             domhi  = upb(domain)
+             
+             if (dm .eq. 2) then
+                ncell(n,:) = domhi(1)-domlo(1)+1
+             else if (dm .eq. 3) then
+                ncell(n,:) = (domhi(1)-domlo(1)+1)*(domhi(2)-domlo(2)+1)
+             end if
+             
+             ! compute phisum at next finer level
+             ! begin by assuming piecewise constant interpolation
+             do r=0,nr(n)-1
+                phisum(n,r) = phisum(n-1,r/rr)*rr**(dm-1)
+             end do
+             
+             ! compute phipert_proc
+             do i=1,phi(n)%nboxes
+                if ( multifab_remote(phi(n), i) ) cycle
+                pp => dataptr(phi(n), i)
+                lo =  lwb(get_box(phi(n), i))
+                hi =  upb(get_box(phi(n), i))
+                select case (dm)
+                case (2)
+                   call compute_phipert_2d(pp(:,:,1,:),phipert_proc(n,:),lo,hi,ng,incomp,rr)
+                case (3)
+                   call compute_phipert_3d(pp(:,:,:,:),phipert_proc(n,:),lo,hi,ng,incomp,rr)
+                end select
+             end do
+             
+             ! gather phipert
+             source_buffer = phipert_proc(n,:)
+             call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
+             phipert(n,:) = target_buffer
+             
+             ! update phisum and compute phibar
+             do r=0,nr(n)-1
+                phisum(n,r) = phisum(n,r) + phipert(n,r)
+                phibar(n,r) = phisum(n,r) / dble(ncell(n,r))
+             end do
 
-          ! update phisum and compute phibar
-          do r=0,nr(n)-1
-             phisum(n,r) = phisum(n,r) + phipert(n,r)
-             phibar(n,r) = phisum(n,r) / dble(ncell(n,r))
           end do
 
-
-       end do
+       end if
 
     else if(spherical .eq. 1) then
 
