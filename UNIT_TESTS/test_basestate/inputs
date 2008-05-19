@@ -17,4 +17,5 @@
  model_file = "model.sph.768"
  dr_base = 651041.666667
 
+ quadratic_interpolation = F
 /
