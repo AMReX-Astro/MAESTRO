@@ -270,11 +270,15 @@ contains
              base_loedge_loc(n,r  )**2 * vel(r  )) / dr(n)
 
        if (r .eq. 0) then
-         w0dpdr_avg_2 =  vel(2) * (p0_old(2)-p0_old(1)) / dr(n)
-         w0dpdr_avg_1 =  vel(1) * (p0_old(1)-p0_old(0)) / dr(n)
-         w0dpdr_avg =  1.5d0 * w0dpdr_avg_1 - 0.5d0 * w0dpdr_avg_2
-       else 
-         w0dpdr_avg =  HALF * ( vel(r+1)*(p0_old(r+1)-p0_old(r)) + vel(r)*(p0_old(r)-p0_old(r-1))) / dr(n)
+          w0dpdr_avg_2 =  vel(2) * (p0_old(2)-p0_old(1)) / dr(n)
+          w0dpdr_avg_1 =  vel(1) * (p0_old(1)-p0_old(0)) / dr(n)
+          w0dpdr_avg =  1.5d0 * w0dpdr_avg_1 - 0.5d0 * w0dpdr_avg_2
+       else if (r .eq. nr(n)-1) then
+          w0dpdr_avg_2 =  vel(nr(n)-1) * (p0_old(nr(n)-1)-p0_old(nr(n)-2)) / dr(n)
+          w0dpdr_avg_1 =  vel(nr(n)-2) * (p0_old(nr(n)-2)-p0_old(nr(n)-3)) / dr(n)
+          w0dpdr_avg =  1.5d0 * w0dpdr_avg_2 - 0.5d0 * w0dpdr_avg_1
+       else
+          w0dpdr_avg =  HALF * ( vel(r+1)*(p0_old(r+1)-p0_old(r)) + vel(r)*(p0_old(r)-p0_old(r-1))) / dr(n)
        end if
 
        factor = Sbar_in(r) - divw - 1.d0 / (gamma1bar(r)*p0_old(r)) * w0dpdr_avg
@@ -309,11 +313,19 @@ contains
              base_loedge_loc(n,r  )**2 * vel(r  )) / dr(n)
 
        if (r .eq. 0) then
-         w0dpdr_avg_2 =  HALF * vel(2) * ( (p0_old(2)-p0_old(1)) &
-                                          +(p0_new(2)-p0_new(1)) ) / dr(n)
-         w0dpdr_avg_1 =  HALF * vel(1) * ( (p0_old(1)-p0_old(0)) &
-                                          +(p0_new(1)-p0_new(0)) ) / dr(n)
-         w0dpdr_avg =  1.5d0 * w0dpdr_avg_1 - 0.5d0 * w0dpdr_avg_2
+          w0dpdr_avg_2 =  HALF * vel(2) * ( (p0_old(2)-p0_old(1)) &
+                                           +(p0_new(2)-p0_new(1)) ) / dr(n)
+          w0dpdr_avg_1 =  HALF * vel(1) * ( (p0_old(1)-p0_old(0)) &
+                                           +(p0_new(1)-p0_new(0)) ) / dr(n)
+          w0dpdr_avg =  1.5d0 * w0dpdr_avg_1 - 0.5d0 * w0dpdr_avg_2
+
+       else if (r .eq. nr(n)-1) then
+          w0dpdr_avg_2 = HALF * vel(nr(n)-1)*((p0_old(nr(n)-1)-p0_old(nr(n)-2)) &
+                                             +(p0_new(nr(n)-1)-p0_new(nr(n)-2))) / dr(n)
+          w0dpdr_avg_1 = HALF * vel(nr(n)-2)*((p0_old(nr(n)-2)-p0_old(nr(n)-3)) &
+                                             +(p0_new(nr(n)-2)-p0_new(nr(n)-3))) / dr(n)
+          w0dpdr_avg =  1.5d0 * w0dpdr_avg_2 - 0.5d0 * w0dpdr_avg_1
+
        else
           w0dpdr_avg = HALF * HALF * &
                       ( vel(r+1)*(p0_old(r+1)-p0_old(r)) + vel(r)*(p0_old(r)-p0_old(r-1)) + &
