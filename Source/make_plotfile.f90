@@ -12,14 +12,14 @@ module make_plotfile_module
 
 contains
 
-  subroutine get_plot_names(dm,plot_names,plot_spec,plot_trac)
+  subroutine get_plot_names(dm,plot_names)
 
     use plot_variables_module
     use variables
     use network, only: nspec, short_spec_names
+    use probin_module, only: plot_spec, plot_trac, plot_base
 
     integer          , intent(in   ) :: dm
-    logical          , intent(in   ) :: plot_spec,plot_trac
     character(len=20), intent(inout) :: plot_names(:)
 
     ! Local variables
@@ -43,6 +43,14 @@ contains
        do comp = 1, ntrac
           plot_names(icomp_trac+comp-1) = "tracer"
        end do
+    end if
+
+    if (plot_base) then
+       plot_names(icomp_w0)   = "w0_x"
+       plot_names(icomp_w0+1) = "w0_y"
+       if (dm > 2) plot_names(icomp_w0+2) = "w0_z"
+       plot_names(icomp_rho0) = "rho0"
+       plot_names(icomp_p0)   = "p0"
     end if
 
     plot_names(icomp_magvel)   = "magvel"
@@ -76,14 +84,15 @@ contains
 
   subroutine make_plotfile(dirname,mla,u,s,gpres,rho_omegadot,Source,sponge,&
                            mba,plot_names,time,dx,the_bc_tower,w0,rho0,p0,tempbar, &
-                           gamma1bar,normal,plot_spec,plot_trac)
+                           gamma1bar,normal)
 
     use bl_prof_module
     use fabio_module
     use vort_module
     use variables
     use plot_variables_module
-    use probin_module, only: nOutFiles, lUsingNFiles
+    use fill_3d_module
+    use probin_module, only: nOutFiles, lUsingNFiles, plot_spec, plot_trac, plot_base
 
     character(len=*) , intent(in   ) :: dirname
     type(ml_layout)  , intent(in   ) :: mla
@@ -103,9 +112,9 @@ contains
     real(dp_t)       , intent(in   ) :: tempbar(:,0:)
     real(dp_t)       , intent(in   ) :: gamma1bar(:,0:)
     type(multifab)   , intent(in   ) :: normal(:)
-    logical          , intent(in   ) :: plot_spec,plot_trac
 
     type(multifab) :: plotdata(mla%nlevel)
+    type(multifab) :: tempfab(mla%nlevel)
 
     integer :: n,dm,nlevs
 
@@ -119,7 +128,8 @@ contains
     do n = 1,nlevs
 
        call multifab_build(plotdata(n), mla%la(n), n_plot_comps, 0)
-
+       call multifab_build(tempfab(n), mla%la(n), dm, 0)
+       
        ! VELOCITY 
        call multifab_copy_c(plotdata(n),icomp_vel,u(n),1,dm)
 
@@ -135,6 +145,37 @@ contains
        if (plot_trac .and. ntrac .ge. 1) then
           call multifab_copy_c(plotdata(n),icomp_trac,s(n),trac_comp,ntrac)
        end if
+
+    end do
+
+    if (plot_base) then
+
+       ! w0
+       call put_1d_array_on_cart(nlevs,w0,tempfab,1,.true.,.true.,dx, &
+                                 the_bc_tower%bc_tower_array,mla,normal=normal)
+
+       do n=1,nlevs
+          call multifab_copy_c(plotdata(n),icomp_w0,tempfab(n),1,dm)
+       end do
+
+       ! rho0
+       call put_1d_array_on_cart(nlevs,rho0,tempfab,dm+rho_comp,.false.,.false.,dx, &
+                                 the_bc_tower%bc_tower_array,mla,normal=normal)
+
+       do n=1,nlevs
+          call multifab_copy_c(plotdata(n),icomp_rho0,tempfab(n),1,1)
+       end do
+
+       ! p0
+       call put_1d_array_on_cart(nlevs,p0,tempfab,foextrap_comp,.false.,.false.,dx, &
+                                 the_bc_tower%bc_tower_array,mla,normal=normal)
+       do n=1,nlevs
+          call multifab_copy_c(plotdata(n),icomp_p0,tempfab(n),1,1)
+       end do
+
+    end if
+
+    do n = 1,nlevs
 
        ! MAGVEL & MOMENTUM
        call make_magvel (plotdata(n),icomp_magvel,icomp_mom,u(n),s(n))
@@ -180,9 +221,11 @@ contains
     end if
 
     call fabio_ml_multifab_write_d(plotdata, mba%rr(:,1), dirname, plot_names, &
-                                   mba%pd(1), time, dx(1,:), nOutFiles = nOutFiles, lUsingNFiles = lUsingNFiles)
+                                   mba%pd(1), time, dx(1,:), nOutFiles = nOutFiles, &
+                                   lUsingNFiles = lUsingNFiles)
     do n = 1,nlevs
        call destroy(plotdata(n))
+       call destroy(tempfab(n))
     end do
 
     call destroy(bpt)

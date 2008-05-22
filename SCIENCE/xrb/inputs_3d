@@ -2,6 +2,7 @@
  test_set = "gr0_3d"
  model_file = "sorted_xrb_lo_1cm.hse"
  spherical_in = 0
+ plot_base = T
 
  prob_lo_x = 600.0d0
  prob_lo_y = 600.0d0
