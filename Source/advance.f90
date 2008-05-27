@@ -54,6 +54,7 @@ contains
     use cell_to_edge_module
     use define_bc_module
     use make_gamma_module
+    use rhoh_vs_t_module
     use probin_module, only: verbose, enthalpy_pred_type
     
     logical,         intent(in   ) :: init_mode
@@ -111,6 +112,8 @@ contains
     type(multifab) :: umac(mla%nlevel,mla%dim)
     type(multifab) :: utrans(mla%nlevel,mla%dim)
     type(multifab) :: etarhoflux(mla%nlevel)
+    type(multifab) :: ptherm_old(mla%nlevel)
+    type(multifab) :: ptherm_new(mla%nlevel)
 
     real(dp_t), allocatable :: grav_cell_nph(:,:)
     real(dp_t), allocatable :: grav_cell_new(:,:)
@@ -128,6 +131,8 @@ contains
     real(dp_t), allocatable :: rho0_predicted_edge(:,:)
     real(dp_t), allocatable :: gamma1bar_old(:,:)
     real(dp_t), allocatable :: delta_gamma1_termbar(:,:)
+    real(dp_t), allocatable :: pthermbar_old(:,:)
+    real(dp_t), allocatable :: pthermbar_new(:,:)
 
     integer    :: r,n,dm,comp,nlevs,ng_s,proj_type
     real(dp_t) :: halfdt,eps_in
@@ -156,6 +161,8 @@ contains
     allocate( rho0_predicted_edge(nlevs,0:nr(nlevs)  ))
     allocate(       gamma1bar_old(nlevs,0:nr(nlevs)-1))
     allocate(delta_gamma1_termbar(nlevs,0:nr(nlevs)-1))
+    allocate(       pthermbar_old(nlevs,0:nr(nlevs)-1))
+    allocate(       pthermbar_new(nlevs,0:nr(nlevs)-1))
 
     ! Set these to zero to be safe
     rhoh0_1 = ZERO
@@ -218,12 +225,20 @@ contains
        end do
     end if
     
+    do n=1,nlevs
+       call multifab_build(ptherm_old(n), mla%la(n), 1, 0)
+    end do
+    
+    call makePfromRhoH(nlevs,sold,ptherm_old,tempbar,mla,the_bc_tower%bc_tower_array,dx)
+    
+    call average(mla,ptherm_old,pthermbar_old,dx,1)
+
     if (evolve_base_state) then
 
        call average(mla,Source_nph,Sbar,dx,1)
 
-       call make_w0(nlevs,w0,w0_old,w0_force,Sbar,rho0_old, &
-                    p0_old,p0_old,gamma1bar,gamma1bar,psi,dt,dtold)
+       call make_w0(nlevs,w0,w0_old,w0_force,Sbar,rho0_old,p0_old,p0_old, &
+                    gamma1bar,gamma1bar,pthermbar_old,pthermbar_old,psi,dt,dtold)
 
        if (dm .eq. 3) then
           call put_1d_array_on_cart(nlevs,w0,w0_cart_vec,1,.true.,.true.,dx, &
@@ -620,6 +635,14 @@ contains
           end do
        end if
 
+       do n=1,nlevs
+          call multifab_build(ptherm_new(n), mla%la(n), 1, 0)
+       end do
+       
+       call makePfromRhoH(nlevs,snew,ptherm_new,tempbar,mla,the_bc_tower%bc_tower_array,dx)
+       
+       call average(mla,ptherm_new,pthermbar_new,dx,1)
+       
        if (evolve_base_state) then
        
           call average(mla,Source_nph,Sbar,dx,1)
@@ -629,8 +652,8 @@ contains
              Sbar = Sbar + delta_gamma1_termbar
           end if
 
-          call make_w0(nlevs,w0,w0_old,w0_force,Sbar,rho0_new, &
-                       p0_old,p0_new,gamma1bar_old,gamma1bar,psi,dt,dtold)
+          call make_w0(nlevs,w0,w0_old,w0_force,Sbar,rho0_new,p0_old,p0_new, &
+                       gamma1bar_old,gamma1bar,pthermbar_old,pthermbar_new,psi,dt,dtold)
        
           if (dm .eq. 3) then
              call put_1d_array_on_cart(nlevs,w0,w0_cart_vec,1,.true.,.true.,dx, &

@@ -17,7 +17,7 @@ module make_w0_module
 contains
 
   subroutine make_w0(nlevs,vel,vel_old,f,Sbar_in,rho0,p0_old,p0_new, &
-                     gamma1bar_old,gamma1bar_new,psi,dt,dtold)
+                     gamma1bar_old,gamma1bar_new,pthermbar_old,pthermbar_new,psi,dt,dtold)
 
     use parallel
     use bl_prof_module
@@ -33,6 +33,7 @@ contains
     real(kind=dp_t), intent(in   ) :: rho0(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:), p0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar_old(:,0:), gamma1bar_new(:,0:)
+    real(kind=dp_t), intent(in   ) :: pthermbar_old(:,0:), pthermbar_new(:,0:)
     real(kind=dp_t), intent(in   ) :: Sbar_in(:,0:)
     real(kind=dp_t), intent(in   ) :: dt,dtold
 
@@ -50,6 +51,7 @@ contains
           call make_w0_planar(n,vel(n,0:),vel_old(n,0:),Sbar_in(n,0:), &
                               p0_old(n,0:),p0_new(n,0:), &
                               gamma1bar_old(n,0:),gamma1bar_new(n,0:), &
+                              pthermbar_old(n,0:),pthermbar_new(n,0:), &
                               psi(n,0:),f(n,0:),dt,dtold)
        else
           call make_w0_spherical(n,vel(n,:),vel_old(n,0:),Sbar_in(n,:), &
@@ -72,12 +74,13 @@ contains
   end subroutine make_w0
 
   subroutine make_w0_planar(n,vel,vel_old,Sbar_in,p0_old,p0_new, &
-                            gamma1bar_old,gamma1bar_new,psi,f,dt,dtold)
+                            gamma1bar_old,gamma1bar_new,pthermbar_old,pthermbar_new, &
+                            psi,f,dt,dtold)
 
     use geometry, only: nr, dr
     use variables, only: rho_comp
     use bl_constants_module
-    use probin_module, only: grav_const
+    use probin_module, only: grav_const, dpdt_factor
 
     integer        , intent(in   ) :: n
     real(kind=dp_t), intent(  out) :: vel(0:)
@@ -85,6 +88,7 @@ contains
     real(kind=dp_t), intent(in   ) :: Sbar_in(0:)
     real(kind=dp_t), intent(in   ) :: p0_old(0:), p0_new(0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar_old(0:), gamma1bar_new(0:)
+    real(kind=dp_t), intent(in   ) :: pthermbar_old(0:), pthermbar_new(0:)
     real(kind=dp_t), intent(in   ) :: psi(0:)
     real(kind=dp_t), intent(inout) ::   f(0:)
     real(kind=dp_t), intent(in   ) :: dt,dtold
@@ -95,6 +99,7 @@ contains
     real(kind=dp_t), allocatable :: vel_new_cen(:)
     real(kind=dp_t), allocatable ::   force(:)
     real(kind=dp_t)              :: vel_avg, div_avg, dt_avg, gamma1bar_p0_avg
+    real(kind=dp_t)              :: volume_discrepancy
 
     ! Cell-centered
     allocate(vel_old_cen(0:nr(n)-1))
@@ -108,8 +113,11 @@ contains
        gamma1bar_p0_avg = (gamma1bar_old(r-1)+gamma1bar_new(r-1))*(p0_old(r-1)+p0_new(r-1)) &
             / 4.0d0
 
+       volume_discrepancy = dpdt_factor * ( 0.5d0*(p0_old(r-1)+p0_new(r-1)) &
+            - 0.5d0*(pthermbar_old(r-1)+pthermbar_new(r-1)) ) / dt
+
        vel(r) = vel(r-1) + Sbar_in(r-1) * dr(n) &
-          - ( psi(r-1) / gamma1bar_p0_avg ) * dr(n)
+          - ( (psi(r-1)-volume_discrepancy) / gamma1bar_p0_avg ) * dr(n)
     end do
 
     ! Compute the forcing term in the base state velocity equation, - 1/rho0 grad pi0 
