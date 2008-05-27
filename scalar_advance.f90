@@ -284,6 +284,20 @@ contains
                           rho0_edge_new,rhoh0_edge_new,the_bc_level,dx)
     end if
 
+!   if (which_step .eq. 1) then
+!      call makeRhoHfromP(nlevs,uold,sedge, &
+!                         rho0_old, rho0_edge_old, &
+!                         rho0_new, rho0_edge_new, &
+!                           p0_old,   p0_old, &
+!                         the_bc_level,dx)
+!   else if (which_step .eq. 2) then
+!      call makeRhoHfromP(nlevs,uold,sedge, &
+!                         rho0_old, rho0_edge_old, &
+!                         rho0_new, rho0_edge_new, &
+!                           p0_old,   p0_new, &
+!                         the_bc_level,dx)
+!   end if
+
     !**************************************************************************
     !     Create the edge states of tracers.
     !**************************************************************************
