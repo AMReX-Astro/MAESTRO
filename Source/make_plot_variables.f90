@@ -7,7 +7,7 @@ module plot_variables_module
 
   private
 
-  public :: make_enthalpy, make_tfromH, make_tfromrho, make_XfromrhoX
+  public :: make_enthalpy, make_tfromH, make_tfromp, make_XfromrhoX
   public :: make_omegadot, make_deltaT
 
 contains
@@ -285,12 +285,12 @@ contains
 
   end subroutine make_tfromH_3d_sphr
 
-  subroutine make_tfromrho(n,plotdata,comp_tfromrho,comp_tpert,comp_rhopert, &
-                           comp_machno,comp_deltag,s,u,rho0,tempbar,gamma1bar,p0,dx)
+  subroutine make_tfromp(n,plotdata,comp_tfromp,comp_tpert,comp_rhopert, &
+                         comp_machno,comp_deltag,s,u,rho0,tempbar,gamma1bar,p0,dx)
 
     use geometry, only: spherical
 
-    integer        , intent(in   ) :: n,comp_tfromrho,comp_tpert
+    integer        , intent(in   ) :: n,comp_tfromp,comp_tpert
     integer        , intent(in   ) :: comp_rhopert, comp_machno
     integer        , intent(in   ) :: comp_deltag
     type(multifab) , intent(inout) :: plotdata
@@ -317,32 +317,32 @@ contains
        hi =  upb(get_box(s, i))
        select case (dm)
        case (2)
-          call make_tfromrho_2d(tp(:,:,1,comp_tfromrho),tp(:,:,1,comp_tpert), &
-                                tp(:,:,1,comp_rhopert ), &
-                                tp(:,:,1,comp_machno  ),tp(:,:,1,comp_deltag), &
-                                sp(:,:,1,:), up(:,:,1,:), &
-                                lo, hi, ng, rho0, tempbar, gamma1bar, p0)
+          call make_tfromp_2d(tp(:,:,1,comp_tfromp),tp(:,:,1,comp_tpert), &
+                              tp(:,:,1,comp_rhopert ), &
+                              tp(:,:,1,comp_machno  ),tp(:,:,1,comp_deltag), &
+                              sp(:,:,1,:), up(:,:,1,:), &
+                              lo, hi, ng, rho0, tempbar, gamma1bar, p0)
        case (3)
           if (spherical .eq. 1) then
-             call make_tfromrho_3d_sphr(n,tp(:,:,:,comp_tfromrho),tp(:,:,:,comp_tpert), &
-                                        tp(:,:,:,comp_rhopert ), &
-                                        tp(:,:,:,comp_machno  ),tp(:,:,:,comp_deltag), &
-                                        sp(:,:,:,:), up(:,:,:,:), &
-                                        lo, hi, ng, rho0, tempbar, gamma1bar, p0, dx)
+             call make_tfromp_3d_sphr(n,tp(:,:,:,comp_tfromp),tp(:,:,:,comp_tpert), &
+                                      tp(:,:,:,comp_rhopert ), &
+                                      tp(:,:,:,comp_machno  ),tp(:,:,:,comp_deltag), &
+                                      sp(:,:,:,:), up(:,:,:,:), &
+                                      lo, hi, ng, rho0, tempbar, gamma1bar, p0, dx)
           else
-             call make_tfromrho_3d_cart(tp(:,:,:,comp_tfromrho),tp(:,:,:,comp_tpert), &
-                                        tp(:,:,:,comp_rhopert ), &
-                                        tp(:,:,:,comp_machno  ),tp(:,:,:,comp_deltag), &
-                                        sp(:,:,:,:), up(:,:,:,:), &
-                                        lo, hi, ng, rho0, tempbar, gamma1bar, p0)
+             call make_tfromp_3d_cart(tp(:,:,:,comp_tfromp),tp(:,:,:,comp_tpert), &
+                                      tp(:,:,:,comp_rhopert ), &
+                                      tp(:,:,:,comp_machno  ),tp(:,:,:,comp_deltag), &
+                                      sp(:,:,:,:), up(:,:,:,:), &
+                                      lo, hi, ng, rho0, tempbar, gamma1bar, p0)
           endif
        end select
     end do
 
-  end subroutine make_tfromrho
+  end subroutine make_tfromp
 
-  subroutine make_tfromrho_2d(t,tpert,rhopert,machno,deltagamma,s,u,lo,hi,ng,rho0,tempbar, &
-                              gamma1bar,p0)
+  subroutine make_tfromp_2d(t,tpert,rhopert,machno,deltagamma,s,u,lo,hi,ng,rho0,tempbar, &
+                            gamma1bar,p0)
 
     use eos_module
     use variables, only: rho_comp, spec_comp
@@ -399,10 +399,10 @@ contains
        enddo
     enddo
 
-  end subroutine make_tfromrho_2d
+  end subroutine make_tfromp_2d
 
-  subroutine make_tfromrho_3d_cart(t,tpert,rhopert,machno,deltagamma,s,u,lo,hi, &
-                                   ng,rho0,tempbar,gamma1bar,p0)
+  subroutine make_tfromp_3d_cart(t,tpert,rhopert,machno,deltagamma,s,u,lo,hi, &
+                                 ng,rho0,tempbar,gamma1bar,p0)
 
     use variables, only: rho_comp, spec_comp
     use eos_module
@@ -461,10 +461,10 @@ contains
        enddo
     enddo
 
-  end subroutine make_tfromrho_3d_cart
+  end subroutine make_tfromp_3d_cart
 
-  subroutine make_tfromrho_3d_sphr(n,t,tpert,rhopert,machno,deltagamma, &
-                                   s,u,lo,hi,ng,rho0,tempbar,gamma1bar,p0,dx)
+  subroutine make_tfromp_3d_sphr(n,t,tpert,rhopert,machno,deltagamma, &
+                                 s,u,lo,hi,ng,rho0,tempbar,gamma1bar,p0,dx)
 
     use geometry, only: nr
     use variables, only: rho_comp, spec_comp
@@ -548,7 +548,7 @@ contains
 
     deallocate(rho0_cart,tempbar_cart,p0_cart,gamma1bar_cart)
 
-  end subroutine make_tfromrho_3d_sphr
+  end subroutine make_tfromp_3d_sphr
 
   subroutine make_XfromrhoX(plotdata,comp,s)
 
@@ -729,9 +729,9 @@ contains
 
   end subroutine make_omega_3d
 
-  subroutine make_deltaT(plotdata,comp_dT,comp_tfromH,comp_tfromrho)
+  subroutine make_deltaT(plotdata,comp_dT,comp_tfromH,comp_tfromp)
 
-    integer        , intent(in   ) :: comp_dT, comp_tfromH, comp_tfromrho
+    integer        , intent(in   ) :: comp_dT, comp_tfromH, comp_tfromp
     type(multifab) , intent(inout) :: plotdata
 
     real(kind=dp_t), pointer:: tp(:,:,:,:)
@@ -748,39 +748,39 @@ contains
        select case (dm)
        case (2)
           call make_deltaT_2d(tp(:,:,1,comp_dT),tp(:,:,1,comp_tfromH), &
-                              tp(:,:,1,comp_tfromrho), lo, hi)
+                              tp(:,:,1,comp_tfromp), lo, hi)
        case (3)
           call make_deltaT_3d(tp(:,:,:,comp_dT),tp(:,:,:,comp_tfromH), &
-                              tp(:,:,:,comp_tfromrho), lo, hi)
+                              tp(:,:,:,comp_tfromp), lo, hi)
        end select
     end do
 
   end subroutine make_deltaT
 
-  subroutine make_deltaT_2d(dT,tfromH,tfromrho,lo,hi)
+  subroutine make_deltaT_2d(dT,tfromH,tfromp,lo,hi)
 
     integer, intent(in) :: lo(:), hi(:)
-    real (kind = dp_t), intent(  out) ::       dT(lo(1):,lo(2):)
-    real (kind = dp_t), intent(in   ) ::   tfromH(lo(1):,lo(2):)
-    real (kind = dp_t), intent(in   ) :: tfromrho(lo(1):,lo(2):)
+    real (kind = dp_t), intent(  out) ::     dT(lo(1):,lo(2):)
+    real (kind = dp_t), intent(in   ) :: tfromH(lo(1):,lo(2):)
+    real (kind = dp_t), intent(in   ) :: tfromp(lo(1):,lo(2):)
 
     !     Local variables
     integer :: i, j
 
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
-          dT(i,j) = tfromH(i,j) - tfromrho(i,j)
+          dT(i,j) = tfromH(i,j) - tfromp(i,j)
        end do
     end do
 
   end subroutine make_deltaT_2d
 
-  subroutine make_deltaT_3d(dT,tfromH,tfromrho,lo,hi)
+  subroutine make_deltaT_3d(dT,tfromH,tfromp,lo,hi)
 
     integer, intent(in) :: lo(:), hi(:)
-    real (kind = dp_t), intent(  out) ::       dT(lo(1):,lo(2):,lo(3):)
-    real (kind = dp_t), intent(in   ) ::   tfromH(lo(1):,lo(2):,lo(3):)
-    real (kind = dp_t), intent(in   ) :: tfromrho(lo(1):,lo(2):,lo(3):)
+    real (kind = dp_t), intent(  out) ::     dT(lo(1):,lo(2):,lo(3):)
+    real (kind = dp_t), intent(in   ) :: tfromH(lo(1):,lo(2):,lo(3):)
+    real (kind = dp_t), intent(in   ) :: tfromp(lo(1):,lo(2):,lo(3):)
 
     !     Local variables
     integer :: i, j, k
@@ -788,7 +788,7 @@ contains
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
-             dT(i,j,k) = tfromH(i,j,k) - tfromrho(i,j,k)
+             dT(i,j,k) = tfromH(i,j,k) - tfromp(i,j,k)
           end do
        end do
     end do

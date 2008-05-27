@@ -11,7 +11,7 @@ module variables
   integer, save :: icomp_vel, icomp_rho, icomp_rhoh, icomp_spec, icomp_trac
   integer, save :: icomp_w0, icomp_rho0, icomp_p0
   integer, save :: icomp_magvel, icomp_velplusw0, icomp_mom, icomp_vort, icomp_divu
-  integer, save :: icomp_enthalpy,icomp_tfromrho,icomp_tpert,icomp_rhopert
+  integer, save :: icomp_enthalpy,icomp_tfromp,icomp_tpert,icomp_rhopert
   integer, save :: icomp_machno,icomp_dg,icomp_gp
   integer, save :: icomp_tfromH,icomp_dp,icomp_dT
   integer, save :: icomp_omegadot,icomp_enuc,icomp_sponge
@@ -81,7 +81,7 @@ contains
     icomp_divu      = first_derive_comp+4
     icomp_enthalpy  = first_derive_comp+5
     icomp_rhopert   = first_derive_comp+6
-    icomp_tfromrho  = first_derive_comp+7
+    icomp_tfromp    = first_derive_comp+7
     icomp_tfromH    = first_derive_comp+8
     icomp_tpert     = first_derive_comp+9
     icomp_machno    = first_derive_comp+10

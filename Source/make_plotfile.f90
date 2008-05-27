@@ -60,7 +60,7 @@ contains
     plot_names(icomp_divu)     = "divu"
     plot_names(icomp_enthalpy) = "enthalpy"
     plot_names(icomp_rhopert)  = "rhopert"
-    plot_names(icomp_tfromrho) = "tfromrho"
+    plot_names(icomp_tfromp)   = "tfromp"
     plot_names(icomp_tfromH)   = "tfromh"
     plot_names(icomp_tpert)    = "tpert"
     plot_names(icomp_machno)   = "Machnumber"
@@ -194,7 +194,7 @@ contains
        call make_enthalpy(plotdata(n),icomp_enthalpy,s(n))
 
        ! RHOPERT & TEMP (FROM RHO) & TPERT & MACHNO & (GAM1 - GAM10)
-       call make_tfromrho(n,plotdata(n),icomp_tfromrho,icomp_tpert,icomp_rhopert, &
+       call make_tfromp(n,plotdata(n),icomp_tfromp,icomp_tpert,icomp_rhopert, &
                           icomp_machno,icomp_dg,s(n),u(n),rho0(n,:), &
                           tempbar(n,:),gamma1bar(n,:),p0(n,:),dx(n,:))
 
@@ -202,8 +202,8 @@ contains
        call make_tfromH(n,plotdata(n),icomp_tfromH,icomp_dp,s(n),p0(n,:), &
                         tempbar(n,:),dx(n,:))
        
-       ! DIFF BETWEEN TFROMRHO AND TFROMH
-       call make_deltaT (plotdata(n),icomp_dT,icomp_tfromrho,icomp_tfromH)
+       ! DIFF BETWEEN TFROMP AND TFROMH
+       call make_deltaT (plotdata(n),icomp_dT,icomp_tfromp,icomp_tfromH)
 
        ! PRESSURE GRADIENT
        call multifab_copy_c(plotdata(n),icomp_gp,gpres(n),1,dm)
