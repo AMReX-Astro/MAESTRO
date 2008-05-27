@@ -143,7 +143,7 @@ contains
                             p0_old,p0_new,rho0,grav,psi,add_thermal)
 
     use geometry, only: dr, nr
-    use probin_module, only: enthalpy_pred_type
+    use probin_module, only: enthalpy_pred_type, base_cutoff_density
     use pred_parameters
 
     ! compute the source terms for the non-reactive part of the enthalpy equation {w dp0/dr}
@@ -168,18 +168,16 @@ contains
 
 !   Add w d(p0)/dz 
     do j = lo(2),hi(2)
-       gradp0 = rho0(j) * grav(j)
 
-!      if (j.eq.0) then
-!         gradp0 = HALF * ( p0_old(j+1) + p0_new(j+1) &
-!                          -p0_old(j  ) - p0_new(j  ) ) / dr(n)
-!      else if (j.eq.nr(n)-1) then
-!         gradp0 = HALF * ( p0_old(j  ) + p0_new(j  ) &
-!                          -p0_old(j-1) - p0_new(j-1) ) / dr(n)
-!      else
-!         gradp0 = FOURTH * ( p0_old(j+1) + p0_new(j+1) &
-!                            -p0_old(j-1) - p0_new(j-1) ) / dr(n)
-!      end if
+       if (rho0(j) > base_cutoff_density) then
+          gradp0 = rho0(j) * grav(j)
+       else if (j.eq.nr(n)-1) then
+          gradp0 = HALF * ( p0_old(j  ) + p0_new(j  ) &
+                           -p0_old(j-1) - p0_new(j-1) ) / dr(n)
+       else
+          gradp0 = FOURTH * ( p0_old(j+1) + p0_new(j+1) &
+                             -p0_old(j-1) - p0_new(j-1) ) / dr(n)
+       end if
 
        do i = lo(1),hi(1)
           wadv = HALF*(wmac(i,j)+wmac(i,j+1))
@@ -211,7 +209,7 @@ contains
                             p0_old,p0_new,rho0,grav,psi,add_thermal)
 
     use geometry, only: dr, nr
-    use probin_module, only: enthalpy_pred_type
+    use probin_module, only: enthalpy_pred_type, base_cutoff_density
     use pred_parameters
 
     ! compute the source terms for the non-reactive part of the enthalpy equation {w dp0/dr}
@@ -232,18 +230,15 @@ contains
 
     do k = lo(3),hi(3)
 
-       gradp0 = rho0(k) * grav(k)
-
-!      if (k.eq.0) then
-!         gradp0 = HALF * ( p0_old(k+1) + p0_new(k+1) &
-!                          -p0_old(k  ) - p0_new(k  ) ) / dr(n)
-!      else if (k.eq.nr(n)-1) then
-!         gradp0 = HALF * ( p0_old(k  ) + p0_new(k  ) &
-!                          -p0_old(k-1) - p0_new(k-1) ) / dr(n)
-!      else
-!         gradp0 = FOURTH * ( p0_old(k+1) + p0_new(k+1) &
-!                            -p0_old(k-1) - p0_new(k-1) ) / dr(n)
-!      end if
+       if (rho0(k) > base_cutoff_density) then
+          gradp0 = rho0(k) * grav(k)
+       else if (k.eq.nr(n)-1) then
+          gradp0 = HALF * ( p0_old(k  ) + p0_new(k  ) &
+                           -p0_old(k-1) - p0_new(k-1) ) / dr(n)
+       else
+          gradp0 = FOURTH * ( p0_old(k+1) + p0_new(k+1) &
+                             -p0_old(k-1) - p0_new(k-1) ) / dr(n)
+       end if
 
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
@@ -282,7 +277,7 @@ contains
 
     use fill_3d_module
     use geometry, only: nr, dr
-    use probin_module, only: enthalpy_pred_type
+    use probin_module, only: enthalpy_pred_type, base_cutoff_density
     use pred_parameters
 
     ! compute the source terms for the non-reactive part of the enthalpy equation {w dp0/dr}
@@ -317,19 +312,15 @@ contains
 
     do r = 0, nr(n)-1
        
-       gradp_rad(r) = rho0(r) * grav(r)
-
-!      if (r.eq.0) then
-!         gradp_rad(r) = HALF * ( p0_old(r+1) + p0_new(r+1) &
-!                                -p0_old(r  ) - p0_new(r  ) ) / dr(n)
-!      else if (r.eq.nr(n)-1) then 
-!         gradp_rad(r) = HALF * ( p0_old(r  ) + p0_new(r  ) &
-!                                -p0_old(r-1) - p0_new(r-1) ) / dr(n)
-!      else
-!         gradp_rad(r) = FOURTH * ( p0_old(r+1) + p0_new(r+1) &
-!                                  -p0_old(r-1) - p0_new(r-1) ) / dr(n)
-!      end if
-!      gradp_rad(r) = gradp_rad(r)
+       if (rho0(r) > base_cutoff_density) then
+          gradp_rad(r) = rho0(r) * grav(r)
+       else if (r.eq.nr(n)-1) then 
+          gradp_rad(r) = HALF * ( p0_old(r  ) + p0_new(r  ) &
+                                 -p0_old(r-1) - p0_new(r-1) ) / dr(n)
+       else
+          gradp_rad(r) = FOURTH * ( p0_old(r+1) + p0_new(r+1) &
+                                   -p0_old(r-1) - p0_new(r-1) ) / dr(n)
+       end if
 
     end do
 
