@@ -822,7 +822,7 @@ contains
           hi = upb(get_box(u(n),i))
           select case (dm)
           case (2)
-             call makeRhoHfromP_2d(sepx(:,:,1,:), sepy(:,:,1,:), &
+             call makeRhoHfromP_2d(n, sepx(:,:,1,:), sepy(:,:,1,:), &
                                    rho0_old(n,:), rho0_edge_old(n,:), &
                                    rho0_new(n,:), rho0_edge_new(n,:), &
                                      p0_old(n,:), p0_new(n,:), lo, hi, dx(n,:))
@@ -831,7 +831,7 @@ contains
                 print *,'NO MAKERHOHFROMP FOR SPHERICAL '
                 stop
              else
-                call makeRhoHfromP_3d(sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
+                call makeRhoHfromP_3d(n, sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
                                       rho0_old(n,:), rho0_edge_old(n,:), &
                                       rho0_new(n,:), rho0_edge_new(n,:), &
                                         p0_old(n,:), p0_new(n,:), lo, hi, dx(n,:))
@@ -853,17 +853,18 @@ contains
     
   end subroutine makeRhoHfromP
 
-  subroutine makeRhoHfromP_2d(sx,sy,rho0_old,rho0_edge_old,&
-                                    rho0_new,rho0_edge_new,p0_old,p0_new,lo,hi,dx)
+  subroutine makeRhoHfromP_2d(n,sx,sy,rho0_old,rho0_edge_old,&
+                                      rho0_new,rho0_edge_new,p0_old,p0_new,lo,hi,dx)
 
     use bl_constants_module
     use variables,     only: rho_comp, temp_comp, spec_comp, rhoh_comp
     use eos_module
-    use probin_module, only: enthalpy_pred_type, small_temp, predict_rho, grav_const
+    use probin_module, only: enthalpy_pred_type, small_temp, predict_rho, grav_const, base_cutoff_density
+    use geometry, only: nr
 
     use pred_parameters
 
-    integer        , intent(in   ) :: lo(:),hi(:)
+    integer        , intent(in   ) :: lo(:),hi(:),n
     real(kind=dp_t), intent(inout) :: sx(lo(1):,lo(2):,:)
     real(kind=dp_t), intent(inout) :: sy(lo(1):,lo(2):,:)
     real(kind=dp_t), intent(in   ) :: rho0_old(0:)
@@ -876,7 +877,7 @@ contains
  
     integer         :: i, j
     real(kind=dp_t) :: p0_old_edge, p0_new_edge
-    
+
     do_diag = .false.
     
     do j = lo(2), hi(2)
@@ -911,12 +912,12 @@ contains
           temp_eos(1) = max(sy(i,j,temp_comp),small_temp)
            den_eos(1) = sy(i,j,rho_comp) + HALF * (rho0_edge_old(j) + rho0_edge_new(j))
 
-          if (j .eq. lo(2)) then
-             p0_old_edge = p0_old(j)
-             p0_new_edge = p0_new(j)
-          else if (j .eq. (hi(2)+1)) then
+          if (j .eq. nr(n)) then
              p0_old_edge = p0_old(j-1)
              p0_new_edge = p0_new(j-1)
+          else if (rho0_edge_old(j) .lt. base_cutoff_density) then
+             p0_old_edge = p0_old(j)
+             p0_new_edge = p0_new(j)
           else 
              p0_old_edge = p0_old(j) + HALF * rho0_old(j) * abs(grav_const) * dx(2)
              p0_new_edge = p0_new(j) + HALF * rho0_new(j) * abs(grav_const) * dx(2)
@@ -945,17 +946,18 @@ contains
     
   end subroutine makeRhoHfromP_2d
 
-  subroutine makeRhoHfromP_3d(sx,sy,sz,rho0_old,rho0_edge_old,&
-                                       rho0_new,rho0_edge_new,p0_old,p0_new,lo,hi,dx)
+  subroutine makeRhoHfromP_3d(n,sx,sy,sz,rho0_old,rho0_edge_old,&
+                                         rho0_new,rho0_edge_new,p0_old,p0_new,lo,hi,dx)
 
     use bl_constants_module
     use variables,     only: rho_comp, temp_comp, spec_comp, rhoh_comp
     use eos_module
-    use probin_module, only: enthalpy_pred_type, small_temp, predict_rho, grav_const
+    use probin_module, only: enthalpy_pred_type, small_temp, predict_rho, grav_const, base_cutoff_density
+    use geometry, only: nr
 
     use pred_parameters
 
-    integer        , intent(in   ) :: lo(:),hi(:)
+    integer        , intent(in   ) :: lo(:),hi(:),n
     real(kind=dp_t), intent(inout) :: sx(lo(1):,lo(2):,lo(3):,:)
     real(kind=dp_t), intent(inout) :: sy(lo(1):,lo(2):,lo(3):,:)
     real(kind=dp_t), intent(inout) :: sz(lo(1):,lo(2):,lo(3):,:)
@@ -1035,12 +1037,12 @@ contains
           temp_eos(1) = max(sz(i,j,k,temp_comp),small_temp)
            den_eos(1) = sz(i,j,k,rho_comp) + HALF * (rho0_edge_old(k) + rho0_edge_new(k))
 
-          if (k .eq. lo(3)) then
-             p0_old_edge = p0_old(k)
-             p0_new_edge = p0_new(k)
-          else if (k .eq. (hi(3)+1)) then
+          if (k .eq. nr(n)) then
              p0_old_edge = p0_old(k-1)
              p0_new_edge = p0_new(k-1)
+          else if (rho0_edge_old(k) .lt. base_cutoff_density) then
+             p0_old_edge = p0_old(k)
+             p0_new_edge = p0_new(k)
           else 
              p0_old_edge = p0_old(k) + HALF * rho0_old(k) * abs(grav_const) * dx(3)
              p0_new_edge = p0_new(k) + HALF * rho0_new(k) * abs(grav_const) * dx(3)
