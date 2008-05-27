@@ -168,8 +168,8 @@ contains
     if (enthalpy_pred_type .eq. predict_rhohprime) then
        
        ! make force for (rho h)'
-       call mkrhohforce(nlevs,scal_force,thermal,umac,p0_old,p0_old,psi,normal,dx,.true., &
-                        mla,the_bc_level)
+       call mkrhohforce(nlevs,scal_force,thermal,umac,p0_old,p0_old,rho0_old,rho0_old,&
+                        psi,normal,dx,.true.,mla,the_bc_level)
 
        call modify_scal_force(nlevs,scal_force,sold,umac,rhoh0_old, &
                               rhoh0_edge_old,w0,dx,rhoh0_old_cart,rhoh_comp,mla,the_bc_level)
@@ -177,8 +177,8 @@ contains
     else if (enthalpy_pred_type .eq. predict_h) then
 
        ! make force for h by calling mkrhohforce then dividing by rho
-       call mkrhohforce(nlevs,scal_force,thermal,umac,p0_old,p0_old,psi,normal,dx,.true., &
-                        mla,the_bc_level)
+       call mkrhohforce(nlevs,scal_force,thermal,umac,p0_old,p0_old,rho0_old,rho0_old,&
+                        psi,normal,dx,.true.,mla,the_bc_level)
        do n=1,nlevs
           call multifab_div_div_c(scal_force(n),rhoh_comp,sold(n),rho_comp,1,1)
        end do
@@ -436,12 +436,12 @@ contains
        
     if (which_step .eq. 1) then
       ! Here just send p0_old and p0_old
-      call mkrhohforce(nlevs,scal_force,thermal,umac,p0_old,p0_old,psi,normal,dx,.false., &
-                       mla,the_bc_level)
+      call mkrhohforce(nlevs,scal_force,thermal,umac,p0_old,p0_old,rho0_old,rho0_old,&
+                       psi,normal,dx,.false.,mla,the_bc_level)
     else
       ! Here send p0_old and p0_new
-      call mkrhohforce(nlevs,scal_force,thermal,umac,p0_old,p0_new,psi,normal,dx,.false., &
-                       mla,the_bc_level)
+      call mkrhohforce(nlevs,scal_force,thermal,umac,p0_old,p0_new,rho0_old,rho0_new,&
+                       psi,normal,dx,.false.,mla,the_bc_level)
     end if
 
     call update_scal(nlevs,rhoh_comp,rhoh_comp,sold,snew,sflux,scal_force,rhoh0_old, &

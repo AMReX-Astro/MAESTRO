@@ -25,22 +25,25 @@ module mkscalforce_module
 
 contains
 
-  subroutine mkrhohforce(nlevs,scal_force,thermal,umac,p0_old,p0_new,psi,normal,dx, &
+  subroutine mkrhohforce(nlevs,scal_force,thermal,umac, &
+                         p0_old, p0_new, rho0_old, rho0_new, &
+                         psi,normal,dx, &
                          add_thermal,mla,the_bc_level)
 
     use bl_prof_module
     use variables, only: foextrap_comp, rhoh_comp
-    use geometry, only: spherical
+    use geometry, only: spherical, nr
     use ml_restriction_module, only: ml_cc_restriction_c
     use multifab_fill_ghost_module
     use multifab_physbc_module
+    use make_grav_module
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: scal_force(:)
     type(multifab) , intent(in   ) :: thermal(:)
     type(multifab) , intent(in   ) :: umac(:,:)
-    real(kind=dp_t), intent(in   ) :: p0_old(:,0:)
-    real(kind=dp_t), intent(in   ) :: p0_new(:,0:)
+    real(kind=dp_t), intent(in   ) ::   p0_old(:,0:),   p0_new(:,0:)
+    real(kind=dp_t), intent(in   ) :: rho0_old(:,0:), rho0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: psi(:,0:)
     type(multifab) , intent(in   ) :: normal(:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
@@ -58,6 +61,8 @@ contains
     real(kind=dp_t), pointer :: fp(:,:,:,:)
     real(kind=dp_t), pointer :: tp(:,:,:,:)
 
+    real(kind=dp_t), allocatable :: rho0(:), grav(:)
+
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "mkrhohforce")
@@ -65,6 +70,13 @@ contains
     dm = scal_force(1)%dim
       
     do n=1,nlevs
+
+       allocate(rho0(0:nr(n)-1))
+       allocate(grav(0:nr(n)-1))
+
+       rho0(:) = HALF * (rho0_old(n,:) + rho0_new(n,:))
+       call make_grav_cell(n,grav,rho0)
+
        do i=1,scal_force(n)%nboxes
           if ( multifab_remote(scal_force(n),i) ) cycle
           fp => dataptr(scal_force(n), i)
@@ -76,21 +88,22 @@ contains
           select case (dm)
           case (2)
              call mkrhohforce_2d(n,fp(:,:,1,rhoh_comp), vmp(:,:,1,1), tp(:,:,1,1), lo, hi, &
-                                 p0_old(n,:), p0_new(n,:), psi(n,:), add_thermal)
+                                 p0_old(n,:), p0_new(n,:), rho0, grav, psi(n,:), add_thermal)
           case(3)
              wmp  => dataptr(umac(n,3), i)
              if (spherical .eq. 0) then
-                call mkrhohforce_3d(n,fp(:,:,:,rhoh_comp), wmp(:,:,:,1), tp(:,:,:,1), &
-                                    lo, hi, p0_old(n,:), p0_new(n,:), psi(n,:), add_thermal)
+                call mkrhohforce_3d(n,fp(:,:,:,rhoh_comp), wmp(:,:,:,1), tp(:,:,:,1), lo, hi, &
+                                    p0_old(n,:), p0_new(n,:), rho0, grav, psi(n,:), add_thermal)
              else
                 np => dataptr(normal(n), i)
                 call mkrhohforce_3d_sphr(n,fp(:,:,:,rhoh_comp), &
                                          ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
                                          tp(:,:,:,1), lo, hi, dx(n,:), np(:,:,:,:), &
-                                         p0_old(n,:), p0_new(n,:), psi(n,:), add_thermal)
+                                         p0_old(n,:), p0_new(n,:), rho0, grav, psi(n,:), add_thermal)
              end if
           end select
        end do
+       deallocate(rho0,grav)
     end do
 
     if (nlevs .eq. 1) then
@@ -126,7 +139,8 @@ contains
     
   end subroutine mkrhohforce
 
-  subroutine mkrhohforce_2d(n,rhoh_force,wmac,thermal,lo,hi,p0_old,p0_new,psi,add_thermal)
+  subroutine mkrhohforce_2d(n,rhoh_force,wmac,thermal,lo,hi, &
+                            p0_old,p0_new,rho0,grav,psi,add_thermal)
 
     use geometry, only: dr, nr
     use probin_module, only: enthalpy_pred_type
@@ -144,6 +158,8 @@ contains
     real(kind=dp_t), intent(in   ) :: thermal(lo(1)-1:,lo(2)-1:)
     real(kind=dp_t), intent(in   ) :: p0_old(0:)
     real(kind=dp_t), intent(in   ) :: p0_new(0:)
+    real(kind=dp_t), intent(in   ) :: rho0(0:)
+    real(kind=dp_t), intent(in   ) :: grav(0:)
     real(kind=dp_t), intent(in   ) :: psi(0:)
     logical        , intent(in   ) :: add_thermal
 
@@ -152,16 +168,19 @@ contains
 
 !   Add w d(p0)/dz 
     do j = lo(2),hi(2)
-       if (j.eq.0) then
-          gradp0 = HALF * ( p0_old(j+1) + p0_new(j+1) &
-                           -p0_old(j  ) - p0_new(j  ) ) / dr(n)
-       else if (j.eq.nr(n)-1) then
-          gradp0 = HALF * ( p0_old(j  ) + p0_new(j  ) &
-                           -p0_old(j-1) - p0_new(j-1) ) / dr(n)
-       else
-          gradp0 = FOURTH * ( p0_old(j+1) + p0_new(j+1) &
-                             -p0_old(j-1) - p0_new(j-1) ) / dr(n)
-       end if
+       gradp0 = rho0(j) * grav(j)
+
+!      if (j.eq.0) then
+!         gradp0 = HALF * ( p0_old(j+1) + p0_new(j+1) &
+!                          -p0_old(j  ) - p0_new(j  ) ) / dr(n)
+!      else if (j.eq.nr(n)-1) then
+!         gradp0 = HALF * ( p0_old(j  ) + p0_new(j  ) &
+!                          -p0_old(j-1) - p0_new(j-1) ) / dr(n)
+!      else
+!         gradp0 = FOURTH * ( p0_old(j+1) + p0_new(j+1) &
+!                            -p0_old(j-1) - p0_new(j-1) ) / dr(n)
+!      end if
+
        do i = lo(1),hi(1)
           wadv = HALF*(wmac(i,j)+wmac(i,j+1))
           rhoh_force(i,j) =  wadv * gradp0           
@@ -188,7 +207,8 @@ contains
 
   end subroutine mkrhohforce_2d
 
-  subroutine mkrhohforce_3d(n,rhoh_force,wmac,thermal,lo,hi,p0_old,p0_new,psi,add_thermal)
+  subroutine mkrhohforce_3d(n,rhoh_force,wmac,thermal,lo,hi,&
+                            p0_old,p0_new,rho0,grav,psi,add_thermal)
 
     use geometry, only: dr, nr
     use probin_module, only: enthalpy_pred_type
@@ -202,6 +222,8 @@ contains
     real(kind=dp_t), intent(in   ) :: thermal(lo(1)-1:,lo(2)-1:,lo(3)-1:)
     real(kind=dp_t), intent(in   ) :: p0_old(0:)
     real(kind=dp_t), intent(in   ) :: p0_new(0:)
+    real(kind=dp_t), intent(in   ) :: rho0(0:)
+    real(kind=dp_t), intent(in   ) :: grav(0:)
     real(kind=dp_t), intent(in   ) :: psi(0:)
     logical        , intent(in   ) :: add_thermal
 
@@ -210,16 +232,18 @@ contains
 
     do k = lo(3),hi(3)
 
-       if (k.eq.0) then
-          gradp0 = HALF * ( p0_old(k+1) + p0_new(k+1) &
-                           -p0_old(k  ) - p0_new(k  ) ) / dr(n)
-       else if (k.eq.nr(n)-1) then
-          gradp0 = HALF * ( p0_old(k  ) + p0_new(k  ) &
-                           -p0_old(k-1) - p0_new(k-1) ) / dr(n)
-       else
-          gradp0 = FOURTH * ( p0_old(k+1) + p0_new(k+1) &
-                             -p0_old(k-1) - p0_new(k-1) ) / dr(n)
-       end if
+       gradp0 = rho0(k) * grav(k)
+
+!      if (k.eq.0) then
+!         gradp0 = HALF * ( p0_old(k+1) + p0_new(k+1) &
+!                          -p0_old(k  ) - p0_new(k  ) ) / dr(n)
+!      else if (k.eq.nr(n)-1) then
+!         gradp0 = HALF * ( p0_old(k  ) + p0_new(k  ) &
+!                          -p0_old(k-1) - p0_new(k-1) ) / dr(n)
+!      else
+!         gradp0 = FOURTH * ( p0_old(k+1) + p0_new(k+1) &
+!                            -p0_old(k-1) - p0_new(k-1) ) / dr(n)
+!      end if
 
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
@@ -254,7 +278,7 @@ contains
   end subroutine mkrhohforce_3d
 
   subroutine mkrhohforce_3d_sphr(n,rhoh_force,umac,vmac,wmac,thermal,lo,hi,dx,normal, &
-                                 p0_old,p0_new,psi,add_thermal)
+                                 p0_old,p0_new,rho0,grav,psi,add_thermal)
 
     use fill_3d_module
     use geometry, only: nr, dr
@@ -273,6 +297,8 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:)
     real(kind=dp_t), intent(in   ) :: p0_old(0:)
     real(kind=dp_t), intent(in   ) :: p0_new(0:)
+    real(kind=dp_t), intent(in   ) :: rho0(0:)
+    real(kind=dp_t), intent(in   ) :: grav(0:)
     real(kind=dp_t), intent(in   ) :: psi(0:)
     logical        , intent(in   ) :: add_thermal
 
@@ -291,17 +317,20 @@ contains
 
     do r = 0, nr(n)-1
        
-       if (r.eq.0) then
-          gradp_rad(r) = HALF * ( p0_old(r+1) + p0_new(r+1) &
-                                 -p0_old(r  ) - p0_new(r  ) ) / dr(n)
-       else if (r.eq.nr(n)-1) then 
-          gradp_rad(r) = HALF * ( p0_old(r  ) + p0_new(r  ) &
-                                 -p0_old(r-1) - p0_new(r-1) ) / dr(n)
-       else
-          gradp_rad(r) = FOURTH * ( p0_old(r+1) + p0_new(r+1) &
-                                   -p0_old(r-1) - p0_new(r-1) ) / dr(n)
-       end if
-       gradp_rad(r) = gradp_rad(r)
+       gradp_rad(r) = rho0(r) * grav(r)
+
+!      if (r.eq.0) then
+!         gradp_rad(r) = HALF * ( p0_old(r+1) + p0_new(r+1) &
+!                                -p0_old(r  ) - p0_new(r  ) ) / dr(n)
+!      else if (r.eq.nr(n)-1) then 
+!         gradp_rad(r) = HALF * ( p0_old(r  ) + p0_new(r  ) &
+!                                -p0_old(r-1) - p0_new(r-1) ) / dr(n)
+!      else
+!         gradp_rad(r) = FOURTH * ( p0_old(r+1) + p0_new(r+1) &
+!                                  -p0_old(r-1) - p0_new(r-1) ) / dr(n)
+!      end if
+!      gradp_rad(r) = gradp_rad(r)
+
     end do
 
     call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,gradp_rad,gradp_cart, &
@@ -351,8 +380,6 @@ contains
     deallocate(gradp_rad, gradp_cart, psi_cart)
 
   end subroutine mkrhohforce_3d_sphr
-
-
 
   subroutine mktempforce(nlevs,temp_force,umac,s,thermal,p0_old,p0_new,psi,normal, &
                          dx,mla,the_bc_level)
