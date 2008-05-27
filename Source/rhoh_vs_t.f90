@@ -9,7 +9,7 @@ module rhoh_vs_t_module
 
   private
 
-  public :: makeRhoHfromT, makeTfromRhoH
+  public :: makeRhoHfromT, makeTfromRhoH, makeRhoHfromP
   
 contains
   
@@ -766,5 +766,308 @@ contains
     endif
 
   end subroutine makeTfromRhoH_3d
+
+  subroutine makeRhoHfromP(nlevs,u,sedge, &
+                           rho0_old,rho0_edge_old,&
+                           rho0_new,rho0_edge_new, &
+                             p0_old, p0_new, the_bc_level,dx)
+
+    use bl_prof_module
+    use bl_constants_module
+    use geometry
+    use variables
+    use network
+    use fill_3d_module
+    use multifab_physbc_module
+    
+    integer        , intent(in   ) :: nlevs
+    type(multifab) , intent(in   ) :: u(:)
+    type(multifab) , intent(inout) :: sedge(:,:)
+    real(kind=dp_t), intent(in   ) :: rho0_old(:,0:)
+    real(kind=dp_t), intent(in   ) :: rho0_edge_old(:,0:)
+    real(kind=dp_t), intent(in   ) :: rho0_new(:,0:)
+    real(kind=dp_t), intent(in   ) :: rho0_edge_new(:,0:)
+    real(kind=dp_t), intent(in   ) ::   p0_old(:,0:)
+    real(kind=dp_t), intent(in   ) ::   p0_new(:,0:)
+    type(bc_level) , intent(in   ) :: the_bc_level(:)
+    real(kind=dp_t), intent(in   ) :: dx(:,:)
+    
+    ! local
+    integer :: i,r,dm,n
+    integer :: lo(u(1)%dim),hi(u(1)%dim)
+    real(kind=dp_t), pointer :: sepx(:,:,:,:)
+    real(kind=dp_t), pointer :: sepy(:,:,:,:)
+    real(kind=dp_t), pointer :: sepz(:,:,:,:)
+    real(kind=dp_t), pointer ::   rp(:,:,:,:)
+    real(kind=dp_t), pointer ::  rhp(:,:,:,:)
+
+    real(kind=dp_t), allocatable ::  rho0_halftime(:)
+    real(kind=dp_t), allocatable :: rhoh0_halftime(:)
+    type(multifab)               ::  rho0_cart
+    type(multifab)               :: rhoh0_cart
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "makeRhoHfromP")
+
+    dm = u(1)%dim
+
+   do n=1,nlevs
+
+       do i=1,u(n)%nboxes
+          if ( multifab_remote(u(n),i) ) cycle
+          sepx => dataptr(sedge(n,1), i)
+          sepy => dataptr(sedge(n,2), i)
+          lo = lwb(get_box(u(n),i))
+          hi = upb(get_box(u(n),i))
+          select case (dm)
+          case (2)
+             call makeRhoHfromP_2d(sepx(:,:,1,:), sepy(:,:,1,:), &
+                                   rho0_old(n,:), rho0_edge_old(n,:), &
+                                   rho0_new(n,:), rho0_edge_new(n,:), &
+                                     p0_old(n,:), p0_new(n,:), lo, hi, dx(n,:))
+          case (3)
+             if (spherical .eq. 1) then
+                print *,'NO MAKERHOHFROMP FOR SPHERICAL '
+                stop
+             else
+                call makeRhoHfromP_3d(sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
+                                      rho0_old(n,:), rho0_edge_old(n,:), &
+                                      rho0_new(n,:), rho0_edge_new(n,:), &
+                                        p0_old(n,:), p0_new(n,:), lo, hi, dx(n,:))
+             end if
+          end select
+       end do
+
+    end do
+
+    if (spherical .eq. 1) then
+      deallocate( rho0_halftime)
+      deallocate(rhoh0_halftime)
+
+      call destroy( rho0_cart)
+      call destroy(rhoh0_cart)
+    end if
+
+    call destroy(bpt)
+    
+  end subroutine makeRhoHfromP
+
+  subroutine makeRhoHfromP_2d(sx,sy,rho0_old,rho0_edge_old,&
+                                    rho0_new,rho0_edge_new,p0_old,p0_new,lo,hi,dx)
+
+    use bl_constants_module
+    use variables,     only: rho_comp, temp_comp, spec_comp, rhoh_comp
+    use eos_module
+    use probin_module, only: enthalpy_pred_type, small_temp, predict_rho, grav_const
+
+    use pred_parameters
+
+    integer        , intent(in   ) :: lo(:),hi(:)
+    real(kind=dp_t), intent(inout) :: sx(lo(1):,lo(2):,:)
+    real(kind=dp_t), intent(inout) :: sy(lo(1):,lo(2):,:)
+    real(kind=dp_t), intent(in   ) :: rho0_old(0:)
+    real(kind=dp_t), intent(in   ) :: rho0_edge_old(0:)
+    real(kind=dp_t), intent(in   ) :: rho0_new(0:)
+    real(kind=dp_t), intent(in   ) :: rho0_edge_new(0:)
+    real(kind=dp_t), intent(in   ) ::   p0_old(0:)
+    real(kind=dp_t), intent(in   ) ::   p0_new(0:)
+    real(kind=dp_t), intent(in   ) ::   dx(:)
+ 
+    integer         :: i, j
+    real(kind=dp_t) :: p0_old_edge, p0_new_edge
+    
+    do_diag = .false.
+    
+    do j = lo(2), hi(2)
+       do i = lo(1), hi(1)+1
+          
+          temp_eos(1) = max(sx(i,j,temp_comp),small_temp)
+           den_eos(1) = sx(i,j,rho_comp) + HALF * (rho0_old(j) + rho0_new(j))
+             p_eos(1) = HALF * (p0_old(j) + p0_new(j))
+
+          ! sx(i,j,spec_comp:spec_comp+nspec-1) holds X
+          xn_eos(1,:) = sx(i,j,spec_comp:spec_comp+nspec-1)
+          
+          call eos(eos_input_rp, den_eos, temp_eos, &
+                   npts, nspec, &
+                   xn_eos, &
+                   p_eos, h_eos, e_eos, &
+                   cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                   dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                   dpdX_eos, dhdX_eos, &
+                   gam1_eos, cs_eos, s_eos, &
+                   dsdt_eos, dsdr_eos, &
+                   do_diag)
+          
+          sx(i,j,rhoh_comp) = h_eos(1)
+          
+       enddo
+    enddo
+
+    do j = lo(2), hi(2)+1
+       do i = lo(1), hi(1)
+          
+          temp_eos(1) = max(sy(i,j,temp_comp),small_temp)
+           den_eos(1) = sy(i,j,rho_comp) + HALF * (rho0_edge_old(j) + rho0_edge_new(j))
+
+          if (j .eq. lo(2)) then
+             p0_old_edge = p0_old(j)
+             p0_new_edge = p0_new(j)
+          else if (j .eq. (hi(2)+1)) then
+             p0_old_edge = p0_old(j-1)
+             p0_new_edge = p0_new(j-1)
+          else 
+             p0_old_edge = p0_old(j) + HALF * rho0_old(j) * abs(grav_const) * dx(2)
+             p0_new_edge = p0_new(j) + HALF * rho0_new(j) * abs(grav_const) * dx(2)
+          end if
+
+          p_eos(1) = HALF * (p0_old_edge + p0_new_edge)
+          
+          ! sy(i,j,spec_comp:spec_comp+nspec-1) holds X
+          xn_eos(1,:) = sy(i,j,spec_comp:spec_comp+nspec-1)
+          
+          call eos(eos_input_rp, den_eos, temp_eos, &
+                   npts, nspec, &
+                   xn_eos, &
+                   p_eos, h_eos, e_eos, &
+                   cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                   dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                   dpdX_eos, dhdX_eos, &
+                   gam1_eos, cs_eos, s_eos, &
+                   dsdt_eos, dsdr_eos, &
+                   do_diag)
+          
+          sy(i,j,rhoh_comp) = h_eos(1) 
+          
+       enddo
+    enddo
+    
+  end subroutine makeRhoHfromP_2d
+
+  subroutine makeRhoHfromP_3d(sx,sy,sz,rho0_old,rho0_edge_old,&
+                                       rho0_new,rho0_edge_new,p0_old,p0_new,lo,hi,dx)
+
+    use bl_constants_module
+    use variables,     only: rho_comp, temp_comp, spec_comp, rhoh_comp
+    use eos_module
+    use probin_module, only: enthalpy_pred_type, small_temp, predict_rho, grav_const
+
+    use pred_parameters
+
+    integer        , intent(in   ) :: lo(:),hi(:)
+    real(kind=dp_t), intent(inout) :: sx(lo(1):,lo(2):,lo(3):,:)
+    real(kind=dp_t), intent(inout) :: sy(lo(1):,lo(2):,lo(3):,:)
+    real(kind=dp_t), intent(inout) :: sz(lo(1):,lo(2):,lo(3):,:)
+    real(kind=dp_t), intent(in   ) :: rho0_old(0:)
+    real(kind=dp_t), intent(in   ) :: rho0_edge_old(0:)
+    real(kind=dp_t), intent(in   ) :: rho0_new(0:)
+    real(kind=dp_t), intent(in   ) :: rho0_edge_new(0:)
+    real(kind=dp_t), intent(in   ) ::   p0_old(0:)
+    real(kind=dp_t), intent(in   ) ::   p0_new(0:)
+    real(kind=dp_t), intent(in   ) ::   dx(:)
+ 
+    integer         :: i, j, k
+    real(kind=dp_t) :: p0_old_edge, p0_new_edge
+    
+    do_diag = .false.
+    
+    do k = lo(2), hi(2)
+      do j = lo(2), hi(2)
+        do i = lo(1), hi(1)+1
+          
+          temp_eos(1) = max(sx(i,j,k,temp_comp),small_temp)
+           den_eos(1) = sx(i,j,k,rho_comp) + HALF * (rho0_old(k) + rho0_new(k))
+             p_eos(1) = HALF * (p0_old(k) + p0_new(k))
+
+          ! sx(i,j,spec_comp:spec_comp+nspec-1) holds X
+          xn_eos(1,:) = sx(i,j,k,spec_comp:spec_comp+nspec-1)
+          
+          call eos(eos_input_rp, den_eos, temp_eos, &
+                   npts, nspec, &
+                   xn_eos, &
+                   p_eos, h_eos, e_eos, &
+                   cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                   dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                   dpdX_eos, dhdX_eos, &
+                   gam1_eos, cs_eos, s_eos, &
+                   dsdt_eos, dsdr_eos, &
+                   do_diag)
+          
+          sx(i,j,k,rhoh_comp) = h_eos(1)
+          
+        enddo
+      enddo
+    enddo
+    
+    do k = lo(2), hi(2)
+      do j = lo(2), hi(2)+1
+        do i = lo(1), hi(1)
+          
+          temp_eos(1) = max(sy(i,j,k,temp_comp),small_temp)
+           den_eos(1) = sy(i,j,k,rho_comp) + HALF * (rho0_old(k) + rho0_new(k))
+             p_eos(1) = HALF * (p0_old(k) + p0_new(k))
+
+          ! sy(i,j,spec_comp:spec_comp+nspec-1) holds X
+          xn_eos(1,:) = sy(i,j,k,spec_comp:spec_comp+nspec-1)
+          
+          call eos(eos_input_rp, den_eos, temp_eos, &
+                   npts, nspec, &
+                   xn_eos, &
+                   p_eos, h_eos, e_eos, &
+                   cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                   dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                   dpdX_eos, dhdX_eos, &
+                   gam1_eos, cs_eos, s_eos, &
+                   dsdt_eos, dsdr_eos, &
+                   do_diag)
+          
+          sy(i,j,k,rhoh_comp) = h_eos(1)
+          
+        enddo
+      enddo
+    enddo
+
+    do k = lo(3), hi(3)+1
+      do j = lo(2), hi(2)
+        do i = lo(1), hi(1)
+          
+          temp_eos(1) = max(sz(i,j,k,temp_comp),small_temp)
+           den_eos(1) = sz(i,j,k,rho_comp) + HALF * (rho0_edge_old(k) + rho0_edge_new(k))
+
+          if (k .eq. lo(3)) then
+             p0_old_edge = p0_old(k)
+             p0_new_edge = p0_new(k)
+          else if (k .eq. (hi(3)+1)) then
+             p0_old_edge = p0_old(k-1)
+             p0_new_edge = p0_new(k-1)
+          else 
+             p0_old_edge = p0_old(k) + HALF * rho0_old(k) * abs(grav_const) * dx(3)
+             p0_new_edge = p0_new(k) + HALF * rho0_new(k) * abs(grav_const) * dx(3)
+          end if
+
+          p_eos(1) = HALF * (p0_old_edge + p0_new_edge)
+          
+          ! sz(i,j,spec_comp:spec_comp+nspec-1) holds X
+          xn_eos(1,:) = sz(i,j,k,spec_comp:spec_comp+nspec-1)
+          
+          call eos(eos_input_rp, den_eos, temp_eos, &
+                   npts, nspec, &
+                   xn_eos, &
+                   p_eos, h_eos, e_eos, &
+                   cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                   dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                   dpdX_eos, dhdX_eos, &
+                   gam1_eos, cs_eos, s_eos, &
+                   dsdt_eos, dsdr_eos, &
+                   do_diag)
+          
+          sz(i,j,k,rhoh_comp) = h_eos(1) 
+          
+        enddo
+      enddo
+    enddo
+    
+  end subroutine makeRhoHfromP_3d
   
 end module rhoh_vs_t_module
