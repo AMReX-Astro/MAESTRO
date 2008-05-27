@@ -108,7 +108,7 @@ contains
     use burner_module
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp, trac_comp, ntrac
     use network, only: nspec, ebin
-    use probin_module, ONLY: do_burning
+    use probin_module, ONLY: do_burning, burning_cutoff_density
     use bl_constants_module, only: zero
     use eos_module
 
@@ -134,7 +134,7 @@ contains
           h_in = s_in(i,j,rhoh_comp) / rho
           T_in = s_in(i,j,temp_comp)
 
-          if (do_burning) then
+          if (do_burning .and. rho > burning_cutoff_density) then
              call burner(rho, T_in, x_in, h_in, dt, x_out, h_out, rhowdot)
           else
              x_out = x_in
@@ -193,7 +193,7 @@ contains
     use burner_module
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp, trac_comp, ntrac
     use network, only: nspec, ebin
-    use probin_module, ONLY: do_burning
+    use probin_module, ONLY: do_burning, burning_cutoff_density
     use bl_constants_module, only: zero
     use eos_module
 
@@ -220,7 +220,7 @@ contains
           h_in = s_in(i,j,k,rhoh_comp) / rho
           T_in = s_in(i,j,k,temp_comp)
 
-          if (do_burning) then
+          if (do_burning .and. rho > burning_cutoff_density) then
              call burner(rho, T_in, x_in, h_in, dt, x_out, h_out, rhowdot)
           else
              x_out = x_in
