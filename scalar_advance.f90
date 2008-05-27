@@ -276,28 +276,34 @@ contains
     ! Compute enthalpy edge states if we were predicting temperature.  This
     ! needs to be done after the state was returned to the full state, and 
     ! the species are back to (rho X) instead of X.
-    if ( (enthalpy_pred_type .eq. predict_T_then_rhohprime) .or. &
-         (enthalpy_pred_type .eq. predict_T_then_h        ) ) then
-       call makeRhoHfromT(nlevs,uold,sedge,rho0_old,rhoh0_old, &
-                          rho0_edge_old,rhoh0_edge_old, &
-                          rho0_new,rhoh0_new, &
-                          rho0_edge_new,rhoh0_edge_new,the_bc_level,dx)
+
+    if (1 .eq. 1) then
+
+       if ( (enthalpy_pred_type .eq. predict_T_then_rhohprime) .or. &
+            (enthalpy_pred_type .eq. predict_T_then_h        ) ) then
+          call makeRhoHfromT(nlevs,uold,sedge,rho0_old,rhoh0_old, &
+                             rho0_edge_old,rhoh0_edge_old, &
+                             rho0_new,rhoh0_new, &
+                             rho0_edge_new,rhoh0_edge_new,the_bc_level,dx)
+       end if
+
+    else
+
+       if (which_step .eq. 1) then
+          call makeRhoHfromP(nlevs,uold,sedge, &
+                             rho0_old, rho0_edge_old, &
+                             rho0_new, rho0_edge_new, &
+                               p0_old,   p0_old, &
+                             the_bc_level,dx)
+       else if (which_step .eq. 2) then
+          call makeRhoHfromP(nlevs,uold,sedge, &
+                             rho0_old, rho0_edge_old, &
+                             rho0_new, rho0_edge_new, &
+                               p0_old,   p0_new, &
+                             the_bc_level,dx)
+       end if
+
     end if
-
-!   if (which_step .eq. 1) then
-!      call makeRhoHfromP(nlevs,uold,sedge, &
-!                         rho0_old, rho0_edge_old, &
-!                         rho0_new, rho0_edge_new, &
-!                           p0_old,   p0_old, &
-!                         the_bc_level,dx)
-!   else if (which_step .eq. 2) then
-!      call makeRhoHfromP(nlevs,uold,sedge, &
-!                         rho0_old, rho0_edge_old, &
-!                         rho0_new, rho0_edge_new, &
-!                           p0_old,   p0_new, &
-!                         the_bc_level,dx)
-!   end if
-
     !**************************************************************************
     !     Create the edge states of tracers.
     !**************************************************************************
