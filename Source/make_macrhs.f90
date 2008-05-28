@@ -150,17 +150,23 @@ contains
     !     Local variables
     integer :: i, j, k
     real(kind=dp_t) :: gamma1bar_p0_avg, ptherm_diff
-    real (kind=dp_t), allocatable :: div_cart(:,:,:,:),Sbar_cart(:,:,:,:)
+    real(kind=dp_t), allocatable :: div_cart(:,:,:,:),Sbar_cart(:,:,:,:)
+    real(kind=dp_t), allocatable :: gamma1bar_old_cart(:,:,:,:)
+    real(kind=dp_t), allocatable :: gamma1bar_new_cart(:,:,:,:)
+    real(kind=dp_t), allocatable :: p0_old_cart(:,:,:,:)
+    real(kind=dp_t), allocatable :: p0_new_cart(:,:,:,:)
+    real(kind=dp_t), allocatable :: pthermbar_old_cart(:,:,:,:)
+    real(kind=dp_t), allocatable :: pthermbar_new_cart(:,:,:,:)
 
     if (spherical .eq. 1) then
 
        allocate(div_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
        call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,div_coeff,div_cart, &
-            lo,hi,dx,0)
+                                         lo,hi,dx,0)
 
        allocate(Sbar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
        call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,Sbar,Sbar_cart, &
-            lo,hi,dx,0)
+                                         lo,hi,dx,0)
 
        do k = lo(3),hi(3)
           do j = lo(2),hi(2)
@@ -172,6 +178,52 @@ contains
        end do
 
        deallocate(Sbar_cart,div_cart)
+
+       if (dpdt_factor .ge. 0.0d0) then
+
+          allocate(gamma1bar_old_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
+          call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1, &
+                                            gamma1bar_old,gamma1bar_old_cart,lo,hi,dx,0)
+
+          allocate(gamma1bar_new_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
+          call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1, &
+                                            gamma1bar_new,gamma1bar_new_cart,lo,hi,dx,0)
+
+          allocate(p0_old_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
+          call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1, &
+                                            p0_old,p0_old_cart,lo,hi,dx,0)
+
+          allocate(p0_new_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
+          call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1, &
+                                            p0_new,p0_new_cart,lo,hi,dx,0)
+
+          allocate(pthermbar_old_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
+          call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1, &
+                                            pthermbar_old,pthermbar_old_cart,lo,hi,dx,0)
+
+          allocate(pthermbar_new_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
+          call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1, &
+                                            pthermbar_new,pthermbar_new_cart,lo,hi,dx,0)
+
+
+          do k = lo(3),hi(3)
+             gamma1bar_p0_avg = 0.25d0 * &
+                  (gamma1bar_old_cart(i,j,k,1) + gamma1bar_new_cart(i,j,k,1)) * &
+                  (p0_old_cart(i,j,k,1) + p0_new_cart(i,j,k,1))
+             do j = lo(2),hi(2)                
+                do i = lo(1),hi(1)
+                   ptherm_diff = 0.5d0*(ptherm_old(i,j,k) + ptherm_new(i,j,k) &
+                        - pthermbar_old_cart(i,j,k,1) - pthermbar_new_cart(i,j,k,1))
+                   rhs(i,j,k) = rhs(i,j,k) + &
+                        (dpdt_factor / gamma1bar_p0_avg) * (ptherm_diff / dt)
+                end do
+             end do
+          end do
+
+          deallocate(gamma1bar_old_cart,gamma1bar_new_cart,p0_old_cart,p0_new_cart)
+          deallocate(pthermbar_old_cart,pthermbar_new_cart)
+
+       end if
 
     else
 
@@ -191,7 +243,7 @@ contains
              do j = lo(2),hi(2)                
                 do i = lo(1),hi(1)
                    ptherm_diff = 0.5d0*(ptherm_old(i,j,k) + ptherm_new(i,j,k) &
-                        - pthermbar_old(j) - pthermbar_new(j))
+                        - pthermbar_old(k) - pthermbar_new(k))
                    rhs(i,j,k) = rhs(i,j,k) + &
                         (dpdt_factor / gamma1bar_p0_avg) * (ptherm_diff / dt)
                 end do
