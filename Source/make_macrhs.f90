@@ -71,7 +71,10 @@ contains
                                  pthermbar_old(n,:),pthermbar_new(n,:),dt)
           case (3)
              call make_macrhs_3d(n,lo,hi,mp(:,:,:,1),sp(:,:,:,1),gp(:,:,:,1),Sbar(n,:), &
-                                 div_coeff(n,:),dx(n,:))
+                                 div_coeff(n,:),dx(n,:), &
+                                 gamma1bar_old(n,:),gamma1bar_new(n,:), &
+                                 p0_old(n,:),p0_new(n,:),pop(:,:,:,1),pnp(:,:,:,1), &
+                                 pthermbar_old(n,:),pthermbar_new(n,:),dt)
           end select
        end do
 
@@ -122,9 +125,12 @@ contains
 
   end subroutine make_macrhs_2d
 
-  subroutine make_macrhs_3d(n,lo,hi,rhs,Source,delta_gamma1_term,Sbar,div_coeff,dx)
+  subroutine make_macrhs_3d(n,lo,hi,rhs,Source,delta_gamma1_term,Sbar,div_coeff,dx, &
+                            gamma1bar_old,gamma1bar_new,p0_old,p0_new, &
+                            ptherm_old,ptherm_new,pthermbar_old,pthermbar_new,dt)
 
     use geometry, only: spherical
+    use probin_module, only: dpdt_factor
     use fill_3d_module
 
     integer         , intent(in   ) :: n,lo(:), hi(:)
@@ -134,9 +140,16 @@ contains
     real (kind=dp_t), intent(in   ) ::      Sbar(0:)  
     real (kind=dp_t), intent(in   ) :: div_coeff(0:)  
     real (kind=dp_t), intent(in   ) :: dx(:)
+    real (kind=dp_t), intent(in   ) :: gamma1bar_old(0:),gamma1bar_new(0:)
+    real (kind=dp_t), intent(in   ) :: p0_old(0:),p0_new(0:)
+    real (kind=dp_t), intent(in   ) :: ptherm_old(lo(1):,lo(2):,lo(3):)
+    real (kind=dp_t), intent(in   ) :: ptherm_new(lo(1):,lo(2):,lo(3):)
+    real (kind=dp_t), intent(in   ) :: pthermbar_old(0:),pthermbar_new(0:)
+    real (kind=dp_t), intent(in   ) :: dt
 
     !     Local variables
     integer :: i, j, k
+    real(kind=dp_t) :: gamma1bar_p0_avg, ptherm_diff
     real (kind=dp_t), allocatable :: div_cart(:,:,:,:),Sbar_cart(:,:,:,:)
 
     if (spherical .eq. 1) then
@@ -170,6 +183,22 @@ contains
              end do
           end do
        end do
+
+       if (dpdt_factor .gt. 0.0d0) then
+          do k = lo(3),hi(3)
+             gamma1bar_p0_avg = 0.25d0 * (gamma1bar_old(k) + gamma1bar_new(k)) * &
+                  (p0_old(k) + p0_new(k))
+             do j = lo(2),hi(2)                
+                do i = lo(1),hi(1)
+                   ptherm_diff = 0.5d0*(ptherm_old(i,j,k) + ptherm_new(i,j,k) &
+                        - pthermbar_old(j) - pthermbar_new(j))
+                   rhs(i,j,k) = rhs(i,j,k) + &
+                        (dpdt_factor / gamma1bar_p0_avg) * (ptherm_diff / dt)
+                end do
+             end do
+          end do
+       end if
+       
     end if
 
   end subroutine make_macrhs_3d
