@@ -222,7 +222,7 @@ contains
 
                    ptherm_diff = 0.5d0*(ptherm_old(i,j,k) + ptherm_new(i,j,k) &
                         - pthermbar_old_cart(i,j,k,1) - pthermbar_new_cart(i,j,k,1))
-                   rhs(i,j,k) = rhs(i,j,k) + div_cart(i,j,k) * &
+                   rhs(i,j,k) = rhs(i,j,k) + div_cart(i,j,k,1) * &
                         (dpdt_factor / gamma1bar_p0_avg) * (ptherm_diff / dt)
                 end do
              end do
