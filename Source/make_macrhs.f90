@@ -22,7 +22,7 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine make_macrhs(nlevs,macrhs,Source,delta_gamma1_term,Sbar,div_coeff,dx, &
+  subroutine make_macrhs(nlevs,macrhs,rho0,Source,delta_gamma1_term,Sbar,div_coeff,dx, &
                          gamma1bar_old,gamma1bar_new,p0_old,p0_new,ptherm_old,ptherm_new, &
                          pthermbar_old,pthermbar_new,dt)
 
@@ -31,6 +31,7 @@ contains
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: macrhs(:)
+    real(kind=dp_t), intent(in   ) :: rho0(:,0:)
     type(multifab) , intent(in   ) :: Source(:)
     type(multifab) , intent(in   ) :: delta_gamma1_term(:)
     real(kind=dp_t), intent(in   ) :: Sbar(:,0:)
@@ -65,7 +66,8 @@ contains
           hi =  upb(get_box(Source(n), i))
           select case (dm)
           case (2)
-             call make_macrhs_2d(lo,hi,mp(:,:,1,1),sp(:,:,1,1),gp(:,:,1,1),Sbar(n,:), &
+             call make_macrhs_2d(lo,hi,rho0(n,:),mp(:,:,1,1),sp(:,:,1,1),gp(:,:,1,1), &
+                                 Sbar(n,:), &
                                  div_coeff(n,:),gamma1bar_old(n,:),gamma1bar_new(n,:), &
                                  p0_old(n,:),p0_new(n,:),pop(:,:,1,1),pnp(:,:,1,1), &
                                  pthermbar_old(n,:),pthermbar_new(n,:),dt)
@@ -84,13 +86,14 @@ contains
 
   end subroutine make_macrhs
 
-  subroutine make_macrhs_2d(lo,hi,rhs,Source,delta_gamma1_term,Sbar,div_coeff, &
+  subroutine make_macrhs_2d(lo,hi,rho0,rhs,Source,delta_gamma1_term,Sbar,div_coeff, &
                             gamma1bar_old,gamma1bar_new,p0_old,p0_new, &
                             ptherm_old,ptherm_new,pthermbar_old,pthermbar_new,dt)
 
-    use probin_module, only: dpdt_factor
+    use probin_module, only: dpdt_factor, base_cutoff_density
 
     integer         , intent(in   ) :: lo(:), hi(:)
+    real (kind=dp_t), intent(in   ) :: rho0(0:) 
     real (kind=dp_t), intent(  out) :: rhs(lo(1):,lo(2):)  
     real (kind=dp_t), intent(in   ) :: Source(lo(1):,lo(2):)  
     real (kind=dp_t), intent(in   ) :: delta_gamma1_term(lo(1):,lo(2):)  
@@ -118,7 +121,9 @@ contains
           do i = lo(1),hi(1)
              ptherm_diff = &
                   0.5d0*(ptherm_old(i,j)+ptherm_new(i,j)-pthermbar_old(j)-pthermbar_new(j))
-             rhs(i,j) = rhs(i,j) + (dpdt_factor / gamma1bar_p0_avg) * (ptherm_diff / dt)
+             if (rho0(j) .gt. base_cutoff_density) then
+                rhs(i,j) = rhs(i,j) + (dpdt_factor / gamma1bar_p0_avg) * (ptherm_diff / dt)
+             end if
           end do
        end do
     end if

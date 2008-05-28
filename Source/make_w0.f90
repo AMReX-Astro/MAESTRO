@@ -48,7 +48,7 @@ contains
 
     do n=1,nlevs
        if (spherical .eq. 0) then
-          call make_w0_planar(n,vel(n,0:),vel_old(n,0:),Sbar_in(n,0:), &
+          call make_w0_planar(n,vel(n,0:),vel_old(n,0:),rho0(n,:),Sbar_in(n,0:), &
                               p0_old(n,0:),p0_new(n,0:), &
                               gamma1bar_old(n,0:),gamma1bar_new(n,0:), &
                               pthermbar_old(n,0:),pthermbar_new(n,0:), &
@@ -73,17 +73,18 @@ contains
 
   end subroutine make_w0
 
-  subroutine make_w0_planar(n,vel,vel_old,Sbar_in,p0_old,p0_new, &
+  subroutine make_w0_planar(n,vel,vel_old,rho0,Sbar_in,p0_old,p0_new, &
                             gamma1bar_old,gamma1bar_new,pthermbar_old,pthermbar_new, &
                             psi,f,dt,dtold)
 
     use geometry, only: nr, dr
     use variables, only: rho_comp
     use bl_constants_module
-    use probin_module, only: grav_const, dpdt_factor
+    use probin_module, only: grav_const, dpdt_factor, base_cutoff_density
 
     integer        , intent(in   ) :: n
     real(kind=dp_t), intent(  out) :: vel(0:)
+    real(kind=dp_t), intent(in   ) :: rho0(0:)
     real(kind=dp_t), intent(in   ) :: vel_old(0:)
     real(kind=dp_t), intent(in   ) :: Sbar_in(0:)
     real(kind=dp_t), intent(in   ) :: p0_old(0:), p0_new(0:)
@@ -113,11 +114,15 @@ contains
        gamma1bar_p0_avg = (gamma1bar_old(r-1)+gamma1bar_new(r-1))*(p0_old(r-1)+p0_new(r-1)) &
             / 4.0d0
 
-       volume_discrepancy = dpdt_factor * ( 0.5d0*(p0_old(r-1)+p0_new(r-1)) &
-            - 0.5d0*(pthermbar_old(r-1)+pthermbar_new(r-1)) ) / dt
+       if (rho0(r-1) .gt. base_cutoff_density) then
+          volume_discrepancy = dpdt_factor * ( 0.5d0*(p0_old(r-1)+p0_new(r-1)) &
+               - 0.5d0*(pthermbar_old(r-1)+pthermbar_new(r-1)) ) / dt
+       else
+          volume_discrepancy = 0.0d0
+       end if
 
        vel(r) = vel(r-1) + Sbar_in(r-1) * dr(n) &
-          - ( (psi(r-1)-volume_discrepancy) / gamma1bar_p0_avg ) * dr(n)
+          - ( (psi(r-1)+volume_discrepancy) / gamma1bar_p0_avg ) * dr(n)
     end do
 
     ! Compute the forcing term in the base state velocity equation, - 1/rho0 grad pi0 

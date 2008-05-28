@@ -275,7 +275,7 @@ contains
     
   end subroutine make_hgrhs_3d
 
-  subroutine correct_hgrhs(nlevs,the_bc_tower,mla,hgrhs,div_coeff,dx,dt,gamma1bar,p0, &
+  subroutine correct_hgrhs(nlevs,the_bc_tower,mla,rho0,hgrhs,div_coeff,dx,dt,gamma1bar,p0, &
                            ptherm,pthermbar)
 
     use define_bc_module
@@ -293,6 +293,7 @@ contains
     type(bc_tower),  intent(in   ) :: the_bc_tower
     type(ml_layout), intent(inout) :: mla
     type(multifab) , intent(inout) :: hgrhs(:)
+    real(kind=dp_t), intent(in   ) :: rho0(:,0:)
     real(kind=dp_t), intent(in   ) :: div_coeff(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:), dt
     real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
@@ -361,7 +362,8 @@ contains
           hi =  upb(get_box(ptherm(n), i))
           select case (dm)
           case (2)
-             call create_correction_cc_2d(lo,hi,ccp(:,:,1,1),ptp(:,:,1,1),div_coeff(n,:), &
+             call create_correction_cc_2d(lo,hi,rho0(n,:),ccp(:,:,1,1),ptp(:,:,1,1), &
+                                          div_coeff(n,:), &
                                           gamma1bar(n,:),p0(n,:),pthermbar(n,:),dt)
           case (3)
              if (spherical .eq. 1) then
@@ -447,12 +449,13 @@ contains
     
   end subroutine correct_hgrhs
   
-  subroutine create_correction_cc_2d(lo,hi,correction_cc,ptherm,div_coeff,gamma1bar, &
+  subroutine create_correction_cc_2d(lo,hi,rho0,correction_cc,ptherm,div_coeff,gamma1bar, &
                                      p0,pthermbar,dt)
 
-    use probin_module, only: dpdt_factor
+    use probin_module, only: dpdt_factor, base_cutoff_density
 
     integer         , intent(in   ) :: lo(:), hi(:)
+    real (kind=dp_t), intent(in   ) :: rho0(0:)
     real (kind=dp_t), intent(  out) :: correction_cc(lo(1)-1:,lo(2)-1:)
     real (kind=dp_t), intent(in   ) :: ptherm(lo(1):,lo(2):)
     real (kind=dp_t), intent(in   ) :: div_coeff(0:)
@@ -466,7 +469,11 @@ contains
     real(kind=dp_t) :: temp
     
     do j = lo(2),hi(2)
-       temp = div_coeff(j)*(dpdt_factor/(gamma1bar(j)*p0(j))) / dt
+       if(rho0(j) .gt. base_cutoff_density) then
+          temp = div_coeff(j)*(dpdt_factor/(gamma1bar(j)*p0(j))) / dt
+       else
+          temp = 0.0d0
+       end if
        do i = lo(1),hi(1)
           correction_cc(i,j) = temp*(ptherm(i,j)-pthermbar(j))
        end do
