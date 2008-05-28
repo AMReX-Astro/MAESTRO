@@ -54,9 +54,10 @@ contains
                               pthermbar_old(n,0:),pthermbar_new(n,0:), &
                               psi(n,0:),f(n,0:),dt,dtold)
        else
-          call make_w0_spherical(n,vel(n,:),vel_old(n,0:),Sbar_in(n,:), &
-                                 rho0(n,:),p0_old(n,:), &
-                                 gamma1bar_old(n,:), &
+          call make_w0_spherical(n,vel(n,:),vel_old(n,0:),Sbar_in(n,0:), &
+                                 rho0(n,:),p0_old(n,0:), &
+                                 gamma1bar_old(n,0:), &
+                                 pthermbar_old(n,0:), &
                                  f(n,0:),dt,dtold)
        endif
 
@@ -140,18 +141,19 @@ contains
 
   end subroutine make_w0_planar
 
-  subroutine make_w0_spherical(n,vel,vel_old,Sbar_in,rho0,p0,gamma1bar,f,dt,dtold)
+  subroutine make_w0_spherical(n,vel,vel_old,Sbar_in,rho0,p0,gamma1bar,pthermbar,f,dt,dtold)
 
     use geometry, only: base_cc_loc, nr, base_loedge_loc, dr
     use make_grav_module
     use cell_to_edge_module
     use bl_constants_module
-    
+    use probin_module, only: dpdt_factor, base_cutoff_density
+
     integer        , intent(in   ) :: n
     real(kind=dp_t), intent(  out) :: vel(0:)
     real(kind=dp_t), intent(in   ) :: vel_old(0:)
     real(kind=dp_t), intent(in   ) :: Sbar_in(0:)
-    real(kind=dp_t), intent(in   ) :: rho0(0:),p0(0:),gamma1bar(0:)
+    real(kind=dp_t), intent(in   ) :: rho0(0:),p0(0:),gamma1bar(0:),pthermbar(0:)
     real(kind=dp_t), intent(inout) ::   f(0:)
     real(kind=dp_t), intent(in   ) :: dt,dtold
 
@@ -168,6 +170,8 @@ contains
 
     real(kind=dp_t) :: dpdr
 
+    real(kind=dp_t) :: volume_discrepancy
+
     ! Cell-centered
     allocate(m(0:nr(n)-1))
     allocate(vel_old_cen(0:nr(n)-1))
@@ -182,8 +186,17 @@ contains
 
     vel_bar = ZERO
     do r = 1,nr(n)
-       vel_bar(r) = vel_bar(r-1) + dr(n) * Sbar_in(r-1) * base_cc_loc(n,r-1)**2
+
+       if (rho0(r-1) .gt. base_cutoff_density) then
+          volume_discrepancy = dpdt_factor * (p0(r-1) - pthermbar(r-1))/dt
+       else
+          volume_discrepancy = ZERO
+       endif
+
+       vel_bar(r) = vel_bar(r-1) + dr(n) * Sbar_in(r-1) * base_cc_loc(n,r-1)**2 - &
+            dr(n)* volume_discrepancy * base_cc_loc(n,r-1)**2 / (gamma1bar(r-1)*p0(r-1))
     end do
+
     do r = 1,nr(n)
        vel_bar(r) = vel_bar(r) / base_loedge_loc(n,r)**2
     end do
