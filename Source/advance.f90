@@ -55,7 +55,7 @@ contains
     use define_bc_module
     use make_gamma_module
     use rhoh_vs_t_module
-    use probin_module, only: verbose, enthalpy_pred_type
+    use probin_module, only: verbose, enthalpy_pred_type, dpdt_factor
     
     logical,         intent(in   ) :: init_mode
     type(ml_layout), intent(inout) :: mla
@@ -1020,6 +1020,11 @@ contains
        proj_type = regular_timestep_comp
        call make_hgrhs(nlevs,the_bc_tower,mla,hgrhs,Source_new,delta_gamma1_term, &
                        Sbar,div_coeff_new,dx)
+    end if
+
+    if (dpdt_factor .gt. ZERO) then
+       call correct_hgrhs(nlevs,the_bc_tower,mla,hgrhs,div_coeff_new,dx,dt,gamma1bar, &
+                          p0_new,ptherm_new,pthermbar_new)
     end if
 
     do n=1,nlevs
