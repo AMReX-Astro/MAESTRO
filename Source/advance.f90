@@ -285,7 +285,9 @@ contains
        call setval(delta_gamma1_term(n), ZERO, all=.true.)
     end do
 
-    call make_macrhs(nlevs,macrhs,Source_nph,delta_gamma1_term,Sbar,div_coeff_old,dx)
+    call make_macrhs(nlevs,macrhs,Source_nph,delta_gamma1_term,Sbar,div_coeff_old,dx, &
+                     gamma1bar,gamma1bar,p0_old,p0_old,ptherm_old,ptherm_old, &
+                     pthermbar_old,pthermbar_old,dt)
 
     do n=1,nlevs
        call destroy(delta_gamma1_term(n))
@@ -690,8 +692,9 @@ contains
        end do
 
        ! note delta_gamma1_term here is not time-centered
-       call make_macrhs(nlevs,macrhs,Source_nph,delta_gamma1_term,Sbar, &
-                        div_coeff_nph,dx)
+       call make_macrhs(nlevs,macrhs,Source_nph,delta_gamma1_term,Sbar,div_coeff_nph,dx, &
+                        gamma1bar_old,gamma1bar,p0_old,p0_new,ptherm_old,ptherm_new, &
+                        pthermbar_old,pthermbar_new,dt)
     
        do n=1,nlevs
           call destroy(delta_gamma1_term(n))
