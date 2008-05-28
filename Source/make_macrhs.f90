@@ -122,7 +122,8 @@ contains
              ptherm_diff = &
                   0.5d0*(ptherm_old(i,j)+ptherm_new(i,j)-pthermbar_old(j)-pthermbar_new(j))
              if (rho0(j) .gt. base_cutoff_density) then
-                rhs(i,j) = rhs(i,j) + (dpdt_factor / gamma1bar_p0_avg) * (ptherm_diff / dt)
+                rhs(i,j) = rhs(i,j) + div_coeff(j) * &
+                     (dpdt_factor / gamma1bar_p0_avg) * (ptherm_diff / dt)
              end if
           end do
        end do
@@ -221,7 +222,7 @@ contains
 
                    ptherm_diff = 0.5d0*(ptherm_old(i,j,k) + ptherm_new(i,j,k) &
                         - pthermbar_old_cart(i,j,k,1) - pthermbar_new_cart(i,j,k,1))
-                   rhs(i,j,k) = rhs(i,j,k) + &
+                   rhs(i,j,k) = rhs(i,j,k) + div_cart(i,j,k) * &
                         (dpdt_factor / gamma1bar_p0_avg) * (ptherm_diff / dt)
                 end do
              end do
@@ -251,7 +252,7 @@ contains
                 do i = lo(1),hi(1)
                    ptherm_diff = 0.5d0*(ptherm_old(i,j,k) + ptherm_new(i,j,k) &
                         - pthermbar_old(k) - pthermbar_new(k))
-                   rhs(i,j,k) = rhs(i,j,k) + &
+                   rhs(i,j,k) = rhs(i,j,k) + div_coeff(k) * &
                         (dpdt_factor / gamma1bar_p0_avg) * (ptherm_diff / dt)
                 end do
              end do
