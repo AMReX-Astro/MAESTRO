@@ -239,8 +239,10 @@ contains
           gradp0 = HALF * ( p0_old(k  ) + p0_new(k  ) &
                            -p0_old(k-1) - p0_new(k-1) ) / dr(n)
        else
-          gradp0 = FOURTH * ( p0_old(k+1) + p0_new(k+1) &
-                             -p0_old(k-1) - p0_new(k-1) ) / dr(n)
+          gradp0 = HALF * ( p0_old(k+1) + p0_new(k+1) &
+                           -p0_old(k  ) - p0_new(k  ) ) / dr(n)
+!         gradp0 = FOURTH * ( p0_old(k+1) + p0_new(k+1) &
+!                            -p0_old(k-1) - p0_new(k-1) ) / dr(n)
        end if
 
        do j = lo(2),hi(2)
@@ -321,8 +323,10 @@ contains
           gradp_rad(r) = HALF * ( p0_old(r  ) + p0_new(r  ) &
                                  -p0_old(r-1) - p0_new(r-1) ) / dr(n)
        else
-          gradp_rad(r) = FOURTH * ( p0_old(r+1) + p0_new(r+1) &
-                                   -p0_old(r-1) - p0_new(r-1) ) / dr(n)
+          gradp_rad(r) = HALF * ( p0_old(r+1) + p0_new(r+1) &
+                                 -p0_old(r  ) - p0_new(r  ) ) / dr(n)
+!         gradp_rad(r) = FOURTH * ( p0_old(r+1) + p0_new(r+1) &
+!                                  -p0_old(r-1) - p0_new(r-1) ) / dr(n)
        end if
 
     end do
