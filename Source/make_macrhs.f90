@@ -207,11 +207,13 @@ contains
 
 
           do k = lo(3),hi(3)
-             gamma1bar_p0_avg = 0.25d0 * &
-                  (gamma1bar_old_cart(i,j,k,1) + gamma1bar_new_cart(i,j,k,1)) * &
-                  (p0_old_cart(i,j,k,1) + p0_new_cart(i,j,k,1))
              do j = lo(2),hi(2)                
                 do i = lo(1),hi(1)
+
+                   gamma1bar_p0_avg = 0.25d0 * &
+                        (gamma1bar_old_cart(i,j,k,1) + gamma1bar_new_cart(i,j,k,1)) * &
+                        (p0_old_cart(i,j,k,1) + p0_new_cart(i,j,k,1))
+
                    ptherm_diff = 0.5d0*(ptherm_old(i,j,k) + ptherm_new(i,j,k) &
                         - pthermbar_old_cart(i,j,k,1) - pthermbar_new_cart(i,j,k,1))
                    rhs(i,j,k) = rhs(i,j,k) + &
