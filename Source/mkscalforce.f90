@@ -175,9 +175,12 @@ contains
           gradp0 = HALF * ( p0_old(j  ) + p0_new(j  ) &
                            -p0_old(j-1) - p0_new(j-1) ) / dr(n)
        else
-          gradp0 = FOURTH * ( p0_old(j+1) + p0_new(j+1) &
-                             -p0_old(j-1) - p0_new(j-1) ) / dr(n)
+          gradp0 = HALF * ( p0_old(j+1) + p0_new(j+1) &
+                           -p0_old(j  ) - p0_new(j  ) ) / dr(n)
+!         gradp0 = FOURTH * ( p0_old(j+1) + p0_new(j+1) &
+!                            -p0_old(j-1) - p0_new(j-1) ) / dr(n)
        end if
+
 
        do i = lo(1),hi(1)
           wadv = HALF*(wmac(i,j)+wmac(i,j+1))
