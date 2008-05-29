@@ -40,6 +40,7 @@
  init_divu_iter = 3
 
  use_thermal_diffusion = T
+ dpdt_factor = 0.3d0
 
  base_cutoff_density = 1.d4
  anelastic_cutoff = 1.d4
