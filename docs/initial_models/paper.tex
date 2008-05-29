@@ -1,0 +1,59 @@
+\documentclass[11pt]{article} 
+
+\tolerance=600
+
+\usepackage{amsmath,color}
+
+% Margins
+\usepackage[lmargin=0.5in,rmargin=0.5in,tmargin=0.75in,bmargin=0.75in]{geometry}
+
+\def\half  {\frac{1}{2}}
+\def\dt    {\Delta t}
+\def\kth   {k_{\rm th}}
+
+\def\edge  {\rm EDGE}
+\def\mac   {\rm MAC}
+\def\trans {\rm TRANS}
+
+\def\eb    {{\bf e}}
+\def\fb    {{\bf f}}
+\def\ib    {{\bf i}}
+\def\Ub    {{\bf U}}
+
+\def\Ubt   {\widetilde{\bf U}}
+\def\ut    {\tilde{u}}
+\def\vt    {\tilde{v}}
+\def\wt    {\tilde{w}}
+
+\title{Notes on generating initial models for mapping into {\tt MAESTRO}}
+
+\setlength{\marginparwidth}{0.75in}
+\newcommand{\MarginPar}[1]{\marginpar{%
+\vskip-\baselineskip %raise the marginpar a bit
+\raggedright\tiny\sffamily
+\hrule\smallskip{\color{red}#1}\par\smallskip\hrule}}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+
+\section{Creating the initial model}
+\begin{itemize}
+\item The initial model should be but into HSE according to $(p_{i+1} - p_i)/\Delta r = half (\rho_{i+1} - \rho_i) g_{i+\half}$
+
+\item The initial model should be created at the same resolution as the base state.  This means that
+when you change resolution of your simulation, use a new initial model.
+
+\item The initial model should be thermodynamically consistent with the EOS that {\tt MAESTRO}
+uses.
+
+\end{itemize}
+
+\section{Spherical notes}
+\begin{itemize}
+\item Spherical runs use $p$, $(\rho X)$, and $\rho$ from the initial model.  These are then
+mapped onto the Cartesian grid, and then $(rho h)$ is computed via the EOS.
+\end{itemize}
+
+\end{document}
