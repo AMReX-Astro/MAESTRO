@@ -157,29 +157,69 @@ contains
     real(kind=dp_t) :: x,y,z
     real(kind=dp_t) :: dens_pert, rhoh_pert, temp_pert
     real(kind=dp_t) :: rhoX_pert(nspec), trac_pert(ntrac)
+    real(kind=dp_t), allocatable :: p0_cart(:,:,:,:)
 
     ! initial the domain with the base state
     s = ZERO
   
     if (spherical .eq. 1) then
 
+       ! if we are spherical, we want to make sure that p0 is good, since that is
+       ! what is needed for HSE.  Therefore, we will put p0 onto a cart array and
+       ! then initialize h from rho, X, and p0.
+       allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
+
        ! initialize the scalars
        call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,s0_init(:,rho_comp), &
                                          s(:,:,:,rho_comp:),lo,hi,dx,ng)
-       call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,s0_init(:,rhoh_comp), &
-                                         s(:,:,:,rhoh_comp:),lo,hi,dx,ng)
+
        call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,s0_init(:,temp_comp), &
                                          s(:,:,:,temp_comp:),lo,hi,dx,ng)
 
+       ! initialize p0_cart
+       call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,p0_background(:), &
+                                         p0_cart(:,:,:,1:),lo,hi,dx,0)
+
+       ! initialize species
        do comp = spec_comp, spec_comp+nspec-1
           call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,s0_init(:,comp), &
                                             s(:,:,:,comp:),lo,hi,dx,ng)
        end do
 
+       ! initialize tracers
        do comp = trac_comp, trac_comp+ntrac-1
           call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,s0_init(:,comp), &
                                             s(:,:,:,comp:),lo,hi,dx,ng)
        end do
+
+       ! initialize (rho h) using the EOS
+       do k = lo(3), hi(3)
+          do j = lo(2), hi(2)
+             do i = lo(1), hi(1)
+
+                temp_eos(1) = s(i,j,k,temp_comp)
+                p_eos(1) = p0_cart(i,j,k,1)
+                den_eos(1) = s(i,j,k,rho_comp)
+                xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
+
+                call eos(eos_input_rp, den_eos, temp_eos, &
+                         npts, nspec, &
+                         xn_eos, &
+                         p_eos, h_eos, e_eos, &
+                         cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                         dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                         dpdX_eos, dhdX_eos, &
+                         gam1_eos, cs_eos, s_eos, &
+                         dsdt_eos, dsdr_eos, &
+                         do_diag)
+
+                s(i,j,k,rhoh_comp) = den_eos(1)*h_eos(1)
+
+             enddo
+          enddo
+       enddo
+
+       deallocate(p0_cart)
 
     else 
 
