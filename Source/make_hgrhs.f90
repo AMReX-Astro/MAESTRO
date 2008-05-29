@@ -284,7 +284,7 @@ contains
     use bl_constants_module
     use geometry, only: spherical
     use fill_3d_module
-    use variables, only: foextrap_comp
+    use variables, only: foextrap_comp, rho_comp
     use ml_restriction_module
     use multifab_fill_ghost_module
     use multifab_physbc_module
@@ -308,9 +308,11 @@ contains
     type(multifab) :: p0_cart(nlevs)
     type(multifab) :: pthermbar_cart(nlevs)
     type(multifab) :: div_coeff_cart(nlevs)
+    type(multifab) :: rho0_cart(nlevs)
 
     real(kind=dp_t), pointer :: rhp(:,:,:,:), ptp(:,:,:,:), ccp(:,:,:,:), cnp(:,:,:,:)
     real(kind=dp_t), pointer :: gbp(:,:,:,:), p0p(:,:,:,:), ptbp(:,:,:,:), dcp(:,:,:,:)
+    real(kind=dp_t), pointer :: r0p(:,:,:,:)
     integer :: lo(ptherm(1)%dim),hi(ptherm(1)%dim)
     integer :: i,dm,n
     logical :: nodal(ptherm(1)%dim)
@@ -328,10 +330,12 @@ contains
           call multifab_build(p0_cart(n),ptherm(n)%la,1,0)
           call multifab_build(pthermbar_cart(n),ptherm(n)%la,1,0)
           call multifab_build(div_coeff_cart(n),ptherm(n)%la,1,0)
+          call multifab_build(rho0_cart(n),ptherm(n)%la,1,0)
           call setval(gamma1bar_cart(n),ZERO,all=.true.)
           call setval(p0_cart(n),ZERO,all=.true.)
           call setval(pthermbar_cart(n),ZERO,all=.true.)
           call setval(div_coeff_cart(n),ZERO,all=.true.)
+          call setval(rho0_cart(n),ZERO,all=.true.)
        end do
     end if
     
@@ -344,6 +348,9 @@ contains
                                  .false.,dx,the_bc_tower%bc_tower_array,mla,1)
        call put_1d_array_on_cart(nlevs,div_coeff,div_coeff_cart,foextrap_comp,.false., &
                                  .false.,dx,the_bc_tower%bc_tower_array,mla,1)
+       call put_1d_array_on_cart(nlevs,rho0,rho0_cart,dm+rho_comp,.false., &
+                                 .false.,dx,the_bc_tower%bc_tower_array,mla,1)
+
     end if
 
     do n = 1, nlevs
@@ -371,12 +378,13 @@ contains
                 p0p  => dataptr(p0_cart(n),i)
                 ptbp => dataptr(pthermbar_cart(n),i)
                 dcp  => dataptr(div_coeff_cart(n),i)
+                r0p  => dataptr(rho0_cart(n),i)
                 call create_correction_cc_3d_sphr(lo,hi,ccp(:,:,:,1),ptp(:,:,:,1), &
                                                   dcp(:,:,:,1),gbp(:,:,:,1),p0p(:,:,:,1), &
-                                                  ptbp(:,:,:,1),dt)
+                                                  ptbp(:,:,:,1),r0p(:,:,:,1),dt)
 
              else
-                call create_correction_cc_3d_cart(lo,hi,ccp(:,:,:,1),ptp(:,:,:,1), &
+                call create_correction_cc_3d_cart(lo,hi,rho0(n,:),ccp(:,:,:,1),ptp(:,:,:,1), &
                                                   div_coeff(n,:),gamma1bar(n,:),p0(n,:), &
                                                   pthermbar(n,:),dt)
              end if
@@ -442,6 +450,7 @@ contains
           call destroy(p0_cart(n))
           call destroy(pthermbar_cart(n))
           call destroy(div_coeff_cart(n))
+          call destroy(rho0_cart(n))
        end if
     end do
 
@@ -466,27 +475,28 @@ contains
     
     ! Local variables
     integer :: i, j
-    real(kind=dp_t) :: temp
+    real(kind=dp_t) :: correction_factor
     
     do j = lo(2),hi(2)
        if(rho0(j) .gt. base_cutoff_density) then
-          temp = div_coeff(j)*(dpdt_factor/(gamma1bar(j)*p0(j))) / dt
+          correction_factor = div_coeff(j)*(dpdt_factor/(gamma1bar(j)*p0(j))) / dt
        else
-          temp = 0.0d0
+          correction_factor = 0.0d0
        end if
        do i = lo(1),hi(1)
-          correction_cc(i,j) = temp*(ptherm(i,j)-pthermbar(j))
+          correction_cc(i,j) = correction_factor*(ptherm(i,j)-pthermbar(j))
        end do
     end do
     
   end subroutine create_correction_cc_2d
 
-  subroutine create_correction_cc_3d_cart(lo,hi,correction_cc,ptherm,div_coeff,gamma1bar, &
-                                          p0,pthermbar,dt)
+  subroutine create_correction_cc_3d_cart(lo,hi,rho0,correction_cc,ptherm,div_coeff, &
+                                          gamma1bar,p0,pthermbar,dt)
 
-    use probin_module, only: dpdt_factor
+    use probin_module, only: dpdt_factor, base_cutoff_density
 
     integer         , intent(in   ) :: lo(:), hi(:)
+    real (kind=dp_t), intent(in   ) :: rho0(0:)
     real (kind=dp_t), intent(  out) :: correction_cc(lo(1)-1:,lo(2)-1:,lo(3)-1:)
     real (kind=dp_t), intent(in   ) :: ptherm(lo(1):,lo(2):,lo(3):)
     real (kind=dp_t), intent(in   ) :: div_coeff(0:)
@@ -497,13 +507,17 @@ contains
     
     ! Local variables
     integer :: i, j, k
-    real(kind=dp_t) :: temp
+    real(kind=dp_t) :: correction_factor
     
     do k = lo(3),hi(3)
-       temp = div_coeff(k)*(dpdt_factor/(gamma1bar(k)*p0(k))) / dt
+       if(rho0(k) .gt. base_cutoff_density) then
+          correction_factor = div_coeff(k)*(dpdt_factor/(gamma1bar(k)*p0(k))) / dt
+       else
+          correction_factor = 0.0d0
+       end if
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
-             correction_cc(i,j,k) = temp*(ptherm(i,j,k)-pthermbar(k))
+             correction_cc(i,j,k) = correction_factor*(ptherm(i,j,k)-pthermbar(k))
           end do
        end do
     end do
@@ -511,9 +525,10 @@ contains
   end subroutine create_correction_cc_3d_cart
 
   subroutine create_correction_cc_3d_sphr(lo,hi,correction_cc,ptherm,div_coeff_cart, &
-                                          gamma1bar_cart,p0_cart,pthermbar_cart,dt)
+                                          gamma1bar_cart,p0_cart,pthermbar_cart, &
+                                          rho0_cart,dt)
 
-    use probin_module, only: dpdt_factor
+    use probin_module, only: dpdt_factor, base_cutoff_density
 
     integer         , intent(in   ) :: lo(:), hi(:)
     real (kind=dp_t), intent(  out) :: correction_cc(lo(1)-1:,lo(2)-1:,lo(3)-1:)
@@ -522,18 +537,23 @@ contains
     real (kind=dp_t), intent(in   ) :: gamma1bar_cart(lo(1):,lo(2):,lo(3):)
     real (kind=dp_t), intent(in   ) :: p0_cart(lo(1):,lo(2):,lo(3):)    
     real (kind=dp_t), intent(in   ) :: pthermbar_cart(lo(1):,lo(2):,lo(3):)
+    real (kind=dp_t), intent(in   ) :: rho0_cart(lo(1):,lo(2):,lo(3):)
     real (kind=dp_t), intent(in   ) :: dt
     
     ! Local variables
     integer :: i, j, k
-    real(kind=dp_t) :: temp
+    real(kind=dp_t) :: correction_factor
     
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
-             temp = div_coeff_cart(i,j,k) * &
-                  (dpdt_factor/(gamma1bar_cart(i,j,k)*p0_cart(i,j,k))) / dt
-             correction_cc(i,j,k) = temp*(ptherm(i,j,k)-pthermbar_cart(i,j,k))
+             if(rho0_cart(i,j,k) .gt. base_cutoff_density) then
+                correction_factor = div_coeff_cart(i,j,k) * &
+                     (dpdt_factor/(gamma1bar_cart(i,j,k)*p0_cart(i,j,k))) / dt
+             else
+                correction_factor = 0.0d0
+             end if
+             correction_cc(i,j,k) = correction_factor*(ptherm(i,j,k)-pthermbar_cart(i,j,k))
           end do
        end do
     end do
