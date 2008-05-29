@@ -214,6 +214,7 @@ contains
                          do_diag)
 
                 s(i,j,k,rhoh_comp) = den_eos(1)*h_eos(1)
+                s(i,j,k,temp_comp) = temp_eos(1)
 
              enddo
           enddo
