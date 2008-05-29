@@ -34,7 +34,7 @@ contains
     use network,       only: nspec, spec_names
     use geometry,      only: spherical, nr
     use variables,     only: nscal, ntrac, spec_comp, trac_comp, temp_comp, &
-                             rho_comp, rhoh_comp
+                             rho_comp, rhoh_comp, foextrap_comp
     use probin_module, only: enthalpy_pred_type, use_thermal_diffusion, verbose, &
                              evolve_base_state, predict_rho
     use pred_parameters
@@ -71,6 +71,7 @@ contains
     type(multifab) :: rho0_new_cart(nlevs)
     type(multifab) :: rhoh0_old_cart(nlevs)
     type(multifab) :: rhoh0_new_cart(nlevs)
+    type(multifab) :: p0_new_cart(nlevs)
     type(multifab) :: sedge(nlevs,mla%dim)
     type(multifab) :: sflux(nlevs,mla%dim)
 
@@ -116,12 +117,16 @@ contains
           call build(rho0_new_cart(n), sold(n)%la, 1, 1)
           call build(rhoh0_old_cart(n), sold(n)%la, 1, 1)
           call build(rhoh0_new_cart(n), sold(n)%la, 1, 1)
+          call build(p0_new_cart(n), sold(n)%la, 1, 1)          
        end do
 
        call put_1d_array_on_cart(nlevs,rho0_old,rho0_old_cart,dm+rho_comp,.false., &
                                  .false.,dx,the_bc_level,mla,1)
        call put_1d_array_on_cart(nlevs,rho0_new,rho0_new_cart,dm+rho_comp,.false., &
                                  .false.,dx,the_bc_level,mla,1)
+       call put_1d_array_on_cart(nlevs,p0_new,p0_new_cart,foextrap_comp,.false., &
+                                 .false.,dx,the_bc_level,mla,1)
+
 
        if (enthalpy_pred_type .eq. predict_T_then_rhohprime .or. &
             enthalpy_pred_type .eq. predict_rhohprime) then
@@ -405,8 +410,8 @@ contains
     end do
 
     call update_scal(nlevs,spec_comp,spec_comp+nspec-1,sold,snew,sflux,scal_force, &
-                     rhoh0_old,rhoh0_new,rhoh0_old_cart,rhoh0_new_cart,p0_new,tempbar,dx,dt, &
-                     the_bc_level,mla)
+                     rhoh0_old,rhoh0_new,rhoh0_old_cart,rhoh0_new_cart,p0_new,p0_new_cart, &
+                     dx,dt,the_bc_level,mla)
     
     if ( verbose .ge. 1 ) then
        do n=1, nlevs
@@ -435,8 +440,8 @@ contains
     
     if ( ntrac .ge. 1 ) then
        call update_scal(nlevs,trac_comp,trac_comp+ntrac-1,sold,snew,sflux,scal_force, &
-                        rhoh0_old,rhoh0_new,rhoh0_old_cart,rhoh0_new_cart,p0_new,tempbar,dx,dt, &
-                        the_bc_level,mla)
+                        rhoh0_old,rhoh0_new,rhoh0_old_cart,rhoh0_new_cart, &
+                        p0_new,p0_new_cart,dx,dt,the_bc_level,mla)
 
        if ( verbose .ge. 1 ) then
           do n=1,nlevs
@@ -466,8 +471,8 @@ contains
     end if
 
     call update_scal(nlevs,rhoh_comp,rhoh_comp,sold,snew,sflux,scal_force,rhoh0_old, &
-                     rhoh0_new,rhoh0_old_cart,rhoh0_new_cart,p0_new,tempbar,dx,dt, &
-                     the_bc_level,mla)
+                     rhoh0_new,rhoh0_old_cart,rhoh0_new_cart,p0_new,p0_new_cart, &
+                     dx,dt,the_bc_level,mla)
 
     if ( verbose .ge. 1 ) then
        do n=1,nlevs
@@ -486,6 +491,7 @@ contains
           call destroy(rho0_new_cart(n))
           call destroy(rhoh0_old_cart(n))
           call destroy(rhoh0_new_cart(n))
+          call destroy(p0_new_cart(n))
        end do
     end if
 
