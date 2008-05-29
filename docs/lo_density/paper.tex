@@ -53,8 +53,8 @@ These are working notes for the low density parameters in {\tt MAESTRO}.
 \item In {\tt base\_state}, we abort the program if {\tt anelastic\_cutoff} $<$ {\tt base\_cutoff\_density}.
 \item In {\tt base\_state}, we compute a physical cutoff location, {\tt r\_cutoff\_loc}, which is defined as the physical location of the first cell-center at the coarsest level for which $\rho_0 <$ {\tt base\_cutoff\_density}.
 \item In {\tt base\_state}, when we are generating the initial background/base state, if we are above {\tt r\_cutoff\_loc}, just use the values for $\rho,T$, and $p$ at {\tt r\_cutoff\_loc}.
-\item In {\tt make\_hgrhs}, we only add the volume discrepancy if $\rho_0 >$ {\tt base\_cutoff\_density}.  NOTE: This is only implemented for 2D Cartesian and needs to be implemented for 3D Cartesian and spherical.
-\item In {\tt make\_macrhs}, we only add the volume discrepancy if $\rho_0 >$ {\tt base\_cutoff\_density}.  NOTE: This is only implemented for 2D Cartesian and needs to be implemented for 3D Cartesian and spherical.
+\item In {\tt make\_hgrhs}, we only add the volume discrepancy if $\rho_0 >$ {\tt base\_cutoff\_density}.
+\item In {\tt make\_macrhs}, we only add the volume discrepancy if $\rho_0 >$ {\tt base\_cutoff\_density}.
 \item In {\tt mkscalforce} subroutine {\tt mkrhohforce}, once $\rho_0 \le$ {\tt base\_cutoff\_density}, we compute $\nabla p_0$ with a difference stencil instead of simply setting it to $\rho_0 g$.
 \item In {\tt rhoh\_vs\_t} function {\tt makeRhoHfromP}, the base state pressure at edges is computed differently based on where we are in relation to the {\tt base\_cutoff\_density}.  If we are at a equal or higher density than {\tt base\_cutoff\_density}, we integrate $\rho g$ from the nearest cell-centered $p_0$ value.  If we are at a lower density than {\tt base\_cutoff\_density}, we just use the cell-centered value.
 \item In {\tt update\_scal}, if the new $\rho$ is less than {\tt base\_cutoff\_density}, we call the EOS to compute $\rho h$.
