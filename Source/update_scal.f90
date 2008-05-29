@@ -14,7 +14,7 @@ module update_scal_module
 contains
 
   subroutine update_scal(nlevs,nstart,nstop,sold,snew,sflux,scal_force,rhoh0_old,rhoh0_new, &
-                         rhoh0_old_cart,rhoh0_new_cart,dx,dt,the_bc_level,mla)
+                         rhoh0_old_cart,rhoh0_new_cart,p0,tempbar,dx,dt,the_bc_level,mla)
 
     use bl_prof_module
     use bl_constants_module
@@ -32,6 +32,8 @@ contains
     type(multifab)    , intent(in   ) :: scal_force(:)
     real(kind = dp_t) , intent(in   ) :: rhoh0_old(:,0:)
     real(kind = dp_t) , intent(in   ) :: rhoh0_new(:,0:)
+    real(kind = dp_t) , intent(in   ) ::       p0(:,0:)
+    real(kind = dp_t) , intent(in   ) ::  tempbar(:,0:)
     type(multifab)    , intent(in   ) :: rhoh0_old_cart(:)
     type(multifab)    , intent(in   ) :: rhoh0_new_cart(:)
     real(kind = dp_t) , intent(in   ) :: dx(:,:),dt
@@ -76,6 +78,7 @@ contains
                                  sfpx(:,:,1,:), sfpy(:,:,1,:), &
                                  fp(:,:,1,:), &
                                  rhoh0_old(n,:), rhoh0_new(n,:), &
+                                 p0(n,:), tempbar(n,:), &
                                  lo, hi, ng_s, dx(n,:), dt)
           case (3)
              sfpz => dataptr(sflux(n,3),i)
@@ -85,6 +88,7 @@ contains
                                          sfpx(:,:,:,:), sfpy(:,:,:,:), sfpz(:,:,:,:), &
                                          fp(:,:,:,:), &
                                          rhoh0_old(n,:), rhoh0_new(n,:), &
+                                         p0(n,:), tempbar(n,:), &
                                          lo, hi, ng_s, dx(n,:), dt)
              else
                 rhoh0op => dataptr(rhoh0_old_cart(n), i)
@@ -94,6 +98,7 @@ contains
                                          sfpx(:,:,:,:), sfpy(:,:,:,:), sfpz(:,:,:,:), &
                                          fp(:,:,:,:), &
                                          rhoh0op(:,:,:,1), rhoh0np(:,:,:,1), &
+                                         p0(n,:), tempbar(n,:), &
                                          lo, hi, ng_s, dx(n,:), dt)
              end if
           end select
@@ -154,11 +159,12 @@ contains
 
   end subroutine update_scal
 
-  subroutine update_scal_2d(nstart,nstop,sold,snew,sfluxx,sfluxy,force,rhoh0_old, &
-                            rhoh0_new,lo,hi,ng_s,dx,dt)
+  subroutine update_scal_2d(nstart,nstop,sold,snew,sfluxx,sfluxy,force, &
+                            rhoh0_old,rhoh0_new,p0,tempbar,lo,hi,ng_s,dx,dt)
 
     use network,       only: nspec
-    use probin_module, only: enthalpy_pred_type
+    use eos_module
+    use probin_module, only: enthalpy_pred_type, base_cutoff_density
     use variables,     only: spec_comp, rho_comp, rhoh_comp, trac_comp, ntrac
     use pred_parameters
     use bl_constants_module
@@ -171,6 +177,8 @@ contains
     real (kind = dp_t), intent(in   ) ::   force(lo(1)- 1:,lo(2)- 1:,:)
     real (kind = dp_t), intent(in   ) ::   rhoh0_old(0:)
     real (kind = dp_t), intent(in   ) ::   rhoh0_new(0:)
+    real (kind = dp_t), intent(in   ) ::       p0(0:)
+    real (kind = dp_t), intent(in   ) ::  tempbar(0:)
     real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
     integer            :: i, j, comp, comp2
@@ -220,6 +228,38 @@ contains
 
        end if
     enddo
+
+    if ( nstart .eq. rhoh_comp) then
+
+       do j = lo(2), hi(2)
+       do i = lo(1), hi(1)
+ 
+          if (snew(i,j,rho_comp) < base_cutoff_density) then
+            den_eos(1) = snew(i,j,rho_comp)
+            temp_eos(1) = tempbar(j)
+            p_eos(1) = p0(j)
+            xn_eos(1,:) = snew(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
+
+            ! (rho,P) --> T,h
+            call eos(eos_input_rp, den_eos, temp_eos, &
+                     npts, nspec, &
+                     xn_eos, &
+                     p_eos, h_eos, e_eos, &
+                     cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                     dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                     dpdX_eos, dhdX_eos, &
+                     gam1_eos, cs_eos, s_eos, &
+                     dsdt_eos, dsdr_eos, &
+                     do_diag)
+   
+            snew(i,j,rhoh_comp) = snew(i,j,rho_comp) * h_eos(1)
+
+          end if
+ 
+       enddo
+       enddo
+
+    end if
 
     ! Define the update to rho as the sum of the updates to (rho X)_i
     if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
@@ -272,10 +312,11 @@ contains
   end subroutine update_scal_2d
 
   subroutine update_scal_3d_cart(nstart,nstop,sold,snew,sfluxx,sfluxy,sfluxz,force, &
-                                 rhoh0_old,rhoh0_new,lo,hi,ng_s,dx,dt)
+                                 rhoh0_old,rhoh0_new,p0,tempbar,lo,hi,ng_s,dx,dt)
 
     use network,       only: nspec
-    use probin_module, only: enthalpy_pred_type
+    use eos_module
+    use probin_module, only: enthalpy_pred_type, base_cutoff_density
     use variables,     only: spec_comp, rho_comp, rhoh_comp, trac_comp, ntrac
     use pred_parameters
     use bl_constants_module
@@ -290,6 +331,8 @@ contains
     real (kind = dp_t), intent(in   ) ::   force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
     real (kind = dp_t), intent(in   ) ::   rhoh0_old(0:)
     real (kind = dp_t), intent(in   ) ::   rhoh0_new(0:)
+    real (kind = dp_t), intent(in   ) ::       p0(0:)
+    real (kind = dp_t), intent(in   ) ::  tempbar(0:)
     real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
     integer            :: i, j, k, comp, comp2
@@ -347,6 +390,42 @@ contains
        end if
     end do
 
+
+    if ( nstart .eq. rhoh_comp) then
+
+       do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+       do i = lo(1), hi(1)
+
+          if (snew(i,j,k,rho_comp) < base_cutoff_density) then
+            den_eos(1) = snew(i,j,k,rho_comp)
+            temp_eos(1) = tempbar(k)
+            p_eos(1) = p0(k)
+            xn_eos(1,:) = snew(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
+
+            ! (rho,P) --> T,h
+            call eos(eos_input_rp, den_eos, temp_eos, &
+                     npts, nspec, &
+                     xn_eos, &
+                     p_eos, h_eos, e_eos, &
+                     cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                     dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                     dpdX_eos, dhdX_eos, &
+                     gam1_eos, cs_eos, s_eos, &
+                     dsdt_eos, dsdr_eos, &
+                     do_diag)
+
+            snew(i,j,k,rhoh_comp) = snew(i,j,k,rho_comp) * h_eos(1)
+
+          end if
+
+       enddo
+       enddo
+       enddo
+
+    end if
+
+
     ! Define the update to rho as the sum of the updates to (rho X)_i
     if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
 
@@ -402,10 +481,11 @@ contains
   end subroutine update_scal_3d_cart
 
   subroutine update_scal_3d_sphr(nstart,nstop,sold,snew,sfluxx,sfluxy,sfluxz,force, &
-                                 rhoh0_old_cart,rhoh0_new_cart,lo,hi,ng_s,dx,dt)
+                                 rhoh0_old_cart,rhoh0_new_cart,p0,tempbar,lo,hi,ng_s,dx,dt)
 
     use network,       only: nspec
-    use probin_module, only: enthalpy_pred_type
+    use eos_module
+    use probin_module, only: enthalpy_pred_type, base_cutoff_density
     use variables,     only: spec_comp, rho_comp, rhoh_comp, trac_comp, ntrac
     use pred_parameters
     use bl_constants_module
@@ -420,6 +500,8 @@ contains
     real (kind = dp_t), intent(in   ) ::   force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
     real (kind = dp_t), intent(in   ) ::   rhoh0_old_cart(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
     real (kind = dp_t), intent(in   ) ::   rhoh0_new_cart(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
+    real (kind = dp_t), intent(in   ) ::       p0(0:)
+    real (kind = dp_t), intent(in   ) ::  tempbar(0:)
     real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
     integer            :: i, j, k, comp, comp2
@@ -475,7 +557,43 @@ contains
           enddo
 
        end if
+
     end do
+
+    if ( nstart .eq. rhoh_comp) then
+
+       do k = lo(3), hi(3) 
+       do j = lo(2), hi(2)
+       do i = lo(1), hi(1)
+
+          if (snew(i,j,k,rho_comp) < base_cutoff_density) then
+            den_eos(1) = snew(i,j,k,rho_comp)
+            temp_eos(1) = tempbar(k)
+            p_eos(1) = p0(k)
+            xn_eos(1,:) = snew(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
+
+            ! (rho,P) --> T,h
+            call eos(eos_input_rp, den_eos, temp_eos, &
+                     npts, nspec, &
+                     xn_eos, &
+                     p_eos, h_eos, e_eos, &
+                     cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                     dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                     dpdX_eos, dhdX_eos, &
+                     gam1_eos, cs_eos, s_eos, &
+                     dsdt_eos, dsdr_eos, &
+                     do_diag)
+
+            snew(i,j,k,rhoh_comp) = snew(i,j,k,rho_comp) * h_eos(1)
+
+          end if
+
+       enddo
+       enddo
+       enddo
+
+    end if
+
 
     ! Define the update to rho as the sum of the updates to (rho X)_i
     if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
