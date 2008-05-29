@@ -164,7 +164,7 @@ contains
 
     use network,       only: nspec
     use eos_module
-    use probin_module, only: enthalpy_pred_type, base_cutoff_density
+    use probin_module, only: enthalpy_pred_type, do_eos_h_above_cutoff, base_cutoff_density
     use variables,     only: spec_comp, rho_comp, rhoh_comp, trac_comp, ntrac
     use pred_parameters
     use bl_constants_module
@@ -229,7 +229,7 @@ contains
        end if
     enddo
 
-    if ( nstart .eq. rhoh_comp) then
+    if ( do_eos_h_above_cutoff .and. (nstart .eq. rhoh_comp) ) then
 
        do j = lo(2), hi(2)
        do i = lo(1), hi(1)
@@ -316,7 +316,7 @@ contains
 
     use network,       only: nspec
     use eos_module
-    use probin_module, only: enthalpy_pred_type, base_cutoff_density
+    use probin_module, only: enthalpy_pred_type, do_eos_h_above_cutoff, base_cutoff_density
     use variables,     only: spec_comp, rho_comp, rhoh_comp, trac_comp, ntrac
     use pred_parameters
     use bl_constants_module
@@ -391,7 +391,7 @@ contains
     end do
 
 
-    if ( nstart .eq. rhoh_comp) then
+    if ( do_eos_h_above_cutoff .and. (nstart .eq. rhoh_comp) ) then
 
        do k = lo(3), hi(3)
        do j = lo(2), hi(2)
@@ -485,7 +485,7 @@ contains
 
     use network,       only: nspec
     use eos_module
-    use probin_module, only: enthalpy_pred_type, base_cutoff_density
+    use probin_module, only: enthalpy_pred_type, do_eos_h_above_cutoff, base_cutoff_density
     use variables,     only: spec_comp, rho_comp, rhoh_comp, trac_comp, ntrac
     use pred_parameters
     use bl_constants_module
@@ -560,7 +560,7 @@ contains
 
     end do
 
-    if ( nstart .eq. rhoh_comp) then
+    if ( do_eos_h_above_cutoff .and. (nstart .eq. rhoh_comp) ) then
 
        do k = lo(3), hi(3) 
        do j = lo(2), hi(2)
