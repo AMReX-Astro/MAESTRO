@@ -913,6 +913,7 @@ contains
     end if
           
     do n=1,nlevs
+       call multifab_destroy(ptherm_old(n))
        call multifab_build(thermal(n), mla%la(n), 1, 1)
     end do
 
@@ -1031,6 +1032,7 @@ contains
 
     do n=1,nlevs
        call destroy(delta_gamma1_term(n))
+       call destroy(ptherm_new(n))
     end do
 
     if (spherical .eq. 1) then
