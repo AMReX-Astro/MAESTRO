@@ -183,7 +183,7 @@ contains
           end do
        end do
 
-       deallocate(Sbar_cart,div_cart)
+       deallocate(Sbar_cart)
 
        if (dpdt_factor .ge. 0.0d0) then
 
@@ -220,8 +220,8 @@ contains
                         (gamma1bar_old_cart(i,j,k,1) + gamma1bar_new_cart(i,j,k,1)) * &
                         (p0_old_cart(i,j,k,1) + p0_new_cart(i,j,k,1))
 
-                   ptherm_diff = 0.5d0*(ptherm_old(i,j,k) + ptherm_new(i,j,k) &
-                        - pthermbar_old_cart(i,j,k,1) - pthermbar_new_cart(i,j,k,1))
+                   ptherm_diff = 0.5d0*(ptherm_old(i,j,k)           + ptherm_new(i,j,k) &
+                                      - pthermbar_old_cart(i,j,k,1) - pthermbar_new_cart(i,j,k,1))
                    rhs(i,j,k) = rhs(i,j,k) + div_cart(i,j,k,1) * &
                         (dpdt_factor / gamma1bar_p0_avg) * (ptherm_diff / dt)
                 end do
@@ -233,6 +233,7 @@ contains
 
        end if
 
+       deallocate(div_cart)
     else
 
        do k = lo(3),hi(3)
