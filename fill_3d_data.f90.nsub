@@ -32,7 +32,7 @@ contains
     logical        , intent(in   ) :: is_edge_centered,is_vector
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     type(bc_level) , intent(in   ) :: the_bc_level(:)
-    type(ml_layout), intent(inout) :: mla
+    type(ml_layout), intent(in   ) :: mla
     integer        , intent(in   ), optional :: interp_type
     type(multifab) , intent(in   ), optional :: normal(:)
     
