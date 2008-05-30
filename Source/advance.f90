@@ -113,11 +113,16 @@ contains
     type(multifab) :: utrans(mla%nlevel,mla%dim)
     type(multifab) :: etarhoflux(mla%nlevel)
     type(multifab) :: ptherm_old(mla%nlevel)
+    type(multifab) :: ptherm_nph(mla%nlevel)
     type(multifab) :: ptherm_new(mla%nlevel)
+    type(multifab) :: p0_cart(mla%nlevel)
+    type(multifab) :: delta_p_term(mla%nlevel)
 
     real(dp_t), allocatable :: grav_cell_nph(:,:)
     real(dp_t), allocatable :: grav_cell_new(:,:)
     real(dp_t), allocatable :: rho0_nph(:,:)
+    real(dp_t), allocatable :: p0_nph(:,:)
+    real(dp_t), allocatable :: delta_p0_ptherm_bar(:,:)
     real(dp_t), allocatable :: w0_force(:,:)
     real(dp_t), allocatable :: w0_old(:,:)
     real(dp_t), allocatable :: Sbar(:,:)
@@ -131,8 +136,6 @@ contains
     real(dp_t), allocatable :: rho0_predicted_edge(:,:)
     real(dp_t), allocatable :: gamma1bar_old(:,:)
     real(dp_t), allocatable :: delta_gamma1_termbar(:,:)
-    real(dp_t), allocatable :: pthermbar_old(:,:)
-    real(dp_t), allocatable :: pthermbar_new(:,:)
 
     integer    :: r,n,dm,comp,nlevs,ng_s,proj_type
     real(dp_t) :: halfdt,eps_in
@@ -148,6 +151,8 @@ contains
     allocate(       grav_cell_nph(nlevs,0:nr(nlevs)-1))
     allocate(       grav_cell_new(nlevs,0:nr(nlevs)-1))
     allocate(            rho0_nph(nlevs,0:nr(nlevs)-1))
+    allocate(              p0_nph(nlevs,0:nr(nlevs)-1))
+    allocate( delta_p0_ptherm_bar(nlevs,0:nr(nlevs)-1))
     allocate(            w0_force(nlevs,0:nr(nlevs)-1))
     allocate(              w0_old(nlevs,0:nr(nlevs)  ))
     allocate(                Sbar(nlevs,0:nr(nlevs)-1))
@@ -161,8 +166,6 @@ contains
     allocate( rho0_predicted_edge(nlevs,0:nr(nlevs)  ))
     allocate(       gamma1bar_old(nlevs,0:nr(nlevs)-1))
     allocate(delta_gamma1_termbar(nlevs,0:nr(nlevs)-1))
-    allocate(       pthermbar_old(nlevs,0:nr(nlevs)-1))
-    allocate(       pthermbar_new(nlevs,0:nr(nlevs)-1))
 
     ! Set these to zero to be safe
     rhoh0_1 = ZERO
@@ -231,14 +234,45 @@ contains
     
     call makePfromRhoH(nlevs,sold,ptherm_old,tempbar,mla,the_bc_tower%bc_tower_array,dx)
     
-    call average(mla,ptherm_old,pthermbar_old,dx,1)
+
+    ! compute Avg(p0 - ptherm)
+    do n=1,nlevs
+       call multifab_build(p0_cart(n), mla%la(n), 1, 0)
+       call multifab_build(delta_p_term(n), mla%la(n), 1, 0)
+    enddo
+
+    call put_1d_array_on_cart(nlevs,p0_old,p0_cart,foextrap_comp,.false.,.false.,dx, &
+         the_bc_tower%bc_tower_array,mla,1)
+
+    ! p0_cart now holds (p0 - ptherm)
+    do n=1,nlevs
+       call multifab_sub_sub(p0_cart(n),ptherm_old(n))
+    enddo
+
+    call average(mla,p0_cart,delta_p0_ptherm_bar,dx,1)
+
+    ! now put delta_p0_ptherm_bar onto a cart array -- this helps 
+    ! correct for the averaging -- store this in delta_p_term
+    call put_1d_array_on_cart(nlevs,delta_p0_ptherm_bar,delta_p_term, &
+         foextrap_comp,.false.,.false.,dx, &
+         the_bc_tower%bc_tower_array,mla,1)
+
+    ! finish computing delta_p_term = (p0 - pthermbar) - (p0 - ptherm)
+    do n = 1,nlevs
+       call multifab_sub_sub(delta_p_term(n),p0_cart(n))
+    enddo
+
+    do n=1,nlevs
+       call destroy(p0_cart(n))
+    enddo
+
 
     if (evolve_base_state) then
 
        call average(mla,Source_nph,Sbar,dx,1)
 
        call make_w0(nlevs,w0,w0_old,w0_force,Sbar,rho0_old,p0_old,p0_old, &
-                    gamma1bar,gamma1bar,pthermbar_old,pthermbar_old,psi,dt,dtold)
+                    gamma1bar,gamma1bar,delta_p0_ptherm_bar,psi,dt,dtold)
 
        if (dm .eq. 3) then
           call put_1d_array_on_cart(nlevs,w0,w0_cart_vec,1,.true.,.true.,dx, &
@@ -287,12 +321,12 @@ contains
 
     call make_macrhs(nlevs,macrhs,rho0_old,Source_nph,delta_gamma1_term,Sbar, &
                      div_coeff_old,dx, &
-                     gamma1bar,gamma1bar,p0_old,p0_old,ptherm_old,ptherm_old, &
-                     pthermbar_old,pthermbar_old,dt)
+                     gamma1bar,gamma1bar,p0_old,p0_old,delta_p_term,dt)
 
     do n=1,nlevs
        call destroy(delta_gamma1_term(n))
        call destroy(Source_nph(n))
+       call destroy(delta_p_term(n))
     end do
 
     do n=1,nlevs
@@ -340,7 +374,6 @@ contains
 
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
        write(6,*) '<<< STEP  3 : react state     '
-       write(6,*) '            : react  base >>> '
     end if
 
     do n=1,nlevs
@@ -353,6 +386,11 @@ contains
                      the_bc_tower%bc_tower_array,time)
     
     if (evolve_base_state) then
+
+       if (parallel_IOProcessor() .and. verbose .ge. 1) then
+          write(6,*) '            : react  base >>> '
+       end if
+
        do comp=1,nspec
           call average(mla,rho_omegadot1,rho_omegadotbar1(:,:,comp),dx,comp)
        end do
@@ -390,7 +428,6 @@ contains
 
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
        write(6,*) '<<< STEP  4 : advect base        '
-       write(6,*) '            : scalar_advance >>> '
     end if
     
     if (evolve_base_state) then
@@ -464,6 +501,10 @@ contains
        call setval(etarhoflux(n),ZERO,all=.true.)
     end do
 
+    if (parallel_IOProcessor() .and. verbose .ge. 1) then
+       write(6,*) '            : scalar_advance >>> '
+    end if
+
     call scalar_advance(nlevs,mla,1,uold,s1,s2,thermal, &
                         umac,w0,w0_cart_vec,etarhoflux,utrans,normal, &
                         rho0_old,rhoh0_1, &
@@ -532,7 +573,6 @@ contains
     
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
        write(6,*) '<<< STEP  5 : react state     '
-       write(6,*) '            : react  base >>> '
     end if
 
     do n=1,nlevs
@@ -547,6 +587,11 @@ contains
     end do
 
     if (evolve_base_state) then
+
+       if (parallel_IOProcessor() .and. verbose .ge. 1) then
+          write(6,*) '            : react  base >>> '
+       end if
+
        do comp=1,nspec
           call average(mla,rho_omegadot2,rho_omegadotbar2(:,:,comp),dx,comp)
        end do
@@ -644,8 +689,52 @@ contains
        
        call makePfromRhoH(nlevs,snew,ptherm_new,tempbar,mla,the_bc_tower%bc_tower_array,dx)
        
-       call average(mla,ptherm_new,pthermbar_new,dx,1)
-       
+
+       ! compute Avg(p0 - ptherm) (time-centered)
+       do n=1,nlevs
+          call multifab_build(p0_cart(n), mla%la(n), 1, 0)
+          call multifab_build(delta_p_term(n), mla%la(n), 1, 0)
+       enddo
+
+       p0_nph = HALF*(p0_old + p0_new)
+
+       call put_1d_array_on_cart(nlevs,p0_nph,p0_cart,foextrap_comp,.false.,.false.,dx, &
+            the_bc_tower%bc_tower_array,mla,1)
+    
+       do n=1,nlevs
+          call multifab_build(ptherm_nph(n), mla%la(n), 1, 0)
+       end do
+
+       ! we need a time-centered ptherm for the average
+       do n=1,nlevs
+          call multifab_copy(ptherm_nph(n), ptherm_old(n))
+          call multifab_plus_plus(ptherm_nph(n), ptherm_new(n))
+          call multifab_div_div_s(ptherm_nph(n), TWO)
+       enddo
+
+       ! p0_cart now holds (p0 - ptherm)
+       do n=1, nlevs
+          call multifab_sub_sub(p0_cart(n),ptherm_nph(n))
+       enddo
+
+       call average(mla,p0_cart,delta_p0_ptherm_bar,dx,1)
+
+       ! now put delta_p0_ptherm_bar onto a cart array -- this helps
+       ! correct for the averaging -- store this in delta_p_term 
+       call put_1d_array_on_cart(nlevs,delta_p0_ptherm_bar,delta_p_term, &
+            foextrap_comp,.false.,.false.,dx, &
+            the_bc_tower%bc_tower_array,mla,1)
+
+       ! finish computing delta_p_term = (p0 - pthermbar) - (p0 - ptherm)
+       do n = 1,nlevs
+          call multifab_sub_sub(delta_p_term(n),p0_cart(n))
+       enddo
+
+       do n=1,nlevs
+          call multifab_destroy(p0_cart(n))
+          call multifab_destroy(ptherm_nph(n))
+       enddo
+
        if (evolve_base_state) then
        
           call average(mla,Source_nph,Sbar,dx,1)
@@ -656,7 +745,7 @@ contains
           end if
 
           call make_w0(nlevs,w0,w0_old,w0_force,Sbar,rho0_new,p0_old,p0_new, &
-                       gamma1bar_old,gamma1bar,pthermbar_old,pthermbar_new,psi,dt,dtold)
+                       gamma1bar_old,gamma1bar,delta_p0_ptherm_bar,psi,dt,dtold)
        
           if (dm .eq. 3) then
              call put_1d_array_on_cart(nlevs,w0,w0_cart_vec,1,.true.,.true.,dx, &
@@ -695,12 +784,12 @@ contains
        ! note delta_gamma1_term here is not time-centered
        call make_macrhs(nlevs,macrhs,rho0_old,Source_nph,delta_gamma1_term,Sbar, &
                         div_coeff_nph,dx, &
-                        gamma1bar_old,gamma1bar,p0_old,p0_new,ptherm_old,ptherm_new, &
-                        pthermbar_old,pthermbar_new,dt)
+                        gamma1bar_old,gamma1bar,p0_old,p0_new,delta_p_term,dt)
     
        do n=1,nlevs
           call destroy(delta_gamma1_term(n))
           call destroy(Source_nph(n))
+          call destroy(delta_p_term(n))
        end do
 
        do n=1,nlevs
@@ -746,7 +835,6 @@ contains
        
        if (parallel_IOProcessor() .and. verbose .ge. 1) then
           write(6,*) '<<< STEP  8 : advect base   '
-          write(6,*) '            : scalar_advance >>>'
        end if
 
        if (evolve_base_state) then
@@ -809,6 +897,10 @@ contains
           call setval(etarhoflux(n),ZERO,all=.true.)
        end do
 
+       if (parallel_IOProcessor() .and. verbose .ge. 1) then
+          write(6,*) '            : scalar_advance >>>'
+       end if
+
        call scalar_advance(nlevs,mla,2,uold,s1,s2,thermal, &
                            umac,w0,w0_cart_vec,etarhoflux,utrans,normal, &
                            rho0_old,rhoh0_1, &
@@ -859,7 +951,6 @@ contains
        
        if (parallel_IOProcessor() .and. verbose .ge. 1) then
           write(6,*) '<<< STEP  9 : react state '
-          write(6,*) '            : react  base >>>'
        end if
 
        do n=1,nlevs
@@ -874,6 +965,11 @@ contains
        end do
 
        if (evolve_base_state) then
+
+          if (parallel_IOProcessor() .and. verbose .ge. 1) then
+             write(6,*) '            : react  base >>>'
+          end if
+
           do comp=1,nspec
              call average(mla,rho_omegadot2,rho_omegadotbar2(:,:,comp),dx,comp)
           end do
@@ -1023,12 +1119,51 @@ contains
        proj_type = regular_timestep_comp
        call make_hgrhs(nlevs,the_bc_tower,mla,hgrhs,Source_new,delta_gamma1_term, &
                        Sbar,div_coeff_new,dx)
-    end if
 
     if (dpdt_factor .gt. ZERO) then
+
+       ! compute Avg(p0 - ptherm)
+       do n=1,nlevs
+          call multifab_build(p0_cart(n), mla%la(n), 1, 0)
+          call multifab_build(delta_p_term(n), mla%la(n), 1, 0)
+       enddo
+
+       call put_1d_array_on_cart(nlevs,p0_new,p0_cart,foextrap_comp,.false.,.false.,dx, &
+            the_bc_tower%bc_tower_array,mla,1)
+
+       ! p0_cart now holds (p0 - ptherm)
+       do n=1,nlevs
+          call multifab_sub_sub(p0_cart(n),ptherm_new(n))
+       enddo
+
+       call average(mla,p0_cart,delta_p0_ptherm_bar,dx,1)
+
+       ! now put delta_p0_ptherm_bar onto a cart array -- this helps 
+       ! correct for the averaging -- store this in delta_p_term
+       call put_1d_array_on_cart(nlevs,delta_p0_ptherm_bar,delta_p_term, &
+            foextrap_comp,.false.,.false.,dx, &
+            the_bc_tower%bc_tower_array,mla,1)
+
+       ! finish computing delta_p_term = (p0 - pthermbar) - (p0 - ptherm)
+       do n = 1,nlevs
+          call multifab_sub_sub(delta_p_term(n),p0_cart(n))
+       enddo
+
+       do n=1,nlevs
+          call destroy(p0_cart(n))
+       enddo
+
        call correct_hgrhs(nlevs,the_bc_tower,mla,rho0_new,hgrhs,div_coeff_new,dx,dt, &
-                          gamma1bar,p0_new,ptherm_new,pthermbar_new)
+                          gamma1bar,p0_new,delta_p_term)
+
+       do n=1,nlevs
+          call destroy(delta_p_term(n))
+       enddo
+
     end if
+
+    end if
+
 
     do n=1,nlevs
        call destroy(delta_gamma1_term(n))

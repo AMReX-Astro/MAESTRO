@@ -276,7 +276,7 @@ contains
   end subroutine make_hgrhs_3d
 
   subroutine correct_hgrhs(nlevs,the_bc_tower,mla,rho0,hgrhs,div_coeff,dx,dt,gamma1bar,p0, &
-                           ptherm,pthermbar)
+                           delta_p_term)
 
     use define_bc_module
     use ml_layout_module
@@ -298,42 +298,38 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:,:), dt
     real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
     real(kind=dp_t), intent(in   ) :: p0(:,0:)
-    type(multifab) , intent(in   ) :: ptherm(:)
-    real(kind=dp_t), intent(in   ) :: pthermbar(:,0:)
+    type(multifab) , intent(in   ) :: delta_p_term(:)
     
     type(multifab) :: correction_cc(nlevs)
     type(multifab) :: correction_nodal(nlevs)
 
     type(multifab) :: gamma1bar_cart(nlevs)
     type(multifab) :: p0_cart(nlevs)
-    type(multifab) :: pthermbar_cart(nlevs)
     type(multifab) :: div_coeff_cart(nlevs)
     type(multifab) :: rho0_cart(nlevs)
 
     real(kind=dp_t), pointer :: rhp(:,:,:,:), ptp(:,:,:,:), ccp(:,:,:,:), cnp(:,:,:,:)
     real(kind=dp_t), pointer :: gbp(:,:,:,:), p0p(:,:,:,:), ptbp(:,:,:,:), dcp(:,:,:,:)
     real(kind=dp_t), pointer :: r0p(:,:,:,:)
-    integer :: lo(ptherm(1)%dim),hi(ptherm(1)%dim)
+    integer :: lo(delta_p_term(1)%dim),hi(delta_p_term(1)%dim)
     integer :: i,dm,n
-    logical :: nodal(ptherm(1)%dim)
+    logical :: nodal(delta_p_term(1)%dim)
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "correct_hgrhs")
     
-    dm = ptherm(1)%dim
+    dm = delta_p_term(1)%dim
     nodal = .true.
 
     if(spherical .eq. 1) then
        do n = 1, nlevs
-          call multifab_build(gamma1bar_cart(n),ptherm(n)%la,1,0)
-          call multifab_build(p0_cart(n),ptherm(n)%la,1,0)
-          call multifab_build(pthermbar_cart(n),ptherm(n)%la,1,0)
-          call multifab_build(div_coeff_cart(n),ptherm(n)%la,1,0)
-          call multifab_build(rho0_cart(n),ptherm(n)%la,1,0)
+          call multifab_build(gamma1bar_cart(n),delta_p_term(n)%la,1,0)
+          call multifab_build(p0_cart(n),delta_p_term(n)%la,1,0)
+          call multifab_build(div_coeff_cart(n),delta_p_term(n)%la,1,0)
+          call multifab_build(rho0_cart(n),delta_p_term(n)%la,1,0)
           call setval(gamma1bar_cart(n),ZERO,all=.true.)
           call setval(p0_cart(n),ZERO,all=.true.)
-          call setval(pthermbar_cart(n),ZERO,all=.true.)
           call setval(div_coeff_cart(n),ZERO,all=.true.)
           call setval(rho0_cart(n),ZERO,all=.true.)
        end do
@@ -344,8 +340,6 @@ contains
                                  .false.,dx,the_bc_tower%bc_tower_array,mla,1)
        call put_1d_array_on_cart(nlevs,p0,p0_cart,foextrap_comp,.false., &
                                  .false.,dx,the_bc_tower%bc_tower_array,mla,1)
-       call put_1d_array_on_cart(nlevs,pthermbar,pthermbar_cart,foextrap_comp,.false., &
-                                 .false.,dx,the_bc_tower%bc_tower_array,mla,1)
        call put_1d_array_on_cart(nlevs,div_coeff,div_coeff_cart,foextrap_comp,.false., &
                                  .false.,dx,the_bc_tower%bc_tower_array,mla,1)
        call put_1d_array_on_cart(nlevs,rho0,rho0_cart,dm+rho_comp,.false., &
@@ -354,39 +348,38 @@ contains
     end if
 
     do n = 1, nlevs
-       call multifab_build(correction_cc(n),ptherm(n)%la,1,1)
+       call multifab_build(correction_cc(n),delta_p_term(n)%la,1,1)
        call setval(correction_cc(n),ZERO,all=.true.)
-       call multifab_build(correction_nodal(n),ptherm(n)%la,1,0,nodal)
+       call multifab_build(correction_nodal(n),delta_p_term(n)%la,1,0,nodal)
        call setval(correction_nodal(n),ZERO,all=.true.)
     end do
 
     do n = 1, nlevs
-       do i = 1, ptherm(n)%nboxes
-          if ( multifab_remote(ptherm(n), i) ) cycle
+       do i = 1, delta_p_term(n)%nboxes
+          if ( multifab_remote(delta_p_term(n), i) ) cycle
           ccp => dataptr(correction_cc(n), i)
-          ptp => dataptr(ptherm(n), i)
-          lo =  lwb(get_box(ptherm(n), i))
-          hi =  upb(get_box(ptherm(n), i))
+          ptp => dataptr(delta_p_term(n), i)
+          lo =  lwb(get_box(delta_p_term(n), i))
+          hi =  upb(get_box(delta_p_term(n), i))
           select case (dm)
           case (2)
              call create_correction_cc_2d(lo,hi,rho0(n,:),ccp(:,:,1,1),ptp(:,:,1,1), &
                                           div_coeff(n,:), &
-                                          gamma1bar(n,:),p0(n,:),pthermbar(n,:),dt)
+                                          gamma1bar(n,:),p0(n,:),dt)
           case (3)
              if (spherical .eq. 1) then
                 gbp  => dataptr(gamma1bar_cart(n),i)
                 p0p  => dataptr(p0_cart(n),i)
-                ptbp => dataptr(pthermbar_cart(n),i)
                 dcp  => dataptr(div_coeff_cart(n),i)
                 r0p  => dataptr(rho0_cart(n),i)
                 call create_correction_cc_3d_sphr(lo,hi,ccp(:,:,:,1),ptp(:,:,:,1), &
                                                   dcp(:,:,:,1),gbp(:,:,:,1),p0p(:,:,:,1), &
-                                                  ptbp(:,:,:,1),r0p(:,:,:,1),dt)
+                                                  r0p(:,:,:,1),dt)
 
              else
                 call create_correction_cc_3d_cart(lo,hi,rho0(n,:),ccp(:,:,:,1),ptp(:,:,:,1), &
                                                   div_coeff(n,:),gamma1bar(n,:),p0(n,:), &
-                                                  pthermbar(n,:),dt)
+                                                  dt)
              end if
           end select
        end do
@@ -422,12 +415,12 @@ contains
        
     do n=1,nlevs
        call setval(correction_nodal(n),ZERO,all=.true.)
-       do i = 1, ptherm(n)%nboxes
-          if ( multifab_remote(ptherm(n), i) ) cycle
+       do i = 1, delta_p_term(n)%nboxes
+          if ( multifab_remote(delta_p_term(n), i) ) cycle
           cnp => dataptr(correction_nodal(n), i)
           ccp => dataptr(correction_cc(n), i)
-          lo =  lwb(get_box(ptherm(n), i))
-          hi =  upb(get_box(ptherm(n), i))
+          lo =  lwb(get_box(delta_p_term(n), i))
+          hi =  upb(get_box(delta_p_term(n), i))
           select case (dm)
           case (2)
              call create_correction_nodal_2d(lo,hi,cnp(:,:,1,1),ccp(:,:,1,1))
@@ -448,7 +441,6 @@ contains
        if (spherical .eq. 1) then
           call destroy(gamma1bar_cart(n))
           call destroy(p0_cart(n))
-          call destroy(pthermbar_cart(n))
           call destroy(div_coeff_cart(n))
           call destroy(rho0_cart(n))
        end if
@@ -458,19 +450,18 @@ contains
     
   end subroutine correct_hgrhs
   
-  subroutine create_correction_cc_2d(lo,hi,rho0,correction_cc,ptherm,div_coeff,gamma1bar, &
-                                     p0,pthermbar,dt)
+  subroutine create_correction_cc_2d(lo,hi,rho0,correction_cc,delta_p_term,div_coeff,gamma1bar, &
+                                     p0,dt)
 
     use probin_module, only: dpdt_factor, base_cutoff_density
 
     integer         , intent(in   ) :: lo(:), hi(:)
     real (kind=dp_t), intent(in   ) :: rho0(0:)
     real (kind=dp_t), intent(  out) :: correction_cc(lo(1)-1:,lo(2)-1:)
-    real (kind=dp_t), intent(in   ) :: ptherm(lo(1):,lo(2):)
+    real (kind=dp_t), intent(in   ) :: delta_p_term(lo(1):,lo(2):)
     real (kind=dp_t), intent(in   ) :: div_coeff(0:)
     real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
     real (kind=dp_t), intent(in   ) :: p0(0:)    
-    real (kind=dp_t), intent(in   ) :: pthermbar(0:)
     real (kind=dp_t), intent(in   ) :: dt
     
     ! Local variables
@@ -484,25 +475,24 @@ contains
           correction_factor = 0.0d0
        end if
        do i = lo(1),hi(1)
-          correction_cc(i,j) = correction_factor*(ptherm(i,j)-pthermbar(j))
+          correction_cc(i,j) = correction_factor*delta_p_term(i,j)
        end do
     end do
     
   end subroutine create_correction_cc_2d
 
-  subroutine create_correction_cc_3d_cart(lo,hi,rho0,correction_cc,ptherm,div_coeff, &
-                                          gamma1bar,p0,pthermbar,dt)
+  subroutine create_correction_cc_3d_cart(lo,hi,rho0,correction_cc,delta_p_term,div_coeff, &
+                                          gamma1bar,p0,dt)
 
     use probin_module, only: dpdt_factor, base_cutoff_density
 
     integer         , intent(in   ) :: lo(:), hi(:)
     real (kind=dp_t), intent(in   ) :: rho0(0:)
     real (kind=dp_t), intent(  out) :: correction_cc(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-    real (kind=dp_t), intent(in   ) :: ptherm(lo(1):,lo(2):,lo(3):)
+    real (kind=dp_t), intent(in   ) :: delta_p_term(lo(1):,lo(2):,lo(3):)
     real (kind=dp_t), intent(in   ) :: div_coeff(0:)
     real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
     real (kind=dp_t), intent(in   ) :: p0(0:)    
-    real (kind=dp_t), intent(in   ) :: pthermbar(0:)
     real (kind=dp_t), intent(in   ) :: dt
     
     ! Local variables
@@ -517,26 +507,25 @@ contains
        end if
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
-             correction_cc(i,j,k) = correction_factor*(ptherm(i,j,k)-pthermbar(k))
+             correction_cc(i,j,k) = correction_factor*delta_p_term(i,j,k)
           end do
        end do
     end do
     
   end subroutine create_correction_cc_3d_cart
 
-  subroutine create_correction_cc_3d_sphr(lo,hi,correction_cc,ptherm,div_coeff_cart, &
-                                          gamma1bar_cart,p0_cart,pthermbar_cart, &
+  subroutine create_correction_cc_3d_sphr(lo,hi,correction_cc,delta_p_term,div_coeff_cart, &
+                                          gamma1bar_cart,p0_cart, &
                                           rho0_cart,dt)
 
     use probin_module, only: dpdt_factor, base_cutoff_density
 
     integer         , intent(in   ) :: lo(:), hi(:)
     real (kind=dp_t), intent(  out) :: correction_cc(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-    real (kind=dp_t), intent(in   ) :: ptherm(lo(1):,lo(2):,lo(3):)
+    real (kind=dp_t), intent(in   ) :: delta_p_term(lo(1):,lo(2):,lo(3):)
     real (kind=dp_t), intent(in   ) :: div_coeff_cart(lo(1):,lo(2):,lo(3):)
     real (kind=dp_t), intent(in   ) :: gamma1bar_cart(lo(1):,lo(2):,lo(3):)
     real (kind=dp_t), intent(in   ) :: p0_cart(lo(1):,lo(2):,lo(3):)    
-    real (kind=dp_t), intent(in   ) :: pthermbar_cart(lo(1):,lo(2):,lo(3):)
     real (kind=dp_t), intent(in   ) :: rho0_cart(lo(1):,lo(2):,lo(3):)
     real (kind=dp_t), intent(in   ) :: dt
     
@@ -553,7 +542,7 @@ contains
              else
                 correction_factor = 0.0d0
              end if
-             correction_cc(i,j,k) = correction_factor*(ptherm(i,j,k)-pthermbar_cart(i,j,k))
+             correction_cc(i,j,k) = correction_factor*delta_p_term(i,j,k)
           end do
        end do
     end do

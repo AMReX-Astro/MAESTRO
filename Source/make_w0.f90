@@ -17,7 +17,7 @@ module make_w0_module
 contains
 
   subroutine make_w0(nlevs,vel,vel_old,f,Sbar_in,rho0,p0_old,p0_new, &
-                     gamma1bar_old,gamma1bar_new,pthermbar_old,pthermbar_new,psi,dt,dtold)
+                     gamma1bar_old,gamma1bar_new,delta_p0_ptherm_bar,psi,dt,dtold)
 
     use parallel
     use bl_prof_module
@@ -33,7 +33,7 @@ contains
     real(kind=dp_t), intent(in   ) :: rho0(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:), p0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar_old(:,0:), gamma1bar_new(:,0:)
-    real(kind=dp_t), intent(in   ) :: pthermbar_old(:,0:), pthermbar_new(:,0:)
+    real(kind=dp_t), intent(in   ) :: delta_p0_ptherm_bar(:,0:)
     real(kind=dp_t), intent(in   ) :: Sbar_in(:,0:)
     real(kind=dp_t), intent(in   ) :: dt,dtold
 
@@ -51,13 +51,13 @@ contains
           call make_w0_planar(n,vel(n,0:),vel_old(n,0:),rho0(n,:),Sbar_in(n,0:), &
                               p0_old(n,0:),p0_new(n,0:), &
                               gamma1bar_old(n,0:),gamma1bar_new(n,0:), &
-                              pthermbar_old(n,0:),pthermbar_new(n,0:), &
+                              delta_p0_ptherm_bar(n,0:), &
                               psi(n,0:),f(n,0:),dt,dtold)
        else
           call make_w0_spherical(n,vel(n,:),vel_old(n,0:),Sbar_in(n,0:), &
-                                 rho0(n,:),p0_old(n,0:), &
-                                 gamma1bar_old(n,0:), &
-                                 pthermbar_old(n,0:), &
+                                 rho0(n,:),p0_old(n,0:),p0_new(n,0:), &
+                                 gamma1bar_old(n,0:),gamma1bar_new(n,0:), &
+                                 delta_p0_ptherm_bar(n,0:), &
                                  f(n,0:),dt,dtold)
        endif
 
@@ -75,7 +75,7 @@ contains
   end subroutine make_w0
 
   subroutine make_w0_planar(n,vel,vel_old,rho0,Sbar_in,p0_old,p0_new, &
-                            gamma1bar_old,gamma1bar_new,pthermbar_old,pthermbar_new, &
+                            gamma1bar_old,gamma1bar_new,delta_p0_ptherm_bar, &
                             psi,f,dt,dtold)
 
     use geometry, only: nr, dr
@@ -90,7 +90,7 @@ contains
     real(kind=dp_t), intent(in   ) :: Sbar_in(0:)
     real(kind=dp_t), intent(in   ) :: p0_old(0:), p0_new(0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar_old(0:), gamma1bar_new(0:)
-    real(kind=dp_t), intent(in   ) :: pthermbar_old(0:), pthermbar_new(0:)
+    real(kind=dp_t), intent(in   ) :: delta_p0_ptherm_bar(0:)
     real(kind=dp_t), intent(in   ) :: psi(0:)
     real(kind=dp_t), intent(inout) ::   f(0:)
     real(kind=dp_t), intent(in   ) :: dt,dtold
@@ -116,8 +116,7 @@ contains
             / 4.0d0
 
        if (rho0(r-1) .gt. base_cutoff_density) then
-          volume_discrepancy = dpdt_factor * ( 0.5d0*(p0_old(r-1)+p0_new(r-1)) &
-               - 0.5d0*(pthermbar_old(r-1)+pthermbar_new(r-1)) ) / dt
+          volume_discrepancy = dpdt_factor * delta_p0_ptherm_bar(r-1)/dt
        else
           volume_discrepancy = 0.0d0
        end if
@@ -141,7 +140,8 @@ contains
 
   end subroutine make_w0_planar
 
-  subroutine make_w0_spherical(n,vel,vel_old,Sbar_in,rho0,p0,gamma1bar,pthermbar,f,dt,dtold)
+  subroutine make_w0_spherical(n,vel,vel_old,Sbar_in,rho0,p0,p0_new, &
+                               gamma1bar,gamma1bar_new,delta_p0_ptherm_bar,f,dt,dtold)
 
     use geometry, only: base_cc_loc, nr, base_loedge_loc, dr
     use make_grav_module
@@ -153,7 +153,7 @@ contains
     real(kind=dp_t), intent(  out) :: vel(0:)
     real(kind=dp_t), intent(in   ) :: vel_old(0:)
     real(kind=dp_t), intent(in   ) :: Sbar_in(0:)
-    real(kind=dp_t), intent(in   ) :: rho0(0:),p0(0:),gamma1bar(0:),pthermbar(0:)
+    real(kind=dp_t), intent(in   ) :: rho0(0:),p0(0:),p0_new(0:),gamma1bar(0:),gamma1bar_new(0:),delta_p0_ptherm_bar(0:)
     real(kind=dp_t), intent(inout) ::   f(0:)
     real(kind=dp_t), intent(in   ) :: dt,dtold
 
@@ -184,22 +184,32 @@ contains
     ! NOTE:  we first solve for the w0 resulting only from Sbar -- then we will
     ! solve for the update to w0.  We integrate d/dr (r^2 w0) = (r^2 Sbar)
 
+!    do r=  0, nr(n)-1
+!       print *, r, p0(r), delta_p0_ptherm_bar(r)
+!    end do
+
+
     vel_bar = ZERO
     do r = 1,nr(n)
 
        if (rho0(r-1) .gt. base_cutoff_density) then
-          volume_discrepancy = dpdt_factor * (p0(r-1) - pthermbar(r-1))/dt
+          volume_discrepancy = dpdt_factor * delta_p0_ptherm_bar(r-1)/dt
        else
           volume_discrepancy = ZERO
        endif
 
        vel_bar(r) = vel_bar(r-1) + dr(n) * Sbar_in(r-1) * base_cc_loc(n,r-1)**2 - &
-            dr(n)* volume_discrepancy * base_cc_loc(n,r-1)**2 / (gamma1bar(r-1)*p0(r-1))
+            dr(n)* volume_discrepancy * base_cc_loc(n,r-1)**2 / &
+            (0.25d0*(gamma1bar(r-1) + gamma1bar_new(r-1))*(p0(r-1) + p0_new(r-1)))
+
+!       print *, r, vel_bar(r), Sbar_in(r-1), volume_discrepancy/(gamma1bar(r-1)*p0(r-1))
     end do
 
     do r = 1,nr(n)
        vel_bar(r) = vel_bar(r) / base_loedge_loc(n,r)**2
     end do
+
+
 
     ! NOTE:  now we solve for the remainder of (r^2 * w0)
 
