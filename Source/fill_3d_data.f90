@@ -13,7 +13,7 @@ module fill_3d_module
 contains  
 
   subroutine put_1d_array_on_cart(nlevs,s0,s0_cart,bc_comp,is_edge_centered,is_vector, &
-                                  dx,the_bc_level,mla,interp_type,normal)
+                                  dx,the_bc_level,mla,normal)
 
     use bl_prof_module
     use bl_constants_module
@@ -33,7 +33,6 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     type(bc_level) , intent(in   ) :: the_bc_level(:)
     type(ml_layout), intent(in   ) :: mla
-    integer        , intent(in   ), optional :: interp_type
     type(multifab) , intent(in   ), optional :: normal(:)
     
     integer :: lo(s0_cart(1)%dim)
@@ -50,10 +49,6 @@ contains
        call bl_error('Error: Calling put_1d_array_on_cart for spherical with is_vector=T and without normal')
     end if
 
-    if (spherical .eq. 1 .and. (.not. present(interp_type)) ) then
-       call bl_error('Error: Calling put_1d_array_on_cart for spherical without an interp_type')
-    end if
-    
     dm = s0_cart(1)%dim
     ng = s0_cart(1)%ng
     
@@ -78,13 +73,11 @@ contains
                 if (is_vector) then
                    np => dataptr(normal(n), i)
 
-                   call put_1d_array_on_cart_3d_sphr(n,is_edge_centered, &
-                                                     is_vector,interp_type, &
+                   call put_1d_array_on_cart_3d_sphr(n,is_edge_centered,is_vector, &
                                                      s0(n,:),sp(:,:,:,:), &
                                                      lo,hi,dx(n,:),ng,np(:,:,:,:))
                 else
-                   call put_1d_array_on_cart_3d_sphr(n,is_edge_centered, &
-                                                     is_vector,interp_type, &
+                   call put_1d_array_on_cart_3d_sphr(n,is_edge_centered,is_vector, &
                                                      s0(n,:),sp(:,:,:,:), &
                                                      lo,hi,dx(n,:),ng)
                 end if
@@ -279,16 +272,16 @@ contains
 
   end subroutine put_1d_array_on_cart_3d
 
-  subroutine put_1d_array_on_cart_3d_sphr(n,is_edge_centered,is_vector,interp_type, &
-                                          s0,s0_cart,lo,hi,dx,ng,normal)
+  subroutine put_1d_array_on_cart_3d_sphr(n,is_edge_centered,is_vector,s0,s0_cart,lo,hi, &
+                                          dx,ng,normal)
 
     use bl_constants_module
     use geometry, only: dr, center, base_cc_loc, nr
+    use probin_module, only: interp_type_radial_bin_to_cart
 
     integer        , intent(in   ) :: n
     integer        , intent(in   ) :: lo(:),hi(:),ng
     logical        , intent(in   ) :: is_edge_centered,is_vector
-    integer        , intent(in   ) :: interp_type
     real(kind=dp_t), intent(in   ) :: s0(0:)
     real(kind=dp_t), intent(inout) :: s0_cart(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real(kind=dp_t), intent(in   ) :: dx(:)
@@ -315,17 +308,9 @@ contains
                 radius = sqrt(x**2 + y**2 + z**2)
                 index  = int(radius / dr(n))
                 
-                if (interp_type .eq. 1) then
+                rfac = (radius - dble(index)*dr(n)) / dr(n)
+                s0_cart_val      = rfac * s0(index) + (ONE-rfac) * s0(index+1)
 
-                   call bl_error('Error: No such thing as interp_type=1 (piecewise constant) for an edge_centered 1D array')
-
-                else
-
-                   rfac = (radius - dble(index)*dr(n)) / dr(n)
-                   s0_cart_val      = rfac * s0(index) + (ONE-rfac) * s0(index+1)
-
-                end if
-                   
                 if (is_vector) then
                    s0_cart(i,j,k,1) = s0_cart_val * normal(i,j,k,1)
                    s0_cart(i,j,k,2) = s0_cart_val * normal(i,j,k,2)
@@ -350,11 +335,11 @@ contains
                 radius = sqrt(x**2 + y**2 + z**2)
                 index  = int(radius / dr(n))
                 
-                if (interp_type .eq. 1) then
+                if (interp_type_radial_bin_to_cart .eq. 1) then
 
                    s0_cart_val = s0(index)
 
-                else if (interp_type .eq. 2) then
+                else if (interp_type_radial_bin_to_cart .eq. 2) then
 
                    if (radius .ge. base_cc_loc(n,index)) then
                       if (index .eq. nr(n)-1) then
@@ -372,6 +357,8 @@ contains
                       end if
                    end if
 
+                else
+                   call bl_error('Error: interp_type_radial_bin_to_cart not defined')
                 end if
 
                 if (is_vector) then

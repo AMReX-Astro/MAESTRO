@@ -243,12 +243,10 @@ contains
     real (kind=dp_t), allocatable :: p0_cart(:,:,:,:)
 
     allocate(tempbar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
-    call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,tempbar,tempbar_cart, &
-                                      lo,hi,dx,0)
+    call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,tempbar,tempbar_cart,lo,hi,dx,0)
 
     allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
-    call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,p0,p0_cart, &
-                                      lo,hi,dx,0)
+    call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,p0,p0_cart,lo,hi,dx,0)
     do_diag = .false.
 
     do k = lo(3), hi(3)
@@ -496,20 +494,16 @@ contains
     do_diag = .false.
 
     allocate(rho0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
-    call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,rho0,rho0_cart, &
-                                      lo,hi,dx,0)
+    call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,rho0,rho0_cart,lo,hi,dx,0)
 
     allocate(tempbar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
-    call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,tempbar,tempbar_cart, &
-                                      lo,hi,dx,0)
+    call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,tempbar,tempbar_cart,lo,hi,dx,0)
 
     allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1)) 
-    call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,p0,p0_cart, &
-                                      lo,hi,dx,0)
+    call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,p0,p0_cart,lo,hi,dx,0)
 
     allocate(gamma1bar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1)) 
-    call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,gamma1bar,gamma1bar_cart, &
-                                      lo,hi,dx,0)
+    call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,gamma1bar,gamma1bar_cart,lo,hi,dx,0)
 
     ! Then compute the perturbation and Mach number
     do k = lo(3), hi(3)

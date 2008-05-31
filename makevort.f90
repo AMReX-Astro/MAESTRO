@@ -828,7 +828,7 @@ contains
     real (kind = dp_t), allocatable :: w0_cart(:,:,:,:)
 
     allocate(w0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),3))
-    call put_1d_array_on_cart_3d_sphr(n,.true.,.true.,2,w0,w0_cart,lo,hi,dx,0,normal)
+    call put_1d_array_on_cart_3d_sphr(n,.true.,.true.,w0,w0_cart,lo,hi,dx,0,normal)
 
     do k = lo(3), hi(3)
     do j = lo(2), hi(2)

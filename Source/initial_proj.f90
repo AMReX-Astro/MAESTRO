@@ -132,7 +132,7 @@ contains
        end do
 
        call put_1d_array_on_cart(nlevs,div_coeff_old,div_coeff_3d,foextrap_comp,.false., &
-                                 .false.,dx,the_bc_tower%bc_tower_array,mla,1)
+                                 .false.,dx,the_bc_tower%bc_tower_array,mla)
 
        call hgproject(initial_projection_comp,mla,uold,uold,rhohalf,pres,gpres,dx, &
                       dt_temp,the_bc_tower,press_comp, &

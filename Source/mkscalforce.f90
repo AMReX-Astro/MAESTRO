@@ -312,8 +312,7 @@ contains
     allocate(gradp_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
 
     allocate(psi_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
-    call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,psi,psi_cart, &
-                                      lo,hi,dx,0)
+    call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,psi,psi_cart,lo,hi,dx,0)
 
     do r = 0, nr(n)-1
        
@@ -331,8 +330,7 @@ contains
 
     end do
 
-    call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,gradp_rad,gradp_cart, &
-                                      lo,hi,dx,0)
+    call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,gradp_rad,gradp_cart,lo,hi,dx,0)
 
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
@@ -664,8 +662,7 @@ contains
     allocate(gradp_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
 
     allocate(psi_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
-    call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,psi,psi_cart, &
-                                      lo,hi,dx,0)
+    call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,psi,psi_cart,lo,hi,dx,0)
 
     do r = 0, nr(n)-1
        
@@ -681,8 +678,7 @@ contains
        end if
     end do
 
-    call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,gradp_rad,gradp_cart, &
-                                      lo,hi,dx,0)
+    call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,gradp_rad,gradp_cart,lo,hi,dx,0)
 
     do k = lo(3),hi(3)
      do j = lo(2),hi(2)

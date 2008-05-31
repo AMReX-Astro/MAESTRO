@@ -72,9 +72,9 @@ contains
     
     if (spherical .eq. 1) then
        call put_1d_array_on_cart(nlevs,div_coeff,div_coeff_cart,foextrap_comp,.false., &
-                                 .false.,dx,the_bc_tower%bc_tower_array,mla,1)
+                                 .false.,dx,the_bc_tower%bc_tower_array,mla)
        call put_1d_array_on_cart(nlevs,Sbar,Sbar_cart,foextrap_comp,.false., &
-                                 .false.,dx,the_bc_tower%bc_tower_array,mla,1)
+                                 .false.,dx,the_bc_tower%bc_tower_array,mla)
     end if
 
     do n = 1, nlevs
@@ -337,13 +337,13 @@ contains
     
     if (spherical .eq. 1) then
        call put_1d_array_on_cart(nlevs,gamma1bar,gamma1bar_cart,foextrap_comp,.false., &
-                                 .false.,dx,the_bc_tower%bc_tower_array,mla,1)
+                                 .false.,dx,the_bc_tower%bc_tower_array,mla)
        call put_1d_array_on_cart(nlevs,p0,p0_cart,foextrap_comp,.false., &
-                                 .false.,dx,the_bc_tower%bc_tower_array,mla,1)
+                                 .false.,dx,the_bc_tower%bc_tower_array,mla)
        call put_1d_array_on_cart(nlevs,div_coeff,div_coeff_cart,foextrap_comp,.false., &
-                                 .false.,dx,the_bc_tower%bc_tower_array,mla,1)
+                                 .false.,dx,the_bc_tower%bc_tower_array,mla)
        call put_1d_array_on_cart(nlevs,rho0,rho0_cart,dm+rho_comp,.false., &
-                                 .false.,dx,the_bc_tower%bc_tower_array,mla,1)
+                                 .false.,dx,the_bc_tower%bc_tower_array,mla)
 
     end if
 

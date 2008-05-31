@@ -80,9 +80,9 @@ contains
             lo = lwb(get_box(rho0_cart,i))
             hi = upb(get_box(rho0_cart,i))
 
-            call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,rho0_halftime,rp, &
+            call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,rho0_halftime,rp, &
                                               lo,hi,dx(n,:),2)
-            call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,rhoh0_halftime,rhp, &
+            call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,rhoh0_halftime,rhp, &
                                               lo,hi,dx(n,:),2)
          enddo
 
@@ -721,8 +721,7 @@ contains
 
     if (spherical .eq. 1) then
        allocate(tempbar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
-       call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,tempbar,tempbar_cart, &
-                                           lo,hi,dx,0)
+       call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,tempbar,tempbar_cart,lo,hi,dx,0)
     endif
 
     do_diag = .false.
@@ -910,8 +909,7 @@ contains
 
     if (spherical .eq. 1) then
        allocate(tempbar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
-       call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,tempbar,tempbar_cart, &
-                                           lo,hi,dx,0)
+       call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,tempbar,tempbar_cart,lo,hi,dx,0)
     endif
 
     do_diag = .false.

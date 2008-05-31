@@ -157,11 +157,11 @@ contains
     if (spherical .eq. 1) then
 
        allocate(div_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
-       call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,div_coeff,div_cart, &
+       call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,div_coeff,div_cart, &
                                          lo,hi,dx,0)
 
        allocate(Sbar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
-       call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,Sbar,Sbar_cart, &
+       call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,Sbar,Sbar_cart, &
                                          lo,hi,dx,0)
 
        do k = lo(3),hi(3)
@@ -178,23 +178,23 @@ contains
        if (dpdt_factor .ge. 0.0d0) then
 
           allocate(gamma1bar_old_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
-          call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1, &
+          call put_1d_array_on_cart_3d_sphr(n,.false.,.false., &
                                             gamma1bar_old,gamma1bar_old_cart,lo,hi,dx,0)
 
           allocate(gamma1bar_new_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
-          call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1, &
+          call put_1d_array_on_cart_3d_sphr(n,.false.,.false., &
                                             gamma1bar_new,gamma1bar_new_cart,lo,hi,dx,0)
 
           allocate(p0_old_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
-          call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1, &
+          call put_1d_array_on_cart_3d_sphr(n,.false.,.false., &
                                             p0_old,p0_old_cart,lo,hi,dx,0)
 
           allocate(p0_new_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
-          call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1, &
+          call put_1d_array_on_cart_3d_sphr(n,.false.,.false., &
                                             p0_new,p0_new_cart,lo,hi,dx,0)
 
           allocate(rho0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
-          call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,rho0,rho0_cart,lo,hi,dx,0)
+          call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,rho0,rho0_cart,lo,hi,dx,0)
 
 
           do k = lo(3),hi(3)

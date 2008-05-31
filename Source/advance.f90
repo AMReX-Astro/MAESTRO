@@ -242,7 +242,7 @@ contains
     enddo
 
     call put_1d_array_on_cart(nlevs,p0_old,p0_cart,foextrap_comp,.false.,.false.,dx, &
-         the_bc_tower%bc_tower_array,mla,1)
+         the_bc_tower%bc_tower_array,mla)
 
     ! p0_cart now holds (p0 - ptherm)
     do n=1,nlevs
@@ -253,9 +253,8 @@ contains
 
     ! now put delta_p0_ptherm_bar onto a cart array -- this helps 
     ! correct for the averaging -- store this in delta_p_term
-    call put_1d_array_on_cart(nlevs,delta_p0_ptherm_bar,delta_p_term, &
-         foextrap_comp,.false.,.false.,dx, &
-         the_bc_tower%bc_tower_array,mla,1)
+    call put_1d_array_on_cart(nlevs,delta_p0_ptherm_bar,delta_p_term,foextrap_comp, &
+                              .false.,.false.,dx,the_bc_tower%bc_tower_array,mla)
 
     ! finish computing delta_p_term = (p0 - pthermbar) - (p0 - ptherm)
     do n = 1,nlevs
@@ -276,7 +275,7 @@ contains
 
        if (dm .eq. 3) then
           call put_1d_array_on_cart(nlevs,w0,w0_cart_vec,1,.true.,.true.,dx, &
-                                    the_bc_tower%bc_tower_array,mla,2,normal)
+                                    the_bc_tower%bc_tower_array,mla,normal)
        end if
 
     end if
@@ -341,7 +340,7 @@ contains
        end do
 
        call put_1d_array_on_cart(nlevs,div_coeff_old,div_coeff_3d,foextrap_comp,.false., &
-                                 .false.,dx,the_bc_tower%bc_tower_array,mla,1)
+                                 .false.,dx,the_bc_tower%bc_tower_array,mla)
 
        call macproject(mla,umac,macphi,sold,dx,the_bc_tower, &
                        press_comp, macrhs,div_coeff_3d=div_coeff_3d)
@@ -699,7 +698,7 @@ contains
        p0_nph = HALF*(p0_old + p0_new)
 
        call put_1d_array_on_cart(nlevs,p0_nph,p0_cart,foextrap_comp,.false.,.false.,dx, &
-            the_bc_tower%bc_tower_array,mla,1)
+                                 the_bc_tower%bc_tower_array,mla)
     
        do n=1,nlevs
           call multifab_build(ptherm_nph(n), mla%la(n), 1, 0)
@@ -721,9 +720,8 @@ contains
 
        ! now put delta_p0_ptherm_bar onto a cart array -- this helps
        ! correct for the averaging -- store this in delta_p_term 
-       call put_1d_array_on_cart(nlevs,delta_p0_ptherm_bar,delta_p_term, &
-            foextrap_comp,.false.,.false.,dx, &
-            the_bc_tower%bc_tower_array,mla,1)
+       call put_1d_array_on_cart(nlevs,delta_p0_ptherm_bar,delta_p_term,foextrap_comp, &
+                                 .false.,.false.,dx,the_bc_tower%bc_tower_array,mla)
 
        ! finish computing delta_p_term = (p0 - pthermbar) - (p0 - ptherm)
        do n = 1,nlevs
@@ -749,10 +747,10 @@ contains
        
           if (dm .eq. 3) then
              call put_1d_array_on_cart(nlevs,w0,w0_cart_vec,1,.true.,.true.,dx, &
-                                       the_bc_tower%bc_tower_array,mla,2,normal)
+                                       the_bc_tower%bc_tower_array,mla,normal)
              call put_1d_array_on_cart(nlevs,w0_force,w0_force_cart_vec,foextrap_comp, &
                                        .false.,.true.,dx,the_bc_tower%bc_tower_array,mla, &
-                                       2,normal)
+                                       normal)
           end if
        end if
        
@@ -806,7 +804,7 @@ contains
           end do
 
           call put_1d_array_on_cart(nlevs,div_coeff_nph,div_coeff_3d,foextrap_comp,.false., &
-                                    .false.,dx,the_bc_tower%bc_tower_array,mla,1)
+                                    .false.,dx,the_bc_tower%bc_tower_array,mla)
 
           call macproject(mla,umac,macphi,rhohalf,dx,the_bc_tower, &
                           press_comp,macrhs,div_coeff_3d=div_coeff_3d)
@@ -1129,7 +1127,7 @@ contains
        enddo
 
        call put_1d_array_on_cart(nlevs,p0_new,p0_cart,foextrap_comp,.false.,.false.,dx, &
-            the_bc_tower%bc_tower_array,mla,1)
+                                 the_bc_tower%bc_tower_array,mla)
 
        ! p0_cart now holds (p0 - ptherm)
        do n=1,nlevs
@@ -1140,9 +1138,8 @@ contains
 
        ! now put delta_p0_ptherm_bar onto a cart array -- this helps 
        ! correct for the averaging -- store this in delta_p_term
-       call put_1d_array_on_cart(nlevs,delta_p0_ptherm_bar,delta_p_term, &
-            foextrap_comp,.false.,.false.,dx, &
-            the_bc_tower%bc_tower_array,mla,1)
+       call put_1d_array_on_cart(nlevs,delta_p0_ptherm_bar,delta_p_term,foextrap_comp, &
+                                 .false.,.false.,dx,the_bc_tower%bc_tower_array,mla)
 
        ! finish computing delta_p_term = (p0 - pthermbar) - (p0 - ptherm)
        do n = 1,nlevs
@@ -1176,7 +1173,7 @@ contains
        end do
        
        call put_1d_array_on_cart(nlevs,div_coeff_nph,div_coeff_3d,foextrap_comp,.false., &
-                                 .false.,dx,the_bc_tower%bc_tower_array,mla,1)
+                                 .false.,dx,the_bc_tower%bc_tower_array,mla)
 
        eps_in = 1.d-12
        call hgproject(proj_type, mla, unew, uold, rhohalf, pres, gpres, dx, dt, &

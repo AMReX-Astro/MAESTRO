@@ -234,8 +234,7 @@ contains
                  (dr(n)*base_cc_loc(n,r)**2)
     end do
 
-    call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,1,divu,divu_cart, &
-                                      lo,hi,dx,0)
+    call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,divu,divu_cart,lo,hi,dx,0)
     
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
