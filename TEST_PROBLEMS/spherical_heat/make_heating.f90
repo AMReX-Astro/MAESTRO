@@ -99,7 +99,7 @@ contains
 
              r = sqrt(x**2 + y**2 + z**2)
 
-             rho_Hext(i,j,k) = 1.d13 * exp(-r**2/width)
+             rho_Hext(i,j,k) = 1.d13 * exp(-r**2/width**2)
              
           enddo
        enddo
