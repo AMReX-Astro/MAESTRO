@@ -43,8 +43,8 @@
  init_divu_iter = 3
 
  velpert_amplitude = 1.d5
- velpert_radius = 1.d7
- velpert_scale = 1.d7
+ velpert_radius = 5.d7
+ velpert_scale = 5.d7
  velpert_steep = 1.d5
 
  enthalpy_pred_type = 1
