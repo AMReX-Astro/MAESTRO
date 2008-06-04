@@ -1,12 +1,12 @@
 &PROBIN
- model_file = "spherical.hse.64"
+ model_file = "spherical.hse.320"
 
  test_set = "gr0_3d.64"
 
  spherical_in = 1
  do_sponge = .true.
 
- dr_base = 7812500
+ dr_base = 1562500.
 
  prob_hi_x = 5.e8
  prob_hi_y = 5.e8
