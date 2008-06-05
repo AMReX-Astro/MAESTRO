@@ -77,6 +77,7 @@ contains
     
     use bl_constants_module
     use geometry, only: center
+    use variables, only: rho_comp
 
     integer, intent(in) :: lo(:), hi(:), ng
     real(kind=dp_t), intent(inout) :: rho_Hext(lo(1):,lo(2):,lo(3):)
