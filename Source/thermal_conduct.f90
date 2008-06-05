@@ -552,7 +552,7 @@ contains
     end if
 
     ! compute updated temperature
-    call makeTfromRhoH(nlevs,s2,tempbar,mla,the_bc_tower%bc_tower_array,dx)
+    call makeTfromRhoH(nlevs,s2,p0_new,tempbar,mla,the_bc_tower%bc_tower_array,dx)
 
     deallocate(fine_flx)
 
@@ -951,7 +951,7 @@ contains
     end if
 
     ! compute updated temperature
-    call makeTfromRhoH(nlevs,s2,tempbar,mla,the_bc_tower%bc_tower_array,dx)
+    call makeTfromRhoH(nlevs,s2,p0_new,tempbar,mla,the_bc_tower%bc_tower_array,dx)
 
 !!!!!!!!!!!!!!!!!!!!!!!
     ! Second implicit solve
@@ -1291,7 +1291,7 @@ contains
     end if
 
     ! compute updated temperature
-    call makeTfromRhoH(nlevs,s2,tempbar,mla,the_bc_tower%bc_tower_array,dx)
+    call makeTfromRhoH(nlevs,s2,p0_new,tempbar,mla,the_bc_tower%bc_tower_array,dx)
 
     deallocate(fine_flx)
 

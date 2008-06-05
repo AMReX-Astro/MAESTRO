@@ -138,7 +138,8 @@ contains
     end if
 
     ! This can be uncommented if you wish to compute T
-    ! call makeTfromRhoH(nlevs,sold,tempbar(:,:),mla,the_bc_level,dx)
+    ! note -- not sure if p0_old or p0_new should be used here
+    ! call makeTfromRhoH(nlevs,sold,p0_old(:,:),tempbar(:,:),mla,the_bc_level,dx)
 
     ! if we are predicting X on the edges, then convert the state arrays
     ! (and base state) from (rho X) to X.  Note, only the time-level n
@@ -504,7 +505,7 @@ contains
     end do
 
     if (.not. use_thermal_diffusion) then
-       call makeTfromRhoH(nlevs,snew,tempbar(:,:),mla,the_bc_level,dx)
+       call makeTfromRhoH(nlevs,snew,p0_new(:,:),tempbar(:,:),mla,the_bc_level,dx)
     end if
 
     call destroy(bpt)

@@ -585,7 +585,7 @@ contains
     
   end subroutine makeRhoHfromT_3d_sphr
   
-  subroutine makeTfromRhoH(nlevs,s,tempbar,mla,the_bc_level,dx)
+  subroutine makeTfromRhoH(nlevs,s,p0,tempbar,mla,the_bc_level,dx)
 
     use variables,             only: temp_comp
     use bl_prof_module
@@ -595,6 +595,7 @@ contains
 
     integer           , intent(in   ) :: nlevs
     type(multifab)    , intent(inout) :: s(:)
+    real (kind = dp_t), intent(in   ) :: p0(:,0:)
     real (kind = dp_t), intent(in   ) :: tempbar(:,0:)
     type(ml_layout)   , intent(inout) :: mla
     type(bc_level)    , intent(in   ) :: the_bc_level(:)
@@ -621,9 +622,9 @@ contains
           hi = upb(get_box(s(n),i))
           select case (dm)
           case (2)
-             call makeTfromRhoH_2d(snp(:,:,1,:), lo, hi, ng, tempbar(n,:))
+             call makeTfromRhoH_2d(snp(:,:,1,:), lo, hi, ng, p0(n,:), tempbar(n,:))
           case (3)
-             call makeTfromRhoH_3d(snp(:,:,:,:), lo, hi, ng, tempbar(n,:), dx(n,:), n)
+             call makeTfromRhoH_3d(snp(:,:,:,:), lo, hi, ng, p0(n,:), tempbar(n,:), dx(n,:), n)
           end select
        end do
 
@@ -660,13 +661,15 @@ contains
 
   end subroutine makeTfromRhoH
 
-  subroutine makeTfromRhoH_2d (state,lo,hi,ng,tempbar)
+  subroutine makeTfromRhoH_2d (state,lo,hi,ng,p0,tempbar)
 
     use variables,     only: rho_comp, spec_comp, rhoh_comp, temp_comp
     use eos_module
+    use probin_module, only: use_tfromp
 
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(inout) ::  state(lo(1)-ng:,lo(2)-ng:,:)
+    real (kind = dp_t), intent(in   ) ::  p0(0:)
     real (kind = dp_t), intent(in   ) ::  tempbar(0:)
     
     ! Local variables
@@ -674,75 +677,20 @@ contains
     
     do_diag = .false.
 
-    do j = lo(2), hi(2)
-       do i = lo(1), hi(1)
 
-          ! (rho, H) --> T, p
-          
-          den_eos(1)  = state(i,j,rho_comp)
-          temp_eos(1) = tempbar(j)
-          xn_eos(1,:) = state(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
+    if (.not. use_tfromp) then
 
-          h_eos(1) = state(i,j,rhoh_comp) / state(i,j,rho_comp)
-
-          call eos(eos_input_rh, den_eos, temp_eos, &
-                   npts, nspec, &
-                   xn_eos, &
-                   p_eos, h_eos, e_eos, &
-                   cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                   dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                   dpdX_eos, dhdX_eos, &
-                   gam1_eos, cs_eos, s_eos, &
-                   dsdt_eos, dsdr_eos, &
-                   do_diag)
-
-          state(i,j,temp_comp) = temp_eos(1)
-
-       enddo
-    enddo
-
-  end subroutine makeTfromRhoH_2d
-
-  subroutine makeTfromRhoH_3d(state,lo,hi,ng,tempbar,dx,n)
-
-    use variables,      only: rho_comp, spec_comp, rhoh_comp, temp_comp
-    use eos_module
-    use geometry,       only: spherical
-    use fill_3d_module
-
-    integer, intent(in) :: lo(:), hi(:), ng, n
-    real (kind = dp_t), intent(inout) ::  state(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-    real (kind = dp_t), intent(in   ) ::  tempbar(0:)
-    real(kind=dp_t)   , intent(in   ) :: dx(:)
-
-    ! Local variables
-    integer :: i, j, k
-    real(kind=dp_t), allocatable :: tempbar_cart(:,:,:,:)
-
-    if (spherical .eq. 1) then
-       allocate(tempbar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
-       call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,tempbar,tempbar_cart,lo,hi,dx,0)
-    endif
-
-    do_diag = .false.
-    
-    do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
-             
+
              ! (rho, H) --> T, p
+          
+             den_eos(1)  = state(i,j,rho_comp)
+             temp_eos(1) = tempbar(j)
+             xn_eos(1,:) = state(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
              
-             den_eos(1)  = state(i,j,k,rho_comp)
+             h_eos(1) = state(i,j,rhoh_comp) / state(i,j,rho_comp)
 
-             if (spherical .eq. 1) then
-                temp_eos(1) = tempbar_cart(i,j,k,1)
-             else
-                temp_eos(1) = tempbar(k)
-             endif
-
-             xn_eos(1,:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
-             h_eos(1) = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp)
-             
              call eos(eos_input_rh, den_eos, temp_eos, &
                       npts, nspec, &
                       xn_eos, &
@@ -753,15 +701,154 @@ contains
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
                       do_diag)
-             
-             state(i,j,k,temp_comp) = temp_eos(1)
-             
+
+             state(i,j,temp_comp) = temp_eos(1)
+
           enddo
        enddo
-    enddo
+
+    else
+
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+
+             ! (rho, p) --> T
+          
+             den_eos(1)  = state(i,j,rho_comp)
+             temp_eos(1) = tempbar(j)
+             xn_eos(1,:) = state(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
+             
+             p_eos(1) = p0(j)
+
+             call eos(eos_input_rp, den_eos, temp_eos, &
+                      npts, nspec, &
+                      xn_eos, &
+                      p_eos, h_eos, e_eos, &
+                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                      dpdX_eos, dhdX_eos, &
+                      gam1_eos, cs_eos, s_eos, &
+                      dsdt_eos, dsdr_eos, &
+                      do_diag)
+
+             state(i,j,temp_comp) = temp_eos(1)
+
+          enddo
+       enddo
+
+    endif
+
+  end subroutine makeTfromRhoH_2d
+
+  subroutine makeTfromRhoH_3d(state,lo,hi,ng,p0,tempbar,dx,n)
+
+    use variables,      only: rho_comp, spec_comp, rhoh_comp, temp_comp
+    use eos_module
+    use geometry,       only: spherical
+    use fill_3d_module
+    use probin_module, only: use_tfromp
+
+    integer, intent(in) :: lo(:), hi(:), ng, n
+    real (kind = dp_t), intent(inout) ::  state(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
+    real (kind = dp_t), intent(in   ) ::  p0(0:)
+    real (kind = dp_t), intent(in   ) ::  tempbar(0:)
+    real(kind=dp_t)   , intent(in   ) :: dx(:)
+
+    ! Local variables
+    integer :: i, j, k
+    real(kind=dp_t), allocatable :: p0_cart(:,:,:,:)
+    real(kind=dp_t), allocatable :: tempbar_cart(:,:,:,:)
 
     if (spherical .eq. 1) then
+       allocate(tempbar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
+       call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,tempbar,tempbar_cart,lo,hi,dx,0)
+
+       allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
+       call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,p0,p0_cart,lo,hi,dx,0)
+    endif
+
+    do_diag = .false.
+
+
+    if (.not. use_tfromp) then
+    
+       do k = lo(3), hi(3)
+          do j = lo(2), hi(2)
+             do i = lo(1), hi(1)
+                
+                ! (rho, H) --> T, p
+             
+                den_eos(1)  = state(i,j,k,rho_comp)
+
+                if (spherical .eq. 1) then
+                   temp_eos(1) = tempbar_cart(i,j,k,1)
+                else
+                   temp_eos(1) = tempbar(k)
+                endif
+
+                xn_eos(1,:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
+                h_eos(1) = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp)
+                
+                call eos(eos_input_rh, den_eos, temp_eos, &
+                         npts, nspec, &
+                         xn_eos, &
+                         p_eos, h_eos, e_eos, &
+                         cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                         dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                         dpdX_eos, dhdX_eos, &
+                         gam1_eos, cs_eos, s_eos, &
+                         dsdt_eos, dsdr_eos, &
+                         do_diag)
+                
+                state(i,j,k,temp_comp) = temp_eos(1)
+             
+             enddo
+          enddo
+       enddo
+
+    else
+
+       do k = lo(3), hi(3)
+          do j = lo(2), hi(2)
+             do i = lo(1), hi(1)
+                
+                ! (rho, p) --> T
+             
+                den_eos(1)  = state(i,j,k,rho_comp)
+
+                if (spherical .eq. 1) then
+                   temp_eos(1) = tempbar_cart(i,j,k,1)
+                   p_eos(1) = p0_cart(i,j,k,1)
+                else
+                   temp_eos(1) = tempbar(k)
+                   p_eos(1) = p0(k)
+                endif
+
+                xn_eos(1,:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
+                
+                call eos(eos_input_rp, den_eos, temp_eos, &
+                         npts, nspec, &
+                         xn_eos, &
+                         p_eos, h_eos, e_eos, &
+                         cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                         dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                         dpdX_eos, dhdX_eos, &
+                         gam1_eos, cs_eos, s_eos, &
+                         dsdt_eos, dsdr_eos, &
+                         do_diag)
+                
+                state(i,j,k,temp_comp) = temp_eos(1)
+             
+             enddo
+          enddo
+       enddo
+
+    endif
+
+       
+    if (spherical .eq. 1) then
        deallocate(tempbar_cart)
+       deallocate(p0_cart)
     endif
 
   end subroutine makeTfromRhoH_3d
