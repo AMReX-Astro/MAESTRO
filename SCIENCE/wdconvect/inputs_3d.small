@@ -1,7 +1,7 @@
 &PROBIN
- model_file = "model_6.e8.hse"
+ model_file = "model_6.e8.hse.240"
 
- test_set = "gr0_3d.small"
+ test_set = "gr0_3d.48"
 
  spherical_in = 1
  do_sponge = .true.
