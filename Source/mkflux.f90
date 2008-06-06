@@ -526,8 +526,8 @@ contains
                       else if (i.eq.domhi(1)+1) then
                          rho0_edge = HALF * (rho0_old_cart(i-1,j,k)+rho0_new_cart(i-1,j,k))
                       else
-                        rho0_edge = ( rho0_old_cart(i,j,k)+rho0_old_cart(i-1,j,k) &
-                                     +rho0_new_cart(i,j,k)+rho0_new_cart(i-1,j,k) ) * FOURTH
+                         rho0_edge = ( rho0_old_cart(i,j,k)+rho0_old_cart(i-1,j,k) &
+                                      +rho0_new_cart(i,j,k)+rho0_new_cart(i-1,j,k) ) * FOURTH
                       end if
                       
                       sfluxx(i,j,k,comp) = (umac(i,j,k) + w0_edgex) * &
@@ -589,7 +589,7 @@ contains
                          rho0_edge = HALF * (rho0_old_cart(i,j-1,k)+rho0_new_cart(i,j-1,k))
                       else
                          rho0_edge = (rho0_old_cart(i,j,k)+rho0_old_cart(i,j-1,k) + &
-                              rho0_new_cart(i,j,k)+rho0_new_cart(i,j-1,k) ) * FOURTH
+                                      rho0_new_cart(i,j,k)+rho0_new_cart(i,j-1,k) ) * FOURTH
                       end if
 
                       sfluxy(i,j,k,comp) = (vmac(i,j,k) + w0_edgey) * &
@@ -646,11 +646,9 @@ contains
 
                       
                       if (k.eq.domlo(3)) then
-                         rho0_edge = HALF * &
-                              (rho0_old_cart(i,j,k)+rho0_new_cart(i,j,k))
+                         rho0_edge = HALF * (rho0_old_cart(i,j,k)+rho0_new_cart(i,j,k))
                       else if (k.eq.domhi(3)+1) then
-                         rho0_edge = HALF * &
-                              (rho0_old_cart(i,j,k-1)+rho0_new_cart(i,j,k-1))
+                         rho0_edge = HALF * (rho0_old_cart(i,j,k-1)+rho0_new_cart(i,j,k-1))
                       else
                          rho0_edge = ( rho0_old_cart(i,j,k)+rho0_old_cart(i,j,k-1) &
                                       +rho0_new_cart(i,j,k)+rho0_new_cart(i,j,k-1) ) * FOURTH
