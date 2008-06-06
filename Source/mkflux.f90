@@ -551,7 +551,7 @@ contains
                    else if (i.eq.domhi(1)+1) then
                       bc_lox = HALF * (rhoh0_old_cart(i-1,j,k)+rhoh0_new_cart(i-1,j,k))
                    else
-                      bc_lox = ( rhoh0_old_cart(i,j,k)+rhoh0_old_cart(i-1,j,k) + 
+                      bc_lox = ( rhoh0_old_cart(i,j,k)+rhoh0_old_cart(i-1,j,k) &
                                 +rhoh0_new_cart(i,j,k)+rhoh0_new_cart(i-1,j,k) ) * FOURTH
                    end if
 
