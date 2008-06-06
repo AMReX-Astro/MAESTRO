@@ -7,7 +7,7 @@ module fill_3d_module
 
   private
   
-  public :: put_1d_array_on_cart, put_1d_array_on_cart_3d_sphr
+  public :: put_1d_array_on_cart, put_1d_array_on_cart_3d_sphr, put_1d_array_on_edges
   public :: make_3d_normal
   
 contains  
@@ -375,6 +375,148 @@ contains
     end if
 
   end subroutine put_1d_array_on_cart_3d_sphr
+
+  subroutine put_1d_array_on_edges(n,s0,s0_cartx,s0_carty,s0_cartz,lo,hi,dx,ng)
+
+    use bl_constants_module
+    use geometry, only: dr, center, base_cc_loc, nr
+    use probin_module, only: interp_type_radial_bin_to_cart
+
+    integer        , intent(in   ) :: n
+    integer        , intent(in   ) :: lo(:),hi(:),ng
+    real(kind=dp_t), intent(in   ) :: s0(0:)
+    real(kind=dp_t), intent(inout) :: s0_cartx(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
+    real(kind=dp_t), intent(inout) :: s0_carty(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
+    real(kind=dp_t), intent(inout) :: s0_cartz(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
+    real(kind=dp_t), intent(in   ) :: dx(:)
+
+    integer         :: i,j,k,index
+    real(kind=dp_t) :: x,y,z
+    real(kind=dp_t) :: radius,rfac,s0_cart_val
+
+    ! interpolate from radial bin centered values onto x-edges
+
+    do k = lo(3),hi(3)
+          z = (dble(k)+HALF)*dx(3) - center(3)
+          do j = lo(2),hi(2)
+             y = (dble(j)+HALF)*dx(2) - center(2)
+             do i = lo(1),hi(1)+1
+                x = (dble(i)     )*dx(1) - center(1)
+                radius = sqrt(x**2 + y**2 + z**2)
+                index  = int(radius / dr(n))
+                
+                if (interp_type_radial_bin_to_cart .eq. 1) then
+
+                   s0_cart_val = s0(index)
+
+                else if (interp_type_radial_bin_to_cart .eq. 2) then
+
+                   if (radius .ge. base_cc_loc(n,index)) then
+                      if (index .eq. nr(n)-1) then
+                         s0_cart_val = s0(index)
+                      else
+                         s0_cart_val = s0(index+1)*(radius-base_cc_loc(n,index))/dr(n) &
+                              + s0(index)*(base_cc_loc(n,index+1)-radius)/dr(n)
+                      endif
+                   else
+                      if (index .eq. 0) then
+                         s0_cart_val = s0(index)
+                      else
+                         s0_cart_val = s0(index)*(radius-base_cc_loc(n,index-1))/dr(n) &
+                              + s0(index-1)*(base_cc_loc(n,index)-radius)/dr(n)
+                      end if
+                   end if
+
+                else
+                   call bl_error('Error: interp_type_radial_bin_to_cart not defined')
+                end if
+
+                s0_cartx(i,j,k) = s0_cart_val
+             end do
+          end do
+    end do
+
+    do k = lo(3),hi(3)
+          z = (dble(k)+HALF)*dx(3) - center(3)
+          do j = lo(2),hi(2)+1
+             y = (dble(j)     )*dx(2) - center(2)
+             do i = lo(1),hi(1)+1
+                x = (dble(i)+HALF)*dx(1) - center(1)
+                radius = sqrt(x**2 + y**2 + z**2)
+                index  = int(radius / dr(n))
+                
+                if (interp_type_radial_bin_to_cart .eq. 1) then
+
+                   s0_cart_val = s0(index)
+
+                else if (interp_type_radial_bin_to_cart .eq. 2) then
+
+                   if (radius .ge. base_cc_loc(n,index)) then
+                      if (index .eq. nr(n)-1) then
+                         s0_cart_val = s0(index)
+                      else
+                         s0_cart_val = s0(index+1)*(radius-base_cc_loc(n,index))/dr(n) &
+                              + s0(index)*(base_cc_loc(n,index+1)-radius)/dr(n)
+                      endif
+                   else
+                      if (index .eq. 0) then
+                         s0_cart_val = s0(index)
+                      else
+                         s0_cart_val = s0(index)*(radius-base_cc_loc(n,index-1))/dr(n) &
+                              + s0(index-1)*(base_cc_loc(n,index)-radius)/dr(n)
+                      end if
+                   end if
+
+                else
+                   call bl_error('Error: interp_type_radial_bin_to_cart not defined')
+                end if
+
+                s0_carty(i,j,k) = s0_cart_val
+             end do
+          end do
+    end do
+
+    do k = lo(3),hi(3)+1
+          z = (dble(k)     )*dx(3) - center(3)
+          do j = lo(2),hi(2)
+             y = (dble(j)+HALF)*dx(2) - center(2)
+             do i = lo(1),hi(1)+1
+                x = (dble(i)+HALF)*dx(1) - center(1)
+                radius = sqrt(x**2 + y**2 + z**2)
+                index  = int(radius / dr(n))
+                
+                if (interp_type_radial_bin_to_cart .eq. 1) then
+
+                   s0_cart_val = s0(index)
+
+                else if (interp_type_radial_bin_to_cart .eq. 2) then
+
+                   if (radius .ge. base_cc_loc(n,index)) then
+                      if (index .eq. nr(n)-1) then
+                         s0_cart_val = s0(index)
+                      else
+                         s0_cart_val = s0(index+1)*(radius-base_cc_loc(n,index))/dr(n) &
+                              + s0(index)*(base_cc_loc(n,index+1)-radius)/dr(n)
+                      endif
+                   else
+                      if (index .eq. 0) then
+                         s0_cart_val = s0(index)
+                      else
+                         s0_cart_val = s0(index)*(radius-base_cc_loc(n,index-1))/dr(n) &
+                              + s0(index-1)*(base_cc_loc(n,index)-radius)/dr(n)
+                      end if
+                   end if
+
+                else
+                   call bl_error('Error: interp_type_radial_bin_to_cart not defined')
+                end if
+
+                s0_cartz(i,j,k) = s0_cart_val
+             end do
+          end do
+    end do
+
+  end subroutine put_1d_array_on_edges
 
   subroutine make_3d_normal(normal,lo,hi,dx,ng)
 
