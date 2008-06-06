@@ -102,7 +102,7 @@ contains
                             rhoh0_old(n,:), rhoh0_edge_old(n,:), &
                             rhoh0_new(n,:), rhoh0_edge_new(n,:), &
                             rho0_predicted_edge(n,:), &
-                            w0(n,:),startcomp,endcomp,lo,hi,dx(n,:))
+                            w0(n,:),startcomp,endcomp,lo,hi)
           case (3)
              sfzp => dataptr(sflux(n,3),i)
              sezp => dataptr(sedge(n,3),i)
@@ -155,8 +155,7 @@ contains
   subroutine mkflux_2d(sfluxx,sfluxy,etarhoflux,sedgex,sedgey,umac,vmac, &
                        rho0_old,rho0_edge_old,rho0_new,rho0_edge_new, &
                        rhoh0_old,rhoh0_edge_old,rhoh0_new,rhoh0_edge_new, &
-                       rho0_predicted_edge,w0,startcomp,endcomp, &
-                       lo,hi,dx)
+                       rho0_predicted_edge,w0,startcomp,endcomp,lo,hi)
 
     use bl_constants_module
     use network, only : nspec
@@ -179,7 +178,6 @@ contains
     real(kind=dp_t), intent(in   ) :: rho0_predicted_edge(0:)
     real(kind=dp_t), intent(in   ) :: w0(0:)
     integer        , intent(in   ) :: startcomp,endcomp
-    real(kind=dp_t), intent(in   ) :: dx(:)
 
     ! local
     integer         :: comp
