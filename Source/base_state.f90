@@ -4,7 +4,7 @@ module base_state_module
 
   implicit none
 
-  real(dp_t), save :: r_cutoff_loc
+  real(dp_t), save :: r_cutoff_loc, prob_hi_r
 
   private
 
@@ -37,7 +37,7 @@ contains
     integer         :: i,j,r,comp
     real(kind=dp_t) :: rloc,dr_in,rmax,starting_rad,mod_dr
     real(kind=dp_t) :: d_ambient,t_ambient,p_ambient,xn_ambient(nspec)
-    real(kind=dp_t) :: sum,prob_hi_r
+    real(kind=dp_t) :: sum
 
     ! these indices define how the initial model is stored in the 
     ! base_state array
