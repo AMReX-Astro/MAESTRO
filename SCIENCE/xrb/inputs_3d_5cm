@@ -1,14 +1,16 @@
 &PROBIN
- test_set = "gr0_2d"
+ test_set = "gr0_3d_5cm"
  model_file = "sorted_xrb_lo_5cm.hse"
  spherical_in = 0
  plot_base = T
 
  prob_lo_x = 600.0d0
  prob_lo_y = 600.0d0
+ prob_lo_z = 600.0d0
 
  prob_hi_x = 3160.0d0
  prob_hi_y = 3160.0d0
+ prob_hi_z = 3160.0d0
 
  grav_const = -2.45e14
 
@@ -26,11 +28,14 @@
 
  bcx_lo = -1
  bcx_hi = -1
- bcy_lo = 14
- bcy_hi = 12
+ bcy_lo = -1
+ bcy_hi = -1
+ bcz_lo = 14
+ bcz_hi = 12
 
  pmask_x = T
- pmask_y = F
+ pmask_y = T
+ pmask_z = F
 
     verbose = 1
  mg_verbose = 0
@@ -54,5 +59,4 @@
  sponge_kappa = 1.d7
 
 !restart = 50
-
 /

@@ -1,6 +1,6 @@
 &PROBIN
- test_set = "gr0_3d"
- model_file = "sorted_xrb_lo_5cm.hse"
+ test_set = "gr0_3d_10cm"
+ model_file = "sorted_xrb_lo_10cm.hse"
  spherical_in = 0
  plot_base = T
 
