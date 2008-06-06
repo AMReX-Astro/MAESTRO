@@ -551,8 +551,8 @@ contains
                    else if (i.eq.domhi(1)+1) then
                       bc_lox = HALF * (rhoh0_old_cart(i-1,j,k)+rhoh0_new_cart(i-1,j,k))
                    else
-                      bc_lox = (rhoh0_old_cart(i,j,k)+rhoh0_old_cart(i-1,j,k) + &
-                                rhoh0_new_cart(i,j,k)+rhoh0_new_cart(i-1,j,k) ) * FOURTH
+                      bc_lox = ( rhoh0_old_cart(i,j,k)+rhoh0_old_cart(i-1,j,k) + 
+                                +rhoh0_new_cart(i,j,k)+rhoh0_new_cart(i-1,j,k) ) * FOURTH
                    end if
 
                    w0_edgex = HALF * ( w0_cart(i  ,j,k,1) +w0_cart(i-1,j,k,1) )
@@ -588,8 +588,8 @@ contains
                       else if (j.eq.domhi(2)+1) then
                          rho0_edge = HALF * (rho0_old_cart(i,j-1,k)+rho0_new_cart(i,j-1,k))
                       else
-                         rho0_edge = (rho0_old_cart(i,j,k)+rho0_old_cart(i,j-1,k) + &
-                                      rho0_new_cart(i,j,k)+rho0_new_cart(i,j-1,k) ) * FOURTH
+                         rho0_edge = ( rho0_old_cart(i,j,k)+rho0_old_cart(i,j-1,k) &
+                                      +rho0_new_cart(i,j,k)+rho0_new_cart(i,j-1,k) ) * FOURTH
                       end if
 
                       sfluxy(i,j,k,comp) = (vmac(i,j,k) + w0_edgey) * &
@@ -612,8 +612,8 @@ contains
                    else if (j.eq.domhi(2)+1) then
                       bc_loy = HALF * (rhoh0_old_cart(i,j-1,k)+rhoh0_new_cart(i,j-1,k))
                    else
-                      bc_loy = (rhoh0_old_cart(i,j,k)+rhoh0_old_cart(i,j-1,k) + &
-                                rhoh0_new_cart(i,j,k)+rhoh0_new_cart(i,j-1,k) ) * FOURTH
+                      bc_loy = ( rhoh0_old_cart(i,j,k)+rhoh0_old_cart(i,j-1,k) &
+                                +rhoh0_new_cart(i,j,k)+rhoh0_new_cart(i,j-1,k) ) * FOURTH
                    end if
                    
                    w0_edgey = HALF * ( w0_cart(i,j  ,k,2) + w0_cart(i,j-1,k,2) )
@@ -675,8 +675,8 @@ contains
                    else if (k.eq.domhi(3)+1) then
                       bc_loz = HALF * (rhoh0_old_cart(i,j,k-1)+rhoh0_new_cart(i,j,k-1))
                    else
-                     bc_loz = (rhoh0_old_cart(i,j,k)+rhoh0_old_cart(i,j,k-1) + &
-                               rhoh0_new_cart(i,j,k)+rhoh0_new_cart(i,j,k-1) ) * FOURTH
+                     bc_loz = ( rhoh0_old_cart(i,j,k)+rhoh0_old_cart(i,j,k-1) &
+                               +rhoh0_new_cart(i,j,k)+rhoh0_new_cart(i,j,k-1) ) * FOURTH
                    end if
                    
                    w0_edgez = HALF * ( w0_cart(i,j,k  ,3) + w0_cart(i,j,k-1,3) )
