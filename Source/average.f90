@@ -245,6 +245,9 @@ contains
                 call average_3d_sphr(n,nlevs,pp(:,:,:,:),phisum_proc(n,:),avasc%fbs(i), &
                                      lo,hi,ng,dx(n,:),ncell_grid(n,:),incomp,mla, &
                                      mp(:,:,:,1))
+!                call average_3d_sphr_linear(n,nlevs,pp(:,:,:,:),phisum_proc(n,:), &
+!                                            avasc%fbs(i),lo,hi,ng,dx(n,:),ncell_grid(n,:), &
+!                                            incomp,mla,mp(:,:,:,1))           
              end if
 
              ncell_proc(n,:) = ncell_proc(n,:) + ncell_grid(n,:)
@@ -463,5 +466,132 @@ contains
     end do
 
   end subroutine average_3d_sphr
+
+  subroutine average_3d_sphr_linear(n,nlevs,phi,phisum,avfab,lo,hi,ng,dx,ncell,incomp, &
+                                    mla,mask)
+
+    use geometry, only: spherical, dr, center, nr, base_cc_loc
+    use ml_layout_module
+    use bl_constants_module
+
+    integer         , intent(in   ) :: n, nlevs
+    integer         , intent(in   ) :: lo(:), hi(:), ng, incomp
+    real (kind=dp_t), intent(in   ) :: phi(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
+    type(avefab)    , intent(in   ) :: avfab
+    real (kind=dp_t), intent(inout) :: phisum(0:)
+    real (kind=dp_t), intent(in   ) :: dx(:)
+    real (kind=dp_t), intent(inout) :: ncell(0:)
+    type(ml_layout) , intent(in   ) :: mla
+    logical         , intent(in   ), optional :: mask(lo(1):,lo(2):,lo(3):)
+
+    integer          :: i, j, k, l, idx, nsub
+    real (kind=dp_t) :: cell_weight
+    logical          :: cell_valid
+    real (kind=dp_t) :: xl, yl, zl, xc, yc, zc, x, y, z, radius
+    real (kind=dp_t) :: m_x, m_y, m_z, test, val
+
+    integer :: ii, jj, kk
+
+    !
+    ! Compute nsub such that we are always guaranteed to fill each of
+    ! the base state radial bins.
+    !
+    nsub = int(dx(1)/dr(nlevs)) + 1
+
+    cell_weight = 1.d0 / nsub**3
+    do i=2,n
+       cell_weight = cell_weight / (mla%mba%rr(i-1,1))**3
+    end do
+
+    do k=lo(3),hi(3)
+       zl = dble(k)*dx(3) - center(3)
+       zc = (dble(k) + HALF)*dx(3) - center(3)
+
+       do j=lo(2),hi(2)
+          yl = dble(j)*dx(2) - center(2)
+          yc = (dble(j) + HALF)*dx(2) - center(2)
+
+          do i=lo(1),hi(1)
+             xl = dble(i)*dx(1) - center(1)
+             xc = (dble(i) + HALF)*dx(1) - center(1)
+
+             cell_valid = .true.
+             if ( present(mask) ) then
+                if ( (.not. mask(i,j,k)) ) cell_valid = .false.
+             end if
+
+             ! use linear reconstruction on the data -- start by constructing
+             ! the slopes (limiter ref. Collela 1990, Eq. 1.9)
+
+             ! x-slope
+             test = (phi(i+1,j,k,incomp) - phi(i,  j,k,incomp))* &
+                    (phi(i,  j,k,incomp) - phi(i-1,j,k,incomp))
+
+             if (test > ZERO) then
+                m_x = min(HALF*abs(phi(i+1,j,k,incomp) - phi(i-1,j,k,incomp)), &
+                          min(TWO*abs(phi(i+1,j,k,incomp) - phi(i,  j,k,incomp)), &
+                              TWO*abs(phi(i,  j,k,incomp) - phi(i-1,j,k,incomp)))) * &
+                              sign(ONE,phi(i+1,j,k,incomp) - phi(i-1,j,k,incomp))
+             else
+                m_x = ZERO
+             endif
+
+             ! y-slope
+             test = (phi(i,j+1,k,incomp) - phi(i,j,  k,incomp))* &
+                    (phi(i,j,  k,incomp) - phi(i,j-1,k,incomp))
+
+             if (test > ZERO) then
+                m_y = min(HALF*abs(phi(i,j+1,k,incomp) - phi(i,j-1,k,incomp)), &
+                          min(TWO*abs(phi(i,j+1,k,incomp) - phi(i,j,  k,incomp)), &
+                              TWO*abs(phi(i,j,  k,incomp) - phi(i,j-1,k,incomp)))) * &
+                              sign(ONE,phi(i,j+1,k,incomp) - phi(i,j-1,k,incomp))
+             else
+                m_y = ZERO
+             endif
+
+             ! z-slope
+             test = (phi(i,j,k+1,incomp) - phi(i,j,k,  incomp))* &
+                    (phi(i,j,k  ,incomp) - phi(i,j,k-1,incomp))
+
+             if (test > ZERO) then
+                m_z = min(HALF*abs(phi(i,j,k+1,incomp) - phi(i,j,k-1,incomp)), &
+                          min(TWO*abs(phi(i,j,k+1,incomp) - phi(i,j,k  ,incomp)), &
+                              TWO*abs(phi(i,j,k  ,incomp) - phi(i,j,k-1,incomp)))) * &
+                              sign(ONE,phi(i,j,k+1,incomp) - phi(i,j,k-1,incomp))
+             else
+                m_z = ZERO
+             endif
+             
+
+             if (cell_valid) then
+
+                do kk = 0, nsub-1
+                   z = dble(kk+HALF)*dx(3)/nsub + zl
+
+                   do jj = 0, nsub-1
+                      y = dble(jj+HALF)*dx(2)/nsub + yl
+
+                      do ii = 0, nsub-1
+                         x = dble(ii+HALF)*dx(1)/nsub + xl
+
+                         radius = sqrt(x**2 + y**2 + z**2)
+                         idx  = int(radius / dr(n))
+
+                         val = m_x*(x - xc)/dx(1) + m_y*(y - yc)/dx(2) + m_z*(z - zc)/dx(3) + phi(i,j,k,incomp)
+
+                         phisum(idx) = phisum(idx) + cell_weight*val
+                         ncell(idx) = ncell(idx) + cell_weight
+
+                      enddo
+                   enddo
+                enddo
+
+             end if
+
+          end do
+       end do
+    end do
+
+  end subroutine average_3d_sphr_linear
 
 end module average_module
