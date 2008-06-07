@@ -415,15 +415,15 @@ contains
                       if (index .eq. nr(n)-1) then
                          s0_cart_val = s0(index)
                       else
-                         s0_cart_val = s0(index+1)*(radius-base_cc_loc(n,index))/dr(n) &
-                              + s0(index)*(base_cc_loc(n,index+1)-radius)/dr(n)
+                         s0_cart_val = s0(index+1)*(radius-base_cc_loc(n,index)  )/dr(n) &
+                                     + s0(index  )*(base_cc_loc(n,index+1)-radius)/dr(n)
                       endif
                    else
                       if (index .eq. 0) then
                          s0_cart_val = s0(index)
                       else
-                         s0_cart_val = s0(index)*(radius-base_cc_loc(n,index-1))/dr(n) &
-                              + s0(index-1)*(base_cc_loc(n,index)-radius)/dr(n)
+                         s0_cart_val = s0(index  )*(radius-base_cc_loc(n,index-1))/dr(n) &
+                                     + s0(index-1)*(base_cc_loc(n,index)-radius)  /dr(n)
                       end if
                    end if
 
@@ -455,15 +455,15 @@ contains
                       if (index .eq. nr(n)-1) then
                          s0_cart_val = s0(index)
                       else
-                         s0_cart_val = s0(index+1)*(radius-base_cc_loc(n,index))/dr(n) &
-                              + s0(index)*(base_cc_loc(n,index+1)-radius)/dr(n)
+                         s0_cart_val = s0(index+1)*(radius-base_cc_loc(n,index)  )/dr(n) &
+                                     + s0(index  )*(base_cc_loc(n,index+1)-radius)/dr(n)
                       endif
                    else
                       if (index .eq. 0) then
                          s0_cart_val = s0(index)
                       else
-                         s0_cart_val = s0(index)*(radius-base_cc_loc(n,index-1))/dr(n) &
-                              + s0(index-1)*(base_cc_loc(n,index)-radius)/dr(n)
+                         s0_cart_val = s0(index  )*(radius-base_cc_loc(n,index-1))/dr(n) &
+                                     + s0(index-1)*(base_cc_loc(n,index)-radius  )/dr(n)
                       end if
                    end if
 
@@ -495,15 +495,15 @@ contains
                       if (index .eq. nr(n)-1) then
                          s0_cart_val = s0(index)
                       else
-                         s0_cart_val = s0(index+1)*(radius-base_cc_loc(n,index))/dr(n) &
-                              + s0(index)*(base_cc_loc(n,index+1)-radius)/dr(n)
+                         s0_cart_val = s0(index+1)*(radius-base_cc_loc(n,index)  )/dr(n) &
+                                     + s0(index  )*(base_cc_loc(n,index+1)-radius)/dr(n)
                       endif
                    else
                       if (index .eq. 0) then
                          s0_cart_val = s0(index)
                       else
-                         s0_cart_val = s0(index)*(radius-base_cc_loc(n,index-1))/dr(n) &
-                              + s0(index-1)*(base_cc_loc(n,index)-radius)/dr(n)
+                         s0_cart_val = s0(index  )*(radius-base_cc_loc(n,index-1))/dr(n) &
+                                     + s0(index-1)*(base_cc_loc(n,index)-radius  )/dr(n)
                       end if
                    end if
 
