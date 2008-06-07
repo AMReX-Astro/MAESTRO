@@ -129,7 +129,7 @@ contains
 
 
        if (enthalpy_pred_type .eq. predict_T_then_rhohprime .or. &
-            enthalpy_pred_type .eq. predict_rhohprime) then
+           enthalpy_pred_type .eq. predict_rhohprime) then
           call put_1d_array_on_cart(nlevs,rhoh0_old,rhoh0_old_cart,dm+rhoh_comp,.false., &
                                     .false.,dx,the_bc_level,mla)
           call put_1d_array_on_cart(nlevs,rhoh0_new,rhoh0_new_cart,dm+rhoh_comp,.false., &
@@ -149,6 +149,7 @@ contains
     ! if we are predicting h on the edges, then convert the state arrays
     ! (and base state) from (rho h) to h.  Note, only the time-level n
     ! stuff need be converted, since that's all the prediction uses
+
     if (enthalpy_pred_type .eq. predict_h) then
        call convert_rhoh_to_h(nlevs,sold,.true.,mla,the_bc_level)
     end if
