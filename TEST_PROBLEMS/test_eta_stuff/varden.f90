@@ -32,7 +32,7 @@ subroutine varden()
 
   implicit none
 
-  integer    :: dm,nr_fine,init_step
+  integer    :: dm,init_step
   integer    :: istep_divu_iter,istep_init_iter,istep
   integer    :: ng_s,i,n,nlevs,n_chk_comps
   integer    :: last_plt_written,last_chk_written
@@ -98,6 +98,8 @@ subroutine varden()
 
   type(bc_tower) ::  the_bc_tower
 
+  type(box), allocatable :: boundingbox(:)
+
   ng_s = 3
 
   last_plt_written = -1
@@ -135,7 +137,7 @@ subroutine varden()
   dm = get_dim(mba)
   allocate(lo(dm),hi(dm))
   call init_variables(dm, nspec)
-  call init_plot_variables(dm, nspec, plot_spec, plot_trac)
+  call init_plot_variables(dm)
   call network_init()
   call eos_init(use_eos_coulomb=use_eos_coulomb, &
                 small_temp=small_temp,small_dens=small_dens)
@@ -147,7 +149,7 @@ subroutine varden()
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   allocate(plot_names(n_plot_comps))
-  call get_plot_names(dm,plot_names,plot_spec,plot_trac)
+  call get_plot_names(dm,plot_names)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! allocate storage for the state
@@ -166,6 +168,8 @@ subroutine varden()
   allocate(dSdt(nlevs),Source_old(nlevs),Source_new(nlevs),rho_omegadot2(nlevs))
   allocate(unew(nlevs),snew(nlevs))
   allocate(vel_force(nlevs),normal(nlevs),sponge(nlevs))
+
+  allocate(boundingbox(nlevs))
 
   allocate(nodal(dm))
   nodal = .true.
@@ -190,6 +194,14 @@ subroutine varden()
      call setval( Source_new(n), 0.0_dp_t, all=.true.)
      call setval(       dSdt(n), 0.0_dp_t, all=.true.)
      call setval(rho_omegadot2(n),0.0_dp_t,all=.true.)
+  end do
+
+  ! create a "bounding box" for each level
+  do n=1,nlevs
+     boundingbox(n) = get_box(sold(n),1)
+     do i=2, sold(n)%nboxes
+        boundingbox(n) = box_bbox(boundingbox(n),get_box(sold(n),i))
+     end do
   end do
 
   if (restart >= 0) then
@@ -449,12 +461,12 @@ subroutine varden()
   center(1:dm) = HALF * (prob_lo(1:dm) + prob_hi(1:dm))
   if (parallel_IOProcessor()) & 
        print *,'DR_BASE ',dr_base
-  call init_geometry(center,dr_base,nlevs,mla)
+  call init_geometry(center,dr_base,nlevs,mla,boundingbox)
 
   ! Initialize base state at each level independently
   if (restart < 0) then
      do n = 1,nlevs
-        call init_base_state(n,model_file,s0_old(n,:,:),p0_old(n,:),gamma1bar(n,:,1),dx(n,:))
+        call init_base_state(n,model_file,s0_old(n,:,:),p0_old(n,:),dx(n,:))
      end do
   else
      write(unit=sd_name,fmt='("chk",i5.5)') restart
@@ -1069,7 +1081,7 @@ subroutine varden()
   deallocate(dx)
   deallocate(domain_phys_bc,domain_boxes)
 
-  deallocate(lo,hi)
+  deallocate(lo,hi,boundingbox)
   deallocate(plot_names)
 
   call bc_tower_destroy(the_bc_tower)

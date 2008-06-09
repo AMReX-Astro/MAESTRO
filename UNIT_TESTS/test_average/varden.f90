@@ -29,7 +29,6 @@ subroutine varden()
   implicit none
 
   integer    :: dm
-  integer    :: nr_fine
   real(dp_t) :: lenx,leny,lenz,max_dist
   integer    :: k,ng_cell
   integer    :: i, j, d, n, nlevs
