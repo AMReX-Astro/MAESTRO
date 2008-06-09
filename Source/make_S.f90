@@ -118,7 +118,7 @@ contains
       use eos_module
       use variables, only: rho_comp, temp_comp, spec_comp
       use probin_module, only: use_delta_gamma1_term
-      use geometry, only: r_anel, nr
+      use geometry, only: anelastic_cutoff_coord, nr
 
       integer         , intent(in   ) :: n,lo(:), hi(:), ng
       real (kind=dp_t), intent(  out) :: Source(lo(1):,lo(2):)
@@ -176,7 +176,7 @@ contains
                         + sigma*react_term &
                         + pres_term/(den_eos(1)*dpdr_eos(1))
 
-           if (use_delta_gamma1_term .and. j < r_anel(n)) then
+           if (use_delta_gamma1_term .and. j < anelastic_cutoff_coord(n)) then
               if (j .eq. 0) then
                  gradp0 = (p0(j+1) - p0(j))/dx(2)
               else if (j .eq. nr(n)-1) then
@@ -208,7 +208,7 @@ contains
       use geometry, only: spherical
       use variables, only: rho_comp, temp_comp, spec_comp
       use probin_module, only: use_delta_gamma1_term
-      use geometry, only: r_anel, nr
+      use geometry, only: anelastic_cutoff_coord, nr
      
       integer         , intent(in   ) :: n,lo(:), hi(:), ng
       real (kind=dp_t), intent(  out) :: Source(lo(1):,lo(2):,lo(3):)  
@@ -272,7 +272,7 @@ contains
                  call bl_error("ERROR: use_delta_gamma1_term not implemented for spherical in make_S")
               end if
 
-              if (use_delta_gamma1_term .and. k < r_anel(n)) then
+              if (use_delta_gamma1_term .and. k < anelastic_cutoff_coord(n)) then
                  if (k .eq. 0) then
                     gradp0 = (p0(k+1) - p0(k))/dx(3)
                  else if (k .eq. nr(n)-1) then

@@ -283,7 +283,7 @@ contains
                                           s0,s0_cart,lo,hi,dx,ng,normal)
 
     use bl_constants_module
-    use geometry, only: dr, center, base_cc_loc, nr
+    use geometry, only: dr, center, nr
 
     integer        , intent(in   ) :: n
     integer        , intent(in   ) :: lo(:),hi(:),ng

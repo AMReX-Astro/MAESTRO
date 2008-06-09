@@ -45,7 +45,7 @@ contains
     use make_explicit_thermal_module
     use add_react_to_thermal_module
     use variables, only: nscal, press_comp, temp_comp, rho_comp, rhoh_comp, foextrap_comp
-    use geometry, only: nr, spherical, r_anel
+    use geometry, only: nr, spherical, anelastic_cutoff_coord
     use network, only: nspec
     use make_grav_module
     use make_eta_module
@@ -188,15 +188,16 @@ contains
     halfdt = half*dt
 
     ! compute the coordinates of the anelastic cutoff
-    r_anel(1) = nr(1)-1
+    anelastic_cutoff_coord(1) = nr(1)-1
     do r=0,nr(1)-1
-       if (rho0_old(1,r) .lt. anelastic_cutoff .and. r_anel(1) .eq. nr(1)-1) then
-          r_anel(1) = r
+       if (rho0_old(1,r) .lt. anelastic_cutoff .and. &
+            anelastic_cutoff_coord(1) .eq. nr(1)-1) then
+          anelastic_cutoff_coord(1) = r
           exit
        end if
     end do
     do n=2,nlevs
-       r_anel(n) = 2*r_anel(n-1)
+       anelastic_cutoff_coord(n) = 2*anelastic_cutoff_coord(n-1)
     end do
 
     ! tempbar is only used as an initial guess for eos calls

@@ -143,7 +143,7 @@ contains
   subroutine make_w0_spherical(n,vel,vel_old,Sbar_in,rho0,p0,p0_new, &
                                gamma1bar,gamma1bar_new,delta_p0_ptherm_bar,f,dt,dtold)
 
-    use geometry, only: base_cc_loc, nr, base_loedge_loc, dr
+    use geometry, only: r_cc_loc, nr, r_edge_loc, dr
     use make_grav_module
     use cell_to_edge_module
     use bl_constants_module
@@ -198,15 +198,15 @@ contains
           volume_discrepancy = ZERO
        endif
 
-       vel_bar(r) = vel_bar(r-1) + dr(n) * Sbar_in(r-1) * base_cc_loc(n,r-1)**2 - &
-            dr(n)* volume_discrepancy * base_cc_loc(n,r-1)**2 / &
+       vel_bar(r) = vel_bar(r-1) + dr(n) * Sbar_in(r-1) * r_cc_loc(n,r-1)**2 - &
+            dr(n)* volume_discrepancy * r_cc_loc(n,r-1)**2 / &
             (0.25d0*(gamma1bar(r-1) + gamma1bar_new(r-1))*(p0(r-1) + p0_new(r-1)))
 
 !       print *, r, vel_bar(r), Sbar_in(r-1), volume_discrepancy/(gamma1bar(r-1)*p0(r-1))
     end do
 
     do r = 1,nr(n)
-       vel_bar(r) = vel_bar(r) / base_loedge_loc(n,r)**2
+       vel_bar(r) = vel_bar(r) / r_edge_loc(n,r)**2
     end do
 
 
@@ -222,27 +222,27 @@ contains
     ! Note that we are solving for (r^2 w0), not just w0. 
 
     do r = 1,nr(n)
-       c(r) = gamma1bar(r-1) * p0(r-1) / base_cc_loc(n,r-1)**2
+       c(r) = gamma1bar(r-1) * p0(r-1) / r_cc_loc(n,r-1)**2
        c(r) = c(r) / dr(n)**2
     end do
 
     do r = 1,nr(n)-1
 
-       d(r) = -( gamma1bar(r-1) * p0(r-1) / base_cc_loc(n,r-1)**2 &
-                +gamma1bar(r  ) * p0(r  ) / base_cc_loc(n,r  )**2 ) / dr(n)**2 
+       d(r) = -( gamma1bar(r-1) * p0(r-1) / r_cc_loc(n,r-1)**2 &
+                +gamma1bar(r  ) * p0(r  ) / r_cc_loc(n,r  )**2 ) / dr(n)**2 
 
        dpdr = (p0(r)-p0(r-1))/dr(n)
-       d(r) = d(r) - four * dpdr / (base_loedge_loc(n,r))**3
+       d(r) = d(r) - four * dpdr / (r_edge_loc(n,r))**3
     end do
 
     do r = 0,nr(n)-1
-       e(r) = gamma1bar(r) * p0(r) / base_cc_loc(n,r)**2
+       e(r) = gamma1bar(r) * p0(r) / r_cc_loc(n,r)**2
        e(r) = e(r) / dr(n)**2
     end do
 
     do r = 1,nr(n)-1
        dpdr = (p0(r)-p0(r-1))/dr(n)
-       rhs(r) = four * dpdr * vel_bar(r) / base_loedge_loc(n,r)
+       rhs(r) = four * dpdr * vel_bar(r) / r_edge_loc(n,r)
     end do
 
     ! Lower boundary
@@ -261,7 +261,7 @@ contains
 
     vel(0) = ZERO
     do r = 1,nr(n)
-       vel(r) = u(r) / base_loedge_loc(n,r)**2
+       vel(r) = u(r) / r_edge_loc(n,r)**2
     end do
 
     do r = 0,nr(n)

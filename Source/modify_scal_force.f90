@@ -201,7 +201,7 @@ contains
   subroutine modify_scal_force_3d_sphr(n,force,s,lo,hi,domlo,domhi,ng, &
                                        umac,vmac,wmac,base_cart,w0,dx)
 
-    use geometry, only: nr, base_loedge_loc, dr, base_cc_loc
+    use geometry, only: nr, r_edge_loc, dr, r_cc_loc
     use fill_3d_module
     use bl_constants_module
     
@@ -229,9 +229,9 @@ contains
     allocate(divu_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
     
     do r = 0,nr(n)-1
-       divu(r) = (base_loedge_loc(n,r+1)**2 * w0(r+1) - &
-                  base_loedge_loc(n,r  )**2 * w0(r  ) ) / &
-                 (dr(n)*base_cc_loc(n,r)**2)
+       divu(r) = (r_edge_loc(n,r+1)**2 * w0(r+1) - &
+                  r_edge_loc(n,r  )**2 * w0(r  ) ) / &
+                 (dr(n)*r_cc_loc(n,r)**2)
     end do
 
     call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,divu,divu_cart,lo,hi,dx,0)

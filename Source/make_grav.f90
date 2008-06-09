@@ -15,7 +15,7 @@ contains
   subroutine make_grav_cell(n,grav_cell,rho0)
 
     use bl_constants_module
-    use geometry, only: spherical, nr, base_cc_loc, base_loedge_loc
+    use geometry, only: spherical, nr, r_cc_loc, r_edge_loc
     use probin_module, only: grav_const
 
 
@@ -39,21 +39,21 @@ contains
 
        allocate(m(0:nr(n)-1))
 
-       m(0) = FOUR3RD*M_PI*rho0(0)*base_cc_loc(n,0)**3
-       grav_cell(0) = -Gconst * m(0) / base_cc_loc(n,0)**2
+       m(0) = FOUR3RD*M_PI*rho0(0)*r_cc_loc(n,0)**3
+       grav_cell(0) = -Gconst * m(0) / r_cc_loc(n,0)**2
 
        do r = 1, nr(n)-1
           ! the mass is defined at the cell-centers, so to compute the
           ! mass at the current center, we need to add the contribution of
           ! the upper half of the zone below us and the lower half of the
           ! current zone.
-          m(r) = m(r-1) + FOUR3RD*M_PI*rho0(r-1)*(base_loedge_loc(n,r) - &
-               base_cc_loc(n,r-1))*(base_loedge_loc(n,r)**2 + &
-               base_loedge_loc(n,r)* base_cc_loc(n,r-1) +  base_cc_loc(n,r-1)**2) &
+          m(r) = m(r-1) + FOUR3RD*M_PI*rho0(r-1)*(r_edge_loc(n,r) - &
+               r_cc_loc(n,r-1))*(r_edge_loc(n,r)**2 + &
+               r_edge_loc(n,r)* r_cc_loc(n,r-1) +  r_cc_loc(n,r-1)**2) &
                + FOUR3RD*M_PI*rho0(r  )*&
-               ( base_cc_loc(n,r) - base_loedge_loc(n,r  ))*( base_cc_loc(n,r)**2 + &
-               base_cc_loc(n,r)*base_loedge_loc(n,r  ) + base_loedge_loc(n,r  )**2)
-          grav_cell(r) = -Gconst * m(r) / base_cc_loc(n,r)**2
+               ( r_cc_loc(n,r) - r_edge_loc(n,r  ))*( r_cc_loc(n,r)**2 + &
+               r_cc_loc(n,r)*r_edge_loc(n,r  ) + r_edge_loc(n,r  )**2)
+          grav_cell(r) = -Gconst * m(r) / r_cc_loc(n,r)**2
        enddo
 
        deallocate(m)
@@ -65,7 +65,7 @@ contains
   subroutine make_grav_edge(n,grav_edge,rho0)
 
   use bl_constants_module
-  use geometry, only: spherical, nr, base_loedge_loc
+  use geometry, only: spherical, nr, r_edge_loc
   use probin_module, only: grav_const
 
 
@@ -93,13 +93,13 @@ contains
           mencl = zero 
           do r2 = 1,r
              mencl = mencl + FOUR3RD*M_PI * &
-                  (base_loedge_loc(n,r2) - base_loedge_loc(n,r2-1)) &
-                  * (base_loedge_loc(n,r2)**2 &
-                  + base_loedge_loc(n,r2)*base_loedge_loc(n,r2-1) &
-                  + base_loedge_loc(n,r2-1)**2) * rho0(r2-1)
+                  (r_edge_loc(n,r2) - r_edge_loc(n,r2-1)) &
+                  * (r_edge_loc(n,r2)**2 &
+                  + r_edge_loc(n,r2)*r_edge_loc(n,r2-1) &
+                  + r_edge_loc(n,r2-1)**2) * rho0(r2-1)
           end do
           
-          grav_edge(r) = -Gconst * mencl / base_loedge_loc(n,r)**2
+          grav_edge(r) = -Gconst * mencl / r_edge_loc(n,r)**2
        end do
        
     end if

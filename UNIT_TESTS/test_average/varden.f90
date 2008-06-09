@@ -279,7 +279,7 @@ subroutine varden()
      open (unit=10, file="dens.error")
      do n=1,nlevs
         do i = 0, nr(n)-1
-           write (10,*) base_cc_loc(n,i), s0_old(n,i,rho_comp), s0_avg(n,i,rho_comp)
+           write (10,*) r_cc_loc(n,i), s0_old(n,i,rho_comp), s0_avg(n,i,rho_comp)
         enddo
      enddo
      close (10)

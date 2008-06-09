@@ -159,7 +159,7 @@ subroutine varden()
   ! output
   open(unit=10,file="base.orig")
   do i = 0, nr_fine-1
-     write(10,1000) base_cc_loc(1,i), s0(1,i,rho_comp), s0(1,i,temp_comp), p0(1,i)
+     write(10,1000) r_cc_loc(1,i), s0(1,i,rho_comp), s0(1,i,temp_comp), p0(1,i)
   enddo
   close(unit=10)
 
@@ -181,10 +181,11 @@ subroutine varden()
      print *, 'time = ', time
 
      ! compute the anelastic cutoff
-     r_anel(1) = nr_fine
+     anelastic_cutoff_coord(1) = nr_fine
      do i = 0, nr_fine-1
-        if (s0(1,i,rho_comp) .le. anelastic_cutoff .and. r_anel(1) .eq. nr_fine-1) then
-           r_anel(1) = i
+        if (s0(1,i,rho_comp) .le. anelastic_cutoff .and. &
+             anelastic_cutoff_coord(1) .eq. nr_fine-1) then
+           anelastic_cutoff_coord(1) = i
            exit
         endif
      enddo
@@ -199,7 +200,7 @@ subroutine varden()
      print *, 'calling the eos', nr_fine
      do i = 0, nr_fine-1
 
-        Hbar = 1.d16 * exp(-((base_cc_loc(1,i) - y_0)**2)/ 1.d14)
+        Hbar = 1.d16 * exp(-((r_cc_loc(1,i) - y_0)**2)/ 1.d14)
      
         ! (rho, T) --> p,h, etc
         den_eos(1)  = s0(1,i,rho_comp)
@@ -290,9 +291,9 @@ subroutine varden()
         ! update (rho X)_0
         do i = 0,nr_fine-1
            s0(1,i,comp) = s0_old(1,i,comp) &
-                - (dt/dr(1))/base_cc_loc(1,i)**2* &
-                (base_loedge_loc(1,i+1)**2 * edge(i+1) * w0(1,i+1) - &
-                 base_loedge_loc(1,i  )**2 * edge(i  ) * w0(1,i  ))
+                - (dt/dr(1))/r_cc_loc(1,i)**2* &
+                (r_edge_loc(1,i+1)**2 * edge(i+1) * w0(1,i+1) - &
+                 r_edge_loc(1,i  )**2 * edge(i  ) * w0(1,i  ))
         end do
 
      enddo
@@ -361,7 +362,7 @@ subroutine varden()
      !write(unit=base_state_name,fmt='("base_",i5.5)') iter
      !open(unit=10,file=base_state_name)
      !do i = 0, nr_fine-1
-     !   write(10,1000) base_cc_loc(1,i), s0(1,i,rho_comp), s0(1,i,temp_comp), p0(1,i), w0(1,i)
+     !   write(10,1000) r_cc_loc(1,i), s0(1,i,rho_comp), s0(1,i,temp_comp), p0(1,i), w0(1,i)
      !enddo
      !close(unit=10)
 
@@ -377,7 +378,7 @@ subroutine varden()
   ! output
   open(unit=10,file="base.new")
   do i = 0, nr_fine-1
-     write(10,1000) base_cc_loc(1,i), s0(1,i,rho_comp), s0(1,i,temp_comp), p0(1,i), w0(1,i)
+     write(10,1000) r_cc_loc(1,i), s0(1,i,rho_comp), s0(1,i,temp_comp), p0(1,i), w0(1,i)
   enddo
   close(unit=10)
 1000 format(1x,6(g20.10))

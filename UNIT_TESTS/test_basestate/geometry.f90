@@ -1,7 +1,7 @@
 ! a module for storing the geometric information so we don't have to pass it
 !
 ! This module provides the coordinate value for the left edge of a base-state
-! zone (base_loedge_loc) and the zone center (base_cc_loc).  As always, it is assumed that 
+! zone (r_edge_loc) and the zone center (r_cc_loc).  As always, it is assumed that 
 ! the base state arrays begin with index 0, not 1.
 
 module geometry
@@ -15,12 +15,12 @@ module geometry
   real(dp_t), save :: center(3)
   real(dp_t), allocatable, save :: dr(:)
   integer   , allocatable, save :: nr(:)
-  integer   , allocatable, save :: r_anel(:)
-  real(dp_t), allocatable, save :: base_cc_loc(:,:), base_loedge_loc(:,:)
+  integer   , allocatable, save :: anelastic_cutoff_coord(:)
+  real(dp_t), allocatable, save :: r_cc_loc(:,:), r_edge_loc(:,:)
 
   private
 
-  public :: spherical, center, dr, base_cc_loc, base_loedge_loc, nr, r_anel
+  public :: spherical, center, dr, r_cc_loc, r_edge_loc, nr, anelastic_cutoff_coord
   public :: init_spherical, init_geometry, destroy_geometry
 
 contains
@@ -46,12 +46,12 @@ contains
 
     nlevs = 1
 
-    allocate(    base_cc_loc(nlevs,0:nr_in-1))
-    allocate(base_loedge_loc(nlevs,0:nr_in))
+    allocate(    r_cc_loc(nlevs,0:nr_in-1))
+    allocate(r_edge_loc(nlevs,0:nr_in))
 
     allocate(dr(nlevs))
     allocate(nr(nlevs))
-    allocate(r_anel(nlevs))
+    allocate(anelastic_cutoff_coord(nlevs))
 
     nr(1) = nr_in
     dr(1) = dr_in
@@ -60,10 +60,10 @@ contains
 
     do n=1,nlevs
        do i = 0,nr(n)-1
-          base_cc_loc(n,i) = (dble(i)+HALF)*dr(n)
+          r_cc_loc(n,i) = (dble(i)+HALF)*dr(n)
        end do
        do i = 0,nr(n)
-          base_loedge_loc(n,i) = (dble(i))*dr(n)
+          r_edge_loc(n,i) = (dble(i))*dr(n)
        end do
     enddo
 
@@ -71,8 +71,8 @@ contains
 
   subroutine destroy_geometry()
 
-    deallocate(base_cc_loc,base_loedge_loc)
-    deallocate(dr,r_anel)
+    deallocate(r_cc_loc,r_edge_loc)
+    deallocate(dr,anelastic_cutoff_coord)
 
   end subroutine destroy_geometry
 

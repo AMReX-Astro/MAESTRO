@@ -418,7 +418,7 @@ contains
 
   subroutine average_3d_sphr(n,nlevs,phi,phisum,avfab,lo,hi,ng,dx,ncell,incomp,mla,mask)
 
-    use geometry, only: spherical, dr, center, nr, base_cc_loc
+    use geometry, only: spherical, dr, center, nr
     use ml_layout_module
     use bl_constants_module
 
@@ -470,7 +470,7 @@ contains
   subroutine average_3d_sphr_linear(n,nlevs,phi,phisum,avfab,lo,hi,ng,dx,ncell,incomp, &
                                     mla,mask)
 
-    use geometry, only: spherical, dr, center, nr, base_cc_loc
+    use geometry, only: spherical, dr, center, nr
     use ml_layout_module
     use bl_constants_module
 

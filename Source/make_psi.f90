@@ -48,7 +48,7 @@ contains
   subroutine make_psi_planar(n,etarho,psi)
 
     use bl_constants_module
-    use geometry, only: r_anel
+    use geometry, only: anelastic_cutoff_coord
     use probin_module, only: grav_const
 
     integer        , intent(in   ) :: n
@@ -61,7 +61,7 @@ contains
    
     psi = ZERO
 
-    do r = 0, r_anel(n)-1
+    do r = 0, anelastic_cutoff_coord(n)-1
       etarho_avg = HALF * (etarho(r)+etarho(r+1))
       psi(r) = etarho_avg * abs(grav_const)
     end do
@@ -71,7 +71,7 @@ contains
   subroutine make_psi_spherical(n,psi,w0,gamma1bar,p0_old,p0_new,Sbar_in)
 
     use bl_constants_module
-    use geometry, only: nr, dr, base_cc_loc, base_loedge_loc
+    use geometry, only: nr, dr, r_cc_loc, r_edge_loc
 
     integer        , intent(in   ) :: n
     real(kind=dp_t), intent(inout) :: psi(0:)
@@ -86,9 +86,9 @@ contains
 
     do r = 0, nr(n)-1
 
-       div_w0_sph = one/(base_cc_loc(n,r)**2)* &
-            (base_loedge_loc(n,r+1)**2 * w0(r+1) - &
-             base_loedge_loc(n,r  )**2 * w0(r  )) / dr(n)
+       div_w0_sph = one/(r_cc_loc(n,r)**2)* &
+            (r_edge_loc(n,r+1)**2 * w0(r+1) - &
+             r_edge_loc(n,r  )**2 * w0(r  )) / dr(n)
 
        psi(r) = gamma1bar(r) * HALF*(p0_old(r) + p0_new(r)) * (Sbar_in(r) - div_w0_sph)
 

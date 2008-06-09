@@ -176,7 +176,7 @@ contains
     use bl_constants_module
     use make_edge_state_module
     use variables, only: rho_comp, rhoh_comp
-    use geometry, only: nr, base_cc_loc, base_loedge_loc, dr, nr
+    use geometry, only: nr, r_cc_loc, r_edge_loc, dr, nr
     use make_grav_module
     use cell_to_edge_module
     use make_div_coeff_module
@@ -234,7 +234,7 @@ contains
 
     do r = 0,nr(n)-1
        force(r) = -rho0_old(r) * (vel(r+1) - vel(r)) / dr(n) - &
-            2.0_dp_t*rho0_old(r)*HALF*(vel(r) + vel(r+1))/base_cc_loc(n,r)
+            2.0_dp_t*rho0_old(r)*HALF*(vel(r) + vel(r+1))/r_cc_loc(n,r)
     end do
     
     call make_edge_state_1d(n,rho0_old,edge,vel,force,1,dr(n),dt)
@@ -243,9 +243,9 @@ contains
 
     do r = 0,nr(n)-1
        rho0_new(r) = rho0_old(r) &
-            - dtdr/base_cc_loc(n,r)**2 * &
-                (base_loedge_loc(n,r+1)**2 * edge(r+1) * vel(r+1) - &
-                 base_loedge_loc(n,r  )**2 * edge(r  ) * vel(r  ))
+            - dtdr/r_cc_loc(n,r)**2 * &
+                (r_edge_loc(n,r+1)**2 * edge(r+1) * vel(r+1) - &
+                 r_edge_loc(n,r  )**2 * edge(r  ) * vel(r  ))
     end do
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -256,18 +256,18 @@ contains
 !   call cell_to_edge(n,div_coeff_old,beta)
 !   Update p0 -- predictor
 !   do r = 0,nr(n)-1
-!      divbetaw = one/(base_cc_loc(n,r)**2) * &
-!           (base_loedge_loc(n,r+1)**2 * beta(r+1) * vel(r+1) - &
-!            base_loedge_loc(n,r  )**2 * beta(r  ) * vel(r  )) / dr(n)
+!      divbetaw = one/(r_cc_loc(n,r)**2) * &
+!           (r_edge_loc(n,r+1)**2 * beta(r+1) * vel(r+1) - &
+!            r_edge_loc(n,r  )**2 * beta(r  ) * vel(r  )) / dr(n)
 !      betahalf = div_coeff_old(r)
 !      factor = half * dt * gamma1bar(r) * (Sbar_in(r) - divbetaw / betahalf)
 !      p0_new(r) = p0_old(r) * (one + factor ) / (one - factor)
 !   end do
 
     do r = 0,nr(n)-1
-       divw = one/(base_cc_loc(n,r)**2) * &
-            (base_loedge_loc(n,r+1)**2 * vel(r+1) - &
-             base_loedge_loc(n,r  )**2 * vel(r  )) / dr(n)
+       divw = one/(r_cc_loc(n,r)**2) * &
+            (r_edge_loc(n,r+1)**2 * vel(r+1) - &
+             r_edge_loc(n,r  )**2 * vel(r  )) / dr(n)
 
        if (r .eq. 0) then
           w0dpdr_avg_2 =  vel(2) * (p0_old(2)-p0_old(1)) / dr(n)
@@ -297,9 +297,9 @@ contains
 !   beta_nh = HALF*(beta + beta_new)
 !   Update p0 -- corrector
 !   do r = 0,nr(n)-1
-!      divbetaw = one / (base_cc_loc(n,r)**2) * &
-!           (base_loedge_loc(n,r+1)**2 * beta_nh(r+1) * vel(r+1) - &
-!            base_loedge_loc(n,r  )**2 * beta_nh(r  ) * vel(r  )) / dr(n)
+!      divbetaw = one / (r_cc_loc(n,r)**2) * &
+!           (r_edge_loc(n,r+1)**2 * beta_nh(r+1) * vel(r+1) - &
+!            r_edge_loc(n,r  )**2 * beta_nh(r  ) * vel(r  )) / dr(n)
 
 !      betahalf = HALF*(div_coeff_old(r) + div_coeff_new(r))
 !      factor = half * dt * (Sbar_in(r) - divbetaw / betahalf)
@@ -308,9 +308,9 @@ contains
 !   end do
 
     do r = 0,nr(n)-1
-       divw = one/(base_cc_loc(n,r)**2) * &
-            (base_loedge_loc(n,r+1)**2 * vel(r+1) - &
-             base_loedge_loc(n,r  )**2 * vel(r  )) / dr(n)
+       divw = one/(r_cc_loc(n,r)**2) * &
+            (r_edge_loc(n,r+1)**2 * vel(r+1) - &
+             r_edge_loc(n,r  )**2 * vel(r  )) / dr(n)
 
        if (r .eq. 0) then
           w0dpdr_avg_2 =  HALF * vel(2) * ( (p0_old(2)-p0_old(1)) &
@@ -352,9 +352,9 @@ contains
 
        do r = 0,nr(n)-1
 
-          div_w0_sph = one/(base_cc_loc(n,r)**2) * &
-               (base_loedge_loc(n,r+1)**2 * vel(r+1) - &
-                base_loedge_loc(n,r  )**2 * vel(r  )) / dr(n)
+          div_w0_sph = one/(r_cc_loc(n,r)**2) * &
+               (r_edge_loc(n,r+1)**2 * vel(r+1) - &
+                r_edge_loc(n,r  )**2 * vel(r  )) / dr(n)
               
           ! add psi at time-level n to the force for the prediction
           psi(r) = gamma1bar_old(r) * p0_old(r) * (Sbar_in(r) - div_w0_sph)
@@ -377,12 +377,12 @@ contains
        do r = 0,nr(n)-1
        
           div_w0_cart = (vel(r+1) - vel(r)) / dr(n)
-          div_w0_sph = one/(base_cc_loc(n,r)**2) * &
-               (base_loedge_loc(n,r+1)**2 * vel(r+1) - &
-                base_loedge_loc(n,r  )**2 * vel(r  )) / dr(n)
+          div_w0_sph = one/(r_cc_loc(n,r)**2) * &
+               (r_edge_loc(n,r+1)**2 * vel(r+1) - &
+                r_edge_loc(n,r  )**2 * vel(r  )) / dr(n)
 
           force(r) = -rhoh0_old(r) * div_w0_cart - &
-               2.0_dp_t*rhoh0_old(r)*HALF*(vel(r) + vel(r+1))/base_cc_loc(n,r)
+               2.0_dp_t*rhoh0_old(r)*HALF*(vel(r) + vel(r+1))/r_cc_loc(n,r)
        
           ! add psi at time-level n to the force for the prediction
           psi(r) = gamma1bar_old(r) * p0_old(r) * (Sbar_in(r) - div_w0_sph)
@@ -401,9 +401,9 @@ contains
     do r = 0,nr(n)-1
        
        rhoh0_new(r) = rhoh0_old(r) - &
-            dtdr / base_cc_loc(n,r)**2 * &
-            (base_loedge_loc(n,r+1)**2 * edge(r+1) * vel(r+1) - &
-             base_loedge_loc(n,r  )**2 * edge(r  ) * vel(r  ))
+            dtdr / r_cc_loc(n,r)**2 * &
+            (r_edge_loc(n,r+1)**2 * edge(r+1) * vel(r+1) - &
+             r_edge_loc(n,r  )**2 * edge(r  ) * vel(r  ))
        
        rhoh0_new(r) = rhoh0_new(r) + dt * psi(r)
        

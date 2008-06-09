@@ -19,7 +19,7 @@ contains
    subroutine make_div_coeff(n,div_coeff,rho0,p0,gamma1bar,grav_center)
 
      use bl_constants_module
-     use geometry, only: dr, r_anel, nr
+     use geometry, only: dr, anelastic_cutoff_coord, nr
 
       integer        , intent(in   ) :: n
       real(kind=dp_t), intent(  out) :: div_coeff(0:)
@@ -110,7 +110,7 @@ contains
 
       end do
       
-      do r = r_anel(n),nr(n)-1
+      do r = anelastic_cutoff_coord(n),nr(n)-1
         div_coeff(r) = div_coeff(r-1) * (rho0(r)/rho0(r-1))
       end do 
    end subroutine make_div_coeff
