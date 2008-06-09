@@ -233,7 +233,7 @@ subroutine varden()
 
   ! Initialize geometry (IMPT: dr is set in init_base_state)
   center(1:dm) = HALF * (prob_lo(1:dm) + prob_hi(1:dm))
-  call init_geometry(center,nr_fine,dr_base,nlevs,mla)
+  call init_geometry(center,dr_base,nlevs,mla)
 
   ! Initialize base state at finest level
   do n=1,nlevs
