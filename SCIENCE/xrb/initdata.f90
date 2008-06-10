@@ -9,7 +9,7 @@ module init_module
   use eos_module
   use variables
   use network
-  use geometry
+  use geometry, only: r_end_coord, spherical
   use ml_layout_module
   use ml_restriction_module
   use multifab_fill_ghost_module
@@ -44,18 +44,18 @@ contains
     dm = s(1)%dim
 
     ! compute the perturbation r location based on where the concentration of He
-    ! becomes greater than he4_pert at the finest level
+    ! becomes greater than he4_pert at the coarsest level
     he4_comp = network_species_index('helium-4')
-    do r=0,nr(nlevs)-1
-       if (s0_init(nlevs,r,spec_comp+he4_comp-1)/s0_init(nlevs,r,rho_comp) .gt. he4_pert) then
+    do r=0,r_end_coord(1)
+       if (s0_init(1,r,spec_comp+he4_comp-1)/s0_init(1,r,rho_comp) .gt. he4_pert) then
           pert_index = r
           exit
        end if
     end do
     if(dm .eq. 2) then
-       pert_height = prob_lo_y + (dble(pert_index)+HALF)*dx(nlevs,dm) + 50.0d0
+       pert_height = prob_lo_y + (dble(pert_index)+HALF)*dx(1,dm) + 50.0d0
     else if(dm .eq. 3) then
-       pert_height = prob_lo_z + (dble(pert_index)+HALF)*dx(nlevs,dm) + 50.0d0
+       pert_height = prob_lo_z + (dble(pert_index)+HALF)*dx(1,dm) + 50.0d0
     end if
 
     do n=1,nlevs
@@ -66,11 +66,11 @@ contains
           hi =  upb(get_box(s(n),i))
           select case (dm)
           case (2)
-             call initscalardata_2d(sop(:,:,1,:), lo, hi, ng, dx(n,:), s0_init(n,:,:), p0_init(n,:), &
-                                    pert_height)
+             call initscalardata_2d(sop(:,:,1,:), lo, hi, ng, dx(n,:), s0_init(n,:,:), &
+                                    p0_init(n,:), pert_height)
           case (3)
-             call initscalardata_3d(n,sop(:,:,:,:), lo, hi, ng, dx(n,:), s0_init(n,:,:), p0_init(n,:), &
-                                    pert_height)
+             call initscalardata_3d(n,sop(:,:,:,:), lo, hi, ng, dx(n,:), s0_init(n,:,:), &
+                                    p0_init(n,:), pert_height)
           end select
        end do
      enddo
