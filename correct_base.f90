@@ -42,7 +42,7 @@ contains
 
   subroutine correct_base_state_planar(n,rho0_new,etarho,dz,dt)
 
-    use geometry, only: anelastic_cutoff_coord
+    use geometry, only: anelastic_cutoff_coord, r_start_coord, r_end_coord
 
     integer        , intent(in   ) :: n
     real(kind=dp_t), intent(inout) :: rho0_new(0:)
@@ -56,8 +56,10 @@ contains
 ! UPDATE RHO0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    do r = 0, anelastic_cutoff_coord(n)-1
-       rho0_new(r) = rho0_new(r) - dt/dz*(etarho(r+1) - etarho(r))
+    do r=r_start_coord(n),r_end_coord(n)
+       if (r .lt. anelastic_cutoff_coord(n)) then
+          rho0_new(r) = rho0_new(r) - dt/dz*(etarho(r+1) - etarho(r))
+       end if
     end do
     
   end subroutine correct_base_state_planar
