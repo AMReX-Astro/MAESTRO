@@ -19,7 +19,7 @@ contains
    subroutine make_div_coeff(n,div_coeff,rho0,p0,gamma1bar,grav_center)
 
      use bl_constants_module
-     use geometry, only: dr, anelastic_cutoff_coord, nr
+     use geometry, only: dr, anelastic_cutoff_coord, r_start_coord, r_end_coord
 
       integer        , intent(in   ) :: n
       real(kind=dp_t), intent(  out) :: div_coeff(0:)
@@ -40,10 +40,10 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
       beta0_edge_lo = rho0(0)
-      do r = 0,nr(n)-1
+      do r = r_start_coord(n),r_end_coord(n)
 
          ! compute the slopes
-         if (r == 0 .or. r == nr(n)-1) then
+         if (r == r_start_coord(n) .or. r == r_end_coord(n)) then
             lambda = ZERO
             mu = ZERO
             nu = ZERO
@@ -75,7 +75,7 @@ contains
 
          endif
 
-         if (r == 0 .or. r == nr(n)-1) then
+         if (r == r_start_coord(n) .or. r == r_end_coord(n)) then
 
             integral = abs(grav_center(r))*rho0(r)*dr(n)/(p0(r)*gamma1bar(r))
 
@@ -110,7 +110,7 @@ contains
 
       end do
       
-      do r = anelastic_cutoff_coord(n),nr(n)-1
+      do r = anelastic_cutoff_coord(n),r_end_coord(n)
         div_coeff(r) = div_coeff(r-1) * (rho0(r)/rho0(r-1))
       end do 
    end subroutine make_div_coeff
