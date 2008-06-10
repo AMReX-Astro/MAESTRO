@@ -56,10 +56,8 @@ contains
 ! UPDATE RHO0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    do r=r_start_coord(n),r_end_coord(n)
-       if (r .lt. anelastic_cutoff_coord(n)) then
-          rho0_new(r) = rho0_new(r) - dt/dz*(etarho(r+1) - etarho(r))
-       end if
+    do r=r_start_coord(n),anelastic_cutoff_coord(n)-1
+       rho0_new(r) = rho0_new(r) - dt/dz*(etarho(r+1) - etarho(r))
     end do
     
   end subroutine correct_base_state_planar
