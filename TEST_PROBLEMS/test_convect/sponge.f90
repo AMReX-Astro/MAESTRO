@@ -17,9 +17,8 @@ module sponge_module
 
 contains
 
-  subroutine init_sponge(nlevs,rho0,prob_hi,dx,prob_lo_r)
+  subroutine init_sponge(rho0,prob_hi,dx,prob_lo_r)
 
-    integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(in   ) :: rho0(0:),prob_lo_r
     real(kind=dp_t), intent(in   ) :: prob_hi(:),dx(:)
 
