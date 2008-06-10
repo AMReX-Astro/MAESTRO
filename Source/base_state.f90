@@ -25,7 +25,7 @@ contains
                              prob_lo_z, prob_hi_x, prob_hi_y, prob_hi_z, &
                              small_temp, small_dens, grav_const
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp, ntrac
-    use geometry, only: dr, nr, spherical
+    use geometry, only: dr, spherical, r_start_coord, r_end_coord
     
     integer           , intent(in   ) :: n
     character(len=256), intent(in   ) :: model_file
@@ -234,7 +234,6 @@ contains
 
     if ( parallel_IOProcessor() ) then
        print *,'DR , RMAX OF MODEL     ',dr_in, rmax
-       print *,'DR , RMAX OF BASE ARRAY',dr(n), dble(nr(n)-HALF) * dr(n)
 
        if (dr(n) .lt. dr_in) then
           mod_dr = mod(dr_in,dr(n))
@@ -277,7 +276,7 @@ contains
        prob_hi_r = r_cutoff_loc
     end if
 
-    do r = 0,nr(n)-1
+    do r=r_start_coord(n),r_end_coord(n)
 
        rloc = starting_rad + (dble(r) + HALF)*dr(n)
 
@@ -352,7 +351,7 @@ contains
 
     max_hse_error = -1.d30
 
-    do r = 1, nr(n)-1
+    do r=r_start_coord(n)+1,r_end_coord(n)
 
        rloc = starting_rad + (dble(r) + HALF)*dr(n)
        rloc = min(rloc, rmax)

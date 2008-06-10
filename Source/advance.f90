@@ -189,7 +189,7 @@ contains
 
     ! compute the coordinates of the anelastic cutoff
     anelastic_cutoff_coord(1) = r_end_coord(1)
-    do r=r_start_coord(1),r_end_coord(1)
+    do r=0,r_end_coord(1)
        if (rho0_old(1,r) .lt. anelastic_cutoff .and. &
             anelastic_cutoff_coord(1) .eq. r_end_coord(1)) then
           anelastic_cutoff_coord(1) = r

@@ -18,7 +18,7 @@ contains
 
   subroutine average(mla,phi,phibar,dx,incomp)
 
-    use geometry, only: nr, spherical, center, dr
+    use geometry, only: nr_fine, r_start_coord, r_end_coord, spherical, center, dr
     use bl_prof_module
     use bl_constants_module
 
@@ -59,19 +59,19 @@ contains
 
     phibar = ZERO
 
-    if (spherical .eq. 1) allocate(ncell_grid(nlevs,0:nr(nlevs)-1))
+    if (spherical .eq. 1) allocate(ncell_grid(nlevs,0:nr_fine-1))
 
-    allocate(ncell_proc(nlevs,0:nr(nlevs)-1))
-    allocate(     ncell(nlevs,0:nr(nlevs)-1))
+    allocate(ncell_proc(nlevs,0:nr_fine-1))
+    allocate(     ncell(nlevs,0:nr_fine-1))
 
-    allocate(phisum_proc(nlevs,0:nr(nlevs)-1))
-    allocate(     phisum(nlevs,0:nr(nlevs)-1))
+    allocate(phisum_proc(nlevs,0:nr_fine-1))
+    allocate(     phisum(nlevs,0:nr_fine-1))
 
-    allocate(phipert_proc(nlevs,0:nr(nlevs)-1))
-    allocate(     phipert(nlevs,0:nr(nlevs)-1))
+    allocate(phipert_proc(nlevs,0:nr_fine-1))
+    allocate(     phipert(nlevs,0:nr_fine-1))
 
-    allocate(source_buffer(nr(nlevs)))
-    allocate(target_buffer(nr(nlevs)))
+    allocate(source_buffer(nr_fine))
+    allocate(target_buffer(nr_fine))
 
     ncell        = ZERO
     ncell_proc   = ZERO
@@ -117,7 +117,7 @@ contains
              source_buffer = phisum_proc(n,:)
              call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
              phisum(n,:) = target_buffer
-             do r=0,nr(n)-1
+             do r=r_start_coord(n),r_end_coord(n)
                 phibar(n,r) = phisum(n,r) / dble(ncell(n,r))
              end do
              
@@ -154,7 +154,7 @@ contains
           source_buffer = phisum_proc(1,:)
           call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
           phisum(1,:) = target_buffer
-          do r=0,nr(1)-1
+          do r=0,r_end_coord(1)
              phibar(1,r) = phisum(1,r) / dble(ncell(1,r))
           end do
           
@@ -175,7 +175,7 @@ contains
              
              ! compute phisum at next finer level
              ! begin by assuming piecewise constant interpolation
-             do r=0,nr(n)-1
+             do r=r_start_coord(n),r_end_coord(n)
                 phisum(n,r) = phisum(n-1,r/rr)*rr**(dm-1)
              end do
              
@@ -199,7 +199,7 @@ contains
              phipert(n,:) = target_buffer
              
              ! update phisum and compute phibar
-             do r=0,nr(n)-1
+             do r=r_start_coord(n),r_end_coord(n)
                 phisum(n,r) = phisum(n,r) + phipert(n,r)
                 phibar(n,r) = phisum(n,r) / dble(ncell(n,r))
              end do
@@ -261,7 +261,7 @@ contains
 
           if (n .ne. nlevs) then
              ncell(nlevs,:) = ncell(nlevs,:) + ncell(n,:)
-             do r=0,nr(nlevs)-1
+             do r=0,nr_fine-1
                 phisum(nlevs,r) = phisum(nlevs,r) + phisum(n,r)
              end do
           end if
@@ -269,7 +269,7 @@ contains
        end do
 
        ! now divide the total phisum by the number of cells to get phibar
-       do r=0,nr(nlevs)-1
+       do r=0,nr_fine
           if (ncell(nlevs,r) .gt. ZERO) then
              phibar(nlevs,r) = phisum(nlevs,r) / ncell(nlevs,r)
           else
@@ -281,8 +281,8 @@ contains
        ! because there is no contribution from any Cartesian cell that lies in this bin.
        ! this needs to be addressed - perhaps in the definition of nr_fine in varden.f90
        ! for spherical problems.
-       if (ncell(nlevs,nr(nlevs)-1) .eq. ZERO) then
-          phibar(nlevs,nr(nlevs)-1) = phibar(nlevs,nr(nlevs)-2)
+       if (ncell(nlevs,nr_fine-1) .eq. ZERO) then
+          phibar(nlevs,nr_fine-1) = phibar(nlevs,nr_fine-2)
        end if
 
        deallocate(ncell_grid)
@@ -418,7 +418,7 @@ contains
 
   subroutine average_3d_sphr(n,nlevs,phi,phisum,avfab,lo,hi,ng,dx,ncell,incomp,mla,mask)
 
-    use geometry, only: spherical, dr, center, nr
+    use geometry, only: spherical, dr, center
     use ml_layout_module
     use bl_constants_module
 
@@ -470,7 +470,7 @@ contains
   subroutine average_3d_sphr_linear(n,nlevs,phi,phisum,avfab,lo,hi,ng,dx,ncell,incomp, &
                                     mla,mask)
 
-    use geometry, only: spherical, dr, center, nr
+    use geometry, only: spherical, dr, center
     use ml_layout_module
     use bl_constants_module
 

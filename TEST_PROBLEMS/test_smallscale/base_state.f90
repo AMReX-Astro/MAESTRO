@@ -20,7 +20,7 @@ contains
     use eos_module
     use probin_module, ONLY: prob_lo_y, prob_lo_z
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp
-    use geometry, only: dr, nr, spherical
+    use geometry, only: dr, spherical, r_start_coord, r_end_coord
     use inlet_bc_module
 
     integer,             intent(in   ) :: n
@@ -113,7 +113,7 @@ contains
     ! Now do the interior cells
     flameloc = ONE
 
-    do i=0,nr(n)-1
+    do i=r_start_coord(n),r_end_coord(n)
 
        loloc = starting_rad +  dble(i)     *dx(dm) - flameloc
        hiloc = starting_rad + (dble(i)+ONE)*dx(dm) - flameloc
