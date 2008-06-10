@@ -29,7 +29,7 @@ contains
 
     use bl_prof_module
     use bl_constants_module
-    use geometry
+    use geometry, only: spherical, nr_fine, r_start_coord, r_end_coord, dr
     use variables, only: foextrap_comp
     use fill_3d_module
     use multifab_physbc_module
@@ -75,10 +75,10 @@ contains
     ng = s(1)%ng
 
     if (spherical .eq. 1) then
-       allocate (gradw0_rad(0:nr(nlevs)-1))
+       allocate (gradw0_rad(0:nr_fine-1))
 
        ! NOTE: here we are doing the computation at the finest level
-       do r = 0, nr(nlevs)-1
+       do r=r_start_coord(nlevs),r_end_coord(nlevs)
           gradw0_rad(r) = (w0(nlevs,r+1) - w0(nlevs,r)) / dr(nlevs)
        enddo
     endif
@@ -180,7 +180,7 @@ contains
                                force,w0,lo,dx,dt,is_vel,phys_bc,adv_bc, &
                                ng,comp,is_conservative)
 
-    use geometry, only: nr
+    use geometry, only: r_start_coord, r_end_coord
     use bc_module
     use slope_module
     use bl_constants_module
@@ -266,13 +266,13 @@ contains
 
           if (use_new_godunov .and. is_vel .and. comp .eq. 2) then
 
-             if ((j+2).le.nr(n)) then
+             if ((j+2).le.r_end_coord(n)+1) then
                 dw0drhi = (w0(j+2)-w0(j+1))/dx(2)
              else
                 dw0drhi = (w0(j+1)-w0(j))/dx(2)
              end if
 
-             if(j .ge. 0) then
+             if(j .ge. r_start_coord(n)) then
                 dw0drlo = (w0(j+1)-w0(j))/dx(2)
              else
                 dw0drlo = (w0(j+2)-w0(j+1))/dx(2)
@@ -310,13 +310,13 @@ contains
 
           if (use_new_godunov .and. is_vel .and. comp .eq. 2) then
 
-             if ((j+1).le.nr(n)) then
+             if ((j+1).le.r_end_coord(n)+1) then
                 dw0drhi = (w0(j+1)-w0(j))/dx(2)
              else
                 dw0drhi = (w0(j+2)-w0(j+1))/dx(2)
              end if
 
-             if(j-1 .ge. 0) then
+             if(j-1.ge.r_start_coord(n)) then
                 dw0drlo = (w0(j)-w0(j-1))/dx(2)
              else
                 dw0drlo = (w0(j+1)-w0(j))/dx(2)
@@ -469,7 +469,7 @@ contains
              st = force(i,j,comp) - HALF * (umac(i,j)+umac(i+1,j))*(splus - sminus) / hx
           end if
           
-          if (is_vel .and. comp .eq. 2 .and. j .ge. 0 .and. j .lt. nr(n)) then
+          if (is_vel .and. comp .eq. 2 .and. j .ge. 0 .and. j .le. r_end_coord(n)) then
              ! vmac contains w0 so we need to subtract it off
              st = st - HALF * (vmac(i,j)+vmac(i,j+1)-w0(j+1)-w0(j))*(w0(j+1)-w0(j))/hy
           end if
@@ -508,7 +508,7 @@ contains
   subroutine make_edge_scal_3d(n,s,sedgex,sedgey,sedgez,umac,vmac,wmac,force,w0_cart_vec, &
                                lo,dx,dt,is_vel,phys_bc,adv_bc,ng,comp,is_conservative)
 
-    use geometry, only: nr, spherical
+    use geometry, only: spherical
     use bc_module
     use slope_module
     use bl_constants_module
