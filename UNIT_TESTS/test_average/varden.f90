@@ -74,7 +74,7 @@ subroutine varden()
 
   type(bc_tower) ::  the_bc_tower
 
-  type(bc_level) ::  bc
+  type(box), allocatable :: boundingbox(:)
 
   ng_cell = 3
 
@@ -111,6 +111,7 @@ subroutine varden()
   nlevs = mba%nlevel
   call ml_layout_build(mla,mba,pmask)
   allocate(uold(nlevs),sold(nlevs))
+  allocate(boundingbox(nlevs))
 
   allocate(nodal(dm), umac_nodal_flag(dm))
   nodal = .true.
@@ -120,6 +121,14 @@ subroutine varden()
      call multifab_build(      sold(n), mla%la(n), nscal, ng_cell)
      call setval( uold(n),0.0_dp_t, all=.true.)
      call setval( sold(n),0.0_dp_t, all=.true.)
+  end do
+
+  ! create a "bounding box" for each level
+  do n=1,nlevs
+     boundingbox(n) = get_box(sold(n),1)
+     do i=2, sold(n)%nboxes
+        boundingbox(n) = box_bbox(boundingbox(n),get_box(sold(n),i))
+     end do
   end do
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -196,6 +205,7 @@ subroutine varden()
 
   la = mla%la(1)
 
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! Allocate the arrays for the boundary conditions at the physical boundaries.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -232,7 +242,7 @@ subroutine varden()
 
   ! Initialize geometry (IMPT: dr is set in init_base_state)
   center(1:dm) = HALF * (prob_lo(1:dm) + prob_hi(1:dm))
-  call init_geometry(center,dr_base,nlevs,mla)
+  call init_geometry(center,dr_base,nlevs,mla,boundingbox)
 
   ! Initialize base state at finest level
   do n=1,nlevs
@@ -298,7 +308,7 @@ subroutine varden()
   deallocate(uold,unew,sold,snew)
   deallocate(s0_old,s0_avg,p0_old,w0)
 
-  deallocate(lo,hi)
+  deallocate(lo,hi,boundingbox)
 
   call bc_tower_destroy(the_bc_tower)
 
