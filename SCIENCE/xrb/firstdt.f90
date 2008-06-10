@@ -70,7 +70,7 @@ contains
 
     use eos_module
     use variables, only: rho_comp, temp_comp, spec_comp
-    use geometry,  only: nr
+    use geometry,  only: r_end_coord
     use bl_constants_module
     
     integer, intent(in)             :: n, lo(:), hi(:), ng
@@ -176,7 +176,7 @@ contains
     do j = lo(2), hi(2)
        if (j .eq. 0) then
           gradp0 = (p0(j+1) - p0(j))/dx(2)
-       else if (j .eq. nr(n)-1) then
+       else if (j .eq. r_end_coord(n)) then
           gradp0 = (p0(j) - p0(j-1))/dx(2)
        else
           gradp0 = HALF*(p0(j+1) - p0(j-1))/dx(2)
@@ -198,7 +198,7 @@ contains
   
   subroutine firstdt_3d(n,u,s,force,divU,p0,gamma1,lo,hi,ng,dx,dt,cfl)
 
-    use geometry,  only: spherical, nr
+    use geometry,  only: spherical, r_end_coord
     use variables, only: rho_comp, temp_comp, spec_comp
     use eos_module
     use bl_constants_module
@@ -322,7 +322,7 @@ contains
     do k = lo(3), hi(3)
        if (k .eq. 0) then
           gradp0 = (p0(k+1) - p0(k))/dx(3)
-       else if (k .eq. nr(n)-1) then
+       else if (k .eq. r_end_coord(n)) then
           gradp0 = (p0(k) - p0(k-1))/dx(3)
        else
           gradp0 = HALF*(p0(k+1) - p0(k-1))/dx(3)
