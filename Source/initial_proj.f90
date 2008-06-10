@@ -15,7 +15,7 @@ contains
     use define_bc_module
     use bl_constants_module
     use probin_module
-    use geometry, only: spherical, nr
+    use geometry, only: spherical, nr_fine
     use proj_parameters, only: initial_projection_comp
     use make_explicit_thermal_module
     use make_S_module
@@ -58,10 +58,9 @@ contains
     real(dp_t), allocatable :: Sbar(:,:)
     real(dp_t), allocatable :: delta_gamma1_termbar(:,:)
 
-    allocate(Sbar                (nlevs,0:nr(nlevs)-1))
-    allocate(delta_gamma1_termbar(nlevs,0:nr(nlevs)-1))
-
-    allocate(psi(nlevs,0:nr(nlevs)))
+    allocate(Sbar                (nlevs,0:nr_fine-1))
+    allocate(delta_gamma1_termbar(nlevs,0:nr_fine-1))
+    allocate(psi                 (nlevs,0:nr_fine))
 
     Sbar = ZERO
     psi = ZERO
