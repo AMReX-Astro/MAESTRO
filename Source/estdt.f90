@@ -123,7 +123,7 @@ contains
   subroutine estdt_2d(n, u, s, force, divU, dSdt, w0, p0, gamma1bar, lo, hi, &
                       ng, dx, rho_min, dt_adv, dt_divu, cfl)
 
-    use geometry,  only: nr
+    use geometry,  only: r_end_coord
     use variables, only: rho_comp
 
     integer, intent(in) :: n, lo(:), hi(:), ng
@@ -192,7 +192,7 @@ contains
        
        if (j .eq. 0) then
           gradp0 = (p0(j+1) - p0(j))/dx(2)
-       else if (j .eq. nr(n)-1) then
+       else if (j .eq. r_end_coord(n)) then
           gradp0 = (p0(j) - p0(j-1))/dx(2)
        else
           gradp0 = HALF*(p0(j+1) - p0(j-1))/dx(2)
@@ -237,7 +237,7 @@ contains
   subroutine estdt_3d_cart(n, u, s, force, divU, dSdt, w0, p0, gamma1bar, lo, hi, &
                            ng, dx, rho_min, dt_adv, dt_divu, cfl)
 
-    use geometry,  only: nr
+    use geometry,  only: r_end_coord
     use variables, only: rho_comp
 
     integer, intent(in) :: n, lo(:), hi(:), ng
@@ -319,7 +319,7 @@ contains
        
        if (k .eq. 0) then
           gradp0 = (p0(k+1) - p0(k))/dx(3)
-       else if (k .eq. nr(n)-1) then
+       else if (k .eq. r_end_coord(n)) then
           gradp0 = (p0(k) - p0(k-1))/dx(3)
        else
           gradp0 = HALF*(p0(k+1) - p0(k-1))/dx(3)
@@ -367,7 +367,7 @@ contains
   subroutine estdt_3d_sphr(n, u, s, force, divU, dSdt, normal, w0, p0, gamma1bar, &
                            lo, hi, ng, dx, rho_min, dt_adv, dt_divu, cfl)
 
-    use geometry,  only: dr, nr
+    use geometry,  only: dr, nr_fine, r_start_coord, r_end_coord
     use variables, only: rho_comp
     use fill_3d_module
     
@@ -453,12 +453,12 @@ contains
        dt_adv = min(dt_adv,sqrt(2.0D0*dx(3)/fz))
     
     ! divU constraint
-    allocate(gp0(0:nr(n)))
-    do r = 1,nr(n)-1
+    allocate(gp0(0:nr_fine))
+    do r=r_start_coord(n)+1,r_end_coord(n)
        gamma1bar_p_avg = HALF * (gamma1bar(r)*p0(r) + gamma1bar(r-1)*p0(r-1))
        gp0(r) = ( (p0(r) - p0(r-1))/dr(n) ) / gamma1bar_p_avg
     end do
-    gp0(nr(n)) = gp0(nr(n)-1)
+    gp0(r_end_coord(n)+1) = gp0(r_end_coord(n))
     gp0(    0) = gp0(      1)
     allocate(gp0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),3))
     call put_1d_array_on_cart_3d_sphr(n,.true.,.true.,gp0,gp0_cart,lo,hi,dx,0,normal)
