@@ -1443,17 +1443,17 @@ contains
      
    end subroutine make_edge_state_3d
    
-   subroutine make_edge_state_1d(n,s,sedgex,umac,force,lo,dx,dt)
+   subroutine make_edge_state_1d(n,s,sedgex,umac,force,dx,dt)
 
-     use geometry, only: nr
+     use geometry, only: r_start_coord, r_end_coord
      use probin_module, only: slope_order
      use bl_constants_module
      
-     integer        , intent(in   ) :: n, lo
-     real(kind=dp_t), intent(in   ) ::      s(lo:)
-     real(kind=dp_t), intent(inout) :: sedgex(lo:)
-     real(kind=dp_t), intent(in   ) ::   umac(lo:)
-     real(kind=dp_t), intent(in   ) ::  force(lo:)
+     integer        , intent(in   ) :: n
+     real(kind=dp_t), intent(in   ) ::      s(0:)
+     real(kind=dp_t), intent(inout) :: sedgex(0:)
+     real(kind=dp_t), intent(in   ) ::   umac(0:)
+     real(kind=dp_t), intent(in   ) ::  force(0:)
      real(kind=dp_t), intent(in   ) :: dx,dt
      
      real(kind=dp_t), allocatable::  slopex(:)
@@ -1463,11 +1463,12 @@ contains
      real(kind=dp_t) :: ubardth, dth, savg
      real(kind=dp_t) :: abs_eps, eps, umax, u
      
-     integer :: i,is,ie,hi
+     integer :: i,lo,hi
      integer        , parameter :: cen = 1, lim = 2, flag = 3, fromm = 4
      real(kind=dp_t), parameter :: fourthirds = 4.0_dp_t / 3.0_dp_t
      
-     hi = lo + nr(n) - 1
+     lo = r_start_coord(n)
+     hi = r_end_coord(n)
      
      allocate(s_l(lo-1:hi+2),s_r(lo-1:hi+2))
      allocate(slopex(lo:hi))
@@ -1477,11 +1478,8 @@ contains
      
      dth = HALF*dt
      
-     is = lo
-     ie = lo + nr(n) - 1
-     
      umax = ZERO
-     do i = is,ie+1
+     do i = lo,hi+1
         umax = max(umax,abs(umac(i)))
      end do
      
@@ -1493,7 +1491,7 @@ contains
 
      else if (slope_order .eq. 2) then
 
-        do i = is+1,ie-1
+        do i = lo+1,hi-1
            del = half*(s(i+1) - s(i-1))
            dpls = two*(s(i+1) - s(i  ))
            dmin = two*(s(i  ) - s(i-1))
@@ -1503,12 +1501,12 @@ contains
            slopex(i)= sflag*min(slim,abs(del))
         enddo
      
-        slopex(is) = ZERO
-        slopex(ie) = ZERO
+        slopex(lo) = ZERO
+        slopex(hi) = ZERO
 
      else if (slope_order .eq. 4) then
      
-        do i = is+1,ie-1
+        do i = lo+1,hi-1
            dxscr(i,cen) = half*(s(i+1)-s(i-1))
            dpls = two*(s(i+1)-s(i  ))
            dmin = two*(s(i  )-s(i-1))
@@ -1518,21 +1516,21 @@ contains
            dxscr(i,fromm)= dxscr(i,flag)*min(dxscr(i,lim),abs(dxscr(i,cen)))
         enddo
      
-        dxscr(is,fromm) = ZERO
-        dxscr(ie,fromm) = ZERO
+        dxscr(lo,fromm) = ZERO
+        dxscr(hi,fromm) = ZERO
      
-        do i = is+1,ie-1
+        do i = lo+1,hi-1
            ds = fourthirds * dxscr(i,cen) - sixth * (dxscr(i+1,fromm) + dxscr(i-1,fromm))
            slopex(i) = dxscr(i,flag)*min(abs(ds),dxscr(i,lim))
         enddo
      
-        slopex(is) = ZERO
-        slopex(ie) = ZERO
+        slopex(lo) = ZERO
+        slopex(hi) = ZERO
 
      end if
         
      ! Compute edge values using slopes and forcing terms.
-     do i = is,ie
+     do i = lo,hi
         
         u = HALF * (umac(i) + umac(i+1))
         ubardth = dth*u/dx
@@ -1542,10 +1540,10 @@ contains
         
      enddo
      
-     sedgex(is  ) = s_r(is  )
-     sedgex(ie+1) = s_l(ie+1)
+     sedgex(lo  ) = s_r(lo  )
+     sedgex(hi+1) = s_l(hi+1)
      
-     do i = is+1, ie 
+     do i = lo+1, hi 
         sedgex(i)=merge(s_l(i),s_r(i),umac(i).gt.ZERO)
         savg = HALF*(s_r(i) + s_l(i))
         sedgex(i)=merge(savg,sedgex(i),abs(umac(i)) .lt. eps)

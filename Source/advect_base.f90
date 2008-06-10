@@ -64,7 +64,7 @@ contains
     use bl_constants_module
     use make_edge_state_module
     use variables, only: rho_comp, rhoh_comp
-    use geometry, only: r_start_coord, r_end_coord
+    use geometry, only: nr_fine, r_start_coord, r_end_coord
     use probin_module, only: grav_const, enthalpy_pred_type
     use pred_parameters
 
@@ -81,16 +81,14 @@ contains
     
     real (kind = dp_t), allocatable :: force(:)
     real (kind = dp_t), allocatable :: edge(:)
-    real (kind = dp_t), allocatable :: X0(:)
     real (kind = dp_t), allocatable :: h0(:)
 
     ! Cell-centered
-    allocate(force(r_start_coord(n):r_end_coord(n)))
-    allocate(   X0(r_start_coord(n):r_end_coord(n)))
-    allocate(   h0(r_start_coord(n):r_end_coord(n)))
+    allocate(force(0:nr_fine-1))
+    allocate(   h0(0:nr_fine-1))
 
     ! Edge-centered
-    allocate(edge(r_start_coord(n):r_end_coord(n)+1))
+    allocate(edge(0:nr_fine))
    
     rho0_predicted_edge = ZERO
 
@@ -100,7 +98,7 @@ contains
 
     force = ZERO
 
-    call make_edge_state_1d(n,p0_old,edge,vel,force,r_start_coord(n),dz,dt)
+    call make_edge_state_1d(n,p0_old,edge,vel,force,dz,dt)
 
     do r=r_start_coord(n),r_end_coord(n)
        p0_new(r) = p0_old(r) &
@@ -116,7 +114,7 @@ contains
        force(r) = -rho0_old(r) * (vel(r+1) - vel(r)) / dz 
     end do
     
-    call make_edge_state_1d(n,rho0_old(:),edge,vel,force,r_start_coord(n),dz,dt)
+    call make_edge_state_1d(n,rho0_old(:),edge,vel,force,dz,dt)
     
     rho0_predicted_edge = edge
 
@@ -141,7 +139,7 @@ contains
        ! mixing, we defer this to correct_base.
        force = ZERO
 
-       call make_edge_state_1d(n,h0,edge,vel,force,r_start_coord(n),dz,dt)
+       call make_edge_state_1d(n,h0,edge,vel,force,dz,dt)
 
        ! our final update needs (rho h)_0 on the edges, so compute
        ! that now
@@ -154,7 +152,7 @@ contains
           force(r) = -rhoh0_old(r) * (vel(r+1) - vel(r)) / dz
        end do
        
-       call make_edge_state_1d(n,rhoh0_old(:),edge,vel,force,r_start_coord(n),dz,dt)
+       call make_edge_state_1d(n,rhoh0_old(:),edge,vel,force,dz,dt)
        
     end if
 
@@ -164,7 +162,7 @@ contains
             - dt / dz * (edge(r+1) * vel(r+1) - edge(r) * vel(r)) + dt*psi(r)
     end do
     
-    deallocate(force,edge,X0,h0)
+    deallocate(force,edge,h0)
     
   end subroutine advect_base_state_planar
 
@@ -176,7 +174,7 @@ contains
     use bl_constants_module
     use make_edge_state_module
     use variables, only: rho_comp, rhoh_comp
-    use geometry, only: r_cc_loc, r_edge_loc, dr, r_start_coord, r_end_coord
+    use geometry, only: r_cc_loc, r_edge_loc, dr, r_start_coord, r_end_coord, nr_fine
     use make_grav_module
     use cell_to_edge_module
     use make_div_coeff_module
@@ -203,7 +201,6 @@ contains
     real (kind = dp_t), allocatable :: force(:)
     real (kind = dp_t), allocatable :: psi(:)
     real (kind = dp_t), allocatable :: edge(:)
-    real (kind = dp_t), allocatable :: X0(:)
     real (kind = dp_t), allocatable :: h0(:)
     real (kind = dp_t), allocatable :: div_coeff_new(:)
     real (kind = dp_t), allocatable :: beta(:),beta_new(:),beta_nh(:)
@@ -214,20 +211,19 @@ contains
     dtdr = dt / dr(n)
     
     ! Cell-centered
-    allocate(        force(r_start_coord(n):r_end_coord(n)))
-    allocate(gamma1bar_old(r_start_coord(n):r_end_coord(n)))
-    allocate(    grav_cell(r_start_coord(n):r_end_coord(n)))
-    allocate(div_coeff_new(r_start_coord(n):r_end_coord(n)))
-    allocate(          psi(r_start_coord(n):r_end_coord(n)))
-    allocate(           X0(r_start_coord(n):r_end_coord(n)))
-    allocate(           h0(r_start_coord(n):r_end_coord(n)))
+    allocate(        force(0:nr_fine-1))
+    allocate(gamma1bar_old(0:nr_fine-1))
+    allocate(    grav_cell(0:nr_fine-1))
+    allocate(div_coeff_new(0:nr_fine-1))
+    allocate(          psi(0:nr_fine-1))
+    allocate(           h0(0:nr_fine-1))
     
     ! Edge-centered
-    allocate(grav_edge(r_start_coord(n):r_end_coord(n)+1))
-    allocate(     edge(r_start_coord(n):r_end_coord(n)+1))
-    allocate(     beta(r_start_coord(n):r_end_coord(n)+1))
-    allocate( beta_new(r_start_coord(n):r_end_coord(n)+1))
-    allocate(  beta_nh(r_start_coord(n):r_end_coord(n)+1))
+    allocate(grav_edge(0:nr_fine))
+    allocate(     edge(0:nr_fine))
+    allocate(     beta(0:nr_fine))
+    allocate( beta_new(0:nr_fine))
+    allocate(  beta_nh(0:nr_fine))
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -239,7 +235,7 @@ contains
             2.0_dp_t*rho0_old(r)*HALF*(vel(r) + vel(r+1))/r_cc_loc(n,r)
     end do
     
-    call make_edge_state_1d(n,rho0_old,edge,vel,force,r_start_coord(n),dr(n),dt)
+    call make_edge_state_1d(n,rho0_old,edge,vel,force,dr(n),dt)
     
     rho0_predicted_edge = edge
 
@@ -372,7 +368,7 @@ contains
                (Sbar_in(r) - div_w0_sph)
        end do
 
-       call make_edge_state_1d(n,h0,edge,vel,force,r_start_coord(n),dr(n),dt)
+       call make_edge_state_1d(n,h0,edge,vel,force,dr(n),dt)
 
        ! our final update needs (rho h)_0 on the edges, so compute
        ! that now
@@ -400,7 +396,7 @@ contains
                (Sbar_in(r) - div_w0_sph)
        end do
     
-       call make_edge_state_1d(n,rhoh0_old,edge,vel,force,r_start_coord(n),dr(n),dt)
+       call make_edge_state_1d(n,rhoh0_old,edge,vel,force,dr(n),dt)
 
     endif
 
@@ -417,7 +413,7 @@ contains
     end do
     
     deallocate(force,psi,edge,beta,beta_new,beta_nh,div_coeff_new,gamma1bar_old)
-    deallocate(grav_cell,grav_edge,X0,h0)
+    deallocate(grav_cell,grav_edge,h0)
     
   end subroutine advect_base_state_spherical
   
