@@ -276,7 +276,7 @@ contains
                                           dx,ng,normal)
 
     use bl_constants_module
-    use geometry, only: dr, center, r_cc_loc, nr
+    use geometry, only: dr, center, r_cc_loc, r_end_coord
     use probin_module, only: interp_type_radial_bin_to_cart
 
     integer        , intent(in   ) :: n
@@ -342,7 +342,7 @@ contains
                 else if (interp_type_radial_bin_to_cart .eq. 2) then
 
                    if (radius .ge. r_cc_loc(n,index)) then
-                      if (index .eq. nr(n)-1) then
+                      if (index .eq. r_end_coord(n)) then
                          s0_cart_val = s0(index)
                       else
                          s0_cart_val = s0(index+1)*(radius-r_cc_loc(n,index))/dr(n) &
@@ -379,7 +379,7 @@ contains
   subroutine put_1d_array_on_edges(n,s0,s0_cartx,s0_carty,s0_cartz,lo,hi,dx,ng)
 
     use bl_constants_module
-    use geometry, only: dr, center, r_cc_loc, nr
+    use geometry, only: dr, center, r_cc_loc, r_end_coord
     use probin_module, only: interp_type_radial_bin_to_cart
 
     integer        , intent(in   ) :: n
@@ -412,7 +412,7 @@ contains
                 else if (interp_type_radial_bin_to_cart .eq. 2) then
 
                    if (radius .ge. r_cc_loc(n,index)) then
-                      if (index .eq. nr(n)-1) then
+                      if (index .eq. r_end_coord(n)) then
                          s0_cart_val = s0(index)
                       else
                          s0_cart_val = s0(index+1)*(radius-r_cc_loc(n,index)  )/dr(n) &
@@ -452,7 +452,7 @@ contains
                 else if (interp_type_radial_bin_to_cart .eq. 2) then
 
                    if (radius .ge. r_cc_loc(n,index)) then
-                      if (index .eq. nr(n)-1) then
+                      if (index .eq. r_end_coord(n)) then
                          s0_cart_val = s0(index)
                       else
                          s0_cart_val = s0(index+1)*(radius-r_cc_loc(n,index)  )/dr(n) &
@@ -492,7 +492,7 @@ contains
                 else if (interp_type_radial_bin_to_cart .eq. 2) then
 
                    if (radius .ge. r_cc_loc(n,index)) then
-                      if (index .eq. nr(n)-1) then
+                      if (index .eq. r_end_coord(n)) then
                          s0_cart_val = s0(index)
                       else
                          s0_cart_val = s0(index+1)*(radius-r_cc_loc(n,index)  )/dr(n) &
