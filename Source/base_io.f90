@@ -15,7 +15,7 @@ contains
     
     use parallel
     use bl_prof_module
-    use geometry, only : dr, nr
+    use geometry, only : dr, r_start_coord, r_end_coord
     use network, only: nspec
     use variables, only: rho_comp, rhoh_comp
     use bl_constants_module
@@ -25,10 +25,10 @@ contains
     character(len=8) , intent(in) :: w0_name
     character(len=9) , intent(in) :: etarho_name
     character(len=8) , intent(in) :: chk_name
-    real(kind=dp_t)  , intent(in) :: rho0(:,:),rhoh0(:,:)
-    real(kind=dp_t)  , intent(in) :: p0(:,:),gamma1bar(:,:)
-    real(kind=dp_t)  , intent(in) :: div_coeff(:,:), psi(:,:)
-    real(kind=dp_t)  , intent(in) :: w0(:,:),etarho(:,:)
+    real(kind=dp_t)  , intent(in) :: rho0(:,0:),rhoh0(:,0:)
+    real(kind=dp_t)  , intent(in) :: p0(:,0:),gamma1bar(:,0:)
+    real(kind=dp_t)  , intent(in) :: div_coeff(:,0:), psi(:,0:)
+    real(kind=dp_t)  , intent(in) :: w0(:,0:),etarho(:,0:)
 
     real(kind=dp_t) :: base_r, problo
     character(len=20) :: out_name
@@ -50,8 +50,8 @@ contains
        open(unit=99,file=out_name,form = "formatted", access = "sequential",action="write")
 
        do n=1,nlevs
-          do i=1,nr(n)
-             base_r = problo + (dble(i)-HALF) * dr(n)
+          do i=r_start_coord(n),r_end_coord(n)
+             base_r = problo + (dble(i)+HALF) * dr(n)
              write(99,1000)  base_r, rho0(n,i), p0(n,i), gamma1bar(n,i), &
                   rhoh0(n,i), div_coeff(n,i), psi(n,i)
           end do
@@ -65,8 +65,8 @@ contains
 
        open(unit=99,file=out_name,form = "formatted", access = "sequential",action="write")
        do n=1,nlevs
-          do i=1,nr(n)+1
-             base_r = problo + (dble(i)-1) * dr(n)
+          do i=r_start_coord(n),r_end_coord(n)+1
+             base_r = problo + dble(i) * dr(n)
              write(99,1000)  base_r,w0(n,i)
           end do
        end do
@@ -79,8 +79,8 @@ contains
 
        open(unit=99,file=out_name,form = "formatted", access = "sequential",action="write")
        do n=1,nlevs
-          do i=1,nr(n)+1
-             base_r = problo + (dble(i)-1) * dr(n)
+          do i=r_start_coord(n),r_end_coord(n)+1
+             base_r = problo + dble(i) * dr(n)
              write(99,1000)  base_r,etarho(n,i)
           end do
        end do
@@ -102,7 +102,7 @@ contains
     use bl_prof_module
     use variables, only: rho_comp, rhoh_comp
     use network, only: nspec
-    use geometry, only : dr, nr
+    use geometry, only : dr, r_start_coord, r_end_coord
     use bl_constants_module
     
     integer          , intent(in   ) :: nlevs
@@ -110,12 +110,12 @@ contains
     character(len=8) , intent(in   ) :: w0_name
     character(len=9) , intent(in   ) :: etarho_name
     character(len=8) , intent(in   ) :: chk_name    
-    real(kind=dp_t)  , intent(inout) :: rho0(:,:),rhoh0(:,:)
-    real(kind=dp_t)  , intent(inout) :: p0(:,:),gamma1bar(:,:)
-    real(kind=dp_t)  , intent(inout) :: div_coeff(:,:), psi(:,:)
-    real(kind=dp_t)  , intent(inout) :: w0(:,:),etarho(:,:)
-    real(kind=dp_t)  , allocatable   :: base_r(:,:)
+    real(kind=dp_t)  , intent(inout) :: rho0(:,0:),rhoh0(:,0:)
+    real(kind=dp_t)  , intent(inout) :: p0(:,0:),gamma1bar(:,0:)
+    real(kind=dp_t)  , intent(inout) :: div_coeff(:,0:), psi(:,0:)
+    real(kind=dp_t)  , intent(inout) :: w0(:,0:),etarho(:,0:)
 
+    ! local
     real(kind=dp_t) :: r_dummy
     character(len=20) :: out_name
     integer :: i, n
@@ -123,8 +123,6 @@ contains
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "read_base_state")
-
-    allocate(base_r(nlevs,nr(nlevs)))
 
     ! read in the state variables
     out_name = chk_name // "/" // state_name
@@ -135,8 +133,8 @@ contains
     open(unit=99,file=out_name)
 
     do n=1,nlevs
-       do i=1,nr(n)
-          read(99,*)  base_r(n,i), rho0(n,i), p0(n,i), gamma1bar(n,i), &
+       do i=r_start_coord(n),r_end_coord(n)
+          read(99,*)  r_dummy, rho0(n,i), p0(n,i), gamma1bar(n,i), &
                rhoh0(n,i), div_coeff(n,i), psi(n,i)
        end do
     end do
@@ -150,7 +148,7 @@ contains
 
     open(unit=99,file=out_name)
     do n=1,nlevs
-       do i=1,nr(n)+1
+       do i=r_start_coord(n),r_end_coord(n)+1
           read(99,*)  r_dummy, w0(n,i)
        end do
     end do
@@ -164,13 +162,11 @@ contains
 
     open(unit=99,file=out_name)
     do n=1,nlevs
-       do i=1,nr(n)+1
+       do i=r_start_coord(n),r_end_coord(n)+1
           read(99,*)  r_dummy, etarho(n,i)
        end do
     end do
     close(99)
-
-    deallocate(base_r)
 
     call destroy(bpt)
 
