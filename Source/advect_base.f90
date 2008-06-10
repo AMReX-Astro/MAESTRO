@@ -64,7 +64,7 @@ contains
     use bl_constants_module
     use make_edge_state_module
     use variables, only: rho_comp, rhoh_comp
-    use geometry, only: nr
+    use geometry, only: r_start_coord, r_end_coord
     use probin_module, only: grav_const, enthalpy_pred_type
     use pred_parameters
 
@@ -85,12 +85,12 @@ contains
     real (kind = dp_t), allocatable :: h0(:)
 
     ! Cell-centered
-    allocate(force(0:nr(n)-1))
-    allocate(   X0(0:nr(n)-1))
-    allocate(   h0(0:nr(n)-1))
+    allocate(force(r_start_coord(n):r_end_coord(n)))
+    allocate(   X0(r_start_coord(n):r_end_coord(n)))
+    allocate(   h0(r_start_coord(n):r_end_coord(n)))
 
     ! Edge-centered
-    allocate(edge(0:nr(n)))
+    allocate(edge(r_start_coord(n):r_end_coord(n)+1))
    
     rho0_predicted_edge = ZERO
 
@@ -100,9 +100,9 @@ contains
 
     force = ZERO
 
-    call make_edge_state_1d(n,p0_old,edge,vel,force,1,dz,dt)
+    call make_edge_state_1d(n,p0_old,edge,vel,force,r_start_coord(n),dz,dt)
 
-    do r = 0, nr(n)-1
+    do r=r_start_coord(n),r_end_coord(n)
        p0_new(r) = p0_old(r) &
             - dt / dz * HALF * (vel(r) + vel(r+1)) * (edge(r+1) - edge(r))  &
             + dt * psi(r)
@@ -112,16 +112,16 @@ contains
 ! Predict rho_0 to vertical edges
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    do r = 0,nr(n)-1
+    do r=r_start_coord(n),r_end_coord(n)
        force(r) = -rho0_old(r) * (vel(r+1) - vel(r)) / dz 
     end do
     
-    call make_edge_state_1d(n,rho0_old(:),edge,vel,force,1,dz,dt)
+    call make_edge_state_1d(n,rho0_old(:),edge,vel,force,r_start_coord(n),dz,dt)
     
     rho0_predicted_edge = edge
 
     ! update rho_0
-    do r = 0,nr(n)-1
+    do r=r_start_coord(n),r_end_coord(n)
        rho0_new(r) = rho0_old(r) &
             - dt / dz * (edge(r+1) * vel(r+1) - edge(r) * vel(r)) 
     end do
@@ -141,7 +141,7 @@ contains
        ! mixing, we defer this to correct_base.
        force = ZERO
 
-       call make_edge_state_1d(n,h0,edge,vel,force,1,dz,dt)
+       call make_edge_state_1d(n,h0,edge,vel,force,r_start_coord(n),dz,dt)
 
        ! our final update needs (rho h)_0 on the edges, so compute
        ! that now
@@ -150,16 +150,16 @@ contains
     else
 
        ! here we predict (rho h)_0 on the edges
-       do r = 0,nr(n)-1
+       do r=r_start_coord(n),r_end_coord(n)
           force(r) = -rhoh0_old(r) * (vel(r+1) - vel(r)) / dz
        end do
        
-       call make_edge_state_1d(n,rhoh0_old(:),edge,vel,force,1,dz,dt)
+       call make_edge_state_1d(n,rhoh0_old(:),edge,vel,force,r_start_coord(n),dz,dt)
        
     end if
 
     ! update (rho h)_0
-    do r = 0,nr(n)-1
+    do r=r_start_coord(n),r_end_coord(n)
        rhoh0_new(r) = rhoh0_old(r) &
             - dt / dz * (edge(r+1) * vel(r+1) - edge(r) * vel(r)) + dt*psi(r)
     end do
@@ -176,7 +176,7 @@ contains
     use bl_constants_module
     use make_edge_state_module
     use variables, only: rho_comp, rhoh_comp
-    use geometry, only: nr, r_cc_loc, r_edge_loc, dr, nr
+    use geometry, only: r_cc_loc, r_edge_loc, dr, r_start_coord, r_end_coord
     use make_grav_module
     use cell_to_edge_module
     use make_div_coeff_module
@@ -214,34 +214,36 @@ contains
     dtdr = dt / dr(n)
     
     ! Cell-centered
-    allocate(force(0:nr(n)-1))
-    allocate(gamma1bar_old(0:nr(n)-1))
-    allocate(grav_cell(0:nr(n)-1))
-    allocate(div_coeff_new(0:nr(n)-1))
-    allocate(psi(0:nr(n)-1))
-    allocate(   X0(0:nr(n)-1))
-    allocate(   h0(0:nr(n)-1))
+    allocate(        force(r_start_coord(n):r_end_coord(n)))
+    allocate(gamma1bar_old(r_start_coord(n):r_end_coord(n)))
+    allocate(    grav_cell(r_start_coord(n):r_end_coord(n)))
+    allocate(div_coeff_new(r_start_coord(n):r_end_coord(n)))
+    allocate(          psi(r_start_coord(n):r_end_coord(n)))
+    allocate(           X0(r_start_coord(n):r_end_coord(n)))
+    allocate(           h0(r_start_coord(n):r_end_coord(n)))
     
     ! Edge-centered
-    allocate(grav_edge(0:nr(n)))
-    allocate(edge(0:nr(n)))
-    allocate(beta(0:nr(n)),beta_new(0:nr(n)),beta_nh(0:nr(n)))
+    allocate(grav_edge(r_start_coord(n):r_end_coord(n)+1))
+    allocate(     edge(r_start_coord(n):r_end_coord(n)+1))
+    allocate(     beta(r_start_coord(n):r_end_coord(n)+1))
+    allocate( beta_new(r_start_coord(n):r_end_coord(n)+1))
+    allocate(  beta_nh(r_start_coord(n):r_end_coord(n)+1))
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Predict rho_0 to vertical edges
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    do r = 0,nr(n)-1
+    do r=r_start_coord(n),r_end_coord(n)
        force(r) = -rho0_old(r) * (vel(r+1) - vel(r)) / dr(n) - &
             2.0_dp_t*rho0_old(r)*HALF*(vel(r) + vel(r+1))/r_cc_loc(n,r)
     end do
     
-    call make_edge_state_1d(n,rho0_old,edge,vel,force,1,dr(n),dt)
+    call make_edge_state_1d(n,rho0_old,edge,vel,force,r_start_coord(n),dr(n),dt)
     
     rho0_predicted_edge = edge
 
-    do r = 0,nr(n)-1
+    do r=r_start_coord(n),r_end_coord(n)
        rho0_new(r) = rho0_old(r) &
             - dtdr/r_cc_loc(n,r)**2 * &
                 (r_edge_loc(n,r+1)**2 * edge(r+1) * vel(r+1) - &
@@ -255,7 +257,7 @@ contains
 !   Put beta_old on edges
 !   call cell_to_edge(n,div_coeff_old,beta)
 !   Update p0 -- predictor
-!   do r = 0,nr(n)-1
+!   do r=r_start_coord(n),r_end_coord(n)
 !      divbetaw = one/(r_cc_loc(n,r)**2) * &
 !           (r_edge_loc(n,r+1)**2 * beta(r+1) * vel(r+1) - &
 !            r_edge_loc(n,r  )**2 * beta(r  ) * vel(r  )) / dr(n)
@@ -264,7 +266,7 @@ contains
 !      p0_new(r) = p0_old(r) * (one + factor ) / (one - factor)
 !   end do
 
-    do r = 0,nr(n)-1
+    do r=r_start_coord(n),r_end_coord(n)
        divw = one/(r_cc_loc(n,r)**2) * &
             (r_edge_loc(n,r+1)**2 * vel(r+1) - &
              r_edge_loc(n,r  )**2 * vel(r  )) / dr(n)
@@ -273,12 +275,15 @@ contains
           w0dpdr_avg_2 =  vel(2) * (p0_old(2)-p0_old(1)) / dr(n)
           w0dpdr_avg_1 =  vel(1) * (p0_old(1)-p0_old(0)) / dr(n)
           w0dpdr_avg =  1.5d0 * w0dpdr_avg_1 - 0.5d0 * w0dpdr_avg_2
-       else if (r .eq. nr(n)-1) then
-          w0dpdr_avg_2 =  vel(nr(n)-1) * (p0_old(nr(n)-1)-p0_old(nr(n)-2)) / dr(n)
-          w0dpdr_avg_1 =  vel(nr(n)-2) * (p0_old(nr(n)-2)-p0_old(nr(n)-3)) / dr(n)
+       else if (r .eq. r_end_coord(n)) then
+          w0dpdr_avg_2 =  vel(r_end_coord(n)) * &
+               (p0_old(r_end_coord(n))-p0_old(r_end_coord(n)-1)) / dr(n)
+          w0dpdr_avg_1 =  vel(r_end_coord(n)-1) * &
+               (p0_old(r_end_coord(n)-1)-p0_old(r_end_coord(n)-2)) / dr(n)
           w0dpdr_avg =  1.5d0 * w0dpdr_avg_2 - 0.5d0 * w0dpdr_avg_1
        else
-          w0dpdr_avg =  HALF * ( vel(r+1)*(p0_old(r+1)-p0_old(r)) + vel(r)*(p0_old(r)-p0_old(r-1))) / dr(n)
+          w0dpdr_avg =  HALF * &
+               ( vel(r+1)*(p0_old(r+1)-p0_old(r)) + vel(r)*(p0_old(r)-p0_old(r-1))) / dr(n)
        end if
 
        factor = Sbar_in(r) - divw - 1.d0 / (gamma1bar(r)*p0_old(r)) * w0dpdr_avg
@@ -296,7 +301,7 @@ contains
 !   call cell_to_edge(n,div_coeff_new,beta_new)
 !   beta_nh = HALF*(beta + beta_new)
 !   Update p0 -- corrector
-!   do r = 0,nr(n)-1
+!   do r=r_start_coord(n),r_end_coord(n)
 !      divbetaw = one / (r_cc_loc(n,r)**2) * &
 !           (r_edge_loc(n,r+1)**2 * beta_nh(r+1) * vel(r+1) - &
 !            r_edge_loc(n,r  )**2 * beta_nh(r  ) * vel(r  )) / dr(n)
@@ -307,7 +312,7 @@ contains
 !           (one + factor * gamma1bar_old(r)) / (one - factor * gamma1bar(r))
 !   end do
 
-    do r = 0,nr(n)-1
+    do r=r_start_coord(n),r_end_coord(n)
        divw = one/(r_cc_loc(n,r)**2) * &
             (r_edge_loc(n,r+1)**2 * vel(r+1) - &
              r_edge_loc(n,r  )**2 * vel(r  )) / dr(n)
@@ -319,17 +324,19 @@ contains
                                            +(p0_new(1)-p0_new(0)) ) / dr(n)
           w0dpdr_avg =  1.5d0 * w0dpdr_avg_1 - 0.5d0 * w0dpdr_avg_2
 
-       else if (r .eq. nr(n)-1) then
-          w0dpdr_avg_2 = HALF * vel(nr(n)-1)*((p0_old(nr(n)-1)-p0_old(nr(n)-2)) &
-                                             +(p0_new(nr(n)-1)-p0_new(nr(n)-2))) / dr(n)
-          w0dpdr_avg_1 = HALF * vel(nr(n)-2)*((p0_old(nr(n)-2)-p0_old(nr(n)-3)) &
-                                             +(p0_new(nr(n)-2)-p0_new(nr(n)-3))) / dr(n)
+       else if (r .eq. r_end_coord(n)) then
+          w0dpdr_avg_2 = HALF * vel(r_end_coord(n)) * &
+               ((p0_old(r_end_coord(n))-p0_old(r_end_coord(n)-1)) &
+               +(p0_new(r_end_coord(n))-p0_new(r_end_coord(n)-1))) / dr(n)
+          w0dpdr_avg_1 = HALF * vel(r_end_coord(n)-1)* &
+               ((p0_old(r_end_coord(n)-1)-p0_old(r_end_coord(n)-2)) &
+               +(p0_new(r_end_coord(n)-1)-p0_new(r_end_coord(n)-2))) / dr(n)
           w0dpdr_avg =  1.5d0 * w0dpdr_avg_2 - 0.5d0 * w0dpdr_avg_1
 
        else
           w0dpdr_avg = HALF * HALF * &
-                      ( vel(r+1)*(p0_old(r+1)-p0_old(r)) + vel(r)*(p0_old(r)-p0_old(r-1)) + &
-                        vel(r+1)*(p0_new(r+1)-p0_new(r)) + vel(r)*(p0_new(r)-p0_new(r-1)) ) / dr(n)
+               ( vel(r+1)*(p0_old(r+1)-p0_old(r)) + vel(r)*(p0_old(r)-p0_old(r-1)) + &
+               vel(r+1)*(p0_new(r+1)-p0_new(r)) + vel(r)*(p0_new(r)-p0_new(r-1)) ) / dr(n)
        end if
 
        p0_avg = HALF * (p0_old(r) + p0_new(r))
@@ -350,7 +357,7 @@ contains
        ! here we predict h_0 on the edges
        h0 = rhoh0_old/rho0_old
 
-       do r = 0,nr(n)-1
+       do r=r_start_coord(n),r_end_coord(n)
 
           div_w0_sph = one/(r_cc_loc(n,r)**2) * &
                (r_edge_loc(n,r+1)**2 * vel(r+1) - &
@@ -365,7 +372,7 @@ contains
                (Sbar_in(r) - div_w0_sph)
        end do
 
-       call make_edge_state_1d(n,h0,edge,vel,force,1,dr(n),dt)
+       call make_edge_state_1d(n,h0,edge,vel,force,r_start_coord(n),dr(n),dt)
 
        ! our final update needs (rho h)_0 on the edges, so compute
        ! that now
@@ -374,7 +381,7 @@ contains
     else
 
        ! here we predict (rho h)_0 on the edges
-       do r = 0,nr(n)-1
+       do r=r_start_coord(n),r_end_coord(n)
        
           div_w0_cart = (vel(r+1) - vel(r)) / dr(n)
           div_w0_sph = one/(r_cc_loc(n,r)**2) * &
@@ -393,12 +400,12 @@ contains
                (Sbar_in(r) - div_w0_sph)
        end do
     
-       call make_edge_state_1d(n,rhoh0_old,edge,vel,force,1,dr(n),dt)
+       call make_edge_state_1d(n,rhoh0_old,edge,vel,force,r_start_coord(n),dr(n),dt)
 
     endif
 
     ! update (rho h)_0
-    do r = 0,nr(n)-1
+    do r=r_start_coord(n),r_end_coord(n)
        
        rhoh0_new(r) = rhoh0_old(r) - &
             dtdr / r_cc_loc(n,r)**2 * &
@@ -409,7 +416,8 @@ contains
        
     end do
     
-    deallocate(force,psi,edge,beta,beta_new,beta_nh,div_coeff_new,gamma1bar_old,grav_cell,grav_edge,X0,h0)
+    deallocate(force,psi,edge,beta,beta_new,beta_nh,div_coeff_new,gamma1bar_old)
+    deallocate(grav_cell,grav_edge,X0,h0)
     
   end subroutine advect_base_state_spherical
   

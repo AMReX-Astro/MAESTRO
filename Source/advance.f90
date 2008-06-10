@@ -45,7 +45,7 @@ contains
     use make_explicit_thermal_module
     use add_react_to_thermal_module
     use variables, only: nscal, press_comp, temp_comp, rho_comp, rhoh_comp, foextrap_comp
-    use geometry, only: nr, spherical, anelastic_cutoff_coord
+    use geometry, only: spherical, nr_fine, r_start_coord, r_end_coord, anelastic_cutoff_coord
     use network, only: nspec
     use make_grav_module
     use make_eta_module
@@ -148,24 +148,24 @@ contains
     dm = mla%dim
     nlevs = mla%nlevel
 
-    allocate(       grav_cell_nph(nlevs,0:nr(nlevs)-1))
-    allocate(       grav_cell_new(nlevs,0:nr(nlevs)-1))
-    allocate(            rho0_nph(nlevs,0:nr(nlevs)-1))
-    allocate(              p0_nph(nlevs,0:nr(nlevs)-1))
-    allocate( delta_p0_ptherm_bar(nlevs,0:nr(nlevs)-1))
-    allocate(            w0_force(nlevs,0:nr(nlevs)-1))
-    allocate(              w0_old(nlevs,0:nr(nlevs)  ))
-    allocate(                Sbar(nlevs,0:nr(nlevs)-1))
-    allocate(       div_coeff_nph(nlevs,0:nr(nlevs)-1))
-    allocate(      div_coeff_edge(nlevs,0:nr(nlevs)  ))
-    allocate(    rho_omegadotbar1(nlevs,0:nr(nlevs)-1,nspec))
-    allocate(    rho_omegadotbar2(nlevs,0:nr(nlevs)-1,nspec))
-    allocate(         rho_Hextbar(nlevs,0:nr(nlevs)-1))
-    allocate(             rhoh0_1(nlevs,0:nr(nlevs)-1))
-    allocate(             rhoh0_2(nlevs,0:nr(nlevs)-1))
-    allocate( rho0_predicted_edge(nlevs,0:nr(nlevs)  ))
-    allocate(       gamma1bar_old(nlevs,0:nr(nlevs)-1))
-    allocate(delta_gamma1_termbar(nlevs,0:nr(nlevs)-1))
+    allocate(       grav_cell_nph(nlevs,0:nr_fine-1))
+    allocate(       grav_cell_new(nlevs,0:nr_fine-1))
+    allocate(            rho0_nph(nlevs,0:nr_fine-1))
+    allocate(              p0_nph(nlevs,0:nr_fine-1))
+    allocate( delta_p0_ptherm_bar(nlevs,0:nr_fine-1))
+    allocate(            w0_force(nlevs,0:nr_fine-1))
+    allocate(              w0_old(nlevs,0:nr_fine  ))
+    allocate(                Sbar(nlevs,0:nr_fine-1))
+    allocate(       div_coeff_nph(nlevs,0:nr_fine-1))
+    allocate(      div_coeff_edge(nlevs,0:nr_fine  ))
+    allocate(    rho_omegadotbar1(nlevs,0:nr_fine-1,nspec))
+    allocate(    rho_omegadotbar2(nlevs,0:nr_fine-1,nspec))
+    allocate(         rho_Hextbar(nlevs,0:nr_fine-1))
+    allocate(             rhoh0_1(nlevs,0:nr_fine-1))
+    allocate(             rhoh0_2(nlevs,0:nr_fine-1))
+    allocate( rho0_predicted_edge(nlevs,0:nr_fine  ))
+    allocate(       gamma1bar_old(nlevs,0:nr_fine-1))
+    allocate(delta_gamma1_termbar(nlevs,0:nr_fine-1))
 
     ! Set these to zero to be safe
     rhoh0_1 = ZERO
@@ -188,10 +188,10 @@ contains
     halfdt = half*dt
 
     ! compute the coordinates of the anelastic cutoff
-    anelastic_cutoff_coord(1) = nr(1)-1
-    do r=0,nr(1)-1
+    anelastic_cutoff_coord(1) = r_end_coord(1)
+    do r=r_start_coord(1),r_end_coord(1)
        if (rho0_old(1,r) .lt. anelastic_cutoff .and. &
-            anelastic_cutoff_coord(1) .eq. nr(1)-1) then
+            anelastic_cutoff_coord(1) .eq. r_end_coord(1)) then
           anelastic_cutoff_coord(1) = r
           exit
        end if
@@ -621,13 +621,13 @@ contains
     
     ! Define base state at half time for use in velocity advance!
     do n=1,nlevs
-       do r=0,nr(n)-1
+       do r=r_start_coord(n),r_end_coord(1)
           rho0_nph(n,r) = HALF * (rho0_old(n,r) + rho0_new(n,r))
        end do
 
        call make_grav_cell(n,grav_cell_nph(n,:),rho0_nph(n,:))
 
-       do r=0,nr(n)-1
+       do r=r_start_coord(n),r_end_coord(1)
           div_coeff_nph(n,r) = HALF * (div_coeff_old(n,r) + div_coeff_new(n,r))
        end do
     end do
@@ -1095,7 +1095,7 @@ contains
 
     ! Define beta at half time using the div_coeff_new from step 9!
     do n=1,nlevs
-       do r=0,nr(n)-1
+       do r=r_start_coord(n),r_end_coord(1)
           div_coeff_nph(n,r) = HALF * (div_coeff_old(n,r) + div_coeff_new(n,r))
        end do
     end do
