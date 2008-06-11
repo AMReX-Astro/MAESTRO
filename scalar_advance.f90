@@ -32,7 +32,7 @@ contains
     use cell_to_edge_module
     use rhoh_vs_t_module
     use network,       only: nspec, spec_names
-    use geometry,      only: spherical, nr
+    use geometry,      only: spherical, nr_fine
     use variables,     only: nscal, ntrac, spec_comp, trac_comp, temp_comp, &
                              rho_comp, rhoh_comp, foextrap_comp
     use probin_module, only: enthalpy_pred_type, use_thermal_diffusion, verbose, &
@@ -97,10 +97,10 @@ contains
     ! contain edge-centered quantities created via spatial interpolation.
     ! This is to be contrasted to rho0_predicted_edge which is the half-time
     ! edge state created in advect_base.
-    allocate(rho0_edge_old(nlevs,0:nr(nlevs)))
-    allocate(rho0_edge_new(nlevs,0:nr(nlevs)))
-    allocate(rhoh0_edge_old(nlevs,0:nr(nlevs)))
-    allocate(rhoh0_edge_new(nlevs,0:nr(nlevs)))
+    allocate(rho0_edge_old (nlevs,0:nr_fine))
+    allocate(rho0_edge_new (nlevs,0:nr_fine))
+    allocate(rhoh0_edge_old(nlevs,0:nr_fine))
+    allocate(rhoh0_edge_new(nlevs,0:nr_fine))
 
     do n = 1, nlevs
        call cell_to_edge(n,rho0_old(n,:),rho0_edge_old(n,:))

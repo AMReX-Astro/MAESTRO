@@ -14,7 +14,7 @@ contains
   
   subroutine react_base(nlevs,rhoh0_in,rho_omegadotbar,rho_Hextbar,halfdt_in,rhoh0_out)
 
-    use geometry, only: nr
+    use geometry, only: r_start_coord, r_end_coord
     use network, only: nspec
     use eos_module, only: ebin
     use variables, only: rho_comp, spec_comp, rhoh_comp
@@ -35,7 +35,7 @@ contains
     
     do n=1,nlevs
 
-       do r = 0,nr(n)-1
+       do r=r_start_coord(n),r_end_coord(n)
           
           ! update enthalpy
           rhoh0_out(n,r) = rhoh0_in(n,r)
