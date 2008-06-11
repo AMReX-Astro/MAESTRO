@@ -16,7 +16,7 @@ contains
   subroutine make_etarho(nlevs,etarho,etarhoflux,mla)
 
     use bl_constants_module
-    use geometry, only: spherical, nr
+    use geometry, only: spherical, nr_fine, r_start_coord, r_end_coord
 
     integer           , intent(in   ) :: nlevs
     real(kind=dp_t)   , intent(inout) :: etarho(:,0:)
@@ -33,6 +33,7 @@ contains
     real(kind=dp_t), allocatable :: etarhopert(:,:)
     real(kind=dp_t), allocatable :: source_buffer(:)
     real(kind=dp_t), allocatable :: target_buffer(:)
+    logical                      :: fine_grids_span_domain_width
 
     type(box) :: domain
 
@@ -46,14 +47,15 @@ contains
 
     dm = mla%dim
 
-    allocate(ncell       (nlevs,0:nr(nlevs))) ! ncell is a function of r only for spherical
-    allocate(etarhosum_proc (nlevs,0:nr(nlevs)))
-    allocate(etarhosum      (nlevs,0:nr(nlevs)))
-    allocate(etarhopert_proc(nlevs,0:nr(nlevs)))
-    allocate(etarhopert     (nlevs,0:nr(nlevs)))
+    ! ncell is a function of r only for spherical
+    allocate(ncell          (nlevs,0:nr_fine)) 
+    allocate(etarhosum_proc (nlevs,0:nr_fine))
+    allocate(etarhosum      (nlevs,0:nr_fine))
+    allocate(etarhopert_proc(nlevs,0:nr_fine))
+    allocate(etarhopert     (nlevs,0:nr_fine))
 
-    allocate(source_buffer(0:nr(nlevs)))
-    allocate(target_buffer(0:nr(nlevs)))
+    allocate(source_buffer(0:nr_fine))
+    allocate(target_buffer(0:nr_fine))
 
     ncell        = ZERO
     etarhosum_proc  = ZERO
@@ -63,111 +65,155 @@ contains
     etarho          = ZERO
 
     if (spherical .eq. 0) then
-    
-       domain = layout_get_pd(mla%la(1))
-       domlo = lwb(domain)
-       domhi = upb(domain)
 
-       if (dm .eq. 2) then
-          ncell(1,:) = domhi(1)-domlo(1)+1
-       else if(dm .eq. 3) then
-          ncell(1,:) = (domhi(1)-domlo(1)+1)*(domhi(2)-domlo(2)+1)
-       end if
-       
-       ! the first step is to compute etarho assuming the coarsest level 
-       ! is the only level in existence
-       do i=1,layout_nboxes(mla%la(1))
-          if ( multifab_remote(etarhoflux(1), i) ) cycle
-          efp => dataptr(etarhoflux(1), i)
-          lo =  lwb(get_box(mla%la(1), i))
-          hi =  upb(get_box(mla%la(1), i))
-          select case (dm)
-          case (2)
-            call sum_etarho_coarsest_2d(lo,hi,domhi,efp(:,:,1,1),etarhosum_proc(1,:))
-          case (3)
-            call sum_etarho_coarsest_3d(lo,hi,domhi,efp(:,:,:,1),etarhosum_proc(1,:))
-          end select
-       end do
+       fine_grids_span_domain_width = .true.
 
-       source_buffer = etarhosum_proc(1,:)
-       call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
-       etarhosum(1,:) = target_buffer
-
-       do r=0,nr(1)
-          etarho(1,r) = etarhosum(1,r) / dble(ncell(1,r))
-       end do
-
-       ! now we compute etarho at the finer levels
-       do n=2,nlevs
+       if (fine_grids_span_domain_width) then
           
-          rr = mla%mba%rr(n-1,dm)
+          do n=1,nlevs
+             domain = layout_get_pd(mla%la(n))
+             domlo = lwb(domain)
+             domhi = upb(domain)
 
-          if (mla%mba%rr(n-1,1) .ne. mla%mba%rr(n-1,dm) .or. &
-               mla%mba%rr(n-1,2) .ne. mla%mba%rr(n-1,dm)) then
-             print*,"ERROR: In make_etarho, refinement ratio in each direction must match"
-             stop
-          endif
-
-          domain = layout_get_pd(mla%la(n))
-          domlo  = lwb(domain)
-          domhi  = upb(domain)
-
+             if (dm .eq. 2) then
+                ncell(n,:) = domhi(1)-domlo(1)+1
+             else if(dm .eq. 3) then
+                ncell(n,:) = (domhi(1)-domlo(1)+1)*(domhi(2)-domlo(2)+1)
+             end if
+          
+             do i=1,layout_nboxes(mla%la(n))
+                if ( multifab_remote(etarhoflux(n), i) ) cycle
+                efp => dataptr(etarhoflux(n), i)
+                lo =  lwb(get_box(mla%la(n), i))
+                hi =  upb(get_box(mla%la(n), i))
+                select case (dm)
+                case (2)
+                   call sum_etarho_coarsest_2d(lo,hi,domhi,efp(:,:,1,1),etarhosum_proc(n,:))
+                case (3)
+                   call sum_etarho_coarsest_3d(lo,hi,domhi,efp(:,:,:,1),etarhosum_proc(n,:))
+                end select
+             end do
+             
+             ! gather etarhosum
+             source_buffer = etarhosum_proc(n,:)
+             call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
+             etarhosum(n,:) = target_buffer
+             
+             do r=r_start_coord(n),r_end_coord(n)+1
+                etarho(n,r) = etarhosum(n,r) / dble(ncell(n,r))
+             end do
+             
+          end do
+          
+       else
+    
+          domain = layout_get_pd(mla%la(1))
+          domlo = lwb(domain)
+          domhi = upb(domain)
+          
           if (dm .eq. 2) then
-             ncell(n,:) = domhi(1)-domlo(1)+1
-          else if (dm .eq. 3) then
-             ncell(n,:) = (domhi(1)-domlo(1)+1)*(domhi(2)-domlo(2)+1)
+             ncell(1,:) = domhi(1)-domlo(1)+1
+          else if(dm .eq. 3) then
+             ncell(1,:) = (domhi(1)-domlo(1)+1)*(domhi(2)-domlo(2)+1)
           end if
           
-          ! on faces that exist at the next coarser level, etarho is the same since
-          ! the fluxes have been restricted.  We copy these values of etarho directly and
-          ! copy scaled values of etarhosum directly.
-          do r=0,nr(n-1)
-             etarho   (n,r*rr) = etarho   (n-1,r)
-             etarhosum(n,r*rr) = etarhosum(n-1,r)*rr**(dm-1)
-          end do
-
-          ! on faces that do not exist at the next coarser level, we use linear
-          ! interpolation to get etarhosum at these faces.
-          do r=0,nr(n-1)-1
-             do rpert=1,rr-1
-                etarhosum(n,r*rr+rpert) = &
-                     dble(rpert)/dble(rr)*(etarhosum(n,r*rr)) + &
-                     dble(rr-rpert)/dble(rr)*(etarhosum(n,(r+1)*rr))
-             end do
-          end do
-
-          ! compute etarhopert_proc on faces that do not exist at the coarser level
-          do i=1,layout_nboxes(mla%la(n))
-             if ( multifab_remote(etarhoflux(n), i) ) cycle
-             efp  => dataptr(etarhoflux(n), i)
-             lo =  lwb(get_box(mla%la(n), i))
-             hi =  upb(get_box(mla%la(n), i))
+          ! the first step is to compute etarho assuming the coarsest level 
+          ! is the only level in existence
+          do i=1,layout_nboxes(mla%la(1))
+             if ( multifab_remote(etarhoflux(1), i) ) cycle
+             efp => dataptr(etarhoflux(1), i)
+             lo =  lwb(get_box(mla%la(1), i))
+             hi =  upb(get_box(mla%la(1), i))
              select case (dm)
              case (2)
-                call compute_etarhopert_2d(lo,hi,efp(:,:,1,1),etarhosum_proc(1,:),rr)
+                call sum_etarho_coarsest_2d(lo,hi,domhi,efp(:,:,1,1),etarhosum_proc(1,:))
              case (3)
-                call compute_etarhopert_3d(lo,hi,efp(:,:,:,1),etarhosum_proc(1,:),rr)
+                call sum_etarho_coarsest_3d(lo,hi,domhi,efp(:,:,:,1),etarhosum_proc(1,:))
              end select
           end do
-
-          ! gather etarhopert for rhoh
-          source_buffer = etarhopert_proc(n,:)
+          
+          ! gather etarhosum
+          source_buffer = etarhosum_proc(1,:)
           call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
-          etarhopert(n,:) = target_buffer
-
-          ! update etasum on faces that do not exist at the coarser level
-          ! then recompute eta on these faces
-          do r=0,nr(n-1)-1
-             do rpert=1,rr-1
-                etarhosum(n,r*rr+rpert) = &
-                     etarhosum(n,r*rr+rpert) + etarhopert(n,r*rr+rpert)
-                etarho(n,r*rr+rpert) = &
-                     etarhosum(n,r*rr+rpert)/dble(ncell(n,r*rr+rpert))
-             end do
+          etarhosum(1,:) = target_buffer
+          
+          do r=0,r_end_coord(1)
+             etarho(1,r) = etarhosum(1,r) / dble(ncell(1,r))
           end do
-
-       end do ! end loop over levels
-
+          
+          ! now we compute etarho at the finer levels
+          do n=2,nlevs
+             
+             rr = mla%mba%rr(n-1,dm)
+             
+             if (mla%mba%rr(n-1,1) .ne. mla%mba%rr(n-1,dm) .or. &
+                  mla%mba%rr(n-1,2) .ne. mla%mba%rr(n-1,dm)) then
+                print*,"ERROR: In make_etarho, refinement ratio in each direction must match"
+                stop
+             endif
+             
+             domain = layout_get_pd(mla%la(n))
+             domlo  = lwb(domain)
+             domhi  = upb(domain)
+             
+             if (dm .eq. 2) then
+                ncell(n,:) = domhi(1)-domlo(1)+1
+             else if (dm .eq. 3) then
+                ncell(n,:) = (domhi(1)-domlo(1)+1)*(domhi(2)-domlo(2)+1)
+             end if
+             
+             ! on faces that exist at the next coarser level, etarho is the same since
+             ! the fluxes have been restricted.  We copy these values of etarho directly and
+             ! copy scaled values of etarhosum directly.
+             do r=r_start_coord(n-1),r_end_coord(n-1)+1
+                etarho   (n,r*rr) = etarho   (n-1,r)
+                etarhosum(n,r*rr) = etarhosum(n-1,r)*rr**(dm-1)
+             end do
+             
+             ! on faces that do not exist at the next coarser level, we use linear
+             ! interpolation to get etarhosum at these faces.
+             do r=r_start_coord(n-1),r_end_coord(n-1)
+                do rpert=1,rr-1
+                   etarhosum(n,r*rr+rpert) = &
+                        dble(rpert)/dble(rr)*(etarhosum(n,r*rr)) + &
+                        dble(rr-rpert)/dble(rr)*(etarhosum(n,(r+1)*rr))
+                end do
+             end do
+             
+             ! compute etarhopert_proc on faces that do not exist at the coarser level
+             do i=1,layout_nboxes(mla%la(n))
+                if ( multifab_remote(etarhoflux(n), i) ) cycle
+                efp  => dataptr(etarhoflux(n), i)
+                lo =  lwb(get_box(mla%la(n), i))
+                hi =  upb(get_box(mla%la(n), i))
+                select case (dm)
+                case (2)
+                   call compute_etarhopert_2d(lo,hi,efp(:,:,1,1),etarhosum_proc(1,:),rr)
+                case (3)
+                   call compute_etarhopert_3d(lo,hi,efp(:,:,:,1),etarhosum_proc(1,:),rr)
+                end select
+             end do
+             
+             ! gather etarhopert for rhoh
+             source_buffer = etarhopert_proc(n,:)
+             call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
+             etarhopert(n,:) = target_buffer
+             
+             ! update etasum on faces that do not exist at the coarser level
+             ! then recompute eta on these faces
+             do r=r_start_coord(n-1),r_end_coord(n-1)
+                do rpert=1,rr-1
+                   etarhosum(n,r*rr+rpert) = &
+                        etarhosum(n,r*rr+rpert) + etarhopert(n,r*rr+rpert)
+                   etarho(n,r*rr+rpert) = &
+                        etarhosum(n,r*rr+rpert)/dble(ncell(n,r*rr+rpert))
+                end do
+             end do
+             
+          end do ! end loop over levels
+          
+       end if
+       
     else
 
        ! haven't written the spherical case yet
