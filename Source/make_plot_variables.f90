@@ -464,7 +464,6 @@ contains
   subroutine make_tfromp_3d_sphr(n,t,tpert,rhopert,machno,deltagamma, &
                                  s,u,lo,hi,ng,rho0,tempbar,gamma1bar,p0,dx)
 
-    use geometry, only: nr
     use variables, only: rho_comp, spec_comp
     use eos_module
     use fill_3d_module
