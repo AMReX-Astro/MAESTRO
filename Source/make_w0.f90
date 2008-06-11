@@ -21,7 +21,7 @@ contains
 
     use parallel
     use bl_prof_module
-    use geometry, only: spherical, nr, dr
+    use geometry, only: spherical, dr, r_start_coord, r_end_coord
     use bl_constants_module
     use probin_module, only: verbose
 
@@ -62,7 +62,7 @@ contains
        endif
 
        max_vel = zero
-       do r = 0,nr(n)
+       do r=r_start_coord(n),r_end_coord(n)
           max_vel = max(max_vel, abs(vel(n,r)))
        end do
 
@@ -78,7 +78,7 @@ contains
                             gamma1bar_old,gamma1bar_new,delta_p0_ptherm_bar, &
                             psi,f,dt,dtold)
 
-    use geometry, only: nr, dr
+    use geometry, only: nr_fine, r_start_coord, r_end_coord, dr
     use variables, only: rho_comp
     use bl_constants_module
     use probin_module, only: grav_const, dpdt_factor, base_cutoff_density
@@ -104,14 +104,14 @@ contains
     real(kind=dp_t)              :: volume_discrepancy
 
     ! Cell-centered
-    allocate(vel_old_cen(0:nr(n)-1))
-    allocate(vel_new_cen(0:nr(n)-1))
-    allocate(      force(0:nr(n)-1))
+    allocate(vel_old_cen(0:nr_fine-1))
+    allocate(vel_new_cen(0:nr_fine-1))
+    allocate(      force(0:nr_fine-1))
 
     ! Initialize new velocity to zero.
     vel(0) = ZERO
     
-    do r = 1,nr(n)
+    do r = 1,r_end_coord(n)+1
        gamma1bar_p0_avg = (gamma1bar_old(r-1)+gamma1bar_new(r-1))*(p0_old(r-1)+p0_new(r-1)) &
             / 4.0d0
 
@@ -127,7 +127,7 @@ contains
 
     ! Compute the forcing term in the base state velocity equation, - 1/rho0 grad pi0 
     dt_avg = HALF * (dt + dtold)
-    do r = 0,nr(n)-1
+    do r=r_start_coord(n),r_end_coord(n)
        vel_old_cen(r) = HALF * (vel_old(r) + vel_old(r+1))
        vel_new_cen(r) = HALF * (vel    (r) + vel    (r+1))
        vel_avg = HALF * (dt *  vel_old_cen(r)           + dtold *  vel_new_cen(r)  ) / dt_avg
@@ -143,7 +143,7 @@ contains
   subroutine make_w0_spherical(n,vel,vel_old,Sbar_in,rho0,p0,p0_new, &
                                gamma1bar,gamma1bar_new,delta_p0_ptherm_bar,f,dt,dtold)
 
-    use geometry, only: r_cc_loc, nr, r_edge_loc, dr
+    use geometry, only: r_cc_loc, nr_fine, r_edge_loc, dr, r_end_coord
     use make_grav_module
     use cell_to_edge_module
     use bl_constants_module
@@ -173,24 +173,19 @@ contains
     real(kind=dp_t) :: volume_discrepancy
 
     ! Cell-centered
-    allocate(m(0:nr(n)-1))
-    allocate(vel_old_cen(0:nr(n)-1))
-    allocate(vel_new_cen(0:nr(n)-1))
+    allocate(m          (0:nr_fine-1))
+    allocate(vel_old_cen(0:nr_fine-1))
+    allocate(vel_new_cen(0:nr_fine-1))
 
     ! Edge-centered
-    allocate(c(0:nr(n)),d(0:nr(n)),e(0:nr(n)),rhs(0:nr(n)),u(0:nr(n)))
-    allocate(vel_bar(0:nr(n)))
+    allocate(c(0:nr_fine),d(0:nr_fine),e(0:nr_fine),rhs(0:nr_fine),u(0:nr_fine))
+    allocate(vel_bar(0:nr_fine))
 
     ! NOTE:  we first solve for the w0 resulting only from Sbar -- then we will
     ! solve for the update to w0.  We integrate d/dr (r^2 w0) = (r^2 Sbar)
 
-!    do r=  0, nr(n)-1
-!       print *, r, p0(r), delta_p0_ptherm_bar(r)
-!    end do
-
-
     vel_bar = ZERO
-    do r = 1,nr(n)
+    do r=1,r_end_coord(n)+1
 
        if (rho0(r-1) .gt. base_cutoff_density) then
           volume_discrepancy = dpdt_factor * delta_p0_ptherm_bar(r-1)/dt
@@ -205,7 +200,7 @@ contains
 !       print *, r, vel_bar(r), Sbar_in(r-1), volume_discrepancy/(gamma1bar(r-1)*p0(r-1))
     end do
 
-    do r = 1,nr(n)
+    do r = 1,r_end_coord(n)+1
        vel_bar(r) = vel_bar(r) / r_edge_loc(n,r)**2
     end do
 
@@ -221,12 +216,12 @@ contains
    
     ! Note that we are solving for (r^2 w0), not just w0. 
 
-    do r = 1,nr(n)
+    do r=1,r_end_coord(n)+1
        c(r) = gamma1bar(r-1) * p0(r-1) / r_cc_loc(n,r-1)**2
        c(r) = c(r) / dr(n)**2
     end do
 
-    do r = 1,nr(n)-1
+    do r=1,r_end_coord(n)
 
        d(r) = -( gamma1bar(r-1) * p0(r-1) / r_cc_loc(n,r-1)**2 &
                 +gamma1bar(r  ) * p0(r  ) / r_cc_loc(n,r  )**2 ) / dr(n)**2 
@@ -235,12 +230,12 @@ contains
        d(r) = d(r) - four * dpdr / (r_edge_loc(n,r))**3
     end do
 
-    do r = 0,nr(n)-1
+    do r = 0,r_end_coord(n)
        e(r) = gamma1bar(r) * p0(r) / r_cc_loc(n,r)**2
        e(r) = e(r) / dr(n)**2
     end do
 
-    do r = 1,nr(n)-1
+    do r = 1,r_end_coord(n)
        dpdr = (p0(r)-p0(r-1))/dr(n)
        rhs(r) = four * dpdr * vel_bar(r) / r_edge_loc(n,r)
     end do
@@ -251,26 +246,26 @@ contains
      rhs(0) = zero
 
     ! Upper boundary
-!      c(nr(n)) = -one
-       c(nr(n)) = zero
-       d(nr(n)) =  one
-     rhs(nr(n)) = zero
+!      c(r_end_coord(n)+1) = -one
+       c(r_end_coord(n)+1) = zero
+       d(r_end_coord(n)+1) =  one
+     rhs(r_end_coord(n)+1) = zero
 
     ! Call the tridiagonal solver
-    call tridiag(c, d, e, rhs, u, nr(n)+1)
+    call tridiag(c, d, e, rhs, u, r_end_coord(n)+2)
 
     vel(0) = ZERO
-    do r = 1,nr(n)
+    do r=1,r_end_coord(n)+1
        vel(r) = u(r) / r_edge_loc(n,r)**2
     end do
 
-    do r = 0,nr(n)
+    do r=0,r_end_coord(n)+1
        vel(r) = vel(r) + vel_bar(r)
     end do
 
     ! Compute the forcing term in the base state velocity equation, - 1/rho0 grad pi0 
     dt_avg = HALF * (dt + dtold)
-    do r = 0,nr(n)-1
+    do r = 0,r_end_coord(n)
        vel_old_cen(r) = HALF * (vel_old(r) + vel_old(r+1))
        vel_new_cen(r) = HALF * (vel    (r) + vel    (r+1))
        vel_avg = HALF * (dt *  vel_old_cen(r)           + dtold *  vel_new_cen(r)  ) / dt_avg

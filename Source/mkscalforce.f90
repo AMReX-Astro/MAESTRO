@@ -32,7 +32,7 @@ contains
 
     use bl_prof_module
     use variables, only: foextrap_comp, rhoh_comp
-    use geometry, only: spherical, nr
+    use geometry, only: spherical, nr_fine
     use ml_restriction_module, only: ml_cc_restriction_c
     use multifab_fill_ghost_module
     use multifab_physbc_module
@@ -71,8 +71,8 @@ contains
       
     do n=1,nlevs
 
-       allocate(rho0(0:nr(n)-1))
-       allocate(grav(0:nr(n)-1))
+       allocate(rho0(0:nr_fine-1))
+       allocate(grav(0:nr_fine-1))
 
        rho0(:) = HALF * (rho0_old(n,:) + rho0_new(n,:))
        call make_grav_cell(n,grav,rho0)
@@ -142,7 +142,7 @@ contains
   subroutine mkrhohforce_2d(n,rhoh_force,wmac,thermal,lo,hi, &
                             p0_old,p0_new,rho0,grav,psi,add_thermal)
 
-    use geometry, only: dr, nr
+    use geometry, only: dr, r_end_coord
     use probin_module, only: enthalpy_pred_type, base_cutoff_density
     use pred_parameters
 
@@ -171,7 +171,7 @@ contains
 
        if (rho0(j) > base_cutoff_density) then
           gradp0 = rho0(j) * grav(j)
-       else if (j.eq.nr(n)-1) then
+       else if (j.eq.r_end_coord(n)) then
           gradp0 = HALF * ( p0_old(j  ) + p0_new(j  ) &
                            -p0_old(j-1) - p0_new(j-1) ) / dr(n)
        else
@@ -211,7 +211,7 @@ contains
   subroutine mkrhohforce_3d(n,rhoh_force,wmac,thermal,lo,hi,&
                             p0_old,p0_new,rho0,grav,psi,add_thermal)
 
-    use geometry, only: dr, nr
+    use geometry, only: dr, r_end_coord
     use probin_module, only: enthalpy_pred_type, base_cutoff_density
     use pred_parameters
 
@@ -235,7 +235,7 @@ contains
 
        if (rho0(k) > base_cutoff_density) then
           gradp0 = rho0(k) * grav(k)
-       else if (k.eq.nr(n)-1) then
+       else if (k.eq.r_end_coord(n)) then
           gradp0 = HALF * ( p0_old(k  ) + p0_new(k  ) &
                            -p0_old(k-1) - p0_new(k-1) ) / dr(n)
        else
@@ -281,7 +281,7 @@ contains
                                  p0_old,p0_new,rho0,grav,psi,add_thermal)
 
     use fill_3d_module
-    use geometry, only: nr, dr
+    use geometry, only: nr_fine, dr, r_end_coord
     use probin_module, only: enthalpy_pred_type, base_cutoff_density
     use pred_parameters
 
@@ -308,17 +308,17 @@ contains
     real(kind=dp_t), allocatable :: psi_cart(:,:,:,:)
     integer :: i,j,k,r
 
-    allocate(gradp_rad(0:nr(n)-1))
+    allocate(gradp_rad(0:nr_fine-1))
     allocate(gradp_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
 
     allocate(psi_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
     call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,psi,psi_cart,lo,hi,dx,0)
 
-    do r = 0, nr(n)-1
+    do r=0,r_end_coord(n)
        
        if (rho0(r) > base_cutoff_density) then
           gradp_rad(r) = rho0(r) * grav(r)
-       else if (r.eq.nr(n)-1) then 
+       else if (r.eq.r_end_coord(n)) then 
           gradp_rad(r) = HALF * ( p0_old(r  ) + p0_new(r  ) &
                                  -p0_old(r-1) - p0_new(r-1) ) / dr(n)
        else
@@ -486,7 +486,7 @@ contains
 
   subroutine mktempforce_2d(n, temp_force, s, wmac, thermal, lo, hi, ng, p0_old, p0_new, psi)
 
-    use geometry, only: dr, nr
+    use geometry, only: dr, r_end_coord
     use variables, only: temp_comp, rho_comp, spec_comp
     use eos_module
 
@@ -514,7 +514,7 @@ contains
        if (j.eq.0) then
           gradp0 = HALF * ( p0_old(j+1) + p0_new(j+1) &
                            -p0_old(j  ) - p0_new(j  ) ) / dr(n)
-       else if (j.eq.nr(n)-1) then
+       else if (j.eq.r_end_coord(n)) then
           gradp0 = HALF * ( p0_old(j  ) + p0_new(j  ) &
                            -p0_old(j-1) - p0_new(j-1) ) / dr(n)
        else
@@ -557,7 +557,7 @@ contains
 
   subroutine mktempforce_3d(n, temp_force, s, wmac, thermal, lo, hi, ng, p0_old, p0_new, psi)
 
-    use geometry,  only: dr, nr
+    use geometry,  only: dr, r_end_coord
     use variables, only: temp_comp, rho_comp, spec_comp
     use eos_module
 
@@ -582,7 +582,7 @@ contains
        if (k.eq.0) then
           gradp0 = HALF * ( p0_old(k+1) + p0_new(k+1) &
                            -p0_old(k  ) - p0_new(k  ) ) / dr(n)
-       else if (k.eq.nr(n)-1) then
+       else if (k.eq.r_end_coord(n)) then
           gradp0 = HALF * ( p0_old(k  ) + p0_new(k  ) &
                            -p0_old(k-1) - p0_new(k-1) ) / dr(n)
        else
@@ -633,7 +633,7 @@ contains
     use fill_3d_module
     use variables, only: temp_comp, rho_comp, spec_comp
     use eos_module
-    use geometry,  only: dr, nr
+    use geometry,  only: dr, nr_fine, r_end_coord
 
     ! compute the source terms for temperature
 
@@ -658,18 +658,18 @@ contains
     real(kind=dp_t), allocatable :: gradp_cart(:,:,:,:)
     real(kind=dp_t), allocatable :: psi_cart(:,:,:,:)
 
-    allocate(gradp_rad(0:nr(n)-1))
+    allocate(gradp_rad(0:nr_fine-1))
     allocate(gradp_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
 
     allocate(psi_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
     call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,psi,psi_cart,lo,hi,dx,0)
 
-    do r = 0, nr(n)-1
+    do r=0,r_end_coord(n)
        
        if (r.eq.0) then
           gradp_rad(r) = HALF * ( p0_old(r+1) + p0_new(r+1) &
                                  -p0_old(r  ) - p0_new(r  ) ) / dr(n)
-       else if (r.eq.nr(n)-1) then 
+       else if (r.eq.r_end_coord(n)) then 
           gradp_rad(r) = HALF * ( p0_old(r  ) + p0_new(r  ) &
                                  -p0_old(r-1) - p0_new(r-1) ) / dr(n)
        else

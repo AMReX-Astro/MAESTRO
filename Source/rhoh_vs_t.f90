@@ -18,7 +18,7 @@ contains
 
     use bl_prof_module
     use bl_constants_module
-    use geometry
+    use geometry, only: spherical, nr_fine, r_end_coord
     use variables
     use network
     use fill_3d_module
@@ -55,9 +55,9 @@ contains
     dm = u(1)%dim
 
     if (spherical .eq. 1) then
-      allocate( rho0_halftime(0:nr(nlevs)))
-      allocate(rhoh0_halftime(0:nr(nlevs)))
-      do r = 0,nr(nlevs)-1
+      allocate( rho0_halftime(0:nr_fine-1))
+      allocate(rhoh0_halftime(0:nr_fine-1))
+      do r=0,r_end_coord(nlevs)
          rho0_halftime(r)  = HALF * (rho0_old(nlevs,r) + &
                                      rho0_new(nlevs,r) )
 
@@ -1134,7 +1134,7 @@ contains
     use variables,     only: rho_comp, temp_comp, spec_comp, rhoh_comp
     use eos_module
     use probin_module, only: enthalpy_pred_type, small_temp, predict_rho, grav_const, base_cutoff_density
-    use geometry, only: nr
+    use geometry, only: r_end_coord
 
     use pred_parameters
 
@@ -1186,7 +1186,7 @@ contains
           temp_eos(1) = max(sy(i,j,temp_comp),small_temp)
            den_eos(1) = sy(i,j,rho_comp) + HALF * (rho0_edge_old(j) + rho0_edge_new(j))
 
-          if (j .eq. nr(n)) then
+          if (j .eq. r_end_coord(n)+1) then
              p0_old_edge = p0_old(j-1)
              p0_new_edge = p0_new(j-1)
           else if (rho0_edge_old(j) .lt. base_cutoff_density) then
@@ -1226,8 +1226,9 @@ contains
     use bl_constants_module
     use variables,     only: rho_comp, temp_comp, spec_comp, rhoh_comp
     use eos_module
-    use probin_module, only: enthalpy_pred_type, small_temp, predict_rho, grav_const, base_cutoff_density
-    use geometry, only: nr
+    use probin_module, only: enthalpy_pred_type, small_temp, predict_rho, grav_const, &
+         base_cutoff_density
+    use geometry, only: r_end_coord
 
     use pred_parameters
 
@@ -1311,7 +1312,7 @@ contains
           temp_eos(1) = max(sz(i,j,k,temp_comp),small_temp)
            den_eos(1) = sz(i,j,k,rho_comp) + HALF * (rho0_edge_old(k) + rho0_edge_new(k))
 
-          if (k .eq. nr(n)) then
+          if (k .eq. r_end_coord(n)+1) then
              p0_old_edge = p0_old(k-1)
              p0_new_edge = p0_new(k-1)
           else if (rho0_edge_old(k) .lt. base_cutoff_density) then
