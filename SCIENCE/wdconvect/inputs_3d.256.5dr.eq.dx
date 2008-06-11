@@ -18,7 +18,7 @@
  stop_time = 1000.
 
  plot_int  = 10
- chk_int   = 10
+ chk_int   = 50
 
  cflfac = 0.5
  init_shrink = 0.1
@@ -56,7 +56,11 @@
 
  use_tfromp = T
 
- nOutFiles    = 4
+ nOutFiles    = 2
  lUsingNFiles = .true.
+
+ interp_type_radial_bin_to_cart = 2
+
+ single_prec_plotfiles = T
 
 /
