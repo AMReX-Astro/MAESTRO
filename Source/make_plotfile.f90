@@ -93,6 +93,7 @@ contains
     use plot_variables_module
     use fill_3d_module
     use probin_module, only: nOutFiles, lUsingNFiles, plot_spec, plot_trac, plot_base
+    use probin_module, only: single_prec_plotfiles
 
     character(len=*) , intent(in   ) :: dirname
     type(ml_layout)  , intent(in   ) :: mla
@@ -116,7 +117,7 @@ contains
     type(multifab) :: plotdata(mla%nlevel)
     type(multifab) :: tempfab(mla%nlevel)
 
-    integer :: n,dm,nlevs
+    integer :: n,dm,nlevs,prec
 
     type(bl_prof_timer), save :: bpt
 
@@ -124,6 +125,12 @@ contains
 
     dm = get_dim(mba)
     nlevs = size(u)
+
+    if (single_prec_plotfiles) then
+       prec = FABIO_SINGLE
+    else
+       prec = FABIO_DOUBLE
+    endif
 
     do n = 1,nlevs
 
@@ -222,7 +229,7 @@ contains
 
     call fabio_ml_multifab_write_d(plotdata, mba%rr(:,1), dirname, plot_names, &
                                    mba%pd(1), time, dx(1,:), nOutFiles = nOutFiles, &
-                                   lUsingNFiles = lUsingNFiles)
+                                   lUsingNFiles = lUsingNFiles, prec = prec)
     do n = 1,nlevs
        call destroy(plotdata(n))
        call destroy(tempfab(n))
