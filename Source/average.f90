@@ -97,8 +97,6 @@ contains
                 ncell(n,:) = (domhi(1)-domlo(1)+1)*(domhi(2)-domlo(2)+1)
              end if
              
-             ! the first step is to compute phibar assuming the coarsest level 
-             ! is the only level in existence
              do i=1,phi(n)%nboxes
                 if ( multifab_remote(phi(n), i) ) cycle
                 pp => dataptr(phi(n), i)
