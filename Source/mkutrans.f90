@@ -87,7 +87,7 @@ contains
 
     use bc_module
     use slope_module
-    use geometry, only: nr
+    use geometry, only: r_end_coord
     use probin_module, only: use_new_godunov
 
     integer,         intent(in   ) :: n,lo(2),ng_s
@@ -182,7 +182,7 @@ contains
     do j = js,je+1 
        do i = is-1,ie+1 
 
-          if (j+1 .gt. nr(n)) then
+          if (j+1 .gt. r_end_coord(n)+1) then
              vhi = vel(i,j,2) + w0(j)
              dw0drhi = (w0(j)-w0(j-1))/dx(2)
           else
