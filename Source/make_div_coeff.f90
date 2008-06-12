@@ -25,12 +25,13 @@ contains
     real(kind=dp_t), intent(in   ) :: rho0(:,0:), p0(:,0:), gamma1bar(:,0:), grav_center(:,0:)
 
     ! local
-    integer :: r, n, i
+    integer :: r, n, i, refrat
     real(kind=dp_t) :: integral
     real(kind=dp_t) :: beta0_edge(nlevs,0:nr_fine)
     real(kind=dp_t) :: lambda, mu, nu
     real(kind=dp_t) :: denom, coeff1, coeff2
     real(kind=dp_t) :: del,dpls,dmin,slim,sflag
+    real(kind=dp_t) :: offset
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! Compute beta0 on the edges and average to the center      
@@ -42,12 +43,12 @@ contains
     !   Compute beta0 on edges and centers at level n
     !   Obtain the starting value of beta0_edge_lo from the coarser grid
     !   Modify the slope calculation at the level edges to look at coarser data
-    !   do i=n,2,-1
-    !     Restrict beta0 at edges from level i to level i-1
-    !     Recompute beta0 at centers at level i-1 for cells that are covered by level i data
-    !     Compare the difference between beta0 at the top of level i to the corresponding
-    !      point on level i-1
-    !     Offset the centered beta on level i-1 above this point so the total integral 
+    !   do i=n-1,1,-1
+    !     Restrict beta0 at edges from level n to level i
+    !     Recompute beta0 at centers at level i for cells that are covered by level n data
+    !     Compare the difference between beta0 at the top of level n to the corresponding
+    !      point on level i
+    !     Offset the centered beta on level i above this point so the total integral 
     !      is consistent
     !     Redo the anelastic cutoff part
     !   end do
@@ -60,7 +61,6 @@ contains
 
     do r = r_start_coord(1),r_end_coord(1)
 
-       ! compute the slopes
        if (r == r_start_coord(1) .or. r == r_end_coord(1)) then
 
           lambda = ZERO
@@ -135,15 +135,18 @@ contains
 
        ! Compute beta0 on edges and centers at level n
        ! Obtain the starting value of beta0_edge_lo from the coarser grid
-       ! Modify the slope calculation at the level edges to look at coarser data
-
        beta0_edge(n,r_start_coord(n)) = beta0_edge(n-1,r_start_coord(n)/2)
 
        do r=r_start_coord(n),r_end_coord(n)
 
+          ! Modify the slope calculation at the level edges to look at coarser data
           if (r .eq. r_start_coord(n)) then
 
+
+
           else if (r .eq. r_end_coord(n)) then
+
+
 
           else
 
@@ -205,17 +208,34 @@ contains
           div_coeff(n,r) = div_coeff(n,r-1) * (rho0(n,r)/rho0(n,r-1))
        end do
 
-       do i=n,2,-1
+       do i=n-1,1,-1
 
-          ! Restrict beta0 at edges from level i to level i-1
-          ! Recompute beta0 at centers at level i-1 for cells that are covered by level i data
-          ! Compare the difference between beta0 at the top of level i to the corresponding
-          !  point on level i-1
-          ! Offset the centered beta on level i-1 above this point so the total integral 
+          refrat = 2**(n-i)
+
+          ! Restrict beta0 at edges from level n to level i
+          do r=r_start_coord(n),r_end_coord(n)+1,refrat
+             beta0_edge(i,r/refrat) = beta0_edge(n,r)
+          end do
+
+          ! Recompute beta0 at centers at level i for cells that are covered by level n data
+          do r=r_start_coord(n),r_end_coord(n)-refrat+1,refrat
+             div_coeff(i,r/refrat) = HALF*(beta0_edge(i,r/refrat) + beta0_edge(i,r/refrat+1))
+          end do
+
+          ! Compare the difference between beta0 at the top of level n to the corresponding
+          !  point on level i
+          offset = beta0_edge(n,r_end_coord(n)+1) - beta0_edge(i,(r_end_coord(n)+1)/refrat)
+
+          ! Offset the centered beta on level i above this point so the total integral 
           !  is consistent
+          do r=(r_end_coord(n)+1)/refrat,r_end_coord(i)
+             div_coeff(i,r) = div_coeff(i,r) + offset
+          end do
+
           ! Redo the anelastic cutoff part
-
-
+          do r = anelastic_cutoff_coord(i),r_end_coord(i)
+             div_coeff(i,r) = div_coeff(i,r-1) * (rho0(i,r)/rho0(i,r-1))
+          end do
 
        end do
 
