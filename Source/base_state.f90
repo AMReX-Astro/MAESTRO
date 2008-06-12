@@ -70,7 +70,7 @@ contains
     real(kind=dp_t), parameter :: TINY = 1.0e-10
 
     real(kind=dp_t), parameter :: Gconst = 6.6725985E-8_dp_t
-    real(kind=dp_t) :: mencl, g, dr_base, r_l, r_r, dpdr, rhog
+    real(kind=dp_t) :: mencl, g, r_l, r_r, dpdr, rhog
     real(kind=dp_t) :: max_hse_error
 
     call build(bpt, "init_base_state")
@@ -298,7 +298,9 @@ contains
           s0_init(r,spec_comp:spec_comp+nspec-1) = spec_above_cutoff(1:nspec)
           p0_init(r) = p_above_cutoff
           s0_init(r,temp_comp) = temp_above_cutoff
-          s0_init(r,trac_comp:trac_comp+ntrac+1) = trac_above_cutoff(1:ntrac)
+          if(ntrac .gt. 0) then
+             s0_init(r,trac_comp:trac_comp+ntrac-1) = trac_above_cutoff(1:ntrac)
+          end if
           
        else
           
@@ -339,8 +341,9 @@ contains
           
           s0_init(r,temp_comp) = t_ambient
           
-          s0_init(r,trac_comp:trac_comp+ntrac-1) = ZERO
-          
+          if (ntrac .gt. 0) then
+             s0_init(r,trac_comp:trac_comp+ntrac-1) = ZERO
+          end if          
           
           ! keep track of the height where we drop below the cutoff density
           if (s0_init(r,rho_comp) .le. base_cutoff_density .and. r_cutoff_loc .eq. prob_hi_r &
@@ -357,7 +360,9 @@ contains
              spec_above_cutoff(1:nspec) = s0_init(r,spec_comp:spec_comp+nspec-1)
              p_above_cutoff = p0_init(r)
              temp_above_cutoff = s0_init(r,temp_comp)
-             trac_above_cutoff(1:ntrac) = s0_init(r,trac_comp:trac_comp+ntrac+1)
+             if (ntrac .gt. 0) then
+                trac_above_cutoff(1:ntrac) = s0_init(r,trac_comp:trac_comp+ntrac+1)
+             end if
              
           end if
        
