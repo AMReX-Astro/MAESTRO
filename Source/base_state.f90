@@ -1,10 +1,15 @@
 module base_state_module
 
   use bl_types
+  use eos_module, only: nspec
 
   implicit none
 
   real(dp_t), save :: r_cutoff_loc, prob_hi_r
+  real(dp_t), save :: rho_above_cutoff, rhoh_above_cutoff
+  real(dp_t), save :: spec_above_cutoff(nspec), p_above_cutoff
+  real(dp_t), save :: temp_above_cutoff
+  real(dp_t), save :: trac_above_cutoff(10) ! if ntrac=0 we'd have a problem if we used ntrac
 
   private
 
@@ -287,60 +292,77 @@ contains
        ! also, if we've falled below the cutoff density, just keep the
        ! model constant
        if (rloc .gt. r_cutoff_loc) then
-          rloc = r_cutoff_loc
-       end if
-
-       d_ambient = interpolate(rloc, npts_model, base_r, base_state(:,idens_model))
-       t_ambient = interpolate(rloc, npts_model, base_r, base_state(:,itemp_model))
-       p_ambient = interpolate(rloc, npts_model, base_r, base_state(:,ipres_model))
+          
+          s0_init(r,rho_comp) = rho_above_cutoff
+          s0_init(r,rhoh_comp) = rhoh_above_cutoff
+          s0_init(r,spec_comp:spec_comp+nspec-1) = spec_above_cutoff(1:nspec)
+          p0_init(r) = p_above_cutoff
+          s0_init(r,temp_comp) = temp_above_cutoff
+          s0_init(r,trac_comp:trac_comp+ntrac+1) = trac_above_cutoff(1:ntrac)
+          
+       else
+          
+          d_ambient = interpolate(rloc, npts_model, base_r, base_state(:,idens_model))
+          t_ambient = interpolate(rloc, npts_model, base_r, base_state(:,itemp_model))
+          p_ambient = interpolate(rloc, npts_model, base_r, base_state(:,ipres_model))
+          
+          sum = ZERO
+          do comp = 1, nspec
+             xn_ambient(comp) = max(ZERO,min(ONE, &
+                  interpolate(rloc, npts_model, base_r, base_state(:,ispec_model-1+comp))))
+             sum = sum + xn_ambient(comp)
+          enddo
+          xn_ambient = xn_ambient/sum
+          
+          ! use the EOS to make the state consistent
+          temp_eos(1) = t_ambient
+          den_eos(1)  = d_ambient
+          p_eos(1)    = p_ambient
+          xn_eos(1,:) = xn_ambient(:)
+          
+          ! (rho,T) --> p,h
+          call eos(eos_input_rt, den_eos, temp_eos, &
+                   npts, nspec, &
+                   xn_eos, &
+                   p_eos, h_eos, e_eos, &
+                   cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                   dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                   dpdX_eos, dhdX_eos, &
+                   gam1_eos, cs_eos, s_eos, &
+                   dsdt_eos, dsdr_eos, &
+                   do_diag)
        
-       sum = ZERO
-       do comp = 1, nspec
-          xn_ambient(comp) = max(ZERO,min(ONE, &
-               interpolate(rloc, npts_model, base_r, base_state(:,ispec_model-1+comp))))
-          sum = sum + xn_ambient(comp)
-       enddo
-       xn_ambient = xn_ambient/sum
-       
-       ! use the EOS to make the state consistent
-       temp_eos(1) = t_ambient
-       den_eos(1)  = d_ambient
-       p_eos(1)    = p_ambient
-       xn_eos(1,:) = xn_ambient(:)
-       
-       ! (rho,T) --> p,h
-       call eos(eos_input_rt, den_eos, temp_eos, &
-                npts, nspec, &
-                xn_eos, &
-                p_eos, h_eos, e_eos, &
-                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                dpdX_eos, dhdX_eos, &
-                gam1_eos, cs_eos, s_eos, &
-                dsdt_eos, dsdr_eos, &
-                do_diag)
-       
-       s0_init(r, rho_comp ) = d_ambient
-       s0_init(r,rhoh_comp ) = d_ambient * h_eos(1)
-       s0_init(r,spec_comp:spec_comp+nspec-1) = d_ambient * xn_ambient(1:nspec)
-       p0_init(r) = p_eos(1)
-       
-       s0_init(r,temp_comp) = t_ambient
-       
-       s0_init(r,trac_comp:trac_comp+ntrac-1) = ZERO
-       
-       ! keep track of the height where we drop below the cutoff density
-       if (s0_init(r,rho_comp) .le. base_cutoff_density .and. r_cutoff_loc .eq. prob_hi_r &
-            .and. n .eq. 1 ) then
-
-          if ( parallel_IOProcessor() ) then
-             print *,'SETTING R_CUTOFF TO ',r
+          s0_init(r, rho_comp ) = d_ambient
+          s0_init(r,rhoh_comp ) = d_ambient * h_eos(1)
+          s0_init(r,spec_comp:spec_comp+nspec-1) = d_ambient * xn_ambient(1:nspec)
+          p0_init(r) = p_eos(1)
+          
+          s0_init(r,temp_comp) = t_ambient
+          
+          s0_init(r,trac_comp:trac_comp+ntrac-1) = ZERO
+          
+          
+          ! keep track of the height where we drop below the cutoff density
+          if (s0_init(r,rho_comp) .le. base_cutoff_density .and. r_cutoff_loc .eq. prob_hi_r &
+               .and. n .eq. 1 ) then
+             
+             if ( parallel_IOProcessor() ) then
+                print *,'SETTING R_CUTOFF TO ',r
+             end if
+             
+             r_cutoff_loc = rloc
+             
+             rho_above_cutoff = s0_init(r,rho_comp)
+             rhoh_above_cutoff = s0_init(r,rhoh_comp)
+             spec_above_cutoff(1:nspec) = s0_init(r,spec_comp:spec_comp+nspec-1)
+             p_above_cutoff = p0_init(r)
+             temp_above_cutoff = s0_init(r,temp_comp)
+             trac_above_cutoff(1:ntrac) = s0_init(r,trac_comp:trac_comp+ntrac+1)
+             
           end if
-
-          r_cutoff_loc = rloc
-
-       end if
        
+       end if
+
     end do
 
     ! check whether we are in HSE
