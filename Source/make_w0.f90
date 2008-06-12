@@ -62,7 +62,7 @@ contains
        endif
 
        max_vel = zero
-       do r=r_start_coord(n),r_end_coord(n)
+       do r=r_start_coord(n),r_end_coord(n)+1
           max_vel = max(max_vel, abs(vel(n,r)))
        end do
 
