@@ -49,6 +49,7 @@ contains
     !      point on level i-1
     !     Offset the centered beta on level i-1 above this point so the total integral 
     !      is consistent
+    !     Redo the anelastic cutoff part
     !   end do
     ! end do
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -136,7 +137,73 @@ contains
        ! Obtain the starting value of beta0_edge_lo from the coarser grid
        ! Modify the slope calculation at the level edges to look at coarser data
 
+       beta0_edge(n,r_start_coord(n)) = beta0_edge(n-1,r_start_coord(n)/2)
 
+       do r=r_start_coord(n),r_end_coord(n)
+
+          if (r .eq. r_start_coord(n)) then
+
+          else if (r .eq. r_end_coord(n)) then
+
+          else
+
+             del    = HALF* (rho0(n,r+1) - rho0(n,r-1))/dr(n)
+             dpls   = TWO * (rho0(n,r+1) - rho0(n,r  ))/dr(n)
+             dmin   = TWO * (rho0(n,r  ) - rho0(n,r-1))/dr(n)
+             slim   = min(abs(dpls), abs(dmin))
+             slim   = merge(slim, zero, dpls*dmin.gt.ZERO)
+             sflag  = sign(ONE,del)
+             lambda = sflag*min(slim,abs(del))
+             
+             del   = HALF* (gamma1bar(n,r+1) - gamma1bar(n,r-1))/dr(n)
+             dpls  = TWO * (gamma1bar(n,r+1) - gamma1bar(n,r  ))/dr(n)
+             dmin  = TWO * (gamma1bar(n,r  ) - gamma1bar(n,r-1))/dr(n)
+             slim  = min(abs(dpls), abs(dmin))
+             slim  = merge(slim, zero, dpls*dmin.gt.ZERO)
+             sflag = sign(ONE,del)
+             mu    = sflag*min(slim,abs(del))
+             
+             del   = HALF* (p0(n,r+1) - p0(n,r-1))/dr(n)
+             dpls  = TWO * (p0(n,r+1) - p0(n,r  ))/dr(n)
+             dmin  = TWO * (p0(n,r  ) - p0(n,r-1))/dr(n)
+             slim  = min(abs(dpls), abs(dmin))
+             slim  = merge(slim, zero, dpls*dmin.gt.ZERO)
+             sflag = sign(ONE,del)
+             nu    = sflag*min(slim,abs(del))
+
+          end if
+
+          if (nu .eq. ZERO .or. mu .eq. ZERO .or. &
+             (nu*gamma1bar(n,r) - mu*p0(n,r)) .eq. ZERO .or. &
+             ((gamma1bar(n,r) + HALF*mu*dr(n))/ &
+             (gamma1bar(n,r) - HALF*mu*dr(n))) .le. ZERO .or. &
+             ((p0(n,r) + HALF*nu*dr(n))/ &
+             (p0(n,r) - HALF*nu*dr(n))) .le. ZERO) then
+
+             integral = abs(grav_center(n,r))*rho0(n,r)*dr(n)/(p0(n,r)*gamma1bar(n,r))
+
+          else 
+
+             denom = nu*gamma1bar(n,r) - mu*p0(n,r)
+             coeff1 = lambda*gamma1bar(n,r)/mu - rho0(n,r)
+             coeff2 = lambda*p0(n,r)/nu - rho0(n,r)
+             
+             integral = (abs(grav_center(n,r))/denom)* &
+                  (coeff1*log( (gamma1bar(n,r) + HALF*mu*dr(n))/ &
+                  (gamma1bar(n,r) - HALF*mu*dr(n))) - &
+                  coeff2*log( (p0(n,r) + HALF*nu*dr(n))/ &
+                  (p0(n,r) - HALF*nu*dr(n))) )
+             
+          endif
+
+          beta0_edge(n,r+1) = beta0_edge(n,r) * exp(-integral)
+          div_coeff(n,r) = HALF*(beta0_edge(n,r) + beta0_edge(n,r+1))
+
+       end do
+
+       do r = anelastic_cutoff_coord(n),r_end_coord(n)
+          div_coeff(n,r) = div_coeff(n,r-1) * (rho0(n,r)/rho0(n,r-1))
+       end do
 
        do i=n,2,-1
 
@@ -146,6 +213,7 @@ contains
           !  point on level i-1
           ! Offset the centered beta on level i-1 above this point so the total integral 
           !  is consistent
+          ! Redo the anelastic cutoff part
 
 
 
