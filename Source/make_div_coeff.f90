@@ -31,7 +31,7 @@ contains
     real(kind=dp_t) :: lambda, mu, nu
     real(kind=dp_t) :: denom, coeff1, coeff2
     real(kind=dp_t) :: del,dpls,dmin,slim,sflag
-    real(kind=dp_t) :: offset
+    real(kind=dp_t) :: offset,ghostval
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! Compute beta0 on the edges and average to the center      
@@ -142,11 +142,61 @@ contains
           ! Modify the slope calculation at the level edges to look at coarser data
           if (r .eq. r_start_coord(n)) then
 
+             ghostval = (1.d0/3.d0)*rho0(n,r) + (2.d0/3.d0)*rho0(n-1,r/2-1)
+             del    = HALF* (rho0(n,r+1) - ghostval   )/dr(n)
+             dpls   = TWO * (rho0(n,r+1) - rho0(n,r  ))/dr(n)
+             dmin   = TWO * (rho0(n,r  ) - ghostval   )/dr(n)
+             slim   = min(abs(dpls), abs(dmin))
+             slim   = merge(slim, zero, dpls*dmin.gt.ZERO)
+             sflag  = sign(ONE,del)
+             lambda = sflag*min(slim,abs(del))
 
+             ghostval = (1.d0/3.d0)*gamma1bar(n,r) + (2.d0/3.d0)*gamma1bar(n-1,r/2-1)
+             del   = HALF* (gamma1bar(n,r+1) - ghostval        )/dr(n)
+             dpls  = TWO * (gamma1bar(n,r+1) - gamma1bar(n,r  ))/dr(n)
+             dmin  = TWO * (gamma1bar(n,r  ) - ghostval        )/dr(n)
+             slim  = min(abs(dpls), abs(dmin))
+             slim  = merge(slim, zero, dpls*dmin.gt.ZERO)
+             sflag = sign(ONE,del)
+             mu    = sflag*min(slim,abs(del))
+
+             ghostval = (1.d0/3.d0)*p0(n,r) + (2.d0/3.d0)*p0(n-1,r/2-1)
+             del   = HALF* (p0(n,r+1) - ghostval )/dr(n)
+             dpls  = TWO * (p0(n,r+1) - p0(n,r  ))/dr(n)
+             dmin  = TWO * (p0(n,r  ) - ghostval )/dr(n)
+             slim  = min(abs(dpls), abs(dmin))
+             slim  = merge(slim, zero, dpls*dmin.gt.ZERO)
+             sflag = sign(ONE,del)
+             nu    = sflag*min(slim,abs(del))
 
           else if (r .eq. r_end_coord(n)) then
 
+             ghostval = (1.d0/3.d0)*rho0(n,r) + (2.d0/3.d0)*rho0(n-1,(r+1)/2)
+             del    = HALF* (ghostval    - rho0(n,r-1))/dr(n)
+             dpls   = TWO * (ghostval    - rho0(n,r  ))/dr(n)
+             dmin   = TWO * (rho0(n,r  ) - rho0(n,r-1))/dr(n)
+             slim   = min(abs(dpls), abs(dmin))
+             slim   = merge(slim, zero, dpls*dmin.gt.ZERO)
+             sflag  = sign(ONE,del)
+             lambda = sflag*min(slim,abs(del))
 
+             ghostval = (1.d0/3.d0)*gamma1bar(n,r) + (2.d0/3.d0)*gamma1bar(n-1,(r+1)/2)
+             del   = HALF* (ghostval         - gamma1bar(n,r-1))/dr(n)
+             dpls  = TWO * (ghostval         - gamma1bar(n,r  ))/dr(n)
+             dmin  = TWO * (gamma1bar(n,r  ) - gamma1bar(n,r-1))/dr(n)
+             slim  = min(abs(dpls), abs(dmin))
+             slim  = merge(slim, zero, dpls*dmin.gt.ZERO)
+             sflag = sign(ONE,del)
+             mu    = sflag*min(slim,abs(del))
+
+             ghostval = (1.d0/3.d0)*p0(n,r) + (2.d0/3.d0)*p0(n-1,(r+1)/2)
+             del   = HALF* (ghostval  - p0(n,r-1))/dr(n)
+             dpls  = TWO * (ghostval  - p0(n,r  ))/dr(n)
+             dmin  = TWO * (p0(n,r  ) - p0(n,r-1))/dr(n)
+             slim  = min(abs(dpls), abs(dmin))
+             slim  = merge(slim, zero, dpls*dmin.gt.ZERO)
+             sflag = sign(ONE,del)
+             nu    = sflag*min(slim,abs(del))
 
           else
 
