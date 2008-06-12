@@ -417,11 +417,10 @@ contains
 
     do n=1,nlevs
        call make_grav_cell(n,grav_cell_new(n,:),rho0_old(n,:))
-       call make_div_coeff(n,div_coeff_new(n,:),rho0_old(n,:),p0_old(n,:), &
-                           gamma1bar(n,:),grav_cell_new(n,:))
     end do
-    
-    
+
+    call make_div_coeff(nlevs,div_coeff_new,rho0_old,p0_old,gamma1bar,grav_cell_new)
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 4 -- advect the base state and full state through dt
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -615,9 +614,9 @@ contains
 
     do n=1,nlevs
        call make_grav_cell(n,grav_cell_new(n,:),rho0_new(n,:))
-       call make_div_coeff(n,div_coeff_new(n,:),rho0_new(n,:),p0_new(n,:), &
-                           gamma1bar(n,:),grav_cell_new(n,:))
     end do
+
+    call make_div_coeff(nlevs,div_coeff_new,rho0_new,p0_new,gamma1bar,grav_cell_new)
     
     ! Define base state at half time for use in velocity advance!
     do n=1,nlevs
@@ -992,9 +991,9 @@ contains
        
        do n=1,nlevs
           call make_grav_cell(n,grav_cell_new(n,:),rho0_new(n,:))
-          call make_div_coeff(n,div_coeff_new(n,:),rho0_new(n,:),p0_new(n,:), &
-                              gamma1bar(n,:),grav_cell_new(n,:))
        end do
+
+       call make_div_coeff(nlevs,div_coeff_new,rho0_new,p0_new,gamma1bar,grav_cell_new)
        
        ! end if corresponding to .not. do_half_alg
     end if
