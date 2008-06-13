@@ -46,35 +46,38 @@ contains
 
     f = ZERO
 
-    do n=1,nlevs
-       if (spherical .eq. 0) then
-          call make_w0_planar(n,vel(n,0:),vel_old(n,0:),rho0(n,:),Sbar_in(n,0:), &
-                              p0_old(n,0:),p0_new(n,0:), &
-                              gamma1bar_old(n,0:),gamma1bar_new(n,0:), &
-                              delta_p0_ptherm_bar(n,0:), &
-                              psi(n,0:),f(n,0:),dt,dtold)
-       else
+    if (spherical .eq. 0) then
+
+       call make_w0_planar(nlevs,vel,vel_old,rho0,Sbar_in,p0_old,p0_new,gamma1bar_old, &
+                           gamma1bar_new,delta_p0_ptherm_bar,psi,f,dt,dtold)
+
+    else
+
+       do n=1,nlevs
           call make_w0_spherical(n,vel(n,:),vel_old(n,0:),Sbar_in(n,0:), &
                                  rho0(n,:),p0_old(n,0:),p0_new(n,0:), &
                                  gamma1bar_old(n,0:),gamma1bar_new(n,0:), &
                                  delta_p0_ptherm_bar(n,0:), &
                                  f(n,0:),dt,dtold)
-       endif
+       end do
 
+    end if
+
+    do n=1,nlevs
        max_vel = zero
        do r=r_start_coord(n),r_end_coord(n)+1
           max_vel = max(max_vel, abs(vel(n,r)))
        end do
-
+       
        if (parallel_IOProcessor() .and. verbose .ge. 1) &
             write(6,*) '... max CFL of w0: ',max_vel * dt / dr(n)
-    enddo
+    end do
 
     call destroy(bpt)
 
   end subroutine make_w0
 
-  subroutine make_w0_planar(n,vel,vel_old,rho0,Sbar_in,p0_old,p0_new, &
+  subroutine make_w0_planar(nlevs,vel,vel_old,rho0,Sbar_in,p0_old,p0_new, &
                             gamma1bar_old,gamma1bar_new,delta_p0_ptherm_bar, &
                             psi,f,dt,dtold)
 
@@ -83,60 +86,62 @@ contains
     use bl_constants_module
     use probin_module, only: grav_const, dpdt_factor, base_cutoff_density
 
-    integer        , intent(in   ) :: n
-    real(kind=dp_t), intent(  out) :: vel(0:)
-    real(kind=dp_t), intent(in   ) :: rho0(0:)
-    real(kind=dp_t), intent(in   ) :: vel_old(0:)
-    real(kind=dp_t), intent(in   ) :: Sbar_in(0:)
-    real(kind=dp_t), intent(in   ) :: p0_old(0:), p0_new(0:)
-    real(kind=dp_t), intent(in   ) :: gamma1bar_old(0:), gamma1bar_new(0:)
-    real(kind=dp_t), intent(in   ) :: delta_p0_ptherm_bar(0:)
-    real(kind=dp_t), intent(in   ) :: psi(0:)
-    real(kind=dp_t), intent(inout) ::   f(0:)
+    integer        , intent(in   ) :: nlevs
+    real(kind=dp_t), intent(  out) :: vel(:,0:)
+    real(kind=dp_t), intent(in   ) :: rho0(:,0:)
+    real(kind=dp_t), intent(in   ) :: vel_old(:,0:)
+    real(kind=dp_t), intent(in   ) :: Sbar_in(:,0:)
+    real(kind=dp_t), intent(in   ) :: p0_old(:,0:), p0_new(:,0:)
+    real(kind=dp_t), intent(in   ) :: gamma1bar_old(:,0:), gamma1bar_new(:,0:)
+    real(kind=dp_t), intent(in   ) :: delta_p0_ptherm_bar(:,0:)
+    real(kind=dp_t), intent(in   ) :: psi(:,0:)
+    real(kind=dp_t), intent(inout) ::   f(:,0:)
     real(kind=dp_t), intent(in   ) :: dt,dtold
 
     ! Local variables
-    integer                      :: r
-    real(kind=dp_t), allocatable :: vel_old_cen(:)
-    real(kind=dp_t), allocatable :: vel_new_cen(:)
-    real(kind=dp_t), allocatable ::   force(:)
+    integer                      :: r, n
+    real(kind=dp_t), allocatable :: vel_old_cen(:,:)
+    real(kind=dp_t), allocatable :: vel_new_cen(:,:)
     real(kind=dp_t)              :: vel_avg, div_avg, dt_avg, gamma1bar_p0_avg
     real(kind=dp_t)              :: volume_discrepancy
 
     ! Cell-centered
-    allocate(vel_old_cen(0:nr_fine-1))
-    allocate(vel_new_cen(0:nr_fine-1))
-    allocate(      force(0:nr_fine-1))
+    allocate(vel_old_cen(nlevs,0:nr_fine-1))
+    allocate(vel_new_cen(nlevs,0:nr_fine-1))
 
-    ! Initialize new velocity to zero.
-    vel(0) = ZERO
-    
-    do r = 1,r_end_coord(n)+1
-       gamma1bar_p0_avg = (gamma1bar_old(r-1)+gamma1bar_new(r-1))*(p0_old(r-1)+p0_new(r-1)) &
-            / 4.0d0
+    do n=1,nlevs
 
-       if (rho0(r-1) .gt. base_cutoff_density) then
-          volume_discrepancy = dpdt_factor * delta_p0_ptherm_bar(r-1)/dt
-       else
-          volume_discrepancy = 0.0d0
-       end if
+       ! Initialize new velocity to zero.
+       vel(n,0) = ZERO
+       
+       do r = 1,r_end_coord(n)+1
+          gamma1bar_p0_avg = (gamma1bar_old(n,r-1)+gamma1bar_new(n,r-1)) * &
+               (p0_old(n,r-1)+p0_new(n,r-1))/4.0d0
+          
+          if (rho0(n,r-1) .gt. base_cutoff_density) then
+             volume_discrepancy = dpdt_factor * delta_p0_ptherm_bar(n,r-1)/dt
+          else
+             volume_discrepancy = 0.0d0
+          end if
+          
+          vel(n,r) = vel(n,r-1) + Sbar_in(n,r-1) * dr(n) &
+               - ( (psi(n,r-1)+volume_discrepancy) / gamma1bar_p0_avg ) * dr(n)
+       end do
+       
+       ! Compute the forcing term in the base state velocity equation, - 1/rho0 grad pi0 
+       dt_avg = HALF * (dt + dtold)
+       do r=r_start_coord(n),r_end_coord(n)
+          vel_old_cen(n,r) = HALF * (vel_old(n,r) + vel_old(n,r+1))
+          vel_new_cen(n,r) = HALF * (vel(n,r) + vel(n,r+1))
+          vel_avg = HALF * (dt * vel_old_cen(n,r) + dtold *  vel_new_cen(n,r)) / dt_avg
+          div_avg = HALF * (dt * (vel_old(n,r+1)-vel_old(n,r)) + &
+               dtold * (vel(n,r+1)-vel(n,r))) / dt_avg
+          f(n,r) = (vel_new_cen(n,r)-vel_old_cen(n,r)) / dt_avg + vel_avg * div_avg / dr(n)
+       end do
 
-       vel(r) = vel(r-1) + Sbar_in(r-1) * dr(n) &
-          - ( (psi(r-1)+volume_discrepancy) / gamma1bar_p0_avg ) * dr(n)
     end do
 
-    ! Compute the forcing term in the base state velocity equation, - 1/rho0 grad pi0 
-    dt_avg = HALF * (dt + dtold)
-    do r=r_start_coord(n),r_end_coord(n)
-       vel_old_cen(r) = HALF * (vel_old(r) + vel_old(r+1))
-       vel_new_cen(r) = HALF * (vel    (r) + vel    (r+1))
-       vel_avg = HALF * (dt *  vel_old_cen(r)           + dtold *  vel_new_cen(r)  ) / dt_avg
-       div_avg = HALF * (dt * (vel_old(r+1)-vel_old(r)) + dtold * (vel(r+1)-vel(r))) / dt_avg
-       f(r) = (vel_new_cen(r)-vel_old_cen(r)) / dt_avg + &
-               vel_avg * div_avg / dr(n)
-    end do
-
-    deallocate(vel_old_cen,vel_new_cen,force)
+    deallocate(vel_old_cen,vel_new_cen)
 
   end subroutine make_w0_planar
 
@@ -153,7 +158,8 @@ contains
     real(kind=dp_t), intent(  out) :: vel(0:)
     real(kind=dp_t), intent(in   ) :: vel_old(0:)
     real(kind=dp_t), intent(in   ) :: Sbar_in(0:)
-    real(kind=dp_t), intent(in   ) :: rho0(0:),p0(0:),p0_new(0:),gamma1bar(0:),gamma1bar_new(0:),delta_p0_ptherm_bar(0:)
+    real(kind=dp_t), intent(in   ) :: rho0(0:),p0(0:),p0_new(0:),gamma1bar(0:)
+    real(kind=dp_t), intent(in   ) :: gamma1bar_new(0:),delta_p0_ptherm_bar(0:)
     real(kind=dp_t), intent(inout) ::   f(0:)
     real(kind=dp_t), intent(in   ) :: dt,dtold
 
