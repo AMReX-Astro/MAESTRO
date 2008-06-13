@@ -6,7 +6,7 @@ module restrict_base_module
 
   private
 
-  public :: restrict_base
+  public :: restrict_base, fill_ghost_base
 
 contains
 
@@ -49,5 +49,43 @@ contains
     call destroy(bpt)
 
   end subroutine restrict_base
+
+  subroutine fill_ghost_base(nlevs,s0,is_cell_centered)
+
+    use bl_prof_module
+    use bl_constants_module
+    use geometry, only: r_start_coord, r_end_coord
+
+    integer        , intent(in   ) :: nlevs
+    real(kind=dp_t), intent(inout) :: s0(:,0:)
+    logical        , intent(in   ) :: is_cell_centered
+
+    ! local
+    integer :: n, r
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "fill_ghost_base")
+
+    if (is_cell_centered) then
+
+       do n=nlevs,2,-1
+
+          s0(n,r_start_coord(n)-1) = -THIRD*s0(n,r_start_coord(n)+1) &
+               + s0(n,r_start_coord(n)) + THIRD*s0(n-1,r_start_coord(n)/2-1)
+
+          s0(n,r_end_coord(n)+1) = -THIRD*s0(n,r_end_coord(n)-1) &
+               + s0(n,r_end_coord(n)) + THIRD*s0(n-1,(r_end_coord(n)+1)/2)
+
+       end do
+
+    else
+
+
+
+    end if
+
+  end subroutine fill_ghost_base
+
 
 end module restrict_base_module
