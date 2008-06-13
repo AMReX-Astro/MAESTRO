@@ -190,9 +190,9 @@ contains
     ! divU constraint
     do j = lo(2), hi(2)
        
-       if (j .eq. 0) then
+       if (n .eq. 1 .and. j .eq. 0) then
           gradp0 = (p0(j+1) - p0(j))/dx(2)
-       else if (j .eq. r_end_coord(n)) then
+       else if (n .eq. 1 .and. j .eq. r_end_coord(n)) then
           gradp0 = (p0(j) - p0(j-1))/dx(2)
        else
           gradp0 = HALF*(p0(j+1) - p0(j-1))/dx(2)
@@ -317,9 +317,9 @@ contains
     ! divU constraint
     do k = lo(3), hi(3)
        
-       if (k .eq. 0) then
+       if (n .eq. 1 .and. k .eq. 0) then
           gradp0 = (p0(k+1) - p0(k))/dx(3)
-       else if (k .eq. r_end_coord(n)) then
+       else if (n .eq. 1 .and. k .eq. r_end_coord(n)) then
           gradp0 = (p0(k) - p0(k-1))/dx(3)
        else
           gradp0 = HALF*(p0(k+1) - p0(k-1))/dx(3)
