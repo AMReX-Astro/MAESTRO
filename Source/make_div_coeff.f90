@@ -19,10 +19,12 @@ contains
 
     use bl_constants_module
     use geometry, only: nr_fine, dr, anelastic_cutoff_coord, r_start_coord, r_end_coord
+    use restrict_base_module, only: fill_ghost_base
 
     integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(  out) :: div_coeff(:,0:)
-    real(kind=dp_t), intent(in   ) :: rho0(:,0:), p0(:,0:), gamma1bar(:,0:), grav_center(:,0:)
+    real(kind=dp_t), intent(inout) :: rho0(:,0:), p0(:,0:), gamma1bar(:,0:)
+    real(kind=dp_t), intent(in   ) :: grav_center(:,0:)
 
     ! local
     integer :: r, n, i, refrat
@@ -31,7 +33,7 @@ contains
     real(kind=dp_t) :: lambda, mu, nu
     real(kind=dp_t) :: denom, coeff1, coeff2
     real(kind=dp_t) :: del,dpls,dmin,slim,sflag
-    real(kind=dp_t) :: offset,ghostval
+    real(kind=dp_t) :: offset
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! Compute beta0 on the edges and average to the center      
@@ -42,7 +44,6 @@ contains
     ! do n=2,nlevs
     !   Compute beta0 on edges and centers at level n
     !   Obtain the starting value of beta0_edge_lo from the coarser grid
-    !   Modify the slope calculation at the level edges to look at coarser data
     !   do i=n-1,1,-1
     !     Restrict beta0 at edges from level n to level i
     !     Recompute beta0 at centers at level i for cells that are covered by level n data
@@ -55,148 +56,28 @@ contains
     ! end do
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     
-    ! Compute beta0 on edges and centers at level 1 only
+    call fill_ghost_base(nlevs,rho0,.true.)
+    call fill_ghost_base(nlevs,gamma1bar,.true.)
+    call fill_ghost_base(nlevs,p0,.true.)
 
-    beta0_edge(1,0) = rho0(1,0)
-
-    do r = r_start_coord(1),r_end_coord(1)
-
-       if (r == r_start_coord(1) .or. r == r_end_coord(1)) then
-
-          lambda = ZERO
-          mu = ZERO
-          nu = ZERO
-
-       else
-
-          del    = HALF* (rho0(1,r+1) - rho0(1,r-1))/dr(1)
-          dpls   = TWO * (rho0(1,r+1) - rho0(1,r  ))/dr(1)
-          dmin   = TWO * (rho0(1,r  ) - rho0(1,r-1))/dr(1)
-          slim   = min(abs(dpls), abs(dmin))
-          slim   = merge(slim, zero, dpls*dmin.gt.ZERO)
-          sflag  = sign(ONE,del)
-          lambda = sflag*min(slim,abs(del))
-
-          del   = HALF* (gamma1bar(1,r+1) - gamma1bar(1,r-1))/dr(1)
-          dpls  = TWO * (gamma1bar(1,r+1) - gamma1bar(1,r  ))/dr(1)
-          dmin  = TWO * (gamma1bar(1,r  ) - gamma1bar(1,r-1))/dr(1)
-          slim  = min(abs(dpls), abs(dmin))
-          slim  = merge(slim, zero, dpls*dmin.gt.ZERO)
-          sflag = sign(ONE,del)
-          mu    = sflag*min(slim,abs(del))
-
-          del   = HALF* (p0(1,r+1) - p0(1,r-1))/dr(1)
-          dpls  = TWO * (p0(1,r+1) - p0(1,r  ))/dr(1)
-          dmin  = TWO * (p0(1,r  ) - p0(1,r-1))/dr(1)
-          slim  = min(abs(dpls), abs(dmin))
-          slim  = merge(slim, zero, dpls*dmin.gt.ZERO)
-          sflag = sign(ONE,del)
-          nu    = sflag*min(slim,abs(del))
-
-       endif
-
-       if (r == r_start_coord(1) .or. r == r_end_coord(1)) then
-
-          integral = abs(grav_center(1,r))*rho0(1,r)*dr(1)/(p0(1,r)*gamma1bar(1,r))
-
-       else if (nu .eq. ZERO .or. mu .eq. ZERO .or. &
-               (nu*gamma1bar(1,r) - mu*p0(1,r)) .eq. ZERO .or. &
-               ((gamma1bar(1,r) + HALF*mu*dr(1))/ &
-               (gamma1bar(1,r) - HALF*mu*dr(1))) .le. ZERO .or. &
-               ((p0(1,r) + HALF*nu*dr(1))/ &
-               (p0(1,r) - HALF*nu*dr(1))) .le. ZERO) then
-
-          integral = abs(grav_center(1,r))*rho0(1,r)*dr(1)/(p0(1,r)*gamma1bar(1,r))
-
-       else 
-
-          denom = nu*gamma1bar(1,r) - mu*p0(1,r)
-          coeff1 = lambda*gamma1bar(1,r)/mu - rho0(1,r)
-          coeff2 = lambda*p0(1,r)/nu - rho0(1,r)
-
-          integral = (abs(grav_center(1,r))/denom)* &
-               (coeff1*log( (gamma1bar(1,r) + HALF*mu*dr(1))/ &
-               (gamma1bar(1,r) - HALF*mu*dr(1))) - &
-               coeff2*log( (p0(1,r) + HALF*nu*dr(1))/ &
-               (p0(1,r) - HALF*nu*dr(1))) )
-
-       endif
-
-       beta0_edge(1,r+1) = beta0_edge(1,r) * exp(-integral)
-       div_coeff(1,r) = HALF*(beta0_edge(1,r) + beta0_edge(1,r+1))
-
-    end do
-
-    do r = anelastic_cutoff_coord(1),r_end_coord(1)
-       div_coeff(1,r) = div_coeff(1,r-1) * (rho0(1,r)/rho0(1,r-1))
-    end do
-
-    do n=2,nlevs
+    do n=1,nlevs
 
        ! Compute beta0 on edges and centers at level n
-       ! Obtain the starting value of beta0_edge_lo from the coarser grid
-       beta0_edge(n,r_start_coord(n)) = beta0_edge(n-1,r_start_coord(n)/2)
+
+       if (n .eq. 1) then
+          beta0_edge(1,0) = rho0(1,0)
+       else
+          ! Obtain the starting value of beta0_edge_lo from the coarser grid
+          beta0_edge(n,r_start_coord(n)) = beta0_edge(n-1,r_start_coord(n)/2)
+       end if
 
        do r=r_start_coord(n),r_end_coord(n)
 
-          ! Modify the slope calculation at the level edges to look at coarser data
-          if (r .eq. r_start_coord(n)) then
+          if (n .eq. 1 .and. (r .eq. r_start_coord(n) .or. r .eq. r_end_coord(n))) then
 
-             ghostval = -THIRD*rho0(n,r+1)+rho0(n,r)+THIRD*rho0(n-1,r/2-1)
-             del    = HALF* (rho0(n,r+1) - ghostval   )/dr(n)
-             dpls   = TWO * (rho0(n,r+1) - rho0(n,r  ))/dr(n)
-             dmin   = TWO * (rho0(n,r  ) - ghostval   )/dr(n)
-             slim   = min(abs(dpls), abs(dmin))
-             slim   = merge(slim, zero, dpls*dmin.gt.ZERO)
-             sflag  = sign(ONE,del)
-             lambda = sflag*min(slim,abs(del))
-
-             ghostval = -THIRD*gamma1bar(n,r+1)+gamma1bar(n,r)+THIRD*gamma1bar(n-1,r/2-1)
-             del   = HALF* (gamma1bar(n,r+1) - ghostval        )/dr(n)
-             dpls  = TWO * (gamma1bar(n,r+1) - gamma1bar(n,r  ))/dr(n)
-             dmin  = TWO * (gamma1bar(n,r  ) - ghostval        )/dr(n)
-             slim  = min(abs(dpls), abs(dmin))
-             slim  = merge(slim, zero, dpls*dmin.gt.ZERO)
-             sflag = sign(ONE,del)
-             mu    = sflag*min(slim,abs(del))
-
-             ghostval = -THIRD*p0(n,r+1)+p0(n,r)+THIRD*p0(n-1,r/2-1)
-             del   = HALF* (p0(n,r+1) - ghostval )/dr(n)
-             dpls  = TWO * (p0(n,r+1) - p0(n,r  ))/dr(n)
-             dmin  = TWO * (p0(n,r  ) - ghostval )/dr(n)
-             slim  = min(abs(dpls), abs(dmin))
-             slim  = merge(slim, zero, dpls*dmin.gt.ZERO)
-             sflag = sign(ONE,del)
-             nu    = sflag*min(slim,abs(del))
-
-          else if (r .eq. r_end_coord(n)) then
-
-             ghostval = -THIRD*rho0(n,r-1)+rho0(n,r)+THIRD*rho0(n-1,(r+1)/2)
-             del    = HALF* (ghostval    - rho0(n,r-1))/dr(n)
-             dpls   = TWO * (ghostval    - rho0(n,r  ))/dr(n)
-             dmin   = TWO * (rho0(n,r  ) - rho0(n,r-1))/dr(n)
-             slim   = min(abs(dpls), abs(dmin))
-             slim   = merge(slim, zero, dpls*dmin.gt.ZERO)
-             sflag  = sign(ONE,del)
-             lambda = sflag*min(slim,abs(del))
-
-             ghostval = -THIRD*gamma1bar(n,r-1)+gamma1bar(n,r)+THIRD*gamma1bar(n-1,(r+1)/2)
-             del   = HALF* (ghostval         - gamma1bar(n,r-1))/dr(n)
-             dpls  = TWO * (ghostval         - gamma1bar(n,r  ))/dr(n)
-             dmin  = TWO * (gamma1bar(n,r  ) - gamma1bar(n,r-1))/dr(n)
-             slim  = min(abs(dpls), abs(dmin))
-             slim  = merge(slim, zero, dpls*dmin.gt.ZERO)
-             sflag = sign(ONE,del)
-             mu    = sflag*min(slim,abs(del))
-
-             ghostval = -THIRD*p0(n,r-1)+p0(n,r)+THIRD*p0(n-1,(r+1)/2)
-             del   = HALF* (ghostval  - p0(n,r-1))/dr(n)
-             dpls  = TWO * (ghostval  - p0(n,r  ))/dr(n)
-             dmin  = TWO * (p0(n,r  ) - p0(n,r-1))/dr(n)
-             slim  = min(abs(dpls), abs(dmin))
-             slim  = merge(slim, zero, dpls*dmin.gt.ZERO)
-             sflag = sign(ONE,del)
-             nu    = sflag*min(slim,abs(del))
+             lambda = ZERO
+             mu = ZERO
+             nu = ZERO
 
           else
 
