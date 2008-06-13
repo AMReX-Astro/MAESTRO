@@ -142,7 +142,7 @@ contains
           ! Modify the slope calculation at the level edges to look at coarser data
           if (r .eq. r_start_coord(n)) then
 
-             ghostval = (1.d0/3.d0)*rho0(n,r) + (2.d0/3.d0)*rho0(n-1,r/2-1)
+             ghostval = -THIRD*rho0(n,r+1)+rho0(n,r)+THIRD*rho0(n-1,r/2-1)
              del    = HALF* (rho0(n,r+1) - ghostval   )/dr(n)
              dpls   = TWO * (rho0(n,r+1) - rho0(n,r  ))/dr(n)
              dmin   = TWO * (rho0(n,r  ) - ghostval   )/dr(n)
@@ -151,7 +151,7 @@ contains
              sflag  = sign(ONE,del)
              lambda = sflag*min(slim,abs(del))
 
-             ghostval = (1.d0/3.d0)*gamma1bar(n,r) + (2.d0/3.d0)*gamma1bar(n-1,r/2-1)
+             ghostval = -THIRD*gamma1bar(n,r+1)+gamma1bar(n,r)+THIRD*gamma1bar(n-1,r/2-1)
              del   = HALF* (gamma1bar(n,r+1) - ghostval        )/dr(n)
              dpls  = TWO * (gamma1bar(n,r+1) - gamma1bar(n,r  ))/dr(n)
              dmin  = TWO * (gamma1bar(n,r  ) - ghostval        )/dr(n)
@@ -160,7 +160,7 @@ contains
              sflag = sign(ONE,del)
              mu    = sflag*min(slim,abs(del))
 
-             ghostval = (1.d0/3.d0)*p0(n,r) + (2.d0/3.d0)*p0(n-1,r/2-1)
+             ghostval = -THIRD*p0(n,r+1)+p0(n,r)+THIRD*p0(n-1,r/2-1)
              del   = HALF* (p0(n,r+1) - ghostval )/dr(n)
              dpls  = TWO * (p0(n,r+1) - p0(n,r  ))/dr(n)
              dmin  = TWO * (p0(n,r  ) - ghostval )/dr(n)
@@ -171,7 +171,7 @@ contains
 
           else if (r .eq. r_end_coord(n)) then
 
-             ghostval = (1.d0/3.d0)*rho0(n,r) + (2.d0/3.d0)*rho0(n-1,(r+1)/2)
+             ghostval = -THIRD*rho0(n,r-1)+rho0(n,r)+THIRD*rho0(n-1,(r+1)/2)
              del    = HALF* (ghostval    - rho0(n,r-1))/dr(n)
              dpls   = TWO * (ghostval    - rho0(n,r  ))/dr(n)
              dmin   = TWO * (rho0(n,r  ) - rho0(n,r-1))/dr(n)
@@ -180,7 +180,7 @@ contains
              sflag  = sign(ONE,del)
              lambda = sflag*min(slim,abs(del))
 
-             ghostval = (1.d0/3.d0)*gamma1bar(n,r) + (2.d0/3.d0)*gamma1bar(n-1,(r+1)/2)
+             ghostval = -THIRD*gamma1bar(n,r-1)+gamma1bar(n,r)+THIRD*gamma1bar(n-1,(r+1)/2)
              del   = HALF* (ghostval         - gamma1bar(n,r-1))/dr(n)
              dpls  = TWO * (ghostval         - gamma1bar(n,r  ))/dr(n)
              dmin  = TWO * (gamma1bar(n,r  ) - gamma1bar(n,r-1))/dr(n)
@@ -189,7 +189,7 @@ contains
              sflag = sign(ONE,del)
              mu    = sflag*min(slim,abs(del))
 
-             ghostval = (1.d0/3.d0)*p0(n,r) + (2.d0/3.d0)*p0(n-1,(r+1)/2)
+             ghostval = -THIRD*p0(n,r-1)+p0(n,r)+THIRD*p0(n-1,(r+1)/2)
              del   = HALF* (ghostval  - p0(n,r-1))/dr(n)
              dpls  = TWO * (ghostval  - p0(n,r  ))/dr(n)
              dmin  = TWO * (p0(n,r  ) - p0(n,r-1))/dr(n)
