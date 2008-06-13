@@ -18,7 +18,7 @@ contains
   subroutine make_div_coeff(nlevs,div_coeff,rho0,p0,gamma1bar,grav_center)
 
     use bl_constants_module
-    use geometry, only: nr_fine, dr, anelastic_cutoff_coord, r_start_coord, r_end_coord
+    use geometry, only: nr_fine, dr, anelastic_cutoff_coord, r_start_coord, r_end_coord, nr
     use restrict_base_module, only: fill_ghost_base
 
     integer        , intent(in   ) :: nlevs
@@ -73,7 +73,7 @@ contains
 
        do r=r_start_coord(n),r_end_coord(n)
 
-          if (n .eq. 1 .and. (r .eq. r_start_coord(n) .or. r .eq. r_end_coord(n))) then
+          if (r .eq. 0 .or. r .eq. nr(n)-1) then
 
              lambda = ZERO
              mu = ZERO

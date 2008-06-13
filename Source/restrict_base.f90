@@ -54,7 +54,7 @@ contains
 
     use bl_prof_module
     use bl_constants_module
-    use geometry, only: r_start_coord, r_end_coord
+    use geometry, only: r_start_coord, r_end_coord, nr
 
     integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(inout) :: s0(:,0:)
@@ -71,11 +71,15 @@ contains
 
        do n=nlevs,2,-1
 
-          s0(n,r_start_coord(n)-1) = -THIRD*s0(n,r_start_coord(n)+1) &
-               + s0(n,r_start_coord(n)) + THIRD*s0(n-1,r_start_coord(n)/2-1)
+          if (r_start_coord(n) .ne. 0) then
+             s0(n,r_start_coord(n)-1) = -THIRD*s0(n,r_start_coord(n)+1) &
+                  + s0(n,r_start_coord(n)) + THIRD*s0(n-1,r_start_coord(n)/2-1)
+          end if
 
-          s0(n,r_end_coord(n)+1) = -THIRD*s0(n,r_end_coord(n)-1) &
-               + s0(n,r_end_coord(n)) + THIRD*s0(n-1,(r_end_coord(n)+1)/2)
+          if (r_end_coord(n) .ne. nr(n)-1) then
+             s0(n,r_end_coord(n)+1) = -THIRD*s0(n,r_end_coord(n)-1) &
+                  + s0(n,r_end_coord(n)) + THIRD*s0(n-1,(r_end_coord(n)+1)/2)
+          end if
 
        end do
 
