@@ -124,32 +124,17 @@ contains
     !   end do
     ! end do
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-    ! Compute vel at level 1 only
-    ! Initialize new velocity at bottom of coarse base array to zero.
-    vel(1,0) = ZERO
-       
-    do r=1,r_end_coord(1)+1
-
-       gamma1bar_p0_avg = (gamma1bar_old(1,r-1)+gamma1bar_new(1,r-1)) * &
-            (p0_old(1,r-1)+p0_new(1,r-1))/4.0d0
-       
-       if (rho0(1,r-1) .gt. base_cutoff_density) then
-          volume_discrepancy = dpdt_factor * delta_p0_ptherm_bar(1,r-1)/dt
-       else
-          volume_discrepancy = 0.0d0
-       end if
-       
-       vel(1,r) = vel(1,r-1) + Sbar_in(1,r-1) * dr(1) &
-            - ( (psi(1,r-1)+volume_discrepancy) / gamma1bar_p0_avg ) * dr(1)
-
-    end do
     
     ! Compute vel on edges at level n
-    do n=2,nlevs
+    do n=1,nlevs
 
-       ! Obtain the starting value of vel from the coarser grid
-       vel(n,r_start_coord(n)) = vel(n-1,r_start_coord(n)/2)
+       if (n .eq. 1) then
+          ! Initialize new velocity at bottom of coarse base array to zero.
+          vel(1,0) = ZERO
+       else
+          ! Obtain the starting value of vel from the coarser grid
+          vel(n,r_start_coord(n)) = vel(n-1,r_start_coord(n)/2)
+       end if
 
        do r=r_start_coord(n)+1,r_end_coord(n)+1
           gamma1bar_p0_avg = (gamma1bar_old(n,r-1)+gamma1bar_new(n,r-1)) * &
