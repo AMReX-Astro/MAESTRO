@@ -24,6 +24,7 @@ contains
     use probin_module, only: use_delta_gamma1_term
     use ml_layout_module
     use average_module
+    use restrict_base_module
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: Source(:)
@@ -34,7 +35,7 @@ contains
     type(multifab) , intent(in   ) :: rho_omegadot(:)
     type(multifab) , intent(in   ) :: rho_Hext(:)
     type(multifab) , intent(in   ) :: thermal(:)
-    real(kind=dp_t), intent(in   ) :: p0(:,0:)
+    real(kind=dp_t), intent(inout) :: p0(:,0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
     real(kind=dp_t), intent(inout) :: delta_gamma1_termbar(:,0:)
     real(kind=dp_t), intent(in   ) :: psi(:,0:)
@@ -54,6 +55,8 @@ contains
 
     ng = state(1)%ng
     dm = state(1)%dim
+
+    call fill_ghost_base(nlevs,p0,.true.)
 
     do n = 1, nlevs
        do i = 1, state(n)%nboxes
@@ -117,7 +120,7 @@ contains
       use eos_module
       use variables, only: rho_comp, temp_comp, spec_comp
       use probin_module, only: use_delta_gamma1_term
-      use geometry, only: anelastic_cutoff_coord, r_start_coord, r_end_coord
+      use geometry, only: anelastic_cutoff_coord, nr
 
       integer         , intent(in   ) :: n,lo(:), hi(:), ng
       real (kind=dp_t), intent(  out) :: Source(lo(1):,lo(2):)
@@ -176,9 +179,9 @@ contains
                         + pres_term/(den_eos(1)*dpdr_eos(1))
 
            if (use_delta_gamma1_term .and. j < anelastic_cutoff_coord(n)) then
-              if (j .eq. r_start_coord(n)) then
+              if (j .eq. 0) then
                  gradp0 = (p0(j+1) - p0(j))/dx(2)
-              else if (j .eq. r_end_coord(n)) then
+              else if (j .eq. nr(n)-1) then
                  gradp0 = (p0(j) - p0(j-1))/dx(2)
               else
                  gradp0 = HALF*(p0(j+1) - p0(j-1))/dx(2)
@@ -207,7 +210,7 @@ contains
       use geometry, only: spherical
       use variables, only: rho_comp, temp_comp, spec_comp
       use probin_module, only: use_delta_gamma1_term
-      use geometry, only: anelastic_cutoff_coord, r_start_coord, r_end_coord
+      use geometry, only: anelastic_cutoff_coord, nr
      
       integer         , intent(in   ) :: n,lo(:), hi(:), ng
       real (kind=dp_t), intent(  out) :: Source(lo(1):,lo(2):,lo(3):)  
@@ -272,9 +275,9 @@ contains
               end if
 
               if (use_delta_gamma1_term .and. k < anelastic_cutoff_coord(n)) then
-                 if (k .eq. r_start_coord(n)) then
+                 if (k .eq. 0) then
                     gradp0 = (p0(k+1) - p0(k))/dx(3)
-                 else if (k .eq. r_end_coord(n)) then
+                 else if (k .eq. nr(n)-1) then
                     gradp0 = (p0(k) - p0(k-1))/dx(3)
                  else
                     gradp0 = HALF*(p0(k+1) - p0(k-1))/dx(3)

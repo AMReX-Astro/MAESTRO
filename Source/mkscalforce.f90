@@ -37,12 +37,13 @@ contains
     use multifab_fill_ghost_module
     use multifab_physbc_module
     use make_grav_module
+    use restrict_base_module
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: scal_force(:)
     type(multifab) , intent(in   ) :: thermal(:)
     type(multifab) , intent(in   ) :: umac(:,:)
-    real(kind=dp_t), intent(in   ) ::   p0_old(:,0:),   p0_new(:,0:)
+    real(kind=dp_t), intent(inout) ::   p0_old(:,0:),   p0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: rho0_old(:,0:), rho0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: psi(:,0:)
     type(multifab) , intent(in   ) :: normal(:)
@@ -69,6 +70,9 @@ contains
 
     dm = scal_force(1)%dim
       
+    call fill_ghost_base(nlevs,p0_old,.true.)
+    call fill_ghost_base(nlevs,p0_new,.true.)
+
     do n=1,nlevs
 
        allocate(rho0(0:nr_fine-1))
@@ -92,14 +96,16 @@ contains
           case(3)
              wmp  => dataptr(umac(n,3), i)
              if (spherical .eq. 0) then
-                call mkrhohforce_3d(n,fp(:,:,:,rhoh_comp), wmp(:,:,:,1), tp(:,:,:,1), lo, hi, &
-                                    p0_old(n,:), p0_new(n,:), rho0, grav, psi(n,:), add_thermal)
+                call mkrhohforce_3d(n,fp(:,:,:,rhoh_comp), wmp(:,:,:,1), tp(:,:,:,1), &
+                                    lo, hi, p0_old(n,:), p0_new(n,:), rho0, grav, &
+                                    psi(n,:), add_thermal)
              else
                 np => dataptr(normal(n), i)
                 call mkrhohforce_3d_sphr(n,fp(:,:,:,rhoh_comp), &
                                          ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
                                          tp(:,:,:,1), lo, hi, dx(n,:), np(:,:,:,:), &
-                                         p0_old(n,:), p0_new(n,:), rho0, grav, psi(n,:), add_thermal)
+                                         p0_old(n,:), p0_new(n,:), rho0, grav, psi(n,:), &
+                                         add_thermal)
              end if
           end select
        end do
@@ -142,7 +148,7 @@ contains
   subroutine mkrhohforce_2d(n,rhoh_force,wmac,thermal,lo,hi, &
                             p0_old,p0_new,rho0,grav,psi,add_thermal)
 
-    use geometry, only: dr, r_end_coord
+    use geometry, only: dr, nr
     use probin_module, only: enthalpy_pred_type, base_cutoff_density
     use pred_parameters
 
@@ -166,19 +172,17 @@ contains
     real(kind=dp_t) :: gradp0, wadv
     integer :: i,j
 
-!   Add w d(p0)/dz 
+    ! Add w d(p0)/dz 
     do j = lo(2),hi(2)
 
        if (rho0(j) > base_cutoff_density) then
           gradp0 = rho0(j) * grav(j)
-       else if (j.eq.r_end_coord(n)) then
+       else if (j.eq.nr(n)-1) then
           gradp0 = HALF * ( p0_old(j  ) + p0_new(j  ) &
                            -p0_old(j-1) - p0_new(j-1) ) / dr(n)
        else
           gradp0 = HALF * ( p0_old(j+1) + p0_new(j+1) &
                            -p0_old(j  ) - p0_new(j  ) ) / dr(n)
-!         gradp0 = FOURTH * ( p0_old(j+1) + p0_new(j+1) &
-!                            -p0_old(j-1) - p0_new(j-1) ) / dr(n)
        end if
 
 
@@ -211,7 +215,7 @@ contains
   subroutine mkrhohforce_3d(n,rhoh_force,wmac,thermal,lo,hi,&
                             p0_old,p0_new,rho0,grav,psi,add_thermal)
 
-    use geometry, only: dr, r_end_coord
+    use geometry, only: dr, nr
     use probin_module, only: enthalpy_pred_type, base_cutoff_density
     use pred_parameters
 
@@ -235,14 +239,12 @@ contains
 
        if (rho0(k) > base_cutoff_density) then
           gradp0 = rho0(k) * grav(k)
-       else if (k.eq.r_end_coord(n)) then
+       else if (k.eq.nr(n)-1) then
           gradp0 = HALF * ( p0_old(k  ) + p0_new(k  ) &
                            -p0_old(k-1) - p0_new(k-1) ) / dr(n)
        else
           gradp0 = HALF * ( p0_old(k+1) + p0_new(k+1) &
                            -p0_old(k  ) - p0_new(k  ) ) / dr(n)
-!         gradp0 = FOURTH * ( p0_old(k+1) + p0_new(k+1) &
-!                            -p0_old(k-1) - p0_new(k-1) ) / dr(n)
        end if
 
        do j = lo(2),hi(2)
@@ -386,14 +388,15 @@ contains
     use ml_restriction_module, only: ml_cc_restriction_c
     use multifab_fill_ghost_module
     use multifab_physbc_module
+    use restrict_base_module
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: temp_force(:)
     type(multifab) , intent(in   ) :: umac(:,:)
     type(multifab) , intent(in   ) :: s(:)
     type(multifab) , intent(in   ) :: thermal(:)
-    real(kind=dp_t), intent(in   ) :: p0_old(:,0:)
-    real(kind=dp_t), intent(in   ) :: p0_new(:,0:)
+    real(kind=dp_t), intent(inout) :: p0_old(:,0:)
+    real(kind=dp_t), intent(inout) :: p0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: psi(:,0:)
     type(multifab) , intent(in   ) :: normal(:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
@@ -417,6 +420,9 @@ contains
 
     dm = temp_force(1)%dim
     ng = s(1)%ng
+
+    call fill_ghost_base(nlevs,p0_old,.true.)
+    call fill_ghost_base(nlevs,p0_new,.true.)
 
     do n=1,nlevs
 
@@ -444,7 +450,8 @@ contains
                                          np(:,:,:,:), dx(n,:))
              else
                 call mktempforce_3d(n, fp(:,:,:,temp_comp), sp(:,:,:,:), wmp(:,:,:,1), &
-                                    tp(:,:,:,1), lo, hi, ng, p0_old(n,:), p0_new(n,:), psi(n,:))
+                                    tp(:,:,:,1), lo, hi, ng, p0_old(n,:), p0_new(n,:), &
+                                    psi(n,:))
              end if
           end select
        end do
@@ -486,7 +493,7 @@ contains
 
   subroutine mktempforce_2d(n, temp_force, s, wmac, thermal, lo, hi, ng, p0_old, p0_new, psi)
 
-    use geometry, only: dr, r_end_coord
+    use geometry, only: dr, nr
     use variables, only: temp_comp, rho_comp, spec_comp
     use eos_module
 
@@ -514,7 +521,7 @@ contains
        if (j.eq.0) then
           gradp0 = HALF * ( p0_old(j+1) + p0_new(j+1) &
                            -p0_old(j  ) - p0_new(j  ) ) / dr(n)
-       else if (j.eq.r_end_coord(n)) then
+       else if (j.eq.nr(n)-1) then
           gradp0 = HALF * ( p0_old(j  ) + p0_new(j  ) &
                            -p0_old(j-1) - p0_new(j-1) ) / dr(n)
        else
@@ -557,7 +564,7 @@ contains
 
   subroutine mktempforce_3d(n, temp_force, s, wmac, thermal, lo, hi, ng, p0_old, p0_new, psi)
 
-    use geometry,  only: dr, r_end_coord
+    use geometry,  only: dr, nr
     use variables, only: temp_comp, rho_comp, spec_comp
     use eos_module
 
@@ -582,7 +589,7 @@ contains
        if (k.eq.0) then
           gradp0 = HALF * ( p0_old(k+1) + p0_new(k+1) &
                            -p0_old(k  ) - p0_new(k  ) ) / dr(n)
-       else if (k.eq.r_end_coord(n)) then
+       else if (k.eq.nr(n)-1) then
           gradp0 = HALF * ( p0_old(k  ) + p0_new(k  ) &
                            -p0_old(k-1) - p0_new(k-1) ) / dr(n)
        else

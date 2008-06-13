@@ -35,7 +35,7 @@ contains
     type(multifab) , intent(inout) :: Source_old(:)
     type(multifab) , intent(inout) :: hgrhs(:)
     real(kind=dp_t), intent(in   ) :: div_coeff_old(:,0:)
-    real(kind=dp_t), intent(in   ) :: p0(:,0:)
+    real(kind=dp_t), intent(inout) :: p0(:,0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     type(bc_tower) , intent(in   ) :: the_bc_tower
