@@ -14,6 +14,7 @@ contains
 
     use bl_prof_module
     use geometry, only: spherical
+    use restrict_base_module
 
     integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(inout) :: rho0_new(:,0:)
@@ -35,6 +36,8 @@ contains
           call correct_base_state_planar(n,rho0_new(n,0:),etarho(n,0:),dz(n),dt)
        end if
     enddo
+
+    call restrict_base(nlevs,rho0_new,.true.)
 
     call destroy(bpt)
        

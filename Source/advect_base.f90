@@ -50,6 +50,10 @@ contains
                                         div_coeff,dt)
     end if
 
+    call restrict_base(nlevs,p0_new,.true.)
+    call restrict_base(nlevs,rho0_new,.true.)
+    call restrict_base(nlevs,rhoh0_new,.true.)
+
     call destroy(bpt)
        
   end subroutine advect_base
