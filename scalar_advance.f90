@@ -50,7 +50,7 @@ contains
     type(multifab) , intent(inout) :: snew(:)
     type(multifab) , intent(inout) :: thermal(:)
     type(multifab) , intent(inout) :: umac(:,:)
-    real(kind=dp_t), intent(in   ) :: w0(:,0:)
+    real(kind=dp_t), intent(inout) :: w0(:,0:)
     type(multifab) , intent(in   ) :: w0_cart_vec(:)
     type(multifab) , intent(inout) :: etarhoflux(:)
     type(multifab) , intent(in   ) :: utrans(:,:)

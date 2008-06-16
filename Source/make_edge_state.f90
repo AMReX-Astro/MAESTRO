@@ -40,13 +40,14 @@ contains
     use fill_3d_module
     use multifab_physbc_module
     use ml_restriction_module, only : ml_edge_restriction_c
+    use restrict_base_module
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(in   ) :: s(:),u(:)
     type(multifab) , intent(inout) :: sedge(:,:),umac(:,:)
     type(multifab) , intent(in   ) :: utrans(:,:),force(:)
     type(multifab) , intent(in   ) :: normal(:)
-    real(kind=dp_t), intent(in   ) :: w0(:,0:)
+    real(kind=dp_t), intent(inout) :: w0(:,0:)
     type(multifab) , intent(in   ) :: w0_cart_vec(:)
     real(kind=dp_t), intent(in   ) :: dx(:,:),dt
     logical        , intent(in   ) :: is_vel
@@ -75,13 +76,14 @@ contains
     real(kind=dp_t), allocatable :: gradw0_rad(:)
     type(multifab) :: gradw0_cart
 
-
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "make_edge_state")
 
     dm = u(1)%dim
     ng = s(1)%ng
+
+    call fill_ghost_base(nlevs,w0,.false.)
 
     if (spherical .eq. 1) then
        allocate (gradw0_rad(0:nr_fine-1))
@@ -214,7 +216,7 @@ contains
                                 vtrans,force,w0,lo,dx,dt,is_vel,phys_bc,adv_bc,velpred, &
                                 ng,comp)
 
-    use geometry, only: r_start_coord, r_end_coord
+    use geometry, only: nr
     use bc_module
     use slope_module
     use bl_constants_module
@@ -319,7 +321,7 @@ contains
           do i = is-1,ie+1 
              
              vlo = u(i,j  ,2) + HALF * (w0(j  )+w0(j+1))
-             if ((j+2).le.r_end_coord(n)+1) then
+             if ((j+2) .le. nr(n)) then
                 vhi = u(i,j+1,2) + HALF * (w0(j+1)+w0(j+2))
              else
                 vhi = u(i,j+1,2) + w0(j+1)
@@ -537,12 +539,12 @@ contains
              
              st = force(i,j,comp) - HALF * (utrans(i,j)+utrans(i+1,j))*(splus - sminus) / hx
              
-             if (is_vel .and. comp .eq. 2 .and. j .ge. 0 .and. j .le. r_end_coord(n)) then
+             if (is_vel .and. comp .eq. 2 .and. j .ge. 0 .and. j .le. nr(n)-1) then
                 ! vtrans contains w0 so we need to subtract it off
                 st = st - HALF * (vtrans(i,j)+vtrans(i,j+1)-w0(j+1)-w0(j))*(w0(j+1)-w0(j))/hy
              end if
-             
-             if (j .ge. r_start_coord(n) .and. j .le. r_end_coord(n)) then
+
+             if (j .ge. 0 .and. j .le. nr(n)-1) then
                 vbardth = dth / hy * ( u(i,j,2) + HALF * (w0(j)+w0(j+1)) )
              else
                 vbardth = dth / hy * u(i,j,2) 
