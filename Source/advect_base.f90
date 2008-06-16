@@ -251,6 +251,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     
 !   Put beta_old on edges
+!   NOTE: Make sure ghost cells for div_coeff_old are filled before calling this
 !   call cell_to_edge(n,div_coeff_old,beta)
 !   Update p0 -- predictor
 !   do r=r_start_coord(n),r_end_coord(n)
@@ -294,6 +295,7 @@ contains
 !   Define beta^n+1 at cell edges using the new gravity above
 !   call make_grav_cell(n,grav_cell,rho0_new)
 !   call make_div_coeff(n,div_coeff_new,rho0_new,p0_new,gamma1bar,grav_cell)
+!   NOTE: Make sure ghost cells are filled for div_coeff_new before calling this
 !   call cell_to_edge(n,div_coeff_new,beta_new)
 !   beta_nh = HALF*(beta + beta_new)
 !   Update p0 -- corrector

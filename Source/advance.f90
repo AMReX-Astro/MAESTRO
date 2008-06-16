@@ -56,6 +56,7 @@ contains
     use make_gamma_module
     use rhoh_vs_t_module
     use probin_module, only: verbose, enthalpy_pred_type, dpdt_factor
+    use restrict_base_module
     
     logical,         intent(in   ) :: init_mode
     type(ml_layout), intent(inout) :: mla
@@ -76,7 +77,7 @@ contains
     real(dp_t)    ,  intent(inout) :: gamma1bar(:,0:)
     real(dp_t)    ,  intent(inout) :: w0(:,0:)
     type(multifab),  intent(inout) :: rho_omegadot2(:)
-    real(dp_t)    ,  intent(in   ) :: div_coeff_old(:,0:)
+    real(dp_t)    ,  intent(inout) :: div_coeff_old(:,0:)
     real(dp_t)    ,  intent(inout) :: div_coeff_new(:,0:)
     real(dp_t)    ,  intent(in   ) :: grav_cell_old(:,0:)
     real(dp_t)    ,  intent(in   ) :: dx(:,:),time,dt,dtold
@@ -350,6 +351,7 @@ contains
           call destroy(div_coeff_3d(n))
        end do
     else
+       call fill_ghost_base(nlevs,div_coeff_old,.true.)
        do n=1,nlevs
           call cell_to_edge(n,div_coeff_old(n,:),div_coeff_edge(n,:))
        end do
@@ -813,6 +815,7 @@ contains
              call destroy(div_coeff_3d(n))
           end do
        else
+          call fill_ghost_base(nlevs,div_coeff_nph,.true.)
           do n=1,nlevs
              call cell_to_edge(n,div_coeff_nph(n,:),div_coeff_edge(n,:))
           end do
