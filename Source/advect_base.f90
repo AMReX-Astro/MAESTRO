@@ -90,10 +90,10 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     force = ZERO
-
+    
+    call make_edge_state_1d(nlevs,p0_old,edge,vel,force,dz,dt)
+    
     do n=1,nlevs
-       call make_edge_state_1d(n,p0_old(n,:),edge(n,:),vel(n,:),force(n,:),dz(n),dt)
-
        do r=r_start_coord(n),r_end_coord(n)
           p0_new(n,r) = p0_old(n,r) &
                - dt / dz(n) * HALF * (vel(n,r) + vel(n,r+1)) * (edge(n,r+1) - edge(n,r))  &
@@ -109,10 +109,10 @@ contains
        do r=r_start_coord(n),r_end_coord(n)
           force(n,r) = -rho0_old(n,r) * (vel(n,r+1) - vel(n,r)) / dz(n)
        end do
-       
-       call make_edge_state_1d(n,rho0_old(n,:),edge(n,:),vel(n,:),force(n,:),dz(n),dt)
     end do
-    
+       
+    call make_edge_state_1d(nlevs,rho0_old,edge,vel,force,dz,dt)
+        
     rho0_predicted_edge = edge
 
     do n=1,nlevs
@@ -138,9 +138,7 @@ contains
        ! mixing, we defer this to correct_base.
        force = ZERO
 
-       do n=1,nlevs
-          call make_edge_state_1d(n,h0(n,:),edge(n,:),vel(n,:),force(n,:),dz(n),dt)
-       end do
+       call make_edge_state_1d(nlevs,h0,edge,vel,force,dz,dt)
 
        ! our final update needs (rho h)_0 on the edges, so compute
        ! that now
@@ -153,10 +151,10 @@ contains
           do r=r_start_coord(n),r_end_coord(n)
              force(n,r) = -rhoh0_old(n,r) * (vel(n,r+1) - vel(n,r)) / dz(n)
           end do
-          
-          call make_edge_state_1d(n,rhoh0_old(n,:),edge(n,:),vel(n,:),force(n,:),dz(n),dt)
        end do
-       
+          
+       call make_edge_state_1d(nlevs,rhoh0_old,edge,vel,force,dz,dt)
+              
     end if
 
     do n=1,nlevs
@@ -240,9 +238,9 @@ contains
           force(n,r) = -rho0_old(n,r) * (vel(n,r+1) - vel(n,r)) / dr(n) - &
                2.0_dp_t*rho0_old(n,r)*HALF*(vel(n,r) + vel(n,r+1))/r_cc_loc(n,r)
        end do
-    
-       call make_edge_state_1d(n,rho0_old(n,:),edge(n,:),vel(n,:),force(n,:),dr(n),dt)
     end do
+    
+    call make_edge_state_1d(nlevs,rho0_old,edge,vel,force,dr,dt)
     
     rho0_predicted_edge = edge
 
@@ -386,10 +384,10 @@ contains
              psi(n,r) = HALF*(gamma1bar(n,r)*p0_new(n,r) + gamma1bar_old(n,r)*p0_old(n,r))* &
                   (Sbar_in(n,r) - div_w0_sph)
           end do
-          
-          call make_edge_state_1d(n,h0(n,:),edge(n,:),vel(n,:),force(n,:),dr(n),dt)
        end do
-
+          
+       call make_edge_state_1d(nlevs,h0,edge,vel,force,dr,dt)
+       
        ! our final update needs (rho h)_0 on the edges, so compute
        ! that now
        edge = rho0_predicted_edge*edge
@@ -417,11 +415,11 @@ contains
              psi(n,r) = HALF*(gamma1bar(n,r)*p0_new(n,r) + gamma1bar_old(n,r)*p0_old(n,r))* &
                   (Sbar_in(n,r) - div_w0_sph)
           end do
-          
-          call make_edge_state_1d(n,rhoh0_old(n,:),edge(n,:),vel(n,:),force(n,:),dr(n),dt)
 
        end do
           
+       call make_edge_state_1d(nlevs,rhoh0_old,edge,vel,force,dr,dt)
+
     endif
 
     do n=1,nlevs

@@ -1445,111 +1445,116 @@ contains
      
    end subroutine make_edge_state_3d
    
-   subroutine make_edge_state_1d(n,s,sedgex,umac,force,dx,dt)
+   subroutine make_edge_state_1d(nlevs,s,sedgex,umac,force,dx,dt)
 
-     use geometry, only: r_start_coord, r_end_coord
+     use geometry, only: r_start_coord, r_end_coord, nr_fine
      use probin_module, only: slope_order
      use bl_constants_module
      
-     integer        , intent(in   ) :: n
-     real(kind=dp_t), intent(in   ) ::      s(0:)
-     real(kind=dp_t), intent(inout) :: sedgex(0:)
-     real(kind=dp_t), intent(in   ) ::   umac(0:)
-     real(kind=dp_t), intent(in   ) ::  force(0:)
-     real(kind=dp_t), intent(in   ) :: dx,dt
+     integer        , intent(in   ) :: nlevs
+     real(kind=dp_t), intent(in   ) ::      s(:,0:)
+     real(kind=dp_t), intent(inout) :: sedgex(:,0:)
+     real(kind=dp_t), intent(in   ) ::   umac(:,0:)
+     real(kind=dp_t), intent(in   ) ::  force(:,0:)
+     real(kind=dp_t), intent(in   ) :: dx(:),dt
      
-     real(kind=dp_t), allocatable::  slopex(:)
-     real(kind=dp_t), allocatable::  s_l(:),s_r(:)
-     real(kind=dp_t), allocatable:: dxscr(:,:)
+     real(kind=dp_t), allocatable::  slopex(:,:)
+     real(kind=dp_t), allocatable::  s_l(:,:),s_r(:,:)
+     real(kind=dp_t), allocatable:: dxscr(:,:,:)
      real(kind=dp_t) :: dmin,dpls,ds,del,slim,sflag
      real(kind=dp_t) :: ubardth, dth, savg
      real(kind=dp_t) :: abs_eps, eps, umax, u
      
-     integer :: r,lo,hi
+     integer :: r,lo,hi,n
      integer        , parameter :: cen = 1, lim = 2, flag = 3, fromm = 4
      real(kind=dp_t), parameter :: fourthirds = 4.0_dp_t / 3.0_dp_t
+        
+     allocate(s_l   (nlevs,-1:nr_fine+1))
+     allocate(s_r   (nlevs,-1:nr_fine+1))
+     allocate(slopex(nlevs, 0:nr_fine-1))
+     allocate(dxscr (nlevs, 0:nr_fine-1,4))
      
-     lo = r_start_coord(n)
-     hi = r_end_coord(n)
+     do n=1,nlevs
+        lo = r_start_coord(n)
+        hi = r_end_coord(n)
+        
+        abs_eps = 1.0d-8
+        
+        dth = HALF*dt
+        
+        umax = ZERO
+        do r = lo,hi+1
+           umax = max(umax,abs(umac(n,r)))
+        end do
+        
+        eps = abs_eps * umax
+        
+        if (slope_order .eq. 0) then
+           
+           slopex(n,:) = ZERO
+           
+        else if (slope_order .eq. 2) then
+           
+           do r = lo+1,hi-1
+              del = half*(s(n,r+1) - s(n,r-1))
+              dpls = two*(s(n,r+1) - s(n,r  ))
+              dmin = two*(s(n,r  ) - s(n,r-1))
+              slim = min(abs(dpls), abs(dmin))
+              slim = merge(slim, zero, dpls*dmin.gt.ZERO)
+              sflag = sign(one,del)
+              slopex(n,r)= sflag*min(slim,abs(del))
+           enddo
+           
+           slopex(n,lo) = ZERO
+           slopex(n,hi) = ZERO
+           
+        else if (slope_order .eq. 4) then
+           
+           do r = lo+1,hi-1
+              dxscr(n,r,cen) = half*(s(n,r+1)-s(n,r-1))
+              dpls = two*(s(n,r+1)-s(n,r  ))
+              dmin = two*(s(n,r  )-s(n,r-1))
+              dxscr(n,r,lim)= min(abs(dmin),abs(dpls))
+              dxscr(n,r,lim) = merge(dxscr(n,r,lim),zero,dpls*dmin.gt.ZERO)
+              dxscr(n,r,flag) = sign(one,dxscr(n,r,cen))
+              dxscr(n,r,fromm)= dxscr(n,r,flag)*min(dxscr(n,r,lim),abs(dxscr(n,r,cen)))
+           enddo
+           
+           dxscr(n,lo,fromm) = ZERO
+           dxscr(n,hi,fromm) = ZERO
+           
+           do r = lo+1,hi-1
+              ds = fourthirds * dxscr(n,r,cen) - &
+                   sixth * (dxscr(n,r+1,fromm) + dxscr(n,r-1,fromm))
+              slopex(n,r) = dxscr(n,r,flag)*min(abs(ds),dxscr(n,r,lim))
+           enddo
+           
+           slopex(n,lo) = ZERO
+           slopex(n,hi) = ZERO
+           
+        end if
      
-     allocate(s_l(lo-1:hi+2),s_r(lo-1:hi+2))
-     allocate(slopex(lo:hi))
-     allocate(dxscr(lo:hi,4))
-     
-     abs_eps = 1.0d-8
-     
-     dth = HALF*dt
-     
-     umax = ZERO
-     do r = lo,hi+1
-        umax = max(umax,abs(umac(r)))
+        ! Compute edge values using slopes and forcing terms.
+        do r = lo,hi
+           
+           u = HALF * (umac(n,r) + umac(n,r+1))
+           ubardth = dth*u/dx(n)
+           
+           s_l(n,r+1)= s(n,r) + (HALF-ubardth)*slopex(n,r) + dth * force(n,r)
+           s_r(n,r  )= s(n,r) - (HALF+ubardth)*slopex(n,r) + dth * force(n,r)
+           
+        enddo
+        
+        sedgex(n,lo  ) = s_r(n,lo  )
+        sedgex(n,hi+1) = s_l(n,hi+1)
+        
+        do r = lo+1, hi 
+           sedgex(n,r)=merge(s_l(n,r),s_r(n,r),umac(n,r).gt.ZERO)
+           savg = HALF*(s_r(n,r) + s_l(n,r))
+           sedgex(n,r)=merge(savg,sedgex(n,r),abs(umac(n,r)) .lt. eps)
+        enddo
+        
      end do
-     
-     eps = abs_eps * umax
-
-     if (slope_order .eq. 0) then
-
-        slopex = ZERO
-
-     else if (slope_order .eq. 2) then
-
-        do r = lo+1,hi-1
-           del = half*(s(r+1) - s(r-1))
-           dpls = two*(s(r+1) - s(r  ))
-           dmin = two*(s(r  ) - s(r-1))
-           slim = min(abs(dpls), abs(dmin))
-           slim = merge(slim, zero, dpls*dmin.gt.ZERO)
-           sflag = sign(one,del)
-           slopex(r)= sflag*min(slim,abs(del))
-        enddo
-     
-        slopex(lo) = ZERO
-        slopex(hi) = ZERO
-
-     else if (slope_order .eq. 4) then
-     
-        do r = lo+1,hi-1
-           dxscr(r,cen) = half*(s(r+1)-s(r-1))
-           dpls = two*(s(r+1)-s(r  ))
-           dmin = two*(s(r  )-s(r-1))
-           dxscr(r,lim)= min(abs(dmin),abs(dpls))
-           dxscr(r,lim) = merge(dxscr(r,lim),zero,dpls*dmin.gt.ZERO)
-           dxscr(r,flag) = sign(one,dxscr(r,cen))
-           dxscr(r,fromm)= dxscr(r,flag)*min(dxscr(r,lim),abs(dxscr(r,cen)))
-        enddo
-     
-        dxscr(lo,fromm) = ZERO
-        dxscr(hi,fromm) = ZERO
-     
-        do r = lo+1,hi-1
-           ds = fourthirds * dxscr(r,cen) - sixth * (dxscr(r+1,fromm) + dxscr(r-1,fromm))
-           slopex(r) = dxscr(r,flag)*min(abs(ds),dxscr(r,lim))
-        enddo
-     
-        slopex(lo) = ZERO
-        slopex(hi) = ZERO
-
-     end if
-        
-     ! Compute edge values using slopes and forcing terms.
-     do r = lo,hi
-        
-        u = HALF * (umac(r) + umac(r+1))
-        ubardth = dth*u/dx
-        
-        s_l(r+1)= s(r) + (HALF-ubardth)*slopex(r) + dth * force(r)
-        s_r(r  )= s(r) - (HALF+ubardth)*slopex(r) + dth * force(r)
-        
-     enddo
-     
-     sedgex(lo  ) = s_r(lo  )
-     sedgex(hi+1) = s_l(hi+1)
-     
-     do r = lo+1, hi 
-        sedgex(r)=merge(s_l(r),s_r(r),umac(r).gt.ZERO)
-        savg = HALF*(s_r(r) + s_l(r))
-        sedgex(r)=merge(savg,sedgex(r),abs(umac(r)) .lt. eps)
-     enddo
      
    end subroutine make_edge_state_1d
    
