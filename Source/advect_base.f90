@@ -36,28 +36,26 @@ contains
 
     call build(bpt, "advect_base")
     
-    do n=1,nlevs
-       if (spherical .eq. 0) then
-          call advect_base_state_planar(n,vel(n,0:),p0_old(n,0:),p0_new(n,0:), &
-                                        rho0_old(n,0:),rho0_new(n,0:), &
-                                        rhoh0_old(n,0:),rhoh0_new(n,0:), &
-                                        rho0_predicted_edge(n,0:),psi(n,:),dz(n),dt)
-       else
+    if (spherical .eq. 0) then
+       call advect_base_state_planar(nlevs,vel,p0_old,p0_new,rho0_old,rho0_new, &
+                                     rhoh0_old,rhoh0_new,rho0_predicted_edge,psi,dz,dt)
+    else
+       do n=1,nlevs
           call advect_base_state_spherical(n,vel(n,:),Sbar_in(n,:), &
                                            p0_old(n,:),p0_new(n,:), &
                                            rho0_old(n,:),rho0_new(n,:), &
                                            rhoh0_old(n,:),rhoh0_new(n,:), &
                                            gamma1bar(n,:), &
                                            rho0_predicted_edge(n,0:),div_coeff(n,:),dt)
-       end if
-    enddo
+       end do
+    end if
 
     call destroy(bpt)
        
   end subroutine advect_base
 
 
-  subroutine advect_base_state_planar(n,vel,p0_old,p0_new, &
+  subroutine advect_base_state_planar(nlevs,vel,p0_old,p0_new, &
                                       rho0_old,rho0_new,rhoh0_old,rhoh0_new, &
                                       rho0_predicted_edge,psi,dz,dt)
 
@@ -68,27 +66,27 @@ contains
     use probin_module, only: grav_const, enthalpy_pred_type
     use pred_parameters
 
-    integer        , intent(in   ) :: n
-    real(kind=dp_t), intent(in   ) :: vel(0:)
-    real(kind=dp_t), intent(in   ) :: p0_old(0:), rho0_old(0:), rhoh0_old(0:)
-    real(kind=dp_t), intent(  out) :: p0_new(0:), rho0_new(0:), rhoh0_new(0:)
-    real(kind=dp_t), intent(  out) :: rho0_predicted_edge(0:)
-    real(kind=dp_t), intent(in   ) :: psi(0:)
-    real(kind=dp_t), intent(in   ) :: dz,dt
+    integer        , intent(in   ) :: nlevs
+    real(kind=dp_t), intent(in   ) :: vel(:,0:)
+    real(kind=dp_t), intent(in   ) :: p0_old(:,0:), rho0_old(:,0:), rhoh0_old(:,0:)
+    real(kind=dp_t), intent(  out) :: p0_new(:,0:), rho0_new(:,0:), rhoh0_new(:,0:)
+    real(kind=dp_t), intent(  out) :: rho0_predicted_edge(:,0:)
+    real(kind=dp_t), intent(in   ) :: psi(:,0:)
+    real(kind=dp_t), intent(in   ) :: dz(:),dt
     
     ! Local variables
-    integer :: r
+    integer :: r, n
     
-    real (kind = dp_t), allocatable :: force(:)
-    real (kind = dp_t), allocatable :: edge(:)
-    real (kind = dp_t), allocatable :: h0(:)
+    real (kind = dp_t), allocatable :: force(:,:)
+    real (kind = dp_t), allocatable :: edge(:,:)
+    real (kind = dp_t), allocatable :: h0(:,:)
 
     ! Cell-centered
-    allocate(force(0:nr_fine-1))
-    allocate(   h0(0:nr_fine-1))
+    allocate(force(nlevs,0:nr_fine-1))
+    allocate(   h0(nlevs,0:nr_fine-1))
 
     ! Edge-centered
-    allocate(edge(0:nr_fine))
+    allocate(edge(nlevs,0:nr_fine))
    
     rho0_predicted_edge = ZERO
 
@@ -98,30 +96,36 @@ contains
 
     force = ZERO
 
-    call make_edge_state_1d(n,p0_old,edge,vel,force,dz,dt)
+    do n=1,nlevs
+       call make_edge_state_1d(n,p0_old(n,:),edge(n,:),vel(n,:),force(n,:),dz(n),dt)
 
-    do r=r_start_coord(n),r_end_coord(n)
-       p0_new(r) = p0_old(r) &
-            - dt / dz * HALF * (vel(r) + vel(r+1)) * (edge(r+1) - edge(r))  &
-            + dt * psi(r)
+       do r=r_start_coord(n),r_end_coord(n)
+          p0_new(n,r) = p0_old(n,r) &
+               - dt / dz(n) * HALF * (vel(n,r) + vel(n,r+1)) * (edge(n,r+1) - edge(n,r))  &
+               + dt * psi(n,r)
+       end do
     end do
-    
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Predict rho_0 to vertical edges
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    do r=r_start_coord(n),r_end_coord(n)
-       force(r) = -rho0_old(r) * (vel(r+1) - vel(r)) / dz 
+    do n=1,nlevs
+       do r=r_start_coord(n),r_end_coord(n)
+          force(n,r) = -rho0_old(n,r) * (vel(n,r+1) - vel(n,r)) / dz(n)
+       end do
+       
+       call make_edge_state_1d(n,rho0_old(n,:),edge(n,:),vel(n,:),force(n,:),dz(n),dt)
     end do
-    
-    call make_edge_state_1d(n,rho0_old(:),edge,vel,force,dz,dt)
     
     rho0_predicted_edge = edge
 
-    ! update rho_0
-    do r=r_start_coord(n),r_end_coord(n)
-       rho0_new(r) = rho0_old(r) &
-            - dt / dz * (edge(r+1) * vel(r+1) - edge(r) * vel(r)) 
+    do n=1,nlevs
+       ! update rho_0
+       do r=r_start_coord(n),r_end_coord(n)
+          rho0_new(n,r) = rho0_old(n,r) &
+               - dt / dz(n) * (edge(n,r+1) * vel(n,r+1) - edge(n,r) * vel(n,r)) 
+       end do
     end do
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -139,7 +143,9 @@ contains
        ! mixing, we defer this to correct_base.
        force = ZERO
 
-       call make_edge_state_1d(n,h0,edge,vel,force,dz,dt)
+       do n=1,nlevs
+          call make_edge_state_1d(n,h0(n,:),edge(n,:),vel(n,:),force(n,:),dz(n),dt)
+       end do
 
        ! our final update needs (rho h)_0 on the edges, so compute
        ! that now
@@ -147,19 +153,23 @@ contains
 
     else
 
-       ! here we predict (rho h)_0 on the edges
-       do r=r_start_coord(n),r_end_coord(n)
-          force(r) = -rhoh0_old(r) * (vel(r+1) - vel(r)) / dz
+       do n=1,nlevs
+          ! here we predict (rho h)_0 on the edges
+          do r=r_start_coord(n),r_end_coord(n)
+             force(n,r) = -rhoh0_old(n,r) * (vel(n,r+1) - vel(n,r)) / dz(n)
+          end do
+          
+          call make_edge_state_1d(n,rhoh0_old(n,:),edge(n,:),vel(n,:),force(n,:),dz(n),dt)
        end do
-       
-       call make_edge_state_1d(n,rhoh0_old(:),edge,vel,force,dz,dt)
        
     end if
 
-    ! update (rho h)_0
-    do r=r_start_coord(n),r_end_coord(n)
-       rhoh0_new(r) = rhoh0_old(r) &
-            - dt / dz * (edge(r+1) * vel(r+1) - edge(r) * vel(r)) + dt*psi(r)
+    do n=1,nlevs
+       ! update (rho h)_0
+       do r=r_start_coord(n),r_end_coord(n)
+          rhoh0_new(n,r) = rhoh0_old(n,r) &
+               - dt / dz(n) * (edge(n,r+1) * vel(n,r+1) - edge(n,r) * vel(n,r)) + dt*psi(n,r)
+       end do
     end do
     
     deallocate(force,edge,h0)
