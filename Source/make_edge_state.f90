@@ -1447,7 +1447,7 @@ contains
    
    subroutine make_edge_state_1d(nlevs,s,sedgex,umac,force,dx,dt)
 
-     use geometry, only: r_start_coord, r_end_coord, nr_fine
+     use geometry, only: r_start_coord, r_end_coord, nr_fine, nr
      use probin_module, only: slope_order
      use bl_constants_module
      
@@ -1475,6 +1475,7 @@ contains
      allocate(dxscr (nlevs, 0:nr_fine-1,4))
      
      do n=1,nlevs
+
         lo = r_start_coord(n)
         hi = r_end_coord(n)
         
@@ -1495,66 +1496,176 @@ contains
            
         else if (slope_order .eq. 2) then
            
-           do r = lo+1,hi-1
-              del = half*(s(n,r+1) - s(n,r-1))
-              dpls = two*(s(n,r+1) - s(n,r  ))
-              dmin = two*(s(n,r  ) - s(n,r-1))
-              slim = min(abs(dpls), abs(dmin))
-              slim = merge(slim, zero, dpls*dmin.gt.ZERO)
-              sflag = sign(one,del)
-              slopex(n,r)= sflag*min(slim,abs(del))
-           enddo
-           
-           slopex(n,lo) = ZERO
-           slopex(n,hi) = ZERO
+           if (n .eq. 1) then ! second order slopes for coarsest level
+              
+              ! do standard limiting on interior cells
+              do r = lo+1,hi-1
+                 del = half*(s(n,r+1) - s(n,r-1))
+                 dpls = two*(s(n,r+1) - s(n,r  ))
+                 dmin = two*(s(n,r  ) - s(n,r-1))
+                 slim = min(abs(dpls), abs(dmin))
+                 slim = merge(slim, zero, dpls*dmin.gt.ZERO)
+                 sflag = sign(one,del)
+                 slopex(n,r)= sflag*min(slim,abs(del))
+              enddo
+
+              ! set slopes next to domain boundaries to zero
+              slopex(n,lo) = ZERO
+              slopex(n,hi) = ZERO
+
+           else ! second order slopes for non-coarsest levels
+                            
+              do r = lo,hi
+                 if (r .eq. 0 .or. r .eq. nr(n)-1) then
+                    ! set slopes next to domain boundaries to zero
+                    slopex(n,r) = ZERO
+                 else
+                    ! do standard limiting on interior cells
+                    del = half*(s(n,r+1) - s(n,r-1))
+                    dpls = two*(s(n,r+1) - s(n,r  ))
+                    dmin = two*(s(n,r  ) - s(n,r-1))
+                    slim = min(abs(dpls), abs(dmin))
+                    slim = merge(slim, zero, dpls*dmin.gt.ZERO)
+                    sflag = sign(one,del)
+                    slopex(n,r)= sflag*min(slim,abs(del))
+                 end if
+              enddo
+
+           end if
            
         else if (slope_order .eq. 4) then
            
-           do r = lo+1,hi-1
-              dxscr(n,r,cen) = half*(s(n,r+1)-s(n,r-1))
-              dpls = two*(s(n,r+1)-s(n,r  ))
-              dmin = two*(s(n,r  )-s(n,r-1))
-              dxscr(n,r,lim)= min(abs(dmin),abs(dpls))
-              dxscr(n,r,lim) = merge(dxscr(n,r,lim),zero,dpls*dmin.gt.ZERO)
-              dxscr(n,r,flag) = sign(one,dxscr(n,r,cen))
-              dxscr(n,r,fromm)= dxscr(n,r,flag)*min(dxscr(n,r,lim),abs(dxscr(n,r,cen)))
-           enddo
+           if (n .eq. 1) then ! fourth order slopes for coarsest level
+              
+              do r = lo+1,hi-1
+                 dxscr(n,r,cen) = half*(s(n,r+1)-s(n,r-1))
+                 dpls = two*(s(n,r+1)-s(n,r  ))
+                 dmin = two*(s(n,r  )-s(n,r-1))
+                 dxscr(n,r,lim)= min(abs(dmin),abs(dpls))
+                 dxscr(n,r,lim) = merge(dxscr(n,r,lim),zero,dpls*dmin.gt.ZERO)
+                 dxscr(n,r,flag) = sign(one,dxscr(n,r,cen))
+                 dxscr(n,r,fromm)= dxscr(n,r,flag)*min(dxscr(n,r,lim),abs(dxscr(n,r,cen)))
+              enddo
+              
+              dxscr(n,lo,fromm) = ZERO
+              dxscr(n,hi,fromm) = ZERO
+              
+              ! fourth order limited slopes on interior
+              do r = lo+1,hi-1
+                 ds = fourthirds * dxscr(n,r,cen) - &
+                      sixth * (dxscr(n,r+1,fromm) + dxscr(n,r-1,fromm))
+                 slopex(n,r) = dxscr(n,r,flag)*min(abs(ds),dxscr(n,r,lim))
+              enddo
+
+              ! set slopes adjacent to domain boundaries to zero
+              slopex(n,lo) = ZERO
+              slopex(n,hi) = ZERO
+
+           else ! fourth order slopes for non-coarsest levels
+
+              do r=lo,hi
+
+                 if (r .eq. 0 .or. r .eq. nr(n)-1) then
+                    dxscr(n,r,fromm) = ZERO
+                 else
+                    dxscr(n,r,cen) = half*(s(n,r+1)-s(n,r-1))
+                    dpls = two*(s(n,r+1)-s(n,r  ))
+                    dmin = two*(s(n,r  )-s(n,r-1))
+                    dxscr(n,r,lim)= min(abs(dmin),abs(dpls))
+                    dxscr(n,r,lim) = merge(dxscr(n,r,lim),zero,dpls*dmin.gt.ZERO)
+                    dxscr(n,r,flag) = sign(one,dxscr(n,r,cen))
+                    dxscr(n,r,fromm)= dxscr(n,r,flag)*min(dxscr(n,r,lim),abs(dxscr(n,r,cen)))
+                 end if
+
+              end do
+              
+              do r=lo,hi
+
+                 if (r .eq. 0 .or. r .eq. nr(n)-1) then
+                    ! set slopes adjacent to domain boundaries to zero
+                    slopex(n,r) = ZERO
+                 else if (r .eq. r_start_coord(n) .or. r .eq. r_end_coord(n)-1) then
+                    ! drop order to second-order limited differences
+                    del = half*(s(n,r+1) - s(n,r-1))
+                    dpls = two*(s(n,r+1) - s(n,r  ))
+                    dmin = two*(s(n,r  ) - s(n,r-1))
+                    slim = min(abs(dpls), abs(dmin))
+                    slim = merge(slim, zero, dpls*dmin.gt.ZERO)
+                    sflag = sign(one,del)
+                    slopex(n,r)= sflag*min(slim,abs(del))
+                 else
+                    ! fourth-order limited slopes on interior
+                    ds = fourthirds * dxscr(n,r,cen) - &
+                         sixth * (dxscr(n,r+1,fromm) + dxscr(n,r-1,fromm))
+                    slopex(n,r) = dxscr(n,r,flag)*min(abs(ds),dxscr(n,r,lim))
+                 end if
+                    
+              end do
+
+           end if ! which level
            
-           dxscr(n,lo,fromm) = ZERO
-           dxscr(n,hi,fromm) = ZERO
-           
-           do r = lo+1,hi-1
-              ds = fourthirds * dxscr(n,r,cen) - &
-                   sixth * (dxscr(n,r+1,fromm) + dxscr(n,r-1,fromm))
-              slopex(n,r) = dxscr(n,r,flag)*min(abs(ds),dxscr(n,r,lim))
-           enddo
-           
-           slopex(n,lo) = ZERO
-           slopex(n,hi) = ZERO
-           
-        end if
-     
+        end if ! slope order
+
         ! Compute edge values using slopes and forcing terms.
-        do r = lo,hi
+        if (n .eq. 1) then
            
-           u = HALF * (umac(n,r) + umac(n,r+1))
-           ubardth = dth*u/dx(n)
+           do r = lo,hi
+              
+              u = HALF * (umac(n,r) + umac(n,r+1))
+              ubardth = dth*u/dx(n)
+              
+              s_l(n,r+1)= s(n,r) + (HALF-ubardth)*slopex(n,r) + dth * force(n,r)
+              s_r(n,r  )= s(n,r) - (HALF+ubardth)*slopex(n,r) + dth * force(n,r)
+              
+           enddo
            
-           s_l(n,r+1)= s(n,r) + (HALF-ubardth)*slopex(n,r) + dth * force(n,r)
-           s_r(n,r  )= s(n,r) - (HALF+ubardth)*slopex(n,r) + dth * force(n,r)
+           sedgex(n,lo  ) = s_r(n,lo  )
+           sedgex(n,hi+1) = s_l(n,hi+1)
            
-        enddo
+           do r = lo+1, hi 
+              sedgex(n,r)=merge(s_l(n,r),s_r(n,r),umac(n,r).gt.ZERO)
+              savg = HALF*(s_r(n,r) + s_l(n,r))
+              sedgex(n,r)=merge(savg,sedgex(n,r),abs(umac(n,r)) .lt. eps)
+           enddo
+
+        else
+
+           do r = lo,hi
+              
+              u = HALF * (umac(n,r) + umac(n,r+1))
+              ubardth = dth*u/dx(n)
+              
+              s_l(n,r+1)= s(n,r) + (HALF-ubardth)*slopex(n,r) + dth * force(n,r)
+              s_r(n,r  )= s(n,r) - (HALF+ubardth)*slopex(n,r) + dth * force(n,r)
+              
+           enddo
+           
+           do r=lo,hi+1
+
+              if (r .eq. 0) then
+                 sedgex(n,r) = s_r(n,r)
+              else if (r .eq. nr(n)) then
+                 sedgex(n,r) = s_l(n,r)
+              else
+                 
+                 ! copy state from coarser level
+                 if (r .eq. r_start_coord(n)) then
+                    s_l(n,r) = s_l(n-1,r/2)
+                 else if (r .eq. r_end_coord(n)+1) then
+                    s_r(n,r) = s_r(n-1,r/2)
+                 end if
+
+                 sedgex(n,r)=merge(s_l(n,r),s_r(n,r),umac(n,r).gt.ZERO)
+                 savg = HALF*(s_r(n,r) + s_l(n,r))
+                 sedgex(n,r)=merge(savg,sedgex(n,r),abs(umac(n,r)) .lt. eps)
+
+              end if
+
+           end do
+
+        end if ! which level
         
-        sedgex(n,lo  ) = s_r(n,lo  )
-        sedgex(n,hi+1) = s_l(n,hi+1)
-        
-        do r = lo+1, hi 
-           sedgex(n,r)=merge(s_l(n,r),s_r(n,r),umac(n,r).gt.ZERO)
-           savg = HALF*(s_r(n,r) + s_l(n,r))
-           sedgex(n,r)=merge(savg,sedgex(n,r),abs(umac(n,r)) .lt. eps)
-        enddo
-        
-     end do
+     end do ! loop over levels
      
    end subroutine make_edge_state_1d
    
