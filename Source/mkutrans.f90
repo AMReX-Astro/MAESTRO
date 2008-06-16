@@ -16,11 +16,12 @@ contains
   subroutine mkutrans(nlevs,u,utrans,w0,w0_cart_vec,dx,dt,the_bc_level)
 
     use bl_prof_module
+    use restrict_base_module
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(in   ) :: u(:)
     type(multifab) , intent(inout) :: utrans(:,:)
-    real(kind=dp_t), intent(in   ) :: w0(:,0:)
+    real(kind=dp_t), intent(inout) :: w0(:,0:)
     type(multifab) , intent(in   ) :: w0_cart_vec(:)
     real(kind=dp_t), intent(in   ) :: dx(:,:),dt
     type(bc_level) , intent(in   ) :: the_bc_level(:)
@@ -40,6 +41,8 @@ contains
 
     dm = u(1)%dim
     ng = u(1)%ng
+
+    call fill_ghost_base(nlevs,w0,.false.)
 
     do n=1,nlevs
 
@@ -87,7 +90,7 @@ contains
 
     use bc_module
     use slope_module
-    use geometry, only: r_end_coord
+    use geometry, only: nr
     use probin_module, only: use_new_godunov
 
     integer,         intent(in   ) :: n,lo(2),ng_s
@@ -182,7 +185,7 @@ contains
     do j = js,je+1 
        do i = is-1,ie+1 
 
-          if (j+1 .gt. r_end_coord(n)+1) then
+          if (j .eq. nr(n)) then
              vhi = vel(i,j,2) + w0(j)
              dw0drhi = (w0(j)-w0(j-1))/dx(2)
           else
@@ -190,7 +193,7 @@ contains
              dw0drhi = (w0(j+1)-w0(j))/dx(2)
           end if
 
-          if (j-1 .lt. ZERO) then
+          if (j .eq. ZERO) then
              vlo = vel(i,j-1,2) + w0(j)
              dw0drlo = (w0(j+1)-w0(j))/dx(2)
           else
