@@ -16,11 +16,12 @@ contains
 
     use bl_prof_module
     use geometry, only: spherical
+    use restrict_base_module
 
     integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(in   ) :: vel(:,0:)
     real(kind=dp_t), intent(in   ) :: Sbar_in(:,0:)
-    real(kind=dp_t), intent(in   ) :: p0_old(:,0:), rho0_old(:,0:), rhoh0_old(:,0:)
+    real(kind=dp_t), intent(inout) :: p0_old(:,0:), rho0_old(:,0:), rhoh0_old(:,0:)
     real(kind=dp_t), intent(  out) :: p0_new(:,0:), rho0_new(:,0:), rhoh0_new(:,0:)
     real(kind=dp_t), intent(inout) :: gamma1bar(:,0:)
     real(kind=dp_t), intent(in   ) :: div_coeff(:,0:)
@@ -36,6 +37,10 @@ contains
 
     call build(bpt, "advect_base")
     
+    call fill_ghost_base(nlevs,p0_old,.true.)
+    call fill_ghost_base(nlevs,rho0_old,.true.)
+    call fill_ghost_base(nlevs,rhoh0_old,.true.)
+
     if (spherical .eq. 0) then
        call advect_base_state_planar(nlevs,vel,p0_old,p0_new,rho0_old,rho0_new, &
                                      rhoh0_old,rhoh0_new,rho0_predicted_edge,psi,dz,dt)
