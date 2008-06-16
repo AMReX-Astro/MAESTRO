@@ -17,6 +17,7 @@ contains
 
     use bl_constants_module
     use geometry, only: spherical, nr_fine, r_start_coord, r_end_coord
+    use restrict_base_module
 
     integer           , intent(in   ) :: nlevs
     real(kind=dp_t)   , intent(inout) :: etarho(:,0:)
@@ -213,6 +214,8 @@ contains
           end do ! end loop over levels
           
        end if
+
+       call restrict_base(nlevs,etarho,.false.)
        
     else
 
