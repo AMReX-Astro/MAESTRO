@@ -164,9 +164,26 @@ contains
           end do
 
           ! Redo the anelastic cutoff part
-          do r = anelastic_cutoff_coord(i),r_end_coord(i)
+          do r=anelastic_cutoff_coord(i),r_end_coord(i)
              div_coeff(i,r) = div_coeff(i,r-1) * (rho0(i,r)/rho0(i,r-1))
           end do
+
+          ! This next piece of coded is needed for the case when the anelastic cutoff 
+          !  coordinate lives on level n.
+          ! We first average div_coeff from level i+1 to level i in the region between
+          !  the anelastic cutoff and the top of grid n
+          ! Then we recompute the anelastic coordinate at level i above the top of grid n
+          if (r_end_coord(n) .ge. anelastic_cutoff_coord(n)) then
+
+             do r=anelastic_cutoff_coord(i),(r_end_coord(n)+1)/refrat-1
+                div_coeff(i,r) = HALF*(div_coeff(i+1,2*r)+div_coeff(i+1,2*r+1))
+             end do
+
+             do r=(r_end_coord(n)+1)/refrat,r_end_coord(i)
+                div_coeff(i,r) = div_coeff(i,r-1) * (rho0(i,r)/rho0(i,r-1))
+             end do
+
+          end if
 
        end do
 
