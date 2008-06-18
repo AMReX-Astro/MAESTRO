@@ -18,6 +18,7 @@ contains
     use variables
     use network, only: nspec, short_spec_names
     use probin_module, only: plot_spec, plot_trac, plot_base
+    use geometry, only: spherical
 
     integer          , intent(in   ) :: dm
     character(len=20), intent(inout) :: plot_names(:)
@@ -52,6 +53,10 @@ contains
        plot_names(icomp_rho0) = "rho0"
        plot_names(icomp_p0)   = "p0"
     end if
+
+    if (spherical .eq. 1) then
+       plot_names(icomp_velr) = "radial velocity"
+    endif
 
     plot_names(icomp_magvel)   = "magvel"
     plot_names(icomp_velplusw0) = "velplusw0"
@@ -94,6 +99,7 @@ contains
     use fill_3d_module
     use probin_module, only: nOutFiles, lUsingNFiles, plot_spec, plot_trac, plot_base
     use probin_module, only: single_prec_plotfiles
+    use geometry, only: spherical
 
     character(len=*) , intent(in   ) :: dirname
     type(ml_layout)  , intent(in   ) :: mla
@@ -186,6 +192,11 @@ contains
 
        ! MAGVEL & MOMENTUM
        call make_magvel (plotdata(n),icomp_magvel,icomp_mom,u(n),s(n))
+
+       ! RADIAL VELOCITY (spherical only)
+       if (spherical .eq. 1) then
+          call make_velr (plotdata(n),icomp_velr,u(n),normal(n))
+       endif
 
        ! VEL_PLUS_W0
        call make_velplusw0 (n,plotdata(n),icomp_velplusw0,u(n),w0(n,:),normal(n),dx(n,:))

@@ -7,7 +7,7 @@ module vort_module
 
   private
 
-  public :: make_vorticity, make_magvel, make_velplusw0
+  public :: make_vorticity, make_magvel, make_velplusw0, make_velr
 
 contains
 
@@ -843,5 +843,69 @@ contains
     deallocate(w0_cart)
 
   end subroutine makevelplusw0_3d_sphr
+
+
+  subroutine make_velr(plotdata,comp_velr,u,normal)
+
+    use bc_module
+    use bl_constants_module
+    use geometry, only: spherical
+
+    integer        , intent(in   ) :: comp_velr
+    type(multifab) , intent(inout) :: plotdata
+    type(multifab) , intent(in   ) :: u
+    type(multifab) , intent(in   ) :: normal
+
+    real(kind=dp_t), pointer:: pp(:,:,:,:)
+    real(kind=dp_t), pointer:: up(:,:,:,:)
+    real(kind=dp_t), pointer:: np(:,:,:,:)
+    integer :: lo(u%dim),hi(u%dim),ng,dm
+    integer :: i
+
+    ng = u%ng
+    dm = u%dim
+
+    if (spherical .ne. 1) then
+       call bl_error("unable to create radial velocity -- not spherical geometry")
+    endif
+
+    do i = 1, u%nboxes
+
+       if ( multifab_remote(u, i) ) cycle
+
+       pp => dataptr(plotdata, i)
+       up => dataptr(u, i)
+       np => dataptr(normal, i)
+       lo =  lwb(get_box(u, i))
+       hi =  upb(get_box(u, i))
+
+       call makevelr_3d_sphr(pp(:,:,:,comp_velr),up(:,:,:,:), &
+                             np(:,:,:,:), lo, hi, ng)
+    end do
+
+  end subroutine make_velr
+
+  subroutine makevelr_3d_sphr (velr,u,normal,lo,hi,ng)
+
+    integer           , intent(in   ) :: lo(:), hi(:), ng
+    real (kind = dp_t), intent(  out) ::   velr(lo(1)   :,lo(2)   :,lo(3)   :)
+    real (kind = dp_t), intent(in   ) ::      u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
+    real (kind = dp_t), intent(in   ) :: normal(lo(1)-1 :,lo(2)-1 :,lo(3)-1 :,:)  
+
+    !     Local variables
+    integer :: i, j, k
+
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+             velr(i,j,k) = u(i,j,k,1)*normal(i,j,k,1) + &
+                           u(i,j,k,2)*normal(i,j,k,2) + &
+                           u(i,j,k,3)*normal(i,j,k,3)
+          enddo
+       enddo
+    enddo
+
+  end subroutine makevelr_3d_sphr
+
 
 end module vort_module

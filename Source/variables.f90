@@ -9,7 +9,7 @@ module variables
   integer, save :: rho_comp, rhoh_comp, spec_comp, temp_comp, trac_comp, press_comp
   integer, save :: foextrap_comp, hoextrap_comp
   integer, save :: icomp_vel, icomp_rho, icomp_rhoh, icomp_spec, icomp_trac
-  integer, save :: icomp_w0, icomp_rho0, icomp_p0
+  integer, save :: icomp_w0, icomp_rho0, icomp_p0, icomp_velr
   integer, save :: icomp_magvel, icomp_velplusw0, icomp_mom, icomp_vort, icomp_divu
   integer, save :: icomp_enthalpy,icomp_tfromp,icomp_tpert,icomp_rhopert
   integer, save :: icomp_machno,icomp_dg,icomp_gp
@@ -46,6 +46,7 @@ contains
 
     use network, only: nspec
     use probin_module, only: plot_spec, plot_trac, plot_base
+    use geometry, only: spherical
 
     integer, intent(in) :: dm
 
@@ -55,6 +56,7 @@ contains
     icomp_rho      = dm+1
     icomp_rhoh     = icomp_rho +1
     first_derive_comp = icomp_rhoh + 1
+
     if (plot_spec) then
       icomp_spec     = icomp_rhoh+1
       first_derive_comp = first_derive_comp + nspec
@@ -68,11 +70,18 @@ contains
     if (plot_base) then
        icomp_w0 = first_derive_comp
        first_derive_comp = first_derive_comp + dm
+
        icomp_rho0 = first_derive_comp
        first_derive_comp = first_derive_comp + 1
+
        icomp_p0 = first_derive_comp
        first_derive_comp = first_derive_comp + 1
     end if
+
+    if (spherical .eq. 1) then
+       icomp_velr = first_derive_comp
+       first_derive_comp = first_derive_comp + 1
+    endif
 
     icomp_velplusw0 = first_derive_comp
     icomp_magvel    = first_derive_comp+1
