@@ -1103,6 +1103,7 @@ contains
        
     ! Project the new velocity field.
     if (init_mode) then
+
        proj_type = pressure_iters_comp
 
        do n=1,nlevs
@@ -1115,54 +1116,55 @@ contains
           call multifab_sub_sub(hgrhs(n),hgrhs_old(n))
           call multifab_div_div_s(hgrhs(n),dt)
        end do
+
     else
+
        proj_type = regular_timestep_comp
        call make_hgrhs(nlevs,the_bc_tower,mla,hgrhs,Source_new,delta_gamma1_term, &
                        Sbar,div_coeff_new,dx)
 
-    if (dpdt_factor .gt. ZERO) then
+       if (dpdt_factor .gt. ZERO) then
 
-       ! compute Avg(p0 - ptherm)
-       do n=1,nlevs
-          call multifab_build(p0_cart(n), mla%la(n), 1, 0)
-          call multifab_build(delta_p_term(n), mla%la(n), 1, 0)
-       enddo
-
-       call put_1d_array_on_cart(nlevs,p0_new,p0_cart,foextrap_comp,.false.,.false.,dx, &
-                                 the_bc_tower%bc_tower_array,mla)
-
-       ! p0_cart now holds (p0 - ptherm)
-       do n=1,nlevs
-          call multifab_sub_sub(p0_cart(n),ptherm_new(n))
-       enddo
-
-       call average(mla,p0_cart,delta_p0_ptherm_bar,dx,1)
-
-       ! now put delta_p0_ptherm_bar onto a cart array -- this helps 
-       ! correct for the averaging -- store this in delta_p_term
-       call put_1d_array_on_cart(nlevs,delta_p0_ptherm_bar,delta_p_term,foextrap_comp, &
-                                 .false.,.false.,dx,the_bc_tower%bc_tower_array,mla)
-
-       ! finish computing delta_p_term = (p0 - pthermbar) - (p0 - ptherm)
-       do n = 1,nlevs
-          call multifab_sub_sub(delta_p_term(n),p0_cart(n))
-       enddo
-
-       do n=1,nlevs
-          call destroy(p0_cart(n))
-       enddo
-
-       call correct_hgrhs(nlevs,the_bc_tower,mla,rho0_new,hgrhs,div_coeff_new,dx,dt, &
-                          gamma1bar,p0_new,delta_p_term)
-
-       do n=1,nlevs
-          call destroy(delta_p_term(n))
-       enddo
+          ! compute Avg(p0 - ptherm)
+          do n=1,nlevs
+             call multifab_build(p0_cart(n), mla%la(n), 1, 0)
+             call multifab_build(delta_p_term(n), mla%la(n), 1, 0)
+          enddo
+          
+          call put_1d_array_on_cart(nlevs,p0_new,p0_cart,foextrap_comp,.false.,.false.,dx, &
+                                    the_bc_tower%bc_tower_array,mla)
+          
+          ! p0_cart now holds (p0 - ptherm)
+          do n=1,nlevs
+             call multifab_sub_sub(p0_cart(n),ptherm_new(n))
+          enddo
+          
+          call average(mla,p0_cart,delta_p0_ptherm_bar,dx,1)
+          
+          ! now put delta_p0_ptherm_bar onto a cart array -- this helps 
+          ! correct for the averaging -- store this in delta_p_term
+          call put_1d_array_on_cart(nlevs,delta_p0_ptherm_bar,delta_p_term,foextrap_comp, &
+                                    .false.,.false.,dx,the_bc_tower%bc_tower_array,mla)
+          
+          ! finish computing delta_p_term = (p0 - pthermbar) - (p0 - ptherm)
+          do n = 1,nlevs
+             call multifab_sub_sub(delta_p_term(n),p0_cart(n))
+          enddo
+          
+          do n=1,nlevs
+             call destroy(p0_cart(n))
+          enddo
+          
+          call correct_hgrhs(nlevs,the_bc_tower,mla,rho0_new,hgrhs,div_coeff_new,dx,dt, &
+                             gamma1bar,p0_new,delta_p_term)
+          
+          do n=1,nlevs
+             call destroy(delta_p_term(n))
+          enddo
+          
+       end if
 
     end if
-
-    end if
-
 
     do n=1,nlevs
        call destroy(delta_gamma1_term(n))
