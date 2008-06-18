@@ -40,7 +40,7 @@ contains
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:), p0_new(:,0:)
     type(multifab) , intent(in   ) :: delta_p_term(:)
 
-    real(kind=dp_t), pointer:: mp(:,:,:,:),sp(:,:,:,:),gp(:,:,:,:),pop(:,:,:,:),pnp(:,:,:,:)
+    real(kind=dp_t), pointer:: mp(:,:,:,:),sp(:,:,:,:),gp(:,:,:,:),pop(:,:,:,:)
 
     integer :: lo(Source(1)%dim),hi(Source(1)%dim)
     integer :: i,dm,n

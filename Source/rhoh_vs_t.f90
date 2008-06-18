@@ -1044,7 +1044,7 @@ contains
   subroutine makeRhoHfromP(nlevs,u,sedge, &
                            rho0_old,rho0_edge_old,&
                            rho0_new,rho0_edge_new, &
-                             p0_old, p0_new, the_bc_level,dx)
+                           p0_old, p0_new, dx)
 
     use bl_prof_module
     use bl_constants_module
@@ -1063,17 +1063,14 @@ contains
     real(kind=dp_t), intent(in   ) :: rho0_edge_new(:,0:)
     real(kind=dp_t), intent(in   ) ::   p0_old(:,0:)
     real(kind=dp_t), intent(in   ) ::   p0_new(:,0:)
-    type(bc_level) , intent(in   ) :: the_bc_level(:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     
     ! local
-    integer :: i,r,dm,n
+    integer :: i,dm,n
     integer :: lo(u(1)%dim),hi(u(1)%dim)
     real(kind=dp_t), pointer :: sepx(:,:,:,:)
     real(kind=dp_t), pointer :: sepy(:,:,:,:)
     real(kind=dp_t), pointer :: sepz(:,:,:,:)
-    real(kind=dp_t), pointer ::   rp(:,:,:,:)
-    real(kind=dp_t), pointer ::  rhp(:,:,:,:)
 
     real(kind=dp_t), allocatable ::  rho0_halftime(:)
     real(kind=dp_t), allocatable :: rhoh0_halftime(:)

@@ -23,7 +23,7 @@ module make_edge_scal_module
 contains
 
   subroutine make_edge_scal(nlevs,s,sedge,umac,force, &
-                            normal,w0,w0_cart_vec, &
+                            w0,w0_cart_vec, &
                             dx,dt,is_vel,the_bc_level, &
                             start_scomp,start_bccomp,num_comp,is_conservative,mla)
 
@@ -41,7 +41,6 @@ contains
     type(multifab) , intent(inout) :: sedge(:,:)
     type(multifab) , intent(in   ) :: umac(:,:)
     type(multifab) , intent(in   ) :: force(:)
-    type(multifab) , intent(in   ) :: normal(:)
     real(kind=dp_t), intent(inout) :: w0(:,0:)
     type(multifab) , intent(in   ) :: w0_cart_vec(:)
     real(kind=dp_t), intent(in   ) :: dx(:,:),dt
@@ -143,7 +142,7 @@ contains
             w0p  => dataptr(w0_cart_vec(n),i)
             do scomp = start_scomp, start_scomp + num_comp - 1
                bccomp = start_bccomp + scomp - start_scomp
-               call make_edge_scal_3d(n, sop(:,:,:,:), &
+               call make_edge_scal_3d(sop(:,:,:,:), &
                                       sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
                                       ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
                                       fp(:,:,:,:), w0p(:,:,:,:), &
@@ -508,7 +507,7 @@ contains
     
   end subroutine make_edge_scal_2d
 
-  subroutine make_edge_scal_3d(n,s,sedgex,sedgey,sedgez,umac,vmac,wmac,force,w0_cart_vec, &
+  subroutine make_edge_scal_3d(s,sedgex,sedgey,sedgez,umac,vmac,wmac,force,w0_cart_vec, &
                                lo,dx,dt,is_vel,phys_bc,adv_bc,ng,comp,is_conservative)
 
     use geometry, only: spherical
@@ -516,7 +515,7 @@ contains
     use slope_module
     use bl_constants_module
 
-    integer        , intent(in   ) :: n,lo(:)
+    integer        , intent(in   ) :: lo(:)
     real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real(kind=dp_t), intent(inout) :: sedgex(lo(1)   :,lo(2)   :,lo(3)   :,:)
     real(kind=dp_t), intent(inout) :: sedgey(lo(1)   :,lo(2)   :,lo(3)   :,:)

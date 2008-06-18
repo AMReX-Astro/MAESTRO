@@ -31,8 +31,6 @@ contains
     real(kind=dp_t), intent(in   ) :: dt
     
     ! local
-    integer :: n
-
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "advect_base")
@@ -207,7 +205,7 @@ contains
     real(kind=dp_t) :: dtdr,divbetaw,betahalf,factor
     real(kind=dp_t) :: div_w0_cart, div_w0_sph
 
-    real(kind=dp_t) :: rho0_avg,divw,p0_avg
+    real(kind=dp_t) :: divw,p0_avg
     real(kind=dp_t) :: w0dpdr_avg,w0dpdr_avg_1,w0dpdr_avg_2
 
     real (kind = dp_t), allocatable :: force(:,:)

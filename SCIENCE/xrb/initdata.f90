@@ -185,7 +185,7 @@ contains
     real (kind = dp_t), intent(in   ) :: pert_height
 
     !     Local variables
-    integer         :: i,j,k,comp
+    integer         :: i,j,k
     real(kind=dp_t) :: x, y, z
     real(kind=dp_t) :: dens_pert, rhoh_pert, temp_pert
     real(kind=dp_t) :: rhoX_pert(nspec), trac_pert(ntrac)
@@ -424,7 +424,7 @@ contains
 
     real(kind=dp_t), pointer:: sop(:,:,:,:)
     integer :: lo(s%dim),hi(s%dim),ng,dm
-    integer :: i,n
+    integer :: i
     
     ng = s%ng
     dm = s%dim
@@ -445,7 +445,7 @@ contains
 
   end subroutine scalar_diags
 
-  subroutine scalar_diags_2d (istep, s,lo,hi,ng,dx,s0_init,p0_init)
+  subroutine scalar_diags_2d (istep,s,lo,hi,ng,dx,s0_init,p0_init)
 
     use probin_module, only: grav_const
 
@@ -456,7 +456,7 @@ contains
     real(kind=dp_t)   , intent(in) :: p0_init(0:)
 
     ! Local variables
-    integer :: i, j, n
+    integer :: i, j
     real(kind=dp_t) :: fac, mass, mass0
     real(kind=dp_t), allocatable ::  rhoavg(:)
     real(kind=dp_t), allocatable :: rhopert(:)

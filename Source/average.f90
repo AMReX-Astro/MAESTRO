@@ -481,7 +481,7 @@ contains
     type(ml_layout) , intent(in   ) :: mla
     logical         , intent(in   ), optional :: mask(lo(1):,lo(2):,lo(3):)
 
-    integer          :: i, j, k, l, idx, nsub
+    integer          :: i, j, k, idx, nsub
     real (kind=dp_t) :: cell_weight
     logical          :: cell_valid
     real (kind=dp_t) :: xl, yl, zl, xc, yc, zc, x, y, z, radius

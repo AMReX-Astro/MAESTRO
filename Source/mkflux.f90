@@ -17,7 +17,7 @@ contains
                     rho0_new,rho0_edge_new,rho0_new_cart, &
                     rhoh0_old,rhoh0_edge_old,rhoh0_old_cart, &
                     rhoh0_new,rhoh0_edge_new,rhoh0_new_cart, &
-                    rho0_predicted_edge,startcomp,endcomp,mla,dx)
+                    rho0_predicted_edge,startcomp,endcomp,mla)
 
     use bl_prof_module
     use bl_constants_module
@@ -43,7 +43,6 @@ contains
     real(kind=dp_t), intent(in   ) :: rho0_predicted_edge(:,0:)
     integer        , intent(in   ) :: startcomp,endcomp
     type(ml_layout), intent(inout) :: mla
-    real(kind=dp_t), intent(in   ) :: dx(:,:)
 
     ! local    
     type(box) :: domain

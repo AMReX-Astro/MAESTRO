@@ -308,8 +308,8 @@ contains
     type(multifab) :: div_coeff_cart(nlevs)
     type(multifab) :: rho0_cart(nlevs)
 
-    real(kind=dp_t), pointer :: rhp(:,:,:,:), ptp(:,:,:,:), ccp(:,:,:,:), cnp(:,:,:,:)
-    real(kind=dp_t), pointer :: gbp(:,:,:,:), p0p(:,:,:,:), ptbp(:,:,:,:), dcp(:,:,:,:)
+    real(kind=dp_t), pointer :: ptp(:,:,:,:), ccp(:,:,:,:), cnp(:,:,:,:)
+    real(kind=dp_t), pointer :: gbp(:,:,:,:), p0p(:,:,:,:), dcp(:,:,:,:)
     real(kind=dp_t), pointer :: r0p(:,:,:,:)
     integer :: lo(delta_p_term(1)%dim),hi(delta_p_term(1)%dim)
     integer :: i,dm,n

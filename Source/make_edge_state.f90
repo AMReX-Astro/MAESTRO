@@ -164,7 +164,7 @@ contains
              end if
              do scomp = start_scomp, start_scomp + num_comp - 1
                 bccomp = start_bccomp + scomp - start_scomp
-                call make_edge_state_3d(n,sop(:,:,:,:), uop(:,:,:,:), &
+                call make_edge_state_3d(sop(:,:,:,:), uop(:,:,:,:), &
                                         sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
                                         ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
                                         utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), &
@@ -632,7 +632,7 @@ contains
   end subroutine make_edge_state_2d
   
   
-  subroutine make_edge_state_3d(n,s,u, &
+  subroutine make_edge_state_3d(s,u, &
                                 sedgex,sedgey,sedgez, &
                                 umac,vmac,wmac, &
                                 utrans,vtrans,wtrans, &
@@ -647,7 +647,7 @@ contains
     use bl_constants_module
     use geometry, only: spherical
 
-    integer        , intent(in   ) :: n,lo(:)
+    integer        , intent(in   ) :: lo(:)
     real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real(kind=dp_t), intent(inout) :: sedgex(lo(1)   :,lo(2)   :,lo(3)   :,:)

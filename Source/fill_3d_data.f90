@@ -62,12 +62,12 @@ contains
           select case (dm)
 
           case (2)
-             call put_1d_array_on_cart_2d(n,is_edge_centered,is_vector, &
+             call put_1d_array_on_cart_2d(is_edge_centered,is_vector, &
                                           s0(n,:),sp(:,:,1,:),lo,hi,ng)
 
           case (3)
              if (spherical .eq. 0) then
-                call put_1d_array_on_cart_3d(n,is_edge_centered,is_vector, &
+                call put_1d_array_on_cart_3d(is_edge_centered,is_vector, &
                                              s0(n,:),sp(:,:,:,:),lo,hi,ng)
              else
                 if (is_vector) then
@@ -146,12 +146,11 @@ contains
     
   end subroutine put_1d_array_on_cart
 
-  subroutine put_1d_array_on_cart_2d(n,is_edge_centered,is_vector,s0,s0_cart,lo,hi,ng)
+  subroutine put_1d_array_on_cart_2d(is_edge_centered,is_vector,s0,s0_cart,lo,hi,ng)
 
     use bl_constants_module
     use geometry, only: dr
 
-    integer        , intent(in   ) :: n
     integer        , intent(in   ) :: lo(:),hi(:),ng
     logical        , intent(in   ) :: is_edge_centered,is_vector
     real(kind=dp_t), intent(in   ) :: s0(0:)
@@ -205,12 +204,11 @@ contains
 
   end subroutine put_1d_array_on_cart_2d
 
-  subroutine put_1d_array_on_cart_3d(n,is_edge_centered,is_vector,s0,s0_cart,lo,hi,ng)
+  subroutine put_1d_array_on_cart_3d(is_edge_centered,is_vector,s0,s0_cart,lo,hi,ng)
 
     use bl_constants_module
     use geometry, only: dr
 
-    integer        , intent(in   ) :: n
     integer        , intent(in   ) :: lo(:),hi(:),ng
     logical        , intent(in   ) :: is_edge_centered,is_vector
     real(kind=dp_t), intent(in   ) :: s0(0:)
@@ -392,7 +390,7 @@ contains
 
     integer         :: i,j,k,index
     real(kind=dp_t) :: x,y,z
-    real(kind=dp_t) :: radius,rfac,s0_cart_val
+    real(kind=dp_t) :: radius,s0_cart_val
 
     ! interpolate from radial bin centered values onto x-edges
 

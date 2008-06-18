@@ -61,7 +61,7 @@ contains
     logical        , intent(in   ) :: is_cell_centered
 
     ! local
-    integer :: n, r
+    integer :: n
 
     type(bl_prof_timer), save :: bpt
 
