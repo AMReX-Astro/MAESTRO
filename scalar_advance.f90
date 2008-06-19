@@ -510,6 +510,10 @@ contains
 
     if (.not. use_thermal_diffusion) then
        call makeTfromRhoH(nlevs,snew,p0_new(:,:),tempbar(:,:),mla,the_bc_level,dx)
+    else
+       do n=1,nlevs
+          call multifab_copy_c(snew(n),temp_comp,sold(n),temp_comp,1)
+       end do
     end if
 
     call destroy(bpt)
