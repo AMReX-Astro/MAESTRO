@@ -55,7 +55,7 @@ contains
     end if
 
     if (spherical .eq. 1) then
-       plot_names(icomp_velr) = "radial velocity"
+       plot_names(icomp_velr) = "radial_velocity"
     endif
 
     plot_names(icomp_magvel)   = "magvel"
