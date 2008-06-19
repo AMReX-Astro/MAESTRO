@@ -845,16 +845,18 @@ contains
   end subroutine makevelplusw0_3d_sphr
 
 
-  subroutine make_velr(plotdata,comp_velr,u,normal)
+  subroutine make_velr(n,plotdata,comp_velr,u,w0,normal,dx)
 
     use bc_module
     use bl_constants_module
     use geometry, only: spherical
 
-    integer        , intent(in   ) :: comp_velr
+    integer        , intent(in   ) :: n, comp_velr
     type(multifab) , intent(inout) :: plotdata
     type(multifab) , intent(in   ) :: u
+    real(kind=dp_t), intent(in   ) :: w0(0:)
     type(multifab) , intent(in   ) :: normal
+    real(kind=dp_t), intent(in   ) :: dx(:)
 
     real(kind=dp_t), pointer:: pp(:,:,:,:)
     real(kind=dp_t), pointer:: up(:,:,:,:)
@@ -879,21 +881,31 @@ contains
        lo =  lwb(get_box(u, i))
        hi =  upb(get_box(u, i))
 
-       call makevelr_3d_sphr(pp(:,:,:,comp_velr),up(:,:,:,:), &
-                             np(:,:,:,:), lo, hi, ng)
+       call makevelr_3d_sphr(pp(:,:,:,comp_velr),up(:,:,:,:), w0, &
+                             np(:,:,:,:), lo, hi, ng, dx, n)
     end do
 
   end subroutine make_velr
 
-  subroutine makevelr_3d_sphr (velr,u,normal,lo,hi,ng)
+  subroutine makevelr_3d_sphr (velr,u,w0,normal,lo,hi,ng,dx,n)
 
-    integer           , intent(in   ) :: lo(:), hi(:), ng
+    use fill_3d_module
+
+    integer           , intent(in   ) :: lo(:), hi(:), ng, n
     real (kind = dp_t), intent(  out) ::   velr(lo(1)   :,lo(2)   :,lo(3)   :)
     real (kind = dp_t), intent(in   ) ::      u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
+    real (kind = dp_t), intent(in   ) :: w0(0:)
     real (kind = dp_t), intent(in   ) :: normal(lo(1)-1 :,lo(2)-1 :,lo(3)-1 :,:)  
+    real (kind = dp_t), intent(in   ) :: dx(:)
 
     !     Local variables
     integer :: i, j, k
+    real (kind = dp_t), allocatable :: w0_cart(:,:,:,:)
+
+    ! since we want w0 in the radial direction, put in onto the Cartesian
+    ! grid, but NOT as a vector
+    allocate(w0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
+    call put_1d_array_on_cart_3d_sphr(n,.true.,.false.,w0,w0_cart,lo,hi,dx,0,normal)
 
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
@@ -901,6 +913,8 @@ contains
              velr(i,j,k) = u(i,j,k,1)*normal(i,j,k,1) + &
                            u(i,j,k,2)*normal(i,j,k,2) + &
                            u(i,j,k,3)*normal(i,j,k,3)
+
+             velr(i,j,k) = velr(i,j,k) + w0_cart(i,j,k,1)
           enddo
        enddo
     enddo

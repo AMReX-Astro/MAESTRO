@@ -195,7 +195,7 @@ contains
 
        ! RADIAL VELOCITY (spherical only)
        if (spherical .eq. 1) then
-          call make_velr (plotdata(n),icomp_velr,u(n),normal(n))
+          call make_velr (n,plotdata(n),icomp_velr,u(n),w0(n,:),normal(n),dx(n,:))
        endif
 
        ! VEL_PLUS_W0
