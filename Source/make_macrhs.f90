@@ -63,7 +63,7 @@ contains
           hi =  upb(get_box(Source(n), i))
           select case (dm)
           case (2)
-             call make_macrhs_2d(lo,hi,rho0(n,:),mp(:,:,1,1),sp(:,:,1,1),gp(:,:,1,1), &
+             call make_macrhs_2d(n,lo,hi,rho0(n,:),mp(:,:,1,1),sp(:,:,1,1),gp(:,:,1,1), &
                                  Sbar(n,:), &
                                  div_coeff(n,:),gamma1bar_old(n,:),gamma1bar_new(n,:), &
                                  p0_old(n,:),p0_new(n,:),pop(:,:,1,1),dt)
@@ -81,12 +81,13 @@ contains
 
   end subroutine make_macrhs
 
-  subroutine make_macrhs_2d(lo,hi,rho0,rhs,Source,delta_gamma1_term,Sbar,div_coeff, &
+  subroutine make_macrhs_2d(n,lo,hi,rho0,rhs,Source,delta_gamma1_term,Sbar,div_coeff, &
                             gamma1bar_old,gamma1bar_new,p0_old,p0_new,delta_p_term,dt)
 
-    use probin_module, only: dpdt_factor, base_cutoff_density
+    use probin_module, only: dpdt_factor
+    use geometry, only: base_cutoff_density_coord
 
-    integer         , intent(in   ) :: lo(:), hi(:)
+    integer         , intent(in   ) :: n, lo(:), hi(:)
     real (kind=dp_t), intent(in   ) :: rho0(0:) 
     real (kind=dp_t), intent(  out) :: rhs(lo(1):,lo(2):)  
     real (kind=dp_t), intent(in   ) :: Source(lo(1):,lo(2):)  
@@ -110,7 +111,7 @@ contains
 
     if (dpdt_factor .gt. 0.0d0) then
        do j = lo(2),hi(2)
-          if (rho0(j) .gt. base_cutoff_density) then
+          if (j .lt. base_cutoff_density_coord(n)) then
              gamma1bar_p0_avg = 0.25d0 * &
                   (gamma1bar_old(j)+gamma1bar_new(j))*(p0_old(j)+p0_new(j))
              do i = lo(1),hi(1)
@@ -127,7 +128,7 @@ contains
                             gamma1bar_old,gamma1bar_new,p0_old,p0_new, &
                             delta_p_term,dt)
 
-    use geometry, only: spherical
+    use geometry, only: spherical, base_cutoff_density_coord
     use probin_module, only: dpdt_factor, base_cutoff_density
     use fill_3d_module
 
@@ -230,7 +231,7 @@ contains
 
        if (dpdt_factor .gt. 0.0d0) then
           do k = lo(3),hi(3)
-             if (rho0(k) .gt. base_cutoff_density) then
+             if (k .lt. base_cutoff_density_coord(n)) then
                 gamma1bar_p0_avg = 0.25d0 * (gamma1bar_old(k) + gamma1bar_new(k)) * &
                      (p0_old(k) + p0_new(k))
                 do j = lo(2),hi(2)                

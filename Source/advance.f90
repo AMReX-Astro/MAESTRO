@@ -44,7 +44,7 @@ contains
     use add_react_to_thermal_module
     use variables, only: nscal, press_comp, temp_comp, rho_comp, foextrap_comp
     use geometry, only: spherical, nr_fine, r_start_coord, r_end_coord, &
-         anelastic_cutoff_coord
+         anelastic_cutoff_coord, base_cutoff_density_coord, burning_cutoff_density_coord
     use network, only: nspec
     use make_grav_module
     use make_eta_module
@@ -199,6 +199,32 @@ contains
     do n=2,nlevs
        anelastic_cutoff_coord(n) = 2*anelastic_cutoff_coord(n-1)
     end do
+
+    ! compute the coordinates of the base cutoff density
+    base_cutoff_density_coord(1) = r_end_coord(1)
+    do r=0,r_end_coord(1)
+       if (rho0_old(1,r) .lt. base_cutoff_density .and. &
+            base_cutoff_density_coord(1) .eq. r_end_coord(1)) then
+          base_cutoff_density_coord(1) = r
+          exit
+       end if
+    end do
+    do n=2,nlevs
+       base_cutoff_density_coord(n) = 2*base_cutoff_density_coord(n-1)
+    end do
+
+  ! compute the coordinates of the burning cutoff density
+  burning_cutoff_density_coord(1) = r_end_coord(1)
+  do r=0,r_end_coord(1)
+     if (rho0_old(1,r) .lt. burning_cutoff_density .and. &
+          burning_cutoff_density_coord(1) .eq. r_end_coord(1)) then
+        burning_cutoff_density_coord(1) = r
+        exit
+     end if
+  end do
+  do n=2,nlevs
+     burning_cutoff_density_coord(n) = 2*burning_cutoff_density_coord(n-1)
+  end do
 
     ! tempbar is only used as an initial guess for eos calls
     call average(mla,sold,tempbar,dx,temp_comp)

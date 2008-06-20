@@ -363,7 +363,7 @@ contains
           hi =  upb(get_box(delta_p_term(n), i))
           select case (dm)
           case (2)
-             call create_correction_cc_2d(lo,hi,rho0(n,:),ccp(:,:,1,1),ptp(:,:,1,1), &
+             call create_correction_cc_2d(n,lo,hi,rho0(n,:),ccp(:,:,1,1),ptp(:,:,1,1), &
                                           div_coeff(n,:), &
                                           gamma1bar(n,:),p0(n,:),dt)
           case (3)
@@ -377,7 +377,7 @@ contains
                                                   r0p(:,:,:,1),dt)
 
              else
-                call create_correction_cc_3d_cart(lo,hi,rho0(n,:),ccp(:,:,:,1),ptp(:,:,:,1), &
+                call create_correction_cc_3d_cart(n,lo,hi,rho0(n,:),ccp(:,:,:,1),ptp(:,:,:,1), &
                                                   div_coeff(n,:),gamma1bar(n,:),p0(n,:), &
                                                   dt)
              end if
@@ -450,12 +450,13 @@ contains
     
   end subroutine correct_hgrhs
   
-  subroutine create_correction_cc_2d(lo,hi,rho0,correction_cc,delta_p_term,div_coeff,gamma1bar, &
-                                     p0,dt)
+  subroutine create_correction_cc_2d(n,lo,hi,rho0,correction_cc,delta_p_term,div_coeff, &
+                                     gamma1bar,p0,dt)
 
-    use probin_module, only: dpdt_factor, base_cutoff_density
+    use probin_module, only: dpdt_factor
+    use geometry, only: base_cutoff_density_coord
 
-    integer         , intent(in   ) :: lo(:), hi(:)
+    integer         , intent(in   ) :: n, lo(:), hi(:)
     real (kind=dp_t), intent(in   ) :: rho0(0:)
     real (kind=dp_t), intent(  out) :: correction_cc(lo(1)-1:,lo(2)-1:)
     real (kind=dp_t), intent(in   ) :: delta_p_term(lo(1):,lo(2):)
@@ -469,7 +470,7 @@ contains
     real(kind=dp_t) :: correction_factor
     
     do j = lo(2),hi(2)
-       if(rho0(j) .gt. base_cutoff_density) then
+       if(j .lt. base_cutoff_density_coord(n)) then
           correction_factor = div_coeff(j)*(dpdt_factor/(gamma1bar(j)*p0(j))) / dt
        else
           correction_factor = 0.0d0
@@ -481,12 +482,13 @@ contains
     
   end subroutine create_correction_cc_2d
 
-  subroutine create_correction_cc_3d_cart(lo,hi,rho0,correction_cc,delta_p_term,div_coeff, &
-                                          gamma1bar,p0,dt)
+  subroutine create_correction_cc_3d_cart(n,lo,hi,rho0,correction_cc,delta_p_term, &
+                                          div_coeff,gamma1bar,p0,dt)
 
-    use probin_module, only: dpdt_factor, base_cutoff_density
+    use probin_module, only: dpdt_factor
+    use geometry, only: base_cutoff_density_coord
 
-    integer         , intent(in   ) :: lo(:), hi(:)
+    integer         , intent(in   ) :: n, lo(:), hi(:)
     real (kind=dp_t), intent(in   ) :: rho0(0:)
     real (kind=dp_t), intent(  out) :: correction_cc(lo(1)-1:,lo(2)-1:,lo(3)-1:)
     real (kind=dp_t), intent(in   ) :: delta_p_term(lo(1):,lo(2):,lo(3):)
@@ -500,7 +502,7 @@ contains
     real(kind=dp_t) :: correction_factor
     
     do k = lo(3),hi(3)
-       if(rho0(k) .gt. base_cutoff_density) then
+       if(k .lt. base_cutoff_density_coord(n)) then
           correction_factor = div_coeff(k)*(dpdt_factor/(gamma1bar(k)*p0(k))) / dt
        else
           correction_factor = 0.0d0
