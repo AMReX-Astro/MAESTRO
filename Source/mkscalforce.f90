@@ -148,8 +148,8 @@ contains
   subroutine mkrhohforce_2d(n,rhoh_force,wmac,thermal,lo,hi, &
                             p0_old,p0_new,rho0,grav,psi,add_thermal)
 
-    use geometry, only: dr, nr
-    use probin_module, only: enthalpy_pred_type, base_cutoff_density
+    use geometry, only: dr, nr, base_cutoff_density_coord
+    use probin_module, only: enthalpy_pred_type
     use pred_parameters
 
     ! compute the source terms for the non-reactive part of the enthalpy equation {w dp0/dr}
@@ -175,7 +175,7 @@ contains
     ! Add w d(p0)/dz 
     do j = lo(2),hi(2)
 
-       if (rho0(j) > base_cutoff_density) then
+       if (j .lt. base_cutoff_density_coord(n)) then
           gradp0 = rho0(j) * grav(j)
        else if (j.eq.nr(n)-1) then
           gradp0 = HALF * ( p0_old(j  ) + p0_new(j  ) &
@@ -215,8 +215,8 @@ contains
   subroutine mkrhohforce_3d(n,rhoh_force,wmac,thermal,lo,hi,&
                             p0_old,p0_new,rho0,grav,psi,add_thermal)
 
-    use geometry, only: dr, nr
-    use probin_module, only: enthalpy_pred_type, base_cutoff_density
+    use geometry, only: dr, nr, base_cutoff_density_coord
+    use probin_module, only: enthalpy_pred_type
     use pred_parameters
 
     ! compute the source terms for the non-reactive part of the enthalpy equation {w dp0/dr}
@@ -237,7 +237,7 @@ contains
 
     do k = lo(3),hi(3)
 
-       if (rho0(k) > base_cutoff_density) then
+       if (k .lt. base_cutoff_density_coord(n)) then
           gradp0 = rho0(k) * grav(k)
        else if (k.eq.nr(n)-1) then
           gradp0 = HALF * ( p0_old(k  ) + p0_new(k  ) &
