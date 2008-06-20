@@ -48,7 +48,7 @@ contains
   subroutine make_psi_planar(n,etarho,psi)
 
     use bl_constants_module
-    use geometry, only: anelastic_cutoff_coord
+    use geometry, only: anelastic_cutoff_coord, r_start_coord
     use probin_module, only: grav_const
 
     integer        , intent(in   ) :: n
@@ -61,7 +61,7 @@ contains
    
     psi = ZERO
 
-    do r = 0, anelastic_cutoff_coord(n)-1
+    do r = r_start_coord(n), anelastic_cutoff_coord(n)-1
       etarho_avg = HALF * (etarho(r)+etarho(r+1))
       psi(r) = etarho_avg * abs(grav_const)
     end do
