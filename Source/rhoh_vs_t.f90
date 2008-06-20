@@ -1130,9 +1130,8 @@ contains
     use bl_constants_module
     use variables,     only: rho_comp, temp_comp, spec_comp, rhoh_comp
     use eos_module
-    use probin_module, only: enthalpy_pred_type, small_temp, predict_rho, grav_const, &
-         base_cutoff_density
-    use geometry, only: nr
+    use probin_module, only: enthalpy_pred_type, small_temp, predict_rho, grav_const
+    use geometry, only: nr, base_cutoff_density_coord
 
     use pred_parameters
 
@@ -1187,7 +1186,7 @@ contains
           if (j .eq. nr(n)+1) then
              p0_old_edge = p0_old(j-1)
              p0_new_edge = p0_new(j-1)
-          else if (rho0_edge_old(j) .lt. base_cutoff_density) then
+          else if (j .ge. base_cutoff_density_coord(n)) then
              p0_old_edge = p0_old(j)
              p0_new_edge = p0_new(j)
           else 
@@ -1226,7 +1225,7 @@ contains
     use eos_module
     use probin_module, only: enthalpy_pred_type, small_temp, predict_rho, grav_const, &
          base_cutoff_density
-    use geometry, only: nr
+    use geometry, only: nr, base_cutoff_density_coord, spherical
 
     use pred_parameters
 
@@ -1313,7 +1312,8 @@ contains
           if (k .eq. nr(n)+1) then
              p0_old_edge = p0_old(k-1)
              p0_new_edge = p0_new(k-1)
-          else if (rho0_edge_old(k) .lt. base_cutoff_density) then
+          else if ( (spherical .eq. 0 .and. k .ge. base_cutoff_density_coord(n)) .or. &
+                    (spherical .eq. 1 .and. rho0_edge_old(k) .lt. base_cutoff_density) ) then
              p0_old_edge = p0_old(k)
              p0_new_edge = p0_new(k)
           else 
