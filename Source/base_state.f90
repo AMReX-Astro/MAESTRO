@@ -5,7 +5,7 @@ module base_state_module
 
   implicit none
 
-  real(dp_t), save :: r_cutoff_loc, prob_hi_r
+  real(dp_t), save :: base_cutoff_density_loc, prob_hi_r
   real(dp_t), save :: rho_above_cutoff, rhoh_above_cutoff
   real(dp_t), save :: spec_above_cutoff(nspec), p_above_cutoff
   real(dp_t), save :: temp_above_cutoff
@@ -272,13 +272,13 @@ contains
 
     if (n .eq. 1) then
        if (dm .eq. 1) then
-          r_cutoff_loc = prob_hi_x
+          base_cutoff_density_loc = prob_hi_x
        else if (dm .eq. 2) then
-          r_cutoff_loc = prob_hi_y
+          base_cutoff_density_loc = prob_hi_y
        else if (dm .eq. 3) then
-          r_cutoff_loc = prob_hi_z
+          base_cutoff_density_loc = prob_hi_z
        end if
-       prob_hi_r = r_cutoff_loc
+       prob_hi_r = base_cutoff_density_loc
     end if
 
     do r=r_start_coord(n),r_end_coord(n)
@@ -291,7 +291,7 @@ contains
 
        ! also, if we've falled below the cutoff density, just keep the
        ! model constant
-       if (rloc .gt. r_cutoff_loc) then
+       if (rloc .gt. base_cutoff_density_loc) then
           
           s0_init(r,rho_comp) = rho_above_cutoff
           s0_init(r,rhoh_comp) = rhoh_above_cutoff
@@ -346,14 +346,14 @@ contains
           end if          
           
           ! keep track of the height where we drop below the cutoff density
-          if (s0_init(r,rho_comp) .le. base_cutoff_density .and. r_cutoff_loc .eq. prob_hi_r &
-               .and. n .eq. 1 ) then
+          if (s0_init(r,rho_comp) .le. base_cutoff_density .and. &
+               base_cutoff_density_loc .eq. prob_hi_r .and. n .eq. 1 ) then
              
              if ( parallel_IOProcessor() ) then
                 print *,'SETTING R_CUTOFF TO ',r
              end if
              
-             r_cutoff_loc = rloc
+             base_cutoff_density_loc = rloc
              
              rho_above_cutoff = s0_init(r,rho_comp)
              rhoh_above_cutoff = s0_init(r,rhoh_comp)
@@ -383,14 +383,14 @@ contains
        rloc = starting_rad + (dble(r) + HALF)*dr(n)
        rloc = min(rloc, rmax)
 
-       if (rloc .lt. r_cutoff_loc) then
+       if (rloc .lt. base_cutoff_density_loc) then
 
           r_r = dble(r+1)*dr(n)
           r_l = dble(r)*dr(n)
           
           if (spherical .eq. 1) then
              g = -Gconst*mencl/r_l**2
-             mencl = mencl + four3rd*m_pi*dr(n)*(r_l**2 + r_l*r_r + r_r**2)*s0_init(r,rho_comp)
+             mencl = mencl + four3rd*m_pi*dr(n)*(r_l**2+r_l*r_r+r_r**2)*s0_init(r,rho_comp)
           else
              g = grav_const
           endif
