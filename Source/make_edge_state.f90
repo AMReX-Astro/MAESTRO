@@ -178,6 +178,8 @@ contains
           end select
        end do
 
+       call destroy(gradw0_cart)
+
     end do
     !
     ! We call ml_edge_restriction for the output velocity if is_vel .eq. .true.
@@ -203,9 +205,6 @@ contains
     if (spherical .eq. 1 .and. is_vel) then
        deallocate(gradw0_rad)
     endif
-
-    call destroy(gradw0_cart)
-
 
     call destroy(bpt)
     
