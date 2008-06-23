@@ -60,7 +60,7 @@ contains
     integer                     :: nlevs,dm,stencil_order
     integer                     :: i,n,comp,ng_s
     integer                     :: lo(s1(1)%dim),hi(s1(1)%dim)
-    type(bndry_reg), pointer    :: fine_flx(:) => Null()
+    type(bndry_reg)             :: fine_flx(2:mla%nlevel)
 
     type(bl_prof_timer), save :: bpt
 
@@ -71,7 +71,6 @@ contains
     stencil_order = 2
     ng_s = s2(1)%ng
 
-    allocate(fine_flx(2:nlevs))
     do n = 2,nlevs
        call bndry_reg_build(fine_flx(n),mla%la(n),ml_layout_get_pd(mla,n))
     end do
@@ -506,6 +505,10 @@ contains
     call mac_multigrid(mla,rhs,phi,fine_flx,lhsalpha,lhsbeta,dx,the_bc_tower, &
                        dm+rhoh_comp,stencil_order,mla%mba%rr)
 
+    do n=2,nlevs
+       call destroy(fine_flx(n))
+    end do
+
     do n=1,nlevs
        call destroy(lhsalpha(n))
        call destroy(lhsbeta(n))
@@ -554,8 +557,6 @@ contains
     ! compute updated temperature
     call makeTfromRhoH(nlevs,s2,p0_new,tempbar,mla,the_bc_tower%bc_tower_array,dx)
 
-    deallocate(fine_flx)
-
     call destroy(bpt)
 
   end subroutine thermal_conduct_full_alg
@@ -599,7 +600,7 @@ contains
     integer                     :: nlevs,dm,stencil_order
     integer                     :: i,n,comp,ng_s
     integer                     :: lo(s1(1)%dim),hi(s1(1)%dim)
-    type(bndry_reg), pointer    :: fine_flx(:) => Null()
+    type(bndry_reg)             :: fine_flx(2:mla%nlevel)
 
     type(bl_prof_timer), save :: bpt
 
@@ -610,7 +611,6 @@ contains
     stencil_order = 2
     ng_s = s2(1)%ng
 
-    allocate(fine_flx(2:nlevs))
     do n = 2,nlevs
        call bndry_reg_build(fine_flx(n),mla%la(n),ml_layout_get_pd(mla,n))
     end do
@@ -1246,6 +1246,10 @@ contains
     call mac_multigrid(mla,rhs,phi,fine_flx,lhsalpha,lhsbeta,dx,the_bc_tower, &
                        dm+rhoh_comp,stencil_order,mla%mba%rr)
 
+    do n=2,nlevs
+       call destroy(fine_flx(n))
+    end do
+
     do n=1,nlevs
        call destroy(lhsalpha(n))
        call destroy(lhsbeta(n))
@@ -1292,8 +1296,6 @@ contains
 
     ! compute updated temperature
     call makeTfromRhoH(nlevs,s2,p0_new,tempbar,mla,the_bc_tower%bc_tower_array,dx)
-
-    deallocate(fine_flx)
 
     call destroy(bpt)
 
