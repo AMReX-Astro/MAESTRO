@@ -1583,7 +1583,7 @@ contains
                  if (r .eq. 0 .or. r .eq. nr(n)-1) then
                     ! set slopes adjacent to domain boundaries to zero
                     slopex(n,r) = ZERO
-                 else if (r .eq. r_start_coord(n) .or. r .eq. r_end_coord(n)-1) then
+                 else if (r .eq. r_start_coord(n) .or. r .eq. r_end_coord(n)) then
                     ! drop order to second-order limited differences
                     del = half*(s(n,r+1) - s(n,r-1))
                     dpls = two*(s(n,r+1) - s(n,r  ))
