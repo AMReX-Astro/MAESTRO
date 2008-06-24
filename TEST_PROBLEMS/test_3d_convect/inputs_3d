@@ -39,4 +39,5 @@
 
  anelastic_cutoff = 3.e6
 
+ use_eos_coulomb = F
 /
