@@ -42,4 +42,7 @@
  evolve_base_state = F
 
 !restart = 50
+
+ use_eos_coulomb = F
+
 /
