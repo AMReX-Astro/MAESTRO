@@ -28,3 +28,6 @@
 -- make_psi is called after scalar_advance, but we need psi in the
    enthalpy update for spherical, so we are using an old one -- this 
    is probably not consistent.
+
+-- have make_grav.f90 ignore the mass in the region with rho <
+   low_density_cutoff -- i.e. anything outside of the star.
