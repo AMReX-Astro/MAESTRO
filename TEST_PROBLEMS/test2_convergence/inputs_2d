@@ -45,4 +45,6 @@
 !restart = 50
  
  enthalpy_pred_type = 4
+
+ use_eos_coulomb = F
 /
