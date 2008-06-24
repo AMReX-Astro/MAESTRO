@@ -16,7 +16,7 @@ contains
 
     use bl_constants_module
     use geometry, only: spherical, nr_fine, r_cc_loc, r_edge_loc, r_end_coord
-    use probin_module, only: grav_const
+    use probin_module, only: grav_const, base_cutoff_density
 
 
     ! compute the base state gravitational acceleration at the cell
@@ -30,6 +30,7 @@ contains
     ! Local variables
     integer                      :: r
     real(kind=dp_t), allocatable :: m(:)
+    real(kind=dp_t) :: term1, term2
 
     if (spherical .eq. 0) then
 
@@ -47,12 +48,31 @@ contains
           ! mass at the current center, we need to add the contribution of
           ! the upper half of the zone below us and the lower half of the
           ! current zone.
-          m(r) = m(r-1) + FOUR3RD*M_PI*rho0(r-1)*(r_edge_loc(n,r) - &
-               r_cc_loc(n,r-1))*(r_edge_loc(n,r)**2 + &
-               r_edge_loc(n,r)* r_cc_loc(n,r-1) +  r_cc_loc(n,r-1)**2) &
-               + FOUR3RD*M_PI*rho0(r  )*&
-               ( r_cc_loc(n,r) - r_edge_loc(n,r  ))*( r_cc_loc(n,r)**2 + &
-               r_cc_loc(n,r)*r_edge_loc(n,r  ) + r_edge_loc(n,r  )**2)
+
+          ! don't add any contributions from outside the star -- i.e.
+          ! rho < base_cutoff_density
+          if (rho0(r-1) > base_cutoff_density) then
+             term1 = FOUR3RD*M_PI*rho0(r-1) * &
+               (r_edge_loc(n,r) - r_cc_loc(n,r-1)) * &
+               (r_edge_loc(n,r)**2 + &
+                r_edge_loc(n,r)*r_cc_loc(n,r-1) + &
+                r_cc_loc(n,r-1)**2)
+          else
+             term1 = ZERO
+          endif
+
+          if (rho0(r) > base_cutoff_density) then
+             term2 = FOUR3RD*M_PI*rho0(r  )*&
+               (r_cc_loc(n,r) - r_edge_loc(n,r  )) * &
+               (r_cc_loc(n,r)**2 + &
+                r_cc_loc(n,r)*r_edge_loc(n,r  ) + &
+                r_edge_loc(n,r  )**2)          
+          else
+             term2 = ZERO
+          endif
+
+          m(r) = m(r-1) + term1 + term2
+
           grav_cell(r) = -Gconst * m(r) / r_cc_loc(n,r)**2
        enddo
 
