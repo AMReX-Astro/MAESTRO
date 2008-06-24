@@ -154,17 +154,17 @@ contains
 
           refrat = 2**(n-i)
 
+          ! Compare the difference between vel at top of level n to the corresponding point
+          !   on level i
+          offset = vel(n,r_end_coord(n)+1) - vel(i,(r_end_coord(n)+1)/refrat)
+
           ! Restrict vel from level n to level i
           do r=r_start_coord(n),r_end_coord(n)+1,refrat
              vel(i,r/refrat) = vel(n,r)
           end do
 
-          ! Compare the difference between vel at top of level n to the corresponding point
-          !   on level i
-          offset = vel(n,r_end_coord(n)+1) - vel(i,(r_end_coord(n)+1)/refrat)
-
           ! Offset the vel on level i above this point
-          do r=(r_end_coord(n)+1)/refrat,r_end_coord(i)
+          do r=(r_end_coord(n)+1)/refrat+1,r_end_coord(i)+1
              vel(i,r) = vel(i,r) + offset
           end do
 
