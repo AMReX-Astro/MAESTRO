@@ -51,4 +51,6 @@
 
  sponge_kappa = 10.d0
 
+ use_eos_coulomb = F
+
 /
