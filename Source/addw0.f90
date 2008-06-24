@@ -74,7 +74,7 @@ contains
 
     integer :: i,j
 
-    do j = lo(2)  ,hi(2)
+    do j = lo(2),hi(2)+1
        do i = lo(1)-1,hi(1)+1
           vmac(i,j) = vmac(i,j) + mult * w0(j)
        end do
@@ -91,7 +91,7 @@ contains
 
     integer :: i,j,k
 
-    do k = lo(3),hi(3)
+    do k = lo(3),hi(3)+1
        do j = lo(2)-1,hi(2)+1
           do i = lo(1)-1,hi(1)+1
              wmac(i,j,k) = wmac(i,j,k) + mult * w0(k)
