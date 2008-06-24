@@ -4,6 +4,8 @@
  spherical_in = 0
  plot_base = T
 
+ use_eos_coulomb = T
+
  prob_lo_x = 600.0d0
  prob_lo_y = 600.0d0
 
