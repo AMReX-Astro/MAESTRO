@@ -56,4 +56,5 @@
 
  interp_type_radial_bin_to_cart = 2
 
+ use_eos_coulomb = T
 /
