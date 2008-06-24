@@ -3,9 +3,14 @@
 # Prefix's for chk and plt files.
 #
 pidfile=compressor.pid
+
 chk_prefix=chk
 plt_prefix=plt
+
 fwdconvect=./fwdconvect.Linux.PathScale.exe
+
+fsnapshot3d=./fsnapshot3d.Linux.PathScale.exe
+pvar=vort
 
 if [ -f $pidfile ]; then
   echo 2>&1 "compressor lock file " $pidfile " already exists"
@@ -62,6 +67,9 @@ function tar_up_and_rm_files
 
       echo "running fwdconvect on ${dir}"
       ${fwdconvect} -p ${dir} -s ${dir}.averages
+
+      echo "running fsnapshot3d on ${dir}"
+      ${fsnapshot3d} -p ${dir} -n 1 -cname "${pvar}"
 
       echo "running fsnapshot3d on ${dir}"
 
