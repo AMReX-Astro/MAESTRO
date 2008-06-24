@@ -39,4 +39,6 @@
  do_initial_projection = 0
 
 !restart = 50
+
+ use_eos_coulomb = F
 /

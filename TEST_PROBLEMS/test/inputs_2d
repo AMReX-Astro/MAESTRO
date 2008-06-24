@@ -32,4 +32,6 @@
  init_divu_iter = 3
 
 !restart = 50
+
+ use_eos_coulomb = F
 /
