@@ -39,31 +39,98 @@
 \tableofcontents
 
 These are working notes for the low density parameters in {\tt MAESTRO}.
+
 \section{anelastic\_cutoff}
+
 \begin{itemize}
-\item In {\tt init\_base\_state}, we abort the program if {\tt anelastic\_cutoff} $<$ {\tt base\_cutoff\_density}.
-\item After we initilize the base state in {\tt varden} and at the beginning of {\tt advance\_timestep}, We compute the coordinate associated with {\tt anelastic\_cutoff}, {\tt anelastic\_cutoff\_coord}.  This is done by setting ${\tt anelastic\_cutoff\_coord}= r$ as soon as $\rho_0(r) <$ {\tt anelastic\_cutoff}.
-\item In {\tt correct\_base}, we only update $\rho_0$ for $r\in[{\tt r\_start\_coord},{\tt anelastic\_cutoff\_coord}-1]$.
-\item In {\tt make\_div\_coeff}, we change how we compute {\tt div\_coeff} for $r\in[{\tt anelastic\_cutoff\_coord},{\tt r\_end\_coord}]$.
-\item In {\tt make\_psi}, we only compute $\psi$ for $r\in[{\tt r\_start\_coord},{\tt anelastic\_cutoff\_coord}-1]$.
-\item in {\tt make\_S}, we set {\tt delta\_gamma1\_term} and {\tt delta\_gamma1} to zero for $r\in[{\tt anelastic\_cutoff\_coord},{\tt r\_end\_coord}]$.
+
+\item In {\tt init\_base\_state}, we abort the program if {\tt
+  anelastic\_cutoff} $<$ {\tt base\_cutoff\_density}.
+
+\item After we initilize the base state in {\tt varden} and at the
+  beginning of {\tt advance\_timestep}, We compute the coordinate
+  associated with {\tt anelastic\_cutoff}, {\tt
+    anelastic\_cutoff\_coord}.  This is done by setting ${\tt
+    anelastic\_cutoff\_coord}= r$ as soon as $\rho_0(r) <$ {\tt
+    anelastic\_cutoff}.
+
+\item In {\tt correct\_base}, we only update $\rho_0$ for $r\in[{\tt
+    r\_start\_coord},{\tt anelastic\_cutoff\_coord}-1]$.
+
+\item In {\tt make\_div\_coeff}, we change how we compute {\tt
+  div\_coeff} for $r\in[{\tt anelastic\_cutoff\_coord},{\tt
+    r\_end\_coord}]$.
+
+\item In {\tt make\_psi}, we only compute $\psi$ for $r\in[{\tt
+    r\_start\_coord},{\tt anelastic\_cutoff\_coord}-1]$.
+
+\item in {\tt make\_S}, we set {\tt delta\_gamma1\_term} and {\tt
+  delta\_gamma1} to zero for $r\in[{\tt anelastic\_cutoff\_coord},{\tt
+    r\_end\_coord}]$.
 \end{itemize}
+
 \section{base\_cutoff\_density}
+
 \begin{itemize}
-\item In {\tt base\_state}, we abort the program if {\tt anelastic\_cutoff} $<$ {\tt base\_cutoff\_density}.
-\item In {\tt base\_state}, we compute a physical cutoff location, {\tt base\_cutoff\_density\_loc}, which is defined as the physical location of the first cell-center at the coarsest level for which $\rho_0 <$ {\tt base\_cutoff\_density}.
-\item In {\tt base\_state}, when we are generating the initial background/base state, if we are above {\tt base\_cutoff\_density\_loc}, just use the values for $\rho,T$, and $p$ at {\tt base\_cutoff\_density\_loc}.
-\item After we initilize the base state in {\tt varden} and at the beginning of {\tt advance\_timestep}, We compute the coordinate associated with {\tt base\_cutoff\_density}, {\tt base\_cutoff\_density\_coord}.  This is done by setting ${\tt base\_cutoff\_density\_coord}= r$ as soon as $\rho_0(r) <$ {\tt base\_cutoff\_density}.
-\item In {\tt make\_hgrhs}, we only add the volume discrepancy for $r\in[{\tt r\_start\_coord},{\tt anelastic\_cutoff\_coord}-1]$.
-\item In {\tt make\_macrhs}, we only add the volume discrepancy for $r\in[{\tt r\_start\_coord},{\tt anelastic\_cutoff\_coord}-1]$.
-\item In {\tt mkscalforce} subroutine {\tt mkrhohforce}, for $r\in[{\tt base\_cutoff\_density\_coord},{\tt r\_end\_coord}]$ we compute $\nabla p_0$ with a difference stencil instead of simply setting it to $\rho_0 g$.
-\item In {\tt makeRhoHfromP}, the base state pressure at edges is computed differently based on where we are in relation to the {\tt base\_cutoff\_density}.  For $r\in[{\tt r\_start\_coord},{\tt base\_cutoff\_density\_coord}-1]$ we integrate $\rho g$ from the nearest cell-centered $p_0$ value.  Otherwise, we just use the cell-centered value above the edge.
-\item In {\tt update\_scal}, if the new $\rho$ is less than {\tt base\_cutoff\_density}, we call the EOS to compute $\rho h$.
+
+\item In {\tt base\_state}, we abort the program if {\tt
+  anelastic\_cutoff} $<$ {\tt base\_cutoff\_density}.
+
+\item In {\tt base\_state}, we compute a physical cutoff location,
+  {\tt base\_cutoff\_density\_loc}, which is defined as the physical
+  location of the first cell-center at the coarsest level for which
+  $\rho_0 <$ {\tt base\_cutoff\_density}.
+
+\item In {\tt base\_state}, when we are generating the initial
+  background/base state, if we are above {\tt
+    base\_cutoff\_density\_loc}, just use the values for $\rho,T$, and
+  $p$ at {\tt base\_cutoff\_density\_loc}.
+
+\item After we initilize the base state in {\tt varden} and at the
+  beginning of {\tt advance\_timestep}, We compute the coordinate
+  associated with {\tt base\_cutoff\_density}, {\tt
+    base\_cutoff\_density\_coord}.  This is done by setting ${\tt
+    base\_cutoff\_density\_coord}= r$ as soon as $\rho_0(r) <$ {\tt
+    base\_cutoff\_density}.
+
+\item In {\tt make\_hgrhs}, we only add the volume discrepancy for
+  $r\in[{\tt r\_start\_coord},{\tt anelastic\_cutoff\_coord}-1]$.
+
+\item In {\tt make\_macrhs}, we only add the volume discrepancy for
+  $r\in[{\tt r\_start\_coord},{\tt anelastic\_cutoff\_coord}-1]$.
+
+\item In {\tt mkscalforce} subroutine {\tt mkrhohforce}, for
+  $r\in[{\tt base\_cutoff\_density\_coord},{\tt r\_end\_coord}]$ we
+  compute $\nabla p_0$ with a difference stencil instead of simply
+  setting it to $\rho_0 g$.
+
+\item In {\tt makeRhoHfromP}, the base state pressure at edges is
+  computed differently based on where we are in relation to the {\tt
+    base\_cutoff\_density}.  For $r\in[{\tt r\_start\_coord},{\tt
+      base\_cutoff\_density\_coord}-1]$ we integrate $\rho g$ from the
+  nearest cell-centered $p_0$ value.  Otherwise, we just use the
+  cell-centered value above the edge.
+
+\item In {\tt update\_scal}, if the new $\rho$ is less than {\tt
+  base\_cutoff\_density}, we call the EOS to compute $\rho h$.
+
+\item In {\tt make\_grav}, if we are spherical, we do not add to the
+  enclosed mass, $M(r)$ if $\rho$ is less than {\tt base\_cutoff\_density}.
 \end{itemize}
+
 \section{burning\_cutoff}
+
 \begin{itemize}
-\item After we initilize the base state in {\tt varden} and at the beginning of {\tt advance\_timestep}, We compute the coordinate associated with {\tt burning\_cutoff\_density}, {\tt burning\_cutoff\_density\_coord}.  This is done by setting ${\tt burning\_cutoff\_density\_coord}= r$ as soon as $\rho_0(r) <$ {\tt burning\_cutoff\_density}.
-\item In {\tt react\_state}, we only call the burner if $\rho >$ {\tt burning\_cutoff\_density}.
+\item After we initilize the base state in {\tt varden} and at the
+  beginning of {\tt advance\_timestep}, We compute the coordinate
+  associated with {\tt burning\_cutoff\_density}, {\tt
+    burning\_cutoff\_density\_coord}.  This is done by setting ${\tt
+    burning\_cutoff\_density\_coord}= r$ as soon as $\rho_0(r) <$ {\tt
+    burning\_cutoff\_density}.
+
+\item In {\tt react\_state}, we only call the burner if $\rho >$ {\tt
+  burning\_cutoff\_density}.
 %\item In {\tt react\_state}, we only call the burner for $r\in[{\tt r\_start\_coord},{\tt burning\_cutoff\_density\_coord}-1]$.
 \end{itemize}
+
 \end{document}
