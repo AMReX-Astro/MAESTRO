@@ -87,9 +87,9 @@ function tar_up_and_rm_files
       ${fwdconvect} -p ${dir} -s ${dir}.averages
 
       echo "running fsnapshot3d on ${dir}"
-      ${fsnapshot3d} -p ${dir} -n 1 -cname "${pvar}"
-      ${fsnapshot3d} -p ${dir} -n 2 -cname "${pvar}"
-      ${fsnapshot3d} -p ${dir} -n 3 -cname "${pvar}"
+      ${fsnapshot3d} -p ${dir} -n 1 -cname "${pvar}" -m -1.e6 -M 1.e6
+      ${fsnapshot3d} -p ${dir} -n 2 -cname "${pvar}" -m -1.e6 -M 1.e6
+      ${fsnapshot3d} -p ${dir} -n 3 -cname "${pvar}" -m -1.e6 -M 1.e6
 
       echo "tarring up ${dir}"
       if `tar cf ${dir}.tar ${dir}`
