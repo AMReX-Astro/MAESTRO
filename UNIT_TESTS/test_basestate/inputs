@@ -18,4 +18,6 @@
  dr_base = 651041.666667
 
  quadratic_interpolation = F
+
+ use_eos_coulomb = F
 /
