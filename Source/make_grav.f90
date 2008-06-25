@@ -86,7 +86,7 @@ contains
 
   use bl_constants_module
   use geometry, only: spherical, r_edge_loc, r_end_coord
-  use probin_module, only: grav_const
+  use probin_module, only: grav_const, base_cutoff_density
 
 
     ! compute the base state gravity at the cell edges (grav_edge(1)
@@ -98,7 +98,7 @@ contains
     real(kind=dp_t), intent(in   ) :: rho0(0:)
 
     ! Local variables
-    integer                      :: r,r2
+    integer                      :: r
     real(kind=dp_t)              :: mencl
     
     if (spherical .eq. 0) then
@@ -108,16 +108,19 @@ contains
     else
        
        grav_edge(0) = zero 
-       do r=1,r_end_coord(n)
-          
-          mencl = zero 
-          do r2 = 1,r
+       mencl = ZERO
+
+       do r = 1, r_end_coord(n)
+
+          ! only add to the enclosed mass if the density is 
+          ! > base_cutoff_density
+          if (rho0(r-1) > base_cutoff_density) then
              mencl = mencl + FOUR3RD*M_PI * &
-                  (r_edge_loc(n,r2) - r_edge_loc(n,r2-1)) &
-                  * (r_edge_loc(n,r2)**2 &
-                  + r_edge_loc(n,r2)*r_edge_loc(n,r2-1) &
-                  + r_edge_loc(n,r2-1)**2) * rho0(r2-1)
-          end do
+                  (r_edge_loc(n,r) - r_edge_loc(n,r-1)) * &
+                  (r_edge_loc(n,r)**2 + &
+                   r_edge_loc(n,r)*r_edge_loc(n,r-1) + &
+                   r_edge_loc(n,r-1)**2) * rho0(r-1)
+          endif
           
           grav_edge(r) = -Gconst * mencl / r_edge_loc(n,r)**2
        end do
