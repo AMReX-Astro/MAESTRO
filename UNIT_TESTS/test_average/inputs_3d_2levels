@@ -1,5 +1,5 @@
 &PROBIN
- model_file = "model_7.e8.hse"
+ model_file = "model_6.e8.hse.320"
 
  test_set = "gr0_3d_2levels"
 
@@ -22,4 +22,5 @@
  pmask_y = F
  pmask_z = F
 
+ use_eos_coulomb = T
 /
