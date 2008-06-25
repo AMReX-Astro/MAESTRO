@@ -485,10 +485,11 @@ contains
           smax = multifab_max_c(snew(n),rhoh_comp)
           if (parallel_IOProcessor()) then
              write(6,2001) smin,smax
-             write(6,2004) 
           end if
        end do
     end if
+
+    write(6,2004) 
 
     if (spherical .eq. 1) then
        do n=1,nlevs
