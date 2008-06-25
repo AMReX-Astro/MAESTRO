@@ -164,7 +164,7 @@ contains
              end if
              do scomp = start_scomp, start_scomp + num_comp - 1
                 bccomp = start_bccomp + scomp - start_scomp
-                call make_edge_state_3d(sop(:,:,:,:), uop(:,:,:,:), &
+                call make_edge_state_3d(n,sop(:,:,:,:), uop(:,:,:,:), &
                                         sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
                                         ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
                                         utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), &
@@ -215,7 +215,7 @@ contains
                                 vtrans,force,w0,lo,dx,dt,is_vel,phys_bc,adv_bc,velpred, &
                                 ng,comp)
 
-    use geometry, only: nr
+    use geometry, only: nr, r_start_coord, r_end_coord
     use bc_module
     use slope_module
     use bl_constants_module
@@ -538,7 +538,9 @@ contains
              
              st = force(i,j,comp) - HALF * (utrans(i,j)+utrans(i+1,j))*(splus - sminus) / hx
              
-             if (is_vel .and. comp .eq. 2 .and. j .ge. 0 .and. j .le. nr(n)-1) then
+             ! hack to prevent out of bounds; need to fix this
+             if (is_vel .and. comp .eq. 2 .and. &
+                  j .ge. r_start_coord(n) .and. j .le. r_end_coord(n)) then
                 ! vtrans contains w0 so we need to subtract it off
                 st = st - HALF * (vtrans(i,j)+vtrans(i,j+1)-w0(j+1)-w0(j))*(w0(j+1)-w0(j))/hy
              end if
@@ -631,7 +633,7 @@ contains
   end subroutine make_edge_state_2d
   
   
-  subroutine make_edge_state_3d(s,u, &
+  subroutine make_edge_state_3d(n, s,u, &
                                 sedgex,sedgey,sedgez, &
                                 umac,vmac,wmac, &
                                 utrans,vtrans,wtrans, &
@@ -644,9 +646,9 @@ contains
     use bc_module
     use slope_module
     use bl_constants_module
-    use geometry, only: spherical
+    use geometry, only: spherical, r_start_coord, r_end_coord
 
-    integer        , intent(in   ) :: lo(:)
+    integer        , intent(in   ) :: n, lo(:)
     real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real(kind=dp_t), intent(inout) :: sedgex(lo(1)   :,lo(2)   :,lo(3)   :,:)
@@ -1336,7 +1338,9 @@ contains
                  if (is_vel) then
                     ! add the (Utilde . e_r) d w_0 /dr e_r term here
 
-                    if (spherical .eq. 0 .and. comp .eq. 3) then
+                    ! hack to prevent out of bounds; need to fix this
+                    if (spherical .eq. 0 .and. comp .eq. 3 .and. &
+                         k .ge. r_start_coord(n) .and. k .le. r_end_coord(n)) then
 
                        ! wtrans contains w0 so we need to subtract it off
                        st = st - HALF * (wtrans(i,j,k)+wtrans(i,j,k+1)- &
