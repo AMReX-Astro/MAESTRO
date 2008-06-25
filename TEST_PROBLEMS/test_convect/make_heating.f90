@@ -122,64 +122,47 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:),time
 
     integer :: i,j,k
-    real(kind=dp_t) :: x,x0,x1,x2
-    real(kind=dp_t) :: z,z0,z1,z2,z_layer
-    real(kind=dp_t) :: r0,r1,r2
+    real(kind=dp_t) :: x, y
+    real(kind=dp_t) :: z,z_layer
     real(kind=dp_t) :: ez,Hmax
+    real(kind=dp_t) :: pi,L_x,L_y
+
 
     rho_Hext = 0.0_dp_t
     Hmax = 0.0_dp_t
 
-    if (time <= 2.0) then
+    ! HACK -- these are the domain sizes
+    L_x = 2.5d8
+    L_y = 2.5d8
 
-       ! First point at (0.5,.65)
-       x0 = 5.0d7
-       z0 = 6.5d7
+    pi = 3.1415926535897932384626433d0
 
-       ! Second point at (1.2,..85)
-       x1 = 1.2d8
-       z1 = 8.5d7
+    if (time <= 200.0) then
 
-       ! Third point at (2.0,.75)
-       x2 = 2.d8
-       z2 = 7.5d7
-
-       z_layer = z2
+       z_layer = 1.25d8
 
        do k = lo(3),hi(3)
+          z = (dble(k)+HALF)*dx(3) + prob_lo_z
+          ez = exp(-(z-z_layer)*(z-z_layer)/1.e14)
+
           do j = lo(2),hi(2)
-             z = (dble(k)+HALF)*dx(3) + prob_lo_z
-             ez = exp(-(z-z_layer)*(z-z_layer)/1.e14)
+             y = (dble(j)+HALF)*dx(2) + prob_lo_y
+
              do i = lo(1),hi(1)
-                ! y = (dble(j)+HALF)*dx(2) + prob_lo_y
-                x = (dble(i)+HALF)*dx(1) + prob_lo_x
+                x =  (dble(i)+HALF)*dx(1) + prob_lo_x
 
-                r0 = sqrt( (x-x0)**2 +(z-z0)**2 ) / 2.5e6
-                r1 = sqrt( (x-x1)**2 +(z-z1)**2 ) / 2.5e6
-                r2 = sqrt( (x-x2)**2 +(z-z2)**2 ) / 2.5e6
-
-                ! rho_Hext(i,j,k) = (ez &
-                !             + .00625_dp_t * exp(-((x-x0)**2 +(z-z0)**2)/0.25e14) &
-                !             + .01875_dp_t * exp(-((x-x1)**2 +(z-z1)**2)/0.25e14) &
-                !             + .01250_dp_t * exp(-((x-x2)**2 +(z-z2)**2)/0.25e14) ) * 1.d17
-
-                ! rho_Hext(i,j,k) = (  .00625_dp_t * exp(-((x-x0)**2 +(z-z0)**2)/0.25e14) &
-                !             + .01875_dp_t * exp(-((x-x1)**2 +(z-z1)**2)/0.25e14) &
-                !             + .01250_dp_t * exp(-((x-x2)**2 +(z-z2)**2)/0.25e14) ) * 1.d17
-
-                rho_Hext(i,j,k) = (  .00625_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r0))) &
-                     + .01875_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r1))) &
-                     + .01250_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r2))) ) * 1.d17
-
-                ! HACK NO HEATING
-                rho_Hext(i,j,k) = ZERO
+                rho_Hext(i,j,k) = ez*(ONE + &
+                     .00625_dp_t * sin(2*pi*x/L_x) * sin(2*pi*y/L_y) &
+                     + .01875_dp_t * sin((6*pi*x/L_x) + pi/3.d0) * sin((6*pi*y/L_y) + pi/3.d0) &
+                     + .01250_dp_t * sin((8*pi*x/L_x) + pi/5.d0) * sin((8*pi*y/L_y) + pi/5.d0))*2.5d16
 
                 Hmax = max(Hmax,rho_Hext(i,j,k))
 
                 rho_Hext(i,j,k) = rho_Hext(i,j,k) * s(i,j,k,rho_comp)
+                
              end do
           end do
-       end do
+       enddo
 
        ! if (parallel_IOProcessor()) print *,'MAX VALUE OF H ',Hmax
 
