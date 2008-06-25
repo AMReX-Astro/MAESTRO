@@ -54,4 +54,6 @@
  quadratic_interpolation = F
  dpdt_factor = 0.0
 
+ use_eos_coulomb = T
+
 /

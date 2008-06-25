@@ -53,4 +53,6 @@
 
  quadratic_interpolation = F
 
+ use_eos_coulomb = T
+
 /

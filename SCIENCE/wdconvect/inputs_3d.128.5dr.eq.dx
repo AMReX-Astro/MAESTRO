@@ -55,4 +55,6 @@
  dpdt_factor = 0.0
 
  use_tfromp = T
+
+ use_eos_coulomb = T
 /

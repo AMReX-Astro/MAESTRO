@@ -1,12 +1,12 @@
 &PROBIN
- model_file = "model_6.e8.hse"
+ model_file = "model_6.e8.hse.64"
 
- test_set = "gr0_3d"
+ test_set = "gr0_3d.test"
 
  spherical_in = 1
  do_sponge = .true.
 
- dr_base = 260416.6666666
+ dr_base = 7812500
 
  prob_hi_x = 5.e8
  prob_hi_y = 5.e8
@@ -53,4 +53,5 @@
 
  quadratic_interpolation = F
 
+ use_eos_coulomb = T
 /
