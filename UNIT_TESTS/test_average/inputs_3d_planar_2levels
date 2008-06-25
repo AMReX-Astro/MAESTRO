@@ -20,4 +20,5 @@
  pmask_y = F
  pmask_z = F
 
+ use_eos_coulomb = F
 /
