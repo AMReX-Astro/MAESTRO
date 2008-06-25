@@ -465,8 +465,13 @@ contains
           sminus = merge(sminus, savg, abs(umac(i,j)) .gt. eps)
           
           if (is_conservative) then
-             st = force(i,j,comp) - ( umac(i+1,j)*splus-umac(i,j)*sminus ) /hx &
-                  - s(i,j,comp)*(vmac(i,j+1)-vmac(i,j)) / hy
+             ! hack to prevent out of bounds; need to fix this
+             if (j .ge. r_start_coord(n) .and. j .le. r_end_coord(n)) then
+                st = force(i,j,comp) - ( umac(i+1,j)*splus-umac(i,j)*sminus ) /hx &
+                     - s(i,j,comp)*(vmac(i,j+1)-vmac(i,j)) / hy
+             else
+                st = ZERO
+             end if             
           else
              st = force(i,j,comp) - HALF * (umac(i,j)+umac(i+1,j))*(splus - sminus) / hx
           end if
@@ -1049,8 +1054,10 @@ contains
              sminus = merge(smbot,smtop,vmac(i,j,k).gt.ZERO)
              savg   = HALF * (smbot + smtop)
              sminus = merge(sminus, savg, abs(vmac(i,j,k)) .gt. eps)
-                 
-             if (is_conservative) then
+               
+             ! hack to prevent out of bounds; need to fix this
+             if (is_conservative .and. &
+                  k .ge. r_start_coord(n) .and. k .le. r_end_coord(n)) then
                 st = st - ( vmac(i,j+1,k)*splus-vmac(i,j,k)*sminus ) / hy &
                   - s(i,j,k,comp)*(wmac(i,j,k+1)-wmac(i,j,k)) / hz
              else
