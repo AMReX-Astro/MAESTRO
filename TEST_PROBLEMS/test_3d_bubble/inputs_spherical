@@ -59,4 +59,7 @@
  perturb_model = F
 
 !restart = 70
+
+ use_eos_coulomb = F
+
 /
