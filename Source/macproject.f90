@@ -1247,6 +1247,7 @@ contains
       ! we only need to do this for fine levels
       do n=2,nlevs
          do i=1,phi(n)%nboxes
+            if ( multifab_remote(phi(n), i) ) cycle
             ump => dataptr(umac(n,1), i)
             vmp => dataptr(umac(n,2), i)
             lo = lwb(get_box(phi(n), i))
