@@ -17,6 +17,7 @@ contains
 
     use bl_prof_module
     use restrict_base_module
+    use macproject_module, only: create_umac_grown
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(in   ) :: u(:)
@@ -71,6 +72,8 @@ contains
        end do
 
     end do
+
+    call create_umac_grown(nlevs,utrans,.true.,.false.)
 
     ! fill ghost cells for two adjacent grids at the same level
     ! this includes periodic domain boundary ghost cells
