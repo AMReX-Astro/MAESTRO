@@ -65,4 +65,6 @@
 
  use_eos_coulomb = T
 
+ plot_trac = F
+
 /
