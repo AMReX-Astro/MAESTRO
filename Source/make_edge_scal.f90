@@ -465,20 +465,13 @@ contains
           sminus = merge(sminus, savg, abs(umac(i,j)) .gt. eps)
           
           if (is_conservative) then
-             ! hack to prevent out of bounds; need to fix this
-             if (j .ge. r_start_coord(n) .and. j .le. r_end_coord(n)) then
-                st = force(i,j,comp) - ( umac(i+1,j)*splus-umac(i,j)*sminus ) /hx &
-                     - s(i,j,comp)*(vmac(i,j+1)-vmac(i,j)) / hy
-             else
-                st = ZERO
-             end if             
+             st = force(i,j,comp) - ( umac(i+1,j)*splus-umac(i,j)*sminus ) /hx &
+                  - s(i,j,comp)*(vmac(i,j+1)-vmac(i,j)) / hy
           else
              st = force(i,j,comp) - HALF * (umac(i,j)+umac(i+1,j))*(splus - sminus) / hx
           end if
           
-          ! hack to prevent out of bounds; need to fix this
-          if (is_vel .and. comp .eq. 2 .and. &
-               j .ge. r_start_coord(n) .and. j .le. r_end_coord(n)) then
+          if (is_vel .and. comp .eq. 2) then
              ! vmac contains w0 so we need to subtract it off
              st = st - HALF * (vmac(i,j)+vmac(i,j+1)-w0(j+1)-w0(j))*(w0(j+1)-w0(j))/hy
           end if
@@ -1055,19 +1048,15 @@ contains
              savg   = HALF * (smbot + smtop)
              sminus = merge(sminus, savg, abs(vmac(i,j,k)) .gt. eps)
                
-             ! hack to prevent out of bounds; need to fix this
-             if (is_conservative .and. &
-                  k .ge. r_start_coord(n) .and. k .le. r_end_coord(n)) then
+             if (is_conservative) then
                 st = st - ( vmac(i,j+1,k)*splus-vmac(i,j,k)*sminus ) / hy &
-                  - s(i,j,k,comp)*(wmac(i,j,k+1)-wmac(i,j,k)) / hz
+                     - s(i,j,k,comp)*(wmac(i,j,k+1)-wmac(i,j,k)) / hz
              else
                 st = st - HALF * (vmac(i,j,k)+vmac(i,j+1,k))*(splus - sminus) / hy
              end if
              
              ! NOTE NOTE : THIS IS WRONG FOR SPHERICAL !!
-             ! hack to prevent out of bounds; need to fix this
-             if (spherical .eq. 0 .and. is_vel .and. comp .eq. 3 .and. &
-                  k .ge. r_start_coord(n) .and. k .le. r_end_coord(n)) then
+             if (spherical .eq. 0 .and. is_vel .and. comp .eq. 3) then
                 ! wmac contains w0 so we need to subtract it off
                 st = st - HALF*(wmac(i,j,k)+wmac(i,j,k+1)- &
                      w0_cart_vec(i,j,k+1,3)-w0_cart_vec(i,j,k,3)) * &

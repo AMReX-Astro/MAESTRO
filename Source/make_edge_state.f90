@@ -538,9 +538,7 @@ contains
              
              st = force(i,j,comp) - HALF * (utrans(i,j)+utrans(i+1,j))*(splus - sminus) / hx
              
-             ! hack to prevent out of bounds; need to fix this
-             if (is_vel .and. comp .eq. 2 .and. &
-                  j .ge. r_start_coord(n) .and. j .le. r_end_coord(n)) then
+             if (is_vel .and. comp .eq. 2) then
                 ! vtrans contains w0 so we need to subtract it off
                 st = st - HALF * (vtrans(i,j)+vtrans(i,j+1)-w0(j+1)-w0(j))*(w0(j+1)-w0(j))/hy
              end if
@@ -1338,9 +1336,7 @@ contains
                  if (is_vel) then
                     ! add the (Utilde . e_r) d w_0 /dr e_r term here
 
-                    ! hack to prevent out of bounds; need to fix this
-                    if (spherical .eq. 0 .and. comp .eq. 3 .and. &
-                         k .ge. r_start_coord(n) .and. k .le. r_end_coord(n)) then
+                    if (spherical .eq. 0 .and. comp .eq. 3) then
 
                        ! wtrans contains w0 so we need to subtract it off
                        st = st - HALF * (wtrans(i,j,k)+wtrans(i,j,k+1)- &
