@@ -67,14 +67,18 @@ contains
                               lo,dx(n,:),dt,ng,&
                               the_bc_level(n)%adv_bc_level_array(i,:,:,:), &
                               the_bc_level(n)%phys_bc_level_array(i,:,:))
-       end select
+          end select
+       end do
+
     end do
 
     ! fill ghost cells for two adjacent grids at the same level
     ! this includes periodic domain boundary ghost cells
-    do i=1,dm
-       call multifab_fill_boundary(utrans(n,i))
-    enddo
+    do n=1,nlevs
+       do i=1,dm
+          call multifab_fill_boundary(utrans(n,i))
+       enddo
+    end do
 
     ! we don't need calls to multifab_physbc or multifab_fill_ghost cells since the boundary 
     ! conditions are handled within mkutrans_2d and _3d.
@@ -82,8 +86,6 @@ contains
 
     call destroy(bpt)
 
- enddo
-    
   end subroutine mkutrans
 
   subroutine mkutrans_2d(n,vel,utrans,vtrans,w0,lo,dx,dt,ng_s,adv_bc,phys_bc)
