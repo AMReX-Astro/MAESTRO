@@ -489,7 +489,7 @@ contains
        end do
     end if
 
-    write(6,2004) 
+    if (parallel_IOProcessor()) write(6,2004) 
 
     if (spherical .eq. 1) then
        do n=1,nlevs
