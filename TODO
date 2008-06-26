@@ -1,6 +1,3 @@
--- rebase the EOS to Frank's latest and turn on the Coulomb
-   corrections.  
-
 -- deal with the comment "! NOTE NOTE : THIS IS WRONG FOR SPHERICAL !!"
    in make_edge_scal.f90 (already implemented in make_edge_state.f90)
 
@@ -29,5 +26,3 @@
    enthalpy update for spherical, so we are using an old one -- this 
    is probably not consistent.
 
--- have make_grav.f90 ignore the mass in the region with rho <
-   low_density_cutoff -- i.e. anything outside of the star.
