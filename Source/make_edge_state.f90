@@ -1472,22 +1472,26 @@ contains
      allocate(s_r   (nlevs,-1:nr_fine+1))
      allocate(slopex(nlevs, 0:nr_fine-1))
      allocate(dxscr (nlevs, 0:nr_fine-1,4))
+
+     abs_eps = 1.0d-8
+     dth = HALF*dt
+
+     ! compute eps based on umax
+     umax = ZERO
+     do n=1,nlevs
+        lo = r_start_coord(n)
+        hi = r_end_coord(n)
+        do r = lo,hi+1
+           umax = max(umax,abs(umac(n,r)))
+        end do
+     end do
+     eps = abs_eps * umax
      
+     ! compute slopes
      do n=1,nlevs
 
         lo = r_start_coord(n)
         hi = r_end_coord(n)
-        
-        abs_eps = 1.0d-8
-        
-        dth = HALF*dt
-        
-        umax = ZERO
-        do r = lo,hi+1
-           umax = max(umax,abs(umac(n,r)))
-        end do
-        
-        eps = abs_eps * umax
         
         if (slope_order .eq. 0) then
            
@@ -1605,6 +1609,13 @@ contains
            
         end if ! slope order
 
+     end do ! end compute slopes
+
+     do n=1,nlevs
+
+        lo = r_start_coord(n)
+        hi = r_end_coord(n)
+        
         ! Compute edge values using slopes and forcing terms.
         if (n .eq. 1) then
            
