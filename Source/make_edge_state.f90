@@ -1635,48 +1635,31 @@ contains
         lo = r_start_coord(n)
         hi = r_end_coord(n)
         
-        ! Compute edge values using slopes and forcing terms.
-        if (n .eq. 1) then
-           
-           sedgex(n,lo  ) = s_r(n,lo  )
-           sedgex(n,hi+1) = s_l(n,hi+1)
-           
-           do r = lo+1, hi 
+        ! if we are not at the finest level
+        ! copy in the s_r and s_l states from the next finer level at the c-f interface
+        if (n .ne. nlevs) then
+           s_r(n,r_start_coord(n+1)/2) = s_r(n+1,r_start_coord(n+1))
+           s_l(n,(r_end_coord(n+1)+1)/2) = s_l(n+1,r_end_coord(n+1)+1)
+        end if
+
+        ! if we are not at the coarsest level
+        ! copy in the s_l and s_r states from the next coarser level at the c-f interface
+        if (n .ne. 1) then
+           s_l(n,lo) = s_l(n-1,lo/2)
+           s_r(n,hi+1) = s_r(n-1,(hi+1)/2)
+        end if
+
+        do r=lo,hi+1
+           if (r .eq. 0) then
+              sedgex(n,r) = s_r(n,r)
+           else if (r .eq. nr(n)) then
+              sedgex(n,r) = s_l(n,r)
+           else
               sedgex(n,r)=merge(s_l(n,r),s_r(n,r),umac(n,r).gt.ZERO)
               savg = HALF*(s_r(n,r) + s_l(n,r))
               sedgex(n,r)=merge(savg,sedgex(n,r),abs(umac(n,r)) .lt. eps)
-           enddo
-
-        else
-           
-           do r=lo,hi+1
-
-              if (r .eq. 0) then
-
-                 sedgex(n,r) = s_r(n,r)
-
-              else if (r .eq. nr(n)) then
-
-                 sedgex(n,r) = s_l(n,r)
-
-              else
-                 
-                 ! copy state from coarser level
-                 if (r .eq. r_start_coord(n)) then
-                    s_l(n,r) = s_l(n-1,r/2)
-                 else if (r .eq. r_end_coord(n)+1) then
-                    s_r(n,r) = s_r(n-1,r/2)
-                 end if
-
-                 sedgex(n,r)=merge(s_l(n,r),s_r(n,r),umac(n,r).gt.ZERO)
-                 savg = HALF*(s_r(n,r) + s_l(n,r))
-                 sedgex(n,r)=merge(savg,sedgex(n,r),abs(umac(n,r)) .lt. eps)
-
-              end if
-
-           end do
-
-        end if ! which level
+           end if
+        end do
         
      end do ! end compute edge state from s_l and s_r
      
