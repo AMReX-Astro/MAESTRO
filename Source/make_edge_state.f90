@@ -1617,11 +1617,15 @@ contains
         lo = r_start_coord(n)
         hi = r_end_coord(n)
 
-        u = HALF * (umac(n,r) + umac(n,r+1))
-        ubardth = dth*u/dx(n)
+        do r = lo,hi
+
+           u = HALF * (umac(n,r) + umac(n,r+1))
+           ubardth = dth*u/dx(n)
         
-        s_l(n,r+1)= s(n,r) + (HALF-ubardth)*slopex(n,r) + dth * force(n,r)
-        s_r(n,r  )= s(n,r) - (HALF+ubardth)*slopex(n,r) + dth * force(n,r)
+           s_l(n,r+1)= s(n,r) + (HALF-ubardth)*slopex(n,r) + dth * force(n,r)
+           s_r(n,r  )= s(n,r) - (HALF+ubardth)*slopex(n,r) + dth * force(n,r)
+           
+        end do
         
      end do ! end compute s_l and s_r
 
