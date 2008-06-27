@@ -1611,6 +1611,21 @@ contains
 
      end do ! end compute slopes
 
+     ! compute s_l and s_r
+     do n=1,nlevs
+
+        lo = r_start_coord(n)
+        hi = r_end_coord(n)
+
+        u = HALF * (umac(n,r) + umac(n,r+1))
+        ubardth = dth*u/dx(n)
+        
+        s_l(n,r+1)= s(n,r) + (HALF-ubardth)*slopex(n,r) + dth * force(n,r)
+        s_r(n,r  )= s(n,r) - (HALF+ubardth)*slopex(n,r) + dth * force(n,r)
+        
+     end do ! end compute s_l and s_r
+
+     ! compute edge states from s_l and s_r
      do n=1,nlevs
 
         lo = r_start_coord(n)
@@ -1618,16 +1633,6 @@ contains
         
         ! Compute edge values using slopes and forcing terms.
         if (n .eq. 1) then
-           
-           do r = lo,hi
-              
-              u = HALF * (umac(n,r) + umac(n,r+1))
-              ubardth = dth*u/dx(n)
-              
-              s_l(n,r+1)= s(n,r) + (HALF-ubardth)*slopex(n,r) + dth * force(n,r)
-              s_r(n,r  )= s(n,r) - (HALF+ubardth)*slopex(n,r) + dth * force(n,r)
-              
-           enddo
            
            sedgex(n,lo  ) = s_r(n,lo  )
            sedgex(n,hi+1) = s_l(n,hi+1)
@@ -1639,23 +1644,17 @@ contains
            enddo
 
         else
-
-           do r = lo,hi
-              
-              u = HALF * (umac(n,r) + umac(n,r+1))
-              ubardth = dth*u/dx(n)
-              
-              s_l(n,r+1)= s(n,r) + (HALF-ubardth)*slopex(n,r) + dth * force(n,r)
-              s_r(n,r  )= s(n,r) - (HALF+ubardth)*slopex(n,r) + dth * force(n,r)
-              
-           enddo
            
            do r=lo,hi+1
 
               if (r .eq. 0) then
+
                  sedgex(n,r) = s_r(n,r)
+
               else if (r .eq. nr(n)) then
+
                  sedgex(n,r) = s_l(n,r)
+
               else
                  
                  ! copy state from coarser level
@@ -1675,7 +1674,7 @@ contains
 
         end if ! which level
         
-     end do ! loop over levels
+     end do ! end compute edge state from s_l and s_r
      
    end subroutine make_edge_state_1d
    
