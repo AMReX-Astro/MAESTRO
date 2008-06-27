@@ -1,0 +1,99 @@
+#!/bin/ksh -p
+#
+# Prefix's plt files.
+#
+pidfile=process.pid
+
+plt_prefix=plt
+
+fwdconvect=./fwdconvect.Linux.PathScale.exe
+
+fsnapshot3d=./fsnapshot3d.Linux.PathScale.exe
+pvar=radial_velocity
+
+# directory to archive to on HPSS
+HPSS_DIR=wdconvect_512_new
+
+
+if [ -f $pidfile ]; then
+  echo 2>&1 "process lock file " $pidfile " already exists"
+  exit -1
+fi
+
+echo $$ > $pidfile
+
+
+trap '/bin/rm -f $pidfile' EXIT HUP TERM XCPU KILL
+
+#
+# Number of seconds to sleep before checking again.
+#
+N=60
+#
+# Process Files
+#
+function process_files
+{
+  if [ ! -f $pidfile ]; then
+    echo "process: $pidfile has been removed, exiting"
+    exit
+  fi
+
+  #
+  # Take all but the final plt file.
+  # We want to ensure they're completely written to disk.
+  # Strip out any tar files that are lying around as well as
+  # and pltXXXXX.processed files.
+  #
+  pltlist=$(ls -d ${plt_prefix}* 2>/dev/null | grep -v tar | grep -v processed)
+
+  if [ "$pltlist" ]; then
+    nl=$(echo "$pltlist" | wc -l)
+    nl=$(expr $nl - 1)
+    if [ $nl -eq 0 ]; then
+      pltlist=""
+    else
+      pltlist=$(echo "$pltlist" | head -$nl)
+    fi
+  fi
+
+
+  # plotfiles
+  for dir in ${pltlist}
+  do
+    if [ -d ${dir} ]; then
+
+      if [ ! -f ${dir}.processed ]; then
+
+        # do processing
+
+        echo "running fwdconvect on ${dir}"
+        ${fwdconvect} -p ${dir} -s ${dir}.averages
+
+        echo "running fsnapshot3d on ${dir}"
+        ${fsnapshot3d} -p ${dir} -n 1 -cname "${pvar}" -m -1.e6 -M 1.e6
+        ${fsnapshot3d} -p ${dir} -n 2 -cname "${pvar}" -m -1.e6 -M 1.e6
+        ${fsnapshot3d} -p ${dir} -n 3 -cname "${pvar}" -m -1.e6 -M 1.e6
+
+        # store the file on HPSS
+        htar -cvf ${HPSS_DIR}/${dir}.tar ${dir} 
+
+        # mark this file as processed so we skip it next time
+        date > ${dir}.processed
+
+      fi
+
+    fi
+  done
+
+
+
+}
+#
+# Looping waiting for plt and chk directories to appear.
+#
+while true
+do
+  process_files
+  sleep $N
+done
