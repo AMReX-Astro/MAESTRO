@@ -12,7 +12,7 @@ module macproject_module
 
   private
 
-  public :: macproject, mac_applyop, mac_multigrid, create_umac_grown
+  public :: macproject, mac_applyop, mac_multigrid, create_umac_grown_onesided
 
 contains 
 
@@ -131,7 +131,7 @@ contains
        end do
     end if
 
-    call create_umac_grown(nlevs,umac,.true.,.true.)
+    call create_umac_grown_onesided(nlevs,umac,.true.,.true.)
 
     do n = 1, nlevs
        do i=1,dm
@@ -1655,7 +1655,7 @@ contains
 
   end subroutine mac_applyop
 
-  subroutine create_umac_grown(nlevs,umac,do_normal,do_trans)
+  subroutine create_umac_grown_onesided(nlevs,umac,do_normal,do_trans)
 
     integer       , intent(in   ) :: nlevs
     type(multifab), intent(inout) :: umac(:,:)
@@ -1680,17 +1680,18 @@ contains
           hi = upb(get_box(umac(n,1), i))
           select case (dm)
           case (2)
-             call create_umac_grown_2d(ump(:,:,1,1),vmp(:,:,1,1),do_normal,do_trans,lo,hi)
+             call create_umac_grown_onesided_2d(ump(:,:,1,1),vmp(:,:,1,1),do_normal, &
+                                                do_trans,lo,hi)
           case (3)
-             call create_umac_grown_3d(ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1), &
-                                       do_normal,do_trans,lo,hi)
+             call create_umac_grown_onesided_3d(ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1), &
+                                                do_normal,do_trans,lo,hi)
           end select
        end do
     end do
 
-  end subroutine create_umac_grown
+  end subroutine create_umac_grown_onesided
 
-  subroutine create_umac_grown_2d(umac,vmac,do_normal,do_trans,lo,hi)
+  subroutine create_umac_grown_onesided_2d(umac,vmac,do_normal,do_trans,lo,hi)
 
     integer        , intent(in   ) :: lo(:),hi(:)
     real(kind=dp_t), intent(inout) :: umac(lo(1)-1:,lo(2)-1:)
@@ -1729,9 +1730,9 @@ contains
 
     end if
 
-  end subroutine create_umac_grown_2d
+  end subroutine create_umac_grown_onesided_2d
 
-  subroutine create_umac_grown_3d(umac,vmac,wmac,do_normal,do_trans,lo,hi)
+  subroutine create_umac_grown_onesided_3d(umac,vmac,wmac,do_normal,do_trans,lo,hi)
 
     integer        , intent(in   ) :: lo(:),hi(:)
     real(kind=dp_t), intent(inout) :: umac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
@@ -1814,6 +1815,6 @@ contains
 
     end if
        
-  end subroutine create_umac_grown_3d
+  end subroutine create_umac_grown_onesided_3d
 
 end module macproject_module
