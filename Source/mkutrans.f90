@@ -17,7 +17,7 @@ contains
 
     use bl_prof_module
     use restrict_base_module
-    use macproject_module, only: create_umac_grown_onesided
+    use create_umac_grown_module
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(in   ) :: u(:)
