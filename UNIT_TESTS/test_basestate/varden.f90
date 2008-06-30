@@ -38,7 +38,7 @@ subroutine varden()
 
   real(dp_t) :: y_0
 
-  real(dp_t) :: dx(1,1)
+  real(dp_t), allocatable :: dx(:,:)
   real(dp_t) :: prob_lo(1), prob_hi(1)
 
   real(dp_t), allocatable :: div_coeff_old(:,:)
@@ -54,15 +54,15 @@ subroutine varden()
   real(dp_t), allocatable :: psi(:,:)
   real(dp_t), allocatable :: f(:,:)
   real(dp_t), allocatable :: Sbar_in(:,:)
+  real(dp_t), allocatable :: delta_p0_ptherm_bar(:,:)
   real(dp_t), allocatable :: rho0_predicted_edge(:,:)
-  real(dp_t), allocatable :: force(:)
-  real(dp_t), allocatable :: X0(:)
-  real(dp_t), allocatable :: edge(:)
+  real(dp_t), allocatable :: force(:,:)
+  real(dp_t), allocatable :: X0(:,:)
+  real(dp_t), allocatable :: edge(:,:)
 
   real(dp_t) :: coeff, Hbar
 
   integer :: nlevs,n
-  integer :: nr_fine
   integer :: which_step
 
   real(dp_t) :: max_dist
@@ -118,6 +118,7 @@ subroutine varden()
      nr_fine = int(max_dist / dr_base) + 1
   end if
 
+  allocate(dx(nlevs,1))
   dx(1,1) = dr_base
 
   allocate(div_coeff_old(nlevs,0:nr_fine-1))
@@ -135,15 +136,18 @@ subroutine varden()
   allocate(                psi(nlevs,0:nr_fine))
   allocate(                  f(nlevs,0:nr_fine))
   allocate(            Sbar_in(nlevs,0:nr_fine-1))
+  allocate(delta_p0_ptherm_bar(nlevs,0:nr_fine-1))
   allocate(rho0_predicted_edge(nlevs,0:nr_fine))
 
-  allocate(force(0:nr_fine-1))
-  allocate(   X0(0:nr_fine-1))
-  allocate(edge(0:nr_fine))
+  allocate(force(nlevs,0:nr_fine-1))
+  allocate(   X0(nlevs,0:nr_fine-1))
+  allocate( edge(nlevs,0:nr_fine))
+
 
   gam1(:,:) = ZERO
   w0(:,:) = ZERO
   psi(:,:) = ZERO
+  delta_p0_ptherm_bar(:,:) = ZERO
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! read in the base state
@@ -237,7 +241,7 @@ subroutine varden()
      w0(:,:) = ZERO
 
      call make_w0(nlevs,w0,w0_old,f,Sbar_in,s0(:,:,rho_comp),p0,p0, &
-                  gam1,gam1,psi,dt,dtold)
+                  gam1,gam1,psi,delta_p0_ptherm_bar,dt,dtold)
   
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -245,9 +249,11 @@ subroutine varden()
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      do n=1,nlevs
         call make_grav_cell(n,grav_cell(n,:),s0(n,:,rho_comp))
-        call make_div_coeff(n,div_coeff(n,:),s0(n,:,rho_comp),p0(n,:), &
-                            gam1(n,:),grav_cell(n,:))     
      enddo
+
+     call make_div_coeff(nlevs,div_coeff,s0(:,:,rho_comp),p0, &
+                         gam1,grav_cell)     
+
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      ! compute the new base state
@@ -275,25 +281,25 @@ subroutine varden()
      do comp = spec_comp,spec_comp+nspec-1
 
         ! here we predict X_0 on the edges
-        X0(:) = s0_old(1,:,comp)/s0_old(1,:,rho_comp)
+        X0(1,:) = s0_old(1,:,comp)/s0_old(1,:,rho_comp)
         do i = 0,nr_fine-1
-           X0(i) = max(X0(i),ZERO)
+           X0(1,i) = max(X0(1,i),ZERO)
         end do
 
         force = ZERO
 
-        call make_edge_state_1d(1,X0,edge,w0(1,:),force,1,dr(1),dt)
+        call make_edge_state_1d(1,X0,edge,w0,force,dx(:,1),dt)
         
         ! our final update needs (rho X)_0 on the edges, so compute
         ! that now
-        edge(:) = rho0_predicted_edge(1,:)*edge(:)
+        edge(1,:) = rho0_predicted_edge(1,:)*edge(1,:)
 
         ! update (rho X)_0
         do i = 0,nr_fine-1
            s0(1,i,comp) = s0_old(1,i,comp) &
                 - (dt/dr(1))/r_cc_loc(1,i)**2* &
-                (r_edge_loc(1,i+1)**2 * edge(i+1) * w0(1,i+1) - &
-                 r_edge_loc(1,i  )**2 * edge(i  ) * w0(1,i  ))
+                (r_edge_loc(1,i+1)**2 * edge(1,i+1) * w0(1,i+1) - &
+                 r_edge_loc(1,i  )**2 * edge(1,i  ) * w0(1,i  ))
         end do
 
      enddo
