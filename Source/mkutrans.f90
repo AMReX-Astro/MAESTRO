@@ -73,15 +73,19 @@ contains
 
     end do
 
-    call create_umac_grown_onesided(nlevs,utrans,.true.,.false.)
-
-    ! fill ghost cells for two adjacent grids at the same level
-    ! this includes periodic domain boundary ghost cells
-    do n=1,nlevs
-       do i=1,dm
-          call multifab_fill_boundary(utrans(n,i))
-       enddo
-    end do
+    ! haven't completed create_umac_grown() yet so using older version
+    if (.true.) then
+       call create_umac_grown_onesided(nlevs,utrans,.true.,.false.)
+       do n=1,nlevs
+          do i=1,dm
+             call multifab_fill_boundary(utrans(n,i))
+          enddo
+       end do
+    else
+       do n=2,nlevs
+          call create_umac_grown(n,utrans(n,:),utrans(n-1,:))
+       end do
+    end if
 
     ! we don't need calls to multifab_physbc or multifab_fill_ghost cells since the boundary 
     ! conditions are handled within mkutrans_2d and _3d.

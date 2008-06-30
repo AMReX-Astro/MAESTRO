@@ -8,10 +8,106 @@ module create_umac_grown_module
 
 contains
 
-  subroutine create_umac_grown()
+  subroutine create_umac_grown(finelev,fine,crse)
 
+    integer       , intent(in   ) :: finelev
+    type(multifab), intent(inout) :: fine(:)
+    type(multifab), intent(inout) :: crse(:)
 
+    ! local
+    integer        :: i,j,dm
+    integer        :: lo(fine(1)%dim)
 
+    type(fgassoc)  :: fgasc
+    type(boxarray) :: f_ba,c_ba
+    type(multifab) :: f_mf,c_mf
+    type(layout)   :: f_la,c_la
+
+    real(kind=dp_t), pointer :: fp(:,:,:,:), cp(:,:,:,:)
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "create_umac_grown")
+
+    dm = fine(1)%dim
+
+    if (finelev .eq. 2) then
+       do i=1,dm
+          call multifab_fill_boundary(crse(i))
+       end do
+    end if
+
+    !
+    ! Grab the cached boxarray of all ghost cells not covered by valid region.
+    !
+    fgasc = layout_fgassoc(fine(1)%la, 1)
+
+    call boxarray_build_copy(f_ba,fgasc%ba)
+    call boxarray_build_copy(c_ba,fgasc%ba)
+
+    do i=1,nboxes(f_ba)
+
+       call set_box(c_ba,i,coarsen(get_box(f_ba,i),2))
+       call set_box(f_ba,i,refine(get_box(c_ba,i),2))
+
+    end do
+
+    do i=1,dm
+
+       call build(f_la,f_ba,get_pd(fine(i)%la),get_pmask(fine(i)%la))
+       call build(c_la,c_ba,get_pd(crse(i)%la),get_pmask(crse(i)%la), &
+                  explicit_mapping=get_proc(f_la))
+
+       ! create coarse and fine nodal multifabs on the same proc
+       call build(f_mf,f_la,1,0,fine(i)%nodal)
+       call build(c_mf,c_la,1,0,crse(i)%nodal)
+
+       call copy(c_mf,crse(i),ng=1)
+
+       ! fill in some of the fine ghost cells from crse
+       do j=1,nboxes(f_mf)
+          if ( remote(f_mf,j) ) cycle
+          fp => dataptr(f_mf,j)
+          cp => dataptr(c_mf,j)
+          lo = lwb(get_box(f_mf,j))
+          select case(dm)
+          case (2)
+
+          case (3)
+
+          end select
+       end do
+
+       call copy(f_mf,fine(i))
+
+       ! fill in the rest of the fine ghost cells
+       do j=1,nboxes(f_mf)
+          if ( remote(f_mf,j) ) cycle
+          fp => dataptr(f_mf,j)
+          cp => dataptr(c_mf,j)
+          lo = lwb(get_box(f_mf,j))
+          select case(dm)
+          case (2)
+
+          case (3)
+
+          end select
+       end do
+
+       call copy(fine(i),f_mf,ng=1)
+       call multifab_fill_boundary(fine(i))
+
+       call destroy(f_mf)
+       call destroy(c_mf)
+
+       call destroy(f_la)
+       call destroy(c_la)
+
+    end do
+
+    call destroy(f_ba)
+    call destroy(c_ba)
+    call destroy(bpt)
 
   end subroutine create_umac_grown
 
