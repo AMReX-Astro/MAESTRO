@@ -75,18 +75,19 @@ contains
 
     ! haven't completed create_umac_grown() yet so using older version
     if (.true.) then
-       call create_umac_grown_onesided(nlevs,utrans,.false.)
-       do n=1,nlevs
-          do i=1,dm
-             call multifab_fill_boundary(utrans(n,i))
-          enddo
-       end do
+       call create_umac_grown_onesided(nlevs,utrans)
     else
        do n=2,nlevs
-          call create_umac_grown(n,utrans(n,:),utrans(n-1,:),.false.)
+          call create_umac_grown(n,utrans(n,:),utrans(n-1,:))
        end do
     end if
 
+    do n=1,nlevs
+       do i=1,dm
+          call multifab_fill_boundary(utrans(n,i))
+       enddo
+    end do
+    
     ! we don't need calls to multifab_physbc or multifab_fill_ghost cells since the boundary 
     ! conditions are handled within mkutrans_2d and _3d.
     ! I don't think a call to ml_edge_restriction makes sense here
@@ -157,7 +158,7 @@ contains
     call slopey_2d(vel(:,:,2:),vely,lo,ng_s,1,adv_bc)
     
     ! Create the x-velocity to be used for transverse derivatives.
-    do j = js-1,je+1 
+    do j = js,je
        do i = is,ie+1 
           
           if (use_new_godunov) then
@@ -192,7 +193,7 @@ contains
     
     ! Create the y-velocity to be used for transverse derivatives.
     do j = js,je+1 
-       do i = is-1,ie+1 
+       do i = is,ie
 
           if (j .eq. nr(n)) then
              vhi = vel(i,j,2) + w0(j)
@@ -318,8 +319,8 @@ contains
     call slopez_3d(vel(:,:,:,3:),velz,lo,ng_s,1,adv_bc)
     
     ! Create the x-velocity to be used for transverse derivatives.
-    do k = ks-1,ke+1
-       do j = js-1,je+1
+    do k = ks,ke
+       do j = js,je
           do i = is,ie+1
 
              uhi = vel(i  ,j,k,1) + w0_cart_vec(i  ,j,k,1)
@@ -352,8 +353,8 @@ contains
     
     ! Create the y-velocity to be used for transverse derivatives.
     do j = js,je+1
-       do k = ks-1,ke+1
-          do i = is-1,ie+1
+       do k = ks,ke
+          do i = is,ie
 
              vhi = vel(i,j  ,k,2) + w0_cart_vec(i,j  ,k,2)
              vlo = vel(i,j-1,k,2) + w0_cart_vec(i,j-1,k,2)
@@ -386,8 +387,8 @@ contains
     
     ! Create the z-velocity to be used for transverse derivatives.
     do k = ks,ke+1
-       do j = js-1,je+1
-          do i = is-1,ie+1
+       do j = js,je
+          do i = is,ie
              
              whi = vel(i,j,k  ,3) + w0_cart_vec(i,j,k  ,3)
              wlo = vel(i,j,k-1,3) + w0_cart_vec(i,j,k-1,3)

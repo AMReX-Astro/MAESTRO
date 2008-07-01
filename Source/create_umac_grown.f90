@@ -8,12 +8,11 @@ module create_umac_grown_module
 
 contains
 
-  subroutine create_umac_grown(finelev,fine,crse,do_trans)
+  subroutine create_umac_grown(finelev,fine,crse)
 
     integer       , intent(in   ) :: finelev
     type(multifab), intent(inout) :: fine(:)
     type(multifab), intent(inout) :: crse(:)
-    logical       , intent(in   ) :: do_trans
 
     ! local
     integer        :: i,j,dm
@@ -78,7 +77,7 @@ contains
           c_hi = upb(get_box(c_mf,j))
           select case(dm)
           case (2)
-             call pc_edge_interp_2d(i,f_lo,f_hi,c_lo,c_hi,fp(:,:,1,1),cp(:,:,1,1),do_trans)
+             call pc_edge_interp_2d(i,f_lo,f_hi,c_lo,c_hi,fp(:,:,1,1),cp(:,:,1,1))
           case (3)
 
           end select
@@ -97,7 +96,7 @@ contains
           c_hi = upb(get_box(c_mf,j))
           select case(dm)
           case (2)
-             call edge_interp_2d(i,f_lo,f_hi,c_lo,c_hi,fp(:,:,1,1),cp(:,:,1,1),do_trans)
+             call edge_interp_2d(i,f_lo,f_hi,c_lo,c_hi,fp(:,:,1,1),cp(:,:,1,1))
           case (3)
 
           end select
@@ -120,67 +119,44 @@ contains
 
   end subroutine create_umac_grown
 
-  subroutine pc_edge_interp_2d(dir,f_lo,f_hi,c_lo,c_hi,fine,crse,do_trans)
+  subroutine pc_edge_interp_2d(dir,f_lo,f_hi,c_lo,c_hi,fine,crse)
 
     integer,         intent(in   ) :: dir,f_lo(:),f_hi(:),c_lo(:),c_hi(:)
     real(kind=dp_t), intent(inout) :: fine(f_lo(1):,f_lo(2):)
     real(kind=dp_t), intent(inout) :: crse(c_lo(1):,c_lo(2):)
-    logical,         intent(in   ) :: do_trans
 
     ! local
     integer :: i,j
 
-    ! do normal pieces
     if (dir .eq. 0) then
 
     else
 
     end if    
-
-    ! do transverse pieces
-    if (do_trans) then
-       if (dir .eq. 0) then
-          
-       else
-          
-       end if
-    end if
 
   end subroutine pc_edge_interp_2d
 
-  subroutine edge_interp_2d(dir,f_lo,f_hi,c_lo,c_hi,fine,crse,do_trans)
+  subroutine edge_interp_2d(dir,f_lo,f_hi,c_lo,c_hi,fine,crse)
 
     integer,         intent(in   ) :: dir,f_lo(:),f_hi(:),c_lo(:),c_hi(:)
     real(kind=dp_t), intent(inout) :: fine(f_lo(1):,f_lo(2):)
     real(kind=dp_t), intent(inout) :: crse(c_lo(1):,c_lo(2):)
-    logical,         intent(in   ) :: do_trans
 
     ! local
     integer :: i,j
 
-    ! do normal pieces
     if (dir .eq. 0) then
 
     else
 
-    end if    
-
-    ! do transverse pieces
-    if (do_trans) then
-       if (dir .eq. 0) then
-          
-       else
-          
-       end if
     end if    
 
   end subroutine edge_interp_2d
 
-  subroutine create_umac_grown_onesided(nlevs,umac,do_trans)
+  subroutine create_umac_grown_onesided(nlevs,umac)
 
     integer       , intent(in   ) :: nlevs
     type(multifab), intent(inout) :: umac(:,:)
-    logical       , intent(in   ) :: do_trans
 
     integer :: i,n,dm
     integer :: lo(umac(1,1)%dim),hi(umac(1,1)%dim)
@@ -201,22 +177,20 @@ contains
           hi = upb(get_box(umac(n,1), i))
           select case (dm)
           case (2)
-             call create_umac_grown_onesided_2d(ump(:,:,1,1),vmp(:,:,1,1),do_trans,lo,hi)
+             call create_umac_grown_onesided_2d(ump(:,:,1,1),vmp(:,:,1,1),lo,hi)
           case (3)
-             call create_umac_grown_onesided_3d(ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1), &
-                                                do_trans,lo,hi)
+             call create_umac_grown_onesided_3d(ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),lo,hi)
           end select
        end do
     end do
 
   end subroutine create_umac_grown_onesided
 
-  subroutine create_umac_grown_onesided_2d(umac,vmac,do_trans,lo,hi)
+  subroutine create_umac_grown_onesided_2d(umac,vmac,lo,hi)
 
     integer        , intent(in   ) :: lo(:),hi(:)
     real(kind=dp_t), intent(inout) :: umac(lo(1)-1:,lo(2)-1:)
     real(kind=dp_t), intent(inout) :: vmac(lo(1)-1:,lo(2)-1:)
-    logical        , intent(in   ) :: do_trans
 
     integer i,j
 
@@ -230,31 +204,26 @@ contains
        vmac(i,hi(2)+2) = TWO*vmac(i,hi(2)+1) - vmac(i,hi(2))
     end do
 
-    if (do_trans) then
-
-       ! use linear interpolation to fill fine level ghost cells needed for 
-       ! transverse derivatives
-       do i=lo(1),hi(1)+1
-          umac(i,lo(2)-1) = TWO*umac(i,lo(2)) - umac(i,lo(2)+1)
-          umac(i,hi(2)+1) = TWO*umac(i,hi(2)) - umac(i,hi(2)-1)
-       end do
-       
-       do j=lo(2),hi(2)+1
-          vmac(lo(1)-1,j) = TWO*vmac(lo(1),j) - vmac(lo(1)+1,j)
-          vmac(hi(1)+1,j) = TWO*vmac(hi(1),j) - vmac(hi(1)-1,j)
-       end do
-
-    end if
+    ! use linear interpolation to fill fine level ghost cells needed for 
+    ! transverse derivatives
+    do i=lo(1),hi(1)+1
+       umac(i,lo(2)-1) = TWO*umac(i,lo(2)) - umac(i,lo(2)+1)
+       umac(i,hi(2)+1) = TWO*umac(i,hi(2)) - umac(i,hi(2)-1)
+    end do
+    
+    do j=lo(2),hi(2)+1
+       vmac(lo(1)-1,j) = TWO*vmac(lo(1),j) - vmac(lo(1)+1,j)
+       vmac(hi(1)+1,j) = TWO*vmac(hi(1),j) - vmac(hi(1)-1,j)
+    end do
 
   end subroutine create_umac_grown_onesided_2d
 
-  subroutine create_umac_grown_onesided_3d(umac,vmac,wmac,do_trans,lo,hi)
+  subroutine create_umac_grown_onesided_3d(umac,vmac,wmac,lo,hi)
 
     integer        , intent(in   ) :: lo(:),hi(:)
     real(kind=dp_t), intent(inout) :: umac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
     real(kind=dp_t), intent(inout) :: vmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
     real(kind=dp_t), intent(inout) :: wmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-    logical        , intent(in   ) :: do_trans
 
     integer i,j,k
 
@@ -279,54 +248,50 @@ contains
        end do
     end do
     
-    if (do_trans) then
+    ! use linear interpolation to fill fine level ghost cells needed for 
+    ! transverse derivatives
+    do i=lo(1),hi(1)+1
+       do j=lo(2),hi(2)
+          umac(i,j,lo(3)-1) = TWO*umac(i,j,lo(3)) - umac(i,j,lo(3)+1)
+          umac(i,j,hi(3)+1) = TWO*umac(i,j,hi(3)) - umac(i,j,hi(3)-1)
+       end do
+    end do
+    
+    do i=lo(1),hi(1)+1
+       do k=lo(3),hi(3)
+          umac(i,lo(2)-1,k) = TWO*umac(i,lo(2),k) - umac(i,lo(2)+1,k)
+          umac(i,hi(2)+1,k) = TWO*umac(i,hi(2),k) - umac(i,hi(2)-1,k)
+       end do
+    end do
+    
+    do j=lo(2),hi(2)+1
+       do i=lo(1),hi(1)
+          vmac(i,j,lo(3)-1) = TWO*vmac(i,j,lo(3)) - vmac(i,j,lo(3)+1)
+          vmac(i,j,hi(3)+1) = TWO*vmac(i,j,hi(3)) - vmac(i,j,hi(3)-1)
+       end do
+    end do
+    
+    do j=lo(2),hi(2)+1
+       do k=lo(3),hi(3)
+          vmac(lo(1)-1,j,k) = TWO*vmac(lo(1),j,k) - vmac(lo(1)+1,j,k)
+          vmac(hi(1)+1,j,k) = TWO*vmac(hi(1),j,k) - vmac(hi(1)-1,j,k)
+       end do
+    end do
 
-       ! use linear interpolation to fill fine level ghost cells needed for 
-       ! transverse derivatives
-       do i=lo(1),hi(1)+1
-          do j=lo(2),hi(2)
-             umac(i,j,lo(3)-1) = TWO*umac(i,j,lo(3)) - umac(i,j,lo(3)+1)
-             umac(i,j,hi(3)+1) = TWO*umac(i,j,hi(3)) - umac(i,j,hi(3)-1)
-          end do
+    do k=lo(3),hi(3)+1
+       do i=lo(1),hi(1)
+          wmac(i,lo(2)-1,k) = TWO*wmac(i,lo(2),k) - wmac(i,lo(2)+1,k)
+          wmac(i,hi(2)+1,k) = TWO*wmac(i,hi(2),k) - wmac(i,hi(2)-1,k)
        end do
-       
-       do i=lo(1),hi(1)+1
-          do k=lo(3),hi(3)
-             umac(i,lo(2)-1,k) = TWO*umac(i,lo(2),k) - umac(i,lo(2)+1,k)
-             umac(i,hi(2)+1,k) = TWO*umac(i,hi(2),k) - umac(i,hi(2)-1,k)
-          end do
-       end do
-       
-       do j=lo(2),hi(2)+1
-          do i=lo(1),hi(1)
-             vmac(i,j,lo(3)-1) = TWO*vmac(i,j,lo(3)) - vmac(i,j,lo(3)+1)
-             vmac(i,j,hi(3)+1) = TWO*vmac(i,j,hi(3)) - vmac(i,j,hi(3)-1)
-          end do
-       end do
-       
-       do j=lo(2),hi(2)+1
-          do k=lo(3),hi(3)
-             vmac(lo(1)-1,j,k) = TWO*vmac(lo(1),j,k) - vmac(lo(1)+1,j,k)
-             vmac(hi(1)+1,j,k) = TWO*vmac(hi(1),j,k) - vmac(hi(1)-1,j,k)
-          end do
-       end do
-       
-       do k=lo(3),hi(3)+1
-          do i=lo(1),hi(1)
-             wmac(i,lo(2)-1,k) = TWO*wmac(i,lo(2),k) - wmac(i,lo(2)+1,k)
-             wmac(i,hi(2)+1,k) = TWO*wmac(i,hi(2),k) - wmac(i,hi(2)-1,k)
-          end do
-       end do
-       
-       do k=lo(3),hi(3)+1
-          do j=lo(2),hi(2)
-             wmac(lo(1)-1,j,k) = TWO*wmac(lo(1),j,k) - wmac(lo(1)+1,j,k)
-             wmac(hi(1)+1,j,k) = TWO*wmac(hi(1),j,k) - wmac(hi(1)-1,j,k)
-          end do
-       end do
+    end do
 
-    end if
-       
+    do k=lo(3),hi(3)+1
+       do j=lo(2),hi(2)
+          wmac(lo(1)-1,j,k) = TWO*wmac(lo(1),j,k) - wmac(lo(1)+1,j,k)
+          wmac(hi(1)+1,j,k) = TWO*wmac(hi(1),j,k) - wmac(hi(1)-1,j,k)
+       end do
+    end do
+
   end subroutine create_umac_grown_onesided_3d
 
 end module create_umac_grown_module
