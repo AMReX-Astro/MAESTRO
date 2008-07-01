@@ -15,15 +15,15 @@ contains
     type(multifab), intent(inout) :: crse(:)
 
     ! local
-    integer        :: i,j,dm
+    integer        :: i,j,k,dm
     integer        :: c_lo(fine(1)%dim),c_hi(fine(1)%dim)
     integer        :: f_lo(fine(1)%dim),f_hi(fine(1)%dim)
 
 
     type(fgassoc)  :: fgasc
-    type(boxarray) :: f_ba,c_ba
-    type(multifab) :: f_mf,c_mf
-    type(layout)   :: f_la,c_la
+    type(boxarray) :: f_ba,c_ba,tba
+    type(multifab) :: f_mf,c_mf,tcrse,tfine
+    type(layout)   :: f_la,c_la,tla
 
     real(kind=dp_t), pointer :: fp(:,:,:,:), cp(:,:,:,:)
 
@@ -38,7 +38,6 @@ contains
           call multifab_fill_boundary(crse(i))
        end do
     end if
-
     !
     ! Grab the cached boxarray of all ghost cells not covered by valid region.
     !
@@ -48,10 +47,8 @@ contains
     call boxarray_build_copy(c_ba,fgasc%ba)
 
     do i=1,nboxes(f_ba)
-
        call set_box(c_ba,i,coarsen(get_box(f_ba,i),2))
        call set_box(f_ba,i,refine(get_box(c_ba,i),2))
-
     end do
 
     do i=1,dm
@@ -64,7 +61,28 @@ contains
        call build(f_mf,f_la,1,0,fine(i)%nodal)
        call build(c_mf,c_la,1,0,crse(i)%nodal)
 
-       call copy(c_mf,crse(i),ng=1)
+       call setval(c_mf, 6.66D66) ! We assume that c_mf is covered by crse(i)
+
+       ! update c_mf with valid and ghost regions from crse
+       call boxarray_build_copy(tba, get_boxarray(crse(i)))
+       do j = 1, nboxes(tba)
+          call set_box(tba,j,grow(get_box(crse(i),j),1))
+       end do
+       call build(tla, tba, get_pd(crse(i)%la), get_pmask(crse(i)%la), &
+            explicit_mapping=get_proc(crse(i)%la))
+       call destroy(tba)
+       call build(tcrse, tla, 1, 0, crse(i)%nodal)
+       do j=1,nboxes(tcrse)
+          if ( remote(tcrse,j) ) cycle
+          fp => dataptr(tcrse,  j)
+          cp => dataptr(crse(i),j)
+          fp = cp
+       end do
+
+       call copy(c_mf, tcrse)
+
+       call destroy(tcrse)
+       call destroy(tla)
 
        ! fill in some of the fine ghost cells from crse
        do j=1,nboxes(f_mf)
@@ -102,7 +120,34 @@ contains
           end select
        end do
 
-       call copy(fine(i),f_mf,ng=1)
+       ! update ghost regions of fine where they overlap with f_mf
+       call boxarray_build_copy(tba, get_boxarray(fine(i)))
+       do j = 1, nboxes(tba)
+          call set_box(tba,j,grow(get_box(fine(i),j),1))
+       end do
+       call build(tla, tba, get_pd(fine(i)%la), get_pmask(fine(i)%la), &
+            explicit_mapping=get_proc(fine(i)%la))
+       call destroy(tba)
+       call build(tfine, tla, 1, 0, fine(i)%nodal)
+
+       call setval(tfine, 6.66D66)
+
+       call copy(tfine, f_mf)
+ 
+       do j=1,nboxes(tfine)
+          if ( remote(tfine,j) ) cycle
+          call boxarray_box_diff(tba, get_ibox(tfine,j), get_ibox(fine(i),j))
+          do k = 1, nboxes(tba)
+             fp => dataptr(fine(i), j, get_box(tba,k))
+             cp => dataptr(tfine,   j, get_box(tba,k))
+             fp = cp
+          end do
+          call destroy(tba)
+       end do
+
+       call destroy(tfine)
+       call destroy(tla)
+
        call multifab_fill_boundary(fine(i))
 
        call destroy(f_mf)
