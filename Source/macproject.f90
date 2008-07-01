@@ -132,20 +132,17 @@ contains
        end do
     end if
 
-    ! haven't completed create_umac_grown() yet so using older version
-    if (.true.) then
-       call create_umac_grown_onesided(nlevs,umac)
-    else
+    if (nlevs .gt. 1) then
        do n=2,nlevs
           call create_umac_grown(n,umac(n,:),umac(n-1,:))
        end do
-    end if
-
-    do n = 1, nlevs
-       do i=1,dm
-          call multifab_fill_boundary(umac(n,i))
+    else
+       do n=1,nlevs
+          do i=1,dm
+             call multifab_fill_boundary(umac(n,i))
+          end do
        end do
-    end do
+    end if
     
     do n = 1, nlevs
        call destroy(rh(n))

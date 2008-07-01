@@ -19,7 +19,6 @@ contains
     integer        :: c_lo(fine(1)%dim),c_hi(fine(1)%dim)
     integer        :: f_lo(fine(1)%dim),f_hi(fine(1)%dim)
 
-
     type(fgassoc)  :: fgasc
     type(boxarray) :: f_ba,c_ba,tba
     type(multifab) :: f_mf,c_mf,tcrse,tfine
@@ -171,11 +170,27 @@ contains
     real(kind=dp_t), intent(inout) :: crse(c_lo(1):,c_lo(2):)
 
     ! local
-    integer :: i,j
+    integer :: i,ii,j,jj
 
-    if (dir .eq. 0) then
+    if (dir .eq. 1) then
+
+       do i=c_lo(1),c_hi(1)+1
+          do j=c_lo(2),c_hi(2)
+             do jj=0,1
+                fine(2*i,2*j+jj) = crse(i,j)
+             end do
+          end do
+       end do
 
     else
+
+       do i=c_lo(1),c_hi(1)
+          do j=c_lo(2),c_hi(2)+1
+             do ii=0,1
+                fine(2*i+ii,2*j) = crse(i,j)
+             end do
+          end do
+       end do
 
     end if    
 
@@ -188,11 +203,27 @@ contains
     real(kind=dp_t), intent(inout) :: crse(c_lo(1):,c_lo(2):)
 
     ! local
-    integer :: i,j
+    integer :: i,ii,j,jj
 
-    if (dir .eq. 0) then
+    if (dir .eq. 1) then
+
+       do i=c_lo(1),c_hi(1)
+          do j=c_lo(2),c_hi(2)
+             do jj=0,1
+                fine(2*i+1,2*j+jj) = HALF*(fine(2*i,2*j+jj)+fine(2*i+2,2*j+jj))
+             end do
+          end do
+       end do
 
     else
+
+       do i=c_lo(1),c_hi(1)
+          do j=c_lo(2),c_hi(2)
+             do ii=0,1
+                fine(2*i+ii,2*j+1) = HALF*(fine(2*i+ii,2*j)+fine(2*i+ii,2*j+2))
+             end do
+          end do
+       end do
 
     end if    
 
