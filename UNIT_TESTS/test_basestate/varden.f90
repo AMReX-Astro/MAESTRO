@@ -288,8 +288,12 @@ subroutine varden()
 
         force = ZERO
 
-        call make_edge_state_1d(1,X0,edge,w0,force,dx(:,1),dt)
-        
+        if (spherical .eq. 0) then
+           call make_edge_state_1d(1,X0,edge,w0,force,dx(:,1),dt)
+        else
+           call make_edge_state_1d(1,X0,edge,w0,force,dr,dt)
+        endif
+
         ! our final update needs (rho X)_0 on the edges, so compute
         ! that now
         edge(1,:) = rho0_predicted_edge(1,:)*edge(1,:)
