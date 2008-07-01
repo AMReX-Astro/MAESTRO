@@ -75,7 +75,7 @@ contains
 
     ! haven't completed create_umac_grown() yet so using older version
     if (.true.) then
-       call create_umac_grown_onesided(nlevs,utrans,.true.,.false.)
+       call create_umac_grown_onesided(nlevs,utrans,.false.)
        do n=1,nlevs
           do i=1,dm
              call multifab_fill_boundary(utrans(n,i))
@@ -83,7 +83,7 @@ contains
        end do
     else
        do n=2,nlevs
-          call create_umac_grown(n,utrans(n,:),utrans(n-1,:))
+          call create_umac_grown(n,utrans(n,:),utrans(n-1,:),.false.)
        end do
     end if
 

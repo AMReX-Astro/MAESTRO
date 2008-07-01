@@ -134,7 +134,7 @@ contains
 
     ! haven't completed create_umac_grown() yet so using older version
     if (.true.) then
-       call create_umac_grown_onesided(nlevs,umac,.true.,.true.)
+       call create_umac_grown_onesided(nlevs,umac,.true.)
        do n = 1, nlevs
           do i=1,dm
              call multifab_fill_boundary(umac(n,i))
@@ -142,7 +142,7 @@ contains
        end do
     else
        do n=2,nlevs
-          call create_umac_grown(n,umac(n,:),umac(n-1,:))
+          call create_umac_grown(n,umac(n,:),umac(n-1,:),.true.)
        end do
     end if
 

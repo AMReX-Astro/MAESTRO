@@ -8,15 +8,18 @@ module create_umac_grown_module
 
 contains
 
-  subroutine create_umac_grown(finelev,fine,crse)
+  subroutine create_umac_grown(finelev,fine,crse,do_trans)
 
     integer       , intent(in   ) :: finelev
     type(multifab), intent(inout) :: fine(:)
     type(multifab), intent(inout) :: crse(:)
+    logical       , intent(in   ) :: do_trans
 
     ! local
     integer        :: i,j,dm
-    integer        :: lo(fine(1)%dim)
+    integer        :: c_lo(fine(1)%dim),c_hi(fine(1)%dim)
+    integer        :: f_lo(fine(1)%dim),f_hi(fine(1)%dim)
+
 
     type(fgassoc)  :: fgasc
     type(boxarray) :: f_ba,c_ba
@@ -69,10 +72,13 @@ contains
           if ( remote(f_mf,j) ) cycle
           fp => dataptr(f_mf,j)
           cp => dataptr(c_mf,j)
-          lo = lwb(get_box(f_mf,j))
+          f_lo = lwb(get_box(f_mf,j))
+          f_hi = upb(get_box(f_mf,j))
+          c_lo = lwb(get_box(c_mf,j))
+          c_hi = upb(get_box(c_mf,j))
           select case(dm)
           case (2)
-
+             call pc_edge_interp_2d(i,f_lo,f_hi,c_lo,c_hi,fp(:,:,1,1),cp(:,:,1,1),do_trans)
           case (3)
 
           end select
@@ -85,10 +91,13 @@ contains
           if ( remote(f_mf,j) ) cycle
           fp => dataptr(f_mf,j)
           cp => dataptr(c_mf,j)
-          lo = lwb(get_box(f_mf,j))
+          f_lo = lwb(get_box(f_mf,j))
+          f_hi = upb(get_box(f_mf,j))
+          c_lo = lwb(get_box(c_mf,j))
+          c_hi = upb(get_box(c_mf,j))
           select case(dm)
           case (2)
-
+             call edge_interp_2d(i,f_lo,f_hi,c_lo,c_hi,fp(:,:,1,1),cp(:,:,1,1),do_trans)
           case (3)
 
           end select
@@ -111,11 +120,67 @@ contains
 
   end subroutine create_umac_grown
 
-  subroutine create_umac_grown_onesided(nlevs,umac,do_normal,do_trans)
+  subroutine pc_edge_interp_2d(dir,f_lo,f_hi,c_lo,c_hi,fine,crse,do_trans)
+
+    integer,         intent(in   ) :: dir,f_lo(:),f_hi(:),c_lo(:),c_hi(:)
+    real(kind=dp_t), intent(inout) :: fine(f_lo(1):,f_lo(2):)
+    real(kind=dp_t), intent(inout) :: crse(c_lo(1):,c_lo(2):)
+    logical,         intent(in   ) :: do_trans
+
+    ! local
+    integer :: i,j
+
+    ! do normal pieces
+    if (dir .eq. 0) then
+
+    else
+
+    end if    
+
+    ! do transverse pieces
+    if (do_trans) then
+       if (dir .eq. 0) then
+          
+       else
+          
+       end if
+    end if
+
+  end subroutine pc_edge_interp_2d
+
+  subroutine edge_interp_2d(dir,f_lo,f_hi,c_lo,c_hi,fine,crse,do_trans)
+
+    integer,         intent(in   ) :: dir,f_lo(:),f_hi(:),c_lo(:),c_hi(:)
+    real(kind=dp_t), intent(inout) :: fine(f_lo(1):,f_lo(2):)
+    real(kind=dp_t), intent(inout) :: crse(c_lo(1):,c_lo(2):)
+    logical,         intent(in   ) :: do_trans
+
+    ! local
+    integer :: i,j
+
+    ! do normal pieces
+    if (dir .eq. 0) then
+
+    else
+
+    end if    
+
+    ! do transverse pieces
+    if (do_trans) then
+       if (dir .eq. 0) then
+          
+       else
+          
+       end if
+    end if    
+
+  end subroutine edge_interp_2d
+
+  subroutine create_umac_grown_onesided(nlevs,umac,do_trans)
 
     integer       , intent(in   ) :: nlevs
     type(multifab), intent(inout) :: umac(:,:)
-    logical       , intent(in   ) :: do_normal, do_trans
+    logical       , intent(in   ) :: do_trans
 
     integer :: i,n,dm
     integer :: lo(umac(1,1)%dim),hi(umac(1,1)%dim)
@@ -136,39 +201,34 @@ contains
           hi = upb(get_box(umac(n,1), i))
           select case (dm)
           case (2)
-             call create_umac_grown_onesided_2d(ump(:,:,1,1),vmp(:,:,1,1),do_normal, &
-                                                do_trans,lo,hi)
+             call create_umac_grown_onesided_2d(ump(:,:,1,1),vmp(:,:,1,1),do_trans,lo,hi)
           case (3)
              call create_umac_grown_onesided_3d(ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1), &
-                                                do_normal,do_trans,lo,hi)
+                                                do_trans,lo,hi)
           end select
        end do
     end do
 
   end subroutine create_umac_grown_onesided
 
-  subroutine create_umac_grown_onesided_2d(umac,vmac,do_normal,do_trans,lo,hi)
+  subroutine create_umac_grown_onesided_2d(umac,vmac,do_trans,lo,hi)
 
     integer        , intent(in   ) :: lo(:),hi(:)
     real(kind=dp_t), intent(inout) :: umac(lo(1)-1:,lo(2)-1:)
     real(kind=dp_t), intent(inout) :: vmac(lo(1)-1:,lo(2)-1:)
-    logical        , intent(in   ) :: do_normal, do_trans
+    logical        , intent(in   ) :: do_trans
 
     integer i,j
 
-    if (do_normal) then
-
-       do j=lo(2),hi(2)
-          umac(lo(1)-1,j) = TWO*umac(lo(1),j) - umac(lo(1)+1,j)
-          umac(hi(1)+2,j) = TWO*umac(hi(1)+1,j) - umac(hi(1),j)
-       end do
-
-       do i=lo(1),hi(1)
-          vmac(i,lo(2)-1) = TWO*vmac(i,lo(2)) - vmac(i,lo(2)+1)
-          vmac(i,hi(2)+2) = TWO*vmac(i,hi(2)+1) - vmac(i,hi(2))
-       end do
-
-    end if
+    do j=lo(2),hi(2)
+       umac(lo(1)-1,j) = TWO*umac(lo(1),j) - umac(lo(1)+1,j)
+       umac(hi(1)+2,j) = TWO*umac(hi(1)+1,j) - umac(hi(1),j)
+    end do
+    
+    do i=lo(1),hi(1)
+       vmac(i,lo(2)-1) = TWO*vmac(i,lo(2)) - vmac(i,lo(2)+1)
+       vmac(i,hi(2)+2) = TWO*vmac(i,hi(2)+1) - vmac(i,hi(2))
+    end do
 
     if (do_trans) then
 
@@ -188,41 +248,37 @@ contains
 
   end subroutine create_umac_grown_onesided_2d
 
-  subroutine create_umac_grown_onesided_3d(umac,vmac,wmac,do_normal,do_trans,lo,hi)
+  subroutine create_umac_grown_onesided_3d(umac,vmac,wmac,do_trans,lo,hi)
 
     integer        , intent(in   ) :: lo(:),hi(:)
     real(kind=dp_t), intent(inout) :: umac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
     real(kind=dp_t), intent(inout) :: vmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
     real(kind=dp_t), intent(inout) :: wmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-    logical        , intent(in   ) :: do_normal, do_trans
+    logical        , intent(in   ) :: do_trans
 
     integer i,j,k
 
-    if (do_normal) then
-
+    do j=lo(2),hi(2)
+       do k=lo(3),hi(3)
+          umac(lo(1)-1,j,k) = TWO*umac(lo(1),j,k) - umac(lo(1)+1,j,k)
+          umac(hi(1)+2,j,k) = TWO*umac(hi(1)+1,j,k) - umac(hi(1),j,k)
+       end do
+    end do
+    
+    do i=lo(1),hi(1)
+       do k=lo(3),hi(3)
+          vmac(i,lo(2)-1,k) = TWO*vmac(i,lo(2),k) - vmac(i,lo(2)+1,k)
+          vmac(i,hi(2)+2,k) = TWO*vmac(i,hi(2)+1,k) - vmac(i,hi(2),k)
+       end do
+    end do
+    
+    do i=lo(1),hi(1)
        do j=lo(2),hi(2)
-          do k=lo(3),hi(3)
-             umac(lo(1)-1,j,k) = TWO*umac(lo(1),j,k) - umac(lo(1)+1,j,k)
-             umac(hi(1)+2,j,k) = TWO*umac(hi(1)+1,j,k) - umac(hi(1),j,k)
-          end do
+          wmac(i,j,lo(3)-1) = TWO*wmac(i,j,lo(3)) - wmac(i,j,lo(3)+1)
+          wmac(i,j,hi(3)+2) = TWO*wmac(i,j,hi(3)+1) - wmac(i,j,hi(3))
        end do
-
-       do i=lo(1),hi(1)
-          do k=lo(3),hi(3)
-             vmac(i,lo(2)-1,k) = TWO*vmac(i,lo(2),k) - vmac(i,lo(2)+1,k)
-             vmac(i,hi(2)+2,k) = TWO*vmac(i,hi(2)+1,k) - vmac(i,hi(2),k)
-          end do
-       end do
-
-       do i=lo(1),hi(1)
-          do j=lo(2),hi(2)
-             wmac(i,j,lo(3)-1) = TWO*wmac(i,j,lo(3)) - wmac(i,j,lo(3)+1)
-             wmac(i,j,hi(3)+2) = TWO*wmac(i,j,hi(3)+1) - wmac(i,j,hi(3))
-          end do
-       end do
-
-    end if
-
+    end do
+    
     if (do_trans) then
 
        ! use linear interpolation to fill fine level ghost cells needed for 
