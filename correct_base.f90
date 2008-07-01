@@ -31,7 +31,7 @@ contains
     
     do n=1,nlevs
        if (spherical .eq. 1) then
-          ! spherical is not updated.
+          call correct_base_state_spherical(n,rho0_new(n,0:),etarho(n,0:),dt)
        else
           call correct_base_state_planar(n,rho0_new(n,0:),etarho(n,0:),dz(n),dt)
        end if
@@ -64,5 +64,30 @@ contains
     end do
     
   end subroutine correct_base_state_planar
+
+  subroutine correct_base_state_spherical(n,rho0_new,etarho,dt)
+
+    use geometry, only: anelastic_cutoff_coord, r_start_coord, r_end_coord, &
+         r_cc_loc, r_edge_loc, dr
+
+    integer        , intent(in   ) :: n
+    real(kind=dp_t), intent(inout) :: rho0_new(0:)
+    real(kind=dp_t), intent(in   ) :: etarho(0:)
+    real(kind=dp_t), intent(in   ) :: dt
+    
+    ! Local variables
+    integer :: r
+   
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! UPDATE RHO0
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    do r=r_start_coord(n),anelastic_cutoff_coord(n)-1
+       rho0_new(r) = rho0_new(r) - dt/(r_cc_loc(n,r)**2)* &
+            (r_edge_loc(n,r+1)**2 * etarho(r+1) - &
+             r_edge_loc(n,r  )**2 * etarho(r  )) / dr(n)
+    end do
+    
+  end subroutine correct_base_state_spherical
   
 end module correct_base_module
