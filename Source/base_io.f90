@@ -11,7 +11,7 @@ module base_io_module
 contains
 
   subroutine write_base_state(nlevs,state_name,w0_name,etarho_name,chk_name, &
-                              rho0,rhoh0,p0,gamma1bar,w0,etarho,div_coeff,psi,problo)
+                              rho0,rhoh0,p0,gamma1bar,w0,etarho,etarho_cc,div_coeff,psi,problo)
     
     use parallel
     use bl_prof_module
@@ -28,7 +28,7 @@ contains
     real(kind=dp_t)  , intent(in) :: rho0(:,0:),rhoh0(:,0:)
     real(kind=dp_t)  , intent(in) :: p0(:,0:),gamma1bar(:,0:)
     real(kind=dp_t)  , intent(in) :: div_coeff(:,0:), psi(:,0:)
-    real(kind=dp_t)  , intent(in) :: w0(:,0:),etarho(:,0:)
+    real(kind=dp_t)  , intent(in) :: w0(:,0:),etarho(:,0:),etarho_cc(:,0:)
 
     real(kind=dp_t) :: base_r, problo
     character(len=20) :: out_name
@@ -53,7 +53,7 @@ contains
           do i=r_start_coord(n),r_end_coord(n)
              base_r = problo + (dble(i)+HALF) * dr(n)
              write(99,1000)  base_r, rho0(n,i), p0(n,i), gamma1bar(n,i), &
-                  rhoh0(n,i), div_coeff(n,i), psi(n,i)
+                  rhoh0(n,i), div_coeff(n,i), psi(n,i), etarho_cc(n,i)
           end do
        end do
        close(99)
@@ -96,7 +96,7 @@ contains
 
 
   subroutine read_base_state(nlevs,state_name,w0_name,etarho_name,chk_name, &
-                             rho0,rhoh0,p0,gamma1bar,w0,etarho,div_coeff,psi)
+                             rho0,rhoh0,p0,gamma1bar,w0,etarho,etarho_cc,div_coeff,psi)
 
     use parallel
     use bl_prof_module
@@ -113,7 +113,7 @@ contains
     real(kind=dp_t)  , intent(inout) :: rho0(:,0:),rhoh0(:,0:)
     real(kind=dp_t)  , intent(inout) :: p0(:,0:),gamma1bar(:,0:)
     real(kind=dp_t)  , intent(inout) :: div_coeff(:,0:), psi(:,0:)
-    real(kind=dp_t)  , intent(inout) :: w0(:,0:),etarho(:,0:)
+    real(kind=dp_t)  , intent(inout) :: w0(:,0:),etarho(:,0:),etarho_cc(:,0:)
 
     ! local
     real(kind=dp_t) :: r_dummy
@@ -135,7 +135,7 @@ contains
     do n=1,nlevs
        do i=r_start_coord(n),r_end_coord(n)
           read(99,*)  r_dummy, rho0(n,i), p0(n,i), gamma1bar(n,i), &
-               rhoh0(n,i), div_coeff(n,i), psi(n,i)
+               rhoh0(n,i), div_coeff(n,i), psi(n,i), etarho_cc(n,i)
        end do
     end do
     close(99)

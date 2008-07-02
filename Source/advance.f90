@@ -13,7 +13,7 @@ contains
                               rho0_new,rhoh0_new,p0_old,p0_new,tempbar,gamma1bar,w0, &
                               rho_omegadot2,div_coeff_old,div_coeff_new, &
                               grav_cell_old,dx,time,dt,dtold,the_bc_tower, &
-                              dSdt,Source_old,Source_new,etarho,psi,sponge,hgrhs,istep)
+                              dSdt,Source_old,Source_new,etarho,etarho_cc,psi,sponge,hgrhs,istep)
 
     use bl_prof_module
     use ml_layout_module
@@ -85,6 +85,7 @@ contains
     type(multifab),  intent(inout) :: Source_old(:)
     type(multifab),  intent(inout) :: Source_new(:)
     real(dp_t)    ,  intent(inout) :: etarho(:,0:)
+    real(dp_t)    ,  intent(inout) :: etarho_cc(:,0:)
     real(dp_t)    ,  intent(inout) :: psi(:,0:)
     type(multifab),  intent(in   ) :: sponge(:)
     type(multifab),  intent(inout) :: hgrhs(:)
