@@ -27,7 +27,7 @@ contains
   !---------------------------------------------------------------------------
   ! plane-parallel geometry routines
   !---------------------------------------------------------------------------
-  subroutine make_etarho_planar(nlevs,etarho,etarhoflux,mla)
+  subroutine make_etarho_planar(nlevs,etarho,etarho_cc,etarhoflux,mla)
 
     use bl_constants_module
     use geometry, only: spherical, nr_fine, r_start_coord, r_end_coord
@@ -35,6 +35,7 @@ contains
 
     integer           , intent(in   ) :: nlevs
     real(kind=dp_t)   , intent(inout) :: etarho(:,0:)
+    real(kind=dp_t)   , intent(inout) :: etarho_cc(:,0:)
     type(multifab)    , intent(inout) :: etarhoflux(:)
     type(ml_layout)   , intent(inout) :: mla
 
@@ -237,6 +238,13 @@ contains
 
     end if
 
+    ! make the cell-centered etarho_cc by averaging etarho to centers
+    do n=1,nlevs
+       do r=r_start_coord(n),r_end_coord(n)
+          etarho_cc(n,r) = HALF*(etarho(n,r) + etarho(n,r+1))
+       enddo
+    enddo
+
     deallocate(ncell)
     deallocate(etarhosum_proc,etarhosum)
     deallocate(etarhopert_proc,etarhopert)
@@ -388,7 +396,7 @@ contains
   ! spherical routines
   !---------------------------------------------------------------------------
   subroutine make_etarho_spherical(nlevs,sold,snew,umac,rho0_old,rho0_new, &
-                                   dx,normal,etarho,mla)
+                                   dx,normal,etarho,etarho_cc,mla)
 
     use bl_constants_module
     use geometry, only: spherical, nr_fine, r_end_coord, nr
@@ -402,6 +410,7 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     type(multifab) , intent(in   ) :: normal(:)
     real(kind=dp_t), intent(  out) :: etarho(:,0:)
+    real(kind=dp_t), intent(  out) :: etarho_cc(:,0:)
     type(ml_layout), intent(in   ) :: mla
 
     type(multifab) :: eta_cart(mla%nlevel)
@@ -413,10 +422,6 @@ contains
 
     integer :: n,i,lo(sold(1)%dim),hi(sold(1)%dim),ng_s
     integer :: r
-
-    real(kind=dp_t), allocatable :: etarho_cc(:,:)
-
-    allocate (etarho_cc(nlevs,0:nr_fine-1))
 
 
     ! construct a multifab containing  [ rho' (Utilde . e_r) ]
@@ -528,7 +533,7 @@ contains
        enddo
     enddo
 
-    deallocate (rho0_cart)
+    deallocate (rho0_cart,rho0_nph)
 
   end subroutine construct_eta_cart
 

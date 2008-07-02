@@ -538,9 +538,9 @@ contains
        if (use_etarho) then
 
           if (spherical .eq. 0) then
-             call make_etarho_planar(nlevs,etarho,etarhoflux,mla)
+             call make_etarho_planar(nlevs,etarho,etarho_cc,etarhoflux,mla)
           else
-             call make_etarho_spherical(nlevs,s1,s2,umac,rho0_old,rho0_new,dx,normal,etarho,mla)
+             call make_etarho_spherical(nlevs,s1,s2,umac,rho0_old,rho0_new,dx,normal,etarho,etarho_cc,mla)
           endif
 
        endif
@@ -944,9 +944,9 @@ contains
           if (use_etarho) then
 
              if (spherical .eq. 0) then
-                call make_etarho_planar(nlevs,etarho,etarhoflux,mla)
+                call make_etarho_planar(nlevs,etarho,etarho_cc,etarhoflux,mla)
              else
-                call make_etarho_spherical(nlevs,s1,s2,umac,rho0_old,rho0_new,dx,normal,etarho,mla)
+                call make_etarho_spherical(nlevs,s1,s2,umac,rho0_old,rho0_new,dx,normal,etarho,etarho_cc,mla)
              endif
 
           endif
