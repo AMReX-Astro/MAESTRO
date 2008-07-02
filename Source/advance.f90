@@ -535,10 +535,18 @@ contains
     ! Now compute the new etarho and psi
     if (evolve_base_state) then
        if (use_etarho) then
-          call make_etarho(nlevs,etarho,etarhoflux,mla)
+
+          if (spherical .eq. 0) then
+             call make_etarho(nlevs,etarho,etarhoflux,mla)
+          else
+             call make_etarho_spherical(nlevs,s1,s2,umac,rho0_old,rho0_new,dx,normal,etarho,mla)
+          endif
+
        endif
+
        call make_psi(nlevs,etarho,psi,w0,gamma1bar,p0_old,p0_new,Sbar)
     end if
+
 
     do n=1,nlevs
        call destroy(thermal(n))
@@ -933,8 +941,15 @@ contains
        ! Now compute the new etarho and psi
        if (evolve_base_state) then
           if (use_etarho) then
-             call make_etarho(nlevs,etarho,etarhoflux,mla)
+
+             if (spherical .eq. 0) then
+                call make_etarho(nlevs,etarho,etarhoflux,mla)
+             else
+                call make_etarho_spherical(nlevs,s1,s2,umac,rho0_old,rho0_new,dx,normal,etarho,mla)
+             endif
+
           endif
+
           call make_psi(nlevs,etarho,psi,w0,gamma1bar,p0_old,p0_new,Sbar)
        end if
 

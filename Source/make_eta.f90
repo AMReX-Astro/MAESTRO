@@ -9,7 +9,7 @@ module make_eta_module
 
   private
 
-  public :: make_etarho
+  public :: make_etarho, make_etarho_spherical
 
 contains
 
@@ -219,7 +219,7 @@ contains
        
     else
 
-       ! haven't written the spherical case yet
+       call bl_error("ERROR: make_eta should not be called for spherical")
 
     end if
 
@@ -368,5 +368,151 @@ contains
     end do
 
   end subroutine compute_etarhopert_3d
+
+
+  subroutine make_etarho_spherical(nlevs,sold,snew,umac,rho0_old,rho0_new, &
+                                   dx,normal,etarho,mla)
+
+    use bl_constants_module
+    use geometry, only: spherical, nr_fine, r_end_coord, nr
+    use variables
+    use average_module
+
+    integer        , intent(in   ) :: nlevs
+    type(multifab) , intent(in   ) :: umac(:,:)
+    type(multifab) , intent(in   ) :: sold(:), snew(:)
+    real(kind=dp_t), intent(in   ) :: rho0_old(:,0:), rho0_new(:,0:) 
+    real(kind=dp_t), intent(in   ) :: dx(:,:)
+    type(multifab) , intent(in   ) :: normal(:)
+    real(kind=dp_t), intent(  out) :: etarho(:,0:)
+    type(ml_layout), intent(in   ) :: mla
+
+    type(multifab) :: eta_cart(mla%nlevel)
+    
+    real(kind=dp_t), pointer :: ep(:,:,:,:)
+    real(kind=dp_t), pointer :: sop(:,:,:,:), snp(:,:,:,:)
+    real(kind=dp_t), pointer :: ump(:,:,:,:), vmp(:,:,:,:), wmp(:,:,:,:)
+    real(kind=dp_t), pointer :: np(:,:,:,:)
+
+    integer :: n,i,lo(sold(1)%dim),hi(sold(1)%dim),ng_s
+    integer :: r
+
+    real(kind=dp_t), allocatable :: etarho_cc(:,:)
+
+    allocate (etarho_cc(nlevs,0:nr_fine-1))
+
+
+    ! construct a multifab containing  [ rho' (Utilde . e_r) ]
+    ng_s = sold(1)%ng
+
+    do n=1,nlevs
+
+       call multifab_build(eta_cart(n), sold(n)%la, 1, 0)
+
+       do i=1,eta_cart(n)%nboxes
+          if ( multifab_remote(eta_cart(n),i) ) cycle
+
+          ep  => dataptr(eta_cart(n), i)
+          sop => dataptr(sold(n), i)
+          snp => dataptr(snew(n), i)
+          ump => dataptr(umac(n,1), i)
+          vmp => dataptr(umac(n,2), i)
+          wmp => dataptr(umac(n,3), i)
+          np  => dataptr(normal(n), i)
+
+          lo = lwb(get_box(eta_cart(n),i))
+          hi = lwb(get_box(eta_cart(n),i))
+
+          call construct_eta_cart(n, sop(:,:,:,rho_comp), snp(:,:,:,rho_comp), &
+                                  ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
+                                  np(:,:,:,:), ep(:,:,:,1), &
+                                  rho0_old(n,:), rho0_new(n,:), &
+                                  dx(n,:), lo, hi, ng_s)
+          
+       enddo
+
+    enddo
+    
+    ! average 
+    call average(mla,eta_cart,etarho_cc,dx,1)
+
+
+    do n=1,nlevs
+       call destroy(eta_cart(n))
+    enddo
+
+    ! put eta on base state edges -- here we are assuming that there
+    ! is no refinement
+    do n=1,nlevs
+       
+       ! the 0th value of etarho = 0, since Utilde . e_r must be 
+       ! zero at the center (since e_r is not defined there)
+       etarho(n,0) = ZERO
+       do r=1, nr(n)-1
+          etarho(n,r) = HALF*(etarho_cc(n,r) + etarho_cc(n,r-1))
+       enddo
+
+       ! probably should do some better extrapolation here eventually
+       etarho(n,nr(n)) = etarho_cc(n,nr(n)-1)
+
+    enddo
+
+  end subroutine make_etarho_spherical
+
+  subroutine construct_eta_cart(n, rho_old, rho_new, &
+                                umac, vmac, wmac, &
+                                normal, eta_cart, &
+                                rho0_old, rho0_new, dx, lo, hi, ng)
+
+    use bl_constants_module
+    use geometry, only: nr_fine
+    use fill_3d_module
+
+    integer        , intent(in   ) :: n,lo(:),hi(:),ng
+    real(kind=dp_t), intent(in   ) ::  rho_old(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
+    real(kind=dp_t), intent(in   ) ::  rho_new(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
+    real(kind=dp_t), intent(in   ) ::     umac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)    
+    real(kind=dp_t), intent(in   ) ::     vmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)    
+    real(kind=dp_t), intent(in   ) ::     wmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)    
+    real(kind=dp_t), intent(in   ) ::   normal(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
+    real(kind=dp_t), intent(inout) :: eta_cart(lo(1):,lo(2):,lo(3):)
+    real(kind=dp_t), intent(in   ) :: rho0_old(0:), rho0_new(0:)
+    real(kind=dp_t), intent(in   ) :: dx(:)
+
+    real(kind=dp_t), allocatable :: rho0_nph(:)
+    real(kind=dp_t), allocatable :: rho0_cart(:,:,:,:)
+
+    real(kind=dp_t) :: Utilde_dot_er
+    integer :: i,j,k,r
+
+    ! put the time-centered base state density on a Cartesian patch.
+    allocate(rho0_nph(0:nr_fine-1))
+    do r = 0, nr_fine-1
+       rho0_nph(r) = HALF*(rho0_old(r) + rho0_new(r))
+    enddo
+
+    allocate(rho0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
+    call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,rho0_nph,rho0_cart,lo,hi,dx,0)
+
+
+    ! construct time-centered [ rho' (Utilde . e_r) ]
+    do k = lo(3),hi(3)
+       do j = lo(2),hi(2)
+          do i = lo(1),hi(1)
+
+             Utilde_dot_er = HALF*(umac(i,j,k) + umac(i+1,j,k)) * normal(i,j,k,1) + &
+                             HALF*(vmac(i,j,k) + vmac(i,j+1,k)) * normal(i,j,k,2) + &
+                             HALF*(wmac(i,j,k) + wmac(i,j,k+1)) * normal(i,j,k,3)
+
+             eta_cart(i,j,k) = (HALF*(rho_old(i,j,k) + rho_new(i,j,k)) - &
+                                rho0_cart(i,j,k,1)) * Utilde_dot_er
+
+          enddo
+       enddo
+    enddo
+
+    deallocate (rho0_cart)
+
+  end subroutine construct_eta_cart
 
 end module make_eta_module
