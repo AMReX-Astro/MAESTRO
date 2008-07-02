@@ -178,8 +178,8 @@ contains
 
     if (dir .eq. 1) then
 
-       do i=c_lo(1),c_hi(1)+1
-          do j=c_lo(2),c_hi(2)
+       do j=c_lo(2),c_hi(2)
+          do i=c_lo(1),c_hi(1)+1
              do jj=0,1
                 fine(2*i,2*j+jj) = crse(i,j)
              end do
@@ -188,8 +188,8 @@ contains
 
     else
 
-       do i=c_lo(1),c_hi(1)
-          do j=c_lo(2),c_hi(2)+1
+       do j=c_lo(2),c_hi(2)+1
+          do i=c_lo(1),c_hi(1)
              do ii=0,1
                 fine(2*i+ii,2*j) = crse(i,j)
              end do
@@ -210,8 +210,8 @@ contains
 
     if (dir .eq. 1) then
 
-       do i=c_lo(1),c_hi(1)
-          do j=c_lo(2),c_hi(2)
+       do j=c_lo(2),c_hi(2)
+          do i=c_lo(1),c_hi(1)
              do jj=0,1
                 fine(2*i+1,2*j+jj) = HALF*(fine(2*i,2*j+jj)+fine(2*i+2,2*j+jj))
              end do
@@ -220,8 +220,8 @@ contains
 
     else
 
-       do i=c_lo(1),c_hi(1)
-          do j=c_lo(2),c_hi(2)
+       do j=c_lo(2),c_hi(2)
+          do i=c_lo(1),c_hi(1)
              do ii=0,1
                 fine(2*i+ii,2*j+1) = HALF*(fine(2*i+ii,2*j)+fine(2*i+ii,2*j+2))
              end do
