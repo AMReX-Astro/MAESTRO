@@ -481,8 +481,8 @@ contains
           do j = js-1, je+1 
              
              if (use_new_godunov) then
-                splft = s(i,j  ,comp) + (HALF - dth*max(ZERO,u(i  ,j,1))/hx) * slopex(i  ,j,1)
-                sprgt = s(i+1,j,comp) - (HALF + dth*min(ZERO,u(i+1,j,1))/hx) * slopex(i+1,j,1)
+                splft = s(i,j  ,comp) + (HALF - dth*max(ZERO,u(i  ,j,1))/hx)*slopex(i  ,j,1)
+                sprgt = s(i+1,j,comp) - (HALF + dth*min(ZERO,u(i+1,j,1))/hx)*slopex(i+1,j,1)
              else
                 splft = s(i,j  ,comp) + (HALF - dth*u(i  ,j,1)/hx) * slopex(i  ,j,1)
                 sprgt = s(i+1,j,comp) - (HALF + dth*u(i+1,j,1)/hx) * slopex(i+1,j,1)
@@ -509,8 +509,8 @@ contains
              splus = merge(splus, savg, abs(utrans(i+1,j)) .gt. eps)
              
              if (use_new_godunov) then
-                smrgt = s(i  ,j,comp) - (HALF + dth*min(ZERO,u(i  ,j,1))/hx) * slopex(i  ,j,1)
-                smlft = s(i-1,j,comp) + (HALF - dth*max(ZERO,u(i-1,j,1))/hx) * slopex(i-1,j,1)
+                smrgt = s(i  ,j,comp) - (HALF + dth*min(ZERO,u(i  ,j,1))/hx)*slopex(i  ,j,1)
+                smlft = s(i-1,j,comp) + (HALF - dth*max(ZERO,u(i-1,j,1))/hx)*slopex(i-1,j,1)
              else
                 smrgt = s(i  ,j,comp) - (HALF + dth*u(i  ,j,1)/hx) * slopex(i  ,j,1)
                 smlft = s(i-1,j,comp) + (HALF - dth*u(i-1,j,1)/hx) * slopex(i-1,j,1)
@@ -540,7 +540,10 @@ contains
              
              if (is_vel .and. comp .eq. 2) then
                 ! vtrans contains w0 so we need to subtract it off
-                st = st - HALF * (vtrans(i,j)+vtrans(i,j+1)-w0(j+1)-w0(j))*(w0(j+1)-w0(j))/hy
+                if (j .ge. 0 .and. j .le. nr(n)-1) then
+                   st = st - HALF * &
+                        (vtrans(i,j)+vtrans(i,j+1)-w0(j+1)-w0(j))*(w0(j+1)-w0(j))/hy
+                end if
              end if
 
              if (j .ge. 0 .and. j .le. nr(n)-1) then
@@ -644,7 +647,7 @@ contains
     use bc_module
     use slope_module
     use bl_constants_module
-    use geometry, only: spherical, r_start_coord, r_end_coord
+    use geometry, only: spherical, r_start_coord, r_end_coord, nr
 
     integer        , intent(in   ) :: n, lo(:)
     real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
@@ -1338,10 +1341,12 @@ contains
 
                     if (spherical .eq. 0 .and. comp .eq. 3) then
 
-                       ! wtrans contains w0 so we need to subtract it off
-                       st = st - HALF * (wtrans(i,j,k)+wtrans(i,j,k+1)- &
-                            w0_cart_vec(i,j,k+1,3)-w0_cart_vec(i,j,k,3))* &
-                            (w0_cart_vec(i,j,k+1,3)-w0_cart_vec(i,j,k,3))/hz
+                       if (k .ge. 0 .and. k .le. nr(n)) then
+                          ! wtrans contains w0 so we need to subtract it off
+                          st = st - HALF * (wtrans(i,j,k)+wtrans(i,j,k+1)- &
+                               w0_cart_vec(i,j,k+1,3)-w0_cart_vec(i,j,k,3))* &
+                               (w0_cart_vec(i,j,k+1,3)-w0_cart_vec(i,j,k,3))/hz
+                       end if
 
                     else if (spherical .eq. 1) then
 
