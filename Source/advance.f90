@@ -533,8 +533,10 @@ contains
     end if
 
     ! Now compute the new etarho and psi
-    if (use_etarho .and. evolve_base_state) then
-       call make_etarho(nlevs,etarho,etarhoflux,mla)
+    if (evolve_base_state) then
+       if (use_etarho) then
+          call make_etarho(nlevs,etarho,etarhoflux,mla)
+       endif
        call make_psi(nlevs,etarho,psi,w0,gamma1bar,p0_old,p0_new,Sbar)
     end if
 
@@ -929,8 +931,10 @@ contains
        end if
 
        ! Now compute the new etarho and psi
-       if (use_etarho .and. evolve_base_state) then
-          call make_etarho(nlevs,etarho,etarhoflux,mla)
+       if (evolve_base_state) then
+          if (use_etarho) then
+             call make_etarho(nlevs,etarho,etarhoflux,mla)
+          endif
           call make_psi(nlevs,etarho,psi,w0,gamma1bar,p0_old,p0_new,Sbar)
        end if
 
