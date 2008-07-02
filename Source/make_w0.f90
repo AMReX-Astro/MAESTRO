@@ -17,7 +17,7 @@ module make_w0_module
 contains
 
   subroutine make_w0(nlevs,vel,vel_old,f,Sbar_in,rho0,p0_old,p0_new, &
-                     gamma1bar_old,gamma1bar_new,delta_p0_ptherm_bar,psi,dt,dtold)
+                     gamma1bar_old,gamma1bar_new,delta_p0_ptherm_bar,psi,etarho,etarh0_cc,dt,dtold)
 
     use parallel
     use bl_prof_module
@@ -29,6 +29,8 @@ contains
     real(kind=dp_t), intent(  out) :: vel(:,0:)
     real(kind=dp_t), intent(in   ) :: vel_old(:,0:)
     real(kind=dp_t), intent(in   ) :: psi(:,0:)
+    real(kind=dp_t), intent(in   ) :: etarho(:,0:)
+    real(kind=dp_t), intent(in   ) :: etarho_cc(:,0:)
     real(kind=dp_t), intent(inout) :: f(:,0:)
     real(kind=dp_t), intent(in   ) :: rho0(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:), p0_new(:,0:)

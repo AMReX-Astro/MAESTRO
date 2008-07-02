@@ -299,7 +299,7 @@ contains
        call average(mla,Source_nph,Sbar,dx,1)
 
        call make_w0(nlevs,w0,w0_old,w0_force,Sbar,rho0_old,p0_old,p0_old, &
-                    gamma1bar,gamma1bar,delta_p0_ptherm_bar,psi,dt,dtold)
+                    gamma1bar,gamma1bar,delta_p0_ptherm_bar,psi,etarho,etarho_cc,dt,dtold)
 
        if (dm .eq. 3) then
           call put_1d_array_on_cart(nlevs,w0,w0_cart_vec,1,.true.,.true.,dx, &
@@ -770,7 +770,7 @@ contains
           end if
 
           call make_w0(nlevs,w0,w0_old,w0_force,Sbar,rho0_new,p0_old,p0_new, &
-                       gamma1bar_old,gamma1bar,delta_p0_ptherm_bar,psi,dt,dtold)
+                       gamma1bar_old,gamma1bar,delta_p0_ptherm_bar,psi,etarho,etarho_cc,dt,dtold)
        
           if (dm .eq. 3) then
              call put_1d_array_on_cart(nlevs,w0,w0_cart_vec,1,.true.,.true.,dx, &
