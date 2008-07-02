@@ -55,14 +55,16 @@ contains
        call build(f_la,f_ba,get_pd(fine(i)%la),get_pmask(fine(i)%la))
        call build(c_la,c_ba,get_pd(crse(i)%la),get_pmask(crse(i)%la), &
                   explicit_mapping=get_proc(f_la))
-
-       ! create coarse and fine nodal multifabs on the same proc
+       !
+       ! Create coarse and fine nodal multifabs on the same proc.
+       !
        call build(f_mf,f_la,1,0,fine(i)%nodal)
        call build(c_mf,c_la,1,0,crse(i)%nodal)
 
        call setval(c_mf, 6.66D66) ! We assume that c_mf is covered by crse(i)
-
-       ! update c_mf with valid and ghost regions from crse
+       !
+       ! Update c_mf with valid and ghost regions from crse.
+       !
        call boxarray_build_copy(tba, get_boxarray(crse(i)))
        do j = 1, nboxes(tba)
           call set_box(tba,j,grow(get_box(crse(i),j),1))
@@ -82,8 +84,9 @@ contains
 
        call destroy(tcrse)
        call destroy(tla)
-
-       ! fill in some of the fine ghost cells from crse
+       !
+       ! Fill in some of the fine ghost cells from crse.
+       !
        do j=1,nboxes(f_mf)
           if ( remote(f_mf,j) ) cycle
           fp => dataptr(f_mf,j)
@@ -101,8 +104,9 @@ contains
        end do
 
        call copy(f_mf,fine(i))
-
-       ! fill in the rest of the fine ghost cells
+       !
+       ! Fill in the rest of the fine ghost cells.
+       !
        do j=1,nboxes(f_mf)
           if ( remote(f_mf,j) ) cycle
           fp => dataptr(f_mf,j)
@@ -113,13 +117,17 @@ contains
           c_hi = upb(get_box(c_mf,j))
           select case(dm)
           case (2)
-             call edge_interp_2d(i,f_lo,f_hi,c_lo,c_hi,fp(:,:,1,1),cp(:,:,1,1))
+             call edge_interp_2d(i,f_lo,f_hi,c_lo,c_hi,fp(:,:,1,1))
           case (3)
 
           end select
        end do
 
-       ! update ghost regions of fine where they overlap with f_mf
+       call destroy(c_mf)
+       call destroy(c_la)
+       !
+       ! Update ghost regions of fine where they overlap with f_mf.
+       !
        call boxarray_build_copy(tba, get_boxarray(fine(i)))
        do j = 1, nboxes(tba)
           call set_box(tba,j,grow(get_box(fine(i),j),1))
@@ -132,6 +140,9 @@ contains
        call setval(tfine, 6.66D66)
 
        call copy(tfine, f_mf)
+
+       call destroy(f_mf)
+       call destroy(f_la)
  
        do j=1,nboxes(tfine)
           if ( remote(tfine,j) ) cycle
@@ -148,13 +159,6 @@ contains
        call destroy(tla)
 
        call multifab_fill_boundary(fine(i))
-
-       call destroy(f_mf)
-       call destroy(c_mf)
-
-       call destroy(f_la)
-       call destroy(c_la)
-
     end do
 
     call destroy(f_ba)
@@ -196,11 +200,10 @@ contains
 
   end subroutine pc_edge_interp_2d
 
-  subroutine edge_interp_2d(dir,f_lo,f_hi,c_lo,c_hi,fine,crse)
+  subroutine edge_interp_2d(dir,f_lo,f_hi,c_lo,c_hi,fine)
 
     integer,         intent(in   ) :: dir,f_lo(:),f_hi(:),c_lo(:),c_hi(:)
     real(kind=dp_t), intent(inout) :: fine(f_lo(1):,f_lo(2):)
-    real(kind=dp_t), intent(inout) :: crse(c_lo(1):,c_lo(2):)
 
     ! local
     integer :: i,ii,j,jj
