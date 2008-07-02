@@ -26,3 +26,7 @@
    enthalpy update for spherical, so we are using an old one -- this 
    is probably not consistent.
 
+-- psi is cell-centered by allocated in varden and divu_iter as 
+   edge-centered
+
+-- update Gconst to the latest accepted value
