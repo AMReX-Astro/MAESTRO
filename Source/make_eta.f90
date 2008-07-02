@@ -244,7 +244,7 @@ contains
 
     call destroy(bpt)
 
-  end subroutine make_etarho
+  end subroutine make_etarho_planar
 
   subroutine sum_etarho_coarsest_2d(lo,hi,domhi,etarhoflux,etarhosum)
 
