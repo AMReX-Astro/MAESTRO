@@ -4,8 +4,6 @@ module make_grav_module
 
   implicit none
 
-  real(kind=dp_t), parameter :: Gconst = 6.6725985E-8_dp_t
-
   private
 
   public :: make_grav_cell, make_grav_edge
@@ -17,7 +15,7 @@ contains
     use bl_constants_module
     use geometry, only: spherical, nr_fine, r_cc_loc, r_edge_loc, r_end_coord
     use probin_module, only: grav_const, base_cutoff_density
-
+    use maestro_constants_module, only: Gconst
 
     ! compute the base state gravitational acceleration at the cell
     ! centers.  The base state uses 0-based indexing, so grav_cell 
@@ -87,7 +85,7 @@ contains
   use bl_constants_module
   use geometry, only: spherical, r_edge_loc, r_end_coord
   use probin_module, only: grav_const, base_cutoff_density
-
+  use maestro_constants_module, only: Gconst
 
     ! compute the base state gravity at the cell edges (grav_edge(1)
     ! is the gravitational acceleration at the left edge of zone 1).
