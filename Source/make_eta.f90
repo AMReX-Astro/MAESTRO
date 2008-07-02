@@ -1,4 +1,15 @@
-! Compute etarho
+! Compute eta_rho = Avg { rho' Utilde.e_r }  (see paper III, Eq. 30)
+!
+! For plane-parallel geometries, we compute eta_rho by averaging up 
+! interface fluxes (etarho_flux) created in mkflux.
+!
+! For spherical geometries, we construct a multifab containing 
+! { rho' Utilde.e_r } and use the average routine to put it in cell-centers 
+! on the base state.
+!
+! We keep make two quantities here: etarho is edge-centered and etarho_cc
+! is cell-centered.  Only spherical (in make_w0) needs the cell-centered
+! quantity.
 
 module make_eta_module
 
@@ -9,11 +20,14 @@ module make_eta_module
 
   private
 
-  public :: make_etarho, make_etarho_spherical
+  public :: make_etarho_planar, make_etarho_spherical
 
 contains
 
-  subroutine make_etarho(nlevs,etarho,etarhoflux,mla)
+  !---------------------------------------------------------------------------
+  ! plane-parallel geometry routines
+  !---------------------------------------------------------------------------
+  subroutine make_etarho_planar(nlevs,etarho,etarhoflux,mla)
 
     use bl_constants_module
     use geometry, only: spherical, nr_fine, r_start_coord, r_end_coord
@@ -370,6 +384,9 @@ contains
   end subroutine compute_etarhopert_3d
 
 
+  !---------------------------------------------------------------------------
+  ! spherical routines
+  !---------------------------------------------------------------------------
   subroutine make_etarho_spherical(nlevs,sold,snew,umac,rho0_old,rho0_new, &
                                    dx,normal,etarho,mla)
 
