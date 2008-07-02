@@ -17,7 +17,7 @@ module make_w0_module
 contains
 
   subroutine make_w0(nlevs,vel,vel_old,f,Sbar_in,rho0,p0_old,p0_new, &
-                     gamma1bar_old,gamma1bar_new,delta_p0_ptherm_bar,psi,etarho,etarh0_cc,dt,dtold)
+                     gamma1bar_old,gamma1bar_new,delta_p0_ptherm_bar,psi,etarho,etarho_cc,dt,dtold)
 
     use parallel
     use bl_prof_module
