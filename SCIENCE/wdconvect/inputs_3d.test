@@ -56,7 +56,7 @@
  dpdt_factor = 0.0
 
  use_eos_coulomb = T
-
+ use_etarho = F
  plot_trac = F
 
 /
