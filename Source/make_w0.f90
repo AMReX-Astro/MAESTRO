@@ -60,6 +60,7 @@ contains
                                  rho0(n,:),p0_old(n,0:),p0_new(n,0:), &
                                  gamma1bar_old(n,0:),gamma1bar_new(n,0:), &
                                  delta_p0_ptherm_bar(n,0:), &
+                                 etarho(n,0:),etarho_cc(n,0:), &
                                  f(n,0:),dt,dtold)
        end do
 
@@ -194,12 +195,14 @@ contains
   end subroutine make_w0_planar
 
   subroutine make_w0_spherical(n,vel,vel_old,Sbar_in,rho0,p0,p0_new, &
-                               gamma1bar,gamma1bar_new,delta_p0_ptherm_bar,f,dt,dtold)
+                               gamma1bar,gamma1bar_new,delta_p0_ptherm_bar, &
+                               etarho,etarho_cc,f,dt,dtold)
 
     use geometry, only: r_cc_loc, nr_fine, r_edge_loc, dr, r_end_coord
     use make_grav_module
     use cell_to_edge_module
     use bl_constants_module
+    use maestro_constants_module, only: Gconst
     use probin_module, only: dpdt_factor, base_cutoff_density
 
     integer        , intent(in   ) :: n
@@ -208,6 +211,7 @@ contains
     real(kind=dp_t), intent(in   ) :: Sbar_in(0:)
     real(kind=dp_t), intent(in   ) :: rho0(0:),p0(0:),p0_new(0:),gamma1bar(0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar_new(0:),delta_p0_ptherm_bar(0:)
+    real(kind=dp_t), intent(in   ) :: etarho(0:),etarho_cc(0:)
     real(kind=dp_t), intent(inout) ::   f(0:)
     real(kind=dp_t), intent(in   ) :: dt,dtold
 
@@ -219,6 +223,7 @@ contains
     real(kind=dp_t), allocatable :: m(:)
     real(kind=dp_t)              :: vel_avg, div_avg, dt_avg
     real(kind=dp_t), allocatable :: vel_bar(:)
+    real(kind=dp_t), allocatable :: grav_edge(:)
 
     real(kind=dp_t), parameter :: eps = 1.d-8
 
@@ -234,6 +239,7 @@ contains
     ! Edge-centered
     allocate(c(0:nr_fine),d(0:nr_fine),e(0:nr_fine),rhs(0:nr_fine),u(0:nr_fine))
     allocate(vel_bar(0:nr_fine))
+    allocate(grav_edge(0:nr_fine))
 
     ! NOTE:  we first solve for the w0 resulting only from Sbar -- then we will
     ! solve for the update to w0.  We integrate d/dr (r^2 w0) = (r^2 Sbar)
@@ -259,6 +265,8 @@ contains
     end do
 
 
+    ! make the edge-centered gravity
+    call make_grav_edge(n,grav_edge,rho0)
 
     ! NOTE:  now we solve for the remainder of (r^2 * w0)
 
@@ -291,7 +299,11 @@ contains
 
     do r = 1,r_end_coord(n)
        dpdr = (p0(r)-p0(r-1))/dr(n)
-       rhs(r) = four * dpdr * vel_bar(r) / r_edge_loc(n,r)
+       rhs(r) = four * dpdr * vel_bar(r) / r_edge_loc(n,r) - &
+            grav_edge(r) * (r_cc_loc(n,r  )**2 * etarho_cc(r  ) - &
+                            r_cc_loc(n,r-1)**2 * etarho_cc(r-1)) / &
+                           (dr(n) * r_edge_loc(n,r)**2) - &
+            four * M_PI * Gconst * HALF * (rho0(r) + rho0(r-1)) * etarho(r)
     end do
 
     ! Lower boundary
