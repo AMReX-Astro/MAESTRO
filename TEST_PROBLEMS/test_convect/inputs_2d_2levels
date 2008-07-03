@@ -3,6 +3,7 @@
 
  test_set = "gr0_2d_2levels"
  spherical_in = 0
+ plot_base = T
 
  prob_hi_x = 2.5e8
  prob_hi_y = 4.0e8
@@ -15,7 +16,7 @@
  stop_time = 10.00
 
  plot_int  = 25
- chk_int   = 200
+ chk_int   = 25
 
  cflfac = 0.5
  init_shrink = 1.
