@@ -60,7 +60,7 @@ contains
 
     allocate(Sbar                (nlevs,0:nr_fine-1))
     allocate(delta_gamma1_termbar(nlevs,0:nr_fine-1))
-    allocate(psi                 (nlevs,0:nr_fine))
+    allocate(psi                 (nlevs,0:nr_fine-1))
 
     Sbar = ZERO
     psi = ZERO
