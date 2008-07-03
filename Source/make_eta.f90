@@ -443,7 +443,7 @@ contains
           np  => dataptr(normal(n), i)
 
           lo = lwb(get_box(eta_cart(n),i))
-          hi = lwb(get_box(eta_cart(n),i))
+          hi = upb(get_box(eta_cart(n),i))
 
           call construct_eta_cart(n, sop(:,:,:,rho_comp), snp(:,:,:,rho_comp), &
                                   ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
