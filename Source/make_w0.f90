@@ -231,15 +231,31 @@ contains
 
     real(kind=dp_t) :: volume_discrepancy
 
+    real(kind=dp_t), allocatable :: gamma1bar_nph(:), rho0_nph(:), p0_nph(:)
+
     ! Cell-centered
     allocate(m          (0:nr_fine-1))
     allocate(vel_old_cen(0:nr_fine-1))
     allocate(vel_new_cen(0:nr_fine-1))
 
+    allocate(gamma1bar_nph(0:nr_fine-1))
+    allocate(     rho0_nph(0:nr_fine-1))
+    allocate(       p0_nph(0:nr_fine-1))
+
+
     ! Edge-centered
     allocate(c(0:nr_fine),d(0:nr_fine),e(0:nr_fine),rhs(0:nr_fine),u(0:nr_fine))
     allocate(vel_bar(0:nr_fine))
     allocate(grav_edge(0:nr_fine))
+
+
+    ! create time-centered base-state quantities
+    do r = 0, r_end_coord(n)
+       p0_nph(r)        = HALF*(p0(r)        + p0_new(r))
+       rho0_nph(r)      = HALF*(rho0(r)      + rho0_new(r))
+       gamma1bar_nph(r) = HALF*(gamma1bar(r) + gamma1bar_new(r))       
+    enddo
+
 
     ! NOTE:  we first solve for the w0 resulting only from Sbar -- then we will
     ! solve for the update to w0.  We integrate d/dr (r^2 w0) = (r^2 Sbar)
@@ -255,9 +271,8 @@ contains
 
        vel_bar(r) = vel_bar(r-1) + dr(n) * Sbar_in(r-1) * r_cc_loc(n,r-1)**2 - &
             dr(n)* volume_discrepancy * r_cc_loc(n,r-1)**2 / &
-            (0.25d0*(gamma1bar(r-1) + gamma1bar_new(r-1))*(p0(r-1) + p0_new(r-1)))
+            (gamma1bar_nph(r-1)*p0_nph(r-1))
 
-!       print *, r, vel_bar(r), Sbar_in(r-1), volume_discrepancy/(gamma1bar(r-1)*p0(r-1))
     end do
 
     do r = 1,r_end_coord(n)+1
@@ -266,7 +281,7 @@ contains
 
 
     ! make the edge-centered gravity
-    call make_grav_edge(n,grav_edge,rho0)
+    call make_grav_edge(n,grav_edge,rho0_nph)
 
     ! NOTE:  now we solve for the remainder of (r^2 * w0)
 
@@ -279,31 +294,31 @@ contains
     ! Note that we are solving for (r^2 w0), not just w0. 
 
     do r=1,r_end_coord(n)+1
-       c(r) = gamma1bar(r-1) * p0(r-1) / r_cc_loc(n,r-1)**2
+       c(r) = gamma1bar_nph(r-1) * p0_nph(r-1) / r_cc_loc(n,r-1)**2
        c(r) = c(r) / dr(n)**2
     end do
 
     do r=1,r_end_coord(n)
 
-       d(r) = -( gamma1bar(r-1) * p0(r-1) / r_cc_loc(n,r-1)**2 &
-                +gamma1bar(r  ) * p0(r  ) / r_cc_loc(n,r  )**2 ) / dr(n)**2 
+       d(r) = -( gamma1bar_nph(r-1) * p0_nph(r-1) / r_cc_loc(n,r-1)**2 &
+                +gamma1bar_nph(r  ) * p0_nph(r  ) / r_cc_loc(n,r  )**2 ) / dr(n)**2 
 
-       dpdr = (p0(r)-p0(r-1))/dr(n)
+       dpdr = (p0_nph(r)-p0_nph(r-1))/dr(n)
        d(r) = d(r) - four * dpdr / (r_edge_loc(n,r))**3
     end do
 
     do r = 0,r_end_coord(n)
-       e(r) = gamma1bar(r) * p0(r) / r_cc_loc(n,r)**2
+       e(r) = gamma1bar_nph(r) * p0_nph(r) / r_cc_loc(n,r)**2
        e(r) = e(r) / dr(n)**2
     end do
 
     do r = 1,r_end_coord(n)
-       dpdr = (p0(r)-p0(r-1))/dr(n)
+       dpdr = (p0_nph(r)-p0_nph(r-1))/dr(n)
        rhs(r) = four * dpdr * vel_bar(r) / r_edge_loc(n,r) - &
             grav_edge(r) * (r_cc_loc(n,r  )**2 * etarho_cc(r  ) - &
                             r_cc_loc(n,r-1)**2 * etarho_cc(r-1)) / &
                            (dr(n) * r_edge_loc(n,r)**2) - &
-            four * M_PI * Gconst * HALF * (rho0(r) + rho0(r-1)) * etarho(r)
+            four * M_PI * Gconst * HALF * (rho0_nph(r) + rho0_nph(r-1)) * etarho(r)
     end do
 
     ! Lower boundary
