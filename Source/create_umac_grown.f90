@@ -150,8 +150,7 @@ contains
        call destroy(tfine)
        call destroy(tla)
 
-       ! now fix up the "transverse" terms because we've done piecewise constant
-       ! interpolation from the coarser level
+       ! now fix up umac grown due to the low order interpolation we used
        do j=1,fine(i)%nboxes
           if ( multifab_remote(fine(i), j) ) cycle
           fp => dataptr(fine(i), j)
@@ -159,7 +158,7 @@ contains
           f_hi = upb(get_box(fine(i), j))
           select case(dm)
           case (2)
-             call correct_trans_terms_2d(fp(:,:,1,1),f_lo,f_hi,i)
+             call correct_umac_grown_2d(fp(:,:,1,1),f_lo,f_hi,i)
           case (3)
 
           end select
@@ -239,31 +238,77 @@ contains
 
   end subroutine lin_edge_interp_2d
 
-  subroutine correct_trans_terms_2d(vel,lo,hi,dir)
+  subroutine correct_umac_grown_2d(vel,lo,hi,dir)
     
     integer        , intent(in   ) :: lo(:),hi(:),dir
     real(kind=dp_t), intent(inout) :: vel(lo(1)-1:,lo(2)-1:)
 
     ! local
-    integer :: i,j
+    integer         :: i,j
+    real(kind=dp_t) :: temp_lo,temp_hi
 
     if (dir .eq. 1) then
+
+       do j=lo(2)-1,hi(2)+1
+          vel(lo(1)-1,j) = TWO*vel(lo(1)-1,j) - vel(lo(1),j)
+          vel(hi(1)+2,j) = TWO*vel(hi(1)+2,j) - vel(hi(1)+1,j)
+       end do
+
+       do j=lo(2)-1,hi(2)+1
+          if (mod(j,2) .eq. 1) then
+             temp_lo = vel(lo(1)-1,j)
+             temp_hi = vel(hi(1)+2,j)
+             vel(lo(1)-1,j) = (3.d0/4.d0)*vel(lo(1)-1,j) + FOURTH*vel(lo(1)-1,j+1)
+             vel(hi(1)+2,j) = (3.d0/4.d0)*vel(hi(1)+2,j) + FOURTH*vel(hi(1)+2,j+1)
+          else
+             vel(lo(1)-1,j) = (3.d0/4.d0)*vel(lo(1)-1,j) + FOURTH*temp_lo
+             vel(hi(1)+2,j) = (3.d0/4.d0)*vel(hi(1)+2,j) + FOURTH*temp_hi
+          end if
+       end do
 
        do i=lo(1),hi(1)+1
           vel(i,lo(2)-1) = (3.d0/4.d0)*vel(i,lo(2)-1) + EIGHTH*(vel(i,lo(2))+vel(i,lo(2)+1))
           vel(i,hi(2)+1) = (3.d0/4.d0)*vel(i,hi(2)+1) + EIGHTH*(vel(i,hi(2))+vel(i,hi(2)-1))
        end do
 
+       do j=lo(2)-1,hi(2)+1
+          vel(lo(1)-1,j) = HALF*(vel(lo(1)-1,j)+vel(lo(1),j))
+          vel(hi(1)+2,j) = HALF*(vel(hi(1)+2,j)+vel(hi(1)+1,j))
+       end do
+
     else if (dir .eq. 2) then
+
+       do i=lo(1)-1,hi(1)+1
+          vel(i,lo(2)-1) = TWO*vel(i,lo(2)-1) - vel(i,lo(2))
+          vel(i,hi(2)+2) = TWO*vel(i,hi(2)+2) - vel(i,hi(2)+1)
+       end do
+
+       do i=lo(1)-1,hi(1)+1
+          if (mod(i,2) .eq. 1) then
+             temp_lo = vel(i,lo(2)-1)
+             temp_hi = vel(i,hi(2)+2)
+             vel(i,lo(2)-1) = (3.d0/4.d0)*vel(i,lo(2)-1) + FOURTH*vel(i+1,lo(2)-1)
+             vel(i,hi(2)+2) = (3.d0/4.d0)*vel(i,hi(2)+2) + FOURTH*vel(i+1,hi(2)+2)
+          else
+             vel(i,lo(2)-1) = (3.d0/4.d0)*vel(i,lo(2)-1) + FOURTH*temp_lo
+             vel(i,hi(2)+2) = (3.d0/4.d0)*vel(i,hi(2)+2) + FOURTH*temp_hi
+          end if
+       end do
 
        do j=lo(2),hi(2)+1
           vel(lo(1)-1,j) = (3.d0/4.d0)*vel(lo(1)-1,j) + EIGHTH*(vel(lo(1),j)+vel(lo(1)+1,j))
           vel(hi(1)+1,j) = (3.d0/4.d0)*vel(hi(1)+1,j) + EIGHTH*(vel(hi(1),j)+vel(hi(1)-1,j))
        end do
 
+       do i=lo(1)-1,hi(1)+1
+          vel(i,lo(2)-1) = HALF*(vel(i,lo(2)-1)+vel(i,lo(2)))
+          vel(i,hi(2)+2) = HALF*(vel(i,hi(2)+2)+vel(i,hi(2)+1))
+
+       end do
+
     end if
 
-  end subroutine correct_trans_terms_2d
+  end subroutine correct_umac_grown_2d
 
   subroutine create_umac_grown_onesided(nlevs,umac)
 
