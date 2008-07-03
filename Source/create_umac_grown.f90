@@ -32,14 +32,15 @@ contains
 
     dm = fine(1)%dim
 
+    ! fill_boundary on level 1
+    ! the fill_boundary for levels 2 through nlev occur later in this function
     if (finelev .eq. 2) then
        do i=1,dm
           call multifab_fill_boundary(crse(i))
        end do
     end if
-    !
+
     ! Grab the cached boxarray of all ghost cells not covered by valid region.
-    !
     fgasc = layout_fgassoc(fine(1)%la, 1)
 
     call boxarray_build_copy(f_ba,fgasc%ba)
@@ -55,22 +56,18 @@ contains
        call build(f_la,f_ba,get_pd(fine(i)%la),get_pmask(fine(i)%la))
        call build(c_la,c_ba,get_pd(crse(i)%la),get_pmask(crse(i)%la), &
                   explicit_mapping=get_proc(f_la))
-       !
-       ! Create coarse and fine nodal multifabs on the same proc.
-       !
+
+       ! Create c_mf and f_mf on the same proc.
        call build(f_mf,f_la,1,0,fine(i)%nodal)
        call build(c_mf,c_la,1,0,crse(i)%nodal)
 
-       call setval(c_mf, 6.66D66) ! We assume that c_mf is covered by crse(i)
-       !
        ! Update c_mf with valid and ghost regions from crse.
-       !
        call boxarray_build_copy(tba, get_boxarray(crse(i)))
-       do j = 1, nboxes(tba)
+       do j=1,nboxes(tba)
           call set_box(tba,j,grow(get_box(crse(i),j),1))
        end do
        call build(tla, tba, get_pd(crse(i)%la), get_pmask(crse(i)%la), &
-            explicit_mapping=get_proc(crse(i)%la))
+                  explicit_mapping=get_proc(crse(i)%la))
        call destroy(tba)
        call build(tcrse, tla, 1, 0, crse(i)%nodal)
        do j=1,nboxes(tcrse)
@@ -84,9 +81,8 @@ contains
 
        call destroy(tcrse)
        call destroy(tla)
-       !
+
        ! Fill in some of the fine ghost cells from crse.
-       !
        do j=1,nboxes(f_mf)
           if ( remote(f_mf,j) ) cycle
           fp => dataptr(f_mf,j)
@@ -104,9 +100,8 @@ contains
        end do
 
        call copy(f_mf,fine(i))
-       !
+
        ! Fill in the rest of the fine ghost cells.
-       !
        do j=1,nboxes(f_mf)
           if ( remote(f_mf,j) ) cycle
           fp => dataptr(f_mf,j)
@@ -117,7 +112,7 @@ contains
           c_hi = upb(get_box(c_mf,j))
           select case(dm)
           case (2)
-             call edge_interp_2d(i,f_lo,f_hi,c_lo,c_hi,fp(:,:,1,1))
+             call lin_edge_interp_2d(i,f_lo,f_hi,c_lo,c_hi,fp(:,:,1,1))
           case (3)
 
           end select
@@ -125,19 +120,16 @@ contains
 
        call destroy(c_mf)
        call destroy(c_la)
-       !
+
        ! Update ghost regions of fine where they overlap with f_mf.
-       !
        call boxarray_build_copy(tba, get_boxarray(fine(i)))
        do j = 1, nboxes(tba)
           call set_box(tba,j,grow(get_box(fine(i),j),1))
        end do
        call build(tla, tba, get_pd(fine(i)%la), get_pmask(fine(i)%la), &
-            explicit_mapping=get_proc(fine(i)%la))
+                  explicit_mapping=get_proc(fine(i)%la))
        call destroy(tba)
        call build(tfine, tla, 1, 0, fine(i)%nodal)
-
-       call setval(tfine, 6.66D66)
 
        call copy(tfine, f_mf)
 
@@ -157,6 +149,21 @@ contains
 
        call destroy(tfine)
        call destroy(tla)
+
+       ! now fix up the "transverse" terms because we've done piecewise constant
+       ! interpolation from the coarser level
+       do j=1,fine(i)%nboxes
+          if ( multifab_remote(fine(i), j) ) cycle
+          fp => dataptr(fine(i), j)
+          f_lo = lwb(get_box(fine(i), j))
+          f_hi = upb(get_box(fine(i), j))
+          select case(dm)
+          case (2)
+             call correct_trans_terms_2d(fp(:,:,1,1),f_lo,f_hi,i)
+          case (3)
+
+          end select
+       end do
 
        call multifab_fill_boundary(fine(i))
     end do
@@ -200,7 +207,7 @@ contains
 
   end subroutine pc_edge_interp_2d
 
-  subroutine edge_interp_2d(dir,f_lo,f_hi,c_lo,c_hi,fine)
+  subroutine lin_edge_interp_2d(dir,f_lo,f_hi,c_lo,c_hi,fine)
 
     integer,         intent(in   ) :: dir,f_lo(:),f_hi(:),c_lo(:),c_hi(:)
     real(kind=dp_t), intent(inout) :: fine(f_lo(1):,f_lo(2):)
@@ -230,7 +237,33 @@ contains
 
     end if    
 
-  end subroutine edge_interp_2d
+  end subroutine lin_edge_interp_2d
+
+  subroutine correct_trans_terms_2d(vel,lo,hi,dir)
+    
+    integer        , intent(in   ) :: lo(:),hi(:),dir
+    real(kind=dp_t), intent(inout) :: vel(lo(1)-1:,lo(2)-1:)
+
+    ! local
+    integer :: i,j
+
+    if (dir .eq. 1) then
+
+       do i=lo(1),hi(1)+1
+          vel(i,lo(2)-1) = (3.d0/4.d0)*vel(i,lo(2)-1) + EIGHTH*(vel(i,lo(2))+vel(i,lo(2)+1))
+          vel(i,hi(2)+1) = (3.d0/4.d0)*vel(i,hi(2)+1) + EIGHTH*(vel(i,hi(2))+vel(i,hi(2)-1))
+       end do
+
+    else if (dir .eq. 2) then
+
+       do j=lo(2),hi(2)+1
+          vel(lo(1)-1,j) = (3.d0/4.d0)*vel(lo(1)-1,j) + EIGHTH*(vel(lo(1),j)+vel(lo(1)+1,j))
+          vel(hi(1)+1,j) = (3.d0/4.d0)*vel(hi(1)+1,j) + EIGHTH*(vel(hi(1),j)+vel(hi(1)-1,j))
+       end do
+
+    end if
+
+  end subroutine correct_trans_terms_2d
 
   subroutine create_umac_grown_onesided(nlevs,umac)
 
