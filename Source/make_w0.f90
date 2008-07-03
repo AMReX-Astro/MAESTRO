@@ -16,7 +16,7 @@ module make_w0_module
 
 contains
 
-  subroutine make_w0(nlevs,vel,vel_old,f,Sbar_in,rho0,p0_old,p0_new, &
+  subroutine make_w0(nlevs,vel,vel_old,f,Sbar_in,rho0_old,rho0_new,p0_old,p0_new, &
                      gamma1bar_old,gamma1bar_new,delta_p0_ptherm_bar,psi,etarho,etarho_cc,dt,dtold)
 
     use parallel
@@ -32,7 +32,7 @@ contains
     real(kind=dp_t), intent(in   ) :: etarho(:,0:)
     real(kind=dp_t), intent(in   ) :: etarho_cc(:,0:)
     real(kind=dp_t), intent(inout) :: f(:,0:)
-    real(kind=dp_t), intent(in   ) :: rho0(:,0:)
+    real(kind=dp_t), intent(in   ) :: rho0_old(:,0:), rho0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:), p0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar_old(:,0:), gamma1bar_new(:,0:)
     real(kind=dp_t), intent(in   ) :: delta_p0_ptherm_bar(:,0:)
@@ -50,14 +50,14 @@ contains
 
     if (spherical .eq. 0) then
 
-       call make_w0_planar(nlevs,vel,vel_old,rho0,Sbar_in,p0_old,p0_new,gamma1bar_old, &
+       call make_w0_planar(nlevs,vel,vel_old,Sbar_in,p0_old,p0_new,gamma1bar_old, &
                            gamma1bar_new,delta_p0_ptherm_bar,psi,f,dt,dtold)
 
     else
 
        do n=1,nlevs
           call make_w0_spherical(n,vel(n,:),vel_old(n,0:),Sbar_in(n,0:), &
-                                 rho0(n,:),p0_old(n,0:),p0_new(n,0:), &
+                                 rho0_old(n,:),rho0_new(n,:),p0_old(n,0:),p0_new(n,0:), &
                                  gamma1bar_old(n,0:),gamma1bar_new(n,0:), &
                                  delta_p0_ptherm_bar(n,0:), &
                                  etarho(n,0:),etarho_cc(n,0:), &
@@ -80,18 +80,17 @@ contains
 
   end subroutine make_w0
 
-  subroutine make_w0_planar(nlevs,vel,vel_old,rho0,Sbar_in,p0_old,p0_new, &
+  subroutine make_w0_planar(nlevs,vel,vel_old,Sbar_in,p0_old,p0_new, &
                             gamma1bar_old,gamma1bar_new,delta_p0_ptherm_bar, &
                             psi,f,dt,dtold)
 
-    use geometry, only: nr_fine, r_start_coord, r_end_coord, dr
+    use geometry, only: nr_fine, r_start_coord, r_end_coord, dr, base_cutoff_density_coord
     use variables, only: rho_comp
     use bl_constants_module
     use probin_module, only: grav_const, dpdt_factor, base_cutoff_density
 
     integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(  out) :: vel(:,0:)
-    real(kind=dp_t), intent(in   ) :: rho0(:,0:)
     real(kind=dp_t), intent(in   ) :: vel_old(:,0:)
     real(kind=dp_t), intent(in   ) :: Sbar_in(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:), p0_new(:,0:)
@@ -143,7 +142,7 @@ contains
           gamma1bar_p0_avg = (gamma1bar_old(n,r-1)+gamma1bar_new(n,r-1)) * &
                (p0_old(n,r-1)+p0_new(n,r-1))/4.0d0
        
-          if (rho0(n,r-1) .gt. base_cutoff_density) then
+          if (r-1 .lt. base_cutoff_density_coord(n)) then
              volume_discrepancy = dpdt_factor * delta_p0_ptherm_bar(n,r-1)/dt
           else
              volume_discrepancy = 0.0d0
@@ -194,7 +193,7 @@ contains
 
   end subroutine make_w0_planar
 
-  subroutine make_w0_spherical(n,vel,vel_old,Sbar_in,rho0,p0,p0_new, &
+  subroutine make_w0_spherical(n,vel,vel_old,Sbar_in,rho0,rho0_new,p0,p0_new, &
                                gamma1bar,gamma1bar_new,delta_p0_ptherm_bar, &
                                etarho,etarho_cc,f,dt,dtold)
 
@@ -209,8 +208,9 @@ contains
     real(kind=dp_t), intent(  out) :: vel(0:)
     real(kind=dp_t), intent(in   ) :: vel_old(0:)
     real(kind=dp_t), intent(in   ) :: Sbar_in(0:)
-    real(kind=dp_t), intent(in   ) :: rho0(0:),p0(0:),p0_new(0:),gamma1bar(0:)
-    real(kind=dp_t), intent(in   ) :: gamma1bar_new(0:),delta_p0_ptherm_bar(0:)
+    real(kind=dp_t), intent(in   ) :: rho0(0:),rho0_new(0:)
+    real(kind=dp_t), intent(in   ) :: p0(0:),p0_new(0:)
+    real(kind=dp_t), intent(in   ) :: gamma1bar(0:),gamma1bar_new(0:),delta_p0_ptherm_bar(0:)
     real(kind=dp_t), intent(in   ) :: etarho(0:),etarho_cc(0:)
     real(kind=dp_t), intent(inout) ::   f(0:)
     real(kind=dp_t), intent(in   ) :: dt,dtold
