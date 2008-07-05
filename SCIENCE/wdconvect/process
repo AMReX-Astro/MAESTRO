@@ -12,7 +12,7 @@ fsnapshot3d=./fsnapshot3d.Linux.PathScale.exe
 pvar=radial_velocity
 
 # directory to archive to on HPSS
-HPSS_DIR=wdconvect_512_new
+HPSS_DIR=wdconvect_384_noeta
 
 
 if [ -f $pidfile ]; then
@@ -78,8 +78,14 @@ function process_files
         # store the file on HPSS
         htar -cvf ${HPSS_DIR}/${dir}.tar ${dir} 
 
-        # mark this file as processed so we skip it next time
-        date > ${dir}.processed
+	# htar's exit status is 0 if it was successful.  The variable $? 
+	# holds the exit status of the previous command
+
+	if [ $? -eq 0 ]; then
+
+          # mark this file as processed so we skip it next time
+          date > ${dir}.processed
+        fi
 
       fi
 
