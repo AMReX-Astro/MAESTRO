@@ -1,37 +1,54 @@
 #!/bin/ksh -p
-#
-# Prefix's plt files.
-#
+
+#----------------------------------------------------------------------------
+# user modifiable variables:
+
+# pidfile is a lock file that is used to make sure that only one instance 
+# of this script is working on the current directory
 pidfile=process.pid
 
+
+# set the prefix of the plotfiles
 plt_prefix=plt
 
-fwdconvect=./fwdconvect.Linux.PathScale.exe
 
+# set the full name of the analysis routines -- note, these need to be in 
+# the working directory so compute nodes can access them.
+fwdconvect=./fwdconvect.Linux.PathScale.exe
 fsnapshot3d=./fsnapshot3d.Linux.PathScale.exe
+
+# set the name of the variable we want to process with fsnapshot
 pvar=radial_velocity
+
 
 # directory to archive to on HPSS
 HPSS_DIR=wdconvect_384_noeta
 
 
+#----------------------------------------------------------------------------
+
+# check to make sure that the lock file does not already exist.
 if [ -f $pidfile ]; then
   echo 2>&1 "process lock file " $pidfile " already exists"
   exit -1
 fi
 
+# create the lock file
 echo $$ > $pidfile
 
 
 trap '/bin/rm -f $pidfile' EXIT HUP TERM XCPU KILL
 
-#
 # Number of seconds to sleep before checking again.
-#
 N=60
-#
-# Process Files
-#
+
+
+
+# Process Files.  Once a plotfile is successfully processed, we will output
+# a file pltXXXXX.processed.  Subsequent invocations of this routine will 
+# skip over any plotfiles that have a corresponding .processed file.
+
+
 function process_files
 {
   if [ ! -f $pidfile ]; then
@@ -39,12 +56,9 @@ function process_files
     exit
   fi
 
-  #
-  # Take all but the final plt file.
-  # We want to ensure they're completely written to disk.
-  # Strip out any tar files that are lying around as well as
-  # and pltXXXXX.processed files.
-  #
+  # Take all but the final plt file -- we want to ensure they're completely 
+  # written to disk.  Strip out any tar files that are lying around as well 
+  # as pltXXXXX.processed files.
   pltlist=$(ls -d ${plt_prefix}* 2>/dev/null | grep -v tar | grep -v processed)
 
   if [ "$pltlist" ]; then
@@ -96,7 +110,7 @@ function process_files
 
 }
 #
-# Looping waiting for plt and chk directories to appear.
+# Looping waiting for plt directories to appear.
 #
 while true
 do
