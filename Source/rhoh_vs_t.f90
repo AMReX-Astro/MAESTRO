@@ -1074,8 +1074,6 @@ contains
 
     real(kind=dp_t), allocatable ::  rho0_halftime(:)
     real(kind=dp_t), allocatable :: rhoh0_halftime(:)
-    type(multifab)               ::  rho0_cart
-    type(multifab)               :: rhoh0_cart
 
     type(bl_prof_timer), save :: bpt
 
@@ -1115,9 +1113,6 @@ contains
     if (spherical .eq. 1) then
       deallocate( rho0_halftime)
       deallocate(rhoh0_halftime)
-
-      call destroy( rho0_cart)
-      call destroy(rhoh0_cart)
     end if
 
     call destroy(bpt)
