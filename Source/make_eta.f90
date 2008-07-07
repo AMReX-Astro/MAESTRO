@@ -104,9 +104,9 @@ contains
                 hi =  upb(get_box(mla%la(n), i))
                 select case (dm)
                 case (2)
-                   call sum_etarho_coarsest_2d(lo,hi,domhi,efp(:,:,1,1),etarhosum_proc(n,:))
+                   call sum_etarho_2d(n,lo,hi,domhi,efp(:,:,1,1),etarhosum_proc(n,:))
                 case (3)
-                   call sum_etarho_coarsest_3d(lo,hi,domhi,efp(:,:,:,1),etarhosum_proc(n,:))
+                   call sum_etarho_3d(n,lo,hi,domhi,efp(:,:,:,1),etarhosum_proc(n,:))
                 end select
              end do
              
@@ -142,9 +142,9 @@ contains
              hi =  upb(get_box(mla%la(1), i))
              select case (dm)
              case (2)
-                call sum_etarho_coarsest_2d(lo,hi,domhi,efp(:,:,1,1),etarhosum_proc(1,:))
+                call sum_etarho_2d(1,lo,hi,domhi,efp(:,:,1,1),etarhosum_proc(1,:))
              case (3)
-                call sum_etarho_coarsest_3d(lo,hi,domhi,efp(:,:,:,1),etarhosum_proc(1,:))
+                call sum_etarho_3d(1,lo,hi,domhi,efp(:,:,:,1),etarhosum_proc(1,:))
              end select
           end do
           
@@ -254,9 +254,11 @@ contains
 
   end subroutine make_etarho_planar
 
-  subroutine sum_etarho_coarsest_2d(lo,hi,domhi,etarhoflux,etarhosum)
+  subroutine sum_etarho_2d(n,lo,hi,domhi,etarhoflux,etarhosum)
 
-    integer         , intent(in   ) :: lo(:), hi(:), domhi(:)
+    use geometry, only: r_end_coord
+
+    integer         , intent(in   ) :: n, lo(:), hi(:), domhi(:)
     real (kind=dp_t), intent(in   ) :: etarhoflux(lo(1):,lo(2):)
     real (kind=dp_t), intent(inout) :: etarhosum(0:)
 
@@ -269,20 +271,22 @@ contains
        end do
     end do
 
-    ! we only add the contribution at the top edge if we are at the top of the domain
+    ! we only add the contribution at the top edge if we are at the top of grid at a level
     ! this prevents double counting
-    if(hi(2) .eq. domhi(2)) then
+    if(hi(2) .eq. r_end_coord(n)) then
        j=hi(2)+1
        do i=lo(1),hi(1)
           etarhosum(j) = etarhosum(j) + etarhoflux(i,j)
        end do
     end if
 
-  end subroutine sum_etarho_coarsest_2d
+  end subroutine sum_etarho_2d
 
-  subroutine sum_etarho_coarsest_3d(lo,hi,domhi,etarhoflux,etarhosum)
+  subroutine sum_etarho_3d(n,lo,hi,domhi,etarhoflux,etarhosum)
 
-    integer         , intent(in   ) :: lo(:), hi(:), domhi(:)
+    use geometry, only: r_end_coord
+
+    integer         , intent(in   ) :: n,lo(:), hi(:), domhi(:)
     real (kind=dp_t), intent(in   ) :: etarhoflux(lo(1):,lo(2):,lo(3):)
     real (kind=dp_t), intent(inout) :: etarhosum(0:)
 
@@ -299,7 +303,7 @@ contains
 
     ! we only add the contribution at the top edge if we are at the top of the domain
     ! this prevents double counting
-    if(hi(3) .eq. domhi(3)) then
+    if(hi(3) .eq. r_end_coord(n)) then
        k=hi(3)+1
        do j=lo(2),hi(2)
           do i=lo(1),hi(1)
@@ -308,7 +312,7 @@ contains
        end do
     end if
 
-  end subroutine sum_etarho_coarsest_3d
+  end subroutine sum_etarho_3d
 
   subroutine compute_etarhopert_2d(lo,hi,etarhoflux,etarhopert,rr)
 
