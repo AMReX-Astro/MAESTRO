@@ -103,6 +103,8 @@ contains
 
     end if
 
+    call destroy(bpt)
+
   end subroutine fill_ghost_base
 
 
