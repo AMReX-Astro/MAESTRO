@@ -129,8 +129,7 @@ contains
     real(dp_t), allocatable :: Sbar(:,:)
     real(dp_t), allocatable :: div_coeff_nph(:,:)
     real(dp_t), allocatable :: div_coeff_edge(:,:)
-    real(dp_t), allocatable :: rho_omegadotbar1(:,:,:)
-    real(dp_t), allocatable :: rho_omegadotbar2(:,:,:)
+    real(dp_t), allocatable :: rho_omegadotbar(:,:,:)
     real(dp_t), allocatable :: rho_Hextbar(:,:)
     real(dp_t), allocatable :: rhoh0_1(:,:)
     real(dp_t), allocatable :: rhoh0_2(:,:)
@@ -159,8 +158,7 @@ contains
     allocate(                Sbar(nlevs,0:nr_fine-1))
     allocate(       div_coeff_nph(nlevs,0:nr_fine-1))
     allocate(      div_coeff_edge(nlevs,0:nr_fine  ))
-    allocate(    rho_omegadotbar1(nlevs,0:nr_fine-1,nspec))
-    allocate(    rho_omegadotbar2(nlevs,0:nr_fine-1,nspec))
+    allocate(    rho_omegadotbar(nlevs,0:nr_fine-1,nspec))
     allocate(         rho_Hextbar(nlevs,0:nr_fine-1))
     allocate(             rhoh0_1(nlevs,0:nr_fine-1))
     allocate(             rhoh0_2(nlevs,0:nr_fine-1))
@@ -407,12 +405,16 @@ contains
        if (parallel_IOProcessor() .and. verbose .ge. 1) then
           write(6,*) '            : react  base >>> '
        end if
-
        do comp=1,nspec
-          call average(mla,rho_omegadot1,rho_omegadotbar1(:,:,comp),dx,comp)
+          call average(mla,rho_omegadot1,rho_omegadotbar(:,:,comp),dx,comp)
        end do
        call average(mla,rho_Hext,rho_Hextbar,dx,1)
-       call react_base(nlevs,rhoh0_old,rho_omegadotbar1,rho_Hextbar,halfdt,rhoh0_1)
+       call react_base(nlevs,rhoh0_old,rho_omegadotbar,rho_Hextbar,halfdt,rhoh0_1)
+
+    else
+
+       rhoh0_1 = rhoh0_old
+
     end if
 
     if (evolve_base_state) then
@@ -619,11 +621,15 @@ contains
        end if
 
        do comp=1,nspec
-          call average(mla,rho_omegadot2,rho_omegadotbar2(:,:,comp),dx,comp)
+          call average(mla,rho_omegadot2,rho_omegadotbar(:,:,comp),dx,comp)
        end do
        call average(mla,rho_Hext,rho_Hextbar,dx,1)
-       call react_base(nlevs,rhoh0_2,rho_omegadotbar2,rho_Hextbar, &
-                       halfdt,rhoh0_new)
+       call react_base(nlevs,rhoh0_2,rho_omegadotbar,rho_Hextbar,halfdt,rhoh0_new)
+
+    else
+
+       rhoh0_new = rhoh0_2
+
     end if
 
     if (evolve_base_state) then
@@ -1006,11 +1012,15 @@ contains
           end if
 
           do comp=1,nspec
-             call average(mla,rho_omegadot2,rho_omegadotbar2(:,:,comp),dx,comp)
+             call average(mla,rho_omegadot2,rho_omegadotbar(:,:,comp),dx,comp)
           end do
           call average(mla,rho_Hext,rho_Hextbar,dx,1)
-          call react_base(nlevs,rhoh0_2,rho_omegadotbar2,rho_Hextbar, &
-                          halfdt,rhoh0_new)
+          call react_base(nlevs,rhoh0_2,rho_omegadotbar,rho_Hextbar,halfdt,rhoh0_new)
+
+       else
+
+          rhoh0_new = rhoh0_2
+
        end if
 
        if (evolve_base_state) then
