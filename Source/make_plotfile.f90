@@ -50,8 +50,9 @@ contains
        plot_names(icomp_w0)   = "w0_x"
        plot_names(icomp_w0+1) = "w0_y"
        if (dm > 2) plot_names(icomp_w0+2) = "w0_z"
-       plot_names(icomp_rho0) = "rho0"
-       plot_names(icomp_p0)   = "p0"
+       plot_names(icomp_rho0)  = "rho0"
+       plot_names(icomp_rhoh0) = "rhoh0"
+       plot_names(icomp_p0)    = "p0"
     end if
 
     if (spherical .eq. 1) then
@@ -88,7 +89,7 @@ contains
   end subroutine get_plot_names
 
   subroutine make_plotfile(dirname,mla,u,s,gpres,rho_omegadot,Source,sponge,&
-                           mba,plot_names,time,dx,the_bc_tower,w0,rho0,p0,tempbar, &
+                           mba,plot_names,time,dx,the_bc_tower,w0,rho0,rhoh0,p0,tempbar, &
                            gamma1bar,normal)
 
     use bl_prof_module
@@ -115,6 +116,7 @@ contains
     type(bc_tower)   , intent(in   ) :: the_bc_tower
     real(dp_t)       , intent(in   ) :: w0(:,0:)
     real(dp_t)       , intent(in   ) :: rho0(:,0:)
+    real(dp_t)       , intent(in   ) :: rhoh0(:,0:)
     real(dp_t)       , intent(in   ) :: p0(:,0:)
     real(dp_t)       , intent(in   ) :: tempbar(:,0:)
     real(dp_t)       , intent(in   ) :: gamma1bar(:,0:)
@@ -177,6 +179,14 @@ contains
 
        do n=1,nlevs
           call multifab_copy_c(plotdata(n),icomp_rho0,tempfab(n),1,1)
+       end do
+
+       ! rhoh0
+       call put_1d_array_on_cart(nlevs,rhoh0,tempfab,dm+rhoh_comp,.false.,.false.,dx, &
+                                 the_bc_tower%bc_tower_array,mla,normal=normal)
+
+       do n=1,nlevs
+          call multifab_copy_c(plotdata(n),icomp_rhoh0,tempfab(n),1,1)
        end do
 
        ! p0
