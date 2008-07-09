@@ -21,8 +21,9 @@ fsnapshot3d=./fsnapshot3d.Linux.PathScale.exe
 pvar=radial_velocity
 
 
-# directory to archive to on HPSS
-HPSS_DIR=wdconvect_384_noeta
+# directory to archive to on HPSS -- set this to the working directory
+work_dir=`pwd`
+HPSS_DIR=`basename $work_dir`
 
 
 #----------------------------------------------------------------------------
