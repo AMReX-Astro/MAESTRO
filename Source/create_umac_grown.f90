@@ -255,7 +255,7 @@ contains
        end do
 
        do j=lo(2)-1,hi(2)+1
-          if (mod(j,2) .eq. 1) then
+          if (abs(mod(j,2)) .eq. 1) then
              temp_lo = vel(lo(1)-1,j)
              temp_hi = vel(hi(1)+2,j)
              vel(lo(1)-1,j) = (3.d0/4.d0)*vel(lo(1)-1,j) + FOURTH*vel(lo(1)-1,j+1)
@@ -284,7 +284,7 @@ contains
        end do
 
        do i=lo(1)-1,hi(1)+1
-          if (mod(i,2) .eq. 1) then
+          if (abs(mod(i,2)) .eq. 1) then
              temp_lo = vel(i,lo(2)-1)
              temp_hi = vel(i,hi(2)+2)
              vel(i,lo(2)-1) = (3.d0/4.d0)*vel(i,lo(2)-1) + FOURTH*vel(i+1,lo(2)-1)
