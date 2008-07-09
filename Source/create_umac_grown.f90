@@ -95,7 +95,7 @@ contains
           case (2)
              call pc_edge_interp_2d(i,f_lo,f_hi,c_lo,c_hi,fp(:,:,1,1),cp(:,:,1,1))
           case (3)
-
+             call pc_edge_interp_3d(i,f_lo,f_hi,c_lo,c_hi,fp(:,:,:,1),cp(:,:,:,1))
           end select
        end do
 
@@ -114,7 +114,7 @@ contains
           case (2)
              call lin_edge_interp_2d(i,f_lo,f_hi,c_lo,c_hi,fp(:,:,1,1))
           case (3)
-
+             call lin_edge_interp_3d(i,f_lo,f_hi,c_lo,c_hi,fp(:,:,:,1))
           end select
        end do
 
@@ -206,6 +206,61 @@ contains
 
   end subroutine pc_edge_interp_2d
 
+  subroutine pc_edge_interp_3d(dir,f_lo,f_hi,c_lo,c_hi,fine,crse)
+
+    integer,         intent(in   ) :: dir,f_lo(:),f_hi(:),c_lo(:),c_hi(:)
+    real(kind=dp_t), intent(inout) :: fine(f_lo(1):,f_lo(2):,f_lo(3):)
+    real(kind=dp_t), intent(inout) :: crse(c_lo(1):,c_lo(2):,c_lo(3):)
+
+    ! local
+    integer :: i,ii,j,jj,k,kk
+
+    if (dir .eq. 1) then
+
+       do k=c_lo(3),c_hi(3)
+          do j=c_lo(2),c_hi(2)
+             do i=c_lo(1),c_hi(1)+1
+                do kk=0,1
+                   do jj=0,1
+                      fine(2*i,2*j+jj,2*k+kk) = crse(i,j,k)
+                   end do
+                end do
+             end do
+          end do
+       end do
+
+    else if (dir .eq. 2) then
+
+       do k=c_lo(3),c_hi(3)
+          do j=c_lo(2),c_hi(2)+1
+             do i=c_lo(1),c_hi(1)
+                do kk=0,1
+                   do ii=0,1
+                      fine(2*i+ii,2*j,2*k+kk) = crse(i,j,k)
+                   end do
+                end do
+             end do
+          end do
+       end do
+
+    else
+
+       do k=c_lo(3),c_hi(3)+1
+          do j=c_lo(2),c_hi(2)
+             do i=c_lo(1),c_hi(1)
+                do jj=0,1
+                   do ii=0,1
+                      fine(2*i+ii,2*j+jj,2*k) = crse(i,j,k)
+                   end do
+                end do
+             end do
+          end do
+       end do
+
+    end if    
+
+  end subroutine pc_edge_interp_3d
+
   subroutine lin_edge_interp_2d(dir,f_lo,f_hi,c_lo,c_hi,fine)
 
     integer,         intent(in   ) :: dir,f_lo(:),f_hi(:),c_lo(:),c_hi(:)
@@ -237,6 +292,63 @@ contains
     end if    
 
   end subroutine lin_edge_interp_2d
+
+  subroutine lin_edge_interp_3d(dir,f_lo,f_hi,c_lo,c_hi,fine)
+
+    integer,         intent(in   ) :: dir,f_lo(:),f_hi(:),c_lo(:),c_hi(:)
+    real(kind=dp_t), intent(inout) :: fine(f_lo(1):,f_lo(2):,f_lo(3):)
+
+    ! local
+    integer :: i,ii,j,jj,k,kk
+
+    if (dir .eq. 1) then
+
+       do k=c_lo(3),c_hi(3)
+          do j=c_lo(2),c_hi(2)
+             do i=c_lo(1),c_hi(1)
+                do kk=0,1
+                   do jj=0,1
+                      fine(2*i+1,2*j+jj,2*k+kk) = &
+                           HALF*(fine(2*i,2*j+jj,2*k+kk)+fine(2*i+2,2*j+jj,2*k+kk))
+                   end do
+                end do
+             end do
+          end do
+       end do
+
+    else if (dir .eq. 2) then
+
+       do k=c_lo(3),c_hi(3)
+          do j=c_lo(2),c_hi(2)
+             do i=c_lo(1),c_hi(1)
+                do kk=0,1
+                   do ii=0,1
+                      fine(2*i+ii,2*j+1,2*k+kk) = &
+                           HALF*(fine(2*i+ii,2*j,2*k+kk)+fine(2*i+ii,2*j+2,2*k+kk))
+                   end do
+                end do
+             end do
+          end do
+       end do
+
+    else
+
+       do k=c_lo(3),c_hi(3)
+          do j=c_lo(2),c_hi(2)
+             do i=c_lo(1),c_hi(1)
+                do jj=0,1
+                   do ii=0,1
+                      fine(2*i+ii,2*j+jj,2*k+1) = &
+                           HALF*(fine(2*i+ii,2*j+jj,2*k)+fine(2*i+ii,2*j+jj,2*k+2))
+                   end do
+                end do
+             end do
+          end do
+       end do
+
+    end if    
+
+  end subroutine lin_edge_interp_3d
 
   subroutine correct_umac_grown_2d(vel,lo,hi,dir)
     
