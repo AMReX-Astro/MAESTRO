@@ -72,6 +72,7 @@ contains
     plot_names(icomp_machno)   = "Machnumber"
     plot_names(icomp_dp)       = "deltap"
     plot_names(icomp_dg)       = "deltagamma"
+    plot_names(icomp_entropy)  = "entropy"
     plot_names(icomp_dT)       = "deltaT"
     plot_names(icomp_sponge)   = "sponge"
     plot_names(icomp_gp)       = "gpx"
@@ -221,9 +222,9 @@ contains
        ! ENTHALPY 
        call make_enthalpy(plotdata(n),icomp_enthalpy,s(n))
 
-       ! RHOPERT & TEMP (FROM RHO) & TPERT & MACHNO & (GAM1 - GAM10)
+       ! RHOPERT & TEMP (FROM RHO) & TPERT & MACHNO & (GAM1 - GAM10) & Entropy
        call make_tfromp(n,plotdata(n),icomp_tfromp,icomp_tpert,icomp_rhopert, &
-                          icomp_machno,icomp_dg,s(n),u(n),rho0(n,:), &
+                          icomp_machno,icomp_dg,icomp_entropy,s(n),u(n),rho0(n,:), &
                           tempbar(n,:),gamma1bar(n,:),p0(n,:),dx(n,:))
 
        ! TEMP (FROM H) & DELTA_P

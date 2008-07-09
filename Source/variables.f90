@@ -12,7 +12,7 @@ module variables
   integer, save :: icomp_w0, icomp_rho0, icomp_rhoh0, icomp_p0, icomp_velr
   integer, save :: icomp_magvel, icomp_velplusw0, icomp_mom, icomp_vort, icomp_divu
   integer, save :: icomp_enthalpy,icomp_tfromp,icomp_tpert,icomp_rhopert
-  integer, save :: icomp_machno,icomp_dg,icomp_gp
+  integer, save :: icomp_machno,icomp_dg,icomp_gp,icomp_entropy
   integer, save :: icomp_tfromH,icomp_dp,icomp_dT
   integer, save :: icomp_omegadot,icomp_enuc,icomp_sponge
   integer, save :: n_plot_comps
@@ -99,9 +99,10 @@ contains
     icomp_machno    = first_derive_comp+10
     icomp_dp        = first_derive_comp+11
     icomp_dg        = first_derive_comp+12
-    icomp_dT        = first_derive_comp+13
-    icomp_sponge    = first_derive_comp+14
-    icomp_gp        = first_derive_comp+15
+    icomp_entropy   = first_derive_comp+13
+    icomp_dT        = first_derive_comp+14
+    icomp_sponge    = first_derive_comp+15
+    icomp_gp        = first_derive_comp+16
 
     if (plot_spec) then
       icomp_omegadot = icomp_gp + dm

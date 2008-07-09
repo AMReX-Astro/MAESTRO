@@ -284,13 +284,13 @@ contains
   end subroutine make_tfromH_3d_sphr
 
   subroutine make_tfromp(n,plotdata,comp_tfromp,comp_tpert,comp_rhopert, &
-                         comp_machno,comp_deltag,s,u,rho0,tempbar,gamma1bar,p0,dx)
+                         comp_machno,comp_deltag,comp_entropy,s,u,rho0,tempbar,gamma1bar,p0,dx)
 
     use geometry, only: spherical
 
     integer        , intent(in   ) :: n,comp_tfromp,comp_tpert
     integer        , intent(in   ) :: comp_rhopert, comp_machno
-    integer        , intent(in   ) :: comp_deltag
+    integer        , intent(in   ) :: comp_deltag, comp_entropy
     type(multifab) , intent(inout) :: plotdata
     type(multifab) , intent(in   ) :: s
     type(multifab) , intent(in   ) :: u
@@ -318,6 +318,7 @@ contains
           call make_tfromp_2d(tp(:,:,1,comp_tfromp),tp(:,:,1,comp_tpert), &
                               tp(:,:,1,comp_rhopert ), &
                               tp(:,:,1,comp_machno  ),tp(:,:,1,comp_deltag), &
+                              tp(:,:,1,comp_entropy ), &
                               sp(:,:,1,:), up(:,:,1,:), &
                               lo, hi, ng, rho0, tempbar, gamma1bar, p0)
        case (3)
@@ -325,12 +326,14 @@ contains
              call make_tfromp_3d_sphr(n,tp(:,:,:,comp_tfromp),tp(:,:,:,comp_tpert), &
                                       tp(:,:,:,comp_rhopert ), &
                                       tp(:,:,:,comp_machno  ),tp(:,:,:,comp_deltag), &
+                                      tp(:,:,:,comp_entropy ), &
                                       sp(:,:,:,:), up(:,:,:,:), &
                                       lo, hi, ng, rho0, tempbar, gamma1bar, p0, dx)
           else
              call make_tfromp_3d_cart(tp(:,:,:,comp_tfromp),tp(:,:,:,comp_tpert), &
                                       tp(:,:,:,comp_rhopert ), &
                                       tp(:,:,:,comp_machno  ),tp(:,:,:,comp_deltag), &
+                                      tp(:,:,:,comp_entropy ), &
                                       sp(:,:,:,:), up(:,:,:,:), &
                                       lo, hi, ng, rho0, tempbar, gamma1bar, p0)
           endif
@@ -339,7 +342,7 @@ contains
 
   end subroutine make_tfromp
 
-  subroutine make_tfromp_2d(t,tpert,rhopert,machno,deltagamma,s,u,lo,hi,ng,rho0,tempbar, &
+  subroutine make_tfromp_2d(t,tpert,rhopert,machno,deltagamma,entropy,s,u,lo,hi,ng,rho0,tempbar, &
                             gamma1bar,p0)
 
     use eos_module
@@ -351,6 +354,7 @@ contains
     real (kind=dp_t), intent(  out) ::    rhopert(lo(1):,lo(2):)  
     real (kind=dp_t), intent(  out) ::     machno(lo(1):,lo(2):)  
     real (kind=dp_t), intent(  out) :: deltagamma(lo(1):,lo(2):)  
+    real (kind=dp_t), intent(  out) ::    entropy(lo(1):,lo(2):)  
     real (kind=dp_t), intent(in   ) ::  s(lo(1)-ng:,lo(2)-ng:,:)
     real (kind=dp_t), intent(in   ) ::  u(lo(1)-ng:,lo(2)-ng:,:)
     real (kind=dp_t), intent(in   ) :: rho0(0:)
@@ -394,12 +398,14 @@ contains
           machno(i,j) = vel / cs_eos(1)
 
           deltagamma(i,j) = gam1_eos(1) - gamma1bar(j)
+
+          entropy(i,j) = s_eos(1)
        enddo
     enddo
 
   end subroutine make_tfromp_2d
 
-  subroutine make_tfromp_3d_cart(t,tpert,rhopert,machno,deltagamma,s,u,lo,hi, &
+  subroutine make_tfromp_3d_cart(t,tpert,rhopert,machno,deltagamma,entropy,s,u,lo,hi, &
                                  ng,rho0,tempbar,gamma1bar,p0)
 
     use variables, only: rho_comp, spec_comp
@@ -411,6 +417,7 @@ contains
     real (kind=dp_t), intent(  out) ::    rhopert(lo(1):,lo(2):,lo(3):)  
     real (kind=dp_t), intent(  out) ::     machno(lo(1):,lo(2):,lo(3):)  
     real (kind=dp_t), intent(  out) :: deltagamma(lo(1):,lo(2):,lo(3):)  
+    real (kind=dp_t), intent(  out) ::    entropy(lo(1):,lo(2):,lo(3):)  
     real (kind=dp_t), intent(in   ) ::  s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind=dp_t), intent(in   ) ::  u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind=dp_t), intent(in   ) :: rho0(0:)
@@ -455,13 +462,15 @@ contains
              machno(i,j,k) = vel / cs_eos(1)
 
              deltagamma(i,j,k) = gam1_eos(1) - gamma1bar(k)
+
+             entropy(i,j,k) = s_eos(1)
           enddo
        enddo
     enddo
 
   end subroutine make_tfromp_3d_cart
 
-  subroutine make_tfromp_3d_sphr(n,t,tpert,rhopert,machno,deltagamma, &
+  subroutine make_tfromp_3d_sphr(n,t,tpert,rhopert,machno,deltagamma,entropy, &
                                  s,u,lo,hi,ng,rho0,tempbar,gamma1bar,p0,dx)
 
     use variables, only: rho_comp, spec_comp
@@ -474,6 +483,7 @@ contains
     real (kind=dp_t), intent(  out) ::    rhopert(lo(1):,lo(2):,lo(3):)  
     real (kind=dp_t), intent(  out) ::     machno(lo(1):,lo(2):,lo(3):)  
     real (kind=dp_t), intent(  out) :: deltagamma(lo(1):,lo(2):,lo(3):)  
+    real (kind=dp_t), intent(  out) ::    entropy(lo(1):,lo(2):,lo(3):)  
     real (kind=dp_t), intent(in   ) ::  s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind=dp_t), intent(in   ) ::  u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind=dp_t), intent(in   ) :: rho0(0:)
@@ -535,6 +545,8 @@ contains
              machno(i,j,k) = vel / cs_eos(1)
 
              deltagamma(i,j,k) = gam1_eos(1) - gamma1bar_cart(i,j,k,1)
+
+             entropy(i,j,k) = s_eos(1)
           enddo
        enddo
     enddo
