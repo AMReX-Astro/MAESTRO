@@ -356,7 +356,7 @@ contains
     real(kind=dp_t), intent(inout) :: vel(lo(1)-1:,lo(2)-1:)
 
     ! local
-    integer         :: i,j
+    integer         :: i,j,signx,signy
     real(kind=dp_t) :: temp_velx_lo(lo(2)-1:hi(2)+1)
     real(kind=dp_t) :: temp_velx_hi(lo(2)-1:hi(2)+1)
     real(kind=dp_t) :: temp_vely_lo(lo(1)-1:hi(1)+1)
@@ -381,12 +381,12 @@ contains
        ! store this value in the first fine ghost cell
        do j=lo(2)-1,hi(2)+1
           if (abs(mod(j,2)) .eq. 1) then
-             vel(lo(1)-1,j) = (3.d0/4.d0)*vel(lo(1)-1,j) + FOURTH*temp_velx_lo(j+1)
-             vel(hi(1)+2,j) = (3.d0/4.d0)*vel(hi(1)+2,j) + FOURTH*temp_velx_hi(j+1)
+             signy = 1
           else
-             vel(lo(1)-1,j) = (3.d0/4.d0)*vel(lo(1)-1,j) + FOURTH*temp_velx_lo(j-1)
-             vel(hi(1)+2,j) = (3.d0/4.d0)*vel(hi(1)+2,j) + FOURTH*temp_velx_hi(j-1)
+             signy = -1
           end if
+          vel(lo(1)-1,j) = (3.d0/4.d0)*vel(lo(1)-1,j) + FOURTH*temp_velx_lo(j+signy)
+          vel(hi(1)+2,j) = (3.d0/4.d0)*vel(hi(1)+2,j) + FOURTH*temp_velx_hi(j+signy)
        end do
 
        ! average the grid edge value with the velocity from the first coarse ghost cell
@@ -424,12 +424,12 @@ contains
        ! store this value in the first fine ghost cell
        do i=lo(1)-1,hi(1)+1
           if (abs(mod(i,2)) .eq. 1) then
-             vel(i,lo(2)-1) = (3.d0/4.d0)*vel(i,lo(2)-1) + FOURTH*temp_vely_lo(i+1)
-             vel(i,hi(2)+2) = (3.d0/4.d0)*vel(i,hi(2)+2) + FOURTH*temp_vely_hi(i+1)
+             signx = 1
           else
-             vel(i,lo(2)-1) = (3.d0/4.d0)*vel(i,lo(2)-1) + FOURTH*temp_vely_lo(i-1)
-             vel(i,hi(2)+2) = (3.d0/4.d0)*vel(i,hi(2)+2) + FOURTH*temp_vely_hi(i-1)
+             signx = -1
           end if
+          vel(i,lo(2)-1) = (3.d0/4.d0)*vel(i,lo(2)-1) + FOURTH*temp_vely_lo(i+signx)
+          vel(i,hi(2)+2) = (3.d0/4.d0)*vel(i,hi(2)+2) + FOURTH*temp_vely_hi(i+signx)
        end do
 
        ! average the grid edge value with the velocity from the first coarse ghost cell
