@@ -7,7 +7,7 @@ module plot_variables_module
 
   private
 
-  public :: make_enthalpy, make_tfromH, make_tfromp, make_XfromrhoX
+  public :: make_enthalpy, make_tfromH, make_tfromp, make_XfromrhoX, make_entropypert
   public :: make_omegadot, make_deltaT
 
 contains
@@ -283,6 +283,7 @@ contains
 
   end subroutine make_tfromH_3d_sphr
 
+
   subroutine make_tfromp(n,plotdata,comp_tfromp,comp_tpert,comp_rhopert, &
                          comp_machno,comp_deltag,comp_entropy,s,u,rho0,tempbar,gamma1bar,p0,dx)
 
@@ -554,6 +555,124 @@ contains
     deallocate(rho0_cart,tempbar_cart,p0_cart,gamma1bar_cart)
 
   end subroutine make_tfromp_3d_sphr
+
+
+  subroutine make_entropypert(n,plotdata,comp_entropy,comp_entropypert,entropybar,dx)
+
+    use geometry, only: spherical
+
+    integer        , intent(in   ) :: n,comp_entropy,comp_entropypert
+    type(multifab) , intent(inout) :: plotdata
+    real(kind=dp_t), intent(in   ) :: entropybar(0:)
+    real(kind=dp_t), intent(in   ) :: dx(:)
+
+    real(kind=dp_t), pointer:: tp(:,:,:,:)
+    integer :: lo(plotdata%dim),hi(plotdata%dim),dm
+    integer :: i
+
+    dm = plotdata%dim
+
+    do i = 1, plotdata%nboxes
+       if ( multifab_remote(plotdata, i) ) cycle
+       tp => dataptr(plotdata, i)
+       lo =  lwb(get_box(plotdata, i))
+       hi =  upb(get_box(plotdata, i))
+       select case (dm)
+       case (2)
+          call make_entropypert_2d(tp(:,:,1,comp_entropy), &
+                                   tp(:,:,1,comp_entropypert), &
+                                   lo, hi, entropybar)
+       case (3)
+          if (spherical .eq. 1) then
+             call make_entropypert_3d_sphr(n,tp(:,:,:,comp_entropy), &
+                                             tp(:,:,:,comp_entropypert), &
+                                           lo, hi, entropybar, dx)
+          else
+             call make_entropypert_3d_cart(tp(:,:,:,comp_entropy), &
+                                           tp(:,:,:,comp_entropypert), &
+                                           lo, hi, entropybar)
+          endif
+       end select
+    end do
+
+  end subroutine make_entropypert
+
+  subroutine make_entropypert_2d(entropy,entropypert,lo,hi,entropybar)
+
+    integer, intent(in) :: lo(:), hi(:)
+    real (kind=dp_t), intent(inout) ::     entropy(lo(1):,lo(2):)  
+    real (kind=dp_t), intent(  out) :: entropypert(lo(1):,lo(2):)  
+    real (kind=dp_t), intent(in   ) :: entropybar(0:)
+
+    !     Local variables
+    integer          :: i, j
+
+    ! Compute entropy - entropybar
+    do j = lo(2), hi(2)
+       do i = lo(1), hi(1)
+
+          entropypert(i,j) = entropy(i,j) - entropybar(j)
+       enddo
+    enddo
+
+  end subroutine make_entropypert_2d
+
+  subroutine make_entropypert_3d_cart(entropy,entropypert,lo,hi,entropybar)
+
+    integer, intent(in) :: lo(:), hi(:)
+    real (kind=dp_t), intent(inout) ::     entropy(lo(1):,lo(2):,lo(3):)  
+    real (kind=dp_t), intent(  out) :: entropypert(lo(1):,lo(2):,lo(3):)  
+    real (kind=dp_t), intent(in   ) :: entropybar(0:)
+
+    ! Local variables
+    integer          :: i, j, k
+
+
+    ! Compute entropy - entropybar
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+
+             entropypert(i,j,k) = entropy(i,j,k) - entropybar(k)
+
+          enddo
+       enddo
+    enddo
+
+  end subroutine make_entropypert_3d_cart
+
+  subroutine make_entropypert_3d_sphr(n,entropy,entropypert,lo,hi,entropybar,dx)
+
+    use fill_3d_module
+
+    integer, intent(in)             :: n,lo(:),hi(:)
+    real (kind=dp_t), intent(inout) ::     entropy(lo(1):,lo(2):,lo(3):)  
+    real (kind=dp_t), intent(  out) :: entropypert(lo(1):,lo(2):,lo(3):)  
+    real (kind=dp_t), intent(in   ) :: entropybar(0:)
+    real (kind=dp_t), intent(in   ) :: dx(:)
+
+    !     Local variables
+    integer          :: i, j, k
+    real (kind=dp_t), allocatable ::  entropybar_cart(:,:,:,:)
+
+    allocate(entropybar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1)) 
+    call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,entropybar,entropybar_cart,lo,hi,dx,0)
+
+
+    ! Compute entropy-entropybar
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+
+             entropypert(i,j,k) = entropy(i,j,k) - entropybar_cart(i,j,k,1)
+
+          enddo
+       enddo
+    enddo
+
+    deallocate(entropybar_cart)
+
+  end subroutine make_entropypert_3d_sphr
 
   subroutine make_XfromrhoX(plotdata,comp,s)
 

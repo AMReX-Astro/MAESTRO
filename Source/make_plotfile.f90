@@ -59,24 +59,25 @@ contains
        plot_names(icomp_velr) = "radial_velocity"
     endif
 
-    plot_names(icomp_magvel)   = "magvel"
-    plot_names(icomp_velplusw0) = "velplusw0"
-    plot_names(icomp_mom)      = "momentum"
-    plot_names(icomp_vort)     = "vort"
-    plot_names(icomp_divu)     = "divu"
-    plot_names(icomp_enthalpy) = "enthalpy"
-    plot_names(icomp_rhopert)  = "rhopert"
-    plot_names(icomp_tfromp)   = "tfromp"
-    plot_names(icomp_tfromH)   = "tfromh"
-    plot_names(icomp_tpert)    = "tpert"
-    plot_names(icomp_machno)   = "Machnumber"
-    plot_names(icomp_dp)       = "deltap"
-    plot_names(icomp_dg)       = "deltagamma"
-    plot_names(icomp_entropy)  = "entropy"
-    plot_names(icomp_dT)       = "deltaT"
-    plot_names(icomp_sponge)   = "sponge"
-    plot_names(icomp_gp)       = "gpx"
-    plot_names(icomp_gp+1)     = "gpy"
+    plot_names(icomp_magvel)      = "magvel"
+    plot_names(icomp_velplusw0)   = "velplusw0"
+    plot_names(icomp_mom)         = "momentum"
+    plot_names(icomp_vort)        = "vort"
+    plot_names(icomp_divu)        = "divu"
+    plot_names(icomp_enthalpy)    = "enthalpy"
+    plot_names(icomp_rhopert)     = "rhopert"
+    plot_names(icomp_tfromp)      = "tfromp"
+    plot_names(icomp_tfromH)      = "tfromh"
+    plot_names(icomp_tpert)       = "tpert"
+    plot_names(icomp_machno)      = "Machnumber"
+    plot_names(icomp_dp)          = "deltap"
+    plot_names(icomp_dg)          = "deltagamma"
+    plot_names(icomp_entropy)     = "entropy"
+    plot_names(icomp_entropypert) = "entropypert"
+    plot_names(icomp_dT)          = "deltaT"
+    plot_names(icomp_sponge)      = "sponge"
+    plot_names(icomp_gp)          = "gpx"
+    plot_names(icomp_gp+1)        = "gpy"
     if (dm > 2) plot_names(icomp_gp+2) = "gpz"
 
     if (plot_spec) then
@@ -101,7 +102,8 @@ contains
     use fill_3d_module
     use probin_module, only: nOutFiles, lUsingNFiles, plot_spec, plot_trac, plot_base
     use probin_module, only: single_prec_plotfiles
-    use geometry, only: spherical
+    use geometry, only: spherical, nr_fine
+    use average_module
 
     character(len=*) , intent(in   ) :: dirname
     type(ml_layout)  , intent(in   ) :: mla
@@ -122,9 +124,10 @@ contains
     real(dp_t)       , intent(in   ) :: tempbar(:,0:)
     real(dp_t)       , intent(in   ) :: gamma1bar(:,0:)
     type(multifab)   , intent(in   ) :: normal(:)
-
+    
     type(multifab) :: plotdata(mla%nlevel)
     type(multifab) :: tempfab(mla%nlevel)
+    real(dp_t), allocatable :: entropybar(:,:)
 
     integer :: n,dm,nlevs,prec
 
@@ -241,6 +244,17 @@ contains
        call multifab_copy_c(plotdata(n),icomp_sponge,sponge(n),1,1)
 
     end do
+
+    ! we just made the entropy above.  To compute s - sbar, we need to average
+    ! the entropy first, and then compute that.
+    allocate(entropybar(nlevs,0:nr_fine-1))
+    
+    call average(mla,plotdata,entropybar,dx,icomp_entropy)
+
+    do n = 1,nlevs
+       call make_entropypert(n,plotdata(n),icomp_entropy,icomp_entropypert,entropybar(n,0:),dx(n,:))
+    enddo
+
 
     if (plot_spec) then
        ! OMEGADOT
