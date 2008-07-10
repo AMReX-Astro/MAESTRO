@@ -405,7 +405,7 @@ contains
           vel(i,hi(2)+1) = (3.d0/4.d0)*vel(i,hi(2)+1) + EIGHTH*(vel(i,hi(2))+vel(i,hi(2)-1))
        end do
 
-    else if (dir .eq. 2) then
+    else
 
        ! for each normal velocity in the first fine ghost cell in the normal direction
        ! compute what the coarse velocity was that came from the first coarse ghost cell
@@ -458,7 +458,7 @@ contains
     real(kind=dp_t), intent(inout) :: vel(lo(1)-1:,lo(2)-1:,lo(3)-1:)
 
     ! local
-    integer         :: i,j,k
+    integer         :: i,j,k,signx,signy,signz
     real(kind=dp_t) :: temp_velx_lo(lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1)
     real(kind=dp_t) :: temp_velx_hi(lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1)
     real(kind=dp_t) :: temp_vely_lo(lo(1)-1:hi(1)+1,lo(3)-1:hi(3)+1)
@@ -466,7 +466,199 @@ contains
     real(kind=dp_t) :: temp_velz_lo(lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1)
     real(kind=dp_t) :: temp_velz_hi(lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1)
 
+    if (dir .eq. 1) then
 
+       ! for each normal velocity in the first fine ghost cell in the normal direction
+       ! compute what the coarse velocity was that came from the first coarse ghost cell
+       ! store this value in the first fine ghost cell
+       do k=lo(3)-1,hi(3)+1
+          do j=lo(2)-1,hi(2)+1
+             vel(lo(1)-1,j,k) = TWO*vel(lo(1)-1,j,k) - vel(lo(1),j,k)
+             vel(hi(1)+2,j,k) = TWO*vel(hi(1)+2,j,k) - vel(hi(1)+1,j,k)
+          end do
+       end do
+
+       ! store the coarse velocity in a temporary array
+       temp_velx_lo(lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1) = vel(lo(1)-1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1)
+       temp_velx_hi(lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1) = vel(hi(1)+2,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1)
+
+       ! linearly interpolate to obtain a better estimate of the velocity from
+       ! the first coarse ghost cell
+       ! store this value in the first fine ghost cell
+       do k=lo(3)-1,hi(3)+1
+          if (abs(mod(k,2)) .eq. 1) then
+             signz = 1
+          else
+             signz = -1
+          end if
+          do j=lo(2)-1,hi(2)+1
+             if (abs(mod(j,2)) .eq. 1) then
+                signy = 1
+             else
+                signy = -1
+             end if
+             vel(lo(1)-1,j,k) = (9.d0/16.d0)*vel(lo(1)-1,j,k) + (3.d0/16.d0)*temp_velx_lo(j+signy,k) &
+                  + (3.d0/16.d0)*temp_velx_lo(j,k+signz) + (1.d0/16.d0)*temp_velx_lo(j+signy,k+signz)
+             vel(hi(1)+2,j,k) = (9.d0/16.d0)*vel(hi(1)+2,j,k) + (3.d0/16.d0)*temp_velx_hi(j+signy,k) &
+                  + (3.d0/16.d0)*temp_velx_hi(j,k+signz) + (1.d0/16.d0)*temp_velx_hi(j+signy,k+signz)
+          end do
+       end do
+
+       ! average the grid edge value with the velocity from the first coarse ghost cell
+       ! (which is currently stored in the first fine ghost cell)
+       ! to get a better estimate of the first fine ghost cell
+       do k=lo(3)-1,hi(3)+1
+          do j=lo(2)-1,hi(2)+1
+             vel(lo(1)-1,j,k) = HALF*(vel(lo(1)-1,j,k)+vel(lo(1),j,k))
+             vel(hi(1)+2,j,k) = HALF*(vel(hi(1)+2,j,k)+vel(hi(1)+1,j,k))
+          end do
+       end do
+
+       ! at transverse faces, the first fine ghost value was set to the 
+       ! first coarse ghost cell value
+       ! we linearly interpolate to get a better estimate of this value
+       do j=lo(2)-1,hi(2)+1
+          do i=lo(1),hi(1)+1
+             vel(i,j,lo(3)-1) = (3.d0/4.d0)*vel(i,j,lo(3)-1) + EIGHTH*(vel(i,j,lo(3))+vel(i,j,lo(3)+1))
+             vel(i,j,hi(3)+1) = (3.d0/4.d0)*vel(i,j,hi(3)+1) + EIGHTH*(vel(i,j,hi(3))+vel(i,j,hi(3)-1))
+          end do
+       end do
+       do k=lo(3)-1,hi(3)+1
+          do i=lo(1),hi(1)+1
+             vel(i,lo(2)-1,k) = (3.d0/4.d0)*vel(i,lo(2)-1,k) + EIGHTH*(vel(i,lo(2),k)+vel(i,lo(2)+1,k))
+             vel(i,hi(2)+1,k) = (3.d0/4.d0)*vel(i,hi(2)+1,k) + EIGHTH*(vel(i,hi(2),k)+vel(i,hi(2)-1,k))
+          end do
+       end do
+
+    else if (dir .eq. 2) then
+
+       ! for each normal velocity in the first fine ghost cell in the normal direction
+       ! compute what the coarse velocity was that came from the first coarse ghost cell
+       ! store this value in the first fine ghost cell
+       do k=lo(3)-1,hi(3)+1
+          do i=lo(1)-1,hi(1)+1
+             vel(i,lo(2)-1,k) = TWO*vel(i,lo(2)-1,k) - vel(i,lo(2),k)
+             vel(i,hi(2)+2,k) = TWO*vel(i,hi(2)+2,k) - vel(i,hi(2)+1,k)
+          end do
+       end do
+
+       ! store the coarse velocity in a temporary array
+       temp_vely_lo(lo(1)-1:hi(1)+1,lo(3)-1:hi(3)+1) = vel(lo(1)-1:hi(1)+1,lo(2)-1,lo(3)-1:hi(3)+1)
+       temp_vely_hi(lo(1)-1:hi(1)+1,lo(3)-1:hi(3)+1) = vel(lo(1)-1:hi(1)+1,hi(2)+2,lo(3)-1:hi(3)+1)
+
+       ! linearly interpolate to obtain a better estimate of the velocity from
+       ! the first coarse ghost cell
+       ! store this value in the first fine ghost cell
+       do k=lo(3)-1,hi(3)+1
+          if (abs(mod(k,2)) .eq. 1) then
+             signz = 1
+          else
+             signz = -1
+          end if
+          do i=lo(1)-1,hi(1)+1
+             if (abs(mod(i,2)) .eq. 1) then
+                signx = 1
+             else
+                signx = -1
+             end if
+             vel(i,lo(2)-1,k) = (9.d0/16.d0)*vel(i,lo(2)-1,k) + (3.d0/16.d0)*temp_vely_lo(i+signx,k) &
+                  + (3.d0/16.d0)*temp_vely_lo(i,k+signz) + (1.d0/16.d0)*temp_vely_lo(i+signx,k+signz)
+             vel(i,hi(2)+2,k) = (9.d0/16.d0)*vel(i,hi(2)+2,k) + (3.d0/16.d0)*temp_vely_hi(i+signx,k) &
+                  + (3.d0/16.d0)*temp_vely_hi(i,k+signz) + (1.d0/16.d0)*temp_vely_hi(i+signx,k+signz)
+          end do
+       end do
+
+       ! average the grid edge value with the velocity from the first coarse ghost cell
+       ! (which is currently stored in the first fine ghost cell)
+       ! to get a better estimate of the first fine ghost cell
+       do k=lo(3)-1,hi(3)+1
+          do i=lo(1)-1,hi(1)+1
+             vel(i,lo(2)-1,k) = HALF*(vel(i,lo(2)-1,k)+vel(i,lo(2),k))
+             vel(i,hi(2)+2,k) = HALF*(vel(i,hi(2)+2,k)+vel(i,hi(2)+1,k))
+          end do
+       end do
+
+       ! at transverse faces, the first fine ghost value was set to the 
+       ! first coarse ghost cell value
+       ! we linearly interpolate to get a better estimate of this value
+       do j=lo(2),hi(2)+1
+          do i=lo(1)-1,hi(1)+1
+             vel(i,j,lo(3)-1) = (3.d0/4.d0)*vel(i,j,lo(3)-1) + EIGHTH*(vel(i,j,lo(3))+vel(i,j,lo(3)+1))
+             vel(i,j,hi(3)+1) = (3.d0/4.d0)*vel(i,j,hi(3)+1) + EIGHTH*(vel(i,j,hi(3))+vel(i,j,hi(3)-1))
+          end do
+       end do
+       do k=lo(3)-1,hi(3)+1
+          do j=lo(2),hi(2)+1
+             vel(lo(1)-1,j,k) = (3.d0/4.d0)*vel(lo(1)-1,j,k) + EIGHTH*(vel(lo(1),j,k)+vel(lo(1)+1,j,k))
+             vel(hi(1)+1,j,k) = (3.d0/4.d0)*vel(hi(1)+1,j,k) + EIGHTH*(vel(hi(1),j,k)+vel(hi(1)-1,j,k))
+          end do
+       end do
+
+    else
+
+       ! for each normal velocity in the first fine ghost cell in the normal direction
+       ! compute what the coarse velocity was that came from the first coarse ghost cell
+       ! store this value in the first fine ghost cell
+       do j=lo(2)-1,hi(2)+1
+          do i=lo(1)-1,hi(1)+1
+             vel(i,j,lo(3)-1) = TWO*vel(i,j,lo(3)-1) - vel(i,j,lo(3))
+             vel(i,j,hi(3)+2) = TWO*vel(i,j,hi(3)+2) - vel(i,j,hi(3)+1)
+          end do
+       end do
+
+       ! store the coarse velocity in a temporary array
+       temp_velz_lo(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1) = vel(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1)
+       temp_velz_hi(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1) = vel(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,hi(3)+2)
+
+       ! linearly interpolate to obtain a better estimate of the velocity from
+       ! the first coarse ghost cell
+       ! store this value in the first fine ghost cell
+       do j=lo(2)-1,hi(2)+1
+          if (abs(mod(j,2)) .eq. 1) then
+             signy = 1
+          else
+             signy = -1
+          end if
+          do i=lo(1)-1,hi(1)+1
+             if (abs(mod(i,2)) .eq. 1) then
+                signx = 1
+             else
+                signx = -1
+             end if
+             vel(i,j,lo(3)-1) = (9.d0/16.d0)*vel(i,j,lo(3)-1) + (3.d0/16.d0)*temp_velz_lo(i+signx,j) &
+                  + (3.d0/16.d0)*temp_velz_lo(i,j+signy) + (1.d0/16.d0)*temp_velz_lo(i+signx,j+signy)
+             vel(i,j,hi(3)+2) = (9.d0/16.d0)*vel(i,j,hi(3)+2) + (3.d0/16.d0)*temp_velz_hi(i+signx,j) &
+                  + (3.d0/16.d0)*temp_velz_hi(i,j+signy) + (1.d0/16.d0)*temp_velz_hi(i+signx,j+signy)
+          end do
+       end do
+
+       ! average the grid edge value with the velocity from the first coarse ghost cell
+       ! (which is currently stored in the first fine ghost cell)
+       ! to get a better estimate of the first fine ghost cell
+       do j=lo(2)-1,hi(2)+1
+          do i=lo(1)-1,hi(1)+1
+             vel(i,j,lo(3)-1) = HALF*(vel(i,j,lo(3)-1)+vel(i,j,lo(3)))
+             vel(i,j,hi(3)+2) = HALF*(vel(i,j,hi(3)+2)+vel(i,j,hi(3)+1))
+          end do
+       end do
+
+       ! at transverse faces, the first fine ghost value was set to the 
+       ! first coarse ghost cell value
+       ! we linearly interpolate to get a better estimate of this value
+       do k=lo(3),hi(3)+1
+          do i=lo(1)-1,hi(1)+1
+             vel(i,lo(2)-1,k) = (3.d0/4.d0)*vel(i,lo(2)-1,k) + EIGHTH*(vel(i,lo(2),k)+vel(i,lo(2)+1,k))
+             vel(i,hi(2)+1,k) = (3.d0/4.d0)*vel(i,hi(2)+1,k) + EIGHTH*(vel(i,hi(2),k)+vel(i,hi(2)-1,k))
+          end do
+       end do
+       do k=lo(3),hi(3)+1
+          do j=lo(2)-1,hi(2)+1
+             vel(lo(1)-1,j,k) = (3.d0/4.d0)*vel(lo(1)-1,j,k) + EIGHTH*(vel(lo(1),j,k)+vel(lo(1)+1,j,k))
+             vel(hi(1)+1,j,k) = (3.d0/4.d0)*vel(hi(1)+1,j,k) + EIGHTH*(vel(hi(1),j,k)+vel(hi(1)-1,j,k))
+          end do
+       end do
+
+    end if
 
 
   end subroutine correct_umac_grown_3d
