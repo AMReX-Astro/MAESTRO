@@ -357,7 +357,10 @@ contains
 
     ! local
     integer         :: i,j
-    real(kind=dp_t) :: temp_lo,temp_hi
+    real(kind=dp_t) :: temp_velx_lo(lo(2)-1:hi(2)+1)
+    real(kind=dp_t) :: temp_velx_hi(lo(2)-1:hi(2)+1)
+    real(kind=dp_t) :: temp_vely_lo(lo(1)-1:hi(1)+1)
+    real(kind=dp_t) :: temp_vely_hi(lo(1)-1:hi(1)+1)
 
     if (dir .eq. 1) then
 
@@ -369,18 +372,20 @@ contains
           vel(hi(1)+2,j) = TWO*vel(hi(1)+2,j) - vel(hi(1)+1,j)
        end do
 
+       ! store the coarse velocity in a temporary array
+       temp_velx_lo(lo(2)-1:hi(2)+1) = vel(lo(1)-1,lo(2)-1:hi(2)+1)
+       temp_velx_hi(lo(2)-1:hi(2)+1) = vel(hi(1)+2,lo(2)-1:hi(2)+1)
+
        ! linearly interpolate to obtain a better estimate of the velocity from
        ! the first coarse ghost cell
        ! store this value in the first fine ghost cell
        do j=lo(2)-1,hi(2)+1
           if (abs(mod(j,2)) .eq. 1) then
-             temp_lo = vel(lo(1)-1,j)
-             temp_hi = vel(hi(1)+2,j)
-             vel(lo(1)-1,j) = (3.d0/4.d0)*vel(lo(1)-1,j) + FOURTH*vel(lo(1)-1,j+1)
-             vel(hi(1)+2,j) = (3.d0/4.d0)*vel(hi(1)+2,j) + FOURTH*vel(hi(1)+2,j+1)
+             vel(lo(1)-1,j) = (3.d0/4.d0)*vel(lo(1)-1,j) + FOURTH*temp_velx_lo(j+1)
+             vel(hi(1)+2,j) = (3.d0/4.d0)*vel(hi(1)+2,j) + FOURTH*temp_velx_hi(j+1)
           else
-             vel(lo(1)-1,j) = (3.d0/4.d0)*vel(lo(1)-1,j) + FOURTH*temp_lo
-             vel(hi(1)+2,j) = (3.d0/4.d0)*vel(hi(1)+2,j) + FOURTH*temp_hi
+             vel(lo(1)-1,j) = (3.d0/4.d0)*vel(lo(1)-1,j) + FOURTH*temp_velx_lo(j-1)
+             vel(hi(1)+2,j) = (3.d0/4.d0)*vel(hi(1)+2,j) + FOURTH*temp_velx_hi(j-1)
           end if
        end do
 
@@ -410,18 +415,20 @@ contains
           vel(i,hi(2)+2) = TWO*vel(i,hi(2)+2) - vel(i,hi(2)+1)
        end do
 
+       ! store the coarse velocity in a temporary array
+       temp_vely_lo(lo(1)-1:hi(1)+1) = vel(lo(1)-1:hi(1)+1,lo(2)-1)
+       temp_vely_hi(lo(1)-1:hi(1)+1) = vel(lo(1)-1:hi(1)+1,hi(2)+2)
+
        ! linearly interpolate to obtain a better estimate of the velocity from
        ! the first coarse ghost cell
        ! store this value in the first fine ghost cell
        do i=lo(1)-1,hi(1)+1
           if (abs(mod(i,2)) .eq. 1) then
-             temp_lo = vel(i,lo(2)-1)
-             temp_hi = vel(i,hi(2)+2)
-             vel(i,lo(2)-1) = (3.d0/4.d0)*vel(i,lo(2)-1) + FOURTH*vel(i+1,lo(2)-1)
-             vel(i,hi(2)+2) = (3.d0/4.d0)*vel(i,hi(2)+2) + FOURTH*vel(i+1,hi(2)+2)
+             vel(i,lo(2)-1) = (3.d0/4.d0)*vel(i,lo(2)-1) + FOURTH*temp_vely_lo(i+1)
+             vel(i,hi(2)+2) = (3.d0/4.d0)*vel(i,hi(2)+2) + FOURTH*temp_vely_hi(i+1)
           else
-             vel(i,lo(2)-1) = (3.d0/4.d0)*vel(i,lo(2)-1) + FOURTH*temp_lo
-             vel(i,hi(2)+2) = (3.d0/4.d0)*vel(i,hi(2)+2) + FOURTH*temp_hi
+             vel(i,lo(2)-1) = (3.d0/4.d0)*vel(i,lo(2)-1) + FOURTH*temp_vely_lo(i-1)
+             vel(i,hi(2)+2) = (3.d0/4.d0)*vel(i,hi(2)+2) + FOURTH*temp_vely_hi(i-1)
           end if
        end do
 
@@ -452,7 +459,15 @@ contains
 
     ! local
     integer         :: i,j,k
-    real(kind=dp_t) :: temp_lo,temp_hi
+    real(kind=dp_t) :: temp_velx_lo(lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1)
+    real(kind=dp_t) :: temp_velx_hi(lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1)
+    real(kind=dp_t) :: temp_vely_lo(lo(1)-1:hi(1)+1,lo(3)-1:hi(3)+1)
+    real(kind=dp_t) :: temp_vely_hi(lo(1)-1:hi(1)+1,lo(3)-1:hi(3)+1)
+    real(kind=dp_t) :: temp_velz_lo(lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1)
+    real(kind=dp_t) :: temp_velz_hi(lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1)
+
+
+
 
   end subroutine correct_umac_grown_3d
 
