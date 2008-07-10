@@ -201,7 +201,7 @@ contains
     use make_grav_module
     use cell_to_edge_module
     use bl_constants_module
-    use maestro_constants_module, only: Gconst
+    use fundamental_constants_module, only: Gconst
     use probin_module, only: dpdt_factor, base_cutoff_density
 
     integer        , intent(in   ) :: n

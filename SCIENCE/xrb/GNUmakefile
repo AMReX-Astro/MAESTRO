@@ -28,6 +28,9 @@ include $(FPARALLEL)/extern/conducteos/GPackage.mak
 VPATH_LOCATIONS += $(FPARALLEL)/extern/conducteos
 FINCLUDE_LOCATIONS += $(FPARALLEL)/extern/conducteos
 
+include $(FPARALLEL)/extern/constants/GPackage.mak
+VPATH_LOCATIONS += $(FPARALLEL)/extern/constants
+
 include $(FPARALLEL)/extern/networks/triple_alpha/GPackage.mak
 VPATH_LOCATIONS += $(FPARALLEL)/extern/networks/triple_alpha
 
