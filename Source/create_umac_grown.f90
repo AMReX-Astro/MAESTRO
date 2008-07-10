@@ -160,7 +160,7 @@ contains
           case (2)
              call correct_umac_grown_2d(fp(:,:,1,1),f_lo,f_hi,i)
           case (3)
-
+             call correct_umac_grown_2d(fp(:,:,:,1),f_lo,f_hi,i)
           end select
        end do
 
@@ -361,11 +361,17 @@ contains
 
     if (dir .eq. 1) then
 
+       ! for each normal velocity in the first fine ghost cell in the normal direction
+       ! compute what the coarse velocity was that came from the first coarse ghost cell
+       ! store this value in the first fine ghost cell
        do j=lo(2)-1,hi(2)+1
           vel(lo(1)-1,j) = TWO*vel(lo(1)-1,j) - vel(lo(1),j)
           vel(hi(1)+2,j) = TWO*vel(hi(1)+2,j) - vel(hi(1)+1,j)
        end do
 
+       ! linearly interpolate to obtain a better estimate of the velocity from
+       ! the first coarse ghost cell
+       ! store this value in the first fine ghost cell
        do j=lo(2)-1,hi(2)+1
           if (abs(mod(j,2)) .eq. 1) then
              temp_lo = vel(lo(1)-1,j)
@@ -378,23 +384,35 @@ contains
           end if
        end do
 
-       do i=lo(1),hi(1)+1
-          vel(i,lo(2)-1) = (3.d0/4.d0)*vel(i,lo(2)-1) + EIGHTH*(vel(i,lo(2))+vel(i,lo(2)+1))
-          vel(i,hi(2)+1) = (3.d0/4.d0)*vel(i,hi(2)+1) + EIGHTH*(vel(i,hi(2))+vel(i,hi(2)-1))
-       end do
-
+       ! average the grid edge value with the velocity from the first coarse ghost cell
+       ! (which is currently stored in the first fine ghost cell)
+       ! to get a better estimate of the first fine ghost cell
        do j=lo(2)-1,hi(2)+1
           vel(lo(1)-1,j) = HALF*(vel(lo(1)-1,j)+vel(lo(1),j))
           vel(hi(1)+2,j) = HALF*(vel(hi(1)+2,j)+vel(hi(1)+1,j))
        end do
 
+       ! at transverse faces, the first fine ghost value was set to the 
+       ! first coarse ghost cell value
+       ! we linearly interpolate to get a better estimate of this value
+       do i=lo(1),hi(1)+1
+          vel(i,lo(2)-1) = (3.d0/4.d0)*vel(i,lo(2)-1) + EIGHTH*(vel(i,lo(2))+vel(i,lo(2)+1))
+          vel(i,hi(2)+1) = (3.d0/4.d0)*vel(i,hi(2)+1) + EIGHTH*(vel(i,hi(2))+vel(i,hi(2)-1))
+       end do
+
     else if (dir .eq. 2) then
 
+       ! for each normal velocity in the first fine ghost cell in the normal direction
+       ! compute what the coarse velocity was that came from the first coarse ghost cell
+       ! store this value in the first fine ghost cell
        do i=lo(1)-1,hi(1)+1
           vel(i,lo(2)-1) = TWO*vel(i,lo(2)-1) - vel(i,lo(2))
           vel(i,hi(2)+2) = TWO*vel(i,hi(2)+2) - vel(i,hi(2)+1)
        end do
 
+       ! linearly interpolate to obtain a better estimate of the velocity from
+       ! the first coarse ghost cell
+       ! store this value in the first fine ghost cell
        do i=lo(1)-1,hi(1)+1
           if (abs(mod(i,2)) .eq. 1) then
              temp_lo = vel(i,lo(2)-1)
@@ -407,20 +425,36 @@ contains
           end if
        end do
 
+       ! average the grid edge value with the velocity from the first coarse ghost cell
+       ! (which is currently stored in the first fine ghost cell)
+       ! to get a better estimate of the first fine ghost cell
+       do i=lo(1)-1,hi(1)+1
+          vel(i,lo(2)-1) = HALF*(vel(i,lo(2)-1)+vel(i,lo(2)))
+          vel(i,hi(2)+2) = HALF*(vel(i,hi(2)+2)+vel(i,hi(2)+1))
+       end do
+
+       ! at transverse faces, the first fine ghost value was set to the 
+       ! first coarse ghost cell value
+       ! we linearly interpolate to get a better estimate of this value
        do j=lo(2),hi(2)+1
           vel(lo(1)-1,j) = (3.d0/4.d0)*vel(lo(1)-1,j) + EIGHTH*(vel(lo(1),j)+vel(lo(1)+1,j))
           vel(hi(1)+1,j) = (3.d0/4.d0)*vel(hi(1)+1,j) + EIGHTH*(vel(hi(1),j)+vel(hi(1)-1,j))
        end do
 
-       do i=lo(1)-1,hi(1)+1
-          vel(i,lo(2)-1) = HALF*(vel(i,lo(2)-1)+vel(i,lo(2)))
-          vel(i,hi(2)+2) = HALF*(vel(i,hi(2)+2)+vel(i,hi(2)+1))
-
-       end do
-
     end if
 
   end subroutine correct_umac_grown_2d
+
+  subroutine correct_umac_grown_3d(vel,lo,hi,dir)
+    
+    integer        , intent(in   ) :: lo(:),hi(:),dir
+    real(kind=dp_t), intent(inout) :: vel(lo(1)-1:,lo(2)-1:,lo(3)-1:)
+
+    ! local
+    integer         :: i,j,k
+    real(kind=dp_t) :: temp_lo,temp_hi
+
+  end subroutine correct_umac_grown_3d
 
   subroutine create_umac_grown_onesided(nlevs,umac)
 
