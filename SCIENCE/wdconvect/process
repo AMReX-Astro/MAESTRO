@@ -8,8 +8,9 @@
 pidfile=process.pid
 
 
-# set the prefix of the plotfiles
+# set the prefix of the plotfiles and checkpoint files
 plt_prefix=plt
+chk_prefix=chk
 
 
 # set the full name of the analysis routines -- note, these need to be in 
@@ -27,6 +28,7 @@ HPSS_DIR=`basename $work_dir`
 
 
 #----------------------------------------------------------------------------
+# initialization stuff
 
 # check to make sure that the lock file does not already exist.
 if [ -f $pidfile ]; then
@@ -37,17 +39,21 @@ fi
 # create the lock file
 echo $$ > $pidfile
 
-
+# if our process if killed, remove the lock file first
 trap '/bin/rm -f $pidfile' EXIT HUP TERM XCPU KILL
 
 # Number of seconds to sleep before checking again.
 N=60
 
 
+#----------------------------------------------------------------------------
+# the processing function
 
 # Process Files.  Once a plotfile is successfully processed, we will output
-# a file pltXXXXX.processed.  Subsequent invocations of this routine will 
-# skip over any plotfiles that have a corresponding .processed file.
+# a file pltXXXXX.processed (checkpoint files are only archived, with a
+# chkXXXXX.processed file appearing once the archiving is successful).  
+# Subsequent invocations of this routine will skip over any plotfiles or
+# checkpoint files that have a corresponding .processed file.
 
 
 function process_files
@@ -56,6 +62,9 @@ function process_files
     echo "process: $pidfile has been removed, exiting"
     exit
   fi
+
+
+  # plotfiles
 
   # Take all but the final plt file -- we want to ensure they're completely 
   # written to disk.  Strip out any tar files that are lying around as well 
@@ -73,7 +82,6 @@ function process_files
   fi
 
 
-  # plotfiles
   for dir in ${pltlist}
   do
     if [ -d ${dir} ]; then
@@ -108,11 +116,55 @@ function process_files
   done
 
 
+  # checkpoint files
+
+  # Take all but the final chk file -- we want to ensure they're completely 
+  # written to disk.  Strip out any tar files that are lying around as well 
+  # as chkXXXXX.processed files.
+  chklist=$(ls -d ${chk_prefix}* 2>/dev/null | grep -v tar | grep -v processed)
+
+  if [ "$chklist" ]; then
+    nl=$(echo "$chklist" | wc -l)
+    nl=$(expr $nl - 1)
+    if [ $nl -eq 0 ]; then
+      chklist=""
+    else
+      chklist=$(echo "$chklist" | head -$nl)
+    fi
+  fi
+
+
+  for dir in ${chklist}
+  do
+    if [ -d ${dir} ]; then
+
+      if [ ! -f ${dir}.processed ]; then
+
+        # store the file on HPSS
+        htar -cvf ${HPSS_DIR}/${dir}.tar ${dir} 
+
+	# htar's exit status is 0 if it was successful.  The variable $? 
+	# holds the exit status of the previous command
+
+	if [ $? -eq 0 ]; then
+
+          # mark this file as processed so we skip it next time
+          date > ${dir}.processed
+        fi
+
+      fi
+
+    fi
+  done
 
 }
-#
-# Looping waiting for plt directories to appear.
-#
+
+
+#----------------------------------------------------------------------------
+# the main loop
+
+# Looping waiting for plt and chk directories to appear.
+
 while true
 do
   process_files
