@@ -189,6 +189,8 @@ contains
 
     end do
 
+    call fill_ghost_base(nlevs,div_coeff,.true.)
+
   end subroutine make_div_coeff
 
 end module make_div_coeff_module

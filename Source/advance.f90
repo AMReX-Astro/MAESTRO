@@ -364,7 +364,6 @@ contains
           call destroy(div_coeff_3d(n))
        end do
     else
-       call fill_ghost_base(nlevs,div_coeff_old,.true.)
        do n=1,nlevs
           call cell_to_edge(n,div_coeff_old(n,:),div_coeff_edge(n,:))
        end do
@@ -651,17 +650,14 @@ contains
 
     call make_div_coeff(nlevs,div_coeff_new,rho0_new,p0_new,gamma1bar,grav_cell_new)
     
+    div_coeff_nph = HALF*(div_coeff_old + div_coeff_new)
+
     ! Define base state at half time for use in velocity advance!
     do n=1,nlevs
        do r=r_start_coord(n),r_end_coord(n)
           rho0_nph(n,r) = HALF * (rho0_old(n,r) + rho0_new(n,r))
        end do
-
        call make_grav_cell(n,grav_cell_nph(n,:),rho0_nph(n,:))
-
-       do r=r_start_coord(n),r_end_coord(n)
-          div_coeff_nph(n,r) = HALF * (div_coeff_old(n,r) + div_coeff_new(n,r))
-       end do
     end do
     
     if(.not. do_half_alg) then
@@ -846,7 +842,6 @@ contains
              call destroy(div_coeff_3d(n))
           end do
        else
-          call fill_ghost_base(nlevs,div_coeff_nph,.true.)
           do n=1,nlevs
              call cell_to_edge(n,div_coeff_nph(n,:),div_coeff_edge(n,:))
           end do
