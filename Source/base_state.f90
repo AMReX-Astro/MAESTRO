@@ -361,7 +361,7 @@ contains
              p_above_cutoff = p0_init(r)
              temp_above_cutoff = s0_init(r,temp_comp)
              if (ntrac .gt. 0) then
-                trac_above_cutoff(1:ntrac) = s0_init(r,trac_comp:trac_comp+ntrac+1)
+                trac_above_cutoff(1:ntrac) = s0_init(r,trac_comp:trac_comp+ntrac-1)
              end if
              
           end if
