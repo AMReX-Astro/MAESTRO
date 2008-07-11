@@ -56,10 +56,6 @@ contains
     ! end do
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     
-    call fill_ghost_base(nlevs,rho0,.true.)
-    call fill_ghost_base(nlevs,gamma1bar,.true.)
-    call fill_ghost_base(nlevs,p0,.true.)
-
     do n=1,nlevs
 
        ! Compute beta0 on edges and centers at level n

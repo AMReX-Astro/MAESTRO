@@ -1028,6 +1028,7 @@ contains
           
           call make_gamma(nlevs,gamma1,snew,p0_new,tempbar,dx)
           call average(mla,gamma1,gamma1bar,dx,1)
+          call fill_ghost_base(nlevs,gamma1bar,.true.)
           
           do n=1,nlevs
              call destroy(gamma1(n))
