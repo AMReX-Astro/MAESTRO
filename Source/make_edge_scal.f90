@@ -34,7 +34,6 @@ contains
     use fill_3d_module
     use multifab_physbc_module
     use ml_restriction_module, only : ml_edge_restriction_c
-    use restrict_base_module
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(in   ) :: s(:)
@@ -73,8 +72,6 @@ contains
 
     dm = s(1)%dim
     ng = s(1)%ng
-
-    call fill_ghost_base(nlevs,w0,.false.)
 
     if (spherical .eq. 1) then
        allocate (gradw0_rad(0:nr_fine-1))

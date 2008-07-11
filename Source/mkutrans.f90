@@ -16,7 +16,6 @@ contains
   subroutine mkutrans(nlevs,u,utrans,w0,w0_cart_vec,dx,dt,the_bc_level)
 
     use bl_prof_module
-    use restrict_base_module
     use create_umac_grown_module
 
     integer        , intent(in   ) :: nlevs
@@ -42,8 +41,6 @@ contains
 
     dm = u(1)%dim
     ng = u(1)%ng
-
-    call fill_ghost_base(nlevs,w0,.false.)
 
     do n=1,nlevs
 
