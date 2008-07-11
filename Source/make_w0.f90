@@ -16,22 +16,24 @@ module make_w0_module
 
 contains
 
-  subroutine make_w0(nlevs,vel,vel_old,f,Sbar_in,rho0_old,rho0_new,p0_old,p0_new, &
-                     gamma1bar_old,gamma1bar_new,delta_p0_ptherm_bar,psi,etarho,etarho_cc,dt,dtold)
+  subroutine make_w0(nlevs,w0,w0_old,w0_force,Sbar_in,rho0_old,rho0_new,p0_old,p0_new, &
+                     gamma1bar_old,gamma1bar_new,delta_p0_ptherm_bar,psi,etarho,etarho_cc, &
+                     dt,dtold)
 
     use parallel
     use bl_prof_module
     use geometry, only: spherical, dr, r_start_coord, r_end_coord
     use bl_constants_module
     use probin_module, only: verbose
+    use restrict_base_module, only: fill_ghost_base
 
     integer        , intent(in   ) :: nlevs
-    real(kind=dp_t), intent(  out) :: vel(:,0:)
-    real(kind=dp_t), intent(in   ) :: vel_old(:,0:)
+    real(kind=dp_t), intent(  out) :: w0(:,0:)
+    real(kind=dp_t), intent(in   ) :: w0_old(:,0:)
     real(kind=dp_t), intent(in   ) :: psi(:,0:)
     real(kind=dp_t), intent(in   ) :: etarho(:,0:)
     real(kind=dp_t), intent(in   ) :: etarho_cc(:,0:)
-    real(kind=dp_t), intent(inout) :: f(:,0:)
+    real(kind=dp_t), intent(inout) :: w0_force(:,0:)
     real(kind=dp_t), intent(in   ) :: rho0_old(:,0:), rho0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:), p0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar_old(:,0:), gamma1bar_new(:,0:)
@@ -40,49 +42,51 @@ contains
     real(kind=dp_t), intent(in   ) :: dt,dtold
 
     integer         :: r,n
-    real(kind=dp_t) :: max_vel
+    real(kind=dp_t) :: max_w0
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "make_w0")
 
-    f = ZERO
+    w0_force = ZERO
 
     if (spherical .eq. 0) then
 
-       call make_w0_planar(nlevs,vel,vel_old,Sbar_in,p0_old,p0_new,gamma1bar_old, &
-                           gamma1bar_new,delta_p0_ptherm_bar,psi,f,dt,dtold)
+       call make_w0_planar(nlevs,w0,w0_old,Sbar_in,p0_old,p0_new,gamma1bar_old, &
+                           gamma1bar_new,delta_p0_ptherm_bar,psi,w0_force,dt,dtold)
 
     else
 
        do n=1,nlevs
-          call make_w0_spherical(n,vel(n,:),vel_old(n,0:),Sbar_in(n,0:), &
+          call make_w0_spherical(n,w0(n,:),w0_old(n,0:),Sbar_in(n,0:), &
                                  rho0_old(n,:),rho0_new(n,:),p0_old(n,0:),p0_new(n,0:), &
                                  gamma1bar_old(n,0:),gamma1bar_new(n,0:), &
                                  delta_p0_ptherm_bar(n,0:), &
                                  etarho(n,0:),etarho_cc(n,0:), &
-                                 f(n,0:),dt,dtold)
+                                 w0_force(n,0:),dt,dtold)
        end do
 
     end if
 
+    call fill_ghost_base(nlevs,w0,.false.)
+    call fill_ghost_base(nlevs,w0_force,.true.)
+
     do n=1,nlevs
-       max_vel = zero
+       max_w0 = zero
        do r=r_start_coord(n),r_end_coord(n)+1
-          max_vel = max(max_vel, abs(vel(n,r)))
+          max_w0 = max(max_w0, abs(w0(n,r)))
        end do
-       
        if (parallel_IOProcessor() .and. verbose .ge. 1) &
-            write(6,*) '... max CFL of w0: ',max_vel * dt / dr(n)
+            write(6,*) '... max CFL of w0: ',max_w0 * dt / dr(n)
     end do
 
     call destroy(bpt)
 
   end subroutine make_w0
 
-  subroutine make_w0_planar(nlevs,vel,vel_old,Sbar_in,p0_old,p0_new, &
+  subroutine make_w0_planar(nlevs,w0,w0_old,Sbar_in,p0_old,p0_new, &
                             gamma1bar_old,gamma1bar_new,delta_p0_ptherm_bar, &
-                            psi,f,dt,dtold)
+                            psi,w0_force,dt,dtold)
 
     use geometry, only: nr_fine, r_start_coord, r_end_coord, dr, base_cutoff_density_coord
     use variables, only: rho_comp
@@ -90,52 +94,52 @@ contains
     use probin_module, only: grav_const, dpdt_factor, base_cutoff_density
 
     integer        , intent(in   ) :: nlevs
-    real(kind=dp_t), intent(  out) :: vel(:,0:)
-    real(kind=dp_t), intent(in   ) :: vel_old(:,0:)
+    real(kind=dp_t), intent(  out) :: w0(:,0:)
+    real(kind=dp_t), intent(in   ) :: w0_old(:,0:)
     real(kind=dp_t), intent(in   ) :: Sbar_in(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:), p0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar_old(:,0:), gamma1bar_new(:,0:)
     real(kind=dp_t), intent(in   ) :: delta_p0_ptherm_bar(:,0:)
     real(kind=dp_t), intent(in   ) :: psi(:,0:)
-    real(kind=dp_t), intent(inout) ::   f(:,0:)
+    real(kind=dp_t), intent(inout) :: w0_force(:,0:)
     real(kind=dp_t), intent(in   ) :: dt,dtold
 
     ! Local variables
     integer                      :: r, n, i, refrat
-    real(kind=dp_t), allocatable :: vel_old_cen(:,:)
-    real(kind=dp_t), allocatable :: vel_new_cen(:,:)
-    real(kind=dp_t)              :: vel_avg, div_avg, dt_avg, gamma1bar_p0_avg
+    real(kind=dp_t), allocatable :: w0_old_cen(:,:)
+    real(kind=dp_t), allocatable :: w0_new_cen(:,:)
+    real(kind=dp_t)              :: w0_avg, div_avg, dt_avg, gamma1bar_p0_avg
     real(kind=dp_t)              :: volume_discrepancy, offset
 
     ! Cell-centered
-    allocate(vel_old_cen(nlevs,0:nr_fine-1))
-    allocate(vel_new_cen(nlevs,0:nr_fine-1))
+    allocate(w0_old_cen(nlevs,0:nr_fine-1))
+    allocate(w0_new_cen(nlevs,0:nr_fine-1))
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! Multilevel Outline
     !
-    ! Compute vel at level 1 only
+    ! Compute w0 at level 1 only
     ! do n=2,nlevs
-    !   Compute vel on edges at level n
-    !   Obtain the starting value of vel from the coarser grid
+    !   Compute w0 on edges at level n
+    !   Obtain the starting value of w0 from the coarser grid
     !   do i=n-1,1,-1
-    !     Restrict vel from level n to level i
-    !     Compare the difference between vel at top of level n to the corresponding point
+    !     Restrict w0 from level n to level i
+    !     Compare the difference between w0 at top of level n to the corresponding point
     !       on level i
-    !     Offset the vel on level i above this point
+    !     Offset the w0 on level i above this point
     !   end do
     ! end do
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     
-    ! Compute vel on edges at level n
+    ! Compute w0 on edges at level n
     do n=1,nlevs
 
        if (n .eq. 1) then
-          ! Initialize new velocity at bottom of coarse base array to zero.
-          vel(1,0) = ZERO
+          ! Initialize new w0 at bottom of coarse base array to zero.
+          w0(1,0) = ZERO
        else
-          ! Obtain the starting value of vel from the coarser grid
-          vel(n,r_start_coord(n)) = vel(n-1,r_start_coord(n)/2)
+          ! Obtain the starting value of w0 from the coarser grid
+          w0(n,r_start_coord(n)) = w0(n-1,r_start_coord(n)/2)
        end if
 
        do r=r_start_coord(n)+1,r_end_coord(n)+1
@@ -148,7 +152,7 @@ contains
              volume_discrepancy = 0.0d0
           end if
           
-          vel(n,r) = vel(n,r-1) + Sbar_in(n,r-1) * dr(n) &
+          w0(n,r) = w0(n,r-1) + Sbar_in(n,r-1) * dr(n) &
                - ( (psi(n,r-1)+volume_discrepancy) / gamma1bar_p0_avg ) * dr(n)
        end do
 
@@ -156,18 +160,18 @@ contains
 
           refrat = 2**(n-i)
 
-          ! Compare the difference between vel at top of level n to the corresponding point
+          ! Compare the difference between w0 at top of level n to the corresponding point
           !   on level i
-          offset = vel(n,r_end_coord(n)+1) - vel(i,(r_end_coord(n)+1)/refrat)
+          offset = w0(n,r_end_coord(n)+1) - w0(i,(r_end_coord(n)+1)/refrat)
 
-          ! Restrict vel from level n to level i
+          ! Restrict w0 from level n to level i
           do r=r_start_coord(n),r_end_coord(n)+1,refrat
-             vel(i,r/refrat) = vel(n,r)
+             w0(i,r/refrat) = w0(n,r)
           end do
 
-          ! Offset the vel on level i above this point
+          ! Offset the w0 on level i above this point
           do r=(r_end_coord(n)+1)/refrat+1,r_end_coord(i)+1
-             vel(i,r) = vel(i,r) + offset
+             w0(i,r) = w0(i,r) + offset
           end do
 
        end do
@@ -179,23 +183,23 @@ contains
        ! Compute the forcing term in the base state velocity equation, - 1/rho0 grad pi0 
        dt_avg = HALF * (dt + dtold)
        do r=r_start_coord(n),r_end_coord(n)
-          vel_old_cen(n,r) = HALF * (vel_old(n,r) + vel_old(n,r+1))
-          vel_new_cen(n,r) = HALF * (vel(n,r) + vel(n,r+1))
-          vel_avg = HALF * (dt * vel_old_cen(n,r) + dtold *  vel_new_cen(n,r)) / dt_avg
-          div_avg = HALF * (dt * (vel_old(n,r+1)-vel_old(n,r)) + &
-               dtold * (vel(n,r+1)-vel(n,r))) / dt_avg
-          f(n,r) = (vel_new_cen(n,r)-vel_old_cen(n,r)) / dt_avg + vel_avg * div_avg / dr(n)
+          w0_old_cen(n,r) = HALF * (w0_old(n,r) + w0_old(n,r+1))
+          w0_new_cen(n,r) = HALF * (w0(n,r) + w0(n,r+1))
+          w0_avg = HALF * (dt * w0_old_cen(n,r) + dtold *  w0_new_cen(n,r)) / dt_avg
+          div_avg = HALF * (dt * (w0_old(n,r+1)-w0_old(n,r)) + &
+               dtold * (w0(n,r+1)-w0(n,r))) / dt_avg
+          w0_force(n,r) = (w0_new_cen(n,r)-w0_old_cen(n,r)) / dt_avg + w0_avg * div_avg / dr(n)
        end do
 
     end do
 
-    deallocate(vel_old_cen,vel_new_cen)
+    deallocate(w0_old_cen,w0_new_cen)
 
   end subroutine make_w0_planar
 
-  subroutine make_w0_spherical(n,vel,vel_old,Sbar_in,rho0,rho0_new,p0,p0_new, &
+  subroutine make_w0_spherical(n,w0,w0_old,Sbar_in,rho0,rho0_new,p0,p0_new, &
                                gamma1bar,gamma1bar_new,delta_p0_ptherm_bar, &
-                               etarho,etarho_cc,f,dt,dtold)
+                               etarho,etarho_cc,w0_force,dt,dtold)
 
     use geometry, only: r_cc_loc, nr_fine, r_edge_loc, dr, r_end_coord
     use make_grav_module
@@ -205,24 +209,24 @@ contains
     use probin_module, only: dpdt_factor, base_cutoff_density
 
     integer        , intent(in   ) :: n
-    real(kind=dp_t), intent(  out) :: vel(0:)
-    real(kind=dp_t), intent(in   ) :: vel_old(0:)
+    real(kind=dp_t), intent(  out) :: w0(0:)
+    real(kind=dp_t), intent(in   ) :: w0_old(0:)
     real(kind=dp_t), intent(in   ) :: Sbar_in(0:)
     real(kind=dp_t), intent(in   ) :: rho0(0:),rho0_new(0:)
     real(kind=dp_t), intent(in   ) :: p0(0:),p0_new(0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar(0:),gamma1bar_new(0:),delta_p0_ptherm_bar(0:)
     real(kind=dp_t), intent(in   ) :: etarho(0:),etarho_cc(0:)
-    real(kind=dp_t), intent(inout) ::   f(0:)
+    real(kind=dp_t), intent(inout) :: w0_force(0:)
     real(kind=dp_t), intent(in   ) :: dt,dtold
 
     ! Local variables
     integer                      :: r
-    real(kind=dp_t), allocatable :: vel_old_cen(:)
-    real(kind=dp_t), allocatable :: vel_new_cen(:)
+    real(kind=dp_t), allocatable :: w0_old_cen(:)
+    real(kind=dp_t), allocatable :: w0_new_cen(:)
     real(kind=dp_t), allocatable :: c(:),d(:),e(:),u(:),rhs(:)
     real(kind=dp_t), allocatable :: m(:)
-    real(kind=dp_t)              :: vel_avg, div_avg, dt_avg
-    real(kind=dp_t), allocatable :: vel_bar(:)
+    real(kind=dp_t)              :: w0_avg, div_avg, dt_avg
+    real(kind=dp_t), allocatable :: w0_bar(:)
     real(kind=dp_t), allocatable :: grav_edge(:)
 
     real(kind=dp_t), parameter :: eps = 1.d-8
@@ -235,8 +239,8 @@ contains
 
     ! Cell-centered
     allocate(m          (0:nr_fine-1))
-    allocate(vel_old_cen(0:nr_fine-1))
-    allocate(vel_new_cen(0:nr_fine-1))
+    allocate(w0_old_cen(0:nr_fine-1))
+    allocate(w0_new_cen(0:nr_fine-1))
 
     allocate(gamma1bar_nph(0:nr_fine-1))
     allocate(     rho0_nph(0:nr_fine-1))
@@ -245,7 +249,7 @@ contains
 
     ! Edge-centered
     allocate(c(0:nr_fine),d(0:nr_fine),e(0:nr_fine),rhs(0:nr_fine),u(0:nr_fine))
-    allocate(vel_bar(0:nr_fine))
+    allocate(w0_bar(0:nr_fine))
     allocate(grav_edge(0:nr_fine))
 
 
@@ -260,7 +264,7 @@ contains
     ! NOTE:  we first solve for the w0 resulting only from Sbar -- then we will
     ! solve for the update to w0.  We integrate d/dr (r^2 w0) = (r^2 Sbar)
 
-    vel_bar = ZERO
+    w0_bar = ZERO
     do r=1,r_end_coord(n)+1
 
        if (rho0(r-1) .gt. base_cutoff_density) then
@@ -269,14 +273,14 @@ contains
           volume_discrepancy = ZERO
        endif
 
-       vel_bar(r) = vel_bar(r-1) + dr(n) * Sbar_in(r-1) * r_cc_loc(n,r-1)**2 - &
+       w0_bar(r) = w0_bar(r-1) + dr(n) * Sbar_in(r-1) * r_cc_loc(n,r-1)**2 - &
             dr(n)* volume_discrepancy * r_cc_loc(n,r-1)**2 / &
             (gamma1bar_nph(r-1)*p0_nph(r-1))
 
     end do
 
     do r = 1,r_end_coord(n)+1
-       vel_bar(r) = vel_bar(r) / r_edge_loc(n,r)**2
+       w0_bar(r) = w0_bar(r) / r_edge_loc(n,r)**2
     end do
 
 
@@ -314,7 +318,7 @@ contains
 
     do r = 1,r_end_coord(n)
        dpdr = (p0_nph(r)-p0_nph(r-1))/dr(n)
-       rhs(r) = four * dpdr * vel_bar(r) / r_edge_loc(n,r) - &
+       rhs(r) = four * dpdr * w0_bar(r) / r_edge_loc(n,r) - &
             grav_edge(r) * (r_cc_loc(n,r  )**2 * etarho_cc(r  ) - &
                             r_cc_loc(n,r-1)**2 * etarho_cc(r-1)) / &
                            (dr(n) * r_edge_loc(n,r)**2) - &
@@ -335,29 +339,28 @@ contains
     ! Call the tridiagonal solver
     call tridiag(c, d, e, rhs, u, r_end_coord(n)+2)
 
-    vel(0) = ZERO
+    w0(0) = ZERO
     do r=1,r_end_coord(n)+1
-       vel(r) = u(r) / r_edge_loc(n,r)**2
+       w0(r) = u(r) / r_edge_loc(n,r)**2
     end do
 
     do r=0,r_end_coord(n)+1
-       vel(r) = vel(r) + vel_bar(r)
+       w0(r) = w0(r) + w0_bar(r)
     end do
 
     ! Compute the forcing term in the base state velocity equation, - 1/rho0 grad pi0 
     dt_avg = HALF * (dt + dtold)
     do r = 0,r_end_coord(n)
-       vel_old_cen(r) = HALF * (vel_old(r) + vel_old(r+1))
-       vel_new_cen(r) = HALF * (vel    (r) + vel    (r+1))
-       vel_avg = HALF * (dt *  vel_old_cen(r)           + dtold *  vel_new_cen(r)  ) / dt_avg
-       div_avg = HALF * (dt * (vel_old(r+1)-vel_old(r)) + dtold * (vel(r+1)-vel(r))) / dt_avg
-       f(r) = (vel_new_cen(r)-vel_old_cen(r)) / dt_avg + &
-               vel_avg * div_avg / dr(n)
+       w0_old_cen(r) = HALF * (w0_old(r) + w0_old(r+1))
+       w0_new_cen(r) = HALF * (w0    (r) + w0    (r+1))
+       w0_avg = HALF * (dt *  w0_old_cen(r)           + dtold *  w0_new_cen(r)  ) / dt_avg
+       div_avg = HALF * (dt * (w0_old(r+1)-w0_old(r)) + dtold * (w0(r+1)-w0(r))) / dt_avg
+       w0_force(r) = (w0_new_cen(r)-w0_old_cen(r)) / dt_avg + w0_avg * div_avg / dr(n)
     end do
 
     deallocate(c,d,e,rhs,u)
     deallocate(m)
-    deallocate(vel_old_cen,vel_new_cen)
+    deallocate(w0_old_cen,w0_new_cen)
 
   end subroutine make_w0_spherical
 
