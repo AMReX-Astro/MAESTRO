@@ -13,7 +13,8 @@ contains
                               rho0_new,rhoh0_new,p0_old,p0_new,tempbar,gamma1bar,w0, &
                               rho_omegadot2,div_coeff_old,div_coeff_new, &
                               grav_cell_old,dx,time,dt,dtold,the_bc_tower, &
-                              dSdt,Source_old,Source_new,etarho,etarho_cc,psi,sponge,hgrhs,istep)
+                              dSdt,Source_old,Source_new,etarho,etarho_cc,psi,sponge,hgrhs, &
+                              istep)
 
     use bl_prof_module
     use ml_layout_module
@@ -55,7 +56,7 @@ contains
     use make_gamma_module
     use rhoh_vs_t_module
     use probin_module
-    use restrict_base_module
+    use restrict_base_module, only: fill_ghost_base
     
     logical,         intent(in   ) :: init_mode
     type(ml_layout), intent(inout) :: mla
@@ -423,6 +424,7 @@ contains
        
        call make_gamma(nlevs,gamma1,s1,p0_old,tempbar,dx)
        call average(mla,gamma1,gamma1bar,dx,1)
+       call fill_ghost_base(nlevs,gamma1bar,.true.)
 
        do n=1,nlevs
           call destroy(gamma1(n))
@@ -638,6 +640,7 @@ contains
        
        call make_gamma(nlevs,gamma1,snew,p0_new,tempbar,dx)
        call average(mla,gamma1,gamma1bar,dx,1)
+       call fill_ghost_base(nlevs,gamma1bar,.true.)
 
        do n=1,nlevs
           call destroy(gamma1(n))

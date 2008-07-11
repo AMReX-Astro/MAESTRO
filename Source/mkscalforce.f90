@@ -37,7 +37,6 @@ contains
     use multifab_fill_ghost_module
     use multifab_physbc_module
     use make_grav_module
-    use restrict_base_module
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: scal_force(:)
@@ -70,9 +69,6 @@ contains
 
     dm = scal_force(1)%dim
       
-    call fill_ghost_base(nlevs,p0_old,.true.)
-    call fill_ghost_base(nlevs,p0_new,.true.)
-
     do n=1,nlevs
 
        allocate(rho0(0:nr_fine-1))
@@ -388,7 +384,6 @@ contains
     use ml_restriction_module, only: ml_cc_restriction_c
     use multifab_fill_ghost_module
     use multifab_physbc_module
-    use restrict_base_module
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: temp_force(:)
@@ -420,9 +415,6 @@ contains
 
     dm = temp_force(1)%dim
     ng = s(1)%ng
-
-    call fill_ghost_base(nlevs,p0_old,.true.)
-    call fill_ghost_base(nlevs,p0_new,.true.)
 
     do n=1,nlevs
 

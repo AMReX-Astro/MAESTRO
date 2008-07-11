@@ -34,10 +34,6 @@ contains
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "advect_base")
-    
-    call fill_ghost_base(nlevs,p0_old,.true.)
-    call fill_ghost_base(nlevs,rho0_old,.true.)
-    call fill_ghost_base(nlevs,rhoh0_old,.true.)
 
     if (spherical .eq. 0) then
        call advect_base_state_planar(nlevs,vel,p0_old,p0_new,rho0_old,rho0_new, &
@@ -51,6 +47,10 @@ contains
     call restrict_base(nlevs,p0_new,.true.)
     call restrict_base(nlevs,rho0_new,.true.)
     call restrict_base(nlevs,rhoh0_new,.true.)
+
+    call fill_ghost_base(nlevs,p0_new,.true.)
+    call fill_ghost_base(nlevs,rho0_new,.true.)
+    call fill_ghost_base(nlevs,rhoh0_new,.true.)
 
     call destroy(bpt)
        

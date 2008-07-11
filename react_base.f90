@@ -51,6 +51,7 @@ contains
     enddo ! end loop over levels
 
     call restrict_base(nlevs,rhoh0_out,.true.)
+    call fill_ghost_base(nlevs,rhoh0_out,.true.)
 
     call destroy(bpt)
 

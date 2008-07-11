@@ -38,6 +38,7 @@ contains
     enddo
 
     call restrict_base(nlevs,rho0_new,.true.)
+    call fill_ghost_base(nlevs,rho0_new,.true.)
 
     call destroy(bpt)
        

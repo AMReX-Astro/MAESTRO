@@ -39,7 +39,6 @@ contains
     use pred_parameters
     use modify_scal_force_module
     use convert_rhoX_to_X_module
-    use restrict_base_module
 
     integer        , intent(in   ) :: nlevs
     type(ml_layout), intent(inout) :: mla
@@ -102,10 +101,6 @@ contains
     allocate(rhoh0_edge_old(nlevs,0:nr_fine))
     allocate(rhoh0_edge_new(nlevs,0:nr_fine))
 
-    call fill_ghost_base(nlevs,rho0_old,.true.)
-    call fill_ghost_base(nlevs,rho0_new,.true.)
-    call fill_ghost_base(nlevs,rhoh0_old,.true.)
-    call fill_ghost_base(nlevs,rhoh0_new,.true.)
     do n = 1, nlevs
        call cell_to_edge(n,rho0_old(n,:),rho0_edge_old(n,:))
        call cell_to_edge(n,rho0_new(n,:),rho0_edge_new(n,:))
