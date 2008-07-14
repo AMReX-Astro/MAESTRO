@@ -95,8 +95,8 @@ contains
           end if
           
           if (r_end_coord(n)+1 .ne. nr(n)) then
-             s0(n,r_end_coord(n)+1) = -THIRD*s0(n,r_end_coord(n)-1) &
-                  + s0(n,r_end_coord(n)) + THIRD*s0(n-1,(r_end_coord(n)+1)/2)
+             s0(n,r_end_coord(n)+2) = -THIRD*s0(n,r_end_coord(n)) &
+                  + s0(n,r_end_coord(n)+1) + THIRD*s0(n-1,(r_end_coord(n)+2)/2)
           end if
 
        end do
