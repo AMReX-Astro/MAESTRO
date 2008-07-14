@@ -655,11 +655,10 @@ contains
     
     div_coeff_nph = HALF*(div_coeff_old + div_coeff_new)
 
+    rho0_nph = HALF*(rho0_old+rho0_new)
+
     ! Define base state at half time for use in velocity advance!
     do n=1,nlevs
-       do r=r_start_coord(n),r_end_coord(n)
-          rho0_nph(n,r) = HALF * (rho0_old(n,r) + rho0_new(n,r))
-       end do
        call make_grav_cell(n,grav_cell_nph(n,:),rho0_nph(n,:))
     end do
     
@@ -1139,11 +1138,7 @@ contains
     end if
 
     ! Define beta at half time using the div_coeff_new from step 9!
-    do n=1,nlevs
-       do r=r_start_coord(n),r_end_coord(n)
-          div_coeff_nph(n,r) = HALF * (div_coeff_old(n,r) + div_coeff_new(n,r))
-       end do
-    end do
+    div_coeff_nph = HALF*(div_coeff_old+div_coeff_new)
        
     ! Project the new velocity field.
     if (init_mode) then
