@@ -58,6 +58,8 @@ contains
     else
 
        do n=1,nlevs
+          ! NOTE: need to fix this to put loop over nlevs within so we can call
+          ! fill_ghost_base on w0 before computing w0_force
           call make_w0_spherical(n,w0(n,:),w0_old(n,0:),Sbar_in(n,0:), &
                                  rho0_old(n,:),rho0_new(n,:),p0_old(n,0:),p0_new(n,0:), &
                                  gamma1bar_old(n,0:),gamma1bar_new(n,0:), &
@@ -68,7 +70,6 @@ contains
 
     end if
 
-    call fill_ghost_base(nlevs,w0,.false.)
     call fill_ghost_base(nlevs,w0_force,.true.)
 
     do n=1,nlevs
@@ -92,6 +93,7 @@ contains
     use variables, only: rho_comp
     use bl_constants_module
     use probin_module, only: grav_const, dpdt_factor, base_cutoff_density
+    use restrict_base_module, only: fill_ghost_base
 
     integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(  out) :: w0(:,0:)
@@ -178,6 +180,8 @@ contains
 
     end do
 
+    call fill_ghost_base(nlevs,w0,.false.)
+
     do n=1,nlevs
        
        ! Compute the forcing term in the base state velocity equation, - 1/rho0 grad pi0 
@@ -188,7 +192,7 @@ contains
           w0_avg = HALF * (dt * w0_old_cen(n,r) + dtold *  w0_new_cen(n,r)) / dt_avg
           div_avg = HALF * (dt * (w0_old(n,r+1)-w0_old(n,r)) + &
                dtold * (w0(n,r+1)-w0(n,r))) / dt_avg
-          w0_force(n,r) = (w0_new_cen(n,r)-w0_old_cen(n,r)) / dt_avg + w0_avg * div_avg / dr(n)
+          w0_force(n,r) = (w0_new_cen(n,r)-w0_old_cen(n,r))/dt_avg + w0_avg*div_avg/dr(n)
        end do
 
     end do
@@ -238,7 +242,7 @@ contains
     real(kind=dp_t), allocatable :: gamma1bar_nph(:), rho0_nph(:), p0_nph(:)
 
     ! Cell-centered
-    allocate(m          (0:nr_fine-1))
+    allocate(m         (0:nr_fine-1))
     allocate(w0_old_cen(0:nr_fine-1))
     allocate(w0_new_cen(0:nr_fine-1))
 
