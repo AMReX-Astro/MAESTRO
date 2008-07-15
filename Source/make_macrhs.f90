@@ -43,13 +43,18 @@ contains
     real(kind=dp_t), pointer:: mp(:,:,:,:),sp(:,:,:,:),gp(:,:,:,:),pop(:,:,:,:)
 
     integer :: lo(Source(1)%dim),hi(Source(1)%dim)
-    integer :: i,dm,n
+    integer :: i,dm,n,ng_rh,ng_sr,ng_dg,ng_dp
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "make_macrhs")
 
     dm = Source(1)%dim
+
+    ng_rh = macrhs(1)%ng
+    ng_sr = Source(1)%ng
+    ng_dg = delta_gamma1_term(1)%ng
+    ng_dp = delta_p_term(1)%ng
 
     do n = 1, nlevs
 
@@ -63,15 +68,15 @@ contains
           hi =  upb(get_box(Source(n), i))
           select case (dm)
           case (2)
-             call make_macrhs_2d(n,lo,hi,rho0(n,:),mp(:,:,1,1),sp(:,:,1,1),gp(:,:,1,1), &
-                                 Sbar(n,:), &
-                                 div_coeff(n,:),gamma1bar_old(n,:),gamma1bar_new(n,:), &
-                                 p0_old(n,:),p0_new(n,:),pop(:,:,1,1),dt)
+             call make_macrhs_2d(n,lo,hi,rho0(n,:),mp(:,:,1,1),ng_rh,sp(:,:,1,1),ng_sr, &
+                                 gp(:,:,1,1),ng_dg,Sbar(n,:),div_coeff(n,:), &
+                                 gamma1bar_old(n,:),gamma1bar_new(n,:),p0_old(n,:), &
+                                 p0_new(n,:),pop(:,:,1,1),ng_dp,dt)
           case (3)
-             call make_macrhs_3d(n,lo,hi,rho0(n,:),mp(:,:,:,1),sp(:,:,:,1),gp(:,:,:,1), &
-                                 Sbar(n,:),div_coeff(n,:),dx(n,:), &
+             call make_macrhs_3d(n,lo,hi,rho0(n,:),mp(:,:,:,1),ng_rh,sp(:,:,:,1),ng_sr, &
+                                 gp(:,:,:,1),ng_dg,Sbar(n,:),div_coeff(n,:),dx(n,:), &
                                  gamma1bar_old(n,:),gamma1bar_new(n,:), &
-                                 p0_old(n,:),p0_new(n,:),pop(:,:,:,1),dt)
+                                 p0_old(n,:),p0_new(n,:),pop(:,:,:,1),ng_dp,dt)
           end select
        end do
 
@@ -81,22 +86,23 @@ contains
 
   end subroutine make_macrhs
 
-  subroutine make_macrhs_2d(n,lo,hi,rho0,rhs,Source,delta_gamma1_term,Sbar,div_coeff, &
-                            gamma1bar_old,gamma1bar_new,p0_old,p0_new,delta_p_term,dt)
+  subroutine make_macrhs_2d(n,lo,hi,rho0,rhs,ng_rh,Source,ng_sr,delta_gamma1_term,ng_dg, &
+                            Sbar,div_coeff,gamma1bar_old,gamma1bar_new,p0_old,p0_new, &
+                            delta_p_term,ng_dp,dt)
 
     use probin_module, only: dpdt_factor
     use geometry, only: base_cutoff_density_coord
 
-    integer         , intent(in   ) :: n, lo(:), hi(:)
+    integer         , intent(in   ) :: n, lo(:), hi(:), ng_rh, ng_sr, ng_dg, ng_dp
     real (kind=dp_t), intent(in   ) :: rho0(0:) 
-    real (kind=dp_t), intent(  out) :: rhs(lo(1):,lo(2):)  
-    real (kind=dp_t), intent(in   ) :: Source(lo(1):,lo(2):)  
-    real (kind=dp_t), intent(in   ) :: delta_gamma1_term(lo(1):,lo(2):)  
+    real (kind=dp_t), intent(  out) ::               rhs(lo(1)-ng_rh:,lo(2)-ng_rh:)  
+    real (kind=dp_t), intent(in   ) ::            Source(lo(1)-ng_sr:,lo(2)-ng_sr:)  
+    real (kind=dp_t), intent(in   ) :: delta_gamma1_term(lo(1)-ng_dg:,lo(2)-ng_dg:)  
     real (kind=dp_t), intent(in   ) :: Sbar(0:)  
     real (kind=dp_t), intent(in   ) :: div_coeff(0:)
     real (kind=dp_t), intent(in   ) :: gamma1bar_old(0:),gamma1bar_new(0:)
     real (kind=dp_t), intent(in   ) :: p0_old(0:),p0_new(0:)
-    real (kind=dp_t), intent(in   ) :: delta_p_term(lo(1):,lo(2):)
+    real (kind=dp_t), intent(in   ) ::      delta_p_term(lo(1)-ng_dp:,lo(2)-ng_dp:)
     real (kind=dp_t), intent(in   ) :: dt
 
     !     Local variables
@@ -124,25 +130,25 @@ contains
 
   end subroutine make_macrhs_2d
 
-  subroutine make_macrhs_3d(n,lo,hi,rho0,rhs,Source,delta_gamma1_term,Sbar,div_coeff,dx, &
-                            gamma1bar_old,gamma1bar_new,p0_old,p0_new, &
-                            delta_p_term,dt)
+  subroutine make_macrhs_3d(n,lo,hi,rho0,rhs,ng_rh,Source,ng_sr,delta_gamma1_term,ng_dg, &
+                            Sbar,div_coeff,dx,gamma1bar_old,gamma1bar_new,p0_old,p0_new, &
+                            delta_p_term,ng_dp,dt)
 
     use geometry, only: spherical, base_cutoff_density_coord
     use probin_module, only: dpdt_factor, base_cutoff_density
     use fill_3d_module
 
-    integer         , intent(in   ) :: n,lo(:), hi(:)
+    integer         , intent(in   ) :: n,lo(:),hi(:),ng_rh,ng_sr,ng_dg,ng_dp
     real (kind=dp_t), intent(in   ) :: rho0(0:)
-    real (kind=dp_t), intent(  out) ::               rhs(lo(1):,lo(2):,lo(3):)  
-    real (kind=dp_t), intent(in   ) ::            Source(lo(1):,lo(2):,lo(3):)  
-    real (kind=dp_t), intent(in   ) :: delta_gamma1_term(lo(1):,lo(2):,lo(3):)  
+    real (kind=dp_t), intent(  out) ::            rhs(lo(1)-ng_rh:,lo(2)-ng_rh:,lo(3)-ng_rh:)
+    real (kind=dp_t), intent(in   ) ::         Source(lo(1)-ng_sr:,lo(2)-ng_sr:,lo(3)-ng_sr:)
+    real (kind=dp_t), intent(in) :: delta_gamma1_term(lo(1)-ng_dg:,lo(2)-ng_dg:,lo(3)-ng_dg:)
     real (kind=dp_t), intent(in   ) ::      Sbar(0:)  
     real (kind=dp_t), intent(in   ) :: div_coeff(0:)  
     real (kind=dp_t), intent(in   ) :: dx(:)
     real (kind=dp_t), intent(in   ) :: gamma1bar_old(0:),gamma1bar_new(0:)
     real (kind=dp_t), intent(in   ) :: p0_old(0:),p0_new(0:)
-    real (kind=dp_t), intent(in   ) :: delta_p_term(lo(1):,lo(2):,lo(3):)
+    real (kind=dp_t), intent(in   ) ::   delta_p_term(lo(1)-ng_dp:,lo(2)-ng_dp:,lo(3)-ng_dp:)
     real (kind=dp_t), intent(in   ) :: dt
 
     !     Local variables
