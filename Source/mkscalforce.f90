@@ -25,10 +25,8 @@ module mkscalforce_module
 
 contains
 
-  subroutine mkrhohforce(nlevs,scal_force,thermal,umac, &
-                         p0_old, p0_new, rho0_old, rho0_new, &
-                         psi,normal,dx, &
-                         add_thermal,mla,the_bc_level)
+  subroutine mkrhohforce(nlevs,scal_force,thermal,umac, p0_old, p0_new, rho0_old, rho0_new, &
+                         psi,normal,dx, add_thermal,mla,the_bc_level)
 
     use bl_prof_module
     use variables, only: foextrap_comp, rhoh_comp
@@ -42,7 +40,7 @@ contains
     type(multifab) , intent(inout) :: scal_force(:)
     type(multifab) , intent(in   ) :: thermal(:)
     type(multifab) , intent(in   ) :: umac(:,:)
-    real(kind=dp_t), intent(in   ) ::   p0_old(:,0:),   p0_new(:,0:)
+    real(kind=dp_t), intent(in   ) :: p0_old(:,0:), p0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: rho0_old(:,0:), rho0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: psi(:,0:)
     type(multifab) , intent(in   ) :: normal(:)
@@ -53,7 +51,8 @@ contains
 
     ! local
     integer                  :: i,dm,n
-    integer                  :: lo(scal_force(1)%dim),hi(scal_force(1)%dim)    
+    integer                  :: lo(scal_force(1)%dim),hi(scal_force(1)%dim)
+    integer                  :: ng_f,ng_um,ng_th,ng_n
     real(kind=dp_t), pointer :: ump(:,:,:,:)
     real(kind=dp_t), pointer :: vmp(:,:,:,:)
     real(kind=dp_t), pointer :: wmp(:,:,:,:)
@@ -69,6 +68,11 @@ contains
 
     dm = scal_force(1)%dim
       
+    ng_f  = scal_force(1)%ng
+    ng_um = umac(1,1)%ng
+    ng_th = thermal(1)%ng
+    ng_n  = normal(1)%ng
+
     do n=1,nlevs
 
        allocate(rho0(0:nr_fine-1))
@@ -87,25 +91,28 @@ contains
           hi = upb(get_box(scal_force(n),i))
           select case (dm)
           case (2)
-             call mkrhohforce_2d(n,fp(:,:,1,rhoh_comp), vmp(:,:,1,1), tp(:,:,1,1), lo, hi, &
-                                 p0_old(n,:), p0_new(n,:), rho0, grav, psi(n,:), add_thermal)
+             call mkrhohforce_2d(n,fp(:,:,1,rhoh_comp), ng_f, vmp(:,:,1,1), ng_um, &
+                                 tp(:,:,1,1), ng_th, lo, hi, p0_old(n,:), p0_new(n,:), &
+                                 rho0, grav, psi(n,:), add_thermal)
           case(3)
              wmp  => dataptr(umac(n,3), i)
              if (spherical .eq. 0) then
-                call mkrhohforce_3d(n,fp(:,:,:,rhoh_comp), wmp(:,:,:,1), tp(:,:,:,1), &
-                                    lo, hi, p0_old(n,:), p0_new(n,:), rho0, grav, &
-                                    psi(n,:), add_thermal)
+                call mkrhohforce_3d(n,fp(:,:,:,rhoh_comp), ng_f, wmp(:,:,:,1), ng_um, &
+                                    tp(:,:,:,1), ng_th, lo, hi, p0_old(n,:), p0_new(n,:), &
+                                    rho0, grav, psi(n,:), add_thermal)
              else
                 np => dataptr(normal(n), i)
-                call mkrhohforce_3d_sphr(n,fp(:,:,:,rhoh_comp), &
-                                         ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
-                                         tp(:,:,:,1), lo, hi, dx(n,:), np(:,:,:,:), &
-                                         p0_old(n,:), p0_new(n,:), rho0, grav, psi(n,:), &
-                                         add_thermal)
+                call mkrhohforce_3d_sphr(n,fp(:,:,:,rhoh_comp), ng_f, &
+                                         ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
+                                         tp(:,:,:,1), ng_th, lo, hi, dx(n,:), np(:,:,:,:), &
+                                         ng_n, p0_old(n,:), p0_new(n,:), rho0, grav, &
+                                         psi(n,:), add_thermal)
              end if
           end select
        end do
+
        deallocate(rho0,grav)
+
     end do
 
     if (nlevs .eq. 1) then
@@ -141,7 +148,7 @@ contains
     
   end subroutine mkrhohforce
 
-  subroutine mkrhohforce_2d(n,rhoh_force,wmac,thermal,lo,hi, &
+  subroutine mkrhohforce_2d(n,rhoh_force,ng_f,wmac,ng_um,thermal,ng_th,lo,hi, &
                             p0_old,p0_new,rho0,grav,psi,add_thermal)
 
     use geometry, only: dr, nr, base_cutoff_density_coord
@@ -154,10 +161,10 @@ contains
     ! both p0_old and p0_new to the same old value.  In the computation
     ! of the rhoh_force for the update, they will be used to time-center.
 
-    integer,         intent(in   ) :: n,lo(:),hi(:)
-    real(kind=dp_t), intent(  out) :: rhoh_force(lo(1)-1:,lo(2)-1:)
-    real(kind=dp_t), intent(in   ) :: wmac(lo(1)-1:,lo(2)-1:)
-    real(kind=dp_t), intent(in   ) :: thermal(lo(1)-1:,lo(2)-1:)
+    integer,         intent(in   ) :: n,lo(:),hi(:),ng_f,ng_um,ng_th
+    real(kind=dp_t), intent(  out) :: rhoh_force(lo(1)-ng_f :,lo(2)-ng_f :)
+    real(kind=dp_t), intent(in   ) ::       wmac(lo(1)-ng_um:,lo(2)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::    thermal(lo(1)-ng_th:,lo(2)-ng_th:)
     real(kind=dp_t), intent(in   ) :: p0_old(0:)
     real(kind=dp_t), intent(in   ) :: p0_new(0:)
     real(kind=dp_t), intent(in   ) :: rho0(0:)
@@ -208,7 +215,7 @@ contains
 
   end subroutine mkrhohforce_2d
 
-  subroutine mkrhohforce_3d(n,rhoh_force,wmac,thermal,lo,hi,&
+  subroutine mkrhohforce_3d(n,rhoh_force,ng_f,wmac,ng_um,thermal,ng_th,lo,hi,&
                             p0_old,p0_new,rho0,grav,psi,add_thermal)
 
     use geometry, only: dr, nr, base_cutoff_density_coord
@@ -217,10 +224,10 @@ contains
 
     ! compute the source terms for the non-reactive part of the enthalpy equation {w dp0/dr}
 
-    integer,         intent(in   ) :: n,lo(:),hi(:)
-    real(kind=dp_t), intent(  out) :: rhoh_force(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-    real(kind=dp_t), intent(in   ) :: wmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-    real(kind=dp_t), intent(in   ) :: thermal(lo(1)-1:,lo(2)-1:,lo(3)-1:)
+    integer,         intent(in   ) :: n,lo(:),hi(:),ng_f,ng_um,ng_th
+    real(kind=dp_t), intent(  out) :: rhoh_force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :)
+    real(kind=dp_t), intent(in   ) ::       wmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::    thermal(lo(1)-ng_th:,lo(2)-ng_th:,lo(3)-ng_th:)
     real(kind=dp_t), intent(in   ) :: p0_old(0:)
     real(kind=dp_t), intent(in   ) :: p0_new(0:)
     real(kind=dp_t), intent(in   ) :: rho0(0:)
@@ -275,8 +282,9 @@ contains
 
   end subroutine mkrhohforce_3d
 
-  subroutine mkrhohforce_3d_sphr(n,rhoh_force,umac,vmac,wmac,thermal,lo,hi,dx,normal, &
-                                 p0_old,p0_new,rho0,grav,psi,add_thermal)
+  subroutine mkrhohforce_3d_sphr(n,rhoh_force,ng_f,umac,vmac,wmac,ng_um,thermal,ng_th, &
+                                 lo,hi,dx,normal,ng_n,p0_old,p0_new,rho0,grav,psi, &
+                                 add_thermal)
 
     use fill_3d_module
     use geometry, only: nr_fine, dr, r_end_coord
@@ -285,13 +293,13 @@ contains
 
     ! compute the source terms for the non-reactive part of the enthalpy equation {w dp0/dr}
 
-    integer,         intent(in   ) :: n,lo(:),hi(:)
-    real(kind=dp_t), intent(  out) :: rhoh_force(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-    real(kind=dp_t), intent(in   ) :: umac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-    real(kind=dp_t), intent(in   ) :: vmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-    real(kind=dp_t), intent(in   ) :: wmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-    real(kind=dp_t), intent(in   ) :: thermal(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-    real(kind=dp_t), intent(in   ) :: normal(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)
+    integer,         intent(in   ) :: n,lo(:),hi(:),ng_f,ng_um,ng_th,ng_n
+    real(kind=dp_t), intent(  out) :: rhoh_force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :)
+    real(kind=dp_t), intent(in   ) ::       umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::       vmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::       wmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::    thermal(lo(1)-ng_th:,lo(2)-ng_th:,lo(3)-ng_th:)
+    real(kind=dp_t), intent(in   ) ::     normal(lo(1)-ng_n :,lo(2)-ng_n :,lo(3)-ng_n :,:)
     real(kind=dp_t), intent(in   ) :: dx(:)
     real(kind=dp_t), intent(in   ) :: p0_old(0:)
     real(kind=dp_t), intent(in   ) :: p0_new(0:)
@@ -399,7 +407,7 @@ contains
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     ! local
-    integer                  :: i,dm,ng,n
+    integer                  :: i,dm,n,ng_f,ng_um,ng_s,ng_th,ng_n
     integer                  :: lo(temp_force(1)%dim),hi(temp_force(1)%dim)
     real(kind=dp_t), pointer :: tp(:,:,:,:)
     real(kind=dp_t), pointer :: ump(:,:,:,:)
@@ -414,7 +422,12 @@ contains
     call build(bpt, "mktempforce")
 
     dm = temp_force(1)%dim
-    ng = s(1)%ng
+
+    ng_f  = temp_force(1)%ng
+    ng_um = umac(1,1)%ng
+    ng_s  = s(1)%ng
+    ng_th = thermal(1)%ng
+    ng_n  = normal(1)%ng
 
     do n=1,nlevs
 
@@ -429,21 +442,22 @@ contains
           tp  => dataptr(thermal(n),i)
           select case (dm)
           case (2)
-             call mktempforce_2d(n, fp(:,:,1,temp_comp), sp(:,:,1,:), vmp(:,:,1,1), &
-                                 tp(:,:,1,1), lo, hi, ng, p0_old(n,:), p0_new(n,:), psi(n,:))
+             call mktempforce_2d(n, fp(:,:,1,temp_comp), ng_f, sp(:,:,1,:), ng_s, &
+                                 vmp(:,:,1,1), ng_um, tp(:,:,1,1), ng_th, lo, hi, &
+                                 p0_old(n,:), p0_new(n,:), psi(n,:))
           case(3)
              wmp => dataptr(umac(n,3),i)
              if (spherical .eq. 1) then
                 np => dataptr(normal(n),i)
-                call mktempforce_3d_sphr(n,fp(:,:,:,temp_comp), sp(:,:,:,:), &
-                                         ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
-                                         tp(:,:,:,1), lo, hi, ng, &
+                call mktempforce_3d_sphr(n,fp(:,:,:,temp_comp), ng_f, sp(:,:,:,:), ng_s, &
+                                         ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
+                                         tp(:,:,:,1), ng_th, lo, hi, &
                                          p0_old(n,:), p0_new(n,:), psi(n,:), &
-                                         np(:,:,:,:), dx(n,:))
+                                         np(:,:,:,:), ng_n, dx(n,:))
              else
-                call mktempforce_3d(n, fp(:,:,:,temp_comp), sp(:,:,:,:), wmp(:,:,:,1), &
-                                    tp(:,:,:,1), lo, hi, ng, p0_old(n,:), p0_new(n,:), &
-                                    psi(n,:))
+                call mktempforce_3d(n, fp(:,:,:,temp_comp), ng_f, sp(:,:,:,:), ng_s, &
+                                    wmp(:,:,:,1), ng_um, tp(:,:,:,1), ng_th, lo, hi, &
+                                    p0_old(n,:), p0_new(n,:), psi(n,:))
              end if
           end select
        end do
@@ -483,7 +497,8 @@ contains
 
   end subroutine mktempforce
 
-  subroutine mktempforce_2d(n, temp_force, s, wmac, thermal, lo, hi, ng, p0_old, p0_new, psi)
+  subroutine mktempforce_2d(n, temp_force, ng_f, s, ng_s, wmac, ng_um, thermal, ng_th, &
+                            lo, hi, p0_old, p0_new, psi)
 
     use geometry, only: dr, nr
     use variables, only: temp_comp, rho_comp, spec_comp
@@ -495,12 +510,12 @@ contains
     ! both p0_old and p0_new to the same old value.  In the computation
     ! of the temp_force for the update, they will be used to time-center.
 
-    integer,         intent(in   ) :: lo(:),hi(:),ng
+    integer,         intent(in   ) :: lo(:),hi(:),ng_f,ng_s,ng_um,ng_th
     integer,         intent(in   ) :: n
-    real(kind=dp_t), intent(  out) :: temp_force(lo(1)-1:,lo(2)-1:)
-    real(kind=dp_t), intent(in   ) :: s(lo(1)-ng:,lo(2)-ng:,:)
-    real(kind=dp_t), intent(in   ) :: wmac(lo(1)-1:, lo(2)-1:)
-    real(kind=dp_t), intent(in   ) :: thermal(lo(1)-1:,lo(2)-1:)
+    real(kind=dp_t), intent(  out) :: temp_force(lo(1)-ng_f :,lo(2)-ng_f :)
+    real(kind=dp_t), intent(in   ) ::          s(lo(1)-ng_s :,lo(2)-ng_s :,:)
+    real(kind=dp_t), intent(in   ) ::       wmac(lo(1)-ng_um:,lo(2)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::    thermal(lo(1)-ng_th:,lo(2)-ng_th:)
     real(kind=dp_t), intent(in   ) :: p0_old(0:), p0_new(0:), psi(0:)
 
     integer :: i,j
@@ -539,8 +554,8 @@ contains
                   dsdt_eos, dsdr_eos, &
                   do_diag)
 
-         dhdp = ONE / s(i,j,rho_comp) + ( s(i,j,rho_comp) * dedr_eos(1) -                  &
-                                          p_eos(1) / s(i,j,rho_comp) )                     &
+         dhdp = ONE / s(i,j,rho_comp) + ( s(i,j,rho_comp) * dedr_eos(1) - &
+                                          p_eos(1) / s(i,j,rho_comp) ) &
                                         / ( s(i,j,rho_comp) * dpdr_eos(1) )
 
          wadv = HALF*(wmac(i,j)+wmac(i,j+1))
@@ -554,7 +569,8 @@ contains
 
   end subroutine mktempforce_2d
 
-  subroutine mktempforce_3d(n, temp_force, s, wmac, thermal, lo, hi, ng, p0_old, p0_new, psi)
+  subroutine mktempforce_3d(n, temp_force, ng_f, s, ng_s, wmac, ng_um, thermal, ng_th, &
+                            lo, hi, p0_old, p0_new, psi)
 
     use geometry,  only: dr, nr
     use variables, only: temp_comp, rho_comp, spec_comp
@@ -566,11 +582,11 @@ contains
     ! both p0_old and p0_new to the same old value.  In the computation
     ! of the temp_force for the update, they will be used to time-center.
 
-    integer,         intent(in   ) :: lo(:),hi(:),ng, n
-    real(kind=dp_t), intent(  out) :: temp_force(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-    real(kind=dp_t), intent(in   ) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-    real(kind=dp_t), intent(in   ) :: wmac(lo(1)-1:, lo(2)-1:, lo(3)-1:)
-    real(kind=dp_t), intent(in   ) :: thermal(lo(1)-1:,lo(2)-1:,lo(3)-1:)
+    integer,         intent(in   ) :: lo(:),hi(:),n,ng_f,ng_s,ng_um,ng_th
+    real(kind=dp_t), intent(  out) :: temp_force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :)
+    real(kind=dp_t), intent(in   ) ::          s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :,:)
+    real(kind=dp_t), intent(in   ) ::       wmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::    thermal(lo(1)-ng_th:,lo(2)-ng_th:,lo(3)-ng_th:)
     real(kind=dp_t), intent(in   ) :: p0_old(0:), p0_new(0:), psi(0:)
 
     integer         :: i,j,k
@@ -608,8 +624,8 @@ contains
                   dsdt_eos, dsdr_eos, &
                   do_diag)
 
-         dhdp = ONE / s(i,j,k,rho_comp) + ( s(i,j,k,rho_comp) * dedr_eos(1) -              &
-                                            p_eos(1) / s(i,j,k,rho_comp) )                 &
+         dhdp = ONE / s(i,j,k,rho_comp) + ( s(i,j,k,rho_comp) * dedr_eos(1) - &
+                                            p_eos(1) / s(i,j,k,rho_comp) ) &
                                           / ( s(i,j,k,rho_comp) * dpdr_eos(1) )
 
          wadv = HALF * (wmac(i,j,k+1) + wmac(i,j,k))
@@ -626,8 +642,9 @@ contains
 
   end subroutine mktempforce_3d
 
-  subroutine mktempforce_3d_sphr(n,temp_force, s, umac, vmac, wmac, thermal, &
-                                 lo, hi, ng, p0_old, p0_new, psi, normal, dx)
+  subroutine mktempforce_3d_sphr(n,temp_force, ng_f, s, ng_s, umac, vmac, wmac, ng_um, &
+                                 thermal, ng_th, &
+                                 lo, hi, p0_old, p0_new, psi, normal, ng_n, dx)
 
     use fill_3d_module
     use variables, only: temp_comp, rho_comp, spec_comp
@@ -640,15 +657,15 @@ contains
     ! both p0_old and p0_new to the same old value.  In the computation
     ! of the temp_force for the update, they will be used to time-center.
 
-    integer,         intent(in   ) :: n,lo(:),hi(:),ng
-    real(kind=dp_t), intent(  out) :: temp_force(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-    real(kind=dp_t), intent(in   ) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-    real(kind=dp_t), intent(in   ) :: umac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-    real(kind=dp_t), intent(in   ) :: vmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-    real(kind=dp_t), intent(in   ) :: wmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-    real(kind=dp_t), intent(in   ) :: thermal(lo(1)-1:,lo(2)-1:,lo(3)-1:)
+    integer,         intent(in   ) :: n,lo(:),hi(:),ng_f,ng_s,ng_um,ng_th,ng_n
+    real(kind=dp_t), intent(  out) :: temp_force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :)
+    real(kind=dp_t), intent(in   ) ::          s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :,:)
+    real(kind=dp_t), intent(in   ) ::       umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::       vmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::       wmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::    thermal(lo(1)-ng_th:,lo(2)-ng_th:,lo(3)-ng_th:)
     real(kind=dp_t), intent(in   ) :: p0_old(0:), p0_new(0:), psi(0:)
-    real(kind=dp_t), intent(in   ) :: normal(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)
+    real(kind=dp_t), intent(in   ) ::     normal(lo(1)-ng_n:,lo(2)-ng_n:,lo(3)-ng_n:,:)
     real(kind=dp_t), intent(in   ) :: dx(:)
 
     integer :: i,j,k,r
@@ -699,8 +716,8 @@ contains
                   dsdt_eos, dsdr_eos, &
                   do_diag)
 
-         dhdp = ONE / s(i,j,k,rho_comp) + ( s(i,j,k,rho_comp) * dedr_eos(1) -              &
-                                            p_eos(1) / s(i,j,k,rho_comp) )                 &
+         dhdp = ONE / s(i,j,k,rho_comp) + ( s(i,j,k,rho_comp) * dedr_eos(1) - &
+                                            p_eos(1) / s(i,j,k,rho_comp) ) &
                                           / ( s(i,j,k,rho_comp) * dpdr_eos(1) )
 
          uadv = HALF * ( umac(i,j,k) + umac(i+1,j,k) )
