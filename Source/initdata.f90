@@ -168,25 +168,25 @@ contains
 
        ! initialize the scalars
        call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,s0_init(:,rho_comp), &
-                                         s(:,:,:,rho_comp:),lo,hi,dx,ng)
+                                         s(:,:,:,rho_comp:),lo,hi,dx,ng,0)
 
        call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,s0_init(:,temp_comp), &
-                                         s(:,:,:,temp_comp:),lo,hi,dx,ng)
+                                         s(:,:,:,temp_comp:),lo,hi,dx,ng,0)
 
        ! initialize p0_cart
        call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,p0_background(:), &
-                                         p0_cart(:,:,:,1:),lo,hi,dx,0)
+                                         p0_cart(:,:,:,1:),lo,hi,dx,0,0)
 
        ! initialize species
        do comp = spec_comp, spec_comp+nspec-1
           call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,s0_init(:,comp), &
-                                            s(:,:,:,comp:),lo,hi,dx,ng)
+                                            s(:,:,:,comp:),lo,hi,dx,ng,0)
        end do
 
        ! initialize tracers
        do comp = trac_comp, trac_comp+ntrac-1
           call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,s0_init(:,comp), &
-                                            s(:,:,:,comp:),lo,hi,dx,ng)
+                                            s(:,:,:,comp:),lo,hi,dx,ng,0)
        end do
 
        ! initialize (rho h) using the EOS

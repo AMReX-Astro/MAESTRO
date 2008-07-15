@@ -832,7 +832,7 @@ contains
     real (kind = dp_t), allocatable :: w0_cart(:,:,:,:)
 
     allocate(w0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),3))
-    call put_1d_array_on_cart_3d_sphr(n,.true.,.true.,w0,w0_cart,lo,hi,dx,0,normal)
+    call put_1d_array_on_cart_3d_sphr(n,.true.,.true.,w0,w0_cart,lo,hi,dx,0,ng_n,normal)
 
     do k = lo(3), hi(3)
     do j = lo(2), hi(2)
@@ -911,7 +911,7 @@ contains
     ! since we want w0 in the radial direction, put in onto the Cartesian
     ! grid, but NOT as a vector
     allocate(w0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
-    call put_1d_array_on_cart_3d_sphr(n,.true.,.false.,w0,w0_cart,lo,hi,dx,0,normal)
+    call put_1d_array_on_cart_3d_sphr(n,.true.,.false.,w0,w0_cart,lo,hi,dx,0,ng_n,normal)
 
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)

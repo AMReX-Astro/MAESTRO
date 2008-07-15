@@ -518,7 +518,7 @@ contains
     enddo
 
     allocate(rho0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
-    call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,rho0_nph,rho0_cart,lo,hi,dx,0)
+    call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,rho0_nph,rho0_cart,lo,hi,dx,0,0)
 
 
     ! construct time-centered [ rho' (Utilde . e_r) ]

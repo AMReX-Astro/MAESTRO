@@ -128,11 +128,11 @@ contains
       if (spherical .eq. 1) then
          allocate(tempbar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
          call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,tempbar,tempbar_cart, &
-                                           lo,hi,dx,0)
+                                           lo,hi,dx,0,0)
          
          allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
          call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,p0,p0_cart, &
-                                           lo,hi,dx,0)
+                                           lo,hi,dx,0,0)
       endif
 
       do k = lo(3), hi(3)

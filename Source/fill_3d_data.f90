@@ -37,7 +37,7 @@ contains
     
     integer :: lo(s0_cart(1)%dim)
     integer :: hi(s0_cart(1)%dim)
-    integer :: i,n,dm,ng,comp
+    integer :: i,n,dm,ng_s,ng_n,comp
     real(kind=dp_t), pointer :: sp(:,:,:,:)
     real(kind=dp_t), pointer :: np(:,:,:,:)
 
@@ -50,7 +50,7 @@ contains
     end if
 
     dm = s0_cart(1)%dim
-    ng = s0_cart(1)%ng
+    ng_s = s0_cart(1)%ng
     
     do n=1,nlevs
        
@@ -63,23 +63,24 @@ contains
 
           case (2)
              call put_1d_array_on_cart_2d(is_edge_centered,is_vector, &
-                                          s0(n,:),sp(:,:,1,:),lo,hi,ng)
+                                          s0(n,:),sp(:,:,1,:),lo,hi,ng_s)
 
           case (3)
              if (spherical .eq. 0) then
                 call put_1d_array_on_cart_3d(is_edge_centered,is_vector, &
-                                             s0(n,:),sp(:,:,:,:),lo,hi,ng)
+                                             s0(n,:),sp(:,:,:,:),lo,hi,ng_s)
              else
                 if (is_vector) then
                    np => dataptr(normal(n), i)
-
+                   ng_n = normal(n)%ng
+                
                    call put_1d_array_on_cart_3d_sphr(n,is_edge_centered,is_vector, &
                                                      s0(n,:),sp(:,:,:,:), &
-                                                     lo,hi,dx(n,:),ng,np(:,:,:,:))
+                                                     lo,hi,dx(n,:),ng_s,ng_n,np(:,:,:,:))
                 else
                    call put_1d_array_on_cart_3d_sphr(n,is_edge_centered,is_vector, &
                                                      s0(n,:),sp(:,:,:,:), &
-                                                     lo,hi,dx(n,:),ng)
+                                                     lo,hi,dx(n,:),ng_s,ng_n)
                 end if
              endif
 
@@ -102,7 +103,7 @@ contains
                 do n=nlevs,2,-1
                    call ml_cc_restriction_c(s0_cart(n-1),comp,s0_cart(n),comp, &
                                             mla%mba%rr(n-1,:),1)
-                   call multifab_fill_ghost_cells(s0_cart(n),s0_cart(n-1),ng, &
+                   call multifab_fill_ghost_cells(s0_cart(n),s0_cart(n-1),ng_s, &
                                                   mla%mba%rr(n-1,:),the_bc_level(n-1), &
                                                   the_bc_level(n),comp,bc_comp,1)
                 end do
@@ -118,7 +119,7 @@ contains
           else
              do n=nlevs,2,-1
                 call ml_cc_restriction_c(s0_cart(n-1),1,s0_cart(n),1,mla%mba%rr(n-1,:),dm)
-                call multifab_fill_ghost_cells(s0_cart(n),s0_cart(n-1),ng, &
+                call multifab_fill_ghost_cells(s0_cart(n),s0_cart(n-1),ng_s, &
                                                mla%mba%rr(n-1,:),the_bc_level(n-1), &
                                                the_bc_level(n),1,bc_comp,dm)
              end do
@@ -135,7 +136,7 @@ contains
        else
           do n=nlevs,2,-1
              call ml_cc_restriction_c(s0_cart(n-1),1,s0_cart(n),1,mla%mba%rr(n-1,:),1)
-             call multifab_fill_ghost_cells(s0_cart(n),s0_cart(n-1),ng,mla%mba%rr(n-1,:), &
+             call multifab_fill_ghost_cells(s0_cart(n),s0_cart(n-1),ng_s,mla%mba%rr(n-1,:), &
                                             the_bc_level(n-1),the_bc_level(n),1,bc_comp,1)
           end do
        end if
@@ -146,15 +147,15 @@ contains
     
   end subroutine put_1d_array_on_cart
 
-  subroutine put_1d_array_on_cart_2d(is_edge_centered,is_vector,s0,s0_cart,lo,hi,ng)
+  subroutine put_1d_array_on_cart_2d(is_edge_centered,is_vector,s0,s0_cart,lo,hi,ng_s)
 
     use bl_constants_module
     use geometry, only: dr
 
-    integer        , intent(in   ) :: lo(:),hi(:),ng
+    integer        , intent(in   ) :: lo(:),hi(:),ng_s
     logical        , intent(in   ) :: is_edge_centered,is_vector
     real(kind=dp_t), intent(in   ) :: s0(0:)
-    real(kind=dp_t), intent(inout) :: s0_cart(lo(1)-ng:,lo(2)-ng:,:)
+    real(kind=dp_t), intent(inout) :: s0_cart(lo(1)-ng_s:,lo(2)-ng_s:,:)
 
     integer :: i,j
 
@@ -204,15 +205,15 @@ contains
 
   end subroutine put_1d_array_on_cart_2d
 
-  subroutine put_1d_array_on_cart_3d(is_edge_centered,is_vector,s0,s0_cart,lo,hi,ng)
+  subroutine put_1d_array_on_cart_3d(is_edge_centered,is_vector,s0,s0_cart,lo,hi,ng_s)
 
     use bl_constants_module
     use geometry, only: dr
 
-    integer        , intent(in   ) :: lo(:),hi(:),ng
+    integer        , intent(in   ) :: lo(:),hi(:),ng_s
     logical        , intent(in   ) :: is_edge_centered,is_vector
     real(kind=dp_t), intent(in   ) :: s0(0:)
-    real(kind=dp_t), intent(inout) :: s0_cart(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
+    real(kind=dp_t), intent(inout) :: s0_cart(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
 
     integer :: i,j,k
 
@@ -271,19 +272,23 @@ contains
   end subroutine put_1d_array_on_cart_3d
 
   subroutine put_1d_array_on_cart_3d_sphr(n,is_edge_centered,is_vector,s0,s0_cart,lo,hi, &
-                                          dx,ng,normal)
+                                          dx,ng_s,ng_n,normal)
+
+    ! note: ng_n is required only to dimension normal.  Since normal is 
+    ! optional, if you do not pass normal in, then you can use any dummy 
+    ! value for ng_n
 
     use bl_constants_module
     use geometry, only: dr, center, r_cc_loc, r_end_coord
     use probin_module, only: interp_type_radial_bin_to_cart
 
     integer        , intent(in   ) :: n
-    integer        , intent(in   ) :: lo(:),hi(:),ng
+    integer        , intent(in   ) :: lo(:),hi(:),ng_s, ng_n
     logical        , intent(in   ) :: is_edge_centered,is_vector
     real(kind=dp_t), intent(in   ) :: s0(0:)
-    real(kind=dp_t), intent(inout) :: s0_cart(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
+    real(kind=dp_t), intent(inout) :: s0_cart(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
     real(kind=dp_t), intent(in   ) :: dx(:)
-    real(kind=dp_t), intent(in   ), optional :: normal(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)
+    real(kind=dp_t), intent(in   ), optional :: normal(lo(1)-ng_n:,lo(2)-ng_n:,lo(3)-ng_n:,:)
 
     integer         :: i,j,k,index
     real(kind=dp_t) :: x,y,z

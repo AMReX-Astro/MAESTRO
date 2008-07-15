@@ -306,7 +306,7 @@ contains
        enddo
 
        call put_1d_array_on_cart_3d_sphr(n,.false.,.true.,gradw0_rad,gradw0_cart, &
-                                         lo,hi,dx,0,normal)
+                                         lo,hi,dx,0,ng_n,normal)
 
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
