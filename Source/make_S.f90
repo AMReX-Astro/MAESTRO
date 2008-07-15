@@ -45,14 +45,22 @@ contains
     real(kind=dp_t), pointer:: tp(:,:,:,:),dgp(:,:,:,:)
     real(kind=dp_t), pointer:: omegap(:,:,:,:), hp(:,:,:,:)
 
-    integer :: lo(state(1)%dim),hi(state(1)%dim),ng,dm
-    integer :: i,n
+    integer :: lo(state(1)%dim),hi(state(1)%dim),dm
+    integer :: i,n,ng_sr,ng_dt,ng_dg,ng_s,ng_u,ng_rw,ng_he,ng_th
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "make_S")
 
-    ng = state(1)%ng
+    ng_sr = Source(1)%ng
+    ng_dt = delta_gamma1_term(1)%ng
+    ng_dg = delta_gamma1(1)%ng
+    ng_s  = state(1)%ng
+    ng_u  = u(1)%ng
+    ng_rw = rho_omegadot(1)%ng
+    ng_he = rho_Hext(1)%ng
+    ng_th = thermal(1)%ng
+
     dm = state(1)%dim
 
     do n = 1, nlevs
@@ -70,13 +78,15 @@ contains
           hi = upb(get_box(state(n), i))
           select case (dm)
           case (2)
-             call make_S_2d(n,lo, hi, srcp(:,:,1,1), dgtp(:,:,1,1), dgp(:,:,1,1), &
-                            sp(:,:,1,:), up(:,:,1,:), omegap(:,:,1,:), hp(:,:,1,1), &
-                            tp(:,:,1,1), ng, p0(n,:), gamma1bar(n,:), dx(n,:))
+             call make_S_2d(n,lo, hi, srcp(:,:,1,1), ng_sr, dgtp(:,:,1,1), ng_dt, &
+                            dgp(:,:,1,1), ng_dg, sp(:,:,1,:), ng_s, up(:,:,1,:), ng_u, &
+                            omegap(:,:,1,:), ng_rw, hp(:,:,1,1), ng_he, &
+                            tp(:,:,1,1), ng_th, p0(n,:), gamma1bar(n,:), dx(n,:))
           case (3)
-             call make_S_3d(n,lo, hi, srcp(:,:,:,1), dgtp(:,:,:,1), dgp(:,:,:,1), &
-                            sp(:,:,:,:), up(:,:,:,:), omegap(:,:,:,:), hp(:,:,:,1), &
-                            tp(:,:,:,1), ng, p0(n,:), gamma1bar(n,:), dx(n,:))
+             call make_S_3d(n,lo, hi, srcp(:,:,:,1), ng_sr, dgtp(:,:,:,1), ng_dt, &
+                            dgp(:,:,:,1), ng_dg, sp(:,:,:,:), ng_s, up(:,:,:,:), ng_u, &
+                            omegap(:,:,:,:), ng_rw, hp(:,:,:,1), ng_he, &
+                            tp(:,:,:,1), ng_th, p0(n,:), gamma1bar(n,:), dx(n,:))
           end select
        end do
     enddo
@@ -92,11 +102,13 @@ contains
              dgp    => dataptr(delta_gamma1(n), i)
              select case (dm)
              case (2)
-                call correct_delta_gamma1_term_2d(lo,hi,dgtp(:,:,1,1),dgp(:,:,1,1), &
+                call correct_delta_gamma1_term_2d(lo,hi,dgtp(:,:,1,1),ng_dt, &
+                                                  dgp(:,:,1,1),ng_dg, &
                                                   gamma1bar(n,:),psi(n,:), &
                                                   delta_gamma1_termbar(n,:),p0(n,:))
              case (3)
-                call correct_delta_gamma1_term_3d(lo,hi,dgtp(:,:,:,1),dgp(:,:,:,1), &
+                call correct_delta_gamma1_term_3d(lo,hi,dgtp(:,:,:,1),ng_dt, &
+                                                  dgp(:,:,:,1),ng_dg, &
                                                   gamma1bar(n,:),psi(n,:), &
                                                   delta_gamma1_termbar(n,:),p0(n,:))
              end select
@@ -110,8 +122,9 @@ contains
    end subroutine make_S
 
 
-   subroutine make_S_2d(n,lo,hi,Source,delta_gamma1_term,delta_gamma1,s,u, &
-                        rho_omegadot,rho_Hext,thermal,ng,p0,gamma1bar,dx)
+   subroutine make_S_2d(n,lo,hi,Source,ng_sr,delta_gamma1_term,ng_dt,delta_gamma1,ng_dg, &
+                        s,ng_s,u,ng_u,rho_omegadot,ng_rw,rho_Hext,ng_he,thermal,ng_th, &
+                        p0,gamma1bar,dx)
 
       use bl_constants_module
       use eos_module
@@ -119,15 +132,16 @@ contains
       use probin_module, only: use_delta_gamma1_term
       use geometry, only: anelastic_cutoff_coord, nr
 
-      integer         , intent(in   ) :: n,lo(:), hi(:), ng
-      real (kind=dp_t), intent(  out) :: Source(lo(1):,lo(2):)
-      real (kind=dp_t), intent(  out) :: delta_gamma1_term(lo(1):,lo(2):)
-      real (kind=dp_t), intent(  out) :: delta_gamma1(lo(1):,lo(2):)
-      real (kind=dp_t), intent(in   ) :: s(lo(1)-ng:,lo(2)-ng:,:)
-      real (kind=dp_t), intent(in   ) :: u(lo(1)-ng:,lo(2)-ng:,:)
-      real (kind=dp_t), intent(in   ) :: rho_omegadot(lo(1):,lo(2):,:)
-      real (kind=dp_t), intent(in   ) :: rho_Hext(lo(1):,lo(2):)
-      real (kind=dp_t), intent(in   ) :: thermal(lo(1)-1:,lo(2)-1:)
+      integer         , intent(in   ) :: n,lo(:),hi(:)
+      integer         , intent(in   ) :: ng_sr,ng_dt,ng_dg,ng_s,ng_u,ng_rw,ng_he,ng_th
+      real (kind=dp_t), intent(  out) ::            Source(lo(1)-ng_sr:,lo(2)-ng_sr:)
+      real (kind=dp_t), intent(  out) :: delta_gamma1_term(lo(1)-ng_dt:,lo(2)-ng_dt:)
+      real (kind=dp_t), intent(  out) ::      delta_gamma1(lo(1)-ng_dg:,lo(2)-ng_dg:)
+      real (kind=dp_t), intent(in   ) ::                 s(lo(1)-ng_s :,lo(2)-ng_s :,:)
+      real (kind=dp_t), intent(in   ) ::                 u(lo(1)-ng_u :,lo(2)-ng_u :,:)
+      real (kind=dp_t), intent(in   ) ::      rho_omegadot(lo(1)-ng_rw:,lo(2)-ng_rw:,:)
+      real (kind=dp_t), intent(in   ) ::          rho_Hext(lo(1)-ng_he:,lo(2)-ng_he:)
+      real (kind=dp_t), intent(in   ) ::           thermal(lo(1)-ng_th:,lo(2)-ng_th:)
       real (kind=dp_t), intent(in   ) :: p0(0:)
       real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
       real (kind=dp_t), intent(in   ) :: dx(:)
@@ -199,8 +213,9 @@ contains
  
    end subroutine make_S_2d
 
-   subroutine make_S_3d(n,lo,hi,Source,delta_gamma1_term,delta_gamma1,s,u, &
-                        rho_omegadot,rho_Hext,thermal,ng,p0,gamma1bar,dx)
+   subroutine make_S_3d(n,lo,hi,Source,ng_sr,delta_gamma1_term,ng_dt,delta_gamma1,ng_dg, &
+                        s,ng_s,u,ng_u,rho_omegadot,ng_rw,rho_Hext,ng_he,thermal,ng_th, &
+                        p0,gamma1bar,dx)
 
       use bl_constants_module
       use eos_module
@@ -209,15 +224,16 @@ contains
       use probin_module, only: use_delta_gamma1_term
       use geometry, only: anelastic_cutoff_coord, nr
      
-      integer         , intent(in   ) :: n,lo(:), hi(:), ng
-      real (kind=dp_t), intent(  out) :: Source(lo(1):,lo(2):,lo(3):)  
-      real (kind=dp_t), intent(  out) :: delta_gamma1_term(lo(1):,lo(2):,lo(3):)  
-      real (kind=dp_t), intent(  out) :: delta_gamma1(lo(1):,lo(2):,lo(3):) 
-      real (kind=dp_t), intent(in   ) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-      real (kind=dp_t), intent(in   ) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-      real (kind=dp_t), intent(in   ) :: rho_omegadot(lo(1):,lo(2):,lo(3):,:)
-      real (kind=dp_t), intent(in   ) :: rho_Hext(lo(1):,lo(2):,lo(3):)
-      real (kind=dp_t), intent(in   ) :: thermal(lo(1)-1:,lo(2)-1:,lo(3)-1:)
+      integer         , intent(in   ) :: n,lo(:),hi(:)
+      integer         , intent(in   ) :: ng_sr,ng_dt,ng_dg,ng_s,ng_u,ng_rw,ng_he,ng_th
+      real (kind=dp_t), intent(  out) ::       Source(lo(1)-ng_sr:,lo(2)-ng_sr:,lo(3)-ng_sr:)  
+      real (kind=dp_t), intent(  out) :: delta_gamma1_term(lo(1)-ng_dt:,lo(2)-ng_dt:,lo(3)-ng_dt:)
+      real (kind=dp_t), intent(  out) :: delta_gamma1(lo(1)-ng_dg:,lo(2)-ng_dg:,lo(3)-ng_dg:) 
+      real (kind=dp_t), intent(in   ) ::            s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :,:)
+      real (kind=dp_t), intent(in   ) ::            u(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :,:)
+      real (kind=dp_t), intent(in   ) :: rho_omegadot(lo(1)-ng_rw:,lo(2)-ng_rw:,lo(3)-ng_rw:,:)
+      real (kind=dp_t), intent(in   ) ::     rho_Hext(lo(1)-ng_he:,lo(2)-ng_he:,lo(3)-ng_he:)
+      real (kind=dp_t), intent(in   ) ::      thermal(lo(1)-ng_th:,lo(2)-ng_th:,lo(3)-ng_th:)
       real (kind=dp_t), intent(in   ) :: p0(0:)
       real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
       real (kind=dp_t), intent(in   ) :: dx(:)
@@ -296,12 +312,12 @@ contains
  
    end subroutine make_S_3d
 
-   subroutine correct_delta_gamma1_term_2d(lo,hi,delta_gamma1_term,delta_gamma1, &
+   subroutine correct_delta_gamma1_term_2d(lo,hi,delta_gamma1_term,ng_dt,delta_gamma1,ng_dg, &
                                            gamma1bar,psi,delta_gamma1_termbar,p0)
 
-     integer         , intent(in   ) :: lo(:), hi(:)
-     real (kind=dp_t), intent(inout) :: delta_gamma1_term(lo(1):,lo(2):)
-     real (kind=dp_t), intent(in   ) :: delta_gamma1(lo(1):,lo(2):)
+     integer         , intent(in   ) :: lo(:), hi(:), ng_dt, ng_dg
+     real (kind=dp_t), intent(inout) :: delta_gamma1_term(lo(1)-ng_dt:,lo(2)-ng_dt:)
+     real (kind=dp_t), intent(in   ) ::      delta_gamma1(lo(1)-ng_dg:,lo(2)-ng_dg:)
      real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
      real (kind=dp_t), intent(in   ) :: psi(0:)
      real (kind=dp_t), intent(in   ) :: delta_gamma1_termbar(0:)
@@ -320,12 +336,12 @@ contains
      
    end subroutine correct_delta_gamma1_term_2d
 
-   subroutine correct_delta_gamma1_term_3d(lo,hi,delta_gamma1_term,delta_gamma1, &
+   subroutine correct_delta_gamma1_term_3d(lo,hi,delta_gamma1_term,ng_dt,delta_gamma1,ng_dg, &
                                            gamma1bar,psi,delta_gamma1_termbar,p0)
 
-     integer         , intent(in   ) :: lo(:), hi(:)
-     real (kind=dp_t), intent(inout) :: delta_gamma1_term(lo(1):,lo(2):,lo(3):)
-     real (kind=dp_t), intent(in   ) :: delta_gamma1(lo(1):,lo(2):,lo(3):)
+     integer         , intent(in   ) :: lo(:), hi(:), ng_dt, ng_dg
+     real (kind=dp_t), intent(inout) :: delta_gamma1_term(lo(1)-ng_dt:,lo(2)-ng_dt:,lo(3)-ng_dt:)
+     real (kind=dp_t), intent(in   ) ::      delta_gamma1(lo(1)-ng_dg:,lo(2)-ng_dg:,lo(3)-ng_dg:)
      real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
      real (kind=dp_t), intent(in   ) :: psi(0:)
      real (kind=dp_t), intent(in   ) :: delta_gamma1_termbar(0:)
