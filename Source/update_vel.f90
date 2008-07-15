@@ -38,8 +38,9 @@ contains
     type(bc_level)    , intent(in   ) :: the_bc_level(:)
 
     ! local
-    integer :: i,dm,ng,n
+    integer :: i,dm,n
     integer :: lo(uold(1)%dim),hi(uold(1)%dim)
+    integer :: ng_uo,ng_un,ng_um,ng_ue,ng_sp,ng_f,ng_n,ng_w0
 
     real(kind=dp_t), pointer:: uop(:,:,:,:)
     real(kind=dp_t), pointer:: unp(:,:,:,:)
@@ -59,7 +60,15 @@ contains
     call build(bpt, "update_velocity")
 
     dm = uold(1)%dim
-    ng = uold(1)%ng
+
+    ng_uo = uold(1)%ng
+    ng_un = unew(1)%ng
+    ng_um = umac(1,1)%ng ! note we are assuming that ng is the same for all directions
+    ng_ue = uedge(1,1)%ng
+    ng_sp = sponge(1)%ng
+    ng_f  = force(1)%ng
+    ng_n  = normal(1)%ng
+    ng_w0 = w0_cart(1)%ng
 
     do n = 1, nlevs
 
@@ -77,11 +86,11 @@ contains
           hi = upb(get_box(uold(n),i))
           select case (dm)
           case (2)
-             call update_velocity_2d(uop(:,:,1,:), unp(:,:,1,:), &
-                                     ump(:,:,1,1), vmp(:,:,1,1), &
-                                     uepx(:,:,1,:), uepy(:,:,1,:), &
-                                     fp(:,:,1,:), w0(n,:), &
-                                     lo, hi, ng, dx(n,:), dt, spp(:,:,1,1))
+             call update_velocity_2d(uop(:,:,1,:), ng_uo, unp(:,:,1,:), ng_un, &
+                                     ump(:,:,1,1), vmp(:,:,1,1), ng_um, &
+                                     uepx(:,:,1,:), uepy(:,:,1,:), ng_ue, &
+                                     fp(:,:,1,:), ng_f, w0(n,:), &
+                                     lo, hi, dx(n,:), dt, spp(:,:,1,1), ng_sp)
           case (3)
              wmp   => dataptr(umac(n,3),i)
              uepz  => dataptr(uedge(n,3),i)
@@ -90,13 +99,12 @@ contains
                 np   =>  dataptr(normal(n),i)
              end if
              call update_velocity_3d(n, &
-                                     uop(:,:,:,:), unp(:,:,:,:), &
-                                     ump(:,:,:,1), vmp(:,:,:,1), &
-                                     wmp(:,:,:,1), uepx(:,:,:,:), &
-                                     uepy(:,:,:,:), uepz(:,:,:,:), &
-                                     fp(:,:,:,:), np(:,:,:,:), &
-                                     w0(n,:), w0p(:,:,:,:), &
-                                     lo, hi, ng, dx(n,:), dt, spp(:,:,:,1))
+                                     uop(:,:,:,:), ng_uo, unp(:,:,:,:), ng_un, &
+                                     ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
+                                     uepx(:,:,:,:), uepy(:,:,:,:), uepz(:,:,:,:), ng_ue, &
+                                     fp(:,:,:,:), ng_f, np(:,:,:,:), ng_n, &
+                                     w0(n,:), w0p(:,:,:,:), ng_w0, &
+                                     lo, hi, dx(n,:), dt, spp(:,:,:,1), ng_sp)
           end select
        end do
 
@@ -122,7 +130,7 @@ contains
           ! fill level n ghost cells using interpolation from level n-1 data
           ! note that multifab_fill_boundary and multifab_physbc are called for
           ! both levels n-1 and n
-          call multifab_fill_ghost_cells(unew(n),unew(n-1),ng,mla%mba%rr(n-1,:), &
+          call multifab_fill_ghost_cells(unew(n),unew(n-1),ng_un,mla%mba%rr(n-1,:), &
                                          the_bc_level(n-1),the_bc_level(n),1,1,dm)
        enddo
 
@@ -132,22 +140,22 @@ contains
 
   end subroutine update_velocity
 
-  subroutine update_velocity_2d(uold,unew,umac,vmac,uedgex,uedgey,force,w0,lo,hi,ng,dx, &
-                                dt,sponge)
+  subroutine update_velocity_2d(uold,ng_uo,unew,ng_un,umac,vmac,ng_um,uedgex,uedgey,ng_ue, &
+                                force,ng_f,w0,lo,hi,dx,dt,sponge,ng_sp)
 
     use bl_constants_module
     use probin_module, only: do_sponge
 
-    integer, intent(in) :: lo(:), hi(:), ng
-    real (kind = dp_t), intent(in   ) ::     uold(lo(1)-ng:,lo(2)-ng:,:)  
-    real (kind = dp_t), intent(  out) ::     unew(lo(1)-ng:,lo(2)-ng:,:)  
-    real (kind = dp_t), intent(in   ) ::     umac(lo(1)- 1:,lo(2)- 1:)  
-    real (kind = dp_t), intent(in   ) ::     vmac(lo(1)- 1:,lo(2)- 1:)  
-    real (kind = dp_t), intent(in   ) ::   uedgex(lo(1)   :,lo(2)   :,:)  
-    real (kind = dp_t), intent(in   ) ::   uedgey(lo(1)   :,lo(2)   :,:)  
-    real (kind = dp_t), intent(in   ) ::    force(lo(1)- 1:,lo(2)- 1:,:)  
-    real (kind = dp_t), intent(in   ) ::   sponge(lo(1)   :,lo(2)   :  )
-    real (kind = dp_t), intent(in   ) ::       w0(0:)
+    integer, intent(in) :: lo(:), hi(:), ng_uo, ng_un, ng_um, ng_ue, ng_f, ng_sp
+    real (kind = dp_t), intent(in   ) ::   uold(lo(1)-ng_uo:,lo(2)-ng_uo:,:)  
+    real (kind = dp_t), intent(  out) ::   unew(lo(1)-ng_un:,lo(2)-ng_un:,:)  
+    real (kind = dp_t), intent(in   ) ::   umac(lo(1)-ng_um:,lo(2)-ng_um:)  
+    real (kind = dp_t), intent(in   ) ::   vmac(lo(1)-ng_um:,lo(2)-ng_um:)  
+    real (kind = dp_t), intent(in   ) :: uedgex(lo(1)-ng_ue:,lo(2)-ng_ue:,:)  
+    real (kind = dp_t), intent(in   ) :: uedgey(lo(1)-ng_ue:,lo(2)-ng_ue:,:)  
+    real (kind = dp_t), intent(in   ) ::  force(lo(1)-ng_f :,lo(2)-ng_f :,:)  
+    real (kind = dp_t), intent(in   ) :: sponge(lo(1)-ng_sp:,lo(2)-ng_sp:)
+    real (kind = dp_t), intent(in   ) ::     w0(0:)
     real (kind = dp_t), intent(in   ) :: dx(:)
     real (kind = dp_t), intent(in   ) :: dt
 
@@ -185,30 +193,32 @@ contains
 
   end subroutine update_velocity_2d
 
-  subroutine update_velocity_3d(n,uold,unew,umac,vmac,wmac,uedgex,uedgey,uedgez,force, &
-                                normal,w0,w0_cart,lo,hi,ng,dx,dt, &
-                                sponge)
+  subroutine update_velocity_3d(n,uold,ng_uo,unew,ng_un,umac,vmac,wmac,ng_um, &
+                                uedgex,uedgey,uedgez,ng_ue,force,ng_f, &
+                                normal,ng_n,w0,w0_cart,ng_w0,lo,hi,dx,dt, &
+                                sponge,ng_sp)
 
     use fill_3d_module
     use geometry, only: spherical, nr_fine, r_end_coord, dr
     use bl_constants_module
     use probin_module, only: do_sponge
 
-    integer, intent(in) :: n, lo(:), hi(:), ng
-    real (kind = dp_t), intent(in   ) ::     uold(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-    real (kind = dp_t), intent(  out) ::     unew(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-    real (kind = dp_t), intent(in   ) ::     umac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:  )
-    real (kind = dp_t), intent(in   ) ::     vmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:  )
-    real (kind = dp_t), intent(in   ) ::     wmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:  )
-    real (kind = dp_t), intent(in   ) ::   uedgex(lo(1)   :,lo(2)   :,lo(3)   :,:)
-    real (kind = dp_t), intent(in   ) ::   uedgey(lo(1)   :,lo(2)   :,lo(3)   :,:)
-    real (kind = dp_t), intent(in   ) ::   uedgez(lo(1)   :,lo(2)   :,lo(3)   :,:)
-    real (kind = dp_t), intent(in   ) ::    force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
-    real (kind = dp_t), intent(in   ) ::   normal(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
-    real (kind = dp_t), intent(in   ) ::   sponge(lo(1)   :,lo(2)   :,lo(3)   :  ) 
-    real (kind = dp_t), intent(in   ) ::       w0(0:)
-    real (kind = dp_t), intent(in   ) ::  w0_cart(lo(1)- 2:,lo(2)- 2:,lo(3)- 2:,:)
-    real (kind = dp_t), intent(in   ) :: dx(:)
+    integer, intent(in) :: n, lo(:), hi(:)
+    integer, intent(in) :: ng_uo, ng_un, ng_um, ng_ue, ng_f, ng_n, ng_w0, ng_sp
+    real (kind = dp_t), intent(in   ) ::    uold(lo(1)-ng_uo:,lo(2)-ng_uo:,lo(3)-ng_uo:,:)
+    real (kind = dp_t), intent(  out) ::    unew(lo(1)-ng_un:,lo(2)-ng_un:,lo(3)-ng_un:,:)
+    real (kind = dp_t), intent(in   ) ::    umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+    real (kind = dp_t), intent(in   ) ::    vmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+    real (kind = dp_t), intent(in   ) ::    wmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+    real (kind = dp_t), intent(in   ) ::  uedgex(lo(1)-ng_ue:,lo(2)-ng_ue:,lo(3)-ng_ue:,:)
+    real (kind = dp_t), intent(in   ) ::  uedgey(lo(1)-ng_ue:,lo(2)-ng_ue:,lo(3)-ng_ue:,:)
+    real (kind = dp_t), intent(in   ) ::  uedgez(lo(1)-ng_ue:,lo(2)-ng_ue:,lo(3)-ng_ue:,:)
+    real (kind = dp_t), intent(in   ) ::   force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :,:)
+    real (kind = dp_t), intent(in   ) ::  normal(lo(1)-ng_n :,lo(2)-ng_n :,lo(3)-ng_n :,:)
+    real (kind = dp_t), intent(in   ) ::  sponge(lo(1)-ng_sp:,lo(2)-ng_sp:,lo(3)-ng_sp:) 
+    real (kind = dp_t), intent(in   ) ::      w0(0:)
+    real (kind = dp_t), intent(in   ) :: w0_cart(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:,:)
+    real (kind = dp_t), intent(in   ) ::      dx(:)
     real (kind = dp_t), intent(in   ) :: dt
 
     integer :: i, j, k, r
