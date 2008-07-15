@@ -58,8 +58,9 @@ contains
     real(kind=dp_t), pointer    :: Xkcoeff1p(:,:,:,:),Xkcoeff2p(:,:,:,:)
     real(kind=dp_t), pointer    :: pcoeff1p(:,:,:,:),pcoeff2p(:,:,:,:)
     integer                     :: nlevs,dm,stencil_order
-    integer                     :: i,n,comp,ng_s
+    integer                     :: i,n,comp
     integer                     :: lo(s1(1)%dim),hi(s1(1)%dim)
+    integer                     :: ng_s,ng_h,ng_X,ng_p,ng_cc,ng_fc
     type(bndry_reg)             :: fine_flx(2:mla%nlevel)
 
     type(bl_prof_timer), save :: bpt
@@ -69,7 +70,6 @@ contains
     nlevs = mla%nlevel
     dm = mla%dim
     stencil_order = 2
-    ng_s = s2(1)%ng
 
     do n = 2,nlevs
        call bndry_reg_build(fine_flx(n),mla%la(n),ml_layout_get_pd(mla,n))
@@ -86,6 +86,12 @@ contains
     ! hcoeff1 = -(dt/2)k_{th}^{(1)}/c_p^{(1)}
     ! Xkcoeff1 = (dt/2)\xi_k^{(1)}k_{th}^{(1)}/c_p^{(1)}
     ! pcoeff1 =  (dt/2)h_p^{(1)}k_{th}^{(1)}/c_p^{(1)}
+
+    ng_s = s1(1)%ng
+    ng_h = hcoeff1(1)%ng
+    ng_X = Xkcoeff1(1)%ng
+    ng_p = pcoeff1(1)%ng
+
     do n=1,nlevs
        do i=1,s1(n)%nboxes
           if (multifab_remote(s1(n),i)) cycle
@@ -97,11 +103,15 @@ contains
           hi = upb(get_box(s1(n), i))
           select case (dm)
           case (2)
-             call compute_thermo_quantities_2d(lo,hi,dt,s1p(:,:,1,:),hcoeff1p(:,:,1,1), &
-                                               Xkcoeff1p(:,:,1,:),pcoeff1p(:,:,1,1))
+             call compute_thermo_quantities_2d(lo,hi,dt,s1p(:,:,1,:),ng_s, &
+                                               hcoeff1p(:,:,1,1),ng_h,&
+                                               Xkcoeff1p(:,:,1,:),ng_X, &
+                                               pcoeff1p(:,:,1,1),ng_p)
           case (3)
-             call compute_thermo_quantities_3d(lo,hi,dt,s1p(:,:,:,:),hcoeff1p(:,:,:,1), &
-                                               Xkcoeff1p(:,:,:,:),pcoeff1p(:,:,:,1))
+             call compute_thermo_quantities_3d(lo,hi,dt,s1p(:,:,:,:),ng_s, &
+                                               hcoeff1p(:,:,:,1),ng_h, &
+                                               Xkcoeff1p(:,:,:,:),ng_X, &
+                                               pcoeff1p(:,:,:,1),ng_p)
           end select
        end do
     enddo
@@ -121,6 +131,12 @@ contains
     ! hcoeff2 = -(dt/2)k_{th}^{(2),*}/c_p^{(2),*}
     ! Xkcoeff2 = (dt/2)\xi_k^{(2),*}k_{th}^{(2),*}/c_p^{(2),*}
     ! pcoeff2 =  (dt/2)h_p^{(2),*}k_{th}^{(2),*}/c_p^{(2),*}
+
+    ng_s = s_for_new_coeff(1)%ng
+    ng_h = hcoeff2(1)%ng
+    ng_X = Xkcoeff2(1)%ng
+    ng_p = pcoeff2(1)%ng
+
     do n=1,nlevs
        do i=1,s_for_new_coeff(n)%nboxes
           if (multifab_remote(s_for_new_coeff(n),i)) cycle
@@ -132,13 +148,15 @@ contains
           hi = upb(get_box(s_for_new_coeff(n), i))
           select case (dm)
           case (2)
-             call compute_thermo_quantities_2d(lo,hi,dt,s_for_new_coeffp(:,:,1,:), &
-                                               hcoeff2p(:,:,1,1),Xkcoeff2p(:,:,1,:), &
-                                               pcoeff2p(:,:,1,1))
+             call compute_thermo_quantities_2d(lo,hi,dt,s_for_new_coeffp(:,:,1,:),ng_s, &
+                                               hcoeff2p(:,:,1,1),ng_h, &
+                                               Xkcoeff2p(:,:,1,:),ng_X, &
+                                               pcoeff2p(:,:,1,1),ng_p)
           case (3)
-             call compute_thermo_quantities_3d(lo,hi,dt,s_for_new_coeffp(:,:,:,:), &
-                                               hcoeff2p(:,:,:,1),Xkcoeff2p(:,:,:,:), &
-                                               pcoeff2p(:,:,:,1))
+             call compute_thermo_quantities_3d(lo,hi,dt,s_for_new_coeffp(:,:,:,:),ng_s, &
+                                               hcoeff2p(:,:,:,1),ng_h, &
+                                               Xkcoeff2p(:,:,:,:),ng_X, &
+                                               pcoeff2p(:,:,:,1),ng_p)
           end select
        end do
     enddo
@@ -152,6 +170,9 @@ contains
     end do
 
     ! put beta on faces
+    ng_cc = hcoeff1(1)%ng
+    ng_fc = rhsbeta(1)%ng
+
     do n=1,nlevs
        do i=1,rhsbeta(n)%nboxes
           if (multifab_remote(rhsbeta(n),i)) cycle
@@ -161,9 +182,9 @@ contains
           hi = upb(get_box(rhsbeta(n), i))
           select case (dm)
           case (2)
-             call put_beta_on_faces_2d(lo,hcoeff1p(:,:,1,1),rhsbetap(:,:,1,:))
+             call put_beta_on_faces_2d(lo,hcoeff1p(:,:,1,1),ng_cc,rhsbetap(:,:,1,:),ng_fc)
           case (3)
-             call put_beta_on_faces_3d(lo,hcoeff1p(:,:,:,1),rhsbetap(:,:,:,:))
+             call put_beta_on_faces_3d(lo,hcoeff1p(:,:,:,1),ng_cc,rhsbetap(:,:,:,:),ng_fc)
           end select
        end do
     enddo
@@ -209,6 +230,9 @@ contains
 
        ! do X_k^{(1)} term first
        ! put beta on faces
+       ng_cc = Xkcoeff1(1)%ng
+       ng_fc = rhsbeta(1)%ng
+
        do n=1,nlevs
           do i=1,rhsbeta(n)%nboxes
              if (multifab_remote(rhsbeta(n),i)) cycle
@@ -218,9 +242,11 @@ contains
              hi = upb(get_box(rhsbeta(n), i))
              select case (dm)
              case (2)
-                call put_beta_on_faces_2d(lo,Xkcoeff1p(:,:,1,comp),rhsbetap(:,:,1,:))
+                call put_beta_on_faces_2d(lo,Xkcoeff1p(:,:,1,comp),ng_cc, &
+                                          rhsbetap(:,:,1,:),ng_fc)
              case (3)
-                call put_beta_on_faces_3d(lo,Xkcoeff1p(:,:,:,comp),rhsbetap(:,:,:,:))
+                call put_beta_on_faces_3d(lo,Xkcoeff1p(:,:,:,comp),ng_cc, &
+                                          rhsbetap(:,:,:,:),ng_fc)
              end select
           end do
        enddo
@@ -244,6 +270,9 @@ contains
 
        ! now do X_k^{(2)} term
        ! put beta on faces
+       ng_cc = Xkcoeff2(1)%ng
+       ng_fc = rhsbeta(1)%ng
+
        do n=1,nlevs
           do i=1,rhsbeta(n)%nboxes
              if (multifab_remote(rhsbeta(n),i)) cycle
@@ -253,9 +282,11 @@ contains
              hi = upb(get_box(rhsbeta(n), i))
              select case (dm)
              case (2)
-                call put_beta_on_faces_2d(lo,Xkcoeff2p(:,:,1,comp),rhsbetap(:,:,1,:))
+                call put_beta_on_faces_2d(lo,Xkcoeff2p(:,:,1,comp),ng_cc, &
+                                          rhsbetap(:,:,1,:),ng_fc)
              case (3)
-                call put_beta_on_faces_3d(lo,Xkcoeff2p(:,:,:,comp),rhsbetap(:,:,:,:))
+                call put_beta_on_faces_3d(lo,Xkcoeff2p(:,:,:,comp),ng_cc, &
+                                          rhsbetap(:,:,:,:),ng_fc)
              end select
           end do
        enddo
@@ -287,6 +318,9 @@ contains
 
     ! do p0_old term first
     ! put beta on faces
+    ng_cc = pcoeff1(1)%ng
+    ng_fc = rhsbeta(1)%ng
+
     do n=1,nlevs
        do i=1,rhsbeta(n)%nboxes
           if (multifab_remote(rhsbeta(n),i)) cycle
@@ -296,9 +330,9 @@ contains
           hi = upb(get_box(rhsbeta(n), i))
           select case (dm)
           case (2)
-             call put_beta_on_faces_2d(lo,pcoeff1p(:,:,1,1),rhsbetap(:,:,1,:))
+             call put_beta_on_faces_2d(lo,pcoeff1p(:,:,1,1),ng_cc,rhsbetap(:,:,1,:),ng_fc)
           case (3)
-             call put_beta_on_faces_3d(lo,pcoeff1p(:,:,:,1),rhsbetap(:,:,:,:))
+             call put_beta_on_faces_3d(lo,pcoeff1p(:,:,:,1),ng_cc,rhsbetap(:,:,:,:),ng_fc)
           end select
        end do
     enddo
@@ -365,6 +399,9 @@ contains
 
     ! now do p0_new term
     ! put beta on faces
+    ng_cc = pcoeff2(1)%ng
+    ng_fc = rhsbeta(1)%ng
+
     do n=1,nlevs
        do i=1,rhsbeta(n)%nboxes
           if (multifab_remote(rhsbeta(n),i)) cycle
@@ -374,9 +411,9 @@ contains
           hi = upb(get_box(rhsbeta(n), i))
           select case (dm)
           case (2)
-             call put_beta_on_faces_2d(lo,pcoeff2p(:,:,1,1),rhsbetap(:,:,1,:))
+             call put_beta_on_faces_2d(lo,pcoeff2p(:,:,1,1),ng_cc,rhsbetap(:,:,1,:),ng_fc)
           case (3)
-             call put_beta_on_faces_3d(lo,pcoeff2p(:,:,:,1),rhsbetap(:,:,:,:))
+             call put_beta_on_faces_3d(lo,pcoeff2p(:,:,:,1),ng_cc,rhsbetap(:,:,:,:),ng_fc)
           end select
        end do
     enddo
@@ -458,6 +495,9 @@ contains
 
     ! create lhsbeta = -hcoeff2 = (dt/2)k_{th}^{(2'')}/c_p^{(2'')}
     ! put beta on faces (remember to scale by -1 afterwards)
+    ng_cc = hcoeff2(1)%ng
+    ng_fc = lhsbeta(1)%ng
+
     do n=1,nlevs
        do i=1,lhsbeta(n)%nboxes
           if (multifab_remote(lhsbeta(n),i)) cycle
@@ -467,9 +507,9 @@ contains
           hi = upb(get_box(lhsbeta(n), i))
           select case (dm)
           case (2)
-             call put_beta_on_faces_2d(lo,hcoeff2p(:,:,1,1),lhsbetap(:,:,1,:))
+             call put_beta_on_faces_2d(lo,hcoeff2p(:,:,1,1),ng_cc,lhsbetap(:,:,1,:),ng_fc)
           case (3)
-             call put_beta_on_faces_3d(lo,hcoeff2p(:,:,:,1),lhsbetap(:,:,:,:))
+             call put_beta_on_faces_3d(lo,hcoeff2p(:,:,:,1),ng_cc,lhsbetap(:,:,:,:),ng_fc)
           end select
        end do
     enddo
@@ -546,7 +586,7 @@ contains
           ! fill level n ghost cells using interpolation from level n-1 data
           ! note that multifab_fill_boundary and multifab_physbc are called for
           ! both levels n-1 and n
-          call multifab_fill_ghost_cells(s2(n),s2(n-1),ng_s,mla%mba%rr(n-1,:), &
+          call multifab_fill_ghost_cells(s2(n),s2(n-1),s2(1)%ng,mla%mba%rr(n-1,:), &
                                          the_bc_tower%bc_tower_array(n-1), &
                                          the_bc_tower%bc_tower_array(n  ), &
                                          rhoh_comp,dm+rhoh_comp,1)
@@ -597,8 +637,8 @@ contains
     real(kind=dp_t), pointer    :: hcoeff1p(:,:,:,:),hcoeff2p(:,:,:,:)
     real(kind=dp_t), pointer    :: Xkcoeff1p(:,:,:,:),Xkcoeff2p(:,:,:,:)
     real(kind=dp_t), pointer    :: pcoeff1p(:,:,:,:),pcoeff2p(:,:,:,:)
-    integer                     :: nlevs,dm,stencil_order
-    integer                     :: i,n,comp,ng_s
+    integer                     :: nlevs,dm,stencil_order,i,n,comp
+    integer                     :: ng_s,ng_h,ng_X,ng_p,ng_cc,ng_fc
     integer                     :: lo(s1(1)%dim),hi(s1(1)%dim)
     type(bndry_reg)             :: fine_flx(2:mla%nlevel)
 
@@ -609,7 +649,6 @@ contains
     nlevs = mla%nlevel
     dm = mla%dim
     stencil_order = 2
-    ng_s = s2(1)%ng
 
     do n = 2,nlevs
        call bndry_reg_build(fine_flx(n),mla%la(n),ml_layout_get_pd(mla,n))
@@ -629,6 +668,12 @@ contains
     ! hcoeff1 = -(dt/2)k_{th}^{(1)}/c_p^{(1)}
     ! Xkcoeff1 = (dt/2)\xi_k^{(1)}k_{th}^{(1)}/c_p^{(1)}
     ! pcoeff1 =  (dt/2)h_p^{(1)}k_{th}^{(1)}/c_p^{(1)}
+
+    ng_s = s1(1)%ng
+    ng_h = hcoeff1(1)%ng
+    ng_X = Xkcoeff1(1)%ng
+    ng_p = pcoeff1(1)%ng
+
     do n=1,nlevs
        do i=1,s1(n)%nboxes
           if (multifab_remote(s1(n),i)) cycle
@@ -640,11 +685,15 @@ contains
           hi = upb(get_box(s1(n), i))
           select case (dm)
           case (2)
-             call compute_thermo_quantities_2d(lo,hi,dt,s1p(:,:,1,:),hcoeff1p(:,:,1,1), &
-                                               Xkcoeff1p(:,:,1,:),pcoeff1p(:,:,1,1))
+             call compute_thermo_quantities_2d(lo,hi,dt,s1p(:,:,1,:),ng_s, &
+                                               hcoeff1p(:,:,1,1),ng_h, &
+                                               Xkcoeff1p(:,:,1,:),ng_X, &
+                                               pcoeff1p(:,:,1,1),ng_p)
           case (3)
-             call compute_thermo_quantities_3d(lo,hi,dt,s1p(:,:,:,:),hcoeff1p(:,:,:,1), &
-                                               Xkcoeff1p(:,:,:,:),pcoeff1p(:,:,:,1))
+             call compute_thermo_quantities_3d(lo,hi,dt,s1p(:,:,:,:),ng_s, &
+                                               hcoeff1p(:,:,:,1),ng_h, &
+                                               Xkcoeff1p(:,:,:,:),ng_X, &
+                                               pcoeff1p(:,:,:,1),ng_p)
           end select
        end do
     enddo
@@ -658,6 +707,9 @@ contains
     end do
 
     ! put beta on faces
+    ng_cc = hcoeff1(1)%ng
+    ng_fc = rhsbeta(1)%ng
+
     do n=1,nlevs
        do i=1,rhsbeta(n)%nboxes
           if (multifab_remote(rhsbeta(n),i)) cycle
@@ -667,9 +719,9 @@ contains
           hi = upb(get_box(rhsbeta(n), i))
           select case (dm)
           case (2)
-             call put_beta_on_faces_2d(lo,hcoeff1p(:,:,1,1),rhsbetap(:,:,1,:))
+             call put_beta_on_faces_2d(lo,hcoeff1p(:,:,1,1),ng_cc,rhsbetap(:,:,1,:),ng_fc)
           case (3)
-             call put_beta_on_faces_3d(lo,hcoeff1p(:,:,:,1),rhsbetap(:,:,:,:))
+             call put_beta_on_faces_3d(lo,hcoeff1p(:,:,:,1),ng_cc,rhsbetap(:,:,:,:),ng_fc)
           end select
        end do
     enddo
@@ -708,6 +760,9 @@ contains
     do comp=1,nspec
 
        ! put beta on faces
+       ng_cc = Xkcoeff1(1)%ng
+       ng_fc = rhsbeta(1)%ng
+
        do n=1,nlevs
           do i=1,rhsbeta(n)%nboxes
              if (multifab_remote(rhsbeta(n),i)) cycle
@@ -717,9 +772,11 @@ contains
              hi = upb(get_box(rhsbeta(n), i))
              select case (dm)
              case (2)
-                call put_beta_on_faces_2d(lo,Xkcoeff1p(:,:,1,comp),rhsbetap(:,:,1,:))
+                call put_beta_on_faces_2d(lo,Xkcoeff1p(:,:,1,comp),ng_cc, &
+                                          rhsbetap(:,:,1,:),ng_fc)
              case (3)
-                call put_beta_on_faces_3d(lo,Xkcoeff1p(:,:,:,comp),rhsbetap(:,:,:,:))
+                call put_beta_on_faces_3d(lo,Xkcoeff1p(:,:,:,comp),ng_cc, &
+                                          rhsbetap(:,:,:,:),ng_fc)
              end select
           end do
        enddo
@@ -753,6 +810,9 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     ! put beta on faces
+    ng_cc = pcoeff1(1)%ng
+    ng_fc = rhsbeta(1)%ng
+
     do n=1,nlevs
        do i=1,rhsbeta(n)%nboxes
           if (multifab_remote(rhsbeta(n),i)) cycle
@@ -762,9 +822,9 @@ contains
           hi = upb(get_box(rhsbeta(n), i))
           select case (dm)
           case (2)
-             call put_beta_on_faces_2d(lo,pcoeff1p(:,:,1,1),rhsbetap(:,:,1,:))
+             call put_beta_on_faces_2d(lo,pcoeff1p(:,:,1,1),ng_cc,rhsbetap(:,:,1,:),ng_fc)
           case (3)
-             call put_beta_on_faces_3d(lo,pcoeff1p(:,:,:,1),rhsbetap(:,:,:,:))
+             call put_beta_on_faces_3d(lo,pcoeff1p(:,:,:,1),ng_cc,rhsbetap(:,:,:,:),ng_fc)
           end select
        end do
     enddo
@@ -866,6 +926,9 @@ contains
 
     ! create lhsbeta = -hcoeff1 = (dt/2)k_{th}^{(1)}/c_p^{(1)}
     ! put beta on faces (remember to scale by -1 afterwards)
+    ng_cc = hcoeff1(1)%ng
+    ng_fc = lhsbeta(1)%ng
+
     do n=1,nlevs
        do i=1,lhsbeta(n)%nboxes
           if (multifab_remote(lhsbeta(n),i)) cycle
@@ -875,9 +938,9 @@ contains
           hi = upb(get_box(lhsbeta(n), i))
           select case (dm)
           case (2)
-             call put_beta_on_faces_2d(lo,hcoeff1p(:,:,1,1),lhsbetap(:,:,1,:))
+             call put_beta_on_faces_2d(lo,hcoeff1p(:,:,1,1),ng_cc,lhsbetap(:,:,1,:),ng_fc)
           case (3)
-             call put_beta_on_faces_3d(lo,hcoeff1p(:,:,:,1),lhsbetap(:,:,:,:))
+             call put_beta_on_faces_3d(lo,hcoeff1p(:,:,:,1),ng_cc,lhsbetap(:,:,:,:),ng_fc)
           end select
        end do
     enddo
@@ -942,7 +1005,7 @@ contains
           ! fill level n ghost cells using interpolation from level n-1 data
           ! note that multifab_fill_boundary and multifab_physbc are called for
           ! both levels n-1 and n
-          call multifab_fill_ghost_cells(s2(n),s2(n-1),ng_s,mla%mba%rr(n-1,:), &
+          call multifab_fill_ghost_cells(s2(n),s2(n-1),s2(1)%ng,mla%mba%rr(n-1,:), &
                                          the_bc_tower%bc_tower_array(n-1), &
                                          the_bc_tower%bc_tower_array(n  ), &
                                          rhoh_comp,dm+rhoh_comp,1)
@@ -962,6 +1025,9 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     ! put beta on faces
+    ng_cc = hcoeff1(1)%ng
+    ng_fc = rhsbeta(1)%ng
+
     do n=1,nlevs
        do i=1,rhsbeta(n)%nboxes
           if (multifab_remote(rhsbeta(n),i)) cycle
@@ -971,9 +1037,9 @@ contains
           hi = upb(get_box(rhsbeta(n), i))
           select case (dm)
           case (2)
-             call put_beta_on_faces_2d(lo,hcoeff1p(:,:,1,1),rhsbetap(:,:,1,:))
+             call put_beta_on_faces_2d(lo,hcoeff1p(:,:,1,1),ng_cc,rhsbetap(:,:,1,:),ng_fc)
           case (3)
-             call put_beta_on_faces_3d(lo,hcoeff1p(:,:,:,1),rhsbetap(:,:,:,:))
+             call put_beta_on_faces_3d(lo,hcoeff1p(:,:,:,1),ng_cc,rhsbetap(:,:,:,:),ng_fc)
           end select
        end do
     enddo
@@ -1007,6 +1073,12 @@ contains
     ! hcoeff2 = -(dt/2)k_{th}^{(2'')}/c_p^{(2'')}
     ! Xkcoeff2 = (dt/2)\xi_k^{(2'')}k_{th}^{(2'')}/c_p^{(2'')}
     ! pcoeff2 =  (dt/2)h_p^{(2'')}k_{th}^{(2'')}/c_p^{(2'')}
+
+    ng_s = s2(1)%ng
+    ng_h = hcoeff2(1)%ng
+    ng_X = Xkcoeff2(1)%ng
+    ng_p = pcoeff2(1)%ng
+
     do n=1,nlevs
        do i=1,s2(n)%nboxes
           if (multifab_remote(s2(n),i)) cycle
@@ -1018,11 +1090,15 @@ contains
           hi = upb(get_box(s2(n), i))
           select case (dm)
           case (2)
-             call compute_thermo_quantities_2d(lo,hi,dt,s2p(:,:,1,:),hcoeff2p(:,:,1,1), &
-                                               Xkcoeff2p(:,:,1,:),pcoeff2p(:,:,1,1))
+             call compute_thermo_quantities_2d(lo,hi,dt,s2p(:,:,1,:),ng_s, &
+                                               hcoeff2p(:,:,1,1),ng_h, &
+                                               Xkcoeff2p(:,:,1,:),ng_X, &
+                                               pcoeff2p(:,:,1,1),ng_p)
           case (3)
-             call compute_thermo_quantities_3d(lo,hi,dt,s2p(:,:,:,:),hcoeff2p(:,:,:,1), &
-                                               Xkcoeff2p(:,:,:,:),pcoeff2p(:,:,:,1))
+             call compute_thermo_quantities_3d(lo,hi,dt,s2p(:,:,:,:),ng_s, &
+                                               hcoeff2p(:,:,:,1),ng_h, &
+                                               Xkcoeff2p(:,:,:,:),ng_X, &
+                                               pcoeff2p(:,:,:,1),ng_p)
           end select
        end do
     enddo
@@ -1036,6 +1112,9 @@ contains
 
        ! do X_k^{(1)} term first
        ! put beta on faces
+       ng_cc = Xkcoeff1(1)%ng
+       ng_fc = rhsbeta(1)%ng
+
        do n=1,nlevs
           do i=1,rhsbeta(n)%nboxes
              if (multifab_remote(rhsbeta(n),i)) cycle
@@ -1045,9 +1124,11 @@ contains
              hi = upb(get_box(rhsbeta(n), i))
              select case (dm)
              case (2)
-                call put_beta_on_faces_2d(lo,Xkcoeff1p(:,:,1,comp),rhsbetap(:,:,1,:))
+                call put_beta_on_faces_2d(lo,Xkcoeff1p(:,:,1,comp),ng_cc, &
+                                          rhsbetap(:,:,1,:),ng_fc)
              case (3)
-                call put_beta_on_faces_3d(lo,Xkcoeff1p(:,:,:,comp),rhsbetap(:,:,:,:))
+                call put_beta_on_faces_3d(lo,Xkcoeff1p(:,:,:,comp),ng_cc, &
+                                          rhsbetap(:,:,:,:),ng_fc)
              end select
           end do
        enddo
@@ -1069,6 +1150,9 @@ contains
 
        ! now do X_k^{(2)} term
        ! put beta on faces
+       ng_cc = Xkcoeff1(1)%ng
+       ng_fc = rhsbeta(1)%ng
+
        do n=1,nlevs
           do i=1,rhsbeta(n)%nboxes
              if (multifab_remote(rhsbeta(n),i)) cycle
@@ -1078,9 +1162,11 @@ contains
              hi = upb(get_box(rhsbeta(n), i))
              select case (dm)
              case (2)
-                call put_beta_on_faces_2d(lo,Xkcoeff2p(:,:,1,comp),rhsbetap(:,:,1,:))
+                call put_beta_on_faces_2d(lo,Xkcoeff2p(:,:,1,comp),ng_cc, &
+                                          rhsbetap(:,:,1,:),ng_fc)
              case (3)
-                call put_beta_on_faces_3d(lo,Xkcoeff2p(:,:,:,comp),rhsbetap(:,:,:,:))
+                call put_beta_on_faces_3d(lo,Xkcoeff2p(:,:,:,comp),ng_cc, &
+                                          rhsbetap(:,:,:,:),ng_fc)
              end select
           end do
        enddo
@@ -1112,6 +1198,9 @@ contains
 
     ! do p0_old term first
     ! put beta on faces
+    ng_cc = pcoeff1(1)%ng
+    ng_fc = rhsbeta(1)%ng
+
     do n=1,nlevs
        do i=1,rhsbeta(n)%nboxes
           if (multifab_remote(rhsbeta(n),i)) cycle
@@ -1121,9 +1210,9 @@ contains
           hi = upb(get_box(rhsbeta(n), i))
           select case (dm)
           case (2)
-             call put_beta_on_faces_2d(lo,pcoeff1p(:,:,1,1),rhsbetap(:,:,1,:))
+             call put_beta_on_faces_2d(lo,pcoeff1p(:,:,1,1),ng_cc,rhsbetap(:,:,1,:),ng_fc)
           case (3)
-             call put_beta_on_faces_3d(lo,pcoeff1p(:,:,:,1),rhsbetap(:,:,:,:))
+             call put_beta_on_faces_3d(lo,pcoeff1p(:,:,:,1),ng_cc,rhsbetap(:,:,:,:),ng_fc)
           end select
        end do
     enddo
@@ -1152,6 +1241,9 @@ contains
 
     ! now do p0_new term
     ! put beta on faces
+    ng_cc = pcoeff2(1)%ng
+    ng_fc = rhsbeta(1)%ng
+
     do n=1,nlevs
        do i=1,rhsbeta(n)%nboxes
           if (multifab_remote(rhsbeta(n),i)) cycle
@@ -1161,9 +1253,9 @@ contains
           hi = upb(get_box(rhsbeta(n), i))
           select case (dm)
           case (2)
-             call put_beta_on_faces_2d(lo,pcoeff2p(:,:,1,1),rhsbetap(:,:,1,:))
+             call put_beta_on_faces_2d(lo,pcoeff2p(:,:,1,1),ng_cc,rhsbetap(:,:,1,:),ng_fc)
           case (3)
-             call put_beta_on_faces_3d(lo,pcoeff2p(:,:,:,1),rhsbetap(:,:,:,:))
+             call put_beta_on_faces_3d(lo,pcoeff2p(:,:,:,1),ng_cc,rhsbetap(:,:,:,:),ng_fc)
           end select
        end do
     enddo
@@ -1205,6 +1297,9 @@ contains
 
     ! create lhsbeta = -hcoeff2 = (dt/2)k_{th}^{(2'')}/c_p^{(2'')}
     ! put beta on faces (remember to scale by -1 afterwards)
+    ng_cc = hcoeff2(1)%ng
+    ng_fc = lhsbeta(1)%ng
+
     do n=1,nlevs
        do i=1,lhsbeta(n)%nboxes
           if (multifab_remote(lhsbeta(n),i)) cycle
@@ -1214,9 +1309,9 @@ contains
           hi = upb(get_box(lhsbeta(n), i))
           select case (dm)
           case (2)
-             call put_beta_on_faces_2d(lo,hcoeff2p(:,:,1,1),lhsbetap(:,:,1,:))
+             call put_beta_on_faces_2d(lo,hcoeff2p(:,:,1,1),ng_cc,lhsbetap(:,:,1,:),ng_fc)
           case (3)
-             call put_beta_on_faces_3d(lo,hcoeff2p(:,:,:,1),lhsbetap(:,:,:,:))
+             call put_beta_on_faces_3d(lo,hcoeff2p(:,:,:,1),ng_cc,lhsbetap(:,:,:,:),ng_fc)
           end select
        end do
     enddo
@@ -1308,18 +1403,20 @@ contains
   ! Xkcoeff = (dt/2)\xi_k k_{th}/c_p
   ! pcoeff = (dt/2)h_p*k_{th}/c_p
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine compute_thermo_quantities_2d(lo,hi,dt,s,hcoeff,Xkcoeff,pcoeff)
+  subroutine compute_thermo_quantities_2d(lo,hi,dt,s,ng_s,hcoeff,ng_h,Xkcoeff,ng_X, &
+                                          pcoeff,ng_p)
 
     use variables, only: rho_comp, spec_comp, temp_comp
     use eos_module
     use probin_module, ONLY: thermal_diffusion_type
 
     integer        , intent(in   ) :: lo(:),hi(:)
+    integer        , intent(in   ) :: ng_s, ng_h, ng_X, ng_p
     real(dp_t)    ,  intent(in   ) :: dt
-    real(kind=dp_t), intent(in   ) :: s(lo(1)-3:,lo(2)-3:,:)
-    real(kind=dp_t), intent(inout) :: hcoeff(lo(1)-1:,lo(2)-1:)
-    real(kind=dp_t), intent(inout) :: Xkcoeff(lo(1)-1:,lo(2)-1:,:)
-    real(kind=dp_t), intent(inout) :: pcoeff(lo(1)-1:,lo(2)-1:)
+    real(kind=dp_t), intent(in   ) ::       s(lo(1)-ng_s:,lo(2)-ng_s:,:)
+    real(kind=dp_t), intent(inout) ::  hcoeff(lo(1)-ng_h:,lo(2)-ng_h:)
+    real(kind=dp_t), intent(inout) :: Xkcoeff(lo(1)-ng_X:,lo(2)-ng_X:,:)
+    real(kind=dp_t), intent(inout) ::  pcoeff(lo(1)-ng_p:,lo(2)-ng_p:)
 
     ! Local
     integer :: i,j,comp
@@ -1374,7 +1471,8 @@ contains
   ! Xkcoeff = (dt/2)\xi_k k_{th}/c_p
   ! pcoeff = (dt/2)h_p*k_{th}/c_p
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine compute_thermo_quantities_3d(lo,hi,dt,s,hcoeff,Xkcoeff,pcoeff)
+  subroutine compute_thermo_quantities_3d(lo,hi,dt,s,ng_s,hcoeff,ng_h,Xkcoeff,ng_X, &
+                                          pcoeff,ng_p)
 
     use variables, only: rho_comp, temp_comp, spec_comp
     use eos_module
@@ -1382,11 +1480,12 @@ contains
     use geometry, only: spherical
 
     integer        , intent(in   ) :: lo(:),hi(:)
+    integer        , intent(in   ) :: ng_s,ng_h,ng_X,ng_p
     real(dp_t)    ,  intent(in   ) :: dt
-    real(kind=dp_t), intent(in   ) :: s(lo(1)-3:,lo(2)-3:,lo(3)-3:,:)
-    real(kind=dp_t), intent(inout) :: hcoeff(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-    real(kind=dp_t), intent(inout) :: Xkcoeff(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)
-    real(kind=dp_t), intent(inout) :: pcoeff(lo(1)-1:,lo(2)-1:,lo(3)-1:)
+    real(kind=dp_t), intent(in   ) ::       s(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
+    real(kind=dp_t), intent(inout) ::  hcoeff(lo(1)-ng_h:,lo(2)-ng_h:,lo(3)-ng_h:)
+    real(kind=dp_t), intent(inout) :: Xkcoeff(lo(1)-ng_X:,lo(2)-ng_X:,lo(3)-ng_X:,:)
+    real(kind=dp_t), intent(inout) ::  pcoeff(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)
 
     ! Local
     integer :: i,j,k,comp
@@ -1448,11 +1547,11 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! put beta on faces
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine put_beta_on_faces_2d(lo,ccbeta,beta)
+  subroutine put_beta_on_faces_2d(lo,ccbeta,ng_cc,beta,ng_fc)
 
-    integer        , intent(in   ) :: lo(:)
-    real(kind=dp_t), intent(in   ) :: ccbeta(lo(1)-1:,lo(2)-1:)
-    real(kind=dp_t), intent(inout) :: beta(lo(1)-1:,lo(2)-1:,:)
+    integer        , intent(in   ) :: lo(:), ng_cc, ng_fc
+    real(kind=dp_t), intent(in   ) :: ccbeta(lo(1)-ng_cc:,lo(2)-ng_cc:)
+    real(kind=dp_t), intent(inout) ::   beta(lo(1)-ng_fc:,lo(2)-ng_fc:,:)
 
     ! Local
     integer :: i,j
@@ -1479,11 +1578,11 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! put beta on faces
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine put_beta_on_faces_3d(lo,ccbeta,beta)
+  subroutine put_beta_on_faces_3d(lo,ccbeta,ng_cc,beta,ng_fc)
 
-    integer        , intent(in   ) :: lo(:)
-    real(kind=dp_t), intent(in   ) :: ccbeta(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-    real(kind=dp_t), intent(inout) :: beta(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)
+    integer        , intent(in   ) :: lo(:), ng_cc, ng_fc
+    real(kind=dp_t), intent(in   ) :: ccbeta(lo(1)-ng_cc:,lo(2)-ng_cc:,lo(3)-ng_cc:)
+    real(kind=dp_t), intent(inout) ::   beta(lo(1)-ng_fc:,lo(2)-ng_fc:,lo(3)-ng_fc:,:)
 
     ! Local
     integer :: i,j,k

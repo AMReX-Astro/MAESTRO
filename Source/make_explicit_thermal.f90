@@ -46,7 +46,7 @@ contains
     type(multifab) :: Tcoeff(mla%nlevel),hcoeff(mla%nlevel),pcoeff(mla%nlevel)
     type(multifab) :: resid(mla%nlevel)
 
-    integer                     :: i,comp,n,nlevs,dm,stencil_order
+    integer                     :: i,comp,n,nlevs,dm,stencil_order,ng_cc,ng_fc
     integer                     :: lo(s(1)%dim),hi(s(1)%dim)
     real(kind=dp_t), pointer    :: sp(:,:,:,:)
     real(kind=dp_t), pointer    :: betap(:,:,:,:),Xkcoeffp(:,:,:,:)
@@ -105,6 +105,9 @@ contains
           call multifab_build(beta(n),mla%la(n), dm, 1)
        end do
 
+       ng_cc = Tcoeff(1)%ng
+       ng_fc = beta(1)%ng
+
        do n=1,nlevs
           ! load T into phi
           call multifab_copy_c(phi(n),1,s(n),temp_comp,1,1)
@@ -118,9 +121,9 @@ contains
              hi = upb(get_box(s(n),i))
              select case (dm)
              case (2)
-                call put_beta_on_faces_2d(lo,Tcoeffp(:,:,1,1),betap(:,:,1,:))
+                call put_beta_on_faces_2d(lo,Tcoeffp(:,:,1,1),ng_cc,betap(:,:,1,:),ng_fc)
              case (3)
-                call put_beta_on_faces_3d(lo,Tcoeffp(:,:,:,1),betap(:,:,:,:))
+                call put_beta_on_faces_3d(lo,Tcoeffp(:,:,:,1),ng_cc,betap(:,:,:,:),ng_fc)
              end select
           end do
        enddo ! end loop over levels
@@ -165,6 +168,9 @@ contains
           call multifab_build(beta(n), mla%la(n), dm, 1)
        end do
 
+       ng_cc = hcoeff(1)%ng
+       ng_fc = beta(1)%ng
+
        do n=1,nlevs
           ! load h into phi
           call multifab_copy_c(phi(n),1,s(n),rhoh_comp,1,1)
@@ -179,9 +185,9 @@ contains
              hi =  upb(get_box(s(n),i))
              select case (dm)
              case (2)
-                call put_beta_on_faces_2d(lo,hcoeffp(:,:,1,1),betap(:,:,1,:))
+                call put_beta_on_faces_2d(lo,hcoeffp(:,:,1,1),ng_cc,betap(:,:,1,:),ng_fc)
              case (3)
-                call put_beta_on_faces_3d(lo,hcoeffp(:,:,:,1),betap(:,:,:,:))
+                call put_beta_on_faces_3d(lo,hcoeffp(:,:,:,1),ng_cc,betap(:,:,:,:),ng_fc)
              end select
           end do
        enddo ! end loop over levels
@@ -205,6 +211,9 @@ contains
           call multifab_plus_plus_c(thermal(n),1,resid(n),1,1,0)
        enddo
      
+       ng_cc = Xkcoeff(1)%ng
+       ng_fc = beta(1)%ng
+
        ! loop over species
        do comp=1,nspec
           do n=1,nlevs
@@ -221,9 +230,11 @@ contains
                 hi = upb(get_box(s(n),i))
                 select case (dm)
                 case (2)
-                   call put_beta_on_faces_2d(lo,Xkcoeffp(:,:,1,comp),betap(:,:,1,:))
+                   call put_beta_on_faces_2d(lo,Xkcoeffp(:,:,1,comp),ng_cc, &
+                                             betap(:,:,1,:),ng_fc)
                 case (3)
-                   call put_beta_on_faces_3d(lo,Xkcoeffp(:,:,:,comp),betap(:,:,:,:))
+                   call put_beta_on_faces_3d(lo,Xkcoeffp(:,:,:,comp),ng_cc, &
+                                             betap(:,:,:,:),ng_fc)
                 end select
              end do
           enddo ! end loop over levels
@@ -274,6 +285,9 @@ contains
 
        end if
 
+       ng_cc = pcoeff(1)%ng
+       ng_fc = beta(1)%ng
+
        ! setup beta = pcoeff on faces
        do n=1,nlevs
           do i=1,beta(n)%nboxes
@@ -284,9 +298,9 @@ contains
              hi = upb(get_box(beta(n),i))
              select case (dm)
              case (2)
-                call put_beta_on_faces_2d(lo,pcoeffp(:,:,1,1),betap(:,:,1,:))
+                call put_beta_on_faces_2d(lo,pcoeffp(:,:,1,1),ng_cc,betap(:,:,1,:),ng_fc)
              case (3)
-                call put_beta_on_faces_3d(lo,pcoeffp(:,:,:,1),betap(:,:,:,:))
+                call put_beta_on_faces_3d(lo,pcoeffp(:,:,:,1),ng_cc,betap(:,:,:,:),ng_fc)
              end select
           end do
        enddo
