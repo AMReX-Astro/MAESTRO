@@ -53,14 +53,22 @@ contains
     real(kind=dp_t), pointer :: p0np(:,:,:,:)
 
     integer :: lo(sold(1)%dim),hi(sold(1)%dim)
-    integer :: i,ng_s,dm,n
+    integer :: i,dm,n
+    integer :: ng_so,ng_sn,ng_sf,ng_f,ng_ho,ng_hn,ng_p
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "update_scal")
 
     dm = sold(1)%dim
-    ng_s = sold(1)%ng
+
+    ng_so = sold(1)%ng
+    ng_sn = snew(1)%ng
+    ng_sf = sflux(1,1)%ng ! note we are assuming that ng is the same for all directions
+    ng_f  = scal_force(1)%ng
+    ng_ho = rhoh0_old_cart(1)%ng
+    ng_hn = rhoh0_new_cart(1)%ng
+    ng_p  = p0_new_cart(1)%ng
 
     do n=1,nlevs
 
@@ -76,30 +84,30 @@ contains
           select case (dm)
           case (2)
              call update_scal_2d(nstart, nstop, &
-                                 sop(:,:,1,:), snp(:,:,1,:), &
-                                 sfpx(:,:,1,:), sfpy(:,:,1,:), &
-                                 fp(:,:,1,:), &
+                                 sop(:,:,1,:), ng_so, snp(:,:,1,:), ng_sn, &
+                                 sfpx(:,:,1,:), sfpy(:,:,1,:), ng_sf, &
+                                 fp(:,:,1,:), ng_f, &
                                  rhoh0_old(n,:), rhoh0_new(n,:), &
-                                 p0(n,:), lo, hi, ng_s, dx(n,:), dt)
+                                 p0(n,:), lo, hi, dx(n,:), dt)
           case (3)
              sfpz => dataptr(sflux(n,3),i)
              if (spherical .eq. 0) then
                 call update_scal_3d_cart(nstart, nstop, &
-                                         sop(:,:,:,:), snp(:,:,:,:), &
+                                         sop(:,:,:,:), ng_so, snp(:,:,:,:), ng_sn, &
                                          sfpx(:,:,:,:), sfpy(:,:,:,:), sfpz(:,:,:,:), &
-                                         fp(:,:,:,:), &
+                                         ng_sf, fp(:,:,:,:), ng_f, &
                                          rhoh0_old(n,:), rhoh0_new(n,:), &
-                                         p0(n,:), lo, hi, ng_s, dx(n,:), dt)
+                                         p0(n,:), lo, hi, dx(n,:), dt)
              else
                 rhoh0op => dataptr(rhoh0_old_cart(n), i)
                 rhoh0np => dataptr(rhoh0_new_cart(n), i)
                 p0np => dataptr(p0_new_cart(n), i)
                 call update_scal_3d_sphr(nstart, nstop, &
-                                         sop(:,:,:,:), snp(:,:,:,:), &
+                                         sop(:,:,:,:), ng_so, snp(:,:,:,:), ng_sn, &
                                          sfpx(:,:,:,:), sfpy(:,:,:,:), sfpz(:,:,:,:), &
-                                         fp(:,:,:,:), &
-                                         rhoh0op(:,:,:,1), rhoh0np(:,:,:,1), &
-                                         p0np(:,:,:,1), lo, hi, ng_s, dx(n,:), dt)
+                                         ng_sf, fp(:,:,:,:), ng_f, &
+                                         rhoh0op(:,:,:,1), ng_ho, rhoh0np(:,:,:,1), ng_hn, &
+                                         p0np(:,:,:,1), ng_p, lo, hi, dx(n,:), dt)
              end if
           end select
        end do
@@ -135,7 +143,7 @@ contains
           ! fill level n ghost cells using interpolation from level n-1 data
           ! note that multifab_fill_boundary and multifab_physbc are called for
           ! both levels n-1 and n
-          call multifab_fill_ghost_cells(snew(n),snew(n-1),ng_s,mla%mba%rr(n-1,:), &
+          call multifab_fill_ghost_cells(snew(n),snew(n-1),ng_sn,mla%mba%rr(n-1,:), &
                                          the_bc_level(n-1),the_bc_level(n), &
                                          nstart,dm+nstart,nstop-nstart+1)
 
@@ -145,7 +153,7 @@ contains
              call ml_cc_restriction_c(snew(n-1),rho_comp,snew(n),rho_comp, &
                                       mla%mba%rr(n-1,:),1)
 
-             call multifab_fill_ghost_cells(snew(n),snew(n-1),ng_s,mla%mba%rr(n-1,:), &
+             call multifab_fill_ghost_cells(snew(n),snew(n-1),ng_sn,mla%mba%rr(n-1,:), &
                                             the_bc_level(n-1),the_bc_level(n), &
                                             rho_comp,dm+rho_comp,1)
 
@@ -159,8 +167,8 @@ contains
 
   end subroutine update_scal
 
-  subroutine update_scal_2d(nstart,nstop,sold,snew,sfluxx,sfluxy,force, &
-                            rhoh0_old,rhoh0_new,p0,lo,hi,ng_s,dx,dt)
+  subroutine update_scal_2d(nstart,nstop,sold,ng_so,snew,ng_sn,sfluxx,sfluxy,ng_sf, &
+                            force,ng_f,rhoh0_old,rhoh0_new,p0,lo,hi,dx,dt)
 
     use network,       only: nspec
     use eos_module
@@ -169,15 +177,16 @@ contains
     use pred_parameters
     use bl_constants_module
 
-    integer           , intent(in   ) :: nstart, nstop, lo(:), hi(:), ng_s
-    real (kind = dp_t), intent(in   ) ::    sold(lo(1)-ng_s:,lo(2)-ng_s:,:)
-    real (kind = dp_t), intent(  out) ::    snew(lo(1)-ng_s:,lo(2)-ng_s:,:)
-    real (kind = dp_t), intent(in   ) ::  sfluxx(lo(1)   :,lo(2)   :,:)
-    real (kind = dp_t), intent(in   ) ::  sfluxy(lo(1)   :,lo(2)   :,:)
-    real (kind = dp_t), intent(in   ) ::   force(lo(1)- 1:,lo(2)- 1:,:)
-    real (kind = dp_t), intent(in   ) ::   rhoh0_old(0:)
-    real (kind = dp_t), intent(in   ) ::   rhoh0_new(0:)
-    real (kind = dp_t), intent(in   ) ::       p0(0:)
+    integer           , intent(in   ) :: nstart, nstop, lo(:), hi(:)
+    integer           , intent(in   ) :: ng_so, ng_sn, ng_sf, ng_f
+    real (kind = dp_t), intent(in   ) ::   sold(lo(1)-ng_so:,lo(2)-ng_so:,:)
+    real (kind = dp_t), intent(  out) ::   snew(lo(1)-ng_sn:,lo(2)-ng_sn:,:)
+    real (kind = dp_t), intent(in   ) :: sfluxx(lo(1)-ng_sf:,lo(2)-ng_sf:,:)
+    real (kind = dp_t), intent(in   ) :: sfluxy(lo(1)-ng_sf:,lo(2)-ng_sf:,:)
+    real (kind = dp_t), intent(in   ) ::  force(lo(1)-ng_f :,lo(2)-ng_f :,:)
+    real (kind = dp_t), intent(in   ) :: rhoh0_old(0:)
+    real (kind = dp_t), intent(in   ) :: rhoh0_new(0:)
+    real (kind = dp_t), intent(in   ) ::        p0(0:)
     real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
     integer            :: i, j, comp, comp2
@@ -310,8 +319,8 @@ contains
 
   end subroutine update_scal_2d
 
-  subroutine update_scal_3d_cart(nstart,nstop,sold,snew,sfluxx,sfluxy,sfluxz,force, &
-                                 rhoh0_old,rhoh0_new,p0,lo,hi,ng_s,dx,dt)
+  subroutine update_scal_3d_cart(nstart,nstop,sold,ng_so,snew,ng_sn,sfluxx,sfluxy,sfluxz, &
+                                 ng_sf,force,ng_f,rhoh0_old,rhoh0_new,p0,lo,hi,dx,dt)
 
     use network,       only: nspec
     use eos_module
@@ -320,16 +329,17 @@ contains
     use pred_parameters
     use bl_constants_module
 
-    integer           , intent(in   ) :: nstart, nstop, lo(:), hi(:), ng_s
-    real (kind = dp_t), intent(in   ) ::    sold(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
-    real (kind = dp_t), intent(  out) ::    snew(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
-    real (kind = dp_t), intent(in   ) ::  sfluxx(lo(1)   :,lo(2)   :,lo(3)   :,:)
-    real (kind = dp_t), intent(in   ) ::  sfluxy(lo(1)   :,lo(2)   :,lo(3)   :,:)
-    real (kind = dp_t), intent(in   ) ::  sfluxz(lo(1)   :,lo(2)   :,lo(3)   :,:)
-    real (kind = dp_t), intent(in   ) ::   force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
-    real (kind = dp_t), intent(in   ) ::   rhoh0_old(0:)
-    real (kind = dp_t), intent(in   ) ::   rhoh0_new(0:)
-    real (kind = dp_t), intent(in   ) ::       p0(0:)
+    integer           , intent(in   ) :: nstart, nstop, lo(:), hi(:)
+    integer           , intent(in   ) :: ng_so, ng_sn, ng_sf, ng_f
+    real (kind = dp_t), intent(in   ) ::   sold(lo(1)-ng_so:,lo(2)-ng_so:,lo(3)-ng_so:,:)
+    real (kind = dp_t), intent(  out) ::   snew(lo(1)-ng_sn:,lo(2)-ng_sn:,lo(3)-ng_sn:,:)
+    real (kind = dp_t), intent(in   ) :: sfluxx(lo(1)-ng_sf:,lo(2)-ng_sf:,lo(3)-ng_sf:,:)
+    real (kind = dp_t), intent(in   ) :: sfluxy(lo(1)-ng_sf:,lo(2)-ng_sf:,lo(3)-ng_sf:,:)
+    real (kind = dp_t), intent(in   ) :: sfluxz(lo(1)-ng_sf:,lo(2)-ng_sf:,lo(3)-ng_sf:,:)
+    real (kind = dp_t), intent(in   ) ::  force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :,:)
+    real (kind = dp_t), intent(in   ) :: rhoh0_old(0:)
+    real (kind = dp_t), intent(in   ) :: rhoh0_new(0:)
+    real (kind = dp_t), intent(in   ) ::        p0(0:)
     real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
     integer            :: i, j, k, comp, comp2
@@ -477,8 +487,9 @@ contains
 
   end subroutine update_scal_3d_cart
 
-  subroutine update_scal_3d_sphr(nstart,nstop,sold,snew,sfluxx,sfluxy,sfluxz,force, &
-                                 rhoh0_old_cart,rhoh0_new_cart,p0_new_cart,lo,hi,ng_s,dx,dt)
+  subroutine update_scal_3d_sphr(nstart,nstop,sold,ng_so,snew,ng_sn,sfluxx,sfluxy,sfluxz, &
+                                 ng_sf,force,ng_f,rhoh0_old_cart,ng_ho,rhoh0_new_cart, &
+                                 ng_hn,p0_new_cart,ng_p,lo,hi,dx,dt)
 
     use network,       only: nspec
     use eos_module
@@ -487,17 +498,17 @@ contains
     use pred_parameters
     use bl_constants_module
 
-    integer           , intent(in   ) :: nstart, nstop
-    integer           , intent(in   ) :: lo(:), hi(:), ng_s
-    real (kind = dp_t), intent(in   ) ::    sold(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
-    real (kind = dp_t), intent(  out) ::    snew(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
-    real (kind = dp_t), intent(in   ) ::  sfluxx(lo(1)   :,lo(2)   :,lo(3)   :,:)
-    real (kind = dp_t), intent(in   ) ::  sfluxy(lo(1)   :,lo(2)   :,lo(3)   :,:)
-    real (kind = dp_t), intent(in   ) ::  sfluxz(lo(1)   :,lo(2)   :,lo(3)   :,:)
-    real (kind = dp_t), intent(in   ) ::   force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
-    real (kind = dp_t), intent(in   ) ::   rhoh0_old_cart(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
-    real (kind = dp_t), intent(in   ) ::   rhoh0_new_cart(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
-    real (kind = dp_t), intent(in   ) ::   p0_new_cart(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
+    integer           , intent(in   ) :: nstart, nstop, lo(:), hi(:)
+    integer           , intent(in   ) :: ng_so, ng_sn, ng_sf, ng_f, ng_ho, ng_hn, ng_p
+    real (kind = dp_t), intent(in   ) ::    sold(lo(1)-ng_so:,lo(2)-ng_so:,lo(3)-ng_so:,:)
+    real (kind = dp_t), intent(  out) ::    snew(lo(1)-ng_sn:,lo(2)-ng_sn:,lo(3)-ng_sn:,:)
+    real (kind = dp_t), intent(in   ) ::  sfluxx(lo(1)-ng_sf:,lo(2)-ng_sf:,lo(3)-ng_sf:,:)
+    real (kind = dp_t), intent(in   ) ::  sfluxy(lo(1)-ng_sf:,lo(2)-ng_sf:,lo(3)-ng_sf:,:)
+    real (kind = dp_t), intent(in   ) ::  sfluxz(lo(1)-ng_sf:,lo(2)-ng_sf:,lo(3)-ng_sf:,:)
+    real (kind = dp_t), intent(in   ) ::   force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :,:)
+    real (kind = dp_t), intent(in   )::rhoh0_old_cart(lo(1)-ng_ho:,lo(2)-ng_ho:,lo(3)-ng_ho:)
+    real (kind = dp_t), intent(in   )::rhoh0_new_cart(lo(1)-ng_hn:,lo(2)-ng_hn:,lo(3)-ng_hn:)
+    real (kind = dp_t), intent(in   )::   p0_new_cart(lo(1)-ng_p :,lo(2)-ng_p :,lo(3)-ng_p :)
     real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
     integer            :: i, j, k, comp, comp2
