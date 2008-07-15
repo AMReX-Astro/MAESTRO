@@ -21,6 +21,8 @@
 
  cflfac = 0.7
  init_shrink = 0.1
+ use_soundspeed_firstdt = T
+ use_divu_firstdt = T
 
  bcx_lo = 12
  bcx_hi = 12

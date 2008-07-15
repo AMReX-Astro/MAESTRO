@@ -38,8 +38,8 @@ contains
     ng = u%ng
     dm = u%dim
     
-    dt_hold_proc = HUGE(dt_hold_proc)
-    dt_grid      = HUGE(dt_grid)
+    dt_hold_proc = 1.d99
+    dt_grid      = 1.d99
     
     do i = 1, u%nboxes
        if ( multifab_remote(u, i) ) cycle
@@ -70,6 +70,7 @@ contains
     use variables, only: rho_comp, temp_comp, spec_comp
     use geometry,  only: nr
     use bl_constants_module
+    use probin_module, only: use_soundspeed_firstdt, use_divu_firstdt
     
     integer, intent(in)             :: n, lo(:), hi(:), ng
     real (kind = dp_t), intent(in ) :: u(lo(1)-ng:,lo(2)-ng:,:)  
@@ -84,7 +85,7 @@ contains
     real (kind = dp_t)  :: spdx, spdy
     real (kind = dp_t)  :: pforcex, pforcey
     real (kind = dp_t)  :: ux, uy
-    real (kind = dp_t)  :: eps, dt_divu, rho_min
+    real (kind = dp_t)  :: eps, dt_divu, dt_sound, rho_min
     integer             :: i,j,gradp0,denom
     
     rho_min = 1.d-20
@@ -97,6 +98,8 @@ contains
     pforcey = ZERO
     ux      = ZERO
     uy      = ZERO
+
+    dt = 1.d99
     
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
@@ -132,41 +135,54 @@ contains
     
     spdx = spdx / dx(1)
     spdy = spdy / dx(2)
-    
-    ! if ux or uy is non-zero use it
-    ! otherwise, use soundspeed
+
+    ! advective constraint
     if (ux .ne. ZERO .or. uy .ne. ZERO) then
        dt = cfl / max(ux,uy)
-    else if (spdx < eps .and. spdy < eps) then
-       dt = min(dx(1),dx(2))
-    else
+    else if (spdx .ne. ZERO .and. spdy .ne. ZERO) then
        dt = cfl / max(spdx,spdy)
-    endif
+    end if
+
+    ! sound speed constraint
+    if (use_soundspeed_firstdt) then
+       if (spdx .eq. ZERO .and. spdy .eq. ZERO) then
+          dt_sound = 1.d99
+       else
+          dt_sound = cfl / max(spdx,spdy)
+       end if
+       dt = min(dt,dt_sound)
+    end if
     
+    ! force constraints
     if (pforcex > eps) dt = min(dt,sqrt(2.0D0*dx(1)/pforcex))
-    
     if (pforcey > eps) dt = min(dt,sqrt(2.0D0*dx(2)/pforcey))
     
     ! divU constraint
-    dt_divu = HUGE(dt_divu)
-    
-    do j = lo(2), hi(2)
-       if (j .eq. 0) then
-          gradp0 = (p0(j+1) - p0(j))/dx(2)
-       else if (j .eq. nr(n)-1) then
-          gradp0 = (p0(j) - p0(j-1))/dx(2)
-       else
-          gradp0 = HALF*(p0(j+1) - p0(j-1))/dx(2)
-       endif
+    if (use_divu_firstdt) then
        
-       do i = lo(1), hi(1)
-          denom = divU(i,j) - u(i,j,2)*gradp0/(gamma1bar(j)*p0(j))
-          if (denom > ZERO) then
-             dt_divu = min(dt_divu,0.4d0*(ONE - rho_min/s(i,j,rho_comp))/denom)
+       dt_divu = 1.d99
+       
+       do j = lo(2), hi(2)
+          if (j .eq. 0) then
+             gradp0 = (p0(j+1) - p0(j))/dx(2)
+          else if (j .eq. nr(n)-1) then
+             gradp0 = (p0(j) - p0(j-1))/dx(2)
+          else
+             gradp0 = HALF*(p0(j+1) - p0(j-1))/dx(2)
           endif
+          
+          do i = lo(1), hi(1)
+             denom = divU(i,j) - u(i,j,2)*gradp0/(gamma1bar(j)*p0(j))
+             if (denom > ZERO) then
+                dt_divu = min(dt_divu,0.4d0*(ONE - rho_min/s(i,j,rho_comp))/denom)
+             endif
+          enddo
        enddo
-    enddo
     
+       dt = min(dt,dt_divu)
+
+    end if
+
   end subroutine firstdt_2d
   
   subroutine firstdt_3d(n,u,s,force,divU,p0,gamma1bar,lo,hi,ng,dx,dt,cfl)
@@ -174,8 +190,8 @@ contains
     use geometry,  only: spherical, nr
     use variables, only: rho_comp, temp_comp, spec_comp
     use eos_module
-    use fill_3d_module
     use bl_constants_module
+    use probin_module, only: use_soundspeed_firstdt, use_divu_firstdt
 
     integer, intent(in)             :: n,lo(:), hi(:), ng
     real (kind = dp_t), intent(in ) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
@@ -190,7 +206,7 @@ contains
     real (kind = dp_t)  :: spdx, spdy, spdz
     real (kind = dp_t)  :: pforcex, pforcey, pforcez
     real (kind = dp_t)  :: ux, uy, uz
-    real (kind = dp_t)  :: eps, dt_divu, gradp0, denom, rho_min
+    real (kind = dp_t)  :: eps, dt_divu, dt_sound, gradp0, denom, rho_min
     integer             :: i,j,k
     
     eps = 1.0d-8
@@ -207,6 +223,8 @@ contains
     uy      = ZERO
     uz      = ZERO
     
+    dt = 1.d99
+
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -240,53 +258,69 @@ contains
           enddo
        enddo
     enddo
+
+    ux = ux / dx(1)
+    uy = uy / dx(2)
+    uz = uz / dx(3)
     
     spdx = spdx / dx(1)
     spdy = spdy / dx(2)
     spdz = spdz / dx(3)
     
-    ux = ux / dx(1)
-    uy = uy / dx(2)
-    uz = uz / dx(3)
-    
-    ! if ux, uy, or uz is non-zero use it
-    ! otherwise, use soundspeed
+    ! advective constraint
     if (ux .ne. ZERO .or. uy .ne. ZERO .or. uz .ne. ZERO) then
        dt = cfl / max(ux,uy,uz)
-    else if (spdx < eps .and. spdy < eps .and. spdz < eps) then
-       dt = min(dx(1),dx(2),dx(3))
-    else
+    else if (spdx .ne. ZERO .and. spdy .ne. ZERO .and. spdz .ne. ZERO) then
        dt = cfl / max(spdx,spdy,spdz)
-    endif
-    
+    end if
+
+    ! sound speed constraint
+    if (use_soundspeed_firstdt) then
+       if (spdx .eq. ZERO .and. spdy .eq. ZERO .and. spdz .eq. ZERO) then
+          dt_sound = 1.d99
+       else
+          dt_sound = cfl / max(spdx,spdy,spdz)
+       end if
+       dt = min(dt,dt_sound)
+    end if
+
+    ! force constraints
     if (pforcex > eps) dt = min(dt,sqrt(2.0D0*dx(1)/pforcex))
-    
     if (pforcey > eps) dt = min(dt,sqrt(2.0D0*dx(2)/pforcey))
-    
     if (pforcez > eps) dt = min(dt,sqrt(2.0D0*dx(3)/pforcez))
     
     ! divU constraint
-    dt_divu = HUGE(dt_divu)
-    
-    do k = lo(3), hi(3)
-       if (k .eq. 0) then
-          gradp0 = (p0(k+1) - p0(k))/dx(3)
-       else if (k .eq. nr(n)-1) then
-          gradp0 = (p0(k) - p0(k-1))/dx(3)
-       else
-          gradp0 = HALF*(p0(k+1) - p0(k-1))/dx(3)
-       endif
+    if (use_divu_firstdt) then
+
+       dt_divu = 1.d99
        
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-             denom = divU(i,j,k) - u(i,j,k,3)*gradp0/(gamma1bar(k)*p0(k))
-             if (denom > ZERO) then
-                dt_divu = min(dt_divu,0.4d0*(ONE - rho_min/s(i,j,k,rho_comp))/denom)
+       if (spherical .eq. 0) then
+
+          do k = lo(3), hi(3)
+             if (k .eq. 0) then
+                gradp0 = (p0(k+1) - p0(k))/dx(3)
+             else if (k .eq. nr(n)-1) then
+                gradp0 = (p0(k) - p0(k-1))/dx(3)
+             else
+                gradp0 = HALF*(p0(k+1) - p0(k-1))/dx(3)
              endif
+             
+             do j = lo(2), hi(2)
+                do i = lo(1), hi(1)
+                   denom = divU(i,j,k) - u(i,j,k,3)*gradp0/(gamma1bar(k)*p0(k))
+                   if (denom > ZERO) then
+                      dt_divu = min(dt_divu,0.4d0*(ONE - rho_min/s(i,j,k,rho_comp))/denom)
+                   endif
+                enddo
+             enddo
           enddo
-       enddo
-    enddo
-    
+
+       end if
+
+       dt = min(dt,dt_divu)
+
+    end if
+
   end subroutine firstdt_3d
   
 end module firstdt_module
