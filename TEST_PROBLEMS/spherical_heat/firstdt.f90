@@ -196,7 +196,7 @@ contains
   
   subroutine firstdt_3d(n,u,s,force,divU,p0,gamma1bar,lo,hi,ng,dx,dt,cfl)
 
-    use geometry,  only: spherical, nr
+    use geometry,  only: spherical
     use variables, only: rho_comp, temp_comp, spec_comp
     use eos_module
     use fill_3d_module

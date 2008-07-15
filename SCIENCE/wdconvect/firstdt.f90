@@ -68,7 +68,7 @@ contains
 
     use eos_module
     use variables, only: rho_comp, temp_comp, spec_comp
-    use geometry,  only: r_end_coord
+    use geometry,  only: nr
     use bl_constants_module
     
     integer, intent(in)             :: n, lo(:), hi(:), ng
@@ -174,7 +174,7 @@ contains
     do j = lo(2), hi(2)
        if (j .eq. 0) then
           gradp0 = (p0(j+1) - p0(j))/dx(2)
-       else if (j .eq. r_end_coord(n)) then
+       else if (j .eq. nr(n)-1) then
           gradp0 = (p0(j) - p0(j-1))/dx(2)
        else
           gradp0 = HALF*(p0(j+1) - p0(j-1))/dx(2)
