@@ -53,13 +53,19 @@ contains
     real(kind=dp_t), pointer:: hp(:,:,:,:),gp(:,:,:,:),rp(:,:,:,:)
     real(kind=dp_t), pointer:: dp(:,:,:,:),sp(:,:,:,:),sbp(:,:,:,:)
     integer :: lo(Source(1)%dim),hi(Source(1)%dim)
-    integer :: i,dm,n
+    integer :: i,dm,n,ng_rh,ng_sr,ng_dg,ng_dc,ng_sb,ng_hg
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "make_hgrhs")
     
     dm = Source(1)%dim
+    ng_rh = rhs_cc(1)%ng
+    ng_sr = Source(1)%ng
+    ng_dg = delta_gamma1_term(1)%ng
+    ng_dc = div_coeff_cart(1)%ng
+    ng_sb = Sbar_cart(1)%ng
+    ng_hg = hgrhs(1)%ng
 
     if(spherical .eq. 1) then
        do n = 1, nlevs
@@ -92,17 +98,18 @@ contains
           hi =  upb(get_box(Source(n), i))
           select case (dm)
           case (2)
-             call make_rhscc_2d(lo,hi,rp(:,:,1,1),sp(:,:,1,1),gp(:,:,1,1),Sbar(n,:), &
-                                div_coeff(n,:))
+             call make_rhscc_2d(lo,hi,rp(:,:,1,1),ng_rh,sp(:,:,1,1),ng_sr, &
+                                gp(:,:,1,1),ng_dg,Sbar(n,:),div_coeff(n,:))
           case (3)
              if (spherical .eq. 1) then
                 dp => dataptr(div_coeff_cart(n), i)
                 sbp => dataptr(Sbar_cart(n), i)
-                call make_rhscc_3d_sphr(lo,hi,rp(:,:,:,1),sp(:,:,:,1),gp(:,:,:,1), &
-                                        sbp(:,:,:,1),dp(:,:,:,1))
+                call make_rhscc_3d_sphr(lo,hi,rp(:,:,:,1),ng_rh,sp(:,:,:,1),ng_sr, &
+                                        gp(:,:,:,1),ng_dg,sbp(:,:,:,1),ng_sb, &
+                                        dp(:,:,:,1),ng_dc)
              else
-                call make_rhscc_3d_cart(lo,hi,rp(:,:,:,1),sp(:,:,:,1),gp(:,:,:,1), &
-                                        Sbar(n,:),div_coeff(n,:))
+                call make_rhscc_3d_cart(lo,hi,rp(:,:,:,1),ng_rh,sp(:,:,:,1),ng_sr, &
+                                        gp(:,:,:,1),ng_dg,Sbar(n,:),div_coeff(n,:))
              end if
           end select
        end do
@@ -144,9 +151,9 @@ contains
           hi =  upb(get_box(Source(n), i))
           select case (dm)
           case (2)
-             call make_hgrhs_2d(lo,hi,hp(:,:,1,1),rp(:,:,1,1))
+             call make_hgrhs_2d(lo,hi,hp(:,:,1,1),ng_hg,rp(:,:,1,1),ng_rh)
           case (3)
-             call make_hgrhs_3d(lo,hi,hp(:,:,:,1),rp(:,:,:,1))
+             call make_hgrhs_3d(lo,hi,hp(:,:,:,1),ng_hg,rp(:,:,:,1),ng_rh)
           end select
        end do
     end do ! end loop over levels
@@ -163,12 +170,13 @@ contains
     
   end subroutine make_hgrhs
   
-  subroutine make_rhscc_2d(lo,hi,rhs_cc,Source,delta_gamma1_term,Sbar,div_coeff)
+  subroutine make_rhscc_2d(lo,hi,rhs_cc,ng_rh,Source,ng_sr,delta_gamma1_term,ng_dg, &
+                           Sbar,div_coeff)
 
-    integer         , intent(in   ) :: lo(:), hi(:)
-    real (kind=dp_t), intent(  out) ::            rhs_cc(lo(1)-1:,lo(2)-1:)
-    real (kind=dp_t), intent(in   ) ::            Source(lo(1)  :,lo(2)  :)
-    real (kind=dp_t), intent(in   ) :: delta_gamma1_term(lo(1)  :,lo(2)  :)  
+    integer         , intent(in   ) :: lo(:), hi(:), ng_rh, ng_sr, ng_dg
+    real (kind=dp_t), intent(  out) ::            rhs_cc(lo(1)-ng_rh:,lo(2)-ng_rh:)
+    real (kind=dp_t), intent(in   ) ::            Source(lo(1)-ng_sr:,lo(2)-ng_sr:)
+    real (kind=dp_t), intent(in   ) :: delta_gamma1_term(lo(1)-ng_dg:,lo(2)-ng_dg:)  
     real (kind=dp_t), intent(in   ) ::      Sbar(0:)
     real (kind=dp_t), intent(in   ) :: div_coeff(0:)
     
@@ -183,12 +191,13 @@ contains
     
   end subroutine make_rhscc_2d
   
-  subroutine make_rhscc_3d_cart(lo,hi,rhs_cc,Source,delta_gamma1_term,Sbar,div_coeff)
+  subroutine make_rhscc_3d_cart(lo,hi,rhs_cc,ng_rh,Source,ng_sr,delta_gamma1_term,ng_dg, &
+                                Sbar,div_coeff)
 
-    integer         , intent(in   ) :: lo(:), hi(:)
-    real (kind=dp_t), intent(  out) ::            rhs_cc(lo(1)-1:,lo(2)-1:,lo(3)-1:)  
-    real (kind=dp_t), intent(in   ) ::            Source(lo(1)  :,lo(2)  :,lo(3)  :)  
-    real (kind=dp_t), intent(in   ) :: delta_gamma1_term(lo(1)  :,lo(2)  :,lo(3)  :)  
+    integer         , intent(in   ) :: lo(:), hi(:), ng_rh, ng_sr, ng_dg
+    real (kind=dp_t), intent(  out) ::         rhs_cc(lo(1)-ng_rh:,lo(2)-ng_rh:,lo(3)-ng_rh:)
+    real (kind=dp_t), intent(in   ) ::         Source(lo(1)-ng_sr:,lo(2)-ng_sr:,lo(3)-ng_sr:)
+    real (kind=dp_t), intent(in) :: delta_gamma1_term(lo(1)-ng_dg:,lo(2)-ng_dg:,lo(3)-ng_dg:)
     real (kind=dp_t), intent(in   ) ::      Sbar(0:)
     real (kind=dp_t), intent(in   ) :: div_coeff(0:)
     
@@ -206,17 +215,17 @@ contains
     
   end subroutine make_rhscc_3d_cart
    
-  subroutine make_rhscc_3d_sphr(lo,hi,rhs_cc,Source,delta_gamma1_term,Sbar_cart, &
-                                div_coeff_cart)
+  subroutine make_rhscc_3d_sphr(lo,hi,rhs_cc,ng_rh,Source,ng_sr,delta_gamma1_term,ng_dg, &
+                                Sbar_cart,ng_sb,div_coeff_cart,ng_dc)
 
-    integer         , intent(in   ) :: lo(:), hi(:)
-    real (kind=dp_t), intent(  out) ::            rhs_cc(lo(1)-1:,lo(2)-1:,lo(3)-1:)  
-    real (kind=dp_t), intent(in   ) ::            Source(lo(1)  :,lo(2)  :,lo(3)  :)  
-    real (kind=dp_t), intent(in   ) :: delta_gamma1_term(lo(1)  :,lo(2)  :,lo(3)  :)  
-    real (kind=dp_t), intent(in   ) ::         Sbar_cart(lo(1)  :,lo(2)  :,lo(3)  :)  
-    real (kind=dp_t), intent(in   ) ::    div_coeff_cart(lo(1)  :,lo(2)  :,lo(3)  :)  
+    integer         , intent(in   ) :: lo(:), hi(:), ng_rh, ng_sr, ng_dg, ng_sb, ng_dc
+    real (kind=dp_t), intent(  out) ::         rhs_cc(lo(1)-ng_rh:,lo(2)-ng_rh:,lo(3)-ng_rh:)
+    real (kind=dp_t), intent(in   ) ::         Source(lo(1)-ng_sr:,lo(2)-ng_sr:,lo(3)-ng_sr:)
+    real (kind=dp_t), intent(in) :: delta_gamma1_term(lo(1)-ng_dg:,lo(2)-ng_dg:,lo(3)-ng_dg:)
+    real (kind=dp_t), intent(in   ) ::      Sbar_cart(lo(1)-ng_sb:,lo(2)-ng_sb:,lo(3)-ng_sb:)
+    real (kind=dp_t), intent(in   ) :: div_coeff_cart(lo(1)-ng_dc:,lo(2)-ng_dc:,lo(3)-ng_dc:)
     
-    ! Local variables
+    ! Local variablesghostcell passing through to the _2d and _3d
     integer :: i, j,k
     
     do k = lo(3),hi(3)
@@ -231,13 +240,13 @@ contains
     
   end subroutine make_rhscc_3d_sphr
   
-  subroutine make_hgrhs_2d(lo,hi,rhs,rhs_cc)
+  subroutine make_hgrhs_2d(lo,hi,rhs,ng_hg,rhs_cc,ng_rh)
 
     use bl_constants_module
 
-    integer         , intent(in   ) :: lo(:), hi(:)
-    real (kind=dp_t), intent(  out) :: rhs(lo(1):,lo(2):)  
-    real (kind=dp_t), intent(in   ) :: rhs_cc(lo(1)-1:,lo(2)-1:)
+    integer         , intent(in   ) :: lo(:), hi(:), ng_hg, ng_rh
+    real (kind=dp_t), intent(  out) ::    rhs(lo(1)-ng_hg:,lo(2)-ng_hg:)  
+    real (kind=dp_t), intent(in   ) :: rhs_cc(lo(1)-ng_rh:,lo(2)-ng_rh:)
     
     ! Local variables
     integer :: i, j
@@ -251,13 +260,13 @@ contains
     
   end subroutine make_hgrhs_2d
   
-  subroutine make_hgrhs_3d(lo,hi,rhs,rhs_cc)
+  subroutine make_hgrhs_3d(lo,hi,rhs,ng_hg,rhs_cc,ng_rh)
 
     use bl_constants_module
 
-    integer         , intent(in   ) :: lo(:), hi(:)
-    real (kind=dp_t), intent(  out) ::    rhs(lo(1)  :,lo(2)  :,lo(3)  :)  
-    real (kind=dp_t), intent(in   ) :: rhs_cc(lo(1)-1:,lo(2)-1:,lo(3)-1:)  
+    integer         , intent(in   ) :: lo(:), hi(:), ng_hg, ng_rh
+    real (kind=dp_t), intent(  out) ::    rhs(lo(1)-ng_hg:,lo(2)-ng_hg:,lo(3)-ng_hg:)  
+    real (kind=dp_t), intent(in   ) :: rhs_cc(lo(1)-ng_rh:,lo(2)-ng_rh:,lo(3)-ng_rh:)  
     
     ! Local variables
     integer :: i, j,k
@@ -363,7 +372,7 @@ contains
           hi =  upb(get_box(delta_p_term(n), i))
           select case (dm)
           case (2)
-             call create_correction_cc_2d(n,lo,hi,rho0(n,:),ccp(:,:,1,1),ptp(:,:,1,1), &
+             call create_correction_cc_2d(n,lo,hi,ccp(:,:,1,1),ptp(:,:,1,1), &
                                           div_coeff(n,:), &
                                           gamma1bar(n,:),p0(n,:),dt)
           case (3)
@@ -377,9 +386,9 @@ contains
                                                   r0p(:,:,:,1),dt)
 
              else
-                call create_correction_cc_3d_cart(n,lo,hi,rho0(n,:),ccp(:,:,:,1),ptp(:,:,:,1), &
-                                                  div_coeff(n,:),gamma1bar(n,:),p0(n,:), &
-                                                  dt)
+                call create_correction_cc_3d_cart(n,lo,hi,ccp(:,:,:,1), &
+                                                  ptp(:,:,:,1),div_coeff(n,:), &
+                                                  gamma1bar(n,:),p0(n,:),dt)
              end if
           end select
        end do
@@ -450,14 +459,13 @@ contains
     
   end subroutine correct_hgrhs
   
-  subroutine create_correction_cc_2d(n,lo,hi,rho0,correction_cc,delta_p_term,div_coeff, &
+  subroutine create_correction_cc_2d(n,lo,hi,correction_cc,delta_p_term,div_coeff, &
                                      gamma1bar,p0,dt)
 
     use probin_module, only: dpdt_factor
     use geometry, only: base_cutoff_density_coord
 
     integer         , intent(in   ) :: n, lo(:), hi(:)
-    real (kind=dp_t), intent(in   ) :: rho0(0:)
     real (kind=dp_t), intent(  out) :: correction_cc(lo(1)-1:,lo(2)-1:)
     real (kind=dp_t), intent(in   ) :: delta_p_term(lo(1):,lo(2):)
     real (kind=dp_t), intent(in   ) :: div_coeff(0:)
@@ -482,14 +490,13 @@ contains
     
   end subroutine create_correction_cc_2d
 
-  subroutine create_correction_cc_3d_cart(n,lo,hi,rho0,correction_cc,delta_p_term, &
+  subroutine create_correction_cc_3d_cart(n,lo,hi,correction_cc,delta_p_term, &
                                           div_coeff,gamma1bar,p0,dt)
 
     use probin_module, only: dpdt_factor
     use geometry, only: base_cutoff_density_coord
 
     integer         , intent(in   ) :: n, lo(:), hi(:)
-    real (kind=dp_t), intent(in   ) :: rho0(0:)
     real (kind=dp_t), intent(  out) :: correction_cc(lo(1)-1:,lo(2)-1:,lo(3)-1:)
     real (kind=dp_t), intent(in   ) :: delta_p_term(lo(1):,lo(2):,lo(3):)
     real (kind=dp_t), intent(in   ) :: div_coeff(0:)
@@ -517,8 +524,7 @@ contains
   end subroutine create_correction_cc_3d_cart
 
   subroutine create_correction_cc_3d_sphr(lo,hi,correction_cc,delta_p_term,div_coeff_cart, &
-                                          gamma1bar_cart,p0_cart, &
-                                          rho0_cart,dt)
+                                          gamma1bar_cart,p0_cart,rho0_cart,dt)
 
     use probin_module, only: dpdt_factor, base_cutoff_density
 
