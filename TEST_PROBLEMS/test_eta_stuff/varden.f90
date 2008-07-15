@@ -536,6 +536,8 @@ subroutine varden()
         call firstdt(n,uold(n),sold(n),vel_force(n),Source_old(n), &
                      p0_old(n,:),gamma1bar(n,:,1),dx(n,:),cflfac,dt_lev)
 
+        dt_lev = min(dt_lev,0.05d0)
+
         if (parallel_IOProcessor() .and. verbose .ge. 1) then
            print*,"Call to firstdt for level",n,"gives dt_lev =",dt_lev
         end if
