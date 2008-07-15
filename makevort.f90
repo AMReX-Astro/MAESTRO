@@ -738,11 +738,13 @@ contains
     real(kind=dp_t), pointer:: pp(:,:,:,:)
     real(kind=dp_t), pointer:: up(:,:,:,:)
     real(kind=dp_t), pointer:: np(:,:,:,:)
-    integer :: lo(u%dim),hi(u%dim),ng,dm
+    integer :: lo(u%dim),hi(u%dim),ng_p,ng_u,ng_n,dm
     integer :: i
 
-    ng = u%ng
     dm = u%dim
+    ng_u = u%ng
+    ng_p = plotdata%ng
+    ng_n = normal%ng
 
     do i = 1, u%nboxes
        if ( multifab_remote(u, i) ) cycle
@@ -752,25 +754,27 @@ contains
        hi =  upb(get_box(u, i))
        select case (dm)
        case (2)
-          call makevelplusw0_2d(pp(:,:,1,comp_velplusw0),up(:,:,1,:), w0, lo, hi, ng)
+          call makevelplusw0_2d(pp(:,:,1,comp_velplusw0),ng_p,up(:,:,1,:),ng_u, &
+               w0, lo, hi)
        case (3)
           if (spherical .eq. 1) then
              np => dataptr(normal, i)
-             call makevelplusw0_3d_sphr(pp(:,:,:,comp_velplusw0),up(:,:,:,:), w0, lo, hi, ng, &
-                                        np(:,:,:,:),dx,n)
+             call makevelplusw0_3d_sphr(pp(:,:,:,comp_velplusw0),ng_p,up(:,:,:,:),ng_u, &
+                                        w0,lo,hi,np(:,:,:,:),ng_n,dx,n)
           else
-             call makevelplusw0_3d_cart(pp(:,:,:,comp_velplusw0),up(:,:,:,:), w0, lo, hi, ng)
+             call makevelplusw0_3d_cart(pp(:,:,:,comp_velplusw0),ng_p,up(:,:,:,:),ng_u, &
+                                        w0,lo,hi)
           end if
        end select
     end do
 
   end subroutine make_velplusw0
 
-  subroutine makevelplusw0_2d (velplusw0,u,w0,lo,hi,ng)
+  subroutine makevelplusw0_2d (velplusw0,ng_p,u,ng_u,w0,lo,hi)
 
-    integer           , intent(in   ) :: lo(:), hi(:), ng
-    real (kind = dp_t), intent(  out) :: velplusw0(lo(1)   :,lo(2)   :)
-    real (kind = dp_t), intent(in   ) ::      u(lo(1)-ng:,lo(2)-ng:,:)  
+    integer           , intent(in   ) :: lo(:), hi(:), ng_p, ng_u
+    real (kind = dp_t), intent(  out) :: velplusw0(lo(1)-ng_p:,lo(2)-ng_p:)
+    real (kind = dp_t), intent(in   ) ::         u(lo(1)-ng_u:,lo(2)-ng_u:,:)  
     real (kind = dp_t), intent(in   ) ::     w0(0:)
 
     !     Local variables
@@ -787,13 +791,13 @@ contains
 
   end subroutine makevelplusw0_2d
 
-  subroutine makevelplusw0_3d_cart (velplusw0,u,w0,lo,hi,ng)
+  subroutine makevelplusw0_3d_cart (velplusw0,ng_p,u,ng_u,w0,lo,hi)
 
     use geometry, only : spherical
 
-    integer           , intent(in   ) :: lo(:), hi(:), ng
-    real (kind = dp_t), intent(  out) :: velplusw0(lo(1)   :,lo(2)   :,lo(3)   :)
-    real (kind = dp_t), intent(in   ) ::         u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
+    integer           , intent(in   ) :: lo(:), hi(:), ng_p, ng_u
+    real (kind = dp_t), intent(  out) :: velplusw0(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)
+    real (kind = dp_t), intent(in   ) ::         u(lo(1)-ng_u:,lo(2)-ng_u:,lo(3)-ng_u:,:) 
     real (kind = dp_t), intent(in   ) :: w0(0:)
 
     !     Local variables
@@ -812,14 +816,14 @@ contains
 
   end subroutine makevelplusw0_3d_cart
 
-  subroutine makevelplusw0_3d_sphr (velplusw0,u,w0,lo,hi,ng,normal,dx,n)
+  subroutine makevelplusw0_3d_sphr (velplusw0,ng_p,u,ng_u,w0,lo,hi,normal,ng_n,dx,n)
 
     use fill_3d_module
 
-    integer           , intent(in   ) :: lo(:), hi(:), ng, n
-    real (kind = dp_t), intent(  out) :: velplusw0(lo(1)   :,lo(2)   :,lo(3)   :)
-    real (kind = dp_t), intent(in   ) ::  u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
-    real (kind = dp_t), intent(in   ) :: normal(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)
+    integer           , intent(in   ) :: lo(:), hi(:), ng_p, ng_u, ng_n, n
+    real (kind = dp_t), intent(  out) :: velplusw0(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)
+    real (kind = dp_t), intent(in   ) ::         u(lo(1)-ng_u:,lo(2)-ng_u:,lo(3)-ng_u:,:) 
+    real (kind = dp_t), intent(in   ) ::    normal(lo(1)-ng_n:,lo(2)-ng_n:,lo(3)-ng_n:,:)
     real (kind = dp_t), intent(in   ) :: w0(0:)
     real (kind = dp_t), intent(in   ) :: dx(:)
 
@@ -861,11 +865,13 @@ contains
     real(kind=dp_t), pointer:: pp(:,:,:,:)
     real(kind=dp_t), pointer:: up(:,:,:,:)
     real(kind=dp_t), pointer:: np(:,:,:,:)
-    integer :: lo(u%dim),hi(u%dim),ng,dm
+    integer :: lo(u%dim),hi(u%dim),ng_p,ng_u,ng_n,dm
     integer :: i
 
-    ng = u%ng
     dm = u%dim
+    ng_u = u%ng
+    ng_p = plotdata%ng
+    ng_n = normal%ng
 
     if (spherical .ne. 1) then
        call bl_error("unable to create radial velocity -- not spherical geometry")
@@ -881,21 +887,21 @@ contains
        lo =  lwb(get_box(u, i))
        hi =  upb(get_box(u, i))
 
-       call makevelr_3d_sphr(pp(:,:,:,comp_velr),up(:,:,:,:), w0, &
-                             np(:,:,:,:), lo, hi, ng, dx, n)
+       call makevelr_3d_sphr(pp(:,:,:,comp_velr),ng_p,up(:,:,:,:),ng_u,w0, &
+                             np(:,:,:,:),ng_n,lo,hi,dx,n)
     end do
 
   end subroutine make_velr
 
-  subroutine makevelr_3d_sphr (velr,u,w0,normal,lo,hi,ng,dx,n)
+  subroutine makevelr_3d_sphr (velr,ng_p,u,ng_u,w0,normal,ng_n,lo,hi,dx,n)
 
     use fill_3d_module
 
-    integer           , intent(in   ) :: lo(:), hi(:), ng, n
-    real (kind = dp_t), intent(  out) ::   velr(lo(1)   :,lo(2)   :,lo(3)   :)
-    real (kind = dp_t), intent(in   ) ::      u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
+    integer           , intent(in   ) :: lo(:), hi(:), ng_p, ng_u, ng_n, n
+    real (kind = dp_t), intent(  out) ::   velr(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)
+    real (kind = dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,lo(3)-ng_u:,:)  
     real (kind = dp_t), intent(in   ) :: w0(0:)
-    real (kind = dp_t), intent(in   ) :: normal(lo(1)-1 :,lo(2)-1 :,lo(3)-1 :,:)  
+    real (kind = dp_t), intent(in   ) :: normal(lo(1)-ng_n:,lo(2)-ng_n:,lo(3)-ng_n:,:)  
     real (kind = dp_t), intent(in   ) :: dx(:)
 
     !     Local variables
