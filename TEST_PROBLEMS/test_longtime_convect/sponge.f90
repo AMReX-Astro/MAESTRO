@@ -17,36 +17,35 @@ module sponge_module
 
 contains
 
-  subroutine init_sponge(nlevs,rho0,prob_hi,dx,prob_lo_r)
+  subroutine init_sponge(rho0,prob_hi,dx,prob_lo_r)
 
-    use geometry, only: nr, dr
+    use geometry, only: dr, r_end_coord
     use bl_constants_module
     use probin_module, only: anelastic_cutoff
 
-    integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(in   ) :: rho0(0:),prob_lo_r
     real(kind=dp_t), intent(in   ) :: prob_hi(:),dx(:)
 
-    real (kind = dp_t) :: r
+    real (kind = dp_t) :: rloc
     real (kind = dp_t) :: r_top, r_hw
-    integer            :: j
+    integer            :: r
 
-    r_top = prob_lo_r + dble(nr(nlevs)) * dr(nlevs)
+    r_top = prob_lo_r + dble(r_end_coord(1)+1) * dr(1)
 
     r_hw = r_top
-    do j = 0, nr(nlevs)-1
-       r = prob_lo_r + (dble(j)+HALF) * dr(nlevs)
-       if (rho0(j) < 1.d7) then
-          r_hw = r
+    do r = 0, r_end_coord(1)
+       rloc = prob_lo_r + (dble(r)+HALF) * dr(1)
+       if (rho0(r) < 1.d7) then
+          r_hw = rloc
           exit
        endif
     enddo
 
     r_md = r_top
-    do j = 0,nr(nlevs)-1
-       r = prob_lo_r + (dble(j)+HALF) * dr(nlevs)
-       if (rho0(j) < anelastic_cutoff) then
-          r_md = r
+    do r = 0,r_end_coord(1)
+       rloc = prob_lo_r + (dble(r)+HALF) * dr(1)
+       if (rho0(r) < anelastic_cutoff) then
+          r_md = rloc
           exit
        endif
     enddo
@@ -82,10 +81,11 @@ contains
 
     ! Local variables
     real(kind=dp_t), pointer :: sp(:,:,:,:)
-    integer :: i,dm,n
+    integer :: i,dm,n,ng_sp
     integer :: lo(sponge(1)%dim),hi(sponge(1)%dim)
 
     dm = sponge(1)%dim
+    ng_sp = sponge(1)%ng
 
     do n=1,nlevs
 
@@ -96,9 +96,9 @@ contains
           hi =  upb(get_box(sponge(n), i))
           select case (dm)
           case (2)
-             call mk_sponge_2d(sp(:,:,1,1),lo,hi,dx(n,:),dt)
+             call mk_sponge_2d(sp(:,:,1,1),ng_sp,lo,hi,dx(n,:),dt)
           case (3)
-             call mk_sponge_3d(sp(:,:,:,1),lo,hi,dx(n,:),dt)
+             call mk_sponge_3d(sp(:,:,:,1),ng_sp,lo,hi,dx(n,:),dt)
           end select
        end do
 
@@ -112,13 +112,13 @@ contains
 
   end subroutine make_sponge
 
-  subroutine mk_sponge_2d(sponge,lo,hi,dx,dt)
+  subroutine mk_sponge_2d(sponge,ng_sp,lo,hi,dx,dt)
 
     use bl_constants_module
     use probin_module, only: prob_lo_y, sponge_kappa
 
-    integer        , intent(in   ) ::  lo(:),hi(:)
-    real(kind=dp_t), intent(inout) :: sponge(lo(1):,lo(2):)
+    integer        , intent(in   ) ::  lo(:),hi(:),ng_sp
+    real(kind=dp_t), intent(inout) :: sponge(lo(1)-ng_sp:,lo(2)-ng_sp:)
     real(kind=dp_t), intent(in   ) ::     dx(:),dt
 
     integer         :: j
@@ -142,14 +142,14 @@ contains
 
   end subroutine mk_sponge_2d
 
-  subroutine mk_sponge_3d(sponge,lo,hi,dx,dt)
+  subroutine mk_sponge_3d(sponge,ng_sp,lo,hi,dx,dt)
 
     use geometry, only: spherical, center
     use bl_constants_module
     use probin_module, only: prob_lo_x, prob_lo_y, prob_lo_z, sponge_kappa
 
-    integer        , intent(in   ) :: lo(:),hi(:)
-    real(kind=dp_t), intent(inout) :: sponge(lo(1):,lo(2):,lo(3):)
+    integer        , intent(in   ) :: lo(:),hi(:),ng_sp
+    real(kind=dp_t), intent(inout) :: sponge(lo(1)-ng_sp:,lo(2)-ng_sp:,lo(3)-ng_sp:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
 
     integer         :: i,j,k

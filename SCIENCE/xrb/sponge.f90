@@ -83,10 +83,11 @@ contains
 
     ! Local variables
     real(kind=dp_t), pointer :: sp(:,:,:,:)
-    integer :: i,dm,n
+    integer :: i,dm,n,ng_sp
     integer :: lo(sponge(1)%dim),hi(sponge(1)%dim)
 
     dm = sponge(1)%dim
+    ng_sp = sponge(1)%ng
 
     do n=1,nlevs
 
@@ -97,9 +98,9 @@ contains
           hi =  upb(get_box(sponge(n), i))
           select case (dm)
           case (2)
-             call mk_sponge_2d(sp(:,:,1,1),lo,hi,dx(n,:),dt)
+             call mk_sponge_2d(sp(:,:,1,1),ng_sp,lo,hi,dx(n,:),dt)
           case (3)
-             call mk_sponge_3d(sp(:,:,:,1),lo,hi,dx(n,:),dt)
+             call mk_sponge_3d(sp(:,:,:,1),ng_sp,lo,hi,dx(n,:),dt)
           end select
        end do
 
@@ -113,13 +114,13 @@ contains
 
   end subroutine make_sponge
 
-  subroutine mk_sponge_2d(sponge,lo,hi,dx,dt)
+  subroutine mk_sponge_2d(sponge,ng_sp,lo,hi,dx,dt)
 
     use bl_constants_module
     use probin_module, only: prob_lo_y, use_xrb_bottom_sponge
 
-    integer        , intent(in   ) :: lo(:),hi(:)
-    real(kind=dp_t), intent(inout) :: sponge(lo(1):,lo(2):)
+    integer        , intent(in   ) :: lo(:),hi(:),ng_sp
+    real(kind=dp_t), intent(inout) :: sponge(lo(1)-ng_sp:,lo(2)-ng_sp:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
 
     integer         :: j
@@ -167,13 +168,13 @@ contains
 
   end subroutine mk_sponge_2d
 
-  subroutine mk_sponge_3d(sponge,lo,hi,dx,dt)
+  subroutine mk_sponge_3d(sponge,ng_sp,lo,hi,dx,dt)
 
     use bl_constants_module
     use probin_module, only: prob_lo_z, use_xrb_bottom_sponge
 
-    integer        , intent(in   ) :: lo(:),hi(:)
-    real(kind=dp_t), intent(inout) :: sponge(lo(1):,lo(2):,lo(3):)
+    integer        , intent(in   ) :: lo(:),hi(:),ng_sp
+    real(kind=dp_t), intent(inout) :: sponge(lo(1)-ng_sp:,lo(2)-ng_sp:,lo(3)-ng_sp:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
 
     integer         :: k
