@@ -32,11 +32,14 @@ contains
     real(kind=dp_t), pointer:: sop(:,:,:,:)
     real(kind=dp_t), pointer:: fp(:,:,:,:)
     real(kind=dp_t), pointer:: divup(:,:,:,:)
-    integer :: lo(u%dim),hi(u%dim),ng,dm,i
+    integer :: lo(u%dim),hi(u%dim),ng_u,ng_s,ng_f,ng_dU,dm,i
     real(kind=dp_t) :: dt_hold_proc,dt_grid
     
-    ng = u%ng
     dm = u%dim
+    ng_u = u%ng
+    ng_s = s%ng
+    ng_f = force%ng
+    ng_dU = divU%ng
     
     dt_hold_proc = 1.d99
     dt_grid      = 1.d99
@@ -51,11 +54,13 @@ contains
        hi    =  upb(get_box(u, i))
        select case (dm)
        case (2)
-          call firstdt_2d(n, uop(:,:,1,:), sop(:,:,1,:), fp(:,:,1,:), divup(:,:,1,1), &
-                          p0, gamma1bar, lo, hi, ng, dx, dt_grid, cflfac)
+          call firstdt_2d(n, uop(:,:,1,:), ng_u, sop(:,:,1,:), ng_s, &
+                          fp(:,:,1,:), ng_f, divup(:,:,1,1), ng_dU, &
+                          p0, gamma1bar, lo, hi, dx, dt_grid, cflfac)
        case (3)
-          call firstdt_3d(n, uop(:,:,:,:), sop(:,:,:,:), fp(:,:,:,:), divup(:,:,:,1), &
-                          p0, gamma1bar, lo, hi, ng, dx, dt_grid, cflfac)
+          call firstdt_3d(n, uop(:,:,:,:), ng_u, sop(:,:,:,:), ng_s, &
+                          fp(:,:,:,:), ng_f, divup(:,:,:,1), ng_dU, &
+                          p0, gamma1bar, lo, hi, dx, dt_grid, cflfac)
        end select
        dt_hold_proc = min(dt_hold_proc,dt_grid)
     end do
@@ -64,7 +69,8 @@ contains
     
   end subroutine firstdt
   
-  subroutine firstdt_2d(n,u,s,force,divu,p0,gamma1bar,lo,hi,ng,dx,dt,cfl)
+  subroutine firstdt_2d(n,u,ng_u,s,ng_s,force,ng_f,divu,ng_dU, &
+                        p0,gamma1bar,lo,hi,dx,dt,cfl)
 
     use eos_module
     use variables, only: rho_comp, temp_comp, spec_comp
@@ -72,11 +78,11 @@ contains
     use bl_constants_module
     use probin_module, only: use_soundspeed_firstdt, use_divu_firstdt
     
-    integer, intent(in)             :: n, lo(:), hi(:), ng
-    real (kind = dp_t), intent(in ) :: u(lo(1)-ng:,lo(2)-ng:,:)  
-    real (kind = dp_t), intent(in ) :: s(lo(1)-ng:,lo(2)-ng:,:)  
-    real (kind = dp_t), intent(in ) :: force(lo(1)- 1:,lo(2)- 1:,:)
-    real (kind = dp_t), intent(in ) :: divu(lo(1):,lo(2):)
+    integer, intent(in)             :: n, lo(:), hi(:), ng_u, ng_s, ng_f, ng_dU
+    real (kind = dp_t), intent(in ) ::     u(lo(1)-ng_u :,lo(2)-ng_u :,:)  
+    real (kind = dp_t), intent(in ) ::     s(lo(1)-ng_s :,lo(2)-ng_s :,:)  
+    real (kind = dp_t), intent(in ) :: force(lo(1)-ng_f :,lo(2)-ng_f :,:)
+    real (kind = dp_t), intent(in ) ::  divu(lo(1)-ng_dU:,lo(2)-ng_dU:)
     real (kind = dp_t), intent(in ) :: p0(0:), gamma1bar(0:)
     real (kind = dp_t), intent(in ) :: dx(:)
     real (kind = dp_t), intent(out) :: dt
@@ -185,7 +191,8 @@ contains
 
   end subroutine firstdt_2d
   
-  subroutine firstdt_3d(n,u,s,force,divU,p0,gamma1bar,lo,hi,ng,dx,dt,cfl)
+  subroutine firstdt_3d(n,u,ng_u,s,ng_s,force,ng_f,divU,ng_dU, &
+                        p0,gamma1bar,lo,hi,dx,dt,cfl)
 
     use geometry,  only: spherical, nr
     use variables, only: rho_comp, temp_comp, spec_comp
@@ -193,11 +200,11 @@ contains
     use bl_constants_module
     use probin_module, only: use_soundspeed_firstdt, use_divu_firstdt
 
-    integer, intent(in)             :: n,lo(:), hi(:), ng
-    real (kind = dp_t), intent(in ) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-    real (kind = dp_t), intent(in ) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-    real (kind = dp_t), intent(in ) :: force(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)
-    real (kind = dp_t), intent(in ) :: divU(lo(1):,lo(2):,lo(3):)  
+    integer, intent(in)             :: n,lo(:), hi(:), ng_u, ng_s, ng_f, ng_dU
+    real (kind = dp_t), intent(in ) ::     u(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :,:)
+    real (kind = dp_t), intent(in ) ::     s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :,:)
+    real (kind = dp_t), intent(in ) :: force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :,:)
+    real (kind = dp_t), intent(in ) ::  divU(lo(1)-ng_dU:,lo(2)-ng_dU:,lo(3)-ng_dU:)  
     real (kind = dp_t), intent(in ) :: p0(0:), gamma1bar(0:)
     real (kind = dp_t), intent(in ) :: dx(:)
     real (kind = dp_t), intent(out) :: dt
