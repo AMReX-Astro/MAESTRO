@@ -30,12 +30,16 @@ contains
     real(kind=dp_t), pointer:: gamp(:,:,:,:),sp(:,:,:,:)
     integer :: lo(s(1)%dim),hi(s(1)%dim),dm
     integer :: i,n
+    integer :: ng_g, ng_s
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "make_gamma")
     
     dm = s(1)%dim
+
+    ng_g = gamma(1)%ng
+    ng_s = s(1)%ng
 
     do n = 1, nlevs
        do i = 1, s(n)%nboxes
@@ -46,9 +50,9 @@ contains
           hi = upb(get_box(s(n), i))
           select case (dm)
           case (2)
-             call make_gamma_2d(lo,hi,gamp(:,:,1,1),sp(:,:,1,:),p0(n,:),tempbar(n,:))
+             call make_gamma_2d(lo,hi,gamp(:,:,1,1),ng_g,sp(:,:,1,:),ng_s,p0(n,:),tempbar(n,:))
           case (3)
-             call make_gamma_3d(n,lo,hi,gamp(:,:,:,1),sp(:,:,:,:),p0(n,:),tempbar(n,:),dx(n,:))
+             call make_gamma_3d(n,lo,hi,gamp(:,:,:,1),ng_g,sp(:,:,:,:),ng_s,p0(n,:),tempbar(n,:),dx(n,:))
           end select
        end do
     end do
@@ -57,14 +61,14 @@ contains
 
    end subroutine make_gamma
 
-   subroutine make_gamma_2d(lo,hi,gamma,s,p0,tempbar)
+   subroutine make_gamma_2d(lo,hi,gamma,ng_g,s,ng_s,p0,tempbar)
 
       use eos_module
       use variables, only: rho_comp, rhoh_comp, spec_comp
 
-      integer         , intent(in   ) :: lo(:), hi(:)
-      real (kind=dp_t), intent(  out) :: gamma(lo(1)  :,lo(2)  :)
-      real (kind=dp_t), intent(in   ) ::     s(lo(1)-3:,lo(2)-3:,:)
+      integer         , intent(in   ) :: lo(:), hi(:), ng_g, ng_s
+      real (kind=dp_t), intent(  out) :: gamma(lo(1)-ng_g:,lo(2)-ng_g:)
+      real (kind=dp_t), intent(in   ) ::     s(lo(1)-ng_s:,lo(2)-ng_s:,:)
       real (kind=dp_t), intent(in   ) :: p0(0:)
       real (kind=dp_t), intent(in   ) :: tempbar(0:)
 
@@ -100,7 +104,7 @@ contains
  
    end subroutine make_gamma_2d
 
-    subroutine make_gamma_3d(n,lo,hi,gamma,s,p0,tempbar,dx)
+    subroutine make_gamma_3d(n,lo,hi,gamma,ng_g,s,ng_s,p0,tempbar,dx)
 
       use eos_module
       use variables, only: rho_comp, rhoh_comp, spec_comp
@@ -108,9 +112,9 @@ contains
       use geometry, only: spherical
 
       integer         , intent(in   ) :: n
-      integer         , intent(in   ) :: lo(:), hi(:)
-      real (kind=dp_t), intent(  out) :: gamma(lo(1)  :,lo(2)  :,lo(3)  :)
-      real (kind=dp_t), intent(in   ) ::     s(lo(1)-3:,lo(2)-3:,lo(3)-3:,:)
+      integer         , intent(in   ) :: lo(:), hi(:), ng_g, ng_s
+      real (kind=dp_t), intent(  out) :: gamma(lo(1)-ng_g:,lo(2)-ng_g:,lo(3)-ng_g:)
+      real (kind=dp_t), intent(in   ) ::     s(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
       real (kind=dp_t), intent(in   ) :: p0(0:)
       real (kind=dp_t), intent(in   ) :: tempbar(0:)
       real (kind=dp_t), intent(in   ) :: dx(:)

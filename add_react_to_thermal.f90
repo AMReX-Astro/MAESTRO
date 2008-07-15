@@ -43,12 +43,18 @@ contains
     real(kind=dp_t), pointer :: hep(:,:,:,:)
     integer                  :: lo(thermal(1)%dim),hi(thermal(1)%dim)
     integer                  :: dm,i,n
+    integer :: ng_t, ng_rw, ng_s, ng_he
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "add_react_to_thermal")
     
     dm = thermal(1)%dim
+
+    ng_t = thermal(1)%ng
+    ng_rw = rho_omegadot(1)%ng
+    ng_s = s(1)%ng
+    ng_he = rho_Hext(1)%ng
 
     call get_rho_Hext(nlevs,mla,s,rho_Hext,dx,time)
     
@@ -63,11 +69,11 @@ contains
           hi = upb(get_box(thermal(n), i))
           select case (dm)
           case (2)
-             call add_react_to_thermal_2d(lo,hi,tp(:,:,1,1),rwp(:,:,1,:),sp(:,:,1,:), &
-                                          hep(:,:,1,1))
+             call add_react_to_thermal_2d(lo,hi,tp(:,:,1,1),ng_t,rwp(:,:,1,:),ng_rw, &
+                                          sp(:,:,1,:),ng_s,hep(:,:,1,1),ng_he)
           case (3)
-             call add_react_to_thermal_3d(lo,hi,tp(:,:,:,1),rwp(:,:,:,:),sp(:,:,:,:), &
-                                          hep(:,:,:,1))
+             call add_react_to_thermal_3d(lo,hi,tp(:,:,:,1),ng_t,rwp(:,:,:,:),ng_rw, &
+                                          sp(:,:,:,:),ng_s,hep(:,:,:,1),ng_he)
           end select
        end do
     enddo
@@ -103,17 +109,18 @@ contains
        
   end subroutine add_react_to_thermal
   
-  subroutine add_react_to_thermal_2d(lo,hi,thermal,rho_omegadot,s,rho_Hext)
+  subroutine add_react_to_thermal_2d(lo,hi,thermal,ng_t,rho_omegadot,ng_rw, &
+                                     s,ng_s,rho_Hext,ng_he)
 
     use eos_module
     use bl_constants_module
     use variables, only: temp_comp, rho_comp, spec_comp
     
-    integer         , intent(in   ) :: lo(:),hi(:)
-    real (kind=dp_t), intent(inout) :: thermal(lo(1)-1:,lo(2)-1:)
-    real (kind=dp_t), intent(in   ) :: rho_omegadot(lo(1):,lo(2):,:)
-    real (kind=dp_t), intent(in   ) :: s(lo(1)-3:,lo(2)-3:,:)
-    real (kind=dp_t), intent(in   ) :: rho_Hext(lo(1):,lo(2):)
+    integer         , intent(in   ) :: lo(:),hi(:),ng_t,ng_rw,ng_s,ng_he
+    real (kind=dp_t), intent(inout) ::      thermal(lo(1)-ng_t :,lo(2)-ng_t :)
+    real (kind=dp_t), intent(in   ) :: rho_omegadot(lo(1)-ng_rw:,lo(2)-ng_rw:,:)
+    real (kind=dp_t), intent(in   ) ::            s(lo(1)-ng_s :,lo(2)-ng_s :,:)
+    real (kind=dp_t), intent(in   ) ::     rho_Hext(lo(1)-ng_he:,lo(2)-ng_he:)
     
     ! Local variables
     integer         :: i,j,comp
@@ -152,17 +159,18 @@ contains
     
   end subroutine add_react_to_thermal_2d
 
-  subroutine add_react_to_thermal_3d(lo,hi,thermal,rho_omegadot,s,rho_Hext)
+  subroutine add_react_to_thermal_3d(lo,hi,thermal,ng_t,rho_omegadot,ng_rw, &
+                                     s,ng_s,rho_Hext,ng_he)
 
     use eos_module
     use bl_constants_module
     use variables, only: spec_comp, rho_comp, temp_comp
     
-    integer         , intent(in   ) :: lo(:),hi(:)
-    real (kind=dp_t), intent(inout) :: thermal(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-    real (kind=dp_t), intent(in   ) :: rho_omegadot(lo(1):,lo(2):,lo(3):,:)
-    real (kind=dp_t), intent(in   ) :: s(lo(1)-3:,lo(2)-3:,lo(3):,:)
-    real (kind=dp_t), intent(in   ) :: rho_Hext(lo(1):,lo(2):,lo(3):)
+    integer         , intent(in   ) :: lo(:),hi(:),ng_t,ng_rw,ng_s,ng_he
+    real (kind=dp_t), intent(inout) ::      thermal(lo(1)-ng_t :,lo(2)-ng_t :,lo(3)-ng_t :)
+    real (kind=dp_t), intent(in   ) :: rho_omegadot(lo(1)-ng_rw:,lo(2)-ng_rw:,lo(3)-ng_rw:,:)
+    real (kind=dp_t), intent(in   ) ::            s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :,:)
+    real (kind=dp_t), intent(in   ) ::     rho_Hext(lo(1)-ng_he:,lo(2)-ng_he:,lo(3)-ng_he:)
     
     ! Local variables
     integer :: i,j,k,comp

@@ -26,13 +26,15 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:,:),time
 
     ! local
-    integer                  :: n,i,ng,dm
+    integer                  :: n,i,ng_s,ng_h,dm
     integer                  :: lo(s(1)%dim),hi(s(1)%dim)
     real(kind=dp_t), pointer :: sp(:,:,:,:)
     real(kind=dp_t), pointer :: hp(:,:,:,:)
 
-    ng = s(1)%ng
     dm = s(1)%dim
+
+    ng_s = s(1)%ng
+    ng_h = rho_Hext(1)%ng
 
     do n=1,nlevs
 
@@ -44,9 +46,9 @@ contains
           hi =  upb(get_box(s(n), i))
           select case (dm)
           case (2)
-             call get_rho_Hext_2d(hp(:,:,1,1), sp(:,:,1,:), lo, hi, ng, dx(n,:), time)
+             call get_rho_Hext_2d(hp(:,:,1,1), ng_h, sp(:,:,1,:), ng_s, lo, hi, dx(n,:), time)
           case (3)
-             call get_rho_Hext_3d(hp(:,:,:,1), sp(:,:,:,:), lo, hi, ng, dx(n,:), time)
+             call get_rho_Hext_3d(hp(:,:,:,1), ng_h, sp(:,:,:,:), ng_s, lo, hi, dx(n,:), time)
           end select
        end do
 
@@ -60,15 +62,15 @@ contains
 
   end subroutine get_rho_Hext
 
-  subroutine get_rho_Hext_2d(rho_Hext,s,lo,hi,ng,dx,time)
+  subroutine get_rho_Hext_2d(rho_Hext,ng_h,s,ng_s,lo,hi,dx,time)
     
     use bl_constants_module
     use variables, only: rho_comp
     use probin_module, only: prob_lo_x, prob_lo_y
     
-    integer, intent(in) :: lo(:), hi(:), ng
-    real(kind=dp_t), intent(inout) :: rho_Hext(lo(1):,lo(2):)
-    real(kind=dp_t), intent(in   ) :: s(lo(1)-ng:,lo(2)-ng:,:)
+    integer, intent(in) :: lo(:), hi(:), ng_s, ng_h
+    real(kind=dp_t), intent(inout) :: rho_Hext(lo(1)-ng_h:,lo(2)-ng_h:)
+    real(kind=dp_t), intent(in   ) ::        s(lo(1)-ng_s:,lo(2)-ng_s:,:)
     real(kind=dp_t), intent(in   ) :: dx(:),time
 
     integer :: i,j
@@ -134,15 +136,15 @@ contains
 
   end subroutine get_rho_Hext_2d
     
-  subroutine get_rho_Hext_3d(rho_Hext,s,lo,hi,ng,dx,time)
+  subroutine get_rho_Hext_3d(rho_Hext,ng_h,s,ng_s,lo,hi,dx,time)
 
     use bl_constants_module
     use variables, only: rho_comp
     use probin_module, only: prob_lo_x, prob_lo_y, prob_lo_z
 
-    integer, intent(in) :: lo(:), hi(:), ng
-    real(kind=dp_t), intent(inout) :: rho_Hext(lo(1):,lo(2):,lo(3):)
-    real(kind=dp_t), intent(in   ) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
+    integer, intent(in) :: lo(:), hi(:), ng_s, ng_h
+    real(kind=dp_t), intent(inout) :: rho_Hext(lo(1)-ng_h:,lo(2)-ng_h:,lo(3)-ng_h:)
+    real(kind=dp_t), intent(in   ) ::        s(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
     real(kind=dp_t), intent(in   ) :: dx(:),time
 
     integer :: i,j,k
