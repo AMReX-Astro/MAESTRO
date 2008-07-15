@@ -42,13 +42,13 @@ contains
     type(multifab) , intent(inout) :: scal_force(:)
     type(multifab) , intent(in   ) :: thermal(:)
     type(multifab) , intent(in   ) :: umac(:,:)
-    real(kind=dp_t), intent(inout) ::   p0_old(:,0:),   p0_new(:,0:)
+    real(kind=dp_t), intent(in   ) ::   p0_old(:,0:),   p0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: rho0_old(:,0:), rho0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: psi(:,0:)
     type(multifab) , intent(in   ) :: normal(:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     logical        , intent(in   ) :: add_thermal
-    type(ml_layout), intent(inout) :: mla
+    type(ml_layout), intent(in   ) :: mla
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     ! local
@@ -390,12 +390,12 @@ contains
     type(multifab) , intent(in   ) :: umac(:,:)
     type(multifab) , intent(in   ) :: s(:)
     type(multifab) , intent(in   ) :: thermal(:)
-    real(kind=dp_t), intent(inout) :: p0_old(:,0:)
-    real(kind=dp_t), intent(inout) :: p0_new(:,0:)
+    real(kind=dp_t), intent(in   ) :: p0_old(:,0:)
+    real(kind=dp_t), intent(in   ) :: p0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: psi(:,0:)
     type(multifab) , intent(in   ) :: normal(:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
-    type(ml_layout), intent(inout) :: mla
+    type(ml_layout), intent(in   ) :: mla
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     ! local

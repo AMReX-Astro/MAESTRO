@@ -23,7 +23,7 @@ contains
 
     integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(  out) :: div_coeff(:,0:)
-    real(kind=dp_t), intent(inout) :: rho0(:,0:), p0(:,0:), gamma1bar(:,0:)
+    real(kind=dp_t), intent(in   ) :: rho0(:,0:), p0(:,0:), gamma1bar(:,0:)
     real(kind=dp_t), intent(in   ) :: grav_center(:,0:)
 
     ! local

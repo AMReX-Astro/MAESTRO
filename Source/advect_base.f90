@@ -21,9 +21,9 @@ contains
     integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(in   ) :: vel(:,0:)
     real(kind=dp_t), intent(in   ) :: Sbar_in(:,0:)
-    real(kind=dp_t), intent(inout) :: p0_old(:,0:), rho0_old(:,0:), rhoh0_old(:,0:)
+    real(kind=dp_t), intent(in   ) :: p0_old(:,0:), rho0_old(:,0:), rhoh0_old(:,0:)
     real(kind=dp_t), intent(  out) :: p0_new(:,0:), rho0_new(:,0:), rhoh0_new(:,0:)
-    real(kind=dp_t), intent(inout) :: gamma1bar(:,0:)
+    real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
     real(kind=dp_t), intent(in   ) :: div_coeff(:,0:)
     real(kind=dp_t), intent(  out) :: rho0_predicted_edge(:,0:)
     real(kind=dp_t), intent(in   ) :: psi(:,0:)
@@ -195,7 +195,7 @@ contains
     real(kind=dp_t), intent(in   ) :: vel(:,0:),Sbar_in(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:), rho0_old(:,0:), rhoh0_old(:,0:)
     real(kind=dp_t), intent(  out) :: p0_new(:,0:), rho0_new(:,0:), rhoh0_new(:,0:)
-    real(kind=dp_t), intent(inout) :: gamma1bar(:,0:)
+    real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
     real(kind=dp_t), intent(  out) :: rho0_predicted_edge(:,0:)
     real(kind=dp_t), intent(in   ) :: div_coeff_old(:,0:)
     real(kind=dp_t), intent(in   ) :: dt

@@ -40,14 +40,14 @@ contains
     type(multifab) , intent(inout) :: sedge(:,:)
     type(multifab) , intent(in   ) :: umac(:,:)
     type(multifab) , intent(in   ) :: force(:)
-    real(kind=dp_t), intent(inout) :: w0(:,0:)
+    real(kind=dp_t), intent(in   ) :: w0(:,0:)
     type(multifab) , intent(in   ) :: w0_cart_vec(:)
     real(kind=dp_t), intent(in   ) :: dx(:,:),dt
     logical        , intent(in   ) :: is_vel
     type(bc_level) , intent(in   ) :: the_bc_level(:)
     integer        , intent(in   ) :: start_scomp,start_bccomp,num_comp
     logical        , intent(in   ) :: is_conservative
-    type(ml_layout), intent(inout) :: mla
+    type(ml_layout), intent(in   ) :: mla
 
     integer                  :: i,r,scomp,bccomp,ng,dm,n
     integer                  :: lo(s(1)%dim), hi(s(1)%dim)

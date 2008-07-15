@@ -46,13 +46,13 @@ contains
     type(multifab) , intent(inout) :: sedge(:,:),umac(:,:)
     type(multifab) , intent(in   ) :: utrans(:,:),force(:)
     type(multifab) , intent(in   ) :: normal(:)
-    real(kind=dp_t), intent(inout) :: w0(:,0:)
+    real(kind=dp_t), intent(in   ) :: w0(:,0:)
     type(multifab) , intent(in   ) :: w0_cart_vec(:)
     real(kind=dp_t), intent(in   ) :: dx(:,:),dt
     logical        , intent(in   ) :: is_vel
     type(bc_level) , intent(in   ) :: the_bc_level(:)
     integer        , intent(in   ) :: velpred,start_scomp,start_bccomp,num_comp
-    type(ml_layout), intent(inout) :: mla
+    type(ml_layout), intent(in   ) :: mla
 
     integer                  :: i,r,scomp,bccomp,ng,dm,n
     integer                  :: lo(u(1)%dim), hi(u(1)%dim)

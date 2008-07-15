@@ -29,7 +29,7 @@ contains
     type(multifab) , intent(inout) :: sflux(:,:)
     type(multifab) , intent(inout) :: etarhoflux(:)
     type(multifab) , intent(in   ) :: sold(:),sedge(:,:)
-    type(multifab) , intent(inout) :: umac(:,:)
+    type(multifab) , intent(in   ) :: umac(:,:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     type(multifab) , intent(in   ) :: w0_cart_vec(:)
     real(kind=dp_t), intent(in   ) :: rho0_old(:,0:),rho0_edge_old(:,0:)
