@@ -55,13 +55,14 @@ contains
 
     integer :: domlo(mla%dim),domhi(mla%dim)
     integer :: lo(mla%dim),hi(mla%dim)
-    integer :: i,r,rpert,n,dm,rr
+    integer :: i,r,rpert,n,dm,rr,ng_e
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "make_etarho")
 
     dm = mla%dim
+    ng_e = etarhoflux(1)%ng
 
     ! ncell is a function of r only for spherical
     allocate(ncell          (nlevs,0:nr_fine)) 
@@ -104,9 +105,9 @@ contains
                 hi =  upb(get_box(mla%la(n), i))
                 select case (dm)
                 case (2)
-                   call sum_etarho_2d(n,lo,hi,domhi,efp(:,:,1,1),etarhosum_proc(n,:))
+                   call sum_etarho_2d(n,lo,hi,domhi,efp(:,:,1,1),ng_e,etarhosum_proc(n,:))
                 case (3)
-                   call sum_etarho_3d(n,lo,hi,domhi,efp(:,:,:,1),etarhosum_proc(n,:))
+                   call sum_etarho_3d(n,lo,hi,domhi,efp(:,:,:,1),ng_e,etarhosum_proc(n,:))
                 end select
              end do
              
@@ -142,9 +143,9 @@ contains
              hi =  upb(get_box(mla%la(1), i))
              select case (dm)
              case (2)
-                call sum_etarho_2d(1,lo,hi,domhi,efp(:,:,1,1),etarhosum_proc(1,:))
+                call sum_etarho_2d(1,lo,hi,domhi,efp(:,:,1,1),ng_e,etarhosum_proc(1,:))
              case (3)
-                call sum_etarho_3d(1,lo,hi,domhi,efp(:,:,:,1),etarhosum_proc(1,:))
+                call sum_etarho_3d(1,lo,hi,domhi,efp(:,:,:,1),ng_e,etarhosum_proc(1,:))
              end select
           end do
           
@@ -204,9 +205,9 @@ contains
                 hi =  upb(get_box(mla%la(n), i))
                 select case (dm)
                 case (2)
-                   call compute_etarhopert_2d(lo,hi,efp(:,:,1,1),etarhosum_proc(1,:),rr)
+                   call compute_etarhopert_2d(lo,hi,efp(:,:,1,1),ng_e,etarhosum_proc(1,:),rr)
                 case (3)
-                   call compute_etarhopert_3d(lo,hi,efp(:,:,:,1),etarhosum_proc(1,:),rr)
+                   call compute_etarhopert_3d(lo,hi,efp(:,:,:,1),ng_e,etarhosum_proc(1,:),rr)
                 end select
              end do
              
@@ -254,12 +255,12 @@ contains
 
   end subroutine make_etarho_planar
 
-  subroutine sum_etarho_2d(n,lo,hi,domhi,etarhoflux,etarhosum)
+  subroutine sum_etarho_2d(n,lo,hi,domhi,etarhoflux,ng_e,etarhosum)
 
     use geometry, only: r_end_coord
 
-    integer         , intent(in   ) :: n, lo(:), hi(:), domhi(:)
-    real (kind=dp_t), intent(in   ) :: etarhoflux(lo(1):,lo(2):)
+    integer         , intent(in   ) :: n, lo(:), hi(:), domhi(:), ng_e
+    real (kind=dp_t), intent(in   ) :: etarhoflux(lo(1)-ng_e:,lo(2)-ng_e:)
     real (kind=dp_t), intent(inout) :: etarhosum(0:)
 
     ! local
@@ -282,12 +283,12 @@ contains
 
   end subroutine sum_etarho_2d
 
-  subroutine sum_etarho_3d(n,lo,hi,domhi,etarhoflux,etarhosum)
+  subroutine sum_etarho_3d(n,lo,hi,domhi,etarhoflux,ng_e,etarhosum)
 
     use geometry, only: r_end_coord
 
-    integer         , intent(in   ) :: n,lo(:), hi(:), domhi(:)
-    real (kind=dp_t), intent(in   ) :: etarhoflux(lo(1):,lo(2):,lo(3):)
+    integer         , intent(in   ) :: n,lo(:), hi(:), domhi(:), ng_e
+    real (kind=dp_t), intent(in   ) :: etarhoflux(lo(1)-ng_e:,lo(2)-ng_e:,lo(3)-ng_e:)
     real (kind=dp_t), intent(inout) :: etarhosum(0:)
 
     ! local
@@ -314,12 +315,12 @@ contains
 
   end subroutine sum_etarho_3d
 
-  subroutine compute_etarhopert_2d(lo,hi,etarhoflux,etarhopert,rr)
+  subroutine compute_etarhopert_2d(lo,hi,etarhoflux,ng_e,etarhopert,rr)
 
     use bl_constants_module
 
-    integer         , intent(in   ) :: lo(:), hi(:), rr
-    real (kind=dp_t), intent(in   ) :: etarhoflux(lo(1):,lo(2):)
+    integer         , intent(in   ) :: lo(:), hi(:), rr, ng_e
+    real (kind=dp_t), intent(in   ) :: etarhoflux(lo(1)-ng_e:,lo(2)-ng_e:)
     real (kind=dp_t), intent(inout) :: etarhopert(0:)
     
     ! local
@@ -351,12 +352,12 @@ contains
 
   end subroutine compute_etarhopert_2d
 
-  subroutine compute_etarhopert_3d(lo,hi,etarhoflux,etarhopert,rr)
+  subroutine compute_etarhopert_3d(lo,hi,etarhoflux,ng_e,etarhopert,rr)
 
     use bl_constants_module
 
-    integer         , intent(in   ) :: lo(:), hi(:), rr
-    real (kind=dp_t), intent(in   ) :: etarhoflux(lo(1):,lo(2):,lo(3):)
+    integer         , intent(in   ) :: lo(:), hi(:), rr, ng_e
+    real (kind=dp_t), intent(in   ) :: etarhoflux(lo(1)-ng_e:,lo(2)-ng_e:,lo(3)-ng_e:)
     real (kind=dp_t), intent(inout) :: etarhopert(0:)
     
     ! local
@@ -424,12 +425,16 @@ contains
     real(kind=dp_t), pointer :: ump(:,:,:,:), vmp(:,:,:,:), wmp(:,:,:,:)
     real(kind=dp_t), pointer :: np(:,:,:,:)
 
-    integer :: n,i,lo(sold(1)%dim),hi(sold(1)%dim),ng_s
+    integer :: n,i,lo(sold(1)%dim),hi(sold(1)%dim),ng_so,ng_sn,ng_um,ng_n,ng_e
     integer :: r
 
 
     ! construct a multifab containing  [ rho' (Utilde . e_r) ]
-    ng_s = sold(1)%ng
+    ng_so = sold(1)%ng
+    ng_sn = snew(1)%ng
+    ng_um = umac(1,1)%ng    ! here we are assuming all components have the 
+                            ! same # of ghostcells
+    ng_n = normal(1)%ng
 
     do n=1,nlevs
 
@@ -449,11 +454,14 @@ contains
           lo = lwb(get_box(eta_cart(n),i))
           hi = upb(get_box(eta_cart(n),i))
 
-          call construct_eta_cart(n, sop(:,:,:,rho_comp), snp(:,:,:,rho_comp), &
-                                  ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
-                                  np(:,:,:,:), ep(:,:,:,1), &
+          ng_e = eta_cart(n)%ng 
+
+          call construct_eta_cart(n, sop(:,:,:,rho_comp), ng_so, &
+                                  snp(:,:,:,rho_comp), ng_sn, &
+                                  ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
+                                  np(:,:,:,:), ng_n, ep(:,:,:,1), ng_e, &
                                   rho0_old(n,:), rho0_new(n,:), &
-                                  dx(n,:), lo, hi, ng_s)
+                                  dx(n,:), lo, hi)
           
        enddo
 
@@ -485,23 +493,23 @@ contains
 
   end subroutine make_etarho_spherical
 
-  subroutine construct_eta_cart(n, rho_old, rho_new, &
-                                umac, vmac, wmac, &
-                                normal, eta_cart, &
-                                rho0_old, rho0_new, dx, lo, hi, ng)
+  subroutine construct_eta_cart(n, rho_old, ng_so, rho_new, ng_sn, &
+                                umac, vmac, wmac, ng_um, &
+                                normal, ng_n, eta_cart, ng_e, &
+                                rho0_old, rho0_new, dx, lo, hi)
 
     use bl_constants_module
     use geometry, only: nr_fine
     use fill_3d_module
 
-    integer        , intent(in   ) :: n,lo(:),hi(:),ng
-    real(kind=dp_t), intent(in   ) ::  rho_old(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
-    real(kind=dp_t), intent(in   ) ::  rho_new(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
-    real(kind=dp_t), intent(in   ) ::     umac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)    
-    real(kind=dp_t), intent(in   ) ::     vmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)    
-    real(kind=dp_t), intent(in   ) ::     wmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)    
-    real(kind=dp_t), intent(in   ) ::   normal(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
-    real(kind=dp_t), intent(inout) :: eta_cart(lo(1):,lo(2):,lo(3):)
+    integer        , intent(in   ) :: n,lo(:),hi(:),ng_so, ng_sn, ng_um, ng_n, ng_e
+    real(kind=dp_t), intent(in   ) ::  rho_old(lo(1)-ng_so:,lo(2)-ng_so:,lo(3)-ng_so:)
+    real(kind=dp_t), intent(in   ) ::  rho_new(lo(1)-ng_sn:,lo(2)-ng_sn:,lo(3)-ng_sn:)
+    real(kind=dp_t), intent(in   ) ::     umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)    
+    real(kind=dp_t), intent(in   ) ::     vmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)    
+    real(kind=dp_t), intent(in   ) ::     wmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)    
+    real(kind=dp_t), intent(in   ) ::   normal(lo(1)-ng_n :,lo(2)-ng_n :,lo(3)-ng_n :,:)
+    real(kind=dp_t), intent(inout) :: eta_cart(lo(1)-ng_e :,lo(2)-ng_e :,lo(3)-ng_e :)
     real(kind=dp_t), intent(in   ) :: rho0_old(0:), rho0_new(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
 
