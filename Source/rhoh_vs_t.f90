@@ -13,8 +13,10 @@ module rhoh_vs_t_module
   
 contains
   
-  subroutine makeRhoHfromT(nlevs,u,sedge,rho0_old,rhoh0_old,rho0_edge_old,rhoh0_edge_old, &
-                           rho0_new,rhoh0_new,rho0_edge_new,rhoh0_edge_new,the_bc_level,dx)
+  subroutine makeRhoHfromT(nlevs,u,sedge, &
+                           rho0_old,rhoh0_old,rho0_edge_old,rhoh0_edge_old, &
+                           rho0_new,rhoh0_new,rho0_edge_new,rhoh0_edge_new, &
+                           the_bc_level,dx)
 
     use bl_prof_module
     use bl_constants_module
@@ -35,7 +37,7 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     
     ! local
-    integer :: i,r,dm,n
+    integer :: i,r,dm,n,ng_u,ng_se,ng_r0,ng_rh0
     integer :: lo(u(1)%dim),hi(u(1)%dim)
     real(kind=dp_t), pointer :: sepx(:,:,:,:)
     real(kind=dp_t), pointer :: sepy(:,:,:,:)
@@ -53,6 +55,9 @@ contains
     call build(bpt, "makeRhoHfromT")
 
     dm = u(1)%dim
+    ng_u = u(1)%ng
+    ng_se = sedge(1,1)%ng  ! note we are assuming that ng is the same for all
+                           ! directions
 
     if (spherical .eq. 1) then
       allocate( rho0_halftime(0:nr_fine-1))
@@ -105,7 +110,7 @@ contains
           hi = upb(get_box(u(n),i))
           select case (dm)
           case (2)
-             call makeRhoHfromT_2d(sepx(:,:,1,:), sepy(:,:,1,:), &
+             call makeRhoHfromT_2d(sepx(:,:,1,:), sepy(:,:,1,:), ng_se, &
                                    rho0_old(n,:), rhoh0_old(n,:), &
                                    rho0_edge_old(n,:), rhoh0_edge_old(n,:), &
                                    rho0_new(n,:), rhoh0_new(n,:), &
@@ -116,10 +121,14 @@ contains
              if (spherical .eq. 1) then
                rp   => dataptr( rho0_cart, i)
                rhp  => dataptr(rhoh0_cart, i)
-               call makeRhoHfromT_3d_sphr(sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
-                                          rp(:,:,:,1), rhp(:,:,:,1), lo, hi, rho0_cart%ng)
+               ng_r0 = rho0_cart%ng
+               ng_rh0 = rhoh0_cart%ng
+               call makeRhoHfromT_3d_sphr(sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), ng_se, &
+                                          rp(:,:,:,1), ng_r0, &
+                                          rhp(:,:,:,1), ng_rh0, &
+                                          lo, hi)
              else
-               call makeRhoHfromT_3d_cart(sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
+               call makeRhoHfromT_3d_cart(sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), ng_se, &
                                           rho0_old(n,:), rhoh0_old(n,:), &
                                           rho0_edge_old(n,:), rhoh0_edge_old(n,:), &
                                           rho0_new(n,:), rhoh0_new(n,:), &
@@ -143,8 +152,10 @@ contains
     
   end subroutine makeRhoHfromT
 
-  subroutine makeRhoHfromT_2d(sx,sy,rho0_old,rhoh0_old,rho0_edge_old,rhoh0_edge_old, &
-                              rho0_new,rhoh0_new,rho0_edge_new,rhoh0_edge_new,lo,hi)
+  subroutine makeRhoHfromT_2d(sx,sy,ng_se, &
+                              rho0_old,rhoh0_old,rho0_edge_old,rhoh0_edge_old,&
+                              rho0_new,rhoh0_new,rho0_edge_new,rhoh0_edge_new,&
+                              lo,hi)
 
     use bl_constants_module
     use variables,     only: rho_comp, temp_comp, spec_comp, rhoh_comp
@@ -152,9 +163,9 @@ contains
     use probin_module, only: enthalpy_pred_type, small_temp, predict_rho
     use pred_parameters
 
-    integer        , intent(in   ) :: lo(:),hi(:)
-    real(kind=dp_t), intent(inout) :: sx(lo(1):,lo(2):,:)
-    real(kind=dp_t), intent(inout) :: sy(lo(1):,lo(2):,:)
+    integer        , intent(in   ) :: lo(:),hi(:),ng_se
+    real(kind=dp_t), intent(inout) :: sx(lo(1)-ng_se:,lo(2)-ng_se:,:)
+    real(kind=dp_t), intent(inout) :: sy(lo(1)-ng_se:,lo(2)-ng_se:,:)
     real(kind=dp_t), intent(in   ) :: rho0_old(0:),      rhoh0_old(0:)
     real(kind=dp_t), intent(in   ) :: rho0_edge_old(0:), rhoh0_edge_old(0:)
     real(kind=dp_t), intent(in   ) :: rho0_new(0:),      rhoh0_new(0:)
@@ -242,9 +253,12 @@ contains
     
   end subroutine makeRhoHfromT_2d
   
-  subroutine makeRhoHfromT_3d_cart(sx,sy,sz,rho0_old,rhoh0_old,rho0_edge_old, &
-                                   rhoh0_edge_old,rho0_new,rhoh0_new,rho0_edge_new, &
-                                   rhoh0_edge_new,lo,hi)
+  subroutine makeRhoHfromT_3d_cart(sx,sy,sz,ng_se, &
+                                   rho0_old,rhoh0_old, &
+                                   rho0_edge_old,rhoh0_edge_old, &
+                                   rho0_new,rhoh0_new, &
+                                   rho0_edge_new,rhoh0_edge_new, &
+                                   lo,hi)
 
     use variables,     only: rho_comp, temp_comp, spec_comp, rhoh_comp
     use eos_module
@@ -252,10 +266,10 @@ contains
     use pred_parameters
     use bl_constants_module
 
-    integer        , intent(in   ) :: lo(:),hi(:)
-    real(kind=dp_t), intent(inout) :: sx(lo(1):,lo(2):,lo(3):,:)
-    real(kind=dp_t), intent(inout) :: sy(lo(1):,lo(2):,lo(3):,:)
-    real(kind=dp_t), intent(inout) :: sz(lo(1):,lo(2):,lo(3):,:)
+    integer        , intent(in   ) :: lo(:),hi(:),ng_se
+    real(kind=dp_t), intent(inout) :: sx(lo(1)-ng_se:,lo(2)-ng_se:,lo(3)-ng_se:,:)
+    real(kind=dp_t), intent(inout) :: sy(lo(1)-ng_se:,lo(2)-ng_se:,lo(3)-ng_se:,:)
+    real(kind=dp_t), intent(inout) :: sz(lo(1)-ng_se:,lo(2)-ng_se:,lo(3)-ng_se:,:)
     real(kind=dp_t), intent(in   ) :: rho0_old(0:),      rhoh0_old(0:)
     real(kind=dp_t), intent(in   ) :: rho0_edge_old(0:), rhoh0_edge_old(0:)
     real(kind=dp_t), intent(in   ) :: rho0_new(0:),      rhoh0_new(0:)
@@ -390,7 +404,8 @@ contains
     
   end subroutine makeRhoHfromT_3d_cart
 
-  subroutine makeRhoHfromT_3d_sphr(sx,sy,sz,rho0_cart,rhoh0_cart,lo,hi,ngc)
+  subroutine makeRhoHfromT_3d_sphr(sx,sy,sz,ng_se, &
+                                   rho0_cart,ng_r0,rhoh0_cart,ng_rh0,lo,hi)
 
     use variables,     only: rho_comp, temp_comp, spec_comp, rhoh_comp
     use geometry,      only: spherical
@@ -399,13 +414,13 @@ contains
     use pred_parameters
     use bl_constants_module
 
-    integer        , intent(in   ) :: ngc
+    integer        , intent(in   ) :: ng_se,ng_r0,ng_rh0
     integer        , intent(in   ) :: lo(:),hi(:)
-    real(kind=dp_t), intent(inout) :: sx(lo(1):,lo(2):,lo(3):,:)
-    real(kind=dp_t), intent(inout) :: sy(lo(1):,lo(2):,lo(3):,:)
-    real(kind=dp_t), intent(inout) :: sz(lo(1):,lo(2):,lo(3):,:)
-    real(kind=dp_t), intent(in   ) ::  rho0_cart(lo(1)-ngc:,lo(2)-ngc:,lo(3)-ngc:)
-    real(kind=dp_t), intent(in   ) :: rhoh0_cart(lo(1)-ngc:,lo(2)-ngc:,lo(3)-ngc:)
+    real(kind=dp_t), intent(inout) :: sx(lo(1)-ng_se:,lo(2)-ng_se:,lo(3)-ng_se:,:)
+    real(kind=dp_t), intent(inout) :: sy(lo(1)-ng_se:,lo(2)-ng_se:,lo(3)-ng_se:,:)
+    real(kind=dp_t), intent(inout) :: sz(lo(1)-ng_se:,lo(2)-ng_se:,lo(3)-ng_se:,:)
+    real(kind=dp_t), intent(in   ) ::  rho0_cart(lo(1)-ng_r0:,lo(2)-ng_r0:,lo(3)-ng_r0:)
+    real(kind=dp_t), intent(in   ) :: rhoh0_cart(lo(1)-ng_rh0:,lo(2)-ng_rh0:,lo(3)-ng_rh0:)
     
     ! Local variables
     integer :: i, j, k
@@ -1066,7 +1081,7 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     
     ! local
-    integer :: i,dm,n
+    integer :: i,dm,n,ng_se
     integer :: lo(u(1)%dim),hi(u(1)%dim)
     real(kind=dp_t), pointer :: sepx(:,:,:,:)
     real(kind=dp_t), pointer :: sepy(:,:,:,:)
@@ -1080,6 +1095,8 @@ contains
     call build(bpt, "makeRhoHfromP")
 
     dm = u(1)%dim
+    ng_se = sedge(1,1)%ng  ! note we are assuming that ng is the same for all
+                           ! directions
 
    do n=1,nlevs
 
@@ -1091,7 +1108,7 @@ contains
           hi = upb(get_box(u(n),i))
           select case (dm)
           case (2)
-             call makeRhoHfromP_2d(n, sepx(:,:,1,:), sepy(:,:,1,:), &
+             call makeRhoHfromP_2d(n, sepx(:,:,1,:), sepy(:,:,1,:), ng_se, &
                                    rho0_old(n,:), rho0_edge_old(n,:), &
                                    rho0_new(n,:), rho0_edge_new(n,:), &
                                      p0_old(n,:), p0_new(n,:), lo, hi, dx(n,:))
@@ -1100,7 +1117,7 @@ contains
                 print *,'NO MAKERHOHFROMP FOR SPHERICAL '
                 stop
              else
-                call makeRhoHfromP_3d(n, sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
+                call makeRhoHfromP_3d(n, sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:),ng_se, &
                                       rho0_old(n,:), rho0_edge_old(n,:), &
                                       rho0_new(n,:), rho0_edge_new(n,:), &
                                         p0_old(n,:), p0_new(n,:), lo, hi, dx(n,:))
@@ -1119,8 +1136,10 @@ contains
     
   end subroutine makeRhoHfromP
 
-  subroutine makeRhoHfromP_2d(n,sx,sy,rho0_old,rho0_edge_old,&
-                                      rho0_new,rho0_edge_new,p0_old,p0_new,lo,hi,dx)
+  subroutine makeRhoHfromP_2d(n,sx,sy,ng_se, &
+                              rho0_old,rho0_edge_old, &
+                              rho0_new,rho0_edge_new, &
+                              p0_old,p0_new,lo,hi,dx)
 
     use bl_constants_module
     use variables,     only: rho_comp, temp_comp, spec_comp, rhoh_comp
@@ -1130,9 +1149,9 @@ contains
 
     use pred_parameters
 
-    integer        , intent(in   ) :: lo(:),hi(:),n
-    real(kind=dp_t), intent(inout) :: sx(lo(1):,lo(2):,:)
-    real(kind=dp_t), intent(inout) :: sy(lo(1):,lo(2):,:)
+    integer        , intent(in   ) :: lo(:),hi(:),n,ng_se
+    real(kind=dp_t), intent(inout) :: sx(lo(1)-ng_se:,lo(2)-ng_se:,:)
+    real(kind=dp_t), intent(inout) :: sy(lo(1)-ng_se:,lo(2)-ng_se:,:)
     real(kind=dp_t), intent(in   ) :: rho0_old(0:)
     real(kind=dp_t), intent(in   ) :: rho0_edge_old(0:)
     real(kind=dp_t), intent(in   ) :: rho0_new(0:)
@@ -1212,8 +1231,10 @@ contains
     
   end subroutine makeRhoHfromP_2d
 
-  subroutine makeRhoHfromP_3d(n,sx,sy,sz,rho0_old,rho0_edge_old,&
-                                         rho0_new,rho0_edge_new,p0_old,p0_new,lo,hi,dx)
+  subroutine makeRhoHfromP_3d(n,sx,sy,sz,ng_se, &
+                              rho0_old,rho0_edge_old, &
+                              rho0_new,rho0_edge_new, &
+                              p0_old,p0_new,lo,hi,dx)
 
     use bl_constants_module
     use variables,     only: rho_comp, temp_comp, spec_comp, rhoh_comp
@@ -1224,10 +1245,10 @@ contains
 
     use pred_parameters
 
-    integer        , intent(in   ) :: lo(:),hi(:),n
-    real(kind=dp_t), intent(inout) :: sx(lo(1):,lo(2):,lo(3):,:)
-    real(kind=dp_t), intent(inout) :: sy(lo(1):,lo(2):,lo(3):,:)
-    real(kind=dp_t), intent(inout) :: sz(lo(1):,lo(2):,lo(3):,:)
+    integer        , intent(in   ) :: lo(:),hi(:),n, ng_se
+    real(kind=dp_t), intent(inout) :: sx(lo(1)-ng_se:,lo(2)-ng_se:,lo(3)-ng_se:,:)
+    real(kind=dp_t), intent(inout) :: sy(lo(1)-ng_se:,lo(2)-ng_se:,lo(3)-ng_se:,:)
+    real(kind=dp_t), intent(inout) :: sz(lo(1)-ng_se:,lo(2)-ng_se:,lo(3)-ng_se:,:)
     real(kind=dp_t), intent(in   ) :: rho0_old(0:)
     real(kind=dp_t), intent(in   ) :: rho0_edge_old(0:)
     real(kind=dp_t), intent(in   ) :: rho0_new(0:)

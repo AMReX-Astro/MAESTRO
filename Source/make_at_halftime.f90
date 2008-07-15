@@ -27,7 +27,7 @@ contains
     real(kind=dp_t), pointer:: shp(:,:,:,:)
     real(kind=dp_t), pointer:: sop(:,:,:,:)
     real(kind=dp_t), pointer:: snp(:,:,:,:)
-    integer :: lo(shalf(1)%dim),hi(shalf(1)%dim),ng_h,ng_o,dm
+    integer :: lo(shalf(1)%dim),hi(shalf(1)%dim),ng_h,ng_o,ng_n,dm
     integer :: i,in_comp,out_comp,n
 
     type(bl_prof_timer), save :: bpt
@@ -37,6 +37,7 @@ contains
     dm = shalf(1)%dim
     ng_h = shalf(1)%ng
     ng_o = sold(1)%ng
+    ng_n = snew(1)%ng
 
     in_comp = 1
     out_comp = 1
@@ -53,10 +54,10 @@ contains
           select case (dm)
           case (2)
              call make_at_halftime_2d(shp(:,:,1,out_comp),sop(:,:,1,in_comp), &
-                                      snp(:,:,1,in_comp),lo,hi,ng_h,ng_o)
+                                      snp(:,:,1,in_comp),lo,hi,ng_h,ng_o,ng_n)
           case (3)
              call make_at_halftime_3d(shp(:,:,:,out_comp),sop(:,:,:,in_comp), &
-                                      snp(:,:,:,in_comp),lo,hi,ng_h,ng_o)
+                                      snp(:,:,:,in_comp),lo,hi,ng_h,ng_o,ng_n)
           end select
        end do
 
@@ -86,11 +87,12 @@ contains
     real(kind=dp_t), pointer:: rop(:,:,:,:)
     real(kind=dp_t), pointer:: rnp(:,:,:,:)
     integer   :: lo(phihalf(1)%dim),hi(phihalf(1)%dim)
-    integer   :: ng_h,ng_o,dm,i,n
+    integer   :: ng_h,ng_o,ng_n,dm,i,n
 
     dm = phihalf(1)%dim
     ng_h = phihalf(1)%ng
     ng_o = sold(1)%ng
+    ng_n = snew(1)%ng
 
     do n = 1, nlevs
        do i = 1, phihalf(n)%nboxes
@@ -103,10 +105,10 @@ contains
           select case (dm)
           case (2)
              call make_at_halftime_2d(rhp(:,:,1,out_comp),rop(:,:,1,in_comp), &
-                                      rnp(:,:,1,in_comp),lo,hi,ng_h,ng_o)
+                                      rnp(:,:,1,in_comp),lo,hi,ng_h,ng_o,ng_n)
           case (3)
              call make_at_halftime_3d(rhp(:,:,:,out_comp),rop(:,:,:,in_comp), &
-                                      rnp(:,:,:,in_comp),lo,hi,ng_h,ng_o)
+                                      rnp(:,:,:,in_comp),lo,hi,ng_h,ng_o,ng_n)
           end select
        end do
     end do
@@ -143,14 +145,14 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine make_at_halftime_2d(phihalf,phiold,phinew,lo,hi,ng_half,ng_old)
+  subroutine make_at_halftime_2d(phihalf,phiold,phinew,lo,hi,ng_half,ng_old,ng_new)
 
     use bl_constants_module
 
-    integer         , intent(in   ) :: lo(:),hi(:),ng_half,ng_old
+    integer         , intent(in   ) :: lo(:),hi(:),ng_half,ng_old,ng_new
     real (kind=dp_t), intent(  out) :: phihalf(lo(1)-ng_half:,lo(2)-ng_half:)
-    real (kind=dp_t), intent(in   ) :: phiold(lo(1)-ng_old:,lo(2)-ng_old:)
-    real (kind=dp_t), intent(in   ) :: phinew(lo(1)-ng_old:,lo(2)-ng_old:)
+    real (kind=dp_t), intent(in   ) ::  phiold(lo(1)-ng_old :,lo(2)-ng_old :)
+    real (kind=dp_t), intent(in   ) ::  phinew(lo(1)-ng_new :,lo(2)-ng_new :)
 
     !  Local variables
     integer :: i, j
@@ -165,14 +167,14 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine make_at_halftime_3d(phihalf,phiold,phinew,lo,hi,ng_half,ng_old)
+  subroutine make_at_halftime_3d(phihalf,phiold,phinew,lo,hi,ng_half,ng_old,ng_new)
 
     use bl_constants_module
 
-    integer         , intent(in   ) :: lo(:),hi(:),ng_half,ng_old
+    integer         , intent(in   ) :: lo(:),hi(:),ng_half,ng_old,ng_new
     real (kind=dp_t), intent(  out) :: phihalf(lo(1)-ng_half:,lo(2)-ng_half:,lo(3)-ng_half:)
-    real (kind=dp_t), intent(in   ) :: phiold(lo(1)-ng_old:,lo(2)-ng_old:,lo(3)-ng_old:)
-    real (kind=dp_t), intent(in   ) :: phinew(lo(1)-ng_old:,lo(2)-ng_old:,lo(3)-ng_old:)
+    real (kind=dp_t), intent(in   ) ::  phiold(lo(1)-ng_old :,lo(2)-ng_old :,lo(3)-ng_old :)
+    real (kind=dp_t), intent(in   ) ::  phinew(lo(1)-ng_new :,lo(2)-ng_new :,lo(3)-ng_new :)
 
     ! Local variables
     integer :: i, j, k

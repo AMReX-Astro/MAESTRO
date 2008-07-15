@@ -23,12 +23,13 @@ contains
     real(kind=dp_t), pointer:: Snphp(:,:,:,:)
     real(kind=dp_t), pointer:: Soldp(:,:,:,:)
     real(kind=dp_t), pointer:: dSdtp(:,:,:,:)
-    integer :: lo(Source_nph(1)%dim),hi(Source_nph(1)%dim),ng_h,ng_o,dm
+    integer :: lo(Source_nph(1)%dim),hi(Source_nph(1)%dim),ng_h,ng_o,ng_dS,dm
     integer :: i,n
       
     dm = Source_nph(1)%dim
     ng_h = Source_nph(1)%ng
     ng_o = Source_old(1)%ng
+    ng_dS = dSdt(1)%ng
 
     do n = 1, nlevs
 
@@ -46,12 +47,12 @@ contains
              call extrap_to_halftime_2d(Snphp(:,:,1,1), &
                                         dSdtp(:,:,1,1), &
                                         Soldp(:,:,1,1), &
-                                        dt,lo,hi,ng_h,ng_o)
+                                        dt,lo,hi,ng_h,ng_o,ng_dS)
           case (3)
              call extrap_to_halftime_3d(Snphp(:,:,:,1), &
                                         dSdtp(:,:,:,1), &
                                         Soldp(:,:,:,1), &
-                                        dt,lo,hi,ng_h,ng_o)
+                                        dt,lo,hi,ng_h,ng_o,ng_dS)
           end select
        end do
        
@@ -61,14 +62,14 @@ contains
 
 
   subroutine extrap_to_halftime_2d(Source_nph,dSdt,Source_old, &
-                                   dt,lo,hi,ng_h,ng_o)
+                                   dt,lo,hi,ng_h,ng_o,ng_dS)
 
     use bl_constants_module
 
-    integer         , intent(in ) :: lo(:), hi(:), ng_h, ng_o
-    real (kind=dp_t), intent(out) :: Source_nph(lo(1)-ng_h:,lo(2)-ng_h:)
-    real (kind=dp_t), intent(in ) :: dSdt(lo(1)-ng_o:,lo(2)-ng_o:)
-    real (kind=dp_t), intent(in ) :: Source_old(lo(1)-ng_o:,lo(2)-ng_o:)
+    integer         , intent(in ) :: lo(:), hi(:), ng_h, ng_o, ng_dS
+    real (kind=dp_t), intent(out) :: Source_nph(lo(1)-ng_h :,lo(2)-ng_h :)
+    real (kind=dp_t), intent(in ) ::       dSdt(lo(1)-ng_dS:,lo(2)-ng_dS:)
+    real (kind=dp_t), intent(in ) :: Source_old(lo(1)-ng_o :,lo(2)-ng_o :)
     real (kind=dp_t) :: dt
 
     ! Local variables
@@ -84,13 +85,13 @@ contains
 
 
   subroutine extrap_to_halftime_3d(Source_nph,dSdt,Source_old, &
-                                   dt,lo,hi,ng_h,ng_o)
+                                   dt,lo,hi,ng_h,ng_o,ng_dS)
     use bl_constants_module
 
-    integer         , intent(in ) :: lo(:), hi(:), ng_h, ng_o
-    real (kind=dp_t), intent(out) :: Source_nph(lo(1)-ng_h:,lo(2)-ng_h:,lo(3)-ng_h:)
-    real (kind=dp_t), intent(in ) :: dSdt(lo(1)-ng_o:,lo(2)-ng_o:,lo(3)-ng_o:)
-    real (kind=dp_t), intent(in ) :: Source_old(lo(1)-ng_o:,lo(2)-ng_o:,lo(3)-ng_o:)
+    integer         , intent(in ) :: lo(:), hi(:), ng_h, ng_o, ng_dS
+    real (kind=dp_t), intent(out) :: Source_nph(lo(1)-ng_h :,lo(2)-ng_h :,lo(3)-ng_h :)
+    real (kind=dp_t), intent(in ) ::       dSdt(lo(1)-ng_dS:,lo(2)-ng_dS:,lo(3)-ng_dS:)
+    real (kind=dp_t), intent(in ) :: Source_old(lo(1)-ng_o :,lo(2)-ng_o :,lo(3)-ng_o :)
     real (kind=dp_t) :: dt
 
     ! Local variables

@@ -39,7 +39,7 @@ contains
     type(bc_level) , intent(in   ) :: the_bc_level(:)
     
     ! local
-    integer :: i,ng,dm,n
+    integer :: i,ng_f,ng_s,ng_um,ng_b,dm,n
     integer :: lo(s(1)%dim),hi(s(1)%dim)
     integer :: domlo(s(1)%dim),domhi(s(1)%dim)    
 
@@ -57,7 +57,10 @@ contains
     call build(bpt, "modify_scal_force")
     
     dm = s(1)%dim
-    ng = s(1)%ng
+    ng_s = s(1)%ng
+    ng_f = force(1)%ng
+    ng_um = umac(1,1)%ng
+    ng_b = base_cart(1)%ng
 
     do n=1,nlevs
 
@@ -75,22 +78,22 @@ contains
           hi = upb(get_box(s(n),i))
           select case (dm)
           case (2)
-             call modify_scal_force_2d(fp(:,:,1,comp),sp(:,:,1,comp), lo, hi, &
-                                       ng,ump(:,:,1,1),vmp(:,:,1,1),base(n,:), &
+             call modify_scal_force_2d(fp(:,:,1,comp),ng_f,sp(:,:,1,comp),ng_s,lo,hi, &
+                                       ump(:,:,1,1),vmp(:,:,1,1),ng_um,base(n,:), &
                                        base_edge(n,:),w0(n,:),dx(n,:))
           case(3)
              wmp  => dataptr(umac(n,3), i)
              if (spherical .eq. 1) then
                 bcp => dataptr(base_cart(n), i)
-                call modify_scal_force_3d_sphr(n,fp(:,:,:,comp),sp(:,:,:,comp), &
-                                               lo,hi,domlo,domhi,ng, &
+                call modify_scal_force_3d_sphr(n,fp(:,:,:,comp),ng_f,sp(:,:,:,comp),ng_s, &
+                                               lo,hi,domlo,domhi, &
                                                ump(:,:,:,1),vmp(:,:,:,1), &
-                                               wmp(:,:,:,1),bcp(:,:,:,1), &
+                                               wmp(:,:,:,1),ng_um,bcp(:,:,:,1),ng_b, &
                                                w0(n,:),dx(n,:))
              else
-                call modify_scal_force_3d_cart(fp(:,:,:,comp),sp(:,:,:,comp), &
-                                               lo,hi,ng,ump(:,:,:,1), &
-                                               vmp(:,:,:,1),wmp(:,:,:,1), &
+                call modify_scal_force_3d_cart(fp(:,:,:,comp),ng_f,sp(:,:,:,comp),ng_s, &
+                                               lo,hi,ump(:,:,:,1), &
+                                               vmp(:,:,:,1),wmp(:,:,:,1),ng_um, &
                                                base(n,:),base_edge(n,:), &
                                                w0(n,:),dx(n,:))
              end if
@@ -132,13 +135,13 @@ contains
     
   end subroutine modify_scal_force
   
-  subroutine modify_scal_force_2d(force,s,lo,hi,ng,umac,vmac,base,base_edge,w0,dx)
+  subroutine modify_scal_force_2d(force,ng_f,s,ng_s,lo,hi,umac,vmac,ng_um,base,base_edge,w0,dx)
 
-    integer        , intent(in   ) :: lo(:),hi(:),ng
-    real(kind=dp_t), intent(  out) :: force(lo(1)-1:,lo(2)-1:)
-    real(kind=dp_t), intent(in   ) ::     s(lo(1)-ng:,lo(2)-ng:)
-    real(kind=dp_t), intent(in   ) ::  umac(lo(1)-1:,lo(2)-1:)
-    real(kind=dp_t), intent(in   ) ::  vmac(lo(1)-1:,lo(2)-1:)
+    integer        , intent(in   ) :: lo(:),hi(:),ng_f,ng_s,ng_um
+    real(kind=dp_t), intent(  out) :: force(lo(1)-ng_f :,lo(2)-ng_f :)
+    real(kind=dp_t), intent(in   ) ::     s(lo(1)-ng_s :,lo(2)-ng_s :)
+    real(kind=dp_t), intent(in   ) ::  umac(lo(1)-ng_um:,lo(2)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::  vmac(lo(1)-ng_um:,lo(2)-ng_um:)
     real(kind=dp_t), intent(in   ) ::  base(0:), base_edge(0:)
     real(kind=dp_t), intent(in   ) ::    w0(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
@@ -162,14 +165,14 @@ contains
           
   end subroutine modify_scal_force_2d
   
-  subroutine modify_scal_force_3d_cart(force,s,lo,hi,ng,umac,vmac,wmac,base,base_edge,w0,dx)
+  subroutine modify_scal_force_3d_cart(force,ng_f,s,ng_s,lo,hi,umac,vmac,wmac,ng_um,base,base_edge,w0,dx)
 
-    integer        , intent(in   ) :: lo(:),hi(:),ng
-    real(kind=dp_t), intent(  out) :: force(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-    real(kind=dp_t), intent(in   ) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
-    real(kind=dp_t), intent(in   ) ::  umac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-    real(kind=dp_t), intent(in   ) ::  vmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-    real(kind=dp_t), intent(in   ) ::  wmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
+    integer        , intent(in   ) :: lo(:),hi(:),ng_f,ng_s,ng_um
+    real(kind=dp_t), intent(  out) :: force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :)
+    real(kind=dp_t), intent(in   ) ::     s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :)
+    real(kind=dp_t), intent(in   ) ::  umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::  vmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::  wmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(in   ) :: base(0:), base_edge(0:)
     real(kind=dp_t), intent(in   ) ::   w0(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
@@ -198,21 +201,21 @@ contains
     
   end subroutine modify_scal_force_3d_cart
   
-  subroutine modify_scal_force_3d_sphr(n,force,s,lo,hi,domlo,domhi,ng, &
-                                       umac,vmac,wmac,base_cart,w0,dx)
+  subroutine modify_scal_force_3d_sphr(n,force,ng_f,s,ng_s,lo,hi,domlo,domhi, &
+                                       umac,vmac,wmac,ng_um,base_cart,ng_b,w0,dx)
 
     use geometry, only: nr_fine, r_edge_loc, dr, r_cc_loc, r_end_coord
     use fill_3d_module
     use bl_constants_module
     
-    integer        , intent(in   ) :: n,lo(:),hi(:),domlo(:),domhi(:),ng
-    real(kind=dp_t), intent(  out) :: force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
-    real(kind=dp_t), intent(in   ) ::     s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
-    real(kind=dp_t), intent(in   ) ::  umac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
-    real(kind=dp_t), intent(in   ) ::  vmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
-    real(kind=dp_t), intent(in   ) ::  wmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
+    integer        , intent(in   ) :: n,lo(:),hi(:),domlo(:),domhi(:),ng_f,ng_s,ng_um,ng_b
+    real(kind=dp_t), intent(  out) :: force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :)
+    real(kind=dp_t), intent(in   ) ::     s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :)
+    real(kind=dp_t), intent(in   ) ::  umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::  vmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::  wmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     
-    real(kind=dp_t), intent(in   ) :: base_cart(lo(1)-1:,lo(2)-1:,lo(3)-1:)
+    real(kind=dp_t), intent(in   ) :: base_cart(lo(1)-ng_b:,lo(2)-ng_b:,lo(3)-ng_b:)
     real(kind=dp_t), intent(in   ) :: w0(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
     

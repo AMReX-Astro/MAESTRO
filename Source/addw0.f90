@@ -23,7 +23,7 @@ contains
     real(kind=dp_t), intent(in   ) :: mult
 
     ! Local variables
-    integer :: i,lo(umac(1,1)%dim),hi(umac(1,1)%dim),dm,n
+    integer :: i,lo(umac(1,1)%dim),hi(umac(1,1)%dim),dm,n,ng_um,ng_w0
     real(kind=dp_t), pointer :: ump(:,:,:,:)
     real(kind=dp_t), pointer :: vmp(:,:,:,:)
     real(kind=dp_t), pointer :: wmp(:,:,:,:)
@@ -34,6 +34,8 @@ contains
     call build(bpt, "addw0")
 
     dm = umac(1,1)%dim
+    ng_um = umac(1,1)%ng    ! here we are assuming all components have the 
+                            ! same # of ghostcells
 
     do n = 1, nlevs
        do i = 1, umac(n,dm)%nboxes
@@ -43,18 +45,20 @@ contains
           hi =  upb(get_box(umac(n,dm), i))
           select case(dm)
           case(2)
-             call addw0_2d(wmp(:,:,1,1),w0(n,:),lo,hi,mult)
+             call addw0_2d(wmp(:,:,1,1),ng_um,w0(n,:),lo,hi,mult)
           case(3)
              if (spherical .eq. 0) then
-                call addw0_3d(wmp(:,:,:,1),w0(n,:),lo,hi,mult)
+                call addw0_3d(wmp(:,:,:,1),ng_um,w0(n,:),lo,hi,mult)
              else
                 ump  => dataptr(umac(n,1), i)
                 vmp  => dataptr(umac(n,2), i)
                 wmp  => dataptr(umac(n,3), i)
                 w0p  => dataptr(w0_cart(n), i)
+                ng_w0 = w0_cart(n)%ng
                 lo =  lwb(get_box(w0_cart(n), i))
                 hi =  upb(get_box(w0_cart(n), i))
-                call addw0_3d_sphr(ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),w0p(:,:,:,:), &
+                call addw0_3d_sphr(ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),ng_um, &
+                                   w0p(:,:,:,:),ng_w0, &
                                    lo,hi,mult)
              end if
           end select
@@ -65,10 +69,10 @@ contains
 
   end subroutine addw0
 
-  subroutine addw0_2d(vmac,w0,lo,hi,mult)
+  subroutine addw0_2d(vmac,ng_um,w0,lo,hi,mult)
 
-    integer        , intent(in   ) :: lo(:),hi(:)
-    real(kind=dp_t), intent(inout) :: vmac(lo(1)- 1:,lo(2)- 1:)
+    integer        , intent(in   ) :: lo(:),hi(:),ng_um
+    real(kind=dp_t), intent(inout) :: vmac(lo(1)-ng_um:,lo(2)-ng_um:)
     real(kind=dp_t), intent(in   ) ::   w0(0:)
     real(kind=dp_t), intent(in   ) :: mult
 
@@ -82,10 +86,10 @@ contains
 
   end subroutine addw0_2d
 
-  subroutine addw0_3d(wmac,w0,lo,hi,mult)
+  subroutine addw0_3d(wmac,ng_um,w0,lo,hi,mult)
 
-    integer        , intent(in   ) :: lo(:),hi(:)
-    real(kind=dp_t), intent(inout) :: wmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
+    integer        , intent(in   ) :: lo(:),hi(:),ng_um
+    real(kind=dp_t), intent(inout) :: wmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(in   ) ::   w0(0:)
     real(kind=dp_t), intent(in   ) :: mult
 
@@ -101,15 +105,15 @@ contains
 
   end subroutine addw0_3d
 
-  subroutine addw0_3d_sphr(umac,vmac,wmac,w0_cart,lo,hi,mult)
+  subroutine addw0_3d_sphr(umac,vmac,wmac,ng_um,w0_cart,ng_w0,lo,hi,mult)
 
     use bl_constants_module
 
-    integer        , intent(in   ) :: lo(:),hi(:)
-    real(kind=dp_t), intent(inout) ::   umac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-    real(kind=dp_t), intent(inout) ::   vmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-    real(kind=dp_t), intent(inout) ::   wmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-    real(kind=dp_t), intent(in   ) :: w0_cart(lo(1)-2:,lo(2)-2:,lo(3)-2:,:)
+    integer        , intent(in   ) :: lo(:),hi(:),ng_um,ng_w0
+    real(kind=dp_t), intent(inout) ::    umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+    real(kind=dp_t), intent(inout) ::    vmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+    real(kind=dp_t), intent(inout) ::    wmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+    real(kind=dp_t), intent(in   ) :: w0_cart(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:,:)
     real(kind=dp_t), intent(in   ) :: mult
 
     integer :: i,j,k
