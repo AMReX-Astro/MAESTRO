@@ -33,14 +33,16 @@ contains
     real(kind=dp_t), pointer :: wtp(:,:,:,:)
     real(kind=dp_t), pointer :: w0p(:,:,:,:)
     integer                  :: lo(u(1)%dim)
-    integer                  :: i,dm,ng,n
+    integer                  :: i,dm,n,ng_u,ng_ut,ng_w0
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "mkutrans")
 
     dm = u(1)%dim
-    ng = u(1)%ng
+    ng_u  = u(1)%ng
+    ng_ut = utrans(1,1)%ng
+    ng_w0 = w0_cart_vec(1)%ng
 
     do n=1,nlevs
 
@@ -52,17 +54,17 @@ contains
           lo =  lwb(get_box(u(n),i))
           select case (dm)
           case (2)
-             call mkutrans_2d(n,up(:,:,1,:), &
-                              utp(:,:,1,1), vtp(:,:,1,1), w0(n,:), &
-                              lo,dx(n,:),dt,ng,&
+             call mkutrans_2d(n,up(:,:,1,:), ng_u, &
+                              utp(:,:,1,1), vtp(:,:,1,1), ng_ut, w0(n,:), &
+                              lo,dx(n,:),dt,&
                               the_bc_level(n)%adv_bc_level_array(i,:,:,:), &
                               the_bc_level(n)%phys_bc_level_array(i,:,:))
           case (3)
              wtp => dataptr(utrans(n,3), i)
              w0p => dataptr(w0_cart_vec(n), i)
-             call mkutrans_3d(up(:,:,:,:), &
-                              utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), w0p(:,:,:,:), &
-                              lo,dx(n,:),dt,ng,&
+             call mkutrans_3d(up(:,:,:,:), ng_u, &
+                              utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), ng_ut, &
+                              w0p(:,:,:,:), ng_w0, lo, dx(n,:), dt, &
                               the_bc_level(n)%adv_bc_level_array(i,:,:,:), &
                               the_bc_level(n)%phys_bc_level_array(i,:,:))
           end select
@@ -90,17 +92,17 @@ contains
 
   end subroutine mkutrans
 
-  subroutine mkutrans_2d(n,vel,utrans,vtrans,w0,lo,dx,dt,ng_s,adv_bc,phys_bc)
+  subroutine mkutrans_2d(n,vel,ng_u,utrans,vtrans,ng_ut,w0,lo,dx,dt,adv_bc,phys_bc)
 
     use bc_module
     use slope_module
     use geometry, only: nr
     use probin_module, only: use_new_godunov
 
-    integer,         intent(in   ) :: n,lo(2),ng_s
-    real(kind=dp_t), intent(in   ) :: vel(lo(1)-ng_s:,lo(2)-ng_s:,:)
-    real(kind=dp_t), intent(inout) :: utrans(lo(1)-1:,lo(2)-1:)
-    real(kind=dp_t), intent(inout) :: vtrans(lo(1)-1:,lo(2)-1:)
+    integer,         intent(in   ) :: n,lo(2),ng_u,ng_ut
+    real(kind=dp_t), intent(in   ) ::    vel(lo(1)-ng_u :,lo(2)-ng_u :,:)
+    real(kind=dp_t), intent(inout) :: utrans(lo(1)-ng_ut:,lo(2)-ng_ut:)
+    real(kind=dp_t), intent(inout) :: vtrans(lo(1)-ng_ut:,lo(2)-ng_ut:)
     real(kind=dp_t), intent(in   ) :: w0(0:)    
     real(kind=dp_t), intent(in   ) :: dt,dx(:)
     integer        , intent(in   ) :: adv_bc(:,:,:)
@@ -115,8 +117,8 @@ contains
     
     logical :: test
     
-    hi(1) = lo(1) + size(vel,dim=1) - (2*ng_s+1)
-    hi(2) = lo(2) + size(vel,dim=2) - (2*ng_s+1)
+    hi(1) = lo(1) + size(vel,dim=1) - (2*ng_u+1)
+    hi(2) = lo(2) + size(vel,dim=2) - (2*ng_u+1)
     
     is = lo(1)
     js = lo(2)
@@ -148,8 +150,8 @@ contains
     allocate(velx(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1))
     allocate(vely(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1))
     
-    call slopex_2d(vel(:,:,1:),velx,lo,ng_s,1,adv_bc)
-    call slopey_2d(vel(:,:,2:),vely,lo,ng_s,1,adv_bc)
+    call slopex_2d(vel(:,:,1:),velx,lo,ng_u,1,adv_bc)
+    call slopey_2d(vel(:,:,2:),vely,lo,ng_u,1,adv_bc)
     
     ! Create the x-velocity to be used for transverse derivatives.
     do j = js,je
@@ -238,18 +240,18 @@ contains
 
   end subroutine mkutrans_2d
   
-  subroutine mkutrans_3d(vel,utrans,vtrans,wtrans,w0_cart_vec,lo,dx,dt,ng_s,adv_bc,phys_bc)
+  subroutine mkutrans_3d(vel,ng_u,utrans,vtrans,wtrans,ng_ut,w0_cart_vec,ng_w0, &
+                         lo,dx,dt,adv_bc,phys_bc)
 
     use bc_module
     use slope_module
     
-    integer, intent(in) :: lo(3),ng_s
-    
-    real(kind=dp_t), intent(in   ) ::    vel(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
-    real(kind=dp_t), intent(inout) :: utrans(lo(1)-   1:,lo(2)-   1:,lo(3)-   1:)
-    real(kind=dp_t), intent(inout) :: vtrans(lo(1)-   1:,lo(2)-   1:,lo(3)-   1:)
-    real(kind=dp_t), intent(inout) :: wtrans(lo(1)-   1:,lo(2)-   1:,lo(3)-   1:)
-    real(kind=dp_t), intent(in   ) :: w0_cart_vec(lo(1)- 2:,lo(2)- 2:,lo(3)- 2:,:)    
+    integer, intent(in) :: lo(3),ng_u,ng_ut,ng_w0    
+    real(kind=dp_t), intent(in   ) ::         vel(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :,:)
+    real(kind=dp_t), intent(inout) ::      utrans(lo(1)-ng_ut:,lo(2)-ng_ut:,lo(3)-ng_ut:)
+    real(kind=dp_t), intent(inout) ::      vtrans(lo(1)-ng_ut:,lo(2)-ng_ut:,lo(3)-ng_ut:)
+    real(kind=dp_t), intent(inout) ::      wtrans(lo(1)-ng_ut:,lo(2)-ng_ut:,lo(3)-ng_ut:)
+    real(kind=dp_t), intent(in   ) :: w0_cart_vec(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:,:)
     real(kind=dp_t), intent(in   ) :: dt,dx(:)
     integer        , intent(in   ) :: adv_bc(:,:,:)
     integer        , intent(in   ) :: phys_bc(:,:)
@@ -265,9 +267,9 @@ contains
     integer :: hi(3)
     integer :: i,j,k,is,js,ks,ie,je,ke
     
-    hi(1) = lo(1) + size(vel,dim=1) - (2*ng_s+1)
-    hi(2) = lo(2) + size(vel,dim=2) - (2*ng_s+1)
-    hi(3) = lo(3) + size(vel,dim=3) - (2*ng_s+1)
+    hi(1) = lo(1) + size(vel,dim=1) - (2*ng_u+1)
+    hi(2) = lo(2) + size(vel,dim=2) - (2*ng_u+1)
+    hi(3) = lo(3) + size(vel,dim=3) - (2*ng_u+1)
     
     is = lo(1)
     js = lo(2)
@@ -307,10 +309,10 @@ contains
     allocate(velz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1))
     
     do k = lo(3)-1,hi(3)+1
-       call slopex_2d(vel(:,:,k,1:),velx(:,:,k,:),lo,ng_s,1,adv_bc)
-       call slopey_2d(vel(:,:,k,2:),vely(:,:,k,:),lo,ng_s,1,adv_bc)
+       call slopex_2d(vel(:,:,k,1:),velx(:,:,k,:),lo,ng_u,1,adv_bc)
+       call slopey_2d(vel(:,:,k,2:),vely(:,:,k,:),lo,ng_u,1,adv_bc)
     end do
-    call slopez_3d(vel(:,:,:,3:),velz,lo,ng_s,1,adv_bc)
+    call slopez_3d(vel(:,:,:,3:),velz,lo,ng_u,1,adv_bc)
     
     ! Create the x-velocity to be used for transverse derivatives.
     do k = ks,ke
