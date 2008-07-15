@@ -196,10 +196,9 @@ contains
   
   subroutine firstdt_3d(n,u,s,force,divU,p0,gamma1bar,lo,hi,ng,dx,dt,cfl)
 
-    use geometry,  only: spherical
+    use geometry,  only: spherical, nr
     use variables, only: rho_comp, temp_comp, spec_comp
     use eos_module
-    use fill_3d_module
     use bl_constants_module
 
     integer, intent(in)             :: n,lo(:), hi(:), ng
@@ -237,7 +236,7 @@ contains
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
-             
+
              ! compute the sound speed from rho and temp
              den_eos(1) = s(i,j,k,rho_comp)
              temp_eos(1) = s(i,j,k,temp_comp)
@@ -305,6 +304,29 @@ contains
 
     ! divU constraint
     dt_divu = HUGE(dt_divu)
+    
+    if (spherical .eq. 0) then
+
+       do k = lo(3), hi(3)
+          if (k .eq. 0) then
+             gradp0 = (p0(k+1) - p0(k))/dx(3)
+          else if (k .eq. nr(n)-1) then
+             gradp0 = (p0(k) - p0(k-1))/dx(3)
+          else
+             gradp0 = HALF*(p0(k+1) - p0(k-1))/dx(3)
+          endif
+          
+          do j = lo(2), hi(2)
+             do i = lo(1), hi(1)
+                denom = divU(i,j,k) - u(i,j,k,3)*gradp0/(gamma1bar(k)*p0(k))
+                if (denom > ZERO) then
+                   dt_divu = min(dt_divu,0.4d0*(ONE - rho_min/s(i,j,k,rho_comp))/denom)
+                endif
+             enddo
+          enddo
+       enddo
+
+    end if
 
     if(dt_divu < dt) then
        dt = dt_divu

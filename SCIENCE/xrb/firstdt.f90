@@ -20,11 +20,11 @@ module firstdt_module
 
 contains
 
-  subroutine firstdt(n,u,s,force,divU,p0,gamma1,dx,cflfac,dt)
+  subroutine firstdt(n,u,s,force,divU,p0,gamma1bar,dx,cflfac,dt)
 
     integer        , intent(in   ) :: n
     type(multifab) , intent(in   ) :: u,s,force,divU
-    real(kind=dp_t), intent(in   ) :: p0(0:), cflfac, gamma1(0:)
+    real(kind=dp_t), intent(in   ) :: p0(0:), cflfac, gamma1bar(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
     real(kind=dp_t), intent(  out) :: dt
     
@@ -51,13 +51,11 @@ contains
        hi    =  upb(get_box(u, i))
        select case (dm)
        case (2)
-          call firstdt_2d(n,uop(:,:,1,:), sop(:,:,1,:), fp(:,:,1,:),&
-                          divup(:,:,1,1), p0, gamma1, lo, hi, ng, dx, &
-                          dt_grid, cflfac)
+          call firstdt_2d(n, uop(:,:,1,:), sop(:,:,1,:), fp(:,:,1,:), divup(:,:,1,1), &
+                          p0, gamma1bar, lo, hi, ng, dx, dt_grid, cflfac)
        case (3)
-          call firstdt_3d(n,uop(:,:,:,:), sop(:,:,:,:), fp(:,:,:,:),&
-                          divup(:,:,:,1), p0, gamma1, lo, hi, ng, dx, &
-                          dt_grid, cflfac)
+          call firstdt_3d(n, uop(:,:,:,:), sop(:,:,:,:), fp(:,:,:,:), divup(:,:,:,1), &
+                          p0, gamma1bar, lo, hi, ng, dx, dt_grid, cflfac)
        end select
        dt_hold_proc = min(dt_hold_proc,dt_grid)
     end do
@@ -66,11 +64,11 @@ contains
     
   end subroutine firstdt
   
-  subroutine firstdt_2d(n,u,s,force,divu,p0,gamma1,lo,hi,ng,dx,dt,cfl)
+  subroutine firstdt_2d(n,u,s,force,divu,p0,gamma1bar,lo,hi,ng,dx,dt,cfl)
 
     use eos_module
     use variables, only: rho_comp, temp_comp, spec_comp
-    use geometry,  only: r_end_coord
+    use geometry,  only: nr
     use bl_constants_module
     
     integer, intent(in)             :: n, lo(:), hi(:), ng
@@ -78,7 +76,7 @@ contains
     real (kind = dp_t), intent(in ) :: s(lo(1)-ng:,lo(2)-ng:,:)  
     real (kind = dp_t), intent(in ) :: force(lo(1)- 1:,lo(2)- 1:,:)
     real (kind = dp_t), intent(in ) :: divu(lo(1):,lo(2):)
-    real (kind = dp_t), intent(in ) :: p0(0:), gamma1(0:)
+    real (kind = dp_t), intent(in ) :: p0(0:), gamma1bar(0:)
     real (kind = dp_t), intent(in ) :: dx(:)
     real (kind = dp_t), intent(out) :: dt
     real (kind = dp_t), intent(in ) :: cfl
@@ -176,14 +174,14 @@ contains
     do j = lo(2), hi(2)
        if (j .eq. 0) then
           gradp0 = (p0(j+1) - p0(j))/dx(2)
-       else if (j .eq. r_end_coord(n)) then
+       else if (j .eq. nr(n)-1) then
           gradp0 = (p0(j) - p0(j-1))/dx(2)
        else
           gradp0 = HALF*(p0(j+1) - p0(j-1))/dx(2)
        endif
        
        do i = lo(1), hi(1)
-          denom = divU(i,j) - u(i,j,2)*gradp0/(gamma1(j)*p0(j))
+          denom = divU(i,j) - u(i,j,2)*gradp0/(gamma1bar(j)*p0(j))
           if (denom > ZERO) then
              dt_divu = min(dt_divu,0.4d0*(ONE - rho_min/s(i,j,rho_comp))/denom)
           endif
@@ -196,9 +194,9 @@ contains
     
   end subroutine firstdt_2d
   
-  subroutine firstdt_3d(n,u,s,force,divU,p0,gamma1,lo,hi,ng,dx,dt,cfl)
+  subroutine firstdt_3d(n,u,s,force,divU,p0,gamma1bar,lo,hi,ng,dx,dt,cfl)
 
-    use geometry,  only: spherical, r_end_coord
+    use geometry,  only: spherical, nr
     use variables, only: rho_comp, temp_comp, spec_comp
     use eos_module
     use bl_constants_module
@@ -208,7 +206,7 @@ contains
     real (kind = dp_t), intent(in ) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind = dp_t), intent(in ) :: force(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)
     real (kind = dp_t), intent(in ) :: divU(lo(1):,lo(2):,lo(3):)  
-    real (kind = dp_t), intent(in ) :: p0(0:), gamma1(0:)
+    real (kind = dp_t), intent(in ) :: p0(0:), gamma1bar(0:)
     real (kind = dp_t), intent(in ) :: dx(:)
     real (kind = dp_t), intent(out) :: dt
     real (kind = dp_t), intent(in ) :: cfl
@@ -298,45 +296,37 @@ contains
        dt = min(dt,dt_sound)
     end if
 
-    if (pforcex > eps) then
-       if(sqrt(2.0D0*dx(1)/pforcex) < dt) then
-          dt = sqrt(2.0D0*dx(1)/pforcex)
-       end if
-    end if
+    if (pforcex > eps) dt = min(dt,sqrt(2.0D0*dx(1)/pforcex))
 
-    if (pforcey > eps) then
-       if(sqrt(2.0D0*dx(2)/pforcey) < dt) then
-          dt = sqrt(2.0D0*dx(2)/pforcey)
-       end if
-    end if
+    if (pforcey > eps) dt = min(dt,sqrt(2.0D0*dx(2)/pforcey))
 
-    if (pforcez > eps) then
-       if(sqrt(2.0D0*dx(3)/pforcez) < dt) then
-          dt = sqrt(2.0D0*dx(3)/pforcez)
-       end if
-    end if
-    
+    if (pforcez > eps) dt = min(dt,sqrt(2.0D0*dx(3)/pforcez))
+
     ! divU constraint
     dt_divu = HUGE(dt_divu)
     
-    do k = lo(3), hi(3)
-       if (k .eq. 0) then
-          gradp0 = (p0(k+1) - p0(k))/dx(3)
-       else if (k .eq. r_end_coord(n)) then
-          gradp0 = (p0(k) - p0(k-1))/dx(3)
-       else
-          gradp0 = HALF*(p0(k+1) - p0(k-1))/dx(3)
-       endif
-       
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-             denom = divU(i,j,k) - u(i,j,k,3)*gradp0/(gamma1(k)*p0(k))
-             if (denom > ZERO) then
-                dt_divu = min(dt_divu,0.4d0*(ONE - rho_min/s(i,j,k,rho_comp))/denom)
-             endif
+    if (spherical .eq. 0) then
+
+       do k = lo(3), hi(3)
+          if (k .eq. 0) then
+             gradp0 = (p0(k+1) - p0(k))/dx(3)
+          else if (k .eq. nr(n)-1) then
+             gradp0 = (p0(k) - p0(k-1))/dx(3)
+          else
+             gradp0 = HALF*(p0(k+1) - p0(k-1))/dx(3)
+          endif
+          
+          do j = lo(2), hi(2)
+             do i = lo(1), hi(1)
+                denom = divU(i,j,k) - u(i,j,k,3)*gradp0/(gamma1bar(k)*p0(k))
+                if (denom > ZERO) then
+                   dt_divu = min(dt_divu,0.4d0*(ONE - rho_min/s(i,j,k,rho_comp))/denom)
+                endif
+             enddo
           enddo
        enddo
-    enddo
+
+    end if
 
     if(dt_divu < dt) then
        dt = dt_divu
