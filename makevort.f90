@@ -23,14 +23,15 @@ contains
 
     real(kind=dp_t), pointer:: up(:,:,:,:)
     real(kind=dp_t), pointer:: vp(:,:,:,:)
-    integer :: lo(u%dim),hi(u%dim),ng,dm
-    integer :: i
+    integer :: lo(u%dim),hi(u%dim),dm
+    integer :: i,ng_u,ng_v
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "make_vort")
 
-    ng = u%ng
+    ng_u = u%ng
+    ng_v = vort%ng
     dm = u%dim
 
     do i = 1, u%nboxes
@@ -41,10 +42,10 @@ contains
        hi =  upb(get_box(u, i))
        select case (dm)
        case (2)
-          call makevort_2d(vp(:,:,1,comp),up(:,:,1,:), lo, hi, ng, dx, &
+          call makevort_2d(vp(:,:,1,comp),ng_v,up(:,:,1,:),ng_u,lo,hi,dx, &
                            bc%phys_bc_level_array(i,:,:))
        case (3)
-          call makevort_3d(vp(:,:,:,comp),up(:,:,:,:), lo, hi, ng, dx, &
+          call makevort_3d(vp(:,:,:,comp),ng_v,up(:,:,:,:),ng_u,lo,hi,dx, &
                            bc%phys_bc_level_array(i,:,:))
        end select
     end do
@@ -53,14 +54,14 @@ contains
 
   end subroutine make_vorticity
 
-  subroutine makevort_2d (vort,u,lo,hi,ng,dx,bc)
+  subroutine makevort_2d(vort,ng_v,u,ng_u,lo,hi,dx,bc)
 
     use bc_module
     use bl_constants_module
 
-    integer           , intent(in   ) :: lo(:), hi(:), ng
-    real (kind = dp_t), intent(  out) :: vort(lo(1):,lo(2):)  
-    real (kind = dp_t), intent(in   ) :: u(lo(1)-ng:,lo(2)-ng:,:)  
+    integer           , intent(in   ) :: lo(:), hi(:), ng_v, ng_u
+    real (kind = dp_t), intent(  out) :: vort(lo(1)-ng_v:,lo(2)-ng_v:)  
+    real (kind = dp_t), intent(in   ) ::    u(lo(1)-ng_u:,lo(2)-ng_u:,:)  
     real (kind = dp_t), intent(in   ) :: dx(:)
     integer           , intent(in   ) :: bc(:,:)
 
@@ -114,14 +115,14 @@ contains
 
   end subroutine makevort_2d
 
-  subroutine makevort_3d (vort,u,lo,hi,ng,dx,bc)
+  subroutine makevort_3d (vort,ng_v,u,ng_u,lo,hi,dx,bc)
 
     use bc_module
     use bl_constants_module
 
-    integer           , intent(in   ) :: lo(:), hi(:), ng
-    real (kind = dp_t), intent(  out) :: vort(lo(1)   :,lo(2)   :,lo(3)   :)
-    real (kind = dp_t), intent(in   ) ::    u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
+    integer           , intent(in   ) :: lo(:), hi(:), ng_v, ng_u
+    real (kind = dp_t), intent(  out) :: vort(lo(1)-ng_v:,lo(2)-ng_v:,lo(3)-ng_v:)
+    real (kind = dp_t), intent(in   ) ::    u(lo(1)-ng_u:,lo(2)-ng_u:,lo(3)-ng_u:,:)  
     real (kind = dp_t), intent(in   ) :: dx(:)
     integer           , intent(in   ) :: bc(:,:)
 
@@ -654,10 +655,12 @@ contains
     real(kind=dp_t), pointer:: pp(:,:,:,:)
     real(kind=dp_t), pointer:: up(:,:,:,:)
     real(kind=dp_t), pointer:: sp(:,:,:,:)
-    integer :: lo(u%dim),hi(u%dim),ng,dm
-    integer :: i
+    integer :: lo(u%dim),hi(u%dim),dm
+    integer :: i,ng_u,ng_s,ng_p
 
-    ng = u%ng
+    ng_u = u%ng
+    ng_s = s%ng
+    ng_p = plotdata%ng
     dm = u%dim
 
     do i = 1, u%nboxes
@@ -669,23 +672,23 @@ contains
        hi =  upb(get_box(u, i))
        select case (dm)
        case (2)
-          call makemagvel_2d(pp(:,:,1,comp_magvel),pp(:,:,1,comp_mom),up(:,:,1,:), &
-                             sp(:,:,1,rho_comp), lo, hi, ng)
+          call makemagvel_2d(pp(:,:,1,comp_magvel),pp(:,:,1,comp_mom),ng_p, &
+                             up(:,:,1,:),ng_u,sp(:,:,1,rho_comp),ng_s,lo,hi)
        case (3)
-          call makemagvel_3d(pp(:,:,:,comp_magvel),pp(:,:,:,comp_mom),up(:,:,:,:), &
-                             sp(:,:,:,rho_comp), lo, hi, ng)
+          call makemagvel_3d(pp(:,:,:,comp_magvel),pp(:,:,:,comp_mom),ng_p, &
+                             up(:,:,:,:),ng_u,sp(:,:,:,rho_comp),ng_s,lo,hi)
        end select
     end do
 
   end subroutine make_magvel
 
-  subroutine makemagvel_2d (magvel,mom,u,rho,lo,hi,ng)
+  subroutine makemagvel_2d(magvel,mom,ng_p,u,ng_u,rho,ng_s,lo,hi)
 
-    integer           , intent(in   ) :: lo(:), hi(:), ng
-    real (kind = dp_t), intent(  out) :: magvel(lo(1)   :,lo(2)   :)
-    real (kind = dp_t), intent(  out) ::    mom(lo(1)   :,lo(2)   :)
-    real (kind = dp_t), intent(in   ) ::      u(lo(1)-ng:,lo(2)-ng:,:)  
-    real (kind = dp_t), intent(in   ) ::    rho(lo(1)-ng:,lo(2)-ng:)  
+    integer           , intent(in   ) :: lo(:), hi(:), ng_p, ng_u, ng_s
+    real (kind = dp_t), intent(  out) :: magvel(lo(1)-ng_p:,lo(2)-ng_p:)
+    real (kind = dp_t), intent(  out) ::    mom(lo(1)-ng_p:,lo(2)-ng_p:)
+    real (kind = dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,:)
+    real (kind = dp_t), intent(in   ) ::    rho(lo(1)-ng_s:,lo(2)-ng_s:)
 
     !     Local variables
     integer :: i, j
@@ -699,13 +702,13 @@ contains
 
   end subroutine makemagvel_2d
 
-  subroutine makemagvel_3d (magvel,mom,u,rho,lo,hi,ng)
+  subroutine makemagvel_3d(magvel,mom,ng_p,u,ng_u,rho,ng_s,lo,hi)
 
-    integer           , intent(in   ) :: lo(:), hi(:), ng
-    real (kind = dp_t), intent(  out) :: magvel(lo(1)   :,lo(2)   :,lo(3)   :)
-    real (kind = dp_t), intent(  out) ::    mom(lo(1)   :,lo(2)   :,lo(3)   :)
-    real (kind = dp_t), intent(in   ) ::      u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
-    real (kind = dp_t), intent(in   ) ::    rho(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)  
+    integer           , intent(in   ) :: lo(:), hi(:), ng_p, ng_u, ng_s
+    real (kind = dp_t), intent(  out) :: magvel(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)
+    real (kind = dp_t), intent(  out) ::    mom(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)
+    real (kind = dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,lo(3)-ng_u:,:)  
+    real (kind = dp_t), intent(in   ) ::    rho(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:)  
 
     !     Local variables
     integer :: i, j, k
@@ -755,7 +758,7 @@ contains
        select case (dm)
        case (2)
           call makevelplusw0_2d(pp(:,:,1,comp_velplusw0),ng_p,up(:,:,1,:),ng_u, &
-               w0, lo, hi)
+                                w0, lo, hi)
        case (3)
           if (spherical .eq. 1) then
              np => dataptr(normal, i)
