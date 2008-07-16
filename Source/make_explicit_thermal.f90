@@ -46,7 +46,8 @@ contains
     type(multifab) :: Tcoeff(mla%nlevel),hcoeff(mla%nlevel),pcoeff(mla%nlevel)
     type(multifab) :: resid(mla%nlevel)
 
-    integer                     :: i,comp,n,nlevs,dm,stencil_order,ng_cc,ng_fc
+    integer                     :: i,comp,n,nlevs,dm,stencil_order
+    integer                     :: ng_s,ng_T,ng_h,ng_X,ng_p,ng_cc,ng_fc
     integer                     :: lo(s(1)%dim),hi(s(1)%dim)
     real(kind=dp_t), pointer    :: sp(:,:,:,:)
     real(kind=dp_t), pointer    :: betap(:,:,:,:),Xkcoeffp(:,:,:,:)
@@ -70,6 +71,12 @@ contains
        call setval(thermal(n), ZERO, all=.true.)
     end do
     
+    ng_s = s(1)%ng
+    ng_T = Tcoeff(1)%ng
+    ng_h = hcoeff(1)%ng
+    ng_X = Xkcoeff(1)%ng
+    ng_p = pcoeff(1)%ng
+
     ! create Tcoeff = -kth, hcoeff = -kth/cp, Xkcoeff = xik*kth/cp, pcoeff = hp*kth/cp
     do n=1,nlevs
        do i=1,s(n)%nboxes
@@ -83,11 +90,13 @@ contains
           hi = upb(get_box(s(n),i))
           select case (dm)
           case (2)
-             call make_coeffs_2d(lo,hi,sp(:,:,1,:),Tcoeffp(:,:,1,1),hcoeffp(:,:,1,1), &
-                                 Xkcoeffp(:,:,1,:),pcoeffp(:,:,1,1))
+             call make_coeffs_2d(lo,hi,sp(:,:,1,:),ng_s,Tcoeffp(:,:,1,1),ng_T, &
+                                 hcoeffp(:,:,1,1),ng_h,Xkcoeffp(:,:,1,:),ng_X, &
+                                 pcoeffp(:,:,1,1),ng_p)
           case (3)
-             call make_coeffs_3d(lo,hi,sp(:,:,:,:),Tcoeffp(:,:,:,1),hcoeffp(:,:,:,1), &
-                                 Xkcoeffp(:,:,:,:),pcoeffp(:,:,:,1))
+             call make_coeffs_3d(lo,hi,sp(:,:,:,:),ng_s,Tcoeffp(:,:,:,1),ng_T, &
+                                 hcoeffp(:,:,:,1),ng_h,Xkcoeffp(:,:,:,:),ng_X, &
+                                 pcoeffp(:,:,:,1),ng_p)
           end select
        end do
     enddo
@@ -368,17 +377,17 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! create Tcoeff = -kth, hcoeff = -kth/cp, Xkcoeff = xik*kth/cp, pcoeff = hp*kth/cp
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine make_coeffs_2d(lo,hi,s,Tcoeff,hcoeff,Xkcoeff,pcoeff)
+  subroutine make_coeffs_2d(lo,hi,s,ng_s,Tcoeff,ng_T,hcoeff,ng_h,Xkcoeff,ng_X,pcoeff,ng_p)
 
     use variables, only: rho_comp, temp_comp, spec_comp
     use eos_module
 
-    integer        , intent(in   ) :: lo(:),hi(:)
-    real(kind=dp_t), intent(in   ) :: s(lo(1)-3:,lo(2)-3:,:)
-    real(kind=dp_t), intent(inout) :: Tcoeff(lo(1)-1:,lo(2)-1:)
-    real(kind=dp_t), intent(inout) :: hcoeff(lo(1)-1:,lo(2)-1:)
-    real(kind=dp_t), intent(inout) :: Xkcoeff(lo(1)-1:,lo(2)-1:,:)
-    real(kind=dp_t), intent(inout) :: pcoeff(lo(1)-1:,lo(2)-1:)
+    integer        , intent(in   ) :: lo(:),hi(:),ng_s,ng_T,ng_h,ng_X,ng_p
+    real(kind=dp_t), intent(in   ) ::       s(lo(1)-ng_s:,lo(2)-ng_s:,:)
+    real(kind=dp_t), intent(inout) ::  Tcoeff(lo(1)-ng_T:,lo(2)-ng_T:)
+    real(kind=dp_t), intent(inout) ::  hcoeff(lo(1)-ng_h:,lo(2)-ng_h:)
+    real(kind=dp_t), intent(inout) :: Xkcoeff(lo(1)-ng_X:,lo(2)-ng_X:,:)
+    real(kind=dp_t), intent(inout) ::  pcoeff(lo(1)-ng_p:,lo(2)-ng_p:)
     
     ! local
     integer :: i,j,comp    
@@ -423,19 +432,19 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! create Tcoeff = -kth, hcoeff = -kth/cp, Xkcoeff = xik*kth/cp, pcoeff = hp*kth/cp
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine make_coeffs_3d(lo,hi,s,Tcoeff,hcoeff,Xkcoeff,pcoeff)
+  subroutine make_coeffs_3d(lo,hi,s,ng_s,Tcoeff,ng_T,hcoeff,ng_h,Xkcoeff,ng_X,pcoeff,ng_p)
 
     use variables, only: rho_comp, temp_comp, spec_comp
     use eos_module
     use geometry, only: spherical
     use fill_3d_module
     
-    integer        , intent(in   ) :: lo(:),hi(:)
-    real(kind=dp_t), intent(in   ) :: s(lo(1)-3:,lo(2)-3:,lo(3)-3:,:)
-    real(kind=dp_t), intent(inout) :: Tcoeff(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-    real(kind=dp_t), intent(inout) :: hcoeff(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-    real(kind=dp_t), intent(inout) :: Xkcoeff(lo(1)-1:,lo(2)-1:,lo(3)-1:,:)
-    real(kind=dp_t), intent(inout) :: pcoeff(lo(1)-1:,lo(2)-1:,lo(3)-1:)
+    integer        , intent(in   ) :: lo(:),hi(:),ng_s,ng_T,ng_h,ng_X,ng_p
+    real(kind=dp_t), intent(in   ) ::       s(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
+    real(kind=dp_t), intent(inout) ::  Tcoeff(lo(1)-ng_T:,lo(2)-ng_T:,lo(3)-ng_T:)
+    real(kind=dp_t), intent(inout) ::  hcoeff(lo(1)-ng_h:,lo(2)-ng_h:,lo(3)-ng_h:)
+    real(kind=dp_t), intent(inout) :: Xkcoeff(lo(1)-ng_X:,lo(2)-ng_X:,lo(3)-ng_X:,:)
+    real(kind=dp_t), intent(inout) ::  pcoeff(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)
 
     ! local
     integer :: i,j,k,comp
