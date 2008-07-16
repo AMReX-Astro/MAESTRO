@@ -177,8 +177,12 @@ contains
       real(kind=dp_t), pointer :: rhp(:,:,:,:) 
       real(kind=dp_t)          :: rhmax
       integer :: i,dm,lo(rh(1)%dim),hi(rh(1)%dim)
+      integer :: ng_um, ng_rh
 
       dm = rh(1)%dim
+
+      ng_um = umac(1,1)%ng
+      ng_rh = rh(1)%ng
 
       do n = nlevs,2,-1
          do i = 1,dm
@@ -196,11 +200,12 @@ contains
             hi =  upb(get_box(rh(n), i))
             select case (dm)
             case (2)
-               call divumac_2d(ump(:,:,1,1), vmp(:,:,1,1),rhp(:,:,1,1), dx(n,:),lo,hi)
+               call divumac_2d(ump(:,:,1,1),vmp(:,:,1,1),ng_um,rhp(:,:,1,1),ng_rh, &
+                               dx(n,:),lo,hi)
             case (3)
                wmp => dataptr(umac(n,3), i)
-               call divumac_3d(ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), rhp(:,:,:,1), &
-                               dx(n,:),lo,hi)
+               call divumac_3d(ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),ng_um, &
+                               rhp(:,:,:,1),ng_rh,dx(n,:),lo,hi)
             end select
          end do
       end do
@@ -244,12 +249,12 @@ contains
 
     end subroutine divumac
 
-    subroutine divumac_2d(umac,vmac,rh,dx,lo,hi)
+    subroutine divumac_2d(umac,vmac,ng_um,rh,ng_rh,dx,lo,hi)
 
-      integer        , intent(in   ) :: lo(:),hi(:)
-      real(kind=dp_t), intent(in   ) :: umac(lo(1)-1:,lo(2)-1:)
-      real(kind=dp_t), intent(in   ) :: vmac(lo(1)-1:,lo(2)-1:)
-      real(kind=dp_t), intent(inout) ::   rh(lo(1)  :,lo(2)  :)
+      integer        , intent(in   ) :: lo(:),hi(:),ng_um,ng_rh
+      real(kind=dp_t), intent(in   ) :: umac(lo(1)-ng_um:,lo(2)-ng_um:)
+      real(kind=dp_t), intent(in   ) :: vmac(lo(1)-ng_um:,lo(2)-ng_um:)
+      real(kind=dp_t), intent(inout) ::   rh(lo(1)-ng_rh:,lo(2)-ng_rh:)
       real(kind=dp_t), intent(in   ) ::   dx(:)
 
       integer :: i,j
@@ -263,13 +268,13 @@ contains
 
     end subroutine divumac_2d
 
-    subroutine divumac_3d(umac,vmac,wmac,rh,dx,lo,hi)
+    subroutine divumac_3d(umac,vmac,wmac,ng_um,rh,ng_rh,dx,lo,hi)
 
-      integer        , intent(in   ) :: lo(:),hi(:)
-      real(kind=dp_t), intent(in   ) :: umac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-      real(kind=dp_t), intent(in   ) :: vmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-      real(kind=dp_t), intent(in   ) :: wmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-      real(kind=dp_t), intent(inout) ::   rh(lo(1)  :,lo(2)  :,lo(3)  :)
+      integer        , intent(in   ) :: lo(:),hi(:),ng_um,ng_rh
+      real(kind=dp_t), intent(in   ) :: umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+      real(kind=dp_t), intent(in   ) :: vmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+      real(kind=dp_t), intent(in   ) :: wmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+      real(kind=dp_t), intent(inout) ::   rh(lo(1)-ng_rh:,lo(2)-ng_rh:,lo(3)-ng_rh:)
       real(kind=dp_t), intent(in   ) :: dx(:)
 
       integer :: i,j,k
@@ -297,9 +302,10 @@ contains
       real(kind=dp_t), pointer :: vmp(:,:,:,:) 
       real(kind=dp_t), pointer :: wmp(:,:,:,:) 
       integer                  :: lo(umac(1)%dim)
-      integer                  :: i,dm
+      integer                  :: i,dm,ng_um
 
       dm = umac(1)%dim
+      ng_um = umac(1)%ng
 
       ! Multiply edge velocities by div coeff
       do i = 1, umac(1)%nboxes
@@ -309,11 +315,11 @@ contains
          lo =  lwb(get_box(umac(1), i))
          select case (dm)
          case (2)
-            call mult_by_1d_coeff_2d(ump(:,:,1,1), vmp(:,:,1,1), &
+            call mult_by_1d_coeff_2d(ump(:,:,1,1), vmp(:,:,1,1), ng_um, &
                                      div_coeff(lo(dm):), div_coeff_half(lo(dm):), do_mult)
          case (3)
             wmp => dataptr(umac(3), i)
-            call mult_by_1d_coeff_3d(ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
+            call mult_by_1d_coeff_3d(ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
                                      div_coeff(lo(dm):), div_coeff_half(lo(dm):), do_mult)
          end select
       end do
@@ -328,9 +334,10 @@ contains
 
       real(kind=dp_t), pointer :: bp(:,:,:,:) 
       integer                  :: lo(beta%dim)
-      integer                  :: i,dm
+      integer                  :: i,dm, ng_b
 
       dm = beta%dim
+      ng_b = beta%ng
 
       ! Multiply edge coefficients by div coeff
       do i = 1, beta%nboxes
@@ -339,20 +346,21 @@ contains
          lo =  lwb(get_box(beta, i))
          select case (dm)
          case (2)
-            call mult_by_1d_coeff_2d(bp(:,:,1,1), bp(:,:,1,2), &
+            call mult_by_1d_coeff_2d(bp(:,:,1,1), bp(:,:,1,2), ng_b, &
                                      div_coeff(lo(dm):), div_coeff_half(lo(dm):), .true.)
          case (3)
-            call mult_by_1d_coeff_3d(bp(:,:,:,1), bp(:,:,:,2), bp(:,:,:,3), &
+            call mult_by_1d_coeff_3d(bp(:,:,:,1), bp(:,:,:,2), bp(:,:,:,3), ng_b, &
                                      div_coeff(lo(dm):), div_coeff_half(lo(dm):), .true.)
          end select
       end do
 
     end subroutine mult_beta_by_1d_coeff
 
-    subroutine mult_by_1d_coeff_2d(umac,vmac,div_coeff,div_coeff_half,do_mult)
+    subroutine mult_by_1d_coeff_2d(umac,vmac,ng_um,div_coeff,div_coeff_half,do_mult)
 
-      real(kind=dp_t), intent(inout) :: umac(-1:,-1:)
-      real(kind=dp_t), intent(inout) :: vmac(-1:,-1:)
+      integer                        :: ng_Um
+      real(kind=dp_t), intent(inout) :: umac(-ng_um:,-ng_um:)
+      real(kind=dp_t), intent(inout) :: vmac(-ng_um:,-ng_um:)
       real(dp_t)     , intent(in   ) :: div_coeff(0:)
       real(dp_t)     , intent(in   ) :: div_coeff_half(0:)
       logical        , intent(in   ) :: do_mult
@@ -379,11 +387,12 @@ contains
 
     end subroutine mult_by_1d_coeff_2d
 
-    subroutine mult_by_1d_coeff_3d(umac,vmac,wmac,div_coeff,div_coeff_half,do_mult)
+    subroutine mult_by_1d_coeff_3d(umac,vmac,wmac,ng_um,div_coeff,div_coeff_half,do_mult)
 
-      real(kind=dp_t), intent(inout) :: umac(-1:,-1:,-1:)
-      real(kind=dp_t), intent(inout) :: vmac(-1:,-1:,-1:)
-      real(kind=dp_t), intent(inout) :: wmac(-1:,-1:,-1:)
+      integer                        :: ng_um
+      real(kind=dp_t), intent(inout) :: umac(-ng_um:,-ng_um:,-ng_um:)
+      real(kind=dp_t), intent(inout) :: vmac(-ng_um:,-ng_um:,-ng_um:)
+      real(kind=dp_t), intent(inout) :: wmac(-ng_um:,-ng_um:,-ng_um:)
       real(dp_t)     , intent(in   ) :: div_coeff(0:)
       real(dp_t)     , intent(in   ) :: div_coeff_half(0:)
       logical        , intent(in   ) :: do_mult
@@ -630,10 +639,11 @@ contains
 
       real(kind=dp_t), pointer :: bp(:,:,:,:) 
       real(kind=dp_t), pointer :: rp(:,:,:,:) 
-      integer :: i,dm,ng
+      integer :: i,dm,ng_r,ng_b
 
       dm = rho(1)%dim
-      ng = rho(1)%ng
+      ng_r = rho(1)%ng
+      ng_b = beta(1)%ng
 
       do n = 1, nlevs
          do i = 1, rho(n)%nboxes
@@ -642,20 +652,20 @@ contains
             bp => dataptr(beta(n), i)
             select case (dm)
             case (2)
-               call mk_mac_coeffs_2d(bp(:,:,1,:), rp(:,:,1,1), ng)
+               call mk_mac_coeffs_2d(bp(:,:,1,:), ng_b, rp(:,:,1,1), ng_r)
             case (3)
-               call mk_mac_coeffs_3d(bp(:,:,:,:), rp(:,:,:,1), ng)
+               call mk_mac_coeffs_3d(bp(:,:,:,:), ng_b, rp(:,:,:,1), ng_r)
             end select
          end do
       end do
 
     end subroutine mk_mac_coeffs
 
-    subroutine mk_mac_coeffs_2d(beta,rho,ng)
+    subroutine mk_mac_coeffs_2d(beta,ng_b,rho,ng_r)
 
-      integer :: ng
-      real(kind=dp_t), intent(inout) :: beta( -1:, -1:,:)
-      real(kind=dp_t), intent(inout) ::  rho(-ng:,-ng:)
+      integer :: ng_b,ng_r
+      real(kind=dp_t), intent(inout) :: beta(-ng_b:,-ng_b:,:)
+      real(kind=dp_t), intent(inout) ::  rho(-ng_r:,-ng_r:)
 
       integer :: i,j
       integer :: nx,ny
@@ -677,11 +687,11 @@ contains
 
     end subroutine mk_mac_coeffs_2d
 
-    subroutine mk_mac_coeffs_3d(beta,rho,ng)
+    subroutine mk_mac_coeffs_3d(beta,ng_b,rho,ng_r)
 
-      integer :: ng
-      real(kind=dp_t), intent(inout) :: beta( -1:, -1:, -1:,:)
-      real(kind=dp_t), intent(inout) ::  rho(-ng:,-ng:,-ng:)
+      integer :: ng_b,ng_r
+      real(kind=dp_t), intent(inout) :: beta(-ng_b:,-ng_b:,-ng_b:,:)
+      real(kind=dp_t), intent(inout) ::  rho(-ng_r:,-ng_r:,-ng_r:)
 
       integer :: i,j,k
       integer :: nx,ny,nz
@@ -731,6 +741,7 @@ contains
       integer       , intent(in   ) :: ref_ratio(:,:)
 
       integer :: i,dm,nlevs
+      integer :: ng_um,ng_p,ng_b
 
       type(bc_level)           :: bc
       real(kind=dp_t), pointer :: ump(:,:,:,:) 
@@ -748,6 +759,10 @@ contains
       nlevs = size(rh,dim=1)
       dm = rh(1)%dim
 
+      ng_um = umac(1,1)%ng
+      ng_p = phi(1)%ng
+      ng_b = beta(1)%ng
+
       do n = 1, nlevs
          bc = the_bc_tower%bc_tower_array(n)
          do i = 1, rh(n)%nboxes
@@ -763,13 +778,13 @@ contains
                   hxp => dataptr(fine_flx(n)%bmf(1,1), i)
                   lyp => dataptr(fine_flx(n)%bmf(2,0), i)
                   hyp => dataptr(fine_flx(n)%bmf(2,1), i)
-                  call mkumac_2d(ump(:,:,1,1),vmp(:,:,1,1), &
-                                 php(:,:,1,1), bp(:,:,1,:), &
+                  call mkumac_2d(ump(:,:,1,1),vmp(:,:,1,1), ng_um, &
+                                 php(:,:,1,1), ng_p, bp(:,:,1,:), ng_b, &
                                  lxp(:,:,1,1),hxp(:,:,1,1),lyp(:,:,1,1),hyp(:,:,1,1), &
                                  dx(n,:),bc%ell_bc_level_array(i,:,:,press_comp))
                else 
-                  call mkumac_2d_base(ump(:,:,1,1),vmp(:,:,1,1), & 
-                                      php(:,:,1,1), bp(:,:,1,:), &
+                  call mkumac_2d_base(ump(:,:,1,1),vmp(:,:,1,1), ng_um, & 
+                                      php(:,:,1,1), ng_p, bp(:,:,1,:), ng_b, &
                                       dx(n,:),bc%ell_bc_level_array(i,:,:,press_comp))
                end if
             case (3)
@@ -781,14 +796,14 @@ contains
                   hyp => dataptr(fine_flx(n)%bmf(2,1), i)
                   lzp => dataptr(fine_flx(n)%bmf(3,0), i)
                   hzp => dataptr(fine_flx(n)%bmf(3,1), i)
-                  call mkumac_3d(ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
-                                 php(:,:,:,1), bp(:,:,:,:), &
+                  call mkumac_3d(ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
+                                 php(:,:,:,1), ng_p, bp(:,:,:,:), ng_b, &
                                  lxp(:,:,:,1),hxp(:,:,:,1),lyp(:,:,:,1),hyp(:,:,:,1), &
                                  lzp(:,:,:,1),hzp(:,:,:,1),dx(n,:),&
                                  bc%ell_bc_level_array(i,:,:,press_comp))
                else
-                  call mkumac_3d_base(ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),& 
-                                      php(:,:,:,1), bp(:,:,:,:), dx(n,:), &
+                  call mkumac_3d_base(ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),ng_um,&
+                                      php(:,:,:,1), ng_p, bp(:,:,:,:), ng_b, dx(n,:), &
                                       bc%ell_bc_level_array(i,:,:,press_comp))
                end if
             end select
@@ -803,12 +818,13 @@ contains
 
     end subroutine mkumac
 
-    subroutine mkumac_2d_base(umac,vmac,phi,beta,dx,press_bc)
+    subroutine mkumac_2d_base(umac,vmac,ng_um,phi,ng_p,beta,ng_b,dx,press_bc)
 
-      real(kind=dp_t), intent(inout) :: umac(-1:,-1:)
-      real(kind=dp_t), intent(inout) :: vmac(-1:,-1:)
-      real(kind=dp_t), intent(inout) ::  phi(-1:,-1:)
-      real(kind=dp_t), intent(in   ) :: beta(-1:,-1:,:)
+      integer        , intent(in   ) :: ng_um,ng_p,ng_b
+      real(kind=dp_t), intent(inout) :: umac(-ng_um:,-ng_um:)
+      real(kind=dp_t), intent(inout) :: vmac(-ng_um:,-ng_um:)
+      real(kind=dp_t), intent(inout) ::  phi(-ng_p:,-ng_p:)
+      real(kind=dp_t), intent(in   ) :: beta(-ng_b:,-ng_b:,:)
       real(kind=dp_t), intent(in   ) :: dx(:)
       integer        , intent(in   ) :: press_bc(:,:)
 
@@ -877,12 +893,14 @@ contains
 
     end subroutine mkumac_2d_base
 
-    subroutine mkumac_2d(umac,vmac,phi,beta,lo_x_flx,hi_x_flx,lo_y_flx,hi_y_flx,dx,press_bc)
+    subroutine mkumac_2d(umac,vmac,ng_um,phi,ng_p,beta,ng_b, &
+                         lo_x_flx,hi_x_flx,lo_y_flx,hi_y_flx,dx,press_bc)
 
-      real(kind=dp_t), intent(inout) :: umac(-1:,-1:)
-      real(kind=dp_t), intent(inout) :: vmac(-1:,-1:)
-      real(kind=dp_t), intent(inout) ::  phi(-1:,-1:)
-      real(kind=dp_t), intent(in   ) :: beta(-1:,-1:,:)
+      integer        , intent(in   ) :: ng_um,ng_p,ng_b
+      real(kind=dp_t), intent(inout) :: umac(-ng_um:,-ng_um:)
+      real(kind=dp_t), intent(inout) :: vmac(-ng_um:,-ng_um:)
+      real(kind=dp_t), intent(inout) ::  phi(-ng_p:,-ng_p:)
+      real(kind=dp_t), intent(in   ) :: beta(-ng_b:,-ng_b:,:)
       real(kind=dp_t), intent(in   ) :: lo_x_flx(:,0:), lo_y_flx(0:,:)
       real(kind=dp_t), intent(in   ) :: hi_x_flx(:,0:), hi_y_flx(0:,:)
       real(kind=dp_t), intent(in   ) :: dx(:)
@@ -958,13 +976,14 @@ contains
 
     end subroutine mkumac_2d
 
-    subroutine mkumac_3d_base(umac,vmac,wmac,phi,beta,dx,press_bc)
+    subroutine mkumac_3d_base(umac,vmac,wmac,ng_um,phi,ng_p,beta,ng_b,dx,press_bc)
 
-      real(kind=dp_t), intent(inout) :: umac(-1:,-1:,-1:)
-      real(kind=dp_t), intent(inout) :: vmac(-1:,-1:,-1:)
-      real(kind=dp_t), intent(inout) :: wmac(-1:,-1:,-1:)
-      real(kind=dp_t), intent(inout) ::  phi(-1:,-1:,-1:)
-      real(kind=dp_t), intent(in   ) :: beta(-1:,-1:,-1:,:)
+      integer        , intent(in   ) :: ng_um,ng_p,ng_b
+      real(kind=dp_t), intent(inout) :: umac(-ng_um:,-ng_um:,-ng_um:)
+      real(kind=dp_t), intent(inout) :: vmac(-ng_um:,-ng_um:,-ng_um:)
+      real(kind=dp_t), intent(inout) :: wmac(-ng_um:,-ng_um:,-ng_um:)
+      real(kind=dp_t), intent(inout) ::  phi(-ng_p:,-ng_p:,-ng_p:)
+      real(kind=dp_t), intent(in   ) :: beta(-ng_b:,-ng_b:,-ng_b:,:)
       real(kind=dp_t), intent(in   ) :: dx(:)
       integer        , intent(in   ) :: press_bc(:,:)
 
@@ -1091,16 +1110,17 @@ contains
 
     end subroutine mkumac_3d_base
 
-    subroutine mkumac_3d(umac,vmac,wmac,phi,beta,lo_x_flx,hi_x_flx,lo_y_flx,hi_y_flx, &
-                         lo_z_flx,hi_z_flx,dx,press_bc)
+    subroutine mkumac_3d(umac,vmac,wmac,ng_um,phi,ng_p,beta,ng_b, &
+                         lo_x_flx,hi_x_flx,lo_y_flx,hi_y_flx,lo_z_flx,hi_z_flx,dx,press_bc)
 
-      real(kind=dp_t), intent(inout) :: umac(-1:,-1:,-1:)
-      real(kind=dp_t), intent(inout) :: vmac(-1:,-1:,-1:)
-      real(kind=dp_t), intent(inout) :: wmac(-1:,-1:,-1:)
-      real(kind=dp_t), intent(inout) ::  phi(-1:,-1:,-1:)
-      real(kind=dp_t), intent(in   ) :: beta(-1:,-1:,-1:,:)
-      real(kind=dp_t), intent(in   ) :: lo_x_flx(:,0:,0:), lo_y_flx(0:,:,0:), lo_z_flx(0:,0:,:)
-      real(kind=dp_t), intent(in   ) :: hi_x_flx(:,0:,0:), hi_y_flx(0:,:,0:), hi_z_flx(0:,0:,:)
+      integer        , intent(in   ) :: ng_um,ng_p,ng_b
+      real(kind=dp_t), intent(inout) :: umac(-ng_um:,-ng_um:,-ng_um:)
+      real(kind=dp_t), intent(inout) :: vmac(-ng_um:,-ng_um:,-ng_um:)
+      real(kind=dp_t), intent(inout) :: wmac(-ng_um:,-ng_um:,-ng_um:)
+      real(kind=dp_t), intent(inout) ::  phi(-ng_p:,-ng_p:,-ng_p:)
+      real(kind=dp_t), intent(in   ) :: beta(-ng_b:,-ng_b:,-ng_b:,:)
+      real(kind=dp_t), intent(in   ) :: lo_x_flx(:,0:,0:),lo_y_flx(0:,:,0:),lo_z_flx(0:,0:,:)
+      real(kind=dp_t), intent(in   ) :: hi_x_flx(:,0:,0:),hi_y_flx(0:,:,0:),hi_z_flx(0:,0:,:)
       real(kind=dp_t), intent(in   ) :: dx(:)
       integer        , intent(in   ) :: press_bc(:,:)
 
@@ -1345,7 +1365,7 @@ contains
        pd = layout_get_pd(mla%la(n))
 
        call mg_tower_build(mgt(n), mla%la(n), pd, &
-                           the_bc_tower%bc_tower_array(n)%ell_bc_level_array(0,:,:,bc_comp), &
+                           the_bc_tower%bc_tower_array(n)%ell_bc_level_array(0,:,:,bc_comp),&
                            dh = dx(n,:), &
                            ns = ns, &
                            smoother = smoother, &
@@ -1546,7 +1566,7 @@ contains
        pd = layout_get_pd(mla%la(n))
 
        call mg_tower_build(mgt(n), mla%la(n), pd, &
-                           the_bc_tower%bc_tower_array(n)%ell_bc_level_array(0,:,:,bc_comp), &
+                           the_bc_tower%bc_tower_array(n)%ell_bc_level_array(0,:,:,bc_comp),&
                            dh = dx(n,:), &
                            ns = ns, &
                            smoother = smoother, &
