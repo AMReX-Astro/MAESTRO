@@ -47,7 +47,7 @@ contains
     type(multifab) :: gphi(mla%nlevel)
     logical        :: nodal(mla%dim)
 
-    integer                   :: n,nlevs,dm,ng, stencil_type
+    integer                   :: n,nlevs,dm,stencil_type
     real(dp_t)                :: umin,umax,vmin,vmax,wmin,wmax
     logical                   :: use_div_coeff_1d, use_div_coeff_3d
     type(bl_prof_timer), save :: bpt
@@ -56,7 +56,6 @@ contains
 
     nlevs = mla%nlevel
     dm    = mla%dim
-    ng    = unew(1)%ng
     nodal = .true.
     
     if (hg_dense_stencil) then
@@ -157,7 +156,7 @@ contains
     call mkgphi(nlevs,gphi,phi,dx)
 
     call hg_update(nlevs,proj_type,unew,uold,gpres,gphi,rhohalf,  &
-                   pres,phi,ng,dt,mla,the_bc_tower%bc_tower_array)
+                   pres,phi,dt,mla,the_bc_tower%bc_tower_array)
 
     do n = 1,nlevs
        call destroy(phi(n))
@@ -219,14 +218,18 @@ contains
       real(kind=dp_t), pointer :: gpp(:,:,:,:) 
       real(kind=dp_t), pointer ::  rp(:,:,:,:)
   
-      integer :: i,n,dm,ng
+      integer :: i,n,dm
+      integer :: ng_un,ng_uo,ng_rh,ng_gp
 
       type(bl_prof_timer), save :: bpt
 
       call build(bpt, "create_uvec_for_projection")
   
-      dm = unew(nlevs)%dim
-      ng = unew(nlevs)%ng
+      dm = unew(1)%dim
+      ng_un = unew(1)%ng
+      ng_uo = uold(1)%ng
+      ng_rh = rhohalf(1)%ng
+      ng_gp = gpres(1)%ng
   
       do n = 1, nlevs
          bc = the_bc_tower%bc_tower_array(n)
@@ -238,11 +241,13 @@ contains
              rp => dataptr(  rhohalf(n), i)
             select case (dm)
                case (2)
-                 call create_uvec_2d(unp(:,:,1,:), uop(:,:,1,:), rp(:,:,1,1), gpp(:,:,1,:), &
-                                     dt,bc%phys_bc_level_array(i,:,:), ng, proj_type)
+                 call create_uvec_2d(unp(:,:,1,:), ng_un, uop(:,:,1,:), ng_uo, &
+                                     rp(:,:,1,1), ng_rh, gpp(:,:,1,:), ng_gp, &
+                                     dt,bc%phys_bc_level_array(i,:,:), proj_type)
                case (3)
-                 call create_uvec_3d(unp(:,:,:,:), uop(:,:,:,:), rp(:,:,:,1), gpp(:,:,:,:), &
-                                     dt, bc%phys_bc_level_array(i,:,:), ng, proj_type)
+                 call create_uvec_3d(unp(:,:,:,:), ng_un, uop(:,:,:,:), ng_uo, &
+                                     rp(:,:,:,1), ng_rh, gpp(:,:,:,:), ng_gp, &
+                                     dt, bc%phys_bc_level_array(i,:,:), proj_type)
             end select
          end do
          call multifab_fill_boundary(unew(n))
@@ -254,15 +259,16 @@ contains
 
     !   ******************************************************************************** !
 
-    subroutine create_uvec_2d(unew,uold,rhohalf,gpres,dt,phys_bc,ng,proj_type)
+    subroutine create_uvec_2d(unew,ng_un,uold,ng_uo,rhohalf,ng_rh,gpres,ng_gp, &
+                              dt,phys_bc,proj_type)
 
       use proj_parameters
 
-      integer        , intent(in   ) :: ng
-      real(kind=dp_t), intent(inout) ::    unew(-ng:,-ng:,:)
-      real(kind=dp_t), intent(in   ) ::    uold(-ng:,-ng:,:)
-      real(kind=dp_t), intent(in   ) :: rhohalf( -1:, -1:)
-      real(kind=dp_t), intent(inout) ::   gpres( -1:, -1:,:)
+      integer        , intent(in   ) :: ng_un,ng_uo,ng_rh,ng_gp
+      real(kind=dp_t), intent(inout) ::    unew(-ng_un:,-ng_un:,:)
+      real(kind=dp_t), intent(in   ) ::    uold(-ng_uo:,-ng_uo:,:)
+      real(kind=dp_t), intent(in   ) :: rhohalf(-ng_rh:,-ng_rh:)
+      real(kind=dp_t), intent(inout) ::   gpres(-ng_gp:,-ng_gp:,:)
       real(kind=dp_t), intent(in   ) :: dt
       integer        , intent(in   ) :: phys_bc(:,:)
       integer        , intent(in   ) :: proj_type
@@ -311,15 +317,16 @@ contains
 
     !  *********************************************************************************** !
 
-    subroutine create_uvec_3d(unew,uold,rhohalf,gpres,dt,phys_bc,ng,proj_type)
+    subroutine create_uvec_3d(unew,ng_un,uold,ng_uo,rhohalf,ng_rh,gpres,ng_gp, &
+                              dt,phys_bc,proj_type)
 
       use proj_parameters
 
-      integer        , intent(in   ) :: ng
-      real(kind=dp_t), intent(inout) ::    unew(-ng:,-ng:,-ng:,:)
-      real(kind=dp_t), intent(in   ) ::    uold(-ng:,-ng:,-ng:,:)
-      real(kind=dp_t), intent(inout) ::      gpres( -1:, -1:, -1:,:)
-      real(kind=dp_t), intent(in   ) :: rhohalf( -1:, -1:, -1:)
+      integer        , intent(in   ) :: ng_un,ng_uo,ng_rh,ng_gp
+      real(kind=dp_t), intent(inout) ::    unew(-ng_un:,-ng_un:,-ng_un:,:)
+      real(kind=dp_t), intent(in   ) ::    uold(-ng_uo:,-ng_uo:,-ng_uo:,:)
+      real(kind=dp_t), intent(inout) ::   gpres(-ng_gp:,-ng_gp:,-ng_gp:,:)
+      real(kind=dp_t), intent(in   ) :: rhohalf(-ng_rh:,-ng_rh:,-ng_rh:)
       real(kind=dp_t), intent(in   ) :: dt
       integer        , intent(in   ) :: phys_bc(:,:)
       integer        , intent(in   ) :: proj_type
@@ -383,7 +390,7 @@ contains
       type(multifab), intent(in   ) :: phi(:)
       real(dp_t) :: dx(:,:)
 
-      integer :: i,dm,n
+      integer :: i,dm,n,ng_p,ng_gp
 
       real(kind=dp_t), pointer :: gph(:,:,:,:) 
       real(kind=dp_t), pointer :: pp(:,:,:,:) 
@@ -393,6 +400,8 @@ contains
       call build(bpt, "mkgphi")
 
       dm = phi(1)%dim
+      ng_p = phi(1)%ng
+      ng_gp = gphi(1)%ng
 
       do n = 1, nlevs
 
@@ -402,9 +411,9 @@ contains
             pp  => dataptr(phi(n),i)
             select case (dm)
             case (2)
-               call mkgphi_2d(gph(:,:,1,:), pp(:,:,1,1), dx(n,:))
+               call mkgphi_2d(gph(:,:,1,:), ng_gp, pp(:,:,1,1), ng_p, dx(n,:))
             case (3)
-               call mkgphi_3d(gph(:,:,:,:), pp(:,:,:,1), dx(n,:))
+               call mkgphi_3d(gph(:,:,:,:), ng_gp, pp(:,:,:,1), ng_p, dx(n,:))
             end select
          end do
 
@@ -416,10 +425,11 @@ contains
 
     !   ********************************************************************************* !
 
-    subroutine mkgphi_2d(gphi,phi,dx)
+    subroutine mkgphi_2d(gphi,ng_gp,phi,ng_p,dx)
 
-      real(kind=dp_t), intent(inout) ::  gphi(0:,0:,:)
-      real(kind=dp_t), intent(inout) :: phi(-1:,-1:)
+      integer        , intent(in   ) :: ng_gp,ng_p
+      real(kind=dp_t), intent(inout) :: gphi(-ng_gp:,-ng_gp:,:)
+      real(kind=dp_t), intent(inout) ::  phi(-ng_p :,-ng_p :)
       real(kind=dp_t), intent(in   ) :: dx(:)
 
       integer :: i,j,nx,ny
@@ -440,10 +450,11 @@ contains
 
     !   ******************************************************************************** !
 
-    subroutine mkgphi_3d(gphi,phi,dx)
+    subroutine mkgphi_3d(gphi,ng_gp,phi,ng_p,dx)
 
-      real(kind=dp_t), intent(inout) ::  gphi(0:,0:,0:,1:)
-      real(kind=dp_t), intent(inout) :: phi(-1:,-1:,-1:)
+      integer        , intent(in   ) :: ng_gp,ng_p
+      real(kind=dp_t), intent(inout) :: gphi(-ng_gp:,-ng_gp:,-ng_gp:,:)
+      real(kind=dp_t), intent(inout) ::  phi(-ng_p :,-ng_p :,-ng_p :)
       real(kind=dp_t), intent(in   ) :: dx(:)
 
       integer :: i,j,k,nx,ny,nz
@@ -475,7 +486,7 @@ contains
 
     ! ******************************************************************************* !
 
-    subroutine hg_update(nlevs,proj_type,unew,uold,gpres,gphi,rhohalf,pres,phi,ng,dt, &
+    subroutine hg_update(nlevs,proj_type,unew,uold,gpres,gphi,rhohalf,pres,phi,dt, &
                          mla,the_bc_level)
 
       use multifab_physbc_module
@@ -490,13 +501,13 @@ contains
       type(multifab) , intent(in   ) :: rhohalf(:)
       type(multifab) , intent(inout) :: pres(:)
       type(multifab) , intent(in   ) :: phi(:)
-      integer        , intent(in   ) :: ng
       real(kind=dp_t), intent(in   ) :: dt
       type(ml_layout), intent(inout) :: mla
       type(bc_level) , intent(in   ) :: the_bc_level(:)
 
       ! local
       integer :: i,dm,n
+      integer :: ng_un,ng_uo,ng_gp,ng_gh,ng_rh,ng_p,ng_h
 
       real(kind=dp_t), pointer :: upn(:,:,:,:) 
       real(kind=dp_t), pointer :: uon(:,:,:,:) 
@@ -512,6 +523,14 @@ contains
 
       dm = unew(1)%dim
 
+      ng_un = unew(1)%ng
+      ng_uo = uold(1)%ng
+      ng_gp = gpres(1)%ng
+      ng_gh = gphi(1)%ng
+      ng_rh = rhohalf(1)%ng
+      ng_p = pres(1)%ng
+      ng_h = phi(1)%ng
+
       do n = 1, nlevs
 
          do i = 1, unew(n)%nboxes
@@ -525,11 +544,13 @@ contains
             ph  => dataptr(phi(n),i)
             select case (dm)
             case (2)
-               call hg_update_2d(proj_type, upn(:,:,1,:), uon(:,:,1,:), gpp(:,:,1,:), &
-                                 gph(:,:,1,:),rp(:,:,1,1),pp(:,:,1,1), ph(:,:,1,1), ng, dt)
+               call hg_update_2d(proj_type, upn(:,:,1,:), ng_un, uon(:,:,1,:), ng_uo, &
+                                 gpp(:,:,1,:), ng_gp, gph(:,:,1,:), ng_gh, rp(:,:,1,1), &
+                                 ng_rh, pp(:,:,1,1), ng_p, ph(:,:,1,1), ng_h, dt)
             case (3)
-               call hg_update_3d(proj_type, upn(:,:,:,:), uon(:,:,:,:), gpp(:,:,:,:), &
-                                 gph(:,:,:,:),rp(:,:,:,1),pp(:,:,:,1), ph(:,:,:,1), ng, dt)
+               call hg_update_3d(proj_type, upn(:,:,:,:), ng_un, uon(:,:,:,:), ng_uo, &
+                                 gpp(:,:,:,:), ng_gp, gph(:,:,:,:), ng_gh, rp(:,:,:,1), &
+                                 ng_rh, pp(:,:,:,1), ng_p, ph(:,:,:,1), ng_h, dt)
             end select
          end do
 
@@ -565,7 +586,7 @@ contains
             ! fill level n ghost cells using interpolation from level n-1 data
             ! note that multifab_fill_boundary and multifab_physbc are called for
             ! both levels n-1 and n
-            call multifab_fill_ghost_cells(unew(n),unew(n-1),ng,mla%mba%rr(n-1,:), &
+            call multifab_fill_ghost_cells(unew(n),unew(n-1),unew(n)%ng,mla%mba%rr(n-1,:), &
                                            the_bc_level(n-1),the_bc_level(n),1,1,dm)
             do i=1,dm
                call multifab_fill_ghost_cells(gpres(n),gpres(n-1),1,mla%mba%rr(n-1,:), &
@@ -583,19 +604,20 @@ contains
 
     !   ****************************************************************************** !
 
-    subroutine hg_update_2d(proj_type,unew,uold,gpres,gphi,rhohalf,pres,phi,ng,dt)
+    subroutine hg_update_2d(proj_type,unew,ng_un,uold,ng_uo,gpres,ng_gp,gphi,ng_gh, &
+                            rhohalf,ng_rh,pres,ng_p,phi,ng_h,dt)
 
       use proj_parameters
 
+      integer        , intent(in   ) :: ng_un,ng_uo,ng_gp,ng_gh,ng_rh,ng_p,ng_h
       integer        , intent(in   ) :: proj_type
-      integer        , intent(in   ) :: ng
-      real(kind=dp_t), intent(inout) ::    unew(-ng:,-ng:,:)
-      real(kind=dp_t), intent(in   ) ::    uold(-ng:,-ng:,:)
-      real(kind=dp_t), intent(inout) ::      gpres( -1:, -1:,:)
-      real(kind=dp_t), intent(in   ) ::    gphi(  0:,  0:,:)
-      real(kind=dp_t), intent(in   ) :: rhohalf( -1:, -1:)
-      real(kind=dp_t), intent(inout) ::       pres( -1:, -1:)
-      real(kind=dp_t), intent(in   ) ::     phi( -1:, -1:)
+      real(kind=dp_t), intent(inout) ::    unew(-ng_un:,-ng_un:,:)
+      real(kind=dp_t), intent(in   ) ::    uold(-ng_uo:,-ng_uo:,:)
+      real(kind=dp_t), intent(inout) ::   gpres(-ng_gp:,-ng_gp:,:)
+      real(kind=dp_t), intent(in   ) ::    gphi(-ng_gh:,-ng_gh:,:)
+      real(kind=dp_t), intent(in   ) :: rhohalf(-ng_rh:,-ng_rh:)
+      real(kind=dp_t), intent(inout) ::    pres(-ng_p :,-ng_p :)
+      real(kind=dp_t), intent(in   ) ::     phi(-ng_h :,-ng_h :)
       real(kind=dp_t), intent(in   ) :: dt
 
       integer         :: nx,ny
@@ -636,19 +658,20 @@ contains
 
     !   ******************************************************************************* !
 
-    subroutine hg_update_3d(proj_type,unew,uold,gpres,gphi,rhohalf,pres,phi,ng,dt)
+    subroutine hg_update_3d(proj_type,unew,ng_un,uold,ng_uo,gpres,ng_gp,gphi,ng_gh, &
+                            rhohalf,ng_rh,pres,ng_p,phi,ng_h,dt)
 
       use proj_parameters
 
+      integer        , intent(in   ) :: ng_un,ng_uo,ng_gp,ng_gh,ng_rh,ng_p,ng_h
       integer        , intent(in   ) :: proj_type
-      integer        , intent(in   ) :: ng
-      real(kind=dp_t), intent(inout) ::    unew(-ng:,-ng:,-ng:,:)
-      real(kind=dp_t), intent(in   ) ::    uold(-ng:,-ng:,-ng:,:)
-      real(kind=dp_t), intent(inout) ::      gpres(-1:,-1:,-1:,:)
-      real(kind=dp_t), intent(in   ) ::    gphi( 0:, 0:, 0:,:)
-      real(kind=dp_t), intent(in   ) :: rhohalf(-1:,-1:,-1:)
-      real(kind=dp_t), intent(inout) ::       pres( -1:, -1:,-1:)
-      real(kind=dp_t), intent(in   ) ::     phi( -1:, -1:,-1:)
+      real(kind=dp_t), intent(inout) ::    unew(-ng_un:,-ng_un:,-ng_un:,:)
+      real(kind=dp_t), intent(in   ) ::    uold(-ng_uo:,-ng_uo:,-ng_uo:,:)
+      real(kind=dp_t), intent(inout) ::   gpres(-ng_gp:,-ng_gp:,-ng_gp:,:)
+      real(kind=dp_t), intent(in   ) ::    gphi(-ng_gh:,-ng_gh:,-ng_gh:,:)
+      real(kind=dp_t), intent(in   ) :: rhohalf(-ng_rh:,-ng_rh:,-ng_rh:)
+      real(kind=dp_t), intent(inout) ::    pres(-ng_p :,-ng_p :,-ng_p :)
+      real(kind=dp_t), intent(in   ) ::     phi(-ng_h :,-ng_h :,-ng_h :)
       real(kind=dp_t), intent(in   ) :: dt
 
       integer         :: nx,ny,nz
@@ -699,12 +722,13 @@ contains
       type(multifab) , intent(inout) :: divu_rhs(:)
       type(bc_tower) , intent(in   ) :: the_bc_tower
 
-      integer        :: i,n,dm,ng,nlevs
+      integer        :: i,n,dm,ng,nlevs,ng_d
       type(bc_level) :: bc
       real(kind=dp_t), pointer :: divp(:,:,:,:) 
 
       nlevs = size(divu_rhs,dim=1)
       dm = divu_rhs(1)%dim
+      ng_d = divu_rhs(1)%ng
 
       do n = 1, nlevs
          bc = the_bc_tower%bc_tower_array(n)
@@ -713,9 +737,9 @@ contains
             divp => dataptr(divu_rhs(n)     , i)
             select case (dm)
             case (2)
-               call enforce_outflow_2d(divp(:,:,1,1), bc%phys_bc_level_array(i,:,:))
+               call enforce_outflow_2d(divp(:,:,1,1), ng_d, bc%phys_bc_level_array(i,:,:))
             case (3)
-               call enforce_outflow_3d(divp(:,:,:,1), bc%phys_bc_level_array(i,:,:))
+               call enforce_outflow_3d(divp(:,:,:,1), ng_d, bc%phys_bc_level_array(i,:,:))
             end select
          end do
       end do
@@ -724,9 +748,10 @@ contains
 
     ! ******************************************************************************** !
 
-    subroutine enforce_outflow_2d(divu_rhs,phys_bc)
+    subroutine enforce_outflow_2d(divu_rhs,ng_d,phys_bc)
 
-      real(kind=dp_t), intent(inout) :: divu_rhs(0:,0:)
+      integer        , intent(in   ) :: ng_d
+      real(kind=dp_t), intent(inout) :: divu_rhs(-ng_d:,-ng_d:)
       integer        , intent(in   ) :: phys_bc(:,:)
 
       integer :: nx,ny
@@ -742,9 +767,10 @@ contains
 
     ! ******************************************************************************** !
 
-    subroutine enforce_outflow_3d(divu_rhs,phys_bc)
+    subroutine enforce_outflow_3d(divu_rhs,ng_d,phys_bc)
 
-      real(kind=dp_t), intent(inout) :: divu_rhs(0:,0:,0:)
+      integer        , intent(in   ) :: ng_d
+      real(kind=dp_t), intent(inout) :: divu_rhs(-ng_d:,-ng_d:,-ng_d:)
       integer        , intent(in   ) :: phys_bc(:,:)
 
       integer :: nx,ny,nz
@@ -1003,10 +1029,11 @@ contains
 
     real(kind=dp_t), pointer :: cp(:,:,:,:)
     real(kind=dp_t), pointer :: rp(:,:,:,:)
-    integer :: i,dm,ng
+    integer :: i,dm,ng_r,ng_c
 
     dm = rho%dim
-    ng = rho%ng
+    ng_r = rho%ng
+    ng_c = coeffs%ng
 
     do i = 1, rho%nboxes
        if ( multifab_remote(rho, i) ) cycle
@@ -1014,9 +1041,9 @@ contains
        cp => dataptr(coeffs, i)
        select case (dm)
        case (2)
-          call mkcoeffs_2d(cp(:,:,1,1), rp(:,:,1,1), ng)
+          call mkcoeffs_2d(cp(:,:,1,1), ng_c, rp(:,:,1,1), ng_r)
        case (3)
-          call mkcoeffs_3d(cp(:,:,:,1), rp(:,:,:,1), ng)
+          call mkcoeffs_3d(cp(:,:,:,1), ng_c, rp(:,:,:,1), ng_r)
        end select
     end do
 
@@ -1024,13 +1051,13 @@ contains
 
   !   *********************************************************************************** !
 
-  subroutine mkcoeffs_2d(coeffs,rho,ng)
+  subroutine mkcoeffs_2d(coeffs,ng_c,rho,ng_r)
 
       use bl_constants_module
 
-    integer :: ng
-    real(kind=dp_t), intent(inout) :: coeffs(   0:,   0:)
-    real(kind=dp_t), intent(in   ) ::  rho(1-ng:,1-ng:)
+    integer                        :: ng_c,ng_r
+    real(kind=dp_t), intent(inout) :: coeffs(1-ng_c:,1-ng_c:)
+    real(kind=dp_t), intent(in   ) ::    rho(1-ng_r:,1-ng_r:)
 
     integer :: i,j
     integer :: nx,ny
@@ -1048,13 +1075,13 @@ contains
 
   !   ********************************************************************************** !
 
-  subroutine mkcoeffs_3d(coeffs,rho,ng)
+  subroutine mkcoeffs_3d(coeffs,ng_c,rho,ng_r)
 
       use bl_constants_module
 
-    integer :: ng
-    real(kind=dp_t), intent(inout) :: coeffs(   0:,   0:, 0:)
-    real(kind=dp_t), intent(in   ) ::  rho(1-ng:,1-ng:,1-ng:)
+    integer                        :: ng_c,ng_r
+    real(kind=dp_t), intent(inout) :: coeffs(1-ng_c:,1-ng_c:,1-ng_c:)
+    real(kind=dp_t), intent(in   ) ::    rho(1-ng_r:,1-ng_r:,1-ng_r:)
 
     integer :: i,j,k
     integer :: nx,ny,nz
@@ -1084,14 +1111,14 @@ contains
 
     ! local
     real(kind=dp_t), pointer :: ump(:,:,:,:) 
-    integer :: i,ng,n,dm
+    integer :: i,ng_u,n,dm
     integer :: lo(u(1)%dim),hi(u(1)%dim)
     logical :: local_do_mult
 
     local_do_mult = .true.
     if (present(do_mult)) local_do_mult = do_mult
 
-    ng = u(1)%ng
+    ng_u = u(1)%ng
     dm = u(1)%dim
 
     do n = 1, nlevs
@@ -1104,9 +1131,9 @@ contains
           hi =  upb(get_box(u(n),i))
           select case (dm)
           case (2)
-             call mult_by_1d_coeff_2d(ump(:,:,1,:),div_coeff(n,:),lo,hi,ng,local_do_mult)
+             call mult_by_1d_coeff_2d(ump(:,:,1,:),ng_u,div_coeff(n,:),lo,hi,local_do_mult)
           case (3)
-             call mult_by_1d_coeff_3d(ump(:,:,:,:),div_coeff(n,:),lo,hi,ng,local_do_mult)
+             call mult_by_1d_coeff_3d(ump(:,:,:,:),ng_u,div_coeff(n,:),lo,hi,local_do_mult)
           end select
        end do
 
@@ -1116,10 +1143,10 @@ contains
 
   !   ********************************************************************************** !
 
-  subroutine mult_by_1d_coeff_2d(u,div_coeff,lo,hi,ng,do_mult)
+  subroutine mult_by_1d_coeff_2d(u,ng_u,div_coeff,lo,hi,do_mult)
 
-    integer        , intent(in   ) :: lo(:),hi(:),ng
-    real(kind=dp_t), intent(inout) :: u(lo(1)-ng:,lo(2)-ng:,:)
+    integer        , intent(in   ) :: lo(:),hi(:),ng_u
+    real(kind=dp_t), intent(inout) :: u(lo(1)-ng_u:,lo(2)-ng_u:,:)
     real(dp_t)     , intent(in   ) :: div_coeff(0:)
     logical        , intent(in   ) :: do_mult
 
@@ -1139,10 +1166,10 @@ contains
 
   !   ********************************************************************************** !
 
-  subroutine mult_by_1d_coeff_3d(u,div_coeff,lo,hi,ng,do_mult)
+  subroutine mult_by_1d_coeff_3d(u,ng_u,div_coeff,lo,hi,do_mult)
 
-    integer        , intent(in   ) :: lo(:),hi(:),ng
-    real(kind=dp_t), intent(inout) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
+    integer        , intent(in   ) :: lo(:),hi(:),ng_u
+    real(kind=dp_t), intent(inout) :: u(lo(1)-ng_u:,lo(2)-ng_u:,lo(3)-ng_u:,:)
     real(dp_t)     , intent(in   ) :: div_coeff(0:)
     logical        , intent(in   ) :: do_mult
 
@@ -1172,10 +1199,10 @@ contains
     ! local
     real(kind=dp_t), pointer :: ump(:,:,:,:) 
     real(kind=dp_t), pointer ::  dp(:,:,:,:) 
-    integer :: i,ngu,ngd,n,dm
+    integer :: i,ng_u,ng_d,n,dm
 
-    ngu = u(1)%ng
-    ngd = div_coeff(1)%ng
+    ng_u = u(1)%ng
+    ng_d = div_coeff(1)%ng
     dm = u(1)%dim
 
     do n = 1, nlevs
@@ -1186,7 +1213,7 @@ contains
           dp => dataptr(div_coeff(n),i)
           select case (dm)
           case (3)
-             call mult_by_3d_coeff_3d(ump(:,:,:,:), ngu, dp(:,:,:,1), ngd, do_mult)
+             call mult_by_3d_coeff_3d(ump(:,:,:,:), ng_u, dp(:,:,:,1), ng_d, do_mult)
           end select
        end do
 
@@ -1196,17 +1223,17 @@ contains
 
   !   ********************************************************************************** !
   
-  subroutine mult_by_3d_coeff_3d(u,ngu,div_coeff,ngd,do_mult)
+  subroutine mult_by_3d_coeff_3d(u,ng_u,div_coeff,ng_d,do_mult)
 
-    integer        , intent(in   ) :: ngu,ngd
-    real(kind=dp_t), intent(inout) ::         u(-ngu:,-ngu:,-ngu:,:)
-    real(dp_t)     , intent(in   ) :: div_coeff(-ngd:,-ngd:,-ngd:)
+    integer        , intent(in   ) :: ng_u,ng_d
+    real(kind=dp_t), intent(inout) ::         u(-ng_u:,-ng_u:,-ng_u:,:)
+    real(dp_t)     , intent(in   ) :: div_coeff(-ng_d:,-ng_d:,-ng_d:)
     logical        , intent(in   ) :: do_mult
 
     integer :: i,j,k,m,nx,ny,nz
-    nx = size(u,dim=1) - 2*ngu
-    ny = size(u,dim=2) - 2*ngu
-    nz = size(u,dim=3) - 2*ngu
+    nx = size(u,dim=1) - 2*ng_u
+    ny = size(u,dim=2) - 2*ng_u
+    nz = size(u,dim=3) - 2*ng_u
 
     if (do_mult) then
        do m = 1, size(u,dim=4)
