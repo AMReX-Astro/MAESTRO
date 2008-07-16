@@ -15,7 +15,7 @@ contains
     type(multifab), intent(inout) :: crse(:)
 
     ! local
-    integer        :: i,j,k,dm
+    integer        :: i,j,k,dm,ng_f,ng_c
     integer        :: c_lo(fine(1)%dim),c_hi(fine(1)%dim)
     integer        :: f_lo(fine(1)%dim),f_hi(fine(1)%dim)
 
@@ -81,6 +81,9 @@ contains
 
        call destroy(tcrse)
        call destroy(tla)
+       
+       ng_f = f_mf%ng
+       ng_c = c_mf%ng
 
        ! Fill in some of the fine ghost cells from crse.
        do j=1,nboxes(f_mf)
@@ -93,9 +96,9 @@ contains
           c_hi = upb(get_box(c_mf,j))
           select case(dm)
           case (2)
-             call pc_edge_interp_2d(i,f_lo,f_hi,c_lo,c_hi,fp(:,:,1,1),cp(:,:,1,1))
+             call pc_edge_interp_2d(i,f_lo,f_hi,c_lo,c_hi,fp(:,:,1,1),ng_f,cp(:,:,1,1),ng_c)
           case (3)
-             call pc_edge_interp_3d(i,f_lo,f_hi,c_lo,c_hi,fp(:,:,:,1),cp(:,:,:,1))
+             call pc_edge_interp_3d(i,f_lo,f_hi,c_lo,c_hi,fp(:,:,:,1),ng_f,cp(:,:,:,1),ng_c)
           end select
        end do
 
@@ -105,16 +108,15 @@ contains
        do j=1,nboxes(f_mf)
           if ( remote(f_mf,j) ) cycle
           fp => dataptr(f_mf,j)
-          cp => dataptr(c_mf,j)
           f_lo = lwb(get_box(f_mf,j))
           f_hi = upb(get_box(f_mf,j))
           c_lo = lwb(get_box(c_mf,j))
           c_hi = upb(get_box(c_mf,j))
           select case(dm)
           case (2)
-             call lin_edge_interp_2d(i,f_lo,f_hi,c_lo,c_hi,fp(:,:,1,1))
+             call lin_edge_interp_2d(i,f_lo,f_hi,c_lo,c_hi,fp(:,:,1,1),ng_f)
           case (3)
-             call lin_edge_interp_3d(i,f_lo,f_hi,c_lo,c_hi,fp(:,:,:,1))
+             call lin_edge_interp_3d(i,f_lo,f_hi,c_lo,c_hi,fp(:,:,:,1),ng_f)
           end select
        end do
 
@@ -150,6 +152,8 @@ contains
        call destroy(tfine)
        call destroy(tla)
 
+       ng_f = fine(1)%ng
+
        ! now fix up umac grown due to the low order interpolation we used
        do j=1,fine(i)%nboxes
           if ( multifab_remote(fine(i), j) ) cycle
@@ -158,9 +162,9 @@ contains
           f_hi = upb(get_box(fine(i), j))
           select case(dm)
           case (2)
-             call correct_umac_grown_2d(fp(:,:,1,1),f_lo,f_hi,i)
+             call correct_umac_grown_2d(fp(:,:,1,1),ng_f,f_lo,f_hi,i)
           case (3)
-             call correct_umac_grown_3d(fp(:,:,:,1),f_lo,f_hi,i)
+             call correct_umac_grown_3d(fp(:,:,:,1),ng_f,f_lo,f_hi,i)
           end select
        end do
 
@@ -173,11 +177,12 @@ contains
 
   end subroutine create_umac_grown
 
-  subroutine pc_edge_interp_2d(dir,f_lo,f_hi,c_lo,c_hi,fine,crse)
+  subroutine pc_edge_interp_2d(dir,f_lo,f_hi,c_lo,c_hi,fine,ng_f,crse,ng_c)
 
     integer,         intent(in   ) :: dir,f_lo(:),f_hi(:),c_lo(:),c_hi(:)
-    real(kind=dp_t), intent(inout) :: fine(f_lo(1):,f_lo(2):)
-    real(kind=dp_t), intent(inout) :: crse(c_lo(1):,c_lo(2):)
+    integer,         intent(in   ) :: ng_f,ng_c
+    real(kind=dp_t), intent(inout) :: fine(f_lo(1)-ng_f:,f_lo(2)-ng_f:)
+    real(kind=dp_t), intent(inout) :: crse(c_lo(1)-ng_c:,c_lo(2)-ng_c:)
 
     ! local
     integer :: i,ii,j,jj
@@ -206,11 +211,12 @@ contains
 
   end subroutine pc_edge_interp_2d
 
-  subroutine pc_edge_interp_3d(dir,f_lo,f_hi,c_lo,c_hi,fine,crse)
+  subroutine pc_edge_interp_3d(dir,f_lo,f_hi,c_lo,c_hi,fine,ng_f,crse,ng_c)
 
     integer,         intent(in   ) :: dir,f_lo(:),f_hi(:),c_lo(:),c_hi(:)
-    real(kind=dp_t), intent(inout) :: fine(f_lo(1):,f_lo(2):,f_lo(3):)
-    real(kind=dp_t), intent(inout) :: crse(c_lo(1):,c_lo(2):,c_lo(3):)
+    integer,         intent(in   ) :: ng_f,ng_c
+    real(kind=dp_t), intent(inout) :: fine(f_lo(1)-ng_f:,f_lo(2)-ng_f:,f_lo(3)-ng_f:)
+    real(kind=dp_t), intent(inout) :: crse(c_lo(1)-ng_c:,c_lo(2)-ng_c:,c_lo(3)-ng_c:)
 
     ! local
     integer :: i,ii,j,jj,k,kk
@@ -261,10 +267,10 @@ contains
 
   end subroutine pc_edge_interp_3d
 
-  subroutine lin_edge_interp_2d(dir,f_lo,f_hi,c_lo,c_hi,fine)
+  subroutine lin_edge_interp_2d(dir,f_lo,f_hi,c_lo,c_hi,fine,ng_f)
 
-    integer,         intent(in   ) :: dir,f_lo(:),f_hi(:),c_lo(:),c_hi(:)
-    real(kind=dp_t), intent(inout) :: fine(f_lo(1):,f_lo(2):)
+    integer,         intent(in   ) :: dir,f_lo(:),f_hi(:),c_lo(:),c_hi(:),ng_f
+    real(kind=dp_t), intent(inout) :: fine(f_lo(1)-ng_f:,f_lo(2)-ng_f:)
 
     ! local
     integer :: i,ii,j,jj
@@ -293,10 +299,10 @@ contains
 
   end subroutine lin_edge_interp_2d
 
-  subroutine lin_edge_interp_3d(dir,f_lo,f_hi,c_lo,c_hi,fine)
+  subroutine lin_edge_interp_3d(dir,f_lo,f_hi,c_lo,c_hi,fine,ng_f)
 
-    integer,         intent(in   ) :: dir,f_lo(:),f_hi(:),c_lo(:),c_hi(:)
-    real(kind=dp_t), intent(inout) :: fine(f_lo(1):,f_lo(2):,f_lo(3):)
+    integer,         intent(in   ) :: dir,f_lo(:),f_hi(:),c_lo(:),c_hi(:),ng_f
+    real(kind=dp_t), intent(inout) :: fine(f_lo(1)-ng_f:,f_lo(2)-ng_f:,f_lo(3)-ng_f:)
 
     ! local
     integer :: i,ii,j,jj,k,kk
@@ -350,10 +356,10 @@ contains
 
   end subroutine lin_edge_interp_3d
 
-  subroutine correct_umac_grown_2d(vel,lo,hi,dir)
+  subroutine correct_umac_grown_2d(vel,ng_f,lo,hi,dir)
     
-    integer        , intent(in   ) :: lo(:),hi(:),dir
-    real(kind=dp_t), intent(inout) :: vel(lo(1)-1:,lo(2)-1:)
+    integer        , intent(in   ) :: lo(:),hi(:),dir,ng_f
+    real(kind=dp_t), intent(inout) :: vel(lo(1)-ng_f:,lo(2)-ng_f:)
 
     ! local
     integer         :: i,j,signx,signy
@@ -452,10 +458,10 @@ contains
 
   end subroutine correct_umac_grown_2d
 
-  subroutine correct_umac_grown_3d(vel,lo,hi,dir)
+  subroutine correct_umac_grown_3d(vel,ng_f,lo,hi,dir)
     
-    integer        , intent(in   ) :: lo(:),hi(:),dir
-    real(kind=dp_t), intent(inout) :: vel(lo(1)-1:,lo(2)-1:,lo(3)-1:)
+    integer        , intent(in   ) :: lo(:),hi(:),dir,ng_f
+    real(kind=dp_t), intent(inout) :: vel(lo(1)-ng_f:,lo(2)-ng_f:,lo(3)-ng_f:)
 
     ! local
     integer         :: i,j,k,signx,signy,signz
@@ -479,8 +485,10 @@ contains
        end do
 
        ! store the coarse velocity in a temporary array
-       temp_velx_lo(lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1) = vel(lo(1)-1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1)
-       temp_velx_hi(lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1) = vel(hi(1)+2,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1)
+       temp_velx_lo(lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1) = &
+            vel(lo(1)-1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1)
+       temp_velx_hi(lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1) = &
+            vel(hi(1)+2,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1)
 
        ! linearly interpolate to obtain a better estimate of the velocity from
        ! the first coarse ghost cell
@@ -497,10 +505,14 @@ contains
              else
                 signy = -1
              end if
-             vel(lo(1)-1,j,k) = (9.d0/16.d0)*vel(lo(1)-1,j,k) + (3.d0/16.d0)*temp_velx_lo(j+signy,k) &
-                  + (3.d0/16.d0)*temp_velx_lo(j,k+signz) + (1.d0/16.d0)*temp_velx_lo(j+signy,k+signz)
-             vel(hi(1)+2,j,k) = (9.d0/16.d0)*vel(hi(1)+2,j,k) + (3.d0/16.d0)*temp_velx_hi(j+signy,k) &
-                  + (3.d0/16.d0)*temp_velx_hi(j,k+signz) + (1.d0/16.d0)*temp_velx_hi(j+signy,k+signz)
+             vel(lo(1)-1,j,k) = (9.d0/16.d0)*vel(lo(1)-1,j,k) &
+                  + (3.d0/16.d0)*temp_velx_lo(j+signy,k) &
+                  + (3.d0/16.d0)*temp_velx_lo(j,k+signz) &
+                  + (1.d0/16.d0)*temp_velx_lo(j+signy,k+signz)
+             vel(hi(1)+2,j,k) = (9.d0/16.d0)*vel(hi(1)+2,j,k) &
+                  + (3.d0/16.d0)*temp_velx_hi(j+signy,k) &
+                  + (3.d0/16.d0)*temp_velx_hi(j,k+signz) &
+                  + (1.d0/16.d0)*temp_velx_hi(j+signy,k+signz)
           end do
        end do
 
@@ -519,14 +531,18 @@ contains
        ! we linearly interpolate to get a better estimate of this value
        do j=lo(2)-1,hi(2)+1
           do i=lo(1),hi(1)+1
-             vel(i,j,lo(3)-1) = (3.d0/4.d0)*vel(i,j,lo(3)-1) + EIGHTH*(vel(i,j,lo(3))+vel(i,j,lo(3)+1))
-             vel(i,j,hi(3)+1) = (3.d0/4.d0)*vel(i,j,hi(3)+1) + EIGHTH*(vel(i,j,hi(3))+vel(i,j,hi(3)-1))
+             vel(i,j,lo(3)-1) = (3.d0/4.d0)*vel(i,j,lo(3)-1) &
+                  + EIGHTH*(vel(i,j,lo(3))+vel(i,j,lo(3)+1))
+             vel(i,j,hi(3)+1) = (3.d0/4.d0)*vel(i,j,hi(3)+1) &
+                  + EIGHTH*(vel(i,j,hi(3))+vel(i,j,hi(3)-1))
           end do
        end do
        do k=lo(3)-1,hi(3)+1
           do i=lo(1),hi(1)+1
-             vel(i,lo(2)-1,k) = (3.d0/4.d0)*vel(i,lo(2)-1,k) + EIGHTH*(vel(i,lo(2),k)+vel(i,lo(2)+1,k))
-             vel(i,hi(2)+1,k) = (3.d0/4.d0)*vel(i,hi(2)+1,k) + EIGHTH*(vel(i,hi(2),k)+vel(i,hi(2)-1,k))
+             vel(i,lo(2)-1,k) = (3.d0/4.d0)*vel(i,lo(2)-1,k) &
+                  + EIGHTH*(vel(i,lo(2),k)+vel(i,lo(2)+1,k))
+             vel(i,hi(2)+1,k) = (3.d0/4.d0)*vel(i,hi(2)+1,k) &
+                  + EIGHTH*(vel(i,hi(2),k)+vel(i,hi(2)-1,k))
           end do
        end do
 
@@ -543,8 +559,10 @@ contains
        end do
 
        ! store the coarse velocity in a temporary array
-       temp_vely_lo(lo(1)-1:hi(1)+1,lo(3)-1:hi(3)+1) = vel(lo(1)-1:hi(1)+1,lo(2)-1,lo(3)-1:hi(3)+1)
-       temp_vely_hi(lo(1)-1:hi(1)+1,lo(3)-1:hi(3)+1) = vel(lo(1)-1:hi(1)+1,hi(2)+2,lo(3)-1:hi(3)+1)
+       temp_vely_lo(lo(1)-1:hi(1)+1,lo(3)-1:hi(3)+1) = &
+            vel(lo(1)-1:hi(1)+1,lo(2)-1,lo(3)-1:hi(3)+1)
+       temp_vely_hi(lo(1)-1:hi(1)+1,lo(3)-1:hi(3)+1) = &
+            vel(lo(1)-1:hi(1)+1,hi(2)+2,lo(3)-1:hi(3)+1)
 
        ! linearly interpolate to obtain a better estimate of the velocity from
        ! the first coarse ghost cell
@@ -561,10 +579,14 @@ contains
              else
                 signx = -1
              end if
-             vel(i,lo(2)-1,k) = (9.d0/16.d0)*vel(i,lo(2)-1,k) + (3.d0/16.d0)*temp_vely_lo(i+signx,k) &
-                  + (3.d0/16.d0)*temp_vely_lo(i,k+signz) + (1.d0/16.d0)*temp_vely_lo(i+signx,k+signz)
-             vel(i,hi(2)+2,k) = (9.d0/16.d0)*vel(i,hi(2)+2,k) + (3.d0/16.d0)*temp_vely_hi(i+signx,k) &
-                  + (3.d0/16.d0)*temp_vely_hi(i,k+signz) + (1.d0/16.d0)*temp_vely_hi(i+signx,k+signz)
+             vel(i,lo(2)-1,k) = (9.d0/16.d0)*vel(i,lo(2)-1,k) &
+                  + (3.d0/16.d0)*temp_vely_lo(i+signx,k) &
+                  + (3.d0/16.d0)*temp_vely_lo(i,k+signz) &
+                  + (1.d0/16.d0)*temp_vely_lo(i+signx,k+signz)
+             vel(i,hi(2)+2,k) = (9.d0/16.d0)*vel(i,hi(2)+2,k) &
+                  + (3.d0/16.d0)*temp_vely_hi(i+signx,k) &
+                  + (3.d0/16.d0)*temp_vely_hi(i,k+signz) &
+                  + (1.d0/16.d0)*temp_vely_hi(i+signx,k+signz)
           end do
        end do
 
@@ -583,14 +605,18 @@ contains
        ! we linearly interpolate to get a better estimate of this value
        do j=lo(2),hi(2)+1
           do i=lo(1)-1,hi(1)+1
-             vel(i,j,lo(3)-1) = (3.d0/4.d0)*vel(i,j,lo(3)-1) + EIGHTH*(vel(i,j,lo(3))+vel(i,j,lo(3)+1))
-             vel(i,j,hi(3)+1) = (3.d0/4.d0)*vel(i,j,hi(3)+1) + EIGHTH*(vel(i,j,hi(3))+vel(i,j,hi(3)-1))
+             vel(i,j,lo(3)-1) = (3.d0/4.d0)*vel(i,j,lo(3)-1) &
+                  + EIGHTH*(vel(i,j,lo(3))+vel(i,j,lo(3)+1))
+             vel(i,j,hi(3)+1) = (3.d0/4.d0)*vel(i,j,hi(3)+1) &
+                  + EIGHTH*(vel(i,j,hi(3))+vel(i,j,hi(3)-1))
           end do
        end do
        do k=lo(3)-1,hi(3)+1
           do j=lo(2),hi(2)+1
-             vel(lo(1)-1,j,k) = (3.d0/4.d0)*vel(lo(1)-1,j,k) + EIGHTH*(vel(lo(1),j,k)+vel(lo(1)+1,j,k))
-             vel(hi(1)+1,j,k) = (3.d0/4.d0)*vel(hi(1)+1,j,k) + EIGHTH*(vel(hi(1),j,k)+vel(hi(1)-1,j,k))
+             vel(lo(1)-1,j,k) = (3.d0/4.d0)*vel(lo(1)-1,j,k) &
+                  + EIGHTH*(vel(lo(1),j,k)+vel(lo(1)+1,j,k))
+             vel(hi(1)+1,j,k) = (3.d0/4.d0)*vel(hi(1)+1,j,k) &
+                  + EIGHTH*(vel(hi(1),j,k)+vel(hi(1)-1,j,k))
           end do
        end do
 
@@ -607,8 +633,10 @@ contains
        end do
 
        ! store the coarse velocity in a temporary array
-       temp_velz_lo(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1) = vel(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1)
-       temp_velz_hi(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1) = vel(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,hi(3)+2)
+       temp_velz_lo(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1) = &
+            vel(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1)
+       temp_velz_hi(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1) = &
+            vel(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,hi(3)+2)
 
        ! linearly interpolate to obtain a better estimate of the velocity from
        ! the first coarse ghost cell
@@ -625,10 +653,14 @@ contains
              else
                 signx = -1
              end if
-             vel(i,j,lo(3)-1) = (9.d0/16.d0)*vel(i,j,lo(3)-1) + (3.d0/16.d0)*temp_velz_lo(i+signx,j) &
-                  + (3.d0/16.d0)*temp_velz_lo(i,j+signy) + (1.d0/16.d0)*temp_velz_lo(i+signx,j+signy)
-             vel(i,j,hi(3)+2) = (9.d0/16.d0)*vel(i,j,hi(3)+2) + (3.d0/16.d0)*temp_velz_hi(i+signx,j) &
-                  + (3.d0/16.d0)*temp_velz_hi(i,j+signy) + (1.d0/16.d0)*temp_velz_hi(i+signx,j+signy)
+             vel(i,j,lo(3)-1) = (9.d0/16.d0)*vel(i,j,lo(3)-1) &
+                  + (3.d0/16.d0)*temp_velz_lo(i+signx,j) &
+                  + (3.d0/16.d0)*temp_velz_lo(i,j+signy) &
+                  + (1.d0/16.d0)*temp_velz_lo(i+signx,j+signy)
+             vel(i,j,hi(3)+2) = (9.d0/16.d0)*vel(i,j,hi(3)+2) &
+                  + (3.d0/16.d0)*temp_velz_hi(i+signx,j) &
+                  + (3.d0/16.d0)*temp_velz_hi(i,j+signy) &
+                  + (1.d0/16.d0)*temp_velz_hi(i+signx,j+signy)
           end do
        end do
 
@@ -647,14 +679,18 @@ contains
        ! we linearly interpolate to get a better estimate of this value
        do k=lo(3),hi(3)+1
           do i=lo(1)-1,hi(1)+1
-             vel(i,lo(2)-1,k) = (3.d0/4.d0)*vel(i,lo(2)-1,k) + EIGHTH*(vel(i,lo(2),k)+vel(i,lo(2)+1,k))
-             vel(i,hi(2)+1,k) = (3.d0/4.d0)*vel(i,hi(2)+1,k) + EIGHTH*(vel(i,hi(2),k)+vel(i,hi(2)-1,k))
+             vel(i,lo(2)-1,k) = (3.d0/4.d0)*vel(i,lo(2)-1,k) &
+                  + EIGHTH*(vel(i,lo(2),k)+vel(i,lo(2)+1,k))
+             vel(i,hi(2)+1,k) = (3.d0/4.d0)*vel(i,hi(2)+1,k) &
+                  + EIGHTH*(vel(i,hi(2),k)+vel(i,hi(2)-1,k))
           end do
        end do
        do k=lo(3),hi(3)+1
           do j=lo(2)-1,hi(2)+1
-             vel(lo(1)-1,j,k) = (3.d0/4.d0)*vel(lo(1)-1,j,k) + EIGHTH*(vel(lo(1),j,k)+vel(lo(1)+1,j,k))
-             vel(hi(1)+1,j,k) = (3.d0/4.d0)*vel(hi(1)+1,j,k) + EIGHTH*(vel(hi(1),j,k)+vel(hi(1)-1,j,k))
+             vel(lo(1)-1,j,k) = (3.d0/4.d0)*vel(lo(1)-1,j,k) &
+                  + EIGHTH*(vel(lo(1),j,k)+vel(lo(1)+1,j,k))
+             vel(hi(1)+1,j,k) = (3.d0/4.d0)*vel(hi(1)+1,j,k) &
+                  + EIGHTH*(vel(hi(1),j,k)+vel(hi(1)-1,j,k))
           end do
        end do
 
@@ -668,7 +704,7 @@ contains
     integer       , intent(in   ) :: nlevs
     type(multifab), intent(inout) :: umac(:,:)
 
-    integer :: i,n,dm
+    integer :: i,n,dm,ng_um
     integer :: lo(umac(1,1)%dim),hi(umac(1,1)%dim)
 
     real(kind=dp_t), pointer :: ump(:,:,:,:) 
@@ -676,6 +712,7 @@ contains
     real(kind=dp_t), pointer :: wmp(:,:,:,:)
 
     dm = size(umac,dim=2)
+    ng_um = umac(1,1)%ng
 
     ! we only need to do this for fine levels
     do n=2,nlevs
@@ -687,20 +724,21 @@ contains
           hi = upb(get_box(umac(n,1), i))
           select case (dm)
           case (2)
-             call create_umac_grown_onesided_2d(ump(:,:,1,1),vmp(:,:,1,1),lo,hi)
+             call create_umac_grown_onesided_2d(ump(:,:,1,1),vmp(:,:,1,1),ng_um,lo,hi)
           case (3)
-             call create_umac_grown_onesided_3d(ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),lo,hi)
+             call create_umac_grown_onesided_3d(ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1), &
+                                                ng_um,lo,hi)
           end select
        end do
     end do
 
   end subroutine create_umac_grown_onesided
 
-  subroutine create_umac_grown_onesided_2d(umac,vmac,lo,hi)
+  subroutine create_umac_grown_onesided_2d(umac,vmac,ng_um,lo,hi)
 
-    integer        , intent(in   ) :: lo(:),hi(:)
-    real(kind=dp_t), intent(inout) :: umac(lo(1)-1:,lo(2)-1:)
-    real(kind=dp_t), intent(inout) :: vmac(lo(1)-1:,lo(2)-1:)
+    integer        , intent(in   ) :: lo(:),hi(:),ng_um
+    real(kind=dp_t), intent(inout) :: umac(lo(1)-ng_um:,lo(2)-ng_um:)
+    real(kind=dp_t), intent(inout) :: vmac(lo(1)-ng_um:,lo(2)-ng_um:)
 
     integer i,j
 
@@ -728,12 +766,12 @@ contains
 
   end subroutine create_umac_grown_onesided_2d
 
-  subroutine create_umac_grown_onesided_3d(umac,vmac,wmac,lo,hi)
+  subroutine create_umac_grown_onesided_3d(umac,vmac,wmac,ng_um,lo,hi)
 
-    integer        , intent(in   ) :: lo(:),hi(:)
-    real(kind=dp_t), intent(inout) :: umac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-    real(kind=dp_t), intent(inout) :: vmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
-    real(kind=dp_t), intent(inout) :: wmac(lo(1)-1:,lo(2)-1:,lo(3)-1:)
+    integer        , intent(in   ) :: lo(:),hi(:),ng_um
+    real(kind=dp_t), intent(inout) :: umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+    real(kind=dp_t), intent(inout) :: vmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+    real(kind=dp_t), intent(inout) :: wmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
 
     integer i,j,k
 
