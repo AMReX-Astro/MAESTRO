@@ -54,7 +54,8 @@ contains
     integer        , intent(in   ) :: velpred,start_scomp,start_bccomp,num_comp
     type(ml_layout), intent(in   ) :: mla
 
-    integer                  :: i,r,scomp,bccomp,ng,dm,n
+    integer                  :: i,r,scomp,bccomp,dm,n
+    integer                  :: ng_s,ng_u,ng_se,ng_um,ng_ut,ng_f,ng_w0,ng_gw,ng_n
     integer                  :: lo(u(1)%dim), hi(u(1)%dim)
     real(kind=dp_t), pointer :: sop(:,:,:,:)
     real(kind=dp_t), pointer :: uop(:,:,:,:)
@@ -80,7 +81,14 @@ contains
     call build(bpt, "make_edge_state")
 
     dm = u(1)%dim
-    ng = s(1)%ng
+    ng_s = s(1)%ng
+    ng_u = u(1)%ng
+    ng_se = sedge(1,1)%ng
+    ng_um = umac(1,1)%ng
+    ng_ut = utrans(1,1)%ng
+    ng_f = force(1)%ng
+    ng_w0 = w0_cart_vec(1)%ng
+    ng_n = normal(1)%ng
 
     if (spherical .eq. 1) then
        allocate (gradw0_rad(0:nr_fine-1))
@@ -122,6 +130,7 @@ contains
           call setval(gradw0_cart, ZERO, all=.true.)
        endif
        
+       ng_gw = gradw0_cart%ng
 
        do i = 1, s(n)%nboxes
           if ( multifab_remote(s(n),i) ) cycle
@@ -139,15 +148,15 @@ contains
           case (2)
              do scomp = start_scomp, start_scomp + num_comp - 1
                 bccomp = start_bccomp + scomp - start_scomp
-                call make_edge_state_2d(n,sop(:,:,1,:), uop(:,:,1,:), &
-                                        sepx(:,:,1,:), sepy(:,:,1,:), &
-                                        ump(:,:,1,1), vmp(:,:,1,1), &
-                                        utp(:,:,1,1), vtp(:,:,1,1), &
-                                        fp(:,:,1,:), w0(n,:), &
+                call make_edge_state_2d(n,sop(:,:,1,:), ng_s, uop(:,:,1,:), ng_u, &
+                                        sepx(:,:,1,:), sepy(:,:,1,:), ng_se, &
+                                        ump(:,:,1,1), vmp(:,:,1,1), ng_um, &
+                                        utp(:,:,1,1), vtp(:,:,1,1), ng_ut, &
+                                        fp(:,:,1,:), ng_f, w0(n,:), &
                                         lo, dx(n,:), dt, is_vel, &
                                         the_bc_level(n)%phys_bc_level_array(i,:,:), &
                                         the_bc_level(n)%adv_bc_level_array(i,:,:,bccomp:), &
-                                        velpred, ng, scomp)
+                                        velpred, scomp)
              end do
 
           case (3)
@@ -161,16 +170,16 @@ contains
              end if
              do scomp = start_scomp, start_scomp + num_comp - 1
                 bccomp = start_bccomp + scomp - start_scomp
-                call make_edge_state_3d(n,sop(:,:,:,:), uop(:,:,:,:), &
-                                        sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
-                                        ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
-                                        utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), &
-                                        fp(:,:,:,:), np(:,:,:,:), &
-                                        w0p(:,:,:,:), gw0p(:,:,:,1), &
+                call make_edge_state_3d(n,sop(:,:,:,:), ng_s, uop(:,:,:,:), ng_u, &
+                                        sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), ng_se, &
+                                        ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
+                                        utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), ng_ut, &
+                                        fp(:,:,:,:), ng_f, np(:,:,:,:), ng_n, &
+                                        w0p(:,:,:,:), ng_w0, gw0p(:,:,:,1), ng_gw, &
                                         lo, dx(n,:), dt, is_vel, &
                                         the_bc_level(n)%phys_bc_level_array(i,:,:), &
                                         the_bc_level(n)%adv_bc_level_array(i,:,:,bccomp:), &
-                                        velpred, ng, scomp)
+                                        velpred, scomp)
              end do
           end select
        end do
@@ -208,9 +217,9 @@ contains
   end subroutine make_edge_state
 
   
-  subroutine make_edge_state_2d(n,s,u,sedgex,sedgey,umac,vmac,utrans, &
-                                vtrans,force,w0,lo,dx,dt,is_vel,phys_bc,adv_bc,velpred, &
-                                ng,comp)
+  subroutine make_edge_state_2d(n,s,ng_s,u,ng_u,sedgex,sedgey,ng_se,umac,vmac,ng_um,utrans, &
+                                vtrans,ng_ut,force,ng_f,w0,lo,dx,dt,is_vel,phys_bc,adv_bc, &
+                                velpred,comp)
 
     use geometry, only: nr, r_start_coord, r_end_coord
     use bc_module
@@ -218,23 +227,23 @@ contains
     use bl_constants_module
     use probin_module, only: use_new_godunov
 
-    integer        , intent(in   ) :: n,lo(:)
-    real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng:,lo(2)-ng:,:)
-    real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng:,lo(2)-ng:,:)
-    real(kind=dp_t), intent(inout) :: sedgex(lo(1)   :,lo(2)   :,:)
-    real(kind=dp_t), intent(inout) :: sedgey(lo(1)   :,lo(2)   :,:)
-    real(kind=dp_t), intent(inout) ::   umac(lo(1)- 1:,lo(2)- 1:)
-    real(kind=dp_t), intent(inout) ::   vmac(lo(1)- 1:,lo(2)- 1:)
-    real(kind=dp_t), intent(in   ) :: utrans(lo(1)- 1:,lo(2)- 1:)
-    real(kind=dp_t), intent(in   ) :: vtrans(lo(1)- 1:,lo(2)- 1:)
-    real(kind=dp_t), intent(in   ) ::  force(lo(1)- 1:,lo(2)- 1:,:)
+    integer        , intent(in   ) :: n,lo(:),ng_s,ng_u,ng_se,ng_um,ng_ut,ng_f
+    real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :,:)
+    real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u :,lo(2)-ng_u :,:)
+    real(kind=dp_t), intent(inout) :: sedgex(lo(1)-ng_se:,lo(2)-ng_se:,:)
+    real(kind=dp_t), intent(inout) :: sedgey(lo(1)-ng_se:,lo(2)-ng_se:,:)
+    real(kind=dp_t), intent(inout) ::   umac(lo(1)-ng_um:,lo(2)-ng_um:)
+    real(kind=dp_t), intent(inout) ::   vmac(lo(1)-ng_um:,lo(2)-ng_um:)
+    real(kind=dp_t), intent(in   ) :: utrans(lo(1)-ng_ut:,lo(2)-ng_ut:)
+    real(kind=dp_t), intent(in   ) :: vtrans(lo(1)-ng_ut:,lo(2)-ng_ut:)
+    real(kind=dp_t), intent(in   ) ::  force(lo(1)-ng_f :,lo(2)-ng_f :,:)
     real(kind=dp_t), intent(in   ) ::     w0(0:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
     logical        , intent(in   ) :: is_vel
     integer        , intent(in   ) :: phys_bc(:,:)
     integer        , intent(in   ) :: adv_bc(:,:,:)
     integer        , intent(in   ) :: velpred
-    integer        , intent(in   ) :: ng,comp
+    integer        , intent(in   ) :: comp
     
     ! Local variables
     real(kind=dp_t), allocatable :: slopex(:,:,:),slopey(:,:,:)
@@ -252,8 +261,8 @@ contains
     integer :: i,j,is,js,ie,je
     logical :: test
     
-    hi(1) = lo(1) + size(s,dim=1) - (2*ng+1)
-    hi(2) = lo(2) + size(s,dim=2) - (2*ng+1)
+    hi(1) = lo(1) + size(s,dim=1) - (2*ng_s+1)
+    hi(2) = lo(2) + size(s,dim=2) - (2*ng_s+1)
     
     is = lo(1)
     ie = hi(1)
@@ -268,8 +277,8 @@ contains
     allocate(slopex(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1))
     allocate(slopey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1))
     
-    call slopex_2d(s(:,:,comp:),slopex,lo,ng,1,adv_bc)
-    call slopey_2d(s(:,:,comp:),slopey,lo,ng,1,adv_bc)
+    call slopex_2d(s(:,:,comp:),slopex,lo,ng_s,1,adv_bc)
+    call slopey_2d(s(:,:,comp:),slopey,lo,ng_s,1,adv_bc)
     
     abs_eps = 1.0d-8
     
@@ -631,43 +640,39 @@ contains
   end subroutine make_edge_state_2d
   
   
-  subroutine make_edge_state_3d(n, s,u, &
-                                sedgex,sedgey,sedgez, &
-                                umac,vmac,wmac, &
-                                utrans,vtrans,wtrans, &
-                                force, normal, &
-                                w0_cart_vec,gradw0_cart, &
-                                lo,dx,dt,is_vel, &
-                                phys_bc,adv_bc, &
-                                velpred,ng,comp)
+  subroutine make_edge_state_3d(n,s,ng_s,u,ng_u,sedgex,sedgey,sedgez,ng_se, &
+                                umac,vmac,wmac,ng_um,utrans,vtrans,wtrans,ng_ut, &
+                                force,ng_f,normal,ng_n,w0_cart_vec,ng_w0,gradw0_cart,ng_gw, &
+                                lo,dx,dt,is_vel,phys_bc,adv_bc,velpred,comp)
 
     use bc_module
     use slope_module
     use bl_constants_module
     use geometry, only: spherical, r_start_coord, r_end_coord, nr
 
-    integer        , intent(in   ) :: n, lo(:)
-    real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-    real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-    real(kind=dp_t), intent(inout) :: sedgex(lo(1)   :,lo(2)   :,lo(3)   :,:)
-    real(kind=dp_t), intent(inout) :: sedgey(lo(1)   :,lo(2)   :,lo(3)   :,:)
-    real(kind=dp_t), intent(inout) :: sedgez(lo(1)   :,lo(2)   :,lo(3)   :,:)
-    real(kind=dp_t), intent(inout) ::   umac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
-    real(kind=dp_t), intent(inout) ::   vmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
-    real(kind=dp_t), intent(inout) ::   wmac(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
-    real(kind=dp_t), intent(in   ) :: utrans(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
-    real(kind=dp_t), intent(in   ) :: vtrans(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
-    real(kind=dp_t), intent(in   ) :: wtrans(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
-    real(kind=dp_t), intent(in   ) ::  force(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
-    real(kind=dp_t), intent(in   ) :: normal(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
-    real(kind=dp_t), intent(in   ) :: w0_cart_vec(lo(1)- 2:,lo(2)- 2:,lo(3)- 2:,:)
-    real(kind=dp_t), intent(in   ) :: gradw0_cart(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:)
+    integer        , intent(in   ) :: n,lo(:)
+    integer        , intent(in   ) :: ng_s,ng_u,ng_se,ng_um,ng_ut,ng_f,ng_n,ng_w0,ng_gw
+    real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :,:)
+    real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :,:)
+    real(kind=dp_t), intent(inout) :: sedgex(lo(1)-ng_se:,lo(2)-ng_se:,lo(3)-ng_se:,:)
+    real(kind=dp_t), intent(inout) :: sedgey(lo(1)-ng_se:,lo(2)-ng_se:,lo(3)-ng_se:,:)
+    real(kind=dp_t), intent(inout) :: sedgez(lo(1)-ng_se:,lo(2)-ng_se:,lo(3)-ng_se:,:)
+    real(kind=dp_t), intent(inout) ::   umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+    real(kind=dp_t), intent(inout) ::   vmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+    real(kind=dp_t), intent(inout) ::   wmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+    real(kind=dp_t), intent(in   ) :: utrans(lo(1)-ng_ut:,lo(2)-ng_ut:,lo(3)-ng_ut:)
+    real(kind=dp_t), intent(in   ) :: vtrans(lo(1)-ng_ut:,lo(2)-ng_ut:,lo(3)-ng_ut:)
+    real(kind=dp_t), intent(in   ) :: wtrans(lo(1)-ng_ut:,lo(2)-ng_ut:,lo(3)-ng_ut:)
+    real(kind=dp_t), intent(in   ) ::  force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :,:)
+    real(kind=dp_t), intent(in   ) :: normal(lo(1)-ng_n :,lo(2)-ng_n :,lo(3)-ng_n :,:)
+    real(kind=dp_t), intent(in   ) :: w0_cart_vec(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:,:)
+    real(kind=dp_t), intent(in   ) :: gradw0_cart(lo(1)-ng_gw:,lo(2)-ng_gw:,lo(3)-ng_gw:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
     logical        , intent(in   ) :: is_vel
     integer        , intent(in   ) :: phys_bc(:,:)
     integer        , intent(in   ) :: adv_bc(:,:,:)
     integer        , intent(in   ) :: velpred
-    integer        , intent(in   ) :: ng,comp
+    integer        , intent(in   ) :: comp
 
     real(kind=dp_t), allocatable :: slopex(:,:,:,:),slopey(:,:,:,:),slopez(:,:,:,:)
     real(kind=dp_t), allocatable :: s_l(:),s_r(:),s_b(:),s_t(:),s_u(:),s_d(:)
@@ -683,9 +688,9 @@ contains
     integer :: hi(3),i,j,k,is,js,ie,je,ks,ke
     logical :: test
     
-    hi(1) = lo(1) + size(s,dim=1) - (2*ng+1)
-    hi(2) = lo(2) + size(s,dim=2) - (2*ng+1)
-    hi(3) = lo(3) + size(s,dim=3) - (2*ng+1)
+    hi(1) = lo(1) + size(s,dim=1) - (2*ng_s+1)
+    hi(2) = lo(2) + size(s,dim=2) - (2*ng_s+1)
+    hi(3) = lo(3) + size(s,dim=3) - (2*ng_s+1)
     
     is = lo(1)
     ie = hi(1)
@@ -706,10 +711,10 @@ contains
     allocate(slopez(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1))
     
     do k = lo(3)-1,hi(3)+1
-       call slopex_2d(s(:,:,k,comp:),slopex(:,:,k,:),lo,ng,1,adv_bc)
-       call slopey_2d(s(:,:,k,comp:),slopey(:,:,k,:),lo,ng,1,adv_bc)
+       call slopex_2d(s(:,:,k,comp:),slopex(:,:,k,:),lo,ng_s,1,adv_bc)
+       call slopey_2d(s(:,:,k,comp:),slopey(:,:,k,:),lo,ng_s,1,adv_bc)
     end do
-    call slopez_3d(s(:,:,:,comp:),slopez,lo,ng,1,adv_bc)
+    call slopez_3d(s(:,:,:,comp:),slopez,lo,ng_s,1,adv_bc)
     
     abs_eps = 1.0d-8
     
