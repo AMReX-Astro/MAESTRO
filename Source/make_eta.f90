@@ -401,12 +401,15 @@ contains
   ! spherical routines
   !---------------------------------------------------------------------------
   subroutine make_etarho_spherical(nlevs,sold,snew,umac,rho0_old,rho0_new, &
-                                   dx,normal,etarho,etarho_cc,mla)
+                                   dx,normal,etarho,etarho_cc,mla,the_bc_level)
 
     use bl_constants_module
     use geometry, only: spherical, nr_fine, r_end_coord, nr
     use variables
     use average_module
+    use ml_restriction_module
+    use multifab_physbc_module
+    use multifab_fill_ghost_module
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(in   ) :: umac(:,:)
@@ -417,6 +420,7 @@ contains
     real(kind=dp_t), intent(  out) :: etarho(:,0:)
     real(kind=dp_t), intent(  out) :: etarho_cc(:,0:)
     type(ml_layout), intent(in   ) :: mla
+    type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     type(multifab) :: eta_cart(mla%nlevel)
     
@@ -466,6 +470,37 @@ contains
        enddo
 
     enddo
+
+
+    ! fill eta_cart ghostcells
+    if (nlevs .eq. 1) then
+
+       ! fill ghost cells for two adjacent grids at the same level
+       ! this includes periodic domain boundary ghost cells
+       call multifab_fill_boundary(eta_cart(nlevs))
+
+       ! fill non-periodic domain boundary ghost cells
+       call multifab_physbc(eta_cart(nlevs),1,foextrap_comp,1,the_bc_level(nlevs))
+
+    else
+
+       ! the loop over nlevs must count backwards to make sure the finer grids are done first
+       do n=nlevs,2,-1
+
+          ! set level n-1 data to be the average of the level n data covering it
+          call ml_cc_restriction(eta_cart(n-1)    ,eta_cart(n)    ,mla%mba%rr(n-1,:))
+
+          ! fill level n ghost cells using interpolation from level n-1 data
+          ! note that multifab_fill_boundary and multifab_physbc are called for
+          ! both levels n-1 and n
+          call multifab_fill_ghost_cells(eta_cart(n),eta_cart(n-1), &
+                                         ng_e,mla%mba%rr(n-1,:), &
+                                         the_bc_level(n-1), the_bc_level(n), &
+                                         1,foextrap_comp,1)
+       enddo
+
+    end if
+    
     
     ! average 
     call average(mla,eta_cart,etarho_cc,dx,1)

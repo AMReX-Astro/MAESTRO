@@ -422,7 +422,8 @@ contains
           call multifab_build(gamma1(n), mla%la(n), 1, 1)
        end do
        
-       call make_gamma(nlevs,gamma1,s1,p0_old,tempbar,dx)
+       call make_gamma(nlevs,mla,gamma1,s1,p0_old,tempbar,dx, &
+                       the_bc_tower%bc_tower_array)
        call average(mla,gamma1,gamma1bar,dx,1)
        call fill_ghost_base(nlevs,gamma1bar,.true.)
 
@@ -543,7 +544,8 @@ contains
           if (spherical .eq. 0) then
              call make_etarho_planar(nlevs,etarho,etarho_cc,etarhoflux,mla)
           else
-             call make_etarho_spherical(nlevs,s1,s2,umac,rho0_old,rho0_new,dx,normal,etarho,etarho_cc,mla)
+             call make_etarho_spherical(nlevs,s1,s2,umac,rho0_old,rho0_new,dx,normal, &
+                                        etarho,etarho_cc,mla,the_bc_tower%bc_tower_array)
           endif
 
        endif
@@ -638,7 +640,8 @@ contains
           call multifab_build(gamma1(n), mla%la(n), 1, 1)
        end do
        
-       call make_gamma(nlevs,gamma1,snew,p0_new,tempbar,dx)
+       call make_gamma(nlevs,mla,gamma1,snew,p0_new,tempbar,dx, &
+                       the_bc_tower%bc_tower_array)
        call average(mla,gamma1,gamma1bar,dx,1)
        call fill_ghost_base(nlevs,gamma1bar,.true.)
 
@@ -949,7 +952,8 @@ contains
              if (spherical .eq. 0) then
                 call make_etarho_planar(nlevs,etarho,etarho_cc,etarhoflux,mla)
              else
-                call make_etarho_spherical(nlevs,s1,s2,umac,rho0_old,rho0_new,dx,normal,etarho,etarho_cc,mla)
+                call make_etarho_spherical(nlevs,s1,s2,umac,rho0_old,rho0_new,dx,normal, &
+                                           etarho,etarho_cc,mla,the_bc_tower%bc_tower_array)
              endif
 
           endif
@@ -1025,7 +1029,8 @@ contains
              call multifab_build(gamma1(n), mla%la(n), 1, 1)
           end do
           
-          call make_gamma(nlevs,gamma1,snew,p0_new,tempbar,dx)
+          call make_gamma(nlevs,mla,gamma1,snew,p0_new,tempbar,dx, &
+                          the_bc_tower%bc_tower_array)
           call average(mla,gamma1,gamma1bar,dx,1)
           call fill_ghost_base(nlevs,gamma1bar,.true.)
           
