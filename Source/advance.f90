@@ -491,7 +491,7 @@ contains
           if(.not. do_half_alg) then
              do n=1,nlevs
                 call multifab_build(rho_omegadot2_hold(n), mla%la(n), nspec, 1)
-                call multifab_copy_c(rho_omegadot2_hold(n),1,rho_omegadot2(n),1,nspec)
+                call multifab_copy_c(rho_omegadot2_hold(n),1,rho_omegadot2(n),1,nspec,1)
              end do
           end if
        end if
