@@ -95,8 +95,11 @@ contains
        call setval( delta_gamma1_term(n), ZERO, all=.true.)
     end do
 
-    call make_S(nlevs,Source_old,delta_gamma1_term,delta_gamma1,sold,uold,rho_omegadot1, &
-                rho_Hext,thermal,p0,gamma1bar,delta_gamma1_termbar,psi,dx,mla)
+    call make_S(nlevs,Source_old,delta_gamma1_term,delta_gamma1, &
+                sold,uold,rho_omegadot1,rho_Hext,thermal, &
+                p0,gamma1bar,delta_gamma1_termbar,psi,dx, &
+                mla,the_bc_tower%bc_tower_array)
+
     do n=1,nlevs
        call destroy(thermal(n))
        call destroy(rho_omegadot1(n))

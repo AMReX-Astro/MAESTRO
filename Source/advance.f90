@@ -694,8 +694,10 @@ contains
        end do
 
        ! p0 is only used for the delta_gamma1_term
-       call make_S(nlevs,Source_new,delta_gamma1_term,delta_gamma1,snew,uold,rho_omegadot2, &
-                   rho_Hext,thermal,p0_old,gamma1bar,delta_gamma1_termbar,psi,dx,mla)
+       call make_S(nlevs,Source_new,delta_gamma1_term,delta_gamma1, &
+                   snew,uold,rho_omegadot2,rho_Hext,thermal, &
+                   p0_old,gamma1bar,delta_gamma1_termbar,psi,dx, &
+                   mla,the_bc_tower%bc_tower_array)
        
        do n=1,nlevs
           call destroy(rho_Hext(n))
@@ -1076,8 +1078,10 @@ contains
     end do
 
     ! p0 is only used for the delta_gamma1_term
-    call make_S(nlevs,Source_new,delta_gamma1_term,delta_gamma1,snew,uold,rho_omegadot2, &
-                rho_Hext,thermal,p0_new,gamma1bar,delta_gamma1_termbar,psi,dx,mla)
+    call make_S(nlevs,Source_new,delta_gamma1_term,delta_gamma1, &
+                snew,uold,rho_omegadot2,rho_Hext,thermal, &
+                p0_new,gamma1bar,delta_gamma1_termbar,psi,dx, &
+                mla,the_bc_tower%bc_tower_array)
 
     do n=1,nlevs
        call destroy(rho_Hext(n))
