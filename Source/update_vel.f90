@@ -95,9 +95,7 @@ contains
              wmp   => dataptr(umac(n,3),i)
              uepz  => dataptr(uedge(n,3),i)
              w0p   => dataptr(w0_cart(n),i)
-             if(spherical .eq. 1) then
-                np   =>  dataptr(normal(n),i)
-             end if
+             np   =>  dataptr(normal(n),i)
              call update_velocity_3d(n, &
                                      uop(:,:,:,:), ng_uo, unp(:,:,:,:), ng_un, &
                                      ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
