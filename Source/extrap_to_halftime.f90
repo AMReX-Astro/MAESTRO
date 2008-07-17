@@ -1,7 +1,11 @@
+! extrap_to_halftime is used to extrapolate S to the half time for the very
+! first step, when we don't yet have a Source_new
+
 module extraphalf_module
 
   use bl_types
   use multifab_module
+  use ml_layout_module
 
   implicit none
 
@@ -14,11 +18,18 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine extrap_to_halftime(nlevs,Source_nph,dSdt,Source_old,dt)
+  subroutine extrap_to_halftime(nlevs,mla,Source_nph,dSdt,Source_old,dt,the_bc_level)
+    
+    use variables, only: foextrap_comp
+    use ml_restriction_module
+    use multifab_physbc_module
+    use multifab_fill_ghost_module
 
     integer        , intent(in   ) :: nlevs
+    type(ml_layout), intent(in   ) :: mla
     type(multifab) , intent(inout) :: Source_nph(:), dSdt(:), Source_old(:)
     real(kind=dp_t), intent(in   ) :: dt
+    type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     real(kind=dp_t), pointer:: Snphp(:,:,:,:)
     real(kind=dp_t), pointer:: Soldp(:,:,:,:)
@@ -57,6 +68,36 @@ contains
        end do
        
     enddo
+
+    ! fill the ghostcells on the new time-centered S
+    if (nlevs .eq. 1) then
+
+       ! fill ghost cells for two adjacent grids at the same level
+       ! this includes periodic domain boundary ghost cells
+       call multifab_fill_boundary(Source_nph(nlevs))
+
+       ! fill non-periodic domain boundary ghost cells
+       call multifab_physbc(Source_nph(nlevs),1,foextrap_comp,1,the_bc_level(nlevs))
+
+    else
+
+       ! the loop over nlevs must count backwards to make sure the finer grids are done first
+       do n=nlevs,2,-1
+
+          ! set level n-1 data to be the average of the level n data covering it
+          call ml_cc_restriction(Source_nph(n-1)    ,Source_nph(n)    ,mla%mba%rr(n-1,:))
+
+          ! fill level n ghost cells using interpolation from level n-1 data
+          ! note that multifab_fill_boundary and multifab_physbc are called for
+          ! both levels n-1 and n
+          call multifab_fill_ghost_cells(Source_nph(n),Source_nph(n-1), &
+                                         ng_h,mla%mba%rr(n-1,:), &
+                                         the_bc_level(n-1), the_bc_level(n), &
+                                         1,foextrap_comp,1)
+       enddo
+
+    end if
+
 
   end subroutine extrap_to_halftime
 
