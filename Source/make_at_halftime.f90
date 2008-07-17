@@ -15,14 +15,20 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine make_S_at_halftime(nlevs,shalf,sold,snew)
+  subroutine make_S_at_halftime(nlevs,mla,shalf,sold,snew,the_bc_level)
 
     use bl_prof_module
+    use multifab_physbc_module
+    use ml_restriction_module, only : ml_cc_restriction
+    use multifab_fill_ghost_module
+    use variables, only: foextrap_comp
 
     integer        , intent(in   ) :: nlevs
+    type(ml_layout), intent(in   ) :: mla
     type(multifab) , intent(inout) :: shalf(:)
     type(multifab) , intent(in   ) :: sold(:)
     type(multifab) , intent(in   ) :: snew(:)
+    type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     real(kind=dp_t), pointer:: shp(:,:,:,:)
     real(kind=dp_t), pointer:: sop(:,:,:,:)
@@ -62,6 +68,36 @@ contains
        end do
 
     end do
+
+    ! fill the ghostcells on the new time-centered S
+    if (nlevs .eq. 1) then
+
+       ! fill ghost cells for two adjacent grids at the same level
+       ! this includes periodic domain boundary ghost cells
+       call multifab_fill_boundary(shalf(nlevs))
+
+       ! fill non-periodic domain boundary ghost cells
+       call multifab_physbc(shalf(nlevs),1,foextrap_comp,1,the_bc_level(nlevs))
+
+    else
+
+       ! the loop over nlevs must count backwards to make sure the finer grids are done first
+       do n=nlevs,2,-1
+
+          ! set level n-1 data to be the average of the level n data covering it
+          call ml_cc_restriction(shalf(n-1)    ,shalf(n)    ,mla%mba%rr(n-1,:))
+
+          ! fill level n ghost cells using interpolation from level n-1 data
+          ! note that multifab_fill_boundary and multifab_physbc are called for
+          ! both levels n-1 and n
+          call multifab_fill_ghost_cells(shalf(n),shalf(n-1), &
+                                         ng_h,mla%mba%rr(n-1,:), &
+                                         the_bc_level(n-1), the_bc_level(n), &
+                                         1,foextrap_comp,1)
+       enddo
+
+    end if
+
 
     call destroy(bpt)
 

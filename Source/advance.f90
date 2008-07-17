@@ -243,9 +243,9 @@ contains
     end do
 
     if (init_mode) then
-       call make_S_at_halftime(nlevs,Source_nph,Source_old,Source_new)
+       call make_S_at_halftime(nlevs,mla,Source_nph,Source_old,Source_new,the_bc_tower%bc_tower_array)
     else
-       call extrap_to_halftime(nlevs,Source_nph,dSdt,Source_old,dt)
+       call extrap_to_halftime(nlevs,mla,Source_nph,dSdt,Source_old,dt,the_bc_tower%bc_tower_array)
     end if
 
     if (dm .eq. 3) then
@@ -707,7 +707,7 @@ contains
           call multifab_build(Source_nph(n), mla%la(n), 1, 1)
        end do
 
-       call make_S_at_halftime(nlevs,Source_nph,Source_old,Source_new)
+       call make_S_at_halftime(nlevs,mla,Source_nph,Source_old,Source_new,the_bc_tower%bc_tower_array)
 
        if (dm .eq. 3) then
           do n=1,nlevs
