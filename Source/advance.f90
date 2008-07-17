@@ -239,7 +239,7 @@ contains
     end if
     
     do n=1,nlevs
-       call multifab_build(Source_nph(n), mla%la(n), 1, 0)
+       call multifab_build(Source_nph(n), mla%la(n), 1, 1)
     end do
 
     if (init_mode) then
@@ -264,8 +264,8 @@ contains
 
     ! compute Avg(p0 - ptherm)
     do n=1,nlevs
-       call multifab_build(p0_cart(n), mla%la(n), 1, 0)
-       call multifab_build(delta_p_term(n), mla%la(n), 1, 0)
+       call multifab_build(p0_cart(n), mla%la(n), 1, 1)
+       call multifab_build(delta_p_term(n), mla%la(n), 1, 1)
     enddo
 
     call put_1d_array_on_cart(nlevs,p0_old,p0_cart,foextrap_comp,.false.,.false.,dx, &
@@ -701,7 +701,7 @@ contains
        end do
 
        do n=1,nlevs
-          call multifab_build(Source_nph(n), mla%la(n), 1, 0)
+          call multifab_build(Source_nph(n), mla%la(n), 1, 1)
        end do
 
        call make_S_at_halftime(nlevs,Source_nph,Source_old,Source_new)
@@ -722,8 +722,8 @@ contains
 
        ! compute Avg(p0 - ptherm) (time-centered)
        do n=1,nlevs
-          call multifab_build(p0_cart(n), mla%la(n), 1, 0)
-          call multifab_build(delta_p_term(n), mla%la(n), 1, 0)
+          call multifab_build(p0_cart(n), mla%la(n), 1, 1)
+          call multifab_build(delta_p_term(n), mla%la(n), 1, 1)
        enddo
 
        p0_nph = HALF*(p0_old + p0_new)
@@ -1166,8 +1166,8 @@ contains
 
           ! compute Avg(p0 - ptherm)
           do n=1,nlevs
-             call multifab_build(p0_cart(n), mla%la(n), 1, 0)
-             call multifab_build(delta_p_term(n), mla%la(n), 1, 0)
+             call multifab_build(p0_cart(n), mla%la(n), 1, 1)
+             call multifab_build(delta_p_term(n), mla%la(n), 1, 1)
           enddo
           
           call put_1d_array_on_cart(nlevs,p0_new,p0_cart,foextrap_comp,.false.,.false.,dx, &
