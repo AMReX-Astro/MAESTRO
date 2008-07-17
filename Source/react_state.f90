@@ -15,7 +15,8 @@ contains
 
   subroutine react_state (nlevs,mla,s_in,s_out,rho_omegadot,rho_Hext,dt,dx,the_bc_level,time)
 
-    use variables, only: rho_comp, nscal
+    use variables, only: rho_comp, nscal, foextrap_comp
+    use network, only: nspec
     use bl_prof_module
     use ml_restriction_module
     use multifab_physbc_module
@@ -38,7 +39,7 @@ contains
     real(kind=dp_t), pointer::   hp(:,:,:,:)
 
     integer :: lo(s_in(1)%dim),hi(s_in(1)%dim),ng_si,ng_so,ng_rw,ng_he,dm
-    integer :: i,n
+    integer :: i,n,ispec
 
     type(bl_prof_timer), save :: bpt
 
@@ -81,6 +82,18 @@ contains
        ! fill non-periodic domain boundary ghost cells
        call multifab_physbc(s_out(nlevs),rho_comp,dm+rho_comp,nscal,the_bc_level(nlevs))
 
+
+       ! since rho_omegadot and rho_Hext are going to be averaged later, we need to 
+       ! also fill the ghostcells on those -- we'll use extrapolation
+       call multifab_fill_boundary(rho_omegadot(nlevs))
+
+       do ispec = 1, nspec
+          call multifab_physbc(rho_omegadot(nlevs),ispec,foextrap_comp,1,the_bc_level(nlevs))
+       enddo
+
+       call multifab_fill_boundary(rho_Hext(nlevs))
+       call multifab_physbc(rho_Hext(nlevs),1,foextrap_comp,1,the_bc_level(nlevs))
+
     else
 
        ! the loop over nlevs must count backwards to make sure the finer grids are done first
@@ -98,6 +111,18 @@ contains
                                          ng_so,mla%mba%rr(n-1,:), &
                                          the_bc_level(n-1), the_bc_level(n), &
                                          rho_comp,dm+rho_comp,nscal)
+
+          do ispec = 1, nspec
+             call multifab_fill_ghost_cells(rho_omegadot(n),rho_omegadot(n-1), &
+                                            ng_rw,mla%mba%rr(n-1,:), &
+                                            the_bc_level(n-1), the_bc_level(n), &
+                                            ispec,foextrap_comp,1)
+          enddo
+
+          call multifab_fill_ghost_cells(rho_Hext(n),rho_Hext(n-1), &
+                                         ng_he,mla%mba%rr(n-1,:), &
+                                         the_bc_level(n-1), the_bc_level(n), &
+                                         1,foextrap_comp,1)
        enddo
 
     end if
