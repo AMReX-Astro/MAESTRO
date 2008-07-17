@@ -104,6 +104,9 @@ contains
     use probin_module, only: single_prec_plotfiles
     use geometry, only: spherical, nr_fine
     use average_module
+    use ml_restriction_module
+    use multifab_physbc_module
+    use multifab_fill_ghost_module
 
     character(len=*) , intent(in   ) :: dirname
     type(ml_layout)  , intent(in   ) :: mla
@@ -263,7 +266,7 @@ contains
        call multifab_fill_boundary(tempfab(nlevs))
 
        ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(tempfab(nlevs),1,foextrap_comp,1,the_bc_level(nlevs))
+       call multifab_physbc(tempfab(nlevs),1,foextrap_comp,1,the_bc_tower%bc_tower_array(nlevs))
 
     else
 
@@ -278,7 +281,7 @@ contains
           ! both levels n-1 and n
           call multifab_fill_ghost_cells(tempfab(n),tempfab(n-1), &
                                          tempfab(n)%ng,mla%mba%rr(n-1,:), &
-                                         the_bc_level(n-1), the_bc_level(n), &
+                                         the_bc_tower%bc_tower_array(n-1), the_bc_tower%bc_tower_array(n), &
                                          1,foextrap_comp,1)
        enddo
 
