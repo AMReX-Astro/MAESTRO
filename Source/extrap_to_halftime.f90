@@ -1,5 +1,5 @@
-! extrap_to_halftime is used to extrapolate S to the half time for the very
-! first step, when we don't yet have a Source_new
+! extrap_to_halftime is used to extrapolate S to the half time for the
+! Step 1 in the algorithm, when we don't yet have a Source_new
 
 module extraphalf_module
 
