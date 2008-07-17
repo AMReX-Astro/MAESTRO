@@ -469,8 +469,8 @@ contains
     real(kind=dp_t) :: temp_velx_hi(lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1)
     real(kind=dp_t) :: temp_vely_lo(lo(1)-1:hi(1)+1,lo(3)-1:hi(3)+1)
     real(kind=dp_t) :: temp_vely_hi(lo(1)-1:hi(1)+1,lo(3)-1:hi(3)+1)
-    real(kind=dp_t) :: temp_velz_lo(lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1)
-    real(kind=dp_t) :: temp_velz_hi(lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1)
+    real(kind=dp_t) :: temp_velz_lo(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1)
+    real(kind=dp_t) :: temp_velz_hi(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1)
 
     if (dir .eq. 1) then
 
