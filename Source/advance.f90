@@ -393,8 +393,8 @@ contains
 
     do n=1,nlevs
        call multifab_build(s1(n),            mla%la(n), nscal, ng_s)
-       call multifab_build(rho_omegadot1(n), mla%la(n), nspec, 0)
-       call multifab_build(rho_Hext(n),      mla%la(n), 1,     0)
+       call multifab_build(rho_omegadot1(n), mla%la(n), nspec, 1)
+       call multifab_build(rho_Hext(n),      mla%la(n), 1,     1)
     end do
 
     call react_state(nlevs,mla,sold,s1,rho_omegadot1,rho_Hext,halfdt,dx, &
@@ -419,7 +419,7 @@ contains
 
     if (evolve_base_state) then
        do n=1,nlevs
-          call multifab_build(gamma1(n), mla%la(n), 1, 0)
+          call multifab_build(gamma1(n), mla%la(n), 1, 1)
        end do
        
        call make_gamma(nlevs,gamma1,s1,p0_old,tempbar,dx)
@@ -478,7 +478,7 @@ contains
          (enthalpy_pred_type .eq. predict_T_then_h        ) ) then
 
        do n=1,nlevs
-          call multifab_build(rho_Hext(n), mla%la(n), 1, 0)
+          call multifab_build(rho_Hext(n), mla%la(n), 1, 1)
        end do
 
        if(istep .le. 1) then
@@ -490,7 +490,7 @@ contains
           
           if(.not. do_half_alg) then
              do n=1,nlevs
-                call multifab_build(rho_omegadot2_hold(n), mla%la(n), nspec, 0)
+                call multifab_build(rho_omegadot2_hold(n), mla%la(n), nspec, 1)
                 call multifab_copy_c(rho_omegadot2_hold(n),1,rho_omegadot2(n),1,3,0)
              end do
           end if
@@ -605,7 +605,7 @@ contains
     end if
 
     do n=1,nlevs
-       call multifab_build(rho_Hext(n), mla%la(n), 1, 0)
+       call multifab_build(rho_Hext(n), mla%la(n), 1, 1)
     end do
     
     call react_state(nlevs,mla,s2,snew,rho_omegadot2,rho_Hext,halfdt,dx, &
@@ -635,7 +635,7 @@ contains
 
     if (evolve_base_state) then
        do n=1,nlevs
-          call multifab_build(gamma1(n), mla%la(n), 1, 0)
+          call multifab_build(gamma1(n), mla%la(n), 1, 1)
        end do
        
        call make_gamma(nlevs,gamma1,snew,p0_new,tempbar,dx)
@@ -895,7 +895,7 @@ contains
             (enthalpy_pred_type .eq. predict_T_then_h        ) ) then
 
           do n=1,nlevs
-             call multifab_build(rho_Hext(n), mla%la(n), 1, 0)
+             call multifab_build(rho_Hext(n), mla%la(n), 1, 1)
           end do
 
           if(istep .le. 1) then
@@ -992,7 +992,7 @@ contains
        end if
 
        do n=1,nlevs
-          call multifab_build(rho_Hext(n), mla%la(n), 1, 0)
+          call multifab_build(rho_Hext(n), mla%la(n), 1, 1)
        end do
        
        call react_state(nlevs,mla,s2,snew,rho_omegadot2,rho_Hext,halfdt,dx,&
@@ -1022,7 +1022,7 @@ contains
 
        if (evolve_base_state) then
           do n=1,nlevs
-             call multifab_build(gamma1(n), mla%la(n), 1, 0)
+             call multifab_build(gamma1(n), mla%la(n), 1, 1)
           end do
           
           call make_gamma(nlevs,gamma1,snew,p0_new,tempbar,dx)
