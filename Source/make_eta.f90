@@ -438,7 +438,7 @@ contains
 
     do n=1,nlevs
 
-       call multifab_build(eta_cart(n), sold(n)%la, 1, 0)
+       call multifab_build(eta_cart(n), sold(n)%la, 1, 1)
 
        do i=1,eta_cart(n)%nboxes
           if ( multifab_remote(eta_cart(n),i) ) cycle

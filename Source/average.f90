@@ -59,6 +59,11 @@ contains
 
     phibar = ZERO
 
+    if (ng == 0) then
+       call bl_error("ERROR: ng = 0 in average")
+    endif
+
+
     if (spherical .eq. 1) then
        allocate(ncell_grid(nlevs,0:nr_fine-1))
     end if
