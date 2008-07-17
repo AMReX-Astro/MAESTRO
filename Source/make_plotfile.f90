@@ -147,7 +147,7 @@ contains
     do n = 1,nlevs
 
        call multifab_build(plotdata(n), mla%la(n), n_plot_comps, 0)
-       call multifab_build(tempfab(n), mla%la(n), dm, 0)
+       call multifab_build(tempfab(n), mla%la(n), dm, 1)
        
        ! VELOCITY 
        call multifab_copy_c(plotdata(n),icomp_vel,u(n),1,dm)
@@ -248,8 +248,13 @@ contains
     ! we just made the entropy above.  To compute s - sbar, we need to average
     ! the entropy first, and then compute that.
     allocate(entropybar(nlevs,0:nr_fine-1))
-    
-    call average(mla,plotdata,entropybar,dx,icomp_entropy)
+
+    ! an average quantity needs ghostcells, so copy entropy into
+    ! tempfab
+    do n=1,nlevs
+       call multifab_copy_c(tempfab(n),1,plotdata(n),icomp_entropy,1)
+    end do
+    call average(mla,tempfab,entropybar,dx,1)
 
     do n = 1,nlevs
        call make_entropypert(n,plotdata(n),icomp_entropy,icomp_entropypert,entropybar(n,0:),dx(n,:))
