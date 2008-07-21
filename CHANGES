@@ -1,13 +1,15 @@
 A list of changes to the code since paper III (i.e. future appendices)
 
--- added thermal conduction
+-- added thermal conduction by setting use_thermal_diffusion=T
 
 -- spherical base state expansion
 
--- predicting (rho h)'
+-- predicting (rho h)' by setting enthalpy_pred_type=1
 
--- turning off evolution of h above atmosphere
+-- turning off evolution of h above atmosphere with do_eos_h_above_cutoff=T
 
--- volume discrepancy factor forcing term
+-- created burning_cutoff_density, which is presently set to base_cutoff_density
 
--- use_tfromp
+-- volume discrepancy factor forcing term by setting dpdt_factor to a non-zero value
+
+-- make T on edges from T=T(rho,X_k,p_0) by setting use_tfromp=T
