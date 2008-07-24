@@ -616,7 +616,7 @@ contains
     ! Compute entropy - entropybar
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
-          entropypert(i,j) = entropy(i,j) - entropybar(j)
+          entropypert(i,j) = (entropy(i,j) - entropybar(j))/entropybar(j)
        enddo
     enddo
 
@@ -637,7 +637,7 @@ contains
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
-             entropypert(i,j,k) = entropy(i,j,k) - entropybar(k)
+             entropypert(i,j,k) = (entropy(i,j,k) - entropybar(k))/entropybar(k)
           enddo
        enddo
     enddo
@@ -666,7 +666,7 @@ contains
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
-             entropypert(i,j,k) = entropy(i,j,k) - entropybar_cart(i,j,k,1)
+             entropypert(i,j,k) = (entropy(i,j,k) - entropybar_cart(i,j,k,1))/entropybar_cart(i,j,k,1)
           enddo
        enddo
     enddo
