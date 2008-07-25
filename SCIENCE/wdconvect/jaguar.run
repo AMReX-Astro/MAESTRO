@@ -2,18 +2,25 @@
 #PBS -N wdconvect
 #PBS -j oe
 #PBS -q batch
-#PBS -l walltime=02:30:00,size=512
+#PBS -l walltime=1:30:00,size=64
 
 cd $PBS_O_WORKDIR
 
 # run the compression script to tar up the plot and checkpoint files
 # as they are created.
-$HOME/fParallel/scripts/compressor &
+./process &
 PID=$!
 trap 'kill -s TERM $PID' EXIT TERM HUP XCPU KILL
 
+# find the latest restart file
+restartFile=`ls -1 | grep -i chk | grep -v tar | grep -v processed | tail -1`
 
-aprun -n 512 ./main.Linux.xt4.mpi.exe inputs_3d 
+# cut out the numerical part of the chkXXXXX file, here we use the 'k' in 
+# 'chk' as the delimiter
+restartNum=`echo ${restartFile} | cut -d'k' -f2`
 
-rm -f compressor.pid
+
+aprun -n 64 ./main.Linux.PathScale.mpi.exe inputs_3d.256.dr.eq.dx --restart ${restartNum}
+
+rm -f process.pid
 
