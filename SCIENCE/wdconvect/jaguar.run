@@ -2,7 +2,7 @@
 #PBS -N wdconvect
 #PBS -j oe
 #PBS -q batch
-#PBS -l walltime=1:30:00,size=64
+#PBS -l walltime=1:00:00,size=432
 
 cd $PBS_O_WORKDIR
 
@@ -17,10 +17,17 @@ restartFile=`ls -1 | grep -i chk | grep -v tar | grep -v processed | tail -1`
 
 # cut out the numerical part of the chkXXXXX file, here we use the 'k' in 
 # 'chk' as the delimiter
-restartNum=`echo ${restartFile} | cut -d'k' -f2`
+restartNum=`echo ${restartFile} | cut -d'k' -f2`  
 
+# restartString will be empty if no chk files are found -- i.e. new run
+if [ "${restartNum}" = "" ]; then
+    restartString=""
+else
+    restartString="--restart ${restartNum}"
+fi
 
-aprun -n 64 ./main.Linux.PathScale.mpi.exe inputs_3d.256.dr.eq.dx --restart ${restartNum}
+aprun -n 432 ./main.Linux.PathScale.mpi.exe inputs_3d.384.dr.eq.dx ${restartString}
+
 
 rm -f process.pid
 
