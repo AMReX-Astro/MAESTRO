@@ -10,7 +10,7 @@ module advect_base_module
 
 contains
 
-  subroutine advect_base(nlevs,vel,Sbar_in,p0_old,p0_new,rho0_old,rho0_new, &
+  subroutine advect_base(nlevs,w0,Sbar_in,p0_old,p0_new,rho0_old,rho0_new, &
                          rhoh0_old,rhoh0_new, &
                          gamma1bar,div_coeff,rho0_predicted_edge,psi,dz,dt)
 
@@ -19,7 +19,7 @@ contains
     use restrict_base_module
 
     integer        , intent(in   ) :: nlevs
-    real(kind=dp_t), intent(in   ) :: vel(:,0:)
+    real(kind=dp_t), intent(in   ) :: w0(:,0:)
     real(kind=dp_t), intent(in   ) :: Sbar_in(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:), rho0_old(:,0:), rhoh0_old(:,0:)
     real(kind=dp_t), intent(  out) :: p0_new(:,0:), rho0_new(:,0:), rhoh0_new(:,0:)
@@ -36,10 +36,10 @@ contains
     call build(bpt, "advect_base")
 
     if (spherical .eq. 0) then
-       call advect_base_state_planar(nlevs,vel,p0_old,p0_new,rho0_old,rho0_new, &
+       call advect_base_state_planar(nlevs,w0,p0_old,p0_new,rho0_old,rho0_new, &
                                      rhoh0_old,rhoh0_new,rho0_predicted_edge,psi,dz,dt)
     else
-       call advect_base_state_spherical(nlevs,vel,Sbar_in,p0_old,p0_new,rho0_old,rho0_new, &
+       call advect_base_state_spherical(nlevs,w0,Sbar_in,p0_old,p0_new,rho0_old,rho0_new, &
                                         rhoh0_old,rhoh0_new,gamma1bar,rho0_predicted_edge, &
                                         div_coeff,dt)
     end if
@@ -57,7 +57,7 @@ contains
   end subroutine advect_base
 
 
-  subroutine advect_base_state_planar(nlevs,vel,p0_old,p0_new, &
+  subroutine advect_base_state_planar(nlevs,w0,p0_old,p0_new, &
                                       rho0_old,rho0_new,rhoh0_old,rhoh0_new, &
                                       rho0_predicted_edge,psi,dz,dt)
 
@@ -69,7 +69,7 @@ contains
     use pred_parameters
 
     integer        , intent(in   ) :: nlevs
-    real(kind=dp_t), intent(in   ) :: vel(:,0:)
+    real(kind=dp_t), intent(in   ) :: w0(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:), rho0_old(:,0:), rhoh0_old(:,0:)
     real(kind=dp_t), intent(  out) :: p0_new(:,0:), rho0_new(:,0:), rhoh0_new(:,0:)
     real(kind=dp_t), intent(  out) :: rho0_predicted_edge(:,0:)
@@ -98,12 +98,12 @@ contains
 
     force = ZERO
     
-    call make_edge_state_1d(nlevs,p0_old,edge,vel,force,dz,dt)
+    call make_edge_state_1d(nlevs,p0_old,edge,w0,force,dz,dt)
     
     do n=1,nlevs
        do r=r_start_coord(n),r_end_coord(n)
           p0_new(n,r) = p0_old(n,r) &
-               - dt / dz(n) * HALF * (vel(n,r) + vel(n,r+1)) * (edge(n,r+1) - edge(n,r))  &
+               - dt / dz(n) * HALF * (w0(n,r) + w0(n,r+1)) * (edge(n,r+1) - edge(n,r))  &
                + dt * psi(n,r)
        end do
     end do
@@ -114,11 +114,11 @@ contains
 
     do n=1,nlevs
        do r=r_start_coord(n),r_end_coord(n)
-          force(n,r) = -rho0_old(n,r) * (vel(n,r+1) - vel(n,r)) / dz(n)
+          force(n,r) = -rho0_old(n,r) * (w0(n,r+1) - w0(n,r)) / dz(n)
        end do
     end do
        
-    call make_edge_state_1d(nlevs,rho0_old,edge,vel,force,dz,dt)
+    call make_edge_state_1d(nlevs,rho0_old,edge,w0,force,dz,dt)
         
     rho0_predicted_edge = edge
 
@@ -126,7 +126,7 @@ contains
        ! update rho_0
        do r=r_start_coord(n),r_end_coord(n)
           rho0_new(n,r) = rho0_old(n,r) &
-               - dt / dz(n) * (edge(n,r+1) * vel(n,r+1) - edge(n,r) * vel(n,r)) 
+               - dt / dz(n) * (edge(n,r+1) * w0(n,r+1) - edge(n,r) * w0(n,r)) 
        end do
     end do
 
@@ -145,7 +145,7 @@ contains
        ! mixing, we defer this to correct_base.
        force = ZERO
 
-       call make_edge_state_1d(nlevs,h0,edge,vel,force,dz,dt)
+       call make_edge_state_1d(nlevs,h0,edge,w0,force,dz,dt)
 
        ! our final update needs (rho h)_0 on the edges, so compute
        ! that now
@@ -156,11 +156,11 @@ contains
        do n=1,nlevs
           ! here we predict (rho h)_0 on the edges
           do r=r_start_coord(n),r_end_coord(n)
-             force(n,r) = -rhoh0_old(n,r) * (vel(n,r+1) - vel(n,r)) / dz(n)
+             force(n,r) = -rhoh0_old(n,r) * (w0(n,r+1) - w0(n,r)) / dz(n)
           end do
        end do
           
-       call make_edge_state_1d(nlevs,rhoh0_old,edge,vel,force,dz,dt)
+       call make_edge_state_1d(nlevs,rhoh0_old,edge,w0,force,dz,dt)
               
     end if
 
@@ -168,7 +168,7 @@ contains
        ! update (rho h)_0
        do r=r_start_coord(n),r_end_coord(n)
           rhoh0_new(n,r) = rhoh0_old(n,r) &
-               - dt / dz(n) * (edge(n,r+1) * vel(n,r+1) - edge(n,r) * vel(n,r)) + dt*psi(n,r)
+               - dt / dz(n) * (edge(n,r+1) * w0(n,r+1) - edge(n,r) * w0(n,r)) + dt*psi(n,r)
        end do
     end do
     
@@ -177,7 +177,7 @@ contains
   end subroutine advect_base_state_planar
 
   
-  subroutine advect_base_state_spherical(nlevs,vel,Sbar_in,p0_old,p0_new, &
+  subroutine advect_base_state_spherical(nlevs,w0,Sbar_in,p0_old,p0_new, &
                                          rho0_old,rho0_new,rhoh0_old,rhoh0_new, &
                                          gamma1bar,rho0_predicted_edge,div_coeff_old,dt)
 
@@ -192,7 +192,7 @@ contains
     use pred_parameters
     
     integer        , intent(in   ) :: nlevs
-    real(kind=dp_t), intent(in   ) :: vel(:,0:),Sbar_in(:,0:)
+    real(kind=dp_t), intent(in   ) :: w0(:,0:),Sbar_in(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:), rho0_old(:,0:), rhoh0_old(:,0:)
     real(kind=dp_t), intent(  out) :: p0_new(:,0:), rho0_new(:,0:), rhoh0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
@@ -242,12 +242,12 @@ contains
 
     do n=1,nlevs
        do r=r_start_coord(n),r_end_coord(n)
-          force(n,r) = -rho0_old(n,r) * (vel(n,r+1) - vel(n,r)) / dr(n) - &
-               2.0_dp_t*rho0_old(n,r)*HALF*(vel(n,r) + vel(n,r+1))/r_cc_loc(n,r)
+          force(n,r) = -rho0_old(n,r) * (w0(n,r+1) - w0(n,r)) / dr(n) - &
+               2.0_dp_t*rho0_old(n,r)*HALF*(w0(n,r) + w0(n,r+1))/r_cc_loc(n,r)
        end do
     end do
     
-    call make_edge_state_1d(nlevs,rho0_old,edge,vel,force,dr,dt)
+    call make_edge_state_1d(nlevs,rho0_old,edge,w0,force,dr,dt)
     
     rho0_predicted_edge = edge
 
@@ -255,8 +255,8 @@ contains
        do r=r_start_coord(n),r_end_coord(n)
           rho0_new(n,r) = rho0_old(n,r) &
                - dtdr/r_cc_loc(n,r)**2 * &
-               (r_edge_loc(n,r+1)**2 * edge(n,r+1) * vel(n,r+1) - &
-               r_edge_loc(n,r  )**2 * edge(n,r  ) * vel(n,r  ))
+               (r_edge_loc(n,r+1)**2 * edge(n,r+1) * w0(n,r+1) - &
+               r_edge_loc(n,r  )**2 * edge(n,r  ) * w0(n,r  ))
        end do
     end do
 
@@ -270,8 +270,8 @@ contains
 !   Update p0 -- predictor
 !   do r=r_start_coord(n),r_end_coord(n)
 !      divbetaw = one/(r_cc_loc(n,r)**2) * &
-!           (r_edge_loc(n,r+1)**2 * beta(n,r+1) * vel(n,r+1) - &
-!            r_edge_loc(n,r  )**2 * beta(n,r  ) * vel(n,r  )) / dr(n)
+!           (r_edge_loc(n,r+1)**2 * beta(n,r+1) * w0(n,r+1) - &
+!            r_edge_loc(n,r  )**2 * beta(n,r  ) * w0(n,r  )) / dr(n)
 !      betahalf = div_coeff_old(n,r)
 !      factor = half * dt * gamma1bar(n,r) * (Sbar_in(n,r) - divbetaw / betahalf)
 !      p0_new(n,r) = p0_old(n,r) * (one + factor ) / (one - factor)
@@ -280,22 +280,22 @@ contains
     do n=1,nlevs
        do r=r_start_coord(n),r_end_coord(n)
           divw = one/(r_cc_loc(n,r)**2) * &
-               (r_edge_loc(n,r+1)**2 * vel(n,r+1) - &
-               r_edge_loc(n,r  )**2 * vel(n,r  )) / dr(n)
+               (r_edge_loc(n,r+1)**2 * w0(n,r+1) - &
+               r_edge_loc(n,r  )**2 * w0(n,r  )) / dr(n)
           
           if (r .eq. 0) then
-             w0dpdr_avg_2 =  vel(n,2) * (p0_old(n,2)-p0_old(n,1)) / dr(n)
-             w0dpdr_avg_1 =  vel(n,1) * (p0_old(n,1)-p0_old(n,0)) / dr(n)
+             w0dpdr_avg_2 =  w0(n,2) * (p0_old(n,2)-p0_old(n,1)) / dr(n)
+             w0dpdr_avg_1 =  w0(n,1) * (p0_old(n,1)-p0_old(n,0)) / dr(n)
              w0dpdr_avg =  1.5d0 * w0dpdr_avg_1 - 0.5d0 * w0dpdr_avg_2
           else if (r .eq. r_end_coord(n)) then
-             w0dpdr_avg_2 =  vel(n,r_end_coord(n)) * &
+             w0dpdr_avg_2 =  w0(n,r_end_coord(n)) * &
                   (p0_old(n,r_end_coord(n))-p0_old(n,r_end_coord(n)-1)) / dr(n)
-             w0dpdr_avg_1 =  vel(n,r_end_coord(n)-1) * &
+             w0dpdr_avg_1 =  w0(n,r_end_coord(n)-1) * &
                   (p0_old(n,r_end_coord(n)-1)-p0_old(n,r_end_coord(n)-2)) / dr(n)
              w0dpdr_avg =  1.5d0 * w0dpdr_avg_2 - 0.5d0 * w0dpdr_avg_1
           else
-             w0dpdr_avg =  HALF * ( vel(n,r+1)*(p0_old(n,r+1)-p0_old(n,r)) &
-                  + vel(n,r)*(p0_old(n,r)-p0_old(n,r-1))) / dr(n)
+             w0dpdr_avg =  HALF * ( w0(n,r+1)*(p0_old(n,r+1)-p0_old(n,r)) &
+                  + w0(n,r)*(p0_old(n,r)-p0_old(n,r-1))) / dr(n)
           end if
           
           factor = Sbar_in(n,r) - divw - 1.d0 / (gamma1bar(n,r)*p0_old(n,r)) * w0dpdr_avg
@@ -318,8 +318,8 @@ contains
 !   Update p0 -- corrector
 !   do r=r_start_coord(n),r_end_coord(n)
 !      divbetaw = one / (r_cc_loc(n,r)**2) * &
-!           (r_edge_loc(n,r+1)**2 * beta_nh(n,r+1) * vel(n,r+1) - &
-!            r_edge_loc(n,r  )**2 * beta_nh(n,r  ) * vel(n,r  )) / dr(n)
+!           (r_edge_loc(n,r+1)**2 * beta_nh(n,r+1) * w0(n,r+1) - &
+!            r_edge_loc(n,r  )**2 * beta_nh(n,r  ) * w0(n,r  )) / dr(n)
 
 !      betahalf = HALF*(div_coeff_old(n,r) + div_coeff_new(n,r))
 !      factor = half * dt * (Sbar_in(n,r) - divbetaw / betahalf)
@@ -330,30 +330,30 @@ contains
     do n=1,nlevs
        do r=r_start_coord(n),r_end_coord(n)
           divw = one/(r_cc_loc(n,r)**2) * &
-               (r_edge_loc(n,r+1)**2 * vel(n,r+1) - &
-               r_edge_loc(n,r  )**2 * vel(n,r  )) / dr(n)
+               (r_edge_loc(n,r+1)**2 * w0(n,r+1) - &
+               r_edge_loc(n,r  )**2 * w0(n,r  )) / dr(n)
           
           if (r .eq. 0) then
-             w0dpdr_avg_2 =  HALF * vel(n,2) * ( (p0_old(n,2)-p0_old(n,1)) &
+             w0dpdr_avg_2 =  HALF * w0(n,2) * ( (p0_old(n,2)-p0_old(n,1)) &
                   +(p0_new(n,2)-p0_new(n,1)) ) / dr(n)
-             w0dpdr_avg_1 =  HALF * vel(n,1) * ( (p0_old(n,1)-p0_old(n,0)) &
+             w0dpdr_avg_1 =  HALF * w0(n,1) * ( (p0_old(n,1)-p0_old(n,0)) &
                   +(p0_new(n,1)-p0_new(n,0)) ) / dr(n)
              w0dpdr_avg =  1.5d0 * w0dpdr_avg_1 - 0.5d0 * w0dpdr_avg_2
              
           else if (r .eq. r_end_coord(n)) then
-             w0dpdr_avg_2 = HALF * vel(n,r_end_coord(n)) * &
+             w0dpdr_avg_2 = HALF * w0(n,r_end_coord(n)) * &
                   ((p0_old(n,r_end_coord(n))-p0_old(n,r_end_coord(n)-1)) &
                   +(p0_new(n,r_end_coord(n))-p0_new(n,r_end_coord(n)-1))) / dr(n)
-             w0dpdr_avg_1 = HALF * vel(n,r_end_coord(n)-1)* &
+             w0dpdr_avg_1 = HALF * w0(n,r_end_coord(n)-1)* &
                   ((p0_old(n,r_end_coord(n)-1)-p0_old(n,r_end_coord(n)-2)) &
                   +(p0_new(n,r_end_coord(n)-1)-p0_new(n,r_end_coord(n)-2))) / dr(n)
              w0dpdr_avg =  1.5d0 * w0dpdr_avg_2 - 0.5d0 * w0dpdr_avg_1
              
           else
-             w0dpdr_avg = HALF * HALF * ( vel(n,r+1)*(p0_old(n,r+1)-p0_old(n,r)) + &
-                  vel(n,r)*(p0_old(n,r)-p0_old(n,r-1)) + &
-                  vel(n,r+1)*(p0_new(n,r+1)-p0_new(n,r)) + &
-                  vel(n,r)*(p0_new(n,r)-p0_new(n,r-1)) ) / dr(n)
+             w0dpdr_avg = HALF * HALF * ( w0(n,r+1)*(p0_old(n,r+1)-p0_old(n,r)) + &
+                  w0(n,r)*(p0_old(n,r)-p0_old(n,r-1)) + &
+                  w0(n,r+1)*(p0_new(n,r+1)-p0_new(n,r)) + &
+                  w0(n,r)*(p0_new(n,r)-p0_new(n,r-1)) ) / dr(n)
           end if
           
           p0_avg = HALF * (p0_old(n,r) + p0_new(n,r))
@@ -380,8 +380,8 @@ contains
           do r=r_start_coord(n),r_end_coord(n)
              
              div_w0_sph = one/(r_cc_loc(n,r)**2) * &
-                  (r_edge_loc(n,r+1)**2 * vel(n,r+1) - &
-                  r_edge_loc(n,r  )**2 * vel(n,r  )) / dr(n)
+                  (r_edge_loc(n,r+1)**2 * w0(n,r+1) - &
+                  r_edge_loc(n,r  )**2 * w0(n,r  )) / dr(n)
              
              ! add psi at time-level n to the force for the prediction
              psi(n,r) = gamma1bar_old(n,r) * p0_old(n,r) * (Sbar_in(n,r) - div_w0_sph)
@@ -393,7 +393,7 @@ contains
           end do
        end do
           
-       call make_edge_state_1d(nlevs,h0,edge,vel,force,dr,dt)
+       call make_edge_state_1d(nlevs,h0,edge,w0,force,dr,dt)
        
        ! our final update needs (rho h)_0 on the edges, so compute
        ! that now
@@ -406,13 +406,13 @@ contains
           ! here we predict (rho h)_0 on the edges
           do r=r_start_coord(n),r_end_coord(n)
              
-             div_w0_cart = (vel(n,r+1) - vel(n,r)) / dr(n)
+             div_w0_cart = (w0(n,r+1) - w0(n,r)) / dr(n)
              div_w0_sph = one/(r_cc_loc(n,r)**2) * &
-                  (r_edge_loc(n,r+1)**2 * vel(n,r+1) - &
-                  r_edge_loc(n,r  )**2 * vel(n,r  )) / dr(n)
+                  (r_edge_loc(n,r+1)**2 * w0(n,r+1) - &
+                  r_edge_loc(n,r  )**2 * w0(n,r  )) / dr(n)
              
              force(n,r) = -rhoh0_old(n,r) * div_w0_cart - &
-                  2.0_dp_t*rhoh0_old(n,r)*HALF*(vel(n,r) + vel(n,r+1))/r_cc_loc(n,r)
+                  2.0_dp_t*rhoh0_old(n,r)*HALF*(w0(n,r) + w0(n,r+1))/r_cc_loc(n,r)
              
              ! add psi at time-level n to the force for the prediction
              psi(n,r) = gamma1bar_old(n,r) * p0_old(n,r) * (Sbar_in(n,r) - div_w0_sph)
@@ -425,7 +425,7 @@ contains
 
        end do
           
-       call make_edge_state_1d(nlevs,rhoh0_old,edge,vel,force,dr,dt)
+       call make_edge_state_1d(nlevs,rhoh0_old,edge,w0,force,dr,dt)
 
     endif
 
@@ -436,8 +436,8 @@ contains
           
           rhoh0_new(n,r) = rhoh0_old(n,r) - &
                dtdr / r_cc_loc(n,r)**2 * &
-               (r_edge_loc(n,r+1)**2 * edge(n,r+1) * vel(n,r+1) - &
-               r_edge_loc(n,r  )**2 * edge(n,r  ) * vel(n,r  ))
+               (r_edge_loc(n,r+1)**2 * edge(n,r+1) * w0(n,r+1) - &
+               r_edge_loc(n,r  )**2 * edge(n,r  ) * w0(n,r  ))
           
           rhoh0_new(n,r) = rhoh0_new(n,r) + dt * psi(n,r)
           

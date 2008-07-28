@@ -1449,7 +1449,7 @@ contains
      
    end subroutine make_edge_state_3d
    
-   subroutine make_edge_state_1d(nlevs,s,sedgex,umac,force,dx,dt)
+   subroutine make_edge_state_1d(nlevs,s,sedgex,w0,force,dx,dt)
 
      use geometry, only: r_start_coord, r_end_coord, nr_fine, nr
      use probin_module, only: slope_order
@@ -1458,7 +1458,7 @@ contains
      integer        , intent(in   ) :: nlevs
      real(kind=dp_t), intent(in   ) ::      s(:,0:)
      real(kind=dp_t), intent(inout) :: sedgex(:,0:)
-     real(kind=dp_t), intent(in   ) ::   umac(:,0:)
+     real(kind=dp_t), intent(in   ) ::   w0(:,0:)
      real(kind=dp_t), intent(in   ) ::  force(:,0:)
      real(kind=dp_t), intent(in   ) :: dx(:),dt
      
@@ -1487,7 +1487,7 @@ contains
         lo = r_start_coord(n)
         hi = r_end_coord(n)
         do r = lo,hi+1
-           umax = max(umax,abs(umac(n,r)))
+           umax = max(umax,abs(w0(n,r)))
         end do
      end do
      eps = abs_eps * umax
@@ -1624,7 +1624,7 @@ contains
 
         do r = lo,hi
 
-           u = HALF * (umac(n,r) + umac(n,r+1))
+           u = HALF * (w0(n,r) + w0(n,r+1))
            ubardth = dth*u/dx(n)
         
            s_l(n,r+1)= s(n,r) + (HALF-ubardth)*slopex(n,r) + dth * force(n,r)
@@ -1660,9 +1660,9 @@ contains
            else if (r .eq. nr(n)) then
               sedgex(n,r) = s_l(n,r)
            else
-              sedgex(n,r)=merge(s_l(n,r),s_r(n,r),umac(n,r).gt.ZERO)
+              sedgex(n,r)=merge(s_l(n,r),s_r(n,r),w0(n,r).gt.ZERO)
               savg = HALF*(s_r(n,r) + s_l(n,r))
-              sedgex(n,r)=merge(savg,sedgex(n,r),abs(umac(n,r)) .lt. eps)
+              sedgex(n,r)=merge(savg,sedgex(n,r),abs(w0(n,r)) .lt. eps)
            end if
         end do
         
