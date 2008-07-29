@@ -29,51 +29,48 @@
 \cleardoublepage
 
 \section{Density Evolution}
-Full density evolution equation:
-\begin{eqnarray}
-\frac{\partial\rho}{\partial t} &=& -\nabla\cdot(\rho\Ub) \nonumber \\
-&=& -\Ub\cdot\nabla\rho -\rho\nabla\cdot\Ub. \label{rho equation}
-\end{eqnarray}
+The full density evolution equation is
+\begin{equation}
+\frac{\partial\rho}{\partial t} = -\nabla\cdot(\rho\Ub) = -\Ub\cdot\nabla\rho 
+- \rho\nabla\cdot\Ub. \label{rho equation}
+\end{equation}
 \subsection{Predicting $\rho'$ (predict\_rho = F - default)}
-Base state density evolution equation:
-\begin{eqnarray}
-\frac{\partial\rho_0}{\partial t} &=& -\nabla\cdot(\rho_0 w_0 \eb_r) - 
-\nabla\cdot(\eta_\rho \eb_r) \nonumber \\
-&=& -w_0\frac{\partial\rho_0}{\partial r} \underbrace{- 
-\rho_0\frac{\partial w_0}{\partial r}} 
-- \nabla\cdot(\eta_\rho \eb_r). \label{rho0 equation}
-\end{eqnarray}
-Note that $\Ub = \Ubt + w_o\eb_r$.  Subtract (\ref{rho0 equation}) from 
-(\ref{rho equation}) to give perturbational density equation:
-\begin{eqnarray}
-\frac{\partial\rho'}{\partial t} &=& -\nabla\cdot(\rho'\Ub) - \nabla\cdot(\rho_0\Ubt) 
-+ \nabla\cdot(\eta_\rho \eb_r) \nonumber \\
-&=& -\Ub\cdot\nabla\rho' \underbrace{- \rho'\nabla\cdot\Ub - \nabla\cdot(\rho_0\Ubt)} 
-+ \nabla\cdot(\eta_\rho \eb_r).\label{rho' equation}
-\end{eqnarray}
+The base state density evolution equation is
+\begin{equation}
+\frac{\partial\rho_0}{\partial t} = -\nabla\cdot(\rho_0 w_0 \eb_r) = 
+-w_0\frac{\partial\rho_0}{\partial r} - \rho_0\frac{\partial w_0}{\partial r}.
+\label{rho0 equation}
+\end{equation}
+Subtract (\ref{rho0 equation}) from (\ref{rho equation}) and rearrange, noting that 
+$\Ub = \Ubt + w_o\eb_r$, to obtain the perturbational density equation,
+\begin{equation}
+\frac{\partial\rho'}{\partial t} = -\Ub\cdot\nabla\rho' \underbrace{- \rho'\nabla\cdot\Ub 
+- \nabla\cdot(\rho_0\Ubt)}_{"\rho' ~ \text{force}"}. 
+\label{rhoprime equation}
+\end{equation}
 \subsubsection{Predicting $\rho'$ at edges}
 We predict $\rho'$ to edges using make\_edge\_scal in scalar\_advance.  The underbraced 
-term in (\ref{rho' equation}) is computed in modify\_scal\_force.  The $\eta_\rho$ term 
-is not included, but this is correct because the procedure to compute $\rho$ at edges 
-described in Section \ref{Computing rho at edges} makes use of an edge-centered, 
-time-centered $\rho_0^{n+\half}$ that does not include an $\eta_\rho$ contribution either.
+forcing term in (\ref{rhoprime equation}) is computed in modify\_scal\_force.
 \subsubsection{Computing $\rho$ at edges}\label{Computing rho at edges}
-We first compute $\rho_0^{(2)}$ using advect\_base (but not correct\_base).  We compute 
-$\rho$ on edges by adding $\rho_0^{n+\half} = (\rho_0^n + \rho_0^{(2)}) / 2$ to $\rho'$ at 
-edges. For the non-radial faces, we can directly add $\rho_0^{n+\half}$ since it is a 
-cell-centered quantity.  For the radial faces, we interpolate to obtain $\rho_0^{n+\half}$ 
-at radial faces.
+We first compute $\rho_0^{(2)}$ from $\rho^n$ using advect\_base.  The $(2)$ in the 
+superscript indicates that we have not called correct\_base yet.  We compute $\rho$ on edges 
+by adding $\rho_0^{n+\half} = (\rho_0^n + \rho_0^{(2)}) / 2$ to $\rho'$ at edges.  We use 
+$\rho^{(2)}$ rather than $\rho^{n+1}$ to be consistent with the fact that we omitted the 
+$\eta_\rho$ contribution to $\rho'$ at edges.  For the non-radial faces, we can directly add 
+$\rho_0^{n+\half}$ to $\rho'$ since it is a cell-centered quantity.  For the radial faces, we 
+interpolate to obtain $\rho_0^{n+\half}$ at edges.
 \subsection{Predicting $\rho$ (predict\_rho = T)}
 \subsubsection{Predicting $\rho$ at edges}
 We predict $\rho$ to edges using make\_edge\_scal in scalar\_advance.  The forcing term 
-is set to zero, and therefore we set is\_conservative = T to alter the discretization 
-in make\_edge\_scal.
+is set to zero, but then we set is\_conservative = T to use the conservative 
+discretization in make\_edge\_scal.
 \subsection{Predicting $\rho_0$}
 To compute $\eta_\rho$, we need $\rho_0$ at edge-centered, time-centered locations.  
 However, we do NOT use the same edge-centered, time-centered $\rho_0^{n+\half}$ that was 
 referred to in Section \ref{Computing rho at edges}.  Instead, we use a $\rho_0$ computed 
 with a Godunov method in make\_edge\_state\_1d.  We call make\_edge\_state\_1d using the 
-underbraced term in (\ref{rho0 equation}) as the forcing.  The $\eta_\rho$ term is not 
+term proportional to $\rho_0$ in  (\ref{rho0 equation}) as the forcing.  The $\eta_\rho$ 
+term is not 
 included.\MarginPar{I think there is a bug in the code and the $\eta_\rho$ term needs to 
 be included here.}  This gives us the so-called $\rho_0^{n+\half,{\rm pred}}$.
 \section{Energy Evolution}
@@ -81,9 +78,9 @@ Full enthalpy equation:
 \begin{eqnarray}
 \frac{\partial(\rho h)}{\partial t} &=& -\nabla\cdot(\rho h \Ub) + \frac{Dp_0}{Dt} 
 + \nabla\cdot\kappa\nabla T + \rho H_{\rm nuc} + \rho H_{\rm ext} \nonumber \\
-&=& -\Ub\cdot\nabla(\rho h) - \rho h\nabla\cdot\Ub -\nabla\cdot(\rho h \Ub) 
-+ \frac{Dp_0}{Dt} + \nabla\cdot\kappa\nabla T + \rho H_{\rm nuc} 
-+ \rho H_{\rm ext}.\label{rhoh equation}
+&=& \underbrace{-\Ub\cdot\nabla(\rho h) - \rho h\nabla\cdot\Ub}_{-\nabla\cdot(\rho h\Ub)} 
++ \underbrace{\psi + \Ubt\cdot\nabla p_0}_{\frac{Dp_0}{Dt}} + \nabla\cdot\kappa\nabla T 
++ \rho H_{\rm nuc} + \rho H_{\rm ext}\label{rhoh equation}
 \end{eqnarray}
 Full temperature equation:
 \begin{equation}
