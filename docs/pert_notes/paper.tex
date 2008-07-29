@@ -12,6 +12,7 @@
 \def\eb    {{\bf e}}
 \def\Ub    {{\bf U}}
 \def\Ubt   {\widetilde{\bf U}}
+\def\wt    {\widetilde{w}}
 
 \title{Notes on Perturbational Quantities}
 
@@ -29,9 +30,10 @@
 
 \section{Density Evolution}
 Full density evolution equation:
-\begin{equation}
-\frac{\partial\rho}{\partial t} = -\nabla\cdot(\rho\Ub). \label{rho equation}
-\end{equation}
+\begin{eqnarray}
+\frac{\partial\rho}{\partial t} &=& -\nabla\cdot(\rho\Ub) \nonumber \\
+&=& -\Ub\cdot\nabla\rho -\rho\nabla\cdot\Ub. \label{rho equation}
+\end{eqnarray}
 \subsection{Predicting $\rho'$ (predict\_rho = F - default)}
 Base state density evolution equation:
 \begin{eqnarray}
@@ -50,10 +52,43 @@ We first compute $\rho_0^{(2)}$ using advect\_base (but not correct\_base).  We 
 \subsection{Predicting $\rho$ (predict\_rho = T)}
 \subsubsection{Predicting $\rho$ at edges}
 We predict $\rho$ to edges using make\_edge\_scal in scalar\_advance.  The forcing term is set to zero, and therefor we set is\_conservative = T to alter the discretization in make\_edge\_scal.\MarginPar{I think there is a bug in the code since is\_conservative is always set to T, even if we are predicting $\rho'$.}
-\subsection{$\rho_0^{n+\half,{\rm pred}}$}
+\subsection{Predicting $\rho_0$}
 To compute $\eta_\rho$, we need $\rho_0$ at edge-centered, time-centered locations.  However, we do NOT use the same edge-centered, time-centered $\rho_0^{n+\half}$ that was referred to in Section \ref{Computing rho at edges}.  Instead, we use a $\rho_0$ computed with a Godunov method in make\_edge\_state\_1d.  We call make\_edge\_state\_1d using the underbraced term in (\ref{rho0 equation}) as the forcing.  The $\eta_\rho$ term is not included.\MarginPar{I think there is a bug in the code and the $\eta_\rho$ term needs to be included here.}  This gives us the so-called $\rho_0^{n+\half,{\rm pred}}$.
 \section{Energy Evolution}
+Full enthalpy equation:
+\begin{eqnarray}
+\frac{\partial(\rho h)}{\partial t} &=& -\nabla\cdot(\rho h \Ub) + \frac{Dp_0}{Dt} + \nabla\cdot\kappa\nabla T + \rho H_{\rm nuc} + \rho H_{\rm ext} \nonumber \\
+&=& -\Ub\cdot\nabla(\rho h) - \rho h\nabla\cdot\Ub -\nabla\cdot(\rho h \Ub) + \frac{Dp_0}{Dt} + \nabla\cdot\kappa\nabla T + \rho H_{\rm nuc} + \rho H_{\rm ext}.\label{rhoh equation}
+\end{eqnarray}
+Full temperature equation:
+\begin{equation}
+\frac{\partial T}{\partial t} = -\Ub\cdot\nabla T + \frac{1}{\rho c_p}\left\{(1-\rho h_p)\left[\psi + (\Ubt\cdot\eb_r)\frac{\partial p_0}{\partial r}\right] - \sum_k\rho\xi_k\dot\omega_k + \rho H_{\rm nuc} + \rho H_{\rm ext}\right\}.
+\end{equation}
 \subsection{Predicting $(\rho h)'$ (enthalpy\_pred\_type = 1 - default)}
+These are working notes for what I'd like to do for the energy evolution.
+\subsubsection{Predicting $(\rho h)'$ at edges}\label{Predicting rhohprime at edges}
+We can arbitrarily define a base state enthalpy evolution equation:
+\begin{eqnarray}
+\frac{\partial(\rho h)_0}{\partial t} &=& -\nabla\cdot[(\rho h)_0 w_0\eb_r] + \frac{D_0p_0}{Dt} + \overline{\nabla\cdot\kappa\nabla T} + \overline{\rho H_{\rm nuc}} + \overline{\rho H_{\rm ext}} \nonumber \\
+&=& -w_0\frac{\partial(\rho h)_0}{\partial r} - (\rho h)_0\frac{\partial w_0}{\partial r} + \psi + \overline{\nabla\cdot\kappa\nabla T} + \overline{\rho H_{\rm nuc}} + \overline{\rho H_{\rm ext}}.\label{rhoh0 equation}
+\end{eqnarray}
+We will predict both $(\rho h)_0$ and $(\rho h)'$ to edges using a Godunov method.  Then we will add the two answers together to get $\rho h$ at edges.  This is different from the density, in which we averaged an ``old'' and ``new'' base state density to get $\rho_0$ at edges.  By computing $\rho h$ at edges in this way, we avoid having to compute the complete evolution of $(\rho h)_0$, and therefore avoid having to write a correct\_base and diffuse\_base function for $\rho h$.\\
+
+To simplify matters, the we have already called react\_state, so for now we will ignore the $\rho H_{\rm nuc}$ and $\rho H_{\rm ext}$ terms in the remaining derivations.  Subtracting (\ref{rhoh0 equation}) from (\ref{rhoh equation}) and ignoring the aforementioned terms gives the perturbational enthalpy equation:
+\begin{eqnarray}
+\frac{\partial(\rho h)'}{\partial t} &=& -\nabla\cdot[(\rho h)'\Ub] - \nabla\cdot[(\rho h)_0\Ubt] + \wt\frac{\partial p_0}{\partial r} + (\nabla\cdot\kappa\nabla T - \overline{\nabla\cdot\kappa\nabla T}) \nonumber \\
+&=& -\Ub\cdot\nabla(\rho h)' \underbrace{- (\rho h)'\nabla\cdot\Ub - \nabla\cdot[(\rho h)_0\Ubt]} + \wt\frac{\partial p_0}{\partial r} + (\nabla\cdot\kappa\nabla T - \overline{\nabla\cdot\kappa\nabla T})\label{rhohprime equation}
+\end{eqnarray}
+We use make\_edge\_scal to get $(\rho h)'$ at edges.  The function modify\_scal\_force computes the underbraced term in (\ref{rhohprime equation}).  The function mkrhohforce computes the $\wt$ term.\MarginPar{I need to write a function to handle the thermal diffusion terms.}
+\subsubsection{Predicting $(\rho h)_0$ at edges}\label{Predicting rhoh0 at edges}
+After the call to react\_state, we set $(\rho h)_0^{(1)} = \overline{(\rho h)^{(1)}}$.  We use the Godunov algorithm in make\_edge\_state\_1d to predict $(\rho h)_0$ at edges, omitting the terms added in react\_state, so we are essentially evolving an abbreviated version of (\ref{rhoh0 equation}):
+\begin{eqnarray}
+\frac{\partial(\rho h)_0}{\partial t} &=& -\nabla\cdot[(\rho h)_0 w_0\eb_r] + \psi + \overline{\nabla\cdot\kappa\nabla T} \nonumber \\
+&=& -w_0\frac{\partial(\rho h)_0}{\partial r} - (\rho h)_0\frac{\partial w_0}{\partial r} + \psi + \overline{\nabla\cdot\kappa\nabla T}.\label{rhoh0 equation}
+\end{eqnarray}
+In advect\_base, the forcing term is set to the term proportional to $(\rho h)_0$.\MarginPar{We are currently omitting the $\psi$ and thermal conduction terms.  I think this is a bug.}
+\subsubsection{Computing $\rho h$ at edges}
+Simply add the results from Sections \ref{Predicting rhohprime at edges} and \ref{Predicting rhoh0 at edges}, using spatial interpolation to get $(\rho h)_0$ at non-radial faces.
 \subsection{Predicting $h$ (enthalpy\_pred\_type = 2)}
 \subsection{Predicting $T$ into $(\rho h)'$ (enthalpy\_pred\_type = 3)}
 \subsection{Predicting $T$ into $h$ (enthalpy\_pred\_type = 4)}
