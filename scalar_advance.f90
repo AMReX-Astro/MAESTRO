@@ -76,6 +76,7 @@ contains
 
     integer    :: velpred,comp,pred_comp,n,dm
     logical    :: umac_nodal_flag(sold(1)%dim), is_vel
+    logical    :: is_conservative
     real(dp_t) :: smin,smax
 
     real(kind=dp_t), allocatable :: rho0_edge_old(:,:)
@@ -237,26 +238,29 @@ contains
     end if
 !   call make_edge_state(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0,w0_cart_vec,dx,dt, &
 !                        is_vel,the_bc_level,velpred,pred_comp,dm+pred_comp,1,mla)
+    is_conservative = .false.
     call make_edge_scal(nlevs,sold,sedge,umac,scal_force, &
                         w0,w0_cart_vec, &
                         dx,dt,is_vel,the_bc_level, &
-                        pred_comp,dm+pred_comp,1,.false.,mla)
+                        pred_comp,dm+pred_comp,1,is_conservative,mla)
 
     ! predict either X or (rho X)' at the edges
 !    call make_edge_state(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0,w0_cart_vec,dx, &
 !                         dt,is_vel,the_bc_level,velpred,spec_comp,dm+spec_comp,nspec,mla)
+    is_conservative = .false.
     call make_edge_scal(nlevs,sold,sedge,umac,scal_force, &
                         w0,w0_cart_vec, &
                         dx,dt,is_vel,the_bc_level, &
-                        spec_comp,dm+spec_comp,nspec,.false.,mla)
+                        spec_comp,dm+spec_comp,nspec,is_conservative,mla)
 
     ! predict rho' at the edges
 !    call make_edge_state(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0,w0_cart_vec,dx, &
 !                         dt,is_vel,the_bc_level,velpred,rho_comp,dm+rho_comp,1,mla)
+    is_conservative = predict_rho
     call make_edge_scal(nlevs,sold,sedge,umac,scal_force, &
                         w0,w0_cart_vec, &
                         dx,dt,is_vel,the_bc_level, &
-                        rho_comp,dm+rho_comp,1,.true.,mla)
+                        rho_comp,dm+rho_comp,1,is_conservative,mla)
 
     if (enthalpy_pred_type .eq. predict_rhohprime) then
        ! convert (rho h)' -> (rho h)
