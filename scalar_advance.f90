@@ -244,7 +244,7 @@ contains
                         dx,dt,is_vel,the_bc_level, &
                         pred_comp,dm+pred_comp,1,is_conservative,mla)
 
-    ! predict either X or (rho X)' at the edges
+    ! predict either X at the edges
 !    call make_edge_state(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0,w0_cart_vec,dx, &
 !                         dt,is_vel,the_bc_level,velpred,spec_comp,dm+spec_comp,nspec,mla)
     is_conservative = .false.
@@ -253,7 +253,7 @@ contains
                         dx,dt,is_vel,the_bc_level, &
                         spec_comp,dm+spec_comp,nspec,is_conservative,mla)
 
-    ! predict rho' at the edges
+    ! predict rho or rho' at the edges
 !    call make_edge_state(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0,w0_cart_vec,dx, &
 !                         dt,is_vel,the_bc_level,velpred,rho_comp,dm+rho_comp,1,mla)
     is_conservative = predict_rho
@@ -273,7 +273,7 @@ contains
        call put_in_pert_form(nlevs,sold,rho0_old,dx,rho_comp,.false.,mla,the_bc_level)
     end if
 
-    ! if we were predicting X at the edges, then restore the state arrays 
+    ! we now always predict X at the edges, so we now restore the state arrays 
     ! (and base state) from X to (rho X)
     call convert_rhoX_to_X(nlevs,sold,.false.,mla,the_bc_level)
 
