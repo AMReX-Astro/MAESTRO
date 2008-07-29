@@ -51,7 +51,7 @@ We predict $\rho'$ to edges using make\_edge\_scal in scalar\_advance.  The unde
 We first compute $\rho_0^{(2)}$ using advect\_base (but not correct\_base).  We compute $\rho$ on edges by adding $\rho_0^{n+\half} = (\rho_0^n + \rho_0^{(2)}) / 2$ to $\rho'$ at edges. For the non-radial faces, we can directly add $\rho_0^{n+\half}$ since it is a cell-centered quantity.  For the radial faces, we interpolate to obtain $\rho_0^{n+\half}$ at radial faces.
 \subsection{Predicting $\rho$ (predict\_rho = T)}
 \subsubsection{Predicting $\rho$ at edges}
-We predict $\rho$ to edges using make\_edge\_scal in scalar\_advance.  The forcing term is set to zero, and therefor we set is\_conservative = T to alter the discretization in make\_edge\_scal.\MarginPar{I think there is a bug in the code since is\_conservative is always set to T, even if we are predicting $\rho'$.}
+We predict $\rho$ to edges using make\_edge\_scal in scalar\_advance.  The forcing term is set to zero, and therefor we set is\_conservative = T to alter the discretization in make\_edge\_scal.
 \subsection{Predicting $\rho_0$}
 To compute $\eta_\rho$, we need $\rho_0$ at edge-centered, time-centered locations.  However, we do NOT use the same edge-centered, time-centered $\rho_0^{n+\half}$ that was referred to in Section \ref{Computing rho at edges}.  Instead, we use a $\rho_0$ computed with a Godunov method in make\_edge\_state\_1d.  We call make\_edge\_state\_1d using the underbraced term in (\ref{rho0 equation}) as the forcing.  The $\eta_\rho$ term is not included.\MarginPar{I think there is a bug in the code and the $\eta_\rho$ term needs to be included here.}  This gives us the so-called $\rho_0^{n+\half,{\rm pred}}$.
 \section{Energy Evolution}
