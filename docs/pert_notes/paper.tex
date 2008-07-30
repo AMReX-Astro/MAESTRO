@@ -59,14 +59,14 @@ There are two ways to predict $\rho_0$ at edges.
 \item We call make\_edge\_state\_1d using the underbraced term in 
 (\ref{rho0 equation}) as the forcing.  This gives us $\rho_0^{n+\half,{\rm pred}}$.
 \MarginPar{You could argue that including a time-lagged $\eta_\rho$ source term would 
-increase the order of accuracy, but Ann has convinced me that this term isn't necessary.}  
+decrease the error, but Ann has convinced me that this term isn't necessary.}  
 This term is used to advect $\rho_0$ in advect\_base and to compute $\eta_\rho$, which will 
 be used in correct\_base.
 \item We define $\rho_0^{n+\half,{\rm avg}} = (\rho_0^n + \rho_0^{(2)})/2$.  We 
-compute $\rho_0^{(2)}$ from $\rho^n$ using advect\_base, which advances equation 
+compute $\rho_0^{(2)}$ from $\rho_0^n$ using advect\_base, which advances equation 
 (\ref{rho0 equation}) through $\Delta t$ in time.  The $(2)$ in the superscript indicates 
-that we have not called correct\_base yet, which computes  $\rho^{n+1}$ from $\rho_0^{(2)}$. 
-We use $\rho^{(2)}$ rather than $\rho^{n+1}$ to construct $\rho_0^{n+\half,{\rm avg}}$ to be 
+that we have not called correct\_base yet, which computes  $\rho_0^{n+1}$ from $\rho_0^{(2)}$. 
+We use $\rho_0^{(2)}$ rather than $\rho_0^{n+1}$ to construct $\rho_0^{n+\half,{\rm avg}}$ to be 
 consistent with the fact that we do not include an $\eta_\rho$ contribution to compute 
 $\rho'$ at edges.  $\rho_0^{n+\half,{\rm avg}}$ is used to construct $\rho$ at edges from 
 $\rho'$ at edges, and this $\rho$ at edges is used to compute fluxes for $\rho X_k$.  
