@@ -49,34 +49,36 @@ $\Ub = \Ubt + w_o\eb_r$, to obtain the perturbational density equation,
 \label{rhoprime equation}
 \end{equation}
 \subsubsection{Predicting $\rho'$ at edges}
-We define $\rho'^n = \rho^n - \rho_0^n$.  Then we predict $\rho'$ to edges using 
+We define $\rho' = \rho^n - \rho_0^n$.  Then we predict $\rho'$ to edges using 
 make\_edge\_scal in scalar\_advance and the underbraced term in (\ref{rhoprime equation}) 
 as the forcing.
+\subsubsection{Predicting $\rho_0$ at edges}
+There are two ways to predict $\rho_0$ at edges.\\ \\
+We can call make\_edge\_state\_1d using the term proportional to $\rho_0$ in 
+(\ref{rho0 equation}) as the forcing.  This gives us $\rho_0^{n+\half,{\rm pred}}$.
+\MarginPar{You could argue that including a time-lagged $\eta_\rho$ source term would 
+increase the order of accuracy, but Ann has convinced me that this term isn't necessary.}  
+This term is used to advect $\rho_0$ in advect\_base and to compute $\eta_\rho$ that will be 
+used in correct\_base.\\ \\
+We can also define $\rho_0^{n+\half,{\rm avg}} = (\rho_0^n + \rho_0^{(2)})/2$.  We first 
+compute $\rho_0^{(2)}$ from $\rho^n$ using advect\_base, which evolves (\ref{rho0 equation}) 
+through $\Delta t$ in time.  The $(2)$ in the superscript indicates that we have not called 
+correct\_base yet (correct\_base takes $\rho_0^{(2)}$ as an input and computes $\rho^{n+1}$ 
+as the output).  This term is used to construct $\rho$ at edges from $\rho'$ at edges, and 
+this $\rho$ at edges is used to compute fluxes for $\rho X_k$.  We use $\rho^{(2)}$ rather 
+than $\rho^{n+1}$ to construct $\rho_0^{n+\half,{\rm avg}}$ to be consistent with the fact 
+that we do not include an $\eta_\rho$ contribution to compute $\rho'$ at edges.
 \subsubsection{Computing $\rho$ at edges}\label{Computing rho at edges}
-We first compute $\rho_0^{(2)}$ from $\rho^n$ using advect\_base, which evolves 
-(\ref{rho0 equation}) through $\Delta t$ in time.  The $(2)$ in the 
-superscript indicates that we have not called correct\_base yet (correct\_base takes 
-$\rho_0^{(2)}$ as an input and computes $\rho^{n+1}$ as the output).  We compute $\rho$ on 
-edges by adding $\rho_0^{n+\half} = (\rho_0^n + \rho_0^{(2)}) / 2$ to $\rho'$ at edges.  We 
-use $\rho^{(2)}$ rather than $\rho^{n+1}$ to be consistent with the fact that we did not 
-include an $\eta_\rho$ contribution to compute $\rho'$ at edges.  For the non-radial edges, 
-we can directly add $\rho_0^{n+\half}$ to $\rho'$ since $\rho_0^{n+\half}$ is a cell-centered 
-quantity.  For the radial edges, we interpolate to obtain $\rho_0^{n+\half}$ at radial edges 
-before adding it to $\rho'$.
-\subsection{Predicting $\rho$ (predict\_rho = T)}
-\subsubsection{Predicting $\rho$ at edges}
-We predict $\rho$ to edges using make\_edge\_scal in scalar\_advance.  The forcing term 
-is set to zero, but then we set is\_conservative = T to use the conservative 
-discretization in make\_edge\_scal.
-\subsection{Predicting $\rho_0$ (predict\_rho = T or F)}
-To advect $\rho_0$ in advect\_base and to compute $\eta_\rho$ that will be used in 
-correct\_base, we need $\rho_0$ at edge-centered, time-centered locations.  However, we do 
-not use the same edge-centered, time-centered $\rho_0^{n+\half}$ referred to in Section 
-\ref{Computing rho at edges}.  Instead, we use a $\rho_0$ computed with a Godunov method in 
-make\_edge\_state\_1d.  We call make\_edge\_state\_1d using the term proportional to 
-$\rho_0$ in (\ref{rho0 equation}) as the forcing.  This gives us $\rho_0^{n+\half,{\rm pred}}$.
-\MarginPar{You could argue that including a time-lagged $\eta_\rho$ source term would
-increase the order of accuracy, but Ann has convinced me that this term isn't necessary.}
+For the non-radial edges, we can directly add $\rho_0^{n+\half,{\rm avg}}$ to $\rho'$ since 
+$\rho_0^{n+\half,{\rm avg}}$ is a cell-centered quantity.  For the radial edges, we 
+interpolate to obtain $\rho_0^{n+\half,{\rm avg}}$ at radial edges before adding it to $\rho'$.
+\subsubsection{Advancing $\rho X_k$}
+The evolution equation for $\rho X_k$, ignoring the reaction terms that were already 
+accounted for in react\_state, and the associated discretization is
+\begin{equation}
+\frac{\partial\rho X_k}{\partial t} = -\nabla\cdot(\rho X_k\Ub) = 
+-\nabla\cdot\left\{\left[\left(\rho_0^{n+\half,{\rm avg}}+\rho'\right)X_k\right](\Ubt+w_0\eb_r)\right\}.
+\end{equation}
 \section{Energy Evolution}
 The full enthalpy equation is
 \begin{eqnarray}
@@ -117,19 +119,32 @@ enthalpy equation:
 + \nabla\cdot\kappa\nabla T\nonumber \\
 &=& -\Ub\cdot\nabla(\rho h)' \underbrace{- (\rho h)'\nabla\cdot\Ub 
 - \nabla\cdot[(\rho h)_0\Ubt] + \wt\frac{\partial p_0}{\partial r}
-+ \nabla\cdot\kappa\nabla T}_{"(\rho h)' ~ \text{force}"} \label{rhohprime equation}
++ \nabla\cdot\kappa\nabla T}_{"(\rho h)' ~ \text{force}"}. \label{rhohprime equation}
 \end{eqnarray}
 \subsubsection{Predicting $(\rho h)'$ at edges}\label{Predicting rhohprime at edges}
 We define $(\rho h)_0^{(1)} = \overline{(\rho h)^{(1)}}$  and 
-$(\rho h)'^{(1)} = (\rho h)^{(1)}-(\rho h)_0^{(1)}$.  Then we predict $(\rho h)'^{(1)}$ to 
+$(\rho h)' = (\rho h)^{(1)}-(\rho h)_0^{(1)}$.  Then we predict $(\rho h)'$ to 
 edges using make\_edge\_scal in scalar\_advance and the underbraced term in 
-(\ref{rhohprime equation}) as the 
-forcing.
+(\ref{rhohprime equation}) as the forcing.\\ \\
+{\bf What the code is currently doing:} Instead of defining 
+$(\rho h)_0^{(1)} = \overline{(\rho h)^{(1)}}$, the code carries through the complete 
+evolution of $(\rho h)_0$ using $(\rho h)_0^n \rightarrow$ react\_base 
+$\rightarrow (\rho h)_0^{(1)} \rightarrow$ advect\_base 
+$\rightarrow (\rho h)_0^{(2)} \rightarrow$ react\_base $\rightarrow (\rho h)_0^{n+1}$.  
+There is no correct\_base function for $(\rho h)_0$ written yet, nor is any adjustment made 
+to sync up $(\rho h)_0$ after the thermal diffusion setp.
+\subsubsection{Predicting $(\rho h)_0$ at edges}
 \subsubsection{Computing $\rho h$ at edges}
 We first compute $(\rho h)_0^{(2)}$ from $(\rho h)_0^{(1)}$ using advect\_base, which evolves 
 (\ref{rhoh equation}) through $\Delta t$ in time.  Then we follow an analogous procedure 
 used in Section \ref{Computing rho at edges} to obtain $\rho h$ at edges.
-\subsection{Predicting $h$ (enthalpy\_pred\_type = 2)}
-\subsection{Predicting $T$ into $(\rho h)'$ (enthalpy\_pred\_type = 3)}
-\subsection{Predicting $T$ into $h$ (enthalpy\_pred\_type = 4)}
+\subsubsection{Advancing $\rho h$}
+We would like to update the non-forcing part of the enthalpy equation using
+\begin{equation}
+\frac{\partial(\rho h)}{\partial t} = -\nabla\cdot(\rho h\Ub) = -\nabla\cdot\left\{\left[(\rho h)_0^{n+\half,{\rm avg}}+(\rho h)'\right]\left(\Ubt + w_0\eb_r\right)\right\}.
+\end{equation}
+{\bf What the code is currently doing:}
+\begin{equation}
+\frac{\partial(\rho h)}{\partial t} = -\nabla\cdot\left[(\rho h)'\left(\Ubt + w_0\eb_r\right)\right] - \nabla\cdot\left[(\rho h)_0^{n+\half,{\rm avg}}\Ubt\right] - \nabla\cdot\left[(\rho h)_0^{n+\half,{\rm pred}}w_0\right].
+\end{equation}
 \end{document}
