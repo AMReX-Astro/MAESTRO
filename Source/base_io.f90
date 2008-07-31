@@ -104,6 +104,7 @@ contains
     use network, only: nspec
     use geometry, only : dr, r_start_coord, r_end_coord
     use bl_constants_module
+    use restrict_base_module, only: fill_ghost_base
     
     integer          , intent(in   ) :: nlevs
     character(len=11), intent(in   ) :: state_name
@@ -167,6 +168,18 @@ contains
        end do
     end do
     close(99)
+
+    if (nlevs .gt. 1) then
+       call fill_ghost_base(nlevs,rho0,.true.)
+       call fill_ghost_base(nlevs,rhoh0,.true.)
+       call fill_ghost_base(nlevs,p0,.true.)
+       call fill_ghost_base(nlevs,gamma1bar,.true.)
+       call fill_ghost_base(nlevs,div_coeff,.true.)
+       call fill_ghost_base(nlevs,psi,.true.)
+       call fill_ghost_base(nlevs,etarho_cc,.true.)
+       call fill_ghost_base(nlevs,w0,.false.)
+       call fill_ghost_base(nlevs,etarho,.false.)
+    end if
 
     call destroy(bpt)
 
