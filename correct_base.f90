@@ -60,16 +60,17 @@ contains
 ! UPDATE RHO0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    do r=r_start_coord(n),anelastic_cutoff_coord(n)-1
-       rho0_new(r) = rho0_new(r) - dt/dz*(etarho(r+1) - etarho(r))
+    do r=r_start_coord(n),r_end_coord(n)
+       if (r .lt. anelastic_cutoff_coord(n)) then
+          rho0_new(r) = rho0_new(r) - dt/dz*(etarho(r+1) - etarho(r))
+       end if
     end do
     
   end subroutine correct_base_state_planar
 
   subroutine correct_base_state_spherical(n,rho0_new,etarho,dt)
 
-    use geometry, only: anelastic_cutoff_coord, r_start_coord, r_end_coord, &
-         r_cc_loc, r_edge_loc, dr
+    use geometry, only: anelastic_cutoff_coord, r_cc_loc, r_edge_loc, dr
 
     integer        , intent(in   ) :: n
     real(kind=dp_t), intent(inout) :: rho0_new(0:)
@@ -83,7 +84,7 @@ contains
 ! UPDATE RHO0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    do r=r_start_coord(n),anelastic_cutoff_coord(n)-1
+    do r=0,anelastic_cutoff_coord(n)-1
        rho0_new(r) = rho0_new(r) - dt/(r_cc_loc(n,r)**2)* &
             (r_edge_loc(n,r+1)**2 * etarho(r+1) - &
              r_edge_loc(n,r  )**2 * etarho(r  )) / dr(n)
