@@ -20,7 +20,7 @@ contains
 
     use bl_prof_module
     use bl_constants_module
-    use geometry, only: spherical, nr_fine, r_end_coord
+    use geometry, only: spherical, nr_fine
     use variables
     use network
     use fill_3d_module
@@ -62,7 +62,7 @@ contains
     if (spherical .eq. 1) then
       allocate( rho0_halftime(0:nr_fine-1))
       allocate(rhoh0_halftime(0:nr_fine-1))
-      do r=0,r_end_coord(nlevs)
+      do r=0,nr_fine-1
          rho0_halftime(r)  = HALF * (rho0_old(nlevs,r) + &
                                      rho0_new(nlevs,r) )
 

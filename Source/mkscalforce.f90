@@ -287,7 +287,7 @@ contains
                                  add_thermal)
 
     use fill_3d_module
-    use geometry, only: nr_fine, dr, r_end_coord
+    use geometry, only: nr_fine, dr
     use probin_module, only: enthalpy_pred_type, base_cutoff_density
     use pred_parameters
 
@@ -320,11 +320,11 @@ contains
     allocate(psi_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
     call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,psi,psi_cart,lo,hi,dx,0,0)
 
-    do r=0,r_end_coord(n)
+    do r=0,nr_fine-1
        
        if (rho0(r) > base_cutoff_density) then
           gradp_rad(r) = rho0(r) * grav(r)
-       else if (r.eq.r_end_coord(n)) then 
+       else if (r.eq.nr_fine-1) then 
           gradp_rad(r) = HALF * ( p0_old(r  ) + p0_new(r  ) &
                                  -p0_old(r-1) - p0_new(r-1) ) / dr(n)
        else
@@ -649,7 +649,7 @@ contains
     use fill_3d_module
     use variables, only: temp_comp, rho_comp, spec_comp
     use eos_module
-    use geometry,  only: dr, nr_fine, r_end_coord
+    use geometry,  only: dr, nr_fine
 
     ! compute the source terms for temperature
 
@@ -680,12 +680,12 @@ contains
     allocate(psi_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
     call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,psi,psi_cart,lo,hi,dx,0,0)
 
-    do r=0,r_end_coord(n)
+    do r=0,nr_fine-1
        
        if (r.eq.0) then
           gradp_rad(r) = HALF * ( p0_old(r+1) + p0_new(r+1) &
                                  -p0_old(r  ) - p0_new(r  ) ) / dr(n)
-       else if (r.eq.r_end_coord(n)) then 
+       else if (r.eq.nr_fine-1) then 
           gradp_rad(r) = HALF * ( p0_old(r  ) + p0_new(r  ) &
                                  -p0_old(r-1) - p0_new(r-1) ) / dr(n)
        else

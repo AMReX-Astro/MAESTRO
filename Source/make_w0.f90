@@ -205,7 +205,7 @@ contains
                                gamma1bar,gamma1bar_new,delta_p0_ptherm_bar, &
                                etarho,etarho_cc,w0_force,dt,dtold)
 
-    use geometry, only: r_cc_loc, nr_fine, r_edge_loc, dr, r_end_coord
+    use geometry, only: r_cc_loc, nr_fine, r_edge_loc, dr
     use make_grav_module
     use cell_to_edge_module
     use bl_constants_module
@@ -258,7 +258,7 @@ contains
 
 
     ! create time-centered base-state quantities
-    do r = 0, r_end_coord(n)
+    do r = 0, nr_fine-1
        p0_nph(r)        = HALF*(p0(r)        + p0_new(r))
        rho0_nph(r)      = HALF*(rho0(r)      + rho0_new(r))
        gamma1bar_nph(r) = HALF*(gamma1bar(r) + gamma1bar_new(r))       
@@ -269,7 +269,7 @@ contains
     ! solve for the update to w0.  We integrate d/dr (r^2 w0) = (r^2 Sbar)
 
     w0_bar = ZERO
-    do r=1,r_end_coord(n)+1
+    do r=1,nr_fine
 
        if (rho0(r-1) .gt. base_cutoff_density) then
           volume_discrepancy = dpdt_factor * delta_p0_ptherm_bar(r-1)/dt
@@ -283,7 +283,7 @@ contains
 
     end do
 
-    do r = 1,r_end_coord(n)+1
+    do r = 1,nr_fine
        w0_bar(r) = w0_bar(r) / r_edge_loc(n,r)**2
     end do
 
@@ -301,13 +301,12 @@ contains
    
     ! Note that we are solving for (r^2 w0), not just w0. 
 
-    do r=1,r_end_coord(n)+1
+    do r=1,nr_fine
        c(r) = gamma1bar_nph(r-1) * p0_nph(r-1) / r_cc_loc(n,r-1)**2
        c(r) = c(r) / dr(n)**2
     end do
 
-    do r=1,r_end_coord(n)
-
+    do r=1,nr_fine-1
        d(r) = -( gamma1bar_nph(r-1) * p0_nph(r-1) / r_cc_loc(n,r-1)**2 &
                 +gamma1bar_nph(r  ) * p0_nph(r  ) / r_cc_loc(n,r  )**2 ) / dr(n)**2 
 
@@ -315,12 +314,12 @@ contains
        d(r) = d(r) - four * dpdr / (r_edge_loc(n,r))**3
     end do
 
-    do r = 0,r_end_coord(n)
+    do r = 0,nr_fine-1
        e(r) = gamma1bar_nph(r) * p0_nph(r) / r_cc_loc(n,r)**2
        e(r) = e(r) / dr(n)**2
     end do
 
-    do r = 1,r_end_coord(n)
+    do r = 1,nr_fine-1
        dpdr = (p0_nph(r)-p0_nph(r-1))/dr(n)
        rhs(r) = four * dpdr * w0_bar(r) / r_edge_loc(n,r) - &
             grav_edge(r) * (r_cc_loc(n,r  )**2 * etarho_cc(r  ) - &
@@ -335,26 +334,26 @@ contains
      rhs(0) = zero
 
     ! Upper boundary
-!      c(r_end_coord(n)+1) = -one
-       c(r_end_coord(n)+1) = zero
-       d(r_end_coord(n)+1) =  one
-     rhs(r_end_coord(n)+1) = zero
+!      c(nr_fine) = -one
+       c(nr_fine) = zero
+       d(nr_fine) =  one
+     rhs(nr_fine) = zero
 
     ! Call the tridiagonal solver
-    call tridiag(c, d, e, rhs, u, r_end_coord(n)+2)
+    call tridiag(c, d, e, rhs, u, nr_fine+1)
 
     w0(0) = ZERO
-    do r=1,r_end_coord(n)+1
+    do r=1,nr_fine
        w0(r) = u(r) / r_edge_loc(n,r)**2
     end do
 
-    do r=0,r_end_coord(n)+1
+    do r=0,nr_fine
        w0(r) = w0(r) + w0_bar(r)
     end do
 
     ! Compute the forcing term in the base state velocity equation, - 1/rho0 grad pi0 
     dt_avg = HALF * (dt + dtold)
-    do r = 0,r_end_coord(n)
+    do r = 0,nr_fine-1
        w0_old_cen(r) = HALF * (w0_old(r) + w0_old(r+1))
        w0_new_cen(r) = HALF * (w0    (r) + w0    (r+1))
        w0_avg = HALF * (dt *  w0_old_cen(r)           + dtold *  w0_new_cen(r)  ) / dt_avg

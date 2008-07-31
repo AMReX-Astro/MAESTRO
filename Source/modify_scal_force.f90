@@ -204,7 +204,7 @@ contains
   subroutine modify_scal_force_3d_sphr(n,force,ng_f,s,ng_s,lo,hi,domlo,domhi, &
                                        umac,vmac,wmac,ng_um,base_cart,ng_b,w0,dx)
 
-    use geometry, only: nr_fine, r_edge_loc, dr, r_cc_loc, r_end_coord
+    use geometry, only: nr_fine, r_edge_loc, dr, r_cc_loc
     use fill_3d_module
     use bl_constants_module
     
@@ -231,7 +231,7 @@ contains
     allocate(divu(0:nr_fine-1))
     allocate(divu_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
     
-    do r=0,r_end_coord(n)
+    do r=0,nr_fine-1
        divu(r) = (r_edge_loc(n,r+1)**2 * w0(r+1) - &
                   r_edge_loc(n,r  )**2 * w0(r  ) ) / &
                  (dr(n)*r_cc_loc(n,r)**2)

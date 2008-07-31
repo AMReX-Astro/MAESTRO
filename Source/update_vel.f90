@@ -197,7 +197,7 @@ contains
                                 sponge,ng_sp)
 
     use fill_3d_module
-    use geometry, only: spherical, nr_fine, r_end_coord, dr
+    use geometry, only: spherical, nr_fine, dr
     use bl_constants_module
     use probin_module, only: do_sponge
 
@@ -299,7 +299,7 @@ contains
        allocate(gradw0_rad(0:nr_fine-1))
        allocate(gradw0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),3))
 
-       do r=0,r_end_coord(n)
+       do r=0,nr_fine-1
           gradw0_rad(r) = (w0(r+1) - w0(r)) / dr(n)
        enddo
 
