@@ -40,7 +40,6 @@ contains
        end do
     endif
 
-    
     call destroy(bpt)
        
   end subroutine make_psi
@@ -48,7 +47,7 @@ contains
   subroutine make_psi_planar(n,etarho,psi)
 
     use bl_constants_module
-    use geometry, only: anelastic_cutoff_coord, r_start_coord
+    use geometry, only: anelastic_cutoff_coord, r_start_coord, r_end_coord
     use probin_module, only: grav_const
 
     integer        , intent(in   ) :: n
@@ -61,9 +60,11 @@ contains
    
     psi = ZERO
 
-    do r = r_start_coord(n), anelastic_cutoff_coord(n)-1
-      etarho_avg = HALF * (etarho(r)+etarho(r+1))
-      psi(r) = etarho_avg * abs(grav_const)
+    do r = r_start_coord(n), r_end_coord(n)
+       if (r .lt. anelastic_cutoff_coord(n)) then
+          etarho_avg = HALF * (etarho(r)+etarho(r+1))
+          psi(r) = etarho_avg * abs(grav_const)
+       end if
     end do
     
   end subroutine make_psi_planar
@@ -94,8 +95,6 @@ contains
 
     enddo
 
-
   end subroutine make_psi_spherical
-
   
 end module make_psi_module
