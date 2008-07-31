@@ -44,8 +44,8 @@ contains
     use make_explicit_thermal_module
     use add_react_to_thermal_module
     use variables, only: nscal, press_comp, temp_comp, rho_comp, foextrap_comp
-    use geometry, only: spherical, nr_fine, r_end_coord, anelastic_cutoff_coord, b&
-         ase_cutoff_density_coord, burning_cutoff_density_coord
+    use geometry, only: spherical, nr_fine, r_end_coord, anelastic_cutoff_coord, &
+         base_cutoff_density_coord, burning_cutoff_density_coord
     use network, only: nspec
     use make_grav_module
     use make_eta_module
