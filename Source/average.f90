@@ -263,7 +263,7 @@ contains
 
           if (n .ne. nlevs) then
              ncell(nlevs,:) = ncell(nlevs,:) + ncell(n,:)
-             do r=r_start_coord(n),r_end_coord(n)
+             do r=0,nr_fine-1
                 phisum(nlevs,r) = phisum(nlevs,r) + phisum(n,r)
              end do
           end if
@@ -271,7 +271,7 @@ contains
        end do
 
        ! now divide the total phisum by the number of cells to get phibar
-       do r=r_start_coord(nlevs),r_end_coord(nlevs)
+       do r=0,nr_fine-1
           if (ncell(nlevs,r) .gt. ZERO) then
              phibar(nlevs,r) = phisum(nlevs,r) / ncell(nlevs,r)
           else
@@ -281,10 +281,10 @@ contains
        
        ! temporary hack for the case where the outermost radial bin average to zero
        ! because there is no contribution from any Cartesian cell that lies in this bin.
-       ! this needs to be addressed - perhaps in the definition of r_end_coord in varden.f90
+       ! this needs to be addressed - perhaps in the definition of nr_fine in varden.f90
        ! for spherical problems.
-       if (ncell(nlevs,r_end_coord(nlevs)) .eq. ZERO) then
-          phibar(nlevs,r_end_coord(nlevs)) = phibar(nlevs,r_end_coord(nlevs)-1)
+       if (ncell(nlevs,nr_fine-1) .eq. ZERO) then
+          phibar(nlevs,nr_fine-1) = phibar(nlevs,nr_fine-2)
        end if
 
        deallocate(ncell_grid)
