@@ -184,7 +184,7 @@ contains
     use bl_constants_module
     use make_edge_state_module
     use variables, only: rho_comp, rhoh_comp
-    use geometry, only: r_cc_loc, r_edge_loc, dr, r_start_coord, r_end_coord, nr_fine
+    use geometry, only: r_cc_loc, r_edge_loc, dr, nr_fine
     use make_grav_module
     use cell_to_edge_module
     use make_div_coeff_module
@@ -241,7 +241,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     do n=1,nlevs
-       do r=r_start_coord(n),r_end_coord(n)
+       do r=0,nr_fine-1
           force(n,r) = -rho0_old(n,r) * (w0(n,r+1) - w0(n,r)) / dr(n) - &
                2.0_dp_t*rho0_old(n,r)*HALF*(w0(n,r) + w0(n,r+1))/r_cc_loc(n,r)
        end do
@@ -252,7 +252,7 @@ contains
     rho0_predicted_edge = edge
 
     do n=1,nlevs
-       do r=r_start_coord(n),r_end_coord(n)
+       do r=0,nr_fine-1
           rho0_new(n,r) = rho0_old(n,r) &
                - dtdr/r_cc_loc(n,r)**2 * &
                (r_edge_loc(n,r+1)**2 * edge(n,r+1) * w0(n,r+1) - &
@@ -268,7 +268,7 @@ contains
 !   NOTE: Make sure ghost cells for div_coeff_old are filled before calling this
 !   call cell_to_edge(n,div_coeff_old,beta)
 !   Update p0 -- predictor
-!   do r=r_start_coord(n),r_end_coord(n)
+!   do r=0,nr_fine-1
 !      divbetaw = one/(r_cc_loc(n,r)**2) * &
 !           (r_edge_loc(n,r+1)**2 * beta(n,r+1) * w0(n,r+1) - &
 !            r_edge_loc(n,r  )**2 * beta(n,r  ) * w0(n,r  )) / dr(n)
@@ -278,7 +278,7 @@ contains
 !   end do
 
     do n=1,nlevs
-       do r=r_start_coord(n),r_end_coord(n)
+       do r=0,nr_fine-1
           divw = one/(r_cc_loc(n,r)**2) * &
                (r_edge_loc(n,r+1)**2 * w0(n,r+1) - &
                r_edge_loc(n,r  )**2 * w0(n,r  )) / dr(n)
@@ -287,11 +287,11 @@ contains
              w0dpdr_avg_2 =  w0(n,2) * (p0_old(n,2)-p0_old(n,1)) / dr(n)
              w0dpdr_avg_1 =  w0(n,1) * (p0_old(n,1)-p0_old(n,0)) / dr(n)
              w0dpdr_avg =  1.5d0 * w0dpdr_avg_1 - 0.5d0 * w0dpdr_avg_2
-          else if (r .eq. r_end_coord(n)) then
-             w0dpdr_avg_2 =  w0(n,r_end_coord(n)) * &
-                  (p0_old(n,r_end_coord(n))-p0_old(n,r_end_coord(n)-1)) / dr(n)
-             w0dpdr_avg_1 =  w0(n,r_end_coord(n)-1) * &
-                  (p0_old(n,r_end_coord(n)-1)-p0_old(n,r_end_coord(n)-2)) / dr(n)
+          else if (r .eq. nr_fine-1) then
+             w0dpdr_avg_2 =  w0(n,nr_fine-1) * &
+                  (p0_old(n,nr_fine-1)-p0_old(n,nr_fine-2)) / dr(n)
+             w0dpdr_avg_1 =  w0(n,nr_fine-2) * &
+                  (p0_old(n,nr_fine-2)-p0_old(n,nr_fine-3)) / dr(n)
              w0dpdr_avg =  1.5d0 * w0dpdr_avg_2 - 0.5d0 * w0dpdr_avg_1
           else
              w0dpdr_avg =  HALF * ( w0(n,r+1)*(p0_old(n,r+1)-p0_old(n,r)) &
@@ -316,7 +316,7 @@ contains
 !   call cell_to_edge(n,div_coeff_new,beta_new)
 !   beta_nh = HALF*(beta + beta_new)
 !   Update p0 -- corrector
-!   do r=r_start_coord(n),r_end_coord(n)
+!   do r=0,nr_fine-1
 !      divbetaw = one / (r_cc_loc(n,r)**2) * &
 !           (r_edge_loc(n,r+1)**2 * beta_nh(n,r+1) * w0(n,r+1) - &
 !            r_edge_loc(n,r  )**2 * beta_nh(n,r  ) * w0(n,r  )) / dr(n)
@@ -328,7 +328,7 @@ contains
 !   end do
 
     do n=1,nlevs
-       do r=r_start_coord(n),r_end_coord(n)
+       do r=0,nr_fine-1
           divw = one/(r_cc_loc(n,r)**2) * &
                (r_edge_loc(n,r+1)**2 * w0(n,r+1) - &
                r_edge_loc(n,r  )**2 * w0(n,r  )) / dr(n)
@@ -340,13 +340,13 @@ contains
                   +(p0_new(n,1)-p0_new(n,0)) ) / dr(n)
              w0dpdr_avg =  1.5d0 * w0dpdr_avg_1 - 0.5d0 * w0dpdr_avg_2
              
-          else if (r .eq. r_end_coord(n)) then
-             w0dpdr_avg_2 = HALF * w0(n,r_end_coord(n)) * &
-                  ((p0_old(n,r_end_coord(n))-p0_old(n,r_end_coord(n)-1)) &
-                  +(p0_new(n,r_end_coord(n))-p0_new(n,r_end_coord(n)-1))) / dr(n)
-             w0dpdr_avg_1 = HALF * w0(n,r_end_coord(n)-1)* &
-                  ((p0_old(n,r_end_coord(n)-1)-p0_old(n,r_end_coord(n)-2)) &
-                  +(p0_new(n,r_end_coord(n)-1)-p0_new(n,r_end_coord(n)-2))) / dr(n)
+          else if (r .eq. nr_fine-1) then
+             w0dpdr_avg_2 = HALF * w0(n,nr_fine-1) * &
+                  ((p0_old(n,nr_fine-1)-p0_old(n,nr_fine-2)) &
+                  +(p0_new(n,nr_fine-1)-p0_new(n,nr_fine-2))) / dr(n)
+             w0dpdr_avg_1 = HALF * w0(n,nr_fine-2)* &
+                  ((p0_old(n,nr_fine-2)-p0_old(n,nr_fine-3)) &
+                  +(p0_new(n,nr_fine-2)-p0_new(n,nr_fine-3))) / dr(n)
              w0dpdr_avg =  1.5d0 * w0dpdr_avg_2 - 0.5d0 * w0dpdr_avg_1
              
           else
@@ -377,7 +377,7 @@ contains
        h0 = rhoh0_old/rho0_old
        
        do n=1,nlevs
-          do r=r_start_coord(n),r_end_coord(n)
+          do r=0,nr_fine-1
              
              div_w0_sph = one/(r_cc_loc(n,r)**2) * &
                   (r_edge_loc(n,r+1)**2 * w0(n,r+1) - &
@@ -404,7 +404,7 @@ contains
        do n=1,nlevs
 
           ! here we predict (rho h)_0 on the edges
-          do r=r_start_coord(n),r_end_coord(n)
+          do r=0,nr_fine-1
              
              div_w0_cart = (w0(n,r+1) - w0(n,r)) / dr(n)
              div_w0_sph = one/(r_cc_loc(n,r)**2) * &
@@ -432,7 +432,7 @@ contains
     do n=1,nlevs
 
        ! update (rho h)_0
-       do r=r_start_coord(n),r_end_coord(n)
+       do r=0,nr_fine-1
           
           rhoh0_new(n,r) = rhoh0_old(n,r) - &
                dtdr / r_cc_loc(n,r)**2 * &
