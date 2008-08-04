@@ -10,12 +10,12 @@ module base_io_module
 
 contains
 
-  subroutine write_base_state(nlevs,state_name,w0_name,etarho_name,chk_name, &
-                              rho0,rhoh0,p0,gamma1bar,w0,etarho,etarho_cc,div_coeff,psi,problo)
+  subroutine write_base_state(nlevs,state_name,w0_name,etarho_name,chk_name,rho0,rhoh0,p0, &
+                              gamma1bar,w0,etarho,etarho_cc,div_coeff,psi,problo)
     
     use parallel
     use bl_prof_module
-    use geometry, only : dr, r_start_coord, r_end_coord
+    use geometry, only : dr, r_start_coord, r_end_coord, numdisjointchunks
     use network, only: nspec
     use variables, only: rho_comp, rhoh_comp
     use bl_constants_module
@@ -32,7 +32,7 @@ contains
 
     real(kind=dp_t) :: base_r, problo
     character(len=20) :: out_name
-    integer :: i, n
+    integer :: n, r, i
 
     type(bl_prof_timer), save :: bpt
 
@@ -50,10 +50,12 @@ contains
        open(unit=99,file=out_name,form = "formatted", access = "sequential",action="write")
 
        do n=1,nlevs
-          do i=r_start_coord(n,1),r_end_coord(n,1)
-             base_r = problo + (dble(i)+HALF) * dr(n)
-             write(99,1000)  base_r, rho0(n,i), p0(n,i), gamma1bar(n,i), &
-                  rhoh0(n,i), div_coeff(n,i), psi(n,i), etarho_cc(n,i)
+          do i=1,numdisjointchunks(n)
+             do r=r_start_coord(n,i),r_end_coord(n,i)
+                base_r = problo + (dble(r)+HALF) * dr(n)
+                write(99,1000)  base_r, rho0(n,r), p0(n,r), gamma1bar(n,r), &
+                     rhoh0(n,r), div_coeff(n,r), psi(n,r), etarho_cc(n,r)
+             end do
           end do
        end do
        close(99)
@@ -65,9 +67,11 @@ contains
 
        open(unit=99,file=out_name,form = "formatted", access = "sequential",action="write")
        do n=1,nlevs
-          do i=r_start_coord(n,1),r_end_coord(n,1)+1
-             base_r = problo + dble(i) * dr(n)
-             write(99,1000)  base_r,w0(n,i)
+          do i=1,numdisjointchunks(n)
+             do r=r_start_coord(n,i),r_end_coord(n,i)+1
+                base_r = problo + dble(r) * dr(n)
+                write(99,1000)  base_r,w0(n,r)
+             end do
           end do
        end do
        close(99)
@@ -79,9 +83,11 @@ contains
 
        open(unit=99,file=out_name,form = "formatted", access = "sequential",action="write")
        do n=1,nlevs
-          do i=r_start_coord(n,1),r_end_coord(n,1)+1
-             base_r = problo + dble(i) * dr(n)
-             write(99,1000)  base_r,etarho(n,i)
+          do i=1,numdisjointchunks(n)
+             do r=r_start_coord(n,i),r_end_coord(n,i)+1
+                base_r = problo + dble(r) * dr(n)
+                write(99,1000)  base_r,etarho(n,r)
+             end do
           end do
        end do
        close(99)
@@ -102,7 +108,7 @@ contains
     use bl_prof_module
     use variables, only: rho_comp, rhoh_comp
     use network, only: nspec
-    use geometry, only : dr, r_start_coord, r_end_coord
+    use geometry, only : dr, r_start_coord, r_end_coord, numdisjointchunks
     use bl_constants_module
     use restrict_base_module, only: fill_ghost_base
     
@@ -119,7 +125,7 @@ contains
     ! local
     real(kind=dp_t) :: r_dummy
     character(len=20) :: out_name
-    integer :: i, n
+    integer :: r, n, i
 
     type(bl_prof_timer), save :: bpt
 
@@ -134,9 +140,11 @@ contains
     open(unit=99,file=out_name)
 
     do n=1,nlevs
-       do i=r_start_coord(n,1),r_end_coord(n,1)
-          read(99,*)  r_dummy, rho0(n,i), p0(n,i), gamma1bar(n,i), &
-               rhoh0(n,i), div_coeff(n,i), psi(n,i), etarho_cc(n,i)
+       do i=1,numdisjointchunks(n)
+          do r=r_start_coord(n,i),r_end_coord(n,i)
+             read(99,*)  r_dummy, rho0(n,r), p0(n,r), gamma1bar(n,r), &
+                  rhoh0(n,r), div_coeff(n,r), psi(n,r), etarho_cc(n,r)
+          end do
        end do
     end do
     close(99)
@@ -149,8 +157,10 @@ contains
 
     open(unit=99,file=out_name)
     do n=1,nlevs
-       do i=r_start_coord(n,1),r_end_coord(n,1)+1
-          read(99,*)  r_dummy, w0(n,i)
+       do i=1,numdisjointchunks(n)
+          do r=r_start_coord(n,i),r_end_coord(n,i)+1
+             read(99,*)  r_dummy, w0(n,r)
+          end do
        end do
     end do
     close(99)
@@ -163,8 +173,10 @@ contains
 
     open(unit=99,file=out_name)
     do n=1,nlevs
-       do i=r_start_coord(n,1),r_end_coord(n,1)+1
-          read(99,*)  r_dummy, etarho(n,i)
+       do i=1,numdisjointchunks(n)
+          do r=r_start_coord(n,i),r_end_coord(n,i)+1
+             read(99,*)  r_dummy, etarho(n,r)
+          end do
        end do
     end do
     close(99)

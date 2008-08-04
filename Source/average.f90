@@ -18,7 +18,8 @@ contains
 
   subroutine average(mla,phi,phibar,dx,incomp)
 
-    use geometry, only: nr_fine, r_start_coord, r_end_coord, spherical, center, dr
+    use geometry, only: nr_fine, r_start_coord, r_end_coord, spherical, center, dr, &
+         numdisjointchunks
     use bl_prof_module
     use bl_constants_module
 
@@ -119,8 +120,10 @@ contains
              source_buffer = phisum_proc(n,:)
              call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
              phisum(n,:) = target_buffer
-             do r=r_start_coord(n,1),r_end_coord(n,1)
-                phibar(n,r) = phisum(n,r) / dble(ncell(n,r))
+             do i=1,numdisjointchunks(n)
+                do r=r_start_coord(n,i),r_end_coord(n,i)
+                   phibar(n,r) = phisum(n,r) / dble(ncell(n,r))
+                end do
              end do
              
           end do
@@ -177,8 +180,10 @@ contains
              
              ! compute phisum at next finer level
              ! begin by assuming piecewise constant interpolation
-             do r=r_start_coord(n,1),r_end_coord(n,1)
-                phisum(n,r) = phisum(n-1,r/rr)*rr**(dm-1)
+             do i=1,numdisjointchunks(n)
+                do r=r_start_coord(n,i),r_end_coord(n,i)
+                   phisum(n,r) = phisum(n-1,r/rr)*rr**(dm-1)
+                end do
              end do
              
              ! compute phipert_proc
@@ -201,9 +206,11 @@ contains
              phipert(n,:) = target_buffer
              
              ! update phisum and compute phibar
-             do r=r_start_coord(n,1),r_end_coord(n,1)
-                phisum(n,r) = phisum(n,r) + phipert(n,r)
-                phibar(n,r) = phisum(n,r) / dble(ncell(n,r))
+             do i=1,numdisjointchunks(n)
+                do r=r_start_coord(n,i),r_end_coord(n,i)
+                   phisum(n,r) = phisum(n,r) + phipert(n,r)
+                   phibar(n,r) = phisum(n,r) / dble(ncell(n,r))
+                end do
              end do
 
           end do
