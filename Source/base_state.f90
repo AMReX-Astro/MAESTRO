@@ -30,7 +30,7 @@ contains
                              prob_lo_z, prob_hi_x, prob_hi_y, prob_hi_z, &
                              small_temp, small_dens, grav_const
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp, ntrac
-    use geometry, only: dr, spherical, r_start_coord, r_end_coord
+    use geometry, only: dr, spherical, r_start_coord, r_end_coord, numdisjointchunks
     
     integer           , intent(in   ) :: n
     character(len=256), intent(in   ) :: model_file
@@ -281,93 +281,95 @@ contains
        prob_hi_r = base_cutoff_density_loc
     end if
 
-    do r=r_start_coord(n,1),r_end_coord(n,1)
+    do i=1,numdisjointchunks(n)
+       do r=r_start_coord(n,i),r_end_coord(n,i)
 
-       rloc = starting_rad + (dble(r) + HALF)*dr(n)
-
-       ! here we account for r > rmax of the model.hse array, assuming
-       ! that the state stays constant beyond rmax
-       rloc = min(rloc, rmax)
-
-       ! also, if we've falled below the cutoff density, just keep the
-       ! model constant
-       if (rloc .gt. base_cutoff_density_loc) then
+          rloc = starting_rad + (dble(r) + HALF)*dr(n)
           
-          s0_init(r,rho_comp) = rho_above_cutoff
-          s0_init(r,rhoh_comp) = rhoh_above_cutoff
-          s0_init(r,spec_comp:spec_comp+nspec-1) = spec_above_cutoff(1:nspec)
-          p0_init(r) = p_above_cutoff
-          s0_init(r,temp_comp) = temp_above_cutoff
-          if(ntrac .gt. 0) then
-             s0_init(r,trac_comp:trac_comp+ntrac-1) = trac_above_cutoff(1:ntrac)
-          end if
+          ! here we account for r > rmax of the model.hse array, assuming
+          ! that the state stays constant beyond rmax
+          rloc = min(rloc, rmax)
           
-       else
-          
-          d_ambient = interpolate(rloc, npts_model, base_r, base_state(:,idens_model))
-          t_ambient = interpolate(rloc, npts_model, base_r, base_state(:,itemp_model))
-          p_ambient = interpolate(rloc, npts_model, base_r, base_state(:,ipres_model))
-          
-          sum = ZERO
-          do comp = 1, nspec
-             xn_ambient(comp) = max(ZERO,min(ONE, &
-                  interpolate(rloc, npts_model, base_r, base_state(:,ispec_model-1+comp))))
-             sum = sum + xn_ambient(comp)
-          enddo
-          xn_ambient = xn_ambient/sum
-          
-          ! use the EOS to make the state consistent
-          temp_eos(1) = t_ambient
-          den_eos(1)  = d_ambient
-          p_eos(1)    = p_ambient
-          xn_eos(1,:) = xn_ambient(:)
-          
-          ! (rho,T) --> p,h
-          call eos(eos_input_rt, den_eos, temp_eos, &
-                   npts, nspec, &
-                   xn_eos, &
-                   p_eos, h_eos, e_eos, &
-                   cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                   dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                   dpdX_eos, dhdX_eos, &
-                   gam1_eos, cs_eos, s_eos, &
-                   dsdt_eos, dsdr_eos, &
-                   do_diag)
-       
-          s0_init(r, rho_comp ) = d_ambient
-          s0_init(r,rhoh_comp ) = d_ambient * h_eos(1)
-          s0_init(r,spec_comp:spec_comp+nspec-1) = d_ambient * xn_ambient(1:nspec)
-          p0_init(r) = p_eos(1)
-          
-          s0_init(r,temp_comp) = t_ambient
-          
-          if (ntrac .gt. 0) then
-             s0_init(r,trac_comp:trac_comp+ntrac-1) = ZERO
-          end if          
-          
-          ! keep track of the height where we drop below the cutoff density
-          if (s0_init(r,rho_comp) .le. base_cutoff_density .and. &
-               base_cutoff_density_loc .eq. prob_hi_r .and. n .eq. 1 ) then
+          ! also, if we've falled below the cutoff density, just keep the
+          ! model constant
+          if (rloc .gt. base_cutoff_density_loc) then
              
-             if ( parallel_IOProcessor() ) then
-                print *,'SETTING R_CUTOFF TO ',r
+             s0_init(r,rho_comp) = rho_above_cutoff
+             s0_init(r,rhoh_comp) = rhoh_above_cutoff
+             s0_init(r,spec_comp:spec_comp+nspec-1) = spec_above_cutoff(1:nspec)
+             p0_init(r) = p_above_cutoff
+             s0_init(r,temp_comp) = temp_above_cutoff
+             if(ntrac .gt. 0) then
+                s0_init(r,trac_comp:trac_comp+ntrac-1) = trac_above_cutoff(1:ntrac)
              end if
              
-             base_cutoff_density_loc = rloc
-             
-             rho_above_cutoff = s0_init(r,rho_comp)
-             rhoh_above_cutoff = s0_init(r,rhoh_comp)
-             spec_above_cutoff(1:nspec) = s0_init(r,spec_comp:spec_comp+nspec-1)
-             p_above_cutoff = p0_init(r)
-             temp_above_cutoff = s0_init(r,temp_comp)
+          else
+
+             d_ambient = interpolate(rloc, npts_model, base_r, base_state(:,idens_model))
+             t_ambient = interpolate(rloc, npts_model, base_r, base_state(:,itemp_model))
+             p_ambient = interpolate(rloc, npts_model, base_r, base_state(:,ipres_model))
+
+             sum = ZERO
+             do comp = 1, nspec
+                xn_ambient(comp) = max(ZERO,min(ONE, &
+                     interpolate(rloc, npts_model, base_r, base_state(:,ispec_model-1+comp))))
+                sum = sum + xn_ambient(comp)
+             enddo
+             xn_ambient = xn_ambient/sum
+
+             ! use the EOS to make the state consistent
+             temp_eos(1) = t_ambient
+             den_eos(1)  = d_ambient
+             p_eos(1)    = p_ambient
+             xn_eos(1,:) = xn_ambient(:)
+
+             ! (rho,T) --> p,h
+             call eos(eos_input_rt, den_eos, temp_eos, &
+                  npts, nspec, &
+                  xn_eos, &
+                  p_eos, h_eos, e_eos, &
+                  cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                  dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                  dpdX_eos, dhdX_eos, &
+                  gam1_eos, cs_eos, s_eos, &
+                  dsdt_eos, dsdr_eos, &
+                  do_diag)
+
+             s0_init(r, rho_comp ) = d_ambient
+             s0_init(r,rhoh_comp ) = d_ambient * h_eos(1)
+             s0_init(r,spec_comp:spec_comp+nspec-1) = d_ambient * xn_ambient(1:nspec)
+             p0_init(r) = p_eos(1)
+
+             s0_init(r,temp_comp) = t_ambient
+
              if (ntrac .gt. 0) then
-                trac_above_cutoff(1:ntrac) = s0_init(r,trac_comp:trac_comp+ntrac-1)
+                s0_init(r,trac_comp:trac_comp+ntrac-1) = ZERO
              end if
-             
-          end if
-       
-       end if
 
+             ! keep track of the height where we drop below the cutoff density
+             if (s0_init(r,rho_comp) .le. base_cutoff_density .and. &
+                  base_cutoff_density_loc .eq. prob_hi_r .and. n .eq. 1 ) then
+
+                if ( parallel_IOProcessor() ) then
+                   print *,'SETTING R_CUTOFF TO ',r
+                end if
+
+                base_cutoff_density_loc = rloc
+
+                rho_above_cutoff = s0_init(r,rho_comp)
+                rhoh_above_cutoff = s0_init(r,rhoh_comp)
+                spec_above_cutoff(1:nspec) = s0_init(r,spec_comp:spec_comp+nspec-1)
+                p_above_cutoff = p0_init(r)
+                temp_above_cutoff = s0_init(r,temp_comp)
+                if (ntrac .gt. 0) then
+                   trac_above_cutoff(1:ntrac) = s0_init(r,trac_comp:trac_comp+ntrac-1)
+                end if
+
+             end if
+
+          end if
+
+       end do
     end do
 
     ! check whether we are in HSE
@@ -378,34 +380,37 @@ contains
 
     max_hse_error = -1.d30
 
-    do r=r_start_coord(n,1)+1,r_end_coord(n,1)
+    do i=1,numdisjointchunks(n)
+       do r=r_start_coord(n,i)+1,r_end_coord(n,i)
+          
+          rloc = starting_rad + (dble(r) + HALF)*dr(n)
+          rloc = min(rloc, rmax)
 
-       rloc = starting_rad + (dble(r) + HALF)*dr(n)
-       rloc = min(rloc, rmax)
+          if (rloc .lt. base_cutoff_density_loc) then
 
-       if (rloc .lt. base_cutoff_density_loc) then
+             r_r = dble(r+1)*dr(n)
+             r_l = dble(r)*dr(n)
 
-          r_r = dble(r+1)*dr(n)
-          r_l = dble(r)*dr(n)
-          
-          if (spherical .eq. 1) then
-             g = -Gconst*mencl/r_l**2
-             mencl = mencl + four3rd*m_pi*dr(n)*(r_l**2+r_l*r_r+r_r**2)*s0_init(r,rho_comp)
-          else
-             g = grav_const
-          endif
-          
-          dpdr = (p0_init(r) - p0_init(r-1))/dr(n)
-          rhog = HALF*(s0_init(r,rho_comp) + s0_init(r-1,rho_comp))*g
-          
-          !write(*,1000) r, dpdr, rhog, abs(dpdr - rhog)/abs(dpdr), s0_init(r,rho_comp)
-1000      format(1x,6(g20.10))
-          
-          max_hse_error = max(max_hse_error, abs(dpdr - rhog)/abs(dpdr))
-          
-       end if
+             if (spherical .eq. 1) then
+                g = -Gconst*mencl/r_l**2
+                mencl = mencl &
+                     + four3rd*m_pi*dr(n)*(r_l**2+r_l*r_r+r_r**2)*s0_init(r,rho_comp)
+             else
+                g = grav_const
+             endif
 
-    enddo
+             dpdr = (p0_init(r) - p0_init(r-1))/dr(n)
+             rhog = HALF*(s0_init(r,rho_comp) + s0_init(r-1,rho_comp))*g
+
+             !write(*,1000) r, dpdr, rhog, abs(dpdr - rhog)/abs(dpdr), s0_init(r,rho_comp)
+1000         format(1x,6(g20.10))
+
+             max_hse_error = max(max_hse_error, abs(dpdr - rhog)/abs(dpdr))
+
+          end if
+
+       enddo
+    end do
 
     if ( parallel_IOProcessor() ) then
        print *, " " 
@@ -427,7 +432,7 @@ contains
   subroutine adjust_base_state(nlevs,s0,p0)
 
     use eos_module
-    use geometry, only: r_start_coord, r_end_coord
+    use geometry, only: r_start_coord, r_end_coord, numdisjointchunks
     use variables, only: temp_comp, rho_comp, rhoh_comp, spec_comp
     use network, only: nspec
 
@@ -436,31 +441,33 @@ contains
     real(kind=dp_t)   , intent(inout) :: p0(:,0:)
 
     ! local
-    integer :: n,r
+    integer :: n,r,i
 
     do n=1,nlevs-1
-       do r=r_start_coord(n,1),r_end_coord(n,1)
-          ! use the EOS to make the state consistent
-          temp_eos(1) = s0(n,r,temp_comp)
-          den_eos(1)  = s0(n,r,rho_comp)
-          h_eos(1)    = s0(n,r,rhoh_comp)/den_eos(1)
-          p_eos(1)    = p0(n,r)
-          xn_eos(1,:) = s0(n,r,spec_comp:spec_comp+nspec-1)/den_eos(1)
+       do i=1,numdisjointchunks(n)
+          do r=r_start_coord(n,i),r_end_coord(n,i)
+             ! use the EOS to make the state consistent
+             temp_eos(1) = s0(n,r,temp_comp)
+             den_eos(1)  = s0(n,r,rho_comp)
+             h_eos(1)    = s0(n,r,rhoh_comp)/den_eos(1)
+             p_eos(1)    = p0(n,r)
+             xn_eos(1,:) = s0(n,r,spec_comp:spec_comp+nspec-1)/den_eos(1)
 
-          ! (rho,h) --> p,T
-          call eos(eos_input_rh, den_eos, temp_eos, &
-                   npts, nspec, &
-                   xn_eos, &
-                   p_eos, h_eos, e_eos, &
-                   cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                   dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                   dpdX_eos, dhdX_eos, &
-                   gam1_eos, cs_eos, s_eos, &
-                   dsdt_eos, dsdr_eos, &
-                   do_diag)
+             ! (rho,h) --> p,T
+             call eos(eos_input_rh, den_eos, temp_eos, &
+                  npts, nspec, &
+                  xn_eos, &
+                  p_eos, h_eos, e_eos, &
+                  cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                  dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                  dpdX_eos, dhdX_eos, &
+                  gam1_eos, cs_eos, s_eos, &
+                  dsdt_eos, dsdr_eos, &
+                  do_diag)
 
-          p0(n,r) = p_eos(1)
-          s0(n,r,temp_comp) = temp_eos(1)
+             p0(n,r) = p_eos(1)
+             s0(n,r,temp_comp) = temp_eos(1)
+          end do
        end do
     end do
 

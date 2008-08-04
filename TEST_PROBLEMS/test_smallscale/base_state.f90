@@ -20,7 +20,7 @@ contains
     use eos_module
     use probin_module, ONLY: prob_lo_y, prob_lo_z
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp
-    use geometry, only: dr, spherical, r_start_coord, r_end_coord
+    use geometry, only: dr, spherical, r_start_coord, r_end_coord, numdisjointchunks
     use inlet_bc_module
 
     integer,             intent(in   ) :: n
@@ -30,7 +30,7 @@ contains
     real(kind=dp_t),     intent(in   ) :: dx(:)
 
     ! local
-    integer :: ndum,i,dm,comp
+    integer :: ndum,r,dm,comp,i
     real(dp_t) :: starting_rad
 
     parameter (ndum = 30)
@@ -113,68 +113,70 @@ contains
     ! Now do the interior cells
     flameloc = ONE
 
-    do i=r_start_coord(n,1),r_end_coord(n,1)
+    do i=1,numdisjointchunks(n)
+       do r=r_start_coord(n,i),r_end_coord(n,i)
 
-       loloc = starting_rad +  dble(i)     *dx(dm) - flameloc
-       hiloc = starting_rad + (dble(i)+ONE)*dx(dm) - flameloc
+          loloc = starting_rad +  dble(r)     *dx(dm) - flameloc
+          hiloc = starting_rad + (dble(r)+ONE)*dx(dm) - flameloc
 
-       call asin1d(lamsolfile, loloc, hiloc, state1d, ndum, .false.)
+          call asin1d(lamsolfile, loloc, hiloc, state1d, ndum, .false.)
 
-       p_eos(1) = Pamb
-       den_eos(1) = state1d(3)
-       temp_eos(1) = state1d(9)
-       do comp=1,nspec
-          if(spec_names(comp) .eq. "carbon-12") then
-             xn_eos(1,comp) = state1d(21)
-          else if(spec_names(comp) .eq. "magnesium-24") then
-             xn_eos(1,comp) = state1d(22)
-          else if(spec_names(comp) .eq. "oxygen-16") then
-             xn_eos(1,comp) = state1d(23)
-          endif
+          p_eos(1) = Pamb
+          den_eos(1) = state1d(3)
+          temp_eos(1) = state1d(9)
+          do comp=1,nspec
+             if(spec_names(comp) .eq. "carbon-12") then
+                xn_eos(1,comp) = state1d(21)
+             else if(spec_names(comp) .eq. "magnesium-24") then
+                xn_eos(1,comp) = state1d(22)
+             else if(spec_names(comp) .eq. "oxygen-16") then
+                xn_eos(1,comp) = state1d(23)
+             endif
+          enddo
+
+          ! given P, T, and X, compute rho
+          call eos(eos_input_tp, den_eos, temp_eos, &
+               npts, nspec, &
+               xn_eos, &
+               p_eos, h_eos, e_eos, & 
+               cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+               dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+               dpdX_eos, dhdX_eos, &
+               gam1_eos, cs_eos, s_eos, &
+               dsdt_eos, dsdr_eos, &
+               do_diag)
+
+          ! given rho, T, and X, compute h.
+          call eos(eos_input_rt, den_eos, temp_eos, &
+               npts, nspec, &
+               xn_eos, &
+               p_eos, h_eos, e_eos, & 
+               cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+               dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+               dpdX_eos, dhdX_eos, &
+               gam1_eos, cs_eos, s_eos, &
+               dsdt_eos, dsdr_eos, &
+               do_diag)
+
+          s0_init(r,rho_comp) = den_eos(1)
+          s0_init(r,rhoh_comp) = den_eos(1)*h_eos(1)
+
+          do comp=1,nspec
+             s0_init(r,spec_comp+comp-1) = den_eos(1)*xn_eos(1,comp)
+          enddo
+          s0_init(r,trac_comp) = 0.0d0
+          s0_init(r,temp_comp) = temp_eos(1)
+          p0_init(r) = pamb
+
        enddo
-
-       ! given P, T, and X, compute rho
-       call eos(eos_input_tp, den_eos, temp_eos, &
-                npts, nspec, &
-                xn_eos, &
-                p_eos, h_eos, e_eos, & 
-                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                dpdX_eos, dhdX_eos, &
-                gam1_eos, cs_eos, s_eos, &
-                dsdt_eos, dsdr_eos, &
-                do_diag)
-
-       ! given rho, T, and X, compute h.
-       call eos(eos_input_rt, den_eos, temp_eos, &
-                npts, nspec, &
-                xn_eos, &
-                p_eos, h_eos, e_eos, & 
-                cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                dpdX_eos, dhdX_eos, &
-                gam1_eos, cs_eos, s_eos, &
-                dsdt_eos, dsdr_eos, &
-                do_diag)
-
-       s0_init(i,rho_comp) = den_eos(1)
-       s0_init(i,rhoh_comp) = den_eos(1)*h_eos(1)
-
-       do comp=1,nspec
-          s0_init(i,spec_comp+comp-1) = den_eos(1)*xn_eos(1,comp)
-       enddo
-       s0_init(i,trac_comp) = 0.0d0
-       s0_init(i,temp_comp) = temp_eos(1)
-       p0_init(i) = pamb
-
-    enddo
+    end do
 
   end subroutine init_base_state
 
   subroutine adjust_base_state(nlevs,s0,p0)
 
     use eos_module
-    use geometry, only: r_start_coord, r_end_coord
+    use geometry, only: r_start_coord, r_end_coord, numdisjointchunks
     use variables, only: temp_comp, rho_comp, rhoh_comp, spec_comp
     use network, only: nspec
 
@@ -183,31 +185,33 @@ contains
     real(kind=dp_t)   , intent(inout) :: p0(:,0:)
 
     ! local
-    integer :: n,r
+    integer :: n,r,i
 
     do n=1,nlevs-1
-       do r=r_start_coord(n,1),r_end_coord(n,1)
-          ! use the EOS to make the state consistent
-          temp_eos(1) = s0(n,r,temp_comp)
-          den_eos(1)  = s0(n,r,rho_comp)
-          h_eos(1)    = s0(n,r,rhoh_comp)/den_eos(1)
-          p_eos(1)    = p0(n,r)
-          xn_eos(1,:) = s0(n,r,spec_comp:spec_comp+nspec-1)/den_eos(1)
+       do i=1,numdisjointchunks(n)
+          do r=r_start_coord(n,1),r_end_coord(n,1)
+             ! use the EOS to make the state consistent
+             temp_eos(1) = s0(n,r,temp_comp)
+             den_eos(1)  = s0(n,r,rho_comp)
+             h_eos(1)    = s0(n,r,rhoh_comp)/den_eos(1)
+             p_eos(1)    = p0(n,r)
+             xn_eos(1,:) = s0(n,r,spec_comp:spec_comp+nspec-1)/den_eos(1)
 
-          ! (rho,h) --> p,T
-          call eos(eos_input_rh, den_eos, temp_eos, &
-                   npts, nspec, &
-                   xn_eos, &
-                   p_eos, h_eos, e_eos, &
-                   cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                   dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                   dpdX_eos, dhdX_eos, &
-                   gam1_eos, cs_eos, s_eos, &
-                   dsdt_eos, dsdr_eos, &
-                   do_diag)
+             ! (rho,h) --> p,T
+             call eos(eos_input_rh, den_eos, temp_eos, &
+                  npts, nspec, &
+                  xn_eos, &
+                  p_eos, h_eos, e_eos, &
+                  cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                  dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                  dpdX_eos, dhdX_eos, &
+                  gam1_eos, cs_eos, s_eos, &
+                  dsdt_eos, dsdr_eos, &
+                  do_diag)
 
-          p0(n,r) = p_eos(1)
-          s0(n,r,temp_comp) = temp_eos(1)
+             p0(n,r) = p_eos(1)
+             s0(n,r,temp_comp) = temp_eos(1)
+          end do
        end do
     end do
 
