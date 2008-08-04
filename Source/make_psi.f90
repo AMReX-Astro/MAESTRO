@@ -47,7 +47,7 @@ contains
   subroutine make_psi_planar(n,etarho,psi)
 
     use bl_constants_module
-    use geometry, only: anelastic_cutoff_coord, r_start_coord, r_end_coord
+    use geometry, only: anelastic_cutoff_coord, r_start_coord, r_end_coord, numdisjointchunks
     use probin_module, only: grav_const
 
     integer        , intent(in   ) :: n
@@ -55,16 +55,18 @@ contains
     real(kind=dp_t), intent(inout) :: psi(0:)
     
     ! Local variables
-    integer         :: r
+    integer         :: r,i
     real(kind=dp_t) :: etarho_avg
    
     psi = ZERO
 
-    do r = r_start_coord(n,1), r_end_coord(n,1)
-       if (r .lt. anelastic_cutoff_coord(n)) then
-          etarho_avg = HALF * (etarho(r)+etarho(r+1))
-          psi(r) = etarho_avg * abs(grav_const)
-       end if
+    do i=1,numdisjointchunks(n)
+       do r = r_start_coord(n,i), r_end_coord(n,i)
+          if (r .lt. anelastic_cutoff_coord(n)) then
+             etarho_avg = HALF * (etarho(r)+etarho(r+1))
+             psi(r) = etarho_avg * abs(grav_const)
+          end if
+       end do
     end do
     
   end subroutine make_psi_planar

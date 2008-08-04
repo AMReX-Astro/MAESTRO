@@ -46,7 +46,7 @@ contains
 
   subroutine correct_base_state_planar(n,rho0_new,etarho,dz,dt)
 
-    use geometry, only: anelastic_cutoff_coord, r_start_coord, r_end_coord
+    use geometry, only: anelastic_cutoff_coord, r_start_coord, r_end_coord, numdisjointchunks
 
     integer        , intent(in   ) :: n
     real(kind=dp_t), intent(inout) :: rho0_new(0:)
@@ -54,16 +54,18 @@ contains
     real(kind=dp_t), intent(in   ) :: dz,dt
     
     ! Local variables
-    integer :: r
+    integer :: r,i
    
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! UPDATE RHO0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    do r=r_start_coord(n,1),r_end_coord(n,1)
-       if (r .lt. anelastic_cutoff_coord(n)) then
-          rho0_new(r) = rho0_new(r) - dt/dz*(etarho(r+1) - etarho(r))
-       end if
+    do i=1,numdisjointchunks(n)
+       do r=r_start_coord(n,i),r_end_coord(n,i)
+          if (r .lt. anelastic_cutoff_coord(n)) then
+             rho0_new(r) = rho0_new(r) - dt/dz*(etarho(r+1) - etarho(r))
+          end if
+       end do
     end do
     
   end subroutine correct_base_state_planar
