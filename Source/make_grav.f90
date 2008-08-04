@@ -13,7 +13,7 @@ contains
   subroutine make_grav_cell(n,grav_cell,rho0)
 
     use bl_constants_module
-    use geometry, only: spherical, nr_fine, r_cc_loc, r_edge_loc, r_end_coord
+    use geometry, only: spherical, nr_fine, r_cc_loc, r_edge_loc
     use probin_module, only: grav_const, base_cutoff_density
     use fundamental_constants_module, only: Gconst
 
@@ -41,7 +41,7 @@ contains
        m(0) = FOUR3RD*M_PI*rho0(0)*r_cc_loc(n,0)**3
        grav_cell(0) = -Gconst * m(0) / r_cc_loc(n,0)**2
 
-       do r = 1, r_end_coord(n)
+       do r = 1, nr_fine-1
           ! the mass is defined at the cell-centers, so to compute the
           ! mass at the current center, we need to add the contribution of
           ! the upper half of the zone below us and the lower half of the
@@ -83,7 +83,7 @@ contains
   subroutine make_grav_edge(n,grav_edge,rho0)
 
   use bl_constants_module
-  use geometry, only: spherical, r_edge_loc, r_end_coord
+  use geometry, only: spherical, r_edge_loc, nr_fine
   use probin_module, only: grav_const, base_cutoff_density
   use fundamental_constants_module, only: Gconst
 
@@ -108,7 +108,7 @@ contains
        grav_edge(0) = zero 
        mencl = ZERO
 
-       do r = 1, r_end_coord(n)
+       do r = 1, nr_fine-1
 
           ! only add to the enclosed mass if the density is 
           ! > base_cutoff_density

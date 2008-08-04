@@ -404,7 +404,7 @@ contains
                                    dx,normal,etarho,etarho_cc,mla,the_bc_level)
 
     use bl_constants_module
-    use geometry, only: spherical, nr_fine, r_end_coord, nr
+    use geometry, only: spherical, nr_fine, nr
     use variables
     use average_module
     use ml_restriction_module
