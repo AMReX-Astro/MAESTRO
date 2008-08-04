@@ -7,7 +7,8 @@ module fill_3d_module
 
   private
   
-  public :: put_1d_array_on_cart, put_1d_array_on_cart_3d_sphr, put_1d_array_on_edges
+  public :: put_1d_array_on_cart, put_1d_array_on_cart_3d_sphr
+  public :: put_1d_array_on_edges_3d_sphr
   public :: make_3d_normal
   
 contains  
@@ -279,7 +280,7 @@ contains
     ! value for ng_n
 
     use bl_constants_module
-    use geometry, only: dr, center, r_cc_loc, r_end_coord
+    use geometry, only: dr, center, r_cc_loc, nr_fine
     use probin_module, only: interp_type_radial_bin_to_cart
 
     integer        , intent(in   ) :: n
@@ -345,7 +346,7 @@ contains
                 else if (interp_type_radial_bin_to_cart .eq. 2) then
 
                    if (radius .ge. r_cc_loc(n,index)) then
-                      if (index .eq. r_end_coord(n)) then
+                      if (index .eq. nr_fine-1) then
                          s0_cart_val = s0(index)
                       else
                          s0_cart_val = s0(index+1)*(radius-r_cc_loc(n,index))/dr(n) &
@@ -379,10 +380,10 @@ contains
 
   end subroutine put_1d_array_on_cart_3d_sphr
 
-  subroutine put_1d_array_on_edges(n,s0,s0_cartx,s0_carty,s0_cartz,lo,hi,dx,ng)
+  subroutine put_1d_array_on_edges_3d_sphr(n,s0,s0_cartx,s0_carty,s0_cartz,lo,hi,dx,ng)
 
     use bl_constants_module
-    use geometry, only: dr, center, r_cc_loc, r_end_coord
+    use geometry, only: dr, center, r_cc_loc, nr_fine
     use probin_module, only: interp_type_radial_bin_to_cart
 
     integer        , intent(in   ) :: n
@@ -415,7 +416,7 @@ contains
                 else if (interp_type_radial_bin_to_cart .eq. 2) then
 
                    if (radius .ge. r_cc_loc(n,index)) then
-                      if (index .eq. r_end_coord(n)) then
+                      if (index .eq. nr_fine-1) then
                          s0_cart_val = s0(index)
                       else
                          s0_cart_val = s0(index+1)*(radius-r_cc_loc(n,index)  )/dr(n) &
@@ -455,7 +456,7 @@ contains
                 else if (interp_type_radial_bin_to_cart .eq. 2) then
 
                    if (radius .ge. r_cc_loc(n,index)) then
-                      if (index .eq. r_end_coord(n)) then
+                      if (index .eq. nr_fine-1) then
                          s0_cart_val = s0(index)
                       else
                          s0_cart_val = s0(index+1)*(radius-r_cc_loc(n,index)  )/dr(n) &
@@ -495,7 +496,7 @@ contains
                 else if (interp_type_radial_bin_to_cart .eq. 2) then
 
                    if (radius .ge. r_cc_loc(n,index)) then
-                      if (index .eq. r_end_coord(n)) then
+                      if (index .eq. nr_fine-1) then
                          s0_cart_val = s0(index)
                       else
                          s0_cart_val = s0(index+1)*(radius-r_cc_loc(n,index)  )/dr(n) &
@@ -519,7 +520,7 @@ contains
           end do
     end do
 
-  end subroutine put_1d_array_on_edges
+  end subroutine put_1d_array_on_edges_3d_sphr
 
   subroutine make_3d_normal(normal,lo,hi,dx,ng)
 

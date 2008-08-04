@@ -29,7 +29,7 @@ contains
 
     use bl_prof_module
     use bl_constants_module
-    use geometry, only: spherical, nr_fine, r_start_coord, r_end_coord, dr
+    use geometry, only: spherical, nr_fine, dr
     use variables, only: foextrap_comp
     use fill_3d_module
     use multifab_physbc_module
@@ -82,7 +82,7 @@ contains
        allocate (gradw0_rad(0:nr_fine-1))
 
        ! NOTE: here we are doing the computation at the finest level
-       do r=r_start_coord(nlevs),r_end_coord(nlevs)
+       do r=0,nr_fine-1
           gradw0_rad(r) = (w0(nlevs,r+1) - w0(nlevs,r)) / dr(nlevs)
        enddo
     endif
@@ -184,7 +184,7 @@ contains
                                force,ng_f,w0,lo,dx,dt,is_vel,phys_bc,adv_bc, &
                                comp,is_conservative)
 
-    use geometry, only: nr, r_start_coord, r_end_coord
+    use geometry, only: nr
     use bc_module
     use slope_module
     use bl_constants_module
@@ -513,7 +513,7 @@ contains
                                force,ng_f,w0_cart_vec,ng_w0, &
                                lo,dx,dt,is_vel,phys_bc,adv_bc,comp,is_conservative)
 
-    use geometry, only: spherical, r_start_coord, r_end_coord
+    use geometry, only: spherical
     use bc_module
     use slope_module
     use bl_constants_module
