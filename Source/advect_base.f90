@@ -64,7 +64,7 @@ contains
     use bl_constants_module
     use make_edge_state_module
     use variables, only: rho_comp, rhoh_comp
-    use geometry, only: nr_fine, r_start_coord, r_end_coord
+    use geometry, only: nr_fine, r_start_coord, r_end_coord, numdisjointchunks
     use probin_module, only: grav_const, enthalpy_pred_type
     use pred_parameters
 
@@ -77,7 +77,7 @@ contains
     real(kind=dp_t), intent(in   ) :: dz(:),dt
     
     ! Local variables
-    integer :: r, n
+    integer :: r, n, i
     
     real (kind = dp_t), allocatable :: force(:,:)
     real (kind = dp_t), allocatable :: edge(:,:)
@@ -101,10 +101,12 @@ contains
     call make_edge_state_1d(nlevs,p0_old,edge,w0,force,dz,dt)
     
     do n=1,nlevs
-       do r=r_start_coord(n,1),r_end_coord(n,1)
-          p0_new(n,r) = p0_old(n,r) &
-               - dt / dz(n) * HALF * (w0(n,r) + w0(n,r+1)) * (edge(n,r+1) - edge(n,r))  &
-               + dt * psi(n,r)
+       do i=1,numdisjointchunks(n)
+          do r=r_start_coord(n,i),r_end_coord(n,i)
+             p0_new(n,r) = p0_old(n,r) &
+                  - dt / dz(n) * HALF * (w0(n,r) + w0(n,r+1)) * (edge(n,r+1) - edge(n,r))  &
+                  + dt * psi(n,r)
+          end do
        end do
     end do
 
@@ -113,8 +115,10 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     do n=1,nlevs
-       do r=r_start_coord(n,1),r_end_coord(n,1)
-          force(n,r) = -rho0_old(n,r) * (w0(n,r+1) - w0(n,r)) / dz(n)
+       do i=1,numdisjointchunks(n)
+          do r=r_start_coord(n,i),r_end_coord(n,i)
+             force(n,r) = -rho0_old(n,r) * (w0(n,r+1) - w0(n,r)) / dz(n)
+          end do
        end do
     end do
        
@@ -122,11 +126,13 @@ contains
         
     rho0_predicted_edge = edge
 
+    ! update rho_0
     do n=1,nlevs
-       ! update rho_0
-       do r=r_start_coord(n,1),r_end_coord(n,1)
-          rho0_new(n,r) = rho0_old(n,r) &
-               - dt / dz(n) * (edge(n,r+1) * w0(n,r+1) - edge(n,r) * w0(n,r)) 
+       do i=1,numdisjointchunks(n)
+          do r=r_start_coord(n,i),r_end_coord(n,i)
+             rho0_new(n,r) = rho0_old(n,r) &
+                  - dt / dz(n) * (edge(n,r+1) * w0(n,r+1) - edge(n,r) * w0(n,r)) 
+          end do
        end do
     end do
 
@@ -153,10 +159,12 @@ contains
 
     else
 
+       ! here we predict (rho h)_0 on the edges
        do n=1,nlevs
-          ! here we predict (rho h)_0 on the edges
-          do r=r_start_coord(n,1),r_end_coord(n,1)
-             force(n,r) = -rhoh0_old(n,r) * (w0(n,r+1) - w0(n,r)) / dz(n)
+          do i=1,numdisjointchunks(i)
+             do r=r_start_coord(n,i),r_end_coord(n,i)
+                force(n,r) = -rhoh0_old(n,r) * (w0(n,r+1) - w0(n,r)) / dz(n)
+             end do
           end do
        end do
           
@@ -164,11 +172,13 @@ contains
               
     end if
 
+    ! update (rho h)_0
     do n=1,nlevs
-       ! update (rho h)_0
-       do r=r_start_coord(n,1),r_end_coord(n,1)
-          rhoh0_new(n,r) = rhoh0_old(n,r) &
-               - dt / dz(n) * (edge(n,r+1) * w0(n,r+1) - edge(n,r) * w0(n,r)) + dt*psi(n,r)
+       do i=1,numdisjointchunks(i)
+          do r=r_start_coord(n,i),r_end_coord(n,i)
+             rhoh0_new(n,r) = rhoh0_old(n,r) &
+                  - dt/dz(n) * (edge(n,r+1) * w0(n,r+1) - edge(n,r) * w0(n,r)) + dt*psi(n,r)
+          end do
        end do
     end do
     
