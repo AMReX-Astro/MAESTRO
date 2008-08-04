@@ -76,6 +76,9 @@ subroutine varden()
 
   type(box), allocatable :: boundingbox(:)
 
+  type(boxarray), allocatable :: validboxarr(:)
+  type(boxarray), allocatable :: diffboxarray(:)
+
   ng_cell = 3
 
   call probin_init()
@@ -129,6 +132,18 @@ subroutine varden()
      do i=2, sold(n)%nboxes
         boundingbox(n) = box_bbox(boundingbox(n),get_box(sold(n),i))
      end do
+  end do
+
+  ! compute diffboxarray
+  ! each box in diffboxarray corresponds to an "empty space" between valid regions at 
+  ! each level, excluding the coarsest level.
+  ! I am going to use this to compute all of the intermediate r_start_coords and r_end_coords
+  allocate(validboxarr(nlevs))
+  allocate(diffboxarray(nlevs))
+  do n=1,nlevs
+     call boxarray_build_copy(validboxarr(n),get_boxarray(sold(n)))
+     call boxarray_boxarray_diff(diffboxarray(n),boundingbox(n),validboxarr(n))
+     call boxarray_simplify(diffboxarray(n))
   end do
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -242,7 +257,7 @@ subroutine varden()
 
   ! Initialize geometry (IMPT: dr is set in init_base_state)
   center(1:dm) = HALF * (prob_lo(1:dm) + prob_hi(1:dm))
-  call init_geometry(center,dr_base,nlevs,mla,boundingbox)
+  call init_geometry(center,dr_base,nlevs,mla,boundingbox,diffboxarray)
 
   ! Initialize base state at finest level
   do n=1,nlevs
@@ -300,6 +315,11 @@ subroutine varden()
      call destroy(sold(n))
      call destroy(snew(n))
      call destroy(normal(n))
+  end do
+
+  do n=1,nlevs
+     call destroy(validboxarr(n))
+     call destroy(diffboxarray(n))
   end do
 
   call destroy(mla)

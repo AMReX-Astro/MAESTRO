@@ -35,7 +35,7 @@ subroutine varden()
   integer    :: dm,init_step
   integer    :: istep_divu_iter,istep_init_iter,istep
   integer    :: ng_s,i,n,nlevs,n_chk_comps
-  integer    :: last_plt_written,last_chk_written
+  integer    :: last_plt_written,last_chk_wryitten
   real(dp_t) :: lenx,leny,lenz,max_dist,smin,smax
   real(dp_t) :: time,dt,dtold,dt_lev
 
@@ -99,6 +99,9 @@ subroutine varden()
   type(bc_tower) ::  the_bc_tower
 
   type(box), allocatable :: boundingbox(:)
+
+  type(boxarray), allocatable :: validboxarr(:)
+  type(boxarray), allocatable :: diffboxarray(:)
 
   ng_s = 3
 
@@ -202,6 +205,18 @@ subroutine varden()
      do i=2, sold(n)%nboxes
         boundingbox(n) = box_bbox(boundingbox(n),get_box(sold(n),i))
      end do
+  end do
+
+  ! compute diffboxarray
+  ! each box in diffboxarray corresponds to an "empty space" between valid regions at 
+  ! each level, excluding the coarsest level.
+  ! I am going to use this to compute all of the intermediate r_start_coords and r_end_coords
+  allocate(validboxarr(nlevs))
+  allocate(diffboxarray(nlevs))
+  do n=1,nlevs
+     call boxarray_build_copy(validboxarr(n),get_boxarray(sold(n)))
+     call boxarray_boxarray_diff(diffboxarray(n),boundingbox(n),validboxarr(n))
+     call boxarray_simplify(diffboxarray(n))
   end do
 
   if (restart >= 0) then
@@ -461,7 +476,7 @@ subroutine varden()
   center(1:dm) = HALF * (prob_lo(1:dm) + prob_hi(1:dm))
   if (parallel_IOProcessor()) & 
        print *,'DR_BASE ',dr_base
-  call init_geometry(center,dr_base,nlevs,mla,boundingbox)
+  call init_geometry(center,dr_base,nlevs,mla,boundingbox,diffboxarray)
 
   ! Initialize base state at each level independently
   if (restart < 0) then
@@ -1060,6 +1075,11 @@ subroutine varden()
      call destroy(hgrhs(n))
      call destroy(rho_omegadot2(n))
      call destroy(sponge(n))
+  end do
+
+  do n=1,nlevs
+     call destroy(validboxarr(n))
+     call destroy(diffboxarray(n))
   end do
 
   if(spherical .eq. 1) then
