@@ -382,7 +382,7 @@ contains
                            w0, p0, gamma1bar, &
                            lo, hi, dx, rho_min, dt_adv, dt_divu, cfl)
 
-    use geometry,  only: dr, nr_fine, r_start_coord, r_end_coord
+    use geometry,  only: dr, nr_fine
     use variables, only: rho_comp
     use fill_3d_module
     
@@ -469,12 +469,12 @@ contains
     
     ! divU constraint
     allocate(gp0(0:nr_fine))
-    do r=r_start_coord(n)+1,r_end_coord(n)
+    do r=1,nr_fine-1
        gamma1bar_p_avg = HALF * (gamma1bar(r)*p0(r) + gamma1bar(r-1)*p0(r-1))
        gp0(r) = ( (p0(r) - p0(r-1))/dr(n) ) / gamma1bar_p_avg
     end do
-    gp0(r_end_coord(n)+1) = gp0(r_end_coord(n))
-    gp0(    0) = gp0(      1)
+    gp0(nr_fine) = gp0(nr_fine-1)
+    gp0(      0) = gp0(        1)
     allocate(gp0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),3))
     call put_1d_array_on_cart_3d_sphr(n,.true.,.true.,gp0,gp0_cart,lo,hi,dx,0,ng_n,normal)
     
