@@ -89,7 +89,8 @@ contains
                             gamma1bar_old,gamma1bar_new,delta_p0_ptherm_bar, &
                             psi,w0_force,dt,dtold)
 
-    use geometry, only: nr_fine, r_start_coord, r_end_coord, dr, base_cutoff_density_coord
+    use geometry, only: nr_fine, r_start_coord, r_end_coord, dr, base_cutoff_density_coord, &
+         numdisjointchunks, nr
     use variables, only: rho_comp
     use bl_constants_module
     use probin_module, only: grav_const, dpdt_factor, base_cutoff_density
@@ -107,7 +108,7 @@ contains
     real(kind=dp_t), intent(in   ) :: dt,dtold
 
     ! Local variables
-    integer                      :: r, n, i, refrat
+    integer                      :: r, n, i, j, refrat
     real(kind=dp_t), allocatable :: w0_old_cen(:,:)
     real(kind=dp_t), allocatable :: w0_new_cen(:,:)
     real(kind=dp_t)              :: w0_avg, div_avg, dt_avg, gamma1bar_p0_avg
@@ -136,44 +137,48 @@ contains
     ! Compute w0 on edges at level n
     do n=1,nlevs
 
-       if (n .eq. 1) then
-          ! Initialize new w0 at bottom of coarse base array to zero.
-          w0(1,0) = ZERO
-       else
-          ! Obtain the starting value of w0 from the coarser grid
-          w0(n,r_start_coord(n,1)) = w0(n-1,r_start_coord(n,1)/2)
-       end if
-
-       do r=r_start_coord(n,1)+1,r_end_coord(n,1)+1
-          gamma1bar_p0_avg = (gamma1bar_old(n,r-1)+gamma1bar_new(n,r-1)) * &
-               (p0_old(n,r-1)+p0_new(n,r-1))/4.0d0
-       
-          if (r-1 .lt. base_cutoff_density_coord(n)) then
-             volume_discrepancy = dpdt_factor * delta_p0_ptherm_bar(n,r-1)/dt
-          else
-             volume_discrepancy = 0.0d0
-          end if
+       do j=1,numdisjointchunks(n)
           
-          w0(n,r) = w0(n,r-1) + Sbar_in(n,r-1) * dr(n) &
-               - ( (psi(n,r-1)+volume_discrepancy) / gamma1bar_p0_avg ) * dr(n)
-       end do
+          if (n .eq. 1) then
+             ! Initialize new w0 at bottom of coarse base array to zero.
+             w0(1,0) = ZERO
+          else
+             ! Obtain the starting value of w0 from the coarser grid
+             w0(n,r_start_coord(n,j)) = w0(n-1,r_start_coord(n,j)/2)
+          end if
 
-       do i=n-1,1,-1
+          do r=r_start_coord(n,j)+1,r_end_coord(n,j)+1
+             gamma1bar_p0_avg = (gamma1bar_old(n,r-1)+gamma1bar_new(n,r-1)) * &
+                  (p0_old(n,r-1)+p0_new(n,r-1))/4.0d0
 
-          refrat = 2**(n-i)
+             if (r-1 .lt. base_cutoff_density_coord(n)) then
+                volume_discrepancy = dpdt_factor * delta_p0_ptherm_bar(n,r-1)/dt
+             else
+                volume_discrepancy = 0.0d0
+             end if
 
-          ! Compare the difference between w0 at top of level n to the corresponding point
-          !   on level i
-          offset = w0(n,r_end_coord(n,1)+1) - w0(i,(r_end_coord(n,1)+1)/refrat)
-
-          ! Restrict w0 from level n to level i
-          do r=r_start_coord(n,1),r_end_coord(n,1)+1,refrat
-             w0(i,r/refrat) = w0(n,r)
+             w0(n,r) = w0(n,r-1) + Sbar_in(n,r-1) * dr(n) &
+                  - ( (psi(n,r-1)+volume_discrepancy) / gamma1bar_p0_avg ) * dr(n)
           end do
 
-          ! Offset the w0 on level i above this point
-          do r=(r_end_coord(n,1)+1)/refrat+1,r_end_coord(i,1)+1
-             w0(i,r) = w0(i,r) + offset
+          do i=n-1,1,-1
+
+             refrat = 2**(n-i)
+
+             ! Compare the difference between w0 at top of level n to the corresponding point
+             !   on level i
+             offset = w0(n,r_end_coord(n,j)+1) - w0(i,(r_end_coord(n,j)+1)/refrat)
+
+             ! Restrict w0 from level n to level i
+             do r=r_start_coord(n,j),r_end_coord(n,j)+1,refrat
+                w0(i,r/refrat) = w0(n,r)
+             end do
+
+             ! Offset the w0 on level i above this point
+             do r=(r_end_coord(n,j)+1)/refrat+1,nr(i)
+                w0(i,r) = w0(i,r) + offset
+             end do
+
           end do
 
        end do
@@ -184,17 +189,21 @@ contains
 
     do n=1,nlevs
        
-       ! Compute the forcing term in the base state velocity equation, - 1/rho0 grad pi0 
-       dt_avg = HALF * (dt + dtold)
-       do r=r_start_coord(n,1),r_end_coord(n,1)
-          w0_old_cen(n,r) = HALF * (w0_old(n,r) + w0_old(n,r+1))
-          w0_new_cen(n,r) = HALF * (w0(n,r) + w0(n,r+1))
-          w0_avg = HALF * (dt * w0_old_cen(n,r) + dtold *  w0_new_cen(n,r)) / dt_avg
-          div_avg = HALF * (dt * (w0_old(n,r+1)-w0_old(n,r)) + &
-               dtold * (w0(n,r+1)-w0(n,r))) / dt_avg
-          w0_force(n,r) = (w0_new_cen(n,r)-w0_old_cen(n,r))/dt_avg + w0_avg*div_avg/dr(n)
-       end do
+       do j=1,numdisjointchunks(n)
 
+          ! Compute the forcing term in the base state velocity equation, - 1/rho0 grad pi0 
+          dt_avg = HALF * (dt + dtold)
+          do r=r_start_coord(n,j),r_end_coord(n,j)
+             w0_old_cen(n,r) = HALF * (w0_old(n,r) + w0_old(n,r+1))
+             w0_new_cen(n,r) = HALF * (w0(n,r) + w0(n,r+1))
+             w0_avg = HALF * (dt * w0_old_cen(n,r) + dtold *  w0_new_cen(n,r)) / dt_avg
+             div_avg = HALF * (dt * (w0_old(n,r+1)-w0_old(n,r)) + &
+                  dtold * (w0(n,r+1)-w0(n,r))) / dt_avg
+             w0_force(n,r) = (w0_new_cen(n,r)-w0_old_cen(n,r))/dt_avg + w0_avg*div_avg/dr(n)
+          end do
+          
+       end do
+       
     end do
 
     deallocate(w0_old_cen,w0_new_cen)
