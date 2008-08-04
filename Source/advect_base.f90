@@ -161,7 +161,7 @@ contains
 
        ! here we predict (rho h)_0 on the edges
        do n=1,nlevs
-          do i=1,numdisjointchunks(i)
+          do i=1,numdisjointchunks(n)
              do r=r_start_coord(n,i),r_end_coord(n,i)
                 force(n,r) = -rhoh0_old(n,r) * (w0(n,r+1) - w0(n,r)) / dz(n)
              end do
@@ -174,7 +174,7 @@ contains
 
     ! update (rho h)_0
     do n=1,nlevs
-       do i=1,numdisjointchunks(i)
+       do i=1,numdisjointchunks(n)
           do r=r_start_coord(n,i),r_end_coord(n,i)
              rhoh0_new(n,r) = rhoh0_old(n,r) &
                   - dt/dz(n) * (edge(n,r+1) * w0(n,r+1) - edge(n,r) * w0(n,r)) + dt*psi(n,r)
