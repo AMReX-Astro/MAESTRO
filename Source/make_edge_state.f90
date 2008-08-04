@@ -1484,8 +1484,8 @@ contains
      ! compute eps based on umax
      umax = ZERO
      do n=1,nlevs
-        lo = r_start_coord(n)
-        hi = r_end_coord(n)
+        lo = r_start_coord(n,1)
+        hi = r_end_coord(n,1)
         do r = lo,hi+1
            umax = max(umax,abs(w0(n,r)))
         end do
@@ -1495,8 +1495,8 @@ contains
      ! compute slopes
      do n=1,nlevs
 
-        lo = r_start_coord(n)
-        hi = r_end_coord(n)
+        lo = r_start_coord(n,1)
+        hi = r_end_coord(n,1)
         
         if (slope_order .eq. 0) then
            
@@ -1592,7 +1592,7 @@ contains
                  if (r .eq. 0 .or. r .eq. nr(n)-1) then
                     ! set slopes adjacent to domain boundaries to zero
                     slopex(n,r) = ZERO
-                 else if (r .eq. r_start_coord(n) .or. r .eq. r_end_coord(n)) then
+                 else if (r .eq. r_start_coord(n,1) .or. r .eq. r_end_coord(n,1)) then
                     ! drop order to second-order limited differences
                     del = half*(s(n,r+1) - s(n,r-1))
                     dpls = two*(s(n,r+1) - s(n,r  ))
@@ -1619,8 +1619,8 @@ contains
      ! compute s_l and s_r
      do n=1,nlevs
 
-        lo = r_start_coord(n)
-        hi = r_end_coord(n)
+        lo = r_start_coord(n,1)
+        hi = r_end_coord(n,1)
 
         do r = lo,hi
 
@@ -1637,14 +1637,14 @@ contains
      ! compute edge states from s_l and s_r
      do n=1,nlevs
 
-        lo = r_start_coord(n)
-        hi = r_end_coord(n)
+        lo = r_start_coord(n,1)
+        hi = r_end_coord(n,1)
         
         ! if we are not at the finest level
         ! copy in the s_r and s_l states from the next finer level at the c-f interface
         if (n .ne. nlevs) then
-           s_r(n,r_start_coord(n+1)/2) = s_r(n+1,r_start_coord(n+1))
-           s_l(n,(r_end_coord(n+1)+1)/2) = s_l(n+1,r_end_coord(n+1)+1)
+           s_r(n,r_start_coord(n+1,1)/2) = s_r(n+1,r_start_coord(n+1,1))
+           s_l(n,(r_end_coord(n+1,1)+1)/2) = s_l(n+1,r_end_coord(n+1,1)+1)
         end if
 
         ! if we are not at the coarsest level

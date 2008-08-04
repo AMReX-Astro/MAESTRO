@@ -64,10 +64,10 @@ contains
           beta0_edge(1,0) = rho0(1,0)
        else
           ! Obtain the starting value of beta0_edge_lo from the coarser grid
-          beta0_edge(n,r_start_coord(n)) = beta0_edge(n-1,r_start_coord(n)/2)
+          beta0_edge(n,r_start_coord(n,1)) = beta0_edge(n-1,r_start_coord(n,1)/2)
        end if
 
-       do r=r_start_coord(n),r_end_coord(n)
+       do r=r_start_coord(n,1),r_end_coord(n,1)
 
           if (r .eq. 0 .or. r .eq. nr(n)-1) then
 
@@ -131,7 +131,7 @@ contains
 
        end do
 
-       do r = anelastic_cutoff_coord(n),r_end_coord(n)
+       do r = anelastic_cutoff_coord(n),r_end_coord(n,1)
           div_coeff(n,r) = div_coeff(n,r-1) * (rho0(n,r)/rho0(n,r-1))
        end do
 
@@ -140,27 +140,27 @@ contains
           refrat = 2**(n-i)
 
           ! Restrict beta0 at edges from level n to level i
-          do r=r_start_coord(n),r_end_coord(n)+1,refrat
+          do r=r_start_coord(n,1),r_end_coord(n,1)+1,refrat
              beta0_edge(i,r/refrat) = beta0_edge(n,r)
           end do
 
           ! Recompute beta0 at centers at level i for cells that are covered by level n data
-          do r=r_start_coord(n),r_end_coord(n)-refrat+1,refrat
+          do r=r_start_coord(n,1),r_end_coord(n,1)-refrat+1,refrat
              div_coeff(i,r/refrat) = HALF*(beta0_edge(i,r/refrat) + beta0_edge(i,r/refrat+1))
           end do
 
           ! Compare the difference between beta0 at the top of level n to the corresponding
           !  point on level i
-          offset = beta0_edge(n,r_end_coord(n)+1) - beta0_edge(i,(r_end_coord(n)+1)/refrat)
+          offset = beta0_edge(n,r_end_coord(n,1)+1) - beta0_edge(i,(r_end_coord(n,1)+1)/refrat)
 
           ! Offset the centered beta on level i above this point so the total integral 
           !  is consistent
-          do r=(r_end_coord(n)+1)/refrat,r_end_coord(i)
+          do r=(r_end_coord(n,1)+1)/refrat,r_end_coord(i,1)
              div_coeff(i,r) = div_coeff(i,r) + offset
           end do
 
           ! Redo the anelastic cutoff part
-          do r=anelastic_cutoff_coord(i),r_end_coord(i)
+          do r=anelastic_cutoff_coord(i),r_end_coord(i,1)
              div_coeff(i,r) = div_coeff(i,r-1) * (rho0(i,r)/rho0(i,r-1))
           end do
 
@@ -169,13 +169,13 @@ contains
           ! We first average div_coeff from level i+1 to level i in the region between
           !  the anelastic cutoff and the top of grid n
           ! Then we recompute the anelastic coordinate at level i above the top of grid n
-          if (r_end_coord(n) .ge. anelastic_cutoff_coord(n)) then
+          if (r_end_coord(n,1) .ge. anelastic_cutoff_coord(n)) then
 
-             do r=anelastic_cutoff_coord(i),(r_end_coord(n)+1)/refrat-1
+             do r=anelastic_cutoff_coord(i),(r_end_coord(n,1)+1)/refrat-1
                 div_coeff(i,r) = HALF*(div_coeff(i+1,2*r)+div_coeff(i+1,2*r+1))
              end do
 
-             do r=(r_end_coord(n)+1)/refrat,r_end_coord(i)
+             do r=(r_end_coord(n,1)+1)/refrat,r_end_coord(i,1)
                 div_coeff(i,r) = div_coeff(i,r-1) * (rho0(i,r)/rho0(i,r-1))
              end do
 

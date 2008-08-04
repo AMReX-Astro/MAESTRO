@@ -60,7 +60,7 @@ contains
 ! UPDATE RHO0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    do r=r_start_coord(n),r_end_coord(n)
+    do r=r_start_coord(n,1),r_end_coord(n,1)
        if (r .lt. anelastic_cutoff_coord(n)) then
           rho0_new(r) = rho0_new(r) - dt/dz*(etarho(r+1) - etarho(r))
        end if

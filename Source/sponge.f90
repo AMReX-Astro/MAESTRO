@@ -30,10 +30,10 @@ contains
     real (kind = dp_t) :: r_top
     integer            :: r
 
-    r_top = prob_lo_r + dble(r_end_coord(1)+1) * dr(1)
+    r_top = prob_lo_r + dble(r_end_coord(1,1)+1) * dr(1)
     r_sp = r_top
 
-    do r=0,r_end_coord(1)
+    do r=0,r_end_coord(1,1)
        rloc = prob_lo_r + (dble(r)+HALF) * dr(1)
        if (rho0(r) < 10.d0*anelastic_cutoff) then
           r_sp = rloc
@@ -42,7 +42,7 @@ contains
     enddo
 
     r_md = r_top
-    do r=0,r_end_coord(1)
+    do r=0,r_end_coord(1,1)
        rloc = prob_lo_r + (dble(r)+HALF) * dr(1)
        if (rho0(r) < anelastic_cutoff) then
           r_md = rloc

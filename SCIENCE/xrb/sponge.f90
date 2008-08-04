@@ -29,10 +29,10 @@ contains
     real (kind = dp_t) :: r_top
     integer            :: r
 
-    r_top = prob_lo_r + dble(r_end_coord(1)+1) * dr(1)
+    r_top = prob_lo_r + dble(r_end_coord(1,1)+1) * dr(1)
     topsponge_lo_r = r_top
 
-    do r=0,r_end_coord(1)
+    do r=0,r_end_coord(1,1)
        rloc = prob_lo_r + (dble(r)+HALF) * dr(1)
        if (rho0(r) < 25.d0*anelastic_cutoff) then
           topsponge_lo_r = rloc
@@ -40,7 +40,7 @@ contains
        endif
     enddo
 
-    do r=0,r_end_coord(1)
+    do r=0,r_end_coord(1,1)
        rloc = prob_lo_r + (dble(r)+HALF) * dr(1)
        if (rho0(r) < anelastic_cutoff) then
           topsponge_hi_r = rloc
@@ -48,7 +48,7 @@ contains
        endif
     enddo
 
-    do r=0,r_end_coord(1)
+    do r=0,r_end_coord(1,1)
        rloc = prob_lo_r + (dble(r)+HALF) * dr(1)
        if (rho0(r) < 6.d7) then
           botsponge_lo_r = rloc
@@ -56,7 +56,7 @@ contains
        endif
     enddo
 
-    do r=0,r_end_coord(1)
+    do r=0,r_end_coord(1,1)
        rloc = prob_lo_r + (dble(r)+HALF) * dr(1)
        if (rho0(r) < 5.d7) then
           botsponge_hi_r = rloc

@@ -36,7 +36,7 @@ contains
     
     do n=1,nlevs
 
-       do r=r_start_coord(n),r_end_coord(n)
+       do r=r_start_coord(n,1),r_end_coord(n,1)
           
           ! update enthalpy
           rhoh0_out(n,r) = rhoh0_in(n,r)

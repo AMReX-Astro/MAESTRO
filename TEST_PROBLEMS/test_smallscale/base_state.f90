@@ -113,7 +113,7 @@ contains
     ! Now do the interior cells
     flameloc = ONE
 
-    do i=r_start_coord(n),r_end_coord(n)
+    do i=r_start_coord(n,1),r_end_coord(n,1)
 
        loloc = starting_rad +  dble(i)     *dx(dm) - flameloc
        hiloc = starting_rad + (dble(i)+ONE)*dx(dm) - flameloc
@@ -186,7 +186,7 @@ contains
     integer :: n,r
 
     do n=1,nlevs-1
-       do r=r_start_coord(n),r_end_coord(n)
+       do r=r_start_coord(n,1),r_end_coord(n,1)
           ! use the EOS to make the state consistent
           temp_eos(1) = s0(n,r,temp_comp)
           den_eos(1)  = s0(n,r,rho_comp)

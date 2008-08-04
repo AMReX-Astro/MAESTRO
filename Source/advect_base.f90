@@ -101,7 +101,7 @@ contains
     call make_edge_state_1d(nlevs,p0_old,edge,w0,force,dz,dt)
     
     do n=1,nlevs
-       do r=r_start_coord(n),r_end_coord(n)
+       do r=r_start_coord(n,1),r_end_coord(n,1)
           p0_new(n,r) = p0_old(n,r) &
                - dt / dz(n) * HALF * (w0(n,r) + w0(n,r+1)) * (edge(n,r+1) - edge(n,r))  &
                + dt * psi(n,r)
@@ -113,7 +113,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     do n=1,nlevs
-       do r=r_start_coord(n),r_end_coord(n)
+       do r=r_start_coord(n,1),r_end_coord(n,1)
           force(n,r) = -rho0_old(n,r) * (w0(n,r+1) - w0(n,r)) / dz(n)
        end do
     end do
@@ -124,7 +124,7 @@ contains
 
     do n=1,nlevs
        ! update rho_0
-       do r=r_start_coord(n),r_end_coord(n)
+       do r=r_start_coord(n,1),r_end_coord(n,1)
           rho0_new(n,r) = rho0_old(n,r) &
                - dt / dz(n) * (edge(n,r+1) * w0(n,r+1) - edge(n,r) * w0(n,r)) 
        end do
@@ -155,7 +155,7 @@ contains
 
        do n=1,nlevs
           ! here we predict (rho h)_0 on the edges
-          do r=r_start_coord(n),r_end_coord(n)
+          do r=r_start_coord(n,1),r_end_coord(n,1)
              force(n,r) = -rhoh0_old(n,r) * (w0(n,r+1) - w0(n,r)) / dz(n)
           end do
        end do
@@ -166,7 +166,7 @@ contains
 
     do n=1,nlevs
        ! update (rho h)_0
-       do r=r_start_coord(n),r_end_coord(n)
+       do r=r_start_coord(n,1),r_end_coord(n,1)
           rhoh0_new(n,r) = rhoh0_old(n,r) &
                - dt / dz(n) * (edge(n,r+1) * w0(n,r+1) - edge(n,r) * w0(n,r)) + dt*psi(n,r)
        end do

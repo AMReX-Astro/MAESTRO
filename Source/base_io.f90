@@ -50,7 +50,7 @@ contains
        open(unit=99,file=out_name,form = "formatted", access = "sequential",action="write")
 
        do n=1,nlevs
-          do i=r_start_coord(n),r_end_coord(n)
+          do i=r_start_coord(n,1),r_end_coord(n,1)
              base_r = problo + (dble(i)+HALF) * dr(n)
              write(99,1000)  base_r, rho0(n,i), p0(n,i), gamma1bar(n,i), &
                   rhoh0(n,i), div_coeff(n,i), psi(n,i), etarho_cc(n,i)
@@ -65,7 +65,7 @@ contains
 
        open(unit=99,file=out_name,form = "formatted", access = "sequential",action="write")
        do n=1,nlevs
-          do i=r_start_coord(n),r_end_coord(n)+1
+          do i=r_start_coord(n,1),r_end_coord(n,1)+1
              base_r = problo + dble(i) * dr(n)
              write(99,1000)  base_r,w0(n,i)
           end do
@@ -79,7 +79,7 @@ contains
 
        open(unit=99,file=out_name,form = "formatted", access = "sequential",action="write")
        do n=1,nlevs
-          do i=r_start_coord(n),r_end_coord(n)+1
+          do i=r_start_coord(n,1),r_end_coord(n,1)+1
              base_r = problo + dble(i) * dr(n)
              write(99,1000)  base_r,etarho(n,i)
           end do
@@ -134,7 +134,7 @@ contains
     open(unit=99,file=out_name)
 
     do n=1,nlevs
-       do i=r_start_coord(n),r_end_coord(n)
+       do i=r_start_coord(n,1),r_end_coord(n,1)
           read(99,*)  r_dummy, rho0(n,i), p0(n,i), gamma1bar(n,i), &
                rhoh0(n,i), div_coeff(n,i), psi(n,i), etarho_cc(n,i)
        end do
@@ -149,7 +149,7 @@ contains
 
     open(unit=99,file=out_name)
     do n=1,nlevs
-       do i=r_start_coord(n),r_end_coord(n)+1
+       do i=r_start_coord(n,1),r_end_coord(n,1)+1
           read(99,*)  r_dummy, w0(n,i)
        end do
     end do
@@ -163,7 +163,7 @@ contains
 
     open(unit=99,file=out_name)
     do n=1,nlevs
-       do i=r_start_coord(n),r_end_coord(n)+1
+       do i=r_start_coord(n,1),r_end_coord(n,1)+1
           read(99,*)  r_dummy, etarho(n,i)
        end do
     end do

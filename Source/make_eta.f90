@@ -116,7 +116,7 @@ contains
              call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
              etarhosum(n,:) = target_buffer
              
-             do r=r_start_coord(n),r_end_coord(n)+1
+             do r=r_start_coord(n,1),r_end_coord(n,1)+1
                 etarho(n,r) = etarhosum(n,r) / dble(ncell(n,r))
              end do
              
@@ -154,7 +154,7 @@ contains
           call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
           etarhosum(1,:) = target_buffer
           
-          do r=0,r_end_coord(1)
+          do r=0,r_end_coord(1,1)
              etarho(1,r) = etarhosum(1,r) / dble(ncell(1,r))
           end do
           
@@ -182,14 +182,14 @@ contains
              ! on faces that exist at the next coarser level, etarho is the same since
              ! the fluxes have been restricted.  We copy these values of etarho directly and
              ! copy scaled values of etarhosum directly.
-             do r=r_start_coord(n-1),r_end_coord(n-1)+1
+             do r=r_start_coord(n-1,1),r_end_coord(n-1,1)+1
                 etarho   (n,r*rr) = etarho   (n-1,r)
                 etarhosum(n,r*rr) = etarhosum(n-1,r)*rr**(dm-1)
              end do
              
              ! on faces that do not exist at the next coarser level, we use linear
              ! interpolation to get etarhosum at these faces.
-             do r=r_start_coord(n-1),r_end_coord(n-1)
+             do r=r_start_coord(n-1,1),r_end_coord(n-1,1)
                 do rpert=1,rr-1
                    etarhosum(n,r*rr+rpert) = &
                         dble(rpert)/dble(rr)*(etarhosum(n,r*rr)) + &
@@ -218,7 +218,7 @@ contains
              
              ! update etasum on faces that do not exist at the coarser level
              ! then recompute eta on these faces
-             do r=r_start_coord(n-1),r_end_coord(n-1)
+             do r=r_start_coord(n-1,1),r_end_coord(n-1,1)
                 do rpert=1,rr-1
                    etarhosum(n,r*rr+rpert) = &
                         etarhosum(n,r*rr+rpert) + etarhopert(n,r*rr+rpert)
@@ -241,7 +241,7 @@ contains
 
     ! make the cell-centered etarho_cc by averaging etarho to centers
     do n=1,nlevs
-       do r=r_start_coord(n),r_end_coord(n)
+       do r=r_start_coord(n,1),r_end_coord(n,1)
           etarho_cc(n,r) = HALF*(etarho(n,r) + etarho(n,r+1))
        enddo
     enddo
@@ -274,7 +274,7 @@ contains
 
     ! we only add the contribution at the top edge if we are at the top of grid at a level
     ! this prevents double counting
-    if(hi(2) .eq. r_end_coord(n)) then
+    if(hi(2) .eq. r_end_coord(n,1)) then
        j=hi(2)+1
        do i=lo(1),hi(1)
           etarhosum(j) = etarhosum(j) + etarhoflux(i,j)
@@ -304,7 +304,7 @@ contains
 
     ! we only add the contribution at the top edge if we are at the top of the domain
     ! this prevents double counting
-    if(hi(3) .eq. r_end_coord(n)) then
+    if(hi(3) .eq. r_end_coord(n,1)) then
        k=hi(3)+1
        do j=lo(2),hi(2)
           do i=lo(1),hi(1)

@@ -60,7 +60,7 @@ contains
    
     psi = ZERO
 
-    do r = r_start_coord(n), r_end_coord(n)
+    do r = r_start_coord(n,1), r_end_coord(n,1)
        if (r .lt. anelastic_cutoff_coord(n)) then
           etarho_avg = HALF * (etarho(r)+etarho(r+1))
           psi(r) = etarho_avg * abs(grav_const)
