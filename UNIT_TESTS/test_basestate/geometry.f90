@@ -18,7 +18,7 @@ module geometry
   real(dp_t), save :: center(3)
   integer   , save :: nr_fine
   real(dp_t), allocatable, save :: dr(:), r_cc_loc(:,:), r_edge_loc(:,:)
-  integer   , allocatable, save :: r_start_coord(:), r_end_coord(:), nr(:)
+  integer   , allocatable, save :: r_start_coord(:,:), r_end_coord(:,:), nr(:)
   integer   , allocatable, save :: anelastic_cutoff_coord(:)
   integer   , allocatable, save :: base_cutoff_density_coord(:)
   integer   , allocatable, save :: burning_cutoff_density_coord(:)
@@ -65,8 +65,8 @@ contains
     allocate(dr(nlevs))
     allocate(r_cc_loc(nlevs,0:nr_in-1))
     allocate(r_edge_loc(nlevs,0:nr_in))
-    allocate(r_start_coord(nlevs))
-    allocate(r_end_coord(nlevs))
+    allocate(r_start_coord(nlevs,1))
+    allocate(r_end_coord(nlevs,1))
     allocate(nr(nlevs))
     allocate(anelastic_cutoff_coord(nlevs))
     allocate(base_cutoff_density_coord(nlevs))
@@ -86,8 +86,8 @@ contains
        end do
     enddo
 
-    r_start_coord(nlevs) = 0
-    r_end_coord(nlevs) = nr_in-1
+    r_start_coord(nlevs,1) = 0
+    r_end_coord(nlevs,1) = nr_in-1
     
   end subroutine init_geometry
 
