@@ -49,8 +49,8 @@ These are working notes for the Godunov step in {\tt MAESTRO} and {\tt VARDEN}.
 \begin{enumerate}
 \item Concerning equations (\ref{Radial utrans_L}), (\ref{Radial utrans_R}), (\ref{1D wt_L extrap}) and (\ref{1D wt_R extrap}), do we really need to include the term proportional to $(\Ubt\cdot\eb_r)$?
 \item Concerning (\ref{Force Term}), do we really need to include the term proportional to $\partial\pi_0/\partial r$ in the edge-state prediction?
-\item Do we want to do characteristic tracing to compute $\Ub^{\trans}$, analgous to how {\tt VARDEN} uses characteristic tracing to compute $\Ub^{\mac}$?
-\item When we compute $\Ub^{\mac,*}$, do we want to replace all instances of ``trans'' velocities with ``MAC'' velocities?  Doing this is simply a matter of replacing the call to {\tt make\_edge\_state} with {\tt make\_edge\_scal}.
+\item Do we want to do characteristic tracing to compute $\Ubt^{\trans}$, analgous to how {\tt VARDEN} uses characteristic tracing to compute $\Ub^{\mac}$?
+\item When we compute $\Ubt^{\edge}$, do we want to replace all instances of ``trans'' velocities with ``MAC'' velocities?  Doing this is simply a matter of replacing the call to {\tt make\_edge\_state} with {\tt make\_edge\_scal}.
 \item NOTE: The {\tt probin} parameter ``use\_new\_godunov'' enables all four of these features.
 \end{enumerate}
 \section{Differences Between {\tt MAESTRO} and {\tt VARDEN}}
