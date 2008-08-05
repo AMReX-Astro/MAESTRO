@@ -58,10 +58,8 @@ There are two ways to predict $\rho_0$ at edges.
 \begin{enumerate}
 \item We call make\_edge\_state\_1d using the underbraced term in 
 (\ref{rho0 equation}) as the forcing.  This gives us $\rho_0^{n+\half,{\rm pred}}$.
-\MarginPar{You could argue that including a time-lagged $\eta_\rho$ source term would 
-decrease the error, but Ann has convinced me that this term isn't necessary.}  
-This term is used to advect $\rho_0$ in advect\_base and to compute $\eta_\rho$, which will 
-be used in correct\_base.
+This term is used to advect $\rho_0$ in advect\_base and therefore must also be used 
+to compute $\eta_\rho$, which will be used in correct\_base.
 \item We define $\rho_0^{n+\half,{\rm avg}} = (\rho_0^n + \rho_0^{(2)})/2$.  We 
 compute $\rho_0^{(2)}$ from $\rho_0^n$ using advect\_base, which advances equation 
 (\ref{rho0 equation}) through $\Delta t$ in time.  The $(2)$ in the superscript indicates 
@@ -109,7 +107,7 @@ already accounted for in react\_state
 + \psi + \wt\frac{\partial p_0}{\partial r} + \nabla\cdot\kappa\nabla T. \label{rhoh equation}
 \end{equation}
 We arbitrarily define a base state enthalpy evolution equation
-\MarginPar{Does $\psi$ need to be included in the force?}
+\MarginPar{Does $\psi$ need to be included in the force?  I have written it in the base state equation for now, even though neither the base state or perturbational edge state prediction in the code uses $\psi$.  How about evolving density first,  then computing a time-centered $\psi$ to be used as the energy forcing?}
 \begin{eqnarray}
 \frac{\partial(\rho h)_0}{\partial t} &=& -\nabla\cdot[(\rho h)_0 w_0\eb_r] 
 + \frac{D_0p_0}{Dt} \nonumber \\
@@ -128,17 +126,17 @@ the perturbational enthalpy equation
 + \nabla\cdot\kappa\nabla T}_{"(\rho h)' ~ \text{force}"}. \label{rhohprime equation}
 \end{eqnarray}
 \subsubsection{Predicting $(\rho h)'$ at edges}\label{Predicting rhohprime at edges}
-We define $(\rho h)_0^{(1)} = \overline{(\rho h)^{(1)}}$  and 
-$(\rho h)' = (\rho h)^{(1)}-(\rho h)_0^{(1)}$.  Then we predict $(\rho h)'$ to 
-edges using make\_edge\_scal in scalar\_advance and the underbraced term in 
-(\ref{rhohprime equation}) as the forcing.\\ \\
 {\bf What the code is currently doing:}\MarginPar{Do we need to change this?}
  Instead of defining $(\rho h)_0^{(1)} = \overline{(\rho h)^{(1)}}$, the code carries 
 through the complete evolution of $(\rho h)_0$ using $(\rho h)_0^n \rightarrow$ react\_base 
 $\rightarrow (\rho h)_0^{(1)} \rightarrow$ advect\_base 
 $\rightarrow (\rho h)_0^{(2)} \rightarrow$ react\_base $\rightarrow (\rho h)_0^{n+1}$.  
 There is no correct\_base function for $(\rho h)_0$ written yet, nor is any adjustment made 
-to sync up $(\rho h)_0$ after the thermal diffusion step.
+to sync up $(\rho h)_0$ after the thermal diffusion step.\\ \\
+{\bf What I'd like to do:}  Define $(\rho h)_0^{(1)} = \overline{(\rho h)^{(1)}}$  and 
+$(\rho h)' = (\rho h)^{(1)}-(\rho h)_0^{(1)}$.  Then we predict $(\rho h)'$ to 
+edges using make\_edge\_scal in scalar\_advance and the underbraced term in 
+(\ref{rhohprime equation}) as the forcing.
 \subsubsection{Predicting $(\rho h)_0$ at edges}
 We use an analogous procedure described in Section \ref{Predicting rho0 at edges} to 
 obtain $(\rho h)_0^{n+\half,\rm{pred}}$ and $(\rho h)_0^{n+\half,\rm{avg}}$.  Note that 
@@ -147,17 +145,18 @@ $(\rho h)_0^{n+\half,{\rm avg}} = [(\rho h)_0^{(1)} + (\rho h)_0^{(2)}]/2$.
 We use an analogous procedure described in Section \ref{Computing rho at edges} to compute
 $\rho h$ at edges.
 \subsubsection{Advancing $\rho h$}
-We would like to update the non-forcing part of the enthalpy equation analogously to
-Section \ref{Advancing rhoX_k}
-\begin{equation}
-\frac{\partial(\rho h)}{\partial t} = -\nabla\cdot(\rho h\Ub) = 
--\nabla\cdot\left\{\left[(\rho h)_0^{n+\half,{\rm avg}} 
-+ (\rho h)'\right]\left(\Ubt + w_0\eb_r\right)\right\}.
-\end{equation}
 {\bf What the code is currently doing:}\MarginPar{Do we need to change this?}
 \begin{equation}
 \frac{\partial(\rho h)}{\partial t} = -\nabla\cdot\left[(\rho h)'\left(\Ubt 
 + w_0\eb_r\right)\right] - \nabla\cdot\left[(\rho h)_0^{n+\half,{\rm avg}}\Ubt\right] 
 - \nabla\cdot\left[(\rho h)_0^{n+\half,{\rm pred}}w_0\eb_r\right].
 \end{equation}
+{\bf What we would do to be consistent with density:} We would like to update the 
+non-forcing part of the enthalpy equation analogously to Section \ref{Advancing rhoX_k}
+\begin{equation}
+\frac{\partial(\rho h)}{\partial t} = -\nabla\cdot(\rho h\Ub) = 
+-\nabla\cdot\left\{\left[(\rho h)_0^{n+\half,{\rm avg}} 
++ (\rho h)'\right]\left(\Ubt + w_0\eb_r\right)\right\}.
+\end{equation}
+
 \end{document}
