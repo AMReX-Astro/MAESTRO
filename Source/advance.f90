@@ -172,12 +172,6 @@ contains
     allocate(       gamma1bar_old(nlevs,0:nr_fine-1))
     allocate(delta_gamma1_termbar(nlevs,0:nr_fine-1))
 
-    ! Set these to zero to be safe
-    rhoh0_1 = ZERO
-    rhoh0_2 = ZERO
-    rho0_predicted_edge = ZERO
-    delta_gamma1_termbar = ZERO
-
     ! Set this to zero so if evolve_base_state = F there is no effect in update_vel
     w0_force = ZERO
 
@@ -248,9 +242,11 @@ contains
     end do
 
     if (init_mode) then
-       call make_S_at_halftime(nlevs,mla,Source_nph,Source_old,Source_new,the_bc_tower%bc_tower_array)
+       call make_S_at_halftime(nlevs,mla,Source_nph,Source_old,Source_new, &
+                               the_bc_tower%bc_tower_array)
     else
-       call extrap_to_halftime(nlevs,mla,Source_nph,dSdt,Source_old,dt,the_bc_tower%bc_tower_array)
+       call extrap_to_halftime(nlevs,mla,Source_nph,dSdt,Source_old,dt, &
+                               the_bc_tower%bc_tower_array)
     end if
 
     if (dm .eq. 3) then
@@ -289,7 +285,8 @@ contains
        call multifab_fill_boundary(p0_cart(nlevs))
 
        ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(p0_cart(nlevs),1,foextrap_comp,1,the_bc_tower%bc_tower_array(nlevs))
+       call multifab_physbc(p0_cart(nlevs),1,foextrap_comp,1, &
+                            the_bc_tower%bc_tower_array(nlevs))
 
     else
 
@@ -304,7 +301,8 @@ contains
           ! both levels n-1 and n
           call multifab_fill_ghost_cells(p0_cart(n),p0_cart(n-1), &
                                          p0_cart(n)%ng,mla%mba%rr(n-1,:), &
-                                         the_bc_tower%bc_tower_array(n-1), the_bc_tower%bc_tower_array(n), &
+                                         the_bc_tower%bc_tower_array(n-1), &
+                                         the_bc_tower%bc_tower_array(n), &
                                          1,foextrap_comp,1)
        enddo
 
@@ -325,7 +323,8 @@ contains
        call multifab_fill_boundary(delta_p_term(nlevs))
 
        ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(delta_p_term(nlevs),1,foextrap_comp,1,the_bc_tower%bc_tower_array(nlevs))
+       call multifab_physbc(delta_p_term(nlevs),1,foextrap_comp,1, &
+                            the_bc_tower%bc_tower_array(nlevs))
 
     else
 
@@ -340,7 +339,8 @@ contains
           ! both levels n-1 and n
           call multifab_fill_ghost_cells(delta_p_term(n),delta_p_term(n-1), &
                                          delta_p_term(n)%ng,mla%mba%rr(n-1,:), &
-                                         the_bc_tower%bc_tower_array(n-1), the_bc_tower%bc_tower_array(n), &
+                                         the_bc_tower%bc_tower_array(n-1), &
+                                         the_bc_tower%bc_tower_array(n), &
                                          1,foextrap_comp,1)
        enddo
 
@@ -773,7 +773,8 @@ contains
           call multifab_build(Source_nph(n), mla%la(n), 1, 1)
        end do
 
-       call make_S_at_halftime(nlevs,mla,Source_nph,Source_old,Source_new,the_bc_tower%bc_tower_array)
+       call make_S_at_halftime(nlevs,mla,Source_nph,Source_old,Source_new, &
+                               the_bc_tower%bc_tower_array)
 
        if (dm .eq. 3) then
           do n=1,nlevs
@@ -824,11 +825,13 @@ contains
           call multifab_fill_boundary(p0_cart(nlevs))
 
           ! fill non-periodic domain boundary ghost cells
-          call multifab_physbc(p0_cart(nlevs),1,foextrap_comp,1,the_bc_tower%bc_tower_array(nlevs))
+          call multifab_physbc(p0_cart(nlevs),1,foextrap_comp,1, &
+                               the_bc_tower%bc_tower_array(nlevs))
        
        else
 
-          ! the loop over nlevs must count backwards to make sure the finer grids are done first
+          ! the loop over nlevs must count backwards to make sure the finer grids are 
+          ! done first
           do n=nlevs,2,-1
 
              ! set level n-1 data to be the average of the level n data covering it
@@ -839,7 +842,8 @@ contains
              ! both levels n-1 and n
              call multifab_fill_ghost_cells(p0_cart(n),p0_cart(n-1), &
                                             p0_cart(n)%ng,mla%mba%rr(n-1,:), &
-                                            the_bc_tower%bc_tower_array(n-1), the_bc_tower%bc_tower_array(n), &
+                                            the_bc_tower%bc_tower_array(n-1), &
+                                            the_bc_tower%bc_tower_array(n), &
                                             1,foextrap_comp,1)
           enddo
 
@@ -861,11 +865,13 @@ contains
           call multifab_fill_boundary(delta_p_term(nlevs))
 
           ! fill non-periodic domain boundary ghost cells
-          call multifab_physbc(delta_p_term(nlevs),1,foextrap_comp,1,the_bc_tower%bc_tower_array(nlevs))
+          call multifab_physbc(delta_p_term(nlevs),1,foextrap_comp,1, &
+                               the_bc_tower%bc_tower_array(nlevs))
        
        else
 
-          ! the loop over nlevs must count backwards to make sure the finer grids are done first
+          ! the loop over nlevs must count backwards to make sure the finer grids are 
+          ! done first
           do n=nlevs,2,-1
 
              ! set level n-1 data to be the average of the level n data covering it
@@ -876,7 +882,8 @@ contains
              ! both levels n-1 and n
              call multifab_fill_ghost_cells(delta_p_term(n),delta_p_term(n-1), &
                                             delta_p_term(n)%ng,mla%mba%rr(n-1,:), &
-                                            the_bc_tower%bc_tower_array(n-1), the_bc_tower%bc_tower_array(n), &
+                                            the_bc_tower%bc_tower_array(n-1), &
+                                            the_bc_tower%bc_tower_array(n), &
                                             1,foextrap_comp,1)
           enddo
 
@@ -902,7 +909,8 @@ contains
           end if
 
           call make_w0(nlevs,w0,w0_old,w0_force,Sbar,rho0_old,rho0_new,p0_old,p0_new, &
-                       gamma1bar_old,gamma1bar,delta_p0_ptherm_bar,psi,etarho,etarho_cc,dt,dtold)
+                       gamma1bar_old,gamma1bar,delta_p0_ptherm_bar,psi,etarho,etarho_cc,dt, &
+                       dtold)
        
           if (dm .eq. 3) then
              call put_1d_array_on_cart(nlevs,w0,w0_cart_vec,1,.true.,.true.,dx, &
@@ -1318,11 +1326,13 @@ contains
              call multifab_fill_boundary(p0_cart(nlevs))
        
              ! fill non-periodic domain boundary ghost cells
-             call multifab_physbc(p0_cart(nlevs),1,foextrap_comp,1,the_bc_tower%bc_tower_array(nlevs))
+             call multifab_physbc(p0_cart(nlevs),1,foextrap_comp,1, &
+                                  the_bc_tower%bc_tower_array(nlevs))
 
           else
 
-             ! the loop over nlevs must count backwards to make sure the finer grids are done first
+             ! the loop over nlevs must count backwards to make sure the finer grids are 
+             ! done first
              do n=nlevs,2,-1
 
                 ! set level n-1 data to be the average of the level n data covering it
@@ -1333,7 +1343,8 @@ contains
                 ! both levels n-1 and n
                 call multifab_fill_ghost_cells(p0_cart(n),p0_cart(n-1), &
                                                p0_cart(n)%ng,mla%mba%rr(n-1,:), &
-                                               the_bc_tower%bc_tower_array(n-1), the_bc_tower%bc_tower_array(n), &
+                                               the_bc_tower%bc_tower_array(n-1), &
+                                               the_bc_tower%bc_tower_array(n), &
                                                1,foextrap_comp,1)
              enddo
              
@@ -1354,11 +1365,13 @@ contains
              call multifab_fill_boundary(delta_p_term(nlevs))
 
              ! fill non-periodic domain boundary ghost cells
-             call multifab_physbc(delta_p_term(nlevs),1,foextrap_comp,1,the_bc_tower%bc_tower_array(nlevs))
+             call multifab_physbc(delta_p_term(nlevs),1,foextrap_comp,1, &
+                                  the_bc_tower%bc_tower_array(nlevs))
 
           else
 
-             ! the loop over nlevs must count backwards to make sure the finer grids are done first
+             ! the loop over nlevs must count backwards to make sure the finer grids are 
+             ! done first
              do n=nlevs,2,-1
 
                 ! set level n-1 data to be the average of the level n data covering it
@@ -1369,7 +1382,8 @@ contains
                 ! both levels n-1 and n
                 call multifab_fill_ghost_cells(delta_p_term(n),delta_p_term(n-1), &
                                                delta_p_term(n)%ng,mla%mba%rr(n-1,:), &
-                                               the_bc_tower%bc_tower_array(n-1), the_bc_tower%bc_tower_array(n), &
+                                               the_bc_tower%bc_tower_array(n-1), &
+                                               the_bc_tower%bc_tower_array(n), &
                                                1,foextrap_comp,1)
              enddo
 
