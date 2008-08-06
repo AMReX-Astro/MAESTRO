@@ -43,7 +43,7 @@ contains
     use thermal_conduct_module
     use make_explicit_thermal_module
     use add_react_to_thermal_module
-    use variables, only: nscal, press_comp, temp_comp, rho_comp, foextrap_comp
+    use variables, only: nscal, press_comp, temp_comp, rho_comp, rhoh_comp, foextrap_comp
     use geometry, only: spherical, nr_fine, r_end_coord, anelastic_cutoff_coord, &
          base_cutoff_density_coord, burning_cutoff_density_coord
     use network, only: nspec
@@ -262,7 +262,6 @@ contains
     
     call makePfromRhoH(nlevs,sold,ptherm_old,tempbar,mla,the_bc_tower%bc_tower_array,dx)
     
-
     ! compute Avg(p0 - ptherm)
     do n=1,nlevs
        call multifab_build(p0_cart(n), mla%la(n), 1, 1)
@@ -464,21 +463,21 @@ contains
     call react_state(nlevs,mla,sold,s1,rho_omegadot1,rho_Hext,halfdt,dx, &
                      the_bc_tower%bc_tower_array,time)
     
-    if (evolve_base_state) then
-
-       if (parallel_IOProcessor() .and. verbose .ge. 1) then
-          write(6,*) '            : react  base >>> '
+    if (full_rhoh0_evolution) then
+       if (evolve_base_state) then
+          if (parallel_IOProcessor() .and. verbose .ge. 1) then
+             write(6,*) '            : react  base >>> '
+          end if
+          do comp=1,nspec
+             call average(mla,rho_omegadot1,rho_omegadotbar(:,:,comp),dx,comp)
+          end do
+          call average(mla,rho_Hext,rho_Hextbar,dx,1)
+          call react_base(nlevs,rhoh0_old,rho_omegadotbar,rho_Hextbar,halfdt,rhoh0_1)
+       else
+          rhoh0_1 = rhoh0_old
        end if
-       do comp=1,nspec
-          call average(mla,rho_omegadot1,rho_omegadotbar(:,:,comp),dx,comp)
-       end do
-       call average(mla,rho_Hext,rho_Hextbar,dx,1)
-       call react_base(nlevs,rhoh0_old,rho_omegadotbar,rho_Hextbar,halfdt,rhoh0_1)
-
     else
-
-       rhoh0_1 = rhoh0_old
-
+       call average(mla,s1,rhoh0_1,dx,rhoh_comp)
     end if
 
     if (evolve_base_state) then
@@ -681,22 +680,17 @@ contains
        call destroy(s2(n))
     end do
 
-    if (evolve_base_state) then
-
+    if (evolve_base_state .and. full_rhoh0_evolution) then
        if (parallel_IOProcessor() .and. verbose .ge. 1) then
           write(6,*) '            : react  base >>> '
        end if
-
        do comp=1,nspec
           call average(mla,rho_omegadot2,rho_omegadotbar(:,:,comp),dx,comp)
        end do
        call average(mla,rho_Hext,rho_Hextbar,dx,1)
        call react_base(nlevs,rhoh0_2,rho_omegadotbar,rho_Hextbar,halfdt,rhoh0_new)
-
     else
-
        rhoh0_new = rhoh0_2
-
     end if
 
     if (evolve_base_state) then
@@ -789,7 +783,6 @@ contains
        
        call makePfromRhoH(nlevs,snew,ptherm_new,tempbar,mla,the_bc_tower%bc_tower_array,dx)
        
-
        ! compute Avg(p0 - ptherm) (time-centered)
        do n=1,nlevs
           call multifab_build(p0_cart(n), mla%la(n), 1, 1)
@@ -1139,22 +1132,17 @@ contains
           call destroy(s2(n))
        end do
 
-       if (evolve_base_state) then
-
+       if (evolve_base_state .and. full_rhoh0_evolution) then
           if (parallel_IOProcessor() .and. verbose .ge. 1) then
              write(6,*) '            : react  base >>>'
           end if
-
           do comp=1,nspec
              call average(mla,rho_omegadot2,rho_omegadotbar(:,:,comp),dx,comp)
           end do
           call average(mla,rho_Hext,rho_Hextbar,dx,1)
           call react_base(nlevs,rhoh0_2,rho_omegadotbar,rho_Hextbar,halfdt,rhoh0_new)
-
        else
-
           rhoh0_new = rhoh0_2
-
        end if
 
        if (evolve_base_state) then
