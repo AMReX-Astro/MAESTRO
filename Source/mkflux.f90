@@ -193,7 +193,7 @@ contains
     ! local
     integer         :: comp
     integer         :: i,j
-    real(kind=dp_t) :: rho_prime, rho0_edge, rhoh0_edge
+    real(kind=dp_t) :: rho_edge, rho0_edge, rhoh0_edge
     logical :: test
     
     ! loop over components
@@ -215,12 +215,12 @@ contains
              
              do i=lo(1),hi(1)+1
                 
-                rho_prime = sedgex(i,j,rho_comp)
+                rho_edge = sedgex(i,j,rho_comp)
 
                 if (predict_rho) then
-                   sfluxx(i,j,comp) = umac(i,j)*rho_prime*sedgex(i,j,comp)
+                   sfluxx(i,j,comp) = umac(i,j)*rho_edge*sedgex(i,j,comp)
                 else
-                   sfluxx(i,j,comp) = umac(i,j)*(rho0_edge+rho_prime)*sedgex(i,j,comp)
+                   sfluxx(i,j,comp) = umac(i,j)*(rho0_edge+rho_edge)*sedgex(i,j,comp)
                 end if
                 
              end do
@@ -235,7 +235,7 @@ contains
              
              do i=lo(1),hi(1)+1
                 
-                sfluxx(i,j,comp) = umac(i,j)*(rhoh0_edge + sedgex(i,j,comp))
+                sfluxx(i,j,comp) = umac(i,j)*(rhoh0_edge+sedgex(i,j,comp))
                 
              end do
              
@@ -252,13 +252,13 @@ contains
              
              do i=lo(1),hi(1)
                 
-                rho_prime = sedgey(i,j,rho_comp)
+                rho_edge = sedgey(i,j,rho_comp)
                 
                 if (predict_rho) then
-                   sfluxy(i,j,comp) = (vmac(i,j)+w0(j))*rho_prime*sedgey(i,j,comp)
+                   sfluxy(i,j,comp) = (vmac(i,j)+w0(j))*rho_edge*sedgey(i,j,comp)
                 else
                    sfluxy(i,j,comp) = &
-                        (vmac(i,j)+w0(j))*(rho0_edge+rho_prime)*sedgey(i,j,comp)
+                        (vmac(i,j)+w0(j))*(rho0_edge+rho_edge)*sedgey(i,j,comp)
                 end if
                 
                 if ( (comp.ge.spec_comp).and.(comp.le.spec_comp+nspec-1) ) then
@@ -283,7 +283,7 @@ contains
              
              do i=lo(1),hi(1)
                 
-                sfluxy(i,j,comp) = (vmac(i,j)+w0(j))*sedgey(i,j,comp) + vmac(i,j)*rhoh0_edge
+                sfluxy(i,j,comp) = (vmac(i,j)+w0(j))*(sedgey(i,j,comp)+rhoh0_edge)
                 
              end do
              
@@ -329,7 +329,7 @@ contains
    ! local
     integer         :: comp
     integer         :: i,j,k
-    real(kind=dp_t) :: rho_prime, rho0_edge, rhoh0_edge
+    real(kind=dp_t) :: rho_edge, rho0_edge, rhoh0_edge
     logical         :: test
     
     ! loop over components
@@ -352,14 +352,14 @@ contains
              do j=lo(2),hi(2)
                 do i=lo(1),hi(1)+1
                 
-                   rho_prime = sedgex(i,j,k,rho_comp)
+                   rho_edge = sedgex(i,j,k,rho_comp)
                    
                    ! sedgex is either h or X at edges
                    if (predict_rho) then
-                      sfluxx(i,j,k,comp) = umac(i,j,k)*rho_prime*sedgex(i,j,k,comp)
+                      sfluxx(i,j,k,comp) = umac(i,j,k)*rho_edge*sedgex(i,j,k,comp)
                    else
                       sfluxx(i,j,k,comp) = &
-                           umac(i,j,k)*(rho0_edge+rho_prime)*sedgex(i,j,k,comp)
+                           umac(i,j,k)*(rho0_edge+rho_edge)*sedgex(i,j,k,comp)
                    end if
                    
                 end do
@@ -368,14 +368,14 @@ contains
              do j=lo(2),hi(2)+1
                 do i=lo(1),hi(1)
                 
-                   rho_prime = sedgey(i,j,k,rho_comp)
+                   rho_edge = sedgey(i,j,k,rho_comp)
                    
                    ! sedgey is either h or X at edges
                    if (predict_rho) then
-                      sfluxy(i,j,k,comp) = vmac(i,j,k)*rho_prime*sedgey(i,j,k,comp)
+                      sfluxy(i,j,k,comp) = vmac(i,j,k)*rho_edge*sedgey(i,j,k,comp)
                    else
-                      sfluxy(i,j,k,comp) =&
-                           vmac(i,j,k)*(rho0_edge+rho_prime)*sedgey(i,j,k,comp)
+                      sfluxy(i,j,k,comp) = &
+                           vmac(i,j,k)*(rho0_edge+rho_edge)*sedgey(i,j,k,comp)
                    end if
 
                 end do
@@ -392,7 +392,7 @@ contains
              do j=lo(2),hi(2)
                 do i=lo(1),hi(1)+1
                 
-                   sfluxx(i,j,k,comp) = umac(i,j,k)*(rhoh0_edge + sedgex(i,j,k,comp))
+                   sfluxx(i,j,k,comp) = umac(i,j,k)*(rhoh0_edge+sedgex(i,j,k,comp))
                    
                 end do
              end do
@@ -400,7 +400,7 @@ contains
              do j=lo(2),hi(2)+1
                 do i=lo(1),hi(1)
                 
-                   sfluxy(i,j,k,comp) = vmac(i,j,k)*(rhoh0_edge + sedgey(i,j,k,comp))
+                   sfluxy(i,j,k,comp) = vmac(i,j,k)*(rhoh0_edge+sedgey(i,j,k,comp))
                    
                 end do
              end do
@@ -419,15 +419,15 @@ contains
              do j=lo(2),hi(2)
                 do i=lo(1),hi(1)
                 
-                   rho_prime = sedgez(i,j,k,rho_comp)
+                   rho_edge = sedgez(i,j,k,rho_comp)
                 
                    ! sedgez is either h or X at edges
                    if (predict_rho) then
                       sfluxz(i,j,k,comp) = &
-                           (wmac(i,j,k)+w0(k))*rho_prime*sedgez(i,j,k,comp)
+                           (wmac(i,j,k)+w0(k))*rho_edge*sedgez(i,j,k,comp)
                    else
                       sfluxz(i,j,k,comp) = &
-                           (wmac(i,j,k)+w0(k))*(rho0_edge+rho_prime)*sedgez(i,j,k,comp)
+                           (wmac(i,j,k)+w0(k))*(rho0_edge+rho_edge)*sedgez(i,j,k,comp)
                    end if
 
                    if ( (comp.ge.spec_comp).and.(comp.le.spec_comp+nspec-1) ) then
@@ -455,8 +455,7 @@ contains
              do j=lo(2),hi(2)
                 do i=lo(1),hi(1)
                 
-                sfluxz(i,j,k,comp) = &
-                     (wmac(i,j,k)+w0(k))*sedgez(i,j,k,comp) + wmac(i,j,k)*rhoh0_edge
+                   sfluxz(i,j,k,comp) = (wmac(i,j,k)+w0(k))*(sedgez(i,j,k,comp)+rhoh0_edge)
                                 
                 end do
              end do
@@ -568,10 +567,9 @@ contains
                                 +rhoh0_new_cart(i,j,k)+rhoh0_new_cart(i-1,j,k) ) * FOURTH
                    end if
 
-                   w0_edgex = HALF * ( w0_cart(i  ,j,k,1) +w0_cart(i-1,j,k,1) )
+                   w0_edgex = HALF * (w0_cart(i,j,k,1)+w0_cart(i-1,j,k,1))
 
-                   sfluxx(i,j,k,comp) = bc_lox*umac(i,j,k) + &
-                        (umac(i,j,k) + w0_edgex)*sedgex(i,j,k,comp)
+                   sfluxx(i,j,k,comp) = (umac(i,j,k)+w0_edgex)*(bc_lox+sedgex(i,j,k,comp))
                 
                 end do
              end do
@@ -629,10 +627,9 @@ contains
                                 +rhoh0_new_cart(i,j,k)+rhoh0_new_cart(i,j-1,k) ) * FOURTH
                    end if
                    
-                   w0_edgey = HALF * ( w0_cart(i,j  ,k,2) + w0_cart(i,j-1,k,2) )
+                   w0_edgey = HALF * (w0_cart(i,j,k,2) + w0_cart(i,j-1,k,2))
                    
-                   sfluxy(i,j,k,comp) = bc_loy*vmac(i,j,k) + &
-                        (vmac(i,j,k) + w0_edgey)*sedgey(i,j,k,comp)
+                   sfluxy(i,j,k,comp) = (vmac(i,j,k)+w0_edgey)*(sedgey(i,j,k,comp)+bc_loy)
 
                 end do
              end do
@@ -692,10 +689,9 @@ contains
                                +rhoh0_new_cart(i,j,k)+rhoh0_new_cart(i,j,k-1) ) * FOURTH
                    end if
                    
-                   w0_edgez = HALF * ( w0_cart(i,j,k  ,3) + w0_cart(i,j,k-1,3) )
+                   w0_edgez = HALF * (w0_cart(i,j,k,3)+w0_cart(i,j,k-1,3))
                    
-                   sfluxz(i,j,k,comp) = bc_loz*wmac(i,j,k) + &
-                        (wmac(i,j,k) + w0_edgez)*sedgez(i,j,k,comp)
+                   sfluxz(i,j,k,comp) = (wmac(i,j,k)+w0_edgez)*(sedgez(i,j,k,comp)+bc_loz)
 
                 end do
              end do

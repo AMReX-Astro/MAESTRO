@@ -13,9 +13,8 @@ module update_scal_module
 
 contains
 
-  subroutine update_scal(nlevs,nstart,nstop,sold,snew,sflux,scal_force,rhoh0_old,rhoh0_new, &
-                         rhoh0_old_cart,rhoh0_new_cart,p0,p0_new_cart,dx,dt, &
-                         the_bc_level,mla)
+  subroutine update_scal(nlevs,nstart,nstop,sold,snew,sflux,scal_force,p0,p0_new_cart, &
+                         dx,dt,the_bc_level,mla)
 
     use bl_prof_module
     use bl_constants_module
@@ -31,12 +30,8 @@ contains
     type(multifab)    , intent(inout) :: snew(:)
     type(multifab)    , intent(in   ) :: sflux(:,:)
     type(multifab)    , intent(in   ) :: scal_force(:)
-    real(kind = dp_t) , intent(in   ) :: rhoh0_old(:,0:)
-    real(kind = dp_t) , intent(in   ) :: rhoh0_new(:,0:)
     real(kind = dp_t) , intent(in   ) :: p0(:,0:)
     type(multifab)    , intent(in   ) :: p0_new_cart(:)
-    type(multifab)    , intent(in   ) :: rhoh0_old_cart(:)
-    type(multifab)    , intent(in   ) :: rhoh0_new_cart(:)
     real(kind = dp_t) , intent(in   ) :: dx(:,:),dt
     type(bc_level)    , intent(in   ) :: the_bc_level(:)
     type(ml_layout)   , intent(inout) :: mla
@@ -48,13 +43,11 @@ contains
     real(kind=dp_t), pointer :: sfpy(:,:,:,:)
     real(kind=dp_t), pointer :: sfpz(:,:,:,:)
     real(kind=dp_t), pointer :: fp(:,:,:,:)
-    real(kind=dp_t), pointer :: rhoh0op(:,:,:,:)
-    real(kind=dp_t), pointer :: rhoh0np(:,:,:,:)
     real(kind=dp_t), pointer :: p0np(:,:,:,:)
 
     integer :: lo(sold(1)%dim),hi(sold(1)%dim)
     integer :: i,dm,n
-    integer :: ng_so,ng_sn,ng_sf,ng_f,ng_ho,ng_hn,ng_p
+    integer :: ng_so,ng_sn,ng_sf,ng_f,ng_p
 
     type(bl_prof_timer), save :: bpt
 
@@ -66,8 +59,6 @@ contains
     ng_sn = snew(1)%ng
     ng_sf = sflux(1,1)%ng ! note we are assuming that ng is the same for all directions
     ng_f  = scal_force(1)%ng
-    ng_ho = rhoh0_old_cart(1)%ng
-    ng_hn = rhoh0_new_cart(1)%ng
     ng_p  = p0_new_cart(1)%ng
 
     do n=1,nlevs
@@ -87,7 +78,6 @@ contains
                                  sop(:,:,1,:), ng_so, snp(:,:,1,:), ng_sn, &
                                  sfpx(:,:,1,:), sfpy(:,:,1,:), ng_sf, &
                                  fp(:,:,1,:), ng_f, &
-                                 rhoh0_old(n,:), rhoh0_new(n,:), &
                                  p0(n,:), lo, hi, dx(n,:), dt)
           case (3)
              sfpz => dataptr(sflux(n,3),i)
@@ -96,17 +86,13 @@ contains
                                          sop(:,:,:,:), ng_so, snp(:,:,:,:), ng_sn, &
                                          sfpx(:,:,:,:), sfpy(:,:,:,:), sfpz(:,:,:,:), &
                                          ng_sf, fp(:,:,:,:), ng_f, &
-                                         rhoh0_old(n,:), rhoh0_new(n,:), &
                                          p0(n,:), lo, hi, dx(n,:), dt)
              else
-                rhoh0op => dataptr(rhoh0_old_cart(n), i)
-                rhoh0np => dataptr(rhoh0_new_cart(n), i)
                 p0np => dataptr(p0_new_cart(n), i)
                 call update_scal_3d_sphr(nstart, nstop, &
                                          sop(:,:,:,:), ng_so, snp(:,:,:,:), ng_sn, &
                                          sfpx(:,:,:,:), sfpy(:,:,:,:), sfpz(:,:,:,:), &
                                          ng_sf, fp(:,:,:,:), ng_f, &
-                                         rhoh0op(:,:,:,1), ng_ho, rhoh0np(:,:,:,1), ng_hn, &
                                          p0np(:,:,:,1), ng_p, lo, hi, dx(n,:), dt)
              end if
           end select
@@ -168,7 +154,7 @@ contains
   end subroutine update_scal
 
   subroutine update_scal_2d(nstart,nstop,sold,ng_so,snew,ng_sn,sfluxx,sfluxy,ng_sf, &
-                            force,ng_f,rhoh0_old,rhoh0_new,p0,lo,hi,dx,dt)
+                            force,ng_f,p0,lo,hi,dx,dt)
 
     use network,       only: nspec
     use eos_module
@@ -184,99 +170,69 @@ contains
     real (kind = dp_t), intent(in   ) :: sfluxx(lo(1)-ng_sf:,lo(2)-ng_sf:,:)
     real (kind = dp_t), intent(in   ) :: sfluxy(lo(1)-ng_sf:,lo(2)-ng_sf:,:)
     real (kind = dp_t), intent(in   ) ::  force(lo(1)-ng_f :,lo(2)-ng_f :,:)
-    real (kind = dp_t), intent(in   ) :: rhoh0_old(0:)
-    real (kind = dp_t), intent(in   ) :: rhoh0_new(0:)
     real (kind = dp_t), intent(in   ) ::        p0(0:)
     real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
     integer            :: i, j, comp, comp2
-    real (kind = dp_t) :: delta_rhoh0,divterm
+    real (kind = dp_t) :: divterm
     real (kind = dp_t) :: delta,frac,sum
     real (kind = dp_t) :: smin(nstart:nstop),smax(nstart:nstop)
-    logical :: test
 
     do comp = nstart, nstop
 
-       ! test = T means the edge states are NOT in perturbational form
-       test = ( (comp.ge.spec_comp).and.(comp.le.spec_comp+nspec-1) ) &
-         .or. ( (comp.eq.rhoh_comp).and. &
-                     ( enthalpy_pred_type.eq.predict_h .or. &
-                       enthalpy_pred_type.eq.predict_T_then_h ) ) &
-         .or. ( (comp.ge.trac_comp).and.(comp.le.trac_comp+ntrac-1) )
+       do j=lo(2),hi(2)
+          do i=lo(1),hi(1)
+             
+             divterm = (sfluxx(i+1,j,comp) - sfluxx(i,j,comp))/dx(1) &
+                     + (sfluxy(i,j+1,comp) - sfluxy(i,j,comp))/dx(2)
 
-       if (test) then
-
-          do j=lo(2),hi(2)
-             do i=lo(1),hi(1)
-
-                divterm = (sfluxx(i+1,j,comp) - sfluxx(i,j,comp))/dx(1) &
-                        + (sfluxy(i,j+1,comp) - sfluxy(i,j,comp))/dx(2)
-
-                snew(i,j,comp) = sold(i,j,comp) + dt*(-divterm + force(i,j,comp))
-
-             end do
+             snew(i,j,comp) = sold(i,j,comp) + dt*(-divterm + force(i,j,comp))
+             
           end do
+       end do
 
-       else
-
-          do j=lo(2),hi(2)
-
-             delta_rhoh0 = rhoh0_new(j) - rhoh0_old(j)
-
-             do i = lo(1), hi(1)
-
-                divterm = (sfluxx(i+1,j,comp) - sfluxx(i,j,comp))/dx(1) &
-                        + (sfluxy(i,j+1,comp) - sfluxy(i,j,comp))/dx(2)
-
-                snew(i,j,comp) = sold(i,j,comp) &
-                     + delta_rhoh0 + dt*(-divterm + force(i,j,comp))
-                
-             end do
-          end do
-
-       end if
     enddo
 
     if ( do_eos_h_above_cutoff .and. (nstart .eq. rhoh_comp) ) then
-
+       
        do j = lo(2), hi(2)
-       do i = lo(1), hi(1)
- 
-          if (snew(i,j,rho_comp) < base_cutoff_density) then
-            den_eos(1) = snew(i,j,rho_comp)
-            temp_eos(1) = sold(i,j,temp_comp)
-            p_eos(1) = p0(j)
-            xn_eos(1,:) = snew(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
-
-            ! (rho,P) --> T,h
-            call eos(eos_input_rp, den_eos, temp_eos, &
-                     npts, nspec, &
-                     xn_eos, &
-                     p_eos, h_eos, e_eos, &
-                     cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                     dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                     dpdX_eos, dhdX_eos, &
-                     gam1_eos, cs_eos, s_eos, &
-                     dsdt_eos, dsdr_eos, &
-                     do_diag)
-   
-            snew(i,j,rhoh_comp) = snew(i,j,rho_comp) * h_eos(1)
-
-          end if
- 
+          do i = lo(1), hi(1)
+             
+             if (snew(i,j,rho_comp) < base_cutoff_density) then
+                den_eos(1) = snew(i,j,rho_comp)
+                temp_eos(1) = sold(i,j,temp_comp)
+                p_eos(1) = p0(j)
+                xn_eos(1,:) = snew(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
+                
+                ! (rho,P) --> T,h
+                call eos(eos_input_rp, den_eos, temp_eos, &
+                         npts, nspec, &
+                         xn_eos, &
+                         p_eos, h_eos, e_eos, &
+                         cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                         dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                         dpdX_eos, dhdX_eos, &
+                         gam1_eos, cs_eos, s_eos, &
+                         dsdt_eos, dsdr_eos, &
+                         do_diag)
+                
+                snew(i,j,rhoh_comp) = snew(i,j,rho_comp) * h_eos(1)
+                
+             end if
+             
+          enddo
        enddo
-       enddo
-
+       
     end if
-
+    
     ! Define the update to rho as the sum of the updates to (rho X)_i
     if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
-
+       
        smin(:) =  HUGE(smin)
        smax(:) = -HUGE(smax)
-
+       
        snew(:,:,rho_comp) = sold(:,:,rho_comp)
-
+       
        do comp = nstart, nstop
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
@@ -286,9 +242,9 @@ contains
              enddo
           enddo
        enddo
-
+       
     end if
-
+    
     ! Do not allow the species to leave here negative.
     if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
        do comp = nstart, nstop
@@ -320,7 +276,7 @@ contains
   end subroutine update_scal_2d
 
   subroutine update_scal_3d_cart(nstart,nstop,sold,ng_so,snew,ng_sn,sfluxx,sfluxy,sfluxz, &
-                                 ng_sf,force,ng_f,rhoh0_old,rhoh0_new,p0,lo,hi,dx,dt)
+                                 ng_sf,force,ng_f,p0,lo,hi,dx,dt)
 
     use network,       only: nspec
     use eos_module
@@ -337,97 +293,63 @@ contains
     real (kind = dp_t), intent(in   ) :: sfluxy(lo(1)-ng_sf:,lo(2)-ng_sf:,lo(3)-ng_sf:,:)
     real (kind = dp_t), intent(in   ) :: sfluxz(lo(1)-ng_sf:,lo(2)-ng_sf:,lo(3)-ng_sf:,:)
     real (kind = dp_t), intent(in   ) ::  force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :,:)
-    real (kind = dp_t), intent(in   ) :: rhoh0_old(0:)
-    real (kind = dp_t), intent(in   ) :: rhoh0_new(0:)
     real (kind = dp_t), intent(in   ) ::        p0(0:)
     real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
     integer            :: i, j, k, comp, comp2
     real (kind = dp_t) :: divterm
-    real (kind = dp_t) :: delta,frac,sum,delta_rhoh0
+    real (kind = dp_t) :: delta,frac,sum
     real (kind = dp_t) :: smin(nstart:nstop),smax(nstart:nstop)
-    logical            :: test
 
     do comp = nstart, nstop
-    
-       ! test = T means the edge states are NOT in perturbational form
-       test = ( (comp.ge.spec_comp).and.(comp.le.spec_comp+nspec-1) ) &
-         .or. ( (comp.eq.rhoh_comp).and. &
-                     ( enthalpy_pred_type.eq.predict_h .or. &
-                       enthalpy_pred_type.eq.predict_T_then_h ) ) &
-         .or. ( (comp.ge.trac_comp).and.(comp.le.trac_comp+ntrac-1) )
 
-       if (test) then
-
-          do k = lo(3), hi(3)
-             do j = lo(2), hi(2)
-                do i = lo(1), hi(1)
+       do k = lo(3), hi(3)
+          do j = lo(2), hi(2)
+             do i = lo(1), hi(1)
+                
+                divterm = (sfluxx(i+1,j,k,comp) - sfluxx(i,j,k,comp))/dx(1) &
+                        + (sfluxy(i,j+1,k,comp) - sfluxy(i,j,k,comp))/dx(2) &
+                        + (sfluxz(i,j,k+1,comp) - sfluxz(i,j,k,comp))/dx(3)
    
-                   divterm = (sfluxx(i+1,j,k,comp) - sfluxx(i,j,k,comp))/dx(1) &
-                           + (sfluxy(i,j+1,k,comp) - sfluxy(i,j,k,comp))/dx(2) &
-                           + (sfluxz(i,j,k+1,comp) - sfluxz(i,j,k,comp))/dx(3)
-   
-                   snew(i,j,k,comp) = sold(i,j,k,comp) &
-                        + dt * (-divterm + force(i,j,k,comp))
-   
-                enddo
+                snew(i,j,k,comp) = sold(i,j,k,comp) + dt * (-divterm + force(i,j,k,comp))
+                
              enddo
           enddo
+       enddo
 
-       else
-
-          do k = lo(3), hi(3)
-
-             delta_rhoh0 = rhoh0_new(k) - rhoh0_old(k)
-
-             do j = lo(2), hi(2)
-                do i = lo(1), hi(1)
-
-                   divterm = (sfluxx(i+1,j,k,comp) - sfluxx(i,j,k,comp))/dx(1) &
-                           + (sfluxy(i,j+1,k,comp) - sfluxy(i,j,k,comp))/dx(2) &
-                           + (sfluxz(i,j,k+1,comp) - sfluxz(i,j,k,comp))/dx(3)
-   
-                   snew(i,j,k,comp) = sold(i,j,k,comp) + delta_rhoh0 &
-                        + dt * (-divterm + force(i,j,k,comp))
-   
-                enddo
-             enddo
-          enddo
-
-       end if
     end do
-
-
+    
+    
     if ( do_eos_h_above_cutoff .and. (nstart .eq. rhoh_comp) ) then
 
        do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-       do i = lo(1), hi(1)
+          do j = lo(2), hi(2)
+             do i = lo(1), hi(1)
 
-          if (snew(i,j,k,rho_comp) < base_cutoff_density) then
-            den_eos(1) = snew(i,j,k,rho_comp)
-            temp_eos(1) = sold(i,j,k,temp_comp)
-            p_eos(1) = p0(k)
-            xn_eos(1,:) = snew(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
+                if (snew(i,j,k,rho_comp) < base_cutoff_density) then
+                   den_eos(1) = snew(i,j,k,rho_comp)
+                   temp_eos(1) = sold(i,j,k,temp_comp)
+                   p_eos(1) = p0(k)
+                   xn_eos(1,:) = snew(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
 
-            ! (rho,P) --> T,h
-            call eos(eos_input_rp, den_eos, temp_eos, &
-                     npts, nspec, &
-                     xn_eos, &
-                     p_eos, h_eos, e_eos, &
-                     cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                     dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                     dpdX_eos, dhdX_eos, &
-                     gam1_eos, cs_eos, s_eos, &
-                     dsdt_eos, dsdr_eos, &
-                     do_diag)
+                   ! (rho,P) --> T,h
+                   call eos(eos_input_rp, den_eos, temp_eos, &
+                            npts, nspec, &
+                            xn_eos, &
+                            p_eos, h_eos, e_eos, &
+                            cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                            dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                            dpdX_eos, dhdX_eos, &
+                            gam1_eos, cs_eos, s_eos, &
+                            dsdt_eos, dsdr_eos, &
+                            do_diag)
 
-            snew(i,j,k,rhoh_comp) = snew(i,j,k,rho_comp) * h_eos(1)
+                   snew(i,j,k,rhoh_comp) = snew(i,j,k,rho_comp) * h_eos(1)
 
-          end if
+                end if
 
-       enddo
-       enddo
+             enddo
+          enddo
        enddo
 
     end if
@@ -488,8 +410,7 @@ contains
   end subroutine update_scal_3d_cart
 
   subroutine update_scal_3d_sphr(nstart,nstop,sold,ng_so,snew,ng_sn,sfluxx,sfluxy,sfluxz, &
-                                 ng_sf,force,ng_f,rhoh0_old_cart,ng_ho,rhoh0_new_cart, &
-                                 ng_hn,p0_new_cart,ng_p,lo,hi,dx,dt)
+                                 ng_sf,force,ng_f,p0_new_cart,ng_p,lo,hi,dx,dt)
 
     use network,       only: nspec
     use eos_module
@@ -499,108 +420,74 @@ contains
     use bl_constants_module
 
     integer           , intent(in   ) :: nstart, nstop, lo(:), hi(:)
-    integer           , intent(in   ) :: ng_so, ng_sn, ng_sf, ng_f, ng_ho, ng_hn, ng_p
+    integer           , intent(in   ) :: ng_so, ng_sn, ng_sf, ng_f, ng_p
     real (kind = dp_t), intent(in   ) ::    sold(lo(1)-ng_so:,lo(2)-ng_so:,lo(3)-ng_so:,:)
     real (kind = dp_t), intent(  out) ::    snew(lo(1)-ng_sn:,lo(2)-ng_sn:,lo(3)-ng_sn:,:)
     real (kind = dp_t), intent(in   ) ::  sfluxx(lo(1)-ng_sf:,lo(2)-ng_sf:,lo(3)-ng_sf:,:)
     real (kind = dp_t), intent(in   ) ::  sfluxy(lo(1)-ng_sf:,lo(2)-ng_sf:,lo(3)-ng_sf:,:)
     real (kind = dp_t), intent(in   ) ::  sfluxz(lo(1)-ng_sf:,lo(2)-ng_sf:,lo(3)-ng_sf:,:)
     real (kind = dp_t), intent(in   ) ::   force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :,:)
-    real (kind = dp_t), intent(in   )::rhoh0_old_cart(lo(1)-ng_ho:,lo(2)-ng_ho:,lo(3)-ng_ho:)
-    real (kind = dp_t), intent(in   )::rhoh0_new_cart(lo(1)-ng_hn:,lo(2)-ng_hn:,lo(3)-ng_hn:)
     real (kind = dp_t), intent(in   )::   p0_new_cart(lo(1)-ng_p :,lo(2)-ng_p :,lo(3)-ng_p :)
     real (kind = dp_t), intent(in   ) :: dt,dx(:)
 
     integer            :: i, j, k, comp, comp2
-    real (kind = dp_t) :: divterm,delta_rhoh0
+    real (kind = dp_t) :: divterm
     real (kind = dp_t) :: delta,frac,sum
     real (kind = dp_t) :: smin(nstart:nstop),smax(nstart:nstop)
-    logical            :: test
 
     ! is spherical
 
     do comp = nstart, nstop
-    
-       ! test = T means the edge states are NOT in perturbational form
-       test = ( (comp.ge.spec_comp).and.(comp.le.spec_comp+nspec-1) ) &
-         .or. ( (comp.eq.rhoh_comp).and. &
-                     ( enthalpy_pred_type.eq.predict_h .or. &
-                       enthalpy_pred_type.eq.predict_T_then_h ) ) &
-         .or. ( (comp.ge.trac_comp).and.(comp.le.trac_comp+ntrac-1) )
+       
+       do k = lo(3), hi(3)
+          do j = lo(2), hi(2)
+             do i = lo(1), hi(1)
 
-       if (test) then
+                divterm = (sfluxx(i+1,j,k,comp) - sfluxx(i,j,k,comp))/dx(1) &
+                        + (sfluxy(i,j+1,k,comp) - sfluxy(i,j,k,comp))/dx(2) &
+                        + (sfluxz(i,j,k+1,comp) - sfluxz(i,j,k,comp))/dx(3)
 
-          do k = lo(3), hi(3)
-             do j = lo(2), hi(2)
-                do i = lo(1), hi(1)
+                snew(i,j,k,comp) = sold(i,j,k,comp) + dt * (-divterm + force(i,j,k,comp))
 
-                   divterm = (sfluxx(i+1,j,k,comp) - sfluxx(i,j,k,comp))/dx(1) &
-                           + (sfluxy(i,j+1,k,comp) - sfluxy(i,j,k,comp))/dx(2) &
-                           + (sfluxz(i,j,k+1,comp) - sfluxz(i,j,k,comp))/dx(3)
-
-                   snew(i,j,k,comp) = sold(i,j,k,comp) &
-                        + dt * (-divterm + force(i,j,k,comp))
-                enddo
              enddo
           enddo
-
-       else
-
-          do k = lo(3), hi(3)
-             do j = lo(2), hi(2)
-                do i = lo(1), hi(1)
-
-                   delta_rhoh0 = rhoh0_new_cart(i,j,k) - rhoh0_old_cart(i,j,k)
-
-                   divterm = (sfluxx(i+1,j,k,comp) - sfluxx(i,j,k,comp))/dx(1) &
-                           + (sfluxy(i,j+1,k,comp) - sfluxy(i,j,k,comp))/dx(2) &
-                           + (sfluxz(i,j,k+1,comp) - sfluxz(i,j,k,comp))/dx(3)
-
-                   snew(i,j,k,comp) = sold(i,j,k,comp) + delta_rhoh0 &
-                        + dt * (-divterm + force(i,j,k,comp))
-
-                enddo
-             enddo
-          enddo
-
-       end if
+       enddo
 
     end do
 
     if ( do_eos_h_above_cutoff .and. (nstart .eq. rhoh_comp) ) then
 
        do k = lo(3), hi(3) 
-       do j = lo(2), hi(2)
-       do i = lo(1), hi(1)
+          do j = lo(2), hi(2)
+             do i = lo(1), hi(1)
 
-          if (snew(i,j,k,rho_comp) < base_cutoff_density) then
-            den_eos(1) = snew(i,j,k,rho_comp)
-            temp_eos(1) = sold(i,j,k,temp_comp)
-            p_eos(1) = p0_new_cart(i,j,k)
-            xn_eos(1,:) = snew(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
+                if (snew(i,j,k,rho_comp) < base_cutoff_density) then
+                   den_eos(1) = snew(i,j,k,rho_comp)
+                   temp_eos(1) = sold(i,j,k,temp_comp)
+                   p_eos(1) = p0_new_cart(i,j,k)
+                   xn_eos(1,:) = snew(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
 
-            ! (rho,P) --> T,h
-            call eos(eos_input_rp, den_eos, temp_eos, &
-                     npts, nspec, &
-                     xn_eos, &
-                     p_eos, h_eos, e_eos, &
-                     cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                     dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                     dpdX_eos, dhdX_eos, &
-                     gam1_eos, cs_eos, s_eos, &
-                     dsdt_eos, dsdr_eos, &
-                     do_diag)
+                   ! (rho,P) --> T,h
+                   call eos(eos_input_rp, den_eos, temp_eos, &
+                            npts, nspec, &
+                            xn_eos, &
+                            p_eos, h_eos, e_eos, &
+                            cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                            dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                            dpdX_eos, dhdX_eos, &
+                            gam1_eos, cs_eos, s_eos, &
+                            dsdt_eos, dsdr_eos, &
+                            do_diag)
 
-            snew(i,j,k,rhoh_comp) = snew(i,j,k,rho_comp) * h_eos(1)
+                   snew(i,j,k,rhoh_comp) = snew(i,j,k,rho_comp) * h_eos(1)
 
-          end if
+                end if
 
-       enddo
-       enddo
+             enddo
+          enddo
        enddo
 
     end if
-
 
     ! Define the update to rho as the sum of the updates to (rho X)_i
     if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
