@@ -2,7 +2,7 @@
 #PBS -N xrb
 #PBS -j oe
 #PBS -q batch
-#PBS -l walltime=0:01:00,size=64
+#PBS -l walltime=0:02:00,size=64
 
 cd $PBS_O_WORKDIR
 
@@ -20,4 +20,4 @@ else
     set restartString="--restart ${restartNum}"
 endif
 
-aprun -n 64 ./main.Linux.PathScale.mpi.exe inputs_2d_2.5cm > ${restartString} > output.txt
+aprun -n 64 ./main.Linux.PathScale.mpi.exe inputs_2d_2.5cm ${restartString} > output.txt
