@@ -2,7 +2,7 @@
 #PBS -N xrb
 #PBS -j oe
 #PBS -q batch
-#PBS -l walltime=0:05:00,size=64
+#PBS -l walltime=0:03:00,size=64
 
 cd $PBS_O_WORKDIR
 
@@ -20,4 +20,7 @@ else
     set restartString="--restart ${restartNum}"
 endif
 
-aprun -n 64 ./main.Linux.PathScale.mpi.exe inputs_2d_2.5cm ${restartString} > output.txt
+if ("${restartNum}" != "99999") then
+    qsub -W depend=afterany:$PBS_JOBID jaguar.run
+    aprun -n 64 ./main.Linux.PathScale.mpi.exe inputs_2d_2.5cm ${restartString} > output.txt
+endif
