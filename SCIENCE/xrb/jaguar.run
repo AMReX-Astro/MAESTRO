@@ -2,7 +2,7 @@
 #PBS -N xrb
 #PBS -j oe
 #PBS -q batch
-#PBS -l walltime=0:02:00,size=64
+#PBS -l walltime=0:05:00,size=64
 
 cd $PBS_O_WORKDIR
 
@@ -14,7 +14,7 @@ set restartFile=`ls -1 | grep -i chk | grep -v tar | grep -v processed | tail -1
 set restartNum=`echo ${restartFile} | cut -d'k' -f2`  
 
 # restartString will be empty if no chk files are found -- i.e. new run
-if [ "${restartNum}" = "" ]; then
+if ("${restartNum}" == "") then
     set restartString=""
 else
     set restartString="--restart ${restartNum}"
