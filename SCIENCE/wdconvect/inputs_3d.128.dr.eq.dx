@@ -15,10 +15,10 @@
  max_step  = 100000000
  init_iter = 1
 
- stop_time = 1000.
+ stop_time = 3000.
 
- plot_int  = 10
- chk_int   = 10
+ plot_int  = 25
+ chk_int   = 50
 
  cflfac = 0.5
  init_shrink = 0.1
@@ -58,7 +58,7 @@
 
  use_tfromp = T
 
- interp_type_radial_bin_to_cart = 2
+ interp_type_radial_bin_to_cart = 1
 
  single_prec_plotfiles = T
 
