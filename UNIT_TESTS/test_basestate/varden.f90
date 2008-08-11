@@ -68,6 +68,7 @@ subroutine varden()
   integer :: which_step
 
   real(dp_t) :: max_dist
+  real(dp_t) :: dr_base
 
   character (len=10) base_state_name
 
@@ -99,26 +100,11 @@ subroutine varden()
 ! allocate storage for the base state
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  if (spherical .eq. 1) then
-    if (dr_base .gt. 0) then
-      max_dist = prob_hi_x - prob_lo_x
-      nr_fine = int(max_dist / dr_base) + 1
-      if ( parallel_IOProcessor() ) then
-         print *,'DISTANCE FROM CENTER TO CORNER IS ',max_dist
-         print *,'DR_BASE IS ',dr_base
-         print *,'SETTING nr_fine TO ',nr_fine
-      end if
-    else
-     if ( parallel_IOProcessor() ) &
-       print *,'NEED TO DEFINE DR_BASE '
-      stop
-    endif
-  else
-     ! NOTE: in the basestate test, we will always use dr_base as the
-     ! input
-     max_dist = prob_hi_x - prob_lo_x
-     nr_fine = int(max_dist / dr_base) + 1
-  end if
+  nr_fine = get_model_npts(model_file)
+  print *, 'number of points in model file: ', nr_fine
+
+  dr_base = (prob_hi_x - prob_lo_x)/nr_fine
+
 
   allocate(dx(nlevs,1))
   dx(1,1) = dr_base

@@ -18,6 +18,7 @@ module geometry
   real(dp_t), save :: center(3)
   integer   , save :: nr_fine
   real(dp_t), allocatable, save :: dr(:), r_cc_loc(:,:), r_edge_loc(:,:)
+  integer   , allocatable, save :: numdisjointchunks(:)
   integer   , allocatable, save :: r_start_coord(:,:), r_end_coord(:,:), nr(:)
   integer   , allocatable, save :: anelastic_cutoff_coord(:)
   integer   , allocatable, save :: base_cutoff_density_coord(:)
@@ -28,6 +29,7 @@ module geometry
 
   public :: spherical, center, nr_fine
   public :: dr, r_cc_loc, r_edge_loc
+  public :: numdisjointchunks
   public :: r_start_coord, r_end_coord, nr
   public :: anelastic_cutoff_coord
   public :: base_cutoff_density_coord
@@ -62,6 +64,10 @@ contains
 
     base_lo = prob_lo_x
 
+    allocate(numdisjointchunks(nlevs))
+    numdisjointchunks(:) = 1
+ 
+
     allocate(dr(nlevs))
     allocate(r_cc_loc(nlevs,0:nr_in-1))
     allocate(r_edge_loc(nlevs,0:nr_in))
@@ -93,9 +99,9 @@ contains
 
   subroutine destroy_geometry()
 
-    deallocate(r_cc_loc,r_edge_loc)
+    deallocate(r_cc_loc,r_edge_loc,numdisjointchunks)
     deallocate(dr,anelastic_cutoff_coord)
-
+    
   end subroutine destroy_geometry
 
 end module geometry

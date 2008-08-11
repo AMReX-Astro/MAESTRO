@@ -13,7 +13,7 @@ module base_state_module
 
   private
 
-  public :: init_base_state, adjust_base_state
+  public :: init_base_state, adjust_base_state, get_model_npts
 
 contains
 
@@ -572,5 +572,29 @@ contains
     return
 
   end function interpolate
+
+
+  function get_model_npts(model_file)
+
+    ! look in the model file and return the number of points
+    real(kind=dp_t) :: get_model_npts
+
+    character(len=256), intent(in   ) :: model_file
+
+    character (len=256) :: header_line
+    integer :: ipos
+
+    open(99,file=model_file)
+
+    ! the first line has the number of points in the model
+    read (99, '(a256)') header_line
+    ipos = index(header_line, '=') + 1
+    read (header_line(ipos:),*) get_model_npts
+
+    close(99)
+
+    return
+
+  end function get_model_npts
 
 end module base_state_module
