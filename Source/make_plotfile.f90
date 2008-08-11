@@ -50,6 +50,7 @@ contains
        plot_names(icomp_w0)   = "w0_x"
        plot_names(icomp_w0+1) = "w0_y"
        if (dm > 2) plot_names(icomp_w0+2) = "w0_z"
+       plot_names(icomp_divw0) = "divw0"
        plot_names(icomp_rho0)  = "rho0"
        plot_names(icomp_rhoh0) = "rhoh0"
        plot_names(icomp_p0)    = "p0"
@@ -130,6 +131,7 @@ contains
     
     type(multifab) :: plotdata(mla%nlevel)
     type(multifab) :: tempfab(mla%nlevel)
+    type(multifab) :: tempfab2(mla%nlevel)
     real(dp_t), allocatable :: entropybar(:,:)
 
     integer :: n,dm,nlevs,prec
@@ -151,7 +153,8 @@ contains
 
        call multifab_build(plotdata(n), mla%la(n), n_plot_comps, 0)
        call multifab_build(tempfab(n), mla%la(n), dm, 1)
-       
+       call multifab_build(tempfab2(n), mla%la(n), 1, 1)
+              
        ! VELOCITY 
        call multifab_copy_c(plotdata(n),icomp_vel,u(n),1,dm)
 
@@ -178,6 +181,15 @@ contains
 
        do n=1,nlevs
           call multifab_copy_c(plotdata(n),icomp_w0,tempfab(n),1,dm)
+       end do
+
+       ! divw0
+       do n=1,nlevs
+          call make_divw0(tempfab(n),tempfab2(n),dx(n,:))
+       end do
+         
+       do n=1,nlevs
+          call multifab_copy_c(plotdata(n),icomp_divw0,tempfab2(n),1,1)
        end do
 
        ! rho0
@@ -308,6 +320,7 @@ contains
     do n = 1,nlevs
        call destroy(plotdata(n))
        call destroy(tempfab(n))
+       call destroy(tempfab2(n))
     end do
 
     call destroy(bpt)

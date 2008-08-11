@@ -9,7 +9,7 @@ module variables
   integer, save :: rho_comp, rhoh_comp, spec_comp, temp_comp, trac_comp, press_comp
   integer, save :: foextrap_comp, hoextrap_comp
   integer, save :: icomp_vel, icomp_rho, icomp_rhoh, icomp_spec, icomp_trac
-  integer, save :: icomp_w0, icomp_rho0, icomp_rhoh0, icomp_p0, icomp_velr
+  integer, save :: icomp_w0, icomp_divw0, icomp_rho0, icomp_rhoh0, icomp_p0, icomp_velr
   integer, save :: icomp_magvel, icomp_velplusw0, icomp_mom, icomp_vort, icomp_divu
   integer, save :: icomp_enthalpy,icomp_tfromp,icomp_tpert,icomp_rhopert
   integer, save :: icomp_machno,icomp_dg,icomp_gp,icomp_entropy,icomp_entropypert
@@ -70,6 +70,9 @@ contains
     if (plot_base) then
        icomp_w0 = first_derive_comp
        first_derive_comp = first_derive_comp + dm
+
+       icomp_divw0 = first_derive_comp
+       first_derive_comp = first_derive_comp + 1
 
        icomp_rho0 = first_derive_comp
        first_derive_comp = first_derive_comp + 1
