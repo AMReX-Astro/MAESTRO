@@ -6,8 +6,6 @@
  spherical_in = 1
  do_sponge = .true.
 
- dr_base = 1302083.3333333333
-
  prob_hi_x = 5.e8
  prob_hi_y = 5.e8
  prob_hi_z = 5.e8
