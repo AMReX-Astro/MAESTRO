@@ -52,7 +52,6 @@
  evolve_base_state = T
  predict_rho = F
 
- quadratic_interpolation = F
  dpdt_factor = 0.0
 
  use_eos_coulomb = T

@@ -53,7 +53,6 @@
  evolve_base_state = T
  predict_rho = F
 
- quadratic_interpolation = F
  dpdt_factor = 0.0
 
  interp_type_radial_bin_to_cart = 2

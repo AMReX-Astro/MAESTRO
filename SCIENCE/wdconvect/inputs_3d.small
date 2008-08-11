@@ -51,8 +51,6 @@
  evolve_base_state = T
  predict_rho = F
 
- quadratic_interpolation = F
-
  use_eos_coulomb = T
 
  plot_trac = F

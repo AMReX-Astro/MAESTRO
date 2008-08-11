@@ -16,7 +16,5 @@
 
  model_file = "model.sph.768"
 
- quadratic_interpolation = F
-
  use_eos_coulomb = F
 /
