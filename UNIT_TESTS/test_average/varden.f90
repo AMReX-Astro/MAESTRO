@@ -76,6 +76,8 @@ subroutine varden()
 
   type(box), allocatable :: boundingbox(:)
 
+  real(dp_t) :: dr_base
+
   type(boxarray), allocatable :: validboxarr(:)
   type(boxarray), allocatable :: diffboxarray(:)
 
@@ -171,22 +173,22 @@ subroutine varden()
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   if (spherical .eq. 1) then
-     if (dr_base .gt. 0) then
-        lenx = HALF * (prob_hi_x - prob_lo_x)
-        leny = HALF * (prob_hi_y - prob_lo_y)
-        lenz = HALF * (prob_hi_z - prob_lo_z)
-        max_dist = sqrt(lenx**2 + leny**2 + lenz**2)
-        nr_fine = int(max_dist / dr_base) + 1
-        if ( parallel_IOProcessor() ) then
-           print *,'DISTANCE FROM CENTER TO CORNER IS ',max_dist
-           print *,'DR_BASE IS ',dr_base
-           print *,'SETTING NR_FINE TO ',nr_fine
-        end if
-     else
-        if ( parallel_IOProcessor() ) &
-             print *,'NEED TO DEFINE DR_BASE '
-        stop
-     endif
+
+     ! for spherical, we will now require that dr_base = dx 
+     dr_base = dx(1,nlevs)
+
+     lenx = HALF * (prob_hi_x - prob_lo_x)
+     leny = HALF * (prob_hi_y - prob_lo_y)
+     lenz = HALF * (prob_hi_z - prob_lo_z)
+
+     max_dist = sqrt(lenx**2 + leny**2 + lenz**2)
+     nr_fine = int(max_dist / dr_base) + 1
+
+     if ( parallel_IOProcessor() ) then
+        print *,'DISTANCE FROM CENTER TO CORNER IS ',max_dist
+        print *,'DR_BASE IS ',dr_base
+        print *,'SETTING NR_FINE TO ',nr_fine
+     end if
   else
      ! NOTE: WE ASSUME DR_BASE IS THE RESOLUTION OF THE FINEST LEVEL IN PLANE-PARALLEL!
      nr_fine = extent(mba%pd(nlevs),dm)
