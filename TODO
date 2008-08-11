@@ -5,8 +5,6 @@
    to anelastic_cutoff), and understand what values of this give a valid
    basestate expansion.
 
--- add the eta stuff in for spherical (also in the predictor)
-
 -- some places (like in rhoh_vs_t.f90), we loop over 1, nr(nlevs)-1
    when dealing with the base state, but in others, we loop over
    1, nr(n)-1 -- which should we be doing?
@@ -25,8 +23,5 @@
 -- make_psi is called after scalar_advance, but we need psi in the
    enthalpy update for spherical, so we are using an old one -- this 
    is probably not consistent.
-
--- psi is cell-centered by allocated in varden and divu_iter as 
-   edge-centered
 
 -- update Gconst to the latest accepted value
