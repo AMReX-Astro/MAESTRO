@@ -475,7 +475,9 @@ contains
           
           if (is_vel .and. comp .eq. 2) then
              ! vmac contains w0 so we need to subtract it off
-             st = st - HALF * (vmac(i,j)+vmac(i,j+1)-w0(j+1)-w0(j))*(w0(j+1)-w0(j))/hy
+             if (j .ge. 0 .and. j .le. nr(n)-1) then
+                st = st - HALF * (vmac(i,j)+vmac(i,j+1)-w0(j+1)-w0(j))*(w0(j+1)-w0(j))/hy
+             end if
           end if
           
           s_b(j+1)= s(i,j,comp) + (HALF-dth*vmac(i,j+1)/hy)*slopey(i,j,1) + dth*st
@@ -513,7 +515,7 @@ contains
                                force,ng_f,w0_cart_vec,ng_w0, &
                                lo,dx,dt,is_vel,phys_bc,adv_bc,comp,is_conservative)
 
-    use geometry, only: spherical
+    use geometry, only: spherical, nr
     use bc_module
     use slope_module
     use bl_constants_module
@@ -1060,10 +1062,14 @@ contains
              
              ! NOTE NOTE : THIS IS WRONG FOR SPHERICAL !!
              if (spherical .eq. 0 .and. is_vel .and. comp .eq. 3) then
-                ! wmac contains w0 so we need to subtract it off
-                st = st - HALF*(wmac(i,j,k)+wmac(i,j,k+1)- &
-                     w0_cart_vec(i,j,k+1,3)-w0_cart_vec(i,j,k,3)) * &
-                     (w0_cart_vec(i,j,k+1,3)-w0_cart_vec(i,j,k,3))/hz
+
+                if (k .ge. 0 .and. k .le. nr(n)-1) then
+                   ! wmac contains w0 so we need to subtract it off
+                   st = st - HALF*(wmac(i,j,k)+wmac(i,j,k+1)- &
+                        w0_cart_vec(i,j,k+1,3)-w0_cart_vec(i,j,k,3)) * &
+                        (w0_cart_vec(i,j,k+1,3)-w0_cart_vec(i,j,k,3))/hz
+                end if
+
              end if
                  
              s_d(k+1)= s(i,j,k,comp) + (HALF-dth*wmac(i,j,k+1)/hz)*slopez(i,j,k,1) + dth*st

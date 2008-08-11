@@ -1345,7 +1345,7 @@ contains
 
                     if (spherical .eq. 0 .and. comp .eq. 3) then
 
-                       if (k .ge. 0 .and. k .le. nr(n)) then
+                       if (k .ge. 0 .and. k .le. nr(n)-1) then
                           ! wtrans contains w0 so we need to subtract it off
                           st = st - HALF * (wtrans(i,j,k)+wtrans(i,j,k+1)- &
                                w0_cart_vec(i,j,k+1,3)-w0_cart_vec(i,j,k,3))* &
