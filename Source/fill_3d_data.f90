@@ -482,15 +482,26 @@ contains
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+2
-           
-!                w0mac(i,j,k,1) = 
-
+                w0mac(i,j,k,1) = HALF* (w0_cc(i-1,j,k,1) + w0_cc(i,j,k,1))
              end do
           end do
        end do
 
+       do k=lo(3)-1,hi(3)+1
+          do j=lo(2)-1,hi(2)+2
+             do i=lo(1)-1,hi(1)+1
+                w0mac(i,j,k,2) = HALF* (w0_cc(i,j-1,k,2) + w0_cc(i,j,k,2))
+             end do
+          end do
+       end do
 
-
+       do k=lo(3)-1,hi(3)+2
+          do j=lo(2)-1,hi(2)+1
+             do i=lo(1)-1,hi(1)+1
+                w0mac(i,j,k,3) = HALF* (w0_cc(i,j,k-1,3) + w0_cc(i,j,k,3))
+             end do
+          end do
+       end do
 
     else if (w0mac_interp_type .eq. 2) then
 
