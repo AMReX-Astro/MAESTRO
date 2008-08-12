@@ -67,6 +67,7 @@ contains
     plot_names(icomp_divu)        = "divu"
     plot_names(icomp_enthalpy)    = "enthalpy"
     plot_names(icomp_rhopert)     = "rhopert"
+    plot_names(icomp_rhohpert)     = "rhohpert"
     plot_names(icomp_tfromp)      = "tfromp"
     plot_names(icomp_tfromH)      = "tfromh"
     plot_names(icomp_tpert)       = "tpert"
@@ -240,10 +241,12 @@ contains
        ! ENTHALPY 
        call make_enthalpy(plotdata(n),icomp_enthalpy,s(n))
 
-       ! RHOPERT & TEMP (FROM RHO) & TPERT & MACHNO & (GAM1 - GAM10) & Entropy
-       call make_tfromp(n,plotdata(n),icomp_tfromp,icomp_tpert,icomp_rhopert, &
-                          icomp_machno,icomp_dg,icomp_entropy,s(n),u(n),rho0(n,:), &
-                          tempbar(n,:),gamma1bar(n,:),p0(n,:),dx(n,:))
+       ! RHOPERT & TEMP (FROM RHO) & TPERT & MACHNO & (GAM1 - GAM10) & Entropy & RHOHPERT
+       call make_tfromp(n,plotdata(n), &
+                        icomp_tfromp,icomp_tpert,icomp_rhopert,icomp_rhohpert, &
+                        icomp_machno,icomp_dg,icomp_entropy, &
+                        s(n),u(n),rho0(n,:),rhoh0(n,:),tempbar(n,:),gamma1bar(n,:), &
+                        p0(n,:),dx(n,:))
 
        ! TEMP (FROM H) & DELTA_P
        call make_tfromH(n,plotdata(n),icomp_tfromH,icomp_dp,s(n),p0(n,:), &
