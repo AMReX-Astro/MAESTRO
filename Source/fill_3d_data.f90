@@ -443,7 +443,7 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:)
 
     integer         :: i,j,k,index,w0mac_interp_type
-    real(kind=dp_t) :: x,y,z,nx,ny,nz
+    real(kind=dp_t) :: x,y,z
     real(kind=dp_t) :: radius,w0_cart_val,rfac
     real(kind=dp_t), allocatable :: w0_cc(:,:,:,:)
 
@@ -506,49 +506,55 @@ contains
     else if (w0mac_interp_type .eq. 2) then
 
        ! NOTE NEED TO ADD MORE GHOST CELLS
-       do k = lo(3),hi(3)
+       do k = lo(3)-1,hi(3)+1
           z = (dble(k)+HALF)*dx(3) - center(3)
-          do j = lo(2),hi(2)
+          do j = lo(2)-1,hi(2)+1
              y = (dble(j)+HALF)*dx(2) - center(2)
-             do i = lo(1),hi(1)+1
+             do i = lo(1)-1,hi(1)+2
                 x = (dble(i)     )*dx(1) - center(1)
                 radius = sqrt(x**2 + y**2 + z**2)
                 index  = int(radius / dr(n))
 
+                rfac = (radius - dble(index)*dr(n)) / dr(n)
+                w0_cart_val = rfac * w0(index) + (ONE-rfac) * w0(index+1)
 
-
+                w0mac(i,j,k,1) = w0_cart_val * x / radius
 
              end do
           end do
        end do
 
-       do k = lo(3),hi(3)
+       do k = lo(3)-1,hi(3)+1
           z = (dble(k)+HALF)*dx(3) - center(3)
-          do j = lo(2),hi(2)+1
+          do j = lo(2)-1,hi(2)+2
              y = (dble(j)     )*dx(2) - center(2)
-             do i = lo(1),hi(1)+1
+             do i = lo(1)-1,hi(1)+1
                 x = (dble(i)+HALF)*dx(1) - center(1)
                 radius = sqrt(x**2 + y**2 + z**2)
                 index  = int(radius / dr(n))
 
+                rfac = (radius - dble(index)*dr(n)) / dr(n)
+                w0_cart_val = rfac * w0(index) + (ONE-rfac) * w0(index+1)
 
-
+                w0mac(i,j,k,2) = w0_cart_val * y / radius
 
              end do
           end do
        end do
 
-       do k = lo(3),hi(3)+1
+       do k = lo(3)-1,hi(3)+2
           z = (dble(k)     )*dx(3) - center(3)
-          do j = lo(2),hi(2)
+          do j = lo(2)-1,hi(2)+1
              y = (dble(j)+HALF)*dx(2) - center(2)
-             do i = lo(1),hi(1)+1
+             do i = lo(1)-1,hi(1)+1
                 x = (dble(i)+HALF)*dx(1) - center(1)
                 radius = sqrt(x**2 + y**2 + z**2)
                 index  = int(radius / dr(n))
 
+                rfac = (radius - dble(index)*dr(n)) / dr(n)
+                w0_cart_val = rfac * w0(index) + (ONE-rfac) * w0(index+1)
 
-
+                w0mac(i,j,k,3) = w0_cart_val * z / radius
 
              end do
           end do
