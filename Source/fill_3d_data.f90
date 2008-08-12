@@ -419,7 +419,7 @@ contains
           case (2)
              call bl_error('Error: Should not have to call put_w0_on_edges in 2d')
           case (3)
-             if (spherical .eq. 0) then
+             if (spherical .eq. 1) then
                 call put_w0_on_edges_3d_sphr(n,w0(n,:),w0mp(:,:,:,:),ng_w0,np(:,:,:,:), &
                                              ng_n,lo,hi,dx(n,:))
              else
@@ -428,6 +428,9 @@ contains
           end select
        end do
     end do
+
+    ! Note: we do not call any ghost cell fills because within put_w0_on_edges_3d_sphr
+    !       we fill the ghost data explicitly in the loops
 
   end subroutine put_w0_on_edges
   
