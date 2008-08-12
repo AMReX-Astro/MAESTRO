@@ -6,8 +6,6 @@
  spherical_in = 1
  do_sponge = .true.
 
- dr_base = 7812500
-
  prob_hi_x = 5.e8
  prob_hi_y = 5.e8
  prob_hi_z = 5.e8
@@ -55,7 +53,11 @@
 
  dpdt_factor = 0.0
 
- interp_type_radial_bin_to_cart = 2
+ use_tfromp = T
+
+ interp_type_radial_bin_to_cart = 1
 
  use_eos_coulomb = T
+
+ plot_trac = F
 /
