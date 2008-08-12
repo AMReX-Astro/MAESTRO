@@ -355,6 +355,12 @@ contains
        call destroy(p0_cart(n))
     enddo
 
+    if (dm .eq. 3) then
+       do n=1,nlevs
+          call multifab_build(w0_force_cart_vec(n), mla%la(n), dm, 1)
+          call setval(w0_force_cart_vec(n),ZERO,all=.true.)
+       end do
+    end if
 
     if (evolve_base_state) then
 
@@ -366,6 +372,9 @@ contains
        if (dm .eq. 3) then
           call put_1d_array_on_cart(nlevs,w0,w0_cart_vec,1,.true.,.true.,dx, &
                                     the_bc_tower%bc_tower_array,mla,normal)
+          call put_1d_array_on_cart(nlevs,w0_force,w0_force_cart_vec,foextrap_comp, &
+                                    .false.,.true.,dx,the_bc_tower%bc_tower_array,mla, &
+                                    normal)
        end if
 
     end if
@@ -390,6 +399,12 @@ contains
     call advance_premac(nlevs,uold,sold,umac,utrans,gpres,normal,w0,w0_cart_vec, &
                         w0_force,w0_force_cart_vec,rho0_old,grav_cell_old,dx,dt, &
                         the_bc_tower%bc_tower_array,mla)
+
+    if (dm .eq. 3) then
+       do n=1,nlevs
+          call destroy(w0_force_cart_vec(n))
+       end do
+    end if
 
     do n=1,nlevs
        call multifab_build(delta_gamma1_term(n), mla%la(n), 1, 0)
@@ -770,13 +785,6 @@ contains
        call make_S_at_halftime(nlevs,mla,Source_nph,Source_old,Source_new, &
                                the_bc_tower%bc_tower_array)
 
-       if (dm .eq. 3) then
-          do n=1,nlevs
-             call multifab_build(w0_force_cart_vec(n), mla%la(n), dm, 1)
-             call setval(w0_force_cart_vec(n),ZERO,all=.true.)
-          end do
-       end if
-
        do n=1,nlevs
           call multifab_build(ptherm_new(n), mla%la(n), 1, 0)
        end do
@@ -891,6 +899,13 @@ contains
           call multifab_destroy(p0_cart(n))
           call multifab_destroy(ptherm_nph(n))
        enddo
+
+       if (dm .eq. 3) then
+          do n=1,nlevs
+             call multifab_build(w0_force_cart_vec(n), mla%la(n), dm, 1)
+             call setval(w0_force_cart_vec(n),ZERO,all=.true.)
+          end do
+       end if
 
        if (evolve_base_state) then
        
