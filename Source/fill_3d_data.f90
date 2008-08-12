@@ -446,6 +446,7 @@ contains
     real(kind=dp_t) :: x,y,z
     real(kind=dp_t) :: radius,w0_cart_val,rfac
     real(kind=dp_t), allocatable :: w0_cc(:,:,:,:)
+    real(kind=dp_t), allocatable :: w0_nodal(:,:,:,:)
 
     ! we currently have three different ideas for computing w0mac
     ! 1.  Interpolate w0 to cell centers, then average to edges
@@ -505,7 +506,6 @@ contains
 
     else if (w0mac_interp_type .eq. 2) then
 
-       ! NOTE NEED TO ADD MORE GHOST CELLS
        do k = lo(3)-1,hi(3)+1
           z = (dble(k)+HALF)*dx(3) - center(3)
           do j = lo(2)-1,hi(2)+1
@@ -561,6 +561,56 @@ contains
        end do
 
     else if (w0mac_interp_type .eq. 3) then
+
+       allocate(w0_nodal(lo(1)-1:hi(1)+2,lo(2)-1:hi(2)+2,lo(3)-1:hi(3)+2,3))
+
+       do k = lo(3)-1,hi(3)+2
+          z = (dble(k))*dx(3) - center(3)
+          do j = lo(2)-1,hi(2)+2
+             y = (dble(j))*dx(2) - center(2)
+             do i = lo(1)-1,hi(1)+2
+                x = (dble(i))*dx(1) - center(1)
+
+                radius = sqrt(x**2 + y**2 + z**2)
+                index  = int(radius / dr(n))
+                
+                rfac = (radius - dble(index)*dr(n)) / dr(n)
+                w0_cart_val = rfac * w0(index) + (ONE-rfac) * w0(index+1)
+
+                w0_nodal(i,j,k,1) = w0_cart_val * x / radius
+                w0_nodal(i,j,k,2) = w0_cart_val * y / radius
+                w0_nodal(i,j,k,3) = w0_cart_val * z / radius
+
+             end do
+          end do
+       end do
+
+       do k = lo(3)-1,hi(3)+1
+          do j = lo(2)-1,hi(2)+1
+             do i = lo(1)-1,hi(1)+2
+                w0mac(i,j,k,1) = FOURTH*( w0_nodal(i,j,k,1) + w0_nodal(i,j+1,k,1) &
+                                         +w0_nodal(i,j,k+1,1) + w0_nodal(i,j+1,k+1,1))
+             end do
+          end do
+       end do
+
+       do k = lo(3)-1,hi(3)+1
+          do j = lo(2)-1,hi(2)+2
+             do i = lo(1)-1,hi(1)+1
+                w0mac(i,j,k,2) = FOURTH*( w0_nodal(i,j,k,2) + w0_nodal(i+1,j,k,2) &
+                                         +w0_nodal(i,j,k+1,2) + w0_nodal(i+1,j,k+1,2))
+             end do
+          end do
+       end do
+
+       do k = lo(3)-1,hi(3)+2
+          do j = lo(2)-1,hi(2)+1
+             do i = lo(1)-1,hi(1)+1
+                w0mac(i,j,k,2) = FOURTH*( w0_nodal(i,j,k,3) + w0_nodal(i+1,j,k,3) &
+                                         +w0_nodal(i,j+1,k,3) + w0_nodal(i+1,j+1,k,3))
+             end do
+          end do
+       end do
 
     else
        call bl_error('Error: fill_3d_data:w0mac_interp_type > 3')
