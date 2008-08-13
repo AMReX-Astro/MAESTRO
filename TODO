@@ -24,3 +24,6 @@
 -- update Gconst to the latest accepted value
 
 -- use the new w0mac stuff for estdt and makevort
+
+-- should we be computing beta_0 differently for spherical?  In 
+   particular, should we do linear reconstruction on g?
