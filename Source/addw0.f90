@@ -60,7 +60,7 @@ contains
                 w0zp  => dataptr(w0mac(n,3), i)
                 ng_w0 = w0mac(n,1)%ng
                 call addw0_3d_sphr(ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),ng_um, &
-                                   w0xp(:,:,:,1),w0yp(:,:,:,1),w0yp(:,:,:,1),ng_w0, &
+                                   w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1),ng_w0, &
                                    lo,hi,mult)
              end if
           end select
