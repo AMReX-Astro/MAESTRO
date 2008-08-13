@@ -12,9 +12,6 @@
    computing div{U + w_0} together?  This is more along the lines
    of how we treat the div{w_0} stuff in update_vel.f90
 
--- generalize put_1d_array_on_cart in fill_3d.f90 to be able to 
-   copy a 1D cell-centered or edge-centered array onto Cartesian edges
-
 -- make firstdt do the divu estimator correctly for spherical
 
 -- make_psi is called after scalar_advance, but we need psi in the
@@ -27,3 +24,11 @@
 
 -- should we be computing beta_0 differently for spherical?  In 
    particular, should we do linear reconstruction on g?
+
+-- is enthalpy_pred_type = 1, it does not look like we are including
+   psi in the final update -- this would only affect us if 
+   evolve_base = T
+
+-- We need something like an eta_rhoh that makes the base state
+   enthalpy agree with the average of the full state enthalpy.
+
