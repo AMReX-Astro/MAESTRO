@@ -941,78 +941,104 @@ contains
 
   end subroutine make_deltaT_3d
 
-  subroutine make_divw0(w0_cart,divw0,dx)
+  subroutine make_divw0(divw0,w0,w0mac,dx)
 
-    type(multifab) , intent(in   ) :: w0_cart
+    use geometry, only: spherical
+
     type(multifab) , intent(inout) :: divw0
+    real(kind=dp_t), intent(in   ) :: w0(:)
+    type(multifab) , intent(in   ) :: w0mac(:)
     real(kind=dp_t), intent(in   ) :: dx(:)
 
-    real(kind=dp_t), pointer :: w0p(:,:,:,:)
+    real(kind=dp_t), pointer :: w0xp(:,:,:,:)
+    real(kind=dp_t), pointer :: w0yp(:,:,:,:)
+    real(kind=dp_t), pointer :: w0zp(:,:,:,:)
     real(kind=dp_t), pointer :: dwp(:,:,:,:)
-    integer                  :: lo(w0_cart%dim),hi(w0_cart%dim)
+    integer                  :: lo(divw0%dim),hi(divw0%dim)
     integer                  :: i,dm,ng_w0,ng_dw
 
-    dm = w0_cart%dim
-    ng_w0 = w0_cart%ng
+    dm = divw0%dim
     ng_dw = divw0%ng
 
-    do i=1,w0_cart%nboxes
-       if ( multifab_remote(w0_cart, i) ) cycle
-       w0p => dataptr(w0_cart, i)
+    do i=1,divw0%nboxes
+       if ( multifab_remote(divw0, i) ) cycle
        dwp => dataptr(divw0, i)
-       lo = lwb(get_box(w0_cart, i))
-       hi = upb(get_box(w0_cart, i))
+       lo = lwb(get_box(divw0, i))
+       hi = upb(get_box(divw0, i))
        select case (dm)
        case (2)
-          call make_divw0_2d(w0p(:,:,1,:), ng_w0, dwp(:,:,1,1), ng_dw, lo, hi, dx)
+          call make_divw0_2d(w0(:), dwp(:,:,1,1), ng_dw, lo, hi, dx)
        case (3)
-          call make_divw0_3d(w0p(:,:,:,:), ng_w0, dwp(:,:,:,1), ng_dw, lo, hi, dx)
+          if(spherical .eq. 1) then
+             ng_w0 = w0mac(1)%ng
+             w0xp => dataptr(w0mac(1), i)
+             w0yp => dataptr(w0mac(2), i)
+             w0zp => dataptr(w0mac(3), i)
+             call make_divw0_3d_sphr(w0xp(:,:,:,1), w0yp(:,:,:,1), w0zp(:,:,:,1), ng_w0, &
+                                     dwp(:,:,:,1), ng_dw, lo, hi, dx)
+          else
+             call make_divw0_3d(w0(:), dwp(:,:,:,1), ng_dw, lo, hi, dx)
+          end if
        end select
     end do
 
   end subroutine make_divw0
 
-  subroutine make_divw0_2d(w0_cart,ng_w0,divw0,ng_dw,lo,hi,dx)
+  subroutine make_divw0_2d(w0,divw0,ng_dw,lo,hi,dx)
 
-    integer, intent(in)               :: lo(:), hi(:), ng_w0, ng_dw
-    real (kind = dp_t), intent(in   ) :: w0_cart(lo(1)-ng_w0:,lo(2)-ng_w0:,:)
-    real (kind = dp_t), intent(inout) ::   divw0(lo(1)-ng_dw:,lo(2)-ng_dw:)
-    real(kind=dp_t)   , intent(in   ) :: dx(:)
+    integer, intent(in)            :: lo(:), hi(:), ng_dw
+    real(kind=dp_t), intent(in   ) :: w0(:)
+    real(kind=dp_t), intent(inout) :: divw0(lo(1)-ng_dw:,lo(2)-ng_dw:)
+    real(kind=dp_t), intent(in   ) :: dx(:)
 
     !     Local variables
-    integer :: i,j
+    integer :: j
 
     do j = lo(2), hi(2)
-       do i = lo(1), hi(1)
-          divw0(i,j) = (w0_cart(i+1,j,1)-w0_cart(i-1,j,1)) / (2.d0 * dx(1)) &
-                      +(w0_cart(i,j+1,2)-w0_cart(i,j-1,2)) / (2.d0 * dx(2))
-
-       end do
+       divw0(:,j) = ( w0(j+1) - w0(j) )/dx(2)
     end do
 
   end subroutine make_divw0_2d
 
-  subroutine make_divw0_3d(w0_cart,ng_w0,divw0,ng_dw,lo,hi,dx)
+  subroutine make_divw0_3d(w0,divw0,ng_dw,lo,hi,dx)
 
-    integer, intent(in)               :: lo(:), hi(:), ng_w0, ng_dw
-    real (kind = dp_t), intent(in   ) :: w0_cart(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:,:)
-    real (kind = dp_t), intent(inout) ::   divw0(lo(1)-ng_dw:,lo(2)-ng_dw:,lo(3)-ng_dw:)
-    real(kind=dp_t)   , intent(in   ) :: dx(:)
+    integer, intent(in)            :: lo(:), hi(:), ng_dw
+    real(kind=dp_t), intent(in   ) :: w0(:)
+    real(kind=dp_t), intent(inout) :: divw0(lo(1)-ng_dw:,lo(2)-ng_dw:,lo(3)-ng_dw:)
+    real(kind=dp_t), intent(in   ) :: dx(:)
 
     !     Local variables
-    integer :: i,j,k
+    integer :: k
 
     do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-             divw0(i,j,k) = (w0_cart(i+1,j,k,1)-w0_cart(i-1,j,k,1)) / (2.d0 * dx(1)) &
-                           +(w0_cart(i,j+1,k,2)-w0_cart(i,j-1,k,2)) / (2.d0 * dx(2)) &
-                           +(w0_cart(i,j,k+1,3)-w0_cart(i,j,k-1,3)) / (2.d0 * dx(3))
+       divw0(:,:,k) = ( w0(k+1) - w0(k) )/dx(3)
+    end do
+
+  end subroutine make_divw0_3d
+
+  subroutine make_divw0_3d_sphr(w0macx,w0macy,w0macz,ng_w0,divw0,ng_dw,lo,hi,dx)
+
+    integer, intent(in)               :: lo(:), hi(:), ng_w0, ng_dw
+    real (kind = dp_t), intent(inout) :: w0macx(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
+    real (kind = dp_t), intent(inout) :: w0macy(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
+    real (kind = dp_t), intent(inout) :: w0macz(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
+    real (kind = dp_t), intent(inout) ::  divw0(lo(1)-ng_dw:,lo(2)-ng_dw:,lo(3)-ng_dw:)
+    real(kind=dp_t)   , intent(in   ) :: dx(:)
+
+    ! Local variables
+    integer :: i,j,k
+
+    do k=lo(3),hi(3)
+       do j=lo(2),hi(2)
+          do i=lo(1),hi(1)
+             divw0(i,j,k) = (w0macx(i+1,j,k)-w0macx(i,j,k)) / dx(1) &
+                           +(w0macy(i,j+1,k)-w0macy(i,j,k)) / dx(2) &
+                           +(w0macz(i,j,k+1)-w0macz(i,j,k)) / dx(3)
           end do
        end do
     end do
 
-  end subroutine make_divw0_3d
+  end subroutine make_divw0_3d_sphr
 
 end module plot_variables_module
 

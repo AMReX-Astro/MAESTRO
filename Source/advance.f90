@@ -99,7 +99,7 @@ contains
 
     ! local
     type(multifab) :: rhohalf(mla%nlevel)
-    type(multifab) :: w0_cart_vec(mla%nlevel)
+    type(multifab) :: w0mac(mla%nlevel,mla%dim)
     type(multifab) :: w0_force_cart_vec(mla%nlevel)
     type(multifab) :: macrhs(mla%nlevel)
     type(multifab) :: macphi(mla%nlevel)
@@ -249,13 +249,17 @@ contains
                                the_bc_tower%bc_tower_array)
     end if
 
-    if (dm .eq. 3) then
+    if (spherical .eq. 1) then
        do n=1,nlevs
-          call multifab_build(w0_cart_vec(n), mla%la(n), dm, 2)
-          call setval(w0_cart_vec(n), ZERO, all=.true.)
+          do comp=1,dm
+             umac_nodal_flag = .false.
+             umac_nodal_flag(comp) = .true.
+             call multifab_build(w0mac(n,comp), mla%la(n),  1, 1, nodal = umac_nodal_flag)
+             call setval(w0mac(n,comp), ZERO, all=.true.)
+          end do
        end do
     end if
-    
+
     do n=1,nlevs
        call multifab_build(ptherm_old(n), mla%la(n), 1, 0)
     end do
@@ -369,9 +373,11 @@ contains
        call make_w0(nlevs,w0,w0_old,w0_force,Sbar,rho0_old,rho0_old,p0_old,p0_old, &
                     gamma1bar,gamma1bar,delta_p0_ptherm_bar,psi,etarho,etarho_cc,dt,dtold)
 
+       if (spherical .eq. 1) then
+          call put_w0_on_edges(nlevs,w0,w0mac,dx,normal)
+       end if
+
        if (dm .eq. 3) then
-          call put_1d_array_on_cart(nlevs,w0,w0_cart_vec,1,.true.,.true.,dx, &
-                                    the_bc_tower%bc_tower_array,mla,normal)
           call put_1d_array_on_cart(nlevs,w0_force,w0_force_cart_vec,foextrap_comp, &
                                     .false.,.true.,dx,the_bc_tower%bc_tower_array,mla, &
                                     normal)
@@ -396,7 +402,7 @@ contains
        end do
     end do
     
-    call advance_premac(nlevs,uold,sold,umac,utrans,gpres,normal,w0,w0_cart_vec, &
+    call advance_premac(nlevs,uold,sold,umac,utrans,gpres,normal,w0,w0mac, &
                         w0_force,w0_force_cart_vec,rho0_old,grav_cell_old,dx,dt, &
                         the_bc_tower%bc_tower_array,mla)
 
@@ -604,7 +610,7 @@ contains
     end if
 
     call scalar_advance(nlevs,mla,1,uold,s1,s2,thermal, &
-                        umac,w0,w0_cart_vec,etarhoflux,utrans,normal, &
+                        umac,w0,w0mac,etarhoflux,utrans,normal, &
                         rho0_old,rhoh0_1, &
                         rho0_new,rhoh0_2, &
                         p0_old,p0_new,tempbar,psi,rho0_predicted_edge, &
@@ -919,10 +925,12 @@ contains
           call make_w0(nlevs,w0,w0_old,w0_force,Sbar,rho0_old,rho0_new,p0_old,p0_new, &
                        gamma1bar_old,gamma1bar,delta_p0_ptherm_bar,psi,etarho,etarho_cc,dt, &
                        dtold)
-       
+
+          if (spherical .eq. 1) then
+             call put_w0_on_edges(nlevs,w0,w0mac,dx,normal)
+          end if
+
           if (dm .eq. 3) then
-             call put_1d_array_on_cart(nlevs,w0,w0_cart_vec,1,.true.,.true.,dx, &
-                                       the_bc_tower%bc_tower_array,mla,normal)
              call put_1d_array_on_cart(nlevs,w0_force,w0_force_cart_vec,foextrap_comp, &
                                        .false.,.true.,dx,the_bc_tower%bc_tower_array,mla, &
                                        normal)
@@ -946,7 +954,7 @@ contains
           end do
        end do
 
-       call advance_premac(nlevs,uold,sold,umac,utrans,gpres,normal,w0,w0_cart_vec, &
+       call advance_premac(nlevs,uold,sold,umac,utrans,gpres,normal,w0,w0mac, &
                            w0_force,w0_force_cart_vec,rho0_old,grav_cell_old,dx,dt, &
                            the_bc_tower%bc_tower_array,mla)
 
@@ -1075,7 +1083,7 @@ contains
        end if
 
        call scalar_advance(nlevs,mla,2,uold,s1,s2,thermal, &
-                           umac,w0,w0_cart_vec,etarhoflux,utrans,normal, &
+                           umac,w0,w0mac,etarhoflux,utrans,normal, &
                            rho0_old,rhoh0_1, &
                            rho0_new,rhoh0_2, &
                            p0_old,p0_new,tempbar,psi,rho0_predicted_edge, &
@@ -1256,7 +1264,7 @@ contains
     call make_at_halftime(nlevs,rhohalf,sold,snew,rho_comp,1,the_bc_tower%bc_tower_array,mla)
     
     call velocity_advance(nlevs,mla,uold,unew,sold,rhohalf,umac,utrans,gpres, &
-                          normal,w0,w0_cart_vec,w0_force,w0_force_cart_vec, &
+                          normal,w0,w0mac,w0_force,w0_force_cart_vec, &
                           rho0_old,rho0_nph, &
                           grav_cell_old,grav_cell_nph,dx,dt, &
                           the_bc_tower%bc_tower_array,sponge)
@@ -1273,9 +1281,16 @@ contains
        end do
     end do
 
+    if (spherical .eq. 1) then
+       do n=1,nlevs
+          do comp=1,dm
+             call destroy(w0mac(n,comp))
+          end do
+       end do
+    end if
+
     if (dm .eq. 3) then
        do n=1,nlevs
-          call destroy(w0_cart_vec(n))
           call destroy(w0_force_cart_vec(n))
        end do
     end if

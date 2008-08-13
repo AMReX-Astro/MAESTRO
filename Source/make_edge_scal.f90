@@ -22,8 +22,8 @@ module make_edge_scal_module
   
 contains
 
-  subroutine make_edge_scal(nlevs,s,sedge,umac,force, &
-                            w0,w0_cart_vec, &
+  subroutine make_edge_scal(nlevs,s,sedge,umac,force,normal, &
+                            w0,w0mac, &
                             dx,dt,is_vel,the_bc_level, &
                             start_scomp,start_bccomp,num_comp,is_conservative,mla)
 
@@ -40,8 +40,9 @@ contains
     type(multifab) , intent(inout) :: sedge(:,:)
     type(multifab) , intent(in   ) :: umac(:,:)
     type(multifab) , intent(in   ) :: force(:)
+    type(multifab) , intent(in   ) :: normal(:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
-    type(multifab) , intent(in   ) :: w0_cart_vec(:)
+    type(multifab) , intent(in   ) :: w0mac(:,:)
     real(kind=dp_t), intent(in   ) :: dx(:,:),dt
     logical        , intent(in   ) :: is_vel
     type(bc_level) , intent(in   ) :: the_bc_level(:)
@@ -51,7 +52,7 @@ contains
 
     integer                  :: i,r,scomp,bccomp,dm,n
     integer                  :: lo(s(1)%dim), hi(s(1)%dim)
-    integer                  :: ng_s,ng_se,ng_um,ng_f,ng_w0
+    integer                  :: ng_s,ng_se,ng_um,ng_f,ng_w0,ng_n,ng_gw
     real(kind=dp_t), pointer :: sop(:,:,:,:)
     real(kind=dp_t), pointer :: sepx(:,:,:,:)
     real(kind=dp_t), pointer :: sepy(:,:,:,:)
@@ -59,13 +60,15 @@ contains
     real(kind=dp_t), pointer :: ump(:,:,:,:)
     real(kind=dp_t), pointer :: vmp(:,:,:,:)
     real(kind=dp_t), pointer :: wmp(:,:,:,:)
-    real(kind=dp_t), pointer :: w0p(:,:,:,:)
+    real(kind=dp_t), pointer :: w0xp(:,:,:,:)
+    real(kind=dp_t), pointer :: w0yp(:,:,:,:)
+    real(kind=dp_t), pointer :: w0zp(:,:,:,:)
     real(kind=dp_t), pointer :: fp(:,:,:,:)
     real(kind=dp_t), pointer :: gw0p(:,:,:,:)
+    real(kind=dp_t), pointer :: np(:,:,:,:)
 
     real(kind=dp_t), allocatable :: gradw0_rad(:)
     type(multifab) :: gradw0_cart
-
 
     type(bl_prof_timer), save :: bpt
 
@@ -76,7 +79,8 @@ contains
     ng_se = sedge(1,1)%ng
     ng_um = umac(1,1)%ng
     ng_f = force(1)%ng
-    ng_w0 = w0_cart_vec(1)%ng
+    ng_w0 = w0mac(1,1)%ng
+    ng_n = normal(1)%ng
 
     if (spherical .eq. 1) then
        allocate (gradw0_rad(0:nr_fine-1))
@@ -89,8 +93,9 @@ contains
 
     do n=1,nlevs
 
+       call multifab_build(gradw0_cart, s(n)%la,1,1)
+
        if (spherical .eq. 1 .and. is_vel) then
-          call multifab_build(gradw0_cart, s(n)%la,1,1)
 
           do i = 1, gradw0_cart%nboxes
              if ( multifab_remote(s(n),i) ) cycle
@@ -141,20 +146,28 @@ contains
           case (3)
             wmp  => dataptr(  umac(n,3),i)
             sepz => dataptr( sedge(n,3),i)
-            w0p  => dataptr(w0_cart_vec(n),i)
+            w0xp => dataptr(w0mac(n,1),i)
+            w0yp => dataptr(w0mac(n,2),i)
+            w0zp => dataptr(w0mac(n,3),i)
+            np   => dataptr(normal(n), i)
+            gw0p => dataptr(gradw0_cart, i)
+            ng_gw = gradw0_cart%ng
             do scomp = start_scomp, start_scomp + num_comp - 1
                bccomp = start_bccomp + scomp - start_scomp
                call make_edge_scal_3d(n, sop(:,:,:,:), ng_s, &
                                       sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), ng_se, &
                                       ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
-                                      fp(:,:,:,:), ng_f, w0p(:,:,:,:), ng_w0, &
-                                      lo, dx(n,:), dt, is_vel, &
+                                      fp(:,:,:,:), ng_f, np(:,:,:,:), ng_n, w0(n,:), &
+                                      w0xp(:,:,:,1), w0yp(:,:,:,1), w0zp(:,:,:,1), ng_w0, &
+                                      gw0p(:,:,:,1), ng_gw, lo, dx(n,:), dt, is_vel, &
                                       the_bc_level(n)%phys_bc_level_array(i,:,:), &
                                       the_bc_level(n)%adv_bc_level_array(i,:,:,bccomp:), &
                                       scomp, is_conservative)
             end do
           end select
        end do
+
+       call destroy(gradw0_cart)
 
     end do
     !
@@ -172,7 +185,6 @@ contains
 
     if (spherical .eq. 1 .and. is_vel) then
        deallocate(gradw0_rad)
-       call destroy(gradw0_cart)
     endif
 
     call destroy(bpt)
@@ -512,15 +524,16 @@ contains
   end subroutine make_edge_scal_2d
 
   subroutine make_edge_scal_3d(n,s,ng_s,sedgex,sedgey,sedgez,ng_se,umac,vmac,wmac,ng_um, &
-                               force,ng_f,w0_cart_vec,ng_w0, &
-                               lo,dx,dt,is_vel,phys_bc,adv_bc,comp,is_conservative)
+                               force,ng_f,normal,ng_n,w0,w0macx,w0macy,w0macz,ng_w0, &
+                               gradw0_cart,ng_gw,lo,dx,dt,is_vel,phys_bc,adv_bc,comp, &
+                               is_conservative)
 
     use geometry, only: spherical, nr
     use bc_module
     use slope_module
     use bl_constants_module
 
-    integer        , intent(in   ) :: n,lo(:),ng_s,ng_se,ng_um,ng_f,ng_w0
+    integer        , intent(in   ) :: n,lo(:),ng_s,ng_se,ng_um,ng_f,ng_w0,ng_n,ng_gw
     real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :,:)
     real(kind=dp_t), intent(inout) :: sedgex(lo(1)-ng_se:,lo(2)-ng_se:,lo(3)-ng_se:,:)
     real(kind=dp_t), intent(inout) :: sedgey(lo(1)-ng_se:,lo(2)-ng_se:,lo(3)-ng_se:,:)
@@ -529,7 +542,12 @@ contains
     real(kind=dp_t), intent(in   ) ::   vmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(in   ) ::   wmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(in   ) ::  force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :,:)
-    real(kind=dp_t), intent(in   ) :: w0_cart_vec(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:,:)
+    real(kind=dp_t), intent(in   ) :: normal(lo(1)-ng_n :,lo(2)-ng_n :,lo(3)-ng_n :,:)
+    real(kind=dp_t), intent(in   ) :: w0(:)
+    real(kind=dp_t), intent(in   ) :: w0macx(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
+    real(kind=dp_t), intent(in   ) :: w0macy(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
+    real(kind=dp_t), intent(in   ) :: w0macz(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
+    real(kind=dp_t), intent(in   ) :: gradw0_cart(lo(1)-ng_gw:,lo(2)-ng_gw:,lo(3)-ng_gw:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
     logical        , intent(in   ) :: is_vel
     integer        , intent(in   ) :: phys_bc(:,:)
@@ -545,6 +563,8 @@ contains
     real(kind=dp_t) :: savg,st
     real(kind=dp_t) :: sptop,spbot,smtop,smbot,splft,sprgt,smlft,smrgt
     real(kind=dp_t) :: abs_eps,eps,umax
+
+    real(kind=dp_t) :: Ut_dot_er
 
     integer :: hi(3)
     integer :: i,j,k,is,js,ks,ie,je,ke
@@ -717,12 +737,35 @@ contains
                 st = st - HALF * (wmac(i,j,k)+wmac(i,j,k+1))*(splus - sminus) / hz
              end if
 
-             ! NOTE NOTE : THIS IS WRONG FOR SPHERICAL !!
-             if (spherical .eq. 0 .and. is_vel .and. comp .eq. 3) then
-                ! wmac contains w0 so we need to subtract it off
-                st = st - HALF*(wmac(i,j,k)+wmac(i,j,k+1)- &
-                     w0_cart_vec(i,j,k+1,3)-w0_cart_vec(i,j,k,3)) &
-                     * (w0_cart_vec(i,j,k+1,3)-w0_cart_vec(i,j,k,3))/hz
+             if (is_vel) then
+                ! add the (Utilde . e_r) d w_0 /dr e_r term here
+                
+                if (spherical .eq. 0 .and. comp .eq. 3) then
+
+                   ! wmac contains w0 so we need to subtract it off
+                   st = st - HALF*(wmac(i,j,k)+wmac(i,j,k+1)-w0(k+1)-w0(k)) &
+                        * (w0(k+1)-w0(k)) / hz
+
+                else if (spherical .eq. 1) then
+
+                   ! u/v/wmac contain w0, so we need to subtract it off.  
+                   Ut_dot_er = (HALF*(umac(i,j,k) + umac(i+1,j,k)) - &
+                                HALF*(w0macx(i,j,k)+w0macx(i+1,j,k))*normal(i,j,k,1)) + &
+                               (HALF*(vmac(i,j,k) + vmac(i,j+1,k)) - &
+                                HALF*(w0macy(i,j,k)+w0macy(i,j+1,k))*normal(i,j,k,2)) + &
+                               (HALF*(wmac(i,j,k) + wmac(i,j,k+1)) - &
+                                HALF*(w0macz(i,j,k)+w0macz(i,j,k+1))*normal(i,j,k,3))
+
+                   if (comp .eq. 1) then
+                      st = st - Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,1)
+                   else if (comp .eq. 2) then
+                      st = st - Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,2)
+                   else if (comp .eq. 3) then
+                      st = st - Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,3)
+                   endif
+
+                end if
+
              end if
 
              s_l(i+1) = s(i,j,k,comp) + (HALF-dth*umac(i+1,j,k)/hx)*slopex(i,j,k,1) + dth*st
@@ -887,13 +930,36 @@ contains
              else
                 st = st - HALF * (wmac(i,j,k)+wmac(i,j,k+1))*(splus - sminus) / hz
              end if
-                 
-             ! NOTE NOTE : THIS IS WRONG FOR SPHERICAL !!
-             if (spherical .eq. 0 .and. is_vel .and. comp.eq.3) then
-                ! wmac contains w0 so we need to subtract it off
-                st = st - HALF * (wmac(i,j,k)+wmac(i,j,k+1)- &
-                     w0_cart_vec(i,j,k+1,3)-w0_cart_vec(i,j,k,3))* &
-                     (w0_cart_vec(i,j,k+1,3)-w0_cart_vec(i,j,k,3))/hz
+
+             if (is_vel) then
+                ! add the (Utilde . e_r) d w_0 /dr e_r term here
+                
+                if (spherical .eq. 0 .and. comp .eq. 3) then
+
+                   ! wmac contains w0 so we need to subtract it off
+                   st = st - HALF*(wmac(i,j,k)+wmac(i,j,k+1)-w0(k+1)-w0(k)) &
+                        * (w0(k+1)-w0(k)) / hz
+
+                else if (spherical .eq. 1) then
+
+                   ! u/v/wmac contain w0, so we need to subtract it off.  
+                   Ut_dot_er = (HALF*(umac(i,j,k) + umac(i+1,j,k)) - &
+                                HALF*(w0macx(i,j,k)+w0macx(i+1,j,k))*normal(i,j,k,1)) + &
+                               (HALF*(vmac(i,j,k) + vmac(i,j+1,k)) - &
+                                HALF*(w0macy(i,j,k)+w0macy(i,j+1,k))*normal(i,j,k,2)) + &
+                               (HALF*(wmac(i,j,k) + wmac(i,j,k+1)) - &
+                                HALF*(w0macz(i,j,k)+w0macz(i,j,k+1))*normal(i,j,k,3))
+
+                   if (comp .eq. 1) then
+                      st = st - Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,1)
+                   else if (comp .eq. 2) then
+                      st = st - Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,2)
+                   else if (comp .eq. 3) then
+                      st = st - Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,3)
+                   endif
+
+                end if
+
              end if
                  
              s_b(j+1)= s(i,j,k,comp) + (HALF-dth*vmac(i,j+1,k)/hy)*slopey(i,j,k,1) + dth*st
@@ -1059,15 +1125,36 @@ contains
              else
                 st = st - HALF * (vmac(i,j,k)+vmac(i,j+1,k))*(splus - sminus) / hy
              end if
-             
-             ! NOTE NOTE : THIS IS WRONG FOR SPHERICAL !!
-             if (spherical .eq. 0 .and. is_vel .and. comp .eq. 3) then
 
-                if (k .ge. 0 .and. k .le. nr(n)-1) then
+             if (is_vel) then
+                ! add the (Utilde . e_r) d w_0 /dr e_r term here
+                
+                if (spherical .eq. 0 .and. comp .eq. 3) then
+
                    ! wmac contains w0 so we need to subtract it off
-                   st = st - HALF*(wmac(i,j,k)+wmac(i,j,k+1)- &
-                        w0_cart_vec(i,j,k+1,3)-w0_cart_vec(i,j,k,3)) * &
-                        (w0_cart_vec(i,j,k+1,3)-w0_cart_vec(i,j,k,3))/hz
+                   if (k .ge. 0 .and. k .le. nr(n)-1) then
+                      st = st - HALF*(wmac(i,j,k)+wmac(i,j,k+1)-w0(k+1)-w0(k)) &
+                           * (w0(k+1)-w0(k)) / hz
+                   end if
+
+                else if (spherical .eq. 1) then
+
+                   ! u/v/wmac contain w0, so we need to subtract it off.  
+                   Ut_dot_er = (HALF*(umac(i,j,k) + umac(i+1,j,k)) - &
+                                HALF*(w0macx(i,j,k)+w0macx(i+1,j,k))*normal(i,j,k,1)) + &
+                               (HALF*(vmac(i,j,k) + vmac(i,j+1,k)) - &
+                                HALF*(w0macy(i,j,k)+w0macy(i,j+1,k))*normal(i,j,k,2)) + &
+                               (HALF*(wmac(i,j,k) + wmac(i,j,k+1)) - &
+                                HALF*(w0macz(i,j,k)+w0macz(i,j,k+1))*normal(i,j,k,3))
+
+                   if (comp .eq. 1) then
+                      st = st - Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,1)
+                   else if (comp .eq. 2) then
+                      st = st - Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,2)
+                   else if (comp .eq. 3) then
+                      st = st - Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,3)
+                   endif
+
                 end if
 
              end if

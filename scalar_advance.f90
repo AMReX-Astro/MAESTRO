@@ -14,7 +14,7 @@ module scalar_advance_module
 contains
 
   subroutine scalar_advance(nlevs,mla,which_step,uold,sold,snew,thermal, &
-                            umac,w0,w0_cart_vec,etarhoflux,utrans,normal, &
+                            umac,w0,w0mac,etarhoflux,utrans,normal, &
                             rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_old,p0_new, &
                             tempbar,psi,rho0_predicted_edge,dx,dt,the_bc_level)
 
@@ -49,7 +49,7 @@ contains
     type(multifab) , intent(in   ) :: thermal(:)
     type(multifab) , intent(inout) :: umac(:,:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
-    type(multifab) , intent(in   ) :: w0_cart_vec(:)
+    type(multifab) , intent(in   ) :: w0mac(:,:)
     type(multifab) , intent(inout) :: etarhoflux(:)
     type(multifab) , intent(in   ) :: utrans(:,:)
     type(multifab) , intent(in   ) :: normal(:)
@@ -204,7 +204,7 @@ contains
     !     Add w0 to MAC velocities (trans velocities already have w0).
     !**************************************************************************
 
-    call addw0(nlevs,umac,w0,w0_cart_vec,mult=ONE)
+    call addw0(nlevs,umac,w0,w0mac,mult=ONE)
 
     !**************************************************************************
     !     Create the edge states of (rho h)' or h or T and (rho X)' or X and rho'
@@ -236,29 +236,24 @@ contains
     else
        pred_comp = rhoh_comp
     end if
-!   call make_edge_state(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0,w0_cart_vec,dx,dt, &
-!                        is_vel,the_bc_level,velpred,pred_comp,dm+pred_comp,1,mla)
+
     is_conservative = .false.
-    call make_edge_scal(nlevs,sold,sedge,umac,scal_force, &
-                        w0,w0_cart_vec, &
+    call make_edge_scal(nlevs,sold,sedge,umac,scal_force,normal, &
+                        w0,w0mac, &
                         dx,dt,is_vel,the_bc_level, &
                         pred_comp,dm+pred_comp,1,is_conservative,mla)
 
     ! predict either X at the edges
-!    call make_edge_state(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0,w0_cart_vec,dx, &
-!                         dt,is_vel,the_bc_level,velpred,spec_comp,dm+spec_comp,nspec,mla)
     is_conservative = .false.
-    call make_edge_scal(nlevs,sold,sedge,umac,scal_force, &
-                        w0,w0_cart_vec, &
+    call make_edge_scal(nlevs,sold,sedge,umac,scal_force,normal, &
+                        w0,w0mac, &
                         dx,dt,is_vel,the_bc_level, &
                         spec_comp,dm+spec_comp,nspec,is_conservative,mla)
 
     ! predict rho or rho' at the edges
-!    call make_edge_state(nlevs,sold,uold,sedge,umac,utrans,scal_force,w0,w0_cart_vec,dx, &
-!                         dt,is_vel,the_bc_level,velpred,rho_comp,dm+rho_comp,1,mla)
     is_conservative = predict_rho
-    call make_edge_scal(nlevs,sold,sedge,umac,scal_force, &
-                        w0,w0_cart_vec, &
+    call make_edge_scal(nlevs,sold,sedge,umac,scal_force,normal, &
+                        w0,w0mac, &
                         dx,dt,is_vel,the_bc_level, &
                         rho_comp,dm+rho_comp,1,is_conservative,mla)
 
@@ -318,7 +313,7 @@ contains
 
     if (ntrac .ge. 1) then
        call make_edge_state(nlevs,sold,uold,sedge,umac,utrans,scal_force, &
-                            normal,w0,w0_cart_vec, &
+                            normal,w0,w0mac, &
                             dx,dt,is_vel,the_bc_level,velpred, &
                             trac_comp,dm+trac_comp,ntrac,mla)
     end if
@@ -327,7 +322,7 @@ contains
     !     Subtract w0 from MAC velocities.
     !**************************************************************************
 
-    call addw0(nlevs,umac,w0,w0_cart_vec,mult=-ONE)
+    call addw0(nlevs,umac,w0,w0mac,mult=-ONE)
 
     !**************************************************************************
     !     Compute fluxes
@@ -346,7 +341,7 @@ contains
     if (which_step .eq. 1) then
 
        ! compute enthalpy fluxes
-       call mkflux(nlevs,sflux,etarhoflux,sold,sedge,umac,w0,w0_cart_vec, &
+       call mkflux(nlevs,sflux,etarhoflux,sold,sedge,umac,w0,w0mac, &
                    rho0_old,rho0_edge_old,rho0_old_cart, &
                    rho0_old,rho0_edge_old,rho0_old_cart, &
                    rhoh0_old,rhoh0_edge_old,rhoh0_old_cart, &
@@ -354,7 +349,7 @@ contains
                    rho0_predicted_edge,rhoh_comp,rhoh_comp,mla)
 
        ! compute species fluxes
-       call mkflux(nlevs,sflux,etarhoflux,sold,sedge,umac,w0,w0_cart_vec, &
+       call mkflux(nlevs,sflux,etarhoflux,sold,sedge,umac,w0,w0mac, &
                    rho0_old,rho0_edge_old,rho0_old_cart, &
                    rho0_old,rho0_edge_old,rho0_old_cart, &
                    rhoh0_old,rhoh0_edge_old,rhoh0_old_cart, &
@@ -363,7 +358,7 @@ contains
 
        if (ntrac .ge. 1) then
           ! compute tracer fluxes
-          call mkflux(nlevs,sflux,etarhoflux,sold,sedge,umac,w0,w0_cart_vec, &
+          call mkflux(nlevs,sflux,etarhoflux,sold,sedge,umac,w0,w0mac, &
                       rho0_old,rho0_edge_old,rho0_old_cart, &
                       rho0_old,rho0_edge_old,rho0_old_cart, &
                       rhoh0_old,rhoh0_edge_old,rhoh0_old_cart, &
@@ -374,7 +369,7 @@ contains
     else if (which_step .eq. 2) then
 
        ! compute enthalpy fluxes
-       call mkflux(nlevs,sflux,etarhoflux,sold,sedge,umac,w0,w0_cart_vec, &
+       call mkflux(nlevs,sflux,etarhoflux,sold,sedge,umac,w0,w0mac, &
                    rho0_old,rho0_edge_old,rho0_old_cart, &
                    rho0_new,rho0_edge_new,rho0_new_cart, &
                    rhoh0_old,rhoh0_edge_old,rhoh0_old_cart, &
@@ -382,7 +377,7 @@ contains
                    rho0_predicted_edge,rhoh_comp,rhoh_comp,mla)
 
        ! compute species fluxes
-       call mkflux(nlevs,sflux,etarhoflux,sold,sedge,umac,w0,w0_cart_vec, &
+       call mkflux(nlevs,sflux,etarhoflux,sold,sedge,umac,w0,w0mac, &
                    rho0_old,rho0_edge_old,rho0_old_cart, &
                    rho0_new,rho0_edge_new,rho0_new_cart, &
                    rhoh0_old,rhoh0_edge_old,rhoh0_old_cart, &
@@ -391,7 +386,7 @@ contains
 
        if (ntrac .ge. 1) then
           ! compute tracer fluxes
-          call mkflux(nlevs,sflux,etarhoflux,sold,sedge,umac,w0,w0_cart_vec, &
+          call mkflux(nlevs,sflux,etarhoflux,sold,sedge,umac,w0,w0mac, &
                       rho0_old,rho0_edge_old,rho0_old_cart, &
                       rho0_new,rho0_edge_new,rho0_new_cart, &
                       rhoh0_old,rhoh0_edge_old,rhoh0_old_cart, &

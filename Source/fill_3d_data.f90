@@ -386,14 +386,16 @@ contains
 
     integer        , intent(in   )           :: nlevs
     real(kind=dp_t), intent(in   )           :: w0(:,0:)
-    type(multifab) , intent(inout)           :: w0mac(:)
+    type(multifab) , intent(inout)           :: w0mac(:,:)
     real(kind=dp_t), intent(in   )           :: dx(:,:)
     type(multifab) , intent(in   ), optional :: normal(:)
 
-    integer :: lo(w0mac(1)%dim)
-    integer :: hi(w0mac(1)%dim)
+    integer :: lo(w0mac(1,1)%dim)
+    integer :: hi(w0mac(1,1)%dim)
     integer :: i,n,dm,ng_w0,ng_n
-    real(kind=dp_t), pointer :: w0mp(:,:,:,:)
+    real(kind=dp_t), pointer :: w0xp(:,:,:,:)
+    real(kind=dp_t), pointer :: w0yp(:,:,:,:)
+    real(kind=dp_t), pointer :: w0zp(:,:,:,:)
     real(kind=dp_t), pointer :: np(:,:,:,:)
     
     type(bl_prof_timer), save :: bpt
@@ -404,23 +406,26 @@ contains
        call bl_error('Error: Calling put_w0_on_edges for spherical without normal')
     end if
 
-    dm = w0mac(1)%dim
-    ng_w0 = w0mac(1)%ng
+    dm = w0mac(1,1)%dim
+    ng_w0 = w0mac(1,1)%ng
     ng_n = normal(1)%ng
 
     do n=1,nlevs
-       do i=1,w0mac(n)%nboxes
-          if ( multifab_remote(w0mac(n), i) ) cycle
-          w0mp => dataptr(w0mac(n), i)
+       do i=1,w0mac(n,1)%nboxes
+          if ( multifab_remote(w0mac(n,1), i) ) cycle
+          w0xp => dataptr(w0mac(n,1), i)
+          w0yp => dataptr(w0mac(n,2), i)
+          w0zp => dataptr(w0mac(n,3), i)
           np   => dataptr(normal(n), i)
-          lo = lwb(get_box(w0mac(n), i))
-          hi = upb(get_box(w0mac(n), i))
+          lo = lwb(get_box(w0mac(n,1), i))
+          hi = upb(get_box(w0mac(n,1), i))
           select case (dm)
           case (2)
              call bl_error('Error: Should not have to call put_w0_on_edges in 2d')
           case (3)
              if (spherical .eq. 1) then
-                call put_w0_on_edges_3d_sphr(n,w0(n,:),w0mp(:,:,:,:),ng_w0,np(:,:,:,:), &
+                call put_w0_on_edges_3d_sphr(n,w0(n,:),w0xp(:,:,:,1),w0yp(:,:,:,1), &
+                                             w0zp(:,:,:,1),ng_w0,np(:,:,:,:), &
                                              ng_n,lo,hi,dx(n,:))
              else
                 call bl_error('Error: Should not have to call put_w0_on_edges in 3d cart')
@@ -434,18 +439,21 @@ contains
 
   end subroutine put_w0_on_edges
   
-  subroutine put_w0_on_edges_3d_sphr(n,w0,w0mac,ng_w0,normal,ng_n,lo,hi,dx)
+  subroutine put_w0_on_edges_3d_sphr(n,w0,w0macx,w0macy,w0macz,ng_w0,normal,ng_n,lo,hi,dx)
 
     use bl_constants_module
-    use geometry, only: dr, center
+    use geometry, only: dr, center, nr_fine
+    use probin_module, only: w0mac_interp_type
 
     integer        , intent(in   ) :: n,lo(:),hi(:),ng_w0,ng_n
     real(kind=dp_t), intent(in   ) :: w0(0:)
-    real(kind=dp_t), intent(inout) ::  w0mac(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:,:)
+    real(kind=dp_t), intent(inout) ::  w0macx(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
+    real(kind=dp_t), intent(inout) ::  w0macy(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
+    real(kind=dp_t), intent(inout) ::  w0macz(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
     real(kind=dp_t), intent(inout) :: normal(lo(1)-ng_n :,lo(2)-ng_n :,lo(3)-ng_n :,:)    
     real(kind=dp_t), intent(in   ) :: dx(:)
 
-    integer         :: i,j,k,index,w0mac_interp_type
+    integer         :: i,j,k,index
     real(kind=dp_t) :: x,y,z
     real(kind=dp_t) :: radius,w0_cart_val,rfac
     real(kind=dp_t), allocatable :: w0_cc(:,:,:,:)
@@ -455,8 +463,6 @@ contains
     ! 1.  Interpolate w0 to cell centers, then average to edges
     ! 2.  Interpolate w0 to edges directly
     ! 3.  Interpolate w0 to nodes, then average to edges
-
-    w0mac_interp_type = 1
 
     if (w0mac_interp_type .eq. 1) then
 
@@ -473,11 +479,16 @@ contains
                 index  = int(radius / dr(n))
                 
                 rfac = (radius - dble(index)*dr(n)) / dr(n)
-                w0_cart_val = rfac * w0(index) + (ONE-rfac) * w0(index+1)
 
-                w0_cc(i,j,k,1) = w0_cart_val * normal(i,j,k,1)
-                w0_cc(i,j,k,2) = w0_cart_val * normal(i,j,k,2)
-                w0_cc(i,j,k,3) = w0_cart_val * normal(i,j,k,3)
+                if (index .lt. nr_fine) then
+                   w0_cart_val = rfac * w0(index) + (ONE-rfac) * w0(index+1)
+                else
+                   w0_cart_val = w0(nr_fine)
+                end if
+
+                w0_cc(i,j,k,1) = w0_cart_val * x / radius
+                w0_cc(i,j,k,2) = w0_cart_val * y / radius
+                w0_cc(i,j,k,3) = w0_cart_val * z / radius
 
              end do
           end do
@@ -486,7 +497,7 @@ contains
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+2
-                w0mac(i,j,k,1) = HALF* (w0_cc(i-1,j,k,1) + w0_cc(i,j,k,1))
+                w0macx(i,j,k) = HALF* (w0_cc(i-1,j,k,1) + w0_cc(i,j,k,1))
              end do
           end do
        end do
@@ -494,7 +505,7 @@ contains
        do k=lo(3)-1,hi(3)+1
           do j=lo(2)-1,hi(2)+2
              do i=lo(1)-1,hi(1)+1
-                w0mac(i,j,k,2) = HALF* (w0_cc(i,j-1,k,2) + w0_cc(i,j,k,2))
+                w0macy(i,j,k) = HALF* (w0_cc(i,j-1,k,2) + w0_cc(i,j,k,2))
              end do
           end do
        end do
@@ -502,7 +513,7 @@ contains
        do k=lo(3)-1,hi(3)+2
           do j=lo(2)-1,hi(2)+1
              do i=lo(1)-1,hi(1)+1
-                w0mac(i,j,k,3) = HALF* (w0_cc(i,j,k-1,3) + w0_cc(i,j,k,3))
+                w0macz(i,j,k) = HALF* (w0_cc(i,j,k-1,3) + w0_cc(i,j,k,3))
              end do
           end do
        end do
@@ -519,9 +530,14 @@ contains
                 index  = int(radius / dr(n))
 
                 rfac = (radius - dble(index)*dr(n)) / dr(n)
-                w0_cart_val = rfac * w0(index) + (ONE-rfac) * w0(index+1)
 
-                w0mac(i,j,k,1) = w0_cart_val * x / radius
+                if (index .lt. nr_fine) then
+                   w0_cart_val = rfac * w0(index) + (ONE-rfac) * w0(index+1)
+                else
+                   w0_cart_val = w0(nr_fine)
+                end if
+
+                w0macx(i,j,k) = w0_cart_val * x / radius
 
              end do
           end do
@@ -537,9 +553,14 @@ contains
                 index  = int(radius / dr(n))
 
                 rfac = (radius - dble(index)*dr(n)) / dr(n)
-                w0_cart_val = rfac * w0(index) + (ONE-rfac) * w0(index+1)
 
-                w0mac(i,j,k,2) = w0_cart_val * y / radius
+                if (index .lt. nr_fine) then
+                   w0_cart_val = rfac * w0(index) + (ONE-rfac) * w0(index+1)
+                else
+                   w0_cart_val = w0(nr_fine)
+                end if
+
+                w0macy(i,j,k) = w0_cart_val * y / radius
 
              end do
           end do
@@ -555,9 +576,14 @@ contains
                 index  = int(radius / dr(n))
 
                 rfac = (radius - dble(index)*dr(n)) / dr(n)
-                w0_cart_val = rfac * w0(index) + (ONE-rfac) * w0(index+1)
 
-                w0mac(i,j,k,3) = w0_cart_val * z / radius
+                if (index .lt. nr_fine) then
+                   w0_cart_val = rfac * w0(index) + (ONE-rfac) * w0(index+1)
+                else
+                   w0_cart_val = w0(nr_fine)
+                end if
+
+                w0macz(i,j,k) = w0_cart_val * z / radius
 
              end do
           end do
@@ -578,7 +604,12 @@ contains
                 index  = int(radius / dr(n))
                 
                 rfac = (radius - dble(index)*dr(n)) / dr(n)
-                w0_cart_val = rfac * w0(index) + (ONE-rfac) * w0(index+1)
+
+                if (index .lt. nr_fine) then
+                   w0_cart_val = rfac * w0(index) + (ONE-rfac) * w0(index+1)
+                else
+                   w0_cart_val = w0(nr_fine)
+                end if
 
                 w0_nodal(i,j,k,1) = w0_cart_val * x / radius
                 w0_nodal(i,j,k,2) = w0_cart_val * y / radius
@@ -591,8 +622,8 @@ contains
        do k = lo(3)-1,hi(3)+1
           do j = lo(2)-1,hi(2)+1
              do i = lo(1)-1,hi(1)+2
-                w0mac(i,j,k,1) = FOURTH*( w0_nodal(i,j,k,1) + w0_nodal(i,j+1,k,1) &
-                                         +w0_nodal(i,j,k+1,1) + w0_nodal(i,j+1,k+1,1))
+                w0macx(i,j,k) = FOURTH*( w0_nodal(i,j,k,1) + w0_nodal(i,j+1,k,1) &
+                                        +w0_nodal(i,j,k+1,1) + w0_nodal(i,j+1,k+1,1))
              end do
           end do
        end do
@@ -600,8 +631,8 @@ contains
        do k = lo(3)-1,hi(3)+1
           do j = lo(2)-1,hi(2)+2
              do i = lo(1)-1,hi(1)+1
-                w0mac(i,j,k,2) = FOURTH*( w0_nodal(i,j,k,2) + w0_nodal(i+1,j,k,2) &
-                                         +w0_nodal(i,j,k+1,2) + w0_nodal(i+1,j,k+1,2))
+                w0macy(i,j,k) = FOURTH*( w0_nodal(i,j,k,2) + w0_nodal(i+1,j,k,2) &
+                                        +w0_nodal(i,j,k+1,2) + w0_nodal(i+1,j,k+1,2))
              end do
           end do
        end do
@@ -609,8 +640,8 @@ contains
        do k = lo(3)-1,hi(3)+2
           do j = lo(2)-1,hi(2)+1
              do i = lo(1)-1,hi(1)+1
-                w0mac(i,j,k,2) = FOURTH*( w0_nodal(i,j,k,3) + w0_nodal(i+1,j,k,3) &
-                                         +w0_nodal(i,j+1,k,3) + w0_nodal(i+1,j+1,k,3))
+                w0macz(i,j,k) = FOURTH*( w0_nodal(i,j,k,3) + w0_nodal(i+1,j,k,3) &
+                                        +w0_nodal(i,j+1,k,3) + w0_nodal(i+1,j+1,k,3))
              end do
           end do
        end do

@@ -109,6 +109,7 @@ contains
     use ml_restriction_module
     use multifab_physbc_module
     use multifab_fill_ghost_module
+    use bl_constants_module
 
     character(len=*) , intent(in   ) :: dirname
     type(ml_layout)  , intent(in   ) :: mla
@@ -132,10 +133,12 @@ contains
     
     type(multifab) :: plotdata(mla%nlevel)
     type(multifab) :: tempfab(mla%nlevel)
-    type(multifab) :: tempfab2(mla%nlevel)
+    type(multifab) :: w0mac(mla%nlevel,mla%dim)
     real(dp_t), allocatable :: entropybar(:,:)
 
-    integer :: n,dm,nlevs,prec
+    integer :: n,dm,nlevs,prec,comp
+
+    logical :: umac_nodal_flag(mla%dim)
 
     type(bl_prof_timer), save :: bpt
 
@@ -154,7 +157,6 @@ contains
 
        call multifab_build(plotdata(n), mla%la(n), n_plot_comps, 0)
        call multifab_build(tempfab(n), mla%la(n), dm, 1)
-       call multifab_build(tempfab2(n), mla%la(n), 1, 1)
               
        ! VELOCITY 
        call multifab_copy_c(plotdata(n),icomp_vel,u(n),1,dm)
@@ -184,13 +186,25 @@ contains
           call multifab_copy_c(plotdata(n),icomp_w0,tempfab(n),1,dm)
        end do
 
+       if (spherical .eq. 1) then
+          do n=1,nlevs
+             do comp=1,dm
+                umac_nodal_flag = .false.
+                umac_nodal_flag(comp) = .true.
+                call multifab_build(w0mac(n,comp), mla%la(n),  1, 1, nodal = umac_nodal_flag)
+                call setval(w0mac(n,comp), ZERO, all=.true.)
+             end do
+          end do
+          call put_w0_on_edges(nlevs,w0,w0mac,dx,normal)
+       end if
+
        ! divw0
        do n=1,nlevs
-          call make_divw0(tempfab(n),tempfab2(n),dx(n,:))
+          call make_divw0(tempfab(n),w0(n,:),w0mac(n,:),dx(n,:))
        end do
          
        do n=1,nlevs
-          call multifab_copy_c(plotdata(n),icomp_divw0,tempfab2(n),1,1)
+          call multifab_copy_c(plotdata(n),icomp_divw0,tempfab(n),1,1)
        end do
 
        ! rho0
@@ -323,8 +337,15 @@ contains
     do n = 1,nlevs
        call destroy(plotdata(n))
        call destroy(tempfab(n))
-       call destroy(tempfab2(n))
     end do
+
+    if (spherical .eq. 1 .and. plot_base) then
+       do n=1,nlevs
+          do comp=1,dm
+             call destroy(w0mac(n,comp))
+          end do
+       end do
+    end if
 
     call destroy(bpt)
 

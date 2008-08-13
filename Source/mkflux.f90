@@ -12,7 +12,7 @@ module mkflux_module
   
 contains
 
-  subroutine mkflux(nlevs,sflux,etarhoflux,sold,sedge,umac,w0,w0_cart_vec, &
+  subroutine mkflux(nlevs,sflux,etarhoflux,sold,sedge,umac,w0,w0mac, &
                     rho0_old,rho0_edge_old,rho0_old_cart, &
                     rho0_new,rho0_edge_new,rho0_new_cart, &
                     rhoh0_old,rhoh0_edge_old,rhoh0_old_cart, &
@@ -31,7 +31,7 @@ contains
     type(multifab) , intent(in   ) :: sold(:),sedge(:,:)
     type(multifab) , intent(in   ) :: umac(:,:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
-    type(multifab) , intent(in   ) :: w0_cart_vec(:)
+    type(multifab) , intent(in   ) :: w0mac(:,:)
     real(kind=dp_t), intent(in   ) :: rho0_old(:,0:),rho0_edge_old(:,0:)
     type(multifab) , intent(in   ) :: rho0_old_cart(:)
     real(kind=dp_t), intent(in   ) :: rho0_new(:,0:),rho0_edge_new(:,0:)
@@ -63,7 +63,9 @@ contains
     real(kind=dp_t), pointer :: ump(:,:,:,:)
     real(kind=dp_t), pointer :: vmp(:,:,:,:)
     real(kind=dp_t), pointer :: wmp(:,:,:,:)
-    real(kind=dp_t), pointer :: w0p(:,:,:,:)
+    real(kind=dp_t), pointer :: w0xp(:,:,:,:)
+    real(kind=dp_t), pointer :: w0yp(:,:,:,:)
+    real(kind=dp_t), pointer :: w0zp(:,:,:,:)
     real(kind=dp_t), pointer :: rho0op(:,:,:,:)
     real(kind=dp_t), pointer :: rho0np(:,:,:,:)
     real(kind=dp_t), pointer :: rhoh0op(:,:,:,:)
@@ -83,7 +85,7 @@ contains
     ng_rn = rho0_new_cart(1)%ng
     ng_ho = rhoh0_old_cart(1)%ng
     ng_hn = rhoh0_new_cart(1)%ng
-    ng_w0 = w0_cart_vec(1)%ng
+    ng_w0 = w0mac(1,1)%ng
     
     do n=1,nlevs
 
@@ -135,14 +137,17 @@ contains
                 rho0np => dataptr(rho0_new_cart(n), i)
                 rhoh0op => dataptr(rhoh0_old_cart(n), i)
                 rhoh0np => dataptr(rhoh0_new_cart(n), i)
-                w0p => dataptr(w0_cart_vec(n),i)
+                w0xp => dataptr(w0mac(n,1),i)
+                w0yp => dataptr(w0mac(n,2),i)
+                w0zp => dataptr(w0mac(n,3),i)
                 call mkflux_3d_sphr(sfxp(:,:,:,:), sfyp(:,:,:,:), sfzp(:,:,:,:), ng_sf, &
                                     efp(:,:,:,1), ng_ef, &
                                     sexp(:,:,:,:), seyp(:,:,:,:), sezp(:,:,:,:), ng_se, &
                                     ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
                                     rho0op(:,:,:,1), ng_ro, rho0np(:,:,:,1), ng_rn, &
                                     rhoh0op(:,:,:,1), ng_ho, rhoh0np(:,:,:,1), ng_hn, &
-                                    w0p(:,:,:,:),ng_w0,startcomp,endcomp,lo,hi,domlo,domhi)
+                                    w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1), &
+                                    ng_w0,startcomp,endcomp,lo,hi,domlo,domhi)
              endif
           end select
        end do
@@ -473,7 +478,7 @@ contains
                             umac,vmac,wmac,ng_um, &
                             rho0_old_cart,ng_ro,rho0_new_cart,ng_rn, &
                             rhoh0_old_cart,ng_ho,rhoh0_new_cart,ng_hn, &
-                            w0_cart,ng_w0,startcomp,endcomp,lo,hi,domlo,domhi)
+                            w0macx,w0macy,w0macz,ng_w0,startcomp,endcomp,lo,hi,domlo,domhi)
 
     use bl_constants_module
     use network, only: nspec
@@ -497,14 +502,15 @@ contains
     real(kind=dp_t), intent(in   ) :: rho0_new_cart(lo(1)-ng_rn:,lo(2)-ng_rn:,lo(3)-ng_rn:)
     real(kind=dp_t), intent(in   ) ::rhoh0_old_cart(lo(1)-ng_ho:,lo(2)-ng_ho:,lo(3)-ng_ho:)
     real(kind=dp_t), intent(in   ) ::rhoh0_new_cart(lo(1)-ng_hn:,lo(2)-ng_hn:,lo(3)-ng_hn:)
-    real(kind=dp_t), intent(in   ) ::       w0_cart(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:,:)
+    real(kind=dp_t), intent(in   ) ::        w0macx(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
+    real(kind=dp_t), intent(in   ) ::        w0macy(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
+    real(kind=dp_t), intent(in   ) ::        w0macz(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
     integer        , intent(in   ) :: startcomp,endcomp
 
     ! local
     integer         :: comp
     integer         :: i,j,k
     real(kind=dp_t) :: bc_lox,bc_loy,bc_loz
-    real(kind=dp_t) :: w0_edgex, w0_edgey, w0_edgez
     real(kind=dp_t) :: rho0_edge
     logical         :: test
     
@@ -524,11 +530,9 @@ contains
              do j = lo(2), hi(2)
                 do i = lo(1), hi(1)+1
                    
-                   w0_edgex = HALF * ( w0_cart(i  ,j,k,1) +w0_cart(i-1,j,k,1) )
-                   
                    if (predict_rho) then
                    
-                      sfluxx(i,j,k,comp) = (umac(i,j,k) + w0_edgex) * &
+                      sfluxx(i,j,k,comp) = (umac(i,j,k) + w0macx(i,j,k)) * &
                            (sedgex(i,j,k,rho_comp))*sedgex(i,j,k,comp)
 
                    else
@@ -542,7 +546,7 @@ contains
                                       +rho0_new_cart(i,j,k)+rho0_new_cart(i-1,j,k) ) * FOURTH
                       end if
                       
-                      sfluxx(i,j,k,comp) = (umac(i,j,k) + w0_edgex) * &
+                      sfluxx(i,j,k,comp) = (umac(i,j,k) + w0macx(i,j,k)) * &
                            (rho0_edge + sedgex(i,j,k,rho_comp))*sedgex(i,j,k,comp)
                       
                    end if
@@ -567,9 +571,7 @@ contains
                                 +rhoh0_new_cart(i,j,k)+rhoh0_new_cart(i-1,j,k) ) * FOURTH
                    end if
 
-                   w0_edgex = HALF * (w0_cart(i,j,k,1)+w0_cart(i-1,j,k,1))
-
-                   sfluxx(i,j,k,comp) = (umac(i,j,k)+w0_edgex)*(bc_lox+sedgex(i,j,k,comp))
+                   sfluxx(i,j,k,comp) = (umac(i,j,k)+w0macx(i,j,k))*(bc_lox+sedgex(i,j,k,comp))
                 
                 end do
              end do
@@ -585,11 +587,9 @@ contains
              do j = lo(2), hi(2)+1
                 do i = lo(1), hi(1)
                    
-                   w0_edgey = HALF * ( w0_cart(i,j  ,k,2) + w0_cart(i,j-1,k,2) )
-                   
                    if (predict_rho) then
 
-                      sfluxy(i,j,k,comp) = (vmac(i,j,k) + w0_edgey) * &
+                      sfluxy(i,j,k,comp) = (vmac(i,j,k) + w0macy(i,j,k)) * &
                            (sedgey(i,j,k,rho_comp))*sedgey(i,j,k,comp)
 
                    else
@@ -603,7 +603,7 @@ contains
                                       +rho0_new_cart(i,j,k)+rho0_new_cart(i,j-1,k) ) * FOURTH
                       end if
 
-                      sfluxy(i,j,k,comp) = (vmac(i,j,k) + w0_edgey) * &
+                      sfluxy(i,j,k,comp) = (vmac(i,j,k) + w0macy(i,j,k)) * &
                            (rho0_edge + sedgey(i,j,k,rho_comp))*sedgey(i,j,k,comp)
                       
                    end if
@@ -627,9 +627,7 @@ contains
                                 +rhoh0_new_cart(i,j,k)+rhoh0_new_cart(i,j-1,k) ) * FOURTH
                    end if
                    
-                   w0_edgey = HALF * (w0_cart(i,j,k,2) + w0_cart(i,j-1,k,2))
-                   
-                   sfluxy(i,j,k,comp) = (vmac(i,j,k)+w0_edgey)*(sedgey(i,j,k,comp)+bc_loy)
+                   sfluxy(i,j,k,comp) = (vmac(i,j,k)+w0macy(i,j,k))*(sedgey(i,j,k,comp)+bc_loy)
 
                 end do
              end do
@@ -644,12 +642,10 @@ contains
           do k = lo(3), hi(3)+1
              do j = lo(2), hi(2)
                 do i = lo(1), hi(1)
-
-                   w0_edgez = HALF * ( w0_cart(i,j,k  ,3) + w0_cart(i,j,k-1,3) )
                    
                    if (predict_rho) then
 
-                      sfluxz(i,j,k,comp) = (wmac(i,j,k) + w0_edgez) * &
+                      sfluxz(i,j,k,comp) = (wmac(i,j,k) + w0macz(i,j,k)) * &
                            (sedgez(i,j,k,rho_comp))*sedgez(i,j,k,comp)
 
                    else
@@ -664,7 +660,7 @@ contains
                                       +rho0_new_cart(i,j,k)+rho0_new_cart(i,j,k-1) ) * FOURTH
                       end if
                       
-                      sfluxz(i,j,k,comp) = (wmac(i,j,k) + w0_edgez) * &
+                      sfluxz(i,j,k,comp) = (wmac(i,j,k) + w0macz(i,j,k)) * &
                            (rho0_edge + sedgez(i,j,k,rho_comp))*sedgez(i,j,k,comp)
                       
                    end if
@@ -689,9 +685,7 @@ contains
                                +rhoh0_new_cart(i,j,k)+rhoh0_new_cart(i,j,k-1) ) * FOURTH
                    end if
                    
-                   w0_edgez = HALF * (w0_cart(i,j,k,3)+w0_cart(i,j,k-1,3))
-                   
-                   sfluxz(i,j,k,comp) = (wmac(i,j,k)+w0_edgez)*(sedgez(i,j,k,comp)+bc_loz)
+                   sfluxz(i,j,k,comp) = (wmac(i,j,k)+w0macz(i,j,k))*(sedgez(i,j,k,comp)+bc_loz)
 
                 end do
              end do

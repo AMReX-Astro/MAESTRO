@@ -12,7 +12,7 @@ module update_vel_module
 
 contains
 
-  subroutine update_velocity(nlevs,uold,unew,umac,uedge,force,normal,w0,w0_cart,dx,dt, &
+  subroutine update_velocity(nlevs,uold,unew,umac,uedge,force,normal,w0,w0mac,dx,dt, &
                              sponge,mla,the_bc_level)
 
     use bl_prof_module
@@ -30,7 +30,7 @@ contains
     type(multifab)    , intent(in   ) :: force(:)
     type(multifab)    , intent(in   ) :: normal(:)
     real (kind = dp_t), intent(in   ) :: w0(:,0:)
-    type(multifab)    , intent(in   ) :: w0_cart(:)
+    type(multifab)    , intent(in   ) :: w0mac(:,:)
     real (kind = dp_t), intent(in   ) :: dx(:,:)
     real (kind = dp_t), intent(in   ) :: dt
     type(multifab)    , intent(in   ) :: sponge(:)
@@ -53,7 +53,9 @@ contains
     real(kind=dp_t), pointer:: spp(:,:,:,:)
     real(kind=dp_t), pointer:: fp(:,:,:,:)
     real(kind=dp_t), pointer:: np(:,:,:,:)
-    real(kind=dp_t), pointer:: w0p(:,:,:,:)
+    real(kind=dp_t), pointer:: w0xp(:,:,:,:)
+    real(kind=dp_t), pointer:: w0yp(:,:,:,:)
+    real(kind=dp_t), pointer:: w0zp(:,:,:,:)
 
     type(bl_prof_timer), save :: bpt
 
@@ -68,7 +70,7 @@ contains
     ng_sp = sponge(1)%ng
     ng_f  = force(1)%ng
     ng_n  = normal(1)%ng
-    ng_w0 = w0_cart(1)%ng
+    ng_w0 = w0mac(1,1)%ng
 
     do n = 1, nlevs
 
@@ -94,15 +96,17 @@ contains
           case (3)
              wmp   => dataptr(umac(n,3),i)
              uepz  => dataptr(uedge(n,3),i)
-             w0p   => dataptr(w0_cart(n),i)
+             w0xp   => dataptr(w0mac(n,1),i)
+             w0yp   => dataptr(w0mac(n,2),i)
+             w0zp   => dataptr(w0mac(n,3),i)
              np   =>  dataptr(normal(n),i)
              call update_velocity_3d(n, &
                                      uop(:,:,:,:), ng_uo, unp(:,:,:,:), ng_un, &
                                      ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
                                      uepx(:,:,:,:), uepy(:,:,:,:), uepz(:,:,:,:), ng_ue, &
                                      fp(:,:,:,:), ng_f, np(:,:,:,:), ng_n, &
-                                     w0(n,:), w0p(:,:,:,:), ng_w0, &
-                                     lo, hi, dx(n,:), dt, spp(:,:,:,1), ng_sp)
+                                     w0(n,:), w0xp(:,:,:,1), w0yp(:,:,:,1), w0zp(:,:,:,1), &
+                                     ng_w0, lo, hi, dx(n,:), dt, spp(:,:,:,1), ng_sp)
           end select
        end do
 
@@ -193,7 +197,7 @@ contains
 
   subroutine update_velocity_3d(n,uold,ng_uo,unew,ng_un,umac,vmac,wmac,ng_um, &
                                 uedgex,uedgey,uedgez,ng_ue,force,ng_f, &
-                                normal,ng_n,w0,w0_cart,ng_w0,lo,hi,dx,dt, &
+                                normal,ng_n,w0,w0macx,w0macy,w0macz,ng_w0,lo,hi,dx,dt, &
                                 sponge,ng_sp)
 
     use fill_3d_module
@@ -215,7 +219,9 @@ contains
     real (kind = dp_t), intent(in   ) ::  normal(lo(1)-ng_n :,lo(2)-ng_n :,lo(3)-ng_n :,:)
     real (kind = dp_t), intent(in   ) ::  sponge(lo(1)-ng_sp:,lo(2)-ng_sp:,lo(3)-ng_sp:) 
     real (kind = dp_t), intent(in   ) ::      w0(0:)
-    real (kind = dp_t), intent(in   ) :: w0_cart(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:,:)
+    real (kind = dp_t), intent(in   ) :: w0macx(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
+    real (kind = dp_t), intent(in   ) :: w0macy(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
+    real (kind = dp_t), intent(in   ) :: w0macz(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
     real (kind = dp_t), intent(in   ) ::      dx(:)
     real (kind = dp_t), intent(in   ) :: dt
 
@@ -337,17 +343,17 @@ contains
                 gradvz = (uedgez(i,j,k+1,2) - uedgez(i,j,k,2))/dx(3)
                 gradwz = (uedgez(i,j,k+1,3) - uedgez(i,j,k,3))/dx(3)
 
-                w0_gradur = gradux * w0_cart(i,j,k,1) &
-                          + graduy * w0_cart(i,j,k,2) &
-                          + graduz * w0_cart(i,j,k,3)
+                w0_gradur = gradux * HALF*(w0macx(i,j,k)+w0macx(i+1,j,k)) &
+                          + graduy * HALF*(w0macy(i,j,k)+w0macy(i,j+1,k)) &
+                          + graduz * HALF*(w0macz(i,j,k)+w0macz(i,j,k+1))
 
-                w0_gradvr = gradvx * w0_cart(i,j,k,1) &
-                          + gradvy * w0_cart(i,j,k,2) &
-                          + gradvz * w0_cart(i,j,k,3)
+                w0_gradvr = gradvx * HALF*(w0macx(i,j,k)+w0macx(i+1,j,k)) &
+                          + gradvy * HALF*(w0macy(i,j,k)+w0macy(i,j+1,k)) &
+                          + gradvz * HALF*(w0macz(i,j,k)+w0macz(i,j,k+1))
 
-                w0_gradwr = gradwx * w0_cart(i,j,k,1) &
-                          + gradwy * w0_cart(i,j,k,2) &
-                          + gradwz * w0_cart(i,j,k,3)
+                w0_gradwr = gradwx * HALF*(w0macx(i,j,k)+w0macx(i+1,j,k)) &
+                          + gradwy * HALF*(w0macy(i,j,k)+w0macy(i,j+1,k)) &
+                          + gradwz * HALF*(w0macz(i,j,k)+w0macz(i,j,k+1))
 
                 unew(i,j,k,1) = unew(i,j,k,1) - dt * w0_gradur
                 unew(i,j,k,2) = unew(i,j,k,2) - dt * w0_gradvr

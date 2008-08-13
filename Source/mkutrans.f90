@@ -13,7 +13,7 @@ module mkutrans_module
 
 contains
 
-  subroutine mkutrans(nlevs,u,utrans,w0,w0_cart_vec,dx,dt,the_bc_level)
+  subroutine mkutrans(nlevs,u,utrans,w0,w0mac,dx,dt,the_bc_level)
 
     use bl_prof_module
     use create_umac_grown_module
@@ -22,7 +22,7 @@ contains
     type(multifab) , intent(in   ) :: u(:)
     type(multifab) , intent(inout) :: utrans(:,:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
-    type(multifab) , intent(in   ) :: w0_cart_vec(:)
+    type(multifab) , intent(in   ) :: w0mac(:,:)
     real(kind=dp_t), intent(in   ) :: dx(:,:),dt
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
@@ -31,7 +31,9 @@ contains
     real(kind=dp_t), pointer :: utp(:,:,:,:)
     real(kind=dp_t), pointer :: vtp(:,:,:,:)
     real(kind=dp_t), pointer :: wtp(:,:,:,:)
-    real(kind=dp_t), pointer :: w0p(:,:,:,:)
+    real(kind=dp_t), pointer :: w0xp(:,:,:,:)
+    real(kind=dp_t), pointer :: w0yp(:,:,:,:)
+    real(kind=dp_t), pointer :: w0zp(:,:,:,:)
     integer                  :: lo(u(1)%dim)
     integer                  :: i,dm,n,ng_u,ng_ut,ng_w0
 
@@ -42,7 +44,7 @@ contains
     dm = u(1)%dim
     ng_u  = u(1)%ng
     ng_ut = utrans(1,1)%ng
-    ng_w0 = w0_cart_vec(1)%ng
+    ng_w0 = w0mac(1,1)%ng
 
     do n=1,nlevs
 
@@ -61,10 +63,13 @@ contains
                               the_bc_level(n)%phys_bc_level_array(i,:,:))
           case (3)
              wtp => dataptr(utrans(n,3), i)
-             w0p => dataptr(w0_cart_vec(n), i)
-             call mkutrans_3d(up(:,:,:,:), ng_u, &
+             w0xp => dataptr(w0mac(n,1), i)
+             w0yp => dataptr(w0mac(n,2), i)
+             w0zp => dataptr(w0mac(n,3), i)
+             call mkutrans_3d(n, up(:,:,:,:), ng_u, &
                               utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), ng_ut, &
-                              w0p(:,:,:,:), ng_w0, lo, dx(n,:), dt, &
+                              w0(n,:), w0xp(:,:,:,1), w0yp(:,:,:,1), w0zp(:,:,:,1),&
+                              ng_w0, lo, dx(n,:), dt, &
                               the_bc_level(n)%adv_bc_level_array(i,:,:,:), &
                               the_bc_level(n)%phys_bc_level_array(i,:,:))
           end select
@@ -240,18 +245,22 @@ contains
 
   end subroutine mkutrans_2d
   
-  subroutine mkutrans_3d(vel,ng_u,utrans,vtrans,wtrans,ng_ut,w0_cart_vec,ng_w0, &
-                         lo,dx,dt,adv_bc,phys_bc)
+  subroutine mkutrans_3d(n,vel,ng_u,utrans,vtrans,wtrans,ng_ut,w0,w0macx,w0macy,w0macz, &
+                         ng_w0,lo,dx,dt,adv_bc,phys_bc)
 
     use bc_module
     use slope_module
+    use geometry, only: nr, spherical
     
-    integer, intent(in) :: lo(3),ng_u,ng_ut,ng_w0    
+    integer, intent(in)            :: n,lo(3),ng_u,ng_ut,ng_w0    
     real(kind=dp_t), intent(in   ) ::         vel(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :,:)
     real(kind=dp_t), intent(inout) ::      utrans(lo(1)-ng_ut:,lo(2)-ng_ut:,lo(3)-ng_ut:)
     real(kind=dp_t), intent(inout) ::      vtrans(lo(1)-ng_ut:,lo(2)-ng_ut:,lo(3)-ng_ut:)
     real(kind=dp_t), intent(inout) ::      wtrans(lo(1)-ng_ut:,lo(2)-ng_ut:,lo(3)-ng_ut:)
-    real(kind=dp_t), intent(in   ) :: w0_cart_vec(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:,:)
+    real(kind=dp_t), intent(in   ) :: w0(:)
+    real(kind=dp_t), intent(in   ) :: w0macx(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
+    real(kind=dp_t), intent(in   ) :: w0macy(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
+    real(kind=dp_t), intent(in   ) :: w0macz(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
     real(kind=dp_t), intent(in   ) :: dt,dx(:)
     integer        , intent(in   ) :: adv_bc(:,:,:)
     integer        , intent(in   ) :: phys_bc(:,:)
@@ -319,8 +328,13 @@ contains
        do j = js,je
           do i = is,ie+1
 
-             uhi = vel(i  ,j,k,1) + w0_cart_vec(i  ,j,k,1)
-             ulo = vel(i-1,j,k,1) + w0_cart_vec(i-1,j,k,1)
+             if (spherical .eq. 1) then
+                uhi = vel(i  ,j,k,1) + HALF* (w0macx(i  ,j,k)+w0macx(i+1,j,k))
+                ulo = vel(i-1,j,k,1) + HALF* (w0macx(i-1,j,k)+w0macx(i  ,j,k))
+             else
+                uhi = vel(i  ,j,k,1)
+                ulo = vel(i-1,j,k,1)
+             end if
              
              urgt = vel(i,j,k  ,1) - (HALF + dth*uhi/hx) * velx(i  ,j,k,1)
              ulft = vel(i-1,j,k,1) + (HALF - dth*ulo/hx) * velx(i-1,j,k,1)
@@ -352,8 +366,13 @@ contains
        do k = ks,ke
           do i = is,ie
 
-             vhi = vel(i,j  ,k,2) + w0_cart_vec(i,j  ,k,2)
-             vlo = vel(i,j-1,k,2) + w0_cart_vec(i,j-1,k,2)
+             if (spherical .eq. 1) then
+                vhi = vel(i,j  ,k,2) + HALF* (w0macy(i,j  ,k)+w0macy(i,j+1,k))
+                vlo = vel(i,j-1,k,2) + HALF* (w0macy(i,j-1,k)+w0macy(i,j  ,k))
+             else
+                vhi = vel(i,j  ,k,2)
+                vlo = vel(i,j-1,k,2)
+             end if
              
              vtop = vel(i,j  ,k,2) - (HALF + dth*vhi/hy) * vely(i,j  ,k,1)
              vbot = vel(i,j-1,k,2) + (HALF - dth*vlo/hy) * vely(i,j-1,k,1)
@@ -385,9 +404,25 @@ contains
     do k = ks,ke+1
        do j = js,je
           do i = is,ie
-             
-             whi = vel(i,j,k  ,3) + w0_cart_vec(i,j,k  ,3)
-             wlo = vel(i,j,k-1,3) + w0_cart_vec(i,j,k-1,3)
+
+             if (spherical .eq. 1) then
+                whi = vel(i,j,k  ,3) + HALF* (w0macz(i,j,k  )+w0macz(i,j,k+1))
+                wlo = vel(i,j,k-1,3) + HALF* (w0macz(i,j,k-1)+w0macz(i,j,k  ))
+             else
+
+                if (k .eq. nr(n)) then
+                   whi = vel(i,j,k,3) + w0(k)
+                else
+                   whi = vel(i,j,k,3) + HALF* (w0(k)+w0(k+1))
+                end if
+
+                if (k .eq. ZERO) then
+                   wlo = vel(i,j,k-1,3) + w0(k)
+                else
+                   wlo = vel(i,j,k-1,3) + HALF* (w0(k-1)+w0(k))
+                end if
+
+             end if
 
              wtop = vel(i,j,k  ,3) - (HALF + dth*whi/hz) * velz(i,j,k  ,1)
              wbot = vel(i,j,k-1,3) + (HALF - dth*wlo/hz) * velz(i,j,k-1,1)

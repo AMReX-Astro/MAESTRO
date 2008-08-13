@@ -11,7 +11,7 @@ module addw0_module
 
 contains
 
-  subroutine addw0(nlevs,umac,w0,w0_cart,mult)
+  subroutine addw0(nlevs,umac,w0,w0mac,mult)
 
     use bl_prof_module
     use geometry, only: spherical
@@ -19,7 +19,7 @@ contains
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: umac(:,:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
-    type(multifab) , intent(in   ) :: w0_cart(:)
+    type(multifab) , intent(in   ) :: w0mac(:,:)
     real(kind=dp_t), intent(in   ) :: mult
 
     ! Local variables
@@ -27,7 +27,9 @@ contains
     real(kind=dp_t), pointer :: ump(:,:,:,:)
     real(kind=dp_t), pointer :: vmp(:,:,:,:)
     real(kind=dp_t), pointer :: wmp(:,:,:,:)
-    real(kind=dp_t), pointer :: w0p(:,:,:,:)
+    real(kind=dp_t), pointer :: w0xp(:,:,:,:)
+    real(kind=dp_t), pointer :: w0yp(:,:,:,:)
+    real(kind=dp_t), pointer :: w0zp(:,:,:,:)
 
     type(bl_prof_timer), save :: bpt
 
@@ -53,12 +55,12 @@ contains
                 ump  => dataptr(umac(n,1), i)
                 vmp  => dataptr(umac(n,2), i)
                 wmp  => dataptr(umac(n,3), i)
-                w0p  => dataptr(w0_cart(n), i)
-                ng_w0 = w0_cart(n)%ng
-                lo =  lwb(get_box(w0_cart(n), i))
-                hi =  upb(get_box(w0_cart(n), i))
+                w0xp  => dataptr(w0mac(n,1), i)
+                w0yp  => dataptr(w0mac(n,2), i)
+                w0zp  => dataptr(w0mac(n,3), i)
+                ng_w0 = w0mac(n,1)%ng
                 call addw0_3d_sphr(ump(:,:,:,1),vmp(:,:,:,1),wmp(:,:,:,1),ng_um, &
-                                   w0p(:,:,:,:),ng_w0, &
+                                   w0xp(:,:,:,1),w0yp(:,:,:,1),w0yp(:,:,:,1),ng_w0, &
                                    lo,hi,mult)
              end if
           end select
@@ -105,7 +107,7 @@ contains
 
   end subroutine addw0_3d
 
-  subroutine addw0_3d_sphr(umac,vmac,wmac,ng_um,w0_cart,ng_w0,lo,hi,mult)
+  subroutine addw0_3d_sphr(umac,vmac,wmac,ng_um,w0macx,w0macy,w0macz,ng_w0,lo,hi,mult)
 
     use bl_constants_module
 
@@ -113,7 +115,9 @@ contains
     real(kind=dp_t), intent(inout) ::    umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(inout) ::    vmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(inout) ::    wmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
-    real(kind=dp_t), intent(in   ) :: w0_cart(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:,:)
+    real(kind=dp_t), intent(in   ) ::  w0macx(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
+    real(kind=dp_t), intent(in   ) ::  w0macy(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
+    real(kind=dp_t), intent(in   ) ::  w0macz(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
     real(kind=dp_t), intent(in   ) :: mult
 
     integer :: i,j,k
@@ -121,24 +125,21 @@ contains
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)+1
-             umac(i,j,k) = umac(i,j,k) + mult * &
-                  HALF * ( w0_cart(i  ,j,k,1) +w0_cart(i-1,j,k,1) )
+             umac(i,j,k) = umac(i,j,k) + mult * w0macx(i,j,k)
           end do
        end do
     end do
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)+1
           do i = lo(1),hi(1)
-             vmac(i,j,k) = vmac(i,j,k) + mult * &
-                  HALF * ( w0_cart(i,j  ,k,2) + w0_cart(i,j-1,k,2) )
+             vmac(i,j,k) = vmac(i,j,k) + mult * w0macy(i,j,k)
           end do
        end do
     end do
     do k = lo(3),hi(3)+1
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
-             wmac(i,j,k) = wmac(i,j,k) + mult * &
-                  HALF * ( w0_cart(i,j,k  ,3) + w0_cart(i,j,k-1,3) )
+             wmac(i,j,k) = wmac(i,j,k) + mult * w0macz(i,j,k)
           end do
        end do
     end do
