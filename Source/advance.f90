@@ -56,7 +56,6 @@ contains
     use make_gamma_module
     use rhoh_vs_t_module
     use probin_module
-    use restrict_base_module, only: fill_ghost_base
     use bl_prof_module
     use ml_restriction_module
     use multifab_physbc_module
@@ -509,7 +508,6 @@ contains
        call make_gamma(nlevs,mla,gamma1,s1,p0_old,tempbar,dx, &
                        the_bc_tower%bc_tower_array)
        call average(mla,gamma1,gamma1bar,dx,1)
-       call fill_ghost_base(nlevs,gamma1bar,.true.)
 
        do n=1,nlevs
           call destroy(gamma1(n))
@@ -722,7 +720,6 @@ contains
        call make_gamma(nlevs,mla,gamma1,snew,p0_new,tempbar,dx, &
                        the_bc_tower%bc_tower_array)
        call average(mla,gamma1,gamma1bar,dx,1)
-       call fill_ghost_base(nlevs,gamma1bar,.true.)
 
        do n=1,nlevs
           call destroy(gamma1(n))
@@ -1176,7 +1173,6 @@ contains
           call make_gamma(nlevs,mla,gamma1,snew,p0_new,tempbar,dx, &
                           the_bc_tower%bc_tower_array)
           call average(mla,gamma1,gamma1bar,dx,1)
-          call fill_ghost_base(nlevs,gamma1bar,.true.)
           
           do n=1,nlevs
              call destroy(gamma1(n))
