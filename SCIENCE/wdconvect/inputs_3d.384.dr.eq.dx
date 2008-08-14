@@ -49,7 +49,6 @@
 
  enthalpy_pred_type = 1
  evolve_base_state = T
- predict_rho = F
 
  dpdt_factor = 0.0
 

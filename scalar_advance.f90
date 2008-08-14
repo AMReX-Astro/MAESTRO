@@ -35,7 +35,7 @@ contains
     use geometry,      only: spherical, nr_fine
     use variables,     only: nscal, ntrac, spec_comp, trac_comp, temp_comp, &
                              rho_comp, rhoh_comp, foextrap_comp
-    use probin_module, only: enthalpy_pred_type, use_thermal_diffusion, verbose, predict_rho
+    use probin_module, only: enthalpy_pred_type, use_thermal_diffusion, verbose
     use pred_parameters
     use modify_scal_force_module
     use convert_rhoX_to_X_module
@@ -76,7 +76,6 @@ contains
 
     integer    :: velpred,comp,pred_comp,n,dm
     logical    :: umac_nodal_flag(sold(1)%dim), is_vel
-    logical    :: is_conservative
     real(dp_t) :: smin,smax
     logical    :: is_prediction
 
@@ -167,10 +166,8 @@ contains
     ! X force is zero - do nothing
 
     ! make force for rho'
-    if (.not. predict_rho) then
-       call modify_scal_force(nlevs,scal_force,sold,umac,rho0_old, &
-                              rho0_edge_old,w0,dx,rho0_old_cart,rho_comp,mla,the_bc_level)
-    end if
+    call modify_scal_force(nlevs,scal_force,sold,umac,rho0_old, &
+                           rho0_edge_old,w0,dx,rho0_old_cart,rho_comp,mla,the_bc_level)
 
     ! make force for either h, T, or (rho h)'
     if (enthalpy_pred_type .eq. predict_rhohprime) then
@@ -222,9 +219,7 @@ contains
     end if
 
     ! convert rho -> rho'
-    if (.not. predict_rho) then
-       call put_in_pert_form(nlevs,sold,rho0_old,dx,rho_comp,.true.,mla,the_bc_level)
-    end if
+    call put_in_pert_form(nlevs,sold,rho0_old,dx,rho_comp,.true.,mla,the_bc_level)
 
     do n=1,nlevs
        do comp = 1,dm
@@ -242,25 +237,22 @@ contains
        pred_comp = rhoh_comp
     end if
 
-    is_conservative = .false.
     call make_edge_scal(nlevs,sold,sedge,umac,scal_force,normal, &
                         w0,w0mac, &
                         dx,dt,is_vel,the_bc_level, &
-                        pred_comp,dm+pred_comp,1,is_conservative,mla)
+                        pred_comp,dm+pred_comp,1,.false.,mla)
 
     ! predict either X at the edges
-    is_conservative = .false.
     call make_edge_scal(nlevs,sold,sedge,umac,scal_force,normal, &
                         w0,w0mac, &
                         dx,dt,is_vel,the_bc_level, &
-                        spec_comp,dm+spec_comp,nspec,is_conservative,mla)
+                        spec_comp,dm+spec_comp,nspec,.false.,mla)
 
     ! predict rho or rho' at the edges
-    is_conservative = predict_rho
     call make_edge_scal(nlevs,sold,sedge,umac,scal_force,normal, &
                         w0,w0mac, &
                         dx,dt,is_vel,the_bc_level, &
-                        rho_comp,dm+rho_comp,1,is_conservative,mla)
+                        rho_comp,dm+rho_comp,1,.false.,mla)
 
     if (enthalpy_pred_type .eq. predict_rhohprime) then
        ! convert (rho h)' -> (rho h)
@@ -269,9 +261,7 @@ contains
     end if
 
     ! convert rho' -> rho
-    if (.not. predict_rho) then
-       call put_in_pert_form(nlevs,sold,rho0_old,dx,rho_comp,.false.,mla,the_bc_level)
-    end if
+    call put_in_pert_form(nlevs,sold,rho0_old,dx,rho_comp,.false.,mla,the_bc_level)
 
     ! we now always predict X at the edges, so we now restore the state arrays 
     ! (and base state) from X to (rho X)

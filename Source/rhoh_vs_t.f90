@@ -160,7 +160,7 @@ contains
     use bl_constants_module
     use variables,     only: rho_comp, temp_comp, spec_comp, rhoh_comp
     use eos_module
-    use probin_module, only: enthalpy_pred_type, small_temp, predict_rho
+    use probin_module, only: enthalpy_pred_type, small_temp
     use pred_parameters
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_se
@@ -179,12 +179,7 @@ contains
        do i = lo(1), hi(1)+1
           
           temp_eos(1) = max(sx(i,j,temp_comp),small_temp)
-
-          if (predict_rho) then
-             den_eos(1)  = sx(i,j,rho_comp)
-          else
-             den_eos(1)  = sx(i,j,rho_comp) + HALF * (rho0_old(j) + rho0_new(j))
-          end if
+          den_eos(1)  = sx(i,j,rho_comp) + HALF * (rho0_old(j) + rho0_new(j))
 
           ! sx(i,j,spec_comp:spec_comp+nspec-1) holds X
           xn_eos(1,:) = sx(i,j,spec_comp:spec_comp+nspec-1)
@@ -217,12 +212,7 @@ contains
        do i = lo(1), hi(1)
           
           temp_eos(1) = max(sy(i,j,temp_comp),small_temp)
-
-          if (predict_rho) then
-             den_eos(1)  = sy(i,j,rho_comp)
-          else
-             den_eos(1)  = sy(i,j,rho_comp) + HALF * (rho0_edge_old(j) + rho0_edge_new(j))
-          end if
+          den_eos(1)  = sy(i,j,rho_comp) + HALF * (rho0_edge_old(j) + rho0_edge_new(j))
           
           ! sy(i,j,spec_comp:spec_comp+nspec-1) holds X
           xn_eos(1,:) = sy(i,j,spec_comp:spec_comp+nspec-1)
@@ -262,7 +252,7 @@ contains
 
     use variables,     only: rho_comp, temp_comp, spec_comp, rhoh_comp
     use eos_module
-    use probin_module, only: enthalpy_pred_type, small_temp, predict_rho
+    use probin_module, only: enthalpy_pred_type, small_temp
     use pred_parameters
     use bl_constants_module
 
@@ -284,13 +274,7 @@ contains
           do i = lo(1), hi(1)+1
              
              temp_eos(1) = max(sx(i,j,k,temp_comp),small_temp)
-
-             if (predict_rho) then
-                den_eos(1) = sx(i,j,k,rho_comp)
-             else
-                den_eos(1) = sx(i,j,k,rho_comp) + &
-                     HALF * (rho0_old(k) + rho0_new(k))
-             end if
+             den_eos(1) = sx(i,j,k,rho_comp) + HALF * (rho0_old(k) + rho0_new(k))
 
              ! sx(i,j,k,spec_comp:spec_comp+nspec-1) holds X
              xn_eos(1,:) = sx(i,j,k,spec_comp:spec_comp+nspec-1)
@@ -325,13 +309,7 @@ contains
           do i = lo(1), hi(1)
              
              temp_eos(1) = max(sy(i,j,k,temp_comp),small_temp)
-
-             if (predict_rho) then
-                den_eos(1)  = sy(i,j,k,rho_comp)
-             else
-                den_eos(1)  = sy(i,j,k,rho_comp) + &
-                     HALF * (rho0_old(k) + rho0_new(k))
-             end if
+             den_eos(1)  = sy(i,j,k,rho_comp) + HALF * (rho0_old(k) + rho0_new(k))
 
              ! sy(i,j,k,spec_comp:spec_comp+nspec-1) holds X
              xn_eos(1,:) = sy(i,j,k,spec_comp:spec_comp+nspec-1)
@@ -366,13 +344,7 @@ contains
           do i = lo(1), hi(1)
              
              temp_eos(1) = max(sz(i,j,k,temp_comp),small_temp)
-
-             if (predict_rho) then
-                den_eos(1) = sz(i,j,k,rho_comp)
-             else
-                den_eos(1) = sz(i,j,k,rho_comp) + &
-                     HALF * (rho0_edge_old(k) + rho0_edge_new(k))
-             end if
+             den_eos(1) = sz(i,j,k,rho_comp) + HALF * (rho0_edge_old(k) + rho0_edge_new(k))
 
              ! sz(i,j,k,spec_comp:spec_comp+nspec-1) X
              xn_eos(1,:) = sz(i,j,k,spec_comp:spec_comp+nspec-1)
@@ -410,7 +382,7 @@ contains
     use variables,     only: rho_comp, temp_comp, spec_comp, rhoh_comp
     use geometry,      only: spherical
     use eos_module
-    use probin_module, only: enthalpy_pred_type, small_temp, predict_rho
+    use probin_module, only: enthalpy_pred_type, small_temp
     use pred_parameters
     use bl_constants_module
 
@@ -435,20 +407,16 @@ contains
              
              temp_eos(1) = max(sx(i,j,k,temp_comp),small_temp)
 
-             if (predict_rho) then
-                den_eos(1) = sx(i,j,k,rho_comp)
-             else
-                rho0_edge = 7.d0/12.d0 * (rho0_cart(i  ,j,k) + rho0_cart(i-1,j,k)) &
-                     -1.d0/12.d0 * (rho0_cart(i+1,j,k) + rho0_cart(i-2,j,k))
-                
-                rho0min = min(rho0_cart(i,j,k),rho0_cart(i-1,j,k))
-                rho0max = max(rho0_cart(i,j,k),rho0_cart(i-1,j,k))
-                
-                rho0_edge = max(rho0_edge, rho0min)
-                rho0_edge = min(rho0_edge, rho0max)
-
-                den_eos(1) = sx(i,j,k,rho_comp) + rho0_edge
-             end if
+             rho0_edge = 7.d0/12.d0 * (rho0_cart(i  ,j,k) + rho0_cart(i-1,j,k)) &
+                  -1.d0/12.d0 * (rho0_cart(i+1,j,k) + rho0_cart(i-2,j,k))
+             
+             rho0min = min(rho0_cart(i,j,k),rho0_cart(i-1,j,k))
+             rho0max = max(rho0_cart(i,j,k),rho0_cart(i-1,j,k))
+             
+             rho0_edge = max(rho0_edge, rho0min)
+             rho0_edge = min(rho0_edge, rho0max)
+             
+             den_eos(1) = sx(i,j,k,rho_comp) + rho0_edge
 
              ! sx(i,j,k,spec_comp:spec_comp+nspec-1) holds X
              xn_eos(1,:) = sx(i,j,k,spec_comp:spec_comp+nspec-1)
@@ -492,20 +460,16 @@ contains
              
              temp_eos(1) = max(sy(i,j,k,temp_comp),small_temp)
 
-             if (predict_rho) then
-                den_eos(1) = sy(i,j,k,rho_comp)
-             else
-                rho0_edge = 7.d0/12.d0 * (rho0_cart(i,j  ,k) + rho0_cart(i,j-1,k)) &
-                     -1.d0/12.d0 * (rho0_cart(i,j+1,k) + rho0_cart(i,j-2,k))
-
-                rho0min = min(rho0_cart(i,j,k),rho0_cart(i,j-1,k))
-                rho0max = max(rho0_cart(i,j,k),rho0_cart(i,j-1,k))
-                
-                rho0_edge = max(rho0_edge, rho0min)
-                rho0_edge = min(rho0_edge, rho0max)
-                
-                den_eos(1) = sy(i,j,k,rho_comp) + rho0_edge
-             end if
+             rho0_edge = 7.d0/12.d0 * (rho0_cart(i,j  ,k) + rho0_cart(i,j-1,k)) &
+                  -1.d0/12.d0 * (rho0_cart(i,j+1,k) + rho0_cart(i,j-2,k))
+             
+             rho0min = min(rho0_cart(i,j,k),rho0_cart(i,j-1,k))
+             rho0max = max(rho0_cart(i,j,k),rho0_cart(i,j-1,k))
+             
+             rho0_edge = max(rho0_edge, rho0min)
+             rho0_edge = min(rho0_edge, rho0max)
+             
+             den_eos(1) = sy(i,j,k,rho_comp) + rho0_edge
 
              ! sy(i,j,k,spec_comp:spec_comp+nspec-1) holds X
              xn_eos(1,:) = sy(i,j,k,spec_comp:spec_comp+nspec-1) 
@@ -548,20 +512,16 @@ contains
              
              temp_eos(1) = max(sz(i,j,k,temp_comp),small_temp)
 
-             if (predict_rho) then
-                den_eos(1) = sz(i,j,k,rho_comp)
-             else
-                rho0_edge = 7.d0/12.d0 * (rho0_cart(i,j,k  ) + rho0_cart(i,j,k-1)) &
-                     -1.d0/12.d0 * (rho0_cart(i,j,k+1) + rho0_cart(i,j,k-2))
-                
-                rho0min = min(rho0_cart(i,j,k),rho0_cart(i,j,k-1))
-                rho0max = max(rho0_cart(i,j,k),rho0_cart(i,j,k-1))
-                
-                rho0_edge = max(rho0_edge, rho0min)
-                rho0_edge = min(rho0_edge, rho0max)
-                
-                den_eos(1) = sz(i,j,k,rho_comp) + rho0_edge
-             end if
+             rho0_edge = 7.d0/12.d0 * (rho0_cart(i,j,k  ) + rho0_cart(i,j,k-1)) &
+                  -1.d0/12.d0 * (rho0_cart(i,j,k+1) + rho0_cart(i,j,k-2))
+             
+             rho0min = min(rho0_cart(i,j,k),rho0_cart(i,j,k-1))
+             rho0max = max(rho0_cart(i,j,k),rho0_cart(i,j,k-1))
+             
+             rho0_edge = max(rho0_edge, rho0min)
+             rho0_edge = min(rho0_edge, rho0max)
+             
+             den_eos(1) = sz(i,j,k,rho_comp) + rho0_edge
              
              ! sz(i,j,k,spec_comp:spec_comp+nspec-1) holds X
              xn_eos(1,:) = sz(i,j,k,spec_comp:spec_comp+nspec-1) 
