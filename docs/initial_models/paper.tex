@@ -40,7 +40,7 @@
 
 \section{Creating the initial model}
 \begin{itemize}
-\item The initial model should be but into HSE according to $(p_{i+1} - p_i)/\Delta r = half (\rho_{i+1} - \rho_i) g_{i+\half}$
+\item The initial model should be but into HSE according to $(p_{i+1} - p_i)/\Delta r = \half (\rho_{i+1} - \rho_i) g_{i+\half}$
 
 \item The initial model should be created at the same resolution as the base state.  This means that
 when you change resolution of your simulation, use a new initial model.
@@ -53,7 +53,7 @@ uses.
 \section{Spherical notes}
 \begin{itemize}
 \item Spherical runs use $p$, $(\rho X)$, and $\rho$ from the initial model.  These are then
-mapped onto the Cartesian grid, and then $(rho h)$ is computed via the EOS.
+mapped onto the Cartesian grid, and then $(\rho h)$ is computed via the EOS.
 \end{itemize}
 
 \end{document}
