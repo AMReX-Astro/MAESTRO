@@ -12,9 +12,11 @@
 \def\eb    {{\bf e}}
 \def\Ub    {{\bf U}}
 \def\Ubt   {\widetilde{\bf U}}
-\def\ut   {\widetilde{\bf U}}
+\def\ut    {\widetilde{\bf U}}
 \def\wt    {\widetilde{w}}
-\def\er   {\bf e_r}
+\def\er    {{\bf e}_r}
+\def\kth   {k_\mathrm{th}}
+
 \title{Notes on Perturbational Quantities}
 
 \setlength{\marginparwidth}{1.0in}
@@ -86,16 +88,16 @@ accounted for in {\tt react\_state}, and the associated discretization is
 The full enthalpy equation is
 \begin{eqnarray}
 \frac{\partial(\rho h)}{\partial t} &=& -\nabla\cdot(\rho h \Ub) + \frac{Dp_0}{Dt} 
-+ \nabla\cdot\kappa\nabla T + \rho H_{\rm nuc} + \rho H_{\rm ext} \nonumber \\
++ \nabla\cdot \kth \nabla T + \rho H_{\rm nuc} + \rho H_{\rm ext} \nonumber \\
 &=& \underbrace{-\Ub\cdot\nabla(\rho h) - \rho h\nabla\cdot\Ub}_{-\nabla\cdot(\rho h\Ub)} 
-+ \underbrace{\psi + \wt\frac{\partial p_0}{\partial r}}_{\frac{Dp_0}{Dt}} 
-+ \nabla\cdot\kappa\nabla T + \rho H_{\rm nuc} + \rho H_{\rm ext}.
++ \underbrace{\psi + (\ut \cdot \er) \frac{\partial p_0}{\partial r}}_{\frac{Dp_0}{Dt}} 
++ \nabla\cdot\kth\nabla T + \rho H_{\rm nuc} + \rho H_{\rm ext}.
 \end{eqnarray}
 The full temperature equation is
 \begin{equation}
 \frac{\partial T}{\partial t} = -\Ub\cdot\nabla T
 + \frac{1}{\rho c_p}\left\{(1-\rho h_p)\left[\psi
-+ \wt\frac{\partial p_0}{\partial r}\right] - \sum_k\rho\xi_k\dot\omega_k 
++ (\ut \cdot \er )\frac{\partial p_0}{\partial r}\right] - \sum_k\rho\xi_k\dot\omega_k 
 + \rho H_{\rm nuc} + \rho H_{\rm ext}\right\}.
 \end{equation}
 \subsection{Predicting $(\rho h)'$ ({\tt enthalpy\_pred\_type = 1} - default)}
@@ -105,7 +107,7 @@ equation that does not include the $\rho H_{\rm nuc}$ and $\rho H_{\rm ext}$ ter
 already accounted for in {\tt react\_state}
 \begin{equation}
 \frac{\partial(\rho h)}{\partial t} = -\Ub\cdot\nabla(\rho h) - \rho h\nabla\cdot\Ub 
-+ \psi + \wt\frac{\partial p_0}{\partial r} + \nabla\cdot\kappa\nabla T. \label{rhoh equation}
++ \psi + (\ut \dot \er) \frac{\partial p_0}{\partial r} + \nabla\cdot\kth\nabla T. \label{rhoh equation}
 \end{equation}
 We arbitrarily define a base state enthalpy evolution equation
 \MarginPar{Does $\psi$ need to be included in the force?  I have written it in the base state equation for now, even though neither the base state or perturbational edge state prediction in the code uses $\psi$.  How about evolving density first,  then computing a time-centered $\psi$ to be used as the energy forcing?}
@@ -120,14 +122,14 @@ Subtracting (\ref{rhoh0 equation}) from (\ref{rhoh equation}) and rearranging te
 the perturbational enthalpy equation
 \begin{eqnarray}
 \frac{\partial(\rho h)'}{\partial t} &=& -\nabla\cdot[(\rho h)'\Ub] 
-- \nabla\cdot[(\rho h)_0\Ubt] + \wt\frac{\partial p_0}{\partial r} 
-+ \nabla\cdot\kappa\nabla T\nonumber \\
+- \nabla\cdot[(\rho h)_0\Ubt] + (\ut \cdot \er)\frac{\partial p_0}{\partial r} 
++ \nabla\cdot\kth\nabla T\nonumber \\
 &=& -\Ub\cdot\nabla(\rho h)' \underbrace{- (\rho h)'\nabla\cdot\Ub 
-- \nabla\cdot[(\rho h)_0\Ubt] + \wt\frac{\partial p_0}{\partial r}
-+ \nabla\cdot\kappa\nabla T}_{"(\rho h)' ~ \text{force}"}. \label{rhohprime equation}
+- \nabla\cdot[(\rho h)_0\Ubt] + (\ut \cdot \er)\frac{\partial p_0}{\partial r}
++ \nabla\cdot\kth\nabla T}_{"(\rho h)' ~ \text{force}"}. \label{rhohprime equation}
 \end{eqnarray}
 \subsubsection{Predicting $(\rho h)'$ at edges}\label{Predicting rhohprime at edges}
-{\bf What the code did before 8/6/08:}
+{\bf What the code did before 8/6/08:} 
  Instead of defining $(\rho h)_0^{(1)} = \overline{(\rho h)^{(1)}}$, the code carries 
 through the complete evolution of $(\rho h)_0$ using $(\rho h)_0^n \rightarrow$ {\tt react\_base}
 $\rightarrow (\rho h)_0^{(1)} \rightarrow$ {\tt advect\_base}
@@ -137,7 +139,7 @@ to sync up $(\rho h)_0$ after the thermal diffusion step.\\ \\
 {\bf What the code currently does:}  Define $(\rho h)_0^{(1)} = \overline{(\rho h)^{(1)}}$  
 and $(\rho h)' = (\rho h)^{(1)}-(\rho h)_0^{(1)}$.  Then we predict $(\rho h)'$ to 
 edges using {\tt make\_edge\_scal} in {\tt scalar\_advance} and the underbraced term in 
-(\ref{rhohprime equation}) as the forcing.
+(\ref{rhohprime equation}) as the forcing. \MarginPar{{\tt full\_rhoh0\_evolution} comes into play here}
 \subsubsection{Predicting $(\rho h)_0$ at edges}
 We use an analogous procedure described in Section \ref{Predicting rho0 at edges} to 
 obtain $(\rho h)_0^{n+\half,\rm{pred}}$ and $(\rho h)_0^{n+\half,\rm{avg}}$.  Note that 
@@ -150,20 +152,20 @@ $\rho h$ at edges.
 \begin{equation}
 \frac{\partial(\rho h)}{\partial t} = -\nabla\cdot\left[(\rho h)'\left(\Ubt 
 + w_0\eb_r\right)\right] - \nabla\cdot\left[(\rho h)_0^{n+\half,{\rm avg}}\Ubt\right] 
-\underbrace{- \nabla\cdot\left[(\rho h)_0^{n+\half,{\rm pred}}w_0\eb_r\right] + \psi}_{\text{this term used to come in through} ~ (\rho h)_0^{n+1} - (\rho h)_0^n} + \wt\frac{\partial p_0}{\partial r} \enskip .
+\underbrace{- \nabla\cdot\left[(\rho h)_0^{n+\half,{\rm pred}}w_0\eb_r\right] + \psi}_{\text{this term used to come in through} ~ (\rho h)_0^{n+1} - (\rho h)_0^n} + (\ut \cdot \er)\frac{\partial p_0}{\partial r} \enskip .
 \end{equation}
 {\bf What the code does now:} We would like to update the 
 non-forcing part of the enthalpy equation analogously to Section \ref{Advancing rhoX_k}
 \begin{equation}
 \frac{\partial(\rho h)}{\partial t} = -\nabla\cdot(\rho h\Ub) = 
 -\nabla\cdot\left\{\left[(\rho h)_0^{n+\half,{\rm avg}} 
-+ (\rho h)'\right]\left(\Ubt + w_0\eb_r\right)\right\} + \wt\frac{\partial p_0}{\partial r} + \psi  \enskip .
++ (\rho h)'\right]\left(\Ubt + w_0\eb_r\right)\right\} + (\ut \cdot \er)\frac{\partial p_0}{\partial r} + \psi  \enskip .
 \end{equation}
 
 
 \subsection{Predicting $h$ ({\tt enthalpy\_pred\_type = 2})}
 
-\subsection{Predicting $T$ then $(rho h)'$ ({\tt enthalpy\_pred\_type = 3})}
+\subsection{Predicting $T$ then $(\rho h)'$ ({\tt enthalpy\_pred\_type = 3})}
 
 \subsection{Predicting $T$ then $h$ ({\tt enthalpy\_pred\_type = 4})}
 
@@ -177,15 +179,15 @@ non-forcing part of the enthalpy equation analogously to Section \ref{Advancing 
 \hline
 {H PRED TYPE} &   {Force} \\
 \hline \\[-3mm]
-1  $((\rho h)^\prime)$ &  $(\tilde{w} \frac{\partial p_0}{\partial r}) - 
+1  $((\rho h)^\prime)$ &  $(\ut \cdot \er) \frac{\partial p_0}{\partial r} - 
  (\rho h)^\prime \; \nabla \cdot (\ut+w_0 \er) - 
- \nabla \cdot (\ut (\rho h)_0)$  \\[2 mm]
-2  $(h)$ & $\frac{1}{\rho} (\psi + \tilde{w} 
-  \frac{\partial p_0}{\partial r})$ \\[2 mm]
-3  $(T)$ & $\frac{1}{\rho c_p} \left[ (1 - \rho h_p) 
-  (\psi + \tilde{w} \frac{\partial p_0}{\partial r}) \right]$ \\[2 mm]
-4  $(T)$ & $\frac{1}{\rho c_p} \left[ (1 - \rho h_p) (\psi + \tilde{w} 
-\frac{\partial p_0}{\partial r}) \right]$ \\[2 mm]
+ \nabla \cdot (\ut (\rho h)_0) + \nabla \cdot \kth \nabla T$ \\[2 mm]
+2  $(h)$ & $\frac{1}{\rho} \left [\psi + (\ut \cdot \er)
+  \frac{\partial p_0}{\partial r} + \nabla \cdot \kth \nabla T \right ]$ \\[2 mm]
+3  $(T)$ & $\frac{1}{\rho c_p} \left \{ (1 - \rho h_p) 
+   \left [\psi + (\ut \cdot \er) \frac{\partial p_0}{\partial r} \right ] \nabla \cdot \kth \nabla T \right \}$ \\[2 mm]
+4  $(T)$ & $\frac{1}{\rho c_p} \left\{ (1 - \rho h_p) \left [\psi + (\ut \cdot \er)
+\frac{\partial p_0}{\partial r}\right ] \nabla \cdot \kth \nabla T \right\}$ \\[2 mm]
 \hline
 \end{tabular}
 \end{center}
@@ -193,7 +195,7 @@ non-forcing part of the enthalpy equation analogously to Section \ref{Advancing 
 
 \begin{table*}[h]
 \begin{center}
-\caption{Quantity that goes into and out of make edge scal \newline}
+\caption{Quantity that goes into and out of {\tt make\_edge\_scal} \newline}
 \begin{tabular}{c|c}
 \hline
 \hline
@@ -210,7 +212,7 @@ non-forcing part of the enthalpy equation analogously to Section \ref{Advancing 
 
 \begin{table*}
 \begin{center}
-\caption{When predicting temp ... \newline}
+\caption{When predicting temp ... (conversion done by {\tt makeRhoHfromT}) \newline}
 \begin{tabular}{c|c|c|c}
 \hline
 \hline
@@ -230,7 +232,7 @@ non-forcing part of the enthalpy equation analogously to Section \ref{Advancing 
 
 \begin{table*}
 \begin{center}
-\caption{Quantity that goes into mkflux on edges \newline}
+\caption{Quantity that goes into {\tt mkflux} on edges \newline}
 \begin{tabular}{c|c|c}
 \hline
 \hline
@@ -253,11 +255,10 @@ non-forcing part of the enthalpy equation analogously to Section \ref{Advancing 
        &            &              &\multicolumn{2}{c}{Forcing Term} \\
 {type} & {Species } & {$(\rho h)$} & {$(\rho X)$} & {$(\rho h)$} \\
 \hline 
-1 & $(\ut+w_0)(\rho_0+\rho^\prime) X          $ & $(\ut+w_0)(\rho h)^\prime
- + \ut (\rho h)_0$ & 0 & $ (\tilde{w} \frac{\partial p_0}{\partial r}) $ \\[2mm]
-2 & $(\ut+w_0)(\rho_0+\rho^\prime) X          $ & $(\ut+w_0) (\rho_0+\rho^\prime) h$ & 0 & $ (\psi + \tilde{w} \frac{\partial p_0}{\partial r}) $ \\[2mm]
-3 & $(\ut+w_0)(\rho_0+\rho^\prime) X          $ & $(\ut+w_0)(\rho h)^\prime + \ut (\rho h)_0$ & 0 & $ (\tilde{w} \frac{\partial p_0}{\partial r}) $ \\[2mm]
-4 & $(\ut+w_0)(\rho_0+\rho^\prime) X          $ & $(\ut+w_0) (\rho_0+\rho^\prime) h$ & 0 & $ (\psi + \tilde{w} \frac{\partial p_0}{\partial r}) $ \\[2mm]
+1 & $(\ut+w_0)(\rho_0+\rho^\prime) X          $ & $(\ut+w_0)\left [(\rho h)_0 + (\rho h)^\prime\right]$ & 0 & $ \psi + (\ut \cdot \er) \frac{\partial p_0}{\partial r} $ \\[2mm]
+2 & $(\ut+w_0)(\rho_0+\rho^\prime) X          $ & $(\ut+w_0) (\rho_0+\rho^\prime) h$ & 0 & $ \psi + (\ut \cdot \er) \frac{\partial p_0}{\partial r} $ \\[2mm]
+3 & $(\ut+w_0)(\rho_0+\rho^\prime) X          $ & $(\ut+w_0)\left [(\rho h)_0 + (\rho h)^\prime\right]$ & 0 & $ \psi + (\ut \cdot \er) \frac{\partial p_0}{\partial r}$ \\[2mm]
+4 & $(\ut+w_0)(\rho_0+\rho^\prime) X          $ & $(\ut+w_0) (\rho_0+\rho^\prime) h$ & 0 & $ \psi + (\ut \cdot \er) \frac{\partial p_0}{\partial r} $ \\[2mm]
 \hline
 \end{tabular}
 \end{center}
