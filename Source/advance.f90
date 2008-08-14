@@ -375,7 +375,7 @@ contains
                     gamma1bar,gamma1bar,p0_minus_pthermbar,psi,etarho,etarho_cc,dt,dtold)
 
        if (spherical .eq. 1) then
-          call put_w0_on_edges(nlevs,w0,w0mac,dx,normal)
+          call put_w0_on_edges(mla,w0,w0mac,dx,normal,div_coeff_old,the_bc_tower)
        end if
 
        if (dm .eq. 3) then
@@ -928,7 +928,7 @@ contains
                        dtold)
 
           if (spherical .eq. 1) then
-             call put_w0_on_edges(nlevs,w0,w0mac,dx,normal)
+             call put_w0_on_edges(mla,w0,w0mac,dx,normal,div_coeff_nph,the_bc_tower)
           end if
 
           if (dm .eq. 3) then

@@ -22,7 +22,7 @@ contains
   subroutine macproject(mla,umac,phi,rho,dx,the_bc_tower, &
                         bc_comp,divu_rhs,div_coeff_1d,div_coeff_half_1d,div_coeff_3d)
 
-    type(ml_layout), intent(inout) :: mla
+    type(ml_layout), intent(in   ) :: mla
     type(multifab ), intent(inout) :: umac(:,:)
     type(multifab ), intent(inout) :: phi(:)
     type(multifab ), intent(in   ) :: rho(:)
@@ -632,7 +632,7 @@ contains
     subroutine mk_mac_coeffs(nlevs,mla,rho,beta,the_bc_tower)
 
       integer        , intent(in   ) :: nlevs
-      type(ml_layout), intent(inout) :: mla
+      type(ml_layout), intent(in   ) :: mla
       type(multifab ), intent(in   ) :: rho(:)
       type(multifab ), intent(inout) :: beta(:)
       type(bc_tower ), intent(in   ) :: the_bc_tower
@@ -1262,7 +1262,7 @@ contains
     use ml_solve_module
     use probin_module, only : mg_bottom_solver, mg_verbose, cg_verbose
 
-    type(ml_layout), intent(inout)        :: mla
+    type(ml_layout), intent(in   )        :: mla
     integer        , intent(in   )        :: stencil_order
     integer        , intent(in   )        :: ref_ratio(:,:)
     real(dp_t)     , intent(in)           :: dx(:,:)

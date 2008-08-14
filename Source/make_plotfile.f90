@@ -94,7 +94,7 @@ contains
 
   subroutine make_plotfile(dirname,mla,u,s,gpres,rho_omegadot,Source,sponge,&
                            mba,plot_names,time,dx,the_bc_tower,w0,rho0,rhoh0,p0,tempbar, &
-                           gamma1bar,normal)
+                           gamma1bar,div_coeff,normal)
 
     use bl_prof_module
     use fabio_module
@@ -129,6 +129,7 @@ contains
     real(dp_t)       , intent(in   ) :: p0(:,0:)
     real(dp_t)       , intent(in   ) :: tempbar(:,0:)
     real(dp_t)       , intent(in   ) :: gamma1bar(:,0:)
+    real(dp_t)       , intent(in   ) :: div_coeff(:,0:)
     type(multifab)   , intent(in   ) :: normal(:)
     
     type(multifab) :: plotdata(mla%nlevel)
@@ -195,7 +196,7 @@ contains
                 call setval(w0mac(n,comp), ZERO, all=.true.)
              end do
           end do
-          call put_w0_on_edges(nlevs,w0,w0mac,dx,normal)
+          call put_w0_on_edges(mla,w0,w0mac,dx,normal,div_coeff,the_bc_tower)
        end if
 
        ! divw0
