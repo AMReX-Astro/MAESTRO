@@ -12,10 +12,10 @@ module mk_rhoX_flux_module
   
 contains
 
-  subroutine mk_rhoX_flux(nlevs,sflux,etarhoflux,sold,sedge,umac,w0,w0mac, &
-                    rho0_old,rho0_edge_old,rho0_old_cart, &
-                    rho0_new,rho0_edge_new,rho0_new_cart, &
-                    rho0_predicted_edge,startcomp,endcomp,mla)
+  subroutine mk_rhoX_flux(mla,sflux,etarhoflux,sold,sedge,umac,w0,w0mac, &
+                          rho0_old,rho0_edge_old,rho0_old_cart, &
+                          rho0_new,rho0_edge_new,rho0_new_cart, &
+                          rho0_predicted_edge,startcomp,endcomp)
 
     use bl_prof_module
     use bl_constants_module
@@ -23,7 +23,7 @@ contains
     use ml_restriction_module, only: ml_edge_restriction_c
     use variables, only: nscal
 
-    integer        , intent(in   ) :: nlevs
+    type(ml_layout), intent(inout) :: mla
     type(multifab) , intent(inout) :: sflux(:,:)
     type(multifab) , intent(inout) :: etarhoflux(:)
     type(multifab) , intent(in   ) :: sold(:),sedge(:,:)
@@ -36,13 +36,12 @@ contains
     type(multifab) , intent(in   ) :: rho0_new_cart(:)
     real(kind=dp_t), intent(in   ) :: rho0_predicted_edge(:,0:)
     integer        , intent(in   ) :: startcomp,endcomp
-    type(ml_layout), intent(inout) :: mla
 
     ! local    
     type(box) :: domain
 
     integer :: domlo(sold(1)%dim),domhi(sold(1)%dim)
-    integer :: i,dm,n
+    integer :: i,dm,n,nlevs
     integer :: lo(sold(1)%dim),hi(sold(1)%dim)
     integer :: ng_sf,ng_ef,ng_se,ng_um,ng_ro,ng_rn,ng_w0
 
@@ -67,7 +66,8 @@ contains
 
     call build(bpt, "mk_rhoX_flux")
 
-    dm = sold(1)%dim
+    dm    = mla%dim
+    nlevs = mla%nlevel
     
     ng_sf = sflux(1,1)%ng
     ng_ef = etarhoflux(1)%ng

@@ -102,13 +102,8 @@ contains
                                  .false.,dx,the_bc_level,mla)
     end if
 
-    ! Since we are predicting X on the edges, we convert the state arrays
-    ! (and base state) from (rho X) to X.  Note, only the time-level n
-    ! stuff need be converted, since that's all the prediction uses
-    call convert_rhoX_to_X(nlevs,sold,.true.,mla,the_bc_level)
-
     !**************************************************************************
-    ! Create scalar source term at time n
+    ! Create source terms at time n
     !**************************************************************************
 
     do n = 1, nlevs
@@ -129,11 +124,8 @@ contains
     call addw0(nlevs,umac,w0,w0mac,mult=ONE)
 
     !**************************************************************************
-    !     Create the edge states of (rho h)' or h or T and (rho X)' or X and rho'
+    !     Build the sedge array.
     !**************************************************************************
-
-    ! convert rho -> rho'
-    call put_in_pert_form(nlevs,sold,rho0_old,dx,rho_comp,.true.,mla,the_bc_level)
 
     do n=1,nlevs
        do comp = 1,dm
@@ -143,23 +135,30 @@ contains
        end do
     end do
 
+    !**************************************************************************
+    !     Create the edge states of (rho X)' or X and rho'
+    !**************************************************************************
+
+    ! convert (rho X) --> X in sold 
+    call convert_rhoX_to_X(nlevs,sold,.true.,mla,the_bc_level)
+
+    ! convert rho -> rho' in sold 
+    call put_in_pert_form(nlevs,sold,rho0_old,dx,rho_comp,.true.,mla,the_bc_level)
+
     ! predict X at the edges
     call make_edge_scal(nlevs,sold,sedge,umac,scal_force,normal, &
-                        w0,w0mac, &
-                        dx,dt,is_vel,the_bc_level, &
+                        w0,w0mac,dx,dt,is_vel,the_bc_level, &
                         spec_comp,dm+spec_comp,nspec,.false.,mla)
 
     ! predict rho' at the edges
     call make_edge_scal(nlevs,sold,sedge,umac,scal_force,normal, &
-                        w0,w0mac, &
-                        dx,dt,is_vel,the_bc_level, &
+                        w0,w0mac,dx,dt,is_vel,the_bc_level, &
                         rho_comp,dm+rho_comp,1,.false.,mla)
 
-    ! convert rho' -> rho
+    ! convert rho' -> rho in sold
     call put_in_pert_form(nlevs,sold,rho0_old,dx,rho_comp,.false.,mla,the_bc_level)
 
-    ! we now always predict X at the edges, so we now restore the state arrays 
-    ! (and base state) from X to (rho X)
+    ! convert X --> (rho X) in sold 
     call convert_rhoX_to_X(nlevs,sold,.false.,mla,the_bc_level)
 
     !**************************************************************************
@@ -185,18 +184,18 @@ contains
     if (which_step .eq. 1) then
 
        ! compute species fluxes
-       call mk_rhoX_flux(nlevs,sflux,etarhoflux,sold,sedge,umac,w0,w0mac, &
+       call mk_rhoX_flux(mla,sflux,etarhoflux,sold,sedge,umac,w0,w0mac, &
                          rho0_old,rho0_edge_old,rho0_old_cart, &
                          rho0_old,rho0_edge_old,rho0_old_cart, &
-                         rho0_predicted_edge,spec_comp,spec_comp+nspec-1,mla)
+                         rho0_predicted_edge,spec_comp,spec_comp+nspec-1)
 
     else if (which_step .eq. 2) then
 
        ! compute species fluxes
-       call mk_rhoX_flux(nlevs,sflux,etarhoflux,sold,sedge,umac,w0,w0mac, &
+       call mk_rhoX_flux(mla,sflux,etarhoflux,sold,sedge,umac,w0,w0mac, &
                          rho0_old,rho0_edge_old,rho0_old_cart, &
                          rho0_new,rho0_edge_new,rho0_new_cart, &
-                         rho0_predicted_edge,spec_comp,spec_comp+nspec-1,mla)
+                         rho0_predicted_edge,spec_comp,spec_comp+nspec-1)
 
     end if
 
