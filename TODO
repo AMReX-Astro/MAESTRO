@@ -32,3 +32,6 @@
 -- We need something like an eta_rhoh that makes the base state
    enthalpy agree with the average of the full state enthalpy.
 
+-- Re-examine the way we handle the dpdt_factor stuff, particularly
+   the way we compute delta_p_term, now that we have a better
+   handle on spherical fill and average
