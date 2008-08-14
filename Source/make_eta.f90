@@ -1,15 +1,25 @@
 ! Compute eta_rho = Avg { rho' Utilde.e_r }  (see paper III, Eq. 30)
+! and also compute div_etarho = div {eta_rho}
 !
-! For plane-parallel geometries, we compute eta_rho by averaging up 
-! interface fluxes (etarho_flux) created in mkflux.
+! We keep make three quantities here: 
+!    etarho is edge-centered 
+!    etarho_cc is cell-centered.  
+!    div_etarho is the divergence of etarho
+!
+! For plane-parallel geometries, we compute etarho by averaging up 
+! interface fluxes (etarho_flux) created in mkflux.  We compute etarho_cc
+! and div_etarho from etarho.
 !
 ! For spherical geometries, we construct a multifab containing 
 ! { rho' Utilde.e_r } and use the average routine to put it in cell-centers 
-! on the base state.
+! on the base state to get etarho_cc.  We compute etarho from these 
+! cell-centered quantites by averaging to the center.  We compute div_etarho
+! from the paper III, eq. 28,
 !
-! We keep make two quantities here: etarho is edge-centered and etarho_cc
-! is cell-centered.  Only spherical (in make_w0) needs the cell-centered
-! quantity.
+!        d rho' / dt = - d eta_rho / dr
+!
+! so div_etarho = - <rho '> / dt
+!
 
 module make_eta_module
 
@@ -27,17 +37,18 @@ contains
   !---------------------------------------------------------------------------
   ! plane-parallel geometry routines
   !---------------------------------------------------------------------------
-  subroutine make_etarho_planar(nlevs,etarho,etarho_cc,etarhoflux,mla)
+  subroutine make_etarho_planar(nlevs,etarho,etarho_cc,div_etarho,etarhoflux,mla)
 
     use bl_constants_module
-    use geometry, only: spherical, nr_fine, r_start_coord, r_end_coord, numdisjointchunks
+    use geometry, only: spherical, nr_fine, r_start_coord, r_end_coord, numdisjointchunks, dr
     use restrict_base_module
 
     integer           , intent(in   ) :: nlevs
-    real(kind=dp_t)   , intent(inout) :: etarho(:,0:)
-    real(kind=dp_t)   , intent(inout) :: etarho_cc(:,0:)
-    type(multifab)    , intent(inout) :: etarhoflux(:)
-    type(ml_layout)   , intent(inout) :: mla
+    real(kind=dp_t)   , intent(  out) :: etarho(:,0:)
+    real(kind=dp_t)   , intent(  out) :: etarho_cc(:,0:)
+    real(kind=dp_t)   , intent(  out) :: div_etarho(:,0:)
+    type(multifab)    , intent(in   ) :: etarhoflux(:)
+    type(ml_layout)   , intent(in   ) :: mla
 
     ! local
     real(kind=dp_t), pointer :: efp(:,:,:,:)
@@ -256,6 +267,16 @@ contains
        enddo
     enddo
 
+    ! make the cell-centerd div_etarho by compute the divergence from
+    ! the edge-centered etarho
+    do n=1,nlevs
+       do i=1,numdisjointchunks(n)
+          do r=r_start_coord(n,i),r_end_coord(n,i)
+             div_etarho(n,r) = (etarho(n,r+1) - etarho(n,r))/dr(n)
+          enddo
+       enddo
+    enddo
+
     deallocate(ncell)
     deallocate(etarhosum_proc,etarhosum)
     deallocate(etarhopert_proc,etarhopert)
@@ -425,7 +446,8 @@ contains
   ! spherical routines
   !---------------------------------------------------------------------------
   subroutine make_etarho_spherical(nlevs,sold,snew,umac,rho0_old,rho0_new, &
-                                   dx,normal,etarho,etarho_cc,mla,the_bc_level)
+                                   dx,dt,normal,etarho,etarho_cc,div_etarho, &
+                                   mla,the_bc_level)
 
     use bl_constants_module
     use geometry, only: spherical, nr_fine, nr
@@ -439,25 +461,28 @@ contains
     type(multifab) , intent(in   ) :: umac(:,:)
     type(multifab) , intent(in   ) :: sold(:), snew(:)
     real(kind=dp_t), intent(in   ) :: rho0_old(:,0:), rho0_new(:,0:) 
-    real(kind=dp_t), intent(in   ) :: dx(:,:)
+    real(kind=dp_t), intent(in   ) :: dx(:,:), dt
     type(multifab) , intent(in   ) :: normal(:)
     real(kind=dp_t), intent(  out) :: etarho(:,0:)
     real(kind=dp_t), intent(  out) :: etarho_cc(:,0:)
+    real(kind=dp_t), intent(  out) :: div_etarho(:,0:)
     type(ml_layout), intent(in   ) :: mla
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     type(multifab) :: eta_cart(mla%nlevel)
+    type(multifab) :: rhoprime_cart(mla%nlevel)
     
-    real(kind=dp_t), pointer :: ep(:,:,:,:)
+    real(kind=dp_t), pointer :: ep(:,:,:,:),rpp(:,:,:,:)
     real(kind=dp_t), pointer :: sop(:,:,:,:), snp(:,:,:,:)
     real(kind=dp_t), pointer :: ump(:,:,:,:), vmp(:,:,:,:), wmp(:,:,:,:)
     real(kind=dp_t), pointer :: np(:,:,:,:)
 
-    integer :: n,i,lo(sold(1)%dim),hi(sold(1)%dim),ng_so,ng_sn,ng_um,ng_n,ng_e
+    integer :: n,i,lo(sold(1)%dim),hi(sold(1)%dim),ng_so,ng_sn,ng_um,ng_n,ng_e,ng_rp
     integer :: r
 
 
-    ! construct a multifab containing  [ rho' (Utilde . e_r) ]
+    ! construct a multifab containing  [ rho' (Utilde . e_r) ] and another
+    ! containing [ rho' ]
     ng_so = sold(1)%ng
     ng_sn = snew(1)%ng
     ng_um = umac(1,1)%ng    ! here we are assuming all components have the 
@@ -466,12 +491,14 @@ contains
 
     do n=1,nlevs
 
-       call multifab_build(eta_cart(n), sold(n)%la, 1, 1)
+       call multifab_build(     eta_cart(n), sold(n)%la, 1, 1)
+       call multifab_build(rhoprime_cart(n), sold(n)%la, 1, 1)
 
        do i=1,eta_cart(n)%nboxes
           if ( multifab_remote(eta_cart(n),i) ) cycle
 
           ep  => dataptr(eta_cart(n), i)
+          rpp  => dataptr(rhoprime_cart(n), i)
           sop => dataptr(sold(n), i)
           snp => dataptr(snew(n), i)
           ump => dataptr(umac(n,1), i)
@@ -482,12 +509,14 @@ contains
           lo = lwb(get_box(eta_cart(n),i))
           hi = upb(get_box(eta_cart(n),i))
 
-          ng_e = eta_cart(n)%ng 
+          ng_e = eta_cart(n)%ng
+          ng_rp = rhoprime_cart(n)%ng 
 
           call construct_eta_cart(n, sop(:,:,:,rho_comp), ng_so, &
                                   snp(:,:,:,rho_comp), ng_sn, &
                                   ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
                                   np(:,:,:,:), ng_n, ep(:,:,:,1), ng_e, &
+                                  rpp(:,:,:,1), ng_rp, &
                                   rho0_old(n,:), rho0_new(n,:), &
                                   dx(n,:), lo, hi)
           
@@ -502,9 +531,11 @@ contains
        ! fill ghost cells for two adjacent grids at the same level
        ! this includes periodic domain boundary ghost cells
        call multifab_fill_boundary(eta_cart(nlevs))
+       call multifab_fill_boundary(rhoprime_cart(nlevs))
 
        ! fill non-periodic domain boundary ghost cells
        call multifab_physbc(eta_cart(nlevs),1,foextrap_comp,1,the_bc_level(nlevs))
+       call multifab_physbc(rhoprime_cart(nlevs),1,foextrap_comp,1,the_bc_level(nlevs))
 
     else
 
@@ -513,6 +544,7 @@ contains
 
           ! set level n-1 data to be the average of the level n data covering it
           call ml_cc_restriction(eta_cart(n-1)    ,eta_cart(n)    ,mla%mba%rr(n-1,:))
+          call ml_cc_restriction(rhoprime_cart(n-1)    ,rhoprime_cart(n)    ,mla%mba%rr(n-1,:))
 
           ! fill level n ghost cells using interpolation from level n-1 data
           ! note that multifab_fill_boundary and multifab_physbc are called for
@@ -521,14 +553,23 @@ contains
                                          ng_e,mla%mba%rr(n-1,:), &
                                          the_bc_level(n-1), the_bc_level(n), &
                                          1,foextrap_comp,1)
+
+          call multifab_fill_ghost_cells(rhoprime_cart(n),rhoprime_cart(n-1), &
+                                         ng_rp,mla%mba%rr(n-1,:), &
+                                         the_bc_level(n-1), the_bc_level(n), &
+                                         1,foextrap_comp,1)
        enddo
 
     end if
     
     
-    ! average 
+    ! compute etarho_cc as the average of eta_cart = [ rho' (Utilde . e_r) ]
     call average(mla,eta_cart,etarho_cc,dx,1)
 
+    ! compute div_etarho using paper III, Eq. 28, as 
+    ! div_etarho = - Avg { [rho '] } / dt
+    call average(mla,rhoprime_cart,div_etarho,dx,1)
+    div_etarho(:,:) = -div_etarho(:,:)/dt
 
     do n=1,nlevs
        call destroy(eta_cart(n))
@@ -554,21 +595,22 @@ contains
 
   subroutine construct_eta_cart(n, rho_old, ng_so, rho_new, ng_sn, &
                                 umac, vmac, wmac, ng_um, &
-                                normal, ng_n, eta_cart, ng_e, &
+                                normal, ng_n, eta_cart, ng_e, rhoprime_cart, ng_rp, &
                                 rho0_old, rho0_new, dx, lo, hi)
 
     use bl_constants_module
     use geometry, only: nr_fine
     use fill_3d_module
 
-    integer        , intent(in   ) :: n,lo(:),hi(:),ng_so, ng_sn, ng_um, ng_n, ng_e
-    real(kind=dp_t), intent(in   ) ::  rho_old(lo(1)-ng_so:,lo(2)-ng_so:,lo(3)-ng_so:)
-    real(kind=dp_t), intent(in   ) ::  rho_new(lo(1)-ng_sn:,lo(2)-ng_sn:,lo(3)-ng_sn:)
-    real(kind=dp_t), intent(in   ) ::     umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)    
-    real(kind=dp_t), intent(in   ) ::     vmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)    
-    real(kind=dp_t), intent(in   ) ::     wmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)    
-    real(kind=dp_t), intent(in   ) ::   normal(lo(1)-ng_n :,lo(2)-ng_n :,lo(3)-ng_n :,:)
-    real(kind=dp_t), intent(inout) :: eta_cart(lo(1)-ng_e :,lo(2)-ng_e :,lo(3)-ng_e :)
+    integer        , intent(in   ) :: n,lo(:),hi(:),ng_so, ng_sn, ng_um, ng_n, ng_e, ng_rp
+    real(kind=dp_t), intent(in   ) ::       rho_old(lo(1)-ng_so:,lo(2)-ng_so:,lo(3)-ng_so:)
+    real(kind=dp_t), intent(in   ) ::       rho_new(lo(1)-ng_sn:,lo(2)-ng_sn:,lo(3)-ng_sn:)
+    real(kind=dp_t), intent(in   ) ::          umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)    
+    real(kind=dp_t), intent(in   ) ::          vmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)    
+    real(kind=dp_t), intent(in   ) ::          wmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)    
+    real(kind=dp_t), intent(in   ) ::        normal(lo(1)-ng_n :,lo(2)-ng_n :,lo(3)-ng_n :,:)
+    real(kind=dp_t), intent(inout) ::      eta_cart(lo(1)-ng_e :,lo(2)-ng_e :,lo(3)-ng_e :)
+    real(kind=dp_t), intent(inout) :: rhoprime_cart(lo(1)-ng_rp:,lo(2)-ng_rp:,lo(3)-ng_rp:)
     real(kind=dp_t), intent(in   ) :: rho0_old(0:), rho0_new(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
 
@@ -600,6 +642,8 @@ contains
              eta_cart(i,j,k) = (HALF*(rho_old(i,j,k) + rho_new(i,j,k)) - &
                                 rho0_cart(i,j,k,1)) * Utilde_dot_er
 
+             rhoprime_cart(i,j,k) = HALF*(rho_old(i,j,k) + rho_new(i,j,k)) - &
+                  rho0_cart(i,j,k,1)
           enddo
        enddo
     enddo

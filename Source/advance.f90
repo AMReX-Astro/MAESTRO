@@ -13,7 +13,8 @@ contains
                               rho0_new,rhoh0_new,p0_old,p0_new,tempbar,gamma1bar,w0, &
                               rho_omegadot2,div_coeff_old,div_coeff_new, &
                               grav_cell_old,dx,time,dt,dtold,the_bc_tower, &
-                              dSdt,Source_old,Source_new,etarho,etarho_cc,psi,sponge,hgrhs, &
+                              dSdt,Source_old,Source_new,etarho,etarho_cc,div_etarho, &
+                              psi,sponge,hgrhs, &
                               istep)
 
     use bl_prof_module
@@ -92,6 +93,7 @@ contains
     type(multifab),  intent(inout) :: Source_new(:)
     real(dp_t)    ,  intent(inout) :: etarho(:,0:)
     real(dp_t)    ,  intent(inout) :: etarho_cc(:,0:)
+    real(dp_t)    ,  intent(inout) :: div_etarho(:,0:)
     real(dp_t)    ,  intent(inout) :: psi(:,0:)
     type(multifab),  intent(in   ) :: sponge(:)
     type(multifab),  intent(inout) :: hgrhs(:)
@@ -633,10 +635,12 @@ contains
        if (use_etarho) then
 
           if (spherical .eq. 0) then
-             call make_etarho_planar(nlevs,etarho,etarho_cc,etarhoflux,mla)
+             call make_etarho_planar(nlevs,etarho,etarho_cc,div_etarho, &
+                                     etarhoflux,mla)
           else
-             call make_etarho_spherical(nlevs,s1,s2,umac,rho0_old,rho0_new,dx,normal, &
-                                        etarho,etarho_cc,mla,the_bc_tower%bc_tower_array)
+             call make_etarho_spherical(nlevs,s1,s2,umac,rho0_old,rho0_new,dx,dt,normal, &
+                                        etarho,etarho_cc,div_etarho, &
+                                        mla,the_bc_tower%bc_tower_array)
           endif
 
        endif
@@ -1113,10 +1117,12 @@ contains
           if (use_etarho) then
 
              if (spherical .eq. 0) then
-                call make_etarho_planar(nlevs,etarho,etarho_cc,etarhoflux,mla)
+                call make_etarho_planar(nlevs,etarho,etarho_cc,div_etarho, &
+                                        etarhoflux,mla)
              else
-                call make_etarho_spherical(nlevs,s1,s2,umac,rho0_old,rho0_new,dx,normal, &
-                                           etarho,etarho_cc,mla,the_bc_tower%bc_tower_array)
+                call make_etarho_spherical(nlevs,s1,s2,umac,rho0_old,rho0_new,dx,dt,normal, &
+                                           etarho,etarho_cc,div_etarho, &
+                                           mla,the_bc_tower%bc_tower_array)
              endif
 
           endif
