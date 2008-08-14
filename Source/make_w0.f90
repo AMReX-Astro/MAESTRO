@@ -17,7 +17,7 @@ module make_w0_module
 contains
 
   subroutine make_w0(nlevs,w0,w0_old,w0_force,Sbar_in,rho0_old,rho0_new,p0_old,p0_new, &
-                     gamma1bar_old,gamma1bar_new,delta_p0_ptherm_bar,psi,etarho,etarho_cc, &
+                     gamma1bar_old,gamma1bar_new,p0_minus_pthermbar,psi,etarho,etarho_cc, &
                      dt,dtold)
 
     use parallel
@@ -37,7 +37,7 @@ contains
     real(kind=dp_t), intent(in   ) :: rho0_old(:,0:), rho0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:), p0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar_old(:,0:), gamma1bar_new(:,0:)
-    real(kind=dp_t), intent(in   ) :: delta_p0_ptherm_bar(:,0:)
+    real(kind=dp_t), intent(in   ) :: p0_minus_pthermbar(:,0:)
     real(kind=dp_t), intent(in   ) :: Sbar_in(:,0:)
     real(kind=dp_t), intent(in   ) :: dt,dtold
 
@@ -53,7 +53,7 @@ contains
     if (spherical .eq. 0) then
 
        call make_w0_planar(nlevs,w0,w0_old,Sbar_in,p0_old,p0_new,gamma1bar_old, &
-                           gamma1bar_new,delta_p0_ptherm_bar,psi,w0_force,dt,dtold)
+                           gamma1bar_new,p0_minus_pthermbar,psi,w0_force,dt,dtold)
 
     else
 
@@ -63,7 +63,7 @@ contains
           call make_w0_spherical(n,w0(n,:),w0_old(n,0:),Sbar_in(n,0:), &
                                  rho0_old(n,:),rho0_new(n,:),p0_old(n,0:),p0_new(n,0:), &
                                  gamma1bar_old(n,0:),gamma1bar_new(n,0:), &
-                                 delta_p0_ptherm_bar(n,0:), &
+                                 p0_minus_pthermbar(n,0:), &
                                  etarho(n,0:),etarho_cc(n,0:), &
                                  w0_force(n,0:),dt,dtold)
        end do
@@ -86,7 +86,7 @@ contains
   end subroutine make_w0
 
   subroutine make_w0_planar(nlevs,w0,w0_old,Sbar_in,p0_old,p0_new, &
-                            gamma1bar_old,gamma1bar_new,delta_p0_ptherm_bar, &
+                            gamma1bar_old,gamma1bar_new,p0_minus_pthermbar, &
                             psi,w0_force,dt,dtold)
 
     use geometry, only: nr_fine, r_start_coord, r_end_coord, dr, base_cutoff_density_coord, &
@@ -102,7 +102,7 @@ contains
     real(kind=dp_t), intent(in   ) :: Sbar_in(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:), p0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar_old(:,0:), gamma1bar_new(:,0:)
-    real(kind=dp_t), intent(in   ) :: delta_p0_ptherm_bar(:,0:)
+    real(kind=dp_t), intent(in   ) :: p0_minus_pthermbar(:,0:)
     real(kind=dp_t), intent(in   ) :: psi(:,0:)
     real(kind=dp_t), intent(inout) :: w0_force(:,0:)
     real(kind=dp_t), intent(in   ) :: dt,dtold
@@ -152,7 +152,7 @@ contains
                   (p0_old(n,r-1)+p0_new(n,r-1))/4.0d0
 
              if (r-1 .lt. base_cutoff_density_coord(n)) then
-                volume_discrepancy = dpdt_factor * delta_p0_ptherm_bar(n,r-1)/dt
+                volume_discrepancy = dpdt_factor * p0_minus_pthermbar(n,r-1)/dt
              else
                 volume_discrepancy = 0.0d0
              end if
@@ -211,7 +211,7 @@ contains
   end subroutine make_w0_planar
 
   subroutine make_w0_spherical(n,w0,w0_old,Sbar_in,rho0,rho0_new,p0,p0_new, &
-                               gamma1bar,gamma1bar_new,delta_p0_ptherm_bar, &
+                               gamma1bar,gamma1bar_new,p0_minus_pthermbar, &
                                etarho,etarho_cc,w0_force,dt,dtold)
 
     use geometry, only: r_cc_loc, nr_fine, r_edge_loc, dr
@@ -227,7 +227,7 @@ contains
     real(kind=dp_t), intent(in   ) :: Sbar_in(0:)
     real(kind=dp_t), intent(in   ) :: rho0(0:),rho0_new(0:)
     real(kind=dp_t), intent(in   ) :: p0(0:),p0_new(0:)
-    real(kind=dp_t), intent(in   ) :: gamma1bar(0:),gamma1bar_new(0:),delta_p0_ptherm_bar(0:)
+    real(kind=dp_t), intent(in   ) :: gamma1bar(0:),gamma1bar_new(0:),p0_minus_pthermbar(0:)
     real(kind=dp_t), intent(in   ) :: etarho(0:),etarho_cc(0:)
     real(kind=dp_t), intent(inout) :: w0_force(0:)
     real(kind=dp_t), intent(in   ) :: dt,dtold
@@ -239,7 +239,7 @@ contains
     real(kind=dp_t), allocatable :: c(:),d(:),e(:),u(:),rhs(:)
     real(kind=dp_t), allocatable :: m(:)
     real(kind=dp_t)              :: w0_avg, div_avg, dt_avg
-    real(kind=dp_t), allocatable :: w0_bar(:)
+    real(kind=dp_t), allocatable :: w0_from_Sbar(:)
     real(kind=dp_t), allocatable :: grav_edge(:)
 
     real(kind=dp_t), parameter :: eps = 1.d-8
@@ -262,7 +262,7 @@ contains
 
     ! Edge-centered
     allocate(c(0:nr_fine),d(0:nr_fine),e(0:nr_fine),rhs(0:nr_fine),u(0:nr_fine))
-    allocate(w0_bar(0:nr_fine))
+    allocate(w0_from_Sbar(0:nr_fine))
     allocate(grav_edge(0:nr_fine))
 
 
@@ -277,23 +277,23 @@ contains
     ! NOTE:  we first solve for the w0 resulting only from Sbar -- then we will
     ! solve for the update to w0.  We integrate d/dr (r^2 w0) = (r^2 Sbar)
 
-    w0_bar = ZERO
+    w0_from_Sbar = ZERO
     do r=1,nr_fine
 
        if (rho0(r-1) .gt. base_cutoff_density) then
-          volume_discrepancy = dpdt_factor * delta_p0_ptherm_bar(r-1)/dt
+          volume_discrepancy = dpdt_factor * p0_minus_pthermbar(r-1)/dt
        else
           volume_discrepancy = ZERO
        endif
 
-       w0_bar(r) = w0_bar(r-1) + dr(n) * Sbar_in(r-1) * r_cc_loc(n,r-1)**2 - &
+       w0_from_Sbar(r) = w0_from_Sbar(r-1) + dr(n) * Sbar_in(r-1) * r_cc_loc(n,r-1)**2 - &
             dr(n)* volume_discrepancy * r_cc_loc(n,r-1)**2 / &
             (gamma1bar_nph(r-1)*p0_nph(r-1))
 
     end do
 
     do r = 1,nr_fine
-       w0_bar(r) = w0_bar(r) / r_edge_loc(n,r)**2
+       w0_from_Sbar(r) = w0_from_Sbar(r) / r_edge_loc(n,r)**2
     end do
 
 
@@ -330,7 +330,7 @@ contains
 
     do r = 1,nr_fine-1
        dpdr = (p0_nph(r)-p0_nph(r-1))/dr(n)
-       rhs(r) = four * dpdr * w0_bar(r) / r_edge_loc(n,r) - &
+       rhs(r) = four * dpdr * w0_from_Sbar(r) / r_edge_loc(n,r) - &
             grav_edge(r) * (r_cc_loc(n,r  )**2 * etarho_cc(r  ) - &
                             r_cc_loc(n,r-1)**2 * etarho_cc(r-1)) / &
                            (dr(n) * r_edge_loc(n,r)**2) - &
@@ -357,7 +357,7 @@ contains
     end do
 
     do r=0,nr_fine
-       w0(r) = w0(r) + w0_bar(r)
+       w0(r) = w0(r) + w0_from_Sbar(r)
     end do
 
     ! Compute the forcing term in the base state velocity equation, - 1/rho0 grad pi0 
