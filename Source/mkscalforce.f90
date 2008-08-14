@@ -25,8 +25,9 @@ module mkscalforce_module
 
 contains
 
-  subroutine mkrhohforce(nlevs,scal_force,thermal,umac, p0_old, p0_new, rho0_old, rho0_new, &
-                         psi,normal,dx, add_thermal,mla,the_bc_level)
+  subroutine mkrhohforce(nlevs, scal_force, is_prediction, thermal, umac, &
+                         p0_old, p0_new, rho0_old, rho0_new, &
+                         psi, normal, dx, add_thermal, mla, the_bc_level)
 
     use bl_prof_module
     use variables, only: foextrap_comp, rhoh_comp
@@ -38,6 +39,7 @@ contains
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: scal_force(:)
+    logical        , intent(in   ) :: is_prediction
     type(multifab) , intent(in   ) :: thermal(:)
     type(multifab) , intent(in   ) :: umac(:,:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:), p0_new(:,0:)
@@ -91,18 +93,20 @@ contains
           hi = upb(get_box(scal_force(n),i))
           select case (dm)
           case (2)
-             call mkrhohforce_2d(n,fp(:,:,1,rhoh_comp), ng_f, vmp(:,:,1,1), ng_um, &
+             call mkrhohforce_2d(n,fp(:,:,1,rhoh_comp), ng_f, is_prediction, &
+                                 vmp(:,:,1,1), ng_um, &
                                  tp(:,:,1,1), ng_th, lo, hi, p0_old(n,:), p0_new(n,:), &
                                  rho0, grav, psi(n,:), add_thermal)
           case(3)
              wmp  => dataptr(umac(n,3), i)
              if (spherical .eq. 0) then
-                call mkrhohforce_3d(n,fp(:,:,:,rhoh_comp), ng_f, wmp(:,:,:,1), ng_um, &
+                call mkrhohforce_3d(n,fp(:,:,:,rhoh_comp), ng_f, is_prediction, &
+                                    wmp(:,:,:,1), ng_um, &
                                     tp(:,:,:,1), ng_th, lo, hi, p0_old(n,:), p0_new(n,:), &
                                     rho0, grav, psi(n,:), add_thermal)
              else
                 np => dataptr(normal(n), i)
-                call mkrhohforce_3d_sphr(n,fp(:,:,:,rhoh_comp), ng_f, &
+                call mkrhohforce_3d_sphr(n,fp(:,:,:,rhoh_comp), ng_f, is_prediction, &
                                          ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
                                          tp(:,:,:,1), ng_th, lo, hi, dx(n,:), np(:,:,:,:), &
                                          ng_n, p0_old(n,:), p0_new(n,:), rho0, grav, &
@@ -148,7 +152,8 @@ contains
     
   end subroutine mkrhohforce
 
-  subroutine mkrhohforce_2d(n,rhoh_force,ng_f,wmac,ng_um,thermal,ng_th,lo,hi, &
+  subroutine mkrhohforce_2d(n,rhoh_force,ng_f,is_prediction, &
+                            wmac,ng_um,thermal,ng_th,lo,hi, &
                             p0_old,p0_new,rho0,grav,psi,add_thermal)
 
     use geometry, only: dr, nr, base_cutoff_density_coord
@@ -162,6 +167,7 @@ contains
     ! of the rhoh_force for the update, they will be used to time-center.
 
     integer,         intent(in   ) :: n,lo(:),hi(:),ng_f,ng_um,ng_th
+    logical,         intent(in   ) :: is_prediction
     real(kind=dp_t), intent(  out) :: rhoh_force(lo(1)-ng_f :,lo(2)-ng_f :)
     real(kind=dp_t), intent(in   ) ::       wmac(lo(1)-ng_um:,lo(2)-ng_um:)
     real(kind=dp_t), intent(in   ) ::    thermal(lo(1)-ng_th:,lo(2)-ng_th:)
@@ -215,7 +221,8 @@ contains
 
   end subroutine mkrhohforce_2d
 
-  subroutine mkrhohforce_3d(n,rhoh_force,ng_f,wmac,ng_um,thermal,ng_th,lo,hi,&
+  subroutine mkrhohforce_3d(n,rhoh_force,ng_f,is_prediction, &
+                            wmac,ng_um,thermal,ng_th,lo,hi,&
                             p0_old,p0_new,rho0,grav,psi,add_thermal)
 
     use geometry, only: dr, nr, base_cutoff_density_coord
@@ -225,6 +232,7 @@ contains
     ! compute the source terms for the non-reactive part of the enthalpy equation {w dp0/dr}
 
     integer,         intent(in   ) :: n,lo(:),hi(:),ng_f,ng_um,ng_th
+    logical,         intent(in   ) :: is_prediction
     real(kind=dp_t), intent(  out) :: rhoh_force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :)
     real(kind=dp_t), intent(in   ) ::       wmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(in   ) ::    thermal(lo(1)-ng_th:,lo(2)-ng_th:,lo(3)-ng_th:)
@@ -282,7 +290,8 @@ contains
 
   end subroutine mkrhohforce_3d
 
-  subroutine mkrhohforce_3d_sphr(n,rhoh_force,ng_f,umac,vmac,wmac,ng_um,thermal,ng_th, &
+  subroutine mkrhohforce_3d_sphr(n,rhoh_force,ng_f,is_prediction, &
+                                 umac,vmac,wmac,ng_um,thermal,ng_th, &
                                  lo,hi,dx,normal,ng_n,p0_old,p0_new,rho0,grav,psi, &
                                  add_thermal)
 
@@ -294,6 +303,7 @@ contains
     ! compute the source terms for the non-reactive part of the enthalpy equation {w dp0/dr}
 
     integer,         intent(in   ) :: n,lo(:),hi(:),ng_f,ng_um,ng_th,ng_n
+    logical,         intent(in   ) :: is_prediction
     real(kind=dp_t), intent(  out) :: rhoh_force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :)
     real(kind=dp_t), intent(in   ) ::       umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(in   ) ::       vmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
