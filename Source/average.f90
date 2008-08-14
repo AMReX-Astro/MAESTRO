@@ -18,16 +18,14 @@ contains
 
   subroutine average(mla,phi,phibar,dx,incomp)
 
-    use geometry, only: nr_fine, r_start_coord, r_end_coord, spherical, center, dr, &
-         numdisjointchunks
+    use geometry, only: nr_fine, r_start_coord, r_end_coord, spherical, numdisjointchunks
     use bl_prof_module
     use bl_constants_module
     use restrict_base_module, only: fill_ghost_base
 
     type(ml_layout), intent(in   ) :: mla
     integer        , intent(in   ) :: incomp
-    type(multifab) , intent(inout) :: phi(:)   ! Need the out so layout_aveassoc() can 
-                                               ! modify the layout.
+    type(multifab) , intent(in   ) :: phi(:)
     real(kind=dp_t), intent(inout) :: phibar(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
 
@@ -62,7 +60,6 @@ contains
     if (ng == 0) then
        call bl_error("ERROR: ng = 0 in average")
     endif
-
 
     if (spherical .eq. 1) then
        allocate(ncell_grid(nlevs,0:nr_fine-1))

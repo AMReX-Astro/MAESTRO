@@ -65,7 +65,7 @@ contains
     logical,         intent(in   ) :: init_mode
     type(ml_layout), intent(inout) :: mla
     type(multifab),  intent(in   ) :: uold(:)
-    type(multifab),  intent(inout) :: sold(:) ! the out is needed only for calls to average
+    type(multifab),  intent(in   ) :: sold(:)
     type(multifab),  intent(inout) :: unew(:)
     type(multifab),  intent(inout) :: snew(:)
     type(multifab),  intent(inout) :: gpres(:)
@@ -113,7 +113,7 @@ contains
     type(multifab) :: delta_gamma1(mla%nlevel)
     type(multifab) :: rho_omegadot1(mla%nlevel)
     type(multifab) :: rho_Hext(mla%nlevel)
-    type(multifab) :: div_coeff_3d(mla%nlevel) ! Only needed for spherical.eq.1
+    type(multifab) :: div_coeff_3d(mla%nlevel)
     type(multifab) :: gamma1(mla%nlevel)
     type(multifab) :: umac(mla%nlevel,mla%dim)
     type(multifab) :: utrans(mla%nlevel,mla%dim)
@@ -128,7 +128,7 @@ contains
     real(dp_t), allocatable :: grav_cell_new(:,:)
     real(dp_t), allocatable :: rho0_nph(:,:)
     real(dp_t), allocatable :: p0_nph(:,:)
-    real(dp_t), allocatable :: delta_p0_ptherm_bar(:,:)
+    real(dp_t), allocatable :: p0_minus_pthermbar(:,:)
     real(dp_t), allocatable :: w0_force(:,:)
     real(dp_t), allocatable :: w0_old(:,:)
     real(dp_t), allocatable :: Sbar(:,:)
@@ -157,13 +157,13 @@ contains
     allocate(       grav_cell_new(nlevs,0:nr_fine-1))
     allocate(            rho0_nph(nlevs,0:nr_fine-1))
     allocate(              p0_nph(nlevs,0:nr_fine-1))
-    allocate( delta_p0_ptherm_bar(nlevs,0:nr_fine-1))
+    allocate(  p0_minus_pthermbar(nlevs,0:nr_fine-1))
     allocate(            w0_force(nlevs,0:nr_fine-1))
     allocate(              w0_old(nlevs,0:nr_fine  ))
     allocate(                Sbar(nlevs,0:nr_fine-1))
     allocate(       div_coeff_nph(nlevs,0:nr_fine-1))
     allocate(      div_coeff_edge(nlevs,0:nr_fine  ))
-    allocate(    rho_omegadotbar(nlevs,0:nr_fine-1,nspec))
+    allocate(     rho_omegadotbar(nlevs,0:nr_fine-1,nspec))
     allocate(         rho_Hextbar(nlevs,0:nr_fine-1))
     allocate(             rhoh0_1(nlevs,0:nr_fine-1))
     allocate(             rhoh0_2(nlevs,0:nr_fine-1))
@@ -211,22 +211,22 @@ contains
        base_cutoff_density_coord(n) = 2*base_cutoff_density_coord(n-1)
     end do
 
-  ! compute the coordinates of the burning cutoff density
-  burning_cutoff_density_coord(1) = r_end_coord(1,1)+1
-  do r=0,r_end_coord(1,1)
-     if (rho0_old(1,r) .lt. burning_cutoff_density .and. &
-          burning_cutoff_density_coord(1) .eq. r_end_coord(1,1)+1) then
-        burning_cutoff_density_coord(1) = r
-        exit
-     end if
-  end do
-  do n=2,nlevs
-     burning_cutoff_density_coord(n) = 2*burning_cutoff_density_coord(n-1)
-  end do
-
+    ! compute the coordinates of the burning cutoff density
+    burning_cutoff_density_coord(1) = r_end_coord(1,1)+1
+    do r=0,r_end_coord(1,1)
+       if (rho0_old(1,r) .lt. burning_cutoff_density .and. &
+            burning_cutoff_density_coord(1) .eq. r_end_coord(1,1)+1) then
+          burning_cutoff_density_coord(1) = r
+          exit
+       end if
+    end do
+    do n=2,nlevs
+       burning_cutoff_density_coord(n) = 2*burning_cutoff_density_coord(n-1)
+    end do
+    
     ! tempbar is only used as an initial guess for eos calls
     call average(mla,sold,tempbar,dx,temp_comp)
-
+    
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 1 -- define average expansion at time n+1/2
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -263,18 +263,18 @@ contains
        call multifab_build(ptherm_old(n), mla%la(n), 1, 0)
     end do
     
+    ! ptherm_old now holds the thermodynamic p computed from sold(rho,h,X)
     call makePfromRhoH(nlevs,sold,ptherm_old,tempbar,mla,the_bc_tower%bc_tower_array,dx)
     
-    ! compute Avg(p0 - ptherm)
     do n=1,nlevs
        call multifab_build(p0_cart(n), mla%la(n), 1, 1)
-       call multifab_build(delta_p_term(n), mla%la(n), 1, 1)
     enddo
 
+     ! p0_cart now holds p0_old
     call put_1d_array_on_cart(nlevs,p0_old,p0_cart,foextrap_comp,.false.,.false.,dx, &
-         the_bc_tower%bc_tower_array,mla)
+                              the_bc_tower%bc_tower_array,mla)
 
-    ! p0_cart now holds (p0 - ptherm)
+    ! p0_cart now holds (p0_old - ptherm_old)
     do n=1,nlevs
        call multifab_sub_sub(p0_cart(n),ptherm_old(n))
     enddo
@@ -296,7 +296,7 @@ contains
        do n=nlevs,2,-1
 
           ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction(p0_cart(n-1)    ,p0_cart(n)    ,mla%mba%rr(n-1,:))
+          call ml_cc_restriction(p0_cart(n-1),p0_cart(n),mla%mba%rr(n-1,:))
 
           ! fill level n ghost cells using interpolation from level n-1 data
           ! note that multifab_fill_boundary and multifab_physbc are called for
@@ -310,11 +310,16 @@ contains
 
     end if
     
-    call average(mla,p0_cart,delta_p0_ptherm_bar,dx,1)
+    ! p0_minus_pthermbar now holds 
+    ! Avg(p0_cart) = Avg(p0_old - ptherm_old) = p0_old - pthermbar_old
+    call average(mla,p0_cart,p0_minus_pthermbar,dx,1)
 
-    ! now put delta_p0_ptherm_bar onto a cart array -- this helps 
-    ! correct for the averaging -- store this in delta_p_term
-    call put_1d_array_on_cart(nlevs,delta_p0_ptherm_bar,delta_p_term,foextrap_comp, &
+    do n=1,nlevs
+       call multifab_build(delta_p_term(n), mla%la(n), 1, 1)
+    enddo
+
+    ! delta_p_term now holds p0_minus_pthermbar = p0_old - pthermbar_old
+    call put_1d_array_on_cart(nlevs,p0_minus_pthermbar,delta_p_term,foextrap_comp, &
                               .false.,.false.,dx,the_bc_tower%bc_tower_array,mla)
 
     ! fill the ghostcells of delta_p_term
@@ -348,8 +353,8 @@ contains
 
     end if
 
-
-    ! finish computing delta_p_term = (p0 - pthermbar) - (p0 - ptherm)
+    ! finish computing delta_p_term = (p0_old - pthermbar_old) - (p0_old - ptherm_old)
+    ! = ptherm_old - pthermbar_old
     do n = 1,nlevs
        call multifab_sub_sub(delta_p_term(n),p0_cart(n),1)
     enddo
@@ -370,7 +375,7 @@ contains
        call average(mla,Source_nph,Sbar,dx,1)
 
        call make_w0(nlevs,w0,w0_old,w0_force,Sbar,rho0_old,rho0_old,p0_old,p0_old, &
-                    gamma1bar,gamma1bar,delta_p0_ptherm_bar,psi,etarho,etarho_cc,dt,dtold)
+                    gamma1bar,gamma1bar,p0_minus_pthermbar,psi,etarho,etarho_cc,dt,dtold)
 
        if (spherical .eq. 1) then
           call put_w0_on_edges(nlevs,w0,w0mac,dx,normal)
@@ -736,7 +741,7 @@ contains
 
     rho0_nph = HALF*(rho0_old+rho0_new)
 
-    ! Define base state at half time for use in velocity advance!
+    ! Define base state at half time for use in velocity advance
     do n=1,nlevs
        call make_grav_cell(n,grav_cell_nph(n,:),rho0_nph(n,:))
     end do
@@ -792,16 +797,17 @@ contains
           call multifab_build(ptherm_new(n), mla%la(n), 1, 0)
        end do
        
+       ! ptherm_new now holds the thermodynamic p computed from snew(rho h X)
        call makePfromRhoH(nlevs,snew,ptherm_new,tempbar,mla,the_bc_tower%bc_tower_array,dx)
        
        ! compute Avg(p0 - ptherm) (time-centered)
        do n=1,nlevs
           call multifab_build(p0_cart(n), mla%la(n), 1, 1)
-          call multifab_build(delta_p_term(n), mla%la(n), 1, 1)
        enddo
 
        p0_nph = HALF*(p0_old + p0_new)
 
+       ! p0_cart now holds p0_nph
        call put_1d_array_on_cart(nlevs,p0_nph,p0_cart,foextrap_comp,.false.,.false.,dx, &
                                  the_bc_tower%bc_tower_array,mla)
     
@@ -809,14 +815,14 @@ contains
           call multifab_build(ptherm_nph(n), mla%la(n), 1, 0)
        end do
 
-       ! we need a time-centered ptherm for the average
+       ! ptherm_nph now holds the average of ptherm_old and ptherm_new
        do n=1,nlevs
           call multifab_copy(ptherm_nph(n), ptherm_old(n))
           call multifab_plus_plus(ptherm_nph(n), ptherm_new(n))
           call multifab_div_div_s(ptherm_nph(n), TWO)
        enddo
 
-       ! p0_cart now holds (p0 - ptherm)
+       ! p0_cart now holds (p0_nph - ptherm_nph)
        do n=1, nlevs
           call multifab_sub_sub(p0_cart(n),ptherm_nph(n))
        enddo
@@ -853,13 +859,17 @@ contains
 
        end if
 
-       call average(mla,p0_cart,delta_p0_ptherm_bar,dx,1)
+       ! p0_minus_pthermbar now holds
+       ! Avg(p0_cart) = Avg(p0_nph - ptherm_nph) = p0_nph - pthermbar_nph
+       call average(mla,p0_cart,p0_minus_pthermbar,dx,1)
 
-       ! now put delta_p0_ptherm_bar onto a cart array -- this helps
-       ! correct for the averaging -- store this in delta_p_term 
-       call put_1d_array_on_cart(nlevs,delta_p0_ptherm_bar,delta_p_term,foextrap_comp, &
+       do n=1,nlevs
+          call multifab_build(delta_p_term(n), mla%la(n), 1, 1)
+       enddo
+
+       ! delta_p_term now holds p0_minus_pthermbar = p0_nph - pthermbar_nph
+       call put_1d_array_on_cart(nlevs,p0_minus_pthermbar,delta_p_term,foextrap_comp, &
                                  .false.,.false.,dx,the_bc_tower%bc_tower_array,mla)
-
 
        ! now fill the ghostcells of delta_p_term
        if (nlevs .eq. 1) then
@@ -893,7 +903,8 @@ contains
 
        end if
 
-       ! finish computing delta_p_term = (p0 - pthermbar) - (p0 - ptherm)
+       ! finish computing delta_p_term = (p0_nph - pthermbar_nph) - (p0_nph - ptherm_nph)
+       ! = ptherm_nph - pthermbar_nph
        do n = 1,nlevs
           call multifab_sub_sub(delta_p_term(n),p0_cart(n),1)
        enddo
@@ -920,7 +931,7 @@ contains
           end if
 
           call make_w0(nlevs,w0,w0_old,w0_force,Sbar,rho0_old,rho0_new,p0_old,p0_new, &
-                       gamma1bar_old,gamma1bar,delta_p0_ptherm_bar,psi,etarho,etarho_cc,dt, &
+                       gamma1bar_old,gamma1bar,p0_minus_pthermbar,psi,etarho,etarho_cc,dt, &
                        dtold)
 
           if (spherical .eq. 1) then
@@ -1184,9 +1195,8 @@ contains
        end do
 
        call make_div_coeff(nlevs,div_coeff_new,rho0_new,p0_new,gamma1bar,grav_cell_new)
-       
-       ! end if corresponding to .not. do_half_alg
-    end if
+              
+    end if ! end if corresponding to .not. do_half_alg
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 10 -- compute S^{n+1} for the final projection
@@ -1364,11 +1374,11 @@ contains
              
           end if
 
-          call average(mla,p0_cart,delta_p0_ptherm_bar,dx,1)
+          call average(mla,p0_cart,p0_minus_pthermbar,dx,1)
           
-          ! now put delta_p0_ptherm_bar onto a cart array -- this helps 
+          ! now put p0_minus_pthermbar onto a cart array -- this helps 
           ! correct for the averaging -- store this in delta_p_term
-          call put_1d_array_on_cart(nlevs,delta_p0_ptherm_bar,delta_p_term,foextrap_comp, &
+          call put_1d_array_on_cart(nlevs,p0_minus_pthermbar,delta_p_term,foextrap_comp, &
                                     .false.,.false.,dx,the_bc_tower%bc_tower_array,mla)
           
           ! fill the ghostcells of delta_p_term
