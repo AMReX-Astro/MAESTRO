@@ -1418,7 +1418,6 @@ contains
           
           do n=1,nlevs
              call destroy(delta_p_term(n))
-             call destroy(ptherm_new(n))
           enddo
           
        end if
@@ -1427,6 +1426,7 @@ contains
 
     do n=1,nlevs
        call destroy(delta_gamma1_term(n))
+       call destroy(ptherm_new(n))
     end do
 
     if (spherical .eq. 1) then
