@@ -12,8 +12,9 @@
 \def\eb    {{\bf e}}
 \def\Ub    {{\bf U}}
 \def\Ubt   {\widetilde{\bf U}}
+\def\ut   {\widetilde{\bf U}}
 \def\wt    {\widetilde{w}}
-
+\def\er   {\bf e_r}
 \title{Notes on Perturbational Quantities}
 
 \setlength{\marginparwidth}{1.0in}
@@ -158,5 +159,109 @@ non-forcing part of the enthalpy equation analogously to Section \ref{Advancing 
 -\nabla\cdot\left\{\left[(\rho h)_0^{n+\half,{\rm avg}} 
 + (\rho h)'\right]\left(\Ubt + w_0\eb_r\right)\right\} + \wt\frac{\partial p_0}{\partial r} + \psi  \enskip .
 \end{equation}
+
+
+\subsection{Predicting $h$ ({\tt enthalpy\_pred\_type = 2})}
+
+\subsection{Predicting $T$ then $(rho h)'$ ({\tt enthalpy\_pred\_type = 3})}
+
+\subsection{Predicting $T$ then $h$ ({\tt enthalpy\_pred\_type = 4})}
+
+\subsection{Summary of Forcing}
+
+\begin{table*}[h]
+\begin{center}
+\caption{Forcing term into {\tt make\_edge\_scal} \newline}
+\begin{tabular}{c|c}
+\hline
+\hline
+{H PRED TYPE} &   {Force} \\
+\hline \\[-3mm]
+1  $((\rho h)^\prime)$ &  $(\tilde{w} \frac{\partial p_0}{\partial r}) - 
+ (\rho h)^\prime \; \nabla \cdot (\ut+w_0 \er) - 
+ \nabla \cdot (\ut (\rho h)_0)$  \\[2 mm]
+2  $(h)$ & $\frac{1}{\rho} (\psi + \tilde{w} 
+  \frac{\partial p_0}{\partial r})$ \\[2 mm]
+3  $(T)$ & $\frac{1}{\rho c_p} \left[ (1 - \rho h_p) 
+  (\psi + \tilde{w} \frac{\partial p_0}{\partial r}) \right]$ \\[2 mm]
+4  $(T)$ & $\frac{1}{\rho c_p} \left[ (1 - \rho h_p) (\psi + \tilde{w} 
+\frac{\partial p_0}{\partial r}) \right]$ \\[2 mm]
+\hline
+\end{tabular}
+\end{center}
+\end{table*}
+
+\begin{table*}[h]
+\begin{center}
+\caption{Quantity that goes into and out of make edge scal \newline}
+\begin{tabular}{c|c}
+\hline
+\hline
+{h pred type} & {h/T } \\
+\hline \\[-3mm]
+1 & $(\rho h)^\prime$ \\
+2 & $h$  \\
+3 & $T$  \\
+4 & $T$  \\
+\hline
+\end{tabular}
+\end{center}
+\end{table*}
+
+\begin{table*}
+\begin{center}
+\caption{When predicting temp ... \newline}
+\begin{tabular}{c|c|c|c}
+\hline
+\hline
+{type} & {Inputs } & {EOS inputs} & {output} \\
+\hline
+3 & $X$ and $\rho^\prime$ & $\rho = \rho_0 + \rho^\prime$ &  $(\rho h)^\prime = \rho h - (\rho h)_0$ \\
+   &                   & $   X = $ given & \\
+   &                   &                 & \\
+ 4 & $X$ and $\rho^\prime$ & $\rho = \rho_0 + \rho^\prime$ & $h$ \\
+   &                   & $   X = $ given & \\
+   &                   &                 & \\
+\hline
+\end{tabular}
+\end{center}
+\end{table*}
+
+
+\begin{table*}
+\begin{center}
+\caption{Quantity that goes into mkflux on edges \newline}
+\begin{tabular}{c|c|c}
+\hline
+\hline
+{h pred type} & {Species } & {h/T } \\
+\hline
+1 & $X$ and $\rho^\prime$ & $(\rho h)^\prime$ \\
+2 & $X$ and $\rho^\prime$ & $h$ \\
+3 & $X$ and $\rho^\prime$ & $(\rho h)^\prime$ \\
+4 & $X$ and $\rho^\prime$ & $h$ \\
+\hline
+\end{tabular}
+\end{center}
+\end{table*}
+
+\begin{table*}
+\begin{center}
+\caption{Quantity that is created in mkflux and passed into update scal\newline\
+}
+\begin{tabular}{c|c|c|c|c}
+       &            &              &\multicolumn{2}{c}{Forcing Term} \\
+{type} & {Species } & {$(\rho h)$} & {$(\rho X)$} & {$(\rho h)$} \\
+\hline 
+1 & $(\ut+w_0)(\rho_0+\rho^\prime) X          $ & $(\ut+w_0)(\rho h)^\prime
+ + \ut (\rho h)_0$ & 0 & $ (\tilde{w} \frac{\partial p_0}{\partial r}) $ \\[2mm]
+2 & $(\ut+w_0)(\rho_0+\rho^\prime) X          $ & $(\ut+w_0) (\rho_0+\rho^\prime) h$ & 0 & $ (\psi + \tilde{w} \frac{\partial p_0}{\partial r}) $ \\[2mm]
+3 & $(\ut+w_0)(\rho_0+\rho^\prime) X          $ & $(\ut+w_0)(\rho h)^\prime + \ut (\rho h)_0$ & 0 & $ (\tilde{w} \frac{\partial p_0}{\partial r}) $ \\[2mm]
+4 & $(\ut+w_0)(\rho_0+\rho^\prime) X          $ & $(\ut+w_0) (\rho_0+\rho^\prime) h$ & 0 & $ (\psi + \tilde{w} \frac{\partial p_0}{\partial r}) $ \\[2mm]
+\hline
+\end{tabular}
+\end{center}
+\end{table*}
+
 
 \end{document}
