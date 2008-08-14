@@ -566,8 +566,8 @@ contains
        do i = lo(1),hi(1)
 
           temp_eos(1) = s(i,j,temp_comp)
-          den_eos(1) = s(i,j,rho_comp)
-          xn_eos(1,:) = s(i,j,spec_comp:spec_comp+nspec-1)
+           den_eos(1) = s(i,j,rho_comp)
+          xn_eos(1,:) = s(i,j,spec_comp:spec_comp+nspec-1) / s(i,j,rho_comp)
 
           ! dens, temp, xmass inputs
          call eos(eos_input_rt, den_eos, temp_eos, &
@@ -637,7 +637,7 @@ contains
 
           temp_eos(1) = s(i,j,k,temp_comp)
           den_eos(1) = s(i,j,k,rho_comp)
-          xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)
+          xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1) / s(i,j,k,rho_comp)
              
           ! dens, temp, xmass inputs
          call eos(eos_input_rt, den_eos, temp_eos, &
@@ -729,7 +729,7 @@ contains
         
           temp_eos(1) = s(i,j,k,temp_comp)
           den_eos(1) = s(i,j,k,rho_comp)
-          xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)
+          xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1) / s(i,j,k,rho_comp)
 
           ! dens, temp, xmass inputs
          call eos(eos_input_rt, den_eos, temp_eos, &
