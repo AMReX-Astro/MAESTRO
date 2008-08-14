@@ -3,7 +3,7 @@ module mkscalforce_module
   ! this module contains the 2d and 3d routines that make the forcing
   ! terms for the scalar equations.
   ! 
-  ! mkrhohforce computes the  w dp/dr  for rho*h evolution
+  ! mkrhohforce computes the  wtilde dp/dr + psi source for rho*h evolution
   !
   ! mktempforce computes the source terms that appear in the
   ! temperature evolution equation.  Note, this formulation is only
@@ -36,6 +36,8 @@ contains
     use multifab_fill_ghost_module
     use multifab_physbc_module
     use make_grav_module
+    use probin_module, only: enthalpy_pred_type
+    use pred_parameters
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: scal_force(:)
@@ -67,6 +69,14 @@ contains
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "mkrhohforce")
+
+    ! if we are doing the prediction, then it only makes sense to be in
+    ! this routine if the quantity we are predicting is (rho h)' or h
+    if (is_prediction .AND. &
+         (enthalpy_pred_type == predict_T_then_rhohprime .OR. &
+          enthalpy_pred_type == predict_T_then_h)) then
+       call bl_error("ERROR: should not call mkrhohforce when predicting T")
+    endif
 
     dm = scal_force(1)%dim
       
@@ -181,7 +191,8 @@ contains
     real(kind=dp_t) :: gradp0, wadv
     integer :: i,j
 
-    ! Add w d(p0)/dz 
+
+    ! Add wtilde d(p0)/dz 
     do j = lo(2),hi(2)
 
        if (j .lt. base_cutoff_density_coord(n)) then
@@ -199,17 +210,21 @@ contains
           wadv = HALF*(wmac(i,j)+wmac(i,j+1))
           rhoh_force(i,j) =  wadv * gradp0           
        end do
+    enddo
 
-       ! add psi as a force only if we are dealing with the full (rho h) or h,
-       ! not the perturbational form.
-       if ((enthalpy_pred_type .eq. predict_h) .or. &
-           (enthalpy_pred_type .eq. predict_T_then_h)) then
+
+    ! psi should always be in the force if we are doing the final update
+    ! For prediction, it should not be in the force if we are predicting
+    ! (rho h)', but should be there if we are predicting h
+    if ((is_prediction .AND. enthalpy_pred_type == predict_h) .OR. &
+         (.NOT. is_prediction)) then
+       do j = lo(2),hi(2)
           do i = lo(1),hi(1)
              rhoh_force(i,j) =  rhoh_force(i,j)  + psi(j)
           end do
-       endif
+       end do
+    endif
 
-    end do
 
     if (add_thermal) then
        do j=lo(2),hi(2)
@@ -246,6 +261,7 @@ contains
     real(kind=dp_t) :: gradp0,wadv
     integer :: i,j,k
 
+    ! Add wtilde d(p0)/dz 
     do k = lo(3),hi(3)
 
        if (k .lt. base_cutoff_density_coord(n)) then
@@ -264,19 +280,22 @@ contains
              rhoh_force(i,j,k) = wadv * gradp0 
           end do
        end do
+    enddo
 
-       ! add psi as a force only if we are dealing with the full (rho h) or h,
-       ! not the perturbational form.
-       if ((enthalpy_pred_type .eq. predict_h) .or. &
-           (enthalpy_pred_type .eq. predict_T_then_h)) then
+    ! psi should always be in the force if we are doing the final update
+    ! For prediction, it should not be in the force if we are predicting
+    ! (rho h)', but should be there if we are predicting h
+    if ((is_prediction .AND. enthalpy_pred_type == predict_h) .OR. &
+         (.NOT. is_prediction)) then
+       do k = lo(3),hi(3)
           do j = lo(2),hi(2)
              do i = lo(1),hi(1)
                 rhoh_force(i,j,k) = rhoh_force(i,j,k) + psi(k)
              end do
           end do
-       endif
+       enddo
+    endif
        
-    end do
 
     if (add_thermal) then
        do k=lo(3),hi(3)
@@ -324,6 +343,7 @@ contains
     real(kind=dp_t), allocatable :: psi_cart(:,:,:,:)
     integer :: i,j,k,r
 
+
     allocate(gradp_rad(0:nr_fine-1))
     allocate(gradp_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
 
@@ -340,8 +360,6 @@ contains
        else
           gradp_rad(r) = HALF * ( p0_old(r+1) + p0_new(r+1) &
                                  -p0_old(r  ) - p0_new(r  ) ) / dr(n)
-!         gradp_rad(r) = FOURTH * ( p0_old(r+1) + p0_new(r+1) &
-!                                  -p0_old(r-1) - p0_new(r-1) ) / dr(n)
        end if
 
     end do
@@ -364,19 +382,18 @@ contains
        end do
     end do
 
-    ! add psi as a force only if we are dealing with the full (rho h) or h,
-    ! not the perturbational form.
-    if ((enthalpy_pred_type .eq. predict_h) .or. &
-        (enthalpy_pred_type .eq. predict_T_then_h)) then 
-
+    ! psi should always be in the force if we are doing the final update
+    ! For prediction, it should not be in the force if we are predicting
+    ! (rho h)', but should be there if we are predicting h
+    if ((is_prediction .AND. enthalpy_pred_type == predict_h) .OR. &
+         (.NOT. is_prediction)) then
        do k = lo(3),hi(3)
           do j = lo(2),hi(2)
              do i = lo(1),hi(1)
                 rhoh_force(i,j,k) = rhoh_force(i,j,k) + psi_cart(i,j,k,1)
              enddo
           enddo
-       enddo
-       
+       enddo       
     endif
 
     if (add_thermal) then
