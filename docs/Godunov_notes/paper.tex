@@ -225,15 +225,15 @@ In {\tt scalar\_advance}, we call {\tt make\_edge\_scal} to compute $\rho^{'\edg
 \item For {\tt enthalpy\_pred\_type} = 2, we predict $h$ to edges.
 \item For {\tt enthalpy\_pred\_type} = 3 and 4, we predict $T$ to edges.
 \end{itemize}
-The force terms are:
+The force terms are (noting reaction terms are excluded since they are handled in {\tt react\_base}):
 \begin{eqnarray}
 f_{\rho'} &=& -\rho'\nabla\cdot\Ub^{\mac} - \nabla\cdot(\rho_0\Ubt^{\mac}), \\
 f_{X_k} &=& 0, \\
 f_{(\rho h)'} &=& (\Ubt\cdot\eb_r)\frac{\partial p_0}{\partial r} -(\rho h)'\nabla\cdot\Ub^{\mac} - \nabla\cdot\left[(\rho h)_0\Ubt^{\mac}\right] + \nabla\cdot\kth\nabla T \\
 f_h &=& \frac{1}{\rho}\left(\psi + (\Ubt\cdot\eb_r)\frac{\partial p_0}{\partial r} + \nabla\cdot\kth\nabla T \right), \\
-f_T &=& \frac{1}{\rho c_p}\left\{(1-\rho h_p)\left[\psi + (\Ubt\cdot\eb_r)\frac{\partial p_0}{\partial r}\right] - \sum_k\rho\xi_k\dot\omega_k + \rho H_{\rm nuc} + \rho H_{\rm ext} + \nabla\cdot\kth\nabla T \right\}.
+f_T &=& \frac{1}{\rho c_p}\left\{(1-\rho h_p)\left[\psi + (\Ubt\cdot\eb_r)\frac{\partial p_0}{\partial r}\right] + \nabla\cdot\kth\nabla T \right\}.
 \end{eqnarray}
-If {\tt enthalpy\_pred\_type} = 3 or 4, we convert $T^{\edge}\rightarrow h^{\edge}$ using $h^{\edge} = h^{\edge}(\rho^{\edge},T^{\edge},X_k^{\edge})$, where $\rho^{\edge} = \rho^{'\edge} + \rho_0$.  Furthermore, if {\tt enthalpy\_pred\_type} = 3, we compute $(\rho h)^{'\edge} = (\rho h)^{\edge} - (\rho h)_0$.
+If {\tt enthalpy\_pred\_type} = 3 or 4, we convert $T^{\edge}\rightarrow h^{\edge}$ using $h^{\edge} = h^{\edge}(\rho^{\edge},T^{\edge},X_k^{\edge})$, where $\rho^{\edge} = \rho^{'\edge} + \rho_0$.  Furthermore, if {\tt enthalpy\_pred\_type} = 3, we compute $(\rho h)^{'\edge} = (\rho h)^{\edge} - (\rho h)_0$.  See the ``pert\_notes'' in {\tt MAESTRO/docs}.
 \subsection{2D Cartesian Case}
 We begin by computing a time-centered 1D extrapolation of $s$ to all faces.  The extrapolation of $s$ to x-faces is:
 \begin{eqnarray}
