@@ -215,19 +215,23 @@ contains
 
     else if(spherical .eq. 1) then
 
-       ! The spherical case is tricky because the base state only exists at one level
-       ! as defined by dr_base in the inputs file.
+       ! The spherical case is tricky because the base state only exists at 
+       ! one level with dr = dx
+
        ! Therefore, the goal here is to compute phibar(nlevs,:).
        ! phisum(nlevs,:,:) will be the volume weighted sum over all levels.
-       ! ncell(nlevs,:) will be the volume weighted number of cells over all levels.
+       ! ncell(nlevs,:) will be the volume weighted number of cells over 
+       ! all levels.
+
        ! We make sure to use mla%mask to not double count cells, i.e.,
        ! we only sum up cells that are not covered by finer cells.
-       ! we use the convention that a cell volume of 1 corresponds to dx(n=1)**3
+       ! we use the convention that a cell volume of 1 corresponds to 
+       ! dx(n=1)**3
 
-       ! First we compute ncell(nlevs,:) and phisum(nlevs,:,:) as if the finest level
-       ! were the only level in existence.
-       ! Then, we add contributions from each coarser cell that is not covered by 
-       ! a finer cell.
+       ! First we compute ncell(nlevs,:) and phisum(nlevs,:,:) as if the 
+       ! finest level were the only level in existence.
+       ! Then, we add contributions from each coarser cell that is not 
+       ! covered by a finer cell.
 
        do n=nlevs,1,-1
 
@@ -274,10 +278,10 @@ contains
           end if
        end do
        
-       ! temporary hack for the case where the outermost radial bin average to zero
-       ! because there is no contribution from any Cartesian cell that lies in this bin.
-       ! this needs to be addressed - perhaps in the definition of nr_fine in varden.f90
-       ! for spherical problems.
+       ! temporary hack for the case where the outermost radial bin average 
+       ! to zero because there is no contribution from any Cartesian cell 
+       ! that lies in this bin.  This needs to be addressed - perhaps in the 
+       ! definition of nr_fine in varden.f90 for spherical problems.
        if (ncell(nlevs,nr_fine-1) .eq. ZERO) then
           phibar(nlevs,nr_fine-1) = phibar(nlevs,nr_fine-2)
        end if
