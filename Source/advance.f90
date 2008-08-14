@@ -607,6 +607,7 @@ contains
     end do
 
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
+       write(6,*) '            : density_advance >>> '
        write(6,*) '            : scalar_advance >>> '
     end if
 
@@ -1086,6 +1087,7 @@ contains
        end do
 
        if (parallel_IOProcessor() .and. verbose .ge. 1) then
+          write(6,*) '            : density_advance >>>'
           write(6,*) '            : scalar_advance >>>'
        end if
 

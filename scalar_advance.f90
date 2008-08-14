@@ -31,9 +31,8 @@ contains
     use pert_form_module
     use cell_to_edge_module
     use rhoh_vs_t_module
-    use network,       only: nspec, spec_names
     use geometry,      only: spherical, nr_fine
-    use variables,     only: nscal, ntrac, spec_comp, trac_comp, temp_comp, &
+    use variables,     only: nscal, ntrac, trac_comp, temp_comp, &
                              rho_comp, rhoh_comp, foextrap_comp
     use probin_module, only: enthalpy_pred_type, use_thermal_diffusion, verbose
     use pred_parameters
@@ -141,11 +140,6 @@ contains
     ! note -- not sure if p0_old or p0_new should be used here
     ! call makeTfromRhoH(nlevs,sold,p0_old(:,:),tempbar(:,:),mla,the_bc_level,dx)
 
-    ! if we are predicting X on the edges, then convert the state arrays
-    ! (and base state) from (rho X) to X.  Note, only the time-level n
-    ! stuff need be converted, since that's all the prediction uses
-    call convert_rhoX_to_X(nlevs,sold,.true.,mla,the_bc_level)
-
     ! if we are predicting h on the edges, then convert the state arrays
     ! (and base state) from (rho h) to h.  Note, only the time-level n
     ! stuff need be converted, since that's all the prediction uses
@@ -162,12 +156,6 @@ contains
        call build(scal_force(n), sold(n)%la, nscal, 1)       
        call setval(scal_force(n),ZERO,all=.true.)
     end do
-
-    ! X force is zero - do nothing
-
-    ! make force for rho'
-    call modify_scal_force(nlevs,scal_force,sold,umac,rho0_old, &
-                           rho0_edge_old,w0,dx,rho0_old_cart,rho_comp,mla,the_bc_level)
 
     ! make force for either h, T, or (rho h)'
     if (enthalpy_pred_type .eq. predict_rhohprime) then
@@ -218,9 +206,6 @@ contains
                              .true.,mla,the_bc_level)
     end if
 
-    ! convert rho -> rho'
-    call put_in_pert_form(nlevs,sold,rho0_old,dx,rho_comp,.true.,mla,the_bc_level)
-
     do n=1,nlevs
        do comp = 1,dm
           umac_nodal_flag = .false.
@@ -242,30 +227,11 @@ contains
                         dx,dt,is_vel,the_bc_level, &
                         pred_comp,dm+pred_comp,1,.false.,mla)
 
-    ! predict either X at the edges
-    call make_edge_scal(nlevs,sold,sedge,umac,scal_force,normal, &
-                        w0,w0mac, &
-                        dx,dt,is_vel,the_bc_level, &
-                        spec_comp,dm+spec_comp,nspec,.false.,mla)
-
-    ! predict rho or rho' at the edges
-    call make_edge_scal(nlevs,sold,sedge,umac,scal_force,normal, &
-                        w0,w0mac, &
-                        dx,dt,is_vel,the_bc_level, &
-                        rho_comp,dm+rho_comp,1,.false.,mla)
-
     if (enthalpy_pred_type .eq. predict_rhohprime) then
        ! convert (rho h)' -> (rho h)
        call put_in_pert_form(nlevs,sold,rhoh0_old,dx,rhoh_comp, &
                              .false.,mla,the_bc_level)
     end if
-
-    ! convert rho' -> rho
-    call put_in_pert_form(nlevs,sold,rho0_old,dx,rho_comp,.false.,mla,the_bc_level)
-
-    ! we now always predict X at the edges, so we now restore the state arrays 
-    ! (and base state) from X to (rho X)
-    call convert_rhoX_to_X(nlevs,sold,.false.,mla,the_bc_level)
 
     ! if we are predicting h at the edges, then restore the state arrays
     ! (and base state) from h to (rho h)
@@ -274,8 +240,7 @@ contains
     end if
 
     ! Compute enthalpy edge states if we were predicting temperature.  This
-    ! needs to be done after the state was returned to the full state, and 
-    ! the species are back to (rho X) instead of X.
+    ! needs to be done after the state was returned to the full state.
 
     if ( (enthalpy_pred_type .eq. predict_T_then_rhohprime) .or. &
          (enthalpy_pred_type .eq. predict_T_then_h        ) ) then
@@ -326,14 +291,6 @@ contains
                    rhoh0_old,rhoh0_edge_old,rhoh0_old_cart, &
                    rho0_predicted_edge,rhoh_comp,rhoh_comp,mla)
 
-       ! compute species fluxes
-       call mkflux(nlevs,sflux,etarhoflux,sold,sedge,umac,w0,w0mac, &
-                   rho0_old,rho0_edge_old,rho0_old_cart, &
-                   rho0_old,rho0_edge_old,rho0_old_cart, &
-                   rhoh0_old,rhoh0_edge_old,rhoh0_old_cart, &
-                   rhoh0_old,rhoh0_edge_old,rhoh0_old_cart, &
-                   rho0_predicted_edge,spec_comp,spec_comp+nspec-1,mla)
-
        if (ntrac .ge. 1) then
           ! compute tracer fluxes
           call mkflux(nlevs,sflux,etarhoflux,sold,sedge,umac,w0,w0mac, &
@@ -353,14 +310,6 @@ contains
                    rhoh0_old,rhoh0_edge_old,rhoh0_old_cart, &
                    rhoh0_new,rhoh0_edge_new,rhoh0_new_cart, &
                    rho0_predicted_edge,rhoh_comp,rhoh_comp,mla)
-
-       ! compute species fluxes
-       call mkflux(nlevs,sflux,etarhoflux,sold,sedge,umac,w0,w0mac, &
-                   rho0_old,rho0_edge_old,rho0_old_cart, &
-                   rho0_new,rho0_edge_new,rho0_new_cart, &
-                   rhoh0_old,rhoh0_edge_old,rhoh0_old_cart, &
-                   rhoh0_new,rhoh0_edge_new,rhoh0_new_cart, &
-                   rho0_predicted_edge,spec_comp,spec_comp+nspec-1,mla)
 
        if (ntrac .ge. 1) then
           ! compute tracer fluxes
@@ -384,38 +333,14 @@ contains
     do n=1,nlevs
        call setval(scal_force(n),ZERO,all=.true.)
     end do
-
-    call update_scal(nlevs,spec_comp,spec_comp+nspec-1,sold,snew,sflux,scal_force, &
-                     p0_new,p0_new_cart,dx,dt,the_bc_level,mla)
     
-    if ( verbose .ge. 1 ) then
-       do n=1, nlevs
-          do comp = spec_comp,spec_comp+nspec-1
-             call multifab_div_div_c(snew(n),comp,snew(n),rho_comp,1)
-             
-             smin = multifab_min_c(snew(n),comp) 
-             smax = multifab_max_c(snew(n),comp)
-             
-             if (parallel_IOProcessor()) &
-                  write(6,2002) spec_names(comp-spec_comp+1), smin,smax
-             call multifab_mult_mult_c(snew(n),comp,snew(n),rho_comp,1)
-          end do
-          
-          smin = multifab_min_c(snew(n),rho_comp) 
-          smax = multifab_max_c(snew(n),rho_comp)
-          
-          if (parallel_IOProcessor()) &
-               write(6,2000) smin,smax
-       end do
-    end if
-
     !**************************************************************************
     !     Update tracers with convective differencing.
     !**************************************************************************
     
     if ( ntrac .ge. 1 ) then
-       call update_scal(nlevs,trac_comp,trac_comp+ntrac-1,sold,snew,sflux,scal_force, &
-                        p0_new,p0_new_cart,dx,dt,the_bc_level,mla)
+       call update_scal(mla,trac_comp,trac_comp+ntrac-1,sold,snew,sflux,scal_force, &
+                        p0_new,p0_new_cart,dx,dt,the_bc_level)
 
        if ( verbose .ge. 1 ) then
           do n=1,nlevs
@@ -448,8 +373,8 @@ contains
                         psi,normal,dx,.false.,mla,the_bc_level)
     end if
 
-    call update_scal(nlevs,rhoh_comp,rhoh_comp,sold,snew,sflux,scal_force, &
-                     p0_new,p0_new_cart,dx,dt,the_bc_level,mla)
+    call update_scal(mla,rhoh_comp,rhoh_comp,sold,snew,sflux,scal_force, &
+                     p0_new,p0_new_cart,dx,dt,the_bc_level)
 
     if ( verbose .ge. 1 ) then
        do n=1,nlevs
@@ -491,9 +416,7 @@ contains
 
     call destroy(bpt)
 
-2000 format('... new min/max : density           ',e17.10,2x,e17.10)
 2001 format('... new min/max : rho * H           ',e17.10,2x,e17.10)
-2002 format('... new min/max : ',a16,2x,e17.10,2x,e17.10)
 2003 format('... new min/max : tracer            ',e17.10,2x,e17.10)
 2004 format(' ')
 

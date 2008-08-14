@@ -32,7 +32,6 @@ contains
     use geometry,      only: spherical, nr_fine
     use variables,     only: nscal, spec_comp, rho_comp, foextrap_comp
     use probin_module, only: verbose
-    use pred_parameters
     use modify_scal_force_module
     use convert_rhoX_to_X_module
 
@@ -211,8 +210,8 @@ contains
        call setval(scal_force(n),ZERO,all=.true.)
     end do
 
-    call update_scal(nlevs,spec_comp,spec_comp+nspec-1,sold,snew,sflux,scal_force, &
-                     p0_new,p0_new_cart,dx,dt,the_bc_level,mla)
+    call update_scal(mla,spec_comp,spec_comp+nspec-1,sold,snew,sflux,scal_force, &
+                     p0_new,p0_new_cart,dx,dt,the_bc_level)
     
     if ( verbose .ge. 1 ) then
        do n=1, nlevs

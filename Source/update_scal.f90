@@ -13,8 +13,8 @@ module update_scal_module
 
 contains
 
-  subroutine update_scal(nlevs,nstart,nstop,sold,snew,sflux,scal_force,p0,p0_new_cart, &
-                         dx,dt,the_bc_level,mla)
+  subroutine update_scal(mla,nstart,nstop,sold,snew,sflux,scal_force,p0,p0_new_cart, &
+                         dx,dt,the_bc_level)
 
     use bl_prof_module
     use bl_constants_module
@@ -25,7 +25,8 @@ contains
     use ml_restriction_module, only: ml_cc_restriction_c
     use multifab_fill_ghost_module
 
-    integer           , intent(in   ) :: nlevs, nstart, nstop
+    type(ml_layout)   , intent(inout) :: mla
+    integer           , intent(in   ) :: nstart, nstop
     type(multifab)    , intent(in   ) :: sold(:)
     type(multifab)    , intent(inout) :: snew(:)
     type(multifab)    , intent(in   ) :: sflux(:,:)
@@ -34,7 +35,6 @@ contains
     type(multifab)    , intent(in   ) :: p0_new_cart(:)
     real(kind = dp_t) , intent(in   ) :: dx(:,:),dt
     type(bc_level)    , intent(in   ) :: the_bc_level(:)
-    type(ml_layout)   , intent(inout) :: mla
 
     ! local
     real(kind=dp_t), pointer :: sop(:,:,:,:)
@@ -46,14 +46,15 @@ contains
     real(kind=dp_t), pointer :: p0np(:,:,:,:)
 
     integer :: lo(sold(1)%dim),hi(sold(1)%dim)
-    integer :: i,dm,n
+    integer :: i,dm,n,nlevs
     integer :: ng_so,ng_sn,ng_sf,ng_f,ng_p
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "update_scal")
 
-    dm = sold(1)%dim
+    nlevs = mla%nlevel
+    dm    = mla%dim
 
     ng_so = sold(1)%ng
     ng_sn = snew(1)%ng
