@@ -12,12 +12,12 @@ module mkflux_module
   
 contains
 
-  subroutine mkflux(nlevs,sflux,etarhoflux,sold,sedge,umac,w0,w0mac, &
+  subroutine mkflux(nlevs,sflux,sold,sedge,umac,w0,w0mac, &
                     rho0_old,rho0_edge_old,rho0_old_cart, &
                     rho0_new,rho0_edge_new,rho0_new_cart, &
                     rhoh0_old,rhoh0_edge_old,rhoh0_old_cart, &
                     rhoh0_new,rhoh0_edge_new,rhoh0_new_cart, &
-                    rho0_predicted_edge,startcomp,endcomp,mla)
+                    startcomp,endcomp,mla)
 
     use bl_prof_module
     use bl_constants_module
@@ -27,7 +27,6 @@ contains
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: sflux(:,:)
-    type(multifab) , intent(inout) :: etarhoflux(:)
     type(multifab) , intent(in   ) :: sold(:),sedge(:,:)
     type(multifab) , intent(in   ) :: umac(:,:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
@@ -40,7 +39,6 @@ contains
     type(multifab) , intent(in   ) :: rhoh0_old_cart(:)
     real(kind=dp_t), intent(in   ) :: rhoh0_new(:,0:),rhoh0_edge_new(:,0:)
     type(multifab) , intent(in   ) :: rhoh0_new_cart(:)
-    real(kind=dp_t), intent(in   ) :: rho0_predicted_edge(:,0:)
     integer        , intent(in   ) :: startcomp,endcomp
     type(ml_layout), intent(inout) :: mla
 
@@ -50,13 +48,11 @@ contains
     integer :: domlo(sold(1)%dim),domhi(sold(1)%dim)
     integer :: i,dm,n
     integer :: lo(sold(1)%dim),hi(sold(1)%dim)
-    integer :: ng_sf,ng_ef,ng_se,ng_um,ng_ro,ng_rn,ng_ho,ng_hn,ng_w0
-
+    integer :: ng_sf,ng_se,ng_um,ng_ro,ng_rn,ng_ho,ng_hn,ng_w0
 
     real(kind=dp_t), pointer :: sfxp(:,:,:,:)
     real(kind=dp_t), pointer :: sfyp(:,:,:,:)
     real(kind=dp_t), pointer :: sfzp(:,:,:,:)
-    real(kind=dp_t), pointer :: efp(:,:,:,:)
     real(kind=dp_t), pointer :: sexp(:,:,:,:)
     real(kind=dp_t), pointer :: seyp(:,:,:,:)
     real(kind=dp_t), pointer :: sezp(:,:,:,:)
@@ -78,7 +74,6 @@ contains
     dm = sold(1)%dim
     
     ng_sf = sflux(1,1)%ng
-    ng_ef = etarhoflux(1)%ng
     ng_se = sedge(1,1)%ng
     ng_um = umac(1,1)%ng
     ng_ro = rho0_old_cart(1)%ng
@@ -97,7 +92,6 @@ contains
           if ( multifab_remote(sold(n),i) ) cycle
           sfxp => dataptr(sflux(n,1),i)
           sfyp => dataptr(sflux(n,2),i)
-          efp  => dataptr(etarhoflux(n),i)
           sexp => dataptr(sedge(n,1),i)
           seyp => dataptr(sedge(n,2),i)
           ump  => dataptr(umac(n,1),i)
@@ -107,14 +101,12 @@ contains
           select case (dm)
           case (2)
              call mkflux_2d(sfxp(:,:,1,:), sfyp(:,:,1,:), ng_sf, &
-                            efp(:,:,1,1), ng_ef, &
                             sexp(:,:,1,:), seyp(:,:,1,:), ng_se, &
                             ump(:,:,1,1), vmp(:,:,1,1), ng_um, &
                             rho0_old(n,:), rho0_edge_old(n,:), &
                             rho0_new(n,:), rho0_edge_new(n,:), &
                             rhoh0_old(n,:), rhoh0_edge_old(n,:), &
                             rhoh0_new(n,:), rhoh0_edge_new(n,:), &
-                            rho0_predicted_edge(n,:), &
                             w0(n,:),startcomp,endcomp,lo,hi)
           case (3)
              sfzp => dataptr(sflux(n,3),i)
@@ -122,14 +114,12 @@ contains
              wmp  => dataptr(umac(n,3),i)
              if(spherical .eq. 0) then
                 call mkflux_3d_cart(sfxp(:,:,:,:), sfyp(:,:,:,:), sfzp(:,:,:,:), ng_sf, &
-                                    efp(:,:,:,1), ng_ef, &
                                     sexp(:,:,:,:), seyp(:,:,:,:), sezp(:,:,:,:), ng_se, &
                                     ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
                                     rho0_old(n,:), rho0_edge_old(n,:), &
                                     rho0_new(n,:), rho0_edge_new(n,:), &
                                     rhoh0_old(n,:), rhoh0_edge_old(n,:), &
                                     rhoh0_new(n,:), rhoh0_edge_new(n,:), &
-                                    rho0_predicted_edge(n,:), &
                                     w0(n,:),startcomp,endcomp,lo,hi)
 
              else
@@ -141,7 +131,6 @@ contains
                 w0yp => dataptr(w0mac(n,2),i)
                 w0zp => dataptr(w0mac(n,3),i)
                 call mkflux_3d_sphr(sfxp(:,:,:,:), sfyp(:,:,:,:), sfzp(:,:,:,:), ng_sf, &
-                                    efp(:,:,:,1), ng_ef, &
                                     sexp(:,:,:,:), seyp(:,:,:,:), sezp(:,:,:,:), ng_se, &
                                     ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
                                     rho0op(:,:,:,1), ng_ro, rho0np(:,:,:,1), ng_rn, &
@@ -159,30 +148,26 @@ contains
        do i = 1, dm
           call ml_edge_restriction_c(sflux(n-1,i),1,sflux(n,i),1,mla%mba%rr(n-1,:),i,nscal)
        enddo
-
-       call ml_edge_restriction_c(etarhoflux(n-1),1,etarhoflux(n),1,mla%mba%rr(n-1,:),dm,1)
-
     enddo
 
     call destroy(bpt)
     
   end subroutine mkflux
   
-  subroutine mkflux_2d(sfluxx,sfluxy,ng_sf,etarhoflux,ng_ef,sedgex,sedgey,ng_se, &
+  subroutine mkflux_2d(sfluxx,sfluxy,ng_sf,sedgex,sedgey,ng_se, &
                        umac,vmac,ng_um,rho0_old,rho0_edge_old,rho0_new,rho0_edge_new, &
                        rhoh0_old,rhoh0_edge_old,rhoh0_new,rhoh0_edge_new, &
-                       rho0_predicted_edge,w0,startcomp,endcomp,lo,hi)
+                       w0,startcomp,endcomp,lo,hi)
 
     use bl_constants_module
     use network, only : nspec
-    use variables, only : spec_comp, rho_comp, rhoh_comp, trac_comp, ntrac
+    use variables, only : rho_comp, rhoh_comp, trac_comp, ntrac
     use probin_module, only: enthalpy_pred_type
     use pred_parameters
 
-    integer        , intent(in   ) :: lo(:),hi(:),ng_sf,ng_ef,ng_se,ng_um
+    integer        , intent(in   ) :: lo(:),hi(:),ng_sf,ng_se,ng_um
     real(kind=dp_t), intent(inout) ::     sfluxx(lo(1)-ng_sf:,lo(2)-ng_sf:,:)
     real(kind=dp_t), intent(inout) ::     sfluxy(lo(1)-ng_sf:,lo(2)-ng_sf:,:)
-    real(kind=dp_t), intent(inout) :: etarhoflux(lo(1)-ng_ef:,lo(2)-ng_ef:)
     real(kind=dp_t), intent(inout) ::     sedgex(lo(1)-ng_se:,lo(2)-ng_se:,:)
     real(kind=dp_t), intent(inout) ::     sedgey(lo(1)-ng_se:,lo(2)-ng_se:,:)
     real(kind=dp_t), intent(in   ) ::       umac(lo(1)-ng_um:,lo(2)-ng_um:)
@@ -191,7 +176,6 @@ contains
     real(kind=dp_t), intent(in   ) :: rho0_new(0:), rho0_edge_new(0:)
     real(kind=dp_t), intent(in   ) :: rhoh0_old(0:), rhoh0_edge_old(0:)
     real(kind=dp_t), intent(in   ) :: rhoh0_new(0:), rhoh0_edge_new(0:)
-    real(kind=dp_t), intent(in   ) :: rho0_predicted_edge(0:)
     real(kind=dp_t), intent(in   ) :: w0(0:)
     integer        , intent(in   ) :: startcomp,endcomp
 
@@ -205,8 +189,7 @@ contains
     do comp = startcomp, endcomp
 
        ! test = T means the edge states are NOT in perturbational form
-       test = ( (comp.ge.spec_comp).and.(comp.le.spec_comp+nspec-1) ) &
-         .or. ( (comp.eq.rhoh_comp).and. &
+       test = ( (comp.eq.rhoh_comp).and. &
                      ( enthalpy_pred_type.eq.predict_h .or. &
                        enthalpy_pred_type.eq.predict_T_then_h ) ) &
          .or. ( (comp.ge.trac_comp).and.(comp.le.trac_comp+ntrac-1) )
@@ -255,16 +238,6 @@ contains
                 sfluxy(i,j,comp) = &
                      (vmac(i,j)+w0(j))*(rho0_edge+sedgey(i,j,rho_comp))*sedgey(i,j,comp)
                 
-                if ( (comp.ge.spec_comp).and.(comp.le.spec_comp+nspec-1) ) then
-
-                   etarhoflux(i,j) = etarhoflux(i,j) + sfluxy(i,j,comp)
-
-                   if ( comp.eq.spec_comp+nspec-1) then
-                      etarhoflux(i,j) = etarhoflux(i,j) - w0(j)*rho0_predicted_edge(j)
-                   end if
-
-                end if
-                
              end do
 
           end do
@@ -289,23 +262,22 @@ contains
 
   end subroutine mkflux_2d
 
-  subroutine mkflux_3d_cart(sfluxx,sfluxy,sfluxz,ng_sf,etarhoflux,ng_ef, &
+  subroutine mkflux_3d_cart(sfluxx,sfluxy,sfluxz,ng_sf,&
                             sedgex,sedgey,sedgez,ng_se,umac,vmac,wmac,ng_um, &
                             rho0_old,rho0_edge_old,rho0_new,rho0_edge_new, &
                             rhoh0_old,rhoh0_edge_old,rhoh0_new,rhoh0_edge_new, &
-                            rho0_predicted_edge,w0,startcomp,endcomp,lo,hi)
+                            w0,startcomp,endcomp,lo,hi)
 
     use bl_constants_module
     use network, only : nspec
-    use variables, only : spec_comp, rho_comp, rhoh_comp, trac_comp, ntrac
+    use variables, only : rho_comp, rhoh_comp, trac_comp, ntrac
     use probin_module, only: enthalpy_pred_type
     use pred_parameters
 
-    integer        , intent(in   ) :: lo(:),hi(:),ng_sf,ng_ef,ng_se,ng_um
+    integer        , intent(in   ) :: lo(:),hi(:),ng_sf,ng_se,ng_um
     real(kind=dp_t), intent(inout) ::     sfluxx(lo(1)-ng_sf:,lo(2)-ng_sf:,lo(3)-ng_sf:,:)
     real(kind=dp_t), intent(inout) ::     sfluxy(lo(1)-ng_sf:,lo(2)-ng_sf:,lo(3)-ng_sf:,:)
     real(kind=dp_t), intent(inout) ::     sfluxz(lo(1)-ng_sf:,lo(2)-ng_sf:,lo(3)-ng_sf:,:)
-    real(kind=dp_t), intent(inout) :: etarhoflux(lo(1)-ng_ef:,lo(2)-ng_ef:,lo(3)-ng_ef:)
     real(kind=dp_t), intent(inout) ::     sedgex(lo(1)-ng_se:,lo(2)-ng_se:,lo(3)-ng_se:,:)
     real(kind=dp_t), intent(inout) ::     sedgey(lo(1)-ng_se:,lo(2)-ng_se:,lo(3)-ng_se:,:)
     real(kind=dp_t), intent(inout) ::     sedgez(lo(1)-ng_se:,lo(2)-ng_se:,lo(3)-ng_se:,:)
@@ -316,7 +288,6 @@ contains
     real(kind=dp_t), intent(in   ) :: rho0_new(0:), rho0_edge_new(0:)
     real(kind=dp_t), intent(in   ) :: rhoh0_old(0:), rhoh0_edge_old(0:)
     real(kind=dp_t), intent(in   ) :: rhoh0_new(0:), rhoh0_edge_new(0:)
-    real(kind=dp_t), intent(in   ) :: rho0_predicted_edge(0:)
     real(kind=dp_t), intent(in   ) :: w0(0:)
     integer        , intent(in   ) :: startcomp,endcomp
 
@@ -330,8 +301,7 @@ contains
     do comp = startcomp, endcomp
 
        ! test = T means the edge states are NOT in perturbational form
-       test = ( (comp.ge.spec_comp).and.(comp.le.spec_comp+nspec-1) ) &
-         .or. ( (comp.eq.rhoh_comp).and. &
+       test = ( (comp.eq.rhoh_comp).and. &
                      ( enthalpy_pred_type.eq.predict_h .or. &
                        enthalpy_pred_type.eq.predict_T_then_h ) ) &
          .or. ( (comp.ge.trac_comp).and.(comp.le.trac_comp+ntrac-1) )
@@ -404,17 +374,6 @@ contains
                    ! sedgez is either h or X at edges
                    sfluxz(i,j,k,comp) = (wmac(i,j,k)+w0(k))* &
                         (rho0_edge+sedgez(i,j,k,rho_comp))*sedgez(i,j,k,comp)
-
-                   if ( (comp.ge.spec_comp).and.(comp.le.spec_comp+nspec-1) ) then
-                      
-                      etarhoflux(i,j,k) = etarhoflux(i,j,k) + sfluxz(i,j,k,comp)
-                      
-                      if ( comp.eq.spec_comp+nspec-1) then
-                         etarhoflux(i,j,k) = &
-                              etarhoflux(i,j,k) - w0(k)*rho0_predicted_edge(k)
-                      end if
-                      
-                   end if
                 
                 end do
              end do
@@ -443,7 +402,7 @@ contains
      
   end subroutine mkflux_3d_cart
 
-  subroutine mkflux_3d_sphr(sfluxx,sfluxy,sfluxz,ng_sf,etarhoflux,ng_ef, &
+  subroutine mkflux_3d_sphr(sfluxx,sfluxy,sfluxz,ng_sf,&
                             sedgex,sedgey,sedgez,ng_se, &
                             umac,vmac,wmac,ng_um, &
                             rho0_old_cart,ng_ro,rho0_new_cart,ng_rn, &
@@ -452,16 +411,15 @@ contains
 
     use bl_constants_module
     use network, only: nspec
-    use variables, only: spec_comp, rho_comp, rhoh_comp, trac_comp, ntrac
+    use variables, only: rho_comp, rhoh_comp, trac_comp, ntrac
     use pred_parameters
     use probin_module, only: enthalpy_pred_type
 
     integer        , intent(in   ) :: lo(:),hi(:),domlo(:),domhi(:)
-    integer        , intent(in   ) :: ng_sf,ng_ef,ng_se,ng_um,ng_ro,ng_rn,ng_ho,ng_hn,ng_w0
+    integer        , intent(in   ) :: ng_sf,ng_se,ng_um,ng_ro,ng_rn,ng_ho,ng_hn,ng_w0
     real(kind=dp_t), intent(inout) ::        sfluxx(lo(1)-ng_sf:,lo(2)-ng_sf:,lo(3)-ng_sf:,:)
     real(kind=dp_t), intent(inout) ::        sfluxy(lo(1)-ng_sf:,lo(2)-ng_sf:,lo(3)-ng_sf:,:)
     real(kind=dp_t), intent(inout) ::        sfluxz(lo(1)-ng_sf:,lo(2)-ng_sf:,lo(3)-ng_sf:,:)
-    real(kind=dp_t), intent(inout) ::    etarhoflux(lo(1)-ng_ef:,lo(2)-ng_ef:,lo(3)-ng_ef:)
     real(kind=dp_t), intent(inout) ::        sedgex(lo(1)-ng_se:,lo(2)-ng_se:,lo(3)-ng_se:,:)
     real(kind=dp_t), intent(inout) ::        sedgey(lo(1)-ng_se:,lo(2)-ng_se:,lo(3)-ng_se:,:)
     real(kind=dp_t), intent(inout) ::        sedgez(lo(1)-ng_se:,lo(2)-ng_se:,lo(3)-ng_se:,:)
@@ -487,8 +445,7 @@ contains
     do comp = startcomp, endcomp
 
        ! test = T means the edge states are NOT in perturbational form
-       test = ( (comp.ge.spec_comp).and.(comp.le.spec_comp+nspec-1) ) &
-         .or. ( (comp.eq.rhoh_comp).and. &
+       test = ( (comp.eq.rhoh_comp).and. &
                      ( enthalpy_pred_type.eq.predict_h .or. &
                        enthalpy_pred_type.eq.predict_T_then_h ) ) &
          .or. ( (comp.ge.trac_comp).and.(comp.le.trac_comp+ntrac-1) )

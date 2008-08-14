@@ -14,9 +14,9 @@ module scalar_advance_module
 contains
 
   subroutine scalar_advance(nlevs,mla,which_step,uold,sold,snew,thermal, &
-                            umac,w0,w0mac,etarhoflux,utrans,normal, &
+                            umac,w0,w0mac,utrans,normal, &
                             rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_old,p0_new, &
-                            tempbar,psi,rho0_predicted_edge,dx,dt,the_bc_level)
+                            tempbar,psi,dx,dt,the_bc_level)
 
     use bl_prof_module
     use bl_constants_module
@@ -49,7 +49,6 @@ contains
     type(multifab) , intent(inout) :: umac(:,:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     type(multifab) , intent(in   ) :: w0mac(:,:)
-    type(multifab) , intent(inout) :: etarhoflux(:)
     type(multifab) , intent(in   ) :: utrans(:,:)
     type(multifab) , intent(in   ) :: normal(:)
     real(kind=dp_t), intent(in   ) :: rho0_old(:,0:)
@@ -60,7 +59,6 @@ contains
     real(kind=dp_t), intent(in   ) :: p0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: tempbar(:,0:)
     real(kind=dp_t), intent(in   ) :: psi(:,0:)
-    real(kind=dp_t), intent(in   ) :: rho0_predicted_edge(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:),dt
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
@@ -91,11 +89,9 @@ contains
     is_vel  = .false.
     velpred = 0    
 
-    ! create edge-centered base state quantities.
+    ! Create edge-centered base state quantities.
     ! Note: rho0_edge_{old,new} and rhoh0_edge_{old,new}
     ! contain edge-centered quantities created via spatial interpolation.
-    ! This is to be contrasted to rho0_predicted_edge which is the half-time
-    ! edge state created in advect_base.
     allocate(rho0_edge_old (nlevs,0:nr_fine))
     allocate(rho0_edge_new (nlevs,0:nr_fine))
     allocate(rhoh0_edge_old(nlevs,0:nr_fine))
@@ -284,41 +280,41 @@ contains
     if (which_step .eq. 1) then
 
        ! compute enthalpy fluxes
-       call mkflux(nlevs,sflux,etarhoflux,sold,sedge,umac,w0,w0mac, &
+       call mkflux(nlevs,sflux,sold,sedge,umac,w0,w0mac, &
                    rho0_old,rho0_edge_old,rho0_old_cart, &
                    rho0_old,rho0_edge_old,rho0_old_cart, &
                    rhoh0_old,rhoh0_edge_old,rhoh0_old_cart, &
                    rhoh0_old,rhoh0_edge_old,rhoh0_old_cart, &
-                   rho0_predicted_edge,rhoh_comp,rhoh_comp,mla)
+                   rhoh_comp,rhoh_comp,mla)
 
        if (ntrac .ge. 1) then
           ! compute tracer fluxes
-          call mkflux(nlevs,sflux,etarhoflux,sold,sedge,umac,w0,w0mac, &
+          call mkflux(nlevs,sflux,sold,sedge,umac,w0,w0mac, &
                       rho0_old,rho0_edge_old,rho0_old_cart, &
                       rho0_old,rho0_edge_old,rho0_old_cart, &
                       rhoh0_old,rhoh0_edge_old,rhoh0_old_cart, &
                       rhoh0_old,rhoh0_edge_old,rhoh0_old_cart, &
-                      rho0_predicted_edge,trac_comp,trac_comp+ntrac-1,mla)
+                      trac_comp,trac_comp+ntrac-1,mla)
        end if
 
     else if (which_step .eq. 2) then
 
        ! compute enthalpy fluxes
-       call mkflux(nlevs,sflux,etarhoflux,sold,sedge,umac,w0,w0mac, &
+       call mkflux(nlevs,sflux,sold,sedge,umac,w0,w0mac, &
                    rho0_old,rho0_edge_old,rho0_old_cart, &
                    rho0_new,rho0_edge_new,rho0_new_cart, &
                    rhoh0_old,rhoh0_edge_old,rhoh0_old_cart, &
                    rhoh0_new,rhoh0_edge_new,rhoh0_new_cart, &
-                   rho0_predicted_edge,rhoh_comp,rhoh_comp,mla)
+                   rhoh_comp,rhoh_comp,mla)
 
        if (ntrac .ge. 1) then
           ! compute tracer fluxes
-          call mkflux(nlevs,sflux,etarhoflux,sold,sedge,umac,w0,w0mac, &
+          call mkflux(nlevs,sflux,sold,sedge,umac,w0,w0mac, &
                       rho0_old,rho0_edge_old,rho0_old_cart, &
                       rho0_new,rho0_edge_new,rho0_new_cart, &
                       rhoh0_old,rhoh0_edge_old,rhoh0_old_cart, &
                       rhoh0_new,rhoh0_edge_new,rhoh0_new_cart, &
-                      rho0_predicted_edge,trac_comp,trac_comp+ntrac-1,mla)
+                      trac_comp,trac_comp+ntrac-1,mla)
        end if
 
     end if

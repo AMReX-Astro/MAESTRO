@@ -617,10 +617,10 @@ contains
                          p0_new,rho0_predicted_edge, &
                          dx,dt,the_bc_tower%bc_tower_array)
     call scalar_advance(nlevs,mla,1,uold,s1,s2,thermal, &
-                        umac,w0,w0mac,etarhoflux,utrans,normal, &
+                        umac,w0,w0mac,utrans,normal, &
                         rho0_old,rhoh0_1, &
                         rho0_new,rhoh0_2, &
-                        p0_old,p0_new,tempbar,psi,rho0_predicted_edge, &
+                        p0_old,p0_new,tempbar,psi,&
                         dx,dt,the_bc_tower%bc_tower_array)
 
     ! Correct the base state using the lagged etarho and psi
@@ -1097,10 +1097,10 @@ contains
                             p0_new,rho0_predicted_edge, &
                             dx,dt,the_bc_tower%bc_tower_array)
        call scalar_advance(nlevs,mla,2,uold,s1,s2,thermal, &
-                           umac,w0,w0mac,etarhoflux,utrans,normal, &
+                           umac,w0,w0mac,utrans,normal, &
                            rho0_old,rhoh0_1, &
                            rho0_new,rhoh0_2, &
-                           p0_old,p0_new,tempbar,psi,rho0_predicted_edge, &
+                           p0_old,p0_new,tempbar,psi,&
                            dx,dt,the_bc_tower%bc_tower_array)
 
        ! Correct the base state using the lagged etarho and psi
