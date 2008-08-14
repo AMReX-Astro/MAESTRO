@@ -38,22 +38,36 @@
 \maketitle
 \tableofcontents
 
+\clearpage
+
 \section{Creating the initial model}
 \begin{itemize}
-\item The initial model should be but into HSE according to $(p_{i+1} - p_i)/\Delta r = \half (\rho_{i+1} - \rho_i) g_{i+\half}$
+\item The initial model should be but into HSE according to 
+$(p_{i+1} - p_i)/\Delta r = \half (\rho_{i+1} - \rho_i) g_{i+\half} \enskip .$
 
-\item The initial model should be created at the same resolution as the base state.  This means that
-when you change resolution of your simulation, use a new initial model.
+\item The initial model should be created at the same resolution as
+the base state.  This means that when you change resolution of your
+simulation, use a new initial model.
 
-\item The initial model should be thermodynamically consistent with the EOS that {\tt MAESTRO}
-uses.
+\item The initial model should be thermodynamically consistent with
+the EOS that {\tt MAESTRO} uses.
 
 \end{itemize}
 
 \section{Spherical notes}
 \begin{itemize}
-\item Spherical runs use $p$, $(\rho X)$, and $\rho$ from the initial model.  These are then
-mapped onto the Cartesian grid, and then $(\rho h)$ is computed via the EOS.
+\item Spherical runs use $p$, $(\rho X)$, and $\rho$ from the initial
+model.  These are then mapped onto the Cartesian grid, and then
+$(\rho h)$ is computed via the EOS.
+
+\item Spherical runs automatically set $\Delta x = \Delta r$.
 \end{itemize}
+
+\section{Running notes}
+\begin{itemize}
+\item When the code is run, it prints out the HSE error of the base
+state model---this should be checked to insure that we a
+\end{itemize}
+
 
 \end{document}
