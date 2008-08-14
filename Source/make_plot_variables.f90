@@ -946,7 +946,7 @@ contains
     use geometry, only: spherical
 
     type(multifab) , intent(inout) :: divw0
-    real(kind=dp_t), intent(in   ) :: w0(:)
+    real(kind=dp_t), intent(in   ) :: w0(0:)
     type(multifab) , intent(in   ) :: w0mac(:)
     real(kind=dp_t), intent(in   ) :: dx(:)
 
@@ -967,7 +967,7 @@ contains
        hi = upb(get_box(divw0, i))
        select case (dm)
        case (2)
-          call make_divw0_2d(w0(:), dwp(:,:,1,1), ng_dw, lo, hi, dx)
+          call make_divw0_2d(w0, dwp(:,:,1,1), ng_dw, lo, hi, dx)
        case (3)
           if(spherical .eq. 1) then
              ng_w0 = w0mac(1)%ng
@@ -977,7 +977,7 @@ contains
              call make_divw0_3d_sphr(w0xp(:,:,:,1), w0yp(:,:,:,1), w0zp(:,:,:,1), ng_w0, &
                                      dwp(:,:,:,1), ng_dw, lo, hi, dx)
           else
-             call make_divw0_3d(w0(:), dwp(:,:,:,1), ng_dw, lo, hi, dx)
+             call make_divw0_3d(w0, dwp(:,:,:,1), ng_dw, lo, hi, dx)
           end if
        end select
     end do
@@ -987,7 +987,7 @@ contains
   subroutine make_divw0_2d(w0,divw0,ng_dw,lo,hi,dx)
 
     integer, intent(in)            :: lo(:), hi(:), ng_dw
-    real(kind=dp_t), intent(in   ) :: w0(:)
+    real(kind=dp_t), intent(in   ) :: w0(0:)
     real(kind=dp_t), intent(inout) :: divw0(lo(1)-ng_dw:,lo(2)-ng_dw:)
     real(kind=dp_t), intent(in   ) :: dx(:)
 
@@ -1003,7 +1003,7 @@ contains
   subroutine make_divw0_3d(w0,divw0,ng_dw,lo,hi,dx)
 
     integer, intent(in)            :: lo(:), hi(:), ng_dw
-    real(kind=dp_t), intent(in   ) :: w0(:)
+    real(kind=dp_t), intent(in   ) :: w0(0:)
     real(kind=dp_t), intent(inout) :: divw0(lo(1)-ng_dw:,lo(2)-ng_dw:,lo(3)-ng_dw:)
     real(kind=dp_t), intent(in   ) :: dx(:)
 
