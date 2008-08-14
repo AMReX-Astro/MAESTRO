@@ -13,7 +13,7 @@ module density_advance_module
 
 contains
 
-  subroutine density_advance(nlevs,mla,which_step,sold,snew,&
+  subroutine density_advance(nlevs,mla,which_step,sold,snew,sedge,&
                             umac,w0,w0mac,etarhoflux,normal, &
                             rho0_old,rho0_new,p0_new, &
                             rho0_predicted_edge,dx,dt,the_bc_level)
@@ -40,6 +40,7 @@ contains
     integer        , intent(in   ) :: which_step
     type(multifab) , intent(inout) :: sold(:)
     type(multifab) , intent(inout) :: snew(:)
+    type(multifab) , intent(inout) :: sedge(:,:)
     type(multifab) , intent(inout) :: umac(:,:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     type(multifab) , intent(in   ) :: w0mac(:,:)
@@ -56,7 +57,6 @@ contains
     type(multifab) :: rho0_old_cart(nlevs)
     type(multifab) :: rho0_new_cart(nlevs)
     type(multifab) :: p0_new_cart(nlevs)
-    type(multifab) :: sedge(nlevs,mla%dim)
     type(multifab) :: sflux(nlevs,mla%dim)
 
     integer    :: comp,n,dm
@@ -122,18 +122,6 @@ contains
     !**************************************************************************
 
     call addw0(nlevs,umac,w0,w0mac,mult=ONE)
-
-    !**************************************************************************
-    !     Build the sedge array.
-    !**************************************************************************
-
-    do n=1,nlevs
-       do comp = 1,dm
-          umac_nodal_flag = .false.
-          umac_nodal_flag(comp) = .true.
-          call multifab_build(sedge(n,comp), mla%la(n), nscal, 0, nodal = umac_nodal_flag)
-       end do
-    end do
 
     !**************************************************************************
     !     Create the edge states of (rho X)' or X and rho'
@@ -246,7 +234,6 @@ contains
     do n = 1, nlevs
        call destroy(scal_force(n))
        do comp = 1,dm
-          call destroy(sedge(n,comp))
           call destroy(sflux(n,comp))
        end do
     end do

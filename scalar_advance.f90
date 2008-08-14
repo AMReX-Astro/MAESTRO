@@ -13,7 +13,7 @@ module scalar_advance_module
 
 contains
 
-  subroutine scalar_advance(nlevs,mla,which_step,uold,sold,snew,thermal, &
+  subroutine scalar_advance(nlevs,mla,which_step,uold,sold,snew,sedge,thermal, &
                             umac,w0,w0mac,utrans,normal, &
                             rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_old,p0_new, &
                             tempbar,psi,dx,dt,the_bc_level)
@@ -45,6 +45,7 @@ contains
     type(multifab) , intent(in   ) :: uold(:)
     type(multifab) , intent(inout) :: sold(:)
     type(multifab) , intent(inout) :: snew(:)
+    type(multifab) , intent(inout) :: sedge(:,:)
     type(multifab) , intent(in   ) :: thermal(:)
     type(multifab) , intent(inout) :: umac(:,:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
@@ -68,7 +69,6 @@ contains
     type(multifab) :: rhoh0_old_cart(nlevs)
     type(multifab) :: rhoh0_new_cart(nlevs)
     type(multifab) :: p0_new_cart(nlevs)
-    type(multifab) :: sedge(nlevs,mla%dim)
     type(multifab) :: sflux(nlevs,mla%dim)
 
     integer    :: velpred,comp,pred_comp,n,dm
@@ -201,14 +201,6 @@ contains
        call put_in_pert_form(nlevs,sold,rhoh0_old,dx,rhoh_comp, &
                              .true.,mla,the_bc_level)
     end if
-
-    do n=1,nlevs
-       do comp = 1,dm
-          umac_nodal_flag = .false.
-          umac_nodal_flag(comp) = .true.
-          call multifab_build(sedge(n,comp), mla%la(n), nscal, 0, nodal = umac_nodal_flag)
-       end do
-    end do
 
     ! predict either T, h, or (rho h)' at the edges
     if ( (enthalpy_pred_type .eq. predict_T_then_rhohprime) .or. &
@@ -397,7 +389,6 @@ contains
     do n = 1, nlevs
        call destroy(scal_force(n))
        do comp = 1,dm
-          call destroy(sedge(n,comp))
           call destroy(sflux(n,comp))
        end do
     end do
