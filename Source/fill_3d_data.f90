@@ -382,7 +382,7 @@ contains
 
   end subroutine put_1d_array_on_cart_3d_sphr
 
-  subroutine put_w0_on_edges(mla,w0,w0mac,dx,normal,div_coeff,the_bc_tower)
+  subroutine put_w0_on_edges(mla,w0,w0mac,dx,div_coeff,the_bc_tower)
 
     use bl_constants_module
     use geometry, only: spherical, nr_fine
@@ -396,7 +396,6 @@ contains
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     type(multifab) , intent(inout) :: w0mac(:,:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
-    type(multifab) , intent(in   ) :: normal(:)
     real(dp_t)    ,  intent(in   ) :: div_coeff(:,0:)
     type(bc_tower),  intent(in   ) :: the_bc_tower
 
@@ -409,14 +408,13 @@ contains
     ! Local variables
     integer         :: lo(mla%dim)
     integer         :: hi(mla%dim)
-    integer         :: i,n,ng_w0,ng_n,dm,nlevs
+    integer         :: i,n,ng_w0,dm,nlevs
     real(kind=dp_t) :: w0rhs(mla%nlevel,0:nr_fine-1)
 
     ! Local pointers
     real(kind=dp_t), pointer :: w0xp(:,:,:,:)
     real(kind=dp_t), pointer :: w0yp(:,:,:,:)
     real(kind=dp_t), pointer :: w0zp(:,:,:,:)
-    real(kind=dp_t), pointer :: np(:,:,:,:)
     
     type(bl_prof_timer), save :: bpt
 
@@ -466,7 +464,6 @@ contains
     else
 
        ng_w0 = w0mac(1,1)%ng
-       ng_n = normal(1)%ng
 
        do n=1,nlevs
           do i=1,w0mac(n,1)%nboxes
@@ -474,12 +471,10 @@ contains
              w0xp => dataptr(w0mac(n,1), i)
              w0yp => dataptr(w0mac(n,2), i)
              w0zp => dataptr(w0mac(n,3), i)
-             np   => dataptr(normal(n), i)
              lo = lwb(get_box(w0mac(n,1), i))
              hi = upb(get_box(w0mac(n,1), i))
              call put_w0_on_edges_3d_sphr(n,w0(n,:),w0xp(:,:,:,1),w0yp(:,:,:,1), &
-                                          w0zp(:,:,:,1),ng_w0,np(:,:,:,:), &
-                                          ng_n,lo,hi,dx(n,:))
+                                          w0zp(:,:,:,1),ng_w0,lo,hi,dx(n,:))
           end do
        end do
 
@@ -504,22 +499,18 @@ contains
          r_hi = dble(r+1) * dr(n)
          r_lo = dble(r  ) * dr(n)
          r_c  = HALF * (r_lo + r_hi)
-         if (r.gt.0) then
-            div_lo = HALF * (div_coeff(n,r-1) + div_coeff(r,n))
+         if (r.ge.1) then
+            div_lo = HALF * (div_coeff(n,r-1) + div_coeff(n,r))
          else
             div_lo = div_coeff(n,0)
          end if
-         if (r.lt.nr_fine-1) then
-            div_hi = HALF * (div_coeff(n,r+1) + div_coeff(r,n))
+         if (r.le.nr_fine-2) then
+            div_hi = HALF * (div_coeff(n,r+1) + div_coeff(n,r))
          else
             div_hi = div_coeff(n,nr_fine-1)
          end if
 
          w0rhs(n,r) = (r_hi**2*div_hi*w0(n,r+1) - r_lo**2*div_lo*w0(n,r)) / (r_c**2 * dr(n))
-
-         print *,'DIV(W0) ',r, &
-            (r_hi**2*w0(n,r+1) - r_lo**2*w0(n,r)) / (r_c**2 * dr(n)), &
-            (r_hi**2*div_hi*w0(n,r+1) - r_lo**2*div_lo*w0(n,r)) / (r_c**2 * dr(n))
       end do
     end do
 
@@ -533,7 +524,6 @@ contains
     type(multifab) , intent(inout) :: w0rhs_3d(:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
 
-    real(kind=dp_t) :: r_lo,r_hi,r_c,div_lo,div_hi
     integer         :: n,i,ng_w0,ng_dc,ng_dw
     integer         :: lo(div_coeff_3d(1)%dim),hi(div_coeff_3d(1)%dim)
 
@@ -602,18 +592,17 @@ contains
 
   end subroutine mk_div_beta0_w0mac_3d
   
-  subroutine put_w0_on_edges_3d_sphr(n,w0,w0macx,w0macy,w0macz,ng_w0,normal,ng_n,lo,hi,dx)
+  subroutine put_w0_on_edges_3d_sphr(n,w0,w0macx,w0macy,w0macz,ng_w0,lo,hi,dx)
 
     use bl_constants_module
     use geometry, only: dr, center, nr_fine
     use probin_module, only: w0mac_interp_type
 
-    integer        , intent(in   ) :: n,lo(:),hi(:),ng_w0,ng_n
+    integer        , intent(in   ) :: n,lo(:),hi(:),ng_w0
     real(kind=dp_t), intent(in   ) :: w0(0:)
     real(kind=dp_t), intent(inout) ::  w0macx(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
     real(kind=dp_t), intent(inout) ::  w0macy(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
     real(kind=dp_t), intent(inout) ::  w0macz(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
-    real(kind=dp_t), intent(inout) :: normal(lo(1)-ng_n :,lo(2)-ng_n :,lo(3)-ng_n :,:)    
     real(kind=dp_t), intent(in   ) :: dx(:)
 
     integer         :: i,j,k,index

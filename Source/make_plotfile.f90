@@ -196,7 +196,7 @@ contains
                 call setval(w0mac(n,comp), ZERO, all=.true.)
              end do
           end do
-          call put_w0_on_edges(mla,w0,w0mac,dx,normal,div_coeff,the_bc_tower)
+          call put_w0_on_edges(mla,w0,w0mac,dx,div_coeff,the_bc_tower)
        end if
 
        ! divw0
