@@ -23,6 +23,7 @@ contains
     use pre_advance_module
     use velocity_advance_module
     use scalar_advance_module
+    use density_advance_module
     use macrhs_module
     use macproject_module
     use hgrhs_module
@@ -375,7 +376,7 @@ contains
                     gamma1bar,gamma1bar,p0_minus_pthermbar,psi,etarho,etarho_cc,dt,dtold)
 
        if (spherical .eq. 1) then
-          call put_w0_on_edges(mla,w0,w0mac,dx,normal,div_coeff_old,the_bc_tower)
+          call put_w0_on_edges(mla,w0,w0mac,dx,div_coeff_old,the_bc_tower)
        end if
 
        if (dm .eq. 3) then
@@ -609,6 +610,11 @@ contains
        write(6,*) '            : scalar_advance >>> '
     end if
 
+    call density_advance(nlevs,mla,1,s1,s2,&
+                         umac,w0,w0mac,etarhoflux,normal, &
+                         rho0_old,rho0_new,&
+                         p0_new,rho0_predicted_edge, &
+                         dx,dt,the_bc_tower%bc_tower_array)
     call scalar_advance(nlevs,mla,1,uold,s1,s2,thermal, &
                         umac,w0,w0mac,etarhoflux,utrans,normal, &
                         rho0_old,rhoh0_1, &
@@ -928,7 +934,7 @@ contains
                        dtold)
 
           if (spherical .eq. 1) then
-             call put_w0_on_edges(mla,w0,w0mac,dx,normal,div_coeff_nph,the_bc_tower)
+             call put_w0_on_edges(mla,w0,w0mac,dx,div_coeff_nph,the_bc_tower)
           end if
 
           if (dm .eq. 3) then
@@ -1083,6 +1089,11 @@ contains
           write(6,*) '            : scalar_advance >>>'
        end if
 
+       call density_advance(nlevs,mla,2,s1,s2,&
+                            umac,w0,w0mac,etarhoflux,normal, &
+                            rho0_old,rho0_new,&
+                            p0_new,rho0_predicted_edge, &
+                            dx,dt,the_bc_tower%bc_tower_array)
        call scalar_advance(nlevs,mla,2,uold,s1,s2,thermal, &
                            umac,w0,w0mac,etarhoflux,utrans,normal, &
                            rho0_old,rhoh0_1, &
