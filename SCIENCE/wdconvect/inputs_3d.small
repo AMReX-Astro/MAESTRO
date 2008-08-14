@@ -1,5 +1,5 @@
 &PROBIN
- model_file = "model_6.e8.hse.240"
+ model_file = "model_6.e8.hse.48"
 
  test_set = "gr0_3d.48"
 
