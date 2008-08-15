@@ -59,10 +59,6 @@ contains
     use rhoh_vs_t_module
     use probin_module
     use bl_prof_module
-    use ml_restriction_module
-    use multifab_physbc_module
-    use multifab_fill_ghost_module
-
     
     logical,         intent(in   ) :: init_mode
     type(ml_layout), intent(inout) :: mla
@@ -279,21 +275,6 @@ contains
     do n=1,nlevs
        call multifab_sub_sub(p0_cart(n),ptherm_old(n))
     enddo
-
-    ! fill the ghostcells of p0_cart
-    if (nlevs .eq. 1) then
-
-    else
-
-       ! the loop over nlevs must count backwards to make sure the finer grids are done first
-       do n=nlevs,2,-1
-
-          ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction(p0_cart(n-1),p0_cart(n),mla%mba%rr(n-1,:))
-
-       enddo
-
-    end if
     
     ! p0_minus_pthermbar now holds 
     ! Avg(p0_cart) = Avg(p0_old - ptherm_old) = p0_old - pthermbar_old
@@ -306,19 +287,6 @@ contains
     ! delta_p_term now holds p0_minus_pthermbar = p0_old - pthermbar_old
     call put_1d_array_on_cart(nlevs,p0_minus_pthermbar,delta_p_term,foextrap_comp, &
                               .false.,.false.,dx,the_bc_tower%bc_tower_array,mla)
-
-    ! fill the ghostcells of delta_p_term
-    if (nlevs .eq. 1) then
-
-    else
-
-       ! the loop over nlevs must count backwards to make sure the finer grids are done first
-       do n=nlevs,2,-1
-          ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction(delta_p_term(n-1),delta_p_term(n),mla%mba%rr(n-1,:))
-       enddo
-
-    end if
 
     ! finish computing delta_p_term = (p0_old - pthermbar_old) - (p0_old - ptherm_old)
     ! = ptherm_old - pthermbar_old
@@ -812,20 +780,6 @@ contains
           call destroy(ptherm_nph(n))
        end do
 
-       ! fill the ghostcells of p0_cart
-       if (nlevs .eq. 1) then
-       
-       else
-
-          ! the loop over nlevs must count backwards to make sure the finer grids are 
-          ! done first
-          do n=nlevs,2,-1
-             ! set level n-1 data to be the average of the level n data covering it
-             call ml_cc_restriction(p0_cart(n-1)    ,p0_cart(n)    ,mla%mba%rr(n-1,:))
-          enddo
-
-       end if
-
        ! p0_minus_pthermbar now holds
        ! Avg(p0_cart) = Avg(p0_nph - ptherm_nph) = p0_nph - pthermbar_nph
        call average(mla,p0_cart,p0_minus_pthermbar,dx,1)
@@ -837,21 +791,6 @@ contains
        ! delta_p_term now holds p0_minus_pthermbar = p0_nph - pthermbar_nph
        call put_1d_array_on_cart(nlevs,p0_minus_pthermbar,delta_p_term,foextrap_comp, &
                                  .false.,.false.,dx,the_bc_tower%bc_tower_array,mla)
-
-       ! now fill the ghostcells of delta_p_term
-       if (nlevs .eq. 1) then
-       
-       else
-
-          ! the loop over nlevs must count backwards to make sure the finer grids are 
-          ! done first
-          do n=nlevs,2,-1
-
-             ! set level n-1 data to be the average of the level n data covering it
-             call ml_cc_restriction(delta_p_term(n-1),delta_p_term(n),mla%mba%rr(n-1,:))
-          enddo
-
-       end if
 
        ! finish computing delta_p_term = (p0_nph - pthermbar_nph) - (p0_nph - ptherm_nph)
        ! = ptherm_nph - pthermbar_nph
