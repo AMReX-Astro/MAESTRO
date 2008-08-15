@@ -10,7 +10,7 @@ module correct_base_module
 
 contains
 
-  subroutine correct_base(nlevs,rho0_new,etarho,dz,dt)
+  subroutine correct_base(nlevs,rho0_new,div_etarho,dt)
 
     use bl_prof_module
     use geometry, only: spherical
@@ -18,8 +18,7 @@ contains
 
     integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(inout) :: rho0_new(:,0:)
-    real(kind=dp_t), intent(in   ) :: etarho(:,0:)
-    real(kind=dp_t), intent(in   ) :: dz(:)
+    real(kind=dp_t), intent(in   ) :: div_etarho(:,0:)
     real(kind=dp_t), intent(in   ) :: dt
     
     ! local
@@ -31,9 +30,9 @@ contains
     
     do n=1,nlevs
        if (spherical .eq. 1) then
-          call correct_base_state_spherical(n,rho0_new(n,0:),etarho(n,0:),dt)
+          call correct_base_state_spherical(n,rho0_new(n,0:),div_etarho(n,0:),dt)
        else
-          call correct_base_state_planar(n,rho0_new(n,0:),etarho(n,0:),dz(n),dt)
+          call correct_base_state_planar(n,rho0_new(n,0:),div_etarho(n,0:),dt)
        end if
     enddo
 
@@ -44,14 +43,14 @@ contains
        
   end subroutine correct_base
 
-  subroutine correct_base_state_planar(n,rho0_new,etarho,dz,dt)
+  subroutine correct_base_state_planar(n,rho0_new,div_etarho,dt)
 
     use geometry, only: anelastic_cutoff_coord, r_start_coord, r_end_coord, numdisjointchunks
 
     integer        , intent(in   ) :: n
     real(kind=dp_t), intent(inout) :: rho0_new(0:)
-    real(kind=dp_t), intent(in   ) :: etarho(0:)
-    real(kind=dp_t), intent(in   ) :: dz,dt
+    real(kind=dp_t), intent(in   ) :: div_etarho(0:)
+    real(kind=dp_t), intent(in   ) :: dt
     
     ! Local variables
     integer :: r,i
@@ -63,20 +62,20 @@ contains
     do i=1,numdisjointchunks(n)
        do r=r_start_coord(n,i),r_end_coord(n,i)
           if (r .lt. anelastic_cutoff_coord(n)) then
-             rho0_new(r) = rho0_new(r) - dt/dz*(etarho(r+1) - etarho(r))
+             rho0_new(r) = rho0_new(r) - dt*div_etarho(r)
           end if
        end do
     end do
     
   end subroutine correct_base_state_planar
 
-  subroutine correct_base_state_spherical(n,rho0_new,etarho,dt)
+  subroutine correct_base_state_spherical(n,rho0_new,div_etarho,dt)
 
     use geometry, only: anelastic_cutoff_coord, r_cc_loc, r_edge_loc, dr
 
     integer        , intent(in   ) :: n
     real(kind=dp_t), intent(inout) :: rho0_new(0:)
-    real(kind=dp_t), intent(in   ) :: etarho(0:)
+    real(kind=dp_t), intent(in   ) :: div_etarho(0:)
     real(kind=dp_t), intent(in   ) :: dt
     
     ! Local variables
@@ -87,9 +86,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     do r=0,anelastic_cutoff_coord(n)-1
-       rho0_new(r) = rho0_new(r) - dt/(r_cc_loc(n,r)**2)* &
-            (r_edge_loc(n,r+1)**2 * etarho(r+1) - &
-             r_edge_loc(n,r  )**2 * etarho(r  )) / dr(n)
+       rho0_new(r) = rho0_new(r) - dt*div_etarho(r)
     end do
     
   end subroutine correct_base_state_spherical

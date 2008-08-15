@@ -638,7 +638,7 @@ contains
 
     ! Correct the base state using the lagged etarho and psi
     if (use_etarho .and. evolve_base_state) then
-       call correct_base(nlevs,rho0_new,etarho,dx(:,dm),dt)
+       call correct_base(nlevs,rho0_new,div_etarho,dt)
     end if
 
     ! Now compute the new etarho and psi
@@ -1120,7 +1120,7 @@ contains
 
        ! Correct the base state using the lagged etarho and psi
        if (use_etarho .and. evolve_base_state) then
-          call correct_base(nlevs,rho0_new,etarho,dx(:,dm),dt)
+          call correct_base(nlevs,rho0_new,div_etarho,dt)
        end if
 
        ! Now compute the new etarho and psi
