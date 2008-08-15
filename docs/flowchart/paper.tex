@@ -41,44 +41,18 @@
 
 \newcommand{\uadvone}{\widetilde{\mathbf{U}}^{\mathrm{ADV},(1)}}
 \newcommand{\uadvtwo}{\widetilde{\mathbf{U}}^{\mathrm{ADV},(2)}}
-\newcommand{\U}{\mathbf{U}}
 \newcommand{\V}{\mathbf{V}}
-\newcommand{\uadvstar}{\widetilde{\mathbf{U}}^{\mathrm{ADV,\star}}}
-\newcommand{\uadvstarone}{\widetilde{\mathbf{U}}^{\mathrm{ADV,(1),\star}}}
-\newcommand{\uadvstartwo}{\widetilde{\mathbf{U}}^{\mathrm{ADV,(2),\star}}}
-\newcommand{\wadv}{w^{\mathrm{ADV}}}
 \newcommand{\dt}{\Delta t}
 \newcommand{\dr}{\Delta r}
-\newcommand{\dx}{\Delta \x}
-\newcommand{\dy}{\Delta r}
-\newcommand{\etal}{\it et al.}
 
 \newcommand{\etarho}{\eta_{\rho}}
-\newcommand{\etaXk}{\eta_{\rho X_k}}
-\newcommand{\etarhoh}{\eta_{\rho h}}
 
 \newcommand{\ubold}{\mathbf{U}}
 \newcommand{\ut}{\widetilde{\ubold}}
-\newcommand{\wt}{\tilde{w}}
-
-\newcommand{\hp}{\widetilde{h}}
 
 \newcommand{\omegadot}{\dot{\omega}}
 \newcommand{\er}{\mathbf{e}_r}
-\newcommand{\nx}{\mathbf{n}_x}
 
-\newcommand{\rhobar}{\overline{\rho}}
-
-\newcommand{\x}{\mathbf{x}}
-\newcommand{\rp}{r^\prime}
-\newcommand{\rhop}{\rho^\prime}
-
-\newcommand{\gcc}{\mathrm{g~cm^{-3} }}
-
-\newcommand{\ext}{\mathrm{ext}}
-\newcommand{\eff}{\mathrm{eff}}
-
-\title{Flowchart}
 
 \setlength{\marginparwidth}{1.0in}
 \newcommand{\MarginPar}[1]{\marginpar{%
@@ -86,11 +60,88 @@
 \raggedright\tiny\sffamily
 \hrule\smallskip{\color{red}#1}\par\smallskip\hrule}}
 
+\title{Flowchart of Current Algorithm}
+
 \begin{document}
 
 \maketitle
 \tableofcontents
 \cleardoublepage
+
+\section{Equations}
+\begin{eqnarray}
+\frac{dX_k}{dt} &=& \omegadot_k(\rho,X_k,T)\enskip, \label{eq:VODE1C} \\
+\frac{dT}{dt} &=&\frac{1}{c_p} \left ( -\sum_k \xi_k  \omegadot_k  + \Hnuc \right )\enskip. \label{eq:tempreactC}
+\end{eqnarray}
+\begin{equation}
+\label{eq:tempenthalpy}
+\frac{DT}{Dt} = \frac{1}{\rho c_p} \left[ \left(1 - \rho h_p\right) \frac{D p}{D t}
+ - \sum_k \rho \xi_k {\omegadot}_k 
+ + \rho \Hnuc + \rho \Hext \right] \enskip , 
+\end{equation}
+\begin{eqnarray}
+\frac{\partial \rhozero}{\partial t} &=& - \nablab \cdotb \left( \rhozero w_0 \er \right)
+- \nablab \cdotb \left( \etarho \er \right) \enskip ,
+\label{eq:rho0upd_new}
+\end{eqnarray}
+\begin{equation}
+\frac{\partial p_0}{\partial t} = w_0 \rho_0 g  + \etarho g
+                                 = - w_0 \frac{\partial p_0}{\partial r} + \etarho g \enskip .
+\label{eq:p0upd_new} 
+\end{equation}
+\begin{equation}
+\label{eq:constraint}
+\nablab \cdotb \ubold + \alpha \left( \frac{\partial p_0}{\partial t} + \ubold \cdotb \nablab p_0 \right) =
+ -\sigma  \sum_k \xi_k \omegadot_k  + 
+  \frac{1}{\rho p_\rho} \sum_k p_{X_k}  {\omegadot}_k + \sigma \Hnuc + \sigma \Hext \equiv S \enskip ,
+\end{equation}
+\begin{eqnarray}
+\frac{\partial w_0}{\partial r} &=& \frac{1}{\beta_0} \nablab \cdotb (\beta_0 w_0 \er) 
+                                    - w_0 \frac{1}{\beta_0} \frac{\partial \beta_0}{\partial r}  \nonumber \\
+                                &=&   \left( \Sbar - \frac{1}{\gammabar p_0}
+                                      \frac{\partial p_0}{\partial t} \right)
+                                     - w_0 \frac{1}{\beta_0} \frac{\partial \beta_0}{\partial r}  \nonumber \\
+                                &=&   \Sbar - \frac{1}{\gammabar p_0}
+                                      \left( \frac{\partial p_0}{\partial t}
+                                       + w_0 \frac{\partial p_0}{\partial r}  \right) \nonumber \\
+                                &=&   \Sbar - \frac{1}{\gammabar p_0} \etarho g \enskip \label{eq:divw0} ,
+\end{eqnarray}
+\begin{equation}
+- \frac{1}{\rho_0} \frac{\partial \pizero}{\partial r} = \frac{\partial w_0}{\partial t} + w_0 \frac{\partial w_0}{\partial r} \enskip, \label{eq:pizero}
+\end{equation}
+\begin{equation}
+\int_{\Omega_H} \ut \cdotb \er \; dA = 0 \label{eq:udoterzero} \enskip ,
+\end{equation}
+\begin{equation}
+\nablab \cdotb (\beta_0 \ut )  = \beta_0 \left(S - \Sbar \right )
+ \enskip .  \label{eq:tildeconstraint}
+\end{equation}
+\begin{equation}
+w_0^{n,\star} = \frac{\dt^{n} w_0^{\nmh} + \dt^{n-1} w_0^{\nph,\star}}{\dt^n+\dt^{n-1}}\enskip,\label{eq:w0nstar}
+\end{equation}
+\begin{equation}
+\left(\frac{\partial w_0}{\partial r}\right)^{n,\star} = \frac{1}{\dt^n+\dt^{n-1} } \left [ \dt^{n} \left(\frac{\partial w_0 }{ \partial r}\right)^{\nmh}
++ \dt^{n-1} \left(\frac{\partial w_0 }{ \partial r}\right)^{\nph,\star} \right ] \enskip.\label{eq:dw0drnstar}
+\end{equation}
+\begin{eqnarray}
+\frac{\partial w_0}{\partial t} &=& - w_0 \frac{\partial w_0}{\partial r} - 
+\frac{1}{\rho_0} \frac{\partial \pizero}{\partial r} \label{eq:w0upd} \enskip , \\
+\frac{\partial\ut}{\partial t} &=& - \ut \cdotb \nablab \ut - w_0 \frac{\partial \ut}{\partial r}
+                                 - \left(\ut \cdotb \er\right) \frac{\partial w_0}{\partial r} \er
+                                 - \frac{1}{\rho} \nablab\pi
+                                 + \frac{1}{\rho_0} \frac{\partial \pizero}{\partial r} \er
+                                 - \frac{(\rho-\rhozero)}{\rho} \; g \; \er  \label{eq:utildeupd}  \enskip ,
+\end{eqnarray}
+\begin{equation}
+ L_\beta^\rho \phi =
+   D \left ( \beta_0^{\nph} {\bf V} \right) - \beta_0^{\nph} \left(S^{n+1}-\overline{S}^{n+1} \right)\enskip,
+\label{eq:nodal_solve}
+\end{equation}
+\begin{equation}
+  S =  -\sigma  \sum_k  \xi_k \omegadot_k  + 
+  \frac{1}{\rho p_\rho} \sum_k p_{X_k}  {\omegadot}_k  + \sigma \Hnuc + \sigma \Hext \enskip .
+\label{eq:defineS} 
+\end{equation}
 
 \section{Current Algorithm}
 \subsection{Notation}
@@ -123,7 +174,7 @@ using the stiff ordinary differential equation
 The absolute error tolerances are set to $10^{-12}$ for the species,
  and a relative tolerance of $10^{-5}$ is used for the temperature.  
 The integration yields the new values of the mass fractions, $X_k^{\outp}$.  
-Equation (ref{eq:tempreactC}) is derived from equation (ref{eq:tempenthalpy}) by assuming that the pressure is constant during the burn state.  
+Equation (\ref{eq:tempreactC}) is derived from equation (\ref{eq:tempenthalpy}) by assuming that the pressure is constant during the burn state.  
 In evolving these equations, we need to evaluate $c_p$ and $\xi_k$.  
 In theory, this means evaluating the equation of state for each right-hand side evaluation that {\tt VODE} requires.  
 In practice, we freeze $c_p$ and $\xi_k$ at the start of the integration time step and compute them using 
@@ -155,7 +206,7 @@ the algorithm for plane-parallel geometries.
 The base state arrays are all one-dimensional 
 in the radial coordinate; we think of the base state quantities as defined
 at cell centers, with $w_0$ and $\beta_0$ defined halfway in-between.\\ \\
-a)  For the density update, we discretize equation (ref{eq:rho0upd\_new}), neglecting the $\etarho$ term,
+a)  For the density update, we discretize equation (\ref{eq:rho0upd_new}), neglecting the $\etarho$ term,
 to compute the new base state density,
 \begin{eqnarray}
 \rho_{0,j}^{\outp} &=& \rho_{0,j}^{\inp} - \frac{\dt}{\dr} 
@@ -165,7 +216,7 @@ to compute the new base state density,
 where $j$ refers to the one-dimensional index in the radial direction.
 The interface states, ${{\rho}_0}^{\outp,\nph}$, are found via the procedure described in
 paper II, Appendix A, and are saved for use later in the overall algorithm.\\ \\
-b)  For the pressure update, We discretize equation (ref{eq:p0upd\_new}), 
+b)  For the pressure update, We discretize equation (\ref{eq:p0upd_new}), 
 to compute the new base state pressure,
 \begin{eqnarray}
 p_{0,j}^\outp &=& p_{0,j}^\inp - \frac{\dt}{2\dr} \left (w_{0,j+\myhalf}^\inp
@@ -211,7 +262,7 @@ we treat $X_k$ and $h$ in non-perturbational form.
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
 
 \item At the beginning of each time step, we need an estimate for the time-centered
-source term in the velocity divergence constraint (see eq. [ref{eq:constraint}]).
+source term in the velocity divergence constraint (see eq. [\ref{eq:constraint}]).
 If this is the first step of the calculation ($n=0$), we set
 \[
 S^{\half,\star} = \frac{S^0 + S^1}{2} \enskip ,
@@ -229,19 +280,15 @@ S^{\nph,\star} = S^n + \frac{\Delta t^n}{2} \frac{S^n - S^{n-1}}{\Delta t^{n-1}}
 \overline{S}^{\nph,\star} = {\mathrm{\bf Avg}} \left(S^{\nph,\star}\right) \enskip.
 \]
 
-\item Construct $w_0^{\nph,\star}$ by integrating equation (ref{eq:divw0}) using 
+\item Construct $w_0^{\nph,\star}$ by integrating equation (\ref{eq:divw0}) using 
 the lagged $\psi^{\nmh},$
 \begin{equation}
 \frac{\partial w_0^{\nph,\star}}{\partial r} =  \overline{S}^{\nph,\star} 
 - \frac{1}{\gammabar^{n} p_0^{n}} \psi^{\nmh} \enskip . \nonumber
 \end{equation}
-%for plane-parallel geometries,  or the analogous equation (see eq. [ref{eq:B7}])
-%for spherical configurations.  
 For spherical geometries, this equation would be modified.
-%In the case of spherical geometries use the current $p_0^n,$
-%${\Gamma_1}^n_0 = \Gamma_1(p_0^n, \rho_0^n, X_k^n),$ and $g$ as computed from $\rho_0^n.$
 
-\item Using equation (ref{eq:pizero}), define the scaled pressure gradient
+\item Using equation (\ref{eq:pizero}), define the scaled pressure gradient
 \begin{equation}
 -\left ( \frac{1}{\rho_0^n} \frac{\partial \pizeroone}{\partial r} \right ) = 
 \frac{w_0^{\nph,\star} - w_0^\nmh}{(\dt^n+\dt^{n-1})/2} 
@@ -262,9 +309,9 @@ If $n=0$, we use $\dt^{-1} = \dt^0$.
 %--------------------------------------------------------------------------
 \noindent {\bf Step 2.} {\em Construct the provisional edge-based advective velocity}, $\uadvone$: 
 
-The procedure to construct $\uadvone$ is described in detail in Appendix ref{app:advective\_vel}.
+The procedure to construct $\uadvone$ is described in detail in Appendix B of paper III.
 We note that  $\uadvone$ satisfies the discrete versions of equations
-(ref{eq:udoterzero}) and (ref{eq:tildeconstraint}), 
+(\ref{eq:udoterzero}) and (\ref{eq:tildeconstraint}), 
 in particular,
 \begin{equation}
 \nablab \cdotb \left(\beta_0^n \uadvone\right) = \beta_0^n \left(S^{\nph,\star} - \overline{S}^{\nph,\star}\right)
@@ -332,14 +379,6 @@ X_k^{(2),\star} &=& (\rho X_k)^{(2),\star} / \rho^{(2),\star} \enskip , \\
 T^{(2),\star} &=& T\left(\rho^{(2),\star}, (\rho h)^{(2),\star},  X_k^{(2),\star}\right) {\hbox{ \rm using the equation of state.}} 
 \end{eqnarray}
 
-%The construction of 
-%$ \left[ \nabla \cdotb \left(  (\uadvone+w_0^{\nph,\star} \er)  (\rho X_k)^{(1)} \right) \right]^{\nph}$ \\
-%and $ \left[ \nabla \cdotb \left( (\uadvone+w_0^{\nph,\star} \er)  (\rho h)^{(1)}\right)  \right]^{\nph}$
-%also follows that described in paper II, Appendix A with $\V = \uadvone+w_0^{\nph,\star} \er.$ 
-%We note that the time-centering of the $p_0$ terms in equations (ref{eq:step4_rhoh})
-%matches as closely as possible the time-centering of the $\beta_0$ in 
-%equation (ref{eq:uadvone_satisfies}). 
-
 \item {\bf Correct Base}$(\rho_0^{(2),\star}, \etarho^{\nmh}) \rightarrow (\rho_0^{n+1,\star})$.
 
 \item Define an edge-centered $\etarho^{\nph,\star}$ and cell-centered $\psi_j^{\nph,\star}$:
@@ -350,7 +389,6 @@ T^{(2),\star} &=& T\left(\rho^{(2),\star}, (\rho h)^{(2),\star},  X_k^{(2),\star
  \psi_j^{\nph,\star}  &=&  \frac{1}{2} \left(\eta_{\rho,j-\myhalf}^{\nph,\star} + \eta_{\rho,j+\myhalf}^{\nph,\star}\right) g \enskip .
 \end{eqnarray}
 For spherical geometries, $\psi_j^{\nph,\star}$ would have a different form. 
-%be computed via equation (ref{eq:spherical_psi_num}).
 
 \end{enumerate}
 
@@ -403,26 +441,22 @@ Then define
 \overline{S}^{\nph} = {\mathrm{\bf Avg}} (S^{\nph}) \enskip.
 \]
 
-\item Construct $w_0^{\nph}$ by integrating equation (ref{eq:divw0}),
+\item Construct $w_0^{\nph}$ by integrating equation (\ref{eq:divw0}),
 \begin{equation}
 \frac{\partial w_0^{\nph}}{\partial r} =  \overline{S}^{\nph,\star} - \frac{1}{\gammabar^{\nph,\star} p_0^{\nph,\star}} \psi^{\nph,\star} \enskip , \nonumber
 \end{equation}
 for plane-parallel geometries, where 
 $\gammabar^{\nph,\star} = (\gammabar^{n} + \gammabar^{n+1,\star} ) / 2 $ and
 $ p_0^{\nph,\star} = (p_0^{n} + p_0^{n+1,\star} ) / 2.$
-%In spherical configurations we use the analogous equation (see eq. [ref{eq:B7}]). 
-%In the case of spherical geometries use $p_0^{n+1,\star},$
-%${\Gamma_1}^{n+1,\star}_0 = \Gamma_1(p_0^{n+1,\star}, \rho_0^{n+1,\star}, X_k^{n+1,\star}),$ and 
-%$g$ as computed from $\rho_0^{n+1,\star}.$
 
-\item Using equation (ref{eq:pizero}), define
+\item Using equation (\ref{eq:pizero}), define
 \begin{equation}
 -\left ( \frac{1}{\rho_0^n} \frac{\partial \pizerotwo}{\partial r} \right ) = 
 \frac{w_0^{\nph} - w_0^\nmh}{\myhalf(\dt^n+\dt^{n-1})} 
 + w_0^n \left(\frac{\partial w_0}{\partial r}\right)^n.
 \end{equation}
 where $w_0^n$ and $(\partial w_0 / \partial r)^{n}$ are defined analogously to 
-equations (ref{eq:w0nstar}) and (ref{eq:dw0drnstar}).
+equations (\ref{eq:w0nstar}) and (\ref{eq:dw0drnstar}).
 
 \end{enumerate}
 
@@ -431,10 +465,10 @@ equations (ref{eq:w0nstar}) and (ref{eq:dw0drnstar}).
 %--------------------------------------------------------------------------
 \noindent {\bf Step 7.} {\em Construct the final edge-based advective velocity}, $\uadvtwo$: 
 
-The procedure to construct $\uadvtwo$ is described in detail in Appendix ref{app:advective\_vel}
+The procedure to construct $\uadvtwo$ is described in detail in Appendix B of paper III
 and is analogous to the procedure used in step 2, but with updated values
 for $w_0$ and $\pizero.$ We note that  $\uadvtwo$ satisfies the discrete versions of 
-equations (ref{eq:udoterzero}) and (ref{eq:tildeconstraint}),
+equations (\ref{eq:udoterzero}) and (\ref{eq:tildeconstraint}),
 in particular
 \begin{equation}
 \nablab \cdotb \left(\beta_0^{\nph,\star} \uadvtwo\right) = \beta_0^{\nph,\star} 
@@ -483,17 +517,6 @@ T^{(2)} &=& T\left(\rho^{(2)}, (\rho h)^{(2)},  X_k^{(2)}\right) {\hbox{ \rm usi
 equation of state.}} 
 \end{eqnarray}
 
-%The construction of 
-%$ \left[ \nabla \cdotb \left(  (\uadvtwo+w_0^{\nph} \er)  (\rho X_k)^{(1)} \right) \right]^{\nph}$ \\
-%and $ \left[ \nabla \cdotb \left( (\uadvtwo+w_0^{\nph} \er)  (\rho h)^{(1)}\right)  \right]^{\nph}$
-%is similar to that described in paper II, Appendix A with $\V = \uadvtwo+w_0^{\nph} \er.$ 
-%For species advection we set $s = X_k,$ then multiply the edge states of $X_k$ by predicted
-%edge states of $\rho.$  For the enthalpy update we predict temperature to the edges, convert
-%$T$ to $h$ using the EOS, then multiply by $\rho.$
-%We note that the time-centering of the $p_0$ terms in Equations (ref{eq:step8_rhoh})
-%matches as closely as possible the time-centering of the $\beta_0$ in 
-%Equation (ref{eq:uadvtwo_satisfies}).
-
 \item {\bf Correct Base}$(\rho_0^{(2)}, \etarho^{\nph, \star}) \rightarrow (\rho_0^{n+1})$
 
 \item Define an edge-centered $ \etarho^{\nph}$ and a cell-centered $\psi_j^{\nph}$,
@@ -503,7 +526,6 @@ equation of state.}}
  \nonumber \enskip , \\
  \psi_j^{\nph}  &=&  \frac{1}{2} \left(\eta_{rho,j-\myhalf}^{\nph} + \eta_{\rho,j+\myhalf}^{\nph}\right) g \enskip .
 \end{eqnarray}
-%For spherical geometries, $\psi_j^{\nph}$ would be computed via equation (ref{eq:spherical_psi_num}).
 \end{enumerate}
 
 %--------------------------------------------------------------------------
@@ -558,7 +580,7 @@ and $T^{n+1}$ from step 9.
 
 The velocity update happens analogously to paper II, using $S^{n+1}$ from step 10.
 We update the velocity field $\ut^n$ to $\ut^{n+1,\star}$ by discretizing
-equation (ref{eq:utildeupd}), 
+equation (\ref{eq:utildeupd}), 
 \begin{eqnarray}
 \ut^{n+1,\star} &=& \ut^n - \dt \;
  \left[\left((\uadvtwo+ w_0^{\nph} \er) \cdotb \nablab\right) \ut \right]^\nph
@@ -573,7 +595,7 @@ The construction of $\left[((\uadvtwo+ w_0^{\nph} \er) \cdotb \nablab) \ut \righ
 is described in paper II, Appendix A, with $\V = \uadvtwo+w_0^{\nph} \er$ and~$s$ set to each
 component of $\ut^n$ individually.
 
-Finally, we impose the divergence constraint from equation (ref{eq:tildeconstraint}),
+Finally, we impose the divergence constraint from equation (\ref{eq:tildeconstraint}),
 \[
 \nablab \cdotb \left(\beta_0^{\nph} \ut^{n+1} \right)  = \beta_0^{\nph} \left(S^{n+1} - \overline{S}^{n+1} \right)\enskip,
 \]
@@ -592,7 +614,7 @@ $\mathbf{G} = -D^T.$
 (See (cite almgrenBellSzymczak:1996) for a detailed discussion of this
 approximate projection; see (cite almgren:bell:crutchfield) for a discussion
 of this particular form of the projection operand.)  
-We solve the linear system of equation (ref{eq:nodal\_solve}) using multigrid V-cycles with Gauss-Seidel relaxation.
+We solve the linear system of equation (\ref{eq:nodal_solve}) using multigrid V-cycles with Gauss-Seidel relaxation.
 
 We determine the new time velocity field from
 \begin{equation}
@@ -650,7 +672,6 @@ proceeds as follows.
 
 \begin{enumerate}
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
-%\renewcommand{\theenumii}{{\bf \roman{enumii}}}
 \renewcommand{\labelenumii}{\roman{enumii}.}
 
 \item {\bf Do} {$\nu = 1,...,N_{\rm iters}^{S}$.}
@@ -661,7 +682,7 @@ proceeds as follows.
   \item {\bf React State}$( \rho^{\initp},(\rho h)^{\initp}, X_k^{\initp}, T^{\initp}, (\rho^{\initp} \Hext) )$\\
       $\rightarrow (\rho^{\outp}, (\rho h)^{\outp}, X_k^{\outp}, T^{\outp}, (\rho \omegadot_k)^{0,\nu} ).$
 
-  \item Compute $S^{0,\nu}$ from equation (ref{eq:defineS}) 
+  \item Compute $S^{0,\nu}$ from equation (\ref{eq:defineS}) 
         using $(\rho \omegadot_k)^{0,\nu}$ and the initial data.
 
   \item Compute $\overline{S}^{0,\nu} = {\mathrm{\bf Avg}} (S^{0,\nu}).$
