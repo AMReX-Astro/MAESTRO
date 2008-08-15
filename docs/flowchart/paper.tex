@@ -251,7 +251,7 @@ here is in fact more robust than the perturbational form
 when the base state mixing terms ($\etarho$) are included.  
 In the algorithm described below, density is still 
 extrapolated to edges in perturbational form, but 
-we treat $X_k$ and $h$ in non-perturbational form.
+we treat $X_k$ and $h$ in non-perturbational form.\\
 
 %--------------------------------------------------------------------------
 % STEP 1
@@ -307,7 +307,7 @@ If $n=0$, we use $\dt^{-1} = \dt^0$.
 %--------------------------------------------------------------------------
 % STEP 2
 %--------------------------------------------------------------------------
-\noindent {\bf Step 2.} {\em Construct the provisional edge-based advective velocity}, $\uadvone$: 
+\noindent {\bf Step 2.} {\em Construct the provisional edge-based advective velocity}, $\uadvone$.\\
 
 The procedure to construct $\uadvone$ is described in detail in Appendix B of paper III.
 We note that  $\uadvone$ satisfies the discrete versions of equations
@@ -370,13 +370,12 @@ reaction terms,
 (\rho X_k)^{(2),\star} &=& (\rho X_k)^{(1)} 
  - \dt \; \left[ \nablab \cdotb \left( (\uadvone+w_0^{\nph,\star} \er)  
   (\rho X_k)^{(1),\nph,\star} \right) \right] \enskip , \\ \nonumber  \\
-(\rho h)^{(2),\star} &=& (\rho h)^{(1)} - \dt \; \left[ \nablab \cdotb \left( (\uadvone+w_0^{\nph,\star} \er)  
+(\rho h)^{(2'),\star} &=& (\rho h)^{(1)} - \dt \; \left[ \nablab \cdotb \left( (\uadvone+w_0^{\nph,\star} \er)  
   (\rho h)^{(1),\nph,\star} \right) \right] \nonumber \\
 && + \dt \; \left(\uadvone \cdotb \er\right) \left(\frac{\partial p_0}{\partial r} \right)^{n} 
 + \dt \; \psi^{\nmh} \enskip , \\
-\rho^{(2),\star} &=& \sum_k (\rho X_k)^{(2),\star} \enskip , \\ 
-X_k^{(2),\star} &=& (\rho X_k)^{(2),\star} / \rho^{(2),\star} \enskip , \\
-T^{(2),\star} &=& T\left(\rho^{(2),\star}, (\rho h)^{(2),\star},  X_k^{(2),\star}\right) {\hbox{ \rm using the equation of state.}} 
+\rho^{(2'),\star} &=& \sum_k (\rho X_k)^{(2),\star} \enskip , \\ 
+X_k^{(2),\star} &=& (\rho X_k)^{(2),\star} / \rho^{(2),\star}
 \end{eqnarray}
 
 \item {\bf Correct Base}$(\rho_0^{(2),\star}, \etarho^{\nmh}) \rightarrow (\rho_0^{n+1,\star})$.
@@ -389,6 +388,27 @@ T^{(2),\star} &=& T\left(\rho^{(2),\star}, (\rho h)^{(2),\star},  X_k^{(2),\star
  \psi_j^{\nph,\star}  &=&  \frac{1}{2} \left(\eta_{\rho,j-\myhalf}^{\nph,\star} + \eta_{\rho,j+\myhalf}^{\nph,\star}\right) g \enskip .
 \end{eqnarray}
 For spherical geometries, $\psi_j^{\nph,\star}$ would have a different form. 
+
+%--------------------------------------------------------------------------
+% STEP 4.1
+%--------------------------------------------------------------------------
+
+\item Diffuse the enthalpy through a time interval of $\dt$.  Compute $\kappa^{(1)}, c_p^{(1)}$, and $\xi_k^{(1)}$ from $\rho^{(1)}, T^{(1)}$, and $X_k^{(1)}$ as inputs to the equation of state.  Note that density is constant in this step, i.e., $\rho^{(2'),\star}=\rho^{(2),\star}$.  The update is given by
+\begin{eqnarray}
+(\rho h)^{(2),\star} &=& (\rho h)^{(2'),\star} + \frac{\dt}{2}\nabla\cdot\left(\frac{\kappa^{(1)}}{c_p^{(1)}}\nabla h^{(2),\star} + \frac{\kappa^{(1)}}{c_p^{(1)}}\nabla h^{(1)}\right)\nonumber\\
+&&- \frac{\dt}{2}\sum_k\nabla\cdot\left(\frac{\xi_k^{(1)}\kappa^{(1)}}{c_p^{(1)}}\nabla X_k^{(2),\star} + \frac{\xi_k^{(1)}\kappa^{(1)}}{c_p^{(1)}}\nabla X_k^{(1)}\right)\nonumber\\
+&&- \frac{\dt}{2}\nabla\cdot\left(\frac{h_p^{(1)}\kappa^{(1)}}{c_p^{(1)}}\nabla p_0^{(2),\star} + \frac{h_p^{(1)}\kappa^{(1)}}{c_p^{(1)}}\nabla p_0^{(1)}\right),
+\end{eqnarray}
+which is numerically implemented as a diffusion equation for $h^{(2),\star}$,
+\begin{eqnarray}
+\left(\rho^{(2),\star} - \frac{\dt}{2}\nabla\cdot\frac{\kappa^{(1)}}{c_p^{(1)}}\nabla\right)h^{(2),\star} &=& (\rho h)^{(2'),\star} + \frac{\dt}{2}\nabla\cdot\frac{\kappa^{(1)}}{c_p^{(1)}}\nabla h^{(1)}\nonumber\\
+&&- \frac{\dt}{2}\sum_k\nabla\cdot\left(\frac{\xi_k^{(1)}\kappa^{(1)}}{c_p^{(1)}}\nabla X_k^{(2),\star} + \frac{\xi_k^{(1)}\kappa^{(1)}}{c_p^{(1)}}\nabla X_k^{(1)}\right)\nonumber\\
+&&- \frac{\dt}{2}\nabla\cdot\left(\frac{h_p^{(1)}\kappa^{(1)}}{c_p^{(1)}}\nabla p_0^{(2),\star} + \frac{h_p^{(1)}\kappa^{(1)}}{c_p^{(1)}}\nabla p_0^{(1)}\right),
+\end{eqnarray}
+\item Update the temperature
+\begin{equation}
+T^{(2),\star} = T\left(\rho^{(2),\star}, h^{(2),\star}, X_k^{(2),\star}\right) {\hbox{ \rm using the equation of state.}}
+\end{equation}
 
 \end{enumerate}
 
@@ -474,7 +494,7 @@ in particular
 \nablab \cdotb \left(\beta_0^{\nph,\star} \uadvtwo\right) = \beta_0^{\nph,\star} 
 \left(S^{\nph} - \overline{S}^{\nph}\right) \enskip .
 \end{equation}
-where $ \beta_0^{\nph,\star} = ( \beta_0^n +  \beta_0^{n+1,\star}) / 2.$
+where $ \beta_0^{\nph,\star} = ( \beta_0^n +  \beta_0^{n+1,\star}) / 2.$\\
 
 %--------------------------------------------------------------------------
 % STEP 8
@@ -505,16 +525,14 @@ $(\rho h)^{(1)} \rightarrow (\rho h)^{(2)},$
 (\rho X_k)^{(2)} &=& (\rho X_k)^{(1)} 
 - \dt \; \left[ \nablab \cdotb \left( (\uadvtwo+w_0^{\nph} \er)  
 (\rho X_k)^{(1),\nph} \right) \right]  \enskip , \\ \nonumber \\
-(\rho h)^{(2)} &=& (\rho h)^{(1)} - \dt \; \left[ \nablab \cdotb \left( (\uadvtwo+w_0^{\nph} \er)  
+(\rho h)^{(2')} &=& (\rho h)^{(1)} - \dt \; \left[ \nablab \cdotb \left( (\uadvtwo+w_0^{\nph} \er)  
 (\rho h)^{(1),\nph} \right) \right] \nonumber \\
 && + \frac{\dt}{2} \; \left(\uadvtwo \cdotb \er\right)
 \left [ \left(\frac{\partial p_0}{\partial r} \right)^{n}
       + \left(\frac{\partial p_0}{\partial r} \right)^{n+1}  \right ] 
 + \dt \; \psi^{\nph,\star} \enskip , \\ 
-\rho^{(2)} &=& \sum_k (\rho X_k)^{(2)} \enskip , \\
-X_k^{(2)} &=& (\rho X_k)^{(2)} / \rho^{(2)} \enskip , \\
-T^{(2)} &=& T\left(\rho^{(2)}, (\rho h)^{(2)},  X_k^{(2)}\right) {\hbox{ \rm using the
-equation of state.}} 
+\rho^{(2')} &=& \sum_k (\rho X_k)^{(2)} \enskip , \\
+X_k^{(2)} &=& (\rho X_k)^{(2)} / \rho^{(2)}
 \end{eqnarray}
 
 \item {\bf Correct Base}$(\rho_0^{(2)}, \etarho^{\nph, \star}) \rightarrow (\rho_0^{n+1})$
@@ -526,6 +544,27 @@ equation of state.}}
  \nonumber \enskip , \\
  \psi_j^{\nph}  &=&  \frac{1}{2} \left(\eta_{rho,j-\myhalf}^{\nph} + \eta_{\rho,j+\myhalf}^{\nph}\right) g \enskip .
 \end{eqnarray}
+
+%--------------------------------------------------------------------------
+% STEP 8.1
+%--------------------------------------------------------------------------
+\item Diffuse the enthalpy through a time interval of $\dt$.  Compute $\kappa^{(2),\star}, c_p^{(2),\star}$, and $\xi_k^{(2),\star}$, from $\rho^{(2),\star}, T^{(2),\star}$, and $X_k^{(2),\star}$ as inputs to the equation of state.  Note that density is constant in the diffusion step, i.e., $\rho^{(2')}=\rho^{(2)}$.  The update is given by
+\begin{eqnarray}
+(\rho h)^{(2)} &=& (\rho h)^{(2')} + \frac{\dt}{2}\nabla\cdot\left(\frac{\kappa^{(2),\star}}{c_p^{(2),\star}}\nabla h^{(2)} + \frac{\kappa^{(1)}}{c_p^{(1)}}\nabla h^{(1)}\right)\nonumber\\
+&&- \frac{\dt}{2}\sum_k\nabla\cdot\left(\frac{\xi_k^{(2),\star}\kappa^{(2),\star}}{c_p^{(2),\star}}\nabla X_k^{(2)} + \frac{\xi_k^{(1)}\kappa^{(1)}}{c_p^{(1)}}\nabla X_k^{(1)}\right)\nonumber\\
+&&- \frac{\dt}{2}\nabla\cdot\left(\frac{h_p^{(2),\star}\kappa^{(2),\star}}{c_p^{(2),\star}}\nabla p_0^{(2)} + \frac{h_p^{(1)}\kappa^{(1)}}{c_p^{(1)}}\nabla p_0^{(1)}\right),
+\end{eqnarray}
+which is numerically implemented as a diffusion equation for $h^{(2)}$,
+\begin{eqnarray}
+\left(\rho^{(2)} - \frac{\dt}{2}\nabla\cdot\frac{\kappa^{(2),\star}}{c_p^{(2),\star}}\nabla\right)h^{(2)} &=& (\rho h)^{(2')} + \frac{\dt}{2}\nabla\cdot\frac{\kappa^{(1)}}{c_p^{(1)}}\nabla h^{(1)}\nonumber\\
+&&- \frac{\dt}{2}\sum_k\nabla\cdot\left(\frac{\xi_k^{(2),\star}\kappa^{(2),\star}}{c_p^{(2),\star}}\nabla X_k^{(2)} + \frac{\xi_k^{(1)}\kappa^{(1)}}{c_p^{(1)}}\nabla X_k^{(1)}\right)\nonumber\\
+&&- \frac{\dt}{2}\nabla\cdot\left(\frac{h_p^{(2),\star}\kappa^{(2),\star}}{c_p^{(2),\star}}\nabla p_0^{(2)} + \frac{h_p^{(1)}\kappa^{(1)}}{c_p^{(1)}}\nabla p_0^{(1)}\right),
+\end{eqnarray}
+\item Update the temperature
+\begin{equation}
+T^{(2)} = T\left(\rho^{(2)}, h^{(2)}, X_k^{(2)}\right) {\hbox{ \rm using the equation of state.}}
+\end{equation}
+
 \end{enumerate}
 
 %--------------------------------------------------------------------------
@@ -655,12 +694,12 @@ This is done through a second iterative procedure which follows the
 time advancement algorithm as described in steps 1-11 in \S~ref{Sec:Alg}.  
 The user specifies the number of iterations, 
 $N_{\rm iters}^{\pi},$ in this second step of the initialization procedure.
-The details for both iterations are given below.
+The details for both iterations are given below.\\
 
 %--------------------------------------------------------------------------
 % STEP 0
 %--------------------------------------------------------------------------
-\noindent {\bf Step 0} {\em Initialization}
+\noindent {\bf Step 0.} {\em Initialization}
 
 Start with initial data $X_k^{\initp}, \rho^{\initp},$ $T^{\initp},$ an 
 initial base state, and an initial guess for the velocity, $\ubold^{\initp}.$
