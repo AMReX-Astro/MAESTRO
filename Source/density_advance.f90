@@ -13,7 +13,7 @@ module density_advance_module
 
 contains
 
-  subroutine density_advance(nlevs,mla,which_step,sold,snew,sedge,&
+  subroutine density_advance(nlevs,mla,which_step,sold,snew,sedge,sflux,&
                             umac,w0,w0mac,etarhoflux,normal, &
                             rho0_old,rho0_new,p0_new, &
                             rho0_predicted_edge,dx,dt,the_bc_level)
@@ -41,6 +41,7 @@ contains
     type(multifab) , intent(inout) :: sold(:)
     type(multifab) , intent(inout) :: snew(:)
     type(multifab) , intent(inout) :: sedge(:,:)
+    type(multifab) , intent(inout) :: sflux(:,:)
     type(multifab) , intent(inout) :: umac(:,:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     type(multifab) , intent(in   ) :: w0mac(:,:)
@@ -57,7 +58,6 @@ contains
     type(multifab) :: rho0_old_cart(nlevs)
     type(multifab) :: rho0_new_cart(nlevs)
     type(multifab) :: p0_new_cart(nlevs)
-    type(multifab) :: sflux(nlevs,mla%dim)
 
     integer    :: comp,n,dm
     logical    :: is_vel
@@ -159,12 +159,6 @@ contains
     !     Compute fluxes
     !**************************************************************************
 
-    do comp = 1,dm
-       do n=1,nlevs
-          call multifab_build(sflux(n,comp), mla%la(n), nscal, 0, nodal = edge_nodal_flag(comp,:))
-       end do
-    end do
-
     ! for which_step .eq. 1, we pass in only the old base state quantities
     ! for which_step .eq. 2, we pass in the old and new for averaging within mkflux
     if (which_step .eq. 1) then
@@ -231,9 +225,6 @@ contains
 
     do n = 1, nlevs
        call destroy(scal_force(n))
-       do comp = 1,dm
-          call destroy(sflux(n,comp))
-       end do
     end do
 
     call destroy(bpt)

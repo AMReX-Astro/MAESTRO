@@ -128,6 +128,7 @@ contains
     type(multifab) :: delta_p_term(mla%nlevel)
 
     type(multifab) :: sedge(mla%nlevel,mla%dim)
+    type(multifab) :: sflux(mla%nlevel,mla%dim)
 
     real(dp_t), allocatable :: grav_cell_nph(:,:)
     real(dp_t), allocatable :: grav_cell_new(:,:)
@@ -614,15 +615,16 @@ contains
     do n=1,nlevs
        do comp = 1,dm
           call multifab_build(sedge(n,comp), mla%la(n), nscal, 0, nodal = edge_nodal_flag(comp,:))
+          call multifab_build(sflux(n,comp), mla%la(n), nscal, 0, nodal = edge_nodal_flag(comp,:))
        end do
     end do
 
-    call density_advance(nlevs,mla,1,s1,s2,sedge,&
+    call density_advance(nlevs,mla,1,s1,s2,sedge,sflux,&
                          umac,w0,w0mac,etarhoflux,normal, &
                          rho0_old,rho0_new,&
                          p0_new,rho0_predicted_edge, &
                          dx,dt,the_bc_tower%bc_tower_array)
-    call scalar_advance(nlevs,mla,1,uold,s1,s2,sedge,thermal, &
+    call scalar_advance(nlevs,mla,1,uold,s1,s2,sedge,sflux,thermal, &
                         umac,w0,w0mac,utrans,normal, &
                         rho0_old,rhoh0_1, &
                         rho0_new,rhoh0_2, &
@@ -633,6 +635,7 @@ contains
     do n = 1, nlevs
        do comp = 1,dm
           call destroy(sedge(n,comp))
+          call destroy(sflux(n,comp))
        end do
     end do
 
@@ -1108,15 +1111,16 @@ contains
        do n=1,nlevs
           do comp = 1,dm
              call multifab_build(sedge(n,comp), mla%la(n), nscal, 0, nodal = edge_nodal_flag(comp,:))
+             call multifab_build(sflux(n,comp), mla%la(n), nscal, 0, nodal = edge_nodal_flag(comp,:))
           end do
        end do
 
-       call density_advance(nlevs,mla,2,s1,s2,sedge,&
+       call density_advance(nlevs,mla,2,s1,s2,sedge,sflux,&
                             umac,w0,w0mac,etarhoflux,normal, &
                             rho0_old,rho0_new,&
                             p0_new,rho0_predicted_edge, &
                             dx,dt,the_bc_tower%bc_tower_array)
-       call scalar_advance(nlevs,mla,2,uold,s1,s2,sedge,thermal, &
+       call scalar_advance(nlevs,mla,2,uold,s1,s2,sedge,sflux,thermal, &
                            umac,w0,w0mac,utrans,normal, &
                            rho0_old,rhoh0_1, &
                            rho0_new,rhoh0_2, &
@@ -1127,6 +1131,7 @@ contains
        do n = 1, nlevs
           do comp = 1,dm
              call destroy(sedge(n,comp))
+             call destroy(sflux(n,comp))
           end do
        end do
 

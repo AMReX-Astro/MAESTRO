@@ -13,7 +13,7 @@ module scalar_advance_module
 
 contains
 
-  subroutine scalar_advance(nlevs,mla,which_step,uold,sold,snew,sedge,thermal, &
+  subroutine scalar_advance(nlevs,mla,which_step,uold,sold,snew,sedge,sflux,thermal, &
                             umac,w0,w0mac,utrans,normal, &
                             rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_old,p0_new, &
                             tempbar,psi,dx,dt,the_bc_level)
@@ -46,6 +46,7 @@ contains
     type(multifab) , intent(inout) :: sold(:)
     type(multifab) , intent(inout) :: snew(:)
     type(multifab) , intent(inout) :: sedge(:,:)
+    type(multifab) , intent(inout) :: sflux(:,:)
     type(multifab) , intent(in   ) :: thermal(:)
     type(multifab) , intent(inout) :: umac(:,:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
@@ -69,7 +70,6 @@ contains
     type(multifab) :: rhoh0_old_cart(nlevs)
     type(multifab) :: rhoh0_new_cart(nlevs)
     type(multifab) :: p0_new_cart(nlevs)
-    type(multifab) :: sflux(nlevs,mla%dim)
 
     integer    :: velpred,comp,pred_comp,n,dm
     logical    :: is_vel
@@ -259,12 +259,6 @@ contains
     !     Compute fluxes
     !**************************************************************************
 
-    do comp = 1,dm
-       do n=1,nlevs
-          call multifab_build(sflux(n,comp), mla%la(n), nscal, 0, nodal = edge_nodal_flag(comp,:))
-       end do
-    end do
-
     ! for which_step .eq. 1, we pass in only the old base state quantities
     ! for which_step .eq. 2, we pass in the old and new for averaging within mkflux
     if (which_step .eq. 1) then
@@ -386,9 +380,6 @@ contains
 
     do n = 1, nlevs
        call destroy(scal_force(n))
-       do comp = 1,dm
-          call destroy(sflux(n,comp))
-       end do
     end do
 
     if (.not. use_thermal_diffusion) then
