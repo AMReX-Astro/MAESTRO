@@ -32,6 +32,7 @@
 
 \newcommand{\Hext}{{H_{\rm ext}}}
 \newcommand{\Hnuc}{{H_{\rm nuc}}}
+\newcommand{\kth}{k_{\rm th}}
 
 \newcommand{\Sbar}{\overline{S}}
 
@@ -393,17 +394,17 @@ For spherical geometries, $\psi_j^{\nph,\star}$ would have a different form.
 % STEP 4.1
 %--------------------------------------------------------------------------
 
-\item Diffuse the enthalpy through a time interval of $\dt$.  Compute $\kappa^{(1)}, c_p^{(1)}$, and $\xi_k^{(1)}$ from $\rho^{(1)}, T^{(1)}$, and $X_k^{(1)}$ as inputs to the equation of state.  Note that density is constant in this step, i.e., $\rho^{(2'),\star}=\rho^{(2),\star}$.  The update is given by
+\item Diffuse the enthalpy through a time interval of $\dt$.  Compute $\kth^{(1)}, c_p^{(1)}$, and $\xi_k^{(1)}$ from $\rho^{(1)}, T^{(1)}$, and $X_k^{(1)}$ as inputs to the equation of state.  Note that density is constant in this step, i.e., $\rho^{(2'),\star}=\rho^{(2),\star}$.  The update is given by
 \begin{eqnarray}
-(\rho h)^{(2),\star} &=& (\rho h)^{(2'),\star} + \frac{\dt}{2}\nabla\cdot\left(\frac{\kappa^{(1)}}{c_p^{(1)}}\nabla h^{(2),\star} + \frac{\kappa^{(1)}}{c_p^{(1)}}\nabla h^{(1)}\right)\nonumber\\
-&&- \frac{\dt}{2}\sum_k\nabla\cdot\left(\frac{\xi_k^{(1)}\kappa^{(1)}}{c_p^{(1)}}\nabla X_k^{(2),\star} + \frac{\xi_k^{(1)}\kappa^{(1)}}{c_p^{(1)}}\nabla X_k^{(1)}\right)\nonumber\\
-&&- \frac{\dt}{2}\nabla\cdot\left(\frac{h_p^{(1)}\kappa^{(1)}}{c_p^{(1)}}\nabla p_0^{(2),\star} + \frac{h_p^{(1)}\kappa^{(1)}}{c_p^{(1)}}\nabla p_0^{(1)}\right),
+(\rho h)^{(2),\star} &=& (\rho h)^{(2'),\star} + \frac{\dt}{2}\nabla\cdot\left(\frac{\kth^{(1)}}{c_p^{(1)}}\nabla h^{(2),\star} + \frac{\kth^{(1)}}{c_p^{(1)}}\nabla h^{(1)}\right)\nonumber\\
+&&- \frac{\dt}{2}\sum_k\nabla\cdot\left(\frac{\xi_k^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla X_k^{(2),\star} + \frac{\xi_k^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla X_k^{(1)}\right)\nonumber\\
+&&- \frac{\dt}{2}\nabla\cdot\left(\frac{h_p^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla p_0^{(2),\star} + \frac{h_p^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla p_0^{(1)}\right),
 \end{eqnarray}
 which is numerically implemented as a diffusion equation for $h^{(2),\star}$,
 \begin{eqnarray}
-\left(\rho^{(2),\star} - \frac{\dt}{2}\nabla\cdot\frac{\kappa^{(1)}}{c_p^{(1)}}\nabla\right)h^{(2),\star} &=& (\rho h)^{(2'),\star} + \frac{\dt}{2}\nabla\cdot\frac{\kappa^{(1)}}{c_p^{(1)}}\nabla h^{(1)}\nonumber\\
-&&- \frac{\dt}{2}\sum_k\nabla\cdot\left(\frac{\xi_k^{(1)}\kappa^{(1)}}{c_p^{(1)}}\nabla X_k^{(2),\star} + \frac{\xi_k^{(1)}\kappa^{(1)}}{c_p^{(1)}}\nabla X_k^{(1)}\right)\nonumber\\
-&&- \frac{\dt}{2}\nabla\cdot\left(\frac{h_p^{(1)}\kappa^{(1)}}{c_p^{(1)}}\nabla p_0^{(2),\star} + \frac{h_p^{(1)}\kappa^{(1)}}{c_p^{(1)}}\nabla p_0^{(1)}\right),
+\left(\rho^{(2),\star} - \frac{\dt}{2}\nabla\cdot\frac{\kth^{(1)}}{c_p^{(1)}}\nabla\right)h^{(2),\star} &=& (\rho h)^{(2'),\star} + \frac{\dt}{2}\nabla\cdot\frac{\kth^{(1)}}{c_p^{(1)}}\nabla h^{(1)}\nonumber\\
+&&- \frac{\dt}{2}\sum_k\nabla\cdot\left(\frac{\xi_k^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla X_k^{(2),\star} + \frac{\xi_k^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla X_k^{(1)}\right)\nonumber\\
+&&- \frac{\dt}{2}\nabla\cdot\left(\frac{h_p^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla p_0^{(2),\star} + \frac{h_p^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla p_0^{(1)}\right),
 \end{eqnarray}
 \item Update the temperature
 \begin{equation}
@@ -548,17 +549,17 @@ X_k^{(2)} &=& (\rho X_k)^{(2)} / \rho^{(2)}
 %--------------------------------------------------------------------------
 % STEP 8.1
 %--------------------------------------------------------------------------
-\item Diffuse the enthalpy through a time interval of $\dt$.  Compute $\kappa^{(2),\star}, c_p^{(2),\star}$, and $\xi_k^{(2),\star}$, from $\rho^{(2),\star}, T^{(2),\star}$, and $X_k^{(2),\star}$ as inputs to the equation of state.  Note that density is constant in the diffusion step, i.e., $\rho^{(2')}=\rho^{(2)}$.  The update is given by
+\item Diffuse the enthalpy through a time interval of $\dt$.  Compute $\kth^{(2),\star}, c_p^{(2),\star}$, and $\xi_k^{(2),\star}$, from $\rho^{(2),\star}, T^{(2),\star}$, and $X_k^{(2),\star}$ as inputs to the equation of state.  Note that density is constant in the diffusion step, i.e., $\rho^{(2')}=\rho^{(2)}$.  The update is given by
 \begin{eqnarray}
-(\rho h)^{(2)} &=& (\rho h)^{(2')} + \frac{\dt}{2}\nabla\cdot\left(\frac{\kappa^{(2),\star}}{c_p^{(2),\star}}\nabla h^{(2)} + \frac{\kappa^{(1)}}{c_p^{(1)}}\nabla h^{(1)}\right)\nonumber\\
-&&- \frac{\dt}{2}\sum_k\nabla\cdot\left(\frac{\xi_k^{(2),\star}\kappa^{(2),\star}}{c_p^{(2),\star}}\nabla X_k^{(2)} + \frac{\xi_k^{(1)}\kappa^{(1)}}{c_p^{(1)}}\nabla X_k^{(1)}\right)\nonumber\\
-&&- \frac{\dt}{2}\nabla\cdot\left(\frac{h_p^{(2),\star}\kappa^{(2),\star}}{c_p^{(2),\star}}\nabla p_0^{(2)} + \frac{h_p^{(1)}\kappa^{(1)}}{c_p^{(1)}}\nabla p_0^{(1)}\right),
+(\rho h)^{(2)} &=& (\rho h)^{(2')} + \frac{\dt}{2}\nabla\cdot\left(\frac{\kth^{(2),\star}}{c_p^{(2),\star}}\nabla h^{(2)} + \frac{\kth^{(1)}}{c_p^{(1)}}\nabla h^{(1)}\right)\nonumber\\
+&&- \frac{\dt}{2}\sum_k\nabla\cdot\left(\frac{\xi_k^{(2),\star}\kth^{(2),\star}}{c_p^{(2),\star}}\nabla X_k^{(2)} + \frac{\xi_k^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla X_k^{(1)}\right)\nonumber\\
+&&- \frac{\dt}{2}\nabla\cdot\left(\frac{h_p^{(2),\star}\kth^{(2),\star}}{c_p^{(2),\star}}\nabla p_0^{(2)} + \frac{h_p^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla p_0^{(1)}\right),
 \end{eqnarray}
 which is numerically implemented as a diffusion equation for $h^{(2)}$,
 \begin{eqnarray}
-\left(\rho^{(2)} - \frac{\dt}{2}\nabla\cdot\frac{\kappa^{(2),\star}}{c_p^{(2),\star}}\nabla\right)h^{(2)} &=& (\rho h)^{(2')} + \frac{\dt}{2}\nabla\cdot\frac{\kappa^{(1)}}{c_p^{(1)}}\nabla h^{(1)}\nonumber\\
-&&- \frac{\dt}{2}\sum_k\nabla\cdot\left(\frac{\xi_k^{(2),\star}\kappa^{(2),\star}}{c_p^{(2),\star}}\nabla X_k^{(2)} + \frac{\xi_k^{(1)}\kappa^{(1)}}{c_p^{(1)}}\nabla X_k^{(1)}\right)\nonumber\\
-&&- \frac{\dt}{2}\nabla\cdot\left(\frac{h_p^{(2),\star}\kappa^{(2),\star}}{c_p^{(2),\star}}\nabla p_0^{(2)} + \frac{h_p^{(1)}\kappa^{(1)}}{c_p^{(1)}}\nabla p_0^{(1)}\right),
+\left(\rho^{(2)} - \frac{\dt}{2}\nabla\cdot\frac{\kth^{(2),\star}}{c_p^{(2),\star}}\nabla\right)h^{(2)} &=& (\rho h)^{(2')} + \frac{\dt}{2}\nabla\cdot\frac{\kth^{(1)}}{c_p^{(1)}}\nabla h^{(1)}\nonumber\\
+&&- \frac{\dt}{2}\sum_k\nabla\cdot\left(\frac{\xi_k^{(2),\star}\kth^{(2),\star}}{c_p^{(2),\star}}\nabla X_k^{(2)} + \frac{\xi_k^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla X_k^{(1)}\right)\nonumber\\
+&&- \frac{\dt}{2}\nabla\cdot\left(\frac{h_p^{(2),\star}\kth^{(2),\star}}{c_p^{(2),\star}}\nabla p_0^{(2)} + \frac{h_p^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla p_0^{(1)}\right),
 \end{eqnarray}
 \item Update the temperature
 \begin{equation}
