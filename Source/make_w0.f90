@@ -17,7 +17,8 @@ module make_w0_module
 contains
 
   subroutine make_w0(nlevs,w0,w0_old,w0_force,Sbar_in,rho0_old,rho0_new,p0_old,p0_new, &
-                     gamma1bar_old,gamma1bar_new,p0_minus_pthermbar,psi,etarho,etarho_cc, &
+                     gamma1bar_old,gamma1bar_new,p0_minus_pthermbar, &
+                     psi,etarho,etarho_cc,div_etarho, &
                      dt,dtold)
 
     use parallel
@@ -33,6 +34,7 @@ contains
     real(kind=dp_t), intent(in   ) :: psi(:,0:)
     real(kind=dp_t), intent(in   ) :: etarho(:,0:)
     real(kind=dp_t), intent(in   ) :: etarho_cc(:,0:)
+    real(kind=dp_t), intent(in   ) :: div_etarho(:,0:)
     real(kind=dp_t), intent(inout) :: w0_force(:,0:)
     real(kind=dp_t), intent(in   ) :: rho0_old(:,0:), rho0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:), p0_new(:,0:)

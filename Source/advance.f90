@@ -375,7 +375,8 @@ contains
        call average(mla,Source_nph,Sbar,dx,1)
 
        call make_w0(nlevs,w0,w0_old,w0_force,Sbar,rho0_old,rho0_old,p0_old,p0_old, &
-                    gamma1bar,gamma1bar,p0_minus_pthermbar,psi,etarho,etarho_cc,dt,dtold)
+                    gamma1bar,gamma1bar,p0_minus_pthermbar, &
+                    psi,etarho,etarho_cc,div_etarho,dt,dtold)
 
        if (spherical .eq. 1) then
           call put_w0_on_edges(mla,w0,w0mac,dx,div_coeff_old,the_bc_tower)
@@ -945,8 +946,8 @@ contains
           end if
 
           call make_w0(nlevs,w0,w0_old,w0_force,Sbar,rho0_old,rho0_new,p0_old,p0_new, &
-                       gamma1bar_old,gamma1bar,p0_minus_pthermbar,psi,etarho,etarho_cc,dt, &
-                       dtold)
+                       gamma1bar_old,gamma1bar,p0_minus_pthermbar, &
+                       psi,etarho,etarho_cc,div_etarho,dt,dtold)
 
           if (spherical .eq. 1) then
              call put_w0_on_edges(mla,w0,w0mac,dx,div_coeff_nph,the_bc_tower)
