@@ -70,60 +70,36 @@
 \cleardoublepage
 
 \section{Equations}
+
+\subsection{Reaction Network}
 \begin{eqnarray}
 \frac{dX_k}{dt} &=& \omegadot_k(\rho,X_k,T)\enskip, \label{eq:VODE1C} \\
 \frac{dT}{dt} &=&\frac{1}{c_p} \left ( -\sum_k \xi_k  \omegadot_k  + \Hnuc \right )\enskip. \label{eq:tempreactC}
 \end{eqnarray}
+
+
+
+\subsection{Energy}
+
 \begin{equation}
 \label{eq:tempenthalpy}
 \frac{DT}{Dt} = \frac{1}{\rho c_p} \left[ \left(1 - \rho h_p\right) \frac{D p}{D t}
  - \sum_k \rho \xi_k {\omegadot}_k 
  + \rho \Hnuc + \rho \Hext \right] \enskip , 
 \end{equation}
-\begin{eqnarray}
-\frac{\partial \rhozero}{\partial t} &=& - \nablab \cdotb \left( \rhozero w_0 \er \right)
-- \nablab \cdotb \left( \etarho \er \right) \enskip ,
-\label{eq:rho0upd_new}
-\end{eqnarray}
+
+
+
+\subsection{Velocity}
+
 \begin{equation}
-\frac{\partial p_0}{\partial t} = w_0 \rho_0 g  + \etarho g
-                                 = - w_0 \frac{\partial p_0}{\partial r} + \etarho g \enskip .
-\label{eq:p0upd_new} 
+U = \ut + w_0 \er
 \end{equation}
-\begin{equation}
-\label{eq:constraint}
-\nablab \cdotb \ubold + \alpha \left( \frac{\partial p_0}{\partial t} + \ubold \cdotb \nablab p_0 \right) =
- -\sigma  \sum_k \xi_k \omegadot_k  + 
-  \frac{1}{\rho p_\rho} \sum_k p_{X_k}  {\omegadot}_k + \sigma \Hnuc + \sigma \Hext \equiv S \enskip ,
-\end{equation}
-\begin{eqnarray}
-\frac{\partial w_0}{\partial r} &=& \frac{1}{\beta_0} \nablab \cdotb (\beta_0 w_0 \er) 
-                                    - w_0 \frac{1}{\beta_0} \frac{\partial \beta_0}{\partial r}  \nonumber \\
-                                &=&   \left( \Sbar - \frac{1}{\gammabar p_0}
-                                      \frac{\partial p_0}{\partial t} \right)
-                                     - w_0 \frac{1}{\beta_0} \frac{\partial \beta_0}{\partial r}  \nonumber \\
-                                &=&   \Sbar - \frac{1}{\gammabar p_0}
-                                      \left( \frac{\partial p_0}{\partial t}
-                                       + w_0 \frac{\partial p_0}{\partial r}  \right) \nonumber \\
-                                &=&   \Sbar - \frac{1}{\gammabar p_0} \etarho g \enskip \label{eq:divw0} ,
-\end{eqnarray}
-\begin{equation}
-- \frac{1}{\rho_0} \frac{\partial \pizero}{\partial r} = \frac{\partial w_0}{\partial t} + w_0 \frac{\partial w_0}{\partial r} \enskip, \label{eq:pizero}
-\end{equation}
+
 \begin{equation}
 \int_{\Omega_H} \ut \cdotb \er \; dA = 0 \label{eq:udoterzero} \enskip ,
 \end{equation}
-\begin{equation}
-\nablab \cdotb (\beta_0 \ut )  = \beta_0 \left(S - \Sbar \right )
- \enskip .  \label{eq:tildeconstraint}
-\end{equation}
-\begin{equation}
-w_0^{n,\star} = \frac{\dt^{n} w_0^{\nmh} + \dt^{n-1} w_0^{\nph,\star}}{\dt^n+\dt^{n-1}}\enskip,\label{eq:w0nstar}
-\end{equation}
-\begin{equation}
-\left(\frac{\partial w_0}{\partial r}\right)^{n,\star} = \frac{1}{\dt^n+\dt^{n-1} } \left [ \dt^{n} \left(\frac{\partial w_0 }{ \partial r}\right)^{\nmh}
-+ \dt^{n-1} \left(\frac{\partial w_0 }{ \partial r}\right)^{\nph,\star} \right ] \enskip.\label{eq:dw0drnstar}
-\end{equation}
+
 \begin{eqnarray}
 \frac{\partial w_0}{\partial t} &=& - w_0 \frac{\partial w_0}{\partial r} - 
 \frac{1}{\rho_0} \frac{\partial \pizero}{\partial r} \label{eq:w0upd} \enskip , \\
@@ -133,15 +109,66 @@ w_0^{n,\star} = \frac{\dt^{n} w_0^{\nmh} + \dt^{n-1} w_0^{\nph,\star}}{\dt^n+\dt
                                  + \frac{1}{\rho_0} \frac{\partial \pizero}{\partial r} \er
                                  - \frac{(\rho-\rhozero)}{\rho} \; g \; \er  \label{eq:utildeupd}  \enskip ,
 \end{eqnarray}
+
 \begin{equation}
- L_\beta^\rho \phi =
-   D \left ( \beta_0^{\nph} {\bf V} \right) - \beta_0^{\nph} \left(S^{n+1}-\overline{S}^{n+1} \right)\enskip,
-\label{eq:nodal_solve}
+\label{eq:constraint}
+\nablab \cdotb \ubold + \alpha \left( \frac{\partial p_0}{\partial t} + \ubold \cdotb \nablab p_0 \right) =
+ -\sigma  \sum_k \xi_k \omegadot_k  + 
+  \frac{1}{\rho p_\rho} \sum_k p_{X_k}  {\omegadot}_k + \sigma \Hnuc + \sigma \Hext \equiv S \enskip ,
 \end{equation}
+
 \begin{equation}
   S =  -\sigma  \sum_k  \xi_k \omegadot_k  + 
   \frac{1}{\rho p_\rho} \sum_k p_{X_k}  {\omegadot}_k  + \sigma \Hnuc + \sigma \Hext \enskip .
 \label{eq:defineS} 
+\end{equation}
+
+\begin{equation}
+\nablab \cdotb (\beta_0 \ut )  = \beta_0 \left(S - \Sbar \right )
+ \enskip .  \label{eq:tildeconstraint}
+\end{equation}
+
+\begin{equation}
+- \frac{1}{\rho_0} \frac{\partial \pizero}{\partial r} = \frac{\partial w_0}{\partial t} + w_0 \frac{\partial w_0}{\partial r} \enskip, \label{eq:pizero}
+\end{equation}
+
+
+
+\subsection{Base State}
+
+\begin{eqnarray}
+\frac{\partial \rhozero}{\partial t} &=& - \nablab \cdotb \left( \rhozero w_0 \er \right)
+- \nablab \cdotb \left( \etarho \er \right) \enskip ,
+\label{eq:rho0upd_new}
+\end{eqnarray}
+
+\subsubsection{Plane-Parallel}
+\begin{equation}
+\frac{\partial p_0}{\partial t} = w_0 \rho_0 g  + \etarho g
+                                 = - w_0 \frac{\partial p_0}{\partial r} + \etarho g \enskip .
+\label{eq:p0upd_new} 
+\end{equation}
+
+\begin{equation}
+\frac{\partial w_0}{\partial r} =  \Sbar - \frac{1}{\gammabar p_0} \etarho g \enskip \label{eq:divw0} ,
+\end{equation}
+
+
+
+\subsection{Misc.}
+
+\begin{equation}
+w_0^{n,\star} = \frac{\dt^{n} w_0^{\nmh} + \dt^{n-1} w_0^{\nph,\star}}{\dt^n+\dt^{n-1}}\enskip,\label{eq:w0nstar}
+\end{equation}
+\begin{equation}
+\left(\frac{\partial w_0}{\partial r}\right)^{n,\star} = \frac{1}{\dt^n+\dt^{n-1} } \left [ \dt^{n} \left(\frac{\partial w_0 }{ \partial r}\right)^{\nmh}
++ \dt^{n-1} \left(\frac{\partial w_0 }{ \partial r}\right)^{\nph,\star} \right ] \enskip.\label{eq:dw0drnstar}
+\end{equation}
+
+\begin{equation}
+ L_\beta^\rho \phi =
+   D \left ( \beta_0^{\nph} {\bf V} \right) - \beta_0^{\nph} \left(S^{n+1}-\overline{S}^{n+1} \right)\enskip,
+\label{eq:nodal_solve}
 \end{equation}
 
 \section{Current Algorithm}
