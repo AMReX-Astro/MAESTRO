@@ -257,7 +257,7 @@ contains
     if (spherical .eq. 1) then
        do n=1,nlevs
           do comp=1,dm
-             call multifab_build(w0mac(n,comp), mla%la(n),  1, 1, nodal = edge_nodal_flag(comp,:))
+             call multifab_build(w0mac(n,comp),mla%la(n),1,1,nodal = edge_nodal_flag(comp,:))
              call setval(w0mac(n,comp), ZERO, all=.true.)
           end do
        end do
@@ -265,7 +265,7 @@ contains
 
     do n=1,nlevs
        call multifab_build(ptherm_old(n), mla%la(n), 1, 0)
-       call multifab_build(p0_cart(n), mla%la(n), 1, 1)
+       call multifab_build(p0_cart(n), mla%la(n), 1, 0)
     end do
     
     ! ptherm_old now holds the thermodynamic p computed from sold(rho,h,X)
@@ -283,14 +283,6 @@ contains
     ! fill the ghostcells of p0_cart
     if (nlevs .eq. 1) then
 
-       ! fill ghost cells for two adjacent grids at the same level
-       ! this includes periodic domain boundary ghost cells
-       call multifab_fill_boundary(p0_cart(nlevs))
-
-       ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(p0_cart(nlevs),1,foextrap_comp,1, &
-                            the_bc_tower%bc_tower_array(nlevs))
-
     else
 
        ! the loop over nlevs must count backwards to make sure the finer grids are done first
@@ -299,14 +291,6 @@ contains
           ! set level n-1 data to be the average of the level n data covering it
           call ml_cc_restriction(p0_cart(n-1),p0_cart(n),mla%mba%rr(n-1,:))
 
-          ! fill level n ghost cells using interpolation from level n-1 data
-          ! note that multifab_fill_boundary and multifab_physbc are called for
-          ! both levels n-1 and n
-          call multifab_fill_ghost_cells(p0_cart(n),p0_cart(n-1), &
-                                         p0_cart(n)%ng,mla%mba%rr(n-1,:), &
-                                         the_bc_tower%bc_tower_array(n-1), &
-                                         the_bc_tower%bc_tower_array(n), &
-                                         1,foextrap_comp,1)
        enddo
 
     end if
@@ -316,7 +300,7 @@ contains
     call average(mla,p0_cart,p0_minus_pthermbar,dx,1)
 
     do n=1,nlevs
-       call multifab_build(delta_p_term(n), mla%la(n), 1, 1)
+       call multifab_build(delta_p_term(n), mla%la(n), 1)
     enddo
 
     ! delta_p_term now holds p0_minus_pthermbar = p0_old - pthermbar_old
@@ -326,30 +310,12 @@ contains
     ! fill the ghostcells of delta_p_term
     if (nlevs .eq. 1) then
 
-       ! fill ghost cells for two adjacent grids at the same level
-       ! this includes periodic domain boundary ghost cells
-       call multifab_fill_boundary(delta_p_term(nlevs))
-
-       ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(delta_p_term(nlevs),1,foextrap_comp,1, &
-                            the_bc_tower%bc_tower_array(nlevs))
-
     else
 
        ! the loop over nlevs must count backwards to make sure the finer grids are done first
        do n=nlevs,2,-1
-
           ! set level n-1 data to be the average of the level n data covering it
           call ml_cc_restriction(delta_p_term(n-1),delta_p_term(n),mla%mba%rr(n-1,:))
-
-          ! fill level n ghost cells using interpolation from level n-1 data
-          ! note that multifab_fill_boundary and multifab_physbc are called for
-          ! both levels n-1 and n
-          call multifab_fill_ghost_cells(delta_p_term(n),delta_p_term(n-1), &
-                                         delta_p_term(n)%ng,mla%mba%rr(n-1,:), &
-                                         the_bc_tower%bc_tower_array(n-1), &
-                                         the_bc_tower%bc_tower_array(n), &
-                                         1,foextrap_comp,1)
        enddo
 
     end if
@@ -357,7 +323,7 @@ contains
     ! finish computing delta_p_term = (p0_old - pthermbar_old) - (p0_old - ptherm_old)
     ! = ptherm_old - pthermbar_old
     do n = 1,nlevs
-       call multifab_sub_sub(delta_p_term(n),p0_cart(n),1)
+       call multifab_sub_sub(delta_p_term(n),p0_cart(n))
     enddo
 
     do n=1,nlevs
@@ -401,8 +367,8 @@ contains
 
     do n=1,nlevs
        do comp=1,dm
-          call multifab_build(  umac(n,comp), mla%la(n),  1, 1, nodal = edge_nodal_flag(comp,:))
-          call multifab_build(utrans(n,comp), mla%la(n),  1, 1, nodal = edge_nodal_flag(comp,:))
+          call multifab_build(  umac(n,comp), mla%la(n),1,1,nodal = edge_nodal_flag(comp,:))
+          call multifab_build(utrans(n,comp), mla%la(n),1,1,nodal = edge_nodal_flag(comp,:))
        end do
     end do
     
@@ -614,8 +580,8 @@ contains
     ! Build the sedge array.
     do n=1,nlevs
        do comp = 1,dm
-          call multifab_build(sedge(n,comp), mla%la(n), nscal, 0, nodal = edge_nodal_flag(comp,:))
-          call multifab_build(sflux(n,comp), mla%la(n), nscal, 0, nodal = edge_nodal_flag(comp,:))
+          call multifab_build(sedge(n,comp),mla%la(n),nscal,0,nodal=edge_nodal_flag(comp,:))
+          call multifab_build(sflux(n,comp),mla%la(n),nscal,0,nodal=edge_nodal_flag(comp,:))
        end do
     end do
 
@@ -818,7 +784,7 @@ contains
        do n=1,nlevs
           call multifab_build(ptherm_new(n), mla%la(n), 1, 0)
           call multifab_build(ptherm_nph(n), mla%la(n), 1, 0)
-          call multifab_build(p0_cart(n), mla%la(n), 1, 1)
+          call multifab_build(p0_cart(n), mla%la(n), 1, 0)
        end do
        
        ! ptherm_new now holds the thermodynamic p computed from snew(rho h X)
@@ -848,32 +814,14 @@ contains
 
        ! fill the ghostcells of p0_cart
        if (nlevs .eq. 1) then
-
-          ! fill ghost cells for two adjacent grids at the same level
-          ! this includes periodic domain boundary ghost cells
-          call multifab_fill_boundary(p0_cart(nlevs))
-
-          ! fill non-periodic domain boundary ghost cells
-          call multifab_physbc(p0_cart(nlevs),1,foextrap_comp,1, &
-                               the_bc_tower%bc_tower_array(nlevs))
        
        else
 
           ! the loop over nlevs must count backwards to make sure the finer grids are 
           ! done first
           do n=nlevs,2,-1
-
              ! set level n-1 data to be the average of the level n data covering it
              call ml_cc_restriction(p0_cart(n-1)    ,p0_cart(n)    ,mla%mba%rr(n-1,:))
-
-             ! fill level n ghost cells using interpolation from level n-1 data
-             ! note that multifab_fill_boundary and multifab_physbc are called for
-             ! both levels n-1 and n
-             call multifab_fill_ghost_cells(p0_cart(n),p0_cart(n-1), &
-                                            p0_cart(n)%ng,mla%mba%rr(n-1,:), &
-                                            the_bc_tower%bc_tower_array(n-1), &
-                                            the_bc_tower%bc_tower_array(n), &
-                                            1,foextrap_comp,1)
           enddo
 
        end if
@@ -883,7 +831,7 @@ contains
        call average(mla,p0_cart,p0_minus_pthermbar,dx,1)
 
        do n=1,nlevs
-          call multifab_build(delta_p_term(n), mla%la(n), 1, 1)
+          call multifab_build(delta_p_term(n), mla%la(n), 1, 0)
        enddo
 
        ! delta_p_term now holds p0_minus_pthermbar = p0_nph - pthermbar_nph
@@ -892,14 +840,6 @@ contains
 
        ! now fill the ghostcells of delta_p_term
        if (nlevs .eq. 1) then
-
-          ! fill ghost cells for two adjacent grids at the same level
-          ! this includes periodic domain boundary ghost cells
-          call multifab_fill_boundary(delta_p_term(nlevs))
-
-          ! fill non-periodic domain boundary ghost cells
-          call multifab_physbc(delta_p_term(nlevs),1,foextrap_comp,1, &
-                               the_bc_tower%bc_tower_array(nlevs))
        
        else
 
@@ -909,15 +849,6 @@ contains
 
              ! set level n-1 data to be the average of the level n data covering it
              call ml_cc_restriction(delta_p_term(n-1),delta_p_term(n),mla%mba%rr(n-1,:))
-
-             ! fill level n ghost cells using interpolation from level n-1 data
-             ! note that multifab_fill_boundary and multifab_physbc are called for
-             ! both levels n-1 and n
-             call multifab_fill_ghost_cells(delta_p_term(n),delta_p_term(n-1), &
-                                            delta_p_term(n)%ng,mla%mba%rr(n-1,:), &
-                                            the_bc_tower%bc_tower_array(n-1), &
-                                            the_bc_tower%bc_tower_array(n), &
-                                            1,foextrap_comp,1)
           enddo
 
        end if
@@ -925,7 +856,7 @@ contains
        ! finish computing delta_p_term = (p0_nph - pthermbar_nph) - (p0_nph - ptherm_nph)
        ! = ptherm_nph - pthermbar_nph
        do n = 1,nlevs
-          call multifab_sub_sub(delta_p_term(n),p0_cart(n),1)
+          call multifab_sub_sub(delta_p_term(n),p0_cart(n))
        enddo
 
        do n=1,nlevs
@@ -973,8 +904,8 @@ contains
 
        do n=1,nlevs
           do comp=1,dm
-             call multifab_build(  umac(n,comp), mla%la(n),  1, 1, nodal = edge_nodal_flag(comp,:))
-             call multifab_build(utrans(n,comp), mla%la(n),  1, 1, nodal = edge_nodal_flag(comp,:))
+             call multifab_build(  umac(n,comp),mla%la(n),1,1,nodal=edge_nodal_flag(comp,:))
+             call multifab_build(utrans(n,comp),mla%la(n),1,1,nodal=edge_nodal_flag(comp,:))
           end do
        end do
 
@@ -1110,8 +1041,10 @@ contains
        ! Build the sedge array.
        do n=1,nlevs
           do comp = 1,dm
-             call multifab_build(sedge(n,comp), mla%la(n), nscal, 0, nodal = edge_nodal_flag(comp,:))
-             call multifab_build(sflux(n,comp), mla%la(n), nscal, 0, nodal = edge_nodal_flag(comp,:))
+             call multifab_build(sedge(n,comp),mla%la(n),nscal,0, &
+                                 nodal=edge_nodal_flag(comp,:))
+             call multifab_build(sflux(n,comp),mla%la(n),nscal,0, &
+                                 nodal=edge_nodal_flag(comp,:))
           end do
        end do
 
@@ -1370,7 +1303,7 @@ contains
 
           do n=1,nlevs
              call multifab_build(ptherm_new(n), mla%la(n), 1, 0)
-             call multifab_build(p0_cart(n), mla%la(n), 1, 1)
+             call multifab_build(p0_cart(n), mla%la(n), 1, 0)
           enddo
 
           ! ptherm_new now holds the thermodynamic p computed from snew(rho h X)
@@ -1389,87 +1322,23 @@ contains
           do n=1,nlevs
              call destroy(ptherm_new(n))
           end do
-          
-          ! fill ghostcells for p0_cart
-          if (nlevs .eq. 1) then
-
-             ! fill ghost cells for two adjacent grids at the same level
-             ! this includes periodic domain boundary ghost cells
-             call multifab_fill_boundary(p0_cart(nlevs))
-       
-             ! fill non-periodic domain boundary ghost cells
-             call multifab_physbc(p0_cart(nlevs),1,foextrap_comp,1, &
-                                  the_bc_tower%bc_tower_array(nlevs))
-
-          else
-
-             ! the loop over nlevs must count backwards to make sure the finer grids are 
-             ! done first
-             do n=nlevs,2,-1
-
-                ! set level n-1 data to be the average of the level n data covering it
-                call ml_cc_restriction(p0_cart(n-1)    ,p0_cart(n)    ,mla%mba%rr(n-1,:))
-
-                ! fill level n ghost cells using interpolation from level n-1 data
-                ! note that multifab_fill_boundary and multifab_physbc are called for
-                ! both levels n-1 and n
-                call multifab_fill_ghost_cells(p0_cart(n),p0_cart(n-1), &
-                                               p0_cart(n)%ng,mla%mba%rr(n-1,:), &
-                                               the_bc_tower%bc_tower_array(n-1), &
-                                               the_bc_tower%bc_tower_array(n), &
-                                               1,foextrap_comp,1)
-             enddo
-             
-          end if
 
           ! p0_minus_pthermbar now holds
           ! Avg(p0_cart) = Avg(p0_new - ptherm_new) = p0_new - pthermbar_new
           call average(mla,p0_cart,p0_minus_pthermbar,dx,1)
 
           do n=1,nlevs
-             call multifab_build(delta_p_term(n), mla%la(n), 1, 1)
+             call multifab_build(delta_p_term(n), mla%la(n), 1, 0)
           enddo
 
           ! delta_p_term now holds p0_minus_pthermbar = p0_new - pthermbar_new
           call put_1d_array_on_cart(nlevs,p0_minus_pthermbar,delta_p_term,foextrap_comp, &
                                     .false.,.false.,dx,the_bc_tower%bc_tower_array,mla)
-          
-          ! fill the ghostcells of delta_p_term
-          if (nlevs .eq. 1) then
-
-             ! fill ghost cells for two adjacent grids at the same level
-             ! this includes periodic domain boundary ghost cells
-             call multifab_fill_boundary(delta_p_term(nlevs))
-
-             ! fill non-periodic domain boundary ghost cells
-             call multifab_physbc(delta_p_term(nlevs),1,foextrap_comp,1, &
-                                  the_bc_tower%bc_tower_array(nlevs))
-
-          else
-
-             ! the loop over nlevs must count backwards to make sure the finer grids are 
-             ! done first
-             do n=nlevs,2,-1
-
-                ! set level n-1 data to be the average of the level n data covering it
-                call ml_cc_restriction(delta_p_term(n-1),delta_p_term(n),mla%mba%rr(n-1,:))
-
-                ! fill level n ghost cells using interpolation from level n-1 data
-                ! note that multifab_fill_boundary and multifab_physbc are called for
-                ! both levels n-1 and n
-                call multifab_fill_ghost_cells(delta_p_term(n),delta_p_term(n-1), &
-                                               delta_p_term(n)%ng,mla%mba%rr(n-1,:), &
-                                               the_bc_tower%bc_tower_array(n-1), &
-                                               the_bc_tower%bc_tower_array(n), &
-                                               1,foextrap_comp,1)
-             enddo
-
-          end if
 
           ! finish computing delta_p_term = (p0_new - pthermbar_new) - (p0_new - ptherm_new)
           ! = ptherm_new - pthermbar_new
           do n = 1,nlevs
-             call multifab_sub_sub(delta_p_term(n),p0_cart(n),1)
+             call multifab_sub_sub(delta_p_term(n),p0_cart(n))
           enddo
           
           do n=1,nlevs
