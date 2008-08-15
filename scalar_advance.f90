@@ -198,8 +198,8 @@ contains
 
     if (enthalpy_pred_type .eq. predict_rhohprime) then
        ! convert (rho h) -> (rho h)'
-       call put_in_pert_form(nlevs,sold,rhoh0_old,dx,rhoh_comp, &
-                             .true.,mla,the_bc_level)
+       call put_in_pert_form(mla,sold,rhoh0_old,dx,rhoh_comp, &
+                             .true.,the_bc_level)
     end if
 
     ! predict either T, h, or (rho h)' at the edges
@@ -217,8 +217,8 @@ contains
 
     if (enthalpy_pred_type .eq. predict_rhohprime) then
        ! convert (rho h)' -> (rho h)
-       call put_in_pert_form(nlevs,sold,rhoh0_old,dx,rhoh_comp, &
-                             .false.,mla,the_bc_level)
+       call put_in_pert_form(mla,sold,rhoh0_old,dx,rhoh_comp, &
+                             .false.,the_bc_level)
     end if
 
     ! if we are predicting h at the edges, then restore the state arrays

@@ -19,7 +19,7 @@ module pert_form_module
   
 contains
 
-  subroutine put_in_pert_form(nlevs,s,base,dx,comp,flag,mla,the_bc_level)
+  subroutine put_in_pert_form(mla,s,base,dx,comp,flag,the_bc_level)
 
     use geometry, only: spherical
     use variables, only: foextrap_comp, nscal
@@ -29,21 +29,23 @@ contains
     use multifab_fill_ghost_module
     use multifab_physbc_module
 
-    integer        , intent(in   ) :: nlevs,comp
+    type(ml_layout), intent(in   ) :: mla
+    integer        , intent(in   ) :: comp
     type(multifab) , intent(inout) :: s(:)
     real(kind=dp_t), intent(in   ) :: base(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     logical        , intent(in   ) :: flag
-    type(ml_layout), intent(inout) :: mla
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     ! Local variables
     real(kind=dp_t), pointer::  sp(:,:,:,:)
     integer :: lo(s(1)%dim),hi(s(1)%dim)
-    integer :: i,ng,dm,n,bc_comp
+    integer :: i,ng,dm,nlevs,n,bc_comp
 
-    ng = s(1)%ng
-    dm = s(1)%dim
+    dm    = mla%dim
+    nlevs = mla%nlevel
+
+    ng    = s(1)%ng
 
     do n=1,nlevs
        do i = 1, s(n)%nboxes
