@@ -31,7 +31,7 @@ contains
     use network,       only: nspec, spec_names
     use geometry,      only: spherical, nr_fine
     use variables,     only: nscal, spec_comp, rho_comp, foextrap_comp
-    use probin_module, only: verbose
+    use probin_module, only: edge_nodal_flag,verbose
     use modify_scal_force_module
     use convert_rhoX_to_X_module
 
@@ -60,7 +60,7 @@ contains
     type(multifab) :: sflux(nlevs,mla%dim)
 
     integer    :: comp,n,dm
-    logical    :: umac_nodal_flag(sold(1)%dim), is_vel
+    logical    :: is_vel
     real(dp_t) :: smin,smax
 
     real(kind=dp_t), allocatable :: rho0_edge_old(:,:)
@@ -160,10 +160,8 @@ contains
     !**************************************************************************
 
     do comp = 1,dm
-       umac_nodal_flag = .false.
-       umac_nodal_flag(comp) = .true.
        do n=1,nlevs
-          call multifab_build(sflux(n,comp), mla%la(n), nscal, 0, nodal = umac_nodal_flag)
+          call multifab_build(sflux(n,comp), mla%la(n), nscal, 0, nodal = edge_nodal_flag(comp,:))
        end do
     end do
 

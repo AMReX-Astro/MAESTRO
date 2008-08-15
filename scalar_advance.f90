@@ -34,7 +34,7 @@ contains
     use geometry,      only: spherical, nr_fine
     use variables,     only: nscal, ntrac, trac_comp, temp_comp, &
                              rho_comp, rhoh_comp, foextrap_comp
-    use probin_module, only: enthalpy_pred_type, use_thermal_diffusion, verbose
+    use probin_module, only: enthalpy_pred_type, use_thermal_diffusion, edge_nodal_flag, verbose
     use pred_parameters
     use modify_scal_force_module
     use convert_rhoX_to_X_module
@@ -72,7 +72,7 @@ contains
     type(multifab) :: sflux(nlevs,mla%dim)
 
     integer    :: velpred,comp,pred_comp,n,dm
-    logical    :: umac_nodal_flag(sold(1)%dim), is_vel
+    logical    :: is_vel
     real(dp_t) :: smin,smax
     logical    :: is_prediction
 
@@ -260,10 +260,8 @@ contains
     !**************************************************************************
 
     do comp = 1,dm
-       umac_nodal_flag = .false.
-       umac_nodal_flag(comp) = .true.
        do n=1,nlevs
-          call multifab_build(sflux(n,comp), mla%la(n), nscal, 0, nodal = umac_nodal_flag)
+          call multifab_build(sflux(n,comp), mla%la(n), nscal, 0, nodal = edge_nodal_flag(comp,:))
        end do
     end do
 

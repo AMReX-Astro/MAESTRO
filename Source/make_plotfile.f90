@@ -103,7 +103,7 @@ contains
     use plot_variables_module
     use fill_3d_module
     use probin_module, only: nOutFiles, lUsingNFiles, plot_spec, plot_trac, plot_base
-    use probin_module, only: single_prec_plotfiles
+    use probin_module, only: single_prec_plotfiles, edge_nodal_flag
     use geometry, only: spherical, nr_fine
     use average_module
     use ml_restriction_module
@@ -138,8 +138,6 @@ contains
     real(dp_t), allocatable :: entropybar(:,:)
 
     integer :: n,dm,nlevs,prec,comp
-
-    logical :: umac_nodal_flag(mla%dim)
 
     type(bl_prof_timer), save :: bpt
 
@@ -190,9 +188,7 @@ contains
        if (spherical .eq. 1) then
           do n=1,nlevs
              do comp=1,dm
-                umac_nodal_flag = .false.
-                umac_nodal_flag(comp) = .true.
-                call multifab_build(w0mac(n,comp), mla%la(n),  1, 1, nodal = umac_nodal_flag)
+                call multifab_build(w0mac(n,comp), mla%la(n),  1, 1, nodal = edge_nodal_flag(comp,:))
                 call setval(w0mac(n,comp), ZERO, all=.true.)
              end do
           end do

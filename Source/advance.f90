@@ -149,7 +149,7 @@ contains
 
     integer    :: r,n,dm,comp,nlevs,ng_s,proj_type
     real(dp_t) :: halfdt,eps_in
-    logical    :: nodal(mla%dim),umac_nodal_flag(mla%dim)
+    logical    :: nodal(mla%dim)
 
     type(bl_prof_timer), save :: bpt
 
@@ -175,15 +175,6 @@ contains
     allocate( rho0_predicted_edge(nlevs,0:nr_fine  ))
     allocate(       gamma1bar_old(nlevs,0:nr_fine-1))
     allocate(delta_gamma1_termbar(nlevs,0:nr_fine-1))
-
-    ! Build the sedge array.
-    do n=1,nlevs
-       do comp = 1,dm
-          umac_nodal_flag = .false.
-          umac_nodal_flag(comp) = .true.
-          call multifab_build(sedge(n,comp), mla%la(n), nscal, 0, nodal = umac_nodal_flag)
-       end do
-    end do
 
     ! Set this to zero so if evolve_base_state = F there is no effect in update_vel
     w0_force = ZERO
@@ -265,9 +256,7 @@ contains
     if (spherical .eq. 1) then
        do n=1,nlevs
           do comp=1,dm
-             umac_nodal_flag = .false.
-             umac_nodal_flag(comp) = .true.
-             call multifab_build(w0mac(n,comp), mla%la(n),  1, 1, nodal = umac_nodal_flag)
+             call multifab_build(w0mac(n,comp), mla%la(n),  1, 1, nodal = edge_nodal_flag(comp,:))
              call setval(w0mac(n,comp), ZERO, all=.true.)
           end do
        end do
@@ -410,10 +399,8 @@ contains
 
     do n=1,nlevs
        do comp=1,dm
-          umac_nodal_flag = .false.
-          umac_nodal_flag(comp) = .true.
-          call multifab_build(  umac(n,comp), mla%la(n),  1, 1, nodal = umac_nodal_flag)
-          call multifab_build(utrans(n,comp), mla%la(n),  1, 1, nodal = umac_nodal_flag)
+          call multifab_build(  umac(n,comp), mla%la(n),  1, 1, nodal = edge_nodal_flag(comp,:))
+          call multifab_build(utrans(n,comp), mla%la(n),  1, 1, nodal = edge_nodal_flag(comp,:))
        end do
     end do
     
@@ -612,10 +599,8 @@ contains
     end do
 
     ! Build etarhoflux here so that we can call correct_base before make_etarho.
-    umac_nodal_flag = .false.
-    umac_nodal_flag(dm) = .true.
     do n=1,nlevs
-       call multifab_build(etarhoflux(n), mla%la(n), 1, nodal = umac_nodal_flag)
+       call multifab_build(etarhoflux(n), mla%la(n), 1, nodal = edge_nodal_flag(dm,:))
        call setval(etarhoflux(n),ZERO,all=.true.)
     end do
 
@@ -623,6 +608,13 @@ contains
        write(6,*) '            : density_advance >>> '
        write(6,*) '            : scalar_advance >>> '
     end if
+
+    ! Build the sedge array.
+    do n=1,nlevs
+       do comp = 1,dm
+          call multifab_build(sedge(n,comp), mla%la(n), nscal, 0, nodal = edge_nodal_flag(comp,:))
+       end do
+    end do
 
     call density_advance(nlevs,mla,1,s1,s2,sedge,&
                          umac,w0,w0mac,etarhoflux,normal, &
@@ -635,6 +627,13 @@ contains
                         rho0_new,rhoh0_2, &
                         p0_old,p0_new,tempbar,psi,&
                         dx,dt,the_bc_tower%bc_tower_array)
+
+    ! Destroy the sedge array.
+    do n = 1, nlevs
+       do comp = 1,dm
+          call destroy(sedge(n,comp))
+       end do
+    end do
 
     ! Correct the base state using the lagged etarho and psi
     if (use_etarho .and. evolve_base_state) then
@@ -970,10 +969,8 @@ contains
 
        do n=1,nlevs
           do comp=1,dm
-             umac_nodal_flag = .false.
-             umac_nodal_flag(comp) = .true.
-             call multifab_build(  umac(n,comp), mla%la(n),  1, 1, nodal = umac_nodal_flag)
-             call multifab_build(utrans(n,comp), mla%la(n),  1, 1, nodal = umac_nodal_flag)
+             call multifab_build(  umac(n,comp), mla%la(n),  1, 1, nodal = edge_nodal_flag(comp,:))
+             call multifab_build(utrans(n,comp), mla%la(n),  1, 1, nodal = edge_nodal_flag(comp,:))
           end do
        end do
 
@@ -1106,6 +1103,13 @@ contains
           write(6,*) '            : scalar_advance >>>'
        end if
 
+       ! Build the sedge array.
+       do n=1,nlevs
+          do comp = 1,dm
+             call multifab_build(sedge(n,comp), mla%la(n), nscal, 0, nodal = edge_nodal_flag(comp,:))
+          end do
+       end do
+
        call density_advance(nlevs,mla,2,s1,s2,sedge,&
                             umac,w0,w0mac,etarhoflux,normal, &
                             rho0_old,rho0_new,&
@@ -1117,6 +1121,13 @@ contains
                            rho0_new,rhoh0_2, &
                            p0_old,p0_new,tempbar,psi,&
                            dx,dt,the_bc_tower%bc_tower_array)
+
+       ! Destroy the sedge array.
+       do n = 1, nlevs
+          do comp = 1,dm
+             call destroy(sedge(n,comp))
+          end do
+       end do
 
        ! Correct the base state using the lagged etarho and psi
        if (use_etarho .and. evolve_base_state) then
@@ -1507,12 +1518,6 @@ contains
           call destroy(hgrhs_old(n))
        end do
     end if
-
-    do n = 1, nlevs
-       do comp = 1,dm
-          call destroy(sedge(n,comp))
-       end do
-    end do
 
     call destroy(bpt)
     
