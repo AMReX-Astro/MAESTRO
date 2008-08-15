@@ -2,23 +2,24 @@
 ! and also compute div_etarho = div {eta_rho}
 !
 ! We keep make three quantities here: 
-!    etarho is edge-centered 
-!    etarho_cc is cell-centered.  
-!    div_etarho is the divergence of etarho
+!    etarho     is edge-centered
+!    etarho_cc  is cell-centered
+!    div_etarho is cell-centered
 !
 ! For plane-parallel geometries, we compute etarho by averaging up 
 ! interface fluxes (etarho_flux) created in mkflux.  We compute etarho_cc
 ! and div_etarho from etarho.
 !
-! For spherical geometries, we construct a multifab containing 
-! { rho' Utilde.e_r } and use the average routine to put it in cell-centers 
-! on the base state to get etarho_cc.  We compute etarho from these 
-! cell-centered quantites by averaging to the center.  We compute div_etarho
-! from the paper III, eq. 28,
+! For spherical geometries, 
+!   1) We construct a multifab containing ! { rho' Utilde.e_r } and 
+!      use the average routine to put it in cell-centers 
+!      on the base state to get etarho_cc.  We compute etarho from these 
+!      cell-centered quantites by averaging to the center.  
+!   2) We compute div_etarho from the paper III, eq. 28,
 !
 !        d rho' / dt = - d eta_rho / dr
 !
-! so div_etarho = - <rho '> / dt
+!      so div_etarho = - <rho'> / dt
 !
 
 module make_eta_module
@@ -616,7 +617,8 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:)
 
     real(kind=dp_t), allocatable :: rho0_nph(:)
-    real(kind=dp_t), allocatable :: rho0_cart(:,:,:,:)
+    real(kind=dp_t), allocatable :: rho0_new_cart(:,:,:,:)
+    real(kind=dp_t), allocatable :: rho0_nph_cart(:,:,:,:)
 
     real(kind=dp_t) :: Utilde_dot_er
     integer :: i,j,k,r
@@ -627,9 +629,11 @@ contains
        rho0_nph(r) = HALF*(rho0_old(r) + rho0_new(r))
     enddo
 
-    allocate(rho0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
-    call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,rho0_nph,rho0_cart,lo,hi,dx,0,0)
+    allocate(rho0_new_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
+    call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,rho0_new,rho0_new_cart,lo,hi,dx,0,0)
 
+    allocate(rho0_nph_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
+    call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,rho0_nph,rho0_nph_cart,lo,hi,dx,0,0)
 
     ! construct time-centered [ rho' (Utilde . e_r) ]
     do k = lo(3),hi(3)
@@ -641,15 +645,19 @@ contains
                              HALF*(wmac(i,j,k) + wmac(i,j,k+1)) * normal(i,j,k,3)
 
              eta_cart(i,j,k) = (HALF*(rho_old(i,j,k) + rho_new(i,j,k)) - &
-                                rho0_cart(i,j,k,1)) * Utilde_dot_er
+                                rho0_nph_cart(i,j,k,1)) * Utilde_dot_er
 
-             rhoprime_cart(i,j,k) = HALF*(rho_old(i,j,k) + rho_new(i,j,k)) - &
-                  rho0_cart(i,j,k,1)
+!            rhoprime_cart(i,j,k) = HALF*(rho_old(i,j,k) + rho_new(i,j,k)) - &
+!                 rho0_nph_cart(i,j,k,1)
+
+             ! We want rhoprime at the new time
+             rhoprime_cart(i,j,k) = rho_new(i,j,k) - rho0_new_cart(i,j,k,1)
+ 
           enddo
        enddo
     enddo
 
-    deallocate (rho0_cart,rho0_nph)
+    deallocate (rho0_new_cart,rho0_nph_cart,rho0_nph)
 
   end subroutine construct_eta_cart
 
