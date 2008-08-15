@@ -461,6 +461,13 @@ contains
 !      call mk_div_beta0_w0mac(nlevs,w0mac,div_coeff_3d,w0rhs_3d,dx)
 !      call fabio_ml_multifab_write_d(w0rhs_3d,mla%mba%rr(:,1),"a_divbw")
 
+       do n=1,nlevs
+          call destroy(div_coeff_3d(n))
+          call destroy(    w0rhs_3d(n))
+          call destroy(    w0phi_3d(n))
+          call destroy(   dummy_rho(n))
+       end do
+
     else
 
        ng_w0 = w0mac(1,1)%ng
