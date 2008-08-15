@@ -573,6 +573,7 @@ contains
 
     do n=1,nlevs
        call destroy(eta_cart(n))
+       call destroy(rhoprime_cart(n))
     enddo
 
     ! put eta on base state edges -- here we are assuming that there
