@@ -120,7 +120,7 @@ contains
     type(multifab) :: ptherm_old(mla%nlevel)
     type(multifab) :: ptherm_nph(mla%nlevel)
     type(multifab) :: ptherm_new(mla%nlevel)
-    type(multifab) :: p0_cart(mla%nlevel)
+    type(multifab) :: pthermbar_cart(mla%nlevel)
     type(multifab) :: delta_p_term(mla%nlevel)
 
     type(multifab) :: sedge(mla%nlevel,mla%dim)
@@ -131,6 +131,7 @@ contains
     real(dp_t), allocatable :: rho0_nph(:,:)
     real(dp_t), allocatable :: p0_nph(:,:)
     real(dp_t), allocatable :: p0_minus_pthermbar(:,:)
+    real(dp_t), allocatable :: pthermbar(:,:)
     real(dp_t), allocatable :: w0_force(:,:)
     real(dp_t), allocatable :: w0_old(:,:)
     real(dp_t), allocatable :: Sbar(:,:)
@@ -160,6 +161,7 @@ contains
     allocate(            rho0_nph(nlevs,0:nr_fine-1))
     allocate(              p0_nph(nlevs,0:nr_fine-1))
     allocate(  p0_minus_pthermbar(nlevs,0:nr_fine-1))
+    allocate(           pthermbar(nlevs,0:nr_fine-1))
     allocate(            w0_force(nlevs,0:nr_fine-1))
     allocate(              w0_old(nlevs,0:nr_fine  ))
     allocate(                Sbar(nlevs,0:nr_fine-1))
@@ -172,6 +174,7 @@ contains
     allocate( rho0_predicted_edge(nlevs,0:nr_fine  ))
     allocate(       gamma1bar_old(nlevs,0:nr_fine-1))
     allocate(delta_gamma1_termbar(nlevs,0:nr_fine-1))
+
 
     ! Set this to zero so if evolve_base_state = F there is no effect in update_vel
     w0_force = ZERO
@@ -261,42 +264,38 @@ contains
 
     do n=1,nlevs
        call multifab_build(ptherm_old(n), mla%la(n), 1, 0)
-       call multifab_build(p0_cart(n), mla%la(n), 1, 0)
     end do
     
     ! ptherm_old now holds the thermodynamic p computed from sold(rho,h,X)
     call makePfromRhoH(nlevs,sold,ptherm_old,tempbar,mla,the_bc_tower%bc_tower_array,dx)
 
-    ! p0_cart now holds p0_old
-    call put_1d_array_on_cart(nlevs,p0_old,p0_cart,foextrap_comp,.false.,.false.,dx, &
-                              the_bc_tower%bc_tower_array,mla)
+    ! compute pthermbar = Avg(ptherm_old)
+    call average(mla,ptherm_old,pthermbar,dx,1)
 
-    ! p0_cart now holds (p0_old - ptherm_old)
-    do n=1,nlevs
-       call multifab_sub_sub(p0_cart(n),ptherm_old(n))
-    enddo
-    
-    ! p0_minus_pthermbar now holds 
-    ! Avg(p0_cart) = Avg(p0_old - ptherm_old) = p0_old - pthermbar_old
-    call average(mla,p0_cart,p0_minus_pthermbar,dx,1)
+    ! compute p0_minus_pthermbar = p0_old - pthermbar
+    p0_minus_pthermbar = p0_old - pthermbar
 
     do n=1,nlevs
-       call multifab_build(delta_p_term(n), mla%la(n), 1)
-    enddo
+       call multifab_build(pthermbar_cart(n), mla%la(n), 1, 0)
+    end do
 
-    ! delta_p_term now holds p0_minus_pthermbar = p0_old - pthermbar_old
-    call put_1d_array_on_cart(nlevs,p0_minus_pthermbar,delta_p_term,foextrap_comp, &
+    ! compute pthermbar_cart = fill(pthermbar)
+    call put_1d_array_on_cart(nlevs,pthermbar,pthermbar_cart,foextrap_comp, &
                               .false.,.false.,dx,the_bc_tower%bc_tower_array,mla)
 
-    ! finish computing delta_p_term = (p0_old - pthermbar_old) - (p0_old - ptherm_old)
-    ! = ptherm_old - pthermbar_old
-    do n = 1,nlevs
-       call multifab_sub_sub(delta_p_term(n),p0_cart(n))
-    enddo
+    do n=1,nlevs
+       call multifab_build(delta_p_term(n), mla%la(n), 1, 0)
+    end do
+
+    ! compute delta_p_term = ptherm_old - pthermbar_cart
+    do n=1,nlevs
+       call multifab_copy(delta_p_term(n), ptherm_old(n))
+       call multifab_sub_sub(delta_p_term(n), pthermbar_cart(n))
+    end do
 
     do n=1,nlevs
-       call destroy(p0_cart(n))
-    enddo
+       call destroy(pthermbar_cart(n))
+    end do
 
     if (dm .eq. 3) then
        do n=1,nlevs
@@ -751,56 +750,57 @@ contains
 
        do n=1,nlevs
           call multifab_build(ptherm_new(n), mla%la(n), 1, 0)
-          call multifab_build(ptherm_nph(n), mla%la(n), 1, 0)
-          call multifab_build(p0_cart(n), mla%la(n), 1, 0)
        end do
        
        ! ptherm_new now holds the thermodynamic p computed from snew(rho h X)
        call makePfromRhoH(nlevs,snew,ptherm_new,tempbar,mla,the_bc_tower%bc_tower_array,dx)
 
-       p0_nph = HALF*(p0_old + p0_new)
+       do n=1,nlevs
+          call multifab_build(ptherm_nph(n), mla%la(n), 1, 0)
+       end do
 
-       ! p0_cart now holds p0_nph
-       call put_1d_array_on_cart(nlevs,p0_nph,p0_cart,foextrap_comp,.false.,.false.,dx, &
-                                 the_bc_tower%bc_tower_array,mla)
-
+       ! compute ptherm_nph = (1/2)*(ptherm_old+ptherm_new)
        do n=1,nlevs
           call multifab_copy(ptherm_nph(n), ptherm_old(n))
           call multifab_plus_plus(ptherm_nph(n), ptherm_new(n))
           call multifab_div_div_s(ptherm_nph(n), TWO)
        enddo
 
-       ! p0_cart now holds (p0_nph - ptherm_nph)
-       do n=1, nlevs
-          call multifab_sub_sub(p0_cart(n),ptherm_nph(n))
-       enddo
-
        do n=1,nlevs
           call destroy(ptherm_new(n))
-          call destroy(ptherm_nph(n))
        end do
 
-       ! p0_minus_pthermbar now holds
-       ! Avg(p0_cart) = Avg(p0_nph - ptherm_nph) = p0_nph - pthermbar_nph
-       call average(mla,p0_cart,p0_minus_pthermbar,dx,1)
+       ! compute pthermbar = Avg(ptherm_nph)
+       call average(mla,ptherm_nph,pthermbar,dx,1)
+
+       ! compute p0_nph = (1/2)*(p0_old+p0_new)
+       p0_nph = HALF*(p0_old + p0_new)
+
+       ! compute p0_minus_pthermbar = p0_nph - pthermbar
+       p0_minus_pthermbar = p0_nph - pthermbar
+
+       do n=1,nlevs
+          call multifab_build(pthermbar_cart(n), mla%la(n), 1, 0)
+       end do
+
+       ! compute pthermbar_cart = fill(pthermbar)
+       call put_1d_array_on_cart(nlevs,pthermbar,pthermbar_cart,foextrap_comp, &
+                                 .false.,.false.,dx,the_bc_tower%bc_tower_array,mla)
 
        do n=1,nlevs
           call multifab_build(delta_p_term(n), mla%la(n), 1, 0)
-       enddo
+       end do
 
-       ! delta_p_term now holds p0_minus_pthermbar = p0_nph - pthermbar_nph
-       call put_1d_array_on_cart(nlevs,p0_minus_pthermbar,delta_p_term,foextrap_comp, &
-                                 .false.,.false.,dx,the_bc_tower%bc_tower_array,mla)
-
-       ! finish computing delta_p_term = (p0_nph - pthermbar_nph) - (p0_nph - ptherm_nph)
-       ! = ptherm_nph - pthermbar_nph
-       do n = 1,nlevs
-          call multifab_sub_sub(delta_p_term(n),p0_cart(n))
-       enddo
+       ! compute delta_p_term = ptherm_nph - pthermbar_cart
+       do n=1,nlevs
+          call multifab_copy(delta_p_term(n), ptherm_nph(n))
+          call multifab_sub_sub(delta_p_term(n), pthermbar_cart(n))
+       end do
 
        do n=1,nlevs
-          call multifab_destroy(p0_cart(n))
-       enddo
+          call destroy(ptherm_nph(n))
+          call destroy(pthermbar_cart(n))
+       end do
 
        if (dm .eq. 3) then
           do n=1,nlevs
@@ -1242,47 +1242,39 @@ contains
 
           do n=1,nlevs
              call multifab_build(ptherm_new(n), mla%la(n), 1, 0)
-             call multifab_build(p0_cart(n), mla%la(n), 1, 0)
           enddo
 
           ! ptherm_new now holds the thermodynamic p computed from snew(rho h X)
           call makePfromRhoH(nlevs,snew,ptherm_new,tempbar,mla, &
                              the_bc_tower%bc_tower_array,dx)
-          
-          ! p0_cart now holds p0_new
-          call put_1d_array_on_cart(nlevs,p0_new,p0_cart,foextrap_comp,.false.,.false.,dx, &
-                                    the_bc_tower%bc_tower_array,mla)
-          
-          ! p0_cart now holds (p0_new - ptherm_new)
-          do n=1,nlevs
-             call multifab_sub_sub(p0_cart(n),ptherm_new(n))
-          enddo
+
+          ! compute pthermbar = Avg(ptherm_new)
+          call average(mla,ptherm_new,pthermbar,dx,1)
+
+          ! no need to compute p0_minus_pthermbar since make_w0 is not called after here
 
           do n=1,nlevs
-             call destroy(ptherm_new(n))
+             call multifab_build(pthermbar_cart(n), mla%la(n), 1, 0)
           end do
 
-          ! p0_minus_pthermbar now holds
-          ! Avg(p0_cart) = Avg(p0_new - ptherm_new) = p0_new - pthermbar_new
-          call average(mla,p0_cart,p0_minus_pthermbar,dx,1)
+          ! compute pthermbar_cart = fill(pthermbar)
+          call put_1d_array_on_cart(nlevs,pthermbar,pthermbar_cart,foextrap_comp, &
+                                    .false.,.false.,dx,the_bc_tower%bc_tower_array,mla)
 
           do n=1,nlevs
              call multifab_build(delta_p_term(n), mla%la(n), 1, 0)
-          enddo
+          end do
 
-          ! delta_p_term now holds p0_minus_pthermbar = p0_new - pthermbar_new
-          call put_1d_array_on_cart(nlevs,p0_minus_pthermbar,delta_p_term,foextrap_comp, &
-                                    .false.,.false.,dx,the_bc_tower%bc_tower_array,mla)
-
-          ! finish computing delta_p_term = (p0_new - pthermbar_new) - (p0_new - ptherm_new)
-          ! = ptherm_new - pthermbar_new
-          do n = 1,nlevs
-             call multifab_sub_sub(delta_p_term(n),p0_cart(n))
-          enddo
-          
+          ! compute delta_p_term = ptherm_new - pthermbar_cart
           do n=1,nlevs
-             call destroy(p0_cart(n))
-          enddo
+             call multifab_copy(delta_p_term(n), ptherm_new(n))
+             call multifab_sub_sub(delta_p_term(n), pthermbar_cart(n))
+          end do
+
+          do n=1,nlevs
+             call destroy(ptherm_new(n))
+             call destroy(pthermbar_cart(n))
+          end do
           
           call correct_hgrhs(nlevs,the_bc_tower,mla,rho0_new,hgrhs,div_coeff_new,dx,dt, &
                              gamma1bar,p0_new,delta_p_term)
