@@ -33,6 +33,7 @@ contains
     use variables, only: foextrap_comp, rhoh_comp
     use geometry, only: spherical, nr_fine
     use ml_restriction_module, only: ml_cc_restriction_c
+    use fill_3d_module, only: put_1d_array_on_cart
     use multifab_fill_ghost_module
     use multifab_physbc_module
     use make_grav_module
@@ -63,8 +64,12 @@ contains
     real(kind=dp_t), pointer :: np(:,:,:,:)
     real(kind=dp_t), pointer :: fp(:,:,:,:)
     real(kind=dp_t), pointer :: tp(:,:,:,:)
+    real(kind=dp_t), pointer :: pp(:,:,:,:)
 
-    real(kind=dp_t), allocatable :: rho0(:), grav(:)
+    type(multifab)  :: p0_cart(nlevs)
+    real(kind=dp_t) :: p0_nph(nlevs,0:nr_fine-1)
+    real(kind=dp_t) ::   rho0(0:nr_fine-1)
+    real(kind=dp_t) ::   grav(0:nr_fine-1)
 
     type(bl_prof_timer), save :: bpt
 
@@ -85,10 +90,19 @@ contains
     ng_th = thermal(1)%ng
     ng_n  = normal(1)%ng
 
+    if (spherical .eq. 1) then
+       do n = 1,nlevs
+          p0_nph(n,:) = HALF * (p0_old(n,:) + p0_new(n,:))
+          call multifab_build(p0_cart(n),mla%la(n),1,1)
+       end do
+    end if
+
     do n=1,nlevs
 
-       allocate(rho0(0:nr_fine-1))
-       allocate(grav(0:nr_fine-1))
+       if (spherical .eq. 1) then
+          call put_1d_array_on_cart(nlevs,p0_nph,p0_cart,foextrap_comp,.false.,.false.,&
+                                    dx,the_bc_level,mla)
+       end if
 
        rho0(:) = HALF * (rho0_old(n,:) + rho0_new(n,:))
        call make_grav_cell(n,grav,rho0)
@@ -99,6 +113,7 @@ contains
           ump => dataptr(umac(n,1),i)
           vmp => dataptr(umac(n,2),i)
           tp  => dataptr(thermal(n),i)
+          pp  => dataptr(p0_cart(n),i)
           lo = lwb(get_box(scal_force(n),i))
           hi = upb(get_box(scal_force(n),i))
           select case (dm)
@@ -118,16 +133,20 @@ contains
                 np => dataptr(normal(n), i)
                 call mkrhohforce_3d_sphr(n,fp(:,:,:,rhoh_comp), ng_f, is_prediction, &
                                          ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
-                                         tp(:,:,:,1), ng_th, lo, hi, dx(n,:), np(:,:,:,:), &
-                                         ng_n, p0_old(n,:), p0_new(n,:), rho0, grav, &
+                                         tp(:,:,:,1), ng_th, pp(:,:,:,1), lo, hi, dx(n,:), np(:,:,:,:), &
+                                         ng_n, p0_nph(n,:),  rho0, grav, &
                                          psi(n,:), add_thermal)
              end if
           end select
        end do
 
-       deallocate(rho0,grav)
-
     end do
+
+    if (spherical .eq. 1) then
+       do n = 1,nlevs
+          call destroy(p0_cart(n))
+       end do
+    end if
 
     if (nlevs .eq. 1) then
 
@@ -310,8 +329,8 @@ contains
   end subroutine mkrhohforce_3d
 
   subroutine mkrhohforce_3d_sphr(n,rhoh_force,ng_f,is_prediction, &
-                                 umac,vmac,wmac,ng_um,thermal,ng_th, &
-                                 lo,hi,dx,normal,ng_n,p0_old,p0_new,rho0,grav,psi, &
+                                 umac,vmac,wmac,ng_um,thermal,ng_th,p0_cart, &
+                                 lo,hi,dx,normal,ng_n,p0_nph,rho0,grav,psi, &
                                  add_thermal)
 
     use fill_3d_module
@@ -329,20 +348,21 @@ contains
     real(kind=dp_t), intent(in   ) ::       wmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(in   ) ::    thermal(lo(1)-ng_th:,lo(2)-ng_th:,lo(3)-ng_th:)
     real(kind=dp_t), intent(in   ) ::     normal(lo(1)-ng_n :,lo(2)-ng_n :,lo(3)-ng_n :,:)
+    real(kind=dp_t), intent(in   ) ::    p0_cart(lo(1)-   1 :,lo(2)-   1 :,lo(3)-   1 :)
     real(kind=dp_t), intent(in   ) :: dx(:)
-    real(kind=dp_t), intent(in   ) :: p0_old(0:)
-    real(kind=dp_t), intent(in   ) :: p0_new(0:)
+    real(kind=dp_t), intent(in   ) :: p0_nph(0:)
     real(kind=dp_t), intent(in   ) :: rho0(0:)
     real(kind=dp_t), intent(in   ) :: grav(0:)
     real(kind=dp_t), intent(in   ) :: psi(0:)
     logical        , intent(in   ) :: add_thermal
 
-    real(kind=dp_t) :: uadv,vadv,wadv,normal_vel
     real(kind=dp_t), allocatable :: gradp_rad(:)
     real(kind=dp_t), allocatable :: gradp_cart(:,:,:,:)
     real(kind=dp_t), allocatable :: psi_cart(:,:,:,:)
-    integer :: i,j,k,r
 
+    real(kind=dp_t) :: uadv,vadv,wadv,normal_vel
+    real(kind=dp_t) :: divup, p0divu
+    integer         :: i,j,k,r
 
     allocate(gradp_rad(0:nr_fine-1))
     allocate(gradp_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
@@ -355,11 +375,9 @@ contains
        if (rho0(r) > base_cutoff_density) then
           gradp_rad(r) = rho0(r) * grav(r)
        else if (r.eq.nr_fine-1) then 
-          gradp_rad(r) = HALF * ( p0_old(r  ) + p0_new(r  ) &
-                                 -p0_old(r-1) - p0_new(r-1) ) / dr(n)
+          gradp_rad(r) = HALF * ( p0_nph(r  ) - p0_nph(r-1) ) / dr(n)
        else
-          gradp_rad(r) = HALF * ( p0_old(r+1) + p0_new(r+1) &
-                                 -p0_old(r  ) - p0_new(r  ) ) / dr(n)
+          gradp_rad(r) = HALF * ( p0_nph(r+1) - p0_nph(r  ) ) / dr(n)
        end if
 
     end do
@@ -370,13 +388,28 @@ contains
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
 
-             uadv = HALF*(umac(i,j,k)+umac(i+1,j,k))
-             vadv = HALF*(vmac(i,j,k)+vmac(i,j+1,k))
-             wadv = HALF*(wmac(i,j,k)+wmac(i,j,k+1))
+             ! *************** The way we've always made u dot grad p ************************* !
 
-             normal_vel = uadv*normal(i,j,k,1)+vadv*normal(i,j,k,2)+wadv*normal(i,j,k,3)
+!            uadv = HALF*(umac(i,j,k)+umac(i+1,j,k))
+!            vadv = HALF*(vmac(i,j,k)+vmac(i,j+1,k))
+!            wadv = HALF*(wmac(i,j,k)+wmac(i,j,k+1))
+!            normal_vel = uadv*normal(i,j,k,1)+vadv*normal(i,j,k,2)+wadv*normal(i,j,k,3)
+!            rhoh_force(i,j,k) = gradp_cart(i,j,k,1) * normal_vel
+ 
+             ! *************** Here we make div (u p) - p div (u) instead  ************************* !
 
-             rhoh_force(i,j,k) = gradp_cart(i,j,k,1) * normal_vel
+             divup = (umac(i+1,j,k) * HALF * (p0_cart(i,j,k)+p0_cart(i+1,j,k)) - &
+                      umac(i  ,j,k) * HALF * (p0_cart(i,j,k)+p0_cart(i-1,j,k)) ) / dx(1) + &
+                     (vmac(i,j+1,k) * HALF * (p0_cart(i,j,k)+p0_cart(i,j+1,k)) - &
+                      vmac(i,j  ,k) * HALF * (p0_cart(i,j,k)+p0_cart(i,j-1,k)) ) / dx(2) + &
+                     (wmac(i,j,k+1) * HALF * (p0_cart(i,j,k)+p0_cart(i,j,k+1)) - &
+                      wmac(i,j,k  ) * HALF * (p0_cart(i,j,k)+p0_cart(i,j,k-1)) ) / dx(3)
+
+             p0divu = ( (umac(i+1,j,k) - umac(i,j,k)) / dx(1) + &
+                        (vmac(i,j+1,k) - vmac(i,j,k)) / dx(2) + &
+                        (wmac(i,j,k+1) - wmac(i,j,k)) / dx(3) ) * p0_cart(i,j,k)
+
+             rhoh_force(i,j,k) = divup - p0divu
 
           end do
        end do
