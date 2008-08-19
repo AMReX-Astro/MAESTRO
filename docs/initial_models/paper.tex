@@ -11,6 +11,8 @@
 \def\dt    {\Delta t}
 \def\kth   {k_{\rm th}}
 \def\init  {\rm init}
+\def\model {\rm model}
+\def\raw   {\rm raw}
 
 \def\edge  {\rm EDGE}
 \def\mac   {\rm MAC}
@@ -41,8 +43,8 @@
 
 \clearpage
 
-\section{Creating the Initial Data}
-We begin with data from a model file, which we shall refer to as the ``model'' data.  Here is a list of the model data for each test problem:
+\section{Creating the Model Data from Raw Data}
+We begin with raw data, $\rho^{\raw}, T^{\raw}, p^{\raw}$, and $X^{\raw}$.  Here is the raw data file for each test problem:
 \begin{eqnarray}
 {\tt test2} & \rightarrow & {\tt ???} \nonumber \\
 {\tt test\_convect} & \rightarrow & {\tt ???} \nonumber \\
@@ -50,7 +52,11 @@ We begin with data from a model file, which we shall refer to as the ``model'' d
 {\tt spherical\_heat} & \rightarrow & {\tt ???} \nonumber \\
 {\tt xrb} & \rightarrow & {\tt initial\_models/xrb/sorted\_xrb.raw} \nonumber
 \end{eqnarray}
-We use a fortran subroutine to modify the model data to create ``initial'' data, denoted with the subcript ``init''.  The model data needs to be modified because there is no guarantee that it was generated with the same equation of state (EOS) that {\tt MAESTRO} uses, nor is there any guarantee that the pressure and density are in hydrostatic equilibrium (HSE) according to our choice of discretization given in equation (\ref{HSE Discretization}).  Here is a list of the fortran subroutine for each test problem:
+Using the raw data, we need to generate model data at the same resolution as the base state.  Note that for spherical problems we set $\Delta r = \Delta x$.  We use a fortran subroutine to interpolate the raw data, yielding the model data, $\rho^{\model}, T^{\model}, p^{\model}$, and $X^{\model}$.  Then, we modify the model data to ensure that it is thermodynamically consistent with the {\tt MAESTRO} equation of state (EOS), and also satisfies our chosen hydrostatic equilibrium (HSE) discretization,
+\begin{equation}
+\frac{p_r - p_{r-1}}{\Delta r} = \frac{\rho_r + \rho_{r-1}}{2}g,\label{HSE Discretization}
+\end{equation}
+to a user defined tolerance using an iterative procedure.  Here are the fortran subroutines for each test problem:
 \begin{eqnarray}
 {\tt test2} & \rightarrow & {\tt ???} \nonumber \\
 {\tt test\_convect} & \rightarrow & {\tt ???} \nonumber \\
@@ -58,13 +64,8 @@ We use a fortran subroutine to modify the model data to create ``initial'' data,
 {\tt spherical\_heat} & \rightarrow & {\tt ???} \nonumber \\
 {\tt xrb} & \rightarrow & {\tt initial\_models/xrb/init\_1d.f90} \nonumber
 \end{eqnarray}
-The fortran subroutine returns $p^{\init}, \rho^{\init}, T^{\init},$ and $X_k^{\init}$.  The fortran subroutine uses an iterative procedure to return initial data that is both thermodynamically consistent with the {\tt MAESTRO} EOS, and in HSE,
-\begin{equation}
-\frac{p_r^{\init} - p_{r-1}^{\init}}{\Delta r} = \frac{\rho_r^{\init} + \rho_{r-1}^{\init}}{2}g,\label{HSE Discretization}
-\end{equation}
-to a user-defined tolerance.
-
-The initial data needs be generated at the same resolution as the base state for single-level problems and at the same resolution of the finest resolution base state for multi-level plane-parallel problems.  For spherical problems, we force $\Delta r = \Delta x$.
+\section{Creating the Initial Data from the Model Data}
+In {\tt initdata.f90}, we set the initial data $\rho^{\init}, T^{\init}, p^{\init}$ and $X^{\init}$ equal to the model data.  Then, we set $h^{\init} = h^{\init}(\rho^{\init},T^{\init},X^{\init})$.  Note that in the code, $p^{\init}$ is also overwritten, but the value of $p^{\init}$ does not change since we called $p^{\model} = p^{\model}(\rho^{\model},T^{\model},X^{\model})$ at the end of the previous fortran subroutine.
 \section{Creating the Base State and Full State}
 Given $p^{\init}, \rho^{\init}, T^{\init},$ and $X^{\init}$, this section describes how the base state ($\rho_0$ and $p_0$) and full state ($\rho, h, X$, and $T$) are computed.  We require that $\rho_0 = \overline\rho$, the base state is in HSE according to equation (\ref{HSE Discretization}), and the full state is in thermodynamic equilibrium with $p_0$.  Here are the steps:
 \begin{enumerate}
@@ -78,4 +79,6 @@ Given $p^{\init}, \rho^{\init}, T^{\init},$ and $X^{\init}$, this section descri
 \item Compute the full state $T,h = T,h(\rho,p_0,X)$.
 \end{enumerate}
 Now $\rho_0 = \overline\rho$, the base state is in HSE, and the full state is in thermodynamic equilibrium with $p_0$.
+\subsection{Multilevel Case}
+Again, we are given 
 \end{document}
