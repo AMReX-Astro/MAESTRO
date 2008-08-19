@@ -113,7 +113,6 @@ contains
           ump => dataptr(umac(n,1),i)
           vmp => dataptr(umac(n,2),i)
           tp  => dataptr(thermal(n),i)
-          pp  => dataptr(p0_cart(n),i)
           lo = lwb(get_box(scal_force(n),i))
           hi = upb(get_box(scal_force(n),i))
           select case (dm)
@@ -131,9 +130,11 @@ contains
                                     rho0, grav, psi(n,:), add_thermal)
              else
                 np => dataptr(normal(n), i)
+                pp  => dataptr(p0_cart(n),i)
                 call mkrhohforce_3d_sphr(n,fp(:,:,:,rhoh_comp), ng_f, is_prediction, &
                                          ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
-                                         tp(:,:,:,1), ng_th, pp(:,:,:,1), lo, hi, dx(n,:), np(:,:,:,:), &
+                                         tp(:,:,:,1), ng_th, pp(:,:,:,1), lo, hi, dx(n,:), &
+                                         np(:,:,:,:), &
                                          ng_n, p0_nph(n,:),  rho0, grav, &
                                          psi(n,:), add_thermal)
              end if
