@@ -52,7 +52,7 @@ We begin with raw data, $\rho^{\raw}, T^{\raw}, p^{\raw}$, and $X^{\raw}$.  Here
 {\tt spherical\_heat} & \rightarrow & {\tt ???} \nonumber \\
 {\tt xrb} & \rightarrow & {\tt initial\_models/xrb/sorted\_xrb.raw} \nonumber
 \end{eqnarray}
-Using the raw data, we need to generate model data at the same resolution as the base state.  Note that for spherical problems we set $\Delta r = \Delta x$.  We use a fortran subroutine to interpolate the raw data, yielding the model data, $\rho^{\model}, T^{\model}, p^{\model}$, and $X^{\model}$.  The fortran subroutine then uses an iterative procedure to modify the model data so that it is thermodynamically consistent with the {\tt MAESTRO} equation of state (EOS), and also satisfies our chosen hydrostatic equilibrium (HSE) discretization,
+Using the raw data, we need to generate model data with the same resolution as the base state.  Note that for spherical problems we set $\Delta r = \Delta x$.  We use a fortran subroutine to interpolate the raw data, yielding the model data, $\rho^{\model}, T^{\model}, p^{\model}$, and $X^{\model}$.  The fortran subroutine then uses an iterative procedure to modify the model data so that it is thermodynamically consistent with the {\tt MAESTRO} equation of state (EOS), and also satisfies our chosen hydrostatic equilibrium (HSE) discretization,
 \begin{equation}
 \frac{p_r - p_{r-1}}{\Delta r} = \frac{\rho_r + \rho_{r-1}}{2}g,\label{HSE Discretization}
 \end{equation}
@@ -64,22 +64,21 @@ to a user defined tolerance.  Here are the fortran subroutines for each test pro
 {\tt spherical\_heat} & \rightarrow & {\tt ???} \nonumber \\
 {\tt xrb} & \rightarrow & {\tt initial\_models/xrb/init\_1d.f90} \nonumber
 \end{eqnarray}
-The model data is not generated at run-time - it must be generated in advance of running any MAESTRO examples.  The inputs file points to the file containing the model data.
+The model data is not generated at run-time - it must be generated in advance of running any MAESTRO examples.  The inputs file should point to the file containing the model data.
+\subsection{Multilevel Plane-Parallel}
+We need to generate model data with the same resolution as the finest base state resolution.
 \section{Creating the Initial Data from the Model Data}
 In {\tt base\_state.f90}, using the subroutine {\tt init\_base\_state.f90} (which is actually a terrible name since we are setting the initial data, not the base state), we set the initial data $\rho^{\init}, T^{\init}, p^{\init}$ and $X^{\init}$ equal to the model data.  Then, we set $h^{\init} = h^{\init}(\rho^{\init},T^{\init},X^{\init})$.  Note that in the code, $p^{\init}$ is also overwritten, but the value of $p^{\init}$ does not change since we called $p^{\model} = p^{\model}(\rho^{\model},T^{\model},X^{\model})$ at the end of the previous fortran subroutine.
 \section{Creating the Base State and Full State}
 Given $p^{\init}, \rho^{\init}, T^{\init},$ and $X^{\init}$, this section describes how the base state ($\rho_0$ and $p_0$) and full state ($\rho, h, X$, and $T$) are computed.  We require that $\rho_0 = \overline\rho$, the base state is in HSE according to equation (\ref{HSE Discretization}), and the full state is in thermodynamic equilibrium with $p_0$.  Here are the steps:
 \begin{enumerate}
-\item Call the EOS to obtain a 1D $h^{\init} = h^{\init}(\rho^{\init},T^{\init},X^{\init})$.  Note that in the code, $p^{\init}$ is also overwritten, but the value of $p^{\init}$ does not change since we called $p^{\init} = p^{\init}(\rho^{\init},T^{\init},X^{\init})$ at the end of the previous fortran subroutine.
-\item For plane-parallel problems, fill $\rho^{\init}, h^{\init}, X^{\init}$, and $T^{\init}$ onto a multifab to obtain the full state $\rho, h, X$, and $T$.  For spherical problems, fill $\rho^{\init}, p^{\init}$, and $X^{\init}$ onto a multifab to obtain the full state $\rho, p$, and $X$, and then call the EOS to obtain the full state $h,T = h,T(\rho,p,X)$.
+\item For plane-parallel problems, fill $\rho^{\init}, h^{\init}, X^{\init}$, and $T^{\init}$ onto a multifab to obtain the full state $\rho, h, X$, and $T$.  For spherical problems, fill $\rho^{\init}, p^{\init}$, and $X^{\init}$ onto a multifab to obtain the full state $\rho, p$, and $X$, and then call the EOS to obtain the full state $h,T = h,T(\rho,p,X)$.  Note that the multifab version of $p$ is temporary, and can be deallocated after this step.
 \item For spherical problems, skip the remaining steps and instead set $p_0 = p^{\init}$ and $\rho_0 = \rho^{\init}$.
 \item If {\tt perturb\_model} = F, skip the remaining steps and instead set $p_0 = p^{\init}$ and $\rho_0 = \rho^{\init}$.
-\item Perturb $T$, then compute $\rho,h = \rho,h(p^{\init},T,X)$.
+\item Perturb $T$, then compute $\rho = \rho(p^{\init},T,X)$.
 \item Set $\rho_0 = \overline\rho$.
-\item Compute $p_0$ using equation (\ref{HSE Discretization}).
+\item Compute $p_0$ using equation (\ref{HSE Discretization}), using $p_{0,r=0}$ as the initial condition.
 \item Compute the full state $T,h = T,h(\rho,p_0,X)$.
 \end{enumerate}
 Now $\rho_0 = \overline\rho$, the base state is in HSE, and the full state is in thermodynamic equilibrium with $p_0$.
-\subsection{Multilevel Case}
-Again, we are given 
 \end{document}
