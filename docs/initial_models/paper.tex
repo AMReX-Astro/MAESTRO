@@ -5,7 +5,7 @@
 \usepackage{amsmath,color}
 
 % Margins
-\usepackage[lmargin=0.5in,rmargin=0.5in,tmargin=0.75in,bmargin=0.75in]{geometry}
+\usepackage[lmargin=0.5in,rmargin=1.5in,tmargin=0.5in,bmargin=0.5in]{geometry}
 
 \def\half  {\frac{1}{2}}
 \def\dt    {\Delta t}
@@ -27,7 +27,7 @@
 
 \title{Notes on generating initial models for mapping into {\tt MAESTRO}}
 
-\setlength{\marginparwidth}{0.75in}
+\setlength{\marginparwidth}{1.0in}
 \newcommand{\MarginPar}[1]{\marginpar{%
 \vskip-\baselineskip %raise the marginpar a bit
 \raggedright\tiny\sffamily
@@ -40,34 +40,40 @@
 
 \clearpage
 
-\section{Creating the initial model}
+\section{Initialization Procedure}
+\subsection{Creating the Initial Model}
+We denote the initial model returned by the code in the {\tt MAESTRO/initial\_models} directory with the superscript ``init''.
+\begin{itemize}
+\item Include a table of which file creates initial models for which examples.
+\item Indicate which variables are returned by the initial model.
+\item Describe how the initial model is developed such that the pressure and density are in hydrostatic equilibrium.
+\end{itemize}
+\subsection{Initialization Procedure}
+Given data from an initial model file (indicated with a superscript ``init''), this section describes how the base state ($\rho_0$, $p_0$) and full state are computed.
+
+\clearpage
+
+\section{Old Notes}
+\subsection{Creating the initial model}
 \begin{itemize}
 \item The initial model should be but into HSE according to 
 $(p_{i+1} - p_i)/\Delta r = \half (\rho_{i+1} - \rho_i) g_{i+\half} \enskip .$
-
 \item The initial model should be created at the same resolution as
 the base state.  This means that when you change resolution of your
 simulation, use a new initial model.
-
 \item The initial model should be thermodynamically consistent with
 the EOS that {\tt MAESTRO} uses.
-
 \end{itemize}
-
 \section{Spherical notes}
 \begin{itemize}
 \item Spherical runs use $p$, $(\rho X)$, and $\rho$ from the initial
 model.  These are then mapped onto the Cartesian grid, and then
 $(\rho h)$ is computed via the EOS.
-
 \item Spherical runs automatically set $\Delta x = \Delta r$.
 \end{itemize}
-
 \section{Running notes}
 \begin{itemize}
 \item When the code is run, it prints out the HSE error of the base
 state model---this should be checked to insure that we a
 \end{itemize}
-
-
 \end{document}
