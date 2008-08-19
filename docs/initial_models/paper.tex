@@ -10,6 +10,7 @@
 \def\half  {\frac{1}{2}}
 \def\dt    {\Delta t}
 \def\kth   {k_{\rm th}}
+\def\init  {\rm init}
 
 \def\edge  {\rm EDGE}
 \def\mac   {\rm MAC}
@@ -40,30 +41,30 @@
 
 \clearpage
 
+\section{Creating the Initial Model}
+The initial model returns the pressure, density, temperature, and species, denoted $p^{\init}, \rho^{\init}, T^{\init},$ and $X_k^{\init}$.  The initial model uses an iterative procedure \MarginPar{add more details about the iterative procedure} to return a state that is both thermodynamically consistent with the {\tt MAESTRO} EOS, and in hydrostatic equilibrium,
+\begin{equation}
+\frac{p_r^{\init} - p_{r-1}^{\init}}{\Delta r} = \frac{\rho_r^{\init} + \rho_{r-1}^{\init}}{2}g,\label{HSE Discretization}
+\end{equation}
+to a user-defined tolerance.  Here is a list of which model file is used for each test problem:\MarginPar{This needs to be filled in and checked for accuracy}
+\begin{eqnarray}
+{\tt test2} & \rightarrow & {\tt ???} \nonumber \\
+{\tt test\_convect} & \rightarrow & {\tt ???} \nonumber \\
+{\tt wdconvect} & \rightarrow & {\tt ???} \nonumber \\
+{\tt spherical\_heat} & \rightarrow & {\tt ???} \nonumber \\
+{\tt xrb} & \rightarrow & {\tt initial\_models/xrb/init\_1d.f90} \nonumber
+\end{eqnarray}
+The initial model needs to be created at the same resolution as the base state (for single-level problems) and at the same resolution of the finest resolution base state (for multi-level plane-parallel problems).
+
 \section{Initialization Procedure}
-\subsection{Creating the Initial Model}
-We denote the initial model returned by the code in the {\tt MAESTRO/initial\_models} directory with the superscript ``init''.
-\begin{itemize}
-\item Include a table of which file creates initial models for which examples.
-\item Indicate which variables are returned by the initial model.
-\item Describe how the initial model is developed such that the pressure and density are in hydrostatic equilibrium.
-\end{itemize}
-\subsection{Initialization Procedure}
-Given data from an initial model file (indicated with a superscript ``init''), this section describes how the base state ($\rho_0$, $p_0$) and full state are computed.
+Given data from an initial model file ($p^{\init}, \rho^{\init}, T^{\init},$ and $X_k^{\init}$), this section describes how the base state ($\rho_0$ and $p_0$) and full state ($\rho, h, X$, and $T$) are computed.  At the end of the initialization, we require that $\rho_0 = \overline\rho$, the base state is in hydrostatic equilibrium according to equation (\ref{HSE Discretization}), and the full state is in thermodynamic equilibrium with $p_0$.  Here are the steps:
+\begin{enumerate}
+\item Call the EOS to obtain a 1D $p^{\init},h^{\init} = p^{\init},h^{\init}(\rho^{\init},T^{\init},X^{\init})$.  Note that this does overwrite the $p^{\init}$ from the initial model file, but this should not change $p^{\init}$ since this pressure was already both thermodynamically consistent and in hydrostatic equilibrium.
+\end{enumerate}
 
 \clearpage
 
 \section{Old Notes}
-\subsection{Creating the initial model}
-\begin{itemize}
-\item The initial model should be but into HSE according to 
-$(p_{i+1} - p_i)/\Delta r = \half (\rho_{i+1} - \rho_i) g_{i+\half} \enskip .$
-\item The initial model should be created at the same resolution as
-the base state.  This means that when you change resolution of your
-simulation, use a new initial model.
-\item The initial model should be thermodynamically consistent with
-the EOS that {\tt MAESTRO} uses.
-\end{itemize}
 \section{Spherical notes}
 \begin{itemize}
 \item Spherical runs use $p$, $(\rho X)$, and $\rho$ from the initial
