@@ -13,6 +13,8 @@
 \def\ib         {{\bf i}}
 \def\Ub         {{\bf U}}
 
+\newcommand{\Ubt}{\widetilde{\Ub}}
+
 \def\etarho     {\eta_\rho}
 \def\etarhocc   {\etarho^{\rm cc}}
 \def\etarhoflux {\etarho^{\rm flux}}
@@ -56,7 +58,7 @@ This is done in {\tt make\_eta.f90}.
 \subsection{Plane-Parallel}
 We first compute a radial edge-centered multifab, $\eta_{\rho}^{\rm flux}$, using
 \begin{equation}
-\eta_{\rho,\ib+\half\eb_r}^{\rm flux} = \Ub_{\ib+\half\eb_r}^{n+\half} \rho_{\ib+\half\eb_r}^{n+\half} - w_{0,r+\half}^{n+\half}\rho_{0,r+\half}^{n+\half, {\rm pred}}
+\eta_{\rho,\ib+\half\eb_r}^{\rm flux} = \left[\left(\Ub_{\ib+\half\eb_r}^{n+\half}\cdot\eb_r\right) + w_{0,r+\half}^{n+\half}\right] \rho_{\ib+\half\eb_r}^{n+\half} - w_{0,r+\half}^{n+\half}\rho_{0,r+\half}^{n+\half, {\rm pred}}
 \end{equation}
 $\etarho$ is the edge-centered ``average'' value of $\eta_{\rho}^{\rm flux}$,
 \begin{equation}
@@ -71,6 +73,23 @@ $\divetarho$ is the cell-centered divergence of $\etarho$,
 \left[\divetarho\right]_r = \frac{\eta_{\rho,r+\half} - \eta_{\rho,r-\half}}{\Delta r}.
 \end{equation}
 \subsection{Spherical}
+First, construct $\eta_{\rho}^{\rm cart} = [\rho'(\Ubt\cdot\eb_r)]^{n+\half}$.  Then, $\etarhocc$ is the cell-centered average of $\eta_{\rho}^{\rm cart}$,
+\begin{equation}
+\etarhocc = \overline{\eta_{\rho}^{\rm cart}}.
+\end{equation}
+On interior faces, $\etarho$ is the average of $\etarhocc$,
+\begin{equation}
+\eta_{\rho,r+\half} = \frac{\eta_{\rho,r}^{\rm cc} + \eta_{\rho,r+1}^{\rm cc}}{2}.
+\end{equation}
+At the upper and lower boundaries, we use
+\begin{eqnarray}
+\eta_{\rho,0} &=& 0, \\
+\eta_{\rho,{\rm nr}} &=& \eta_{\rho,{\rm nr}-1}^{\rm cc}.
+\end{eqnarray}
+$\divetarho$ is the cell-centered average of $\rho'^{n+1}$,
+\begin{equation}
+\divetarho = \overline{\rho'^{n+1}}
+\end{equation}
 \section{Using $\etarho$}
 \subsection{Plane-Parallel}
 NOT USED.
