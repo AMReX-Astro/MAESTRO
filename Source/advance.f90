@@ -592,7 +592,7 @@ contains
 
        endif
 
-       call make_psi(nlevs,etarho,psi,w0,gamma1bar,p0_old,p0_new,Sbar)
+       call make_psi(nlevs,etarho_cc,psi,w0,gamma1bar,p0_old,p0_new,Sbar)
     end if
 
 
@@ -1027,7 +1027,7 @@ contains
 
           endif
 
-          call make_psi(nlevs,etarho,psi,w0,gamma1bar,p0_old,p0_new,Sbar)
+          call make_psi(nlevs,etarho_cc,psi,w0,gamma1bar,p0_old,p0_new,Sbar)
        end if
 
        do n=1,nlevs

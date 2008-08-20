@@ -9,13 +9,13 @@ module make_psi_module
 
 contains
 
-  subroutine make_psi(nlevs,etarho,psi,w0,gamma1bar,p0_old,p0_new,Sbar_in)
+  subroutine make_psi(nlevs,etarho_cc,psi,w0,gamma1bar,p0_old,p0_new,Sbar_in)
 
     use bl_prof_module
     use geometry, only: spherical
 
     integer        , intent(in   ) :: nlevs
-    real(kind=dp_t), intent(in   ) :: etarho(:,0:)
+    real(kind=dp_t), intent(in   ) :: etarho_cc(:,0:)
     real(kind=dp_t), intent(inout) :: psi(:,0:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
@@ -31,7 +31,7 @@ contains
     
     if (spherical .eq. 0) then 
        do n = 1,nlevs
-          call make_psi_planar(n,etarho(n,0:),psi(n,0:))
+          call make_psi_planar(n,etarho_cc(n,0:),psi(n,0:))
        end do
     else
        do n = 1,nlevs
@@ -44,27 +44,25 @@ contains
        
   end subroutine make_psi
 
-  subroutine make_psi_planar(n,etarho,psi)
+  subroutine make_psi_planar(n,etarho_cc,psi)
 
     use bl_constants_module
     use geometry, only: anelastic_cutoff_coord, r_start_coord, r_end_coord, numdisjointchunks
     use probin_module, only: grav_const
 
     integer        , intent(in   ) :: n
-    real(kind=dp_t), intent(in   ) :: etarho(0:)
+    real(kind=dp_t), intent(in   ) :: etarho_cc(0:)
     real(kind=dp_t), intent(inout) :: psi(0:)
     
     ! Local variables
     integer         :: r,i
-    real(kind=dp_t) :: etarho_avg
    
     psi = ZERO
 
     do i=1,numdisjointchunks(n)
        do r = r_start_coord(n,i), r_end_coord(n,i)
           if (r .lt. anelastic_cutoff_coord(n)) then
-             etarho_avg = HALF * (etarho(r)+etarho(r+1))
-             psi(r) = etarho_avg * abs(grav_const)
+             psi(r) = etarho_cc(r) * abs(grav_const)
           end if
        end do
     end do
