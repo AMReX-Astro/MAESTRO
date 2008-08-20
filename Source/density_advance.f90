@@ -13,7 +13,7 @@ module density_advance_module
 
 contains
 
-  subroutine density_advance(mla,which_step,sold,snew,sedge,sflux,&
+  subroutine density_advance(mla,which_step,sold,snew,sedge,sflux,scal_force,&
                              umac,w0,w0mac,etarhoflux,normal, &
                              rho0_old,rho0_new,p0_new, &
                              rho0_predicted_edge,dx,dt,the_bc_level)
@@ -30,7 +30,7 @@ contains
     use cell_to_edge_module
     use network,       only: nspec, spec_names
     use geometry,      only: spherical, nr_fine
-    use variables,     only: nscal, spec_comp, rho_comp, foextrap_comp
+    use variables,     only: nscal, ntrac, spec_comp, rho_comp, trac_comp, foextrap_comp
     use probin_module, only: verbose
     use modify_scal_force_module
     use convert_rhoX_to_X_module
@@ -41,6 +41,7 @@ contains
     type(multifab) , intent(inout) :: snew(:)
     type(multifab) , intent(inout) :: sedge(:,:)
     type(multifab) , intent(inout) :: sflux(:,:)
+    type(multifab) , intent(inout) :: scal_force(:)
     type(multifab) , intent(inout) :: umac(:,:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     type(multifab) , intent(in   ) :: w0mac(:,:)
@@ -53,7 +54,6 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:,:),dt
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
-    type(multifab) :: scal_force(mla%nlevel)
     type(multifab) :: rho0_old_cart(mla%nlevel)
     type(multifab) :: rho0_new_cart(mla%nlevel)
     type(multifab) :: p0_new_cart(mla%nlevel)
@@ -107,13 +107,12 @@ contains
     !**************************************************************************
 
     do n = 1, nlevs
-       call build(scal_force(n), sold(n)%la, nscal, 1)       
        call setval(scal_force(n),ZERO,all=.true.)
     end do
 
-    ! X force is zero - do nothing
+    ! Source terms for X and for tracers are zero - do nothing
 
-    ! make force for rho'
+    ! Make source term for rho'
     call modify_scal_force(nlevs,scal_force,sold,umac,rho0_old, &
                            rho0_edge_old,w0,dx,rho0_old_cart,rho_comp,mla,the_bc_level)
 
@@ -150,6 +149,14 @@ contains
     call convert_rhoX_to_X(nlevs,sold,.false.,mla,the_bc_level)
 
     !**************************************************************************
+    !     Create edge states of tracers
+    !**************************************************************************
+    if (ntrac.ge.1) &
+       call make_edge_scal(nlevs,sold,sedge,umac,scal_force,normal, &
+                           w0,w0mac,dx,dt,is_vel,the_bc_level, &
+                           trac_comp,dm+trac_comp,ntrac,.false.,mla)
+
+    !**************************************************************************
     !     Subtract w0 from MAC velocities.
     !**************************************************************************
 
@@ -169,6 +176,12 @@ contains
                          rho0_old,rho0_edge_old,rho0_old_cart, &
                          rho0_predicted_edge,spec_comp,spec_comp+nspec-1)
 
+       ! compute tracer fluxes
+       call mk_rhoX_flux(mla,sflux,etarhoflux,sold,sedge,umac,w0,w0mac, &
+                         rho0_old,rho0_edge_old,rho0_old_cart, &
+                         rho0_old,rho0_edge_old,rho0_old_cart, &
+                         rho0_predicted_edge,trac_comp,trac_comp+ntrac-1)
+
     else if (which_step .eq. 2) then
 
        ! compute species fluxes
@@ -177,12 +190,19 @@ contains
                          rho0_new,rho0_edge_new,rho0_new_cart, &
                          rho0_predicted_edge,spec_comp,spec_comp+nspec-1)
 
+       ! compute tracer fluxes
+       call mk_rhoX_flux(mla,sflux,etarhoflux,sold,sedge,umac,w0,w0mac, &
+                         rho0_old,rho0_edge_old,rho0_old_cart, &
+                         rho0_new,rho0_edge_new,rho0_new_cart, &
+                         rho0_predicted_edge,trac_comp,trac_comp+ntrac-1)
+
     end if
 
     !**************************************************************************
     !     1) Set force for (rho X)'_i at time n+1/2 = 0.
     !     2) Update (rho X)_i with conservative differencing.
     !     3) Define density as the sum of the (rho X)_i
+    !     4) Update tracer with conservative differencing as well.
     !**************************************************************************
     
     do n=1,nlevs
@@ -190,6 +210,9 @@ contains
     end do
 
     call update_scal(mla,spec_comp,spec_comp+nspec-1,sold,snew,sflux,scal_force, &
+                     p0_new,p0_new_cart,dx,dt,the_bc_level)
+
+    call update_scal(mla,trac_comp,trac_comp+ntrac-1,sold,snew,sflux,scal_force, &
                      p0_new,p0_new_cart,dx,dt,the_bc_level)
     
     if ( verbose .ge. 1 ) then
@@ -211,6 +234,11 @@ contains
           if (parallel_IOProcessor()) &
                write(6,2000) smin,smax
        end do
+
+       smin = multifab_min_c(snew(n),trac_comp) 
+       smax = multifab_max_c(snew(n),trac_comp)
+       if (parallel_IOProcessor()) &
+            write(6,2003) smin,smax
     end if
 
     if (parallel_IOProcessor()) write(6,2004) 
@@ -223,14 +251,11 @@ contains
        end do
     end if
 
-    do n = 1, nlevs
-       call destroy(scal_force(n))
-    end do
-
     call destroy(bpt)
 
 2000 format('... new min/max : density           ',e17.10,2x,e17.10)
 2002 format('... new min/max : ',a16,2x,e17.10,2x,e17.10)
+2003 format('... new min/max : tracer            ',e17.10,2x,e17.10)
 2004 format(' ')
 
   end subroutine density_advance

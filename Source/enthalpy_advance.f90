@@ -13,8 +13,8 @@ module enthalpy_advance_module
 
 contains
 
-  subroutine enthalpy_advance(mla,which_step,uold,sold,snew,sedge,sflux,thermal, &
-                              umac,w0,w0mac,normal, &
+  subroutine enthalpy_advance(mla,which_step,uold,sold,snew,sedge,sflux,scal_force,&
+                              thermal,umac,w0,w0mac,normal, &
                               rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_old,p0_new, &
                               tempbar,psi,dx,dt,the_bc_level)
 
@@ -45,6 +45,7 @@ contains
     type(multifab) , intent(inout) :: snew(:)
     type(multifab) , intent(inout) :: sedge(:,:)
     type(multifab) , intent(inout) :: sflux(:,:)
+    type(multifab) , intent(inout) :: scal_force(:)
     type(multifab) , intent(in   ) :: thermal(:)
     type(multifab) , intent(inout) :: umac(:,:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
@@ -61,7 +62,6 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:,:),dt
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
-    type(multifab) :: scal_force(mla%nlevel)
     type(multifab) :: rho0_old_cart(mla%nlevel)
     type(multifab) :: rho0_new_cart(mla%nlevel)
     type(multifab) :: rhoh0_old_cart(mla%nlevel)
@@ -147,7 +147,6 @@ contains
     !**************************************************************************
 
     do n = 1, nlevs
-       call build(scal_force(n), sold(n)%la, nscal, 1)       
        call setval(scal_force(n),ZERO,all=.true.)
     end do
 
@@ -319,10 +318,6 @@ contains
           call destroy(p0_new_cart(n))
        end do
     end if
-
-    do n = 1, nlevs
-       call destroy(scal_force(n))
-    end do
 
     if (.not. use_thermal_diffusion) then
        call makeTfromRhoH(nlevs,snew,p0_new(:,:),tempbar(:,:),mla,the_bc_level,dx)

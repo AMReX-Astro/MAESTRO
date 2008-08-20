@@ -25,7 +25,6 @@ contains
     use velocity_advance_module
     use density_advance_module
     use enthalpy_advance_module
-    use scalar_advance_module
     use macrhs_module
     use macproject_module
     use hgrhs_module
@@ -46,7 +45,7 @@ contains
     use thermal_conduct_module
     use make_explicit_thermal_module
     use add_react_to_thermal_module
-    use variables, only: nscal, ntrac, press_comp, temp_comp, rho_comp, rhoh_comp, foextrap_comp
+    use variables, only: nscal, press_comp, temp_comp, rho_comp, rhoh_comp, foextrap_comp
     use geometry, only: spherical, nr_fine, r_end_coord, anelastic_cutoff_coord, &
          base_cutoff_density_coord, burning_cutoff_density_coord
     use network, only: nspec
@@ -126,6 +125,7 @@ contains
 
     type(multifab) :: sedge(mla%nlevel,mla%dim)
     type(multifab) :: sflux(mla%nlevel,mla%dim)
+    type(multifab) :: scal_force(mla%nlevel)
 
     real(dp_t), allocatable :: grav_cell_nph(:,:)
     real(dp_t), allocatable :: grav_cell_new(:,:)
@@ -541,9 +541,9 @@ contains
     end do
 
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
-       write(6,*) '            : density_advance >>> '
+       write(6,*) '            :  density_advance >>> '
+       write(6,*) '            :   tracer_advance >>> '
        write(6,*) '            : enthalpy_advance >>> '
-       write(6,*) '            : scalar_advance >>> '
     end if
 
     ! Build the sedge array.
@@ -552,21 +552,16 @@ contains
           call multifab_build(sedge(n,comp),mla%la(n),nscal,0,nodal=edge_nodal_flag(comp,:))
           call multifab_build(sflux(n,comp),mla%la(n),nscal,0,nodal=edge_nodal_flag(comp,:))
        end do
+       call build(scal_force(n), mla%la(n), nscal, 1)
     end do
 
-    call density_advance(mla,1,s1,s2,sedge,sflux,&
+    call density_advance(mla,1,s1,s2,sedge,sflux,scal_force,&
                          umac,w0,w0mac,etarhoflux,normal, &
                          rho0_old,rho0_new,&
                          p0_new,rho0_predicted_edge, &
                          dx,dt,the_bc_tower%bc_tower_array)
-    if (ntrac .ge. 1) &
-       call scalar_advance(mla,1,s1,s2,sedge,sflux,&
-                           umac,w0,w0mac,etarhoflux,normal, &
-                           rho0_old,rho0_new,&
-                           p0_new,rho0_predicted_edge, &
-                           dx,dt,the_bc_tower%bc_tower_array)
-    call enthalpy_advance(mla,1,uold,s1,s2,sedge,sflux,thermal, &
-                          umac,w0,w0mac,normal, &
+    call enthalpy_advance(mla,1,uold,s1,s2,sedge,sflux,scal_force,&
+                          thermal,umac,w0,w0mac,normal, &
                           rho0_old,rhoh0_1, &
                           rho0_new,rhoh0_2, &
                           p0_old,p0_new,tempbar,psi,&
@@ -578,6 +573,7 @@ contains
           call destroy(sedge(n,comp))
           call destroy(sflux(n,comp))
        end do
+       call destroy(scal_force(n))
     end do
 
     ! Correct the base state using the lagged etarho and psi
@@ -981,8 +977,9 @@ contains
        end do
 
        if (parallel_IOProcessor() .and. verbose .ge. 1) then
-          write(6,*) '            : density_advance >>>'
-          write(6,*) '            : scalar_advance >>>'
+          write(6,*) '            :  density_advance >>>'
+          write(6,*) '            :   tracer_advance >>>'
+          write(6,*) '            : enthalpy_advance >>>'
        end if
 
        ! Build the sedge array.
@@ -993,21 +990,16 @@ contains
              call multifab_build(sflux(n,comp),mla%la(n),nscal,0, &
                                  nodal=edge_nodal_flag(comp,:))
           end do
+          call multifab_build(scal_force(n), mla%la(n), nscal, 1)
        end do
 
-       call density_advance(mla,2,s1,s2,sedge,sflux,&
+       call density_advance(mla,2,s1,s2,sedge,sflux,scal_force,&
                             umac,w0,w0mac,etarhoflux,normal, &
                             rho0_old,rho0_new,&
                             p0_new,rho0_predicted_edge, &
                             dx,dt,the_bc_tower%bc_tower_array)
-       if (ntrac .ge. 1) &
-          call scalar_advance(mla,2,s1,s2,sedge,sflux,&
-                              umac,w0,w0mac,etarhoflux,normal, &
-                              rho0_old,rho0_new,&
-                              p0_new,rho0_predicted_edge, &
-                              dx,dt,the_bc_tower%bc_tower_array)
-       call enthalpy_advance(mla,2,uold,s1,s2,sedge,sflux,thermal, &
-                             umac,w0,w0mac,normal, &
+       call enthalpy_advance(mla,2,uold,s1,s2,sedge,sflux,scal_force,&
+                             thermal,umac,w0,w0mac,normal, &
                              rho0_old,rhoh0_1, &
                              rho0_new,rhoh0_2, &
                              p0_old,p0_new,tempbar,psi,&
@@ -1019,6 +1011,7 @@ contains
              call destroy(sedge(n,comp))
              call destroy(sflux(n,comp))
           end do
+          call destroy(scal_force(n))
        end do
 
        ! Correct the base state using the lagged etarho and psi
