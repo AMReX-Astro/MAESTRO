@@ -14,6 +14,7 @@ f90sources += define_bc_tower.f90
 f90sources += density_advance.f90
 f90sources += divu_iter.f90
 f90sources += enforce_HSE.f90
+f90sources += enthalpy_advance.f90
 f90sources += estdt.f90
 f90sources += extrap_to_halftime.f90
 f90sources += fill_3d_data.f90

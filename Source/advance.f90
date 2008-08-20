@@ -23,8 +23,9 @@ contains
     use multifab_module
     use pre_advance_module
     use velocity_advance_module
-    use scalar_advance_module
     use density_advance_module
+    use enthalpy_advance_module
+    use scalar_advance_module
     use macrhs_module
     use macproject_module
     use hgrhs_module
@@ -45,7 +46,7 @@ contains
     use thermal_conduct_module
     use make_explicit_thermal_module
     use add_react_to_thermal_module
-    use variables, only: nscal, press_comp, temp_comp, rho_comp, rhoh_comp, foextrap_comp
+    use variables, only: nscal, ntrac, press_comp, temp_comp, rho_comp, rhoh_comp, foextrap_comp
     use geometry, only: spherical, nr_fine, r_end_coord, anelastic_cutoff_coord, &
          base_cutoff_density_coord, burning_cutoff_density_coord
     use network, only: nspec
@@ -541,6 +542,7 @@ contains
 
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
        write(6,*) '            : density_advance >>> '
+       write(6,*) '            : enthalpy_advance >>> '
        write(6,*) '            : scalar_advance >>> '
     end if
 
@@ -552,17 +554,23 @@ contains
        end do
     end do
 
-    call density_advance(nlevs,mla,1,s1,s2,sedge,sflux,&
+    call density_advance(mla,1,s1,s2,sedge,sflux,&
                          umac,w0,w0mac,etarhoflux,normal, &
                          rho0_old,rho0_new,&
                          p0_new,rho0_predicted_edge, &
                          dx,dt,the_bc_tower%bc_tower_array)
-    call scalar_advance(nlevs,mla,1,uold,s1,s2,sedge,sflux,thermal, &
-                        umac,w0,w0mac,utrans,normal, &
-                        rho0_old,rhoh0_1, &
-                        rho0_new,rhoh0_2, &
-                        p0_old,p0_new,tempbar,psi,&
-                        dx,dt,the_bc_tower%bc_tower_array)
+    if (ntrac .ge. 1) &
+       call scalar_advance(mla,1,s1,s2,sedge,sflux,&
+                           umac,w0,w0mac,etarhoflux,normal, &
+                           rho0_old,rho0_new,&
+                           p0_new,rho0_predicted_edge, &
+                           dx,dt,the_bc_tower%bc_tower_array)
+    call enthalpy_advance(mla,1,uold,s1,s2,sedge,sflux,thermal, &
+                          umac,w0,w0mac,normal, &
+                          rho0_old,rhoh0_1, &
+                          rho0_new,rhoh0_2, &
+                          p0_old,p0_new,tempbar,psi,&
+                          dx,dt,the_bc_tower%bc_tower_array)
 
     ! Destroy the sedge array.
     do n = 1, nlevs
@@ -987,17 +995,23 @@ contains
           end do
        end do
 
-       call density_advance(nlevs,mla,2,s1,s2,sedge,sflux,&
+       call density_advance(mla,2,s1,s2,sedge,sflux,&
                             umac,w0,w0mac,etarhoflux,normal, &
                             rho0_old,rho0_new,&
                             p0_new,rho0_predicted_edge, &
                             dx,dt,the_bc_tower%bc_tower_array)
-       call scalar_advance(nlevs,mla,2,uold,s1,s2,sedge,sflux,thermal, &
-                           umac,w0,w0mac,utrans,normal, &
-                           rho0_old,rhoh0_1, &
-                           rho0_new,rhoh0_2, &
-                           p0_old,p0_new,tempbar,psi,&
-                           dx,dt,the_bc_tower%bc_tower_array)
+       if (ntrac .ge. 1) &
+          call scalar_advance(mla,2,s1,s2,sedge,sflux,&
+                              umac,w0,w0mac,etarhoflux,normal, &
+                              rho0_old,rho0_new,&
+                              p0_new,rho0_predicted_edge, &
+                              dx,dt,the_bc_tower%bc_tower_array)
+       call enthalpy_advance(mla,2,uold,s1,s2,sedge,sflux,thermal, &
+                             umac,w0,w0mac,normal, &
+                             rho0_old,rhoh0_1, &
+                             rho0_new,rhoh0_2, &
+                             p0_old,p0_new,tempbar,psi,&
+                             dx,dt,the_bc_tower%bc_tower_array)
 
        ! Destroy the sedge array.
        do n = 1, nlevs

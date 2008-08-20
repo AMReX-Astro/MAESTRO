@@ -199,7 +199,8 @@ contains
              sfluxy(i,j,comp) = &
                   (vmac(i,j)+w0(j))*(rho0_edge+sedgey(i,j,rho_comp))*sedgey(i,j,comp)
 
-             etarhoflux(i,j) = etarhoflux(i,j) + sfluxy(i,j,comp)
+             if (comp .ge. spec_comp .and. comp .le. spec_comp+nspec-1) &
+                etarhoflux(i,j) = etarhoflux(i,j) + sfluxy(i,j,comp)
 
              if ( comp.eq.spec_comp+nspec-1) &
                 etarhoflux(i,j) = etarhoflux(i,j) - w0(j)*rho0_predicted_edge(j)
@@ -281,7 +282,8 @@ contains
                 sfluxz(i,j,k,comp) = (wmac(i,j,k)+w0(k))* &
                      (rho0_edge+sedgez(i,j,k,rho_comp))*sedgez(i,j,k,comp)
 
-                etarhoflux(i,j,k) = etarhoflux(i,j,k) + sfluxz(i,j,k,comp)
+                if (comp .ge. spec_comp .and. comp .le. spec_comp+nspec-1) &
+                   etarhoflux(i,j,k) = etarhoflux(i,j,k) + sfluxz(i,j,k,comp)
                    
                 if ( comp.eq.spec_comp+nspec-1) &
                    etarhoflux(i,j,k) = &

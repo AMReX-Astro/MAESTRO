@@ -13,10 +13,10 @@ module density_advance_module
 
 contains
 
-  subroutine density_advance(nlevs,mla,which_step,sold,snew,sedge,sflux,&
-                            umac,w0,w0mac,etarhoflux,normal, &
-                            rho0_old,rho0_new,p0_new, &
-                            rho0_predicted_edge,dx,dt,the_bc_level)
+  subroutine density_advance(mla,which_step,sold,snew,sedge,sflux,&
+                             umac,w0,w0mac,etarhoflux,normal, &
+                             rho0_old,rho0_new,p0_new, &
+                             rho0_predicted_edge,dx,dt,the_bc_level)
 
     use bl_prof_module
     use bl_constants_module
@@ -31,11 +31,10 @@ contains
     use network,       only: nspec, spec_names
     use geometry,      only: spherical, nr_fine
     use variables,     only: nscal, spec_comp, rho_comp, foextrap_comp
-    use probin_module, only: edge_nodal_flag,verbose
+    use probin_module, only: verbose
     use modify_scal_force_module
     use convert_rhoX_to_X_module
 
-    integer        , intent(in   ) :: nlevs
     type(ml_layout), intent(inout) :: mla
     integer        , intent(in   ) :: which_step
     type(multifab) , intent(inout) :: sold(:)
@@ -54,12 +53,12 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:,:),dt
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
-    type(multifab) :: scal_force(nlevs)
-    type(multifab) :: rho0_old_cart(nlevs)
-    type(multifab) :: rho0_new_cart(nlevs)
-    type(multifab) :: p0_new_cart(nlevs)
+    type(multifab) :: scal_force(mla%nlevel)
+    type(multifab) :: rho0_old_cart(mla%nlevel)
+    type(multifab) :: rho0_new_cart(mla%nlevel)
+    type(multifab) :: p0_new_cart(mla%nlevel)
 
-    integer    :: comp,n,dm
+    integer    :: comp,n,dm,nlevs
     logical    :: is_vel
     real(dp_t) :: smin,smax
 
@@ -70,7 +69,8 @@ contains
 
     call build(bpt, "density_advance")
 
-    dm      = sold(1)%dim
+    dm    = mla%dim
+    nlevs = mla%nlevel
     is_vel  = .false.
 
     ! create edge-centered base state quantities.

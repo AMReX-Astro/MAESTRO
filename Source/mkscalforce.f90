@@ -25,9 +25,9 @@ module mkscalforce_module
 
 contains
 
-  subroutine mkrhohforce(nlevs, scal_force, is_prediction, thermal, umac, &
+  subroutine mkrhohforce(mla, scal_force, is_prediction, thermal, umac, &
                          p0_old, p0_new, rho0_old, rho0_new, &
-                         psi, normal, dx, add_thermal, mla, the_bc_level)
+                         psi, dx, add_thermal, the_bc_level)
 
     use bl_prof_module
     use variables, only: foextrap_comp, rhoh_comp
@@ -40,7 +40,6 @@ contains
     use probin_module, only: enthalpy_pred_type
     use pred_parameters
 
-    integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: scal_force(:)
     logical        , intent(in   ) :: is_prediction
     type(multifab) , intent(in   ) :: thermal(:)
@@ -48,16 +47,15 @@ contains
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:), p0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: rho0_old(:,0:), rho0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: psi(:,0:)
-    type(multifab) , intent(in   ) :: normal(:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     logical        , intent(in   ) :: add_thermal
     type(ml_layout), intent(in   ) :: mla
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     ! local
-    integer                  :: i,dm,n
+    integer                  :: i,dm,n,nlevs
     integer                  :: lo(scal_force(1)%dim),hi(scal_force(1)%dim)
-    integer                  :: ng_f,ng_um,ng_th,ng_n
+    integer                  :: ng_f,ng_um,ng_th
     real(kind=dp_t), pointer :: ump(:,:,:,:)
     real(kind=dp_t), pointer :: vmp(:,:,:,:)
     real(kind=dp_t), pointer :: wmp(:,:,:,:)
@@ -66,14 +64,16 @@ contains
     real(kind=dp_t), pointer :: tp(:,:,:,:)
     real(kind=dp_t), pointer :: pp(:,:,:,:)
 
-    type(multifab)  :: p0_cart(nlevs)
-    real(kind=dp_t) :: p0_nph(nlevs,0:nr_fine-1)
+    type(multifab)  ::    p0_cart(mla%nlevel)
+    real(kind=dp_t) ::     p0_nph(mla%nlevel,0:nr_fine-1)
     real(kind=dp_t) ::   rho0(0:nr_fine-1)
     real(kind=dp_t) ::   grav(0:nr_fine-1)
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "mkrhohforce")
+
+    nlevs = mla%nlevel
 
     ! if we are doing the prediction, then it only makes sense to be in
     ! this routine if the quantity we are predicting is (rho h)' or h
@@ -88,7 +88,6 @@ contains
     ng_f  = scal_force(1)%ng
     ng_um = umac(1,1)%ng
     ng_th = thermal(1)%ng
-    ng_n  = normal(1)%ng
 
     if (spherical .eq. 1) then
        do n = 1,nlevs
@@ -129,13 +128,10 @@ contains
                                     tp(:,:,:,1), ng_th, lo, hi, p0_old(n,:), p0_new(n,:), &
                                     rho0, grav, psi(n,:), add_thermal)
              else
-                np => dataptr(normal(n), i)
                 pp  => dataptr(p0_cart(n),i)
                 call mkrhohforce_3d_sphr(n,fp(:,:,:,rhoh_comp), ng_f, is_prediction, &
                                          ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
                                          tp(:,:,:,1), ng_th, pp(:,:,:,1), lo, hi, dx(n,:), &
-                                         np(:,:,:,:), &
-                                         ng_n, p0_nph(n,:),  rho0, grav, &
                                          psi(n,:), add_thermal)
              end if
           end select
@@ -232,7 +228,6 @@ contains
        end do
     enddo
 
-
     ! psi should always be in the force if we are doing the final update
     ! For prediction, it should not be in the force if we are predicting
     ! (rho h)', but should be there if we are predicting h
@@ -244,7 +239,6 @@ contains
           end do
        end do
     endif
-
 
     if (add_thermal) then
        do j=lo(2),hi(2)
@@ -331,84 +325,56 @@ contains
 
   subroutine mkrhohforce_3d_sphr(n,rhoh_force,ng_f,is_prediction, &
                                  umac,vmac,wmac,ng_um,thermal,ng_th,p0_cart, &
-                                 lo,hi,dx,normal,ng_n,p0_nph,rho0,grav,psi, &
-                                 add_thermal)
+                                 lo,hi,dx,psi,add_thermal)
 
     use fill_3d_module
-    use geometry, only: nr_fine, dr
+    use geometry, only: nr_fine, dr, center
     use probin_module, only: enthalpy_pred_type, base_cutoff_density
     use pred_parameters
 
     ! compute the source terms for the non-reactive part of the enthalpy equation {w dp0/dr}
 
-    integer,         intent(in   ) :: n,lo(:),hi(:),ng_f,ng_um,ng_th,ng_n
+    integer,         intent(in   ) :: n,lo(:),hi(:),ng_f,ng_um,ng_th
     logical,         intent(in   ) :: is_prediction
     real(kind=dp_t), intent(  out) :: rhoh_force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :)
     real(kind=dp_t), intent(in   ) ::       umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(in   ) ::       vmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(in   ) ::       wmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(in   ) ::    thermal(lo(1)-ng_th:,lo(2)-ng_th:,lo(3)-ng_th:)
-    real(kind=dp_t), intent(in   ) ::     normal(lo(1)-ng_n :,lo(2)-ng_n :,lo(3)-ng_n :,:)
     real(kind=dp_t), intent(in   ) ::    p0_cart(lo(1)-   1 :,lo(2)-   1 :,lo(3)-   1 :)
     real(kind=dp_t), intent(in   ) :: dx(:)
-    real(kind=dp_t), intent(in   ) :: p0_nph(0:)
-    real(kind=dp_t), intent(in   ) :: rho0(0:)
-    real(kind=dp_t), intent(in   ) :: grav(0:)
     real(kind=dp_t), intent(in   ) :: psi(0:)
     logical        , intent(in   ) :: add_thermal
 
-    real(kind=dp_t), allocatable :: gradp_rad(:)
-    real(kind=dp_t), allocatable :: gradp_cart(:,:,:,:)
     real(kind=dp_t), allocatable :: psi_cart(:,:,:,:)
 
-    real(kind=dp_t) :: uadv,vadv,wadv,normal_vel
-    real(kind=dp_t) :: divup, p0divu
-    integer         :: i,j,k,r
+    real(kind=dp_t) :: p0_lox,p0_hix,p0_loy,p0_hiy,p0_loz,p0_hiz
+    real(kind=dp_t) :: x,y,z,radius
+    real(kind=dp_t) :: divup, p0divu, p0_cen
+    integer         :: i,j,k,r,index
 
-    allocate(gradp_rad(0:nr_fine-1))
-    allocate(gradp_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
-
-    allocate(psi_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
-    call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,psi,psi_cart,lo,hi,dx,0,0)
-
-    do r=0,nr_fine-1
-       
-       if (rho0(r) > base_cutoff_density) then
-          gradp_rad(r) = rho0(r) * grav(r)
-       else if (r.eq.nr_fine-1) then 
-          gradp_rad(r) = HALF * ( p0_nph(r  ) - p0_nph(r-1) ) / dr(n)
-       else
-          gradp_rad(r) = HALF * ( p0_nph(r+1) - p0_nph(r  ) ) / dr(n)
-       end if
-
-    end do
-
-    call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,gradp_rad,gradp_cart,lo,hi,dx,0,0)
-
+    ! Here we make u grad p = div (u p) - p div (u) 
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
 
-             ! *************** The way we've always made u dot grad p ************************* !
+             p0_lox = HALF * (p0_cart(i,j,k) + p0_cart(i-1,j,k))
+             p0_hix = HALF * (p0_cart(i,j,k) + p0_cart(i+1,j,k))
+             p0_loy = HALF * (p0_cart(i,j,k) + p0_cart(i,j-1,k))
+             p0_hiy = HALF * (p0_cart(i,j,k) + p0_cart(i,j+1,k))
+             p0_loz = HALF * (p0_cart(i,j,k) + p0_cart(i,j,k-1))
+             p0_hiz = HALF * (p0_cart(i,j,k) + p0_cart(i,j,k+1))
 
-!            uadv = HALF*(umac(i,j,k)+umac(i+1,j,k))
-!            vadv = HALF*(vmac(i,j,k)+vmac(i,j+1,k))
-!            wadv = HALF*(wmac(i,j,k)+wmac(i,j,k+1))
-!            normal_vel = uadv*normal(i,j,k,1)+vadv*normal(i,j,k,2)+wadv*normal(i,j,k,3)
-!            rhoh_force(i,j,k) = gradp_cart(i,j,k,1) * normal_vel
- 
-             ! *************** Here we make div (u p) - p div (u) instead  ************************* !
+             divup = (umac(i+1,j,k) * p0_hix - umac(i,j,k) * p0_lox) / dx(1) + &
+                     (vmac(i,j+1,k) * p0_hiy - vmac(i,j,k) * p0_loy) / dx(2) + &
+                     (wmac(i,j,k+1) * p0_hiz - wmac(i,j,k) * p0_loz) / dx(3)
 
-             divup = (umac(i+1,j,k) * HALF * (p0_cart(i,j,k)+p0_cart(i+1,j,k)) - &
-                      umac(i  ,j,k) * HALF * (p0_cart(i,j,k)+p0_cart(i-1,j,k)) ) / dx(1) + &
-                     (vmac(i,j+1,k) * HALF * (p0_cart(i,j,k)+p0_cart(i,j+1,k)) - &
-                      vmac(i,j  ,k) * HALF * (p0_cart(i,j,k)+p0_cart(i,j-1,k)) ) / dx(2) + &
-                     (wmac(i,j,k+1) * HALF * (p0_cart(i,j,k)+p0_cart(i,j,k+1)) - &
-                      wmac(i,j,k  ) * HALF * (p0_cart(i,j,k)+p0_cart(i,j,k-1)) ) / dx(3)
+             p0_cen = (p0_lox + p0_hix + p0_loy + p0_hiy + p0_loz + p0_hiz) / 6.d0
+!            p0_cen = p0_cart(i,j,k)
 
              p0divu = ( (umac(i+1,j,k) - umac(i,j,k)) / dx(1) + &
                         (vmac(i,j+1,k) - vmac(i,j,k)) / dx(2) + &
-                        (wmac(i,j,k+1) - wmac(i,j,k)) / dx(3) ) * p0_cart(i,j,k)
+                        (wmac(i,j,k+1) - wmac(i,j,k)) / dx(3) ) * p0_cen
 
              rhoh_force(i,j,k) = divup - p0divu
 
@@ -421,6 +387,10 @@ contains
     ! (rho h)', but should be there if we are predicting h
     if ((is_prediction .AND. enthalpy_pred_type == predict_h) .OR. &
          (.NOT. is_prediction)) then
+
+       allocate(psi_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
+       call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,psi,psi_cart,lo,hi,dx,0,0)
+
        do k = lo(3),hi(3)
           do j = lo(2),hi(2)
              do i = lo(1),hi(1)
@@ -428,6 +398,7 @@ contains
              enddo
           enddo
        enddo       
+       deallocate(psi_cart)
     endif
 
     if (add_thermal) then
@@ -440,21 +411,19 @@ contains
        end do
     end if
 
-    deallocate(gradp_rad, gradp_cart, psi_cart)
-
   end subroutine mkrhohforce_3d_sphr
 
-  subroutine mktempforce(nlevs,temp_force,umac,s,thermal,p0_old,p0_new,psi,normal, &
-                         dx,mla,the_bc_level)
+  subroutine mktempforce(mla,temp_force,umac,s,thermal,p0_old,p0_new,psi,&
+                         dx,the_bc_level)
 
     use bl_prof_module
     use variables, only: foextrap_comp, temp_comp
-    use geometry, only: spherical
+    use geometry, only: spherical, nr_fine
     use ml_restriction_module, only: ml_cc_restriction_c
     use multifab_fill_ghost_module
     use multifab_physbc_module
 
-    integer        , intent(in   ) :: nlevs
+    type(ml_layout), intent(in   ) :: mla
     type(multifab) , intent(inout) :: temp_force(:)
     type(multifab) , intent(in   ) :: umac(:,:)
     type(multifab) , intent(in   ) :: s(:)
@@ -462,33 +431,41 @@ contains
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: psi(:,0:)
-    type(multifab) , intent(in   ) :: normal(:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
-    type(ml_layout), intent(in   ) :: mla
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     ! local
-    integer                  :: i,dm,n,ng_f,ng_um,ng_s,ng_th,ng_n
-    integer                  :: lo(temp_force(1)%dim),hi(temp_force(1)%dim)
+    integer         :: i,dm,n,ng_f,ng_um,ng_s,ng_th,nlevs
+    type(multifab)  :: p0_cart(mla%nlevel)
+    real(kind=dp_t) :: p0_nph(mla%nlevel,0:nr_fine-1)
+    integer         :: lo(temp_force(1)%dim),hi(temp_force(1)%dim)
+
     real(kind=dp_t), pointer :: tp(:,:,:,:)
     real(kind=dp_t), pointer :: ump(:,:,:,:)
     real(kind=dp_t), pointer :: vmp(:,:,:,:)
     real(kind=dp_t), pointer :: wmp(:,:,:,:)
     real(kind=dp_t), pointer :: sp(:,:,:,:)
     real(kind=dp_t), pointer :: fp(:,:,:,:)
-    real(kind=dp_t), pointer :: np(:,:,:,:)
+    real(kind=dp_t), pointer :: pp(:,:,:,:)
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "mktempforce")
 
-    dm = temp_force(1)%dim
+    dm    = mla%dim
+    nlevs = mla%nlevel
 
     ng_f  = temp_force(1)%ng
     ng_um = umac(1,1)%ng
     ng_s  = s(1)%ng
     ng_th = thermal(1)%ng
-    ng_n  = normal(1)%ng
+
+    if (spherical .eq. 1) then
+       do n = 1,nlevs
+          p0_nph(n,:) = HALF * (p0_old(n,:) + p0_new(n,:))
+          call multifab_build(p0_cart(n),mla%la(n),1,1)
+       end do
+    end if
 
     do n=1,nlevs
 
@@ -509,12 +486,11 @@ contains
           case(3)
              wmp => dataptr(umac(n,3),i)
              if (spherical .eq. 1) then
-                np => dataptr(normal(n),i)
+                pp  => dataptr(p0_cart(n),i)
                 call mktempforce_3d_sphr(n,fp(:,:,:,temp_comp), ng_f, sp(:,:,:,:), ng_s, &
                                          ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
                                          tp(:,:,:,1), ng_th, lo, hi, &
-                                         p0_old(n,:), p0_new(n,:), psi(n,:), &
-                                         np(:,:,:,:), ng_n, dx(n,:))
+                                         pp(:,:,:,1), psi(n,:), dx(n,:))
              else
                 call mktempforce_3d(n, fp(:,:,:,temp_comp), ng_f, sp(:,:,:,:), ng_s, &
                                     wmp(:,:,:,1), ng_um, tp(:,:,:,1), ng_th, lo, hi, &
@@ -704,8 +680,7 @@ contains
   end subroutine mktempforce_3d
 
   subroutine mktempforce_3d_sphr(n,temp_force, ng_f, s, ng_s, umac, vmac, wmac, ng_um, &
-                                 thermal, ng_th, &
-                                 lo, hi, p0_old, p0_new, psi, normal, ng_n, dx)
+                                 thermal, ng_th, lo, hi, p0_cart, psi, dx)
 
     use fill_3d_module
     use variables, only: temp_comp, rho_comp, spec_comp
@@ -714,56 +689,32 @@ contains
 
     ! compute the source terms for temperature
 
-    ! note, in the prediction of the interface states, we will set
-    ! both p0_old and p0_new to the same old value.  In the computation
-    ! of the temp_force for the update, they will be used to time-center.
-
-    integer,         intent(in   ) :: n,lo(:),hi(:),ng_f,ng_s,ng_um,ng_th,ng_n
+    integer,         intent(in   ) :: n,lo(:),hi(:),ng_f,ng_s,ng_um,ng_th
     real(kind=dp_t), intent(  out) :: temp_force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :)
     real(kind=dp_t), intent(in   ) ::          s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :,:)
     real(kind=dp_t), intent(in   ) ::       umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(in   ) ::       vmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(in   ) ::       wmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(in   ) ::    thermal(lo(1)-ng_th:,lo(2)-ng_th:,lo(3)-ng_th:)
-    real(kind=dp_t), intent(in   ) :: p0_old(0:), p0_new(0:), psi(0:)
-    real(kind=dp_t), intent(in   ) ::     normal(lo(1)-ng_n:,lo(2)-ng_n:,lo(3)-ng_n:,:)
+    real(kind=dp_t), intent(in   ) ::    p0_cart(lo(1)-   1 :,lo(2)-   1 :,lo(3)-   1 :)
+    real(kind=dp_t), intent(in   ) :: psi(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
 
     integer :: i,j,k,r
-    real(kind=dp_t) :: uadv,vadv,wadv,normal_vel,dhdp
-    real(kind=dp_t), allocatable :: gradp_rad(:)
-    real(kind=dp_t), allocatable :: gradp_cart(:,:,:,:)
+    real(kind=dp_t) :: p0_lox,p0_hix,p0_loy,p0_hiy,p0_loz,p0_hiz
+    real(kind=dp_t) :: divup,p0divu,ugradp,dhdp
     real(kind=dp_t), allocatable :: psi_cart(:,:,:,:)
-
-    allocate(gradp_rad(0:nr_fine-1))
-    allocate(gradp_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
 
     allocate(psi_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
     call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,psi,psi_cart,lo,hi,dx,0,0)
-
-    do r=0,nr_fine-1
-       
-       if (r.eq.0) then
-          gradp_rad(r) = HALF * ( p0_old(r+1) + p0_new(r+1) &
-                                 -p0_old(r  ) - p0_new(r  ) ) / dr(n)
-       else if (r.eq.nr_fine-1) then 
-          gradp_rad(r) = HALF * ( p0_old(r  ) + p0_new(r  ) &
-                                 -p0_old(r-1) - p0_new(r-1) ) / dr(n)
-       else
-          gradp_rad(r) = FOURTH * ( p0_old(r+1) + p0_new(r+1) &
-                                   -p0_old(r-1) - p0_new(r-1) ) / dr(n)
-       end if
-    end do
-
-    call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,gradp_rad,gradp_cart,lo,hi,dx,0,0)
 
     do k = lo(3),hi(3)
      do j = lo(2),hi(2)
        do i = lo(1),hi(1)
         
-          temp_eos(1) = s(i,j,k,temp_comp)
-          den_eos(1) = s(i,j,k,rho_comp)
-          xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1) / s(i,j,k,rho_comp)
+         temp_eos(1)   = s(i,j,k,temp_comp)
+          den_eos(1)   = s(i,j,k,rho_comp)
+           xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1) / s(i,j,k,rho_comp)
 
           ! dens, temp, xmass inputs
          call eos(eos_input_rt, den_eos, temp_eos, &
@@ -781,15 +732,26 @@ contains
                                             p_eos(1) / s(i,j,k,rho_comp) ) &
                                           / ( s(i,j,k,rho_comp) * dpdr_eos(1) )
 
-         uadv = HALF * ( umac(i,j,k) + umac(i+1,j,k) )
-         vadv = HALF * ( vmac(i,j,k) + vmac(i,j+1,k) )
-         wadv = HALF * ( wmac(i,j,k) + wmac(i,j,k+1) )
+         p0_lox = HALF * (p0_cart(i,j,k) + p0_cart(i-1,j,k)) 
+         p0_hix = HALF * (p0_cart(i,j,k) + p0_cart(i+1,j,k)) 
+         p0_loy = HALF * (p0_cart(i,j,k) + p0_cart(i,j-1,k)) 
+         p0_hiy = HALF * (p0_cart(i,j,k) + p0_cart(i,j+1,k)) 
+         p0_loz = HALF * (p0_cart(i,j,k) + p0_cart(i,j,k-1)) 
+         p0_hiz = HALF * (p0_cart(i,j,k) + p0_cart(i,j,k+1)) 
 
-         normal_vel = uadv*normal(i,j,k,1) + vadv*normal(i,j,k,2) + wadv*normal(i,j,k,3)
+         divup = (umac(i+1,j,k) * p0_hix - umac(i,j,k) * p0_lox) / dx(1) + &
+                 (vmac(i,j+1,k) * p0_hiy - vmac(i,j,k) * p0_loy) / dx(2) + &
+                 (wmac(i,j,k+1) * p0_hiz - wmac(i,j,k) * p0_loz) / dx(3)
+
+         p0divu = ( (umac(i+1,j,k) - umac(i,j,k)) / dx(1) + &
+                    (vmac(i,j+1,k) - vmac(i,j,k)) / dx(2) + &
+                    (wmac(i,j,k+1) - wmac(i,j,k)) / dx(3) ) * p0_cart(i,j,k)
+
+         ugradp = divup - p0divu
 
          temp_force(i,j,k) =  thermal(i,j,k) + &
                               (ONE - s(i,j,k,rho_comp) * dhdp) * &
-                              (normal_vel * gradp_cart(i,j,k,1) + psi_cart(i,j,k,1))
+                              (ugradp + psi_cart(i,j,k,1))
 
          temp_force(i,j,k) = temp_force(i,j,k) / (cp_eos(1) * s(i,j,k,rho_comp))
 
@@ -797,7 +759,7 @@ contains
      end do
     end do
 
-    deallocate(gradp_rad, gradp_cart, psi_cart)
+    deallocate(psi_cart)
 
   end subroutine mktempforce_3d_sphr
 
