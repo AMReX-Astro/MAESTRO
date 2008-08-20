@@ -212,8 +212,9 @@ contains
     call update_scal(mla,spec_comp,spec_comp+nspec-1,sold,snew,sflux,scal_force, &
                      p0_new,p0_new_cart,dx,dt,the_bc_level)
 
-    call update_scal(mla,trac_comp,trac_comp+ntrac-1,sold,snew,sflux,scal_force, &
-                     p0_new,p0_new_cart,dx,dt,the_bc_level)
+    if (ntrac.ge.1) &
+       call update_scal(mla,trac_comp,trac_comp+ntrac-1,sold,snew,sflux,scal_force, &
+                        p0_new,p0_new_cart,dx,dt,the_bc_level)
     
     if ( verbose .ge. 1 ) then
        do n=1, nlevs
@@ -233,12 +234,12 @@ contains
           
           if (parallel_IOProcessor()) &
                write(6,2000) smin,smax
-       end do
 
-       smin = multifab_min_c(snew(n),trac_comp) 
-       smax = multifab_max_c(snew(n),trac_comp)
-       if (parallel_IOProcessor()) &
-            write(6,2003) smin,smax
+          smin = multifab_min_c(snew(n),trac_comp) 
+          smax = multifab_max_c(snew(n),trac_comp)
+          if (parallel_IOProcessor()) &
+               write(6,2003) smin,smax
+       end do
     end if
 
     if (parallel_IOProcessor()) write(6,2004) 
