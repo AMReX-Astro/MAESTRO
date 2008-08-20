@@ -94,16 +94,16 @@ $\divetarho$ is the cell-centered average of $\rho'^{n+1}$,
 \subsection{Plane-Parallel}
 NOT USED.
 \subsection{Spherical}
-In {\tt make\_w0}
+In {\tt make\_w0}, $\etarho$ is used in the construction of the RHS for the $\delta w_0$ equation.
 \section{Using $\etarhocc$}
 \subsection{Plane-Parallel}
-In {\tt make\_psi}
+In {\tt make\_psi}, $\psi = \etarho g$.
 \subsection{Spherical}
-In {\tt make\_w0}
+In {\tt make\_w0} $\etarhocc$ is used in the construction of the RHS for the $\delta w_0$ equation.
 \section{Using $\divetarho$}
 \subsection{Plane-Parallel}
-In {\tt correct\_base}
+In {\tt correct\_base}, $\rho_0^{n+1} = \rho_0^{n+1} - \Delta t \divetarho$.
 \subsection{Spherical}
-In {\tt correct\_base}
+In {\tt correct\_base}, $\rho_0^{n+1} = \rho_0^{n+1} - \Delta t \divetarho$.
 
 \end{document}
