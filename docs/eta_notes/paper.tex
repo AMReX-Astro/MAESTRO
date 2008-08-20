@@ -15,6 +15,7 @@
 
 \def\etarho     {\eta_\rho}
 \def\etarhocc   {\etarho^{\rm cc}}
+\def\etarhoflux {\etarho^{\rm flux}}
 \def\divetarho  {\nabla\cdot(\etarho\eb_r)}
 
 
@@ -30,8 +31,25 @@
 \begin{document}
 
 \maketitle
+\tableofcontents
+\clearpage
 
-We carry around three different quantities: $\etarho$ (edge-centered), $\etarhocc$ (cell-centered), and $\divetarho$ (edge-centered).  These are each 1D in the radial direction.  These notes discuss when each of these is used, and how they are computed, in both plane-parallel and spherical.
+We carry around three different 1D radial quantities: $\etarho$ (edge-centered), $\etarhocc$ (cell-centered), and $\divetarho$ (edge-centered).  These notes discuss when each of these is used, and how they are computed, in both plane-parallel and spherical.
+
+\section{Flow Chart}
+\begin{enumerate}
+\item Enter {\tt advance} with $[\etarho, \etarhocc, \divetarho]^{n-\half}$.
+\item Call {\tt make\_w0}.  The spherical version uses uses $\etarho$ and $\etarhocc$.
+\item Call {\tt density\_advance}.  The plane-parallel version computes $\etarhoflux$.
+\item Call {\tt correct\_base}, which uses $\divetarho$.
+\item Compute $[\etarho, \etarhocc, \divetarho]^{n+\half,*}$.
+\item Call {\tt make\_psi}.  The plane-parallel version uses $\etarhocc$.
+\item Call {\tt make\_w0}.  The spherical version uses uses $\etarho$ and $\etarhocc$.
+\item Call {\tt density\_advance}.  The plane-parallel version computes $\etarhoflux$.
+\item Call {\tt correct\_base}, which uses $\divetarho$.
+\item Compute $[\etarho, \etarhocc, \divetarho]^{n+\half}$.
+\item Call {\tt make\_psi}.  The plane-parallel version uses $\etarhocc$.
+\end{enumerate}
 
 \section{Computing $\etarho, \etarhocc$, and $\divetarho$}
 This is done in {\tt make\_eta.f90}.
@@ -53,5 +71,20 @@ $\divetarho$ is the cell-centered divergence of $\etarho$,
 \left[\divetarho\right]_r = \frac{\eta_{\rho,r+\half} - \eta_{\rho,r-\half}}{\Delta r}.
 \end{equation}
 \subsection{Spherical}
+\section{Using $\etarho$}
+\subsection{Plane-Parallel}
+NOT USED.
+\subsection{Spherical}
+In {\tt make\_w0}
+\section{Using $\etarhocc$}
+\subsection{Plane-Parallel}
+In {\tt make\_psi}
+\subsection{Spherical}
+In {\tt make\_w0}
+\section{Using $\divetarho$}
+\subsection{Plane-Parallel}
+In {\tt correct\_base}
+\subsection{Spherical}
+In {\tt correct\_base}
 
 \end{document}
