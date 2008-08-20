@@ -69,6 +69,8 @@ The model data is not generated at run-time - it must be generated in advance of
 We need to generate model data with the same resolution as the finest base state resolution.
 \section{Creating the Initial Data from the Model Data}
 In {\tt base\_state.f90}, using the subroutine {\tt init\_base\_state.f90} (which is actually a terrible name since we are setting the initial data, not the base state), we set the initial data $\rho^{\init}, T^{\init}, p^{\init}$ and $X^{\init}$ equal to the model data.  Then, we set $h^{\init} = h^{\init}(\rho^{\init},T^{\init},X^{\init})$.  Note that in the code, $p^{\init}$ is also overwritten, but the value of $p^{\init}$ does not change since we called $p^{\model} = p^{\model}(\rho^{\model},T^{\model},X^{\model})$ at the end of the previous fortran subroutine.
+\subsection{Multilevel Plane-Parallel}
+For the finest level, we can set the initial data equal to the model data.  For the non-finest levels, we use linear interpolation to compute the initial data.  For cells that are covered by finer cells, we average $\rho^{\init}, (\rho h)^{\init},$ and $(\rho X)^{\init}$ from the fine cell to get the coarse cell value.  Then, for every cell not at the finest level, we call the EOS to compute $p^{\init},T^{\init} = p^{\init},T^{\init}(\rho^{\init},h^{\init},X^{\init})$.\MarginPar{Now $p^{\init}$ and $\rho^{\init}$ are not in HSE.  Is this a problem?}
 \section{Creating the Base State and Full State}
 Given $p^{\init}, \rho^{\init}, T^{\init},$ and $X^{\init}$, this section describes how the base state ($\rho_0$ and $p_0$) and full state ($\rho, h, X$, and $T$) are computed.  We require that $\rho_0 = \overline\rho$, the base state is in HSE according to equation (\ref{HSE Discretization}), and the full state is in thermodynamic equilibrium with $p_0$.  Here are the steps:
 \begin{enumerate}
@@ -81,4 +83,5 @@ Given $p^{\init}, \rho^{\init}, T^{\init},$ and $X^{\init}$, this section descri
 \item Compute the full state $T,h = T,h(\rho,p_0,X)$.
 \end{enumerate}
 Now $\rho_0 = \overline\rho$, the base state is in HSE, and the full state is in thermodynamic equilibrium with $p_0$.
+\subsection{Multilevel Plane-Parallel}
 \end{document}
