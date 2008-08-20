@@ -7,11 +7,17 @@
 % Margins
 \usepackage[lmargin=0.5in,rmargin=1.5in,tmargin=0.5in,bmargin=0.5in]{geometry}
 
-\def\eb        {\bf{e}}
+\def\half   {\frac{1}{2}}
 
-\def\etarho    {\eta_\rho}
-\def\etarhocc  {\etarho^{\rm cc}}
-\def\divetarho {\nabla\cdot(\etarho\eb_r)}
+\def\eb         {{\bf e}}
+\def\ib         {{\bf i}}
+\def\Ub         {{\bf U}}
+
+\def\etarho     {\eta_\rho}
+\def\etarhocc   {\etarho^{\rm cc}}
+\def\divetarho  {\nabla\cdot(\etarho\eb_r)}
+
+
 
 \title{Notes on $\etarho$}
 
@@ -25,7 +31,27 @@
 
 \maketitle
 
-We carry around three different quantities: $\etarho$ (edge-centered), $\etarhocc$ (cell-centered), and $\divetarho$ (edge-centered).  These notes discuss when each of these is used, and how they are computed, in both plane-parallel and spherical.
+We carry around three different quantities: $\etarho$ (edge-centered), $\etarhocc$ (cell-centered), and $\divetarho$ (edge-centered).  These are each 1D in the radial direction.  These notes discuss when each of these is used, and how they are computed, in both plane-parallel and spherical.
 
+\section{Computing $\etarho, \etarhocc$, and $\divetarho$}
+This is done in {\tt make\_eta.f90}.
+\subsection{Plane-Parallel}
+We first compute a radial edge-centered multifab, $\eta_{\rho}^{\rm flux}$, using
+\begin{equation}
+\eta_{\rho,\ib+\half\eb_r}^{\rm flux} = \Ub_{\ib+\half\eb_r}^{n+\half} \rho_{\ib+\half\eb_r}^{n+\half} - w_{0,r+\half}^{n+\half}\rho_{0,r+\half}^{n+\half, {\rm pred}}
+\end{equation}
+$\etarho$ is the edge-centered ``average'' value of $\eta_{\rho}^{\rm flux}$,
+\begin{equation}
+\eta_{\rho,r+\half} = \overline{\eta_{\rho,\ib+\half\eb_r}^{\rm flux}}
+\end{equation}
+$\etarhocc$ is a cell-centered average of $\etarho$,
+\begin{equation}
+\eta_{\rho,r}^{\rm cc} = \frac{\eta_{\rho,r+\half} + \eta_{\rho,r-\half}}{2}.
+\end{equation}
+$\divetarho$ is the cell-centered divergence of $\etarho$,
+\begin{equation}
+\left[\divetarho\right]_r = \frac{\eta_{\rho,r+\half} - \eta_{\rho,r-\half}}{\Delta r}.
+\end{equation}
+\subsection{Spherical}
 
 \end{document}
