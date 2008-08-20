@@ -177,10 +177,11 @@ contains
                          rho0_predicted_edge,spec_comp,spec_comp+nspec-1)
 
        ! compute tracer fluxes
-       call mk_rhoX_flux(mla,sflux,etarhoflux,sold,sedge,umac,w0,w0mac, &
-                         rho0_old,rho0_edge_old,rho0_old_cart, &
-                         rho0_old,rho0_edge_old,rho0_old_cart, &
-                         rho0_predicted_edge,trac_comp,trac_comp+ntrac-1)
+       if (ntrac.ge.1) &
+          call mk_rhoX_flux(mla,sflux,etarhoflux,sold,sedge,umac,w0,w0mac, &
+                            rho0_old,rho0_edge_old,rho0_old_cart, &
+                            rho0_old,rho0_edge_old,rho0_old_cart, &
+                            rho0_predicted_edge,trac_comp,trac_comp+ntrac-1)
 
     else if (which_step .eq. 2) then
 
@@ -191,10 +192,11 @@ contains
                          rho0_predicted_edge,spec_comp,spec_comp+nspec-1)
 
        ! compute tracer fluxes
-       call mk_rhoX_flux(mla,sflux,etarhoflux,sold,sedge,umac,w0,w0mac, &
-                         rho0_old,rho0_edge_old,rho0_old_cart, &
-                         rho0_new,rho0_edge_new,rho0_new_cart, &
-                         rho0_predicted_edge,trac_comp,trac_comp+ntrac-1)
+       if (ntrac.ge.1) &
+          call mk_rhoX_flux(mla,sflux,etarhoflux,sold,sedge,umac,w0,w0mac, &
+                            rho0_old,rho0_edge_old,rho0_old_cart, &
+                            rho0_new,rho0_edge_new,rho0_new_cart, &
+                            rho0_predicted_edge,trac_comp,trac_comp+ntrac-1)
 
     end if
 
@@ -235,10 +237,12 @@ contains
           if (parallel_IOProcessor()) &
                write(6,2000) smin,smax
 
-          smin = multifab_min_c(snew(n),trac_comp) 
-          smax = multifab_max_c(snew(n),trac_comp)
-          if (parallel_IOProcessor()) &
-               write(6,2003) smin,smax
+          if (ntrac.ge.1) then
+             smin = multifab_min_c(snew(n),trac_comp) 
+             smax = multifab_max_c(snew(n),trac_comp)
+             if (parallel_IOProcessor()) &
+                  write(6,2003) smin,smax
+          end if
        end do
     end if
 
