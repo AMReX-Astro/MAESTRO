@@ -2,10 +2,6 @@
    to anelastic_cutoff), and understand what values of this give a valid
    basestate expansion.
 
--- some places (like in rhoh_vs_t.f90), we loop over 1, nr(nlevs)-1
-   when dealing with the base state, but in others, we loop over
-   1, nr(n)-1 -- which should we be doing?
-
 -- in modify_scal_force, for spherical, why do we compute divu for  
    the base state in the radial geom and then put it on the Cart 
    grid, instead of putting w0 onto the Cart grid first and then
@@ -25,13 +21,5 @@
 -- should we be computing beta_0 differently for spherical?  In 
    particular, should we do linear reconstruction on g?
 
--- is enthalpy_pred_type = 1, it does not look like we are including
-   psi in the final update -- this would only affect us if 
-   evolve_base = T
-
 -- We need something like an eta_rhoh that makes the base state
    enthalpy agree with the average of the full state enthalpy.
-
--- Re-examine the way we handle the dpdt_factor stuff, particularly
-   the way we compute delta_p_term, now that we have a better
-   handle on spherical fill and average
