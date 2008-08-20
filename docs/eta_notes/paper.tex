@@ -41,12 +41,12 @@ We carry around three different 1D radial quantities: $\etarho$ (edge-centered),
 \section{Flow Chart}
 \begin{enumerate}
 \item Enter {\tt advance} with $[\etarho, \etarhocc, \divetarho]^{n-\half}$.
-\item Call {\tt make\_w0}.  The spherical version uses uses $\etarho$ and $\etarhocc$.
+\item Call {\tt make\_w0}.  The spherical version uses uses $\etarho$ and $\divetarho$.
 \item Call {\tt density\_advance}.  The plane-parallel version computes $\etarhoflux$.
 \item Call {\tt correct\_base}, which uses $\divetarho$.
 \item Compute $[\etarho, \etarhocc, \divetarho]^{n+\half,*}$.
 \item Call {\tt make\_psi}.  The plane-parallel version uses $\etarhocc$.
-\item Call {\tt make\_w0}.  The spherical version uses uses $\etarho$ and $\etarhocc$.
+\item Call {\tt make\_w0}.  The spherical version uses uses $\etarho$ and $\divetarho$.
 \item Call {\tt density\_advance}.  The plane-parallel version computes $\etarhoflux$.
 \item Call {\tt correct\_base}, which uses $\divetarho$.
 \item Compute $[\etarho, \etarhocc, \divetarho]^{n+\half}$.
@@ -55,6 +55,7 @@ We carry around three different 1D radial quantities: $\etarho$ (edge-centered),
 
 \section{Computing $\etarho, \etarhocc$, and $\divetarho$}
 This is done in {\tt make\_eta.f90}.
+
 \subsection{Plane-Parallel}
 We first compute a radial edge-centered multifab, $\eta_{\rho}^{\rm flux}$, using
 \begin{equation}
@@ -72,6 +73,7 @@ $\divetarho$ is the cell-centered divergence of $\etarho$,
 \begin{equation}
 \left[\divetarho\right]_r = \frac{\eta_{\rho,r+\half} - \eta_{\rho,r-\half}}{\Delta r}.
 \end{equation}
+
 \subsection{Spherical}
 First, construct $\eta_{\rho}^{\rm cart} = [\rho'(\Ubt\cdot\eb_r)]^{n+\half}$.  Then, $\etarhocc$ is the cell-centered average of $\eta_{\rho}^{\rm cart}$,
 \begin{equation}
@@ -86,24 +88,36 @@ At the upper and lower boundaries, we use
 \eta_{\rho,0} &=& 0, \\
 \eta_{\rho,{\rm nr}} &=& \eta_{\rho,{\rm nr}-1}^{\rm cc}.
 \end{eqnarray}
-$\divetarho$ is the cell-centered average of $\rho'^{n+1}$,
+$\divetarho$ is constructed from the cell-centered average of $\rho'^{n+1}$ as
 \begin{equation}
-\divetarho = \overline{\rho'^{n+1}}
+\divetarho = -\overline{\rho'^{n+1}}/\Delta t
 \end{equation}
+
+
 \section{Using $\etarho$}
+
 \subsection{Plane-Parallel}
 NOT USED.
+
 \subsection{Spherical}
 In {\tt make\_w0}, $\etarho$ is used in the construction of the RHS for the $\delta w_0$ equation.
+
+
 \section{Using $\etarhocc$}
+
 \subsection{Plane-Parallel}
 In {\tt make\_psi}, $\psi = \etarho g$.
+
 \subsection{Spherical}
-In {\tt make\_w0} $\etarhocc$ is used in the construction of the RHS for the $\delta w_0$ equation.
+NOT USED.
+
+
 \section{Using $\divetarho$}
+
 \subsection{Plane-Parallel}
 In {\tt correct\_base}, $\rho_0^{n+1} = \rho_0^{n+1} - \Delta t \divetarho$.
-\subsection{Spherical}
-In {\tt correct\_base}, $\rho_0^{n+1} = \rho_0^{n+1} - \Delta t \divetarho$.
 
+\subsection{Spherical}
+In {\tt correct\_base}, $\rho_0^{n+1} = \rho_0^{n+1} - \Delta t \divetarho$. \\
+In {\tt make\_w0}, we average $\divetarho$ onto edges for the $\delta w_0$ equation.
 \end{document}
