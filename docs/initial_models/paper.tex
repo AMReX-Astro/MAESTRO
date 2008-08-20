@@ -7,7 +7,18 @@
 % Margins
 \usepackage[lmargin=0.5in,rmargin=1.5in,tmargin=0.5in,bmargin=0.5in]{geometry}
 
+\newcommand{\sfrac}[2]{\mathchoice
+  {\kern0em\raise.5ex\hbox{\the\scriptfont0 #1}\kern-.15em/
+   \kern-.15em\lower.25ex\hbox{\the\scriptfont0 #2}}
+  {\kern0em\raise.5ex\hbox{\the\scriptfont0 #1}\kern-.15em/
+   \kern-.15em\lower.25ex\hbox{\the\scriptfont0 #2}}
+  {\kern0em\raise.5ex\hbox{\the\scriptscriptfont0 #1}\kern-.2em/
+   \kern-.15em\lower.25ex\hbox{\the\scriptscriptfont0 #2}}
+  {#1\!/#2}}
+
 \def\half  {\frac{1}{2}}
+\newcommand{\myhalf}{\sfrac{1}{2}}
+
 \def\dt    {\Delta t}
 \def\kth   {k_{\rm th}}
 \def\init  {\rm init}
@@ -84,4 +95,35 @@ Given $p^{\init}, \rho^{\init}, T^{\init},$ and $X^{\init}$, this section descri
 \end{enumerate}
 Now $\rho_0 = \overline\rho$, the base state is in HSE, and the full state is in thermodynamic equilibrium with $p_0$.
 \subsection{Multilevel Plane-Parallel}
+Integrating the HSE discretization upward, when we encounter a change from coarse to fine, here is an equation to integrate up to the coarse-fine interface
+\begin{equation}
+\frac{p_{r-\myhalf}^l - p_{\sfrac{r}{2}-1}^{l-1}}{\Delta r^{l-1}/2} = \frac{\rho_{r-\myhalf}^l + \rho_{\sfrac{r}{2}-1}^{l-1}}{2}g ~~~ \rightarrow ~~~ p_{r-\myhalf}^l = p_{\sfrac{r}{2}-1}^{l-1} + \frac{\Delta r^{l-1} g}{4}\left(\rho_{r-\myhalf}^l + \rho_{\sfrac{r}{2}-1}^{l-1}\right).
+\end{equation}
+Here is an equation to integrate from the coarse-fine interface up to the cell center
+\begin{equation}
+\frac{p_r^l - p_{r-\myhalf}^l}{\Delta r^l/2} = \frac{\rho_r^l + \rho_{r-\myhalf}^l}{2}g ~~~ \rightarrow ~~~ p_r^l = p_{r-\myhalf}^l + \frac{\Delta r^l g}{4}\left(\rho_r^l + \rho_{r-\myhalf}^l\right).
+\end{equation}
+Combining equations gives
+\begin{equation}
+p_r^l = p_{\sfrac{r}{2}-1}^{l-1} + \frac{\Delta r^{l-1} g}{4}\left(\rho_{r-\myhalf}^l + \rho_{\sfrac{r}{2}-1}^{l-1}\right) + \frac{\Delta r^l g}{4}\left(\rho_r^l + \rho_{r-\myhalf}^l\right).
+\end{equation}
+We can simplify using
+\begin{equation}
+\Delta r^{l-1} = 2\Delta r^l,
+\end{equation}
+\begin{equation}
+\rho_{r-\myhalf}^l = \frac{2}{3}\rho_r^l + \frac{1}{3}\rho_{\sfrac{r}{2}-1}^{l-1}.
+\end{equation}
+Simplifying
+\begin{eqnarray}
+p_r^l &=& p_{\sfrac{r}{2}-1}^{l-1} + \frac{\Delta r^l g}{2}\left(\frac{2}{3}\rho_r^l + \frac{1}{3}\rho_{\sfrac{r}{2}-1}^{l-1} + \rho_{\sfrac{r}{2}-1}^{l-1}\right) + \frac{\Delta r^l g}{4}\left(\rho_r^l + \frac{2}{3}\rho_r^l + \frac{1}{3}\rho_{\sfrac{r}{2}-1}^{l-1}\right) \nonumber \\
+&=& p_{\sfrac{r}{2}-1}^{l-1} + \frac{3\Delta r^l g}{4}\left(\rho_{\sfrac{r}{2}-1}^{l-1} + \rho_r^l\right).
+\end{eqnarray}
+When we encounter a change from fine to coarse, analogously
+\begin{equation}
+p_{r}^l = p_{2(r-1)+1}^{l+1} + \frac{3\Delta r^{l+1}g}{4}\left(\rho_{2(r-1)+1}^{l+1} + \rho_{r}^l\right).
+\end{equation}
+
+
+
 \end{document}
