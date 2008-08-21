@@ -1,3 +1,4 @@
+#!/bin/csh
 #PBS -A ast006
 #PBS -N xrb
 #PBS -j oe
