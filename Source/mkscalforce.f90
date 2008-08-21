@@ -369,6 +369,7 @@ contains
                      (vmac(i,j+1,k) * p0_hiy - vmac(i,j,k) * p0_loy) / dx(2) + &
                      (wmac(i,j,k+1) * p0_hiz - wmac(i,j,k) * p0_loz) / dx(3)
 
+             ! This version of p0_cen seems to give a better tfromh
              p0_cen = (p0_lox + p0_hix + p0_loy + p0_hiy + p0_loz + p0_hiz) / 6.d0
 !            p0_cen = p0_cart(i,j,k)
 
@@ -701,7 +702,7 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:)
 
     integer :: i,j,k,r
-    real(kind=dp_t) :: p0_lox,p0_hix,p0_loy,p0_hiy,p0_loz,p0_hiz
+    real(kind=dp_t) :: p0_lox,p0_hix,p0_loy,p0_hiy,p0_loz,p0_hiz,p0_cen
     real(kind=dp_t) :: divup,p0divu,ugradp,dhdp
     real(kind=dp_t), allocatable :: psi_cart(:,:,:,:)
 
@@ -743,9 +744,13 @@ contains
                  (vmac(i,j+1,k) * p0_hiy - vmac(i,j,k) * p0_loy) / dx(2) + &
                  (wmac(i,j,k+1) * p0_hiz - wmac(i,j,k) * p0_loz) / dx(3)
 
+         ! This version of p0_cen seems to give a better tfromh
+         p0_cen = (p0_lox + p0_hix + p0_loy + p0_hiy + p0_loz + p0_hiz) / 6.d0
+!        p0_cen = p0_cart(i,j,k)
+
          p0divu = ( (umac(i+1,j,k) - umac(i,j,k)) / dx(1) + &
                     (vmac(i,j+1,k) - vmac(i,j,k)) / dx(2) + &
-                    (wmac(i,j,k+1) - wmac(i,j,k)) / dx(3) ) * p0_cart(i,j,k)
+                    (wmac(i,j,k+1) - wmac(i,j,k)) / dx(3) ) * p0_cen
 
          ugradp = divup - p0divu
 
