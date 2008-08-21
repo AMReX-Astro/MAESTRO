@@ -233,7 +233,7 @@ contains
     use define_bc_module
     use ml_restriction_module
     use multifab_fill_ghost_module
-    use variables, only: rhoh_comp, temp_comp
+    use variables, only: rhoh_comp, rho_comp
     use multifab_physbc_module
 
     integer        , intent(in   ) :: nlevs
@@ -274,7 +274,7 @@ contains
 
        ! fill non-periodic domain boundary ghost cells
        call multifab_physbc(s(nlevs),rhoh_comp,dm+rhoh_comp,1,bc(nlevs))
-       call multifab_physbc(s(nlevs),temp_comp,dm+rho_comp,1,bc(nlevs))
+       call multifab_physbc(s(nlevs),rho_comp,dm+rho_comp,1,bc(nlevs))
 
     else
 
@@ -283,7 +283,7 @@ contains
 
           ! set level n-1 data to be the average of the level n data covering it
           call ml_cc_restriction_c(s(n-1),rhoh_comp,s(n),rhoh_comp,mla%mba%rr(n-1,:))
-          call ml_cc_restriction_c(s(n-1),temp_comp,s(n), rho_comp,mla%mba%rr(n-1,:))
+          call ml_cc_restriction_c(s(n-1),rho_comp,s(n), rho_comp,mla%mba%rr(n-1,:))
 
           ! fill level n ghost cells using interpolation from level n-1 data
           ! note that multifab_fill_boundary and multifab_physbc are called for
