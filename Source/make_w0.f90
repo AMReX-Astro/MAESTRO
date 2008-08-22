@@ -332,8 +332,14 @@ contains
 
     do r = 1,nr_fine-1
        dpdr = (p0_nph(r)-p0_nph(r-1))/dr(n)
+! averaging div_etarho to edges does not seem to work
+!       rhs(r) = four * dpdr * w0_from_Sbar(r) / r_edge_loc(n,r) - &
+!            grav_edge(r) * HALF * (div_etarho(r) + div_etarho(r-1)) - &
+!            four * M_PI * Gconst * HALF * (rho0_nph(r) + rho0_nph(r-1)) * etarho(r)
        rhs(r) = four * dpdr * w0_from_Sbar(r) / r_edge_loc(n,r) - &
-            grav_edge(r) * HALF * (div_etarho(r) + div_etarho(r-1)) - &
+            grav_edge(r) * (r_cc_loc(n,r  )**2 * etarho_cc(r  ) - &
+                            r_cc_loc(n,r-1)**2 * etarho_cc(r-1)) / &
+                            (dr(n) * r_edge_loc(n,r)**2) - &
             four * M_PI * Gconst * HALF * (rho0_nph(r) + rho0_nph(r-1)) * etarho(r)
     end do
 
