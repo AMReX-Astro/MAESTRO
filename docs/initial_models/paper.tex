@@ -99,7 +99,7 @@ Refer to figure \ref{Fig:Multilevel Initialization}.  The dots represent the ini
 \begin{enumerate}
 \item Step 1
 \begin{enumerate}
-\item Copy the initial data from the dots directly into the circles.  For the squares, compute only $\rho$ and $X$ by averaging $\rho$ and $(\rho X)$ from the two corresponding dots.
+\item Copy the initial data from the dots directly into the circles.  For the squares, compute only $\rho$ and $X$ by using linear interpolation from the two nearest corresponding dots.\MarginPar{Maybe we should use quadratic interpolation?}
 \item Integrate to get $p$ in the squares.  We need a fancy stencil at coarse-fine interfaces that I haven't finished deriving.  Away from coarse-fine interfaces, we can use our standard HSE discretization.
 \item Call EOS to get $T$ and $h$ in the squares, i.e., $T,h = Th,h(\rho,p,X)$.
 \item We now copy this 1D profile onto the full multifab.
