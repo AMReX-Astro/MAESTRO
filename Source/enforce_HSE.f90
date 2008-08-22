@@ -13,23 +13,24 @@ contains
   subroutine enforce_HSE(nlevs,rho0,p0,grav_cell)
 
     use geometry, only: dr, r_start_coord, r_end_coord, numdisjointchunks, spherical, &
-         base_cutoff_density_coord
+         base_cutoff_density_coord, nr
     use restrict_base_module, only: fill_ghost_base
+    use bl_error_module
 
     integer,         intent(in   ) :: nlevs
     real(kind=dp_t), intent(in   ) :: rho0(:,0:)
     real(kind=dp_t), intent(inout) ::   p0(:,0:)
     real(kind=dp_t), intent(in   ) :: grav_cell(:,0:)
 
-    integer         :: n,i,r
-    real(kind=dp_t) :: grav
+    integer         :: n,l,i,r
+    real(kind=dp_t) :: grav,temp,offset
 
     if (spherical .eq. 0) then
 
        ! gravity is constant
        grav = grav_cell(1,0)
 
-       ! do level 1 first
+       ! integrate all of level 1 first
        ! we start at r=1 since the pressure at r=0 is assumed correct
        do r=1,min(r_end_coord(1,1),base_cutoff_density_coord(1))
           p0(1,r) = p0(1,r-1) + (dr(1)/2.d0)*(rho0(1,r)+rho0(1,r-1))*grav
@@ -43,12 +44,17 @@ contains
           do i=1,numdisjointchunks(n)
 
              ! use a special stencil for the first point
-             if (r_start_coord(n,i) .le. base_cutoff_density_coord(n)) then
-                p0(n,r_start_coord(n,i)) = p0(n-1,r_start_coord(n,i)/2) &
-                     + (2.d0/3.d0)*(rho0(n-1,r_start_coord(n,i)/2))*grav &
-                     + (1.d0/3.d0)*(rho0(n,r_start_coord(n,i)))*grav
+             if (r_start_coord(n,i) .eq. 0) then
+                ! do nothing - p0(n,r_start_coord(n,i) already contains the correct data
+
+             else if (r_start_coord(n,i) .le. base_cutoff_density_coord(n)) then
+                ! use coarse -> fine stencil in notes
+                p0(n,r_start_coord(n,i)) = p0(n-1,r_start_coord(n,i)/2-1) &
+                     + (3.d0*grav*dr(n)/4.d0)* &
+                     (rho0(n-1,r_start_coord(n,i)/2-1)+rho0(n,r_start_coord(n,i)))
              else
-                p0(n,r_start_coord(n,i)) = p0(n-1,r_start_coord(n,i)/2)
+                ! copy pressure from below
+                p0(n,r_start_coord(n,i)) = p0(n-1,r_start_coord(n,i)/2-1)
              end if
 
              ! iterate normally over the rest          
@@ -59,12 +65,37 @@ contains
                 p0(n,r) = p0(n,r-1)
              end do
 
-          end do
+             ! use a special stencil to get the value of the coarse cell above
+             if (r_end_coord(n,i) .eq. nr(n)-1) then
+                ! do nothing - we are at the top of the domain
 
-       end do
+             else if (r_end_coord(n,i) .le. base_cutoff_density_coord(n)) then
+                ! use fine -> coarse stencil in notes
+                temp = p0(n,r_end_coord(n,i)) + (3.d0*grav*dr(n)/4.d0)* &
+                     (rho0(n,r_end_coord(n,i))+rho0(n-1,(r_end_coord(n,i)+1)/2))
+                offset = p0(n-1,(r_end_coord(n,i)+1)/2) - temp
+             else
+                ! copy pressure from below
+                temp = p0(n,r_end_coord(n,i))
+                offset = p0(n-1,(r_end_coord(n,i)+1)/2) - temp
+             end if
+
+             ! if we are not at the top of the domain, we need to subtract the offset 
+             ! for all values at and above this point
+             if (r_end_coord(n,i) .ne. nr(n)-1) then
+                do l=n-1,1,-1
+                   do r=(r_end_coord(n,i)+1)/(2**(n-l)),nr(n)-1
+                      p0(l,r) = p0(l,r) - offset
+                   end do
+                end do
+             end if
+
+          end do ! end loop over disjoint chunks
+
+       end do ! end loop over levels
 
     else
-
+       call bl_error('Have not written enforce_HSE for spherical yet')
     end if
 
     call fill_ghost_base(nlevs,p0,.true.)
