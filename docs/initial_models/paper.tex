@@ -100,8 +100,8 @@ Refer to figure \ref{Fig:Multilevel Initialization}.  The dots represent the ini
 \item Step 1
 \begin{enumerate}
 \item Copy the initial data from the dots directly into the circles.  For the squares, compute only $\rho$ and $X$ by using linear interpolation from the two nearest corresponding dots.\MarginPar{Maybe we should use quadratic interpolation?}
-\item Integrate to get $p$ in the squares.  We need a fancy stencil at coarse-fine interfaces that I haven't finished deriving.  Away from coarse-fine interfaces, we can use our standard HSE discretization.
-\item Call EOS to get $T$ and $h$ in the squares, i.e., $T,h = Th,h(\rho,p,X)$.
+\item Integrate to get $p$ in the squares.  We need the fancy stencils at coarse-fine interfaces in equations (\ref{Coarse-Fine Stencil}) and (\ref{Fine-Coarse Stencil}).  Away from coarse-fine interfaces, we can use our standard HSE discretization.
+\item Call EOS to get $T$ and $h$ in the squares, i.e., $T,h = T,h(\rho,p,X)$.
 \item We now copy this 1D profile onto the full multifab.
 \end{enumerate}
 \end{enumerate}
@@ -114,7 +114,7 @@ Refer to figure \ref{Fig:Multilevel Initialization}.  The dots represent the ini
 \end{center}
 \end{figure}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsubsection{Working Notes on Coarse-Fine HSE Discretization - Not Final}
+\subsubsection{Coarse-Fine HSE Discretization}
 Integrating the HSE discretization upward, when we encounter a change from coarse to fine, here is an equation to integrate up to the coarse-fine interface
 \begin{equation}
 \frac{p_{r-\myhalf}^l - p_{\sfrac{r}{2}-1}^{l-1}}{\Delta r^{l-1}/2} = \frac{\rho_{r-\myhalf}^l + \rho_{\sfrac{r}{2}-1}^{l-1}}{2}g ~~~ \rightarrow ~~~ p_{r-\myhalf}^l = p_{\sfrac{r}{2}-1}^{l-1} + \frac{\Delta r^{l-1} g}{4}\left(\rho_{r-\myhalf}^l + \rho_{\sfrac{r}{2}-1}^{l-1}\right).
@@ -137,10 +137,10 @@ We can simplify using
 Simplifying
 \begin{eqnarray}
 p_r^l &=& p_{\sfrac{r}{2}-1}^{l-1} + \frac{\Delta r^l g}{2}\left(\frac{2}{3}\rho_r^l + \frac{1}{3}\rho_{\sfrac{r}{2}-1}^{l-1} + \rho_{\sfrac{r}{2}-1}^{l-1}\right) + \frac{\Delta r^l g}{4}\left(\rho_r^l + \frac{2}{3}\rho_r^l + \frac{1}{3}\rho_{\sfrac{r}{2}-1}^{l-1}\right) \nonumber \\
-&=& p_{\sfrac{r}{2}-1}^{l-1} + \frac{3\Delta r^l g}{4}\left(\rho_{\sfrac{r}{2}-1}^{l-1} + \rho_r^l\right).
+&=& p_{\sfrac{r}{2}-1}^{l-1} + \frac{3\Delta r^l g}{4}\left(\rho_{\sfrac{r}{2}-1}^{l-1} + \rho_r^l\right).\label{Coarse-Fine Stencil}
 \end{eqnarray}
 When we encounter a change from fine to coarse, analogously
 \begin{equation}
-p_{(r+1)/2}^{l-1} = p_{r}^l + \frac{3\Delta r^l g}{4}\left(\rho_{r}^l+\rho_{(r+1)/2}^{l-1}\right).
+p_{(r+1)/2}^{l-1} = p_{r}^l + \frac{3\Delta r^l g}{4}\left(\rho_{r}^l+\rho_{(r+1)/2}^{l-1}\right).\label{Fine-Coarse Stencil}
 \end{equation}
 \end{document}
