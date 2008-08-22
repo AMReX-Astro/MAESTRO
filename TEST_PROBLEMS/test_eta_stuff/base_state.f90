@@ -366,6 +366,9 @@ contains
     real(kind=dp_t) :: minvar, maxvar
 
     integer :: i, id
+    logical :: use_quadratic_interpolation
+
+    use_quadratic_interpolation = .false.
 
     ! find the location in the coordinate array where we want to interpolate
     do i = 1, npts
@@ -404,40 +407,58 @@ contains
        interpolate = max(interpolate,minvar)
        interpolate = min(interpolate,maxvar)
 
-    else if((model_var(id+1) - model_var(id))*(model_var(id) - model_var(id-1)) <= ZERO) then
-
-       ! if we are at a maximum or minimum, then drop to linear interpolation
-       slope = (model_var(id+1) - model_var(id-1))/(model_r(id+1) - model_r(id-1))
-       interpolate = slope*(r - model_r(id)) + model_var(id)
-
-       ! safety check to make sure interpolate lies within the bounding points
-       minvar = min(model_var(id-1),min(model_var(id),model_var(id+1)))
-       maxvar = max(model_var(id-1),max(model_var(id),model_var(id+1)))
-       interpolate = max(interpolate,minvar)
-       interpolate = min(interpolate,maxvar)
-
     else
 
-       ! do a quadratic interpolation
-       dr_model = model_r(id+1) - model_r(id)
-       xi = r - model_r(id)
-       interpolate = &
-            (model_var(id+1) - 2*model_var(id) + model_var(id-1))*xi**2/(2*dr_model**2) + &
-            (model_var(id+1) - model_var(id-1))*xi/(2*dr_model) + &
-            (-model_var(id+1) + 26*model_var(id) - model_var(id-1))/24.0_dp_t
+       if (use_quadratic_interpolation) then
 
-       minvar = min(model_var(id), min(model_var(id-1), model_var(id+1)))
-       maxvar = max(model_var(id), max(model_var(id-1), model_var(id+1)))
+          ! do a quadratic interpolation
+          dr_model = model_r(id+1) - model_r(id)
+          xi = r - model_r(id)
+          interpolate = &
+               (model_var(id+1) - 2*model_var(id) + model_var(id-1))*xi**2/(2*dr_model**2) + &
+               (model_var(id+1) - model_var(id-1))*xi/(2*dr_model) + &
+               (-model_var(id+1) + 26*model_var(id) - model_var(id-1))/24.0_dp_t
+          
+          minvar = min(model_var(id), min(model_var(id-1), model_var(id+1)))
+          maxvar = max(model_var(id), max(model_var(id-1), model_var(id+1)))
+          
+          ! if we overshoot or undershoot, use linear interpolation
+          if (interpolate > maxvar .OR. interpolate < minvar) then
+             
+             slope = (model_var(id+1) - model_var(id-1))/(model_r(id+1) - model_r(id-1))
+             interpolate = slope*(r - model_r(id)) + model_var(id)      
+             interpolate = max(interpolate,minvar)
+             interpolate = min(interpolate,maxvar)
+             
+          endif
+          
+       else
+          
+          if (r .ge. model_r(id)) then
 
-       ! if we overshoot or undershoot, use linear interpolation
-       if (interpolate > maxvar .OR. interpolate < minvar) then
+             slope = (model_var(id+1) - model_var(id))/(model_r(id+1) - model_r(id))
+             interpolate = slope*(r - model_r(id)) + model_var(id)
+             
+             ! safety check to make sure interpolate lies within the bounding points
+             minvar = min(model_var(id+1),model_var(id))
+             maxvar = max(model_var(id+1),model_var(id))
+             interpolate = max(interpolate,minvar)
+             interpolate = min(interpolate,maxvar)
 
-          slope = (model_var(id+1) - model_var(id-1))/(model_r(id+1) - model_r(id-1))
-          interpolate = slope*(r - model_r(id)) + model_var(id)      
-          interpolate = max(interpolate,minvar)
-          interpolate = min(interpolate,maxvar)
+          else
 
-       endif
+             slope = (model_var(id) - model_var(id-1))/(model_r(id) - model_r(id-1))
+             interpolate = slope*(r - model_r(id)) + model_var(id)
+             
+             ! safety check to make sure interpolate lies within the bounding points
+             minvar = min(model_var(id),model_var(id-1))
+             maxvar = max(model_var(id),model_var(id-1))
+             interpolate = max(interpolate,minvar)
+             interpolate = min(interpolate,maxvar)
+
+          end if
+
+       end if
 
     endif
 
