@@ -28,7 +28,7 @@ contains
     use macproject_module
     use network, only: nspec
     use rhoh_vs_t_module
-    use probin_module, ONLY: thermal_diffusion_type
+    use probin_module, ONLY: thermal_diffusion_type, use_tfromp
     use bl_prof_module
     use multifab_physbc_module
     use multifab_fill_ghost_module
@@ -595,7 +595,11 @@ contains
     end if
 
     ! compute updated temperature
-    call makeTfromRhoH(nlevs,s2,p0_new,tempbar,mla,the_bc_tower%bc_tower_array,dx)
+    if (use_tfromp) then
+       call makeTfromRhoP(nlevs,s2,p0_new,tempbar,mla,the_bc_tower%bc_tower_array,dx)
+    else
+       call makeTfromRhoH(nlevs,s2,p0_new,tempbar,mla,the_bc_tower%bc_tower_array,dx)
+    end if
 
     call destroy(bpt)
 
@@ -615,6 +619,7 @@ contains
     use multifab_physbc_module
     use multifab_fill_ghost_module
     use ml_restriction_module, only: ml_cc_restriction_c
+    use probin_module, only: use_tfromp
 
     type(ml_layout), intent(inout) :: mla
     real(dp_t)     , intent(in   ) :: dx(:,:),dt
@@ -1014,7 +1019,11 @@ contains
     end if
 
     ! compute updated temperature
-    call makeTfromRhoH(nlevs,s2,p0_new,tempbar,mla,the_bc_tower%bc_tower_array,dx)
+    if (use_tfromp) then
+       call makeTfromRhoP(nlevs,s2,p0_new,tempbar,mla,the_bc_tower%bc_tower_array,dx)
+    else
+       call makeTfromRhoH(nlevs,s2,p0_new,tempbar,mla,the_bc_tower%bc_tower_array,dx)
+    end if
 
 !!!!!!!!!!!!!!!!!!!!!!!
     ! Second implicit solve
@@ -1390,7 +1399,11 @@ contains
     end if
 
     ! compute updated temperature
-    call makeTfromRhoH(nlevs,s2,p0_new,tempbar,mla,the_bc_tower%bc_tower_array,dx)
+    if (use_tfromp) then
+       call makeTfromRhoP(nlevs,s2,p0_new,tempbar,mla,the_bc_tower%bc_tower_array,dx)
+    else
+       call makeTfromRhoH(nlevs,s2,p0_new,tempbar,mla,the_bc_tower%bc_tower_array,dx)
+    end if
 
     call destroy(bpt)
 

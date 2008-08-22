@@ -33,7 +33,8 @@ contains
     use rhoh_vs_t_module
     use geometry,      only: spherical, nr_fine
     use variables,     only: nscal, temp_comp, rho_comp, rhoh_comp, foextrap_comp
-    use probin_module, only: enthalpy_pred_type, use_thermal_diffusion, edge_nodal_flag, verbose
+    use probin_module, only: enthalpy_pred_type, use_thermal_diffusion, edge_nodal_flag, &
+         verbose, use_tfromp
     use pred_parameters
     use modify_scal_force_module
     use convert_rhoX_to_X_module
@@ -132,7 +133,11 @@ contains
 
     ! This can be uncommented if you wish to compute T
     ! note -- not sure if p0_old or p0_new should be used here
-    ! call makeTfromRhoH(nlevs,sold,p0_old(:,:),tempbar(:,:),mla,the_bc_level,dx)
+    ! if (use_tfromp) then
+    !    call makeTfromRhoP(nlevs,sold,p0_old(:,:),tempbar(:,:),mla,the_bc_level,dx)
+    ! else
+    !    call makeTfromRhoH(nlevs,sold,p0_old(:,:),tempbar(:,:),mla,the_bc_level,dx)
+    ! end if
 
     ! if we are predicting h on the edges, then convert the state arrays
     ! (and base state) from (rho h) to h.  Note, only the time-level n
@@ -229,10 +234,10 @@ contains
 
     if ( (enthalpy_pred_type .eq. predict_T_then_rhohprime) .or. &
          (enthalpy_pred_type .eq. predict_T_then_h        ) ) then
-       call makeRhoHfromT(nlevs,uold,sedge,rho0_old,rhoh0_old, &
-                          rho0_edge_old,rhoh0_edge_old, &
-                          rho0_new,rhoh0_new, &
-                          rho0_edge_new,rhoh0_edge_new,the_bc_level,dx)
+       call makeHfromRhoT_edge(nlevs,uold,sedge,rho0_old,rhoh0_old, &
+                               rho0_edge_old,rhoh0_edge_old, &
+                               rho0_new,rhoh0_new, &
+                               rho0_edge_new,rhoh0_edge_new,the_bc_level,dx)
     end if
 
     !**************************************************************************
@@ -320,7 +325,11 @@ contains
     end if
 
     if (.not. use_thermal_diffusion) then
-       call makeTfromRhoH(nlevs,snew,p0_new(:,:),tempbar(:,:),mla,the_bc_level,dx)
+       if (use_tfromp) then
+          call makeTfromRhoP(nlevs,snew,p0_new(:,:),tempbar(:,:),mla,the_bc_level,dx)
+       else
+          call makeTfromRhoH(nlevs,snew,p0_new(:,:),tempbar(:,:),mla,the_bc_level,dx)
+       end if
     else
        do n=1,nlevs
           call multifab_copy_c(snew(n),temp_comp,sold(n),temp_comp,1)
