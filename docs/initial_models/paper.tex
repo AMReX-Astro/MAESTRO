@@ -2,7 +2,7 @@
 
 \tolerance=600
 
-\usepackage{amsmath,color}
+\usepackage{amsmath,color,epsfig,epsf}
 
 % Margins
 \usepackage[lmargin=0.5in,rmargin=1.5in,tmargin=0.5in,bmargin=0.5in]{geometry}
@@ -95,6 +95,17 @@ Given $p^{\init}, \rho^{\init}, T^{\init},$ and $X^{\init}$, this section descri
 \end{enumerate}
 Now $\rho_0 = \overline\rho$, the base state is in HSE, and the full state is in thermodynamic equilibrium with $p_0$.
 \subsection{Multilevel Plane-Parallel}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{figure}[tpb]
+\begin{center}
+\epsffile{./multilevel_init.eps}
+\caption{Multilevel Initialization}
+\label{Fig:Multilevel Initialization}
+\end{center}
+\end{figure}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
 Integrating the HSE discretization upward, when we encounter a change from coarse to fine, here is an equation to integrate up to the coarse-fine interface
 \begin{equation}
 \frac{p_{r-\myhalf}^l - p_{\sfrac{r}{2}-1}^{l-1}}{\Delta r^{l-1}/2} = \frac{\rho_{r-\myhalf}^l + \rho_{\sfrac{r}{2}-1}^{l-1}}{2}g ~~~ \rightarrow ~~~ p_{r-\myhalf}^l = p_{\sfrac{r}{2}-1}^{l-1} + \frac{\Delta r^{l-1} g}{4}\left(\rho_{r-\myhalf}^l + \rho_{\sfrac{r}{2}-1}^{l-1}\right).
@@ -123,7 +134,5 @@ When we encounter a change from fine to coarse, analogously
 \begin{equation}
 p_{r}^l = p_{2(r-1)+1}^{l+1} + \frac{3\Delta r^{l+1}g}{4}\left(\rho_{2(r-1)+1}^{l+1} + \rho_{r}^l\right).
 \end{equation}
-
-
 
 \end{document}

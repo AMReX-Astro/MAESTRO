@@ -28,7 +28,7 @@ pdf:	paper.pdf
 
 clean:
 	$(RM) $(pdf_source) paper.dvi 
-	$(RM) paper.blg paper.log
+	$(RM) paper.blg paper.log paper.pdf
 	$(RM) paper.aux paper.ps paper.bbl
 	$(RM) *~
 
