@@ -1,4 +1,4 @@
-#!/bin/csh
+#!/bin/ksh
 #PBS -A ast006
 #PBS -N wdconvect
 #PBS -j oe
