@@ -12,6 +12,7 @@ A list of changes to the code since paper III (i.e. future appendices)
 
 -- volume discrepancy factor forcing term by setting dpdt_factor to a non-zero value
 
--- make T on edges from T=T(rho,X_k,p_0) by setting use_tfromp=T
+-- make full state T on cell-centers after the advection-diffusion step from 
+   T=T(rho,X_k,p_0) by setting use_tfromp=T for spherical problems
 
 -- computing eta in spherical
