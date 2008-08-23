@@ -16,3 +16,6 @@ A list of changes to the code since paper III (i.e. future appendices)
    T=T(rho,X_k,p_0) by setting use_tfromp=T for spherical problems
 
 -- computing eta in spherical
+
+-- flag full_rhoh0_evolution=F sets rhoh0 = Avg(rhoh) before advect base.  Subroutines 
+   react_base and a (not-written-yet) correct_base for rhoh0 are not called
