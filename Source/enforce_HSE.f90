@@ -24,8 +24,12 @@ contains
 
     integer         :: n,l,i,r
     real(kind=dp_t) :: grav,temp,offset
+    real(kind=dp_t) :: temppres
 
     if (spherical .eq. 0) then
+
+       ! store the pressure at the top cell
+       temppres = p0(1,nr(1)-1)
 
        ! gravity is constant
        grav = grav_cell(1,0)
@@ -93,6 +97,22 @@ contains
           end do ! end loop over disjoint chunks
 
        end do ! end loop over levels
+
+       ! now compare pressure in the last cell and offset to make sure we are !
+       ! integrating "from the top"
+       offset = p0(1,nr(1)-1) - temppres
+       
+       ! offset level 1
+       p0(1,:) = p0(1,:) - offset
+
+       ! offset remaining levels
+       do n=2,nlevs
+          do i=1,numdisjointchunks(n)
+             do r=r_start_coord(n,i),r_end_coord(n,i)-1
+                p0(1,r) = p0(1,r) - offset
+             end do
+          end do
+       end do
 
     else
        call bl_error('Have not written enforce_HSE for spherical yet')
