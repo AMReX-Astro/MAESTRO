@@ -88,7 +88,7 @@ contains
              ! for all values at and above this point
              if (r_end_coord(n,i) .ne. nr(n)-1) then
                 do l=n-1,1,-1
-                   do r=(r_end_coord(n,i)+1)/(2**(n-l)),nr(n)-1
+                   do r=(r_end_coord(n,i)+1)/(2**(n-l)),nr(l)-1
                       p0(l,r) = p0(l,r) - offset
                    end do
                 end do
