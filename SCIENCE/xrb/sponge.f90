@@ -117,7 +117,7 @@ contains
   subroutine mk_sponge_2d(sponge,ng_sp,lo,hi,dx,dt)
 
     use bl_constants_module
-    use probin_module, only: prob_lo_y, use_xrb_bottom_sponge
+    use probin_module, only: prob_lo_y, xrb_use_bottom_sponge
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_sp
     real(kind=dp_t), intent(inout) :: sponge(lo(1)-ng_sp:,lo(2)-ng_sp:)
@@ -128,7 +128,7 @@ contains
 
     spongemin = 0.01d0
 
-    if (use_xrb_bottom_sponge) then
+    if (xrb_use_bottom_sponge) then
 
        do j = lo(2),hi(2)
           y = prob_lo_y + (dble(j)+HALF)*dx(2)
@@ -171,7 +171,7 @@ contains
   subroutine mk_sponge_3d(sponge,ng_sp,lo,hi,dx,dt)
 
     use bl_constants_module
-    use probin_module, only: prob_lo_z, use_xrb_bottom_sponge
+    use probin_module, only: prob_lo_z, xrb_use_bottom_sponge
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_sp
     real(kind=dp_t), intent(inout) :: sponge(lo(1)-ng_sp:,lo(2)-ng_sp:,lo(3)-ng_sp:)
@@ -182,7 +182,7 @@ contains
 
     spongemin = 0.01d0
 
-    if (use_xrb_bottom_sponge) then
+    if (xrb_use_bottom_sponge) then
 
        do k = lo(3),hi(3)
           z = prob_lo_z + (dble(k)+HALF)*dx(3)
