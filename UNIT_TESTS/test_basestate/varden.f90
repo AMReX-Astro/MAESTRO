@@ -100,6 +100,10 @@ subroutine varden()
 ! allocate storage for the base state
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+  ! we get the number of points for the base state directly from
+  ! the model file and use this to set the resolution.  It should be
+  ! the case that prob_hi_x agrees with the maximum radius for the model
+  ! file.
   nr_fine = get_model_npts(model_file)
   print *, 'number of points in model file: ', nr_fine
 
