@@ -109,7 +109,7 @@ contains
        do n=2,nlevs
           do i=1,numdisjointchunks(n)
              do r=r_start_coord(n,i),r_end_coord(n,i)-1
-                p0(1,r) = p0(1,r) - offset
+                p0(n,r) = p0(n,r) - offset
              end do
           end do
        end do
