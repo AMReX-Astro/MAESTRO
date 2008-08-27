@@ -46,10 +46,10 @@ contains
     !   Compute beta0 on edges and centers at level n
     !   Obtain the starting value of beta0_edge_lo from the coarser grid
     !   do i=n-1,1,-1
-    !     Restrict beta0 at edges from level n to level i
-    !     Recompute beta0 at centers at level i for cells that are covered by level n data
     !     Compare the difference between beta0 at the top of level n to the corresponding
     !      point on level i
+    !     Restrict beta0 at edges from level n to level i
+    !     Recompute beta0 at centers at level i for cells that are covered by level n data
     !     Offset the centered beta on level i above this point so the total integral 
     !      is consistent
     !     Redo the anelastic cutoff part
@@ -142,6 +142,11 @@ contains
              
              refrat = 2**(n-i)
              
+             ! Compare the difference between beta0 at the top of level n to the 
+             ! corresponding point on level i
+             offset = beta0_edge(n,r_end_coord(n,j)+1) &
+                  - beta0_edge(i,(r_end_coord(n,j)+1)/refrat)
+
              ! Restrict beta0 at edges from level n to level i
              do r=r_start_coord(n,j),r_end_coord(n,j)+1,refrat
                 beta0_edge(i,r/refrat) = beta0_edge(n,r)
@@ -153,11 +158,6 @@ contains
                 div_coeff(i,r/refrat) = HALF*(beta0_edge(i,r/refrat) &
                      + beta0_edge(i,r/refrat+1))
              end do
-             
-             ! Compare the difference between beta0 at the top of level n to the 
-             ! corresponding point on level i
-             offset = beta0_edge(n,r_end_coord(n,j)+1) &
-                  - beta0_edge(i,(r_end_coord(n,j)+1)/refrat)
              
              ! Offset the centered beta on level i above this point so the total integral 
              !  is consistent
@@ -194,6 +194,10 @@ contains
     end do
 
     call fill_ghost_base(nlevs,div_coeff,.true.)
+
+    ! we are purposely choosing not to restrict_base since the 
+    ! "restrict edges and average to centers" does not equal
+    ! average centers in this case
 
   end subroutine make_div_coeff
 
