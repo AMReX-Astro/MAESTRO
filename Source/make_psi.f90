@@ -13,6 +13,7 @@ contains
 
     use bl_prof_module
     use geometry, only: spherical
+    use restrict_base_module
 
     integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(in   ) :: etarho_cc(:,0:)
@@ -21,7 +22,6 @@ contains
     real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:), p0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: Sbar_in(:,0:)
-
     
     ! local
     integer :: n
@@ -39,6 +39,9 @@ contains
                                   p0_old(n,0:),p0_new(n,0:),Sbar_in(n,0:))
        end do
     endif
+
+    call fill_ghost_base(nlevs,psi,.true.)
+    call restrict_base(nlevs,psi,.true.)
 
     call destroy(bpt)
        
