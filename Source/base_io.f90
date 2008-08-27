@@ -202,6 +202,9 @@ contains
        call fill_ghost_base(nlevs,etarho,.false.)
     end if
 
+    ! calls to restrict base are not here needed since they are written to the checkpoint file
+    ! after a call to restrict base was already completed
+
     call destroy(bpt)
 
   end subroutine read_base_state
