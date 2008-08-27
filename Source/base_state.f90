@@ -13,7 +13,7 @@ module base_state_module
 
   private
 
-  public :: init_base_state, adjust_base_state, get_model_npts
+  public :: init_base_state, get_model_npts
 
 contains
 
@@ -426,52 +426,6 @@ contains
     call destroy(bpt)
 
   end subroutine init_base_state
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-  subroutine adjust_base_state(nlevs,s0,p0)
-
-    use eos_module
-    use geometry, only: r_start_coord, r_end_coord, numdisjointchunks
-    use variables, only: temp_comp, rho_comp, rhoh_comp, spec_comp
-    use network, only: nspec
-
-    integer           , intent(in   ) :: nlevs
-    real(kind=dp_t)   , intent(inout) :: s0(:,0:,:)
-    real(kind=dp_t)   , intent(inout) :: p0(:,0:)
-
-    ! local
-    integer :: n,r,i
-
-    do n=1,nlevs-1
-       do i=1,numdisjointchunks(n)
-          do r=r_start_coord(n,i),r_end_coord(n,i)
-             ! use the EOS to make the state consistent
-             temp_eos(1) = s0(n,r,temp_comp)
-             den_eos(1)  = s0(n,r,rho_comp)
-             h_eos(1)    = s0(n,r,rhoh_comp)/den_eos(1)
-             p_eos(1)    = p0(n,r)
-             xn_eos(1,:) = s0(n,r,spec_comp:spec_comp+nspec-1)/den_eos(1)
-
-             ! (rho,h) --> p,T
-             call eos(eos_input_rh, den_eos, temp_eos, &
-                  npts, nspec, &
-                  xn_eos, &
-                  p_eos, h_eos, e_eos, &
-                  cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                  dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                  dpdX_eos, dhdX_eos, &
-                  gam1_eos, cs_eos, s_eos, &
-                  dsdt_eos, dsdr_eos, &
-                  do_diag)
-
-             p0(n,r) = p_eos(1)
-             s0(n,r,temp_comp) = temp_eos(1)
-          end do
-       end do
-    end do
-
-  end subroutine adjust_base_state
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
