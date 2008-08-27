@@ -20,7 +20,7 @@ contains
     use bl_constants_module
     use geometry, only: nr_fine, dr, anelastic_cutoff_coord, r_start_coord, r_end_coord, &
          nr, numdisjointchunks
-    use restrict_base_module, only: fill_ghost_base
+    use restrict_base_module
 
     integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(  out) :: div_coeff(:,0:)
@@ -48,13 +48,12 @@ contains
     !   do i=n-1,1,-1
     !     Compare the difference between beta0 at the top of level n to the corresponding
     !      point on level i
-    !     Restrict beta0 at edges from level n to level i
-    !     Recompute beta0 at centers at level i for cells that are covered by level n data
     !     Offset the centered beta on level i above this point so the total integral 
     !      is consistent
     !     Redo the anelastic cutoff part
     !   end do
     ! end do
+    ! call restrict_base
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     
     do n=1,nlevs
@@ -146,18 +145,6 @@ contains
              ! corresponding point on level i
              offset = beta0_edge(n,r_end_coord(n,j)+1) &
                   - beta0_edge(i,(r_end_coord(n,j)+1)/refrat)
-
-             ! Restrict beta0 at edges from level n to level i
-             do r=r_start_coord(n,j),r_end_coord(n,j)+1,refrat
-                beta0_edge(i,r/refrat) = beta0_edge(n,r)
-             end do
-             
-             ! Recompute beta0 at centers at level i for cells that are covered by 
-             ! level n data
-             do r=r_start_coord(n,j),r_end_coord(n,j)-refrat+1,refrat
-                div_coeff(i,r/refrat) = HALF*(beta0_edge(i,r/refrat) &
-                     + beta0_edge(i,r/refrat+1))
-             end do
              
              ! Offset the centered beta on level i above this point so the total integral 
              !  is consistent
@@ -194,10 +181,7 @@ contains
     end do
 
     call fill_ghost_base(nlevs,div_coeff,.true.)
-
-    ! we are purposely choosing not to restrict_base since the 
-    ! "restrict edges and average to centers" does not equal
-    ! average centers in this case
+    call restrict_base(nlevs,div_coeff,.true.)
 
   end subroutine make_div_coeff
 
