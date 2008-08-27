@@ -21,7 +21,7 @@ contains
     use geometry, only: nr_fine, r_start_coord, r_end_coord, spherical, numdisjointchunks
     use bl_prof_module
     use bl_constants_module
-    use restrict_base_module, only: fill_ghost_base
+    use restrict_base_module
 
     type(ml_layout), intent(in   ) :: mla
     integer        , intent(in   ) :: incomp
@@ -122,6 +122,7 @@ contains
 
           if (nlevs .ge. 2) then
              call fill_ghost_base(nlevs,phibar,.true.)
+             call restrict_base(nlevs,phibar,.true.)
           end if
 
        else
