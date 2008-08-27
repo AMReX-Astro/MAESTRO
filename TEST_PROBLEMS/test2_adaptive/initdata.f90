@@ -379,7 +379,7 @@ contains
     y0 = 6.5d7
     
     x1 = 1.2d8
-    y1 = 10.5d7
+    y1 = 1.1d8
 
     ! Tanh bubbles
     r0 = sqrt( (x-x0)**2 +(y-y0)**2 ) / 2.5e6
