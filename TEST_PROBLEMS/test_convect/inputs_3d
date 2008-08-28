@@ -3,6 +3,7 @@
 
  test_set = "gr0_3d"
  spherical_in = 0
+ dm_in = 3
 
  prob_hi_x = 2.5e8
  prob_hi_y = 2.5e8

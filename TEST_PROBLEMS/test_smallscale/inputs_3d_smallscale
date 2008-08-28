@@ -1,6 +1,7 @@
 &PROBIN 
  test_set = "gr0_3d_smallscale"
  spherical_in = 0
+ dm_in = 3
 
  prob_hi_x = 0.25
  prob_hi_y = 0.25

@@ -4,6 +4,7 @@
  test_set = "gr0_3d.test"
 
  spherical_in = 1
+ dm_in = 3
  do_sponge = .true.
 
  prob_hi_x = 5.e8
