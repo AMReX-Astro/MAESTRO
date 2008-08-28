@@ -418,7 +418,7 @@ subroutine varden()
   end do
 
   ! Build the arrays for each grid from the domain_bc arrays.
-  call bc_tower_build(the_bc_tower,mla,domain_phys_bc,domain_boxes,nspec)
+  call bc_tower_build(the_bc_tower,mla,domain_phys_bc,domain_boxes)
 
   ! now that we have the_bc_tower, we can fill the ghost cells outside of the
   ! domain for the read-in checkpoint data

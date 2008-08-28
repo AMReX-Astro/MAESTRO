@@ -251,7 +251,7 @@ subroutine varden()
   end do
 
   ! Build the arrays for each grid from the domain_bc arrays.
-  call bc_tower_build(the_bc_tower,mla,domain_phys_bc,domain_boxes,nspec)
+  call bc_tower_build(the_bc_tower,mla,domain_phys_bc,domain_boxes)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Now initialize the grid data, and do initial projection if restart < 0.
