@@ -32,7 +32,7 @@ subroutine varden()
 
   implicit none
 
-  integer    :: dm,init_step
+  integer    :: init_step
   integer    :: istep_divu_iter,istep_init_iter,istep
   integer    :: ng_s,i,n,nlevs,n_chk_comps
   integer    :: last_plt_written,last_chk_written
@@ -121,6 +121,7 @@ subroutine varden()
   end if
 
   call init_spherical(spherical_in)
+  call init_dm(dm_in)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! Initialize the arrays and read the restart data if restart >= 0
@@ -137,7 +138,6 @@ subroutine varden()
   ! Initialize the variable index pointers and the reaction network
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  dm = get_dim(mba)
   allocate(lo(dm),hi(dm))
   call init_variables(dm, nspec)
   call init_plot_variables(dm)

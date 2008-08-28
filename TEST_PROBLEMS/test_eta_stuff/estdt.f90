@@ -27,7 +27,7 @@ contains
   subroutine estdt(n, u, s, force, divU, dSdt, normal, w0, p0, gamma1bar, dx, cflfac, dt)
 
     use bl_prof_module
-    use geometry, only: spherical
+    use geometry, only: spherical, dm
     
     integer        , intent(in ) :: n
     type(multifab) , intent(in ) :: u
@@ -48,7 +48,7 @@ contains
     real(kind=dp_t), pointer:: dUp(:,:,:,:)
     real(kind=dp_t), pointer:: dSdtp(:,:,:,:)
     
-    integer :: lo(u%dim),hi(u%dim),dm,i
+    integer :: lo(u%dim),hi(u%dim),i
     integer :: ng_s,ng_u,ng_f,ng_dU,ng_dS,ng_n
     real(kind=dp_t) :: dt_adv,dt_adv_grid,dt_adv_proc,dt_start
     real(kind=dp_t) :: dt_divu,dt_divu_grid,dt_divu_proc
@@ -59,7 +59,6 @@ contains
 
     call build(bpt, "estdt")
     
-    dm = u%dim
     ng_u = u%ng
     ng_s = s%ng
     ng_f = force%ng

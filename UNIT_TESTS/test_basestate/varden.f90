@@ -29,7 +29,6 @@ subroutine varden()
   integer :: iter
 
   real(dp_t) :: frac, delta, sum
-  integer    :: dm
 
   real(dp_t) :: time,dt,half_time,dtold
   real(dp_t) :: smin,smax
@@ -76,9 +75,8 @@ subroutine varden()
 
   nlevs = 1
 
-  dm = 1
-
   call init_spherical(spherical_in)
+  call init_dm(1)
 
   center(1) = ZERO
 

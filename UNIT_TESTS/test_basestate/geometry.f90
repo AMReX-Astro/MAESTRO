@@ -15,6 +15,7 @@ module geometry
   implicit none
 
   integer   , save :: spherical
+  integer   , save :: dm
   real(dp_t), save :: center(3)
   integer   , save :: nr_fine
   real(dp_t), allocatable, save :: dr(:), r_cc_loc(:,:), r_edge_loc(:,:)
@@ -27,7 +28,7 @@ module geometry
 
   private
 
-  public :: spherical, center, nr_fine
+  public :: dm, spherical, center, nr_fine
   public :: dr, r_cc_loc, r_edge_loc
   public :: numdisjointchunks
   public :: r_start_coord, r_end_coord, nr
@@ -35,7 +36,7 @@ module geometry
   public :: base_cutoff_density_coord
   public :: burning_cutoff_density_coord
   
-  public :: init_spherical, init_geometry, destroy_geometry
+  public :: init_dm, init_spherical, init_geometry, destroy_geometry
 
 contains
 
@@ -46,6 +47,14 @@ contains
     spherical = spherical_in
 
   end subroutine init_spherical
+
+  subroutine init_dm(dm_in)
+
+    integer   , intent(in) :: dm_in
+
+    dm = dm_in
+
+  end subroutine init_dm
 
   subroutine init_geometry(center_in, nr_in, dr_in)
 
