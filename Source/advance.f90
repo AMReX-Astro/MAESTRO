@@ -253,7 +253,7 @@ contains
                                the_bc_tower%bc_tower_array)
     end if
 
-    if (spherical .eq. 1) then
+    if (dm .eq. 3) then
        do n=1,nlevs
           do comp=1,dm
              call multifab_build(w0mac(n,comp),mla%la(n),1,1,nodal = edge_nodal_flag(comp,:))
@@ -1205,7 +1205,7 @@ contains
        end do
     end do
 
-    if (spherical .eq. 1) then
+    if (dm .eq. 3) then
        do n=1,nlevs
           do comp=1,dm
              call destroy(w0mac(n,comp))

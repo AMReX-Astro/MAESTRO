@@ -327,7 +327,7 @@ contains
        do j = js,je 
           do i = is-1,ie+1 
              
-             vlo = u(i,j  ,2) + HALF * (w0(j  )+w0(j+1))
+             vlo = u(i,j,2) + HALF * (w0(j)+w0(j+1))
              if ((j+2) .le. nr(n)) then
                 vhi = u(i,j+1,2) + HALF * (w0(j+1)+w0(j+2))
              else
@@ -847,13 +847,12 @@ contains
                     wlo = u(i,j,k  ,3) + HALF*(w0macz(i,j,k  )+w0macz(i,j,k+1))
                  else
 
-                    if (k+1 .eq. nr(n)) then
-                       whi = u(i,j,k+1,3) + w0(k+1)
-                    else
+                    wlo = u(i,j,k,3) + HALF * (w0(k)+w0(k+1))
+                    if ((k+2) .le. nr(n)) then
                        whi = u(i,j,k+1,3) + HALF* (w0(k+1)+w0(k+2))
+                    else
+                       whi = u(i,j,k+1,3) + w0(k+1)
                     end if
-
-                    wlo = u(i,j,k-1,3) + HALF* (w0(k-1)+w0(k))
                     
                  end if
 
@@ -885,13 +884,12 @@ contains
                     wlo = u(i,j,k-1,3) + HALF*(w0macz(i,j,k-1)+w0macz(i,j,k  ))
                  else
 
-                    whi = u(i,j,k,3) + HALF* (w0(k)+w0(k+1))
-
-                    if (k .eq. ZERO) then
-                       wlo = u(i,j,k-1,3) + w0(k)
-                    else
+                    if (k .ge. 1) then
                        wlo = u(i,j,k-1,3) + HALF* (w0(k-1)+w0(k))
+                    else
+                       wlo = u(i,j,k-1,3) + w0(k)
                     end if
+                    whi = u(i,j,k,3) + HALF* (w0(k)+w0(k+1))
 
                  end if
                  
@@ -1113,13 +1111,12 @@ contains
                     wlo = u(i,j,k  ,3) + HALF*(w0macz(i,j,k  )+w0macz(i,j,k+1))
                  else
 
-                    if (k+1 .eq. nr(n)) then
-                       whi = u(i,j,k+1,3) + w0(k+1)
-                    else
+                    wlo = u(i,j,k,3) + HALF* (w0(k)+w0(k+1))
+                    if ((k+2) .le. nr(n)) then
                        whi = u(i,j,k+1,3) + HALF* (w0(k+1)+w0(k+2))
+                    else
+                       whi = u(i,j,k+1,3) + w0(k+1)
                     end if
-
-                    wlo = u(i,j,k-1,3) + HALF* (w0(k-1)+w0(k))
                     
                  end if
                  
@@ -1151,13 +1148,12 @@ contains
                     wlo = u(i,j,k-1,3) + HALF*(w0macz(i,j,k-1)+w0macz(i,j,k  ))
                  else
 
-                    whi = u(i,j,k,3) + HALF* (w0(k)+w0(k+1))
-
-                    if (k .eq. ZERO) then
-                       wlo = u(i,j,k-1,3) + w0(k)
-                    else
+                    if (k .ge. 1) then
                        wlo = u(i,j,k-1,3) + HALF* (w0(k-1)+w0(k))
+                    else
+                       wlo = u(i,j,k-1,3) + w0(k)
                     end if
+                    whi = u(i,j,k,3) + HALF* (w0(k)+w0(k+1))
 
                  end if
                  
