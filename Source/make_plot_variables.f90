@@ -14,18 +14,19 @@ contains
 
   subroutine make_enthalpy(enthalpy,comp,s)
 
+    use geometry, only: dm
+
     integer        , intent(in   ) :: comp
     type(multifab) , intent(inout) :: enthalpy
     type(multifab) , intent(in   ) :: s
 
     real(kind=dp_t), pointer:: sp(:,:,:,:)
     real(kind=dp_t), pointer:: rp(:,:,:,:)
-    integer :: lo(s%dim),hi(s%dim),ng_s,ng_e,dm
+    integer :: lo(s%dim),hi(s%dim),ng_s,ng_e
     integer :: i
 
     ng_s = s%ng
     ng_e = enthalpy%ng
-    dm = s%dim
 
     do i = 1, s%nboxes
        if ( multifab_remote(s, i) ) cycle
@@ -85,7 +86,7 @@ contains
 
   subroutine make_tfromH(n,plotdata,comp_t,comp_dp,state,p0,tempbar,dx)
 
-    use geometry, only: spherical
+    use geometry, only: spherical, dm
 
     integer        , intent(in   ) :: n,comp_t,comp_dp
     type(multifab) , intent(inout) :: plotdata
@@ -96,12 +97,11 @@ contains
 
     real(kind=dp_t), pointer:: sp(:,:,:,:)
     real(kind=dp_t), pointer:: tp(:,:,:,:)
-    integer :: lo(state%dim),hi(state%dim),ng_s,ng_p,dm
+    integer :: lo(state%dim),hi(state%dim),ng_s,ng_p
     integer :: i
 
     ng_s = state%ng
     ng_p = plotdata%ng
-    dm = state%dim
 
     do i = 1, state%nboxes
        if ( multifab_remote(state, i) ) cycle
@@ -291,7 +291,7 @@ contains
                          comp_machno,comp_deltag,comp_entropy, &
                          s,u,rho0,rhoh0,tempbar,gamma1bar,p0,dx)
 
-    use geometry, only: spherical
+    use geometry, only: spherical, dm
 
     integer        , intent(in   ) :: n,comp_tfromp,comp_tpert
     integer        , intent(in   ) :: comp_rhopert, comp_rhohpert, comp_machno
@@ -306,13 +306,12 @@ contains
     real(kind=dp_t), intent(in   ) :: p0(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
     real(kind=dp_t), pointer:: sp(:,:,:,:),tp(:,:,:,:),up(:,:,:,:)
-    integer :: lo(s%dim),hi(s%dim),i,dm
+    integer :: lo(s%dim),hi(s%dim),i
     integer :: ng_p,ng_s,ng_u
 
     ng_p = plotdata%ng
     ng_s = s%ng
     ng_u = u%ng
-    dm = s%dim
 
     do i = 1, s%nboxes
        if ( multifab_remote(s, i) ) cycle
@@ -583,7 +582,7 @@ contains
 
   subroutine make_entropypert(n,plotdata,comp_entropy,comp_entropypert,entropybar,dx)
 
-    use geometry, only: spherical
+    use geometry, only: spherical, dm
 
     integer        , intent(in   ) :: n,comp_entropy,comp_entropypert
     type(multifab) , intent(inout) :: plotdata
@@ -591,10 +590,9 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:)
 
     real(kind=dp_t), pointer:: tp(:,:,:,:)
-    integer :: lo(plotdata%dim),hi(plotdata%dim),dm,ng_p
+    integer :: lo(plotdata%dim),hi(plotdata%dim),ng_p
     integer :: i
 
-    dm = plotdata%dim
     ng_p = plotdata%ng
 
     do i = 1, plotdata%nboxes
@@ -698,6 +696,7 @@ contains
 
     use network, only: nspec
     use variables, only: spec_comp
+    use geometry, only: dm
 
     integer        , intent(in   ) :: comp
     type(multifab) , intent(in   ) :: s
@@ -705,12 +704,11 @@ contains
 
     real(kind=dp_t), pointer:: sp(:,:,:,:)
     real(kind=dp_t), pointer:: pp(:,:,:,:)
-    integer :: lo(s%dim),hi(s%dim),ng_s,ng_p,dm
+    integer :: lo(s%dim),hi(s%dim),ng_s,ng_p
     integer :: i
 
     ng_s = s%ng
     ng_p = plotdata%ng
-    dm = s%dim
 
     do i = 1, s%nboxes
        if ( multifab_remote(s, i) ) cycle
@@ -781,6 +779,7 @@ contains
 
     use network, only: nspec
     use variables, only: rho_comp
+    use geometry, only: dm
 
     integer        , intent(in   ) :: comp, comp_enuc
     type(multifab) , intent(in   ) :: s, rho_omegadot
@@ -789,13 +788,12 @@ contains
     real(kind=dp_t), pointer:: sp(:,:,:,:)
     real(kind=dp_t), pointer:: rop(:,:,:,:)
     real(kind=dp_t), pointer:: pp(:,:,:,:)
-    integer :: lo(s%dim),hi(s%dim),ng_s,ng_o,ng_p,dm
+    integer :: lo(s%dim),hi(s%dim),ng_s,ng_o,ng_p
     integer :: i
 
     ng_s = s%ng
     ng_o = rho_omegadot%ng
     ng_p = plotdata%ng
-    dm = s%dim
 
     do i = 1, s%nboxes
        if ( multifab_remote(s, i) ) cycle
@@ -876,15 +874,16 @@ contains
 
   subroutine make_deltaT(plotdata,comp_dT,comp_tfromH,comp_tfromp)
 
+    use geometry, only: dm
+
     integer        , intent(in   ) :: comp_dT, comp_tfromH, comp_tfromp
     type(multifab) , intent(inout) :: plotdata
 
     real(kind=dp_t), pointer:: tp(:,:,:,:)
     integer :: lo(plotdata%dim),hi(plotdata%dim)
-    integer :: i,dm,ng_p
+    integer :: i,ng_p
 
     ng_p = plotdata%ng
-    dm = plotdata%dim
 
     do i = 1, plotdata%nboxes
        if ( multifab_remote(plotdata, i) ) cycle
@@ -943,7 +942,7 @@ contains
 
   subroutine make_divw0(divw0,w0,w0mac,dx)
 
-    use geometry, only: spherical
+    use geometry, only: spherical, dm
 
     type(multifab) , intent(inout) :: divw0
     real(kind=dp_t), intent(in   ) :: w0(0:)
@@ -955,9 +954,8 @@ contains
     real(kind=dp_t), pointer :: w0zp(:,:,:,:)
     real(kind=dp_t), pointer :: dwp(:,:,:,:)
     integer                  :: lo(divw0%dim),hi(divw0%dim)
-    integer                  :: i,dm,ng_w0,ng_dw
+    integer                  :: i,ng_w0,ng_dw
 
-    dm = divw0%dim
     ng_dw = divw0%ng
 
     do i=1,divw0%nboxes

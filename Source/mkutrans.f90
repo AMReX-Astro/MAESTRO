@@ -17,6 +17,7 @@ contains
 
     use bl_prof_module
     use create_umac_grown_module
+    use geometry, only: dm
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(in   ) :: u(:)
@@ -35,13 +36,12 @@ contains
     real(kind=dp_t), pointer :: w0yp(:,:,:,:)
     real(kind=dp_t), pointer :: w0zp(:,:,:,:)
     integer                  :: lo(u(1)%dim)
-    integer                  :: i,dm,n,ng_u,ng_ut,ng_w0
+    integer                  :: i,n,ng_u,ng_ut,ng_w0
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "mkutrans")
 
-    dm = u(1)%dim
     ng_u  = u(1)%ng
     ng_ut = utrans(1,1)%ng
     ng_w0 = w0mac(1,1)%ng

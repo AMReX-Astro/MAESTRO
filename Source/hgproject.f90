@@ -25,6 +25,7 @@ contains
     use ml_restriction_module
     use multifab_fill_ghost_module
     use probin_module, only: verbose, mg_verbose, cg_verbose, hg_dense_stencil
+    use geometry, only: dm
 
     integer        , intent(in   ) :: proj_type
     type(ml_layout), intent(inout) :: mla
@@ -47,7 +48,7 @@ contains
     type(multifab) :: gphi(mla%nlevel)
     logical        :: nodal(mla%dim)
 
-    integer                   :: n,nlevs,dm,stencil_type
+    integer                   :: n,nlevs,stencil_type
     real(dp_t)                :: umin,umax,vmin,vmax,wmin,wmax
     logical                   :: use_div_coeff_1d, use_div_coeff_3d
     type(bl_prof_timer), save :: bpt
@@ -55,7 +56,6 @@ contains
     call build(bpt, "hgproject")
 
     nlevs = mla%nlevel
-    dm    = mla%dim
     nodal = .true.
     
     if (hg_dense_stencil) then
@@ -218,14 +218,13 @@ contains
       real(kind=dp_t), pointer :: gpp(:,:,:,:) 
       real(kind=dp_t), pointer ::  rp(:,:,:,:)
   
-      integer :: i,n,dm
+      integer :: i,n
       integer :: ng_un,ng_uo,ng_rh,ng_gp
 
       type(bl_prof_timer), save :: bpt
 
       call build(bpt, "create_uvec_for_projection")
   
-      dm = unew(1)%dim
       ng_un = unew(1)%ng
       ng_uo = uold(1)%ng
       ng_rh = rhohalf(1)%ng
@@ -390,7 +389,7 @@ contains
       type(multifab), intent(in   ) :: phi(:)
       real(dp_t) :: dx(:,:)
 
-      integer :: i,dm,n,ng_p,ng_gp
+      integer :: i,n,ng_p,ng_gp
 
       real(kind=dp_t), pointer :: gph(:,:,:,:) 
       real(kind=dp_t), pointer :: pp(:,:,:,:) 
@@ -399,7 +398,6 @@ contains
 
       call build(bpt, "mkgphi")
 
-      dm = phi(1)%dim
       ng_p = phi(1)%ng
       ng_gp = gphi(1)%ng
 
@@ -506,7 +504,7 @@ contains
       type(bc_level) , intent(in   ) :: the_bc_level(:)
 
       ! local
-      integer :: i,dm,n
+      integer :: i,n
       integer :: ng_un,ng_uo,ng_gp,ng_gh,ng_rh,ng_p,ng_h
 
       real(kind=dp_t), pointer :: upn(:,:,:,:) 
@@ -520,8 +518,6 @@ contains
       type(bl_prof_timer), save :: bpt
 
       call build(bpt, "hg_update")
-
-      dm = unew(1)%dim
 
       ng_un = unew(1)%ng
       ng_uo = uold(1)%ng
@@ -722,12 +718,11 @@ contains
       type(multifab) , intent(inout) :: divu_rhs(:)
       type(bc_tower) , intent(in   ) :: the_bc_tower
 
-      integer        :: i,n,dm,ng,nlevs,ng_d
+      integer        :: i,n,ng,nlevs,ng_d
       type(bc_level) :: bc
       real(kind=dp_t), pointer :: divp(:,:,:,:) 
 
       nlevs = size(divu_rhs,dim=1)
-      dm = divu_rhs(1)%dim
       ng_d = divu_rhs(1)%ng
 
       do n = 1, nlevs
@@ -803,6 +798,7 @@ contains
     use ml_solve_module
     use nodal_divu_module
     use probin_module, only : hg_bottom_solver, verbose, mg_verbose, cg_verbose
+    use geometry, only: dm
 
     type(ml_layout), intent(inout) :: mla
     type(multifab ), intent(inout) :: unew(:)
@@ -831,7 +827,7 @@ contains
     real(dp_t) :: eps
     real(dp_t) :: omega
 
-    integer :: i, dm, nlevs, ns
+    integer :: i, nlevs, ns
     integer :: bottom_solver, bottom_max_iter
     integer :: max_iter
     integer :: min_width
@@ -848,7 +844,6 @@ contains
 
     !! Defaults:
 
-    dm    = mla%dim
     nlevs = mla%nlevel
     nodal = .true.
 
@@ -1024,14 +1019,15 @@ contains
 
   subroutine mkcoeffs(rho,coeffs)
 
+    use geometry, only: dm
+
     type(multifab) , intent(in   ) :: rho
     type(multifab) , intent(inout) :: coeffs
 
     real(kind=dp_t), pointer :: cp(:,:,:,:)
     real(kind=dp_t), pointer :: rp(:,:,:,:)
-    integer :: i,dm,ng_r,ng_c
+    integer :: i,ng_r,ng_c
 
-    dm = rho%dim
     ng_r = rho%ng
     ng_c = coeffs%ng
 
@@ -1104,6 +1100,8 @@ contains
 
   subroutine mult_by_1d_coeff(nlevs,u,div_coeff,do_mult)
 
+    use geometry, only: dm
+
     integer       , intent(in   )           :: nlevs
     type(multifab), intent(inout)           :: u(:)
     real(dp_t)    , intent(in   )           :: div_coeff(:,:)
@@ -1111,7 +1109,7 @@ contains
 
     ! local
     real(kind=dp_t), pointer :: ump(:,:,:,:) 
-    integer :: i,ng_u,n,dm
+    integer :: i,ng_u,n
     integer :: lo(u(1)%dim),hi(u(1)%dim)
     logical :: local_do_mult
 
@@ -1119,7 +1117,6 @@ contains
     if (present(do_mult)) local_do_mult = do_mult
 
     ng_u = u(1)%ng
-    dm = u(1)%dim
 
     do n = 1, nlevs
 
@@ -1191,6 +1188,8 @@ contains
 
   subroutine mult_by_3d_coeff(nlevs,u,div_coeff,do_mult)
 
+    use geometry, only: dm
+
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: u(:)
     type(multifab) , intent(in   ) :: div_coeff(:)
@@ -1199,11 +1198,10 @@ contains
     ! local
     real(kind=dp_t), pointer :: ump(:,:,:,:) 
     real(kind=dp_t), pointer ::  dp(:,:,:,:) 
-    integer :: i,ng_u,ng_d,n,dm
+    integer :: i,ng_u,ng_d,n
 
     ng_u = u(1)%ng
     ng_d = div_coeff(1)%ng
-    dm = u(1)%dim
 
     do n = 1, nlevs
        ! Multiply u by div coeff

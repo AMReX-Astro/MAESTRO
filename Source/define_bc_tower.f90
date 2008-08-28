@@ -98,23 +98,23 @@ contains
     type(layout), intent(in   ) :: la_level
     integer     , intent(in   ) :: default_value
     type(box) :: bx,pd
-    integer :: i,dm
+    integer :: i,d
 
     pd = layout_get_pd(la_level) 
 
     phys_bc_level = default_value
 
     i = 0
-    do dm = 1,layout_dim(la_level)
-       phys_bc_level(i,dm,1) = domain_bc(dm,1)
-       phys_bc_level(i,dm,2) = domain_bc(dm,2)
+    do d = 1,layout_dim(la_level)
+       phys_bc_level(i,d,1) = domain_bc(d,1)
+       phys_bc_level(i,d,2) = domain_bc(d,2)
     end do
 
     do i = 1,layout_nboxes(la_level)
        bx = layout_get_box(la_level,i)
-       do dm = 1,layout_dim(la_level)
-          if (bx%lo(dm) == pd%lo(dm)) phys_bc_level(i,dm,1) = domain_bc(dm,1)
-          if (bx%hi(dm) == pd%hi(dm)) phys_bc_level(i,dm,2) = domain_bc(dm,2)
+       do d = 1,layout_dim(la_level)
+          if (bx%lo(d) == pd%lo(d)) phys_bc_level(i,d,1) = domain_bc(d,1)
+          if (bx%hi(d) == pd%hi(d)) phys_bc_level(i,d,2) = domain_bc(d,2)
        end do
     end do
 
@@ -125,6 +125,7 @@ contains
     use variables, only: rho_comp, rhoh_comp, spec_comp, temp_comp, trac_comp, press_comp, &
          foextrap_comp, hoextrap_comp, ntrac
     use network, only: nspec
+    use geometry, only: dm
 
     ! define boundary conditions for the advection problem
 
@@ -132,7 +133,6 @@ contains
     integer  , intent(in   ) :: phys_bc_level(0:,:,:)
     integer  , intent(in   ) :: default_value
 
-    integer :: dm
     integer :: n,d,i
 
     adv_bc_level = default_value
@@ -147,8 +147,6 @@ contains
 !   COMP = 2     : y-velocity
 !   COMP = 3     : z-velocity
 !   COMP = 4...  : density, (rho h), (rho X)_i, temp, tracers, pressure
-
-    dm = size(adv_bc_level,dim=2)
 
     do n  = 0,size(adv_bc_level,dim=1)-1
     do d  = 1,dm
@@ -217,6 +215,7 @@ contains
     use variables, only: rho_comp, rhoh_comp, spec_comp, temp_comp, trac_comp, press_comp, &
          foextrap_comp, hoextrap_comp, ntrac
     use network, only: nspec
+    use geometry, only: dm
 
     ! define boundary conditions for the elliptic problem
 
@@ -226,7 +225,6 @@ contains
     integer  , intent(in   ) :: phys_bc_level(0:,:,:)
     integer  , intent(in   ) :: default_value
 
-    integer :: dm
     integer :: n,d,i
 
     ell_bc_level = default_value
@@ -241,8 +239,6 @@ contains
 !   COMP = 2     : y-velocity
 !   COMP = 3     : z-velocity
 !   COMP = 4...  : density, (rho h), (rho X)_i, temp, tracers, pressure
-
-    dm = size(ell_bc_level,dim=2)
 
     do n = 0,size(ell_bc_level,dim=1)-1
     do d = 1,dm

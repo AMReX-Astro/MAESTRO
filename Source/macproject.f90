@@ -22,6 +22,8 @@ contains
   subroutine macproject(mla,umac,phi,rho,dx,the_bc_tower, &
                         bc_comp,divu_rhs,div_coeff_1d,div_coeff_half_1d,div_coeff_3d)
 
+    use geometry, only: dm
+
     type(ml_layout), intent(in   ) :: mla
     type(multifab ), intent(inout) :: umac(:,:)
     type(multifab ), intent(inout) :: phi(:)
@@ -39,7 +41,7 @@ contains
     type(bndry_reg) :: fine_flx(2:mla%nlevel)
 
     real(dp_t)                   :: umac_norm(mla%nlevel)
-    integer                      :: dm,stencil_order,i,n,nlevs
+    integer                      :: stencil_order,i,n,nlevs
     logical                      :: use_rhs, use_div_coeff_1d, use_div_coeff_3d
 
     type(bl_prof_timer), save :: bpt
@@ -47,7 +49,6 @@ contains
     call build(bpt, "macproject")
 
     nlevs = mla%nlevel
-    dm    = umac(nlevs,1)%dim
 
     use_rhs          = .false. ; if (present(divu_rhs)    ) use_rhs          = .true.
     use_div_coeff_1d = .false. ; if (present(div_coeff_1d)) use_div_coeff_1d = .true.
@@ -162,6 +163,7 @@ contains
 
       use ml_restriction_module, only: ml_cc_restriction, ml_edge_restriction
       use probin_module, only: verbose
+      use geometry, only: dm
 
       integer        , intent(in   ) :: nlevs
       type(multifab) , intent(inout) :: umac(:,:)
@@ -176,10 +178,8 @@ contains
       real(kind=dp_t), pointer :: wmp(:,:,:,:) 
       real(kind=dp_t), pointer :: rhp(:,:,:,:) 
       real(kind=dp_t)          :: rhmax
-      integer :: i,dm,lo(rh(1)%dim),hi(rh(1)%dim)
+      integer :: i,lo(rh(1)%dim),hi(rh(1)%dim)
       integer :: ng_um, ng_rh
-
-      dm = rh(1)%dim
 
       ng_um = umac(1,1)%ng
       ng_rh = rh(1)%ng
@@ -293,6 +293,8 @@ contains
 
     subroutine mult_umac_by_1d_coeff(umac,div_coeff,div_coeff_half,do_mult)
 
+      use geometry, only: dm
+
       type(multifab) , intent(inout) :: umac(:)
       real(dp_t)     , intent(in   ) :: div_coeff(0:)
       real(dp_t)     , intent(in   ) :: div_coeff_half(0:)
@@ -302,9 +304,8 @@ contains
       real(kind=dp_t), pointer :: vmp(:,:,:,:) 
       real(kind=dp_t), pointer :: wmp(:,:,:,:) 
       integer                  :: lo(umac(1)%dim)
-      integer                  :: i,dm,ng_um
+      integer                  :: i,ng_um
 
-      dm = umac(1)%dim
       ng_um = umac(1)%ng
 
       ! Multiply edge velocities by div coeff
@@ -328,15 +329,16 @@ contains
 
     subroutine mult_beta_by_1d_coeff(beta,div_coeff,div_coeff_half)
 
+      use geometry, only: dm
+
       type(multifab) , intent(inout) :: beta
       real(dp_t)     , intent(in   ) :: div_coeff(0:)
       real(dp_t)     , intent(in   ) :: div_coeff_half(0:)
 
       real(kind=dp_t), pointer :: bp(:,:,:,:) 
       integer                  :: lo(beta%dim)
-      integer                  :: i,dm, ng_b
+      integer                  :: i,ng_b
 
-      dm = beta%dim
       ng_b = beta%ng
 
       ! Multiply edge coefficients by div coeff
@@ -631,6 +633,8 @@ contains
 
     subroutine mk_mac_coeffs(nlevs,mla,rho,beta,the_bc_tower)
 
+      use geometry, only: dm
+
       integer        , intent(in   ) :: nlevs
       type(ml_layout), intent(in   ) :: mla
       type(multifab ), intent(in   ) :: rho(:)
@@ -639,9 +643,8 @@ contains
 
       real(kind=dp_t), pointer :: bp(:,:,:,:) 
       real(kind=dp_t), pointer :: rp(:,:,:,:) 
-      integer :: i,dm,ng_r,ng_b
+      integer :: i,ng_r,ng_b
 
-      dm = rho(1)%dim
       ng_r = rho(1)%ng
       ng_b = beta(1)%ng
 
@@ -729,6 +732,7 @@ contains
     subroutine mkumac(rh,umac,phi,beta,fine_flx,dx,the_bc_tower,press_comp,ref_ratio)
 
       use ml_restriction_module, only: ml_edge_restriction
+      use geometry, only: dm
 
       type(multifab), intent(inout) :: umac(:,:)
       type(multifab), intent(inout) ::   rh(:)
@@ -740,7 +744,7 @@ contains
       integer       , intent(in   ) :: press_comp
       integer       , intent(in   ) :: ref_ratio(:,:)
 
-      integer :: i,dm,nlevs
+      integer :: i,nlevs
       integer :: ng_um,ng_p,ng_b
 
       type(bc_level)           :: bc
@@ -757,7 +761,6 @@ contains
       real(kind=dp_t), pointer :: hzp(:,:,:,:) 
 
       nlevs = size(rh,dim=1)
-      dm = rh(1)%dim
 
       ng_um = umac(1,1)%ng
       ng_p = phi(1)%ng
@@ -1261,6 +1264,7 @@ contains
     use coeffs_module
     use ml_solve_module
     use probin_module, only : mg_bottom_solver, mg_verbose, cg_verbose
+    use geometry, only: dm
 
     type(ml_layout), intent(in   )        :: mla
     integer        , intent(in   )        :: stencil_order
@@ -1283,7 +1287,7 @@ contains
     type(imultifab) :: mm
     type(sparse)    :: sparse_object
     type(mg_tower)  :: mgt(mla%nlevel)
-    integer         :: i, dm, ns, nlevs, test
+    integer         :: i, ns, nlevs, test
 
     ! MG solver defaults
     integer :: bottom_solver, bottom_max_iter
@@ -1301,7 +1305,6 @@ contains
     !! Defaults:
 
     nlevs = mla%nlevel
-    dm    = mla%dim
 
     test           = 0
 
@@ -1464,6 +1467,7 @@ contains
     use coeffs_module
     use ml_cc_module, only: ml_cc_applyop
     use probin_module, only: cg_verbose, mg_verbose
+    use geometry, only: dm
 
     type(ml_layout), intent(inout) :: mla
     integer        , intent(in   ) :: stencil_order
@@ -1485,7 +1489,7 @@ contains
     type(imultifab) :: mm
     type(sparse)    :: sparse_object
     type(mg_tower)  :: mgt(mla%nlevel)
-    integer         :: i, dm, ns, nlevs
+    integer         :: i, ns, nlevs
     integer         :: test
 
     ! MG solver defaults
@@ -1508,7 +1512,6 @@ contains
     !! Defaults:
 
     nlevs = mla%nlevel
-    dm    = mla%dim
     test  = 0
 
     max_nlevel        = mgt(nlevs)%max_nlevel

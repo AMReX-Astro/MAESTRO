@@ -29,6 +29,7 @@ contains
     use multifab_physbc_module
     use multifab_fill_ghost_module
     use variables, only: foextrap_comp
+    use geometry, only: dm
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: Source(:)
@@ -51,7 +52,7 @@ contains
     real(kind=dp_t), pointer:: tp(:,:,:,:),dgp(:,:,:,:)
     real(kind=dp_t), pointer:: omegap(:,:,:,:), hp(:,:,:,:)
 
-    integer :: lo(state(1)%dim),hi(state(1)%dim),dm
+    integer :: lo(state(1)%dim),hi(state(1)%dim)
     integer :: i,n,ng_sr,ng_dt,ng_dg,ng_s,ng_u,ng_rw,ng_he,ng_th
 
     type(bl_prof_timer), save :: bpt
@@ -66,8 +67,6 @@ contains
     ng_rw = rho_omegadot(1)%ng
     ng_he = rho_Hext(1)%ng
     ng_th = thermal(1)%ng
-
-    dm = state(1)%dim
 
     do n = 1, nlevs
        do i = 1, state(n)%nboxes

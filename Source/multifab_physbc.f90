@@ -15,6 +15,7 @@ contains
 
     use setbc_module
     use bl_prof_module
+    use geometry, only: dm
 
     type(multifab) , intent(inout) :: s
     integer        , intent(in   ) :: start_scomp,start_bccomp,num_comp
@@ -22,13 +23,12 @@ contains
 
     ! Local
     integer                  :: lo(s%dim)
-    integer                  :: i,ng,dm,scomp,bccomp
+    integer                  :: i,ng,scomp,bccomp
     real(kind=dp_t), pointer :: sp(:,:,:,:)
 
     type(bl_prof_timer), save :: bpt
     
     ng = s%ng
-    dm = s%dim
 
     if (ng == 0) return
 

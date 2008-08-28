@@ -27,6 +27,7 @@ contains
 
     use bl_prof_module
     use bl_constants_module
+    use geometry, only: dm
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: macrhs(:)
@@ -43,13 +44,11 @@ contains
     real(kind=dp_t), pointer:: mp(:,:,:,:),sp(:,:,:,:),gp(:,:,:,:),pop(:,:,:,:)
 
     integer :: lo(Source(1)%dim),hi(Source(1)%dim)
-    integer :: i,dm,n,ng_rh,ng_sr,ng_dg,ng_dp
+    integer :: i,n,ng_rh,ng_sr,ng_dg,ng_dp
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "make_macrhs")
-
-    dm = Source(1)%dim
 
     ng_rh = macrhs(1)%ng
     ng_sr = Source(1)%ng

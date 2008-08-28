@@ -22,6 +22,7 @@ contains
     use multifab_physbc_module
     use multifab_fill_ghost_module
     use heating_module
+    use geometry, only: dm
 
     integer        , intent(in   ) :: nlevs
     type(ml_layout), intent(in   ) :: mla
@@ -38,14 +39,13 @@ contains
     real(kind=dp_t), pointer::   rp(:,:,:,:)
     real(kind=dp_t), pointer::   hp(:,:,:,:)
 
-    integer :: lo(s_in(1)%dim),hi(s_in(1)%dim),ng_si,ng_so,ng_rw,ng_he,dm
+    integer :: lo(s_in(1)%dim),hi(s_in(1)%dim),ng_si,ng_so,ng_rw,ng_he
     integer :: i,n,ispec
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "react_state")
 
-    dm = s_in(1)%dim
     ng_si = s_in(1)%ng
     ng_so = s_out(1)%ng
     ng_rw = rho_omegadot(1)%ng

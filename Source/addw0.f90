@@ -14,7 +14,7 @@ contains
   subroutine addw0(nlevs,umac,w0,w0mac,mult)
 
     use bl_prof_module
-    use geometry, only: spherical
+    use geometry, only: spherical, dm
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: umac(:,:)
@@ -23,7 +23,7 @@ contains
     real(kind=dp_t), intent(in   ) :: mult
 
     ! Local variables
-    integer :: i,lo(umac(1,1)%dim),hi(umac(1,1)%dim),dm,n,ng_um,ng_w0
+    integer :: i,lo(umac(1,1)%dim),hi(umac(1,1)%dim),n,ng_um,ng_w0
     real(kind=dp_t), pointer :: ump(:,:,:,:)
     real(kind=dp_t), pointer :: vmp(:,:,:,:)
     real(kind=dp_t), pointer :: wmp(:,:,:,:)
@@ -35,7 +35,6 @@ contains
 
     call build(bpt, "addw0")
 
-    dm = umac(1,1)%dim
     ng_um = umac(1,1)%ng    ! here we are assuming all components have the 
                             ! same # of ghostcells
 

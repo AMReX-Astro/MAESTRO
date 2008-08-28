@@ -29,7 +29,7 @@ contains
 
     use bl_prof_module
     use bl_constants_module
-    use geometry, only: spherical, nr_fine, dr
+    use geometry, only: spherical, nr_fine, dr, dm
     use variables, only: foextrap_comp
     use fill_3d_module
     use multifab_physbc_module
@@ -50,7 +50,7 @@ contains
     logical        , intent(in   ) :: is_conservative
     type(ml_layout), intent(in   ) :: mla
 
-    integer                  :: i,r,scomp,bccomp,dm,n
+    integer                  :: i,r,scomp,bccomp,n
     integer                  :: lo(s(1)%dim), hi(s(1)%dim)
     integer                  :: ng_s,ng_se,ng_um,ng_f,ng_w0,ng_n,ng_gw
     real(kind=dp_t), pointer :: sop(:,:,:,:)
@@ -74,7 +74,6 @@ contains
 
     call build(bpt, "make_edge_scal")
 
-    dm = s(1)%dim
     ng_s = s(1)%ng
     ng_se = sedge(1,1)%ng
     ng_um = umac(1,1)%ng

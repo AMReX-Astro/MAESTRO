@@ -33,6 +33,7 @@ contains
     use multifab_physbc_module
     use multifab_fill_ghost_module
     use ml_restriction_module, only: ml_cc_restriction_c
+    use geometry, only: dm
 
     type(ml_layout), intent(inout) :: mla
     real(dp_t)     , intent(in   ) :: dx(:,:),dt
@@ -57,7 +58,7 @@ contains
     real(kind=dp_t), pointer    :: hcoeff1p(:,:,:,:),hcoeff2p(:,:,:,:)
     real(kind=dp_t), pointer    :: Xkcoeff1p(:,:,:,:),Xkcoeff2p(:,:,:,:)
     real(kind=dp_t), pointer    :: pcoeff1p(:,:,:,:),pcoeff2p(:,:,:,:)
-    integer                     :: nlevs,dm,stencil_order
+    integer                     :: nlevs,stencil_order
     integer                     :: i,n,comp
     integer                     :: lo(s1(1)%dim),hi(s1(1)%dim)
     integer                     :: ng_s,ng_h,ng_X,ng_p,ng_cc,ng_fc
@@ -68,7 +69,6 @@ contains
     call build(bpt, "therm_cond_full_alg")
 
     nlevs = mla%nlevel
-    dm = mla%dim
     stencil_order = 2
 
     do n = 2,nlevs
@@ -620,6 +620,7 @@ contains
     use multifab_fill_ghost_module
     use ml_restriction_module, only: ml_cc_restriction_c
     use probin_module, only: use_tfromp
+    use geometry, only: dm
 
     type(ml_layout), intent(inout) :: mla
     real(dp_t)     , intent(in   ) :: dx(:,:),dt
@@ -642,7 +643,7 @@ contains
     real(kind=dp_t), pointer    :: hcoeff1p(:,:,:,:),hcoeff2p(:,:,:,:)
     real(kind=dp_t), pointer    :: Xkcoeff1p(:,:,:,:),Xkcoeff2p(:,:,:,:)
     real(kind=dp_t), pointer    :: pcoeff1p(:,:,:,:),pcoeff2p(:,:,:,:)
-    integer                     :: nlevs,dm,stencil_order,i,n,comp
+    integer                     :: nlevs,stencil_order,i,n,comp
     integer                     :: ng_s,ng_h,ng_X,ng_p,ng_cc,ng_fc
     integer                     :: lo(s1(1)%dim),hi(s1(1)%dim)
     type(bndry_reg)             :: fine_flx(2:mla%nlevel)
@@ -652,7 +653,6 @@ contains
     call build(bpt, "therm_cond_half_alg")
 
     nlevs = mla%nlevel
-    dm = mla%dim
     stencil_order = 2
 
     do n = 2,nlevs

@@ -26,6 +26,7 @@ contains
     use variables, only: foextrap_comp
     use ml_restriction_module, only : ml_cc_restriction
     use heating_module
+    use geometry, only: dm
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: thermal(:)
@@ -42,15 +43,13 @@ contains
     real(kind=dp_t), pointer :: rwp(:,:,:,:)
     real(kind=dp_t), pointer :: hep(:,:,:,:)
     integer                  :: lo(thermal(1)%dim),hi(thermal(1)%dim)
-    integer                  :: dm,i,n
+    integer                  :: i,n
     integer :: ng_t, ng_rw, ng_s, ng_he
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "add_react_to_thermal")
     
-    dm = thermal(1)%dim
-
     ng_t = thermal(1)%ng
     ng_rw = rho_omegadot(1)%ng
     ng_s = s(1)%ng

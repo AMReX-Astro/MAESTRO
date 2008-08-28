@@ -18,6 +18,7 @@ contains
     use multifab_module
     use ml_layout_module
     use ml_restriction_module
+    use geometry, only: dm
 
     integer, intent(in) :: nlevs
     type(ml_layout), intent(in   ) :: mla
@@ -26,12 +27,10 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:,:),time
 
     ! local
-    integer                  :: n,i,ng_s,ng_h,dm
+    integer                  :: n,i,ng_s,ng_h
     integer                  :: lo(s(1)%dim),hi(s(1)%dim)
     real(kind=dp_t), pointer :: sp(:,:,:,:)
     real(kind=dp_t), pointer :: hp(:,:,:,:)
-
-    dm = s(1)%dim
 
     ng_s = s(1)%ng
     ng_h = rho_Hext(1)%ng
@@ -46,9 +45,9 @@ contains
           hi =  upb(get_box(s(n), i))
           select case (dm)
           case (2)
-             call get_rho_Hext_2d(hp(:,:,1,1), ng_h, sp(:,:,1,:), ng_s, lo, hi, dx(n,:), time)
+             call get_rho_Hext_2d(hp(:,:,1,1), ng_h, sp(:,:,1,:), ng_s, lo, hi, dx(n,:),time)
           case (3)
-             call get_rho_Hext_3d(hp(:,:,:,1), ng_h, sp(:,:,:,:), ng_s, lo, hi, dx(n,:), time)
+             call get_rho_Hext_3d(hp(:,:,:,1), ng_h, sp(:,:,:,:), ng_s, lo, hi, dx(n,:),time)
           end select
        end do
 

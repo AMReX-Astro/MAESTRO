@@ -28,7 +28,6 @@ subroutine varden()
 
   implicit none
 
-  integer    :: dm
   real(dp_t) :: lenx,leny,lenz,max_dist
   integer    :: k,ng_cell
   integer    :: i, j, d, n, nlevs
@@ -86,6 +85,7 @@ subroutine varden()
   call probin_init()
 
   call init_spherical(spherical_in)
+  call init_dm(dm_in)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! Initialize the arrays and read the restart data if restart >= 0

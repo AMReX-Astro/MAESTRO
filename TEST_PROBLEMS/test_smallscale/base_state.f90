@@ -20,7 +20,7 @@ contains
     use eos_module
     use probin_module, ONLY: prob_lo_y, prob_lo_z
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp
-    use geometry, only: dr, spherical, r_start_coord, r_end_coord, numdisjointchunks
+    use geometry, only: dr, spherical, r_start_coord, r_end_coord, numdisjointchunks, dm
     use inlet_bc_module
 
     integer,             intent(in   ) :: n
@@ -30,7 +30,7 @@ contains
     real(kind=dp_t),     intent(in   ) :: dx(:)
 
     ! local
-    integer :: ndum,r,dm,comp,i
+    integer :: ndum,r,comp,i
     real(dp_t) :: starting_rad
 
     parameter (ndum = 30)
@@ -38,8 +38,6 @@ contains
     character(len=128) :: lamsolfile
     real(kind=dp_t) :: state1d(ndum),Pamb,temporary
     real(kind=dp_t) :: loloc,hiloc,flameloc
-
-    dm = size(dx)
 
     if (dm .eq. 2) then
        starting_rad = prob_lo_y

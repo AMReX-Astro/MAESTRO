@@ -18,7 +18,7 @@ contains
 
     use bl_prof_module
     use bl_constants_module
-    use geometry,  only: spherical
+    use geometry,  only: spherical, dm
     use variables, only: spec_comp, rho_comp
     use network,   only: nspec
     use multifab_physbc_module
@@ -46,7 +46,7 @@ contains
     real(kind=dp_t), pointer :: p0np(:,:,:,:)
 
     integer :: lo(sold(1)%dim),hi(sold(1)%dim)
-    integer :: i,dm,n,nlevs
+    integer :: i,n,nlevs
     integer :: ng_so,ng_sn,ng_sf,ng_f,ng_p
 
     type(bl_prof_timer), save :: bpt
@@ -54,7 +54,6 @@ contains
     call build(bpt, "update_scal")
 
     nlevs = mla%nlevel
-    dm    = mla%dim
 
     ng_so = sold(1)%ng
     ng_sn = snew(1)%ng

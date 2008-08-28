@@ -17,7 +17,7 @@ contains
 
     use bl_prof_module
     use bl_constants_module
-    use geometry, only: spherical
+    use geometry, only: spherical, dm
     use variables, only: foextrap_comp
     use multifab_physbc_module
     use ml_restriction_module
@@ -39,7 +39,7 @@ contains
     type(bc_level) , intent(in   ) :: the_bc_level(:)
     
     ! local
-    integer :: i,ng_f,ng_s,ng_um,ng_b,dm,n
+    integer :: i,ng_f,ng_s,ng_um,ng_b,n
     integer :: lo(s(1)%dim),hi(s(1)%dim)
     integer :: domlo(s(1)%dim),domhi(s(1)%dim)    
 
@@ -56,7 +56,6 @@ contains
 
     call build(bpt, "modify_scal_force")
     
-    dm = s(1)%dim
     ng_s = s(1)%ng
     ng_f = force(1)%ng
     ng_um = umac(1,1)%ng

@@ -10,12 +10,14 @@ contains
 
   subroutine create_umac_grown(finelev,fine,crse)
 
+    use geometry, only: dm
+
     integer       , intent(in   ) :: finelev
     type(multifab), intent(inout) :: fine(:)
     type(multifab), intent(inout) :: crse(:)
 
     ! local
-    integer        :: i,j,k,dm,ng_f,ng_c
+    integer        :: i,j,k,ng_f,ng_c
     integer        :: c_lo(fine(1)%dim),c_hi(fine(1)%dim)
     integer        :: f_lo(fine(1)%dim),f_hi(fine(1)%dim)
 
@@ -29,8 +31,6 @@ contains
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "create_umac_grown")
-
-    dm = fine(1)%dim
 
     ! fill_boundary on level 1
     ! the fill_boundary for levels 2 through nlev occur later in this function
@@ -701,17 +701,18 @@ contains
 
   subroutine create_umac_grown_onesided(nlevs,umac)
 
+    use geometry, only: dm
+
     integer       , intent(in   ) :: nlevs
     type(multifab), intent(inout) :: umac(:,:)
 
-    integer :: i,n,dm,ng_um
+    integer :: i,n,ng_um
     integer :: lo(umac(1,1)%dim),hi(umac(1,1)%dim)
 
     real(kind=dp_t), pointer :: ump(:,:,:,:) 
     real(kind=dp_t), pointer :: vmp(:,:,:,:)
     real(kind=dp_t), pointer :: wmp(:,:,:,:)
 
-    dm = size(umac,dim=2)
     ng_um = umac(1,1)%ng
 
     ! we only need to do this for fine levels

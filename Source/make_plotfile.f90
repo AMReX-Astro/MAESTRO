@@ -12,15 +12,14 @@ module make_plotfile_module
 
 contains
 
-  subroutine get_plot_names(dm,plot_names)
+  subroutine get_plot_names(plot_names)
 
     use plot_variables_module
     use variables
     use network, only: nspec, short_spec_names
     use probin_module, only: plot_spec, plot_trac, plot_base
-    use geometry, only: spherical
+    use geometry, only: spherical, dm
 
-    integer          , intent(in   ) :: dm
     character(len=20), intent(inout) :: plot_names(:)
 
     ! Local variables
@@ -104,7 +103,7 @@ contains
     use fill_3d_module
     use probin_module, only: nOutFiles, lUsingNFiles, plot_spec, plot_trac, plot_base
     use probin_module, only: single_prec_plotfiles, edge_nodal_flag
-    use geometry, only: spherical, nr_fine
+    use geometry, only: spherical, nr_fine, dm
     use average_module
     use ml_restriction_module
     use multifab_physbc_module
@@ -137,13 +136,12 @@ contains
     type(multifab) :: w0mac(mla%nlevel,mla%dim)
     real(dp_t), allocatable :: entropybar(:,:)
 
-    integer :: n,dm,nlevs,prec,comp
+    integer :: n,nlevs,prec,comp
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "make_plotfile")
 
-    dm = get_dim(mba)
     nlevs = size(u)
 
     if (single_prec_plotfiles) then

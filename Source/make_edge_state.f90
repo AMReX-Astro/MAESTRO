@@ -35,7 +35,7 @@ contains
 
     use bl_prof_module
     use bl_constants_module
-    use geometry, only: nr_fine, dr, spherical
+    use geometry, only: nr_fine, dr, spherical, dm
     use variables, only: foextrap_comp
     use fill_3d_module
     use multifab_physbc_module
@@ -54,7 +54,7 @@ contains
     integer        , intent(in   ) :: velpred,start_scomp,start_bccomp,num_comp
     type(ml_layout), intent(in   ) :: mla
 
-    integer                  :: i,r,scomp,bccomp,dm,n
+    integer                  :: i,r,scomp,bccomp,n
     integer                  :: ng_s,ng_u,ng_se,ng_um,ng_ut,ng_f,ng_w0,ng_gw,ng_n
     integer                  :: lo(u(1)%dim), hi(u(1)%dim)
     real(kind=dp_t), pointer :: sop(:,:,:,:)
@@ -82,7 +82,6 @@ contains
 
     call build(bpt, "make_edge_state")
 
-    dm = u(1)%dim
     ng_s = s(1)%ng
     ng_u = u(1)%ng
     ng_se = sedge(1,1)%ng

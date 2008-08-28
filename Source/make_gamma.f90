@@ -23,6 +23,7 @@ contains
     use ml_restriction_module
     use multifab_physbc_module
     use multifab_fill_ghost_module
+    use geometry, only: dm
 
     integer        , intent(in   ) :: nlevs
     type(ml_layout), intent(in   ) :: mla
@@ -34,7 +35,7 @@ contains
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     real(kind=dp_t), pointer:: gamp(:,:,:,:),sp(:,:,:,:)
-    integer :: lo(s(1)%dim),hi(s(1)%dim),dm
+    integer :: lo(s(1)%dim),hi(s(1)%dim)
     integer :: i,n
     integer :: ng_g, ng_s
 
@@ -42,8 +43,6 @@ contains
 
     call build(bpt, "make_gamma")
     
-    dm = s(1)%dim
-
     ng_g = gamma(1)%ng
     ng_s = s(1)%ng
 

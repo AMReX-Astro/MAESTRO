@@ -24,6 +24,7 @@ contains
     use ml_restriction_module, only: ml_cc_restriction
     use multifab_fill_ghost_module
     use multifab_physbc_module
+    use geometry, only: dm
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: s(:)
@@ -32,9 +33,7 @@ contains
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     ! Local variables
-    integer :: dm,n,comp,bc_comp
-
-    dm = s(1)%dim
+    integer :: n,comp,bc_comp
 
     if (flag) then
        do n=1,nlevs
@@ -106,6 +105,7 @@ contains
     use ml_restriction_module, only: ml_cc_restriction
     use multifab_fill_ghost_module
     use multifab_physbc_module
+    use geometry, only: dm
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: s(:)
@@ -114,9 +114,7 @@ contains
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     ! Local variables
-    integer :: dm,n,bc_comp
-
-    dm = s(1)%dim
+    integer :: n,bc_comp
 
     if (flag) then
        do n=1,nlevs

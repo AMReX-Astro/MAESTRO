@@ -21,7 +21,7 @@ contains
     use bl_prof_module
     use bl_constants_module
     use define_bc_module
-    use geometry, only: spherical
+    use geometry, only: spherical, dm
     use ml_layout_module
     use multifab_physbc_module
     use ml_restriction_module, only: ml_cc_restriction_c
@@ -40,7 +40,7 @@ contains
     
     integer :: lo(s0_cart(1)%dim)
     integer :: hi(s0_cart(1)%dim)
-    integer :: i,n,dm,ng_s,ng_n,comp
+    integer :: i,n,ng_s,ng_n,comp
     real(kind=dp_t), pointer :: sp(:,:,:,:)
     real(kind=dp_t), pointer :: np(:,:,:,:)
 
@@ -52,7 +52,6 @@ contains
        call bl_error('Error: Calling put_1d_array_on_cart for spherical with is_vector=T and without normal')
     end if
 
-    dm = s0_cart(1)%dim
     ng_s = s0_cart(1)%ng
     
     do n=1,nlevs
@@ -385,7 +384,7 @@ contains
   subroutine put_w0_on_edges(mla,w0,w0mac,dx,div_coeff,the_bc_tower)
 
     use bl_constants_module
-    use geometry, only: spherical, nr_fine
+    use geometry, only: spherical, nr_fine, dm
     use probin_module, only: w0mac_interp_type
     use variables, only: foextrap_comp,press_comp
     use define_bc_module
@@ -408,7 +407,7 @@ contains
     ! Local variables
     integer         :: lo(mla%dim)
     integer         :: hi(mla%dim)
-    integer         :: i,n,ng_w0,dm,nlevs
+    integer         :: i,n,ng_w0,nlevs
     real(kind=dp_t) :: w0rhs(mla%nlevel,0:nr_fine-1)
 
     ! Local pointers
@@ -420,7 +419,6 @@ contains
 
     call build(bpt, "put_w0_on_edges")
 
-    dm    = mla%dim
     nlevs = mla%nlevel
 
     if (dm.eq.2 .or. spherical.eq.0) &

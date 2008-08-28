@@ -31,7 +31,7 @@ contains
 
     use bl_prof_module
     use variables, only: foextrap_comp, rhoh_comp
-    use geometry, only: spherical, nr_fine
+    use geometry, only: spherical, nr_fine, dm
     use ml_restriction_module, only: ml_cc_restriction_c
     use fill_3d_module, only: put_1d_array_on_cart
     use multifab_fill_ghost_module
@@ -53,7 +53,7 @@ contains
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     ! local
-    integer                  :: i,dm,n,nlevs
+    integer                  :: i,n,nlevs
     integer                  :: lo(scal_force(1)%dim),hi(scal_force(1)%dim)
     integer                  :: ng_f,ng_um,ng_th
     real(kind=dp_t), pointer :: ump(:,:,:,:)
@@ -83,8 +83,6 @@ contains
        call bl_error("ERROR: should not call mkrhohforce when predicting T")
     endif
 
-    dm = scal_force(1)%dim
-      
     ng_f  = scal_force(1)%ng
     ng_um = umac(1,1)%ng
     ng_th = thermal(1)%ng
@@ -419,7 +417,7 @@ contains
 
     use bl_prof_module
     use variables, only: foextrap_comp, temp_comp
-    use geometry, only: spherical, nr_fine
+    use geometry, only: spherical, nr_fine, dm
     use ml_restriction_module, only: ml_cc_restriction_c
     use multifab_fill_ghost_module
     use multifab_physbc_module
@@ -436,7 +434,7 @@ contains
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     ! local
-    integer         :: i,dm,n,ng_f,ng_um,ng_s,ng_th,nlevs
+    integer         :: i,n,ng_f,ng_um,ng_s,ng_th,nlevs
     type(multifab)  :: p0_cart(mla%nlevel)
     real(kind=dp_t) :: p0_nph(mla%nlevel,0:nr_fine-1)
     integer         :: lo(temp_force(1)%dim),hi(temp_force(1)%dim)
@@ -453,7 +451,6 @@ contains
 
     call build(bpt, "mktempforce")
 
-    dm    = mla%dim
     nlevs = mla%nlevel
 
     ng_f  = temp_force(1)%ng

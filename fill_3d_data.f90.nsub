@@ -18,7 +18,7 @@ contains
     use bl_prof_module
     use bl_constants_module
     use define_bc_module
-    use geometry, only: spherical
+    use geometry, only: spherical, dm
     use ml_layout_module
     use multifab_physbc_module
     use ml_restriction_module, only: ml_cc_restriction_c
@@ -38,7 +38,7 @@ contains
     
     integer :: lo(s0_cart(1)%dim)
     integer :: hi(s0_cart(1)%dim)
-    integer :: i,n,dm,ng,comp
+    integer :: i,n,ng,comp
     real(kind=dp_t), pointer :: sp(:,:,:,:)
     real(kind=dp_t), pointer :: np(:,:,:,:)
 
@@ -54,7 +54,6 @@ contains
        call bl_error('Error: Calling put_1d_array_on_cart for spherical without an interp_type')
     end if
     
-    dm = s0_cart(1)%dim
     ng = s0_cart(1)%ng
     
     do n=1,nlevs

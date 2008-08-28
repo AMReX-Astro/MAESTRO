@@ -18,6 +18,7 @@ contains
     use parallel
     use bl_prof_module
     use checkpoint_module
+    use geometry, only: dm
 
     integer          , intent(in   ) :: restart_int
     real(dp_t)       , intent(  out) :: time,dt
@@ -29,7 +30,7 @@ contains
     type(multifab)   , pointer        :: chk_src_old(:)
     type(multifab)   , pointer        :: chk_rho_omegadot2(:)
     character(len=8)                  :: sd_name
-    integer                           :: n,nlevs,dm
+    integer                           :: n,nlevs
 
     type(bl_prof_timer), save :: bpt
 
@@ -40,8 +41,6 @@ contains
       print *,'Reading ',sd_name,' to get state data for restart'
     call checkpoint_read(chkdata, chk_p, chk_dsdt, chk_src_old, &
          chk_rho_omegadot2, sd_name, time, dt, nlevs)
-
-    dm = chkdata(1)%dim
 
     call build(mba,nlevs,dm)
     mba%pd(1) =  bbox(get_boxarray(chkdata(1)))

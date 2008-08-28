@@ -22,6 +22,8 @@ contains
 
   subroutine firstdt(n,u,s,force,divU,p0,gamma1bar,dx,cflfac,dt)
 
+    use geometry, only: dm
+
     integer        , intent(in   ) :: n
     type(multifab) , intent(in   ) :: u,s,force,divU
     real(kind=dp_t), intent(in   ) :: p0(0:), cflfac, gamma1bar(0:)
@@ -32,10 +34,9 @@ contains
     real(kind=dp_t), pointer:: sop(:,:,:,:)
     real(kind=dp_t), pointer:: fp(:,:,:,:)
     real(kind=dp_t), pointer:: divup(:,:,:,:)
-    integer :: lo(u%dim),hi(u%dim),ng_u,ng_s,ng_f,ng_dU,dm,i
+    integer :: lo(u%dim),hi(u%dim),ng_u,ng_s,ng_f,ng_dU,i
     real(kind=dp_t) :: dt_hold_proc,dt_grid
     
-    dm = u%dim
     ng_u = u%ng
     ng_s = s%ng
     ng_f = force%ng

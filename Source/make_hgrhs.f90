@@ -29,7 +29,7 @@ contains
     use ml_layout_module
     use bl_prof_module
     use bl_constants_module
-    use geometry, only: spherical
+    use geometry, only: spherical, dm
     use fill_3d_module
     use variables, only: foextrap_comp
     use ml_restriction_module
@@ -52,15 +52,13 @@ contains
 
     real(kind=dp_t), pointer:: hp(:,:,:,:),gp(:,:,:,:),rp(:,:,:,:)
     real(kind=dp_t), pointer:: dp(:,:,:,:),sp(:,:,:,:),sbp(:,:,:,:)
-    integer :: lo(Source(1)%dim),hi(Source(1)%dim),i,dm,n
+    integer :: lo(Source(1)%dim),hi(Source(1)%dim),i,n
     integer :: ng_rh,ng_sr,ng_dg,ng_dc,ng_sb,ng_hg
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "make_hgrhs")
     
-    dm = Source(1)%dim
-
     if(spherical .eq. 1) then
        do n = 1, nlevs
           call multifab_build(Sbar_cart(n),Source(n)%la,1,0)
@@ -292,7 +290,7 @@ contains
     use ml_layout_module
     use bl_prof_module
     use bl_constants_module
-    use geometry, only: spherical
+    use geometry, only: spherical, dm
     use fill_3d_module
     use variables, only: foextrap_comp, rho_comp
     use ml_restriction_module
@@ -321,7 +319,7 @@ contains
     real(kind=dp_t), pointer :: ptp(:,:,:,:), ccp(:,:,:,:), cnp(:,:,:,:)
     real(kind=dp_t), pointer :: gbp(:,:,:,:), p0p(:,:,:,:), dcp(:,:,:,:)
     real(kind=dp_t), pointer :: r0p(:,:,:,:)
-    integer :: lo(delta_p_term(1)%dim),hi(delta_p_term(1)%dim),i,dm,n
+    integer :: lo(delta_p_term(1)%dim),hi(delta_p_term(1)%dim),i,n
     integer :: ng_cc, ng_dp, ng_gb, ng_p0, ng_dc, ng_r0, ng_cn
     logical :: nodal(delta_p_term(1)%dim)
 
@@ -329,7 +327,6 @@ contains
 
     call build(bpt, "correct_hgrhs")
     
-    dm = delta_p_term(1)%dim
     nodal = .true.
 
     if(spherical .eq. 1) then

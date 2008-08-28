@@ -31,10 +31,9 @@ contains
     type(ml_layout), intent(inout) :: mla
 
     real(kind=dp_t), pointer:: sop(:,:,:,:)
-    integer :: lo(s(1)%dim),hi(s(1)%dim),ng,dm,i,n
+    integer :: lo(s(1)%dim),hi(s(1)%dim),ng,i,n
 
     ng = s(1)%ng
-    dm = s(1)%dim
 
     do n=1,nlevs
 
@@ -155,11 +154,10 @@ contains
 
 
     real(kind=dp_t), pointer:: uop(:,:,:,:)
-    integer :: lo(u(1)%dim),hi(u(1)%dim),ng,dm
+    integer :: lo(u(1)%dim),hi(u(1)%dim),ng
     integer :: i,n
 
     ng = u(1)%ng
-    dm = u(1)%dim
 
     do n=1,nlevs
 
@@ -216,14 +214,12 @@ contains
     real(kind=dp_t), intent(in   ) ::    s0_init(0:,:)
 
     ! local
-    integer ndum, j, dm
+    integer ndum, j
     parameter (ndum = 31)
 
     character(len=128) :: lamsolfile
     real(kind=dp_t) :: state1d(ndum)
     real(kind=dp_t) :: loloc,hiloc,flameloc
-
-    dm = size(dx)
 
     lamsolfile = 'flame_4.e7_screen_left.out'
 
@@ -253,14 +249,12 @@ contains
     real(kind=dp_t), intent(in   ) ::    s0_init(0:,:)
 
     ! local
-    integer ndum, k, dm
+    integer ndum, k
     parameter (ndum = 31)
 
     character(len=128) :: lamsolfile
     real(kind=dp_t) :: state1d(ndum)
     real(kind=dp_t) :: loloc,hiloc
-
-    dm = size(dx)
 
     lamsolfile = 'flame_4.e7_screen_left.out'
 
@@ -286,11 +280,10 @@ contains
     real(kind=dp_t), intent(in)    :: dx(:)
 
     real(kind=dp_t), pointer:: sop(:,:,:,:)
-    integer :: lo(s%dim),hi(s%dim),ng,dm
+    integer :: lo(s%dim),hi(s%dim),ng
     integer :: i,n
 
     ng = s%ng
-    dm = s%dim
 
     do i = 1, s%nboxes
        if ( multifab_remote(s, i) ) cycle

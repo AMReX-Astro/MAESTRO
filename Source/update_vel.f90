@@ -20,7 +20,7 @@ contains
     use ml_restriction_module
     use multifab_fill_ghost_module
     use multifab_physbc_module
-    use geometry, only: spherical
+    use geometry, only: spherical, dm
 
     integer           , intent(in   ) :: nlevs
     type(multifab)    , intent(in   ) :: uold(:)
@@ -38,7 +38,7 @@ contains
     type(bc_level)    , intent(in   ) :: the_bc_level(:)
 
     ! local
-    integer :: i,dm,n
+    integer :: i,n
     integer :: lo(uold(1)%dim),hi(uold(1)%dim)
     integer :: ng_uo,ng_un,ng_um,ng_ue,ng_sp,ng_f,ng_n,ng_w0
 
@@ -60,8 +60,6 @@ contains
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "update_velocity")
-
-    dm = uold(1)%dim
 
     ng_uo = uold(1)%ng
     ng_un = unew(1)%ng

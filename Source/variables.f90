@@ -20,9 +20,10 @@ module variables
 
 contains
 
-  subroutine init_variables(dm, nspec)
+  subroutine init_variables()
 
-    integer, intent(in) :: dm, nspec
+    use geometry, only: dm
+    use network, only: nspec
 
     rho_comp    = 1
     rhoh_comp   = 2
@@ -42,13 +43,11 @@ contains
 
   end subroutine init_variables
 
-  subroutine init_plot_variables(dm)
+  subroutine init_plot_variables()
 
     use network, only: nspec
     use probin_module, only: plot_spec, plot_trac, plot_base
-    use geometry, only: spherical
-
-    integer, intent(in) :: dm
+    use geometry, only: spherical, dm
 
     integer :: first_derive_comp
 

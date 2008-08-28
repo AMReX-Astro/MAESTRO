@@ -32,6 +32,7 @@ contains
     use multifab_physbc_module
     use fill_3d_module
     use thermal_conduct_module
+    use geometry, only: dm
 
     type(ml_layout), intent(inout) :: mla
     real(dp_t)     , intent(in   ) :: dx(:,:)
@@ -46,7 +47,7 @@ contains
     type(multifab) :: Tcoeff(mla%nlevel),hcoeff(mla%nlevel),pcoeff(mla%nlevel)
     type(multifab) :: resid(mla%nlevel)
 
-    integer                     :: i,comp,n,nlevs,dm,stencil_order
+    integer                     :: i,comp,n,nlevs,stencil_order
     integer                     :: ng_s,ng_T,ng_h,ng_X,ng_p,ng_cc,ng_fc
     integer                     :: lo(s(1)%dim),hi(s(1)%dim)
     real(kind=dp_t), pointer    :: sp(:,:,:,:)
@@ -60,7 +61,6 @@ contains
     call build(bpt, "make_explicit_thermal")
 
     nlevs = mla%nlevel
-    dm = mla%dim
     stencil_order = 2
 
     do n=1,nlevs

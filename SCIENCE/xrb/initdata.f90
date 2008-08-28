@@ -9,7 +9,7 @@ module init_module
   use eos_module
   use variables
   use network
-  use geometry, only: r_end_coord, spherical
+  use geometry, only: r_end_coord, spherical, dm
   use ml_layout_module
   use ml_restriction_module
   use multifab_fill_ghost_module
@@ -33,7 +33,7 @@ contains
     type(ml_layout), intent(inout) :: mla
 
     real(kind=dp_t), pointer:: sop(:,:,:,:)
-    integer :: lo(s(1)%dim),hi(s(1)%dim),ng,dm
+    integer :: lo(s(1)%dim),hi(s(1)%dim),ng
     integer :: i,n,r
 
     real(kind=dp_t), parameter :: he4_pert = 0.99d0
@@ -41,7 +41,6 @@ contains
     integer                    :: he4_comp, pert_index
     
     ng = s(1)%ng
-    dm = s(1)%dim
 
     ! compute the perturbation r location based on where the concentration of He
     ! becomes greater than he4_pert at the coarsest level
@@ -262,11 +261,10 @@ contains
     type(ml_layout), intent(inout) :: mla
 
     real(kind=dp_t), pointer:: uop(:,:,:,:)
-    integer :: lo(u(1)%dim),hi(u(1)%dim),ng,dm
+    integer :: lo(u(1)%dim),hi(u(1)%dim),ng
     integer :: i,n
     
     ng = u(1)%ng
-    dm = u(1)%dim
 
     do n=1,nlevs
        do i = 1, u(n)%nboxes
@@ -423,11 +421,10 @@ contains
     real(kind=dp_t), intent(in)    :: dx(:)
 
     real(kind=dp_t), pointer:: sop(:,:,:,:)
-    integer :: lo(s%dim),hi(s%dim),ng,dm
+    integer :: lo(s%dim),hi(s%dim),ng
     integer :: i
     
     ng = s%ng
-    dm = s%dim
 
     do i = 1, s%nboxes
        if ( multifab_remote(s, i) ) cycle

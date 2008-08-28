@@ -41,7 +41,8 @@ contains
   subroutine make_etarho_planar(nlevs,etarho,etarho_cc,div_etarho,etarhoflux,mla)
 
     use bl_constants_module
-    use geometry, only: spherical, nr_fine, r_start_coord, r_end_coord, numdisjointchunks, dr
+    use geometry, only: spherical, nr_fine, r_start_coord, r_end_coord, numdisjointchunks, &
+         dr, dm
     use restrict_base_module
 
     integer           , intent(in   ) :: nlevs
@@ -67,13 +68,12 @@ contains
 
     integer :: domlo(mla%dim),domhi(mla%dim)
     integer :: lo(mla%dim),hi(mla%dim)
-    integer :: i,r,rpert,n,dm,rr,ng_e
+    integer :: i,r,rpert,n,rr,ng_e
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "make_etarho")
 
-    dm = mla%dim
     ng_e = etarhoflux(1)%ng
 
     ! ncell is a function of r only for spherical

@@ -47,7 +47,7 @@ contains
     use add_react_to_thermal_module
     use variables, only: nscal, press_comp, temp_comp, rho_comp, rhoh_comp, foextrap_comp
     use geometry, only: spherical, nr_fine, r_end_coord, anelastic_cutoff_coord, &
-         base_cutoff_density_coord, burning_cutoff_density_coord
+         base_cutoff_density_coord, burning_cutoff_density_coord, dm
     use network, only: nspec
     use make_grav_module
     use make_eta_module
@@ -146,7 +146,7 @@ contains
     real(dp_t), allocatable :: gamma1bar_old(:,:)
     real(dp_t), allocatable :: delta_gamma1_termbar(:,:)
 
-    integer    :: r,n,dm,comp,nlevs,ng_s,proj_type
+    integer    :: r,n,comp,nlevs,ng_s,proj_type
     real(dp_t) :: halfdt,eps_in
     logical    :: nodal(mla%dim)
 
@@ -154,7 +154,6 @@ contains
 
     call build(bpt, "advance_timestep")
 
-    dm = mla%dim
     nlevs = mla%nlevel
 
     allocate(       grav_cell_nph(nlevs,0:nr_fine-1))

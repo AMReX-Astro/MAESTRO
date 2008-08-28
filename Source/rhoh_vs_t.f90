@@ -21,7 +21,7 @@ contains
 
     use bl_prof_module
     use bl_constants_module
-    use geometry, only: spherical, nr_fine
+    use geometry, only: spherical, nr_fine, dm
     use variables
     use network
     use fill_3d_module
@@ -38,7 +38,7 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     
     ! local
-    integer :: i,r,dm,n,ng_u,ng_se,ng_r0,ng_rh0
+    integer :: i,r,n,ng_u,ng_se,ng_r0,ng_rh0
     integer :: lo(u(1)%dim),hi(u(1)%dim)
     real(kind=dp_t), pointer :: sepx(:,:,:,:)
     real(kind=dp_t), pointer :: sepy(:,:,:,:)
@@ -55,7 +55,6 @@ contains
 
     call build(bpt, "makeHfromRhoT_edge")
 
-    dm = u(1)%dim
     ng_u = u(1)%ng
     ng_se = sedge(1,1)%ng  ! note we are assuming that ng is the same for all
                            ! directions
@@ -561,6 +560,7 @@ contains
     use ml_restriction_module, only: ml_cc_restriction_c
     use multifab_physbc_module
     use multifab_fill_ghost_module
+    use geometry, only: dm
 
     integer           , intent(in   ) :: nlevs
     type(multifab)    , intent(inout) :: s(:)
@@ -571,7 +571,7 @@ contains
     real(kind=dp_t)   , intent(in   ) :: dx(:,:)
 
     ! local
-    integer                  :: i,ng,dm,n
+    integer                  :: i,ng,n
     integer                  :: lo(s(1)%dim),hi(s(1)%dim)
     real(kind=dp_t), pointer :: snp(:,:,:,:)
 
@@ -579,7 +579,6 @@ contains
 
     call build(bpt, "makeTfromRhoH")
 
-    dm = s(1)%dim
     ng = s(1)%ng
 
     do n=1,nlevs
@@ -745,6 +744,7 @@ contains
     use ml_restriction_module, only: ml_cc_restriction_c
     use multifab_physbc_module
     use multifab_fill_ghost_module
+    use geometry, only: dm
 
     integer           , intent(in   ) :: nlevs
     type(multifab)    , intent(inout) :: s(:)
@@ -755,7 +755,7 @@ contains
     real(kind=dp_t)   , intent(in   ) :: dx(:,:)
 
     ! local
-    integer                  :: i,ng,dm,n
+    integer                  :: i,ng,n
     integer                  :: lo(s(1)%dim),hi(s(1)%dim)
     real(kind=dp_t), pointer :: snp(:,:,:,:)
 
@@ -763,7 +763,6 @@ contains
 
     call build(bpt, "makeTfromRhoP")
 
-    dm = s(1)%dim
     ng = s(1)%ng
 
     do n=1,nlevs
@@ -935,6 +934,7 @@ contains
     use ml_restriction_module, only: ml_cc_restriction_c
     use multifab_physbc_module
     use multifab_fill_ghost_module
+    use geometry, only: dm
 
     integer           , intent(in   ) :: nlevs
     type(multifab)    , intent(in   ) :: s(:)
@@ -945,7 +945,7 @@ contains
     real(kind=dp_t)   , intent(in   ) :: dx(:,:)
 
     ! local
-    integer                  :: i,ng_s,ng_p,dm,n
+    integer                  :: i,ng_s,ng_p,n
     integer                  :: lo(s(1)%dim),hi(s(1)%dim)
     real(kind=dp_t), pointer :: snp(:,:,:,:)
     real(kind=dp_t), pointer :: pnp(:,:,:,:)
@@ -954,7 +954,6 @@ contains
 
     call build(bpt, "makePfromRhoH")
 
-    dm = s(1)%dim
     ng_s = s(1)%ng
     ng_p = p(1)%ng
 
@@ -1126,6 +1125,7 @@ contains
     use multifab_fill_ghost_module
     use variables, only: rhoh_comp, temp_comp
     use multifab_physbc_module
+    use geometry, only: dm
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: s(:)
@@ -1135,11 +1135,10 @@ contains
 
     ! local
     real(kind=dp_t), pointer :: sop(:,:,:,:)
-    integer                  :: i,n,ng_s,dm
+    integer                  :: i,n,ng_s
     integer                  :: lo(s(1)%dim),hi(s(1)%dim)
 
     ng_s = s(1)%ng
-    dm = s(1)%dim
 
     do n=1,nlevs
        do i = 1, s(n)%nboxes
@@ -1281,6 +1280,7 @@ contains
     use multifab_fill_ghost_module
     use variables, only: rhoh_comp, rho_comp
     use multifab_physbc_module
+    use geometry, only: dm
 
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: s(:)
@@ -1290,11 +1290,10 @@ contains
 
     ! local
     real(kind=dp_t), pointer :: sop(:,:,:,:)
-    integer                  :: i,n,ng_s,dm
+    integer                  :: i,n,ng_s
     integer                  :: lo(s(1)%dim),hi(s(1)%dim)
 
     ng_s = s(1)%ng
-    dm = s(1)%dim
 
     do n=1,nlevs
        do i = 1, s(n)%nboxes

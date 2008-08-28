@@ -18,7 +18,8 @@ contains
 
   subroutine average(mla,phi,phibar,dx,incomp)
 
-    use geometry, only: nr_fine, r_start_coord, r_end_coord, spherical, numdisjointchunks
+    use geometry, only: nr_fine, r_start_coord, r_end_coord, spherical, numdisjointchunks, &
+         dm
     use bl_prof_module
     use bl_constants_module
     use restrict_base_module
@@ -35,7 +36,7 @@ contains
     type(box)                    :: domain
     integer                      :: domlo(phi(1)%dim),domhi(phi(1)%dim)
     integer                      :: lo(phi(1)%dim),hi(phi(1)%dim)
-    integer                      :: i,r,n,nlevs,ng,dm,rr
+    integer                      :: i,r,n,nlevs,ng,rr
     real(kind=dp_t), allocatable :: ncell_grid(:,:)
     real(kind=dp_t), allocatable :: ncell_proc(:,:)
     real(kind=dp_t), allocatable :: ncell(:,:)
@@ -51,7 +52,6 @@ contains
 
     call build(bpt, "average")
 
-    dm = phi(1)%dim
     ng = phi(1)%ng
     nlevs = size(dx,dim=1)
 

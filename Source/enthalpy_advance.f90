@@ -31,7 +31,7 @@ contains
     use pert_form_module
     use cell_to_edge_module
     use rhoh_vs_t_module
-    use geometry,      only: spherical, nr_fine
+    use geometry,      only: spherical, nr_fine, dm
     use variables,     only: nscal, temp_comp, rho_comp, rhoh_comp, foextrap_comp
     use probin_module, only: enthalpy_pred_type, use_thermal_diffusion, edge_nodal_flag, &
          verbose, use_tfromp
@@ -69,7 +69,7 @@ contains
     type(multifab) :: rhoh0_new_cart(mla%nlevel)
     type(multifab) :: p0_new_cart(mla%nlevel)
 
-    integer    :: velpred,comp,pred_comp,n,dm,nlevs
+    integer    :: velpred,comp,pred_comp,n,nlevs
     logical    :: is_vel
     real(dp_t) :: smin,smax
     logical    :: is_prediction
@@ -83,7 +83,6 @@ contains
 
     call build(bpt, "enthalpy_advance")
 
-    dm    = mla%dim
     nlevs = mla%nlevel
     is_vel  = .false.
     velpred = 0    

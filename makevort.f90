@@ -14,6 +14,7 @@ contains
   subroutine make_vorticity (vort,comp,u,dx,bc)
 
     use bl_prof_module
+    use geometry, only: dm
 
     integer        , intent(in   ) :: comp
     type(multifab) , intent(inout) :: vort
@@ -23,7 +24,7 @@ contains
 
     real(kind=dp_t), pointer:: up(:,:,:,:)
     real(kind=dp_t), pointer:: vp(:,:,:,:)
-    integer :: lo(u%dim),hi(u%dim),dm
+    integer :: lo(u%dim),hi(u%dim)
     integer :: i,ng_u,ng_v
 
     type(bl_prof_timer), save :: bpt
@@ -32,7 +33,6 @@ contains
 
     ng_u = u%ng
     ng_v = vort%ng
-    dm = u%dim
 
     do i = 1, u%nboxes
        if ( multifab_remote(u, i) ) cycle
@@ -646,6 +646,7 @@ contains
     use bc_module
     use bl_constants_module
     use variables, only: rho_comp
+    use geometry, only: dm
 
     integer        , intent(in   ) :: comp_magvel
     integer        , intent(in   ) :: comp_mom
@@ -655,13 +656,12 @@ contains
     real(kind=dp_t), pointer:: pp(:,:,:,:)
     real(kind=dp_t), pointer:: up(:,:,:,:)
     real(kind=dp_t), pointer:: sp(:,:,:,:)
-    integer :: lo(u%dim),hi(u%dim),dm
+    integer :: lo(u%dim),hi(u%dim)
     integer :: i,ng_u,ng_s,ng_p
 
     ng_u = u%ng
     ng_s = s%ng
     ng_p = plotdata%ng
-    dm = u%dim
 
     do i = 1, u%nboxes
        if ( multifab_remote(u, i) ) cycle
@@ -728,8 +728,7 @@ contains
 
     use bc_module
     use bl_constants_module
-
-    use geometry, only : spherical
+    use geometry, only : spherical, dm
 
     integer        , intent(in   ) :: n,comp_velplusw0
     type(multifab) , intent(inout) :: plotdata
@@ -741,10 +740,9 @@ contains
     real(kind=dp_t), pointer:: pp(:,:,:,:)
     real(kind=dp_t), pointer:: up(:,:,:,:)
     real(kind=dp_t), pointer:: np(:,:,:,:)
-    integer :: lo(u%dim),hi(u%dim),ng_p,ng_u,ng_n,dm
+    integer :: lo(u%dim),hi(u%dim),ng_p,ng_u,ng_n
     integer :: i
 
-    dm = u%dim
     ng_u = u%ng
     ng_p = plotdata%ng
     ng_n = normal%ng
@@ -868,10 +866,9 @@ contains
     real(kind=dp_t), pointer:: pp(:,:,:,:)
     real(kind=dp_t), pointer:: up(:,:,:,:)
     real(kind=dp_t), pointer:: np(:,:,:,:)
-    integer :: lo(u%dim),hi(u%dim),ng_p,ng_u,ng_n,dm
+    integer :: lo(u%dim),hi(u%dim),ng_p,ng_u,ng_n
     integer :: i
 
-    dm = u%dim
     ng_u = u%ng
     ng_p = plotdata%ng
     ng_n = normal%ng

@@ -21,7 +21,7 @@ contains
 
     use bl_prof_module
     use bl_constants_module
-    use geometry, only: spherical
+    use geometry, only: spherical, dm
     use ml_restriction_module, only: ml_edge_restriction_c
     use variables, only: nscal
 
@@ -46,7 +46,7 @@ contains
     type(box) :: domain
 
     integer :: domlo(sold(1)%dim),domhi(sold(1)%dim)
-    integer :: i,dm,n
+    integer :: i,n
     integer :: lo(sold(1)%dim),hi(sold(1)%dim)
     integer :: ng_sf,ng_se,ng_um,ng_ro,ng_rn,ng_ho,ng_hn,ng_w0
 
@@ -71,8 +71,6 @@ contains
 
     call build(bpt, "mkflux")
 
-    dm = sold(1)%dim
-    
     ng_sf = sflux(1,1)%ng
     ng_se = sedge(1,1)%ng
     ng_um = umac(1,1)%ng

@@ -29,7 +29,7 @@ contains
     use pert_form_module
     use cell_to_edge_module
     use network,       only: nspec, spec_names
-    use geometry,      only: spherical, nr_fine
+    use geometry,      only: spherical, nr_fine, dm
     use variables,     only: nscal, ntrac, spec_comp, rho_comp, trac_comp, foextrap_comp
     use probin_module, only: verbose
     use modify_scal_force_module
@@ -58,7 +58,7 @@ contains
     type(multifab) :: rho0_new_cart(mla%nlevel)
     type(multifab) :: p0_new_cart(mla%nlevel)
 
-    integer    :: comp,n,dm,nlevs
+    integer    :: comp,n,nlevs
     logical    :: is_vel
     real(dp_t) :: smin,smax
 
@@ -69,7 +69,6 @@ contains
 
     call build(bpt, "density_advance")
 
-    dm    = mla%dim
     nlevs = mla%nlevel
     is_vel  = .false.
 

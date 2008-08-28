@@ -30,7 +30,7 @@ contains
                              prob_lo_z, prob_hi_x, prob_hi_y, prob_hi_z, &
                              small_temp, small_dens, grav_const
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp, ntrac
-    use geometry, only: dr, spherical, r_start_coord, r_end_coord, numdisjointchunks
+    use geometry, only: dr, spherical, r_start_coord, r_end_coord, numdisjointchunks, dm
     
     integer           , intent(in   ) :: n
     character(len=256), intent(in   ) :: model_file
@@ -62,7 +62,7 @@ contains
     character(len=MAX_VARNAME_LENGTH), allocatable :: varnames_stored(:)
     logical :: found
 
-    integer :: ipos,dm
+    integer :: ipos
     character (len=256) :: header_line
 
     type(bl_prof_timer), save :: bpt
@@ -76,8 +76,6 @@ contains
     call build(bpt, "init_base_state")
 
     do_diag = .false.
-
-    dm = size(dx,dim=1)
 
     ! open the model file and read in the header
     ! the model file is assumed to be of the follow form:

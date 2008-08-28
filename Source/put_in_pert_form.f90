@@ -21,7 +21,7 @@ contains
 
   subroutine put_in_pert_form(mla,s,base,dx,comp,flag,the_bc_level)
 
-    use geometry, only: spherical
+    use geometry, only: spherical, dm
     use variables, only: foextrap_comp, nscal
     use ml_layout_module
     use define_bc_module
@@ -40,9 +40,8 @@ contains
     ! Local variables
     real(kind=dp_t), pointer::  sp(:,:,:,:)
     integer :: lo(s(1)%dim),hi(s(1)%dim)
-    integer :: i,ng,dm,nlevs,n,bc_comp
+    integer :: i,ng,nlevs,n,bc_comp
 
-    dm    = mla%dim
     nlevs = mla%nlevel
 
     ng    = s(1)%ng
