@@ -11,7 +11,7 @@ module fill_3d_module
   
   public :: put_1d_array_on_cart,  put_1d_array_on_cart_3d_sphr
   public :: put_w0_on_edges, put_w0_on_edges_3d_sphr
-  public :: make_3d_normal
+  public :: make_normal
   
 contains  
 
@@ -809,7 +809,35 @@ contains
 
   end subroutine put_w0_on_edges_3d_sphr
 
-  subroutine make_3d_normal(normal,lo,hi,dx,ng)
+  subroutine make_normal(nlevs,normal,dx)
+
+    use geometry, only: spherical, dm
+
+    integer,         intent(in   ) :: nlevs
+    type(multifab) , intent(inout) :: normal(:)
+    real(kind=dp_t), intent(in   ) :: dx(:,:)
+        
+    integer             :: lo(dm),hi(dm)
+    integer             :: n,i,ng_n
+    real(dp_t), pointer :: nop(:,:,:,:)
+        
+    ng_n = normal(1)%ng
+
+    if (spherical .eq. 1) then
+       do n = 1,nlevs
+          do i = 1, normal(n)%nboxes
+             if ( multifab_remote(normal(n), i) ) cycle
+             nop => dataptr(normal(n), i)
+             lo =  lwb(get_box(normal(n), i))
+             hi =  upb(get_box(normal(n), i))
+             call make_normal_3d_sphr(nop(:,:,:,:),lo,hi,dx(n,:),ng_n)
+          end do
+       end do
+    end if
+
+  end subroutine make_normal
+
+  subroutine make_normal_3d_sphr(normal,lo,hi,dx,ng)
 
     use bl_constants_module
     use geometry, only: spherical, center
@@ -842,6 +870,6 @@ contains
       call bl_error('SHOULDNT CALL MAKE_3D_NORMAL WITH SPHERICAL = 0')
     end if
 
-  end subroutine make_3d_normal
+  end subroutine make_normal_3d_sphr
 
 end module fill_3d_module
