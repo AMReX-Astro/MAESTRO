@@ -1,0 +1,14 @@
+#PBS -q debug
+#PBS -l feature=quad
+#PBS -l mppwidth=64
+#PBS -l mppnppn=4
+#PBS -l walltime=00:30:00
+#PBS -j eo
+
+cd $PBS_O_WORKDIR
+
+echo Starting `date`
+
+aprun -n 64 -N 4 ./main.Linux.PathScale.mpi.exe inputs_2d_5cm > output.txt
+
+echo Ending `date`
