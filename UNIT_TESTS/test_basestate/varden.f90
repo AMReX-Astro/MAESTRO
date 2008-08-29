@@ -52,6 +52,7 @@ subroutine varden()
   real(dp_t), allocatable :: psi(:,:)
   real(dp_t), allocatable :: etarho(:,:)
   real(dp_t), allocatable :: etarho_cc(:,:)
+  real(dp_t), allocatable :: div_etarho(:,:)
   real(dp_t), allocatable :: f(:,:)
   real(dp_t), allocatable :: Sbar_in(:,:)
   real(dp_t), allocatable :: delta_p0_ptherm_bar(:,:)
@@ -71,18 +72,17 @@ subroutine varden()
   character (len=10) base_state_name
 
   call probin_init()
+  call init_dm(1)
+  call init_spherical(spherical_in)
+
+  call init_variables()
+
+  call network_init()
+  call eos_init(use_eos_coulomb=use_eos_coulomb)
 
   nlevs = 1
 
-  call init_spherical(spherical_in)
-  call init_dm(1)
-
   center(1) = ZERO
-
-
-  call init_variables(dm, nspec)
-  call network_init()
-  call eos_init(use_eos_coulomb=use_eos_coulomb)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! define the grid spacing on all levels
@@ -119,6 +119,7 @@ subroutine varden()
   allocate(                psi(nlevs,0:nr_fine-1))
   allocate(             etarho(nlevs,0:nr_fine))
   allocate(          etarho_cc(nlevs,0:nr_fine-1))
+  allocate(         div_etarho(nlevs,0:nr_fine-1))
   allocate(                  f(nlevs,0:nr_fine))
   allocate(            Sbar_in(nlevs,0:nr_fine-1))
   allocate(delta_p0_ptherm_bar(nlevs,0:nr_fine-1))
@@ -134,6 +135,7 @@ subroutine varden()
   psi(:,:) = ZERO
   etarho(:,:) = ZERO
   etarho_cc(:,:) = ZERO
+  div_etarho(:,:) = ZERO
   delta_p0_ptherm_bar(:,:) = ZERO
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -227,8 +229,8 @@ subroutine varden()
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      w0(:,:) = ZERO
 
-     call make_w0(nlevs,w0,w0_old,f,Sbar_in,s0(:,:,rho_comp),s0(:,:,rho_comp),p0,p0, &
-                  gam1,gam1,delta_p0_ptherm_bar,psi,etarho,etarho_cc,dt,dtold)
+     call make_w0(w0,w0_old,f,Sbar_in,s0(:,:,rho_comp),s0(:,:,rho_comp),p0,p0, &
+                  gam1,gam1,delta_p0_ptherm_bar,psi,etarho,etarho_cc,div_etarho,dt,dtold)
   
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -238,8 +240,7 @@ subroutine varden()
         call make_grav_cell(n,grav_cell(n,:),s0(n,:,rho_comp))
      enddo
 
-     call make_div_coeff(nlevs,div_coeff,s0(:,:,rho_comp),p0, &
-                         gam1,grav_cell)     
+     call make_div_coeff(div_coeff,s0(:,:,rho_comp),p0,gam1,grav_cell)     
 
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -253,7 +254,7 @@ subroutine varden()
 
      which_step = 1
 
-     call advect_base(nlevs,w0,Sbar_in,p0_old,p0, &
+     call advect_base(w0,Sbar_in,p0_old,p0, &
                       s0_old(:,:,rho_comp),s0(:,:,rho_comp), &
                       s0_old(:,:,rhoh_comp),s0(:,:,rhoh_comp), &
                       gam1,div_coeff, &
@@ -276,9 +277,9 @@ subroutine varden()
         force = ZERO
 
         if (spherical .eq. 0) then
-           call make_edge_state_1d(1,X0,edge,w0,force,dx(:,1),dt)
+           call make_edge_state_1d(X0,edge,w0,force,dx(:,1),dt)
         else
-           call make_edge_state_1d(1,X0,edge,w0,force,dr,dt)
+           call make_edge_state_1d(X0,edge,w0,force,dr,dt)
         endif
 
         ! our final update needs (rho X)_0 on the edges, so compute
