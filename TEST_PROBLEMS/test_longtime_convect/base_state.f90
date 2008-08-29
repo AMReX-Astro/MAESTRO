@@ -19,7 +19,7 @@ contains
     use define_bc_module
     use bl_constants_module
     use eos_module
-    use probin_module, only: base_cutoff_density, anelastic_cutoff, prob_lo_y, prob_lo_z
+    use probin_module, only: base_cutoff_density, anelastic_cutoff, prob_lo
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp, ntrac
     use geometry, only: dr, nr, spherical, dm
 
@@ -199,11 +199,7 @@ contains
        print *,'DR , RMAX OF BASE ARRAY',dr(n), dble(nr(n)) * dr(n)
     end if
 
-    if (dm .eq. 2) then
-       starting_rad = prob_lo_y
-    else if(dm .eq. 3) then
-       starting_rad = prob_lo_z
-    endif
+    starting_rad = prob_lo(dm)
 
     j_cutoff = nr(n)
     max_speed = 0.d0

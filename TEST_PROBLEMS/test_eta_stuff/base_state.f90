@@ -19,8 +19,7 @@ contains
     use define_bc_module
     use bl_constants_module
     use eos_module
-    use probin_module, only: base_cutoff_density, anelastic_cutoff, grav_const, &
-                             prob_lo_y, prob_lo_z
+    use probin_module, only: base_cutoff_density, anelastic_cutoff, grav_const, prob_lo
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp, ntrac
     use geometry, only: dr, nr, spherical, dm
 
@@ -203,12 +202,8 @@ contains
       print *,'DR , RMAX OF BASE ARRAY',dr(n), dble(nr(n)) * dr(n)
     end if
 
-    if (dm .eq. 2) then
-       starting_rad = prob_lo_y
-    else if (dm .eq. 3) then
-       starting_rad = prob_lo_z
-    end if
-
+    starting_rad = prob_lo(dm)
+    
     do j = 0,nr(n)-1
 
          ! compute the coordinate height at this level

@@ -26,8 +26,7 @@ contains
     use define_bc_module
     use bl_constants_module
     use eos_module
-    use probin_module, only: base_cutoff_density, anelastic_cutoff, prob_lo_x, prob_lo_y, &
-                             prob_lo_z, prob_hi_x, prob_hi_y, prob_hi_z, &
+    use probin_module, only: base_cutoff_density, anelastic_cutoff, prob_lo, prob_hi, &
                              small_temp, small_dens, grav_const
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp, ntrac
     use geometry, only: dr, spherical, r_start_coord, r_end_coord, numdisjointchunks, dm
@@ -257,25 +256,13 @@ contains
     end if
 
     if (spherical .eq. 0) then
-       if (dm .eq. 1) then
-          starting_rad = prob_lo_x
-       else if (dm .eq. 2) then
-          starting_rad = prob_lo_y
-       else if (dm .eq. 3) then
-          starting_rad = prob_lo_z
-       endif
+       starting_rad = prob_lo(dm)
     else
        starting_rad = ZERO
     endif
 
     if (n .eq. 1) then
-       if (dm .eq. 1) then
-          base_cutoff_density_loc = prob_hi_x
-       else if (dm .eq. 2) then
-          base_cutoff_density_loc = prob_hi_y
-       else if (dm .eq. 3) then
-          base_cutoff_density_loc = prob_hi_z
-       end if
+       base_cutoff_density_loc = prob_hi(dm)
        prob_hi_r = base_cutoff_density_loc
     end if
 

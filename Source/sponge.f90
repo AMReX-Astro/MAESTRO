@@ -17,14 +17,14 @@ module sponge_module
 
 contains
 
-  subroutine init_sponge(rho0,prob_hi,dx,prob_lo_r)
+  subroutine init_sponge(rho0,dx,prob_lo_r)
 
     use geometry, only: dr, r_end_coord
     use bl_constants_module
-    use probin_module, only: anelastic_cutoff
+    use probin_module, only: anelastic_cutoff, prob_hi
 
     real(kind=dp_t), intent(in   ) :: rho0(0:),prob_lo_r
-    real(kind=dp_t), intent(in   ) :: prob_hi(:),dx(:)
+    real(kind=dp_t), intent(in   ) :: dx(:)
 
     real (kind = dp_t) :: rloc
     real (kind = dp_t) :: r_top
@@ -114,7 +114,7 @@ contains
   subroutine mk_sponge_2d(sponge,ng_sp,lo,hi,dx,dt)
 
     use bl_constants_module
-    use probin_module, only: prob_lo_y, sponge_kappa
+    use probin_module, only: prob_lo, sponge_kappa
 
     integer        , intent(in   ) ::  lo(:),hi(:), ng_sp
     real(kind=dp_t), intent(inout) :: sponge(lo(1)-ng_sp:,lo(2)-ng_sp:)
@@ -126,7 +126,7 @@ contains
     sponge = ONE
 
     do j = lo(2),hi(2)
-       y = prob_lo_y + (dble(j)+HALF)*dx(2)
+       y = prob_lo(2) + (dble(j)+HALF)*dx(2)
 
        if (y >= r_sp) then
           if (y < r_tp) then
@@ -145,7 +145,7 @@ contains
 
     use geometry, only: spherical, center
     use bl_constants_module
-    use probin_module, only: prob_lo_x, prob_lo_y, prob_lo_z, sponge_kappa
+    use probin_module, only: prob_lo, sponge_kappa
 
     integer        , intent(in   ) :: lo(:),hi(:), ng_sp
     real(kind=dp_t), intent(inout) :: sponge(lo(1)-ng_sp:,lo(2)-ng_sp:,lo(3)-ng_sp:)
@@ -158,7 +158,7 @@ contains
 
     if (spherical .eq. 0) then
        do k = lo(3),hi(3)
-          z = prob_lo_z + (dble(k)+HALF)*dx(3)
+          z = prob_lo(3) + (dble(k)+HALF)*dx(3)
           if (z >= r_sp) then
              if (z < r_tp) then
                 smdamp = HALF*(ONE - cos(M_PI*(z - r_sp)/(r_tp - r_sp)))
@@ -172,11 +172,11 @@ contains
     else
 
        do k = lo(3),hi(3)
-          z = prob_lo_z + (dble(k)+HALF)*dx(3)
+          z = prob_lo(3) + (dble(k)+HALF)*dx(3)
           do j = lo(2),hi(2)
-             y = prob_lo_y + (dble(j)+HALF)*dx(2)
+             y = prob_lo(2) + (dble(j)+HALF)*dx(2)
              do i = lo(1),hi(1)
-                x = prob_lo_x + (dble(i)+HALF)*dx(1)
+                x = prob_lo(1) + (dble(i)+HALF)*dx(1)
 
                 r = sqrt( (x-center(1))**2 + (y-center(2))**2 + (z-center(3))**2 )
 

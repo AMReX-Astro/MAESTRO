@@ -16,14 +16,14 @@ module sponge_module
 
 contains
 
-  subroutine init_sponge(rho0,prob_hi,dx,prob_lo_r)
+  subroutine init_sponge(rho0,dx,prob_lo_r)
 
     use geometry, only: dr, r_end_coord
     use bl_constants_module
-    use probin_module, only: anelastic_cutoff
+    use probin_module, only: anelastic_cutoff, prob_hi
 
     real(kind=dp_t), intent(in   ) :: rho0(0:),prob_lo_r
-    real(kind=dp_t), intent(in   ) :: prob_hi(:),dx(:)
+    real(kind=dp_t), intent(in   ) :: dx(:)
 
     real (kind = dp_t) :: rloc
     real (kind = dp_t) :: r_top
@@ -117,7 +117,7 @@ contains
   subroutine mk_sponge_2d(sponge,ng_sp,lo,hi,dx,dt)
 
     use bl_constants_module
-    use probin_module, only: prob_lo_y, xrb_use_bottom_sponge
+    use probin_module, only: prob_lo, xrb_use_bottom_sponge
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_sp
     real(kind=dp_t), intent(inout) :: sponge(lo(1)-ng_sp:,lo(2)-ng_sp:)
@@ -131,7 +131,7 @@ contains
     if (xrb_use_bottom_sponge) then
 
        do j = lo(2),hi(2)
-          y = prob_lo_y + (dble(j)+HALF)*dx(2)
+          y = prob_lo(2) + (dble(j)+HALF)*dx(2)
           if(y .le. botsponge_lo_r) then
              sponge(:,j) = spongemin
           else if(y .le. botsponge_hi_r) then
@@ -152,7 +152,7 @@ contains
     else
 
        do j = lo(2),hi(2)
-          y = prob_lo_y + (dble(j)+HALF)*dx(2)
+          y = prob_lo(2) + (dble(j)+HALF)*dx(2)
           if(y .le. topsponge_lo_r) then
              sponge(:,j) = ONE
           else if (y .le. topsponge_hi_r) then
@@ -171,7 +171,7 @@ contains
   subroutine mk_sponge_3d(sponge,ng_sp,lo,hi,dx,dt)
 
     use bl_constants_module
-    use probin_module, only: prob_lo_z, xrb_use_bottom_sponge
+    use probin_module, only: prob_lo, xrb_use_bottom_sponge
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_sp
     real(kind=dp_t), intent(inout) :: sponge(lo(1)-ng_sp:,lo(2)-ng_sp:,lo(3)-ng_sp:)
@@ -185,7 +185,7 @@ contains
     if (xrb_use_bottom_sponge) then
 
        do k = lo(3),hi(3)
-          z = prob_lo_z + (dble(k)+HALF)*dx(3)
+          z = prob_lo(3) + (dble(k)+HALF)*dx(3)
           if(z .le. botsponge_lo_r) then
              sponge(:,:,k) = spongemin
           else if(z .le. botsponge_hi_r) then
@@ -206,7 +206,7 @@ contains
     else
 
        do k = lo(3),hi(3)
-          z = prob_lo_z + (dble(k)+HALF)*dx(3)
+          z = prob_lo(3) + (dble(k)+HALF)*dx(3)
           if(z .le. topsponge_lo_r) then
              sponge(:,:,k) = ONE
           else if (z .le. topsponge_hi_r) then

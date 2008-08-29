@@ -87,7 +87,7 @@ contains
 
   subroutine initscalardata_2d(s,lo,hi,ng,dx,s0_init,p0_background)
 
-    use probin_module, only: prob_lo_x, prob_lo_y, perturb_model
+    use probin_module, only: prob_lo, perturb_model
 
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,:)  
@@ -122,10 +122,10 @@ contains
     ! add an optional perturbation
     if (perturb_model) then
        do j = lo(2), hi(2)
-          y = prob_lo_y + (dble(j)+HALF) * dx(2)
+          y = prob_lo(2) + (dble(j)+HALF) * dx(2)
        
           do i = lo(1), hi(1)
-             x = prob_lo_x + (dble(i)+HALF) * dx(1)
+             x = prob_lo(1) + (dble(i)+HALF) * dx(1)
           
              call perturb_2d(x, y, p0_background(j), s0_init(j,:), &
                              dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
@@ -143,7 +143,7 @@ contains
 
   subroutine initscalardata_3d(n,s,lo,hi,ng,dx,s0_init,p0_background)
 
-    use probin_module, only: prob_lo_x, prob_lo_y, prob_lo_z, perturb_model
+    use probin_module, only: prob_lo, perturb_model
 
     integer, intent(in) :: n, lo(:), hi(:), ng
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
@@ -244,13 +244,13 @@ contains
 
           ! add an optional perturbation
           do k = lo(3), hi(3)
-             z = prob_lo_z + (dble(k)+HALF) * dx(3)
+             z = prob_lo(3) + (dble(k)+HALF) * dx(3)
              
              do j = lo(2), hi(2)
-                y = prob_lo_y + (dble(j)+HALF) * dx(2)
+                y = prob_lo(2) + (dble(j)+HALF) * dx(2)
                 
                 do i = lo(1), hi(1)
-                   x = prob_lo_x + (dble(i)+HALF) * dx(1)
+                   x = prob_lo(1) + (dble(i)+HALF) * dx(1)
                    
                    call perturb_3d(x, y, z, p0_background(k), s0_init(k,:), &
                                    dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
@@ -358,8 +358,7 @@ contains
   ! "velpert_amplitude".
   subroutine initveldata_3d(u,lo,hi,ng,dx,s0_init,p0_background)
 
-    use probin_module, only: prob_lo_x, prob_lo_y, prob_lo_z, &
-         prob_hi_x, prob_hi_y, prob_hi_z, &
+    use probin_module, only: prob_lo, prob_hi, &
          velpert_amplitude, velpert_radius, velpert_steep, velpert_scale
 
     integer, intent(in) :: lo(:), hi(:), ng
@@ -440,9 +439,9 @@ contains
 
     ! define where center of star is
     ! this currently assumes the star is at the center of the domain
-    xc(1) = 0.5d0*(prob_lo_x+prob_hi_x)
-    xc(2) = 0.5d0*(prob_lo_y+prob_hi_y)
-    xc(3) = 0.5d0*(prob_lo_z+prob_hi_z)
+    xc(1) = 0.5d0*(prob_lo(1)+prob_hi(1))
+    xc(2) = 0.5d0*(prob_lo(2)+prob_hi(2))
+    xc(3) = 0.5d0*(prob_lo(3)+prob_hi(3))
 
     ! now do the big loop over all points in the domain
     do iloc = lo(1),hi(1)
@@ -453,9 +452,9 @@ contains
              upert = ZERO
 
              ! compute where we physically are
-             xloc(1) = prob_lo_x + (dble(iloc)+0.5d0)*dx(1)
-             xloc(2) = prob_lo_y + (dble(jloc)+0.5d0)*dx(2)
-             xloc(3) = prob_lo_z + (dble(kloc)+0.5d0)*dx(3)
+             xloc(1) = prob_lo(1) + (dble(iloc)+0.5d0)*dx(1)
+             xloc(2) = prob_lo(2) + (dble(jloc)+0.5d0)*dx(2)
+             xloc(3) = prob_lo(3) + (dble(kloc)+0.5d0)*dx(3)
 
              ! compute distance to the center of the star
              rloc = ZERO

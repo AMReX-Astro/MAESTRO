@@ -86,7 +86,7 @@ contains
 
   subroutine initscalardata_2d(s,lo,hi,ng,dx,s0_init,p0_background)
 
-    use probin_module, only: prob_lo_x, prob_lo_y, perturb_model
+    use probin_module, only: prob_lo, perturb_model
 
     integer           , intent(in   ) :: lo(:),hi(:),ng
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,:)  
@@ -119,10 +119,10 @@ contains
     ! add an optional perturbation
     if (perturb_model) then
        do j = lo(2), hi(2)
-          y = prob_lo_y + (dble(j)+HALF) * dx(2)
+          y = prob_lo(2) + (dble(j)+HALF) * dx(2)
           
           do i = lo(1), hi(1)
-             x = prob_lo_x + (dble(i)+HALF) * dx(1)
+             x = prob_lo(1) + (dble(i)+HALF) * dx(1)
           
              call perturb_2d(x, y, p0_background(j), s0_init(j,:), &
                              dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
@@ -140,7 +140,7 @@ contains
 
   subroutine initscalardata_3d(n,s,lo,hi,ng,dx,s0_init,p0_background)
 
-    use probin_module, only: prob_lo_x, prob_lo_y, prob_lo_z, perturb_model
+    use probin_module, only: prob_lo, perturb_model
     
     integer           , intent(in   ) :: n,lo(:),hi(:),ng
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
@@ -239,13 +239,13 @@ contains
 
           ! add an optional perturbation
           do k = lo(3), hi(3)
-             z = prob_lo_z + (dble(k)+HALF) * dx(3)
+             z = prob_lo(3) + (dble(k)+HALF) * dx(3)
              
              do j = lo(2), hi(2)
-                y = prob_lo_y + (dble(j)+HALF) * dx(2)
+                y = prob_lo(2) + (dble(j)+HALF) * dx(2)
                 
                 do i = lo(1), hi(1)
-                   x = prob_lo_x + (dble(i)+HALF) * dx(1)
+                   x = prob_lo(1) + (dble(i)+HALF) * dx(1)
                    
                    call perturb_3d(x, y, z, p0_background(k), s0_init(k,:), &
                                    dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)

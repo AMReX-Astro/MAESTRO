@@ -206,7 +206,7 @@ contains
 
   subroutine initveldata_2d(u,lo,hi,ng,dx,s0_init)
 
-    use probin_module, only: prob_lo_y
+    use probin_module, only: prob_lo
 
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(out) :: u(lo(1)-ng:,lo(2)-ng:,:)  
@@ -227,8 +227,8 @@ contains
 
     do j=lo(2),hi(2)
 
-       loloc = prob_lo_y +  dble(j)     *dx(dm) - flameloc
-       hiloc = prob_lo_y + (dble(j)+ONE)*dx(dm) - flameloc
+       loloc = prob_lo(2) +  dble(j)     *dx(dm) - flameloc
+       hiloc = prob_lo(2) + (dble(j)+ONE)*dx(dm) - flameloc
 
        call asin1d(lamsolfile, loloc, hiloc, state1d, ndum, .false.)
 
@@ -241,7 +241,7 @@ contains
 
   subroutine initveldata_3d(u,lo,hi,ng,dx,s0_init)
 
-    use probin_module, only: prob_lo_z
+    use probin_module, only: prob_lo
 
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(out) :: u(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
@@ -260,8 +260,8 @@ contains
 
     do k=lo(3),hi(3)
 
-       loloc = prob_lo_z +  dble(k)     *dx(dm)
-       hiloc = prob_lo_z + (dble(k)+ONE)*dx(dm)
+       loloc = prob_lo(3) +  dble(k)     *dx(dm)
+       hiloc = prob_lo(3) + (dble(k)+ONE)*dx(dm)
 
        call asin1d(lamsolfile, loloc, hiloc, state1d, ndum, .false.)
 

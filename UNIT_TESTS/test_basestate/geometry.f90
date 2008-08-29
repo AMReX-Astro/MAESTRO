@@ -59,7 +59,7 @@ contains
   subroutine init_geometry(center_in, nr_in, dr_in)
 
     use bl_constants_module
-    use probin_module, only: prob_lo_x
+    use probin_module, only: prob_lo
 
     real(dp_t)     , intent(in)    :: center_in(:)
     integer        , intent(in)    :: nr_in
@@ -71,7 +71,7 @@ contains
 
     nlevs = 1
 
-    base_lo = prob_lo_x
+    base_lo = prob_lo(1)
 
     allocate(numdisjointchunks(nlevs))
     numdisjointchunks(:) = 1

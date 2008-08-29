@@ -85,7 +85,7 @@ contains
 
   subroutine initscalardata_2d(s,lo,hi,ng,dx,s0_init,p0_init)
 
-    use probin_module, only: prob_lo_x, prob_lo_y, perturb_model
+    use probin_module, only: prob_lo, perturb_model
 
     integer           , intent(in   ) :: lo(:),hi(:),ng
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,:)  
@@ -118,10 +118,10 @@ contains
     ! add an optional perturbation
     if (perturb_model) then
        do j = lo(2), hi(2)
-          y = prob_lo_y + (dble(j)+HALF) * dx(2)
+          y = prob_lo(2) + (dble(j)+HALF) * dx(2)
           
           do i = lo(1), hi(1)
-             x = prob_lo_x + (dble(i)+HALF) * dx(1)
+             x = prob_lo(1) + (dble(i)+HALF) * dx(1)
           
              call perturb_2d(x, y, p0_init(j), s0_init(j,:), &
                              dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
@@ -139,7 +139,7 @@ contains
 
   subroutine initscalardata_3d(n,s,lo,hi,ng,dx,s0_init,p0_init)
 
-    use probin_module, only: prob_lo_x, prob_lo_y, prob_lo_z, perturb_model
+    use probin_module, only: prob_lo, perturb_model
     
     integer           , intent(in   ) :: n,lo(:),hi(:),ng
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
@@ -192,13 +192,13 @@ contains
 
           ! add an optional perturbation
           do k = lo(3), hi(3)
-             z = prob_lo_z + (dble(k)+HALF) * dx(3)
+             z = prob_lo(3) + (dble(k)+HALF) * dx(3)
              
              do j = lo(2), hi(2)
-                y = prob_lo_y + (dble(j)+HALF) * dx(2)
+                y = prob_lo(2) + (dble(j)+HALF) * dx(2)
                 
                 do i = lo(1), hi(1)
-                   x = prob_lo_x + (dble(i)+HALF) * dx(1)
+                   x = prob_lo(1) + (dble(i)+HALF) * dx(1)
                    
                    call perturb_3d(x, y, z, p0_init(k), s0_init(k,:), &
                                    dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
@@ -279,7 +279,7 @@ contains
 
   subroutine initveldata_2d(u,lo,hi,ng,dx,s0_init,p0_init)
 
-    use probin_module, only: prob_lo_x, prob_lo_y, prob_hi_x, prob_hi_y
+    use probin_module, only: prob_lo, prob_hi
 
     integer           , intent(in   ) :: lo(:),hi(:),ng
     real (kind = dp_t), intent(  out) :: u(lo(1)-ng:,lo(2)-ng:,:)  
@@ -299,12 +299,12 @@ contains
 
     do j = lo(2), hi(2)
        if (j .ge. hi(2)/8 .and. j .le. 3*hi(2)/8) then
-!           y = prob_lo_y + (dble(j) + half)*dx(2) / (prob_hi_y-prob_lo_y) - (hi(2)/8)*dx(2)
-            y = (dble(j) - hi(2)/8 + half)*dx(2) / (prob_hi_y-prob_lo_y)
+!           y = prob_lo(2) + (dble(j) + half)*dx(2) / (prob_hi(2)-prob_lo(2)) - (hi(2)/8)*dx(2)
+            y = (dble(j) - hi(2)/8 + half)*dx(2) / (prob_hi(2)-prob_lo(2))
             spy = sin(Pi*FOUR*y)
             cpy = cos(Pi*FOUR*y)
             do i = lo(1), hi(1)
-               x = prob_lo_x + (dble(i) + half)*dx(1) / (prob_hi_x-prob_lo_x)
+               x = prob_lo(1) + (dble(i) + half)*dx(1) / (prob_hi(1)-prob_lo(1))
 
                spx = sin(Pi*x)
                cpx = cos(Pi*x)

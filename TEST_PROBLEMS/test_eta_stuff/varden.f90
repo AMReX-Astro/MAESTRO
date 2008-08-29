@@ -43,7 +43,6 @@ subroutine varden()
   integer     , allocatable :: lo(:), hi(:)
   logical     , allocatable :: nodal(:)
   real(dp_t)  , allocatable :: dx(:,:)
-  real(dp_t)  , allocatable :: prob_lo(:),prob_hi(:)
   type(box)   , allocatable :: domain_boxes(:)
 
   type(ml_layout) :: mla
@@ -264,21 +263,6 @@ subroutine varden()
 
   allocate(dx(nlevs,dm))
 
-  prob_lo(1) = prob_lo_x
-  if (dm > 1) prob_lo(2) = prob_lo_y
-  if (dm > 2) prob_lo(3) = prob_lo_z
-  prob_hi(1) = prob_hi_x
-  if (dm > 1) prob_hi(2) = prob_hi_y
-  if (dm > 2) prob_hi(3) = prob_hi_z
-
-  if(spherical .eq. 1) then
-     do i=1,dm
-        if(prob_lo(i) .ne. ZERO) then
-           call bl_error('Error: prob_lo for spherical is not zero')
-        end if
-     end do
-  end if
-
   do i = 1, dm
      dx(1,i) = (prob_hi(i)-prob_lo(i)) / real(extent(mba%pd(1),i),kind=dp_t)
   end do
@@ -305,9 +289,9 @@ subroutine varden()
 
   if (spherical .eq. 1) then
      if (dr_base .gt. 0) then
-        lenx = HALF * (prob_hi_x - prob_lo_x)
-        leny = HALF * (prob_hi_y - prob_lo_y)
-        lenz = HALF * (prob_hi_z - prob_lo_z)
+        lenx = HALF * (prob_hi(1) - prob_lo(1))
+        leny = HALF * (prob_hi(2) - prob_lo(2))
+        lenz = HALF * (prob_hi(3) - prob_lo(3))
         max_dist = sqrt(lenx**2 + leny**2 + lenz**2)
         nr_fine = int(max_dist / dr_base) + 1
         if ( parallel_IOProcessor() ) then
@@ -1094,7 +1078,6 @@ subroutine varden()
   deallocate(rho_omegadot2)
   deallocate(vel_force,sponge,normal)
   deallocate(gpres,pres,hgrhs)
-  deallocate(prob_lo,prob_hi)
   deallocate(nodal)
   deallocate(dx)
   deallocate(domain_phys_bc,domain_boxes)

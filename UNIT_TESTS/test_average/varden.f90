@@ -36,8 +36,6 @@ subroutine varden()
   integer     , allocatable :: domain_phys_bc(:,:)
 
   real(dp_t)  , allocatable :: dx(:,:)
-  real(dp_t)  , allocatable :: prob_hi(:)
-  real(dp_t)  , allocatable :: prob_lo(:)
   type(ml_layout)           :: mla
   type(box)   , allocatable :: domain_boxes(:)
 
@@ -150,13 +148,6 @@ subroutine varden()
 
   allocate(dx(nlevs,dm))
 
-  prob_lo(1) = prob_lo_x
-  if (dm > 1) prob_lo(2) = prob_lo_y
-  if (dm > 2) prob_lo(3) = prob_lo_z
-  prob_hi(1) = prob_hi_x
-  if (dm > 1) prob_hi(2) = prob_hi_y
-  if (dm > 2) prob_hi(3) = prob_hi_z
-
   do i = 1, dm
      dx(1,i) = (prob_hi(i)-prob_lo(i)) / real(extent(mba%pd(1),i),kind=dp_t)
   end do
@@ -173,9 +164,9 @@ subroutine varden()
      ! for spherical, we will now require that dr_base = dx 
      dr_base = dx(1,nlevs)
 
-     lenx = HALF * (prob_hi_x - prob_lo_x)
-     leny = HALF * (prob_hi_y - prob_lo_y)
-     lenz = HALF * (prob_hi_z - prob_lo_z)
+     lenx = HALF * (prob_hi(1) - prob_lo(1))
+     leny = HALF * (prob_hi(2) - prob_lo(2))
+     lenz = HALF * (prob_hi(3) - prob_lo(3))
 
      max_dist = sqrt(lenx**2 + leny**2 + lenz**2)
      nr_fine = int(max_dist / dr_base) + 1

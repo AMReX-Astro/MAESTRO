@@ -65,7 +65,7 @@ contains
 
     use bl_constants_module
     use variables, only: rho_comp
-    use probin_module, only: prob_lo_x, prob_lo_y
+    use probin_module, only: prob_lo
 
     integer, intent(in) :: lo(:), hi(:), ng_s, ng_h
     real(kind=dp_t), intent(inout) :: rho_Hext(lo(1)-ng_h:,lo(2)-ng_h:)
@@ -87,13 +87,13 @@ contains
 
     if (time <= 200.0) then
 
-       y_layer = 7.5d7 + prob_lo_y
+       y_layer = 7.5d7 + prob_lo(2)
 
        do j = lo(2),hi(2)
-          y = (dble(j)+HALF)*dx(2) + prob_lo_y
+          y = (dble(j)+HALF)*dx(2) + prob_lo(2)
           ey = exp(-(y-y_layer)*(y-y_layer)/1.e14)
           do i = lo(1),hi(1)
-             x =  (dble(i)+HALF)*dx(1) + prob_lo_x
+             x =  (dble(i)+HALF)*dx(1) + prob_lo(1)
 
              rho_Hext(i,j) = ey*(ONE + &
                     0.00625_dp_t * sin(2*pi*x/L_x) &
@@ -117,7 +117,7 @@ contains
 
     use bl_constants_module
     use variables, only: rho_comp
-    use probin_module, only: prob_lo_x, prob_lo_y, prob_lo_z
+    use probin_module, only: prob_lo
 
     integer, intent(in) :: lo(:), hi(:), ng_s, ng_h
     real(kind=dp_t), intent(inout) :: rho_Hext(lo(1)-ng_h:,lo(2)-ng_h:,lo(3)-ng_h:)
@@ -151,11 +151,11 @@ contains
 
        do k = lo(3),hi(3)
           do j = lo(2),hi(2)
-             z = (dble(k)+HALF)*dx(3) + prob_lo_z
+             z = (dble(k)+HALF)*dx(3) + prob_lo(3)
              ez = exp(-(z-z_layer)*(z-z_layer)/1.e14)
              do i = lo(1),hi(1)
-                ! y = (dble(j)+HALF)*dx(2) + prob_lo_y
-                x = (dble(i)+HALF)*dx(1) + prob_lo_x
+                ! y = (dble(j)+HALF)*dx(2) + prob_lo(2)
+                x = (dble(i)+HALF)*dx(1) + prob_lo(1)
 
                 r0 = sqrt( (x-x0)**2 +(z-z0)**2 ) / 2.5e6
                 r1 = sqrt( (x-x1)**2 +(z-z1)**2 ) / 2.5e6

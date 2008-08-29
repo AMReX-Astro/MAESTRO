@@ -38,7 +38,6 @@ subroutine varden()
   real(dp_t) :: y_0
 
   real(dp_t), allocatable :: dx(:,:)
-  real(dp_t) :: prob_lo(1), prob_hi(1)
 
   real(dp_t), allocatable :: div_coeff_old(:,:)
   real(dp_t), allocatable :: div_coeff(:,:)
@@ -89,23 +88,18 @@ subroutine varden()
 ! define the grid spacing on all levels
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  prob_lo(1) = prob_lo_x
-  prob_hi(1) = prob_hi_x
-
-
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! allocate storage for the base state
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   ! we get the number of points for the base state directly from
   ! the model file and use this to set the resolution.  It should be
-  ! the case that prob_hi_x agrees with the maximum radius for the model
+  ! the case that prob_hi(1) agrees with the maximum radius for the model
   ! file.
   nr_fine = get_model_npts(model_file)
   print *, 'number of points in model file: ', nr_fine
 
-  dr_base = (prob_hi_x - prob_lo_x)/nr_fine
+  dr_base = (prob_hi(1) - prob_lo(1))/nr_fine
 
 
   allocate(dx(nlevs,1))

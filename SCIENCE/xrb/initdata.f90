@@ -13,7 +13,7 @@ module init_module
   use ml_layout_module
   use ml_restriction_module
   use multifab_fill_ghost_module
-  use probin_module, only: prob_lo_y, prob_lo_z
+  use probin_module, only: prob_lo
 
   implicit none
 
@@ -52,9 +52,9 @@ contains
        end if
     end do
     if(dm .eq. 2) then
-       pert_height = prob_lo_y + (dble(pert_index)+HALF)*dx(1,dm) + 50.0d0
+       pert_height = prob_lo(2) + (dble(pert_index)+HALF)*dx(1,dm) + 50.0d0
     else if(dm .eq. 3) then
-       pert_height = prob_lo_z + (dble(pert_index)+HALF)*dx(1,dm) + 50.0d0
+       pert_height = prob_lo(3) + (dble(pert_index)+HALF)*dx(1,dm) + 50.0d0
     end if
 
     do n=1,nlevs
@@ -105,9 +105,7 @@ contains
 
   subroutine initscalardata_2d(s,lo,hi,ng,dx,s0_init,p0_init,pert_height)
 
-    use probin_module, only: prob_lo_x, prob_hi_x,    &
-                             prob_lo_y,               &
-                             perturb_model
+    use probin_module, only: prob_lo, prob_hi, perturb_model
 
     integer           , intent(in   ) :: lo(:),hi(:),ng
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,:)  
@@ -144,14 +142,14 @@ contains
     ! add an optional perturbation
     if (perturb_model) then
 
-       xcen = (prob_lo_x + prob_hi_x) / TWO
+       xcen = (prob_lo(1) + prob_hi(1)) / TWO
        ycen = pert_height
 
        do j = lo(2), hi(2)
-          y = prob_lo_y + (dble(j)+HALF) * dx(2)
+          y = prob_lo(2) + (dble(j)+HALF) * dx(2)
           
           do i = lo(1), hi(1)
-             x = prob_lo_x + (dble(i)+HALF) * dx(1)
+             x = prob_lo(1) + (dble(i)+HALF) * dx(1)
           
              dist = sqrt((x-xcen)**2 + (y-ycen)**2)
 
@@ -171,10 +169,7 @@ contains
 
   subroutine initscalardata_3d(n,s,lo,hi,ng,dx,s0_init,p0_init,pert_height)
 
-    use probin_module, only: prob_lo_x, prob_hi_x,    &
-                             prob_lo_y, prob_hi_y,    &
-                             prob_lo_z,               &
-                             perturb_model
+    use probin_module, only: prob_lo, prob_hi, perturb_model
     
     integer           , intent(in   ) :: n,lo(:),hi(:),ng
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
@@ -217,19 +212,19 @@ contains
        
        if (perturb_model) then
 
-          xcen = (prob_lo_x + prob_hi_x) / TWO
-          ycen = (prob_lo_y + prob_hi_y) / TWO
+          xcen = (prob_lo(1) + prob_hi(1)) / TWO
+          ycen = (prob_lo(2) + prob_hi(2)) / TWO
           zcen = pert_height
 
           ! add an optional perturbation
           do k = lo(3), hi(3)
-             z = prob_lo_z + (dble(k)+HALF) * dx(3)
+             z = prob_lo(3) + (dble(k)+HALF) * dx(3)
              
              do j = lo(2), hi(2)
-                y = prob_lo_y + (dble(j)+HALF) * dx(2)
+                y = prob_lo(2) + (dble(j)+HALF) * dx(2)
                 
                 do i = lo(1), hi(1)
-                   x = prob_lo_x + (dble(i)+HALF) * dx(1)
+                   x = prob_lo(1) + (dble(i)+HALF) * dx(1)
 
                    dist = sqrt((x-xcen)**2 + (y-ycen)**2 + (z-zcen)**2)
                    
