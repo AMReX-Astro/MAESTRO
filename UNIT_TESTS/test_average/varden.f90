@@ -35,7 +35,6 @@ subroutine varden()
 
   integer     , allocatable :: domain_phys_bc(:,:)
 
-  logical     , allocatable :: pmask(:)
   real(dp_t)  , allocatable :: dx(:,:)
   real(dp_t)  , allocatable :: prob_hi(:)
   real(dp_t)  , allocatable :: prob_lo(:)
@@ -106,9 +105,6 @@ subroutine varden()
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! allocate storage for the state
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-  allocate(prob_lo(dm), prob_hi(dm), pmask(dm))
-  pmask = pmask_xyz(1:dm)
 
   if ( parallel_IOProcessor() ) &
        print *, 'pmask = ', pmask

@@ -41,7 +41,6 @@ subroutine varden()
 
   integer     , allocatable :: domain_phys_bc(:,:)
   integer     , allocatable :: lo(:), hi(:)
-  logical     , allocatable :: pmask(:)
   logical     , allocatable :: nodal(:)
   real(dp_t)  , allocatable :: dx(:,:)
   real(dp_t)  , allocatable :: prob_lo(:),prob_hi(:)
@@ -157,9 +156,6 @@ subroutine varden()
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! allocate storage for the state
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-  allocate(prob_lo(dm), prob_hi(dm), pmask(dm))
-  pmask = pmask_xyz(1:dm)
 
   if ( parallel_IOProcessor() ) &
        print *, 'pmask = ', pmask
@@ -1098,7 +1094,7 @@ subroutine varden()
   deallocate(rho_omegadot2)
   deallocate(vel_force,sponge,normal)
   deallocate(gpres,pres,hgrhs)
-  deallocate(prob_lo,prob_hi,pmask)
+  deallocate(prob_lo,prob_hi)
   deallocate(nodal)
   deallocate(dx)
   deallocate(domain_phys_bc,domain_boxes)
