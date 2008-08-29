@@ -296,6 +296,7 @@ contains
     use ml_restriction_module
     use multifab_fill_ghost_module
     use multifab_physbc_module
+    use probin_module, only: nodal
     
     integer        , intent(in   ) :: nlevs
     type(bc_tower),  intent(in   ) :: the_bc_tower
@@ -321,14 +322,11 @@ contains
     real(kind=dp_t), pointer :: r0p(:,:,:,:)
     integer :: lo(dm),hi(dm),i,n
     integer :: ng_cc, ng_dp, ng_gb, ng_p0, ng_dc, ng_r0, ng_cn
-    logical :: nodal(dm)
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "correct_hgrhs")
     
-    nodal = .true.
-
     if(spherical .eq. 1) then
        do n = 1, nlevs
           call multifab_build(gamma1bar_cart(n),delta_p_term(n)%la,1,0)

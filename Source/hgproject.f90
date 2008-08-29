@@ -24,7 +24,7 @@ contains
     use ml_solve_module
     use ml_restriction_module
     use multifab_fill_ghost_module
-    use probin_module, only: verbose, mg_verbose, cg_verbose, hg_dense_stencil
+    use probin_module, only: verbose, mg_verbose, cg_verbose, hg_dense_stencil, nodal
     use geometry, only: dm
 
     integer        , intent(in   ) :: proj_type
@@ -46,7 +46,6 @@ contains
     ! Local  
     type(multifab) :: phi(mla%nlevel)
     type(multifab) :: gphi(mla%nlevel)
-    logical        :: nodal(dm)
 
     integer                   :: n,nlevs,stencil_type
     real(dp_t)                :: umin,umax,vmin,vmax,wmin,wmax
@@ -56,7 +55,6 @@ contains
     call build(bpt, "hgproject")
 
     nlevs = mla%nlevel
-    nodal = .true.
     
     if (hg_dense_stencil) then
        stencil_type = ST_DENSE
@@ -797,7 +795,7 @@ contains
     use coeffs_module
     use ml_solve_module
     use nodal_divu_module
-    use probin_module, only : hg_bottom_solver, verbose, mg_verbose, cg_verbose
+    use probin_module, only : hg_bottom_solver, verbose, mg_verbose, cg_verbose, nodal
     use geometry, only: dm
 
     type(ml_layout), intent(inout) :: mla
@@ -836,7 +834,6 @@ contains
     integer :: n
     integer :: max_nlevel_in
     integer :: do_diagnostics
-    logical :: nodal(dm)
 
     type(bl_prof_timer), save :: bpt
 
@@ -845,7 +842,6 @@ contains
     !! Defaults:
 
     nlevs = mla%nlevel
-    nodal = .true.
 
     max_nlevel        = mgt(nlevs)%max_nlevel
     max_iter          = mgt(nlevs)%max_iter

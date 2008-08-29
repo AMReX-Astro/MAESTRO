@@ -148,7 +148,6 @@ contains
 
     integer    :: r,n,comp,nlevs,ng_s,proj_type
     real(dp_t) :: halfdt,eps_in
-    logical    :: nodal(dm)
 
     type(bl_prof_timer), save :: bpt
 
@@ -186,7 +185,6 @@ contains
     w0_old = w0
     gamma1bar_old = gamma1bar
 
-    nodal = .true.
     ng_s = sold(1)%ng
     halfdt = half*dt
 
@@ -256,7 +254,7 @@ contains
     if (dm .eq. 3) then
        do n=1,nlevs
           do comp=1,dm
-             call multifab_build(w0mac(n,comp),mla%la(n),1,1,nodal = edge_nodal_flag(comp,:))
+             call multifab_build(w0mac(n,comp),mla%la(n),1,1,nodal=edge_nodal_flag(comp,:))
              call setval(w0mac(n,comp), ZERO, all=.true.)
           end do
        end do
@@ -334,8 +332,8 @@ contains
 
     do n=1,nlevs
        do comp=1,dm
-          call multifab_build(  umac(n,comp), mla%la(n),1,1,nodal = edge_nodal_flag(comp,:))
-          call multifab_build(utrans(n,comp), mla%la(n),1,1,nodal = edge_nodal_flag(comp,:))
+          call multifab_build(  umac(n,comp), mla%la(n),1,1,nodal=edge_nodal_flag(comp,:))
+          call multifab_build(utrans(n,comp), mla%la(n),1,1,nodal=edge_nodal_flag(comp,:))
        end do
     end do
     
@@ -535,7 +533,7 @@ contains
 
     ! Build etarhoflux here so that we can call correct_base before make_etarho.
     do n=1,nlevs
-       call multifab_build(etarhoflux(n), mla%la(n), 1, nodal = edge_nodal_flag(dm,:))
+       call multifab_build(etarhoflux(n), mla%la(n), 1, nodal=edge_nodal_flag(dm,:))
        call setval(etarhoflux(n),ZERO,all=.true.)
     end do
 
