@@ -23,6 +23,7 @@ contains
                         bc_comp,divu_rhs,div_coeff_1d,div_coeff_half_1d,div_coeff_3d)
 
     use geometry, only: dm
+    use probin_module, only: nlevs
 
     type(ml_layout), intent(in   ) :: mla
     type(multifab ), intent(inout) :: umac(:,:)
@@ -41,14 +42,12 @@ contains
     type(bndry_reg) :: fine_flx(2:mla%nlevel)
 
     real(dp_t)                   :: umac_norm(mla%nlevel)
-    integer                      :: stencil_order,i,n,nlevs
+    integer                      :: stencil_order,i,n
     logical                      :: use_rhs, use_div_coeff_1d, use_div_coeff_3d
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "macproject")
-
-    nlevs = mla%nlevel
 
     use_rhs          = .false. ; if (present(divu_rhs)    ) use_rhs          = .true.
     use_div_coeff_1d = .false. ; if (present(div_coeff_1d)) use_div_coeff_1d = .true.
@@ -89,12 +88,12 @@ contains
     end do
 
     if (use_rhs) then
-       call divumac(nlevs,umac,rh,dx,mla%mba%rr,.true.,divu_rhs)
+       call divumac(umac,rh,dx,mla%mba%rr,.true.,divu_rhs)
     else
-       call divumac(nlevs,umac,rh,dx,mla%mba%rr,.true.)
+       call divumac(umac,rh,dx,mla%mba%rr,.true.)
     end if
 
-    call mk_mac_coeffs(nlevs,mla,rho,beta,the_bc_tower)
+    call mk_mac_coeffs(mla,rho,beta,the_bc_tower)
 
     if (use_div_coeff_1d) then
        do n = 1,nlevs
@@ -116,9 +115,9 @@ contains
     call mkumac(rh,umac,phi,beta,fine_flx,dx,the_bc_tower,bc_comp,mla%mba%rr)
 
     if (use_rhs) then
-       call divumac(nlevs,umac,rh,dx,mla%mba%rr,.false.,divu_rhs)
+       call divumac(umac,rh,dx,mla%mba%rr,.false.,divu_rhs)
     else
-       call divumac(nlevs,umac,rh,dx,mla%mba%rr,.false.)
+       call divumac(umac,rh,dx,mla%mba%rr,.false.)
     end if
 
     if (use_div_coeff_1d) then
@@ -159,13 +158,12 @@ contains
 
   contains
 
-    subroutine divumac(nlevs,umac,rh,dx,ref_ratio,before,divu_rhs)
+    subroutine divumac(umac,rh,dx,ref_ratio,before,divu_rhs)
 
       use ml_restriction_module, only: ml_cc_restriction, ml_edge_restriction
       use probin_module, only: verbose
       use geometry, only: dm
 
-      integer        , intent(in   ) :: nlevs
       type(multifab) , intent(inout) :: umac(:,:)
       type(multifab) , intent(inout) :: rh(:)
       real(kind=dp_t), intent(in   ) :: dx(:,:)
@@ -635,11 +633,10 @@ contains
 
     end subroutine mult_by_3d_coeff_3d
 
-    subroutine mk_mac_coeffs(nlevs,mla,rho,beta,the_bc_tower)
+    subroutine mk_mac_coeffs(mla,rho,beta,the_bc_tower)
 
       use geometry, only: dm
 
-      integer        , intent(in   ) :: nlevs
       type(ml_layout), intent(in   ) :: mla
       type(multifab ), intent(in   ) :: rho(:)
       type(multifab ), intent(inout) :: beta(:)
@@ -737,6 +734,7 @@ contains
 
       use ml_restriction_module, only: ml_edge_restriction
       use geometry, only: dm
+      use probin_module, only: nlevs
 
       type(multifab), intent(inout) :: umac(:,:)
       type(multifab), intent(inout) ::   rh(:)
@@ -748,7 +746,7 @@ contains
       integer       , intent(in   ) :: press_comp
       integer       , intent(in   ) :: ref_ratio(:,:)
 
-      integer :: i,nlevs
+      integer :: i
       integer :: ng_um,ng_p,ng_b
 
       type(bc_level)           :: bc
@@ -763,8 +761,6 @@ contains
       real(kind=dp_t), pointer :: hyp(:,:,:,:) 
       real(kind=dp_t), pointer :: lzp(:,:,:,:) 
       real(kind=dp_t), pointer :: hzp(:,:,:,:) 
-
-      nlevs = size(rh,dim=1)
 
       ng_um = umac(1,1)%ng
       ng_p = phi(1)%ng
@@ -1267,7 +1263,7 @@ contains
     use mg_module
     use coeffs_module
     use ml_solve_module
-    use probin_module, only : mg_bottom_solver, mg_verbose, cg_verbose
+    use probin_module, only : mg_bottom_solver, mg_verbose, cg_verbose, nlevs
     use geometry, only: dm
 
     type(ml_layout), intent(in   )        :: mla
@@ -1291,7 +1287,7 @@ contains
     type(imultifab) :: mm
     type(sparse)    :: sparse_object
     type(mg_tower)  :: mgt(mla%nlevel)
-    integer         :: i, ns, nlevs, test
+    integer         :: i, ns, test
 
     ! MG solver defaults
     integer :: bottom_solver, bottom_max_iter
@@ -1307,8 +1303,6 @@ contains
     call build(bpt, "mac_multigrid")
 
     !! Defaults:
-
-    nlevs = mla%nlevel
 
     test           = 0
 
@@ -1470,7 +1464,7 @@ contains
     use mg_module
     use coeffs_module
     use ml_cc_module, only: ml_cc_applyop
-    use probin_module, only: cg_verbose, mg_verbose
+    use probin_module, only: cg_verbose, mg_verbose, nlevs
     use geometry, only: dm
 
     type(ml_layout), intent(inout) :: mla
@@ -1493,7 +1487,7 @@ contains
     type(imultifab) :: mm
     type(sparse)    :: sparse_object
     type(mg_tower)  :: mgt(mla%nlevel)
-    integer         :: i, ns, nlevs
+    integer         :: i, ns
     integer         :: test
 
     ! MG solver defaults
@@ -1514,8 +1508,6 @@ contains
     call build(bpt, "mac_applyop")
 
     !! Defaults:
-
-    nlevs = mla%nlevel
     test  = 0
 
     max_nlevel        = mgt(nlevs)%max_nlevel

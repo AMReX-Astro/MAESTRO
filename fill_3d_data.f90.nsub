@@ -12,7 +12,7 @@ module fill_3d_module
   
 contains  
 
-  subroutine put_1d_array_on_cart(nlevs,s0,s0_cart,bc_comp,is_edge_centered,is_vector, &
+  subroutine put_1d_array_on_cart(s0,s0_cart,bc_comp,is_edge_centered,is_vector, &
                                   dx,the_bc_level,mla,interp_type,normal)
 
     use bl_prof_module
@@ -24,8 +24,8 @@ contains
     use ml_restriction_module, only: ml_cc_restriction_c
     use multifab_fill_ghost_module
     use variables, only: foextrap_comp
+    use probin_module, only: nlevs
     
-    integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(in   ) :: s0(:,0:)
     type(multifab) , intent(inout) :: s0_cart(:)
     integer        , intent(in   ) :: bc_comp

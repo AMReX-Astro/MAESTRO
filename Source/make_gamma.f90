@@ -16,7 +16,7 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine make_gamma(nlevs,mla,gamma,s,p0,tempbar,dx,the_bc_level)
+  subroutine make_gamma(mla,gamma,s,p0,tempbar,dx,the_bc_level)
 
     use variables, only: foextrap_comp
     use bl_prof_module
@@ -24,8 +24,8 @@ contains
     use multifab_physbc_module
     use multifab_fill_ghost_module
     use geometry, only: dm
+    use probin_module, only: nlevs
 
-    integer        , intent(in   ) :: nlevs
     type(ml_layout), intent(in   ) :: mla
     type(multifab) , intent(inout) :: gamma(:)
     type(multifab) , intent(in   ) :: s(:)

@@ -699,11 +699,11 @@ contains
 
   end subroutine correct_umac_grown_3d
 
-  subroutine create_umac_grown_onesided(nlevs,umac)
+  subroutine create_umac_grown_onesided(umac)
 
     use geometry, only: dm
+    use probin_module, only: nlevs
 
-    integer       , intent(in   ) :: nlevs
     type(multifab), intent(inout) :: umac(:,:)
 
     integer :: i,n,ng_um

@@ -30,7 +30,7 @@ subroutine varden()
 
   real(dp_t) :: lenx,leny,lenz,max_dist
   integer    :: k,ng_cell
-  integer    :: i, j, d, n, nlevs
+  integer    :: i, j, d, n
   integer    :: comp,bc_comp
 
   integer     , allocatable :: domain_phys_bc(:,:)

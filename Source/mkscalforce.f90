@@ -37,7 +37,7 @@ contains
     use multifab_fill_ghost_module
     use multifab_physbc_module
     use make_grav_module
-    use probin_module, only: enthalpy_pred_type
+    use probin_module, only: enthalpy_pred_type, nlevs
     use pred_parameters
 
     type(multifab) , intent(inout) :: scal_force(:)
@@ -53,7 +53,7 @@ contains
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     ! local
-    integer                  :: i,n,nlevs
+    integer                  :: i,n
     integer                  :: lo(dm),hi(dm)
     integer                  :: ng_f,ng_um,ng_th
     real(kind=dp_t), pointer :: ump(:,:,:,:)
@@ -72,8 +72,6 @@ contains
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "mkrhohforce")
-
-    nlevs = mla%nlevel
 
     ! if we are doing the prediction, then it only makes sense to be in
     ! this routine if the quantity we are predicting is (rho h)' or h
@@ -97,7 +95,7 @@ contains
     do n=1,nlevs
 
        if (spherical .eq. 1) then
-          call put_1d_array_on_cart(nlevs,p0_nph,p0_cart,foextrap_comp,.false.,.false.,&
+          call put_1d_array_on_cart(p0_nph,p0_cart,foextrap_comp,.false.,.false.,&
                                     dx,the_bc_level,mla)
        end if
 
@@ -421,6 +419,7 @@ contains
     use ml_restriction_module, only: ml_cc_restriction_c
     use multifab_fill_ghost_module
     use multifab_physbc_module
+    use probin_module, only: nlevs
 
     type(ml_layout), intent(in   ) :: mla
     type(multifab) , intent(inout) :: temp_force(:)
@@ -434,7 +433,7 @@ contains
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     ! local
-    integer         :: i,n,ng_f,ng_um,ng_s,ng_th,nlevs
+    integer         :: i,n,ng_f,ng_um,ng_s,ng_th
     type(multifab)  :: p0_cart(mla%nlevel)
     real(kind=dp_t) :: p0_nph(mla%nlevel,0:nr_fine-1)
     integer         :: lo(dm),hi(dm)
@@ -450,8 +449,6 @@ contains
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "mktempforce")
-
-    nlevs = mla%nlevel
 
     ng_f  = temp_force(1)%ng
     ng_um = umac(1,1)%ng

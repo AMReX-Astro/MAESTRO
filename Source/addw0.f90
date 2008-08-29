@@ -11,12 +11,12 @@ module addw0_module
 
 contains
 
-  subroutine addw0(nlevs,umac,w0,w0mac,mult)
+  subroutine addw0(umac,w0,w0mac,mult)
 
     use bl_prof_module
     use geometry, only: spherical, dm
-
-    integer        , intent(in   ) :: nlevs
+    use probin_module, only: nlevs
+    
     type(multifab) , intent(inout) :: umac(:,:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     type(multifab) , intent(in   ) :: w0mac(:,:)

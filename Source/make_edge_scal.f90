@@ -22,7 +22,7 @@ module make_edge_scal_module
   
 contains
 
-  subroutine make_edge_scal(nlevs,s,sedge,umac,force,normal, &
+  subroutine make_edge_scal(s,sedge,umac,force,normal, &
                             w0,w0mac, &
                             dx,dt,is_vel,the_bc_level, &
                             start_scomp,start_bccomp,num_comp,is_conservative,mla)
@@ -34,8 +34,8 @@ contains
     use fill_3d_module
     use multifab_physbc_module
     use ml_restriction_module, only : ml_edge_restriction_c
+    use probin_module, only: nlevs
 
-    integer        , intent(in   ) :: nlevs
     type(multifab) , intent(in   ) :: s(:)
     type(multifab) , intent(inout) :: sedge(:,:)
     type(multifab) , intent(in   ) :: umac(:,:)

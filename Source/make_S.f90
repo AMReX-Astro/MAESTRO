@@ -16,13 +16,13 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine make_S(nlevs,Source,delta_gamma1_term,delta_gamma1,state,u,rho_omegadot, &
+  subroutine make_S(Source,delta_gamma1_term,delta_gamma1,state,u,rho_omegadot, &
                     rho_Hext,thermal,p0,gamma1bar,delta_gamma1_termbar,psi,dx,mla, &
                     the_bc_level)
 
     use bl_constants_module
     use bl_prof_module
-    use probin_module, only: use_delta_gamma1_term
+    use probin_module, only: use_delta_gamma1_term, nlevs
     use ml_layout_module
     use average_module
     use ml_restriction_module
@@ -31,7 +31,6 @@ contains
     use variables, only: foextrap_comp
     use geometry, only: dm
 
-    integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: Source(:)
     type(multifab) , intent(inout) :: delta_gamma1_term(:)
     type(multifab) , intent(inout) :: delta_gamma1(:)

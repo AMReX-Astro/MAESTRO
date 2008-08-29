@@ -5,6 +5,7 @@ module hgproject_module
   use multifab_module
   use ml_layout_module
   use define_bc_module
+  use probin_module, only: nlevs
 
   implicit none
 
@@ -47,15 +48,13 @@ contains
     type(multifab) :: phi(mla%nlevel)
     type(multifab) :: gphi(mla%nlevel)
 
-    integer                   :: n,nlevs,stencil_type
+    integer                   :: n,stencil_type
     real(dp_t)                :: umin,umax,vmin,vmax,wmin,wmax
     logical                   :: use_div_coeff_1d, use_div_coeff_3d
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "hgproject")
 
-    nlevs = mla%nlevel
-    
     if (hg_dense_stencil) then
        stencil_type = ST_DENSE
     else
@@ -112,14 +111,14 @@ contains
 1003 format('... z-velocity before projection ',e17.10,2x,e17.10)
 1004 format(' ')
 
-    call create_uvec_for_projection(nlevs,unew,uold,rhohalf,gpres,dt,the_bc_tower,proj_type)
+    call create_uvec_for_projection(unew,uold,rhohalf,gpres,dt,the_bc_tower,proj_type)
 
     if (use_div_coeff_1d) then
-       call mult_by_1d_coeff(nlevs,unew,div_coeff_1d,.true.)
-       call mult_by_1d_coeff(nlevs,rhohalf,div_coeff_1d,.false.)
+       call mult_by_1d_coeff(unew,div_coeff_1d,.true.)
+       call mult_by_1d_coeff(rhohalf,div_coeff_1d,.false.)
     else if (use_div_coeff_3d) then
-       call mult_by_3d_coeff(nlevs,unew,div_coeff_3d,.true.)
-       call mult_by_3d_coeff(nlevs,rhohalf,div_coeff_3d,.false.)
+       call mult_by_3d_coeff(unew,div_coeff_3d,.true.)
+       call mult_by_3d_coeff(rhohalf,div_coeff_3d,.false.)
     end if
 
     if (present(divu_rhs)) then
@@ -140,20 +139,20 @@ contains
     end if
 
     if (use_div_coeff_1d) then
-       call mult_by_1d_coeff(nlevs,unew,div_coeff_1d,.false.)
-       call mult_by_1d_coeff(nlevs,rhohalf,div_coeff_1d,.true.)
+       call mult_by_1d_coeff(unew,div_coeff_1d,.false.)
+       call mult_by_1d_coeff(rhohalf,div_coeff_1d,.true.)
     else if (use_div_coeff_3d) then
-       call mult_by_3d_coeff(nlevs,unew,div_coeff_3d,.false.)
-       call mult_by_3d_coeff(nlevs,rhohalf,div_coeff_3d,.true.)
+       call mult_by_3d_coeff(unew,div_coeff_3d,.false.)
+       call mult_by_3d_coeff(rhohalf,div_coeff_3d,.true.)
     end if
 
     do n = 1, nlevs
        call multifab_build(gphi(n), mla%la(n), dm, 0)
     end do
 
-    call mkgphi(nlevs,gphi,phi,dx)
+    call mkgphi(gphi,phi,dx)
 
-    call hg_update(nlevs,proj_type,unew,uold,gpres,gphi,rhohalf,  &
+    call hg_update(proj_type,unew,uold,gpres,gphi,rhohalf,  &
                    pres,phi,dt,mla,the_bc_tower%bc_tower_array)
 
     do n = 1,nlevs
@@ -197,10 +196,9 @@ contains
 
     ! ******************************************************************************* !
 
-    subroutine create_uvec_for_projection(nlevs,unew,uold,rhohalf,gpres,dt,the_bc_tower, &
+    subroutine create_uvec_for_projection(unew,uold,rhohalf,gpres,dt,the_bc_tower, &
                                           proj_type)
 
-      integer        , intent(in   ) :: nlevs
       type(multifab) , intent(inout) :: unew(:)
       type(multifab) , intent(in   ) :: uold(:)
       type(multifab) , intent(in   ) :: rhohalf(:)
@@ -380,9 +378,8 @@ contains
 
     ! ******************************************************************************* !
 
-    subroutine mkgphi(nlevs,gphi,phi,dx)
+    subroutine mkgphi(gphi,phi,dx)
 
-      integer       , intent(in   ) :: nlevs
       type(multifab), intent(inout) :: gphi(:)
       type(multifab), intent(in   ) :: phi(:)
       real(dp_t) :: dx(:,:)
@@ -482,13 +479,12 @@ contains
 
     ! ******************************************************************************* !
 
-    subroutine hg_update(nlevs,proj_type,unew,uold,gpres,gphi,rhohalf,pres,phi,dt, &
+    subroutine hg_update(proj_type,unew,uold,gpres,gphi,rhohalf,pres,phi,dt, &
                          mla,the_bc_level)
 
       use multifab_physbc_module
       use variables, only: foextrap_comp
 
-      integer        , intent(in   ) :: nlevs
       integer        , intent(in   ) :: proj_type
       type(multifab) , intent(inout) :: unew(:)
       type(multifab) , intent(in   ) :: uold(:)
@@ -716,11 +712,10 @@ contains
       type(multifab) , intent(inout) :: divu_rhs(:)
       type(bc_tower) , intent(in   ) :: the_bc_tower
 
-      integer        :: i,n,ng,nlevs,ng_d
+      integer        :: i,n,ng,ng_d
       type(bc_level) :: bc
       real(kind=dp_t), pointer :: divp(:,:,:,:) 
 
-      nlevs = size(divu_rhs,dim=1)
       ng_d = divu_rhs(1)%ng
 
       do n = 1, nlevs
@@ -825,7 +820,7 @@ contains
     real(dp_t) :: eps
     real(dp_t) :: omega
 
-    integer :: i, nlevs, ns
+    integer :: i, ns
     integer :: bottom_solver, bottom_max_iter
     integer :: max_iter
     integer :: min_width
@@ -840,9 +835,6 @@ contains
     call build(bpt, "hg_multigrid")
 
     !! Defaults:
-
-    nlevs = mla%nlevel
-
     max_nlevel        = mgt(nlevs)%max_nlevel
     max_iter          = mgt(nlevs)%max_iter
     eps               = mgt(nlevs)%eps
@@ -1094,11 +1086,10 @@ contains
 
   !   ********************************************************************************** !
 
-  subroutine mult_by_1d_coeff(nlevs,u,div_coeff,do_mult)
+  subroutine mult_by_1d_coeff(u,div_coeff,do_mult)
 
     use geometry, only: dm
 
-    integer       , intent(in   )           :: nlevs
     type(multifab), intent(inout)           :: u(:)
     real(dp_t)    , intent(in   )           :: div_coeff(:,:)
     logical       , intent(in   ), optional :: do_mult
@@ -1182,11 +1173,10 @@ contains
 
   !   *********************************************************************************** !
 
-  subroutine mult_by_3d_coeff(nlevs,u,div_coeff,do_mult)
+  subroutine mult_by_3d_coeff(u,div_coeff,do_mult)
 
     use geometry, only: dm
 
-    integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: u(:)
     type(multifab) , intent(in   ) :: div_coeff(:)
     logical        , intent(in   ) :: do_mult

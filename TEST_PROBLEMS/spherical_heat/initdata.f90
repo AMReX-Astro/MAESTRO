@@ -22,9 +22,10 @@ module init_module
 
 contains
 
-  subroutine initscalardata(nlevs,s,s0_init,p0_background,dx,bc,mla)
+  subroutine initscalardata(s,s0_init,p0_background,dx,bc,mla)
 
-    integer        , intent(in   ) :: nlevs
+    use probin_module, only: nlevs
+
     type(multifab) , intent(inout) :: s(:)
     real(kind=dp_t), intent(in   ) :: s0_init(:,0:,:)
     real(kind=dp_t), intent(in   ) :: p0_background(:,0:)
@@ -269,9 +270,10 @@ contains
     
   end subroutine initscalardata_3d
 
-  subroutine initveldata(nlevs,u,s0_init,p0_background,dx,bc,mla)
+  subroutine initveldata(u,s0_init,p0_background,dx,bc,mla)
 
-    integer        , intent(in   ) :: nlevs
+    use probin_module, only: nlevs
+
     type(multifab) , intent(inout) :: u(:)
     real(kind=dp_t), intent(in   ) :: s0_init(:,0:,:)
     real(kind=dp_t), intent(in   ) :: p0_background(:,0:)

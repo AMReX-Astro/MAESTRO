@@ -14,7 +14,7 @@ module rhoh_vs_t_module
   
 contains
   
-  subroutine makeHfromRhoT_edge(nlevs,u,sedge, &
+  subroutine makeHfromRhoT_edge(u,sedge, &
                                 rho0_old,rhoh0_old,rho0_edge_old,rhoh0_edge_old, &
                                 rho0_new,rhoh0_new,rho0_edge_new,rhoh0_edge_new, &
                                 the_bc_level,dx)
@@ -26,8 +26,8 @@ contains
     use network
     use fill_3d_module
     use multifab_physbc_module
-    
-    integer        , intent(in   ) :: nlevs
+    use probin_module, only: nlevs
+
     type(multifab) , intent(in   ) :: u(:)
     type(multifab) , intent(inout) :: sedge(:,:)
     real(kind=dp_t), intent(in   ) :: rho0_old(:,0:),      rhoh0_old(:,0:)
@@ -553,7 +553,7 @@ contains
     
   end subroutine makeHfromRhoT_edge_3d_sphr
   
-  subroutine makeTfromRhoH(nlevs,s,p0,tempbar,mla,the_bc_level,dx)
+  subroutine makeTfromRhoH(s,p0,tempbar,mla,the_bc_level,dx)
 
     use variables,             only: temp_comp
     use bl_prof_module
@@ -561,8 +561,8 @@ contains
     use multifab_physbc_module
     use multifab_fill_ghost_module
     use geometry, only: dm
+    use probin_module, only: nlevs
 
-    integer           , intent(in   ) :: nlevs
     type(multifab)    , intent(inout) :: s(:)
     real (kind = dp_t), intent(in   ) :: p0(:,0:)
     real (kind = dp_t), intent(in   ) :: tempbar(:,0:)
@@ -737,7 +737,7 @@ contains
 
   end subroutine makeTfromRhoH_3d
 
-  subroutine makeTfromRhoP(nlevs,s,p0,tempbar,mla,the_bc_level,dx)
+  subroutine makeTfromRhoP(s,p0,tempbar,mla,the_bc_level,dx)
 
     use variables,             only: temp_comp
     use bl_prof_module
@@ -745,8 +745,8 @@ contains
     use multifab_physbc_module
     use multifab_fill_ghost_module
     use geometry, only: dm
+    use probin_module, only: nlevs
 
-    integer           , intent(in   ) :: nlevs
     type(multifab)    , intent(inout) :: s(:)
     real (kind = dp_t), intent(in   ) :: p0(:,0:)
     real (kind = dp_t), intent(in   ) :: tempbar(:,0:)
@@ -927,7 +927,7 @@ contains
 
   end subroutine makeTfromRhoP_3d
 
-  subroutine makePfromRhoH(nlevs,s,p,tempbar,mla,the_bc_level,dx)
+  subroutine makePfromRhoH(s,p,tempbar,mla,the_bc_level,dx)
 
     use variables,             only: foextrap_comp
     use bl_prof_module
@@ -935,8 +935,8 @@ contains
     use multifab_physbc_module
     use multifab_fill_ghost_module
     use geometry, only: dm
+    use probin_module, only: nlevs
 
-    integer           , intent(in   ) :: nlevs
     type(multifab)    , intent(in   ) :: s(:)
     type(multifab)    , intent(inout) :: p(:)
     real (kind = dp_t), intent(in   ) :: tempbar(:,0:)
@@ -1116,7 +1116,7 @@ contains
   end subroutine makePfromRhoH_3d
 
 
-  subroutine makeTHfromRhoP(nlevs,s,p0,bc,mla)
+  subroutine makeTHfromRhoP(s,p0,bc,mla)
 
     use multifab_module
     use ml_layout_module
@@ -1126,8 +1126,8 @@ contains
     use variables, only: rhoh_comp, temp_comp
     use multifab_physbc_module
     use geometry, only: dm
+    use probin_module, only: nlevs
 
-    integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: s(:)
     real(kind=dp_t), intent(in   ) :: p0(:,0:)
     type(bc_level) , intent(in   ) :: bc(:)
@@ -1271,7 +1271,7 @@ contains
 
   end subroutine makeTHfromRhoP_3d
 
-  subroutine makeRhoHfromTP(nlevs,s,p0,bc,mla)
+  subroutine makeRhoHfromTP(s,p0,bc,mla)
 
     use multifab_module
     use ml_layout_module
@@ -1281,8 +1281,8 @@ contains
     use variables, only: rhoh_comp, rho_comp
     use multifab_physbc_module
     use geometry, only: dm
+    use probin_module, only: nlevs
 
-    integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: s(:)
     real(kind=dp_t), intent(in   ) :: p0(:,0:)
     type(bc_level) , intent(in   ) :: bc(:)

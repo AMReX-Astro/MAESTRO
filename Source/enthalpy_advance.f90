@@ -34,7 +34,7 @@ contains
     use geometry,      only: spherical, nr_fine, dm
     use variables,     only: nscal, temp_comp, rho_comp, rhoh_comp, foextrap_comp
     use probin_module, only: enthalpy_pred_type, use_thermal_diffusion, edge_nodal_flag, &
-         verbose, use_tfromp
+         verbose, use_tfromp, nlevs
     use pred_parameters
     use modify_scal_force_module
     use convert_rhoX_to_X_module
@@ -69,7 +69,7 @@ contains
     type(multifab) :: rhoh0_new_cart(mla%nlevel)
     type(multifab) :: p0_new_cart(mla%nlevel)
 
-    integer    :: velpred,comp,pred_comp,n,nlevs
+    integer    :: velpred,comp,pred_comp,n
     logical    :: is_vel
     real(dp_t) :: smin,smax
     logical    :: is_prediction
@@ -83,7 +83,6 @@ contains
 
     call build(bpt, "enthalpy_advance")
 
-    nlevs = mla%nlevel
     is_vel  = .false.
     velpred = 0    
 
@@ -113,19 +112,19 @@ contains
           call build(p0_new_cart(n), sold(n)%la, 1, 1)          
        end do
 
-       call put_1d_array_on_cart(nlevs,rho0_old,rho0_old_cart,dm+rho_comp,.false., &
+       call put_1d_array_on_cart(rho0_old,rho0_old_cart,dm+rho_comp,.false., &
                                  .false.,dx,the_bc_level,mla)
-       call put_1d_array_on_cart(nlevs,rho0_new,rho0_new_cart,dm+rho_comp,.false., &
+       call put_1d_array_on_cart(rho0_new,rho0_new_cart,dm+rho_comp,.false., &
                                  .false.,dx,the_bc_level,mla)
-       call put_1d_array_on_cart(nlevs,p0_new,p0_new_cart,foextrap_comp,.false., &
+       call put_1d_array_on_cart(p0_new,p0_new_cart,foextrap_comp,.false., &
                                  .false.,dx,the_bc_level,mla)
 
 
        if (enthalpy_pred_type .eq. predict_T_then_rhohprime .or. &
            enthalpy_pred_type .eq. predict_rhohprime) then
-          call put_1d_array_on_cart(nlevs,rhoh0_old,rhoh0_old_cart,dm+rhoh_comp,.false., &
+          call put_1d_array_on_cart(rhoh0_old,rhoh0_old_cart,dm+rhoh_comp,.false., &
                                     .false.,dx,the_bc_level,mla)
-          call put_1d_array_on_cart(nlevs,rhoh0_new,rhoh0_new_cart,dm+rhoh_comp,.false., &
+          call put_1d_array_on_cart(rhoh0_new,rhoh0_new_cart,dm+rhoh_comp,.false., &
                                     .false.,dx,the_bc_level,mla)
        end if
     end if
@@ -133,9 +132,9 @@ contains
     ! This can be uncommented if you wish to compute T
     ! note -- not sure if p0_old or p0_new should be used here
     ! if (use_tfromp) then
-    !    call makeTfromRhoP(nlevs,sold,p0_old(:,:),tempbar(:,:),mla,the_bc_level,dx)
+    !    call makeTfromRhoP(sold,p0_old(:,:),tempbar(:,:),mla,the_bc_level,dx)
     ! else
-    !    call makeTfromRhoH(nlevs,sold,p0_old(:,:),tempbar(:,:),mla,the_bc_level,dx)
+    !    call makeTfromRhoH(sold,p0_old(:,:),tempbar(:,:),mla,the_bc_level,dx)
     ! end if
 
     ! if we are predicting h on the edges, then convert the state arrays
@@ -143,7 +142,7 @@ contains
     ! stuff need be converted, since that's all the prediction uses
 
     if (enthalpy_pred_type .eq. predict_h) then
-       call convert_rhoh_to_h(nlevs,sold,.true.,mla,the_bc_level)
+       call convert_rhoh_to_h(sold,.true.,mla,the_bc_level)
     end if
 
     !**************************************************************************
@@ -163,7 +162,7 @@ contains
                         thermal,umac,p0_old,p0_old,rho0_old,rho0_old,&
                         psi,dx,.true.,the_bc_level)
 
-       call modify_scal_force(nlevs,scal_force,sold,umac,rhoh0_old, &
+       call modify_scal_force(scal_force,sold,umac,rhoh0_old, &
                               rhoh0_edge_old,w0,dx,rhoh0_old_cart,rhoh_comp,mla,the_bc_level)
 
     else if (enthalpy_pred_type .eq. predict_h) then
@@ -191,7 +190,7 @@ contains
     !     Add w0 to MAC velocities (trans velocities already have w0).
     !**************************************************************************
 
-    call addw0(nlevs,umac,w0,w0mac,mult=ONE)
+    call addw0(umac,w0,w0mac,mult=ONE)
 
     !**************************************************************************
     !     Create the edge states of (rho h)' or h or T and (rho X)' or X and rho'
@@ -211,7 +210,7 @@ contains
        pred_comp = rhoh_comp
     end if
 
-    call make_edge_scal(nlevs,sold,sedge,umac,scal_force,normal, &
+    call make_edge_scal(sold,sedge,umac,scal_force,normal, &
                         w0,w0mac, &
                         dx,dt,is_vel,the_bc_level, &
                         pred_comp,dm+pred_comp,1,.false.,mla)
@@ -225,7 +224,7 @@ contains
     ! if we are predicting h at the edges, then restore the state arrays
     ! (and base state) from h to (rho h)
     if (enthalpy_pred_type .eq. predict_h) then
-       call convert_rhoh_to_h(nlevs,sold,.false.,mla,the_bc_level)
+       call convert_rhoh_to_h(sold,.false.,mla,the_bc_level)
     end if
 
     ! Compute enthalpy edge states if we were predicting temperature.  This
@@ -233,7 +232,7 @@ contains
 
     if ( (enthalpy_pred_type .eq. predict_T_then_rhohprime) .or. &
          (enthalpy_pred_type .eq. predict_T_then_h        ) ) then
-       call makeHfromRhoT_edge(nlevs,uold,sedge,rho0_old,rhoh0_old, &
+       call makeHfromRhoT_edge(uold,sedge,rho0_old,rhoh0_old, &
                                rho0_edge_old,rhoh0_edge_old, &
                                rho0_new,rhoh0_new, &
                                rho0_edge_new,rhoh0_edge_new,the_bc_level,dx)
@@ -243,7 +242,7 @@ contains
     !     Subtract w0 from MAC velocities.
     !**************************************************************************
 
-    call addw0(nlevs,umac,w0,w0mac,mult=-ONE)
+    call addw0(umac,w0,w0mac,mult=-ONE)
 
     !**************************************************************************
     !     Compute fluxes
@@ -254,7 +253,7 @@ contains
     if (which_step .eq. 1) then
 
        ! compute enthalpy fluxes
-       call mkflux(nlevs,sflux,sold,sedge,umac,w0,w0mac, &
+       call mkflux(sflux,sold,sedge,umac,w0,w0mac, &
                    rho0_old,rho0_edge_old,rho0_old_cart, &
                    rho0_old,rho0_edge_old,rho0_old_cart, &
                    rhoh0_old,rhoh0_edge_old,rhoh0_old_cart, &
@@ -264,7 +263,7 @@ contains
     else if (which_step .eq. 2) then
 
        ! compute enthalpy fluxes
-       call mkflux(nlevs,sflux,sold,sedge,umac,w0,w0mac, &
+       call mkflux(sflux,sold,sedge,umac,w0,w0mac, &
                    rho0_old,rho0_edge_old,rho0_old_cart, &
                    rho0_new,rho0_edge_new,rho0_new_cart, &
                    rhoh0_old,rhoh0_edge_old,rhoh0_old_cart, &
@@ -325,9 +324,9 @@ contains
 
     if (.not. use_thermal_diffusion) then
        if (use_tfromp) then
-          call makeTfromRhoP(nlevs,snew,p0_new(:,:),tempbar(:,:),mla,the_bc_level,dx)
+          call makeTfromRhoP(snew,p0_new(:,:),tempbar(:,:),mla,the_bc_level,dx)
        else
-          call makeTfromRhoH(nlevs,snew,p0_new(:,:),tempbar(:,:),mla,the_bc_level,dx)
+          call makeTfromRhoH(snew,p0_new(:,:),tempbar(:,:),mla,the_bc_level,dx)
        end if
     else
        do n=1,nlevs

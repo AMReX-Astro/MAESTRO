@@ -13,13 +13,13 @@ module mkutrans_module
 
 contains
 
-  subroutine mkutrans(nlevs,u,utrans,w0,w0mac,dx,dt,the_bc_level)
+  subroutine mkutrans(u,utrans,w0,w0mac,dx,dt,the_bc_level)
 
     use bl_prof_module
     use create_umac_grown_module
     use geometry, only: dm
+    use probin_module, only: nlevs
 
-    integer        , intent(in   ) :: nlevs
     type(multifab) , intent(in   ) :: u(:)
     type(multifab) , intent(inout) :: utrans(:,:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)

@@ -12,7 +12,7 @@ module react_base_module
   
 contains
   
-  subroutine react_base(nlevs,rhoh0_in,rho_omegadotbar,rho_Hextbar,halfdt_in,rhoh0_out)
+  subroutine react_base(rhoh0_in,rho_omegadotbar,rho_Hextbar,halfdt_in,rhoh0_out)
 
     use geometry, only: r_start_coord, r_end_coord, numdisjointchunks
     use network, only: nspec
@@ -20,8 +20,8 @@ contains
     use variables, only: rho_comp, spec_comp, rhoh_comp
     use bl_prof_module
     use restrict_base_module
+    use probin_module, only: nlevs
      
-    integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(in   ) :: rhoh0_in(:,0:)
     real(kind=dp_t), intent(in   ) :: rho_omegadotbar(:,0:,:)
     real(kind=dp_t), intent(in   ) :: rho_Hextbar(:,0:)
@@ -50,8 +50,8 @@ contains
        end do
     enddo ! end loop over levels
 
-    call restrict_base(nlevs,rhoh0_out,.true.)
-    call fill_ghost_base(nlevs,rhoh0_out,.true.)
+    call restrict_base(rhoh0_out,.true.)
+    call fill_ghost_base(rhoh0_out,.true.)
 
     call destroy(bpt)
 

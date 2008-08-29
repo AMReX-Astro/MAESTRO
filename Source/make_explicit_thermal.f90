@@ -33,6 +33,7 @@ contains
     use fill_3d_module
     use thermal_conduct_module
     use geometry, only: dm
+    use probin_module, only: nlevs
 
     type(ml_layout), intent(inout) :: mla
     real(dp_t)     , intent(in   ) :: dx(:,:)
@@ -47,7 +48,7 @@ contains
     type(multifab) :: Tcoeff(mla%nlevel),hcoeff(mla%nlevel),pcoeff(mla%nlevel)
     type(multifab) :: resid(mla%nlevel)
 
-    integer                     :: i,comp,n,nlevs,stencil_order
+    integer                     :: i,comp,n,stencil_order
     integer                     :: ng_s,ng_T,ng_h,ng_X,ng_p,ng_cc,ng_fc
     integer                     :: lo(dm),hi(dm)
     real(kind=dp_t), pointer    :: sp(:,:,:,:)
@@ -60,7 +61,6 @@ contains
 
     call build(bpt, "make_explicit_thermal")
 
-    nlevs = mla%nlevel
     stencil_order = 2
 
     do n=1,nlevs
@@ -262,7 +262,7 @@ contains
           call destroy(Xkcoeff(n))
        end do
        
-       call put_1d_array_on_cart(nlevs,p0,phi,foextrap_comp,.false.,.false., &
+       call put_1d_array_on_cart(p0,phi,foextrap_comp,.false.,.false., &
                                  dx,the_bc_tower%bc_tower_array,mla)       
 
        if (nlevs .eq. 1) then

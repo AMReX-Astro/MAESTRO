@@ -13,14 +13,14 @@ module heating_module
 
 contains
 
-  subroutine get_rho_Hext(nlevs,mla,s,rho_Hext,dx,time)
+  subroutine get_rho_Hext(mla,s,rho_Hext,dx,time)
 
     use multifab_module
     use ml_layout_module
     use ml_restriction_module
     use geometry, only: dm
+    use probin_module, only: nlevs
 
-    integer, intent(in) :: nlevs
     type(ml_layout), intent(in   ) :: mla
     type(multifab) , intent(in   ) :: s(:)
     type(multifab) , intent(inout) :: rho_Hext(:)

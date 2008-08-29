@@ -28,7 +28,7 @@ contains
     use macproject_module
     use network, only: nspec
     use rhoh_vs_t_module
-    use probin_module, ONLY: thermal_diffusion_type, use_tfromp
+    use probin_module, ONLY: thermal_diffusion_type, use_tfromp, nlevs
     use bl_prof_module
     use multifab_physbc_module
     use multifab_fill_ghost_module
@@ -58,7 +58,7 @@ contains
     real(kind=dp_t), pointer    :: hcoeff1p(:,:,:,:),hcoeff2p(:,:,:,:)
     real(kind=dp_t), pointer    :: Xkcoeff1p(:,:,:,:),Xkcoeff2p(:,:,:,:)
     real(kind=dp_t), pointer    :: pcoeff1p(:,:,:,:),pcoeff2p(:,:,:,:)
-    integer                     :: nlevs,stencil_order
+    integer                     :: stencil_order
     integer                     :: i,n,comp
     integer                     :: lo(dm),hi(dm)
     integer                     :: ng_s,ng_h,ng_X,ng_p,ng_cc,ng_fc
@@ -68,7 +68,6 @@ contains
 
     call build(bpt, "therm_cond_full_alg")
 
-    nlevs = mla%nlevel
     stencil_order = 2
 
     do n = 2,nlevs
@@ -345,7 +344,7 @@ contains
        call multifab_build(p0_oldfab(n), mla%la(n),  1, 1)
     end do
 
-    call put_1d_array_on_cart(nlevs,p0_old,p0_oldfab,foextrap_comp,.false.,.false., &
+    call put_1d_array_on_cart(p0_old,p0_oldfab,foextrap_comp,.false.,.false., &
                               dx,the_bc_tower%bc_tower_array,mla)
 
     if (nlevs .eq. 1) then
@@ -426,7 +425,7 @@ contains
        call multifab_build(p0_newfab(n), mla%la(n),  1, 1)
     end do
 
-    call put_1d_array_on_cart(nlevs,p0_new,p0_newfab,foextrap_comp,.false.,.false., &
+    call put_1d_array_on_cart(p0_new,p0_newfab,foextrap_comp,.false.,.false., &
                               dx,the_bc_tower%bc_tower_array,mla)
 
     if (nlevs .eq. 1) then
@@ -596,9 +595,9 @@ contains
 
     ! compute updated temperature
     if (use_tfromp) then
-       call makeTfromRhoP(nlevs,s2,p0_new,tempbar,mla,the_bc_tower%bc_tower_array,dx)
+       call makeTfromRhoP(s2,p0_new,tempbar,mla,the_bc_tower%bc_tower_array,dx)
     else
-       call makeTfromRhoH(nlevs,s2,p0_new,tempbar,mla,the_bc_tower%bc_tower_array,dx)
+       call makeTfromRhoH(s2,p0_new,tempbar,mla,the_bc_tower%bc_tower_array,dx)
     end if
 
     call destroy(bpt)
@@ -619,7 +618,7 @@ contains
     use multifab_physbc_module
     use multifab_fill_ghost_module
     use ml_restriction_module, only: ml_cc_restriction_c
-    use probin_module, only: use_tfromp
+    use probin_module, only: use_tfromp, nlevs
     use geometry, only: dm
 
     type(ml_layout), intent(inout) :: mla
@@ -643,7 +642,7 @@ contains
     real(kind=dp_t), pointer    :: hcoeff1p(:,:,:,:),hcoeff2p(:,:,:,:)
     real(kind=dp_t), pointer    :: Xkcoeff1p(:,:,:,:),Xkcoeff2p(:,:,:,:)
     real(kind=dp_t), pointer    :: pcoeff1p(:,:,:,:),pcoeff2p(:,:,:,:)
-    integer                     :: nlevs,stencil_order,i,n,comp
+    integer                     :: stencil_order,i,n,comp
     integer                     :: ng_s,ng_h,ng_X,ng_p,ng_cc,ng_fc
     integer                     :: lo(dm),hi(dm)
     type(bndry_reg)             :: fine_flx(2:mla%nlevel)
@@ -652,7 +651,6 @@ contains
 
     call build(bpt, "therm_cond_half_alg")
 
-    nlevs = mla%nlevel
     stencil_order = 2
 
     do n = 2,nlevs
@@ -838,7 +836,7 @@ contains
        call multifab_build(p0_oldfab(n), mla%la(n),  1, 1)
     end do
 
-    call put_1d_array_on_cart(nlevs,p0_old,p0_oldfab,foextrap_comp,.false.,.false., &
+    call put_1d_array_on_cart(p0_old,p0_oldfab,foextrap_comp,.false.,.false., &
                               dx,the_bc_tower%bc_tower_array,mla)
 
     if (nlevs .eq. 1) then
@@ -874,7 +872,7 @@ contains
        call multifab_build(p0_newfab(n), mla%la(n),  1, 1)
     end do
 
-    call put_1d_array_on_cart(nlevs,p0_new,p0_newfab,foextrap_comp,.false.,.false., &
+    call put_1d_array_on_cart(p0_new,p0_newfab,foextrap_comp,.false.,.false., &
                               dx,the_bc_tower%bc_tower_array,mla)
 
     if (nlevs .eq. 1) then
@@ -1020,9 +1018,9 @@ contains
 
     ! compute updated temperature
     if (use_tfromp) then
-       call makeTfromRhoP(nlevs,s2,p0_new,tempbar,mla,the_bc_tower%bc_tower_array,dx)
+       call makeTfromRhoP(s2,p0_new,tempbar,mla,the_bc_tower%bc_tower_array,dx)
     else
-       call makeTfromRhoH(nlevs,s2,p0_new,tempbar,mla,the_bc_tower%bc_tower_array,dx)
+       call makeTfromRhoH(s2,p0_new,tempbar,mla,the_bc_tower%bc_tower_array,dx)
     end if
 
 !!!!!!!!!!!!!!!!!!!!!!!
@@ -1400,9 +1398,9 @@ contains
 
     ! compute updated temperature
     if (use_tfromp) then
-       call makeTfromRhoP(nlevs,s2,p0_new,tempbar,mla,the_bc_tower%bc_tower_array,dx)
+       call makeTfromRhoP(s2,p0_new,tempbar,mla,the_bc_tower%bc_tower_array,dx)
     else
-       call makeTfromRhoH(nlevs,s2,p0_new,tempbar,mla,the_bc_tower%bc_tower_array,dx)
+       call makeTfromRhoH(s2,p0_new,tempbar,mla,the_bc_tower%bc_tower_array,dx)
     end if
 
     call destroy(bpt)

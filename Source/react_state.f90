@@ -13,7 +13,7 @@ module react_state_module
 
 contains
 
-  subroutine react_state (nlevs,mla,s_in,s_out,rho_omegadot,rho_Hext,dt,dx,the_bc_level,time)
+  subroutine react_state (mla,s_in,s_out,rho_omegadot,rho_Hext,dt,dx,the_bc_level,time)
 
     use variables, only: rho_comp, nscal, foextrap_comp
     use network, only: nspec
@@ -23,8 +23,8 @@ contains
     use multifab_fill_ghost_module
     use heating_module
     use geometry, only: dm
+    use probin_module, only: nlevs
 
-    integer        , intent(in   ) :: nlevs
     type(ml_layout), intent(in   ) :: mla
     type(multifab) , intent(in   ) :: s_in(:)
     type(multifab) , intent(inout) :: s_out(:)
@@ -51,7 +51,7 @@ contains
     ng_rw = rho_omegadot(1)%ng
     ng_he = rho_Hext(1)%ng
 
-    call get_rho_Hext(nlevs,mla,s_in,rho_Hext,dx,time)
+    call get_rho_Hext(mla,s_in,rho_Hext,dx,time)
 
     do n = 1, nlevs
        do i = 1, s_in(n)%nboxes

@@ -22,14 +22,14 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine make_macrhs(nlevs,macrhs,rho0,Source,delta_gamma1_term,Sbar,div_coeff,dx, &
+  subroutine make_macrhs(macrhs,rho0,Source,delta_gamma1_term,Sbar,div_coeff,dx, &
                          gamma1bar_old,gamma1bar_new,p0_old,p0_new,delta_p_term,dt)
 
     use bl_prof_module
     use bl_constants_module
     use geometry, only: dm
+    use probin_module, only: nlevs
 
-    integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: macrhs(:)
     real(kind=dp_t), intent(in   ) :: rho0(:,0:)
     type(multifab) , intent(in   ) :: Source(:)

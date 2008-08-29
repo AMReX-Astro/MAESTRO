@@ -23,6 +23,7 @@ contains
     use bl_prof_module
     use bl_constants_module
     use restrict_base_module
+    use probin_module, only: nlevs
 
     type(ml_layout), intent(in   ) :: mla
     integer        , intent(in   ) :: incomp
@@ -36,7 +37,7 @@ contains
     type(box)                    :: domain
     integer                      :: domlo(dm),domhi(dm)
     integer                      :: lo(dm),hi(dm)
-    integer                      :: i,r,n,nlevs,ng,rr
+    integer                      :: i,r,n,ng,rr
     real(kind=dp_t), allocatable :: ncell_grid(:,:)
     real(kind=dp_t), allocatable :: ncell_proc(:,:)
     real(kind=dp_t), allocatable :: ncell(:,:)
@@ -53,7 +54,6 @@ contains
     call build(bpt, "average")
 
     ng = phi(1)%ng
-    nlevs = size(dx,dim=1)
 
     phibar = ZERO
 
@@ -121,8 +121,8 @@ contains
           end do
 
           if (nlevs .ge. 2) then
-             call fill_ghost_base(nlevs,phibar,.true.)
-             call restrict_base(nlevs,phibar,.true.)
+             call fill_ghost_base(phibar,.true.)
+             call restrict_base(phibar,.true.)
           end if
 
        else

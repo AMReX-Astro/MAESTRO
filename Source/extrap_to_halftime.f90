@@ -18,15 +18,15 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine extrap_to_halftime(nlevs,mla,Source_nph,dSdt,Source_old,dt,the_bc_level)
+  subroutine extrap_to_halftime(mla,Source_nph,dSdt,Source_old,dt,the_bc_level)
     
     use variables, only: foextrap_comp
     use ml_restriction_module
     use multifab_physbc_module
     use multifab_fill_ghost_module
     use geometry, only: dm
+    use probin_module, only: nlevs
 
-    integer        , intent(in   ) :: nlevs
     type(ml_layout), intent(in   ) :: mla
     type(multifab) , intent(inout) :: Source_nph(:), dSdt(:), Source_old(:)
     real(kind=dp_t), intent(in   ) :: dt

@@ -24,6 +24,7 @@ contains
     use multifab_physbc_module
     use ml_restriction_module, only: ml_cc_restriction_c
     use multifab_fill_ghost_module
+    use probin_module, only: nlevs
 
     type(ml_layout)   , intent(inout) :: mla
     integer           , intent(in   ) :: nstart, nstop
@@ -46,14 +47,12 @@ contains
     real(kind=dp_t), pointer :: p0np(:,:,:,:)
 
     integer :: lo(dm),hi(dm)
-    integer :: i,n,nlevs
+    integer :: i,n
     integer :: ng_so,ng_sn,ng_sf,ng_f,ng_p
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "update_scal")
-
-    nlevs = mla%nlevel
 
     ng_so = sold(1)%ng
     ng_sn = snew(1)%ng

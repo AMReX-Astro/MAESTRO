@@ -15,7 +15,7 @@ module fill_3d_module
   
 contains  
 
-  subroutine put_1d_array_on_cart(nlevs,s0,s0_cart,bc_comp,is_edge_centered,is_vector, &
+  subroutine put_1d_array_on_cart(s0,s0_cart,bc_comp,is_edge_centered,is_vector, &
                                   dx,the_bc_level,mla,normal)
 
     use bl_prof_module
@@ -27,8 +27,8 @@ contains
     use ml_restriction_module, only: ml_cc_restriction_c
     use multifab_fill_ghost_module
     use variables, only: foextrap_comp
+    use probin_module, only: nlevs
     
-    integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(in   ) :: s0(:,0:)
     type(multifab) , intent(inout) :: s0_cart(:)
     integer        , intent(in   ) :: bc_comp
@@ -385,7 +385,7 @@ contains
 
     use bl_constants_module
     use geometry, only: spherical, nr_fine, dm
-    use probin_module, only: w0mac_interp_type
+    use probin_module, only: w0mac_interp_type, nlevs
     use variables, only: foextrap_comp,press_comp
     use define_bc_module
     use macproject_module
@@ -407,7 +407,7 @@ contains
     ! Local variables
     integer         :: lo(dm)
     integer         :: hi(dm)
-    integer         :: i,n,ng_w0,nlevs
+    integer         :: i,n,ng_w0
     real(kind=dp_t) :: w0rhs(mla%nlevel,0:nr_fine-1)
 
     ! Local pointers
@@ -418,8 +418,6 @@ contains
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "put_w0_on_edges")
-
-    nlevs = mla%nlevel
 
     if (dm.eq.2 .or. spherical.eq.0) &
        call bl_error('Error: only call put_w0_on_edges for spherical')
@@ -441,12 +439,12 @@ contains
 
        end do
 
-       call put_1d_array_on_cart(nlevs,div_coeff,div_coeff_3d,foextrap_comp,.false., &
+       call put_1d_array_on_cart(div_coeff,div_coeff_3d,foextrap_comp,.false., &
                                  .false.,dx,the_bc_tower%bc_tower_array,mla)
 
-       call mk_w0mac_rhs(nlevs,w0,div_coeff,w0rhs)
+       call mk_w0mac_rhs(w0,div_coeff,w0rhs)
 
-       call put_1d_array_on_cart(nlevs,w0rhs,w0rhs_3d,foextrap_comp,.false., &
+       call put_1d_array_on_cart(w0rhs,w0rhs_3d,foextrap_comp,.false., &
                                  .false.,dx,the_bc_tower%bc_tower_array,mla)
 
        call macproject(mla,w0mac,w0phi_3d,dummy_rho,dx,the_bc_tower, &
@@ -456,7 +454,7 @@ contains
 !      do n = 1,nlevs
 !         call setval(w0rhs_3d(n), ZERO, all=.true.)
 !      end do
-!      call mk_div_beta0_w0mac(nlevs,w0mac,div_coeff_3d,w0rhs_3d,dx)
+!      call mk_div_beta0_w0mac(w0mac,div_coeff_3d,w0rhs_3d,dx)
 !      call fabio_ml_multifab_write_d(w0rhs_3d,mla%mba%rr(:,1),"a_divbw")
 
        do n=1,nlevs
@@ -487,11 +485,11 @@ contains
 
   end subroutine put_w0_on_edges
 
-  subroutine mk_w0mac_rhs(nlevs,w0,div_coeff,w0rhs)
+  subroutine mk_w0mac_rhs(w0,div_coeff,w0rhs)
 
     use geometry, only: nr_fine, dr
+    use probin_module, only: nlevs
 
-    integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     real(kind=dp_t), intent(in   ) :: div_coeff(:,0:)
     real(kind=dp_t), intent(inout) :: w0rhs(:,0:)
@@ -521,11 +519,11 @@ contains
 
   end subroutine mk_w0mac_rhs
 
-  subroutine mk_div_beta0_w0mac(nlevs,w0mac,div_coeff_3d,w0rhs_3d,dx)
+  subroutine mk_div_beta0_w0mac(w0mac,div_coeff_3d,w0rhs_3d,dx)
 
     use geometry, only: dm
+    use probin_module, only: nlevs
 
-    integer        , intent(in   ) :: nlevs
     type(multifab) , intent(in   ) :: div_coeff_3d(:)
     type(multifab) , intent(in   ) :: w0mac(:,:)
     type(multifab) , intent(inout) :: w0rhs_3d(:)
@@ -811,11 +809,11 @@ contains
 
   end subroutine put_w0_on_edges_3d_sphr
 
-  subroutine make_normal(nlevs,normal,dx)
+  subroutine make_normal(normal,dx)
 
     use geometry, only: spherical, dm
+    use probin_module, only: nlevs
 
-    integer,         intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: normal(:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
         

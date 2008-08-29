@@ -30,7 +30,7 @@ contains
     type(multifab)   , pointer        :: chk_src_old(:)
     type(multifab)   , pointer        :: chk_rho_omegadot2(:)
     character(len=8)                  :: sd_name
-    integer                           :: n,nlevs
+    integer                           :: n,nlevs_local
 
     type(bl_prof_timer), save :: bpt
 
@@ -40,15 +40,15 @@ contains
     if ( parallel_IOProcessor()) &
       print *,'Reading ',sd_name,' to get state data for restart'
     call checkpoint_read(chkdata, chk_p, chk_dsdt, chk_src_old, &
-         chk_rho_omegadot2, sd_name, time, dt, nlevs)
+         chk_rho_omegadot2, sd_name, time, dt, nlevs_local)
 
-    call build(mba,nlevs,dm)
+    call build(mba,nlevs_local,dm)
     mba%pd(1) =  bbox(get_boxarray(chkdata(1)))
-    do n = 2,nlevs
+    do n = 2,nlevs_local
       mba%pd(n) = refine(mba%pd(n-1),2)
       mba%rr(n-1,:) = 2
     end do
-    do n = 1,nlevs
+    do n = 1,nlevs_local
       call boxarray_build_copy(mba%bas(n), get_boxarray(chkdata(n))) 
     end do
 

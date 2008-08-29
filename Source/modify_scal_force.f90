@@ -12,7 +12,7 @@ module modify_scal_force_module
 
 contains
 
-  subroutine modify_scal_force(nlevs,force,s,umac,base,base_edge,w0,dx,base_cart, &
+  subroutine modify_scal_force(force,s,umac,base,base_edge,w0,dx,base_cart, &
                                comp,mla,the_bc_level)
 
     use bl_prof_module
@@ -22,12 +22,12 @@ contains
     use multifab_physbc_module
     use ml_restriction_module
     use multifab_fill_ghost_module
+    use probin_module, only: nlevs
 
     ! When we write the scalar equation in perturbational and convective
     ! form, the terms other than s'_t + U.grad s' act as source terms.  Add
     ! them to the forces here.
     
-    integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: force(:)
     type(multifab) , intent(in   ) :: s(:)
     type(multifab) , intent(in   ) :: umac(:,:)

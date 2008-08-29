@@ -22,6 +22,7 @@ contains
     use geometry, only: spherical, dm
     use ml_restriction_module, only: ml_edge_restriction_c
     use variables, only: nscal
+    use probin_module, only: nlevs
 
     type(ml_layout), intent(inout) :: mla
     type(multifab) , intent(inout) :: sflux(:,:)
@@ -41,7 +42,7 @@ contains
     type(box) :: domain
 
     integer :: domlo(dm),domhi(dm)
-    integer :: i,n,nlevs
+    integer :: i,n
     integer :: lo(dm),hi(dm)
     integer :: ng_sf,ng_ef,ng_se,ng_um,ng_ro,ng_rn,ng_w0
 
@@ -66,8 +67,6 @@ contains
 
     call build(bpt, "mk_rhoX_flux")
 
-    nlevs = mla%nlevel
-    
     ng_sf = sflux(1,1)%ng
     ng_ef = etarhoflux(1)%ng
     ng_se = sedge(1,1)%ng

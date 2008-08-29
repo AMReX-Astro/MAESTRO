@@ -71,13 +71,13 @@ contains
 
   end subroutine init_sponge
 
-  subroutine make_sponge(nlevs,sponge,dx,dt,mla)
+  subroutine make_sponge(sponge,dx,dt,mla)
 
     use bl_constants_module
     use ml_restriction_module, only: ml_cc_restriction
     use geometry, only: dm
+    use probin_module, only: nlevs
 
-    integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: sponge(:)
     real(kind=dp_t), intent(in   ) :: dx(:,:),dt
     type(ml_layout), intent(in   ) :: mla

@@ -9,13 +9,13 @@ module make_psi_module
 
 contains
 
-  subroutine make_psi(nlevs,etarho_cc,psi,w0,gamma1bar,p0_old,p0_new,Sbar_in)
+  subroutine make_psi(etarho_cc,psi,w0,gamma1bar,p0_old,p0_new,Sbar_in)
 
     use bl_prof_module
     use geometry, only: spherical
     use restrict_base_module
+    use probin_module, only: nlevs
 
-    integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(in   ) :: etarho_cc(:,0:)
     real(kind=dp_t), intent(inout) :: psi(:,0:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
@@ -40,8 +40,8 @@ contains
        end do
     endif
 
-    call fill_ghost_base(nlevs,psi,.true.)
-    call restrict_base(nlevs,psi,.true.)
+    call fill_ghost_base(psi,.true.)
+    call restrict_base(psi,.true.)
 
     call destroy(bpt)
        

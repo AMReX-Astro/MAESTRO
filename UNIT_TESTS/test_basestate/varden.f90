@@ -62,7 +62,7 @@ subroutine varden()
 
   real(dp_t) :: coeff, Hbar
 
-  integer :: nlevs,n
+  integer :: n
   integer :: which_step
 
   real(dp_t) :: max_dist
@@ -100,7 +100,6 @@ subroutine varden()
   print *, 'number of points in model file: ', nr_fine
 
   dr_base = (prob_hi(1) - prob_lo(1))/nr_fine
-
 
   allocate(dx(nlevs,1))
   dx(1,1) = dr_base

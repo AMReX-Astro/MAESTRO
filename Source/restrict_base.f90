@@ -10,12 +10,12 @@ module restrict_base_module
 
 contains
 
-  subroutine restrict_base(nlevs,s0,is_cell_centered)
+  subroutine restrict_base(s0,is_cell_centered)
 
     use bl_prof_module
     use geometry, only: r_start_coord, r_end_coord, numdisjointchunks
+    use probin_module, only: nlevs
 
-    integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(inout) :: s0(:,0:)
     logical        , intent(in   ) :: is_cell_centered
 
@@ -54,13 +54,13 @@ contains
 
   end subroutine restrict_base
 
-  subroutine fill_ghost_base(nlevs,s0,is_cell_centered)
+  subroutine fill_ghost_base(s0,is_cell_centered)
 
     use bl_prof_module
     use bl_constants_module
     use geometry, only: r_start_coord, r_end_coord, nr, numdisjointchunks
+    use probin_module, only: nlevs
 
-    integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(inout) :: s0(:,0:)
     logical        , intent(in   ) :: is_cell_centered
 

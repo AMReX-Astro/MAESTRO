@@ -10,15 +10,15 @@ module advect_base_module
 
 contains
 
-  subroutine advect_base(nlevs,w0,Sbar_in,p0_old,p0_new,rho0_old,rho0_new, &
+  subroutine advect_base(w0,Sbar_in,p0_old,p0_new,rho0_old,rho0_new, &
                          rhoh0_old,rhoh0_new, &
                          gamma1bar,div_coeff,rho0_predicted_edge,psi,dz,dt)
 
     use bl_prof_module
     use geometry, only: spherical
     use restrict_base_module
+    use probin_module, only: nlevs
 
-    integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     real(kind=dp_t), intent(in   ) :: Sbar_in(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:), rho0_old(:,0:), rhoh0_old(:,0:)
@@ -36,28 +36,28 @@ contains
     call build(bpt, "advect_base")
 
     if (spherical .eq. 0) then
-       call advect_base_state_planar(nlevs,w0,p0_old,p0_new,rho0_old,rho0_new, &
+       call advect_base_state_planar(w0,p0_old,p0_new,rho0_old,rho0_new, &
                                      rhoh0_old,rhoh0_new,rho0_predicted_edge,psi,dz,dt)
     else
-       call advect_base_state_spherical(nlevs,w0,Sbar_in,p0_old,p0_new,rho0_old,rho0_new, &
+       call advect_base_state_spherical(w0,Sbar_in,p0_old,p0_new,rho0_old,rho0_new, &
                                         rhoh0_old,rhoh0_new,gamma1bar,rho0_predicted_edge, &
                                         div_coeff,dt)
     end if
 
-    call restrict_base(nlevs,p0_new,.true.)
-    call restrict_base(nlevs,rho0_new,.true.)
-    call restrict_base(nlevs,rhoh0_new,.true.)
+    call restrict_base(p0_new,.true.)
+    call restrict_base(rho0_new,.true.)
+    call restrict_base(rhoh0_new,.true.)
 
-    call fill_ghost_base(nlevs,p0_new,.true.)
-    call fill_ghost_base(nlevs,rho0_new,.true.)
-    call fill_ghost_base(nlevs,rhoh0_new,.true.)
+    call fill_ghost_base(p0_new,.true.)
+    call fill_ghost_base(rho0_new,.true.)
+    call fill_ghost_base(rhoh0_new,.true.)
 
     call destroy(bpt)
        
   end subroutine advect_base
 
 
-  subroutine advect_base_state_planar(nlevs,w0,p0_old,p0_new, &
+  subroutine advect_base_state_planar(w0,p0_old,p0_new, &
                                       rho0_old,rho0_new,rhoh0_old,rhoh0_new, &
                                       rho0_predicted_edge,psi,dz,dt)
 
@@ -65,10 +65,9 @@ contains
     use make_edge_state_module
     use variables, only: rho_comp, rhoh_comp
     use geometry, only: nr_fine, r_start_coord, r_end_coord, numdisjointchunks
-    use probin_module, only: grav_const, enthalpy_pred_type
+    use probin_module, only: grav_const, enthalpy_pred_type, nlevs
     use pred_parameters
 
-    integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:), rho0_old(:,0:), rhoh0_old(:,0:)
     real(kind=dp_t), intent(  out) :: p0_new(:,0:), rho0_new(:,0:), rhoh0_new(:,0:)
@@ -98,7 +97,7 @@ contains
 
     force = ZERO
     
-    call make_edge_state_1d(nlevs,p0_old,edge,w0,force,dz,dt)
+    call make_edge_state_1d(p0_old,edge,w0,force,dz,dt)
     
     do n=1,nlevs
        do i=1,numdisjointchunks(n)
@@ -122,7 +121,7 @@ contains
        end do
     end do
        
-    call make_edge_state_1d(nlevs,rho0_old,edge,w0,force,dz,dt)
+    call make_edge_state_1d(rho0_old,edge,w0,force,dz,dt)
         
     rho0_predicted_edge = edge
 
@@ -151,7 +150,7 @@ contains
        ! mixing, we defer this to correct_base.
        force = ZERO
 
-       call make_edge_state_1d(nlevs,h0,edge,w0,force,dz,dt)
+       call make_edge_state_1d(h0,edge,w0,force,dz,dt)
 
        ! our final update needs (rho h)_0 on the edges, so compute
        ! that now
@@ -168,7 +167,7 @@ contains
           end do
        end do
           
-       call make_edge_state_1d(nlevs,rhoh0_old,edge,w0,force,dz,dt)
+       call make_edge_state_1d(rhoh0_old,edge,w0,force,dz,dt)
               
     end if
 
@@ -187,7 +186,7 @@ contains
   end subroutine advect_base_state_planar
 
   
-  subroutine advect_base_state_spherical(nlevs,w0,Sbar_in,p0_old,p0_new, &
+  subroutine advect_base_state_spherical(w0,Sbar_in,p0_old,p0_new, &
                                          rho0_old,rho0_new,rhoh0_old,rhoh0_new, &
                                          gamma1bar,rho0_predicted_edge,div_coeff_old,dt)
 
@@ -198,10 +197,9 @@ contains
     use make_grav_module
     use cell_to_edge_module
     use make_div_coeff_module
-    use probin_module, only: grav_const, enthalpy_pred_type
+    use probin_module, only: grav_const, enthalpy_pred_type, nlevs
     use pred_parameters
     
-    integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(in   ) :: w0(:,0:),Sbar_in(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:), rho0_old(:,0:), rhoh0_old(:,0:)
     real(kind=dp_t), intent(  out) :: p0_new(:,0:), rho0_new(:,0:), rhoh0_new(:,0:)
@@ -257,7 +255,7 @@ contains
        end do
     end do
     
-    call make_edge_state_1d(nlevs,rho0_old,edge,w0,force,dr,dt)
+    call make_edge_state_1d(rho0_old,edge,w0,force,dr,dt)
     
     rho0_predicted_edge = edge
 
@@ -403,7 +401,7 @@ contains
           end do
        end do
           
-       call make_edge_state_1d(nlevs,h0,edge,w0,force,dr,dt)
+       call make_edge_state_1d(h0,edge,w0,force,dr,dt)
        
        ! our final update needs (rho h)_0 on the edges, so compute
        ! that now
@@ -435,7 +433,7 @@ contains
 
        end do
           
-       call make_edge_state_1d(nlevs,rhoh0_old,edge,w0,force,dr,dt)
+       call make_edge_state_1d(rhoh0_old,edge,w0,force,dr,dt)
 
     endif
 

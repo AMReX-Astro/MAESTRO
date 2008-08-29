@@ -34,7 +34,7 @@ subroutine varden()
 
   integer    :: init_step
   integer    :: istep_divu_iter,istep_init_iter,istep
-  integer    :: ng_s,i,n,nlevs,n_chk_comps
+  integer    :: ng_s,i,n,n_chk_comps
   integer    :: last_plt_written,last_chk_written
   real(dp_t) :: lenx,leny,lenz,max_dist,smin,smax
   real(dp_t) :: time,dt,dtold,dt_lev

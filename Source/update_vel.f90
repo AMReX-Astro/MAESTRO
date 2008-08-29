@@ -12,7 +12,7 @@ module update_vel_module
 
 contains
 
-  subroutine update_velocity(nlevs,uold,unew,umac,uedge,force,normal,w0,w0mac,dx,dt, &
+  subroutine update_velocity(uold,unew,umac,uedge,force,normal,w0,w0mac,dx,dt, &
                              sponge,mla,the_bc_level)
 
     use bl_prof_module
@@ -21,8 +21,8 @@ contains
     use multifab_fill_ghost_module
     use multifab_physbc_module
     use geometry, only: spherical, dm
+    use probin_module, only: nlevs
 
-    integer           , intent(in   ) :: nlevs
     type(multifab)    , intent(in   ) :: uold(:)
     type(multifab)    , intent(inout) :: unew(:)
     type(multifab)    , intent(in   ) :: umac(:,:)

@@ -15,14 +15,14 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine make_div_coeff(nlevs,div_coeff,rho0,p0,gamma1bar,grav_center)
+  subroutine make_div_coeff(div_coeff,rho0,p0,gamma1bar,grav_center)
 
     use bl_constants_module
     use geometry, only: nr_fine, dr, anelastic_cutoff_coord, r_start_coord, r_end_coord, &
          nr, numdisjointchunks
     use restrict_base_module
+    use probin_module, only: nlevs
 
-    integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(  out) :: div_coeff(:,0:)
     real(kind=dp_t), intent(in   ) :: rho0(:,0:), p0(:,0:), gamma1bar(:,0:)
     real(kind=dp_t), intent(in   ) :: grav_center(:,0:)
@@ -180,8 +180,8 @@ contains
 
     end do
 
-    call fill_ghost_base(nlevs,div_coeff,.true.)
-    call restrict_base(nlevs,div_coeff,.true.)
+    call fill_ghost_base(div_coeff,.true.)
+    call restrict_base(div_coeff,.true.)
 
   end subroutine make_div_coeff
 

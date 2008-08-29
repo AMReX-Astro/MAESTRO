@@ -10,7 +10,7 @@ module base_io_module
 
 contains
 
-  subroutine write_base_state(nlevs,state_name,w0_name,etarho_name,chk_name, &
+  subroutine write_base_state(state_name,w0_name,etarho_name,chk_name, &
                               rho0,rhoh0,p0, &
                               gamma1bar,w0,etarho,etarho_cc,div_etarho, &
                               div_coeff,psi,problo)
@@ -21,8 +21,8 @@ contains
     use network, only: nspec
     use variables, only: rho_comp, rhoh_comp
     use bl_constants_module
+    use probin_module, only: nlevs
 
-    integer          , intent(in) :: nlevs
     character(len=11), intent(in) :: state_name
     character(len=8) , intent(in) :: w0_name
     character(len=9) , intent(in) :: etarho_name
@@ -105,7 +105,7 @@ contains
   end subroutine write_base_state
 
 
-  subroutine read_base_state(nlevs,state_name,w0_name,etarho_name,chk_name, &
+  subroutine read_base_state(state_name,w0_name,etarho_name,chk_name, &
                              rho0,rhoh0,p0,gamma1bar,w0, &
                              etarho,etarho_cc,div_etarho, &
                              div_coeff,psi)
@@ -117,8 +117,8 @@ contains
     use geometry, only : dr, r_start_coord, r_end_coord, numdisjointchunks
     use bl_constants_module
     use restrict_base_module, only: fill_ghost_base
+    use probin_module, only: nlevs
     
-    integer          , intent(in   ) :: nlevs
     character(len=11), intent(in   ) :: state_name
     character(len=8) , intent(in   ) :: w0_name
     character(len=9) , intent(in   ) :: etarho_name
@@ -190,20 +190,20 @@ contains
     close(99)
 
     if (nlevs .gt. 1) then
-       call fill_ghost_base(nlevs,rho0,.true.)
-       call fill_ghost_base(nlevs,rhoh0,.true.)
-       call fill_ghost_base(nlevs,p0,.true.)
-       call fill_ghost_base(nlevs,gamma1bar,.true.)
-       call fill_ghost_base(nlevs,div_coeff,.true.)
-       call fill_ghost_base(nlevs,psi,.true.)
-       call fill_ghost_base(nlevs,etarho_cc,.true.)
-       call fill_ghost_base(nlevs,div_etarho,.true.)
-       call fill_ghost_base(nlevs,w0,.false.)
-       call fill_ghost_base(nlevs,etarho,.false.)
+       call fill_ghost_base(rho0,.true.)
+       call fill_ghost_base(rhoh0,.true.)
+       call fill_ghost_base(p0,.true.)
+       call fill_ghost_base(gamma1bar,.true.)
+       call fill_ghost_base(div_coeff,.true.)
+       call fill_ghost_base(psi,.true.)
+       call fill_ghost_base(etarho_cc,.true.)
+       call fill_ghost_base(div_etarho,.true.)
+       call fill_ghost_base(w0,.false.)
+       call fill_ghost_base(etarho,.false.)
     end if
 
-    ! calls to restrict base are not here needed since they are written to the checkpoint file
-    ! after a call to restrict base was already completed
+    ! calls to restrict base are not here needed since they are written to the checkpoint 
+    ! file after a call to restrict base was already completed
 
     call destroy(bpt)
 

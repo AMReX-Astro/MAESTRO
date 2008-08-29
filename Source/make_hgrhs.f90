@@ -22,7 +22,7 @@ contains
   
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   
-  subroutine make_hgrhs(nlevs,the_bc_tower,mla,hgrhs,Source,delta_gamma1_term,Sbar, &
+  subroutine make_hgrhs(the_bc_tower,mla,hgrhs,Source,delta_gamma1_term,Sbar, &
                         div_coeff,dx)
 
     use define_bc_module
@@ -35,8 +35,8 @@ contains
     use ml_restriction_module
     use multifab_fill_ghost_module
     use multifab_physbc_module
+    use probin_module, only: nlevs
     
-    integer        , intent(in   ) :: nlevs
     type(bc_tower),  intent(in   ) :: the_bc_tower
     type(ml_layout), intent(inout) :: mla
     type(multifab) , intent(inout) :: hgrhs(:)
@@ -69,9 +69,9 @@ contains
     end if
     
     if (spherical .eq. 1) then
-       call put_1d_array_on_cart(nlevs,div_coeff,div_coeff_cart,foextrap_comp,.false., &
+       call put_1d_array_on_cart(div_coeff,div_coeff_cart,foextrap_comp,.false., &
                                  .false.,dx,the_bc_tower%bc_tower_array,mla)
-       call put_1d_array_on_cart(nlevs,Sbar,Sbar_cart,foextrap_comp,.false., &
+       call put_1d_array_on_cart(Sbar,Sbar_cart,foextrap_comp,.false., &
                                  .false.,dx,the_bc_tower%bc_tower_array,mla)
     end if
 
@@ -283,7 +283,7 @@ contains
     
   end subroutine make_hgrhs_3d
 
-  subroutine correct_hgrhs(nlevs,the_bc_tower,mla,rho0,hgrhs,div_coeff,dx,dt,gamma1bar,p0, &
+  subroutine correct_hgrhs(the_bc_tower,mla,rho0,hgrhs,div_coeff,dx,dt,gamma1bar,p0, &
                            delta_p_term)
 
     use define_bc_module
@@ -296,9 +296,8 @@ contains
     use ml_restriction_module
     use multifab_fill_ghost_module
     use multifab_physbc_module
-    use probin_module, only: nodal
+    use probin_module, only: nodal, nlevs
     
-    integer        , intent(in   ) :: nlevs
     type(bc_tower),  intent(in   ) :: the_bc_tower
     type(ml_layout), intent(inout) :: mla
     type(multifab) , intent(inout) :: hgrhs(:)
@@ -341,13 +340,13 @@ contains
     end if
     
     if (spherical .eq. 1) then
-       call put_1d_array_on_cart(nlevs,gamma1bar,gamma1bar_cart,foextrap_comp,.false., &
+       call put_1d_array_on_cart(gamma1bar,gamma1bar_cart,foextrap_comp,.false., &
                                  .false.,dx,the_bc_tower%bc_tower_array,mla)
-       call put_1d_array_on_cart(nlevs,p0,p0_cart,foextrap_comp,.false., &
+       call put_1d_array_on_cart(p0,p0_cart,foextrap_comp,.false., &
                                  .false.,dx,the_bc_tower%bc_tower_array,mla)
-       call put_1d_array_on_cart(nlevs,div_coeff,div_coeff_cart,foextrap_comp,.false., &
+       call put_1d_array_on_cart(div_coeff,div_coeff_cart,foextrap_comp,.false., &
                                  .false.,dx,the_bc_tower%bc_tower_array,mla)
-       call put_1d_array_on_cart(nlevs,rho0,rho0_cart,dm+rho_comp,.false., &
+       call put_1d_array_on_cart(rho0,rho0_cart,dm+rho_comp,.false., &
                                  .false.,dx,the_bc_tower%bc_tower_array,mla)
 
     end if

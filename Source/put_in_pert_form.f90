@@ -28,6 +28,7 @@ contains
     use ml_restriction_module, only: ml_cc_restriction
     use multifab_fill_ghost_module
     use multifab_physbc_module
+    use probin_module, only: nlevs
 
     type(ml_layout), intent(in   ) :: mla
     integer        , intent(in   ) :: comp
@@ -40,9 +41,7 @@ contains
     ! Local variables
     real(kind=dp_t), pointer::  sp(:,:,:,:)
     integer :: lo(dm),hi(dm)
-    integer :: i,ng,nlevs,n,bc_comp
-
-    nlevs = mla%nlevel
+    integer :: i,ng,n,bc_comp
 
     ng    = s(1)%ng
 

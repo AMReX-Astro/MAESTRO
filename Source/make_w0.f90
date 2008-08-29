@@ -16,7 +16,7 @@ module make_w0_module
 
 contains
 
-  subroutine make_w0(nlevs,w0,w0_old,w0_force,Sbar_in,rho0_old,rho0_new,p0_old,p0_new, &
+  subroutine make_w0(w0,w0_old,w0_force,Sbar_in,rho0_old,rho0_new,p0_old,p0_new, &
                      gamma1bar_old,gamma1bar_new,p0_minus_pthermbar, &
                      psi,etarho,etarho_cc,div_etarho, &
                      dt,dtold)
@@ -25,10 +25,9 @@ contains
     use bl_prof_module
     use geometry, only: spherical, dr, r_start_coord, r_end_coord
     use bl_constants_module
-    use probin_module, only: verbose
+    use probin_module, only: verbose, nlevs
     use restrict_base_module, only: fill_ghost_base
 
-    integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(  out) :: w0(:,0:)
     real(kind=dp_t), intent(in   ) :: w0_old(:,0:)
     real(kind=dp_t), intent(in   ) :: psi(:,0:)
@@ -54,7 +53,7 @@ contains
 
     if (spherical .eq. 0) then
 
-       call make_w0_planar(nlevs,w0,w0_old,Sbar_in,p0_old,p0_new,gamma1bar_old, &
+       call make_w0_planar(w0,w0_old,Sbar_in,p0_old,p0_new,gamma1bar_old, &
                            gamma1bar_new,p0_minus_pthermbar,psi,w0_force,dt,dtold)
 
     else
@@ -72,7 +71,7 @@ contains
 
     end if
 
-    call fill_ghost_base(nlevs,w0_force,.true.)
+    call fill_ghost_base(w0_force,.true.)
 
     do n=1,nlevs
        max_w0 = zero
@@ -87,7 +86,7 @@ contains
 
   end subroutine make_w0
 
-  subroutine make_w0_planar(nlevs,w0,w0_old,Sbar_in,p0_old,p0_new, &
+  subroutine make_w0_planar(w0,w0_old,Sbar_in,p0_old,p0_new, &
                             gamma1bar_old,gamma1bar_new,p0_minus_pthermbar, &
                             psi,w0_force,dt,dtold)
 
@@ -95,10 +94,9 @@ contains
          numdisjointchunks, nr
     use variables, only: rho_comp
     use bl_constants_module
-    use probin_module, only: grav_const, dpdt_factor, base_cutoff_density
+    use probin_module, only: grav_const, dpdt_factor, base_cutoff_density, nlevs
     use restrict_base_module, only: fill_ghost_base
 
-    integer        , intent(in   ) :: nlevs
     real(kind=dp_t), intent(  out) :: w0(:,0:)
     real(kind=dp_t), intent(in   ) :: w0_old(:,0:)
     real(kind=dp_t), intent(in   ) :: Sbar_in(:,0:)
@@ -187,7 +185,7 @@ contains
 
     end do
 
-    call fill_ghost_base(nlevs,w0,.false.)
+    call fill_ghost_base(w0,.false.)
 
     do n=1,nlevs
        

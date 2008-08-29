@@ -7,7 +7,7 @@ module initial_proj_module
 
 contains
 
-  subroutine initial_proj(nlevs,uold,sold,pres,gpres,Source_old,hgrhs, &
+  subroutine initial_proj(uold,sold,pres,gpres,Source_old,hgrhs, &
                           div_coeff_old,p0,gamma1bar,dx,the_bc_tower,mla)
 
     use variables, only: press_comp, foextrap_comp, rho_comp
@@ -27,7 +27,6 @@ contains
     use ml_layout_module
     use heating_module
 
-    integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: uold(:)
     type(multifab) , intent(in   ) :: sold(:)
     type(multifab) , intent(inout) :: pres(:)
@@ -95,7 +94,7 @@ contains
        call setval( delta_gamma1_term(n), ZERO, all=.true.)
     end do
 
-    call make_S(nlevs,Source_old,delta_gamma1_term,delta_gamma1, &
+    call make_S(Source_old,delta_gamma1_term,delta_gamma1, &
                 sold,uold,rho_omegadot1,rho_Hext,thermal, &
                 p0,gamma1bar,delta_gamma1_termbar,psi,dx, &
                 mla,the_bc_tower%bc_tower_array)
@@ -119,7 +118,7 @@ contains
        call setval(rhohalf(n),ONE,1,1,all=.true.)
     end do
     
-    call make_hgrhs(nlevs,the_bc_tower,mla,hgrhs,Source_old,delta_gamma1_term,Sbar, &
+    call make_hgrhs(the_bc_tower,mla,hgrhs,Source_old,delta_gamma1_term,Sbar, &
                     div_coeff_old,dx)
 
     do n=1,nlevs
@@ -135,7 +134,7 @@ contains
           call multifab_build(div_coeff_3d(n), mla%la(n), 1, 0)
        end do
 
-       call put_1d_array_on_cart(nlevs,div_coeff_old,div_coeff_3d,foextrap_comp,.false., &
+       call put_1d_array_on_cart(div_coeff_old,div_coeff_3d,foextrap_comp,.false., &
                                  .false.,dx,the_bc_tower%bc_tower_array,mla)
 
        call hgproject(initial_projection_comp,mla,uold,uold,rhohalf,pres,gpres,dx, &

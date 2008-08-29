@@ -12,7 +12,7 @@ module mkflux_module
   
 contains
 
-  subroutine mkflux(nlevs,sflux,sold,sedge,umac,w0,w0mac, &
+  subroutine mkflux(sflux,sold,sedge,umac,w0,w0mac, &
                     rho0_old,rho0_edge_old,rho0_old_cart, &
                     rho0_new,rho0_edge_new,rho0_new_cart, &
                     rhoh0_old,rhoh0_edge_old,rhoh0_old_cart, &
@@ -24,8 +24,8 @@ contains
     use geometry, only: spherical, dm
     use ml_restriction_module, only: ml_edge_restriction_c
     use variables, only: nscal
+    use probin_module, only: nlevs
 
-    integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: sflux(:,:)
     type(multifab) , intent(in   ) :: sold(:),sedge(:,:)
     type(multifab) , intent(in   ) :: umac(:,:)

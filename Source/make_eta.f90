@@ -38,14 +38,14 @@ contains
   !---------------------------------------------------------------------------
   ! plane-parallel geometry routines
   !---------------------------------------------------------------------------
-  subroutine make_etarho_planar(nlevs,etarho,etarho_cc,div_etarho,etarhoflux,mla)
+  subroutine make_etarho_planar(etarho,etarho_cc,div_etarho,etarhoflux,mla)
 
     use bl_constants_module
     use geometry, only: spherical, nr_fine, r_start_coord, r_end_coord, numdisjointchunks, &
          dr, dm
     use restrict_base_module
+    use probin_module, only: nlevs
 
-    integer           , intent(in   ) :: nlevs
     real(kind=dp_t)   , intent(  out) :: etarho(:,0:)
     real(kind=dp_t)   , intent(  out) :: etarho_cc(:,0:)
     real(kind=dp_t)   , intent(  out) :: div_etarho(:,0:)
@@ -251,7 +251,7 @@ contains
           
        end if
 
-       call restrict_base(nlevs,etarho,.false.)
+       call restrict_base(etarho,.false.)
        
     else
 
@@ -446,7 +446,7 @@ contains
   !---------------------------------------------------------------------------
   ! spherical routines
   !---------------------------------------------------------------------------
-  subroutine make_etarho_spherical(nlevs,sold,snew,umac,rho0_old,rho0_new, &
+  subroutine make_etarho_spherical(sold,snew,umac,rho0_old,rho0_new, &
                                    dx,dt,normal,etarho,etarho_cc,div_etarho, &
                                    mla,the_bc_level)
 
@@ -457,8 +457,8 @@ contains
     use ml_restriction_module
     use multifab_physbc_module
     use multifab_fill_ghost_module
+    use probin_module, only: nlevs
 
-    integer        , intent(in   ) :: nlevs
     type(multifab) , intent(in   ) :: umac(:,:)
     type(multifab) , intent(in   ) :: sold(:), snew(:)
     real(kind=dp_t), intent(in   ) :: rho0_old(:,0:), rho0_new(:,0:) 

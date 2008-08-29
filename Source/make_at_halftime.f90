@@ -15,7 +15,7 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine make_S_at_halftime(nlevs,mla,shalf,sold,snew,the_bc_level)
+  subroutine make_S_at_halftime(mla,shalf,sold,snew,the_bc_level)
 
     use bl_prof_module
     use multifab_physbc_module
@@ -24,7 +24,8 @@ contains
     use variables, only: foextrap_comp
     use geometry, only: dm
 
-    integer        , intent(in   ) :: nlevs
+    use probin_module, only: nlevs
+
     type(ml_layout), intent(in   ) :: mla
     type(multifab) , intent(inout) :: shalf(:)
     type(multifab) , intent(in   ) :: sold(:)
@@ -105,14 +106,14 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine make_at_halftime(nlevs,phihalf,sold,snew,in_comp,out_comp,the_bc_level,mla)
+  subroutine make_at_halftime(phihalf,sold,snew,in_comp,out_comp,the_bc_level,mla)
 
     use multifab_physbc_module
     use ml_restriction_module, only : ml_cc_restriction
     use multifab_fill_ghost_module
     use geometry, only: dm
+    use probin_module, only: nlevs
 
-    integer        , intent(in   ) :: nlevs
     type(multifab) , intent(inout) :: phihalf(:)
     type(multifab) , intent(in   ) :: sold(:)
     type(multifab) , intent(in   ) :: snew(:)

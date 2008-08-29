@@ -10,14 +10,14 @@ module enforce_HSE_module
 
 contains
 
-  subroutine enforce_HSE(nlevs,rho0,p0,grav_cell)
+  subroutine enforce_HSE(rho0,p0,grav_cell)
 
     use geometry, only: dr, r_start_coord, r_end_coord, numdisjointchunks, spherical, &
          base_cutoff_density_coord, nr
     use restrict_base_module, only: fill_ghost_base
     use bl_error_module
+    use probin_module, only: nlevs
 
-    integer,         intent(in   ) :: nlevs
     real(kind=dp_t), intent(in   ) :: rho0(:,0:)
     real(kind=dp_t), intent(inout) ::   p0(:,0:)
     real(kind=dp_t), intent(in   ) :: grav_cell(:,0:)
@@ -118,7 +118,7 @@ contains
        call bl_error('Have not written enforce_HSE for spherical yet')
     end if
 
-    call fill_ghost_base(nlevs,p0,.true.)
+    call fill_ghost_base(p0,.true.)
 
   end subroutine enforce_HSE
 

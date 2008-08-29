@@ -102,7 +102,7 @@ contains
     use plot_variables_module
     use fill_3d_module
     use probin_module, only: nOutFiles, lUsingNFiles, plot_spec, plot_trac, plot_base
-    use probin_module, only: single_prec_plotfiles, edge_nodal_flag
+    use probin_module, only: single_prec_plotfiles, edge_nodal_flag, nlevs
     use geometry, only: spherical, nr_fine, dm
     use average_module
     use ml_restriction_module
@@ -136,13 +136,11 @@ contains
     type(multifab) :: w0mac(mla%nlevel,dm)
     real(dp_t), allocatable :: entropybar(:,:)
 
-    integer :: n,nlevs,prec,comp
+    integer :: n,prec,comp
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "make_plotfile")
-
-    nlevs = size(u)
 
     if (single_prec_plotfiles) then
        prec = FABIO_SINGLE
@@ -176,7 +174,7 @@ contains
     if (plot_base) then
 
        ! w0
-       call put_1d_array_on_cart(nlevs,w0,tempfab,1,.true.,.true.,dx, &
+       call put_1d_array_on_cart(w0,tempfab,1,.true.,.true.,dx, &
                                  the_bc_tower%bc_tower_array,mla,normal=normal)
 
        do n=1,nlevs
@@ -203,7 +201,7 @@ contains
        end do
 
        ! rho0
-       call put_1d_array_on_cart(nlevs,rho0,tempfab,dm+rho_comp,.false.,.false.,dx, &
+       call put_1d_array_on_cart(rho0,tempfab,dm+rho_comp,.false.,.false.,dx, &
                                  the_bc_tower%bc_tower_array,mla,normal=normal)
 
        do n=1,nlevs
@@ -211,7 +209,7 @@ contains
        end do
 
        ! rhoh0
-       call put_1d_array_on_cart(nlevs,rhoh0,tempfab,dm+rhoh_comp,.false.,.false.,dx, &
+       call put_1d_array_on_cart(rhoh0,tempfab,dm+rhoh_comp,.false.,.false.,dx, &
                                  the_bc_tower%bc_tower_array,mla,normal=normal)
 
        do n=1,nlevs
@@ -219,7 +217,7 @@ contains
        end do
 
        ! p0
-       call put_1d_array_on_cart(nlevs,p0,tempfab,foextrap_comp,.false.,.false.,dx, &
+       call put_1d_array_on_cart(p0,tempfab,foextrap_comp,.false.,.false.,dx, &
                                  the_bc_tower%bc_tower_array,mla,normal=normal)
        do n=1,nlevs
           call multifab_copy_c(plotdata(n),icomp_p0,tempfab(n),1,1)

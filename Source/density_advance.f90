@@ -31,7 +31,7 @@ contains
     use network,       only: nspec, spec_names
     use geometry,      only: spherical, nr_fine, dm
     use variables,     only: nscal, ntrac, spec_comp, rho_comp, trac_comp, foextrap_comp
-    use probin_module, only: verbose
+    use probin_module, only: verbose, nlevs
     use modify_scal_force_module
     use convert_rhoX_to_X_module
 
@@ -58,7 +58,7 @@ contains
     type(multifab) :: rho0_new_cart(mla%nlevel)
     type(multifab) :: p0_new_cart(mla%nlevel)
 
-    integer    :: comp,n,nlevs
+    integer    :: comp,n
     logical    :: is_vel
     real(dp_t) :: smin,smax
 
@@ -69,7 +69,6 @@ contains
 
     call build(bpt, "density_advance")
 
-    nlevs = mla%nlevel
     is_vel  = .false.
 
     ! create edge-centered base state quantities.
@@ -93,11 +92,11 @@ contains
           call build(p0_new_cart(n), sold(n)%la, 1, 1)          
        end do
 
-       call put_1d_array_on_cart(nlevs,rho0_old,rho0_old_cart,dm+rho_comp,.false., &
+       call put_1d_array_on_cart(rho0_old,rho0_old_cart,dm+rho_comp,.false., &
                                  .false.,dx,the_bc_level,mla)
-       call put_1d_array_on_cart(nlevs,rho0_new,rho0_new_cart,dm+rho_comp,.false., &
+       call put_1d_array_on_cart(rho0_new,rho0_new_cart,dm+rho_comp,.false., &
                                  .false.,dx,the_bc_level,mla)
-       call put_1d_array_on_cart(nlevs,p0_new,p0_new_cart,foextrap_comp,.false., &
+       call put_1d_array_on_cart(p0_new,p0_new_cart,foextrap_comp,.false., &
                                  .false.,dx,the_bc_level,mla)
     end if
 
@@ -112,32 +111,32 @@ contains
     ! Source terms for X and for tracers are zero - do nothing
 
     ! Make source term for rho'
-    call modify_scal_force(nlevs,scal_force,sold,umac,rho0_old, &
+    call modify_scal_force(scal_force,sold,umac,rho0_old, &
                            rho0_edge_old,w0,dx,rho0_old_cart,rho_comp,mla,the_bc_level)
 
     !**************************************************************************
     !     Add w0 to MAC velocities (trans velocities already have w0).
     !**************************************************************************
 
-    call addw0(nlevs,umac,w0,w0mac,mult=ONE)
+    call addw0(umac,w0,w0mac,mult=ONE)
 
     !**************************************************************************
     !     Create the edge states of (rho X)' or X and rho'
     !**************************************************************************
 
     ! convert (rho X) --> X in sold 
-    call convert_rhoX_to_X(nlevs,sold,.true.,mla,the_bc_level)
+    call convert_rhoX_to_X(sold,.true.,mla,the_bc_level)
 
     ! convert rho -> rho' in sold 
     call put_in_pert_form(mla,sold,rho0_old,dx,rho_comp,.true.,the_bc_level)
 
     ! predict X at the edges
-    call make_edge_scal(nlevs,sold,sedge,umac,scal_force,normal, &
+    call make_edge_scal(sold,sedge,umac,scal_force,normal, &
                         w0,w0mac,dx,dt,is_vel,the_bc_level, &
                         spec_comp,dm+spec_comp,nspec,.false.,mla)
 
     ! predict rho' at the edges
-    call make_edge_scal(nlevs,sold,sedge,umac,scal_force,normal, &
+    call make_edge_scal(sold,sedge,umac,scal_force,normal, &
                         w0,w0mac,dx,dt,is_vel,the_bc_level, &
                         rho_comp,dm+rho_comp,1,.false.,mla)
 
@@ -145,13 +144,13 @@ contains
     call put_in_pert_form(mla,sold,rho0_old,dx,rho_comp,.false.,the_bc_level)
 
     ! convert X --> (rho X) in sold 
-    call convert_rhoX_to_X(nlevs,sold,.false.,mla,the_bc_level)
+    call convert_rhoX_to_X(sold,.false.,mla,the_bc_level)
 
     !**************************************************************************
     !     Create edge states of tracers
     !**************************************************************************
     if (ntrac.ge.1) &
-       call make_edge_scal(nlevs,sold,sedge,umac,scal_force,normal, &
+       call make_edge_scal(sold,sedge,umac,scal_force,normal, &
                            w0,w0mac,dx,dt,is_vel,the_bc_level, &
                            trac_comp,dm+trac_comp,ntrac,.false.,mla)
 
@@ -159,7 +158,7 @@ contains
     !     Subtract w0 from MAC velocities.
     !**************************************************************************
 
-    call addw0(nlevs,umac,w0,w0mac,mult=-ONE)
+    call addw0(umac,w0,w0mac,mult=-ONE)
 
     !**************************************************************************
     !     Compute fluxes

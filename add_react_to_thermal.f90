@@ -16,7 +16,7 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine add_react_to_thermal(nlevs,thermal,rho_omegadot,s,rho_Hext,the_bc_level,mla, &
+  subroutine add_react_to_thermal(thermal,rho_omegadot,s,rho_Hext,the_bc_level,mla, &
                                   dx,time)
 
     use bl_prof_module
@@ -27,8 +27,8 @@ contains
     use ml_restriction_module, only : ml_cc_restriction
     use heating_module
     use geometry, only: dm
-
-    integer        , intent(in   ) :: nlevs
+    use probin_module, only: nlevs
+    
     type(multifab) , intent(inout) :: thermal(:)
     type(multifab) , intent(in   ) :: rho_omegadot(:)
     type(multifab) , intent(in   ) :: s(:)
@@ -55,7 +55,7 @@ contains
     ng_s = s(1)%ng
     ng_he = rho_Hext(1)%ng
 
-    call get_rho_Hext(nlevs,mla,s,rho_Hext,dx,time)
+    call get_rho_Hext(mla,s,rho_Hext,dx,time)
     
     do n=1,nlevs
        do i=1,thermal(n)%nboxes

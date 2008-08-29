@@ -146,14 +146,12 @@ contains
     real(dp_t), allocatable :: gamma1bar_old(:,:)
     real(dp_t), allocatable :: delta_gamma1_termbar(:,:)
 
-    integer    :: r,n,comp,nlevs,ng_s,proj_type
+    integer    :: r,n,comp,ng_s,proj_type
     real(dp_t) :: halfdt,eps_in
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "advance_timestep")
-
-    nlevs = mla%nlevel
 
     allocate(       grav_cell_nph(nlevs,0:nr_fine-1))
     allocate(       grav_cell_new(nlevs,0:nr_fine-1))
@@ -244,10 +242,10 @@ contains
     end do
 
     if (init_mode) then
-       call make_S_at_halftime(nlevs,mla,Source_nph,Source_old,Source_new, &
+       call make_S_at_halftime(mla,Source_nph,Source_old,Source_new, &
                                the_bc_tower%bc_tower_array)
     else
-       call extrap_to_halftime(nlevs,mla,Source_nph,dSdt,Source_old,dt, &
+       call extrap_to_halftime(mla,Source_nph,dSdt,Source_old,dt, &
                                the_bc_tower%bc_tower_array)
     end if
 
@@ -265,7 +263,7 @@ contains
     end do
     
     ! ptherm_old now holds the thermodynamic p computed from sold(rho,h,X)
-    call makePfromRhoH(nlevs,sold,ptherm_old,tempbar,mla,the_bc_tower%bc_tower_array,dx)
+    call makePfromRhoH(sold,ptherm_old,tempbar,mla,the_bc_tower%bc_tower_array,dx)
 
     ! compute pthermbar = Avg(ptherm_old)
     call average(mla,ptherm_old,pthermbar,dx,1)
@@ -278,7 +276,7 @@ contains
     end do
 
     ! compute pthermbar_cart = fill(pthermbar)
-    call put_1d_array_on_cart(nlevs,pthermbar,pthermbar_cart,foextrap_comp, &
+    call put_1d_array_on_cart(pthermbar,pthermbar_cart,foextrap_comp, &
                               .false.,.false.,dx,the_bc_tower%bc_tower_array,mla)
 
     do n=1,nlevs
@@ -306,7 +304,7 @@ contains
 
        call average(mla,Source_nph,Sbar,dx,1)
 
-       call make_w0(nlevs,w0,w0_old,w0_force,Sbar,rho0_old,rho0_old,p0_old,p0_old, &
+       call make_w0(w0,w0_old,w0_force,Sbar,rho0_old,rho0_old,p0_old,p0_old, &
                     gamma1bar,gamma1bar,p0_minus_pthermbar, &
                     psi,etarho,etarho_cc,div_etarho,dt,dtold)
 
@@ -315,7 +313,7 @@ contains
        end if
 
        if (dm .eq. 3) then
-          call put_1d_array_on_cart(nlevs,w0_force,w0_force_cart_vec,foextrap_comp, &
+          call put_1d_array_on_cart(w0_force,w0_force_cart_vec,foextrap_comp, &
                                     .false.,.true.,dx,the_bc_tower%bc_tower_array,mla, &
                                     normal)
        end if
@@ -337,7 +335,7 @@ contains
        end do
     end do
     
-    call advance_premac(nlevs,uold,sold,umac,utrans,gpres,normal,w0,w0mac, &
+    call advance_premac(uold,sold,umac,utrans,gpres,normal,w0,w0mac, &
                         w0_force,w0_force_cart_vec,rho0_old,grav_cell_old,dx,dt, &
                         the_bc_tower%bc_tower_array,mla)
 
@@ -353,7 +351,7 @@ contains
        call setval(delta_gamma1_term(n), ZERO, all=.true.)
     end do
 
-    call make_macrhs(nlevs,macrhs,rho0_old,Source_nph,delta_gamma1_term,Sbar, &
+    call make_macrhs(macrhs,rho0_old,Source_nph,delta_gamma1_term,Sbar, &
                      div_coeff_old,dx, &
                      gamma1bar,gamma1bar,p0_old,p0_old,delta_p_term,dt)
 
@@ -374,7 +372,7 @@ contains
           call multifab_build(div_coeff_3d(n), mla%la(nlevs), 1, 1)
        end do
 
-       call put_1d_array_on_cart(nlevs,div_coeff_old,div_coeff_3d,foextrap_comp,.false., &
+       call put_1d_array_on_cart(div_coeff_old,div_coeff_3d,foextrap_comp,.false., &
                                  .false.,dx,the_bc_tower%bc_tower_array,mla)
 
        call macproject(mla,umac,macphi,sold,dx,the_bc_tower, &
@@ -416,7 +414,7 @@ contains
        call multifab_build(rho_Hext(n),      mla%la(n), 1,     1)
     end do
 
-    call react_state(nlevs,mla,sold,s1,rho_omegadot1,rho_Hext,halfdt,dx, &
+    call react_state(mla,sold,s1,rho_omegadot1,rho_Hext,halfdt,dx, &
                      the_bc_tower%bc_tower_array,time)
     
     if (full_rhoh0_evolution) then
@@ -428,7 +426,7 @@ contains
              call average(mla,rho_omegadot1,rho_omegadotbar(:,:,comp),dx,comp)
           end do
           call average(mla,rho_Hext,rho_Hextbar,dx,1)
-          call react_base(nlevs,rhoh0_old,rho_omegadotbar,rho_Hextbar,halfdt,rhoh0_1)
+          call react_base(rhoh0_old,rho_omegadotbar,rho_Hextbar,halfdt,rhoh0_1)
        else
           rhoh0_1 = rhoh0_old
        end if
@@ -441,7 +439,7 @@ contains
           call multifab_build(gamma1(n), mla%la(n), 1, 1)
        end do
        
-       call make_gamma(nlevs,mla,gamma1,s1,p0_old,tempbar,dx, &
+       call make_gamma(mla,gamma1,s1,p0_old,tempbar,dx, &
                        the_bc_tower%bc_tower_array)
        call average(mla,gamma1,gamma1bar,dx,1)
 
@@ -458,7 +456,7 @@ contains
        call make_grav_cell(n,grav_cell_new(n,:),rho0_old(n,:))
     end do
 
-    call make_div_coeff(nlevs,div_coeff_new,rho0_old,p0_old,gamma1bar,grav_cell_new)
+    call make_div_coeff(div_coeff_new,rho0_old,p0_old,gamma1bar,grav_cell_new)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 4 -- advect the base state and full state through dt
@@ -469,7 +467,7 @@ contains
     end if
     
     if (evolve_base_state) then
-       call advect_base(nlevs,w0,Sbar,p0_old,p0_new,rho0_old,rho0_new,rhoh0_1,rhoh0_2, &
+       call advect_base(w0,Sbar,p0_old,p0_new,rho0_old,rho0_new,rhoh0_1,rhoh0_2, &
                         gamma1bar,div_coeff_new,rho0_predicted_edge,psi,dx(:,dm),dt)
     else
        rho0_new = rho0_old
@@ -501,10 +499,10 @@ contains
        end do
 
        if(istep .le. 1) then
-          call add_react_to_thermal(nlevs,thermal,rho_omegadot1,s1,rho_Hext, &
+          call add_react_to_thermal(thermal,rho_omegadot1,s1,rho_Hext, &
                                     the_bc_tower%bc_tower_array,mla,dx,time)
        else
-          call add_react_to_thermal(nlevs,thermal,rho_omegadot2,s1,rho_Hext, &
+          call add_react_to_thermal(thermal,rho_omegadot2,s1,rho_Hext, &
                                     the_bc_tower%bc_tower_array,mla,dx,time)
           
           if(.not. do_half_alg) then
@@ -575,7 +573,7 @@ contains
 
     ! Correct the base state using the lagged etarho and psi
     if (use_etarho .and. evolve_base_state) then
-       call correct_base(nlevs,rho0_new,div_etarho,dt)
+       call correct_base(rho0_new,div_etarho,dt)
     end if
 
     ! Now compute the new etarho and psi
@@ -583,17 +581,17 @@ contains
        if (use_etarho) then
 
           if (spherical .eq. 0) then
-             call make_etarho_planar(nlevs,etarho,etarho_cc,div_etarho, &
+             call make_etarho_planar(etarho,etarho_cc,div_etarho, &
                                      etarhoflux,mla)
           else
-             call make_etarho_spherical(nlevs,s1,s2,umac,rho0_old,rho0_new,dx,dt,normal, &
+             call make_etarho_spherical(s1,s2,umac,rho0_old,rho0_new,dx,dt,normal, &
                                         etarho,etarho_cc,div_etarho, &
                                         mla,the_bc_tower%bc_tower_array)
           endif
 
        endif
 
-       call make_psi(nlevs,etarho_cc,psi,w0,gamma1bar,p0_old,p0_new,Sbar)
+       call make_psi(etarho_cc,psi,w0,gamma1bar,p0_old,p0_new,Sbar)
     end if
 
 
@@ -653,7 +651,7 @@ contains
        call multifab_build(rho_Hext(n), mla%la(n), 1, 1)
     end do
     
-    call react_state(nlevs,mla,s2,snew,rho_omegadot2,rho_Hext,halfdt,dx, &
+    call react_state(mla,s2,snew,rho_omegadot2,rho_Hext,halfdt,dx, &
                      the_bc_tower%bc_tower_array,time)
 
     do n=1,nlevs
@@ -668,7 +666,7 @@ contains
           call average(mla,rho_omegadot2,rho_omegadotbar(:,:,comp),dx,comp)
        end do
        call average(mla,rho_Hext,rho_Hextbar,dx,1)
-       call react_base(nlevs,rhoh0_2,rho_omegadotbar,rho_Hextbar,halfdt,rhoh0_new)
+       call react_base(rhoh0_2,rho_omegadotbar,rho_Hextbar,halfdt,rhoh0_new)
     else
        rhoh0_new = rhoh0_2
     end if
@@ -678,7 +676,7 @@ contains
           call multifab_build(gamma1(n), mla%la(n), 1, 1)
        end do
        
-       call make_gamma(nlevs,mla,gamma1,snew,p0_new,tempbar,dx, &
+       call make_gamma(mla,gamma1,snew,p0_new,tempbar,dx, &
                        the_bc_tower%bc_tower_array)
        call average(mla,gamma1,gamma1bar,dx,1)
 
@@ -691,7 +689,7 @@ contains
        call make_grav_cell(n,grav_cell_new(n,:),rho0_new(n,:))
     end do
 
-    call make_div_coeff(nlevs,div_coeff_new,rho0_new,p0_new,gamma1bar,grav_cell_new)
+    call make_div_coeff(div_coeff_new,rho0_new,p0_new,gamma1bar,grav_cell_new)
     
     div_coeff_nph = HALF*(div_coeff_old + div_coeff_new)
 
@@ -731,7 +729,7 @@ contains
        end do
 
        ! p0 is only used for the delta_gamma1_term
-       call make_S(nlevs,Source_new,delta_gamma1_term,delta_gamma1, &
+       call make_S(Source_new,delta_gamma1_term,delta_gamma1, &
                    snew,uold,rho_omegadot2,rho_Hext,thermal, &
                    p0_old,gamma1bar,delta_gamma1_termbar,psi,dx, &
                    mla,the_bc_tower%bc_tower_array)
@@ -746,7 +744,7 @@ contains
           call multifab_build(Source_nph(n), mla%la(n), 1, 1)
        end do
 
-       call make_S_at_halftime(nlevs,mla,Source_nph,Source_old,Source_new, &
+       call make_S_at_halftime(mla,Source_nph,Source_old,Source_new, &
                                the_bc_tower%bc_tower_array)
 
        do n=1,nlevs
@@ -754,7 +752,7 @@ contains
        end do
        
        ! ptherm_new now holds the thermodynamic p computed from snew(rho h X)
-       call makePfromRhoH(nlevs,snew,ptherm_new,tempbar,mla,the_bc_tower%bc_tower_array,dx)
+       call makePfromRhoH(snew,ptherm_new,tempbar,mla,the_bc_tower%bc_tower_array,dx)
 
        do n=1,nlevs
           call multifab_build(ptherm_nph(n), mla%la(n), 1, 0)
@@ -785,7 +783,7 @@ contains
        end do
 
        ! compute pthermbar_cart = fill(pthermbar)
-       call put_1d_array_on_cart(nlevs,pthermbar,pthermbar_cart,foextrap_comp, &
+       call put_1d_array_on_cart(pthermbar,pthermbar_cart,foextrap_comp, &
                                  .false.,.false.,dx,the_bc_tower%bc_tower_array,mla)
 
        do n=1,nlevs
@@ -819,7 +817,7 @@ contains
              Sbar = Sbar + delta_gamma1_termbar
           end if
 
-          call make_w0(nlevs,w0,w0_old,w0_force,Sbar,rho0_old,rho0_new,p0_old,p0_new, &
+          call make_w0(w0,w0_old,w0_force,Sbar,rho0_old,rho0_new,p0_old,p0_new, &
                        gamma1bar_old,gamma1bar,p0_minus_pthermbar, &
                        psi,etarho,etarho_cc,div_etarho,dt,dtold)
 
@@ -828,7 +826,7 @@ contains
           end if
 
           if (dm .eq. 3) then
-             call put_1d_array_on_cart(nlevs,w0_force,w0_force_cart_vec,foextrap_comp, &
+             call put_1d_array_on_cart(w0_force,w0_force_cart_vec,foextrap_comp, &
                                        .false.,.true.,dx,the_bc_tower%bc_tower_array,mla, &
                                        normal)
           end if
@@ -849,7 +847,7 @@ contains
           end do
        end do
 
-       call advance_premac(nlevs,uold,sold,umac,utrans,gpres,normal,w0,w0mac, &
+       call advance_premac(uold,sold,umac,utrans,gpres,normal,w0,w0mac, &
                            w0_force,w0_force_cart_vec,rho0_old,grav_cell_old,dx,dt, &
                            the_bc_tower%bc_tower_array,mla)
 
@@ -858,7 +856,7 @@ contains
        end do
 
        ! note delta_gamma1_term here is not time-centered
-       call make_macrhs(nlevs,macrhs,rho0_old,Source_nph,delta_gamma1_term,Sbar, &
+       call make_macrhs(macrhs,rho0_old,Source_nph,delta_gamma1_term,Sbar, &
                         div_coeff_nph,dx, &
                         gamma1bar_old,gamma1bar,p0_old,p0_new,delta_p_term,dt)
     
@@ -872,7 +870,7 @@ contains
           call multifab_build(rhohalf(n), mla%la(n), 1, 1)
        end do
 
-       call make_at_halftime(nlevs,rhohalf,sold,snew,rho_comp,1, &
+       call make_at_halftime(rhohalf,sold,snew,rho_comp,1, &
                              the_bc_tower%bc_tower_array,mla)
        
        ! MAC projection !
@@ -881,7 +879,7 @@ contains
              call multifab_build(div_coeff_3d(n), mla%la(nlevs), 1, 1)
           end do
 
-          call put_1d_array_on_cart(nlevs,div_coeff_nph,div_coeff_3d,foextrap_comp,.false., &
+          call put_1d_array_on_cart(div_coeff_nph,div_coeff_3d,foextrap_comp,.false., &
                                     .false.,dx,the_bc_tower%bc_tower_array,mla)
 
           call macproject(mla,umac,macphi,rhohalf,dx,the_bc_tower, &
@@ -914,7 +912,7 @@ contains
        end if
 
        if (evolve_base_state) then
-          call advect_base(nlevs,w0,Sbar,p0_old,p0_new,rho0_old,rho0_new,rhoh0_1,rhoh0_2, &
+          call advect_base(w0,Sbar,p0_old,p0_new,rho0_old,rho0_new,rhoh0_1,rhoh0_2, &
                            gamma1bar,div_coeff_nph,rho0_predicted_edge,psi,dx(:,dm),dt)
        else
           rho0_new = rho0_old
@@ -946,10 +944,10 @@ contains
           end do
 
           if(istep .le. 1) then
-             call add_react_to_thermal(nlevs,thermal,rho_omegadot1,s1,rho_Hext, &
+             call add_react_to_thermal(thermal,rho_omegadot1,s1,rho_Hext, &
                                        the_bc_tower%bc_tower_array,mla,dx,time)
           else
-             call add_react_to_thermal(nlevs,thermal,rho_omegadot2_hold,s1,rho_Hext, &
+             call add_react_to_thermal(thermal,rho_omegadot2_hold,s1,rho_Hext, &
                                        the_bc_tower%bc_tower_array,mla,dx,time)
 
              do n=1,nlevs
@@ -1013,7 +1011,7 @@ contains
 
        ! Correct the base state using the lagged etarho and psi
        if (use_etarho .and. evolve_base_state) then
-          call correct_base(nlevs,rho0_new,div_etarho,dt)
+          call correct_base(rho0_new,div_etarho,dt)
        end if
 
        ! Now compute the new etarho and psi
@@ -1021,17 +1019,17 @@ contains
           if (use_etarho) then
 
              if (spherical .eq. 0) then
-                call make_etarho_planar(nlevs,etarho,etarho_cc,div_etarho, &
+                call make_etarho_planar(etarho,etarho_cc,div_etarho, &
                                         etarhoflux,mla)
              else
-                call make_etarho_spherical(nlevs,s1,s2,umac,rho0_old,rho0_new,dx,dt,normal, &
+                call make_etarho_spherical(s1,s2,umac,rho0_old,rho0_new,dx,dt,normal, &
                                            etarho,etarho_cc,div_etarho, &
                                            mla,the_bc_tower%bc_tower_array)
              endif
 
           endif
 
-          call make_psi(nlevs,etarho_cc,psi,w0,gamma1bar,p0_old,p0_new,Sbar)
+          call make_psi(etarho_cc,psi,w0,gamma1bar,p0_old,p0_new,Sbar)
        end if
 
        do n=1,nlevs
@@ -1072,7 +1070,7 @@ contains
           call multifab_build(rho_Hext(n), mla%la(n), 1, 1)
        end do
        
-       call react_state(nlevs,mla,s2,snew,rho_omegadot2,rho_Hext,halfdt,dx,&
+       call react_state(mla,s2,snew,rho_omegadot2,rho_Hext,halfdt,dx,&
                         the_bc_tower%bc_tower_array,time)
 
        do n=1,nlevs
@@ -1087,7 +1085,7 @@ contains
              call average(mla,rho_omegadot2,rho_omegadotbar(:,:,comp),dx,comp)
           end do
           call average(mla,rho_Hext,rho_Hextbar,dx,1)
-          call react_base(nlevs,rhoh0_2,rho_omegadotbar,rho_Hextbar,halfdt,rhoh0_new)
+          call react_base(rhoh0_2,rho_omegadotbar,rho_Hextbar,halfdt,rhoh0_new)
        else
           rhoh0_new = rhoh0_2
        end if
@@ -1097,7 +1095,7 @@ contains
              call multifab_build(gamma1(n), mla%la(n), 1, 1)
           end do
           
-          call make_gamma(nlevs,mla,gamma1,snew,p0_new,tempbar,dx, &
+          call make_gamma(mla,gamma1,snew,p0_new,tempbar,dx, &
                           the_bc_tower%bc_tower_array)
           call average(mla,gamma1,gamma1bar,dx,1)
           
@@ -1110,7 +1108,7 @@ contains
           call make_grav_cell(n,grav_cell_new(n,:),rho0_new(n,:))
        end do
 
-       call make_div_coeff(nlevs,div_coeff_new,rho0_new,p0_new,gamma1bar,grav_cell_new)
+       call make_div_coeff(div_coeff_new,rho0_new,p0_new,gamma1bar,grav_cell_new)
               
     end if ! end if corresponding to .not. do_half_alg
 
@@ -1142,7 +1140,7 @@ contains
     end do
 
     ! p0 is only used for the delta_gamma1_term
-    call make_S(nlevs,Source_new,delta_gamma1_term,delta_gamma1, &
+    call make_S(Source_new,delta_gamma1_term,delta_gamma1, &
                 snew,uold,rho_omegadot2,rho_Hext,thermal, &
                 p0_new,gamma1bar,delta_gamma1_termbar,psi,dx, &
                 mla,the_bc_tower%bc_tower_array)
@@ -1183,9 +1181,9 @@ contains
        call multifab_build(rhohalf(n), mla%la(n), 1, 1)
     end do
 
-    call make_at_halftime(nlevs,rhohalf,sold,snew,rho_comp,1,the_bc_tower%bc_tower_array,mla)
+    call make_at_halftime(rhohalf,sold,snew,rho_comp,1,the_bc_tower%bc_tower_array,mla)
     
-    call velocity_advance(nlevs,mla,uold,unew,sold,rhohalf,umac,utrans,gpres, &
+    call velocity_advance(mla,uold,unew,sold,rhohalf,umac,utrans,gpres, &
                           normal,w0,w0mac,w0_force,w0_force_cart_vec, &
                           rho0_old,rho0_nph, &
                           grav_cell_old,grav_cell_nph,dx,dt, &
@@ -1229,7 +1227,7 @@ contains
           call multifab_build(hgrhs_old(n), mla%la(n), 1, 0, nodal)
           call multifab_copy(hgrhs_old(n),hgrhs(n))
        end do
-       call make_hgrhs(nlevs,the_bc_tower,mla,hgrhs,Source_new,delta_gamma1_term, &
+       call make_hgrhs(the_bc_tower,mla,hgrhs,Source_new,delta_gamma1_term, &
                        Sbar,div_coeff_new,dx)
        do n=1,nlevs
           call multifab_sub_sub(hgrhs(n),hgrhs_old(n))
@@ -1239,7 +1237,7 @@ contains
     else
 
        proj_type = regular_timestep_comp
-       call make_hgrhs(nlevs,the_bc_tower,mla,hgrhs,Source_new,delta_gamma1_term, &
+       call make_hgrhs(the_bc_tower,mla,hgrhs,Source_new,delta_gamma1_term, &
                        Sbar,div_coeff_new,dx)
 
        if (dpdt_factor .gt. ZERO) then
@@ -1249,7 +1247,7 @@ contains
           enddo
 
           ! ptherm_new now holds the thermodynamic p computed from snew(rho h X)
-          call makePfromRhoH(nlevs,snew,ptherm_new,tempbar,mla, &
+          call makePfromRhoH(snew,ptherm_new,tempbar,mla, &
                              the_bc_tower%bc_tower_array,dx)
 
           ! compute pthermbar = Avg(ptherm_new)
@@ -1262,7 +1260,7 @@ contains
           end do
 
           ! compute pthermbar_cart = fill(pthermbar)
-          call put_1d_array_on_cart(nlevs,pthermbar,pthermbar_cart,foextrap_comp, &
+          call put_1d_array_on_cart(pthermbar,pthermbar_cart,foextrap_comp, &
                                     .false.,.false.,dx,the_bc_tower%bc_tower_array,mla)
 
           do n=1,nlevs
@@ -1280,7 +1278,7 @@ contains
              call destroy(pthermbar_cart(n))
           end do
           
-          call correct_hgrhs(nlevs,the_bc_tower,mla,rho0_new,hgrhs,div_coeff_new,dx,dt, &
+          call correct_hgrhs(the_bc_tower,mla,rho0_new,hgrhs,div_coeff_new,dx,dt, &
                              gamma1bar,p0_new,delta_p_term)
           
           do n=1,nlevs
@@ -1300,7 +1298,7 @@ contains
           call multifab_build(div_coeff_3d(n), mla%la(nlevs), 1, 1)
        end do
        
-       call put_1d_array_on_cart(nlevs,div_coeff_nph,div_coeff_3d,foextrap_comp,.false., &
+       call put_1d_array_on_cart(div_coeff_nph,div_coeff_3d,foextrap_comp,.false., &
                                  .false.,dx,the_bc_tower%bc_tower_array,mla)
 
        eps_in = 1.d-12

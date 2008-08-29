@@ -28,7 +28,7 @@ module make_edge_state_module
   
 contains
 
-  subroutine make_edge_state(nlevs,s,u,sedge,umac,utrans,force, &
+  subroutine make_edge_state(s,u,sedge,umac,utrans,force, &
                              normal,w0,w0mac, &
                              dx,dt,is_vel,the_bc_level,velpred, &
                              start_scomp,start_bccomp,num_comp,mla)
@@ -40,8 +40,8 @@ contains
     use fill_3d_module
     use multifab_physbc_module
     use ml_restriction_module, only : ml_edge_restriction_c
+    use probin_module, only: nlevs
 
-    integer        , intent(in   ) :: nlevs
     type(multifab) , intent(in   ) :: s(:),u(:)
     type(multifab) , intent(inout) :: sedge(:,:),umac(:,:)
     type(multifab) , intent(in   ) :: utrans(:,:),force(:)
@@ -1558,13 +1558,12 @@ contains
      
    end subroutine make_edge_state_3d
    
-   subroutine make_edge_state_1d(nlevs,s,sedgex,w0,force,dx,dt)
+   subroutine make_edge_state_1d(s,sedgex,w0,force,dx,dt)
 
      use geometry, only: r_start_coord, r_end_coord, nr_fine, nr, numdisjointchunks
-     use probin_module, only: slope_order
+     use probin_module, only: slope_order, nlevs
      use bl_constants_module
      
-     integer        , intent(in   ) :: nlevs
      real(kind=dp_t), intent(in   ) ::      s(:,0:)
      real(kind=dp_t), intent(inout) :: sedgex(:,0:)
      real(kind=dp_t), intent(in   ) ::   w0(:,0:)
