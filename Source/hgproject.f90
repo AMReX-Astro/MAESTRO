@@ -46,7 +46,7 @@ contains
     ! Local  
     type(multifab) :: phi(mla%nlevel)
     type(multifab) :: gphi(mla%nlevel)
-    logical        :: nodal(mla%dim)
+    logical        :: nodal(dm)
 
     integer                   :: n,nlevs,stencil_type
     real(dp_t)                :: umin,umax,vmin,vmax,wmin,wmax
@@ -836,7 +836,7 @@ contains
     integer :: n
     integer :: max_nlevel_in
     integer :: do_diagnostics
-    logical :: nodal(mla%dim)
+    logical :: nodal(dm)
 
     type(bl_prof_timer), save :: bpt
 
@@ -1110,7 +1110,7 @@ contains
     ! local
     real(kind=dp_t), pointer :: ump(:,:,:,:) 
     integer :: i,ng_u,n
-    integer :: lo(u(1)%dim),hi(u(1)%dim)
+    integer :: lo(dm),hi(dm)
     logical :: local_do_mult
 
     local_do_mult = .true.

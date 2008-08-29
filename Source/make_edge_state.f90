@@ -56,7 +56,7 @@ contains
 
     integer                  :: i,r,scomp,bccomp,n
     integer                  :: ng_s,ng_u,ng_se,ng_um,ng_ut,ng_f,ng_w0,ng_gw,ng_n
-    integer                  :: lo(u(1)%dim), hi(u(1)%dim)
+    integer                  :: lo(dm), hi(dm)
     real(kind=dp_t), pointer :: sop(:,:,:,:)
     real(kind=dp_t), pointer :: uop(:,:,:,:)
     real(kind=dp_t), pointer :: sepx(:,:,:,:)

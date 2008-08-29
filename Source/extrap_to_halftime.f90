@@ -35,7 +35,7 @@ contains
     real(kind=dp_t), pointer:: Snphp(:,:,:,:)
     real(kind=dp_t), pointer:: Soldp(:,:,:,:)
     real(kind=dp_t), pointer:: dSdtp(:,:,:,:)
-    integer :: lo(Source_nph(1)%dim),hi(Source_nph(1)%dim),ng_h,ng_o,ng_dS
+    integer :: lo(dm),hi(dm),ng_h,ng_o,ng_dS
     integer :: i,n
       
     ng_h = Source_nph(1)%ng

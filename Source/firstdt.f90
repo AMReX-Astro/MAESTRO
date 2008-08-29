@@ -34,7 +34,7 @@ contains
     real(kind=dp_t), pointer:: sop(:,:,:,:)
     real(kind=dp_t), pointer:: fp(:,:,:,:)
     real(kind=dp_t), pointer:: divup(:,:,:,:)
-    integer :: lo(u%dim),hi(u%dim),ng_u,ng_s,ng_f,ng_dU,i
+    integer :: lo(dm),hi(dm),ng_u,ng_s,ng_f,ng_dU,i
     real(kind=dp_t) :: dt_hold_proc,dt_grid
     
     ng_u = u%ng

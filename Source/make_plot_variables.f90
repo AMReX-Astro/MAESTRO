@@ -22,7 +22,7 @@ contains
 
     real(kind=dp_t), pointer:: sp(:,:,:,:)
     real(kind=dp_t), pointer:: rp(:,:,:,:)
-    integer :: lo(s%dim),hi(s%dim),ng_s,ng_e
+    integer :: lo(dm),hi(dm),ng_s,ng_e
     integer :: i
 
     ng_s = s%ng
@@ -97,7 +97,7 @@ contains
 
     real(kind=dp_t), pointer:: sp(:,:,:,:)
     real(kind=dp_t), pointer:: tp(:,:,:,:)
-    integer :: lo(state%dim),hi(state%dim),ng_s,ng_p
+    integer :: lo(dm),hi(dm),ng_s,ng_p
     integer :: i
 
     ng_s = state%ng
@@ -306,7 +306,7 @@ contains
     real(kind=dp_t), intent(in   ) :: p0(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
     real(kind=dp_t), pointer:: sp(:,:,:,:),tp(:,:,:,:),up(:,:,:,:)
-    integer :: lo(s%dim),hi(s%dim),i
+    integer :: lo(dm),hi(dm),i
     integer :: ng_p,ng_s,ng_u
 
     ng_p = plotdata%ng
@@ -590,7 +590,7 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:)
 
     real(kind=dp_t), pointer:: tp(:,:,:,:)
-    integer :: lo(plotdata%dim),hi(plotdata%dim),ng_p
+    integer :: lo(dm),hi(dm),ng_p
     integer :: i
 
     ng_p = plotdata%ng
@@ -704,7 +704,7 @@ contains
 
     real(kind=dp_t), pointer:: sp(:,:,:,:)
     real(kind=dp_t), pointer:: pp(:,:,:,:)
-    integer :: lo(s%dim),hi(s%dim),ng_s,ng_p
+    integer :: lo(dm),hi(dm),ng_s,ng_p
     integer :: i
 
     ng_s = s%ng
@@ -788,7 +788,7 @@ contains
     real(kind=dp_t), pointer:: sp(:,:,:,:)
     real(kind=dp_t), pointer:: rop(:,:,:,:)
     real(kind=dp_t), pointer:: pp(:,:,:,:)
-    integer :: lo(s%dim),hi(s%dim),ng_s,ng_o,ng_p
+    integer :: lo(dm),hi(dm),ng_s,ng_o,ng_p
     integer :: i
 
     ng_s = s%ng
@@ -880,7 +880,7 @@ contains
     type(multifab) , intent(inout) :: plotdata
 
     real(kind=dp_t), pointer:: tp(:,:,:,:)
-    integer :: lo(plotdata%dim),hi(plotdata%dim)
+    integer :: lo(dm),hi(dm)
     integer :: i,ng_p
 
     ng_p = plotdata%ng
@@ -953,7 +953,7 @@ contains
     real(kind=dp_t), pointer :: w0yp(:,:,:,:)
     real(kind=dp_t), pointer :: w0zp(:,:,:,:)
     real(kind=dp_t), pointer :: dwp(:,:,:,:)
-    integer                  :: lo(divw0%dim),hi(divw0%dim)
+    integer                  :: lo(dm),hi(dm)
     integer                  :: i,ng_w0,ng_dw
 
     ng_dw = divw0%ng

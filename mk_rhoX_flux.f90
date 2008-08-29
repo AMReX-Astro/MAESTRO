@@ -40,9 +40,9 @@ contains
     ! local    
     type(box) :: domain
 
-    integer :: domlo(sold(1)%dim),domhi(sold(1)%dim)
+    integer :: domlo(dm),domhi(dm)
     integer :: i,n,nlevs
-    integer :: lo(sold(1)%dim),hi(sold(1)%dim)
+    integer :: lo(dm),hi(dm)
     integer :: ng_sf,ng_ef,ng_se,ng_um,ng_ro,ng_rn,ng_w0
 
 

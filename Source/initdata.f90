@@ -33,7 +33,7 @@ contains
     type(ml_layout), intent(inout) :: mla
 
     real(kind=dp_t), pointer:: sop(:,:,:,:)
-    integer :: lo(s(1)%dim),hi(s(1)%dim),ng
+    integer :: lo(dm),hi(dm),ng
     integer :: i,n
     
     ng = s(1)%ng
@@ -275,7 +275,7 @@ contains
     type(ml_layout), intent(inout) :: mla
 
     real(kind=dp_t), pointer:: uop(:,:,:,:)
-    integer :: lo(u(1)%dim),hi(u(1)%dim),ng
+    integer :: lo(dm),hi(dm),ng
     integer :: i,n
     
     ng = u(1)%ng
@@ -512,7 +512,7 @@ contains
     real(kind=dp_t), intent(in)    :: dx(:)
 
     real(kind=dp_t), pointer:: sop(:,:,:,:)
-    integer :: lo(s%dim),hi(s%dim),ng
+    integer :: lo(dm),hi(dm),ng
     integer :: i
     
     ng = s%ng

@@ -34,8 +34,8 @@ contains
     real(kind=dp_t), pointer     :: pp(:,:,:,:)
     logical, pointer             :: mp(:,:,:,:)
     type(box)                    :: domain
-    integer                      :: domlo(phi(1)%dim),domhi(phi(1)%dim)
-    integer                      :: lo(phi(1)%dim),hi(phi(1)%dim)
+    integer                      :: domlo(dm),domhi(dm)
+    integer                      :: lo(dm),hi(dm)
     integer                      :: i,r,n,nlevs,ng,rr
     real(kind=dp_t), allocatable :: ncell_grid(:,:)
     real(kind=dp_t), allocatable :: ncell_proc(:,:)

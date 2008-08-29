@@ -43,7 +43,7 @@ contains
 
     real(kind=dp_t), pointer:: mp(:,:,:,:),sp(:,:,:,:),gp(:,:,:,:),pop(:,:,:,:)
 
-    integer :: lo(Source(1)%dim),hi(Source(1)%dim)
+    integer :: lo(dm),hi(dm)
     integer :: i,n,ng_rh,ng_sr,ng_dg,ng_dp
 
     type(bl_prof_timer), save :: bpt

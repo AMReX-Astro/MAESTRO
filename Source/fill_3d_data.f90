@@ -38,8 +38,8 @@ contains
     type(ml_layout), intent(in   ) :: mla
     type(multifab) , intent(in   ), optional :: normal(:)
     
-    integer :: lo(s0_cart(1)%dim)
-    integer :: hi(s0_cart(1)%dim)
+    integer :: lo(dm)
+    integer :: hi(dm)
     integer :: i,n,ng_s,ng_n,comp
     real(kind=dp_t), pointer :: sp(:,:,:,:)
     real(kind=dp_t), pointer :: np(:,:,:,:)
@@ -405,8 +405,8 @@ contains
     type(multifab)  ::    dummy_rho(mla%nlevel)
 
     ! Local variables
-    integer         :: lo(mla%dim)
-    integer         :: hi(mla%dim)
+    integer         :: lo(dm)
+    integer         :: hi(dm)
     integer         :: i,n,ng_w0,nlevs
     real(kind=dp_t) :: w0rhs(mla%nlevel,0:nr_fine-1)
 
@@ -523,6 +523,8 @@ contains
 
   subroutine mk_div_beta0_w0mac(nlevs,w0mac,div_coeff_3d,w0rhs_3d,dx)
 
+    use geometry, only: dm
+
     integer        , intent(in   ) :: nlevs
     type(multifab) , intent(in   ) :: div_coeff_3d(:)
     type(multifab) , intent(in   ) :: w0mac(:,:)
@@ -530,7 +532,7 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:,:)
 
     integer         :: n,i,ng_w0,ng_dc,ng_dw
-    integer         :: lo(div_coeff_3d(1)%dim),hi(div_coeff_3d(1)%dim)
+    integer         :: lo(dm),hi(dm)
 
     real(kind=dp_t), pointer :: w0xp(:,:,:,:)
     real(kind=dp_t), pointer :: w0yp(:,:,:,:)

@@ -60,7 +60,7 @@ contains
     real(kind=dp_t), pointer    :: pcoeff1p(:,:,:,:),pcoeff2p(:,:,:,:)
     integer                     :: nlevs,stencil_order
     integer                     :: i,n,comp
-    integer                     :: lo(s1(1)%dim),hi(s1(1)%dim)
+    integer                     :: lo(dm),hi(dm)
     integer                     :: ng_s,ng_h,ng_X,ng_p,ng_cc,ng_fc
     type(bndry_reg)             :: fine_flx(2:mla%nlevel)
 
@@ -645,7 +645,7 @@ contains
     real(kind=dp_t), pointer    :: pcoeff1p(:,:,:,:),pcoeff2p(:,:,:,:)
     integer                     :: nlevs,stencil_order,i,n,comp
     integer                     :: ng_s,ng_h,ng_X,ng_p,ng_cc,ng_fc
-    integer                     :: lo(s1(1)%dim),hi(s1(1)%dim)
+    integer                     :: lo(dm),hi(dm)
     type(bndry_reg)             :: fine_flx(2:mla%nlevel)
 
     type(bl_prof_timer), save :: bpt

@@ -52,7 +52,7 @@ contains
     real(kind=dp_t), pointer:: tp(:,:,:,:),dgp(:,:,:,:)
     real(kind=dp_t), pointer:: omegap(:,:,:,:), hp(:,:,:,:)
 
-    integer :: lo(state(1)%dim),hi(state(1)%dim)
+    integer :: lo(dm),hi(dm)
     integer :: i,n,ng_sr,ng_dt,ng_dg,ng_s,ng_u,ng_rw,ng_he,ng_th
 
     type(bl_prof_timer), save :: bpt

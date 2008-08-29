@@ -24,7 +24,7 @@ contains
 
     real(kind=dp_t), pointer:: up(:,:,:,:)
     real(kind=dp_t), pointer:: vp(:,:,:,:)
-    integer :: lo(u%dim),hi(u%dim)
+    integer :: lo(dm),hi(dm)
     integer :: i,ng_u,ng_v
 
     type(bl_prof_timer), save :: bpt
@@ -656,7 +656,7 @@ contains
     real(kind=dp_t), pointer:: pp(:,:,:,:)
     real(kind=dp_t), pointer:: up(:,:,:,:)
     real(kind=dp_t), pointer:: sp(:,:,:,:)
-    integer :: lo(u%dim),hi(u%dim)
+    integer :: lo(dm),hi(dm)
     integer :: i,ng_u,ng_s,ng_p
 
     ng_u = u%ng
@@ -740,7 +740,7 @@ contains
     real(kind=dp_t), pointer:: pp(:,:,:,:)
     real(kind=dp_t), pointer:: up(:,:,:,:)
     real(kind=dp_t), pointer:: np(:,:,:,:)
-    integer :: lo(u%dim),hi(u%dim),ng_p,ng_u,ng_n
+    integer :: lo(dm),hi(dm),ng_p,ng_u,ng_n
     integer :: i
 
     ng_u = u%ng
@@ -854,7 +854,7 @@ contains
 
     use bc_module
     use bl_constants_module
-    use geometry, only: spherical
+    use geometry, only: spherical, dm
 
     integer        , intent(in   ) :: n, comp_velr
     type(multifab) , intent(inout) :: plotdata
@@ -866,7 +866,7 @@ contains
     real(kind=dp_t), pointer:: pp(:,:,:,:)
     real(kind=dp_t), pointer:: up(:,:,:,:)
     real(kind=dp_t), pointer:: np(:,:,:,:)
-    integer :: lo(u%dim),hi(u%dim),ng_p,ng_u,ng_n
+    integer :: lo(dm),hi(dm),ng_p,ng_u,ng_n
     integer :: i
 
     ng_u = u%ng

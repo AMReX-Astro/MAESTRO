@@ -97,7 +97,7 @@ contains
 
     ! local
     type(multifab) :: rhohalf(mla%nlevel)
-    type(multifab) :: w0mac(mla%nlevel,mla%dim)
+    type(multifab) :: w0mac(mla%nlevel,dm)
     type(multifab) :: w0_force_cart_vec(mla%nlevel)
     type(multifab) :: macrhs(mla%nlevel)
     type(multifab) :: macphi(mla%nlevel)
@@ -114,8 +114,8 @@ contains
     type(multifab) :: rho_Hext(mla%nlevel)
     type(multifab) :: div_coeff_3d(mla%nlevel)
     type(multifab) :: gamma1(mla%nlevel)
-    type(multifab) :: umac(mla%nlevel,mla%dim)
-    type(multifab) :: utrans(mla%nlevel,mla%dim)
+    type(multifab) :: umac(mla%nlevel,dm)
+    type(multifab) :: utrans(mla%nlevel,dm)
     type(multifab) :: etarhoflux(mla%nlevel)
     type(multifab) :: ptherm_old(mla%nlevel)
     type(multifab) :: ptherm_nph(mla%nlevel)
@@ -123,8 +123,8 @@ contains
     type(multifab) :: pthermbar_cart(mla%nlevel)
     type(multifab) :: delta_p_term(mla%nlevel)
 
-    type(multifab) :: sedge(mla%nlevel,mla%dim)
-    type(multifab) :: sflux(mla%nlevel,mla%dim)
+    type(multifab) :: sedge(mla%nlevel,dm)
+    type(multifab) :: sflux(mla%nlevel,dm)
     type(multifab) :: scal_force(mla%nlevel)
 
     real(dp_t), allocatable :: grav_cell_nph(:,:)
@@ -148,7 +148,7 @@ contains
 
     integer    :: r,n,comp,nlevs,ng_s,proj_type
     real(dp_t) :: halfdt,eps_in
-    logical    :: nodal(mla%dim)
+    logical    :: nodal(dm)
 
     type(bl_prof_timer), save :: bpt
 

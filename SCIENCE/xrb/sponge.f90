@@ -85,7 +85,7 @@ contains
     ! Local variables
     real(kind=dp_t), pointer :: sp(:,:,:,:)
     integer :: i,n,ng_sp
-    integer :: lo(sponge(1)%dim),hi(sponge(1)%dim)
+    integer :: lo(dm),hi(dm)
 
     ng_sp = sponge(1)%ng
 

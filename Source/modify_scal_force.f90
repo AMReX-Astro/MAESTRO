@@ -40,8 +40,8 @@ contains
     
     ! local
     integer :: i,ng_f,ng_s,ng_um,ng_b,n
-    integer :: lo(s(1)%dim),hi(s(1)%dim)
-    integer :: domlo(s(1)%dim),domhi(s(1)%dim)    
+    integer :: lo(dm),hi(dm)
+    integer :: domlo(dm),domhi(dm)    
 
     type(box) :: domain
 

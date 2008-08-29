@@ -45,9 +45,9 @@ contains
     ! local    
     type(box) :: domain
 
-    integer :: domlo(sold(1)%dim),domhi(sold(1)%dim)
+    integer :: domlo(dm),domhi(dm)
     integer :: i,n
-    integer :: lo(sold(1)%dim),hi(sold(1)%dim)
+    integer :: lo(dm),hi(dm)
     integer :: ng_sf,ng_se,ng_um,ng_ro,ng_rn,ng_ho,ng_hn,ng_w0
 
     real(kind=dp_t), pointer :: sfxp(:,:,:,:)

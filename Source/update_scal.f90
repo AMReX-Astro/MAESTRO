@@ -45,7 +45,7 @@ contains
     real(kind=dp_t), pointer :: fp(:,:,:,:)
     real(kind=dp_t), pointer :: p0np(:,:,:,:)
 
-    integer :: lo(sold(1)%dim),hi(sold(1)%dim)
+    integer :: lo(dm),hi(dm)
     integer :: i,n,nlevs
     integer :: ng_so,ng_sn,ng_sf,ng_f,ng_p
 

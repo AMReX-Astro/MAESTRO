@@ -33,6 +33,7 @@ contains
 
     use bl_prof_module
     use variables, only: nscal
+    use geometry, only: dm
 
     type(bc_tower ), intent(  out) :: bct
     type(ml_layout), intent(in   ) :: mla
@@ -47,26 +48,26 @@ contains
     call build(bpt, "bc_tower_build")
 
     bct%nlevels = mla%nlevel
-    bct%dim     = mla%dim
+    bct%dim     = dm
 
     allocate(bct%bc_tower_array(bct%nlevels))
     do i = 1,bct%nlevels
        ngrids = layout_nboxes(mla%la(i))
-       bct%bc_tower_array(i)%dim    = bct%dim
+       bct%bc_tower_array(i)%dim    = dm
        bct%bc_tower_array(i)%ngrids = ngrids
        bct%bc_tower_array(i)%domain = domain_box(i)
 
-       allocate(bct%bc_tower_array(i)%phys_bc_level_array(0:ngrids,bct%dim,2))
+       allocate(bct%bc_tower_array(i)%phys_bc_level_array(0:ngrids,dm,2))
        default_value = INTERIOR
        call phys_bc_level_build(bct%bc_tower_array(i)%phys_bc_level_array,mla%la(i), &
                                 domain_bc,default_value)
 
-       allocate(bct%bc_tower_array(i)%adv_bc_level_array(0:ngrids,bct%dim,2,bct%dim+nscal+3))
+       allocate(bct%bc_tower_array(i)%adv_bc_level_array(0:ngrids,dm,2,dm+nscal+3))
        default_value = INTERIOR
        call adv_bc_level_build(bct%bc_tower_array(i)%adv_bc_level_array, &
                                bct%bc_tower_array(i)%phys_bc_level_array,default_value)
 
-       allocate(bct%bc_tower_array(i)%ell_bc_level_array(0:ngrids,bct%dim,2,bct%dim+nscal+3))
+       allocate(bct%bc_tower_array(i)%ell_bc_level_array(0:ngrids,dm,2,dm+nscal+3))
        default_value = BC_INT
        call ell_bc_level_build(bct%bc_tower_array(i)%ell_bc_level_array, &
                                bct%bc_tower_array(i)%phys_bc_level_array,default_value)

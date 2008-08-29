@@ -39,7 +39,7 @@ contains
 
     ! local
     integer :: i,n
-    integer :: lo(uold(1)%dim),hi(uold(1)%dim)
+    integer :: lo(dm),hi(dm)
     integer :: ng_uo,ng_un,ng_um,ng_ue,ng_sp,ng_f,ng_n,ng_w0
 
     real(kind=dp_t), pointer:: uop(:,:,:,:)

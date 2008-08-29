@@ -34,7 +34,7 @@ contains
     real(kind=dp_t), pointer:: shp(:,:,:,:)
     real(kind=dp_t), pointer:: sop(:,:,:,:)
     real(kind=dp_t), pointer:: snp(:,:,:,:)
-    integer :: lo(shalf(1)%dim),hi(shalf(1)%dim),ng_h,ng_o,ng_n
+    integer :: lo(dm),hi(dm),ng_h,ng_o,ng_n
     integer :: i,in_comp,out_comp,n
 
     type(bl_prof_timer), save :: bpt
@@ -123,7 +123,7 @@ contains
     real(kind=dp_t), pointer:: rhp(:,:,:,:)
     real(kind=dp_t), pointer:: rop(:,:,:,:)
     real(kind=dp_t), pointer:: rnp(:,:,:,:)
-    integer   :: lo(phihalf(1)%dim),hi(phihalf(1)%dim)
+    integer   :: lo(dm),hi(dm)
     integer   :: ng_h,ng_o,ng_n,i,n
 
     ng_h = phihalf(1)%ng

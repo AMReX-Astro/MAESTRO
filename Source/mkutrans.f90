@@ -35,7 +35,7 @@ contains
     real(kind=dp_t), pointer :: w0xp(:,:,:,:)
     real(kind=dp_t), pointer :: w0yp(:,:,:,:)
     real(kind=dp_t), pointer :: w0zp(:,:,:,:)
-    integer                  :: lo(u(1)%dim)
+    integer                  :: lo(dm)
     integer                  :: i,n,ng_u,ng_ut,ng_w0
 
     type(bl_prof_timer), save :: bpt

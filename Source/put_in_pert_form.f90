@@ -39,7 +39,7 @@ contains
 
     ! Local variables
     real(kind=dp_t), pointer::  sp(:,:,:,:)
-    integer :: lo(s(1)%dim),hi(s(1)%dim)
+    integer :: lo(dm),hi(dm)
     integer :: i,ng,nlevs,n,bc_comp
 
     nlevs = mla%nlevel

@@ -42,7 +42,7 @@ contains
     real(kind=dp_t), pointer :: tp(:,:,:,:)
     real(kind=dp_t), pointer :: rwp(:,:,:,:)
     real(kind=dp_t), pointer :: hep(:,:,:,:)
-    integer                  :: lo(thermal(1)%dim),hi(thermal(1)%dim)
+    integer                  :: lo(dm),hi(dm)
     integer                  :: i,n
     integer :: ng_t, ng_rw, ng_s, ng_he
 

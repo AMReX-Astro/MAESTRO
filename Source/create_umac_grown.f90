@@ -18,8 +18,8 @@ contains
 
     ! local
     integer        :: i,j,k,ng_f,ng_c
-    integer        :: c_lo(fine(1)%dim),c_hi(fine(1)%dim)
-    integer        :: f_lo(fine(1)%dim),f_hi(fine(1)%dim)
+    integer        :: c_lo(dm),c_hi(dm)
+    integer        :: f_lo(dm),f_hi(dm)
 
     type(fgassoc)  :: fgasc
     type(boxarray) :: f_ba,c_ba,tba
@@ -707,7 +707,7 @@ contains
     type(multifab), intent(inout) :: umac(:,:)
 
     integer :: i,n,ng_um
-    integer :: lo(umac(1,1)%dim),hi(umac(1,1)%dim)
+    integer :: lo(dm),hi(dm)
 
     real(kind=dp_t), pointer :: ump(:,:,:,:) 
     real(kind=dp_t), pointer :: vmp(:,:,:,:)

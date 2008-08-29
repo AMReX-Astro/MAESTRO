@@ -49,7 +49,7 @@ contains
 
     integer                     :: i,comp,n,nlevs,stencil_order
     integer                     :: ng_s,ng_T,ng_h,ng_X,ng_p,ng_cc,ng_fc
-    integer                     :: lo(s(1)%dim),hi(s(1)%dim)
+    integer                     :: lo(dm),hi(dm)
     real(kind=dp_t), pointer    :: sp(:,:,:,:)
     real(kind=dp_t), pointer    :: betap(:,:,:,:),Xkcoeffp(:,:,:,:)
     real(kind=dp_t), pointer    :: Tcoeffp(:,:,:,:),hcoeffp(:,:,:,:)

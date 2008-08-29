@@ -66,8 +66,8 @@ contains
 
     type(box) :: domain
 
-    integer :: domlo(mla%dim),domhi(mla%dim)
-    integer :: lo(mla%dim),hi(mla%dim)
+    integer :: domlo(dm),domhi(dm)
+    integer :: lo(dm),hi(dm)
     integer :: i,r,rpert,n,rr,ng_e
 
     type(bl_prof_timer), save :: bpt
@@ -451,7 +451,7 @@ contains
                                    mla,the_bc_level)
 
     use bl_constants_module
-    use geometry, only: spherical, nr_fine, nr
+    use geometry, only: spherical, nr_fine, nr, dm
     use variables
     use average_module
     use ml_restriction_module
@@ -478,7 +478,7 @@ contains
     real(kind=dp_t), pointer :: ump(:,:,:,:), vmp(:,:,:,:), wmp(:,:,:,:)
     real(kind=dp_t), pointer :: np(:,:,:,:)
 
-    integer :: n,i,lo(sold(1)%dim),hi(sold(1)%dim),ng_so,ng_sn,ng_um,ng_n,ng_e,ng_rp
+    integer :: n,i,lo(dm),hi(dm),ng_so,ng_sn,ng_um,ng_n,ng_e,ng_rp
     integer :: r
 
 

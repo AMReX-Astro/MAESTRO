@@ -23,7 +23,7 @@ contains
     real(kind=dp_t), intent(in   ) :: mult
 
     ! Local variables
-    integer :: i,lo(umac(1,1)%dim),hi(umac(1,1)%dim),n,ng_um,ng_w0
+    integer :: i,lo(dm),hi(dm),n,ng_um,ng_w0
     real(kind=dp_t), pointer :: ump(:,:,:,:)
     real(kind=dp_t), pointer :: vmp(:,:,:,:)
     real(kind=dp_t), pointer :: wmp(:,:,:,:)

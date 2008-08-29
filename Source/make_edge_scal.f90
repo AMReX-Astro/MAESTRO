@@ -51,7 +51,7 @@ contains
     type(ml_layout), intent(in   ) :: mla
 
     integer                  :: i,r,scomp,bccomp,n
-    integer                  :: lo(s(1)%dim), hi(s(1)%dim)
+    integer                  :: lo(dm), hi(dm)
     integer                  :: ng_s,ng_se,ng_um,ng_f,ng_w0,ng_n,ng_gw
     real(kind=dp_t), pointer :: sop(:,:,:,:)
     real(kind=dp_t), pointer :: sepx(:,:,:,:)

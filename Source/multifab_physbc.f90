@@ -22,7 +22,7 @@ contains
     type(bc_level) , intent(in   ) :: the_bc_level
 
     ! Local
-    integer                  :: lo(s%dim)
+    integer                  :: lo(dm)
     integer                  :: i,ng,scomp,bccomp
     real(kind=dp_t), pointer :: sp(:,:,:,:)
 

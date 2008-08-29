@@ -35,7 +35,7 @@ contains
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     real(kind=dp_t), pointer:: gamp(:,:,:,:),sp(:,:,:,:)
-    integer :: lo(s(1)%dim),hi(s(1)%dim)
+    integer :: lo(dm),hi(dm)
     integer :: i,n
     integer :: ng_g, ng_s
 

@@ -39,7 +39,7 @@ contains
     real(kind=dp_t), pointer::   rp(:,:,:,:)
     real(kind=dp_t), pointer::   hp(:,:,:,:)
 
-    integer :: lo(s_in(1)%dim),hi(s_in(1)%dim),ng_si,ng_so,ng_rw,ng_he
+    integer :: lo(dm),hi(dm),ng_si,ng_so,ng_rw,ng_he
     integer :: i,n,ispec
 
     type(bl_prof_timer), save :: bpt

@@ -39,7 +39,7 @@ contains
     
     ! local
     integer :: i,r,n,ng_u,ng_se,ng_r0,ng_rh0
-    integer :: lo(u(1)%dim),hi(u(1)%dim)
+    integer :: lo(dm),hi(dm)
     real(kind=dp_t), pointer :: sepx(:,:,:,:)
     real(kind=dp_t), pointer :: sepy(:,:,:,:)
     real(kind=dp_t), pointer :: sepz(:,:,:,:)
@@ -572,7 +572,7 @@ contains
 
     ! local
     integer                  :: i,ng,n
-    integer                  :: lo(s(1)%dim),hi(s(1)%dim)
+    integer                  :: lo(dm),hi(dm)
     real(kind=dp_t), pointer :: snp(:,:,:,:)
 
     type(bl_prof_timer), save :: bpt
@@ -756,7 +756,7 @@ contains
 
     ! local
     integer                  :: i,ng,n
-    integer                  :: lo(s(1)%dim),hi(s(1)%dim)
+    integer                  :: lo(dm),hi(dm)
     real(kind=dp_t), pointer :: snp(:,:,:,:)
 
     type(bl_prof_timer), save :: bpt
@@ -946,7 +946,7 @@ contains
 
     ! local
     integer                  :: i,ng_s,ng_p,n
-    integer                  :: lo(s(1)%dim),hi(s(1)%dim)
+    integer                  :: lo(dm),hi(dm)
     real(kind=dp_t), pointer :: snp(:,:,:,:)
     real(kind=dp_t), pointer :: pnp(:,:,:,:)
 
@@ -1136,7 +1136,7 @@ contains
     ! local
     real(kind=dp_t), pointer :: sop(:,:,:,:)
     integer                  :: i,n,ng_s
-    integer                  :: lo(s(1)%dim),hi(s(1)%dim)
+    integer                  :: lo(dm),hi(dm)
 
     ng_s = s(1)%ng
 
@@ -1291,7 +1291,7 @@ contains
     ! local
     real(kind=dp_t), pointer :: sop(:,:,:,:)
     integer                  :: i,n,ng_s
-    integer                  :: lo(s(1)%dim),hi(s(1)%dim)
+    integer                  :: lo(dm),hi(dm)
 
     ng_s = s(1)%ng
 

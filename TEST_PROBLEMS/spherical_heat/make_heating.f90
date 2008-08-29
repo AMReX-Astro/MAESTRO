@@ -28,7 +28,7 @@ contains
 
     ! local
     integer                  :: n,i,ng_s,ng_h
-    integer                  :: lo(s(1)%dim),hi(s(1)%dim)
+    integer                  :: lo(dm),hi(dm)
     real(kind=dp_t), pointer :: sp(:,:,:,:)
     real(kind=dp_t), pointer :: hp(:,:,:,:)
 

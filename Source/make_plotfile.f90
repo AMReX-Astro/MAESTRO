@@ -133,7 +133,7 @@ contains
     
     type(multifab) :: plotdata(mla%nlevel)
     type(multifab) :: tempfab(mla%nlevel)
-    type(multifab) :: w0mac(mla%nlevel,mla%dim)
+    type(multifab) :: w0mac(mla%nlevel,dm)
     real(dp_t), allocatable :: entropybar(:,:)
 
     integer :: n,nlevs,prec,comp

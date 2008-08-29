@@ -54,7 +54,7 @@ contains
 
     ! local
     integer                  :: i,n,nlevs
-    integer                  :: lo(scal_force(1)%dim),hi(scal_force(1)%dim)
+    integer                  :: lo(dm),hi(dm)
     integer                  :: ng_f,ng_um,ng_th
     real(kind=dp_t), pointer :: ump(:,:,:,:)
     real(kind=dp_t), pointer :: vmp(:,:,:,:)
@@ -437,7 +437,7 @@ contains
     integer         :: i,n,ng_f,ng_um,ng_s,ng_th,nlevs
     type(multifab)  :: p0_cart(mla%nlevel)
     real(kind=dp_t) :: p0_nph(mla%nlevel,0:nr_fine-1)
-    integer         :: lo(temp_force(1)%dim),hi(temp_force(1)%dim)
+    integer         :: lo(dm),hi(dm)
 
     real(kind=dp_t), pointer :: tp(:,:,:,:)
     real(kind=dp_t), pointer :: ump(:,:,:,:)

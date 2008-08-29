@@ -178,7 +178,7 @@ contains
       real(kind=dp_t), pointer :: wmp(:,:,:,:) 
       real(kind=dp_t), pointer :: rhp(:,:,:,:) 
       real(kind=dp_t)          :: rhmax
-      integer :: i,lo(rh(1)%dim),hi(rh(1)%dim)
+      integer :: i,lo(dm),hi(dm)
       integer :: ng_um, ng_rh
 
       ng_um = umac(1,1)%ng
@@ -303,7 +303,7 @@ contains
       real(kind=dp_t), pointer :: ump(:,:,:,:) 
       real(kind=dp_t), pointer :: vmp(:,:,:,:) 
       real(kind=dp_t), pointer :: wmp(:,:,:,:) 
-      integer                  :: lo(umac(1)%dim)
+      integer                  :: lo(dm)
       integer                  :: i,ng_um
 
       ng_um = umac(1)%ng
@@ -336,7 +336,7 @@ contains
       real(dp_t)     , intent(in   ) :: div_coeff_half(0:)
 
       real(kind=dp_t), pointer :: bp(:,:,:,:) 
-      integer                  :: lo(beta%dim)
+      integer                  :: lo(dm)
       integer                  :: i,ng_b
 
       ng_b = beta%ng
@@ -429,6 +429,8 @@ contains
 
     subroutine mult_umac_by_3d_coeff(umac,div_coeff,domain,do_mult)
 
+      use geometry, only: dm
+
       type(multifab) , intent(inout) :: umac(:)
       type(multifab) , intent(in   ) :: div_coeff
       type(box)      , intent(in   ) :: domain
@@ -438,8 +440,8 @@ contains
       real(kind=dp_t), pointer :: vmp(:,:,:,:) 
       real(kind=dp_t), pointer :: wmp(:,:,:,:) 
       real(kind=dp_t), pointer ::  dp(:,:,:,:) 
-      integer :: i,lo(umac(1)%dim),hi(umac(1)%dim)
-      integer :: domlo(umac(1)%dim),domhi(umac(1)%dim)
+      integer :: i,lo(dm),hi(dm)
+      integer :: domlo(dm),domhi(dm)
 
       domlo =  lwb(domain)
       domhi =  upb(domain)
@@ -453,7 +455,7 @@ contains
          dp => dataptr(div_coeff, i)
          lo =  lwb(get_box(umac(1), i))
          hi =  upb(get_box(umac(1), i))
-         select case (umac(1)%dim)
+         select case (dm)
          case (3)
             call mult_by_3d_coeff_3d(ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
                                      dp(:,:,:,1), lo, hi, domlo, domhi, do_mult)
@@ -464,14 +466,16 @@ contains
 
     subroutine mult_beta_by_3d_coeff(beta,div_coeff,domain)
 
+      use geometry, only: dm
+
       type(multifab) , intent(inout) :: beta
       type(multifab) , intent(in   ) :: div_coeff
       type(box)      , intent(in   ) :: domain
 
       real(kind=dp_t), pointer :: bp(:,:,:,:) 
       real(kind=dp_t), pointer :: dp(:,:,:,:) 
-      integer :: i,lo(beta%dim),hi(beta%dim)
-      integer :: domlo(beta%dim),domhi(beta%dim)
+      integer :: i,lo(dm),hi(dm)
+      integer :: domlo(dm),domhi(dm)
 
       domlo =  lwb(domain)
       domhi =  upb(domain)
@@ -483,7 +487,7 @@ contains
          dp => dataptr(div_coeff,i)
          lo =  lwb(get_box(beta, i))
          hi =  upb(get_box(beta, i))
-         select case (beta%dim)
+         select case (dm)
          case (3)
             call mult_by_3d_coeff_3d(bp(:,:,:,1), bp(:,:,:,2), bp(:,:,:,3), &
                                      dp(:,:,:,1), lo, hi, domlo, domhi, .true.)
@@ -1295,8 +1299,8 @@ contains
     integer    :: n, nu1, nu2, gamma, cycle, smoother
     integer    :: max_nlevel_in,do_diagnostics
     real(dp_t) :: rel_eps,abs_eps,omega,bottom_solver_eps
-    real(dp_t) ::  xa(mla%dim),  xb(mla%dim)
-    real(dp_t) :: pxa(mla%dim), pxb(mla%dim)
+    real(dp_t) ::  xa(dm),  xb(dm)
+    real(dp_t) :: pxa(dm), pxb(dm)
 
     type(bl_prof_timer), save :: bpt
 
@@ -1500,8 +1504,8 @@ contains
     integer    :: n, nu1, nu2, gamma, ncycle, smoother
     integer    :: max_nlevel_in,do_diagnostics
     real(dp_t) :: rel_eps,abs_eps,omega,bottom_solver_eps
-    real(dp_t) ::  xa(mla%dim),  xb(mla%dim)
-    real(dp_t) :: pxa(mla%dim), pxb(mla%dim)
+    real(dp_t) ::  xa(dm),  xb(dm)
+    real(dp_t) :: pxa(dm), pxb(dm)
 
     type(boxarray) :: bac
 
