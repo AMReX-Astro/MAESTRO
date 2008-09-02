@@ -18,8 +18,8 @@ fEXE_sources += iumach.f
 
 fEXE_sources += dacopy.f
 fEXE_sources += dcopy.f
-fEXE_sources += daxpy.f
-fEXE_sources += ddot.f
+#fEXE_sources += daxpy.f
+#fEXE_sources += ddot.f
 fEXE_sources += dgbfa.f
 fEXE_sources += dgbsl.f
 fEXE_sources += dgefa.f
