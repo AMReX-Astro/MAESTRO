@@ -1,7 +1,14 @@
 &PROBIN
- test_set = "gr0_2d_3levels"
+! uncomment for fixed grids
+! test_set = "gr0_2d_3levels"
  spherical_in = 0
  plot_base = T
+
+! uncomment for adaptive grids
+ max_levs = 3
+ n_cellx = 96
+ n_celly = 160
+ regrid_int = 1
 
  prob_hi_x = 2.16e8
  prob_hi_y = 3.6e8
