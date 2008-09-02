@@ -18,8 +18,7 @@ module init_module
   implicit none
 
   private
-  public :: initscalardata, initscalardata_on_level, initveldata, initveldata_on_level, &
-       scalar_diags
+  public :: initscalardata, initscalardata_on_level, initveldata, scalar_diags
 
 contains
 
@@ -361,41 +360,6 @@ contains
     end if
 
   end subroutine initveldata
-
-  subroutine initveldata_on_level(n,u,s0_init,p0_background,dx,bc)
-
-    integer        , intent(in   ) :: n
-    type(multifab) , intent(inout) :: u
-    real(kind=dp_t), intent(in   ) :: s0_init(0:,:)
-    real(kind=dp_t), intent(in   ) :: p0_background(0:)
-    real(kind=dp_t), intent(in   ) :: dx(:)
-    type(bc_level) , intent(in   ) :: bc
-
-    ! local
-    integer                  :: ng,i
-    integer                  :: lo(dm),hi(dm)
-    real(kind=dp_t), pointer :: uop(:,:,:,:)
-
-    ng = u%ng
-
-    do i = 1, u%nboxes
-       if ( multifab_remote(u,i) ) cycle
-       uop => dataptr(u,i)
-       lo =  lwb(get_box(u,i))
-       hi =  upb(get_box(u,i))
-       select case (dm)
-       case (2)
-          call initscalardata_2d(uop(:,:,1,:), lo, hi, ng, dx, s0_init, p0_background)
-       case (3)
-          call initscalardata_3d(n,uop(:,:,:,:), lo, hi, ng, dx, s0_init, p0_background)
-       end select
-    end do
-
-    call multifab_fill_boundary(u)
-
-    call multifab_physbc(u,1,1,dm,bc)
-
-  end subroutine initveldata_on_level
 
   subroutine initveldata_2d(u,lo,hi,ng,dx,s0_init,p0_background)
 
