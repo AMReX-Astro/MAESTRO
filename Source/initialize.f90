@@ -343,38 +343,38 @@ contains
        endif
     endif
 
-     ! mba is big enough to hold max_levs levels
-     call ml_boxarray_build_n(mba,max_levs,dm)
-     do n = 1, max_levs-1
-        mba%rr(n,:) = ref_ratio
-     enddo
+    ! mba is big enough to hold max_levs levels
+    call ml_boxarray_build_n(mba,max_levs,dm)
+    do n = 1, max_levs-1
+       mba%rr(n,:) = ref_ratio
+    enddo
 
-     allocate(uold(max_levs),sold(max_levs),gpres(max_levs),pres(max_levs))
-     allocate(dSdt(max_levs),Source_old(max_levs),rho_omegadot2(max_levs))
+    allocate(uold(max_levs),sold(max_levs),gpres(max_levs),pres(max_levs))
+    allocate(dSdt(max_levs),Source_old(max_levs),rho_omegadot2(max_levs))
 
-       ! Build the level 1 boxarray
-     call box_build_2(bxs,lo,hi)
-     call boxarray_build_bx(mba%bas(1),bxs)
-     call boxarray_maxsize(mba%bas(1),max_grid_size)
+    ! Build the level 1 boxarray
+    call box_build_2(bxs,lo,hi)
+    call boxarray_build_bx(mba%bas(1),bxs)
+    call boxarray_maxsize(mba%bas(1),max_grid_size)
 
-     ! build pd(:)
-     mba%pd(1) = bxs
-     do n = 2, max_levs
-        mba%pd(n) = refine(mba%pd(n-1),mba%rr((n-1),:))
-     enddo
-
+    ! build pd(:)
+    mba%pd(1) = bxs
+    do n = 2, max_levs
+       mba%pd(n) = refine(mba%pd(n-1),mba%rr((n-1),:))
+    enddo
+    
     allocate(dx(max_levs,dm))
 
     do d=1,dm
-       dx(1,d) = (prob_hi(d)-prob_lo(d)) / real(extent(mla%mba%pd(1),d),kind=dp_t)
+       dx(1,d) = (prob_hi(d)-prob_lo(d)) / real(extent(mba%pd(1),d),kind=dp_t)
     end do
     do n = 2,max_levs
-       dx(n,:) = dx(n-1,:) / mla%mba%rr(n-1,:)
+       dx(n,:) = dx(n-1,:) / mba%rr(n-1,:)
     end do
 
     allocate(domain_phys_bc(dm,2))
     allocate(domain_boxes(max_levs))
-    
+
     do n = 1,max_levs
        domain_boxes(n) = layout_get_pd(mla%la(n))
     end do
@@ -416,6 +416,8 @@ contains
     ! this may be modified later since we don't know how many levels we actually
     ! need until we start initializing the data
     nlevs = max_levs
+
+    call destroy(mba)
 
   end subroutine initialize_with_adaptive_grids
 
