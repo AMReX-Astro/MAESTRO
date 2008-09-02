@@ -306,7 +306,116 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine initialize_with_adaptive_grids()
+  subroutine initialize_with_adaptive_grids(mla,pmask,dx,uold,sold,gpres,pres, &
+                                            dSdt,Source_old,rho_omegadot2,the_bc_tower)
+
+    use probin_module, only: n_cellx, n_celly, n_cellz, regrid_int, max_grid_size, &
+         ref_ratio, max_levs
+
+    type(ml_layout),intent(out)   :: mla
+    logical       , intent(in   ) :: pmask(:)
+    real(dp_t)    , pointer       :: dx(:,:)
+    type(multifab), pointer       :: uold(:),sold(:),gpres(:),pres(:),dSdt(:)
+    type(multifab), pointer       :: Source_old(:),rho_omegadot2(:)
+    type(bc_tower), intent(  out) :: the_bc_tower
+
+    integer     , allocatable :: domain_phys_bc(:,:)
+    type(box)   , allocatable :: domain_boxes(:)
+
+    integer           :: buf_wid
+    type(layout)      :: la_array(max_levs)
+    type(box)         :: bxs
+    type(ml_boxarray) :: mba
+
+    logical :: new_grid
+    integer :: lo(dm), hi(dm)
+    integer :: n, d
+
+    buf_wid = regrid_int
+
+    ! set up hi & lo to carry indexing info
+    lo = 0
+    hi(1) = n_cellx-1
+    if (dm > 1) then   
+       hi(2) = n_celly - 1        
+       if (dm > 2)  then
+          hi(3) = n_cellz -1
+       endif
+    endif
+
+     ! mba is big enough to hold max_levs levels
+     call ml_boxarray_build_n(mba,max_levs,dm)
+     do n = 1, max_levs-1
+        mba%rr(n,:) = ref_ratio
+     enddo
+
+     allocate(uold(max_levs),sold(max_levs),gpres(max_levs),pres(max_levs))
+     allocate(dSdt(max_levs),Source_old(max_levs),rho_omegadot2(max_levs))
+
+       ! Build the level 1 boxarray
+     call box_build_2(bxs,lo,hi)
+     call boxarray_build_bx(mba%bas(1),bxs)
+     call boxarray_maxsize(mba%bas(1),max_grid_size)
+
+     ! build pd(:)
+     mba%pd(1) = bxs
+     do n = 2, max_levs
+        mba%pd(n) = refine(mba%pd(n-1),mba%rr((n-1),:))
+     enddo
+
+    allocate(dx(max_levs,dm))
+
+    do d=1,dm
+       dx(1,d) = (prob_hi(d)-prob_lo(d)) / real(extent(mla%mba%pd(1),d),kind=dp_t)
+    end do
+    do n = 2,max_levs
+       dx(n,:) = dx(n-1,:) / mla%mba%rr(n-1,:)
+    end do
+
+    allocate(domain_phys_bc(dm,2))
+    allocate(domain_boxes(max_levs))
+    
+    do n = 1,max_levs
+       domain_boxes(n) = layout_get_pd(mla%la(n))
+    end do
+
+    ! Put the bc values from the inputs file into domain_phys_bc
+    domain_phys_bc(1,1) = bcx_lo
+    domain_phys_bc(1,2) = bcx_hi
+    if (pmask(1)) then
+       if (bcx_lo .ne. -1 .or. bcx_hi .ne. -1) then
+          call bl_error('MUST HAVE BCX = -1 if PMASK = T')
+       endif
+    end if
+    if (dm > 1) then
+       domain_phys_bc(2,1) = bcy_lo
+       domain_phys_bc(2,2) = bcy_hi
+       if (pmask(2)) then
+          if (bcy_lo .ne. -1 .or. bcy_hi .ne. -1) then
+             call bl_error('MUST HAVE BCY = -1 if PMASK = T') 
+          end if
+       end if
+    end if
+    if (dm > 2) then
+       domain_phys_bc(3,1) = bcz_lo
+       domain_phys_bc(3,2) = bcz_hi
+       if (pmask(3)) then
+          if (bcz_lo .ne. -1 .or. bcz_hi .ne. -1) then
+             call bl_error('MUST HAVE BCZ = -1 if PMASK = T')
+          end if
+       end if
+    end if
+
+    do d=1,dm
+       if ( pmask(d) ) domain_phys_bc(d,:) = BC_PER
+    end do
+
+    ! Build the arrays for each grid from the domain_bc arrays.
+    call bc_tower_build(the_bc_tower,mla,domain_phys_bc,domain_boxes)
+
+    ! this may be modified later since we don't know how many levels we actually
+    ! need until we start initializing the data
+    nlevs = max_levs
 
   end subroutine initialize_with_adaptive_grids
 
