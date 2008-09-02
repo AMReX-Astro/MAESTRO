@@ -3,6 +3,12 @@ module initialize_module
   use define_bc_module
   use ml_layout_module
   use multifab_module
+  use bc_module
+  use probin_module, only: nlevs, nodal, test_set, prob_lo, prob_hi, bcx_lo, bcx_hi, &
+       bcy_lo, bcy_hi, bcz_lo, bcz_hi
+  use variables, only: nscal, rho_comp
+  use geometry, only: dm
+  use network, only: nspec
 
   implicit none
 
@@ -16,10 +22,6 @@ contains
   subroutine initialize_from_restart(mla,restart,time,dt,dx,pmask,uold,sold,gpres,pres, &
                                      dSdt,Source_old,rho_omegadot2,the_bc_tower)
 
-    use probin_module, only: nlevs, nodal, prob_lo, prob_hi
-    use variables, only: nscal, rho_comp
-    use geometry, only: dm
-    use network, only: nspec
     use restart_module
 
     type(ml_layout),intent(out)   :: mla
@@ -37,6 +39,9 @@ contains
     type(multifab), pointer :: chk_dsdt(:)
     type(multifab), pointer :: chk_src_old(:)
     type(multifab), pointer :: chk_rho_omegadot2(:)
+
+    integer     , allocatable :: domain_phys_bc(:,:)
+    type(box)   , allocatable :: domain_boxes(:)
 
     type(ml_boxarray) :: mba
 
@@ -105,6 +110,47 @@ contains
        dx(n,:) = dx(n-1,:) / mla%mba%rr(n-1,:)
     end do
 
+    allocate(domain_phys_bc(dm,2))
+    allocate(domain_boxes(nlevs))
+    
+    do n = 1,nlevs
+       domain_boxes(n) = layout_get_pd(mla%la(n))
+    end do
+
+    ! Put the bc values from the inputs file into domain_phys_bc
+    domain_phys_bc(1,1) = bcx_lo
+    domain_phys_bc(1,2) = bcx_hi
+    if (pmask(1)) then
+       if (bcx_lo .ne. -1 .or. bcx_hi .ne. -1) then
+          call bl_error('MUST HAVE BCX = -1 if PMASK = T')
+       endif
+    end if
+    if (dm > 1) then
+       domain_phys_bc(2,1) = bcy_lo
+       domain_phys_bc(2,2) = bcy_hi
+       if (pmask(2)) then
+          if (bcy_lo .ne. -1 .or. bcy_hi .ne. -1) then
+             call bl_error('MUST HAVE BCY = -1 if PMASK = T') 
+          end if
+       end if
+    end if
+    if (dm > 2) then
+       domain_phys_bc(3,1) = bcz_lo
+       domain_phys_bc(3,2) = bcz_hi
+       if (pmask(3)) then
+          if (bcz_lo .ne. -1 .or. bcz_hi .ne. -1) then
+             call bl_error('MUST HAVE BCZ = -1 if PMASK = T')
+          end if
+       end if
+    end if
+
+    do d=1,dm
+       if ( pmask(d) ) domain_phys_bc(d,:) = BC_PER
+    end do
+
+    ! Build the arrays for each grid from the domain_bc arrays.
+    call bc_tower_build(the_bc_tower,mla,domain_phys_bc,domain_boxes)
+
     call destroy(mba)
 
   end subroutine initialize_from_restart
@@ -114,10 +160,6 @@ contains
   subroutine initialize_with_fixed_grids(mla,pmask,dx,uold,sold,gpres,pres, &
                                          dSdt,Source_old,rho_omegadot2,the_bc_tower)
 
-    use probin_module, only: nlevs, nodal, test_set, prob_lo, prob_hi
-    use variables, only: nscal
-    use geometry, only: dm
-    use network, only: nspec
     use box_util_module
     
     type(ml_layout),intent(out)   :: mla
@@ -127,6 +169,9 @@ contains
     type(multifab), pointer       :: Source_old(:),rho_omegadot2(:)
     type(bc_tower), intent(  out) :: the_bc_tower
     
+    integer     , allocatable :: domain_phys_bc(:,:)
+    type(box)   , allocatable :: domain_boxes(:)
+
     type(ml_boxarray)         :: mba
 
     integer :: n,d
@@ -170,6 +215,47 @@ contains
     do n = 2,nlevs
        dx(n,:) = dx(n-1,:) / mla%mba%rr(n-1,:)
     end do
+
+    allocate(domain_phys_bc(dm,2))
+    allocate(domain_boxes(nlevs))
+    
+    do n = 1,nlevs
+       domain_boxes(n) = layout_get_pd(mla%la(n))
+    end do
+
+    ! Put the bc values from the inputs file into domain_phys_bc
+    domain_phys_bc(1,1) = bcx_lo
+    domain_phys_bc(1,2) = bcx_hi
+    if (pmask(1)) then
+       if (bcx_lo .ne. -1 .or. bcx_hi .ne. -1) then
+          call bl_error('MUST HAVE BCX = -1 if PMASK = T')
+       endif
+    end if
+    if (dm > 1) then
+       domain_phys_bc(2,1) = bcy_lo
+       domain_phys_bc(2,2) = bcy_hi
+       if (pmask(2)) then
+          if (bcy_lo .ne. -1 .or. bcy_hi .ne. -1) then
+             call bl_error('MUST HAVE BCY = -1 if PMASK = T') 
+          end if
+       end if
+    end if
+    if (dm > 2) then
+       domain_phys_bc(3,1) = bcz_lo
+       domain_phys_bc(3,2) = bcz_hi
+       if (pmask(3)) then
+          if (bcz_lo .ne. -1 .or. bcz_hi .ne. -1) then
+             call bl_error('MUST HAVE BCZ = -1 if PMASK = T')
+          end if
+       end if
+    end if
+
+    do d=1,dm
+       if ( pmask(d) ) domain_phys_bc(d,:) = BC_PER
+    end do
+
+    ! Build the arrays for each grid from the domain_bc arrays.
+    call bc_tower_build(the_bc_tower,mla,domain_phys_bc,domain_boxes)
 
     call destroy(mba)
 
