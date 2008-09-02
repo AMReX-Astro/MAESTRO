@@ -19,6 +19,8 @@ contains
 
   subroutine tag_boxes(mf,tagboxes,lev)
 
+    use variables, only: temp_comp
+
     type( multifab), intent(in   ) :: mf
     type(lmultifab), intent(inout) :: tagboxes
     integer        , intent(in   ) :: lev
@@ -37,9 +39,9 @@ contains
 
        select case (mf%dim)
        case (2)
-          call tag_boxes_2d(tp(:,:,1,1),sp(:,:,1,1),lo,ng_s,lev)
+          call tag_boxes_2d(tp(:,:,1,1),sp(:,:,1,temp_comp),lo,ng_s,lev)
        case  (3)
-          call tag_boxes_3d(tp(:,:,:,1),sp(:,:,:,1),lo,ng_s,lev)
+          call tag_boxes_3d(tp(:,:,:,1),sp(:,:,:,temp_comp),lo,ng_s,lev)
        end select
     end do
 
@@ -59,31 +61,33 @@ contains
 
     tagbox = .false.
 
+    ! if any cell meets the tag condition, we tag across the domain
+
     select case(llev)
     case (1)
-       ! tag all boxes with a density >= 1.01
+       ! tag all boxes with temperature >= 6.06d8
        do j = lo(2),lo(2)+ny-1
           do i = lo(1),lo(1)+nx-1
-             if (mf(i,j) .gt. 1.01d0) then
-                tagbox(i,j) = .true.
+             if (mf(i,j) .gt. 6.06d8) then
+                tagbox(:,j) = .true.
              end if
           end do
        enddo
     case (2)
-       ! for level 2 tag all boxes with a density >= 1.1
+       ! for level 2 tag all boxes with temperature >= 6.06d8
        do j = lo(2),lo(2)+ny-1
           do i = lo(1),lo(1)+nx-1
-             if (mf(i,j) .gt. 1.1d0) then
-                tagbox(i,j) = .true.
+             if (mf(i,j) .gt. 6.06d8) then
+                tagbox(:,j) = .true.
              end if
           end do
        end do
     case default
-       ! for level 3 or greater tag all boxes with a density >= 1.5
+       ! for level 3 or greater tag all boxes with temperature >= 6.06d8
        do j = lo(2),lo(2)+ny-1
           do i = lo(1),lo(1)+nx-1
-             if (mf(i,j) .gt. 1.5d0) then
-                tagbox(i,j) = .true.
+             if (mf(i,j) .gt. 6.06d8) then
+                tagbox(:,j) = .true.
              end if
           end do
        end do
