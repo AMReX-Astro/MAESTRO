@@ -6,8 +6,8 @@
 
 ! uncomment for adaptive grids
  max_levs = 2
- ncell_x = 192
- ncell_y = 320
+ n_cellx = 192
+ n_celly = 320
  regrid_int = 1
 
  prob_hi_x = 2.16e8
