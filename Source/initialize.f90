@@ -9,6 +9,7 @@ module initialize_module
   use variables, only: nscal, rho_comp
   use geometry, only: dm
   use network, only: nspec
+  use bl_constants_module
 
   implicit none
 
@@ -154,22 +155,26 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine initialize_with_fixed_grids(mla,pmask,dx,uold,sold,gpres,pres, &
+  subroutine initialize_with_fixed_grids(mla,time,dt,pmask,dx,uold,sold,gpres,pres, &
                                          dSdt,Source_old,rho_omegadot2,the_bc_tower)
 
     use box_util_module
     
-    type(ml_layout),intent(out)   :: mla
+    type(ml_layout),intent(out  ) :: mla
+    real(dp_t)    , intent(inout) :: time,dt
     logical       , intent(in   ) :: pmask(:)
     real(dp_t)    , pointer       :: dx(:,:)
     type(multifab), pointer       :: uold(:),sold(:),gpres(:),pres(:),dSdt(:)
     type(multifab), pointer       :: Source_old(:),rho_omegadot2(:)
     type(bc_tower), intent(  out) :: the_bc_tower
 
+    ! local
     type(ml_boxarray)         :: mba
-
-    integer :: n,d
+    integer                   :: n
     
+    time = ZERO
+    dt = 1.d20
+
     call read_a_hgproj_grid(mba,test_set)
     call ml_layout_build(mla,mba,pmask)
     
@@ -192,13 +197,13 @@ contains
        call multifab_build(   Source_old(n), mla%la(n),     1, 1)
        call multifab_build(rho_omegadot2(n), mla%la(n), nspec, 1)
 
-       call setval(         uold(n), 0.0_dp_t, all=.true.)
-       call setval(         sold(n), 0.0_dp_t, all=.true.)
-       call setval(        gpres(n), 0.0_dp_t, all=.true.)
-       call setval(         pres(n), 0.0_dp_t, all=.true.)
-       call setval(   Source_old(n), 0.0_dp_t, all=.true.)
-       call setval(         dSdt(n), 0.0_dp_t, all=.true.)
-       call setval(rho_omegadot2(n), 0.0_dp_t, all=.true.)
+       call setval(         uold(n), ZERO, all=.true.)
+       call setval(         sold(n), ZERO, all=.true.)
+       call setval(        gpres(n), ZERO, all=.true.)
+       call setval(         pres(n), ZERO, all=.true.)
+       call setval(   Source_old(n), ZERO, all=.true.)
+       call setval(         dSdt(n), ZERO, all=.true.)
+       call setval(rho_omegadot2(n), ZERO, all=.true.)
     end do
 
     call initialize_dx(dx,mba,nlevs)
@@ -214,13 +219,14 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine initialize_with_adaptive_grids(mla,pmask,dx,uold,sold,gpres,pres, &
+  subroutine initialize_with_adaptive_grids(mla,time,dt,pmask,dx,uold,sold,gpres,pres, &
                                             dSdt,Source_old,rho_omegadot2,the_bc_tower)
 
     use probin_module, only: n_cellx, n_celly, n_cellz, regrid_int, max_grid_size, &
          ref_ratio, max_levs
 
     type(ml_layout),intent(out)   :: mla
+    real(dp_t)    , intent(inout) :: time,dt
     logical       , intent(in   ) :: pmask(:)
     real(dp_t)    , pointer       :: dx(:,:)
     type(multifab), pointer       :: uold(:),sold(:),gpres(:),pres(:),dSdt(:)
@@ -235,6 +241,9 @@ contains
     logical :: new_grid
     integer :: lo(dm), hi(dm)
     integer :: n, d
+
+    time = ZERO
+    dt = 1.d20
 
     buf_wid = regrid_int
 
@@ -284,7 +293,6 @@ contains
 
     use bc_module
     use probin_module, only : bcx_lo, bcx_hi, bcy_lo, bcy_hi, bcz_lo, bcz_hi
-    use geometry, only: dm
 
     type(bc_tower), intent(  out) :: the_bc_tower
     integer       , intent(in   ) :: num_levs
@@ -327,8 +335,6 @@ contains
 
   subroutine initialize_dx(dx,mba,num_levs)
 
-    use geometry, only: dm
-  
     real(dp_t)       , pointer     :: dx(:,:)
     type(ml_boxarray), intent(in ) :: mba
     integer          , intent(in ) :: num_levs
