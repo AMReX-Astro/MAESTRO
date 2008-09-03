@@ -54,11 +54,16 @@ contains
     type(multifab), pointer :: chk_src_old(:)
     type(multifab), pointer :: chk_rho_omegadot2(:)
 
+    type(boxarray), allocatable :: validboxarr(:)
+    type(boxarray), allocatable :: diffboxarray(:)
+
+    type(box), allocatable :: boundingbox(:)
+
     type(ml_boxarray) :: mba
 
     real(dp_t) :: lenx,leny,lenz,max_dist
 
-    integer :: n
+    integer :: n,i
 
     call fill_restart_data(restart, mba, chkdata, chk_p, chk_dsdt, chk_src_old, &
                            chk_rho_omegadot2, time, dt)
@@ -66,39 +71,6 @@ contains
     call ml_layout_build(mla,mba,pmask)
 
     nlevs = mla%nlevel
-
-    call initialize_dx(dx,mba,nlevs)
-
-    ! compute nr_fine and dr_fine
-    if (spherical .eq. 1) then
-
-       ! for spherical, we will now require that dr_fine = dx
-       dr_fine = dx(1,nlevs)
-       
-       lenx = HALF * (prob_hi(1) - prob_lo(1))
-       leny = HALF * (prob_hi(2) - prob_lo(2))
-       lenz = HALF * (prob_hi(3) - prob_lo(3))
-       
-       max_dist = sqrt(lenx**2 + leny**2 + lenz**2)
-       nr_fine = int(max_dist / dr_fine) + 1
-       
-    else
-       
-       nr_fine = extent(mla%mba%pd(nlevs),dm)
-       dr_fine = (prob_hi(dm)-prob_lo(dm)) / dble(nr_fine)
-       
-    end if
-
-    ! allocate base state
-    call initialize_1d_arrays(div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold, &
-                              s0_init,rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_init, &
-                              p0_old,p0_new,w0,etarho,etarho_cc,div_etarho,psi,tempbar, &
-                              grav_cell)
-
-    ! fill base state
-
-
-
 
     allocate(uold(nlevs),sold(nlevs),gpres(nlevs),pres(nlevs))
     allocate(dSdt(nlevs),Source_old(nlevs),rho_omegadot2(nlevs))
@@ -147,6 +119,67 @@ contains
     
     deallocate(chkdata, chk_p, chk_dsdt, chk_src_old, chk_rho_omegadot2)
 
+    call initialize_dx(dx,mba,nlevs)
+
+    ! compute nr_fine and dr_fine
+    if (spherical .eq. 1) then
+
+       ! for spherical, we will now require that dr_fine = dx
+       dr_fine = dx(1,nlevs)
+       
+       lenx = HALF * (prob_hi(1) - prob_lo(1))
+       leny = HALF * (prob_hi(2) - prob_lo(2))
+       lenz = HALF * (prob_hi(3) - prob_lo(3))
+       
+       max_dist = sqrt(lenx**2 + leny**2 + lenz**2)
+       nr_fine = int(max_dist / dr_fine) + 1
+       
+    else
+       
+       nr_fine = extent(mla%mba%pd(nlevs),dm)
+       dr_fine = (prob_hi(dm)-prob_lo(dm)) / dble(nr_fine)
+       
+    end if
+    
+    ! create a "bounding box" for each level
+    ! this the smallest possible box that fits every grid at a particular level
+    ! this even includes the empty spaces if there are gaps between grids
+    allocate(boundingbox(nlevs))
+    do n=1,nlevs
+       boundingbox(n) = get_box(sold(n),1)
+       do i=2, sold(n)%nboxes
+          boundingbox(n) = box_bbox(boundingbox(n),get_box(sold(n),i))
+       end do
+    end do
+
+    ! compute diffboxarray
+    ! each box in diffboxarray corresponds to an "empty space" between valid regions at 
+    ! each level, excluding the coarsest level.
+    ! I am going to use this to compute all of the intermediate r_start_coord and r_end_coord
+    allocate(validboxarr(nlevs))
+    allocate(diffboxarray(nlevs))
+    do n=1,nlevs
+       call boxarray_build_copy(validboxarr(n),get_boxarray(sold(n)))
+       call boxarray_boxarray_diff(diffboxarray(n),boundingbox(n),validboxarr(n))
+       call boxarray_simplify(diffboxarray(n))
+    end do
+
+    ! Initialize geometry
+    call init_geometry(nlevs,mla,boundingbox,diffboxarray)
+
+    ! allocate base state
+    call initialize_1d_arrays(div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold, &
+                              s0_init,rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_init, &
+                              p0_old,p0_new,w0,etarho,etarho_cc,div_etarho,psi,tempbar, &
+                              grav_cell)
+
+    ! fill base state
+
+
+
+
+
+
      call initialize_bc(the_bc_tower,nlevs,pmask)
      do n = 1,nlevs
         call bc_tower_level_build(the_bc_tower,n,mla%la(n))
@@ -192,6 +225,11 @@ contains
        
     end if
 
+    do n=1,nlevs
+       call destroy(validboxarr(n))
+       call destroy(diffboxarray(n))
+    end do
+
     call destroy(mba)
 
   end subroutine initialize_from_restart
@@ -225,9 +263,14 @@ contains
     ! local
     type(ml_boxarray) :: mba
 
+    type(boxarray), allocatable :: validboxarr(:)
+    type(boxarray), allocatable :: diffboxarray(:)
+
+    type(box), allocatable :: boundingbox(:)
+
     real(dp_t) :: lenx,leny,lenz,max_dist
 
-    integer :: n
+    integer :: n,i
     
     time = ZERO
     dt = 1.d20
@@ -242,6 +285,27 @@ contains
     end if
     
     nlevs = mla%nlevel
+
+    allocate(uold(nlevs),sold(nlevs),gpres(nlevs),pres(nlevs))
+    allocate(dSdt(nlevs),Source_old(nlevs),rho_omegadot2(nlevs))
+    
+    do n = 1,nlevs
+       call multifab_build(         uold(n), mla%la(n),    dm, 3)
+       call multifab_build(         sold(n), mla%la(n), nscal, 3)
+       call multifab_build(        gpres(n), mla%la(n),    dm, 1)
+       call multifab_build(         pres(n), mla%la(n),     1, 1, nodal)
+       call multifab_build(         dSdt(n), mla%la(n),     1, 0)
+       call multifab_build(   Source_old(n), mla%la(n),     1, 1)
+       call multifab_build(rho_omegadot2(n), mla%la(n), nspec, 1)
+
+       call setval(         uold(n), ZERO, all=.true.)
+       call setval(         sold(n), ZERO, all=.true.)
+       call setval(        gpres(n), ZERO, all=.true.)
+       call setval(         pres(n), ZERO, all=.true.)
+       call setval(   Source_old(n), ZERO, all=.true.)
+       call setval(         dSdt(n), ZERO, all=.true.)
+       call setval(rho_omegadot2(n), ZERO, all=.true.)
+    end do
 
     call initialize_dx(dx,mba,nlevs)
 
@@ -265,6 +329,32 @@ contains
        
     end if
 
+    ! create a "bounding box" for each level
+    ! this the smallest possible box that fits every grid at a particular level
+    ! this even includes the empty spaces if there are gaps between grids
+    allocate(boundingbox(nlevs))
+    do n=1,nlevs
+       boundingbox(n) = get_box(sold(n),1)
+       do i=2, sold(n)%nboxes
+          boundingbox(n) = box_bbox(boundingbox(n),get_box(sold(n),i))
+       end do
+    end do
+
+    ! compute diffboxarray
+    ! each box in diffboxarray corresponds to an "empty space" between valid regions at 
+    ! each level, excluding the coarsest level.
+    ! I am going to use this to compute all of the intermediate r_start_coord and r_end_coord
+    allocate(validboxarr(nlevs))
+    allocate(diffboxarray(nlevs))
+    do n=1,nlevs
+       call boxarray_build_copy(validboxarr(n),get_boxarray(sold(n)))
+       call boxarray_boxarray_diff(diffboxarray(n),boundingbox(n),validboxarr(n))
+       call boxarray_simplify(diffboxarray(n))
+    end do
+
+    ! Initialize geometry
+    call init_geometry(nlevs,mla,boundingbox,diffboxarray)
+
     ! allocate base state
     call initialize_1d_arrays(div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold, &
                               s0_init,rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_init, &
@@ -276,30 +366,16 @@ contains
 
 
     
-    allocate(uold(nlevs),sold(nlevs),gpres(nlevs),pres(nlevs))
-    allocate(dSdt(nlevs),Source_old(nlevs),rho_omegadot2(nlevs))
-    
-    do n = 1,nlevs
-       call multifab_build(         uold(n), mla%la(n),    dm, 3)
-       call multifab_build(         sold(n), mla%la(n), nscal, 3)
-       call multifab_build(        gpres(n), mla%la(n),    dm, 1)
-       call multifab_build(         pres(n), mla%la(n),     1, 1, nodal)
-       call multifab_build(         dSdt(n), mla%la(n),     1, 0)
-       call multifab_build(   Source_old(n), mla%la(n),     1, 1)
-       call multifab_build(rho_omegadot2(n), mla%la(n), nspec, 1)
 
-       call setval(         uold(n), ZERO, all=.true.)
-       call setval(         sold(n), ZERO, all=.true.)
-       call setval(        gpres(n), ZERO, all=.true.)
-       call setval(         pres(n), ZERO, all=.true.)
-       call setval(   Source_old(n), ZERO, all=.true.)
-       call setval(         dSdt(n), ZERO, all=.true.)
-       call setval(rho_omegadot2(n), ZERO, all=.true.)
-    end do
 
     call initialize_bc(the_bc_tower,nlevs,pmask)
     do n = 1,nlevs
        call bc_tower_level_build(the_bc_tower,n,mla%la(n))
+    end do
+
+    do n=1,nlevs
+       call destroy(validboxarr(n))
+       call destroy(diffboxarray(n))
     end do
 
     call destroy(mba)
