@@ -19,15 +19,41 @@ module define_bc_module
 
      integer :: dim     = 0
      integer :: nlevels = 0
+     integer :: max_level_built = 0
      type(bc_level), pointer :: bc_tower_array(:) => Null()
+     integer       , pointer :: domain_bc(:,:) => Null()
 
   end type bc_tower
 
   private
 
-  public :: bc_level, bc_tower, bc_tower_build, bc_tower_destroy
+  public :: bc_level, bc_tower, bc_tower_init, bc_tower_build, bc_tower_destroy
 
 contains
+
+  subroutine bc_tower_init(bct,num_levs,dm,phys_bc_in)
+
+    implicit none
+
+    type(bc_tower ), intent(  out) :: bct
+    integer        , intent(in   ) :: num_levs
+    integer        , intent(in   ) :: dm
+    integer        , intent(in   ) :: phys_bc_in(:,:)
+
+    integer :: n
+
+    bct%nlevels = num_levs
+    bct%dim     = dm
+    allocate(bct%bc_tower_array(bct%nlevels))
+    allocate(bct%domain_bc(dm,2))
+
+    do n = 1, num_levs
+      bct%bc_tower_array(n)%ngrids = -1
+    end do
+
+    bct%domain_bc(:,:) = phys_bc_in(:,:)
+
+  end subroutine bc_tower_init
 
   subroutine bc_tower_build(bct,mla,domain_bc,domain_box)
 

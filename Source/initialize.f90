@@ -104,14 +104,7 @@ contains
     
     deallocate(chkdata, chk_p, chk_dsdt, chk_src_old, chk_rho_omegadot2)
 
-    allocate(dx(nlevs,dm))
-    
-    do d=1,dm
-       dx(1,d) = (prob_hi(d)-prob_lo(d)) / real(extent(mla%mba%pd(1),d),kind=dp_t)
-    end do
-    do n = 2,nlevs
-       dx(n,:) = dx(n-1,:) / mla%mba%rr(n-1,:)
-    end do
+    call initialize_dx(dx,mba,nlevs)
 
     allocate(domain_phys_bc(dm,2))
     allocate(domain_boxes(nlevs))
@@ -250,14 +243,7 @@ contains
        call setval(rho_omegadot2(n),0.0_dp_t,all=.true.)
     end do
 
-    allocate(dx(nlevs,dm))
-
-    do d=1,dm
-       dx(1,d) = (prob_hi(d)-prob_lo(d)) / real(extent(mla%mba%pd(1),d),kind=dp_t)
-    end do
-    do n = 2,nlevs
-       dx(n,:) = dx(n-1,:) / mla%mba%rr(n-1,:)
-    end do
+    call initialize_dx(dx,mba,nlevs)
 
     allocate(domain_phys_bc(dm,2))
     allocate(domain_boxes(nlevs))
@@ -363,14 +349,7 @@ contains
        mba%pd(n) = refine(mba%pd(n-1),mba%rr((n-1),:))
     enddo
     
-    allocate(dx(max_levs,dm))
-
-    do d=1,dm
-       dx(1,d) = (prob_hi(d)-prob_lo(d)) / real(extent(mba%pd(1),d),kind=dp_t)
-    end do
-    do n = 2,max_levs
-       dx(n,:) = dx(n-1,:) / mba%rr(n-1,:)
-    end do
+    call initialize_dx(dx,mba,max_levs)
 
     allocate(domain_phys_bc(dm,2))
     allocate(domain_boxes(max_levs))
@@ -423,8 +402,70 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine initialize_bc()
+  subroutine initialize_bc(the_bc_tower,num_levs,pmask)
 
+    use bc_module
+    use probin_module, only : bcx_lo, bcx_hi, bcy_lo, bcy_hi, bcz_lo, bcz_hi
+    use geometry, only: dm
+
+    type(bc_tower), intent(  out) :: the_bc_tower
+    integer       , intent(in   ) :: num_levs
+    logical       , intent(in   ) :: pmask(:)
+    
+    integer :: domain_phys_bc(dm,2)
+
+    ! Define the physical boundary conditions on the domain
+    ! Put the bc values from the inputs file into domain_phys_bc
+    domain_phys_bc(1,1) = bcx_lo
+    domain_phys_bc(1,2) = bcx_hi
+    if (pmask(1)) then
+       domain_phys_bc(1,:) = BC_PER
+       if (bcx_lo .ne. -1 .or. bcx_hi .ne. -1) &
+            call bl_error('MUST HAVE BCX = -1 if PMASK = T')
+    end if
+    if (dm > 1) then
+       domain_phys_bc(2,1) = bcy_lo
+       domain_phys_bc(2,2) = bcy_hi
+       if (pmask(2)) then
+          domain_phys_bc(2,:) = BC_PER
+          if (bcy_lo .ne. -1 .or. bcy_hi .ne. -1) &
+               call bl_error('MUST HAVE BCY = -1 if PMASK = T') 
+       end if
+    end if
+    if (dm > 2) then
+       domain_phys_bc(3,1) = bcz_lo
+       domain_phys_bc(3,2) = bcz_hi
+       if (pmask(3)) then
+          domain_phys_bc(3,:) = BC_PER
+          if (bcz_lo .ne. -1 .or. bcz_hi .ne. -1) &
+               call bl_error('MUST HAVE BCZ = -1 if PMASK = T')
+       end if
+    end if
+    
+    ! Initialize the_bc_tower object.
+    call bc_tower_init(the_bc_tower,num_levs,dm,domain_phys_bc)
+    
   end subroutine initialize_bc
 
+  subroutine initialize_dx(dx,mba,num_levs)
+
+    use geometry, only: dm
+  
+    real(dp_t)       , pointer     :: dx(:,:)
+    type(ml_boxarray), intent(in ) :: mba
+    integer          , intent(in ) :: num_levs
+    
+    integer :: n,d
+    
+    allocate(dx(num_levs,dm))
+    
+    do d=1,dm
+       dx(1,d) = (prob_hi(d)-prob_lo(d)) / real(extent(mba%pd(1),d),kind=dp_t)
+    end do
+    do n=2,num_levs
+       dx(n,:) = dx(n-1,:) / mba%rr(n-1,:)
+    end do
+
+  end subroutine initialize_dx
+  
 end module initialize_module
