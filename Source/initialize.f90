@@ -5,7 +5,7 @@ module initialize_module
   use multifab_module
   use bc_module
   use probin_module
-  use variables, only: nscal, rho_comp
+  use variables, only: nscal, rho_comp, rhoh_comp
   use geometry
   use network, only: nspec
   use bl_constants_module
@@ -269,6 +269,9 @@ contains
                                          tempbar,grav_cell)
 
     use box_util_module
+    use init_module
+    use average_module
+    use restrict_base_module
     
     type(ml_layout),intent(out  ) :: mla
     real(dp_t)    , intent(inout) :: time,dt
@@ -400,9 +403,38 @@ contains
                               grav_cell)
 
     ! now that we have dr and nr we can fill initial state
-     do n=1,nlevs
-        call init_base_state(n,model_file,s0_init(n,:,:),p0_init(n,:),dx(n,:))
-     end do
+    do n=1,nlevs
+       call init_base_state(n,model_file,s0_init(n,:,:),p0_init(n,:),dx(n,:))
+    end do
+
+    call initveldata(uold,s0_init,p0_init,dx,the_bc_tower%bc_tower_array,mla)
+    call initscalardata(sold,s0_init,p0_init,dx,the_bc_tower%bc_tower_array,mla)
+
+    if (perturb_model) then
+
+       ! force rho0 to be the average density
+       call average(mla,sold,rho0_old,dx,rho_comp)
+
+    else
+
+       ! s0_init already contains the average
+       rho0_old = s0_init(:,:,rho_comp)
+       call fill_ghost_base(rho0_old,.true.)
+       call restrict_base(rho0_old,.true.)
+
+    end if
+
+    ! this will be overwritten if we are multilevel or if perturb_model = T
+    ! but we copy it anyway for the initial condition
+    p0_old = p0_init
+    call fill_ghost_base(p0_old,.true.)
+    call restrict_base(p0_old,.true.)
+
+    ! this will be overwritten if we are multilevel or if perturb_model = T
+    ! but we copy it anyway so s0_init can remain local
+    rhoh0_old = s0_init(:,:,rhoh_comp)
+    call fill_ghost_base(rhoh0_old,.true.)
+    call restrict_base(rhoh0_old,.true.)
 
     do n=1,nlevs
        call destroy(validboxarr(n))
