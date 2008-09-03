@@ -363,7 +363,7 @@ contains
 
     max_hse_error = -1.d30
 
-    do r=0,nr(n)-1
+    do r=1,nr(n)-1
        
        rloc = starting_rad + (dble(r) + HALF)*dr(n)
        rloc = min(rloc, rmax)
