@@ -4,12 +4,13 @@ module initialize_module
   use ml_layout_module
   use multifab_module
   use bc_module
-  use probin_module, only: nlevs, nodal, test_set, prob_lo, prob_hi, bcx_lo, bcx_hi, &
-       bcy_lo, bcy_hi, bcz_lo, bcz_hi
+  use probin_module
   use variables, only: nscal, rho_comp
   use geometry
   use network, only: nspec
   use bl_constants_module
+  use base_state_module
+  use base_io_module
 
   implicit none
 
@@ -58,6 +59,11 @@ contains
     type(boxarray), allocatable :: diffboxarray(:)
 
     type(box), allocatable :: boundingbox(:)
+
+    character(len=8)  :: sd_name
+    character(len=11) :: base_state_name
+    character(len=8)  :: base_w0_name
+    character(len=9)  :: base_etarho_name
 
     type(ml_boxarray) :: mba
 
@@ -174,12 +180,18 @@ contains
                               grav_cell)
 
     ! fill base state
+     ! load base state
+     write(unit=sd_name,fmt='("chk",i5.5)') restart
+     write(unit=base_state_name,fmt='("model_",i5.5)') restart
+     write(unit=base_w0_name,fmt='("w0_",i5.5)') restart
+     write(unit=base_etarho_name,fmt='("eta_",i5.5)') restart
 
+     call read_base_state(base_state_name, base_w0_name, base_etarho_name, sd_name, &
+                          rho0_old, rhoh0_old, p0_old, gamma1bar, w0, &
+                          etarho, etarho_cc, div_etarho, &
+                          div_coeff_old, psi)
 
-
-
-
-
+     ! initialize boundary conditions
      call initialize_bc(the_bc_tower,nlevs,pmask)
      do n = 1,nlevs
         call bc_tower_level_build(the_bc_tower,n,mla%la(n))
@@ -361,13 +373,12 @@ contains
                               p0_old,p0_new,w0,etarho,etarho_cc,div_etarho,psi,tempbar, &
                               grav_cell)
 
-    ! fill base state
+    ! fill initial state
+     do n=1,nlevs
+        call init_base_state(n,model_file,s0_init(n,:,:),p0_init(n,:),dx(n,:))
+     end do
 
-
-
-    
-
-
+    ! initialize boundary conditions
     call initialize_bc(the_bc_tower,nlevs,pmask)
     do n = 1,nlevs
        call bc_tower_level_build(the_bc_tower,n,mla%la(n))
