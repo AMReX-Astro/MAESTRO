@@ -21,7 +21,11 @@ module initialize_module
 contains
     
   subroutine initialize_from_restart(mla,restart,time,dt,dx,pmask,uold,sold,gpres,pres, &
-                                     dSdt,Source_old,rho_omegadot2,the_bc_tower)
+                                     dSdt,Source_old,rho_omegadot2,the_bc_tower, &
+                                     div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold, &
+                                     s0_init,rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_init, &
+                                     p0_old,p0_new,w0,etarho,etarho_cc,div_etarho,psi, &
+                                     tempbar,grav_cell)
 
     use restart_module
     use ml_restriction_module
@@ -36,6 +40,12 @@ contains
     type(multifab), pointer       :: uold(:),sold(:),gpres(:),pres(:),dSdt(:)
     type(multifab), pointer       :: Source_old(:),rho_omegadot2(:)
     type(bc_tower), intent(  out) :: the_bc_tower
+    real(dp_t)    , pointer       :: div_coeff_old(:,:),div_coeff_new(:,:),gamma1bar(:,:)
+    real(dp_t)    , pointer       :: gamma1bar_hold(:,:),s0_init(:,:,:),rho0_old(:,:)
+    real(dp_t)    , pointer       :: rhoh0_old(:,:),rho0_new(:,:),rhoh0_new(:,:),p0_init(:,:)
+    real(dp_t)    , pointer       :: p0_old(:,:),p0_new(:,:),w0(:,:),etarho(:,:)
+    real(dp_t)    , pointer       :: etarho_cc(:,:),div_etarho(:,:),psi(:,:),tempbar(:,:)
+    real(dp_t)    , pointer       :: grav_cell(:,:)
 
     ! local
     type(multifab), pointer :: chkdata(:)
@@ -80,8 +90,10 @@ contains
     end if
 
     ! allocate base state
-
-
+    call initialize_1d_arrays(div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold, &
+                              s0_init,rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_init, &
+                              p0_old,p0_new,w0,etarho,etarho_cc,div_etarho,psi,tempbar, &
+                              grav_cell)
 
     ! fill base state
 
@@ -187,7 +199,12 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   subroutine initialize_with_fixed_grids(mla,time,dt,pmask,dx,uold,sold,gpres,pres, &
-                                         dSdt,Source_old,rho_omegadot2,the_bc_tower)
+                                         dSdt,Source_old,rho_omegadot2,the_bc_tower, &
+                                         div_coeff_old,div_coeff_new,gamma1bar, &
+                                         gamma1bar_hold,s0_init,rho0_old,rhoh0_old, &
+                                         rho0_new,rhoh0_new,p0_init, &
+                                         p0_old,p0_new,w0,etarho,etarho_cc,div_etarho,psi, &
+                                         tempbar,grav_cell)
 
     use box_util_module
     
@@ -198,6 +215,12 @@ contains
     type(multifab), pointer       :: uold(:),sold(:),gpres(:),pres(:),dSdt(:)
     type(multifab), pointer       :: Source_old(:),rho_omegadot2(:)
     type(bc_tower), intent(  out) :: the_bc_tower
+    real(dp_t)    , pointer       :: div_coeff_old(:,:),div_coeff_new(:,:),gamma1bar(:,:)
+    real(dp_t)    , pointer       :: gamma1bar_hold(:,:),s0_init(:,:,:),rho0_old(:,:)
+    real(dp_t)    , pointer       :: rhoh0_old(:,:),rho0_new(:,:),rhoh0_new(:,:),p0_init(:,:)
+    real(dp_t)    , pointer       :: p0_old(:,:),p0_new(:,:),w0(:,:),etarho(:,:)
+    real(dp_t)    , pointer       :: etarho_cc(:,:),div_etarho(:,:),psi(:,:),tempbar(:,:)
+    real(dp_t)    , pointer       :: grav_cell(:,:)
 
     ! local
     type(ml_boxarray) :: mba
@@ -243,8 +266,10 @@ contains
     end if
 
     ! allocate base state
-
-
+    call initialize_1d_arrays(div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold, &
+                              s0_init,rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_init, &
+                              p0_old,p0_new,w0,etarho,etarho_cc,div_etarho,psi,tempbar, &
+                              grav_cell)
 
     ! fill base state
 
@@ -415,5 +440,58 @@ contains
     end do
 
   end subroutine initialize_dx
+
+  subroutine initialize_1d_arrays(div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold, &
+                                  s0_init,rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_init, &
+                                  p0_old,p0_new,w0,etarho,etarho_cc,div_etarho,psi,tempbar, &
+                                  grav_cell)
+
+    real(dp_t) , pointer :: div_coeff_old(:,:),div_coeff_new(:,:),gamma1bar(:,:)
+    real(dp_t) , pointer :: gamma1bar_hold(:,:),s0_init(:,:,:),rho0_old(:,:)
+    real(dp_t) , pointer :: rhoh0_old(:,:),rho0_new(:,:),rhoh0_new(:,:),p0_init(:,:)
+    real(dp_t) , pointer :: p0_old(:,:),p0_new(:,:),w0(:,:),etarho(:,:),etarho_cc(:,:)
+    real(dp_t) , pointer :: div_etarho(:,:),psi(:,:),tempbar(:,:),grav_cell(:,:)
+
+    allocate(div_coeff_old (nlevs,0:nr_fine-1))
+    allocate(div_coeff_new (nlevs,0:nr_fine-1))
+    allocate(gamma1bar     (nlevs,0:nr_fine-1))
+    allocate(gamma1bar_hold(nlevs,0:nr_fine-1))
+    allocate(s0_init       (nlevs,0:nr_fine-1,nscal))
+    allocate(rho0_old      (nlevs,0:nr_fine-1))
+    allocate(rhoh0_old     (nlevs,0:nr_fine-1))
+    allocate(rho0_new      (nlevs,0:nr_fine-1))
+    allocate(rhoh0_new     (nlevs,0:nr_fine-1))
+    allocate(p0_init       (nlevs,0:nr_fine-1))
+    allocate(p0_old        (nlevs,0:nr_fine-1))
+    allocate(p0_new        (nlevs,0:nr_fine-1))
+    allocate(w0            (nlevs,0:nr_fine))
+    allocate(etarho        (nlevs,0:nr_fine))
+    allocate(etarho_cc     (nlevs,0:nr_fine-1))
+    allocate(div_etarho    (nlevs,0:nr_fine-1))
+    allocate(psi           (nlevs,0:nr_fine-1))
+    allocate(tempbar       (nlevs,0:nr_fine-1))
+    allocate(grav_cell     (nlevs,0:nr_fine-1))
+
+    div_coeff_old = ZERO
+    div_coeff_new = ZERO
+    gamma1bar = ZERO
+    gamma1bar_hold = ZERO
+    s0_init = ZERO
+    rho0_old = ZERO
+    rhoh0_old = ZERO
+    rho0_new = ZERO
+    rhoh0_new = ZERO
+    p0_init = ZERO
+    p0_old = ZERO
+    p0_new = ZERO
+    w0 = ZERO
+    etarho = ZERO
+    etarho_cc = ZERO
+    div_etarho = ZERO
+    psi = ZERO
+    tempbar = ZERO
+    grav_cell = ZERO
+
+  end subroutine initialize_1d_arrays
   
 end module initialize_module
