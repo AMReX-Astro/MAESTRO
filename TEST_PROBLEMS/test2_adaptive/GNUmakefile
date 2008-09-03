@@ -11,9 +11,6 @@ FPARALLEL := ../..
 
 include $(FPARALLEL)/mk/GMakedefs.mak
 
-include $(FPARALLEL)/MAESTRO/test2_adaptive/GPackage.mak
-VPATH_LOCATIONS += $(FPARALLEL)/MAESTRO/test2_adaptive
-
 include $(FPARALLEL)/boxlib/GPackage.mak
 VPATH_LOCATIONS += $(FPARALLEL)/boxlib
 
