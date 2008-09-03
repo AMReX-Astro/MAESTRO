@@ -7,7 +7,7 @@ module initialize_module
   use probin_module, only: nlevs, nodal, test_set, prob_lo, prob_hi, bcx_lo, bcx_hi, &
        bcy_lo, bcy_hi, bcz_lo, bcz_hi
   use variables, only: nscal, rho_comp
-  use geometry, only: dm
+  use geometry
   use network, only: nspec
   use bl_constants_module
 
@@ -46,7 +46,9 @@ contains
 
     type(ml_boxarray) :: mba
 
-    integer :: n,d
+    real(dp_t) :: lenx,leny,lenz,max_dist
+
+    integer :: n
 
     call fill_restart_data(restart, mba, chkdata, chk_p, chk_dsdt, chk_src_old, &
                            chk_rho_omegadot2, time, dt)
@@ -54,6 +56,37 @@ contains
     call ml_layout_build(mla,mba,pmask)
 
     nlevs = mla%nlevel
+
+    call initialize_dx(dx,mba,nlevs)
+
+    ! compute nr_fine and dr_fine
+    if (spherical .eq. 1) then
+
+       ! for spherical, we will now require that dr_fine = dx
+       dr_fine = dx(1,nlevs)
+       
+       lenx = HALF * (prob_hi(1) - prob_lo(1))
+       leny = HALF * (prob_hi(2) - prob_lo(2))
+       lenz = HALF * (prob_hi(3) - prob_lo(3))
+       
+       max_dist = sqrt(lenx**2 + leny**2 + lenz**2)
+       nr_fine = int(max_dist / dr_fine) + 1
+       
+    else
+       
+       nr_fine = extent(mla%mba%pd(nlevs),dm)
+       dr_fine = (prob_hi(dm)-prob_lo(dm)) / dble(nr_fine)
+       
+    end if
+
+    ! allocate base state
+
+
+
+    ! fill base state
+
+
+
 
     allocate(uold(nlevs),sold(nlevs),gpres(nlevs),pres(nlevs))
     allocate(dSdt(nlevs),Source_old(nlevs),rho_omegadot2(nlevs))
@@ -101,8 +134,6 @@ contains
     end do
     
     deallocate(chkdata, chk_p, chk_dsdt, chk_src_old, chk_rho_omegadot2)
-
-    call initialize_dx(dx,mba,nlevs)
 
      call initialize_bc(the_bc_tower,nlevs,pmask)
      do n = 1,nlevs
@@ -169,13 +200,17 @@ contains
     type(bc_tower), intent(  out) :: the_bc_tower
 
     ! local
-    type(ml_boxarray)         :: mba
-    integer                   :: n
+    type(ml_boxarray) :: mba
+
+    real(dp_t) :: lenx,leny,lenz,max_dist
+
+    integer :: n
     
     time = ZERO
     dt = 1.d20
 
     call read_a_hgproj_grid(mba,test_set)
+
     call ml_layout_build(mla,mba,pmask)
     
     ! check for proper nesting
@@ -184,6 +219,37 @@ contains
     end if
     
     nlevs = mla%nlevel
+
+    call initialize_dx(dx,mba,nlevs)
+
+    ! compute nr_fine and dr_fine
+    if (spherical .eq. 1) then
+
+       ! for spherical, we will now require that dr_fine = dx
+       dr_fine = dx(1,nlevs)
+       
+       lenx = HALF * (prob_hi(1) - prob_lo(1))
+       leny = HALF * (prob_hi(2) - prob_lo(2))
+       lenz = HALF * (prob_hi(3) - prob_lo(3))
+       
+       max_dist = sqrt(lenx**2 + leny**2 + lenz**2)
+       nr_fine = int(max_dist / dr_fine) + 1
+       
+    else
+       
+       nr_fine = extent(mla%mba%pd(nlevs),dm)
+       dr_fine = (prob_hi(dm)-prob_lo(dm)) / dble(nr_fine)
+       
+    end if
+
+    ! allocate base state
+
+
+
+    ! fill base state
+
+
+
     
     allocate(uold(nlevs),sold(nlevs),gpres(nlevs),pres(nlevs))
     allocate(dSdt(nlevs),Source_old(nlevs),rho_omegadot2(nlevs))
@@ -205,8 +271,6 @@ contains
        call setval(         dSdt(n), ZERO, all=.true.)
        call setval(rho_omegadot2(n), ZERO, all=.true.)
     end do
-
-    call initialize_dx(dx,mba,nlevs)
 
     call initialize_bc(the_bc_tower,nlevs,pmask)
     do n = 1,nlevs
