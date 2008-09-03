@@ -108,6 +108,7 @@ contains
        deallocate(bct%bc_tower_array(i)%ell_bc_level_array)
     end do
     deallocate(bct%bc_tower_array)
+    deallocate(bct%domain_bc)
 
   end subroutine bc_tower_destroy
 
