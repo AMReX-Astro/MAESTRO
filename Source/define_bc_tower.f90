@@ -27,7 +27,7 @@ module define_bc_module
 
   private
 
-  public :: bc_level, bc_tower, bc_tower_init, bc_tower_build, bc_tower_destroy
+  public :: bc_level, bc_tower, bc_tower_init, bc_tower_level_build, bc_tower_destroy
 
 contains
 
@@ -55,53 +55,46 @@ contains
 
   end subroutine bc_tower_init
 
-  subroutine bc_tower_build(bct,mla,domain_bc,domain_box)
+  subroutine bc_tower_level_build(bct,n,la)
 
-    use bl_prof_module
-    use variables, only: nscal
-    use geometry, only: dm
+    use variables, only : nscal
 
-    type(bc_tower ), intent(  out) :: bct
-    type(ml_layout), intent(in   ) :: mla
-    integer        , intent(in   ) :: domain_bc(:,:)
-    type(box)      , intent(in   ) :: domain_box(:)
+    type(bc_tower ), intent(inout) :: bct
+    integer        , intent(in   ) :: n
+    type(layout)   , intent(in   ) :: la
 
-    integer :: i,ngrids
+    integer :: ngrids
     integer :: default_value
 
-    type(bl_prof_timer), save :: bpt
+    if (bct%bc_tower_array(n)%ngrids > 0) then
+      deallocate(bct%bc_tower_array(n)%phys_bc_level_array)
+      deallocate(bct%bc_tower_array(n)%adv_bc_level_array)
+      deallocate(bct%bc_tower_array(n)%ell_bc_level_array)
+    end if
 
-    call build(bpt, "bc_tower_build")
+    ngrids = layout_nboxes(la)
+    bct%bc_tower_array(n)%dim    = bct%dim
+    bct%bc_tower_array(n)%ngrids = ngrids
+    bct%bc_tower_array(n)%domain = layout_get_pd(la)
 
-    bct%nlevels = mla%nlevel
-    bct%dim     = dm
+    allocate(bct%bc_tower_array(n)%phys_bc_level_array(0:ngrids,bct%dim,2))
+    default_value = INTERIOR
+    call phys_bc_level_build(bct%bc_tower_array(n)%phys_bc_level_array,la, &
+                             bct%domain_bc,default_value)
 
-    allocate(bct%bc_tower_array(bct%nlevels))
-    do i = 1,bct%nlevels
-       ngrids = layout_nboxes(mla%la(i))
-       bct%bc_tower_array(i)%dim    = dm
-       bct%bc_tower_array(i)%ngrids = ngrids
-       bct%bc_tower_array(i)%domain = domain_box(i)
+    allocate(bct%bc_tower_array(n)%adv_bc_level_array(0:ngrids,bct%dim,2,bct%dim+nscal+3))
+    default_value = INTERIOR
+    call adv_bc_level_build(bct%bc_tower_array(n)%adv_bc_level_array, &
+                            bct%bc_tower_array(n)%phys_bc_level_array,default_value)
 
-       allocate(bct%bc_tower_array(i)%phys_bc_level_array(0:ngrids,dm,2))
-       default_value = INTERIOR
-       call phys_bc_level_build(bct%bc_tower_array(i)%phys_bc_level_array,mla%la(i), &
-                                domain_bc,default_value)
+    allocate(bct%bc_tower_array(n)%ell_bc_level_array(0:ngrids,bct%dim,2,bct%dim+nscal+3))
+    default_value = BC_INT
+    call ell_bc_level_build(bct%bc_tower_array(n)%ell_bc_level_array, &
+                            bct%bc_tower_array(n)%phys_bc_level_array,default_value)
 
-       allocate(bct%bc_tower_array(i)%adv_bc_level_array(0:ngrids,dm,2,dm+nscal+3))
-       default_value = INTERIOR
-       call adv_bc_level_build(bct%bc_tower_array(i)%adv_bc_level_array, &
-                               bct%bc_tower_array(i)%phys_bc_level_array,default_value)
+     bct%max_level_built = n
 
-       allocate(bct%bc_tower_array(i)%ell_bc_level_array(0:ngrids,dm,2,dm+nscal+3))
-       default_value = BC_INT
-       call ell_bc_level_build(bct%bc_tower_array(i)%ell_bc_level_array, &
-                               bct%bc_tower_array(i)%phys_bc_level_array,default_value)
-    end do
-
-    call destroy(bpt)
-
-  end subroutine bc_tower_build
+  end subroutine bc_tower_level_build
 
   subroutine bc_tower_destroy(bct)
 
