@@ -42,12 +42,13 @@ contains
     ! Multilevel Outline:
     !
     ! First, compute beta0 on edges and centers at level 1 only
+    ! Obtain the starting value from rho0 at the bottom of the domain.
     ! do n=2,nlevs
     !   Compute beta0 on edges and centers at level n
     !   Obtain the starting value of beta0_edge_lo from the coarser grid
+    !   if n>1, compare the difference between beta0 at the top of level n to the
+    !           corresponding point on level n-1
     !   do i=n-1,1,-1
-    !     Compare the difference between beta0 at the top of level n to the corresponding
-    !      point on level i
     !     Offset the centered beta on level i above this point so the total integral 
     !      is consistent
     !     Redo the anelastic cutoff part
@@ -137,48 +138,52 @@ contains
              div_coeff(n,r) = div_coeff(n,r-1) * (rho0(n,r)/rho0(n,r-1))
           end do
 
-          do i=n-1,1,-1
-             
-             refrat = 2**(n-i)
-             
+          if (n .gt. 1) then
+
              ! Compare the difference between beta0 at the top of level n to the 
-             ! corresponding point on level i
+             ! corresponding point on level n-1
              offset = beta0_edge(n,r_end_coord(n,j)+1) &
-                  - beta0_edge(i,(r_end_coord(n,j)+1)/refrat)
-             
-             ! Offset the centered beta on level i above this point so the total integral 
-             !  is consistent
-             do r=(r_end_coord(n,j)+1)/refrat,nr(i)
-                div_coeff(i,r) = div_coeff(i,r) + offset
-             end do
+                  - beta0_edge(n-1,(r_end_coord(n,j)+1)/2)
 
-             ! Redo the anelastic cutoff part
-             do r=anelastic_cutoff_coord(i),nr(i)
-                div_coeff(i,r) = div_coeff(i,r-1) * (rho0(i,r)/rho0(i,r-1))
-             end do
-
-             ! This next piece of coded is needed for the case when the anelastic cutoff 
-             !  coordinate lives on level n.
-             ! We first average div_coeff from level i+1 to level i in the region between
-             !  the anelastic cutoff and the top of grid n
-             ! Then we recompute the anelastic coordinate at level i above the top of grid n
-             if (r_end_coord(n,j) .ge. anelastic_cutoff_coord(n)) then
+             do i=n-1,1,-1
                 
-                do r=anelastic_cutoff_coord(i),(r_end_coord(n,j)+1)/refrat-1
-                   div_coeff(i,r) = HALF*(div_coeff(i+1,2*r)+div_coeff(i+1,2*r+1))
+                refrat = 2**(n-i)
+                
+                ! Offset the centered beta on level i above this point so the total integral 
+                !  is consistent
+                do r=r_end_coord(n,j)/refrat+1,nr(i)
+                   div_coeff(i,r) = div_coeff(i,r) + offset
                 end do
                 
-                do r=(r_end_coord(n,j)+1)/refrat,nr(i)
+                ! Redo the anelastic cutoff part
+                do r=anelastic_cutoff_coord(i),nr(i)
                    div_coeff(i,r) = div_coeff(i,r-1) * (rho0(i,r)/rho0(i,r-1))
                 end do
+
+                ! This next piece of coded is needed for the case when the anelastic cutoff 
+                !  coordinate lives on level n.
+                ! We first average div_coeff from level i+1 to level i in the region between
+                !  the anelastic cutoff and the top of grid n
+                ! Then recompute the anelastic coordinate at level i above the top of grid n
+                if (r_end_coord(n,j) .ge. anelastic_cutoff_coord(n)) then
+                   
+                   do r=anelastic_cutoff_coord(i),(r_end_coord(n,j)+1)/refrat-1
+                      div_coeff(i,r) = HALF*(div_coeff(i+1,2*r)+div_coeff(i+1,2*r+1))
+                   end do
+                   
+                   do r=(r_end_coord(n,j)+1)/refrat,nr(i)
+                      div_coeff(i,r) = div_coeff(i,r-1) * (rho0(i,r)/rho0(i,r-1))
+                   end do
+                   
+                end if
                 
-             end if
-             
-          end do
+             end do ! end loop over i=n-1,1,-1
 
-       end do
+          end if ! end if (n .gt. 1)
 
-    end do
+       end do ! end loop over disjoint chunks
+
+    end do ! end loop over levels
 
     call fill_ghost_base(div_coeff,.true.)
     call restrict_base(div_coeff,.true.)
