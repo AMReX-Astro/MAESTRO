@@ -20,31 +20,34 @@ module regrid_module
 
 contains
 
-  subroutine regrid(mla,uold,sold,gpres,pres,dSdt,Source_old,rho_omegadot2,dx,the_bc_tower)
+  subroutine regrid(mla,uold,sold,gpres,pres,dSdt,src,rw2,dx,the_bc_tower)
 
     use probin_module, only : nlevs, nodal, pmask, regrid_int, max_grid_size, ref_ratio, &
          max_levs
     use geometry, only: dm
-    use variables, only: nscal
+    use variables, only: nscal, rho_comp, foextrap_comp
+    use network, only: nspec
 
     type(ml_layout),intent(inout) :: mla
     type(multifab), pointer       :: uold(:),sold(:),gpres(:),pres(:)
-    type(multifab), pointer       :: dSdt,Source_old(:),rho_omegadot2(:)
+    type(multifab), pointer       :: dSdt(:),src(:),rw2(:)
     real(dp_t)    , pointer       :: dx(:,:)
     type(bc_tower), intent(inout) :: the_bc_tower
 
+    ! local
     logical           :: new_grid
-    integer           :: n, nl, buf_wid
+    integer           :: n, nl, buf_wid, d
     type(layout)      :: la_array(max_levs)
     type(ml_layout)   :: mla_old
     type(ml_boxarray) :: mba
 
     ! These are copies to hold the old data.
     type(multifab) :: uold_temp(nlevs), sold_temp(nlevs), gpres_temp(nlevs), pres_temp(nlevs)
-    type(multifab) :: dSdt_temp(nlevs), srcold_temp(nlevs), rw2_temp(nlevs)
+    type(multifab) :: dSdt_temp(nlevs), src_temp(nlevs), rw2_temp(nlevs)
 
-    if (max_levs < 2) &
-         call bl_error('Dont call regrid with max_levs < 2')
+    if (max_levs < 2) then
+       call bl_error('Dont call regrid with max_levs < 2')
+    end if
 
     call ml_layout_build(mla_old,mla%mba,mla%pmask)
 
@@ -55,11 +58,17 @@ contains
        call multifab_build( sold_temp(n),mla_old%la(n),nscal, 3)
        call multifab_build(gpres_temp(n),mla_old%la(n),   dm, 1)
        call multifab_build( pres_temp(n),mla_old%la(n),    1, 1, nodal)
+       call multifab_build( dSdt_temp(n),mla_old%la(n),    1, 0)
+       call multifab_build(  src_temp(n),mla_old%la(n),    1, 1)
+       call multifab_build(  rw2_temp(n),mla_old%la(n),nspec, 1)
 
        call multifab_copy_c( uold_temp(n),1, uold(n),1,   dm)
        call multifab_copy_c( sold_temp(n),1, sold(n),1,nscal)
        call multifab_copy_c(gpres_temp(n),1,gpres(n),1,   dm)
        call multifab_copy_c( pres_temp(n),1, pres(n),1,    1)
+       call multifab_copy_c( dSdt_temp(n),1, dSdt(n),1,    1)
+       call multifab_copy_c(  src_temp(n),1,  src(n),1,    1)
+       call multifab_copy_c(  rw2_temp(n),1,  rw2(n),1,nspec)
 
        ! Get rid of the old data structures so we can create new ones 
        ! with the same names.
@@ -67,6 +76,9 @@ contains
        call multifab_destroy( sold(n))
        call multifab_destroy(gpres(n))
        call multifab_destroy( pres(n))
+       call multifab_destroy( dSdt(n))
+       call multifab_destroy(  src(n))
+       call multifab_destroy(  rw2(n))
 
     end do
 
@@ -84,10 +96,11 @@ contains
     enddo
 
     if (associated(uold)) then
-       deallocate(uold,sold,pres,gpres)
+       deallocate(uold,sold,pres,gpres,dSdt,src,rw2)
     end if
 
     allocate(uold(max_levs),sold(max_levs),pres(max_levs),gpres(max_levs))
+    allocate(dSdt(max_levs),src(max_levs),rw2(max_levs))
 
     ! Copy the level 1 boxarray
     call copy(mba%bas(1),mla_old%mba%bas(1))
@@ -106,12 +119,18 @@ contains
     call multifab_build( sold(1), la_array(1), nscal, 3)
     call multifab_build(gpres(1), la_array(1),    dm, 1)
     call multifab_build( pres(1), la_array(1),     1, 1, nodal)
+    call multifab_build( dSdt(1), la_array(1),     1, 0)
+    call multifab_build(  src(1), la_array(1),     1, 1)
+    call multifab_build(  rw2(1), la_array(1), nspec, 1)
 
     ! Copy the level 1 data from the "old" temporaries.
     call multifab_copy_c( uold(1),1, uold_temp(1) ,1,   dm)
     call multifab_copy_c( sold(1),1, sold_temp(1) ,1,nscal)
     call multifab_copy_c(gpres(1),1,gpres_temp(1), 1,   dm)
     call multifab_copy_c( pres(1),1, pres_temp(1) ,1,    1)
+    call multifab_copy_c( dSdt(1),1, dSdt_temp(1), 1,    1)
+    call multifab_copy_c(  src(1),1,  src_temp(1), 1,    1)
+    call multifab_copy_c(  rw2(1),1,  rw2_temp(1), 1,nspec)
 
     nl       = 1
     new_grid = .true.
@@ -132,6 +151,9 @@ contains
           call multifab_build( sold(nl+1), la_array(nl+1), nscal, 3)
           call multifab_build(gpres(nl+1), la_array(nl+1),    dm, 1)
           call multifab_build( pres(nl+1), la_array(nl+1),     1, 1, nodal)
+          call multifab_build( dSdt(nl+1), la_array(nl+1),     1, 0)
+          call multifab_build(  src(nl+1), la_array(nl+1),     1, 1)
+          call multifab_build(  rw2(nl+1), la_array(nl+1), nspec, 1)
 
           ! Define bc_tower at level nl+1.
           call bc_tower_level_build(the_bc_tower,nl+1,la_array(nl+1))
@@ -146,12 +168,31 @@ contains
                          3,mba%rr(nl,:), &
                          the_bc_tower%bc_tower_array(nl  ), &
                          the_bc_tower%bc_tower_array(nl+1), &
-                         1,1,dm+1,nscal)
-          call fillpatch(gpres(nl+1),gpres(nl), &
+                         1,1,dm+rho_comp,nscal)
+          do d=1,dm
+             call fillpatch(gpres(nl+1),gpres(nl), &
+                            1,mba%rr(nl,:), &
+                            the_bc_tower%bc_tower_array(nl  ), &
+                            the_bc_tower%bc_tower_array(nl+1), &
+                            d,d,foextrap_comp,1)
+          end do
+          call fillpatch(dSdt(nl+1),dSdt(nl), &
+                         0,mba%rr(nl,:), &
+                         the_bc_tower%bc_tower_array(nl  ), &
+                         the_bc_tower%bc_tower_array(nl+1), &
+                         1,1,foextrap_comp,1)
+          call fillpatch(src(nl+1),src(nl), &
                          1,mba%rr(nl,:), &
                          the_bc_tower%bc_tower_array(nl  ), &
                          the_bc_tower%bc_tower_array(nl+1), &
-                         1,1,1,dm)
+                         1,1,foextrap_comp,1)
+          do d=1,nspec
+             call fillpatch(rw2(nl+1),rw2(nl), &
+                            1,mba%rr(nl,:), &
+                            the_bc_tower%bc_tower_array(nl  ), &
+                            the_bc_tower%bc_tower_array(nl+1), &
+                            d,d,foextrap_comp,1)
+          end do
 
           ! We interpolate p differently because it is nodal, not cell-centered
           call ml_prolongation(pres(nl+1),pres(nl),layout_get_pd(la_array(nl+1)), &
@@ -163,6 +204,9 @@ contains
              call multifab_copy_c( sold(nl+1),1, sold_temp(nl+1),1,nscal)
              call multifab_copy_c(gpres(nl+1),1,gpres_temp(nl+1),1,   dm)
              call multifab_copy_c( pres(nl+1),1, pres_temp(nl+1),1,    1)
+             call multifab_copy_c( dSdt(nl+1),1, dSdt_temp(nl+1),1,    1)
+             call multifab_copy_c(  src(nl+1),1,  src_temp(nl+1),1,    1)
+             call multifab_copy_c(  rw2(nl+1),1,  rw2_temp(nl+1),1,nspec)
           end if
 
           nlevs = nl+1
@@ -177,6 +221,9 @@ contains
        call destroy( uold(n))
        call destroy(gpres(n))
        call destroy( pres(n))
+       call destroy( dSdt(n))
+       call destroy(  src(n))
+       call destroy(  rw2(n))
     end do
 
     nlevs = nl
@@ -184,8 +231,9 @@ contains
     call ml_layout_restricted_build(mla,mba,nlevs,pmask)
 
     ! check for proper nesting
-    if (nlevs .ge. 3) &
-         call enforce_proper_nesting(mba,la_array,max_grid_size)
+    if (nlevs .ge. 3) then
+       call enforce_proper_nesting(mba,la_array,max_grid_size)
+    end if
 
     do n = 1,nl
        call destroy(la_array(n))
@@ -200,12 +248,18 @@ contains
     call multifab_build( sold(1), mla%la(1), nscal, 3)
     call multifab_build(gpres(1), mla%la(1),    dm, 1)
     call multifab_build( pres(1), mla%la(1),     1, 1, nodal)
+    call multifab_build( dSdt(1), mla%la(1),     1, 0)
+    call multifab_build(  src(1), mla%la(1),     1, 1)
+    call multifab_build(  rw2(1), mla%la(1), nspec, 1)
 
     ! Copy the level 1 data from the "old" temporaries again.
     call multifab_copy_c( uold(1),1, uold_temp(1) ,1,   dm)
     call multifab_copy_c( sold(1),1, sold_temp(1) ,1,nscal)
     call multifab_copy_c(gpres(1),1,gpres_temp(1),1,    dm)
     call multifab_copy_c( pres(1),1, pres_temp(1) ,1,    1)
+    call multifab_copy_c( dSdt(1),1, dSdt_temp(1), 1,    1)
+    call multifab_copy_c(  src(1),1,  src_temp(1), 1,    1)
+    call multifab_copy_c(  rw2(1),1,  rw2_temp(1), 1,nspec)
 
     nlevs = mla%nlevel
 
@@ -216,6 +270,9 @@ contains
        call multifab_build( sold(nl+1), mla%la(nl+1), nscal, 3)
        call multifab_build(gpres(nl+1), mla%la(nl+1),    dm, 1)
        call multifab_build( pres(nl+1), mla%la(nl+1),     1, 1, nodal)
+       call multifab_build( dSdt(nl+1), mla%la(nl+1),     1, 0)
+       call multifab_build(  src(nl+1), mla%la(nl+1),     1, 1)
+       call multifab_build(  rw2(nl+1), mla%la(nl+1), nspec, 1)
        
        ! Define bc_tower at level nl+1.
        call bc_tower_level_build(the_bc_tower,nl+1,mla%la(nl+1))
@@ -225,17 +282,36 @@ contains
                       3,mba%rr(nl,:), &
                       the_bc_tower%bc_tower_array(nl  ), &
                       the_bc_tower%bc_tower_array(nl+1), &
-            1,1,1,dm)
+                      1,1,1,dm)
        call fillpatch(sold(nl+1),sold(nl), &
                       3,mba%rr(nl,:), &
                       the_bc_tower%bc_tower_array(nl  ), &
                       the_bc_tower%bc_tower_array(nl+1), &
-                      1,1,dm+1,nscal)
-       call fillpatch(gpres(nl+1),gpres(nl), &
+                      1,1,dm+rho_comp,nscal)
+       do d=1,dm
+          call fillpatch(gpres(nl+1),gpres(nl), &
+                         1,mba%rr(nl,:), &
+                         the_bc_tower%bc_tower_array(nl  ), &
+                         the_bc_tower%bc_tower_array(nl+1), &
+                         d,d,foextrap_comp,1)
+       end do
+       call fillpatch(dSdt(nl+1),dSdt(nl), &
+                      0,mba%rr(nl,:), &
+                      the_bc_tower%bc_tower_array(nl  ), &
+                      the_bc_tower%bc_tower_array(nl+1), &
+                      1,1,foextrap_comp,1)
+       call fillpatch(src(nl+1),src(nl), &
                       1,mba%rr(nl,:), &
                       the_bc_tower%bc_tower_array(nl  ), &
                       the_bc_tower%bc_tower_array(nl+1), &
-                      1,1,1,dm)
+                      1,1,foextrap_comp,1)
+       do d=1,nspec
+          call fillpatch(rw2(nl+1),rw2(nl), &
+                         1,mba%rr(nl,:), &
+                         the_bc_tower%bc_tower_array(nl  ), &
+                         the_bc_tower%bc_tower_array(nl+1), &
+                         d,d,foextrap_comp,1)
+       end do
 
        ! We interpolate p differently because it is nodal, not cell-centered
        call ml_prolongation(pres(nl+1),pres(nl),layout_get_pd(mla%la(nl+1)),mba%rr(nl,:))
@@ -246,12 +322,18 @@ contains
           call multifab_copy_c( sold(nl+1),1, sold_temp(nl+1),1,nscal)
           call multifab_copy_c(gpres(nl+1),1,gpres_temp(nl+1),1,   dm)
           call multifab_copy_c( pres(nl+1),1, pres_temp(nl+1),1,    1)
+          call multifab_copy_c( dSdt(nl+1),1, dSdt_temp(nl+1),1,    1)
+          call multifab_copy_c(  src(nl+1),1,  src_temp(nl+1),1,    1)
+          call multifab_copy_c(  rw2(nl+1),1,  rw2_temp(nl+1),1,nspec)
        end if
 
        call destroy( uold_temp(nl+1))
        call destroy( sold_temp(nl+1))
        call destroy(gpres_temp(nl+1))
        call destroy( pres_temp(nl+1))
+       call destroy( dSdt_temp(nl+1))
+       call destroy(  src_temp(nl+1))
+       call destroy(  rw2_temp(nl+1))
 
     end do
 
@@ -261,6 +343,9 @@ contains
     call destroy( sold_temp(1))
     call destroy(gpres_temp(1))
     call destroy( pres_temp(1))
+    call destroy( dSdt_temp(1))
+    call destroy(  src_temp(1))
+    call destroy(  rw2_temp(1))
 
     call destroy(mla_old)
 
