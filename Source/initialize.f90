@@ -208,6 +208,9 @@ contains
     ! initialize dx
     call initialize_dx(dx,mba,nlevs)
 
+    ! initialize cutoff arrays
+    call init_cutoff(nlevs)
+
     ! now that we have dx we can initialize nr_fine and dr_fine
     if (spherical .eq. 1) then
 
@@ -233,7 +236,7 @@ contains
 
     ! use boundingbox and diffboxarray to create numdisjointchunks, r_start_coord, 
     ! and r_end_coord
-    call init_geometry(nlevs,boundingbox,diffboxarray)
+    call init_multilevel(boundingbox,diffboxarray)
 
     ! now that we have nr_fine we can allocate 1d arrays
     call initialize_1d_arrays(nlevs,div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold, &
@@ -375,6 +378,9 @@ contains
     ! initialize dx
     call initialize_dx(dx,mba,nlevs)
 
+    ! initialize cutoff arrays
+    call init_cutoff(nlevs)
+
     ! now that we have dx we can initialize nr_fine and dr_fine
     if (spherical .eq. 1) then
 
@@ -400,7 +406,7 @@ contains
 
     ! use boundingbox and diffboxarray to create numdisjointchunks, r_start_coord, 
     ! and r_end_coord
-    call init_geometry(nlevs,boundingbox,diffboxarray)
+    call init_multilevel(boundingbox,diffboxarray)
 
     ! now that we have nr_fine we can allocate 1d arrays
     call initialize_1d_arrays(nlevs,div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold, &
@@ -533,6 +539,9 @@ contains
 
     ! initialize dx
     call initialize_dx(dx,mba,max_levs)
+
+    ! initialize cutoff arrays
+    call init_cutoff(max_levs)
 
     ! now that we have dx we can initialize nr_fine and dr_fine
     if (spherical .eq. 1) then
@@ -688,7 +697,7 @@ contains
 
     ! use boundingbox and diffboxarray to create numdisjointchunks, r_start_coord, 
     ! and r_end_coord
-    call init_geometry(nlevs,boundingbox,diffboxarray)
+    call init_multilevel(boundingbox,diffboxarray)
 
     call initveldata(uold,s0_init,p0_init,dx,the_bc_tower%bc_tower_array,mla)
     call initscalardata(sold,s0_init,p0_init,dx,the_bc_tower%bc_tower_array,mla)
