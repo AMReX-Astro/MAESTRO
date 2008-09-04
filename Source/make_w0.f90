@@ -122,15 +122,15 @@ contains
     ! Multilevel Outline
     !
     ! Compute w0 at level 1 only
-    ! We set w0=0 at bottom of the domain
+    ! Initialize new w0 at bottom of coarse base array to zero.
     ! do n=2,nlevs
     !   Compute w0 on edges at level n
     !   Obtain the starting value of w0 from the coarser grid
+    !   if n>1, compare the difference between w0 at top of level n to the 
+    !           corresponding point on level n-1
     !   do i=n-1,1,-1
     !     Restrict w0 from level n to level i
-    !     Compare the difference between w0 at top of level n to the corresponding point
-    !       on level i
-    !     Offset the w0 on level i above this point
+    !     Offset the w0 on level i above the top of level n
     !   end do
     ! end do
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -162,27 +162,31 @@ contains
                   - ( (psi(n,r-1)+volume_discrepancy) / gamma1bar_p0_avg ) * dr(n)
           end do
 
-          do i=n-1,1,-1
-
-             refrat = 2**(n-i)
+          if (n .gt. 1) then
 
              ! Compare the difference between w0 at top of level n to the corresponding point
-             !   on level i
-             offset = w0(n,r_end_coord(n,j)+1) - w0(i,(r_end_coord(n,j)+1)/refrat)
+             !   on level n-1
+             offset = w0(n,r_end_coord(n,j)+1) - w0(n-1,(r_end_coord(n,j)+1)/2)
 
-             ! Restrict w0 from level n to level i
-             do r=r_start_coord(n,j),r_end_coord(n,j)+1
-                if (mod(r,refrat) .eq. 0) then
-                   w0(i,r/refrat) = w0(n,r)
-                end if
+             do i=n-1,1,-1
+
+                refrat = 2**(n-i)
+                
+                ! Restrict w0 from level n to level i
+                do r=r_start_coord(n,j),r_end_coord(n,j)+1
+                   if (mod(r,refrat) .eq. 0) then
+                      w0(i,r/refrat) = w0(n,r)
+                   end if
+                end do
+                
+                ! Offset the w0 on level i above the top of level n
+                do r=(r_end_coord(n,j)+1)/refrat+1,nr(i)
+                   w0(i,r) = w0(i,r) + offset
+                end do
+                
              end do
-
-             ! Offset the w0 on level i above this point
-             do r=(r_end_coord(n,j)+1)/refrat+1,nr(i)
-                w0(i,r) = w0(i,r) + offset
-             end do
-
-          end do
+             
+          end if
 
        end do
 
