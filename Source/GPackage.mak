@@ -60,6 +60,7 @@ f90sources += proj_parameters.f90
 f90sources += put_in_pert_form.f90
 f90sources += react_base.f90
 f90sources += react_state.f90
+f90sources += regrid.f90
 f90sources += restart.f90
 f90sources += restrict_base.f90
 f90sources += setbc.f90
