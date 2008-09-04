@@ -122,6 +122,7 @@ contains
     ! Multilevel Outline
     !
     ! Compute w0 at level 1 only
+    ! We set w0=0 at bottom of the domain
     ! do n=2,nlevs
     !   Compute w0 on edges at level n
     !   Obtain the starting value of w0 from the coarser grid
@@ -170,8 +171,10 @@ contains
              offset = w0(n,r_end_coord(n,j)+1) - w0(i,(r_end_coord(n,j)+1)/refrat)
 
              ! Restrict w0 from level n to level i
-             do r=r_start_coord(n,j),r_end_coord(n,j)+1,refrat
-                w0(i,r/refrat) = w0(n,r)
+             do r=r_start_coord(n,j),r_end_coord(n,j)+1
+                if (mod(r,refrat) .eq. 0) then
+                   w0(i,r/refrat) = w0(n,r)
+                end if
              end do
 
              ! Offset the w0 on level i above this point
