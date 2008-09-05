@@ -51,11 +51,6 @@ contains
     ! local
     type(ml_boxarray) :: mba
 
-    type(boxarray), allocatable :: validboxarr(:)
-    type(boxarray), allocatable :: diffboxarray(:)
-
-    type(box), allocatable :: boundingbox(:)
-
     real(dp_t) :: lenx,leny,lenz,max_dist
 
     integer :: n,i
@@ -181,29 +176,6 @@ contains
        end do
        
     end if
-    
-    ! create a "bounding box" for each level
-    ! this the smallest possible box that fits every grid at a particular level
-    ! this even includes the empty spaces if there are gaps between grids
-    allocate(boundingbox(nlevs))
-    do n=1,nlevs
-       boundingbox(n) = get_box(sold(n),1)
-       do i=2, sold(n)%nboxes
-          boundingbox(n) = box_bbox(boundingbox(n),get_box(sold(n),i))
-       end do
-    end do
-
-    ! compute diffboxarray
-    ! each box in diffboxarray corresponds to an "empty space" between valid regions at 
-    ! each level, excluding the coarsest level.
-    ! I am going to use this to compute all of the intermediate r_start_coord and r_end_coord
-    allocate(validboxarr(nlevs))
-    allocate(diffboxarray(nlevs))
-    do n=1,nlevs
-       call boxarray_build_copy(validboxarr(n),get_boxarray(sold(n)))
-       call boxarray_boxarray_diff(diffboxarray(n),boundingbox(n),validboxarr(n))
-       call boxarray_simplify(diffboxarray(n))
-    end do
 
     ! initialize dx
     call initialize_dx(dx,mba,nlevs)
@@ -231,12 +203,11 @@ contains
        
     end if
 
+    ! create numdisjointchunks, r_start_coord, r_end_coord
+    call init_multilevel(sold)
+
     ! now that we have nr_fine and dr_fine we can create nr, dr, r_cc_loc, r_edge_loc
     call init_radial(nlevs,mba)
-
-    ! use boundingbox and diffboxarray to create numdisjointchunks, r_start_coord, 
-    ! and r_end_coord
-    call init_multilevel(boundingbox,diffboxarray)
 
     ! now that we have nr_fine we can allocate 1d arrays
     call initialize_1d_arrays(nlevs,div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold, &
@@ -254,12 +225,6 @@ contains
                          rho0_old, rhoh0_old, p0_old, gamma1bar, w0, &
                          etarho, etarho_cc, div_etarho, &
                          div_coeff_old, psi)
-
-    do n=1,nlevs
-       call destroy(validboxarr(n))
-       call destroy(diffboxarray(n))
-    end do
-
     call destroy(mba)
 
   end subroutine initialize_from_restart
@@ -295,11 +260,6 @@ contains
 
     ! local
     type(ml_boxarray) :: mba
-
-    type(boxarray), allocatable :: validboxarr(:)
-    type(boxarray), allocatable :: diffboxarray(:)
-
-    type(box), allocatable :: boundingbox(:)
 
     real(dp_t) :: lenx,leny,lenz,max_dist
 
@@ -351,30 +311,6 @@ contains
        call setval(         dSdt(n), ZERO, all=.true.)
        call setval(rho_omegadot2(n), ZERO, all=.true.)
     end do
-
-    ! create a "bounding box" for each level
-    ! this the smallest possible box that fits every grid at a particular level
-    ! this even includes the empty spaces if there are gaps between grids
-    allocate(boundingbox(nlevs))
-    do n=1,nlevs
-       boundingbox(n) = get_box(sold(n),1)
-       do i=2, sold(n)%nboxes
-          boundingbox(n) = box_bbox(boundingbox(n),get_box(sold(n),i))
-       end do
-    end do
-
-    ! compute diffboxarray
-    ! each box in diffboxarray corresponds to an "empty space" between valid regions at 
-    ! each level, excluding the coarsest level.
-    ! I am going to use this to compute all of the intermediate r_start_coord and r_end_coord
-    allocate(validboxarr(nlevs))
-    allocate(diffboxarray(nlevs))
-    do n=1,nlevs
-       call boxarray_build_copy(validboxarr(n),get_boxarray(sold(n)))
-       call boxarray_boxarray_diff(diffboxarray(n),boundingbox(n),validboxarr(n))
-       call boxarray_simplify(diffboxarray(n))
-    end do
-
     ! initialize dx
     call initialize_dx(dx,mba,nlevs)
 
@@ -401,12 +337,11 @@ contains
        
     end if
 
+    ! create numdisjointchunks, r_start_coord, r_end_coord
+    call init_multilevel(sold)
+
     ! now that we have nr_fine and dr_fine we can create nr, dr, r_cc_loc, r_edge_loc
     call init_radial(nlevs,mba)
-
-    ! use boundingbox and diffboxarray to create numdisjointchunks, r_start_coord, 
-    ! and r_end_coord
-    call init_multilevel(boundingbox,diffboxarray)
 
     ! now that we have nr_fine we can allocate 1d arrays
     call initialize_1d_arrays(nlevs,div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold, &
@@ -443,11 +378,6 @@ contains
     rhoh0_old = s0_init(:,:,rhoh_comp)
     call fill_ghost_base(rhoh0_old,.true.)
     call restrict_base(rhoh0_old,.true.)
-
-    do n=1,nlevs
-       call destroy(validboxarr(n))
-       call destroy(diffboxarray(n))
-    end do
 
     call destroy(mba)
 
@@ -486,11 +416,6 @@ contains
 
     ! local
     type(ml_boxarray) :: mba
-
-    type(boxarray), allocatable :: validboxarr(:)
-    type(boxarray), allocatable :: diffboxarray(:)
-
-    type(box), allocatable :: boundingbox(:)
 
     type(layout) :: la_array(max_levs)
     type(box)    :: bxs
@@ -672,32 +597,8 @@ contains
        call setval(rho_omegadot2(n), ZERO, all=.true.)
     end do
 
-    ! create a "bounding box" for each level
-    ! this the smallest possible box that fits every grid at a particular level
-    ! this even includes the empty spaces if there are gaps between grids
-    allocate(boundingbox(nlevs))
-    do n=1,nlevs
-       boundingbox(n) = get_box(sold(n),1)
-       do i=2, sold(n)%nboxes
-          boundingbox(n) = box_bbox(boundingbox(n),get_box(sold(n),i))
-       end do
-    end do
-
-    ! compute diffboxarray
-    ! each box in diffboxarray corresponds to an "empty space" between valid regions at 
-    ! each level, excluding the coarsest level.
-    ! I am going to use this to compute all of the intermediate r_start_coord and r_end_coord
-    allocate(validboxarr(nlevs))
-    allocate(diffboxarray(nlevs))
-    do n=1,nlevs
-       call boxarray_build_copy(validboxarr(n),get_boxarray(sold(n)))
-       call boxarray_boxarray_diff(diffboxarray(n),boundingbox(n),validboxarr(n))
-       call boxarray_simplify(diffboxarray(n))
-    end do
-
-    ! use boundingbox and diffboxarray to create numdisjointchunks, r_start_coord, 
-    ! and r_end_coord
-    call init_multilevel(boundingbox,diffboxarray)
+    ! create numdisjointchunks, r_start_coord, r_end_coord
+    call init_multilevel(sold)
 
     call initveldata(uold,s0_init,p0_init,dx,the_bc_tower%bc_tower_array,mla)
     call initscalardata(sold,s0_init,p0_init,dx,the_bc_tower%bc_tower_array,mla)
@@ -723,11 +624,6 @@ contains
     rhoh0_old = s0_init(:,:,rhoh_comp)
     call fill_ghost_base(rhoh0_old,.true.)
     call restrict_base(rhoh0_old,.true.)
-
-    do n=1,nlevs
-       call destroy(validboxarr(n))
-       call destroy(diffboxarray(n))
-    end do
 
     call destroy(mba)
 
