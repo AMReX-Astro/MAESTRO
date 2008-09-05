@@ -24,9 +24,12 @@ module network
   implicit none
 
   integer, parameter :: nspec = 3
+  integer, parameter :: naux  = 0
 
   character (len=16), save :: spec_names(nspec) 
-  character (len=5), save :: short_spec_names(nspec)
+  character (len= 5), save :: short_spec_names(nspec)
+  character (len= 5), save :: short_aux_names(naux)
+
   real(kind=dp_t), save :: aion(nspec), zion(nspec), ebin(nspec)
 
   logical, save :: network_initialized = .false.
