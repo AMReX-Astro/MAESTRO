@@ -436,11 +436,10 @@ contains
 
     if (evolve_base_state) then
        do n=1,nlevs
-          call multifab_build(gamma1(n), mla%la(n), 1, 1)
+          call multifab_build(gamma1(n), mla%la(n), 1, 0)
        end do
        
-       call make_gamma(mla,gamma1,s1,p0_old,tempbar,dx, &
-                       the_bc_tower%bc_tower_array)
+       call make_gamma(mla,gamma1,s1,p0_old,tempbar,dx,the_bc_tower%bc_tower_array)
        call average(mla,gamma1,gamma1bar,dx,1)
 
        do n=1,nlevs
@@ -673,11 +672,10 @@ contains
 
     if (evolve_base_state) then
        do n=1,nlevs
-          call multifab_build(gamma1(n), mla%la(n), 1, 1)
+          call multifab_build(gamma1(n), mla%la(n), 1, 0)
        end do
        
-       call make_gamma(mla,gamma1,snew,p0_new,tempbar,dx, &
-                       the_bc_tower%bc_tower_array)
+       call make_gamma(mla,gamma1,snew,p0_new,tempbar,dx,the_bc_tower%bc_tower_array)
        call average(mla,gamma1,gamma1bar,dx,1)
 
        do n=1,nlevs
@@ -1092,11 +1090,10 @@ contains
 
        if (evolve_base_state) then
           do n=1,nlevs
-             call multifab_build(gamma1(n), mla%la(n), 1, 1)
+             call multifab_build(gamma1(n), mla%la(n), 1, 0)
           end do
           
-          call make_gamma(mla,gamma1,snew,p0_new,tempbar,dx, &
-                          the_bc_tower%bc_tower_array)
+          call make_gamma(mla,gamma1,snew,p0_new,tempbar,dx,the_bc_tower%bc_tower_array)
           call average(mla,gamma1,gamma1bar,dx,1)
           
           do n=1,nlevs

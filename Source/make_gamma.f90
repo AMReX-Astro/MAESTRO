@@ -55,40 +55,21 @@ contains
           hi = upb(get_box(s(n), i))
           select case (dm)
           case (2)
-             call make_gamma_2d(lo,hi,gamp(:,:,1,1),ng_g,sp(:,:,1,:),ng_s,p0(n,:),tempbar(n,:))
+             call make_gamma_2d(lo,hi,gamp(:,:,1,1),ng_g,sp(:,:,1,:),ng_s,p0(n,:), &
+                                tempbar(n,:))
           case (3)
-             call make_gamma_3d(n,lo,hi,gamp(:,:,:,1),ng_g,sp(:,:,:,:),ng_s,p0(n,:),tempbar(n,:),dx(n,:))
+             call make_gamma_3d(n,lo,hi,gamp(:,:,:,1),ng_g,sp(:,:,:,:),ng_s,p0(n,:), &
+                                tempbar(n,:),dx(n,:))
           end select
        end do
     end do
 
-    if (nlevs .eq. 1) then
-
-       ! fill ghost cells for two adjacent grids at the same level
-       ! this includes periodic domain boundary ghost cells
-       call multifab_fill_boundary(gamma(nlevs))
-
-       ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(gamma(nlevs),1,foextrap_comp,1,the_bc_level(nlevs))
-
-    else
-
-       ! the loop over nlevs must count backwards to make sure the finer grids are done first
-       do n=nlevs,2,-1
-
-          ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction(gamma(n-1)    ,gamma(n)    ,mla%mba%rr(n-1,:))
-
-          ! fill level n ghost cells using interpolation from level n-1 data
-          ! note that multifab_fill_boundary and multifab_physbc are called for
-          ! both levels n-1 and n
-          call multifab_fill_ghost_cells(gamma(n),gamma(n-1), &
-                                         ng_g,mla%mba%rr(n-1,:), &
-                                         the_bc_level(n-1), the_bc_level(n), &
-                                         1,foextrap_comp,1)
-       enddo
-
-    end if
+    ! gamma1 has no ghost cells so we don't need to fill them
+    ! the loop over nlevs must count backwards to make sure the finer grids are done first
+    do n=nlevs,2,-1
+       ! set level n-1 data to be the average of the level n data covering it
+       call ml_cc_restriction(gamma(n-1), gamma(n), mla%mba%rr(n-1,:))
+    end do
 
     call destroy(bpt)
 
@@ -159,13 +140,14 @@ contains
       real (kind=dp_t), allocatable :: p0_cart(:,:,:,:)
 
       if (spherical .eq. 1) then
+
          allocate(tempbar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
          call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,tempbar,tempbar_cart, &
                                            lo,hi,dx,0,0)
-         
+
          allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
-         call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,p0,p0_cart, &
-                                           lo,hi,dx,0,0)
+         call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,p0,p0_cart,lo,hi,dx,0,0)
+
       endif
 
       do k = lo(3), hi(3)
@@ -184,7 +166,6 @@ contains
 
                xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
 
-               
                ! dens, pres, and xmass are inputs
                call eos(eos_input_rp, den_eos, temp_eos, &
                         npts, nspec, &
@@ -196,22 +177,6 @@ contains
                         gam1_eos, cs_eos, s_eos, &
                         dsdt_eos, dsdr_eos, &
                         do_diag)
-
-!               den_eos(1) = s(i,j,k,rho_comp)
-!               h_eos(1) =  s(i,j,k,rhoh_comp)/s(i,j,k,rho_comp)
-!               xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
-!               
-!               ! dens, enthalpy, and xmass are inputs
-!               call eos(eos_input_rh, den_eos, temp_eos, &
-!                        npts, nspec, &
-!                        xn_eos, &
-!                        p_eos, h_eos, e_eos, & 
-!                        cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-!                        dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-!                        dpdX_eos, dhdX_eos, &
-!                        gam1_eos, cs_eos, s_eos, &
-!                        dsdt_eos, dsdr_eos, &
-!                        do_diag)
                
                gamma(i,j,k) = gam1_eos(1)
                
