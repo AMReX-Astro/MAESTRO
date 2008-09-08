@@ -17,9 +17,12 @@ module tag_boxes_module
 
 contains
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
   subroutine tag_boxes(mf,tagboxes,lev)
 
     use variables, only: temp_comp
+    use geometry, only: dm, nr_fine
 
     type( multifab), intent(in   ) :: mf
     type(lmultifab), intent(inout) :: tagboxes
@@ -27,41 +30,57 @@ contains
 
     real(kind = dp_t), pointer :: sp(:,:,:,:)
     logical          , pointer :: tp(:,:,:,:)
-    integer           :: i, lo(mf%dim), ng_s
+    integer           :: i, lo(dm), ng_s
+    logical           ::      radialtag(0:nr_fine-1)
+    logical           :: radialtag_proc(0:nr_fine-1)
+
+    radialtag = .false.
+    radialtag_proc = .false.
 
     ng_s = mf%ng
 
     do i = 1, mf%nboxes
        if ( multifab_remote(mf, i) ) cycle
        sp => dataptr(mf, i)
+       lo =  lwb(get_box(tagboxes, i))
+       select case (dm)
+       case (2)
+          call radialtag_2d(radialtag_proc,sp(:,:,1,temp_comp),lo,ng_s,lev)
+       case  (3)
+          call radialtag_3d(radialtag_proc,sp(:,:,:,temp_comp),lo,ng_s,lev)
+       end select
+    end do
+
+    ! gather radialtag
+    call parallel_reduce(radialtag, radialtag_proc, MPI_LOR)
+
+    do i = 1, mf%nboxes
+       if ( multifab_remote(mf, i) ) cycle
        tp => dataptr(tagboxes, i)
        lo =  lwb(get_box(tagboxes, i))
-
-       select case (mf%dim)
+       select case (dm)
        case (2)
-          call tag_boxes_2d(tp(:,:,1,1),sp(:,:,1,temp_comp),lo,ng_s,lev)
+          call tag_boxes_2d(tp(:,:,1,1),radialtag,lo,lev)
        case  (3)
-          call tag_boxes_3d(tp(:,:,:,1),sp(:,:,:,temp_comp),lo,ng_s,lev)
+          call tag_boxes_3d(tp(:,:,:,1),radialtag,lo,lev)
        end select
     end do
 
   end subroutine tag_boxes
 
-  subroutine tag_boxes_2d(tagbox,mf,lo,ng,lev)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  subroutine radialtag_2d(radialtag,mf,lo,ng,lev)
 
     integer          , intent(in   ) :: lo(:),ng
-    logical          , intent(  out) :: tagbox(lo(1):,lo(2):)
+    logical          , intent(inout) :: radialtag(0:)
     real(kind = dp_t), intent(in   ) :: mf(lo(1)-ng:,lo(2)-ng:)
     integer, optional, intent(in   ) :: lev
     integer :: i,j,nx,ny,llev
 
     llev = 1; if (present(lev)) llev = lev
-    nx = size(tagbox,dim=1)
-    ny = size(tagbox,dim=2)
-
-    tagbox = .false.
-
-    ! if any cell meets the tag condition, we tag across the domain
+    nx = size(mf,dim=1) - 2*ng
+    ny = size(mf,dim=2) - 2*ng
 
     select case(llev)
     case (1)
@@ -69,7 +88,7 @@ contains
        do j = lo(2),lo(2)+ny-1
           do i = lo(1),lo(1)+nx-1
              if (mf(i,j) .gt. 6.06d8) then
-                tagbox(:,j) = .true.
+                radialtag(j) = .true.
              end if
           end do
        enddo
@@ -78,7 +97,7 @@ contains
        do j = lo(2),lo(2)+ny-1
           do i = lo(1),lo(1)+nx-1
              if (mf(i,j) .gt. 6.06d8) then
-                tagbox(:,j) = .true.
+                radialtag(j) = .true.
              end if
           end do
        end do
@@ -87,66 +106,135 @@ contains
        do j = lo(2),lo(2)+ny-1
           do i = lo(1),lo(1)+nx-1
              if (mf(i,j) .gt. 6.06d8) then
-                tagbox(:,j) = .true.
+                radialtag(j) = .true.
              end if
           end do
        end do
     end select
 
-  end subroutine tag_boxes_2d
+  end subroutine radialtag_2d
 
-  subroutine tag_boxes_3d(tagbox,mf,lo,ng,lev)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  subroutine radialtag_3d(radialtag,mf,lo,ng,lev)
 
     integer          , intent(in   ) :: lo(:),ng
-    logical          , intent(  out) :: tagbox(lo(1):,lo(2):,lo(3):)
+    logical          , intent(inout) :: radialtag(0:)
     real(kind = dp_t), intent(in   ) :: mf(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
     integer, optional, intent(in   ) :: lev
 
     integer :: i,j,k,nx,ny,nz,llev
 
     llev = 1; if (present(lev)) llev = lev
-    nx = size(tagbox,dim=1)
-    ny = size(tagbox,dim=2)
-    nz = size(tagbox,dim=3)
-
-    tagbox = .false.
+    nx = size(mf,dim=1) - 2*ng
+    ny = size(mf,dim=2) - 2*ng
+    nz = size(mf,dim=3) - 2*ng
 
     select case(llev)
     case (1)
-       ! tag all boxes with a density >= 1.01
+       ! tag all boxes with a temperature >= 6.06d68
        do k = lo(3),lo(3)+nz-1
           do j = lo(2),lo(2)+ny-1
              do i = lo(1),lo(1)+nx-1
-                if (mf(i,j,k) .gt. 1.01d0) then
-                   tagbox(i,j,k) = .true.
+                if (mf(i,j,k) .gt. 6.06d8) then
+                   radialtag(k) = .true.
                 end if
              end do
           enddo
        end do
     case (2)
-       ! for level 2 tag all boxes with a density >= 1.1
+       ! for level 2 tag all boxes with temperature >= 6.06d8
        do k = lo(3),lo(3)+nz-1
           do j = lo(2),lo(2)+ny-1
              do i = lo(1),lo(1)+nx-1
-                if (mf(i,j,k) .gt. 1.1d0) then
-                   tagbox(i,j,k) = .true.
+                if (mf(i,j,k) .gt. 6.06d8) then
+                   radialtag(k) = .true.
                 end if
              end do
           end do
        end do
     case default
-       ! for level 3 or greater tag all boxes with a density >= 1.5
+       ! for level 3 or greater tag all boxes with temperature >= 6.06d8
        do k = lo(3),lo(3)+nz-1
           do j = lo(2),lo(2)+ny-1
              do i = lo(1),lo(1)+nx-1
-                if (mf(i,j,k) .gt. 1.5d0) then
-                   tagbox(i,j,k) = .true.
+                if (mf(i,j,k) .gt. 6.06d8) then
+                   radialtag(k) = .true.
                 end if
              end do
           end do
        end do
     end select
 
+  end subroutine radialtag_3d
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  subroutine tag_boxes_2d(tagbox,radialtag,lo,lev)
+
+    integer          , intent(in   ) :: lo(:)
+    logical          , intent(  out) :: tagbox(lo(1):,lo(2):)
+    logical          , intent(in   ) :: radialtag(0:)
+    integer, optional, intent(in   ) :: lev
+    integer :: j,ny,llev
+
+    llev = 1; if (present(lev)) llev = lev
+    ny = size(tagbox,dim=2)
+
+    tagbox = .false.
+
+    ! tag all boxes with radialtag = .true
+    select case(llev)
+    case (1)
+       do j = lo(2),lo(2)+ny-1
+          tagbox(:,j) = radialtag(j)
+       enddo
+    case (2)
+       do j = lo(2),lo(2)+ny-1
+          tagbox(:,j) = radialtag(j)
+       end do
+    case default
+       do j = lo(2),lo(2)+ny-1
+          tagbox(:,j) = radialtag(j)
+       end do
+    end select
+
+  end subroutine tag_boxes_2d
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  subroutine tag_boxes_3d(tagbox,radialtag,lo,lev)
+
+    integer          , intent(in   ) :: lo(:)
+    logical          , intent(  out) :: tagbox(lo(1):,lo(2):,lo(3):)
+    logical          , intent(in   ) :: radialtag(0:)
+    integer, optional, intent(in   ) :: lev
+
+    integer :: k,nz,llev
+
+    llev = 1; if (present(lev)) llev = lev
+    nz = size(tagbox,dim=3)
+
+    tagbox = .false.
+
+    ! tag all boxes with radialtag = .true.
+    select case(llev)
+    case (1)
+       do k = lo(3),lo(3)+nz-1
+          tagbox(:,:,k) = radialtag(k)
+       end do
+    case (2)
+       do k = lo(3),lo(3)+nz-1
+          tagbox(:,:,k) = radialtag(k)
+       end do
+    case default
+       do k = lo(3),lo(3)+nz-1
+          tagbox(:,:,k) = radialtag(k)
+       end do
+    end select
+
   end subroutine tag_boxes_3d
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 end module tag_boxes_module
