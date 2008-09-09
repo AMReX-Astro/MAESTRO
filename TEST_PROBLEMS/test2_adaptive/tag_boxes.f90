@@ -84,28 +84,28 @@ contains
 
     select case(llev)
     case (1)
-       ! tag all boxes with temperature >= 6.06d8
+       ! tag all boxes with temperature >= 5.5d8
        do j = lo(2),lo(2)+ny-1
           do i = lo(1),lo(1)+nx-1
-             if (mf(i,j) .gt. 6.06d8) then
+             if (mf(i,j) .gt. 5.5d8) then
                 radialtag(j) = .true.
              end if
           end do
        enddo
     case (2)
-       ! for level 2 tag all boxes with temperature >= 6.06d8
+       ! for level 2 tag all boxes with temperature >= 5.5d8
        do j = lo(2),lo(2)+ny-1
           do i = lo(1),lo(1)+nx-1
-             if (mf(i,j) .gt. 6.06d8) then
+             if (mf(i,j) .gt. 5.5d8) then
                 radialtag(j) = .true.
              end if
           end do
        end do
     case default
-       ! for level 3 or greater tag all boxes with temperature >= 6.06d8
+       ! for level 3 or greater tag all boxes with temperature >= 5.5d8
        do j = lo(2),lo(2)+ny-1
           do i = lo(1),lo(1)+nx-1
-             if (mf(i,j) .gt. 6.06d8) then
+             if (mf(i,j) .gt. 5.5d8) then
                 radialtag(j) = .true.
              end if
           end do
@@ -136,29 +136,29 @@ contains
        do k = lo(3),lo(3)+nz-1
           do j = lo(2),lo(2)+ny-1
              do i = lo(1),lo(1)+nx-1
-                if (mf(i,j,k) .gt. 6.06d8) then
+                if (mf(i,j,k) .gt. 5.5d8) then
                    radialtag(k) = .true.
                 end if
              end do
           enddo
        end do
     case (2)
-       ! for level 2 tag all boxes with temperature >= 6.06d8
+       ! for level 2 tag all boxes with temperature >= 5.5d8
        do k = lo(3),lo(3)+nz-1
           do j = lo(2),lo(2)+ny-1
              do i = lo(1),lo(1)+nx-1
-                if (mf(i,j,k) .gt. 6.06d8) then
+                if (mf(i,j,k) .gt. 5.5d8) then
                    radialtag(k) = .true.
                 end if
              end do
           end do
        end do
     case default
-       ! for level 3 or greater tag all boxes with temperature >= 6.06d8
+       ! for level 3 or greater tag all boxes with temperature >= 5.5d8
        do k = lo(3),lo(3)+nz-1
           do j = lo(2),lo(2)+ny-1
              do i = lo(1),lo(1)+nx-1
-                if (mf(i,j,k) .gt. 6.06d8) then
+                if (mf(i,j,k) .gt. 5.5d8) then
                    radialtag(k) = .true.
                 end if
              end do
