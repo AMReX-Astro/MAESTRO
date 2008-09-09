@@ -17,6 +17,8 @@ module init_module
 
   implicit none
 
+  real(dp_t), save :: pert_height
+
   private
   public :: initscalardata, initscalardata_on_level, initveldata, scalar_diags
 
@@ -38,7 +40,6 @@ contains
     integer :: i,n,r
 
     real(kind=dp_t), parameter :: he4_pert = 0.99d0
-    real(kind=dp_t)            :: pert_height
     integer                    :: he4_comp, pert_index
     
     ng = s(1)%ng
@@ -67,10 +68,10 @@ contains
           select case (dm)
           case (2)
              call initscalardata_2d(sop(:,:,1,:), lo, hi, ng, dx(n,:), s0_init(n,:,:), &
-                                    p0_init(n,:), pert_height)
+                                    p0_init(n,:))
           case (3)
              call initscalardata_3d(n,sop(:,:,:,:), lo, hi, ng, dx(n,:), s0_init(n,:,:), &
-                                    p0_init(n,:), pert_height)
+                                    p0_init(n,:))
           end select
        end do
      enddo
@@ -114,15 +115,31 @@ contains
     type(bc_level) , intent(in   ) :: bc
 
     ! local
-    integer                  :: ng,i
-    integer                  :: lo(dm),hi(dm)
-    real(kind=dp_t), pointer :: sop(:,:,:,:)
-    real(kind=dp_t)          :: pert_height
-
-    ! THIS NEEDS TO BE FIXED
-    pert_height = 0.d0
+    integer                    :: ng,i,r
+    integer                    :: lo(dm),hi(dm)
+    real(kind=dp_t), pointer   :: sop(:,:,:,:)
+    real(kind=dp_t), parameter :: he4_pert = 0.99d0
+    integer                    :: he4_comp, pert_index
 
     ng = s%ng
+
+    ! we only need to compute pert_height at the coarsest level
+    if (n .eq. 1) then
+       ! compute the perturbation r location based on where the concentration of He
+       ! becomes greater than he4_pert at the coarsest level
+       he4_comp = network_species_index('helium-4')
+       do r=0,r_end_coord(1,1)
+          if (s0_init(r,spec_comp+he4_comp-1)/s0_init(r,rho_comp) .gt. he4_pert) then
+             pert_index = r
+             exit
+          end if
+       end do
+       if(dm .eq. 2) then
+          pert_height = prob_lo(2) + (dble(pert_index)+HALF)*dx(dm) + 50.0d0
+       else if(dm .eq. 3) then
+          pert_height = prob_lo(3) + (dble(pert_index)+HALF)*dx(dm) + 50.0d0
+       end if
+    end if
 
     do i = 1, s%nboxes
        if ( multifab_remote(s,i) ) cycle
@@ -131,11 +148,9 @@ contains
        hi =  upb(get_box(s,i))
        select case (dm)
        case (2)
-          call initscalardata_2d(sop(:,:,1,:), lo, hi, ng, dx, s0_init, p0_background, &
-                                 pert_height)
+          call initscalardata_2d(sop(:,:,1,:), lo, hi, ng, dx, s0_init, p0_background)
        case (3)
-          call initscalardata_3d(n,sop(:,:,:,:), lo, hi, ng, dx, s0_init, p0_background, &
-                                 pert_height)
+          call initscalardata_3d(n,sop(:,:,:,:), lo, hi, ng, dx, s0_init, p0_background)
        end select
     end do
 
@@ -145,7 +160,7 @@ contains
 
   end subroutine initscalardata_on_level
 
-  subroutine initscalardata_2d(s,lo,hi,ng,dx,s0_init,p0_init,pert_height)
+  subroutine initscalardata_2d(s,lo,hi,ng,dx,s0_init,p0_init)
 
     use probin_module, only: prob_lo, prob_hi, perturb_model
 
@@ -154,8 +169,6 @@ contains
     real (kind = dp_t), intent(in   ) :: dx(:)
     real(kind=dp_t)   , intent(in   ) :: s0_init(0:,:)
     real(kind=dp_t)   , intent(in   ) :: p0_init(0:)
-    real (kind = dp_t), intent(in   ) :: pert_height
-    
 
     ! Local variables
     integer         :: i,j,n
@@ -209,7 +222,7 @@ contains
     
   end subroutine initscalardata_2d
 
-  subroutine initscalardata_3d(n,s,lo,hi,ng,dx,s0_init,p0_init,pert_height)
+  subroutine initscalardata_3d(n,s,lo,hi,ng,dx,s0_init,p0_init)
 
     use probin_module, only: prob_lo, prob_hi, perturb_model
     
@@ -218,9 +231,8 @@ contains
     real (kind = dp_t), intent(in   ) :: dx(:)
     real(kind=dp_t)   , intent(in   ) :: s0_init(0:,:)
     real(kind=dp_t)   , intent(in   ) :: p0_init(0:)
-    real (kind = dp_t), intent(in   ) :: pert_height
 
-    !     Local variables
+    ! local
     integer         :: i,j,k
     real(kind=dp_t) :: x, y, z
     real(kind=dp_t) :: dens_pert, rhoh_pert, temp_pert
@@ -357,8 +369,6 @@ contains
     real(kind=dp_t)   , intent(in   ) :: s0_init(0:,:)
     real(kind=dp_t)   , intent(in   ) :: p0_init(0:)
 
-    ! Local variables
-
     ! initial the velocity
     u = ZERO
 
@@ -371,8 +381,6 @@ contains
     real (kind = dp_t), intent(in   ) :: dx(:)
     real(kind=dp_t)   , intent(in   ) :: s0_init(0:,:)
     real(kind=dp_t)   , intent(in   ) :: p0_init(0:)
-
-    ! Local variables
 
     ! initial the velocity
     u = ZERO
