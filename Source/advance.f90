@@ -122,7 +122,6 @@ contains
     type(multifab) :: ptherm_new(mla%nlevel)
     type(multifab) :: pthermbar_cart(mla%nlevel)
     type(multifab) :: delta_p_term(mla%nlevel)
-
     type(multifab) :: sedge(mla%nlevel,dm)
     type(multifab) :: sflux(mla%nlevel,dm)
     type(multifab) :: scal_force(mla%nlevel)
@@ -146,8 +145,8 @@ contains
     real(dp_t), allocatable :: gamma1bar_old(:,:)
     real(dp_t), allocatable :: delta_gamma1_termbar(:,:)
 
-    integer    :: r,n,comp,ng_s,proj_type
-    real(dp_t) :: halfdt,eps_in
+    integer    :: r,n,comp,proj_type
+    real(dp_t) :: halfdt
 
     type(bl_prof_timer), save :: bpt
 
@@ -183,7 +182,6 @@ contains
     w0_old = w0
     gamma1bar_old = gamma1bar
 
-    ng_s = sold(1)%ng
     halfdt = half*dt
 
     ! compute the coordinates of the anelastic cutoff
@@ -409,7 +407,7 @@ contains
     end if
 
     do n=1,nlevs
-       call multifab_build(s1(n),            mla%la(n), nscal, ng_s)
+       call multifab_build(s1(n),            mla%la(n), nscal, 3)
        call multifab_build(rho_omegadot1(n), mla%la(n), nspec, 1)
        call multifab_build(rho_Hext(n),      mla%la(n), 1,     1)
     end do
@@ -525,7 +523,7 @@ contains
     end if
 
     do n=1,nlevs
-       call multifab_build(s2(n), mla%la(n), nscal, ng_s)
+       call multifab_build(s2(n), mla%la(n), nscal, 3)
     end do
 
     ! Build etarhoflux here so that we can call correct_base before make_etarho.
@@ -626,8 +624,8 @@ contains
           ! make a copy of s2star since these are needed to compute
           ! coefficients in the call to thermal_conduct_full_alg
           do n=1,nlevs
-             call multifab_build(s2star(n), mla%la(n), nscal, ng_s)
-             call multifab_copy_c(s2star(n), 1, s2(n), 1, nscal, ng_s)
+             call multifab_build(s2star(n), mla%la(n), nscal, 3)
+             call multifab_copy_c(s2star(n), 1, s2(n), 1, nscal, 3)
           end do
        end if
     end if
@@ -965,7 +963,7 @@ contains
        end do
        
        do n=1,nlevs
-          call multifab_build(s2(n), mla%la(n), nscal, ng_s)
+          call multifab_build(s2(n), mla%la(n), nscal, 3)
           call setval(etarhoflux(n),ZERO,all=.true.)
        end do
 
@@ -1298,10 +1296,9 @@ contains
        call put_1d_array_on_cart(div_coeff_nph,div_coeff_3d,foextrap_comp,.false., &
                                  .false.,dx,the_bc_tower%bc_tower_array,mla)
 
-       eps_in = 1.d-12
        call hgproject(proj_type, mla, unew, uold, rhohalf, pres, gpres, dx, dt, &
                       the_bc_tower, press_comp, &
-                      hgrhs, div_coeff_3d=div_coeff_3d, eps_in = eps_in)
+                      hgrhs, div_coeff_3d=div_coeff_3d,eps_in=1.d-12)
 
        do n=1,nlevs
           call destroy(div_coeff_3d(n))
