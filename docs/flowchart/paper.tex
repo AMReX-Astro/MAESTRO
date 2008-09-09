@@ -183,8 +183,8 @@ the average over $\Omega_H,$ as
 \overline{\phi}(r) = \frac{1}{\mathrm{A}(\Omega_H)}\int_{\Omega_H} \phi(r,{\bf x}) \; dA \enskip .
 \end{equation}
 
-\item {\bf React State}$(\rho^{\inp},(\rho h)^{\inp},X_k^{\inp},T^{\inp}, (\rho\Hext)^{\inp})\rightarrow$
-$(\rho^{\outp}, (\rho h)^{\outp}, X_k^{\outp}, T^{\outp}, (\rho \omegadot_k)^{\outp})$ \newline
+\item {\bf React State}$[\rho^{\inp},(\rho h)^{\inp},X_k^{\inp},T^{\inp}, (\rho\Hext)^{\inp}]\rightarrow$
+$[\rho^{\outp}, (\rho h)^{\outp}, X_k^{\outp}, T^{\outp}, (\rho \omegadot_k)^{\outp}]$ \newline
 is the process by which we evolve the species and enthalpy from $X_k^{\inp} \rightarrow X_k^{\outp}$ 
 and $(\rho h)^{\inp} \rightarrow (\rho h)^{\outp}$ by solving the following system of equations 
 over a time interval of  $\Delta t/2$,
@@ -252,7 +252,8 @@ p_{0,j}^\outp &=& p_{0,j}^\inp - \frac{\dt}{2\dr} \left (w_{0,j+\myhalf}^\inp
 \left (p_{0,j+\myhalf}^{n+\myhalf} -p_{0,j-\myhalf}^{n+\myhalf} \right ) + \dt \; \psi_j^\inp \enskip,
 \end{eqnarray}
 where the interface states are again found via the procedure described in
-paper II, Appendix A.
+paper II, Appendix A.\\ \\
+c)  For the enthalpy update, \MarginPar{We need enthalpy equations now that we are predicting $(\rho h)'$.}
 \\
 
 \item {\bf Correct Base}$(\rho_0^{\inp} , \etarho^{\inp}) \rightarrow (\rho_0^{\outp})$
@@ -268,18 +269,11 @@ is the process by which we adjust the base state density given $\etarho$ using
 We now describe the full time advancement algorithm, making frequent
 use of the shorthand developed above.  Here, we assume that the
 problem is already properly initialized.  We describe the details of
-the initialization in \S~ref{Sec:Initialization}.
+the initialization in \S~\ref{Sec:Initialization}.
 
-In paper II we discretized the density and enthalpy evolution equations in 
-perturbational form, arguing that this would be less
-susceptible to grid effects.  In the present algorithm, the analog would
-be to use a perturbational form of the species equations.
-Numerical testing has shown that the form of the algorithm presented
-here is in fact more robust than the perturbational form 
-when the base state mixing terms ($\etarho$) are included.  
-In the algorithm described below, density is still 
-extrapolated to edges in perturbational form, but 
-we treat $X_k$ and $h$ in non-perturbational form.\\
+In paper III we discretized the enthalpy evolution equation in full, non-perturbation form.  
+We have discovered that discretizing the enthalpy evolution in non-perturbational form 
+leads to better numerical properties.  This is more like paper II.\\
 
 %--------------------------------------------------------------------------
 % STEP 1
@@ -381,13 +375,12 @@ $(\rho_0^{(2),\star}, \rho_0^{\nph,\star,{\rm pred}}, p_0^{n+1,\star}).$
 
 \item Compute the edge states, $(\rho X_k)^{(1),\nph,\star}$ and $(\rho h)^{(1),\nph,\star},$
       for the conservative update of $(\rho X_k)$ and $(\rho h).$  Here we
-      predict $\rho'$, $T$, and $X_k$ to the edges, using
+      predict $\rho'$, $(\rho h)'$, and $X_k$ to the edges, using
       a second-order Taylor expansion in space and time, as described in
       paper II, Appendix A, using $\V = \uadvone+w_0^{\nph,\star} \er$.  
-      We explicitly include the reaction terms in the temperature prediction, 
-      since we 
-      did not update the temperature in {\bf React State}. 
-      We use the equation of state and base state density, $\rho_0$,
+      We do not include the reaction terms in the enthalpy prediction, 
+      since we accounted for them already in {\bf React State}. 
+      We use the base state density, $\rho_0$, and base state enthalpy, $(\rho h)_0$,
       to convert these to edge states for $(\rho X_k)$ and $(\rho h)$. 
       We define $\rho^{(1),\nph,\star} = \sum_k (\rho X_k)^{(1),\nph,\star}.$
 
@@ -537,13 +530,12 @@ $(\rho_0^{(2)}, \rho_0^{\nph,{\rm pred}}, p_0^{n+1}).$
 
 \item Compute the edge states, $(\rho X_k)^{(1),\nph}$ and $(\rho h)^{(1),\nph},$
       for the conservative update of $(\rho X_k)$ and $(\rho h).$  Here we
-      predict $\rho'$, $T$, and $X_k$ to the edges, using
+      predict $\rho'$, $(\rho h)'$, and $X_k$ to the edges, using
       a second-order Taylor expansion in space and time, as described in
       paper II, Appendix A, using $\V = \uadvtwo+w_0^{\nph} \er$. 
-      Again, we explicitly include the reaction terms in the temperature prediction, 
-      since we did not update  
-      the temperature in {\bf React State}.
-      We use the equation of state and base state density, $\rho_0$,
+      Again, we do not include the reaction terms in the enthalpy prediction 
+      since we accounted for them already in {\bf React State}.
+      We use the base state density, $\rho_0$, and base state enthalpy, $(\rho h)_0$,
       to convert these to edge states for $(\rho X_k)$ and $(\rho h)$. 
       We define $\rho^{(1),\nph} = \sum_k (\rho X_k)^{(1),\nph}.$
 
@@ -703,7 +695,7 @@ $\ut^{n+1}$ as computed in step 11.  We use this $\dt$ in the next time step.
 
 \noindent This completes the time advancement of the algorithm.
 
-\subsection{Initialization}
+\subsection{Initialization}\label{Sec:Initialization}
 
 We start each calculation with user-specified initial values for
 $\rho$, $X_k$ and $T,$ as well as an initial background state.  In
