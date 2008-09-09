@@ -9,7 +9,7 @@ module init_module
   use eos_module
   use variables
   use network
-  use geometry, only: r_end_coord, spherical, dm
+  use geometry, only: nr, spherical, dm
   use ml_layout_module
   use ml_restriction_module
   use multifab_fill_ghost_module
@@ -47,7 +47,7 @@ contains
     ! compute the perturbation r location based on where the concentration of He
     ! becomes greater than he4_pert at the coarsest level
     he4_comp = network_species_index('helium-4')
-    do r=0,r_end_coord(1,1)
+    do r=0,nr(1)-1
        if (s0_init(1,r,spec_comp+he4_comp-1)/s0_init(1,r,rho_comp) .gt. he4_pert) then
           pert_index = r
           exit
@@ -128,7 +128,7 @@ contains
        ! compute the perturbation r location based on where the concentration of He
        ! becomes greater than he4_pert at the coarsest level
        he4_comp = network_species_index('helium-4')
-       do r=0,r_end_coord(1,1)
+       do r=0,nr(1)-1
           if (s0_init(r,spec_comp+he4_comp-1)/s0_init(r,rho_comp) .gt. he4_pert) then
              pert_index = r
              exit
