@@ -304,6 +304,7 @@ S^{\nph,\star} = S^n + \frac{\Delta t^n}{2} \frac{S^n - S^{n-1}}{\Delta t^{n-1}}
 
 \item Construct $w_0^{\nph,\star}$ by integrating equation (\ref{eq:divw0}) using 
 the lagged $\psi^{\nmh},$
+\MarginPar{Need dpdt\_factor stuff.}
 \begin{equation}
 \frac{\partial w_0^{\nph,\star}}{\partial r} =  \overline{S}^{\nph,\star} 
 - \frac{1}{\gammabar^{n} p_0^{n}} \psi^{\nmh} \enskip . \nonumber
@@ -333,8 +334,8 @@ If $n=0$, we use $\dt^{-1} = \dt^0$.
 
 The procedure to construct $\uadvone$ is described in detail in Appendix B of paper III.
 We note that  $\uadvone$ satisfies the discrete versions of equations
-(\ref{eq:udoterzero}) and (\ref{eq:tildeconstraint}), 
-in particular,
+(\ref{eq:udoterzero}) and (\ref{eq:tildeconstraint}), in particular,
+\MarginPar{Need dpdt\_factor stuff.}
 \begin{equation}
 \nablab \cdotb \left(\beta_0^n \uadvone\right) = \beta_0^n \left(S^{\nph,\star} - \overline{S}^{\nph,\star}\right)
 \enskip ,
@@ -348,9 +349,9 @@ in particular,
 \begin{enumerate}
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
 
-\item {\bf React State}$(\rho^n, (\rho h)^n, X_k^n, T^n, (\rho^n \Hext))
-                   \rightarrow$ $( \rho^{(1)}, (\rho h)^{(1)}, X_k^{(1)}, T^{(1)},
-                                  (\rho \omegadot_k)^{(1)} ).$  
+\item {\bf React State}$[\rho^n, (\rho h)^n, X_k^n, T^n, (\rho^n \Hext)]
+                   \rightarrow$ $[ \rho^{(1)}, (\rho h)^{(1)}, X_k^{(1)}, T^{(1)},
+                                  (\rho \omegadot_k)^{(1)} ].$  
 
 \item
 Define
@@ -483,6 +484,7 @@ Then define
 \]
 
 \item Construct $w_0^{\nph}$ by integrating equation (\ref{eq:divw0}),
+\MarginPar{Need dpdt\_factor stuff.}
 \begin{equation}
 \frac{\partial w_0^{\nph}}{\partial r} =  \overline{S}^{\nph,\star} - \frac{1}{\gammabar^{\nph,\star} p_0^{\nph,\star}} \psi^{\nph,\star} \enskip , \nonumber
 \end{equation}
@@ -509,8 +511,8 @@ equations (\ref{eq:w0nstar}) and (\ref{eq:dw0drnstar}).
 The procedure to construct $\uadvtwo$ is described in detail in Appendix B of paper III
 and is analogous to the procedure used in step 2, but with updated values
 for $w_0$ and $\pizero.$ We note that  $\uadvtwo$ satisfies the discrete versions of 
-equations (\ref{eq:udoterzero}) and (\ref{eq:tildeconstraint}),
-in particular
+equations (\ref{eq:udoterzero}) and (\ref{eq:tildeconstraint}), in particular,
+\MarginPar{Need dpdt\_factor stuff.}
 \begin{equation}
 \nablab \cdotb \left(\beta_0^{\nph,\star} \uadvtwo\right) = \beta_0^{\nph,\star} 
 \left(S^{\nph} - \overline{S}^{\nph}\right) \enskip .
@@ -655,6 +657,7 @@ is described in paper II, Appendix A, with $\V = \uadvtwo+w_0^{\nph} \er$ and~$s
 component of $\ut^n$ individually.
 
 Finally, we impose the divergence constraint from equation (\ref{eq:tildeconstraint}),
+\MarginPar{Need dpdt\_factor stuff.}
 \[
 \nablab \cdotb \left(\beta_0^{\nph} \ut^{n+1} \right)  = \beta_0^{\nph} \left(S^{n+1} - \overline{S}^{n+1} \right)\enskip,
 \]
