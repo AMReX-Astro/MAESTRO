@@ -21,7 +21,7 @@ contains
 
   subroutine tag_boxes(mf,tagboxes,lev)
 
-    use variables, only: spec_comp
+    use variables, only: rho_comp, spec_comp
     use geometry, only: dm, nr_fine
 
     type( multifab), intent(in   ) :: mf
@@ -45,9 +45,9 @@ contains
        lo =  lwb(get_box(tagboxes, i))
        select case (dm)
        case (2)
-          call radialtag_2d(radialtag_proc,sp(:,:,1,spec_comp),lo,ng_s,lev)
+          call radialtag_2d(radialtag_proc,sp(:,:,1,spec_comp),sp(:,:,1,rho_comp),lo,ng_s,lev)
        case  (3)
-          call radialtag_3d(radialtag_proc,sp(:,:,:,spec_comp),lo,ng_s,lev)
+          call radialtag_3d(radialtag_proc,sp(:,:,:,spec_comp),sp(:,:,:,rho_comp),lo,ng_s,lev)
        end select
     end do
 
@@ -70,42 +70,46 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine radialtag_2d(radialtag,mf,lo,ng,lev)
+  subroutine radialtag_2d(radialtag,he,rho,lo,ng,lev)
 
     integer          , intent(in   ) :: lo(:),ng
     logical          , intent(inout) :: radialtag(0:)
-    real(kind = dp_t), intent(in   ) :: mf(lo(1)-ng:,lo(2)-ng:)
+    real(kind = dp_t), intent(in   ) ::  he(lo(1)-ng:,lo(2)-ng:)
+    real(kind = dp_t), intent(in   ) :: rho(lo(1)-ng:,lo(2)-ng:)
     integer, optional, intent(in   ) :: lev
+
+    ! local
     integer :: i,j,nx,ny,llev
+    real(kind=dp_t) :: Xhe
 
     llev = 1; if (present(lev)) llev = lev
-    nx = size(mf,dim=1) - 2*ng
-    ny = size(mf,dim=2) - 2*ng
+    nx = size(he,dim=1) - 2*ng
+    ny = size(he,dim=2) - 2*ng
 
     select case(llev)
     case (1)
-       ! tag all boxes with temperature >= 5.5d8
        do j = lo(2),lo(2)+ny-1
           do i = lo(1),lo(1)+nx-1
-             if (mf(i,j) .gt. 1.d-4 .and. mf(i,j) .lt. 0.99d0) then
+             Xhe = he(i,j)/rho(i,j)
+             if (Xhe .gt. 1.d-4 .and. Xhe .lt. 0.99d0) then
                 radialtag(j) = .true.
              end if
           end do
        enddo
     case (2)
-       ! for level 2 tag all boxes with temperature >= 5.5d8
        do j = lo(2),lo(2)+ny-1
           do i = lo(1),lo(1)+nx-1
-             if (mf(i,j) .gt. 1.d-1 .and. mf(i,j) .lt. 0.99d0) then
+             Xhe = he(i,j)/rho(i,j)
+             if (Xhe .gt. 1.d-1 .and. Xhe .lt. 0.99d0) then
                 radialtag(j) = .true.
              end if
           end do
        end do
     case default
-       ! for level 3 or greater tag all boxes with temperature >= 5.5d8
        do j = lo(2),lo(2)+ny-1
           do i = lo(1),lo(1)+nx-1
-             if (mf(i,j) .gt. 1.d-1 .and. mf(i,j) .lt. 0.99d0) then
+             Xhe = he(i,j)/rho(i,j)
+             if (Xhe .gt. 1.d-1 .and. Xhe .lt. 0.99d0) then
                 radialtag(j) = .true.
              end if
           end do
@@ -116,49 +120,52 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine radialtag_3d(radialtag,mf,lo,ng,lev)
+  subroutine radialtag_3d(radialtag,he,rho,lo,ng,lev)
 
     integer          , intent(in   ) :: lo(:),ng
     logical          , intent(inout) :: radialtag(0:)
-    real(kind = dp_t), intent(in   ) :: mf(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
+    real(kind = dp_t), intent(in   ) ::  he(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
+    real(kind = dp_t), intent(in   ) :: rho(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
     integer, optional, intent(in   ) :: lev
 
+    ! local
     integer :: i,j,k,nx,ny,nz,llev
+    real(kind=dp_t) :: Xhe
 
     llev = 1; if (present(lev)) llev = lev
-    nx = size(mf,dim=1) - 2*ng
-    ny = size(mf,dim=2) - 2*ng
-    nz = size(mf,dim=3) - 2*ng
+    nx = size(he,dim=1) - 2*ng
+    ny = size(he,dim=2) - 2*ng
+    nz = size(he,dim=3) - 2*ng
 
     select case(llev)
     case (1)
-       ! tag all boxes with a temperature >= 6.06d68
        do k = lo(3),lo(3)+nz-1
           do j = lo(2),lo(2)+ny-1
              do i = lo(1),lo(1)+nx-1
-                if (mf(i,j,k) .gt. 5.5d8) then
+                Xhe = he(i,j,k)/rho(i,j,k)
+                if (Xhe .gt. 1.d-1 .and. Xhe .lt. 0.99d0) then
                    radialtag(k) = .true.
                 end if
              end do
           enddo
        end do
     case (2)
-       ! for level 2 tag all boxes with temperature >= 5.5d8
        do k = lo(3),lo(3)+nz-1
           do j = lo(2),lo(2)+ny-1
              do i = lo(1),lo(1)+nx-1
-                if (mf(i,j,k) .gt. 5.5d8) then
+                Xhe = he(i,j,k)/rho(i,j,k)
+                if (Xhe .gt. 1.d-1 .and. Xhe .lt. 0.99d0) then
                    radialtag(k) = .true.
                 end if
              end do
           end do
        end do
     case default
-       ! for level 3 or greater tag all boxes with temperature >= 5.5d8
        do k = lo(3),lo(3)+nz-1
           do j = lo(2),lo(2)+ny-1
              do i = lo(1),lo(1)+nx-1
-                if (mf(i,j,k) .gt. 5.5d8) then
+                Xhe = he(i,j,k)/rho(i,j,k)
+                if (Xhe .gt. 1.d-1 .and. Xhe .lt. 0.99d0) then
                    radialtag(k) = .true.
                 end if
              end do

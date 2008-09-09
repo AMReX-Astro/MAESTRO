@@ -1,9 +1,8 @@
 &PROBIN
-
- ! uncomment for fixed grids
+! uncomment for fixed grids
  test_set = "gr0_2d_5cm_3levels"
 
- ! uncomment for adaptive grids
+! uncomment for adaptive grids
 ! max_levs = 3
 ! n_cellx = 127
 ! n_celly = 127
