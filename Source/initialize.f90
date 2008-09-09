@@ -53,7 +53,7 @@ contains
 
     real(dp_t) :: lenx,leny,lenz,max_dist
 
-    integer :: n,i
+    integer :: n
 
     type(multifab), pointer :: chkdata(:)
     type(multifab), pointer :: chk_p(:)
@@ -263,7 +263,7 @@ contains
 
     real(dp_t) :: lenx,leny,lenz,max_dist
 
-    integer :: n,i
+    integer :: n
     
     ! set time and dt
     time = ZERO
@@ -421,7 +421,7 @@ contains
     type(box)    :: bxs
 
     real(dp_t) :: lenx,leny,lenz,max_dist
-    integer    :: buf_wid,n,nl,d,i
+    integer    :: buf_wid,n,nl
     integer    :: lo(dm), hi(dm)
     logical    :: new_grid
 

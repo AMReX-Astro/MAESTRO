@@ -69,7 +69,7 @@ contains
     type(multifab) :: rhoh0_new_cart(mla%nlevel)
     type(multifab) :: p0_new_cart(mla%nlevel)
 
-    integer    :: velpred,comp,pred_comp,n
+    integer    :: velpred,pred_comp,n
     logical    :: is_vel
     real(dp_t) :: smin,smax
     logical    :: is_prediction
