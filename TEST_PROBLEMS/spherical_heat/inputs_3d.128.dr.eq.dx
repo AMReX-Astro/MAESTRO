@@ -3,6 +3,7 @@
 
  test_set = "gr0_3d.128"
 
+ dm_in = 3
  spherical_in = 1
  do_sponge = .true.
 
@@ -49,7 +50,6 @@
 
  enthalpy_pred_type = 1
  evolve_base_state = T
- predict_rho = F
 
  dpdt_factor = 0.0
 
