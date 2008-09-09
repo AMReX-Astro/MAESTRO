@@ -4,8 +4,8 @@
 
 ! uncomment for adaptive grids
 ! max_levs = 3
-! n_cellx = 127
-! n_celly = 127
+! n_cellx = 128
+! n_celly = 128
 ! regrid_int = 10
 
  model_file = "sorted_xrb_lo_5cm.hse"
