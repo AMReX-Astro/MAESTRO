@@ -287,11 +287,13 @@ contains
 
     if (dm .eq. 3) then
        do n=1,nlevs
-          call multifab_build(w0_force_cart_vec(n), mla%la(n), dm, 1)
-          call multifab_build(w0mac(n,comp),        mla%la(n),  1, 1, &
-                              nodal=edge_nodal_flag(comp,:))
-          call setval(w0_force_cart_vec(n), ZERO, all=.true.)
-          call setval(w0mac(n,comp),        ZERO, all=.true.)
+          call multifab_build(w0_force_cart_vec(n),mla%la(n),dm,1)
+          call setval(w0_force_cart_vec(n),ZERO,all=.true.)
+          do comp=1,dm
+             call multifab_build(w0mac(n,comp),mla%la(n),1,1,nodal=edge_nodal_flag(comp,:))
+             call setval(w0mac(n,comp),ZERO,all=.true.)
+          end do
+
        end do
     end if
 
