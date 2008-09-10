@@ -70,7 +70,7 @@ contains
              call initscalardata_2d(sop(:,:,1,:), lo, hi, ng, dx(n,:), s0_init(n,:,:), &
                                     p0_init(n,:))
           case (3)
-             call initscalardata_3d(n,sop(:,:,:,:), lo, hi, ng, dx(n,:), s0_init(n,:,:), &
+             call initscalardata_3d(sop(:,:,:,:), lo, hi, ng, dx(n,:), s0_init(n,:,:), &
                                     p0_init(n,:))
           end select
        end do
@@ -150,7 +150,7 @@ contains
        case (2)
           call initscalardata_2d(sop(:,:,1,:), lo, hi, ng, dx, s0_init, p0_background)
        case (3)
-          call initscalardata_3d(n,sop(:,:,:,:), lo, hi, ng, dx, s0_init, p0_background)
+          call initscalardata_3d(sop(:,:,:,:), lo, hi, ng, dx, s0_init, p0_background)
        end select
     end do
 
@@ -222,11 +222,11 @@ contains
     
   end subroutine initscalardata_2d
 
-  subroutine initscalardata_3d(n,s,lo,hi,ng,dx,s0_init,p0_init)
+  subroutine initscalardata_3d(s,lo,hi,ng,dx,s0_init,p0_init)
 
     use probin_module, only: prob_lo, prob_hi, perturb_model
     
-    integer           , intent(in   ) :: n,lo(:),hi(:),ng
+    integer           , intent(in   ) :: lo(:),hi(:),ng
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
     real (kind = dp_t), intent(in   ) :: dx(:)
     real(kind=dp_t)   , intent(in   ) :: s0_init(0:,:)
