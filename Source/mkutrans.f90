@@ -251,6 +251,7 @@ contains
     use bc_module
     use slope_module
     use geometry, only: nr, spherical
+    use probin_module, only: use_new_godunov
     
     integer, intent(in)            :: n,lo(3),ng_u,ng_ut,ng_w0    
     real(kind=dp_t), intent(in   ) ::         vel(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :,:)
@@ -267,7 +268,7 @@ contains
     
     real(kind=dp_t), allocatable::  velx(:,:,:,:),vely(:,:,:,:),velz(:,:,:,:)
     
-    real(kind=dp_t) ulft,urgt,vbot,vtop,wbot,wtop
+    real(kind=dp_t) ulft,urgt,vbot,vtop,wbot,wtop,dw0drhi,dw0drlo
     real(kind=dp_t) uhi,ulo,vhi,vlo,whi,wlo
     real(kind=dp_t) hx, hy, hz, dth, umax, eps, abs_eps
     
@@ -288,6 +289,10 @@ contains
     ke = hi(3)
     
     abs_eps = 1.d-8
+
+    ! set these to zero so they have no effect in spherical
+    dw0drhi = ZERO
+    dw0drlo = ZERO
     
     ! Compute eps, which is relative to the max velocity
     umax = abs(vel(is,js,ks,1))
@@ -336,8 +341,13 @@ contains
                 ulo = vel(i-1,j,k,1)
              end if
              
-             urgt = vel(i,j,k  ,1) - (HALF + dth*uhi/hx) * velx(i  ,j,k,1)
-             ulft = vel(i-1,j,k,1) + (HALF - dth*ulo/hx) * velx(i-1,j,k,1)
+             if (use_new_godunov) then
+                urgt = vel(i,j,k  ,1) - (HALF + dth*min(ZERO,uhi)/hx) * velx(i  ,j,k,1)
+                ulft = vel(i-1,j,k,1) + (HALF - dth*max(ZERO,ulo)/hx) * velx(i-1,j,k,1)
+             else
+                urgt = vel(i,j,k  ,1) - (HALF + dth*uhi/hx) * velx(i  ,j,k,1)
+                ulft = vel(i-1,j,k,1) + (HALF - dth*ulo/hx) * velx(i-1,j,k,1)
+             end if
 
              urgt = merge(vel(is-1,j,k,1),urgt,i.eq.is   .and. phys_bc(1,1) .eq. INLET)
              urgt = merge(vel(ie+1,j,k,1),urgt,i.eq.ie+1 .and. phys_bc(1,2) .eq. INLET)
@@ -374,8 +384,13 @@ contains
                 vlo = vel(i,j-1,k,2)
              end if
              
-             vtop = vel(i,j  ,k,2) - (HALF + dth*vhi/hy) * vely(i,j  ,k,1)
-             vbot = vel(i,j-1,k,2) + (HALF - dth*vlo/hy) * vely(i,j-1,k,1)
+             if (use_new_godunov) then
+                vtop = vel(i,j  ,k,2) - (HALF + dth*min(ZERO,vhi)/hy) * vely(i,j  ,k,1)
+                vbot = vel(i,j-1,k,2) + (HALF - dth*max(ZERO,vlo)/hy) * vely(i,j-1,k,1)
+             else
+                vtop = vel(i,j  ,k,2) - (HALF + dth*vhi/hy) * vely(i,j  ,k,1)
+                vbot = vel(i,j-1,k,2) + (HALF - dth*vlo/hy) * vely(i,j-1,k,1)
+             end if
 
              vtop = merge(vel(i,js-1,k,2),vtop,j.eq.js   .and. phys_bc(2,1) .eq. INLET)
              vtop = merge(vel(i,je+1,k,2),vtop,j.eq.je+1 .and. phys_bc(2,2) .eq. INLET)
@@ -412,20 +427,31 @@ contains
 
                 if (k .eq. nr(n)) then
                    whi = vel(i,j,k,3) + w0(k)
+                   dw0drhi = (w0(k)-w0(k-1))/dx(3)
                 else
                    whi = vel(i,j,k,3) + HALF* (w0(k)+w0(k+1))
+                   dw0drhi = (w0(k+1)-w0(k))/dx(3)
                 end if
 
                 if (k .eq. ZERO) then
                    wlo = vel(i,j,k-1,3) + w0(k)
+                   dw0drlo = (w0(k+1)-w0(k))/dx(3)
                 else
                    wlo = vel(i,j,k-1,3) + HALF* (w0(k-1)+w0(k))
+                   dw0drlo = (w0(k)-w0(k-1))/dx(3)
                 end if
 
              end if
 
-             wtop = vel(i,j,k  ,3) - (HALF + dth*whi/hz) * velz(i,j,k  ,1)
-             wbot = vel(i,j,k-1,3) + (HALF - dth*wlo/hz) * velz(i,j,k-1,1)
+             if (use_new_godunov) then
+                wtop = vel(i,j,k  ,3) - (HALF + dth*min(ZERO,whi)/hz) * velz(i,j,k  ,1) &
+                     - dth*vel(i,j,k  ,3)*dw0drhi
+                wbot = vel(i,j,k-1,3) + (HALF - dth*max(ZERO,wlo)/hz) * velz(i,j,k-1,1) &
+                     - dth*vel(i,j,k-1,3)*dw0drlo
+             else
+                wtop = vel(i,j,k  ,3) - (HALF + dth*whi/hz) * velz(i,j,k  ,1)
+                wbot = vel(i,j,k-1,3) + (HALF - dth*wlo/hz) * velz(i,j,k-1,1)
+             end if
              
              wtop = merge(vel(i,j,ks-1,3),wtop,k.eq.ks   .and. phys_bc(3,1) .eq. INLET)
              wtop = merge(vel(i,j,ke+1,3),wtop,k.eq.ke+1 .and. phys_bc(3,2) .eq. INLET)
