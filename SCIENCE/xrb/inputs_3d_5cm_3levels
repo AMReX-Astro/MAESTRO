@@ -1,10 +1,20 @@
 &PROBIN
- test_set = "gr0_3d_5cm_3levels"
- model_file = "sorted_xrb_lo_5cm.hse"
+! uncomment for fixed grids
+test_set = "gr0_3d_5cm_3levels"
 
+! uncomment for adaptive grids
+! max_levs = 3
+! n_cellx = 32
+! n_celly = 32
+! n_cellz = 128
+! regrid_int = 10
+! max_grid_size = 32
+
+ model_file = "sorted_xrb_lo_5cm.hse"
  spherical_in = 0
- dm_in = 3
  plot_base = T
+
+ dm_in = 3
 
  use_eos_coulomb = T
 
