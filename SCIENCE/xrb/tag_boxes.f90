@@ -60,9 +60,9 @@ contains
        lo =  lwb(get_box(tagboxes, i))
        select case (dm)
        case (2)
-          call tag_boxes_2d(tp(:,:,1,1),radialtag,lo,lev)
+          call tag_boxes_2d(tp(:,:,1,1),radialtag,lo)
        case  (3)
-          call tag_boxes_3d(tp(:,:,:,1),radialtag,lo,lev)
+          call tag_boxes_3d(tp(:,:,:,1),radialtag,lo)
        end select
     end do
 
@@ -177,68 +177,43 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine tag_boxes_2d(tagbox,radialtag,lo,lev)
+  subroutine tag_boxes_2d(tagbox,radialtag,lo)
 
     integer          , intent(in   ) :: lo(:)
     logical          , intent(  out) :: tagbox(lo(1):,lo(2):)
     logical          , intent(in   ) :: radialtag(0:)
-    integer, optional, intent(in   ) :: lev
-    integer :: j,ny,llev
 
-    llev = 1; if (present(lev)) llev = lev
+    integer :: j,ny
+
     ny = size(tagbox,dim=2)
 
     tagbox = .false.
 
     ! tag all boxes with radialtag = .true
-    select case(llev)
-    case (1)
-       do j = lo(2),lo(2)+ny-1
-          tagbox(:,j) = radialtag(j)
-       enddo
-    case (2)
-       do j = lo(2),lo(2)+ny-1
-          tagbox(:,j) = radialtag(j)
-       end do
-    case default
-       do j = lo(2),lo(2)+ny-1
-          tagbox(:,j) = radialtag(j)
-       end do
-    end select
+    do j = lo(2),lo(2)+ny-1
+       tagbox(:,j) = radialtag(j)
+    enddo
 
   end subroutine tag_boxes_2d
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine tag_boxes_3d(tagbox,radialtag,lo,lev)
+  subroutine tag_boxes_3d(tagbox,radialtag,lo)
 
     integer          , intent(in   ) :: lo(:)
     logical          , intent(  out) :: tagbox(lo(1):,lo(2):,lo(3):)
     logical          , intent(in   ) :: radialtag(0:)
-    integer, optional, intent(in   ) :: lev
 
-    integer :: k,nz,llev
+    integer :: k,nz
 
-    llev = 1; if (present(lev)) llev = lev
     nz = size(tagbox,dim=3)
 
     tagbox = .false.
 
     ! tag all boxes with radialtag = .true.
-    select case(llev)
-    case (1)
-       do k = lo(3),lo(3)+nz-1
-          tagbox(:,:,k) = radialtag(k)
-       end do
-    case (2)
-       do k = lo(3),lo(3)+nz-1
-          tagbox(:,:,k) = radialtag(k)
-       end do
-    case default
-       do k = lo(3),lo(3)+nz-1
-          tagbox(:,:,k) = radialtag(k)
-       end do
-    end select
+    do k = lo(3),lo(3)+nz-1
+       tagbox(:,:,k) = radialtag(k)
+    end do
 
   end subroutine tag_boxes_3d
 
