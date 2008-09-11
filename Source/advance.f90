@@ -182,7 +182,7 @@ contains
     w0_old = w0
     gamma1bar_old = gamma1bar
 
-    ! Set this to zero since we only compute this is dpdt_factor != 0
+    ! Set this to zero since we only compute this if dpdt_factor > 0
     p0_minus_pthermbar = ZERO
 
     halfdt = half*dt
@@ -256,7 +256,7 @@ contains
        call setval(delta_p_term(n),ZERO,all=.true.)
     end do
 
-    if (dpdt_factor .ne. ZERO ) then
+    if (dpdt_factor .gt. ZERO ) then
     
        ! compute p0_minus_pthermbar = p0_old - pthermbar (for making w0)
        ! and delta_p_term = ptherm_old - pthermbar_cart (for RHS of projection)
@@ -752,7 +752,7 @@ contains
           call setval(delta_p_term(n),ZERO,all=.true.)
        end do
 
-       if (dpdt_factor .ne. ZERO) then
+       if (dpdt_factor .gt. ZERO) then
 
           ! compute p0_minus_pthermbar = p0_nph - pthermbar (for making w0)
           ! and delta_p_term = ptherm_nph - pthermbar_cart (for RHS of projection)
@@ -1247,7 +1247,7 @@ contains
        call make_hgrhs(the_bc_tower,mla,hgrhs,Source_new,delta_gamma1_term, &
                        Sbar,div_coeff_new,dx)
 
-       if (dpdt_factor .ne. ZERO) then
+       if (dpdt_factor .gt. ZERO) then
 
           do n=1,nlevs
              call multifab_build(ptherm_new(n), mla%la(n), 1, 0)
