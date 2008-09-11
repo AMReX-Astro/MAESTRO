@@ -443,14 +443,24 @@ contains
 
              end if
 
-             if (use_new_godunov) then
-                wtop = vel(i,j,k  ,3) - (HALF + dth*min(ZERO,whi)/hz) * velz(i,j,k  ,1) &
-                     - dth*vel(i,j,k  ,3)*dw0drhi
-                wbot = vel(i,j,k-1,3) + (HALF - dth*max(ZERO,wlo)/hz) * velz(i,j,k-1,1) &
-                     - dth*vel(i,j,k-1,3)*dw0drlo
+             if (spherical .eq. 0) then
+                if (use_new_godunov) then
+                   wtop = vel(i,j,k  ,3) - (HALF + dth*min(ZERO,whi)/hz) * velz(i,j,k  ,1) &
+                        - dth*vel(i,j,k  ,3)*dw0drhi
+                   wbot = vel(i,j,k-1,3) + (HALF - dth*max(ZERO,wlo)/hz) * velz(i,j,k-1,1) &
+                        - dth*vel(i,j,k-1,3)*dw0drlo
+                else
+                   wtop = vel(i,j,k  ,3) - (HALF + dth*whi/hz) * velz(i,j,k  ,1)
+                   wbot = vel(i,j,k-1,3) + (HALF - dth*wlo/hz) * velz(i,j,k-1,1)
+                end if
              else
-                wtop = vel(i,j,k  ,3) - (HALF + dth*whi/hz) * velz(i,j,k  ,1)
-                wbot = vel(i,j,k-1,3) + (HALF - dth*wlo/hz) * velz(i,j,k-1,1)
+                if (use_new_godunov) then
+                   wtop = vel(i,j,k  ,3) - (HALF + dth*min(ZERO,whi)/hz) * velz(i,j,k  ,1)
+                   wbot = vel(i,j,k-1,3) + (HALF - dth*max(ZERO,wlo)/hz) * velz(i,j,k-1,1) 
+                else
+                   wtop = vel(i,j,k  ,3) - (HALF + dth*whi/hz) * velz(i,j,k  ,1)
+                   wbot = vel(i,j,k-1,3) + (HALF - dth*wlo/hz) * velz(i,j,k-1,1)
+                end if
              end if
              
              wtop = merge(vel(i,j,ks-1,3),wtop,k.eq.ks   .and. phys_bc(3,1) .eq. INLET)
