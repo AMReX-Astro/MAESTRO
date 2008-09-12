@@ -23,7 +23,7 @@ contains
     use bl_prof_module
     use bl_constants_module
     use restrict_base_module
-    use probin_module, only: nlevs
+    use probin_module, only: nlevs, drdxfac
 
     type(ml_layout), intent(in   ) :: mla
     integer        , intent(in   ) :: incomp
@@ -48,6 +48,12 @@ contains
     real(kind=dp_t), allocatable :: source_buffer(:)
     real(kind=dp_t), allocatable :: target_buffer(:)
     logical                      :: fine_grids_span_domain_width
+
+    integer                      :: j
+    integer                      :: nr_crse
+    real(kind=dp_t), allocatable :: ncell_crse(:)
+    real(kind=dp_t), allocatable :: phibar_crse(:)
+    real(kind=dp_t)              :: w_lo, w_hi, del_w, wsix, theta
 
     type(bl_prof_timer), save :: bpt
 
@@ -217,7 +223,7 @@ contains
     else if(spherical .eq. 1) then
 
        ! The spherical case is tricky because the base state only exists at 
-       ! one level with dr = dx
+       ! one level with dr = dx / drdxfac.
 
        ! Therefore, the goal here is to compute phibar(nlevs,:).
        ! phisum(nlevs,:,:) will be the volume weighted sum over all levels.
@@ -270,14 +276,77 @@ contains
 
        end do
 
-       ! now divide the total phisum by the number of cells to get phibar
-       do r=0,nr_fine-1
-          if (ncell(nlevs,r) .gt. ZERO) then
-             phibar(nlevs,r) = phisum(nlevs,r) / ncell(nlevs,r)
-          else
-             phibar(nlevs,r) = ZERO
-          end if
-       end do
+       if (drdxfac .ne. 1) then
+
+          nr_crse = nr_fine / drdxfac + 1
+          allocate( ncell_crse(0:nr_crse-1))
+          allocate(phibar_crse(-2:nr_crse+1))
+
+          do r = 0, nr_crse-1
+
+             phibar_crse(r) = 0.d0
+              ncell_crse(r) = 0.d0
+   
+             ! Sum fine data onto the crse grid
+             do j = drdxfac*r, min(drdxfac*r+(drdxfac-1),nr_fine-1)
+                phibar_crse(r) = phibar_crse(r) + phisum(nlevs,j)
+                 ncell_crse(r) =  ncell_crse(r) +  ncell(nlevs,j)
+             end do
+
+             ! Now compute the average
+             if (ncell_crse(r) .gt. ZERO) then
+                phibar_crse(r) = phibar_crse(r) / ncell_crse(r)
+             else if (r .eq. nr_crse-1) then
+                phibar_crse(r) = phibar_crse(nr_crse-2)
+             else 
+                phibar_crse(r) = ZERO
+             end if
+          end do
+
+          ! Reflect (even) across origin
+          phibar_crse(-1) = phibar_crse(0)
+          phibar_crse(-2) = phibar_crse(1)
+
+          ! Extend at high r
+          phibar_crse(nr_crse  ) = phibar_crse(nr_crse-1)
+          phibar_crse(nr_crse+1) = phibar_crse(nr_crse-1)
+
+          ! Put the average back onto the fine grid
+          do r = 0, nr_crse-1
+   
+             w_lo = ( 7.d0 * (phibar_crse(r  ) + phibar_crse(r-1)) &
+                     -1.d0 * (phibar_crse(r+1) + phibar_crse(r-2)) ) / 12.d0
+             w_hi = ( 7.d0 * (phibar_crse(r  ) + phibar_crse(r+1)) &
+                     -1.d0 * (phibar_crse(r-1) + phibar_crse(r+2)) ) / 12.d0
+
+             del_w = w_hi - w_lo
+
+             wsix = 6.d0 * ( phibar_crse(r) - 0.5d0 * (w_lo + w_hi) )
+
+             do j = 0, min(drdxfac-1,nr_fine-drdxfac*r-1)
+                ! piecewise constant
+!               phibar(nlevs,drdxfac*r+j) = phibar_crse(r)
+   
+                ! parabolic interpolation
+                theta = dble(j) / dble(drdxfac)
+                phibar(nlevs,drdxfac*r+j) = w_lo + theta * del_w + &
+                                       theta * (1.d0 - theta) * wsix
+             end do
+
+          end do
+
+       else 
+
+          ! if drdxfac = 1 then divide the total phisum by the number of cells to get phibar
+          do r=0,nr_fine-1
+             if (ncell(nlevs,r) .gt. ZERO) then
+                phibar(nlevs,r) = phisum(nlevs,r) / ncell(nlevs,r)
+             else
+                phibar(nlevs,r) = ZERO
+             end if
+          end do
+
+       end if
        
        ! temporary hack for the case where the outermost radial bin average 
        ! to zero because there is no contribution from any Cartesian cell 
@@ -293,6 +362,11 @@ contains
        deallocate(phisum_proc,phisum)
        deallocate(phipert_proc,phipert)
        deallocate(source_buffer,target_buffer)
+
+       if (drdxfac .ne. 1) then
+          deallocate( ncell_crse)
+          deallocate(phibar_crse)
+       end if
 
     endif
 
