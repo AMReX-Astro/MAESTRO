@@ -100,7 +100,7 @@ contains
        do j = lo(2),lo(2)+ny-1
           do i = lo(1),lo(1)+nx-1
              Xhe = he(i,j)/rho(i,j)
-             if (Xhe .gt. 1.d-1 .and. Xhe .lt. 0.99d0) then
+             if (Xhe .gt. 1.d-4 .and. Xhe .lt. 0.99d0) then
                 radialtag(j) = .true.
              end if
           end do
@@ -109,7 +109,7 @@ contains
        do j = lo(2),lo(2)+ny-1
           do i = lo(1),lo(1)+nx-1
              Xhe = he(i,j)/rho(i,j)
-             if (Xhe .gt. 1.d-1 .and. Xhe .lt. 0.99d0) then
+             if (Xhe .gt. 1.d-4 .and. Xhe .lt. 0.99d0) then
                 radialtag(j) = .true.
              end if
           end do
@@ -154,7 +154,7 @@ contains
           do j = lo(2),lo(2)+ny-1
              do i = lo(1),lo(1)+nx-1
                 Xhe = he(i,j,k)/rho(i,j,k)
-                if (Xhe .gt. 1.d-1 .and. Xhe .lt. 0.99d0) then
+                if (Xhe .gt. 1.d-4 .and. Xhe .lt. 0.99d0) then
                    radialtag(k) = .true.
                 end if
              end do
@@ -165,7 +165,7 @@ contains
           do j = lo(2),lo(2)+ny-1
              do i = lo(1),lo(1)+nx-1
                 Xhe = he(i,j,k)/rho(i,j,k)
-                if (Xhe .gt. 1.d-1 .and. Xhe .lt. 0.99d0) then
+                if (Xhe .gt. 1.d-4 .and. Xhe .lt. 0.99d0) then
                    radialtag(k) = .true.
                 end if
              end do
