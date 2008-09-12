@@ -17,7 +17,7 @@ module initialize_module
   private
 
   public :: initialize_from_restart, initialize_with_fixed_grids, &
-       initialize_with_adaptive_grids, initialize_bc
+            initialize_with_adaptive_grids, initialize_bc
 
 contains
     
@@ -32,6 +32,7 @@ contains
     use ml_restriction_module
     use multifab_fill_ghost_module
     use multifab_physbc_module
+    use probin_module, only : drdxfac
 
     type(ml_layout),intent(out)   :: mla
     integer       , intent(in   ) :: restart
@@ -187,7 +188,7 @@ contains
     if (spherical .eq. 1) then
 
        ! for spherical, we will now require that dr_fine = dx
-       dr_fine = dx(1,nlevs)
+       dr_fine = dx(1,nlevs) / drdxfac
        
        lenx = HALF * (prob_hi(1) - prob_lo(1))
        leny = HALF * (prob_hi(2) - prob_lo(2))
@@ -243,6 +244,7 @@ contains
     use init_module
     use average_module
     use restrict_base_module
+    use probin_module, only : drdxfac
     
     type(ml_layout),intent(out  ) :: mla
     real(dp_t)    , intent(inout) :: time,dt
@@ -321,7 +323,7 @@ contains
     if (spherical .eq. 1) then
 
        ! for spherical, we will now require that dr_fine = dx
-       dr_fine = dx(1,nlevs)
+       dr_fine = dx(1,nlevs) / drdxfac
        
        lenx = HALF * (prob_hi(1) - prob_lo(1))
        leny = HALF * (prob_hi(2) - prob_lo(2))
@@ -399,6 +401,7 @@ contains
     use average_module
     use restrict_base_module
     use make_new_grids_module
+    use probin_module, only : drdxfac
 
     type(ml_layout),intent(out  ) :: mla
     real(dp_t)    , intent(inout) :: time,dt
@@ -472,7 +475,7 @@ contains
     if (spherical .eq. 1) then
 
        ! for spherical, we will now require that dr_fine = dx
-       dr_fine = dx(1,max_levs)
+       dr_fine = dx(1,max_levs) / drdxfac
 
        lenx = HALF * (prob_hi(1) - prob_lo(1))
        leny = HALF * (prob_hi(2) - prob_lo(2))
