@@ -132,9 +132,9 @@ contains
     ! This can be uncommented if you wish to compute T
     ! note -- not sure if p0_old or p0_new should be used here
     ! if (use_tfromp) then
-    !    call makeTfromRhoP(sold,p0_old(:,:),tempbar(:,:),mla,the_bc_level,dx)
+    !    call makeTfromRhoP(sold,p0_old,tempbar,mla,the_bc_level,dx)
     ! else
-    !    call makeTfromRhoH(sold,p0_old(:,:),tempbar(:,:),mla,the_bc_level,dx)
+    !    call makeTfromRhoH(sold,p0_old,tempbar,mla,the_bc_level,dx)
     ! end if
 
     ! if we are predicting h on the edges, then convert the state arrays
@@ -324,9 +324,9 @@ contains
 
     if (.not. use_thermal_diffusion) then
        if (use_tfromp) then
-          call makeTfromRhoP(snew,p0_new(:,:),tempbar(:,:),mla,the_bc_level,dx)
+          call makeTfromRhoP(snew,p0_new,tempbar,mla,the_bc_level,dx)
        else
-          call makeTfromRhoH(snew,p0_new(:,:),tempbar(:,:),mla,the_bc_level,dx)
+          call makeTfromRhoH(snew,p0_new,tempbar,mla,the_bc_level,dx)
        end if
     else
        do n=1,nlevs
