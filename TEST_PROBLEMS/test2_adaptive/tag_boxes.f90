@@ -88,27 +88,35 @@ contains
     case (1)
        do j = lo(2),lo(2)+ny-1
           do i = lo(1),lo(1)+nx-1
-             if (abs(mf(i,j)-tempbar(llev,j)) .gt. 3.d7) then
-                radialtag(j) = .true.
+             if (j .gt. 24 .and. j .lt. 80) then
+                if (abs(mf(i,j)-tempbar(llev,j)) .gt. 3.d7) then
+                   radialtag(j) = .true.
+                end if
              end if
           end do
        enddo
     case (2)
        do j = lo(2),lo(2)+ny-1
           do i = lo(1),lo(1)+nx-1
-             if (abs(mf(i,j)-tempbar(llev,j)) .gt. 3.d7) then
-                radialtag(j) = .true.
+             if (j .gt. 48 .and. j .lt. 160) then
+                if (abs(mf(i,j)-tempbar(llev,j)) .gt. 3.d7) then
+                   radialtag(j) = .true.
+                end if
+             end if
+          end do
+       enddo
+    case (3)
+       do j = lo(2),lo(2)+ny-1
+          do i = lo(1),lo(1)+nx-1
+             if (j .gt. 96 .and. j .lt. 320) then
+                if (abs(mf(i,j)-tempbar(llev,j)) .gt. 3.d7) then
+                   radialtag(j) = .true.
+                end if
              end if
           end do
        enddo
     case default
-       do j = lo(2),lo(2)+ny-1
-          do i = lo(1),lo(1)+nx-1
-             if (abs(mf(i,j)-tempbar(llev,j)) .gt. 3.d7) then
-                radialtag(j) = .true.
-             end if
-          end do
-       enddo
+       call bl_error('tagging conditions not defined past level 3')
     end select
 
   end subroutine radialtag_2d
@@ -135,8 +143,10 @@ contains
        do k = lo(3),lo(3)+nz-1
           do j = lo(2),lo(2)+ny-1
              do i = lo(1),lo(1)+nx-1
-                if (abs(mf(i,j,k)-tempbar(llev,k)) .gt. 3.d7) then
-                   radialtag(k) = .true.
+                if (k .gt. 24 .and. k .lt. 80) then
+                   if (abs(mf(i,j,k)-tempbar(llev,k)) .gt. 3.d7) then
+                      radialtag(k) = .true.
+                   end if
                 end if
              end do
           enddo
@@ -145,22 +155,28 @@ contains
        do k = lo(3),lo(3)+nz-1
           do j = lo(2),lo(2)+ny-1
              do i = lo(1),lo(1)+nx-1
-                if (abs(mf(i,j,k)-tempbar(llev,k)) .gt. 3.d7) then
-                   radialtag(k) = .true.
+                if (k .gt. 48 .and. k .lt. 160) then
+                   if (abs(mf(i,j,k)-tempbar(llev,k)) .gt. 3.d7) then
+                      radialtag(k) = .true.
+                   end if
+                end if
+             end do
+          end do
+       end do
+    case (3)
+       do k = lo(3),lo(3)+nz-1
+          do j = lo(2),lo(2)+ny-1
+             do i = lo(1),lo(1)+nx-1
+                if (k .gt. 96 .and. j .lt. 160) then
+                   if (abs(mf(i,j,k)-tempbar(llev,k)) .gt. 3.d7) then
+                      radialtag(k) = .true.
+                   end if
                 end if
              end do
           end do
        end do
     case default
-       do k = lo(3),lo(3)+nz-1
-          do j = lo(2),lo(2)+ny-1
-             do i = lo(1),lo(1)+nx-1
-                if (abs(mf(i,j,k)-tempbar(llev,k)) .gt. 3.d7) then
-                   radialtag(k) = .true.
-                end if
-             end do
-          end do
-       end do
+       call bl_error('tagging conditions not defined past level 3')
     end select
 
   end subroutine radialtag_3d
