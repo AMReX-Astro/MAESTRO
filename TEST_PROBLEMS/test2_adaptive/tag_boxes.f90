@@ -27,7 +27,7 @@ contains
     type( multifab), intent(in   ) :: mf
     type(lmultifab), intent(inout) :: tagboxes
     integer        , intent(in   ) :: lev
-    real(dp_t)     , intent(in   ) :: tempbar(:,:)
+    real(dp_t)     , intent(in   ) :: tempbar(0:,:)
 
     real(kind = dp_t), pointer :: sp(:,:,:,:)
     logical          , pointer :: tp(:,:,:,:)
@@ -76,7 +76,7 @@ contains
     integer          , intent(in   ) :: lo(:),ng
     logical          , intent(inout) :: radialtag(0:)
     real(kind = dp_t), intent(in   ) :: mf(lo(1)-ng:,lo(2)-ng:)
-    real(dp_t)       , intent(in   ) :: tempbar(:,:)
+    real(dp_t)       , intent(in   ) :: tempbar(0:,:)
     integer, optional, intent(in   ) :: lev
     integer :: i,j,nx,ny,llev
 
@@ -120,7 +120,7 @@ contains
     integer          , intent(in   ) :: lo(:),ng
     logical          , intent(inout) :: radialtag(0:)
     real(kind = dp_t), intent(in   ) :: mf(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
-    real(dp_t)       , intent(in   ) :: tempbar(:,:)
+    real(dp_t)       , intent(in   ) :: tempbar(0:,:)
     integer, optional, intent(in   ) :: lev
 
     integer :: i,j,k,nx,ny,nz,llev
