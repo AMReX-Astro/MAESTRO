@@ -374,6 +374,98 @@ contains
 
   end subroutine average
 
+  subroutine average_one_level(n,phi,phibar,incomp)
+
+    use geometry, only: nr_fine, nr, spherical, dm
+    use bl_prof_module
+    use bl_constants_module
+
+    integer        , intent(in   ) :: n,incomp
+    type(multifab) , intent(in   ) :: phi(:)
+    real(kind=dp_t), intent(inout) :: phibar(:,0:)
+
+    ! local
+    real(kind=dp_t), pointer     :: pp(:,:,:,:)
+    type(box)                    :: domain
+    integer                      :: domlo(dm),domhi(dm)
+    integer                      :: lo(dm),hi(dm)
+    integer                      :: i,r,ng,ncell
+    real(kind=dp_t), allocatable :: phisum_proc(:)
+    real(kind=dp_t), allocatable :: phisum(:)
+    real(kind=dp_t), allocatable :: source_buffer(:)
+    real(kind=dp_t), allocatable :: target_buffer(:)
+    logical                      :: fine_grids_span_domain_width
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "average_one_level")
+
+    ng = phi(1)%ng
+
+    phibar = ZERO
+
+    allocate(phisum_proc  (0:nr_fine-1))
+    allocate(phisum       (0:nr_fine-1))
+    allocate(source_buffer(0:nr_fine-1))
+    allocate(target_buffer(0:nr_fine-1))
+
+    ncell        = ZERO
+    phisum       = ZERO       
+    phisum_proc  = ZERO
+
+    if (spherical .eq. 0) then
+
+       fine_grids_span_domain_width = .true.
+
+       if (fine_grids_span_domain_width) then
+          
+          domain = layout_get_pd(phi(n)%la)
+          domlo  = lwb(domain)
+          domhi  = upb(domain)
+
+          if (dm .eq. 2) then
+             ncell = domhi(1)-domlo(1)+1
+          else if (dm .eq. 3) then
+             ncell = (domhi(1)-domlo(1)+1)*(domhi(2)-domlo(2)+1)
+          end if
+
+          do i=1,phi(n)%nboxes
+             if ( multifab_remote(phi(n), i) ) cycle
+             pp => dataptr(phi(n), i)
+             lo =  lwb(get_box(phi(n), i))
+             hi =  upb(get_box(phi(n), i))
+             select case (dm)
+             case (2)
+                call sum_phi_coarsest_2d(pp(:,:,1,:),phisum_proc,lo,hi,ng,incomp)
+             case (3)
+                call sum_phi_coarsest_3d(pp(:,:,:,:),phisum_proc,lo,hi,ng,incomp)
+             end select
+          end do
+
+          ! gather phisum
+          source_buffer = phisum_proc
+          call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
+          phisum = target_buffer
+          do r=0,nr(n)-1
+             phibar(n,r) = phisum(r) / dble(ncell)
+          end do
+
+       else
+
+          call bl_error("average_one_level not written for fine_grids_span_domain_width = F")
+
+       end if
+
+    else if(spherical .eq. 1) then
+
+       call bl_error("average_one_level not written for multilevel spherical")
+
+    end if
+
+    call destroy(bpt)
+
+  end subroutine average_one_level
+
   subroutine sum_phi_coarsest_2d(phi,phisum,lo,hi,ng,incomp)
 
     integer         , intent(in   ) :: lo(:), hi(:), ng, incomp
