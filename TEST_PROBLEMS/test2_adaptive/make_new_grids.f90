@@ -28,7 +28,7 @@ module make_new_grids_module
        integer            , intent(in   ) :: max_grid_size
        integer            , intent(in   ) :: ref_ratio
        integer            , intent(in   ) :: lev
-       real(dp_t)         , intent(in   ) :: tempbar(0:,:)
+       real(dp_t)         , intent(in   ) :: tempbar(:,0:)
 
        type(box)         :: pd
        type(boxarray)    :: ba_new
@@ -69,7 +69,7 @@ module make_new_grids_module
       real(dp_t)       , intent(in   ) :: dx_crse
       integer          , intent(in   ) :: buf_wid
       integer, optional, intent(in   ) :: lev
-       real(dp_t)      , intent(in   ) :: tempbar(0:,:)
+       real(dp_t)      , intent(in   ) :: tempbar(:,0:)
 
       integer         :: llev
       type(lmultifab) :: tagboxes
