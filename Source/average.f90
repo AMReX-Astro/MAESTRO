@@ -12,7 +12,7 @@ module average_module
   implicit none
 
   private
-  public :: average
+  public :: average, average_one_level
 
 contains
 
