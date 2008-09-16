@@ -73,51 +73,32 @@ contains
 
   subroutine radialtag_2d(radialtag,mf,lo,ng,tempbar,lev)
 
+    use geometry, only: dr
+
     integer          , intent(in   ) :: lo(:),ng
     logical          , intent(inout) :: radialtag(0:)
     real(kind = dp_t), intent(in   ) :: mf(lo(1)-ng:,lo(2)-ng:)
     real(dp_t)       , intent(in   ) :: tempbar(:,0:)
     integer, optional, intent(in   ) :: lev
-    integer :: i,j,nx,ny,llev
+
+    ! local
+    integer         :: i,j,nx,ny,llev
+    real(kind=dp_t) :: height
 
     llev = 1; if (present(lev)) llev = lev
     nx = size(mf,dim=1) - 2*ng
     ny = size(mf,dim=2) - 2*ng
 
-    select case(llev)
-    case (1)
-       do j = lo(2),lo(2)+ny-1
-          do i = lo(1),lo(1)+nx-1
-             if (j .gt. 24 .and. j .lt. 80) then
-                if (abs(mf(i,j)-tempbar(llev,j)) .gt. 3.d7) then
-                   radialtag(j) = .true.
-                end if
+    do j = lo(2),lo(2)+ny-1
+       height = (dble(j)+0.d50)*dr(llev)
+       do i = lo(1),lo(1)+nx-1
+          if (height .gt. 5.4d7 .and. height .lt. 1.8d8) then
+             if (abs(mf(i,j)-tempbar(llev,j)) .gt. 3.d7) then
+                radialtag(j) = .true.
              end if
-          end do
-       enddo
-    case (2)
-       do j = lo(2),lo(2)+ny-1
-          do i = lo(1),lo(1)+nx-1
-             if (j .gt. 48 .and. j .lt. 160) then
-                if (abs(mf(i,j)-tempbar(llev,j)) .gt. 3.d7) then
-                   radialtag(j) = .true.
-                end if
-             end if
-          end do
-       enddo
-    case (3)
-       do j = lo(2),lo(2)+ny-1
-          do i = lo(1),lo(1)+nx-1
-             if (j .gt. 96 .and. j .lt. 320) then
-                if (abs(mf(i,j)-tempbar(llev,j)) .gt. 3.d7) then
-                   radialtag(j) = .true.
-                end if
-             end if
-          end do
-       enddo
-    case default
-       call bl_error('tagging conditions not defined past level 3')
-    end select
+          end if
+       end do
+    enddo
 
   end subroutine radialtag_2d
 
@@ -125,59 +106,35 @@ contains
 
   subroutine radialtag_3d(radialtag,mf,lo,ng,tempbar,lev)
 
+    use geometry, only: dr
+
     integer          , intent(in   ) :: lo(:),ng
     logical          , intent(inout) :: radialtag(0:)
     real(kind = dp_t), intent(in   ) :: mf(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
     real(dp_t)       , intent(in   ) :: tempbar(:,0:)
     integer, optional, intent(in   ) :: lev
 
-    integer :: i,j,k,nx,ny,nz,llev
+    ! local
+    integer         :: i,j,k,nx,ny,nz,llev
+    real(kind=dp_t) :: height
 
     llev = 1; if (present(lev)) llev = lev
     nx = size(mf,dim=1) - 2*ng
     ny = size(mf,dim=2) - 2*ng
     nz = size(mf,dim=3) - 2*ng
 
-    select case(llev)
-    case (1)
-       do k = lo(3),lo(3)+nz-1
-          do j = lo(2),lo(2)+ny-1
-             do i = lo(1),lo(1)+nx-1
-                if (k .gt. 24 .and. k .lt. 80) then
-                   if (abs(mf(i,j,k)-tempbar(llev,k)) .gt. 3.d7) then
-                      radialtag(k) = .true.
-                   end if
+    do k = lo(3),lo(3)+nz-1
+       height = (dble(k)+0.5d0)*dr(llev)
+       do j = lo(2),lo(2)+ny-1
+          do i = lo(1),lo(1)+nx-1
+             if (height .gt. 5.4d7 .and. height .lt. 1.8d8) then
+                if (abs(mf(i,j,k)-tempbar(llev,k)) .gt. 3.d7) then
+                   radialtag(k) = .true.
                 end if
-             end do
-          enddo
-       end do
-    case (2)
-       do k = lo(3),lo(3)+nz-1
-          do j = lo(2),lo(2)+ny-1
-             do i = lo(1),lo(1)+nx-1
-                if (k .gt. 48 .and. k .lt. 160) then
-                   if (abs(mf(i,j,k)-tempbar(llev,k)) .gt. 3.d7) then
-                      radialtag(k) = .true.
-                   end if
-                end if
-             end do
+             end if
           end do
-       end do
-    case (3)
-       do k = lo(3),lo(3)+nz-1
-          do j = lo(2),lo(2)+ny-1
-             do i = lo(1),lo(1)+nx-1
-                if (k .gt. 96 .and. j .lt. 160) then
-                   if (abs(mf(i,j,k)-tempbar(llev,k)) .gt. 3.d7) then
-                      radialtag(k) = .true.
-                   end if
-                end if
-             end do
-          end do
-       end do
-    case default
-       call bl_error('tagging conditions not defined past level 3')
-    end select
+       enddo
+    end do
 
   end subroutine radialtag_3d
 
