@@ -12,10 +12,15 @@ A list of changes to the code since paper III (i.e. future appendices)
 
 -- volume discrepancy factor forcing term by setting dpdt_factor to a non-zero value
 
--- make full state T on cell-centers after the advection-diffusion step from 
-   T=T(rho,X_k,p_0) by setting use_tfromp=T for spherical problems
+-- For spherical problems, make full state T on cell-centers after the 
+   advection-diffusion step from T=T(rho,X_k,p_0) by setting use_tfromp=T rather
+   than T=T(rho,h,X_k).
 
 -- computing eta in spherical
 
--- flag full_rhoh0_evolution=F sets rhoh0 = Avg(rhoh) before advect base.  Subroutines 
-   react_base and a (not-written-yet) correct_base for rhoh0 are not called
+-- flag full_rhoh0_evolution=F sets rhoh0 = Avg(rhoh) before advect base.  React-base
+   will not be called.  If full_rhoh0_evolution=T, we need to write a correct_base
+   and diffuse_base.
+
+-- modified hyperbolics with use_new_godunov=T.  Papers I-III didn't give the gory
+   details, which have changed, so newer papers may not have to either.
