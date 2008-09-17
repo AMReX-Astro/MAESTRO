@@ -24,7 +24,7 @@ module estdt_module
 
 contains
 
-  subroutine estdt(n, u, s, force, divU, dSdt, normal, w0, p0, gamma1bar, dx, cflfac, dt)
+  subroutine estdt(n,u,s,force,divU,dSdt,normal,w0,w0mac,p0,gamma1bar,dx,cflfac,dt)
 
     use bl_prof_module
     use geometry, only: spherical, dm
@@ -37,6 +37,7 @@ contains
     type(multifab) , intent(in ) :: dSdt
     type(multifab) , intent(in ) :: normal
     real(kind=dp_t), intent(in ) :: w0(0:), p0(0:), gamma1bar(0:)
+    type(multifab) , intent(in ) :: w0mac(:)
     real(kind=dp_t), intent(in ) :: dx(:)
     real(kind=dp_t), intent(in ) :: cflfac
     real(kind=dp_t), intent(out) :: dt
@@ -47,9 +48,12 @@ contains
     real(kind=dp_t), pointer:: np(:,:,:,:)
     real(kind=dp_t), pointer:: dUp(:,:,:,:)
     real(kind=dp_t), pointer:: dSdtp(:,:,:,:)
+    real(kind=dp_t), pointer:: wxp(:,:,:,:)
+    real(kind=dp_t), pointer:: wyp(:,:,:,:)
+    real(kind=dp_t), pointer:: wzp(:,:,:,:)
     
     integer :: lo(dm),hi(dm),i
-    integer :: ng_s,ng_u,ng_f,ng_dU,ng_dS,ng_n
+    integer :: ng_s,ng_u,ng_f,ng_dU,ng_dS,ng_n,ng_w
     real(kind=dp_t) :: dt_adv,dt_adv_grid,dt_adv_proc,dt_start
     real(kind=dp_t) :: dt_divu,dt_divu_grid,dt_divu_proc
     
@@ -93,10 +97,15 @@ contains
           if (spherical .eq. 1) then
              np => dataptr(normal, i)
              ng_n = normal%ng
+             ng_w = w0mac(1)%ng
+             wxp => dataptr(w0mac(1), i)
+             wyp => dataptr(w0mac(2), i)
+             wzp => dataptr(w0mac(3), i)
              call estdt_3d_sphr(n, uop(:,:,:,:), ng_u, sop(:,:,:,:), ng_s, &
                                 fp(:,:,:,:), ng_f, dUp(:,:,:,1), ng_dU, &
                                 dSdtp(:,:,:,1), ng_dS, np(:,:,:,:), ng_n, &
-                                w0, p0, gamma1bar, lo, hi, dx, &
+                                w0,wxp(:,:,:,1),wyp(:,:,:,1),wzp(:,:,:,1),ng_w, &
+                                p0, gamma1bar, lo, hi, dx, &
                                 rho_min, dt_adv_grid, dt_divu_grid, cflfac)
           else
              call estdt_3d_cart(n, uop(:,:,:,:), ng_u, sop(:,:,:,:), ng_s, &
@@ -378,26 +387,28 @@ contains
   
   subroutine estdt_3d_sphr(n, u, ng_u, s, ng_s, force, ng_f, &
                            divU, ng_dU, dSdt, ng_dS, normal, ng_n, &
-                           w0, p0, gamma1bar, &
+                           w0,w0macx,w0macy,w0macz,ng_w, p0, gamma1bar, &
                            lo, hi, dx, rho_min, dt_adv, dt_divu, cfl)
 
     use geometry,  only: dr, nr_fine
     use variables, only: rho_comp
     use fill_3d_module
     
-    integer, intent(in) :: n, lo(:), hi(:), ng_u, ng_s, ng_f, ng_dU, ng_dS, ng_n
+    integer, intent(in) :: n, lo(:), hi(:), ng_u, ng_s, ng_f, ng_dU, ng_dS, ng_n, ng_w
     real (kind = dp_t), intent(in   ) ::      u(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :,:)  
     real (kind = dp_t), intent(in   ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :,:)  
     real (kind = dp_t), intent(in   ) ::  force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :,:)  
     real (kind = dp_t), intent(in   ) ::   divU(lo(1)-ng_dU:,lo(2)-ng_dU:,lo(3)-ng_dU:)
     real (kind = dp_t), intent(in   ) ::   dSdt(lo(1)-ng_dS:,lo(2)-ng_dS:,lo(3)-ng_dS:)
     real (kind = dp_t), intent(in   ) :: normal(lo(1)-ng_n :,lo(2)-ng_n :,lo(3)-ng_n :,:)
+    real (kind = dp_t), intent(in   ) :: w0macx(lo(1)-ng_w :,lo(2)-ng_w :,lo(3)-ng_w :)
+    real (kind = dp_t), intent(in   ) :: w0macy(lo(1)-ng_w :,lo(2)-ng_w :,lo(3)-ng_w :)
+    real (kind = dp_t), intent(in   ) :: w0macz(lo(1)-ng_w :,lo(2)-ng_w :,lo(3)-ng_w :)
     real (kind = dp_t), intent(in   ) :: w0(0:), p0(0:), gamma1bar(0:)
     real (kind = dp_t), intent(in   ) :: dx(:)
     real (kind = dp_t), intent(in   ) :: rho_min, cfl
     real (kind = dp_t), intent(inout) :: dt_adv, dt_divu
     
-    real (kind = dp_t), allocatable ::  w0_cart(:,:,:,:)
     real (kind = dp_t), allocatable :: gp0_cart(:,:,:,:)
     real (kind = dp_t), allocatable :: gp0(:)
     real (kind = dp_t)  :: spdx, spdy, spdz, spdr, gp_dot_u, gamma1bar_p_avg
@@ -409,26 +420,21 @@ contains
     spdx = ZERO
     spdy = ZERO 
     spdz = ZERO 
-    spdr = ZERO 
-    
-    allocate( w0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),3))
-    call put_1d_array_on_cart_3d_sphr(n,.true.,.true.,w0,w0_cart,lo,hi,dx,0,ng_n,normal)
+    spdr = ZERO
 
     ! Limit dt based on velocity terms
     do k = lo(3), hi(3); do j = lo(2), hi(2); do i = lo(1), hi(1)
-       spdx = max(spdx ,abs(u(i,j,k,1)+w0_cart(i,j,k,1)))
+       spdx = max(spdx ,abs(u(i,j,k,1)+w0macx(i,j,k)))
     enddo; enddo; enddo
 
     do k = lo(3), hi(3); do j = lo(2), hi(2); do i = lo(1), hi(1)
-       spdy = max(spdy ,abs(u(i,j,k,2)+w0_cart(i,j,k,2)))
+       spdy = max(spdy ,abs(u(i,j,k,2)+w0macy(i,j,k)))
     enddo; enddo; enddo
 
     do k = lo(3), hi(3); do j = lo(2), hi(2); do i = lo(1), hi(1)
-       spdz = max(spdz ,abs(u(i,j,k,3)+w0_cart(i,j,k,3)))
+       spdz = max(spdz ,abs(u(i,j,k,3)+w0macz(i,j,k)))
     enddo; enddo; enddo
     
-    deallocate(w0_cart)
-
     do k = 0,size(w0,dim=1)-1
        spdr = max(spdr ,abs(w0(k)))
     enddo

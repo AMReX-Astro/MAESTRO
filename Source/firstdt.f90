@@ -20,12 +20,12 @@ module firstdt_module
 
 contains
 
-  subroutine firstdt(n,u,s,force,divU,p0,gamma1bar,dx,cflfac,dt)
+  subroutine firstdt(n,u,s,force,divU,normal,p0,gamma1bar,dx,cflfac,dt)
 
     use geometry, only: dm
 
     integer        , intent(in   ) :: n
-    type(multifab) , intent(in   ) :: u,s,force,divU
+    type(multifab) , intent(in   ) :: u,s,force,divU,normal
     real(kind=dp_t), intent(in   ) :: p0(0:), cflfac, gamma1bar(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
     real(kind=dp_t), intent(  out) :: dt
@@ -34,7 +34,9 @@ contains
     real(kind=dp_t), pointer:: sop(:,:,:,:)
     real(kind=dp_t), pointer:: fp(:,:,:,:)
     real(kind=dp_t), pointer:: divup(:,:,:,:)
-    integer :: lo(dm),hi(dm),ng_u,ng_s,ng_f,ng_dU,i
+    real(kind=dp_t), pointer:: np(:,:,:,:)
+
+    integer :: lo(dm),hi(dm),ng_u,ng_s,ng_f,ng_dU,ng_n,i
     real(kind=dp_t) :: dt_hold_proc,dt_grid
     
     ng_u = u%ng
@@ -59,8 +61,10 @@ contains
                           fp(:,:,1,:), ng_f, divup(:,:,1,1), ng_dU, &
                           p0, gamma1bar, lo, hi, dx, dt_grid, cflfac)
        case (3)
+          np => dataptr(normal, i)
+          ng_n = normal%ng
           call firstdt_3d(n, uop(:,:,:,:), ng_u, sop(:,:,:,:), ng_s, &
-                          fp(:,:,:,:), ng_f, divup(:,:,:,1), ng_dU, &
+                          fp(:,:,:,:), ng_f, divup(:,:,:,1), ng_dU, np(:,:,:,:), ng_n, &
                           p0, gamma1bar, lo, hi, dx, dt_grid, cflfac)
        end select
        dt_hold_proc = min(dt_hold_proc,dt_grid)
@@ -192,20 +196,22 @@ contains
 
   end subroutine firstdt_2d
   
-  subroutine firstdt_3d(n,u,ng_u,s,ng_s,force,ng_f,divU,ng_dU, &
+  subroutine firstdt_3d(n,u,ng_u,s,ng_s,force,ng_f,divU,ng_dU,normal,ng_n, &
                         p0,gamma1bar,lo,hi,dx,dt,cfl)
 
-    use geometry,  only: spherical, nr
+    use geometry,  only: spherical, nr, dr, nr_fine
     use variables, only: rho_comp, temp_comp, spec_comp
     use eos_module
     use bl_constants_module
     use probin_module, only: use_soundspeed_firstdt, use_divu_firstdt
+    use fill_3d_module
 
-    integer, intent(in)             :: n,lo(:), hi(:), ng_u, ng_s, ng_f, ng_dU
-    real (kind = dp_t), intent(in ) ::     u(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :,:)
-    real (kind = dp_t), intent(in ) ::     s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :,:)
-    real (kind = dp_t), intent(in ) :: force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :,:)
-    real (kind = dp_t), intent(in ) ::  divU(lo(1)-ng_dU:,lo(2)-ng_dU:,lo(3)-ng_dU:)  
+    integer, intent(in)             :: n,lo(:), hi(:), ng_u, ng_s, ng_f, ng_dU, ng_n
+    real (kind = dp_t), intent(in ) ::      u(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :,:)
+    real (kind = dp_t), intent(in ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :,:)
+    real (kind = dp_t), intent(in ) ::  force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :,:)
+    real (kind = dp_t), intent(in ) ::   divU(lo(1)-ng_dU:,lo(2)-ng_dU:,lo(3)-ng_dU:) 
+    real (kind = dp_t), intent(in ) :: normal(lo(1)-ng_n :,lo(2)-ng_n :,lo(3)-ng_n :,:) 
     real (kind = dp_t), intent(in ) :: p0(0:), gamma1bar(0:)
     real (kind = dp_t), intent(in ) :: dx(:)
     real (kind = dp_t), intent(out) :: dt
@@ -213,10 +219,13 @@ contains
     
     real (kind = dp_t)  :: spdx, spdy, spdz
     real (kind = dp_t)  :: pforcex, pforcey, pforcez
-    real (kind = dp_t)  :: ux, uy, uz
+    real (kind = dp_t)  :: ux, uy, uz, gp_dot_u, gamma1bar_p_avg
     real (kind = dp_t)  :: eps, dt_divu, dt_sound, gradp0, denom, rho_min
-    integer             :: i,j,k
-    
+    integer             :: i,j,k,r
+
+    real (kind = dp_t), allocatable :: gp0_cart(:,:,:,:)
+    real (kind = dp_t), allocatable :: gp0(:)
+
     eps = 1.0d-8
     
     rho_min = 1.d-20
@@ -323,6 +332,38 @@ contains
              enddo
           enddo
 
+       else
+
+          ! spherical divU constraint
+          allocate(gp0(0:nr_fine))
+          do r=1,nr_fine-1
+             gamma1bar_p_avg = HALF * (gamma1bar(r)*p0(r) + gamma1bar(r-1)*p0(r-1))
+             gp0(r) = ( (p0(r) - p0(r-1))/dr(n) ) / gamma1bar_p_avg
+          end do
+          gp0(nr_fine) = gp0(nr_fine-1)
+          gp0(      0) = gp0(        1)
+          allocate(gp0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),3))
+          call put_1d_array_on_cart_3d_sphr(n,.true.,.true.,gp0,gp0_cart,lo,hi,dx,0, &
+                                            ng_n,normal)
+          
+          do k = lo(3), hi(3)
+             do j = lo(2), hi(2)
+                do i = lo(1), hi(1)
+                   
+                   gp_dot_u = u(i,j,k,1) * gp0_cart(i,j,k,1) + &
+                              u(i,j,k,2) * gp0_cart(i,j,k,2) + &
+                              u(i,j,k,3) * gp0_cart(i,j,k,3)
+                   
+                   denom = divU(i,j,k) - gp_dot_u 
+                   
+                   if (denom > ZERO) then
+                      dt_divu = min(dt_divu,0.4d0*(ONE - rho_min/s(i,j,k,rho_comp))/denom)
+                   endif
+                   
+                enddo
+             enddo
+          enddo
+          
        end if
 
        dt = min(dt,dt_divu)

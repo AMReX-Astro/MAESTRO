@@ -8,18 +8,15 @@
    computing div{U + w_0} together?  This is more along the lines
    of how we treat the div{w_0} stuff in update_vel.f90
 
--- make firstdt do the divu estimator correctly for spherical
-
--- make_psi is called after scalar_advance, but we need psi in the
-   enthalpy update for spherical, so we are using an old one -- this 
-   is probably not consistent.
+-- enthalpy_advance is using a lagged psi.  Now that we have split up scalar_advance 
+   into density_advance and enthalpy_advance, we can call make_psi after density_advance 
+   if we want a time-centered psi.
 
 -- update Gconst to the latest accepted value
-
--- use the new w0mac stuff for estdt and makevort
 
 -- should we be computing beta_0 differently for spherical?  In 
    particular, should we do linear reconstruction on g?
 
--- We need something like an eta_rhoh that makes the base state
-   enthalpy agree with the average of the full state enthalpy.
+-- If full_rhoh0_evolution=T, we need a correct_base and diffusve_base
+   for enthalpy so the base state enthalpy agrees with the average of 
+   the full state enthalpy.

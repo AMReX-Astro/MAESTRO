@@ -724,7 +724,7 @@ contains
 
   end subroutine makemagvel_3d
 
-  subroutine make_velplusw0(n,plotdata,comp_velplusw0,u,w0,normal,dx)
+  subroutine make_velplusw0(n,plotdata,comp_velplusw0,u,w0,w0mac,normal,dx)
 
     use bc_module
     use bl_constants_module
@@ -734,13 +734,18 @@ contains
     type(multifab) , intent(inout) :: plotdata
     type(multifab) , intent(in   ) :: u
     real(kind=dp_t), intent(in   ) :: w0(0:)
+    type(multifab) , intent(in   ) :: w0mac(:)
     type(multifab) , intent(in   ) :: normal
     real(kind=dp_t), intent(in   ) :: dx(:)
 
     real(kind=dp_t), pointer:: pp(:,:,:,:)
     real(kind=dp_t), pointer:: up(:,:,:,:)
     real(kind=dp_t), pointer:: np(:,:,:,:)
-    integer :: lo(dm),hi(dm),ng_p,ng_u,ng_n
+    real(kind=dp_t), pointer:: wxp(:,:,:,:)
+    real(kind=dp_t), pointer:: wyp(:,:,:,:)
+    real(kind=dp_t), pointer:: wzp(:,:,:,:)
+
+    integer :: lo(dm),hi(dm),ng_p,ng_u,ng_n,ng_w
     integer :: i
 
     ng_u = u%ng
@@ -759,9 +764,14 @@ contains
                                 w0, lo, hi)
        case (3)
           if (spherical .eq. 1) then
-             np => dataptr(normal, i)
+             np  => dataptr(normal, i)
+             wxp => dataptr(w0mac(1), i)
+             wyp => dataptr(w0mac(2), i)
+             wzp => dataptr(w0mac(3), i)
+             ng_w = w0mac(1)%ng
              call makevelplusw0_3d_sphr(pp(:,:,:,comp_velplusw0),ng_p,up(:,:,:,:),ng_u, &
-                                        w0,lo,hi,np(:,:,:,:),ng_n,dx,n)
+                                        wxp(:,:,:,1),wyp(:,:,:,1),wzp(:,:,:,1),ng_w, &
+                                        lo,hi,np(:,:,:,:),ng_n,dx,n)
           else
              call makevelplusw0_3d_cart(pp(:,:,:,comp_velplusw0),ng_p,up(:,:,:,:),ng_u, &
                                         w0,lo,hi)
@@ -817,40 +827,36 @@ contains
 
   end subroutine makevelplusw0_3d_cart
 
-  subroutine makevelplusw0_3d_sphr (velplusw0,ng_p,u,ng_u,w0,lo,hi,normal,ng_n,dx,n)
+  subroutine makevelplusw0_3d_sphr(velplusw0,ng_p,u,ng_u,w0macx,w0macy,w0macz,ng_w, &
+                                   lo,hi,normal,ng_n,dx,n)
 
-    use fill_3d_module
 
-    integer           , intent(in   ) :: lo(:), hi(:), ng_p, ng_u, ng_n, n
+    integer           , intent(in   ) :: lo(:), hi(:), ng_p, ng_u, ng_n, ng_w, n
     real (kind = dp_t), intent(  out) :: velplusw0(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)
     real (kind = dp_t), intent(in   ) ::         u(lo(1)-ng_u:,lo(2)-ng_u:,lo(3)-ng_u:,:) 
     real (kind = dp_t), intent(in   ) ::    normal(lo(1)-ng_n:,lo(2)-ng_n:,lo(3)-ng_n:,:)
-    real (kind = dp_t), intent(in   ) :: w0(0:)
+    real (kind = dp_t), intent(in   ) ::    w0macx(lo(1)-ng_w:,lo(2)-ng_w:,lo(3)-ng_w:)
+    real (kind = dp_t), intent(in   ) ::    w0macy(lo(1)-ng_w:,lo(2)-ng_w:,lo(3)-ng_w:)
+    real (kind = dp_t), intent(in   ) ::    w0macz(lo(1)-ng_w:,lo(2)-ng_w:,lo(3)-ng_w:)
     real (kind = dp_t), intent(in   ) :: dx(:)
 
     !     Local variables
     integer :: i, j, k
-    real (kind = dp_t), allocatable :: w0_cart(:,:,:,:)
-
-    allocate(w0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),3))
-    call put_1d_array_on_cart_3d_sphr(n,.true.,.true.,w0,w0_cart,lo,hi,dx,0,ng_n,normal)
 
     do k = lo(3), hi(3)
-    do j = lo(2), hi(2)
-    do i = lo(1), hi(1)
-       velplusw0(i,j,k) = sqrt( (u(i,j,k,1)+w0_cart(i,j,k,1))**2 + &
-                                (u(i,j,k,2)+w0_cart(i,j,k,2))**2 + &
-                                (u(i,j,k,3)+w0_cart(i,j,k,3))**2)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+             velplusw0(i,j,k) = sqrt( (u(i,j,k,1)+w0macx(i,j,k))**2 + &
+                                      (u(i,j,k,2)+w0macy(i,j,k))**2 + &
+                                      (u(i,j,k,3)+w0macz(i,j,k))**2)
+          enddo
+       enddo
     enddo
-    enddo
-    enddo
-
-    deallocate(w0_cart)
 
   end subroutine makevelplusw0_3d_sphr
 
 
-  subroutine make_velr(n,plotdata,comp_velr,u,w0,normal,dx)
+  subroutine make_velr(n,plotdata,comp_velr,u,w0,w0mac,normal,dx)
 
     use bc_module
     use bl_constants_module
@@ -860,18 +866,24 @@ contains
     type(multifab) , intent(inout) :: plotdata
     type(multifab) , intent(in   ) :: u
     real(kind=dp_t), intent(in   ) :: w0(0:)
+    type(multifab) , intent(in   ) :: w0mac(:)
     type(multifab) , intent(in   ) :: normal
     real(kind=dp_t), intent(in   ) :: dx(:)
 
+    ! local
     real(kind=dp_t), pointer:: pp(:,:,:,:)
     real(kind=dp_t), pointer:: up(:,:,:,:)
     real(kind=dp_t), pointer:: np(:,:,:,:)
-    integer :: lo(dm),hi(dm),ng_p,ng_u,ng_n
+    real(kind=dp_t), pointer:: wxp(:,:,:,:)
+    real(kind=dp_t), pointer:: wyp(:,:,:,:)
+    real(kind=dp_t), pointer:: wzp(:,:,:,:)
+    integer :: lo(dm),hi(dm),ng_p,ng_u,ng_n,ng_w
     integer :: i
 
     ng_u = u%ng
     ng_p = plotdata%ng
     ng_n = normal%ng
+    ng_w = w0mac(1)%ng
 
     if (spherical .ne. 1) then
        call bl_error("unable to create radial velocity -- not spherical geometry")
@@ -884,43 +896,40 @@ contains
        pp => dataptr(plotdata, i)
        up => dataptr(u, i)
        np => dataptr(normal, i)
+       wxp => dataptr(w0mac(1), i)
+       wyp => dataptr(w0mac(2), i)
+       wzp => dataptr(w0mac(3), i)
        lo =  lwb(get_box(u, i))
        hi =  upb(get_box(u, i))
 
-       call makevelr_3d_sphr(pp(:,:,:,comp_velr),ng_p,up(:,:,:,:),ng_u,w0, &
+       call makevelr_3d_sphr(pp(:,:,:,comp_velr),ng_p,up(:,:,:,:),ng_u, &
+                             wxp(:,:,:,1),wyp(:,:,:,1),wzp(:,:,:,1),ng_w, &
                              np(:,:,:,:),ng_n,lo,hi,dx,n)
     end do
 
   end subroutine make_velr
 
-  subroutine makevelr_3d_sphr (velr,ng_p,u,ng_u,w0,normal,ng_n,lo,hi,dx,n)
+  subroutine makevelr_3d_sphr(velr,ng_p,u,ng_u,w0macx,w0macy,w0macz,ng_w,normal,ng_n, &
+                              lo,hi,dx,n)
 
-    use fill_3d_module
-
-    integer           , intent(in   ) :: lo(:), hi(:), ng_p, ng_u, ng_n, n
+    integer           , intent(in   ) :: lo(:), hi(:), ng_p, ng_u, ng_n, ng_w, n
     real (kind = dp_t), intent(  out) ::   velr(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)
-    real (kind = dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,lo(3)-ng_u:,:)  
-    real (kind = dp_t), intent(in   ) :: w0(0:)
+    real (kind = dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,lo(3)-ng_u:,:)
+    real (kind = dp_t), intent(in   ) :: w0macx(lo(1)-ng_w:,lo(2)-ng_w:,lo(3)-ng_w:)
+    real (kind = dp_t), intent(in   ) :: w0macy(lo(1)-ng_w:,lo(2)-ng_w:,lo(3)-ng_w:)
+    real (kind = dp_t), intent(in   ) :: w0macz(lo(1)-ng_w:,lo(2)-ng_w:,lo(3)-ng_w:)
     real (kind = dp_t), intent(in   ) :: normal(lo(1)-ng_n:,lo(2)-ng_n:,lo(3)-ng_n:,:)  
     real (kind = dp_t), intent(in   ) :: dx(:)
 
     !     Local variables
     integer :: i, j, k
-    real (kind = dp_t), allocatable :: w0_cart(:,:,:,:)
-
-    ! since we want w0 in the radial direction, put in onto the Cartesian
-    ! grid, but NOT as a vector
-    allocate(w0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
-    call put_1d_array_on_cart_3d_sphr(n,.true.,.false.,w0,w0_cart,lo,hi,dx,0,ng_n,normal)
 
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
-             velr(i,j,k) = u(i,j,k,1)*normal(i,j,k,1) + &
-                           u(i,j,k,2)*normal(i,j,k,2) + &
-                           u(i,j,k,3)*normal(i,j,k,3)
-
-             velr(i,j,k) = velr(i,j,k) + w0_cart(i,j,k,1)
+             velr(i,j,k) = (u(i,j,k,1)+w0macx(i,j,k))*normal(i,j,k,1) + &
+                           (u(i,j,k,2)+w0macy(i,j,k))*normal(i,j,k,2) + &
+                           (u(i,j,k,3)+w0macz(i,j,k))*normal(i,j,k,3)
           enddo
        enddo
     enddo

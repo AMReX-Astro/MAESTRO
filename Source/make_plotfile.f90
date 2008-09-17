@@ -171,6 +171,17 @@ contains
 
     end do
 
+    if (spherical .eq. 1) then
+       do n=1,nlevs
+          do comp=1,dm
+             call multifab_build(w0mac(n,comp), mla%la(n),1,1, &
+                  nodal = edge_nodal_flag(comp,:))
+             call setval(w0mac(n,comp), ZERO, all=.true.)
+          end do
+       end do
+       call put_w0_on_edges(mla,w0,w0mac,dx,div_coeff,the_bc_tower)
+    end if
+
     if (plot_base) then
 
        ! w0
@@ -180,16 +191,6 @@ contains
        do n=1,nlevs
           call multifab_copy_c(plotdata(n),icomp_w0,tempfab(n),1,dm)
        end do
-
-       if (spherical .eq. 1) then
-          do n=1,nlevs
-             do comp=1,dm
-                call multifab_build(w0mac(n,comp), mla%la(n),  1, 1, nodal = edge_nodal_flag(comp,:))
-                call setval(w0mac(n,comp), ZERO, all=.true.)
-             end do
-          end do
-          call put_w0_on_edges(mla,w0,w0mac,dx,div_coeff,the_bc_tower)
-       end if
 
        ! divw0
        do n=1,nlevs
@@ -232,11 +233,12 @@ contains
 
        ! RADIAL VELOCITY (spherical only)
        if (spherical .eq. 1) then
-          call make_velr (n,plotdata(n),icomp_velr,u(n),w0(n,:),normal(n),dx(n,:))
+          call make_velr(n,plotdata(n),icomp_velr,u(n),w0(n,:),w0mac(n,:),normal(n),dx(n,:))
        endif
 
        ! VEL_PLUS_W0
-       call make_velplusw0 (n,plotdata(n),icomp_velplusw0,u(n),w0(n,:),normal(n),dx(n,:))
+       call make_velplusw0(n,plotdata(n),icomp_velplusw0,u(n),w0(n,:),w0mac(n,:), &
+                           normal(n),dx(n,:))
 
        ! VORTICITY
        call make_vorticity(plotdata(n),icomp_vort,u(n),dx(n,:), &
@@ -332,7 +334,7 @@ contains
        call destroy(tempfab(n))
     end do
 
-    if (spherical .eq. 1 .and. plot_base) then
+    if (spherical .eq. 1) then
        do n=1,nlevs
           do comp=1,dm
              call destroy(w0mac(n,comp))
