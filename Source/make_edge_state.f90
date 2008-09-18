@@ -328,7 +328,7 @@ contains
           do i = is-1,ie+1 
              
              vlo = u(i,j,2) + HALF * (w0(j)+w0(j+1))
-             if ((j+2) .le. nr(n)) then
+             if (j .ne. nr(n)-1) then
                 vhi = u(i,j+1,2) + HALF * (w0(j+1)+w0(j+2))
              else
                 vhi = u(i,j+1,2) + w0(j+1)
@@ -362,7 +362,7 @@ contains
              savg  = HALF * (spbot + sptop)
              splus = merge(splus, savg, abs(vtrans(i,j+1)) .gt. eps)
              
-             if (j.ge.1) then
+             if (j .ne. 0) then
                 vlo = u(i,j-1,2) + HALF * (w0(j-1)+w0(j  ))
              else
                 vlo = u(i,j-1,2) + w0(j)
@@ -859,7 +859,7 @@ contains
                  else
 
                     wlo = u(i,j,k,3) + HALF * (w0(k)+w0(k+1))
-                    if ((k+2) .le. nr(n)) then
+                    if (k .ne. nr(n)-1) then
                        whi = u(i,j,k+1,3) + HALF* (w0(k+1)+w0(k+2))
                     else
                        whi = u(i,j,k+1,3) + w0(k+1)
@@ -900,7 +900,7 @@ contains
                     wlo = u(i,j,k-1,3) + HALF*(w0macz(i,j,k-1)+w0macz(i,j,k  ))
                  else
 
-                    if (k .ge. 1) then
+                    if (k .ne. 0) then
                        wlo = u(i,j,k-1,3) + HALF* (w0(k-1)+w0(k))
                     else
                        wlo = u(i,j,k-1,3) + w0(k)
@@ -1150,7 +1150,7 @@ contains
                  else
 
                     wlo = u(i,j,k,3) + HALF* (w0(k)+w0(k+1))
-                    if ((k+2) .le. nr(n)) then
+                    if (k .ne. nr(n)-1) then
                        whi = u(i,j,k+1,3) + HALF* (w0(k+1)+w0(k+2))
                     else
                        whi = u(i,j,k+1,3) + w0(k+1)
@@ -1191,7 +1191,7 @@ contains
                     wlo = u(i,j,k-1,3) + HALF*(w0macz(i,j,k-1)+w0macz(i,j,k  ))
                  else
 
-                    if (k .ge. 1) then
+                    if (k .ne. 0) then
                        wlo = u(i,j,k-1,3) + HALF* (w0(k-1)+w0(k))
                     else
                        wlo = u(i,j,k-1,3) + w0(k)

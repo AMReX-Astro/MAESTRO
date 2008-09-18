@@ -281,17 +281,12 @@ contains
 
           if (use_new_godunov .and. is_vel .and. comp .eq. 2) then
 
-             if ((j+2).le.nr(n)) then
+             if (j .ne. nr(n)-1) then
                 dw0drhi = (w0(j+2)-w0(j+1))/dx(2)
              else
                 dw0drhi = (w0(j+1)-w0(j))/dx(2)
              end if
-
-             if(j .ge. 0) then
-                dw0drlo = (w0(j+1)-w0(j))/dx(2)
-             else
-                dw0drlo = (w0(j+2)-w0(j+1))/dx(2)
-             end if
+             dw0drlo = (w0(j+1)-w0(j))/dx(2)
 
              vtilde = vmac(i,j+1) - w0(j+1)
 
@@ -325,13 +320,8 @@ contains
 
           if (use_new_godunov .and. is_vel .and. comp .eq. 2) then
 
-             if ((j+1).le.nr(n)) then
-                dw0drhi = (w0(j+1)-w0(j))/dx(2)
-             else
-                dw0drhi = (w0(j)-w0(j-1))/dx(2)
-             end if
-
-             if(j-1.ge.0) then
+             dw0drhi = (w0(j+1)-w0(j))/dx(2)
+             if (j .ne. 0) then
                 dw0drlo = (w0(j)-w0(j-1))/dx(2)
              else
                 dw0drlo = (w0(j+1)-w0(j))/dx(2)
@@ -689,17 +679,12 @@ contains
              
              if (use_new_godunov .and. is_vel .and. comp .eq. 3 .and. spherical .eq. 0) then
 
-                if ((k+2).le.nr(n)) then
+                if (k .ne. nr(n)-1) then
                    dw0drhi = (w0(k+2)-w0(k+1))/dx(3)
                 else
                    dw0drhi = (w0(k+1)-w0(k))/dx(3)
                 end if
-                
-                if(k .ge. 0) then
-                   dw0drlo = (w0(k+1)-w0(k))/dx(3)
-                else
-                   dw0drlo = (w0(k+2)-w0(k+1))/dx(3)
-                end if
+                dw0drlo = (w0(k+1)-w0(k))/dx(3)
                 
                 wtilde = wmac(i,j,k+1) - w0(k+1)
                 
@@ -733,13 +718,8 @@ contains
 
              if (use_new_godunov .and. is_vel .and. comp .eq. 3 .and. spherical .eq. 0) then
                 
-                if ((k+1).le.nr(n)) then
-                   dw0drhi = (w0(k+1)-w0(k))/dx(3)
-                else
-                   dw0drhi = (w0(k)-w0(k-1))/dx(3)
-                end if
-
-                if(k-1.ge.0) then
+                dw0drhi = (w0(k+1)-w0(k))/dx(3)
+                if (k .ne. 0) then
                    dw0drlo = (w0(k)-w0(k-1))/dx(3)
                 else
                    dw0drlo = (w0(k+1)-w0(k))/dx(3)
@@ -925,17 +905,12 @@ contains
 
              if (use_new_godunov .and. is_vel .and. comp .eq. 3 .and. spherical .eq. 0) then
 
-                if ((k+2).le.nr(n)) then
+                if (k .ne. nr(n)-1) then
                    dw0drhi = (w0(k+2)-w0(k+1))/dx(3)
                 else
                    dw0drhi = (w0(k+1)-w0(k))/dx(3)
                 end if
-                
-                if(k .ge. 0) then
-                   dw0drlo = (w0(k+1)-w0(k))/dx(3)
-                else
-                   dw0drlo = (w0(k+2)-w0(k+1))/dx(3)
-                end if
+                dw0drlo = (w0(k+1)-w0(k))/dx(3)
                 
                 wtilde = wmac(i,j,k+1) - w0(k+1)
                 
@@ -969,13 +944,8 @@ contains
 
              if (use_new_godunov .and. is_vel .and. comp .eq. 3 .and. spherical .eq. 0) then
                 
-                if ((k+1).le.nr(n)) then
-                   dw0drhi = (w0(k+1)-w0(k))/dx(3)
-                else
-                   dw0drhi = (w0(k)-w0(k-1))/dx(3)
-                end if
-
-                if(k-1.ge.0) then
+                dw0drhi = (w0(k+1)-w0(k))/dx(3)
+                if (k .ne. 0) then
                    dw0drlo = (w0(k)-w0(k-1))/dx(3)
                 else
                    dw0drlo = (w0(k+1)-w0(k))/dx(3)
