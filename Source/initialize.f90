@@ -137,47 +137,6 @@ contains
     
     deallocate(chkdata, chk_p, chk_dsdt, chk_src_old, chk_rho_omegadot2)
 
-    ! fill ghost cells
-    if (nlevs .eq. 1) then
-        
-       ! fill ghost cells for two adjacent grids at the same level
-       ! this includes periodic domain boundary ghost cells
-       call multifab_fill_boundary(sold(nlevs))
-       call multifab_fill_boundary(uold(nlevs))
-       
-       ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(sold(nlevs),rho_comp,dm+rho_comp,nscal, &
-                            the_bc_tower%bc_tower_array(nlevs))
-       call multifab_physbc(uold(nlevs),       1,          1,   dm, &
-                            the_bc_tower%bc_tower_array(nlevs))
-       
-    else
-
-       ! the loop over nlevs must count backwards to make sure the finer grids are 
-       ! done first
-       do n = nlevs,2,-1
-          
-          ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction(uold(n-1),uold(n),mla%mba%rr(n-1,:))
-          call ml_cc_restriction(sold(n-1),sold(n),mla%mba%rr(n-1,:))
-          
-          ! fill level n ghost cells using interpolation from level n-1 data
-          ! note that multifab_fill_boundary and multifab_physbc are called for
-          ! both levels n-1 and n
-          call multifab_fill_ghost_cells(uold(n),uold(n-1), &
-                                         3,mla%mba%rr(n-1,:), &
-                                         the_bc_tower%bc_tower_array(n-1), &
-                                         the_bc_tower%bc_tower_array(n  ), &
-                                         1,1,dm)
-          call multifab_fill_ghost_cells(sold(n),sold(n-1), &
-                                         3,mla%mba%rr(n-1,:), &
-                                         the_bc_tower%bc_tower_array(n-1), &
-                                         the_bc_tower%bc_tower_array(n  ), &
-                                         1,dm+rho_comp,nscal)
-       end do
-       
-    end if
-
     ! initialize dx
     call initialize_dx(dx,mba,nlevs)
 
@@ -226,6 +185,50 @@ contains
                          rho0_old, rhoh0_old, p0_old, gamma1bar, w0, &
                          etarho, etarho_cc, div_etarho, &
                          div_coeff_old, psi)
+
+    ! fill ghost cells
+    ! this need to be done after read_base_state since in some problems, the inflow
+    ! boundary conditions are set in read_base_state
+    if (nlevs .eq. 1) then
+        
+       ! fill ghost cells for two adjacent grids at the same level
+       ! this includes periodic domain boundary ghost cells
+       call multifab_fill_boundary(sold(nlevs))
+       call multifab_fill_boundary(uold(nlevs))
+       
+       ! fill non-periodic domain boundary ghost cells
+       call multifab_physbc(sold(nlevs),rho_comp,dm+rho_comp,nscal, &
+                            the_bc_tower%bc_tower_array(nlevs))
+       call multifab_physbc(uold(nlevs),       1,          1,   dm, &
+                            the_bc_tower%bc_tower_array(nlevs))
+       
+    else
+
+       ! the loop over nlevs must count backwards to make sure the finer grids are 
+       ! done first
+       do n = nlevs,2,-1
+          
+          ! set level n-1 data to be the average of the level n data covering it
+          call ml_cc_restriction(uold(n-1),uold(n),mla%mba%rr(n-1,:))
+          call ml_cc_restriction(sold(n-1),sold(n),mla%mba%rr(n-1,:))
+          
+          ! fill level n ghost cells using interpolation from level n-1 data
+          ! note that multifab_fill_boundary and multifab_physbc are called for
+          ! both levels n-1 and n
+          call multifab_fill_ghost_cells(uold(n),uold(n-1), &
+                                         3,mla%mba%rr(n-1,:), &
+                                         the_bc_tower%bc_tower_array(n-1), &
+                                         the_bc_tower%bc_tower_array(n  ), &
+                                         1,1,dm)
+          call multifab_fill_ghost_cells(sold(n),sold(n-1), &
+                                         3,mla%mba%rr(n-1,:), &
+                                         the_bc_tower%bc_tower_array(n-1), &
+                                         the_bc_tower%bc_tower_array(n  ), &
+                                         1,dm+rho_comp,nscal)
+       end do
+       
+    end if
+
     call destroy(mba)
 
   end subroutine initialize_from_restart
