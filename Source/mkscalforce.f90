@@ -533,6 +533,7 @@ contains
     if (spherical .eq. 1) then
        do n = 1,nlevs
           call destroy(p0_cart(n))
+          call destroy(h0_cart(n))
        end do
     end if
 
