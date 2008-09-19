@@ -54,8 +54,6 @@ subroutine varden()
   integer :: un, ierr
   logical :: lexist
   logical :: need_inputs
-  logical, allocatable :: nodal(:)
-  logical, allocatable :: umac_nodal_flag(:)
 
   logical :: init_mode
 
@@ -81,8 +79,8 @@ subroutine varden()
 
   call probin_init()
 
-  call init_spherical(spherical_in)
-  call init_dm(dm_in)
+  call init_spherical()
+  call init_dm()
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! Initialize the arrays and read the restart data if restart >= 0
@@ -96,7 +94,7 @@ subroutine varden()
 
   dm = get_dim(mba)
   allocate(lo(dm),hi(dm))
-  call init_variables(dm, nspec)
+  call init_variables()
   call network_init()
   call eos_init(use_eos_coulomb=use_eos_coulomb)
 
@@ -111,9 +109,6 @@ subroutine varden()
   call ml_layout_build(mla,mba,pmask)
   allocate(uold(nlevs),sold(nlevs))
   allocate(boundingbox(nlevs))
-
-  allocate(nodal(dm), umac_nodal_flag(dm))
-  nodal = .true.
 
   do n = 1,nlevs
      call multifab_build(      uold(n), mla%la(n),    dm, ng_cell)
@@ -266,8 +261,8 @@ subroutine varden()
      end do
   end if
 
-  call initveldata(nlevs,uold,s0_old,p0_old,dx,the_bc_tower%bc_tower_array,mla)
-  call initscalardata(nlevs,sold,s0_old,p0_old,dx,the_bc_tower%bc_tower_array,mla)
+  call initveldata(uold,s0_old,p0_old,dx,the_bc_tower%bc_tower_array,mla)
+  call initscalardata(sold,s0_old,p0_old,dx,the_bc_tower%bc_tower_array,mla)
 
   do n = 1,nlevs
      ! This is done to impose any Dirichlet bc's on unew or snew.
