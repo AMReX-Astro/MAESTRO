@@ -25,19 +25,15 @@ subroutine varden()
   use fill_3d_module
   use probin_module
   use bl_constants_module
+  use initialize_module
 
   implicit none
 
   real(dp_t) :: lenx,leny,lenz,max_dist
-  integer    :: k,ng_cell
-  integer    :: i, j, d, n
-  integer    :: comp,bc_comp
+  integer    :: i,n
 
-  integer     , allocatable :: domain_phys_bc(:,:)
-
-  real(dp_t)  , allocatable :: dx(:,:)
+  real(dp_t)  , pointer :: dx(:,:)
   type(ml_layout)           :: mla
-  type(box)   , allocatable :: domain_boxes(:)
 
   type(multifab), allocatable ::       uold(:)
   type(multifab), allocatable ::       unew(:)
@@ -45,20 +41,10 @@ subroutine varden()
   type(multifab), allocatable ::       snew(:)
   type(multifab), allocatable ::     normal(:)
 
-  real(kind=dp_t), pointer :: uop(:,:,:,:)
-  real(kind=dp_t), pointer :: sop(:,:,:,:)
   real(kind=dp_t), pointer :: nrp(:,:,:,:)
-  integer,allocatable      :: lo(:),hi(:)
-
-  character(len=20), allocatable :: plot_names(:)
-  integer :: un, ierr
-  logical :: lexist
-  logical :: need_inputs
-
-  logical :: init_mode
+  integer, allocatable      :: lo(:),hi(:)
 
   type(layout)    :: la
-  type(box)       :: fine_domain
   type(ml_boxarray) :: mba
 
   real(dp_t), allocatable :: s0_old(:,:,:)
@@ -68,91 +54,75 @@ subroutine varden()
 
   type(bc_tower) ::  the_bc_tower
 
-  type(box), allocatable :: boundingbox(:)
-
   real(dp_t) :: dr_base
 
-  type(boxarray), allocatable :: validboxarr(:)
-  type(boxarray), allocatable :: diffboxarray(:)
-
-  ng_cell = 3
-
   call probin_init()
-
-  call init_spherical()
   call init_dm()
+  call init_spherical()
+  call init_center()
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  ! Initialize the arrays and read the restart data if restart >= 0
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-  call read_a_hgproj_grid(mba, test_set)
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  ! Initialize the variable index pointers and the reaction network
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-  dm = get_dim(mba)
-  allocate(lo(dm),hi(dm))
   call init_variables()
+
   call network_init()
   call eos_init(use_eos_coulomb=use_eos_coulomb)
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  ! allocate storage for the state
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  call read_a_hgproj_grid(mba, test_set)
 
-  if ( parallel_IOProcessor() ) &
-       print *, 'pmask = ', pmask
-
-  nlevs = mba%nlevel
   call ml_layout_build(mla,mba,pmask)
-  allocate(uold(nlevs),sold(nlevs))
-  allocate(boundingbox(nlevs))
 
+  ! check for proper nesting
+  if (.not. ml_boxarray_properly_nested(mla%mba, 3, pmask)) then
+     call bl_error('fixed_grids not properly nested')
+  end if
+
+  ! initialize nlevs
+  nlevs = mla%nlevel
+
+  ! initialize boundary conditions
+  call initialize_bc(the_bc_tower,nlevs,pmask)
   do n = 1,nlevs
-     call multifab_build(      uold(n), mla%la(n),    dm, ng_cell)
-     call multifab_build(      sold(n), mla%la(n), nscal, ng_cell)
+     call bc_tower_level_build(the_bc_tower,n,mla%la(n))
+  end do
+
+  ! allocate states
+  allocate(uold(nlevs),sold(nlevs))
+
+  ! build states
+  do n = 1,nlevs
+     call multifab_build(      uold(n), mla%la(n),    dm, 3)
+     call multifab_build(      sold(n), mla%la(n), nscal, 3)
      call setval( uold(n),0.0_dp_t, all=.true.)
      call setval( sold(n),0.0_dp_t, all=.true.)
   end do
 
-  ! create a "bounding box" for each level
-  do n=1,nlevs
-     boundingbox(n) = get_box(sold(n),1)
-     do i=2, sold(n)%nboxes
-        boundingbox(n) = box_bbox(boundingbox(n),get_box(sold(n),i))
-     end do
-  end do
+  ! initialize_dx
+  call initialize_dx(dx,mba,nlevs)
 
-  ! compute diffboxarray
-  ! each box in diffboxarray corresponds to an "empty space" between valid regions at 
-  ! each level, excluding the coarsest level.
-  ! I am going to use this to compute all of the intermediate r_start_coords and r_end_coords
-  allocate(validboxarr(nlevs))
-  allocate(diffboxarray(nlevs))
-  do n=1,nlevs
-     call boxarray_build_copy(validboxarr(n),get_boxarray(sold(n)))
-     call boxarray_boxarray_diff(diffboxarray(n),boundingbox(n),validboxarr(n))
-     call boxarray_simplify(diffboxarray(n))
-  end do
+  ! now that we have dx we can initialize nr_fine and dr_fine
+  if (spherical .eq. 1) then
+     
+     ! for spherical, we will now require that dr_fine = dx
+     dr_fine = dx(1,nlevs) / dble(drdxfac)
+     
+     lenx = HALF * (prob_hi(1) - prob_lo(1))
+     leny = HALF * (prob_hi(2) - prob_lo(2))
+     lenz = HALF * (prob_hi(3) - prob_lo(3))
+     
+     max_dist = sqrt(lenx**2 + leny**2 + lenz**2)
+     nr_fine = int(max_dist / dr_fine) + 1
+     
+  else
+     
+     nr_fine = extent(mla%mba%pd(nlevs),dm)
+     dr_fine = (prob_hi(dm)-prob_lo(dm)) / dble(nr_fine)
+     
+  end if
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  ! define the grid spacing on all levels
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  ! create numdisjointchunks, r_start_coord, r_end_coord
+  call init_multilevel(sold)
 
-  allocate(dx(nlevs,dm))
-
-  do i = 1, dm
-     dx(1,i) = (prob_hi(i)-prob_lo(i)) / real(extent(mba%pd(1),i),kind=dp_t)
-  end do
-  do n = 2,nlevs
-     dx(n,:) = dx(n-1,:) / mba%rr(n-1,:)
-  end do
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  ! allocate storage for the base state
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  ! now that we have nr_fine and dr_fine we can create nr, dr, r_cc_loc, r_edge_loc
+  call init_radial(nlevs,mba)
 
   if (spherical .eq. 1) then
 
@@ -194,9 +164,9 @@ subroutine varden()
   allocate(normal(nlevs))
 
   do n = nlevs,1,-1
-     call multifab_build(   unew(n), mla%la(n),    dm, ng_cell)
-     call multifab_build(   snew(n), mla%la(n), nscal, ng_cell)
-     call multifab_build(normal(n), mla%la(n), dm, 1)
+     call multifab_build(   unew(n), mla%la(n),    dm, 3)
+     call multifab_build(   snew(n), mla%la(n), nscal, 3)
+     call multifab_build( normal(n), mla%la(n),    dm, 1)
 
      call setval(  unew(n),ZERO, all=.true.)
      call setval(  snew(n),ZERO, all=.true.)
@@ -204,49 +174,17 @@ subroutine varden()
 
   la = mla%la(1)
 
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  ! Allocate the arrays for the boundary conditions at the physical boundaries.
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-  allocate(domain_phys_bc(dm,2))
-
-  allocate(domain_boxes(nlevs))
-  do n = 1,nlevs
-     domain_boxes(n) = layout_get_pd(mla%la(n))
-  end do
-
-  ! Put the bc values from the inputs file into domain_phys_bc
-  domain_phys_bc(1,1) = bcx_lo
-  domain_phys_bc(1,2) = bcx_hi
-  if (dm > 1) then
-     domain_phys_bc(2,1) = bcy_lo
-     domain_phys_bc(2,2) = bcy_hi
-  end if
-  if (dm > 2) then
-     domain_phys_bc(3,1) = bcz_lo
-     domain_phys_bc(3,2) = bcz_hi
-  end if
-
-  do i = 1, dm
-     if ( pmask(i) ) domain_phys_bc(i,:) = BC_PER
-  end do
-
-  ! Build the arrays for each grid from the domain_bc arrays.
-  call bc_tower_build(the_bc_tower,mla,domain_phys_bc,domain_boxes)
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Now initialize the grid data, and do initial projection if restart < 0.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-  ! Initialize geometry (IMPT: dr is set in init_base_state)
-  center(1:dm) = HALF * (prob_lo(1:dm) + prob_hi(1:dm))
-  call init_geometry(center,dr_base,nlevs,mla,boundingbox,diffboxarray)
 
   ! Initialize base state at finest level
   do n=1,nlevs
      call init_base_state(n,model_file,s0_old(n,:,:),p0_old(n,:),dx(n,:))
   enddo
+
+  allocate(lo(dm))
+  allocate(hi(dm))
 
   ! Create the normal array once we have defined "center"
   if (spherical .eq. 1) then
@@ -301,21 +239,18 @@ subroutine varden()
      call destroy(normal(n))
   end do
 
-  do n=1,nlevs
-     call destroy(validboxarr(n))
-     call destroy(diffboxarray(n))
-  end do
-
   call destroy(mla)
   call destroy(mba)
 
   deallocate(uold,unew,sold,snew)
   deallocate(s0_old,s0_avg,p0_old,w0)
 
-  deallocate(lo,hi,boundingbox)
+  deallocate(lo,hi)
 
   call bc_tower_destroy(the_bc_tower)
 
-  call destroy_geometry()
+  call probin_close()
+
+  deallocate(dr,r_cc_loc,r_edge_loc,r_start_coord,r_end_coord,nr,numdisjointchunks,dx)
 
 end subroutine varden

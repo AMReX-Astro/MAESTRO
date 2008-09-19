@@ -17,7 +17,7 @@ module initialize_module
   private
 
   public :: initialize_from_restart, initialize_with_fixed_grids, &
-            initialize_with_adaptive_grids, initialize_bc
+            initialize_with_adaptive_grids, initialize_bc, initialize_dx
 
 contains
     
