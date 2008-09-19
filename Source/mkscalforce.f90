@@ -480,7 +480,7 @@ contains
        do n = 1,nlevs
           p0_nph(n,:) = HALF * (p0_old(n,:) + p0_new(n,:))
           call multifab_build(p0_cart(n),mla%la(n),1,1)
-          h0_nph(n,:) = HALF * (h0_old(n,:) + p0_old(n,:))
+          h0_nph(n,:) = HALF * (h0_old(n,:) + h0_old(n,:))
           call multifab_build(h0_cart(n),mla%la(n),1,1)
        end do
     end if
