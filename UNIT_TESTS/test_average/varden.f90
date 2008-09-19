@@ -256,7 +256,7 @@ subroutine varden()
            nrp => dataptr(normal(n), i)
            lo =  lwb(get_box(normal(n), i))
            hi =  upb(get_box(normal(n), i))
-           call make_3d_normal(nrp(:,:,:,:),lo,hi,dx(n,:),1)
+           call make_normal_3d_sphr(nrp(:,:,:,:),lo,hi,dx(n,:),1)
         end do
      end do
   end if
