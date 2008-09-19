@@ -181,7 +181,7 @@ contains
     integer         :: comp
     integer         :: i,j
     real(kind=dp_t) :: rho0_edge, rhoh0_edge
-    logical :: test
+    logical :: test,test2
     
     ! loop over components
     do comp = startcomp, endcomp
@@ -191,6 +191,8 @@ contains
                      ( enthalpy_pred_type.eq.predict_h .or. &
                        enthalpy_pred_type.eq.predict_T_then_h ) ) &
          .or. ( (comp.ge.trac_comp).and.(comp.le.trac_comp+ntrac-1) )
+
+       test2 = (comp.eq.rhoh_comp .and. enthalpy_pred_type.eq.predict_hprime)
 
        ! create x-fluxes
        if (test) then
@@ -207,7 +209,11 @@ contains
              end do
              
           end do
-                
+           
+       else if (test2) then
+
+          call bl_error("mkflux : predict_hprime not coded yet")
+     
        else
               
           do j=lo(2),hi(2)
@@ -240,6 +246,10 @@ contains
 
           end do
           
+       else if (test2) then
+
+          call bl_error("mkflux : predict_hprime not coded yet")
+
        else
           
           do j=lo(2),hi(2)+1
@@ -293,7 +303,7 @@ contains
     integer         :: comp
     integer         :: i,j,k
     real(kind=dp_t) :: rho0_edge, rhoh0_edge
-    logical         :: test
+    logical         :: test,test2
     
     ! loop over components
     do comp = startcomp, endcomp
@@ -303,7 +313,9 @@ contains
                      ( enthalpy_pred_type.eq.predict_h .or. &
                        enthalpy_pred_type.eq.predict_T_then_h ) ) &
          .or. ( (comp.ge.trac_comp).and.(comp.le.trac_comp+ntrac-1) )
-       
+
+       test2 = (comp.eq.rhoh_comp .and. enthalpy_pred_type.eq.predict_hprime)
+
        ! create x-fluxes and y-fluxes
        if (test) then
 
@@ -332,7 +344,11 @@ contains
              end do
              
           end do
-                
+           
+       else if (test2) then
+
+          call bl_error("mkflux : predict_hprime not coded yet")
+     
        else
               
           do k=lo(3),hi(3)
@@ -378,6 +394,10 @@ contains
 
           end do
           
+       else if (test2) then
+
+          call bl_error("mkflux : predict_hprime not coded yet")
+
        else
           
           do k=lo(3),hi(3)+1
@@ -438,7 +458,7 @@ contains
     integer         :: i,j,k
     real(kind=dp_t) :: bc_lox,bc_loy,bc_loz
     real(kind=dp_t) :: rho0_edge, h0_edge
-    logical         :: test
+    logical         :: test,test2
     
     do comp = startcomp, endcomp
 
@@ -447,6 +467,8 @@ contains
                      ( enthalpy_pred_type.eq.predict_h .or. &
                        enthalpy_pred_type.eq.predict_T_then_h ) ) &
          .or. ( (comp.ge.trac_comp).and.(comp.le.trac_comp+ntrac-1) )
+
+       test2 = (comp.eq.rhoh_comp .and. enthalpy_pred_type.eq.predict_hprime)
 
        ! loop for x-fluxes
        if (test) then
@@ -471,14 +493,48 @@ contains
              end do
           end do
 
+       else if (test2) then
+          
+          ! (rho h)_edge = (h' + h_0) * (rho' + rho_0)
+          ! where h0 is computed from (rho h)_0 / rho_0
+          ! sfluxx = (umac(i,j,k)+w0macx(i,j,k)) * (rho h)_edge
+          do k = lo(3), hi(3)
+             do j = lo(2), hi(2)
+                do i = lo(1), hi(1)+1
+
+                   if (i.eq.domlo(1)) then
+                      rho0_edge = HALF * ( rho0_old_cart(i,j,k)+rho0_new_cart(i,j,k) )
+                      h0_edge = HALF * ( rhoh0_old_cart(i,j,k)/rho0_old_cart(i,j,k) &
+                                        +rhoh0_new_cart(i,j,k)/rho0_new_cart(i,j,k) )
+                   else if (i.eq.domhi(1)+1) then
+                      rho0_edge = HALF * ( rho0_old_cart(i-1,j,k)+rho0_new_cart(i-1,j,k) )
+                      h0_edge = HALF * ( rhoh0_old_cart(i-1,j,k)/rho0_old_cart(i-1,j,k) &
+                                        +rhoh0_new_cart(i-1,j,k)/rho0_new_cart(i-1,j,k) )
+                   else
+                      rho0_edge = FOURTH * ( rho0_old_cart(i-1,j,k)+rho0_new_cart(i-1,j,k) &
+                                            +rho0_old_cart(i  ,j,k)+rho0_new_cart(i  ,j,k) )
+                      h0_edge = FOURTH * ( rhoh0_old_cart(i-1,j,k)/rho0_old_cart(i-1,j,k) &
+                                          +rhoh0_new_cart(i-1,j,k)/rho0_new_cart(i-1,j,k) &
+                                          +rhoh0_old_cart(i  ,j,k)/rho0_old_cart(i  ,j,k) &
+                                          +rhoh0_new_cart(i  ,j,k)/rho0_new_cart(i  ,j,k) )
+                   end if
+
+                   sfluxx(i,j,k,comp) = (umac(i,j,k)+w0macx(i,j,k)) * &
+                        (sedgex(i,j,k,rho_comp)+rho0_edge) * (sedgex(i,j,k,comp)+h0_edge)
+
+                end do
+             end do
+          end do
+
        else
 
           do k = lo(3), hi(3)
              do j = lo(2), hi(2)
                 do i = lo(1), hi(1)+1
-
                 
                    ! Average (rho h) onto edges by averaging rho and h separately onto edges.
+                   ! (rho h)_edge = (rho h)' + (rho_0 * h_0)
+                   ! where h_0 is computed from (rho h)_0 / rho_0
                    if (comp.eq.rhoh_comp) then
 
                       if (i.eq.domlo(1)) then
@@ -522,7 +578,6 @@ contains
 
        endif
 
-
        ! loop for y-fluxes
        if (test) then
 
@@ -546,6 +601,38 @@ contains
              end do
           end do
 
+       else if (test2) then
+
+          ! (rho h)_edge = (h' + h_0) * (rho' + rho_0)
+          ! where h0 is computed from (rho h)_0 / rho_0
+          ! sfluxy = (vmac(i,j,k)+w0macy(i,j,k)) * (rho h)_edge
+          do k = lo(3), hi(3)
+             do j = lo(2), hi(2)+1
+                do i = lo(1), hi(1)
+                   if (j.eq.domlo(2)) then
+                      rho0_edge = HALF * ( rho0_old_cart(i,j,k)+rho0_new_cart(i,j,k) )
+                      h0_edge = HALF * ( rhoh0_old_cart(i,j,k)/rho0_old_cart(i,j,k) &
+                                        +rhoh0_new_cart(i,j,k)/rho0_new_cart(i,j,k) )
+                   else if (j.eq.domhi(2)+1) then
+                      rho0_edge = HALF * ( rho0_old_cart(i,j-1,k)+rho0_new_cart(i,j-1,k) )
+                      h0_edge = HALF * ( rhoh0_old_cart(i,j-1,k)/rho0_old_cart(i,j-1,k) &
+                                        +rhoh0_new_cart(i,j-1,k)/rho0_new_cart(i,j-1,k) )
+                   else
+                      rho0_edge = FOURTH * ( rho0_old_cart(i,j-1,k)+rho0_new_cart(i,j-1,k) &
+                                             +rho0_old_cart(i,j  ,k)+rho0_new_cart(i,j  ,k) )
+                      h0_edge = FOURTH * ( rhoh0_old_cart(i,j-1,k)/rho0_old_cart(i,j-1,k) &
+                                          +rhoh0_new_cart(i,j-1,k)/rho0_new_cart(i,j-1,k) &
+                                          +rhoh0_old_cart(i,j  ,k)/rho0_old_cart(i,j  ,k) &
+                                          +rhoh0_new_cart(i,j  ,k)/rho0_new_cart(i,j  ,k) )
+                   end if
+                   
+                   sfluxy(i,j,k,comp) = (vmac(i,j,k)+w0macy(i,j,k)) * &
+                        (sedgey(i,j,k,rho_comp)+rho0_edge) * (sedgey(i,j,k,comp)+h0_edge)
+
+                end do
+             end do
+          end do
+                   
        else
 
           do k = lo(3), hi(3)
@@ -553,6 +640,8 @@ contains
                 do i = lo(1), hi(1)
 
                    ! Average (rho h) onto edges by averaging rho and h separately onto edges.
+                   ! (rho h)_edge = (rho h)' + (rho_0 * h_0)
+                   ! where h_0 is computed from (rho h)_0 / rho_0
                    if (comp.eq.rhoh_comp) then
 
                       if (j.eq.domlo(2)) then
@@ -620,6 +709,38 @@ contains
              end do
           end do
 
+       else if (test2) then
+
+          ! (rho h)_edge = (h' + h_0) * (rho' + rho_0)
+          ! where h0 is computed from (rho h)_0 / rho_0
+          ! sfluxz = (wmac(i,j,k)+w0macz(i,j,k)) * (rho h)_edge
+          do k = lo(3), hi(3)+1
+             do j = lo(2), hi(2)
+                do i = lo(1), hi(1)
+                   if (k.eq.domlo(3)) then
+                      rho0_edge = HALF * ( rho0_old_cart(i,j,k)+rho0_new_cart(i,j,k) )
+                      h0_edge = HALF * ( rhoh0_old_cart(i,j,k)/rho0_old_cart(i,j,k) &
+                                        +rhoh0_new_cart(i,j,k)/rho0_new_cart(i,j,k) )
+                   else if (k.eq.domhi(3)+1) then
+                      rho0_edge = HALF * ( rho0_old_cart(i,j,k-1)+rho0_new_cart(i,j,k-1) )
+                      h0_edge = HALF * ( rhoh0_old_cart(i,j,k-1)/rho0_old_cart(i,j,k-1) &
+                                        +rhoh0_new_cart(i,j,k-1)/rho0_new_cart(i,j,k-1) )
+                   else
+                      rho0_edge = FOURTH * ( rho0_old_cart(i,j,k-1)+rho0_new_cart(i,j,k-1) &
+                                            +rho0_old_cart(i,j,k  )+rho0_new_cart(i,j,k  ) )
+                      h0_edge = FOURTH * ( rhoh0_old_cart(i,j,k-1)/rho0_old_cart(i,j,k-1) &
+                                          +rhoh0_new_cart(i,j,k-1)/rho0_new_cart(i,j,k-1) &
+                                          +rhoh0_old_cart(i,j,k  )/rho0_old_cart(i,j,k  ) &
+                                          +rhoh0_new_cart(i,j,k  )/rho0_new_cart(i,j,k  ) )
+                   end if
+                   
+                   sfluxz(i,j,k,comp) = (wmac(i,j,k)+w0macz(i,j,k)) * &
+                        (sedgez(i,j,k,rho_comp)+rho0_edge) * (sedgez(i,j,k,comp)+h0_edge)
+
+                end do
+             end do
+          end do
+
        else
 
           do k = lo(3), hi(3)+1
@@ -627,6 +748,8 @@ contains
                 do i = lo(1), hi(1)
 
                    ! Average (rho h) onto edges by averaging rho and h separately onto edges.
+                   ! (rho h)_edge = (rho h)' + (rho_0 * h_0)
+                   ! where h_0 is computed from (rho h)_0 / rho_0
                    if (comp.eq.rhoh_comp) then
 
                       if (k.eq.domlo(3)) then
