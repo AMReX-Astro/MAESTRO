@@ -128,18 +128,22 @@ the perturbational enthalpy equation
 - \nabla\cdot[(\rho h)_0\Ubt] + (\ut \cdot \er)\frac{\partial p_0}{\partial r}
 + \nabla\cdot\kth\nabla T}_{"(\rho h)' ~ \text{force}"}. \label{rhohprime equation}
 \end{eqnarray}
-\subsubsection{Predicting $(\rho h)'$ at edges}\label{Predicting rhohprime at edges}
-{\bf What the code did before 8/6/08:} 
+\subsubsection{Advancing $(\rho h)_0$}
+{\bf Using full\_rhoh0\_evolution = F:}  Define 
+$(\rho h)_0^{(1)} = \overline{(\rho h)^{(1)}}$  
+and $(\rho h)' = (\rho h)^{(1)}-(\rho h)_0^{(1)}$.  Then, $(\rho h)_0^{(1)} \rightarrow$ 
+{\tt advect\_base} $\rightarrow (\rho h)_0^{(2)}$.\\ \\
+{\bf Using full\_rhoh0\_evolution = T:}
  Instead of defining $(\rho h)_0^{(1)} = \overline{(\rho h)^{(1)}}$, the code carries 
 through the complete evolution of $(\rho h)_0$ using $(\rho h)_0^n \rightarrow$ {\tt react\_base}
 $\rightarrow (\rho h)_0^{(1)} \rightarrow$ {\tt advect\_base}
 $\rightarrow (\rho h)_0^{(2)} \rightarrow$ {\tt react\_base} $\rightarrow (\rho h)_0^{n+1}$.  
-There is no {\tt correct\_base} function for $(\rho h)_0$ written yet, nor is any adjustment made 
-to sync up $(\rho h)_0$ after the thermal diffusion step.\\ \\
-{\bf What the code currently does:}  Define $(\rho h)_0^{(1)} = \overline{(\rho h)^{(1)}}$  
-and $(\rho h)' = (\rho h)^{(1)}-(\rho h)_0^{(1)}$.  Then we predict $(\rho h)'$ to 
+There is no {\tt correct\_base} function for $(\rho h)_0$ written yet, nor is any 
+adjustment made to sync up $(\rho h)_0$ after the thermal diffusion step.
+\subsubsection{Predicting $(\rho h)'$ at edges}\label{Predicting rhohprime at edges}
+We predict $(\rho h)'$ to 
 edges using {\tt make\_edge\_scal} in {\tt scalar\_advance} and the underbraced term in 
-(\ref{rhohprime equation}) as the forcing. \MarginPar{{\tt full\_rhoh0\_evolution} comes into play here}
+(\ref{rhohprime equation}) as the forcing, except that we omit the $\psi$ in the forcing for plane-parallel, and we omit the $\partial w_0/\partial r$ part of $\psi$ in spherical.  Note that we still use full $\psi$ to update the cell.
 \subsubsection{Predicting $(\rho h)_0$ at edges}
 We use an analogous procedure described in Section \ref{Predicting rho0 at edges} to 
 obtain $(\rho h)_0^{n+\half,\rm{pred}}$ and $(\rho h)_0^{n+\half,\rm{avg}}$.  Note that 
