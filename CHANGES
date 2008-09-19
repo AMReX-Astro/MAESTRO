@@ -24,3 +24,8 @@ A list of changes to the code since paper III (i.e. future appendices)
 
 -- modified hyperbolics with use_new_godunov=T.  Papers I-III didn't give the gory
    details, which have changed, so newer papers may not have to either.
+
+-- mkflux changes for putting rho and h on edges
+
+-- changing enthalpy equation to have p div{U} instead of U grad{p} term
+   in spherical
