@@ -128,7 +128,7 @@ contains
     call convert_rhoX_to_X(sold,.true.,mla,the_bc_level)
 
     ! convert rho -> rho' in sold 
-    call put_in_pert_form(mla,sold,rho0_old,dx,rho_comp,.true.,the_bc_level)
+    call put_in_pert_form(mla,sold,rho0_old,dx,rho_comp,foextrap_comp,.true.,the_bc_level)
 
     ! predict X at the edges
     call make_edge_scal(sold,sedge,umac,scal_force,normal, &
@@ -141,7 +141,7 @@ contains
                         rho_comp,dm+rho_comp,1,.false.,mla)
 
     ! convert rho' -> rho in sold
-    call put_in_pert_form(mla,sold,rho0_old,dx,rho_comp,.false.,the_bc_level)
+    call put_in_pert_form(mla,sold,rho0_old,dx,rho_comp,dm+rho_comp,.false.,the_bc_level)
 
     ! convert X --> (rho X) in sold 
     call convert_rhoX_to_X(sold,.false.,mla,the_bc_level)

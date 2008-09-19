@@ -19,7 +19,7 @@ module pert_form_module
   
 contains
 
-  subroutine put_in_pert_form(mla,s,base,dx,comp,flag,the_bc_level)
+  subroutine put_in_pert_form(mla,s,base,dx,comp,bc_comp,flag,the_bc_level)
 
     use geometry, only: spherical, dm
     use variables, only: foextrap_comp, nscal
@@ -31,7 +31,7 @@ contains
     use probin_module, only: nlevs
 
     type(ml_layout), intent(in   ) :: mla
-    integer        , intent(in   ) :: comp
+    integer        , intent(in   ) :: comp,bc_comp
     type(multifab) , intent(inout) :: s(:)
     real(kind=dp_t), intent(in   ) :: base(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
@@ -41,7 +41,7 @@ contains
     ! Local variables
     real(kind=dp_t), pointer::  sp(:,:,:,:)
     integer :: lo(dm),hi(dm)
-    integer :: i,ng,n,bc_comp
+    integer :: i,ng,n
 
     ng    = s(1)%ng
 
@@ -69,13 +69,6 @@ contains
        ! fill ghost cells for two adjacent grids at the same level
        ! this includes periodic domain boundary ghost cells
        call multifab_fill_boundary_c(s(nlevs),comp,1)
-
-       if (flag) then
-          bc_comp = foextrap_comp
-       else
-          bc_comp = dm+comp
-       end if
-
        ! fill non-periodic domain boundary ghost cells
        call multifab_physbc(s(nlevs),comp,bc_comp,1,the_bc_level(nlevs))
        
@@ -86,13 +79,6 @@ contains
 
           ! set level n-1 data to be the average of the level n data covering it
           call ml_cc_restriction(s(n-1),s(n),mla%mba%rr(n-1,:))
-          
-          if (flag) then
-             bc_comp = foextrap_comp
-          else
-             bc_comp = dm+comp
-          end if
-             
           ! fill level n ghost cells using interpolation from level n-1 data
           ! note that multifab_fill_boundary and multifab_physbc are called for
           ! both levels n-1 and n
