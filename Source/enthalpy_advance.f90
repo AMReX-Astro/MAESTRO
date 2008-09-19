@@ -174,9 +174,20 @@ contains
 
     else if (enthalpy_pred_type .eq. predict_hprime) then
 
+       ! first compute h0_old
+       do n=1,nlevs
+          do i=1,numdisjointchunks(n)
+             do r=r_start_coord(n,i),r_end_coord(n,i)
+                h0_old(n,r) = rhoh0_old(n,r) / rho0_old(n,r)
+             end do
+          end do
+       end do
+
        ! make force for hprime
-
-
+       is_prediction = .true.
+       call mkhprimeforce(mla,sold,sold,scal_force,is_prediction,&
+                          thermal,umac,p0_old,p0_old,rho0_old,rho0_old,&
+                          h0_old,h0_old,psi,dx,.true.,the_bc_level)
 
     else if ( (enthalpy_pred_type .eq. predict_T_then_rhohprime) .or. &
               (enthalpy_pred_type .eq. predict_T_then_h        ) ) then
@@ -205,13 +216,6 @@ contains
 
     if (enthalpy_pred_type .eq. predict_hprime) then
        ! convert h -> h'
-       do n=1,nlevs
-          do i=1,numdisjointchunks(n)
-             do r=r_start_coord(n,i),r_end_coord(n,i)
-                h0_old(n,r) = rhoh0_old(n,r) / rho0_old(n,r)
-             end do
-          end do
-       end do
        call put_in_pert_form(mla,sold,h0_old,dx,rhoh_comp,foextrap_comp,.true.,the_bc_level)
     end if
 
