@@ -72,8 +72,8 @@ subroutine varden()
   character (len=10) base_state_name
 
   call probin_init()
-  call init_dm(1)
-  call init_spherical(spherical_in)
+  call init_dm()
+  call init_spherical()
 
   call init_variables()
 
