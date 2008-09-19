@@ -11,7 +11,7 @@ module fill_3d_module
   
   public :: put_1d_array_on_cart,  put_1d_array_on_cart_3d_sphr
   public :: put_w0_on_edges, put_w0_on_edges_3d_sphr
-  public :: make_normal
+  public :: make_normal, make_normal_3d_sphr
   
 contains  
 
