@@ -2,7 +2,7 @@
  model_file = "model_6.e8.hse.1280"
  drdxfac = 5
 
- test_set = "grd_256"
+ test_set = "gr0_3d.256"
 
  spherical_in = 1
  dm_in = 3
