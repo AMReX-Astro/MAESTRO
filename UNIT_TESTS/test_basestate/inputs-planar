@@ -15,7 +15,6 @@
  cflfac = 0.5
 
  model_file = "model.hse"
- dr_base = 390625
 
  use_eos_coulomb = F
 /
