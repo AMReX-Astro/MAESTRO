@@ -22,6 +22,7 @@ subroutine varden()
   use make_edge_state_module
   use probin_module
   use bl_constants_module
+  use initialize_module
 
   implicit none
 
@@ -30,10 +31,7 @@ subroutine varden()
 
   real(dp_t) :: frac, delta, sum
 
-  real(dp_t) :: time,dt,half_time,dtold
-  real(dp_t) :: smin,smax
-
-  integer :: un, ierr
+  real(dp_t) :: time,dt,dtold
 
   real(dp_t) :: y_0
 
@@ -66,14 +64,10 @@ subroutine varden()
   integer :: n
   integer :: which_step
 
-  real(dp_t) :: max_dist
-  real(dp_t) :: dr_base
-
-  character (len=10) base_state_name
-
   call probin_init()
   call init_dm()
   call init_spherical()
+  center(1) = ZERO
 
   call init_variables()
 
@@ -82,16 +76,6 @@ subroutine varden()
 
   nlevs = 1
 
-  center(1) = ZERO
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! define the grid spacing on all levels
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! allocate storage for the base state
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
   ! we get the number of points for the base state directly from
   ! the model file and use this to set the resolution.  It should be
   ! the case that prob_hi(1) agrees with the maximum radius for the model
@@ -99,10 +83,26 @@ subroutine varden()
   nr_fine = get_model_npts(model_file)
   print *, 'number of points in model file: ', nr_fine
 
-  dr_base = (prob_hi(1) - prob_lo(1))/nr_fine
+  dr_fine = (prob_hi(1) - prob_lo(1))/nr_fine
 
   allocate(dx(nlevs,1))
-  dx(1,1) = dr_base
+  dx(1,1) = dr_fine
+
+  allocate(dr(1))
+  allocate(nr(1))
+
+  allocate(  r_cc_loc(1,0:nr_fine-1))
+  allocate(r_edge_loc(1,0:nr_fine))
+
+  nr(1) = nr_fine
+  dr(1) = dr_fine
+
+  do i = 0,nr(1)-1
+     r_cc_loc(1,i) = prob_lo(dm) + (dble(i)+HALF)*dr(1)
+  end do
+  do i = 0,nr(1)
+     r_edge_loc(1,i) = prob_lo(dm) + (dble(i))*dr(1)
+  end do
 
   allocate(div_coeff_old(nlevs,0:nr_fine-1))
   allocate(    div_coeff(nlevs,0:nr_fine-1))
@@ -142,8 +142,6 @@ subroutine varden()
 ! read in the base state
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  call init_geometry(center,nr_fine,dr_base)
-
   do n = 1,nlevs
      call init_base_state(n,model_file,s0(n,:,:),p0(n,:),dx(n,:))
   enddo
@@ -169,6 +167,9 @@ subroutine varden()
   w0_old(:,:) = ZERO
 
   iter = 0
+
+  allocate(anelastic_cutoff_coord(1))
+
   do while (time < stop_time)
 
      print *, 'time = ', time
@@ -364,7 +365,7 @@ subroutine varden()
      !enddo
      !close(unit=10)
 
-     dt = min(1.1*dt,cflfac*dr_base/maxval(abs(w0)))
+     dt = min(1.1*dt,cflfac*dr_fine/maxval(abs(w0)))
      if (time+dt > stop_time) dt = stop_time - time
 
      ! store the old velocity
