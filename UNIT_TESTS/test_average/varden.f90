@@ -124,28 +124,6 @@ subroutine varden()
   ! now that we have nr_fine and dr_fine we can create nr, dr, r_cc_loc, r_edge_loc
   call init_radial(nlevs,mba)
 
-  if (spherical .eq. 1) then
-
-     ! for spherical, we will now require that dr_base = dx 
-     dr_base = dx(1,nlevs)
-
-     lenx = HALF * (prob_hi(1) - prob_lo(1))
-     leny = HALF * (prob_hi(2) - prob_lo(2))
-     lenz = HALF * (prob_hi(3) - prob_lo(3))
-
-     max_dist = sqrt(lenx**2 + leny**2 + lenz**2)
-     nr_fine = int(max_dist / dr_base) + 1
-
-     if ( parallel_IOProcessor() ) then
-        print *,'DISTANCE FROM CENTER TO CORNER IS ',max_dist
-        print *,'DR_BASE IS ',dr_base
-        print *,'SETTING NR_FINE TO ',nr_fine
-     end if
-  else
-     ! NOTE: WE ASSUME DR_BASE IS THE RESOLUTION OF THE FINEST LEVEL IN PLANE-PARALLEL!
-     nr_fine = extent(mba%pd(nlevs),dm)
-     dr_base = (prob_hi(dm)-prob_lo(dm)) / dble(nr_fine)
-  end if
 
   allocate( s0_old(nlevs,0:nr_fine-1,nscal))
   allocate( s0_avg(nlevs,0:nr_fine-1,nscal))
