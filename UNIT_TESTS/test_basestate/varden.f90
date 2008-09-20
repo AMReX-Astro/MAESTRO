@@ -76,12 +76,22 @@ subroutine varden()
 
   nlevs = 1
 
+
   ! we get the number of points for the base state directly from
   ! the model file and use this to set the resolution.  It should be
   ! the case that prob_hi(1) agrees with the maximum radius for the model
   ! file.
   nr_fine = get_model_npts(model_file)
   print *, 'number of points in model file: ', nr_fine
+
+  allocate(r_start_coord(nlevs,1))
+  r_start_coord(nlevs,1) = 0
+
+  allocate(r_end_coord(nlevs,1))
+  r_end_coord(nlevs,1) = nr_fine-1
+
+  allocate(numdisjointchunks(nlevs))
+  numdisjointchunks(:) = 1
 
   dr_fine = (prob_hi(1) - prob_lo(1))/nr_fine
 
