@@ -301,7 +301,7 @@ contains
              else if (r .eq. nr_crse-1) then
                 phibar_crse(r) = phibar_crse(nr_crse-2)
              else 
-                phibar_crse(r) = ZERO
+                call bl_error("ERROR: ncell_crse = 0 in average")
              end if
           end do
 
@@ -344,8 +344,10 @@ contains
           do r=0,nr_fine-1
              if (ncell(nlevs,r) .gt. ZERO) then
                 phibar(nlevs,r) = phisum(nlevs,r) / ncell(nlevs,r)
+             else if (r .eq. nr_fine-1 .and. ncell(nlevs,r) .eq. ZERO) then
+                phibar(nlevs,r) = phibar(nlevs,r-1)
              else
-                phibar(nlevs,r) = ZERO
+                call bl_error("ERROR: ncell_crse = 0 in average")
              end if
           end do
 
