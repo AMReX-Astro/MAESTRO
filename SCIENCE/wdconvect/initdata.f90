@@ -341,28 +341,21 @@ contains
        do i=1,3
           do j=1,3
              do k=1,3
-!               call random_number(rand)
                 rand = genrand_real1()
                 rand = 2.0d0*rand - 1.0d0
                 alpha(i,j,k) = rand
-                write(6,*)"alpha",i,j,k,alpha(i,j,k)
-!               call random_number(rand)
                 rand = genrand_real1()
                 rand = 2.0d0*rand - 1.0d0
                 beta(i,j,k) = rand
-!               call random_number(rand)
                 rand = genrand_real1()
                 rand = 2.0d0*rand - 1.0d0
                 gamma(i,j,k) = rand
-!               call random_number(rand)
                 rand = genrand_real1()
                 rand = 2.0d0*M_PI*rand
                 phix(i,j,k) = rand
-!               call random_number(rand)
                 rand = genrand_real1()
                 rand = 2.0d0*M_PI*rand
                 phiy(i,j,k) = rand
-!               call random_number(rand)
                 rand = genrand_real1()
                 rand = 2.0d0*M_PI*rand
                 phiz(i,j,k) = rand
