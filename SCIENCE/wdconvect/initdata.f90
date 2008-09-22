@@ -308,6 +308,7 @@ contains
   subroutine initveldata(u,s0_init,p0_background,dx,bc,mla)
 
     use probin_module, only: nlevs
+    use mt19937_module
     
     type(multifab) , intent(inout) :: u(:)
     real(kind=dp_t), intent(in   ) :: s0_init(:,0:,:)
@@ -336,25 +337,33 @@ contains
 
     ! load in random numbers alpha, beta, gamma, phix, phiy, and phiz
     if (dm .eq. 3) then
+       call init_genrand(20908)
        do i=1,3
           do j=1,3
              do k=1,3
-                call random_number(rand)
+!               call random_number(rand)
+                rand = genrand_real1()
                 rand = 2.0d0*rand - 1.0d0
                 alpha(i,j,k) = rand
-                call random_number(rand)
+                write(6,*)"alpha",i,j,k,alpha(i,j,k)
+!               call random_number(rand)
+                rand = genrand_real1()
                 rand = 2.0d0*rand - 1.0d0
                 beta(i,j,k) = rand
-                call random_number(rand)
+!               call random_number(rand)
+                rand = genrand_real1()
                 rand = 2.0d0*rand - 1.0d0
                 gamma(i,j,k) = rand
-                call random_number(rand)
+!               call random_number(rand)
+                rand = genrand_real1()
                 rand = 2.0d0*M_PI*rand
                 phix(i,j,k) = rand
-                call random_number(rand)
+!               call random_number(rand)
+                rand = genrand_real1()
                 rand = 2.0d0*M_PI*rand
                 phiy(i,j,k) = rand
-                call random_number(rand)
+!               call random_number(rand)
+                rand = genrand_real1()
                 rand = 2.0d0*M_PI*rand
                 phiz(i,j,k) = rand
              enddo
