@@ -308,7 +308,8 @@ contains
   subroutine initveldata(u,s0_init,p0_background,dx,bc,mla)
 
     use probin_module, only: nlevs
-
+    use mt19937_module
+    
     type(multifab) , intent(inout) :: u(:)
     real(kind=dp_t), intent(in   ) :: s0_init(:,0:,:)
     real(kind=dp_t), intent(in   ) :: p0_background(:,0:)
@@ -318,9 +319,59 @@ contains
 
     real(kind=dp_t), pointer:: uop(:,:,:,:)
     integer :: lo(dm),hi(dm),ng
-    integer :: i,n
+    integer :: i,j,k,n
+
+    ! random numbers between -1 and 1
+    real(kind=dp_t) :: alpha(3,3,3), beta(3,3,3), gamma(3,3,3)
+
+    ! random numbers between 0 and 2*pi
+    real(kind=dp_t) :: phix(3,3,3), phiy(3,3,3), phiz(3,3,3)
+
+    ! L2 norm of k
+    real(kind=dp_t) :: normk(3,3,3)
+
+    ! random number
+    real(kind=dp_t) :: rand
     
     ng = u(1)%ng
+
+    ! load in random numbers alpha, beta, gamma, phix, phiy, and phiz
+    if (dm .eq. 3) then
+       call init_genrand(20908)
+       do i=1,3
+          do j=1,3
+             do k=1,3
+                rand = genrand_real1()
+                rand = 2.0d0*rand - 1.0d0
+                alpha(i,j,k) = rand
+                rand = genrand_real1()
+                rand = 2.0d0*rand - 1.0d0
+                beta(i,j,k) = rand
+                rand = genrand_real1()
+                rand = 2.0d0*rand - 1.0d0
+                gamma(i,j,k) = rand
+                rand = genrand_real1()
+                rand = 2.0d0*M_PI*rand
+                phix(i,j,k) = rand
+                rand = genrand_real1()
+                rand = 2.0d0*M_PI*rand
+                phiy(i,j,k) = rand
+                rand = genrand_real1()
+                rand = 2.0d0*M_PI*rand
+                phiz(i,j,k) = rand
+             enddo
+          enddo
+       enddo
+
+       ! compute the norm of k
+       do i=1,3
+          do j=1,3
+             do k=1,3
+                normk(i,j,k) = sqrt(dble(i)**2+dble(j)**2+dble(k)**2)
+             enddo
+          enddo
+       enddo
+    end if
 
     do n=1,nlevs
 
@@ -335,7 +386,8 @@ contains
                                  s0_init(n,:,:), p0_background(n,:))   
           case (3)
              call initveldata_3d(uop(:,:,:,:), lo, hi, ng, dx(n,:), &
-                                 s0_init(n,:,:), p0_background(n,:))
+                                 s0_init(n,:,:), p0_background(n,:), &
+                                 alpha, beta, gamma, phix, phiy, phiz, normk)
           end select
        end do
     
@@ -393,7 +445,8 @@ contains
   ! The steepness of the cutoff is controlled by "velpert_steep".  The
   ! relative amplitude of the modes is controlled by
   ! "velpert_amplitude".
-  subroutine initveldata_3d(u,lo,hi,ng,dx,s0_init,p0_background)
+  subroutine initveldata_3d(u,lo,hi,ng,dx,s0_init,p0_background, &
+                            alpha,beta,gamma,phix,phiy,phiz,normk)
 
     use probin_module, only: prob_lo, prob_hi, &
          velpert_amplitude, velpert_radius, velpert_steep, velpert_scale
@@ -404,18 +457,18 @@ contains
     real(kind=dp_t), intent(in   ) ::    s0_init(0:,:)
     real(kind=dp_t), intent(in   ) ::    p0_background(0:)
 
+    ! random numbers between -1 and 1
+    real(kind=dp_t), intent(in) :: alpha(3,3,3), beta(3,3,3), gamma(3,3,3)
+
+    ! random numbers between 0 and 2*pi
+    real(kind=dp_t), intent(in) :: phix(3,3,3), phiy(3,3,3), phiz(3,3,3)
+
+    ! L2 norm of k
+    real(kind=dp_t), intent(in) :: normk(3,3,3)
+
     ! Local variables
     integer :: i, j, k
     integer :: iloc, jloc, kloc
-
-    ! L2 norm of k
-    real(kind=dp_t) :: normk(3,3,3)
-
-    ! random numbers between -1 and 1
-    real(kind=dp_t) :: alpha(3,3,3), beta(3,3,3), gamma(3,3,3)
-
-    ! random numbers between 0 and 2*pi
-    real(kind=dp_t) :: phix(3,3,3), phiy(3,3,3), phiz(3,3,3)
 
     ! cos and sin of (2*pi*kx/L + phix), etc
     real(kind=dp_t) :: cx(3,3,3), cy(3,3,3), cz(3,3,3)
@@ -433,46 +486,8 @@ contains
     ! perturbational velocity to add
     real(kind=dp_t) :: upert(3)
 
-    ! random number
-    real(kind=dp_t) :: rand
-
     ! initialize the velocity to zero everywhere
     u = ZERO
-
-    ! load in random numbers alpha, beta, gamma, phix, phiy, and phiz
-    do i=1,3
-       do j=1,3
-          do k=1,3
-             call random_number(rand)
-             rand = 2.0d0*rand - 1.0d0
-             alpha(i,j,k) = rand
-             call random_number(rand)
-             rand = 2.0d0*rand - 1.0d0
-             beta(i,j,k) = rand
-             call random_number(rand)
-             rand = 2.0d0*rand - 1.0d0
-             gamma(i,j,k) = rand
-             call random_number(rand)
-             rand = 2.0d0*M_PI*rand
-             phix(i,j,k) = rand
-             call random_number(rand)
-             rand = 2.0d0*M_PI*rand
-             phiy(i,j,k) = rand
-             call random_number(rand)
-             rand = 2.0d0*M_PI*rand
-             phiz(i,j,k) = rand
-          enddo
-       enddo
-    enddo
-
-    ! compute the norm of k
-    do i=1,3
-       do j=1,3
-          do k=1,3
-             normk(i,j,k) = sqrt(dble(i)**2+dble(j)**2+dble(k)**2)
-          enddo
-       enddo
-    enddo
 
     ! define where center of star is
     ! this currently assumes the star is at the center of the domain
@@ -522,16 +537,16 @@ contains
                       ! compute contribution from perturbation velocity from each mode
                       upert(1) = upert(1) + &
                            (-gamma(i,j,k)*dble(j)*cx(i,j,k)*cz(i,j,k)*sy(i,j,k) &
-                            +beta(i,j,k)*dble(k)*cx(i,j,k)*cy(i,j,k)*sz(i,j,k)) &
+                             +beta(i,j,k)*dble(k)*cx(i,j,k)*cy(i,j,k)*sz(i,j,k)) &
                             / normk(i,j,k)
 
                       upert(2) = upert(2) + &
                            (gamma(i,j,k)*dble(i)*cy(i,j,k)*cz(i,j,k)*sx(i,j,k) &
-                            -alpha(i,j,k)*dble(k)*cx(i,j,k)*cy(i,j,k)*sz(i,j,k)) &
+                           -alpha(i,j,k)*dble(k)*cx(i,j,k)*cy(i,j,k)*sz(i,j,k)) &
                             / normk(i,j,k)
 
                       upert(3) = upert(3) + &
-                           (-beta(i,j,k)*dble(i)*cy(i,j,k)*cz(i,j,k)*sx(i,j,k) &
+                           ( -beta(i,j,k)*dble(i)*cy(i,j,k)*cz(i,j,k)*sx(i,j,k) &
                             +alpha(i,j,k)*dble(j)*cx(i,j,k)*cz(i,j,k)*sy(i,j,k)) &
                             / normk(i,j,k)
                    enddo
@@ -567,7 +582,12 @@ contains
     real(kind=dp_t), intent(out) :: rhoX_pert(:)
     real(kind=dp_t), intent(out) :: trac_pert(:)
 
-    ! no perturbation for wdconvect
+    ! no perturbation for wdconvect -- put these here so compiler stops complaining
+    dens_pert = 0.d0
+    rhoh_pert = 0.d0
+    rhoX_pert = 0.d0
+    temp_pert = 0.d0
+    trac_pert = 0.d0
     call bl_error("perturb_2d not written")
 
   end subroutine perturb_2d
@@ -584,7 +604,12 @@ contains
     real(kind=dp_t), intent(out) :: rhoX_pert(:)
     real(kind=dp_t), intent(out) :: trac_pert(:)
     
-    ! no perturbation for wdconvect
+    ! no perturbation for wdconvect -- put these here so compiler stops complaining
+    dens_pert = 0.d0
+    rhoh_pert = 0.d0
+    rhoX_pert = 0.d0
+    temp_pert = 0.d0
+    trac_pert = 0.d0
     call bl_error("perturb_3d not written")
 
   end subroutine perturb_3d
