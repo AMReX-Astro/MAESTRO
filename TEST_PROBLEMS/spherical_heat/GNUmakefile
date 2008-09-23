@@ -14,8 +14,8 @@ FPARALLEL := ../..
 
 include $(FPARALLEL)/mk/GMakedefs.mak
 
-include $(FPARALLEL)/spherical_heat/GPackage.mak
-VPATH_LOCATIONS += $(FPARALLEL)/spherical_heat
+include $(FPARALLEL)/MAESTRO/spherical_heat/GPackage.mak
+VPATH_LOCATIONS += $(FPARALLEL)/MAESTRO/spherical_heat
 
 include $(FPARALLEL)/boxlib/GPackage.mak
 VPATH_LOCATIONS += $(FPARALLEL)/boxlib
