@@ -795,6 +795,13 @@ contains
    
     end do
 
+    if (spherical .eq. 1) then
+       do n = 1,nlevs
+          call destroy(p0_cart(n))
+          call destroy(t0_cart(n))
+       end do
+    end if
+
     if (nlevs .eq. 1) then
 
        ! fill ghost cells for two adjacent grids at the same level
