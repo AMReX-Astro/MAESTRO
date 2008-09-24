@@ -138,6 +138,7 @@ contains
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp, trac_comp, ntrac
     use network, only: nspec, ebin
     use probin_module, ONLY: do_burning, burning_cutoff_density, enthalpy_pred_type
+    use pred_parameters
     use bl_constants_module, only: zero
     use eos_module
 
@@ -220,21 +221,23 @@ contains
 
   end subroutine react_state_2d
 
-  subroutine react_state_3d(s_in,ng_si,s_out,ng_so,rho_omegadot,ng_rw,rho_Hext,ng_he,dt,lo,hi)
+  subroutine react_state_3d(s_in,ng_si,s_out,ng_so,rho_omegadot,ng_rw,rho_Hext,ng_he,dt, &
+                            lo,hi)
 
     use burner_module
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp, trac_comp, ntrac
     use network, only: nspec, ebin
     use probin_module, ONLY: do_burning, burning_cutoff_density, enthalpy_pred_type
+    use pred_parameters
     use bl_constants_module, only: zero
     use eos_module
 
-    integer, intent(in) :: lo(:), hi(:), ng_si, ng_so, ng_rw, ng_he
-    real (kind = dp_t), intent(in   ) ::         s_in(lo(1)-ng_si:,lo(2)-ng_si:,lo(3)-ng_si:,:)
-    real (kind = dp_t), intent(  out) ::        s_out(lo(1)-ng_so:,lo(2)-ng_so:,lo(3)-ng_so:,:)
-    real (kind = dp_t), intent(  out) :: rho_omegadot(lo(1)-ng_rw:,lo(2)-ng_rw:,lo(3)-ng_rw:,:)
-    real (kind = dp_t), intent(in   ) ::     rho_Hext(lo(1)-ng_he:,lo(2)-ng_he:,lo(3)-ng_he:)
-    real (kind = dp_t), intent(in   ) :: dt
+    integer, intent(in)             :: lo(:), hi(:), ng_si, ng_so, ng_rw, ng_he
+    real (kind = dp_t),intent(in   )::         s_in(lo(1)-ng_si:,lo(2)-ng_si:,lo(3)-ng_si:,:)
+    real (kind = dp_t),intent(  out)::        s_out(lo(1)-ng_so:,lo(2)-ng_so:,lo(3)-ng_so:,:)
+    real (kind = dp_t),intent(  out):: rho_omegadot(lo(1)-ng_rw:,lo(2)-ng_rw:,lo(3)-ng_rw:,:)
+    real (kind = dp_t),intent(in   )::     rho_Hext(lo(1)-ng_he:,lo(2)-ng_he:,lo(3)-ng_he:)
+    real (kind = dp_t),intent(in   ):: dt
 
     !     Local variables
     integer :: i, j, k
