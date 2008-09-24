@@ -137,7 +137,7 @@ contains
     use burner_module
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp, trac_comp, ntrac
     use network, only: nspec, ebin
-    use probin_module, ONLY: do_burning, burning_cutoff_density
+    use probin_module, ONLY: do_burning, burning_cutoff_density, enthalpy_pred_type
     use bl_constants_module, only: zero
     use eos_module
 
@@ -185,24 +185,27 @@ contains
 ! NOTE: if you update the temperature here, then you should not add the
 ! reaction term explicitly to the temperature equation force returned 
 ! by mktempforce in scalar advance, since you will be double counting.
-!
-!          den_eos(1)  = s_out(i,j,rho_comp)
-!          h_eos(1)    = s_out(i,j,rhoh_comp)/s_out(i,j,rho_comp)
-!          xn_eos(1,:) = s_out(i,j,spec_comp:spec_comp+nspec-1)/s_out(i,j,rho_comp)
-!          temp_eos(1) = T_in
-!
-!          call eos(eos_input_rh, den_eos, temp_eos, &
-!               npts, nspec, &
-!               xn_eos, &
-!               p_eos, h_eos, e_eos, &
-!               cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-!               dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-!               dpdX_eos, dhdX_eos, &
-!               gam1_eos, cs_eos, s_eos, &
-!               dsdt_eos, dsdr_eos, &
-!               do_diag)
-!
-!          s_out(i,j,temp_comp) = temp_eos(1)
+
+          if (enthalpy_pred_type .eq. predict_Tprime_then_h) then
+             den_eos(1)  = s_out(i,j,rho_comp)
+             h_eos(1)    = s_out(i,j,rhoh_comp)/s_out(i,j,rho_comp)
+             xn_eos(1,:) = s_out(i,j,spec_comp:spec_comp+nspec-1)/s_out(i,j,rho_comp)
+             temp_eos(1) = T_in
+             
+             call eos(eos_input_rh, den_eos, temp_eos, &
+                      npts, nspec, &
+                      xn_eos, &
+                      p_eos, h_eos, e_eos, &
+                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                      dpdX_eos, dhdX_eos, &
+                      gam1_eos, cs_eos, s_eos, &
+                      dsdt_eos, dsdr_eos, &
+                      do_diag)
+             
+             s_out(i,j,temp_comp) = temp_eos(1)
+          end if
+
 !**********************************************
 
           s_out(i,j,temp_comp) = s_in(i,j,temp_comp)
@@ -222,7 +225,7 @@ contains
     use burner_module
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp, trac_comp, ntrac
     use network, only: nspec, ebin
-    use probin_module, ONLY: do_burning, burning_cutoff_density
+    use probin_module, ONLY: do_burning, burning_cutoff_density, enthalpy_pred_type
     use bl_constants_module, only: zero
     use eos_module
 
@@ -271,24 +274,27 @@ contains
 ! NOTE: if you update the temperature here, then you should not add the
 ! reaction term explicitly to the temperature equation force returned 
 ! by mktempforce in scalar advance, since you will be double counting.
-!
-!          den_eos(1)  = s_out(i,j,k,rho_comp)
-!          h_eos(1)    = s_out(i,j,k,rhoh_comp)/s_out(i,j,k,rho_comp)
-!          xn_eos(1,:) = s_out(i,j,k,spec_comp:spec_comp+nspec-1)/s_out(i,j,k,rho_comp)
-!          temp_eos(1) = T_in
-!
-!          call eos(eos_input_rh, den_eos, temp_eos, &
-!               npts, nspec, &
-!               xn_eos, &
-!               p_eos, h_eos, e_eos, &
-!               cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-!               dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-!               dpdX_eos, dhdX_eos, &
-!               gam1_eos, cs_eos, s_eos, &
-!               dsdt_eos, dsdr_eos, &
-!               do_diag)
-!
-!          s_out(i,j,k,temp_comp) = temp_eos(1)
+
+          if (enthalpy_pred_type .eq. predict_Tprime_then_h) then
+             den_eos(1)  = s_out(i,j,k,rho_comp)
+             h_eos(1)    = s_out(i,j,k,rhoh_comp)/s_out(i,j,k,rho_comp)
+             xn_eos(1,:) = s_out(i,j,k,spec_comp:spec_comp+nspec-1)/s_out(i,j,k,rho_comp)
+             temp_eos(1) = T_in
+             
+             call eos(eos_input_rh, den_eos, temp_eos, &
+                      npts, nspec, &
+                      xn_eos, &
+                      p_eos, h_eos, e_eos, &
+                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                      dpdX_eos, dhdX_eos, &
+                      gam1_eos, cs_eos, s_eos, &
+                      dsdt_eos, dsdr_eos, &
+                      do_diag)
+             
+             s_out(i,j,k,temp_comp) = temp_eos(1)
+          end if
+
 !**********************************************
 
           s_out(i,j,k,temp_comp) = s_in(i,j,k,temp_comp)
