@@ -220,9 +220,15 @@ contains
        call put_in_pert_form(mla,sold,h0_old,dx,rhoh_comp,foextrap_comp,.true.,the_bc_level)
     end if
 
+    if (enthalpy_pred_type .eq. predict_Tprime_then_h) then
+       ! convert T -> T'
+       call put_in_pert_form(mla,sold,tempbar,dx,temp_comp,foextrap_comp,.true.,the_bc_level)
+    end if
+
     ! predict either T, h, or (rho h)' at the edges
     if ( (enthalpy_pred_type .eq. predict_T_then_rhohprime) .or. &
-         (enthalpy_pred_type .eq. predict_T_then_h        )  ) then
+         (enthalpy_pred_type .eq. predict_T_then_h        ) .or. &
+         (enthalpy_pred_type .eq. predict_Tprime_then_h) ) then
        pred_comp = temp_comp
     else
        pred_comp = rhoh_comp
@@ -242,6 +248,12 @@ contains
     if (enthalpy_pred_type .eq. predict_hprime) then
        ! convert h' -> h
        call put_in_pert_form(mla,sold,h0_old,dx,rhoh_comp,foextrap_comp,.false.,the_bc_level)
+    end if
+
+    if (enthalpy_pred_type .eq. predict_Tprime_then_h) then
+       ! convert T' -> T
+       call put_in_pert_form(mla,sold,tempbar,dx,temp_comp,foextrap_comp,.false., &
+                             the_bc_level)
     end if
 
     if (enthalpy_pred_type .eq. predict_h .or. &
