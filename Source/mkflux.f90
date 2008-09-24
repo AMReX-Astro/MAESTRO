@@ -189,7 +189,8 @@ contains
        ! test = T means the edge states are NOT in perturbational form
        test = ( (comp.eq.rhoh_comp).and. &
                      ( enthalpy_pred_type.eq.predict_h .or. &
-                       enthalpy_pred_type.eq.predict_T_then_h ) ) &
+                       enthalpy_pred_type.eq.predict_T_then_h .or. &
+                       enthalpy_pred_type.eq.predict_Tprime_then_h) ) &
          .or. ( (comp.ge.trac_comp).and.(comp.le.trac_comp+ntrac-1) )
 
        test2 = (comp.eq.rhoh_comp .and. enthalpy_pred_type.eq.predict_hprime)
@@ -311,7 +312,8 @@ contains
        ! test = T means the edge states are NOT in perturbational form
        test = ( (comp.eq.rhoh_comp).and. &
                      ( enthalpy_pred_type.eq.predict_h .or. &
-                       enthalpy_pred_type.eq.predict_T_then_h ) ) &
+                       enthalpy_pred_type.eq.predict_T_then_h .or. &
+                       enthalpy_pred_type.eq.predict_Tprime_then_h) ) &
          .or. ( (comp.ge.trac_comp).and.(comp.le.trac_comp+ntrac-1) )
 
        test2 = (comp.eq.rhoh_comp .and. enthalpy_pred_type.eq.predict_hprime)
@@ -465,7 +467,8 @@ contains
        ! test = T means the edge states are NOT in perturbational form
        test = ( (comp.eq.rhoh_comp).and. &
                      ( enthalpy_pred_type.eq.predict_h .or. &
-                       enthalpy_pred_type.eq.predict_T_then_h ) ) &
+                       enthalpy_pred_type.eq.predict_T_then_h .or. &
+                       enthalpy_pred_type.eq.predict_Tprime_then_h) ) &
          .or. ( (comp.ge.trac_comp).and.(comp.le.trac_comp+ntrac-1) )
 
        test2 = (comp.eq.rhoh_comp .and. enthalpy_pred_type.eq.predict_hprime)

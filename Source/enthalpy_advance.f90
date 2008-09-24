@@ -68,6 +68,8 @@ contains
     type(multifab) :: rho0_new_cart(mla%nlevel)
     type(multifab) :: rhoh0_old_cart(mla%nlevel)
     type(multifab) :: rhoh0_new_cart(mla%nlevel)
+    type(multifab) :: t0_old_cart(mla%nlevel)
+    type(multifab) :: t0_new_cart(mla%nlevel)
     type(multifab) :: p0_new_cart(mla%nlevel)
 
     integer    :: pred_comp,n,r,i
@@ -84,6 +86,8 @@ contains
     real(kind=dp_t) :: rho0_edge_new(nlevs,0:nr_fine)
     real(kind=dp_t) :: rhoh0_edge_old(nlevs,0:nr_fine)
     real(kind=dp_t) :: rhoh0_edge_new(nlevs,0:nr_fine)
+    real(kind=dp_t) :: t0_edge_old(nlevs,0:nr_fine)
+    real(kind=dp_t) :: t0_edge_new(nlevs,0:nr_fine)
 
     type(bl_prof_timer), save :: bpt
 
@@ -96,6 +100,8 @@ contains
        call cell_to_edge(n,rho0_new(n,:),rho0_edge_new(n,:))
        call cell_to_edge(n,rhoh0_old(n,:),rhoh0_edge_old(n,:))
        call cell_to_edge(n,rhoh0_new(n,:),rhoh0_edge_new(n,:))
+       call cell_to_edge(n,tempbar(n,:),t0_edge_old(n,:))
+       call cell_to_edge(n,tempbar(n,:),t0_edge_new(n,:))
     end do
 
     ! Define rho0_old_cart and rho0_new_cart
@@ -106,6 +112,8 @@ contains
           call build(rho0_new_cart(n), sold(n)%la, 1, 1)
           call build(rhoh0_old_cart(n), sold(n)%la, 1, 1)
           call build(rhoh0_new_cart(n), sold(n)%la, 1, 1)
+          call build(t0_old_cart(n), sold(n)%la, 1, 1)
+          call build(t0_new_cart(n), sold(n)%la, 1, 1)
           call build(p0_new_cart(n), sold(n)%la, 1, 1)          
        end do
 
@@ -116,7 +124,6 @@ contains
        call put_1d_array_on_cart(p0_new,p0_new_cart,foextrap_comp,.false., &
                                  .false.,dx,the_bc_level,mla)
 
-
        if (enthalpy_pred_type .eq. predict_T_then_rhohprime .or. &
            enthalpy_pred_type .eq. predict_rhohprime .or. &
            enthalpy_pred_type .eq. predict_hprime) then
@@ -125,6 +132,14 @@ contains
           call put_1d_array_on_cart(rhoh0_new,rhoh0_new_cart,dm+rhoh_comp,.false., &
                                     .false.,dx,the_bc_level,mla)
        end if
+
+       if (enthalpy_pred_type .eq. predict_Tprime_then_h) then
+          call put_1d_array_on_cart(tempbar,t0_old_cart,dm+temp_comp,.false., &
+                                    .false.,dx,the_bc_level,mla)
+          call put_1d_array_on_cart(tempbar,t0_new_cart,dm+temp_comp,.false., &
+                                    .false.,dx,the_bc_level,mla)
+       end if
+
     end if
 
     ! This can be uncommented if you wish to compute T
@@ -265,11 +280,13 @@ contains
     ! Compute enthalpy edge states if we were predicting temperature.  This
     ! needs to be done after the state was returned to the full state.
     if ( (enthalpy_pred_type .eq. predict_T_then_rhohprime) .or. &
-         (enthalpy_pred_type .eq. predict_T_then_h        ) ) then
-       call makeHfromRhoT_edge(uold,sedge,rho0_old,rhoh0_old, &
-                               rho0_edge_old,rhoh0_edge_old, &
-                               rho0_new,rhoh0_new, &
-                               rho0_edge_new,rhoh0_edge_new,the_bc_level,dx)
+         (enthalpy_pred_type .eq. predict_T_then_h        ) .or. &
+         (enthalpy_pred_type .eq. predict_Tprime_then_h) ) then
+       call makeHfromRhoT_edge(uold,sedge,rho0_old,rhoh0_old,tempbar, &
+                               rho0_edge_old,rhoh0_edge_old,t0_edge_old, &
+                               rho0_new,rhoh0_new,tempbar, &
+                               rho0_edge_new,rhoh0_edge_new,t0_edge_new, &
+                               the_bc_level,dx)
     end if
 
     !**************************************************************************
