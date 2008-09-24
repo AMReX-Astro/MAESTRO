@@ -92,12 +92,12 @@ contains
        end do
     end if
 
-    do n=1,nlevs
+    if (spherical .eq. 1) then
+       call put_1d_array_on_cart(p0_nph,p0_cart,foextrap_comp,.false.,.false.,&
+                                 dx,the_bc_level,mla)
+    end if
 
-       if (spherical .eq. 1) then
-          call put_1d_array_on_cart(p0_nph,p0_cart,foextrap_comp,.false.,.false.,&
-                                    dx,the_bc_level,mla)
-       end if
+    do n=1,nlevs
 
        rho0(:) = HALF * (rho0_old(n,:) + rho0_new(n,:))
        call make_grav_cell(n,grav,rho0)
@@ -746,6 +746,8 @@ contains
           p0_nph(n,:) = HALF * (p0_old(n,:) + p0_new(n,:))
           call multifab_build(p0_cart(n),mla%la(n),1,1)
        end do
+       call put_1d_array_on_cart(p0_nph,p0_cart,foextrap_comp,.false.,.false.,&
+                                 dx,the_bc_level,mla)
     end if
 
     do n=1,nlevs
