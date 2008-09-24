@@ -227,7 +227,9 @@ contains
     end do
     
     ! tempbar is only used as an initial guess for eos calls
-    call average(mla,sold,tempbar,dx,temp_comp)
+    if (enthalpy_pred_type .ne. predict_Tprime_then_h) then
+       call average(mla,sold,tempbar,dx,temp_comp)
+    end if
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 1 -- define average expansion at time n+1/2
