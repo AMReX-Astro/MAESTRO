@@ -58,7 +58,6 @@ contains
     use make_gamma_module
     use rhoh_vs_t_module
     use probin_module
-    use bl_prof_module
     
     logical,         intent(in   ) :: init_mode
     type(ml_layout), intent(inout) :: mla
