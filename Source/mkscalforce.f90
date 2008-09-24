@@ -696,7 +696,7 @@ contains
 
   end subroutine mkhprimeforce_3d_sphr
 
-  subroutine mktempforce(mla,temp_force,umac,s,thermal,p0_old,p0_new,psi,&
+  subroutine mktempforce(mla,temp_force,umac,s,thermal,p0_old,p0_new,t0_old,t0_new,psi,&
                          dx,the_bc_level)
 
     use bl_prof_module
@@ -715,6 +715,8 @@ contains
     type(multifab) , intent(in   ) :: thermal(:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_new(:,0:)
+    real(kind=dp_t), intent(in   ) :: t0_old(:,0:)
+    real(kind=dp_t), intent(in   ) :: t0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: psi(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     type(bc_level) , intent(in   ) :: the_bc_level(:)
@@ -722,7 +724,9 @@ contains
     ! local
     integer         :: i,n,ng_f,ng_um,ng_s,ng_th
     type(multifab)  :: p0_cart(mla%nlevel)
+    type(multifab)  :: t0_cart(mla%nlevel)
     real(kind=dp_t) :: p0_nph(mla%nlevel,0:nr_fine-1)
+    real(kind=dp_t) :: t0_nph(mla%nlevel,0:nr_fine-1)
     integer         :: lo(dm),hi(dm)
 
     real(kind=dp_t), pointer :: tp(:,:,:,:)
@@ -732,6 +736,7 @@ contains
     real(kind=dp_t), pointer :: sp(:,:,:,:)
     real(kind=dp_t), pointer :: fp(:,:,:,:)
     real(kind=dp_t), pointer :: pp(:,:,:,:)
+    real(kind=dp_t), pointer :: tpp(:,:,:,:)
 
     type(bl_prof_timer), save :: bpt
 
@@ -745,9 +750,13 @@ contains
     if (spherical .eq. 1) then
        do n = 1,nlevs
           p0_nph(n,:) = HALF * (p0_old(n,:) + p0_new(n,:))
+          t0_nph(n,:) = HALF * (t0_old(n,:) + t0_new(n,:))
           call multifab_build(p0_cart(n),mla%la(n),1,1)
+          call multifab_build(t0_cart(n),mla%la(n),1,1)
        end do
        call put_1d_array_on_cart(p0_nph,p0_cart,foextrap_comp,.false.,.false.,&
+                                 dx,the_bc_level,mla)
+       call put_1d_array_on_cart(t0_nph,t0_cart,foextrap_comp,.false.,.false.,&
                                  dx,the_bc_level,mla)
     end if
 
@@ -771,10 +780,11 @@ contains
              wmp => dataptr(umac(n,3),i)
              if (spherical .eq. 1) then
                 pp  => dataptr(p0_cart(n),i)
+                tpp => dataptr(t0_cart(n),i)
                 call mktempforce_3d_sphr(n,fp(:,:,:,temp_comp), ng_f, sp(:,:,:,:), ng_s, &
                                          ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
                                          tp(:,:,:,1), ng_th, lo, hi, &
-                                         pp(:,:,:,1), psi(n,:), dx(n,:))
+                                         pp(:,:,:,1), tpp(:,:,:,1), psi(n,:), dx(n,:))
              else
                 call mktempforce_3d(n, fp(:,:,:,temp_comp), ng_f, sp(:,:,:,:), ng_s, &
                                     wmp(:,:,:,1), ng_um, tp(:,:,:,1), ng_th, lo, hi, &
@@ -964,12 +974,14 @@ contains
   end subroutine mktempforce_3d
 
   subroutine mktempforce_3d_sphr(n,temp_force, ng_f, s, ng_s, umac, vmac, wmac, ng_um, &
-                                 thermal, ng_th, lo, hi, p0_cart, psi, dx)
+                                 thermal, ng_th, lo, hi, p0_cart, t0_cart, psi, dx)
 
     use fill_3d_module
     use variables, only: temp_comp, rho_comp, spec_comp
     use eos_module
     use geometry,  only: dr, nr_fine
+    use probin_module, only: enthalpy_pred_type
+    use pred_parameters
 
     ! compute the source terms for temperature
 
@@ -980,73 +992,107 @@ contains
     real(kind=dp_t), intent(in   ) ::       vmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(in   ) ::       wmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(in   ) ::    thermal(lo(1)-ng_th:,lo(2)-ng_th:,lo(3)-ng_th:)
-    real(kind=dp_t), intent(in   ) ::    p0_cart(lo(1)-   1 :,lo(2)-   1 :,lo(3)-   1 :)
+    real(kind=dp_t), intent(in   ) ::    p0_cart(lo(1)-1    :,lo(2)-1    :,lo(3)-1    :)
+    real(kind=dp_t), intent(in   ) ::    t0_cart(lo(1)-1    :,lo(2)-1    :,lo(3)-1    :)
     real(kind=dp_t), intent(in   ) :: psi(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
 
     integer :: i,j,k,r
     real(kind=dp_t) :: p0_lox,p0_hix,p0_loy,p0_hiy,p0_loz,p0_hiz,p0_cen
     real(kind=dp_t) :: divup,p0divu,ugradp,dhdp
+    real(kind=dp_t) :: t0_lox,t0_hix,t0_loy,t0_hiy,t0_loz,t0_hiz,t0_cen
+    real(kind=dp_t) :: divut,t0divu
     real(kind=dp_t), allocatable :: psi_cart(:,:,:,:)
 
     allocate(psi_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
     call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,psi,psi_cart,lo,hi,dx,0,0)
 
     do k = lo(3),hi(3)
-     do j = lo(2),hi(2)
-       do i = lo(1),hi(1)
-        
-         temp_eos(1)   = s(i,j,k,temp_comp)
-          den_eos(1)   = s(i,j,k,rho_comp)
-           xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1) / s(i,j,k,rho_comp)
+       do j = lo(2),hi(2)
+          do i = lo(1),hi(1)
+             
+             temp_eos(1)   = s(i,j,k,temp_comp)
+             den_eos(1)   = s(i,j,k,rho_comp)
+             xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1) / s(i,j,k,rho_comp)
+             
+             ! dens, temp, xmass inputs
+             call eos(eos_input_rt, den_eos, temp_eos, &
+                      npts, nspec, &
+                      xn_eos, &
+                      p_eos, h_eos, e_eos, &
+                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                      dpdX_eos, dhdX_eos, &
+                      gam1_eos, cs_eos, s_eos, &
+                      dsdt_eos, dsdr_eos, &
+                      do_diag)
+             
+             dhdp = ONE / s(i,j,k,rho_comp) + ( s(i,j,k,rho_comp) * dedr_eos(1) - &
+                                                p_eos(1) / s(i,j,k,rho_comp) ) &
+                                                / ( s(i,j,k,rho_comp) * dpdr_eos(1) )
 
-          ! dens, temp, xmass inputs
-         call eos(eos_input_rt, den_eos, temp_eos, &
-                  npts, nspec, &
-                  xn_eos, &
-                  p_eos, h_eos, e_eos, &
-                  cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                  dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                  dpdX_eos, dhdX_eos, &
-                  gam1_eos, cs_eos, s_eos, &
-                  dsdt_eos, dsdr_eos, &
-                  do_diag)
+             p0_lox = HALF * (p0_cart(i,j,k) + p0_cart(i-1,j,k)) 
+             p0_hix = HALF * (p0_cart(i,j,k) + p0_cart(i+1,j,k)) 
+             p0_loy = HALF * (p0_cart(i,j,k) + p0_cart(i,j-1,k)) 
+             p0_hiy = HALF * (p0_cart(i,j,k) + p0_cart(i,j+1,k)) 
+             p0_loz = HALF * (p0_cart(i,j,k) + p0_cart(i,j,k-1)) 
+             p0_hiz = HALF * (p0_cart(i,j,k) + p0_cart(i,j,k+1)) 
+             
+             divup = (umac(i+1,j,k) * p0_hix - umac(i,j,k) * p0_lox) / dx(1) + &
+                     (vmac(i,j+1,k) * p0_hiy - vmac(i,j,k) * p0_loy) / dx(2) + &
+                     (wmac(i,j,k+1) * p0_hiz - wmac(i,j,k) * p0_loz) / dx(3)
 
-         dhdp = ONE / s(i,j,k,rho_comp) + ( s(i,j,k,rho_comp) * dedr_eos(1) - &
-                                            p_eos(1) / s(i,j,k,rho_comp) ) &
-                                          / ( s(i,j,k,rho_comp) * dpdr_eos(1) )
+             ! This version of p0_cen seems to give a better tfromh
+             p0_cen = (p0_lox + p0_hix + p0_loy + p0_hiy + p0_loz + p0_hiz) / 6.d0
+             ! p0_cen = p0_cart(i,j,k)
 
-         p0_lox = HALF * (p0_cart(i,j,k) + p0_cart(i-1,j,k)) 
-         p0_hix = HALF * (p0_cart(i,j,k) + p0_cart(i+1,j,k)) 
-         p0_loy = HALF * (p0_cart(i,j,k) + p0_cart(i,j-1,k)) 
-         p0_hiy = HALF * (p0_cart(i,j,k) + p0_cart(i,j+1,k)) 
-         p0_loz = HALF * (p0_cart(i,j,k) + p0_cart(i,j,k-1)) 
-         p0_hiz = HALF * (p0_cart(i,j,k) + p0_cart(i,j,k+1)) 
+             p0divu = ( (umac(i+1,j,k) - umac(i,j,k)) / dx(1) + &
+                        (vmac(i,j+1,k) - vmac(i,j,k)) / dx(2) + &
+                        (wmac(i,j,k+1) - wmac(i,j,k)) / dx(3) ) * p0_cen
+             
+             ugradp = divup - p0divu
+             
+             temp_force(i,j,k) =  thermal(i,j,k) + &
+                  (ONE - s(i,j,k,rho_comp) * dhdp) * (ugradp + psi_cart(i,j,k,1))
 
-         divup = (umac(i+1,j,k) * p0_hix - umac(i,j,k) * p0_lox) / dx(1) + &
-                 (vmac(i,j+1,k) * p0_hiy - vmac(i,j,k) * p0_loy) / dx(2) + &
-                 (wmac(i,j,k+1) * p0_hiz - wmac(i,j,k) * p0_loz) / dx(3)
-
-         ! This version of p0_cen seems to give a better tfromh
-         p0_cen = (p0_lox + p0_hix + p0_loy + p0_hiy + p0_loz + p0_hiz) / 6.d0
-!        p0_cen = p0_cart(i,j,k)
-
-         p0divu = ( (umac(i+1,j,k) - umac(i,j,k)) / dx(1) + &
-                    (vmac(i,j+1,k) - vmac(i,j,k)) / dx(2) + &
-                    (wmac(i,j,k+1) - wmac(i,j,k)) / dx(3) ) * p0_cen
-
-         ugradp = divup - p0divu
-
-         temp_force(i,j,k) =  thermal(i,j,k) + &
-                              (ONE - s(i,j,k,rho_comp) * dhdp) * &
-                              (ugradp + psi_cart(i,j,k,1))
-
-         temp_force(i,j,k) = temp_force(i,j,k) / (cp_eos(1) * s(i,j,k,rho_comp))
-
+             temp_force(i,j,k) = temp_force(i,j,k) / (cp_eos(1) * s(i,j,k,rho_comp))
+             
+          end do
        end do
-     end do
     end do
 
+    if (enthalpy_pred_type .eq. predict_Tprime_then_h) then
+
+       do k = lo(3),hi(3)
+          do j = lo(2),hi(2)
+             do i = lo(1),hi(1)
+
+                t0_lox = HALF * (t0_cart(i,j,k) + t0_cart(i-1,j,k)) 
+                t0_hix = HALF * (t0_cart(i,j,k) + t0_cart(i+1,j,k)) 
+                t0_loy = HALF * (t0_cart(i,j,k) + t0_cart(i,j-1,k)) 
+                t0_hiy = HALF * (t0_cart(i,j,k) + t0_cart(i,j+1,k)) 
+                t0_loz = HALF * (t0_cart(i,j,k) + t0_cart(i,j,k-1)) 
+                t0_hiz = HALF * (t0_cart(i,j,k) + t0_cart(i,j,k+1)) 
+                
+                divut = (umac(i+1,j,k) * t0_hix - umac(i,j,k) * t0_lox) / dx(1) + &
+                        (vmac(i,j+1,k) * t0_hiy - vmac(i,j,k) * t0_loy) / dx(2) + &
+                        (wmac(i,j,k+1) * t0_hiz - wmac(i,j,k) * t0_loz) / dx(3)
+                
+                t0_cen = (t0_lox + t0_hix + t0_loy + t0_hiy + t0_loz + t0_hiz) / 6.d0
+                ! t0_cen = t0_cart(i,j,k)
+                
+                t0divu = ( (umac(i+1,j,k) - umac(i,j,k)) / dx(1) + &
+                           (vmac(i,j+1,k) - vmac(i,j,k)) / dx(2) + &
+                           (wmac(i,j,k+1) - wmac(i,j,k)) / dx(3) ) * t0_cen
+                
+                temp_force(i,j,k) = temp_force(i,j,k) + t0divu - divut
+
+             end do
+          end do
+       end do
+
+    end if
+    
     deallocate(psi_cart)
 
   end subroutine mktempforce_3d_sphr
