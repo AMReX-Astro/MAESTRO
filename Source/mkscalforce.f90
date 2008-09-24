@@ -509,11 +509,11 @@ contains
           hi = upb(get_box(scal_force(n),i))
           select case (dm)
           case (2)
-
+             call bl_error("mkscalforce: mkhprime force not written for 2d")       
           case(3)
              wmp  => dataptr(umac(n,3), i)
              if (spherical .eq. 0) then
-
+             call bl_error("mkscalforce: mkhprime force not written for 3d plane parallel")
              else
                 pp  => dataptr(p0_cart(n),i)
                 hp  => dataptr(h0_cart(n),i)
