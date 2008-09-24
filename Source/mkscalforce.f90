@@ -706,6 +706,7 @@ contains
     use multifab_fill_ghost_module
     use multifab_physbc_module
     use probin_module, only: nlevs
+    use fill_3d_module, only: put_1d_array_on_cart
 
     type(ml_layout), intent(in   ) :: mla
     type(multifab) , intent(inout) :: temp_force(:)
