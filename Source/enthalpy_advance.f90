@@ -267,7 +267,7 @@ contains
 
     if (enthalpy_pred_type .eq. predict_Tprime_then_h) then
        ! convert T' -> T
-       call put_in_pert_form(mla,sold,tempbar,dx,temp_comp,foextrap_comp,.false., &
+       call put_in_pert_form(mla,sold,tempbar,dx,temp_comp,dm+temp_comp,.false., &
                              the_bc_level)
     end if
 
