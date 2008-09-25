@@ -223,7 +223,6 @@ contains
 
     use geometry, only: r_cc_loc, nr_fine, r_edge_loc, dr
     use make_grav_module
-    use cell_to_edge_module
     use bl_constants_module
     use fundamental_constants_module, only: Gconst
     use probin_module, only: dpdt_factor, base_cutoff_density
