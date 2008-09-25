@@ -95,18 +95,10 @@ contains
 
     is_vel  = .false.
 
-    do n = 1, nlevs
-       call cell_to_edge(n,rho0_old(n,:),rho0_edge_old(n,:))
-       call cell_to_edge(n,rho0_new(n,:),rho0_edge_new(n,:))
-       call cell_to_edge(n,rhoh0_old(n,:),rhoh0_edge_old(n,:))
-       call cell_to_edge(n,rhoh0_new(n,:),rhoh0_edge_new(n,:))
-       call cell_to_edge(n,tempbar(n,:),t0_edge_old(n,:))
-       call cell_to_edge(n,tempbar(n,:),t0_edge_new(n,:))
-    end do
-
-    ! Define rho0_old_cart and rho0_new_cart
-    ! Define rhoh0_old_cart and rhoh0_new_cart
     if (spherical .eq. 1) then
+
+       ! Define rho0_old_cart and rho0_new_cart
+       ! Define rhoh0_old_cart and rhoh0_new_cart
        do n=1,nlevs
           call build(rho0_old_cart(n), sold(n)%la, 1, 1)
           call build(rho0_new_cart(n), sold(n)%la, 1, 1)
@@ -139,6 +131,17 @@ contains
           call put_1d_array_on_cart(tempbar,t0_new_cart,dm+temp_comp,.false., &
                                     .false.,dx,the_bc_level,mla)
        end if
+
+    else
+
+       do n = 1, nlevs
+          call cell_to_edge(n,rho0_old(n,:),rho0_edge_old(n,:))
+          call cell_to_edge(n,rho0_new(n,:),rho0_edge_new(n,:))
+          call cell_to_edge(n,rhoh0_old(n,:),rhoh0_edge_old(n,:))
+          call cell_to_edge(n,rhoh0_new(n,:),rhoh0_edge_new(n,:))
+          call cell_to_edge(n,tempbar(n,:),t0_edge_old(n,:))
+          call cell_to_edge(n,tempbar(n,:),t0_edge_new(n,:))
+       end do
 
     end if
 

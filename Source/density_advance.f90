@@ -62,8 +62,8 @@ contains
     logical    :: is_vel
     real(dp_t) :: smin,smax
 
-    real(kind=dp_t), allocatable :: rho0_edge_old(:,:)
-    real(kind=dp_t), allocatable :: rho0_edge_new(:,:)
+    real(kind=dp_t) :: rho0_edge_old(nlevs,0:nr_fine)
+    real(kind=dp_t) :: rho0_edge_new(nlevs,0:nr_fine)
 
     type(bl_prof_timer), save :: bpt
 
@@ -71,21 +71,10 @@ contains
 
     is_vel  = .false.
 
-    ! create edge-centered base state quantities.
-    ! Note: rho0_edge_{old,new} 
-    ! contains edge-centered quantities created via spatial interpolation.
-    ! This is to be contrasted to rho0_predicted_edge which is the half-time
-    ! edge state created in advect_base.
-    allocate(rho0_edge_old (nlevs,0:nr_fine))
-    allocate(rho0_edge_new (nlevs,0:nr_fine))
 
-    do n = 1, nlevs
-       call cell_to_edge(n,rho0_old(n,:),rho0_edge_old(n,:))
-       call cell_to_edge(n,rho0_new(n,:),rho0_edge_new(n,:))
-    end do
-
-    ! Define rho0_old_cart and rho0_new_cart
     if (spherical .eq. 1) then
+       
+       ! Define rho0_old_cart and rho0_new_cart
        do n=1,nlevs
           call build(rho0_old_cart(n), sold(n)%la, 1, 1)
           call build(rho0_new_cart(n), sold(n)%la, 1, 1)
@@ -98,6 +87,19 @@ contains
                                  .false.,dx,the_bc_level,mla)
        call put_1d_array_on_cart(p0_new,p0_new_cart,foextrap_comp,.false., &
                                  .false.,dx,the_bc_level,mla)
+
+    else
+
+       ! create edge-centered base state quantities.
+       ! Note: rho0_edge_{old,new} 
+       ! contains edge-centered quantities created via spatial interpolation.
+       ! This is to be contrasted to rho0_predicted_edge which is the half-time
+       ! edge state created in advect_base.       
+       do n = 1, nlevs
+          call cell_to_edge(n,rho0_old(n,:),rho0_edge_old(n,:))
+          call cell_to_edge(n,rho0_new(n,:),rho0_edge_new(n,:))
+       end do
+
     end if
 
     !**************************************************************************

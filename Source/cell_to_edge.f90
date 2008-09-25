@@ -13,7 +13,7 @@ contains
   subroutine cell_to_edge(n,s0_cell,s0_edge)
 
     use bl_constants_module
-    use geometry, only: r_start_coord, r_end_coord, nr, numdisjointchunks
+    use geometry, only: r_start_coord, r_end_coord, nr, numdisjointchunks, spherical
 
     integer        , intent(in   ) :: n
     real(kind=dp_t), intent(in   ) :: s0_cell(0:)
@@ -21,6 +21,10 @@ contains
     
     real(kind=dp_t)                ::  s0min,s0max,tmp
     integer                        ::  r,i
+
+    if (spherical .eq. 1) then
+       call bl_error('calling cell_to_edge with spherical .eq. 1')
+    end if
 
     do i=1,numdisjointchunks(n)
        do r=r_start_coord(n,i),r_end_coord(n,i)+1
