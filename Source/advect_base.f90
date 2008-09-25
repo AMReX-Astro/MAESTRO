@@ -78,16 +78,9 @@ contains
     ! Local variables
     integer :: r, n, i
     
-    real (kind = dp_t), allocatable :: force(:,:)
-    real (kind = dp_t), allocatable :: edge(:,:)
-    real (kind = dp_t), allocatable :: h0(:,:)
-
-    ! Cell-centered
-    allocate(force(nlevs,0:nr_fine-1))
-    allocate(   h0(nlevs,0:nr_fine-1))
-
-    ! Edge-centered
-    allocate(edge(nlevs,0:nr_fine))
+    real (kind=dp_t) :: force(nlevs,0:nr_fine-1)
+    real (kind=dp_t) ::    h0(nlevs,0:nr_fine-1)
+    real (kind=dp_t) ::  edge(nlevs,0:nr_fine)
    
     rho0_predicted_edge = ZERO
 
@@ -181,8 +174,6 @@ contains
        end do
     end do
     
-    deallocate(force,edge,h0)
-    
   end subroutine advect_base_state_planar
 
   
@@ -216,33 +207,19 @@ contains
     real(kind=dp_t) :: divw,p0_avg
     real(kind=dp_t) :: w0dpdr_avg,w0dpdr_avg_1,w0dpdr_avg_2
 
-    real (kind = dp_t), allocatable :: force(:,:)
-    real (kind = dp_t), allocatable :: psi(:,:)
-    real (kind = dp_t), allocatable :: edge(:,:)
-    real (kind = dp_t), allocatable :: h0(:,:)
-    real (kind = dp_t), allocatable :: div_coeff_new(:,:)
-    real (kind = dp_t), allocatable :: beta(:,:),beta_new(:,:),beta_nh(:,:)
-    real (kind = dp_t), allocatable :: gamma1bar_old(:,:)
-    real (kind = dp_t), allocatable :: grav_cell(:,:)
-    real (kind = dp_t), allocatable :: grav_edge(:,:)
+    real (kind = dp_t) ::         force(nlevs,0:nr_fine-1)
+    real (kind = dp_t) ::           psi(nlevs,0:nr_fine-1)
+    real (kind = dp_t) ::            h0(nlevs,0:nr_fine-1)
+    real (kind = dp_t) :: div_coeff_new(nlevs,0:nr_fine-1)
+    real (kind = dp_t) :: gamma1bar_old(nlevs,0:nr_fine-1)
+    real (kind = dp_t) ::     grav_cell(nlevs,0:nr_fine-1)
+    real (kind = dp_t) ::          edge(nlevs,0:nr_fine)
+    real (kind = dp_t) ::          beta(nlevs,0:nr_fine)
+    real (kind = dp_t) ::      beta_new(nlevs,0:nr_fine)
+    real (kind = dp_t) ::       beta_nh(nlevs,0:nr_fine)
+    real (kind = dp_t) ::     grav_edge(nlevs,0:nr_fine)
     
     dtdr = dt / dr(nlevs)
-    
-    ! Cell-centered
-    allocate(        force(nlevs,0:nr_fine-1))
-    allocate(gamma1bar_old(nlevs,0:nr_fine-1))
-    allocate(    grav_cell(nlevs,0:nr_fine-1))
-    allocate(div_coeff_new(nlevs,0:nr_fine-1))
-    allocate(          psi(nlevs,0:nr_fine-1))
-    allocate(           h0(nlevs,0:nr_fine-1))
-    
-    ! Edge-centered
-    allocate(grav_edge(nlevs,0:nr_fine))
-    allocate(     edge(nlevs,0:nr_fine))
-    allocate(     beta(nlevs,0:nr_fine))
-    allocate( beta_new(nlevs,0:nr_fine))
-    allocate(  beta_nh(nlevs,0:nr_fine))
-
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Predict rho_0 to vertical edges
@@ -453,9 +430,6 @@ contains
 
     end do
        
-    deallocate(force,psi,edge,beta,beta_new,beta_nh,div_coeff_new,gamma1bar_old)
-    deallocate(grav_cell,grav_edge,h0)
-    
   end subroutine advect_base_state_spherical
   
 end module advect_base_module
