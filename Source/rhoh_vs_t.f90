@@ -416,7 +416,7 @@ contains
     integer :: i, j, k
     real(kind=dp_t) rho0_edge, rho0min, rho0max
     real(kind=dp_t) rhoh0_edge, rhoh0min, rhoh0max
-    real(kind=dp_t) t0_edge
+    real(kind=dp_t) t0_edge, t0min, t0max
     
     do_diag = .false.
 
@@ -427,6 +427,13 @@ contains
              if (enthalpy_pred_type .eq. predict_Tprime_then_h) then
                 t0_edge = 7.d0/12.d0 * (t0_cart(i  ,j,k) + t0_cart(i-1,j,k)) &
                      -1.d0/12.d0 * (t0_cart(i+1,j,k) + t0_cart(i-2,j,k))
+
+                t0min = min(t0_cart(i,j,k),t0_cart(i-1,j,k))
+                t0max = max(t0_cart(i,j,k),t0_cart(i-1,j,k))
+
+                t0_edge = max(t0_edge, t0min)
+                t0_edge = min(t0_edge, t0max)
+
                 temp_eos(1) = max(sx(i,j,k,temp_comp)+t0_edge,small_temp)
              else
                 temp_eos(1) = max(sx(i,j,k,temp_comp),small_temp)
