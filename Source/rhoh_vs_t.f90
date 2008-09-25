@@ -414,9 +414,7 @@ contains
     
     ! Local variables
     integer :: i, j, k
-    real(kind=dp_t) rho0_edge, rho0min, rho0max
-    real(kind=dp_t) rhoh0_edge, rhoh0min, rhoh0max
-    real(kind=dp_t) t0_edge, t0min, t0max
+    real(kind=dp_t) rho0_edge, rhoh0_edge, t0_edge
     
     do_diag = .false.
 
@@ -425,29 +423,13 @@ contains
           do i = lo(1), hi(1)+1
              
              if (enthalpy_pred_type .eq. predict_Tprime_then_h) then
-                t0_edge = 7.d0/12.d0 * (t0_cart(i  ,j,k) + t0_cart(i-1,j,k)) &
-                     -1.d0/12.d0 * (t0_cart(i+1,j,k) + t0_cart(i-2,j,k))
-
-                t0min = min(t0_cart(i,j,k),t0_cart(i-1,j,k))
-                t0max = max(t0_cart(i,j,k),t0_cart(i-1,j,k))
-
-                t0_edge = max(t0_edge, t0min)
-                t0_edge = min(t0_edge, t0max)
-
+                t0_edge = HALF* (t0_cart(i-1,j,k) + t0_cart(i,j,k))
                 temp_eos(1) = max(sx(i,j,k,temp_comp)+t0_edge,small_temp)
              else
                 temp_eos(1) = max(sx(i,j,k,temp_comp),small_temp)
              end if
 
-             rho0_edge = 7.d0/12.d0 * (rho0_cart(i  ,j,k) + rho0_cart(i-1,j,k)) &
-                  -1.d0/12.d0 * (rho0_cart(i+1,j,k) + rho0_cart(i-2,j,k))
-             
-             rho0min = min(rho0_cart(i,j,k),rho0_cart(i-1,j,k))
-             rho0max = max(rho0_cart(i,j,k),rho0_cart(i-1,j,k))
-             
-             rho0_edge = max(rho0_edge, rho0min)
-             rho0_edge = min(rho0_edge, rho0max)
-             
+             rho0_edge = HALF * (rho0_cart(i-1,j,k) + rho0_cart(i,j,k))
              den_eos(1) = sx(i,j,k,rho_comp) + rho0_edge
 
              ! sx(i,j,k,spec_comp:spec_comp+nspec-1) holds X
@@ -468,12 +450,7 @@ contains
                  enthalpy_pred_type .eq. predict_Tprime_then_h) then
                 sx(i,j,k,rhoh_comp) = h_eos(1)
              else if (enthalpy_pred_type .eq. predict_T_then_rhohprime) then
-                rhoh0_edge = 7.d0/12.d0 * (rhoh0_cart(i  ,j,k) + rhoh0_cart(i-1,j,k)) &
-                            -1.d0/12.d0 * (rhoh0_cart(i+1,j,k) + rhoh0_cart(i-2,j,k))
-                rhoh0min = min(rhoh0_cart(i,j,k),rhoh0_cart(i-1,j,k))
-                rhoh0max = max(rhoh0_cart(i,j,k),rhoh0_cart(i-1,j,k))
-                rhoh0_edge = max(rhoh0_edge,rhoh0min)
-                rhoh0_edge = min(rhoh0_edge,rhoh0max)
+                rhoh0_edge = HALF * (rhoh0_cart(i-1,j,k) + rhoh0_cart(i,j,k))
                 sx(i,j,k,rhoh_comp) = den_eos(1)*h_eos(1) - rhoh0_edge
              end if
 
@@ -486,22 +463,13 @@ contains
           do i = lo(1), hi(1)
              
              if (enthalpy_pred_type .eq. predict_Tprime_then_h) then
-                t0_edge = 7.d0/12.d0 * (t0_cart(i,j  ,k) + t0_cart(i,j-1,k)) &
-                     -1.d0/12.d0 * (t0_cart(i,j+1,k) + t0_cart(i,j-2,k))
+                t0_edge = HALF * (t0_cart(i,j-1,k) + t0_cart(i,j,k))
                 temp_eos(1) = max(sy(i,j,k,temp_comp)+t0_edge,small_temp)
              else
                 temp_eos(1) = max(sy(i,j,k,temp_comp),small_temp)
              end if
 
-             rho0_edge = 7.d0/12.d0 * (rho0_cart(i,j  ,k) + rho0_cart(i,j-1,k)) &
-                  -1.d0/12.d0 * (rho0_cart(i,j+1,k) + rho0_cart(i,j-2,k))
-             
-             rho0min = min(rho0_cart(i,j,k),rho0_cart(i,j-1,k))
-             rho0max = max(rho0_cart(i,j,k),rho0_cart(i,j-1,k))
-             
-             rho0_edge = max(rho0_edge, rho0min)
-             rho0_edge = min(rho0_edge, rho0max)
-             
+             rho0_edge = HALF * (rho0_cart(i,j-1,k) + rho0_cart(i,j,k))
              den_eos(1) = sy(i,j,k,rho_comp) + rho0_edge
 
              ! sy(i,j,k,spec_comp:spec_comp+nspec-1) holds X
@@ -522,12 +490,7 @@ contains
                  enthalpy_pred_type .eq. predict_Tprime_then_h) then
                 sy(i,j,k,rhoh_comp) = h_eos(1)
              else if (enthalpy_pred_type .eq. predict_T_then_rhohprime) then
-                rhoh0_edge = 7.d0/12.d0 * (rhoh0_cart(i,j  ,k) + rhoh0_cart(i,j-1,k)) &
-                            -1.d0/12.d0 * (rhoh0_cart(i,j+1,k) + rhoh0_cart(i,j-2,k))
-                rhoh0min = min(rhoh0_cart(i,j,k),rhoh0_cart(i,j-1,k))
-                rhoh0max = max(rhoh0_cart(i,j,k),rhoh0_cart(i,j-1,k))
-                rhoh0_edge = max(rhoh0_edge,rhoh0min)
-                rhoh0_edge = min(rhoh0_edge,rhoh0max)
+                rhoh0_edge = HALF * (rhoh0_cart(i,j-1,k) + rhoh0_cart(i,j,k))
                 sy(i,j,k,rhoh_comp) = den_eos(1)*h_eos(1) - rhoh0_edge
              end if
              
@@ -540,22 +503,13 @@ contains
           do i = lo(1), hi(1)
                  
              if (enthalpy_pred_type .eq. predict_Tprime_then_h) then
-                t0_edge = 7.d0/12.d0 * (t0_cart(i,j,k  ) + t0_cart(i,j,k-1)) &
-                     -1.d0/12.d0 * (t0_cart(i,j,k+1) + t0_cart(i,j,k-2))
+                t0_edge = HALF * (t0_cart(i,j,k-1) + t0_cart(i,j,k))
                 temp_eos(1) = max(sz(i,j,k,temp_comp)+t0_edge,small_temp)
              else
                 temp_eos(1) = max(sz(i,j,k,temp_comp),small_temp)
              end if
 
-             rho0_edge = 7.d0/12.d0 * (rho0_cart(i,j,k  ) + rho0_cart(i,j,k-1)) &
-                  -1.d0/12.d0 * (rho0_cart(i,j,k+1) + rho0_cart(i,j,k-2))
-             
-             rho0min = min(rho0_cart(i,j,k),rho0_cart(i,j,k-1))
-             rho0max = max(rho0_cart(i,j,k),rho0_cart(i,j,k-1))
-             
-             rho0_edge = max(rho0_edge, rho0min)
-             rho0_edge = min(rho0_edge, rho0max)
-             
+             rho0_edge = HALF * (rho0_cart(i,j,k-1) + rho0_cart(i,j,k))             
              den_eos(1) = sz(i,j,k,rho_comp) + rho0_edge
              
              ! sz(i,j,k,spec_comp:spec_comp+nspec-1) holds X
@@ -576,12 +530,7 @@ contains
                  enthalpy_pred_type .eq. predict_Tprime_then_h) then
                 sz(i,j,k,rhoh_comp) = h_eos(1)
              else if (enthalpy_pred_type .eq. predict_T_then_rhohprime) then
-                rhoh0_edge = 7.d0/12.d0 * (rhoh0_cart(i,j,k  ) + rhoh0_cart(i,j,k-1)) &
-                            -1.d0/12.d0 * (rhoh0_cart(i,j,k+1) + rhoh0_cart(i,j,k-2))
-                rhoh0min = min(rhoh0_cart(i,j,k),rhoh0_cart(i,j,k-1))
-                rhoh0max = max(rhoh0_cart(i,j,k),rhoh0_cart(i,j,k-1))
-                rhoh0_edge = max(rhoh0_edge,rhoh0min)
-                rhoh0_edge = min(rhoh0_edge,rhoh0max)
+                rhoh0_edge = HALF * (rhoh0_cart(i,j,k-1) + rhoh0_cart(i,j,k))
                 sz(i,j,k,rhoh_comp) = den_eos(1)*h_eos(1) - rhoh0_edge
              end if
              
