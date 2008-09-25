@@ -373,7 +373,7 @@ contains
           call destroy(rhoh0_old_cart(n))
           call destroy(rhoh0_new_cart(n))
           call destroy(t0_old_cart(n))
-          call destroy(t0_ned_cart(n))
+          call destroy(t0_new_cart(n))
           call destroy(p0_new_cart(n))
        end do
     end if
