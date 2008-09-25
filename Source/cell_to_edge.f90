@@ -1,6 +1,7 @@
 module cell_to_edge_module
 
   use bl_types
+  use bl_error_module
 
   implicit none
   
