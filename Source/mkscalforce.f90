@@ -1009,9 +1009,8 @@ contains
     real(kind=dp_t) :: divup,p0divu,ugradp,dhdp
     real(kind=dp_t) :: t0_lox,t0_hix,t0_loy,t0_hiy,t0_loz,t0_hiz,t0_cen
     real(kind=dp_t) :: divut,t0divu
-    real(kind=dp_t), allocatable :: psi_cart(:,:,:,:)
+    real(kind=dp_t) :: psi_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1)
 
-    allocate(psi_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
     call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,psi,psi_cart,lo,hi,dx,0,0)
 
     do k = lo(3),hi(3)
@@ -1099,8 +1098,6 @@ contains
        end do
 
     end if
-    
-    deallocate(psi_cart)
 
   end subroutine mktempforce_3d_sphr
 

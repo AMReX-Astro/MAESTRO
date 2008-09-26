@@ -150,11 +150,12 @@ contains
     real (kind = dp_t), intent(in   ) :: dt
 
     !     Local variables
-    integer :: i, j
-    real (kind = dp_t), allocatable :: x_in(:),x_out(:),rhowdot(:)
+    integer            :: i, j
     real (kind = dp_t) :: rho,T_in,h_in,h_out
 
-    allocate(x_in(nspec),x_out(nspec),rhowdot(nspec))
+    real (kind = dp_t) :: x_in(nspec)
+    real (kind = dp_t) :: x_out(nspec)
+    real (kind = dp_t) :: rhowdot(nspec)
 
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
@@ -217,8 +218,6 @@ contains
        enddo
     enddo
 
-    deallocate(x_in,x_out,rhowdot)
-
   end subroutine react_state_2d
 
   subroutine react_state_3d(s_in,ng_si,s_out,ng_so,rho_omegadot,ng_rw,rho_Hext,ng_he,dt, &
@@ -240,11 +239,12 @@ contains
     real (kind = dp_t),intent(in   ):: dt
 
     !     Local variables
-    integer :: i, j, k
-    real (kind = dp_t), allocatable :: x_in(:),x_out(:),rhowdot(:)
+    integer            :: i, j, k
     real (kind = dp_t) :: rho,T_in,h_in,h_out
 
-    allocate(x_in(nspec),x_out(nspec),rhowdot(nspec))
+    real (kind = dp_t) :: x_in(nspec)
+    real (kind = dp_t) :: x_out(nspec)
+    real (kind = dp_t) :: rhowdot(nspec)
 
     do k = lo(3), hi(3)
      do j = lo(2), hi(2)
@@ -308,8 +308,6 @@ contains
        enddo
      enddo
     enddo
-
-    deallocate(x_in,x_out,rhowdot)
 
   end subroutine react_state_3d
 

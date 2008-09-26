@@ -158,10 +158,10 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:)
     logical        , intent(in   ) :: flag
 
-    real(kind=dp_t), allocatable :: s0_cart(:,:,:,:)
-    integer                      :: i,j,k
+    ! local
+    integer :: i,j,k
 
-    allocate(s0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
+    real(kind=dp_t) :: s0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1)
 
     call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,s0,s0_cart,lo,hi,dx,0,0)
 
@@ -182,8 +182,6 @@ contains
           end do
        end do
     end if
-
-    deallocate(s0_cart)
 
   end subroutine pert_form_3d_sphr
 

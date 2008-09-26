@@ -225,10 +225,8 @@ contains
     real(kind=dp_t) :: base_ylo,base_yhi
     real(kind=dp_t) :: base_zlo,base_zhi
     
-    real(kind=dp_t), allocatable :: divu(:),divu_cart(:,:,:,:)
-    
-    allocate(divu(0:nr_fine-1))
-    allocate(divu_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
+    real(kind=dp_t) :: divu(0:nr_fine-1)
+    real(kind=dp_t) :: divu_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1)
     
     do r=0,nr_fine-1
        divu(r) = (r_edge_loc(n,r+1)**2 * w0(r+1) - &
@@ -288,8 +286,6 @@ contains
           end do
        end do
     end do
-    
-    deallocate(divu,divu_cart)
     
   end subroutine modify_scal_force_3d_sphr
   
