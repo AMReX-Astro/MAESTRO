@@ -34,26 +34,26 @@ contains
     ! local
     real(kind=dp_t), pointer     :: pp(:,:,:,:)
     logical, pointer             :: mp(:,:,:,:)
-    type(box)                    :: domain
-    integer                      :: domlo(dm),domhi(dm)
-    integer                      :: lo(dm),hi(dm)
-    integer                      :: i,r,n,ng,rr
-    real(kind=dp_t), allocatable :: ncell_grid(:,:)
-    real(kind=dp_t), allocatable :: ncell_proc(:,:)
-    real(kind=dp_t), allocatable :: ncell(:,:)
-    real(kind=dp_t), allocatable :: phisum_proc(:,:)
-    real(kind=dp_t), allocatable :: phisum(:,:)
-    real(kind=dp_t), allocatable :: phipert_proc(:,:)
-    real(kind=dp_t), allocatable :: phipert(:,:)
-    real(kind=dp_t), allocatable :: source_buffer(:)
-    real(kind=dp_t), allocatable :: target_buffer(:)
-    logical                      :: fine_grids_span_domain_width
 
-    integer                      :: j
-    integer                      :: nr_crse
+    type(box)                    :: domain
+    integer                      :: domlo(dm),domhi(dm),lo(dm),hi(dm)
+    integer                      :: i,j,r,n,ng,rr,nr_crse
+    logical                      :: fine_grids_span_domain_width
+    real(kind=dp_t)              :: w_lo, w_hi, del_w, wsix, theta
+
+    real(kind=dp_t) ::   ncell_grid(nlevs,0:nr_fine-1)
+    real(kind=dp_t) ::   ncell_proc(nlevs,0:nr_fine-1)
+    real(kind=dp_t) ::        ncell(nlevs,0:nr_fine-1)
+    real(kind=dp_t) ::  phisum_proc(nlevs,0:nr_fine-1)
+    real(kind=dp_t) ::       phisum(nlevs,0:nr_fine-1)
+    real(kind=dp_t) :: phipert_proc(nlevs,0:nr_fine-1)
+    real(kind=dp_t) ::      phipert(nlevs,0:nr_fine-1)
+
+    real(kind=dp_t) :: source_buffer(0:nr_fine-1)
+    real(kind=dp_t) :: target_buffer(0:nr_fine-1)
+
     real(kind=dp_t), allocatable :: ncell_crse(:)
     real(kind=dp_t), allocatable :: phibar_crse(:)
-    real(kind=dp_t)              :: w_lo, w_hi, del_w, wsix, theta
 
     type(bl_prof_timer), save :: bpt
 
@@ -62,19 +62,6 @@ contains
     ng = phi(1)%ng
 
     phibar = ZERO
-
-    if (spherical .eq. 1) then
-       allocate(ncell_grid(nlevs,0:nr_fine-1))
-    end if
-
-    allocate(ncell_proc   (nlevs,0:nr_fine-1))
-    allocate(ncell        (nlevs,0:nr_fine-1))
-    allocate(phisum_proc  (nlevs,0:nr_fine-1))
-    allocate(phisum       (nlevs,0:nr_fine-1))
-    allocate(phipert_proc (nlevs,0:nr_fine-1))
-    allocate(phipert      (nlevs,0:nr_fine-1))
-    allocate(source_buffer      (0:nr_fine-1))
-    allocate(target_buffer      (0:nr_fine-1))
 
     ncell        = ZERO
     ncell_proc   = ZERO
@@ -361,18 +348,6 @@ contains
           phibar(nlevs,nr_fine-1) = phibar(nlevs,nr_fine-2)
        end if
 
-       deallocate(ncell_grid)
-
-       deallocate(ncell_proc,ncell)
-       deallocate(phisum_proc,phisum)
-       deallocate(phipert_proc,phipert)
-       deallocate(source_buffer,target_buffer)
-
-       if (drdxfac .ne. 1) then
-          deallocate( ncell_crse)
-          deallocate(phibar_crse)
-       end if
-
     endif
 
     call destroy(bpt)
@@ -390,16 +365,17 @@ contains
     real(kind=dp_t), intent(inout) :: phibar(:,0:)
 
     ! local
-    real(kind=dp_t), pointer     :: pp(:,:,:,:)
-    type(box)                    :: domain
-    integer                      :: domlo(dm),domhi(dm)
-    integer                      :: lo(dm),hi(dm)
-    integer                      :: i,r,ng,ncell
-    real(kind=dp_t), allocatable :: phisum_proc(:)
-    real(kind=dp_t), allocatable :: phisum(:)
-    real(kind=dp_t), allocatable :: source_buffer(:)
-    real(kind=dp_t), allocatable :: target_buffer(:)
-    logical                      :: fine_grids_span_domain_width
+    real(kind=dp_t), pointer :: pp(:,:,:,:)
+    type(box)                :: domain
+    integer                  :: domlo(dm),domhi(dm)
+    integer                  :: lo(dm),hi(dm)
+    integer                  :: i,r,ng,ncell
+    logical                  :: fine_grids_span_domain_width
+
+    real(kind=dp_t) ::   phisum_proc(0:nr_fine-1)
+    real(kind=dp_t) ::        phisum(0:nr_fine-1)
+    real(kind=dp_t) :: source_buffer(0:nr_fine-1)
+    real(kind=dp_t) :: target_buffer(0:nr_fine-1)
 
     type(bl_prof_timer), save :: bpt
 
@@ -408,11 +384,6 @@ contains
     ng = phi(1)%ng
 
     phibar = ZERO
-
-    allocate(phisum_proc  (0:nr_fine-1))
-    allocate(phisum       (0:nr_fine-1))
-    allocate(source_buffer(0:nr_fine-1))
-    allocate(target_buffer(0:nr_fine-1))
 
     ncell        = ZERO
     phisum       = ZERO       
