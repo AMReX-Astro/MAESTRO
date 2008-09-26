@@ -52,6 +52,7 @@ contains
        plot_names(icomp_divw0) = "divw0"
        plot_names(icomp_rho0)  = "rho0"
        plot_names(icomp_rhoh0) = "rhoh0"
+       plot_names(icomp_h0)    = "h0"
        plot_names(icomp_p0)    = "p0"
     end if
 
@@ -132,9 +133,11 @@ contains
     type(multifab)   , intent(in   ) :: normal(:)
     
     type(multifab) :: plotdata(mla%nlevel)
-    type(multifab) :: tempfab(mla%nlevel)
-    type(multifab) :: w0mac(mla%nlevel,dm)
-    real(dp_t), allocatable :: entropybar(:,:)
+    type(multifab) ::  tempfab(mla%nlevel)
+    type(multifab) ::    w0mac(mla%nlevel,dm)
+
+    real(dp_t) :: entropybar(nlevs,0:nr_fine-1)
+    real(dp_t) ::         h0(nlevs,0:nr_fine-1)
 
     integer :: n,prec,comp
 
@@ -210,11 +213,20 @@ contains
        end do
 
        ! rhoh0
+       h0 = rhoh0 / rho0
        call put_1d_array_on_cart(rhoh0,tempfab,dm+rhoh_comp,.false.,.false.,dx, &
                                  the_bc_tower%bc_tower_array,mla,normal=normal)
 
        do n=1,nlevs
           call multifab_copy_c(plotdata(n),icomp_rhoh0,tempfab(n),1,1)
+       end do
+
+       ! h0
+       call put_1d_array_on_cart(h0,tempfab,foextrap_comp,.false.,.false.,dx, &
+                                 the_bc_tower%bc_tower_array,mla,normal=normal)
+
+       do n=1,nlevs
+          call multifab_copy_c(plotdata(n),icomp_h0,tempfab(n),1,1)
        end do
 
        ! p0
@@ -274,8 +286,6 @@ contains
 
     ! we just made the entropy above.  To compute s - sbar, we need to average
     ! the entropy first, and then compute that.
-    allocate(entropybar(nlevs,0:nr_fine-1))
-
     ! an average quantity needs ghostcells, so copy entropy into
     ! tempfab
     do n=1,nlevs
@@ -305,13 +315,13 @@ contains
           ! both levels n-1 and n
           call multifab_fill_ghost_cells(tempfab(n),tempfab(n-1), &
                                          tempfab(n)%ng,mla%mba%rr(n-1,:), &
-                                         the_bc_tower%bc_tower_array(n-1), the_bc_tower%bc_tower_array(n), &
+                                         the_bc_tower%bc_tower_array(n-1), &
+                                         the_bc_tower%bc_tower_array(n), &
                                          1,foextrap_comp,1)
        enddo
 
     end if
     
-
     call average(mla,tempfab,entropybar,dx,1)
 
     do n = 1,nlevs
