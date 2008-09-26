@@ -153,12 +153,13 @@ contains
     !     Local variables
     integer :: i, j, k
     real(kind=dp_t) :: gamma1bar_p0_avg
-    real(kind=dp_t), allocatable :: div_cart(:,:,:,:),Sbar_cart(:,:,:,:)
+    real(kind=dp_t), allocatable ::           div_cart(:,:,:,:)
+    real(kind=dp_t), allocatable ::          Sbar_cart(:,:,:,:)
     real(kind=dp_t), allocatable :: gamma1bar_old_cart(:,:,:,:)
     real(kind=dp_t), allocatable :: gamma1bar_new_cart(:,:,:,:)
-    real(kind=dp_t), allocatable :: p0_old_cart(:,:,:,:)
-    real(kind=dp_t), allocatable :: p0_new_cart(:,:,:,:)
-    real(kind=dp_t), allocatable :: rho0_cart(:,:,:,:)
+    real(kind=dp_t), allocatable ::        p0_old_cart(:,:,:,:)
+    real(kind=dp_t), allocatable ::        p0_new_cart(:,:,:,:)
+    real(kind=dp_t), allocatable ::          rho0_cart(:,:,:,:)
 
     if (spherical .eq. 1) then
 
@@ -217,12 +218,12 @@ contains
              end do
           end do
 
-          deallocate(gamma1bar_old_cart,gamma1bar_new_cart,p0_old_cart,p0_new_cart)
-          deallocate(rho0_cart)
+          deallocate(gamma1bar_old_cart,gamma1bar_new_cart,p0_old_cart,p0_new_cart,rho0_cart)
 
        end if
 
        deallocate(div_cart)
+
     else
 
        do k = lo(3),hi(3)

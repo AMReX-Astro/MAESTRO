@@ -44,8 +44,6 @@ contains
     integer    :: n
     real(dp_t) :: dt_temp
 
-    real(dp_t), allocatable :: psi(:,:) 
-
     type(multifab) :: delta_gamma1_term(nlevs)
     type(multifab) :: delta_gamma1(nlevs)
     type(multifab) :: thermal(nlevs)
@@ -54,12 +52,9 @@ contains
     type(multifab) :: rho_Hext(nlevs)
     type(multifab) :: div_coeff_3d(nlevs)
 
-    real(dp_t), allocatable :: Sbar(:,:)
-    real(dp_t), allocatable :: delta_gamma1_termbar(:,:)
-
-    allocate(Sbar                (nlevs,0:nr_fine-1))
-    allocate(delta_gamma1_termbar(nlevs,0:nr_fine-1))
-    allocate(psi                 (nlevs,0:nr_fine-1))
+    real(dp_t) ::                  psi(nlevs,0:nr_fine-1)
+    real(dp_t) ::                 Sbar(nlevs,0:nr_fine-1)
+    real(dp_t) :: delta_gamma1_termbar(nlevs,0:nr_fine-1)
 
     Sbar = ZERO
     psi = ZERO
@@ -162,8 +157,6 @@ contains
        call setval(gpres(n), 0.0_dp_t, all=.true.)
     end do
     
-    deallocate(Sbar)
-
   end subroutine initial_proj
 
 end module initial_proj_module

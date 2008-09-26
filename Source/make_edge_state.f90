@@ -92,8 +92,7 @@ contains
     ng_n = normal(1)%ng
 
     if (spherical .eq. 1) then
-       allocate (gradw0_rad(0:nr_fine-1))
-
+       allocate(gradw0_rad(0:nr_fine-1))
        ! NOTE: here we are doing the computation at the finest level
        do r=0,nr_fine-1
           gradw0_rad(r) = (w0(nlevs,r+1) - w0(nlevs,r)) / dr(nlevs)
@@ -638,6 +637,9 @@ contains
           
        enddo
     end if
+
+    deallocate(s_l,s_r,s_b,s_t)
+    deallocate(slopex,slopey)
     
   end subroutine make_edge_state_2d
   
@@ -1634,6 +1636,9 @@ contains
            enddo
         enddo
      endif
+
+     deallocate(s_l,s_r,s_b,s_t,s_d,s_u)
+     deallocate(slopex,slopey,slopez)
      
    end subroutine make_edge_state_3d
    
@@ -1649,21 +1654,19 @@ contains
      real(kind=dp_t), intent(in   ) ::  force(:,0:)
      real(kind=dp_t), intent(in   ) :: dx(:),dt
      
-     real(kind=dp_t), allocatable::  slopex(:,:)
-     real(kind=dp_t), allocatable::  s_l(:,:),s_r(:,:)
-     real(kind=dp_t), allocatable:: dxscr(:,:,:)
      real(kind=dp_t) :: dmin,dpls,ds,del,slim,sflag
      real(kind=dp_t) :: ubardth, dth, savg
      real(kind=dp_t) :: abs_eps, eps, umax, u
      
      integer :: r,lo,hi,n,i
+
      integer        , parameter :: cen = 1, lim = 2, flag = 3, fromm = 4
      real(kind=dp_t), parameter :: fourthirds = 4.0_dp_t / 3.0_dp_t
         
-     allocate(s_l   (nlevs,-1:nr_fine+1))
-     allocate(s_r   (nlevs,-1:nr_fine+1))
-     allocate(slopex(nlevs, 0:nr_fine-1))
-     allocate(dxscr (nlevs, 0:nr_fine-1,4))
+     real(kind=dp_t) :: slopex(nlevs, 0:nr_fine-1)
+     real(kind=dp_t) ::    s_l(nlevs,-1:nr_fine+1)
+     real(kind=dp_t) ::    s_r(nlevs,-1:nr_fine+1)
+     real(kind=dp_t) ::  dxscr(nlevs, 0:nr_fine-1,4)
 
      abs_eps = 1.0d-8
      dth = HALF*dt

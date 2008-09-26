@@ -235,20 +235,18 @@ contains
     real (kind = dp_t), intent(  out) ::      T(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
     real (kind = dp_t), intent(  out) :: deltaP(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
     real (kind = dp_t), intent(in   ) ::  state(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
-    real (kind = dp_t), intent(in   ) ::    p0(0:)
-    real (kind = dp_t), intent(in   ) ::    tempbar(0:)
+    real (kind = dp_t), intent(in   ) ::      p0(0:)
+    real (kind = dp_t), intent(in   ) :: tempbar(0:)
     real (kind = dp_t), intent(in   ) :: dx(:)
 
     ! Local variables
-    integer :: i, j, k
-    real (kind=dp_t), allocatable :: tempbar_cart(:,:,:,:)
-    real (kind=dp_t), allocatable :: p0_cart(:,:,:,:)
+    integer          :: i, j, k
+    real (kind=dp_t) :: tempbar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1)
+    real (kind=dp_t) ::      p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1)
 
-    allocate(tempbar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
     call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,tempbar,tempbar_cart,lo,hi,dx,0,0)
-
-    allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
     call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,p0,p0_cart,lo,hi,dx,0,0)
+
     do_diag = .false.
 
     do k = lo(3), hi(3)
@@ -280,8 +278,6 @@ contains
           enddo
        enddo
     enddo
-
-    deallocate(tempbar_cart,p0_cart)
 
   end subroutine make_tfromH_3d_sphr
 
@@ -513,27 +509,18 @@ contains
     !     Local variables
     integer          :: i, j, k
     real (kind=dp_t) :: vel
-    real (kind=dp_t), allocatable ::  rho0_cart(:,:,:,:)
-    real (kind=dp_t), allocatable ::  rhoh0_cart(:,:,:,:)
-    real (kind=dp_t), allocatable ::  tempbar_cart(:,:,:,:)
-    real (kind=dp_t), allocatable ::  p0_cart(:,:,:,:)
-    real (kind=dp_t), allocatable ::  gamma1bar_cart(:,:,:,:)
+    real (kind=dp_t) ::      rho0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1)
+    real (kind=dp_t) ::     rhoh0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1)
+    real (kind=dp_t) ::   tempbar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1)
+    real (kind=dp_t) ::        p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1)
+    real (kind=dp_t) :: gamma1bar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1)
 
     do_diag = .false.
 
-    allocate(rho0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
     call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,rho0,rho0_cart,lo,hi,dx,0,0)
-
-    allocate(rhoh0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
     call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,rhoh0,rhoh0_cart,lo,hi,dx,0,0)
-
-    allocate(tempbar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
     call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,tempbar,tempbar_cart,lo,hi,dx,0,0)
-
-    allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1)) 
     call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,p0,p0_cart,lo,hi,dx,0,0)
-
-    allocate(gamma1bar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1)) 
     call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,gamma1bar,gamma1bar_cart,lo,hi, &
                                       dx,0,0)
 
@@ -574,8 +561,6 @@ contains
           enddo
        enddo
     enddo
-
-    deallocate(rho0_cart,rhoh0_cart,tempbar_cart,p0_cart,gamma1bar_cart)
 
   end subroutine make_tfromp_3d_sphr
 
@@ -673,9 +658,8 @@ contains
 
     !     Local variables
     integer          :: i, j, k
-    real (kind=dp_t), allocatable ::  entropybar_cart(:,:,:,:)
+    real (kind=dp_t) :: entropybar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1)
 
-    allocate(entropybar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1)) 
     call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,entropybar,entropybar_cart,lo,hi, &
                                       dx,0,0)
 
@@ -683,12 +667,11 @@ contains
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
-             entropypert(i,j,k) = (entropy(i,j,k) - entropybar_cart(i,j,k,1))/entropybar_cart(i,j,k,1)
+             entropypert(i,j,k) = &
+                  (entropy(i,j,k) - entropybar_cart(i,j,k,1))/entropybar_cart(i,j,k,1)
           enddo
        enddo
     enddo
-
-    deallocate(entropybar_cart)
 
   end subroutine make_entropypert_3d_sphr
 

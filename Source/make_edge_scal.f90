@@ -82,7 +82,7 @@ contains
     ng_n = normal(1)%ng
 
     if (spherical .eq. 1) then
-       allocate (gradw0_rad(0:nr_fine-1))
+       allocate(gradw0_rad(0:nr_fine-1))
 
        ! NOTE: here we are doing the computation at the finest level
        do r=0,nr_fine-1
@@ -509,6 +509,9 @@ contains
        endif
        
     enddo
+
+    deallocate(s_l,s_r,s_b,s_t)
+    deallocate(slopex,slopey)
     
   end subroutine make_edge_scal_2d
 
@@ -1262,6 +1265,9 @@ contains
           
        end do
     end do
+
+    deallocate(s_l,s_r,s_b,s_t,s_d,s_u)
+    deallocate(slopex,slopey,slopez)
 
   end subroutine make_edge_scal_3d
 

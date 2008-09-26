@@ -55,14 +55,15 @@ contains
     ! local
     real(kind=dp_t), pointer :: efp(:,:,:,:)
     
-    real(kind=dp_t), allocatable :: ncell(:,:)
-    real(kind=dp_t), allocatable :: etarhosum_proc(:,:)
-    real(kind=dp_t), allocatable :: etarhosum(:,:)
-    real(kind=dp_t), allocatable :: etarhopert_proc(:,:)
-    real(kind=dp_t), allocatable :: etarhopert(:,:)
-    real(kind=dp_t), allocatable :: source_buffer(:)
-    real(kind=dp_t), allocatable :: target_buffer(:)
-    logical                      :: fine_grids_span_domain_width
+    real(kind=dp_t) ::           ncell(nlevs,0:nr_fine)
+    real(kind=dp_t) ::  etarhosum_proc(nlevs,0:nr_fine)
+    real(kind=dp_t) ::       etarhosum(nlevs,0:nr_fine)
+    real(kind=dp_t) :: etarhopert_proc(nlevs,0:nr_fine)
+    real(kind=dp_t) ::      etarhopert(nlevs,0:nr_fine)
+    real(kind=dp_t) ::   source_buffer(0:nr_fine)
+    real(kind=dp_t) ::   target_buffer(0:nr_fine)
+
+    logical :: fine_grids_span_domain_width
 
     type(box) :: domain
 
@@ -76,17 +77,7 @@ contains
 
     ng_e = etarhoflux(1)%ng
 
-    ! ncell is a function of r only for spherical
-    allocate(ncell          (nlevs,0:nr_fine)) 
-    allocate(etarhosum_proc (nlevs,0:nr_fine))
-    allocate(etarhosum      (nlevs,0:nr_fine))
-    allocate(etarhopert_proc(nlevs,0:nr_fine))
-    allocate(etarhopert     (nlevs,0:nr_fine))
-
-    allocate(source_buffer(0:nr_fine))
-    allocate(target_buffer(0:nr_fine))
-
-    ncell        = ZERO
+    ncell           = ZERO
     etarhosum_proc  = ZERO
     etarhosum       = ZERO
     etarhopert_proc = ZERO
@@ -277,11 +268,6 @@ contains
           enddo
        enddo
     enddo
-
-    deallocate(ncell)
-    deallocate(etarhosum_proc,etarhosum)
-    deallocate(etarhopert_proc,etarhopert)
-    deallocate(source_buffer,target_buffer)
 
     call destroy(bpt)
 
@@ -607,32 +593,28 @@ contains
     integer        , intent(in   ) :: n,lo(:),hi(:),ng_so, ng_sn, ng_um, ng_n, ng_e, ng_rp
     real(kind=dp_t), intent(in   ) ::       rho_old(lo(1)-ng_so:,lo(2)-ng_so:,lo(3)-ng_so:)
     real(kind=dp_t), intent(in   ) ::       rho_new(lo(1)-ng_sn:,lo(2)-ng_sn:,lo(3)-ng_sn:)
-    real(kind=dp_t), intent(in   ) ::          umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)    
-    real(kind=dp_t), intent(in   ) ::          vmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)    
-    real(kind=dp_t), intent(in   ) ::          wmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)    
+    real(kind=dp_t), intent(in   ) ::          umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::          vmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::          wmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(in   ) ::        normal(lo(1)-ng_n :,lo(2)-ng_n :,lo(3)-ng_n :,:)
     real(kind=dp_t), intent(inout) ::      eta_cart(lo(1)-ng_e :,lo(2)-ng_e :,lo(3)-ng_e :)
     real(kind=dp_t), intent(inout) :: rhoprime_cart(lo(1)-ng_rp:,lo(2)-ng_rp:,lo(3)-ng_rp:)
     real(kind=dp_t), intent(in   ) :: rho0_old(0:), rho0_new(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
 
-    real(kind=dp_t), allocatable :: rho0_nph(:)
-    real(kind=dp_t), allocatable :: rho0_new_cart(:,:,:,:)
-    real(kind=dp_t), allocatable :: rho0_nph_cart(:,:,:,:)
+    real(kind=dp_t) ::      rho0_nph(0:nr_fine-1)
+    real(kind=dp_t) :: rho0_new_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1)
+    real(kind=dp_t) :: rho0_nph_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1)
 
     real(kind=dp_t) :: Utilde_dot_er
     integer :: i,j,k,r
 
     ! put the time-centered base state density on a Cartesian patch.
-    allocate(rho0_nph(0:nr_fine-1))
     do r = 0, nr_fine-1
        rho0_nph(r) = HALF*(rho0_old(r) + rho0_new(r))
     enddo
 
-    allocate(rho0_new_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
     call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,rho0_new,rho0_new_cart,lo,hi,dx,0,0)
-
-    allocate(rho0_nph_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
     call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,rho0_nph,rho0_nph_cart,lo,hi,dx,0,0)
 
     ! construct time-centered [ rho' (Utilde . e_r) ]
@@ -656,8 +638,6 @@ contains
           enddo
        enddo
     enddo
-
-    deallocate (rho0_new_cart,rho0_nph_cart,rho0_nph)
 
   end subroutine construct_eta_cart
 
