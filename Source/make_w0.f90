@@ -108,15 +108,11 @@ contains
     real(kind=dp_t), intent(in   ) :: dt,dtold
 
     ! Local variables
-    integer                      :: r, n, i, j, refrat
-    real(kind=dp_t), allocatable :: w0_old_cen(:,:)
-    real(kind=dp_t), allocatable :: w0_new_cen(:,:)
-    real(kind=dp_t)              :: w0_avg, div_avg, dt_avg, gamma1bar_p0_avg
-    real(kind=dp_t)              :: volume_discrepancy, offset
-
-    ! Cell-centered
-    allocate(w0_old_cen(nlevs,0:nr_fine-1))
-    allocate(w0_new_cen(nlevs,0:nr_fine-1))
+    integer         :: r, n, i, j, refrat
+    real(kind=dp_t) :: w0_old_cen(nlevs,0:nr_fine-1)
+    real(kind=dp_t) :: w0_new_cen(nlevs,0:nr_fine-1)
+    real(kind=dp_t) :: w0_avg, div_avg, dt_avg, gamma1bar_p0_avg
+    real(kind=dp_t) :: volume_discrepancy, offset
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! Multilevel Outline
@@ -213,8 +209,6 @@ contains
        
     end do
 
-    deallocate(w0_old_cen,w0_new_cen)
-
   end subroutine make_w0_planar
 
   subroutine make_w0_spherical(n,w0,w0_old,Sbar_in,rho0,rho0_new,p0,p0_new, &
@@ -239,38 +233,24 @@ contains
     real(kind=dp_t), intent(in   ) :: dt,dtold
 
     ! Local variables
-    integer                      :: r
-    real(kind=dp_t), allocatable :: w0_old_cen(:)
-    real(kind=dp_t), allocatable :: w0_new_cen(:)
-    real(kind=dp_t), allocatable :: c(:),d(:),e(:),u(:),rhs(:)
-    real(kind=dp_t), allocatable :: m(:)
-    real(kind=dp_t)              :: w0_avg, div_avg, dt_avg
-    real(kind=dp_t), allocatable :: w0_from_Sbar(:)
-    real(kind=dp_t), allocatable :: grav_edge(:)
-
+    integer                    :: r
+    real(kind=dp_t)            :: dpdr, volume_discrepancy
+    real(kind=dp_t)            :: w0_avg, div_avg, dt_avg
     real(kind=dp_t), parameter :: eps = 1.d-8
 
-    real(kind=dp_t) :: dpdr
-
-    real(kind=dp_t) :: volume_discrepancy
-
-    real(kind=dp_t), allocatable :: gamma1bar_nph(:), rho0_nph(:), p0_nph(:)
-
-    ! Cell-centered
-    allocate(m         (0:nr_fine-1))
-    allocate(w0_old_cen(0:nr_fine-1))
-    allocate(w0_new_cen(0:nr_fine-1))
-
-    allocate(gamma1bar_nph(0:nr_fine-1))
-    allocate(     rho0_nph(0:nr_fine-1))
-    allocate(       p0_nph(0:nr_fine-1))
-
-
-    ! Edge-centered
-    allocate(c(0:nr_fine),d(0:nr_fine),e(0:nr_fine),rhs(0:nr_fine),u(0:nr_fine))
-    allocate(w0_from_Sbar(0:nr_fine))
-    allocate(grav_edge(0:nr_fine))
-
+    real(kind=dp_t) ::             m(0:nr_fine-1)
+    real(kind=dp_t) ::    w0_old_cen(0:nr_fine-1)
+    real(kind=dp_t) ::    w0_new_cen(0:nr_fine-1)
+    real(kind=dp_t) :: gamma1bar_nph(0:nr_fine-1)
+    real(kind=dp_t) ::      rho0_nph(0:nr_fine-1)
+    real(kind=dp_t) ::        p0_nph(0:nr_fine-1)
+    real(kind=dp_t) ::             c(0:nr_fine)
+    real(kind=dp_t) ::             d(0:nr_fine)
+    real(kind=dp_t) ::             e(0:nr_fine)
+    real(kind=dp_t) ::             u(0:nr_fine)
+    real(kind=dp_t) ::           rhs(0:nr_fine)
+    real(kind=dp_t) ::  w0_from_Sbar(0:nr_fine)
+    real(kind=dp_t) ::     grav_edge(0:nr_fine)
 
     ! create time-centered base-state quantities
     do r = 0, nr_fine-1
@@ -278,7 +258,6 @@ contains
        rho0_nph(r)      = HALF*(rho0(r)      + rho0_new(r))
        gamma1bar_nph(r) = HALF*(gamma1bar(r) + gamma1bar_new(r))       
     enddo
-
 
     ! NOTE:  we first solve for the w0 resulting only from Sbar -- then we will
     ! solve for the update to w0.  We integrate d/dr (r^2 w0) = (r^2 Sbar)
@@ -380,10 +359,6 @@ contains
        w0_force(r) = (w0_new_cen(r)-w0_old_cen(r)) / dt_avg + w0_avg * div_avg / dr(n)
     end do
 
-    deallocate(c,d,e,rhs,u)
-    deallocate(m)
-    deallocate(w0_old_cen,w0_new_cen)
-
   end subroutine make_w0_spherical
 
   subroutine tridiag(a,b,c,r,u,n)
@@ -394,12 +369,11 @@ contains
     real(kind=dp_t), intent(  out) :: u(:)
     integer, intent(in)            :: n
 
-    real(kind=dp_t)              :: bet
-    real(kind=dp_t), allocatable :: gam(:)
-    integer                      :: j
+    ! local
+    real(kind=dp_t) :: bet
+    real(kind=dp_t) :: gam(n)
+    integer         :: j
 
-    allocate(gam(n))
-    
     if ( b(1) .eq. 0 ) call bl_error('tridiag: CANT HAVE B(1) = ZERO')
     
     bet = b(1)
