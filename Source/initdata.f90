@@ -583,16 +583,14 @@ contains
     ! Local variables
     integer :: i, j
     real(kind=dp_t) :: fac, mass, mass0
-    real(kind=dp_t), allocatable ::  rhoavg(:)
-    real(kind=dp_t), allocatable :: rhopert(:)
-    real(kind=dp_t), allocatable ::    pavg(:)
+
+    real(kind=dp_t) ::  rhoavg(lo(2):hi(2))
+    real(kind=dp_t) :: rhopert(lo(2):hi(2))
+    real(kind=dp_t) ::    pavg(lo(2):hi(2))
+
     character(len=11) :: file_name
     character(len=10) :: file_name2
     character(len= 8) :: file_name3
-
-    allocate(rhopert(lo(2):hi(2)))
-    allocate( rhoavg(lo(2):hi(2)))
-    allocate(   pavg(lo(2):hi(2)))
 
     write(unit=file_name ,fmt='("rhopert",i4.4)') istep
     write(unit=file_name2,fmt='("rhoavg",i4.4)') istep
@@ -628,8 +626,6 @@ contains
     do j = lo(2),hi(2)
       write(92,*) (dble(j)+HALF)*dx(2),p0_background(j),pavg(j)
     enddo
-
-    deallocate(rhoavg,rhopert,pavg)
 
   end subroutine scalar_diags_2d
 

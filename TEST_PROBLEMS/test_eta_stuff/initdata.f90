@@ -529,15 +529,13 @@ contains
     real(kind=dp_t) :: fac, stot_pert, mass, mass0
     real(kind=dp_t) :: deltap_avg, dp_avg, deltaP
     real(kind=dp_t) :: phsevs0_init
-    real(kind=dp_t), allocatable :: rhoavg(:), phse(:)
+    real(kind=dp_t) :: rhoavg(lo(2):hi(2))
+    real(kind=dp_t) ::   phse(lo(2):hi(2))
     character(len=11) :: file_name
     character(len=10) :: file_name1
     character(len=10) :: file_name2
     character(len= 8) :: file_name3
     character(len= 8) :: file_name4
-
-    allocate(rhoavg(lo(2):hi(2))) 
-    allocate(  phse(lo(2):hi(2))) 
 
     write(unit=file_name ,fmt='("rhopert",i4.4)') istep
     write(unit=file_name1,fmt='("rhoavg",i4.4)') istep
@@ -620,7 +618,5 @@ contains
     write(69,*)  ' '
     write(70,*)  ' '
 
-    deallocate(rhoavg,phse)
-    
   end subroutine scalar_diags_2d
 end module init_module

@@ -675,6 +675,8 @@ contains
           end do
        end do
 
+       deallocate(w0_cc)
+
     else if (w0mac_interp_type .eq. 2) then
 
        do k = lo(3)-1,hi(3)+1
@@ -802,6 +804,8 @@ contains
              end do
           end do
        end do
+
+       deallocate(w0_nodal)
 
     else
        call bl_error('Error: fill_3d_data:w0mac_interp_type can only be 1,2 or 3')

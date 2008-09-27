@@ -223,8 +223,8 @@ contains
     real (kind = dp_t)  :: eps, dt_divu, dt_sound, gradp0, denom, rho_min
     integer             :: i,j,k,r
 
-    real (kind = dp_t), allocatable :: gp0_cart(:,:,:,:)
-    real (kind = dp_t), allocatable :: gp0(:)
+    real (kind = dp_t) :: gp0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),3)
+    real (kind = dp_t) ::      gp0(0:nr_fine)
 
     eps = 1.0d-8
     
@@ -335,14 +335,13 @@ contains
        else
 
           ! spherical divU constraint
-          allocate(gp0(0:nr_fine))
           do r=1,nr_fine-1
              gamma1bar_p_avg = HALF * (gamma1bar(r)*p0(r) + gamma1bar(r-1)*p0(r-1))
              gp0(r) = ( (p0(r) - p0(r-1))/dr(n) ) / gamma1bar_p_avg
           end do
           gp0(nr_fine) = gp0(nr_fine-1)
           gp0(      0) = gp0(        1)
-          allocate(gp0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),3))
+
           call put_1d_array_on_cart_3d_sphr(n,.true.,.true.,gp0,gp0_cart,lo,hi,dx,0, &
                                             ng_n,normal)
           
