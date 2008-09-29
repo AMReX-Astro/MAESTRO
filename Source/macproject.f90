@@ -22,8 +22,7 @@ contains
   subroutine macproject(mla,umac,phi,rho,dx,the_bc_tower, &
                         bc_comp,divu_rhs,div_coeff_1d,div_coeff_half_1d,div_coeff_3d)
 
-    use geometry, only: dm
-    use probin_module, only: nlevs
+    use geometry, only: dm, nlevs
 
     type(ml_layout), intent(in   ) :: mla
     type(multifab ), intent(inout) :: umac(:,:)
@@ -733,8 +732,7 @@ contains
     subroutine mkumac(rh,umac,phi,beta,fine_flx,dx,the_bc_tower,press_comp,ref_ratio)
 
       use ml_restriction_module, only: ml_edge_restriction
-      use geometry, only: dm
-      use probin_module, only: nlevs
+      use geometry, only: dm, nlevs
 
       type(multifab), intent(inout) :: umac(:,:)
       type(multifab), intent(inout) ::   rh(:)
@@ -1263,8 +1261,8 @@ contains
     use mg_module
     use coeffs_module
     use ml_solve_module
-    use probin_module, only : mg_bottom_solver, mg_verbose, cg_verbose, nlevs
-    use geometry, only: dm
+    use probin_module, only : mg_bottom_solver, mg_verbose, cg_verbose
+    use geometry, only: dm, nlevs
 
     type(ml_layout), intent(in   )        :: mla
     integer        , intent(in   )        :: stencil_order
@@ -1464,8 +1462,8 @@ contains
     use mg_module
     use coeffs_module
     use ml_cc_module, only: ml_cc_applyop
-    use probin_module, only: cg_verbose, mg_verbose, nlevs
-    use geometry, only: dm
+    use probin_module, only: cg_verbose, mg_verbose
+    use geometry, only: dm, nlevs
 
     type(ml_layout), intent(inout) :: mla
     integer        , intent(in   ) :: stencil_order

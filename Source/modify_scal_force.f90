@@ -17,12 +17,11 @@ contains
 
     use bl_prof_module
     use bl_constants_module
-    use geometry, only: spherical, dm
+    use geometry, only: spherical, dm, nlevs
     use variables, only: foextrap_comp
     use multifab_physbc_module
     use ml_restriction_module
     use multifab_fill_ghost_module
-    use probin_module, only: nlevs
 
     ! When we write the scalar equation in perturbational and convective
     ! form, the terms other than s'_t + U.grad s' act as source terms.  Add

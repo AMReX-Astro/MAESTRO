@@ -15,8 +15,7 @@ contains
 
   subroutine make_div_coeff(div_coeff,rho0,p0,gamma1bar,grav_center)
 
-    use geometry, only: r_start_coord, r_end_coord
-    use probin_module, only: nlevs
+    use geometry, only: r_start_coord, r_end_coord, nlevs
 
     real(kind=dp_t), intent(  out) :: div_coeff(:,0:)
     real(kind=dp_t), intent(in   ) :: rho0(:,0:), p0(:,0:), gamma1bar(:,0:), grav_center(:,0:)

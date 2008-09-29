@@ -21,14 +21,13 @@ contains
 
   subroutine put_in_pert_form(mla,s,base,dx,comp,bc_comp,flag,the_bc_level)
 
-    use geometry, only: spherical, dm
+    use geometry, only: spherical, dm, nlevs
     use variables, only: foextrap_comp, nscal
     use ml_layout_module
     use define_bc_module
     use ml_restriction_module, only: ml_cc_restriction
     use multifab_fill_ghost_module
     use multifab_physbc_module
-    use probin_module, only: nlevs
 
     type(ml_layout), intent(in   ) :: mla
     integer        , intent(in   ) :: comp,bc_comp

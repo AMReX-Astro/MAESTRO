@@ -35,12 +35,11 @@ contains
 
     use bl_prof_module
     use bl_constants_module
-    use geometry, only: nr_fine, dr, spherical, dm
+    use geometry, only: nr_fine, dr, spherical, dm, nlevs
     use variables, only: foextrap_comp
     use fill_3d_module
     use multifab_physbc_module
     use ml_restriction_module, only : ml_edge_restriction_c
-    use probin_module, only: nlevs
 
     type(multifab) , intent(in   ) :: s(:),u(:)
     type(multifab) , intent(inout) :: sedge(:,:),umac(:,:)
@@ -1644,8 +1643,8 @@ contains
    
    subroutine make_edge_state_1d(s,sedgex,w0,force,dx,dt)
 
-     use geometry, only: r_start_coord, r_end_coord, nr_fine, nr, numdisjointchunks
-     use probin_module, only: slope_order, nlevs
+     use geometry, only: r_start_coord, r_end_coord, nr_fine, nr, numdisjointchunks, nlevs
+     use probin_module, only: slope_order
      use bl_constants_module
      
      real(kind=dp_t), intent(in   ) ::      s(:,0:)

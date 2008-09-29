@@ -26,8 +26,7 @@ contains
     use variables, only: foextrap_comp
     use ml_restriction_module, only : ml_cc_restriction
     use heating_module
-    use geometry, only: dm
-    use probin_module, only: nlevs
+    use geometry, only: dm, nlevs
     
     type(multifab) , intent(inout) :: thermal(:)
     type(multifab) , intent(in   ) :: rho_omegadot(:)

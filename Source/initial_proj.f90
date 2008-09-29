@@ -15,7 +15,7 @@ contains
     use define_bc_module
     use bl_constants_module
     use probin_module
-    use geometry, only: spherical, nr_fine
+    use geometry, only: spherical, nr_fine, nlevs
     use proj_parameters, only: initial_projection_comp
     use make_explicit_thermal_module
     use make_S_module

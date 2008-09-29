@@ -12,9 +12,8 @@ contains
   subroutine make_psi(etarho_cc,psi,w0,gamma1bar,p0_old,p0_new,Sbar_in)
 
     use bl_prof_module
-    use geometry, only: spherical
+    use geometry, only: spherical, nlevs
     use restrict_base_module
-    use probin_module, only: nlevs
 
     real(kind=dp_t), intent(in   ) :: etarho_cc(:,0:)
     real(kind=dp_t), intent(inout) :: psi(:,0:)

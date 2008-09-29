@@ -15,9 +15,8 @@ contains
                          gamma1bar,div_coeff,rho0_predicted_edge,psi,dz,dt)
 
     use bl_prof_module
-    use geometry, only: spherical
+    use geometry, only: spherical, nlevs
     use restrict_base_module
-    use probin_module, only: nlevs
 
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     real(kind=dp_t), intent(in   ) :: Sbar_in(:,0:)
@@ -64,8 +63,8 @@ contains
     use bl_constants_module
     use make_edge_state_module
     use variables, only: rho_comp, rhoh_comp
-    use geometry, only: nr_fine, r_start_coord, r_end_coord, numdisjointchunks
-    use probin_module, only: grav_const, enthalpy_pred_type, nlevs
+    use geometry, only: nr_fine, r_start_coord, r_end_coord, numdisjointchunks, nlevs
+    use probin_module, only: grav_const, enthalpy_pred_type
     use pred_parameters
 
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
@@ -184,11 +183,11 @@ contains
     use bl_constants_module
     use make_edge_state_module
     use variables, only: rho_comp, rhoh_comp
-    use geometry, only: r_cc_loc, r_edge_loc, dr, nr_fine
+    use geometry, only: r_cc_loc, r_edge_loc, dr, nr_fine, nlevs
     use make_grav_module
     use cell_to_edge_module
     use make_div_coeff_module
-    use probin_module, only: grav_const, enthalpy_pred_type, nlevs
+    use probin_module, only: grav_const, enthalpy_pred_type
     use pred_parameters
     
     real(kind=dp_t), intent(in   ) :: w0(:,0:),Sbar_in(:,0:)

@@ -103,8 +103,8 @@ contains
     use plot_variables_module
     use fill_3d_module
     use probin_module, only: nOutFiles, lUsingNFiles, plot_spec, plot_trac, plot_base
-    use probin_module, only: single_prec_plotfiles, edge_nodal_flag, nlevs
-    use geometry, only: spherical, nr_fine, dm
+    use probin_module, only: single_prec_plotfiles, edge_nodal_flag
+    use geometry, only: spherical, nr_fine, dm, nlevs
     use average_module
     use ml_restriction_module
     use multifab_physbc_module

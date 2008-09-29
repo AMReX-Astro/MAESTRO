@@ -29,12 +29,11 @@ contains
 
     use bl_prof_module
     use bl_constants_module
-    use geometry, only: spherical, nr_fine, dr, dm
+    use geometry, only: spherical, nr_fine, dr, dm, nlevs
     use variables, only: foextrap_comp
     use fill_3d_module
     use multifab_physbc_module
     use ml_restriction_module, only : ml_edge_restriction_c
-    use probin_module, only: nlevs
 
     type(multifab) , intent(in   ) :: s(:)
     type(multifab) , intent(inout) :: sedge(:,:)

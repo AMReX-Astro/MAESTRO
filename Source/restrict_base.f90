@@ -13,8 +13,7 @@ contains
   subroutine restrict_base(s0,is_cell_centered)
 
     use bl_prof_module
-    use geometry, only: r_start_coord, r_end_coord, numdisjointchunks
-    use probin_module, only: nlevs
+    use geometry, only: r_start_coord, r_end_coord, numdisjointchunks, nlevs
 
     real(kind=dp_t), intent(inout) :: s0(:,0:)
     logical        , intent(in   ) :: is_cell_centered
@@ -58,8 +57,7 @@ contains
 
     use bl_prof_module
     use bl_constants_module
-    use geometry, only: r_start_coord, r_end_coord, nr, numdisjointchunks
-    use probin_module, only: nlevs
+    use geometry, only: r_start_coord, r_end_coord, nr, numdisjointchunks, nlevs
 
     real(kind=dp_t), intent(inout) :: s0(:,0:)
     logical        , intent(in   ) :: is_cell_centered

@@ -19,9 +19,8 @@ contains
 
     use bl_constants_module
     use geometry, only: nr_fine, dr, anelastic_cutoff_coord, r_start_coord, r_end_coord, &
-         nr, numdisjointchunks
+         nr, numdisjointchunks, nlevs
     use restrict_base_module
-    use probin_module, only: nlevs
 
     real(kind=dp_t), intent(  out) :: div_coeff(:,0:)
     real(kind=dp_t), intent(in   ) :: rho0(:,0:), p0(:,0:), gamma1bar(:,0:)

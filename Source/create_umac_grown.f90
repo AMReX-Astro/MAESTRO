@@ -701,8 +701,7 @@ contains
 
   subroutine create_umac_grown_onesided(umac)
 
-    use geometry, only: dm
-    use probin_module, only: nlevs
+    use geometry, only: dm, nlevs
 
     type(multifab), intent(inout) :: umac(:,:)
 

@@ -29,13 +29,12 @@ contains
     use ml_layout_module
     use bl_prof_module
     use bl_constants_module
-    use geometry, only: spherical, dm
+    use geometry, only: spherical, dm, nlevs
     use fill_3d_module
     use variables, only: foextrap_comp
     use ml_restriction_module
     use multifab_fill_ghost_module
     use multifab_physbc_module
-    use probin_module, only: nlevs
     
     type(bc_tower),  intent(in   ) :: the_bc_tower
     type(ml_layout), intent(inout) :: mla
@@ -290,13 +289,13 @@ contains
     use ml_layout_module
     use bl_prof_module
     use bl_constants_module
-    use geometry, only: spherical, dm
+    use geometry, only: spherical, dm, nlevs
     use fill_3d_module
     use variables, only: foextrap_comp, rho_comp
     use ml_restriction_module
     use multifab_fill_ghost_module
     use multifab_physbc_module
-    use probin_module, only: nodal, nlevs
+    use probin_module, only: nodal
     
     type(bc_tower),  intent(in   ) :: the_bc_tower
     type(ml_layout), intent(inout) :: mla

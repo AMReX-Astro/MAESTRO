@@ -21,13 +21,12 @@ contains
     use bl_prof_module
     use bl_constants_module
     use define_bc_module
-    use geometry, only: spherical, dm
+    use geometry, only: spherical, dm, nlevs
     use ml_layout_module
     use multifab_physbc_module
     use ml_restriction_module, only: ml_cc_restriction_c
     use multifab_fill_ghost_module
     use variables, only: foextrap_comp
-    use probin_module, only: nlevs
     
     real(kind=dp_t), intent(in   ) :: s0(:,0:)
     type(multifab) , intent(inout) :: s0_cart(:)
@@ -384,8 +383,8 @@ contains
   subroutine put_w0_on_edges(mla,w0,w0mac,dx,div_coeff,the_bc_tower)
 
     use bl_constants_module
-    use geometry, only: spherical, nr_fine, dm
-    use probin_module, only: w0mac_interp_type, nlevs
+    use geometry, only: spherical, nr_fine, dm, nlevs
+    use probin_module, only: w0mac_interp_type
     use variables, only: foextrap_comp,press_comp
     use define_bc_module
     use macproject_module
@@ -487,8 +486,7 @@ contains
 
   subroutine mk_w0mac_rhs(w0,div_coeff,w0rhs)
 
-    use geometry, only: nr_fine, dr
-    use probin_module, only: nlevs
+    use geometry, only: nr_fine, dr, nlevs
 
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
     real(kind=dp_t), intent(in   ) :: div_coeff(:,0:)
@@ -521,8 +519,7 @@ contains
 
   subroutine mk_div_beta0_w0mac(w0mac,div_coeff_3d,w0rhs_3d,dx)
 
-    use geometry, only: dm
-    use probin_module, only: nlevs
+    use geometry, only: dm, nlevs
 
     type(multifab) , intent(in   ) :: div_coeff_3d(:)
     type(multifab) , intent(in   ) :: w0mac(:,:)
@@ -815,8 +812,7 @@ contains
 
   subroutine make_normal(normal,dx)
 
-    use geometry, only: spherical, dm
-    use probin_module, only: nlevs
+    use geometry, only: spherical, dm, nlevs
 
     type(multifab) , intent(inout) :: normal(:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)

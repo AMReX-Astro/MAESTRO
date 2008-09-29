@@ -29,9 +29,9 @@ contains
     use pert_form_module
     use cell_to_edge_module
     use network,       only: nspec, spec_names
-    use geometry,      only: spherical, nr_fine, dm
+    use geometry,      only: spherical, nr_fine, dm, nlevs
     use variables,     only: nscal, ntrac, spec_comp, rho_comp, trac_comp, foextrap_comp
-    use probin_module, only: verbose, nlevs
+    use probin_module, only: verbose
     use modify_scal_force_module
     use convert_rhoX_to_X_module
 

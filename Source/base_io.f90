@@ -17,11 +17,10 @@ contains
     
     use parallel
     use bl_prof_module
-    use geometry, only : dr, r_start_coord, r_end_coord, numdisjointchunks
+    use geometry, only : dr, r_start_coord, r_end_coord, numdisjointchunks, nlevs
     use network, only: nspec
     use variables, only: rho_comp, rhoh_comp
     use bl_constants_module
-    use probin_module, only: nlevs
 
     character(len=11), intent(in) :: state_name
     character(len=8) , intent(in) :: w0_name
@@ -114,10 +113,9 @@ contains
     use bl_prof_module
     use variables, only: rho_comp, rhoh_comp
     use network, only: nspec
-    use geometry, only : dr, r_start_coord, r_end_coord, numdisjointchunks
+    use geometry, only : dr, r_start_coord, r_end_coord, numdisjointchunks, nlevs
     use bl_constants_module
     use restrict_base_module, only: fill_ghost_base
-    use probin_module, only: nlevs
     
     character(len=11), intent(in   ) :: state_name
     character(len=8) , intent(in   ) :: w0_name

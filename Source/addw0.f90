@@ -14,8 +14,7 @@ contains
   subroutine addw0(umac,w0,w0mac,mult)
 
     use bl_prof_module
-    use geometry, only: spherical, dm
-    use probin_module, only: nlevs
+    use geometry, only: spherical, dm, nlevs
     
     type(multifab) , intent(inout) :: umac(:,:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)

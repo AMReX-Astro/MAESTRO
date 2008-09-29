@@ -32,8 +32,7 @@ contains
     use multifab_physbc_module
     use fill_3d_module
     use thermal_conduct_module
-    use geometry, only: dm
-    use probin_module, only: nlevs
+    use geometry, only: dm, nlevs
 
     type(ml_layout), intent(inout) :: mla
     real(dp_t)     , intent(in   ) :: dx(:,:)

@@ -18,8 +18,7 @@ contains
     use multifab_module
     use ml_layout_module
     use ml_restriction_module
-    use geometry, only: dm
-    use probin_module, only: nlevs
+    use geometry, only: dm, nlevs
 
     type(ml_layout), intent(in   ) :: mla
     type(multifab) , intent(in   ) :: s(:)

@@ -13,9 +13,8 @@ contains
   subroutine correct_base(rho0_new,div_etarho,dt)
 
     use bl_prof_module
-    use geometry, only: spherical
+    use geometry, only: spherical, nlevs
     use restrict_base_module
-    use probin_module, only: nlevs
 
     real(kind=dp_t), intent(inout) :: rho0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: div_etarho(:,0:)

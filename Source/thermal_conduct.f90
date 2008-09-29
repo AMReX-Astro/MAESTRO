@@ -28,12 +28,12 @@ contains
     use macproject_module
     use network, only: nspec
     use rhoh_vs_t_module
-    use probin_module, ONLY: thermal_diffusion_type, use_tfromp, nlevs
+    use probin_module, ONLY: thermal_diffusion_type, use_tfromp
     use bl_prof_module
     use multifab_physbc_module
     use multifab_fill_ghost_module
     use ml_restriction_module, only: ml_cc_restriction_c
-    use geometry, only: dm
+    use geometry, only: dm, nlevs
 
     type(ml_layout), intent(inout) :: mla
     real(dp_t)     , intent(in   ) :: dx(:,:),dt
@@ -618,8 +618,8 @@ contains
     use multifab_physbc_module
     use multifab_fill_ghost_module
     use ml_restriction_module, only: ml_cc_restriction_c
-    use probin_module, only: use_tfromp, nlevs
-    use geometry, only: dm
+    use probin_module, only: use_tfromp
+    use geometry, only: dm, nlevs
 
     type(ml_layout), intent(inout) :: mla
     real(dp_t)     , intent(in   ) :: dx(:,:),dt

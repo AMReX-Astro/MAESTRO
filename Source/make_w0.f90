@@ -23,9 +23,9 @@ contains
 
     use parallel
     use bl_prof_module
-    use geometry, only: spherical, dr, r_start_coord, r_end_coord
+    use geometry, only: spherical, dr, r_start_coord, r_end_coord, nlevs
     use bl_constants_module
-    use probin_module, only: verbose, nlevs
+    use probin_module, only: verbose
     use restrict_base_module, only: fill_ghost_base
 
     real(kind=dp_t), intent(  out) :: w0(:,0:)
@@ -91,10 +91,10 @@ contains
                             psi,w0_force,dt,dtold)
 
     use geometry, only: nr_fine, r_start_coord, r_end_coord, dr, base_cutoff_density_coord, &
-         numdisjointchunks, nr
+         numdisjointchunks, nr, nlevs
     use variables, only: rho_comp
     use bl_constants_module
-    use probin_module, only: grav_const, dpdt_factor, base_cutoff_density, nlevs
+    use probin_module, only: grav_const, dpdt_factor, base_cutoff_density
     use restrict_base_module, only: fill_ghost_base
 
     real(kind=dp_t), intent(  out) :: w0(:,0:)

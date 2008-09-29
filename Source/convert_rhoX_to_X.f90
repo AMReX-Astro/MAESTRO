@@ -24,8 +24,7 @@ contains
     use ml_restriction_module, only: ml_cc_restriction
     use multifab_fill_ghost_module
     use multifab_physbc_module
-    use geometry, only: dm
-    use probin_module, only: nlevs
+    use geometry, only: dm, nlevs
 
     type(multifab) , intent(inout) :: s(:)
     logical        , intent(in   ) :: flag
@@ -105,8 +104,7 @@ contains
     use ml_restriction_module, only: ml_cc_restriction
     use multifab_fill_ghost_module
     use multifab_physbc_module
-    use geometry, only: dm
-    use probin_module, only: nlevs
+    use geometry, only: dm, nlevs
 
     type(multifab) , intent(inout) :: s(:)
     logical        , intent(in   ) :: flag

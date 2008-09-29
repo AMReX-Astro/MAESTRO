@@ -32,10 +32,10 @@ contains
     use cell_to_edge_module
     use rhoh_vs_t_module
     use geometry,      only: spherical, nr_fine, dm, r_start_coord, r_end_coord, &
-         numdisjointchunks
+         numdisjointchunks, nlevs
     use variables,     only: nscal, temp_comp, rho_comp, rhoh_comp, foextrap_comp
     use probin_module, only: enthalpy_pred_type, use_thermal_diffusion, edge_nodal_flag, &
-         verbose, use_tfromp, nlevs
+         verbose, use_tfromp
     use pred_parameters
     use modify_scal_force_module
     use convert_rhoX_to_X_module

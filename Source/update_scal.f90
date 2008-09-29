@@ -18,13 +18,12 @@ contains
 
     use bl_prof_module
     use bl_constants_module
-    use geometry,  only: spherical, dm
+    use geometry,  only: spherical, dm, nlevs
     use variables, only: spec_comp, rho_comp
     use network,   only: nspec
     use multifab_physbc_module
     use ml_restriction_module, only: ml_cc_restriction_c
     use multifab_fill_ghost_module
-    use probin_module, only: nlevs
 
     type(ml_layout)   , intent(inout) :: mla
     integer           , intent(in   ) :: nstart, nstop

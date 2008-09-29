@@ -19,10 +19,9 @@ contains
 
     use bl_prof_module
     use bl_constants_module
-    use geometry, only: spherical, dm
+    use geometry, only: spherical, dm, nlevs
     use ml_restriction_module, only: ml_edge_restriction_c
     use variables, only: nscal
-    use probin_module, only: nlevs
 
     type(ml_layout), intent(inout) :: mla
     type(multifab) , intent(inout) :: sflux(:,:)

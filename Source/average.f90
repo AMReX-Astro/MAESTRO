@@ -19,11 +19,11 @@ contains
   subroutine average(mla,phi,phibar,dx,incomp)
 
     use geometry, only: nr_fine, r_start_coord, r_end_coord, spherical, numdisjointchunks, &
-         dm
+         dm, nlevs
     use bl_prof_module
     use bl_constants_module
     use restrict_base_module
-    use probin_module, only: nlevs, drdxfac
+    use probin_module, only: drdxfac
 
     type(ml_layout), intent(in   ) :: mla
     integer        , intent(in   ) :: incomp

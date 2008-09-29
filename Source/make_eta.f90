@@ -42,9 +42,8 @@ contains
 
     use bl_constants_module
     use geometry, only: spherical, nr_fine, r_start_coord, r_end_coord, numdisjointchunks, &
-         dr, dm
+         dr, dm, nlevs
     use restrict_base_module
-    use probin_module, only: nlevs
 
     real(kind=dp_t)   , intent(  out) :: etarho(:,0:)
     real(kind=dp_t)   , intent(  out) :: etarho_cc(:,0:)
@@ -437,13 +436,12 @@ contains
                                    mla,the_bc_level)
 
     use bl_constants_module
-    use geometry, only: spherical, nr_fine, nr, dm
+    use geometry, only: spherical, nr_fine, nr, dm, nlevs
     use variables
     use average_module
     use ml_restriction_module
     use multifab_physbc_module
     use multifab_fill_ghost_module
-    use probin_module, only: nlevs
 
     type(multifab) , intent(in   ) :: umac(:,:)
     type(multifab) , intent(in   ) :: sold(:), snew(:)

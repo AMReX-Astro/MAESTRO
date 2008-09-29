@@ -27,8 +27,7 @@ contains
 
     use bl_prof_module
     use bl_constants_module
-    use geometry, only: dm
-    use probin_module, only: nlevs
+    use geometry, only: dm, nlevs
 
     type(multifab) , intent(inout) :: macrhs(:)
     real(kind=dp_t), intent(in   ) :: rho0(:,0:)

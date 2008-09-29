@@ -22,9 +22,7 @@ contains
     use ml_restriction_module, only : ml_cc_restriction
     use multifab_fill_ghost_module
     use variables, only: foextrap_comp
-    use geometry, only: dm
-
-    use probin_module, only: nlevs
+    use geometry, only: dm, nlevs
 
     type(ml_layout), intent(in   ) :: mla
     type(multifab) , intent(inout) :: shalf(:)
@@ -111,8 +109,7 @@ contains
     use multifab_physbc_module
     use ml_restriction_module, only : ml_cc_restriction
     use multifab_fill_ghost_module
-    use geometry, only: dm
-    use probin_module, only: nlevs
+    use geometry, only: dm, nlevs
 
     type(multifab) , intent(inout) :: phihalf(:)
     type(multifab) , intent(in   ) :: sold(:)

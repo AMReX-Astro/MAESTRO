@@ -47,7 +47,7 @@ contains
     use add_react_to_thermal_module
     use variables, only: nscal, press_comp, temp_comp, rho_comp, rhoh_comp, foextrap_comp
     use geometry, only: spherical, nr_fine, r_end_coord, anelastic_cutoff_coord, &
-         base_cutoff_density_coord, burning_cutoff_density_coord, dm
+         base_cutoff_density_coord, burning_cutoff_density_coord, dm, nlevs
     use network, only: nspec
     use make_grav_module
     use make_eta_module
@@ -537,6 +537,25 @@ contains
                          rho0_old,rho0_new,&
                          p0_new,rho0_predicted_edge, &
                          dx,dt,the_bc_tower%bc_tower_array)
+
+    ! Now compute the new etarho and psi
+    if (evolve_base_state .and. (.not. lag_etarho) ) then
+       if (use_etarho) then
+
+          if (spherical .eq. 0) then
+             call make_etarho_planar(etarho,etarho_cc,div_etarho,etarhoflux,mla)
+          else
+             call make_etarho_spherical(s1,s2,umac,rho0_old,rho0_new,dx,dt,normal, &
+                                        etarho,etarho_cc,div_etarho, &
+                                        mla,the_bc_tower%bc_tower_array)
+          endif
+
+       endif
+
+       call make_psi(etarho_cc,psi,w0,gamma1bar,p0_old,p0_new,Sbar)
+    end if
+
+
     call enthalpy_advance(mla,1,uold,s1,s2,sedge,sflux,scal_force,&
                           thermal,umac,w0,w0mac,normal, &
                           rho0_old,rhoh0_1, &
@@ -559,12 +578,11 @@ contains
     end if
 
     ! Now compute the new etarho and psi
-    if (evolve_base_state) then
+    if (evolve_base_state .and. lag_etarho) then
        if (use_etarho) then
 
           if (spherical .eq. 0) then
-             call make_etarho_planar(etarho,etarho_cc,div_etarho, &
-                                     etarhoflux,mla)
+             call make_etarho_planar(etarho,etarho_cc,div_etarho,etarhoflux,mla)
           else
              call make_etarho_spherical(s1,s2,umac,rho0_old,rho0_new,dx,dt,normal, &
                                         etarho,etarho_cc,div_etarho, &
@@ -575,7 +593,6 @@ contains
 
        call make_psi(etarho_cc,psi,w0,gamma1bar,p0_old,p0_new,Sbar)
     end if
-
 
     do n=1,nlevs
        call destroy(thermal(n))
@@ -982,6 +999,25 @@ contains
                             rho0_old,rho0_new,&
                             p0_new,rho0_predicted_edge, &
                             dx,dt,the_bc_tower%bc_tower_array)
+
+       ! Now compute the new etarho and psi
+       if (evolve_base_state .and. (.not. lag_etarho) ) then
+          if (use_etarho) then
+
+             if (spherical .eq. 0) then
+                call make_etarho_planar(etarho,etarho_cc,div_etarho, &
+                                        etarhoflux,mla)
+             else
+                call make_etarho_spherical(s1,s2,umac,rho0_old,rho0_new,dx,dt,normal, &
+                                           etarho,etarho_cc,div_etarho, &
+                                           mla,the_bc_tower%bc_tower_array)
+             endif
+
+          endif
+
+          call make_psi(etarho_cc,psi,w0,gamma1bar,p0_old,p0_new,Sbar)
+       end if
+
        call enthalpy_advance(mla,2,uold,s1,s2,sedge,sflux,scal_force,&
                              thermal,umac,w0,w0mac,normal, &
                              rho0_old,rhoh0_1, &
@@ -1004,7 +1040,7 @@ contains
        end if
 
        ! Now compute the new etarho and psi
-       if (evolve_base_state) then
+       if (evolve_base_state .and. lag_etarho) then
           if (use_etarho) then
 
              if (spherical .eq. 0) then

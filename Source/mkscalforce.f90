@@ -31,13 +31,13 @@ contains
 
     use bl_prof_module
     use variables, only: foextrap_comp, rhoh_comp
-    use geometry, only: spherical, nr_fine, dm
+    use geometry, only: spherical, nr_fine, dm, nlevs
     use ml_restriction_module, only: ml_cc_restriction_c
     use fill_3d_module, only: put_1d_array_on_cart
     use multifab_fill_ghost_module
     use multifab_physbc_module
     use make_grav_module
-    use probin_module, only: enthalpy_pred_type, nlevs
+    use probin_module, only: enthalpy_pred_type
     use pred_parameters
 
     type(multifab) , intent(inout) :: scal_force(:)
@@ -416,13 +416,13 @@ contains
 
     use bl_prof_module
     use variables, only: foextrap_comp, rhoh_comp, rho_comp
-    use geometry, only: spherical, nr_fine, dm
+    use geometry, only: spherical, nr_fine, dm, nlevs
     use ml_restriction_module, only: ml_cc_restriction_c
     use fill_3d_module, only: put_1d_array_on_cart
     use multifab_fill_ghost_module
     use multifab_physbc_module
     use make_grav_module
-    use probin_module, only: enthalpy_pred_type, nlevs
+    use probin_module, only: enthalpy_pred_type
     use pred_parameters
 
     type(multifab) , intent(inout) :: scal_force(:)
@@ -701,11 +701,10 @@ contains
 
     use bl_prof_module
     use variables, only: foextrap_comp, temp_comp
-    use geometry, only: spherical, nr_fine, dm
+    use geometry, only: spherical, nr_fine, dm, nlevs
     use ml_restriction_module, only: ml_cc_restriction_c
     use multifab_fill_ghost_module
     use multifab_physbc_module
-    use probin_module, only: nlevs
     use fill_3d_module, only: put_1d_array_on_cart
 
     type(ml_layout), intent(in   ) :: mla

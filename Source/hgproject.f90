@@ -5,7 +5,6 @@ module hgproject_module
   use multifab_module
   use ml_layout_module
   use define_bc_module
-  use probin_module, only: nlevs
 
   implicit none
 
@@ -26,7 +25,7 @@ contains
     use ml_restriction_module
     use multifab_fill_ghost_module
     use probin_module, only: verbose, mg_verbose, cg_verbose, hg_dense_stencil, nodal
-    use geometry, only: dm
+    use geometry, only: dm, nlevs
 
     integer        , intent(in   ) :: proj_type
     type(ml_layout), intent(inout) :: mla
@@ -791,7 +790,7 @@ contains
     use ml_solve_module
     use nodal_divu_module
     use probin_module, only : hg_bottom_solver, verbose, mg_verbose, cg_verbose, nodal
-    use geometry, only: dm
+    use geometry, only: dm, nlevs
 
     type(ml_layout), intent(inout) :: mla
     type(multifab ), intent(inout) :: unew(:)
@@ -1088,7 +1087,7 @@ contains
 
   subroutine mult_by_1d_coeff(u,div_coeff,do_mult)
 
-    use geometry, only: dm
+    use geometry, only: dm, nlevs
 
     type(multifab), intent(inout)           :: u(:)
     real(dp_t)    , intent(in   )           :: div_coeff(:,:)
@@ -1175,7 +1174,7 @@ contains
 
   subroutine mult_by_3d_coeff(u,div_coeff,do_mult)
 
-    use geometry, only: dm
+    use geometry, only: dm, nlevs
 
     type(multifab) , intent(inout) :: u(:)
     type(multifab) , intent(in   ) :: div_coeff(:)

@@ -20,8 +20,7 @@ contains
     use ml_restriction_module
     use multifab_fill_ghost_module
     use multifab_physbc_module
-    use geometry, only: spherical, dm
-    use probin_module, only: nlevs
+    use geometry, only: spherical, dm, nlevs
 
     type(multifab)    , intent(in   ) :: uold(:)
     type(multifab)    , intent(inout) :: unew(:)

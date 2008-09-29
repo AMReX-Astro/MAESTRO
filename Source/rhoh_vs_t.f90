@@ -23,12 +23,11 @@ contains
 
     use bl_prof_module
     use bl_constants_module
-    use geometry, only: spherical, nr_fine, dm
+    use geometry, only: spherical, nr_fine, dm, nlevs
     use variables
     use network
     use fill_3d_module
     use multifab_physbc_module
-    use probin_module, only: nlevs
 
     type(multifab) , intent(in   ) :: u(:)
     type(multifab) , intent(inout) :: sedge(:,:)
@@ -547,8 +546,7 @@ contains
     use ml_restriction_module, only: ml_cc_restriction_c
     use multifab_physbc_module
     use multifab_fill_ghost_module
-    use geometry, only: dm
-    use probin_module, only: nlevs
+    use geometry, only: dm, nlevs
 
     type(multifab)    , intent(inout) :: s(:)
     real (kind = dp_t), intent(in   ) :: p0(:,0:)
@@ -731,8 +729,7 @@ contains
     use ml_restriction_module, only: ml_cc_restriction_c
     use multifab_physbc_module
     use multifab_fill_ghost_module
-    use geometry, only: dm
-    use probin_module, only: nlevs
+    use geometry, only: dm, nlevs
 
     type(multifab)    , intent(inout) :: s(:)
     real (kind = dp_t), intent(in   ) :: p0(:,0:)
@@ -921,8 +918,7 @@ contains
     use ml_restriction_module, only: ml_cc_restriction_c
     use multifab_physbc_module
     use multifab_fill_ghost_module
-    use geometry, only: dm
-    use probin_module, only: nlevs
+    use geometry, only: dm, nlevs
 
     type(multifab)    , intent(in   ) :: s(:)
     type(multifab)    , intent(inout) :: p(:)
@@ -1112,8 +1108,7 @@ contains
     use multifab_fill_ghost_module
     use variables, only: rhoh_comp, temp_comp
     use multifab_physbc_module
-    use geometry, only: dm
-    use probin_module, only: nlevs
+    use geometry, only: dm, nlevs
 
     type(multifab) , intent(inout) :: s(:)
     real(kind=dp_t), intent(in   ) :: p0(:,0:)
@@ -1267,8 +1262,7 @@ contains
     use multifab_fill_ghost_module
     use variables, only: rhoh_comp, rho_comp
     use multifab_physbc_module
-    use geometry, only: dm
-    use probin_module, only: nlevs
+    use geometry, only: dm, nlevs
 
     type(multifab) , intent(inout) :: s(:)
     real(kind=dp_t), intent(in   ) :: p0(:,0:)
