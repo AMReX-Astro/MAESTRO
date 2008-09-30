@@ -539,7 +539,7 @@ contains
                          dx,dt,the_bc_tower%bc_tower_array)
 
     ! Now compute the new etarho and psi
-    if (evolve_base_state .and. (.not. lag_etarho) ) then
+    if (evolve_base_state) then
        if (use_etarho) then
 
           if (spherical .eq. 0) then
@@ -575,23 +575,6 @@ contains
     ! Correct the base state using the lagged etarho and psi
     if (use_etarho .and. evolve_base_state) then
        call correct_base(rho0_new,div_etarho,dt)
-    end if
-
-    ! Now compute the new etarho and psi
-    if (evolve_base_state .and. lag_etarho) then
-       if (use_etarho) then
-
-          if (spherical .eq. 0) then
-             call make_etarho_planar(etarho,etarho_cc,div_etarho,etarhoflux,mla)
-          else
-             call make_etarho_spherical(s1,s2,umac,rho0_old,rho0_new,dx,dt,normal, &
-                                        etarho,etarho_cc,div_etarho, &
-                                        mla,the_bc_tower%bc_tower_array)
-          endif
-
-       endif
-
-       call make_psi(etarho_cc,psi,w0,gamma1bar,p0_old,p0_new,Sbar)
     end if
 
     do n=1,nlevs
@@ -1001,7 +984,7 @@ contains
                             dx,dt,the_bc_tower%bc_tower_array)
 
        ! Now compute the new etarho and psi
-       if (evolve_base_state .and. (.not. lag_etarho) ) then
+       if (evolve_base_state) then
           if (use_etarho) then
 
              if (spherical .eq. 0) then
@@ -1037,24 +1020,6 @@ contains
        ! Correct the base state using the lagged etarho and psi
        if (use_etarho .and. evolve_base_state) then
           call correct_base(rho0_new,div_etarho,dt)
-       end if
-
-       ! Now compute the new etarho and psi
-       if (evolve_base_state .and. lag_etarho) then
-          if (use_etarho) then
-
-             if (spherical .eq. 0) then
-                call make_etarho_planar(etarho,etarho_cc,div_etarho, &
-                                        etarhoflux,mla)
-             else
-                call make_etarho_spherical(s1,s2,umac,rho0_old,rho0_new,dx,dt,normal, &
-                                           etarho,etarho_cc,div_etarho, &
-                                           mla,the_bc_tower%bc_tower_array)
-             endif
-
-          endif
-
-          call make_psi(etarho_cc,psi,w0,gamma1bar,p0_old,p0_new,Sbar)
        end if
 
        do n=1,nlevs

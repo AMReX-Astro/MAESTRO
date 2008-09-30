@@ -30,4 +30,4 @@ A list of changes to the code since paper III (i.e. future appendices)
 -- changing enthalpy equation to have p div{U} instead of U grad{p} term
    in spherical
 
--- lag_etarho enables time-centering of eta and psi
+-- eta and psi are now time-centered instead of time-lagged
