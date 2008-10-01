@@ -410,7 +410,7 @@ contains
 
     t0 = s0_init(temp_comp)
 
-    x0 = 5.0d7
+    x0 = 1.08d8
     y0 = 6.5d7
     
     x1 = 1.2d8
