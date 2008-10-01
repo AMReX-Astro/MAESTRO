@@ -18,8 +18,7 @@ contains
 
   subroutine make_w0(w0,w0_old,w0_force,Sbar_in,rho0_old,rho0_new,p0_old,p0_new, &
                      gamma1bar_old,gamma1bar_new,p0_minus_pthermbar, &
-                     psi,etarho_ec,etarho_cc,div_etarho, &
-                     dt,dtold)
+                     psi,etarho_ec,etarho_cc,dt,dtold)
 
     use parallel
     use bl_prof_module
@@ -33,7 +32,6 @@ contains
     real(kind=dp_t), intent(in   ) :: psi(:,0:)
     real(kind=dp_t), intent(in   ) :: etarho_ec(:,0:)
     real(kind=dp_t), intent(in   ) :: etarho_cc(:,0:)
-    real(kind=dp_t), intent(in   ) :: div_etarho(:,0:)
     real(kind=dp_t), intent(inout) :: w0_force(:,0:)
     real(kind=dp_t), intent(in   ) :: rho0_old(:,0:), rho0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:), p0_new(:,0:)
@@ -64,8 +62,7 @@ contains
           call make_w0_spherical(n,w0(n,:),w0_old(n,0:),Sbar_in(n,0:), &
                                  rho0_old(n,:),rho0_new(n,:),p0_old(n,0:),p0_new(n,0:), &
                                  gamma1bar_old(n,0:),gamma1bar_new(n,0:), &
-                                 p0_minus_pthermbar(n,0:), &
-                                 etarho_ec(n,0:),etarho_cc(n,0:),div_etarho(n,0:), &
+                                 p0_minus_pthermbar(n,0:),etarho_ec(n,0:),etarho_cc(n,0:), &
                                  w0_force(n,0:),dt,dtold)
        end do
 
@@ -213,7 +210,7 @@ contains
 
   subroutine make_w0_spherical(n,w0,w0_old,Sbar_in,rho0,rho0_new,p0,p0_new, &
                                gamma1bar,gamma1bar_new,p0_minus_pthermbar, &
-                               etarho_ec,etarho_cc,div_etarho,w0_force,dt,dtold)
+                               etarho_ec,etarho_cc,w0_force,dt,dtold)
 
     use geometry, only: r_cc_loc, nr_fine, r_edge_loc, dr
     use make_grav_module
@@ -228,7 +225,7 @@ contains
     real(kind=dp_t), intent(in   ) :: rho0(0:),rho0_new(0:)
     real(kind=dp_t), intent(in   ) :: p0(0:),p0_new(0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar(0:),gamma1bar_new(0:),p0_minus_pthermbar(0:)
-    real(kind=dp_t), intent(in   ) :: etarho_ec(0:),etarho_cc(0:),div_etarho(0:)
+    real(kind=dp_t), intent(in   ) :: etarho_ec(0:),etarho_cc(0:)
     real(kind=dp_t), intent(inout) :: w0_force(0:)
     real(kind=dp_t), intent(in   ) :: dt,dtold
 
@@ -315,10 +312,6 @@ contains
 
     do r = 1,nr_fine-1
        dpdr = (p0_nph(r)-p0_nph(r-1))/dr(n)
-! averaging div_etarho to edges does not seem to work
-!       rhs(r) = four * dpdr * w0_from_Sbar(r) / r_edge_loc(n,r) - &
-!            grav_edge(r) * HALF * (div_etarho(r) + div_etarho(r-1)) - &
-!            four * M_PI * Gconst * HALF * (rho0_nph(r) + rho0_nph(r-1)) * etarho(r)
        rhs(r) = four * dpdr * w0_from_Sbar(r) / r_edge_loc(n,r) - &
             grav_edge(r) * (r_cc_loc(n,r  )**2 * etarho_cc(r  ) - &
                             r_cc_loc(n,r-1)**2 * etarho_cc(r-1)) / &

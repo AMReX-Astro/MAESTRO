@@ -289,7 +289,7 @@ contains
 
        call make_w0(w0,w0_old,w0_force,Sbar,rho0_old,rho0_old,p0_old,p0_old, &
                     gamma1bar,gamma1bar,p0_minus_pthermbar, &
-                    psi,etarho_ec,etarho_cc,div_etarho,dt,dtold)
+                    psi,etarho_ec,etarho_cc,dt,dtold)
 
        if (spherical .eq. 1) then
           call put_w0_on_edges(mla,w0,w0mac,dx,div_coeff_old,the_bc_tower)
@@ -808,7 +808,7 @@ contains
 
           call make_w0(w0,w0_old,w0_force,Sbar,rho0_old,rho0_new,p0_old,p0_new, &
                        gamma1bar_old,gamma1bar,p0_minus_pthermbar, &
-                       psi,etarho_ec,etarho_cc,div_etarho,dt,dtold)
+                       psi,etarho_ec,etarho_cc,dt,dtold)
 
           if (spherical .eq. 1) then
              call put_w0_on_edges(mla,w0,w0mac,dx,div_coeff_nph,the_bc_tower)
