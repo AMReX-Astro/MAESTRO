@@ -13,7 +13,7 @@ contains
                               rho0_new,rhoh0_new,p0_old,p0_new,tempbar,gamma1bar,w0, &
                               rho_omegadot2,div_coeff_old,div_coeff_new, &
                               grav_cell_old,dx,time,dt,dtold,the_bc_tower, &
-                              dSdt,Source_old,Source_new,etarho,etarho_cc,div_etarho, &
+                              dSdt,Source_old,Source_new,etarho_ec,etarho_cc,div_etarho, &
                               psi,sponge,hgrhs, &
                               istep)
 
@@ -86,7 +86,7 @@ contains
     type(multifab),  intent(inout) ::       dSdt(:)
     type(multifab),  intent(inout) :: Source_old(:)
     type(multifab),  intent(inout) :: Source_new(:)
-    real(dp_t)    ,  intent(inout) ::     etarho(:,0:)
+    real(dp_t)    ,  intent(inout) ::  etarho_ec(:,0:)
     real(dp_t)    ,  intent(inout) ::  etarho_cc(:,0:)
     real(dp_t)    ,  intent(inout) :: div_etarho(:,0:)
     real(dp_t)    ,  intent(inout) ::        psi(:,0:)
@@ -289,7 +289,7 @@ contains
 
        call make_w0(w0,w0_old,w0_force,Sbar,rho0_old,rho0_old,p0_old,p0_old, &
                     gamma1bar,gamma1bar,p0_minus_pthermbar, &
-                    psi,etarho,etarho_cc,div_etarho,dt,dtold)
+                    psi,etarho_ec,etarho_cc,div_etarho,dt,dtold)
 
        if (spherical .eq. 1) then
           call put_w0_on_edges(mla,w0,w0mac,dx,div_coeff_old,the_bc_tower)
@@ -543,10 +543,10 @@ contains
        if (use_etarho) then
 
           if (spherical .eq. 0) then
-             call make_etarho_planar(etarho,etarho_cc,div_etarho,etarhoflux,mla)
+             call make_etarho_planar(etarho_ec,etarho_cc,div_etarho,etarhoflux,mla)
           else
              call make_etarho_spherical(s1,s2,umac,rho0_old,rho0_new,dx,dt,normal, &
-                                        etarho,etarho_cc,div_etarho, &
+                                        etarho_ec,etarho_cc,div_etarho, &
                                         mla,the_bc_tower%bc_tower_array)
           endif
 
@@ -808,7 +808,7 @@ contains
 
           call make_w0(w0,w0_old,w0_force,Sbar,rho0_old,rho0_new,p0_old,p0_new, &
                        gamma1bar_old,gamma1bar,p0_minus_pthermbar, &
-                       psi,etarho,etarho_cc,div_etarho,dt,dtold)
+                       psi,etarho_ec,etarho_cc,div_etarho,dt,dtold)
 
           if (spherical .eq. 1) then
              call put_w0_on_edges(mla,w0,w0mac,dx,div_coeff_nph,the_bc_tower)
@@ -988,11 +988,10 @@ contains
           if (use_etarho) then
 
              if (spherical .eq. 0) then
-                call make_etarho_planar(etarho,etarho_cc,div_etarho, &
-                                        etarhoflux,mla)
+                call make_etarho_planar(etarho_ec,etarho_cc,div_etarho,etarhoflux,mla)
              else
                 call make_etarho_spherical(s1,s2,umac,rho0_old,rho0_new,dx,dt,normal, &
-                                           etarho,etarho_cc,div_etarho, &
+                                           etarho_ec,etarho_cc,div_etarho, &
                                            mla,the_bc_tower%bc_tower_array)
              endif
 

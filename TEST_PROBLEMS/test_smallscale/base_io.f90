@@ -11,7 +11,8 @@ module base_io_module
 contains
 
   subroutine write_base_state(state_name,w0_name,etarho_name,chk_name,rho0,rhoh0,p0, &
-                              gamma1bar,w0,etarho,etarho_cc,div_etarho,div_coeff,psi,problo)
+                              gamma1bar,w0,etarho_ec,etarho_cc,div_etarho,div_coeff,psi, &
+                              problo)
     
     use parallel
     use bl_prof_module
@@ -27,7 +28,7 @@ contains
     real(kind=dp_t)  , intent(in) :: rho0(:,0:),rhoh0(:,0:)
     real(kind=dp_t)  , intent(in) :: p0(:,0:),gamma1bar(:,0:)
     real(kind=dp_t)  , intent(in) :: div_coeff(:,0:), psi(:,0:)
-    real(kind=dp_t)  , intent(in) :: w0(:,0:),etarho(:,0:),etarho_cc(:,0:)
+    real(kind=dp_t)  , intent(in) :: w0(:,0:),etarho_ec(:,0:),etarho_cc(:,0:)
     real(kind=dp_t)  , intent(in) :: div_etarho(:,0:)
 
     real(kind=dp_t) :: base_r, problo
@@ -77,7 +78,7 @@ contains
        end do
        close(99)
 
-       ! write out etarho (it is edge-based, so it gets a separate file)
+       ! write out etarho_ec (it is edge-based, so it gets a separate file)
        out_name = chk_name // "/" // etarho_name
        write(6,*) 'Writing etarho on edges to ',out_name
        write(6,*) ''
@@ -87,7 +88,7 @@ contains
           do i=1,numdisjointchunks(n)
              do r=r_start_coord(n,i),r_end_coord(n,i)+1
                 base_r = problo + dble(r) * dr(n)
-                write(99,1000)  base_r,etarho(n,r)
+                write(99,1000)  base_r,etarho_ec(n,r)
              end do
           end do
        end do
@@ -103,7 +104,7 @@ contains
 
 
   subroutine read_base_state(state_name,w0_name,etarho_name,chk_name, &
-                             rho0,rhoh0,p0,gamma1bar,w0,etarho,etarho_cc,div_etarho, &
+                             rho0,rhoh0,p0,gamma1bar,w0,etarho_ec,etarho_cc,div_etarho, &
                              div_coeff,psi)
 
     use parallel
@@ -123,7 +124,7 @@ contains
     real(kind=dp_t)  , intent(inout) :: rho0(:,0:),rhoh0(:,0:)
     real(kind=dp_t)  , intent(inout) :: p0(:,0:),gamma1bar(:,0:)
     real(kind=dp_t)  , intent(inout) :: div_coeff(:,0:), psi(:,0:)
-    real(kind=dp_t)  , intent(inout) :: w0(:,0:),etarho(:,0:),etarho_cc(:,0:)
+    real(kind=dp_t)  , intent(inout) :: w0(:,0:),etarho_ec(:,0:),etarho_cc(:,0:)
     real(kind=dp_t)  , intent(inout) :: div_etarho(:,0:)
 
     real(kind=dp_t) :: r_dummy
@@ -173,17 +174,17 @@ contains
     end do
     close(99)
 
-    ! read in etarho
+    ! read in etarho_ec
     out_name = chk_name // "/" // etarho_name
     if (parallel_IOProcessor()) then
-      print *,'Reading etarho state from ',out_name
+      print *,'Reading etarho_ec state from ',out_name
     end if
 
     open(unit=99,file=out_name)
     do n=1,nlevs
        do i=1,numdisjointchunks(n)
           do r=r_start_coord(n,i),r_end_coord(n,i)+1
-             read(99,*)  r_dummy, etarho(n,r)
+             read(99,*)  r_dummy, etarho_ec(n,r)
           end do
        end do
     end do
@@ -264,7 +265,7 @@ contains
        call fill_ghost_base(etarho_cc,.true.)
        call fill_ghost_base(div_etarho,.true.)
        call fill_ghost_base(w0,.false.)
-       call fill_ghost_base(etarho,.false.)
+       call fill_ghost_base(etarho_ec,.false.)
     end if
 
   end subroutine read_base_state

@@ -38,14 +38,14 @@ contains
   !---------------------------------------------------------------------------
   ! plane-parallel geometry routines
   !---------------------------------------------------------------------------
-  subroutine make_etarho_planar(etarho,etarho_cc,div_etarho,etarhoflux,mla)
+  subroutine make_etarho_planar(etarho_ec,etarho_cc,div_etarho,etarhoflux,mla)
 
     use bl_constants_module
     use geometry, only: spherical, nr_fine, r_start_coord, r_end_coord, numdisjointchunks, &
          dr, dm, nlevs
     use restrict_base_module
 
-    real(kind=dp_t)   , intent(  out) :: etarho(:,0:)
+    real(kind=dp_t)   , intent(  out) :: etarho_ec(:,0:)
     real(kind=dp_t)   , intent(  out) :: etarho_cc(:,0:)
     real(kind=dp_t)   , intent(  out) :: div_etarho(:,0:)
     type(multifab)    , intent(in   ) :: etarhoflux(:)
@@ -81,7 +81,7 @@ contains
     etarhosum       = ZERO
     etarhopert_proc = ZERO
     etarhopert      = ZERO
-    etarho          = ZERO
+    etarho_ec       = ZERO
 
     if (spherical .eq. 0) then
 
@@ -120,7 +120,7 @@ contains
              
              do i=1,numdisjointchunks(n)
                 do r=r_start_coord(n,i),r_end_coord(n,i)+1
-                   etarho(n,r) = etarhosum(n,r) / dble(ncell(n,r))
+                   etarho_ec(n,r) = etarhosum(n,r) / dble(ncell(n,r))
                 end do
              end do
              
@@ -159,7 +159,7 @@ contains
           etarhosum(1,:) = target_buffer
           
           do r=0,r_end_coord(1,1)
-             etarho(1,r) = etarhosum(1,r) / dble(ncell(1,r))
+             etarho_ec(1,r) = etarhosum(1,r) / dble(ncell(1,r))
           end do
           
           ! now we compute etarho at the finer levels
@@ -188,7 +188,7 @@ contains
              ! copy scaled values of etarhosum directly.
              do i=1,numdisjointchunks(n)
                 do r=r_start_coord(n-1,i),r_end_coord(n-1,i)+1
-                   etarho   (n,r*rr) = etarho   (n-1,r)
+                   etarho_ec(n,r*rr) = etarho_ec(n-1,r)
                    etarhosum(n,r*rr) = etarhosum(n-1,r)*rr**(dm-1)
                 end do
              end do
@@ -231,7 +231,7 @@ contains
                    do rpert=1,rr-1
                       etarhosum(n,r*rr+rpert) = &
                            etarhosum(n,r*rr+rpert) + etarhopert(n,r*rr+rpert)
-                      etarho(n,r*rr+rpert) = &
+                      etarho_ec(n,r*rr+rpert) = &
                            etarhosum(n,r*rr+rpert)/dble(ncell(n,r*rr+rpert))
                    end do
                 end do
@@ -241,7 +241,7 @@ contains
           
        end if
 
-       call restrict_base(etarho,.false.)
+       call restrict_base(etarho_ec,.false.)
        
     else
 
@@ -253,7 +253,7 @@ contains
     do n=1,nlevs
        do i=1,numdisjointchunks(n)
           do r=r_start_coord(n,i),r_end_coord(n,i)
-             etarho_cc(n,r) = HALF*(etarho(n,r) + etarho(n,r+1))
+             etarho_cc(n,r) = HALF*(etarho_ec(n,r) + etarho_ec(n,r+1))
           enddo
        enddo
     enddo
@@ -263,7 +263,7 @@ contains
     do n=1,nlevs
        do i=1,numdisjointchunks(n)
           do r=r_start_coord(n,i),r_end_coord(n,i)
-             div_etarho(n,r) = (etarho(n,r+1) - etarho(n,r))/dr(n)
+             div_etarho(n,r) = (etarho_ec(n,r+1) - etarho_ec(n,r))/dr(n)
           enddo
        enddo
     enddo
@@ -432,7 +432,7 @@ contains
   ! spherical routines
   !---------------------------------------------------------------------------
   subroutine make_etarho_spherical(sold,snew,umac,rho0_old,rho0_new, &
-                                   dx,dt,normal,etarho,etarho_cc,div_etarho, &
+                                   dx,dt,normal,etarho_ec,etarho_cc,div_etarho, &
                                    mla,the_bc_level)
 
     use bl_constants_module
@@ -448,7 +448,7 @@ contains
     real(kind=dp_t), intent(in   ) :: rho0_old(:,0:), rho0_new(:,0:) 
     real(kind=dp_t), intent(in   ) :: dx(:,:), dt
     type(multifab) , intent(in   ) :: normal(:)
-    real(kind=dp_t), intent(  out) :: etarho(:,0:)
+    real(kind=dp_t), intent(  out) :: etarho_ec(:,0:)
     real(kind=dp_t), intent(  out) :: etarho_cc(:,0:)
     real(kind=dp_t), intent(  out) :: div_etarho(:,0:)
     type(ml_layout), intent(in   ) :: mla
@@ -528,8 +528,8 @@ contains
        do n=nlevs,2,-1
 
           ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction(eta_cart(n-1)    ,eta_cart(n)    ,mla%mba%rr(n-1,:))
-          call ml_cc_restriction(rhoprime_cart(n-1)    ,rhoprime_cart(n)    ,mla%mba%rr(n-1,:))
+          call ml_cc_restriction(eta_cart(n-1)     ,eta_cart(n)     ,mla%mba%rr(n-1,:))
+          call ml_cc_restriction(rhoprime_cart(n-1),rhoprime_cart(n),mla%mba%rr(n-1,:))
 
           ! fill level n ghost cells using interpolation from level n-1 data
           ! note that multifab_fill_boundary and multifab_physbc are called for
@@ -567,13 +567,13 @@ contains
        
        ! the 0th value of etarho = 0, since Utilde . e_r must be 
        ! zero at the center (since e_r is not defined there)
-       etarho(n,0) = ZERO
+       etarho_ec(n,0) = ZERO
        do r=1, nr(n)-1
-          etarho(n,r) = HALF*(etarho_cc(n,r) + etarho_cc(n,r-1))
+          etarho_ec(n,r) = HALF*(etarho_cc(n,r) + etarho_cc(n,r-1))
        enddo
 
        ! probably should do some better extrapolation here eventually
-       etarho(n,nr(n)) = etarho_cc(n,nr(n)-1)
+       etarho_ec(n,nr(n)) = etarho_cc(n,nr(n)-1)
 
     enddo
 

@@ -18,7 +18,7 @@ contains
 
   subroutine make_w0(w0,w0_old,w0_force,Sbar_in,rho0_old,rho0_new,p0_old,p0_new, &
                      gamma1bar_old,gamma1bar_new,p0_minus_pthermbar, &
-                     psi,etarho,etarho_cc,div_etarho, &
+                     psi,etarho_ec,etarho_cc,div_etarho, &
                      dt,dtold)
 
     use parallel
@@ -31,7 +31,7 @@ contains
     real(kind=dp_t), intent(  out) :: w0(:,0:)
     real(kind=dp_t), intent(in   ) :: w0_old(:,0:)
     real(kind=dp_t), intent(in   ) :: psi(:,0:)
-    real(kind=dp_t), intent(in   ) :: etarho(:,0:)
+    real(kind=dp_t), intent(in   ) :: etarho_ec(:,0:)
     real(kind=dp_t), intent(in   ) :: etarho_cc(:,0:)
     real(kind=dp_t), intent(in   ) :: div_etarho(:,0:)
     real(kind=dp_t), intent(inout) :: w0_force(:,0:)
@@ -65,7 +65,7 @@ contains
                                  rho0_old(n,:),rho0_new(n,:),p0_old(n,0:),p0_new(n,0:), &
                                  gamma1bar_old(n,0:),gamma1bar_new(n,0:), &
                                  p0_minus_pthermbar(n,0:), &
-                                 etarho(n,0:),etarho_cc(n,0:),div_etarho(n,0:), &
+                                 etarho_ec(n,0:),etarho_cc(n,0:),div_etarho(n,0:), &
                                  w0_force(n,0:),dt,dtold)
        end do
 
@@ -213,7 +213,7 @@ contains
 
   subroutine make_w0_spherical(n,w0,w0_old,Sbar_in,rho0,rho0_new,p0,p0_new, &
                                gamma1bar,gamma1bar_new,p0_minus_pthermbar, &
-                               etarho,etarho_cc,div_etarho,w0_force,dt,dtold)
+                               etarho_ec,etarho_cc,div_etarho,w0_force,dt,dtold)
 
     use geometry, only: r_cc_loc, nr_fine, r_edge_loc, dr
     use make_grav_module
@@ -228,7 +228,7 @@ contains
     real(kind=dp_t), intent(in   ) :: rho0(0:),rho0_new(0:)
     real(kind=dp_t), intent(in   ) :: p0(0:),p0_new(0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar(0:),gamma1bar_new(0:),p0_minus_pthermbar(0:)
-    real(kind=dp_t), intent(in   ) :: etarho(0:),etarho_cc(0:),div_etarho(0:)
+    real(kind=dp_t), intent(in   ) :: etarho_ec(0:),etarho_cc(0:),div_etarho(0:)
     real(kind=dp_t), intent(inout) :: w0_force(0:)
     real(kind=dp_t), intent(in   ) :: dt,dtold
 
@@ -323,7 +323,7 @@ contains
             grav_edge(r) * (r_cc_loc(n,r  )**2 * etarho_cc(r  ) - &
                             r_cc_loc(n,r-1)**2 * etarho_cc(r-1)) / &
                             (dr(n) * r_edge_loc(n,r)**2) - &
-            four * M_PI * Gconst * HALF * (rho0_nph(r) + rho0_nph(r-1)) * etarho(r)
+            four * M_PI * Gconst * HALF * (rho0_nph(r) + rho0_nph(r-1)) * etarho_ec(r)
     end do
 
     ! Lower boundary

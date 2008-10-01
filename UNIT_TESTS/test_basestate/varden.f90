@@ -48,7 +48,7 @@ subroutine varden()
   real(dp_t), allocatable :: w0(:,:)
   real(dp_t), allocatable :: w0_old(:,:)
   real(dp_t), allocatable :: psi(:,:)
-  real(dp_t), allocatable :: etarho(:,:)
+  real(dp_t), allocatable :: etarho_ec(:,:)
   real(dp_t), allocatable :: etarho_cc(:,:)
   real(dp_t), allocatable :: div_etarho(:,:)
   real(dp_t), allocatable :: f(:,:)
@@ -127,7 +127,7 @@ subroutine varden()
   allocate(             w0_old(nlevs,0:nr_fine))
   allocate(                 w0(nlevs,0:nr_fine))
   allocate(                psi(nlevs,0:nr_fine-1))
-  allocate(             etarho(nlevs,0:nr_fine))
+  allocate(          etarho_ec(nlevs,0:nr_fine))
   allocate(          etarho_cc(nlevs,0:nr_fine-1))
   allocate(         div_etarho(nlevs,0:nr_fine-1))
   allocate(                  f(nlevs,0:nr_fine))
@@ -143,7 +143,7 @@ subroutine varden()
   gam1(:,:) = ZERO
   w0(:,:) = ZERO
   psi(:,:) = ZERO
-  etarho(:,:) = ZERO
+  etarho_ec(:,:) = ZERO
   etarho_cc(:,:) = ZERO
   div_etarho(:,:) = ZERO
   delta_p0_ptherm_bar(:,:) = ZERO
@@ -241,7 +241,7 @@ subroutine varden()
      w0(:,:) = ZERO
 
      call make_w0(w0,w0_old,f,Sbar_in,s0(:,:,rho_comp),s0(:,:,rho_comp),p0,p0, &
-                  gam1,gam1,delta_p0_ptherm_bar,psi,etarho,etarho_cc,div_etarho,dt,dtold)
+                  gam1,gam1,delta_p0_ptherm_bar,psi,etarho_ec,etarho_cc,div_etarho,dt,dtold)
   
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
