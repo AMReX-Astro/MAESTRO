@@ -25,9 +25,9 @@ contains
 
   subroutine regrid(mla,uold,sold,gpres,pres,dSdt,src,rw2,dx,the_bc_tower)
 
-    use probin_module, only : nlevs, nodal, pmask, regrid_int, max_grid_size, ref_ratio, &
+    use probin_module, only : nodal, pmask, regrid_int, max_grid_size, ref_ratio, &
          max_levs
-    use geometry, only: dm, nr_fine
+    use geometry, only: dm, nr_fine, nlevs
     use variables, only: nscal, rho_comp, foextrap_comp, temp_comp
     use network, only: nspec
     use average_module

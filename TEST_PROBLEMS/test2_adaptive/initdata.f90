@@ -24,7 +24,7 @@ contains
 
   subroutine initscalardata(s,s0_init,p0_background,dx,bc,mla)
 
-    use probin_module, only: nlevs
+    use geometry, only: nlevs
 
     type(multifab) , intent(inout) :: s(:)
     real(kind=dp_t), intent(in   ) :: s0_init(:,0:,:)
@@ -302,7 +302,7 @@ contains
 
   subroutine initveldata(u,s0_init,p0_background,dx,bc,mla)
 
-    use probin_module, only: nlevs
+    use geometry, only: nlevs
 
     type(multifab) , intent(inout) :: u(:)
     real(kind=dp_t), intent(in   ) :: s0_init(:,0:,:)
@@ -420,10 +420,14 @@ contains
     r0 = sqrt( (x-x0)**2 +(y-y0)**2 ) / 2.5e6
     r1 = sqrt( (x-x1)**2 +(y-y1)**2 ) / 2.5e6
     
-    ! This case works
+    ! Two bubbles
+!    temp = t0 * (ONE + TWO * ( &
+!         .15_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r0))) + &
+!         .3_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r1))) ) )
+
+    ! One bubble
     temp = t0 * (ONE + TWO * ( &
-         .15_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r0))) + &
-         .3_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r1))) ) )
+         .15_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r0))) ) )
           
     ! Use the EOS to make this temperature perturbation occur at constant 
     ! pressure
