@@ -8,10 +8,6 @@
    computing div{U + w_0} together?  This is more along the lines
    of how we treat the div{w_0} stuff in update_vel.f90
 
--- enthalpy_advance is using a lagged psi.  Now that we have split up scalar_advance 
-   into density_advance and enthalpy_advance, we can call make_psi after density_advance 
-   if we want a time-centered psi.
-
 -- update Gconst to the latest accepted value
 
 -- should we be computing beta_0 differently for spherical?  In 
