@@ -265,7 +265,12 @@ contains
 
        if (drdxfac .ne. 1) then
 
-          nr_crse = nr_fine / drdxfac + 1
+          if ( mod(nr_fine,drdxfac) .eq. 0 ) then
+             nr_crse = nr_fine / drdxfac
+          else
+             nr_crse = nr_fine / drdxfac + 1
+          end if
+
           allocate( ncell_crse(0:nr_crse-1))
           allocate(phibar_crse(-2:nr_crse+1))
 
