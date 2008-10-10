@@ -161,17 +161,18 @@ contains
     real (kind = dp_t), intent(in   ) ::        s_in (lo(1)-ng_si:,lo(2)-ng_si:,:)
     real (kind = dp_t), intent(  out) ::        s_out(lo(1)-ng_so:,lo(2)-ng_so:,:)
     real (kind = dp_t), intent(  out) :: rho_omegadot(lo(1)-ng_rw:,lo(2)-ng_rw:,:)
-    real (kind = dp_t), intent(in   ) ::     rho_Hnuc(lo(1)-ng_hn:,lo(2)-ng_hn:)
+    real (kind = dp_t), intent(  out) ::     rho_Hnuc(lo(1)-ng_hn:,lo(2)-ng_hn:)
     real (kind = dp_t), intent(in   ) ::     rho_Hext(lo(1)-ng_he:,lo(2)-ng_he:)
     real (kind = dp_t), intent(in   ) :: dt
 
     !     Local variables
     integer            :: i, j
-    real (kind = dp_t) :: rho,T_in,h_in,h_out
+    real (kind = dp_t) :: rho,T_in
 
     real (kind = dp_t) :: x_in(nspec)
     real (kind = dp_t) :: x_out(nspec)
     real (kind = dp_t) :: rhowdot(nspec)
+    real (kind = dp_t) :: rhoH
 
     logical :: update_temp
 
@@ -182,23 +183,29 @@ contains
 
           rho = s_in(i,j,rho_comp)
           x_in(1:nspec) = s_in(i,j,spec_comp:spec_comp+nspec-1) / rho
-          h_in = s_in(i,j,rhoh_comp) / rho
           T_in = s_in(i,j,temp_comp)
 
           if (do_burning .and. rho > burning_cutoff_density) then
-             call burner(rho, T_in, x_in, h_in, dt, x_out, h_out, rhowdot)
+             call burner(rho, T_in, x_in, dt, x_out, rhowdot, rhoH)
           else
              x_out = x_in
-             h_out = h_in
              rhowdot = ZERO
+             rhoH = ZERO
           endif
 
+          ! update the density and species
           s_out(i,j,rho_comp) = s_in(i,j,rho_comp)
           s_out(i,j,spec_comp:spec_comp+nspec-1) = x_out(1:nspec) * rho
-          
+
+          ! store the energy generation and species creation quantities
           rho_omegadot(i,j,1:nspec) = rhowdot(1:nspec)
-          
-          s_out(i,j,rhoh_comp) = rho * h_out + dt * rho_Hext(i,j)
+          rho_Hnuc(i,j) = rhoH
+
+          ! update the enthalpy -- include the change due to external heating
+          s_out(i,j,rhoh_comp) = s_in(i,j,rhoh_comp) &
+               + dt * rho_Hnuc(i,j) + dt * rho_Hext(i,j)
+
+
 
 !**********************************************
 ! option to compute temperature and put it into s_out
@@ -259,17 +266,18 @@ contains
     real (kind = dp_t),intent(in   )::         s_in(lo(1)-ng_si:,lo(2)-ng_si:,lo(3)-ng_si:,:)
     real (kind = dp_t),intent(  out)::        s_out(lo(1)-ng_so:,lo(2)-ng_so:,lo(3)-ng_so:,:)
     real (kind = dp_t),intent(  out):: rho_omegadot(lo(1)-ng_rw:,lo(2)-ng_rw:,lo(3)-ng_rw:,:)
-    real (kind = dp_t),intent(in   )::     rho_Hnuc(lo(1)-ng_hn:,lo(2)-ng_hn:,lo(3)-ng_hn:)
+    real (kind = dp_t),intent(  out)::     rho_Hnuc(lo(1)-ng_hn:,lo(2)-ng_hn:,lo(3)-ng_hn:)
     real (kind = dp_t),intent(in   )::     rho_Hext(lo(1)-ng_he:,lo(2)-ng_he:,lo(3)-ng_he:)
     real (kind = dp_t),intent(in   ):: dt
 
     !     Local variables
     integer            :: i, j, k
-    real (kind = dp_t) :: rho,T_in,h_in,h_out
+    real (kind = dp_t) :: rho,T_in
 
     real (kind = dp_t) :: x_in(nspec)
     real (kind = dp_t) :: x_out(nspec)
     real (kind = dp_t) :: rhowdot(nspec)
+    real (kind = dp_t) :: rhoH
 
     logical :: update_temp
 
@@ -281,23 +289,29 @@ contains
        do i = lo(1), hi(1)
           rho = s_in(i,j,k,rho_comp)
           x_in = s_in(i,j,k,spec_comp:spec_comp+nspec-1) / rho
-          h_in = s_in(i,j,k,rhoh_comp) / rho
           T_in = s_in(i,j,k,temp_comp)
 
           if (do_burning .and. rho > burning_cutoff_density) then
-             call burner(rho, T_in, x_in, h_in, dt, x_out, h_out, rhowdot)
+             call burner(rho, T_in, x_in, dt, x_out, rhowdot, rhoH)
           else
              x_out = x_in
-             h_out = h_in
              rhowdot = ZERO
+             rhoH = ZERO
           endif
           
+          ! update the density and species
           s_out(i,j,k,rho_comp) = s_in(i,j,k,rho_comp)
           s_out(i,j,k,spec_comp:spec_comp+nspec-1) = x_out(1:nspec) * rho
 
+          ! store the energy generation and species create quantities
           rho_omegadot(i,j,k,1:nspec) = rhowdot(1:nspec)
+          rho_Hnuc(i,j,k) = rhoH
 
-          s_out(i,j,k,rhoh_comp) = rho * h_out + dt * rho_Hext(i,j,k)
+          ! update the enthalpy -- include the change due to external heating
+          s_out(i,j,k,rhoh_comp) = s_in(i,j,k,rhoh_comp) &
+               + dt * rho_Hnuc(i,j,k) + dt * rho_Hext(i,j,k)
+
+
 
 !**********************************************
 ! option to compute temperature and put it into s_out

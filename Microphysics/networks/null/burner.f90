@@ -8,19 +8,26 @@ module burner_module
 
 contains
 
-  subroutine burner(dens, temp, Xin, hin, dt, Xout, hout, rho_omegadot)
+  subroutine burner(dens, temp, Xin, dt, Xout, rho_omegadot, rho_Hnuc)
 
+    ! outputs:
+    !   Xout are the mass fractions after burning through timestep dt
+    !   rho_omegadot = rho dX/dt
+    !   rho_Hnuc = - sum_k q_k rho_omegadot_k  [erg / cm^3 / s]
 
     implicit none
     
-    real(kind=dp_t), intent(in) :: dens, temp, Xin(nspec), hin, dt
-    real(kind=dp_t), intent(out) :: Xout(nspec), hout, rho_omegadot(nspec)
+    real(kind=dp_t), intent(in) :: dens, temp, Xin(nspec), dt
+    real(kind=dp_t), intent(out) :: Xout(nspec), rho_omegadot(nspec), rho_Hnuc
     
     integer :: n
     real(kind=dp_t) :: enuc, dX
     
     Xout(:) = Xin(:)
     
+    ! compute the energy release.  Our convention is that the binding
+    ! energies are negative, so the energy release is
+    ! - sum_k { (Xout(k) - Xin(k)) ebin(k) }
     enuc = 0.0_dp_t
     do n = 1, nspec
        dX = Xout(n)-Xin(n) 
@@ -30,7 +37,7 @@ contains
        rho_omegadot(n) = dens * dX / dt
     enddo
   
-    hout = hin + enuc
+    rho_Hnuc = dens*enuc/dt
   
   end subroutine burner
 
