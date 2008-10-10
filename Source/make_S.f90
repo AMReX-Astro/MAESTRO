@@ -16,7 +16,7 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine make_S(Source,delta_gamma1_term,delta_gamma1,state,u,rho_omegadot, &
+  subroutine make_S(Source,delta_gamma1_term,delta_gamma1,state,u,rho_omegadot,rho_Hnuc, &
                     rho_Hext,thermal,p0,gamma1bar,delta_gamma1_termbar,psi,dx,mla, &
                     the_bc_level)
 
@@ -37,6 +37,7 @@ contains
     type(multifab) , intent(in   ) :: state(:)
     type(multifab) , intent(in   ) :: u(:)
     type(multifab) , intent(in   ) :: rho_omegadot(:)
+    type(multifab) , intent(in   ) :: rho_Hnuc(:)
     type(multifab) , intent(in   ) :: rho_Hext(:)
     type(multifab) , intent(in   ) :: thermal(:)
     real(kind=dp_t), intent(in   ) :: p0(:,0:)

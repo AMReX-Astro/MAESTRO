@@ -16,7 +16,7 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine add_react_to_thermal(thermal,rho_omegadot,s,rho_Hext,the_bc_level,mla, &
+  subroutine add_react_to_thermal(thermal,rho_omegadot,rho_Hnuc,s,rho_Hext,the_bc_level,mla, &
                                   dx,time)
 
     use bl_prof_module
@@ -30,6 +30,7 @@ contains
     
     type(multifab) , intent(inout) :: thermal(:)
     type(multifab) , intent(in   ) :: rho_omegadot(:)
+    type(multifab) , intent(in   ) :: rho_Hnuc(:)
     type(multifab) , intent(in   ) :: s(:)
     type(multifab) , intent(inout) :: rho_Hext(:)
     type(bc_level) , intent(in   ) :: the_bc_level(:)

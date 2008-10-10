@@ -105,11 +105,13 @@ contains
     type(multifab) ::            thermal(mla%nlevel)
     type(multifab) ::             s2star(mla%nlevel)
     type(multifab) :: rho_omegadot2_hold(mla%nlevel)
+    type(multifab) ::     rho_Hnuc2_hold(mla%nlevel)
     type(multifab) ::                 s1(mla%nlevel)
     type(multifab) ::                 s2(mla%nlevel)
     type(multifab) ::  delta_gamma1_term(mla%nlevel)
     type(multifab) ::       delta_gamma1(mla%nlevel)
     type(multifab) ::      rho_omegadot1(mla%nlevel)
+    type(multifab) ::          rho_Hnuc1(mla%nlevel)
     type(multifab) ::           rho_Hext(mla%nlevel)
     type(multifab) ::       div_coeff_3d(mla%nlevel)
     type(multifab) ::             gamma1(mla%nlevel)
@@ -144,6 +146,7 @@ contains
     real(dp_t) ::       div_coeff_edge(nlevs,0:nr_fine)
     real(dp_t) ::  rho0_predicted_edge(nlevs,0:nr_fine)
     real(dp_t) ::      rho_omegadotbar(nlevs,0:nr_fine-1,nspec)
+    real(dp_t) ::          rho_Hnucbar(nlevs,0:nr_fine-1)
 
     integer    :: r,n,comp,proj_type
     real(dp_t) :: halfdt
@@ -395,10 +398,11 @@ contains
     do n=1,nlevs
        call multifab_build(s1(n),            mla%la(n), nscal, 3)
        call multifab_build(rho_omegadot1(n), mla%la(n), nspec, 1)
+       call multifab_build(rho_Hnuc1(n),     mla%la(n), 1,     1)
        call multifab_build(rho_Hext(n),      mla%la(n), 1,     1)
     end do
 
-    call react_state(mla,sold,s1,rho_omegadot1,rho_Hext,halfdt,dx, &
+    call react_state(mla,sold,s1,rho_omegadot1,rho_Hnuc1,rho_Hext,halfdt,dx, &
                      the_bc_tower%bc_tower_array,time)
     
     if (full_rhoh0_evolution) then
@@ -409,8 +413,9 @@ contains
           do comp=1,nspec
              call average(mla,rho_omegadot1,rho_omegadotbar(:,:,comp),dx,comp)
           end do
-          call average(mla,rho_Hext,rho_Hextbar,dx,1)
-          call react_base(rhoh0_old,rho_omegadotbar,rho_Hextbar,halfdt,rhoh0_1)
+          call average(mla,rho_Hnuc1,rho_Hnucbar,dx,1)
+          call average(mla,rho_Hext, rho_Hextbar,dx,1)
+          call react_base(rhoh0_old,rho_omegadotbar,rho_Hnucbar,rho_Hextbar,halfdt,rhoh0_1)
        else
           rhoh0_1 = rhoh0_old
        end if
@@ -482,16 +487,21 @@ contains
        end do
 
        if(istep .le. 1) then
-          call add_react_to_thermal(thermal,rho_omegadot1,s1,rho_Hext, &
+          call add_react_to_thermal(thermal,rho_omegadot1,rho_Hnuc1,s1,rho_Hext, &
                                     the_bc_tower%bc_tower_array,mla,dx,time)
        else
-          call add_react_to_thermal(thermal,rho_omegadot2,s1,rho_Hext, &
+          ! note: at this point in the evolution, rho_omegadot2/rho_Hnuc2 are
+          ! from the previous timestep
+          call add_react_to_thermal(thermal,rho_omegadot2,rho_Hnuc2,s1,rho_Hext, &
                                     the_bc_tower%bc_tower_array,mla,dx,time)
           
           if(.not. do_half_alg) then
              do n=1,nlevs
                 call multifab_build(rho_omegadot2_hold(n), mla%la(n), nspec, 1)
                 call multifab_copy_c(rho_omegadot2_hold(n),1,rho_omegadot2(n),1,nspec,1)
+
+                call multifab_build(rho_Hnuc2_hold(n), mla%la(n), 1, 1)
+                call multifab_copy_c(rho_Hnuc2_hold(n),1,rho_Hnuc2(n),1,1,1)
              end do
           end if
        end if
@@ -505,6 +515,7 @@ contains
     if(do_half_alg) then
        do n=1,nlevs
           call destroy(rho_omegadot1(n))
+          call destroy(rho_Hnuc1(n))
        end do
     end if
 
@@ -634,7 +645,7 @@ contains
        call multifab_build(rho_Hext(n), mla%la(n), 1, 1)
     end do
     
-    call react_state(mla,s2,snew,rho_omegadot2,rho_Hext,halfdt,dx, &
+    call react_state(mla,s2,snew,rho_omegadot2,rho_Hnuc2,rho_Hext,halfdt,dx, &
                      the_bc_tower%bc_tower_array,time)
 
     do n=1,nlevs
@@ -648,8 +659,9 @@ contains
        do comp=1,nspec
           call average(mla,rho_omegadot2,rho_omegadotbar(:,:,comp),dx,comp)
        end do
+       call average(mla,rho_Hnuc2,rho_Hnucbar,dx,1)
        call average(mla,rho_Hext,rho_Hextbar,dx,1)
-       call react_base(rhoh0_2,rho_omegadotbar,rho_Hextbar,halfdt,rhoh0_new)
+       call react_base(rhoh0_2,rho_omegadotbar,rho_Hnucbar,rho_Hextbar,halfdt,rhoh0_new)
     else
        rhoh0_new = rhoh0_2
     end if
@@ -712,7 +724,7 @@ contains
 
        ! p0 is only used for the delta_gamma1_term
        call make_S(Source_new,delta_gamma1_term,delta_gamma1, &
-                   snew,uold,rho_omegadot2,rho_Hext,thermal, &
+                   snew,uold,rho_omegadot2,rho_Hnuc2,rho_Hext,thermal, &
                    p0_old,gamma1bar,delta_gamma1_termbar,psi,dx, &
                    mla,the_bc_tower%bc_tower_array)
        
@@ -934,14 +946,15 @@ contains
           end do
 
           if(istep .le. 1) then
-             call add_react_to_thermal(thermal,rho_omegadot1,s1,rho_Hext, &
+             call add_react_to_thermal(thermal,rho_omegadot1,rho_Hnuc1,s1,rho_Hext, &
                                        the_bc_tower%bc_tower_array,mla,dx,time)
           else
-             call add_react_to_thermal(thermal,rho_omegadot2_hold,s1,rho_Hext, &
+             call add_react_to_thermal(thermal,rho_omegadot2_hold,rho_Hnuc2_hold,s1,rho_Hext, &
                                        the_bc_tower%bc_tower_array,mla,dx,time)
 
              do n=1,nlevs
                 call destroy(rho_omegadot2_hold(n))
+                call destroy(rho_Hnuc2_hold(n))
              end do
           end if
 
@@ -954,6 +967,7 @@ contains
 
        do n=1,nlevs
           call destroy(rho_omegadot1(n))
+          call destroy(rho_Hnuc1(n))
        end do
        
        do n=1,nlevs
@@ -1060,7 +1074,7 @@ contains
           call multifab_build(rho_Hext(n), mla%la(n), 1, 1)
        end do
        
-       call react_state(mla,s2,snew,rho_omegadot2,rho_Hext,halfdt,dx,&
+       call react_state(mla,s2,snew,rho_omegadot2,rho_Hnuc2,rho_Hext,halfdt,dx,&
                         the_bc_tower%bc_tower_array,time)
 
        do n=1,nlevs
@@ -1074,8 +1088,9 @@ contains
           do comp=1,nspec
              call average(mla,rho_omegadot2,rho_omegadotbar(:,:,comp),dx,comp)
           end do
+          call average(mla,rho_Hnuc2,rho_Hnucbar,dx,1)
           call average(mla,rho_Hext,rho_Hextbar,dx,1)
-          call react_base(rhoh0_2,rho_omegadotbar,rho_Hextbar,halfdt,rhoh0_new)
+          call react_base(rhoh0_2,rho_omegadotbar,rho_Hnucbar,rho_Hextbar,halfdt,rhoh0_new)
        else
           rhoh0_new = rhoh0_2
        end if
@@ -1130,7 +1145,7 @@ contains
 
     ! p0 is only used for the delta_gamma1_term
     call make_S(Source_new,delta_gamma1_term,delta_gamma1, &
-                snew,uold,rho_omegadot2,rho_Hext,thermal, &
+                snew,uold,rho_omegadot2,rho_Hnuc2,rho_Hext,thermal, &
                 p0_new,gamma1bar,delta_gamma1_termbar,psi,dx, &
                 mla,the_bc_tower%bc_tower_array)
 

@@ -49,6 +49,7 @@ contains
     type(multifab) :: thermal(nlevs)
     type(multifab) :: rhohalf(nlevs)
     type(multifab) :: rho_omegadot1(nlevs)
+    type(multifab) :: rho_Hnuc1(nlevs)
     type(multifab) :: rho_Hext(nlevs)
     type(multifab) :: div_coeff_3d(nlevs)
 
@@ -81,22 +82,26 @@ contains
        call multifab_build(delta_gamma1_term(n), mla%la(n), 1, 1)
        call multifab_build(delta_gamma1(n), mla%la(n), 1, 1)
        call multifab_build(rho_omegadot1(n), mla%la(n), nspec, 1)
+       call multifab_build(rho_Hnuc1(n), mla%la(n), 1, 1)
        call multifab_build(rho_Hext(n),      mla%la(n), 1,     1)
-       ! we don't have a legit timestep yet, so we set rho_omegadot1 and rho_Hext to 0 
+       ! we don't have a legit timestep yet, so we set rho_omegadot1, rho_Hnuc1,
+       ! and rho_Hext to 0 
        call setval(     rho_omegadot1(n), ZERO, all=.true.)
+       call setval(         rho_Hnuc1(n), ZERO, all=.true.)
        call setval(          rho_Hext(n), ZERO, all=.true.)
        call setval(      delta_gamma1(n), ZERO, all=.true.)
        call setval( delta_gamma1_term(n), ZERO, all=.true.)
     end do
 
     call make_S(Source_old,delta_gamma1_term,delta_gamma1, &
-                sold,uold,rho_omegadot1,rho_Hext,thermal, &
+                sold,uold,rho_omegadot1,rho_Hnuc1,rho_Hext,thermal, &
                 p0,gamma1bar,delta_gamma1_termbar,psi,dx, &
                 mla,the_bc_tower%bc_tower_array)
 
     do n=1,nlevs
        call destroy(thermal(n))
        call destroy(rho_omegadot1(n))
+       call destroy(rho_Hnuc1(n))
        call destroy(rho_Hext(n))
        call destroy(delta_gamma1(n))
     end do
