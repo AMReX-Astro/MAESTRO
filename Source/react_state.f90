@@ -151,7 +151,7 @@ contains
 
     use burner_module
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp, trac_comp, ntrac
-    use network, only: nspec, ebin
+    use network, only: nspec
     use probin_module, ONLY: do_burning, burning_cutoff_density, enthalpy_pred_type
     use pred_parameters
     use bl_constants_module, only: zero
@@ -256,7 +256,7 @@ contains
 
     use burner_module
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp, trac_comp, ntrac
-    use network, only: nspec, ebin
+    use network, only: nspec
     use probin_module, ONLY: do_burning, burning_cutoff_density, enthalpy_pred_type
     use pred_parameters
     use bl_constants_module, only: zero
