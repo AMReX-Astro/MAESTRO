@@ -11,7 +11,7 @@ contains
   subroutine advance_timestep(init_mode,mla,uold,sold,unew,snew, &
                               gpres,pres,normal,rho0_old,rhoh0_old, &
                               rho0_new,rhoh0_new,p0_old,p0_new,tempbar,gamma1bar,w0, &
-                              rho_omegadot2,div_coeff_old,div_coeff_new, &
+                              rho_omegadot2,rho_Hnuc2,div_coeff_old,div_coeff_new, &
                               grav_cell_old,dx,time,dt,dtold,the_bc_tower, &
                               dSdt,Source_old,Source_new,etarho_ec,etarho_cc,div_etarho, &
                               psi,sponge,hgrhs, &
@@ -78,6 +78,7 @@ contains
     real(dp_t)    ,  intent(inout) :: gamma1bar(:,0:)
     real(dp_t)    ,  intent(inout) ::        w0(:,0:)
     type(multifab),  intent(inout) :: rho_omegadot2(:)
+    type(multifab),  intent(inout) :: rho_Hnuc2(:)
     real(dp_t)    ,  intent(inout) :: div_coeff_old(:,0:)
     real(dp_t)    ,  intent(inout) :: div_coeff_new(:,0:)
     real(dp_t)    ,  intent(in   ) :: grav_cell_old(:,0:)
