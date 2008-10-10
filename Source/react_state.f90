@@ -157,6 +157,10 @@ contains
     real (kind = dp_t) :: x_out(nspec)
     real (kind = dp_t) :: rhowdot(nspec)
 
+    logical :: update_temp
+
+    update_temp = .false.
+
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
 
@@ -184,7 +188,8 @@ contains
 ! option to compute temperature and put it into s_out
 ! dens, enthalpy, and xmass are inputs
 !
-! NOTE: if you update the temperature here, then you should not add the
+! NOTE: if you update the temperature here for an option other than
+! predict_Tprime_then_h, then you should not add the
 ! reaction term explicitly to the temperature equation force returned 
 ! by mktempforce in scalar advance, since you will be double counting.
 
@@ -206,11 +211,13 @@ contains
                       do_diag)
              
              s_out(i,j,temp_comp) = temp_eos(1)
+
+          else
+
+             s_out(i,j,temp_comp) = s_in(i,j,temp_comp)
+
           end if
 
-!**********************************************
-
-          s_out(i,j,temp_comp) = s_in(i,j,temp_comp)
 
           s_out(i,j,trac_comp:trac_comp+ntrac-1) = &
                s_in(i,j,trac_comp:trac_comp+ntrac-1)   
@@ -245,6 +252,10 @@ contains
     real (kind = dp_t) :: x_in(nspec)
     real (kind = dp_t) :: x_out(nspec)
     real (kind = dp_t) :: rhowdot(nspec)
+
+    logical :: update_temp
+
+    update_temp = .false.
 
     do k = lo(3), hi(3)
      do j = lo(2), hi(2)
