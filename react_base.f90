@@ -12,11 +12,11 @@ module react_base_module
   
 contains
   
-  subroutine react_base(rhoh0_in,rho_omegadotbar,rho_Hnucbar,rho_Hextbar,halfdt_in,rhoh0_out)
+  subroutine react_base(rhoh0_in,rho_omegadotbar,rho_Hnucbar,rho_Hextbar, &
+                        halfdt_in,rhoh0_out)
 
     use geometry, only: r_start_coord, r_end_coord, numdisjointchunks, nlevs
     use network, only: nspec
-    use eos_module, only: ebin
     use variables, only: rho_comp, spec_comp, rhoh_comp
     use bl_prof_module
     use restrict_base_module
@@ -39,12 +39,8 @@ contains
           do r=r_start_coord(n,i),r_end_coord(n,i)
              
              ! update enthalpy
-             rhoh0_out(n,r) = rhoh0_in(n,r)
-             do comp = spec_comp,spec_comp+nspec-1
-                rhoh0_out(n,r) = rhoh0_out(n,r) &
-                     -halfdt_in*rho_omegadotbar(n,r,comp-spec_comp+1)*ebin(comp-spec_comp+1)
-             end do
-             rhoh0_out(n,r) = rhoh0_out(n,r) + halfdt_in * rho_Hextbar(n,r)
+             rhoh0_out(n,r) = rhoh0_in(n,r) &
+                  + halfdt_in * rho_Hnucbar(n,r) + halfdt_in * rho_Hextbar(n,r)
              
           end do
        end do
