@@ -118,7 +118,6 @@ contains
                                      s,ng_s,rho_Hext,ng_he)
 
     use eos_module
-    use network, only: ebin
     use bl_constants_module
     use variables, only: temp_comp, rho_comp, spec_comp
     
@@ -171,7 +170,6 @@ contains
                                      s,ng_s,rho_Hext,ng_he)
 
     use eos_module
-    use network, only: ebin
     use bl_constants_module
     use variables, only: spec_comp, rho_comp, temp_comp
     

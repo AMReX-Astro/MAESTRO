@@ -806,7 +806,7 @@ contains
 
   subroutine make_omega_2d(omegadot,enuc,ng_p,rho_omegadot,ng_o,rho_Hnuc,ng_h,rho,ng_s,lo,hi)
 
-    use network, only: nspec, ebin
+    use network, only: nspec
     use bl_constants_module
 
     integer, intent(in) :: lo(:), hi(:), ng_p, ng_o, ng_s, ng_h
@@ -837,7 +837,7 @@ contains
 
   subroutine make_omega_3d(omegadot,enuc,ng_p,rho_omegadot,ng_o,rho_Hnuc,ng_h,rho,ng_s,lo,hi)
 
-    use network, only: nspec, ebin
+    use network, only: nspec
     use bl_constants_module
 
     integer, intent(in) :: lo(:), hi(:), ng_p, ng_o, ng_s, ng_h
