@@ -2,7 +2,7 @@ module base_state_module
 
   use bl_types
   use eos_module, only: nspec
-
+  
   implicit none
 
   real(dp_t), save :: base_cutoff_density_loc, prob_hi_r
@@ -26,6 +26,7 @@ contains
     use define_bc_module
     use bl_constants_module
     use eos_module
+    use network, only: spec_names
     use probin_module, only: base_cutoff_density, anelastic_cutoff, prob_lo, prob_hi, &
                              small_temp, small_dens, grav_const
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp, ntrac
