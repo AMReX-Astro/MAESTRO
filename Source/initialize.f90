@@ -138,7 +138,7 @@ contains
     end do
 
     do n=1,nlevs
-       call multifab_copy_c(rho_Hnuc2(n),1,chk_rho_Hnuc2(n),1,nspec)
+       call multifab_copy_c(rho_Hnuc2(n),1,chk_rho_Hnuc2(n),1,1)
        call destroy(chk_rho_Hnuc2(n)%la)
        call destroy(chk_rho_Hnuc2(n))
     end do
