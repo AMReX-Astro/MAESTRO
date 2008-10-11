@@ -827,7 +827,11 @@ contains
        enddo
     enddo
 
-    enuc(i,j) = rho_Hnuc(i,j) / rho(i,j)
+    do j = lo(2), hi(2)
+       do i = lo(1), hi(1)
+          enuc(i,j) = rho_Hnuc(i,j) / rho(i,j)
+       enddo
+    enddo
 
   end subroutine make_omega_2d
 
@@ -856,7 +860,13 @@ contains
        enddo
     enddo
 
-    enuc(i,j,k) = rho_Hnuc(i,j,k) / rho(i,j,k)
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+             enuc(i,j,k) = rho_Hnuc(i,j,k) / rho(i,j,k)
+          enddo
+       enddo
+    enddo
 
   end subroutine make_omega_3d
 
