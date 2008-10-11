@@ -17,6 +17,7 @@ contains
     use multifab_module
     use define_bc_module
     use bl_constants_module
+    use network, only: spec_names
     use eos_module
     use probin_module, ONLY: prob_lo
     use variables, only: rho_comp, rhoh_comp, temp_comp, spec_comp, trac_comp

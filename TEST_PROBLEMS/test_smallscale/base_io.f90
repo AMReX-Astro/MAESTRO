@@ -110,7 +110,7 @@ contains
     use parallel
     use bl_prof_module
     use variables, only: rho_comp, rhoh_comp
-    use network, only: nspec
+    use network, only: nspec, spec_names
     use geometry, only : dr, r_start_coord, r_end_coord, numdisjointchunks, nlevs
     use bl_constants_module
     use eos_module
