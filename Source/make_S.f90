@@ -50,10 +50,10 @@ contains
     
     real(kind=dp_t), pointer:: srcp(:,:,:,:),dgtp(:,:,:,:),sp(:,:,:,:),up(:,:,:,:)
     real(kind=dp_t), pointer:: tp(:,:,:,:),dgp(:,:,:,:)
-    real(kind=dp_t), pointer:: omegap(:,:,:,:), hp(:,:,:,:)
+    real(kind=dp_t), pointer:: omegap(:,:,:,:), hep(:,:,:,:), hnp(:,:,:,:)
 
     integer :: lo(dm),hi(dm)
-    integer :: i,n,ng_sr,ng_dt,ng_dg,ng_s,ng_u,ng_rw,ng_he,ng_th
+    integer :: i,n,ng_sr,ng_dt,ng_dg,ng_s,ng_u,ng_rw,ng_he,ng_hn,ng_th
 
     type(bl_prof_timer), save :: bpt
 
@@ -66,6 +66,7 @@ contains
     ng_u  = u(1)%ng
     ng_rw = rho_omegadot(1)%ng
     ng_he = rho_Hext(1)%ng
+    ng_hn = rho_Hnuc(1)%ng
     ng_th = thermal(1)%ng
 
     do n = 1, nlevs
@@ -77,7 +78,8 @@ contains
           sp     => dataptr(state(n), i)
           up     => dataptr(u(n), i)
           omegap => dataptr(rho_omegadot(n), i)
-          hp     => dataptr(rho_Hext(n), i)
+          hep    => dataptr(rho_Hext(n), i)
+          hnp    => dataptr(rho_Hnuc(n), i)
           tp     => dataptr(thermal(n), i)
           lo = lwb(get_box(state(n), i))
           hi = upb(get_box(state(n), i))
@@ -85,12 +87,14 @@ contains
           case (2)
              call make_S_2d(n,lo, hi, srcp(:,:,1,1), ng_sr, dgtp(:,:,1,1), ng_dt, &
                             dgp(:,:,1,1), ng_dg, sp(:,:,1,:), ng_s, up(:,:,1,:), ng_u, &
-                            omegap(:,:,1,:), ng_rw, hp(:,:,1,1), ng_he, &
+                            omegap(:,:,1,:), ng_rw, hnp(:,:,1,1), ng_hn, &
+                            hep(:,:,1,1), ng_he, &
                             tp(:,:,1,1), ng_th, p0(n,:), gamma1bar(n,:), dx(n,:))
           case (3)
              call make_S_3d(n,lo, hi, srcp(:,:,:,1), ng_sr, dgtp(:,:,:,1), ng_dt, &
                             dgp(:,:,:,1), ng_dg, sp(:,:,:,:), ng_s, up(:,:,:,:), ng_u, &
-                            omegap(:,:,:,:), ng_rw, hp(:,:,:,1), ng_he, &
+                            omegap(:,:,:,:), ng_rw, hnp(:,:,:,1), ng_hn, &
+                            hep(:,:,:,1), ng_he, &
                             tp(:,:,:,1), ng_th, p0(n,:), gamma1bar(n,:), dx(n,:))
           end select
        end do
@@ -193,7 +197,8 @@ contains
 
 
    subroutine make_S_2d(n,lo,hi,Source,ng_sr,delta_gamma1_term,ng_dt,delta_gamma1,ng_dg, &
-                        s,ng_s,u,ng_u,rho_omegadot,ng_rw,rho_Hext,ng_he,thermal,ng_th, &
+                        s,ng_s,u,ng_u,rho_omegadot,ng_rw,rho_Hnuc,ng_hn, &
+                        rho_Hext,ng_he,thermal,ng_th, &
                         p0,gamma1bar,dx)
 
       use bl_constants_module
@@ -203,13 +208,14 @@ contains
       use geometry, only: anelastic_cutoff_coord, nr
 
       integer         , intent(in   ) :: n,lo(:),hi(:)
-      integer         , intent(in   ) :: ng_sr,ng_dt,ng_dg,ng_s,ng_u,ng_rw,ng_he,ng_th
+      integer         , intent(in   ) :: ng_sr,ng_dt,ng_dg,ng_s,ng_u,ng_rw,ng_he,ng_hn,ng_th
       real (kind=dp_t), intent(  out) ::            Source(lo(1)-ng_sr:,lo(2)-ng_sr:)
       real (kind=dp_t), intent(  out) :: delta_gamma1_term(lo(1)-ng_dt:,lo(2)-ng_dt:)
       real (kind=dp_t), intent(  out) ::      delta_gamma1(lo(1)-ng_dg:,lo(2)-ng_dg:)
       real (kind=dp_t), intent(in   ) ::                 s(lo(1)-ng_s :,lo(2)-ng_s :,:)
       real (kind=dp_t), intent(in   ) ::                 u(lo(1)-ng_u :,lo(2)-ng_u :,:)
       real (kind=dp_t), intent(in   ) ::      rho_omegadot(lo(1)-ng_rw:,lo(2)-ng_rw:,:)
+      real (kind=dp_t), intent(in   ) ::          rho_Hnuc(lo(1)-ng_hn:,lo(2)-ng_hn:)
       real (kind=dp_t), intent(in   ) ::          rho_Hext(lo(1)-ng_he:,lo(2)-ng_he:)
       real (kind=dp_t), intent(in   ) ::           thermal(lo(1)-ng_th:,lo(2)-ng_th:)
       real (kind=dp_t), intent(in   ) :: p0(0:)
@@ -218,7 +224,7 @@ contains
 
 !     Local variables
       integer         :: i, j, comp
-      real(kind=dp_t) :: sigma, react_term, pres_term, gradp0
+      real(kind=dp_t) :: sigma, xi_term, pres_term, gradp0
 
       Source = zero
 
@@ -245,19 +251,20 @@ contains
 
            sigma = dpdt_eos(1) / (den_eos(1) * cp_eos(1) * dpdr_eos(1))
 
-           react_term = ZERO
+           xi_term = ZERO
            pres_term = ZERO
            do comp = 1, nspec
-              react_term = react_term - &
-                   (dhdX_eos(1,comp) + ebin(comp))*rho_omegadot(i,j,comp)/den_eos(1)
+              xi_term = xi_term - &
+                   dhdX_eos(1,comp)*rho_omegadot(i,j,comp)/den_eos(1) 
 
               pres_term = pres_term + &
                    dpdX_eos(1,comp)*rho_omegadot(i,j,comp)/den_eos(1)
            enddo
 
-           Source(i,j) = (sigma/den_eos(1)) * ( rho_Hext(i,j) + thermal(i,j) ) &
-                        + sigma*react_term &
-                        + pres_term/(den_eos(1)*dpdr_eos(1))
+           Source(i,j) = (sigma/den_eos(1)) * &
+                          ( rho_Hext(i,j) + rho_Hnuc(i,j) + thermal(i,j) ) &
+                          + sigma*xi_term &
+                          + pres_term/(den_eos(1)*dpdr_eos(1))
 
            if (use_delta_gamma1_term .and. j < anelastic_cutoff_coord(n)) then
               if (j .eq. 0) then
@@ -284,7 +291,8 @@ contains
    end subroutine make_S_2d
 
    subroutine make_S_3d(n,lo,hi,Source,ng_sr,delta_gamma1_term,ng_dt,delta_gamma1,ng_dg, &
-                        s,ng_s,u,ng_u,rho_omegadot,ng_rw,rho_Hext,ng_he,thermal,ng_th, &
+                        s,ng_s,u,ng_u,rho_omegadot,ng_rw,rho_Hnuc,ng_hn, &
+                        rho_Hext,ng_he,thermal,ng_th, &
                         p0,gamma1bar,dx)
 
       use bl_constants_module
@@ -295,13 +303,14 @@ contains
       use geometry, only: anelastic_cutoff_coord, nr
      
       integer         , intent(in   ) :: n,lo(:),hi(:)
-      integer         , intent(in   ) :: ng_sr,ng_dt,ng_dg,ng_s,ng_u,ng_rw,ng_he,ng_th
+      integer         , intent(in   ) :: ng_sr,ng_dt,ng_dg,ng_s,ng_u,ng_rw,ng_he,ng_hn,ng_th
       real (kind=dp_t), intent(  out) ::       Source(lo(1)-ng_sr:,lo(2)-ng_sr:,lo(3)-ng_sr:)  
       real (kind=dp_t), intent(  out) :: delta_gamma1_term(lo(1)-ng_dt:,lo(2)-ng_dt:,lo(3)-ng_dt:)
       real (kind=dp_t), intent(  out) :: delta_gamma1(lo(1)-ng_dg:,lo(2)-ng_dg:,lo(3)-ng_dg:) 
       real (kind=dp_t), intent(in   ) ::            s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :,:)
       real (kind=dp_t), intent(in   ) ::            u(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :,:)
       real (kind=dp_t), intent(in   ) :: rho_omegadot(lo(1)-ng_rw:,lo(2)-ng_rw:,lo(3)-ng_rw:,:)
+      real (kind=dp_t), intent(in   ) ::     rho_Hnuc(lo(1)-ng_hn:,lo(2)-ng_hn:,lo(3)-ng_hn:)
       real (kind=dp_t), intent(in   ) ::     rho_Hext(lo(1)-ng_he:,lo(2)-ng_he:,lo(3)-ng_he:)
       real (kind=dp_t), intent(in   ) ::      thermal(lo(1)-ng_th:,lo(2)-ng_th:,lo(3)-ng_th:)
       real (kind=dp_t), intent(in   ) :: p0(0:)
@@ -310,7 +319,7 @@ contains
 
 !     Local variables
       integer         :: i, j, k, comp
-      real(kind=dp_t) :: sigma, react_term, pres_term, gradp0
+      real(kind=dp_t) :: sigma, xi_term, pres_term, gradp0
 
       Source = zero
 
@@ -338,19 +347,20 @@ contains
 
               sigma = dpdt_eos(1) / (den_eos(1) * cp_eos(1) * dpdr_eos(1))
 
-              react_term = ZERO
+              xi_term = ZERO
               pres_term = ZERO
               do comp = 1, nspec
-                 react_term = react_term - &
-                      (dhdX_eos(1,comp) + ebin(comp))*rho_omegadot(i,j,k,comp)/den_eos(1)
+                 xi_term = xi_term - &
+                      dhdX_eos(1,comp)*rho_omegadot(i,j,k,comp)/den_eos(1) 
 
                  pres_term = pres_term + &
                       dpdX_eos(1,comp)*rho_omegadot(i,j,k,comp)/den_eos(1)
               enddo
 
-              Source(i,j,k) = (sigma/den_eos(1)) * ( rho_Hext(i,j,k) + thermal(i,j,k) ) &
-                           + sigma*react_term &
-                           + pres_term/(den_eos(1)*dpdr_eos(1))
+              Source(i,j,k) = (sigma/den_eos(1)) * &
+                               ( rho_Hext(i,j,k) + rho_Hnuc(i,j,k) + thermal(i,j,k) ) &
+                               + sigma*xi_term &
+                               + pres_term/(den_eos(1)*dpdr_eos(1))
 
 
               if (use_delta_gamma1_term .and. spherical .eq. 1) then
