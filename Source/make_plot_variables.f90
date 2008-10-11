@@ -758,30 +758,33 @@ contains
   end subroutine make_XfromrhoX_3d
 
 
-  subroutine make_omegadot(plotdata,comp,comp_enuc,s,rho_omegadot)
+  subroutine make_omegadot(plotdata,comp,comp_enuc,s,rho_omegadot,rho_Hnuc)
 
     use network, only: nspec
     use variables, only: rho_comp
     use geometry, only: dm
 
     integer        , intent(in   ) :: comp, comp_enuc
-    type(multifab) , intent(in   ) :: s, rho_omegadot
+    type(multifab) , intent(in   ) :: s, rho_omegadot, rho_Hnuc
     type(multifab) , intent(inout) :: plotdata
 
     real(kind=dp_t), pointer:: sp(:,:,:,:)
     real(kind=dp_t), pointer:: rop(:,:,:,:)
+    real(kind=dp_t), pointer:: rHp(:,:,:,:)
     real(kind=dp_t), pointer:: pp(:,:,:,:)
-    integer :: lo(dm),hi(dm),ng_s,ng_o,ng_p
+    integer :: lo(dm),hi(dm),ng_s,ng_o,ng_p,ng_h
     integer :: i
 
     ng_s = s%ng
     ng_o = rho_omegadot%ng
+    ng_h = rho_Hnuc%ng
     ng_p = plotdata%ng
 
     do i = 1, s%nboxes
        if ( multifab_remote(s, i) ) cycle
        sp => dataptr(s, i)
        rop => dataptr(rho_omegadot, i)
+       rHp => dataptr(rho_Hnuc, i)
        pp => dataptr(plotdata, i)
        lo =  lwb(get_box(s, i))
        hi =  upb(get_box(s, i))
@@ -789,69 +792,71 @@ contains
        select case (dm)
        case (2)
           call make_omega_2d(pp(:,:,1,comp:comp-1+nspec),pp(:,:,1,comp_enuc),ng_p, &
-                             rop(:,:,1,:),ng_o,sp(:,:,1,rho_comp),ng_s,lo,hi)
+                             rop(:,:,1,:),ng_o,rHp(:,:,1,1),ng_h, &
+                             sp(:,:,1,rho_comp),ng_s,lo,hi)
        case (3)
           call make_omega_3d(pp(:,:,:,comp:comp-1+nspec),pp(:,:,:,comp_enuc),ng_p, &
-                             rop(:,:,:,:),ng_o,sp(:,:,:,rho_comp),ng_s,lo,hi)
+                             rop(:,:,:,:),ng_o,rHp(:,:,:,1),ng_h, &
+                             sp(:,:,:,rho_comp),ng_s,lo,hi)
        end select
     end do
 
   end subroutine make_omegadot
 
 
-  subroutine make_omega_2d(omegadot,enuc,ng_p,rho_omegadot,ng_o,rho,ng_s,lo,hi)
+  subroutine make_omega_2d(omegadot,enuc,ng_p,rho_omegadot,ng_o,rho_Hnuc,ng_h,rho,ng_s,lo,hi)
 
     use network, only: nspec, ebin
     use bl_constants_module
 
-    integer, intent(in) :: lo(:), hi(:), ng_p, ng_o, ng_s
+    integer, intent(in) :: lo(:), hi(:), ng_p, ng_o, ng_s, ng_h
     real (kind = dp_t), intent(  out) ::     omegadot(lo(1)-ng_p:,lo(2)-ng_p:,:)
     real (kind = dp_t), intent(  out) ::         enuc(lo(1)-ng_p:,lo(2)-ng_p:)
     real (kind = dp_t), intent(in   ) :: rho_omegadot(lo(1)-ng_o:,lo(2)-ng_o:,:)
+    real (kind = dp_t), intent(in   ) ::     rho_Hnuc(lo(1)-ng_h:,lo(2)-ng_h:)
     real (kind = dp_t), intent(in   ) ::          rho(lo(1)-ng_s:,lo(2)-ng_s:)
 
     ! Local variables
     integer :: i, j, comp
 
-    enuc = ZERO
-
     do comp = 1, nspec
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
              omegadot(i,j,comp) = rho_omegadot(i,j,comp) / rho(i,j)
-             enuc(i,j) = enuc(i,j) - omegadot(i,j,comp)*ebin(comp)
           enddo
        enddo
     enddo
 
+    enuc(i,j) = rho_Hnuc(i,j) / rho(i,j)
+
   end subroutine make_omega_2d
 
-  subroutine make_omega_3d(omegadot,enuc,ng_p,rho_omegadot,ng_o,rho,ng_s,lo,hi)
+  subroutine make_omega_3d(omegadot,enuc,ng_p,rho_omegadot,ng_o,rho_Hnuc,ng_h,rho,ng_s,lo,hi)
 
     use network, only: nspec, ebin
     use bl_constants_module
 
-    integer, intent(in) :: lo(:), hi(:), ng_p, ng_o, ng_s
+    integer, intent(in) :: lo(:), hi(:), ng_p, ng_o, ng_s, ng_h
     real (kind = dp_t), intent(  out) ::     omegadot(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:,:)
     real (kind = dp_t), intent(  out) ::         enuc(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)
     real (kind = dp_t), intent(in   ) :: rho_omegadot(lo(1)-ng_o:,lo(2)-ng_o:,lo(3)-ng_o:,:)
+    real (kind = dp_t), intent(in   ) ::     rho_Hnuc(lo(1)-ng_h:,lo(2)-ng_h:,lo(3)-ng_h:)
     real (kind = dp_t), intent(in   ) ::          rho(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:)
 
     ! Local variables
     integer :: i, j, k, comp
-
-    enuc = ZERO
 
     do comp = 1, nspec
        do k = lo(3), hi(3)
           do j = lo(2), hi(2)
              do i = lo(1), hi(1)
                 omegadot(i,j,k,comp) = rho_omegadot(i,j,k,comp) / rho(i,j,k)
-                enuc(i,j,k) = enuc(i,j,k) - omegadot(i,j,k,comp)*ebin(comp)
              enddo
           enddo
        enddo
     enddo
+
+    enuc(i,j,k) = rho_Hnuc(i,j,k) / rho(i,j,k)
 
   end subroutine make_omega_3d
 

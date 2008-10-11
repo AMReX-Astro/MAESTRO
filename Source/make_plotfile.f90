@@ -331,9 +331,9 @@ contains
 
 
     if (plot_spec) then
-       ! OMEGADOT
+       ! OMEGADOT and HNUC
        do n = 1,nlevs
-          call make_omegadot(plotdata(n),icomp_omegadot,icomp_enuc,s(n),rho_omegadot(n))
+          call make_omegadot(plotdata(n),icomp_omegadot,icomp_enuc,s(n),rho_omegadot(n),rho_Hnuc(n))
        end do
     end if
 
