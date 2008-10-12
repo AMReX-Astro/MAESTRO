@@ -243,7 +243,10 @@ leads to better numerical properties.  This is more like paper II.\\
 %--------------------------------------------------------------------------
 % STEP 1
 %--------------------------------------------------------------------------
-\noindent {\bf Step 1.} {\em Define the average expansion at time $t^\nph$ and the new $w_0.$}
+
+\begin{description}
+
+\item[Step 1.] {\em Define the average expansion at time $t^\nph$ and the new $w_0.$}
 
 \begin{enumerate}
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
@@ -317,7 +320,7 @@ If $n=0$, we use $\dt^{-1} = \dt^0$.
 %--------------------------------------------------------------------------
 % STEP 2
 %--------------------------------------------------------------------------
-\noindent {\bf Step 2.} {\em Construct the provisional edge-based advective velocity}, $\uadvone$.\\
+\item[Step 2.] {\em Construct the provisional edge-based advective velocity}, $\uadvone$.\\
 
 The procedure to construct $\uadvone$ is described in detail in Appendix B of paper III.
 We note that  $\uadvone$ satisfies the discrete versions of 
@@ -341,7 +344,7 @@ In particular,
 %--------------------------------------------------------------------------
 % STEP 3
 %--------------------------------------------------------------------------
-\noindent {\bf Step 3.} {\em React the full state through the first time interval of $\dt / 2.$}
+\item[Step 3.] {\em React the full state through the first time interval of $\dt / 2.$}
 
 \begin{enumerate}
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
@@ -363,7 +366,7 @@ Define
 %--------------------------------------------------------------------------
 % STEP 4
 %--------------------------------------------------------------------------
-\noindent {\bf Step 4.} {\em Advect the base state, then the full state, through a time interval of $\dt.$}
+\item[Step 4.] {\em Advect the base state, then the full state, through a time interval of $\dt.$}
 
 \begin{enumerate}
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
@@ -444,7 +447,7 @@ T^{(2),\star} = T\left(\rho^{(2),\star}, h^{(2),\star}, X_k^{(2),\star}\right) {
 %--------------------------------------------------------------------------
 % STEP 5
 %--------------------------------------------------------------------------
-\noindent {\bf Step 5.} {\em React the full state through a second time interval of $\dt / 2.$}
+\item[Step 5.] {\em React the full state through a second time interval of $\dt / 2.$}
 
 \begin{enumerate}
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
@@ -466,7 +469,7 @@ $\rightarrow ( \rho^{n+1,\star},(\rho h)^{n+1,\star}, X_k^{n+1,\star}, T^{n+1,\s
 %--------------------------------------------------------------------------
 % STEP 6
 %--------------------------------------------------------------------------
-\noindent {\bf Step 6.} {\em Define a new average expansion rate at time $t^\nph.$}
+\item[Step 6.] {\em Define a new average expansion rate at time $t^\nph.$}
 
 \begin{enumerate}
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
@@ -535,7 +538,7 @@ w_0^{n,\star} = \frac{\dt^{n} w_0^{\nmh} + \dt^{n-1} w_0^{\nph,\star}}{\dt^n+\dt
 %--------------------------------------------------------------------------
 % STEP 7
 %--------------------------------------------------------------------------
-\noindent {\bf Step 7.} {\em Construct the final edge-based advective velocity}, $\uadvtwo$: 
+\item[Step 7.] {\em Construct the final edge-based advective velocity}, $\uadvtwo$: 
 
 The procedure to construct $\uadvtwo$ is described in detail in Appendix B of paper III
 and is analogous to the procedure used in step 2, but with updated values
@@ -551,7 +554,7 @@ where $ \beta_0^{\nph,\star} = ( \beta_0^n +  \beta_0^{n+1,\star}) / 2.$\\
 %--------------------------------------------------------------------------
 % STEP 8
 %--------------------------------------------------------------------------
-\noindent {\bf Step 8.} {\em Advect the base state, then the full state, through a time interval of $\dt.$}
+\item[Step 8.] {\em Advect the base state, then the full state, through a time interval of $\dt.$}
 
 \begin{enumerate}
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
@@ -632,7 +635,7 @@ T^{(2)} = T\left(\rho^{(2)}, h^{(2)}, X_k^{(2)}\right) {\hbox{ \rm using the equ
 %--------------------------------------------------------------------------
 % STEP 9
 %--------------------------------------------------------------------------
-\noindent {\bf Step 9.} {\em React the full state through a second time interval of $\dt / 2.$}
+\item[Step 9.] {\em React the full state through a second time interval of $\dt / 2.$}
 
 \begin{enumerate}
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
@@ -652,7 +655,7 @@ T^{(2)} = T\left(\rho^{(2)}, h^{(2)}, X_k^{(2)}\right) {\hbox{ \rm using the equ
 %--------------------------------------------------------------------------
 % STEP 10
 %--------------------------------------------------------------------------
-\noindent {\bf Step 10.} {\em Compute $S^{n+1}$ for the final projection.}
+\item[Step 10.] {\em Compute $S^{n+1}$ for the final projection.}
 
 \begin{enumerate}
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
@@ -677,7 +680,7 @@ and $T^{n+1}$ from step 9.
 %--------------------------------------------------------------------------
 % STEP 11
 %--------------------------------------------------------------------------
-\noindent {\bf Step 11.} {\em Update the velocity}.  
+\item[Step 11.] {\em Update the velocity}.  
 
 The velocity update happens analogously to paper II, using $S^{n+1}$ from step 10.
 We update the velocity field $\ut^n$ to $\ut^{n+1,\star}$ by discretizing
@@ -744,13 +747,18 @@ and the new time-centered perturbational pressure from:
 %--------------------------------------------------------------------------
 % STEP 12
 %--------------------------------------------------------------------------
-\noindent {\bf Step 12.} {\em Compute a new $\dt.$}
+\item[Step 12.] {\em Compute a new $\dt.$}
 
 Compute $\dt$ for the next time step with the procedure described in \S~ref{sec:timesteps},
 using $w_0$ as computed in step 6 and
 $\ut^{n+1}$ as computed in step 11.  We use this $\dt$ in the next time step. 
 
+
+\end{description}
+
 \noindent This completes the time advancement of the algorithm.
+
+
 
 \subsection{Initialization}\label{Sec:Initialization}
 
