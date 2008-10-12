@@ -391,33 +391,25 @@ Define
 \item {\bf Advect Base}$(\rhozero^{n}, p_0^{n}, \beta_0^{(1)}, w_0^{\nph,\star}, \psi^{\nmh}) \rightarrow $
 $(\rho_0^{(2),\star}, \rho_0^{\nph,\star,{\rm pred}}, p_0^{n+1,\star}).$ 
 
-\item Compute the edge states, $(\rho X_k)^{(1),\nph,\star}$ and $(\rho h)^{(1),\nph,\star},$
-      for the conservative update of $(\rho X_k)$ and $(\rho h).$  Here we
-      predict $\rho'$, $(\rho h)'$, and $X_k$ to the edges, using
-      a second-order Taylor expansion in space and time, as described in
-      paper II, Appendix A, using $\V = \uadvone+w_0^{\nph,\star} \er$.  
-      We do not include the reaction terms in the enthalpy prediction, 
-      since we accounted for them already in {\bf React State}. 
-      We use the base state density, $\rho_0$, and base state enthalpy, $(\rho h)_0$,
-      to convert these to edge states for $(\rho X_k)$ and $(\rho h)$. 
-      We define $\rho^{(1),\nph,\star} = \sum_k (\rho X_k)^{(1),\nph,\star}.$  \MarginPar{we actually split these now, and do $\rho$ first, compute $\psi$, and then do $(\rho h)$}
+\item Compute the species edge states, $(\rho X_k)^{(1),\nph,\star}$,
+  for the conservative update of $(\rho X_k)$.  Here we predict
+  $\rho'$ and $X_k$ to the edges, using a second-order Taylor
+  expansion in space and time, as described in paper II, Appendix A,
+  using $\V = \uadvone+w_0^{\nph,\star} \er$.  We use the base state
+  density, $\rho_0$, to convert these to edge states for $(\rho X_k)$.
+  We define $\rho^{(1),\nph,\star} = \sum_k (\rho
+  X_k)^{(1),\nph,\star}.$
 
-\item Evolve $(\rho X_k)^{(1)} \rightarrow (\rho X_k)^{(2),\star}$ and
-$(\rho h)^{(1)} \rightarrow (\rho h)^{(2),\star}$ without explicitly including the 
-reaction terms,
+\item Evolve $(\rho X_k)^{(1)} \rightarrow (\rho X_k)^{(2),\star}$
+  without explicitly including the reaction terms,
 \begin{eqnarray}
 (\rho X_k)^{(2),\star} &=& (\rho X_k)^{(1)} 
  - \dt \; \left[ \nablab \cdotb \left( (\uadvone+w_0^{\nph,\star} \er)  
   (\rho X_k)^{(1),\nph,\star} \right) \right] \enskip , \\ \nonumber  \\
-(\rho h)^{(2'),\star} &=& (\rho h)^{(1)} - \dt \; \left[ \nablab \cdotb \left( (\uadvone+w_0^{\nph,\star} \er)  
-  (\rho h)^{(1),\nph,\star} \right) \right] \nonumber \\
-&& + \dt \; \left(\uadvone \cdotb \er\right) \left(\frac{\partial p_0}{\partial r} \right)^{n} 
-+ \dt \; \psi^{\nmh} \enskip , \\
 \rho^{(2'),\star} &=& \sum_k (\rho X_k)^{(2),\star} \enskip , \\ 
 X_k^{(2),\star} &=& (\rho X_k)^{(2),\star} / \rho^{(2),\star}
 \end{eqnarray}
 \MarginPar{why $\rho^{(2'),\star}$ and not $\rho^{(2),\star}$?}
-\item {\bf Correct Base}$(\rho_0^{(2),\star}, \etarho^{\nmh}) \rightarrow (\rho_0^{n+1,\star})$.
 
 \item Define an edge-centered $\etarho^{\nph,\star}$ and cell-centered $\psi_j^{\nph,\star}$:
 
@@ -436,6 +428,28 @@ X_k^{(2),\star} &=& (\rho X_k)^{(2),\star} / \rho^{(2),\star}
 
 \MarginPar{need to add spherical here}
 \end{description}
+
+\item Compute the enthalpy edge state, $(\rho h)^{(1),\nph,\star},$
+  for the conservative update of $(\rho h).$ Here we predict $(\rho
+  h)'$ to the edges, using a second-order Taylor expansion in space
+  and time, as described in paper II, Appendix A, using $\V =
+  \uadvone+w_0^{\nph,\star} \er$.  We do not include the reaction
+  terms in the enthalpy prediction, since we accounted for them
+  already in {\bf React State}.  We use the base state enthalpy,
+  $(\rho h)_0$, to convert this to an edge state for $(\rho h)$.  
+
+\item Evolve $(\rho h)^{(1)} \rightarrow (\rho h)^{(2),\star}$ without
+  explicitly including the reaction terms,
+\begin{eqnarray}
+(\rho h)^{(2'),\star} &=& (\rho h)^{(1)} - \dt \; \left[ \nablab \cdotb \left( (\uadvone+w_0^{\nph,\star} \er)  
+  (\rho h)^{(1),\nph,\star} \right) \right] \nonumber \\
+&& + \dt \; \left(\uadvone \cdotb \er\right) \left(\frac{\partial p_0}{\partial r} \right)^{n} 
++ \dt \; \psi^{\nmh} \enskip , 
+\end{eqnarray}
+
+
+\item {\bf Correct Base}$(\rho_0^{(2),\star}, \etarho^{\nmh}) \rightarrow (\rho_0^{n+1,\star})$.
+
 
 %--------------------------------------------------------------------------
 % STEP 4.1
@@ -577,34 +591,24 @@ where $ \beta_0^{\nph,\star} = ( \beta_0^n +  \beta_0^{n+1,\star}) / 2.$\\
 \item {\bf Advect Base}$(\rho_0^{n}, p_0^{n}, \beta_0^{(1)}, w_0^{\nph}, \psi^{\nph,\star} ) \rightarrow $
 $(\rho_0^{(2)}, \rho_0^{\nph,{\rm pred}}, p_0^{n+1}).$ 
 
-\item Compute the edge states, $(\rho X_k)^{(1),\nph}$ and $(\rho h)^{(1),\nph},$
-      for the conservative update of $(\rho X_k)$ and $(\rho h).$  Here we
-      predict $\rho'$, $(\rho h)'$, and $X_k$ to the edges, using
-      a second-order Taylor expansion in space and time, as described in
-      paper II, Appendix A, using $\V = \uadvtwo+w_0^{\nph} \er$. 
-      Again, we do not include the reaction terms in the enthalpy prediction 
-      since we accounted for them already in {\bf React State}.
-      We use the base state density, $\rho_0$, and base state enthalpy, $(\rho h)_0$,
-      to convert these to edge states for $(\rho X_k)$ and $(\rho h)$. 
-      We define $\rho^{(1),\nph} = \sum_k (\rho X_k)^{(1),\nph}.$ \MarginPar{we split this into two now}
+\item Compute the species edge states, $(\rho X_k)^{(1),\nph}$, for
+  the conservative update of $(\rho X_k)$. Here we
+  predict $\rho'$ and $X_k$ to the edges, using a second-order Taylor
+  expansion in space and time, as described in paper II, Appendix A,
+  using $\V = \uadvtwo+w_0^{\nph} \er$.  We use the base state
+  density, $\rho_0$, to convert these to edge states for $(\rho X_k)$
+  and $(\rho h)$.  We define $\rho^{(1),\nph} = \sum_k (\rho
+  X_k)^{(1),\nph}$.
 
-\item Evolve $(\rho X_k)^{(1)} \rightarrow (\rho X_k)^{(2)}$ and
-$(\rho h)^{(1)} \rightarrow (\rho h)^{(2)},$ 
+\item Evolve $(\rho X_k)^{(1)} \rightarrow (\rho X_k)^{(2)}$ 
+without explicitly including the reaction terms,
 \begin{eqnarray}
 (\rho X_k)^{(2)} &=& (\rho X_k)^{(1)} 
 - \dt \; \left[ \nablab \cdotb \left( (\uadvtwo+w_0^{\nph} \er)  
 (\rho X_k)^{(1),\nph} \right) \right]  \enskip , \\ \nonumber \\
-(\rho h)^{(2')} &=& (\rho h)^{(1)} - \dt \; \left[ \nablab \cdotb \left( (\uadvtwo+w_0^{\nph} \er)  
-(\rho h)^{(1),\nph} \right) \right] \nonumber \\
-&& + \frac{\dt}{2} \; \left(\uadvtwo \cdotb \er\right)
-\left [ \left(\frac{\partial p_0}{\partial r} \right)^{n}
-      + \left(\frac{\partial p_0}{\partial r} \right)^{n+1}  \right ] 
-+ \dt \; \psi^{\nph,\star} \enskip , \\ 
 \rho^{(2')} &=& \sum_k (\rho X_k)^{(2)} \enskip , \\
 X_k^{(2)} &=& (\rho X_k)^{(2)} / \rho^{(2)}
 \end{eqnarray}
-
-\item {\bf Correct Base}$(\rho_0^{(2)}, \etarho^{\nph, \star}) \rightarrow (\rho_0^{n+1})$
 
 \item Define an edge-centered $ \etarho^{\nph}$ and a cell-centered $\psi_j^{\nph}$,
 
@@ -622,6 +626,29 @@ X_k^{(2)} &=& (\rho X_k)^{(2)} / \rho^{(2)}
 \item[spherical:]~
 
 \end{description}
+
+\item Compute the enthalpy edge state, $(\rho h)^{(1),\nph}$, for the
+  conservative update of $(\rho h)$. Here we predict $(\rho h)'$ to
+  the edges, using a second-order Taylor expansion in space and time,
+  as described in paper II, Appendix A, using $\V =
+  \uadvtwo+w_0^{\nph} \er$.  Again, we do not include the reaction
+  terms in the enthalpy prediction since we accounted for them already
+  in {\bf React State}. We use the base state enthalpy, $(\rho h)_0$,
+  to convert these to edge states for $(\rho h)$.
+
+\item Evolve $(\rho h)^{(1)} \rightarrow (\rho h)^{(2)}$ 
+without explicitly including the reaction terms,
+\begin{eqnarray}
+(\rho h)^{(2')} &=& (\rho h)^{(1)} - \dt \; \left[ \nablab \cdotb \left( (\uadvtwo+w_0^{\nph} \er)  
+(\rho h)^{(1),\nph} \right) \right] \nonumber \\
+&& + \frac{\dt}{2} \; \left(\uadvtwo \cdotb \er\right)
+\left [ \left(\frac{\partial p_0}{\partial r} \right)^{n}
+      + \left(\frac{\partial p_0}{\partial r} \right)^{n+1}  \right ] 
++ \dt \; \psi^{\nph,\star} \enskip ,
+\end{eqnarray}
+
+\item {\bf Correct Base}$(\rho_0^{(2)}, \etarho^{\nph, \star}) \rightarrow (\rho_0^{n+1})$
+
 
 
 %--------------------------------------------------------------------------
