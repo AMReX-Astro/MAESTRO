@@ -101,6 +101,7 @@ the average over $\Omega_H,$ as
 \end{equation}
 here $\Omega_H$ is a layer at constant radius $r$. \MarginPar{we should discuss the implementation of average for spherical here}
 
+
 \item {\bf React State}$[\rho^{\inp},(\rho h)^{\inp},X_k^{\inp},T^{\inp}, (\rho\Hext)^{\inp}]\rightarrow$
 $[\rho^{\outp}, (\rho h)^{\outp}, X_k^{\outp}, T^{\outp}, (\rho \omegadot_k)^{\outp}, (\rho\Hnuc)^{\outp}]$ \newline
 is the process by which we evolve the species and enthalpy from $X_k^{\inp} \rightarrow X_k^{\outp}$ 
@@ -167,13 +168,13 @@ one-dimensional in the radial coordinate; we think of the base state
 quantities as defined at cell centers, with $w_0$ and $\beta_0$
 defined halfway in-between.
 
-\begin{enumerate}
-\renewcommand{\theenumii}{{\bf \alph{enumii}}}
+\begin{description}
 
-
-\item plane-parallel
+\item[plane-parallel:] ~
 
 \begin{enumerate}
+\renewcommand{\labelenumii}{{\bf \alph{enumii}}.}
+
 \item For the density update, we discretize equation the base state
   density evolution equation
 \begin{eqnarray}
@@ -192,7 +193,6 @@ where $j$ refers to the one-dimensional index in the radial direction.
 The interface states, ${{\rho}_0}^{\outp,\nph}$, are found via the
 procedure described in paper II, Appendix A, and are saved for use
 later in the overall algorithm.
-
 
 \item For the pressure update, we discretize the base state pressure
   evolution equation,
@@ -214,20 +214,34 @@ in paper II, Appendix A.
   now that we are predicting $(\rho h)'$.}  
 \end{enumerate}
 
-\item spherical
+\item[spherical:]
 
 \MarginPar{we need to write the spherical description}
 
-\end{enumerate} 
+\end{description}
+
 
 \item {\bf Correct Base}$(\rho_0^{\inp} , \etarho^{\inp}) \rightarrow (\rho_0^{\outp})$
-is the process by which we adjust the base state density given $\etarho$ using
+is the process by which we adjust the base state density to account for
+large-scale mixing, through $\etarho$
+
+\begin{description}
+
+\item[plane-parallel:] We use
 \begin{eqnarray}
 \rho_{0,j}^{\outp} &=& \rho_{0,j}^{\inp} - \frac{\dt}{\dr} 
 \left( \eta_{\rho,j+\myhalf}^{\inp} - \eta_{\rho,j-\myhalf}^{\inp}  \right)  \enskip . 
 \end{eqnarray} 
-\end{enumerate}
+
+\item[spherical:] ~
+
 \MarginPar{need to add spherical}
+
+\end{description}
+
+\end{enumerate}
+
+
 
 \subsection{Time Advancement Algorithm}
 
@@ -277,13 +291,11 @@ S^{\nph,\star} = S^n + \frac{\Delta t^n}{2} \frac{S^n - S^{n-1}}{\Delta t^{n-1}}
 \overline{S}^{\nph,\star} = {\mathrm{\bf Avg}} \left(S^{\nph,\star}\right) \enskip.
 \]
 
-\item Construct $w_0^{\nph,\star}$ by integrating
+\item Construct $w_0^{\nph,\star}$
 
-\begin{enumerate}
-%\renewcommand{\labelenumii}{\roman{enumii}.}
-\renewcommand{\theenumii}{{\bf \roman{enumii}}}
+\begin{description}
 
-\item plane-parallel
+\item[plane-parallel:] We integrate
 \begin{equation}
 \frac{\partial w_0}{\partial r} =  \Sbar - \frac{1}{\gammabar p_0} \etarho g \enskip \label{eq:divw0} ,
 \end{equation}
@@ -294,10 +306,11 @@ using the lagged $\psi^{\nmh},$ \MarginPar{note: this is true only for plane-par
 - \frac{1}{\gammabar^{n} p_0^{n}} \psi^{\nmh} \enskip . \nonumber
 \end{equation}
 
-\item spherical
+\item[spherical:] ~
 
 \MarginPar{need to add spherical}
-\end{enumerate}
+
+\end{description}
 
 \item Using 
 \begin{equation}
@@ -323,6 +336,8 @@ If $n=0$, we use $\dt^{-1} = \dt^0$.
 % STEP 2
 %--------------------------------------------------------------------------
 \item[Step 2.] {\em Construct the provisional edge-based advective velocity}, $\uadvone$.\\
+
+The local velocity field is described by
 
 The procedure to construct $\uadvone$ is described in detail in Appendix B of paper III.
 We note that  $\uadvone$ satisfies the discrete versions of 
@@ -401,15 +416,14 @@ reaction terms,
 \rho^{(2'),\star} &=& \sum_k (\rho X_k)^{(2),\star} \enskip , \\ 
 X_k^{(2),\star} &=& (\rho X_k)^{(2),\star} / \rho^{(2),\star}
 \end{eqnarray}
-
+\MarginPar{why $\rho^{(2'),\star}$ and not $\rho^{(2),\star}$?}
 \item {\bf Correct Base}$(\rho_0^{(2),\star}, \etarho^{\nmh}) \rightarrow (\rho_0^{n+1,\star})$.
 
 \item Define an edge-centered $\etarho^{\nph,\star}$ and cell-centered $\psi_j^{\nph,\star}$:
 
-\begin{enumerate}
-%\renewcommand{\labelenumii}{\roman{enumii}.}
-\renewcommand{\theenumii}{{\bf \roman{enumii}}}
-\item plane-parallel
+
+\begin{description}
+\item[plane-parallel:]~
 
 \begin{eqnarray}
  \etarho^{\nph,\star}   &=&  {\rm {\bf Avg}} \left( (\uadvone \cdotb \er + w_0^{\nph,\star}) 
@@ -418,10 +432,10 @@ X_k^{(2),\star} &=& (\rho X_k)^{(2),\star} / \rho^{(2),\star}
  \psi_j^{\nph,\star}  &=&  \frac{1}{2} \left(\eta_{\rho,j-\myhalf}^{\nph,\star} + \eta_{\rho,j+\myhalf}^{\nph,\star}\right) g \enskip .
 \end{eqnarray}
 
-\item spherical
+\item[spherical:]~
 
 \MarginPar{need to add spherical here}
-\end{enumerate}
+\end{description}
 
 %--------------------------------------------------------------------------
 % STEP 4.1
@@ -454,10 +468,10 @@ T^{(2),\star} = T\left(\rho^{(2),\star}, h^{(2),\star}, X_k^{(2),\star}\right) {
 \begin{enumerate}
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
 
-\item {\bf React State}$( \rho^{(2),\star},(\rho h)^{(2),\star}, X_k^{(2),\star}, 
-                             T^{(2),\star}, (\rho^{(2),\star} \Hext)) $\\
-$\rightarrow ( \rho^{n+1,\star},(\rho h)^{n+1,\star}, X_k^{n+1,\star}, T^{n+1,\star}, 
-              (\rho \omegadot_k)^{(2),\star}, (\rho \Hnuc)^{(2),\star} ).$  
+\item {\bf React State}$[ \rho^{(2),\star},(\rho h)^{(2),\star}, X_k^{(2),\star}, 
+                             T^{(2),\star}, (\rho^{(2),\star} \Hext)] $\\
+$\rightarrow [ \rho^{n+1,\star},(\rho h)^{n+1,\star}, X_k^{n+1,\star}, T^{n+1,\star}, 
+              (\rho \omegadot_k)^{(2),\star}, (\rho \Hnuc)^{(2),\star} ].$  
 
 \item Define
 \begin{eqnarray}
@@ -495,13 +509,11 @@ Then define
 \overline{S}^{\nph} = {\mathrm{\bf Avg}} (S^{\nph}) \enskip.
 \]
 
-\item Construct $w_0^{\nph}$ by integrating equation (\ref{eq:divw0}),
+\item Construct $w_0^{\nph}$
 
-\begin{enumerate}
-%\renewcommand{\labelenumii}{\roman{enumii}.}
-\renewcommand{\theenumii}{{\bf \roman{enumii}}}
+\begin{description}
 
-\item plane-parallel
+\item[plane-parallel:] We integrate equation (\ref{eq:divw0}),
 
 \MarginPar{Need dpdt\_factor stuff.}
 \begin{equation}
@@ -511,11 +523,11 @@ for plane-parallel geometries, where
 $\gammabar^{\nph,\star} = (\gammabar^{n} + \gammabar^{n+1,\star} ) / 2 $ and
 $ p_0^{\nph,\star} = (p_0^{n} + p_0^{n+1,\star} ) / 2.$
 
-\item spherical
+\item[spherical:]~
 
 \MarginPar{need to discuss spherical}
 
-\end{enumerate}
+\end{description}
 
 
 
@@ -596,11 +608,9 @@ X_k^{(2)} &=& (\rho X_k)^{(2)} / \rho^{(2)}
 
 \item Define an edge-centered $ \etarho^{\nph}$ and a cell-centered $\psi_j^{\nph}$,
 
-\begin{enumerate}
-%\renewcommand{\labelenumii}{\roman{enumii}.}
-\renewcommand{\theenumii}{{\bf \roman{enumii}}}
+\begin{description}
 
-\item plane-parallel
+\item[plane-parallel:] ~
 
 \begin{eqnarray}
  \etarho^{\nph}   &=&  {\rm {\bf Avg}} \left( (\uadvtwo \cdotb \er + w_0^{\nph}) 
@@ -609,9 +619,9 @@ X_k^{(2)} &=& (\rho X_k)^{(2)} / \rho^{(2)}
  \psi_j^{\nph}  &=&  \frac{1}{2} \left(\eta_{rho,j-\myhalf}^{\nph} + \eta_{\rho,j+\myhalf}^{\nph}\right) g \enskip .
 \end{eqnarray}
 
-\item spherical
+\item[spherical:]~
 
-\end{enumerate}
+\end{description}
 
 
 %--------------------------------------------------------------------------
@@ -644,9 +654,9 @@ T^{(2)} = T\left(\rho^{(2)}, h^{(2)}, X_k^{(2)}\right) {\hbox{ \rm using the equ
 \begin{enumerate}
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
 
-\item {\bf React State}$(\rho^{(2)},(\rho h)^{(2)}, X_k^{(2)},T^{(2)}, (\rho^{(2)} \Hext) )
-                   \rightarrow (\rho^{n+1}, (\rho h)^{n+1}, X_k^{n+1}, T^{n+1}, 
-                               (\rho \omegadot_k)^{(2)}, (\rho \Hnuc)^{(2)} ).$  
+\item {\bf React State}$[\rho^{(2)},(\rho h)^{(2)}, X_k^{(2)},T^{(2)}, (\rho^{(2)} \Hext) ]
+                   \rightarrow [\rho^{n+1}, (\rho h)^{n+1}, X_k^{n+1}, T^{n+1}, 
+                               (\rho \omegadot_k)^{(2)}, (\rho \Hnuc)^{(2)} ].$  
 
 \item Define
 \begin{eqnarray}
@@ -807,8 +817,8 @@ proceeds as follows.
 
   \item Estimate $\Delta t^\nu$ using $\ubold^{0,\nu}$ and $w_0^\nu.$
 
-  \item {\bf React State}$( \rho^{\initp},(\rho h)^{\initp}, X_k^{\initp}, T^{\initp}, (\rho^{\initp} \Hext) )$\\
-      $\rightarrow (\rho^{\outp}, (\rho h)^{\outp}, X_k^{\outp}, T^{\outp}, (\rho \omegadot_k)^{0,\nu} ).$
+  \item {\bf React State}$[ \rho^{\initp},(\rho h)^{\initp}, X_k^{\initp}, T^{\initp}, (\rho^{\initp} \Hext) ]$\\
+      $\rightarrow [\rho^{\outp}, (\rho h)^{\outp}, X_k^{\outp}, T^{\outp}, (\rho \omegadot_k)^{0,\nu} ].$
 
   \item Compute $S^{0,\nu}$ from equation (\ref{eq:defineS}) 
         using $(\rho \omegadot_k)^{0,\nu}$ and the initial data.
