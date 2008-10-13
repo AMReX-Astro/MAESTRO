@@ -86,6 +86,9 @@ the development of the algorithm:
 \item {\em Low Mach Number Modeling of Type Ia Supernovae. III. Reactions}
 A.~S.~Almgren, J.~B.~Bell, A.~Nonaka, \& M.~Zingale
   2008, ApJ, 684, 449 (henceforth paper~III)
+\item {\em Low Mach Number Modeling of Type Ia Supernovae. IV. White Dwarf Convection}
+A.~S.~Almgren, J.~B.~Bell, A.~Nonaka, \& M.~Zingale,
+  in perparation (henceforth paper~IV)
 \end{itemize}
 
 
@@ -223,12 +226,12 @@ in paper II, Appendix A.
 
 
 \item {\bf Correct Base}
-$[\rho_0^{\inp}, (\nabla\cdot\etarho)^{\inp}] \rightarrow (\rho_0^{\outp})$
+$[\rho_0^{\inp}, (\nabla\cdot\etarho\er)^{\inp}] \rightarrow (\rho_0^{\outp})$
 is the process by which we adjust the base state density to account for
 large-scale mixing, through $\etarho$.  For both plane-parallel and spherical
 we use
 \begin{equation}
-\rho_{0,j}^{\outp} = \rho_{0,j}^{\inp} - \dt (\nabla\cdot\etarho)^{\inp}_j \enskip . 
+\rho_{0,j}^{\outp} = \rho_{0,j}^{\inp} - \dt (\nabla\cdot\etarho\er)^{\inp}_j \enskip . 
 \end{equation}
 
 \end{enumerate}
@@ -301,7 +304,7 @@ using the lagged $\psi^{\nmh}$ and the volume discrepancy correction with $f=0.3
 
 \item[spherical:] ~
 
-\MarginPar{need to add spherical}
+See Paper IV for working notes until we finalize this.
 
 \end{description}
 
@@ -416,7 +419,7 @@ X_k^{(2),\star} &=& (\rho X_k)^{(2),\star} / \rho^{(2),\star}
 \end{enumerate}
 
 \item Define an edge-centered $\etarho^{\nph,\star}$, cell-centered 
-$(\nabla\cdot\etarho)^{\nph,\star}$, and cell-centered $\psi_j^{\nph,\star}$:
+$(\nabla\cdot\etarho\er)^{\nph,\star}$, and cell-centered $\psi_j^{\nph,\star}$:
 
 \begin{description}
 \item[plane-parallel:]~
@@ -425,7 +428,7 @@ $(\nabla\cdot\etarho)^{\nph,\star}$, and cell-centered $\psi_j^{\nph,\star}$:
  \etarho^{\nph,\star}   &=&  {\rm {\bf Avg}} \left( (\uadvone \cdotb \er + w_0^{\nph,\star}) 
 \rho^{(1),\nph,\star} \right) - w_0^{\nph,\star} \rho_0^{\nph,\star,{\rm pred}} 
  \enskip , \nonumber \\ \\
-(\nabla\cdot\etarho)_j^{\nph,\star} &=& 
+(\nabla\cdot\etarho\er)_j^{\nph,\star} &=& 
 \frac{\eta_{\rho,j+\myhalf}^{\nph,\star}-\eta_{\rho,j-\myhalf}^{\nph,\star}}{\Delta r} \enskip , \\
  \psi_j^{\nph,\star}  &=&  \frac{1}{2} \left(\eta_{\rho,j-\myhalf}^{\nph,\star} + \eta_{\rho,j+\myhalf}^{\nph,\star}\right) g \enskip .
 \end{eqnarray}
@@ -471,14 +474,14 @@ $(\nabla\cdot\etarho)^{\nph,\star}$, and cell-centered $\psi_j^{\nph,\star}$:
   \end{enumerate}
 
 \item {\bf Correct Base}
-$[\rho_0^{(2),\star}, (\nabla\cdot\etarho)^{\nph,*}] \rightarrow (\rho_0^{n+1,\star})$.
+$[\rho_0^{(2),\star}, (\nabla\cdot\etarho\er)^{\nph,*}] \rightarrow (\rho_0^{n+1,\star})$.
 
 
 %--------------------------------------------------------------------------
 % STEP 4.1
 %--------------------------------------------------------------------------
 
-\item Diffuse the enthalpy through a time interval of $\dt$.  Compute $\kth^{(1)}, c_p^{(1)}$, and $\xi_k^{(1)}$ from $\rho^{(1)}, T^{(1)}$, and $X_k^{(1)}$ as inputs to the equation of state.  The update is given by:
+\item Diffuse the enthalpy through a time interval of $\dt$.  Compute $\kth^{(1)}, c_p^{(1)}$, and $\xi_k^{(1)}$ from $\rho^{(1)}, T^{(1)}$, and $X_k^{(1)}$ as inputs to the equation of state.  The update is given by
 \begin{eqnarray}
 (\rho h)^{(2),\star} &=& (\rho h)^{(2'),\star} + \frac{\dt}{2}\nabla\cdot\left(\frac{\kth^{(1)}}{c_p^{(1)}}\nabla h^{(2),\star} + \frac{\kth^{(1)}}{c_p^{(1)}}\nabla h^{(1)}\right)\nonumber\\
 &&- \frac{\dt}{2}\sum_k\nabla\cdot\left(\frac{\xi_k^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla X_k^{(2),\star} + \frac{\xi_k^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla X_k^{(1)}\right)\nonumber\\
@@ -526,7 +529,7 @@ $\rightarrow [ \rho^{n+1,\star},(\rho h)^{n+1,\star}, X_k^{n+1,\star}, T^{n+1,\s
 
 \begin{enumerate}
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
-\item Define:
+\item Define
 \begin{equation}
   S^{n+1,\star} =  -\sigma  \sum_k  \xi_k  (\omegadot_k)^{(2),\star}  + 
   \sigma \Hnuc^{(2),\star} +
@@ -541,7 +544,7 @@ Then define
  S^\nph = \frac{S^n + S^{n+1,\star}}{2} \enskip. 
 \end{equation}
 
-\item Define:
+\item Define
 \begin{equation}
 \overline{S}^{\nph} = {\mathrm{\bf Avg}} (S^{\nph}) \enskip.
 \end{equation}
@@ -599,13 +602,13 @@ w_0^{n,\star} = \frac{\dt^{n} w_0^{\nmh} + \dt^{n-1} w_0^{\nph,\star}}{\dt^n+\dt
 %--------------------------------------------------------------------------
 % STEP 7
 %--------------------------------------------------------------------------
-\item[Step 7.] {\em Construct the final edge-based advective velocity}, $\uadvtwo$: 
+\item[Step 7.] {\em Construct the final edge-based advective velocity}, $\uadvtwo$.
 
 The procedure to construct $\uadvtwo$ is described in detail in Appendix B of paper III
 and is analogous to the procedure used in step 2, but with updated values
 for $w_0$ and $\pizero.$  We note that $\uadvtwo$ satisfies the discrete versions of 
 equations (\ref{eq:udoterzero}) and (\ref{eq:tildeconstraint}).   The discretization
-with the volume discrepancy correction is:
+with the volume discrepancy correction is
 \begin{eqnarray}
 \nablab \cdotb \left(\beta_0^{\nph,\star} \uadvtwo\right) &=& 
 \beta_0^{\nph,\star} \left(S^{\nph} - \overline{S}^{\nph}\right) \nonumber \\
@@ -657,7 +660,7 @@ X_k^{(2)} &=& (\rho X_k)^{(2)} / \rho^{(2)}
    \end{enumerate}
 
 \item Define an edge-centered $\etarho^{\nph}$, cell-centered 
-$(\nabla\cdot\etarho)^{\nph}$, and a cell-centered $\psi_j^{\nph}$,
+$(\nabla\cdot\etarho\er)^{\nph}$, and a cell-centered $\psi_j^{\nph}$,
 
 \begin{description}
 
@@ -666,7 +669,7 @@ $(\nabla\cdot\etarho)^{\nph}$, and a cell-centered $\psi_j^{\nph}$,
 \begin{eqnarray}
  \etarho^{\nph}   &=&  {\rm {\bf Avg}} \left( (\uadvtwo \cdotb \er + w_0^{\nph}) 
 \rho^{(1),\nph} \right) - w_0^{\nph} \rho_0^{\nph,{\rm pred}} \enskip , \nonumber \\ \\
-(\nabla\cdot\etarho)_j^{\nph} &=& 
+(\nabla\cdot\etarho\er)_j^{\nph} &=& 
 \frac{\eta_{\rho,j+\myhalf}^{\nph} - \eta_{\rho,j-\myhalf}^{\nph}}{\Delta r} \enskip , \\
  \psi_j^{\nph}  &=&  \frac{1}{2} \left(\eta_{\rho,j-\myhalf}^{\nph} + \eta_{\rho,j+\myhalf}^{\nph}\right) g \enskip .
 \end{eqnarray}
@@ -704,12 +707,12 @@ $(\nabla\cdot\etarho)^{\nph}$, and a cell-centered $\psi_j^{\nph}$,
 \end{enumerate}
 
 \item {\bf Correct Base}
-$[\rho_0^{(2)}, (\nabla\cdot\etarho)^{\nph}] \rightarrow (\rho_0^{n+1})$
+$[\rho_0^{(2)}, (\nabla\cdot\etarho\er)^{\nph}] \rightarrow (\rho_0^{n+1})$
 
 %--------------------------------------------------------------------------
 % STEP 8.1
 %--------------------------------------------------------------------------
-\item Diffuse the enthalpy through a time interval of $\dt$.  Compute $\kth^{(2),\star}, c_p^{(2),\star}$, and $\xi_k^{(2),\star}$, from $\rho^{(2),\star}, T^{(2),\star}$, and $X_k^{(2),\star}$ as inputs to the equation of state.  The update is given by:
+\item Diffuse the enthalpy through a time interval of $\dt$.  Compute $\kth^{(2),\star}, c_p^{(2),\star}$, and $\xi_k^{(2),\star}$, from $\rho^{(2),\star}, T^{(2),\star}$, and $X_k^{(2),\star}$ as inputs to the equation of state.  The update is given by
 \begin{eqnarray}
 (\rho h)^{(2)} &=& (\rho h)^{(2')} + \frac{\dt}{2}\nabla\cdot\left(\frac{\kth^{(2),\star}}{c_p^{(2),\star}}\nabla h^{(2)} + \frac{\kth^{(1)}}{c_p^{(1)}}\nabla h^{(1)}\right)\nonumber\\
 &&- \frac{\dt}{2}\sum_k\nabla\cdot\left(\frac{\xi_k^{(2),\star}\kth^{(2),\star}}{c_p^{(2),\star}}\nabla X_k^{(2)} + \frac{\xi_k^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla X_k^{(1)}\right)\nonumber\\
@@ -755,7 +758,7 @@ T^{(2)} = T\left(\rho^{(2)}, h^{(2)}, X_k^{(2)}\right) {\hbox{ \rm using the equ
 
 \begin{enumerate}
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
-\item Define:
+\item Define
 \begin{equation}
   S^{n+1} =  -\sigma  \sum_k  \xi_k (\omegadot_k)^{(2)}  + \sigma \Hnuc^{(2)} +
   \frac{1}{\rho p_\rho} \sum_k p_{X_k}  ({\omegadot}_k)^{(2)}  
@@ -842,7 +845,7 @@ We determine the new time velocity field from
 \begin{equation}
 \ut^{n+1} = {\bf V} - \frac{1}{\rho^\nph} \mathbf{G} \phi \enskip ,
 \end{equation}
-and the new time-centered perturbational pressure from:
+and the new time-centered perturbational pressure from
 \begin{equation}
   \pi^\nph = \frac{1}{\dt} \phi \enskip .
 \end{equation}
