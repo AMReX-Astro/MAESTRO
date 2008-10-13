@@ -165,7 +165,15 @@ updated by
 (\rho h)^{\inp} + \frac{\dt}{2} (\rho\Hnuc) + \frac{\dt}{2} (\rho\Hext)^{\inp}\enskip.
 \end{equation}
 
-\item {\bf React Base}$[(\rho h)_0^{\inp}] \rightarrow [(\rho h)_0^{\outp}]$
+\item {\bf React Base}$[(\rho h)_0^{\inp},(\overline{\rho\Hnuc})^{\inp},(\overline{\rho\Hext})^{\inp}] \rightarrow [(\rho h)_0^{\outp}]$\\
+is the process by which we update the base state enthalpy through $\dt/2$ in time using
+\begin{equation}
+\frac{\partial(\rho h)_0}{\partial t} = (\overline{\rho\Hnuc})^{\inp} + (\overline{\rho\Hext})^{\inp}\enskip ,
+\end{equation}
+discretized as
+\begin{equation}
+(\rho h)_{0,j}^{\outp} = (\rho h)_{0,j}^{\inp} + \frac{\dt}{2}(\overline{\rho\Hnuc})_{j}^{\inp} + \frac{\dt}{2}(\overline{\rho\Hext})_{j}^{\inp} \enskip .
+\end{equation}
 
 \item {\bf Advect Base}$[\rho_0^{\inp}, (\rho h)_0^{\inp}, p_0^{\inp}, \beta_0^{\inp}, w_0^{\inp}, \psi^{\inp}] \rightarrow (\rho_0^{\outp}, \rho_0^{\outp,n+\myhalf}, p_0^{\outp})$ \\
 is the process by which we update the base state through $\dt$ in
@@ -380,15 +388,17 @@ and
 %--------------------------------------------------------------------------
 % STEP 3
 %--------------------------------------------------------------------------
-\item[Step 3.] {\em React the full state through the first time interval of $\dt / 2.$}
+\item[Step 3.] {\em React the full state and base state through the first time 
+interval of $\dt / 2.$}
 
 \begin{enumerate}
-\MarginPar{Need React Base}
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
 
-\item {\bf React State}$[\rho^n, (\rho h)^n, X_k^n, T^n, (\rho^n \Hext)]
+\item {\bf React State}$[\rho^n, (\rho h)^n, X_k^n, T^n, (\rho\Hext)^n]
                    \rightarrow$ $[ \rho^{(1)}, (\rho h)^{(1)}, X_k^{(1)}, T^{(1)},
                                   (\rho \omegadot_k)^{(1)}, (\rho \Hnuc)^{(1)} ].$  
+
+\item {\bf React Base}$[(\rho h)_0^n,(\overline{\rho \Hnuc})^{(1)},(\overline{\rho\Hext})^n] \rightarrow [(\rho h)_0^{(1)}]$
 
 \item
 Define
@@ -547,11 +557,10 @@ T^{(2),\star} = T\left(\rho^{(2),\star}, h^{(2),\star}, X_k^{(2),\star}\right) {
 \item[Step 5.] {\em React the full state through a second time interval of $\dt / 2.$}
 
 \begin{enumerate}
-\MarginPar{Need React Base}
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
 
 \item {\bf React State}$[ \rho^{(2),\star},(\rho h)^{(2),\star}, X_k^{(2),\star}, 
-                             T^{(2),\star}, (\rho^{(2),\star} \Hext)] $\\
+                             T^{(2),\star}, (\rho\Hext)^{(2),\star}] $\\
 $\rightarrow [ \rho^{n+1,\star},(\rho h)^{n+1,\star}, X_k^{n+1,\star}, T^{n+1,\star}, 
               (\rho \omegadot_k)^{(2),\star}, (\rho \Hnuc)^{(2),\star} ].$  
 
@@ -789,15 +798,17 @@ T^{(2)} = T\left(\rho^{(2)}, h^{(2)}, X_k^{(2)}\right) {\hbox{ \rm using the equ
 %--------------------------------------------------------------------------
 % STEP 9
 %--------------------------------------------------------------------------
-\item[Step 9.] {\em React the full state through a second time interval of $\dt / 2.$}
+\item[Step 9.] {\em React the full state and base state through a second time 
+interval of $\dt / 2.$}
 
 \begin{enumerate}
-\MarginPar{Need React Base}
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
 
 \item {\bf React State}$[\rho^{(2)},(\rho h)^{(2)}, X_k^{(2)},T^{(2)}, (\rho^{(2)} \Hext) ]$\\
                    $\rightarrow [\rho^{n+1}, (\rho h)^{n+1}, X_k^{n+1}, T^{n+1}, 
                                (\rho \omegadot_k)^{(2)}, (\rho \Hnuc)^{(2)} ].$  
+
+\item {\bf React Base}$[(\rho h)_0^{(2)},(\overline{\rho \Hnuc})^{(2)},(\overline{\rho\Hext})^{(2)}] \rightarrow [(\rho h)_0^{n+1}]$
 
 \item Define
 \begin{eqnarray}

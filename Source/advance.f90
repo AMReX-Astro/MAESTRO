@@ -647,16 +647,20 @@ contains
     do n=1,nlevs
        call destroy(s2(n))
     end do
-
-    if (evolve_base_state .and. full_rhoh0_evolution) then
-       if (parallel_IOProcessor() .and. verbose .ge. 1) then
-          write(6,*) '            : react  base >>> '
+    
+    ! if we are doing the full algorithm, there is no need to call react_base since
+    ! rhoh0_new isn't actually used
+    if (do_half_alg) then
+       if (evolve_base_state .and. full_rhoh0_evolution) then
+          if (parallel_IOProcessor() .and. verbose .ge. 1) then
+             write(6,*) '            : react  base >>> '
+          end if
+          call average(mla,rho_Hnuc2,rho_Hnucbar,dx,1)
+          call average(mla,rho_Hext,rho_Hextbar,dx,1)
+          call react_base(rhoh0_2,rho_Hnucbar,rho_Hextbar,halfdt,rhoh0_new)
+       else
+          rhoh0_new = rhoh0_2
        end if
-       call average(mla,rho_Hnuc2,rho_Hnucbar,dx,1)
-       call average(mla,rho_Hext,rho_Hextbar,dx,1)
-       call react_base(rhoh0_2,rho_Hnucbar,rho_Hextbar,halfdt,rhoh0_new)
-    else
-       rhoh0_new = rhoh0_2
     end if
 
     if (evolve_base_state) then
