@@ -145,7 +145,6 @@ contains
     real(dp_t) ::               w0_old(nlevs,0:nr_fine)
     real(dp_t) ::       div_coeff_edge(nlevs,0:nr_fine)
     real(dp_t) ::  rho0_predicted_edge(nlevs,0:nr_fine)
-    real(dp_t) ::      rho_omegadotbar(nlevs,0:nr_fine-1,nspec)
     real(dp_t) ::          rho_Hnucbar(nlevs,0:nr_fine-1)
 
     integer    :: r,n,comp,proj_type
@@ -410,12 +409,9 @@ contains
           if (parallel_IOProcessor() .and. verbose .ge. 1) then
              write(6,*) '            : react  base >>> '
           end if
-          do comp=1,nspec
-             call average(mla,rho_omegadot1,rho_omegadotbar(:,:,comp),dx,comp)
-          end do
           call average(mla,rho_Hnuc1,rho_Hnucbar,dx,1)
           call average(mla,rho_Hext, rho_Hextbar,dx,1)
-          call react_base(rhoh0_old,rho_omegadotbar,rho_Hnucbar,rho_Hextbar,halfdt,rhoh0_1)
+          call react_base(rhoh0_old,rho_Hnucbar,rho_Hextbar,halfdt,rhoh0_1)
        else
           rhoh0_1 = rhoh0_old
        end if
@@ -656,12 +652,9 @@ contains
        if (parallel_IOProcessor() .and. verbose .ge. 1) then
           write(6,*) '            : react  base >>> '
        end if
-       do comp=1,nspec
-          call average(mla,rho_omegadot2,rho_omegadotbar(:,:,comp),dx,comp)
-       end do
        call average(mla,rho_Hnuc2,rho_Hnucbar,dx,1)
        call average(mla,rho_Hext,rho_Hextbar,dx,1)
-       call react_base(rhoh0_2,rho_omegadotbar,rho_Hnucbar,rho_Hextbar,halfdt,rhoh0_new)
+       call react_base(rhoh0_2,rho_Hnucbar,rho_Hextbar,halfdt,rhoh0_new)
     else
        rhoh0_new = rhoh0_2
     end if
@@ -1085,12 +1078,9 @@ contains
           if (parallel_IOProcessor() .and. verbose .ge. 1) then
              write(6,*) '            : react  base >>>'
           end if
-          do comp=1,nspec
-             call average(mla,rho_omegadot2,rho_omegadotbar(:,:,comp),dx,comp)
-          end do
           call average(mla,rho_Hnuc2,rho_Hnucbar,dx,1)
           call average(mla,rho_Hext,rho_Hextbar,dx,1)
-          call react_base(rhoh0_2,rho_omegadotbar,rho_Hnucbar,rho_Hextbar,halfdt,rhoh0_new)
+          call react_base(rhoh0_2,rho_Hnucbar,rho_Hextbar,halfdt,rhoh0_new)
        else
           rhoh0_new = rhoh0_2
        end if

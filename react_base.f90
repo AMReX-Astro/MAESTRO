@@ -12,17 +12,13 @@ module react_base_module
   
 contains
   
-  subroutine react_base(rhoh0_in,rho_omegadotbar,rho_Hnucbar,rho_Hextbar, &
-                        halfdt_in,rhoh0_out)
+  subroutine react_base(rhoh0_in,rho_Hnucbar,rho_Hextbar,halfdt_in,rhoh0_out)
 
     use geometry, only: r_start_coord, r_end_coord, numdisjointchunks, nlevs
-    use network, only: nspec
-    use variables, only: rho_comp, spec_comp, rhoh_comp
     use bl_prof_module
     use restrict_base_module
      
     real(kind=dp_t), intent(in   ) :: rhoh0_in(:,0:)
-    real(kind=dp_t), intent(in   ) :: rho_omegadotbar(:,0:,:)
     real(kind=dp_t), intent(in   ) :: rho_Hnucbar(:,0:)
     real(kind=dp_t), intent(in   ) :: rho_Hextbar(:,0:)
     real(kind=dp_t), intent(in   ) :: halfdt_in
