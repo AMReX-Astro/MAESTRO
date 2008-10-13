@@ -222,23 +222,14 @@ in paper II, Appendix A.
 \end{description}
 
 
-\item {\bf Correct Base}$(\rho_0^{\inp} , \etarho^{\inp}) \rightarrow (\rho_0^{\outp})$
+\item {\bf Correct Base}
+$[\rho_0^{\inp}, (\nabla\cdot\etarho)^{\inp}] \rightarrow (\rho_0^{\outp})$
 is the process by which we adjust the base state density to account for
-large-scale mixing, through $\etarho$
-
-\begin{description}
-
-\item[plane-parallel:] We use
-\begin{eqnarray}
-\rho_{0,j}^{\outp} &=& \rho_{0,j}^{\inp} - \frac{\dt}{\dr} 
-\left( \eta_{\rho,j+\myhalf}^{\inp} - \eta_{\rho,j-\myhalf}^{\inp}  \right)  \enskip . 
-\end{eqnarray} 
-
-\item[spherical:] ~
-
-\MarginPar{need to add spherical}
-
-\end{description}
+large-scale mixing, through $\etarho$.  For both plane-parallel and spherical
+we use
+\begin{equation}
+\rho_{0,j}^{\outp} = \rho_{0,j}^{\inp} - \dt (\nabla\cdot\etarho)^{\inp}_j \enskip . 
+\end{equation}
 
 \end{enumerate}
 
@@ -424,8 +415,8 @@ X_k^{(2),\star} &=& (\rho X_k)^{(2),\star} / \rho^{(2),\star}
 
 \end{enumerate}
 
-\item Define an edge-centered $\etarho^{\nph,\star}$ and cell-centered $\psi_j^{\nph,\star}$:
-
+\item Define an edge-centered $\etarho^{\nph,\star}$, cell-centered 
+$(\nabla\cdot\etarho)^{\nph,\star}$, and cell-centered $\psi_j^{\nph,\star}$:
 
 \begin{description}
 \item[plane-parallel:]~
@@ -434,6 +425,8 @@ X_k^{(2),\star} &=& (\rho X_k)^{(2),\star} / \rho^{(2),\star}
  \etarho^{\nph,\star}   &=&  {\rm {\bf Avg}} \left( (\uadvone \cdotb \er + w_0^{\nph,\star}) 
 \rho^{(1),\nph,\star} \right) - w_0^{\nph,\star} \rho_0^{\nph,\star,{\rm pred}} 
  \enskip , \nonumber \\ \\
+(\nabla\cdot\etarho)_j^{\nph,\star} &=& 
+\frac{\eta_{\rho,j+\myhalf}^{\nph,\star}-\eta_{\rho,j-\myhalf}^{\nph,\star}}{\Delta r} \enskip , \\
  \psi_j^{\nph,\star}  &=&  \frac{1}{2} \left(\eta_{\rho,j-\myhalf}^{\nph,\star} + \eta_{\rho,j+\myhalf}^{\nph,\star}\right) g \enskip .
 \end{eqnarray}
 
@@ -477,7 +470,8 @@ X_k^{(2),\star} &=& (\rho X_k)^{(2),\star} / \rho^{(2),\star}
   \MarginPar{we should also show the update in the case that $(\rho h)'$ is the flux}
   \end{enumerate}
 
-\item {\bf Correct Base}$(\rho_0^{(2),\star}, \etarho^{\nph,*}) \rightarrow (\rho_0^{n+1,\star})$.
+\item {\bf Correct Base}
+$[\rho_0^{(2),\star}, (\nabla\cdot\etarho)^{\nph,*}] \rightarrow (\rho_0^{n+1,\star})$.
 
 
 %--------------------------------------------------------------------------
@@ -662,7 +656,8 @@ X_k^{(2)} &=& (\rho X_k)^{(2)} / \rho^{(2)}
 
    \end{enumerate}
 
-\item Define an edge-centered $ \etarho^{\nph}$ and a cell-centered $\psi_j^{\nph}$,
+\item Define an edge-centered $\etarho^{\nph}$, cell-centered 
+$(\nabla\cdot\etarho)^{\nph}$, and a cell-centered $\psi_j^{\nph}$,
 
 \begin{description}
 
@@ -670,7 +665,9 @@ X_k^{(2)} &=& (\rho X_k)^{(2)} / \rho^{(2)}
 
 \begin{eqnarray}
  \etarho^{\nph}   &=&  {\rm {\bf Avg}} \left( (\uadvtwo \cdotb \er + w_0^{\nph}) 
-\rho^{(1),\nph} \right) - w_0^{\nph} \rho_0^{\nph,{\rm pred}} \enskip , \\
+\rho^{(1),\nph} \right) - w_0^{\nph} \rho_0^{\nph,{\rm pred}} \enskip , \nonumber \\ \\
+(\nabla\cdot\etarho)_j^{\nph} &=& 
+\frac{\eta_{\rho,j+\myhalf}^{\nph} - \eta_{\rho,j-\myhalf}^{\nph}}{\Delta r} \enskip , \\
  \psi_j^{\nph}  &=&  \frac{1}{2} \left(\eta_{\rho,j-\myhalf}^{\nph} + \eta_{\rho,j+\myhalf}^{\nph}\right) g \enskip .
 \end{eqnarray}
 
@@ -706,9 +703,8 @@ X_k^{(2)} &=& (\rho X_k)^{(2)} / \rho^{(2)}
 
 \end{enumerate}
 
-\item {\bf Correct Base}$(\rho_0^{(2)}, \etarho^{\nph}) \rightarrow (\rho_0^{n+1})$
-
-
+\item {\bf Correct Base}
+$[\rho_0^{(2)}, (\nabla\cdot\etarho)^{\nph}] \rightarrow (\rho_0^{n+1})$
 
 %--------------------------------------------------------------------------
 % STEP 8.1
