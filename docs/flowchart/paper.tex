@@ -276,9 +276,9 @@ source term in the velocity divergence constraint,
 (paper III; eq.~[19]).
 
 If this is the first step of the calculation ($n=0$), we set
-\[
+\begin{equation}
 S^{\half,\star} = \frac{S^0 + S^1}{2} \enskip ,
-\]
+\end{equation}
 where $S^1$ is found through the iterative process that initializes the calculation.
 Otherwise, following the method used in our small-scale low Mach number algorithm
 (Cite Bell04), we extrapolate to the half-time using the source
@@ -288,9 +288,9 @@ S^{\nph,\star} = S^n + \frac{\Delta t^n}{2} \frac{S^n - S^{n-1}}{\Delta t^{n-1}}
 \end{equation}
 
 \item Define
-\[
-\overline{S}^{\nph,\star} = {\mathrm{\bf Avg}} \left(S^{\nph,\star}\right) \enskip.
-\]
+\begin{equation}
+\overline{S}^{\nph,\star} = {\mathrm{\bf Avg}} \left(S^{\nph,\star}\right) \enskip .
+\end{equation}
 
 \item Construct $w_0^{\nph,\star}$
 
@@ -300,12 +300,12 @@ S^{\nph,\star} = S^n + \frac{\Delta t^n}{2} \frac{S^n - S^{n-1}}{\Delta t^{n-1}}
 \begin{equation}
 \frac{\partial w_0}{\partial r} =  \Sbar - \frac{1}{\gammabar p_0} \etarho g \enskip \label{eq:divw0} ,
 \end{equation}
-using the lagged $\psi^{\nmh}$ and the volume discrepancy correction with $f=0.3$:
+using the lagged $\psi^{\nmh}$ and the volume discrepancy correction with $f=0.3$,
 \begin{equation}
 \frac{\partial w_0^{\nph,\star}}{\partial r} =  \overline{S}^{\nph,\star} 
 - \frac{1}{\gammabar^{n} p_0^{n}}
 \left[ \psi^{\nmh} - f \left(\frac{p_0^n - \overline{p(\rho,h,X_k)^n}}{\Delta t^n} \right)\right]
-\enskip . \nonumber
+\enskip .
 \end{equation}
 
 \item[spherical:] ~
@@ -344,20 +344,20 @@ The local velocity field is described by
 The procedure to construct $\uadvone$ is described in detail in Appendix B of paper III.
 We note that  $\uadvone$ satisfies the discrete versions of 
 \begin{equation}
-\int_{\Omega_H} \ut \cdotb \er \; dA = 0 \label{eq:udoterzero} 
+\int_{\Omega_H} \ut \cdotb \er \; dA = 0 \label{eq:udoterzero} \enskip ,
 \end{equation}
 (paper III; eq.~[21])
 and
 \begin{equation}
-\nablab \cdotb (\beta_0 \ut )  = \beta_0 \left(S - \Sbar \right )
+\nablab \cdotb (\beta_0 \ut )  = \beta_0 \left(S - \Sbar \right )\enskip ,
 \label{eq:tildeconstraint}
 \end{equation}
-(paper III; eq.~[39]).
-In particular,
-\MarginPar{Need dpdt\_factor stuff.}
+(paper III; eq.~[39]).  The discretization with the volume discrepancy correction is
 \begin{equation}
-\nablab \cdotb \left(\beta_0^n \uadvone\right) = \beta_0^n \left(S^{\nph,\star} - \overline{S}^{\nph,\star}\right)
-\enskip ,
+\nablab \cdotb \left(\beta_0^n \uadvone\right) = 
+\beta_0^n \left(S^{\nph,\star} - \overline{S}^{\nph,\star}\right)
++ \frac{f}{\gammabar^n p_0^n}
+\left(\frac{p(\rho,h,X_k)^n - \overline{p(\rho,h,X_k)^n}}{\Delta t^n}\right) \enskip .
 \end{equation}
 
 %--------------------------------------------------------------------------
@@ -375,8 +375,7 @@ In particular,
 \item
 Define
 \begin{eqnarray}
-\gammabar^{(1)}        &=& {\rm{\bf Avg}} \left( \Gamma_1(\rho^{(1)}, p_0^{n}, X_k^{(1)}) \right) 
-                                                                \enskip , \nonumber \\
+\gammabar^{(1)}        &=& {\rm{\bf Avg}} \left( \Gamma_1(\rho^{(1)}, p_0^{n}, X_k^{(1)}) \right) \enskip , \\
  {\beta   }_0^{(1)}    &=& \beta   \left(\rho_0^{n}, p_0^{n}, \gammabar^{(1)}\right) \enskip .
 \end{eqnarray}
 
@@ -418,7 +417,7 @@ $(\rho_0^{(2),\star}, \rho_0^{\nph,\star,{\rm pred}}, p_0^{n+1,\star}).$
 \begin{eqnarray}
 (\rho X_k)^{(2),\star} &=& (\rho X_k)^{(1)} 
  - \dt \; \left[ \nablab \cdotb \left( (\uadvone+w_0^{\nph,\star} \er)  
-  (\rho X_k)^{(1),\nph,\star} \right) \right] \enskip , \\ \nonumber  \\
+  (\rho X_k)^{(1),\nph,\star} \right) \right] \enskip , \nonumber \\ \\
 \rho^{(2),\star} &=& \sum_k (\rho X_k)^{(2),\star} \enskip , \\ 
 X_k^{(2),\star} &=& (\rho X_k)^{(2),\star} / \rho^{(2),\star}
 \end{eqnarray}
@@ -434,7 +433,7 @@ X_k^{(2),\star} &=& (\rho X_k)^{(2),\star} / \rho^{(2),\star}
 \begin{eqnarray}
  \etarho^{\nph,\star}   &=&  {\rm {\bf Avg}} \left( (\uadvone \cdotb \er + w_0^{\nph,\star}) 
 \rho^{(1),\nph,\star} \right) - w_0^{\nph,\star} \rho_0^{\nph,\star,{\rm pred}} 
- \nonumber \enskip , \\
+ \enskip , \nonumber \\ \\
  \psi_j^{\nph,\star}  &=&  \frac{1}{2} \left(\eta_{\rho,j-\myhalf}^{\nph,\star} + \eta_{\rho,j+\myhalf}^{\nph,\star}\right) g \enskip .
 \end{eqnarray}
 
@@ -447,9 +446,10 @@ X_k^{(2),\star} &=& (\rho X_k)^{(2),\star} / \rho^{(2),\star}
 
   \begin{equation}
   \frac{\partial (\rho h)}{\partial t}  = - \nablab \cdotb (\ubold \rho h)
-+ \frac{Dp_0}{Dt} + \rho \Hnuc + \rho \Hext \enskip , \label{eq:rhohupd} 
++ \frac{Dp_0}{Dt} + \nabla\cdot\kth\nabla T + \rho \Hnuc + \rho \Hext 
+\enskip , \label{eq:rhohupd} 
   \end{equation}
-  neglecting the reaction terms. \MarginPar{need to add diffusion.}
+  neglecting the reaction terms.
 
   \begin{enumerate}
   \renewcommand{\labelenumii}{{\bf \roman{enumii}}.}
@@ -519,7 +519,7 @@ $\rightarrow [ \rho^{n+1,\star},(\rho h)^{n+1,\star}, X_k^{n+1,\star}, T^{n+1,\s
 \item Define
 \begin{eqnarray}
  \gammabar^{n+1,\star}    &=& {\rm{\bf Avg}} \left( \Gamma_1(\rho^{n+1,\star}, p_0^{n+1,\star}, 
-                                                      X_k^{n+1,\star}) \right) \enskip , \nonumber \\
+                                                      X_k^{n+1,\star}) \right) \enskip , \\
  {\beta   }_0^{n+1,\star}    &=& \beta   \left(\rho_0^{n+1,\star}, p_0^{n+1,\star}, \gammabar^{n+1,\star}\right) \enskip .
 \end{eqnarray}
 
@@ -543,26 +543,26 @@ where $(\omegadot_k)^{(2),\star} = (\rho \omegadot_k)^{(2),\star} / \rho^{(2),\s
 and the remaining quantities are defined using $X_k^{n+1,\star},$ $\rho^{n+1,\star},$ 
 and $T^{n+1,\star}$ from step 5.
 Then define
-\[
+\begin{equation}
  S^\nph = \frac{S^n + S^{n+1,\star}}{2} \enskip. 
-\]
+\end{equation}
 
 \item Define:
-\[
+\begin{equation}
 \overline{S}^{\nph} = {\mathrm{\bf Avg}} (S^{\nph}) \enskip.
-\]
+\end{equation}
 
 \item Construct $w_0^{\nph}$
 
 \begin{description}
 
 \item[plane-parallel:] We integrate equation (\ref{eq:divw0}) with the 
-volume discrepancy correction with $f=0.3$:
+volume discrepancy correction,
 \begin{equation}
 \frac{\partial w_0^{\nph}}{\partial r} = 
 \overline{S}^{\nph,\star} - \frac{1}{\gammabar^{\nph,\star} p_0^{\nph,\star}}
 \left[ \psi^{\nph,\star} - f \left(\frac{p_0^{\nph,\star} - \overline{p(\rho,h,X_k)^{\nph,\star}}}{\Delta t^n}\right)\right]
-\enskip , \nonumber
+\enskip ,
 \end{equation}
 \begin{equation}
 \gammabar^{\nph,\star} = \frac{\gammabar^{n} + \gammabar^{n+1,\star}}{2}
@@ -609,14 +609,19 @@ w_0^{n,\star} = \frac{\dt^{n} w_0^{\nmh} + \dt^{n-1} w_0^{\nph,\star}}{\dt^n+\dt
 
 The procedure to construct $\uadvtwo$ is described in detail in Appendix B of paper III
 and is analogous to the procedure used in step 2, but with updated values
-for $w_0$ and $\pizero.$ We note that  $\uadvtwo$ satisfies the discrete versions of 
-equations (\ref{eq:udoterzero}) and (\ref{eq:tildeconstraint}), in particular,
-\MarginPar{Need dpdt\_factor stuff.}
+for $w_0$ and $\pizero.$  We note that $\uadvtwo$ satisfies the discrete versions of 
+equations (\ref{eq:udoterzero}) and (\ref{eq:tildeconstraint}).   The discretization
+with the volume discrepancy correction is:
+\begin{eqnarray}
+\nablab \cdotb \left(\beta_0^{\nph,\star} \uadvtwo\right) &=& 
+\beta_0^{\nph,\star} \left(S^{\nph} - \overline{S}^{\nph}\right) \nonumber \\
+&& + \frac{f}{\gammabar^{\nph,\star} p_0^{\nph,\star}}
+\left(\frac{p(\rho,h,X_k)^{\nph,\star} - \overline{p(\rho,h,X_k)^{\nph,\star}}}{\Delta t^n}\right)
+\enskip , \nonumber \\
+\end{eqnarray}
 \begin{equation}
-\nablab \cdotb \left(\beta_0^{\nph,\star} \uadvtwo\right) = \beta_0^{\nph,\star} 
-\left(S^{\nph} - \overline{S}^{\nph}\right) \enskip .
+\beta_0^{\nph,\star} = \frac{ \beta_0^n +  \beta_0^{n+1,\star} }{2} \enskip .
 \end{equation}
-where $ \beta_0^{\nph,\star} = ( \beta_0^n +  \beta_0^{n+1,\star}) / 2.$\\
 
 %--------------------------------------------------------------------------
 % STEP 8
@@ -665,8 +670,7 @@ X_k^{(2)} &=& (\rho X_k)^{(2)} / \rho^{(2)}
 
 \begin{eqnarray}
  \etarho^{\nph}   &=&  {\rm {\bf Avg}} \left( (\uadvtwo \cdotb \er + w_0^{\nph}) 
-\rho^{(1),\nph} \right) - w_0^{\nph} \rho_0^{\nph,{\rm pred}} 
- \nonumber \enskip , \\
+\rho^{(1),\nph} \right) - w_0^{\nph} \rho_0^{\nph,{\rm pred}} \enskip , \\
  \psi_j^{\nph}  &=&  \frac{1}{2} \left(\eta_{\rho,j-\myhalf}^{\nph} + \eta_{\rho,j+\myhalf}^{\nph}\right) g \enskip .
 \end{eqnarray}
 
@@ -742,7 +746,7 @@ T^{(2)} = T\left(\rho^{(2)}, h^{(2)}, X_k^{(2)}\right) {\hbox{ \rm using the equ
 
 \item Define
 \begin{eqnarray}
- \gammabar^{n+1}    &=& {\rm{\bf Avg}}\left(\Gamma_1(\rho^{n+1}, p_0^{n+1}, {X_k}^{n+1}) \right) \enskip , \nonumber \\ 
+ \gammabar^{n+1}    &=& {\rm{\bf Avg}}\left(\Gamma_1(\rho^{n+1}, p_0^{n+1}, {X_k}^{n+1}) \right) \enskip , \\ 
  {\beta   }_0^{n+1}    &=& \beta   \left(\rho_0^{n+1}, p_0^{n+1},   \gammabar^{n+1}\right) \enskip .
 \end{eqnarray}
 
@@ -766,9 +770,9 @@ and the remaining quantities are defined using $X_k^{n+1},$ $\rho^{n+1},$
 and $T^{n+1}$ from step 9.
 
 \item Define
-\[
+\begin{equation}
 \overline{S}^{n+1} = {\mathrm{\bf Avg}} (S^{n+1}) \enskip.
-\]
+\end{equation}
 
 \end{enumerate}
 
@@ -803,20 +807,27 @@ The construction of $\left[((\uadvtwo+ w_0^{\nph} \er) \cdotb \nablab) \ut \righ
 is described in paper II, Appendix A, with $\V = \uadvtwo+w_0^{\nph} \er$ and~$s$ set to each
 component of $\ut^n$ individually.
 
-Finally, we impose the divergence constraint from equation (\ref{eq:tildeconstraint}),
-\MarginPar{Need dpdt\_factor stuff.}
-\[
-\nablab \cdotb \left(\beta_0^{\nph} \ut^{n+1} \right)  = \beta_0^{\nph} \left(S^{n+1} - \overline{S}^{n+1} \right)\enskip,
-\]
-by defining ${\bf V} = \ut^{n+1,\star} + ( \dt / \rho^\nph ) \; \mathbf{G} \pi^\nmh$ and solving
+Finally, we impose the divergence constraint from equation (\ref{eq:tildeconstraint}) 
+including the volume discrepancy correction,
+\begin{equation}
+\nablab \cdotb \left(\beta_0^{\nph} \ut^{n+1} \right)  = \beta_0^{\nph} \left(S^{n+1} - \overline{S}^{n+1} \right)
++ \frac{f}{\gammabar^{n+1} p_0^{n+1}}
+\left(\frac{p(\rho,h,X_k)^{n+1} - \overline{p(\rho,h,X_k)^{n+1}}}{\Delta t^n}\right)
+\enskip,
+\end{equation}
+by defining ${\bf V} = \ut^{n+1,\star} + ( \dt / \rho^\nph ) \; \mathbf{G} \pi^\nmh$ 
+and solving
 \begin{equation}
  L_\beta^\rho \phi =
-   D \left ( \beta_0^{\nph} {\bf V} \right) - \beta_0^{\nph} \left(S^{n+1}-\overline{S}^{n+1} \right)\enskip,
+   D \left ( \beta_0^{\nph} {\bf V} \right) - \beta_0^{\nph} \left(S^{n+1}-\overline{S}^{n+1} \right)
+- \frac{f}{\gammabar^{n+1} p_0^{n+1}}
+\left(\frac{p(\rho,h,X_k)^{n+1} - \overline{p(\rho,h,X_k)^{n+1}}}{\Delta t^n}\right) \enskip,
 \end{equation}
 for nodal values of $\phi$, where
 $\beta_0^\nph = ( \beta_0^n + \beta_0^{n+1} )/2$ and
 $L_\beta^\rho$ is the standard bilinear
 finite element approximation to $\nablab \cdotb ({\beta_0^\nph}/{\rho^\nph}) \nablab.$
+\MarginPar{Why are $\beta$ and $\rho$ time centered here instead using the new time value?  Does this have something to do with how $\phi$ relates to a lagged pressure?}
 In this step, $D$ is a discrete second-order operator that approximates the 
 divergence at nodes from cell-centered data and satisfies
 $\mathbf{G} = -D^T.$ 
@@ -836,9 +847,9 @@ We determine the new time velocity field from
 \ut^{n+1} = {\bf V} - \frac{1}{\rho^\nph} \mathbf{G} \phi \enskip ,
 \end{equation}
 and the new time-centered perturbational pressure from:
-\[
+\begin{equation}
   \pi^\nph = \frac{1}{\dt} \phi \enskip .
-\]
+\end{equation}
 
 %--------------------------------------------------------------------------
 % STEP 12
