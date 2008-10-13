@@ -418,12 +418,11 @@ $(\rho_0^{(2),\star}, \rho_0^{\nph,\star,{\rm pred}}, p_0^{n+1,\star}).$
 (\rho X_k)^{(2),\star} &=& (\rho X_k)^{(1)} 
  - \dt \; \left[ \nablab \cdotb \left( (\uadvone+w_0^{\nph,\star} \er)  
   (\rho X_k)^{(1),\nph,\star} \right) \right] \enskip , \\ \nonumber  \\
-\rho^{(2'),\star} &=& \sum_k (\rho X_k)^{(2),\star} \enskip , \\ 
+\rho^{(2),\star} &=& \sum_k (\rho X_k)^{(2),\star} \enskip , \\ 
 X_k^{(2),\star} &=& (\rho X_k)^{(2),\star} / \rho^{(2),\star}
 \end{eqnarray}
-\MarginPar{why $\rho^{(2'),\star}$ and not $\rho^{(2),\star}$?}
 
-  \end{enumerate}
+\end{enumerate}
 
 \item Define an edge-centered $\etarho^{\nph,\star}$ and cell-centered $\psi_j^{\nph,\star}$:
 
@@ -465,26 +464,26 @@ X_k^{(2),\star} &=& (\rho X_k)^{(2),\star} / \rho^{(2),\star}
     \MarginPar{actually, there are lots of different prediction
     methods that need to be listed here!}
 
-  \item Evolve $(\rho h)^{(1)} \rightarrow (\rho h)^{(2),\star}$ without
-  explicitly including the reaction terms, \MarginPar{shouldn't this be $(\rho h)^{(2'),\star}$?}
+  \item Evolve $(\rho h)^{(1)} \rightarrow (\rho h)^{(2'),\star}$ without
+  explicitly including the reaction terms,
   \begin{eqnarray}
   (\rho h)^{(2'),\star} &=& (\rho h)^{(1)} - \dt \; \left[ \nablab
       \cdotb \left( (\uadvone+w_0^{\nph,\star} \er) (\rho
       h)^{(1),\nph,\star} \right) \right] \nonumber \\ && + \dt \;
     \left(\uadvone \cdotb \er\right) \left(\frac{\partial
-      p_0}{\partial r} \right)^{n} + \dt \; \psi^{\nmh} \enskip ,
+      p_0}{\partial r} \right)^{n} + \dt \; \psi^{\nph,*} \enskip ,
   \end{eqnarray}
   \MarginPar{we should also show the update in the case that $(\rho h)'$ is the flux}
   \end{enumerate}
 
-\item {\bf Correct Base}$(\rho_0^{(2),\star}, \etarho^{\nmh}) \rightarrow (\rho_0^{n+1,\star})$.
+\item {\bf Correct Base}$(\rho_0^{(2),\star}, \etarho^{\nph,*}) \rightarrow (\rho_0^{n+1,\star})$.
 
 
 %--------------------------------------------------------------------------
 % STEP 4.1
 %--------------------------------------------------------------------------
 
-\item Diffuse the enthalpy through a time interval of $\dt$.  Compute $\kth^{(1)}, c_p^{(1)}$, and $\xi_k^{(1)}$ from $\rho^{(1)}, T^{(1)}$, and $X_k^{(1)}$ as inputs to the equation of state.  Note that density is constant in this step, i.e., $\rho^{(2'),\star}=\rho^{(2),\star}$.  The update is given by
+\item Diffuse the enthalpy through a time interval of $\dt$.  Compute $\kth^{(1)}, c_p^{(1)}$, and $\xi_k^{(1)}$ from $\rho^{(1)}, T^{(1)}$, and $X_k^{(1)}$ as inputs to the equation of state.  The update is given by:
 \begin{eqnarray}
 (\rho h)^{(2),\star} &=& (\rho h)^{(2'),\star} + \frac{\dt}{2}\nabla\cdot\left(\frac{\kth^{(1)}}{c_p^{(1)}}\nabla h^{(2),\star} + \frac{\kth^{(1)}}{c_p^{(1)}}\nabla h^{(1)}\right)\nonumber\\
 &&- \frac{\dt}{2}\sum_k\nabla\cdot\left(\frac{\xi_k^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla X_k^{(2),\star} + \frac{\xi_k^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla X_k^{(1)}\right)\nonumber\\
@@ -642,7 +641,7 @@ $(\rho_0^{(2)}, \rho_0^{\nph,{\rm pred}}, p_0^{n+1}).$
 (\rho X_k)^{(2)} &=& (\rho X_k)^{(1)} 
 - \dt \; \left[ \nablab \cdotb \left( (\uadvtwo+w_0^{\nph} \er)  
 (\rho X_k)^{(1),\nph} \right) \right]  \enskip , \\ \nonumber \\
-\rho^{(2')} &=& \sum_k (\rho X_k)^{(2)} \enskip , \\
+\rho^{(2)} &=& \sum_k (\rho X_k)^{(2)} \enskip , \\
 X_k^{(2)} &=& (\rho X_k)^{(2)} / \rho^{(2)}
 \end{eqnarray}
 
@@ -658,9 +657,8 @@ X_k^{(2)} &=& (\rho X_k)^{(2)} / \rho^{(2)}
  \etarho^{\nph}   &=&  {\rm {\bf Avg}} \left( (\uadvtwo \cdotb \er + w_0^{\nph}) 
 \rho^{(1),\nph} \right) - w_0^{\nph} \rho_0^{\nph,{\rm pred}} 
  \nonumber \enskip , \\
- \psi_j^{\nph}  &=&  \frac{1}{2} \left(\eta_{rho,j-\myhalf}^{\nph} + \eta_{\rho,j+\myhalf}^{\nph}\right) g \enskip .
+ \psi_j^{\nph}  &=&  \frac{1}{2} \left(\eta_{\rho,j-\myhalf}^{\nph} + \eta_{\rho,j+\myhalf}^{\nph}\right) g \enskip .
 \end{eqnarray}
-\MarginPar{this needs to be updated---we are not lagging things anymore.} 
 
 \item[spherical:]~
 
@@ -689,20 +687,19 @@ X_k^{(2)} &=& (\rho X_k)^{(2)} / \rho^{(2)}
 && + \frac{\dt}{2} \; \left(\uadvtwo \cdotb \er\right)
 \left [ \left(\frac{\partial p_0}{\partial r} \right)^{n}
       + \left(\frac{\partial p_0}{\partial r} \right)^{n+1}  \right ] 
-+ \dt \; \psi^{\nph,\star} \enskip ,
++ \dt \; \psi^{\nph} \enskip ,
 \end{eqnarray}
-   \end{enumerate}
 
-\MarginPar{we need to update the centering of $\psi$ in the enthalpy difference equation.}
+\end{enumerate}
 
-\item {\bf Correct Base}$(\rho_0^{(2)}, \etarho^{\nph, \star}) \rightarrow (\rho_0^{n+1})$
+\item {\bf Correct Base}$(\rho_0^{(2)}, \etarho^{\nph}) \rightarrow (\rho_0^{n+1})$
 
 
 
 %--------------------------------------------------------------------------
 % STEP 8.1
 %--------------------------------------------------------------------------
-\item Diffuse the enthalpy through a time interval of $\dt$.  Compute $\kth^{(2),\star}, c_p^{(2),\star}$, and $\xi_k^{(2),\star}$, from $\rho^{(2),\star}, T^{(2),\star}$, and $X_k^{(2),\star}$ as inputs to the equation of state.  Note that density is constant in the diffusion step, i.e., $\rho^{(2')}=\rho^{(2)}$.  The update is given by
+\item Diffuse the enthalpy through a time interval of $\dt$.  Compute $\kth^{(2),\star}, c_p^{(2),\star}$, and $\xi_k^{(2),\star}$, from $\rho^{(2),\star}, T^{(2),\star}$, and $X_k^{(2),\star}$ as inputs to the equation of state.  The update is given by:
 \begin{eqnarray}
 (\rho h)^{(2)} &=& (\rho h)^{(2')} + \frac{\dt}{2}\nabla\cdot\left(\frac{\kth^{(2),\star}}{c_p^{(2),\star}}\nabla h^{(2)} + \frac{\kth^{(1)}}{c_p^{(1)}}\nabla h^{(1)}\right)\nonumber\\
 &&- \frac{\dt}{2}\sum_k\nabla\cdot\left(\frac{\xi_k^{(2),\star}\kth^{(2),\star}}{c_p^{(2),\star}}\nabla X_k^{(2)} + \frac{\xi_k^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla X_k^{(1)}\right)\nonumber\\
@@ -729,8 +726,8 @@ T^{(2)} = T\left(\rho^{(2)}, h^{(2)}, X_k^{(2)}\right) {\hbox{ \rm using the equ
 \begin{enumerate}
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
 
-\item {\bf React State}$[\rho^{(2)},(\rho h)^{(2)}, X_k^{(2)},T^{(2)}, (\rho^{(2)} \Hext) ]
-                   \rightarrow [\rho^{n+1}, (\rho h)^{n+1}, X_k^{n+1}, T^{n+1}, 
+\item {\bf React State}$[\rho^{(2)},(\rho h)^{(2)}, X_k^{(2)},T^{(2)}, (\rho^{(2)} \Hext) ]$\\
+                   $\rightarrow [\rho^{n+1}, (\rho h)^{n+1}, X_k^{n+1}, T^{n+1}, 
                                (\rho \omegadot_k)^{(2)}, (\rho \Hnuc)^{(2)} ].$  
 
 \item Define
