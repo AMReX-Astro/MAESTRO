@@ -107,7 +107,7 @@ here $\Omega_H$ is a layer at constant radius $r$.
 
 For spherical problems, see Paper IV for details.
 
-\item {\bf React State}$[\rho^{\inp},(\rho h)^{\inp},X_k^{\inp},T^{\inp}, (\rho\Hext)^{\inp}]\rightarrow [\rho^{\outp}, (\rho h)^{\outp}, X_k^{\outp}, T^{\outp}, (\rho \omegadot_k)^{\outp}, (\rho\Hnuc)^{\outp}]$ \newline
+\item {\bf React State}$[\rho^{\inp},(\rho h)^{\inp},X_k^{\inp},T^{\inp}, (\rho\Hext)^{\inp}]\rightarrow [\rho^{\outp}, (\rho h)^{\outp}, X_k^{\outp}, T^{\outp}, (\rho \omegadot_k)^{\outp}, (\rho\Hnuc)^{\outp}]$ \\
 is the process by which we evolve the species and enthalpy from 
 $X_k^{\inp} \rightarrow X_k^{\outp}$ 
 and $(\rho h)^{\inp} \rightarrow (\rho h)^{\outp}$ by solving the following 
@@ -165,11 +165,9 @@ updated by
 (\rho h)^{\inp} + \frac{\dt}{2} (\rho\Hnuc) + \frac{\dt}{2} (\rho\Hext)^{\inp}\enskip.
 \end{equation}
 
-\MarginPar{Need React Base?}
+\item {\bf React Base}$[(\rho h)_0^{\inp}] \rightarrow [(\rho h)_0^{\outp}]$
 
-\item {\bf Advect Base}$(\rho_0^{\inp}, p_0^{\inp}, \beta_0^{\inp}, w_0^{\inp}, \psi^{\inp} ) \rightarrow (\rho_0^{\outp}, \rho_0^{\outp,n+\myhalf}, p_0^{\outp})$ 
-\MarginPar{shouldn't $h_0$ be in the interface?}
-\newline
+\item {\bf Advect Base}$[\rho_0^{\inp}, (\rho h)_0^{\inp}, p_0^{\inp}, \beta_0^{\inp}, w_0^{\inp}, \psi^{\inp}] \rightarrow (\rho_0^{\outp}, \rho_0^{\outp,n+\myhalf}, p_0^{\outp})$ \\
 is the process by which we update the base state through $\dt$ in
 time \MarginPar{we need a separate section for spherical} given the
 radial velocity $w_0^{\inp}.$ The base state arrays are all
@@ -185,14 +183,13 @@ defined halfway in-between.
 \renewcommand{\labelenumii}{{\bf \alph{enumii}}.}
 
 \item For the density update, we discretize equation the base state
-  density evolution equation
+  density evolution equation (paper III; eq.~[29]) without the $\etarho$ term,
 \begin{eqnarray}
 \frac{\partial \rhozero}{\partial t} &=& - \nablab \cdotb \left( \rhozero w_0 \er \right)
-- \nablab \cdotb \left( \etarho \er \right) \enskip ,
+\enskip ,
 \label{eq:rho0upd_new}
 \end{eqnarray}
-(paper III; eq.~[29]), neglecting the $\etarho$ term, to compute the
-new base state density,
+to compute the new base state density,
 \begin{eqnarray}
 \rho_{0,j}^{\outp} &=& \rho_{0,j}^{\inp} - \frac{\dt}{\dr} 
 \left [ \left( {{\rho}_0}^{\outp,\nph} {w_0}^{\inp}\right)_{j+\myhalf} -  
@@ -205,24 +202,38 @@ procedure described in paper II, Appendix A, and are saved for use
 later in the overall algorithm.
 
 \item For the pressure update, we discretize the base state pressure
-  evolution equation,
+  evolution equation (paper III; eq.~[31]),
 \begin{equation}
-\frac{\partial p_0}{\partial t} = w_0 \rho_0 g  + \etarho g
-                                 = - w_0 \frac{\partial p_0}{\partial r} + \etarho g \enskip .
+\frac{\partial p_0}{\partial t} = 
+-w_0 \frac{\partial p_0}{\partial r} + \psi \enskip ,
 \label{eq:p0upd_new}
 \end{equation}
-(paper III; eq.~[31]) to compute the new base state pressure,
-\begin{eqnarray}
-p_{0,j}^\outp &=& p_{0,j}^\inp - \frac{\dt}{2\dr} \left (w_{0,j+\myhalf}^\inp
+to compute the new base state pressure,
+\begin{equation}
+p_{0,j}^\outp = p_{0,j}^\inp - \frac{\dt}{2\dr} \left (w_{0,j+\myhalf}^\inp
 + w_{0,j-\myhalf}^\inp \right)
 \left (p_{0,j+\myhalf}^{n+\myhalf} -p_{0,j-\myhalf}^{n+\myhalf} \right ) + \dt \; \psi_j^\inp 
 \enskip,
-\end{eqnarray}
+\end{equation}
 where the interface states are again found via the procedure described
-in paper II, Appendix A.
+in paper II, Appendix A.  Note that the $\psi$ term is not included in the forcing for
+the interface state calculation, but is used in the update.
 
-\item For the enthalpy update, \MarginPar{We need enthalpy equations
-  now that we are predicting $(\rho h)'$.}  
+\item For the enthalpy update, we discretize
+\begin{equation}
+\frac{\partial (\rho h)_0}{\partial t} = -\nabla\cdot\left[(\rho h)_0w_0\er\right] + \psi \enskip ,
+\end{equation}
+to compute the new base state enthalpy,
+\begin{equation}
+(\rho h)_{0,j}^{\outp} = (\rho h)_{0,j}^{\inp} - \frac{\dt}{\Delta r}
+\left [ \left( {(\rho h)_0}^{\outp,\nph} {w_0}^{\inp}\right)_{j+\myhalf} -  
+         \left( {(\rho h)_0}^{\outp,\nph} {w_0}^{\inp}\right)_{j-\myhalf} \right ] 
++ \dt\psi_j^{\inp} \enskip ,
+\end{equation}
+where the interface states are again found via the procedure described
+in paper II, Appendix A.  Note that the $\psi$ term is not included in 
+the forcing for the interface state calculation, but is used in the update.
+
 \end{enumerate}
 
 \item[spherical:]
@@ -231,9 +242,8 @@ in paper II, Appendix A.
 
 \end{description}
 
-
 \item {\bf Correct Base}
-$[\rho_0^{\inp}, (\nabla\cdot\etarho\er)^{\inp}] \rightarrow (\rho_0^{\outp})$
+$[\rho_0^{\inp}, (\nabla\cdot\etarho\er)^{\inp}] \rightarrow (\rho_0^{\outp})$\\
 is the process by which we adjust the base state density to account for
 large-scale mixing, through $\etarho$.  For both plane-parallel and spherical
 we use
@@ -373,6 +383,7 @@ and
 \item[Step 3.] {\em React the full state through the first time interval of $\dt / 2.$}
 
 \begin{enumerate}
+\MarginPar{Need React Base}
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
 
 \item {\bf React State}$[\rho^n, (\rho h)^n, X_k^n, T^n, (\rho^n \Hext)]
@@ -398,8 +409,8 @@ of $\dt.$}
 \begin{enumerate}
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
 
-\item {\bf Advect Base}$(\rhozero^{n}, p_0^{n}, \beta_0^{(1)}, w_0^{\nph,\star}, \psi^{\nmh}) \rightarrow $
-$(\rho_0^{(2),\star}, \rho_0^{\nph,\star,{\rm pred}}, p_0^{n+1,\star}).$ 
+\item {\bf Advect Base}$(\rhozero^{n}, (\rho h)_0^{(1)}, p_0^{n}, \beta_0^{(1)}, w_0^{\nph,\star}, \psi^{\nmh}) \rightarrow $
+$(\rho_0^{(2),\star}, (\rho h)_0^{(2),\star}, \rho_0^{\nph,\star,{\rm pred}}, p_0^{n+1,\star}).$ 
 
 \item Update the species.  Here we do a difference approximation
   to 
@@ -536,6 +547,7 @@ T^{(2),\star} = T\left(\rho^{(2),\star}, h^{(2),\star}, X_k^{(2),\star}\right) {
 \item[Step 5.] {\em React the full state through a second time interval of $\dt / 2.$}
 
 \begin{enumerate}
+\MarginPar{Need React Base}
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
 
 \item {\bf React State}$[ \rho^{(2),\star},(\rho h)^{(2),\star}, X_k^{(2),\star}, 
@@ -656,8 +668,8 @@ with the volume discrepancy correction is
 \begin{enumerate}
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
 
-\item {\bf Advect Base}$(\rho_0^{n}, p_0^{n}, \beta_0^{(1)}, w_0^{\nph}, \psi^{\nph,\star} ) \rightarrow $
-$(\rho_0^{(2)}, \rho_0^{\nph,{\rm pred}}, p_0^{n+1}).$ 
+\item {\bf Advect Base}$(\rho_0^{n}, (\rho h)_0^{(1)}, p_0^{n}, \beta_0^{(1)}, w_0^{\nph}, \psi^{\nph,\star} ) \rightarrow $
+$(\rho_0^{(2)}, (\rho h)_0^{(2)}, \rho_0^{\nph,{\rm pred}}, p_0^{n+1}).$ 
 
 \item Update the speces.  Here we do a difference approximation to
   eq.~\ref{eq:species}, neglecting the reaction terms.  The
@@ -780,6 +792,7 @@ T^{(2)} = T\left(\rho^{(2)}, h^{(2)}, X_k^{(2)}\right) {\hbox{ \rm using the equ
 \item[Step 9.] {\em React the full state through a second time interval of $\dt / 2.$}
 
 \begin{enumerate}
+\MarginPar{Need React Base}
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
 
 \item {\bf React State}$[\rho^{(2)},(\rho h)^{(2)}, X_k^{(2)},T^{(2)}, (\rho^{(2)} \Hext) ]$\\
