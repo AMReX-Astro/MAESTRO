@@ -300,11 +300,12 @@ S^{\nph,\star} = S^n + \frac{\Delta t^n}{2} \frac{S^n - S^{n-1}}{\Delta t^{n-1}}
 \begin{equation}
 \frac{\partial w_0}{\partial r} =  \Sbar - \frac{1}{\gammabar p_0} \etarho g \enskip \label{eq:divw0} ,
 \end{equation}
-using the lagged $\psi^{\nmh},$ \MarginPar{note: this is true only for plane-parallel}
-\MarginPar{Need dpdt\_factor stuff.}
+using the lagged $\psi^{\nmh}$ and the volume discrepancy correction with $f=0.3$:
 \begin{equation}
 \frac{\partial w_0^{\nph,\star}}{\partial r} =  \overline{S}^{\nph,\star} 
-- \frac{1}{\gammabar^{n} p_0^{n}} \psi^{\nmh} \enskip . \nonumber
+- \frac{1}{\gammabar^{n} p_0^{n}}
+\left[ \psi^{\nmh} - f \left(\frac{p_0^n - \overline{p(\rho,h,X_k)^n}}{\Delta t^n} \right)\right]
+\enskip . \nonumber
 \end{equation}
 
 \item[spherical:] ~
@@ -555,15 +556,24 @@ Then define
 
 \begin{description}
 
-\item[plane-parallel:] We integrate equation (\ref{eq:divw0}),
-
-\MarginPar{Need dpdt\_factor stuff.}
+\item[plane-parallel:] We integrate equation (\ref{eq:divw0}) with the 
+volume discrepancy correction with $f=0.3$:
 \begin{equation}
-\frac{\partial w_0^{\nph}}{\partial r} =  \overline{S}^{\nph,\star} - \frac{1}{\gammabar^{\nph,\star} p_0^{\nph,\star}} \psi^{\nph,\star} \enskip , \nonumber
+\frac{\partial w_0^{\nph}}{\partial r} = 
+\overline{S}^{\nph,\star} - \frac{1}{\gammabar^{\nph,\star} p_0^{\nph,\star}}
+\left[ \psi^{\nph,\star} - f \left(\frac{p_0^{\nph,\star} - \overline{p(\rho,h,X_k)^{\nph,\star}}}{\Delta t^n}\right)\right]
+\enskip , \nonumber
 \end{equation}
-for plane-parallel geometries, where 
-$\gammabar^{\nph,\star} = (\gammabar^{n} + \gammabar^{n+1,\star} ) / 2 $ and
-$ p_0^{\nph,\star} = (p_0^{n} + p_0^{n+1,\star} ) / 2.$
+\begin{equation}
+\gammabar^{\nph,\star} = \frac{\gammabar^{n} + \gammabar^{n+1,\star}}{2}
+\end{equation}
+\begin{equation}
+p_0^{\nph,\star} = \frac{p_0^{n} + p_0^{n+1,\star}}{2}
+\end{equation}
+\begin{equation}
+\overline{p(\rho,h,X_k)^{\nph,\star}} = 
+\frac{\overline{p(\rho,h,X_k)^n} + \overline{p(\rho,h,X_k)^{n+1,\star}}}{2}
+\end{equation}
 
 \item[spherical:]~
 
