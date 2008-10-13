@@ -160,6 +160,7 @@ updated by
 
 \item {\bf Advect Base}$(\rho_0^{\inp}, p_0^{\inp}, \beta_0^{\inp}, w_0^{\inp}, \psi^{\inp} ) \rightarrow 
 (\rho_0^{\outp}, \rho_0^{\outp,n+\myhalf}, p_0^{\outp})$ 
+\MarginPar{shouldn't $h_0$ be in the interface?}
 \newline
 is the process by which we update the base state through $\dt$ in
 time \MarginPar{we need a separate section for spherical} given the
@@ -403,12 +404,12 @@ $(\rho_0^{(2),\star}, \rho_0^{\nph,\star,{\rm pred}}, p_0^{n+1,\star}).$
   \renewcommand{\labelenumii}{{\bf \roman{enumii}}.}
 
   \item Compute the species edge states, $(\rho X_k)^{(1),\nph,\star}$,
-  for the conservative update of $(\rho X_k)$.  Here we predict
-  $\rho'$ and $X_k$ to the edges, using a second-order Taylor
-  expansion in space and time, as described in paper II, Appendix A,
-  using $\V = \uadvone+w_0^{\nph,\star} \er$.  We use the base state
-  density, $\rho_0$, to convert these to edge states for $(\rho X_k)$.
-  We define $\rho^{(1),\nph,\star} = \sum_k (\rho
+  for the conservative update of $(\rho X_k)$. 
+  Here we predict $\rho'$ and $X_k$ to the edges, using a second-order
+  Taylor expansion in space and time, as described in paper II,
+  Appendix A, using $\V = \uadvone+w_0^{\nph,\star} \er$.  We use the
+  base state density, $\rho_0$, to convert these to edge states for
+  $(\rho X_k)$.  We define $\rho^{(1),\nph,\star} = \sum_k (\rho
   X_k)^{(1),\nph,\star}.$
 
   \item Evolve $(\rho X_k)^{(1)} \rightarrow (\rho X_k)^{(2),\star}$
@@ -461,9 +462,11 @@ X_k^{(2),\star} &=& (\rho X_k)^{(2),\star} / \rho^{(2),\star}
     terms in the enthalpy prediction, since we accounted for them
     already in {\bf React State}.  We use the base state enthalpy,
     $(\rho h)_0$, to convert this to an edge state for $(\rho h)$.
+    \MarginPar{actually, there are lots of different prediction
+    methods that need to be listed here!}
 
   \item Evolve $(\rho h)^{(1)} \rightarrow (\rho h)^{(2),\star}$ without
-  explicitly including the reaction terms,
+  explicitly including the reaction terms, \MarginPar{shouldn't this be $(\rho h)^{(2'),\star}$?}
   \begin{eqnarray}
   (\rho h)^{(2'),\star} &=& (\rho h)^{(1)} - \dt \; \left[ \nablab
       \cdotb \left( (\uadvone+w_0^{\nph,\star} \er) (\rho
@@ -471,6 +474,7 @@ X_k^{(2),\star} &=& (\rho X_k)^{(2),\star} / \rho^{(2),\star}
     \left(\uadvone \cdotb \er\right) \left(\frac{\partial
       p_0}{\partial r} \right)^{n} + \dt \; \psi^{\nmh} \enskip ,
   \end{eqnarray}
+  \MarginPar{we should also show the update in the case that $(\rho h)'$ is the flux}
   \end{enumerate}
 
 \item {\bf Correct Base}$(\rho_0^{(2),\star}, \etarho^{\nmh}) \rightarrow (\rho_0^{n+1,\star})$.
