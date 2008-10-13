@@ -100,16 +100,18 @@ We make use of the following shorthand notations in outlining the algorithm.
 \item For any quantity, $\phi,$ we define $\overline{\phi} = ${\bf Avg}$(\phi),$ 
 the average over $\Omega_H,$ as
 \begin{equation}
-\overline{\phi}(r) = \frac{1}{\mathrm{A}(\Omega_H)}\int_{\Omega_H} \phi(r,{\bf x}) \; dA \enskip .
+\overline{\phi}(r) 
+= \frac{1}{\mathrm{A}(\Omega_H)}\int_{\Omega_H} \phi(r,{\bf x}) \; dA \enskip .
 \end{equation}
-here $\Omega_H$ is a layer at constant radius $r$. \MarginPar{we should discuss the implementation of average for spherical here}
+here $\Omega_H$ is a layer at constant radius $r$.
 
+For spherical problems, see Paper IV for details.
 
-\item {\bf React State}$[\rho^{\inp},(\rho h)^{\inp},X_k^{\inp},T^{\inp}, (\rho\Hext)^{\inp}]\rightarrow$
-$[\rho^{\outp}, (\rho h)^{\outp}, X_k^{\outp}, T^{\outp}, (\rho \omegadot_k)^{\outp}, (\rho\Hnuc)^{\outp}]$ \newline
-is the process by which we evolve the species and enthalpy from $X_k^{\inp} \rightarrow X_k^{\outp}$ 
-and $(\rho h)^{\inp} \rightarrow (\rho h)^{\outp}$ by solving the following system of equations 
-over a time interval of  $\Delta t/2$,
+\item {\bf React State}$[\rho^{\inp},(\rho h)^{\inp},X_k^{\inp},T^{\inp}, (\rho\Hext)^{\inp}]\rightarrow [\rho^{\outp}, (\rho h)^{\outp}, X_k^{\outp}, T^{\outp}, (\rho \omegadot_k)^{\outp}, (\rho\Hnuc)^{\outp}]$ \newline
+is the process by which we evolve the species and enthalpy from 
+$X_k^{\inp} \rightarrow X_k^{\outp}$ 
+and $(\rho h)^{\inp} \rightarrow (\rho h)^{\outp}$ by solving the following 
+system of equations over a time interval of  $\Delta t/2$,
 \begin{eqnarray}
 \frac{\partial X_k}{\partial t} &=& \omegadot_k\enskip,\\
 \frac{\partial (\rho h)}{\partial t} &=& \rho \Hnuc + \rho \Hext\enskip .
@@ -117,7 +119,8 @@ over a time interval of  $\Delta t/2$,
   In particular, to evolve the species, we solve the system:
 \begin{eqnarray}
 \frac{dX_k}{dt} &=& \omegadot_k(\rho,X_k,T)\enskip, \\
-\frac{dT}{dt} &=&\frac{1}{c_p} \left ( -\sum_k \xi_k  \omegadot_k  + \Hnuc \right )\enskip. \label{eq:reacttemp}
+\frac{dT}{dt} &=&\frac{1}{c_p} \left ( -\sum_k \xi_k  \omegadot_k  + \Hnuc \right )
+\enskip. \label{eq:reacttemp}
 \end{eqnarray}
 using the stiff ordinary differential equation integration methods
 provided by the {\tt VODE} package (cite VODE).  The absolute error
@@ -158,11 +161,11 @@ $\Hnuc$ is an output of the reaction network, more general networks
 update incorporates the external heating, $(\rho\Hext)^{\inp}$, and is
 updated by
 \begin{equation}
-(\rho h)^{\outp} = (\rho h)^{\inp} + \frac{\dt}{2} (\rho\Hnuc) + \frac{\dt}{2} (\rho\Hext)^{\inp}\enskip.
+(\rho h)^{\outp} = 
+(\rho h)^{\inp} + \frac{\dt}{2} (\rho\Hnuc) + \frac{\dt}{2} (\rho\Hext)^{\inp}\enskip.
 \end{equation}
 
-\item {\bf Advect Base}$(\rho_0^{\inp}, p_0^{\inp}, \beta_0^{\inp}, w_0^{\inp}, \psi^{\inp} ) \rightarrow 
-(\rho_0^{\outp}, \rho_0^{\outp,n+\myhalf}, p_0^{\outp})$ 
+\item {\bf Advect Base}$(\rho_0^{\inp}, p_0^{\inp}, \beta_0^{\inp}, w_0^{\inp}, \psi^{\inp} ) \rightarrow (\rho_0^{\outp}, \rho_0^{\outp,n+\myhalf}, p_0^{\outp})$ 
 \MarginPar{shouldn't $h_0$ be in the interface?}
 \newline
 is the process by which we update the base state through $\dt$ in
@@ -191,7 +194,8 @@ new base state density,
 \begin{eqnarray}
 \rho_{0,j}^{\outp} &=& \rho_{0,j}^{\inp} - \frac{\dt}{\dr} 
 \left [ \left( {{\rho}_0}^{\outp,\nph} {w_0}^{\inp}\right)_{j+\myhalf} -  
-         \left( {{\rho}_0}^{\outp,\nph} {w_0}^{\inp}\right)_{j-\myhalf} \right ] \nonumber  \enskip,
+         \left( {{\rho}_0}^{\outp,\nph} {w_0}^{\inp}\right)_{j-\myhalf} \right ]
+         \nonumber \enskip,
 \end{eqnarray}
 where $j$ refers to the one-dimensional index in the radial direction.
 The interface states, ${{\rho}_0}^{\outp,\nph}$, are found via the
@@ -209,7 +213,8 @@ later in the overall algorithm.
 \begin{eqnarray}
 p_{0,j}^\outp &=& p_{0,j}^\inp - \frac{\dt}{2\dr} \left (w_{0,j+\myhalf}^\inp
 + w_{0,j-\myhalf}^\inp \right)
-\left (p_{0,j+\myhalf}^{n+\myhalf} -p_{0,j-\myhalf}^{n+\myhalf} \right ) + \dt \; \psi_j^\inp \enskip,
+\left (p_{0,j+\myhalf}^{n+\myhalf} -p_{0,j-\myhalf}^{n+\myhalf} \right ) + \dt \; \psi_j^\inp 
+\enskip,
 \end{eqnarray}
 where the interface states are again found via the procedure described
 in paper II, Appendix A.
@@ -292,25 +297,27 @@ S^{\nph,\star} = S^n + \frac{\Delta t^n}{2} \frac{S^n - S^{n-1}}{\Delta t^{n-1}}
 
 \item[plane-parallel:] We integrate
 \begin{equation}
-\frac{\partial w_0}{\partial r} =  \Sbar - \frac{1}{\gammabar p_0} \etarho g \enskip \label{eq:divw0} ,
+\frac{\partial w_0}{\partial r} =  \Sbar - \frac{1}{\gammabar p_0} \etarho g 
+\enskip \label{eq:divw0} ,
 \end{equation}
 using the lagged $\psi^{\nmh}$ and the volume discrepancy correction with $f=0.3$,
 \begin{equation}
 \frac{\partial w_0^{\nph,\star}}{\partial r} =  \overline{S}^{\nph,\star} 
 - \frac{1}{\gammabar^{n} p_0^{n}}
-\left[ \psi^{\nmh} - f \left(\frac{p_0^n - \overline{p(\rho,h,X_k)^n}}{\Delta t^n} \right)\right]
+\left[ \psi^{\nmh} - 
+f \left(\frac{p_0^n - \overline{p(\rho,h,X_k)^n}}{\Delta t^n} \right)\right]
 \enskip .
 \end{equation}
 
-\item[spherical:] ~
-
-See Paper IV for working notes until we finalize this.
+\item[spherical:] See Paper IV for working notes until we finalize this.
 
 \end{description}
 
 \item Using 
 \begin{equation}
-- \frac{1}{\rho_0} \frac{\partial \pizero}{\partial r} = \frac{\partial w_0}{\partial t} + w_0 \frac{\partial w_0}{\partial r} \enskip, \label{eq:pizero}
+- \frac{1}{\rho_0} \frac{\partial \pizero}{\partial r} 
+= \frac{\partial w_0}{\partial t} + w_0 \frac{\partial w_0}{\partial r} 
+\enskip, \label{eq:pizero}
 \end{equation}
 define the scaled pressure gradient
 \begin{equation}
@@ -320,10 +327,14 @@ define the scaled pressure gradient
 \end{equation} 
 where $w_0^{n,\star}$ and $(\partial w_0 / \partial r)^{n,\star}$ are
 \begin{equation}
-w_0^{n,\star} = \frac{\dt^{n} w_0^{\nmh} + \dt^{n-1} w_0^{\nph,\star}}{\dt^n+\dt^{n-1}}\enskip,\end{equation}
+w_0^{n,\star} = \frac{\dt^{n} w_0^{\nmh} + \dt^{n-1} w_0^{\nph,\star}}{\dt^n+\dt^{n-1}} 
+\enskip,\end{equation}
 \begin{equation}
-\left(\frac{\partial w_0}{\partial r}\right)^{n,\star} = \frac{1}{\dt^n+\dt^{n-1} } \left [ \dt^{n} \left(\frac{\partial w_0 }{ \partial r}\right)^{\nmh}
-+ \dt^{n-1} \left(\frac{\partial w_0 }{ \partial r}\right)^{\nph,\star} \right ] \enskip.\end{equation}
+\left(\frac{\partial w_0}{\partial r}\right)^{n,\star} = 
+\frac{1}{\dt^n+\dt^{n-1} } 
+\left [ \dt^{n} \left(\frac{\partial w_0 }{ \partial r}\right)^{\nmh}
++ \dt^{n-1} \left(\frac{\partial w_0 }{ \partial r}\right)^{\nph,\star} \right ] 
+\enskip.\end{equation}
 If $n=0$, we use $\dt^{-1} = \dt^0$.
 
 \end{enumerate}
@@ -369,7 +380,8 @@ and
 \item
 Define
 \begin{eqnarray}
-\gammabar^{(1)}        &=& {\rm{\bf Avg}} \left( \Gamma_1(\rho^{(1)}, p_0^{n}, X_k^{(1)}) \right) \enskip , \\
+\gammabar^{(1)}        &=& {\rm{\bf Avg}} \left( \Gamma_1(\rho^{(1)}, p_0^{n}, X_k^{(1)}) 
+\right) \enskip , \\
  {\beta   }_0^{(1)}    &=& \beta   \left(\rho_0^{n}, p_0^{n}, \gammabar^{(1)}\right) \enskip .
 \end{eqnarray}
 
@@ -378,7 +390,8 @@ Define
 %--------------------------------------------------------------------------
 % STEP 4
 %--------------------------------------------------------------------------
-\item[Step 4.] {\em Advect the base state, then the full state, through a time interval of $\dt.$}
+\item[Step 4.] {\em Advect the base state, then the full state, through a time interval 
+of $\dt.$}
 
 \begin{enumerate}
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
@@ -433,9 +446,9 @@ $(\nabla\cdot\etarho\er)^{\nph,\star}$, and cell-centered $\psi_j^{\nph,\star}$:
  \psi_j^{\nph,\star}  &=&  \frac{1}{2} \left(\eta_{\rho,j-\myhalf}^{\nph,\star} + \eta_{\rho,j+\myhalf}^{\nph,\star}\right) g \enskip .
 \end{eqnarray}
 
-\item[spherical:]~
+\item[spherical:] See {\tt MAESTO/docs/eta\_notes} for working notes until we finlize 
+the details.
 
-\MarginPar{need to add spherical here}
 \end{description}
 
 \item Update the enthalpy, using a difference approximation to
@@ -572,9 +585,7 @@ p_0^{\nph,\star} = \frac{p_0^{n} + p_0^{n+1,\star}}{2}
 \frac{\overline{p(\rho,h,X_k)^n} + \overline{p(\rho,h,X_k)^{n+1,\star}}}{2}
 \end{equation}
 
-\item[spherical:]~
-
-\MarginPar{need to discuss spherical}
+\item[spherical:] See Paper IV for working notes until we finalize this.
 
 \end{description}
 
