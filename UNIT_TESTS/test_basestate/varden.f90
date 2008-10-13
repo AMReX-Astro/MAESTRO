@@ -53,7 +53,7 @@ subroutine varden()
   real(dp_t), allocatable :: div_etarho(:,:)
   real(dp_t), allocatable :: f(:,:)
   real(dp_t), allocatable :: Sbar_in(:,:)
-  real(dp_t), allocatable :: delta_p0_ptherm_bar(:,:)
+  real(dp_t), allocatable :: p0_minus_pthermbar(:,:)
   real(dp_t), allocatable :: rho0_predicted_edge(:,:)
   real(dp_t), allocatable :: force(:,:)
   real(dp_t), allocatable :: X0(:,:)
@@ -132,7 +132,7 @@ subroutine varden()
   allocate(         div_etarho(nlevs,0:nr_fine-1))
   allocate(                  f(nlevs,0:nr_fine))
   allocate(            Sbar_in(nlevs,0:nr_fine-1))
-  allocate(delta_p0_ptherm_bar(nlevs,0:nr_fine-1))
+  allocate( p0_minus_pthermbar(nlevs,0:nr_fine-1))
   allocate(rho0_predicted_edge(nlevs,0:nr_fine))
 
   allocate(force(nlevs,0:nr_fine-1))
@@ -146,7 +146,7 @@ subroutine varden()
   etarho_ec(:,:) = ZERO
   etarho_cc(:,:) = ZERO
   div_etarho(:,:) = ZERO
-  delta_p0_ptherm_bar(:,:) = ZERO
+  p0_minus_pthermbar(:,:) = ZERO
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! read in the base state
@@ -241,7 +241,7 @@ subroutine varden()
      w0(:,:) = ZERO
 
      call make_w0(w0,w0_old,f,Sbar_in,s0(:,:,rho_comp),s0(:,:,rho_comp),p0,p0, &
-                  gam1,gam1,delta_p0_ptherm_bar,psi,etarho_ec,etarho_cc,div_etarho,dt,dtold)
+                  gam1,gam1,p0_minus_pthermbar,psi,etarho_ec,etarho_cc,dt,dtold)
   
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
