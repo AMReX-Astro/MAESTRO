@@ -8,11 +8,11 @@ module castro_burner_module
 
 contains
 
-  subroutine burner(dens, temp, Xin, ein, dt, Xout, eout)
+  subroutine burner(dens, temp, Xin, ein, dt, time, Xout, eout)
 
     implicit none
     
-    real(kind=dp_t), intent(in) :: dens, temp, Xin(nspec), ein, dt
+    real(kind=dp_t), intent(in) :: dens, temp, Xin(nspec), ein, dt, time
     real(kind=dp_t), intent(out) :: Xout(nspec), eout
     
     integer :: n
