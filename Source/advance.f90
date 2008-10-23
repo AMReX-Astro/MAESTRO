@@ -124,7 +124,6 @@ contains
     type(multifab) ::         scal_force(mla%nlevel)
     type(multifab) ::              w0mac(mla%nlevel,dm)
     type(multifab) ::               umac(mla%nlevel,dm)
-    type(multifab) ::             utrans(mla%nlevel,dm)
     type(multifab) ::              sedge(mla%nlevel,dm)
     type(multifab) ::              sflux(mla%nlevel,dm)
 
@@ -317,11 +316,10 @@ contains
     do n=1,nlevs
        do comp=1,dm
           call multifab_build(  umac(n,comp), mla%la(n),1,1,nodal=edge_nodal_flag(comp,:))
-          call multifab_build(utrans(n,comp), mla%la(n),1,1,nodal=edge_nodal_flag(comp,:))
        end do
     end do
     
-    call advance_premac(uold,sold,umac,utrans,gpres,normal,w0,w0mac, &
+    call advance_premac(uold,sold,umac,gpres,normal,w0,w0mac, &
                         w0_force,w0_force_cart_vec,rho0_old,grav_cell_old,dx,dt, &
                         the_bc_tower%bc_tower_array,mla)
 
@@ -593,7 +591,6 @@ contains
        do n=1,nlevs
           do comp=1,dm
              call destroy(umac(n,comp))
-             call destroy(utrans(n,comp))
           end do
        end do
     end if
@@ -842,11 +839,10 @@ contains
        do n=1,nlevs
           do comp=1,dm
              call multifab_build(  umac(n,comp),mla%la(n),1,1,nodal=edge_nodal_flag(comp,:))
-             call multifab_build(utrans(n,comp),mla%la(n),1,1,nodal=edge_nodal_flag(comp,:))
           end do
        end do
 
-       call advance_premac(uold,sold,umac,utrans,gpres,normal,w0,w0mac, &
+       call advance_premac(uold,sold,umac,gpres,normal,w0,w0mac, &
                            w0_force,w0_force_cart_vec,rho0_old,grav_cell_old,dx,dt, &
                            the_bc_tower%bc_tower_array,mla)
 
@@ -1181,7 +1177,7 @@ contains
 
     call make_at_halftime(rhohalf,sold,snew,rho_comp,1,the_bc_tower%bc_tower_array,mla)
     
-    call velocity_advance(mla,uold,unew,sold,rhohalf,umac,utrans,gpres, &
+    call velocity_advance(mla,uold,unew,sold,rhohalf,umac,gpres, &
                           normal,w0,w0mac,w0_force,w0_force_cart_vec, &
                           rho0_old,rho0_nph, &
                           grav_cell_old,grav_cell_nph,dx,dt, &
@@ -1195,7 +1191,6 @@ contains
     do n=1,nlevs
        do comp=1,dm
           call destroy(umac(n,comp))
-          call destroy(utrans(n,comp))
        end do
     end do
 
