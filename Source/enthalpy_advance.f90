@@ -20,7 +20,6 @@ contains
 
     use bl_prof_module
     use bl_constants_module
-    use make_edge_state_module
     use make_edge_scal_module
     use mkflux_module
     use mkscalforce_module
