@@ -17,23 +17,19 @@ contains
     integer        , intent(in   ) :: lo(:),hi(:),ng,nvar
     real(kind=dp_t), intent(in   ) ::   s(lo(1)-ng:, lo(2)-ng:,:)
     real(kind=dp_t), intent(  out) :: slx(lo(1)- 1:, lo(2)- 1:,:) 
-    integer, intent(in) ::  bc(:,:,:)
+    integer        , intent(in)    :: bc(:,:,:)
 
     !     Local variables
     integer :: is,js,ie,je
     integer :: i,j,comp
 
-    real(kind=dp_t) del,slim,sflag
-    real(kind=dp_t) dpls,dmin,ds
-
-    real(kind=dp_t), allocatable :: dxscr(:,:)
+    real(kind=dp_t) :: del,slim,sflag,dpls,dmin,ds
+    real(kind=dp_t) :: dxscr(lo(1)-2:hi(1)+2,4)
 
     is = lo(1)
     js = lo(2)
     ie = hi(1)
     je = hi(2)
-
-    allocate(dxscr(is-2:ie+2,4))
 
     !     HERE DOING 1ST ORDER
     if (slope_order .eq. 0) then
@@ -153,8 +149,6 @@ contains
 
     endif
 
-    deallocate(dxscr)
-
   end subroutine slopex_2d
 
   subroutine slopey_2d(s,sly,lo,hi,ng,nvar,bc)
@@ -163,23 +157,21 @@ contains
     use bl_constants_module
     use probin_module, only : slope_order
 
-    integer, intent(in) :: lo(:),hi(:),ng,nvar
-    integer, intent(in) :: bc(:,:,:)
+    integer        , intent(in)  :: lo(:),hi(:),ng,nvar
+    integer        , intent(in)  :: bc(:,:,:)
+    real(kind=dp_t), intent( in) ::   s(lo(1)-ng:,lo(2)-ng:,:)
+    real(kind=dp_t), intent(out) :: sly(lo(1)- 1:,lo(2)- 1:,:)
 
-    real(kind=dp_t), intent( in) ::     s(lo(1)-ng:,lo(2)-ng:,:)
-    real(kind=dp_t), intent(out) ::   sly(lo(1)- 1:,lo(2)- 1:,:)
-    real(kind=dp_t), allocatable :: dyscr(:,:)
+    ! local
+    real(kind=dp_t) :: dyscr(lo(2)-2:hi(2)+2,4)
+    real(kind=dp_t) :: dpls,dmin,ds,del,slim,sflag
 
-    real(kind=dp_t) :: dpls,dmin,ds
-    real(kind=dp_t) :: del,slim,sflag
     integer :: is,js,ie,je,i,j,comp
 
     is = lo(1)
     js = lo(2)
     ie = hi(1)
     je = hi(2)
-
-    allocate(dyscr(lo(2)-2:hi(2)+2,4))
 
     !     HERE DOING 1ST ORDER
     if (slope_order .eq. 0) then
@@ -303,8 +295,6 @@ contains
 
     endif
 
-    deallocate(dyscr)
-
   end subroutine slopey_2d
 
   subroutine slopez_3d(s,slz,lo,hi,ng,nvar,bc)
@@ -313,15 +303,14 @@ contains
     use bl_constants_module
     use probin_module, only : slope_order
 
-    integer, intent(in) :: lo(:),hi(:),ng,nvar
-    integer, intent(in) :: bc(:,:,:)
+    integer        , intent(in)  :: lo(:),hi(:),ng,nvar
+    integer        , intent(in)  :: bc(:,:,:)
+    real(kind=dp_t), intent( in) ::   s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
+    real(kind=dp_t), intent(out) :: slz(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
 
-    real(kind=dp_t), intent( in) ::     s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-    real(kind=dp_t), intent(out) ::   slz(lo(1)- 1:,lo(2)- 1:,lo(3)- 1:,:)
-    real(kind=dp_t), allocatable :: dzscr(:,:)
+    real(kind=dp_t) :: dzscr(lo(3)-2:hi(3)+2,4)
+    real(kind=dp_t) :: dpls,dmin,ds,del,slim,sflag
 
-    real(kind=dp_t) :: dpls,dmin,ds
-    real(kind=dp_t) :: del,slim,sflag
     integer :: is,js,ks,ie,je,ke,i,j,k,comp
 
     is = lo(1)
@@ -330,8 +319,6 @@ contains
     ie = hi(1)
     je = hi(2)
     ke = hi(3)
-
-    allocate(dzscr(lo(3)-2:hi(3)+2,4))
 
     !     HERE DOING 1ST ORDER
     if (slope_order .eq. 0) then
@@ -460,8 +447,6 @@ contains
        enddo
 
     endif
-
-    deallocate(dzscr)
 
   end subroutine slopez_3d
 
