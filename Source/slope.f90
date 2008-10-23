@@ -8,19 +8,18 @@ module slope_module
 
 contains
 
-  subroutine slopex_2d(s,slx,lo,ng,nvar,bc)
+  subroutine slopex_2d(s,slx,lo,hi,ng,nvar,bc)
 
     use bc_module
     use bl_constants_module
     use probin_module, only : slope_order
 
-    integer        , intent(in   ) :: lo(2),ng,nvar
+    integer        , intent(in   ) :: lo(:),hi(:),ng,nvar
     real(kind=dp_t), intent(in   ) ::   s(lo(1)-ng:, lo(2)-ng:,:)
     real(kind=dp_t), intent(  out) :: slx(lo(1)- 1:, lo(2)- 1:,:) 
     integer, intent(in) ::  bc(:,:,:)
 
     !     Local variables
-    integer :: hi(2)
     integer :: is,js,ie,je
     integer :: i,j,comp
 
@@ -28,9 +27,6 @@ contains
     real(kind=dp_t) dpls,dmin,ds
 
     real(kind=dp_t), allocatable :: dxscr(:,:)
-
-    hi(1) = lo(1) + size(s,dim=1) - (2*ng+1)
-    hi(2) = lo(2) + size(s,dim=2) - (2*ng+1)
 
     is = lo(1)
     js = lo(2)
@@ -161,13 +157,13 @@ contains
 
   end subroutine slopex_2d
 
-  subroutine slopey_2d(s,sly,lo,ng,nvar,bc)
+  subroutine slopey_2d(s,sly,lo,hi,ng,nvar,bc)
 
     use bc_module
     use bl_constants_module
     use probin_module, only : slope_order
 
-    integer, intent(in) :: lo(:),ng,nvar
+    integer, intent(in) :: lo(:),hi(:),ng,nvar
     integer, intent(in) :: bc(:,:,:)
 
     real(kind=dp_t), intent( in) ::     s(lo(1)-ng:,lo(2)-ng:,:)
@@ -176,11 +172,7 @@ contains
 
     real(kind=dp_t) :: dpls,dmin,ds
     real(kind=dp_t) :: del,slim,sflag
-    integer :: hi(2)
     integer :: is,js,ie,je,i,j,comp
-
-    hi(1) = lo(1) + size(s,dim=1) - (2*ng+1)
-    hi(2) = lo(2) + size(s,dim=2) - (2*ng+1)
 
     is = lo(1)
     js = lo(2)
@@ -315,13 +307,13 @@ contains
 
   end subroutine slopey_2d
 
-  subroutine slopez_3d(s,slz,lo,ng,nvar,bc)
+  subroutine slopez_3d(s,slz,lo,hi,ng,nvar,bc)
 
     use bc_module
     use bl_constants_module
     use probin_module, only : slope_order
 
-    integer, intent(in) :: lo(:),ng,nvar
+    integer, intent(in) :: lo(:),hi(:),ng,nvar
     integer, intent(in) :: bc(:,:,:)
 
     real(kind=dp_t), intent( in) ::     s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
@@ -330,12 +322,7 @@ contains
 
     real(kind=dp_t) :: dpls,dmin,ds
     real(kind=dp_t) :: del,slim,sflag
-    integer :: hi(3)
     integer :: is,js,ks,ie,je,ke,i,j,k,comp
-
-    hi(1) = lo(1) + size(s,dim=1) - (2*ng+1)
-    hi(2) = lo(2) + size(s,dim=2) - (2*ng+1)
-    hi(3) = lo(3) + size(s,dim=3) - (2*ng+1)
 
     is = lo(1)
     js = lo(2)

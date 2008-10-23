@@ -123,6 +123,7 @@ contains
           vtp  => dataptr(utrans(n,2),i)
           fp   => dataptr(force(n),i)
           lo   =  lwb(get_box(s(n),i))
+          hi   =  upb(get_box(s(n),i))
           select case (dm)
           case (2)
              do comp = 1,dm
@@ -131,7 +132,7 @@ contains
                                 ump(:,:,1,1), vmp(:,:,1,1), ng_um, &
                                 utp(:,:,1,1), vtp(:,:,1,1), ng_ut, &
                                 fp(:,:,1,:), ng_f, w0(n,:), &
-                                lo, dx(n,:), dt, &
+                                lo, hi, dx(n,:), dt, &
                                 the_bc_level(n)%phys_bc_level_array(i,:,:), &
                                 the_bc_level(n)%adv_bc_level_array(i,:,:,comp:), &
                                 comp)
@@ -154,7 +155,7 @@ contains
                                 fp(:,:,:,:), ng_f, np(:,:,:,:), ng_n, &
                                 w0(n,:),w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1), &
                                 ng_w0, gw0p(:,:,:,1), ng_gw, &
-                                lo, dx(n,:), dt, &
+                                lo, hi, dx(n,:), dt, &
                                 the_bc_level(n)%phys_bc_level_array(i,:,:), &
                                 the_bc_level(n)%adv_bc_level_array(i,:,:,comp:), &
                                 comp)
@@ -181,7 +182,7 @@ contains
   end subroutine velpred
 
     subroutine velpred_2d(n,s,ng_s,u,ng_u,sedgex,sedgey,ng_se,umac,vmac,ng_um,utrans, &
-                          vtrans,ng_ut,force,ng_f,w0,lo,dx,dt,phys_bc,adv_bc,comp)
+                          vtrans,ng_ut,force,ng_f,w0,lo,hi,dx,dt,phys_bc,adv_bc,comp)
 
     use geometry, only: nr
     use bc_module
@@ -189,7 +190,7 @@ contains
     use bl_constants_module
     use probin_module, only: use_new_godunov
 
-    integer        , intent(in   ) :: n,lo(:),ng_s,ng_u,ng_se,ng_um,ng_ut,ng_f
+    integer        , intent(in   ) :: n,lo(:),hi(:),ng_s,ng_u,ng_se,ng_um,ng_ut,ng_f
     real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :,:)
     real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u :,lo(2)-ng_u :,:)
     real(kind=dp_t), intent(inout) :: sedgex(lo(1)-ng_se:,lo(2)-ng_se:,:)
@@ -206,8 +207,12 @@ contains
     integer        , intent(in   ) :: comp
     
     ! Local variables
-    real(kind=dp_t), allocatable :: slopex(:,:,:),slopey(:,:,:)
-    real(kind=dp_t), allocatable :: s_l(:),s_r(:),s_b(:),s_t(:)
+    real(kind=dp_t) :: slopex(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1)
+    real(kind=dp_t) :: slopey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1)
+    real(kind=dp_t) :: s_l(lo(1)-1:hi(1)+2)
+    real(kind=dp_t) :: s_r(lo(1)-1:hi(1)+2)
+    real(kind=dp_t) :: s_b(lo(2)-1:hi(2)+2)
+    real(kind=dp_t) :: s_t(lo(2)-1:hi(2)+2)
     
     real(kind=dp_t) :: ubardth, vbardth
     real(kind=dp_t) :: hx, hy, dth
@@ -217,28 +222,16 @@ contains
     real(kind=dp_t) :: sptop,spbot,smtop,smbot,splft,sprgt,smlft,smrgt
     real(kind=dp_t) :: abs_eps, eps, umax
     
-    integer :: hi(2)
     integer :: i,j,is,js,ie,je
     logical :: test
-    
-    hi(1) = lo(1) + size(s,dim=1) - (2*ng_s+1)
-    hi(2) = lo(2) + size(s,dim=2) - (2*ng_s+1)
     
     is = lo(1)
     ie = hi(1)
     js = lo(2)
     je = hi(2)
     
-    allocate(s_l(lo(1)-1:hi(1)+2))
-    allocate(s_r(lo(1)-1:hi(1)+2))
-    allocate(s_b(lo(2)-1:hi(2)+2))
-    allocate(s_t(lo(2)-1:hi(2)+2))
-    
-    allocate(slopex(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1))
-    allocate(slopey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1))
-    
-    call slopex_2d(s(:,:,comp:),slopex,lo,ng_s,1,adv_bc)
-    call slopey_2d(s(:,:,comp:),slopey,lo,ng_s,1,adv_bc)
+    call slopex_2d(s(:,:,comp:),slopex,lo,hi,ng_s,1,adv_bc)
+    call slopey_2d(s(:,:,comp:),slopey,lo,hi,ng_s,1,adv_bc)
     
     abs_eps = 1.0d-8
     
@@ -534,15 +527,12 @@ contains
        enddo
     end if
 
-    deallocate(s_l,s_r,s_b,s_t)
-    deallocate(slopex,slopey)
-    
   end subroutine velpred_2d
     
   subroutine velpred_3d(n,s,ng_s,u,ng_u,sedgex,sedgey,sedgez,ng_se, &
                                 umac,vmac,wmac,ng_um,utrans,vtrans,wtrans,ng_ut, &
                                 force,ng_f,normal,ng_n,w0,w0macx,w0macy,w0macz,ng_w0, &
-                                gradw0_cart,ng_gw,lo,dx,dt,phys_bc,adv_bc,comp)
+                                gradw0_cart,ng_gw,lo,hi,dx,dt,phys_bc,adv_bc,comp)
 
     use bc_module
     use slope_module
@@ -550,7 +540,7 @@ contains
     use geometry, only: spherical, nr
     use probin_module, only: use_new_godunov
 
-    integer        , intent(in   ) :: n,lo(:)
+    integer        , intent(in   ) :: n,lo(:),hi(:)
     integer        , intent(in   ) :: ng_s,ng_u,ng_se,ng_um,ng_ut,ng_f,ng_n,ng_w0,ng_gw
     real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :,:)
     real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :,:)
@@ -575,8 +565,15 @@ contains
     integer        , intent(in   ) :: adv_bc(:,:,:)
     integer        , intent(in   ) :: comp
 
-    real(kind=dp_t), allocatable :: slopex(:,:,:,:),slopey(:,:,:,:),slopez(:,:,:,:)
-    real(kind=dp_t), allocatable :: s_l(:),s_r(:),s_b(:),s_t(:),s_u(:),s_d(:)
+    real(kind=dp_t) :: slopex(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1)
+    real(kind=dp_t) :: slopey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1)
+    real(kind=dp_t) :: slopez(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1)
+    real(kind=dp_t) :: s_l(lo(1)-1:hi(1)+2)
+    real(kind=dp_t) :: s_r(lo(1)-1:hi(1)+2)
+    real(kind=dp_t) :: s_b(lo(2)-1:hi(2)+2)
+    real(kind=dp_t) :: s_t(lo(2)-1:hi(2)+2)
+    real(kind=dp_t) :: s_u(lo(3)-1:hi(3)+2)
+    real(kind=dp_t) :: s_d(lo(3)-1:hi(3)+2)
     
     real(kind=dp_t) :: ubardth, vbardth, wbardth
     real(kind=dp_t) :: hx, hy, hz, dth, splus, sminus
@@ -586,12 +583,8 @@ contains
 
     real(kind=dp_t) :: Ut_dot_er
 
-    integer :: hi(3),i,j,k,is,js,ie,je,ks,ke
+    integer :: i,j,k,is,js,ie,je,ks,ke
     logical :: test
-    
-    hi(1) = lo(1) + size(s,dim=1) - (2*ng_s+1)
-    hi(2) = lo(2) + size(s,dim=2) - (2*ng_s+1)
-    hi(3) = lo(3) + size(s,dim=3) - (2*ng_s+1)
     
     is = lo(1)
     ie = hi(1)
@@ -600,22 +593,11 @@ contains
     ks = lo(3)
     ke = hi(3)
     
-    allocate(s_l(lo(1)-1:hi(1)+2))
-    allocate(s_r(lo(1)-1:hi(1)+2))
-    allocate(s_b(lo(2)-1:hi(2)+2))
-    allocate(s_t(lo(2)-1:hi(2)+2))
-    allocate(s_d(lo(3)-1:hi(3)+2))
-    allocate(s_u(lo(3)-1:hi(3)+2))
-
-    allocate(slopex(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1))
-    allocate(slopey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1))
-    allocate(slopez(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1))
-    
     do k = lo(3)-1,hi(3)+1
-       call slopex_2d(s(:,:,k,comp:),slopex(:,:,k,:),lo,ng_s,1,adv_bc)
-       call slopey_2d(s(:,:,k,comp:),slopey(:,:,k,:),lo,ng_s,1,adv_bc)
+       call slopex_2d(s(:,:,k,comp:),slopex(:,:,k,:),lo,hi,ng_s,1,adv_bc)
+       call slopey_2d(s(:,:,k,comp:),slopey(:,:,k,:),lo,hi,ng_s,1,adv_bc)
     end do
-    call slopez_3d(s(:,:,:,comp:),slopez,lo,ng_s,1,adv_bc)
+    call slopez_3d(s(:,:,:,comp:),slopez,lo,hi,ng_s,1,adv_bc)
     
     abs_eps = 1.0d-8
     
@@ -1409,9 +1391,6 @@ contains
         enddo
      endif
 
-     deallocate(s_l,s_r,s_b,s_t,s_d,s_u)
-     deallocate(slopex,slopey,slopez)
-     
    end subroutine velpred_3d
   
  end module velpred_module

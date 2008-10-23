@@ -11,24 +11,21 @@ module setbc_module
 
 contains
 
-  subroutine setbc_2d(s,lo,ng,bc,icomp)
+  subroutine setbc_2d(s,lo,hi,ng,bc,icomp)
 
     use bc_module
     use bl_constants_module
 
-    integer        , intent(in   ) :: lo(:),ng
+    integer        , intent(in   ) :: lo(:),hi(:),ng
     real(kind=dp_t), intent(inout) :: s(lo(1)-ng:, lo(2)-ng:)
     integer        , intent(in   ) :: bc(:,:)
     integer        , intent(in   ) :: icomp
 
     !     Local variables
-    integer         :: i,j,hi(2)
+    integer         :: i,j
     real(kind=dp_t) :: dir_val
 
     if(ng == 0) return
-
-    hi(1) = lo(1) + size(s,dim=1) - (2*ng+1)
-    hi(2) = lo(2) + size(s,dim=2) - (2*ng+1)
 
     if (icomp .eq. 1 .or. icomp .eq. 2) dir_val = ZERO
     if (icomp .eq. 3 .or. icomp .eq. 4) dir_val = ONE
@@ -167,24 +164,20 @@ contains
 
   end subroutine setbc_2d
 
-  subroutine setbc_3d(s,lo,ng,bc,icomp)
+  subroutine setbc_3d(s,lo,hi,ng,bc,icomp)
 
     use bc_module
     use bl_constants_module
 
-    integer        , intent(in   ) :: lo(:),ng
+    integer        , intent(in   ) :: lo(:),hi(:),ng
     real(kind=dp_t), intent(inout) :: s(lo(1)-ng:, lo(2)-ng:, lo(3)-ng:)
     integer        , intent(in   ) :: bc(:,:)
     integer        , intent(in   ) :: icomp
 
     !     Local variables
-    integer :: i,j,k,hi(3)
+    integer :: i,j,k
 
     if (ng == 0) return
-
-    hi(1) = lo(1) + size(s,dim=1) - (2*ng+1)
-    hi(2) = lo(2) + size(s,dim=2) - (2*ng+1)
-    hi(3) = lo(3) + size(s,dim=3) - (2*ng+1)
 
     if (bc(1,1) .eq. EXT_DIR) then
        do k = lo(3)-1,hi(3)+1

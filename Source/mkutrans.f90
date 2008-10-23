@@ -34,7 +34,7 @@ contains
     real(kind=dp_t), pointer :: w0xp(:,:,:,:)
     real(kind=dp_t), pointer :: w0yp(:,:,:,:)
     real(kind=dp_t), pointer :: w0zp(:,:,:,:)
-    integer                  :: lo(dm)
+    integer                  :: lo(dm),hi(dm)
     integer                  :: i,n,ng_u,ng_ut,ng_w0
 
     type(bl_prof_timer), save :: bpt
@@ -53,11 +53,12 @@ contains
           utp => dataptr(utrans(n,1),i)
           vtp => dataptr(utrans(n,2),i)
           lo =  lwb(get_box(u(n),i))
+          hi =  upb(get_box(u(n),i))
           select case (dm)
           case (2)
              call mkutrans_2d(n,up(:,:,1,:), ng_u, &
                               utp(:,:,1,1), vtp(:,:,1,1), ng_ut, w0(n,:), &
-                              lo,dx(n,:),dt,&
+                              lo,hi,dx(n,:),dt,&
                               the_bc_level(n)%adv_bc_level_array(i,:,:,:), &
                               the_bc_level(n)%phys_bc_level_array(i,:,:))
           case (3)
@@ -68,7 +69,7 @@ contains
              call mkutrans_3d(n, up(:,:,:,:), ng_u, &
                               utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), ng_ut, &
                               w0(n,:), w0xp(:,:,:,1), w0yp(:,:,:,1), w0zp(:,:,:,1),&
-                              ng_w0, lo, dx(n,:), dt, &
+                              ng_w0, lo, hi, dx(n,:), dt, &
                               the_bc_level(n)%adv_bc_level_array(i,:,:,:), &
                               the_bc_level(n)%phys_bc_level_array(i,:,:))
           end select
@@ -96,14 +97,14 @@ contains
 
   end subroutine mkutrans
 
-  subroutine mkutrans_2d(n,vel,ng_u,utrans,vtrans,ng_ut,w0,lo,dx,dt,adv_bc,phys_bc)
+  subroutine mkutrans_2d(n,vel,ng_u,utrans,vtrans,ng_ut,w0,lo,hi,dx,dt,adv_bc,phys_bc)
 
     use bc_module
     use slope_module
     use geometry, only: nr
     use probin_module, only: use_new_godunov
 
-    integer,         intent(in   ) :: n,lo(2),ng_u,ng_ut
+    integer,         intent(in   ) :: n,lo(:),hi(:),ng_u,ng_ut
     real(kind=dp_t), intent(in   ) ::    vel(lo(1)-ng_u :,lo(2)-ng_u :,:)
     real(kind=dp_t), intent(inout) :: utrans(lo(1)-ng_ut:,lo(2)-ng_ut:)
     real(kind=dp_t), intent(inout) :: vtrans(lo(1)-ng_ut:,lo(2)-ng_ut:)
@@ -112,17 +113,15 @@ contains
     integer        , intent(in   ) :: adv_bc(:,:,:)
     integer        , intent(in   ) :: phys_bc(:,:)
     
-    real(kind=dp_t), allocatable ::  velx(:,:,:), vely(:,:,:)
+    real(kind=dp_t) :: velx(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1)
+    real(kind=dp_t) :: vely(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1)
     
     real(kind=dp_t) hx, hy, dth, umax, dw0drhi, dw0drlo
     real(kind=dp_t) ulft,urgt,vbot,vtop,vlo,vhi,eps,abs_eps
 
-    integer :: hi(2), i,j,is,js,ie,je
+    integer :: i,j,is,js,ie,je
     
     logical :: test
-    
-    hi(1) = lo(1) + size(vel,dim=1) - (2*ng_u+1)
-    hi(2) = lo(2) + size(vel,dim=2) - (2*ng_u+1)
     
     is = lo(1)
     js = lo(2)
@@ -151,11 +150,8 @@ contains
     hx = dx(1)
     hy = dx(2)
     
-    allocate(velx(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1))
-    allocate(vely(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1))
-    
-    call slopex_2d(vel(:,:,1:),velx,lo,ng_u,1,adv_bc)
-    call slopey_2d(vel(:,:,2:),vely,lo,ng_u,1,adv_bc)
+    call slopex_2d(vel(:,:,1:),velx,lo,hi,ng_u,1,adv_bc)
+    call slopey_2d(vel(:,:,2:),vely,lo,hi,ng_u,1,adv_bc)
     
     ! Create the x-velocity to be used for transverse derivatives.
     do j = js,je
@@ -242,19 +238,17 @@ contains
        enddo
     enddo
 
-    deallocate(velx,vely)
-
   end subroutine mkutrans_2d
   
   subroutine mkutrans_3d(n,vel,ng_u,utrans,vtrans,wtrans,ng_ut,w0,w0macx,w0macy,w0macz, &
-                         ng_w0,lo,dx,dt,adv_bc,phys_bc)
+                         ng_w0,lo,hi,dx,dt,adv_bc,phys_bc)
 
     use bc_module
     use slope_module
     use geometry, only: nr, spherical
     use probin_module, only: use_new_godunov
     
-    integer, intent(in)            :: n,lo(3),ng_u,ng_ut,ng_w0    
+    integer,         intent(in)    :: n,lo(:),hi(:),ng_u,ng_ut,ng_w0    
     real(kind=dp_t), intent(in   ) ::         vel(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :,:)
     real(kind=dp_t), intent(inout) ::      utrans(lo(1)-ng_ut:,lo(2)-ng_ut:,lo(3)-ng_ut:)
     real(kind=dp_t), intent(inout) ::      vtrans(lo(1)-ng_ut:,lo(2)-ng_ut:,lo(3)-ng_ut:)
@@ -267,7 +261,9 @@ contains
     integer        , intent(in   ) :: adv_bc(:,:,:)
     integer        , intent(in   ) :: phys_bc(:,:)
     
-    real(kind=dp_t), allocatable::  velx(:,:,:,:),vely(:,:,:,:),velz(:,:,:,:)
+    real(kind=dp_t) :: velx(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1)
+    real(kind=dp_t) :: vely(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1)
+    real(kind=dp_t) :: velz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1)
     
     real(kind=dp_t) ulft,urgt,vbot,vtop,wbot,wtop,dw0drhi,dw0drlo
     real(kind=dp_t) uhi,ulo,vhi,vlo,whi,wlo
@@ -275,12 +271,7 @@ contains
     
     logical :: test
     
-    integer :: hi(3)
     integer :: i,j,k,is,js,ks,ie,je,ke
-    
-    hi(1) = lo(1) + size(vel,dim=1) - (2*ng_u+1)
-    hi(2) = lo(2) + size(vel,dim=2) - (2*ng_u+1)
-    hi(3) = lo(3) + size(vel,dim=3) - (2*ng_u+1)
     
     is = lo(1)
     js = lo(2)
@@ -319,15 +310,11 @@ contains
     hy = dx(2)
     hz = dx(3)
     
-    allocate(velx(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1))
-    allocate(vely(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1))
-    allocate(velz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1))
-    
     do k = lo(3)-1,hi(3)+1
-       call slopex_2d(vel(:,:,k,1:),velx(:,:,k,:),lo,ng_u,1,adv_bc)
-       call slopey_2d(vel(:,:,k,2:),vely(:,:,k,:),lo,ng_u,1,adv_bc)
+       call slopex_2d(vel(:,:,k,1:),velx(:,:,k,:),lo,hi,ng_u,1,adv_bc)
+       call slopey_2d(vel(:,:,k,2:),vely(:,:,k,:),lo,hi,ng_u,1,adv_bc)
     end do
-    call slopez_3d(vel(:,:,:,3:),velz,lo,ng_u,1,adv_bc)
+    call slopez_3d(vel(:,:,:,3:),velz,lo,hi,ng_u,1,adv_bc)
     
     ! Create the x-velocity to be used for transverse derivatives.
     do k = ks,ke
@@ -486,8 +473,6 @@ contains
           enddo
        enddo
     enddo
-
-    deallocate(velx,vely,velz)
 
   end subroutine mkutrans_3d
   

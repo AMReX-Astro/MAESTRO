@@ -127,6 +127,7 @@ contains
           vmp  => dataptr(umac(n,2),i)
           fp   => dataptr(force(n),i)
           lo   =  lwb(get_box(s(n),i))
+          hi   =  upb(get_box(s(n),i))
           select case (dm)
           case (2)
              do scomp = start_scomp, start_scomp + num_comp - 1
@@ -135,7 +136,7 @@ contains
                                        sepx(:,:,1,:), sepy(:,:,1,:), ng_se, &
                                        ump(:,:,1,1), vmp(:,:,1,1), ng_um, &
                                        fp(:,:,1,:), ng_f, w0(n,:), &
-                                       lo, dx(n,:), dt, is_vel, &
+                                       lo, hi, dx(n,:), dt, is_vel, &
                                        the_bc_level(n)%phys_bc_level_array(i,:,:), &
                                        the_bc_level(n)%adv_bc_level_array(i,:,:,bccomp:), &
                                        scomp, is_conservative)
@@ -157,7 +158,7 @@ contains
                                       ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
                                       fp(:,:,:,:), ng_f, np(:,:,:,:), ng_n, w0(n,:), &
                                       w0xp(:,:,:,1), w0yp(:,:,:,1), w0zp(:,:,:,1), ng_w0, &
-                                      gw0p(:,:,:,1), ng_gw, lo, dx(n,:), dt, is_vel, &
+                                      gw0p(:,:,:,1), ng_gw, lo, hi, dx(n,:), dt, is_vel, &
                                       the_bc_level(n)%phys_bc_level_array(i,:,:), &
                                       the_bc_level(n)%adv_bc_level_array(i,:,:,bccomp:), &
                                       scomp, is_conservative)
@@ -191,7 +192,7 @@ contains
 
   
   subroutine make_edge_scal_2d(n,s,ng_s,sedgex,sedgey,ng_se,umac,vmac,ng_um, &
-                               force,ng_f,w0,lo,dx,dt,is_vel,phys_bc,adv_bc, &
+                               force,ng_f,w0,lo,hi,dx,dt,is_vel,phys_bc,adv_bc, &
                                comp,is_conservative)
 
     use geometry, only: nr
@@ -200,7 +201,7 @@ contains
     use bl_constants_module
     use probin_module, only: use_new_godunov
 
-    integer        , intent(in   ) :: n,lo(:),ng_s,ng_se,ng_um,ng_f
+    integer        , intent(in   ) :: n,lo(:),hi(:),ng_s,ng_se,ng_um,ng_f
     real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :,:)
     real(kind=dp_t), intent(inout) :: sedgex(lo(1)-ng_se:,lo(2)-ng_se:,:)
     real(kind=dp_t), intent(inout) :: sedgey(lo(1)-ng_se:,lo(2)-ng_se:,:)
@@ -216,35 +217,27 @@ contains
     logical        , intent(in   ) :: is_conservative
 
     ! Local variables
-    real(kind=dp_t), allocatable :: slopex(:,:,:),slopey(:,:,:)
-    real(kind=dp_t), allocatable :: s_l(:),s_r(:),s_b(:),s_t(:)
+    real(kind=dp_t) :: slopex(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1)
+    real(kind=dp_t) :: slopey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1)
+    real(kind=dp_t) :: s_l(lo(1)-1:hi(1)+2)
+    real(kind=dp_t) :: s_r(lo(1)-1:hi(1)+2)
+    real(kind=dp_t) :: s_b(lo(2)-1:hi(2)+2)
+    real(kind=dp_t) :: s_t(lo(2)-1:hi(2)+2)
 
     real(kind=dp_t) :: hx,hy,dth,splus,sminus
     real(kind=dp_t) :: savg,st
     real(kind=dp_t) :: sptop,spbot,smtop,smbot,splft,sprgt,smlft,smrgt
     real(kind=dp_t) :: abs_eps,eps,umax,dw0drhi,dw0drlo,vtilde
 
-    integer :: hi(2)
     integer :: i,j,is,js,ie,je
-
-    hi(1) = lo(1) + size(s,dim=1) - (2*ng_s+1)
-    hi(2) = lo(2) + size(s,dim=2) - (2*ng_s+1)
 
     is = lo(1)
     ie = hi(1)
     js = lo(2)
     je = hi(2)
 
-    allocate(s_l(lo(1)-1:hi(1)+2))
-    allocate(s_r(lo(1)-1:hi(1)+2))
-    allocate(s_b(lo(2)-1:hi(2)+2))
-    allocate(s_t(lo(2)-1:hi(2)+2))
-
-    allocate(slopex(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1))
-    allocate(slopey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1))
-
-    call slopex_2d(s(:,:,comp:),slopex,lo,ng_s,1,adv_bc)
-    call slopey_2d(s(:,:,comp:),slopey,lo,ng_s,1,adv_bc)
+    call slopex_2d(s(:,:,comp:),slopex,lo,hi,ng_s,1,adv_bc)
+    call slopey_2d(s(:,:,comp:),slopey,lo,hi,ng_s,1,adv_bc)
 
     abs_eps = 1.0d-8
 
@@ -509,14 +502,11 @@ contains
        
     enddo
 
-    deallocate(s_l,s_r,s_b,s_t)
-    deallocate(slopex,slopey)
-    
   end subroutine make_edge_scal_2d
 
   subroutine make_edge_scal_3d(n,s,ng_s,sedgex,sedgey,sedgez,ng_se,umac,vmac,wmac,ng_um, &
                                force,ng_f,normal,ng_n,w0,w0macx,w0macy,w0macz,ng_w0, &
-                               gradw0_cart,ng_gw,lo,dx,dt,is_vel,phys_bc,adv_bc,comp, &
+                               gradw0_cart,ng_gw,lo,hi,dx,dt,is_vel,phys_bc,adv_bc,comp, &
                                is_conservative)
 
     use geometry, only: spherical, nr
@@ -525,7 +515,7 @@ contains
     use bl_constants_module
     use probin_module, only: use_new_godunov
 
-    integer        , intent(in   ) :: n,lo(:),ng_s,ng_se,ng_um,ng_f,ng_w0,ng_n,ng_gw
+    integer        , intent(in   ) :: n,lo(:),hi(:),ng_s,ng_se,ng_um,ng_f,ng_w0,ng_n,ng_gw
     real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :,:)
     real(kind=dp_t), intent(inout) :: sedgex(lo(1)-ng_se:,lo(2)-ng_se:,lo(3)-ng_se:,:)
     real(kind=dp_t), intent(inout) :: sedgey(lo(1)-ng_se:,lo(2)-ng_se:,lo(3)-ng_se:,:)
@@ -548,8 +538,15 @@ contains
     logical        , intent(in   ) :: is_conservative
 
     ! Local variables
-    real(kind=dp_t), allocatable :: slopex(:,:,:,:),slopey(:,:,:,:),slopez(:,:,:,:)
-    real(kind=dp_t), allocatable :: s_l(:),s_r(:),s_b(:),s_t(:),s_u(:),s_d(:)
+    real(kind=dp_t) :: slopex(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1)
+    real(kind=dp_t) :: slopey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1)
+    real(kind=dp_t) :: slopez(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1)
+    real(kind=dp_t) :: s_l(lo(1)-1:hi(1)+2)
+    real(kind=dp_t) :: s_r(lo(1)-1:hi(1)+2)
+    real(kind=dp_t) :: s_b(lo(2)-1:hi(2)+2)
+    real(kind=dp_t) :: s_t(lo(2)-1:hi(2)+2)
+    real(kind=dp_t) :: s_u(lo(3)-1:hi(3)+2)
+    real(kind=dp_t) :: s_d(lo(3)-1:hi(3)+2)
 
     real(kind=dp_t) :: hx,hy,hz,dth,splus,sminus
     real(kind=dp_t) :: savg,st
@@ -558,13 +555,8 @@ contains
 
     real(kind=dp_t) :: Ut_dot_er
 
-    integer :: hi(3)
     integer :: i,j,k,is,js,ks,ie,je,ke
 
-    hi(1) = lo(1) + size(s,dim=1) - (2*ng_s+1)
-    hi(2) = lo(2) + size(s,dim=2) - (2*ng_s+1)
-    hi(3) = lo(3) + size(s,dim=3) - (2*ng_s+1)
-    
     is = lo(1)
     ie = hi(1)
     js = lo(2)
@@ -572,22 +564,11 @@ contains
     ks = lo(3)
     ke = hi(3)
 
-    allocate(s_l(lo(1)-1:hi(1)+2))
-    allocate(s_r(lo(1)-1:hi(1)+2))
-    allocate(s_b(lo(2)-1:hi(2)+2))
-    allocate(s_t(lo(2)-1:hi(2)+2))
-    allocate(s_d(lo(3)-1:hi(3)+2))
-    allocate(s_u(lo(3)-1:hi(3)+2))
-
-    allocate(slopex(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1))
-    allocate(slopey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1))
-    allocate(slopez(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1))
-
     do k = lo(3)-1,hi(3)+1
-       call slopex_2d(s(:,:,k,comp:),slopex(:,:,k,:),lo,ng_s,1,adv_bc)
-       call slopey_2d(s(:,:,k,comp:),slopey(:,:,k,:),lo,ng_s,1,adv_bc)
+       call slopex_2d(s(:,:,k,comp:),slopex(:,:,k,:),lo,hi,ng_s,1,adv_bc)
+       call slopey_2d(s(:,:,k,comp:),slopey(:,:,k,:),lo,hi,ng_s,1,adv_bc)
     end do
-    call slopez_3d(s(:,:,:,comp:),slopez,lo,ng_s,1,adv_bc)
+    call slopez_3d(s(:,:,:,comp:),slopez,lo,hi,ng_s,1,adv_bc)
 
     abs_eps = 1.0d-8
     
@@ -1264,9 +1245,6 @@ contains
           
        end do
     end do
-
-    deallocate(s_l,s_r,s_b,s_t,s_d,s_u)
-    deallocate(slopex,slopey,slopez)
 
   end subroutine make_edge_scal_3d
 

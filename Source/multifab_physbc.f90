@@ -22,7 +22,7 @@ contains
     type(bc_level) , intent(in   ) :: the_bc_level
 
     ! Local
-    integer                  :: lo(dm)
+    integer                  :: lo(dm),hi(dm)
     integer                  :: i,ng,scomp,bccomp
     real(kind=dp_t), pointer :: sp(:,:,:,:)
 
@@ -38,17 +38,18 @@ contains
        if ( multifab_remote(s,i) ) cycle
        sp => dataptr(s,i)
        lo = lwb(get_box(s,i))
+       hi = upb(get_box(s,i))
        select case (dm)
        case (2)
           do scomp = start_scomp,start_scomp+num_comp-1
              bccomp = start_bccomp + scomp - start_scomp
-             call setbc_2d(sp(:,:,1,scomp), lo, ng, &
+             call setbc_2d(sp(:,:,1,scomp), lo, hi, ng, &
                            the_bc_level%adv_bc_level_array(i,:,:,bccomp),bccomp)
           end do
        case (3)
           do scomp = start_scomp,start_scomp+num_comp-1
              bccomp = start_bccomp + scomp - start_scomp
-             call setbc_3d(sp(:,:,:,scomp), lo, ng, &
+             call setbc_3d(sp(:,:,:,scomp), lo, hi, ng, &
                            the_bc_level%adv_bc_level_array(i,:,:,bccomp),bccomp)
           end do
        end select
