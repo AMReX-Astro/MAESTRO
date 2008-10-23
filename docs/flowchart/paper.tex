@@ -175,7 +175,7 @@ discretized as
 (\rho h)_{0,j}^{\outp} = (\rho h)_{0,j}^{\inp} + \frac{\dt}{2}(\overline{\rho\Hnuc})_{j}^{\inp} + \frac{\dt}{2}(\overline{\rho\Hext})_{j}^{\inp} \enskip .
 \end{equation}
 
-\item {\bf Advect Base}$[\rho_0^{\inp}, (\rho h)_0^{\inp}, p_0^{\inp}, \beta_0^{\inp}, w_0^{\inp}, \psi^{\inp}] \rightarrow (\rho_0^{\outp}, \rho_0^{\outp,n+\myhalf}, p_0^{\outp})$ \\
+\item {\bf Advect Base}$[\rho_0^{\inp}, (\rho h)_0^{\inp}, p_0^{\inp}, \beta_0^{\inp}, w_0^{\inp}, \psi^{\inp}] \rightarrow [\rho_0^{\outp}, \rho_0^{\outp,n+\myhalf}, p_0^{\outp}]$ \\
 is the process by which we update the base state through $\dt$ in
 time \MarginPar{we need a separate section for spherical} given the
 radial velocity $w_0^{\inp}.$ The base state arrays are all
@@ -234,8 +234,8 @@ the interface state calculation, but is used in the update.
 to compute the new base state enthalpy,
 \begin{equation}
 (\rho h)_{0,j}^{\outp} = (\rho h)_{0,j}^{\inp} - \frac{\dt}{\Delta r}
-\left [ \left( {(\rho h)_0}^{\outp,\nph} {w_0}^{\inp}\right)_{j+\myhalf} -  
-         \left( {(\rho h)_0}^{\outp,\nph} {w_0}^{\inp}\right)_{j-\myhalf} \right ] 
+\left\{ \left[ {(\rho h)_0}^{\outp,\nph} {w_0}^{\inp}\right]_{j+\myhalf} -  
+         \left[ {(\rho h)_0}^{\outp,\nph} {w_0}^{\inp}\right]_{j-\myhalf} \right\}
 + \dt\psi_j^{\inp} \enskip ,
 \end{equation}
 where the interface states are again found via the procedure described
@@ -251,7 +251,7 @@ the forcing for the interface state calculation, but is used in the update.
 \end{description}
 
 \item {\bf Correct Base}
-$[\rho_0^{\inp}, (\nabla\cdot\etarho\er)^{\inp}] \rightarrow (\rho_0^{\outp})$\\
+$[\rho_0^{\inp}, (\nabla\cdot\etarho\er)^{\inp}] \rightarrow [\rho_0^{\outp}]$\\
 is the process by which we adjust the base state density to account for
 large-scale mixing, through $\etarho$.  For both plane-parallel and spherical
 we use
@@ -324,8 +324,8 @@ using the lagged $\psi^{\nmh}$ and the volume discrepancy correction with $f=0.3
 \begin{equation}
 \frac{\partial w_0^{\nph,\star}}{\partial r} =  \overline{S}^{\nph,\star} 
 - \frac{1}{\gammabar^{n} p_0^{n}}
-\left[ \psi^{\nmh} - 
-f \left(\frac{p_0^n - \overline{p(\rho,h,X_k)^n}}{\Delta t^n} \right)\right]
+\left\{ \psi^{\nmh} - 
+f \left[\frac{p_0^n - \overline{p(\rho,h,X_k)^n}}{\Delta t^n} \right]\right\}
 \enskip .
 \end{equation}
 
@@ -382,7 +382,7 @@ and
 \nablab \cdotb \left(\beta_0^n \uadvone\right) = 
 \beta_0^n \left(S^{\nph,\star} - \overline{S}^{\nph,\star}\right)
 + \frac{f}{\gammabar^n p_0^n}
-\left(\frac{p(\rho,h,X_k)^n - \overline{p(\rho,h,X_k)^n}}{\Delta t^n}\right) \enskip .
+\left[\frac{p(\rho,h,X_k)^n - \overline{p(\rho,h,X_k)^n}}{\Delta t^n}\right] \enskip .
 \end{equation}
 
 %--------------------------------------------------------------------------
@@ -403,8 +403,7 @@ interval of $\dt / 2.$}
 \item
 Define
 \begin{eqnarray}
-\gammabar^{(1)}        &=& {\rm{\bf Avg}} \left( \Gamma_1(\rho^{(1)}, p_0^{n}, X_k^{(1)}) 
-\right) \enskip , \\
+\gammabar^{(1)}        &=& {\rm{\bf Avg}} \left[ \Gamma_1(\rho^{(1)}, p_0^{n}, X_k^{(1)}) \right] \enskip , \\
  {\beta   }_0^{(1)}    &=& \beta   \left(\rho_0^{n}, p_0^{n}, \gammabar^{(1)}\right) \enskip .
 \end{eqnarray}
 
@@ -419,8 +418,8 @@ of $\dt.$}
 \begin{enumerate}
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
 
-\item {\bf Advect Base}$(\rhozero^{n}, (\rho h)_0^{(1)}, p_0^{n}, \beta_0^{(1)}, w_0^{\nph,\star}, \psi^{\nmh}) \rightarrow $
-$(\rho_0^{(2),\star}, (\rho h)_0^{(2),\star}, \rho_0^{\nph,\star,{\rm pred}}, p_0^{n+1,\star}).$ 
+\item {\bf Advect Base}$[\rhozero^{n}, (\rho h)_0^{(1)}, p_0^{n}, \beta_0^{(1)}, w_0^{\nph,\star}, \psi^{\nmh}] \rightarrow $
+$[\rho_0^{(2),\star}, (\rho h)_0^{(2),\star}, \rho_0^{\nph,\star,{\rm pred}}, p_0^{n+1,\star}].$ 
 
 \item Update the species.  Here we do a difference approximation
   to 
@@ -443,15 +442,15 @@ $(\rho_0^{(2),\star}, (\rho h)_0^{(2),\star}, \rho_0^{\nph,\star,{\rm pred}}, p_
 
 \begin{equation}
 \rho^{(1),\nph,\star} = 
-\rho^{'(1),\nph,\star} + \left(\frac{\rho_0^n + \rho_0^{(2),\star}}{2}\right) \enskip ,
+\rho^{'(1),\nph,\star} + \frac{\rho_0^n + \rho_0^{(2),\star}}{2} \enskip ,
 \end{equation}
 
   \item Evolve $(\rho X_k)^{(1)} \rightarrow (\rho X_k)^{(2),\star}$
   without explicitly including the reaction terms,
 \begin{equation}
 (\rho X_k)^{(2),\star} = (\rho X_k)^{(1)} 
- - \dt \; \left[ \nablab \cdotb \left( (\uadvone+w_0^{\nph,\star} \er)  
-  (\rho X_k)^{(1),\nph,\star} \right) \right] \enskip ,
+ - \dt \; \left\{ \nablab \cdotb \left[ \left(\uadvone+w_0^{\nph,\star} \er\right)  
+  (\rho X_k)^{(1),\nph,\star} \right] \right\} \enskip ,
 \end{equation}
 \begin{equation}
 \rho^{(2),\star} = \sum_k (\rho X_k)^{(2),\star} \enskip ,
@@ -469,7 +468,7 @@ $(\nabla\cdot\etarho\er)^{\nph,\star}$, and cell-centered $\psi_j^{\nph,\star}$:
 \item[plane-parallel:]~
 
 \begin{equation}
- \etarho^{\nph,\star} =  {\rm {\bf Avg}} \sum_k \left[ (\uadvone \cdotb \er + w_0^{\nph,\star}) (\rho X_k)^{(1),\nph,\star} \right] - w_0^{\nph,\star} \rho_0^{\nph,\star,{\rm pred}} \enskip ,
+ \etarho^{\nph,\star} =  {\rm {\bf Avg}} \sum_k \left[ \left(\uadvone \cdotb \er + w_0^{\nph,\star}\right) (\rho X_k)^{(1),\nph,\star} \right] - w_0^{\nph,\star} \rho_0^{\nph,\star,{\rm pred}} \enskip ,
 \end{equation}
 \begin{equation}
 (\nabla\cdot\etarho\er)_j^{\nph,\star} = 
@@ -508,16 +507,16 @@ the details.
     \MarginPar{in these notes we currently assume pred type 1, $(\rho h)'$}
 \begin{equation}
 (\rho h)^{(1),\nph,\star} = 
-(\rho h)^{'(1),\nph,\star} + \left(\frac{(\rho h)_0^n + (\rho h)_0^{(2),\star}}{2}\right)
+(\rho h)^{'(1),\nph,\star} + \frac{(\rho h)_0^n + (\rho h)_0^{(2),\star}}{2}
 \enskip .
 \end{equation}
 
   \item Evolve $(\rho h)^{(1)} \rightarrow (\rho h)^{(2'),\star}$ without
   explicitly including the reaction terms,
   \begin{eqnarray}
-  (\rho h)^{(2'),\star} &=& (\rho h)^{(1)} - \dt \; \left[ \nablab
-      \cdotb \left( (\uadvone+w_0^{\nph,\star} \er) (\rho
-      h)^{(1),\nph,\star} \right) \right] \nonumber \\ && + \dt \;
+  (\rho h)^{(2'),\star} &=& (\rho h)^{(1)} - \dt \; \left\{ \nablab
+      \cdotb \left[ \left(\uadvone+w_0^{\nph,\star} \er\right) (\rho
+      h)^{(1),\nph,\star} \right] \right\} \nonumber \\ && + \dt \;
     \left(\uadvone \cdotb \er\right) \left(\frac{\partial
       p_0}{\partial r} \right)^{n} + \dt \; \psi^{\nph,*} \enskip ,
   \end{eqnarray}
@@ -525,7 +524,7 @@ the details.
   \end{enumerate}
 
 \item {\bf Correct Base}
-$[\rho_0^{(2),\star}, (\nabla\cdot\etarho\er)^{\nph,*}] \rightarrow (\rho_0^{n+1,\star})$.
+$[\rho_0^{(2),\star}, (\nabla\cdot\etarho\er)^{\nph,*}] \rightarrow [\rho_0^{n+1,\star}]$.
 
 
 %--------------------------------------------------------------------------
@@ -566,8 +565,8 @@ $\rightarrow [ \rho^{n+1,\star},(\rho h)^{n+1,\star}, X_k^{n+1,\star}, T^{n+1,\s
 
 \item Define
 \begin{eqnarray}
- \gammabar^{n+1,\star}    &=& {\rm{\bf Avg}} \left( \Gamma_1(\rho^{n+1,\star}, p_0^{n+1,\star}, 
-                                                      X_k^{n+1,\star}) \right) \enskip , \\
+ \gammabar^{n+1,\star}    &=& {\rm{\bf Avg}} \left[ \Gamma_1(\rho^{n+1,\star}, p_0^{n+1,\star}, 
+                                                      X_k^{n+1,\star}) \right] \enskip , \\
  {\beta   }_0^{n+1,\star}    &=& \beta   \left(\rho_0^{n+1,\star}, p_0^{n+1,\star}, \gammabar^{n+1,\star}\right) \enskip .
 \end{eqnarray}
 
@@ -609,7 +608,7 @@ volume discrepancy correction,
 \begin{equation}
 \frac{\partial w_0^{\nph}}{\partial r} = 
 \overline{S}^{\nph,\star} - \frac{1}{\gammabar^{\nph,\star} p_0^{\nph,\star}}
-\left[ \psi^{\nph,\star} - f \left(\frac{p_0^{\nph,\star} - \overline{p(\rho,h,X_k)^{\nph,\star}}}{\Delta t^n}\right)\right]
+\left\{ \psi^{\nph,\star} - f \left[\frac{p_0^{\nph,\star} - \overline{p(\rho,h,X_k)^{\nph,\star}}}{\Delta t^n}\right]\right\}
 \enskip ,
 \end{equation}
 \begin{equation}
@@ -662,7 +661,7 @@ with the volume discrepancy correction is
 \nablab \cdotb \left(\beta_0^{\nph,\star} \uadvtwo\right) &=& 
 \beta_0^{\nph,\star} \left(S^{\nph} - \overline{S}^{\nph}\right) \nonumber \\
 && + \frac{f}{\gammabar^{\nph,\star} p_0^{\nph,\star}}
-\left(\frac{p(\rho,h,X_k)^{\nph,\star} - \overline{p(\rho,h,X_k)^{\nph,\star}}}{\Delta t^n}\right)
+\left[\frac{p(\rho,h,X_k)^{\nph,\star} - \overline{p(\rho,h,X_k)^{\nph,\star}}}{\Delta t^n}\right]
 \enskip , \nonumber \\
 \end{eqnarray}
 \begin{equation}
@@ -678,7 +677,7 @@ with the volume discrepancy correction is
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
 
 \item {\bf Advect Base}$(\rho_0^{n}, (\rho h)_0^{(1)}, p_0^{n}, \beta_0^{(1)}, w_0^{\nph}, \psi^{\nph,\star} ) \rightarrow $
-$(\rho_0^{(2)}, (\rho h)_0^{(2)}, \rho_0^{\nph,{\rm pred}}, p_0^{n+1}).$ 
+$[\rho_0^{(2)}, (\rho h)_0^{(2)}, \rho_0^{\nph,{\rm pred}}, p_0^{n+1}].$ 
 
 \item Update the species.  Here we do a difference approximation to
   eq.~\ref{eq:species}, neglecting the reaction terms.  The
@@ -696,15 +695,15 @@ $(\rho_0^{(2)}, (\rho h)_0^{(2)}, \rho_0^{\nph,{\rm pred}}, p_0^{n+1}).$
     state density, $\rho_0$, to convert this to an edge state for $\rho$,
 
 \begin{equation}
-\rho^{(1),\nph} = \rho^{'(1),\nph} + \left(\frac{\rho_0^n + \rho_0^{(2)}}{2}\right)\enskip ,
+\rho^{(1),\nph} = \rho^{'(1),\nph} + \frac{\rho_0^n + \rho_0^{(2)}}{2}\enskip ,
 \end{equation}
 
     \item Evolve $(\rho X_k)^{(1)} \rightarrow (\rho X_k)^{(2)}$
       without explicitly including the reaction terms,
 \begin{equation}
 (\rho X_k)^{(2)} = (\rho X_k)^{(1)} 
-- \dt \; \left[ \nablab \cdotb \left( (\uadvtwo+w_0^{\nph} \er)  
-(\rho X_k)^{(1),\nph} \right) \right]  \enskip ,
+- \dt \; \left\{ \nablab \cdotb \left[\left(\uadvtwo+w_0^{\nph} \er\right)  
+(\rho X_k)^{(1),\nph} \right] \right\}  \enskip ,
 \end{equation}
 \begin{equation}
 \rho^{(2)} = \sum_k (\rho X_k)^{(2)} \enskip ,
@@ -724,7 +723,7 @@ $(\nabla\cdot\etarho\er)^{\nph}$, and a cell-centered $\psi_j^{\nph}$,
 \item[plane-parallel:] ~
 
 \begin{equation}
- \etarho^{\nph} = {\rm {\bf Avg}} \sum_k \left [\uadvtwo \cdotb \er + w_0^{\nph}) (\rho X_k)^{(1),\nph} \right] - w_0^{\nph} \rho_0^{\nph,{\rm pred}} \enskip ,
+ \etarho^{\nph} = {\rm {\bf Avg}} \sum_k \left [\left(\uadvtwo \cdotb \er + w_0^{\nph}\right) (\rho X_k)^{(1),\nph} \right] - w_0^{\nph} \rho_0^{\nph,{\rm pred}} \enskip ,
 \end{equation}
 \begin{equation}
 (\nabla\cdot\etarho\er)_j^{\nph} = \frac{\eta_{\rho,j+\myhalf}^{\nph} - \eta_{\rho,j-\myhalf}^{\nph}}{\Delta r} \enskip , \\
@@ -754,14 +753,14 @@ $(\nabla\cdot\etarho\er)^{\nph}$, and a cell-centered $\psi_j^{\nph}$,
     $(\rho h)_0$, to convert these to edge states for $(\rho h)$,
 \begin{equation}
 (\rho h)^{(1),\nph} = 
-(\rho h)^{'(1),\nph} + \left(\frac{(\rho h)_0^n + (\rho h)_0^{(2)}}{2}\right) \enskip .
+(\rho h)^{'(1),\nph} + \frac{(\rho h)_0^n + (\rho h)_0^{(2)}}{2} \enskip .
 \end{equation}
 
    \item Evolve $(\rho h)^{(1)} \rightarrow (\rho h)^{(2)}$ without
      explicitly including the reaction terms,
 \begin{eqnarray}
-(\rho h)^{(2')} &=& (\rho h)^{(1)} - \dt \; \left[ \nablab \cdotb \left( (\uadvtwo+w_0^{\nph} \er)  
-(\rho h)^{(1),\nph} \right) \right] \nonumber \\
+(\rho h)^{(2')} &=& (\rho h)^{(1)} - \dt \; \left\{ \nablab \cdotb \left[ \left(\uadvtwo+w_0^{\nph} \er\right)  
+(\rho h)^{(1),\nph} \right] \right\} \nonumber \\
 && + \frac{\dt}{2} \; \left(\uadvtwo \cdotb \er\right)
 \left [ \left(\frac{\partial p_0}{\partial r} \right)^{n}
       + \left(\frac{\partial p_0}{\partial r} \right)^{n+1}  \right ] 
@@ -771,7 +770,7 @@ $(\nabla\cdot\etarho\er)^{\nph}$, and a cell-centered $\psi_j^{\nph}$,
 \end{enumerate}
 
 \item {\bf Correct Base}
-$[\rho_0^{(2)}, (\nabla\cdot\etarho\er)^{\nph}] \rightarrow (\rho_0^{n+1})$
+$[\rho_0^{(2)}, (\nabla\cdot\etarho\er)^{\nph}] \rightarrow [\rho_0^{n+1}]$
 
 %--------------------------------------------------------------------------
 % STEP 8.1
@@ -812,7 +811,7 @@ interval of $\dt / 2.$}
 
 \item Define
 \begin{eqnarray}
- \gammabar^{n+1}    &=& {\rm{\bf Avg}}\left(\Gamma_1(\rho^{n+1}, p_0^{n+1}, {X_k}^{n+1}) \right) \enskip , \\ 
+ \gammabar^{n+1}    &=& {\rm{\bf Avg}}\left[\Gamma_1(\rho^{n+1}, p_0^{n+1}, {X_k}^{n+1}) \right] \enskip , \\ 
  {\beta   }_0^{n+1}    &=& \beta   \left(\rho_0^{n+1}, p_0^{n+1},   \gammabar^{n+1}\right) \enskip .
 \end{eqnarray}
 
@@ -861,7 +860,7 @@ We update the velocity field $\ut^n$ to $\ut^{n+1,\star}$ by discretizing
 (paper III; eq.~[37]) as 
 \begin{eqnarray}
 \ut^{n+1,\star} &=& \ut^n - \dt \;
- \left[\left((\uadvtwo+ w_0^{\nph} \er) \cdotb \nablab\right) \ut \right]^\nph
+ \left[\left(\uadvtwo+ w_0^{\nph} \er\right) \cdotb \nablab \ut \right]^\nph
       - \dt \; \left(\uadvtwo \cdotb \er\right)  \left(\frac{\partial w_0^{\nph}}{\partial r} \right) \er \nonumber \\
    &&   + \dt \left[ - \frac{1}{\rho^\nph} {\mathbf{G}} \pi^\nmh
         + \frac{1}{\rho_0} {\mathbf{G}} \pizerotwo
@@ -869,7 +868,7 @@ We update the velocity field $\ut^n$ to $\ut^{n+1,\star}$ by discretizing
 \end{eqnarray}
 where $\rho^\nph = ( \rho^n + \rho^{n+1} )/2$
 and $\mathbf{G}$ approximates a cell-centered gradient from nodal data. 
-The construction of $\left[((\uadvtwo+ w_0^{\nph} \er) \cdotb \nablab) \ut \right]^\nph$
+The construction of $[(\uadvtwo+ w_0^{\nph} \er \cdotb \nablab) \ut ]^\nph$
 is described in paper II, Appendix A, with $\V = \uadvtwo+w_0^{\nph} \er$ and~$s$ set to each
 component of $\ut^n$ individually.
 
@@ -878,7 +877,7 @@ including the volume discrepancy correction,
 \begin{equation}
 \nablab \cdotb \left(\beta_0^{\nph} \ut^{n+1} \right)  = \beta_0^{\nph} \left(S^{n+1} - \overline{S}^{n+1} \right)
 + \frac{f}{\gammabar^{n+1} p_0^{n+1}}
-\left(\frac{p(\rho,h,X_k)^{n+1} - \overline{p(\rho,h,X_k)^{n+1}}}{\Delta t^n}\right)
+\left[\frac{p(\rho,h,X_k)^{n+1} - \overline{p(\rho,h,X_k)^{n+1}}}{\Delta t^n}\right]
 \enskip,
 \end{equation}
 by defining ${\bf V} = \ut^{n+1,\star} + ( \dt / \rho^\nph ) \; \mathbf{G} \pi^\nmh$ 
@@ -887,7 +886,7 @@ and solving
  L_\beta^\rho \phi =
    D \left ( \beta_0^{\nph} {\bf V} \right) - \beta_0^{\nph} \left(S^{n+1}-\overline{S}^{n+1} \right)
 - \frac{f}{\gammabar^{n+1} p_0^{n+1}}
-\left(\frac{p(\rho,h,X_k)^{n+1} - \overline{p(\rho,h,X_k)^{n+1}}}{\Delta t^n}\right) \enskip,
+\left[\frac{p(\rho,h,X_k)^{n+1} - \overline{p(\rho,h,X_k)^{n+1}}}{\Delta t^n}\right] \enskip,
 \end{equation}
 for nodal values of $\phi$, where
 $\beta_0^\nph = ( \beta_0^n + \beta_0^{n+1} )/2$ and
@@ -976,8 +975,7 @@ proceeds as follows.
 
   \item Estimate $\Delta t^\nu$ using $\ubold^{0,\nu}$ and $w_0^\nu.$
 
-  \item {\bf React State}$[ \rho^{\initp},(\rho h)^{\initp}, X_k^{\initp}, T^{\initp}, (\rho^{\initp} \Hext) ]$\\
-      $\rightarrow [\rho^{\outp}, (\rho h)^{\outp}, X_k^{\outp}, T^{\outp}, (\rho \omegadot_k)^{0,\nu} ].$
+  \item {\bf React State}$[ \rho^{\initp},(\rho h)^{\initp}, X_k^{\initp}, T^{\initp}, (\rho^{\initp} \Hext) ] \rightarrow [\rho^{\outp}, (\rho h)^{\outp}, X_k^{\outp}, T^{\outp}, (\rho \omegadot_k)^{0,\nu} ].$
 
   \item Compute $S^{0,\nu}$ from equation (\ref{eq:defineS}) 
         using $(\rho \omegadot_k)^{0,\nu}$ and the initial data.
@@ -1017,7 +1015,7 @@ $\etarho^{-\half} = 0$, $\psi^{-\half} = 0$, and $\pi^{-\half} = 0.$
     The only other difference in the time advancement is that in step 11
     we define ${\bf V} = (\ut^{1,\star} - \ut^0)$ and solve
     \begin{equation}  L_\beta^\rho \phi =
-      D \left ( \beta_0^{\half} {\bf V} \right) - \beta_0^{\half} \left( (S^{1}-\overline{S}^{1}) - (S^{0}-\overline{S}^{0}) \right) \enskip . 
+      D \left ( \beta_0^{\half} {\bf V} \right) - \beta_0^{\half} \left[ (S^{1}-\overline{S}^{1}) - (S^{0}-\overline{S}^{0}) \right] \enskip . 
     \end{equation}
     (The motivation for this form of the projection in the initial pressure iterations
     is discussed in (cite almgren:bell:crutchfield).)
