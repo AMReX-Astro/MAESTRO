@@ -10,7 +10,7 @@ module rhoh_vs_t_module
   private
 
   public :: makeHfromRhoT_edge, makeTfromRhoH, makeTfromRhoP, makePfromRhoH, &
-       makeTHfromRhoP, makeRhoHfromTP
+       makeTHfromRhoP, makeRhoHfromTP, makeHfromRhoP
   
 contains
   
@@ -1406,5 +1406,152 @@ contains
     end do
 
   end subroutine makeRhoHfromTP_3d
+
+ subroutine makeHfromRhoP(s,p0,bc,mla)
+
+    use multifab_module
+    use ml_layout_module
+    use define_bc_module
+    use ml_restriction_module
+    use multifab_fill_ghost_module
+    use variables, only: rhoh_comp, temp_comp
+    use multifab_physbc_module
+    use geometry, only: dm, nlevs
+
+    type(multifab) , intent(inout) :: s(:)
+    real(kind=dp_t), intent(in   ) :: p0(:,0:)
+    type(bc_level) , intent(in   ) :: bc(:)
+    type(ml_layout), intent(inout) :: mla
+
+    ! local
+    real(kind=dp_t), pointer :: sop(:,:,:,:)
+    integer                  :: i,n,ng_s
+    integer                  :: lo(dm),hi(dm)
+
+    ng_s = s(1)%ng
+
+    do n=1,nlevs
+       do i = 1, s(n)%nboxes
+          if ( multifab_remote(s(n),i) ) cycle
+          sop => dataptr(s(n),i)
+          lo =  lwb(get_box(s(n),i))
+          hi =  upb(get_box(s(n),i))
+          select case (dm)
+          case (2)
+             call makeHfromRhoP_2d(sop(:,:,1,:), ng_s, lo, hi, p0(n,:))
+          case (3)
+             call makeHfromRhoP_3d(sop(:,:,:,:), ng_s, lo, hi, p0(n,:))             
+          end select
+       end do
+    enddo
+
+    if (nlevs .eq. 1) then
+
+       ! fill ghost cells for two adjacent grids at the same level
+       ! this includes periodic domain boundary ghost cells
+       call multifab_fill_boundary_c(s(nlevs),rhoh_comp,1)
+
+       ! fill non-periodic domain boundary ghost cells
+       call multifab_physbc(s(nlevs),rhoh_comp,dm+rhoh_comp,1,bc(nlevs))
+
+    else
+
+       ! the loop over nlevs must count backwards to make sure the finer grids are done first
+       do n=nlevs,2,-1
+
+          ! set level n-1 data to be the average of the level n data covering it
+          call ml_cc_restriction_c(s(n-1),rhoh_comp,s(n),rhoh_comp,mla%mba%rr(n-1,:))
+
+          ! fill level n ghost cells using interpolation from level n-1 data
+          ! note that multifab_fill_boundary and multifab_physbc are called for
+          ! both levels n-1 and n
+          call multifab_fill_ghost_cells(s(n),s(n-1),ng_s,mla%mba%rr(n-1,:), &
+                                         bc(n-1),bc(n),1,dm+rhoh_comp,1)
+
+       enddo
+
+    end if
+
+  end subroutine makeHfromRhoP
+
+  subroutine makeHfromRhoP_2d(s,ng_s,lo,hi,p0)
+
+    use eos_module
+    use network
+    use variables
+
+    integer           , intent(in   ) :: lo(:),hi(:),ng_s
+    real (kind = dp_t), intent(inout) :: s(lo(1)-ng_s:,lo(2)-ng_s:,:)  
+    real(kind=dp_t)   , intent(in   ) :: p0(0:)
+
+    ! local
+    integer    :: i,j
+
+    do j=lo(2),hi(2)
+       do i=lo(1),hi(1)
+
+          den_eos(1) = s(i,j,rho_comp)
+          xn_eos(1,:) = s(i,j,spec_comp:spec_comp+nspec-1)/s(i,j,rho_comp)
+          temp_eos(1) = s(i,j,temp_comp)
+          p_eos(1) = p0(j)
+
+          call eos(eos_input_rp, den_eos, temp_eos, &
+                   npts, nspec, &
+                   xn_eos, &
+                   p_eos, h_eos, e_eos, &
+                   cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                   dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                   dpdX_eos, dhdX_eos, &
+                   gam1_eos, cs_eos, s_eos, &
+                   dsdt_eos, dsdr_eos, &
+                   do_diag)
+
+          s(i,j,rhoh_comp) = den_eos(1)*h_eos(1)
+
+       end do
+    end do
+
+  end subroutine makeHfromRhoP_2d
+  
+  subroutine makeHfromRhoP_3d(s,ng_s,lo,hi,p0)
+
+    use eos_module
+    use network
+    use variables
+
+    integer           , intent(in   ) :: lo(:),hi(:),ng_s
+    real (kind = dp_t), intent(inout) :: s(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)  
+    real(kind=dp_t)   , intent(in   ) :: p0(0:)
+
+    ! local
+    integer    :: i,j,k
+
+    do k=lo(3),hi(3)
+       do j=lo(2),hi(2)
+          do i=lo(1),hi(1)
+             
+             den_eos(1) = s(i,j,k,rho_comp)
+             xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/s(i,j,K,rho_comp)
+             temp_eos(1) = s(i,j,k,temp_comp)
+             p_eos(1) = p0(k)
+             
+             call eos(eos_input_rp, den_eos, temp_eos, &
+                      npts, nspec, &
+                      xn_eos, &
+                      p_eos, h_eos, e_eos, &
+                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                      dpdX_eos, dhdX_eos, &
+                      gam1_eos, cs_eos, s_eos, &
+                      dsdt_eos, dsdr_eos, &
+                      do_diag)
+             
+             s(i,j,k,rhoh_comp) = den_eos(1)*h_eos(1)
+             
+          end do
+       end do
+    end do
+
+  end subroutine makeHfromRhoP_3d
 
 end module rhoh_vs_t_module
