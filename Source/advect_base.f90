@@ -153,7 +153,6 @@ contains
     real(kind=dp_t) :: w0dpdr_avg,w0dpdr_avg_1,w0dpdr_avg_2
 
     real (kind = dp_t) ::         force(nlevs,0:nr_fine-1)
-    real (kind = dp_t) ::           psi(nlevs,0:nr_fine-1)
     real (kind = dp_t) ::            h0(nlevs,0:nr_fine-1)
     real (kind = dp_t) :: div_coeff_new(nlevs,0:nr_fine-1)
     real (kind = dp_t) :: gamma1bar_old(nlevs,0:nr_fine-1)
