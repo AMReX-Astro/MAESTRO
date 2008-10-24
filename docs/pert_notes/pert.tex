@@ -97,20 +97,15 @@ not include the $\rho H_{\rm nuc}$ and $\rho H_{\rm ext}$ terms, where
 were already accounted for in {\tt react\_state}
 \begin{equation}
 \frac{\partial(\rho h)}{\partial t} = -\Ub\cdot\nabla(\rho h) - \rho h\nabla\cdot\Ub 
-+ \psi + (\Ubt \dot \er) \frac{\partial p_0}{\partial r} + \nabla\cdot\kth\nabla T. \label{rhoh equation}
++ \psi + (\Ubt \cdot \er) \frac{\partial p_0}{\partial r} + \nabla\cdot\kth\nabla T. \label{rhoh equation}
 \end{equation}
 We define the base state enthalpy evolution equation as
-\MarginPar{Does $\psi$ need to be included in the force?  I have
-written it in the base state equation for now, even though neither the
-base state or perturbational edge state prediction in the code uses
-$\psi$.  How about evolving density first, then computing a
-time-centered $\psi$ to be used as the energy forcing?}
 \begin{eqnarray}
 \frac{\partial(\rho h)_0}{\partial t} &=& -\nabla\cdot[(\rho h)_0 w_0\eb_r] 
 + \frac{D_0p_0}{Dt} \nonumber \\
 &=& -w_0\frac{\partial(\rho h)_0}{\partial r} 
-- \underbrace{(\rho h)_0\frac{\partial w_0}{\partial r}}_{"(\rho h)_0 ~ \text{force}"}
-+ \psi.\label{rhoh0 equation}
+- \underbrace{(\rho h)_0\frac{\partial w_0}{\partial r}+ \psi}_{"(\rho h)_0 ~ \text{force}"}
+\enskip .\label{rhoh0 equation}
 \end{eqnarray}
 Subtracting (\ref{rhoh0 equation}) from (\ref{rhoh equation}) and rearranging terms gives 
 the perturbational enthalpy equation
