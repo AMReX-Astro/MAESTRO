@@ -2,7 +2,7 @@
 
 \tolerance=600
 
-\usepackage{amsmath,color,longtable}
+\usepackage{amsmath,color,longtable,epsfig,epsf}
 
 % Margins
 \usepackage[lmargin=0.5in,rmargin=1.5in,tmargin=1.0in,bmargin=1.0in]{geometry}
@@ -12,6 +12,8 @@
 \newcommand{\pizeroone}{\pi_0^{(1)}}
 \newcommand{\pizerotwo}{\pi_0^{(2)}}
 \newcommand{\gammabar}{\overline{\Gamma}_1}
+
+\newcommand{\figpath}{./initial_models}
 
 \def\eb         {{\bf e}}
 \def\fb    {{\bf f}}
@@ -48,6 +50,9 @@
 \newcommand{\Hext}{{H_{\rm ext}}}
 \newcommand{\Hnuc}{{H_{\rm nuc}}}
 \newcommand{\kth}{k_{\rm th}}
+\def\init  {\rm init}
+\def\model {\rm model}
+\def\raw   {\rm raw}
 
 \newcommand{\Sbar}{\overline{S}}
 
@@ -91,7 +96,14 @@
 
 
 \input flowchart/flowchart
+\clearpage
+
 \input eta_notes/eta
+\clearpage
+
 \input Godunov_notes/Godunov
+\clearpage
+
+\input initial_models/initial_models
 
 \end{document}

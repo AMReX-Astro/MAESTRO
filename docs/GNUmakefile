@@ -6,13 +6,15 @@ eps_source = $(wildcard *.eps)
 
 pdf_source = $(eps_source:.eps=.pdf)
 
-paper.dvi: paper.tex flowchart/flowchart.tex eta_notes/eta.tex $(eps_source)
+section_sources = flowchart/flowchart.tex eta_notes/eta.tex Godunov_notes/Godunov.tex initial_models/initial_models.tex
+
+paper.dvi: paper.tex $(eps_source) $(section_sources)
 	latex paper.tex < /dev/null
 	latex paper.tex < /dev/null
 	latex paper.tex < /dev/null
 	latex paper.tex < /dev/null
 
-paper.pdf: paper.tex $(pdf_source)
+paper.pdf: paper.tex $(pdf_source) $(section_sources)
 	pdflatex paper.tex < /dev/null
 	pdflatex paper.tex < /dev/null
 	pdflatex paper.tex < /dev/null
