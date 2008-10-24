@@ -6,7 +6,7 @@ eps_source = $(wildcard *.eps)
 
 pdf_source = $(eps_source:.eps=.pdf)
 
-paper.dvi: paper.tex $(eps_source)
+paper.dvi: paper.tex eta.tex $(eps_source)
 	latex paper.tex < /dev/null
 	latex paper.tex < /dev/null
 	latex paper.tex < /dev/null
