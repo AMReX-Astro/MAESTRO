@@ -225,23 +225,14 @@ discretized as
 (\rho h)_{0,j}^{\outp} = (\rho h)_{0,j}^{\inp} + \frac{\dt}{2}(\overline{\rho\Hnuc})_{j}^{\inp} + \frac{\dt}{2}(\overline{\rho\Hext})_{j}^{\inp} \enskip .
 \end{equation}
 
-\item {\bf Advect Base}$[\rho_0^{\inp}, (\rho h)_0^{\inp}, p_0^{\inp}, \beta_0^{\inp}, w_0^{\inp}, \psi^{\inp}] \rightarrow [\rho_0^{\outp}, \rho_0^{\outp,n+\myhalf}, p_0^{\outp}]$ \\
-is the process by which we update the base state through $\dt$ in
-time \MarginPar{we need a separate section for spherical} given the
-radial velocity $w_0^{\inp}.$ The base state arrays are all
-one-dimensional in the radial coordinate; we think of the base state
-quantities as defined at cell centers, with $w_0$ and $\beta_0$
-defined halfway in-between.
-
+\item {\bf Advect Base Density}$[\rho_0^\inp,w_0^\inp]$
+$\rightarrow [\rho_0^\outp,\rho_0^{\outp,n+\myhalf}]$\\
+is the process by which we update the base state density through $\dt$ in time
+as well as compute time-centered interface states for use later in the algorithm.
 \begin{description}
 
-\item[plane-parallel:] ~
-
-\begin{enumerate}
-\renewcommand{\labelenumii}{{\bf \alph{enumii}}.}
-
-\item For the density update, we discretize equation the base state
-  density evolution equation (paper III; eq.~[29]) without the $\etarho$ term,
+\item[plane-parallel:] We discretize equation the base state density evolution 
+equation (paper III; eq.~[29]) without the $\etarho$ term,
 \begin{eqnarray}
 \frac{\partial \rhozero}{\partial t} &=& - \nablab \cdotb \left( \rhozero w_0 \er \right)
 \enskip ,
@@ -256,10 +247,17 @@ to compute the new base state density,
 \end{eqnarray}
 where $j$ refers to the one-dimensional index in the radial direction.
 The interface states, ${{\rho}_0}^{\outp,\nph}$, are found via the
-procedure described in paper II, Appendix A, and are saved for use
-later in the overall algorithm.
+procedure described in paper II, Appendix A.
 
-\item For the pressure update, we discretize the base state pressure
+\item[spherical:]
+
+\end{description}
+
+\item {\bf Advect Base Pressure}$[p_0^\inp,w_0^\inp,\psi^\inp] \rightarrow [p_0^\outp]$\\
+is the process by which we update the base state pressure through $\dt$ in time.
+\begin{description}
+
+\item[plane-parallel:] We discretize the base state pressure
   evolution equation (paper III; eq.~[31]),
 \begin{equation}
 \frac{\partial p_0}{\partial t} = 
@@ -277,9 +275,18 @@ where the interface states are again found via the procedure described
 in paper II, Appendix A.  Note that the $\psi$ term is not included in the forcing for
 the interface state calculation, but is used in the update.
 
-\item For the enthalpy update, we discretize
+\item[spherical:]
+
+\end{description}
+
+\item {\bf Advect Base Enthalpy}$[(\rho h)_0^\inp,w_0^\inp,\psi^\inp] \rightarrow [(\rho h)_0]^\outp$\\
+is the process by which we update the base state enthalpy through $\dt$ in time.
+\begin{description}
+
+\item[plane-parallel:] We discretize
 \begin{equation}
-\frac{\partial (\rho h)_0}{\partial t} = -\nabla\cdot\left[(\rho h)_0w_0\er\right] + \psi \enskip ,
+\frac{\partial (\rho h)_0}{\partial t} = -\nabla\cdot\left[(\rho h)_0w_0\er\right] 
++ \psi \enskip ,
 \end{equation}
 to compute the new base state enthalpy,
 \begin{equation}
@@ -292,11 +299,7 @@ where the interface states are again found via the procedure described
 in paper II, Appendix A.  Note that the $\psi$ term is not included in 
 the forcing for the interface state calculation, but is used in the update.
 
-\end{enumerate}
-
 \item[spherical:]
-
-\MarginPar{we need to write the spherical description}
 
 \end{description}
 
