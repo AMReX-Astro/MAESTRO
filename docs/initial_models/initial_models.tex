@@ -1,6 +1,4 @@
-\section{Notes on generating initial models for mapping into {\tt MAESTRO}}
-
-\subsection{Creating the Model Data from Raw Data}\label{Sec:Creating the Model Data from Raw Data}
+\section{Creating the Model Data from Raw Data}\label{Sec:Creating the Model Data from Raw Data}
 
 We begin with raw data, $\rho^{\raw}, T^{\raw}, p^{\raw}$, and
 $X^{\raw}$.  Here is the raw data file for each test problem:
@@ -35,13 +33,13 @@ The model data is not generated at run-time - it must be generated in
 advance of running any MAESTRO examples.  The inputs file should point
 to the file containing the model data.
 
-\subsubsection{Multilevel Plane-Parallel}
+\subsection{Multilevel Plane-Parallel}
 We do the same thing as the single-level case except that we generate
 model data with the same resolution as the finest base state
 resolution.
 
 
-\subsection{Creating the Initial Data from the Model Data}
+\section{Creating the Initial Data from the Model Data}
 In {\tt base\_state.f90}, using the subroutine {\tt
   init\_base\_state.f90} (which is actually a terrible name since we
 are setting the initial data, not the base state), we set the initial
@@ -54,7 +52,7 @@ p^{\model}(\rho^{\model},T^{\model},X^{\model})$ at the end of the
 fortran subroutine in \S~\ref{Sec:Creating the Model Data from Raw
   Data}.
 
-\subsubsection{Multilevel Plane-Parallel}
+\subsection{Multilevel Plane-Parallel}
 We do the same thing as the single-level case except that we generate
 initial data at the non-finest levels by using linear interpolation
 from the two nearest model points (see Figure \ref{Fig:Multilevel
@@ -78,7 +76,7 @@ these on the base state and full state later.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-\subsection{Creating the Base State and Full State}\label{Sec:Creating the Base State and Full State}
+\section{Creating the Base State and Full State}\label{Sec:Creating the Base State and Full State}
 
 Given $p^{\init}, \rho^{\init}, T^{\init},$ and $X^{\init}$, this
 section describes how the base state ($\rho_0$ and $p_0$) and full
@@ -111,7 +109,7 @@ consistent with $p_0$.  Here are the steps:
 Now $\rho_0 = \overline\rho$, the base state is in HSE, and the full
 state is thermodynamically consistent with $p_0$.
 
-\subsubsection{Multilevel Plane-Parallel}
+\subsection{Multilevel Plane-Parallel}
 \begin{enumerate}
 \item Fill $\rho^{\init}, h^{\init}, X^{\init}$, and $T^{\init}$ onto
   a multifab to obtain the full state $\rho, h, X$, and $T$.
@@ -131,7 +129,7 @@ state is thermodynamically consistent with $p_0$.
 Now $\rho_0 = \overline\rho$, the base state is in HSE, and the full
 state is thermodynamically consistent with $p_0$.
 
-\subsubsection{Coarse-Fine HSE Discretization}\label{Sec:Coarse-Fine HSE Discretization}
+\subsection{Coarse-Fine HSE Discretization}\label{Sec:Coarse-Fine HSE Discretization}
 Integrating the HSE discretization upward, when we encounter a change
 from coarse to fine, here is an equation to integrate up to the
 coarse-fine interface ($l$ is the ``finer'' level, $l-1$ is the

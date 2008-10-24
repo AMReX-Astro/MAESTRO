@@ -1,12 +1,10 @@
-\section{Godunov advection}
-
 These are working notes for the Godunov step in {\tt MAESTRO} and {\tt
   VARDEN}.
 
 %-----------------------------------------------------------------------------
 % note differences
 %-----------------------------------------------------------------------------
-\subsection{Differences Between These Notes and the Code}
+\section{Differences Between These Notes and the Code}
 \begin{enumerate}
 \item Concerning equations (\ref{Radial utrans_L}), (\ref{Radial
   utrans_R}), (\ref{1D wt_L extrap}) and (\ref{1D wt_R extrap}), in
@@ -21,7 +19,7 @@ These are working notes for the Godunov step in {\tt MAESTRO} and {\tt
 %-----------------------------------------------------------------------------
 % questions
 %-----------------------------------------------------------------------------
-\subsection{Questions}
+\section{Questions}
 \begin{enumerate}
 \item Concerning equations (\ref{Radial utrans_L}), (\ref{Radial
   utrans_R}), (\ref{1D wt_L extrap}) and (\ref{1D wt_R extrap}), do we
@@ -42,7 +40,7 @@ These are working notes for the Godunov step in {\tt MAESTRO} and {\tt
 %-----------------------------------------------------------------------------
 % differences between Maestro and Varden
 %-----------------------------------------------------------------------------
-\subsection{Differences Between {\tt MAESTRO} and {\tt VARDEN}}
+\section{Differences Between {\tt MAESTRO} and {\tt VARDEN}}
 \begin{enumerate}
 \item {\tt VARDEN} does not use the concept of $w_0$, so $\Ubt$ does
   not exist.
@@ -68,7 +66,7 @@ These are working notes for the Godunov step in {\tt MAESTRO} and {\tt
 %-----------------------------------------------------------------------------
 % utrans
 %-----------------------------------------------------------------------------
-\subsection{Computing $\Ubt^{\trans}$ in {\tt MAESTRO}}
+\section{Computing $\Ubt^{\trans}$ in {\tt MAESTRO}}
 In {\tt advance\_premac}, we call the function {\tt mkutrans}, which
 computes the edge-centered transverse velocities, $\Ubt^{\trans}$.
 These transverse velocities do not contain $w_0$, so immediately
@@ -87,7 +85,7 @@ that are not in the direction of the extrapolation.  We first compute
 ``left/right'' states, and then use a Riemann solver to pick the final
 state.
 
-\subsubsection{2D Cartesian Case}
+\subsection{2D Cartesian Case}
 For the rest of this paper, for 2D Cartesian problems, $\Ub = (u,w)$
 and $\Ubt = (u,\wt)$.  We will use the shorthand $\ib = (x,r)$.\\
 
@@ -137,7 +135,7 @@ and $w_R^{\trans} = \wt_{R,\ib-\half\eb_r}^{\trans} + w_{0,r-\half}$.
 Finally, we call {\tt addw0} to compute $w^{\trans}$ from
 $\wt^{\trans}$.
 
-\subsubsection{3D Cartesian Case}
+\subsection{3D Cartesian Case}
 For the rest of this paper, for 3D Cartesian problems, $\Ub = (u,v,w)$
 and $\Ubt = (u,v,\wt)$.  We will use the shorthand $\ib = (x,y,r)$.\\
 
@@ -157,7 +155,7 @@ v_{R,\ib-\half\eb_y}^{\trans}, & v_{L,\ib-\half\eb_y}^{\trans} + v_{R,\ib-\half\
 \end{cases}
 \end{equation}
 
-\subsubsection{3D Spherical Case}
+\subsection{3D Spherical Case}
 For the rest of this paper, for 3D spherical problems, $\Ub = (u,v,w)$
 and $\Ubt = (\ut,\vt,\wt)$.  We will use the shorthand $\ib =
 (x,y,z)$.\\
@@ -184,7 +182,7 @@ $\Ub^{\trans}$ from $\Ubt^{\trans}$.
 %-----------------------------------------------------------------------------
 % Umac
 %-----------------------------------------------------------------------------
-\subsection{Computing $\Ubt^{\mac,*}$ in {\tt MAESTRO}}
+\section{Computing $\Ubt^{\mac,*}$ in {\tt MAESTRO}}
 In {\tt advance\_premac}, we call {\tt make\_edge\_state} to compute
 $\Ubt^{\mac,*}$.  We will only compute the normal component of
 velocity at each face.\\
@@ -199,7 +197,7 @@ f_w \\
 = \frac{1}{\rho}\nabla\pi + \frac{1}{\rho_0}\frac{\partial\pi_0}{\partial r}\eb_r - \frac{(\rho-\rho_0)}{\rho}g\eb_r.\label{Force Term}
 \end{equation}
 
-\subsubsection{2D Cartesian Case}
+\subsection{2D Cartesian Case}
 We begin by computing a time-centered 1D extrapolation of $u$ to
 r-faces:
 \begin{eqnarray}
@@ -281,7 +279,7 @@ We then project $\Ubt^{\mac,*}$ to obtain $\Ubt^{\mac}$ and we call
 %-----------------------------------------------------------------------------
 % edge states
 %-----------------------------------------------------------------------------
-\subsection{Computing $\rho^{'\edge}, X_k^{\edge}$, and $(\rho h)^{'\edge}/h^{\edge}/T^{\edge}$ in {\tt MAESTRO}}
+\section{Computing $\rho^{'\edge}, X_k^{\edge}$, and $(\rho h)^{'\edge}/h^{\edge}/T^{\edge}$ in {\tt MAESTRO}}
 In {\tt scalar\_advance}, we call {\tt make\_edge\_scal} to compute
 $\rho^{'\edge}, X_k^{\edge}$, and $(\rho
 h)^{'\edge}/h^{\edge}/T^{\edge}$ at each edge.  The procedure is the
@@ -309,7 +307,7 @@ h^{\edge}(\rho^{\edge},T^{\edge},X_k^{\edge})$, where $\rho^{\edge} =
 3, we compute $(\rho h)^{'\edge} = (\rho h)^{\edge} - (\rho h)_0$.
 See the ``pert\_notes'' in {\tt MAESTRO/docs}.
 
-\subsubsection{2D Cartesian Case}
+\subsection{2D Cartesian Case}
 We begin by computing a time-centered 1D extrapolation of $s$ to all
 faces.  The extrapolation of $s$ to x-faces is:
 \begin{eqnarray}
@@ -380,12 +378,12 @@ s_{R,\ib-\half\eb_r}^{\edge}, & u^{\mac}_{\ib-\half\eb_r} < 0.
 %-----------------------------------------------------------------------------
 % U-edge states
 %-----------------------------------------------------------------------------
-\subsection{Computing $\Ubt^{\edge}$ in {\tt MAESTRO}}
+\section{Computing $\Ubt^{\edge}$ in {\tt MAESTRO}}
 In {\tt velocity\_advance}, we call {\tt make\_edge\_state} to compute
 $\Ubt^{\edge}$.  Unlike when we computed $\Ubt^{\trans}$ and
 $\Ubt^{\mac,*}$, we need all components of velocity at each face.
 
-\subsubsection{2D Cartesian Case}
+\subsection{2D Cartesian Case}
 We begin by computing a time-centered 1D extrapolation of $u$ to all
 faces.  The extrapolation of $u$ to x-faces is:
 \begin{eqnarray}
@@ -531,9 +529,9 @@ Then, we upwind based on $w^{\mac}$:
 %-----------------------------------------------------------------------------
 % Umac in Varden
 %-----------------------------------------------------------------------------
-\subsection{Computing $\Ub^{\mac,*}$ in {\tt VARDEN}}
+\section{Computing $\Ub^{\mac,*}$ in {\tt VARDEN}}
 
-\subsubsection{2D Cartesian Case}
+\subsection{2D Cartesian Case}
 We do a 1D Taylor series extrapolation to get both components of velocity at the x-face:
 \begin{eqnarray}
 u_{L,\ib-\half\eb_x}^{1D} &=& u_{\ib-\eb_x} + \left[\half - \frac{\dt}{2h}{\rm max}(0,u_{\ib-\eb_x})\right]\Delta_xu_{\ib-\eb_x}, \label{varden U_L^1D} \\
@@ -583,7 +581,7 @@ u_{R,\ib-\half\eb_x}^{\mac,*}, & u_{L,\ib-\half\eb_x}^{\mac,*} + u_{R,\ib-\half\
 We perform analogous operations to compute the normal velocity at the
 y-faces, $v^{\mac,*}_{\ib-\half\eb_y}$.
 
-\subsubsection{3D Cartesian Case}
+\subsection{3D Cartesian Case}
 This is more complicated than the 2D case because we include corner
 coupling.  We compute $\Ub_{\ib-\half\eb_x}^{1D},
 \Ub_{\ib-\half\eb_y}^{1D}$, and $\Ub_{\ib-\half\eb_z}^{1D}$ in an
@@ -627,7 +625,7 @@ $w_{\ib-\half\eb_z}^{\mac,*}$.
 %-----------------------------------------------------------------------------
 % Varden edge states
 %-----------------------------------------------------------------------------
-\subsection{Computing $\Ub^{\edge}$ and $\rho^{\edge}$ in {\tt VARDEN}}
+\section{Computing $\Ub^{\edge}$ and $\rho^{\edge}$ in {\tt VARDEN}}
 To compute $\Ub^{\edge}$, {\tt VARDEN} uses the exact same algorithm
 as the $s^{\edge}$ case in {\tt MAESTRO}.  The algorithm for
 $\rho^{\edge}$ in {\tt VARDEN} is slightly different than the
@@ -635,7 +633,7 @@ $s^{\edge}$ case in {\tt MAESTRO} since it uses a ``conservative''
 formulation.  Here, $s$ is used in place of either $\rho, u, v$, or
 $w$ (in 3D).
 
-\subsubsection{2D Cartesian Case}
+\subsection{2D Cartesian Case}
 The 1D extrapolation is:
 \begin{eqnarray}
 s_{L,\ib-\half\eb_x}^{1D} &=& s_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x s_{\ib-\eb_x}^n, \label{varden s_L^1D}\\
@@ -675,7 +673,7 @@ s_{R,\ib-\half\eb_x}^{\edge}, & u^{\mac}_{\ib-\half\eb_x} < 0.
 \end{equation}
 We use an analogous procedure to compute $s_{\ib-\half\eb_y}^{\edge}$.
 
-\subsubsection{3D Cartesian Case}
+\subsection{3D Cartesian Case}
 This is more complicated than the 2D case because we include corner
 coupling.  We first compute $s_{\ib-\half\eb_x}^{1D}$,
 $s_{\ib-\half\eb_y}^{1D}$, and $s_{\ib-\half\eb_z}^{1D}$ in an

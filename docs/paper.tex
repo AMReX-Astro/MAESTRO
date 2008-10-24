@@ -1,11 +1,11 @@
-\documentclass[11pt]{article} 
+\documentclass[11pt]{book} 
 
 \tolerance=600
 
 \usepackage{amsmath,color,longtable,epsfig,epsf}
 
 % Margins
-\usepackage[lmargin=0.5in,rmargin=1.5in,tmargin=1.0in,bmargin=1.0in]{geometry}
+\usepackage{fullpage}
 
 \newcommand{\rhozero}{\rho_0}
 \newcommand{\pizero}{\pi_0}
@@ -94,16 +94,21 @@
 \tableofcontents
 \cleardoublepage
 
-
+\chapter{Algorithm Flowchart}
 \input flowchart/flowchart
-\clearpage
 
+
+\chapter{Notes on $\etarho$}
 \input eta_notes/eta
-\clearpage
 
+
+\chapter{Notes on Advection}
 \input Godunov_notes/Godunov
-\clearpage
 
+\chapter{Initial Models}
 \input initial_models/initial_models
+
+\chapter{Notes on the Low Density Parameters in {\tt MAESTRO}}
+\input lo_density/lo_density
 
 \end{document}

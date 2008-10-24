@@ -1,5 +1,3 @@
-\section{Computing $\eta$}
-
 We carry around three different 1D radial quantities: $\etarhoec$
 (edge-centered), $\etarhocc$ (cell-centered), and $\divetarho$
 (cell-centered).  These notes discuss when each of these is used, and
@@ -8,7 +6,7 @@ how they are computed, in both plane-parallel and spherical.
 %-----------------------------------------------------------------------------
 % flow chart
 %-----------------------------------------------------------------------------
-\subsection{$\eta$ Flow Chart}
+\section{$\eta$ Flow Chart}
 \begin{enumerate}
 \item Enter {\tt advance} with $[\etarhoec, \etarhocc, \divetarho]^{n-\half}$.
 \item Call {\tt make\_w0}.  The spherical version uses uses $\etarhoec$ and $\etarhocc$.
@@ -26,10 +24,10 @@ how they are computed, in both plane-parallel and spherical.
 %-----------------------------------------------------------------------------
 % computing
 %-----------------------------------------------------------------------------
-\subsection{Computing $\etarhoec, \etarhocc$, and $\divetarho$}
+\section{Computing $\etarhoec, \etarhocc$, and $\divetarho$}
 This is done in {\tt make\_eta.f90}.
 
-\subsubsection{Plane-Parallel}
+\subsection{Plane-Parallel}
 We first compute a radial edge-centered multifab, $\eta_{\rho}^{\rm flux}$, using
 \begin{equation}
 \eta_{\rho,\ib+\half\eb_r}^{\rm flux} = \left[\left(\Ubt_{\ib+\half\eb_r}^{n+\half}\cdot\eb_r\right) + w_{0,r+\half}^{n+\half}\right] \rho_{\ib+\half\eb_r}^{n+\half} - w_{0,r+\half}^{n+\half}\rho_{0,r+\half}^{n+\half, {\rm pred}}
@@ -47,7 +45,7 @@ $\divetarho$ is the cell-centered divergence of $\etarhoec$,
 \left[\divetarho\right]_r = \frac{\eta_{\rho,r+\half}^{\rm ec} - \eta_{\rho,r-\half}^{\rm ec}}{\Delta r}.
 \end{equation}
 
-\subsubsection{Spherical}
+\subsection{Spherical}
 First, construct $\eta_{\rho}^{\rm cart} =
 [\rho'(\Ubt\cdot\eb_r)]^{n+\half}$ using:
 \begin{equation}
@@ -75,32 +73,32 @@ $\rho'^{n+1} = \rho^{n+1} - \rho_0^{n+1}$ as
 %-----------------------------------------------------------------------------
 % etarho_ec
 %-----------------------------------------------------------------------------
-\subsection{Using $\etarhoec$}
-\subsubsection{Plane-Parallel}
+\section{Using $\etarhoec$}
+\subsection{Plane-Parallel}
 NOT USED.
 
-\subsubsection{Spherical}
+\subsection{Spherical}
 In {\tt make\_w0}, $\etarhoec$ is used in the construction of the RHS
 for the $\delta w_0$ equation.
 
 %-----------------------------------------------------------------------------
 % etarho_cc
 %-----------------------------------------------------------------------------
-\subsection{Using $\etarhocc$}
-\subsubsection{Plane-Parallel}
+\section{Using $\etarhocc$}
+\subsection{Plane-Parallel}
 In {\tt make\_psi}, $\psi = \etarhocc g$.
 
-\subsubsection{Spherical}
+\subsection{Spherical}
 In {\tt make\_w0}, $\etarhocc$ is used in the construction of the RHS
 for the $\delta w_0$ equation.
 
 %-----------------------------------------------------------------------------
 % div etarho
 %-----------------------------------------------------------------------------
-\subsection{Using $\divetarho$}
-\subsubsection{Plane-Parallel}
+\section{Using $\divetarho$}
+\subsection{Plane-Parallel}
 In {\tt correct\_base}, $\rho_0^{n+1} = \rho_0^{n+1} - \Delta t \divetarho$.
 
-\subsubsection{Spherical}
+\subsection{Spherical}
 In {\tt correct\_base}, $\rho_0^{n+1} = \rho_0^{n+1} - \Delta t \divetarho$. \\
 
