@@ -449,8 +449,10 @@ contains
     end if
     
     if (evolve_base_state) then
-       call advect_base(w0,Sbar,p0_old,p0_new,rho0_old,rho0_new,rhoh0_1,rhoh0_2, &
-                        gamma1bar,div_coeff_new,rho0_predicted_edge,psi,dx(:,dm),dt)
+       call advect_base_dens(w0,Sbar,p0_old,p0_new,rho0_old,rho0_new,gamma1bar, &
+                             div_coeff_new,rho0_predicted_edge,psi,dx(:,dm),dt)
+       call advect_base_enthalpy(w0,Sbar,rho0_old,rhoh0_1,rhoh0_2,p0_old,p0_new, &
+                                 gamma1bar,rho0_predicted_edge,psi,dx(:,dm),dt)
     else
        rho0_new = rho0_old
        rhoh0_2 = rhoh0_1
@@ -907,8 +909,10 @@ contains
        end if
 
        if (evolve_base_state) then
-          call advect_base(w0,Sbar,p0_old,p0_new,rho0_old,rho0_new,rhoh0_1,rhoh0_2, &
-                           gamma1bar,div_coeff_nph,rho0_predicted_edge,psi,dx(:,dm),dt)
+          call advect_base_dens(w0,Sbar,p0_old,p0_new,rho0_old,rho0_new,gamma1bar, &
+                                div_coeff_nph,rho0_predicted_edge,psi,dx(:,dm),dt)
+          call advect_base_enthalpy(w0,Sbar,rho0_old,rhoh0_1,rhoh0_2,p0_old,p0_new, &
+                                    gamma1bar,rho0_predicted_edge,psi,dx(:,dm),dt)
        else
           rho0_new = rho0_old
           rhoh0_2 = rhoh0_1
