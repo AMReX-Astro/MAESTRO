@@ -450,7 +450,7 @@ contains
        do n=1,nlevs
           do i=1,numdisjointchunks(n)
              do r=r_start_coord(n,i),r_end_coord(n,i)
-                force(n,r) = -rhoh0_old(n,r) * (w0(n,r+1) - w0(n,r)) / dz(n)
+                force(n,r) = -rhoh0_old(n,r) * (w0(n,r+1) - w0(n,r)) / dz(n) + psi(n,r)
              end do
           end do
        end do

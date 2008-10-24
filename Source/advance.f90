@@ -450,14 +450,8 @@ contains
     
     if (evolve_base_state) then
        call advect_base_dens(w0,rho0_old,rho0_new,rho0_predicted_edge,dx(:,dm),dt)
-       call advect_base_pres(w0,Sbar,rho0_new,p0_old,p0_new,gamma1bar,div_coeff_new, &
-                             psi,dx(:,dm),dt)
-       call advect_base_enthalpy(w0,Sbar,rho0_old,rhoh0_1,rhoh0_2,p0_old,p0_new, &
-                                 gamma1bar,rho0_predicted_edge,psi,dx(:,dm),dt)
     else
        rho0_new = rho0_old
-       p0_new = p0_old
-       rhoh0_2 = rhoh0_1
     end if
 
     do n=1,nlevs
@@ -547,6 +541,15 @@ contains
                          p0_new,rho0_predicted_edge, &
                          dx,dt,the_bc_tower%bc_tower_array)
 
+    if (spherical .eq. 1) then
+       if (evolve_base_state) then
+          call advect_base_pres(w0,Sbar,rho0_new,p0_old,p0_new,gamma1bar,div_coeff_new, &
+                                psi,dx(:,dm),dt)
+       else
+          p0_new = p0_old
+       end if
+    end if
+
     ! Now compute the new etarho and psi
     if (evolve_base_state) then
        if (use_etarho) then
@@ -564,6 +567,21 @@ contains
        call make_psi(etarho_cc,psi,w0,gamma1bar,p0_old,p0_new,Sbar)
     end if
 
+    if (spherical .eq. 0) then
+       if (evolve_base_state) then
+          call advect_base_pres(w0,Sbar,rho0_new,p0_old,p0_new,gamma1bar,div_coeff_new, &
+                                psi,dx(:,dm),dt)
+       else
+          p0_new = p0_old
+       end if
+    end if
+
+    if (evolve_base_state) then
+       call advect_base_enthalpy(w0,Sbar,rho0_old,rhoh0_1,rhoh0_2,p0_old,p0_new, &
+                                 gamma1bar,rho0_predicted_edge,psi,dx(:,dm),dt)
+    else
+       rhoh0_2 = rhoh0_1
+    end if
 
     call enthalpy_advance(mla,1,uold,s1,s2,sedge,sflux,scal_force,&
                           thermal,umac,w0,w0mac,normal, &
@@ -911,14 +929,8 @@ contains
 
        if (evolve_base_state) then
           call advect_base_dens(w0,rho0_old,rho0_new,rho0_predicted_edge,dx(:,dm),dt)
-          call advect_base_pres(w0,Sbar,rho0_new,p0_old,p0_new,gamma1bar,div_coeff_nph, &
-                                psi,dx(:,dm),dt)
-          call advect_base_enthalpy(w0,Sbar,rho0_old,rhoh0_1,rhoh0_2,p0_old,p0_new, &
-                                    gamma1bar,rho0_predicted_edge,psi,dx(:,dm),dt)
        else
           rho0_new = rho0_old
-          p0_new = p0_old
-          rhoh0_2 = rhoh0_1
        end if
               
        do n=1,nlevs
@@ -997,6 +1009,15 @@ contains
                             p0_new,rho0_predicted_edge, &
                             dx,dt,the_bc_tower%bc_tower_array)
 
+       if (spherical .eq. 1) then
+          if (evolve_base_state) then
+             call advect_base_pres(w0,Sbar,rho0_new,p0_old,p0_new,gamma1bar,div_coeff_nph, &
+                                   psi,dx(:,dm),dt)
+          else
+             p0_new = p0_old
+          end if
+       end if
+
        ! Now compute the new etarho and psi
        if (evolve_base_state) then
           if (use_etarho) then
@@ -1012,6 +1033,22 @@ contains
           endif
 
           call make_psi(etarho_cc,psi,w0,gamma1bar,p0_old,p0_new,Sbar)
+       end if
+
+       if (spherical .eq. 0) then
+          if (evolve_base_state) then
+             call advect_base_pres(w0,Sbar,rho0_new,p0_old,p0_new,gamma1bar,div_coeff_nph, &
+                                   psi,dx(:,dm),dt)
+          else
+             p0_new = p0_old
+          end if
+       end if
+
+       if (evolve_base_state) then
+          call advect_base_enthalpy(w0,Sbar,rho0_old,rhoh0_1,rhoh0_2,p0_old,p0_new, &
+                                    gamma1bar,rho0_predicted_edge,psi,dx(:,dm),dt)
+       else
+          rhoh0_2 = rhoh0_1
        end if
 
        call enthalpy_advance(mla,2,uold,s1,s2,sedge,sflux,scal_force,&
