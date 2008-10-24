@@ -114,7 +114,7 @@ $\beta_0$ & coefficient to velocity
 \hline
 $\Gamma_1$ & first adiabatic exponent ($\Gamma_1 \equiv \left . d \log p/d \log \rho \right |_s$) & -- \\
 \hline
-$\etarho$ & $\etarho \equiv \overline{ (\rho' \Ubt \cdot \er)}$ & g~cm$^{-2}$~s$^{-1}$ \\
+$\etarho$ & $\etarho \equiv (\overline{ \rho' \Ubt \cdot \er})$ & g~cm$^{-2}$~s$^{-1}$ \\
 \hline
 $\xi_k$ & $\xi_k \equiv \left . \partial h / \partial X_k \right |_{p,T,X_{j,j\ne k}}$ & erg~g$^{-1}$ \\
 \hline 
@@ -396,7 +396,7 @@ using the lagged $\psi^{\nmh}$ and the volume discrepancy correction with $f=0.3
 \frac{\partial w_0^{\nph,\star}}{\partial r} =  \overline{S}^{\nph,\star} 
 - \frac{1}{\gammabar^{n} p_0^{n}}
 \left\{ \psi^{\nmh} - 
-f \left[\frac{p_0^n - \overline{p(\rho,h,X_k)^n}}{\Delta t^n} \right]\right\}
+f \left[\frac{p_0^n - \overline{p(\rho,h,X_k)}^n}{\Delta t^n} \right]\right\}
 \enskip .
 \end{equation}
 
@@ -453,7 +453,7 @@ and
 \nablab \cdotb \left(\beta_0^n \uadvone\right) = 
 \beta_0^n \left(S^{\nph,\star} - \overline{S}^{\nph,\star}\right)
 + \frac{f}{\gammabar^n p_0^n}
-\left[\frac{p(\rho,h,X_k)^n - \overline{p(\rho,h,X_k)^n}}{\Delta t^n}\right] \enskip .
+\left[\frac{p(\rho,h,X_k)^n - \overline{p(\rho,h,X_k)}^n}{\Delta t^n}\right] \enskip .
 \end{equation}
 
 %--------------------------------------------------------------------------
@@ -490,8 +490,6 @@ of $\dt.$}
 
 \begin{enumerate}
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
-
-%\item {\bf Advect Base}$[\rhozero^{n}, (\rho h)_0^{(1)}, p_0^{n}, \beta_0^{(1)}, w_0^{\nph,\star}, \psi^{\nmh}] \rightarrow [\rho_0^{(2),\star}, (\rho h)_0^{(2),\star}, \rho_0^{\nph,\star,{\rm pred}}, p_0^{n+1,\star}].$ 
 
 \item {\bf Advect Base Density}
 
@@ -748,7 +746,7 @@ volume discrepancy correction,
 \begin{equation}
 \frac{\partial w_0^{\nph}}{\partial r} = 
 \overline{S}^{\nph,\star} - \frac{1}{\gammabar^{\nph,\star} p_0^{\nph,\star}}
-\left\{ \psi^{\nph,\star} - f \left[\frac{p_0^{\nph,\star} - \overline{p(\rho,h,X_k)^{\nph,\star}}}{\Delta t^n}\right]\right\}
+\left\{ \psi^{\nph,\star} - f \left[\frac{p_0^{\nph,\star} - \overline{p(\rho,h,X_k)}^{\nph,\star}}{\Delta t^n}\right]\right\}
 \enskip ,
 \end{equation}
 \begin{equation}
@@ -758,8 +756,8 @@ volume discrepancy correction,
 p_0^{\nph,\star} = \frac{p_0^{n} + p_0^{n+1,\star}}{2}
 \end{equation}
 \begin{equation}
-\overline{p(\rho,h,X_k)^{\nph,\star}} = 
-\frac{\overline{p(\rho,h,X_k)^n} + \overline{p(\rho,h,X_k)^{n+1,\star}}}{2}
+\overline{p(\rho,h,X_k)}^{\nph,\star} = 
+\frac{\overline{p(\rho,h,X_k)}^n + \overline{p(\rho,h,X_k)}^{n+1,\star}}{2}
 \end{equation}
 
 \item[spherical:] See Paper IV for working notes until we finalize this.
@@ -801,7 +799,7 @@ with the volume discrepancy correction is
 \nablab \cdotb \left(\beta_0^{\nph,\star} \uadvtwo\right) &=& 
 \beta_0^{\nph,\star} \left(S^{\nph} - \overline{S}^{\nph}\right) \nonumber \\
 && + \frac{f}{\gammabar^{\nph,\star} p_0^{\nph,\star}}
-\left[\frac{p(\rho,h,X_k)^{\nph,\star} - \overline{p(\rho,h,X_k)^{\nph,\star}}}{\Delta t^n}\right]
+\left[\frac{p(\rho,h,X_k)^{\nph,\star} - \overline{p(\rho,h,X_k)}^{\nph,\star}}{\Delta t^n}\right]
 \enskip , \nonumber \\
 \end{eqnarray}
 \begin{equation}
@@ -815,8 +813,6 @@ with the volume discrepancy correction is
 
 \begin{enumerate}
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
-
-%\item {\bf Advect Base}$(\rho_0^{n}, (\rho h)_0^{(1)}, p_0^{n}, \beta_0^{(1)}, w_0^{\nph}, \psi^{\nph,\star} ) \rightarrow [\rho_0^{(2)}, (\rho h)_0^{(2)}, \rho_0^{\nph,{\rm pred}}, p_0^{n+1}].$ 
 
 \item {\bf Advect Base Density}
 
@@ -1040,7 +1036,7 @@ including the volume discrepancy correction,
 \begin{equation}
 \nablab \cdotb \left(\beta_0^{\nph} \Ubt^{n+1} \right)  = \beta_0^{\nph} \left(S^{n+1} - \overline{S}^{n+1} \right)
 + \frac{f}{\gammabar^{n+1} p_0^{n+1}}
-\left[\frac{p(\rho,h,X_k)^{n+1} - \overline{p(\rho,h,X_k)^{n+1}}}{\Delta t^n}\right]
+\left[\frac{p(\rho,h,X_k)^{n+1} - \overline{p(\rho,h,X_k)}^{n+1}}{\Delta t^n}\right]
 \enskip,
 \end{equation}
 by defining ${\bf V} = \Ubt^{n+1,\star} + ( \dt / \rho^\nph ) \; \mathbf{G} \pi^\nmh$ 
@@ -1049,7 +1045,7 @@ and solving
  L_\beta^\rho \phi =
    D \left ( \beta_0^{\nph} {\bf V} \right) - \beta_0^{\nph} \left(S^{n+1}-\overline{S}^{n+1} \right)
 - \frac{f}{\gammabar^{n+1} p_0^{n+1}}
-\left[\frac{p(\rho,h,X_k)^{n+1} - \overline{p(\rho,h,X_k)^{n+1}}}{\Delta t^n}\right] \enskip,
+\left[\frac{p(\rho,h,X_k)^{n+1} - \overline{p(\rho,h,X_k)}^{n+1}}{\Delta t^n}\right] \enskip,
 \end{equation}
 for nodal values of $\phi$, where
 $\beta_0^\nph = ( \beta_0^n + \beta_0^{n+1} )/2$ and
