@@ -91,9 +91,9 @@ $t$     & time                                       & s \\
 \hline
 $T$     & temperature                                & K \\
 \hline
-$\ubold$     & total velocity ($\ubold = \Ut + w_0 \er$) & cm~s$^{-1}$ \\
+$\Ub$     & total velocity ($\Ub = \Ubt + w_0 \er$) & cm~s$^{-1}$ \\
 \hline
-$\Ut$   & local velocity                             & cm~s$^{-1}$ \\
+$\Ubt$   & local velocity                             & cm~s$^{-1}$ \\
 \hline
 $\uadv$ & advective velocity (edge-centered)         & cm~s$^{-1}$ \\
 \hline
@@ -106,7 +106,7 @@ $\beta_0$ & coefficient to velocity
 \hline
 $\Gamma_1$ & first adiabatic exponent ($\Gamma_1 \equiv \left . d \log p/d \log \rho \right |_s$) & -- \\
 \hline
-$\etarho$ & $\etarho \equiv \overline{ (\rho' \Ut \cdot \er)}$ & g~cm$^{-2}$~s$^{-1}$ \\
+$\etarho$ & $\etarho \equiv \overline{ (\rho' \Ubt \cdot \er)}$ & g~cm$^{-2}$~s$^{-1}$ \\
 \hline
 $\xi_k$ & $\xi_k \equiv \left . \partial h / \partial X_k \right |_{p,T,X_{j,j\ne k}}$ & erg~g$^{-1}$ \\
 \hline 
@@ -414,12 +414,12 @@ The local velocity field is described by
 The procedure to construct $\uadvone$ is described in detail in Appendix B of paper III.
 We note that  $\uadvone$ satisfies the discrete versions of 
 \begin{equation}
-\int_{\Omega_H} \Ut \cdotb \er \; dA = 0 \label{eq:udoterzero} \enskip ,
+\int_{\Omega_H} \Ubt \cdotb \er \; dA = 0 \label{eq:udoterzero} \enskip ,
 \end{equation}
 (paper III; eq.~[21])
 and
 \begin{equation}
-\nablab \cdotb (\beta_0 \Ut )  = \beta_0 \left(S - \Sbar \right )\enskip ,
+\nablab \cdotb (\beta_0 \Ubt )  = \beta_0 \left(S - \Sbar \right )\enskip ,
 \label{eq:tildeconstraint}
 \end{equation}
 (paper III; eq.~[39]).  The discretization with the volume discrepancy correction is
@@ -471,7 +471,7 @@ $[\rho_0^{(2),\star}, (\rho h)_0^{(2),\star}, \rho_0^{\nph,\star,{\rm pred}}, p_
 \item Update the species.  Here we do a difference approximation
   to 
   \begin{equation}
-  \frac{\partial (\rho X_k)}{\partial t} + \nablab \cdotb (\ubold \rho X_k) =
+  \frac{\partial (\rho X_k)}{\partial t} + \nablab \cdotb (\Ub \rho X_k) =
          \rho {\omegadot}_k \enskip , \label{eq:species}
   \end{equation}
   neglecting the reaction terms.  The update consists of two steps:
@@ -484,7 +484,7 @@ $[\rho_0^{(2),\star}, (\rho h)_0^{(2),\star}, \rho_0^{\nph,\star,{\rm pred}}, p_
   Here we predict $\rho'$ and $X_k$ to the edges to obtain 
   $\rho^{'(1),\nph,\star}$ and $X_k^{(1),\nph,\star}$ using a second-order
   Taylor expansion in space and time, as described in paper II,
-  Appendix A, using $\V = \uadvone+w_0^{\nph,\star} \er$.  We use the base
+  Appendix A, using $\Vb = \uadvone+w_0^{\nph,\star} \er$.  We use the base
   state density, $\rho_0$, to convert this to an edge state for $\rho$,
 
 \begin{equation}
@@ -533,14 +533,14 @@ the details.
 \item Update the enthalpy.  The full enthalpy equation is 
 \MarginPar{we should say something about {\tt use\_tfromp}, and {\tt do\_eos\_h\_above\_cutoff}}
   \begin{equation}
-  \frac{\partial (\rho h)}{\partial t}  = - \nablab \cdotb (\ubold \rho h)
+  \frac{\partial (\rho h)}{\partial t}  = - \nablab \cdotb (\Ub \rho h)
 + \frac{Dp_0}{Dt} + \nabla\cdot\kth\nabla T + \rho \Hnuc + \rho \Hext 
 \enskip , \label{eq:rhohupd} 
   \end{equation}
 Here we consider only the advection, neglecting the reaction terms and thermal diffusion terms,
 and solve a discretized version of
   \begin{equation}
-  \frac{\partial (\rho h)}{\partial t}  = - \nablab \cdotb (\ubold \rho h)
+  \frac{\partial (\rho h)}{\partial t}  = - \nablab \cdotb (\Ub \rho h)
 + \frac{Dp_0}{Dt} 
 \enskip , \label{eq:rhohupdadv} 
   \end{equation}
@@ -552,7 +552,7 @@ and solve a discretized version of
     for the conservative update of $(\rho h).$  Here we predict $(\rho
     h)'$ to the edges to obtain $(\rho h)^{'(1),\nph,\star}$, 
     using a second-order Taylor expansion in space
-    and time, as described in paper II, Appendix A, using $\V =
+    and time, as described in paper II, Appendix A, using $\Vb =
     \uadvone+w_0^{\nph,\star} \er$.  We do not include the reaction
     terms in the enthalpy prediction, since we accounted for them
     already in {\bf React State}.  We use the base state enthalpy,
@@ -766,7 +766,7 @@ $[\rho_0^{(2)}, (\rho h)_0^{(2)}, \rho_0^{\nph,{\rm pred}}, p_0^{n+1}].$
     the conservative update of $(\rho X_k)$.  Here we predict $\rho'$ 
     and $X_k$ to the edges to obtain $\rho^{'(1),\nph}$ and 
     $X_k^{(1),\nph}$ using a second-order Taylor expansion in
-    space and time, as described in paper II, Appendix A, using $\V =
+    space and time, as described in paper II, Appendix A, using $\Vb =
     \uadvtwo+w_0^{\nph} \er$.  We use the base
     state density, $\rho_0$, to convert this to an edge state for $\rho$,
 
@@ -822,7 +822,7 @@ $(\nabla\cdot\etarho\er)^{\nph}$, and a cell-centered $\psi_j^{\nph}$,
     the conservative update of $(\rho h)$. Here we predict $(\rho h)'$
     to the edges to obtain $(\rho h)^{'(1),\nph}$, 
     using a second-order Taylor expansion in space and
-    time, as described in paper II, Appendix A, using $\V =
+    time, as described in paper II, Appendix A, using $\Vb =
     \uadvtwo+w_0^{\nph} \er$.  Again, we do not include the reaction
     terms in the enthalpy prediction since we accounted for them
     already in {\bf React State}. We use the base state enthalpy,
@@ -924,10 +924,10 @@ and $T^{n+1}$ from step 9.
 \item[Step 11.] {\em Update the velocity}.  
 
 The velocity update happens analogously to paper II, using $S^{n+1}$ from step 10.
-We update the velocity field $\Ut^n$ to $\Ut^{n+1,\star}$ by discretizing
+We update the velocity field $\Ubt^n$ to $\Ubt^{n+1,\star}$ by discretizing
 \begin{equation}
-\frac{\partial\Ut}{\partial t} = - \Ut \cdotb \nablab \Ut - w_0 \frac{\partial \Ut}{\partial r}
-                                 - \left(\Ut \cdotb \er\right) \frac{\partial w_0}{\partial r} \er
+\frac{\partial\Ubt}{\partial t} = - \Ubt \cdotb \nablab \Ubt - w_0 \frac{\partial \Ubt}{\partial r}
+                                 - \left(\Ubt \cdotb \er\right) \frac{\partial w_0}{\partial r} \er
                                  - \frac{1}{\rho} \nablab\pi
                                  + \frac{1}{\rho_0} \frac{\partial \pizero}{\partial r} \er
                                  - \frac{(\rho-\rhozero)}{\rho} \; g \; \er  \label{eq:utildeupd}  \enskip\
@@ -935,8 +935,8 @@ We update the velocity field $\Ut^n$ to $\Ut^{n+1,\star}$ by discretizing
 \end{equation}
 (paper III; eq.~[37]) as 
 \begin{eqnarray}
-\Ut^{n+1,\star} &=& \Ut^n - \dt \;
- \left[\left(\uadvtwo+ w_0^{\nph} \er\right) \cdotb \nablab \Ut \right]^\nph
+\Ubt^{n+1,\star} &=& \Ubt^n - \dt \;
+ \left[\left(\uadvtwo+ w_0^{\nph} \er\right) \cdotb \nablab \Ubt \right]^\nph
       - \dt \; \left(\uadvtwo \cdotb \er\right)  \left(\frac{\partial w_0^{\nph}}{\partial r} \right) \er \nonumber \\
    &&   + \dt \left[ - \frac{1}{\rho^\nph} {\mathbf{G}} \pi^\nmh
         + \frac{1}{\rho_0} {\mathbf{G}} \pizerotwo
@@ -944,19 +944,19 @@ We update the velocity field $\Ut^n$ to $\Ut^{n+1,\star}$ by discretizing
 \end{eqnarray}
 where $\rho^\nph = ( \rho^n + \rho^{n+1} )/2$
 and $\mathbf{G}$ approximates a cell-centered gradient from nodal data. 
-The construction of $[(\uadvtwo+ w_0^{\nph} \er \cdotb \nablab) \Ut ]^\nph$
-is described in paper II, Appendix A, with $\V = \uadvtwo+w_0^{\nph} \er$ and~$s$ set to each
-component of $\Ut^n$ individually.
+The construction of $[(\uadvtwo+ w_0^{\nph} \er \cdotb \nablab) \Ubt ]^\nph$
+is described in paper II, Appendix A, with $\Vb = \uadvtwo+w_0^{\nph} \er$ and~$s$ set to each
+component of $\Ubt^n$ individually.
 
 Finally, we impose the divergence constraint from equation (\ref{eq:tildeconstraint}) 
 including the volume discrepancy correction,
 \begin{equation}
-\nablab \cdotb \left(\beta_0^{\nph} \Ut^{n+1} \right)  = \beta_0^{\nph} \left(S^{n+1} - \overline{S}^{n+1} \right)
+\nablab \cdotb \left(\beta_0^{\nph} \Ubt^{n+1} \right)  = \beta_0^{\nph} \left(S^{n+1} - \overline{S}^{n+1} \right)
 + \frac{f}{\gammabar^{n+1} p_0^{n+1}}
 \left[\frac{p(\rho,h,X_k)^{n+1} - \overline{p(\rho,h,X_k)^{n+1}}}{\Delta t^n}\right]
 \enskip,
 \end{equation}
-by defining ${\bf V} = \Ut^{n+1,\star} + ( \dt / \rho^\nph ) \; \mathbf{G} \pi^\nmh$ 
+by defining ${\bf V} = \Ubt^{n+1,\star} + ( \dt / \rho^\nph ) \; \mathbf{G} \pi^\nmh$ 
 and solving
 \begin{equation}
  L_\beta^\rho \phi =
@@ -985,7 +985,7 @@ We solve the linear system of equation
 
 We determine the new time velocity field from
 \begin{equation}
-\Ut^{n+1} = {\bf V} - \frac{1}{\rho^\nph} \mathbf{G} \phi \enskip ,
+\Ubt^{n+1} = {\bf V} - \frac{1}{\rho^\nph} \mathbf{G} \phi \enskip ,
 \end{equation}
 and the new time-centered perturbational pressure from
 \begin{equation}
@@ -999,7 +999,7 @@ and the new time-centered perturbational pressure from
 
 Compute $\dt$ for the next time step with the procedure described in \S~ref{sec:timesteps},
 using $w_0$ as computed in step 6 and
-$\Ut^{n+1}$ as computed in step 11.  We use this $\dt$ in the next time step. 
+$\Ubt^{n+1}$ as computed in step 11.  We use this $\dt$ in the next time step. 
 
 
 \end{description}
@@ -1039,11 +1039,11 @@ The details for both iterations are given below.\\
 \noindent {\bf Step 0.} {\em Initialization}
 
 Start with initial data $X_k^{\initp}, \rho^{\initp},$ $T^{\initp},$ an 
-initial base state, and an initial guess for the velocity, $\ubold^{\initp}.$
+initial base state, and an initial guess for the velocity, $\Ub^{\initp}.$
 Use the equation of state to determine $(\rho h)^{\initp}$.  Set
 $w_0^1 = 0$ as an initial approximation.  Compute $\beta_0^{\initp}$ as a function of 
-the initial data.  Then, project $\ubold^{\initp}$ using $\beta_0^{\initp}$ and 
-$S = \rho\Hext$, giving $\ubold^{0,1}$.  The next part of the initialization process 
+the initial data.  Then, project $\Ub^{\initp}$ using $\beta_0^{\initp}$ and 
+$S = \rho\Hext$, giving $\Ub^{0,1}$.  The next part of the initialization process 
 proceeds as follows.
 
 \begin{enumerate}
@@ -1053,7 +1053,7 @@ proceeds as follows.
 \item {\bf Do} {$\nu = 1,...,N_{\rm iters}^{S}$.}
   \begin{enumerate}
 
-  \item Estimate $\Delta t^\nu$ using $\ubold^{0,\nu}$ and $w_0^\nu.$
+  \item Estimate $\Delta t^\nu$ using $\Ub^{0,\nu}$ and $w_0^\nu.$
 
   \item {\bf React State}$[ \rho^{\initp},(\rho h)^{\initp}, X_k^{\initp}, T^{\initp}, (\rho^{\initp} \Hext) ] \rightarrow [\rho^{\outp}, (\rho h)^{\outp}, X_k^{\outp}, T^{\outp}, (\rho \omegadot_k)^{0,\nu} ].$
 
@@ -1065,16 +1065,16 @@ proceeds as follows.
   \item Compute $w_0^{\nu+1}$ as in step 1c using $\overline{S}^{0,\nu}$ and $\psi^{\nmh} = 0$.
         
 
-  \item Project $\ubold^{0,\nu}$ using $\beta_0^{\initp}$ and 
+  \item Project $\Ub^{0,\nu}$ using $\beta_0^{\initp}$ and 
         $(S^{0,\nu} - \overline{S}^{0,\nu})$ as the source term.  
-        This yields $\ubold^{0,\nu+1}.$
+        This yields $\Ub^{0,\nu+1}.$
 
   \end{enumerate}
 
   {\bf End do.}
 
   Define $S^0 = S^{0,N_{\rm iters}^S}$, $w_0^{-\myhalf} = w_0^{N_{\rm iters}^S+1}$, 
-$\dt^0 = \Delta t^{N_{\rm iters}^S},$ and $\ubold^0 = \ubold^{0,N_{\rm iters}^S+1}.$
+$\dt^0 = \Delta t^{N_{\rm iters}^S},$ and $\Ub^0 = \Ub^{0,N_{\rm iters}^S+1}.$
 
 \end{enumerate}
 
@@ -1093,7 +1093,7 @@ $\etarho^{-\half} = 0$, $\psi^{-\half} = 0$, and $\pi^{-\half} = 0.$
   \item Perform steps 1--11 as described above, using 
     $S^{\half,\star} = (S^0 + S^{1,\nu})/2$ in step 1 as described.
     The only other difference in the time advancement is that in step 11
-    we define ${\bf V} = (\Ut^{1,\star} - \Ut^0)$ and solve
+    we define ${\bf V} = (\Ubt^{1,\star} - \Ubt^0)$ and solve
     \begin{equation}  L_\beta^\rho \phi =
       D \left ( \beta_0^{\half} {\bf V} \right) - \beta_0^{\half} \left[ (S^{1}-\overline{S}^{1}) - (S^{0}-\overline{S}^{0}) \right] \enskip . 
     \end{equation}
