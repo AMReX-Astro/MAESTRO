@@ -99,7 +99,7 @@ were already accounted for in {\tt react\_state}
 \frac{\partial(\rho h)}{\partial t} = -\Ub\cdot\nabla(\rho h) - \rho h\nabla\cdot\Ub 
 + \psi + (\Ubt \dot \er) \frac{\partial p_0}{\partial r} + \nabla\cdot\kth\nabla T. \label{rhoh equation}
 \end{equation}
-We arbitrarily define a base state enthalpy evolution equation
+We define the base state enthalpy evolution equation as
 \MarginPar{Does $\psi$ need to be included in the force?  I have
 written it in the base state equation for now, even though neither the
 base state or perturbational edge state prediction in the code uses
@@ -124,17 +124,19 @@ the perturbational enthalpy equation
 \end{eqnarray}
 
 \subsubsection{Advancing $(\rho h)_0$}
-{\bf Using full\_rhoh0\_evolution = F:}  Define 
-$(\rho h)_0^{(1)} = \overline{(\rho h)^{(1)}}$  
+\begin{itemize}
+\item {\bf Using full\_rhoh0\_evolution = F:}\\
+ Define $(\rho h)_0^{(1)} = \overline{(\rho h)^{(1)}}$  
 and $(\rho h)' = (\rho h)^{(1)}-(\rho h)_0^{(1)}$.  Then, $(\rho h)_0^{(1)} \rightarrow$ 
-{\tt advect\_base} $\rightarrow (\rho h)_0^{(2)}$.\\ \\
-{\bf Using full\_rhoh0\_evolution = T:}
+{\tt advect\_base} $\rightarrow (\rho h)_0^{(2)}$.
+\item {\bf Using full\_rhoh0\_evolution = T:}\\
  Instead of defining $(\rho h)_0^{(1)} = \overline{(\rho h)^{(1)}}$, the code carries 
-through the complete evolution of $(\rho h)_0$ using $(\rho h)_0^n \rightarrow$ {\tt react\_base}
-$\rightarrow (\rho h)_0^{(1)} \rightarrow$ {\tt advect\_base}
+through the complete evolution of $(\rho h)_0$ using $(\rho h)_0^n \rightarrow$ 
+{\tt react\_base} $\rightarrow (\rho h)_0^{(1)} \rightarrow$ {\tt advect\_base}
 $\rightarrow (\rho h)_0^{(2)} \rightarrow$ {\tt react\_base} $\rightarrow (\rho h)_0^{n+1}$.  
 There is no {\tt correct\_base} function for $(\rho h)_0$ written yet, nor is any 
 adjustment made to sync up $(\rho h)_0$ after the thermal diffusion step.
+\end{itemize}
 
 \subsubsection{Predicting $(\rho h)'$ at edges}\label{Predicting rhohprime at edges}
 We predict $(\rho h)'$ to edges using {\tt make\_edge\_scal} in {\tt
@@ -155,21 +157,14 @@ We use an analogous procedure described in Section \ref{Computing rho
 at edges} to compute $\rho h$ at edges.
 
 \subsubsection{Advancing $\rho h$}
-{\bf What the did before 8/6/08:}
-\begin{equation}
-\frac{\partial(\rho h)}{\partial t} = -\nabla\cdot\left[(\rho h)'\left(\Ubt 
-+ w_0\eb_r\right)\right] - \nabla\cdot\left[(\rho h)_0^{n+\half,{\rm avg}}\Ubt\right] 
-\underbrace{- \nabla\cdot\left[(\rho h)_0^{n+\half,{\rm pred}}w_0\eb_r\right] + \psi}_{\text{this term used to come in through} ~ (\rho h)_0^{n+1} - (\rho h)_0^n} + (\Ubt \cdot \er)\frac{\partial p_0}{\partial r} \enskip .
-\end{equation}
-{\bf What the code does now:} We would like to update the non-forcing
-part of the enthalpy equation analogously to Section \ref{Advancing
-rhoX_k}
+We update the enthalpy analogously to the species update in 
+Section \ref{Advancing rhoX_k}.  The only difference is that we also 
+have a forcing term
 \begin{equation}
 \frac{\partial(\rho h)}{\partial t} = -\nabla\cdot(\rho h\Ub) = 
 -\nabla\cdot\left\{\left[(\rho h)_0^{n+\half,{\rm avg}} 
 + (\rho h)'\right]\left(\Ubt + w_0\eb_r\right)\right\} + (\Ubt \cdot \er)\frac{\partial p_0}{\partial r} + \psi  \enskip .
 \end{equation}
-
 
 \subsection{Predicting $h$ ({\tt enthalpy\_pred\_type = 2})}
 
