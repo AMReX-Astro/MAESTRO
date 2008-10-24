@@ -78,14 +78,14 @@ The full enthalpy equation is
 \frac{\partial(\rho h)}{\partial t} &=& -\nabla\cdot(\rho h \Ub) + \frac{Dp_0}{Dt} 
 + \nabla\cdot \kth \nabla T + \rho H_{\rm nuc} + \rho H_{\rm ext} \nonumber \\
 &=& \underbrace{-\Ub\cdot\nabla(\rho h) - \rho h\nabla\cdot\Ub}_{-\nabla\cdot(\rho h\Ub)} 
-+ \underbrace{\psi + (\ut \cdot \er) \frac{\partial p_0}{\partial r}}_{\frac{Dp_0}{Dt}} 
++ \underbrace{\psi + (\Ubt \cdot \er) \frac{\partial p_0}{\partial r}}_{\frac{Dp_0}{Dt}} 
 + \nabla\cdot\kth\nabla T + \rho H_{\rm nuc} + \rho H_{\rm ext}.
 \end{eqnarray}
 The full temperature equation is
 \begin{equation}
 \frac{\partial T}{\partial t} = -\Ub\cdot\nabla T
 + \frac{1}{\rho c_p}\left\{(1-\rho h_p)\left[\psi
-+ (\ut \cdot \er )\frac{\partial p_0}{\partial r}\right] - \sum_k\rho\xi_k\dot\omega_k 
++ (\Ubt \cdot \er )\frac{\partial p_0}{\partial r}\right] - \sum_k\rho\xi_k\dot\omega_k 
 + \rho H_{\rm nuc} + \rho H_{\rm ext}\right\}.
 \end{equation}
 
@@ -97,7 +97,7 @@ not include the $\rho H_{\rm nuc}$ and $\rho H_{\rm ext}$ terms, where
 were already accounted for in {\tt react\_state}
 \begin{equation}
 \frac{\partial(\rho h)}{\partial t} = -\Ub\cdot\nabla(\rho h) - \rho h\nabla\cdot\Ub 
-+ \psi + (\ut \dot \er) \frac{\partial p_0}{\partial r} + \nabla\cdot\kth\nabla T. \label{rhoh equation}
++ \psi + (\Ubt \dot \er) \frac{\partial p_0}{\partial r} + \nabla\cdot\kth\nabla T. \label{rhoh equation}
 \end{equation}
 We arbitrarily define a base state enthalpy evolution equation
 \MarginPar{Does $\psi$ need to be included in the force?  I have
@@ -116,10 +116,10 @@ Subtracting (\ref{rhoh0 equation}) from (\ref{rhoh equation}) and rearranging te
 the perturbational enthalpy equation
 \begin{eqnarray}
 \frac{\partial(\rho h)'}{\partial t} &=& -\nabla\cdot[(\rho h)'\Ub] 
-- \nabla\cdot[(\rho h)_0\Ubt] + (\ut \cdot \er)\frac{\partial p_0}{\partial r} 
+- \nabla\cdot[(\rho h)_0\Ubt] + (\Ubt \cdot \er)\frac{\partial p_0}{\partial r} 
 + \nabla\cdot\kth\nabla T\nonumber \\
 &=& -\Ub\cdot\nabla(\rho h)' \underbrace{- (\rho h)'\nabla\cdot\Ub 
-- \nabla\cdot[(\rho h)_0\Ubt] + (\ut \cdot \er)\frac{\partial p_0}{\partial r}
+- \nabla\cdot[(\rho h)_0\Ubt] + (\Ubt \cdot \er)\frac{\partial p_0}{\partial r}
 + \nabla\cdot\kth\nabla T}_{"(\rho h)' ~ \text{force}"}. \label{rhohprime equation}
 \end{eqnarray}
 
