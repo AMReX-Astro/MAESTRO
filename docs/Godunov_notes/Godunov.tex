@@ -1,0 +1,730 @@
+\section{Godunov advection}
+
+These are working notes for the Godunov step in {\tt MAESTRO} and {\tt
+  VARDEN}.
+
+%-----------------------------------------------------------------------------
+% note differences
+%-----------------------------------------------------------------------------
+\subsection{Differences Between These Notes and the Code}
+\begin{enumerate}
+\item Concerning equations (\ref{Radial utrans_L}), (\ref{Radial
+  utrans_R}), (\ref{1D wt_L extrap}) and (\ref{1D wt_R extrap}), in
+  the code we are omitting the term in equation (\ref{Perturbational
+    Velocity Equation}) proportional to $(\Ubt\cdot\eb_r)$.
+\item Concerning (\ref{Force Term}), in the code we are not including
+  the term proportional to $\partial\pi_0/\partial r$ in the
+  edge-state prediction.  However, this term is present in the
+  cell-update.
+\end{enumerate}
+
+%-----------------------------------------------------------------------------
+% questions
+%-----------------------------------------------------------------------------
+\subsection{Questions}
+\begin{enumerate}
+\item Concerning equations (\ref{Radial utrans_L}), (\ref{Radial
+  utrans_R}), (\ref{1D wt_L extrap}) and (\ref{1D wt_R extrap}), do we
+  really need to include the term proportional to $(\Ubt\cdot\eb_r)$?
+\item Concerning (\ref{Force Term}), do we really need to include the
+  term proportional to $\partial\pi_0/\partial r$ in the edge-state
+  prediction?
+\item Do we want to do characteristic tracing to compute
+  $\Ubt^{\trans}$, analgous to how {\tt VARDEN} uses characteristic
+  tracing to compute $\Ub^{\mac}$?
+\item When we compute $\Ubt^{\edge}$, do we want to replace all
+  instances of ``trans'' velocities with ``MAC'' velocities?  Doing
+  this is simply a matter of replacing the call to {\tt
+    make\_edge\_state} with {\tt make\_edge\_scal}.
+\item NOTE: The {\tt probin} parameter ``use\_new\_godunov'' enables all four of these features.
+\end{enumerate}
+
+%-----------------------------------------------------------------------------
+% differences between Maestro and Varden
+%-----------------------------------------------------------------------------
+\subsection{Differences Between {\tt MAESTRO} and {\tt VARDEN}}
+\begin{enumerate}
+\item {\tt VARDEN} does not use the concept of $w_0$, so $\Ubt$ does
+  not exist.
+\item {\tt VARDEN} only does Cartesian problems.
+\item {\tt VARDEN} does not use the concept of $\Ub^{\trans}$ in the
+  computation of $\Ub^{\mac}$, so therefore the function {\tt velpred}
+  computes $\Ub^{\mac,*}$ directly.
+\item {\tt VARDEN} uses characteristic tracing in the Taylor series
+  extrapolation for $\Ub^{\mac,*}$, whereas {\tt MAESTRO} does not.
+\item {\tt VARDEN} uses an ``FPU'' type algorithm to get both
+  $\Ub^{\edge}$ and $s^{\edge}$, whereas {\tt MAESTRO} uses the
+  ``FPU'' algorithm for $s^{\edge}$, and a ``non-FPU'' algorithm for
+  $\Ub^{\edge}$
+\item {\tt VARDEN} treats $\rho$ in a conservative manner, whereas
+  {\tt MAESTRO} treats $\rho'$ in a non-conservative manner.
+  Therefore, {\tt MAESTRO} accounts for this difference by modifying
+  the forcing term in {\tt modify\_scal\_force}
+\item {\tt MAESTRO} does not corner couple for 3D problems.
+\end{enumerate}
+
+\cleardoublepage
+
+%-----------------------------------------------------------------------------
+% utrans
+%-----------------------------------------------------------------------------
+\subsection{Computing $\Ubt^{\trans}$ in {\tt MAESTRO}}
+In {\tt advance\_premac}, we call the function {\tt mkutrans}, which
+computes the edge-centered transverse velocities, $\Ubt^{\trans}$.
+These transverse velocities do not contain $w_0$, so immediately
+following the call to {\tt mkutrans}, we call {\tt addw0} to compute
+$\Ub^{\trans}$ from $\Ubt^{\trans}$.  We will only compute the normal
+component of velocity at each face.\\
+
+The evolution equation for the perturbational velocity is:
+\begin{equation}
+\frac{\partial\Ubt}{\partial t} = -\Ubt\cdot\nabla\Ubt - w_0\frac{\partial\Ubt}{\partial r} - (\Ubt\cdot\eb_r)\frac{\partial w_0}{\partial r}\eb_r - \frac{1}{\rho}\nabla\pi + \frac{1}{\rho_0}\frac{\partial\pi_0}{\partial r}\eb_r - \frac{(\rho-\rho_0)}{\rho}g\eb_r.\label{Perturbational Velocity Equation}
+\end{equation}
+We are going to use a 1D Taylor series extrapolation in space and time
+to compute time-centered normal components of $\Ubt^{\trans}$ at
+face-centers.  By 1D, we mean that we omit any spatial derivatives
+that are not in the direction of the extrapolation.  We first compute
+``left/right'' states, and then use a Riemann solver to pick the final
+state.
+
+\subsubsection{2D Cartesian Case}
+For the rest of this paper, for 2D Cartesian problems, $\Ub = (u,w)$
+and $\Ubt = (u,\wt)$.  We will use the shorthand $\ib = (x,r)$.\\
+
+For the x-faces, the 1D extrapolation of $u$ is:
+\begin{eqnarray}
+u_{L,\ib-\half\eb_x}^{\trans} &=& u_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\eb_x}^n\right)\Delta_x u_{\ib-\eb_x}^n, \\
+u_{R,\ib-\half\eb_x}^{\trans} &=& u_{\ib}^n - \left(\half + \frac{\dt}{2h}u_{\ib}^n\right)\Delta_x u_{\ib}^n.
+\end{eqnarray}
+We pick the final edge states using a Riemann solver:
+\begin{equation}
+u^{\trans}_{\ib-\half\eb_x} =
+\begin{cases}
+0, & \left(u_{L,\ib-\half\eb_x}^{\trans} \le 0 ~~ {\rm AND} ~~ u_{R,\ib-\half\eb_x}^{\trans} \ge 0\right) ~~ {\rm OR} ~~ \left|u_{L,\ib-\half\eb_x}^{\trans} + u_{R,\ib-\half\eb_x}^{\trans}\right| < \epsilon, \\
+u_{L,\ib-\half\eb_x}^{\trans}, & u_{L,\ib-\half\eb_x}^{\trans} + u_{R,\ib-\half\eb_x}^{\trans} > 0, \\
+u_{R,\ib-\half\eb_x}^{\trans}, & u_{L,\ib-\half\eb_x}^{\trans} + u_{R,\ib-\half\eb_x}^{\trans} < 0, \\
+\end{cases}
+\end{equation}
+For the r-faces, we choose include the radial derivative terms
+proportional to $w_0$ and $(\Ubt\cdot\eb_r) = \wt$.  The term
+proportional to $w_0$ is included by using $w$ rather than $\wt$ as
+the advection speed.  The term proportional to $\wt$ is an additional
+term.  For the r-faces, the 1D extrapolation of $\wt$ is:
+\begin{eqnarray}
+\wt_{L,\ib-\half\eb_r}^{\trans} &=& \wt_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\eb_r}^n\right)\Delta_r \wt_{\ib-\eb_r}^n - \frac{\dt}{2}\wt_{\ib-\eb_r}^n\left(\frac{\partial w_0}{\partial r}\right)_{\ib-\eb_r},\label{Radial utrans_L} \\
+\wt_{R,\ib-\half\eb_r}^{\trans} &=& \wt_{\ib}^n - \left(\half + \frac{\dt}{2h}w_{\ib}^n\right)\Delta_r \wt_{\ib}^n - \frac{\dt}{2}\wt_{\ib}^n\left(\frac{\partial w_0}{\partial r}\right)_{\ib}.\label{Radial utrans_R}
+\end{eqnarray}
+The total radial velocity is defined as:
+\begin{equation}
+w_{\ib}^n = \wt_{\ib}^n + \frac{w_{0,r+\half}+w_{0,r-\half}}{2}.\label{Total Radial Velocity}
+\end{equation}
+The spatial derivatives of $w_0$ are given by the two-point centered
+difference:
+\begin{equation}
+\left(\frac{\partial w_0}{\partial r}\right)_{\ib} = \frac{w_{0,r+\half}-w_{0,r-\half}}{h}.\label{Radial Derivative of w_0}
+\end{equation}
+We pick the final edge states using:
+\begin{equation}
+\wt^{\trans}_{\ib-\half\eb_r} =
+\begin{cases}
+0, & \left(w_L^{\trans} \le 0 ~~ {\rm AND} ~~ w_R^{\trans} \ge 0\right) ~~ {\rm OR} ~~ \left|w_L^{\trans} + w_R^{\trans}\right| < \epsilon, \\
+\wt_{L,\ib-\half\eb_r}^{\trans}, & w_L^{\trans} + w_R^{\trans} > 0, \\
+\wt_{R,\ib-\half\eb_r}^{\trans}, & w_L^{\trans} + w_R^{\trans} < 0, \\
+\end{cases}
+\end{equation}
+where $w_L^{\trans} = \wt_{L,\ib-\half\eb_r}^{\trans} + w_{0,r-\half}$
+and $w_R^{\trans} = \wt_{R,\ib-\half\eb_r}^{\trans} + w_{0,r-\half}$.
+Finally, we call {\tt addw0} to compute $w^{\trans}$ from
+$\wt^{\trans}$.
+
+\subsubsection{3D Cartesian Case}
+For the rest of this paper, for 3D Cartesian problems, $\Ub = (u,v,w)$
+and $\Ubt = (u,v,\wt)$.  We will use the shorthand $\ib = (x,y,r)$.\\
+
+The only difference between the 2D and 3D Cartesian cases is that we
+must also compute $v^{\trans}$.  The procedure is analogous to
+computing $u^{\trans}$.  For y-faces, the 1D extrapolation of $v$ is:
+\begin{eqnarray}
+v_{L,\ib-\half\eb_y}^{\trans} &=& v_{\ib-\eb_y}^n + \left(\half - \frac{\dt}{2h}v_{\ib-\eb_y}^n\right)\Delta_y v_{\ib-\eb_y}^n, \\
+v_{R,\ib-\half\eb_y}^{\trans} &=& v_{\ib}^n - \left(\half + \frac{\dt}{2h}v_{\ib}^n\right)\Delta_y v_{\ib}^n,
+\end{eqnarray}
+\begin{equation}
+v^{\trans}_{\ib-\half\eb_y} =
+\begin{cases}
+0, & \left(v_{L,\ib-\half\eb_y}^{\trans} \le 0 ~~ {\rm AND} ~~ v_{R,\ib-\half\eb_y}^{\trans} \ge 0\right) ~~ {\rm OR} ~~ \left|v_{L,\ib-\half\eb_y}^{\trans} + v_{R,\ib-\half\eb_y}^{\trans}\right| < \epsilon, \\
+v_{L,\ib-\half\eb_y}^{\trans}, & v_{L,\ib-\half\eb_y}^{\trans} + v_{R,\ib-\half\eb_y}^{\trans} > 0, \\
+v_{R,\ib-\half\eb_y}^{\trans}, & v_{L,\ib-\half\eb_y}^{\trans} + v_{R,\ib-\half\eb_y}^{\trans} < 0. \\
+\end{cases}
+\end{equation}
+
+\subsubsection{3D Spherical Case}
+For the rest of this paper, for 3D spherical problems, $\Ub = (u,v,w)$
+and $\Ubt = (\ut,\vt,\wt)$.  We will use the shorthand $\ib =
+(x,y,z)$.\\
+
+We first construct $\Ub$ by mapping $w_0$ onto a Cartesian array and
+adding it to $\Ubt$.  This is a spherical generalization of equation
+(\ref{Total Radial Velocity}).  We also map $\partial w_0/\partial r$
+onto a Cartesian array.  This is a spherical generalization of
+equation (\ref{Radial Derivative of w_0}).  Then we use a 1D
+extrapolation analogous to equations equations (\ref{Radial utrans_L})
+and (\ref{Radial utrans_R}).  For example, for x-faces:
+\begin{eqnarray}
+\ut_L^{\trans} &=& \ut_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\eb_x}^n\right)\Delta_x\ut_{\ib-\eb_x}^n - \frac{\dt}{2}\left[(\Ubt^n\cdot\eb_r)\left(\frac{\partial w_0}{\partial r}\right)(\eb_r\cdot\eb_x)\right]_{\ib-\eb_x}, \\
+\ut_R^{\trans} &=& \ut_{\ib}^n - \left(\half + \frac{\dt}{2h}u_{\ib}^n\right)\Delta_x\ut_{\ib}^n - \frac{\dt}{2}\left[(\Ubt^n\cdot\eb_r)\left(\frac{\partial w_0}{\partial r}\right)(\eb_r\cdot\eb_x)\right]_{\ib}.
+\end{eqnarray}
+Then, we use the same Riemann solver as the Cartesian case to obtain
+$\ut^{\trans}$.  To compute $\vt^{\trans}$ (or $\wt^{\trans}$), simply
+replace all instaces of $\ut$ with $\vt$ (or $\wt$) and all instaces
+of $x$ with $y$ (or $z$).  Finally, we call {\tt addw0} to compute
+$\Ub^{\trans}$ from $\Ubt^{\trans}$.
+
+\cleardoublepage
+
+%-----------------------------------------------------------------------------
+% Umac
+%-----------------------------------------------------------------------------
+\subsection{Computing $\Ubt^{\mac,*}$ in {\tt MAESTRO}}
+In {\tt advance\_premac}, we call {\tt make\_edge\_state} to compute
+$\Ubt^{\mac,*}$.  We will only compute the normal component of
+velocity at each face.\\
+
+The force terms are:
+\begin{equation}
+\fb =
+\left(\begin{array}{c}
+f_u \\
+f_w \\
+\end{array}\right)
+= \frac{1}{\rho}\nabla\pi + \frac{1}{\rho_0}\frac{\partial\pi_0}{\partial r}\eb_r - \frac{(\rho-\rho_0)}{\rho}g\eb_r.\label{Force Term}
+\end{equation}
+
+\subsubsection{2D Cartesian Case}
+We begin by computing a time-centered 1D extrapolation of $u$ to
+r-faces:
+\begin{eqnarray}
+u_{L,\ib-\half\eb_r}^{1D} &=& u_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\eb_r}^n\right)\Delta_r u_{\ib-\eb_r}^n, \\
+u_{R,\ib-\half\eb_r}^{1D} &=& u_{\ib} - \left(\half + \frac{\dt}{2h}w_{\ib}^n\right)\Delta_r u_{\ib}^n.
+\end{eqnarray}
+Then we upwind based on $w^{\trans}$:
+\begin{equation}
+u_{\ib-\half\eb_r}^{1D} =
+\begin{cases}
+\half\left(u_{L,\ib-\half\eb_r}^{1D} + u_{R,\ib-\half\eb_r}^{1D}\right), & \left|w^{\trans}_{\ib-\half\eb_r}\right| < \epsilon \\
+u_{L,\ib-\half\eb_r}^{1D}, & w^{\trans}_{\ib-\half\eb_r} > 0, \\
+u_{R,\ib-\half\eb_r}^{1D}, & w^{\trans}_{\ib-\half\eb_r} < 0. \\
+\end{cases}
+\end{equation}
+Then, we do a full-dimensional extrapolation of $u$ to x-faces:
+\begin{eqnarray}
+u_{L,\ib-\half\eb_x}^{\mac,*} = u_{\ib-\eb_x}^n &+& \left(\half - \frac{\dt}{2h}u_{\ib-\eb_x}\right)\Delta_x u_{\ib-\eb_x}^n \nonumber \\
+&-& \frac{\dt}{4h}\left(w_{\ib-\eb_x+\half\eb_r}^{\trans}+w_{\ib-\eb_x-\half\eb_r}^{\trans}\right)\left(u_{\ib-\eb_x+\half\eb_r}^{1D} - u_{\ib-\eb_x-\half\eb_r}^{1D}\right) + \frac{\dt}{2}f_{u,\ib-\eb_x}, \\
+u_{R,\ib-\half\eb_x}^{\mac,*} = u_{\ib}^n &-& \left(\half + \frac{\dt}{2h}u_{\ib}\right)\Delta_x u_{\ib}^n \nonumber \\
+&-& \frac{\dt}{4h}\left(w_{\ib+\half\eb_r}^{\trans}+w_{\ib-\half\eb_r}^{\trans}\right)\left(u_{\ib+\half\eb_r}^{1D} - u_{\ib-\half\eb_r}^{1D}\right) + \frac{\dt}{2}f_{u,\ib}.
+\end{eqnarray}
+Finally, we solve a Riemann problem:
+\begin{equation}
+u_{\ib-\half\eb_x}^{\mac,*} =
+\begin{cases}
+0, & \left(u_{L,\ib-\half\eb_x}^{\mac,*} \le 0 ~~ {\rm AND} ~~ u_{R,\ib-\half\eb_x}^{\mac,*} \ge 0\right) ~~ {\rm OR} ~~ \left|u_{L,\ib-\half\eb_x}^{\mac,*} + u_{R,\ib-\half\eb_x}^{\mac,*}\right| < \epsilon, \\
+u_{L,\ib-\half\eb_x}^{\mac,*}, & u_{L,\ib-\half\eb_x}^{\mac,*} + u_{R,\ib-\half\eb_x}^{\mac,*} > 0, \\
+u_{R,\ib-\half\eb_x}^{\mac,*}, & u_{L,\ib-\half\eb_x}^{\mac,*} + u_{R,\ib-\half\eb_x}^{\mac,*} < 0. 
+\end{cases}
+\end{equation}
+
+To compute $\wt^{\mac,*}$, we use an analogous procedure for computing
+$u^{\mac,*}$, except that we need to incorporate the terms in equation
+(\ref{Perturbational Velocity Equation}) proportional to $w_0$ and
+$\partial w_0/\partial r$ into the full-dimensional extrapolation.  We
+compute a time-centered 1D extrapolation of $\wt$ to x-faces:
+\begin{eqnarray}
+\wt_{L,\ib-\half\eb_x}^{1D} &=& \wt_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\eb_x}^n\right)\Delta_x \wt_{\ib-\eb_x}^n, \\
+\wt_{R,\ib-\half\eb_x}^{1D} &=& \wt_{\ib} - \left(\half + \frac{\dt}{2h}u_{\ib}^n\right)\Delta_x \wt_{\ib}^n.
+\end{eqnarray}
+Then we upwind based on $u^{\trans}$:
+\begin{equation}
+\wt_{\ib-\half\eb_x}^{1D} =
+\begin{cases}
+\half\left(\wt_{L,\ib-\half\eb_x}^{1D} + \wt_{R,\ib-\half\eb_x}^{1D}\right), & \left|u^{\trans}_{\ib-\half\eb_x}\right| < \epsilon \\
+\wt_{L,\ib-\half\eb_x}^{1D}, & u^{\trans}_{\ib-\half\eb_x} > 0, \\
+\wt_{R,\ib-\half\eb_x}^{1D}, & u^{\trans}_{\ib-\half\eb_x} < 0. \\
+\end{cases}
+\end{equation}
+Then, we do a full-dimensional extrapolation of $\wt$ to r-faces,
+incorporating the extra term proportional to $w_0$ by using $w$
+instead of $\wt$ as the advection velocity and the extra term
+proportional to $\partial w_0/\partial r$ as a separate term:
+\begin{eqnarray}
+\wt_{L,\ib-\half\eb_r}^{\mac,*} = \wt_{\ib-\eb_r}^n &+& \left(\half - \frac{\dt}{2h}w_{\ib-\eb_r}\right)\Delta_r \wt_{\ib-\eb_r}^n \nonumber \\
+&-& \frac{\dt}{4h}\left(u_{\ib+\half\eb_x-\eb_r}^{\trans}+u_{\ib-\half\eb_x-\eb_r}^{\trans}\right)\left(\wt_{\ib+\half\eb_x-\eb_r}^{1D} - \wt_{\ib-\half\eb_x-\eb_r}^{1D}\right) \nonumber \\
+&-& \frac{\dt}{4h}\left(\wt_{\ib-\half\eb_r}^{\trans}+\wt_{\ib-\frac{3}{2}\eb_r}^{\trans}\right)(w_{0,\ib-\half\eb_r} - w_{0,\ib-\frac{3}{2}\eb_r}) + \frac{\dt}{2}f_{w,\ib-\eb_r},\label{wt_L Extrapolation} \\
+\wt_{R,\ib-\half\eb_r}^{\mac,*} = \wt_{\ib}^n &-& \left(\half + \frac{\dt}{2h}w_{\ib}\right)\Delta_r \wt_{\ib}^n \nonumber \\
+&-& \frac{\dt}{4h}\left(u_{\ib+\half\eb_x}^{\trans}+u_{\ib-\half\eb_x}^{\trans}\right)\left(\wt_{\ib+\half\eb_x}^{1D} - \wt_{\ib-\half\eb_x}^{1D}\right) \nonumber \\
+&-& \frac{\dt}{4h}\left(\wt_{\ib+\half\eb_r}^{\trans}+\wt_{\ib-\half\eb_r}^{\trans}\right)(w_{0,\ib+\half\eb_r} - w_{0,\ib-\half\eb_r}) + \frac{\dt}{2}f_{w,\ib}.\label{wt_R Extrapolation}
+\end{eqnarray}
+Next, we solve a Riemann problem:
+\begin{equation}
+\wt_{\ib-\half\eb_r}^{\mac,*} =
+\begin{cases}
+0, & \left(w_L^{\mac,*} \le 0 ~~ {\rm AND} ~~ w_R^{\mac,*} \ge 0\right) ~~ {\rm OR} ~~ \left|w_L^{\mac,*} + w_R^{\mac,*}\right| < \epsilon, \\
+\wt_{L,\ib-\half\eb_r}^{\mac,*}, & w_L^{\mac,*} + w_R^{\mac,*} > 0, \\
+\wt_{R,\ib-\half\eb_r}^{\mac,*}, & w_L^{\mac,*} + w_R^{\mac,*} < 0. 
+\end{cases}
+\end{equation}
+We then project $\Ubt^{\mac,*}$ to obtain $\Ubt^{\mac}$ and we call
+{\tt addw0} to compute $\Ub^{\mac}$ from $\Ubt^{\mac}$.
+%\subsection{3D Cartesian Case}
+%\subsection{3D Spherical Case}
+
+\cleardoublepage
+
+%-----------------------------------------------------------------------------
+% edge states
+%-----------------------------------------------------------------------------
+\subsection{Computing $\rho^{'\edge}, X_k^{\edge}$, and $(\rho h)^{'\edge}/h^{\edge}/T^{\edge}$ in {\tt MAESTRO}}
+In {\tt scalar\_advance}, we call {\tt make\_edge\_scal} to compute
+$\rho^{'\edge}, X_k^{\edge}$, and $(\rho
+h)^{'\edge}/h^{\edge}/T^{\edge}$ at each edge.  The procedure is the
+same for each scalar, so we shall simply denote the scalar as $s$.  We
+always need to compute $\rho'$ and $X_k$ to edges, and the choice of
+energy prediction is as follows:
+\begin{itemize}
+\item For {\tt enthalpy\_pred\_type} = 1, we predict $(\rho h)'$ to edges.
+\item For {\tt enthalpy\_pred\_type} = 2, we predict $h$ to edges.
+\item For {\tt enthalpy\_pred\_type} = 3 and 4, we predict $T$ to edges.
+\end{itemize}
+The force terms are (noting reaction terms are excluded since they are
+handled in {\tt react\_base}):
+\begin{eqnarray}
+f_{\rho'} &=& -\rho'\nabla\cdot\Ub^{\mac} - \nabla\cdot(\rho_0\Ubt^{\mac}), \\
+f_{X_k} &=& 0, \\
+f_{(\rho h)'} &=& (\Ubt\cdot\eb_r)\frac{\partial p_0}{\partial r} -(\rho h)'\nabla\cdot\Ub^{\mac} - \nabla\cdot\left[(\rho h)_0\Ubt^{\mac}\right] + \nabla\cdot\kth\nabla T \\
+f_h &=& \frac{1}{\rho}\left(\psi + (\Ubt\cdot\eb_r)\frac{\partial p_0}{\partial r} + \nabla\cdot\kth\nabla T \right), \\
+f_T &=& \frac{1}{\rho c_p}\left\{(1-\rho h_p)\left[\psi + (\Ubt\cdot\eb_r)\frac{\partial p_0}{\partial r}\right] + \nabla\cdot\kth\nabla T \right\}.
+\end{eqnarray}
+If {\tt enthalpy\_pred\_type} = 3 or 4, we convert
+$T^{\edge}\rightarrow h^{\edge}$ using $h^{\edge} =
+h^{\edge}(\rho^{\edge},T^{\edge},X_k^{\edge})$, where $\rho^{\edge} =
+\rho^{'\edge} + \rho_0$.  Furthermore, if {\tt enthalpy\_pred\_type} =
+3, we compute $(\rho h)^{'\edge} = (\rho h)^{\edge} - (\rho h)_0$.
+See the ``pert\_notes'' in {\tt MAESTRO/docs}.
+
+\subsubsection{2D Cartesian Case}
+We begin by computing a time-centered 1D extrapolation of $s$ to all
+faces.  The extrapolation of $s$ to x-faces is:
+\begin{eqnarray}
+s_{L,\ib-\half\eb_x}^{1D} &=& s_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x s_{\ib-\eb_x}^n, \\
+s_{R,\ib-\half\eb_x}^{1D} &=& s_{\ib} - \left(\half + \frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x s_{\ib}^n.
+\end{eqnarray}
+Then we upwind based on $u^{\mac}$:
+\begin{equation}
+s_{\ib-\half\eb_x}^{1D} =
+\begin{cases}
+\half\left(s_{L,\ib-\half\eb_x}^{1D} + s_{R,\ib-\half\eb_x}^{1D}\right), & \left|u^{\mac}_{\ib-\half\eb_x}\right| < \epsilon \\
+s_{L,\ib-\half\eb_x}^{1D}, & u^{\mac}_{\ib-\half\eb_x} > 0, \\
+s_{R,\ib-\half\eb_x}^{1D}, & u^{\mac}_{\ib-\half\eb_x} < 0. \\
+\end{cases}
+\end{equation}
+The extrapolation of $s$ to r-faces is analogous to the extrapolation
+to x-faces:
+\begin{eqnarray}
+s_{L,\ib-\half\eb_r}^{1D} &=& s_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\half\eb_r}^{\mac}\right)\Delta_r s_{\ib-\eb_r}^n, \\
+s_{R,\ib-\half\eb_r}^{1D} &=& s_{\ib} - \left(\half + \frac{\dt}{2h}w_{\ib-\half\eb_r}^{\mac}\right)\Delta_r s_{\ib}^n.
+\end{eqnarray}
+Then we upwind based on $w^{\mac}$:
+\begin{equation}
+s_{\ib-\half\eb_r}^{1D} =
+\begin{cases}
+\half\left(s_{L,\ib-\half\eb_r}^{1D} + s_{R,\ib-\half\eb_r}^{1D}\right), & \left|w^{\mac}_{\ib-\half\eb_r}\right| < \epsilon \\
+u_{L,\ib-\half\eb_r}^{1D}, & w^{\mac}_{\ib-\half\eb_r} > 0, \\
+u_{R,\ib-\half\eb_r}^{1D}, & w^{\mac}_{\ib-\half\eb_r} < 0. \\
+\end{cases}
+\end{equation}
+Now we do a full-dimensional extrapolation of $s$ to each face.  The
+extrapolation of $s$ to x-faces is:
+\begin{eqnarray}
+s_{L,\ib-\half\eb_x}^{\edge} &=& s_{L,\ib-\half\eb_x}^{1D} - \frac{\dt}{4h}\left(w_{\ib-\eb_x+\half\eb_r}^{\mac}+w_{\ib-\eb_x-\half\eb_r}^{\mac}\right)\left(s_{\ib-\eb_x+\half\eb_r}^{1D} - s_{\ib-\eb_x-\half\eb_r}^{1D}\right) + \frac{\dt}{2}f_{s,\ib-\eb_x}, \\
+s_{R,\ib-\half\eb_x}^{\edge} &=& s_{R,\ib-\half\eb_x}^{1D} - \frac{\dt}{4h}\left(w_{\ib+\half\eb_r}^{\mac}+w_{\ib-\half\eb_r}^{\mac}\right)\left(s_{\ib+\half\eb_r}^{1D} - s_{\ib-\half\eb_r}^{1D}\right) + \frac{\dt}{2}f_{s,\ib}.
+\end{eqnarray}
+Then, we upwind based on $u^{\mac}$.
+\begin{equation}
+s_{\ib-\half\eb_x}^{\edge} =
+\begin{cases}
+\half\left(s_{L,\ib-\half\eb_x}^{\edge} + s_{R,\ib-\half\eb_x}^{\edge}\right), & \left|u^{\mac}_{\ib-\half\eb_x}\right| < \epsilon \\
+s_{L,\ib-\half\eb_x}^{\edge}, & u^{\mac}_{\ib-\half\eb_x} > 0, \\
+s_{R,\ib-\half\eb_x}^{\edge}, & u^{\mac}_{\ib-\half\eb_x} < 0.
+\end{cases}
+\end{equation}
+The full-dimensional extrapolation of $s$ to r-faces is analogous to
+the extrapolation to x-faces:
+\begin{eqnarray}
+s_{L,\ib-\half\eb_r}^{\edge} = s_{\ib-\eb_r}^n &+& \left(\half - \frac{\dt}{2h}w_{\ib-\half\eb_r}^{\mac}\right)\Delta_r s_{\ib-\eb_r}^n \nonumber \\
+&-& \frac{\dt}{4h}\left(u_{\ib+\half\eb_x-\eb_r}^{\mac}+u_{\ib-\half\eb_x-\eb_r}^{\mac}\right)\left(s_{\ib+\half\eb_x-\eb_r}^{1D} - s_{\ib-\half\eb_x-\eb_r}^{1D}\right) + \frac{\dt}{2}f_{s,\ib-\eb_r},  \\
+s_{R,\ib-\half\eb_r}^{\edge} = s_{\ib}^n &-& \left(\half + \frac{\dt}{2h}w_{\ib-\half\eb_r}^{\mac}\right)\Delta_r s_{\ib}^n \nonumber \\
+&-& \frac{\dt}{4h}\left(u_{\ib+\half\eb_x}^{\mac}+u_{\ib-\half\eb_x}^{\mac}\right)\left(s_{\ib+\half\eb_x}^{1D} - s_{\ib-\half\eb_x}^{1D}\right) + \frac{\dt}{2}f_{s,\ib}. 
+\end{eqnarray}
+Then, we upwind based on $w^{\mac}$.
+\begin{equation}
+s_{\ib-\half\eb_r}^{\edge} =
+\begin{cases}
+\half\left(s_{L,\ib-\half\eb_r}^{\edge} + s_{R,\ib-\half\eb_r}^{\edge}\right), & \left|w^{\mac}_{\ib-\half\eb_r}\right| < \epsilon \\
+s_{L,\ib-\half\eb_r}^{\edge}, & u^{\mac}_{\ib-\half\eb_r} > 0, \\
+s_{R,\ib-\half\eb_r}^{\edge}, & u^{\mac}_{\ib-\half\eb_r} < 0.
+\end{cases}
+\end{equation}
+%\subsection{3D Cartesian Case}
+%\subsection{3D Spherical Case}
+
+\cleardoublepage
+
+%-----------------------------------------------------------------------------
+% U-edge states
+%-----------------------------------------------------------------------------
+\subsection{Computing $\Ubt^{\edge}$ in {\tt MAESTRO}}
+In {\tt velocity\_advance}, we call {\tt make\_edge\_state} to compute
+$\Ubt^{\edge}$.  Unlike when we computed $\Ubt^{\trans}$ and
+$\Ubt^{\mac,*}$, we need all components of velocity at each face.
+
+\subsubsection{2D Cartesian Case}
+We begin by computing a time-centered 1D extrapolation of $u$ to all
+faces.  The extrapolation of $u$ to x-faces is:
+\begin{eqnarray}
+u_{L,\ib-\half\eb_x}^{1D} &=& u_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\eb_x}^n\right)\Delta_x u_{\ib-\eb_x}^n, \\
+u_{R,\ib-\half\eb_x}^{1D} &=& u_{\ib} - \left(\half + \frac{\dt}{2h}u_{\ib}^n\right)\Delta_x u_{\ib}^n.
+\end{eqnarray}
+Then we upwind based on $u^{\trans}$:
+\begin{equation}
+u_{\ib-\half\eb_x}^{1D} =
+\begin{cases}
+\half\left(u_{L,\ib-\half\eb_x}^{1D} + u_{R,\ib-\half\eb_x}^{1D}\right), & \left|u^{\trans}_{\ib-\half\eb_x}\right| < \epsilon \\
+u_{L,\ib-\half\eb_x}^{1D}, & u^{\trans}_{\ib-\half\eb_x} > 0, \\
+u_{R,\ib-\half\eb_x}^{1D}, & u^{\trans}_{\ib-\half\eb_x} < 0. \\
+\end{cases}
+\end{equation}
+The extrapolation of $u$ to r-faces is:
+\begin{eqnarray}
+u_{L,\ib-\half\eb_r}^{1D} &=& u_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\eb_r}^n\right)\Delta_r u_{\ib-\eb_r}^n, \\
+u_{R,\ib-\half\eb_r}^{1D} &=& u_{\ib} - \left(\half + \frac{\dt}{2h}w_{\ib}^n\right)\Delta_r u_{\ib}^n.
+\end{eqnarray}
+Then we upwind based on $w^{\trans}$:
+\begin{equation}
+u_{\ib-\half\eb_r}^{1D} =
+\begin{cases}
+\half\left(u_{L,\ib-\half\eb_r}^{1D} + u_{R,\ib-\half\eb_r}^{1D}\right), & \left|w^{\trans}_{\ib-\half\eb_r}\right| < \epsilon \\
+u_{L,\ib-\half\eb_r}^{1D}, & w^{\trans}_{\ib-\half\eb_r} > 0, \\
+u_{R,\ib-\half\eb_r}^{1D}, & w^{\trans}_{\ib-\half\eb_r} < 0. \\
+\end{cases}
+\end{equation}
+We repeat this procedure to compute a time-centered 1D extrapolation
+of $\wt$ at each face.  The extrapolation of $\wt$ to x-faces is:
+\begin{eqnarray}
+\wt_{L,\ib-\half\eb_x}^{1D} &=& \wt_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\eb_x}^n\right)\Delta_x \wt_{\ib-\eb_x}^n, \\
+\wt_{R,\ib-\half\eb_x}^{1D} &=& \wt_{\ib} - \left(\half + \frac{\dt}{2h}u_{\ib}^n\right)\Delta_x \wt_{\ib}^n.
+\end{eqnarray}
+Then we upwind based on $u^{\trans}$:
+\begin{equation}
+\wt_{\ib-\half\eb_x}^{1D} =
+\begin{cases}
+\half\left(\wt_{L,\ib-\half\eb_x}^{1D} + \wt_{R,\ib-\half\eb_x}^{1D}\right), & \left|u^{\trans}_{\ib-\half\eb_x}\right| < \epsilon \\
+\wt_{L,\ib-\half\eb_x}^{1D}, & u^{\trans}_{\ib-\half\eb_x} > 0, \\
+\wt_{R,\ib-\half\eb_x}^{1D}, & u^{\trans}_{\ib-\half\eb_x} < 0. \\
+\end{cases}
+\end{equation}
+The extrapolation of $\wt$ to r-faces is:
+\begin{eqnarray}
+\wt_{L,\ib-\half\eb_r}^{1D} &=& \wt_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\eb_r}^n\right)\Delta_r \wt_{\ib-\eb_r}^n - \frac{\dt}{2}\wt_{\ib-\eb_r}^n\left(\frac{\partial w_0}{\partial r}\right)_{\ib-\eb_r}, \label{1D wt_L extrap} \\
+\wt_{R,\ib-\half\eb_r}^{1D} &=& \wt_{\ib} - \left(\half + \frac{\dt}{2h}w_{\ib}^n\right)\Delta_r \wt_{\ib}^n - \frac{\dt}{2}\wt_{\ib}^n\left(\frac{\partial w_0}{\partial r}\right)_{\ib}. \label{1D wt_R extrap}
+\end{eqnarray}
+Then we upwind based on $w^{\trans}$:
+\begin{equation}
+\wt_{\ib-\half\eb_r}^{1D} =
+\begin{cases}
+\half\left(\wt_{L,\ib-\half\eb_r}^{1D} + \wt_{R,\ib-\half\eb_r}^{1D}\right), & \left|w^{\trans}_{\ib-\half\eb_r}\right| < \epsilon \\
+\wt_{L,\ib-\half\eb_r}^{1D}, & w^{\trans}_{\ib-\half\eb_r} > 0, \\
+\wt_{R,\ib-\half\eb_r}^{1D}, & w^{\trans}_{\ib-\half\eb_r} < 0. \\
+\end{cases}
+\end{equation}
+Now we do a full-dimensional extrapolation of $u$ to each face.  The
+extrapolation of $u$ to x-faces is:
+\begin{eqnarray}
+u_{L,\ib-\half\eb_x}^{\edge} = u_{\ib-\eb_x}^n &+& \left(\half -
+\frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x u_{\ib-\eb_x}^n
+\nonumber \\ &-&
+\frac{\dt}{4h}\left(w_{\ib-\eb_x+\half\eb_r}^{\trans}+w_{\ib-\eb_x-\half\eb_r}^{\trans}\right)\left(u_{\ib-\eb_x+\half\eb_r}^{1D}
+- u_{\ib-\eb_x-\half\eb_r}^{1D}\right) + \frac{\dt}{2}f_{u,\ib-\eb_x},
+\\ u_{R,\ib-\half\eb_x}^{\edge} = u_{\ib}^n &-& \left(\half +
+\frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x u_{\ib}^n
+\nonumber \\ &-&
+\frac{\dt}{4h}\left(w_{\ib+\half\eb_r}^{\trans}+w_{\ib-\half\eb_r}^{\trans}\right)\left(u_{\ib+\half\eb_r}^{1D}
+- u_{\ib-\half\eb_r}^{1D}\right) + \frac{\dt}{2}f_{u,\ib}.
+\end{eqnarray}
+Then, we upwind based on $u^{\mac}$.
+\begin{equation}
+u_{\ib-\half\eb_x}^{\edge} =
+\begin{cases}
+\half\left(u_{L,\ib-\half\eb_x}^{\edge} + u_{R,\ib-\half\eb_x}^{\edge}\right), & \left|u^{\mac}_{\ib-\half\eb_x}\right| < \epsilon \\
+u_{L,\ib-\half\eb_x}^{\edge}, & u^{\mac}_{\ib-\half\eb_x} > 0, \\
+u_{R,\ib-\half\eb_x}^{\edge}, & u^{\mac}_{\ib-\half\eb_x} < 0.
+\end{cases}
+\end{equation}
+The full-dimensional extrapolation of $u$ to r-faces is:
+\begin{eqnarray}
+u_{L,\ib-\half\eb_r}^{\edge} = u_{\ib-\eb_r}^n &+& \left(\half - \frac{\dt}{2h}w_{\ib-\half\eb_r}^{\mac}\right)\Delta_r u_{\ib-\eb_r}^n \nonumber \\
+&-& \frac{\dt}{4h}\left(u_{\ib+\half\eb_x-\eb_r}^{\trans}+u_{\ib-\half\eb_x-\eb_r}^{\trans}\right)\left(u_{\ib+\half\eb_x-\eb_r}^{1D} - u_{\ib-\half\eb_x-\eb_r}^{1D}\right) + \frac{\dt}{2}f_{u,\ib-\eb_r},  \\
+u_{R,\ib-\half\eb_r}^{\edge} = u_{\ib}^n &-& \left(\half + \frac{\dt}{2h}w_{\ib-\half\eb_r}^{\mac}\right)\Delta_r u_{\ib}^n \nonumber \\
+&-& \frac{\dt}{4h}\left(u_{\ib+\half\eb_x}^{\trans}+u_{\ib-\half\eb_x}^{\trans}\right)\left(u_{\ib+\half\eb_x}^{1D} - u_{\ib-\half\eb_x}^{1D}\right) + \frac{\dt}{2}f_{u,\ib}. 
+\end{eqnarray}
+Then, we upwind based on $w^{\mac}$.
+\begin{equation}
+u_{\ib-\half\eb_r}^{\edge} =
+\begin{cases}
+\half\left(u_{L,\ib-\half\eb_r}^{\edge} + u_{R,\ib-\half\eb_r}^{\edge}\right), & \left|w^{\mac}_{\ib-\half\eb_r}\right| < \epsilon \\
+u_{L,\ib-\half\eb_r}^{\edge}, & u^{\mac}_{\ib-\half\eb_r} > 0, \\
+u_{R,\ib-\half\eb_r}^{\edge}, & u^{\mac}_{\ib-\half\eb_r} < 0.
+\end{cases}
+\end{equation}
+Now we do a full-dimensional extrapolatino of $\wt$ to each face.
+This is different from the extrapolation of $u$ to faces because we
+must include the term proportional to $\partial w_0/\partial r$ in
+equation (\ref{Perturbational Velocity Equation}).  The
+full-dimensional extrapolation of $\wt$ to x-faces is:
+\begin{eqnarray}
+\wt_{L,\ib-\half\eb_x}^{\edge} = \wt_{\ib-\eb_x}^n &+& \left(\half - \frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x \wt_{\ib-\eb_x}^n \nonumber \\
+&-& \frac{\dt}{4h}\left(w_{\ib-\eb_x+\half\eb_r}^{\trans}+w_{\ib-\eb_x-\half\eb_r}^{\trans}\right)\left(\wt_{\ib-\eb_x+\half\eb_r}^{1D} - \wt_{\ib-\eb_x-\half\eb_r}^{1D}\right) \nonumber \\
+&-& \frac{\dt}{4h}\left(\wt_{\ib-\eb_x+\half\eb_r}^{\trans}+\wt_{\ib-\eb_x-\half\eb_r}^{\trans}\right)\left(w_{0,\ib-\eb_x+\half\eb_r}-w_{0,\ib-\eb_x-\half\eb_r}\right) + \frac{\dt}{2}f_{w,\ib-\eb_x}, \label{wt_L x-edge} \\
+\wt_{R,\ib-\half\eb_x}^{\edge} = \wt_{\ib}^n &-& \left(\half + \frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x \wt_{\ib}^n \nonumber \\
+&-& \frac{\dt}{4h}\left(w_{\ib+\half\eb_r}^{\trans}+w_{\ib-\half\eb_r}^{\trans}\right)\left(\wt_{\ib+\half\eb_r}^{1D} - \wt_{\ib-\half\eb_r}^{1D}\right) \nonumber \\
+&-& \frac{\dt}{4h}\left(\wt_{\ib+\half\eb_r}^{\trans}+\wt_{\ib-\half\eb_r}^{\trans}\right)\left(w_{0,\ib+\half\eb_r}-w_{0,\ib-\half\eb_r}\right) + \frac{\dt}{2}f_{w,\ib}. \label{wt_R x-edge}
+\end{eqnarray}
+Then, we upwind based on $u^{\mac}$:
+\begin{equation}
+\wt_{\ib-\half\eb_x}^{\edge} =
+\begin{cases}
+\half\left(\wt_{L,\ib-\half\eb_x}^{\edge} + \wt_{R,\ib-\half\eb_x}^{\edge}\right), & \left|u^{\mac}_{\ib-\half\eb_x}\right| < \epsilon \\
+\wt_{L,\ib-\half\eb_x}^{\edge}, & u^{\mac}_{\ib-\half\eb_x} > 0, \\
+\wt_{R,\ib-\half\eb_x}^{\edge}, & u^{\mac}_{\ib-\half\eb_x} < 0.
+\end{cases}
+\end{equation}
+The full-dimensional extrapolation of $\wt$ to r-faces is:
+\begin{eqnarray}
+\wt_{L,\ib-\half\eb_r}^{\edge} = \wt_{\ib-\eb_r}^n &+& \left(\half - \frac{\dt}{2h}w_{\ib-\half\eb_r}^{\mac}\right)\Delta_r \wt_{\ib-\eb_r}^n \nonumber \\
+&-& \frac{\dt}{4h}\left(u_{\ib+\half\eb_x-\eb_r}^{\trans}+u_{\ib-\half\eb_x-\eb_r}^{\trans}\right)\left(\wt_{\ib+\half\eb_x-\eb_r}^{1D} - \wt_{\ib-\half\eb_x-\eb_r}^{1D}\right) \nonumber \\
+&-& \frac{\dt}{4h}\left(\wt_{\ib-\half\eb_r}^{\trans}+\wt_{\ib-\frac{3}{2}\eb_r}^{\trans}\right)\left(w_{0,\ib-\half\eb_r}-w_{0,\ib-\frac{3}{2}\eb_r}\right) + \frac{\dt}{2}f_{w,\ib-\eb_r}, \label{wt_L r-edge} \\
+\wt_{R,\ib-\half\eb_r}^{\edge} = \wt_{\ib}^n &+& \left(\half - \frac{\dt}{2h}w_{\ib-\half\eb_r}^{\mac}\right)\Delta_r \wt_{\ib}^n \nonumber \\
+&-& \frac{\dt}{4h}\left(u_{\ib+\half\eb_x}^{\trans}+u_{\ib-\half\eb_x}^{\trans}\right)\left(\wt_{\ib+\half\eb_x}^{1D} - \wt_{\ib-\half\eb_x}^{1D}\right) \nonumber \\
+&-& \frac{\dt}{4h}\left(\wt_{\ib+\half\eb_r}^{\trans}+\wt_{\ib-\half\eb_r}^{\trans}\right)\left(w_{0,\ib+\half\eb_r}-w_{0,\ib-\half\eb_r}\right) + \frac{\dt}{2}f_{w,\ib}. \label{wt_R r-edge}
+\end{eqnarray}
+Then, we upwind based on $w^{\mac}$:
+\begin{equation}
+\wt_{\ib-\half\eb_r}^{\edge} =
+\begin{cases}
+\half\left(\wt_{L,\ib-\half\eb_r}^{\edge} + \wt_{R,\ib-\half\eb_r}^{\edge}\right), & \left|w^{\mac}_{\ib-\half\eb_r}\right| < \epsilon \\
+\wt_{L,\ib-\half\eb_r}^{\edge}, & w^{\mac}_{\ib-\half\eb_r} > 0, \\
+\wt_{R,\ib-\half\eb_r}^{\edge}, & w^{\mac}_{\ib-\half\eb_r} < 0.
+\end{cases}
+\end{equation}
+%\subsection{3D Cartesian Case}
+%\subsection{3D Spherical Case}
+
+\cleardoublepage
+
+%-----------------------------------------------------------------------------
+% Umac in Varden
+%-----------------------------------------------------------------------------
+\subsection{Computing $\Ub^{\mac,*}$ in {\tt VARDEN}}
+
+\subsubsection{2D Cartesian Case}
+We do a 1D Taylor series extrapolation to get both components of velocity at the x-face:
+\begin{eqnarray}
+u_{L,\ib-\half\eb_x}^{1D} &=& u_{\ib-\eb_x} + \left[\half - \frac{\dt}{2h}{\rm max}(0,u_{\ib-\eb_x})\right]\Delta_xu_{\ib-\eb_x}, \label{varden U_L^1D} \\
+u_{R,\ib-\half\eb_x}^{1D} &=& u_{\ib} + \left[\half - \frac{\dt}{2h}{\rm min}(0,u_{\ib})\right]\Delta_xu_{\ib}.
+\end{eqnarray}
+\begin{eqnarray}
+v_{L,\ib-\half\eb_x}^{1D} &=& v_{\ib-\eb_x} + \left[\half - \frac{\dt}{2h}{\rm max}(0,v_{\ib-\eb_x})\right]\Delta_xv_{\ib-\eb_x}, \label{varden U_L^1D} \\
+v_{R,\ib-\half\eb_x}^{1D} &=& v_{\ib} + \left[\half - \frac{\dt}{2h}{\rm min}(0,v_{\ib})\right]\Delta_xv_{\ib}.
+\end{eqnarray}
+We obtain the normal velocity using the Riemann problem:
+\begin{equation}
+u_{\ib-\half\eb_x}^{1D} =
+\begin{cases}
+0, & \left(u_{L,\ib-\half\eb_x}^{1D} \le 0 ~~ {\rm AND} ~~ u_{R,\ib-\half\eb_x}^{1D} \ge 0\right) ~~ {\rm OR} ~~ \left|u_{L,\ib-\half\eb_x}^{1D} + u_{R,\ib-\half\eb_x}^{1D}\right| < \epsilon, \\
+u_{L,\ib-\half\eb_x}^{1D}, & u_{L,\ib-\half\eb_x}^{1D} + u_{R,\ib-\half\eb_x}^{1D} > 0, \\
+u_{R,\ib-\half\eb_x}^{1D}, & u_{L,\ib-\half\eb_x}^{1D} + u_{R,\ib-\half\eb_x}^{1D} < 0.
+\end{cases}
+\end{equation}
+We obtain the transverse velocity by upwinding based on
+$u_{\ib-\half\eb_x}^{1D}$:
+\begin{equation}
+v_{\ib-\half\eb_x}^{1D} =
+\begin{cases}
+\half\left(v_{L,\ib-\half\eb_x}^{1D} + v_{R,\ib-\half\eb_x}^{1D}\right), & \left|u_{\ib-\half\eb_x}^{1D}\right| < \epsilon \\
+v_{L,\ib-\half\eb_x}^{1D}, & u_{\ib-\half\eb_x}^{1D} > 0, \\
+v_{R,\ib-\half\eb_x}^{1D}, & u_{\ib-\half\eb_x}^{1D} < 0.
+\end{cases}\label{Transverse Velocity Riemann Problem}
+\end{equation}
+We perform analogous operations to compute both components of velocity
+at the y-faces, $\Ub_{\ib-\half\eb_y}^{1D}$. \\
+
+Now we do a full-dimensional extrapolation to get the MAC velocity at
+the x-faces (note that we only compute the normal components):
+\begin{eqnarray}
+u_{L,\ib-\half\eb_x}^{\mac,*} &=& u_{L,\ib-\half\eb_x}^{1D} - \frac{\dt}{4h}\left(v_{\ib-\eb_x+\half\eb_y}^{1D}+v_{\ib-\eb_x-\half\eb_y}^{1D}\right)\left(u_{\ib-\eb_x+\half\eb_y}^{1D} - u_{\ib-\eb_x-\half\eb_y}^{1D}\right) + \frac{\dt}{2}f_{u,\ib-\eb_x}, \\
+u_{R,\ib-\half\eb_x}^{\mac,*} &=& u_{R,\ib-\half\eb_x}^{1D} - \frac{\dt}{4h}\left(v_{\ib+\half\eb_y}^{1D}+v_{\ib-\half\eb_y}^{1D}\right)\left(u_{\ib+\half\eb_y}^{1D} - u_{\ib-\half\eb_y}^{1D}\right) + \frac{\dt}{2}f_{u,\ib}.
+\end{eqnarray}
+Then, we solve a Riemann problem:
+\begin{equation}
+u_{\ib-\half\eb_x}^{\mac,*} =
+\begin{cases}
+0, & \left(u_{L,\ib-\half\eb_x}^{\mac,*} \le 0 ~~ {\rm AND} ~~ u_{R,\ib-\half\eb_x}^{\mac,*} \ge 0\right) ~~ {\rm OR} ~~ \left|u_{L,\ib-\half\eb_x}^{\mac,*} + u_{R,\ib-\half\eb_x}^{\mac,*}\right| < \epsilon, \\
+u_{L,\ib-\half\eb_x}^{\mac,*}, & u_{L,\ib-\half\eb_x}^{\mac,*} + u_{R,\ib-\half\eb_x}^{\mac,*} > 0, \\
+u_{R,\ib-\half\eb_x}^{\mac,*}, & u_{L,\ib-\half\eb_x}^{\mac,*} + u_{R,\ib-\half\eb_x}^{\mac,*} < 0.
+\end{cases}\label{umac Riemann Problem}
+\end{equation}
+We perform analogous operations to compute the normal velocity at the
+y-faces, $v^{\mac,*}_{\ib-\half\eb_y}$.
+
+\subsubsection{3D Cartesian Case}
+This is more complicated than the 2D case because we include corner
+coupling.  We compute $\Ub_{\ib-\half\eb_x}^{1D},
+\Ub_{\ib-\half\eb_y}^{1D}$, and $\Ub_{\ib-\half\eb_z}^{1D}$ in an
+analogous manner as equations (\ref{varden U_L^1D})-(\ref{Transverse
+  Velocity Riemann Problem}).  Then, we compute an intermediate state,
+$u_{\ib-\half\eb_y}^{y|z}$, which is described as ``state
+$u_{\ib-\half\eb_y}^{1D}$ that has been updated to account for the
+transverse derivatives in the z direction'', using:
+\begin{eqnarray}
+u_{L,\ib-\half\eb_y}^{y|z} &=& u_{L,\ib-\half\eb_y}^{1D} - \frac{\dt}{6h}\left(w_{\ib-\eb_y+\half\eb_z}^{1D}+w_{\ib-\eb_y-\half\eb_z}^{1D}\right)\left(u_{\ib-\eb_y+\half\eb_z}^{1D}-u_{\ib-\eb_y-\half\eb_z}^{1D}\right), \\
+u_{R,\ib-\half\eb_y}^{y|z} &=& u_{R,\ib-\half\eb_y}^{1D} - \frac{\dt}{6h}\left(w_{\ib+\half\eb_z}^{1D}+w_{\ib-\half\eb_z}^{1D}\right)\left(u_{\ib+\half\eb_z}^{1D}-u_{\ib-\half\eb_z}^{1D}\right).
+\end{eqnarray}
+Then, upwind based on $v_{\ib-\half\eb_y}^{1D}$:
+\begin{equation}
+u_{\ib-\half\eb_y}^{y|z} =
+\begin{cases}
+\half\left(u_{L,\ib-\half\eb_y}^{y|z} + u_{R,\ib-\half\eb_y}^{y|z}\right), & \left|v_{\ib-\half\eb_y}^{1D}\right| < \epsilon \\
+u_{L,\ib-\half\eb_y}^{y|z}, & v_{\ib-\half\eb_y}^{1D} > 0, \\
+u_{R,\ib-\half\eb_y}^{y|z}, & v_{\ib-\half\eb_y}^{1D} < 0.
+\end{cases}
+\end{equation}
+We use an analogous procedure to compute five more intemediate states,
+$u_{\ib-\half\eb_z}^{z|y}, v_{\ib-\half\eb_x}^{x|z},
+v_{\ib-\half\eb_z}^{z|x}, w_{\ib-\half\eb_x}^{x|y}$, and
+$w_{\ib-\half\eb_y}^{y|x}$.  Then, we do a full-dimensional
+extrapolation to get the MAC velocities at normal faces:
+\begin{eqnarray}
+u_{L,\ib-\half\eb_x}^{\mac,*} = u_{L,\ib-\half\eb_x}^{1D} &-& \frac{\dt}{4h}\left(v_{\ib-\eb_x+\half\eb_y}^{1D}+v_{\ib-\eb_x-\half\eb_y}^{1D}\right)\left(u_{\ib-\eb_x+\half\eb_y}^{y|z}-u_{\ib-\eb_x-\half\eb_y}^{y|z}\right) \nonumber \\
+&-& \frac{\dt}{4h}\left(w_{\ib-\eb_x+\half\eb_z}^{1D}+w_{\ib-\eb_x-\half\eb_z}^{1D}\right)\left(u_{\ib-\eb_x+\half\eb_z}^{z|y}-u_{\ib-\eb_x-\half\eb_z}^{z|y}\right) + \frac{\dt}{2}f_{u,\ib-\eb_x}, \\
+u_{R,\ib-\half\eb_x}^{\mac,*} = u_{R,\ib-\half\eb_x}^{1D} &-& \frac{\dt}{4h}\left(v_{\ib+\half\eb_y}^{1D}+v_{\ib-\half\eb_y}^{1D}\right)\left(u_{\ib+\half\eb_y}^{y|z}-u_{\ib-\half\eb_y}^{y|z}\right) \nonumber \\
+&-& \frac{\dt}{4h}\left(w_{\ib+\half\eb_z}^{1D}+w_{\ib-\half\eb_z}^{1D}\right)\left(u_{\ib+\half\eb_z}^{z|y}-u_{\ib-\half\eb_z}^{z|y}\right) + \frac{\dt}{2}f_{u,\ib}.
+\end{eqnarray}
+Then, we use the Riemann solver given above for the 2D case (equation
+[\ref{umac Riemann Problem}]) to compute
+$u_{\ib-\half\eb_x}^{\mac,*}$.  We use an analogous procedure to
+obtain $v_{\ib-\half\eb_y}^{\mac,*}$ and
+$w_{\ib-\half\eb_z}^{\mac,*}$.
+
+\cleardoublepage
+
+%-----------------------------------------------------------------------------
+% Varden edge states
+%-----------------------------------------------------------------------------
+\subsection{Computing $\Ub^{\edge}$ and $\rho^{\edge}$ in {\tt VARDEN}}
+To compute $\Ub^{\edge}$, {\tt VARDEN} uses the exact same algorithm
+as the $s^{\edge}$ case in {\tt MAESTRO}.  The algorithm for
+$\rho^{\edge}$ in {\tt VARDEN} is slightly different than the
+$s^{\edge}$ case in {\tt MAESTRO} since it uses a ``conservative''
+formulation.  Here, $s$ is used in place of either $\rho, u, v$, or
+$w$ (in 3D).
+
+\subsubsection{2D Cartesian Case}
+The 1D extrapolation is:
+\begin{eqnarray}
+s_{L,\ib-\half\eb_x}^{1D} &=& s_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x s_{\ib-\eb_x}^n, \label{varden s_L^1D}\\
+s_{R,\ib-\half\eb_x}^{1D} &=& s_{\ib} - \left(\half + \frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x s_{\ib}^n. \label{varden s_R^1D}
+\end{eqnarray}
+Then we upwind based on $u^{\mac}$:
+\begin{equation}
+s_{\ib-\half\eb_x}^{1D} =
+\begin{cases}
+\half\left(s_{L,\ib-\half\eb_x}^{1D} + s_{R,\ib-\half\eb_x}^{1D}\right), & \left|u^{\mac}_{\ib-\half\eb_x}\right| < \epsilon \\
+s_{L,\ib-\half\eb_x}^{1D}, & u^{\mac}_{\ib-\half\eb_x} > 0, \\
+s_{R,\ib-\half\eb_x}^{1D}, & u^{\mac}_{\ib-\half\eb_x} < 0. \\
+\end{cases}
+\end{equation}
+We use an analogous procedure to obtain $s_{\ib-\half\eb_y}^{1D}$.
+Now we do a full-dimensional extrapolation of $s$ to each face.  The
+extrapolation of a ``non-conserved'' $s$ to x-faces is:
+\begin{eqnarray}
+s_{L,\ib-\half\eb_x}^{\edge} &=& s_{L,\ib-\half\eb_x}^{1D} - \frac{\dt}{4h}\left(v_{\ib-\eb_x+\half\eb_y}^{\mac}+v_{\ib-\eb_x-\half\eb_y}^{\mac}\right)\left(s_{\ib-\eb_x+\half\eb_y}^{1D} - s_{\ib-\eb_x-\half\eb_y}^{1D}\right) + \frac{\dt}{2}f_{s,\ib-\eb_x}, \\
+s_{R,\ib-\half\eb_x}^{\edge} &=& s_{R,\ib-\half\eb_x}^{1D} - \frac{\dt}{4h}\left(v_{\ib+\half\eb_y}^{\mac}+v_{\ib-\half\eb_y}^{\mac}\right)\left(s_{\ib+\half\eb_y}^{1D} - s_{\ib-\half\eb_y}^{1D}\right) + \frac{\dt}{2}f_{s,\ib}.
+\end{eqnarray}
+The extrapolation of a ``conserved'' $s$ to x-faces is:
+\begin{eqnarray}
+s_{L,\ib-\half\eb_x}^{\edge} = s_{L,\ib-\half\eb_x}^{1D} &-& \frac{\dt}{2h}\left[(s^{1D} v^{\mac})_{\ib-\eb_x+\half\eb_y} - (s^{1D} v^{\mac})_{\ib-\eb_x-\half\eb_y}\right] \nonumber \\
+&-& \frac{\dt}{2}s_{\ib-\eb_x}(\nabla\cdot\Ub^{\mac})_{\ib-\eb_x} + \frac{\dt}{2h}s_{\ib-\eb_x}\left(v_{\ib-\eb_x+\half\eb_y}^{\mac} - v_{\ib-\eb_x-\half\eb_y}^{\mac}\right) + \frac{\dt}{2}f_{s,\ib-\eb_x}, \\
+s_{R,\ib-\half\eb_x}^{\edge} = s_{R,\ib-\half\eb_x}^{1D} &-& \frac{\dt}{2h}\left[(s^{1D} v^{\mac})_{\ib+\half\eb_y} - (s^{1D} v^{\mac})_{\ib-\half\eb_y}\right] \nonumber \\
+&-& \frac{\dt}{2}s_{\ib}(\nabla\cdot\Ub^{\mac})_{\ib} + \frac{\dt}{2h}s_{\ib}\left(v_{\ib+\half\eb_y}^{\mac} - v_{\ib-\half\eb_y}^{\mac}\right) + \frac{\dt}{2}f_{s,\ib}.
+\end{eqnarray}
+Then, we upwind based on $u^{\mac}$.
+\begin{equation}
+s_{\ib-\half\eb_x}^{\edge} =
+\begin{cases}
+\half\left(s_{L,\ib-\half\eb_x}^{\edge} + s_{R,\ib-\half\eb_x}^{\edge}\right), & \left|u^{\mac}_{\ib-\half\eb_x}\right| < \epsilon \\
+s_{L,\ib-\half\eb_x}^{\edge}, & u^{\mac}_{\ib-\half\eb_x} > 0, \\
+s_{R,\ib-\half\eb_x}^{\edge}, & u^{\mac}_{\ib-\half\eb_x} < 0.
+\end{cases}\label{varden s^edge upwind}
+\end{equation}
+We use an analogous procedure to compute $s_{\ib-\half\eb_y}^{\edge}$.
+
+\subsubsection{3D Cartesian Case}
+This is more complicated than the 2D case because we include corner
+coupling.  We first compute $s_{\ib-\half\eb_x}^{1D}$,
+$s_{\ib-\half\eb_y}^{1D}$, and $s_{\ib-\half\eb_z}^{1D}$ in an
+analogous manner to equations (\ref{varden s_L^1D}) and (\ref{varden
+  s_R^1D}).  Then we compute six intermediate states,
+$s_{\ib-\half\eb_x}^{x|y}, s_{\ib-\half\eb_x}^{x|z},
+s_{\ib-\half\eb_y}^{y|x}, s_{\ib-\half\eb_y}^{y|z},
+s_{\ib-\half\eb_z}^{z|x}$, and $s_{\ib-\half\eb_z}^{z|y}$.  For the
+``non-conservative case'', we use, for example:
+\begin{eqnarray}
+s_{L,\ib-\half\eb_x}^{x|y} &=& s_{L,\ib-\half\eb_x}^{1D} - \frac{\dt}{6h}\left(v_{\ib-\eb_x+\half\eb_y}^{\mac} + v_{\ib-\eb_x-\half\eb_y}^{\mac}\right)\left(s_{\ib-\eb_x+\half\eb_y}^{1D} - s_{\ib-\eb_x-\half\eb_y}^{1D}\right), \\
+s_{R,\ib-\half\eb_x}^{x|y} &=& s_{R,\ib-\half\eb_x}^{1D} - \frac{\dt}{6h}\left(v_{\ib+\half\eb_y}^{\mac} + v_{\ib-\half\eb_y}^{\mac}\right)\left(s_{\ib+\half\eb_y}^{1D} - s_{\ib-\half\eb_y}^{1D}\right).
+\end{eqnarray}
+For the ``conservative'' case, we use, for example:
+\begin{eqnarray}
+s_{L,\ib-\half\eb_x}^{x|y} &=& s_{L,\ib-\half\eb_x}^{1D} - \frac{\dt}{3h}\left[(sv^{\mac})_{\ib-\eb_x+\half\eb_y}-(sv^{\mac})_{\ib-\eb_x-\half\eb_y}\right], \\
+s_{R,\ib-\half\eb_x}^{x|y} &=& s_{R,\ib-\half\eb_x}^{1D} - \frac{\dt}{3h}\left[(sv^{\mac})_{\ib+\half\eb_y}-(sv^{\mac})_{\ib-\half\eb_y}\right].
+\end{eqnarray}
+Then, we upwind based on $u^{\mac}$:
+\begin{equation}
+s_{\ib-\half\eb_x}^{\edge} =
+\begin{cases}
+\half\left(s_{L,\ib-\half\eb_x}^{x|y} + s_{R,\ib-\half\eb_x}^{x|y}\right), & \left|u^{\mac}_{\ib-\half\eb_x}\right| < \epsilon \\
+s_{L,\ib-\half\eb_x}^{x|y}, & u^{\mac}_{\ib-\half\eb_x} > 0, \\
+s_{R,\ib-\half\eb_x}^{x|y}, & u^{\mac}_{\ib-\half\eb_x} < 0.
+\end{cases}
+\end{equation}
+We use an analogous procedure to compute the other five intermediate
+states.  Now we do a full-dimensional extrapolation of $s$ to each
+face.  The extrapolation of a ``non-conserved'' $s$ to x-faces is:
+\begin{eqnarray}
+s_{L,\ib-\half\eb_x}^{\edge} = s_{L,\ib-\half\eb_x}^{1D} &-& \frac{\dt}{4h}\left(v_{\ib-\eb_x+\half\eb_y}^{\mac}+v_{\ib-\eb_x-\half\eb_y}^{\mac}\right)\left(s_{\ib-\eb_x+\half\eb_y}^{y|z}-s_{\ib-\eb_x-\half\eb_y}^{y|z}\right) \nonumber \\
+&-& \frac{\dt}{4h}\left(w_{\ib-\eb_x+\half\eb_z}^{\mac}+w_{\ib-\eb_x-\half\eb_z}^{\mac}\right)\left(s_{\ib-\eb_x+\half\eb_z}^{z|y}-s_{\ib-\eb_x-\half\eb_z}^{z|y}\right) + \frac{\dt}{2}f_{s,\ib-\eb_x}, \\
+s_{R,\ib-\half\eb_x}^{\edge} = s_{R,\ib-\half\eb_x}^{1D} &-& \frac{\dt}{4h}\left(v_{\ib+\half\eb_y}^{\mac}+v_{\ib-\half\eb_y}^{\mac}\right)\left(s_{\ib+\half\eb_y}^{y|z}-s_{\ib-\half\eb_y}^{y|z}\right) \nonumber \\
+&-& \frac{\dt}{4h}\left(w_{\ib+\half\eb_z}^{\mac}+w_{\ib-\half\eb_z}^{\mac}\right)\left(s_{\ib+\half\eb_z}^{z|y}-s_{\ib-\half\eb_z}^{z|y}\right) + \frac{\dt}{2}f_{s,\ib}.
+\end{eqnarray}
+The extrapolation of a ``conserved'' $s$ to x-faces is:
+\begin{eqnarray}
+s_{L,\ib-\half\eb_x}^{\edge} = s_{L,\ib-\half\eb_x}^{1D} &-& \frac{\dt}{2h}\left[(s^{y|z}v^{\mac})_{\ib-\eb_x+\half\eb_y}-({s^{y|z}v^{\mac})_{\ib-\eb_x-\half\eb_y}}\right] \nonumber \\
+&-& \frac{\dt}{2h}\left[(s^{z|y}w^{\mac})_{\ib-\eb_x+\half\eb_z}-({s^{z|y}w^{\mac})_{\ib-\eb_x-\half\eb_z}}\right] \nonumber \\
+&-& \frac{\dt}{2}s_{\ib-\eb_x}(\nabla\cdot\Ub^{\mac})_{\ib-\eb_x} + \frac{\dt}{2h}s_{\ib-\eb_x}\left(v_{\ib-\eb_x+\half\eb_y}^{\mac}-v_{\ib-\eb_x-\half\eb_y}^{\mac}+w_{\ib-\eb_x+\half\eb_z}^{\mac}-w_{\ib-\eb_x-\half\eb_z}^{\mac}\right) \nonumber \\
+&+& \frac{\dt}{2}f_{s,\ib-\eb_x}, \\
+s_{R,\ib-\half\eb_x}^{\edge} = s_{R,\ib-\half\eb_x}^{1D} &-& \frac{\dt}{2h}\left[(s^{y|z}v^{\mac})_{\ib+\half\eb_y}-({s^{y|z}v^{\mac})_{\ib-\half\eb_y}}\right] \nonumber \\
+&-& \frac{\dt}{2h}\left[(s^{z|y}w^{\mac})_{\ib+\half\eb_z}-({s^{z|y}w^{\mac})_{\ib-\half\eb_z}}\right] \nonumber \\
+&-& \frac{\dt}{2}s_{\ib}(\nabla\cdot\Ub^{\mac})_{\ib} + \frac{\dt}{2h}s_{\ib}\left(v_{\ib+\half\eb_y}^{\mac}-v_{\ib-\half\eb_y}^{\mac}+w_{\ib+\half\eb_z}^{\mac}-w_{\ib-\half\eb_z}^{\mac}\right) \nonumber \\
+&+& \frac{\dt}{2}f_{s,\ib}.
+\end{eqnarray}
+Then we upwind based on $u^{\mac}$, as in equation (\ref{varden s^edge
+  upwind}).  We use an analogous procedure to compute both
+$s_{\ib-\half\eb_y}^{\edge}$ and $s_{\ib-\half\eb_z}$.
+
+\end{document}
