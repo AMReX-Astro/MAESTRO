@@ -13,6 +13,13 @@
 -- should we be computing beta_0 differently for spherical?  In 
    particular, should we do linear reconstruction on g?
 
--- If full_rhoh0_evolution=T, we need a correct_base and diffusve_base
+-- If full_rhoh0_evolution=T, we need a correct_base and diffuse_base
    for enthalpy so the base state enthalpy agrees with the average of 
    the full state enthalpy.
+
+-- the small scale problem should read in its initial model in our
+   standard format
+
+-- we should have a global option in the code to do smallscale problems
+   that would set the divergence coefficient to 1 (I believe that's what
+   we want). 
