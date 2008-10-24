@@ -4,19 +4,27 @@ starting point for this description are the series of papers describing
 the development of the algorithm:
 \begin{itemize}
 \item {\em Low Mach Number Modeling of Type Ia
-  Supernovae. I. Hydrodynamics}, A.~S.~Almgren, J.~B.~Bell, 
+  Supernovae. I. Hydrodynamics,} A.~S.~Almgren, J.~B.~Bell, 
   C.~A.~Rendleman, \& M.~Zingale 2006, ApJ, 637, 922 (henceforth
   paper~I)
 \item {\em Low Mach Number Modeling of Type Ia Supernovae. II. Energy
-  Evolution} A.~S.~Almgren, J.~B.~Bell, C.~A.~Rendleman, \& M.~Zingale
+  Evolution,} A.~S.~Almgren, J.~B.~Bell, C.~A.~Rendleman, \& M.~Zingale
   2006, ApJ, 649, 927 (henceforth paper~II)
-\item {\em Low Mach Number Modeling of Type Ia Supernovae. III. Reactions}
+\item {\em Low Mach Number Modeling of Type Ia Supernovae. III. Reactions,}
 A.~S.~Almgren, J.~B.~Bell, A.~Nonaka, \& M.~Zingale
   2008, ApJ, 684, 449 (henceforth paper~III)
-\item {\em Low Mach Number Modeling of Type Ia Supernovae. IV. White Dwarf Convection}
+\item {\em Low Mach Number Modeling of Type Ia Supernovae. IV. White Dwarf Convection,}
 A.~S.~Almgren, J.~B.~Bell, A.~Nonaka, \& M.~Zingale,
   in perparation (henceforth paper~IV)
 \end{itemize}
+We also carry over some ideas from our small-scale low Mach number algorithm
+for astrophysical flows:
+\begin{itemize}
+\item {\em Adaptive Low Mach Number Simulations of Nuclear Flames,}
+J.~B.~Bell, M.~S.~Day, C.~A.~Rendleman, S.~E.~Woosley, \& M.~Zingale
+2004, JCP, 195, 2, 677 (henceforth BDRWZ)
+\end{itemize}
+
 
 %-----------------------------------------------------------------------------
 % Notation
@@ -301,6 +309,7 @@ we use
 \rho_{0,j}^{\outp} = \rho_{0,j}^{\inp} - \dt (\nabla\cdot\etarho\er)^{\inp}_j \enskip . 
 \end{equation}
 
+\MarginPar{what about a $\eta_{\rho h}$}
 \end{enumerate}
 
 
@@ -315,9 +324,24 @@ use of the shorthand developed above.  Here, we assume that the
 problem is already properly initialized.  We describe the details of
 the initialization in \S~\ref{Sec:Initialization}.
 
-In paper III we discretized the enthalpy evolution equation in full, non-perturbation form.  
-We have discovered that discretizing the enthalpy evolution in non-perturbational form 
-leads to better numerical properties.  This is more like paper II.\\
+There are several changes to the algorithm since it was last detailed
+in paper III.  The major changes are:
+\begin{itemize}
+\item In paper III we discretized the enthalpy evolution equation in
+full, non-perturbation form.  We have discovered that discretizing the
+enthalpy evolution in non-perturbational form leads to better
+numerical properties.  This is more like paper II.
+
+\item We split the update of the density and enthalpy in steps 4 and 8.
+Now, density is updated first, allowing us to compute new values of 
+$\psi$ that are then used in the enthalpy update.
+
+\item We discuss spherical geometries.
+
+\item We add thermal diffusion.
+\end{itemize}
+%
+The advance of the state through a single timestep appears as:
 
 %--------------------------------------------------------------------------
 % STEP 1
@@ -345,7 +369,7 @@ S^{\half,\star} = \frac{S^0 + S^1}{2} \enskip ,
 \end{equation}
 where $S^1$ is found through the iterative process that initializes the calculation.
 Otherwise, following the method used in our small-scale low Mach number algorithm
-(Cite Bell04), we extrapolate to the half-time using the source
+(BDRWZ), we extrapolate to the half-time using the source
 terms at the previous and current time levels
 \begin{equation}
 S^{\nph,\star} = S^n + \frac{\Delta t^n}{2} \frac{S^n - S^{n-1}}{\Delta t^{n-1}} \enskip .
@@ -563,6 +587,11 @@ and solve a discretized version of
 (\rho h)^{'(1),\nph,\star} + \frac{(\rho h)_0^n + (\rho h)_0^{(2),\star}}{2}
 \enskip .
 \end{equation}
+   
+   We note that for spherical geometry, the edge state of $(\rho h)_0$
+   is computed by averging $h_0 \equiv (\rho h)_0/\rho_0$ and $\rho_0$
+   to the edge separately, and then computing 
+   ${(\rho h)_0}_{r+1/2} = {\rho_0}_{r+1/2} {h_0}_{r+1/2}$.
 
   \item Evolve $(\rho h)^{(1)} \rightarrow (\rho h)^{(2'),\star}$ without
   explicitly including the reaction terms,
