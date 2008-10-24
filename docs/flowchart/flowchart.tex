@@ -436,6 +436,8 @@ and
 \item[Step 3.] {\em React the full state and base state through the first time 
 interval of $\dt / 2.$}
 
+\MarginPar{don't we set $h_0 = \overline{h}$ somewhere around here?}
+
 \begin{enumerate}
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
 
@@ -529,6 +531,7 @@ the details.
 \end{description}
 
 \item Update the enthalpy.  The full enthalpy equation is 
+\MarginPar{we should say something about {\tt use\_tfromp}, and {\tt do\_eos\_h\_above\_cutoff}}
   \begin{equation}
   \frac{\partial (\rho h)}{\partial t}  = - \nablab \cdotb (\ubold \rho h)
 + \frac{Dp_0}{Dt} + \nabla\cdot\kth\nabla T + \rho \Hnuc + \rho \Hext 
@@ -582,7 +585,7 @@ $[\rho_0^{(2),\star}, (\nabla\cdot\etarho\er)^{\nph,*}] \rightarrow [\rho_0^{n+1
 %--------------------------------------------------------------------------
 
 \item Diffuse the enthalpy through a time interval of $\dt$.  Here we begin
-with the enthalpy equation (eq.~[eq:rhohup]), but consider only the 
+with the enthalpy equation (eq.~[\ref{eq:rhohup}]), but consider only the 
 diffusion terms,
 \begin{equation}
   \frac{\partial (\rho h)}{\partial t}  = 
