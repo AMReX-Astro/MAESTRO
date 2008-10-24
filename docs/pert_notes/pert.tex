@@ -159,7 +159,7 @@ at edges} to compute $\rho h$ at edges.
 \begin{equation}
 \frac{\partial(\rho h)}{\partial t} = -\nabla\cdot\left[(\rho h)'\left(\Ubt 
 + w_0\eb_r\right)\right] - \nabla\cdot\left[(\rho h)_0^{n+\half,{\rm avg}}\Ubt\right] 
-\underbrace{- \nabla\cdot\left[(\rho h)_0^{n+\half,{\rm pred}}w_0\eb_r\right] + \psi}_{\text{this term used to come in through} ~ (\rho h)_0^{n+1} - (\rho h)_0^n} + (\ut \cdot \er)\frac{\partial p_0}{\partial r} \enskip .
+\underbrace{- \nabla\cdot\left[(\rho h)_0^{n+\half,{\rm pred}}w_0\eb_r\right] + \psi}_{\text{this term used to come in through} ~ (\rho h)_0^{n+1} - (\rho h)_0^n} + (\Ubt \cdot \er)\frac{\partial p_0}{\partial r} \enskip .
 \end{equation}
 {\bf What the code does now:} We would like to update the non-forcing
 part of the enthalpy equation analogously to Section \ref{Advancing
@@ -167,7 +167,7 @@ rhoX_k}
 \begin{equation}
 \frac{\partial(\rho h)}{\partial t} = -\nabla\cdot(\rho h\Ub) = 
 -\nabla\cdot\left\{\left[(\rho h)_0^{n+\half,{\rm avg}} 
-+ (\rho h)'\right]\left(\Ubt + w_0\eb_r\right)\right\} + (\ut \cdot \er)\frac{\partial p_0}{\partial r} + \psi  \enskip .
++ (\rho h)'\right]\left(\Ubt + w_0\eb_r\right)\right\} + (\Ubt \cdot \er)\frac{\partial p_0}{\partial r} + \psi  \enskip .
 \end{equation}
 
 
@@ -187,14 +187,14 @@ rhoX_k}
 \hline
 {H PRED TYPE} &   {Force} \\
 \hline \\[-3mm]
-1  $((\rho h)^\prime)$ &  $(\ut \cdot \er) \frac{\partial p_0}{\partial r} - 
- (\rho h)^\prime \; \nabla \cdot (\ut+w_0 \er) - 
- \nabla \cdot (\ut (\rho h)_0) + \nabla \cdot \kth \nabla T$ \\[2 mm]
-2  $(h)$ & $\frac{1}{\rho} \left [\psi + (\ut \cdot \er)
+1  $((\rho h)^\prime)$ &  $(\Ubt \cdot \er) \frac{\partial p_0}{\partial r} - 
+ (\rho h)^\prime \; \nabla \cdot (\Ubt+w_0 \er) - 
+ \nabla \cdot (\Ubt (\rho h)_0) + \nabla \cdot \kth \nabla T$ \\[2 mm]
+2  $(h)$ & $\frac{1}{\rho} \left [\psi + (\Ubt \cdot \er)
   \frac{\partial p_0}{\partial r} + \nabla \cdot \kth \nabla T \right ]$ \\[2 mm]
 3  $(T)$ & $\frac{1}{\rho c_p} \left \{ (1 - \rho h_p) 
-   \left [\psi + (\ut \cdot \er) \frac{\partial p_0}{\partial r} \right ] \nabla \cdot \kth \nabla T \right \}$ \\[2 mm]
-4  $(T)$ & $\frac{1}{\rho c_p} \left\{ (1 - \rho h_p) \left [\psi + (\ut \cdot \er)
+   \left [\psi + (\Ubt \cdot \er) \frac{\partial p_0}{\partial r} \right ] \nabla \cdot \kth \nabla T \right \}$ \\[2 mm]
+4  $(T)$ & $\frac{1}{\rho c_p} \left\{ (1 - \rho h_p) \left [\psi + (\Ubt \cdot \er)
 \frac{\partial p_0}{\partial r}\right ] \nabla \cdot \kth \nabla T \right\}$ \\[2 mm]
 \hline
 \end{tabular}
@@ -263,10 +263,10 @@ rhoX_k}
        &            &              &\multicolumn{2}{c}{Forcing Term} \\
 {type} & {Species } & {$(\rho h)$} & {$(\rho X)$} & {$(\rho h)$} \\
 \hline 
-1 & $(\ut+w_0)(\rho_0+\rho^\prime) X          $ & $(\ut+w_0)\left [(\rho h)_0 + (\rho h)^\prime\right]$ & 0 & $ \psi + (\ut \cdot \er) \frac{\partial p_0}{\partial r} $ \\[2mm]
-2 & $(\ut+w_0)(\rho_0+\rho^\prime) X          $ & $(\ut+w_0) (\rho_0+\rho^\prime) h$ & 0 & $ \psi + (\ut \cdot \er) \frac{\partial p_0}{\partial r} $ \\[2mm]
-3 & $(\ut+w_0)(\rho_0+\rho^\prime) X          $ & $(\ut+w_0)\left [(\rho h)_0 + (\rho h)^\prime\right]$ & 0 & $ \psi + (\ut \cdot \er) \frac{\partial p_0}{\partial r}$ \\[2mm]
-4 & $(\ut+w_0)(\rho_0+\rho^\prime) X          $ & $(\ut+w_0) (\rho_0+\rho^\prime) h$ & 0 & $ \psi + (\ut \cdot \er) \frac{\partial p_0}{\partial r} $ \\[2mm]
+1 & $(\Ubt+w_0)(\rho_0+\rho^\prime) X          $ & $(\Ubt+w_0)\left [(\rho h)_0 + (\rho h)^\prime\right]$ & 0 & $ \psi + (\Ubt \cdot \er) \frac{\partial p_0}{\partial r} $ \\[2mm]
+2 & $(\Ubt+w_0)(\rho_0+\rho^\prime) X          $ & $(\Ubt+w_0) (\rho_0+\rho^\prime) h$ & 0 & $ \psi + (\Ubt \cdot \er) \frac{\partial p_0}{\partial r} $ \\[2mm]
+3 & $(\Ubt+w_0)(\rho_0+\rho^\prime) X          $ & $(\Ubt+w_0)\left [(\rho h)_0 + (\rho h)^\prime\right]$ & 0 & $ \psi + (\Ubt \cdot \er) \frac{\partial p_0}{\partial r}$ \\[2mm]
+4 & $(\Ubt+w_0)(\rho_0+\rho^\prime) X          $ & $(\Ubt+w_0) (\rho_0+\rho^\prime) h$ & 0 & $ \psi + (\Ubt \cdot \er) \frac{\partial p_0}{\partial r} $ \\[2mm]
 \hline
 \end{tabular}
 \end{center}
