@@ -93,9 +93,9 @@ $t$     & time                                       & s \\
 \hline
 $T$     & temperature                                & K \\
 \hline
-$\ubold$     & total velocity ($\ubold = \ut + w_0 \er$) & cm~s$^{-1}$ \\
+$\ubold$     & total velocity ($\ubold = \Ut + w_0 \er$) & cm~s$^{-1}$ \\
 \hline
-$\ut$   & local velocity                             & cm~s$^{-1}$ \\
+$\Ut$   & local velocity                             & cm~s$^{-1}$ \\
 \hline
 $\uadv$ & advective velocity (edge-centered)         & cm~s$^{-1}$ \\
 \hline
@@ -108,7 +108,7 @@ $\beta_0$ & coefficient to velocity
 \hline
 $\Gamma_1$ & first adiabatic exponent ($\Gamma_1 \equiv \left . d \log p/d \log \rho \right |_s$) & -- \\
 \hline
-$\etarho$ & $\etarho \equiv \overline{ (\rho' \ut \cdot \er)}$ & g~cm$^{-2}$~s$^{-1}$ \\
+$\etarho$ & $\etarho \equiv \overline{ (\rho' \Ut \cdot \er)}$ & g~cm$^{-2}$~s$^{-1}$ \\
 \hline
 $\xi_k$ & $\xi_k \equiv \left . \partial h / \partial X_k \right |_{p,T,X_{j,j\ne k}}$ & erg~g$^{-1}$ \\
 \hline 
@@ -416,12 +416,12 @@ The local velocity field is described by
 The procedure to construct $\uadvone$ is described in detail in Appendix B of paper III.
 We note that  $\uadvone$ satisfies the discrete versions of 
 \begin{equation}
-\int_{\Omega_H} \ut \cdotb \er \; dA = 0 \label{eq:udoterzero} \enskip ,
+\int_{\Omega_H} \Ut \cdotb \er \; dA = 0 \label{eq:udoterzero} \enskip ,
 \end{equation}
 (paper III; eq.~[21])
 and
 \begin{equation}
-\nablab \cdotb (\beta_0 \ut )  = \beta_0 \left(S - \Sbar \right )\enskip ,
+\nablab \cdotb (\beta_0 \Ut )  = \beta_0 \left(S - \Sbar \right )\enskip ,
 \label{eq:tildeconstraint}
 \end{equation}
 (paper III; eq.~[39]).  The discretization with the volume discrepancy correction is
@@ -923,10 +923,10 @@ and $T^{n+1}$ from step 9.
 \item[Step 11.] {\em Update the velocity}.  
 
 The velocity update happens analogously to paper II, using $S^{n+1}$ from step 10.
-We update the velocity field $\ut^n$ to $\ut^{n+1,\star}$ by discretizing
+We update the velocity field $\Ut^n$ to $\Ut^{n+1,\star}$ by discretizing
 \begin{equation}
-\frac{\partial\ut}{\partial t} = - \ut \cdotb \nablab \ut - w_0 \frac{\partial \ut}{\partial r}
-                                 - \left(\ut \cdotb \er\right) \frac{\partial w_0}{\partial r} \er
+\frac{\partial\Ut}{\partial t} = - \Ut \cdotb \nablab \Ut - w_0 \frac{\partial \Ut}{\partial r}
+                                 - \left(\Ut \cdotb \er\right) \frac{\partial w_0}{\partial r} \er
                                  - \frac{1}{\rho} \nablab\pi
                                  + \frac{1}{\rho_0} \frac{\partial \pizero}{\partial r} \er
                                  - \frac{(\rho-\rhozero)}{\rho} \; g \; \er  \label{eq:utildeupd}  \enskip\
@@ -934,8 +934,8 @@ We update the velocity field $\ut^n$ to $\ut^{n+1,\star}$ by discretizing
 \end{equation}
 (paper III; eq.~[37]) as 
 \begin{eqnarray}
-\ut^{n+1,\star} &=& \ut^n - \dt \;
- \left[\left(\uadvtwo+ w_0^{\nph} \er\right) \cdotb \nablab \ut \right]^\nph
+\Ut^{n+1,\star} &=& \Ut^n - \dt \;
+ \left[\left(\uadvtwo+ w_0^{\nph} \er\right) \cdotb \nablab \Ut \right]^\nph
       - \dt \; \left(\uadvtwo \cdotb \er\right)  \left(\frac{\partial w_0^{\nph}}{\partial r} \right) \er \nonumber \\
    &&   + \dt \left[ - \frac{1}{\rho^\nph} {\mathbf{G}} \pi^\nmh
         + \frac{1}{\rho_0} {\mathbf{G}} \pizerotwo
@@ -943,19 +943,19 @@ We update the velocity field $\ut^n$ to $\ut^{n+1,\star}$ by discretizing
 \end{eqnarray}
 where $\rho^\nph = ( \rho^n + \rho^{n+1} )/2$
 and $\mathbf{G}$ approximates a cell-centered gradient from nodal data. 
-The construction of $[(\uadvtwo+ w_0^{\nph} \er \cdotb \nablab) \ut ]^\nph$
+The construction of $[(\uadvtwo+ w_0^{\nph} \er \cdotb \nablab) \Ut ]^\nph$
 is described in paper II, Appendix A, with $\V = \uadvtwo+w_0^{\nph} \er$ and~$s$ set to each
-component of $\ut^n$ individually.
+component of $\Ut^n$ individually.
 
 Finally, we impose the divergence constraint from equation (\ref{eq:tildeconstraint}) 
 including the volume discrepancy correction,
 \begin{equation}
-\nablab \cdotb \left(\beta_0^{\nph} \ut^{n+1} \right)  = \beta_0^{\nph} \left(S^{n+1} - \overline{S}^{n+1} \right)
+\nablab \cdotb \left(\beta_0^{\nph} \Ut^{n+1} \right)  = \beta_0^{\nph} \left(S^{n+1} - \overline{S}^{n+1} \right)
 + \frac{f}{\gammabar^{n+1} p_0^{n+1}}
 \left[\frac{p(\rho,h,X_k)^{n+1} - \overline{p(\rho,h,X_k)^{n+1}}}{\Delta t^n}\right]
 \enskip,
 \end{equation}
-by defining ${\bf V} = \ut^{n+1,\star} + ( \dt / \rho^\nph ) \; \mathbf{G} \pi^\nmh$ 
+by defining ${\bf V} = \Ut^{n+1,\star} + ( \dt / \rho^\nph ) \; \mathbf{G} \pi^\nmh$ 
 and solving
 \begin{equation}
  L_\beta^\rho \phi =
@@ -984,7 +984,7 @@ We solve the linear system of equation
 
 We determine the new time velocity field from
 \begin{equation}
-\ut^{n+1} = {\bf V} - \frac{1}{\rho^\nph} \mathbf{G} \phi \enskip ,
+\Ut^{n+1} = {\bf V} - \frac{1}{\rho^\nph} \mathbf{G} \phi \enskip ,
 \end{equation}
 and the new time-centered perturbational pressure from
 \begin{equation}
@@ -998,7 +998,7 @@ and the new time-centered perturbational pressure from
 
 Compute $\dt$ for the next time step with the procedure described in \S~ref{sec:timesteps},
 using $w_0$ as computed in step 6 and
-$\ut^{n+1}$ as computed in step 11.  We use this $\dt$ in the next time step. 
+$\Ut^{n+1}$ as computed in step 11.  We use this $\dt$ in the next time step. 
 
 
 \end{description}
@@ -1092,7 +1092,7 @@ $\etarho^{-\half} = 0$, $\psi^{-\half} = 0$, and $\pi^{-\half} = 0.$
   \item Perform steps 1--11 as described above, using 
     $S^{\half,\star} = (S^0 + S^{1,\nu})/2$ in step 1 as described.
     The only other difference in the time advancement is that in step 11
-    we define ${\bf V} = (\ut^{1,\star} - \ut^0)$ and solve
+    we define ${\bf V} = (\Ut^{1,\star} - \Ut^0)$ and solve
     \begin{equation}  L_\beta^\rho \phi =
       D \left ( \beta_0^{\half} {\bf V} \right) - \beta_0^{\half} \left[ (S^{1}-\overline{S}^{1}) - (S^{0}-\overline{S}^{0}) \right] \enskip . 
     \end{equation}
