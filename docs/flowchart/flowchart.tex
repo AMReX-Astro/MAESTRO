@@ -300,8 +300,7 @@ the forcing for the interface state calculation, but is used in the update.
 
 \end{description}
 
-\item {\bf Correct Base}
-$[\rho_0^{\inp}, (\nabla\cdot\etarho\er)^{\inp}] \rightarrow [\rho_0^{\outp}]$\\
+\item {\bf Correct Base}$[\rho_0^{\inp}, (\nabla\cdot\etarho\er)^{\inp}] \rightarrow [\rho_0^{\outp}]$\\
 is the process by which we adjust the base state density to account for
 large-scale mixing, through $\etarho$.  For both plane-parallel and spherical
 we use
@@ -489,8 +488,9 @@ of $\dt.$}
 \begin{enumerate}
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
 
-\item {\bf Advect Base}$[\rhozero^{n}, (\rho h)_0^{(1)}, p_0^{n}, \beta_0^{(1)}, w_0^{\nph,\star}, \psi^{\nmh}] \rightarrow $
-$[\rho_0^{(2),\star}, (\rho h)_0^{(2),\star}, \rho_0^{\nph,\star,{\rm pred}}, p_0^{n+1,\star}].$ 
+%\item {\bf Advect Base}$[\rhozero^{n}, (\rho h)_0^{(1)}, p_0^{n}, \beta_0^{(1)}, w_0^{\nph,\star}, \psi^{\nmh}] \rightarrow [\rho_0^{(2),\star}, (\rho h)_0^{(2),\star}, \rho_0^{\nph,\star,{\rm pred}}, p_0^{n+1,\star}].$ 
+
+\item {\bf Advect Base Density}
 
 \item Update the species.  Here we do a difference approximation
   to 
@@ -532,6 +532,8 @@ X_k^{(2),\star} = (\rho X_k)^{(2),\star} / \rho^{(2),\star}
 
 \end{enumerate}
 
+\item (spherical only) {\bf Advect Base Pressure}
+
 \item Define an edge-centered $\etarho^{\nph,\star}$, cell-centered 
 $(\nabla\cdot\etarho\er)^{\nph,\star}$, and cell-centered $\psi_j^{\nph,\star}$:
 
@@ -553,6 +555,10 @@ $(\nabla\cdot\etarho\er)^{\nph,\star}$, and cell-centered $\psi_j^{\nph,\star}$:
 the details.
 
 \end{description}
+
+\item (plane-parallel only only) {\bf Advect Base Pressure}
+
+\item {\bf Advect Base Enthalpy}
 
 \item Update the enthalpy.  The full enthalpy equation is 
 \MarginPar{we should say something about {\tt use\_tfromp}, and {\tt do\_eos\_h\_above\_cutoff}}
@@ -632,8 +638,7 @@ results in a better solution.
 
   \end{enumerate}
 
-\item {\bf Correct Base}
-$[\rho_0^{(2),\star}, (\nabla\cdot\etarho\er)^{\nph,*}] \rightarrow [\rho_0^{n+1,\star}]$.
+\item {\bf Correct Base}$[\rho_0^{(2),\star}, (\nabla\cdot\etarho\er)^{\nph,*}] \rightarrow [\rho_0^{n+1,\star}]$.
 
 
 %--------------------------------------------------------------------------
@@ -808,8 +813,9 @@ with the volume discrepancy correction is
 \begin{enumerate}
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
 
-\item {\bf Advect Base}$(\rho_0^{n}, (\rho h)_0^{(1)}, p_0^{n}, \beta_0^{(1)}, w_0^{\nph}, \psi^{\nph,\star} ) \rightarrow $
-$[\rho_0^{(2)}, (\rho h)_0^{(2)}, \rho_0^{\nph,{\rm pred}}, p_0^{n+1}].$ 
+%\item {\bf Advect Base}$(\rho_0^{n}, (\rho h)_0^{(1)}, p_0^{n}, \beta_0^{(1)}, w_0^{\nph}, \psi^{\nph,\star} ) \rightarrow [\rho_0^{(2)}, (\rho h)_0^{(2)}, \rho_0^{\nph,{\rm pred}}, p_0^{n+1}].$ 
+
+\item {\bf Advect Base Density}
 
 \item Update the species.  Here we do a difference approximation to
   eq.~\ref{eq:species}, neglecting the reaction terms.  The
@@ -847,6 +853,8 @@ X_k^{(2)} = (\rho X_k)^{(2)} / \rho^{(2)}
 
    \end{enumerate}
 
+\item (spherical only) {\bf Advect Base Pressure}
+
 \item Define an edge-centered $\etarho^{\nph}$, cell-centered 
 $(\nabla\cdot\etarho\er)^{\nph}$, and a cell-centered $\psi_j^{\nph}$,
 
@@ -867,6 +875,11 @@ $(\nabla\cdot\etarho\er)^{\nph}$, and a cell-centered $\psi_j^{\nph}$,
 \item[spherical:]~
 
 \end{description}
+
+
+\item (plane-parallel only) {\bf Advect Base Pressure}
+
+\item {\bf Advect Base Enthalpy}
 
 \item Update the enthalpy, using a difference approximation to
   eq.~\ref{eq:rhohupd}, neglecting the reaction terms.
@@ -917,8 +930,7 @@ $(\nabla\cdot\etarho\er)^{\nph}$, and a cell-centered $\psi_j^{\nph}$,
 
 \end{enumerate}
 
-\item {\bf Correct Base}
-$[\rho_0^{(2)}, (\nabla\cdot\etarho\er)^{\nph}] \rightarrow [\rho_0^{n+1}]$
+\item {\bf Correct Base}$[\rho_0^{(2)}, (\nabla\cdot\etarho\er)^{\nph}] \rightarrow [\rho_0^{n+1}]$
 
 %--------------------------------------------------------------------------
 % STEP 8.1
