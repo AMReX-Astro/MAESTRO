@@ -8,9 +8,8 @@ The full density evolution equation is
 \frac{\partial\rho}{\partial t} = -\nabla\cdot(\rho\Ub) = -\Ub\cdot\nabla\rho 
 - \rho\nabla\cdot\Ub. \label{rho equation}
 \end{equation}
-
-\subsection{Predicting $\rho'$ ({\tt predict\_rho = F} - default)}
-The base state density evolution equation is \MarginPar{we don't have {\tt predict\_rho} anymore--is this still right?}
+We predict both $\rho'$ and $\rho_0$ to edges and later reconstruct $\rho$.
+The base state density evolution equation is
 \begin{equation}
 \frac{\partial\rho_0}{\partial t} = -\nabla\cdot(\rho_0 w_0 \eb_r) = 
 -w_0\frac{\partial\rho_0}{\partial r} 
@@ -26,12 +25,12 @@ perturbational density equation,
 \label{rhoprime equation}
 \end{equation}
 
-\subsubsection{Predicting $\rho'$ at edges}
+\subsection{Predicting $\rho'$ at edges}
 We define $\rho' = \rho^n - \rho_0^n$.  Then we predict $\rho'$ to
 edges using {\tt make\_edge\_scal} in {\tt scalar\_advance} and the
 underbraced term in (\ref{rhoprime equation}) as the forcing.
 
-\subsubsection{Predicting $\rho_0$ at edges}\label{Predicting rho0 at edges}
+\subsection{Predicting $\rho_0$ at edges}\label{Predicting rho0 at edges}
 There are two ways to predict $\rho_0$ at edges.
 \begin{enumerate}
 \item We call {\tt make\_edge\_state\_1d} using the underbraced term
@@ -52,14 +51,14 @@ avg}}$ is used to construct $\rho$ at edges from $\rho'$ at edges, and
 this $\rho$ at edges is used to compute fluxes for $\rho X_k$.
 \end{enumerate}
 
-\subsubsection{Computing $\rho$ at edges}\label{Computing rho at edges}
+\subsection{Computing $\rho$ at edges}\label{Computing rho at edges}
 For the non-radial edges, we directly add $\rho_0^{n+\half,{\rm avg}}$
 to $\rho'$ since $\rho_0^{n+\half,{\rm avg}}$ is a cell-centered
 quantity.  For the radial edges, we interpolate to obtain
 $\rho_0^{n+\half,{\rm avg}}$ at radial edges before adding it to
 $\rho'$.
 
-\subsubsection{Advancing $\rho X_k$}\label{Advancing rhoX_k}
+\subsection{Advancing $\rho X_k$}\label{Advancing rhoX_k}
 The evolution equation for $\rho X_k$, ignoring the reaction terms
 that were already accounted for in {\tt react\_state}, and the
 associated discretization is
