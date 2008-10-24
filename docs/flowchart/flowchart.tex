@@ -491,7 +491,8 @@ of $\dt.$}
 \begin{enumerate}
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
 
-\item {\bf Advect Base Density}
+\item {\bf Advect Base Density}$[\rhozero^{n},w_0^{\nph,\star}] \rightarrow$ 
+$[\rho_0^{(2),\star}, \rho_0^{\nph,\star,{\rm pred}}]$.
 
 \item Update the species.  Here we do a difference approximation
   to 
@@ -533,7 +534,8 @@ X_k^{(2),\star} = (\rho X_k)^{(2),\star} / \rho^{(2),\star}
 
 \end{enumerate}
 
-\item (spherical only) {\bf Advect Base Pressure}
+\item (spherical only) {\bf Advect Base Pressure}$[p_0^{n}, w_0^{\nph,\star}, \psi^{\nmh}]$ 
+$\rightarrow [p_0^{n+1,\star}]$.  Note that $\psi$ is not used in the spherical case.
 
 \item Define an edge-centered $\etarho^{\nph,\star}$, cell-centered 
 $(\nabla\cdot\etarho\er)^{\nph,\star}$, and cell-centered $\psi_j^{\nph,\star}$:
@@ -557,9 +559,11 @@ the details.
 
 \end{description}
 
-\item (plane-parallel only only) {\bf Advect Base Pressure}
+\item (plane-parallel only only) {\bf Advect Base Pressure}$[p_0^{n}, w_0^{\nph,\star},$ 
+$\psi^{\nph,\star}] \rightarrow [p_0^{n+1,\star}]$.
 
-\item {\bf Advect Base Enthalpy}
+\item {\bf Advect Base Enthalpy}$[(\rho h)_0^{(1)}, w_0^{\nph,\star}, \psi^{\nph,\star}]$ 
+$\rightarrow [(\rho h)_0^{(2),\star}]$.
 
 \item Update the enthalpy.  The full enthalpy equation is 
 \MarginPar{we should say something about {\tt use\_tfromp}, and {\tt do\_eos\_h\_above\_cutoff}}
@@ -814,7 +818,8 @@ with the volume discrepancy correction is
 \begin{enumerate}
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
 
-\item {\bf Advect Base Density}
+\item {\bf Advect Base Density}$[\rho_0^{n},w_0^{\nph}] \rightarrow$ 
+$[\rho_0^{(2)}, \rho_0^{\nph,{\rm pred}}]$.
 
 \item Update the species.  Here we do a difference approximation to
   eq.~\ref{eq:species}, neglecting the reaction terms.  The
@@ -852,7 +857,8 @@ X_k^{(2)} = (\rho X_k)^{(2)} / \rho^{(2)}
 
    \end{enumerate}
 
-\item (spherical only) {\bf Advect Base Pressure}
+\item (spherical only) {\bf Advect Base Pressure}$[p_0^{n}, w_0^{\nph}, \psi^{\nph,\star}]$ 
+$\rightarrow [p_0^{n+1}]$.  Note that $\psi$ is not used in the spherical case.
 
 \item Define an edge-centered $\etarho^{\nph}$, cell-centered 
 $(\nabla\cdot\etarho\er)^{\nph}$, and a cell-centered $\psi_j^{\nph}$,
@@ -875,10 +881,11 @@ $(\nabla\cdot\etarho\er)^{\nph}$, and a cell-centered $\psi_j^{\nph}$,
 
 \end{description}
 
+\item  (plane-parallel only) {\bf Advect Base Pressure}$[p_0^{n}, w_0^{\nph}, \psi^{\nph}]$ 
+$\rightarrow [p_0^{n+1}]$.
 
-\item (plane-parallel only) {\bf Advect Base Pressure}
-
-\item {\bf Advect Base Enthalpy}
+\item {\bf Advect Base Enthalpy}$[(\rho h)_0^{(1)}, w_0^{\nph}, \psi^{\nph}]$ 
+$\rightarrow [(\rho h)_0^{(2)}]$.
 
 \item Update the enthalpy, using a difference approximation to
   eq.~\ref{eq:rhohupd}, neglecting the reaction terms.
