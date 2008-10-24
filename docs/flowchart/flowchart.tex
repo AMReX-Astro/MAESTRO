@@ -558,16 +558,24 @@ the details.
 \MarginPar{we should say something about {\tt use\_tfromp}, and {\tt do\_eos\_h\_above\_cutoff}}
   \begin{equation}
   \frac{\partial (\rho h)}{\partial t}  = - \nablab \cdotb (\Ub \rho h)
-+ \frac{Dp_0}{Dt} + \nabla\cdot\kth\nabla T + \rho \Hnuc + \rho \Hext 
++ \psi + (\Ubt \cdot \er) \frac{\partial p_0}{\partial r} + \nabla\cdot\kth\nabla T + \rho \Hnuc + \rho \Hext 
 \enskip , \label{eq:rhohupd} 
   \end{equation}
 Here we consider only the advection, neglecting the reaction terms and thermal diffusion terms,
 and solve a discretized version of
   \begin{equation}
   \frac{\partial (\rho h)}{\partial t}  = - \nablab \cdotb (\Ub \rho h)
-+ \frac{Dp_0}{Dt} 
++ \psi + (\Ubt \cdot \er) \frac{\partial p_0}{\partial r} 
 \enskip , \label{eq:rhohupdadv} 
   \end{equation}
+For spherical flows, experience has shown that solving the algebraically-equivalent form
+\begin{equation}
+  \frac{\partial (\rho h)}{\partial t}  = - \nablab \cdotb (\Ub \rho h)
++ \psi + \nabla \cdot (\Ubt p_0) - p_0 \nabla \cdot \Ubt  
+\enskip , \label{eq:rhohupdadv2} 
+\end{equation}
+results in a better solution.
+
 
   \begin{enumerate}
   \renewcommand{\labelenumii}{{\bf \roman{enumii}}.}
@@ -595,6 +603,10 @@ and solve a discretized version of
 
   \item Evolve $(\rho h)^{(1)} \rightarrow (\rho h)^{(2'),\star}$ without
   explicitly including the reaction terms,
+
+\begin{description}
+\item[plane-parallel:]
+
   \begin{eqnarray}
   (\rho h)^{(2'),\star} &=& (\rho h)^{(1)} - \dt \; \left\{ \nablab
       \cdotb \left[ \left(\uadvone+w_0^{\nph,\star} \er\right) (\rho
@@ -603,6 +615,21 @@ and solve a discretized version of
       p_0}{\partial r} \right)^{n} + \dt \; \psi^{\nph,*} \enskip ,
   \end{eqnarray}
   \MarginPar{we should also show the update in the case that $(\rho h)'$ is the flux}
+
+\item[spherical:]
+
+  \begin{eqnarray}
+  (\rho h)^{(2'),\star} &=& (\rho h)^{(1)} - \dt \; \left\{ \nablab
+      \cdotb \left[ \left(\uadvone+w_0^{\nph,\star} \er\right) (\rho
+      h)^{(1),\nph,\star} \right] \right\} \nonumber \\ 
+    && + \dt \; \left \{ \nabla \cdot \left (\uadvone p_0^{n} \right ) 
+       - p_0^{n} \nabla \cdot \uadvone \right \} \nonumber \\
+    && + \dt \; \psi^{\nph,*} \enskip ,
+  \end{eqnarray}
+
+\MarginPar{is it really $p_0^n$ here and not $p_0^{n+1/2}$?}
+\end{description}
+
   \end{enumerate}
 
 \item {\bf Correct Base}
@@ -863,6 +890,10 @@ $(\nabla\cdot\etarho\er)^{\nph}$, and a cell-centered $\psi_j^{\nph}$,
 
    \item Evolve $(\rho h)^{(1)} \rightarrow (\rho h)^{(2)}$ without
      explicitly including the reaction terms,
+
+\begin{description}
+\item[plane-parallel:]
+
 \begin{eqnarray}
 (\rho h)^{(2')} &=& (\rho h)^{(1)} - \dt \; \left\{ \nablab \cdotb \left[ \left(\uadvtwo+w_0^{\nph} \er\right)  
 (\rho h)^{(1),\nph} \right] \right\} \nonumber \\
@@ -871,6 +902,18 @@ $(\nabla\cdot\etarho\er)^{\nph}$, and a cell-centered $\psi_j^{\nph}$,
       + \left(\frac{\partial p_0}{\partial r} \right)^{n+1}  \right ] 
 + \dt \; \psi^{\nph} \enskip ,
 \end{eqnarray}
+
+\item[spherical:]
+
+\begin{eqnarray}
+(\rho h)^{(2')} &=& (\rho h)^{(1)} - \dt \; \left\{ \nablab \cdotb \left[ \left(\uadvtwo+w_0^{\nph} \er\right)  
+(\rho h)^{(1),\nph} \right] \right\} \nonumber \\
+    && + \dt \; \left \{ \nabla \cdot \left (\uadvtwo p_0^{n+1/2} \right ) 
+       - p_0^{n+1/2} \nabla \cdot \uadvtwo \right \} \nonumber \\
+    && + \dt \; \psi^{\nph} \enskip ,
+\end{eqnarray}
+
+\end{description}
 
 \end{enumerate}
 
