@@ -40,6 +40,7 @@
 \newcommand{\initp}{\mathrm{init}}
 \newcommand{\outp}{\mathrm{out}}
 
+\newcommand{\uadv}{\widetilde{\mathbf{U}}^{\mathrm{ADV}}}
 \newcommand{\uadvone}{\widetilde{\mathbf{U}}^{\mathrm{ADV},\star}}
 \newcommand{\uadvtwo}{\widetilde{\mathbf{U}}^{\mathrm{ADV}}}
 \newcommand{\V}{\mathbf{V}}
@@ -107,20 +108,20 @@ A.~S.~Almgren, J.~B.~Bell, A.~Nonaka, \& M.~Zingale,
 \begin{center}
 \begin{longtable}{|l|p{4.0in}|l|}
 \caption[definition of symbols.]{definition of symbols.} \label{table:sym} \\
-
+%
 \hline \multicolumn{1}{|c|}{\textbf{symbol}} & 
        \multicolumn{1}{ c|}{\textbf{meaning}} & 
        \multicolumn{1}{ c|}{\textbf{units}} \\ \hline 
 \endfirsthead
 
 \multicolumn{3}{c}%
-{{\bfseries \tablename\ \thetable{} -- continued from previous page}} \\
+{{\tablename\ \thetable{}---continued}} \\
 \hline \multicolumn{1}{|c|}{\textbf{symbol}} & 
        \multicolumn{1}{ c|}{\textbf{meaning}} & 
        \multicolumn{1}{ c|}{\textbf{units}} \\ \hline 
 \endhead
 
-\multicolumn{3}{|r|}{{Continued on next page}} \\ \hline
+\multicolumn{3}{|r|}{{\em continued on next page}} \\ \hline
 \endfoot
 
 \hline 
@@ -130,7 +131,7 @@ $c_p$   & specific heat at constant pressure
           ($c_p \equiv \left . \partial h / \partial T \right |_{p,X_k}$)
         & erg~g$^{-1}$~K$^{-1}$ \\
 \hline
-$f$     & volume discrepancy factor ($0 \le f \le 1$) & - \\
+$f$     & volume discrepancy factor ($0 \le f \le 1$) & -- \\
 \hline
 $g$     & gravitational acceleration                 & cm~s$^{-2}$ \\
 \hline
@@ -152,7 +153,7 @@ $p_{X_k}$ & $p_{X_k} \equiv \left . \partial p / \partial X_k \right |_{p,T,X_{j
 \hline
 $p_\rho$ & $p_\rho \equiv \left . \partial p / \partial \rho \right |_{T,X_k}$ & erg~g$^{-1}$ \\
 \hline
-$q_k$   & specific nuclear binding energy            & erg~g  \\
+$q_k$   & specific nuclear binding energy            & erg~g$^{-1}$  \\
 \hline
 $r$     & radial coordinate (direction of gravity)   & cm \\
 \hline
@@ -160,7 +161,7 @@ $s$     & specific entropy                           & erg~g$^{-1}$~K$^{-1}$ \\
 \hline
 $S$     & source term to the divergence constraint   & s$^{-1}$ \\
 \hline
-t       & time                                       & s \\
+$t$     & time                                       & s \\
 \hline
 $T$     & temperature                                & K \\
 \hline
@@ -168,14 +169,16 @@ $\ubold$     & total velocity ($\ubold = \ut + w_0 \er$) & cm~s$^{-1}$ \\
 \hline
 $\ut$   & local velocity                             & cm~s$^{-1}$ \\
 \hline
+$\uadv$ & advective velocity (edge-centered)         & cm~s$^{-1}$ \\
+\hline
 $w_0$   & base state expansion velocity              & cm~s$^{-1}$ \\
 \hline
-$X_k$   & mass fraction of the species ($\sum_k X_k = 1$) & - \\
+$X_k$   & mass fraction of the species ($\sum_k X_k = 1$) & -- \\
 \hline
-$\beta_0$ & density-like quantity that is the coefficient to velocity
-            in our constraint equation  & g~cm$^{-3}$ \\
+$\beta_0$ & coefficient to velocity
+            in velocity constraint equation  & g~cm$^{-3}$ \\
 \hline
-$\Gamma_1$ & first adiabatic exponent ($\Gamma_1 \equiv \left . d \log p/d \log \rho \right |_s$) & - \\
+$\Gamma_1$ & first adiabatic exponent ($\Gamma_1 \equiv \left . d \log p/d \log \rho \right |_s$) & -- \\
 \hline
 $\etarho$ & $\etarho \equiv \overline{ (\rho' \ut \cdot \er)}$ & g~cm$^{-2}$~s$^{-1}$ \\
 \hline
@@ -191,6 +194,11 @@ $\rho_0$  & base state mass density  & g~cm$^{-3}$ \\
 \hline
 $\rho'$  & perturbational density ($\rho' = \rho - \rho_0$) & g~cm$^{-3}$ \\
 \hline
+$(\rho h)_0$ & base state enthalpy density & erg~cm$^{-3}$  \\
+\hline
+$(\rho h)'$ & perturbational enthalpy density 
+              $ \left [(\rho h)' = \rho h - (\rho h)_0 \right ]$ & erg~cm$^{-3}$  \\
+\hline
 $\sigma$ & $\sigma \equiv p_T/(\rho c_p p_\rho)$ & erg$^{-1}$~g \\
 \hline
 $\psi$  & $\psi \equiv D_0 p_0/Dt$ & erg~cm$^{-3}$~s$^{-1}$ \\
@@ -202,7 +210,7 @@ $\omegadot_k$ & creation rate for species $k$ ($\omegadot_k \equiv DX_k/Dt$) & s
 \renewcommand{\arraystretch}{1.0}
 
 
-We make use of the following shorthand notations in outlining the algorithm.
+We make use of the following shorthand notations in outlining the algorithm:
 \begin{enumerate}
 
 \item For any quantity, $\phi,$ we define $\overline{\phi} = ${\bf Avg}$(\phi),$ 
@@ -594,14 +602,19 @@ the details.
 
 \end{description}
 
-\item Update the enthalpy, using a difference approximation to
-
+\item Update the enthalpy.  The full enthalpy equation is 
   \begin{equation}
   \frac{\partial (\rho h)}{\partial t}  = - \nablab \cdotb (\ubold \rho h)
 + \frac{Dp_0}{Dt} + \nabla\cdot\kth\nabla T + \rho \Hnuc + \rho \Hext 
 \enskip , \label{eq:rhohupd} 
   \end{equation}
-  neglecting the reaction terms.
+Here we consider only the advection, neglecting the reaction terms and thermal diffusion terms,
+and solve a discretized version of
+  \begin{equation}
+  \frac{\partial (\rho h)}{\partial t}  = - \nablab \cdotb (\ubold \rho h)
++ \frac{Dp_0}{Dt} 
+\enskip , \label{eq:rhohupdadv} 
+  \end{equation}
 
   \begin{enumerate}
   \renewcommand{\labelenumii}{{\bf \roman{enumii}}.}
@@ -642,7 +655,30 @@ $[\rho_0^{(2),\star}, (\nabla\cdot\etarho\er)^{\nph,*}] \rightarrow [\rho_0^{n+1
 % STEP 4.1
 %--------------------------------------------------------------------------
 
-\item Diffuse the enthalpy through a time interval of $\dt$.  Compute $\kth^{(1)}, c_p^{(1)}$, and $\xi_k^{(1)}$ from $\rho^{(1)}, T^{(1)}$, and $X_k^{(1)}$ as inputs to the equation of state.  The update is given by
+\item Diffuse the enthalpy through a time interval of $\dt$.  Here we begin
+with the enthalpy equation (eq.~[eq:rhohup]), but consider only the 
+diffusion terms,
+\begin{equation}
+  \frac{\partial (\rho h)}{\partial t}  = 
+ \nabla\cdot\kth\nabla T 
+\enskip . \label{eq:rhohupdthermal} 
+  \end{equation}
+We can recast this as an enthalpy-diffusion equation by applying the
+chain-rule to $h(p_0,T,X_k)$,
+\begin{equation}
+\nabla h = h_p \nabla p_0 + c_p \nabla T + \sum_k \xi_k \nabla X_k \enskip ,
+\end{equation}
+giving
+\begin{equation}
+  \frac{\partial (\rho h)}{\partial t}  = 
+ \nabla\cdot \frac{\kth}{c_p}\nabla h -  
+ \sum_k \nabla\cdot \frac{\xi_k \kth}{c_p}\nabla X_k -
+ \nabla\cdot \frac{h_p \kth}{c_p}\nabla p_0 
+\enskip . \label{eq:rhohupdthermal2} 
+  \end{equation}
+
+
+Compute $\kth^{(1)}, c_p^{(1)}$, and $\xi_k^{(1)}$ from $\rho^{(1)}, T^{(1)}$, and $X_k^{(1)}$ as inputs to the equation of state.  The update is given by
 \begin{eqnarray}
 (\rho h)^{(2),\star} &=& (\rho h)^{(2'),\star} + \frac{\dt}{2}\nabla\cdot\left(\frac{\kth^{(1)}}{c_p^{(1)}}\nabla h^{(2),\star} + \frac{\kth^{(1)}}{c_p^{(1)}}\nabla h^{(1)}\right)\nonumber\\
 &&- \frac{\dt}{2}\sum_k\nabla\cdot\left(\frac{\xi_k^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla X_k^{(2),\star} + \frac{\xi_k^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla X_k^{(1)}\right)\nonumber\\
