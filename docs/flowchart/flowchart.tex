@@ -341,6 +341,9 @@ $\psi$ that are then used in the enthalpy update.
 \item We discuss spherical geometries.
 
 \item We add thermal diffusion.
+
+\item We added the volume-discrepancy term to the velocity constraint
+equation.
 \end{itemize}
 %
 The advance of the state through a single timestep appears as:
@@ -479,6 +482,7 @@ Define
 \gammabar^{(1)}        &=& {\rm{\bf Avg}} \left[ \Gamma_1(\rho^{(1)}, p_0^{n}, X_k^{(1)}) \right] \enskip , \\
  {\beta   }_0^{(1)}    &=& \beta   \left(\rho_0^{n}, p_0^{n}, \gammabar^{(1)}\right) \enskip .
 \end{eqnarray}
+Here $\beta_0$ is computed as described in paper~III, Appendix C.
 
 \end{enumerate}
 
