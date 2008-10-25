@@ -70,7 +70,7 @@ function process_files
   # written to disk.  Strip out any tar files that are lying around as well 
   # as pltXXXXX.processed files.
   #pltlist=$(ls -d ${plt_prefix}* 2>/dev/null | grep -v tar | grep -v processed)
-  pltlist=$(find . -type d -name "${plt_prefix}*" -print)
+  pltlist=$(find . -type d -name "${plt_prefix}*" -print | sort)
 
   if [ "$pltlist" ]; then
     nl=$(echo "$pltlist" | wc -l)
@@ -123,7 +123,7 @@ function process_files
   # written to disk.  Strip out any tar files that are lying around as well 
   # as chkXXXXX.processed files.
   #chklist=$(ls -d ${chk_prefix}* 2>/dev/null | grep -v tar | grep -v processed)
-  chklist=$(find . -type d -name "${chk_prefix}*" -print)
+  chklist=$(find . -type d -name "${chk_prefix}*" -print | sort)
 
   if [ "$chklist" ]; then
     nl=$(echo "$chklist" | wc -l)
