@@ -15,7 +15,7 @@ A.~S.~Almgren, J.~B.~Bell, A.~Nonaka, \& M.~Zingale
   2008, ApJ, 684, 449 (henceforth paper~III)
 \item {\em Low Mach Number Modeling of Type Ia Supernovae. IV. White Dwarf Convection,}
 A.~S.~Almgren, J.~B.~Bell, A.~Nonaka, \& M.~Zingale,
-  in perparation (henceforth paper~IV)
+  in preparation (henceforth paper~IV)
 \end{itemize}
 We also carry over some ideas from our small-scale low Mach number algorithm
 for astrophysical flows:
@@ -516,7 +516,7 @@ $[\rho_0^{(2),\star}, \rho_0^{\nph,\star,{\rm pred}}]$.
   Taylor expansion in space and time, as described in paper II,
   Appendix A, using $\Vb = \uadvone+w_0^{\nph,\star} \er$.  We use the base
   state density, $\rho_0$, to convert this to an edge state for $\rho$,
-
+  \MarginPar{why don't we do something higher order here for plane-parallel?}
 \begin{equation}
 \rho^{(1),\nph,\star} = 
 \rho^{'(1),\nph,\star} + \frac{\rho_0^n + \rho_0^{(2),\star}}{2} \enskip ,
@@ -558,7 +558,7 @@ $(\nabla\cdot\etarho\er)^{\nph,\star}$, and cell-centered $\psi_j^{\nph,\star}$:
  \psi_j^{\nph,\star} = \frac{1}{2} \left(\eta_{\rho,j-\myhalf}^{\nph,\star} + \eta_{\rho,j+\myhalf}^{\nph,\star}\right) g \enskip .
 \end{equation}
 
-\item[spherical:] See {\tt MAESTO/docs/eta\_notes} for working notes until we finlize 
+\item[spherical:] See {\tt MAESTRO/docs/eta\_notes} for working notes until we finalize 
 the details.
 
 \end{description}
@@ -612,7 +612,7 @@ results in a better solution.
 \end{equation}
    
    We note that for spherical geometry, the edge state of $(\rho h)_0$
-   is computed by averging $h_0 \equiv (\rho h)_0/\rho_0$ and $\rho_0$
+   is computed by averaging $h_0 \equiv (\rho h)_0/\rho_0$ and $\rho_0$
    to the edge separately, and then computing 
    ${(\rho h)_0}_{r+1/2} = {\rho_0}_{r+1/2} {h_0}_{r+1/2}$.
 
@@ -911,6 +911,10 @@ $\rightarrow [(\rho h)_0^{(2)}]$.
 (\rho h)^{'(1),\nph} + \frac{(\rho h)_0^n + (\rho h)_0^{(2)}}{2} \enskip .
 \end{equation}
 
+   We note that for spherical geometry, the edge state of $(\rho h)_0$
+   is computed by averaging $h_0 \equiv (\rho h)_0/\rho_0$ and $\rho_0$
+   to the edge separately, and then computing 
+   ${(\rho h)_0}_{r+1/2} = {\rho_0}_{r+1/2} {h_0}_{r+1/2}$.
    \item Evolve $(\rho h)^{(1)} \rightarrow (\rho h)^{(2)}$ without
      explicitly including the reaction terms,
 
