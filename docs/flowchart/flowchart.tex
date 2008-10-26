@@ -704,10 +704,19 @@ which is numerically implemented as a diffusion equation for $h^{(2),\star}$,
 &&- \frac{\dt}{2}\sum_k\nabla\cdot\left(\frac{\xi_k^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla X_k^{(2),\star} + \frac{\xi_k^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla X_k^{(1)}\right)\nonumber\\
 &&- \frac{\dt}{2}\nabla\cdot\left(\frac{h_p^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla p_0^{(2),\star} + \frac{h_p^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla p_0^{(1)}\right),
 \end{eqnarray}
-\item Update the temperature
+\item Update the temperature using the equation of state.
+
+The default is to do
 \begin{equation}
-T^{(2),\star} = T\left(\rho^{(2),\star}, h^{(2),\star}, X_k^{(2),\star}\right) {\hbox{ \rm using the equation of state.}}
+T^{(2),\star} = T\left(\rho^{(2),\star}, h^{(2),\star}, X_k^{(2),\star}\right) \enskip ,
 \end{equation}
+but if {\tt use\_tfromp = T}, then we do
+\begin{equation}
+T^{(2),\star} = T\left(\rho^{(2),\star}, p_0^{(2),\star}, X_k^{(2),\star}\right) \enskip .
+\end{equation}
+This has the effect of completely decoupling the enthalpy equation from the 
+evolution.
+
 
 \end{enumerate}
 
@@ -976,10 +985,18 @@ which is numerically implemented as a diffusion equation for $h^{(2)}$,
 &&- \frac{\dt}{2}\sum_k\nabla\cdot\left(\frac{\xi_k^{(2),\star}\kth^{(2),\star}}{c_p^{(2),\star}}\nabla X_k^{(2)} + \frac{\xi_k^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla X_k^{(1)}\right)\nonumber\\
 &&- \frac{\dt}{2}\nabla\cdot\left(\frac{h_p^{(2),\star}\kth^{(2),\star}}{c_p^{(2),\star}}\nabla p_0^{(2)} + \frac{h_p^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla p_0^{(1)}\right),
 \end{eqnarray}
-\item Update the temperature
+\item Update the temperature using the equation of state
+
+The default is to do
 \begin{equation}
-T^{(2)} = T\left(\rho^{(2)}, h^{(2)}, X_k^{(2)}\right) {\hbox{ \rm using the equation of state.}}
+T^{(2)} = T\left(\rho^{(2)}, h^{(2)}, X_k^{(2)}\right) \enskip ,
 \end{equation}
+but if {\tt use\_tfromp = T}, then we do
+\begin{equation}
+T^{(2)} = T\left(\rho^{(2)}, {p_0}^{(2)}, X_k^{(2)}\right) \enskip .
+\end{equation}
+This has the effect of completely decoupling the enthalpy equation from the 
+evolution.
 
 \end{enumerate}
 
