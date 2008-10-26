@@ -520,6 +520,7 @@ $[\rho_0^{(2),\star}, \rho_0^{\nph,\star,{\rm pred}}]$.
 \begin{equation}
 \rho^{(1),\nph,\star} = 
 \rho^{'(1),\nph,\star} + \frac{\rho_0^n + \rho_0^{(2),\star}}{2} \enskip ,
+\label{eq:rhoXedgestate}
 \end{equation}
 
   \item Evolve $(\rho X_k)^{(1)} \rightarrow (\rho X_k)^{(2),\star}$
@@ -614,7 +615,7 @@ results in a better solution.
    We note that for spherical geometry, the edge state of $(\rho h)_0$
    is computed by averaging $h_0 \equiv (\rho h)_0/\rho_0$ and $\rho_0$
    to the edge separately, and then computing 
-   ${(\rho h)_0}_{r+1/2} = {\rho_0}_{r+1/2} {h_0}_{r+1/2}$.
+   ${(\rho h)_0}_{r+\myhalf} = {\rho_0}_{r+\myhalf} {h_0}_{r+\myhalf}$.
 
   \item Evolve $(\rho h)^{(1)} \rightarrow (\rho h)^{(2'),\star}$ without
   explicitly including the reaction terms,
@@ -642,7 +643,7 @@ results in a better solution.
     && + \dt \; \psi^{\nph,*} \enskip ,
   \end{eqnarray}
 
-\MarginPar{is it really $p_0^n$ here and not $p_0^{n+1/2}$?}
+\MarginPar{is it really $p_0^n$ here and not $p_0^{\nph}$?}
 \end{description}
 
   \end{enumerate}
@@ -914,7 +915,7 @@ $\rightarrow [(\rho h)_0^{(2)}]$.
    We note that for spherical geometry, the edge state of $(\rho h)_0$
    is computed by averaging $h_0 \equiv (\rho h)_0/\rho_0$ and $\rho_0$
    to the edge separately, and then computing 
-   ${(\rho h)_0}_{r+1/2} = {\rho_0}_{r+1/2} {h_0}_{r+1/2}$.
+   ${(\rho h)_0}_{r+\myhalf} = {\rho_0}_{r+\myhalf} {h_0}_{r+\myhalf}$.
    \item Evolve $(\rho h)^{(1)} \rightarrow (\rho h)^{(2)}$ without
      explicitly including the reaction terms,
 
@@ -935,8 +936,8 @@ $\rightarrow [(\rho h)_0^{(2)}]$.
 \begin{eqnarray}
 (\rho h)^{(2')} &=& (\rho h)^{(1)} - \dt \; \left\{ \nablab \cdotb \left[ \left(\uadvtwo+w_0^{\nph} \er\right)  
 (\rho h)^{(1),\nph} \right] \right\} \nonumber \\
-    && + \dt \; \left \{ \nabla \cdot \left (\uadvtwo p_0^{n+1/2} \right ) 
-       - p_0^{n+1/2} \nabla \cdot \uadvtwo \right \} \nonumber \\
+    && + \dt \; \left \{ \nabla \cdot \left (\uadvtwo p_0^{\nph} \right ) 
+       - p_0^{\nph} \nabla \cdot \uadvtwo \right \} \nonumber \\
     && + \dt \; \psi^{\nph} \enskip ,
 \end{eqnarray}
 
@@ -1212,3 +1213,28 @@ $\etarho^{-\half} = 0$, $\psi^{-\half} = 0$, and $\pi^{-\half} = 0.$
     
   \end{enumerate}
 
+
+\section{Outstanding Questions}
+
+\begin{enumerate}
+\item Why do we only update the temperature at the end of steps 4 and
+      8.  This means that at the top of the algorithm, the temperature
+      going into {\bf React State} in step 2 does not include the
+      effects of the previous reactions.
+
+      To be thermodynamically consistent, I think that we need to
+      update the temperature at the very end of step 9.  That way we
+      end the time-level update with $T^{n+1}$ instead of $T^{(2)}$,
+      and we go into the next sequence, step 2 with a valid temperature.
+
+\item Why is there no equivalent of $\etarho$ for enthalpy---e.g.\ an
+      $\eta_{\rho h}$?
+
+\item Why for plane parallel, when constructing the full edge state
+      (eq.~\ref{eq:rhoXedgestate}) do we simply average to the interface
+      instead of doing the 4th order interpolation that is used for the
+      full state?
+
+
+
+\end{enumerate}
