@@ -245,6 +245,8 @@ to compute the new base state density,
          \left( {{\rho}_0}^{\outp,\nph} {w_0}^{\inp}\right)_{j-\myhalf} \right ]
          \nonumber \enskip,
 \end{eqnarray}
+\MarginPar{why is the notation for the edge state ${{\rho}_0}^{\outp,\nph}$? shouldn't
+           it be ${{\rho}_0}^{\inp,\nph}$?}
 where $j$ refers to the one-dimensional index in the radial direction.
 The interface states, ${{\rho}_0}^{\outp,\nph}$, are found via the
 procedure described in paper II, Appendix A.
@@ -271,6 +273,7 @@ p_{0,j}^\outp = p_{0,j}^\inp - \frac{\dt}{2\dr} \left (w_{0,j+\myhalf}^\inp
 \left (p_{0,j+\myhalf}^{n+\myhalf} -p_{0,j-\myhalf}^{n+\myhalf} \right ) + \dt \; \psi_j^\inp 
 \enskip,
 \end{equation}
+\MarginPar{shouldn't the edge states for $p_0$ have a $\inp$ or $\outp$ superscript?}
 where the interface states are again found via the procedure described
 in paper II, Appendix A.  Note that the $\psi$ term is not included in the forcing for
 the interface state calculation, but is used in the update.
@@ -295,6 +298,8 @@ to compute the new base state enthalpy,
          \left[ {(\rho h)_0}^{\outp,\nph} {w_0}^{\inp}\right]_{j-\myhalf} \right\}
 + \dt\psi_j^{\inp} \enskip ,
 \end{equation}
+\MarginPar{why is the notation for the edge state ${{\rho h}_0}^{\outp,\nph}$? shouldn't
+           it be ${{\rho h}_0}^{\inp,\nph}$?}
 where the interface states are again found via the procedure described
 in paper II, Appendix A.  Note that the $\psi$ term is not included in 
 the forcing for the interface state calculation, but is used in the update.
@@ -439,6 +444,15 @@ If $n=0$, we use $\dt^{-1} = \dt^0$.
 \item[Step 2.] {\em Construct the provisional edge-based advective velocity}, $\uadvone$.\\
 
 The local velocity field is described by
+\begin{equation}
+\frac{\partial\Ubt}{\partial t} = - \Ubt \cdotb \nablab \Ubt - w_0 \frac{\partial \Ubt}{\partial r}
+                                 - \left(\Ubt \cdotb \er\right) \frac{\partial w_0}{\partial r} \er
+                                 - \frac{1}{\rho} \nablab\pi
+                                 + \frac{1}{\rho_0} \frac{\partial \pizero}{\partial r} \er
+                                 - \frac{(\rho-\rhozero)}{\rho} \; g \; \er  \label{eq:utildeupd}  \enskip\
+ ,
+\end{equation}
+(paper III; eq.~[37]).
 
 The procedure to construct $\uadvone$ is described in detail in Appendix B of paper III.
 We note that  $\uadvone$ satisfies the discrete versions of 
@@ -1023,16 +1037,8 @@ and $T^{n+1}$ from step 9.
 \item[Step 11.] {\em Update the velocity}.  
 
 The velocity update happens analogously to paper II, using $S^{n+1}$ from step 10.
-We update the velocity field $\Ubt^n$ to $\Ubt^{n+1,\star}$ by discretizing
-\begin{equation}
-\frac{\partial\Ubt}{\partial t} = - \Ubt \cdotb \nablab \Ubt - w_0 \frac{\partial \Ubt}{\partial r}
-                                 - \left(\Ubt \cdotb \er\right) \frac{\partial w_0}{\partial r} \er
-                                 - \frac{1}{\rho} \nablab\pi
-                                 + \frac{1}{\rho_0} \frac{\partial \pizero}{\partial r} \er
-                                 - \frac{(\rho-\rhozero)}{\rho} \; g \; \er  \label{eq:utildeupd}  \enskip\
- ,
-\end{equation}
-(paper III; eq.~[37]) as 
+We update the velocity field $\Ubt^n$ to $\Ubt^{n+1,\star}$ by discretizing eq.~\ref{eq:utildeupd}
+as
 \begin{eqnarray}
 \Ubt^{n+1,\star} &=& \Ubt^n - \dt \;
  \left[\left(\uadvtwo+ w_0^{\nph} \er\right) \cdotb \nablab \Ubt \right]^\nph
