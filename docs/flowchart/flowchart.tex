@@ -472,11 +472,10 @@ and
 (paper III; eq.~[39]).  The discretization with the volume discrepancy correction is
 \begin{equation}
 \nablab \cdotb \left(\beta_0^n \uadvone\right) = 
-\beta_0^n \left(S^{\nph,\star} - \overline{S}^{\nph,\star}\right)
+\beta_0^n \left\{ \left(S^{\nph,\star} - \overline{S}^{\nph,\star}\right)
 + \frac{f}{\gammabar^n p_0^n}
-\left[\frac{p(\rho,h,X_k)^n - \overline{p(\rho,h,X_k)}^n}{\Delta t^n}\right] \enskip .
+\left[\frac{p(\rho,h,X_k)^n - \overline{p(\rho,h,X_k)}^n}{\Delta t^n}\right]\right\} \enskip .
 \end{equation}
-\MarginPar{units aren't correct---shouldn't volume discrepancy term have a $\beta_0$?}
 
 %--------------------------------------------------------------------------
 % STEP 3
@@ -826,13 +825,12 @@ and is analogous to the procedure used in step 2, but with updated values
 for $w_0$ and $\pizero.$  We note that $\uadvtwo$ satisfies the discrete versions of 
 equations (\ref{eq:udoterzero}) and (\ref{eq:tildeconstraint}).   The discretization
 with the volume discrepancy correction is
-\begin{eqnarray}
-\nablab \cdotb \left(\beta_0^{\nph,\star} \uadvtwo\right) &=& 
-\beta_0^{\nph,\star} \left(S^{\nph} - \overline{S}^{\nph}\right) \nonumber \\
-&& + \frac{f}{\gammabar^{\nph,\star} p_0^{\nph,\star}}
-\left[\frac{p(\rho,h,X_k)^{\nph,\star} - \overline{p(\rho,h,X_k)}^{\nph,\star}}{\Delta t^n}\right]
-\enskip , \nonumber \\
-\end{eqnarray}
+\begin{equation}
+\nablab \cdotb \left(\beta_0^{\nph,\star} \uadvtwo\right) =
+\beta_0^{\nph,\star}\left\{\left(S^{\nph} - \overline{S}^{\nph}\right)
+ + \frac{f}{\gammabar^{\nph,\star} p_0^{\nph,\star}}
+\left[\frac{p(\rho,h,X_k)^{\nph,\star} - \overline{p(\rho,h,X_k)}^{\nph,\star}}{\Delta t^n}\right]\right\} \enskip ,
+\end{equation}
 \begin{equation}
 \beta_0^{\nph,\star} = \frac{ \beta_0^n +  \beta_0^{n+1,\star} }{2} \enskip .
 \end{equation}
@@ -1065,18 +1063,18 @@ component of $\Ubt^n$ individually.
 Finally, we impose the divergence constraint from equation (\ref{eq:tildeconstraint}) 
 including the volume discrepancy correction,
 \begin{equation}
-\nablab \cdotb \left(\beta_0^{\nph} \Ubt^{n+1} \right)  = \beta_0^{\nph} \left(S^{n+1} - \overline{S}^{n+1} \right)
+\nablab \cdotb \left(\beta_0^{\nph} \Ubt^{n+1} \right)  = \beta_0^{\nph}\left\{  \left(S^{n+1} - \overline{S}^{n+1} \right)
 + \frac{f}{\gammabar^{n+1} p_0^{n+1}}
-\left[\frac{p(\rho,h,X_k)^{n+1} - \overline{p(\rho,h,X_k)}^{n+1}}{\Delta t^n}\right]
+\left[\frac{p(\rho,h,X_k)^{n+1} - \overline{p(\rho,h,X_k)}^{n+1}}{\Delta t^n}\right]\right\}
 \enskip,
 \end{equation}
 by defining ${\bf V} = \Ubt^{n+1,\star} + ( \dt / \rho^\nph ) \; \mathbf{G} \pi^\nmh$ 
 and solving
 \begin{equation}
  L_\beta^\rho \phi =
-   D \left ( \beta_0^{\nph} {\bf V} \right) - \beta_0^{\nph} \left(S^{n+1}-\overline{S}^{n+1} \right)
+   D \left ( \beta_0^{\nph} {\bf V} \right) - \beta_0^{\nph}\left\{ \left(S^{n+1}-\overline{S}^{n+1} \right)
 - \frac{f}{\gammabar^{n+1} p_0^{n+1}}
-\left[\frac{p(\rho,h,X_k)^{n+1} - \overline{p(\rho,h,X_k)}^{n+1}}{\Delta t^n}\right] \enskip,
+\left[\frac{p(\rho,h,X_k)^{n+1} - \overline{p(\rho,h,X_k)}^{n+1}}{\Delta t^n}\right]\right\} \enskip,
 \end{equation}
 for nodal values of $\phi$, where
 $\beta_0^\nph = ( \beta_0^n + \beta_0^{n+1} )/2$ and
@@ -1089,13 +1087,8 @@ $\mathbf{G} = -D^T.$
 (See (cite almgrenBellSzymczak:1996) for a detailed discussion of this
 approximate projection; see (cite almgren:bell:crutchfield) for a discussion
 of this particular form of the projection operand.)  
-We solve the linear system of equation
-\begin{equation}
- L_\beta^\rho \phi =
-   D \left ( \beta_0^{\nph} {\bf V} \right) - \beta_0^{\nph} \left(S^{n+1}-\overline{S}^{n+1} \right)\enskip,
-\label{eq:nodal_solve}
-\end{equation}
-(paper III; eq.~[77]) using multigrid V-cycles with Gauss-Seidel relaxation.
+We solve this linear system of equations using multigrid V-cycles with 
+Gauss-Seidel relaxation.
 
 We determine the new time velocity field from
 \begin{equation}
