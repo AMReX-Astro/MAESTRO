@@ -255,12 +255,17 @@ procedure described in paper II, Appendix A.
 
 \end{description}
 
-\item {\bf Advect Base Pressure}$[p_0^\inp,w_0^\inp,\psi^\inp] \rightarrow [p_0^\outp]$\\
-is the process by which we update the base state pressure through $\dt$ in time.
+\item {\bf Advect Base Pressure}$[p_0^\inp,w_0^\inp,\etarho^\inp] \rightarrow$ 
+$[p_0^\outp,\psi^\outp]$\\
+is the process by which we update the base state pressure through $\dt$ in time and
+compute $\psi$.
 \begin{description}
 
-\item[plane-parallel:] We discretize the base state pressure
-  evolution equation (paper III; eq.~[31]),
+\item[plane-parallel:] First we compute a cell-centered $\psi^\outp$ using
+\begin{equation}
+ \psi_j^\outp = \frac{1}{2} \left(\eta_{\rho,j-\myhalf}^\inp + \eta_{\rho,j+\myhalf}^\inp\right) g \enskip .
+\end{equation}
+Then, we discretize the base state pressure evolution equation (paper III; eq.~[31]),
 \begin{equation}
 \frac{\partial p_0}{\partial t} = 
 -w_0 \frac{\partial p_0}{\partial r} + \psi \enskip ,
@@ -270,13 +275,12 @@ to compute the new base state pressure,
 \begin{equation}
 p_{0,j}^\outp = p_{0,j}^\inp - \frac{\dt}{2\dr} \left (w_{0,j+\myhalf}^\inp
 + w_{0,j-\myhalf}^\inp \right)
-\left (p_{0,j+\myhalf}^{n+\myhalf} -p_{0,j-\myhalf}^{n+\myhalf} \right ) + \dt \; \psi_j^\inp 
+\left (p_{0,j+\myhalf}^{n+\myhalf} -p_{0,j-\myhalf}^{n+\myhalf} \right ) + \dt \; \psi_j^\outp 
 \enskip,
 \end{equation}
 \MarginPar{shouldn't the edge states for $p_0$ have a $\inp$ or $\outp$ superscript?}
 where the interface states are again found via the procedure described
-in paper II, Appendix A.  Note that the $\psi$ term is not included in the forcing for
-the interface state calculation, but is used in the update.
+in paper II, Appendix A.
 
 \item[spherical:]
 
@@ -553,11 +557,8 @@ X_k^{(2),\star} = (\rho X_k)^{(2),\star} / \rho^{(2),\star}
 
 \end{enumerate}
 
-\item (spherical only) {\bf Advect Base Pressure}$[p_0^{n}, w_0^{\nph,\star}, \psi^{\nmh}]$ 
-$\rightarrow [p_0^{n+1,\star}]$.  Note that $\psi$ is not used in the spherical case.
-
-\item Define an edge-centered $\etarho^{\nph,\star}$, cell-centered 
-$(\nabla\cdot\etarho\er)^{\nph,\star}$, and cell-centered $\psi_j^{\nph,\star}$:
+\item Define an edge-centered $\etarho^{\nph,\star}$ and  cell-centered 
+$(\nabla\cdot\etarho\er)^{\nph,\star}$:
 
 \begin{description}
 \item[plane-parallel:]~
@@ -569,17 +570,14 @@ $(\nabla\cdot\etarho\er)^{\nph,\star}$, and cell-centered $\psi_j^{\nph,\star}$:
 (\nabla\cdot\etarho\er)_j^{\nph,\star} = 
 \frac{\eta_{\rho,j+\myhalf}^{\nph,\star}-\eta_{\rho,j-\myhalf}^{\nph,\star}}{\Delta r} \enskip ,
 \end{equation}
-\begin{equation}
- \psi_j^{\nph,\star} = \frac{1}{2} \left(\eta_{\rho,j-\myhalf}^{\nph,\star} + \eta_{\rho,j+\myhalf}^{\nph,\star}\right) g \enskip .
-\end{equation}
 
 \item[spherical:] See {\tt MAESTRO/docs/eta\_notes} for working notes until we finalize 
 the details.
 
 \end{description}
 
-\item (plane-parallel only only) {\bf Advect Base Pressure}$[p_0^{n}, w_0^{\nph,\star},$ 
-$\psi^{\nph,\star}] \rightarrow [p_0^{n+1,\star}]$.
+\item {\bf Advect Base Pressure}$[p_0^{n}, w_0^{\nph,\star}, \etarho^{n+\myhalf,\star}]$ 
+$\rightarrow [p_0^{n+1,\star}, \psi^{\nph,\star}]$.
 
 \item {\bf Advect Base Enthalpy}$[(\rho h)_0^{(1)}, w_0^{\nph,\star}, \psi^{\nph,\star}]$ 
 $\rightarrow [(\rho h)_0^{(2),\star}]$.
@@ -882,14 +880,10 @@ $[\rho_0^{(2)}, \rho_0^{\nph,{\rm pred}}]$.
 X_k^{(2)} = (\rho X_k)^{(2)} / \rho^{(2)}
 \end{equation}
 
+\end{enumerate}
 
-   \end{enumerate}
-
-\item (spherical only) {\bf Advect Base Pressure}$[p_0^{n}, w_0^{\nph}, \psi^{\nph,\star}]$ 
-$\rightarrow [p_0^{n+1}]$.  Note that $\psi$ is not used in the spherical case.
-
-\item Define an edge-centered $\etarho^{\nph}$, cell-centered 
-$(\nabla\cdot\etarho\er)^{\nph}$, and a cell-centered $\psi_j^{\nph}$,
+\item Define an edge-centered $\etarho^{\nph}$ and cell-centered 
+$(\nabla\cdot\etarho\er)^{\nph}$:
 
 \begin{description}
 
@@ -901,16 +895,13 @@ $(\nabla\cdot\etarho\er)^{\nph}$, and a cell-centered $\psi_j^{\nph}$,
 \begin{equation}
 (\nabla\cdot\etarho\er)_j^{\nph} = \frac{\eta_{\rho,j+\myhalf}^{\nph} - \eta_{\rho,j-\myhalf}^{\nph}}{\Delta r} \enskip , \\
 \end{equation}
-\begin{equation}
- \psi_j^{\nph} = \frac{1}{2} \left(\eta_{\rho,j-\myhalf}^{\nph} + \eta_{\rho,j+\myhalf}^{\nph}\right) g \enskip .
-\end{equation}
 
 \item[spherical:]~
 
 \end{description}
 
-\item  (plane-parallel only) {\bf Advect Base Pressure}$[p_0^{n}, w_0^{\nph}, \psi^{\nph}]$ 
-$\rightarrow [p_0^{n+1}]$.
+\item {\bf Advect Base Pressure}$[p_0^{n}, w_0^{\nph}, \etarho^{n+\myhalf}]$ 
+$\rightarrow [p_0^{n+1}, \psi^{n+\myhalf}]$.
 
 \item {\bf Advect Base Enthalpy}$[(\rho h)_0^{(1)}, w_0^{\nph}, \psi^{\nph}]$ 
 $\rightarrow [(\rho h)_0^{(2)}]$.
