@@ -541,15 +541,6 @@ contains
                          p0_new,rho0_predicted_edge, &
                          dx,dt,the_bc_tower%bc_tower_array)
 
-    if (spherical .eq. 1) then
-       if (evolve_base_state) then
-          call advect_base_pres(w0,Sbar,rho0_new,p0_old,p0_new,gamma1bar,div_coeff_new, &
-                                psi,dx(:,dm),dt)
-       else
-          p0_new = p0_old
-       end if
-    end if
-
     ! Now compute the new etarho and psi
     if (evolve_base_state) then
        if (use_etarho) then
@@ -563,17 +554,13 @@ contains
           endif
 
        endif
-
-       call make_psi(etarho_cc,psi,w0,gamma1bar,p0_old,p0_new,Sbar)
     end if
 
-    if (spherical .eq. 0) then
-       if (evolve_base_state) then
-          call advect_base_pres(w0,Sbar,rho0_new,p0_old,p0_new,gamma1bar,div_coeff_new, &
-                                psi,dx(:,dm),dt)
-       else
-          p0_new = p0_old
-       end if
+    if (evolve_base_state) then
+       call advect_base_pres(w0,Sbar,rho0_new,p0_old,p0_new,gamma1bar,div_coeff_new, &
+                             psi,etarho_cc,dx(:,dm),dt)
+    else
+       p0_new = p0_old
     end if
 
     if (evolve_base_state) then
@@ -1009,15 +996,6 @@ contains
                             p0_new,rho0_predicted_edge, &
                             dx,dt,the_bc_tower%bc_tower_array)
 
-       if (spherical .eq. 1) then
-          if (evolve_base_state) then
-             call advect_base_pres(w0,Sbar,rho0_new,p0_old,p0_new,gamma1bar,div_coeff_nph, &
-                                   psi,dx(:,dm),dt)
-          else
-             p0_new = p0_old
-          end if
-       end if
-
        ! Now compute the new etarho and psi
        if (evolve_base_state) then
           if (use_etarho) then
@@ -1031,17 +1009,13 @@ contains
              endif
 
           endif
-
-          call make_psi(etarho_cc,psi,w0,gamma1bar,p0_old,p0_new,Sbar)
        end if
 
-       if (spherical .eq. 0) then
-          if (evolve_base_state) then
-             call advect_base_pres(w0,Sbar,rho0_new,p0_old,p0_new,gamma1bar,div_coeff_nph, &
-                                   psi,dx(:,dm),dt)
-          else
-             p0_new = p0_old
-          end if
+       if (evolve_base_state) then
+          call advect_base_pres(w0,Sbar,rho0_new,p0_old,p0_new,gamma1bar,div_coeff_nph, &
+                                psi,etarho_cc,dx(:,dm),dt)
+       else
+          p0_new = p0_old
        end if
 
        if (evolve_base_state) then

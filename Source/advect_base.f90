@@ -140,10 +140,11 @@ contains
 
 
   subroutine advect_base_pres(w0,Sbar_in,rho0_new,p0_old,p0_new, &
-                              gamma1bar,div_coeff,psi,dz,dt)
+                              gamma1bar,div_coeff,psi,etarho_cc,dz,dt)
 
     use bl_prof_module
     use geometry, only: spherical, nlevs
+    use make_psi_module
     use restrict_base_module
 
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
@@ -153,7 +154,8 @@ contains
     real(kind=dp_t), intent(  out) :: p0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
     real(kind=dp_t), intent(in   ) :: div_coeff(:,0:)
-    real(kind=dp_t), intent(in   ) :: psi(:,0:)
+    real(kind=dp_t), intent(inout) :: psi(:,0:)
+    real(kind=dp_t), intent(in   ) :: etarho_cc(:,0:)
     real(kind=dp_t), intent(in   ) :: dz(:)
     real(kind=dp_t), intent(in   ) :: dt
     
@@ -163,14 +165,17 @@ contains
     call build(bpt, "advect_base")
 
     if (spherical .eq. 0) then
+       call make_psi(etarho_cc,psi,w0,gamma1bar,p0_old,p0_new,Sbar_in)
        call advect_base_pres_planar(w0,p0_old,p0_new,psi,dz,dt)
+       call restrict_base(p0_new,.true.)
+       call fill_ghost_base(p0_new,.true.)
     else
-       call advect_base_pres_spherical(w0,Sbar_in,p0_old,p0_new,rho0_new, &
-                                       gamma1bar,div_coeff,dt)
+       call advect_base_pres_spherical(w0,Sbar_in,p0_old,p0_new,rho0_new,gamma1bar, &
+                                       div_coeff,dt)
+       call restrict_base(p0_new,.true.)
+       call fill_ghost_base(p0_new,.true.)
+       call make_psi(etarho_cc,psi,w0,gamma1bar,p0_old,p0_new,Sbar_in)
     end if
-
-    call restrict_base(p0_new,.true.)
-    call fill_ghost_base(p0_new,.true.)
 
     call destroy(bpt)
        
