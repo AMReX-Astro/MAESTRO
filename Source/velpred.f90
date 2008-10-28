@@ -13,7 +13,7 @@ module velpred_module
   
 contains
 
-  subroutine velpred(s,u,sedge,umac,utrans,force,normal,w0,w0mac,dx,dt,the_bc_level,mla)
+  subroutine velpred(s,u,umac,utrans,force,normal,w0,w0mac,dx,dt,the_bc_level,mla)
 
     use bl_prof_module
     use bl_constants_module
@@ -24,7 +24,7 @@ contains
     use ml_restriction_module, only : ml_edge_restriction_c
 
     type(multifab) , intent(in   ) :: s(:),u(:)
-    type(multifab) , intent(inout) :: sedge(:,:),umac(:,:)
+    type(multifab) , intent(inout) :: umac(:,:)
     type(multifab) , intent(in   ) :: utrans(:,:),force(:)
     type(multifab) , intent(in   ) :: normal(:)
     real(kind=dp_t), intent(in   ) :: w0(:,0:)
@@ -38,9 +38,6 @@ contains
     integer                  :: lo(dm), hi(dm)
     real(kind=dp_t), pointer :: sop(:,:,:,:)
     real(kind=dp_t), pointer :: uop(:,:,:,:)
-    real(kind=dp_t), pointer :: sepx(:,:,:,:)
-    real(kind=dp_t), pointer :: sepy(:,:,:,:)
-    real(kind=dp_t), pointer :: sepz(:,:,:,:)
     real(kind=dp_t), pointer :: ump(:,:,:,:)
     real(kind=dp_t), pointer :: vmp(:,:,:,:)
     real(kind=dp_t), pointer :: wmp(:,:,:,:)
@@ -63,7 +60,6 @@ contains
 
     ng_s = s(1)%ng
     ng_u = u(1)%ng
-    ng_se = sedge(1,1)%ng
     ng_um = umac(1,1)%ng
     ng_ut = utrans(1,1)%ng
     ng_f = force(1)%ng
@@ -115,8 +111,6 @@ contains
           if ( multifab_remote(s(n),i) ) cycle
           sop  => dataptr(s(n),i)
           uop  => dataptr(u(n),i)
-          sepx => dataptr(sedge(n,1),i)
-          sepy => dataptr(sedge(n,2),i)
           ump  => dataptr(umac(n,1),i)
           vmp  => dataptr(umac(n,2),i)
           utp  => dataptr(utrans(n,1),i)
@@ -128,7 +122,6 @@ contains
           case (2)
              do comp = 1,dm
                 call velpred_2d(n,sop(:,:,1,:), ng_s, uop(:,:,1,:), ng_u, &
-                                sepx(:,:,1,:), sepy(:,:,1,:), ng_se, &
                                 ump(:,:,1,1), vmp(:,:,1,1), ng_um, &
                                 utp(:,:,1,1), vtp(:,:,1,1), ng_ut, &
                                 fp(:,:,1,:), ng_f, w0(n,:), &
@@ -141,7 +134,6 @@ contains
           case (3)
              wmp  => dataptr(  umac(n,3),i)
              wtp  => dataptr(utrans(n,3),i)
-             sepz => dataptr( sedge(n,3),i)
              w0xp  => dataptr(w0mac(n,1),i)
              w0yp  => dataptr(w0mac(n,2),i)
              w0zp  => dataptr(w0mac(n,3),i)
@@ -149,7 +141,6 @@ contains
              np => dataptr(normal(n),i)
              do comp = 1, dm
                 call velpred_3d(n,sop(:,:,:,:), ng_s, uop(:,:,:,:), ng_u, &
-                                sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), ng_se, &
                                 ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
                                 utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), ng_ut, &
                                 fp(:,:,:,:), ng_f, np(:,:,:,:), ng_n, &
@@ -181,7 +172,7 @@ contains
     
   end subroutine velpred
 
-    subroutine velpred_2d(n,s,ng_s,u,ng_u,sedgex,sedgey,ng_se,umac,vmac,ng_um,utrans, &
+    subroutine velpred_2d(n,s,ng_s,u,ng_u,umac,vmac,ng_um,utrans, &
                           vtrans,ng_ut,force,ng_f,w0,lo,hi,dx,dt,phys_bc,adv_bc,comp)
 
     use geometry, only: nr
@@ -190,11 +181,9 @@ contains
     use bl_constants_module
     use probin_module, only: use_new_godunov
 
-    integer        , intent(in   ) :: n,lo(:),hi(:),ng_s,ng_u,ng_se,ng_um,ng_ut,ng_f
+    integer        , intent(in   ) :: n,lo(:),hi(:),ng_s,ng_u,ng_um,ng_ut,ng_f
     real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :,:)
     real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u :,lo(2)-ng_u :,:)
-    real(kind=dp_t), intent(inout) :: sedgex(lo(1)-ng_se:,lo(2)-ng_se:,:)
-    real(kind=dp_t), intent(inout) :: sedgey(lo(1)-ng_se:,lo(2)-ng_se:,:)
     real(kind=dp_t), intent(inout) ::   umac(lo(1)-ng_um:,lo(2)-ng_um:)
     real(kind=dp_t), intent(inout) ::   vmac(lo(1)-ng_um:,lo(2)-ng_um:)
     real(kind=dp_t), intent(in   ) :: utrans(lo(1)-ng_ut:,lo(2)-ng_ut:)
@@ -352,45 +341,41 @@ contains
              savg = HALF*(s_r(i) + s_l(i))
              test = ( (s_l(i) .le. ZERO  .and. s_r(i) .ge. ZERO) .or. &
                   (abs(s_l(i) + s_r(i)) .lt. eps) )
-             sedgex(i,j,comp)=merge(s_l(i),s_r(i),savg.gt.ZERO)
-             sedgex(i,j,comp)=merge(savg,sedgex(i,j,comp),test)
+             umac(i,j)=merge(s_l(i),s_r(i),savg.gt.ZERO)
+             umac(i,j)=merge(savg,umac(i,j),test)
           enddo
           
           if (phys_bc(1,1) .eq. SLIP_WALL .or. phys_bc(1,1) .eq. NO_SLIP_WALL) then
              if (comp .eq. 1) then
-                sedgex(is,j,comp) = ZERO
+                umac(is,j) = ZERO
              else
-                sedgex(is,j,comp) = merge(ZERO,s_r(is),phys_bc(1,1).eq.NO_SLIP_WALL)
+                umac(is,j) = merge(ZERO,s_r(is),phys_bc(1,1).eq.NO_SLIP_WALL)
              endif
           elseif (phys_bc(1,1) .eq. INLET) then
-             sedgex(is,j,comp) = s(is-1,j,comp)
+             umac(is,j) = s(is-1,j,comp)
           elseif (phys_bc(1,1) .eq. OUTLET) then
              if (comp.eq.1) then
-                sedgex(is,j,comp) = MIN(s_r(is),ZERO)
+                umac(is,j) = MIN(s_r(is),ZERO)
              else
-                sedgex(is,j,comp) = s_r(is)
+                umac(is,j) = s_r(is)
              end if
           endif
           if (phys_bc(1,2) .eq. SLIP_WALL .or. phys_bc(1,2) .eq. NO_SLIP_WALL) then
              if (comp .eq. 1) then
-                sedgex(ie+1,j,comp) = ZERO
+                umac(ie+1,j) = ZERO
              else
-                sedgex(ie+1,j,comp) = merge(ZERO,s_l(ie+1),phys_bc(1,2).eq.NO_SLIP_WALL)
+                umac(ie+1,j) = merge(ZERO,s_l(ie+1),phys_bc(1,2).eq.NO_SLIP_WALL)
              endif
           elseif (phys_bc(1,2) .eq. INLET) then
-             sedgex(ie+1,j,comp) = s(ie+1,j,comp)
+             umac(ie+1,j) = s(ie+1,j,comp)
           elseif (phys_bc(1,2) .eq. OUTLET) then
              if (comp.eq.1) then
-                sedgex(ie+1,j,comp) = MAX(s_l(ie+1),ZERO)
+                umac(ie+1,j) = MAX(s_l(ie+1),ZERO)
              else
-                sedgex(ie+1,j,comp) = s_l(ie+1)
+                umac(ie+1,j) = s_l(ie+1)
              end if
           endif
           
-          do i = is, ie+1 
-             umac(i,j) = sedgex(i,j,1)
-          enddo
-
        enddo
     endif
     
@@ -484,55 +469,51 @@ contains
              savg = HALF*(s_b(j) + s_t(j))
              test = ( (s_b(j) .le. ZERO .and. s_t(j) .ge. ZERO) .or. &
                   (abs(s_b(j) + s_t(j)) .lt. eps) )
-             sedgey(i,j,comp)=merge(s_b(j),s_t(j),savg.gt.ZERO)
-             sedgey(i,j,comp)=merge(savg,sedgey(i,j,comp),test)
+             vmac(i,j)=merge(s_b(j),s_t(j),savg.gt.ZERO)
+             vmac(i,j)=merge(savg,vmac(i,j),test)
           enddo
              
           if (phys_bc(2,1) .eq. SLIP_WALL .or. phys_bc(2,1) .eq. NO_SLIP_WALL) then
              if (comp .eq. 2) then
-                sedgey(i,js,comp) = ZERO
+                vmac(i,js) = ZERO
              else
-                sedgey(i,js,comp) = merge(ZERO,s_t(js),phys_bc(2,1).eq.NO_SLIP_WALL)
+                vmac(i,js) = merge(ZERO,s_t(js),phys_bc(2,1).eq.NO_SLIP_WALL)
              endif
           elseif (phys_bc(2,1) .eq. INLET) then
-             sedgey(i,js,comp) = s(i,js-1,comp)
+             vmac(i,js) = s(i,js-1,comp)
           elseif (phys_bc(2,1) .eq. OUTLET) then
              if (comp.eq.2) then
-                sedgey(i,js,comp) = MIN(s_t(js),ZERO)
+                vmac(i,js) = MIN(s_t(js),ZERO)
              else
-                sedgey(i,js,comp) = s_t(js)
+                vmac(i,js) = s_t(js)
              end if
           endif
           
           if (phys_bc(2,2) .eq. SLIP_WALL .or. phys_bc(2,2) .eq. NO_SLIP_WALL) then
              if (comp .eq. 2) then
-                sedgey(i,je+1,comp) = ZERO
+                vmac(i,je+1) = ZERO
              else
-                sedgey(i,je+1,comp) = merge(ZERO,s_b(je+1),phys_bc(2,2).eq.NO_SLIP_WALL)
+                vmac(i,je+1) = merge(ZERO,s_b(je+1),phys_bc(2,2).eq.NO_SLIP_WALL)
              endif
           elseif (phys_bc(2,2) .eq. INLET) then
-             sedgey(i,je+1,comp) = s(i,je+1,comp)
+             vmac(i,je+1) = s(i,je+1,comp)
           elseif (phys_bc(2,2) .eq. OUTLET) then
              if (comp.eq.2) then
-                sedgey(i,je+1,comp) = MAX(s_b(je+1),ZERO)
+                vmac(i,je+1) = MAX(s_b(je+1),ZERO)
              else
-                sedgey(i,je+1,comp) = s_b(je+1)
+                vmac(i,je+1) = s_b(je+1)
              end if
           endif
-          
-          do j = js, je+1 
-             vmac(i,j) = sedgey(i,j,2)
-          enddo
           
        enddo
     end if
 
   end subroutine velpred_2d
     
-  subroutine velpred_3d(n,s,ng_s,u,ng_u,sedgex,sedgey,sedgez,ng_se, &
-                                umac,vmac,wmac,ng_um,utrans,vtrans,wtrans,ng_ut, &
-                                force,ng_f,normal,ng_n,w0,w0macx,w0macy,w0macz,ng_w0, &
-                                gradw0_cart,ng_gw,lo,hi,dx,dt,phys_bc,adv_bc,comp)
+  subroutine velpred_3d(n,s,ng_s,u,ng_u, &
+                        umac,vmac,wmac,ng_um,utrans,vtrans,wtrans,ng_ut, &
+                        force,ng_f,normal,ng_n,w0,w0macx,w0macy,w0macz,ng_w0, &
+                        gradw0_cart,ng_gw,lo,hi,dx,dt,phys_bc,adv_bc,comp)
 
     use bc_module
     use slope_module
@@ -541,12 +522,9 @@ contains
     use probin_module, only: use_new_godunov
 
     integer        , intent(in   ) :: n,lo(:),hi(:)
-    integer        , intent(in   ) :: ng_s,ng_u,ng_se,ng_um,ng_ut,ng_f,ng_n,ng_w0,ng_gw
+    integer        , intent(in   ) :: ng_s,ng_u,ng_um,ng_ut,ng_f,ng_n,ng_w0,ng_gw
     real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :,:)
     real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :,:)
-    real(kind=dp_t), intent(inout) :: sedgex(lo(1)-ng_se:,lo(2)-ng_se:,lo(3)-ng_se:,:)
-    real(kind=dp_t), intent(inout) :: sedgey(lo(1)-ng_se:,lo(2)-ng_se:,lo(3)-ng_se:,:)
-    real(kind=dp_t), intent(inout) :: sedgez(lo(1)-ng_se:,lo(2)-ng_se:,lo(3)-ng_se:,:)
     real(kind=dp_t), intent(inout) ::   umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(inout) ::   vmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
     real(kind=dp_t), intent(inout) ::   wmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
@@ -838,45 +816,40 @@ contains
                  savg = HALF*(s_r(i) + s_l(i))
                  test = ( (s_l(i) .le. ZERO .and. s_r(i) .ge. ZERO) .or. &
                       (abs(s_l(i) + s_r(i)) .lt. eps) )
-                 sedgex(i,j,k,comp)=merge(s_l(i),s_r(i),savg.gt.ZERO)
-                 sedgex(i,j,k,comp)=merge(savg,sedgex(i,j,k,comp),test)
+                 umac(i,j,k)=merge(s_l(i),s_r(i),savg.gt.ZERO)
+                 umac(i,j,k)=merge(savg,umac(i,j,k),test)
               enddo
               
               if (phys_bc(1,1) .eq. SLIP_WALL .or. phys_bc(1,1) .eq. NO_SLIP_WALL) then
                  if (comp .eq. 1) then
-                    sedgex(is,j,k,comp) = ZERO
+                    umac(is,j,k) = ZERO
                  else
-                    sedgex(is,j,k,comp) = merge(ZERO,s_r(is),phys_bc(1,1).eq.NO_SLIP_WALL)
+                    umac(is,j,k) = merge(ZERO,s_r(is),phys_bc(1,1).eq.NO_SLIP_WALL)
                  endif
               elseif (phys_bc(1,1) .eq. INLET) then
-                 sedgex(is,j,k,comp) = s(is-1,j,k,comp)
+                 umac(is,j,k) = s(is-1,j,k,comp)
               elseif (phys_bc(1,1) .eq. OUTLET) then
                  if (comp.eq.1) then
-                    sedgex(is,j,k,comp) = MIN(s_r(is),ZERO)
+                    umac(is,j,k) = MIN(s_r(is),ZERO)
                  else
-                    sedgex(is,j,k,comp) = s_r(is)
+                    umac(is,j,k) = s_r(is)
                  end if
               endif
               if (phys_bc(1,2) .eq. SLIP_WALL .or. phys_bc(1,2) .eq. NO_SLIP_WALL) then
                  if (comp .eq. 1) then
-                    sedgex(ie+1,j,k,comp) = ZERO
+                    umac(ie+1,j,k) = ZERO
                  else
-                    sedgex(ie+1,j,k,comp) = &
-                         merge(ZERO,s_l(ie+1),phys_bc(1,2).eq.NO_SLIP_WALL)
+                    umac(ie+1,j,k) = merge(ZERO,s_l(ie+1),phys_bc(1,2).eq.NO_SLIP_WALL)
                  endif
               elseif (phys_bc(1,2) .eq. INLET) then
-                 sedgex(ie+1,j,k,comp) = s(ie+1,j,k,comp)
+                 umac(ie+1,j,k) = s(ie+1,j,k,comp)
               elseif (phys_bc(1,2) .eq. OUTLET) then
                  if (comp.eq.1) then
-                    sedgex(ie+1,j,k,comp) = MAX(s_l(ie+1),ZERO)
+                    umac(ie+1,j,k) = MAX(s_l(ie+1),ZERO)
                  else
-                    sedgex(ie+1,j,k,comp) = s_l(ie+1)
+                    umac(ie+1,j,k) = s_l(ie+1)
                  end if
               endif
-              
-              do i = is, ie+1 
-                 umac(i,j,k) = sedgex(i,j,k,1)
-              enddo
               
            enddo
         enddo
@@ -1095,46 +1068,41 @@ contains
                  savg = HALF*(s_b(j) + s_t(j))
                  test = ( (s_b(j) .le. ZERO .and. s_t(j) .ge. ZERO) .or. &
                       (abs(s_b(j) + s_t(j)) .lt. eps) )
-                 sedgey(i,j,k,comp)=merge(s_b(j),s_t(j),savg.gt.ZERO)
-                 sedgey(i,j,k,comp)=merge(savg,sedgey(i,j,k,comp),test)
+                 vmac(i,j,k)=merge(s_b(j),s_t(j),savg.gt.ZERO)
+                 vmac(i,j,k)=merge(savg,vmac(i,j,k),test)
               enddo
               
               if (phys_bc(2,1) .eq. SLIP_WALL .or. phys_bc(2,1) .eq. NO_SLIP_WALL) then
                  if (comp .eq. 2) then
-                    sedgey(i,js,k,comp) = ZERO
+                    vmac(i,js,k) = ZERO
                  else
-                    sedgey(i,js,k,comp) = merge(ZERO,s_t(js),phys_bc(2,1).eq.NO_SLIP_WALL)
+                    vmac(i,js,k) = merge(ZERO,s_t(js),phys_bc(2,1).eq.NO_SLIP_WALL)
                  endif
               elseif (phys_bc(2,1) .eq. INLET) then
-                 sedgey(i,js,k,comp) = s(i,js-1,k,comp)
+                 vmac(i,js,k) = s(i,js-1,k,comp)
               elseif (phys_bc(2,1) .eq. OUTLET) then
                  if (comp.eq.2) then
-                    sedgey(i,js,k,comp) = MIN(s_t(js),ZERO)
+                    vmac(i,js,k) = MIN(s_t(js),ZERO)
                  else
-                    sedgey(i,js,k,comp) = s_t(js)
+                    vmac(i,js,k) = s_t(js)
                  end if
               endif
               
               if (phys_bc(2,2) .eq. SLIP_WALL .or. phys_bc(2,2) .eq. NO_SLIP_WALL) then
                  if (comp .eq. 2) then
-                    sedgey(i,je+1,k,comp) = ZERO
+                    vmac(i,je+1,k) = ZERO
                  else
-                    sedgey(i,je+1,k,comp) = &
-                         merge(ZERO,s_b(je+1),phys_bc(2,2).eq.NO_SLIP_WALL)
+                    vmac(i,je+1,k) = merge(ZERO,s_b(je+1),phys_bc(2,2).eq.NO_SLIP_WALL)
                  endif
               elseif (phys_bc(2,2) .eq. INLET) then
-                 sedgey(i,je+1,k,comp) = s(i,je+1,k,comp)
+                 vmac(i,je+1,k) = s(i,je+1,k,comp)
               elseif (phys_bc(2,2) .eq. OUTLET) then
                  if (comp.eq.2) then
-                    sedgey(i,je+1,k,comp) = MAX(s_b(je+1),ZERO)
+                    vmac(i,je+1,k) = MAX(s_b(je+1),ZERO)
                  else
-                    sedgey(i,je+1,k,comp) = s_b(je+1)
+                    vmac(i,je+1,k) = s_b(je+1)
                  end if
               endif
-              
-              do j = js, je+1 
-                 vmac(i,j,k) = sedgey(i,j,k,2)
-              enddo
               
            enddo
         enddo
@@ -1346,46 +1314,41 @@ contains
                  savg = HALF*(s_d(k) + s_u(k))
                  test = ( (s_d(k) .le. ZERO .and. s_u(k) .ge. ZERO) .or. &
                       (abs(s_d(k) + s_u(k)) .lt. eps) )
-                 sedgez(i,j,k,comp)=merge(s_d(k),s_u(k),savg.gt.ZERO)
-                 sedgez(i,j,k,comp)=merge(savg,sedgez(i,j,k,comp),test)
+                 wmac(i,j,k)=merge(s_d(k),s_u(k),savg.gt.ZERO)
+                 wmac(i,j,k)=merge(savg,wmac(i,j,k),test)
               enddo
               
               if (phys_bc(3,1) .eq. SLIP_WALL .or. phys_bc(3,1) .eq. NO_SLIP_WALL) then
                  if (comp .eq. 2) then
-                    sedgez(i,j,ks,comp) = ZERO
+                    wmac(i,j,ks) = ZERO
                  else
-                    sedgez(i,j,ks,comp) = merge(ZERO,s_u(ks),phys_bc(3,1).eq.NO_SLIP_WALL)
+                    wmac(i,j,ks) = merge(ZERO,s_u(ks),phys_bc(3,1).eq.NO_SLIP_WALL)
                  endif
               elseif (phys_bc(3,1) .eq. INLET) then
-                 sedgez(i,j,ks,comp) = s(i,j,ks-1,comp)
+                 wmac(i,j,ks) = s(i,j,ks-1,comp)
               elseif (phys_bc(3,1) .eq. OUTLET) then
                  if (comp.eq.3) then
-                    sedgez(i,j,ks,comp) = MIN(s_u(ks),ZERO)
+                    wmac(i,j,ks) = MIN(s_u(ks),ZERO)
                  else
-                    sedgez(i,j,ks,comp) = s_u(ks)
+                    wmac(i,j,ks) = s_u(ks)
                  end if
               endif
               
               if (phys_bc(3,2) .eq. SLIP_WALL .or. phys_bc(3,2) .eq. NO_SLIP_WALL) then
                  if (comp .eq. 2) then
-                    sedgez(i,j,ke+1,comp) = ZERO
+                    wmac(i,j,ke+1 ) = ZERO
                  else
-                    sedgez(i,j,ke+1,comp) = &
-                         merge(ZERO,s_d(ke+1),phys_bc(3,2).eq.NO_SLIP_WALL)
+                    wmac(i,j,ke+1) = merge(ZERO,s_d(ke+1),phys_bc(3,2).eq.NO_SLIP_WALL)
                  endif
               elseif (phys_bc(3,2) .eq. INLET) then
-                 sedgez(i,j,ke+1,comp) = s(i,j,ke+1,comp)
+                 wmac(i,j,ke+1) = s(i,j,ke+1,comp)
               elseif (phys_bc(3,2) .eq. OUTLET) then
                  if (comp.eq.3) then
-                    sedgez(i,j,ke+1,comp) = MAX(s_d(ke+1),ZERO)
+                    wmac(i,j,ke+1) = MAX(s_d(ke+1),ZERO)
                  else
-                    sedgez(i,j,ke+1,comp) = s_d(ke+1)
+                    wmac(i,j,ke+1) = s_d(ke+1)
                  end if
               endif
-              
-              do k = ks, ke+1 
-                 wmac(i,j,k) = sedgez(i,j,k,3)
-              enddo
               
            enddo
         enddo
