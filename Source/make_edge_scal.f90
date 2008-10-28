@@ -1208,9 +1208,9 @@ contains
           enddo
           
           if (phys_bc(3,1) .eq. SLIP_WALL .or. phys_bc(3,1) .eq. NO_SLIP_WALL) then
-             if (is_vel .and. comp .eq. 2) then
+             if (is_vel .and. comp .eq. 3) then
                 sedgez(i,j,ks,comp) = ZERO
-             elseif (is_vel .and. comp .ne. 2) then
+             elseif (is_vel .and. comp .ne. 3) then
                 sedgez(i,j,ks,comp) = merge(ZERO,s_u(ks),phys_bc(3,1).eq.NO_SLIP_WALL)
              else 
                 sedgez(i,j,ks,comp) = s_u(ks)
@@ -1226,9 +1226,9 @@ contains
           endif
           
           if (phys_bc(3,2) .eq. SLIP_WALL .or. phys_bc(3,2) .eq. NO_SLIP_WALL) then
-             if (is_vel .and. comp .eq. 2) then
+             if (is_vel .and. comp .eq. 3) then
                 sedgez(i,j,ke+1,comp) = ZERO
-             elseif (is_vel .and. comp .ne. 2) then
+             elseif (is_vel .and. comp .ne. 3) then
                 sedgez(i,j,ke+1,comp) = merge(ZERO,s_d(ke+1),phys_bc(3,2).eq.NO_SLIP_WALL)
              else 
                 sedgez(i,j,ke+1,comp) = s_d(ke+1)
