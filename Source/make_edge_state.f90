@@ -1802,7 +1802,7 @@ contains
            do r = lo,hi
               
               u = HALF * (w0(n,r) + w0(n,r+1))
-              ubardth = dth*u/dx(n)                    endif
+              ubardth = dth*u/dx(n)
 
               
               s_l(n,r+1)= s(n,r) + (HALF-ubardth)*slopex(n,r) + dth * force(n,r)
