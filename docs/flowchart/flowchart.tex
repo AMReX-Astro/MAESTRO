@@ -245,8 +245,6 @@ to compute the new base state density,
          \left( {{\rho}_0}^{\outp,\nph} {w_0}^{\inp}\right)_{j-\myhalf} \right ]
          \nonumber \enskip,
 \end{eqnarray}
-\MarginPar{why is the notation for the edge state ${{\rho}_0}^{\outp,\nph}$? shouldn't
-           it be ${{\rho}_0}^{\inp,\nph}$?}
 where $j$ refers to the one-dimensional index in the radial direction.
 The interface states, ${{\rho}_0}^{\outp,\nph}$, are found via the
 procedure described in paper II, Appendix A.
@@ -278,7 +276,6 @@ p_{0,j}^\outp = p_{0,j}^\inp - \frac{\dt}{2\dr} \left (w_{0,j+\myhalf}^\inp
 \left (p_{0,j+\myhalf}^{n+\myhalf} -p_{0,j-\myhalf}^{n+\myhalf} \right ) + \dt \; \psi_j^\outp 
 \enskip,
 \end{equation}
-\MarginPar{shouldn't the edge states for $p_0$ have a $\inp$ or $\outp$ superscript?}
 where the interface states are again found via the procedure described
 in paper II, Appendix A.
 
@@ -298,12 +295,10 @@ is the process by which we update the base state enthalpy through $\dt$ in time.
 to compute the new base state enthalpy,
 \begin{equation}
 (\rho h)_{0,j}^{\outp} = (\rho h)_{0,j}^{\inp} - \frac{\dt}{\Delta r}
-\left\{ \left[ {(\rho h)_0}^{\outp,\nph} {w_0}^{\inp}\right]_{j+\myhalf} -  
-         \left[ {(\rho h)_0}^{\outp,\nph} {w_0}^{\inp}\right]_{j-\myhalf} \right\}
+\left\{ \left[ {(\rho h)_0}^{\nph} {w_0}^{\inp}\right]_{j+\myhalf} -  
+         \left[ {(\rho h)_0}^{\nph} {w_0}^{\inp}\right]_{j-\myhalf} \right\}
 + \dt\psi_j^{\inp} \enskip ,
 \end{equation}
-\MarginPar{why is the notation for the edge state ${{\rho h}_0}^{\outp,\nph}$? shouldn't
-           it be ${{\rho h}_0}^{\inp,\nph}$?}
 where the interface states are again found via the procedure described
 in paper II, Appendix A.  Note that the $\psi$ term is not included in 
 the forcing for the interface state calculation, but is used in the update.
