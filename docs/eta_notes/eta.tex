@@ -8,20 +8,18 @@ how they are computed, in both plane-parallel and spherical.
 %-----------------------------------------------------------------------------
 \section{$\eta$ Flow Chart}
 \begin{enumerate}
-\item Enter {\tt advance} with $[\etarhoec, \etarhocc, \divetarho]^{n-\half}$.
+\item Enter {\tt advance\_timestep} with $[\etarhoec, \etarhocc, \divetarho]^{n-\half}$.
 \item Call {\tt make\_w0}.  The spherical version uses uses $\etarhoec$ and $\etarhocc$.
 \item Call {\tt density\_advance}.  The plane-parallel version computes $\etarhoflux$.
-\item Call {\tt correct\_base}, which uses $\divetarho$.
-\item Compute $[\etarhoec, \etarhocc, \divetarho]^{n+\half,*}$.
+\item Call {\tt make\_etarho} to compute $[\etarhoec, \etarhocc, \divetarho]^{n+\half,*}$
 \item Call {\tt make\_psi}.  The plane-parallel version uses $\etarhocc$.
+\item Call {\tt correct\_base}, which uses $\divetarho$.
 \item Call {\tt make\_w0}.  The spherical version uses uses $\etarhoec$ and $\etarhocc$.
 \item Call {\tt density\_advance}.  The plane-parallel version computes $\etarhoflux$.
-\item Call {\tt correct\_base}, which uses $\divetarho$.
-\item Compute $[\etarhoec, \etarhocc, \divetarho]^{n+\half}$.
+\item Call {\tt make\_etarho} to compute $[\etarhoec, \etarhocc, \divetarho]^{n+\half}$
 \item Call {\tt make\_psi}.  The plane-parallel version uses $\etarhocc$.
+\item Call {\tt correct\_base}, which uses $\divetarho$.
 \end{enumerate}
-
-\MarginPar{I don't think that this is accurate anymore -- we don't lag $\eta$}
 
 %-----------------------------------------------------------------------------
 % computing
