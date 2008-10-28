@@ -19,7 +19,3 @@
 
 -- the small scale problem should read in its initial model in our
    standard format
-
--- we should have a global option in the code to do smallscale problems
-   that would set the divergence coefficient to 1 (I believe that's what
-   we want). 
