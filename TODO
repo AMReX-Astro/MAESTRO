@@ -23,5 +23,3 @@
 -- we should have a global option in the code to do smallscale problems
    that would set the divergence coefficient to 1 (I believe that's what
    we want). 
-
--- add psi to the forcing for p0 in advect_base_pres

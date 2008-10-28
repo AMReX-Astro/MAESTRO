@@ -204,7 +204,7 @@ contains
 ! Update p_0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    force = ZERO
+    force = psi
     
     call make_edge_state_1d(p0_old,edge,w0,force,dz,dt)
     
