@@ -11,9 +11,11 @@ Here is a list of what is enabled with {\tt use\_new\_godunov}.
   utrans_R}), (\ref{1D wt_L extrap}) and (\ref{1D wt_R extrap}), we
   include the term proportional to $(\Ubt\cdot\eb_r)$.
 \item Concerning (\ref{Force Term}), we include the
-  term proportional to $\partial\pi_0/\partial r$ in the edge-state
-  prediction (this term is already present in the cell-update).
-\item We use characteristic tracing to compute $\Ubt^{\trans}$.
+  term proportional to $\partial\pi_0/\partial r$ in the forcing for
+  computing $\Ubt^{\mac}$ and $\Ubt^{\edge}$.  Note this term is 
+  already present in the forcing for the velocity update.
+\item We use characteristic tracing to compute $\Ubt^{\trans}$
+  and $\Ubt^{\mac,\star}$.
 \end{enumerate}
 
 %-----------------------------------------------------------------------------
