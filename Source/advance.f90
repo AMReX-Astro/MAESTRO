@@ -58,6 +58,7 @@ contains
     use make_gamma_module
     use rhoh_vs_t_module
     use probin_module
+    use diag_module
     
     logical,         intent(in   ) :: init_mode
     type(ml_layout), intent(inout) :: mla
@@ -1336,6 +1337,8 @@ contains
           call destroy(hgrhs_old(n))
        end do
     end if
+
+    call diag(time,dt,dx,snew,unew,normal)
 
     call destroy(bpt)
     
