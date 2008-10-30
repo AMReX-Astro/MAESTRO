@@ -831,6 +831,8 @@ contains
                                    lo,hi,normal,ng_n,dx,n)
 
 
+    use bl_constants_module
+
     integer           , intent(in   ) :: lo(:), hi(:), ng_p, ng_u, ng_n, ng_w, n
     real (kind = dp_t), intent(  out) :: velplusw0(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)
     real (kind = dp_t), intent(in   ) ::         u(lo(1)-ng_u:,lo(2)-ng_u:,lo(3)-ng_u:,:) 
@@ -846,9 +848,9 @@ contains
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
-             velplusw0(i,j,k) = sqrt( (u(i,j,k,1)+w0macx(i,j,k))**2 + &
-                                      (u(i,j,k,2)+w0macy(i,j,k))**2 + &
-                                      (u(i,j,k,3)+w0macz(i,j,k))**2)
+             velplusw0(i,j,k) = sqrt( (u(i,j,k,1)+HALF*(w0macx(i,j,k)+w0macx(i+1,j,k)))**2 + &
+                                      (u(i,j,k,2)+HALF*(w0macy(i,j,k)+w0macy(i,j+1,k)))**2 + &
+                                      (u(i,j,k,3)+HALF*(w0macz(i,j,k)+w0macz(i,j,k+1)))**2)
           enddo
        enddo
     enddo
@@ -856,7 +858,7 @@ contains
   end subroutine makevelplusw0_3d_sphr
 
 
-  subroutine make_velr(n,plotdata,comp_velr,u,w0,w0mac,normal,dx)
+  subroutine make_velr(n,plotdata,comp_velr,u,w0,w0r_cart,normal,dx)
 
     use bc_module
     use bl_constants_module
@@ -866,7 +868,7 @@ contains
     type(multifab) , intent(inout) :: plotdata
     type(multifab) , intent(in   ) :: u
     real(kind=dp_t), intent(in   ) :: w0(0:)
-    type(multifab) , intent(in   ) :: w0mac(:)
+    type(multifab) , intent(in   ) :: w0r_cart
     type(multifab) , intent(in   ) :: normal
     real(kind=dp_t), intent(in   ) :: dx(:)
 
@@ -874,16 +876,14 @@ contains
     real(kind=dp_t), pointer:: pp(:,:,:,:)
     real(kind=dp_t), pointer:: up(:,:,:,:)
     real(kind=dp_t), pointer:: np(:,:,:,:)
-    real(kind=dp_t), pointer:: wxp(:,:,:,:)
-    real(kind=dp_t), pointer:: wyp(:,:,:,:)
-    real(kind=dp_t), pointer:: wzp(:,:,:,:)
+    real(kind=dp_t), pointer:: w0rp(:,:,:,:)
     integer :: lo(dm),hi(dm),ng_p,ng_u,ng_n,ng_w
     integer :: i
 
     ng_u = u%ng
     ng_p = plotdata%ng
     ng_n = normal%ng
-    ng_w = w0mac(1)%ng
+    ng_w = w0r_cart%ng
 
     if (spherical .ne. 1) then
        call bl_error("unable to create radial velocity -- not spherical geometry")
@@ -896,28 +896,24 @@ contains
        pp => dataptr(plotdata, i)
        up => dataptr(u, i)
        np => dataptr(normal, i)
-       wxp => dataptr(w0mac(1), i)
-       wyp => dataptr(w0mac(2), i)
-       wzp => dataptr(w0mac(3), i)
+       w0rp => dataptr(w0r_cart, i)
        lo =  lwb(get_box(u, i))
        hi =  upb(get_box(u, i))
 
        call makevelr_3d_sphr(pp(:,:,:,comp_velr),ng_p,up(:,:,:,:),ng_u, &
-                             wxp(:,:,:,1),wyp(:,:,:,1),wzp(:,:,:,1),ng_w, &
+                             w0rp(:,:,:,1),ng_w, &
                              np(:,:,:,:),ng_n,lo,hi,dx,n)
     end do
 
   end subroutine make_velr
 
-  subroutine makevelr_3d_sphr(velr,ng_p,u,ng_u,w0macx,w0macy,w0macz,ng_w,normal,ng_n, &
+  subroutine makevelr_3d_sphr(velr,ng_p,u,ng_u,w0r,ng_w,normal,ng_n, &
                               lo,hi,dx,n)
 
     integer           , intent(in   ) :: lo(:), hi(:), ng_p, ng_u, ng_n, ng_w, n
     real (kind = dp_t), intent(  out) ::   velr(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)
     real (kind = dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,lo(3)-ng_u:,:)
-    real (kind = dp_t), intent(in   ) :: w0macx(lo(1)-ng_w:,lo(2)-ng_w:,lo(3)-ng_w:)
-    real (kind = dp_t), intent(in   ) :: w0macy(lo(1)-ng_w:,lo(2)-ng_w:,lo(3)-ng_w:)
-    real (kind = dp_t), intent(in   ) :: w0macz(lo(1)-ng_w:,lo(2)-ng_w:,lo(3)-ng_w:)
+    real (kind = dp_t), intent(in   ) ::    w0r(lo(1)-ng_w:,lo(2)-ng_w:,lo(3)-ng_w:)
     real (kind = dp_t), intent(in   ) :: normal(lo(1)-ng_n:,lo(2)-ng_n:,lo(3)-ng_n:,:)  
     real (kind = dp_t), intent(in   ) :: dx(:)
 
@@ -927,9 +923,10 @@ contains
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
-             velr(i,j,k) = (u(i,j,k,1)+w0macx(i,j,k))*normal(i,j,k,1) + &
-                           (u(i,j,k,2)+w0macy(i,j,k))*normal(i,j,k,2) + &
-                           (u(i,j,k,3)+w0macz(i,j,k))*normal(i,j,k,3)
+             velr(i,j,k) = u(i,j,k,1)*normal(i,j,k,1) + &
+                           u(i,j,k,2)*normal(i,j,k,2) + &
+                           u(i,j,k,3)*normal(i,j,k,3) + &
+                           w0r(i,j,k)
           enddo
        enddo
     enddo

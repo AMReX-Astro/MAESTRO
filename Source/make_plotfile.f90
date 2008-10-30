@@ -136,6 +136,7 @@ contains
     type(multifab) :: plotdata(mla%nlevel)
     type(multifab) ::  tempfab(mla%nlevel)
     type(multifab) ::    w0mac(mla%nlevel,dm)
+    type(multifab) ::    w0r_cart(mla%nlevel)
 
     real(dp_t) :: entropybar(nlevs,0:nr_fine-1)
     real(dp_t) ::         h0(nlevs,0:nr_fine-1)
@@ -178,12 +179,27 @@ contains
     if (spherical .eq. 1) then
        do n=1,nlevs
           do comp=1,dm
+             ! w0mac will contain an edge-centered w0 on a Cartesian grid,
+             ! for use in computing divergences.
              call multifab_build(w0mac(n,comp), mla%la(n),1,1, &
                   nodal = edge_nodal_flag(comp,:))
              call setval(w0mac(n,comp), ZERO, all=.true.)
+
+             ! w0r_cart is w0 but onto a Cartesian grid in cell-centered as
+             ! a scalar.  Since w0 is the radial expansion velocity, w0r_cart
+             ! is the radial w0 in a zone
+             call multifab_build(w0r_cart(n), mla%la(n),1,0)
+             call setval(w0r_cart(n), ZERO, all=.true.)
           end do
        end do
+
+       ! put w0 on Cartesian edges as a vector
        call put_w0_on_edges(mla,w0,w0mac,dx,div_coeff,the_bc_tower)
+
+       ! put w0 in Cartesian cell-centers as a scalar (the radial expansion velocity)
+       call put_1d_array_on_cart(w0,w0r_cart,foextrap_comp,.true.,.false.,dx, &
+            the_bc_tower%bc_tower_array,mla,normal=normal)
+
     end if
 
     if (plot_base) then
@@ -246,7 +262,7 @@ contains
 
        ! RADIAL VELOCITY (spherical only)
        if (spherical .eq. 1) then
-          call make_velr(n,plotdata(n),icomp_velr,u(n),w0(n,:),w0mac(n,:),normal(n),dx(n,:))
+          call make_velr(n,plotdata(n),icomp_velr,u(n),w0(n,:),w0r_cart(n),normal(n),dx(n,:))
        endif
 
        ! VEL_PLUS_W0
