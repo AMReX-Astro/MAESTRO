@@ -27,7 +27,7 @@ Here is a list of what is enabled with {\tt use\_new\_godunov}.
   not exist.
 \item {\tt VARDEN} only does Cartesian problems.
 \item {\tt VARDEN} does not use the concept of $\Ub^{\trans}$ in the
-  computation of $\Ub^{\mac}$, so therefore the function {\tt velpred}
+  computation of $\Ub^{\mac,\star}$, i.e., the function {\tt velpred}
   computes $\Ub^{\mac,*}$ directly.
 \item {\tt VARDEN} uses characteristic tracing in the Taylor series
   extrapolation for $\Ub^{\mac,*}$, whereas {\tt MAESTRO} does not 
@@ -49,8 +49,7 @@ computes the edge-centered transverse velocities, $\Ubt^{\trans}$.
 These transverse velocities do not contain $w_0$, so immediately
 following the call to {\tt mkutrans}, we call {\tt addw0} to compute
 $\Ub^{\trans}$ from $\Ubt^{\trans}$.  We will only compute the normal
-component of velocity at each face.\\
-
+component of velocity at each face.\\ \\
 The evolution equation for the perturbational velocity is:
 \begin{equation}
 \frac{\partial\Ubt}{\partial t} = -\Ubt\cdot\nabla\Ubt - w_0\frac{\partial\Ubt}{\partial r} - (\Ubt\cdot\eb_r)\frac{\partial w_0}{\partial r}\eb_r - \frac{1}{\rho}\nabla\pi + \frac{1}{\rho_0}\frac{\partial\pi_0}{\partial r}\eb_r - \frac{(\rho-\rho_0)}{\rho}g\eb_r.\label{Perturbational Velocity Equation}
@@ -64,13 +63,19 @@ state.
 
 \subsection{2D Cartesian Case}
 For the rest of this paper, for 2D Cartesian problems, $\Ub = (u,w)$
-and $\Ubt = (u,\wt)$.  We will use the shorthand $\ib = (x,r)$.\\
-
-For the x-faces, the 1D extrapolation of $u$ is:
+and $\Ubt = (u,\wt)$ since $u = \ut$.  We will use the shorthand $\ib = (x,r)$.\\ \\
+For the x-faces, the 1D extrapolation of $u$ is as follows:\\ \\
+{\bf if} {\tt use\_new\_godunov = F} {\bf then}
 \begin{eqnarray}
 u_{L,\ib-\half\eb_x}^{\trans} &=& u_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\eb_x}^n\right)\Delta_x u_{\ib-\eb_x}^n, \\
 u_{R,\ib-\half\eb_x}^{\trans} &=& u_{\ib}^n - \left(\half + \frac{\dt}{2h}u_{\ib}^n\right)\Delta_x u_{\ib}^n.
 \end{eqnarray}
+{\bf else if} {\tt use\_new\_godunov = T} {\bf then}
+\begin{eqnarray}
+u_{L,\ib-\half\eb_x}^{\trans} &=& u_{\ib-\eb_x}^n + \left[\half - \frac{\dt}{2h}\max(0,u_{\ib-\eb_x}^n)\right]\Delta_x u_{\ib-\eb_x}^n, \\
+u_{R,\ib-\half\eb_x}^{\trans} &=& u_{\ib}^n - \left[\half + \frac{\dt}{2h}\min(0,u_{\ib}^n)\right]\Delta_x u_{\ib}^n.
+\end{eqnarray}
+{\bf end if}\\ \\
 We pick the final edge states using a Riemann solver:
 \begin{equation}
 u^{\trans}_{\ib-\half\eb_x} =
@@ -80,18 +85,21 @@ u_{L,\ib-\half\eb_x}^{\trans}, & u_{L,\ib-\half\eb_x}^{\trans} + u_{R,\ib-\half\
 u_{R,\ib-\half\eb_x}^{\trans}, & u_{L,\ib-\half\eb_x}^{\trans} + u_{R,\ib-\half\eb_x}^{\trans} < 0, \\
 \end{cases}
 \end{equation}
-For the r-faces, we choose include the radial derivative terms
-proportional to $w_0$ and $(\Ubt\cdot\eb_r) = \wt$.  The term
-proportional to $w_0$ is included by using $w$ rather than $\wt$ as
-the advection speed.  The term proportional to $\wt$ is an additional
-term.  For the r-faces, the 1D extrapolation of $\wt$ is:
+For the radial faces, the 1D extrapolation of $\wt$ is as follows:\\ \\
+{\bf if} {\tt use\_new\_godunov = F} {\bf then}
 \begin{eqnarray}
-\wt_{L,\ib-\half\eb_r}^{\trans} &=& \wt_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\eb_r}^n\right)\Delta_r \wt_{\ib-\eb_r}^n - \frac{\dt}{2}\wt_{\ib-\eb_r}^n\left(\frac{\partial w_0}{\partial r}\right)_{\ib-\eb_r},\label{Radial utrans_L} \\
-\wt_{R,\ib-\half\eb_r}^{\trans} &=& \wt_{\ib}^n - \left(\half + \frac{\dt}{2h}w_{\ib}^n\right)\Delta_r \wt_{\ib}^n - \frac{\dt}{2}\wt_{\ib}^n\left(\frac{\partial w_0}{\partial r}\right)_{\ib}.\label{Radial utrans_R}
+\wt_{L,\ib-\half\eb_r}^{\trans} &=& \wt_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\eb_r}^n\right)\Delta_r \wt_{\ib-\eb_r}^n,\label{Radial utrans_L} \\
+\wt_{R,\ib-\half\eb_r}^{\trans} &=& \wt_{\ib}^n - \left(\half + \frac{\dt}{2h}w_{\ib}^n\right)\Delta_r \wt_{\ib}^n,\label{Radial utrans_R}
 \end{eqnarray}
-The total radial velocity is defined as:
+{\bf else if} {\tt use\_new\_godunov = T} {\bf then}
+\begin{eqnarray}
+\wt_{L,\ib-\half\eb_r}^{\trans} &=& \wt_{\ib-\eb_r}^n + \left[\half - \frac{\dt}{2h}\max(0,w_{\ib-\eb_r}^n)\right]\Delta_r \wt_{\ib-\eb_r}^n - \frac{\dt}{2}\wt_{\ib-\eb_r}^n\left(\frac{\partial w_0}{\partial r}\right)_{\ib-\eb_r},\\
+\wt_{R,\ib-\half\eb_r}^{\trans} &=& \wt_{\ib}^n - \left[\half + \frac{\dt}{2h}\min(0,w_{\ib}^n)\right]\Delta_r \wt_{\ib}^n - \frac{\dt}{2}\wt_{\ib}^n\left(\frac{\partial w_0}{\partial r}\right)_{\ib}.
+\end{eqnarray}
+{\bf end if}\\ \\
+To obtain $w_{\ib}^n$ at cell centers, simple averaging is used:\label{Total Radial Velocity}
 \begin{equation}
-w_{\ib}^n = \wt_{\ib}^n + \frac{w_{0,r+\half}+w_{0,r-\half}}{2}.\label{Total Radial Velocity}
+w_{\ib}^n = \wt_{\ib}^n + \frac{w_{0,r-\myhalf} + w_{0,r+\myhalf}}{2}.
 \end{equation}
 The spatial derivatives of $w_0$ are given by the two-point centered
 difference:
@@ -99,30 +107,35 @@ difference:
 \left(\frac{\partial w_0}{\partial r}\right)_{\ib} = \frac{w_{0,r+\half}-w_{0,r-\half}}{h}.\label{Radial Derivative of w_0}
 \end{equation}
 We pick the final edge states using:
+\MarginPar{Should we really upwind based on $\wt$ instead of $w$?}
 \begin{equation}
 \wt^{\trans}_{\ib-\half\eb_r} =
 \begin{cases}
-0, & \left(w_L^{\trans} \le 0 ~~ {\rm AND} ~~ w_R^{\trans} \ge 0\right) ~~ {\rm OR} ~~ \left|w_L^{\trans} + w_R^{\trans}\right| < \epsilon, \\
-\wt_{L,\ib-\half\eb_r}^{\trans}, & w_L^{\trans} + w_R^{\trans} > 0, \\
-\wt_{R,\ib-\half\eb_r}^{\trans}, & w_L^{\trans} + w_R^{\trans} < 0, \\
+0, & \left(\wt_L^{\trans} \le 0 ~~ {\rm AND} ~~ \wt_R^{\trans} \ge 0\right) ~~ {\rm OR} ~~ \left|\wt_L^{\trans} + \wt_R^{\trans}\right| < \epsilon, \\
+\wt_{L,\ib-\half\eb_r}^{\trans}, & \wt_L^{\trans} + \wt_R^{\trans} > 0, \\
+\wt_{R,\ib-\half\eb_r}^{\trans}, & \wt_L^{\trans} + \wt_R^{\trans} < 0, \\
 \end{cases}
 \end{equation}
-where $w_L^{\trans} = \wt_{L,\ib-\half\eb_r}^{\trans} + w_{0,r-\half}$
-and $w_R^{\trans} = \wt_{R,\ib-\half\eb_r}^{\trans} + w_{0,r-\half}$.
-Finally, we call {\tt addw0} to compute $w^{\trans}$ from
-$\wt^{\trans}$.
+Finally, we call {\tt addw0} to compute $w^{\trans}$ from $\wt^{\trans}$.
 
 \subsection{3D Cartesian Case}
 For the rest of this paper, for 3D Cartesian problems, $\Ub = (u,v,w)$
-and $\Ubt = (u,v,\wt)$.  We will use the shorthand $\ib = (x,y,r)$.\\
-
-The only difference between the 2D and 3D Cartesian cases is that we
-must also compute $v^{\trans}$.  The procedure is analogous to
-computing $u^{\trans}$.  For y-faces, the 1D extrapolation of $v$ is:
+and $\Ubt = (u,v,\wt)$ since $u = \ut$ and $v = \vt$.
+We will use the shorthand $\ib = (x,y,r)$.\\ \\
+We use the exact same procedure in 2D and 3D to compute $u^{\trans}$ and 
+$\wt^{\trans}$. The procedure for computing $v^{\trans}$ is analogous to
+computing $u^{\trans}$.  For y-faces, the 1D extrapolation of $v$ is:\\ \\
+{\bf if} {\tt use\_new\_godunov = F} {\bf then}
 \begin{eqnarray}
 v_{L,\ib-\half\eb_y}^{\trans} &=& v_{\ib-\eb_y}^n + \left(\half - \frac{\dt}{2h}v_{\ib-\eb_y}^n\right)\Delta_y v_{\ib-\eb_y}^n, \\
 v_{R,\ib-\half\eb_y}^{\trans} &=& v_{\ib}^n - \left(\half + \frac{\dt}{2h}v_{\ib}^n\right)\Delta_y v_{\ib}^n,
 \end{eqnarray}
+{\bf else if} {\tt use\_new\_godunov = T} {\bf then}
+\begin{eqnarray}
+v_{L,\ib-\half\eb_y}^{\trans} &=& v_{\ib-\eb_y}^n + \left[\half - \frac{\dt}{2h}\max(0,v_{\ib-\eb_y}^n)\right]\Delta_y v_{\ib-\eb_y}^n, \\
+v_{R,\ib-\half\eb_y}^{\trans} &=& v_{\ib}^n - \left[\half + \frac{\dt}{2h}\min(0,v_{\ib}^n)\right]\Delta_y v_{\ib}^n,
+\end{eqnarray}
+{\bf end if}
 \begin{equation}
 v^{\trans}_{\ib-\half\eb_y} =
 \begin{cases}
@@ -131,27 +144,33 @@ v_{L,\ib-\half\eb_y}^{\trans}, & v_{L,\ib-\half\eb_y}^{\trans} + v_{R,\ib-\half\
 v_{R,\ib-\half\eb_y}^{\trans}, & v_{L,\ib-\half\eb_y}^{\trans} + v_{R,\ib-\half\eb_y}^{\trans} < 0. \\
 \end{cases}
 \end{equation}
-
 \subsection{3D Spherical Case}
 For the rest of this paper, for 3D spherical problems, $\Ub = (u,v,w)$
 and $\Ubt = (\ut,\vt,\wt)$.  We will use the shorthand $\ib =
-(x,y,z)$.\\
-
+(x,y,z)$.\\ \\
 We first construct $\Ub$ by mapping $w_0$ onto a Cartesian array and
 adding it to $\Ubt$.  This is a spherical generalization of equation
 (\ref{Total Radial Velocity}).  We also map $\partial w_0/\partial r$
 onto a Cartesian array.  This is a spherical generalization of
 equation (\ref{Radial Derivative of w_0}).  Then we use a 1D
-extrapolation analogous to equations equations (\ref{Radial utrans_L})
-and (\ref{Radial utrans_R}).  For example, for x-faces:
+extrapolation, which is analogous for all three directions.
+For example, for x-faces:\\ \\
+\MarginPar{We are excluding the $\partial w_0/\partial r$ term}
+{\bf if} {\tt use\_new\_godunov} {\bf then}
 \begin{eqnarray}
-\ut_L^{\trans} &=& \ut_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\eb_x}^n\right)\Delta_x\ut_{\ib-\eb_x}^n - \frac{\dt}{2}\left[(\Ubt^n\cdot\eb_r)\left(\frac{\partial w_0}{\partial r}\right)(\eb_r\cdot\eb_x)\right]_{\ib-\eb_x}, \\
-\ut_R^{\trans} &=& \ut_{\ib}^n - \left(\half + \frac{\dt}{2h}u_{\ib}^n\right)\Delta_x\ut_{\ib}^n - \frac{\dt}{2}\left[(\Ubt^n\cdot\eb_r)\left(\frac{\partial w_0}{\partial r}\right)(\eb_r\cdot\eb_x)\right]_{\ib}.
+\ut_{L,\ib-\half\eb_x}^{\trans} &=& \ut_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\eb_x}^n\right)\Delta_x\ut_{\ib-\eb_x}^n \\
+\ut_{R,\ib-\half\eb_x}^{\trans} &=& \ut_{\ib}^n - \left(\half + \frac{\dt}{2h}u_{\ib}^n\right)\Delta_x\ut_{\ib}^n ,
 \end{eqnarray}
-Then, we use the same Riemann solver as the Cartesian case to obtain
-$\ut^{\trans}$.  To compute $\vt^{\trans}$ (or $\wt^{\trans}$), simply
-replace all instaces of $\ut$ with $\vt$ (or $\wt$) and all instaces
-of $x$ with $y$ (or $z$).  Finally, we call {\tt addw0} to compute
+{\bf else if} {\tt use\_new\_godunov = T} {\bf then}
+\begin{eqnarray}
+\ut_{L,\ib-\half\eb_x}^{\trans} &=& \ut_{\ib-\eb_x}^n + \left[\half - \frac{\dt}{2h}\max(0,u_{\ib-\eb_x}^n)\right]\Delta_x\ut_{\ib-\eb_x}^n \\
+\ut_{R,\ib-\half\eb_x}^{\trans} &=& \ut_{\ib}^n - \left[\half + \frac{\dt}{2h}\min(0,u_{\ib}^n)\right]\Delta_x\ut_{\ib}^n.
+\end{eqnarray}
+{\bf end if}\\ \\
+Then, we use the same Riemann solver as the Cartesian 
+case to obtain $\ut^{\trans}$.
+\MarginPar{Again, should we really upwind based on $\ut$ instead of $u$?}
+Finally, we call {\tt addw0} to compute
 $\Ub^{\trans}$ from $\Ubt^{\trans}$.
 
 
