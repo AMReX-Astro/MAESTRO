@@ -6,6 +6,7 @@ module diag_module
   use bl_types
   use multifab_module
   use ml_layout_module
+  use define_bc_module
 
   implicit none
 
@@ -15,10 +16,12 @@ module diag_module
 
 contains
 
-  subroutine diag(time,dt,dx,s,rho0,rhoh0,p0,tempbar,gamma1bar,u,w0,normal)
+  subroutine diag(time,dt,dx,s,rho0,rhoh0,p0,tempbar,gamma1bar,u,w0,normal, &
+                  mla,the_bc_tower)
 
     use bl_prof_module
     use geometry, only: dm, nlevs
+    use bl_constants_module
 
     real(kind=dp_t), intent(in   ) :: dt,dx(:,:),time
     type(multifab) , intent(in   ) :: s(:)
@@ -30,6 +33,8 @@ contains
     real(kind=dp_t), intent(in   ) ::   tempbar(:,0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
     real(kind=dp_t), intent(in   ) ::        w0(:,0:)
+    type(ml_layout), intent(in   ) :: mla
+    type(bc_tower) , intent(in   ) :: the_bc_tower
 
 
     ! Local
