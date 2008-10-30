@@ -98,9 +98,10 @@ We predict $\wt$ to r-faces using a 1D extrapolation:\\ \\
 \wt_{R,\ib-\half\eb_r}^{\trans} &=& \wt_{\ib}^n - \left[\half + \frac{\dt}{2h}\min(0,w_{\ib}^n)\right]\Delta_r \wt_{\ib}^n - \frac{\dt}{2}\wt_{\ib}^n\left(\frac{\partial w_0}{\partial r}\right)_{\ib}.
 \end{eqnarray}
 {\bf end if}\\ \\
-To obtain $w_{\ib}^n$ at cell centers, simple averaging is used:\label{Total Radial Velocity}
+To obtain $w_{\ib}^n$ at cell centers, simple averaging is used:
 \begin{equation}
 w_{\ib}^n = \wt_{\ib}^n + \frac{w_{0,r-\myhalf} + w_{0,r+\myhalf}}{2}.
+\label{Total Radial Velocity}
 \end{equation}
 The spatial derivatives of $w_0$ are given by the two-point centered
 difference:
@@ -223,8 +224,8 @@ Then, we predict $u$ to x-faces using a full-dimensional extrapolation:\\ \\
 \end{eqnarray}
 {\bf else if} {\tt use\_new\_godunov = T} {\bf then}
 \begin{eqnarray}
-\ut_{L,\ib-\half\eb_x}^{\mac,*} &=& \ut_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}\max(0,u_{\ib-\eb_x})\right)\Delta_x \ut_{\ib-\eb_x}^n \nonumber \\
-&& -\frac{\dt}{4h}\left[w_{\ib-\eb_x+\half\eb_r}^{\trans}+w_{\ib-\eb_x-\half\eb_r}^{\trans}\right]\left(\ut_{\ib-\eb_x+\half\eb_r}^{1D} - \ut_{\ib-\eb_x-\half\eb_r}^{1D}\right) + \frac{\dt}{2}f_{u,\ib-\eb_x}, \\
+\ut_{L,\ib-\half\eb_x}^{\mac,*} &=& \ut_{\ib-\eb_x}^n + \left[\half - \frac{\dt}{2h}\max(0,u_{\ib-\eb_x})\right]\Delta_x \ut_{\ib-\eb_x}^n \nonumber \\
+&& -\frac{\dt}{4h}\left(w_{\ib-\eb_x+\half\eb_r}^{\trans}+w_{\ib-\eb_x-\half\eb_r}^{\trans}\right)\left(\ut_{\ib-\eb_x+\half\eb_r}^{1D} - \ut_{\ib-\eb_x-\half\eb_r}^{1D}\right) + \frac{\dt}{2}f_{u,\ib-\eb_x}, \\
 \ut_{R,\ib-\half\eb_x}^{\mac,*} &=& \ut_{\ib}^n - \left[\half + \frac{\dt}{2h}\min(0,u_{\ib})\right]\Delta_x \ut_{\ib}^n \nonumber \\
 && -\frac{\dt}{4h}\left(w_{\ib+\half\eb_r}^{\trans}+w_{\ib-\half\eb_r}^{\trans}\right)\left(\ut_{\ib+\half\eb_r}^{1D} - \ut_{\ib-\half\eb_r}^{1D}\right) + \frac{\dt}{2}f_{u,\ib}.
 \end{eqnarray}
@@ -297,14 +298,31 @@ Next, we solve a Riemann problem:
 We then project $\Ubt^{\mac,*}$ to obtain $\Ubt^{\mac}$ and we call
 {\tt addw0} to compute $\Ub^{\mac}$ from $\Ubt^{\mac}$.
 \subsection{3D Cartesian Case}
-Predict $u$ to y-faces using a 1D extrapolation.\\ \\
-Predict $u$ to r-faces using a 1D extrapolation.\\ \\
-Predict $u$ to x-faces using a full-dimensional extrapolation.\\ \\
-The $\partial w_0/\partial r$ term only enters in a full-dimensional 
-extrapolation of $\wt$ to r-faces..
+\begin{enumerate}
+\item Predict $\ut$ to y-faces using a 1D extrapolation.
+\item Predict $\ut$ to r-faces using a 1D extrapolation.
+\item Predict $\ut$ to x-faces using a full-dimensional extrapolation.
+\item Predict $\vt$ to x-faces using a 1D extrapolation.
+\item Predict $\vt$ to r-faces using a 1D extrapolation.
+\item Predict $\vt$ to y-faces using a full-dimensional extrapolation.
+\item Predict $\wt$ to x-faces using a 1D extrapolation.
+\item Predict $\wt$ to y-faces using a 1D extrapolation.
+\item Predict $\wt$ to r-faces using a full-dimensional extrapolation, 
+  noting that the $\partial w_0/\partial r$ term only enters here.
+\end{enumerate}
 \subsection{3D Spherical Case}
-Same as 3D case, except the $\partial w_0/\partial r$ term enters 
+We first construct $\Ub$ by mapping $w_0$ onto a Cartesian array and
+adding it to $\Ubt$.  This is a spherical generalization of equation
+(\ref{Total Radial Velocity}).  We also map $\partial w_0/\partial r$
+onto a Cartesian array.  This is a spherical generalization of
+equation (\ref{Radial Derivative of w_0}).\\ \\
+The spherical case is the same as the plane-parallel 3D Cartesian 
+case, except the $\partial w_0/\partial r$ term enters 
 in the full dimensional extrapolation for each direction.
+\MarginPar{Similar to the $\Ubt^{\trans}$ spherical algorithm, 
+we are excluding the $\partial w_0/\partial r$ 
+term in the 1D extrapolation.  We are also upwinding based 
+on $\ut/\vt/\wt$ instead of $u/v/w$.}
 
 %-----------------------------------------------------------------------------
 % edge states
