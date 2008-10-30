@@ -184,13 +184,14 @@ contains
              call multifab_build(w0mac(n,comp), mla%la(n),1,1, &
                   nodal = edge_nodal_flag(comp,:))
              call setval(w0mac(n,comp), ZERO, all=.true.)
+          enddo
 
-             ! w0r_cart is w0 but onto a Cartesian grid in cell-centered as
-             ! a scalar.  Since w0 is the radial expansion velocity, w0r_cart
-             ! is the radial w0 in a zone
-             call multifab_build(w0r_cart(n), mla%la(n),1,0)
-             call setval(w0r_cart(n), ZERO, all=.true.)
-          end do
+          ! w0r_cart is w0 but onto a Cartesian grid in cell-centered as
+          ! a scalar.  Since w0 is the radial expansion velocity, w0r_cart
+          ! is the radial w0 in a zone
+          call multifab_build(w0r_cart(n), mla%la(n),1,0)
+          call setval(w0r_cart(n), ZERO, all=.true.)
+
        end do
 
        ! put w0 on Cartesian edges as a vector
