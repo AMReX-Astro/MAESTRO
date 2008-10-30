@@ -15,7 +15,7 @@ module diag_module
 
 contains
 
-  subroutine diag(time,dt,dx,s,u,normal)
+  subroutine diag(time,dt,dx,s,rho0,rhoh0,p0,tempbar,gamma1bar,u,w0,normal)
 
     use bl_prof_module
     use geometry, only: dm, nlevs
@@ -24,6 +24,12 @@ contains
     type(multifab) , intent(in   ) :: s(:)
     type(multifab) , intent(in   ) :: u(:)
     type(multifab) , intent(in   ) :: normal(:)
+    real(kind=dp_t), intent(in   ) ::      rho0(:,0:)
+    real(kind=dp_t), intent(in   ) ::     rhoh0(:,0:)
+    real(kind=dp_t), intent(in   ) ::        p0(:,0:)
+    real(kind=dp_t), intent(in   ) ::   tempbar(:,0:)
+    real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
+    real(kind=dp_t), intent(in   ) ::        w0(:,0:)
 
 
     ! Local
@@ -56,13 +62,19 @@ contains
           case (2)
              call diag_2d(time,dt,dx(n,:), &
                           sp(:,:,1,:),ng_s, &
+                          rho0(n,:),rhoh0(n,:), &
+                          p0(n,:),tempbar(n,:),gamma1bar(n,:), &
                           up(:,:,1,:),ng_u, &
+                          w0(n,:), &
                           np(:,:,1,:),ng_n, &
                           lo,hi)
           case (3)
              call diag_3d(time,dt,dx(n,:), &
                           sp(:,:,:,:),ng_s, &
+                          rho0(n,:),rhoh0(n,:), &
+                          p0(n,:),tempbar(n,:),gamma1bar(n,:), &
                           up(:,:,:,:),ng_u, &
+                          w0(n,:), &
                           np(:,:,:,:),ng_n, &
                           lo,hi)
           end select
@@ -73,16 +85,20 @@ contains
 
   end subroutine diag
 
-  subroutine diag_2d(time,dt,dx,s,ng_s,u,ng_u,normal,ng_n,lo,hi)
+  subroutine diag_2d(time,dt,dx,s,ng_s,rho0,rhoh0,p0,tempbar,gamma1bar, &
+                     u,ng_u,w0,normal,ng_n,lo,hi)
 
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
     use network, only: nspec
 
     integer, intent(in) :: lo(:), hi(:), ng_s, ng_u, ng_n
-    real (kind = dp_t), intent(in   ) ::      s(lo(1)-ng_s:,lo(2)-ng_s:,:)
-    real (kind = dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,:)
-    real (kind = dp_t), intent(in   ) :: normal(lo(1)-ng_n:,lo(2)-ng_n:,:)
-    real (kind = dp_t), intent(in   ) :: time, dt, dx(:)
+    real (kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s:,lo(2)-ng_s:,:)
+    real (kind=dp_t), intent(in   ) :: rho0(0:), rhoh0(0:), &
+                                         p0(0:),tempbar(0:),gamma1bar(0:)
+    real (kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,:)
+    real (kind=dp_t), intent(in   ) :: w0(0:)
+    real (kind=dp_t), intent(in   ) :: normal(lo(1)-ng_n:,lo(2)-ng_n:,:)
+    real (kind=dp_t), intent(in   ) :: time, dt, dx(:)
 
     !     Local variables
     integer            :: i, j
@@ -106,16 +122,20 @@ contains
 
   end subroutine diag_2d
 
-  subroutine diag_3d(time,dt,dx,s,ng_s,u,ng_u,normal,ng_n,lo,hi)
+  subroutine diag_3d(time,dt,dx,s,ng_s,rho0,rhoh0,p0,tempbar,gamma1bar, &
+                     u,ng_u,w0,normal,ng_n,lo,hi)
 
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
     use network, only: nspec
 
     integer, intent(in) :: lo(:), hi(:), ng_s, ng_u, ng_n
-    real (kind = dp_t), intent(in   ) ::      s(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
-    real (kind = dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,lo(3)-ng_u:,:)
-    real (kind = dp_t), intent(in   ) :: normal(lo(1)-ng_n:,lo(2)-ng_n:,lo(3)-ng_n:,:)
-    real (kind = dp_t), intent(in   ) :: time, dt, dx(:)
+    real (kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
+    real (kind=dp_t), intent(in   ) :: rho0(0:), rhoh0(0:), &
+                                         p0(0:),tempbar(0:),gamma1bar(0:)
+    real (kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,lo(3)-ng_u:,:)
+    real (kind=dp_t), intent(in   ) :: w0(0:)
+    real (kind=dp_t), intent(in   ) :: normal(lo(1)-ng_n:,lo(2)-ng_n:,lo(3)-ng_n:,:)
+    real (kind=dp_t), intent(in   ) :: time, dt, dx(:)
 
     !     Local variables
     integer            :: i, j, k

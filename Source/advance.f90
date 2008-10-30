@@ -1338,7 +1338,7 @@ contains
        end do
     end if
 
-    call diag(time,dt,dx,snew,unew,normal)
+    call diag(time,dt,dx,snew,rho0_new,rhoh0_new,p0_new,tempbar,gamma1bar,unew,w0,normal)
 
     call destroy(bpt)
     
