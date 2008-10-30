@@ -63,29 +63,30 @@ state.
 
 \subsection{2D Cartesian Case}
 For the rest of this paper, for 2D Cartesian problems, $\Ub = (u,w)$
-and $\Ubt = (u,\wt)$ since $u = \ut$.  We will use the shorthand $\ib = (x,r)$.\\ \\
-For the x-faces, the 1D extrapolation of $u$ is as follows:\\ \\
+and $\Ubt = (\ut,\wt)$.  Note that $u = \ut$.  We will use the 
+shorthand $\ib = (x,r)$.\\ \\
+We predict $u$ to x-faces using a 1D extrapolation:\\ \\
 {\bf if} {\tt use\_new\_godunov = F} {\bf then}
 \begin{eqnarray}
-u_{L,\ib-\half\eb_x}^{\trans} &=& u_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\eb_x}^n\right)\Delta_x u_{\ib-\eb_x}^n, \\
-u_{R,\ib-\half\eb_x}^{\trans} &=& u_{\ib}^n - \left(\half + \frac{\dt}{2h}u_{\ib}^n\right)\Delta_x u_{\ib}^n.
+\ut_{L,\ib-\half\eb_x}^{\trans} &=& \ut_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\eb_x}^n\right)\Delta_x \ut_{\ib-\eb_x}^n, \\
+\ut_{R,\ib-\half\eb_x}^{\trans} &=& \ut_{\ib}^n - \left(\half + \frac{\dt}{2h}u_{\ib}^n\right)\Delta_x \ut_{\ib}^n.
 \end{eqnarray}
 {\bf else if} {\tt use\_new\_godunov = T} {\bf then}
 \begin{eqnarray}
-u_{L,\ib-\half\eb_x}^{\trans} &=& u_{\ib-\eb_x}^n + \left[\half - \frac{\dt}{2h}\max(0,u_{\ib-\eb_x}^n)\right]\Delta_x u_{\ib-\eb_x}^n, \\
-u_{R,\ib-\half\eb_x}^{\trans} &=& u_{\ib}^n - \left[\half + \frac{\dt}{2h}\min(0,u_{\ib}^n)\right]\Delta_x u_{\ib}^n.
+\ut_{L,\ib-\half\eb_x}^{\trans} &=& \ut_{\ib-\eb_x}^n + \left[\half - \frac{\dt}{2h}\max(0,u_{\ib-\eb_x}^n)\right]\Delta_x \ut_{\ib-\eb_x}^n, \\
+\ut_{R,\ib-\half\eb_x}^{\trans} &=& \ut_{\ib}^n - \left[\half + \frac{\dt}{2h}\min(0,u_{\ib}^n)\right]\Delta_x \ut_{\ib}^n.
 \end{eqnarray}
 {\bf end if}\\ \\
-We pick the final edge states using a Riemann solver:
+We pick the final trans states using a Riemann solver:
 \begin{equation}
-u^{\trans}_{\ib-\half\eb_x} =
+\ut^{\trans}_{\ib-\half\eb_x} =
 \begin{cases}
-0, & \left(u_{L,\ib-\half\eb_x}^{\trans} \le 0 ~~ {\rm AND} ~~ u_{R,\ib-\half\eb_x}^{\trans} \ge 0\right) ~~ {\rm OR} ~~ \left|u_{L,\ib-\half\eb_x}^{\trans} + u_{R,\ib-\half\eb_x}^{\trans}\right| < \epsilon, \\
-u_{L,\ib-\half\eb_x}^{\trans}, & u_{L,\ib-\half\eb_x}^{\trans} + u_{R,\ib-\half\eb_x}^{\trans} > 0, \\
-u_{R,\ib-\half\eb_x}^{\trans}, & u_{L,\ib-\half\eb_x}^{\trans} + u_{R,\ib-\half\eb_x}^{\trans} < 0, \\
+0, & \left(\ut_{L,\ib-\half\eb_x}^{\trans} \le 0 ~~ {\rm AND} ~~ \ut_{R,\ib-\half\eb_x}^{\trans} \ge 0\right) ~~ {\rm OR} ~~ \left|\ut_{L,\ib-\half\eb_x}^{\trans} + \ut_{R,\ib-\half\eb_x}^{\trans}\right| < \epsilon, \\
+\ut_{L,\ib-\half\eb_x}^{\trans}, & \ut_{L,\ib-\half\eb_x}^{\trans} + \ut_{R,\ib-\half\eb_x}^{\trans} > 0, \\
+\ut_{R,\ib-\half\eb_x}^{\trans}, & \ut_{L,\ib-\half\eb_x}^{\trans} + \ut_{R,\ib-\half\eb_x}^{\trans} < 0, \\
 \end{cases}
 \end{equation}
-For the r-faces, the 1D extrapolation of $\wt$ is as follows:\\ \\
+We predict $\wt$ to r-faces using a 1D extrapolation:\\ \\
 {\bf if} {\tt use\_new\_godunov = F} {\bf then}
 \begin{eqnarray}
 \wt_{L,\ib-\half\eb_r}^{\trans} &=& \wt_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\eb_r}^n\right)\Delta_r \wt_{\ib-\eb_r}^n,\label{Radial utrans_L} \\
@@ -106,7 +107,7 @@ difference:
 \begin{equation}
 \left(\frac{\partial w_0}{\partial r}\right)_{\ib} = \frac{w_{0,r+\half}-w_{0,r-\half}}{h}.\label{Radial Derivative of w_0}
 \end{equation}
-We pick the final edge states using:
+We pick the final trans states using a Riemann solver:
 \MarginPar{Should we really upwind based on $\wt$ instead of $w$?}
 \begin{equation}
 \wt^{\trans}_{\ib-\half\eb_r} =
@@ -118,28 +119,29 @@ We pick the final edge states using:
 \end{equation}
 \subsection{3D Cartesian Case}
 For the rest of this paper, for 3D Cartesian problems, $\Ub = (u,v,w)$
-and $\Ubt = (u,v,\wt)$ since $u = \ut$ and $v = \vt$.
+and $\Ubt = (\ut,\vt,\wt)$.  Note that $u = \ut$ and $v = \vt$.
 We will use the shorthand $\ib = (x,y,r)$.\\ \\
-We use the exact same procedure in 2D and 3D to compute $u^{\trans}$ and 
-$\wt^{\trans}$. The procedure for computing $v^{\trans}$ is analogous to
-computing $u^{\trans}$.  For y-faces, the 1D extrapolation of $v$ is:\\ \\
+We use the exact same procedure in 2D and 3D to compute $\ut^{\trans}$ and 
+$\wt^{\trans}$. The procedure for computing $\vt^{\trans}$ is analogous to
+computing $\ut^{\trans}$.  We predict $\vt$ to y-faces using the
+1D extrapolation:\\ \\
 {\bf if} {\tt use\_new\_godunov = F} {\bf then}
 \begin{eqnarray}
-v_{L,\ib-\half\eb_y}^{\trans} &=& v_{\ib-\eb_y}^n + \left(\half - \frac{\dt}{2h}v_{\ib-\eb_y}^n\right)\Delta_y v_{\ib-\eb_y}^n, \\
-v_{R,\ib-\half\eb_y}^{\trans} &=& v_{\ib}^n - \left(\half + \frac{\dt}{2h}v_{\ib}^n\right)\Delta_y v_{\ib}^n,
+\vt_{L,\ib-\half\eb_y}^{\trans} &=& \vt_{\ib-\eb_y}^n + \left(\half - \frac{\dt}{2h}v_{\ib-\eb_y}^n\right)\Delta_y \vt_{\ib-\eb_y}^n, \\
+\vt_{R,\ib-\half\eb_y}^{\trans} &=& \vt_{\ib}^n - \left(\half + \frac{\dt}{2h}v_{\ib}^n\right)\Delta_y \vt_{\ib}^n,
 \end{eqnarray}
 {\bf else if} {\tt use\_new\_godunov = T} {\bf then}
 \begin{eqnarray}
-v_{L,\ib-\half\eb_y}^{\trans} &=& v_{\ib-\eb_y}^n + \left[\half - \frac{\dt}{2h}\max(0,v_{\ib-\eb_y}^n)\right]\Delta_y v_{\ib-\eb_y}^n, \\
-v_{R,\ib-\half\eb_y}^{\trans} &=& v_{\ib}^n - \left[\half + \frac{\dt}{2h}\min(0,v_{\ib}^n)\right]\Delta_y v_{\ib}^n,
+\vt_{L,\ib-\half\eb_y}^{\trans} &=& \vt_{\ib-\eb_y}^n + \left[\half - \frac{\dt}{2h}\max(0,v_{\ib-\eb_y}^n)\right]\Delta_y \vt_{\ib-\eb_y}^n, \\
+\vt_{R,\ib-\half\eb_y}^{\trans} &=& \vt_{\ib}^n - \left[\half + \frac{\dt}{2h}\min(0,v_{\ib}^n)\right]\Delta_y \vt_{\ib}^n,
 \end{eqnarray}
 {\bf end if}
 \begin{equation}
-v^{\trans}_{\ib-\half\eb_y} =
+\vt^{\trans}_{\ib-\half\eb_y} =
 \begin{cases}
-0, & \left(v_{L,\ib-\half\eb_y}^{\trans} \le 0 ~~ {\rm AND} ~~ v_{R,\ib-\half\eb_y}^{\trans} \ge 0\right) ~~ {\rm OR} ~~ \left|v_{L,\ib-\half\eb_y}^{\trans} + v_{R,\ib-\half\eb_y}^{\trans}\right| < \epsilon, \\
-v_{L,\ib-\half\eb_y}^{\trans}, & v_{L,\ib-\half\eb_y}^{\trans} + v_{R,\ib-\half\eb_y}^{\trans} > 0, \\
-v_{R,\ib-\half\eb_y}^{\trans}, & v_{L,\ib-\half\eb_y}^{\trans} + v_{R,\ib-\half\eb_y}^{\trans} < 0. \\
+0, & \left(\vt_{L,\ib-\half\eb_y}^{\trans} \le 0 ~~ {\rm AND} ~~ \vt_{R,\ib-\half\eb_y}^{\trans} \ge 0\right) ~~ {\rm OR} ~~ \left|\vt_{L,\ib-\half\eb_y}^{\trans} + \vt_{R,\ib-\half\eb_y}^{\trans}\right| < \epsilon, \\
+\vt_{L,\ib-\half\eb_y}^{\trans}, & \vt_{L,\ib-\half\eb_y}^{\trans} + \vt_{R,\ib-\half\eb_y}^{\trans} > 0, \\
+\vt_{R,\ib-\half\eb_y}^{\trans}, & \vt_{L,\ib-\half\eb_y}^{\trans} + \vt_{R,\ib-\half\eb_y}^{\trans} < 0. \\
 \end{cases}
 \end{equation}
 \subsection{3D Spherical Case}
@@ -150,8 +152,9 @@ We first construct $\Ub$ by mapping $w_0$ onto a Cartesian array and
 adding it to $\Ubt$.  This is a spherical generalization of equation
 (\ref{Total Radial Velocity}).  We also map $\partial w_0/\partial r$
 onto a Cartesian array.  This is a spherical generalization of
-equation (\ref{Radial Derivative of w_0}).  Then we use a 1D
-extrapolation, which is analogous for all three directions.
+equation (\ref{Radial Derivative of w_0}).  Then we predict the normal 
+component of velocity to the normal faces using a 1D extrapolation.  
+This extrapolation is analogous for all three directions.
 For example, for x-faces:\\ \\
 \MarginPar{We are excluding the $\partial w_0/\partial r$ term}
 {\bf if} {\tt use\_new\_godunov} {\bf then}
@@ -189,50 +192,50 @@ f_w \\
 *This term is only included if {\tt use\_new\_godunov = T}.  Note that 
 later this term is always included in the cell update.
 \subsection{2D Cartesian Case}
-We begin by computing a time-centered 1D extrapolation of $u$ to r-faces:\\ \\
+We begin by predicting $\ut$ to r-faces using a 1D extrapolation:\\ \\
 {\bf if} {\tt use\_new\_godunov = F} {\bf then}
 \begin{eqnarray}
-u_{L,\ib-\half\eb_r}^{1D} &=& u_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\eb_r}^n\right)\Delta_r u_{\ib-\eb_r}^n, \\
-u_{R,\ib-\half\eb_r}^{1D} &=& u_{\ib} - \left(\half + \frac{\dt}{2h}w_{\ib}^n\right)\Delta_r u_{\ib}^n.
+\ut_{L,\ib-\half\eb_r}^{1D} &=& \ut_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\eb_r}^n\right)\Delta_r \ut_{\ib-\eb_r}^n, \\
+\ut_{R,\ib-\half\eb_r}^{1D} &=& \ut_{\ib} - \left(\half + \frac{\dt}{2h}w_{\ib}^n\right)\Delta_r \ut_{\ib}^n.
 \end{eqnarray}
 {\bf else if} {\tt use\_new\_godunov = T} {\bf then}
 \begin{eqnarray}
-u_{L,\ib-\half\eb_r}^{1D} &=& u_{\ib-\eb_r}^n + \left[\half - \frac{\dt}{2h}\max(0,w_{\ib-\eb_r}^n)\right]\Delta_r u_{\ib-\eb_r}^n, \\
-u_{R,\ib-\half\eb_r}^{1D} &=& u_{\ib} - \left[\half + \frac{\dt}{2h}\min(0,w_{\ib}^n)\right]\Delta_r u_{\ib}^n.
+\ut_{L,\ib-\half\eb_r}^{1D} &=& \ut_{\ib-\eb_r}^n + \left[\half - \frac{\dt}{2h}\max(0,w_{\ib-\eb_r}^n)\right]\Delta_r \ut_{\ib-\eb_r}^n, \\
+\ut_{R,\ib-\half\eb_r}^{1D} &=& \ut_{\ib} - \left[\half + \frac{\dt}{2h}\min(0,w_{\ib}^n)\right]\Delta_r \ut_{\ib}^n.
 \end{eqnarray}
 {\bf end if}\\ \\
 Then we upwind based on $w^{\trans}$:
 \begin{equation}
-u_{\ib-\half\eb_r}^{1D} =
+\ut_{\ib-\half\eb_r}^{1D} =
 \begin{cases}
-\half\left(u_{L,\ib-\half\eb_r}^{1D} + u_{R,\ib-\half\eb_r}^{1D}\right), & \left|w^{\trans}_{\ib-\half\eb_r}\right| < \epsilon \\
-u_{L,\ib-\half\eb_r}^{1D}, & w^{\trans}_{\ib-\half\eb_r} > 0, \\
-u_{R,\ib-\half\eb_r}^{1D}, & w^{\trans}_{\ib-\half\eb_r} < 0. \\
+\half\left(\ut_{L,\ib-\half\eb_r}^{1D} + \ut_{R,\ib-\half\eb_r}^{1D}\right), & \left|w^{\trans}_{\ib-\half\eb_r}\right| < \epsilon \\
+\ut_{L,\ib-\half\eb_r}^{1D}, & w^{\trans}_{\ib-\half\eb_r} > 0, \\
+\ut_{R,\ib-\half\eb_r}^{1D}, & w^{\trans}_{\ib-\half\eb_r} < 0. \\
 \end{cases}
 \end{equation}
-Then, we do a full-dimensional extrapolation of $u$ to x-faces:\\ \\
+Then, we predict $u$ to x-faces using a full-dimensional extrapolation:\\ \\
 {\bf if} {\tt use\_new\_godunov = F} {\bf then}
 \begin{eqnarray}
-u_{L,\ib-\half\eb_x}^{\mac,*} &=& u_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\eb_x}\right)\Delta_x u_{\ib-\eb_x}^n \nonumber \\
-&& -\frac{\dt}{4h}\left(w_{\ib-\eb_x+\half\eb_r}^{\trans}+w_{\ib-\eb_x-\half\eb_r}^{\trans}\right)\left(u_{\ib-\eb_x+\half\eb_r}^{1D} - u_{\ib-\eb_x-\half\eb_r}^{1D}\right) + \frac{\dt}{2}f_{u,\ib-\eb_x}, \\
-u_{R,\ib-\half\eb_x}^{\mac,*} &=& u_{\ib}^n - \left(\half + \frac{\dt}{2h}u_{\ib}\right)\Delta_x u_{\ib}^n \nonumber \\
-&& -\frac{\dt}{4h}\left(w_{\ib+\half\eb_r}^{\trans}+w_{\ib-\half\eb_r}^{\trans}\right)\left(u_{\ib+\half\eb_r}^{1D} - u_{\ib-\half\eb_r}^{1D}\right) + \frac{\dt}{2}f_{u,\ib},
+\ut_{L,\ib-\half\eb_x}^{\mac,*} &=& \ut_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\eb_x}\right)\Delta_x \ut_{\ib-\eb_x}^n \nonumber \\
+&& -\frac{\dt}{4h}\left(w_{\ib-\eb_x+\half\eb_r}^{\trans}+w_{\ib-\eb_x-\half\eb_r}^{\trans}\right)\left(\ut_{\ib-\eb_x+\half\eb_r}^{1D} - \ut_{\ib-\eb_x-\half\eb_r}^{1D}\right) + \frac{\dt}{2}f_{u,\ib-\eb_x}, \\
+\ut_{R,\ib-\half\eb_x}^{\mac,*} &=& \ut_{\ib}^n - \left(\half + \frac{\dt}{2h}u_{\ib}\right)\Delta_x \ut_{\ib}^n \nonumber \\
+&& -\frac{\dt}{4h}\left(w_{\ib+\half\eb_r}^{\trans}+w_{\ib-\half\eb_r}^{\trans}\right)\left(\ut_{\ib+\half\eb_r}^{1D} - \ut_{\ib-\half\eb_r}^{1D}\right) + \frac{\dt}{2}f_{u,\ib},
 \end{eqnarray}
 {\bf else if} {\tt use\_new\_godunov = T} {\bf then}
 \begin{eqnarray}
-u_{L,\ib-\half\eb_x}^{\mac,*} &=& u_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}\max(0,u_{\ib-\eb_x})\right)\Delta_x u_{\ib-\eb_x}^n \nonumber \\
-&& -\frac{\dt}{4h}\left[w_{\ib-\eb_x+\half\eb_r}^{\trans}+w_{\ib-\eb_x-\half\eb_r}^{\trans}\right]\left(u_{\ib-\eb_x+\half\eb_r}^{1D} - u_{\ib-\eb_x-\half\eb_r}^{1D}\right) + \frac{\dt}{2}f_{u,\ib-\eb_x}, \\
-u_{R,\ib-\half\eb_x}^{\mac,*} &=& u_{\ib}^n - \left[\half + \frac{\dt}{2h}\min(0,u_{\ib})\right]\Delta_x u_{\ib}^n \nonumber \\
-&& -\frac{\dt}{4h}\left(w_{\ib+\half\eb_r}^{\trans}+w_{\ib-\half\eb_r}^{\trans}\right)\left(u_{\ib+\half\eb_r}^{1D} - u_{\ib-\half\eb_r}^{1D}\right) + \frac{\dt}{2}f_{u,\ib}.
+\ut_{L,\ib-\half\eb_x}^{\mac,*} &=& \ut_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}\max(0,u_{\ib-\eb_x})\right)\Delta_x \ut_{\ib-\eb_x}^n \nonumber \\
+&& -\frac{\dt}{4h}\left[w_{\ib-\eb_x+\half\eb_r}^{\trans}+w_{\ib-\eb_x-\half\eb_r}^{\trans}\right]\left(\ut_{\ib-\eb_x+\half\eb_r}^{1D} - \ut_{\ib-\eb_x-\half\eb_r}^{1D}\right) + \frac{\dt}{2}f_{u,\ib-\eb_x}, \\
+\ut_{R,\ib-\half\eb_x}^{\mac,*} &=& \ut_{\ib}^n - \left[\half + \frac{\dt}{2h}\min(0,u_{\ib})\right]\Delta_x \ut_{\ib}^n \nonumber \\
+&& -\frac{\dt}{4h}\left(w_{\ib+\half\eb_r}^{\trans}+w_{\ib-\half\eb_r}^{\trans}\right)\left(\ut_{\ib+\half\eb_r}^{1D} - \ut_{\ib-\half\eb_r}^{1D}\right) + \frac{\dt}{2}f_{u,\ib}.
 \end{eqnarray}
 {\bf end if}\\ \\
 Finally, we solve a Riemann problem:
 \begin{equation}
-u_{\ib-\half\eb_x}^{\mac,*} =
+\ut_{\ib-\half\eb_x}^{\mac,*} =
 \begin{cases}
-0, & \left(u_{L,\ib-\half\eb_x}^{\mac,*} \le 0 ~~ {\rm AND} ~~ u_{R,\ib-\half\eb_x}^{\mac,*} \ge 0\right) ~~ {\rm OR} ~~ \left|u_{L,\ib-\half\eb_x}^{\mac,*} + u_{R,\ib-\half\eb_x}^{\mac,*}\right| < \epsilon, \\
-u_{L,\ib-\half\eb_x}^{\mac,*}, & u_{L,\ib-\half\eb_x}^{\mac,*} + u_{R,\ib-\half\eb_x}^{\mac,*} > 0, \\
-u_{R,\ib-\half\eb_x}^{\mac,*}, & u_{L,\ib-\half\eb_x}^{\mac,*} + u_{R,\ib-\half\eb_x}^{\mac,*} < 0. 
+0, & \left(\ut_{L,\ib-\half\eb_x}^{\mac,*} \le 0 ~~ {\rm AND} ~~ \ut_{R,\ib-\half\eb_x}^{\mac,*} \ge 0\right) ~~ {\rm OR} ~~ \left|\ut_{L,\ib-\half\eb_x}^{\mac,*} + \ut_{R,\ib-\half\eb_x}^{\mac,*}\right| < \epsilon, \\
+\ut_{L,\ib-\half\eb_x}^{\mac,*}, & \ut_{L,\ib-\half\eb_x}^{\mac,*} + \ut_{R,\ib-\half\eb_x}^{\mac,*} > 0, \\
+\ut_{R,\ib-\half\eb_x}^{\mac,*}, & \ut_{L,\ib-\half\eb_x}^{\mac,*} + \ut_{R,\ib-\half\eb_x}^{\mac,*} < 0. 
 \end{cases}
 \end{equation}
 
@@ -240,7 +243,7 @@ To compute $\wt^{\mac,*}$, we use an analogous procedure for computing
 $u^{\mac,*}$, except that we need to incorporate the terms in equation
 (\ref{Perturbational Velocity Equation}) proportional to 
 $\partial w_0/\partial r$ into the full-dimensional extrapolation.  We
-compute a time-centered 1D extrapolation of $\wt$ to x-faces:\\ \\
+predict $\wt$ to x-faces using a 1D extrapolation:\\ \\
 {\bf if} {\tt use\_new\_godunov = F} {\bf then}
 \begin{eqnarray}
 \wt_{L,\ib-\half\eb_x}^{1D} &=& \wt_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\eb_x}^n\right)\Delta_x \wt_{\ib-\eb_x}^n, \\
@@ -261,7 +264,7 @@ Then we upwind based on $u^{\trans}$:
 \wt_{R,\ib-\half\eb_x}^{1D}, & u^{\trans}_{\ib-\half\eb_x} < 0. \\
 \end{cases}
 \end{equation}
-Then, we do a full-dimensional extrapolation of $\wt$ to r-faces:\\ \\
+Then, we predict $\wt$ to r-faces using a full-dimensional extrapolation:\\ \\
 {\bf if} {\tt use\_new\_godunov = F} {\bf then}
 \begin{eqnarray}
 \wt_{L,\ib-\half\eb_r}^{\mac,*} &=& \wt_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\eb_r}\right)\Delta_r \wt_{\ib-\eb_r}^n \nonumber \\
@@ -293,27 +296,35 @@ Next, we solve a Riemann problem:
 \end{equation}
 We then project $\Ubt^{\mac,*}$ to obtain $\Ubt^{\mac}$ and we call
 {\tt addw0} to compute $\Ub^{\mac}$ from $\Ubt^{\mac}$.
-%\subsection{3D Cartesian Case}
-%\subsection{3D Spherical Case}
-
+\subsection{3D Cartesian Case}
+Predict $u$ to y-faces using a 1D extrapolation.\\ \\
+Predict $u$ to r-faces using a 1D extrapolation.\\ \\
+Predict $u$ to x-faces using a full-dimensional extrapolation.\\ \\
+The $\partial w_0/\partial r$ term only enters in a full-dimensional 
+extrapolation of $\wt$ to r-faces..
+\subsection{3D Spherical Case}
+Same as 3D case, except the $\partial w_0/\partial r$ term enters 
+in the full dimensional extrapolation for each direction.
 
 %-----------------------------------------------------------------------------
 % edge states
 %-----------------------------------------------------------------------------
-\section{Computing $\rho^{'\edge}, X_k^{\edge}$, and $(\rho h)^{'\edge}/h^{\edge}/T^{\edge}$ in {\tt MAESTRO}}
+\section{Computing $\rho^{'\edge}, X_k^{\edge}$, and $(\rho h)^{'\edge}/h^{\edge}/T^{\edge}/h'^{\edge}/T'^{\edge}$ in {\tt MAESTRO}}
 In {\tt scalar\_advance}, we call {\tt make\_edge\_scal} to compute
-$\rho^{'\edge}, X_k^{\edge}$, and $(\rho
-h)^{'\edge}/h^{\edge}/T^{\edge}$ at each edge.  The procedure is the
-same for each scalar, so we shall simply denote the scalar as $s$.  We
-always need to compute $\rho'$ and $X_k$ to edges, and the choice of
-energy prediction is as follows:
+$\rho^{'\edge}, X_k^{\edge}$, and 
+$(\rho h)^{'\edge}/h^{\edge}/T^{\edge}/h'^{\edge}/T'^{\edge}$ at each edge.
+The procedure is the same for each scalar, so we shall simply denote 
+the scalar as $s$.  We always need to compute $\rho'$ and $X_k$ to edges, 
+and the choice of energy prediction is as follows:
 \begin{itemize}
 \item For {\tt enthalpy\_pred\_type} = 1, we predict $(\rho h)'$ to edges.
 \item For {\tt enthalpy\_pred\_type} = 2, we predict $h$ to edges.
 \item For {\tt enthalpy\_pred\_type} = 3 and 4, we predict $T$ to edges.
+\item For {\tt enthalpy\_pred\_type} = 5, we predict $h'$ to edges.
+\item For {\tt enthalpy\_pred\_type} = 6, we predict $T'$ to edges.
 \end{itemize}
-The force terms are (noting reaction terms are excluded since they are
-handled in {\tt react\_base}):
+The force terms are (noting reaction terms are may or may not be excluded 
+depending on how they are handled in {\tt react\_state}):
 \begin{eqnarray}
 f_{\rho'} &=& -\rho'\nabla\cdot\Ub^{\mac} - \nabla\cdot(\rho_0\Ubt^{\mac}), \\
 f_{X_k} &=& 0, \\
@@ -326,6 +337,8 @@ $T^{\edge}\rightarrow h^{\edge}$ using $h^{\edge} =
 h^{\edge}(\rho^{\edge},T^{\edge},X_k^{\edge})$, where $\rho^{\edge} =
 \rho^{'\edge} + \rho_0$.  Furthermore, if {\tt enthalpy\_pred\_type} =
 3, we compute $(\rho h)^{'\edge} = (\rho h)^{\edge} - (\rho h)_0$.
+If {\tt enthalpy\_pred\_type} = 6, we convert 
+$T'^{\edge} \rightarrow h^{\edge}$.
 See the ``pert\_notes'' in {\tt MAESTRO/docs}.
 
 \subsection{2D Cartesian Case}
