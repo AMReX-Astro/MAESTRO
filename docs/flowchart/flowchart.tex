@@ -374,7 +374,7 @@ source term in the velocity divergence constraint,
 
 If this is the first step of the calculation ($n=0$), we set
 \begin{equation}
-S^{\half,\star} = \frac{S^0 + S^1}{2} \enskip ,
+S^{\myhalf,\star} = \frac{S^0 + S^1}{2} \enskip ,
 \end{equation}
 where $S^1$ is found through the iterative process that initializes the calculation.
 Otherwise, following the method used in our small-scale low Mach number algorithm
@@ -487,8 +487,11 @@ interval of $\dt / 2.$}
                    \rightarrow$ $[ \rho^{(1)}, (\rho h)^{(1)}, X_k^{(1)}, T^{(1)},
                                   (\rho \omegadot_k)^{(1)}, (\rho \Hnuc)^{(1)} ].$  
 
-\item {\bf React Base}$[(\rho h)_0^n,(\overline{\rho \Hnuc})^{(1)},(\overline{\rho\Hext})^n] \rightarrow [(\rho h)_0^{(1)}]$
-
+\item {\bf if} ~ {\tt full\_rhoh0\_evolution = T} ~ {\bf then}\\
+{\bf React Base}$[(\rho h)_0^n,(\overline{\rho \Hnuc})^{(1)},(\overline{\rho\Hext})^n] \rightarrow [(\rho h)_0^{(1)}]$ \\
+{\bf else}\\
+$(\rho h)_0^{(1)} = (\overline{\rho h})^{(1)}$\\
+{\bf end if}
 \item
 Define
 \begin{eqnarray}
@@ -1183,7 +1186,7 @@ $\dt^0 = \Delta t^{N_{\rm iters}^S},$ and $\Ub^0 = \Ub^{0,N_{\rm iters}^S+1}.$
 Next, we need to construct an approximation to the time-centered perturbational pressure,
 $\pi,$  and an approximation to the divergence constraint at the end of the
 first time step.  As initial approximations, set $S^{1,0} = S^0$,
-$\etarho^{-\half} = 0$, $\psi^{-\half} = 0$, and $\pi^{-\half} = 0.$
+$\etarho^{-\myhalf} = 0$, $\psi^{-\myhalf} = 0$, and $\pi^{-\myhalf} = 0.$
 \begin{enumerate}
   \renewcommand{\theenumi}{{\bf \alph{enumi}}}
   \renewcommand{\labelenumii}{\roman{enumii}.}
@@ -1193,21 +1196,21 @@ $\etarho^{-\half} = 0$, $\psi^{-\half} = 0$, and $\pi^{-\half} = 0.$
   
   \begin{enumerate}
   \item Perform steps 1--11 as described above, using 
-    $S^{\half,\star} = (S^0 + S^{1,\nu})/2$ in step 1 as described.
+    $S^{\myhalf,\star} = (S^0 + S^{1,\nu})/2$ in step 1 as described.
     The only other difference in the time advancement is that in step 11
     we define ${\bf V} = (\Ubt^{1,\star} - \Ubt^0)$ and solve
     \begin{equation}  L_\beta^\rho \phi =
-      D \left ( \beta_0^{\half} {\bf V} \right) - \beta_0^{\half} \left[ (S^{1}-\overline{S}^{1}) - (S^{0}-\overline{S}^{0}) \right] \enskip . 
+      D \left ( \beta_0^{\myhalf} {\bf V} \right) - \beta_0^{\myhalf} \left[ (S^{1}-\overline{S}^{1}) - (S^{0}-\overline{S}^{0}) \right] \enskip . 
     \end{equation}
     (The motivation for this form of the projection in the initial pressure iterations
     is discussed in (cite almgren:bell:crutchfield).)
       We discard the new velocity resulting from this, but keep the new  
-      value for $\pi^{\half} = \pi^{-\half} + (1 / \dt) \; \phi.$  
+      value for $\pi^{\myhalf} = \pi^{-\myhalf} + (1 / \dt) \; \phi.$  
       These steps also yield new scalar data at time $\dt,$ which
-      we discard,  and new values for $\etarho^{\half}$ (step 8), $\psi^{\half}$ (step 8), 
-      $S^{1,\nu+1}$ (step 10), and $\pi^{\half}$ (step 11), which we keep.
-    \item Set $\pi^{-\half} = \pi^{\half}$, $\etarho^{-\half} = \etarho^{\half}$,
-      and $\psi^{-\half} = \psi^{\half}$. 
+      we discard,  and new values for $\etarho^{\myhalf}$ (step 8), $\psi^{\myhalf}$ (step 8), 
+      $S^{1,\nu+1}$ (step 10), and $\pi^{\myhalf}$ (step 11), which we keep.
+    \item Set $\pi^{-\myhalf} = \pi^{\myhalf}$, $\etarho^{-\myhalf} = \etarho^{\myhalf}$,
+      and $\psi^{-\myhalf} = \psi^{\myhalf}$. 
     \end{enumerate}
     
     {\bf End do.}
@@ -1220,6 +1223,7 @@ $\etarho^{-\half} = 0$, $\psi^{-\half} = 0$, and $\pi^{-\half} = 0.$
 \section{Outstanding Questions}
 
 \begin{enumerate}
+
 \item Why do we only update the temperature at the end of steps 4 and
       8.  This means that at the top of the algorithm, the temperature
       going into {\bf React State} in step 2 does not include the
@@ -1232,12 +1236,5 @@ $\etarho^{-\half} = 0$, $\psi^{-\half} = 0$, and $\pi^{-\half} = 0.$
 
 \item Why is there no equivalent of $\etarho$ for enthalpy---e.g.\ an
       $\eta_{\rho h}$?
-
-\item Why for plane parallel, when constructing the full edge state
-      (eq.~\ref{eq:rhoXedgestate}) do we simply average to the interface
-      instead of doing the 4th order interpolation that is used for the
-      full state?
-
-
 
 \end{enumerate}
