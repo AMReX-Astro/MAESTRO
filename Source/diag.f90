@@ -58,11 +58,8 @@ contains
           if ( multifab_remote(s(n), i) ) cycle
           sp => dataptr(s(n) , i)
           up => dataptr(u(n) , i)
-          np => dataptr(normal(n) , i)
-
           lo =  lwb(get_box(s(n), i))
           hi =  upb(get_box(s(n), i))
-
           select case (dm)
           case (2)
              call diag_2d(time,dt,dx(n,:), &
@@ -71,9 +68,9 @@ contains
                           p0(n,:),tempbar(n,:),gamma1bar(n,:), &
                           up(:,:,1,:),ng_u, &
                           w0(n,:), &
-                          np(:,:,1,:),ng_n, &
                           lo,hi)
           case (3)
+             np => dataptr(normal(n) , i)
              call diag_3d(time,dt,dx(n,:), &
                           sp(:,:,:,:),ng_s, &
                           rho0(n,:),rhoh0(n,:), &
@@ -91,18 +88,17 @@ contains
   end subroutine diag
 
   subroutine diag_2d(time,dt,dx,s,ng_s,rho0,rhoh0,p0,tempbar,gamma1bar, &
-                     u,ng_u,w0,normal,ng_n,lo,hi)
+                     u,ng_u,w0,lo,hi)
 
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
     use network, only: nspec
 
-    integer, intent(in) :: lo(:), hi(:), ng_s, ng_u, ng_n
+    integer, intent(in) :: lo(:), hi(:), ng_s, ng_u
     real (kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s:,lo(2)-ng_s:,:)
     real (kind=dp_t), intent(in   ) :: rho0(0:), rhoh0(0:), &
                                          p0(0:),tempbar(0:),gamma1bar(0:)
     real (kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,:)
     real (kind=dp_t), intent(in   ) :: w0(0:)
-    real (kind=dp_t), intent(in   ) :: normal(lo(1)-ng_n:,lo(2)-ng_n:,:)
     real (kind=dp_t), intent(in   ) :: time, dt, dx(:)
 
     !     Local variables
@@ -119,9 +115,7 @@ contains
           ! access velocity components as:
           !   u(i,j,1), u(i,j,2), u(i,j,3)
           !
-          ! access normal vector as:
-          !   normal(i,j,1), normal(i,j,2), normal(i,j,3)
-          
+
        enddo
     enddo
 
