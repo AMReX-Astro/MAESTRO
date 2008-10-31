@@ -385,26 +385,34 @@ s_{R,\ib-\half\eb_r}^{1D}, & w^{\mac}_{\ib-\half\eb_r} < 0. \\
 \end{equation}
 We predict $s$ to x-faces using a full-dimensional extrapolation:
 \begin{eqnarray}
-s_{L,\ib-\half\eb_x}^{\edge} &=& s_{\ib-\eb_x}^n +  \left(\half - \frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x s_{\ib-\eb_x}^n + \frac{\dt}{2}f_{\ib-\eb_x}^n \\
+s_{L,\ib-\half\eb_x}^{\edge} &=& s_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x s_{\ib-\eb_x}^n + \frac{\dt}{2}f_{\ib-\eb_x}^n \\
 s_{R,\ib-\half\eb_x}^{\edge} &=& s_{\ib}^n - \left(\half + \frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x s_{\ib}^n + \frac{\dt}{2}f_{\ib}^n 
 \end{eqnarray}
 We account for the transverse terms:\\ \\
 {\bf if} {\tt is\_conservative} {\bf then}
 \begin{eqnarray}
-s_{L,\ib-\half\eb_x}^{\edge} &=& s_{L,\ib-\half\eb_x}^{\edge} - ...\\
-s_{R,\ib-\half\eb_x}^{\edge} &=& s_{R,\ib-\half\eb_x}^{\edge} - ...
+s_{L,\ib-\half\eb_x}^{\edge} &=& s_{L,\ib-\half\eb_x}^{\edge} -
+\frac{\dt}{2h}\left[\left(w^{\mac}s^{1D}\right)_{\ib-\eb_x+\half\eb_r} - \left(w^{\mac}s^{1D}\right)_{\ib-\eb_x-\half\eb_r}\right]\nonumber\\
+&&- \frac{\dt}{2h}s_{\ib-\eb_x}^{n}\left(u_{\ib-\half\eb_x}^{\mac}-u_{\ib-\frac{3}{2}\eb_x}^{\mac}\right)\\
+s_{R,\ib-\half\eb_x}^{\edge} &=& s_{R,\ib-\half\eb_x}^{\edge} -
+\frac{\dt}{2h}\left[\left(w^{\mac}s^{1D}\right)_{\ib+\half\eb_r} - \left(w^{\mac}s^{1D}\right)_{\ib-\half\eb_r}\right]\nonumber\\
+&&- \frac{\dt}{2h}s_{\ib}^{n}\left(u_{\ib+\half\eb_x}^{\mac}-u_{\ib-\half\eb_x}^{\mac}\right)\\
 \end{eqnarray}
 {\bf else}
 \begin{eqnarray}
-s_{L,\ib-\half\eb_x}^{\edge} &=& s_{L,\ib-\half\eb_x}^{\edge} - ...\\
-s_{R,\ib-\half\eb_x}^{\edge} &=& s_{R,\ib-\half\eb_x}^{\edge} - ...
+s_{L,\ib-\half\eb_x}^{\edge} &=& s_{L,\ib-\half\eb_x}^{\edge} -
+\frac{\dt}{4h}\left(w^{\mac}_{\ib-\eb_x+\half\eb_r} + w^{\mac}_{\ib-\eb_x-\half\eb_r}\right)\left(s^{1D}_{\ib-\eb_x+\half\eb_r} - s^{1D}_{\ib-\eb_x-\half\eb_r}\right)\\
+s_{R,\ib-\half\eb_x}^{\edge} &=& s_{R,\ib-\half\eb_x}^{\edge} -
+\frac{\dt}{4h}\left(w^{\mac}_{\ib+\half\eb_r} + w^{\mac}_{\ib-\half\eb_r}\right)\left(s^{1D}_{\ib+\half\eb_r} - s^{1D}_{\ib-\half\eb_r}\right)
 \end{eqnarray}
 {\bf end if}\\ \\
 We account for the $\partial w_0/\partial r$ term:\\ \\
 {\bf if} {\tt is\_vel} {\bf and} {\tt comp} = 2 {\bf then}
 \begin{eqnarray}
-s_{L,\ib-\half\eb_x}^{\edge} &=& s_{L,\ib-\half\eb_x}^{\edge} - ...\\
-s_{R,\ib-\half\eb_x}^{\edge} &=& s_{R,\ib-\half\eb_x}^{\edge} - ...
+s_{L,\ib-\half\eb_x}^{\edge} &=& s_{L,\ib-\half\eb_x}^{\edge} - 
+\frac{\dt}{4h}\left(\wt^{\mac}_{\ib-\eb_x+\half\eb_r} + \wt^{\mac}_{\ib-\eb_x-\half\eb_r}\right)\left(w_{0,\ib+\half\eb_r}-w_{0,\ib-\half\eb_r}\right) \\
+s_{R,\ib-\half\eb_x}^{\edge} &=& s_{R,\ib-\half\eb_x}^{\edge} -
+\frac{\dt}{4h}\left(\wt^{\mac}_{\ib+\half\eb_r} + \wt^{\mac}_{\ib-\half\eb_r}\right)\left(w_{0,\ib+\half\eb_r}-w_{0,\ib-\half\eb_r}\right) \\
 \end{eqnarray}
 {\bf end if}\\ \\
 Then we upwind based on $u^{\mac}$.
@@ -432,26 +440,34 @@ s_{R,\ib-\half\eb_x}^{1D}, & u^{\mac}_{\ib-\half\eb_x} < 0. \\
 \end{equation}
 We predict $s$ to r-faces using a full-dimensional extrapolation:
 \begin{eqnarray}
-s_{L,\ib-\half\eb_r}^{\edge} &=& ...\\
-s_{R,\ib-\half\eb_r}^{\edge} &=& ...
+s_{L,\ib-\half\eb_r}^{\edge} &=&  s_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\half\eb_r}^{\mac}\right)\Delta_r s_{\ib-\eb_r}^n + \frac{\dt}{2}f_{\ib-\eb_r}^n \\
+s_{R,\ib-\half\eb_r}^{\edge} &=&  s_{\ib}^n - \left(\half + \frac{\dt}{2h}w_{\ib-\half\eb_r}^{\mac}\right)\Delta_r s_{\ib}^n + \frac{\dt}{2}f_{\ib}^n 
 \end{eqnarray}
 We account for the transverse terms:\\ \\
 {\bf if} {\tt is\_conservative} {\bf then}
 \begin{eqnarray}
-s_{L,\ib-\half\eb_r}^{\edge} &=& s_{L,\ib-\half\eb_r}^{\edge} - ...\\
-s_{R,\ib-\half\eb_r}^{\edge} &=& s_{R,\ib-\half\eb_r}^{\edge} - ...
+s_{L,\ib-\half\eb_r}^{\edge} &=& s_{L,\ib-\half\eb_r}^{\edge} -
+\frac{\dt}{2h}\left[\left(u^{\mac}s^{1D}\right)_{\ib-\eb_r+\half\eb_x} - \left(u^{\mac}s^{1D}\right)_{\ib-\eb_r-\half\eb_x}\right]\nonumber\\
+&&- \frac{\dt}{2h}s_{\ib-\eb_r}^{n}\left(w_{\ib-\half\eb_r}^{\mac}-w_{\ib-\frac{3}{2}\eb_r}^{\mac}\right)\\
+s_{R,\ib-\half\eb_r}^{\edge} &=& s_{R,\ib-\half\eb_r}^{\edge} -
+\frac{\dt}{2h}\left[\left(u^{\mac}s^{1D}\right)_{\ib+\half\eb_x} - \left(u^{\mac}s^{1D}\right)_{\ib-\half\eb_x}\right]\nonumber\\
+&&- \frac{\dt}{2h}s_{\ib}^{n}\left(w_{\ib+\half\eb_r}^{\mac}-w_{\ib-\half\eb_r}^{\mac}\right)\\
 \end{eqnarray}
 {\bf else}
 \begin{eqnarray}
-s_{L,\ib-\half\eb_r}^{\edge} &=& s_{L,\ib-\half\eb_r}^{\edge} - ...\\
-s_{R,\ib-\half\eb_r}^{\edge} &=& s_{R,\ib-\half\eb_r}^{\edge} - ...
+s_{L,\ib-\half\eb_r}^{\edge} &=& s_{L,\ib-\half\eb_r}^{\edge} -
+\frac{\dt}{4h}\left(u^{\mac}_{\ib-\eb_r+\half\eb_x} + u^{\mac}_{\ib-\eb_r-\half\eb_x}\right)\left(s^{1D}_{\ib-\eb_r+\half\eb_x} - s^{1D}_{\ib-\eb_r-\half\eb_x}\right)\\
+s_{R,\ib-\half\eb_r}^{\edge} &=& s_{R,\ib-\half\eb_r}^{\edge} -
+\frac{\dt}{4h}\left(u^{\mac}_{\ib+\half\eb_x} + u^{\mac}_{\ib-\half\eb_x}\right)\left(s^{1D}_{\ib+\half\eb_x} - s^{1D}_{\ib-\half\eb_x}\right)
 \end{eqnarray}
 {\bf end if}\\ \\
 We account for the $\partial w_0/\partial r$ term:\\ \\
 {\bf if} {\tt is\_vel} {\bf and} {\tt comp} = 2 {\bf then}
 \begin{eqnarray}
-s_{L,\ib-\half\eb_r}^{\edge} &=& s_{L,\ib-\half\eb_r}^{\edge} - ...\\
-s_{R,\ib-\half\eb_r}^{\edge} &=& s_{R,\ib-\half\eb_r}^{\edge} - ...
+s_{L,\ib-\half\eb_r}^{\edge} &=& s_{L,\ib-\half\eb_r}^{\edge} - 
+\frac{\dt}{4h}\left(\wt^{\mac}_{\ib-\half\eb_r} + \wt^{\mac}_{\ib-\frac{3}{2}\eb_r}\right)\left(w_{0,\ib-\half\eb_r}-w_{0,\ib-\frac{3}{2}\eb_r}\right) \\
+s_{R,\ib-\half\eb_r}^{\edge} &=& s_{R,\ib-\half\eb_r}^{\edge} -
+\frac{\dt}{4h}\left(\wt^{\mac}_{\ib+\half\eb_r} + \wt^{\mac}_{\ib-\half\eb_r}\right)\left(w_{0,\ib+\half\eb_r}-w_{0,\ib-\half\eb_r}\right) \\
 \end{eqnarray}
 {\bf end if}\\ \\
 Then we upwind based on $w^{\mac}$:
