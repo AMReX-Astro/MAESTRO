@@ -1338,7 +1338,10 @@ contains
        end do
     end if
 
-    call diag(time,dt,dx,snew,rho0_new,rhoh0_new,p0_new,tempbar,gamma1bar,unew,w0,normal,mla,the_bc_tower)
+    if (.not. init_mode) &
+         call diag(time,dt,dx,snew, &
+                   rho0_new,rhoh0_new,p0_new,tempbar,gamma1bar, &
+                   unew,w0,normal,mla,the_bc_tower)
 
     call destroy(bpt)
     
