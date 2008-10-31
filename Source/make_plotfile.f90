@@ -360,6 +360,7 @@ contains
     do n = 1,nlevs
        call destroy(plotdata(n))
        call destroy(tempfab(n))
+       call destroy(w0r_cart(n))
     end do
 
     if (spherical .eq. 1) then
