@@ -50,9 +50,9 @@ contains
 
     type(multifab) ::    w0r_cart(mla%nlevel)
 
-    real(kind=dp_t) :: vr_x, vr_y, vr_z
-    real(kind=dp_t) :: vr_x_local, vr_y_local, vr_z_local
-    real(kind=dp_t) :: vol
+    real(kind=dp_t) :: vr_x, vr_y, vr_z, vr_max
+    real(kind=dp_t) :: vr_x_local, vr_y_local, vr_z_local, vr_max_local
+    integer         :: nzones, nzones_local
 
     integer :: lo(dm),hi(dm),ng_s,ng_u,ng_n,ng_w
     integer :: i,n
@@ -88,10 +88,16 @@ contains
     vr_x = ZERO
     vr_y = ZERO
     vr_z = ZERO
+    vr_max = ZERO
 
     vr_x_local = ZERO
     vr_y_local = ZERO
     vr_z_local = ZERO
+    vr_max_local = ZERO
+
+    nzones = 0
+    nzones_local = 0
+
 
     do n = 1, nlevs
        do i = 1, s(n)%nboxes
@@ -116,7 +122,7 @@ contains
                           w0(n,:), &
                           w0rp(:,:,:,1), ng_w, &
                           np(:,:,:,:),ng_n, &
-                          lo,hi,vr_x_local,vr_y_local,vr_z_local)
+                          lo,hi,vr_x_local,vr_y_local,vr_z_local,vr_max_local,nzones_local)
           end select
        end do
     end do
@@ -125,17 +131,16 @@ contains
     call parallel_reduce(vr_x,vr_x_local, MPI_SUM)
     call parallel_reduce(vr_y,vr_y_local, MPI_SUM)
     call parallel_reduce(vr_z,vr_z_local, MPI_SUM)
+    call parallel_reduce(nzones,nzones_local, MPI_SUM)
 
-    vol = (prob_hi_x - prob_lo_x)* &
-          (prob_hi_y - prob_lo_y)* &
-          (prob_hi_x - prob_lo_x)
+    call parallel_reduce(vr_max,vr_max_local,MPI_MAX)
 
-    vr_x = vr_x/vol
-    vr_y = vr_y/vol
-    vr_z = vr_z/vol
+    vr_x = vr_x/nzones
+    vr_y = vr_y/nzones
+    vr_z = vr_z/nzones
 
-1000 format(1x,5(g20.10,1x))
-1001 format(1x,5(a20,1x))
+1000 format(1x,6(g20.10,1x))
+1001 format(1x,6(a20,1x))
 
     if (parallel_IOProcessor()) then
        un = unit_new()
@@ -145,11 +150,11 @@ contains
                status="old", position="append")
        else
           open(unit=un, file="wdconvect_radvel_diag.out", status="new")
-          write (un,1001) "time", "vr_x", "vr_y", "vr_z", "vr"
+          write (un,1001) "time", "<vr_x>", "<vr_y>", "<vr_z>", "<vr>", "max{|vr|}"
        endif
 
        write (un,1000) time, vr_x, vr_y, vr_z, &
-            sqrt(vr_x**2 + vr_y**2 + vr_z**2)
+            sqrt(vr_x**2 + vr_y**2 + vr_z**2), vr_max
        close(un)
     endif
 
@@ -158,11 +163,12 @@ contains
   end subroutine diag
 
   subroutine diag_3d(time,dt,dx,s,ng_s,rho0,rhoh0,p0,tempbar,gamma1bar, &
-                     u,ng_u,w0,w0r,ng_w,normal,ng_n,lo,hi,vr_x,vr_y,vr_z)
+                     u,ng_u,w0,w0r,ng_w,normal,ng_n,lo,hi,vr_x,vr_y,vr_z,vr_max,nzones)
 
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
     use network, only: nspec
     use geometry, only: spherical
+    use probin_module, only: base_cutoff_density
 
     integer, intent(in) :: lo(:), hi(:), ng_s, ng_u, ng_n, ng_w
     real (kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
@@ -173,7 +179,8 @@ contains
     real (kind=dp_t), intent(in   ) ::    w0r(lo(1)-ng_w:,lo(2)-ng_w:,lo(3)-ng_w:)
     real (kind=dp_t), intent(in   ) :: normal(lo(1)-ng_n:,lo(2)-ng_n:,lo(3)-ng_n:,:)
     real (kind=dp_t), intent(in   ) :: time, dt, dx(:)
-    real (kind=dp_t), intent(inout) :: vr_x, vr_y, vr_z
+    real (kind=dp_t), intent(inout) :: vr_x, vr_y, vr_z, vr_max
+    integer         , intent(inout) :: nzones
 
     !     Local variables
     integer            :: i, j, k
@@ -188,14 +195,21 @@ contains
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)           
 
-             velr = u(i,j,k,1)*normal(i,j,k,1) + &
-                    u(i,j,k,2)*normal(i,j,k,2) + &
-                    u(i,j,k,3)*normal(i,j,k,3) + w0r(i,j,k)
+             if (s(i,j,k,rho_comp) > base_cutoff_density) then
 
-             vr_x = vr_x + dx(1)*dx(2)*dx(3)*velr*normal(i,j,k,1)
-             vr_y = vr_y + dx(1)*dx(2)*dx(3)*velr*normal(i,j,k,2)
-             vr_z = vr_z + dx(1)*dx(2)*dx(3)*velr*normal(i,j,k,3)
+                velr = u(i,j,k,1)*normal(i,j,k,1) + &
+                       u(i,j,k,2)*normal(i,j,k,2) + &
+                       u(i,j,k,3)*normal(i,j,k,3) + w0r(i,j,k)
 
+                vr_max = max(vr_max,abs(velr))
+
+                vr_x = vr_x + velr*normal(i,j,k,1)
+                vr_y = vr_y + velr*normal(i,j,k,2)
+                vr_z = vr_z + velr*normal(i,j,k,3)
+
+                nzones = nzones + 1
+
+             endif
 
           enddo
        enddo
