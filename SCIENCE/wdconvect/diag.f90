@@ -53,11 +53,14 @@ contains
     real(kind=dp_t) :: vr_x, vr_y, vr_z, vr_max
     real(kind=dp_t) :: vr_x_local, vr_y_local, vr_z_local, vr_max_local
     integer         :: nzones, nzones_local
+    real(kind=dp_t) :: T_max, T_max_local
 
     integer :: lo(dm),hi(dm),ng_s,ng_u,ng_n,ng_w
     integer :: i,n
-    integer :: un
+    integer :: un, un2
     logical :: lexist
+
+    logical, save :: firstCall = .true.
 
     type(bl_prof_timer), save :: bpt
 
@@ -98,6 +101,8 @@ contains
     nzones = 0
     nzones_local = 0
 
+    T_max = ZERO
+    T_max_local = ZERO
 
     do n = 1, nlevs
        do i = 1, s(n)%nboxes
@@ -122,27 +127,33 @@ contains
                           w0(n,:), &
                           w0rp(:,:,:,1), ng_w, &
                           np(:,:,:,:),ng_n, &
-                          lo,hi,vr_x_local,vr_y_local,vr_z_local,vr_max_local,nzones_local)
+                          lo,hi, &
+                          vr_x_local,vr_y_local,vr_z_local,vr_max_local, &
+                          nzones_local, &
+                          T_max_local)
           end select
        end do
     end do
 
     ! we now have vr_n on each processor -- do a reduce
-    call parallel_reduce(vr_x,vr_x_local, MPI_SUM)
-    call parallel_reduce(vr_y,vr_y_local, MPI_SUM)
-    call parallel_reduce(vr_z,vr_z_local, MPI_SUM)
-    call parallel_reduce(nzones,nzones_local, MPI_SUM)
+    call parallel_reduce(vr_x,vr_x_local, MPI_SUM, proc = parallel_IOProcessorNode())
+    call parallel_reduce(vr_y,vr_y_local, MPI_SUM, proc = parallel_IOProcessorNode())
+    call parallel_reduce(vr_z,vr_z_local, MPI_SUM, proc = parallel_IOProcessorNode())
+    call parallel_reduce(nzones,nzones_local, MPI_SUM, proc = parallel_IOProcessorNode())
 
-    call parallel_reduce(vr_max,vr_max_local,MPI_MAX)
+    call parallel_reduce(vr_max,vr_max_local, MPI_MAX, proc = parallel_IOProcessorNode())
+    call parallel_reduce(T_max,T_max_local, MPI_MAX, proc = parallel_IOProcessorNode())
 
     vr_x = vr_x/nzones
     vr_y = vr_y/nzones
     vr_z = vr_z/nzones
 
 1000 format(1x,6(g20.10,1x))
-1001 format(1x,6(a20,1x))
+1001 format("#",6(a20,1x))
 
     if (parallel_IOProcessor()) then
+
+       ! open the diagnostic files for output
        un = unit_new()
        inquire(file="wdconvect_radvel_diag.out", exist=lexist)
        if (lexist) then
@@ -150,12 +161,32 @@ contains
                status="old", position="append")
        else
           open(unit=un, file="wdconvect_radvel_diag.out", status="new")
-          write (un,1001) "time", "<vr_x>", "<vr_y>", "<vr_z>", "<vr>", "max{|vr|}"
        endif
 
+       un2 = unit_new()
+       inquire(file="wdconvect_temp_diag.out", exist=lexist)
+       if (lexist) then
+          open(unit=un2, file="wdconvect_temp_diag.out", &
+               status="old", position="append")
+       else
+          open(unit=un2, file="wdconvect_temp_diag.out", status="new")
+       endif
+
+       ! write out the headers
+       if (firstCall) then
+          write (un, 1001) "time", "<vr_x>", "<vr_y>", "<vr_z>", "<vr>", "max{|vr|}"
+          write (un2,1001) "time", "max{T}"
+          firstCall = .false.
+       endif
+
+       ! write out the data
        write (un,1000) time, vr_x, vr_y, vr_z, &
             sqrt(vr_x**2 + vr_y**2 + vr_z**2), vr_max
+       
+       write (un2,1000) time, T_max
+
        close(un)
+       close(un2)
     endif
 
     call destroy(bpt)
@@ -163,7 +194,7 @@ contains
   end subroutine diag
 
   subroutine diag_3d(time,dt,dx,s,ng_s,rho0,rhoh0,p0,tempbar,gamma1bar, &
-                     u,ng_u,w0,w0r,ng_w,normal,ng_n,lo,hi,vr_x,vr_y,vr_z,vr_max,nzones)
+                     u,ng_u,w0,w0r,ng_w,normal,ng_n,lo,hi,vr_x,vr_y,vr_z,vr_max,nzones,T_max)
 
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
     use network, only: nspec
@@ -179,7 +210,7 @@ contains
     real (kind=dp_t), intent(in   ) ::    w0r(lo(1)-ng_w:,lo(2)-ng_w:,lo(3)-ng_w:)
     real (kind=dp_t), intent(in   ) :: normal(lo(1)-ng_n:,lo(2)-ng_n:,lo(3)-ng_n:,:)
     real (kind=dp_t), intent(in   ) :: time, dt, dx(:)
-    real (kind=dp_t), intent(inout) :: vr_x, vr_y, vr_z, vr_max
+    real (kind=dp_t), intent(inout) :: vr_x, vr_y, vr_z, vr_max, T_max
     integer         , intent(inout) :: nzones
 
     !     Local variables
@@ -208,6 +239,8 @@ contains
                 vr_z = vr_z + velr*normal(i,j,k,3)
 
                 nzones = nzones + 1
+
+                T_max = max(T_max,s(i,j,k,temp_comp))
 
              endif
 
