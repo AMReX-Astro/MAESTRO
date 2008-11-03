@@ -153,19 +153,9 @@ $\Ubt^{\mac,*}$.  We will only compute the normal component of
 velocity at each face.\\ \\
 For reference, here is the perturbational velocity equation from before:
 \begin{equation}
-\frac{\partial\Ubt}{\partial t} = -\Ubt\cdot\nabla\Ubt - w_0\frac{\partial\Ubt}{\partial r} - (\Ubt\cdot\eb_r)\frac{\partial w_0}{\partial r}\eb_r - \frac{1}{\rho}\nabla\pi + \frac{1}{\rho_0}\frac{\partial\pi_0}{\partial r}\eb_r - \frac{(\rho-\rho_0)}{\rho}g\eb_r.
+\frac{\partial\Ubt}{\partial t} = -\Ubt\cdot\nabla\Ubt - w_0\frac{\partial\Ubt}{\partial r} \underbrace{- (\Ubt\cdot\eb_r)\frac{\partial w_0}{\partial r}\eb_r - \frac{1}{\rho}\nabla\pi + \frac{1}{\rho_0}\frac{\partial\pi_0}{\partial r}\eb_r - \frac{(\rho-\rho_0)}{\rho}g\eb_r}.
 \end{equation}
-The force terms are:
-\begin{equation}
-\fb =
-\left(\begin{array}{c}
-f_u \\
-f_w \\
-\end{array}\right)
-= - \frac{1}{\rho}\nabla\pi + \underbrace{\frac{1}{\rho_0}\frac{\partial\pi_0}{\partial r}\eb_r} - \frac{(\rho-\rho_0)}{\rho}g\eb_r.
-\end{equation}
-The underbraced term is only included if {\tt use\_new\_godunov = T}.
-Note that later this term is always included in the cell update.
+where the underbraced terms are the forcing.
 
 \newpage
 
@@ -177,18 +167,11 @@ Note that later this term is always included in the cell update.
 \item Predict $\wt$ to r-faces using a full-dimensional extrapolation.
   Note the use of the $\partial w_0/\partial r$ term.
 \end{enumerate}
-Predict $\ut$ to r-faces using a 1D extrapolation:\\ \\
-{\bf if} {\tt use\_new\_godunov = F} {\bf then}
-\begin{eqnarray}
-\ut_{L,\ib-\half\eb_r}^{1D} &=& \ut_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\eb_r}^n\right)\Delta_r \ut_{\ib-\eb_r}^n, \\
-\ut_{R,\ib-\half\eb_r}^{1D} &=& \ut_{\ib} - \left(\half + \frac{\dt}{2h}w_{\ib}^n\right)\Delta_r \ut_{\ib}^n.
-\end{eqnarray}
-{\bf else if} {\tt use\_new\_godunov = T} {\bf then}
+Predict $\ut$ to r-faces using a 1D extrapolation:
 \begin{eqnarray}
 \ut_{L,\ib-\half\eb_r}^{1D} &=& \ut_{\ib-\eb_r}^n + \left[\half - \frac{\dt}{2h}\max(0,w_{\ib-\eb_r}^n)\right]\Delta_r \ut_{\ib-\eb_r}^n, \\
 \ut_{R,\ib-\half\eb_r}^{1D} &=& \ut_{\ib} - \left[\half + \frac{\dt}{2h}\min(0,w_{\ib}^n)\right]\Delta_r \ut_{\ib}^n.
 \end{eqnarray}
-{\bf end if}\\ \\
 Upwind based on $w^{\trans}$:
 \begin{equation}
 \ut_{\ib-\half\eb_r}^{1D} =
@@ -198,22 +181,13 @@ Upwind based on $w^{\trans}$:
 \ut_{R,\ib-\half\eb_r}^{1D}, & w^{\trans}_{\ib-\half\eb_r} < 0. \\
 \end{cases}
 \end{equation}
-Predict $\ut$ to x-faces using a full-dimensional extrapolation:\\ \\
-{\bf if} {\tt use\_new\_godunov = F} {\bf then}
-\begin{eqnarray}
-\ut_{L,\ib-\half\eb_x}^{\mac,*} &=& \ut_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\eb_x}\right)\Delta_x \ut_{\ib-\eb_x}^n \nonumber \\
-&& -\frac{\dt}{4h}\left(w_{\ib-\eb_x+\half\eb_r}^{\trans}+w_{\ib-\eb_x-\half\eb_r}^{\trans}\right)\left(\ut_{\ib-\eb_x+\half\eb_r}^{1D} - \ut_{\ib-\eb_x-\half\eb_r}^{1D}\right) + \frac{\dt}{2}f_{u,\ib-\eb_x}, \\
-\ut_{R,\ib-\half\eb_x}^{\mac,*} &=& \ut_{\ib}^n - \left(\half + \frac{\dt}{2h}u_{\ib}\right)\Delta_x \ut_{\ib}^n \nonumber \\
-&& -\frac{\dt}{4h}\left(w_{\ib+\half\eb_r}^{\trans}+w_{\ib-\half\eb_r}^{\trans}\right)\left(\ut_{\ib+\half\eb_r}^{1D} - \ut_{\ib-\half\eb_r}^{1D}\right) + \frac{\dt}{2}f_{u,\ib},
-\end{eqnarray}
-{\bf else if} {\tt use\_new\_godunov = T} {\bf then}
+Predict $\ut$ to x-faces using a full-dimensional extrapolation:
 \begin{eqnarray}
 \ut_{L,\ib-\half\eb_x}^{\mac,*} &=& \ut_{\ib-\eb_x}^n + \left[\half - \frac{\dt}{2h}\max(0,u_{\ib-\eb_x})\right]\Delta_x \ut_{\ib-\eb_x}^n \nonumber \\
 && -\frac{\dt}{4h}\left(w_{\ib-\eb_x+\half\eb_r}^{\trans}+w_{\ib-\eb_x-\half\eb_r}^{\trans}\right)\left(\ut_{\ib-\eb_x+\half\eb_r}^{1D} - \ut_{\ib-\eb_x-\half\eb_r}^{1D}\right) + \frac{\dt}{2}f_{u,\ib-\eb_x}, \\
 \ut_{R,\ib-\half\eb_x}^{\mac,*} &=& \ut_{\ib}^n - \left[\half + \frac{\dt}{2h}\min(0,u_{\ib})\right]\Delta_x \ut_{\ib}^n \nonumber \\
 && -\frac{\dt}{4h}\left(w_{\ib+\half\eb_r}^{\trans}+w_{\ib-\half\eb_r}^{\trans}\right)\left(\ut_{\ib+\half\eb_r}^{1D} - \ut_{\ib-\half\eb_r}^{1D}\right) + \frac{\dt}{2}f_{u,\ib}.
 \end{eqnarray}
-{\bf end if}\\ \\
 Solve a Riemann problem:
 \begin{equation}
 \ut_{\ib-\half\eb_x}^{\mac,*} =
@@ -223,18 +197,11 @@ Solve a Riemann problem:
 \ut_{R,\ib-\half\eb_x}^{\mac,*}, & \ut_{L,\ib-\half\eb_x}^{\mac,*} + \ut_{R,\ib-\half\eb_x}^{\mac,*} < 0. 
 \end{cases}
 \end{equation}
-Predict $\wt$ to x-faces using a 1D extrapolation:\\ \\
-{\bf if} {\tt use\_new\_godunov = F} {\bf then}
-\begin{eqnarray}
-\wt_{L,\ib-\half\eb_x}^{1D} &=& \wt_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\eb_x}^n\right)\Delta_x \wt_{\ib-\eb_x}^n, \\
-\wt_{R,\ib-\half\eb_x}^{1D} &=& \wt_{\ib} - \left(\half + \frac{\dt}{2h}u_{\ib}^n\right)\Delta_x \wt_{\ib}^n.
-\end{eqnarray}
-{\bf else if} {\tt use\_new\_godunov = T} {\bf then}
+Predict $\wt$ to x-faces using a 1D extrapolation:
 \begin{eqnarray}
 \wt_{L,\ib-\half\eb_x}^{1D} &=& \wt_{\ib-\eb_x}^n + \left[\half - \frac{\dt}{2h}\max(0,u_{\ib-\eb_x}^n)\right]\Delta_x \wt_{\ib-\eb_x}^n, \\
 \wt_{R,\ib-\half\eb_x}^{1D} &=& \wt_{\ib} - \left[\half + \frac{\dt}{2h}\min(0,u_{\ib}^n)\right]\Delta_x \wt_{\ib}^n.
 \end{eqnarray}
-{\bf end if}\\ \\
 Upwind based on $u^{\trans}$:
 \begin{equation}
 \wt_{\ib-\half\eb_x}^{1D} =
@@ -245,17 +212,7 @@ Upwind based on $u^{\trans}$:
 \end{cases}
 \end{equation}
 Predict $\wt$ to r-faces using a full-dimensional extrapolation.
-Note the use of the $\partial w_0/\partial r$ term:\\ \\
-{\bf if} {\tt use\_new\_godunov = F} {\bf then}
-\begin{eqnarray}
-\wt_{L,\ib-\half\eb_r}^{\mac,*} &=& \wt_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\eb_r}\right)\Delta_r \wt_{\ib-\eb_r}^n \nonumber \\
-&& - \frac{\dt}{4h}\left(u_{\ib+\half\eb_x-\eb_r}^{\trans}+u_{\ib-\half\eb_x-\eb_r}^{\trans}\right)\left(\wt_{\ib+\half\eb_x-\eb_r}^{1D} - \wt_{\ib-\half\eb_x-\eb_r}^{1D}\right) \nonumber \\
-&& - \frac{\dt}{4h}\left(\wt_{\ib-\half\eb_r}^{\trans}+\wt_{\ib-\frac{3}{2}\eb_r}^{\trans}\right)(w_{0,\ib-\half\eb_r} - w_{0,\ib-\frac{3}{2}\eb_r}) + \frac{\dt}{2}f_{w,\ib-\eb_r}, \\
-\wt_{R,\ib-\half\eb_r}^{\mac,*} &=& \wt_{\ib}^n - \left(\half + \frac{\dt}{2h}w_{\ib}\right)\Delta_r \wt_{\ib}^n \nonumber \\
-&& - \frac{\dt}{4h}\left(u_{\ib+\half\eb_x}^{\trans}+u_{\ib-\half\eb_x}^{\trans}\right)\left(\wt_{\ib+\half\eb_x}^{1D} - \wt_{\ib-\half\eb_x}^{1D}\right) \nonumber \\
-&& - \frac{\dt}{4h}\left(\wt_{\ib+\half\eb_r}^{\trans}+\wt_{\ib-\half\eb_r}^{\trans}\right)(w_{0,\ib+\half\eb_r} - w_{0,\ib-\half\eb_r}) + \frac{\dt}{2}f_{w,\ib}.
-\end{eqnarray}
-{\bf else if} {\tt use\_new\_godunov = T} {\bf then}
+Note the use of the $\partial w_0/\partial r$ term:
 \begin{eqnarray}
 \wt_{L,\ib-\half\eb_r}^{\mac,*} &=& \wt_{\ib-\eb_r}^n + \left[\half - \frac{\dt}{2h}\max(0,w_{\ib-\eb_r})\right]\Delta_r \wt_{\ib-\eb_r}^n \nonumber \\
 && - \frac{\dt}{4h}\left(u_{\ib+\half\eb_x-\eb_r}^{\trans}+u_{\ib-\half\eb_x-\eb_r}^{\trans}\right)\left(\wt_{\ib+\half\eb_x-\eb_r}^{1D} - \wt_{\ib-\half\eb_x-\eb_r}^{1D}\right) \nonumber \\
@@ -264,7 +221,6 @@ Note the use of the $\partial w_0/\partial r$ term:\\ \\
 && - \frac{\dt}{4h}\left(u_{\ib+\half\eb_x}^{\trans}+u_{\ib-\half\eb_x}^{\trans}\right)\left(\wt_{\ib+\half\eb_x}^{1D} - \wt_{\ib-\half\eb_x}^{1D}\right) \nonumber \\
 && - \frac{\dt}{4h}\left(\wt_{\ib+\half\eb_r}^{\trans}+\wt_{\ib-\half\eb_r}^{\trans}\right)(w_{0,\ib+\half\eb_r} - w_{0,\ib-\half\eb_r}) + \frac{\dt}{2}f_{w,\ib}.
 \end{eqnarray}
-{\bf end if}\\ \\
 Solve a Riemann problem:
 \MarginPar{Again, should we really upwind based on $\wt$ instead of $w$?}
 \begin{equation}
@@ -339,10 +295,8 @@ f_{(\rho h)'} &=& (\Ubt\cdot\eb_r)\frac{\partial p_0}{\partial r} -(\rho h)'\nab
 f_u \\
 f_w \\
 \end{array}\right)
-&=& -\frac{1}{\rho}\nabla\pi + \underbrace{\frac{1}{\rho_0}\frac{\partial\pi_0}{\partial r}\eb_r} - \frac{(\rho-\rho_0)}{\rho}g\eb_r.
+&=& -(\Ubt\cdot\eb_r)\frac{\partial w_0}{\partial r}\eb_r - \frac{1}{\rho}\nabla\pi + \frac{1}{\rho_0}\frac{\partial\pi_0}{\partial r}\eb_r - \frac{(\rho-\rho_0)}{\rho}g\eb_r.
 \end{eqnarray}
-The underbraced term is only included if {\tt use\_new\_godunov = T}.
-Note that later this term is always included in the cell update.
 
 \newpage
 
