@@ -2,23 +2,6 @@ These are working notes for the Godunov step in {\tt MAESTRO}
 and {\tt VARDEN}.
 
 %-----------------------------------------------------------------------------
-% questions
-%-----------------------------------------------------------------------------
-\section{{\tt use\_new\_godunov} Features}
-Here is a list of what is enabled with {\tt use\_new\_godunov}.
-\begin{enumerate}
-\item Concerning equations (\ref{Radial utrans_L}), (\ref{Radial
-  utrans_R}), (\ref{1D wt_L extrap}) and (\ref{1D wt_R extrap}), we
-  include the term proportional to $(\Ubt\cdot\eb_r)$.
-\item Concerning (\ref{Force Term}), we include the
-  term proportional to $\partial\pi_0/\partial r$ in the forcing for
-  computing $\Ubt^{\mac}$ and $\Ubt^{\edge}$.  Note this term is 
-  already present in the forcing for the velocity update.
-\item We use characteristic tracing to compute $\Ubt^{\trans}$
-  and $\Ubt^{\mac,\star}$.
-\end{enumerate}
-
-%-----------------------------------------------------------------------------
 % differences between Maestro and Varden
 %-----------------------------------------------------------------------------
 \section{Differences Between {\tt MAESTRO} and {\tt VARDEN}}
@@ -61,6 +44,8 @@ face-centers.  By 1D, we mean that we omit any spatial derivatives
 that are not in the direction of the extrapolation.  We first compute
 ``left/right'' states, and then use a Riemann solver to pick the final
 state.
+
+\newpage
 
 \subsection{2D Cartesian Case}
 For the rest of this paper, for 2D Cartesian problems, $\Ub = (u,w)$
@@ -119,6 +104,9 @@ We pick the final trans states using a Riemann solver:
 \wt_{R,\ib-\half\eb_r}^{\trans}, & \wt_L^{\trans} + \wt_R^{\trans} < 0, \\
 \end{cases}
 \end{equation}
+
+\newpage
+
 \subsection{3D Cartesian Case}
 For the rest of this paper, for 3D Cartesian problems, $\Ub = (u,v,w)$
 and $\Ubt = (\ut,\vt,\wt)$.  Note that $u = \ut$ and $v = \vt$.
@@ -146,6 +134,9 @@ computing $\ut^{\trans}$.  We predict $\vt$ to y-faces using the
 \vt_{R,\ib-\half\eb_y}^{\trans}, & \vt_{L,\ib-\half\eb_y}^{\trans} + \vt_{R,\ib-\half\eb_y}^{\trans} < 0. \\
 \end{cases}
 \end{equation}
+
+\newpage
+
 \subsection{3D Spherical Case}
 For the rest of this paper, for 3D spherical problems, $\Ub = (u,v,w)$
 and $\Ubt = (\ut,\vt,\wt)$.  We will use the shorthand $\ib =
@@ -194,6 +185,9 @@ f_w \\
 \end{equation}
 *This term is only included if {\tt use\_new\_godunov = T}.  Note that 
 later this term is always included in the cell update.
+
+\newpage
+
 \subsection{2D Cartesian Case}
 We begin by predicting $\ut$ to r-faces using a 1D extrapolation:\\ \\
 {\bf if} {\tt use\_new\_godunov = F} {\bf then}
@@ -299,6 +293,9 @@ Next, we solve a Riemann problem:
 \end{equation}
 We then project $\Ubt^{\mac,*}$ to obtain $\Ubt^{\mac}$ and we call
 {\tt addw0} to compute $\Ub^{\mac}$ from $\Ubt^{\mac}$.
+
+\newpage
+
 \subsection{3D Cartesian Case}
 \begin{enumerate}
 \item Predict $\ut$ to y-faces using a 1D extrapolation.
@@ -312,6 +309,9 @@ We then project $\Ubt^{\mac,*}$ to obtain $\Ubt^{\mac}$ and we call
 \item Predict $\wt$ to r-faces using a full-dimensional extrapolation, 
   noting that the $\partial w_0/\partial r$ term only enters here.
 \end{enumerate}
+
+\newpage
+
 \subsection{3D Spherical Case}
 We first construct $\Ub$ by mapping $w_0$ onto a Cartesian array and
 adding it to $\Ubt$.  This is a spherical generalization of equation
@@ -361,6 +361,9 @@ f_w \\
 \end{eqnarray}
 *This term is only included if {\tt use\_new\_godunov = T}.  Note that 
 later this term is always included in the cell update.
+
+\newpage
+
 \subsection{2D Cartesian Case}
 We predict $s$ to r-faces using a 1D extrapolation:
 \begin{eqnarray}
@@ -480,8 +483,15 @@ u_{R,\ib-\half\eb_r}^{1D}, & w^{\mac}_{\ib-\half\eb_r} < 0. \\
 \end{cases}
 \end{equation}
 
-%\subsection{3D Cartesian Case}
-%\subsection{3D Spherical Case}
+\newpage
+
+\subsection{3D Cartesian Case}
+Same as 2D with the older 3D corner coupling algorithm for the transverse terms.
+
+\newpage
+
+\subsection{3D Spherical Case}
+Same as 3D Cartesian case except that we never include $\partial w_0/\partial r$ in any of the 1D extrapolations, and always include it in the full dimensional extrapolation.
 
 \newpage
 
