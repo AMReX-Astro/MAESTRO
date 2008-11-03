@@ -150,13 +150,13 @@ We first map $w_0$ onto $w_0^{\mac}$ using {\tt put\_w0\_on\_edges.}
 $w_0^{\mac}$ only contains normal velocities at each face.
 Then we construct $\Ub$ by using
 \begin{equation}
-u_{\ib} = \ut_{\ib} + \frac{w_{0,\ib+\half\eb_x}^{\mac} + w_{0,\mac,\ib+\half\eb_x}}{2},
+u_{\ib} = \ut_{\ib} + \frac{w_{0,\ib+\half\eb_x}^{\mac} + w_{0,\ib+\half\eb_x}^{\mac}}{2},
 \end{equation}
 \begin{equation}
-v_{\ib} = \vt_{\ib} + \frac{w_{0,\ib+\half\eb_y}^{\mac} + w_{0,\mac,\ib+\half\eb_y}}{2},
+v_{\ib} = \vt_{\ib} + \frac{w_{0,\ib+\half\eb_y}^{\mac} + w_{0,\ib+\half\eb_y}^{\mac}}{2},
 \end{equation}
 \begin{equation}
-w_{\ib} = \wt_{\ib} + \frac{w_{0,\ib+\half\eb_z}^{\mac} + w_{0,\mac,\ib+\half\eb_z}}{2}.
+w_{\ib} = \wt_{\ib} + \frac{w_{0,\ib+\half\eb_z}^{\mac} + w_{0,\ib+\half\eb_z}^{\mac}}{2}.
 \end{equation}
 This is a spherical generalization of equation
 (\ref{Total Radial Velocity}).  Then we predict the normal 

@@ -531,8 +531,8 @@ $[\rho_0^{(2),\star}, \rho_0^{\nph,\star,{\rm pred}}]$.
   $\rho^{'(1),\nph,\star}$ and $X_k^{(1),\nph,\star}$ using a second-order
   Taylor expansion in space and time, as described in paper II,
   Appendix A, using $\Vb = \uadvone+w_0^{\nph,\star} \er$.  We use the base
-  state density, $\rho_0$, to convert this to an edge state for $\rho$,
-  \MarginPar{why don't we do something higher order here for plane-parallel?}
+  state density, $\rho_0$, to convert this to an edge state for $\rho$.
+  We use 4th-order spatial averaging to get $\rho_0$ on radial faces,
 \begin{equation}
 \rho^{(1),\nph,\star} = 
 \rho^{'(1),\nph,\star} + \frac{\rho_0^n + \rho_0^{(2),\star}}{2} \enskip ,
@@ -614,7 +614,8 @@ results in a better solution.
     \uadvone+w_0^{\nph,\star} \er$.  We do not include the reaction
     terms in the enthalpy prediction, since we accounted for them
     already in {\bf React State}.  We use the base state enthalpy,
-    $(\rho h)_0$, to convert this to an edge state for $(\rho h)$,
+    $(\rho h)_0$, to convert this to an edge state for $(\rho h)$.
+    We use 4th-order spatial averaging to get $(\rho h)_0$ on radial faces,
     \MarginPar{in these notes we currently assume pred type 1, $(\rho h)'$}
 \begin{equation}
 (\rho h)^{(1),\nph,\star} = 
