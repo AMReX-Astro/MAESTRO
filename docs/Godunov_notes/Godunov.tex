@@ -24,9 +24,6 @@ and {\tt VARDEN}.
 \item {\tt VARDEN} does not use the concept of $\Ub^{\trans}$ in the
   computation of $\Ub^{\mac,\star}$, i.e., the function {\tt velpred}
   computes $\Ub^{\mac,*}$ directly.
-\item {\tt VARDEN} uses characteristic tracing in the Taylor series
-  extrapolation for $\Ub^{\mac,*}$, whereas {\tt MAESTRO} does not 
-  unless you enable {\tt use\_new\_godunov}.
 \item {\tt VARDEN} treats $\rho$ in a conservative manner, whereas
   {\tt MAESTRO} treats $\rho'$ in a non-conservative manner.
   Therefore, {\tt MAESTRO} accounts for this difference by modifying
@@ -52,27 +49,16 @@ The evolution equation for the perturbational velocity is:
 \end{equation}
 We are going to use a 1D Taylor series extrapolation in space and time.
 By 1D, we mean that we omit any spatial derivatives that are not in the 
-direction of the extrapolation.  We also omit the underbraced source terms,
-with the possible exception of the $\partial w_0/\partial r$ term, which
-is enabled in plane-parallel with {\tt use\_new\_godunov}.
-\MarginPar{Need to discuss role of $\partial w_0/\partial r$ term}
+direction of the extrapolation.  We also omit the underbraced source terms.
 
 \newpage
 
 \subsection{2D Cartesian Case}
 We predict $\ut$ to x-faces using a 1D extrapolation:\\ \\
-{\bf if} {\tt use\_new\_godunov = F} {\bf then}
-\begin{eqnarray}
-\ut_{L,\ib-\half\eb_x}^{\trans} &=& \ut_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\eb_x}^n\right)\Delta_x \ut_{\ib-\eb_x}^n, \\
-\ut_{R,\ib-\half\eb_x}^{\trans} &=& \ut_{\ib}^n - \left(\half + \frac{\dt}{2h}u_{\ib}^n\right)\Delta_x \ut_{\ib}^n.
-\end{eqnarray}
-{\bf else if} {\tt use\_new\_godunov = T} {\bf then}
-\MarginPar{I think the upwinding needs to be permanent.}
 \begin{eqnarray}
 \ut_{L,\ib-\half\eb_x}^{\trans} &=& \ut_{\ib-\eb_x}^n + \left[\half - \frac{\dt}{2h}\max(0,u_{\ib-\eb_x}^n)\right]\Delta_x \ut_{\ib-\eb_x}^n, \\
 \ut_{R,\ib-\half\eb_x}^{\trans} &=& \ut_{\ib}^n - \left[\half + \frac{\dt}{2h}\min(0,u_{\ib}^n)\right]\Delta_x \ut_{\ib}^n.
 \end{eqnarray}
-{\bf end if}\\ \\
 We pick the final trans states using a Riemann solver:
 \begin{equation}
 \ut^{\trans}_{\ib-\half\eb_x} =
@@ -83,18 +69,10 @@ We pick the final trans states using a Riemann solver:
 \end{cases}
 \end{equation}
 We predict $\wt$ to r-faces using a 1D extrapolation:\\ \\
-{\bf if} {\tt use\_new\_godunov = F} {\bf then}
 \begin{eqnarray}
-\wt_{L,\ib-\half\eb_r}^{\trans} &=& \wt_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\eb_r}^n\right)\Delta_r \wt_{\ib-\eb_r}^n, \\
-\wt_{R,\ib-\half\eb_r}^{\trans} &=& \wt_{\ib}^n - \left(\half + \frac{\dt}{2h}w_{\ib}^n\right)\Delta_r \wt_{\ib}^n,
+\wt_{L,\ib-\half\eb_r}^{\trans} &=& \wt_{\ib-\eb_r}^n + \left[\half - \frac{\dt}{2h}\max(0,w_{\ib-\eb_r}^n)\right]\Delta_r \wt_{\ib-\eb_r}^n,\\
+\wt_{R,\ib-\half\eb_r}^{\trans} &=& \wt_{\ib}^n - \left[\half + \frac{\dt}{2h}\min(0,w_{\ib}^n)\right]\Delta_r \wt_{\ib}^n.
 \end{eqnarray}
-{\bf else if} {\tt use\_new\_godunov = T} {\bf then}
-\MarginPar{Here is the optional $\partial w_0/\partial r$ term.}
-\begin{eqnarray}
-\wt_{L,\ib-\half\eb_r}^{\trans} &=& \wt_{\ib-\eb_r}^n + \left[\half - \frac{\dt}{2h}\max(0,w_{\ib-\eb_r}^n)\right]\Delta_r \wt_{\ib-\eb_r}^n - \frac{\dt}{2}\wt_{\ib-\eb_r}^n\left(\frac{\partial w_0}{\partial r}\right)_{\ib-\eb_r},\\
-\wt_{R,\ib-\half\eb_r}^{\trans} &=& \wt_{\ib}^n - \left[\half + \frac{\dt}{2h}\min(0,w_{\ib}^n)\right]\Delta_r \wt_{\ib}^n - \frac{\dt}{2}\wt_{\ib}^n\left(\frac{\partial w_0}{\partial r}\right)_{\ib}.
-\end{eqnarray}
-{\bf end if}\\ \\
 To obtain $w_{\ib}^n$ at cell centers, simple averaging of $w_0$ is used:
 \begin{equation}
 w_{\ib}^n = \wt_{\ib}^n + \frac{w_{0,r-\myhalf} + w_{0,r+\myhalf}}{2}.
@@ -169,7 +147,6 @@ For example, for x-faces:\\ \\
 \ut_{R,\ib-\half\eb_x}^{\trans} &=& \ut_{\ib}^n - \left(\half + \frac{\dt}{2h}u_{\ib}^n\right)\Delta_x\ut_{\ib}^n ,
 \end{eqnarray}
 {\bf else if} {\tt use\_new\_godunov = T} {\bf then}
-\MarginPar{The code currently excludes the $\partial w_0/\partial r$ term in spherical}
 \begin{eqnarray}
 \ut_{L,\ib-\half\eb_x}^{\trans} &=& \ut_{\ib-\eb_x}^n + \left[\half - \frac{\dt}{2h}\max(0,u_{\ib-\eb_x}^n)\right]\Delta_x\ut_{\ib-\eb_x}^n \\
 \ut_{R,\ib-\half\eb_x}^{\trans} &=& \ut_{\ib}^n - \left[\half + \frac{\dt}{2h}\min(0,u_{\ib}^n)\right]\Delta_x\ut_{\ib}^n.
