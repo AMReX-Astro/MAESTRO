@@ -1,6 +1,18 @@
 These are working notes for the Godunov step in {\tt MAESTRO} 
 and {\tt VARDEN}.
 
+\section{{\tt MAESTRO} Notation}
+\begin{itemize}
+\item For 2D, $\Ub = (u,w)$ and $\Ubt = (\ut,\wt)$.  
+  Note that $u = \ut$.  We will use the shorthand $\ib = (x,r)$.
+\item For 3D plane parallel, $\Ub = (u,v,w)$
+  and $\Ubt = (\ut,\vt,\wt)$.  Note that $u = \ut$ and $v = \vt$.
+  We will use the shorthand $\ib = (x,y,r)$.
+\item For 3D spherical, $\Ub = (u,v,w)$
+  and $\Ubt = (\ut,\vt,\wt)$.  We will use the shorthand 
+  $\ib = (x,y,z)$.
+\end{itemize}
+
 %-----------------------------------------------------------------------------
 % differences between Maestro and Varden
 %-----------------------------------------------------------------------------
@@ -29,35 +41,33 @@ and {\tt VARDEN}.
 %-----------------------------------------------------------------------------
 \section{Computing $\Ubt^{\trans}$ in {\tt MAESTRO}}
 In {\tt advance\_premac}, we call {\tt mkutrans}, to compute
-time-centered, edge-centered transverse velocities, $\Ubt^{\trans}$.
+$\Ubt^{\trans}$.  We will only compute the normal
+component of velocity at each face.
 These transverse velocities do not contain $w_0$, so immediately
 following the call to {\tt mkutrans}, we call {\tt addw0} to compute
-$\Ub^{\trans}$ from $\Ubt^{\trans}$.  We will only compute the normal
-component of velocity at each face.\\ \\
+$\Ub^{\trans}$ from $\Ubt^{\trans}$.\\ \\
 The evolution equation for the perturbational velocity is:
 \begin{equation}
-\frac{\partial\Ubt}{\partial t} = -\Ubt\cdot\nabla\Ubt - w_0\frac{\partial\Ubt}{\partial r} - (\Ubt\cdot\eb_r)\frac{\partial w_0}{\partial r}\eb_r - \frac{1}{\rho}\nabla\pi + \frac{1}{\rho_0}\frac{\partial\pi_0}{\partial r}\eb_r - \frac{(\rho-\rho_0)}{\rho}g\eb_r.\label{Perturbational Velocity Equation}
+\frac{\partial\Ubt}{\partial t} = -\Ubt\cdot\nabla\Ubt - w_0\frac{\partial\Ubt}{\partial r} \underbrace{- (\Ubt\cdot\eb_r)\frac{\partial w_0}{\partial r}\eb_r - \frac{1}{\rho}\nabla\pi + \frac{1}{\rho_0}\frac{\partial\pi_0}{\partial r}\eb_r - \frac{(\rho-\rho_0)}{\rho}g\eb_r}.\label{Perturbational Velocity Equation}
 \end{equation}
-We are going to use a 1D Taylor series extrapolation in space and time
-to compute time-centered normal components of $\Ubt^{\trans}$ at
-face-centers.  By 1D, we mean that we omit any spatial derivatives
-that are not in the direction of the extrapolation.  We first compute
-``left/right'' states, and then use a Riemann solver to pick the final
-state.
+We are going to use a 1D Taylor series extrapolation in space and time.
+By 1D, we mean that we omit any spatial derivatives that are not in the 
+direction of the extrapolation.  We also omit the underbraced source terms,
+with the possible exception of the $\partial w_0/\partial r$ term, which
+is enabled in plane-parallel with {\tt use\_new\_godunov}.
+\MarginPar{Need to discuss role of $\partial w_0/\partial r$ term}
 
 \newpage
 
 \subsection{2D Cartesian Case}
-For the rest of this paper, for 2D Cartesian problems, $\Ub = (u,w)$
-and $\Ubt = (\ut,\wt)$.  Note that $u = \ut$.  We will use the 
-shorthand $\ib = (x,r)$.\\ \\
-We predict $u$ to x-faces using a 1D extrapolation:\\ \\
+We predict $\ut$ to x-faces using a 1D extrapolation:\\ \\
 {\bf if} {\tt use\_new\_godunov = F} {\bf then}
 \begin{eqnarray}
 \ut_{L,\ib-\half\eb_x}^{\trans} &=& \ut_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\eb_x}^n\right)\Delta_x \ut_{\ib-\eb_x}^n, \\
 \ut_{R,\ib-\half\eb_x}^{\trans} &=& \ut_{\ib}^n - \left(\half + \frac{\dt}{2h}u_{\ib}^n\right)\Delta_x \ut_{\ib}^n.
 \end{eqnarray}
 {\bf else if} {\tt use\_new\_godunov = T} {\bf then}
+\MarginPar{I think the upwinding needs to be permanent.}
 \begin{eqnarray}
 \ut_{L,\ib-\half\eb_x}^{\trans} &=& \ut_{\ib-\eb_x}^n + \left[\half - \frac{\dt}{2h}\max(0,u_{\ib-\eb_x}^n)\right]\Delta_x \ut_{\ib-\eb_x}^n, \\
 \ut_{R,\ib-\half\eb_x}^{\trans} &=& \ut_{\ib}^n - \left[\half + \frac{\dt}{2h}\min(0,u_{\ib}^n)\right]\Delta_x \ut_{\ib}^n.
@@ -75,16 +85,17 @@ We pick the final trans states using a Riemann solver:
 We predict $\wt$ to r-faces using a 1D extrapolation:\\ \\
 {\bf if} {\tt use\_new\_godunov = F} {\bf then}
 \begin{eqnarray}
-\wt_{L,\ib-\half\eb_r}^{\trans} &=& \wt_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\eb_r}^n\right)\Delta_r \wt_{\ib-\eb_r}^n,\label{Radial utrans_L} \\
-\wt_{R,\ib-\half\eb_r}^{\trans} &=& \wt_{\ib}^n - \left(\half + \frac{\dt}{2h}w_{\ib}^n\right)\Delta_r \wt_{\ib}^n,\label{Radial utrans_R}
+\wt_{L,\ib-\half\eb_r}^{\trans} &=& \wt_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\eb_r}^n\right)\Delta_r \wt_{\ib-\eb_r}^n, \\
+\wt_{R,\ib-\half\eb_r}^{\trans} &=& \wt_{\ib}^n - \left(\half + \frac{\dt}{2h}w_{\ib}^n\right)\Delta_r \wt_{\ib}^n,
 \end{eqnarray}
 {\bf else if} {\tt use\_new\_godunov = T} {\bf then}
+\MarginPar{Here is the optional $\partial w_0/\partial r$ term.}
 \begin{eqnarray}
 \wt_{L,\ib-\half\eb_r}^{\trans} &=& \wt_{\ib-\eb_r}^n + \left[\half - \frac{\dt}{2h}\max(0,w_{\ib-\eb_r}^n)\right]\Delta_r \wt_{\ib-\eb_r}^n - \frac{\dt}{2}\wt_{\ib-\eb_r}^n\left(\frac{\partial w_0}{\partial r}\right)_{\ib-\eb_r},\\
 \wt_{R,\ib-\half\eb_r}^{\trans} &=& \wt_{\ib}^n - \left[\half + \frac{\dt}{2h}\min(0,w_{\ib}^n)\right]\Delta_r \wt_{\ib}^n - \frac{\dt}{2}\wt_{\ib}^n\left(\frac{\partial w_0}{\partial r}\right)_{\ib}.
 \end{eqnarray}
 {\bf end if}\\ \\
-To obtain $w_{\ib}^n$ at cell centers, simple averaging is used:
+To obtain $w_{\ib}^n$ at cell centers, simple averaging of $w_0$ is used:
 \begin{equation}
 w_{\ib}^n = \wt_{\ib}^n + \frac{w_{0,r-\myhalf} + w_{0,r+\myhalf}}{2}.
 \label{Total Radial Velocity}
@@ -108,9 +119,6 @@ We pick the final trans states using a Riemann solver:
 \newpage
 
 \subsection{3D Cartesian Case}
-For the rest of this paper, for 3D Cartesian problems, $\Ub = (u,v,w)$
-and $\Ubt = (\ut,\vt,\wt)$.  Note that $u = \ut$ and $v = \vt$.
-We will use the shorthand $\ib = (x,y,r)$.\\ \\
 We use the exact same procedure in 2D and 3D to compute $\ut^{\trans}$ and 
 $\wt^{\trans}$. The procedure for computing $\vt^{\trans}$ is analogous to
 computing $\ut^{\trans}$.  We predict $\vt$ to y-faces using the
@@ -138,24 +146,30 @@ computing $\ut^{\trans}$.  We predict $\vt$ to y-faces using the
 \newpage
 
 \subsection{3D Spherical Case}
-For the rest of this paper, for 3D spherical problems, $\Ub = (u,v,w)$
-and $\Ubt = (\ut,\vt,\wt)$.  We will use the shorthand $\ib =
-(x,y,z)$.\\ \\
-We first construct $\Ub$ by mapping $w_0$ onto a Cartesian array and
-adding it to $\Ubt$.  This is a spherical generalization of equation
-(\ref{Total Radial Velocity}).  We also map $\partial w_0/\partial r$
-onto a Cartesian array.  This is a spherical generalization of
-equation (\ref{Radial Derivative of w_0}).  Then we predict the normal 
-component of velocity to the normal faces using a 1D extrapolation.  
+We first map $w_0$ onto $w_0^{\mac}$ using {\tt put\_w0\_on\_edges.}
+$w_0^{\mac}$ only contains normal velocities at each face.
+Then we construct $\Ub$ by using
+\begin{equation}
+u_{\ib} = \ut_{\ib} + \frac{w_{0,\ib+\half\eb_x}^{\mac} + w_{0,\mac,\ib+\half\eb_x}}{2},
+\end{equation}
+\begin{equation}
+v_{\ib} = \vt_{\ib} + \frac{w_{0,\ib+\half\eb_y}^{\mac} + w_{0,\mac,\ib+\half\eb_y}}{2},
+\end{equation}
+\begin{equation}
+w_{\ib} = \wt_{\ib} + \frac{w_{0,\ib+\half\eb_z}^{\mac} + w_{0,\mac,\ib+\half\eb_z}}{2}.
+\end{equation}
+This is a spherical generalization of equation
+(\ref{Total Radial Velocity}).  Then we predict the normal 
+components of velocity to the normal faces using a 1D extrapolation.  
 This extrapolation is analogous for all three directions.
 For example, for x-faces:\\ \\
-\MarginPar{We are excluding the $\partial w_0/\partial r$ term}
 {\bf if} {\tt use\_new\_godunov} {\bf then}
 \begin{eqnarray}
 \ut_{L,\ib-\half\eb_x}^{\trans} &=& \ut_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\eb_x}^n\right)\Delta_x\ut_{\ib-\eb_x}^n \\
 \ut_{R,\ib-\half\eb_x}^{\trans} &=& \ut_{\ib}^n - \left(\half + \frac{\dt}{2h}u_{\ib}^n\right)\Delta_x\ut_{\ib}^n ,
 \end{eqnarray}
 {\bf else if} {\tt use\_new\_godunov = T} {\bf then}
+\MarginPar{The code currently excludes the $\partial w_0/\partial r$ term in spherical}
 \begin{eqnarray}
 \ut_{L,\ib-\half\eb_x}^{\trans} &=& \ut_{\ib-\eb_x}^n + \left[\half - \frac{\dt}{2h}\max(0,u_{\ib-\eb_x}^n)\right]\Delta_x\ut_{\ib-\eb_x}^n \\
 \ut_{R,\ib-\half\eb_x}^{\trans} &=& \ut_{\ib}^n - \left[\half + \frac{\dt}{2h}\min(0,u_{\ib}^n)\right]\Delta_x\ut_{\ib}^n.
@@ -163,7 +177,7 @@ For example, for x-faces:\\ \\
 {\bf end if}\\ \\
 Then we use the same Riemann solver as the Cartesian case to 
 obtain $\ut^{\trans}$.
-\MarginPar{Again, should we really upwind based on $\ut$ instead of $u$?}
+\MarginPar{Again, should we really upwind based on $\ut/\vt/\wt$ instead of $u/v/w$?}
 
 \newpage
 
@@ -181,7 +195,7 @@ The force terms are:
 f_u \\
 f_w \\
 \end{array}\right)
-= \frac{1}{\rho}\nabla\pi + \underbrace{\frac{1}{\rho_0}\frac{\partial\pi_0}{\partial r}\eb_r}_{\hbox{*}} - \frac{(\rho-\rho_0)}{\rho}g\eb_r.\label{Force Term}
+= \frac{1}{\rho}\nabla\pi + \underbrace{\frac{1}{\rho_0}\frac{\partial\pi_0}{\partial r}\eb_r}_{\hbox{*}} - \frac{(\rho-\rho_0)}{\rho}g\eb_r.
 \end{equation}
 *This term is only included if {\tt use\_new\_godunov = T}.  Note that 
 later this term is always included in the cell update.
@@ -210,7 +224,7 @@ Then we upwind based on $w^{\trans}$:
 \ut_{R,\ib-\half\eb_r}^{1D}, & w^{\trans}_{\ib-\half\eb_r} < 0. \\
 \end{cases}
 \end{equation}
-Then we predict $u$ to x-faces using a full-dimensional extrapolation:\\ \\
+Then we predict $\ut$ to x-faces using a full-dimensional extrapolation:\\ \\
 {\bf if} {\tt use\_new\_godunov = F} {\bf then}
 \begin{eqnarray}
 \ut_{L,\ib-\half\eb_x}^{\mac,*} &=& \ut_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\eb_x}\right)\Delta_x \ut_{\ib-\eb_x}^n \nonumber \\
@@ -507,7 +521,7 @@ u_{L,\ib-\half\eb_x}^{1D} &=& u_{\ib-\eb_x} + \left[\half - \frac{\dt}{2h}{\rm m
 u_{R,\ib-\half\eb_x}^{1D} &=& u_{\ib} + \left[\half - \frac{\dt}{2h}{\rm min}(0,u_{\ib})\right]\Delta_xu_{\ib}.
 \end{eqnarray}
 \begin{eqnarray}
-v_{L,\ib-\half\eb_x}^{1D} &=& v_{\ib-\eb_x} + \left[\half - \frac{\dt}{2h}{\rm max}(0,v_{\ib-\eb_x})\right]\Delta_xv_{\ib-\eb_x}, \label{varden U_L^1D} \\
+v_{L,\ib-\half\eb_x}^{1D} &=& v_{\ib-\eb_x} + \left[\half - \frac{\dt}{2h}{\rm max}(0,v_{\ib-\eb_x})\right]\Delta_xv_{\ib-\eb_x}, \\
 v_{R,\ib-\half\eb_x}^{1D} &=& v_{\ib} + \left[\half - \frac{\dt}{2h}{\rm min}(0,v_{\ib})\right]\Delta_xv_{\ib}.
 \end{eqnarray}
 We obtain the normal velocity using the Riemann problem:
@@ -527,7 +541,7 @@ v_{\ib-\half\eb_x}^{1D} =
 \half\left(v_{L,\ib-\half\eb_x}^{1D} + v_{R,\ib-\half\eb_x}^{1D}\right), & \left|u_{\ib-\half\eb_x}^{1D}\right| < \epsilon \\
 v_{L,\ib-\half\eb_x}^{1D}, & u_{\ib-\half\eb_x}^{1D} > 0, \\
 v_{R,\ib-\half\eb_x}^{1D}, & u_{\ib-\half\eb_x}^{1D} < 0.
-\end{cases}\label{Transverse Velocity Riemann Problem}
+\end{cases}
 \end{equation}
 We perform analogous operations to compute both components of velocity
 at the y-faces, $\Ub_{\ib-\half\eb_y}^{1D}$. \\
@@ -646,8 +660,8 @@ We use an analogous procedure to compute $s_{\ib-\half\eb_y}^{\edge}$.
 This is more complicated than the 2D case because we include corner
 coupling.  We first compute $s_{\ib-\half\eb_x}^{1D}$,
 $s_{\ib-\half\eb_y}^{1D}$, and $s_{\ib-\half\eb_z}^{1D}$ in an
-analogous manner to equations (\ref{varden s_L^1D}) and (\ref{varden
-  s_R^1D}).  Then we compute six intermediate states,
+analogous manner to equations (\ref{varden s_L^1D}) and 
+(\ref{varden s_R^1D}).  Then we compute six intermediate states,
 $s_{\ib-\half\eb_x}^{x|y}, s_{\ib-\half\eb_x}^{x|z},
 s_{\ib-\half\eb_y}^{y|x}, s_{\ib-\half\eb_y}^{y|z},
 s_{\ib-\half\eb_z}^{z|x}$, and $s_{\ib-\half\eb_z}^{z|y}$.  For the
@@ -690,7 +704,8 @@ s_{R,\ib-\half\eb_x}^{\edge} = s_{R,\ib-\half\eb_x}^{1D} &-& \frac{\dt}{2h}\left
 &-& \frac{\dt}{2}s_{\ib}(\nabla\cdot\Ub^{\mac})_{\ib} + \frac{\dt}{2h}s_{\ib}\left(v_{\ib+\half\eb_y}^{\mac}-v_{\ib-\half\eb_y}^{\mac}+w_{\ib+\half\eb_z}^{\mac}-w_{\ib-\half\eb_z}^{\mac}\right) \nonumber \\
 &+& \frac{\dt}{2}f_{s,\ib}.
 \end{eqnarray}
-Then we upwind based on $u^{\mac}$, as in equation (\ref{varden s^edge
-  upwind}).  We use an analogous procedure to compute both
+Then we upwind based on $u^{\mac}$, as in equation 
+(\ref{varden s^edge upwind}).  
+We use an analogous procedure to compute both
 $s_{\ib-\half\eb_y}^{\edge}$ and $s_{\ib-\half\eb_z}$.
 
