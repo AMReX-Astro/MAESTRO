@@ -188,6 +188,10 @@ obtain $\ut^{\trans}$.
 In {\tt advance\_premac}, we call {\tt velpred} to compute
 $\Ubt^{\mac,*}$.  We will only compute the normal component of
 velocity at each face.\\ \\
+For reference, here is the perturbational velocity equation from before:
+\begin{equation}
+\frac{\partial\Ubt}{\partial t} = -\Ubt\cdot\nabla\Ubt - w_0\frac{\partial\Ubt}{\partial r} - (\Ubt\cdot\eb_r)\frac{\partial w_0}{\partial r}\eb_r - \frac{1}{\rho}\nabla\pi + \frac{1}{\rho_0}\frac{\partial\pi_0}{\partial r}\eb_r - \frac{(\rho-\rho_0)}{\rho}g\eb_r.
+\end{equation}
 The force terms are:
 \begin{equation}
 \fb =
@@ -195,15 +199,22 @@ The force terms are:
 f_u \\
 f_w \\
 \end{array}\right)
-= \frac{1}{\rho}\nabla\pi + \underbrace{\frac{1}{\rho_0}\frac{\partial\pi_0}{\partial r}\eb_r}_{\hbox{*}} - \frac{(\rho-\rho_0)}{\rho}g\eb_r.
+= - \frac{1}{\rho}\nabla\pi + \underbrace{\frac{1}{\rho_0}\frac{\partial\pi_0}{\partial r}\eb_r} - \frac{(\rho-\rho_0)}{\rho}g\eb_r.
 \end{equation}
-*This term is only included if {\tt use\_new\_godunov = T}.  Note that 
-later this term is always included in the cell update.
+The underbraced term is only included if {\tt use\_new\_godunov = T}.
+Note that later this term is always included in the cell update.
 
 \newpage
 
 \subsection{2D Cartesian Case}
-We begin by predicting $\ut$ to r-faces using a 1D extrapolation:\\ \\
+\begin{enumerate}
+\item Predict $\ut$ to r-faces using a 1D extrapolation.
+\item Predict $\ut$ to x-faces using a full-dimensional extrapolation.
+\item Predict $\wt$ to x-faces using a 1D extrapolation.
+\item Predict $\wt$ to r-faces using a full-dimensional extrapolation.
+  Note the use of the $\partial w_0/\partial r$ term.
+\end{enumerate}
+Predict $\ut$ to r-faces using a 1D extrapolation:\\ \\
 {\bf if} {\tt use\_new\_godunov = F} {\bf then}
 \begin{eqnarray}
 \ut_{L,\ib-\half\eb_r}^{1D} &=& \ut_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\eb_r}^n\right)\Delta_r \ut_{\ib-\eb_r}^n, \\
@@ -215,7 +226,7 @@ We begin by predicting $\ut$ to r-faces using a 1D extrapolation:\\ \\
 \ut_{R,\ib-\half\eb_r}^{1D} &=& \ut_{\ib} - \left[\half + \frac{\dt}{2h}\min(0,w_{\ib}^n)\right]\Delta_r \ut_{\ib}^n.
 \end{eqnarray}
 {\bf end if}\\ \\
-Then we upwind based on $w^{\trans}$:
+Upwind based on $w^{\trans}$:
 \begin{equation}
 \ut_{\ib-\half\eb_r}^{1D} =
 \begin{cases}
@@ -224,7 +235,7 @@ Then we upwind based on $w^{\trans}$:
 \ut_{R,\ib-\half\eb_r}^{1D}, & w^{\trans}_{\ib-\half\eb_r} < 0. \\
 \end{cases}
 \end{equation}
-Then we predict $\ut$ to x-faces using a full-dimensional extrapolation:\\ \\
+Predict $\ut$ to x-faces using a full-dimensional extrapolation:\\ \\
 {\bf if} {\tt use\_new\_godunov = F} {\bf then}
 \begin{eqnarray}
 \ut_{L,\ib-\half\eb_x}^{\mac,*} &=& \ut_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\eb_x}\right)\Delta_x \ut_{\ib-\eb_x}^n \nonumber \\
@@ -240,7 +251,7 @@ Then we predict $\ut$ to x-faces using a full-dimensional extrapolation:\\ \\
 && -\frac{\dt}{4h}\left(w_{\ib+\half\eb_r}^{\trans}+w_{\ib-\half\eb_r}^{\trans}\right)\left(\ut_{\ib+\half\eb_r}^{1D} - \ut_{\ib-\half\eb_r}^{1D}\right) + \frac{\dt}{2}f_{u,\ib}.
 \end{eqnarray}
 {\bf end if}\\ \\
-Finally, we solve a Riemann problem:
+Solve a Riemann problem:
 \begin{equation}
 \ut_{\ib-\half\eb_x}^{\mac,*} =
 \begin{cases}
@@ -249,12 +260,7 @@ Finally, we solve a Riemann problem:
 \ut_{R,\ib-\half\eb_x}^{\mac,*}, & \ut_{L,\ib-\half\eb_x}^{\mac,*} + \ut_{R,\ib-\half\eb_x}^{\mac,*} < 0. 
 \end{cases}
 \end{equation}
-
-To compute $\wt^{\mac,*}$, we use an analogous procedure for computing
-$u^{\mac,*}$, except that we need to incorporate the terms in equation
-(\ref{Perturbational Velocity Equation}) proportional to 
-$\partial w_0/\partial r$ into the full-dimensional extrapolation.  We
-predict $\wt$ to x-faces using a 1D extrapolation:\\ \\
+Predict $\wt$ to x-faces using a 1D extrapolation:\\ \\
 {\bf if} {\tt use\_new\_godunov = F} {\bf then}
 \begin{eqnarray}
 \wt_{L,\ib-\half\eb_x}^{1D} &=& \wt_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\eb_x}^n\right)\Delta_x \wt_{\ib-\eb_x}^n, \\
@@ -266,7 +272,7 @@ predict $\wt$ to x-faces using a 1D extrapolation:\\ \\
 \wt_{R,\ib-\half\eb_x}^{1D} &=& \wt_{\ib} - \left[\half + \frac{\dt}{2h}\min(0,u_{\ib}^n)\right]\Delta_x \wt_{\ib}^n.
 \end{eqnarray}
 {\bf end if}\\ \\
-Then we upwind based on $u^{\trans}$:
+Upwind based on $u^{\trans}$:
 \begin{equation}
 \wt_{\ib-\half\eb_x}^{1D} =
 \begin{cases}
@@ -275,7 +281,8 @@ Then we upwind based on $u^{\trans}$:
 \wt_{R,\ib-\half\eb_x}^{1D}, & u^{\trans}_{\ib-\half\eb_x} < 0. \\
 \end{cases}
 \end{equation}
-Then we predict $\wt$ to r-faces using a full-dimensional extrapolation:\\ \\
+Predict $\wt$ to r-faces using a full-dimensional extrapolation.
+Note the use of the $\partial w_0/\partial r$ term:\\ \\
 {\bf if} {\tt use\_new\_godunov = F} {\bf then}
 \begin{eqnarray}
 \wt_{L,\ib-\half\eb_r}^{\mac,*} &=& \wt_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\eb_r}\right)\Delta_r \wt_{\ib-\eb_r}^n \nonumber \\
@@ -295,7 +302,7 @@ Then we predict $\wt$ to r-faces using a full-dimensional extrapolation:\\ \\
 && - \frac{\dt}{4h}\left(\wt_{\ib+\half\eb_r}^{\trans}+\wt_{\ib-\half\eb_r}^{\trans}\right)(w_{0,\ib+\half\eb_r} - w_{0,\ib-\half\eb_r}) + \frac{\dt}{2}f_{w,\ib}.
 \end{eqnarray}
 {\bf end if}\\ \\
-Next, we solve a Riemann problem:
+Solve a Riemann problem:
 \MarginPar{Again, should we really upwind based on $\wt$ instead of $w$?}
 \begin{equation}
 \wt_{\ib-\half\eb_r}^{\mac,*} =
@@ -305,8 +312,6 @@ Next, we solve a Riemann problem:
 \wt_{R,\ib-\half\eb_r}^{\mac,*}, & \wt_L^{\mac,*} + \wt_R^{\mac,*} < 0. 
 \end{cases}
 \end{equation}
-We then project $\Ubt^{\mac,*}$ to obtain $\Ubt^{\mac}$ and we call
-{\tt addw0} to compute $\Ub^{\mac}$ from $\Ubt^{\mac}$.
 
 \newpage
 
@@ -320,17 +325,18 @@ We then project $\Ubt^{\mac,*}$ to obtain $\Ubt^{\mac}$ and we call
 \item Predict $\vt$ to y-faces using a full-dimensional extrapolation.
 \item Predict $\wt$ to x-faces using a 1D extrapolation.
 \item Predict $\wt$ to y-faces using a 1D extrapolation.
-\item Predict $\wt$ to r-faces using a full-dimensional extrapolation, 
-  noting that the $\partial w_0/\partial r$ term only enters here.
+\item Predict $\wt$ to r-faces using a full-dimensional extrapolation.
+  Note the use of the $\partial w_0/\partial r$ term.
 \end{enumerate}
 
 \newpage
 
 \subsection{3D Spherical Case}
-We first construct $\Ub$ by mapping $w_0$ onto a Cartesian array and
-adding it to $\Ubt$.  This is a spherical generalization of equation
-(\ref{Total Radial Velocity}).  We also map $\partial w_0/\partial r$
-onto a Cartesian array.  This is a spherical generalization of
+As before in the $\Ubt^{\trans}$, algorithm, we first map 
+$w_0$ onto $w_0^{\mac}$ using {\tt put\_w0\_on\_edges.}\\ \\
+We also map $\partial w_0/\partial r$ onto a Cartesian 
+array using {\tt put\_1d\_array\_on\_cart\_3d\_sphr}.
+This is a spherical generalization of
 equation (\ref{Radial Derivative of w_0}).\\ \\
 The spherical case is the same as the plane-parallel 3D Cartesian 
 case, except the $\partial w_0/\partial r$ term enters 
