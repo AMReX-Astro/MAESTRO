@@ -54,7 +54,7 @@ direction of the extrapolation.  We also omit the underbraced source terms.
 \newpage
 
 \subsection{2D Cartesian Case}
-We predict $\ut$ to x-faces using a 1D extrapolation:\\ \\
+We predict $\ut$ to x-faces using a 1D extrapolation:
 \begin{eqnarray}
 \ut_{L,\ib-\half\eb_x}^{\trans} &=& \ut_{\ib-\eb_x}^n + \left[\half - \frac{\dt}{2h}\max(0,u_{\ib-\eb_x}^n)\right]\Delta_x \ut_{\ib-\eb_x}^n, \\
 \ut_{R,\ib-\half\eb_x}^{\trans} &=& \ut_{\ib}^n - \left[\half + \frac{\dt}{2h}\min(0,u_{\ib}^n)\right]\Delta_x \ut_{\ib}^n.
@@ -68,7 +68,7 @@ We pick the final trans states using a Riemann solver:
 \ut_{R,\ib-\half\eb_x}^{\trans}, & \ut_{L,\ib-\half\eb_x}^{\trans} + \ut_{R,\ib-\half\eb_x}^{\trans} < 0, \\
 \end{cases}
 \end{equation}
-We predict $\wt$ to r-faces using a 1D extrapolation:\\ \\
+We predict $\wt$ to r-faces using a 1D extrapolation:
 \begin{eqnarray}
 \wt_{L,\ib-\half\eb_r}^{\trans} &=& \wt_{\ib-\eb_r}^n + \left[\half - \frac{\dt}{2h}\max(0,w_{\ib-\eb_r}^n)\right]\Delta_r \wt_{\ib-\eb_r}^n,\\
 \wt_{R,\ib-\half\eb_r}^{\trans} &=& \wt_{\ib}^n - \left[\half + \frac{\dt}{2h}\min(0,w_{\ib}^n)\right]\Delta_r \wt_{\ib}^n.
@@ -83,14 +83,15 @@ difference:
 \begin{equation}
 \left(\frac{\partial w_0}{\partial r}\right)_{\ib} = \frac{w_{0,r+\half}-w_{0,r-\half}}{h}.\label{Radial Derivative of w_0}
 \end{equation}
-We pick the final trans states using a Riemann solver:
-\MarginPar{Should we really upwind based on $\wt$ instead of $w$?}
+We pick the final $\trans$ states using a Riemann solver, noting
+that we upwind based on the full velocity, which is computed by adding
+$w_0$ to the left and right $\trans$ velocities.
 \begin{equation}
 \wt^{\trans}_{\ib-\half\eb_r} =
 \begin{cases}
-0, & \left(\wt_L^{\trans} \le 0 ~~ {\rm AND} ~~ \wt_R^{\trans} \ge 0\right) ~~ {\rm OR} ~~ \left|\wt_L^{\trans} + \wt_R^{\trans}\right| < \epsilon, \\
-\wt_{L,\ib-\half\eb_r}^{\trans}, & \wt_L^{\trans} + \wt_R^{\trans} > 0, \\
-\wt_{R,\ib-\half\eb_r}^{\trans}, & \wt_L^{\trans} + \wt_R^{\trans} < 0, \\
+0, & \left(w_L^{\trans} \le 0 ~~ {\rm AND} ~~ w_R^{\trans} \ge 0\right) ~~ {\rm OR} ~~ \left|w_L^{\trans} + w_R^{\trans}\right| < \epsilon, \\
+\wt_{L,\ib-\half\eb_r}^{\trans}, & w_L^{\trans} + w_R^{\trans} > 0, \\
+\wt_{R,\ib-\half\eb_r}^{\trans}, & w_L^{\trans} + w_R^{\trans} < 0, \\
 \end{cases}
 \end{equation}
 
@@ -100,24 +101,17 @@ We pick the final trans states using a Riemann solver:
 We use the exact same procedure in 2D and 3D to compute $\ut^{\trans}$ and 
 $\wt^{\trans}$. The procedure for computing $\vt^{\trans}$ is analogous to
 computing $\ut^{\trans}$.  We predict $\vt$ to y-faces using the
-1D extrapolation:\\ \\
-{\bf if} {\tt use\_new\_godunov = F} {\bf then}
-\begin{eqnarray}
-\vt_{L,\ib-\half\eb_y}^{\trans} &=& \vt_{\ib-\eb_y}^n + \left(\half - \frac{\dt}{2h}v_{\ib-\eb_y}^n\right)\Delta_y \vt_{\ib-\eb_y}^n, \\
-\vt_{R,\ib-\half\eb_y}^{\trans} &=& \vt_{\ib}^n - \left(\half + \frac{\dt}{2h}v_{\ib}^n\right)\Delta_y \vt_{\ib}^n,
-\end{eqnarray}
-{\bf else if} {\tt use\_new\_godunov = T} {\bf then}
+1D extrapolation:
 \begin{eqnarray}
 \vt_{L,\ib-\half\eb_y}^{\trans} &=& \vt_{\ib-\eb_y}^n + \left[\half - \frac{\dt}{2h}\max(0,v_{\ib-\eb_y}^n)\right]\Delta_y \vt_{\ib-\eb_y}^n, \\
 \vt_{R,\ib-\half\eb_y}^{\trans} &=& \vt_{\ib}^n - \left[\half + \frac{\dt}{2h}\min(0,v_{\ib}^n)\right]\Delta_y \vt_{\ib}^n,
 \end{eqnarray}
-{\bf end if}
 \begin{equation}
 \vt^{\trans}_{\ib-\half\eb_y} =
 \begin{cases}
-0, & \left(\vt_{L,\ib-\half\eb_y}^{\trans} \le 0 ~~ {\rm AND} ~~ \vt_{R,\ib-\half\eb_y}^{\trans} \ge 0\right) ~~ {\rm OR} ~~ \left|\vt_{L,\ib-\half\eb_y}^{\trans} + \vt_{R,\ib-\half\eb_y}^{\trans}\right| < \epsilon, \\
-\vt_{L,\ib-\half\eb_y}^{\trans}, & \vt_{L,\ib-\half\eb_y}^{\trans} + \vt_{R,\ib-\half\eb_y}^{\trans} > 0, \\
-\vt_{R,\ib-\half\eb_y}^{\trans}, & \vt_{L,\ib-\half\eb_y}^{\trans} + \vt_{R,\ib-\half\eb_y}^{\trans} < 0. \\
+0, & \left(v_{L,\ib-\half\eb_y}^{\trans} \le 0 ~~ {\rm AND} ~~ v_{R,\ib-\half\eb_y}^{\trans} \ge 0\right) ~~ {\rm OR} ~~ \left|v_{L,\ib-\half\eb_y}^{\trans} + v_{R,\ib-\half\eb_y}^{\trans}\right| < \epsilon, \\
+\vt_{L,\ib-\half\eb_y}^{\trans}, & v_{L,\ib-\half\eb_y}^{\trans} + v_{R,\ib-\half\eb_y}^{\trans} > 0, \\
+\vt_{R,\ib-\half\eb_y}^{\trans}, & v_{L,\ib-\half\eb_y}^{\trans} + v_{R,\ib-\half\eb_y}^{\trans} < 0. \\
 \end{cases}
 \end{equation}
 
@@ -140,21 +134,13 @@ This is a spherical generalization of equation
 (\ref{Total Radial Velocity}).  Then we predict the normal 
 components of velocity to the normal faces using a 1D extrapolation.  
 This extrapolation is analogous for all three directions.
-For example, for x-faces:\\ \\
-{\bf if} {\tt use\_new\_godunov} {\bf then}
-\begin{eqnarray}
-\ut_{L,\ib-\half\eb_x}^{\trans} &=& \ut_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\eb_x}^n\right)\Delta_x\ut_{\ib-\eb_x}^n \\
-\ut_{R,\ib-\half\eb_x}^{\trans} &=& \ut_{\ib}^n - \left(\half + \frac{\dt}{2h}u_{\ib}^n\right)\Delta_x\ut_{\ib}^n ,
-\end{eqnarray}
-{\bf else if} {\tt use\_new\_godunov = T} {\bf then}
+For example, for x-faces:
 \begin{eqnarray}
 \ut_{L,\ib-\half\eb_x}^{\trans} &=& \ut_{\ib-\eb_x}^n + \left[\half - \frac{\dt}{2h}\max(0,u_{\ib-\eb_x}^n)\right]\Delta_x\ut_{\ib-\eb_x}^n \\
 \ut_{R,\ib-\half\eb_x}^{\trans} &=& \ut_{\ib}^n - \left[\half + \frac{\dt}{2h}\min(0,u_{\ib}^n)\right]\Delta_x\ut_{\ib}^n.
 \end{eqnarray}
-{\bf end if}\\ \\
-Then we use the same Riemann solver as the Cartesian case to 
-obtain $\ut^{\trans}$.
-\MarginPar{Again, should we really upwind based on $\ut/\vt/\wt$ instead of $u/v/w$?}
+Then we use the same Riemann solver as the Cartesian case to obtain $\ut^{\trans}$,
+making sure we upwind based on the full velocity.
 
 \newpage
 
