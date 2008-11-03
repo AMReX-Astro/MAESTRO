@@ -174,8 +174,7 @@ contains
                (phys_bc(1,2) .eq. SLIP_WALL .or. phys_bc(1,2) .eq. NO_SLIP_WALL))
           
           utrans(i,j) = merge(ulft,urgt,(ulft+urgt).gt.ZERO)
-          test = ( (ulft .le. ZERO  .and.  urgt .ge. ZERO)  .or.  &
-               (abs(ulft+urgt) .lt. eps) )
+          test = ( (ulft .le. ZERO .and. urgt .ge. ZERO) .or. (abs(ulft+urgt) .lt. eps) )
           utrans(i,j) = merge(ZERO,utrans(i,j),test)
           
        enddo
@@ -214,9 +213,10 @@ contains
           vbot = merge(ZERO     ,vbot,j.eq.je+1 .and. &
                        (phys_bc(2,2) .eq. SLIP_WALL .or. phys_bc(2,2) .eq. NO_SLIP_WALL))
           
-          vtrans(i,j)=merge(vbot,vtop,(vbot+vtop).gt.ZERO)
-          test = ( (vbot .le. ZERO  .and.  vtop .ge. ZERO)  .or.  &
-               (abs(vbot+vtop) .lt. eps))
+          ! upwind based on w, not wtilde
+          vtrans(i,j)=merge(vbot,vtop,(vbot+vtop+TWO*w0(j)).gt.ZERO)
+          test = ( (vbot+w0(j) .le. ZERO .and. vtop+w0(j) .ge. ZERO) .or. &
+               (abs(vbot+vtop+TWO*w0(j)) .lt. eps))
           vtrans(i,j) = merge(ZERO,vtrans(i,j),test)
 
        enddo
@@ -325,10 +325,18 @@ contains
              ulft = merge(ZERO           ,ulft,i.eq.ie+1 .and. &
                   (phys_bc(1,2) .eq. SLIP_WALL .or. phys_bc(1,2) .eq. NO_SLIP_WALL))
              
-             utrans(i,j,k) = merge(ulft,urgt,(ulft+urgt).gt.ZERO)
-             test=( (ulft .le. ZERO  .and.  urgt .ge. ZERO)  .or. &
-                  (abs(ulft+urgt) .lt. eps) )
-             utrans(i,j,k) = merge(ZERO,utrans(i,j,k),test)
+             if (spherical .eq. 1) then
+                ! upwind based on u, not utilde
+                utrans(i,j,k) = merge(ulft,urgt,(ulft+urgt+TWO*w0macx(i,j,k)).gt.ZERO)
+                test=( (ulft+w0macx(i,j,k).le. ZERO.and.urgt+w0macx(i,j,k).ge.ZERO) .or. &
+                     (abs(ulft+urgt+TWO*w0macx(i,j,k)) .lt. eps) )
+                utrans(i,j,k) = merge(ZERO,utrans(i,j,k),test)
+             else
+                utrans(i,j,k) = merge(ulft,urgt,(ulft+urgt).gt.ZERO)
+                test=( (ulft .le. ZERO  .and.  urgt .ge. ZERO)  .or. &
+                     (abs(ulft+urgt) .lt. eps) )
+                utrans(i,j,k) = merge(ZERO,utrans(i,j,k),test)
+             end if
 
           enddo
        enddo
@@ -364,10 +372,18 @@ contains
              vbot = merge(ZERO           ,vbot,j.eq.je+1 .and. &
                   (phys_bc(2,2) .eq. SLIP_WALL .or. phys_bc(2,2) .eq. NO_SLIP_WALL))
              
-             vtrans(i,j,k)=merge(vbot,vtop,(vbot+vtop).gt.ZERO)
-             test = ( (vbot .le. ZERO  .and.  vtop .ge. ZERO)  .or. &
-                  (abs(vbot+vtop) .lt. eps))
-             vtrans(i,j,k) = merge(ZERO,vtrans(i,j,k),test)
+             if (spherical .eq. 1) then
+                ! upwind based on v, not vtilde
+                vtrans(i,j,k)=merge(vbot,vtop,(vbot+vtop+TWO*w0macy(i,j,k)).gt.ZERO)
+                test = ( (vbot+w0macy(i,j,k).le.ZERO.and.vtop+w0macy(i,j,k).ge.ZERO) .or. &
+                     (abs(vbot+vtop+TWO*w0macy(i,j,k)) .lt. eps) )
+                vtrans(i,j,k) = merge(ZERO,vtrans(i,j,k),test)
+             else
+                vtrans(i,j,k)=merge(vbot,vtop,(vbot+vtop).gt.ZERO)
+                test = ( (vbot .le. ZERO  .and.  vtop .ge. ZERO)  .or. &
+                     (abs(vbot+vtop) .lt. eps))
+                vtrans(i,j,k) = merge(ZERO,vtrans(i,j,k),test)
+             end if
              
           enddo
        enddo
@@ -412,10 +428,18 @@ contains
              wbot = merge(ZERO           ,wbot,k.eq.ke+1 .and. &
                   (phys_bc(3,2) .eq. SLIP_WALL .or. phys_bc(3,2) .eq. NO_SLIP_WALL))
              
-             wtrans(i,j,k)=merge(wbot,wtop,(wbot+wtop).gt.ZERO)
-             test = ( (wbot .le. ZERO  .and.  wtop .ge. ZERO)  .or. &
-                  (abs(wbot+wtop) .lt. eps))
-             wtrans(i,j,k) = merge(ZERO,wtrans(i,j,k),test)
+             ! upwind based on w, not wtilde
+             if (spherical .eq. 1) then
+                wtrans(i,j,k)=merge(wbot,wtop,(wbot+wtop+TWO*w0macz(i,j,k)).gt.ZERO)
+                test = ( (wbot+w0macz(i,j,k).le.ZERO.and.wtop+w0macz(i,j,k).ge.ZERO) .or. &
+                     (abs(wbot+wtop+TWO*w0macz(i,j,k)) .lt. eps) )
+                wtrans(i,j,k) = merge(ZERO,wtrans(i,j,k),test)
+             else
+                wtrans(i,j,k)=merge(wbot,wtop,(wbot+wtop+TWO*w0(k)).gt.ZERO)
+                test = ( (wbot+w0(k) .le. ZERO  .and.  wtop+w0(k) .ge. ZERO)  .or. &
+                     (abs(wbot+wtop+TWO*w0(k)) .lt. eps))
+                wtrans(i,j,k) = merge(ZERO,wtrans(i,j,k),test)
+             end if
              
           enddo
        enddo
