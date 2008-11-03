@@ -365,39 +365,44 @@ and the choice of energy prediction is as follows:
 \item For {\tt enthalpy\_pred\_type} = 5, we predict $h'$ to edges.
 \item For {\tt enthalpy\_pred\_type} = 6, we predict $T'$ to edges.
 \end{itemize}
-The force terms are (noting reaction terms are may or may not be excluded 
-depending on how they are handled in {\tt react\_state}):
+We are using {\tt enthalpy\_pred\_type} = 1 for now.  The force terms are:
 \begin{eqnarray}
 f_{\rho'} &=& -\rho'\nabla\cdot\Ub^{\mac} - \nabla\cdot(\rho_0\Ubt^{\mac}), \\
 f_{X_k} &=& 0, \\
-f_{(\rho h)'} &=& (\Ubt\cdot\eb_r)\frac{\partial p_0}{\partial r} -(\rho h)'\nabla\cdot\Ub^{\mac} - \nabla\cdot\left[(\rho h)_0\Ubt^{\mac}\right] + \nabla\cdot\kth\nabla T \\
-f_h &=& \frac{1}{\rho}\left(\psi + (\Ubt\cdot\eb_r)\frac{\partial p_0}{\partial r} + \nabla\cdot\kth\nabla T \right), \\
-f_T &=& \frac{1}{\rho c_p}\left\{(1-\rho h_p)\left[\psi + (\Ubt\cdot\eb_r)\frac{\partial p_0}{\partial r}\right] + \nabla\cdot\kth\nabla T \right\}. \\
+f_{(\rho h)'} &=& (\Ubt\cdot\eb_r)\frac{\partial p_0}{\partial r} -(\rho h)'\nabla\cdot\Ub^{\mac} - \nabla\cdot\left[(\rho h)_0\Ubt^{\mac}\right] + \nabla\cdot\kth\nabla T, \\
+%f_h &=& \frac{1}{\rho}\left(\psi + (\Ubt\cdot\eb_r)\frac{\partial p_0}{\partial r} + \nabla\cdot\kth\nabla T \right), \\
+%f_T &=& \frac{1}{\rho c_p}\left\{(1-\rho h_p)\left[\psi + (\Ubt\cdot\eb_r)\frac{\partial p_0}{\partial r}\right] + \nabla\cdot\kth\nabla T \right\}. \\
 \left(\begin{array}{c}
 f_u \\
 f_w \\
 \end{array}\right)
-&=& \frac{1}{\rho}\nabla\pi + \underbrace{\frac{1}{\rho_0}\frac{\partial\pi_0}{\partial r}\eb_r}_{\hbox{*}} - \frac{(\rho-\rho_0)}{\rho}g\eb_r.
+&=& -\frac{1}{\rho}\nabla\pi + \underbrace{\frac{1}{\rho_0}\frac{\partial\pi_0}{\partial r}\eb_r} - \frac{(\rho-\rho_0)}{\rho}g\eb_r.
 \end{eqnarray}
-*This term is only included if {\tt use\_new\_godunov = T}.  Note that 
-later this term is always included in the cell update.
+The underbraced term is only included if {\tt use\_new\_godunov = T}.
+Note that later this term is always included in the cell update.
 
 \newpage
 
 \subsection{2D Cartesian Case}
-We predict $s$ to r-faces using a 1D extrapolation:
+\begin{enumerate}
+\item Predict $s$ to r-faces using a 1D extrapolation.
+\item Predict $s$ to x-faces using a full-dimensional extrapolation.
+\item Predict $s$ to x-faces using a 1D extrapolation.
+\item Predict $s$ to r-faces using a full-dimensional extrapolation.
+\end{enumerate}
+Predict $s$ to r-faces using a 1D extrapolation:
 \begin{eqnarray}
 s_{L,\ib-\half\eb_r}^{1D} &=& s_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\half\eb_r}^{\mac}\right)\Delta_r s_{\ib-\eb_r}^n, \\
 s_{R,\ib-\half\eb_r}^{1D} &=& s_{\ib} - \left(\half + \frac{\dt}{2h}w_{\ib-\half\eb_r}^{\mac}\right)\Delta_r s_{\ib}^n.
 \end{eqnarray}
-Then we account for the $\partial w_0/\partial r$ term:\\ \\
+Account for the $\partial w_0/\partial r$ term:\\ \\
 {\bf if} {\tt use\_new\_godunov} {\bf and} {\tt is\_vel} {\bf and} {\tt comp} = 2 {\bf then}
 \begin{eqnarray}
 s_{L,\ib-\half\eb_r}^{1D} &=& s_{L,\ib-\half\eb_r}^{1D} - \frac{\dt}{2}\wt_{\ib-\eb_r}^n\left(\frac{\partial w_0}{\partial r}\right)_{\ib-\eb_r}, \\
 s_{R,\ib-\half\eb_r}^{1D} &=& s_{R,\ib-\half\eb_r}^{1D} - \frac{\dt}{2}\wt_{\ib}^n\left(\frac{\partial w_0}{\partial r}\right)_{\ib}.
 \end{eqnarray}
 {\bf end if}\\ \\
-Then we upwind based on $w^{\mac}$:
+Upwind based on $w^{\mac}$:
 \begin{equation}
 s_{\ib-\half\eb_r}^{1D} =
 \begin{cases}
@@ -406,12 +411,12 @@ s_{L,\ib-\half\eb_r}^{1D}, & w^{\mac}_{\ib-\half\eb_r} > 0, \\
 s_{R,\ib-\half\eb_r}^{1D}, & w^{\mac}_{\ib-\half\eb_r} < 0. \\
 \end{cases}
 \end{equation}
-We predict $s$ to x-faces using a full-dimensional extrapolation:
+Predict $s$ to x-faces using a full-dimensional extrapolation:
 \begin{eqnarray}
 s_{L,\ib-\half\eb_x}^{\edge} &=& s_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x s_{\ib-\eb_x}^n + \frac{\dt}{2}f_{\ib-\eb_x}^n \\
 s_{R,\ib-\half\eb_x}^{\edge} &=& s_{\ib}^n - \left(\half + \frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x s_{\ib}^n + \frac{\dt}{2}f_{\ib}^n 
 \end{eqnarray}
-We account for the transverse terms:\\ \\
+Account for the transverse terms:\\ \\
 {\bf if} {\tt is\_conservative} {\bf then}
 \begin{eqnarray}
 s_{L,\ib-\half\eb_x}^{\edge} &=& s_{L,\ib-\half\eb_x}^{\edge} -
@@ -438,7 +443,7 @@ s_{R,\ib-\half\eb_x}^{\edge} &=& s_{R,\ib-\half\eb_x}^{\edge} -
 \frac{\dt}{4h}\left(\wt^{\mac}_{\ib+\half\eb_r} + \wt^{\mac}_{\ib-\half\eb_r}\right)\left(w_{0,\ib+\half\eb_r}-w_{0,\ib-\half\eb_r}\right) \\
 \end{eqnarray}
 {\bf end if}\\ \\
-Then we upwind based on $u^{\mac}$.
+Upwind based on $u^{\mac}$.
 \begin{equation}
 s_{\ib-\half\eb_x}^{\edge} =
 \begin{cases}
@@ -447,12 +452,12 @@ s_{L,\ib-\half\eb_x}^{\edge}, & u^{\mac}_{\ib-\half\eb_x} > 0, \\
 s_{R,\ib-\half\eb_x}^{\edge}, & u^{\mac}_{\ib-\half\eb_x} < 0.
 \end{cases}
 \end{equation}
-We predict $s$ to x-faces using a 1D extrapolation:
+Predict $s$ to x-faces using a 1D extrapolation:
 \begin{eqnarray}
 s_{L,\ib-\half\eb_x}^{1D} &=& s_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x s_{\ib-\eb_x}^n, \\
 s_{R,\ib-\half\eb_x}^{1D} &=& s_{\ib} - \left(\half + \frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x s_{\ib}^n.
 \end{eqnarray}
-Then we upwind based on $u^{\mac}$:
+Upwind based on $u^{\mac}$:
 \begin{equation}
 s_{\ib-\half\eb_x}^{1D} =
 \begin{cases}
@@ -461,12 +466,12 @@ s_{L,\ib-\half\eb_x}^{1D}, & u^{\mac}_{\ib-\half\eb_x} > 0, \\
 s_{R,\ib-\half\eb_x}^{1D}, & u^{\mac}_{\ib-\half\eb_x} < 0. \\
 \end{cases}
 \end{equation}
-We predict $s$ to r-faces using a full-dimensional extrapolation:
+Predict $s$ to r-faces using a full-dimensional extrapolation:
 \begin{eqnarray}
 s_{L,\ib-\half\eb_r}^{\edge} &=&  s_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\half\eb_r}^{\mac}\right)\Delta_r s_{\ib-\eb_r}^n + \frac{\dt}{2}f_{\ib-\eb_r}^n \\
 s_{R,\ib-\half\eb_r}^{\edge} &=&  s_{\ib}^n - \left(\half + \frac{\dt}{2h}w_{\ib-\half\eb_r}^{\mac}\right)\Delta_r s_{\ib}^n + \frac{\dt}{2}f_{\ib}^n 
 \end{eqnarray}
-We account for the transverse terms:\\ \\
+Account for the transverse terms:\\ \\
 {\bf if} {\tt is\_conservative} {\bf then}
 \begin{eqnarray}
 s_{L,\ib-\half\eb_r}^{\edge} &=& s_{L,\ib-\half\eb_r}^{\edge} -
@@ -484,7 +489,7 @@ s_{R,\ib-\half\eb_r}^{\edge} &=& s_{R,\ib-\half\eb_r}^{\edge} -
 \frac{\dt}{4h}\left(u^{\mac}_{\ib+\half\eb_x} + u^{\mac}_{\ib-\half\eb_x}\right)\left(s^{1D}_{\ib+\half\eb_x} - s^{1D}_{\ib-\half\eb_x}\right)
 \end{eqnarray}
 {\bf end if}\\ \\
-We account for the $\partial w_0/\partial r$ term:\\ \\
+Account for the $\partial w_0/\partial r$ term:\\ \\
 {\bf if} {\tt is\_vel} {\bf and} {\tt comp} = 2 {\bf then}
 \begin{eqnarray}
 s_{L,\ib-\half\eb_r}^{\edge} &=& s_{L,\ib-\half\eb_r}^{\edge} - 
@@ -493,7 +498,7 @@ s_{R,\ib-\half\eb_r}^{\edge} &=& s_{R,\ib-\half\eb_r}^{\edge} -
 \frac{\dt}{4h}\left(\wt^{\mac}_{\ib+\half\eb_r} + \wt^{\mac}_{\ib-\half\eb_r}\right)\left(w_{0,\ib+\half\eb_r}-w_{0,\ib-\half\eb_r}\right) \\
 \end{eqnarray}
 {\bf end if}\\ \\
-Then we upwind based on $w^{\mac}$:
+Upwind based on $w^{\mac}$:
 \begin{equation}
 s_{\ib-\half\eb_r}^{1D} =
 \begin{cases}
@@ -506,7 +511,18 @@ u_{R,\ib-\half\eb_r}^{1D}, & w^{\mac}_{\ib-\half\eb_r} < 0. \\
 \newpage
 
 \subsection{3D Cartesian Case}
-Same as 2D with the older 3D corner coupling algorithm for the transverse terms.
+\begin{enumerate}
+\item Predict $s$ to y-faces using a 1D extrapolation.
+\item Predict $s$ to r-faces using a 1D extrapolation.
+\item Predict $s$ to x-faces using a full-dimensional extrapolation.
+\item Predict $s$ to x-faces using a 1D extrapolation.
+\item Predict $s$ to r-faces using a 1D extrapolation.
+\item Predict $s$ to y-faces using a full-dimensional extrapolation.
+\item Predict $s$ to x-faces using a 1D extrapolation.
+\item Predict $s$ to y-faces using a 1D extrapolation.
+\item Predict $s$ to r-faces using a full-dimensional extrapolation.
+\end{enumerate}
+We are not using corner coupling yet.
 
 \newpage
 
