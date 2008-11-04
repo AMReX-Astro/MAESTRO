@@ -199,7 +199,6 @@ contains
     use bc_module
     use slope_module
     use bl_constants_module
-    use probin_module, only: use_new_godunov
 
     integer        , intent(in   ) :: n,lo(:),hi(:),ng_s,ng_se,ng_um,ng_f
     real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :,:)
@@ -227,7 +226,7 @@ contains
     real(kind=dp_t) :: hx,hy,dth,splus,sminus
     real(kind=dp_t) :: savg,st
     real(kind=dp_t) :: sptop,spbot,smtop,smbot,splft,sprgt,smlft,smrgt
-    real(kind=dp_t) :: abs_eps,eps,umax,dw0drhi,dw0drlo,vtilde
+    real(kind=dp_t) :: abs_eps,eps,umax
 
     integer :: i,j,is,js,ie,je
 
@@ -271,22 +270,6 @@ contains
           spbot = s(i,j  ,comp) + (HALF - dth*vmac(i,j+1)/hy) * slopey(i,j  ,1)
           sptop = s(i,j+1,comp) - (HALF + dth*vmac(i,j+1)/hy) * slopey(i,j+1,1)
 
-          if (use_new_godunov .and. is_vel .and. comp .eq. 2) then
-
-             if (j .ne. nr(n)-1) then
-                dw0drhi = (w0(j+2)-w0(j+1))/dx(2)
-             else
-                dw0drhi = (w0(j+1)-w0(j))/dx(2)
-             end if
-             dw0drlo = (w0(j+1)-w0(j))/dx(2)
-
-             vtilde = vmac(i,j+1) - w0(j+1)
-
-             spbot = spbot - dth*vtilde*dw0drlo
-             sptop = sptop - dth*vtilde*dw0drhi
-
-          end if
-
           sptop = merge(s(i,je+1,comp),sptop,j.eq.je .and. phys_bc(2,2) .eq. INLET)
           spbot = merge(s(i,je+1,comp),spbot,j.eq.je .and. phys_bc(2,2) .eq. INLET)
 
@@ -309,22 +292,6 @@ contains
 
           smtop = s(i,j  ,comp) - (HALF + dth*vmac(i,j)/hy) * slopey(i,j  ,1)
           smbot = s(i,j-1,comp) + (HALF - dth*vmac(i,j)/hy) * slopey(i,j-1,1)
-
-          if (use_new_godunov .and. is_vel .and. comp .eq. 2) then
-
-             dw0drhi = (w0(j+1)-w0(j))/dx(2)
-             if (j .ne. 0) then
-                dw0drlo = (w0(j)-w0(j-1))/dx(2)
-             else
-                dw0drlo = (w0(j+1)-w0(j))/dx(2)
-             end if
-
-             vtilde = vmac(i,j) - w0(j)
-
-             smbot = smbot - dth*vtilde*dw0drlo
-             smtop = smtop - dth*vtilde*dw0drhi
-
-          end if
 
           smtop = merge(s(i,js-1,comp),smtop,j.eq.js .and. phys_bc(2,1) .eq. INLET)
           smbot = merge(s(i,js-1,comp),smbot,j.eq.js .and. phys_bc(2,1) .eq. INLET)
@@ -353,6 +320,7 @@ contains
              st = force(i,j,comp) - HALF * (vmac(i,j)+vmac(i,j+1))*(splus - sminus) / hy
           end if
 
+          ! add the (Utilde . e_r) d w_0 /dr e_r term here
           if (is_vel .and. comp .eq. 2) then
              ! vmac contains w0 so we need to subtract it off
              st = st - HALF * (vmac(i,j)+vmac(i,j+1)-w0(j+1)-w0(j))*(w0(j+1)-w0(j))/hy
@@ -513,7 +481,6 @@ contains
     use bc_module
     use slope_module
     use bl_constants_module
-    use probin_module, only: use_new_godunov
 
     integer        , intent(in   ) :: n,lo(:),hi(:),ng_s,ng_se,ng_um,ng_f,ng_w0,ng_n,ng_gw
     real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :,:)
@@ -551,7 +518,7 @@ contains
     real(kind=dp_t) :: hx,hy,hz,dth,splus,sminus
     real(kind=dp_t) :: savg,st
     real(kind=dp_t) :: sptop,spbot,smtop,smbot,splft,sprgt,smlft,smrgt
-    real(kind=dp_t) :: abs_eps,eps,umax,dw0drhi,dw0drlo,wtilde
+    real(kind=dp_t) :: abs_eps,eps,umax
 
     real(kind=dp_t) :: Ut_dot_er
 
@@ -660,22 +627,6 @@ contains
              spbot = s(i,j,k  ,comp) + (HALF - dth*wmac(i,j,k+1)/hz) * slopez(i,j,k  ,1)
              sptop = s(i,j,k+1,comp) - (HALF + dth*wmac(i,j,k+1)/hz) * slopez(i,j,k+1,1)
              
-             if (use_new_godunov .and. is_vel .and. comp .eq. 3 .and. spherical .eq. 0) then
-
-                if (k .ne. nr(n)-1) then
-                   dw0drhi = (w0(k+2)-w0(k+1))/dx(3)
-                else
-                   dw0drhi = (w0(k+1)-w0(k))/dx(3)
-                end if
-                dw0drlo = (w0(k+1)-w0(k))/dx(3)
-                
-                wtilde = wmac(i,j,k+1) - w0(k+1)
-                
-                spbot = spbot - dth*wtilde*dw0drlo
-                sptop = sptop - dth*wtilde*dw0drhi
-                
-             end if
-
              sptop = merge(s(i,j,ke+1,comp),sptop,k.eq.ke .and. phys_bc(3,2) .eq. INLET)
              spbot = merge(s(i,j,ke+1,comp),spbot,k.eq.ke .and. phys_bc(3,2) .eq. INLET)
                  
@@ -698,22 +649,6 @@ contains
                  
              smtop = s(i,j,k  ,comp) - (HALF + dth*wmac(i,j,k)/hz) * slopez(i,j,k  ,1)
              smbot = s(i,j,k-1,comp) + (HALF - dth*wmac(i,j,k)/hz) * slopez(i,j,k-1,1)
-
-             if (use_new_godunov .and. is_vel .and. comp .eq. 3 .and. spherical .eq. 0) then
-                
-                dw0drhi = (w0(k+1)-w0(k))/dx(3)
-                if (k .ne. 0) then
-                   dw0drlo = (w0(k)-w0(k-1))/dx(3)
-                else
-                   dw0drlo = (w0(k+1)-w0(k))/dx(3)
-                end if
-
-                wtilde = wmac(i,j,k) - w0(k)
-
-                smbot = smbot - dth*wtilde*dw0drlo
-                smtop = smtop - dth*wtilde*dw0drhi
-
-             end if
 
              smtop = merge(s(i,j,ks-1,comp),smtop,k.eq.ks .and. phys_bc(3,1) .eq. INLET)
              smbot = merge(s(i,j,ks-1,comp),smbot,k.eq.ks .and. phys_bc(3,1) .eq. INLET)
@@ -743,13 +678,12 @@ contains
              end if
 
              if (is_vel) then
+
                 ! add the (Utilde . e_r) d w_0 /dr e_r term here
-                
                 if (spherical .eq. 0 .and. comp .eq. 3) then
 
                    ! wmac contains w0 so we need to subtract it off
-                   st = st - HALF*(wmac(i,j,k)+wmac(i,j,k+1)-w0(k+1)-w0(k)) &
-                        * (w0(k+1)-w0(k)) / hz
+                   st = st-HALF*(wmac(i,j,k)+wmac(i,j,k+1)-w0(k+1)-w0(k))*(w0(k+1)-w0(k))/hz
 
                 else if (spherical .eq. 1) then
 
@@ -886,22 +820,6 @@ contains
              splft = s(i,j,k  ,comp) + (HALF - dth*wmac(i,j,k+1)/hz) * slopez(i,j,k  ,1)
              sprgt = s(i,j,k+1,comp) - (HALF + dth*wmac(i,j,k+1)/hz) * slopez(i,j,k+1,1)
 
-             if (use_new_godunov .and. is_vel .and. comp .eq. 3 .and. spherical .eq. 0) then
-
-                if (k .ne. nr(n)-1) then
-                   dw0drhi = (w0(k+2)-w0(k+1))/dx(3)
-                else
-                   dw0drhi = (w0(k+1)-w0(k))/dx(3)
-                end if
-                dw0drlo = (w0(k+1)-w0(k))/dx(3)
-                
-                wtilde = wmac(i,j,k+1) - w0(k+1)
-                
-                splft = splft - dth*wtilde*dw0drlo
-                sprgt = sprgt - dth*wtilde*dw0drhi
-                
-             end if
-
              sprgt = merge(s(i,j,ke+1,comp),sprgt,k.eq.ke .and. phys_bc(3,2) .eq. INLET)
              splft = merge(s(i,j,ke+1,comp),splft,k.eq.ke .and. phys_bc(3,2) .eq. INLET)
                  
@@ -925,22 +843,6 @@ contains
              smrgt = s(i,j,k  ,comp) - (HALF + dth*wmac(i,j,k)/hz) * slopez(i,j,k  ,1)
              smlft = s(i,j,k-1,comp) + (HALF - dth*wmac(i,j,k)/hz) * slopez(i,j,k-1,1)
 
-             if (use_new_godunov .and. is_vel .and. comp .eq. 3 .and. spherical .eq. 0) then
-                
-                dw0drhi = (w0(k+1)-w0(k))/dx(3)
-                if (k .ne. 0) then
-                   dw0drlo = (w0(k)-w0(k-1))/dx(3)
-                else
-                   dw0drlo = (w0(k+1)-w0(k))/dx(3)
-                end if
-
-                wtilde = wmac(i,j,k) - w0(k)
-
-                smrgt = smrgt - dth*wtilde*dw0drlo
-                smlft = smlft - dth*wtilde*dw0drhi
-
-             end if
-
              smrgt = merge(s(i,j,ks-1,comp),smrgt,k.eq.ks .and. phys_bc(3,1) .eq. INLET)
              smlft = merge(s(i,j,ks-1,comp),smlft,k.eq.ks .and. phys_bc(3,1) .eq. INLET)
              
@@ -963,19 +865,18 @@ contains
                  
              if (is_conservative) then
                 st = st - ( wmac(i,j,k+1)*splus-wmac(i,j,k)*sminus ) / hz &
-                  - s(i,j,k,comp)*(vmac(i,j+1,k)-vmac(i,j,k)) / hy
+                     - s(i,j,k,comp)*(vmac(i,j+1,k)-vmac(i,j,k)) / hy
              else
                 st = st - HALF * (wmac(i,j,k)+wmac(i,j,k+1))*(splus - sminus) / hz
              end if
 
              if (is_vel) then
+
                 ! add the (Utilde . e_r) d w_0 /dr e_r term here
-                
                 if (spherical .eq. 0 .and. comp .eq. 3) then
 
                    ! wmac contains w0 so we need to subtract it off
-                   st = st - HALF*(wmac(i,j,k)+wmac(i,j,k+1)-w0(k+1)-w0(k)) &
-                        * (w0(k+1)-w0(k)) / hz
+                   st = st-HALF*(wmac(i,j,k)+wmac(i,j,k+1)-w0(k+1)-w0(k))*(w0(k+1)-w0(k))/hz
 
                 else if (spherical .eq. 1) then
 
@@ -1164,14 +1065,16 @@ contains
              end if
 
              if (is_vel) then
+
                 ! add the (Utilde . e_r) d w_0 /dr e_r term here
-                
                 if (spherical .eq. 0 .and. comp .eq. 3) then
 
                    ! wmac contains w0 so we need to subtract it off
                    if (k .ge. 0 .and. k .le. nr(n)-1) then
-                      st = st - HALF*(wmac(i,j,k)+wmac(i,j,k+1)-w0(k+1)-w0(k)) &
-                           * (w0(k+1)-w0(k)) / hz
+                      st = st - &
+                           HALF*(wmac(i,j,k)+wmac(i,j,k+1)-w0(k+1)-w0(k))*(w0(k+1)-w0(k))/hz
+                   else
+                      ! dw0/dr=0 and therefore st is unchanged
                    end if
 
                 else if (spherical .eq. 1) then
