@@ -438,6 +438,8 @@ contains
              ! vmac contains w0 so we need to subtract it off
              if (j .ge. 0 .and. j .le. nr(n)-1) then
                 st = st - HALF * (vmac(i,j)+vmac(i,j+1)-w0(j+1)-w0(j))*(w0(j+1)-w0(j))/hy
+             else
+                ! dw0/dr=0 and therefore st is unchanged
              end if
           end if
           
