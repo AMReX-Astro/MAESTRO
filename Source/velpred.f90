@@ -382,7 +382,7 @@ contains
           savg = HALF*(s_b(j) + s_t(j))
           test = ( (s_b(j)+w0(j) .le. ZERO .and. s_t(j)+w0(j) .ge. ZERO) &
                .or. (abs(s_b(j) + s_t(j) + TWO*w0(j)) .lt. eps) )
-          vmac(i,j)=merge(s_b(j),s_t(j),savg+TWO*w0(j).gt.ZERO)
+          vmac(i,j)=merge(s_b(j),s_t(j),savg+w0(j).gt.ZERO)
           vmac(i,j)=merge(savg,vmac(i,j),test)
        enddo
 
@@ -1012,7 +1012,7 @@ contains
                 savg = HALF*(s_d(k) + s_u(k))
                 test = ( (s_d(k)+w0macz(i,j,k).le.ZERO.and.s_u(k)+w0macz(i,j,k).ge.ZERO) &
                      .or. (abs(s_d(k)+s_u(k)+TWO*w0macz(i,j,k)).lt.eps) )
-                wmac(i,j,k)=merge(s_d(k),s_u(k),savg+TWO*w0macz(i,j,k).gt.ZERO)
+                wmac(i,j,k)=merge(s_d(k),s_u(k),savg+w0macz(i,j,k).gt.ZERO)
                 wmac(i,j,k)=merge(savg,wmac(i,j,k),test)
              enddo
           else
@@ -1020,7 +1020,7 @@ contains
                 savg = HALF*(s_d(k) + s_u(k))
                 test = ( (s_d(k)+w0(k).le.ZERO.and.s_u(k)+w0(k).ge.ZERO) &
                      .or. (abs(s_d(k)+s_u(k)+TWO*w0(k)).lt.eps) )
-                wmac(i,j,k)=merge(s_d(k),s_u(k),savg+TWO*w0(k).gt.ZERO)
+                wmac(i,j,k)=merge(s_d(k),s_u(k),savg+w0(k).gt.ZERO)
                 wmac(i,j,k)=merge(savg,wmac(i,j,k),test)
              enddo
           end if
