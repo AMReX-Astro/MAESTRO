@@ -61,17 +61,18 @@ it thermodynamically consistent on non-finest cells.  We will enforce
 these on the base state and full state later.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{figure}[tpb]
-\begin{center}
-\epsffile{\figpath/multilevel_init.eps}
+\centering
+\includegraphics[width=0.4in]{\figpath/multilevel_init}\hspace{0.2in}
+\begin{minipage}[b]{5.0in}
 \caption{Multilevel Initialization.  The data from the initial model
   is represented by the dots on the right.  The initial data at the
   finest level is represented by the circles.  The initial data at
   non-finest levels is represented by the squares.  We copy data from
   the dots directly into the circles.  We use linear interpolation
   using the two nearest points to copy data from the dots to the
-  squares.}
+  squares.\vspace{2em}}
+\end{minipage}
 \label{Fig:Multilevel Initialization}
-\end{center}
 \end{figure}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
