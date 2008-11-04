@@ -234,14 +234,14 @@ contains
     ! Loop for edge states on x-edges.
     !********************************
 
-    do j = js,je 
-       do i = is-1,ie+1 
+    do j = js,je
+       do i = is-1,ie+1
 
           vlo = u(i,j,2) + HALF * (w0(j)+w0(j+1))
-          if (j .ne. nr(n)-1) then
-             vhi = u(i,j+1,2) + HALF * (w0(j+1)+w0(j+2))
-          else
+          if (j .eq. nr(n)-1) then
              vhi = u(i,j+1,2) + w0(j+1)
+          else
+             vhi = u(i,j+1,2) + HALF * (w0(j+1)+w0(j+2))
           end if
 
           spbot = u(i,j  ,1) + (HALF - dth*max(ZERO,vlo)/hy) * slopey(i,j  ,1)
@@ -259,10 +259,10 @@ contains
           savg  = HALF * (spbot + sptop)
           splus = merge(splus, savg, abs(vtrans(i,j+1)) .gt. eps)
 
-          if (j .ne. 0) then
-             vlo = u(i,j-1,2) + HALF * (w0(j-1)+w0(j  ))
-          else
+          if (j .eq. 0) then
              vlo = u(i,j-1,2) + w0(j)
+          else
+             vlo = u(i,j-1,2) + HALF * (w0(j-1)+w0(j))
           end if
           vhi = u(i,j  ,2) + HALF * (w0(j  )+w0(j+1))
 
@@ -292,7 +292,7 @@ contains
        enddo
 
        ! upwind based on u
-       do i = is, ie+1 
+       do i = is,ie+1 
           savg = HALF*(s_r(i) + s_l(i))
           test = ( (s_l(i).le.ZERO.and.s_r(i).ge.ZERO) .or. (abs(s_l(i)+s_r(i)).lt.eps) )
           umac(i,j)=merge(s_l(i),s_r(i),savg.gt.ZERO)
@@ -320,8 +320,8 @@ contains
     ! Loop for edge states on y-edges.
     !********************************
 
-    do i = is, ie 
-       do j = js-1, je+1 
+    do i = is,ie 
+       do j = js-1,je+1
 
           splft = u(i,j  ,2) + (HALF - dth*max(ZERO,u(i  ,j,1))/hx)*slopex(i  ,j,2)
           sprgt = u(i+1,j,2) - (HALF + dth*min(ZERO,u(i+1,j,1))/hx)*slopex(i+1,j,2)
@@ -356,15 +356,20 @@ contains
 
           st = force(i,j,2) - HALF * (utrans(i,j)+utrans(i+1,j))*(splus - sminus) / hx
 
-          ! vtrans contains w0 so we need to subtract it off
+          ! add the (Utilde . e_r) d w_0 /dr e_r term here
           if (j .ge. 0 .and. j .le. nr(n)-1) then
+             ! vtrans contains w0 so we need to subtract it off
              st = st - HALF * (vtrans(i,j)+vtrans(i,j+1)-w0(j+1)-w0(j))*(w0(j+1)-w0(j))/hy
+          else
+             ! dw0/dr=0 and therefore st is unchanged
           end if
 
-          if (j .ge. 0 .and. j .le. nr(n)-1) then
-             vbardth = dth / hy * ( u(i,j,2) + HALF * (w0(j)+w0(j+1)) )
+          if (j .lt. 0) then
+             vbardth = dth / hy * ( u(i,j,2) + w0(j+1) )
+          else if (j .gt. nr(n)-1) then
+             vbardth = dth / hy * ( u(i,j,2) + w0(j) )
           else
-             vbardth = dth / hy * u(i,j,2) 
+             vbardth = dth / hy * ( u(i,j,2) + HALF * (w0(j)+w0(j+1)) )
           end if
 
           s_b(j+1)= u(i,j,2) + (HALF-max(ZERO,vbardth))*slopey(i,j,2) + dth*st
@@ -559,10 +564,10 @@ contains
                 wlo = u(i,j,k  ,3) + HALF*(w0macz(i,j,k  )+w0macz(i,j,k+1))
              else
                 wlo = u(i,j,k,3) + HALF * (w0(k)+w0(k+1))
-                if (k .ne. nr(n)-1) then
-                   whi = u(i,j,k+1,3) + HALF* (w0(k+1)+w0(k+2))
-                else
+                if (k .eq. nr(n)-1) then
                    whi = u(i,j,k+1,3) + w0(k+1)
+                else
+                   whi = u(i,j,k+1,3) + HALF* (w0(k+1)+w0(k+2))
                 end if
              end if
 
@@ -587,10 +592,10 @@ contains
                 whi = u(i,j,k  ,3) + HALF*(w0macz(i,j,k  )+w0macz(i,j,k+1))
                 wlo = u(i,j,k-1,3) + HALF*(w0macz(i,j,k-1)+w0macz(i,j,k  ))
              else
-                if (k .ne. 0) then
-                   wlo = u(i,j,k-1,3) + HALF* (w0(k-1)+w0(k))
-                else
+                if (k .eq. 0) then
                    wlo = u(i,j,k-1,3) + w0(k)
+                else
+                   wlo = u(i,j,k-1,3) + HALF* (w0(k-1)+w0(k))
                 end if
                 whi = u(i,j,k,3) + HALF* (w0(k)+w0(k+1))
              end if
@@ -734,10 +739,10 @@ contains
              else
 
                 wlo = u(i,j,k,3) + HALF* (w0(k)+w0(k+1))
-                if (k .ne. nr(n)-1) then
-                   whi = u(i,j,k+1,3) + HALF* (w0(k+1)+w0(k+2))
-                else
+                if (k .eq. nr(n)-1) then
                    whi = u(i,j,k+1,3) + w0(k+1)
+                else
+                   whi = u(i,j,k+1,3) + HALF* (w0(k+1)+w0(k+2))
                 end if
 
              end if
@@ -764,10 +769,10 @@ contains
                 wlo = u(i,j,k-1,3) + HALF*(w0macz(i,j,k-1)+w0macz(i,j,k  ))
              else
 
-                if (k .ne. 0) then
-                   wlo = u(i,j,k-1,3) + HALF* (w0(k-1)+w0(k))
-                else
+                if (k .eq. 0) then
                    wlo = u(i,j,k-1,3) + w0(k)
+                else
+                   wlo = u(i,j,k-1,3) + HALF* (w0(k-1)+w0(k))
                 end if
                 whi = u(i,j,k,3) + HALF* (w0(k)+w0(k+1))
 
@@ -962,9 +967,12 @@ contains
              ! add the (Utilde . e_r) d w_0 /dr e_r term here
              if (spherical .eq. 0) then
 
+                ! wtrans contains w0 so we need to subtract it off
                 if (k .ge. 0 .and. k .le. nr(n)-1) then
-                   st = st - HALF* &
+                   st = st - HALF * &
                         (wtrans(i,j,k)+wtrans(i,j,k+1)-w0(k+1)-w0(k))*(w0(k+1)-w0(k)) / hz
+                else
+                   ! dw0/dr=0 and therefore st is unchanged
                 end if
 
              else if (spherical .eq. 1) then
@@ -984,10 +992,12 @@ contains
              if (spherical .eq. 1) then
                 wbardth = dth/hz * ( u(i,j,k,3) + HALF*(w0macz(i,j,k)+w0macz(i,j,k+1)) )
              else
-                if (k .ge. 0 .and. k .le. nr(n)-1) then
-                   wbardth = dth/hz * ( u(i,j,k,3) + HALF*(w0(k)+w0(k+1)) )
+                if (k .lt. 0) then
+                   wbardth = dth/hz * ( u(i,j,k,3) + w0(k+1) )
+                else if(k .gt. nr(n)-1) then
+                   wbardth = dth/hz * ( u(i,j,k,3) + w0(k) )
                 else
-                   wbardth = dth/hz * u(i,j,k,3)
+                   wbardth = dth/hz * ( u(i,j,k,3) + HALF*(w0(k)+w0(k+1)) )
                 end if
              end if
 
