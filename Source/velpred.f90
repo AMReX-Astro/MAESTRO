@@ -218,7 +218,7 @@ contains
        umax = max(umax,abs(utrans(i,j)))
     end do; end do
     do j = js,je+1; do i = is,ie
-       umax = max(umax,abs(vtrans(i,j)))
+       umax = max(umax,abs(vtrans(i,j)+w0(j)))
     end do; end do
 
     if (umax .eq. 0.d0) then
@@ -255,9 +255,10 @@ contains
              spbot = merge(ZERO,spbot,phys_bc(2,2).eq.NO_SLIP_WALL)
           endif
 
-          splus = merge(spbot,sptop,vtrans(i,j+1).gt.ZERO)
+          ! upwind based on full vtrans
+          splus = merge(spbot,sptop,vtrans(i,j+1)+w0(j+1).gt.ZERO)
           savg  = HALF * (spbot + sptop)
-          splus = merge(splus, savg, abs(vtrans(i,j+1)) .gt. eps)
+          splus = merge(splus, savg, abs(vtrans(i,j+1)+w0(j+1)) .gt. eps)
 
           if (j .eq. 0) then
              vlo = u(i,j-1,2) + w0(j)
@@ -277,12 +278,12 @@ contains
              smtop = merge(ZERO,smtop,phys_bc(2,1).eq.NO_SLIP_WALL)
           endif
 
-          ! upwind based on vtrans
-          sminus = merge(smbot,smtop,vtrans(i,j).gt.ZERO)
+          ! upwind based on full vtrans
+          sminus = merge(smbot,smtop,vtrans(i,j)+w0(j).gt.ZERO)
           savg   = HALF * (smbot + smtop)
-          sminus = merge(sminus, savg, abs(vtrans(i,j)) .gt. eps)
+          sminus = merge(sminus, savg, abs(vtrans(i,j)+w0(j)) .gt. eps)
 
-          st = force(i,j,1) - HALF * (vtrans(i,j)+vtrans(i,j+1))*(splus - sminus) / hy
+          st = force(i,j,1)-HALF*(vtrans(i,j)+w0(j)+vtrans(i,j+1)+w0(j+1))*(splus-sminus) / hy
 
           ubardth = dth*u(i,j,1)/hx
 
@@ -291,7 +292,7 @@ contains
 
        enddo
 
-       ! upwind based on u
+       ! upwind based on umac
        do i = is,ie+1 
           savg = HALF*(s_r(i) + s_l(i))
           test = ( (s_l(i).le.ZERO.and.s_r(i).ge.ZERO) .or. (abs(s_l(i)+s_r(i)).lt.eps) )
@@ -334,6 +335,7 @@ contains
              splft = merge(ZERO,splft,phys_bc(1,2).eq.NO_SLIP_WALL)
           endif
 
+          ! upwind based on utrans
           splus = merge(splft,sprgt,utrans(i+1,j).gt.ZERO)
           savg  = HALF * (splft + sprgt)
           splus = merge(splus, savg, abs(utrans(i+1,j)) .gt. eps)
@@ -358,8 +360,7 @@ contains
 
           ! add the (Utilde . e_r) d w_0 /dr e_r term here
           if (j .ge. 0 .and. j .le. nr(n)-1) then
-             ! vtrans contains w0 so we need to subtract it off
-             st = st - HALF * (vtrans(i,j)+vtrans(i,j+1)-w0(j+1)-w0(j))*(w0(j+1)-w0(j))/hy
+             st = st - HALF * (vtrans(i,j)+vtrans(i,j+1))*(w0(j+1)-w0(j))/hy
           else
              ! dw0/dr=0 and therefore st is unchanged
           end if
@@ -377,7 +378,7 @@ contains
 
        enddo
 
-       ! upwind based on w, not wtilde
+       ! upwind based on full vmac
        do j = js, je+1 
           savg = HALF*(s_b(j) + s_t(j))
           test = ( (s_b(j)+w0(j) .le. ZERO .and. s_t(j)+w0(j) .ge. ZERO) &
@@ -473,17 +474,29 @@ contains
     hy = dx(2)
     hz = dx(3)
 
-    umax = abs(utrans(is,js,ks))
-
-    do k = ks,ke; do j = js,je; do i = is,ie+1
-       umax = max(umax,abs(utrans(i,j,k)))
-    end do; end do; end do
-    do k = ks,ke; do j = js,je+1; do i = is,ie
-       umax = max(umax,abs(vtrans(i,j,k)))
-    end do; end do; end do
-    do k = ks,ke+1; do j = js,je; do i = is,ie
-       umax = max(umax,abs(wtrans(i,j,k)))
-    end do; end do; end do
+    if (spherical .eq. 1) then
+       umax = abs(utrans(is,js,ks)+w0macx(is,js,ks))
+       do k = ks,ke; do j = js,je; do i = is,ie+1
+          umax = max(umax,abs(utrans(i,j,k)+w0macx(i,j,k)))
+       end do; end do; end do
+       do k = ks,ke; do j = js,je+1; do i = is,ie
+          umax = max(umax,abs(vtrans(i,j,k)+w0macy(i,j,k)))
+       end do; end do; end do
+       do k = ks,ke+1; do j = js,je; do i = is,ie
+          umax = max(umax,abs(wtrans(i,j,k)+w0macz(i,j,k)))
+       end do; end do; end do
+    else
+       umax = abs(utrans(is,js,ks))
+       do k = ks,ke; do j = js,je; do i = is,ie+1
+          umax = max(umax,abs(utrans(i,j,k)))
+       end do; end do; end do
+       do k = ks,ke; do j = js,je+1; do i = is,ie
+          umax = max(umax,abs(vtrans(i,j,k)))
+       end do; end do; end do
+       do k = ks,ke+1; do j = js,je; do i = is,ie
+          umax = max(umax,abs(wtrans(i,j,k)+w0(k)))
+       end do; end do; end do
+    end if
 
     if (umax .eq. 0.d0) then
        eps = abs_eps
@@ -526,10 +539,16 @@ contains
                 spbot = merge(ZERO,spbot,phys_bc(2,2).eq.NO_SLIP_WALL)
              endif
 
-             ! upwind based on vtrans
-             splus = merge(spbot,sptop,vtrans(i,j+1,k).gt.ZERO)
-             savg  = HALF * (spbot + sptop)
-             splus = merge(splus, savg, abs(vtrans(i,j+1,k)) .gt. eps)
+             ! upwind based on full vtrans
+             if (spherical .eq. 1) then
+                splus = merge(spbot,sptop,vtrans(i,j+1,k)+w0macy(i,j+1,k).gt.ZERO)
+                savg  = HALF * (spbot + sptop)
+                splus = merge(splus, savg, abs(vtrans(i,j+1,k)+w0macy(i,j+1,k)) .gt. eps)
+             else
+                splus = merge(spbot,sptop,vtrans(i,j+1,k).gt.ZERO)
+                savg  = HALF * (spbot + sptop)
+                splus = merge(splus, savg, abs(vtrans(i,j+1,k)) .gt. eps)
+             end if
 
              if (spherical .eq. 1) then
                 vlo = u(i,j-1,k,2) + HALF*(w0macy(i,j-1,k)+w0macy(i,j  ,k))
@@ -551,12 +570,24 @@ contains
                 smtop = merge(ZERO,smtop,phys_bc(2,1).eq.NO_SLIP_WALL)
              endif
 
-             ! upwind based on vtrans
-             sminus = merge(smbot,smtop,vtrans(i,j,k).gt.ZERO)
-             savg   = HALF * (smbot + smtop)
-             sminus = merge(sminus, savg, abs(vtrans(i,j,k)) .gt. eps)
+             ! upwind based on full vtrans
+             if (spherical .eq. 1) then
+                sminus = merge(smbot,smtop,vtrans(i,j,k)+w0macy(i,j,k).gt.ZERO)
+                savg   = HALF * (smbot + smtop)
+                sminus = merge(sminus, savg, abs(vtrans(i,j,k)+w0macy(i,j,k)) .gt. eps)
+             else
+                sminus = merge(smbot,smtop,vtrans(i,j,k).gt.ZERO)
+                savg   = HALF * (smbot + smtop)
+                sminus = merge(sminus, savg, abs(vtrans(i,j,k)) .gt. eps)
+             end if
 
-             st = force(i,j,k,1) - HALF * (vtrans(i,j,k)+vtrans(i,j+1,k))*(splus-sminus) / hy
+             if (spherical .eq. 1) then
+                st = force(i,j,k,1) - HALF &
+                     * (vtrans(i,j,k)+w0macy(i,j,k)+vtrans(i,j+1,k)+w0macy(i,j+1,k)) &
+                     * (splus-sminus) / hy
+             else
+                st = force(i,j,k,1)-HALF*(vtrans(i,j,k)+vtrans(i,j+1,k))*(splus-sminus) / hy
+             end if
 
              ! Do transverse in k direction
              if (spherical .eq. 1) then
@@ -583,10 +614,16 @@ contains
                 spbot = merge(ZERO,spbot,phys_bc(3,2).eq.NO_SLIP_WALL)
              endif
 
-             ! upwind based on wtrans
-             splus = merge(spbot,sptop,wtrans(i,j,k+1).gt.ZERO)
-             savg  = HALF * (spbot + sptop)
-             splus = merge(splus, savg, abs(wtrans(i,j,k+1)) .gt. eps)
+             ! upwind based on full wtrans
+             if (spherical .eq. 1) then
+                splus = merge(spbot,sptop,wtrans(i,j,k+1)+w0macz(i,j,k+1).gt.ZERO)
+                savg  = HALF * (spbot + sptop)
+                splus = merge(splus, savg, abs(wtrans(i,j,k+1)+w0macz(i,j,k+1)) .gt. eps)
+             else
+                splus = merge(spbot,sptop,wtrans(i,j,k+1)+w0(k+1).gt.ZERO)
+                savg  = HALF * (spbot + sptop)
+                splus = merge(splus, savg, abs(wtrans(i,j,k+1)+w0(k+1)) .gt. eps)
+             end if
 
              if (spherical .eq. 1) then
                 whi = u(i,j,k  ,3) + HALF*(w0macz(i,j,k  )+w0macz(i,j,k+1))
@@ -612,23 +649,33 @@ contains
                 smtop = merge(ZERO,smtop,phys_bc(3,1).eq.NO_SLIP_WALL)
              endif
 
-             ! upwind based on wtrans
-             sminus = merge(smbot,smtop,wtrans(i,j,k).gt.ZERO)
-             savg   = HALF * (smbot + smtop)
-             sminus = merge(sminus, savg, abs(wtrans(i,j,k)) .gt. eps)
+             ! upwind based on full wtrans
+             if (spherical .eq. 1) then
+                sminus = merge(smbot,smtop,wtrans(i,j,k)+w0macz(i,j,k).gt.ZERO)
+                savg   = HALF * (smbot + smtop)
+                sminus = merge(sminus, savg, abs(wtrans(i,j,k)+w0macz(i,j,k)) .gt. eps)
+             else
+                sminus = merge(smbot,smtop,wtrans(i,j,k)+w0(k).gt.ZERO)
+                savg   = HALF * (smbot + smtop)
+                sminus = merge(sminus, savg, abs(wtrans(i,j,k)+w0(k)) .gt. eps)
+             end if
 
-             st = st - HALF * (wtrans(i,j,k)+wtrans(i,j,k+1))*(splus-sminus) / hz
+             if (spherical .eq. 1) then
+                st = st - HALF &
+                     * (wtrans(i,j,k)+w0macz(i,j,k)+wtrans(i,j,k+1)+w0macz(i,j,k+1))&
+                     * (splus-sminus) / hz
+             else
+                st = st - HALF &
+                     * (wtrans(i,j,k)+w0(k)+wtrans(i,j,k+1)+w0(k+1)) &
+                     * (splus-sminus) / hz
+             end if
 
              ! add the (Utilde . e_r) d w_0 /dr e_r term here
              if (spherical .eq. 1) then
 
-                ! u/v/wtrans contain w0, so we need to subtract it off.  
-                Ut_dot_er = (HALF*(utrans(i,j,k) + utrans(i+1,j,k)) - &
-                             HALF*(w0macx(i,j,k) + w0macx(i+1,j,k))*normal(i,j,k,1)) + &
-                            (HALF*(vtrans(i,j,k) + vtrans(i,j+1,k)) - &
-                             HALF*(w0macy(i,j,k) + w0macy(i,j+1,k))*normal(i,j,k,2)) + &
-                            (HALF*(wtrans(i,j,k) + wtrans(i,j,k+1)) - &
-                             HALF*(w0macz(i,j,k) + w0macz(i,j,k+1))*normal(i,j,k,3))
+                Ut_dot_er = HALF*(utrans(i,j,k) + utrans(i+1,j,k))*normal(i,j,k,1) + &
+                            HALF*(vtrans(i,j,k) + vtrans(i,j+1,k))*normal(i,j,k,2) + &
+                            HALF*(wtrans(i,j,k) + wtrans(i,j,k+1))*normal(i,j,k,3)
 
                 st = st - Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,1)
 
@@ -645,7 +692,7 @@ contains
 
           enddo
 
-          ! upwind based on u
+          ! upwind based on full umac
           do i = is, ie+1 
              savg = HALF*(s_r(i) + s_l(i))
              test = ( (s_l(i).le.ZERO.and.s_r(i).ge.ZERO) .or. (abs(s_l(i)+s_r(i)).lt.eps) )
@@ -700,10 +747,16 @@ contains
                 splft = merge(ZERO,splft,phys_bc(1,2).eq.NO_SLIP_WALL)
              endif
 
-             ! upwind based on utrans
-             splus = merge(splft,sprgt,utrans(i+1,j,k).gt.ZERO)
-             savg  = HALF * (splft + sprgt)
-             splus = merge(splus, savg, abs(utrans(i+1,j,k)) .gt. eps)
+             ! upwind based on full utrans
+             if (spherical .eq. 1) then
+                splus = merge(splft,sprgt,utrans(i+1,j,k)+w0macx(i+1,j,k).gt.ZERO)
+                savg  = HALF * (splft + sprgt)
+                splus = merge(splus, savg, abs(utrans(i+1,j,k)+w0macx(i+1,j,k)) .gt. eps)
+             else
+                splus = merge(splft,sprgt,utrans(i+1,j,k).gt.ZERO)
+                savg  = HALF * (splft + sprgt)
+                splus = merge(splus, savg, abs(utrans(i+1,j,k)) .gt. eps)
+             end if
 
              if (spherical .eq. 1) then
                 ulo = u(i-1,j,k,1) + HALF*(w0macx(i-1,j,k)+w0macx(i  ,j,k))
@@ -725,12 +778,24 @@ contains
                 smrgt = merge(ZERO,smrgt,phys_bc(1,1).eq.NO_SLIP_WALL)
              endif
 
-             ! upwind based on utrans
-             sminus = merge(smlft,smrgt,utrans(i,j,k).gt.ZERO)
-             savg   = HALF * (smlft + smrgt)
-             sminus = merge(sminus, savg, abs(utrans(i,j,k)) .gt. eps)
+             ! upwind based on full utrans
+             if (spherical .eq. 1) then
+                sminus = merge(smlft,smrgt,utrans(i,j,k)+w0macx(i,j,k).gt.ZERO)
+                savg   = HALF * (smlft + smrgt)
+                sminus = merge(sminus, savg, abs(utrans(i,j,k)+w0macx(i,j,k)) .gt. eps)
+             else
+                sminus = merge(smlft,smrgt,utrans(i,j,k).gt.ZERO)
+                savg   = HALF * (smlft + smrgt)
+                sminus = merge(sminus, savg, abs(utrans(i,j,k)) .gt. eps)
+             end if
 
-             st = force(i,j,k,2) - HALF * (utrans(i,j,k)+utrans(i+1,j,k))*(splus-sminus) / hx
+             if (spherical .eq. 1) then
+                st = force(i,j,k,2) - HALF &
+                     * (utrans(i,j,k)+w0macx(i,j,k)+utrans(i+1,j,k)+w0macx(i+1,j,k)) &
+                     * (splus-sminus) / hx
+             else
+                st = force(i,j,k,2) - HALF*(utrans(i,j,k)+utrans(i+1,j,k))*(splus-sminus) / hx
+             end if
 
              ! Do transverse in k direction
              if (spherical .eq. 1) then
@@ -759,10 +824,16 @@ contains
                 splft = merge(ZERO,splft,phys_bc(3,2).eq.NO_SLIP_WALL)
              endif
 
-             ! upwind based on wtrans
-             splus = merge(splft,sprgt,wtrans(i,j,k+1).gt.ZERO)
-             savg  = HALF * (splft + sprgt)
-             splus = merge(splus, savg, abs(wtrans(i,j,k+1)) .gt. eps)
+             ! upwind based on full wtrans
+             if (spherical .eq. 1) then
+                splus = merge(splft,sprgt,wtrans(i,j,k+1)+w0macz(i,j,k+1).gt.ZERO)
+                savg  = HALF * (splft + sprgt)
+                splus = merge(splus, savg, abs(wtrans(i,j,k+1)+w0macz(i,j,k+1)) .gt. eps)
+             else
+                splus = merge(splft,sprgt,wtrans(i,j,k+1)+w0(k+1).gt.ZERO)
+                savg  = HALF * (splft + sprgt)
+                splus = merge(splus, savg, abs(wtrans(i,j,k+1)+w0(k+1)) .gt. eps)
+             end if
 
              if (spherical .eq. 1) then
                 whi = u(i,j,k  ,3) + HALF*(w0macz(i,j,k  )+w0macz(i,j,k+1))
@@ -790,23 +861,33 @@ contains
                 smrgt = merge(ZERO,smrgt,phys_bc(1,1).eq.NO_SLIP_WALL)
              endif
 
-             ! upwind based on wtrans
-             sminus = merge(smlft,smrgt,wtrans(i,j,k).gt.ZERO)
-             savg   = HALF * (smlft + smrgt)
-             sminus = merge(sminus, savg, abs(wtrans(i,j,k)) .gt. eps)
+             ! upwind based on full wtrans
+             if (spherical .eq. 1) then
+                sminus = merge(smlft,smrgt,wtrans(i,j,k)+w0macz(i,j,k).gt.ZERO)
+                savg   = HALF * (smlft + smrgt)
+                sminus = merge(sminus, savg, abs(wtrans(i,j,k)+w0macz(i,j,k)) .gt. eps)
+             else
+                sminus = merge(smlft,smrgt,wtrans(i,j,k)+w0(k).gt.ZERO)
+                savg   = HALF * (smlft + smrgt)
+                sminus = merge(sminus, savg, abs(wtrans(i,j,k)+w0(k)) .gt. eps)
+             end if
 
-             st = st - HALF * (wtrans(i,j,k)+wtrans(i,j,k+1))*(splus-sminus) / hz
+             if (spherical .eq. 1) then
+                st = st - HALF &
+                     * (wtrans(i,j,k)+w0macz(i,j,k)+wtrans(i,j,k+1)+w0macz(i,j,k+1)) &
+                     * (splus-sminus) / hz
+             else
+                st = st - HALF &
+                     * (wtrans(i,j,k)+w0(k)+wtrans(i,j,k+1)+w0(k+1)) &
+                     * (splus-sminus) / hz
+             end if
 
              ! add the (Utilde . e_r) d w_0 /dr e_r term here
              if (spherical .eq. 1) then
 
-                ! u/v/wtrans contain w0, so we need to subtract it off.  
-                Ut_dot_er = (HALF*(utrans(i,j,k) + utrans(i+1,j,k)) - &
-                             HALF*(w0macx(i,j,k) + w0macx(i+1,j,k))*normal(i,j,k,1)) + &
-                            (HALF*(vtrans(i,j,k) + vtrans(i,j+1,k)) - &
-                             HALF*(w0macy(i,j,k) + w0macy(i,j+1,k))*normal(i,j,k,2)) + &
-                            (HALF*(wtrans(i,j,k) + wtrans(i,j,k+1)) - &
-                             HALF*(w0macz(i,j,k) + w0macz(i,j,k+1))*normal(i,j,k,3))
+                Ut_dot_er = HALF*(utrans(i,j,k) + utrans(i+1,j,k))*normal(i,j,k,1) + &
+                            HALF*(vtrans(i,j,k) + vtrans(i,j+1,k))*normal(i,j,k,2) + &
+                            HALF*(wtrans(i,j,k) + wtrans(i,j,k+1))*normal(i,j,k,3)
 
                 st = st - Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,2)
 
@@ -823,7 +904,7 @@ contains
 
           enddo
 
-          ! upwind based on v
+          ! upwind based on full vmac
           do j = js, je+1 
              savg = HALF*(s_b(j) + s_t(j))
              test = ( (s_b(j).le.ZERO.and.s_t(j).ge.ZERO) .or. (abs(s_b(j)+s_t(j)).lt.eps) )
@@ -879,10 +960,16 @@ contains
                 splft = merge(ZERO,splft,phys_bc(1,2).eq.NO_SLIP_WALL)
              endif
 
-             ! upwind based on utrans
-             splus = merge(splft,sprgt,utrans(i+1,j,k).gt.ZERO)
-             savg  = HALF * (splft + sprgt)
-             splus = merge(splus, savg, abs(utrans(i+1,j,k)) .gt. eps)
+             ! upwind based on full utrans
+             if (spherical .eq. 1) then
+                splus = merge(splft,sprgt,utrans(i+1,j,k)+w0macx(i+1,j,k).gt.ZERO)
+                savg  = HALF * (splft + sprgt)
+                splus = merge(splus, savg, abs(utrans(i+1,j,k)+w0macx(i+1,j,k)) .gt. eps)
+             else
+                splus = merge(splft,sprgt,utrans(i+1,j,k).gt.ZERO)
+                savg  = HALF * (splft + sprgt)
+                splus = merge(splus, savg, abs(utrans(i+1,j,k)) .gt. eps)
+             end if
 
              if (spherical .eq. 1) then
                 ulo = u(i-1,j,k,1) + HALF*(w0macx(i-1,j,k)+w0macx(i  ,j,k))
@@ -904,12 +991,24 @@ contains
                 smrgt = merge(ZERO,smrgt,phys_bc(1,1).eq.NO_SLIP_WALL)
              endif
 
-             ! upwind based on utrans
-             sminus = merge(smlft,smrgt,utrans(i,j,k).gt.ZERO)
-             savg   = HALF * (smlft + smrgt)
-             sminus = merge(sminus, savg, abs(utrans(i,j,k)) .gt. eps)
+             ! upwind based on full utrans
+             if (spherical .eq. 1) then
+                sminus = merge(smlft,smrgt,utrans(i,j,k)+w0macx(i,j,k).gt.ZERO)
+                savg   = HALF * (smlft + smrgt)
+                sminus = merge(sminus, savg, abs(utrans(i,j,k)+w0macx(i,j,k)) .gt. eps)
+             else
+                sminus = merge(smlft,smrgt,utrans(i,j,k).gt.ZERO)
+                savg   = HALF * (smlft + smrgt)
+                sminus = merge(sminus, savg, abs(utrans(i,j,k)) .gt. eps)
+             end if
 
-             st = force(i,j,k,3) - HALF * (utrans(i,j,k)+utrans(i+1,j,k))*(splus-sminus) / hx
+             if (spherical .eq. 1) then
+                st = force(i,j,k,3) - HALF &
+                     * (utrans(i,j,k)+w0macx(i,j,k)+utrans(i+1,j,k)+w0macx(i+1,j,k)) &
+                     * (splus-sminus) / hx
+             else
+                st = force(i,j,k,3) - HALF*(utrans(i,j,k)+utrans(i+1,j,k))*(splus-sminus) / hx
+             end if
 
              ! Do transverse in j direction
              if (spherical .eq. 1) then
@@ -932,10 +1031,16 @@ contains
                 spbot = merge(ZERO,spbot,phys_bc(2,2).eq.NO_SLIP_WALL)
              endif
 
-             ! upwind based on vtrans
-             splus = merge(spbot,sptop,vtrans(i,j+1,k).gt.ZERO)
-             savg  = HALF * (spbot + sptop)
-             splus = merge(splus, savg, abs(vtrans(i,j+1,k)) .gt. eps)
+             ! upwind based on full vtrans
+             if (spherical .eq. 1) then
+                splus = merge(spbot,sptop,vtrans(i,j+1,k)+w0macy(i,j+1,k).gt.ZERO)
+                savg  = HALF * (spbot + sptop)
+                splus = merge(splus, savg, abs(vtrans(i,j+1,k)+w0macy(i,j+1,k)) .gt. eps)
+             else
+                splus = merge(spbot,sptop,vtrans(i,j+1,k).gt.ZERO)
+                savg  = HALF * (spbot + sptop)
+                splus = merge(splus, savg, abs(vtrans(i,j+1,k)) .gt. eps)
+             end if
 
              if (spherical .eq. 1) then
                 vlo = u(i,j-1,k,2) + HALF*(w0macy(i,j-1,k)+w0macy(i,j  ,k))
@@ -957,33 +1062,39 @@ contains
                 smtop = merge(ZERO,smtop,phys_bc(2,1).eq.NO_SLIP_WALL)
              endif
 
-             ! upwind based on vtrans
-             sminus = merge(smbot,smtop,vtrans(i,j,k).gt.ZERO)
-             savg   = HALF * (smbot + smtop)
-             sminus = merge(sminus, savg, abs(vtrans(i,j,k)) .gt. eps)
+             ! upwind based on full vtrans
+             if (spherical .eq. 1) then
+                sminus = merge(smbot,smtop,vtrans(i,j,k)+w0macy(i,j,k).gt.ZERO)
+                savg   = HALF * (smbot + smtop)
+                sminus = merge(sminus, savg, abs(vtrans(i,j,k)+w0macy(i,j,k)) .gt. eps)
+             else
+                sminus = merge(smbot,smtop,vtrans(i,j,k).gt.ZERO)
+                savg   = HALF * (smbot + smtop)
+                sminus = merge(sminus, savg, abs(vtrans(i,j,k)) .gt. eps)
+             end if
 
-             st = st - HALF * (vtrans(i,j,k)+vtrans(i,j+1,k))*(splus - sminus) / hy
+             if (spherical .eq. 1) then
+                st = st - HALF &
+                     * (vtrans(i,j,k)+w0macy(i,j,k)+vtrans(i,j+1,k)+w0macy(i,j+1,k)) &
+                     * (splus - sminus) / hy
+             else
+                st = st - HALF * (vtrans(i,j,k)+vtrans(i,j+1,k))*(splus - sminus) / hy
+             end if
 
              ! add the (Utilde . e_r) d w_0 /dr e_r term here
              if (spherical .eq. 0) then
 
-                ! wtrans contains w0 so we need to subtract it off
                 if (k .ge. 0 .and. k .le. nr(n)-1) then
-                   st = st - HALF * &
-                        (wtrans(i,j,k)+wtrans(i,j,k+1)-w0(k+1)-w0(k))*(w0(k+1)-w0(k)) / hz
+                   st = st - HALF * (wtrans(i,j,k)+wtrans(i,j,k+1))*(w0(k+1)-w0(k)) / hz
                 else
                    ! dw0/dr=0 and therefore st is unchanged
                 end if
 
              else if (spherical .eq. 1) then
 
-                ! u/v/wtrans contain w0, so we need to subtract it off.  
-                Ut_dot_er = (HALF*(utrans(i,j,k) + utrans(i+1,j,k)) - &
-                             HALF*(w0macx(i,j,k) + w0macx(i+1,j,k))*normal(i,j,k,1)) + &
-                            (HALF*(vtrans(i,j,k) + vtrans(i,j+1,k)) - &
-                             HALF*(w0macy(i,j,k) + w0macy(i,j+1,k))*normal(i,j,k,2)) + &
-                            (HALF*(wtrans(i,j,k) + wtrans(i,j,k+1)) - &
-                             HALF*(w0macz(i,j,k) + w0macz(i,j,k+1))*normal(i,j,k,3))
+                Ut_dot_er = HALF*(utrans(i,j,k) + utrans(i+1,j,k))*normal(i,j,k,1) + &
+                            HALF*(vtrans(i,j,k) + vtrans(i,j+1,k))*normal(i,j,k,2) + &
+                            HALF*(wtrans(i,j,k) + wtrans(i,j,k+1))*normal(i,j,k,3)
 
                 st = st - Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,3)
 
@@ -1006,7 +1117,7 @@ contains
 
           enddo
 
-          ! upwind based on w, not wtilde
+          ! upwind based on full wmac
           if (spherical .eq. 1) then
              do k = ks, ke+1 
                 savg = HALF*(s_d(k) + s_u(k))
