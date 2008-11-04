@@ -691,11 +691,11 @@ contains
 
                    ! u/v/wmac contain w0, so we need to subtract it off.  
                    Ut_dot_er = (HALF*(umac(i,j,k) + umac(i+1,j,k)) - &
-                                HALF*(w0macx(i,j,k)+w0macx(i+1,j,k))*normal(i,j,k,1)) + &
+                                HALF*(w0macx(i,j,k)+w0macx(i+1,j,k)))*normal(i,j,k,1) + &
                                (HALF*(vmac(i,j,k) + vmac(i,j+1,k)) - &
-                                HALF*(w0macy(i,j,k)+w0macy(i,j+1,k))*normal(i,j,k,2)) + &
+                                HALF*(w0macy(i,j,k)+w0macy(i,j+1,k)))*normal(i,j,k,2) + &
                                (HALF*(wmac(i,j,k) + wmac(i,j,k+1)) - &
-                                HALF*(w0macz(i,j,k)+w0macz(i,j,k+1))*normal(i,j,k,3))
+                                HALF*(w0macz(i,j,k)+w0macz(i,j,k+1)))*normal(i,j,k,3)
 
                    if (comp .eq. 1) then
                       st = st - Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,1)
@@ -884,11 +884,11 @@ contains
 
                    ! u/v/wmac contain w0, so we need to subtract it off.  
                    Ut_dot_er = (HALF*(umac(i,j,k) + umac(i+1,j,k)) - &
-                                HALF*(w0macx(i,j,k)+w0macx(i+1,j,k))*normal(i,j,k,1)) + &
+                                HALF*(w0macx(i,j,k)+w0macx(i+1,j,k)))*normal(i,j,k,1) + &
                                (HALF*(vmac(i,j,k) + vmac(i,j+1,k)) - &
-                                HALF*(w0macy(i,j,k)+w0macy(i,j+1,k))*normal(i,j,k,2)) + &
+                                HALF*(w0macy(i,j,k)+w0macy(i,j+1,k)))*normal(i,j,k,2) + &
                                (HALF*(wmac(i,j,k) + wmac(i,j,k+1)) - &
-                                HALF*(w0macz(i,j,k)+w0macz(i,j,k+1))*normal(i,j,k,3))
+                                HALF*(w0macz(i,j,k)+w0macz(i,j,k+1)))*normal(i,j,k,3)
 
                    if (comp .eq. 1) then
                       st = st - Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,1)
@@ -1083,11 +1083,11 @@ contains
 
                    ! u/v/wmac contain w0, so we need to subtract it off.  
                    Ut_dot_er = (HALF*(umac(i,j,k) + umac(i+1,j,k)) - &
-                                HALF*(w0macx(i,j,k)+w0macx(i+1,j,k))*normal(i,j,k,1)) + &
+                                HALF*(w0macx(i,j,k)+w0macx(i+1,j,k)))*normal(i,j,k,1) + &
                                (HALF*(vmac(i,j,k) + vmac(i,j+1,k)) - &
-                                HALF*(w0macy(i,j,k)+w0macy(i,j+1,k))*normal(i,j,k,2)) + &
+                                HALF*(w0macy(i,j,k)+w0macy(i,j+1,k)))*normal(i,j,k,2) + &
                                (HALF*(wmac(i,j,k) + wmac(i,j,k+1)) - &
-                                HALF*(w0macz(i,j,k)+w0macz(i,j,k+1))*normal(i,j,k,3))
+                                HALF*(w0macz(i,j,k)+w0macz(i,j,k+1)))*normal(i,j,k,3)
 
                    if (comp .eq. 1) then
                       st = st - Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,1)
