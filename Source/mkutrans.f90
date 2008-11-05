@@ -119,7 +119,6 @@ contains
     real(kind=dp_t) ulft,urgt,vbot,vtop,vlo,vhi,eps,abs_eps
 
     integer :: i,j,is,js,ie,je
-    
     logical :: test
     
     is = lo(1)
@@ -135,7 +134,7 @@ contains
        umax = max(umax,abs(vel(i,j,1)))
     end do; end do
     do j = js,je; do i = is,ie
-       umax = max(umax,abs(vel(i,j,2)))
+       umax = max(umax,abs(vel(i,j,2)+HALF*(w0(j)+w0(j+1))))
     end do; end do
     
     if (umax .eq. 0.d0) then
@@ -144,7 +143,7 @@ contains
        eps = abs_eps * umax
     endif
     
-    dth = HALF * dt
+    dth = HALF*dt
     
     hx = dx(1)
     hy = dx(2)
@@ -253,7 +252,6 @@ contains
     real(kind=dp_t) hx, hy, hz, dth, umax, eps, abs_eps
     
     logical :: test
-    
     integer :: i,j,k,is,js,ks,ie,je,ke
     
     is = lo(1)
@@ -266,16 +264,29 @@ contains
     abs_eps = 1.d-8
 
     ! Compute eps, which is relative to the max velocity
-    umax = abs(vel(is,js,ks,1))
-    do k = ks,ke; do j = js,je; do i = is,ie
-       umax = max(umax,abs(vel(i,j,k,1)))
-    end do; end do; end do
-    do k = ks,ke; do j = js,je; do i = is,ie
-       umax = max(umax,abs(vel(i,j,k,2)))
-    end do; end do; end do
-    do k = ks,ke; do j = js,je; do i = is,ie
-       umax = max(umax,abs(vel(i,j,k,3)))
-    end do; end do; end do
+    if (spherical .eq. 1) then
+       umax = abs(vel(is,js,ks,1))
+       do k = ks,ke; do j = js,je; do i = is,ie
+          umax = max(umax,abs(vel(i,j,k,1)+HALF*(w0macx(i,j,k)+w0macx(i+1,j,k))))
+       end do; end do; end do
+       do k = ks,ke; do j = js,je; do i = is,ie
+          umax = max(umax,abs(vel(i,j,k,2)+HALF*(w0macy(i,j,k)+w0macy(i,j+1,k))))
+       end do; end do; end do
+       do k = ks,ke; do j = js,je; do i = is,ie
+          umax = max(umax,abs(vel(i,j,k,3)+HALF*(w0macz(i,j,k)+w0macz(i,j,k+1))))
+       end do; end do; end do
+    else
+       umax = abs(vel(is,js,ks,1))
+       do k = ks,ke; do j = js,je; do i = is,ie
+          umax = max(umax,abs(vel(i,j,k,1)))
+       end do; end do; end do
+       do k = ks,ke; do j = js,je; do i = is,ie
+          umax = max(umax,abs(vel(i,j,k,2)))
+       end do; end do; end do
+       do k = ks,ke; do j = js,je; do i = is,ie
+          umax = max(umax,abs(vel(i,j,k,3)+HALF*(w0(k)+w0(k+1))))
+       end do; end do; end do
+    end if
     
     if (umax .eq. 0.d0) then
        eps = abs_eps
@@ -283,7 +294,7 @@ contains
        eps = abs_eps * umax
     endif
     
-    dth = HALF * dt
+    dth = HALF*dt
     
     hx = dx(1)
     hy = dx(2)

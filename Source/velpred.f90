@@ -207,18 +207,13 @@ contains
 
     abs_eps = 1.0d-8
 
-    dth = HALF*dt
-
-    hx = dx(1)
-    hy = dx(2)
-
-    umax = abs(utrans(is,js))
-
-    do j = js,je; do i = is,ie+1
-       umax = max(umax,abs(utrans(i,j)))
+    ! Compute eps, which is relative to the max velocity
+    umax = abs(u(is,js,1))
+    do j = js,je; do i = is,ie
+       umax = max(umax,abs(u(i,j,1)))
     end do; end do
-    do j = js,je+1; do i = is,ie
-       umax = max(umax,abs(vtrans(i,j)+w0(j)))
+    do j = js,je; do i = is,ie
+       umax = max(umax,abs(u(i,j,2)+HALF*(w0(j)+w0(j+1))))
     end do; end do
 
     if (umax .eq. 0.d0) then
@@ -226,6 +221,11 @@ contains
     else
        eps = abs_eps * umax
     endif
+
+    dth = HALF*dt
+
+    hx = dx(1)
+    hy = dx(2)
 
     call slopex_2d(u,slopex,lo,hi,ng_u,2,adv_bc)
     call slopey_2d(u,slopey,lo,hi,ng_u,2,adv_bc)
@@ -468,33 +468,28 @@ contains
 
     abs_eps = 1.0d-8
 
-    dth = HALF*dt
-
-    hx = dx(1)
-    hy = dx(2)
-    hz = dx(3)
-
+    ! Compute eps, which is relative to the max velocity
     if (spherical .eq. 1) then
-       umax = abs(utrans(is,js,ks)+w0macx(is,js,ks))
-       do k = ks,ke; do j = js,je; do i = is,ie+1
-          umax = max(umax,abs(utrans(i,j,k)+w0macx(i,j,k)))
+       umax = abs(u(is,js,ks,1))
+       do k = ks,ke; do j = js,je; do i = is,ie
+          umax = max(umax,abs(u(i,j,k,1)+HALF*(w0macx(i,j,k)+w0macx(i+1,j,k))))
        end do; end do; end do
-       do k = ks,ke; do j = js,je+1; do i = is,ie
-          umax = max(umax,abs(vtrans(i,j,k)+w0macy(i,j,k)))
+       do k = ks,ke; do j = js,je; do i = is,ie
+          umax = max(umax,abs(u(i,j,k,2)+HALF*(w0macy(i,j,k)+w0macy(i,j+1,k))))
        end do; end do; end do
-       do k = ks,ke+1; do j = js,je; do i = is,ie
-          umax = max(umax,abs(wtrans(i,j,k)+w0macz(i,j,k)))
+       do k = ks,ke; do j = js,je; do i = is,ie
+          umax = max(umax,abs(u(i,j,k,3)+HALF*(w0macz(i,j,k)+w0macz(i,j,k+1))))
        end do; end do; end do
     else
-       umax = abs(utrans(is,js,ks))
-       do k = ks,ke; do j = js,je; do i = is,ie+1
-          umax = max(umax,abs(utrans(i,j,k)))
+       umax = abs(u(is,js,ks,1))
+       do k = ks,ke; do j = js,je; do i = is,ie
+          umax = max(umax,abs(u(i,j,k,1)))
        end do; end do; end do
-       do k = ks,ke; do j = js,je+1; do i = is,ie
-          umax = max(umax,abs(vtrans(i,j,k)))
+       do k = ks,ke; do j = js,je; do i = is,ie
+          umax = max(umax,abs(u(i,j,k,2)))
        end do; end do; end do
-       do k = ks,ke+1; do j = js,je; do i = is,ie
-          umax = max(umax,abs(wtrans(i,j,k)+w0(k)))
+       do k = ks,ke; do j = js,je; do i = is,ie
+          umax = max(umax,abs(u(i,j,k,3)+HALF*(w0(k)+w0(k+1))))
        end do; end do; end do
     end if
 
@@ -503,6 +498,12 @@ contains
     else
        eps = abs_eps * umax
     endif
+
+    dth = HALF*dt
+
+    hx = dx(1)
+    hy = dx(2)
+    hz = dx(3)
 
     do k = lo(3)-1,hi(3)+1
        call slopex_2d(u(:,:,k,:),slopex(:,:,k,:),lo,hi,ng_u,3,adv_bc)
