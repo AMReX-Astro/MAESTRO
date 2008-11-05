@@ -168,6 +168,7 @@ contains
     use bc_module
     use slope_module
     use bl_constants_module
+    use variables, only: rel_eps
 
     integer        , intent(in   ) :: n,lo(:),hi(:),ng_u,ng_um,ng_ut,ng_f
     real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u :,lo(2)-ng_u :,:)
@@ -195,8 +196,6 @@ contains
     real(kind=dp_t) :: savg,st
     real(kind=dp_t) :: vlo,vhi
     real(kind=dp_t) :: sptop,spbot,smtop,smbot,splft,sprgt,smlft,smrgt
-    real(kind=dp_t) :: abs_eps, eps, umax
-
     integer :: i,j,is,js,ie,je
     logical :: test
 
@@ -204,23 +203,6 @@ contains
     ie = hi(1)
     js = lo(2)
     je = hi(2)
-
-    abs_eps = 1.0d-8
-
-    ! Compute eps, which is relative to the max velocity
-    umax = abs(u(is,js,1))
-    do j = js,je; do i = is,ie
-       umax = max(umax,abs(u(i,j,1)))
-    end do; end do
-    do j = js,je; do i = is,ie
-       umax = max(umax,abs(u(i,j,2)+HALF*(w0(j)+w0(j+1))))
-    end do; end do
-
-    if (umax .eq. 0.d0) then
-       eps = abs_eps
-    else
-       eps = abs_eps * umax
-    endif
 
     dth = HALF*dt
 
@@ -258,7 +240,7 @@ contains
           ! upwind based on full vtrans
           splus = merge(spbot,sptop,vtrans(i,j+1)+w0(j+1).gt.ZERO)
           savg  = HALF * (spbot + sptop)
-          splus = merge(splus, savg, abs(vtrans(i,j+1)+w0(j+1)) .gt. eps)
+          splus = merge(splus, savg, abs(vtrans(i,j+1)+w0(j+1)) .gt. rel_eps)
 
           if (j .eq. 0) then
              vlo = u(i,j-1,2) + w0(j)
@@ -281,7 +263,7 @@ contains
           ! upwind based on full vtrans
           sminus = merge(smbot,smtop,vtrans(i,j)+w0(j).gt.ZERO)
           savg   = HALF * (smbot + smtop)
-          sminus = merge(sminus, savg, abs(vtrans(i,j)+w0(j)) .gt. eps)
+          sminus = merge(sminus, savg, abs(vtrans(i,j)+w0(j)) .gt. rel_eps)
 
           st = force(i,j,1)-HALF*(vtrans(i,j)+w0(j)+vtrans(i,j+1)+w0(j+1))*(splus-sminus) / hy
 
@@ -295,7 +277,7 @@ contains
        ! upwind based on umac
        do i = is,ie+1 
           savg = HALF*(s_r(i) + s_l(i))
-          test = ( (s_l(i).le.ZERO.and.s_r(i).ge.ZERO) .or. (abs(s_l(i)+s_r(i)).lt.eps) )
+          test = ( (s_l(i).le.ZERO.and.s_r(i).ge.ZERO) .or. (abs(s_l(i)+s_r(i)).lt.rel_eps) )
           umac(i,j)=merge(s_l(i),s_r(i),savg.gt.ZERO)
           umac(i,j)=merge(savg,umac(i,j),test)
        enddo
@@ -338,7 +320,7 @@ contains
           ! upwind based on utrans
           splus = merge(splft,sprgt,utrans(i+1,j).gt.ZERO)
           savg  = HALF * (splft + sprgt)
-          splus = merge(splus, savg, abs(utrans(i+1,j)) .gt. eps)
+          splus = merge(splus, savg, abs(utrans(i+1,j)) .gt. rel_eps)
 
           smrgt = u(i  ,j,2) - (HALF + dth*min(ZERO,u(i  ,j,1))/hx)*slopex(i  ,j,2)
           smlft = u(i-1,j,2) + (HALF - dth*max(ZERO,u(i-1,j,1))/hx)*slopex(i-1,j,2)
@@ -354,7 +336,7 @@ contains
           ! upwind based on utrans
           sminus = merge(smlft,smrgt,utrans(i,j).gt.ZERO)
           savg   = HALF * (smlft + smrgt)
-          sminus = merge(sminus, savg, abs(utrans(i,j)) .gt. eps)
+          sminus = merge(sminus, savg, abs(utrans(i,j)) .gt. rel_eps)
 
           st = force(i,j,2) - HALF * (utrans(i,j)+utrans(i+1,j))*(splus - sminus) / hx
 
@@ -382,7 +364,7 @@ contains
        do j = js, je+1 
           savg = HALF*(s_b(j) + s_t(j))
           test = ( (s_b(j)+w0(j) .le. ZERO .and. s_t(j)+w0(j) .ge. ZERO) &
-               .or. (abs(s_b(j) + s_t(j) + TWO*w0(j)) .lt. eps) )
+               .or. (abs(s_b(j) + s_t(j) + TWO*w0(j)) .lt. rel_eps) )
           vmac(i,j)=merge(s_b(j),s_t(j),savg+w0(j).gt.ZERO)
           vmac(i,j)=merge(savg,vmac(i,j),test)
        enddo
@@ -417,6 +399,7 @@ contains
     use slope_module
     use bl_constants_module
     use geometry, only: spherical, nr
+    use variables, only: rel_eps
 
     integer        , intent(in   ) :: n,lo(:),hi(:)
     integer        , intent(in   ) :: ng_u,ng_um,ng_ut,ng_f,ng_n,ng_w0,ng_gw
@@ -452,7 +435,6 @@ contains
     real(kind=dp_t) :: hx, hy, hz, dth, splus, sminus
     real(kind=dp_t) :: savg,st,ulo,uhi,vlo,vhi,wlo,whi
     real(kind=dp_t) :: sptop,spbot,smtop,smbot,splft,sprgt,smlft,smrgt
-    real(kind=dp_t) :: abs_eps, eps, umax
 
     real(kind=dp_t) :: Ut_dot_er
 
@@ -465,39 +447,6 @@ contains
     je = hi(2)
     ks = lo(3)
     ke = hi(3)
-
-    abs_eps = 1.0d-8
-
-    ! Compute eps, which is relative to the max velocity
-    if (spherical .eq. 1) then
-       umax = abs(u(is,js,ks,1))
-       do k = ks,ke; do j = js,je; do i = is,ie
-          umax = max(umax,abs(u(i,j,k,1)+HALF*(w0macx(i,j,k)+w0macx(i+1,j,k))))
-       end do; end do; end do
-       do k = ks,ke; do j = js,je; do i = is,ie
-          umax = max(umax,abs(u(i,j,k,2)+HALF*(w0macy(i,j,k)+w0macy(i,j+1,k))))
-       end do; end do; end do
-       do k = ks,ke; do j = js,je; do i = is,ie
-          umax = max(umax,abs(u(i,j,k,3)+HALF*(w0macz(i,j,k)+w0macz(i,j,k+1))))
-       end do; end do; end do
-    else
-       umax = abs(u(is,js,ks,1))
-       do k = ks,ke; do j = js,je; do i = is,ie
-          umax = max(umax,abs(u(i,j,k,1)))
-       end do; end do; end do
-       do k = ks,ke; do j = js,je; do i = is,ie
-          umax = max(umax,abs(u(i,j,k,2)))
-       end do; end do; end do
-       do k = ks,ke; do j = js,je; do i = is,ie
-          umax = max(umax,abs(u(i,j,k,3)+HALF*(w0(k)+w0(k+1))))
-       end do; end do; end do
-    end if
-
-    if (umax .eq. 0.d0) then
-       eps = abs_eps
-    else
-       eps = abs_eps * umax
-    endif
 
     dth = HALF*dt
 
@@ -544,11 +493,11 @@ contains
              if (spherical .eq. 1) then
                 splus = merge(spbot,sptop,vtrans(i,j+1,k)+w0macy(i,j+1,k).gt.ZERO)
                 savg  = HALF * (spbot + sptop)
-                splus = merge(splus, savg, abs(vtrans(i,j+1,k)+w0macy(i,j+1,k)) .gt. eps)
+                splus = merge(splus, savg, abs(vtrans(i,j+1,k)+w0macy(i,j+1,k)) .gt. rel_eps)
              else
                 splus = merge(spbot,sptop,vtrans(i,j+1,k).gt.ZERO)
                 savg  = HALF * (spbot + sptop)
-                splus = merge(splus, savg, abs(vtrans(i,j+1,k)) .gt. eps)
+                splus = merge(splus, savg, abs(vtrans(i,j+1,k)) .gt. rel_eps)
              end if
 
              if (spherical .eq. 1) then
@@ -575,11 +524,11 @@ contains
              if (spherical .eq. 1) then
                 sminus = merge(smbot,smtop,vtrans(i,j,k)+w0macy(i,j,k).gt.ZERO)
                 savg   = HALF * (smbot + smtop)
-                sminus = merge(sminus, savg, abs(vtrans(i,j,k)+w0macy(i,j,k)) .gt. eps)
+                sminus = merge(sminus, savg, abs(vtrans(i,j,k)+w0macy(i,j,k)) .gt. rel_eps)
              else
                 sminus = merge(smbot,smtop,vtrans(i,j,k).gt.ZERO)
                 savg   = HALF * (smbot + smtop)
-                sminus = merge(sminus, savg, abs(vtrans(i,j,k)) .gt. eps)
+                sminus = merge(sminus, savg, abs(vtrans(i,j,k)) .gt. rel_eps)
              end if
 
              if (spherical .eq. 1) then
@@ -619,11 +568,11 @@ contains
              if (spherical .eq. 1) then
                 splus = merge(spbot,sptop,wtrans(i,j,k+1)+w0macz(i,j,k+1).gt.ZERO)
                 savg  = HALF * (spbot + sptop)
-                splus = merge(splus, savg, abs(wtrans(i,j,k+1)+w0macz(i,j,k+1)) .gt. eps)
+                splus = merge(splus, savg, abs(wtrans(i,j,k+1)+w0macz(i,j,k+1)) .gt. rel_eps)
              else
                 splus = merge(spbot,sptop,wtrans(i,j,k+1)+w0(k+1).gt.ZERO)
                 savg  = HALF * (spbot + sptop)
-                splus = merge(splus, savg, abs(wtrans(i,j,k+1)+w0(k+1)) .gt. eps)
+                splus = merge(splus, savg, abs(wtrans(i,j,k+1)+w0(k+1)) .gt. rel_eps)
              end if
 
              if (spherical .eq. 1) then
@@ -654,11 +603,11 @@ contains
              if (spherical .eq. 1) then
                 sminus = merge(smbot,smtop,wtrans(i,j,k)+w0macz(i,j,k).gt.ZERO)
                 savg   = HALF * (smbot + smtop)
-                sminus = merge(sminus, savg, abs(wtrans(i,j,k)+w0macz(i,j,k)) .gt. eps)
+                sminus = merge(sminus, savg, abs(wtrans(i,j,k)+w0macz(i,j,k)) .gt. rel_eps)
              else
                 sminus = merge(smbot,smtop,wtrans(i,j,k)+w0(k).gt.ZERO)
                 savg   = HALF * (smbot + smtop)
-                sminus = merge(sminus, savg, abs(wtrans(i,j,k)+w0(k)) .gt. eps)
+                sminus = merge(sminus, savg, abs(wtrans(i,j,k)+w0(k)) .gt. rel_eps)
              end if
 
              if (spherical .eq. 1) then
@@ -696,7 +645,7 @@ contains
           ! upwind based on full umac
           do i = is, ie+1 
              savg = HALF*(s_r(i) + s_l(i))
-             test = ( (s_l(i).le.ZERO.and.s_r(i).ge.ZERO) .or. (abs(s_l(i)+s_r(i)).lt.eps) )
+             test = ( (s_l(i).le.ZERO.and.s_r(i).ge.ZERO) .or. (abs(s_l(i)+s_r(i)).lt.rel_eps) )
              umac(i,j,k)=merge(s_l(i),s_r(i),savg.gt.ZERO)
              umac(i,j,k)=merge(savg,umac(i,j,k),test)
           enddo
@@ -752,11 +701,11 @@ contains
              if (spherical .eq. 1) then
                 splus = merge(splft,sprgt,utrans(i+1,j,k)+w0macx(i+1,j,k).gt.ZERO)
                 savg  = HALF * (splft + sprgt)
-                splus = merge(splus, savg, abs(utrans(i+1,j,k)+w0macx(i+1,j,k)) .gt. eps)
+                splus = merge(splus, savg, abs(utrans(i+1,j,k)+w0macx(i+1,j,k)) .gt. rel_eps)
              else
                 splus = merge(splft,sprgt,utrans(i+1,j,k).gt.ZERO)
                 savg  = HALF * (splft + sprgt)
-                splus = merge(splus, savg, abs(utrans(i+1,j,k)) .gt. eps)
+                splus = merge(splus, savg, abs(utrans(i+1,j,k)) .gt. rel_eps)
              end if
 
              if (spherical .eq. 1) then
@@ -783,11 +732,11 @@ contains
              if (spherical .eq. 1) then
                 sminus = merge(smlft,smrgt,utrans(i,j,k)+w0macx(i,j,k).gt.ZERO)
                 savg   = HALF * (smlft + smrgt)
-                sminus = merge(sminus, savg, abs(utrans(i,j,k)+w0macx(i,j,k)) .gt. eps)
+                sminus = merge(sminus, savg, abs(utrans(i,j,k)+w0macx(i,j,k)) .gt. rel_eps)
              else
                 sminus = merge(smlft,smrgt,utrans(i,j,k).gt.ZERO)
                 savg   = HALF * (smlft + smrgt)
-                sminus = merge(sminus, savg, abs(utrans(i,j,k)) .gt. eps)
+                sminus = merge(sminus, savg, abs(utrans(i,j,k)) .gt. rel_eps)
              end if
 
              if (spherical .eq. 1) then
@@ -829,11 +778,11 @@ contains
              if (spherical .eq. 1) then
                 splus = merge(splft,sprgt,wtrans(i,j,k+1)+w0macz(i,j,k+1).gt.ZERO)
                 savg  = HALF * (splft + sprgt)
-                splus = merge(splus, savg, abs(wtrans(i,j,k+1)+w0macz(i,j,k+1)) .gt. eps)
+                splus = merge(splus, savg, abs(wtrans(i,j,k+1)+w0macz(i,j,k+1)) .gt. rel_eps)
              else
                 splus = merge(splft,sprgt,wtrans(i,j,k+1)+w0(k+1).gt.ZERO)
                 savg  = HALF * (splft + sprgt)
-                splus = merge(splus, savg, abs(wtrans(i,j,k+1)+w0(k+1)) .gt. eps)
+                splus = merge(splus, savg, abs(wtrans(i,j,k+1)+w0(k+1)) .gt. rel_eps)
              end if
 
              if (spherical .eq. 1) then
@@ -866,11 +815,11 @@ contains
              if (spherical .eq. 1) then
                 sminus = merge(smlft,smrgt,wtrans(i,j,k)+w0macz(i,j,k).gt.ZERO)
                 savg   = HALF * (smlft + smrgt)
-                sminus = merge(sminus, savg, abs(wtrans(i,j,k)+w0macz(i,j,k)) .gt. eps)
+                sminus = merge(sminus, savg, abs(wtrans(i,j,k)+w0macz(i,j,k)) .gt. rel_eps)
              else
                 sminus = merge(smlft,smrgt,wtrans(i,j,k)+w0(k).gt.ZERO)
                 savg   = HALF * (smlft + smrgt)
-                sminus = merge(sminus, savg, abs(wtrans(i,j,k)+w0(k)) .gt. eps)
+                sminus = merge(sminus, savg, abs(wtrans(i,j,k)+w0(k)) .gt. rel_eps)
              end if
 
              if (spherical .eq. 1) then
@@ -908,7 +857,7 @@ contains
           ! upwind based on full vmac
           do j = js, je+1 
              savg = HALF*(s_b(j) + s_t(j))
-             test = ( (s_b(j).le.ZERO.and.s_t(j).ge.ZERO) .or. (abs(s_b(j)+s_t(j)).lt.eps) )
+             test = ( (s_b(j).le.ZERO.and.s_t(j).ge.ZERO) .or. (abs(s_b(j)+s_t(j)).lt.rel_eps) )
              vmac(i,j,k)=merge(s_b(j),s_t(j),savg.gt.ZERO)
              vmac(i,j,k)=merge(savg,vmac(i,j,k),test)
           enddo
@@ -965,11 +914,11 @@ contains
              if (spherical .eq. 1) then
                 splus = merge(splft,sprgt,utrans(i+1,j,k)+w0macx(i+1,j,k).gt.ZERO)
                 savg  = HALF * (splft + sprgt)
-                splus = merge(splus, savg, abs(utrans(i+1,j,k)+w0macx(i+1,j,k)) .gt. eps)
+                splus = merge(splus, savg, abs(utrans(i+1,j,k)+w0macx(i+1,j,k)) .gt. rel_eps)
              else
                 splus = merge(splft,sprgt,utrans(i+1,j,k).gt.ZERO)
                 savg  = HALF * (splft + sprgt)
-                splus = merge(splus, savg, abs(utrans(i+1,j,k)) .gt. eps)
+                splus = merge(splus, savg, abs(utrans(i+1,j,k)) .gt. rel_eps)
              end if
 
              if (spherical .eq. 1) then
@@ -996,11 +945,11 @@ contains
              if (spherical .eq. 1) then
                 sminus = merge(smlft,smrgt,utrans(i,j,k)+w0macx(i,j,k).gt.ZERO)
                 savg   = HALF * (smlft + smrgt)
-                sminus = merge(sminus, savg, abs(utrans(i,j,k)+w0macx(i,j,k)) .gt. eps)
+                sminus = merge(sminus, savg, abs(utrans(i,j,k)+w0macx(i,j,k)) .gt. rel_eps)
              else
                 sminus = merge(smlft,smrgt,utrans(i,j,k).gt.ZERO)
                 savg   = HALF * (smlft + smrgt)
-                sminus = merge(sminus, savg, abs(utrans(i,j,k)) .gt. eps)
+                sminus = merge(sminus, savg, abs(utrans(i,j,k)) .gt. rel_eps)
              end if
 
              if (spherical .eq. 1) then
@@ -1036,11 +985,11 @@ contains
              if (spherical .eq. 1) then
                 splus = merge(spbot,sptop,vtrans(i,j+1,k)+w0macy(i,j+1,k).gt.ZERO)
                 savg  = HALF * (spbot + sptop)
-                splus = merge(splus, savg, abs(vtrans(i,j+1,k)+w0macy(i,j+1,k)) .gt. eps)
+                splus = merge(splus, savg, abs(vtrans(i,j+1,k)+w0macy(i,j+1,k)) .gt. rel_eps)
              else
                 splus = merge(spbot,sptop,vtrans(i,j+1,k).gt.ZERO)
                 savg  = HALF * (spbot + sptop)
-                splus = merge(splus, savg, abs(vtrans(i,j+1,k)) .gt. eps)
+                splus = merge(splus, savg, abs(vtrans(i,j+1,k)) .gt. rel_eps)
              end if
 
              if (spherical .eq. 1) then
@@ -1067,11 +1016,11 @@ contains
              if (spherical .eq. 1) then
                 sminus = merge(smbot,smtop,vtrans(i,j,k)+w0macy(i,j,k).gt.ZERO)
                 savg   = HALF * (smbot + smtop)
-                sminus = merge(sminus, savg, abs(vtrans(i,j,k)+w0macy(i,j,k)) .gt. eps)
+                sminus = merge(sminus, savg, abs(vtrans(i,j,k)+w0macy(i,j,k)) .gt. rel_eps)
              else
                 sminus = merge(smbot,smtop,vtrans(i,j,k).gt.ZERO)
                 savg   = HALF * (smbot + smtop)
-                sminus = merge(sminus, savg, abs(vtrans(i,j,k)) .gt. eps)
+                sminus = merge(sminus, savg, abs(vtrans(i,j,k)) .gt. rel_eps)
              end if
 
              if (spherical .eq. 1) then
@@ -1123,7 +1072,7 @@ contains
              do k = ks, ke+1 
                 savg = HALF*(s_d(k) + s_u(k))
                 test = ( (s_d(k)+w0macz(i,j,k).le.ZERO.and.s_u(k)+w0macz(i,j,k).ge.ZERO) &
-                     .or. (abs(s_d(k)+s_u(k)+TWO*w0macz(i,j,k)).lt.eps) )
+                     .or. (abs(s_d(k)+s_u(k)+TWO*w0macz(i,j,k)).lt.rel_eps) )
                 wmac(i,j,k)=merge(s_d(k),s_u(k),savg+w0macz(i,j,k).gt.ZERO)
                 wmac(i,j,k)=merge(savg,wmac(i,j,k),test)
              enddo
@@ -1131,7 +1080,7 @@ contains
              do k = ks, ke+1 
                 savg = HALF*(s_d(k) + s_u(k))
                 test = ( (s_d(k)+w0(k).le.ZERO.and.s_u(k)+w0(k).ge.ZERO) &
-                     .or. (abs(s_d(k)+s_u(k)+TWO*w0(k)).lt.eps) )
+                     .or. (abs(s_d(k)+s_u(k)+TWO*w0(k)).lt.rel_eps) )
                 wmac(i,j,k)=merge(s_d(k),s_u(k),savg+w0(k).gt.ZERO)
                 wmac(i,j,k)=merge(savg,wmac(i,j,k),test)
              enddo

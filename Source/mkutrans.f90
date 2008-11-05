@@ -102,6 +102,7 @@ contains
     use bc_module
     use slope_module
     use geometry, only: nr
+    use variables, only: rel_eps
 
     integer,         intent(in   ) :: n,lo(:),hi(:),ng_u,ng_ut
     real(kind=dp_t), intent(in   ) ::    vel(lo(1)-ng_u :,lo(2)-ng_u :,:)
@@ -116,7 +117,7 @@ contains
     real(kind=dp_t) :: vely(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1)
     
     real(kind=dp_t) hx, hy, dth, umax
-    real(kind=dp_t) ulft,urgt,vbot,vtop,vlo,vhi,eps,abs_eps
+    real(kind=dp_t) ulft,urgt,vbot,vtop,vlo,vhi,abs_eps
 
     integer :: i,j,is,js,ie,je
     logical :: test
@@ -128,7 +129,7 @@ contains
     
     abs_eps = 1.d-8
     
-    ! Compute eps, which is relative to the max velocity
+    ! Compute rel_eps, which is relative to the max velocity
     umax = abs(vel(is,js,1))
     do j = js,je; do i = is,ie
        umax = max(umax,abs(vel(i,j,1)))
@@ -136,11 +137,10 @@ contains
     do j = js,je; do i = is,ie
        umax = max(umax,abs(vel(i,j,2)+HALF*(w0(j)+w0(j+1))))
     end do; end do
-    
     if (umax .eq. 0.d0) then
-       eps = abs_eps
+       rel_eps = abs_eps
     else
-       eps = abs_eps * umax
+       rel_eps = abs_eps * umax
     endif
     
     dth = HALF*dt
@@ -173,7 +173,7 @@ contains
                (phys_bc(1,2) .eq. SLIP_WALL .or. phys_bc(1,2) .eq. NO_SLIP_WALL))
           
           utrans(i,j) = merge(ulft,urgt,(ulft+urgt).gt.ZERO)
-          test = ( (ulft .le. ZERO .and. urgt .ge. ZERO) .or. (abs(ulft+urgt) .lt. eps) )
+          test = ( (ulft .le. ZERO .and. urgt .ge. ZERO) .or. (abs(ulft+urgt) .lt. rel_eps) )
           utrans(i,j) = merge(ZERO,utrans(i,j),test)
           
        enddo
@@ -215,7 +215,7 @@ contains
           ! upwind based on w, not wtilde
           vtrans(i,j)=merge(vbot,vtop,(vbot+vtop+TWO*w0(j)).gt.ZERO)
           test = ( (vbot+w0(j) .le. ZERO .and. vtop+w0(j) .ge. ZERO) .or. &
-               (abs(vbot+vtop+TWO*w0(j)) .lt. eps))
+               (abs(vbot+vtop+TWO*w0(j)) .lt. rel_eps))
           vtrans(i,j) = merge(ZERO,vtrans(i,j),test)
 
        enddo
@@ -229,6 +229,7 @@ contains
     use bc_module
     use slope_module
     use geometry, only: nr, spherical
+    use variables, only: rel_eps
     
     integer,         intent(in)    :: n,lo(:),hi(:),ng_u,ng_ut,ng_w0    
     real(kind=dp_t), intent(in   ) ::    vel(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :,:)
@@ -249,7 +250,7 @@ contains
     
     real(kind=dp_t) ulft,urgt,vbot,vtop,wbot,wtop
     real(kind=dp_t) uhi,ulo,vhi,vlo,whi,wlo
-    real(kind=dp_t) hx, hy, hz, dth, umax, eps, abs_eps
+    real(kind=dp_t) hx, hy, hz, dth, umax, abs_eps
     
     logical :: test
     integer :: i,j,k,is,js,ks,ie,je,ke
@@ -263,7 +264,7 @@ contains
     
     abs_eps = 1.d-8
 
-    ! Compute eps, which is relative to the max velocity
+    ! Compute rel_eps, which is relative to the max velocity
     if (spherical .eq. 1) then
        umax = abs(vel(is,js,ks,1))
        do k = ks,ke; do j = js,je; do i = is,ie
@@ -289,9 +290,9 @@ contains
     end if
     
     if (umax .eq. 0.d0) then
-       eps = abs_eps
+       rel_eps = abs_eps
     else
-       eps = abs_eps * umax
+       rel_eps = abs_eps * umax
     endif
     
     dth = HALF*dt
@@ -340,12 +341,12 @@ contains
                 ! upwind based on u, not utilde
                 utrans(i,j,k) = merge(ulft,urgt,(ulft+urgt+TWO*w0macx(i,j,k)).gt.ZERO)
                 test=( (ulft+w0macx(i,j,k).le. ZERO.and.urgt+w0macx(i,j,k).ge.ZERO) .or. &
-                     (abs(ulft+urgt+TWO*w0macx(i,j,k)) .lt. eps) )
+                     (abs(ulft+urgt+TWO*w0macx(i,j,k)) .lt. rel_eps) )
                 utrans(i,j,k) = merge(ZERO,utrans(i,j,k),test)
              else
                 utrans(i,j,k) = merge(ulft,urgt,(ulft+urgt).gt.ZERO)
                 test=( (ulft .le. ZERO  .and.  urgt .ge. ZERO)  .or. &
-                     (abs(ulft+urgt) .lt. eps) )
+                     (abs(ulft+urgt) .lt. rel_eps) )
                 utrans(i,j,k) = merge(ZERO,utrans(i,j,k),test)
              end if
 
@@ -387,12 +388,12 @@ contains
                 ! upwind based on v, not vtilde
                 vtrans(i,j,k)=merge(vbot,vtop,(vbot+vtop+TWO*w0macy(i,j,k)).gt.ZERO)
                 test = ( (vbot+w0macy(i,j,k).le.ZERO.and.vtop+w0macy(i,j,k).ge.ZERO) .or. &
-                     (abs(vbot+vtop+TWO*w0macy(i,j,k)) .lt. eps) )
+                     (abs(vbot+vtop+TWO*w0macy(i,j,k)) .lt. rel_eps) )
                 vtrans(i,j,k) = merge(ZERO,vtrans(i,j,k),test)
              else
                 vtrans(i,j,k)=merge(vbot,vtop,(vbot+vtop).gt.ZERO)
                 test = ( (vbot .le. ZERO  .and.  vtop .ge. ZERO)  .or. &
-                     (abs(vbot+vtop) .lt. eps))
+                     (abs(vbot+vtop) .lt. rel_eps))
                 vtrans(i,j,k) = merge(ZERO,vtrans(i,j,k),test)
              end if
              
@@ -443,12 +444,12 @@ contains
              if (spherical .eq. 1) then
                 wtrans(i,j,k)=merge(wbot,wtop,(wbot+wtop+TWO*w0macz(i,j,k)).gt.ZERO)
                 test = ( (wbot+w0macz(i,j,k).le.ZERO.and.wtop+w0macz(i,j,k).ge.ZERO) .or. &
-                     (abs(wbot+wtop+TWO*w0macz(i,j,k)) .lt. eps) )
+                     (abs(wbot+wtop+TWO*w0macz(i,j,k)) .lt. rel_eps) )
                 wtrans(i,j,k) = merge(ZERO,wtrans(i,j,k),test)
              else
                 wtrans(i,j,k)=merge(wbot,wtop,(wbot+wtop+TWO*w0(k)).gt.ZERO)
                 test = ( (wbot+w0(k) .le. ZERO  .and.  wtop+w0(k) .ge. ZERO)  .or. &
-                     (abs(wbot+wtop+TWO*w0(k)) .lt. eps))
+                     (abs(wbot+wtop+TWO*w0(k)) .lt. rel_eps))
                 wtrans(i,j,k) = merge(ZERO,wtrans(i,j,k),test)
              end if
              

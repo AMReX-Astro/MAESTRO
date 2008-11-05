@@ -30,6 +30,7 @@ contains
      use geometry, only: r_start_coord, r_end_coord, nr_fine, nr, numdisjointchunks, nlevs
      use probin_module, only: slope_order
      use bl_constants_module
+     use variables, only: rel_eps
      
      real(kind=dp_t), intent(in   ) ::      s(:,0:)
      real(kind=dp_t), intent(inout) :: sedgex(:,0:)
@@ -38,8 +39,7 @@ contains
      real(kind=dp_t), intent(in   ) :: dx(:),dt
      
      real(kind=dp_t) :: dmin,dpls,ds,del,slim,sflag
-     real(kind=dp_t) :: ubardth, dth, savg
-     real(kind=dp_t) :: abs_eps, eps, umax, u
+     real(kind=dp_t) :: ubardth, dth, savg, u
      
      integer :: r,lo,hi,n,i
 
@@ -51,22 +51,8 @@ contains
      real(kind=dp_t) ::    s_r(nlevs,-1:nr_fine+1)
      real(kind=dp_t) ::  dxscr(nlevs, 0:nr_fine-1,4)
 
-     abs_eps = 1.0d-8
      dth = HALF*dt
 
-     ! compute eps based on umax
-     umax = ZERO
-     do n=1,nlevs
-        do i=1,numdisjointchunks(n)
-           lo = r_start_coord(n,i)
-           hi = r_end_coord(n,i)
-           do r = lo,hi+1
-              umax = max(umax,abs(w0(n,r)))
-           end do
-        end do
-     end do
-     eps = abs_eps * umax
-     
      ! compute slopes
      do n=1,nlevs
 
@@ -249,7 +235,7 @@ contains
               else
                  sedgex(n,r)=merge(s_l(n,r),s_r(n,r),w0(n,r).gt.ZERO)
                  savg = HALF*(s_r(n,r) + s_l(n,r))
-                 sedgex(n,r)=merge(savg,sedgex(n,r),abs(w0(n,r)) .lt. eps)
+                 sedgex(n,r)=merge(savg,sedgex(n,r),abs(w0(n,r)) .lt. rel_eps)
               end if
            end do
 

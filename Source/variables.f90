@@ -4,6 +4,8 @@
 !
 module variables
 
+  use bl_types
+
   implicit none
 
   integer, save :: rho_comp, rhoh_comp, spec_comp, temp_comp, trac_comp, press_comp
@@ -18,6 +20,7 @@ module variables
   integer, save :: icomp_omegadot,icomp_enuc,icomp_sponge
   integer, save :: n_plot_comps
   integer, save :: ntrac,nscal
+  real(kind=dp_t), save :: rel_eps
 
 contains
 

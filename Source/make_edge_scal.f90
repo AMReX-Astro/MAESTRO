@@ -199,6 +199,7 @@ contains
     use bc_module
     use slope_module
     use bl_constants_module
+    use variables, only: rel_eps
 
     integer        , intent(in   ) :: n,lo(:),hi(:),ng_s,ng_se,ng_um,ng_f
     real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :,:)
@@ -226,7 +227,6 @@ contains
     real(kind=dp_t) :: hx,hy,dth,splus,sminus
     real(kind=dp_t) :: savg,st
     real(kind=dp_t) :: sptop,spbot,smtop,smbot,splft,sprgt,smlft,smrgt
-    real(kind=dp_t) :: abs_eps,eps,umax
 
     integer :: i,j,is,js,ie,je
 
@@ -238,27 +238,10 @@ contains
     call slopex_2d(s(:,:,comp:),slopex,lo,hi,ng_s,1,adv_bc)
     call slopey_2d(s(:,:,comp:),slopey,lo,hi,ng_s,1,adv_bc)
 
-    abs_eps = 1.0d-8
-
     dth = HALF*dt
 
     hx = dx(1)
     hy = dx(2)
-
-    umax = abs(umac(is,js))
-
-    do j = js,je; do i = is,ie+1
-       umax = max(umax,abs(umac(i,j)))
-    end do; end do
-    do j = js,je+1; do i = is,ie
-       umax = max(umax,abs(vmac(i,j)))
-    end do; end do
-
-    if (umax .eq. 0.d0) then
-       eps = abs_eps
-    else
-       eps = abs_eps * umax
-    endif
 
     !********************************
     ! Loop for edge states on x-edges.
@@ -288,7 +271,7 @@ contains
 
           splus = merge(spbot,sptop,vmac(i,j+1).gt.ZERO)
           savg  = HALF * (spbot + sptop)
-          splus = merge(splus, savg, abs(vmac(i,j+1)) .gt. eps)
+          splus = merge(splus, savg, abs(vmac(i,j+1)) .gt. rel_eps)
 
           smtop = s(i,j  ,comp) - (HALF + dth*vmac(i,j)/hy) * slopey(i,j  ,1)
           smbot = s(i,j-1,comp) + (HALF - dth*vmac(i,j)/hy) * slopey(i,j-1,1)
@@ -311,7 +294,7 @@ contains
 
           sminus = merge(smbot,smtop,vmac(i,j).gt.ZERO)
           savg   = HALF * (smbot + smtop)
-          sminus = merge(sminus, savg, abs(vmac(i,j)) .gt. eps)
+          sminus = merge(sminus, savg, abs(vmac(i,j)) .gt. rel_eps)
 
           if (is_conservative) then
              st = force(i,j,comp) - ( vmac(i,j+1)*splus-vmac(i,j)*sminus ) / hy &
@@ -334,7 +317,7 @@ contains
        do i = is, ie+1 
           sedgex(i,j,comp)=merge(s_l(i),s_r(i),umac(i,j).gt.ZERO)
           savg = HALF*(s_r(i) + s_l(i))
-          sedgex(i,j,comp)=merge(savg,sedgex(i,j,comp),abs(umac(i,j)) .lt. eps)
+          sedgex(i,j,comp)=merge(savg,sedgex(i,j,comp),abs(umac(i,j)) .lt. rel_eps)
        enddo
 
        if (phys_bc(1,1) .eq. SLIP_WALL .or. phys_bc(1,1) .eq. NO_SLIP_WALL) then
@@ -402,7 +385,7 @@ contains
 
           splus = merge(splft,sprgt,umac(i+1,j).gt.ZERO)
           savg  = HALF * (splft + sprgt)
-          splus = merge(splus, savg, abs(umac(i+1,j)) .gt. eps)
+          splus = merge(splus, savg, abs(umac(i+1,j)) .gt. rel_eps)
           
           smrgt = s(i  ,j,comp) - (HALF + dth*umac(i,j)/hx) * slopex(i  ,j,1)
           smlft = s(i-1,j,comp) + (HALF - dth*umac(i,j)/hx) * slopex(i-1,j,1)
@@ -425,7 +408,7 @@ contains
           
           sminus = merge(smlft,smrgt,umac(i,j).gt.ZERO)
           savg   = HALF * (smlft + smrgt)
-          sminus = merge(sminus, savg, abs(umac(i,j)) .gt. eps)
+          sminus = merge(sminus, savg, abs(umac(i,j)) .gt. rel_eps)
           
           if (is_conservative) then
              st = force(i,j,comp) - ( umac(i+1,j)*splus-umac(i,j)*sminus ) /hx &
@@ -451,7 +434,7 @@ contains
        do j = js, je+1 
           sedgey(i,j,comp)=merge(s_b(j),s_t(j),vmac(i,j).gt.ZERO)
           savg = HALF*(s_b(j) + s_t(j))
-          sedgey(i,j,comp)=merge(savg,sedgey(i,j,comp),abs(vmac(i,j)) .lt. eps)
+          sedgey(i,j,comp)=merge(savg,sedgey(i,j,comp),abs(vmac(i,j)) .lt. rel_eps)
        enddo
           
        if (phys_bc(2,1) .eq. SLIP_WALL .or. phys_bc(2,1) .eq. NO_SLIP_WALL) then
@@ -483,6 +466,7 @@ contains
     use bc_module
     use slope_module
     use bl_constants_module
+    use variables, only: rel_eps
 
     integer        , intent(in   ) :: n,lo(:),hi(:),ng_s,ng_se,ng_um,ng_f,ng_w0,ng_n,ng_gw
     real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :,:)
@@ -520,8 +504,6 @@ contains
     real(kind=dp_t) :: hx,hy,hz,dth,splus,sminus
     real(kind=dp_t) :: savg,st
     real(kind=dp_t) :: sptop,spbot,smtop,smbot,splft,sprgt,smlft,smrgt
-    real(kind=dp_t) :: abs_eps,eps,umax
-
     real(kind=dp_t) :: Ut_dot_er
 
     integer :: i,j,k,is,js,ks,ie,je,ke
@@ -539,31 +521,11 @@ contains
     end do
     call slopez_3d(s(:,:,:,comp:),slopez,lo,hi,ng_s,1,adv_bc)
 
-    abs_eps = 1.0d-8
-    
     dth = HALF*dt
     
     hx = dx(1)
     hy = dx(2)
     hz = dx(3)
-
-    umax = abs(umac(is,js,ks))
-
-    do k = ks,ke; do j = js,je; do i = is,ie+1
-       umax = max(umax,abs(umac(i,j,k)))
-    end do; end do; end do
-    do k = ks,ke; do j = js,je+1; do i = is,ie
-       umax = max(umax,abs(vmac(i,j,k)))
-    end do; end do; end do
-    do k = ks,ke+1; do j = js,je; do i = is,ie
-       umax = max(umax,abs(wmac(i,j,k)))
-    end do; end do; end do
-
-    if (umax .eq. 0.d0) then
-       eps = abs_eps
-    else
-       eps = abs_eps * umax
-    endif
 
     !********************************
     ! Loop for edge states on x-edges.
@@ -594,7 +556,7 @@ contains
 
              splus = merge(spbot,sptop,vmac(i,j+1,k).gt.ZERO)
              savg  = HALF * (spbot + sptop)
-             splus = merge(splus, savg, abs(vmac(i,j+1,k)) .gt. eps)
+             splus = merge(splus, savg, abs(vmac(i,j+1,k)) .gt. rel_eps)
 
              smtop = s(i,j  ,k,comp) - (HALF + dth*vmac(i,j,k)/hy) * slopey(i,j  ,k,1)
              smbot = s(i,j-1,k,comp) + (HALF - dth*vmac(i,j,k)/hy) * slopey(i,j-1,k,1)
@@ -617,7 +579,7 @@ contains
 
              sminus = merge(smbot,smtop,vmac(i,j,k).gt.ZERO)
              savg   = HALF * (smbot + smtop)
-             sminus = merge(sminus, savg, abs(vmac(i,j,k)) .gt. eps)
+             sminus = merge(sminus, savg, abs(vmac(i,j,k)) .gt. rel_eps)
 
              if (is_conservative) then
                 st = force(i,j,k,comp) - ( vmac(i,j+1,k)*splus-vmac(i,j,k)*sminus )  / hy
@@ -647,7 +609,7 @@ contains
                  
              splus = merge(spbot,sptop,wmac(i,j,k+1).gt.ZERO)
              savg  = HALF * (spbot + sptop)
-             splus = merge(splus, savg, abs(wmac(i,j,k+1)) .gt. eps)
+             splus = merge(splus, savg, abs(wmac(i,j,k+1)) .gt. rel_eps)
                  
              smtop = s(i,j,k  ,comp) - (HALF + dth*wmac(i,j,k)/hz) * slopez(i,j,k  ,1)
              smbot = s(i,j,k-1,comp) + (HALF - dth*wmac(i,j,k)/hz) * slopez(i,j,k-1,1)
@@ -670,7 +632,7 @@ contains
              
              sminus = merge(smbot,smtop,wmac(i,j,k).gt.ZERO)
              savg   = HALF * (smbot + smtop)
-             sminus = merge(sminus, savg, abs(wmac(i,j,k)) .gt. eps)
+             sminus = merge(sminus, savg, abs(wmac(i,j,k)) .gt. rel_eps)
 
              if (is_conservative) then
                 st = st - ( wmac(i,j,k+1)*splus-wmac(i,j,k)*sminus ) / hz &
@@ -717,7 +679,7 @@ contains
           do i = is, ie+1 
              sedgex(i,j,k,comp)=merge(s_l(i),s_r(i),umac(i,j,k).gt.ZERO)
              savg = HALF*(s_r(i) + s_l(i))
-             sedgex(i,j,k,comp)=merge(savg,sedgex(i,j,k,comp),abs(umac(i,j,k)) .lt. eps)
+             sedgex(i,j,k,comp)=merge(savg,sedgex(i,j,k,comp),abs(umac(i,j,k)) .lt. rel_eps)
           enddo
               
           if (phys_bc(1,1) .eq. SLIP_WALL .or. phys_bc(1,1) .eq. NO_SLIP_WALL) then
@@ -787,7 +749,7 @@ contains
              
              splus = merge(splft,sprgt,umac(i+1,j,k).gt.ZERO)
              savg  = HALF * (splft + sprgt)
-             splus = merge(splus, savg, abs(umac(i+1,j,k)) .gt. eps)
+             splus = merge(splus, savg, abs(umac(i+1,j,k)) .gt. rel_eps)
              
              smrgt = s(i  ,j,k,comp) - (HALF + dth*umac(i,j,k)/hx) * slopex(i  ,j,k,1)
              smlft = s(i-1,j,k,comp) + (HALF - dth*umac(i,j,k)/hx) * slopex(i-1,j,k,1)
@@ -810,7 +772,7 @@ contains
              
              sminus = merge(smlft,smrgt,umac(i,j,k).gt.ZERO)
              savg   = HALF * (smlft + smrgt)
-             sminus = merge(sminus, savg, abs(umac(i,j,k)) .gt. eps)
+             sminus = merge(sminus, savg, abs(umac(i,j,k)) .gt. rel_eps)
 
              if (is_conservative) then
                 st = force(i,j,k,comp) - ( umac(i+1,j,k)*splus-umac(i,j,k)*sminus ) / hx
@@ -840,7 +802,7 @@ contains
              
              splus = merge(splft,sprgt,wmac(i,j,k+1).gt.ZERO)
              savg  = HALF * (splft + sprgt)
-             splus = merge(splus, savg, abs(wmac(i,j,k+1)) .gt. eps)
+             splus = merge(splus, savg, abs(wmac(i,j,k+1)) .gt. rel_eps)
              
              smrgt = s(i,j,k  ,comp) - (HALF + dth*wmac(i,j,k)/hz) * slopez(i,j,k  ,1)
              smlft = s(i,j,k-1,comp) + (HALF - dth*wmac(i,j,k)/hz) * slopez(i,j,k-1,1)
@@ -863,7 +825,7 @@ contains
              
              sminus = merge(smlft,smrgt,wmac(i,j,k).gt.ZERO)
              savg   = HALF * (smlft + smrgt)
-             sminus = merge(sminus, savg, abs(wmac(i,j,k)) .gt. eps)
+             sminus = merge(sminus, savg, abs(wmac(i,j,k)) .gt. rel_eps)
                  
              if (is_conservative) then
                 st = st - ( wmac(i,j,k+1)*splus-wmac(i,j,k)*sminus ) / hz &
@@ -910,7 +872,7 @@ contains
           do j = js, je+1 
              sedgey(i,j,k,comp)=merge(s_b(j),s_t(j),vmac(i,j,k).gt.ZERO)
              savg = HALF*(s_b(j) + s_t(j))
-             sedgey(i,j,k,comp)=merge(savg,sedgey(i,j,k,comp),abs(vmac(i,j,k)) .lt. eps)
+             sedgey(i,j,k,comp)=merge(savg,sedgey(i,j,k,comp),abs(vmac(i,j,k)) .lt. rel_eps)
           enddo
           
           if (phys_bc(2,1) .eq. SLIP_WALL .or. phys_bc(2,1) .eq. NO_SLIP_WALL) then
@@ -981,7 +943,7 @@ contains
                  
              splus = merge(splft,sprgt,umac(i+1,j,k).gt.ZERO)
              savg  = HALF * (splft + sprgt)
-             splus = merge(splus, savg, abs(umac(i+1,j,k)) .gt. eps)
+             splus = merge(splus, savg, abs(umac(i+1,j,k)) .gt. rel_eps)
              
              smlft = s(i-1,j,k,comp) + (HALF - dth*umac(i,j,k)/hx) * slopex(i-1,j,k,1)
              smrgt = s(i  ,j,k,comp) - (HALF + dth*umac(i,j,k)/hx) * slopex(i  ,j,k,1)
@@ -1004,7 +966,7 @@ contains
              
              sminus = merge(smlft,smrgt,umac(i,j,k).gt.ZERO)
              savg   = HALF * (smlft + smrgt)
-             sminus = merge(sminus, savg, abs(umac(i,j,k)) .gt. eps)
+             sminus = merge(sminus, savg, abs(umac(i,j,k)) .gt. rel_eps)
                  
              if (is_conservative) then
                 st = force(i,j,k,comp) - ( umac(i+1,j,k)*splus - umac(i,j,k)*sminus ) / hx
@@ -1034,7 +996,7 @@ contains
              
              splus = merge(spbot,sptop,vmac(i,j+1,k).gt.ZERO)
              savg  = HALF * (spbot + sptop)
-             splus = merge(splus, savg, abs(vmac(i,j+1,k)) .gt. eps)
+             splus = merge(splus, savg, abs(vmac(i,j+1,k)) .gt. rel_eps)
                  
              smbot = s(i,j-1,k,comp) + (HALF - dth*vmac(i,j,k)/hy) * slopey(i,j-1,k,1)
              smtop = s(i,j  ,k,comp) - (HALF + dth*vmac(i,j,k)/hy) * slopey(i,j  ,k,1)
@@ -1057,7 +1019,7 @@ contains
                  
              sminus = merge(smbot,smtop,vmac(i,j,k).gt.ZERO)
              savg   = HALF * (smbot + smtop)
-             sminus = merge(sminus, savg, abs(vmac(i,j,k)) .gt. eps)
+             sminus = merge(sminus, savg, abs(vmac(i,j,k)) .gt. rel_eps)
                
              if (is_conservative) then
                 st = st - ( vmac(i,j+1,k)*splus-vmac(i,j,k)*sminus ) / hy &
@@ -1109,7 +1071,7 @@ contains
           do k = ks, ke+1 
              sedgez(i,j,k,comp)=merge(s_d(k),s_u(k),wmac(i,j,k).gt.ZERO)
              savg = HALF*(s_d(k) + s_u(k))
-             sedgez(i,j,k,comp)=merge(savg,sedgez(i,j,k,comp),abs(wmac(i,j,k)) .lt. eps)
+             sedgez(i,j,k,comp)=merge(savg,sedgez(i,j,k,comp),abs(wmac(i,j,k)) .lt. rel_eps)
           enddo
           
           if (phys_bc(3,1) .eq. SLIP_WALL .or. phys_bc(3,1) .eq. NO_SLIP_WALL) then
