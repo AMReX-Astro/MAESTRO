@@ -1292,7 +1292,7 @@ contains
     integer    :: max_iter, min_width, max_nlevel
     integer    :: n, nu1, nu2, gamma, cycle, smoother
     integer    :: max_nlevel_in,do_diagnostics
-    real(dp_t) :: rel_eps,abs_eps,omega,bottom_solver_eps
+    real(dp_t) :: eps,abs_eps,omega,bottom_solver_eps
     real(dp_t) ::  xa(dm),  xb(dm)
     real(dp_t) :: pxa(dm), pxb(dm)
 
@@ -1306,7 +1306,7 @@ contains
 
     max_nlevel        = mgt(nlevs)%max_nlevel
     max_iter          = mgt(nlevs)%max_iter
-    rel_eps           = mgt(nlevs)%eps
+    eps               = mgt(nlevs)%eps
     abs_eps           = mgt(nlevs)%abs_eps
     smoother          = mgt(nlevs)%smoother
     nu1               = mgt(nlevs)%nu1
@@ -1321,11 +1321,11 @@ contains
 
     ! Note: put this here to minimize asymmetries - ASA
     if (nlevs .eq. 1) then
-       rel_eps = 1.d-12
+       eps = 1.d-12
     else if (nlevs .eq. 2) then
-       rel_eps = 1.d-11
+       eps = 1.d-11
     else
-       rel_eps = 1.d-10
+       eps = 1.d-10
     end if
 
     abs_eps = -1.0_dp_t
@@ -1333,7 +1333,7 @@ contains
        do n = 1,nlevs
           abs_eps = max(abs_eps, umac_norm(n) / dx(n,1))
        end do
-       abs_eps = rel_eps * abs_eps
+       abs_eps = eps * abs_eps
     end if
 
     if ( mg_bottom_solver >= 0) bottom_solver = mg_bottom_solver
@@ -1379,7 +1379,7 @@ contains
                            max_iter = max_iter, &
                            max_nlevel = max_nlevel_in, &
                            min_width = min_width, &
-                           eps = rel_eps, &
+                           eps = eps, &
                            abs_eps = abs_eps, &
                            verbose = mg_verbose, &
                            cg_verbose = cg_verbose, &
@@ -1495,7 +1495,7 @@ contains
     integer    :: max_nlevel
     integer    :: n, nu1, nu2, gamma, ncycle, smoother
     integer    :: max_nlevel_in,do_diagnostics
-    real(dp_t) :: rel_eps,abs_eps,omega,bottom_solver_eps
+    real(dp_t) :: eps,abs_eps,omega,bottom_solver_eps
     real(dp_t) ::  xa(dm),  xb(dm)
     real(dp_t) :: pxa(dm), pxb(dm)
 
@@ -1510,7 +1510,7 @@ contains
 
     max_nlevel        = mgt(nlevs)%max_nlevel
     max_iter          = mgt(nlevs)%max_iter
-    rel_eps           = mgt(nlevs)%eps
+    eps               = mgt(nlevs)%eps
     abs_eps           = mgt(nlevs)%abs_eps
     smoother          = mgt(nlevs)%smoother
     nu1               = mgt(nlevs)%nu1
@@ -1525,11 +1525,11 @@ contains
 
     ! Note: put this here to minimize asymmetries - ASA
     if (nlevs .eq. 1) then
-       rel_eps = 1.d-12
+       eps = 1.d-12
     else if (nlevs .eq. 2) then
-       rel_eps = 1.d-11
+       eps = 1.d-11
     else
-       rel_eps = 1.d-10
+       eps = 1.d-10
     end if
 
     abs_eps = -1.0_dp_t
@@ -1537,7 +1537,7 @@ contains
        do n = 1,nlevs
           abs_eps = max(abs_eps, umac_norm(n) / dx(n,1))
        end do
-       abs_eps = rel_eps * abs_eps
+       abs_eps = eps * abs_eps
     end if
 
     if ( test /= 0 .AND. max_iter == mgt(nlevs)%max_iter ) &
@@ -1577,7 +1577,7 @@ contains
                            max_iter = max_iter, &
                            max_nlevel = max_nlevel_in, &
                            min_width = min_width, &
-                           eps = rel_eps, &
+                           eps = eps, &
                            abs_eps = abs_eps, &
                            verbose = mg_verbose, &
                            cg_verbose = cg_verbose, &
