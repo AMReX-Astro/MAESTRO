@@ -233,7 +233,6 @@ contains
     integer                    :: r
     real(kind=dp_t)            :: dpdr, volume_discrepancy
     real(kind=dp_t)            :: w0_avg, div_avg, dt_avg
-    real(kind=dp_t), parameter :: eps = 1.d-8
 
     real(kind=dp_t) ::             m(0:nr_fine-1)
     real(kind=dp_t) ::    w0_old_cen(0:nr_fine-1)
