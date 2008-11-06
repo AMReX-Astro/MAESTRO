@@ -996,19 +996,18 @@ contains
           do i=is-1,ie+1
              ! extrapolate to faces
              if (spherical .eq. 1) then
-                ! fix
-                ulyz(i,j,k) = uly(i,j,k,1) &
-                     - (dt6/hz)*(uimhz(i,j-1,k+1,3)+uimhz(i,j-1,k,3)) &
+                ulyz(i,j,k) = uly(i,j,k,1) - (dt6/hz)* &
+                     (uimhz(i,j-1,k+1,3)+w0macz(i,j-1,k+1)+uimhz(i,j-1,k,3)+w0macz(i,j-1,k)) &
                      * (uimhz(i,j-1,k+1,1)-uimhz(i,j-1,k,1))
-                uryz(i,j,k) = ury(i,j,k,1) &
-                     - (dt6/hz)*(uimhz(i,j  ,k+1,3)+uimhz(i,j  ,k,3)) &
+                uryz(i,j,k) = ury(i,j,k,1) - (dt6/hz)* &
+                     (uimhz(i,j  ,k+1,3)+w0macz(i,j  ,k+1)+uimhz(i,j  ,k,3)+w0macz(i,j  ,k)) &
                      * (uimhz(i,j  ,k+1,1)-uimhz(i,j  ,k,1))
              else
                 ulyz(i,j,k) = uly(i,j,k,1) &
-                     - (dt6/hz)*(uimhz(i,j-1,k+1,3)+uimhz(i,j-1,k,3)) &
+                     - (dt6/hz)*(uimhz(i,j-1,k+1,3)+w0(k+1)+uimhz(i,j-1,k,3)+w0(k)) &
                      * (uimhz(i,j-1,k+1,1)-uimhz(i,j-1,k,1))
                 uryz(i,j,k) = ury(i,j,k,1) &
-                     - (dt6/hz)*(uimhz(i,j  ,k+1,3)+uimhz(i,j  ,k,3)) &
+                     - (dt6/hz)*(uimhz(i,j  ,k+1,3)+w0(k+1)+uimhz(i,j  ,k,3)+w0(k)) &
                      * (uimhz(i,j  ,k+1,1)-uimhz(i,j  ,k,1))
              end if
 
@@ -1034,10 +1033,11 @@ contains
 
              ! upwind
              if (spherical .eq. 1) then
-                ! fix
-                uimhyz(i,j,k) = merge(ulyz(i,j,k),uryz(i,j,k),uimhy(i,j,k,2).gt.ZERO)
+                uimhyz(i,j,k) = merge(ulyz(i,j,k),uryz(i,j,k), &
+                     uimhy(i,j,k,2)+w0macy(i,j,k).gt.ZERO)
                 uavg = HALF*(ulyz(i,j,k)+uryz(i,j,k))
-                uimhyz(i,j,k) = merge(uavg,uimhyz(i,j,k),abs(uimhy(i,j,k,2)).lt.rel_eps)
+                uimhyz(i,j,k) = merge(uavg,uimhyz(i,j,k), &
+                     abs(uimhy(i,j,k,2)+w0macy(i,j,k)).lt.rel_eps)
              else
                 uimhyz(i,j,k) = merge(ulyz(i,j,k),uryz(i,j,k),uimhy(i,j,k,2).gt.ZERO)
                 uavg = HALF*(ulyz(i,j,k)+uryz(i,j,k))
@@ -1053,15 +1053,13 @@ contains
           do i=is-1,ie+1
              ! extrapolate to faces
              if (spherical .eq. 1) then
-                ! fix
-                ulzy(i,j,k) = ulz(i,j,k,1) &
-                     - (dt6/hy)*(uimhy(i,j+1,k-1,2)+uimhy(i,j,k-1,2)) &
+                ulzy(i,j,k) = ulz(i,j,k,1) - (dt6/hy)* &
+                     (uimhy(i,j+1,k-1,2)+w0macy(i,j+1,k-1)+uimhy(i,j,k-1,2)+w0macy(i,j,k-1)) &
                      * (uimhy(i,j+1,k-1,1)-uimhy(i,j,k-1,1))
-                urzy(i,j,k) = urz(i,j,k,1) &
-                     - (dt6/hy)*(uimhy(i,j+1,k  ,2)+uimhy(i,j,k  ,2)) &
+                urzy(i,j,k) = urz(i,j,k,1) - (dt6/hy)* &
+                     (uimhy(i,j+1,k  ,2)+w0macy(i,j+1,k  )+uimhy(i,j,k  ,2)+w0macy(i,j,k  )) &
                      * (uimhy(i,j+1,k  ,1)-uimhy(i,j,k  ,1))
              else
-                ! fix
                 ulzy(i,j,k) = ulz(i,j,k,1) &
                      - (dt6/hy)*(uimhy(i,j+1,k-1,2)+uimhy(i,j,k-1,2)) &
                      * (uimhy(i,j+1,k-1,1)-uimhy(i,j,k-1,1))
@@ -1092,15 +1090,15 @@ contains
 
              ! upwind
              if (spherical .eq. 1) then
-                ! fix
-                uimhzy(i,j,k) = merge(ulzy(i,j,k),urzy(i,j,k),uimhz(i,j,k,3).gt.ZERO)
+                uimhzy(i,j,k) = merge(ulzy(i,j,k),urzy(i,j,k), &
+                     uimhz(i,j,k,3)+w0macz(i,j,k).gt.ZERO)
                 uavg = HALF*(ulzy(i,j,k)+urzy(i,j,k))
-                uimhzy(i,j,k) = merge(uavg,uimhzy(i,j,k),abs(uimhz(i,j,k,3)).lt.rel_eps)
+                uimhzy(i,j,k) = merge(uavg,uimhzy(i,j,k), &
+                     abs(uimhz(i,j,k,3)+w0macz(i,j,k)).lt.rel_eps)
              else
-                ! fix
-                uimhzy(i,j,k) = merge(ulzy(i,j,k),urzy(i,j,k),uimhz(i,j,k,3).gt.ZERO)
+                uimhzy(i,j,k) = merge(ulzy(i,j,k),urzy(i,j,k),uimhz(i,j,k,3)+w0(k).gt.ZERO)
                 uavg = HALF*(ulzy(i,j,k)+urzy(i,j,k))
-                uimhzy(i,j,k) = merge(uavg,uimhzy(i,j,k),abs(uimhz(i,j,k,3)).lt.rel_eps)
+                uimhzy(i,j,k) = merge(uavg,uimhzy(i,j,k),abs(uimhz(i,j,k,3)+w0(k)).lt.rel_eps)
              end if
           enddo
        enddo
@@ -1112,19 +1110,18 @@ contains
           do i=is,ie+1
              ! extrapolate to faces
              if (spherical .eq. 1) then
-                ! fix
-                vlxz(i,j,k) = ulx(i,j,k,2) &
-                     - (dt6/hz)*(uimhz(i-1,j,k+1,3)+uimhz(i-1,j,k,3)) &
+                vlxz(i,j,k) = ulx(i,j,k,2) - (dt6/hz)* &
+                     (uimhz(i-1,j,k+1,3)+w0macz(i-1,j,k+1)+uimhz(i-1,j,k,3)+w0macz(i-1,j,k)) &
                      * (uimhz(i-1,j,k+1,2)-uimhz(i-1,j,k,2))
-                vrxz(i,j,k) = urx(i,j,k,2) &
-                     - (dt6/hz)*(uimhz(i  ,j,k+1,3)+uimhz(i  ,j,k,3)) &
+                vrxz(i,j,k) = urx(i,j,k,2) - (dt6/hz)* &
+                     (uimhz(i  ,j,k+1,3)+w0macz(i  ,j,k+1)+uimhz(i  ,j,k,3)+w0macz(i  ,j,k)) &
                      * (uimhz(i  ,j,k+1,2)-uimhz(i  ,j,k,2))
              else
                 vlxz(i,j,k) = ulx(i,j,k,2) &
-                     - (dt6/hz)*(uimhz(i-1,j,k+1,3)+uimhz(i-1,j,k,3)) &
+                     - (dt6/hz)*(uimhz(i-1,j,k+1,3)+w0(k+1)+uimhz(i-1,j,k,3)+w0(k)) &
                      * (uimhz(i-1,j,k+1,2)-uimhz(i-1,j,k,2))
                 vrxz(i,j,k) = urx(i,j,k,2) &
-                     - (dt6/hz)*(uimhz(i  ,j,k+1,3)+uimhz(i  ,j,k,3)) &
+                     - (dt6/hz)*(uimhz(i  ,j,k+1,3)+w0(k+1)+uimhz(i  ,j,k,3)+w0(k)) &
                      * (uimhz(i  ,j,k+1,2)-uimhz(i  ,j,k,2))
              end if
 
@@ -1150,10 +1147,11 @@ contains
 
              ! upwind
              if (spherical .eq. 1) then
-                ! fix
-                vimhxz(i,j,k) = merge(vlxz(i,j,k),vrxz(i,j,k),uimhx(i,j,k,1).gt.ZERO)
+                vimhxz(i,j,k) = merge(vlxz(i,j,k),vrxz(i,j,k), &
+                     uimhx(i,j,k,1)+w0macx(i,j,k).gt.ZERO)
                 uavg = HALF*(vlxz(i,j,k)+vrxz(i,j,k))
-                vimhxz(i,j,k) = merge(uavg,vimhxz(i,j,k),abs(uimhx(i,j,k,1)).lt.rel_eps)
+                vimhxz(i,j,k) = merge(uavg,vimhxz(i,j,k), &
+                     abs(uimhx(i,j,k,1)+w0macx(i,j,k)).lt.rel_eps)
              else
                 vimhxz(i,j,k) = merge(vlxz(i,j,k),vrxz(i,j,k),uimhx(i,j,k,1).gt.ZERO)
                 uavg = HALF*(vlxz(i,j,k)+vrxz(i,j,k))
@@ -1169,12 +1167,11 @@ contains
           do i=is,ie
              ! extrapolate to faces
              if (spherical .eq. 1) then
-                ! fix
-                vlzx(i,j,k) = ulz(i,j,k,2) &
-                     - (dt6/hx)*(uimhx(i+1,j,k-1,1)+uimhx(i,j,k-1,1)) &
+                vlzx(i,j,k) = ulz(i,j,k,2) - (dt6/hx)* &
+                     (uimhx(i+1,j,k-1,1)+w0macx(i+1,j,k-1)+uimhx(i,j,k-1,1)+w0macx(i,j,k-1)) &
                      * (uimhx(i+1,j,k-1,2)-uimhx(i,j,k-1,2))
-                vrzx(i,j,k) = urz(i,j,k,2) &
-                     - (dt6/hx)*(uimhx(i+1,j,k  ,1)+uimhx(i,j,k  ,1)) &
+                vrzx(i,j,k) = urz(i,j,k,2) - (dt6/hx)* &
+                     (uimhx(i+1,j,k  ,1)+w0macx(i+1,j,k  )+uimhx(i,j,k  ,1)+w0macx(i,j,k  )) &
                      * (uimhx(i+1,j,k  ,2)-uimhx(i,j,k  ,2))
              else
                 vlzx(i,j,k) = ulz(i,j,k,2) &
@@ -1207,14 +1204,15 @@ contains
 
              ! upwind
              if (spherical .eq. 1) then
-                ! fix
-                vimhzx(i,j,k) = merge(vlzx(i,j,k),vrzx(i,j,k),uimhz(i,j,k,3).gt.ZERO)
+                vimhzx(i,j,k) = merge(vlzx(i,j,k),vrzx(i,j,k), &
+                     uimhz(i,j,k,3)+w0macz(i,j,k).gt.ZERO)
                 uavg = HALF*(vlzx(i,j,k)+vrzx(i,j,k))
-                vimhzx(i,j,k) = merge(uavg,vimhzx(i,j,k),abs(uimhz(i,j,k,3)).lt.rel_eps)
+                vimhzx(i,j,k) = merge(uavg,vimhzx(i,j,k), &
+                     abs(uimhz(i,j,k,3)+w0macz(i,j,k)).lt.rel_eps)
              else
-                vimhzx(i,j,k) = merge(vlzx(i,j,k),vrzx(i,j,k),uimhz(i,j,k,3).gt.ZERO)
+                vimhzx(i,j,k) = merge(vlzx(i,j,k),vrzx(i,j,k),uimhz(i,j,k,3)+w0(k).gt.ZERO)
                 uavg = HALF*(vlzx(i,j,k)+vrzx(i,j,k))
-                vimhzx(i,j,k) = merge(uavg,vimhzx(i,j,k),abs(uimhz(i,j,k,3)).lt.rel_eps)
+                vimhzx(i,j,k) = merge(uavg,vimhzx(i,j,k),abs(uimhz(i,j,k,3)+w0(k)).lt.rel_eps)
              end if
           enddo
        enddo
@@ -1226,15 +1224,13 @@ contains
           do i=is,ie+1
              ! extrapolate to faces
              if (spherical .eq. 1) then
-                ! fix
-                wlxy(i,j,k) = ulx(i,j,k,3) &
-                     - (dt6/hy)*(uimhy(i-1,j+1,k,2)+uimhy(i-1,j,k,2)) &
+                wlxy(i,j,k) = ulx(i,j,k,3) - (dt6/hy)* &
+                     (uimhy(i-1,j+1,k,2)+w0macy(i-1,j+1,k)+uimhy(i-1,j,k,2)+w0macy(i-1,j,k)) &
                      * (uimhy(i-1,j+1,k,3)-uimhy(i-1,j,k,3))
-                wrxy(i,j,k) = urx(i,j,k,3) &
-                     - (dt6/hy)*(uimhy(i  ,j+1,k,2)+uimhy(i  ,j,k,2)) &
+                wrxy(i,j,k) = urx(i,j,k,3) - (dt6/hy)* &
+                     (uimhy(i  ,j+1,k,2)+w0macy(i  ,j+1,k)+uimhy(i  ,j,k,2)+w0macy(i  ,j,k)) &
                      * (uimhy(i  ,j+1,k,3)-uimhy(i  ,j,k,3))
              else
-                ! fix
                 wlxy(i,j,k) = ulx(i,j,k,3) &
                      - (dt6/hy)*(uimhy(i-1,j+1,k,2)+uimhy(i-1,j,k,2)) &
                      * (uimhy(i-1,j+1,k,3)-uimhy(i-1,j,k,3))
@@ -1265,12 +1261,12 @@ contains
 
              ! upwind
              if (spherical .eq. 1) then
-                ! fix
-                wimhxy(i,j,k) = merge(wlxy(i,j,k),wrxy(i,j,k),uimhx(i,j,k,1).gt.ZERO)
+                wimhxy(i,j,k) = merge(wlxy(i,j,k),wrxy(i,j,k), &
+                     uimhx(i,j,k,1)+w0macx(i,j,k).gt.ZERO)
                 uavg = HALF*(wlxy(i,j,k)+wrxy(i,j,k))
-                wimhxy(i,j,k) = merge(uavg,wimhxy(i,j,k),abs(uimhx(i,j,k,1)).lt.rel_eps)
+                wimhxy(i,j,k) = merge(uavg,wimhxy(i,j,k), &
+                     abs(uimhx(i,j,k,1)+w0macx(i,j,k)).lt.rel_eps)
              else
-                ! fix
                 wimhxy(i,j,k) = merge(wlxy(i,j,k),wrxy(i,j,k),uimhx(i,j,k,1).gt.ZERO)
                 uavg = HALF*(wlxy(i,j,k)+wrxy(i,j,k))
                 wimhxy(i,j,k) = merge(uavg,wimhxy(i,j,k),abs(uimhx(i,j,k,1)).lt.rel_eps)
@@ -1285,12 +1281,11 @@ contains
           do i=is,ie
              ! extrapolate to faces
              if (spherical .eq. 1) then
-                ! fix
-                wlyx(i,j,k) = uly(i,j,k,3) &
-                     - (dt6/hx)*(uimhx(i+1,j-1,k,1)+uimhx(i,j-1,k,1)) &
+                wlyx(i,j,k) = uly(i,j,k,3) - (dt6/hx)* &
+                     (uimhx(i+1,j-1,k,1)+w0macx(i+1,j-1,k)+uimhx(i,j-1,k,1)+w0macx(i,j-1,k)) &
                      * (uimhx(i+1,j-1,k,3)-uimhx(i,j-1,k,3))
-                wryx(i,j,k) = ury(i,j,k,3) &
-                     - (dt6/hx)*(uimhx(i+1,j  ,k,1)+uimhx(i,j  ,k,1)) &
+                wryx(i,j,k) = ury(i,j,k,3) - (dt6/hx)* &
+                     (uimhx(i+1,j  ,k,1)+w0macx(i+1,j  ,k)+uimhx(i,j  ,k,1)+w0macx(i,j  ,k)) &
                      * (uimhx(i+1,j  ,k,3)-uimhx(i,j  ,k,3))
              else
                 wlyx(i,j,k) = uly(i,j,k,3) &
@@ -1323,10 +1318,11 @@ contains
 
              ! upwind
              if (spherical .eq. 1) then
-                ! fix
-                wimhyx(i,j,k) = merge(wlyx(i,j,k),wryx(i,j,k),uimhy(i,j,k,2).gt.ZERO)
+                wimhyx(i,j,k) = merge(wlyx(i,j,k),wryx(i,j,k), &
+                     uimhy(i,j,k,2)+w0macy(i,j,k).gt.ZERO)
                 uavg = HALF*(wlyx(i,j,k)+wryx(i,j,k))
-                wimhyx(i,j,k) = merge(uavg,wimhyx(i,j,k),abs(uimhy(i,j,k,2)).lt.rel_eps)
+                wimhyx(i,j,k) = merge(uavg,wimhyx(i,j,k), &
+                     abs(uimhy(i,j,k,2)+w0macy(i,j,k)).lt.rel_eps)
              else
                 wimhyx(i,j,k) = merge(wlyx(i,j,k),wryx(i,j,k),uimhy(i,j,k,2).gt.ZERO)
                 uavg = HALF*(wlyx(i,j,k)+wryx(i,j,k))
