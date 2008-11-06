@@ -1342,47 +1342,59 @@ contains
           do i=is,ie+1
              ! extrapolate to edges
              if (spherical .eq. 1) then
-                ! fix
-                umacl(i,j,k) = ulx(i,j,k,1) &
-                     - (dt4/hy)*(uimhy(i-1,j+1,k  ,2)+uimhy(i-1,j,k,2)) &
+                umacl(i,j,k) = ulx(i,j,k,1) - (dt4/hy)* &
+                     (uimhy(i-1,j+1,k,2)+w0macy(i-1,j+1,k)+uimhy(i-1,j,k,2)+w0macy(i-1,j,k)) &
                      * (uimhyz(i-1,j+1,k  )-uimhyz(i-1,j,k)) &
-                     - (dt4/hz)*(uimhz(i-1,j  ,k+1,3)+uimhz(i-1,j,k,3)) &
+                     - (dt4/hz)* &
+                     (uimhz(i-1,j,k+1,3)+w0macz(i-1,j,k+1)+uimhz(i-1,j,k,3)+w0macz(i-1,j,k)) &
                      * (uimhzy(i-1,j  ,k+1)-uimhzy(i-1,j,k)) &
                      + dt2*force(i-1,j,k,1)
-                umacr(i,j,k) = urx(i,j,k,1) &
-                     - (dt4/hy)*(uimhy(i  ,j+1,k  ,2)+uimhy(i  ,j,k,2)) &
+                umacr(i,j,k) = urx(i,j,k,1) - (dt4/hy)* &
+                     (uimhy(i  ,j+1,k,2)+w0macy(i  ,j+1,k)+uimhy(i  ,j,k,2)+w0macy(i  ,j,k)) &
                      * (uimhyz(i  ,j+1,k  )-uimhyz(i  ,j,k)) &
-                     - (dt4/hz)*(uimhz(i  ,j  ,k+1,3)+uimhz(i  ,j,k,3)) &
+                     - (dt4/hz)* &
+                     (uimhz(i  ,j,k+1,3)+w0macz(i  ,j,k+1)+uimhz(i  ,j,k,3)+w0macz(i  ,j,k)) &
                      * (uimhzy(i  ,j  ,k+1)-uimhzy(i  ,j,k)) &
                      + dt2*force(i  ,j,k,1)
              else
-                ! fix
                 umacl(i,j,k) = ulx(i,j,k,1) &
                      - (dt4/hy)*(uimhy(i-1,j+1,k  ,2)+uimhy(i-1,j,k,2)) &
                      * (uimhyz(i-1,j+1,k  )-uimhyz(i-1,j,k)) &
-                     - (dt4/hz)*(uimhz(i-1,j  ,k+1,3)+uimhz(i-1,j,k,3)) &
+                     - (dt4/hz)*(uimhz(i-1,j  ,k+1,3)+w0(k+1)+uimhz(i-1,j,k,3)+w0(k)) &
                      * (uimhzy(i-1,j  ,k+1)-uimhzy(i-1,j,k)) &
                      + dt2*force(i-1,j,k,1)
                 umacr(i,j,k) = urx(i,j,k,1) &
                      - (dt4/hy)*(uimhy(i  ,j+1,k  ,2)+uimhy(i  ,j,k,2)) &
                      * (uimhyz(i  ,j+1,k  )-uimhyz(i  ,j,k)) &
-                     - (dt4/hz)*(uimhz(i  ,j  ,k+1,3)+uimhz(i  ,j,k,3)) &
+                     - (dt4/hz)*(uimhz(i  ,j  ,k+1,3)+w0(k+1)+uimhz(i  ,j,k,3)+w0(k)) &
                      * (uimhzy(i  ,j  ,k+1)-uimhzy(i  ,j,k)) &
                      + dt2*force(i  ,j,k,1)
              end if
 
              ! add the (Utilde . e_r) d w_0 /dr e_r term here
              if (spherical .eq. 1) then
-                ! fix
+
+                Ut_dot_er = HALF*(utrans(i-1,j,k) + utrans(i,j,k))*normal(i-1,j,k,1) + &
+                            HALF*(vtrans(i-1,j,k) + vtrans(i-1,j+1,k))*normal(i-1,j,k,2) + &
+                            HALF*(wtrans(i-1,j,k) + wtrans(i-1,j,k+1))*normal(i-1,j,k,3)
+
+                umacl(i,j,k) = umacl(i,j,k) - dt2*Ut_dot_er*gradw0_cart(i-1,j,k)*normal(i-1,j,k,1)
+
+                Ut_dot_er = HALF*(utrans(i,j,k) + utrans(i+1,j,k))*normal(i,j,k,1) + &
+                            HALF*(vtrans(i,j,k) + vtrans(i,j+1,k))*normal(i,j,k,2) + &
+                            HALF*(wtrans(i,j,k) + wtrans(i,j,k+1))*normal(i,j,k,3)
+
+                umacr(i,j,k) = umacr(i,j,k) - dt2*Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,1)
+
              end if
 
              ! solve Riemann problem
              if (spherical .eq. 1) then
-                ! fix
                 uavg = HALF*(umacl(i,j,k)+umacr(i,j,k))
-                test = ((umacl(i,j,k) .le. ZERO .and. umacr(i,j,k) .ge. ZERO) .or. &
-                     (abs(umacl(i,j,k)+umacr(i,j,k)) .lt. rel_eps))
-                umac(i,j,k) = merge(umacl(i,j,k),umacr(i,j,k),uavg .gt. ZERO)
+                test = ((umacl(i,j,k)+w0macx(i,j,k) .le. ZERO .and. &
+                     umacr(i,j,k)+w0macx(i,j,k) .ge. ZERO) .or. &
+                     (abs(umacl(i,j,k)+umacr(i,j,k)+TWO*w0macx(i,j,k)) .lt. rel_eps))
+                umac(i,j,k) = merge(umacl(i,j,k),umacr(i,j,k),uavg+w0macx(i,j,k) .gt. ZERO)
                 umac(i,j,k) = merge(uavg,umac(i,j,k),test) ! varden uses ZERO instead of uavg
              else
                 uavg = HALF*(umacl(i,j,k)+umacr(i,j,k))
@@ -1423,47 +1435,59 @@ contains
           do i=is,ie
              ! extrapolate to edges
              if (spherical .eq. 1) then
-                ! fix
-                vmacl(i,j,k) = uly(i,j,k,2) &
-                     - (dt4/hx)*(uimhx(i+1,j-1,k  ,1)+uimhx(i,j-1,k,1)) &
+                vmacl(i,j,k) = uly(i,j,k,2) - (dt4/hx)* &
+                     (uimhx(i+1,j-1,k,1)+w0macx(i+1,j-1,k)+uimhx(i,j-1,k,1)+w0macx(i,j-1,k)) &
                      * (vimhxz(i+1,j-1,k  )-vimhxz(i,j-1,k)) &
-                     - (dt4/hz)*(uimhz(i  ,j-1,k+1,3)+uimhz(i,j-1,k,3)) &
+                     - (dt4/hz)* &
+                     (uimhz(i,j-1,k+1,3)+w0macz(i,j-1,k+1)+uimhz(i,j-1,k,3)+w0macz(i,j-1,k)) &
                      * (vimhzx(i  ,j-1,k+1)-vimhzx(i,j-1,k)) &
                      + dt2*force(i,j-1,k,2)
-                vmacr(i,j,k) = ury(i,j,k,2) &
-                     - (dt4/hx)*(uimhx(i+1,j  ,k  ,1)+uimhx(i,j  ,k,1)) &
-                     * (vimhxz(i+1,j  ,k  )-vimhxz(i,j  ,k)) &
-                     - (dt4/hz)*(uimhz(i  ,j  ,k+1,3)+uimhz(i,j  ,k,3)) &
+                vmacr(i,j,k) = ury(i,j,k,2) - (dt4/hx)* &
+                     (uimhx(i+1,j  ,k,1)+w0macx(i+1,j  ,k)+uimhx(i,j  ,k,1)+w0macx(i,j  ,k)) &
+                     * (vimhxz(i+1,j,k  )-vimhxz(i,j,k)) &
+                     - (dt4/hz)* &
+                     (uimhz(i,j  ,k+1,3)+w0macz(i,j  ,k+1)+uimhz(i,j  ,k,3)+w0macz(i,j,  k)) &
                      * (vimhzx(i  ,j  ,k+1)-vimhzx(i,j  ,k)) &
                      + dt2*force(i,j  ,k,2)
              else
-                ! fix
                 vmacl(i,j,k) = uly(i,j,k,2) &
                      - (dt4/hx)*(uimhx(i+1,j-1,k  ,1)+uimhx(i,j-1,k,1)) &
                      * (vimhxz(i+1,j-1,k  )-vimhxz(i,j-1,k)) &
-                     - (dt4/hz)*(uimhz(i  ,j-1,k+1,3)+uimhz(i,j-1,k,3)) &
+                     - (dt4/hz)*(uimhz(i  ,j-1,k+1,3)+w0(k+1)+uimhz(i,j-1,k,3)+w0(k)) &
                      * (vimhzx(i  ,j-1,k+1)-vimhzx(i,j-1,k)) &
                      + dt2*force(i,j-1,k,2)
                 vmacr(i,j,k) = ury(i,j,k,2) &
                      - (dt4/hx)*(uimhx(i+1,j  ,k  ,1)+uimhx(i,j  ,k,1)) &
                      * (vimhxz(i+1,j  ,k  )-vimhxz(i,j  ,k)) &
-                     - (dt4/hz)*(uimhz(i  ,j  ,k+1,3)+uimhz(i,j  ,k,3)) &
+                     - (dt4/hz)*(uimhz(i  ,j  ,k+1,3)+w0(k+1)+uimhz(i,j  ,k,3)+w0(k)) &
                      * (vimhzx(i  ,j  ,k+1)-vimhzx(i,j  ,k)) &
                      + dt2*force(i,j  ,k,2)
              end if
 
              ! add the (Utilde . e_r) d w_0 /dr e_r term here
              if (spherical .eq. 1) then
-                ! fix
+
+                Ut_dot_er = HALF*(utrans(i,j-1,k) + utrans(i+1,j-1,k))*normal(i,j-1,k,1) + &
+                            HALF*(vtrans(i,j-1,k) + vtrans(i,j,k))*normal(i,j-1,k,2) + &
+                            HALF*(wtrans(i,j-1,k) + wtrans(i,j-1,k+1))*normal(i,j-1,k,3)
+
+                vmacl(i,j,k) = vmacl(i,j,k) - dt2*Ut_dot_er*gradw0_cart(i,j-1,k)*normal(i,j-1,k,2)
+
+                Ut_dot_er = HALF*(utrans(i,j,k) + utrans(i+1,j,k))*normal(i,j,k,1) + &
+                            HALF*(vtrans(i,j,k) + vtrans(i,j+1,k))*normal(i,j,k,2) + &
+                            HALF*(wtrans(i,j,k) + wtrans(i,j,k+1))*normal(i,j,k,3)
+
+                vmacr(i,j,k) = vmacr(i,j,k) - dt2*Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,2)
+
              end if
 
              ! solve Riemann problem
              if (spherical .eq. 1) then
-                ! fix
                 uavg = HALF*(vmacl(i,j,k)+vmacr(i,j,k))
-                test = ((vmacl(i,j,k) .le. ZERO .and. vmacr(i,j,k) .ge. ZERO) .or. &
-                     (abs(vmacl(i,j,k)+vmacr(i,j,k)) .lt. rel_eps))
-                vmac(i,j,k) = merge(vmacl(i,j,k),vmacr(i,j,k),uavg .gt. ZERO)
+                test = ((vmacl(i,j,k)+w0macy(i,j,k) .le. ZERO .and. &
+                     vmacr(i,j,k)+w0macy(i,j,k) .ge. ZERO) .or. &
+                     (abs(vmacl(i,j,k)+vmacr(i,j,k)+TWO*w0macy(i,j,k)) .lt. rel_eps))
+                vmac(i,j,k) = merge(vmacl(i,j,k),vmacr(i,j,k),uavg+w0macy(i,j,k) .gt. ZERO)
                 vmac(i,j,k) = merge(uavg,vmac(i,j,k),test) ! varden uses ZERO instead of uavg
              else
                 uavg = HALF*(vmacl(i,j,k)+vmacr(i,j,k))
@@ -1504,17 +1528,18 @@ contains
           do i=is,ie
              ! extrapolate to edges
              if (spherical .eq. 1) then
-                ! fix
-                wmacl(i,j,k) = ulz(i,j,k,3) &
-                     - (dt4/hx)*(uimhx(i+1,j  ,k-1,1)+uimhx(i,j,k-1,1)) &
+                wmacl(i,j,k) = ulz(i,j,k,3) - (dt4/hx)* &
+                     (uimhx(i+1,j,k-1,1)+w0macx(i+1,j,k-1)+uimhx(i,j,k-1,1)+w0macx(i,j,k-1)) &
                      * (wimhxy(i+1,j  ,k-1)-wimhxy(i,j,k-1)) &
-                     - (dt4/hy)*(uimhy(i  ,j+1,k-1,2)+uimhy(i,j,k-1,2)) &
+                     - (dt4/hy)* &
+                     (uimhy(i,j+1,k-1,2)+w0macy(i,j+1,k-1)+uimhy(i,j,k-1,2)+w0macy(i,j,k-1)) &
                      * (wimhyx(i  ,j+1,k-1)-wimhyx(i,j,k-1)) &
                      + dt2*force(i,j,k-1,3)
-                wmacr(i,j,k) = urz(i,j,k,3) &
-                     - (dt4/hx)*(uimhx(i+1,j  ,k  ,1)+uimhx(i,j,k  ,1)) &
+                wmacr(i,j,k) = urz(i,j,k,3) - (dt4/hx)* &
+                     (uimhx(i+1,j,k  ,1)+w0macx(i+1,j,k  )+uimhx(i,j,k  ,1)+w0macx(i,j,k  )) &
                      * (wimhxy(i+1,j  ,k  )-wimhxy(i,j,k  )) &
-                     - (dt4/hy)*(uimhy(i  ,j+1,k  ,2)+uimhy(i,j,k  ,2)) &
+                     - (dt4/hy)* &
+                     (uimhy(i,j+1,k  ,2)+w0macy(i,j+1,k  )+uimhy(i,j,k  ,2)+w0macy(i,j,k  )) &
                      * (wimhyx(i  ,j+1,k  )-wimhyx(i,j,k  )) &
                      + dt2*force(i,j,k  ,3)
              else
@@ -1534,25 +1559,48 @@ contains
 
              ! add the (Utilde . e_r) d w_0 /dr e_r term here
              if (spherical .eq. 1) then
-                ! fix
+
+                Ut_dot_er = HALF*(utrans(i,j,k-1) + utrans(i+1,j,k-1))*normal(i,j,k-1,1) + &
+                            HALF*(vtrans(i,j,k-1) + vtrans(i,j+1,k-1))*normal(i,j,k-1,2) + &
+                            HALF*(wtrans(i,j,k-1) + wtrans(i,j,k))*normal(i,j,k-1,3)
+
+                wmacl(i,j,k) = wmacl(i,j,k) - dt2*Ut_dot_er*gradw0_cart(i,j,k-1)*normal(i,j,k-1,3)
+
+                Ut_dot_er = HALF*(utrans(i,j,k) + utrans(i+1,j,k))*normal(i,j,k,1) + &
+                            HALF*(vtrans(i,j,k) + vtrans(i,j+1,k))*normal(i,j,k,2) + &
+                            HALF*(wtrans(i,j,k) + wtrans(i,j,k+1))*normal(i,j,k,3)
+
+                wmacr(i,j,k) = wmacr(i,j,k) - dt2*Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,3)
+
              else
-                ! fix
+
+                if (k .eq. 0) then
+                   ! wmacl unchanged since dw_0 / dr = 0
+                   wmacr(i,j,k) = wmacr(i,j,k)-(dt4/hz)*(uimhz(i,j,k+1,3)+uimhz(i,j,k  ,3))*(w0(k+1)-w0(k))
+                else if (k .eq. nr(n)) then
+                   wmacl(i,j,k) = wmacl(i,j,k)-(dt4/hz)*(uimhz(i,j,k  ,3)+uimhz(i,j,k-1,3))*(w0(k)-w0(k-1))
+                   ! wmacr unchanged since dw_0 / dr = 0
+                else
+                   wmacl(i,j,k) = wmacl(i,j,k)-(dt4/hz)*(uimhz(i,j,k  ,3)+uimhz(i,j,k-1,3))*(w0(k)-w0(k-1))
+                   wmacr(i,j,k) = wmacr(i,j,k)-(dt4/hz)*(uimhz(i,j,k+1,3)+uimhz(i,j,k  ,3))*(w0(k+1)-w0(k))
+                end if
+
              end if
 
              ! solve Riemann problem
              if (spherical .eq. 1) then
-                ! fix
                 uavg = HALF*(wmacl(i,j,k)+wmacr(i,j,k))
-                test = ((wmacl(i,j,k) .le. ZERO .and. wmacr(i,j,k) .ge. ZERO) .or. &
-                     (abs(wmacl(i,j,k)+wmacr(i,j,k)) .lt. rel_eps))
-                wmac(i,j,k) = merge(wmacl(i,j,k),wmacr(i,j,k),uavg .gt. ZERO)
+                test = ((wmacl(i,j,k)+w0macz(i,j,k) .le. ZERO .and. &
+                     wmacr(i,j,k)+w0macz(i,j,k) .ge. ZERO) .or. &
+                     (abs(wmacl(i,j,k)+wmacr(i,j,k)+TWO*w0macz(i,j,k)) .lt. rel_eps))
+                wmac(i,j,k) = merge(wmacl(i,j,k),wmacr(i,j,k),uavg+w0macz(i,j,k) .gt. ZERO)
                 wmac(i,j,k) = merge(uavg,wmac(i,j,k),test) ! varden uses ZERO instead of uavg
              else
-                ! fix
                 uavg = HALF*(wmacl(i,j,k)+wmacr(i,j,k))
-                test = ((wmacl(i,j,k) .le. ZERO .and. wmacr(i,j,k) .ge. ZERO) .or. &
-                     (abs(wmacl(i,j,k)+wmacr(i,j,k)) .lt. rel_eps))
-                wmac(i,j,k) = merge(wmacl(i,j,k),wmacr(i,j,k),uavg .gt. ZERO)
+                test = ((wmacl(i,j,k)+w0(k) .le. ZERO .and. &
+                     wmacr(i,j,k)+w0(k) .ge. ZERO) .or. &
+                     (abs(wmacl(i,j,k)+wmacr(i,j,k)+TWO*w0(k)) .lt. rel_eps))
+                wmac(i,j,k) = merge(wmacl(i,j,k),wmacr(i,j,k),uavg+w0(k) .gt. ZERO)
                 wmac(i,j,k) = merge(uavg,wmac(i,j,k),test) ! varden uses ZERO instead of uavg
              end if
           enddo
