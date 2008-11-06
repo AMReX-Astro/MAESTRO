@@ -186,8 +186,11 @@ contains
     real(kind=dp_t) :: slopex(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2)
     real(kind=dp_t) :: slopey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2)
 
+    ! these correspond to u_L^x, etc.
     real(kind=dp_t), allocatable :: ulx(:,:,:),urx(:,:,:),uimhx(:,:,:)
     real(kind=dp_t), allocatable :: uly(:,:,:),ury(:,:,:),uimhy(:,:,:)
+
+    ! these correspond to umac_L, etc.
     real(kind=dp_t), allocatable :: umacl(:,:),umacr(:,:)
     real(kind=dp_t), allocatable :: vmacl(:,:),vmacr(:,:)
 
@@ -506,25 +509,117 @@ contains
     integer        , intent(in   ) :: phys_bc(:,:)
     integer        , intent(in   ) :: adv_bc(:,:,:)
 
-    real(kind=dp_t) :: slopex(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3)
-    real(kind=dp_t) :: slopey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3)
-    real(kind=dp_t) :: slopez(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3)
+    ! local variables only needed to non-corner coupling code
     real(kind=dp_t) :: s_l(lo(1)-1:hi(1)+2)
     real(kind=dp_t) :: s_r(lo(1)-1:hi(1)+2)
     real(kind=dp_t) :: s_b(lo(2)-1:hi(2)+2)
     real(kind=dp_t) :: s_t(lo(2)-1:hi(2)+2)
     real(kind=dp_t) :: s_u(lo(3)-1:hi(3)+2)
     real(kind=dp_t) :: s_d(lo(3)-1:hi(3)+2)
-
     real(kind=dp_t) :: ubardt2, vbardt2, wbardt2
-    real(kind=dp_t) :: hx, hy, hz, dt2, splus, sminus
-    real(kind=dp_t) :: savg,st,ulo,uhi,vlo,vhi,wlo,whi
+    real(kind=dp_t) :: splus, sminus
+    real(kind=dp_t) :: savg,st
     real(kind=dp_t) :: sptop,spbot,smtop,smbot,splft,sprgt,smlft,smrgt
 
-    real(kind=dp_t) :: Ut_dot_er
+    ! local variables
+    real(kind=dp_t) :: slopex(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3)
+    real(kind=dp_t) :: slopey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3)
+    real(kind=dp_t) :: slopez(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3)
+
+    ! these correspond to u_L^x, etc.
+    real(kind=dp_t), allocatable:: ulx(:,:,:,:),urx(:,:,:,:),uimhx(:,:,:,:)
+    real(kind=dp_t), allocatable:: uly(:,:,:,:),ury(:,:,:,:),uimhy(:,:,:,:)
+    real(kind=dp_t), allocatable:: ulz(:,:,:,:),urz(:,:,:,:),uimhz(:,:,:,:)
+
+    ! these correspond to u_L^{y|z}, etc.
+    real(kind=dp_t), allocatable:: ulyz(:,:,:)
+    real(kind=dp_t), allocatable:: uryz(:,:,:)
+    real(kind=dp_t), allocatable:: uimhyz(:,:,:)
+
+    real(kind=dp_t), allocatable:: ulzy(:,:,:)
+    real(kind=dp_t), allocatable:: urzy(:,:,:)
+    real(kind=dp_t), allocatable:: uimhzy(:,:,:)
+
+    real(kind=dp_t), allocatable:: vlxz(:,:,:)
+    real(kind=dp_t), allocatable:: vrxz(:,:,:)
+    real(kind=dp_t), allocatable:: vimhxz(:,:,:)
+
+    real(kind=dp_t), allocatable:: vlzx(:,:,:)
+    real(kind=dp_t), allocatable:: vrzx(:,:,:)
+    real(kind=dp_t), allocatable:: vimhzx(:,:,:)
+
+    real(kind=dp_t), allocatable:: wlxy(:,:,:)
+    real(kind=dp_t), allocatable:: wrxy(:,:,:)
+    real(kind=dp_t), allocatable:: wimhxy(:,:,:)
+
+    real(kind=dp_t), allocatable:: wlyx(:,:,:)
+    real(kind=dp_t), allocatable:: wryx(:,:,:)
+    real(kind=dp_t), allocatable:: wimhyx(:,:,:)
+
+    ! these correspond to umac_L, etc.
+    real(kind=dp_t), allocatable:: umacl(:,:,:),umacr(:,:,:)
+    real(kind=dp_t), allocatable:: vmacl(:,:,:),vmacr(:,:,:)
+    real(kind=dp_t), allocatable:: wmacl(:,:,:),wmacr(:,:,:)
+
+    real(kind=dp_t) :: hx, hy, hz, dt2, dt4, dt6, uavg, abs_eps, umax
+    real(kind=dp_t) :: ulo, uhi, vlo, vhi, wlo, whi, Ut_dot_er
 
     integer :: i,j,k,is,js,ie,je,ks,ke
+
     logical :: test
+
+    ! normal predictor states
+    ! Allocated from lo:hi+1 in the normal direction
+    ! lo-1:hi+1 in the transverse directions
+    allocate(ulx(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
+    allocate(urx(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
+    allocate(uimhx(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
+
+    allocate(uly(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3)-1:hi(3)+1,3))
+    allocate(ury(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3)-1:hi(3)+1,3))
+    allocate(uimhy(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3)-1:hi(3)+1,3))
+
+    allocate(ulz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)+1,3))
+    allocate(urz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)+1,3))
+    allocate(uimhz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)+1,3))
+
+    ! transverse states
+    ! lo-1:hi+1 in base direction
+    ! lo:hi+1 in normal direction
+    ! lo:hi in transverse direction
+    allocate(ulyz(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3):hi(3)))
+    allocate(uryz(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3):hi(3)))
+    allocate(uimhyz(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3):hi(3)))
+
+    allocate(ulzy(lo(1)-1:hi(1)+1,lo(2):hi(2),lo(3):hi(3)+1))
+    allocate(urzy(lo(1)-1:hi(1)+1,lo(2):hi(2),lo(3):hi(3)+1))
+    allocate(uimhzy(lo(1)-1:hi(1)+1,lo(2):hi(2),lo(3):hi(3)+1))
+
+    allocate(vlxz(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)))
+    allocate(vrxz(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)))
+    allocate(vimhxz(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)))
+
+    allocate(vlzx(lo(1):hi(1),lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
+    allocate(vrzx(lo(1):hi(1),lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
+    allocate(vimhzx(lo(1):hi(1),lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
+
+    allocate(wlxy(lo(1):hi(1)+1,lo(2):hi(2),lo(3)-1:hi(3)+1))
+    allocate(wrxy(lo(1):hi(1)+1,lo(2):hi(2),lo(3)-1:hi(3)+1))
+    allocate(wimhxy(lo(1):hi(1)+1,lo(2):hi(2),lo(3)-1:hi(3)+1))
+
+    allocate(wlyx(lo(1):hi(1),lo(2):hi(2)+1,lo(3)-1:hi(3)+1))
+    allocate(wryx(lo(1):hi(1),lo(2):hi(2)+1,lo(3)-1:hi(3)+1))
+    allocate(wimhyx(lo(1):hi(1),lo(2):hi(2)+1,lo(3)-1:hi(3)+1))
+
+    ! mac states
+    ! Allocated from lo:hi+1 in the normal direction
+    ! lo:hi in the transverse direction
+    allocate(umacl(lo(1):hi(1)+1,lo(2):hi(2),lo(3):hi(3)))
+    allocate(umacr(lo(1):hi(1)+1,lo(2):hi(2),lo(3):hi(3)))
+    allocate(vmacl(lo(1):hi(1),lo(2):hi(2)+1,lo(3):hi(3)))
+    allocate(vmacr(lo(1):hi(1),lo(2):hi(2)+1,lo(3):hi(3)))
+    allocate(wmacl(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)+1))
+    allocate(wmacr(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)+1))
 
     is = lo(1)
     ie = hi(1)
@@ -533,7 +628,41 @@ contains
     ks = lo(3)
     ke = hi(3)
 
+    abs_eps = 1.d-8
+
+    ! Compute rel_eps, which is relative to the max velocity
+    if (spherical .eq. 1) then
+       umax = abs(u(is,js,ks,1))
+       do k = ks,ke; do j = js,je; do i = is,ie
+          umax = max(umax,abs(u(i,j,k,1)+HALF*(w0macx(i,j,k)+w0macx(i+1,j,k))))
+       end do; end do; end do
+       do k = ks,ke; do j = js,je; do i = is,ie
+          umax = max(umax,abs(u(i,j,k,2)+HALF*(w0macy(i,j,k)+w0macy(i,j+1,k))))
+       end do; end do; end do
+       do k = ks,ke; do j = js,je; do i = is,ie
+          umax = max(umax,abs(u(i,j,k,3)+HALF*(w0macz(i,j,k)+w0macz(i,j,k+1))))
+       end do; end do; end do
+    else
+       umax = abs(u(is,js,ks,1))
+       do k = ks,ke; do j = js,je; do i = is,ie
+          umax = max(umax,abs(u(i,j,k,1)))
+       end do; end do; end do
+       do k = ks,ke; do j = js,je; do i = is,ie
+          umax = max(umax,abs(u(i,j,k,2)))
+       end do; end do; end do
+       do k = ks,ke; do j = js,je; do i = is,ie
+          umax = max(umax,abs(u(i,j,k,3)+HALF*(w0(k)+w0(k+1))))
+       end do; end do; end do
+    end if
+    if (umax .eq. 0.d0) then
+       rel_eps = abs_eps
+    else
+       rel_eps = abs_eps * umax
+    endif
+
     dt2 = HALF*dt
+    dt4 = dt/4.0d0
+    dt6 = dt/6.0d0
 
     hx = dx(1)
     hy = dx(2)
@@ -544,6 +673,12 @@ contains
        call slopey_2d(u(:,:,k,:),slopey(:,:,k,:),lo,hi,ng_u,3,adv_bc)
     end do
     call slopez_3d(u,slopez,lo,hi,ng_u,3,adv_bc)
+
+
+
+
+
+    ! NON-CORNER-COUPLING CODE
 
     !********************************
     ! Loop for edge states on x-edges.
@@ -1189,6 +1324,12 @@ contains
 
        enddo
     enddo
+
+    deallocate(ulx,urx,uimhx,uly,ury,uimhy,ulz,urz,uimhz)
+    deallocate(ulyz,uryz,uimhyz,ulzy,urzy,uimhzy)
+    deallocate(vlxz,vrxz,vimhxz,vlzx,vrzx,vimhzx)
+    deallocate(wlxy,wrxy,wimhxy,wlyx,wryx,wimhyx)
+    deallocate(umacl,umacr,vmacl,vmacr,wmacl,wmacr)
 
   end subroutine velpred_3d
 
