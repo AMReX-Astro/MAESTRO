@@ -384,10 +384,10 @@ contains
        do i=is,ie+1
           ! extrapolate to edges
           umacl(i,j) = ulx(i,j,1) &
-               - (dt4/hy) * (uimhy(i-1,j+1,2)+w0(j+1)+uimhy(i-1,j,2)+w0(j)) &
+               - (dt4/hy)*(uimhy(i-1,j+1,2)+w0(j+1)+uimhy(i-1,j,2)+w0(j)) &
                * (uimhy(i-1,j+1,1)-uimhy(i-1,j,1)) + dt2*force(i-1,j,1)
           umacr(i,j) = urx(i,j,1) &
-               - (dt4/hy) * (uimhy(i  ,j+1,2)+w0(j+1)+uimhy(i  ,j,2)+w0(j))&
+               - (dt4/hy)*(uimhy(i  ,j+1,2)+w0(j+1)+uimhy(i  ,j,2)+w0(j)) &
                * (uimhy(i  ,j+1,1)-uimhy(i  ,j,1)) + dt2*force(i  ,j,1)
 
           ! solve Riemann problem
@@ -395,9 +395,7 @@ contains
           test = ((umacl(i,j) .le. ZERO .and. umacr(i,j) .ge. ZERO) .or. &
                (abs(umacl(i,j)+umacr(i,j)) .lt. rel_eps))
           umac(i,j) = merge(umacl(i,j),umacr(i,j),uavg .gt. ZERO)
-          ! NOTE: Need to talk to John about this
-          ! umac(i,j) = merge(ZERO,umac(i,j),test)
-          umac(i,j) = merge(uavg,umac(i,j),test)
+          umac(i,j) = merge(uavg,umac(i,j),test) ! varden uses ZERO instead of uavg
        enddo
     enddo
 
@@ -425,10 +423,12 @@ contains
     do j=js,je+1
        do i=is,ie
           ! extrapolate to edges
-          vmacl(i,j) = uly(i,j,2) - (dt4/hx)*(uimhx(i+1,j-1,1)+uimhx(i,j-1,1)) * &
-               (uimhx(i+1,j-1,2)-uimhx(i,j-1,2)) + dt2*force(i,j-1,2)
-          vmacr(i,j) = ury(i,j,2) - (dt4/hx)*(uimhx(i+1,j  ,1)+uimhx(i,j  ,1)) * &
-               (uimhx(i+1,j  ,2)-uimhx(i,j  ,2)) + dt2*force(i,j  ,2)
+          vmacl(i,j) = uly(i,j,2) &
+               - (dt4/hx)*(uimhx(i+1,j-1,1)+uimhx(i,j-1,1)) &
+               * (uimhx(i+1,j-1,2)-uimhx(i,j-1,2)) + dt2*force(i,j-1,2)
+          vmacr(i,j) = ury(i,j,2) &
+               - (dt4/hx)*(uimhx(i+1,j  ,1)+uimhx(i,j  ,1)) &
+               * (uimhx(i+1,j  ,2)-uimhx(i,j  ,2)) + dt2*force(i,j  ,2)
 
           ! add the (Utilde . e_r) d w_0 /dr e_r term here
           if (j .eq. 0) then
@@ -447,9 +447,7 @@ contains
           test = ((vmacl(i,j)+w0(j) .le. ZERO .and. vmacr(i,j)+w0(j) .ge. ZERO) .or. &
                (abs(vmacl(i,j)+vmacr(i,j)+TWO*w0(j)) .lt. rel_eps))
           vmac(i,j) = merge(vmacl(i,j),vmacr(i,j),uavg+w0(j) .gt. ZERO)
-          ! NOTE: Need to talk to John about this
-          ! vmac(i,j) = merge(ZERO,vmac(i,j),test)
-          vmac(i,j) = merge(uavg,vmac(i,j),test)
+          vmac(i,j) = merge(uavg,vmac(i,j),test) ! varden uses ZERO instead of uavg
        enddo
     enddo
 
@@ -1140,9 +1138,7 @@ contains
              test = ((umacl(i,j,k) .le. ZERO .and. umacr(i,j,k) .ge. ZERO) .or. &
                   (abs(umacl(i,j,k)+umacr(i,j,k)) .lt. rel_eps))
              umac(i,j,k) = merge(umacl(i,j,k),umacr(i,j,k),uavg .gt. ZERO)
-             ! NOTE: Need to talk to John about this
-             ! umac(i,j,k) = merge(ZERO,umac(i,j,k),test)
-             umac(i,j,k) = merge(uavg,umac(i,j,k),test)
+             umac(i,j,k) = merge(uavg,umac(i,j,k),test) ! varden uses ZERO instead of uavg
           enddo
        enddo
     enddo
@@ -1188,9 +1184,7 @@ contains
              test = ((vmacl(i,j,k) .le. ZERO .and. vmacr(i,j,k) .ge. ZERO) .or. &
                   (abs(vmacl(i,j,k)+vmacr(i,j,k)) .lt. rel_eps))
              vmac(i,j,k) = merge(vmacl(i,j,k),vmacr(i,j,k),uavg .gt. ZERO)
-             ! NOTE: Need to talk to John about this
-             ! vmac(i,j,k) = merge(ZERO,vmac(i,j,k),test)
-             vmac(i,j,k) = merge(uavg,vmac(i,j,k),test)
+             vmac(i,j,k) = merge(uavg,vmac(i,j,k),test) ! varden uses ZERO instead of uavg
           enddo
        enddo
     enddo
@@ -1236,9 +1230,7 @@ contains
              test = ((wmacl(i,j,k) .le. ZERO .and. wmacr(i,j,k) .ge. ZERO) .or. &
                   (abs(wmacl(i,j,k)+wmacr(i,j,k)) .lt. rel_eps))
              wmac(i,j,k) = merge(wmacl(i,j,k),wmacr(i,j,k),uavg .gt. ZERO)
-             ! NOTE: Need to talk to John about this
-             ! wmac(i,j,k) = merge(ZERO,wmac(i,j,k),test)
-             wmac(i,j,k) = merge(uavg,wmac(i,j,k),test)
+             wmac(i,j,k) = merge(uavg,wmac(i,j,k),test) ! varden uses ZERO instead of uavg
           enddo
        enddo
     enddo
