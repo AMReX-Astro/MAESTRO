@@ -736,21 +736,44 @@ contains
                 endif
              endif
 
-             ! make normal component of uimhx by first solving a normal Riemann problem
-             uavg = HALF*(ulx(i,j,k,1)+urx(i,j,k,1))
-             test = ((ulx(i,j,k,1) .le. ZERO .and. urx(i,j,k,1) .ge. ZERO) .or. &
-                  (abs(ulx(i,j,k,1)+urx(i,j,k,1)) .lt. rel_eps))
-             uimhx(i,j,k,1) = merge(ulx(i,j,k,1),urx(i,j,k,1),uavg .gt. ZERO)
-             uimhx(i,j,k,1) = merge(ZERO,uimhx(i,j,k,1),test)
-
-             ! now upwind to get transverse components of uimhx
-             uimhx(i,j,k,2) = merge(ulx(i,j,k,2),urx(i,j,k,2),uimhx(i,j,k,1).gt.ZERO)
-             uavg = HALF*(ulx(i,j,k,2)+urx(i,j,k,2))
-             uimhx(i,j,k,2) = merge(uavg,uimhx(i,j,k,2),abs(uimhx(i,j,k,1)).lt.rel_eps)
-
-             uimhx(i,j,k,3) = merge(ulx(i,j,k,3),urx(i,j,k,3),uimhx(i,j,k,1).gt.ZERO)
-             uavg = HALF*(ulx(i,j,k,3)+urx(i,j,k,3))
-             uimhx(i,j,k,3) = merge(uavg,uimhx(i,j,k,3),abs(uimhx(i,j,k,1)).lt.rel_eps)
+             if (spherical .eq. 1) then
+                ! make normal component of uimhx by first solving a normal Riemann problem
+                uavg = HALF*(ulx(i,j,k,1)+urx(i,j,k,1))
+                test = ((ulx(i,j,k,1)+w0macx(i,j,k) .le. ZERO .and. &
+                     urx(i,j,k,1)+w0macx(i,j,k) .ge. ZERO) .or. &
+                     (abs(ulx(i,j,k,1)+urx(i,j,k,1)+TWO*w0macx(i,j,k)) .lt. rel_eps))
+                uimhx(i,j,k,1) = merge(ulx(i,j,k,1),urx(i,j,k,1),uavg+w0macx(i,j,k) .gt. ZERO)
+                uimhx(i,j,k,1) = merge(ZERO,uimhx(i,j,k,1),test)
+                
+                ! now upwind to get transverse components of uimhx
+                uimhx(i,j,k,2) = merge(ulx(i,j,k,2),urx(i,j,k,2), &
+                     uimhx(i,j,k,1)+w0macx(i,j,k).gt.ZERO)
+                uavg = HALF*(ulx(i,j,k,2)+urx(i,j,k,2))
+                uimhx(i,j,k,2) = merge(uavg,uimhx(i,j,k,2), &
+                     abs(uimhx(i,j,k,1)+w0macx(i,j,k)).lt.rel_eps)
+                
+                uimhx(i,j,k,3) = merge(ulx(i,j,k,3),urx(i,j,k,3), &
+                     uimhx(i,j,k,1)+w0macx(i,j,k).gt.ZERO)
+                uavg = HALF*(ulx(i,j,k,3)+urx(i,j,k,3))
+                uimhx(i,j,k,3) = merge(uavg,uimhx(i,j,k,3), &
+                     abs(uimhx(i,j,k,1)+w0macx(i,j,k)).lt.rel_eps)
+             else
+                ! make normal component of uimhx by first solving a normal Riemann problem
+                uavg = HALF*(ulx(i,j,k,1)+urx(i,j,k,1))
+                test = ((ulx(i,j,k,1) .le. ZERO .and. urx(i,j,k,1) .ge. ZERO) .or. &
+                     (abs(ulx(i,j,k,1)+urx(i,j,k,1)) .lt. rel_eps))
+                uimhx(i,j,k,1) = merge(ulx(i,j,k,1),urx(i,j,k,1),uavg .gt. ZERO)
+                uimhx(i,j,k,1) = merge(ZERO,uimhx(i,j,k,1),test)
+                
+                ! now upwind to get transverse components of uimhx
+                uimhx(i,j,k,2) = merge(ulx(i,j,k,2),urx(i,j,k,2),uimhx(i,j,k,1).gt.ZERO)
+                uavg = HALF*(ulx(i,j,k,2)+urx(i,j,k,2))
+                uimhx(i,j,k,2) = merge(uavg,uimhx(i,j,k,2),abs(uimhx(i,j,k,1)).lt.rel_eps)
+                
+                uimhx(i,j,k,3) = merge(ulx(i,j,k,3),urx(i,j,k,3),uimhx(i,j,k,1).gt.ZERO)
+                uavg = HALF*(ulx(i,j,k,3)+urx(i,j,k,3))
+                uimhx(i,j,k,3) = merge(uavg,uimhx(i,j,k,3),abs(uimhx(i,j,k,1)).lt.rel_eps)
+             end if
           enddo
        enddo
     enddo
@@ -812,21 +835,44 @@ contains
                 endif
              endif
 
-             ! make normal component of uimhy by first solving a normal Riemann problem
-             uavg = HALF*(uly(i,j,k,2)+ury(i,j,k,2))
-             test = ((uly(i,j,k,2) .le. ZERO .and. ury(i,j,k,2) .ge. ZERO) .or. &
-                  (abs(uly(i,j,k,2)+ury(i,j,k,2)) .lt. rel_eps))
-             uimhy(i,j,k,2) = merge(uly(i,j,k,2),ury(i,j,k,2),uavg .gt. ZERO)
-             uimhy(i,j,k,2) = merge(ZERO,uimhy(i,j,k,2),test)
-
-             ! now upwind to get transverse components of uimhy
-             uimhy(i,j,k,1) = merge(uly(i,j,k,1),ury(i,j,k,1),uimhy(i,j,k,2).gt.ZERO)
-             uavg = HALF*(uly(i,j,k,1)+ury(i,j,k,1))
-             uimhy(i,j,k,1) = merge(uavg,uimhy(i,j,k,1),abs(uimhy(i,j,k,2)).lt.rel_eps)
-
-             uimhy(i,j,k,3) = merge(uly(i,j,k,3),ury(i,j,k,3),uimhy(i,j,k,2).gt.ZERO)
-             uavg = HALF*(uly(i,j,k,3)+ury(i,j,k,3))
-             uimhy(i,j,k,3) = merge(uavg,uimhy(i,j,k,3),abs(uimhy(i,j,k,2)).lt.rel_eps)
+             if (spherical .eq. 1) then
+                ! make normal component of uimhy by first solving a normal Riemann problem
+                uavg = HALF*(uly(i,j,k,2)+ury(i,j,k,2))
+                test = ((uly(i,j,k,2)+w0macy(i,j,k) .le. ZERO .and. &
+                     ury(i,j,k,2)+w0macy(i,j,k) .ge. ZERO) .or. &
+                     (abs(uly(i,j,k,2)+ury(i,j,k,2)+TWO*w0macy(i,j,k)) .lt. rel_eps))
+                uimhy(i,j,k,2) = merge(uly(i,j,k,2),ury(i,j,k,2),uavg+w0macy(i,j,k) .gt. ZERO)
+                uimhy(i,j,k,2) = merge(ZERO,uimhy(i,j,k,2),test)
+                
+                ! now upwind to get transverse components of uimhy
+                uimhy(i,j,k,1) = merge(uly(i,j,k,1),ury(i,j,k,1), &
+                     uimhy(i,j,k,2)+w0macy(i,j,k).gt.ZERO)
+                uavg = HALF*(uly(i,j,k,1)+ury(i,j,k,1))
+                uimhy(i,j,k,1) = merge(uavg,uimhy(i,j,k,1), &
+                     abs(uimhy(i,j,k,2)+w0macy(i,j,k)).lt.rel_eps)
+                
+                uimhy(i,j,k,3) = merge(uly(i,j,k,3),ury(i,j,k,3), &
+                     uimhy(i,j,k,2)+w0macy(i,j,k).gt.ZERO)
+                uavg = HALF*(uly(i,j,k,3)+ury(i,j,k,3))
+                uimhy(i,j,k,3) = merge(uavg,uimhy(i,j,k,3), &
+                     abs(uimhy(i,j,k,2)+w0macy(i,j,k)).lt.rel_eps)
+             else
+                ! make normal component of uimhy by first solving a normal Riemann problem
+                uavg = HALF*(uly(i,j,k,2)+ury(i,j,k,2))
+                test = ((uly(i,j,k,2) .le. ZERO .and. ury(i,j,k,2) .ge. ZERO) .or. &
+                     (abs(uly(i,j,k,2)+ury(i,j,k,2)) .lt. rel_eps))
+                uimhy(i,j,k,2) = merge(uly(i,j,k,2),ury(i,j,k,2),uavg .gt. ZERO)
+                uimhy(i,j,k,2) = merge(ZERO,uimhy(i,j,k,2),test)
+                
+                ! now upwind to get transverse components of uimhy
+                uimhy(i,j,k,1) = merge(uly(i,j,k,1),ury(i,j,k,1),uimhy(i,j,k,2).gt.ZERO)
+                uavg = HALF*(uly(i,j,k,1)+ury(i,j,k,1))
+                uimhy(i,j,k,1) = merge(uavg,uimhy(i,j,k,1),abs(uimhy(i,j,k,2)).lt.rel_eps)
+                
+                uimhy(i,j,k,3) = merge(uly(i,j,k,3),ury(i,j,k,3),uimhy(i,j,k,2).gt.ZERO)
+                uavg = HALF*(uly(i,j,k,3)+ury(i,j,k,3))
+                uimhy(i,j,k,3) = merge(uavg,uimhy(i,j,k,3),abs(uimhy(i,j,k,2)).lt.rel_eps)
+             end if
           enddo
        enddo
     enddo
@@ -896,21 +942,46 @@ contains
                 endif
              endif
 
-             ! make normal component of uimhz by first solving a normal Riemann problem
-             uavg = HALF*(ulz(i,j,k,3)+urz(i,j,k,3))
-             test = ((ulz(i,j,k,3) .le. ZERO .and. urz(i,j,k,3) .ge. ZERO) .or. &
-                  (abs(ulz(i,j,k,3)+urz(i,j,k,3)) .lt. rel_eps))
-             uimhz(i,j,k,3) = merge(ulz(i,j,k,3),urz(i,j,k,3),uavg .gt. ZERO)
-             uimhz(i,j,k,3) = merge(ZERO,uimhz(i,j,k,3),test)
-
-             ! now upwind to get transverse components of uimhz
-             uimhz(i,j,k,1) = merge(ulz(i,j,k,1),urz(i,j,k,1),uimhz(i,j,k,3).gt.ZERO)
-             uavg = HALF*(ulz(i,j,k,1)+urz(i,j,k,1))
-             uimhz(i,j,k,1) = merge(uavg,uimhz(i,j,k,1),abs(uimhz(i,j,k,3)).lt.rel_eps)
-
-             uimhz(i,j,k,2) = merge(ulz(i,j,k,2),urz(i,j,k,2),uimhz(i,j,k,3).gt.ZERO)
-             uavg = HALF*(ulz(i,j,k,2)+urz(i,j,k,2))
-             uimhz(i,j,k,2) = merge(uavg,uimhz(i,j,k,2),abs(uimhz(i,j,k,3)).lt.rel_eps)
+             if (spherical .eq. 1) then
+                ! make normal component of uimhz by first solving a normal Riemann problem
+                uavg = HALF*(ulz(i,j,k,3)+urz(i,j,k,3))
+                test = ((ulz(i,j,k,3)+w0macz(i,j,k) .le. ZERO .and. &
+                     urz(i,j,k,3)+w0macz(i,j,k) .ge. ZERO) .or. &
+                     (abs(ulz(i,j,k,3)+urz(i,j,k,3)+TWO*w0macz(i,j,k)) .lt. rel_eps))
+                uimhz(i,j,k,3) = merge(ulz(i,j,k,3),urz(i,j,k,3),uavg+w0macz(i,j,k) .gt. ZERO)
+                uimhz(i,j,k,3) = merge(ZERO,uimhz(i,j,k,3),test)
+                
+                ! now upwind to get transverse components of uimhz
+                uimhz(i,j,k,1) = merge(ulz(i,j,k,1),urz(i,j,k,1), &
+                     uimhz(i,j,k,3)+w0macz(i,j,k).gt.ZERO)
+                uavg = HALF*(ulz(i,j,k,1)+urz(i,j,k,1))
+                uimhz(i,j,k,1) = merge(uavg,uimhz(i,j,k,1), &
+                     abs(uimhz(i,j,k,3)+w0macz(i,j,k)).lt.rel_eps)
+                
+                uimhz(i,j,k,2) = merge(ulz(i,j,k,2),urz(i,j,k,2), &
+                     uimhz(i,j,k,3)+w0macz(i,j,k).gt.ZERO)
+                uavg = HALF*(ulz(i,j,k,2)+urz(i,j,k,2))
+                uimhz(i,j,k,2) = merge(uavg,uimhz(i,j,k,2), &
+                     abs(uimhz(i,j,k,3)+w0macz(i,j,k)).lt.rel_eps)
+             else
+                ! make normal component of uimhz by first solving a normal Riemann problem
+                uavg = HALF*(ulz(i,j,k,3)+urz(i,j,k,3))
+                test = ((ulz(i,j,k,3)+w0(k).le.ZERO .and. urz(i,j,k,3)+w0(k).ge.ZERO) .or. &
+                     (abs(ulz(i,j,k,3)+urz(i,j,k,3)+TWO*w0(k)) .lt. rel_eps))
+                uimhz(i,j,k,3) = merge(ulz(i,j,k,3),urz(i,j,k,3),uavg+w0(k) .gt. ZERO)
+                uimhz(i,j,k,3) = merge(ZERO,uimhz(i,j,k,3),test)
+                
+                ! now upwind to get transverse components of uimhz
+                uimhz(i,j,k,1) = merge(ulz(i,j,k,1),urz(i,j,k,1),uimhz(i,j,k,3)+w0(k).gt.ZERO)
+                uavg = HALF*(ulz(i,j,k,1)+urz(i,j,k,1))
+                uimhz(i,j,k,1) = merge(uavg,uimhz(i,j,k,1), &
+                     abs(uimhz(i,j,k,3)+w0(k)).lt.rel_eps)
+                
+                uimhz(i,j,k,2) = merge(ulz(i,j,k,2),urz(i,j,k,2),uimhz(i,j,k,3)+w0(k).gt.ZERO)
+                uavg = HALF*(ulz(i,j,k,2)+urz(i,j,k,2))
+                uimhz(i,j,k,2) = merge(uavg,uimhz(i,j,k,2), &
+                     abs(uimhz(i,j,k,3)+w0(k)).lt.rel_eps)
+             end if
           enddo
        enddo
     enddo
@@ -925,9 +996,11 @@ contains
           do i=is-1,ie+1
              ! extrapolate to faces
              ulyz(i,j,k) = uly(i,j,k,1) &
-                  - (dt6/hz)*(uimhz(i,j-1,k+1,3)+uimhz(i,j-1,k,3))*(uimhz(i,j-1,k+1,1)-uimhz(i,j-1,k,1))
+                  - (dt6/hz)*(uimhz(i,j-1,k+1,3)+uimhz(i,j-1,k,3)) &
+                  * (uimhz(i,j-1,k+1,1)-uimhz(i,j-1,k,1))
              uryz(i,j,k) = ury(i,j,k,1) &
-                  - (dt6/hz)*(uimhz(i,j  ,k+1,3)+uimhz(i,j  ,k,3))*(uimhz(i,j  ,k+1,1)-uimhz(i,j  ,k,1))
+                  - (dt6/hz)*(uimhz(i,j  ,k+1,3)+uimhz(i,j  ,k,3)) &
+                  * (uimhz(i,j  ,k+1,1)-uimhz(i,j  ,k,1))
 
              ! impose lo side bc's
              if(j .eq. js) then
@@ -963,9 +1036,11 @@ contains
           do i=is-1,ie+1
              ! extrapolate to faces
              ulzy(i,j,k) = ulz(i,j,k,1) &
-                  - (dt6/hy)*(uimhy(i,j+1,k-1,2)+uimhy(i,j,k-1,2))*(uimhy(i,j+1,k-1,1)-uimhy(i,j,k-1,1))
+                  - (dt6/hy)*(uimhy(i,j+1,k-1,2)+uimhy(i,j,k-1,2)) &
+                  * (uimhy(i,j+1,k-1,1)-uimhy(i,j,k-1,1))
              urzy(i,j,k) = urz(i,j,k,1) &
-                  - (dt6/hy)*(uimhy(i,j+1,k  ,2)+uimhy(i,j,k  ,2))*(uimhy(i,j+1,k  ,1)-uimhy(i,j,k  ,1))
+                  - (dt6/hy)*(uimhy(i,j+1,k  ,2)+uimhy(i,j,k  ,2)) &
+                  * (uimhy(i,j+1,k  ,1)-uimhy(i,j,k  ,1))
 
              ! impose lo side bc's
              if(k .eq. ks) then
@@ -1001,9 +1076,11 @@ contains
           do i=is,ie+1
              ! extrapolate to faces
              vlxz(i,j,k) = ulx(i,j,k,2) &
-                  - (dt6/hz)*(uimhz(i-1,j,k+1,3)+uimhz(i-1,j,k,3))*(uimhz(i-1,j,k+1,2)-uimhz(i-1,j,k,2))
+                  - (dt6/hz)*(uimhz(i-1,j,k+1,3)+uimhz(i-1,j,k,3)) &
+                  * (uimhz(i-1,j,k+1,2)-uimhz(i-1,j,k,2))
              vrxz(i,j,k) = urx(i,j,k,2) &
-                  - (dt6/hz)*(uimhz(i  ,j,k+1,3)+uimhz(i  ,j,k,3))*(uimhz(i  ,j,k+1,2)-uimhz(i  ,j,k,2))
+                  - (dt6/hz)*(uimhz(i  ,j,k+1,3)+uimhz(i  ,j,k,3)) &
+                  * (uimhz(i  ,j,k+1,2)-uimhz(i  ,j,k,2))
 
              ! impose lo side bc's
              if(i .eq. is) then
@@ -1039,9 +1116,11 @@ contains
           do i=is,ie
              ! extrapolate to faces
              vlzx(i,j,k) = ulz(i,j,k,2) &
-                  - (dt6/hx)*(uimhx(i+1,j,k-1,1)+uimhx(i,j,k-1,1))*(uimhx(i+1,j,k-1,2)-uimhx(i,j,k-1,2))
+                  - (dt6/hx)*(uimhx(i+1,j,k-1,1)+uimhx(i,j,k-1,1)) &
+                  * (uimhx(i+1,j,k-1,2)-uimhx(i,j,k-1,2))
              vrzx(i,j,k) = urz(i,j,k,2) &
-                  - (dt6/hx)*(uimhx(i+1,j,k  ,1)+uimhx(i,j,k  ,1))*(uimhx(i+1,j,k  ,2)-uimhx(i,j,k  ,2))
+                  - (dt6/hx)*(uimhx(i+1,j,k  ,1)+uimhx(i,j,k  ,1)) &
+                  * (uimhx(i+1,j,k  ,2)-uimhx(i,j,k  ,2))
 
              ! impose lo side bc's
              if(k .eq. ks) then
@@ -1077,9 +1156,11 @@ contains
           do i=is,ie+1
              ! extrapolate to faces
              wlxy(i,j,k) = ulx(i,j,k,3) &
-                  - (dt6/hy)*(uimhy(i-1,j+1,k,2)+uimhy(i-1,j,k,2))*(uimhy(i-1,j+1,k,3)-uimhy(i-1,j,k,3))
+                  - (dt6/hy)*(uimhy(i-1,j+1,k,2)+uimhy(i-1,j,k,2)) &
+                  * (uimhy(i-1,j+1,k,3)-uimhy(i-1,j,k,3))
              wrxy(i,j,k) = urx(i,j,k,3) &
-                  - (dt6/hy)*(uimhy(i  ,j+1,k,2)+uimhy(i  ,j,k,2))*(uimhy(i  ,j+1,k,3)-uimhy(i  ,j,k,3))
+                  - (dt6/hy)*(uimhy(i  ,j+1,k,2)+uimhy(i  ,j,k,2)) &
+                  * (uimhy(i  ,j+1,k,3)-uimhy(i  ,j,k,3))
 
              ! impose lo side bc's
              if(i .eq. is) then
@@ -1115,9 +1196,11 @@ contains
           do i=is,ie
              ! extrapolate to faces
              wlyx(i,j,k) = uly(i,j,k,3) &
-                  - (dt6/hx)*(uimhx(i+1,j-1,k,1)+uimhx(i,j-1,k,1))*(uimhx(i+1,j-1,k,3)-uimhx(i,j-1,k,3))
+                  - (dt6/hx)*(uimhx(i+1,j-1,k,1)+uimhx(i,j-1,k,1)) &
+                  * (uimhx(i+1,j-1,k,3)-uimhx(i,j-1,k,3))
              wryx(i,j,k) = ury(i,j,k,3) &
-                  - (dt6/hx)*(uimhx(i+1,j  ,k,1)+uimhx(i,j  ,k,1))*(uimhx(i+1,j  ,k,3)-uimhx(i,j  ,k,3))
+                  - (dt6/hx)*(uimhx(i+1,j  ,k,1)+uimhx(i,j  ,k,1)) &
+                  * (uimhx(i+1,j  ,k,3)-uimhx(i,j  ,k,3))
 
              ! impose lo side bc's
              if(j .eq. js) then
@@ -1157,12 +1240,16 @@ contains
           do i=is,ie+1
              ! extrapolate to edges
              umacl(i,j,k) = ulx(i,j,k,1) &
-                  - (dt4/hy)*(uimhy(i-1,j+1,k  ,2)+uimhy(i-1,j,k,2))*(uimhyz(i-1,j+1,k  )-uimhyz(i-1,j,k)) &
-                  - (dt4/hz)*(uimhz(i-1,j  ,k+1,3)+uimhz(i-1,j,k,3))*(uimhzy(i-1,j  ,k+1)-uimhzy(i-1,j,k)) &
+                  - (dt4/hy)*(uimhy(i-1,j+1,k  ,2)+uimhy(i-1,j,k,2)) &
+                  * (uimhyz(i-1,j+1,k  )-uimhyz(i-1,j,k)) &
+                  - (dt4/hz)*(uimhz(i-1,j  ,k+1,3)+uimhz(i-1,j,k,3)) &
+                  * (uimhzy(i-1,j  ,k+1)-uimhzy(i-1,j,k)) &
                   + dt2*force(i-1,j,k,1)
              umacr(i,j,k) = urx(i,j,k,1) &
-                  - (dt4/hy)*(uimhy(i  ,j+1,k  ,2)+uimhy(i  ,j,k,2))*(uimhyz(i  ,j+1,k  )-uimhyz(i  ,j,k)) &
-                  - (dt4/hz)*(uimhz(i  ,j  ,k+1,3)+uimhz(i  ,j,k,3))*(uimhzy(i  ,j  ,k+1)-uimhzy(i  ,j,k)) &
+                  - (dt4/hy)*(uimhy(i  ,j+1,k  ,2)+uimhy(i  ,j,k,2)) &
+                  * (uimhyz(i  ,j+1,k  )-uimhyz(i  ,j,k)) &
+                  - (dt4/hz)*(uimhz(i  ,j  ,k+1,3)+uimhz(i  ,j,k,3)) &
+                  * (uimhzy(i  ,j  ,k+1)-uimhzy(i  ,j,k)) &
                   + dt2*force(i  ,j,k,1)
 
              ! solve Riemann problem
@@ -1203,12 +1290,16 @@ contains
           do i=is,ie
              ! extrapolate to edges
              vmacl(i,j,k) = uly(i,j,k,2) &
-                  - (dt4/hx)*(uimhx(i+1,j-1,k  ,1)+uimhx(i,j-1,k,1))*(vimhxz(i+1,j-1,k  )-vimhxz(i,j-1,k)) &
-                  - (dt4/hz)*(uimhz(i  ,j-1,k+1,3)+uimhz(i,j-1,k,3))*(vimhzx(i  ,j-1,k+1)-vimhzx(i,j-1,k)) &
+                  - (dt4/hx)*(uimhx(i+1,j-1,k  ,1)+uimhx(i,j-1,k,1)) &
+                  * (vimhxz(i+1,j-1,k  )-vimhxz(i,j-1,k)) &
+                  - (dt4/hz)*(uimhz(i  ,j-1,k+1,3)+uimhz(i,j-1,k,3)) &
+                  * (vimhzx(i  ,j-1,k+1)-vimhzx(i,j-1,k)) &
                   + dt2*force(i,j-1,k,2)
              vmacr(i,j,k) = ury(i,j,k,2) &
-                  - (dt4/hx)*(uimhx(i+1,j  ,k  ,1)+uimhx(i,j  ,k,1))*(vimhxz(i+1,j  ,k  )-vimhxz(i,j  ,k)) &
-                  - (dt4/hz)*(uimhz(i  ,j  ,k+1,3)+uimhz(i,j  ,k,3))*(vimhzx(i  ,j  ,k+1)-vimhzx(i,j  ,k)) &
+                  - (dt4/hx)*(uimhx(i+1,j  ,k  ,1)+uimhx(i,j  ,k,1)) &
+                  * (vimhxz(i+1,j  ,k  )-vimhxz(i,j  ,k)) &
+                  - (dt4/hz)*(uimhz(i  ,j  ,k+1,3)+uimhz(i,j  ,k,3)) &
+                  * (vimhzx(i  ,j  ,k+1)-vimhzx(i,j  ,k)) &
                   + dt2*force(i,j  ,k,2)
 
              ! solve Riemann problem
@@ -1249,12 +1340,16 @@ contains
           do i=is,ie
              ! extrapolate to edges
              wmacl(i,j,k) = ulz(i,j,k,3) &
-                  - (dt4/hx)*(uimhx(i+1,j  ,k-1,1)+uimhx(i,j,k-1,1))*(wimhxy(i+1,j  ,k-1)-wimhxy(i,j,k-1)) &
-                  - (dt4/hy)*(uimhy(i  ,j+1,k-1,2)+uimhy(i,j,k-1,2))*(wimhyx(i  ,j+1,k-1)-wimhyx(i,j,k-1)) &
+                  - (dt4/hx)*(uimhx(i+1,j  ,k-1,1)+uimhx(i,j,k-1,1)) &
+                  * (wimhxy(i+1,j  ,k-1)-wimhxy(i,j,k-1)) &
+                  - (dt4/hy)*(uimhy(i  ,j+1,k-1,2)+uimhy(i,j,k-1,2)) &
+                  * (wimhyx(i  ,j+1,k-1)-wimhyx(i,j,k-1)) &
                   + dt2*force(i,j,k-1,3)
              wmacr(i,j,k) = urz(i,j,k,3) &
-                  - (dt4/hx)*(uimhx(i+1,j  ,k  ,1)+uimhx(i,j,k  ,1))*(wimhxy(i+1,j  ,k  )-wimhxy(i,j,k  )) &
-                  - (dt4/hy)*(uimhy(i  ,j+1,k  ,2)+uimhy(i,j,k  ,2))*(wimhyx(i  ,j+1,k  )-wimhyx(i,j,k  )) &
+                  - (dt4/hx)*(uimhx(i+1,j  ,k  ,1)+uimhx(i,j,k  ,1)) &
+                  * (wimhxy(i+1,j  ,k  )-wimhxy(i,j,k  )) &
+                  - (dt4/hy)*(uimhy(i  ,j+1,k  ,2)+uimhy(i,j,k  ,2)) &
+                  * (wimhyx(i  ,j+1,k  )-wimhyx(i,j,k  )) &
                   + dt2*force(i,j,k  ,3)
 
              ! solve Riemann problem
