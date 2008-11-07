@@ -417,13 +417,13 @@ contains
           ! add the (Utilde . e_r) d w_0 /dr e_r term here
           if (j .eq. 0) then
              ! vmacl unchanged since dw_0 / dr = 0
-             vmacr(i,j) = vmacr(i,j)-(dt4/hy)*(uimhy(i,j+1,2)+uimhy(i,j  ,2))*(w0(j+1)-w0(j))
+             vmacr(i,j) = vmacr(i,j)-(dt4/hy)*(vtrans(i,j+1)+vtrans(i,j  ))*(w0(j+1)-w0(j))
           else if (j .eq. nr(n)) then
-             vmacl(i,j) = vmacl(i,j)-(dt4/hy)*(uimhy(i,j  ,2)+uimhy(i,j-1,2))*(w0(j)-w0(j-1))
+             vmacl(i,j) = vmacl(i,j)-(dt4/hy)*(vtrans(i,j  )+vtrans(i,j-1))*(w0(j)-w0(j-1))
              ! vmacr unchanged since dw_0 / dr = 0
           else
-             vmacl(i,j) = vmacl(i,j)-(dt4/hy)*(uimhy(i,j  ,2)+uimhy(i,j-1,2))*(w0(j)-w0(j-1))
-             vmacr(i,j) = vmacr(i,j)-(dt4/hy)*(uimhy(i,j+1,2)+uimhy(i,j  ,2))*(w0(j+1)-w0(j))
+             vmacl(i,j) = vmacl(i,j)-(dt4/hy)*(vtrans(i,j  )+vtrans(i,j-1))*(w0(j)-w0(j-1))
+             vmacr(i,j) = vmacr(i,j)-(dt4/hy)*(vtrans(i,j+1)+vtrans(i,j  ))*(w0(j+1)-w0(j))
           end if
 
           ! solve Riemann problem
