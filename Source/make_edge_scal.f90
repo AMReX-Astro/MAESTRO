@@ -862,14 +862,18 @@ contains
              ! make slxy, srxy by updating 1D extrapolation
              if(is_conservative) then
                 slxy(i,j,k) = slx(i,j,k) &
-                     - (dt3/hy)*(simhy(i-1,j+1,k)*vmac(i-1,j+1,k) - simhy(i-1,j,k)*vmac(i-1,j,k))
+                     - (dt3/hy)*(simhy(i-1,j+1,k)*vmac(i-1,j+1,k) &
+                     - simhy(i-1,j,k)*vmac(i-1,j,k))
                 srxy(i,j,k) = srx(i,j,k) &
-                     - (dt3/hy)*(simhy(i  ,j+1,k)*vmac(i  ,j+1,k) - simhy(i  ,j,k)*vmac(i  ,j,k))
+                     - (dt3/hy)*(simhy(i  ,j+1,k)*vmac(i  ,j+1,k) &
+                     - simhy(i  ,j,k)*vmac(i  ,j,k))
              else
                 slxy(i,j,k) = slx(i,j,k) &
-                     - (dt6/hy)*(vmac(i-1,j+1,k)+vmac(i-1,j,k))*(simhy(i-1,j+1,k)-simhy(i-1,j,k))
+                     - (dt6/hy)*(vmac(i-1,j+1,k)+vmac(i-1,j,k)) &
+                     *(simhy(i-1,j+1,k)-simhy(i-1,j,k))
                 srxy(i,j,k) = srx(i,j,k) &
-                     - (dt6/hy)*(vmac(i  ,j+1,k)+vmac(i  ,j,k))*(simhy(i  ,j+1,k)-simhy(i  ,j,k))
+                     - (dt6/hy)*(vmac(i  ,j+1,k)+vmac(i  ,j,k)) &
+                     *(simhy(i  ,j+1,k)-simhy(i  ,j,k))
              endif
 
              ! impose lo side bc's
@@ -921,14 +925,18 @@ contains
              ! make slxz, srxz by updating 1D extrapolation
              if(is_conservative) then
                 slxz(i,j,k) = slx(i,j,k) &
-                     - (dt3/hz)*(simhz(i-1,j,k+1)*wmac(i-1,j,k+1) - simhz(i-1,j,k)*wmac(i-1,j,k))
+                     - (dt3/hz)*(simhz(i-1,j,k+1)*wmac(i-1,j,k+1) &
+                     - simhz(i-1,j,k)*wmac(i-1,j,k))
                 srxz(i,j,k) = srx(i,j,k) &
-                     - (dt3/hz)*(simhz(i  ,j,k+1)*wmac(i  ,j,k+1) - simhz(i  ,j,k)*wmac(i  ,j,k))
+                     - (dt3/hz)*(simhz(i  ,j,k+1)*wmac(i  ,j,k+1) &
+                     - simhz(i  ,j,k)*wmac(i  ,j,k))
              else
                 slxz(i,j,k) = slx(i,j,k) &
-                     - (dt6/hz)*(wmac(i-1,j,k+1)+wmac(i-1,j,k))*(simhz(i-1,j,k+1)-simhz(i-1,j,k))
+                     - (dt6/hz)*(wmac(i-1,j,k+1)+wmac(i-1,j,k)) &
+                     *(simhz(i-1,j,k+1)-simhz(i-1,j,k))
                 srxz(i,j,k) = srx(i,j,k) &
-                     - (dt6/hz)*(wmac(i  ,j,k+1)+wmac(i  ,j,k))*(simhz(i  ,j,k+1)-simhz(i  ,j,k))
+                     - (dt6/hz)*(wmac(i  ,j,k+1)+wmac(i  ,j,k)) &
+                     *(simhz(i  ,j,k+1)-simhz(i  ,j,k))
              endif
 
              ! impose lo side bc's
@@ -980,14 +988,18 @@ contains
              ! make slyx, sryx by updating 1D extrapolation
              if(is_conservative) then
                 slyx(i,j,k) = sly(i,j,k) &
-                     - (dt3/hx)*(simhx(i+1,j-1,k)*umac(i+1,j-1,k) - simhx(i,j-1,k)*umac(i,j-1,k))
+                     - (dt3/hx)*(simhx(i+1,j-1,k)*umac(i+1,j-1,k) &
+                     - simhx(i,j-1,k)*umac(i,j-1,k))
                 sryx(i,j,k) = sry(i,j,k) &
-                     - (dt3/hx)*(simhx(i+1,j  ,k)*umac(i+1,j  ,k) - simhx(i,j  ,k)*umac(i,j  ,k))
+                     - (dt3/hx)*(simhx(i+1,j  ,k)*umac(i+1,j  ,k) &
+                     - simhx(i,j  ,k)*umac(i,j  ,k))
              else
                 slyx(i,j,k) = sly(i,j,k) &
-                     - (dt6/hx)*(umac(i+1,j-1,k)+umac(i,j-1,k))*(simhx(i+1,j-1,k)-simhx(i,j-1,k))
+                     - (dt6/hx)*(umac(i+1,j-1,k)+umac(i,j-1,k)) &
+                     *(simhx(i+1,j-1,k)-simhx(i,j-1,k))
                 sryx(i,j,k) = sry(i,j,k) &
-                     - (dt6/hx)*(umac(i+1,j  ,k)+umac(i,j  ,k))*(simhx(i+1,j  ,k)-simhx(i,j  ,k))
+                     - (dt6/hx)*(umac(i+1,j  ,k)+umac(i,j  ,k)) &
+                     *(simhx(i+1,j  ,k)-simhx(i,j  ,k))
              endif
 
              ! impose lo side bc's
@@ -1039,14 +1051,18 @@ contains
              ! make slyz, sryz by updating 1D extrapolation
              if(is_conservative) then
                 slyz(i,j,k) = sly(i,j,k) &
-                     - (dt3/hz)*(simhz(i,j-1,k+1)*wmac(i,j-1,k+1) - simhz(i,j-1,k)*wmac(i,j-1,k))
+                     - (dt3/hz)*(simhz(i,j-1,k+1)*wmac(i,j-1,k+1) &
+                     - simhz(i,j-1,k)*wmac(i,j-1,k))
                 sryz(i,j,k) = sry(i,j,k) &
-                     - (dt3/hz)*(simhz(i,j  ,k+1)*wmac(i,j  ,k+1) - simhz(i,j  ,k)*wmac(i,j  ,k))
+                     - (dt3/hz)*(simhz(i,j  ,k+1)*wmac(i,j  ,k+1) &
+                     - simhz(i,j  ,k)*wmac(i,j  ,k))
              else
                 slyz(i,j,k) = sly(i,j,k) &
-                     - (dt6/hz)*(wmac(i,j-1,k+1)+wmac(i,j-1,k))*(simhz(i,j-1,k+1)-simhz(i,j-1,k))
+                     - (dt6/hz)*(wmac(i,j-1,k+1)+wmac(i,j-1,k)) &
+                     *(simhz(i,j-1,k+1)-simhz(i,j-1,k))
                 sryz(i,j,k) = sry(i,j,k) &
-                     - (dt6/hz)*(wmac(i,j  ,k+1)+wmac(i,j  ,k))*(simhz(i,j  ,k+1)-simhz(i,j  ,k))
+                     - (dt6/hz)*(wmac(i,j  ,k+1)+wmac(i,j  ,k)) &
+                     *(simhz(i,j  ,k+1)-simhz(i,j  ,k))
              endif
 
              ! impose lo side bc's
@@ -1098,14 +1114,18 @@ contains
              ! make slzx, srzx by updating 1D extrapolation
              if(is_conservative) then
                 slzx(i,j,k) = slz(i,j,k) &
-                     - (dt3/hx)*(simhx(i+1,j,k-1)*umac(i+1,j,k-1) - simhx(i,j,k-1)*umac(i,j,k-1))
+                     - (dt3/hx)*(simhx(i+1,j,k-1)*umac(i+1,j,k-1) &
+                     - simhx(i,j,k-1)*umac(i,j,k-1))
                 srzx(i,j,k) = srz(i,j,k) &
-                     - (dt3/hx)*(simhx(i+1,j,k  )*umac(i+1,j,k  ) - simhx(i,j,k  )*umac(i,j,k  ))
+                     - (dt3/hx)*(simhx(i+1,j,k  )*umac(i+1,j,k  ) &
+                     - simhx(i,j,k  )*umac(i,j,k  ))
              else
                 slzx(i,j,k) = slz(i,j,k) &
-                     - (dt6/hx)*(umac(i+1,j,k-1)+umac(i,j,k-1))*(simhx(i+1,j,k-1)-simhx(i,j,k-1))
+                     - (dt6/hx)*(umac(i+1,j,k-1)+umac(i,j,k-1)) &
+                     *(simhx(i+1,j,k-1)-simhx(i,j,k-1))
                 srzx(i,j,k) = srz(i,j,k) &
-                     - (dt6/hx)*(umac(i+1,j,k  )+umac(i,j,k  ))*(simhx(i+1,j,k  )-simhx(i,j,k  ))
+                     - (dt6/hx)*(umac(i+1,j,k  )+umac(i,j,k  )) &
+                     *(simhx(i+1,j,k  )-simhx(i,j,k  ))
              endif
 
              ! impose lo side bc's
@@ -1157,14 +1177,18 @@ contains
              ! make slzy, srzy by updating 1D extrapolation
              if(is_conservative) then
                 slzy(i,j,k) = slz(i,j,k) &
-                     - (dt3/hy)*(simhy(i,j+1,k-1)*vmac(i,j+1,k-1) - simhy(i,j,k-1)*vmac(i,j,k-1))
+                     - (dt3/hy)*(simhy(i,j+1,k-1)*vmac(i,j+1,k-1) &
+                     - simhy(i,j,k-1)*vmac(i,j,k-1))
                 srzy(i,j,k) = srz(i,j,k) &
-                     - (dt3/hy)*(simhy(i,j+1,k  )*vmac(i,j+1,k  ) - simhy(i,j,k  )*vmac(i,j,k  ))
+                     - (dt3/hy)*(simhy(i,j+1,k  )*vmac(i,j+1,k  ) &
+                     - simhy(i,j,k  )*vmac(i,j,k  ))
              else
                 slzy(i,j,k) = slz(i,j,k) &
-                     - (dt6/hy)*(vmac(i,j+1,k-1)+vmac(i,j,k-1))*(simhy(i,j+1,k-1)-simhy(i,j,k-1))
+                     - (dt6/hy)*(vmac(i,j+1,k-1)+vmac(i,j,k-1)) &
+                     *(simhy(i,j+1,k-1)-simhy(i,j,k-1))
                 srzy(i,j,k) = srz(i,j,k) &
-                     - (dt6/hy)*(vmac(i,j+1,k  )+vmac(i,j,k  ))*(simhy(i,j+1,k  )-simhy(i,j,k  ))
+                     - (dt6/hy)*(vmac(i,j+1,k  )+vmac(i,j,k  )) &
+                     *(simhy(i,j+1,k  )-simhy(i,j,k  ))
              endif
 
              ! impose lo side bc's
@@ -1220,25 +1244,75 @@ contains
              ! make sedgelx, sedgerx
              if(is_conservative) then
                 sedgelx(i,j,k) = slx(i,j,k) &
-                     - (dt2/hy)*(simhyz(i-1,j+1,k  )*vmac(i-1,j+1,k  ) - simhyz(i-1,j,k)*vmac(i-1,j,k)) &
-                     - (dt2/hz)*(simhzy(i-1,j  ,k+1)*wmac(i-1,j  ,k+1) - simhzy(i-1,j,k)*wmac(i-1,j,k)) &
+                     - (dt2/hy)*(simhyz(i-1,j+1,k  )*vmac(i-1,j+1,k  ) &
+                     - simhyz(i-1,j,k)*vmac(i-1,j,k)) &
+                     - (dt2/hz)*(simhzy(i-1,j  ,k+1)*wmac(i-1,j  ,k+1) &
+                     - simhzy(i-1,j,k)*wmac(i-1,j,k)) &
                      - (dt2/hx)*s(i-1,j,k,comp)*(umac(i  ,j,k)-umac(i-1,j,k)) &
                      + dt2*force(i-1,j,k,comp)
                 sedgerx(i,j,k) = srx(i,j,k) &
-                     - (dt2/hy)*(simhyz(i  ,j+1,k  )*vmac(i  ,j+1,  k) - simhyz(i  ,j,k)*vmac(i  ,j,k)) &
-                     - (dt2/hz)*(simhzy(i  ,j  ,k+1)*wmac(i  ,j  ,k+1) - simhzy(i  ,j,k)*wmac(i  ,j,k)) &
+                     - (dt2/hy)*(simhyz(i  ,j+1,k  )*vmac(i  ,j+1,  k) &
+                     - simhyz(i  ,j,k)*vmac(i  ,j,k)) &
+                     - (dt2/hz)*(simhzy(i  ,j  ,k+1)*wmac(i  ,j  ,k+1) &
+                     - simhzy(i  ,j,k)*wmac(i  ,j,k)) &
                      - (dt2/hx)*s(i  ,j,k,comp)*(umac(i+1,j,k)-umac(i  ,j,k)) &
                      + dt2*force(i  ,j,k,comp)
              else
                 sedgelx(i,j,k) = slx(i,j,k) &
-                     - (dt4/hy)*(vmac(i-1,j+1,k  )+vmac(i-1,j,k))*(simhyz(i-1,j+1,k  )-simhyz(i-1,j,k)) &
-                     - (dt4/hz)*(wmac(i-1,j  ,k+1)+wmac(i-1,j,k))*(simhzy(i-1,j  ,k+1)-simhzy(i-1,j,k)) &
+                     - (dt4/hy)*(vmac(i-1,j+1,k  )+vmac(i-1,j,k))* &
+                     (simhyz(i-1,j+1,k  )-simhyz(i-1,j,k)) &
+                     - (dt4/hz)*(wmac(i-1,j  ,k+1)+wmac(i-1,j,k))* &
+                     (simhzy(i-1,j  ,k+1)-simhzy(i-1,j,k)) &
                      + dt2*force(i-1,j,k,comp)
                 sedgerx(i,j,k) = srx(i,j,k) &
-                     - (dt4/hy)*(vmac(i  ,j+1,k  )+vmac(i  ,j,k))*(simhyz(i  ,j+1,k  )-simhyz(i  ,j,k)) &
-                     - (dt4/hz)*(wmac(i  ,j  ,k+1)+wmac(i  ,j,k))*(simhzy(i  ,j  ,k+1)-simhzy(i  ,j,k)) &
+                     - (dt4/hy)*(vmac(i  ,j+1,k  )+vmac(i  ,j,k))* &
+                     (simhyz(i  ,j+1,k  )-simhyz(i  ,j,k)) &
+                     - (dt4/hz)*(wmac(i  ,j  ,k+1)+wmac(i  ,j,k))* &
+                     (simhzy(i  ,j  ,k+1)-simhzy(i  ,j,k)) &
                      + dt2*force(i  ,j,k,comp)
              endif
+
+             ! add the (Utilde . e_r) d w_0 /dr e_r term here
+             if (is_vel) then
+
+                if (spherical .eq. 0 .and. comp .eq. 3) then
+
+                   ! wmac contains w0 so we need to subtract it off
+                   sedgelx(i,j,k) = sedgelx(i,j,k) &
+                        -(dt4/hz)*(wmac(i-1,j,k)-w0(k)+wmac(i-1,j,k+1)-w0(k+1))* &
+                        (w0(k+1)-w0(k))
+                   sedgerx(i,j,k) = sedgerx(i,j,k) &
+                        -(dt4/hz)*(wmac(i  ,j,k)-w0(k)+wmac(i  ,j,k+1)-w0(k+1))* &
+                        (w0(k+1)-w0(k))
+
+                else if (spherical .eq. 1) then
+
+                   ! u/v/wmac contain w0, so we need to subtract it off.
+                   ! left face centered about (i-1,j,k)
+                   Ut_dot_er = (HALF*(umac(i-1,j,k) + umac(i,j,k)) - &
+                                HALF*(w0macx(i-1,j,k)+w0macx(i,j,k)))*normal(i-1,j,k,1) + &
+                               (HALF*(vmac(i-1,j,k) + vmac(i-1,j+1,k)) - &
+                                HALF*(w0macy(i-1,j,k)+w0macy(i-1,j+1,k)))*normal(i-1,j,k,2) + &
+                               (HALF*(wmac(i-1,j,k) + wmac(i-1,j,k+1)) - &
+                                HALF*(w0macz(i-1,j,k)+w0macz(i-1,j,k+1)))*normal(i-1,j,k,3)
+
+                   sedgelx(i,j,k) = sedgelx(i,j,k) &
+                        - dt2*Ut_dot_er*gradw0_cart(i-1,j,k)*normal(i-1,j,k,comp)
+
+                   ! right face centered about (i,j,k)
+                   Ut_dot_er = (HALF*(umac(i,j,k) + umac(i+1,j,k)) - &
+                                HALF*(w0macx(i,j,k)+w0macx(i+1,j,k)))*normal(i,j,k,1) + &
+                               (HALF*(vmac(i,j,k) + vmac(i,j+1,k)) - &
+                                HALF*(w0macy(i,j,k)+w0macy(i,j+1,k)))*normal(i,j,k,2) + &
+                               (HALF*(wmac(i,j,k) + wmac(i,j,k+1)) - &
+                                HALF*(w0macz(i,j,k)+w0macz(i,j,k+1)))*normal(i,j,k,3)
+
+                   sedgelx(i,j,k) = sedgelx(i,j,k) &
+                        - dt2*Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,comp)
+
+                end if
+
+             end if             
 
              ! make sedgex by solving Riemann problem
              ! boundary conditions enforced outside of i,j,k loop
@@ -1299,25 +1373,75 @@ contains
              ! make sedgely, sedgery
              if(is_conservative) then
                 sedgely(i,j,k) = sly(i,j,k) &
-                     - (dt2/hx)*(simhxz(i+1,j-1,k  )*umac(i+1,j-1,k  ) - simhxz(i,j-1,k)*umac(i,j-1,k)) &
-                     - (dt2/hz)*(simhzx(i  ,j-1,k+1)*wmac(i  ,j-1,k+1) - simhzx(i,j-1,k)*wmac(i,j-1,k)) &
+                     - (dt2/hx)*(simhxz(i+1,j-1,k  )*umac(i+1,j-1,k  ) &
+                     - simhxz(i,j-1,k)*umac(i,j-1,k)) &
+                     - (dt2/hz)*(simhzx(i  ,j-1,k+1)*wmac(i  ,j-1,k+1) &
+                     - simhzx(i,j-1,k)*wmac(i,j-1,k)) &
                      - (dt2/hy)*s(i,j-1,k,comp)*(vmac(i,j  ,k)-vmac(i,j-1,k)) &
                      + dt2*force(i,j-1,k,comp)
                 sedgery(i,j,k) = sry(i,j,k) &
-                     - (dt2/hx)*(simhxz(i+1,j  ,k  )*umac(i+1,j  ,k  ) - simhxz(i,j  ,k)*umac(i,j  ,k)) &
-                     - (dt2/hz)*(simhzx(i  ,j  ,k+1)*wmac(i  ,j  ,k+1) - simhzx(i,j  ,k)*wmac(i,j  ,k)) &
+                     - (dt2/hx)*(simhxz(i+1,j  ,k  )*umac(i+1,j  ,k  ) &
+                     - simhxz(i,j  ,k)*umac(i,j  ,k)) &
+                     - (dt2/hz)*(simhzx(i  ,j  ,k+1)*wmac(i  ,j  ,k+1) &
+                     - simhzx(i,j  ,k)*wmac(i,j  ,k)) &
                      - (dt2/hy)*s(i,j  ,k,comp)*(vmac(i,j+1,k)-vmac(i,j  ,k)) &
                      + dt2*force(i,j  ,k,comp)
              else
                 sedgely(i,j,k) = sly(i,j,k) &
-                     - (dt4/hx)*(umac(i+1,j-1,k  )+umac(i,j-1,k))*(simhxz(i+1,j-1,k  )-simhxz(i,j-1,k)) &
-                     - (dt4/hz)*(wmac(i  ,j-1,k+1)+wmac(i,j-1,k))*(simhzx(i  ,j-1,k+1)-simhzx(i,j-1,k)) &
+                     - (dt4/hx)*(umac(i+1,j-1,k  )+umac(i,j-1,k))* &
+                     (simhxz(i+1,j-1,k  )-simhxz(i,j-1,k)) &
+                     - (dt4/hz)*(wmac(i  ,j-1,k+1)+wmac(i,j-1,k))* &
+                     (simhzx(i  ,j-1,k+1)-simhzx(i,j-1,k)) &
                      + dt2*force(i,j-1,k,comp)
                 sedgery(i,j,k) = sry(i,j,k) &
-                     - (dt4/hx)*(umac(i+1,j  ,k  )+umac(i,j  ,k))*(simhxz(i+1,j  ,k  )-simhxz(i,j  ,k)) &
-                     - (dt4/hz)*(wmac(i  ,j  ,k+1)+wmac(i,j  ,k))*(simhzx(i  ,j  ,k+1)-simhzx(i,j  ,k)) &
+                     - (dt4/hx)*(umac(i+1,j  ,k  )+umac(i,j  ,k))* &
+                     (simhxz(i+1,j  ,k  )-simhxz(i,j  ,k)) &
+                     - (dt4/hz)*(wmac(i  ,j  ,k+1)+wmac(i,j  ,k))* &
+                     (simhzx(i  ,j  ,k+1)-simhzx(i,j  ,k)) &
                      + dt2*force(i,j  ,k,comp)
              endif
+
+             ! add the (Utilde . e_r) d w_0 /dr e_r term here
+             if (is_vel) then
+
+                if (spherical .eq. 0 .and. comp .eq. 3) then
+
+                   ! wmac contains w0 so we need to subtract it off
+                   sedgely(i,j,k) = sedgely(i,j,k) &
+                        -(dt4/hz)*(wmac(i,j-1,k)-w0(k)+wmac(i,j-1,k+1)-w0(k+1)) &
+                        *(w0(k+1)-w0(k))
+                   sedgery(i,j,k) = sedgery(i,j,k) &
+                        -(dt4/hz)*(wmac(i,j  ,k)-w0(k)+wmac(i,j  ,k+1)-w0(k+1)) &
+                        *(w0(k+1)-w0(k))
+
+                else if (spherical .eq. 1) then
+
+                   ! u/v/wmac contain w0, so we need to subtract it off.  
+                   ! left face centered about (i,j-1,k)
+                   Ut_dot_er = (HALF*(umac(i,j-1,k) + umac(i+1,j-1,k)) - &
+                                HALF*(w0macx(i,j-1,k)+w0macx(i+1,j-1,k)))*normal(i,j-1,k,1) + &
+                               (HALF*(vmac(i,j-1,k) + vmac(i,j,k)) - &
+                                HALF*(w0macy(i,j-1,k)+w0macy(i,j,k)))*normal(i,j-1,k,2) + &
+                               (HALF*(wmac(i,j-1,k) + wmac(i,j-1,k+1)) - &
+                                HALF*(w0macz(i,j-1,k)+w0macz(i,j-1,k+1)))*normal(i,j-1,k,3)
+
+                   sedgely(i,j,k) = sedgely(i,j,k) &
+                        - dt2*Ut_dot_er*gradw0_cart(i,j-1,k)*normal(i,j-1,k,comp)
+
+                   ! right face centered about (i,j,k)
+                   Ut_dot_er = (HALF*(umac(i,j,k) + umac(i+1,j,k)) - &
+                                HALF*(w0macx(i,j,k)+w0macx(i+1,j,k)))*normal(i,j,k,1) + &
+                               (HALF*(vmac(i,j,k) + vmac(i,j+1,k)) - &
+                                HALF*(w0macy(i,j,k)+w0macy(i,j+1,k)))*normal(i,j,k,2) + &
+                               (HALF*(wmac(i,j,k) + wmac(i,j,k+1)) - &
+                                HALF*(w0macz(i,j,k)+w0macz(i,j,k+1)))*normal(i,j,k,3)
+
+                   sedgely(i,j,k) = sedgely(i,j,k) &
+                        - dt2*Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,comp)
+
+                end if
+
+             end if 
 
              ! make sedgey by solving Riemann problem
              ! boundary conditions enforced outside of i,j,k loop
@@ -1378,25 +1502,86 @@ contains
              ! make sedgelz, sedgerz
              if(is_conservative) then
                 sedgelz(i,j,k) = slz(i,j,k) &
-                     - (dt2/hx)*(simhxy(i+1,j  ,k-1)*umac(i+1,j  ,k-1) - simhxy(i,j,k-1)*umac(i,j,k-1)) &
-                     - (dt2/hy)*(simhyx(i  ,j+1,k-1)*vmac(i  ,j+1,k-1) - simhyx(i,j,k-1)*vmac(i,j,k-1)) &
+                     - (dt2/hx)*(simhxy(i+1,j  ,k-1)*umac(i+1,j  ,k-1) &
+                     - simhxy(i,j,k-1)*umac(i,j,k-1)) &
+                     - (dt2/hy)*(simhyx(i  ,j+1,k-1)*vmac(i  ,j+1,k-1) &
+                     - simhyx(i,j,k-1)*vmac(i,j,k-1)) &
                      - (dt2/hz)*s(i,j,k-1,comp)*(wmac(i,j,k  )-wmac(i,j,k-1)) &
                      + dt2*force(i,j,k-1,comp)
                 sedgerz(i,j,k) = srz(i,j,k) &
-                     - (dt2/hx)*(simhxy(i+1,j  ,k  )*umac(i+1,j  ,k  ) - simhxy(i,j,k  )*umac(i,j,k  )) &
-                     - (dt2/hy)*(simhyx(i  ,j+1,k  )*vmac(i  ,j+1,k  ) - simhyx(i,j,k  )*vmac(i,j,k  )) &
+                     - (dt2/hx)*(simhxy(i+1,j  ,k  )*umac(i+1,j  ,k  ) &
+                     - simhxy(i,j,k  )*umac(i,j,k  )) &
+                     - (dt2/hy)*(simhyx(i  ,j+1,k  )*vmac(i  ,j+1,k  ) &
+                     - simhyx(i,j,k  )*vmac(i,j,k  )) &
                      - (dt2/hz)*s(i,j,k  ,comp)*(wmac(i,j,k+1)-wmac(i,j,k  )) &
                      + dt2*force(i,j,k  ,comp)
              else
                 sedgelz(i,j,k) = slz(i,j,k) &
-                     - (dt4/hx)*(umac(i+1,j  ,k-1)+umac(i,j,k-1))*(simhxy(i+1,j  ,k-1)-simhxy(i,j,k-1)) &
-                     - (dt4/hy)*(vmac(i  ,j+1,k-1)+vmac(i,j,k-1))*(simhyx(i  ,j+1,k-1)-simhyx(i,j,k-1)) &
+                     - (dt4/hx)*(umac(i+1,j  ,k-1)+umac(i,j,k-1)) &
+                     *(simhxy(i+1,j  ,k-1)-simhxy(i,j,k-1)) &
+                     - (dt4/hy)*(vmac(i  ,j+1,k-1)+vmac(i,j,k-1)) &
+                     *(simhyx(i  ,j+1,k-1)-simhyx(i,j,k-1)) &
                      + dt2*force(i,j,k-1,comp)
                 sedgerz(i,j,k) = srz(i,j,k) &
-                     - (dt4/hx)*(umac(i+1,j  ,k  )+umac(i,j,k  ))*(simhxy(i+1,j  ,k  )-simhxy(i,j,k  )) &
-                     - (dt4/hy)*(vmac(i  ,j+1,k  )+vmac(i,j,k  ))*(simhyx(i  ,j+1,k  )-simhyx(i,j,k  )) &
+                     - (dt4/hx)*(umac(i+1,j  ,k  )+umac(i,j,k  )) &
+                     *(simhxy(i+1,j  ,k  )-simhxy(i,j,k  )) &
+                     - (dt4/hy)*(vmac(i  ,j+1,k  )+vmac(i,j,k  )) &
+                     *(simhyx(i  ,j+1,k  )-simhyx(i,j,k  )) &
                      + dt2*force(i,j,k  ,comp)
              endif
+
+             ! add the (Utilde . e_r) d w_0 /dr e_r term here
+             if (is_vel) then
+
+                if (spherical .eq. 0 .and. comp .eq. 3) then
+                   ! wmac contains w0 so we need to subtract it off
+                   if (k .eq. 0) then
+                      ! sedgelz unchanged since dw_0 / dr = 0
+                      sedgerz(i,j,k) = sedgerz(i,j,k) &
+                           -(dt4/hz)*(wmac(i,j,k)-w0(k)+wmac(i,j,k+1)-w0(k+1)) &
+                           *(w0(k+1)-w0(k  ))                      
+                   else if (k .eq. nr(n)) then
+                      sedgelz(i,j,k) = sedgelz(i,j,k) &
+                           -(dt4/hz)*(wmac(i,j,k)-w0(k)+wmac(i,j,k-1)-w0(k-1)) &
+                           *(w0(k  )-w0(k-1))
+                      ! sedgerz unchanged since dw_0 / dr = 0
+                   else
+                      sedgelz(i,j,k) = sedgelz(i,j,k) &
+                           -(dt4/hz)*(wmac(i,j,k)-w0(k)+wmac(i,j,k-1)-w0(k-1)) &
+                           *(w0(k  )-w0(k-1))
+                      sedgerz(i,j,k) = sedgerz(i,j,k) &
+                           -(dt4/hz)*(wmac(i,j,k)-w0(k)+wmac(i,j,k+1)-w0(k+1)) &
+                           *(w0(k+1)-w0(k  ))
+                   end if
+
+                else if (spherical .eq. 1) then
+                   ! u/v/wmac contain w0, so we need to subtract it off.  
+
+                   ! left face centered about (i,j,k-1)
+                   Ut_dot_er = (HALF*(umac(i,j,k-1) + umac(i+1,j,k-1)) - &
+                                HALF*(w0macx(i,j,k-1)+w0macx(i+1,j,k-1)))*normal(i,j,k-1,1) + &
+                               (HALF*(vmac(i,j,k-1) + vmac(i,j+1,k-1)) - &
+                                HALF*(w0macy(i,j,k-1)+w0macy(i,j+1,k-1)))*normal(i,j,k-1,2) + &
+                               (HALF*(wmac(i,j,k-1) + wmac(i,j,k)) - &
+                                HALF*(w0macz(i,j,k-1)+w0macz(i,j,k)))*normal(i,j,k-1,3)
+
+                   sedgelz(i,j,k) = sedgelz(i,j,k) &
+                        - dt2*Ut_dot_er*gradw0_cart(i,j,k-1)*normal(i,j,k-1,comp)
+
+                   ! right face centered about (i,j,k)
+                   Ut_dot_er = (HALF*(umac(i,j,k) + umac(i+1,j,k)) - &
+                                HALF*(w0macx(i,j,k)+w0macx(i+1,j,k)))*normal(i,j,k,1) + &
+                               (HALF*(vmac(i,j,k) + vmac(i,j+1,k)) - &
+                                HALF*(w0macy(i,j,k)+w0macy(i,j+1,k)))*normal(i,j,k,2) + &
+                               (HALF*(wmac(i,j,k) + wmac(i,j,k+1)) - &
+                                HALF*(w0macz(i,j,k)+w0macz(i,j,k+1)))*normal(i,j,k,3)
+
+                   sedgerz(i,j,k) = sedgerz(i,j,k) &
+                        - dt2*Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,comp)
+
+                end if
+
+             end if 
 
              ! make sedgez by solving Riemann problem
              ! boundary conditions enforced outside of i,j,k loop
