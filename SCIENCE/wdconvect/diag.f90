@@ -67,6 +67,9 @@ contains
     call build(bpt, "diagnostics")
 
     if (spherical .eq. 1) then
+
+       ! even though we are looping over levels, this is not multilevel
+       ! aware.  We are assuming here that there is only 1 level.
        do n=1,nlevs
 
           ! w0r_cart is w0 but onto a Cartesian grid in cell-centered as
@@ -81,6 +84,8 @@ contains
        call put_1d_array_on_cart(w0,w0r_cart,foextrap_comp,.true.,.false.,dx, &
             the_bc_tower%bc_tower_array,mla,normal=normal)
 
+    else
+       call bl_error("ERROR: geometry not spherical")
     endif
 
 
@@ -92,9 +97,6 @@ contains
     vr(:) = ZERO
     vr_local(:) = ZERO
 
-    vr_max = ZERO
-    vr_max_local = ZERO
-
     rhovr(:) = ZERO
     rhovr_local(:) = ZERO
 
@@ -103,6 +105,9 @@ contains
 
     nzones = 0
     nzones_local = 0
+
+    vr_max = ZERO
+    vr_max_local = ZERO
 
     T_max = ZERO
     T_max_local = ZERO
@@ -124,10 +129,7 @@ contains
           case (3)
              call diag_3d(time,dt,dx(n,:), &
                           sp(:,:,:,:),ng_s, &
-                          rho0(n,:),rhoh0(n,:), &
-                          p0(n,:),tempbar(n,:),gamma1bar(n,:), &
                           up(:,:,:,:),ng_u, &
-                          w0(n,:), &
                           w0rp(:,:,:,1), ng_w, &
                           np(:,:,:,:),ng_n, &
                           lo,hi, &
@@ -163,8 +165,8 @@ contains
     ! normalize
     vr = vr/nzones
     
-1000 format(1x,9(g20.10,1x))
-1001 format("#",9(a20,1x))
+1000 format(1x,10(g20.10,1x))
+1001 format("#",10(a20,1x))
 
     if (parallel_IOProcessor()) then
 
@@ -192,7 +194,8 @@ contains
        if (firstCall) then
           write (un, 1001) "time", "<vr_x>", "<vr_y>", "<vr_z>", "<vr>", &
                            "max{|vr|}", &
-                           "int{rhovr_x}/mass", "int{rhovr_y}/mass", "int{rhovr_z}/mass"
+                           "int{rhovr_x}/mass", "int{rhovr_y}/mass", "int{rhovr_z}/mass", &
+                           "mass"
           write (un2,1001) "time", "max{T}"
           firstCall = .false.
        endif
@@ -200,7 +203,7 @@ contains
        ! write out the data
        write (un,1000) time, vr(1), vr(2), vr(3), &
             sqrt(vr(1)**2 + vr(2)**2 + vr(3)**2), vr_max, &
-            rhovr(1)/mass, rhovr(2)/mass, rhovr(3)/mass
+            rhovr(1)/mass, rhovr(2)/mass, rhovr(3)/mass, mass*dx(1,1)*dx(1,2)*dx(1,3)
        
        write (un2,1000) time, T_max
 
@@ -223,10 +226,8 @@ contains
 
   subroutine diag_3d(time,dt,dx, &
                      s,ng_s, &
-                     rho0,rhoh0, &
-                     p0,tempbar,gamma1bar, &
                      u,ng_u, &
-                     w0,w0r,ng_w, &
+                     w0r,ng_w, &
                      normal,ng_n, &
                      lo,hi, &
                      nzones, &
@@ -240,11 +241,8 @@ contains
     use probin_module, only: base_cutoff_density
 
     integer, intent(in) :: lo(:), hi(:), ng_s, ng_u, ng_n, ng_w
-    real (kind=dp_t), intent(in   ) :: s(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
-    real (kind=dp_t), intent(in   ) :: u(lo(1)-ng_u:,lo(2)-ng_u:,lo(3)-ng_u:,:)
-    real (kind=dp_t), intent(in   ) :: rho0(0:), rhoh0(0:), &
-                                         p0(0:),tempbar(0:),gamma1bar(0:)
-    real (kind=dp_t), intent(in   ) :: w0(0:)
+    real (kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
+    real (kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,lo(3)-ng_u:,:)
     real (kind=dp_t), intent(in   ) ::    w0r(lo(1)-ng_w:,lo(2)-ng_w:,lo(3)-ng_w:)
     real (kind=dp_t), intent(in   ) :: normal(lo(1)-ng_n:,lo(2)-ng_n:,lo(3)-ng_n:,:)
     real (kind=dp_t), intent(in   ) :: time, dt, dx(:)
