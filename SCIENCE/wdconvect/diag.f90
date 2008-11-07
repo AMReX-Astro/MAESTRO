@@ -189,6 +189,15 @@ contains
        close(un2)
     endif
 
+    if (spherical .eq. 1) then
+       do n=1,nlevs
+          call destroy(w0r_cart(n))
+       end do
+    end if
+
+
+
+
     call destroy(bpt)
 
   end subroutine diag
