@@ -425,15 +425,15 @@ contains
 
     ! Limit dt based on velocity terms
     do k = lo(3), hi(3); do j = lo(2), hi(2); do i = lo(1), hi(1)
-       spdx = max(spdx ,abs(u(i,j,k,1)+w0macx(i,j,k)))
+       spdx = max(spdx ,abs(u(i,j,k,1)+HALF*(w0macx(i,j,k)+w0macx(i+1,j,k))))
     enddo; enddo; enddo
 
     do k = lo(3), hi(3); do j = lo(2), hi(2); do i = lo(1), hi(1)
-       spdy = max(spdy ,abs(u(i,j,k,2)+w0macy(i,j,k)))
+       spdy = max(spdy ,abs(u(i,j,k,2)+HALF*(w0macy(i,j,k)+w0macy(i,j+1,k))))
     enddo; enddo; enddo
 
     do k = lo(3), hi(3); do j = lo(2), hi(2); do i = lo(1), hi(1)
-       spdz = max(spdz ,abs(u(i,j,k,3)+w0macz(i,j,k)))
+       spdz = max(spdz ,abs(u(i,j,k,3)+HALF*(w0macz(i,j,k)+w0macz(i,j,k+1))))
     enddo; enddo; enddo
     
     do k = 0,size(w0,dim=1)-1
