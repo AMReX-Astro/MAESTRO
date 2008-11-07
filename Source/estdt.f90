@@ -28,6 +28,7 @@ contains
 
     use bl_prof_module
     use geometry, only: spherical, dm
+    use variables, only: rel_eps
     
     integer        , intent(in ) :: n
     type(multifab) , intent(in ) :: u
@@ -56,6 +57,7 @@ contains
     integer :: ng_s,ng_u,ng_f,ng_dU,ng_dS,ng_n,ng_w
     real(kind=dp_t) :: dt_adv,dt_adv_grid,dt_adv_proc,dt_start
     real(kind=dp_t) :: dt_divu,dt_divu_grid,dt_divu_proc
+    real(kind=dp_t) :: umax,umax_grid,umax_proc
     
     real(kind=dp_t), parameter :: rho_min = 1.d-20
 
@@ -69,9 +71,11 @@ contains
     ng_dU = divU%ng
     ng_dS = dSdt%ng
 
-    dt_adv_proc   = HUGE(dt_adv_proc)
-    dt_divu_proc  = HUGE(dt_divu_proc)
-    dt_start      = HUGE(dt_start)
+    dt_adv_proc  = 1.d99
+    dt_divu_proc = 1.d99
+    dt_start     = 1.d99
+    umax_grid    = 0.d0
+    umax_proc    = 0.d0
     
     do i = 1, u%nboxes
        if ( multifab_remote(u, i) ) cycle
@@ -92,7 +96,7 @@ contains
                         fp(:,:,1,:), ng_f, dUp(:,:,1,1), ng_dU, &
                         dSdtp(:,:,1,1), ng_dS, &
                         w0, p0, gamma1bar, lo, hi, &
-                        dx, rho_min, dt_adv_grid, dt_divu_grid, cflfac)
+                        dx, rho_min, dt_adv_grid, dt_divu_grid, umax_grid, cflfac)
        case (3)
           if (spherical .eq. 1) then
              np => dataptr(normal, i)
@@ -106,24 +110,28 @@ contains
                                 dSdtp(:,:,:,1), ng_dS, np(:,:,:,:), ng_n, &
                                 w0,wxp(:,:,:,1),wyp(:,:,:,1),wzp(:,:,:,1),ng_w, &
                                 p0, gamma1bar, lo, hi, dx, &
-                                rho_min, dt_adv_grid, dt_divu_grid, cflfac)
+                                rho_min, dt_adv_grid, dt_divu_grid, umax_grid, cflfac)
           else
              call estdt_3d_cart(n, uop(:,:,:,:), ng_u, sop(:,:,:,:), ng_s, &
                                 fp(:,:,:,:), ng_f, dUp(:,:,:,1), ng_dU, &
                                 dSdtp(:,:,:,1), ng_dS, &
                                 w0, p0, gamma1bar, lo, hi, dx, rho_min, &
-                                dt_adv_grid, dt_divu_grid, cflfac)
+                                dt_adv_grid, dt_divu_grid, umax_grid, cflfac)
           end if
        end select
        
-       dt_adv_proc  = min(dt_adv_proc ,dt_adv_grid)
-       dt_divu_proc = min(dt_divu_proc,dt_divu_grid)
+       dt_adv_proc  = min( dt_adv_proc,  dt_adv_grid)
+       dt_divu_proc = min(dt_divu_proc, dt_divu_grid)
+       umax_proc    = max(   umax_proc,    umax_grid)
 
     end do
     
     ! This sets dt to be the min of dt_proc over all processors.
-    call parallel_reduce(dt_adv ,dt_adv_proc ,MPI_MIN)
-    call parallel_reduce(dt_divu,dt_divu_proc,MPI_MIN)
+    call parallel_reduce( dt_adv,  dt_adv_proc, MPI_MIN)
+    call parallel_reduce(dt_divu, dt_divu_proc, MPI_MIN)
+    call parallel_reduce(   umax,    umax_proc, MPI_MAX)
+
+    rel_eps = 1.d-8*umax
     
     dt = min(dt_adv,dt_divu)
 
@@ -140,7 +148,7 @@ contains
   subroutine estdt_2d(n, u, ng_u, s, ng_s, force, ng_f, &
                       divU, ng_dU, dSdt, ng_dS, &
                       w0, p0, gamma1bar, lo, hi, &
-                      dx, rho_min, dt_adv, dt_divu, cfl)
+                      dx, rho_min, dt_adv, dt_divu, umax, cfl)
 
     use geometry,  only: nr
     use variables, only: rho_comp
@@ -154,7 +162,7 @@ contains
     real (kind = dp_t), intent(in   ) :: w0(0:), p0(0:), gamma1bar(0:)
     real (kind = dp_t), intent(in   ) :: dx(:)
     real (kind = dp_t), intent(in   ) :: rho_min,cfl
-    real (kind = dp_t), intent(inout) :: dt_adv,dt_divu
+    real (kind = dp_t), intent(inout) :: dt_adv,dt_divu,umax
     
     real (kind = dp_t)  :: spdx, spdy, spdr
     real (kind = dp_t)  :: fx, fy
@@ -168,19 +176,24 @@ contains
     ! advective constraints
     spdx = ZERO
     spdy = ZERO
-    spdr = ZERO 
+    spdr = ZERO
+    umax = ZERO
     
     do j = lo(2), hi(2); do i = lo(1), hi(1)
        spdx = max(spdx ,abs(u(i,j,1)))
     enddo; enddo
 
     do j = lo(2), hi(2); do i = lo(1), hi(1)
-       spdy = max(spdy ,abs(u(i,j,2)+w0(j)))
+       spdy = max(spdy ,abs(u(i,j,2)+HALF*(w0(j)+w0(j+1))))
     enddo; enddo
     
     do j = lo(2),hi(2)
        spdr = max(spdr ,abs(w0(j)))
     enddo
+
+    umax = max(umax,spdx)
+    umax = max(umax,spdy)
+    umax = max(umax,spdr)
 
     if (spdx > eps) dt_adv = min(dt_adv, dx(1)/spdx)
     if (spdy > eps) dt_adv = min(dt_adv, dx(2)/spdy)
@@ -256,7 +269,7 @@ contains
   subroutine estdt_3d_cart(n, u, ng_u, s, ng_s, force, ng_f, &
                            divU, ng_dU, dSdt, ng_dS, &
                            w0, p0, gamma1bar, lo, hi, &
-                           dx, rho_min, dt_adv, dt_divu, cfl)
+                           dx, rho_min, dt_adv, dt_divu, umax, cfl)
 
     use geometry,  only: nr
     use variables, only: rho_comp
@@ -270,7 +283,7 @@ contains
     real (kind = dp_t), intent(in   ) :: w0(0:), p0(0:), gamma1bar(0:)
     real (kind = dp_t), intent(in   ) :: dx(:)
     real (kind = dp_t), intent(in   ) :: rho_min,cfl
-    real (kind = dp_t), intent(inout) :: dt_adv, dt_divu
+    real (kind = dp_t), intent(inout) :: dt_adv, dt_divu, umax
     
     real (kind = dp_t)  :: spdx, spdy, spdz, spdr
     real (kind = dp_t)  :: fx, fy, fz
@@ -283,7 +296,8 @@ contains
     spdx = ZERO
     spdy = ZERO 
     spdz = ZERO 
-    spdr = ZERO 
+    spdr = ZERO
+    umax = ZERO
     
     ! Limit dt based on velocity terms
     do k = lo(3), hi(3); do j = lo(2), hi(2); do i = lo(1), hi(1)
@@ -295,12 +309,17 @@ contains
     enddo; enddo; enddo
 
     do k = lo(3), hi(3); do j = lo(2), hi(2); do i = lo(1), hi(1)
-       spdz = max(spdz ,abs(u(i,j,k,3)+w0(k)))
+       spdz = max(spdz ,abs(u(i,j,k,3)+HALF*(w0(k)+w0(k+1))))
     enddo; enddo; enddo
     
     do k = lo(3),hi(3)
        spdr = max(spdr ,abs(w0(k)))
     enddo
+
+    umax = max(umax,spdx)
+    umax = max(umax,spdy)
+    umax = max(umax,spdz)
+    umax = max(umax,spdr)
 
     if (spdx > eps) dt_adv = min(dt_adv, dx(1)/spdx)
     if (spdy > eps) dt_adv = min(dt_adv, dx(2)/spdy)
@@ -388,7 +407,7 @@ contains
   subroutine estdt_3d_sphr(n, u, ng_u, s, ng_s, force, ng_f, &
                            divU, ng_dU, dSdt, ng_dS, normal, ng_n, &
                            w0,w0macx,w0macy,w0macz,ng_w, p0, gamma1bar, &
-                           lo, hi, dx, rho_min, dt_adv, dt_divu, cfl)
+                           lo, hi, dx, rho_min, dt_adv, dt_divu, umax, cfl)
 
     use geometry,  only: dr, nr_fine
     use variables, only: rho_comp
@@ -407,7 +426,7 @@ contains
     real (kind = dp_t), intent(in   ) :: w0(0:), p0(0:), gamma1bar(0:)
     real (kind = dp_t), intent(in   ) :: dx(:)
     real (kind = dp_t), intent(in   ) :: rho_min, cfl
-    real (kind = dp_t), intent(inout) :: dt_adv, dt_divu
+    real (kind = dp_t), intent(inout) :: dt_adv, dt_divu, umax
     
     real (kind = dp_t) :: gp0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),3)
     real (kind = dp_t) :: gp0(0:nr_fine)
@@ -422,6 +441,7 @@ contains
     spdy = ZERO 
     spdz = ZERO 
     spdr = ZERO
+    umax = ZERO
 
     ! Limit dt based on velocity terms
     do k = lo(3), hi(3); do j = lo(2), hi(2); do i = lo(1), hi(1)
@@ -439,6 +459,11 @@ contains
     do k = 0,size(w0,dim=1)-1
        spdr = max(spdr ,abs(w0(k)))
     enddo
+
+    umax = max(umax,spdx)
+    umax = max(umax,spdy)
+    umax = max(umax,spdz)
+    umax = max(umax,spdr)
 
     if (spdx > eps) dt_adv = min(dt_adv, dx(1)/spdx)
     if (spdy > eps) dt_adv = min(dt_adv, dx(2)/spdy)

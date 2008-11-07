@@ -23,6 +23,7 @@ contains
   subroutine firstdt(n,u,s,force,divU,normal,p0,gamma1bar,dx,cflfac,dt)
 
     use geometry, only: dm
+    use variables, only: rel_eps
 
     integer        , intent(in   ) :: n
     type(multifab) , intent(in   ) :: u,s,force,divU,normal
@@ -37,15 +38,18 @@ contains
     real(kind=dp_t), pointer:: np(:,:,:,:)
 
     integer :: lo(dm),hi(dm),ng_u,ng_s,ng_f,ng_dU,ng_n,i
-    real(kind=dp_t) :: dt_hold_proc,dt_grid
+    real(kind=dp_t) :: dt_proc,dt_grid
+    real(kind=dp_t) :: umax,umax_proc,umax_grid
     
     ng_u = u%ng
     ng_s = s%ng
     ng_f = force%ng
     ng_dU = divU%ng
     
-    dt_hold_proc = 1.d99
-    dt_grid      = 1.d99
+    dt_proc   = 1.d99
+    dt_grid   = 1.d99
+    umax_proc = 0.d0
+    umax_grid = 0.d0
     
     do i = 1, u%nboxes
        if ( multifab_remote(u, i) ) cycle
@@ -59,23 +63,29 @@ contains
        case (2)
           call firstdt_2d(n, uop(:,:,1,:), ng_u, sop(:,:,1,:), ng_s, &
                           fp(:,:,1,:), ng_f, divup(:,:,1,1), ng_dU, &
-                          p0, gamma1bar, lo, hi, dx, dt_grid, cflfac)
+                          p0, gamma1bar, lo, hi, dx, dt_grid, umax_grid, cflfac)
        case (3)
           np => dataptr(normal, i)
           ng_n = normal%ng
           call firstdt_3d(n, uop(:,:,:,:), ng_u, sop(:,:,:,:), ng_s, &
                           fp(:,:,:,:), ng_f, divup(:,:,:,1), ng_dU, np(:,:,:,:), ng_n, &
-                          p0, gamma1bar, lo, hi, dx, dt_grid, cflfac)
+                          p0, gamma1bar, lo, hi, dx, dt_grid, umax_grid, cflfac)
        end select
-       dt_hold_proc = min(dt_hold_proc,dt_grid)
+
+       dt_proc   = min(  dt_proc,   dt_grid)
+       umax_proc = max(umax_proc, umax_grid)
+
     end do
     
-    call parallel_reduce(dt, dt_hold_proc ,MPI_MIN)
+    call parallel_reduce(  dt,   dt_proc, MPI_MIN)
+    call parallel_reduce(umax, umax_proc, MPI_MAX)
+
+    rel_eps = 1.d-8*umax
     
   end subroutine firstdt
   
   subroutine firstdt_2d(n,u,ng_u,s,ng_s,force,ng_f,divu,ng_dU, &
-                        p0,gamma1bar,lo,hi,dx,dt,cfl)
+                        p0,gamma1bar,lo,hi,dx,dt,umax,cfl)
 
     use eos_module
     use variables, only: rho_comp, temp_comp, spec_comp
@@ -90,7 +100,7 @@ contains
     real (kind = dp_t), intent(in ) ::  divu(lo(1)-ng_dU:,lo(2)-ng_dU:)
     real (kind = dp_t), intent(in ) :: p0(0:), gamma1bar(0:)
     real (kind = dp_t), intent(in ) :: dx(:)
-    real (kind = dp_t), intent(out) :: dt
+    real (kind = dp_t), intent(out) :: dt, umax
     real (kind = dp_t), intent(in ) :: cfl
     
     real (kind = dp_t)  :: spdx, spdy
@@ -111,6 +121,7 @@ contains
     uy      = ZERO
 
     dt = 1.d99
+    umax = ZERO
     
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
@@ -138,9 +149,13 @@ contains
           pforcey = max(pforcey,abs(force(i,j,2)))
           ux      = max(ux,abs(u(i,j,1)))
           uy      = max(uy,abs(u(i,j,2)))
+
        enddo
     enddo
     
+    umax = max(umax,ux)
+    umax = max(umax,uy)
+
     ux = ux / dx(1)
     uy = uy / dx(2)
     
@@ -197,7 +212,7 @@ contains
   end subroutine firstdt_2d
   
   subroutine firstdt_3d(n,u,ng_u,s,ng_s,force,ng_f,divU,ng_dU,normal,ng_n, &
-                        p0,gamma1bar,lo,hi,dx,dt,cfl)
+                        p0,gamma1bar,lo,hi,dx,dt,umax,cfl)
 
     use geometry,  only: spherical, nr, dr, nr_fine
     use variables, only: rho_comp, temp_comp, spec_comp
@@ -214,7 +229,7 @@ contains
     real (kind = dp_t), intent(in ) :: normal(lo(1)-ng_n :,lo(2)-ng_n :,lo(3)-ng_n :,:) 
     real (kind = dp_t), intent(in ) :: p0(0:), gamma1bar(0:)
     real (kind = dp_t), intent(in ) :: dx(:)
-    real (kind = dp_t), intent(out) :: dt
+    real (kind = dp_t), intent(out) :: dt, umax
     real (kind = dp_t), intent(in ) :: cfl
     
     real (kind = dp_t)  :: spdx, spdy, spdz
@@ -241,6 +256,7 @@ contains
     uz      = ZERO
     
     dt = 1.d99
+    umax = ZERO
 
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
@@ -272,9 +288,14 @@ contains
              ux      = max(ux,abs(u(i,j,k,1)))
              uy      = max(uy,abs(u(i,j,k,2)))
              uz      = max(uz,abs(u(i,j,k,3)))
+
           enddo
        enddo
     enddo
+
+    umax = max(umax,ux)
+    umax = max(umax,uy)
+    umax = max(umax,uz)
 
     ux = ux / dx(1)
     uy = uy / dx(2)

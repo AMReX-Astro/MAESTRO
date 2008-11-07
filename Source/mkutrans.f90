@@ -116,8 +116,8 @@ contains
     real(kind=dp_t) :: slopex(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2)
     real(kind=dp_t) :: slopey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2)
     
-    real(kind=dp_t) hx, hy, dth, umax
-    real(kind=dp_t) ulft,urgt,vbot,vtop,vlo,vhi,abs_eps
+    real(kind=dp_t) hx, hy, dth
+    real(kind=dp_t) ulft,urgt,vbot,vtop,vlo,vhi
 
     integer :: i,j,is,js,ie,je
     logical :: test
@@ -126,22 +126,6 @@ contains
     js = lo(2)
     ie = hi(1)
     je = hi(2)
-    
-    abs_eps = 1.d-8
-    
-    ! Compute rel_eps, which is relative to the max velocity
-    umax = abs(u(is,js,1))
-    do j = js,je; do i = is,ie
-       umax = max(umax,abs(u(i,j,1)))
-    end do; end do
-    do j = js,je; do i = is,ie
-       umax = max(umax,abs(u(i,j,2)+HALF*(w0(j)+w0(j+1))))
-    end do; end do
-    if (umax .eq. 0.d0) then
-       rel_eps = abs_eps
-    else
-       rel_eps = abs_eps * umax
-    endif
     
     dth = HALF*dt
     
@@ -250,7 +234,7 @@ contains
     
     real(kind=dp_t) ulft,urgt,vbot,vtop,wbot,wtop
     real(kind=dp_t) uhi,ulo,vhi,vlo,whi,wlo
-    real(kind=dp_t) hx, hy, hz, dth, umax, abs_eps
+    real(kind=dp_t) hx, hy, hz, dth
     
     logical :: test
     integer :: i,j,k,is,js,ks,ie,je,ke
@@ -261,39 +245,6 @@ contains
     ie = hi(1)
     je = hi(2)
     ke = hi(3)
-    
-    abs_eps = 1.d-8
-
-    ! Compute rel_eps, which is relative to the max velocity
-    if (spherical .eq. 1) then
-       umax = abs(u(is,js,ks,1))
-       do k = ks,ke; do j = js,je; do i = is,ie
-          umax = max(umax,abs(u(i,j,k,1)+HALF*(w0macx(i,j,k)+w0macx(i+1,j,k))))
-       end do; end do; end do
-       do k = ks,ke; do j = js,je; do i = is,ie
-          umax = max(umax,abs(u(i,j,k,2)+HALF*(w0macy(i,j,k)+w0macy(i,j+1,k))))
-       end do; end do; end do
-       do k = ks,ke; do j = js,je; do i = is,ie
-          umax = max(umax,abs(u(i,j,k,3)+HALF*(w0macz(i,j,k)+w0macz(i,j,k+1))))
-       end do; end do; end do
-    else
-       umax = abs(u(is,js,ks,1))
-       do k = ks,ke; do j = js,je; do i = is,ie
-          umax = max(umax,abs(u(i,j,k,1)))
-       end do; end do; end do
-       do k = ks,ke; do j = js,je; do i = is,ie
-          umax = max(umax,abs(u(i,j,k,2)))
-       end do; end do; end do
-       do k = ks,ke; do j = js,je; do i = is,ie
-          umax = max(umax,abs(u(i,j,k,3)+HALF*(w0(k)+w0(k+1))))
-       end do; end do; end do
-    end if
-    
-    if (umax .eq. 0.d0) then
-       rel_eps = abs_eps
-    else
-       rel_eps = abs_eps * umax
-    endif
     
     dth = HALF*dt
     
