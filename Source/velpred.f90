@@ -194,7 +194,7 @@ contains
     real(kind=dp_t), allocatable :: umacl(:,:),umacr(:,:)
     real(kind=dp_t), allocatable :: vmacl(:,:),vmacr(:,:)
 
-    real(kind=dp_t) :: hx, hy, dt2, dt4, uavg, abs_eps, umax, vlo, vhi
+    real(kind=dp_t) :: hx, hy, dt2, dt4, uavg, vlo, vhi
 
     integer :: i,j,is,js,ie,je
 
@@ -218,22 +218,6 @@ contains
     ie = hi(1)
     js = lo(2)
     je = hi(2)
-
-    abs_eps = 1.d-8
-    
-    ! Compute rel_eps, which is relative to the max velocity
-    umax = abs(u(is,js,1))
-    do j = js,je; do i = is,ie
-       umax = max(umax,abs(u(i,j,1)))
-    end do; end do
-    do j = js,je; do i = is,ie
-       umax = max(umax,abs(u(i,j,2)+HALF*(w0(j)+w0(j+1))))
-    end do; end do
-    if (umax .eq. 0.d0) then
-       rel_eps = abs_eps
-    else
-       rel_eps = abs_eps * umax
-    endif
 
     dt2 = HALF*dt
     dt4 = dt/4.0d0
@@ -559,7 +543,7 @@ contains
     real(kind=dp_t), allocatable:: vmacl(:,:,:),vmacr(:,:,:)
     real(kind=dp_t), allocatable:: wmacl(:,:,:),wmacr(:,:,:)
 
-    real(kind=dp_t) :: hx, hy, hz, dt2, dt4, dt6, uavg, abs_eps, umax
+    real(kind=dp_t) :: hx, hy, hz, dt2, dt4, dt6, uavg
     real(kind=dp_t) :: ulo, uhi, vlo, vhi, wlo, whi, Ut_dot_er
 
     integer :: i,j,k,is,js,ie,je,ks,ke
@@ -625,38 +609,6 @@ contains
     je = hi(2)
     ks = lo(3)
     ke = hi(3)
-
-    abs_eps = 1.d-8
-
-    ! Compute rel_eps, which is relative to the max velocity
-    if (spherical .eq. 1) then
-       umax = abs(u(is,js,ks,1))
-       do k = ks,ke; do j = js,je; do i = is,ie
-          umax = max(umax,abs(u(i,j,k,1)+HALF*(w0macx(i,j,k)+w0macx(i+1,j,k))))
-       end do; end do; end do
-       do k = ks,ke; do j = js,je; do i = is,ie
-          umax = max(umax,abs(u(i,j,k,2)+HALF*(w0macy(i,j,k)+w0macy(i,j+1,k))))
-       end do; end do; end do
-       do k = ks,ke; do j = js,je; do i = is,ie
-          umax = max(umax,abs(u(i,j,k,3)+HALF*(w0macz(i,j,k)+w0macz(i,j,k+1))))
-       end do; end do; end do
-    else
-       umax = abs(u(is,js,ks,1))
-       do k = ks,ke; do j = js,je; do i = is,ie
-          umax = max(umax,abs(u(i,j,k,1)))
-       end do; end do; end do
-       do k = ks,ke; do j = js,je; do i = is,ie
-          umax = max(umax,abs(u(i,j,k,2)))
-       end do; end do; end do
-       do k = ks,ke; do j = js,je; do i = is,ie
-          umax = max(umax,abs(u(i,j,k,3)+HALF*(w0(k)+w0(k+1))))
-       end do; end do; end do
-    end if
-    if (umax .eq. 0.d0) then
-       rel_eps = abs_eps
-    else
-       rel_eps = abs_eps * umax
-    endif
 
     dt2 = HALF*dt
     dt4 = dt/4.0d0
