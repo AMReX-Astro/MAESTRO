@@ -222,9 +222,7 @@ contains
     real(kind=dp_t) :: s_b(lo(2)-1:hi(2)+2)
     real(kind=dp_t) :: s_t(lo(2)-1:hi(2)+2)
 
-    real(kind=dp_t) :: hx,hy,dt2,dt4,splus,sminus
-    real(kind=dp_t) :: savg,st
-    real(kind=dp_t) :: sptop,spbot,smtop,smbot,splft,sprgt,smlft,smrgt
+    real(kind=dp_t) :: hx,hy,dt2,dt4,savg
 
     integer :: i,j,is,js,ie,je
 
@@ -271,9 +269,6 @@ contains
 
     hx = dx(1)
     hy = dx(2)
-
-    ! NEW CODE
-    if (.false.) then
     
     !******************************************************************
     ! Create s_{\i-\half\e_x}^x, etc.
@@ -394,10 +389,21 @@ contains
                   + dt2*force(i  ,j,comp)
           else
              sedgelx(i,j) = slx(i,j) &
-                  - (dt4/hy)*(vmac(i-1,j+1)+vmac(i-1,j))*(simhy(i-1,j+1)-simhy(i-1,j))
+                  - (dt4/hy)*(vmac(i-1,j+1)+vmac(i-1,j))*(simhy(i-1,j+1)-simhy(i-1,j)) &
+                  + dt2*force(i-1,j,comp)
              sedgerx(i,j) = srx(i,j) &
-                  - (dt4/hy)*(vmac(i  ,j+1)+vmac(i  ,j))*(simhy(i  ,j+1)-simhy(i  ,j))
+                  - (dt4/hy)*(vmac(i  ,j+1)+vmac(i  ,j))*(simhy(i  ,j+1)-simhy(i  ,j)) &
+                  + dt2*force(i  ,j,comp)
           endif
+
+          ! add the (Utilde . e_r) d w_0 /dr e_r term here
+          ! vmac contains w0 so we need to subtract it off
+          if (is_vel .and. comp .eq. 2) then
+             sedgelx(i,j) = sedgelx(i,j) &
+                  -(dt4/hy)*(vmac(i-1,j)-w0(j)+vmac(i-1,j+1)-w0(j+1))*(w0(j+1)-w0(j))
+             sedgerx(i,j) = sedgerx(i,j) &
+                  -(dt4/hy)*(vmac(i  ,j)-w0(j)+vmac(i  ,j+1)-w0(j+1))*(w0(j+1)-w0(j))
+          end if
 
           ! make sedgex by solving Riemann problem
           ! boundary conditions enforced outside of i,j loop
@@ -463,10 +469,31 @@ contains
                   + dt2*force(i,j  ,comp)
           else
              sedgely(i,j) = sly(i,j) &
-                  - (dt4/hx)*(umac(i+1,j-1)+umac(i,j-1))*(simhx(i+1,j-1)-simhx(i,j-1))
+                  - (dt4/hx)*(umac(i+1,j-1)+umac(i,j-1))*(simhx(i+1,j-1)-simhx(i,j-1)) &
+                  + dt2*force(i,j-1,comp)
              sedgery(i,j) = sry(i,j) &
-                  - (dt4/hx)*(umac(i+1,j  )+umac(i,j  ))*(simhx(i+1,j  )-simhx(i,j  ))
+                  - (dt4/hx)*(umac(i+1,j  )+umac(i,j  ))*(simhx(i+1,j  )-simhx(i,j  )) &
+                  + dt2*force(i,j  ,comp)
           endif
+
+          ! add the (Utilde . e_r) d w_0 /dr e_r term here
+          ! vmac contains w0 so we need to subtract it off
+          if (is_vel .and. comp .eq. 2) then
+             if (j .eq. 0) then
+                ! sedgely unchanged since dw_0 / dr = 0
+                sedgery(i,j) = sedgery(i,j) &
+                     -(dt4/hy)*(vmac(i,j+1)-w0(j+1)+vmac(i,j  )-w0(j  ))*(w0(j+1)-w0(j  ))
+             else if (j .eq. nr(n)) then
+                sedgely(i,j) = sedgely(i,j) &
+                     -(dt4/hy)*(vmac(i,j  )-w0(j  )+vmac(i,j-1)-w0(j-1))*(w0(j  )-w0(j-1))
+                ! sedgery unchanged since dw_0 / dr = 0
+             else
+                sedgely(i,j) = sedgely(i,j) &
+                     -(dt4/hy)*(vmac(i,j  )-w0(j  )+vmac(i,j-1)-w0(j-1))*(w0(j  )-w0(j-1))
+                sedgery(i,j) = sedgery(i,j) &
+                     -(dt4/hy)*(vmac(i,j+1)-w0(j+1)+vmac(i,j  )-w0(j  ))*(w0(j+1)-w0(j  ))
+             end if
+          end if
 
           ! make sedgey by solving Riemann problem
           ! boundary conditions enforced outside of i,j loop
@@ -517,227 +544,6 @@ contains
        endif
     enddo
 
-    end if
-    ! END NEW CODE
-
-    ! ORIGINAL CODE
-    if (.true.) then
-
-    !********************************
-    ! Loop for edge states on x-edges.
-    !********************************
-
-    do j = js,je 
-       do i = is-1,ie+1 
-
-          spbot = s(i,j  ,comp) + (HALF - dt2*vmac(i,j+1)/hy) * slopey(i,j  ,1)
-          sptop = s(i,j+1,comp) - (HALF + dt2*vmac(i,j+1)/hy) * slopey(i,j+1,1)
-
-          sptop = merge(s(i,je+1,comp),sptop,j.eq.je .and. phys_bc(2,2) .eq. INLET)
-          spbot = merge(s(i,je+1,comp),spbot,j.eq.je .and. phys_bc(2,2) .eq. INLET)
-
-          if (j .eq. je .and. &
-               (phys_bc(2,2).eq.SLIP_WALL.or.phys_bc(2,2).eq.NO_SLIP_WALL)) then
-             if (is_vel .and. comp .eq. 2) then
-                sptop = ZERO
-                spbot = ZERO
-             elseif (is_vel .and. comp .eq. 1) then
-                sptop = merge(ZERO,spbot,phys_bc(2,2).eq.NO_SLIP_WALL)
-                spbot = merge(ZERO,spbot,phys_bc(2,2).eq.NO_SLIP_WALL)
-             else
-                sptop = spbot
-             endif
-          endif
-
-          splus = merge(spbot,sptop,vmac(i,j+1).gt.ZERO)
-          savg  = HALF * (spbot + sptop)
-          splus = merge(splus, savg, abs(vmac(i,j+1)) .gt. rel_eps)
-
-          smtop = s(i,j  ,comp) - (HALF + dt2*vmac(i,j)/hy) * slopey(i,j  ,1)
-          smbot = s(i,j-1,comp) + (HALF - dt2*vmac(i,j)/hy) * slopey(i,j-1,1)
-
-          smtop = merge(s(i,js-1,comp),smtop,j.eq.js .and. phys_bc(2,1) .eq. INLET)
-          smbot = merge(s(i,js-1,comp),smbot,j.eq.js .and. phys_bc(2,1) .eq. INLET)
-
-          if (j .eq. js .and. &
-               (phys_bc(2,1).eq.SLIP_WALL.or.phys_bc(2,1).eq.NO_SLIP_WALL)) then
-             if (is_vel .and. (comp .eq. 2)) then
-                smtop = ZERO
-                smbot = ZERO
-             elseif (is_vel .and. (comp .ne. 2)) then
-                smbot = merge(ZERO,smtop,phys_bc(2,1).eq.NO_SLIP_WALL)
-                smtop = merge(ZERO,smtop,phys_bc(2,1).eq.NO_SLIP_WALL)
-             else
-                smbot = smtop
-             endif
-          endif
-
-          sminus = merge(smbot,smtop,vmac(i,j).gt.ZERO)
-          savg   = HALF * (smbot + smtop)
-          sminus = merge(sminus, savg, abs(vmac(i,j)) .gt. rel_eps)
-
-          if (is_conservative) then
-             st = force(i,j,comp) - ( vmac(i,j+1)*splus-vmac(i,j)*sminus ) / hy &
-                  - s(i,j,comp)*(umac(i+1,j)-umac(i,j)) / hx
-          else
-             st = force(i,j,comp) - HALF * (vmac(i,j)+vmac(i,j+1))*(splus - sminus) / hy
-          end if
-
-          ! add the (Utilde . e_r) d w_0 /dr e_r term here
-          if (is_vel .and. comp .eq. 2) then
-             ! vmac contains w0 so we need to subtract it off
-             st = st - HALF * (vmac(i,j)+vmac(i,j+1)-w0(j+1)-w0(j))*(w0(j+1)-w0(j))/hy
-          end if
-
-          s_l(i+1)= s(i,j,comp) + (HALF-dt2*umac(i+1,j)/hx)*slopex(i,j,1) + dt2*st
-          s_r(i  )= s(i,j,comp) - (HALF+dt2*umac(i  ,j)/hx)*slopex(i,j,1) + dt2*st
-
-       enddo
-
-       do i = is, ie+1 
-          sedgex(i,j,comp)=merge(s_l(i),s_r(i),umac(i,j).gt.ZERO)
-          savg = HALF*(s_r(i) + s_l(i))
-          sedgex(i,j,comp)=merge(savg,sedgex(i,j,comp),abs(umac(i,j)) .lt. rel_eps)
-       enddo
-
-       if (phys_bc(1,1) .eq. SLIP_WALL .or. phys_bc(1,1) .eq. NO_SLIP_WALL) then
-          if (is_vel .and. comp .eq. 1) then
-             sedgex(is,j,comp) = ZERO
-          elseif (is_vel .and. comp .ne. 1) then
-             sedgex(is,j,comp) = merge(ZERO,s_r(is),phys_bc(1,1).eq.NO_SLIP_WALL)
-          else 
-             sedgex(is,j,comp) = s_r(is)
-          endif
-       elseif (phys_bc(1,1) .eq. INLET) then
-          sedgex(is,j,comp) = s(is-1,j,comp)
-       elseif (phys_bc(1,1) .eq. OUTLET) then
-          if (is_vel .and. comp.eq.1) then
-             sedgex(is,j,comp) = MIN(s_r(is),ZERO)
-          else
-             sedgex(is,j,comp) = s_r(is)
-          end if
-       endif
-       if (phys_bc(1,2) .eq. SLIP_WALL .or. phys_bc(1,2) .eq. NO_SLIP_WALL) then
-          if (is_vel .and. comp .eq. 1) then
-             sedgex(ie+1,j,comp) = ZERO
-          else if (is_vel .and. comp .ne. 1) then
-             sedgex(ie+1,j,comp) = merge(ZERO,s_l(ie+1),phys_bc(1,2).eq.NO_SLIP_WALL)
-          else 
-             sedgex(ie+1,j,comp) = s_l(ie+1)
-          endif
-       elseif (phys_bc(1,2) .eq. INLET) then
-          sedgex(ie+1,j,comp) = s(ie+1,j,comp)
-       elseif (phys_bc(1,2) .eq. OUTLET) then
-          if (is_vel .and. comp.eq.1) then
-             sedgex(ie+1,j,comp) = MAX(s_l(ie+1),ZERO)
-          else
-             sedgex(ie+1,j,comp) = s_l(ie+1)
-          end if
-       endif
-
-    enddo
-
-    !********************************
-    ! Loop for edge states on y-edges.
-    !********************************
-
-    do i = is, ie 
-       do j = js-1, je+1 
-
-          splft = s(i,j  ,comp) + (HALF - dt2*umac(i+1,j)/hx) * slopex(i  ,j,1)
-          sprgt = s(i+1,j,comp) - (HALF + dt2*umac(i+1,j)/hx) * slopex(i+1,j,1)
-
-          sprgt = merge(s(ie+1,j,comp),sprgt,i.eq.ie .and. phys_bc(1,2) .eq. INLET)
-          splft = merge(s(ie+1,j,comp),splft,i.eq.ie .and. phys_bc(1,2) .eq. INLET)
-
-          if (i .eq. ie .and. &
-               (phys_bc(1,2).eq.SLIP_WALL.or.phys_bc(1,2).eq.NO_SLIP_WALL)) then
-             if (is_vel .and. comp .eq. 1) then
-                splft = ZERO
-                sprgt = ZERO
-             elseif (is_vel .and. comp .ne. 1) then
-                sprgt = merge(ZERO,splft,phys_bc(1,2).eq.NO_SLIP_WALL)
-                splft = merge(ZERO,splft,phys_bc(1,2).eq.NO_SLIP_WALL)
-             else
-                sprgt = splft
-             endif
-          endif
-
-          splus = merge(splft,sprgt,umac(i+1,j).gt.ZERO)
-          savg  = HALF * (splft + sprgt)
-          splus = merge(splus, savg, abs(umac(i+1,j)) .gt. rel_eps)
-          
-          smrgt = s(i  ,j,comp) - (HALF + dt2*umac(i,j)/hx) * slopex(i  ,j,1)
-          smlft = s(i-1,j,comp) + (HALF - dt2*umac(i,j)/hx) * slopex(i-1,j,1)
-          
-          smrgt = merge(s(is-1,j,comp),smrgt,i.eq.is .and. phys_bc(1,1) .eq. INLET)
-          smlft = merge(s(is-1,j,comp),smlft,i.eq.is .and. phys_bc(1,1) .eq. INLET)
-          
-          if (i .eq. is .and. &
-               (phys_bc(1,1).eq.SLIP_WALL.or.phys_bc(1,1).eq.NO_SLIP_WALL)) then
-             if (is_vel .and. comp .eq. 1) then
-                smlft = ZERO
-                smrgt = ZERO
-             elseif (is_vel .and. comp .ne. 1) then
-                smlft = merge(ZERO,smrgt,phys_bc(1,1).eq.NO_SLIP_WALL)
-                smrgt = merge(ZERO,smrgt,phys_bc(1,1).eq.NO_SLIP_WALL)
-             else
-                smlft = smrgt
-             endif
-          endif
-          
-          sminus = merge(smlft,smrgt,umac(i,j).gt.ZERO)
-          savg   = HALF * (smlft + smrgt)
-          sminus = merge(sminus, savg, abs(umac(i,j)) .gt. rel_eps)
-          
-          if (is_conservative) then
-             st = force(i,j,comp) - ( umac(i+1,j)*splus-umac(i,j)*sminus ) /hx &
-                  - s(i,j,comp)*(vmac(i,j+1)-vmac(i,j)) / hy
-          else
-             st = force(i,j,comp) - HALF * (umac(i,j)+umac(i+1,j))*(splus - sminus) / hx
-          end if
-          
-          if (is_vel .and. comp .eq. 2) then
-             ! vmac contains w0 so we need to subtract it off
-             if (j .ge. 0 .and. j .le. nr(n)-1) then
-                st = st - HALF * (vmac(i,j)+vmac(i,j+1)-w0(j+1)-w0(j))*(w0(j+1)-w0(j))/hy
-             else
-                ! dw0/dr=0 and therefore st is unchanged
-             end if
-          end if
-          
-          s_b(j+1)= s(i,j,comp) + (HALF-dt2*vmac(i,j+1)/hy)*slopey(i,j,1) + dt2*st
-          s_t(j  )= s(i,j,comp) - (HALF+dt2*vmac(i,j  )/hy)*slopey(i,j,1) + dt2*st
-          
-       enddo
-       
-       do j = js, je+1 
-          sedgey(i,j,comp)=merge(s_b(j),s_t(j),vmac(i,j).gt.ZERO)
-          savg = HALF*(s_b(j) + s_t(j))
-          sedgey(i,j,comp)=merge(savg,sedgey(i,j,comp),abs(vmac(i,j)) .lt. rel_eps)
-       enddo
-          
-       if (phys_bc(2,1) .eq. SLIP_WALL .or. phys_bc(2,1) .eq. NO_SLIP_WALL) then
-          sedgey(i,js,comp) = s_t(js)
-       elseif (phys_bc(2,1) .eq. INLET) then
-          sedgey(i,js,comp) = s(i,js-1,comp)
-       elseif (phys_bc(2,1) .eq. OUTLET) then
-          sedgey(i,js,comp) = s_t(js)
-       endif
-          
-       if (phys_bc(2,2) .eq. SLIP_WALL .or. phys_bc(2,2) .eq. NO_SLIP_WALL) then
-          sedgey(i,je+1,comp) = s_b(je+1)
-       elseif (phys_bc(2,2) .eq. INLET) then
-          sedgey(i,je+1,comp) = s(i,je+1,comp)
-       elseif (phys_bc(2,2) .eq. OUTLET) then
-          sedgey(i,je+1,comp) = s_b(je+1)
-       endif
-       
-    enddo
-
-    end if
-    ! END ORIGINAL CODE
-
     deallocate(slx,srx,sly,sry,simhx,simhy,sedgelx,sedgerx,sedgely,sedgery)
 
   end subroutine make_edge_scal_2d
@@ -786,12 +592,88 @@ contains
     real(kind=dp_t) :: s_u(lo(3)-1:hi(3)+2)
     real(kind=dp_t) :: s_d(lo(3)-1:hi(3)+2)
 
-    real(kind=dp_t) :: hx,hy,hz,dt2,splus,sminus
+    real(kind=dp_t) :: hx,hy,hz,dt2,dt3,dt4,dt6,splus,sminus
     real(kind=dp_t) :: savg,st
     real(kind=dp_t) :: sptop,spbot,smtop,smbot,splft,sprgt,smlft,smrgt
     real(kind=dp_t) :: Ut_dot_er
 
     integer :: i,j,k,is,js,ks,ie,je,ke
+
+    ! these correspond to s_L^x, etc.
+    real(kind=dp_t), allocatable:: slx(:,:,:),srx(:,:,:)
+    real(kind=dp_t), allocatable:: sly(:,:,:),sry(:,:,:)
+    real(kind=dp_t), allocatable:: slz(:,:,:),srz(:,:,:)
+
+    ! these correspond to s_{\i-\half\e_x}^x, etc.
+    real(kind=dp_t), allocatable:: simhx(:,:,:),simhy(:,:,:),simhz(:,:,:)
+
+    ! these correspond to s_L^{x|y}, etc.
+    real(kind=dp_t), allocatable:: slxy(:,:,:),srxy(:,:,:),slxz(:,:,:),srxz(:,:,:)
+    real(kind=dp_t), allocatable:: slyx(:,:,:),sryx(:,:,:),slyz(:,:,:),sryz(:,:,:)
+    real(kind=dp_t), allocatable:: slzx(:,:,:),srzx(:,:,:),slzy(:,:,:),srzy(:,:,:)
+
+    ! these correspond to s_{\i-\half\e_x}^{x|y}, etc.
+    real(kind=dp_t), allocatable:: simhxy(:,:,:),simhxz(:,:,:)
+    real(kind=dp_t), allocatable:: simhyx(:,:,:),simhyz(:,:,:)
+    real(kind=dp_t), allocatable:: simhzx(:,:,:),simhzy(:,:,:)
+
+    ! these correspond to \mathrm{sedge}_L^x, etc.
+    real(kind=dp_t), allocatable:: sedgelx(:,:,:),sedgerx(:,:,:)
+    real(kind=dp_t), allocatable:: sedgely(:,:,:),sedgery(:,:,:)
+    real(kind=dp_t), allocatable:: sedgelz(:,:,:),sedgerz(:,:,:)
+
+    ! Normal predictor states.
+    ! Allocated from lo:hi+1 in the normal direction
+    ! lo-1:hi+1 in the transverse directions
+    allocate(slx  (lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
+    allocate(srx  (lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
+    allocate(simhx(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
+
+    allocate(sly  (lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3)-1:hi(3)+1))
+    allocate(sry  (lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3)-1:hi(3)+1))
+    allocate(simhy(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3)-1:hi(3)+1))
+
+    allocate(slz  (lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
+    allocate(srz  (lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
+    allocate(simhz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
+
+    ! These are transverse terms.  The size allocation is tricky.
+    ! lo:hi+1 in normal direction
+    ! lo:hi in transverse direction
+    ! lo-1:hi+1 in unused direction
+    allocate(slxy  (lo(1):hi(1)+1,lo(2):hi(2),lo(3)-1:hi(3)+1))
+    allocate(srxy  (lo(1):hi(1)+1,lo(2):hi(2),lo(3)-1:hi(3)+1))
+    allocate(simhxy(lo(1):hi(1)+1,lo(2):hi(2),lo(3)-1:hi(3)+1))
+
+    allocate(slxz  (lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)))
+    allocate(srxz  (lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)))
+    allocate(simhxz(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)))
+
+    allocate(slyx  (lo(1):hi(1),lo(2):hi(2)+1,lo(3)-1:hi(3)+1))
+    allocate(sryx  (lo(1):hi(1),lo(2):hi(2)+1,lo(3)-1:hi(3)+1))
+    allocate(simhyx(lo(1):hi(1),lo(2):hi(2)+1,lo(3)-1:hi(3)+1))
+
+    allocate(slyz  (lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3):hi(3)))
+    allocate(sryz  (lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3):hi(3)))
+    allocate(simhyz(lo(1)-1:hi(1)+1,lo(2):hi(2)+1,lo(3):hi(3)))
+
+    allocate(slzx  (lo(1):hi(1),lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
+    allocate(srzx  (lo(1):hi(1),lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
+    allocate(simhzx(lo(1):hi(1),lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
+
+    allocate(slzy  (lo(1)-1:hi(1)+1,lo(2):hi(2),lo(3):hi(3)+1))
+    allocate(srzy  (lo(1)-1:hi(1)+1,lo(2):hi(2),lo(3):hi(3)+1))
+    allocate(simhzy(lo(1)-1:hi(1)+1,lo(2):hi(2),lo(3):hi(3)+1))
+
+    ! Final edge states.
+    ! lo:hi+1 in the normal direction
+    ! lo:hi in the transverse directions
+    allocate(sedgelx(lo(1):hi(1)+1,lo(2):hi(2),lo(3):hi(3)))
+    allocate(sedgerx(lo(1):hi(1)+1,lo(2):hi(2),lo(3):hi(3)))
+    allocate(sedgely(lo(1):hi(1),lo(2):hi(2)+1,lo(3):hi(3)))
+    allocate(sedgery(lo(1):hi(1),lo(2):hi(2)+1,lo(3):hi(3)))
+    allocate(sedgelz(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)+1))
+    allocate(sedgerz(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3)+1))
 
     is = lo(1)
     ie = hi(1)
@@ -807,596 +689,771 @@ contains
     call slopez_3d(s(:,:,:,comp:),slopez,lo,hi,ng_s,1,adv_bc)
 
     dt2 = HALF*dt
+    dt3 = dt/3.0d0
+    dt4 = dt/4.0d0
+    dt6 = dt/6.0d0
     
     hx = dx(1)
     hy = dx(2)
     hz = dx(3)
+    
+    !******************************************************************
+    ! Create s_{\i-\half\e_x}^x, etc.
+    !******************************************************************
+    
+    ! loop over appropriate x-faces
+    do k=ks-1,ke+1
+       do j=js-1,je+1
+          do i=is,ie+1
+             ! make slx, srx with 1D extrapolation
+             slx(i,j,k) = s(i-1,j,k,comp) + (HALF - dt2*umac(i,j,k)/hx)*slopex(i-1,j,k,1)
+             srx(i,j,k) = s(i  ,j,k,comp) - (HALF + dt2*umac(i,j,k)/hx)*slopex(i  ,j,k,1)
 
-    !********************************
-    ! Loop for edge states on x-edges.
-    !********************************
-
-    do k = ks, ke
-       do j= js, je
-          do i = is-1, ie+1
-
-             spbot = s(i,j  ,k,comp) + (HALF - dt2*vmac(i,j+1,k)/hy) * slopey(i,j  ,k,1)
-             sptop = s(i,j+1,k,comp) - (HALF + dt2*vmac(i,j+1,k)/hy) * slopey(i,j+1,k,1)
-
-             sptop = merge(s(i,je+1,k,comp),sptop,j.eq.je .and. phys_bc(2,2) .eq. INLET)
-             spbot = merge(s(i,je+1,k,comp),spbot,j.eq.je .and. phys_bc(2,2) .eq. INLET)
-
-             if (j .eq. je .and. &
-                  (phys_bc(2,2).eq.SLIP_WALL.or.phys_bc(2,2).eq.NO_SLIP_WALL)) then
-                if (is_vel .and. comp.eq.2) then
-                   sptop = ZERO
-                   spbot = ZERO
-                elseif (is_vel .and. comp.ne.2) then
-                   sptop = merge(ZERO,spbot,phys_bc(2,2).eq.NO_SLIP_WALL)
-                   spbot = merge(ZERO,spbot,phys_bc(2,2).eq.NO_SLIP_WALL)
-                else
-                   sptop = spbot
-                endif
-             endif
-
-             splus = merge(spbot,sptop,vmac(i,j+1,k).gt.ZERO)
-             savg  = HALF * (spbot + sptop)
-             splus = merge(splus, savg, abs(vmac(i,j+1,k)) .gt. rel_eps)
-
-             smtop = s(i,j  ,k,comp) - (HALF + dt2*vmac(i,j,k)/hy) * slopey(i,j  ,k,1)
-             smbot = s(i,j-1,k,comp) + (HALF - dt2*vmac(i,j,k)/hy) * slopey(i,j-1,k,1)
-
-             smtop = merge(s(i,js-1,k,comp),smtop,j.eq.js .and. phys_bc(2,1) .eq. INLET)
-             smbot = merge(s(i,js-1,k,comp),smbot,j.eq.js .and. phys_bc(2,1) .eq. INLET)
-
-             if (j .eq. js .and. &
-                  (phys_bc(2,1).eq.SLIP_WALL.or.phys_bc(2,1).eq.NO_SLIP_WALL)) then
-                if (is_vel .and. (comp .eq. 2)) then
-                   smtop = ZERO
-                   smbot = ZERO
-                elseif (is_vel .and. (comp .ne. 2)) then
-                   smbot = merge(ZERO,smtop,phys_bc(2,1).eq.NO_SLIP_WALL)
-                   smtop = merge(ZERO,smtop,phys_bc(2,1).eq.NO_SLIP_WALL)
-                else
-                   smbot = smtop
-                endif
-             endif
-
-             sminus = merge(smbot,smtop,vmac(i,j,k).gt.ZERO)
-             savg   = HALF * (smbot + smtop)
-             sminus = merge(sminus, savg, abs(vmac(i,j,k)) .gt. rel_eps)
-
-             if (is_conservative) then
-                st = force(i,j,k,comp) - ( vmac(i,j+1,k)*splus-vmac(i,j,k)*sminus )  / hy
-             else
-                st = force(i,j,k,comp) &
-                     - HALF * (vmac(i,j,k)+vmac(i,j+1,k))*(splus - sminus) / hy
-             end if
-
-             spbot = s(i,j,k  ,comp) + (HALF - dt2*wmac(i,j,k+1)/hz) * slopez(i,j,k  ,1)
-             sptop = s(i,j,k+1,comp) - (HALF + dt2*wmac(i,j,k+1)/hz) * slopez(i,j,k+1,1)
-             
-             sptop = merge(s(i,j,ke+1,comp),sptop,k.eq.ke .and. phys_bc(3,2) .eq. INLET)
-             spbot = merge(s(i,j,ke+1,comp),spbot,k.eq.ke .and. phys_bc(3,2) .eq. INLET)
-                 
-             if (k .eq. ke .and. &
-                  (phys_bc(3,2).eq.SLIP_WALL.or.phys_bc(3,2).eq.NO_SLIP_WALL)) then
-                if (is_vel .and. comp .eq. 3) then
-                   sptop = ZERO
-                   spbot = ZERO
-                elseif (is_vel .and. (comp.ne.3)) then
-                   sptop = merge(ZERO,spbot,phys_bc(3,2).eq.NO_SLIP_WALL)
-                   spbot = merge(ZERO,spbot,phys_bc(3,2).eq.NO_SLIP_WALL)
-                else
-                   sptop = spbot
-                endif
-             endif
-                 
-             splus = merge(spbot,sptop,wmac(i,j,k+1).gt.ZERO)
-             savg  = HALF * (spbot + sptop)
-             splus = merge(splus, savg, abs(wmac(i,j,k+1)) .gt. rel_eps)
-                 
-             smtop = s(i,j,k  ,comp) - (HALF + dt2*wmac(i,j,k)/hz) * slopez(i,j,k  ,1)
-             smbot = s(i,j,k-1,comp) + (HALF - dt2*wmac(i,j,k)/hz) * slopez(i,j,k-1,1)
-
-             smtop = merge(s(i,j,ks-1,comp),smtop,k.eq.ks .and. phys_bc(3,1) .eq. INLET)
-             smbot = merge(s(i,j,ks-1,comp),smbot,k.eq.ks .and. phys_bc(3,1) .eq. INLET)
-             
-             if (k .eq. ks .and. &
-                  (phys_bc(3,1).eq.SLIP_WALL.or.phys_bc(3,1).eq.NO_SLIP_WALL)) then
-                if (is_vel .and. (comp.eq.3)) then
-                   smtop = ZERO
-                   smbot = ZERO
-                elseif (is_vel .and. (comp.ne.3)) then
-                   smbot = merge(ZERO,smtop,phys_bc(3,1).eq.NO_SLIP_WALL)
-                   smtop = merge(ZERO,smtop,phys_bc(3,1).eq.NO_SLIP_WALL)
-                else
-                   smbot = smtop
-                endif
-             endif
-             
-             sminus = merge(smbot,smtop,wmac(i,j,k).gt.ZERO)
-             savg   = HALF * (smbot + smtop)
-             sminus = merge(sminus, savg, abs(wmac(i,j,k)) .gt. rel_eps)
-
-             if (is_conservative) then
-                st = st - ( wmac(i,j,k+1)*splus-wmac(i,j,k)*sminus ) / hz &
-                     - s(i,j,k,comp)*(umac(i+1,j,k)-umac(i,j,k)) / hx
-             else
-                st = st - HALF * (wmac(i,j,k)+wmac(i,j,k+1))*(splus - sminus) / hz
-             end if
-
-             if (is_vel) then
-
-                ! add the (Utilde . e_r) d w_0 /dr e_r term here
-                if (spherical .eq. 0 .and. comp .eq. 3) then
-
-                   ! wmac contains w0 so we need to subtract it off
-                   st = st-HALF*(wmac(i,j,k)+wmac(i,j,k+1)-w0(k+1)-w0(k))*(w0(k+1)-w0(k))/hz
-
-                else if (spherical .eq. 1) then
-
-                   ! u/v/wmac contain w0, so we need to subtract it off.  
-                   Ut_dot_er = (HALF*(umac(i,j,k) + umac(i+1,j,k)) - &
-                                HALF*(w0macx(i,j,k)+w0macx(i+1,j,k)))*normal(i,j,k,1) + &
-                               (HALF*(vmac(i,j,k) + vmac(i,j+1,k)) - &
-                                HALF*(w0macy(i,j,k)+w0macy(i,j+1,k)))*normal(i,j,k,2) + &
-                               (HALF*(wmac(i,j,k) + wmac(i,j,k+1)) - &
-                                HALF*(w0macz(i,j,k)+w0macz(i,j,k+1)))*normal(i,j,k,3)
-
-                   if (comp .eq. 1) then
-                      st = st - Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,1)
-                   else if (comp .eq. 2) then
-                      st = st - Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,2)
-                   else if (comp .eq. 3) then
-                      st = st - Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,3)
+             ! impose lo side bc's
+             if(i .eq. is) then
+                slx(i,j,k) = merge(s(is-1,j,k,comp),slx(i,j,k),phys_bc(1,1) .eq. INLET)
+                srx(i,j,k) = merge(s(is-1,j,k,comp),srx(i,j,k),phys_bc(1,1) .eq. INLET)
+                if(phys_bc(1,1) .eq. SLIP_WALL .or. phys_bc(1,1) .eq. NO_SLIP_WALL) then
+                   if(is_vel .and. comp .eq. 1) then
+                      slx(i,j,k) = ZERO
+                      srx(i,j,k) = ZERO
+                   else if(is_vel .and. comp .ne. 1) then
+                      slx(i,j,k) = merge(ZERO,srx(i,j,k),phys_bc(1,1) .eq. NO_SLIP_WALL)
+                      srx(i,j,k) = merge(ZERO,srx(i,j,k),phys_bc(1,1) .eq. NO_SLIP_WALL)
+                   else
+                      slx(i,j,k) = srx(i,j,k)
                    endif
+                endif
+             endif
 
-                end if
+             ! impose hi side bc's
+             if(i .eq. ie+1) then
+                slx(i,j,k) = merge(s(ie+1,j,k,comp),slx(i,j,k),phys_bc(1,2) .eq. INLET)
+                srx(i,j,k) = merge(s(ie+1,j,k,comp),srx(i,j,k),phys_bc(1,2) .eq. INLET)
+                if(phys_bc(1,2) .eq. SLIP_WALL .or. phys_bc(1,2) .eq. NO_SLIP_WALL) then
+                   if (is_vel .and. comp .eq. 1) then
+                      slx(i,j,k) = ZERO
+                      srx(i,j,k) = ZERO
+                   else if (is_vel .and. comp .ne. 1) then
+                      slx(i,j,k) = merge(ZERO,slx(i,j,k),phys_bc(1,2).eq.NO_SLIP_WALL)
+                      srx(i,j,k) = merge(ZERO,slx(i,j,k),phys_bc(1,2).eq.NO_SLIP_WALL)
+                   else
+                      srx(i,j,k) = slx(i,j,k)
+                   endif
+                endif
+             endif
 
-             end if
-
-             s_l(i+1) = s(i,j,k,comp) + (HALF-dt2*umac(i+1,j,k)/hx)*slopex(i,j,k,1) + dt2*st
-             s_r(i  ) = s(i,j,k,comp) - (HALF+dt2*umac(i  ,j,k)/hx)*slopex(i,j,k,1) + dt2*st
-
-          end do
-
-          do i = is, ie+1 
-             sedgex(i,j,k,comp)=merge(s_l(i),s_r(i),umac(i,j,k).gt.ZERO)
-             savg = HALF*(s_r(i) + s_l(i))
-             sedgex(i,j,k,comp)=merge(savg,sedgex(i,j,k,comp),abs(umac(i,j,k)) .lt. rel_eps)
+             ! make simhx by solving Riemann problem
+             simhx(i,j,k) = merge(slx(i,j,k),srx(i,j,k),umac(i,j,k) .gt. ZERO)
+             savg = HALF*(slx(i,j,k)+srx(i,j,k))
+             simhx(i,j,k) = merge(simhx(i,j,k),savg,abs(umac(i,j,k)) .gt. rel_eps)
           enddo
-              
+       enddo
+    enddo
+
+    ! loop over appropriate y-faces
+    do k=ks-1,ke+1
+       do j=js,je+1
+          do i=is-1,ie+1
+             ! make sly, sry with 1D extrapolation
+             sly(i,j,k) = s(i,j-1,k,comp) + (HALF - dt2*vmac(i,j,k)/hy)*slopey(i,j-1,k,1)
+             sry(i,j,k) = s(i,j  ,k,comp) - (HALF + dt2*vmac(i,j,k)/hy)*slopey(i,j  ,k,1)
+
+             ! impose lo side bc's
+             if(j .eq. js) then
+                sly(i,j,k) = merge(s(is,j-1,k,comp),sly(i,j,k),phys_bc(2,1) .eq. INLET)
+                sry(i,j,k) = merge(s(is,j-1,k,comp),sry(i,j,k),phys_bc(2,1) .eq. INLET)
+                if(phys_bc(2,1) .eq. SLIP_WALL .or. phys_bc(2,1) .eq. NO_SLIP_WALL) then
+                   if(is_vel .and. comp .eq. 2) then
+                      sly(i,j,k) = ZERO
+                      sry(i,j,k) = ZERO
+                   else if(is_vel .and. comp .ne. 2) then
+                      sly(i,j,k) = merge(ZERO,sry(i,j,k),phys_bc(2,1) .eq. NO_SLIP_WALL)
+                      sry(i,j,k) = merge(ZERO,sry(i,j,k),phys_bc(2,1) .eq. NO_SLIP_WALL)
+                   else
+                      sly(i,j,k) = sry(i,j,k)
+                   endif
+                endif
+             endif
+
+             ! impose hi side bc's
+             if(j .eq. je+1) then
+                sly(i,j,k) = merge(s(i,je+1,k,comp),sly(i,j,k),phys_bc(2,2) .eq. INLET)
+                sry(i,j,k) = merge(s(i,je+1,k,comp),sry(i,j,k),phys_bc(2,2) .eq. INLET)
+                if(phys_bc(2,2) .eq. SLIP_WALL .or. phys_bc(2,2) .eq. NO_SLIP_WALL) then
+                   if (is_vel .and. comp .eq. 2) then
+                      sly(i,j,k) = ZERO
+                      sry(i,j,k) = ZERO
+                   else if (is_vel .and. comp .ne. 2) then
+                      sly(i,j,k) = merge(ZERO,sly(i,j,k),phys_bc(2,2).eq.NO_SLIP_WALL)
+                      sry(i,j,k) = merge(ZERO,sly(i,j,k),phys_bc(2,2).eq.NO_SLIP_WALL)
+                   else
+                      sry(i,j,k) = sly(i,j,k)
+                   endif
+                endif
+             endif
+
+             ! make simhy by solving Riemann problem
+             simhy(i,j,k) = merge(sly(i,j,k),sry(i,j,k),vmac(i,j,k) .gt. ZERO)
+             savg = HALF*(sly(i,j,k)+sry(i,j,k))
+             simhy(i,j,k) = merge(simhy(i,j,k),savg,abs(vmac(i,j,k)) .gt. rel_eps)
+          enddo
+       enddo
+    enddo
+
+    ! loop over appropriate z-faces
+    do k=ks,ke+1
+       do j=js-1,je+1
+          do i=is-1,ie+1
+             ! make slz, srz with 1D extrapolation
+             slz(i,j,k) = s(i,j,k-1,comp) + (HALF - dt2*wmac(i,j,k)/hz)*slopez(i,j,k-1,1)
+             srz(i,j,k) = s(i,j,k  ,comp) - (HALF + dt2*wmac(i,j,k)/hz)*slopez(i,j,k  ,1)
+
+             ! impose lo side bc's
+             if(k .eq. ks) then
+                slz(i,j,k) = merge(s(is,j,k-1,comp),slz(i,j,k),phys_bc(3,1) .eq. INLET)
+                srz(i,j,k) = merge(s(is,j,k-1,comp),srz(i,j,k),phys_bc(3,1) .eq. INLET)
+                if(phys_bc(3,1) .eq. SLIP_WALL .or. phys_bc(3,1) .eq. NO_SLIP_WALL) then
+                   if(is_vel .and. comp .eq. 3) then
+                      slz(i,j,k) = ZERO
+                      srz(i,j,k) = ZERO
+                   else if(is_vel .and. comp .ne. 3) then
+                      slz(i,j,k) = merge(ZERO,srz(i,j,k),phys_bc(3,1) .eq. NO_SLIP_WALL)
+                      srz(i,j,k) = merge(ZERO,srz(i,j,k),phys_bc(3,1) .eq. NO_SLIP_WALL)
+                   else
+                      slz(i,j,k) = srz(i,j,k)
+                   endif
+                endif
+             endif
+
+             ! impose hi side bc's
+             if(k .eq. ke+1) then
+                slz(i,j,k) = merge(s(i,j,ke+1,comp),slz(i,j,k),phys_bc(3,2) .eq. INLET)
+                srz(i,j,k) = merge(s(i,j,ke+1,comp),srz(i,j,k),phys_bc(3,2) .eq. INLET)
+                if(phys_bc(3,2) .eq. SLIP_WALL .or. phys_bc(3,2) .eq. NO_SLIP_WALL) then
+                   if (is_vel .and. comp .eq. 3) then
+                      slz(i,j,k) = ZERO
+                      srz(i,j,k) = ZERO
+                   else if (is_vel .and. comp .ne. 3) then
+                      slz(i,j,k) = merge(ZERO,slz(i,j,k),phys_bc(3,2).eq.NO_SLIP_WALL)
+                      srz(i,j,k) = merge(ZERO,slz(i,j,k),phys_bc(3,2).eq.NO_SLIP_WALL)
+                   else
+                      srz(i,j,k) = slz(i,j,k)
+                   endif
+                endif
+             endif
+
+             ! make simhz by solving Riemann problem
+             simhz(i,j,k) = merge(slz(i,j,k),srz(i,j,k),wmac(i,j,k) .gt. ZERO)
+             savg = HALF*(slz(i,j,k)+srz(i,j,k))
+             simhz(i,j,k) = merge(simhz(i,j,k),savg,abs(wmac(i,j,k)) .gt. rel_eps)
+          enddo
+       enddo
+    enddo
+
+    !******************************************************************
+    ! Create s_{\i-\half\e_x}^{x|y}, etc.
+    !******************************************************************
+
+    ! loop over appropriate xy faces
+    do k=ks-1,ke+1
+       do j=js,je
+          do i=is,ie+1
+             ! make slxy, srxy by updating 1D extrapolation
+             if(is_conservative) then
+                slxy(i,j,k) = slx(i,j,k) &
+                     - (dt3/hy)*(simhy(i-1,j+1,k)*vmac(i-1,j+1,k) - simhy(i-1,j,k)*vmac(i-1,j,k))
+                srxy(i,j,k) = srx(i,j,k) &
+                     - (dt3/hy)*(simhy(i  ,j+1,k)*vmac(i  ,j+1,k) - simhy(i  ,j,k)*vmac(i  ,j,k))
+             else
+                slxy(i,j,k) = slx(i,j,k) &
+                     - (dt6/hy)*(vmac(i-1,j+1,k)+vmac(i-1,j,k))*(simhy(i-1,j+1,k)-simhy(i-1,j,k))
+                srxy(i,j,k) = srx(i,j,k) &
+                     - (dt6/hy)*(vmac(i  ,j+1,k)+vmac(i  ,j,k))*(simhy(i  ,j+1,k)-simhy(i  ,j,k))
+             endif
+
+             ! impose lo side bc's
+             if(i .eq. is) then
+                slxy(i,j,k) = merge(s(is-1,j,k,comp),slxy(i,j,k),phys_bc(1,1) .eq. INLET)
+                srxy(i,j,k) = merge(s(is-1,j,k,comp),srxy(i,j,k),phys_bc(1,1) .eq. INLET)
+                if(phys_bc(1,1) .eq. SLIP_WALL .or. phys_bc(1,1) .eq. NO_SLIP_WALL) then
+                   if(is_vel .and. comp .eq. 1) then
+                      slxy(i,j,k) = ZERO
+                      srxy(i,j,k) = ZERO
+                   else if(is_vel .and. comp .ne. 1) then
+                      slxy(i,j,k) = merge(ZERO,srxy(i,j,k),phys_bc(1,1) .eq. NO_SLIP_WALL)
+                      srxy(i,j,k) = merge(ZERO,srxy(i,j,k),phys_bc(1,1) .eq. NO_SLIP_WALL)
+                   else
+                      slxy(i,j,k) = srxy(i,j,k)
+                   endif
+                endif
+             endif
+
+             ! impose hi side bc's
+             if(i .eq. ie+1) then
+                slxy(i,j,k) = merge(s(ie+1,j,k,comp),slxy(i,j,k),phys_bc(1,2) .eq. INLET)
+                srxy(i,j,k) = merge(s(ie+1,j,k,comp),srxy(i,j,k),phys_bc(1,2) .eq. INLET)
+                if(phys_bc(1,2) .eq. SLIP_WALL .or. phys_bc(1,2) .eq. NO_SLIP_WALL) then
+                   if (is_vel .and. comp .eq. 1) then
+                      slxy(i,j,k) = ZERO
+                      srxy(i,j,k) = ZERO
+                   else if (is_vel .and. comp .ne. 1) then
+                      slxy(i,j,k) = merge(ZERO,slxy(i,j,k),phys_bc(1,2).eq.NO_SLIP_WALL)
+                      srxy(i,j,k) = merge(ZERO,slxy(i,j,k),phys_bc(1,2).eq.NO_SLIP_WALL)
+                   else
+                      srxy(i,j,k) = slxy(i,j,k)
+                   endif
+                endif
+             endif
+
+             ! make simhxy by solving Riemann problem
+             simhxy(i,j,k) = merge(slxy(i,j,k),srxy(i,j,k),umac(i,j,k) .gt. ZERO)
+             savg = HALF*(slxy(i,j,k)+srxy(i,j,k))
+             simhxy(i,j,k) = merge(simhxy(i,j,k),savg,abs(umac(i,j,k)) .gt. rel_eps)
+          enddo
+       enddo
+    enddo
+
+    ! loop over appropriate xz faces
+    do k=ks,ke
+       do j=js-1,je+1
+          do i=is,ie+1
+             ! make slxz, srxz by updating 1D extrapolation
+             if(is_conservative) then
+                slxz(i,j,k) = slx(i,j,k) &
+                     - (dt3/hz)*(simhz(i-1,j,k+1)*wmac(i-1,j,k+1) - simhz(i-1,j,k)*wmac(i-1,j,k))
+                srxz(i,j,k) = srx(i,j,k) &
+                     - (dt3/hz)*(simhz(i  ,j,k+1)*wmac(i  ,j,k+1) - simhz(i  ,j,k)*wmac(i  ,j,k))
+             else
+                slxz(i,j,k) = slx(i,j,k) &
+                     - (dt6/hz)*(wmac(i-1,j,k+1)+wmac(i-1,j,k))*(simhz(i-1,j,k+1)-simhz(i-1,j,k))
+                srxz(i,j,k) = srx(i,j,k) &
+                     - (dt6/hz)*(wmac(i  ,j,k+1)+wmac(i  ,j,k))*(simhz(i  ,j,k+1)-simhz(i  ,j,k))
+             endif
+
+             ! impose lo side bc's
+             if(i .eq. is) then
+                slxz(i,j,k) = merge(s(is-1,j,k,comp),slxz(i,j,k),phys_bc(1,1) .eq. INLET)
+                srxz(i,j,k) = merge(s(is-1,j,k,comp),srxz(i,j,k),phys_bc(1,1) .eq. INLET)
+                if(phys_bc(1,1) .eq. SLIP_WALL .or. phys_bc(1,1) .eq. NO_SLIP_WALL) then
+                   if(is_vel .and. comp .eq. 1) then
+                      slxz(i,j,k) = ZERO
+                      srxz(i,j,k) = ZERO
+                   else if(is_vel .and. comp .ne. 1) then
+                      slxz(i,j,k) = merge(ZERO,srxz(i,j,k),phys_bc(1,1) .eq. NO_SLIP_WALL)
+                      srxz(i,j,k) = merge(ZERO,srxz(i,j,k),phys_bc(1,1) .eq. NO_SLIP_WALL)
+                   else
+                      slxz(i,j,k) = srxz(i,j,k)
+                   endif
+                endif
+             endif
+
+             ! impose hi side bc's
+             if(i .eq. ie+1) then
+                slxz(i,j,k) = merge(s(ie+1,j,k,comp),slxz(i,j,k),phys_bc(1,2) .eq. INLET)
+                srxz(i,j,k) = merge(s(ie+1,j,k,comp),srxz(i,j,k),phys_bc(1,2) .eq. INLET)
+                if(phys_bc(1,2) .eq. SLIP_WALL .or. phys_bc(1,2) .eq. NO_SLIP_WALL) then
+                   if (is_vel .and. comp .eq. 1) then
+                      slxz(i,j,k) = ZERO
+                      srxz(i,j,k) = ZERO
+                   else if (is_vel .and. comp .ne. 1) then
+                      slxz(i,j,k) = merge(ZERO,slxz(i,j,k),phys_bc(1,2).eq.NO_SLIP_WALL)
+                      srxz(i,j,k) = merge(ZERO,slxz(i,j,k),phys_bc(1,2).eq.NO_SLIP_WALL)
+                   else
+                      srxz(i,j,k) = slxz(i,j,k)
+                   endif
+                endif
+             endif
+
+             ! make simhxz by solving Riemann problem
+             simhxz(i,j,k) = merge(slxz(i,j,k),srxz(i,j,k),umac(i,j,k) .gt. ZERO)
+             savg = HALF*(slxz(i,j,k)+srxz(i,j,k))
+             simhxz(i,j,k) = merge(simhxz(i,j,k),savg,abs(umac(i,j,k)) .gt. rel_eps)
+          enddo
+       enddo
+    enddo
+
+    ! loop over appropriate yx faces
+    do k=ks-1,ke+1
+       do j=js,je+1
+          do i=is,ie
+             ! make slyx, sryx by updating 1D extrapolation
+             if(is_conservative) then
+                slyx(i,j,k) = sly(i,j,k) &
+                     - (dt3/hx)*(simhx(i+1,j-1,k)*umac(i+1,j-1,k) - simhx(i,j-1,k)*umac(i,j-1,k))
+                sryx(i,j,k) = sry(i,j,k) &
+                     - (dt3/hx)*(simhx(i+1,j  ,k)*umac(i+1,j  ,k) - simhx(i,j  ,k)*umac(i,j  ,k))
+             else
+                slyx(i,j,k) = sly(i,j,k) &
+                     - (dt6/hx)*(umac(i+1,j-1,k)+umac(i,j-1,k))*(simhx(i+1,j-1,k)-simhx(i,j-1,k))
+                sryx(i,j,k) = sry(i,j,k) &
+                     - (dt6/hx)*(umac(i+1,j  ,k)+umac(i,j  ,k))*(simhx(i+1,j  ,k)-simhx(i,j  ,k))
+             endif
+
+             ! impose lo side bc's
+             if(j .eq. js) then
+                slyx(i,j,k) = merge(s(is,j-1,k,comp),slyx(i,j,k),phys_bc(2,1) .eq. INLET)
+                sryx(i,j,k) = merge(s(is,j-1,k,comp),sryx(i,j,k),phys_bc(2,1) .eq. INLET)
+                if(phys_bc(2,1) .eq. SLIP_WALL .or. phys_bc(2,1) .eq. NO_SLIP_WALL) then
+                   if(is_vel .and. comp .eq. 2) then
+                      slyx(i,j,k) = ZERO
+                      sryx(i,j,k) = ZERO
+                   else if(is_vel .and. comp .ne. 2) then
+                      slyx(i,j,k) = merge(ZERO,sryx(i,j,k),phys_bc(2,1) .eq. NO_SLIP_WALL)
+                      sryx(i,j,k) = merge(ZERO,sryx(i,j,k),phys_bc(2,1) .eq. NO_SLIP_WALL)
+                   else
+                      slyx(i,j,k) = sryx(i,j,k)
+                   endif
+                endif
+             endif
+
+             ! impose hi side bc's
+             if(j .eq. je+1) then
+                slyx(i,j,k) = merge(s(i,je+1,k,comp),slyx(i,j,k),phys_bc(2,2) .eq. INLET)
+                sryx(i,j,k) = merge(s(i,je+1,k,comp),sryx(i,j,k),phys_bc(2,2) .eq. INLET)
+                if(phys_bc(2,2) .eq. SLIP_WALL .or. phys_bc(2,2) .eq. NO_SLIP_WALL) then
+                   if (is_vel .and. comp .eq. 2) then
+                      slyx(i,j,k) = ZERO
+                      sryx(i,j,k) = ZERO
+                   else if (is_vel .and. comp .ne. 2) then
+                      slyx(i,j,k) = merge(ZERO,slyx(i,j,k),phys_bc(2,2).eq.NO_SLIP_WALL)
+                      sryx(i,j,k) = merge(ZERO,slyx(i,j,k),phys_bc(2,2).eq.NO_SLIP_WALL)
+                   else
+                      sryx(i,j,k) = slyx(i,j,k)
+                   endif
+                endif
+             endif
+
+             ! make simhyx by solving Riemann problem
+             simhyx(i,j,k) = merge(slyx(i,j,k),sryx(i,j,k),vmac(i,j,k) .gt. ZERO)
+             savg = HALF*(slyx(i,j,k)+sryx(i,j,k))
+             simhyx(i,j,k) = merge(simhyx(i,j,k),savg,abs(vmac(i,j,k)) .gt. rel_eps)
+          enddo
+       enddo
+    enddo
+
+    ! loop over appropriate yz faces
+    do k=ks,ke
+       do j=js,je+1
+          do i=is-1,ie+1
+             ! make slyz, sryz by updating 1D extrapolation
+             if(is_conservative) then
+                slyz(i,j,k) = sly(i,j,k) &
+                     - (dt3/hz)*(simhz(i,j-1,k+1)*wmac(i,j-1,k+1) - simhz(i,j-1,k)*wmac(i,j-1,k))
+                sryz(i,j,k) = sry(i,j,k) &
+                     - (dt3/hz)*(simhz(i,j  ,k+1)*wmac(i,j  ,k+1) - simhz(i,j  ,k)*wmac(i,j  ,k))
+             else
+                slyz(i,j,k) = sly(i,j,k) &
+                     - (dt6/hz)*(wmac(i,j-1,k+1)+wmac(i,j-1,k))*(simhz(i,j-1,k+1)-simhz(i,j-1,k))
+                sryz(i,j,k) = sry(i,j,k) &
+                     - (dt6/hz)*(wmac(i,j  ,k+1)+wmac(i,j  ,k))*(simhz(i,j  ,k+1)-simhz(i,j  ,k))
+             endif
+
+             ! impose lo side bc's
+             if(j .eq. js) then
+                slyz(i,j,k) = merge(s(is,j-1,k,comp),slyz(i,j,k),phys_bc(2,1) .eq. INLET)
+                sryz(i,j,k) = merge(s(is,j-1,k,comp),sryz(i,j,k),phys_bc(2,1) .eq. INLET)
+                if(phys_bc(2,1) .eq. SLIP_WALL .or. phys_bc(2,1) .eq. NO_SLIP_WALL) then
+                   if(is_vel .and. comp .eq. 2) then
+                      slyz(i,j,k) = ZERO
+                      sryz(i,j,k) = ZERO
+                   else if(is_vel .and. comp .ne. 2) then
+                      slyz(i,j,k) = merge(ZERO,sryz(i,j,k),phys_bc(2,1) .eq. NO_SLIP_WALL)
+                      sryz(i,j,k) = merge(ZERO,sryz(i,j,k),phys_bc(2,1) .eq. NO_SLIP_WALL)
+                   else
+                      slyz(i,j,k) = sryz(i,j,k)
+                   endif
+                endif
+             endif
+
+             ! impose hi side bc's
+             if(j .eq. je+1) then
+                slyz(i,j,k) = merge(s(i,je+1,k,comp),slyz(i,j,k),phys_bc(2,2) .eq. INLET)
+                sryz(i,j,k) = merge(s(i,je+1,k,comp),sryz(i,j,k),phys_bc(2,2) .eq. INLET)
+                if(phys_bc(2,2) .eq. SLIP_WALL .or. phys_bc(2,2) .eq. NO_SLIP_WALL) then
+                   if (is_vel .and. comp .eq. 2) then
+                      slyz(i,j,k) = ZERO
+                      sryz(i,j,k) = ZERO
+                   else if (is_vel .and. comp .ne. 2) then
+                      slyz(i,j,k) = merge(ZERO,slyz(i,j,k),phys_bc(2,2).eq.NO_SLIP_WALL)
+                      sryz(i,j,k) = merge(ZERO,slyz(i,j,k),phys_bc(2,2).eq.NO_SLIP_WALL)
+                   else
+                      sryz(i,j,k) = slyz(i,j,k)
+                   endif
+                endif
+             endif
+
+             ! make simhyz by solving Riemann problem
+             simhyz(i,j,k) = merge(slyz(i,j,k),sryz(i,j,k),vmac(i,j,k) .gt. ZERO)
+             savg = HALF*(slyz(i,j,k)+sryz(i,j,k))
+             simhyz(i,j,k) = merge(simhyz(i,j,k),savg,abs(vmac(i,j,k)) .gt. rel_eps)
+          enddo
+       enddo
+    enddo
+
+    ! loop over appropriate zx faces
+    do k=ks,ke+1
+       do j=js-1,je+1
+          do i=is,ie
+             ! make slzx, srzx by updating 1D extrapolation
+             if(is_conservative) then
+                slzx(i,j,k) = slz(i,j,k) &
+                     - (dt3/hx)*(simhx(i+1,j,k-1)*umac(i+1,j,k-1) - simhx(i,j,k-1)*umac(i,j,k-1))
+                srzx(i,j,k) = srz(i,j,k) &
+                     - (dt3/hx)*(simhx(i+1,j,k  )*umac(i+1,j,k  ) - simhx(i,j,k  )*umac(i,j,k  ))
+             else
+                slzx(i,j,k) = slz(i,j,k) &
+                     - (dt6/hx)*(umac(i+1,j,k-1)+umac(i,j,k-1))*(simhx(i+1,j,k-1)-simhx(i,j,k-1))
+                srzx(i,j,k) = srz(i,j,k) &
+                     - (dt6/hx)*(umac(i+1,j,k  )+umac(i,j,k  ))*(simhx(i+1,j,k  )-simhx(i,j,k  ))
+             endif
+
+             ! impose lo side bc's
+             if(k .eq. ks) then
+                slzx(i,j,k) = merge(s(is,j,k-1,comp),slzx(i,j,k),phys_bc(3,1) .eq. INLET)
+                srzx(i,j,k) = merge(s(is,j,k-1,comp),srzx(i,j,k),phys_bc(3,1) .eq. INLET)
+                if(phys_bc(3,1) .eq. SLIP_WALL .or. phys_bc(3,1) .eq. NO_SLIP_WALL) then
+                   if(is_vel .and. comp .eq. 3) then
+                      slzx(i,j,k) = ZERO
+                      srzx(i,j,k) = ZERO
+                   else if(is_vel .and. comp .ne. 3) then
+                      slzx(i,j,k) = merge(ZERO,srzx(i,j,k),phys_bc(3,1) .eq. NO_SLIP_WALL)
+                      srzx(i,j,k) = merge(ZERO,srzx(i,j,k),phys_bc(3,1) .eq. NO_SLIP_WALL)
+                   else
+                      slzx(i,j,k) = srzx(i,j,k)
+                   endif
+                endif
+             endif
+
+             ! impose hi side bc's
+             if(k .eq. ke+1) then
+                slzx(i,j,k) = merge(s(i,j,ke+1,comp),slzx(i,j,k),phys_bc(3,2) .eq. INLET)
+                srzx(i,j,k) = merge(s(i,j,ke+1,comp),srzx(i,j,k),phys_bc(3,2) .eq. INLET)
+                if(phys_bc(3,2) .eq. SLIP_WALL .or. phys_bc(3,2) .eq. NO_SLIP_WALL) then
+                   if (is_vel .and. comp .eq. 3) then
+                      slzx(i,j,k) = ZERO
+                      srzx(i,j,k) = ZERO
+                   else if (is_vel .and. comp .ne. 3) then
+                      slzx(i,j,k) = merge(ZERO,slzx(i,j,k),phys_bc(3,2).eq.NO_SLIP_WALL)
+                      srzx(i,j,k) = merge(ZERO,slzx(i,j,k),phys_bc(3,2).eq.NO_SLIP_WALL)
+                   else
+                      srzx(i,j,k) = slzx(i,j,k)
+                   endif
+                endif
+             endif
+
+             ! make simhzx by solving Riemann problem
+             simhzx(i,j,k) = merge(slzx(i,j,k),srzx(i,j,k),wmac(i,j,k) .gt. ZERO)
+             savg = HALF*(slzx(i,j,k)+srzx(i,j,k))
+             simhzx(i,j,k) = merge(simhzx(i,j,k),savg,abs(wmac(i,j,k)) .gt. rel_eps)
+          enddo
+       enddo
+    enddo
+
+    ! loop over appropriate zy faces
+    do k=ks,ke+1
+       do j=js,je
+          do i=is-1,ie+1
+             ! make slzy, srzy by updating 1D extrapolation
+             if(is_conservative) then
+                slzy(i,j,k) = slz(i,j,k) &
+                     - (dt3/hy)*(simhy(i,j+1,k-1)*vmac(i,j+1,k-1) - simhy(i,j,k-1)*vmac(i,j,k-1))
+                srzy(i,j,k) = srz(i,j,k) &
+                     - (dt3/hy)*(simhy(i,j+1,k  )*vmac(i,j+1,k  ) - simhy(i,j,k  )*vmac(i,j,k  ))
+             else
+                slzy(i,j,k) = slz(i,j,k) &
+                     - (dt6/hy)*(vmac(i,j+1,k-1)+vmac(i,j,k-1))*(simhy(i,j+1,k-1)-simhy(i,j,k-1))
+                srzy(i,j,k) = srz(i,j,k) &
+                     - (dt6/hy)*(vmac(i,j+1,k  )+vmac(i,j,k  ))*(simhy(i,j+1,k  )-simhy(i,j,k  ))
+             endif
+
+             ! impose lo side bc's
+             if(k .eq. ks) then
+                slzy(i,j,k) = merge(s(is,j,k-1,comp),slzy(i,j,k),phys_bc(3,1) .eq. INLET)
+                srzy(i,j,k) = merge(s(is,j,k-1,comp),srzy(i,j,k),phys_bc(3,1) .eq. INLET)
+                if(phys_bc(3,1) .eq. SLIP_WALL .or. phys_bc(3,1) .eq. NO_SLIP_WALL) then
+                   if(is_vel .and. comp .eq. 3) then
+                      slzy(i,j,k) = ZERO
+                      srzy(i,j,k) = ZERO
+                   else if(is_vel .and. comp .ne. 3) then
+                      slzy(i,j,k) = merge(ZERO,srzy(i,j,k),phys_bc(3,1) .eq. NO_SLIP_WALL)
+                      srzy(i,j,k) = merge(ZERO,srzy(i,j,k),phys_bc(3,1) .eq. NO_SLIP_WALL)
+                   else
+                      slzy(i,j,k) = srzy(i,j,k)
+                   endif
+                endif
+             endif
+
+             ! impose hi side bc's
+             if(k .eq. ke+1) then
+                slzy(i,j,k) = merge(s(i,j,ke+1,comp),slzy(i,j,k),phys_bc(3,2) .eq. INLET)
+                srzy(i,j,k) = merge(s(i,j,ke+1,comp),srzy(i,j,k),phys_bc(3,2) .eq. INLET)
+                if(phys_bc(3,2) .eq. SLIP_WALL .or. phys_bc(3,2) .eq. NO_SLIP_WALL) then
+                   if (is_vel .and. comp .eq. 3) then
+                      slzy(i,j,k) = ZERO
+                      srzy(i,j,k) = ZERO
+                   else if (is_vel .and. comp .ne. 3) then
+                      slzy(i,j,k) = merge(ZERO,slzy(i,j,k),phys_bc(3,2).eq.NO_SLIP_WALL)
+                      srzy(i,j,k) = merge(ZERO,slzy(i,j,k),phys_bc(3,2).eq.NO_SLIP_WALL)
+                   else
+                      srzy(i,j,k) = slzy(i,j,k)
+                   endif
+                endif
+             endif
+
+             ! make simhzy by solving Riemann problem
+             simhzy(i,j,k) = merge(slzy(i,j,k),srzy(i,j,k),wmac(i,j,k) .gt. ZERO)
+             savg = HALF*(slzy(i,j,k)+srzy(i,j,k))
+             simhzy(i,j,k) = merge(simhzy(i,j,k),savg,abs(wmac(i,j,k)) .gt. rel_eps)
+          enddo
+       enddo
+    enddo
+
+    !******************************************************************
+    ! Create sedgelx, etc.
+    !******************************************************************
+
+    ! loop over appropriate x-faces
+    do k=ks,ke
+       do j=js,je
+          do i=is,ie+1
+             ! make sedgelx, sedgerx
+             if(is_conservative) then
+                sedgelx(i,j,k) = slx(i,j,k) &
+                     - (dt2/hy)*(simhyz(i-1,j+1,k  )*vmac(i-1,j+1,k  ) - simhyz(i-1,j,k)*vmac(i-1,j,k)) &
+                     - (dt2/hz)*(simhzy(i-1,j  ,k+1)*wmac(i-1,j  ,k+1) - simhzy(i-1,j,k)*wmac(i-1,j,k)) &
+                     - (dt2/hx)*s(i-1,j,k,comp)*(umac(i  ,j,k)-umac(i-1,j,k)) &
+                     + dt2*force(i-1,j,k,comp)
+                sedgerx(i,j,k) = srx(i,j,k) &
+                     - (dt2/hy)*(simhyz(i  ,j+1,k  )*vmac(i  ,j+1,  k) - simhyz(i  ,j,k)*vmac(i  ,j,k)) &
+                     - (dt2/hz)*(simhzy(i  ,j  ,k+1)*wmac(i  ,j  ,k+1) - simhzy(i  ,j,k)*wmac(i  ,j,k)) &
+                     - (dt2/hx)*s(i  ,j,k,comp)*(umac(i+1,j,k)-umac(i  ,j,k)) &
+                     + dt2*force(i  ,j,k,comp)
+             else
+                sedgelx(i,j,k) = slx(i,j,k) &
+                     - (dt4/hy)*(vmac(i-1,j+1,k  )+vmac(i-1,j,k))*(simhyz(i-1,j+1,k  )-simhyz(i-1,j,k)) &
+                     - (dt4/hz)*(wmac(i-1,j  ,k+1)+wmac(i-1,j,k))*(simhzy(i-1,j  ,k+1)-simhzy(i-1,j,k)) &
+                     + dt2*force(i-1,j,k,comp)
+                sedgerx(i,j,k) = srx(i,j,k) &
+                     - (dt4/hy)*(vmac(i  ,j+1,k  )+vmac(i  ,j,k))*(simhyz(i  ,j+1,k  )-simhyz(i  ,j,k)) &
+                     - (dt4/hz)*(wmac(i  ,j  ,k+1)+wmac(i  ,j,k))*(simhzy(i  ,j  ,k+1)-simhzy(i  ,j,k)) &
+                     + dt2*force(i  ,j,k,comp)
+             endif
+
+             ! make sedgex by solving Riemann problem
+             ! boundary conditions enforced outside of i,j,k loop
+             sedgex(i,j,k,comp) = merge(sedgelx(i,j,k),sedgerx(i,j,k),umac(i,j,k) .gt. ZERO)
+             savg = HALF*(sedgelx(i,j,k)+sedgerx(i,j,k))
+             sedgex(i,j,k,comp) = merge(sedgex(i,j,k,comp),savg,abs(umac(i,j,k)) .gt. rel_eps)
+          enddo
+       enddo
+    enddo
+
+    ! sedgex boundary conditions
+    do k=ks,ke
+       do j=js,je
+          ! lo side
           if (phys_bc(1,1) .eq. SLIP_WALL .or. phys_bc(1,1) .eq. NO_SLIP_WALL) then
              if (is_vel .and. comp .eq. 1) then
                 sedgex(is,j,k,comp) = ZERO
              elseif (is_vel .and. comp .ne. 1) then
-                sedgex(is,j,k,comp) = merge(ZERO,s_r(is),phys_bc(1,1).eq.NO_SLIP_WALL)
-             else 
-                sedgex(is,j,k,comp) = s_r(is)
+                sedgex(is,j,k,comp) = merge(ZERO,sedgerx(is,j,k),phys_bc(1,1).eq.NO_SLIP_WALL)
+             else
+                sedgex(is,j,k,comp) = sedgerx(is,j,k)
              endif
           elseif (phys_bc(1,1) .eq. INLET) then
              sedgex(is,j,k,comp) = s(is-1,j,k,comp)
           elseif (phys_bc(1,1) .eq. OUTLET) then
              if (is_vel .and. comp.eq.1) then
-                sedgex(is,j,k,comp) = MIN(s_r(is),ZERO)
+                sedgex(is,j,k,comp) = MIN(sedgerx(is,j,k),ZERO)
              else
-                sedgex(is,j,k,comp) = s_r(is)
+                sedgex(is,j,k,comp) = sedgerx(is,j,k)
              end if
           endif
+
+          ! hi side
           if (phys_bc(1,2) .eq. SLIP_WALL .or. phys_bc(1,2) .eq. NO_SLIP_WALL) then
              if (is_vel .and. comp .eq. 1) then
                 sedgex(ie+1,j,k,comp) = ZERO
              else if (is_vel .and. comp .ne. 1) then
-                sedgex(ie+1,j,k,comp) = merge(ZERO,s_l(ie+1),phys_bc(1,2).eq.NO_SLIP_WALL)
+                sedgex(ie+1,j,k,comp) = merge(ZERO,sedgelx(ie+1,j,k),phys_bc(1,2).eq.NO_SLIP_WALL)
              else 
-                sedgex(ie+1,j,k,comp) = s_l(ie+1)
+                sedgex(ie+1,j,k,comp) = sedgelx(ie+1,j,k)
              endif
           elseif (phys_bc(1,2) .eq. INLET) then
              sedgex(ie+1,j,k,comp) = s(ie+1,j,k,comp)
           elseif (phys_bc(1,2) .eq. OUTLET) then
              if (is_vel .and. comp.eq.1) then
-                sedgex(ie+1,j,k,comp) = MAX(s_l(ie+1),ZERO)
+                sedgex(ie+1,j,k,comp) = MAX(sedgelx(ie+1,j,k),ZERO)
              else
-                sedgex(ie+1,j,k,comp) = s_l(ie+1)
+                sedgex(ie+1,j,k,comp) = sedgelx(ie+1,j,k)
              end if
           endif
-          
-       end do
-    end do
+       enddo
+    enddo
 
-    !********************************
-    ! Loop for edge states on y-edges.
-    !********************************
-
-    do k = ks, ke 
-       do i = is, ie 
-          do j = js-1, je+1 
-
-             splft = s(i,j  ,k,comp) + (HALF - dt2*umac(i+1,j,k)/hx) * slopex(i  ,j,k,1)
-             sprgt = s(i+1,j,k,comp) - (HALF + dt2*umac(i+1,j,k)/hx) * slopex(i+1,j,k,1)
-             
-             sprgt = merge(s(ie+1,j,k,comp),sprgt,i.eq.ie .and. phys_bc(1,2) .eq. INLET)
-             splft = merge(s(ie+1,j,k,comp),splft,i.eq.ie .and. phys_bc(1,2) .eq. INLET)
-             
-             if (i .eq. ie .and. &
-                  (phys_bc(1,2).eq.SLIP_WALL.or.phys_bc(1,2).eq.NO_SLIP_WALL)) then
-                if (is_vel .and. comp .eq. 1) then
-                   splft = ZERO
-                   sprgt = ZERO
-                elseif (is_vel .and. comp .ne. 1) then
-                   sprgt = merge(ZERO,splft,phys_bc(1,2).eq.NO_SLIP_WALL)
-                   splft = merge(ZERO,splft,phys_bc(1,2).eq.NO_SLIP_WALL)
-                else
-                   sprgt = splft
-                endif
-             endif
-             
-             splus = merge(splft,sprgt,umac(i+1,j,k).gt.ZERO)
-             savg  = HALF * (splft + sprgt)
-             splus = merge(splus, savg, abs(umac(i+1,j,k)) .gt. rel_eps)
-             
-             smrgt = s(i  ,j,k,comp) - (HALF + dt2*umac(i,j,k)/hx) * slopex(i  ,j,k,1)
-             smlft = s(i-1,j,k,comp) + (HALF - dt2*umac(i,j,k)/hx) * slopex(i-1,j,k,1)
-             
-             smrgt = merge(s(is-1,j,k,comp),smrgt,i.eq.is .and. phys_bc(1,1) .eq. INLET)
-             smlft = merge(s(is-1,j,k,comp),smlft,i.eq.is .and. phys_bc(1,1) .eq. INLET)
-             
-             if (i .eq. is .and. &
-                  (phys_bc(1,1).eq.SLIP_WALL.or.phys_bc(1,1).eq.NO_SLIP_WALL)) then
-                if (is_vel .and. comp .eq. 1) then
-                   smlft = ZERO
-                   smrgt = ZERO
-                elseif (is_vel .and. comp .ne. 1) then
-                   smlft = merge(ZERO,smrgt,phys_bc(1,1).eq.NO_SLIP_WALL)
-                   smrgt = merge(ZERO,smrgt,phys_bc(1,1).eq.NO_SLIP_WALL)
-                else
-                   smlft = smrgt
-                endif
-             endif
-             
-             sminus = merge(smlft,smrgt,umac(i,j,k).gt.ZERO)
-             savg   = HALF * (smlft + smrgt)
-             sminus = merge(sminus, savg, abs(umac(i,j,k)) .gt. rel_eps)
-
-             if (is_conservative) then
-                st = force(i,j,k,comp) - ( umac(i+1,j,k)*splus-umac(i,j,k)*sminus ) / hx
+    ! loop over appropriate y-faces
+    do k=ks,ke
+       do j=js,je+1
+          do i=is,ie
+             ! make sedgely, sedgery
+             if(is_conservative) then
+                sedgely(i,j,k) = sly(i,j,k) &
+                     - (dt2/hx)*(simhxz(i+1,j-1,k  )*umac(i+1,j-1,k  ) - simhxz(i,j-1,k)*umac(i,j-1,k)) &
+                     - (dt2/hz)*(simhzx(i  ,j-1,k+1)*wmac(i  ,j-1,k+1) - simhzx(i,j-1,k)*wmac(i,j-1,k)) &
+                     - (dt2/hy)*s(i,j-1,k,comp)*(vmac(i,j  ,k)-vmac(i,j-1,k)) &
+                     + dt2*force(i,j-1,k,comp)
+                sedgery(i,j,k) = sry(i,j,k) &
+                     - (dt2/hx)*(simhxz(i+1,j  ,k  )*umac(i+1,j  ,k  ) - simhxz(i,j  ,k)*umac(i,j  ,k)) &
+                     - (dt2/hz)*(simhzx(i  ,j  ,k+1)*wmac(i  ,j  ,k+1) - simhzx(i,j  ,k)*wmac(i,j  ,k)) &
+                     - (dt2/hy)*s(i,j  ,k,comp)*(vmac(i,j+1,k)-vmac(i,j  ,k)) &
+                     + dt2*force(i,j  ,k,comp)
              else
-                st = force(i,j,k,comp) &
-                     - HALF*(umac(i,j,k)+umac(i+1,j,k)) * (splus - sminus) / hx
-             end if
-
-             splft = s(i,j,k  ,comp) + (HALF - dt2*wmac(i,j,k+1)/hz) * slopez(i,j,k  ,1)
-             sprgt = s(i,j,k+1,comp) - (HALF + dt2*wmac(i,j,k+1)/hz) * slopez(i,j,k+1,1)
-
-             sprgt = merge(s(i,j,ke+1,comp),sprgt,k.eq.ke .and. phys_bc(3,2) .eq. INLET)
-             splft = merge(s(i,j,ke+1,comp),splft,k.eq.ke .and. phys_bc(3,2) .eq. INLET)
-                 
-             if (k .eq. ke .and. &
-                  (phys_bc(3,2).eq.SLIP_WALL.or.phys_bc(3,2).eq.NO_SLIP_WALL)) then
-                if (is_vel .and. comp .eq. 3) then
-                   splft = ZERO
-                   sprgt = ZERO
-                elseif (is_vel .and. comp .ne. 3) then
-                   sprgt = merge(ZERO,splft,phys_bc(3,2).eq.NO_SLIP_WALL)
-                   splft = merge(ZERO,splft,phys_bc(3,2).eq.NO_SLIP_WALL)
-                else
-                   sprgt = splft
-                endif
+                sedgely(i,j,k) = sly(i,j,k) &
+                     - (dt4/hx)*(umac(i+1,j-1,k  )+umac(i,j-1,k))*(simhxz(i+1,j-1,k  )-simhxz(i,j-1,k)) &
+                     - (dt4/hz)*(wmac(i  ,j-1,k+1)+wmac(i,j-1,k))*(simhzx(i  ,j-1,k+1)-simhzx(i,j-1,k)) &
+                     + dt2*force(i,j-1,k,comp)
+                sedgery(i,j,k) = sry(i,j,k) &
+                     - (dt4/hx)*(umac(i+1,j  ,k  )+umac(i,j  ,k))*(simhxz(i+1,j  ,k  )-simhxz(i,j  ,k)) &
+                     - (dt4/hz)*(wmac(i  ,j  ,k+1)+wmac(i,j  ,k))*(simhzx(i  ,j  ,k+1)-simhzx(i,j  ,k)) &
+                     + dt2*force(i,j  ,k,comp)
              endif
-             
-             splus = merge(splft,sprgt,wmac(i,j,k+1).gt.ZERO)
-             savg  = HALF * (splft + sprgt)
-             splus = merge(splus, savg, abs(wmac(i,j,k+1)) .gt. rel_eps)
-             
-             smrgt = s(i,j,k  ,comp) - (HALF + dt2*wmac(i,j,k)/hz) * slopez(i,j,k  ,1)
-             smlft = s(i,j,k-1,comp) + (HALF - dt2*wmac(i,j,k)/hz) * slopez(i,j,k-1,1)
 
-             smrgt = merge(s(i,j,ks-1,comp),smrgt,k.eq.ks .and. phys_bc(3,1) .eq. INLET)
-             smlft = merge(s(i,j,ks-1,comp),smlft,k.eq.ks .and. phys_bc(3,1) .eq. INLET)
-             
-             if (k .eq. ks .and. &
-                  (phys_bc(3,1).eq.SLIP_WALL.or.phys_bc(3,1).eq.NO_SLIP_WALL)) then
-                if (is_vel .and. comp .eq. 3) then
-                   smlft = ZERO
-                   smrgt = ZERO
-                elseif (is_vel .and. comp .ne. 3) then
-                   smlft = merge(ZERO,smrgt,phys_bc(1,1).eq.NO_SLIP_WALL)
-                   smrgt = merge(ZERO,smrgt,phys_bc(1,1).eq.NO_SLIP_WALL)
-                else
-                   smlft = smrgt
-                endif
-             endif
-             
-             sminus = merge(smlft,smrgt,wmac(i,j,k).gt.ZERO)
-             savg   = HALF * (smlft + smrgt)
-             sminus = merge(sminus, savg, abs(wmac(i,j,k)) .gt. rel_eps)
-                 
-             if (is_conservative) then
-                st = st - ( wmac(i,j,k+1)*splus-wmac(i,j,k)*sminus ) / hz &
-                     - s(i,j,k,comp)*(vmac(i,j+1,k)-vmac(i,j,k)) / hy
-             else
-                st = st - HALF * (wmac(i,j,k)+wmac(i,j,k+1))*(splus - sminus) / hz
-             end if
-
-             if (is_vel) then
-
-                ! add the (Utilde . e_r) d w_0 /dr e_r term here
-                if (spherical .eq. 0 .and. comp .eq. 3) then
-
-                   ! wmac contains w0 so we need to subtract it off
-                   st = st-HALF*(wmac(i,j,k)+wmac(i,j,k+1)-w0(k+1)-w0(k))*(w0(k+1)-w0(k))/hz
-
-                else if (spherical .eq. 1) then
-
-                   ! u/v/wmac contain w0, so we need to subtract it off.  
-                   Ut_dot_er = (HALF*(umac(i,j,k) + umac(i+1,j,k)) - &
-                                HALF*(w0macx(i,j,k)+w0macx(i+1,j,k)))*normal(i,j,k,1) + &
-                               (HALF*(vmac(i,j,k) + vmac(i,j+1,k)) - &
-                                HALF*(w0macy(i,j,k)+w0macy(i,j+1,k)))*normal(i,j,k,2) + &
-                               (HALF*(wmac(i,j,k) + wmac(i,j,k+1)) - &
-                                HALF*(w0macz(i,j,k)+w0macz(i,j,k+1)))*normal(i,j,k,3)
-
-                   if (comp .eq. 1) then
-                      st = st - Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,1)
-                   else if (comp .eq. 2) then
-                      st = st - Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,2)
-                   else if (comp .eq. 3) then
-                      st = st - Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,3)
-                   endif
-
-                end if
-
-             end if
-                 
-             s_b(j+1)= s(i,j,k,comp) + (HALF-dt2*vmac(i,j+1,k)/hy)*slopey(i,j,k,1) + dt2*st
-             s_t(j  )= s(i,j,k,comp) - (HALF+dt2*vmac(i,j,  k)/hy)*slopey(i,j,k,1) + dt2*st
-
-          end do
-         
-          do j = js, je+1 
-             sedgey(i,j,k,comp)=merge(s_b(j),s_t(j),vmac(i,j,k).gt.ZERO)
-             savg = HALF*(s_b(j) + s_t(j))
-             sedgey(i,j,k,comp)=merge(savg,sedgey(i,j,k,comp),abs(vmac(i,j,k)) .lt. rel_eps)
+             ! make sedgey by solving Riemann problem
+             ! boundary conditions enforced outside of i,j,k loop
+             sedgey(i,j,k,comp) = merge(sedgely(i,j,k),sedgery(i,j,k),vmac(i,j,k) .gt. ZERO)
+             savg = HALF*(sedgely(i,j,k)+sedgery(i,j,k))
+             sedgey(i,j,k,comp) = merge(sedgey(i,j,k,comp),savg,abs(vmac(i,j,k)) .gt. rel_eps)
           enddo
-          
+       enddo
+    enddo
+
+    ! sedgey boundary conditions
+    do k=ks,ke
+       do i=is,ie
+          ! lo side
           if (phys_bc(2,1) .eq. SLIP_WALL .or. phys_bc(2,1) .eq. NO_SLIP_WALL) then
              if (is_vel .and. comp .eq. 2) then
                 sedgey(i,js,k,comp) = ZERO
              elseif (is_vel .and. comp .ne. 2) then
-                sedgey(i,js,k,comp) = merge(ZERO,s_t(js),phys_bc(2,1).eq.NO_SLIP_WALL)
+                sedgey(i,js,k,comp) = merge(ZERO,sedgery(i,js,k),phys_bc(2,1).eq.NO_SLIP_WALL)
              else 
-                sedgey(i,js,k,comp) = s_t(js)
+                sedgey(i,js,k,comp) = sedgery(i,js,k)
              endif
           elseif (phys_bc(2,1) .eq. INLET) then
              sedgey(i,js,k,comp) = s(i,js-1,k,comp)
           elseif (phys_bc(2,1) .eq. OUTLET) then
              if (is_vel .and. comp.eq.2) then
-                sedgey(i,js,k,comp) = MIN(s_t(js),ZERO)
+                sedgey(i,js,k,comp) = MIN(sedgery(i,js,k),ZERO)
              else
-                sedgey(i,js,k,comp) = s_t(js)
+                sedgey(i,js,k,comp) = sedgery(i,js,k)
              end if
           endif
-          
+
+          ! hi side
           if (phys_bc(2,2) .eq. SLIP_WALL .or. phys_bc(2,2) .eq. NO_SLIP_WALL) then
              if (is_vel .and. comp .eq. 2) then
                 sedgey(i,je+1,k,comp) = ZERO
              elseif (is_vel .and. comp .ne. 2) then
-                sedgey(i,je+1,k,comp) = merge(ZERO,s_b(je+1),phys_bc(2,2).eq.NO_SLIP_WALL)
+                sedgey(i,je+1,k,comp) = merge(ZERO,sedgely(i,je+1,k),phys_bc(2,2).eq.NO_SLIP_WALL)
              else 
-                sedgey(i,je+1,k,comp) = s_b(je+1)
+                sedgey(i,je+1,k,comp) = sedgely(i,je+1,k)
              endif
           elseif (phys_bc(2,2) .eq. INLET) then
              sedgey(i,je+1,k,comp) = s(i,je+1,k,comp)
           elseif (phys_bc(2,2) .eq. OUTLET) then
              if (is_vel .and. comp.eq.2) then
-                sedgey(i,je+1,k,comp) = MAX(s_b(je+1),ZERO)
+                sedgey(i,je+1,k,comp) = MAX(sedgely(i,je+1,k),ZERO)
              else
-                sedgey(i,je+1,k,comp) = s_b(je+1)
+                sedgey(i,je+1,k,comp) = sedgely(i,je+1,k)
              end if
           endif
+       enddo
+    enddo
 
-       end do
-    end do
-
-    !********************************
-    ! Loop for edge states on z-edges.
-    !********************************
-
-    do j = js, je 
-       do i = is, ie 
-          do k = ks-1, ke+1
-
-             splft = s(i  ,j,k,comp) + (HALF - dt2*umac(i+1,j,k)/hx) * slopex(i  ,j,k,1)
-             sprgt = s(i+1,j,k,comp) - (HALF + dt2*umac(i+1,j,k)/hx) * slopex(i+1,j,k,1)
-                 
-             sprgt = merge(s(ie+1,j,k,comp),sprgt,i.eq.ie .and. phys_bc(1,2) .eq. INLET)
-             splft = merge(s(ie+1,j,k,comp),splft,i.eq.ie .and. phys_bc(1,2) .eq. INLET)
-             
-             if (i .eq. ie .and. &
-                  (phys_bc(1,2).eq.SLIP_WALL.or.phys_bc(1,2).eq.NO_SLIP_WALL)) then
-                if (is_vel .and. comp .eq. 1) then
-                   splft = ZERO
-                   sprgt = ZERO
-                elseif (is_vel .and. comp .ne. 1) then
-                   sprgt = merge(ZERO,splft,phys_bc(1,2).eq.NO_SLIP_WALL)
-                   splft = merge(ZERO,splft,phys_bc(1,2).eq.NO_SLIP_WALL)
-                else
-                   sprgt = splft
-                endif
-             endif
-                 
-             splus = merge(splft,sprgt,umac(i+1,j,k).gt.ZERO)
-             savg  = HALF * (splft + sprgt)
-             splus = merge(splus, savg, abs(umac(i+1,j,k)) .gt. rel_eps)
-             
-             smlft = s(i-1,j,k,comp) + (HALF - dt2*umac(i,j,k)/hx) * slopex(i-1,j,k,1)
-             smrgt = s(i  ,j,k,comp) - (HALF + dt2*umac(i,j,k)/hx) * slopex(i  ,j,k,1)
-             
-             smrgt = merge(s(is-1,j,k,comp),smrgt,i.eq.is .and. phys_bc(1,1) .eq. INLET)
-             smlft = merge(s(is-1,j,k,comp),smlft,i.eq.is .and. phys_bc(1,1) .eq. INLET)
-             
-             if (i .eq. is .and. &
-                  (phys_bc(1,1).eq.SLIP_WALL.or.phys_bc(1,1).eq.NO_SLIP_WALL)) then
-                if (is_vel .and. comp .eq. 1) then
-                   smlft = ZERO
-                   smrgt = ZERO
-                elseif (is_vel .and. comp .ne. 1) then
-                   smlft = merge(ZERO,smrgt,phys_bc(1,1).eq.NO_SLIP_WALL)
-                   smrgt = merge(ZERO,smrgt,phys_bc(1,1).eq.NO_SLIP_WALL)
-                else
-                   smlft = smrgt
-                endif
-             endif
-             
-             sminus = merge(smlft,smrgt,umac(i,j,k).gt.ZERO)
-             savg   = HALF * (smlft + smrgt)
-             sminus = merge(sminus, savg, abs(umac(i,j,k)) .gt. rel_eps)
-                 
-             if (is_conservative) then
-                st = force(i,j,k,comp) - ( umac(i+1,j,k)*splus - umac(i,j,k)*sminus ) / hx
+    ! loop over appropriate z-faces
+    do k=ks,ke+1
+       do j=js,je
+          do i=is,ie
+             ! make sedgelz, sedgerz
+             if(is_conservative) then
+                sedgelz(i,j,k) = slz(i,j,k) &
+                     - (dt2/hx)*(simhxy(i+1,j  ,k-1)*umac(i+1,j  ,k-1) - simhxy(i,j,k-1)*umac(i,j,k-1)) &
+                     - (dt2/hy)*(simhyx(i  ,j+1,k-1)*vmac(i  ,j+1,k-1) - simhyx(i,j,k-1)*vmac(i,j,k-1)) &
+                     - (dt2/hz)*s(i,j,k-1,comp)*(wmac(i,j,k  )-wmac(i,j,k-1)) &
+                     + dt2*force(i,j,k-1,comp)
+                sedgerz(i,j,k) = srz(i,j,k) &
+                     - (dt2/hx)*(simhxy(i+1,j  ,k  )*umac(i+1,j  ,k  ) - simhxy(i,j,k  )*umac(i,j,k  )) &
+                     - (dt2/hy)*(simhyx(i  ,j+1,k  )*vmac(i  ,j+1,k  ) - simhyx(i,j,k  )*vmac(i,j,k  )) &
+                     - (dt2/hz)*s(i,j,k  ,comp)*(wmac(i,j,k+1)-wmac(i,j,k  )) &
+                     + dt2*force(i,j,k  ,comp)
              else
-                st = force(i,j,k,comp) &
-                     - HALF * (umac(i,j,k)+umac(i+1,j,k))*(splus - sminus) / hx
-             end if
-                 
-             spbot = s(i,j  ,k,comp) + (HALF - dt2*vmac(i,j+1,k)/hy) * slopey(i,j  ,k,1)
-             sptop = s(i,j+1,k,comp) - (HALF + dt2*vmac(i,j+1,k)/hy) * slopey(i,j+1,k,1)
-                 
-             sptop = merge(s(i,je+1,k,comp),sptop,j.eq.je .and. phys_bc(2,2) .eq. INLET)
-             spbot = merge(s(i,je+1,k,comp),spbot,j.eq.je .and. phys_bc(2,2) .eq. INLET)
-             
-             if (j .eq. je .and. &
-                  (phys_bc(2,2).eq.SLIP_WALL.or.phys_bc(2,2).eq.NO_SLIP_WALL)) then
-                if (is_vel .and. comp.eq.2) then
-                   sptop = ZERO
-                   spbot = ZERO
-                elseif (is_vel .and. comp.ne.2) then
-                   sptop = merge(ZERO,spbot,phys_bc(2,2).eq.NO_SLIP_WALL)
-                   spbot = merge(ZERO,spbot,phys_bc(2,2).eq.NO_SLIP_WALL)
-                else
-                   sptop = spbot
-                endif
+                sedgelz(i,j,k) = slz(i,j,k) &
+                     - (dt4/hx)*(umac(i+1,j  ,k-1)+umac(i,j,k-1))*(simhxy(i+1,j  ,k-1)-simhxy(i,j,k-1)) &
+                     - (dt4/hy)*(vmac(i  ,j+1,k-1)+vmac(i,j,k-1))*(simhyx(i  ,j+1,k-1)-simhyx(i,j,k-1)) &
+                     + dt2*force(i,j,k-1,comp)
+                sedgerz(i,j,k) = srz(i,j,k) &
+                     - (dt4/hx)*(umac(i+1,j  ,k  )+umac(i,j,k  ))*(simhxy(i+1,j  ,k  )-simhxy(i,j,k  )) &
+                     - (dt4/hy)*(vmac(i  ,j+1,k  )+vmac(i,j,k  ))*(simhyx(i  ,j+1,k  )-simhyx(i,j,k  )) &
+                     + dt2*force(i,j,k  ,comp)
              endif
-             
-             splus = merge(spbot,sptop,vmac(i,j+1,k).gt.ZERO)
-             savg  = HALF * (spbot + sptop)
-             splus = merge(splus, savg, abs(vmac(i,j+1,k)) .gt. rel_eps)
-                 
-             smbot = s(i,j-1,k,comp) + (HALF - dt2*vmac(i,j,k)/hy) * slopey(i,j-1,k,1)
-             smtop = s(i,j  ,k,comp) - (HALF + dt2*vmac(i,j,k)/hy) * slopey(i,j  ,k,1)
-                 
-             smtop = merge(s(i,js-1,k,comp),smtop,j.eq.js .and. phys_bc(2,1) .eq. INLET)
-             smbot = merge(s(i,js-1,k,comp),smbot,j.eq.js .and. phys_bc(2,1) .eq. INLET)
-             
-             if (j .eq. js .and. &
-                  (phys_bc(2,1).eq.SLIP_WALL.or.phys_bc(2,1).eq.NO_SLIP_WALL)) then
-                if (is_vel .and. (comp .eq. 2)) then
-                   smtop = ZERO
-                   smbot = ZERO
-                elseif (is_vel .and. (comp .ne. 2)) then
-                   smbot = merge(ZERO,smtop,phys_bc(2,1).eq.NO_SLIP_WALL)
-                   smtop = merge(ZERO,smtop,phys_bc(2,1).eq.NO_SLIP_WALL)
-                else
-                   smbot = smtop
-                endif
-             endif
-                 
-             sminus = merge(smbot,smtop,vmac(i,j,k).gt.ZERO)
-             savg   = HALF * (smbot + smtop)
-             sminus = merge(sminus, savg, abs(vmac(i,j,k)) .gt. rel_eps)
-               
-             if (is_conservative) then
-                st = st - ( vmac(i,j+1,k)*splus-vmac(i,j,k)*sminus ) / hy &
-                     - s(i,j,k,comp)*(wmac(i,j,k+1)-wmac(i,j,k)) / hz
-             else
-                st = st - HALF * (vmac(i,j,k)+vmac(i,j+1,k))*(splus - sminus) / hy
-             end if
 
-             if (is_vel) then
-
-                ! add the (Utilde . e_r) d w_0 /dr e_r term here
-                if (spherical .eq. 0 .and. comp .eq. 3) then
-
-                   ! wmac contains w0 so we need to subtract it off
-                   if (k .ge. 0 .and. k .le. nr(n)-1) then
-                      st = st - &
-                           HALF*(wmac(i,j,k)+wmac(i,j,k+1)-w0(k+1)-w0(k))*(w0(k+1)-w0(k))/hz
-                   else
-                      ! dw0/dr=0 and therefore st is unchanged
-                   end if
-
-                else if (spherical .eq. 1) then
-
-                   ! u/v/wmac contain w0, so we need to subtract it off.  
-                   Ut_dot_er = (HALF*(umac(i,j,k) + umac(i+1,j,k)) - &
-                                HALF*(w0macx(i,j,k)+w0macx(i+1,j,k)))*normal(i,j,k,1) + &
-                               (HALF*(vmac(i,j,k) + vmac(i,j+1,k)) - &
-                                HALF*(w0macy(i,j,k)+w0macy(i,j+1,k)))*normal(i,j,k,2) + &
-                               (HALF*(wmac(i,j,k) + wmac(i,j,k+1)) - &
-                                HALF*(w0macz(i,j,k)+w0macz(i,j,k+1)))*normal(i,j,k,3)
-
-                   if (comp .eq. 1) then
-                      st = st - Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,1)
-                   else if (comp .eq. 2) then
-                      st = st - Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,2)
-                   else if (comp .eq. 3) then
-                      st = st - Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,3)
-                   endif
-
-                end if
-
-             end if
-                 
-             s_d(k+1)= s(i,j,k,comp) + (HALF-dt2*wmac(i,j,k+1)/hz)*slopez(i,j,k,1) + dt2*st
-             s_u(k  )= s(i,j,k,comp) - (HALF+dt2*wmac(i,j,k  )/hz)*slopez(i,j,k,1) + dt2*st
-
-          end do
-
-          do k = ks, ke+1 
-             sedgez(i,j,k,comp)=merge(s_d(k),s_u(k),wmac(i,j,k).gt.ZERO)
-             savg = HALF*(s_d(k) + s_u(k))
-             sedgez(i,j,k,comp)=merge(savg,sedgez(i,j,k,comp),abs(wmac(i,j,k)) .lt. rel_eps)
+             ! make sedgez by solving Riemann problem
+             ! boundary conditions enforced outside of i,j,k loop
+             sedgez(i,j,k,comp) = merge(sedgelz(i,j,k),sedgerz(i,j,k),wmac(i,j,k) .gt. ZERO)
+             savg = HALF*(sedgelz(i,j,k)+sedgerz(i,j,k))
+             sedgez(i,j,k,comp) = merge(sedgez(i,j,k,comp),savg,abs(wmac(i,j,k)) .gt. rel_eps)
           enddo
-          
+       enddo
+    enddo
+
+    ! sedgez boundary conditions
+    do j=js,je
+       do i=is,ie
+          ! lo side
           if (phys_bc(3,1) .eq. SLIP_WALL .or. phys_bc(3,1) .eq. NO_SLIP_WALL) then
-             if (is_vel .and. comp .eq. 3) then
+             if (is_vel .and. comp .eq. 2) then
                 sedgez(i,j,ks,comp) = ZERO
-             elseif (is_vel .and. comp .ne. 3) then
-                sedgez(i,j,ks,comp) = merge(ZERO,s_u(ks),phys_bc(3,1).eq.NO_SLIP_WALL)
+             elseif (is_vel .and. comp .ne. 2) then
+                sedgez(i,j,ks,comp) = merge(ZERO,sedgerz(i,j,ks),phys_bc(3,1).eq.NO_SLIP_WALL)
              else 
-                sedgez(i,j,ks,comp) = s_u(ks)
+                sedgez(i,j,ks,comp) = sedgerz(i,j,ks)
              endif
           elseif (phys_bc(3,1) .eq. INLET) then
              sedgez(i,j,ks,comp) = s(i,j,ks-1,comp)
           elseif (phys_bc(3,1) .eq. OUTLET) then
              if (is_vel .and. comp.eq.3) then
-                sedgez(i,j,ks,comp) = MIN(s_u(ks),ZERO)
+                sedgez(i,j,ks,comp) = MIN(sedgerz(i,j,ks),ZERO)
              else
-                sedgez(i,j,ks,comp) = s_u(ks)
+                sedgez(i,j,ks,comp) = sedgerz(i,j,ks)
              end if
           endif
-          
+
+          ! hi side
           if (phys_bc(3,2) .eq. SLIP_WALL .or. phys_bc(3,2) .eq. NO_SLIP_WALL) then
-             if (is_vel .and. comp .eq. 3) then
+             if (is_vel .and. comp .eq. 2) then
                 sedgez(i,j,ke+1,comp) = ZERO
-             elseif (is_vel .and. comp .ne. 3) then
-                sedgez(i,j,ke+1,comp) = merge(ZERO,s_d(ke+1),phys_bc(3,2).eq.NO_SLIP_WALL)
+             elseif (is_vel .and. comp .ne. 2) then
+                sedgez(i,j,ke+1,comp) = merge(ZERO,sedgelz(i,j,ke+1),phys_bc(3,2).eq.NO_SLIP_WALL)
              else 
-                sedgez(i,j,ke+1,comp) = s_d(ke+1)
+                sedgez(i,j,ke+1,comp) = sedgelz(i,j,ke+1)
              endif
           elseif (phys_bc(3,2) .eq. INLET) then
              sedgez(i,j,ke+1,comp) = s(i,j,ke+1,comp)
           elseif (phys_bc(3,2) .eq. OUTLET) then
              if (is_vel .and. comp.eq.3) then
-                sedgez(i,j,ke+1,comp) = MAX(s_d(ke+1),ZERO)
+                sedgez(i,j,ke+1,comp) = MAX(sedgelz(i,j,ke+1),ZERO)
              else
-                sedgez(i,j,ke+1,comp) = s_d(ke+1)
+                sedgez(i,j,ke+1,comp) = sedgelz(i,j,ke+1)
              end if
           endif
-          
-       end do
-    end do
+       enddo
+    enddo
+
+    deallocate(slx,srx,simhx,sly,sry,simhy,slz,srz,simhz)
+    deallocate(slxy,srxy,simhxy,slxz,srxz,simhxz,slyx,sryx,simhyx)
+    deallocate(slyz,sryz,simhyz,slzx,srzx,simhzx,slzy,srzy,simhzy)
+    deallocate(sedgelx,sedgerx,sedgely,sedgery,sedgelz,sedgerz)    
 
   end subroutine make_edge_scal_3d
 
