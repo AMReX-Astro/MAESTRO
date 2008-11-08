@@ -236,12 +236,12 @@ contains
     do j=js-1,je+1
        do i=is,ie+1
           ! extrapolate both components of velocity to left face
-          ulx(i,j,1) = u(i-1,j,1) + (HALF - dt2*max(ZERO,u(i-1,j,1)/hx))*slopex(i-1,j,1)
-          ulx(i,j,2) = u(i-1,j,2) + (HALF - dt2*max(ZERO,u(i-1,j,1)/hx))*slopex(i-1,j,2)
+          ulx(i,j,1) = u(i-1,j,1) + (HALF - (dt2/hx)*max(ZERO,u(i-1,j,1)))*slopex(i-1,j,1)
+          ulx(i,j,2) = u(i-1,j,2) + (HALF - (dt2/hx)*max(ZERO,u(i-1,j,1)))*slopex(i-1,j,2)
 
           ! extrapolate both components of velocity to right face
-          urx(i,j,1) = u(i  ,j,1) - (HALF + dt2*min(ZERO,u(i  ,j,1)/hx))*slopex(i  ,j,1)
-          urx(i,j,2) = u(i  ,j,2) - (HALF + dt2*min(ZERO,u(i  ,j,1)/hx))*slopex(i  ,j,2)
+          urx(i,j,1) = u(i  ,j,1) - (HALF + (dt2/hx)*min(ZERO,u(i  ,j,1)))*slopex(i  ,j,1)
+          urx(i,j,2) = u(i  ,j,2) - (HALF + (dt2/hx)*min(ZERO,u(i  ,j,1)))*slopex(i  ,j,2)
        end do
     end do
 
@@ -294,25 +294,26 @@ contains
     enddo
 
     do j=js,je+1
-       do i=is-1,ie+1
-          if (j .eq. 0) then
-             vlo = u(i,j-1,2) + w0(j)
-             vhi = u(i,j  ,2) + HALF*(w0(j)+w0(j+1))
-          else if (j .eq. nr(n)) then
-             vlo = u(i,j-1,2) + HALF*(w0(j-1)+w0(j))
-             vhi = u(i,j  ,2) + w0(j)
-          else
-             vlo = u(i,j-1,2) + HALF*(w0(j-1)+w0(j))
-             vhi = u(i,j  ,2) + HALF*(w0(j)+w0(j+1))
-          end if
 
+       if (j .eq. 0) then
+          vlo = w0(j)
+          vhi = HALF*(w0(j)+w0(j+1))
+       else if (j .eq. nr(n)) then
+          vlo = HALF*(w0(j-1)+w0(j))
+          vhi = w0(j)
+       else
+          vlo = HALF*(w0(j-1)+w0(j))
+          vhi = HALF*(w0(j)+w0(j+1))
+       end if
+
+       do i=is-1,ie+1
           ! extrapolate both components of velocity to left face
-          uly(i,j,1) = u(i,j-1,1) + (HALF - dt2*max(ZERO,vlo/hy))*slopey(i,j-1,1)
-          uly(i,j,2) = u(i,j-1,2) + (HALF - dt2*max(ZERO,vlo/hy))*slopey(i,j-1,2)
+          uly(i,j,1) = u(i,j-1,1) + (HALF - (dt2/hy)*max(ZERO,u(i,j-1,2)+vlo))*slopey(i,j-1,1)
+          uly(i,j,2) = u(i,j-1,2) + (HALF - (dt2/hy)*max(ZERO,u(i,j-1,2)+vlo))*slopey(i,j-1,2)
 
           ! extrapolate both components of velocity to right face
-          ury(i,j,1) = u(i,j  ,1) - (HALF + dt2*min(ZERO,vhi/hy))*slopey(i,j  ,1)
-          ury(i,j,2) = u(i,j  ,2) - (HALF + dt2*min(ZERO,vhi/hy))*slopey(i,j  ,2)
+          ury(i,j,1) = u(i,j  ,1) - (HALF + (dt2/hy)*min(ZERO,u(i,j,2)+vhi))*slopey(i,j  ,1)
+          ury(i,j,2) = u(i,j  ,2) - (HALF + (dt2/hy)*min(ZERO,u(i,j,2)+vhi))*slopey(i,j  ,2)
        end do
     end do
 
