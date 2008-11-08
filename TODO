@@ -22,5 +22,3 @@
 
 -- restore the call to addw0 after mkutrans, and then clean up velpred
    knowing that full utrans comes in - it will eliminate a lot of code
-
--- finish corner coupling in 3D for make_edge_scal.f90
