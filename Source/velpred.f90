@@ -274,9 +274,11 @@ contains
     do j=js-1,je+1
        do i=is,ie+1
           ! make normal component of uimhx by first solving a normal Riemann problem
-          ! uimhx(1) = { ulx(1) if uavg > 0,
-          !              urx(1) if uavg < 0,
-          !              0   if (ulx(1) < 0 and urx(1) > 0) or |ulx(1)+urx(1)|<rel_eps }
+          ! NOTE: uimhx(:,:,1) is exactly the same thing as the perturbational utrans(:,:).
+          ! You can actually use utrans(:,:) instead of uimhx(:,:,1) for the rest of 
+          ! this function.  The only reason we don't eliminate mkutrans.f90 is that 
+          ! utrans(:,:) has ghost cell information that is needed to compute the
+          ! (Utilde . e_r) d w_0 /dr e_r term.
           uavg = HALF*(ulx(i,j,1)+urx(i,j,1))
           test = ((ulx(i,j,1) .le. ZERO .and. urx(i,j,1) .ge. ZERO) .or. &
                (abs(ulx(i,j,1)+urx(i,j,1)) .lt. rel_eps))
@@ -284,9 +286,6 @@ contains
           uimhx(i,j,1) = merge(ZERO,uimhx(i,j,1),test)
 
           ! now upwind to get transverse component of uimhx
-          ! uimhx(2) = { ulx(2) if uimhx(1) > rel_eps
-          !              urx(2) if uimhx(1) < rel_eps
-          !              uavg   if |uimhx(1)| < rel_eps }
           uimhx(i,j,2) = merge(ulx(i,j,2),urx(i,j,2),uimhx(i,j,1).gt.ZERO)
           uavg = HALF*(ulx(i,j,2)+urx(i,j,2))
           uimhx(i,j,2) = merge(uavg,uimhx(i,j,2),abs(uimhx(i,j,1)).lt.rel_eps)
@@ -346,9 +345,11 @@ contains
     do j=js,je+1
        do i=is-1,ie+1
           ! make normal component of uimhy by first solving a normal Riemann problem
-          ! uimhy(2) = { uly(2) if uavg > 0,
-          !              ury(2) if uavg < 0,
-          !              0   if (uly(2) < 0 and ury(2) > 0) or |uly(2)+ury(2)|<rel_eps }
+          ! NOTE: uvimhx(:,:,2) is exactly the same thing as the perturbational vtrans(:,:).
+          ! You can actually use vtrans(:,:) instead of uimhx(:,:,2) for the rest of 
+          ! this function.  The only reason we don't eliminate mkutrans.f90 is that 
+          ! vtrans(:,:) has ghost cell information that is needed to compute the
+          ! (Utilde . e_r) d w_0 /dr e_r term.
           uavg = HALF*(uly(i,j,2)+ury(i,j,2))
           test = ((uly(i,j,2)+w0(j) .le. ZERO .and. ury(i,j,2)+w0(j) .ge. ZERO) .or. &
                (abs(uly(i,j,2)+ury(i,j,2)+TWO*w0(j)) .lt. rel_eps))
@@ -356,9 +357,6 @@ contains
           uimhy(i,j,2) = merge(ZERO,uimhy(i,j,2),test)
 
           ! now upwind to get transverse component of uimhy
-          ! uimhy(1) = { uly(1) if uimhy(2) > rel_eps
-          !              ury(1) if uimhy(2) < rel_eps
-          !              uavg   if |uimhx(2)| < rel_eps }
           uimhy(i,j,1) = merge(uly(i,j,1),ury(i,j,1),uimhy(i,j,2)+w0(j).gt.ZERO)
           uavg = HALF*(uly(i,j,1)+ury(i,j,1))
           uimhy(i,j,1) = merge(uavg,uimhy(i,j,1),abs(uimhy(i,j,2)+w0(j)).lt.rel_eps)
@@ -698,6 +696,11 @@ contains
           do i=is,ie+1
              if (spherical .eq. 1) then
                 ! make normal component of uimhx by first solving a normal Riemann problem
+                ! NOTE: uimhx(:,:,:,1) is exactly the same thing as the perturbational 
+                ! utrans(:,:,:).  You can actually use utrans(:,:,:) instead of 
+                ! uimhx(:,:,:,1) for the rest of this function.  The only reason we don't 
+                ! eliminate mkutrans.f90 is that utrans(:,:,:) has ghost cell information 
+                ! that is needed to compute the (Utilde . e_r) d w_0 /dr e_r term.
                 uavg = HALF*(ulx(i,j,k,1)+urx(i,j,k,1))
                 test = ((ulx(i,j,k,1)+w0macx(i,j,k) .le. ZERO .and. &
                      urx(i,j,k,1)+w0macx(i,j,k) .ge. ZERO) .or. &
@@ -719,6 +722,11 @@ contains
                      abs(uimhx(i,j,k,1)+w0macx(i,j,k)).lt.rel_eps)
              else
                 ! make normal component of uimhx by first solving a normal Riemann problem
+                ! NOTE: uimhx(:,:,:,1) is exactly the same thing as the perturbational 
+                ! utrans(:,:,:).  You can actually use utrans(:,:,:) instead of 
+                ! uimhx(:,:,:,1) for the rest of this function.  The only reason we don't 
+                ! eliminate mkutrans.f90 is that utrans(:,:,:) has ghost cell information 
+                ! that is needed to compute the (Utilde . e_r) d w_0 /dr e_r term.
                 uavg = HALF*(ulx(i,j,k,1)+urx(i,j,k,1))
                 test = ((ulx(i,j,k,1) .le. ZERO .and. urx(i,j,k,1) .ge. ZERO) .or. &
                      (abs(ulx(i,j,k,1)+urx(i,j,k,1)) .lt. rel_eps))
@@ -803,6 +811,11 @@ contains
           do i=is-1,ie+1
              if (spherical .eq. 1) then
                 ! make normal component of uimhy by first solving a normal Riemann problem
+                ! NOTE: uimhy(:,:,:,2) is exactly the same thing as the perturbational 
+                ! vtrans(:,:,:).  You can actually use vtrans(:,:,:) instead of 
+                ! uimhy(:,:,:,2) for the rest of this function.  The only reason we don't 
+                ! eliminate mkutrans.f90 is that vtrans(:,:,:) has ghost cell information 
+                ! that is needed to compute the (Utilde . e_r) d w_0 /dr e_r term.
                 uavg = HALF*(uly(i,j,k,2)+ury(i,j,k,2))
                 test = ((uly(i,j,k,2)+w0macy(i,j,k) .le. ZERO .and. &
                      ury(i,j,k,2)+w0macy(i,j,k) .ge. ZERO) .or. &
@@ -824,6 +837,11 @@ contains
                      abs(uimhy(i,j,k,2)+w0macy(i,j,k)).lt.rel_eps)
              else
                 ! make normal component of uimhy by first solving a normal Riemann problem
+                ! NOTE: uimhy(:,:,:,2) is exactly the same thing as the perturbational 
+                ! vtrans(:,:,:).  You can actually use vtrans(:,:,:) instead of 
+                ! uimhy(:,:,:,2) for the rest of this function.  The only reason we don't 
+                ! eliminate mkutrans.f90 is that vtrans(:,:,:) has ghost cell information 
+                ! that is needed to compute the (Utilde . e_r) d w_0 /dr e_r term.
                 uavg = HALF*(uly(i,j,k,2)+ury(i,j,k,2))
                 test = ((uly(i,j,k,2) .le. ZERO .and. ury(i,j,k,2) .ge. ZERO) .or. &
                      (abs(uly(i,j,k,2)+ury(i,j,k,2)) .lt. rel_eps))
@@ -916,6 +934,11 @@ contains
           do i=is-1,ie+1
              if (spherical .eq. 1) then
                 ! make normal component of uimhz by first solving a normal Riemann problem
+                ! NOTE: uimhz(:,:,:,3) is exactly the same thing as the perturbational 
+                ! wtrans(:,:,:).  You can actually use wtrans(:,:,:) instead of 
+                ! uimhz(:,:,:,3) for the rest of this function.  The only reason we don't 
+                ! eliminate mkutrans.f90 is that wtrans(:,:,:) has ghost cell information 
+                ! that is needed to compute the (Utilde . e_r) d w_0 /dr e_r term.
                 uavg = HALF*(ulz(i,j,k,3)+urz(i,j,k,3))
                 test = ((ulz(i,j,k,3)+w0macz(i,j,k) .le. ZERO .and. &
                      urz(i,j,k,3)+w0macz(i,j,k) .ge. ZERO) .or. &
@@ -937,6 +960,11 @@ contains
                      abs(uimhz(i,j,k,3)+w0macz(i,j,k)).lt.rel_eps)
              else
                 ! make normal component of uimhz by first solving a normal Riemann problem
+                ! NOTE: uimhz(:,:,:,3) is exactly the same thing as the perturbational 
+                ! wtrans(:,:,:).  You can actually use wtrans(:,:,:) instead of 
+                ! uimhz(:,:,:,3) for the rest of this function.  The only reason we don't 
+                ! eliminate mkutrans.f90 is that wtrans(:,:,:) has ghost cell information 
+                ! that is needed to compute the (Utilde . e_r) d w_0 /dr e_r term.
                 uavg = HALF*(ulz(i,j,k,3)+urz(i,j,k,3))
                 test = ((ulz(i,j,k,3)+w0(k).le.ZERO .and. urz(i,j,k,3)+w0(k).ge.ZERO) .or. &
                      (abs(ulz(i,j,k,3)+urz(i,j,k,3)+TWO*w0(k)) .lt. rel_eps))
