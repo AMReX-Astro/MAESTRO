@@ -229,9 +229,12 @@ This algorithm is more complicated than the 2D case since we include
 the effects of corner coupling.
 
 \begin{enumerate}
-\item Predict $\ut$ to y-faces and r-faces using a 1D extrapolation.
-\item Predict $\vt$ to x-faces and r-faces using a 1D extrapolation.
-\item Predict $\wt$ to x-faces and y-faces using a 1D extrapolation.
+\item Predict $\ut$ to y-faces using a 1D extrapolation.
+\item Predict $\ut$ to r-faces using a 1D extrapolation.
+\item Predict $\vt$ to x-faces using a 1D extrapolation.
+\item Predict $\vt$ to r-faces using a 1D extrapolation.
+\item Predict $\wt$ to x-faces using a 1D extrapolation.
+\item Predict $\wt$ to y-faces using a 1D extrapolation.
 \item Update prediction of $\ut$ to y-faces by accounting for $r$-derivatives.
 \item Update prediction of $\ut$ to r-faces by accounting for $y$-derivatives.
 \item Update prediction of $\vt$ to x-faces by accounting for $r$-derivatives.
@@ -242,6 +245,72 @@ the effects of corner coupling.
 \item Predict $\vt$ to y-faces using a full-dimensional extrapolation.
 \item Predict $\wt$ to r-faces using a full-dimensional extrapolation.
 \end{enumerate}
+Predict $\ut$ to y-faces using a 1D extrapolation.
+\begin{eqnarray}
+\ut_{L,\ib-\half\eb_y} &=& \ut_{\ib-\eb_y}^n + \left[\half - \frac{\dt}{2h}\max(0,v_{\ib-\eb_y}^n)\right]\Delta_y \ut_{\ib-\eb_y}^n, \\
+\ut_{R,\ib-\half\eb_y} &=& \ut_{\ib} - \left[\half + \frac{\dt}{2h}\min(0,v_{\ib}^n)\right]\Delta_y \ut_{\ib}^n.
+\end{eqnarray}
+Upwind based on $v^{\trans}$:
+\begin{equation}
+\ut_{\ib-\half\eb_y} =
+\begin{cases}
+\half\left(\ut_{L,\ib-\half\eb_y} + \ut_{R,\ib-\half\eb_y}\right), & \left|v^{\trans}_{\ib-\half\eb_y}\right| < \epsilon \\
+\ut_{L,\ib-\half\eb_y}, & v^{\trans}_{\ib-\half\eb_y} > 0, \\
+\ut_{R,\ib-\half\eb_y}, & v^{\trans}_{\ib-\half\eb_y} < 0. \\
+\end{cases}
+\end{equation}
+Predict $\ut$ to r-faces using a 1D extrapolation.\\ \\
+Predict $\vt$ to x-faces using a 1D extrapolation.\\ \\
+Predict $\vt$ to r-faces using a 1D extrapolation.\\ \\
+Predict $\wt$ to x-faces using a 1D extrapolation.\\ \\
+Predict $\wt$ to y-faces using a 1D extrapolation.\\ \\
+Update prediction of $\ut$ to y-faces by accounting for $r$-derivatives.
+The notation $\ut_{\ib-\half\eb_y}^{y|r}$ means state $\ut_{\ib-\half\eb_y}$ that has been updated to account for transverse derives in the r-direction.
+\begin{eqnarray}
+\ut_{L,\ib-\half\eb_y}^{y|r} &=& \ut_{L,\ib-\half\eb_y} - \frac{\dt}{6h}\left(w_{\ib-\eb_y+\half\eb_r}^{\trans}+w_{\ib-\eb_y-\half\eb_r}^{\trans}\right)\left(\ut_{\ib-\eb_y+\half\eb_r}-\ut_{\ib-\eb_y-\half\eb_r}\right), \\
+\ut_{R,\ib-\half\eb_y}^{y|r} &=& \ut_{R,\ib-\half\eb_y} - \frac{\dt}{6h}\left(w_{\ib+\half\eb_r}^{\trans}+w_{\ib-\half\eb_r}^{\trans}\right)\left(\ut_{\ib+\half\eb_r}-\ut_{\ib-\half\eb_r}\right).
+\end{eqnarray}
+Upwind based on $v^{\trans}$:
+\begin{equation}
+\ut_{\ib-\half\eb_y}^{y|r} =
+\begin{cases}
+\half\left(\ut_{L,\ib-\half\eb_y}^{y|r} + \ut_{R,\ib-\half\eb_y}^{y|r}\right), & \left|v_{\ib-\half\eb_y}^{\trans}\right| < \epsilon \\
+\ut_{L,\ib-\half\eb_y}^{y|r}, & v_{\ib-\half\eb_y}^{\trans} > 0, \\
+\ut_{R,\ib-\half\eb_y}^{y|r}, & v_{\ib-\half\eb_y}^{\trans} < 0.
+\end{cases}
+\end{equation}
+Update prediction of $\ut$ to r-faces by accounting for $y$-derivatives. \\ \\
+Update prediction of $\vt$ to x-faces by accounting for $r$-derivatives. \\ \\
+Update prediction of $\vt$ to r-faces by accounting for $x$-derivatives. \\ \\
+Update prediction of $\wt$ to x-faces by accounting for $y$-derivatives. \\ \\
+Update prediction of $\wt$ to y-faces by accounting for $x$-derivatives. \\ \\
+Predict $\ut$ to x-faces using a full-dimensional extrapolation.
+\begin{eqnarray}
+\ut_{L,\ib-\half\eb_x}^{\mac,*} = \ut_{L,\ib-\half\eb_x} &-& \frac{\dt}{4h}\left(v_{\ib-\eb_x+\half\eb_y}^{\trans}+v_{\ib-\eb_x-\half\eb_y}^{\trans}\right)\left(\ut_{\ib-\eb_x+\half\eb_y}^{y|r}-\ut_{\ib-\eb_x-\half\eb_y}^{y|r}\right) \nonumber \\
+&-& \frac{\dt}{4h}\left(w_{\ib-\eb_x+\half\eb_r}^{\trans}+w_{\ib-\eb_x-\half\eb_r}^{\trans}\right)\left(\ut_{\ib-\eb_x+\half\eb_r}^{r|y}-\ut_{\ib-\eb_x-\half\eb_r}^{r|y}\right) + \frac{\dt}{2}f_{u,\ib-\eb_x}, \nonumber \\
+&& \\
+\ut_{R,\ib-\half\eb_x}^{\mac,*} = \ut_{R,\ib-\half\eb_x} &-& \frac{\dt}{4h}\left(v_{\ib+\half\eb_y}^{\trans}+v_{\ib-\half\eb_y}^{\trans}\right)\left(\ut_{\ib+\half\eb_y}^{y|r}-\ut_{\ib-\half\eb_y}^{y|r}\right) \nonumber \\
+&-& \frac{\dt}{4h}\left(w_{\ib+\half\eb_r}^{\trans}+w_{\ib-\half\eb_r}^{\trans}\right)\left(\ut_{\ib+\half\eb_r}^{r|y}-\ut_{\ib-\half\eb_r}^{r|y}\right) + \frac{\dt}{2}f_{u,\ib}.
+\end{eqnarray}
+Solve a Riemann problem:
+\begin{equation}
+\ut_{\ib-\half\eb_x}^{\mac,*} =
+\begin{cases}
+0, & \left(u_{L,\ib-\half\eb_x}^{\mac,*} \le 0 ~~ {\rm AND} ~~ u_{R,\ib-\half\eb_x}^{\mac,*} \ge 0\right) ~~ {\rm OR} ~~ \left|u_{L,\ib-\half\eb_x}^{\mac,*} + u_{R,\ib-\half\eb_x}^{\mac,*}\right| < \epsilon, \\
+\ut_{L,\ib-\half\eb_x}^{\mac,*}, & u_{L,\ib-\half\eb_x}^{\mac,*} + u_{R,\ib-\half\eb_x}^{\mac,*} > 0, \\
+\ut_{R,\ib-\half\eb_x}^{\mac,*}, & u_{L,\ib-\half\eb_x}^{\mac,*} + u_{R,\ib-\half\eb_x}^{\mac,*} < 0. 
+\end{cases}
+\end{equation}
+Predict $\vt$ to y-faces using a full-dimensional extrapolation.\\ \\
+Predict $\wt$ to r-faces using a full-dimensional extrapolation.  
+In this step, make sure you account for the $\partial w_0/\partial r$ 
+term before solving the Riemann problem:
+\begin{eqnarray}
+\wt_{L,\ib-\half\eb_r}^{\mac,*} &=& \wt_{L,\ib-\half\eb_r}^{\mac,*} - 
+\frac{\dt}{4h}\left(\wt^{\trans}_{\ib+\half\eb_r} + \wt^{\trans}_{\ib-\half\eb_r}\right)\left(w_{0,\ib+\half\eb_r}-w_{0,\ib-\half\eb_r}\right) \\
+\wt_{R,\ib-\half\eb_r}^{\mac,*} &=& \wt_{R,\ib-\half\eb_r}^{\mac,*} -
+\frac{\dt}{4h}\left(\wt^{\trans}_{\ib-\half\eb_r} + \wt^{\trans}_{\ib-\frac{3}{2}\eb_r}\right)\left(w_{0,\ib-\half\eb_r}-w_{0,\ib-\frac{3}{2}\eb_r}\right)
+\end{eqnarray}
 
 \newpage
 
