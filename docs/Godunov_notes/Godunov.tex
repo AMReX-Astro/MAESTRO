@@ -31,6 +31,9 @@ v_{\ib} = \vt_{\ib} + \frac{w_{0,\ib+\half\eb_y}^{\mac} + w_{0,\ib-\half\eb_y}^{
 \begin{equation}
 w_{\ib} = \wt_{\ib} + \frac{w_{0,\ib+\half\eb_z}^{\mac} + w_{0,\ib-\half\eb_z}^{\mac}}{2}.
 \end{equation}
+To compute full edge-state velocities, simply add $w_0$ 
+(for plane-parallel) or {\tt w0mac} to the perturbational
+velocity directly since only edge-based quantities are involved.
 \subsection{Computing $\partial w_0/\partial r$}
 For plane-parallel problems, the spatial derivatives of $w_0$ 
 are given by the two-point centered difference:
@@ -43,24 +46,6 @@ For spherical problems, we compute the radial bin centered gradient using
 \end{equation}
 Then we put $\partial w_0/\partial r$ onto a Cartesian grid 
 using {\tt put\_1d\_array\_on\_cart\_3d\_sphr}.
-
-%-----------------------------------------------------------------------------
-% differences between Maestro and Varden
-%-----------------------------------------------------------------------------
-\section{Differences Between {\tt MAESTRO} and {\tt VARDEN}}
-\begin{enumerate}
-\item {\tt VARDEN} does not use the concept of $w_0$, so $\Ubt$ does
-  not exist.
-\item {\tt VARDEN} only does Cartesian problems.
-\item {\tt VARDEN} does not use the concept of $\Ub^{\trans}$ in the
-  computation of $\Ub^{\mac,*}$, i.e., the function {\tt velpred}
-  computes $\Ub^{\mac,*}$ directly.
-\item {\tt VARDEN} treats $\rho$ in a conservative manner, whereas
-  {\tt MAESTRO} treats $\rho'$ in a non-conservative manner.
-  Therefore, {\tt MAESTRO} accounts for this difference by modifying
-  the forcing term in {\tt modify\_scal\_force}
-\item {\tt MAESTRO} does not corner couple for 3D problems.
-\end{enumerate}
 
 \newpage
 
@@ -76,43 +61,42 @@ following the call to {\tt mkutrans}, we call {\tt addw0} to compute
 $\Ub^{\trans}$ from $\Ubt^{\trans}$.\\ \\
 The evolution equation for the perturbational velocity is:
 \begin{equation}
-\frac{\partial\Ubt}{\partial t} = -\Ubt\cdot\nabla\Ubt - w_0\frac{\partial\Ubt}{\partial r} \underbrace{- (\Ubt\cdot\eb_r)\frac{\partial w_0}{\partial r}\eb_r - \frac{1}{\rho}\nabla\pi + \frac{1}{\rho_0}\frac{\partial\pi_0}{\partial r}\eb_r - \frac{(\rho-\rho_0)}{\rho}g\eb_r}.\label{Perturbational Velocity Equation}
+\frac{\partial\Ubt}{\partial t} = -\Ubt\cdot\nabla\Ubt - w_0\frac{\partial\Ubt}{\partial r} \underbrace{- (\Ubt\cdot\eb_r)\frac{\partial w_0}{\partial r}\eb_r - \frac{1}{\rho}\nabla\pi + \frac{1}{\rho_0}\frac{\partial\pi_0}{\partial r}\eb_r - \frac{(\rho-\rho_0)}{\rho}g\eb_r}_{\hbox{forcing terms}}.\label{Perturbational Velocity Equation}
 \end{equation}
 We are going to use a 1D Taylor series extrapolation in space and time.
 By 1D, we mean that we omit any spatial derivatives that are not in the 
-direction of the extrapolation.  We also omit the underbraced source terms.
+direction of the extrapolation.  We also omit the underbraced forcing terms.
 
 \newpage
 
 \subsection{2D Cartesian Case}
 We predict $\ut$ to x-faces using a 1D extrapolation:
 \begin{eqnarray}
-\ut_{L,\ib-\half\eb_x}^{1D} &=& \ut_{\ib-\eb_x}^n + \left[\half - \frac{\dt}{2h}\max(0,u_{\ib-\eb_x}^n)\right]\Delta_x \ut_{\ib-\eb_x}^n, \label{u_L^1D}\\
-\ut_{R,\ib-\half\eb_x}^{1D} &=& \ut_{\ib}^n - \left[\half + \frac{\dt}{2h}\min(0,u_{\ib}^n)\right]\Delta_x \ut_{\ib}^n.\label{u_R^1D}
+\ut_{L,\ib-\half\eb_x} &=& \ut_{\ib-\eb_x}^n + \left[\half - \frac{\dt}{2h}\max(0,u_{\ib-\eb_x}^n)\right]\Delta_x \ut_{\ib-\eb_x}^n, \label{u_L^1D}\\
+\ut_{R,\ib-\half\eb_x} &=& \ut_{\ib}^n - \left[\half + \frac{\dt}{2h}\min(0,u_{\ib}^n)\right]\Delta_x \ut_{\ib}^n.\label{u_R^1D}
 \end{eqnarray}
 We pick the final trans states using a Riemann solver:
 \begin{equation}
 \ut^{\trans}_{\ib-\half\eb_x} =
 \begin{cases}
-0, & \left(\ut_{L,\ib-\half\eb_x}^{1D} \le 0 ~~ {\rm AND} ~~ \ut_{R,\ib-\half\eb_x}^{1D} \ge 0\right) ~~ {\rm OR} ~~ \left|\ut_{L,\ib-\half\eb_x}^{1D} + \ut_{R,\ib-\half\eb_x}^{1D}\right| < \epsilon, \\
-\ut_{L,\ib-\half\eb_x}^{1D}, & \ut_{L,\ib-\half\eb_x}^{1D} + \ut_{R,\ib-\half\eb_x}^{1D} > 0, \\
-\ut_{R,\ib-\half\eb_x}^{1D}, & \ut_{L,\ib-\half\eb_x}^{1D} + \ut_{R,\ib-\half\eb_x}^{1D} < 0, \\
+0, & \left(\ut_{L,\ib-\half\eb_x} \le 0 ~~ {\rm AND} ~~ \ut_{R,\ib-\half\eb_x} \ge 0\right) ~~ {\rm OR} ~~ \left|\ut_{L,\ib-\half\eb_x} + \ut_{R,\ib-\half\eb_x}\right| < \epsilon, \\
+\ut_{L,\ib-\half\eb_x}, & \ut_{L,\ib-\half\eb_x} + \ut_{R,\ib-\half\eb_x} > 0, \\
+\ut_{R,\ib-\half\eb_x}, & \ut_{L,\ib-\half\eb_x} + \ut_{R,\ib-\half\eb_x} < 0, \\
 \end{cases}
 \end{equation}
 We predict $\wt$ to r-faces using a 1D extrapolation:
 \begin{eqnarray}
-\wt_{L,\ib-\half\eb_r}^{1D} &=& \wt_{\ib-\eb_r}^n + \left[\half - \frac{\dt}{2h}\max(0,w_{\ib-\eb_r}^n)\right]\Delta_r \wt_{\ib-\eb_r}^n,\\
-\wt_{R,\ib-\half\eb_r}^{1D} &=& \wt_{\ib}^n - \left[\half + \frac{\dt}{2h}\min(0,w_{\ib}^n)\right]\Delta_r \wt_{\ib}^n.
+\wt_{L,\ib-\half\eb_r} &=& \wt_{\ib-\eb_r}^n + \left[\half - \frac{\dt}{2h}\max(0,w_{\ib-\eb_r}^n)\right]\Delta_r \wt_{\ib-\eb_r}^n,\\
+\wt_{R,\ib-\half\eb_r} &=& \wt_{\ib}^n - \left[\half + \frac{\dt}{2h}\min(0,w_{\ib}^n)\right]\Delta_r \wt_{\ib}^n.
 \end{eqnarray}
 We pick the final $\trans$ states using a Riemann solver, noting
-that we upwind based on the full velocity, which is computed by adding
-$w_0$ to the left and right $1D$ velocities.
+that we upwind based on the full velocity.
 \begin{equation}
 \wt^{\trans}_{\ib-\half\eb_r} =
 \begin{cases}
-0, & \left(w_L^{1D} \le 0 ~~ {\rm AND} ~~ w_R^{1D} \ge 0\right) ~~ {\rm OR} ~~ \left|w_L^{1D} + w_R^{1D}\right| < \epsilon, \\
-\wt_{L,\ib-\half\eb_r}^{1D}, & w_L^{1D} + w_R^{1D} > 0, \\
-\wt_{R,\ib-\half\eb_r}^{1D}, & w_L^{1D} + w_R^{1D} < 0, \\
+0, & \left(w_{L,\ib-\half\eb_r} \le 0 ~~ {\rm AND} ~~ w_{R,\ib-\half\eb_r} \ge 0\right) ~~ {\rm OR} ~~ \left|w_{L,\ib-\half\eb_r} + w_{R,\ib-\half\eb_r}\right| < \epsilon, \\
+\wt_{L,\ib-\half\eb_r}, & w_{L,\ib-\half\eb_r} + w_{R,\ib-\half\eb_r} > 0, \\
+\wt_{R,\ib-\half\eb_r}, & w_{L,\ib-\half\eb_r} + w_{R,\ib-\half\eb_r} < 0, \\
 \end{cases}
 \end{equation}
 
@@ -124,15 +108,15 @@ $\wt^{\trans}$. The procedure for computing $\vt^{\trans}$ is analogous to
 computing $\ut^{\trans}$.  We predict $\vt$ to y-faces using the
 1D extrapolation:
 \begin{eqnarray}
-\vt_{L,\ib-\half\eb_y}^{1D} &=& \vt_{\ib-\eb_y}^n + \left[\half - \frac{\dt}{2h}\max(0,v_{\ib-\eb_y}^n)\right]\Delta_y \vt_{\ib-\eb_y}^n, \\
-\vt_{R,\ib-\half\eb_y}^{1D} &=& \vt_{\ib}^n - \left[\half + \frac{\dt}{2h}\min(0,v_{\ib}^n)\right]\Delta_y \vt_{\ib}^n,
+\vt_{L,\ib-\half\eb_y} &=& \vt_{\ib-\eb_y}^n + \left[\half - \frac{\dt}{2h}\max(0,v_{\ib-\eb_y}^n)\right]\Delta_y \vt_{\ib-\eb_y}^n, \\
+\vt_{R,\ib-\half\eb_y} &=& \vt_{\ib}^n - \left[\half + \frac{\dt}{2h}\min(0,v_{\ib}^n)\right]\Delta_y \vt_{\ib}^n,
 \end{eqnarray}
 \begin{equation}
 \vt^{\trans}_{\ib-\half\eb_y} =
 \begin{cases}
-0, & \left(v_{L,\ib-\half\eb_y}^{1D} \le 0 ~~ {\rm AND} ~~ v_{R,\ib-\half\eb_y}^{1D} \ge 0\right) ~~ {\rm OR} ~~ \left|v_{L,\ib-\half\eb_y}^{1D} + v_{R,\ib-\half\eb_y}^{1D}\right| < \epsilon, \\
-\vt_{L,\ib-\half\eb_y}^{1D}, & v_{L,\ib-\half\eb_y}^{1D} + v_{R,\ib-\half\eb_y}^{1D} > 0, \\
-\vt_{R,\ib-\half\eb_y}^{1D}, & v_{L,\ib-\half\eb_y}^{1D} + v_{R,\ib-\half\eb_y}^{1D} < 0. \\
+0, & \left(v_{L,\ib-\half\eb_y} \le 0 ~~ {\rm AND} ~~ v_{R,\ib-\half\eb_y} \ge 0\right) ~~ {\rm OR} ~~ \left|v_{L,\ib-\half\eb_y} + v_{R,\ib-\half\eb_y}\right| < \epsilon, \\
+\vt_{L,\ib-\half\eb_y}, & v_{L,\ib-\half\eb_y} + v_{R,\ib-\half\eb_y} > 0, \\
+\vt_{R,\ib-\half\eb_y}, & v_{L,\ib-\half\eb_y} + v_{R,\ib-\half\eb_y} < 0. \\
 \end{cases}
 \end{equation}
 
@@ -157,11 +141,10 @@ $\Ubt^{\mac,*}$.  We will only compute the normal component of
 velocity at each face.\\ \\
 For reference, here is the perturbational velocity equation from before:
 \begin{equation}
-\frac{\partial\Ubt}{\partial t} = -\Ubt\cdot\nabla\Ubt - w_0\frac{\partial\Ubt}{\partial r} \underbrace{- (\Ubt\cdot\eb_r)\frac{\partial w_0}{\partial r}\eb_r - \frac{1}{\rho}\nabla\pi + \frac{1}{\rho_0}\frac{\partial\pi_0}{\partial r}\eb_r - \frac{(\rho-\rho_0)}{\rho}g\eb_r}.
+\frac{\partial\Ubt}{\partial t} = -\Ubt\cdot\nabla\Ubt - w_0\frac{\partial\Ubt}{\partial r} \underbrace{- (\Ubt\cdot\eb_r)\frac{\partial w_0}{\partial r}\eb_r \underbrace{- \frac{1}{\rho}\nabla\pi + \frac{1}{\rho_0}\frac{\partial\pi_0}{\partial r}\eb_r - \frac{(\rho-\rho_0)}{\rho}g\eb_r}_{\hbox{terms included in $\fb_{\Ubt}$}}}_{\hbox{forcing terms}}.
 \end{equation}
-where the underbraced terms are the forcing.  Note that the 
-$\partial w_0/\partial r$ term is treated like a source term, but
-it is not actually part of $f_{\Ubt}$.
+Note that the $\partial w_0/\partial r$ term is treated like a forcing
+term, but it is not actually part of $\fb_{\Ubt}$.
 
 \newpage
 
@@ -171,29 +154,28 @@ it is not actually part of $f_{\Ubt}$.
 \item Predict $\ut$ to x-faces using a full-dimensional extrapolation.
 \item Predict $\wt$ to x-faces using a 1D extrapolation.
 \item Predict $\wt$ to r-faces using a full-dimensional extrapolation.
-  Note the inclusion of the $\partial w_0/\partial r$ term.
 \end{enumerate}
 Predict $\ut$ to r-faces using a 1D extrapolation:
 \begin{eqnarray}
-\ut_{L,\ib-\half\eb_r}^{1D} &=& \ut_{\ib-\eb_r}^n + \left[\half - \frac{\dt}{2h}\max(0,w_{\ib-\eb_r}^n)\right]\Delta_r \ut_{\ib-\eb_r}^n, \\
-\ut_{R,\ib-\half\eb_r}^{1D} &=& \ut_{\ib} - \left[\half + \frac{\dt}{2h}\min(0,w_{\ib}^n)\right]\Delta_r \ut_{\ib}^n.
+\ut_{L,\ib-\half\eb_r} &=& \ut_{\ib-\eb_r}^n + \left[\half - \frac{\dt}{2h}\max(0,w_{\ib-\eb_r}^n)\right]\Delta_r \ut_{\ib-\eb_r}^n, \\
+\ut_{R,\ib-\half\eb_r} &=& \ut_{\ib} - \left[\half + \frac{\dt}{2h}\min(0,w_{\ib}^n)\right]\Delta_r \ut_{\ib}^n.
 \end{eqnarray}
 Upwind based on $w^{\trans}$:
 \begin{equation}
-\ut_{\ib-\half\eb_r}^{1D} =
+\ut_{\ib-\half\eb_r} =
 \begin{cases}
-\half\left(\ut_{L,\ib-\half\eb_r}^{1D} + \ut_{R,\ib-\half\eb_r}^{1D}\right), & \left|w^{\trans}_{\ib-\half\eb_r}\right| < \epsilon \\
-\ut_{L,\ib-\half\eb_r}^{1D}, & w^{\trans}_{\ib-\half\eb_r} > 0, \\
-\ut_{R,\ib-\half\eb_r}^{1D}, & w^{\trans}_{\ib-\half\eb_r} < 0. \\
+\half\left(\ut_{L,\ib-\half\eb_r} + \ut_{R,\ib-\half\eb_r}\right), & \left|w^{\trans}_{\ib-\half\eb_r}\right| < \epsilon \\
+\ut_{L,\ib-\half\eb_r}, & w^{\trans}_{\ib-\half\eb_r} > 0, \\
+\ut_{R,\ib-\half\eb_r}, & w^{\trans}_{\ib-\half\eb_r} < 0. \\
 \end{cases}
 \end{equation}
 Predict $\ut$ to x-faces using a full-dimensional extrapolation, 
-where $\ut_{L/R,\ib-\half\eb_x}^{1D}$ comes from equations 
-(\ref{u_L^1D}) and (\ref{u_R^1D}):
+where $\ut_{L/R,\ib-\half\eb_x}$ comes from equations (\ref{u_L^1D})
+and (\ref{u_R^1D}):
 \begin{eqnarray}
-\ut_{L,\ib-\half\eb_x}^{\mac,*} &=& \ut_{L,\ib-\half\eb_x}^{1D} - \frac{\dt}{4h}\left(w_{\ib-\eb_x+\half\eb_r}^{\trans}+w_{\ib-\eb_x-\half\eb_r}^{\trans}\right)\left(\ut_{\ib-\eb_x+\half\eb_r}^{1D} - \ut_{\ib-\eb_x-\half\eb_r}^{1D}\right) + \frac{\dt}{2}f_{\ut,\ib-\eb_x}, \nonumber \\
+\ut_{L,\ib-\half\eb_x}^{\mac,*} &=& \ut_{L,\ib-\half\eb_x} - \frac{\dt}{4h}\left(w_{\ib-\eb_x+\half\eb_r}^{\trans}+w_{\ib-\eb_x-\half\eb_r}^{\trans}\right)\left(\ut_{\ib-\eb_x+\half\eb_r} - \ut_{\ib-\eb_x-\half\eb_r}\right) + \frac{\dt}{2}f_{\ut,\ib-\eb_x}, \nonumber \\
 && \\
-\ut_{R,\ib-\half\eb_x}^{\mac,*} &=& \ut_{R,\ib-\half\eb_x}^{1D} - \frac{\dt}{4h}\left(w_{\ib+\half\eb_r}^{\trans}+w_{\ib-\half\eb_r}^{\trans}\right)\left(\ut_{\ib+\half\eb_r}^{1D} - \ut_{\ib-\half\eb_r}^{1D}\right) + \frac{\dt}{2}f_{\ut,\ib}.
+\ut_{R,\ib-\half\eb_x}^{\mac,*} &=& \ut_{R,\ib-\half\eb_x} - \frac{\dt}{4h}\left(w_{\ib+\half\eb_r}^{\trans}+w_{\ib-\half\eb_r}^{\trans}\right)\left(\ut_{\ib+\half\eb_r} - \ut_{\ib-\half\eb_r}\right) + \frac{\dt}{2}f_{\ut,\ib}.
 \end{eqnarray}
 Solve a Riemann problem:
 \begin{equation}
@@ -206,24 +188,23 @@ Solve a Riemann problem:
 \end{equation}
 Predict $\wt$ to x-faces using a 1D extrapolation:
 \begin{eqnarray}
-\wt_{L,\ib-\half\eb_x}^{1D} &=& \wt_{\ib-\eb_x}^n + \left[\half - \frac{\dt}{2h}\max(0,u_{\ib-\eb_x}^n)\right]\Delta_x \wt_{\ib-\eb_x}^n, \\
-\wt_{R,\ib-\half\eb_x}^{1D} &=& \wt_{\ib} - \left[\half + \frac{\dt}{2h}\min(0,u_{\ib}^n)\right]\Delta_x \wt_{\ib}^n.
+\wt_{L,\ib-\half\eb_x} &=& \wt_{\ib-\eb_x}^n + \left[\half - \frac{\dt}{2h}\max(0,u_{\ib-\eb_x}^n)\right]\Delta_x \wt_{\ib-\eb_x}^n, \\
+\wt_{R,\ib-\half\eb_x} &=& \wt_{\ib} - \left[\half + \frac{\dt}{2h}\min(0,u_{\ib}^n)\right]\Delta_x \wt_{\ib}^n.
 \end{eqnarray}
 Upwind based on $u^{\trans}$:
 \begin{equation}
-\wt_{\ib-\half\eb_x}^{1D} =
+\wt_{\ib-\half\eb_x} =
 \begin{cases}
-\half\left(\wt_{L,\ib-\half\eb_x}^{1D} + \wt_{R,\ib-\half\eb_x}^{1D}\right), & \left|u^{\trans}_{\ib-\half\eb_x}\right| < \epsilon \\
-\wt_{L,\ib-\half\eb_x}^{1D}, & u^{\trans}_{\ib-\half\eb_x} > 0, \\
-\wt_{R,\ib-\half\eb_x}^{1D}, & u^{\trans}_{\ib-\half\eb_x} < 0. \\
+\half\left(\wt_{L,\ib-\half\eb_x} + \wt_{R,\ib-\half\eb_x}\right), & \left|u^{\trans}_{\ib-\half\eb_x}\right| < \epsilon \\
+\wt_{L,\ib-\half\eb_x}, & u^{\trans}_{\ib-\half\eb_x} > 0, \\
+\wt_{R,\ib-\half\eb_x}, & u^{\trans}_{\ib-\half\eb_x} < 0. \\
 \end{cases}
 \end{equation}
-Predict $\wt$ to r-faces using a full-dimensional extrapolation.
-Note the inclusion of the $\partial w_0/\partial r$ term:
+Predict $\wt$ to r-faces using a full-dimensional extrapolation:
 \begin{eqnarray}
-\wt_{L,\ib-\half\eb_r}^{\mac,*} &=& \wt_{L,\ib-\half\eb_r}^{1D} - \frac{\dt}{4h}\left(u_{\ib+\half\eb_x-\eb_r}^{\trans}+u_{\ib-\half\eb_x-\eb_r}^{\trans}\right)\left(\wt_{\ib+\half\eb_x-\eb_r}^{1D} - \wt_{\ib-\half\eb_x-\eb_r}^{1D}\right) \nonumber \\
+\wt_{L,\ib-\half\eb_r}^{\mac,*} &=& \wt_{L,\ib-\half\eb_r} - \frac{\dt}{4h}\left(u_{\ib-\eb_r+\half\eb_x}^{\trans}+u_{\ib-\eb_r-\half\eb_x}^{\trans}\right)\left(\wt_{\ib-\eb_r+\half\eb_x} - \wt_{\ib-\eb_r-\half\eb_x}\right) \nonumber \\
 && - \frac{\dt}{4h}\left(\wt_{\ib-\half\eb_r}^{\trans}+\wt_{\ib-\frac{3}{2}\eb_r}^{\trans}\right)\left(w_{0,\ib-\half\eb_r} - w_{0,\ib-\frac{3}{2}\eb_r}\right) + \frac{\dt}{2}f_{\wt,\ib-\eb_r}, \\
-\wt_{R,\ib-\half\eb_r}^{\mac,*} &=& \wt_{R,\ib-\half\eb_r} - \frac{\dt}{4h}\left(u_{\ib+\half\eb_x}^{\trans}+u_{\ib-\half\eb_x}^{\trans}\right)\left(\wt_{\ib+\half\eb_x}^{1D} - \wt_{\ib-\half\eb_x}^{1D}\right) \nonumber \\
+\wt_{R,\ib-\half\eb_r}^{\mac,*} &=& \wt_{R,\ib-\half\eb_r} - \frac{\dt}{4h}\left(u_{\ib+\half\eb_x}^{\trans}+u_{\ib-\half\eb_x}^{\trans}\right)\left(\wt_{\ib+\half\eb_x} - \wt_{\ib-\half\eb_x}\right) \nonumber \\
 && - \frac{\dt}{4h}\left(\wt_{\ib+\half\eb_r}^{\trans}+\wt_{\ib-\half\eb_r}^{\trans}\right)\left(w_{0,\ib+\half\eb_r} - w_{0,\ib-\half\eb_r}\right) + \frac{\dt}{2}f_{\wt,\ib}.
 \end{eqnarray}
 Solve a Riemann problem:
@@ -249,7 +230,6 @@ Solve a Riemann problem:
 \item Predict $\wt$ to x-faces using a 1D extrapolation.
 \item Predict $\wt$ to y-faces using a 1D extrapolation.
 \item Predict $\wt$ to r-faces using a full-dimensional extrapolation.
-  Note the inclusion of the $\partial w_0/\partial r$ term.
 \end{enumerate}
 
 \newpage
@@ -281,6 +261,8 @@ and the choice of energy prediction is as follows:
 \item For {\tt enthalpy\_pred\_type} = 6, we predict $T'$ to edges.
 \end{itemize}
 We are using {\tt enthalpy\_pred\_type} = 1 for now.  The force terms are:
+\MarginPar{Need to write out the full equations - this will also show which
+terms are treated conservatively.  Also make sure it's clear that the $\partial w_0/\partial r$ term is not part of the velocity forcing.}
 \begin{eqnarray}
 f_{\rho'} &=& -\rho'\nabla\cdot\Ub^{\mac} - \nabla\cdot(\rho_0\Ubt^{\mac}), \\
 f_{X_k} &=& 0, \\
@@ -293,8 +275,6 @@ f_{\wt} \\
 \end{array}\right)
 &=& -\frac{1}{\rho}\nabla\pi + \frac{1}{\rho_0}\frac{\partial\pi_0}{\partial r}\eb_r - \frac{(\rho-\rho_0)}{\rho}g\eb_r.
 \end{eqnarray}
-Note that the $\partial w_0/\partial r$ term is treated 
-like a source term, but it is not actually part of $f_{\Ubt}$.
 
 \newpage
 
@@ -307,16 +287,16 @@ like a source term, but it is not actually part of $f_{\Ubt}$.
 \end{enumerate}
 Predict $s$ to r-faces using a 1D extrapolation:
 \begin{eqnarray}
-s_{L,\ib-\half\eb_r}^{1D} &=& s_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\half\eb_r}^{\mac}\right)\Delta_r s_{\ib-\eb_r}^n, \\
-s_{R,\ib-\half\eb_r}^{1D} &=& s_{\ib} - \left(\half + \frac{\dt}{2h}w_{\ib-\half\eb_r}^{\mac}\right)\Delta_r s_{\ib}^n.
+s_{L,\ib-\half\eb_r} &=& s_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\half\eb_r}^{\mac}\right)\Delta_r s_{\ib-\eb_r}^n, \\
+s_{R,\ib-\half\eb_r} &=& s_{\ib} - \left(\half + \frac{\dt}{2h}w_{\ib-\half\eb_r}^{\mac}\right)\Delta_r s_{\ib}^n.
 \end{eqnarray}
 Upwind based on $w^{\mac}$:
 \begin{equation}
-s_{\ib-\half\eb_r}^{1D} =
+s_{\ib-\half\eb_r} =
 \begin{cases}
-\half\left(s_{L,\ib-\half\eb_r}^{1D} + s_{R,\ib-\half\eb_r}^{1D}\right), & \left|w^{\mac}_{\ib-\half\eb_r}\right| < \epsilon \\
-s_{L,\ib-\half\eb_r}^{1D}, & w^{\mac}_{\ib-\half\eb_r} > 0, \\
-s_{R,\ib-\half\eb_r}^{1D}, & w^{\mac}_{\ib-\half\eb_r} < 0. \\
+\half\left(s_{L,\ib-\half\eb_r} + s_{R,\ib-\half\eb_r}\right), & \left|w^{\mac}_{\ib-\half\eb_r}\right| < \epsilon \\
+s_{L,\ib-\half\eb_r}, & w^{\mac}_{\ib-\half\eb_r} > 0, \\
+s_{R,\ib-\half\eb_r}, & w^{\mac}_{\ib-\half\eb_r} < 0. \\
 \end{cases}
 \end{equation}
 Predict $s$ to x-faces using a full-dimensional extrapolation:
@@ -328,18 +308,17 @@ Account for the transverse terms:\\ \\
 {\bf if} {\tt is\_conservative} {\bf then}
 \begin{eqnarray}
 s_{L,\ib-\half\eb_x}^{\edge} &=& s_{L,\ib-\half\eb_x}^{\edge} -
-\frac{\dt}{2h}\left[\left(w^{\mac}s^{1D}\right)_{\ib-\eb_x+\half\eb_r} - \left(w^{\mac}s^{1D}\right)_{\ib-\eb_x-\half\eb_r}\right]\nonumber\\
-&&- \frac{\dt}{2h}s_{\ib-\eb_x}^{n}\left(u_{\ib-\half\eb_x}^{\mac}-u_{\ib-\frac{3}{2}\eb_x}^{\mac}\right)\\
+\frac{\dt}{2h}\left[\left(w^{\mac}s\right)_{\ib-\eb_x+\half\eb_r} - \left(w^{\mac}s\right)_{\ib-\eb_x-\half\eb_r}\right] - \frac{\dt}{2h}s_{\ib-\eb_x}^{n}\left(u_{\ib-\half\eb_x}^{\mac}-u_{\ib-\frac{3}{2}\eb_x}^{\mac}\right)\nonumber \\
+&&\\
 s_{R,\ib-\half\eb_x}^{\edge} &=& s_{R,\ib-\half\eb_x}^{\edge} -
-\frac{\dt}{2h}\left[\left(w^{\mac}s^{1D}\right)_{\ib+\half\eb_r} - \left(w^{\mac}s^{1D}\right)_{\ib-\half\eb_r}\right]\nonumber\\
-&&- \frac{\dt}{2h}s_{\ib}^{n}\left(u_{\ib+\half\eb_x}^{\mac}-u_{\ib-\half\eb_x}^{\mac}\right)\\
+\frac{\dt}{2h}\left[\left(w^{\mac}s\right)_{\ib+\half\eb_r} - \left(w^{\mac}s\right)_{\ib-\half\eb_r}\right] - \frac{\dt}{2h}s_{\ib}^{n}\left(u_{\ib+\half\eb_x}^{\mac}-u_{\ib-\half\eb_x}^{\mac}\right)
 \end{eqnarray}
 {\bf else}
 \begin{eqnarray}
 s_{L,\ib-\half\eb_x}^{\edge} &=& s_{L,\ib-\half\eb_x}^{\edge} -
-\frac{\dt}{4h}\left(w^{\mac}_{\ib-\eb_x+\half\eb_r} + w^{\mac}_{\ib-\eb_x-\half\eb_r}\right)\left(s^{1D}_{\ib-\eb_x+\half\eb_r} - s^{1D}_{\ib-\eb_x-\half\eb_r}\right)\\
+\frac{\dt}{4h}\left(w^{\mac}_{\ib-\eb_x+\half\eb_r} + w^{\mac}_{\ib-\eb_x-\half\eb_r}\right)\left(s_{\ib-\eb_x+\half\eb_r} - s_{\ib-\eb_x-\half\eb_r}\right)\\
 s_{R,\ib-\half\eb_x}^{\edge} &=& s_{R,\ib-\half\eb_x}^{\edge} -
-\frac{\dt}{4h}\left(w^{\mac}_{\ib+\half\eb_r} + w^{\mac}_{\ib-\half\eb_r}\right)\left(s^{1D}_{\ib+\half\eb_r} - s^{1D}_{\ib-\half\eb_r}\right)
+\frac{\dt}{4h}\left(w^{\mac}_{\ib+\half\eb_r} + w^{\mac}_{\ib-\half\eb_r}\right)\left(s_{\ib+\half\eb_r} - s_{\ib-\half\eb_r}\right)
 \end{eqnarray}
 {\bf end if}\\ \\
 We account for the $\partial w_0/\partial r$ term:\\ \\
@@ -362,16 +341,16 @@ s_{R,\ib-\half\eb_x}^{\edge}, & u^{\mac}_{\ib-\half\eb_x} < 0.
 \end{equation}
 Predict $s$ to x-faces using a 1D extrapolation:
 \begin{eqnarray}
-s_{L,\ib-\half\eb_x}^{1D} &=& s_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x s_{\ib-\eb_x}^n, \\
-s_{R,\ib-\half\eb_x}^{1D} &=& s_{\ib} - \left(\half + \frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x s_{\ib}^n.
+s_{L,\ib-\half\eb_x} &=& s_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x s_{\ib-\eb_x}^n, \\
+s_{R,\ib-\half\eb_x} &=& s_{\ib} - \left(\half + \frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x s_{\ib}^n.
 \end{eqnarray}
 Upwind based on $u^{\mac}$:
 \begin{equation}
-s_{\ib-\half\eb_x}^{1D} =
+s_{\ib-\half\eb_x} =
 \begin{cases}
-\half\left(s_{L,\ib-\half\eb_x}^{1D} + s_{R,\ib-\half\eb_x}^{1D}\right), & \left|u^{\mac}_{\ib-\half\eb_x}\right| < \epsilon \\
-s_{L,\ib-\half\eb_x}^{1D}, & u^{\mac}_{\ib-\half\eb_x} > 0, \\
-s_{R,\ib-\half\eb_x}^{1D}, & u^{\mac}_{\ib-\half\eb_x} < 0. \\
+\half\left(s_{L,\ib-\half\eb_x} + s_{R,\ib-\half\eb_x}\right), & \left|u^{\mac}_{\ib-\half\eb_x}\right| < \epsilon \\
+s_{L,\ib-\half\eb_x}, & u^{\mac}_{\ib-\half\eb_x} > 0, \\
+s_{R,\ib-\half\eb_x}, & u^{\mac}_{\ib-\half\eb_x} < 0. \\
 \end{cases}
 \end{equation}
 Predict $s$ to r-faces using a full-dimensional extrapolation:
@@ -383,18 +362,17 @@ Account for the transverse terms:\\ \\
 {\bf if} {\tt is\_conservative} {\bf then}
 \begin{eqnarray}
 s_{L,\ib-\half\eb_r}^{\edge} &=& s_{L,\ib-\half\eb_r}^{\edge} -
-\frac{\dt}{2h}\left[\left(u^{\mac}s^{1D}\right)_{\ib-\eb_r+\half\eb_x} - \left(u^{\mac}s^{1D}\right)_{\ib-\eb_r-\half\eb_x}\right]\nonumber\\
-&&- \frac{\dt}{2h}s_{\ib-\eb_r}^{n}\left(w_{\ib-\half\eb_r}^{\mac}-w_{\ib-\frac{3}{2}\eb_r}^{\mac}\right)\\
+\frac{\dt}{2h}\left[\left(u^{\mac}s\right)_{\ib-\eb_r+\half\eb_x} - \left(u^{\mac}s\right)_{\ib-\eb_r-\half\eb_x}\right] - \frac{\dt}{2h}s_{\ib-\eb_r}^{n}\left(w_{\ib-\half\eb_r}^{\mac}-w_{\ib-\frac{3}{2}\eb_r}^{\mac}\right)\nonumber\\
+&& \\
 s_{R,\ib-\half\eb_r}^{\edge} &=& s_{R,\ib-\half\eb_r}^{\edge} -
-\frac{\dt}{2h}\left[\left(u^{\mac}s^{1D}\right)_{\ib+\half\eb_x} - \left(u^{\mac}s^{1D}\right)_{\ib-\half\eb_x}\right]\nonumber\\
-&&- \frac{\dt}{2h}s_{\ib}^{n}\left(w_{\ib+\half\eb_r}^{\mac}-w_{\ib-\half\eb_r}^{\mac}\right)\\
+\frac{\dt}{2h}\left[\left(u^{\mac}s\right)_{\ib+\half\eb_x} - \left(u^{\mac}s\right)_{\ib-\half\eb_x}\right] - \frac{\dt}{2h}s_{\ib}^{n}\left(w_{\ib+\half\eb_r}^{\mac}-w_{\ib-\half\eb_r}^{\mac}\right)
 \end{eqnarray}
 {\bf else}
 \begin{eqnarray}
 s_{L,\ib-\half\eb_r}^{\edge} &=& s_{L,\ib-\half\eb_r}^{\edge} -
-\frac{\dt}{4h}\left(u^{\mac}_{\ib-\eb_r+\half\eb_x} + u^{\mac}_{\ib-\eb_r-\half\eb_x}\right)\left(s^{1D}_{\ib-\eb_r+\half\eb_x} - s^{1D}_{\ib-\eb_r-\half\eb_x}\right)\\
+\frac{\dt}{4h}\left(u^{\mac}_{\ib-\eb_r+\half\eb_x} + u^{\mac}_{\ib-\eb_r-\half\eb_x}\right)\left(s_{\ib-\eb_r+\half\eb_x} - s_{\ib-\eb_r-\half\eb_x}\right)\\
 s_{R,\ib-\half\eb_r}^{\edge} &=& s_{R,\ib-\half\eb_r}^{\edge} -
-\frac{\dt}{4h}\left(u^{\mac}_{\ib+\half\eb_x} + u^{\mac}_{\ib-\half\eb_x}\right)\left(s^{1D}_{\ib+\half\eb_x} - s^{1D}_{\ib-\half\eb_x}\right)
+\frac{\dt}{4h}\left(u^{\mac}_{\ib+\half\eb_x} + u^{\mac}_{\ib-\half\eb_x}\right)\left(s_{\ib+\half\eb_x} - s_{\ib-\half\eb_x}\right)
 \end{eqnarray}
 {\bf end if}\\ \\
 Account for the $\partial w_0/\partial r$ term:\\ \\
@@ -408,11 +386,11 @@ s_{R,\ib-\half\eb_r}^{\edge} &=& s_{R,\ib-\half\eb_r}^{\edge} -
 {\bf end if}\\ \\
 Upwind based on $w^{\mac}$:
 \begin{equation}
-s_{\ib-\half\eb_r}^{1D} =
+s_{\ib-\half\eb_r} =
 \begin{cases}
-\half\left(s_{L,\ib-\half\eb_r}^{1D} + s_{R,\ib-\half\eb_r}^{1D}\right), & \left|w^{\mac}_{\ib-\half\eb_r}\right| < \epsilon \\
-u_{L,\ib-\half\eb_r}^{1D}, & w^{\mac}_{\ib-\half\eb_r} > 0, \\
-u_{R,\ib-\half\eb_r}^{1D}, & w^{\mac}_{\ib-\half\eb_r} < 0. \\
+\half\left(s_{L,\ib-\half\eb_r} + s_{R,\ib-\half\eb_r}\right), & \left|w^{\mac}_{\ib-\half\eb_r}\right| < \epsilon \\
+u_{L,\ib-\half\eb_r}, & w^{\mac}_{\ib-\half\eb_r} > 0, \\
+u_{R,\ib-\half\eb_r}, & w^{\mac}_{\ib-\half\eb_r} < 0. \\
 \end{cases}
 \end{equation}
 
