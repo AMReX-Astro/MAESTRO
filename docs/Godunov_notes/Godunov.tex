@@ -94,9 +94,9 @@ We pick the final trans states using a Riemann solver:
 \begin{equation}
 \ut^{\trans}_{\ib-\half\eb_x} =
 \begin{cases}
-0, & \left(\ut_{L,\ib-\half\eb_x}^{\trans} \le 0 ~~ {\rm AND} ~~ \ut_{R,\ib-\half\eb_x}^{\trans} \ge 0\right) ~~ {\rm OR} ~~ \left|\ut_{L,\ib-\half\eb_x}^{\trans} + \ut_{R,\ib-\half\eb_x}^{\trans}\right| < \epsilon, \\
-\ut_{L,\ib-\half\eb_x}^{\trans}, & \ut_{L,\ib-\half\eb_x}^{\trans} + \ut_{R,\ib-\half\eb_x}^{\trans} > 0, \\
-\ut_{R,\ib-\half\eb_x}^{\trans}, & \ut_{L,\ib-\half\eb_x}^{\trans} + \ut_{R,\ib-\half\eb_x}^{\trans} < 0, \\
+0, & \left(\ut_{L,\ib-\half\eb_x}^{1D} \le 0 ~~ {\rm AND} ~~ \ut_{R,\ib-\half\eb_x}^{1D} \ge 0\right) ~~ {\rm OR} ~~ \left|\ut_{L,\ib-\half\eb_x}^{1D} + \ut_{R,\ib-\half\eb_x}^{1D}\right| < \epsilon, \\
+\ut_{L,\ib-\half\eb_x}^{1D}, & \ut_{L,\ib-\half\eb_x}^{1D} + \ut_{R,\ib-\half\eb_x}^{1D} > 0, \\
+\ut_{R,\ib-\half\eb_x}^{1D}, & \ut_{L,\ib-\half\eb_x}^{1D} + \ut_{R,\ib-\half\eb_x}^{1D} < 0, \\
 \end{cases}
 \end{equation}
 We predict $\wt$ to r-faces using a 1D extrapolation:
@@ -106,13 +106,13 @@ We predict $\wt$ to r-faces using a 1D extrapolation:
 \end{eqnarray}
 We pick the final $\trans$ states using a Riemann solver, noting
 that we upwind based on the full velocity, which is computed by adding
-$w_0$ to the left and right $\trans$ velocities.
+$w_0$ to the left and right $1D$ velocities.
 \begin{equation}
 \wt^{\trans}_{\ib-\half\eb_r} =
 \begin{cases}
-0, & \left(w_L^{\trans} \le 0 ~~ {\rm AND} ~~ w_R^{\trans} \ge 0\right) ~~ {\rm OR} ~~ \left|w_L^{\trans} + w_R^{\trans}\right| < \epsilon, \\
-\wt_{L,\ib-\half\eb_r}^{\trans}, & w_L^{\trans} + w_R^{\trans} > 0, \\
-\wt_{R,\ib-\half\eb_r}^{\trans}, & w_L^{\trans} + w_R^{\trans} < 0, \\
+0, & \left(w_L^{1D} \le 0 ~~ {\rm AND} ~~ w_R^{1D} \ge 0\right) ~~ {\rm OR} ~~ \left|w_L^{1D} + w_R^{1D}\right| < \epsilon, \\
+\wt_{L,\ib-\half\eb_r}^{1D}, & w_L^{1D} + w_R^{1D} > 0, \\
+\wt_{R,\ib-\half\eb_r}^{1D}, & w_L^{1D} + w_R^{1D} < 0, \\
 \end{cases}
 \end{equation}
 
@@ -128,27 +128,23 @@ computing $\ut^{\trans}$.  We predict $\vt$ to y-faces using the
 \vt_{R,\ib-\half\eb_y}^{\trans} &=& \vt_{\ib}^n - \left[\half + \frac{\dt}{2h}\min(0,v_{\ib}^n)\right]\Delta_y \vt_{\ib}^n,
 \end{eqnarray}
 \begin{equation}
-\vt^{\trans}_{\ib-\half\eb_y} =
+\vt^{1D}_{\ib-\half\eb_y} =
 \begin{cases}
-0, & \left(v_{L,\ib-\half\eb_y}^{\trans} \le 0 ~~ {\rm AND} ~~ v_{R,\ib-\half\eb_y}^{\trans} \ge 0\right) ~~ {\rm OR} ~~ \left|v_{L,\ib-\half\eb_y}^{\trans} + v_{R,\ib-\half\eb_y}^{\trans}\right| < \epsilon, \\
-\vt_{L,\ib-\half\eb_y}^{\trans}, & v_{L,\ib-\half\eb_y}^{\trans} + v_{R,\ib-\half\eb_y}^{\trans} > 0, \\
-\vt_{R,\ib-\half\eb_y}^{\trans}, & v_{L,\ib-\half\eb_y}^{\trans} + v_{R,\ib-\half\eb_y}^{\trans} < 0. \\
+0, & \left(v_{L,\ib-\half\eb_y}^{1D} \le 0 ~~ {\rm AND} ~~ v_{R,\ib-\half\eb_y}^{1D} \ge 0\right) ~~ {\rm OR} ~~ \left|v_{L,\ib-\half\eb_y}^{1D} + v_{R,\ib-\half\eb_y}^{1D}\right| < \epsilon, \\
+\vt_{L,\ib-\half\eb_y}^{1D}, & v_{L,\ib-\half\eb_y}^{1D} + v_{R,\ib-\half\eb_y}^{1D} > 0, \\
+\vt_{R,\ib-\half\eb_y}^{1D}, & v_{L,\ib-\half\eb_y}^{1D} + v_{R,\ib-\half\eb_y}^{1D} < 0. \\
 \end{cases}
 \end{equation}
 
 \newpage
 
 \subsection{3D Spherical Case}
-We predict the normal 
-components of velocity to the normal faces using a 1D extrapolation.  
-This extrapolation is analogous for all three directions.
-For example, for x-faces:
-\begin{eqnarray}
-\ut_{L,\ib-\half\eb_x}^{\trans} &=& \ut_{\ib-\eb_x}^n + \left[\half - \frac{\dt}{2h}\max(0,u_{\ib-\eb_x}^n)\right]\Delta_x\ut_{\ib-\eb_x}^n \\
-\ut_{R,\ib-\half\eb_x}^{\trans} &=& \ut_{\ib}^n - \left[\half + \frac{\dt}{2h}\min(0,u_{\ib}^n)\right]\Delta_x\ut_{\ib}^n.
-\end{eqnarray}
-Then we use the same Riemann solver as the Cartesian case to obtain $\ut^{\trans}$,
-making sure we upwind based on the full velocity.
+We predict the normal components of velocity to the normal faces 
+using a 1D extrapolation.  The equations for all three directions 
+are identical to those given in the 2D and 3D plane-parallel 
+sections.  Just make sure the advection velocities, as well as 
+the upwinding, is done with the full velocity, not the 
+perturbational velocity.
 
 \newpage
 
