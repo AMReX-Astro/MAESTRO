@@ -206,10 +206,11 @@ Upwind based on $u^{\trans}$:
 \end{equation}
 Predict $\wt$ to r-faces using a full-dimensional extrapolation:
 \begin{eqnarray}
-\wt_{L,\ib-\half\eb_r}^{\mac,*} &=& \wt_{L,\ib-\half\eb_r} - \frac{\dt}{4h}\left(u_{\ib-\eb_r+\half\eb_x}^{\trans}+u_{\ib-\eb_r-\half\eb_x}^{\trans}\right)\left(\wt_{\ib-\eb_r+\half\eb_x} - \wt_{\ib-\eb_r-\half\eb_x}\right) \nonumber \\
-&& - \frac{\dt}{4h}\left(\wt_{\ib-\half\eb_r}^{\trans}+\wt_{\ib-\frac{3}{2}\eb_r}^{\trans}\right)\left(w_{0,\ib-\half\eb_r} - w_{0,\ib-\frac{3}{2}\eb_r}\right) + \frac{\dt}{2}f_{\wt,\ib-\eb_r}, \\
-\wt_{R,\ib-\half\eb_r}^{\mac,*} &=& \wt_{R,\ib-\half\eb_r} - \frac{\dt}{4h}\left(u_{\ib+\half\eb_x}^{\trans}+u_{\ib-\half\eb_x}^{\trans}\right)\left(\wt_{\ib+\half\eb_x} - \wt_{\ib-\half\eb_x}\right) \nonumber \\
-&& - \frac{\dt}{4h}\left(\wt_{\ib+\half\eb_r}^{\trans}+\wt_{\ib-\half\eb_r}^{\trans}\right)\left(w_{0,\ib+\half\eb_r} - w_{0,\ib-\half\eb_r}\right) + \frac{\dt}{2}f_{\wt,\ib}.
+\wt_{L,\ib-\half\eb_r}^{\mac,*} = \wt_{L,\ib-\half\eb_r} &-& \frac{\dt}{4h}\left(u_{\ib-\eb_r+\half\eb_x}^{\trans}+u_{\ib-\eb_r-\half\eb_x}^{\trans}\right)\left(\wt_{\ib-\eb_r+\half\eb_x} - \wt_{\ib-\eb_r-\half\eb_x}\right) \nonumber \\
+&-& \frac{\dt}{4h}\left(\wt_{\ib-\half\eb_r}^{\trans}+\wt_{\ib-\frac{3}{2}\eb_r}^{\trans}\right)\left(w_{0,\ib-\half\eb_r} - w_{0,\ib-\frac{3}{2}\eb_r}\right) + \frac{\dt}{2}f_{\wt,\ib-\eb_r}, \nonumber \\
+&& \\
+\wt_{R,\ib-\half\eb_r}^{\mac,*} = \wt_{R,\ib-\half\eb_r} &-& \frac{\dt}{4h}\left(u_{\ib+\half\eb_x}^{\trans}+u_{\ib-\half\eb_x}^{\trans}\right)\left(\wt_{\ib+\half\eb_x} - \wt_{\ib-\half\eb_x}\right) \nonumber \\
+&-& \frac{\dt}{4h}\left(\wt_{\ib+\half\eb_r}^{\trans}+\wt_{\ib-\half\eb_r}^{\trans}\right)\left(w_{0,\ib+\half\eb_r} - w_{0,\ib-\half\eb_r}\right) + \frac{\dt}{2}f_{\wt,\ib}.
 \end{eqnarray}
 Solve a Riemann problem:
 \begin{equation}
@@ -228,12 +229,9 @@ This algorithm is more complicated than the 2D case since we include
 the effects of corner coupling.
 
 \begin{enumerate}
-\item Predict $\ut$ to y-faces using a 1D extrapolation.
-\item Predict $\ut$ to r-faces using a 1D extrapolation.
-\item Predict $\vt$ to x-faces using a 1D extrapolation.
-\item Predict $\vt$ to r-faces using a 1D extrapolation.
-\item Predict $\wt$ to x-faces using a 1D extrapolation.
-\item Predict $\wt$ to y-faces using a 1D extrapolation.
+\item Predict $\ut$ to y-faces and r-faces using a 1D extrapolation.
+\item Predict $\vt$ to x-faces and r-faces using a 1D extrapolation.
+\item Predict $\wt$ to x-faces and y-faces using a 1D extrapolation.
 \item Update prediction of $\ut$ to y-faces by accounting for $r$-derivatives.
 \item Update prediction of $\ut$ to r-faces by accounting for $y$-derivatives.
 \item Update prediction of $\vt$ to x-faces by accounting for $r$-derivatives.
@@ -328,7 +326,7 @@ s_{R,\ib-\half\eb_x}^{\edge} &=& s_{R,\ib-\half\eb_x}^{\edge} -
 \frac{\dt}{4h}\left(w^{\mac}_{\ib+\half\eb_r} + w^{\mac}_{\ib-\half\eb_r}\right)\left(s_{\ib+\half\eb_r} - s_{\ib-\half\eb_r}\right)
 \end{eqnarray}
 {\bf end if}\\ \\
-We account for the $\partial w_0/\partial r$ term:\\ \\
+Account for the $\partial w_0/\partial r$ term:\\ \\
 {\bf if} {\tt is\_vel} {\bf and} {\tt comp} = 2 {\bf then}
 \begin{eqnarray}
 s_{L,\ib-\half\eb_x}^{\edge} &=& s_{L,\ib-\half\eb_x}^{\edge} - 
@@ -407,32 +405,112 @@ u_{R,\ib-\half\eb_r}, & w^{\mac}_{\ib-\half\eb_r} < 0. \\
 This algorithm is more complicated than the 2D case since we include
 the effects of corner coupling.
 \begin{enumerate}
-\item Predict $s$ to y-faces using a 1D extrapolation.
-\item Predict $s$ to r-faces using a 1D extrapolation.
-\item Predict $s$ to x-faces using a 1D extrapolation.
-\item Predict $s$ to r-faces using a 1D extrapolation.
 \item Predict $s$ to x-faces using a 1D extrapolation.
 \item Predict $s$ to y-faces using a 1D extrapolation.
-\item Update prediction of $s$ to y-faces by accounting for $r$-derivatives.
-\item Update prediction of $s$ to r-faces by accounting for $y$-derivatives.
-\item Update prediction of $s$ to x-faces by accounting for $r$-derivatives.
-\item Update prediction of $s$ to r-faces by accounting for $x$-derivatives.
-\item Update prediction of $s$ to x-faces by accounting for $y$-derivatives.
-\item Update prediction of $s$ to y-faces by accounting for $x$-derivatives.
+\item Predict $s$ to r-faces using a 1D extrapolation.
+\item Update prediction of $s$ to x-faces by accounting for y-derivatives.
+\item Update prediction of $s$ to x-faces by accounting for r-derivatives.
+\item Update prediction of $s$ to y-faces by accounting for x-derivatives.
+\item Update prediction of $s$ to y-faces by accounting for r-derivatives.
+\item Update prediction of $s$ to r-faces by accounting for x-derivatives.
+\item Update prediction of $s$ to r-faces by accounting for y-derivatives.
 \item Predict $s$ to x-faces using a full-dimensional extrapolation.
 \item Predict $s$ to y-faces using a full-dimensional extrapolation.
 \item Predict $s$ to r-faces using a full-dimensional extrapolation.
 \end{enumerate}
+Predict $s$ to x-faces using a 1D extrapolation.
+\begin{eqnarray}
+s_{L,\ib-\half\eb_x} &=& s_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x s_{\ib-\eb_x}^n, \\
+s_{R,\ib-\half\eb_x} &=& s_{\ib} - \left(\half + \frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x s_{\ib}^n.
+\end{eqnarray}
+Upwind based on $u^{\mac}$:
+\begin{equation}
+s_{\ib-\half\eb_x} =
+\begin{cases}
+\half\left(s_{L,\ib-\half\eb_x} + s_{R,\ib-\half\eb_x}\right), & \left|u^{\mac}_{\ib-\half\eb_x}\right| < \epsilon \\
+s_{L,\ib-\half\eb_x}, & u^{\mac}_{\ib-\half\eb_x} > 0, \\
+s_{R,\ib-\half\eb_x}, & u^{\mac}_{\ib-\half\eb_x} < 0. \\
+\end{cases}
+\end{equation}
+Predict $s$ to y-faces using a 1D extrapolation.\\ \\
+Predict $s$ to r-faces using a 1D extrapolation.\\ \\
+Update prediction of $s$ to x-faces by accounting for y-derivatives.
+The notation $s_{\ib-\half\eb_x}^{x|y}$ means ``state $s_{\ib-\half\eb_x}$
+that has been updated to account for the transverse derivatives in 
+the $y$-direction''.\\ \\
+{\bf if} {\tt is\_conservative} {\bf then}
+\begin{eqnarray}
+s_{L,\ib-\half\eb_x}^{x|y} &=& s_{L,\ib-\half\eb_x} - \frac{\dt}{3h}\left[(sv^{\mac})_{\ib-\eb_x+\half\eb_y}-(sv^{\mac})_{\ib-\eb_x-\half\eb_y}\right], \\
+s_{R,\ib-\half\eb_x}^{x|y} &=& s_{R,\ib-\half\eb_x} - \frac{\dt}{3h}\left[(sv^{\mac})_{\ib+\half\eb_y}-(sv^{\mac})_{\ib-\half\eb_y}\right].
+\end{eqnarray}
+{\bf else}
+\begin{eqnarray}
+s_{L,\ib-\half\eb_x}^{x|y} &=& s_{L,\ib-\half\eb_x} - \frac{\dt}{6h}\left(v_{\ib-\eb_x+\half\eb_y}^{\mac} + v_{\ib-\eb_x-\half\eb_y}^{\mac}\right)\left(s_{\ib-\eb_x+\half\eb_y} - s_{\ib-\eb_x-\half\eb_y}\right), \\
+s_{R,\ib-\half\eb_x}^{x|y} &=& s_{R,\ib-\half\eb_x} - \frac{\dt}{6h}\left(v_{\ib+\half\eb_y}^{\mac} + v_{\ib-\half\eb_y}^{\mac}\right)\left(s_{\ib+\half\eb_y} - s_{\ib-\half\eb_y}\right).
+\end{eqnarray}
+{\bf end if}\\ \\
+Upwind based on $u^{\mac}$:
+\begin{equation}
+s_{\ib-\half\eb_x}^{x|y} =
+\begin{cases}
+\half\left(s_{L,\ib-\half\eb_x}^{x|y} + s_{R,\ib-\half\eb_x}^{x|y}\right), & \left|u^{\mac}_{\ib-\half\eb_x}\right| < \epsilon \\
+s_{L,\ib-\half\eb_x}^{x|y}, & u^{\mac}_{\ib-\half\eb_x} > 0, \\
+s_{R,\ib-\half\eb_x}^{x|y}, & u^{\mac}_{\ib-\half\eb_x} < 0.
+\end{cases}
+\end{equation}
+Update prediction of $s$ to x-faces by accounting for r-derivatives.\\ \\
+Update prediction of $s$ to y-faces by accounting for x-derivatives.\\ \\
+Update prediction of $s$ to y-faces by accounting for r-derivatives.\\ \\
+Update prediction of $s$ to r-faces by accounting for x-derivatives.\\ \\
+Update prediction of $s$ to r-faces by accounting for y-derivatives.\\ \\
+Predict $s$ to x-faces using a full-dimensional extrapolation.\\ \\
+{\bf if} {\tt is\_conservative} {\bf then}
+\begin{eqnarray}
+s_{L,\ib-\half\eb_x}^{\edge} = s_{L,\ib-\half\eb_x} &-& \frac{\dt}{2h}\left[(s^{y|r}v^{\mac})_{\ib-\eb_x+\half\eb_y}-({s^{y|r}v^{\mac})_{\ib-\eb_x-\half\eb_y}}\right] \nonumber \\
+&-& \frac{\dt}{2h}\left[(s^{r|y}w^{\mac})_{\ib-\eb_x+\half\eb_r}-({s^{r|y}w^{\mac})_{\ib-\eb_x-\half\eb_r}}\right] \nonumber \\
+&-& \frac{\dt}{2h}s_{\ib-\eb_x}\left(u_{\ib-\half\eb_x}^{\mac}-u_{\ib-\frac{3}{2}\eb_x}^{\mac}\right) + \frac{\dt}{2}f_{\ib-\eb_x}, \\
+s_{R,\ib-\half\eb_x}^{\edge} = s_{R,\ib-\half\eb_x} &-& \frac{\dt}{2h}\left[(s^{y|r}v^{\mac})_{\ib+\half\eb_y}-({s^{y|r}v^{\mac})_{\ib-\half\eb_y}}\right] \nonumber \\
+&-& \frac{\dt}{2h}\left[(s^{r|y}w^{\mac})_{\ib+\half\eb_r}-({s^{r|y}w^{\mac})_{\ib-\half\eb_r}}\right] \nonumber \\
+&-& \frac{\dt}{2h}s_{\ib}\left(u_{\ib+\half\eb_x}^{\mac}-u_{\ib-\half\eb_x}^{\mac}\right) + \frac{\dt}{2}f_{\ib}.
+\end{eqnarray}
+{\bf else}
+\begin{eqnarray}
+s_{L,\ib-\half\eb_x}^{\edge} = s_{L,\ib-\half\eb_x} &-& \frac{\dt}{4h}\left(v_{\ib-\eb_x+\half\eb_y}^{\mac}+v_{\ib-\eb_x-\half\eb_y}^{\mac}\right)\left(s_{\ib-\eb_x+\half\eb_y}^{y|r}-s_{\ib-\eb_x-\half\eb_y}^{y|r}\right) \nonumber \\
+&-& \frac{\dt}{4h}\left(w_{\ib-\eb_x+\half\eb_r}^{\mac}+w_{\ib-\eb_x-\half\eb_r}^{\mac}\right)\left(s_{\ib-\eb_x+\half\eb_r}^{r|y}-s_{\ib-\eb_x-\half\eb_r}^{r|y}\right) + \frac{\dt}{2}f_{\ib-\eb_x}, \nonumber \\
+&& \\
+s_{R,\ib-\half\eb_x}^{\edge} = s_{R,\ib-\half\eb_x} &-& \frac{\dt}{4h}\left(v_{\ib+\half\eb_y}^{\mac}+v_{\ib-\half\eb_y}^{\mac}\right)\left(s_{\ib+\half\eb_y}^{y|r}-s_{\ib-\half\eb_y}^{y|r}\right) \nonumber \\
+&-& \frac{\dt}{4h}\left(w_{\ib+\half\eb_r}^{\mac}+w_{\ib-\half\eb_r}^{\mac}\right)\left(s_{\ib+\half\eb_r}^{r|y}-s_{\ib-\half\eb_r}^{r|y}\right) + \frac{\dt}{2}f_{\ib}.
+\end{eqnarray}
+{\bf end if}\\ \\
+Account for the $\partial w_0/\partial r$ term:\\ \\
+{\bf if} {\tt is\_vel} {\bf and} {\tt comp} = 2 {\bf then}
+\begin{eqnarray}
+s_{L,\ib-\half\eb_x}^{\edge} &=& s_{L,\ib-\half\eb_x}^{\edge} - 
+\frac{\dt}{4h}\left(\wt^{\mac}_{\ib-\eb_x+\half\eb_r} + \wt^{\mac}_{\ib-\eb_x-\half\eb_r}\right)\left(w_{0,\ib+\half\eb_r}-w_{0,\ib-\half\eb_r}\right) \\
+s_{R,\ib-\half\eb_x}^{\edge} &=& s_{R,\ib-\half\eb_x}^{\edge} -
+\frac{\dt}{4h}\left(\wt^{\mac}_{\ib+\half\eb_r} + \wt^{\mac}_{\ib-\half\eb_r}\right)\left(w_{0,\ib+\half\eb_r}-w_{0,\ib-\half\eb_r}\right) \\
+\end{eqnarray}
+{\bf end if}\\ \\
+Upwind based on $u^{\mac}$:
+\begin{equation}
+s_{\ib-\half\eb_x}^{\edge} =
+\begin{cases}
+\half\left(s_{L,\ib-\half\eb_x}^{\edge} + s_{R,\ib-\half\eb_x}^{\edge}\right), & \left|u^{\mac}_{\ib-\half\eb_x}\right| < \epsilon \\
+s_{L,\ib-\half\eb_x}^{\edge}, & u^{\mac}_{\ib-\half\eb_x} > 0, \\
+s_{R,\ib-\half\eb_x}^{\edge}, & u^{\mac}_{\ib-\half\eb_x} < 0.
+\end{cases}
+\end{equation}
+Predict $s$ to y-faces using a full-dimensional extrapolation.\\ \\
+Predict $s$ to r-faces using a full-dimensional extrapolation.
 
 \newpage
 
 \subsection{3D Spherical Case}
 The spherical case is the same as the plane-parallel 3D Cartesian 
-case, except the $\partial w_0/\partial r$ term enters 
-in the full dimensional extrapolation for each direction
-when predicting velocity to faces.
-As in the plane-parallel case, make sure upwind based on the 
-full velocity.
+case, except the $\partial w_0/\partial r$ term enters in the full 
+dimensional extrapolation for each direction when predicting velocity 
+to faces.  As in the plane-parallel case, make sure upwind based on 
+the full velocity.
 
 \newpage
 
@@ -604,7 +682,7 @@ s_{R,\ib-\half\eb_x}^{x|y} &=& s_{R,\ib-\half\eb_x}^{1D} - \frac{\dt}{3h}\left[(
 \end{eqnarray}
 Then we upwind based on $u^{\mac}$:
 \begin{equation}
-s_{\ib-\half\eb_x}^{\edge} =
+s_{\ib-\half\eb_x}^{x|y} =
 \begin{cases}
 \half\left(s_{L,\ib-\half\eb_x}^{x|y} + s_{R,\ib-\half\eb_x}^{x|y}\right), & \left|u^{\mac}_{\ib-\half\eb_x}\right| < \epsilon \\
 s_{L,\ib-\half\eb_x}^{x|y}, & u^{\mac}_{\ib-\half\eb_x} > 0, \\
