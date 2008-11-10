@@ -61,7 +61,7 @@ following the call to {\tt mkutrans}, we call {\tt addw0} to compute
 $\Ub^{\trans}$ from $\Ubt^{\trans}$.\\ \\
 The evolution equation for the perturbational velocity is:
 \begin{equation}
-\frac{\partial\Ubt}{\partial t} = -\Ubt\cdot\nabla\Ubt - w_0\frac{\partial\Ubt}{\partial r} \underbrace{- (\Ubt\cdot\eb_r)\frac{\partial w_0}{\partial r}\eb_r - \frac{1}{\rho}\nabla\pi + \frac{1}{\rho_0}\frac{\partial\pi_0}{\partial r}\eb_r - \frac{(\rho-\rho_0)}{\rho}g\eb_r}_{\hbox{forcing terms}}.\label{Perturbational Velocity Equation}
+\frac{\partial\Ubt}{\partial t} = -\Ub\cdot\nabla\Ubt \underbrace{- (\Ubt\cdot\eb_r)\frac{\partial w_0}{\partial r}\eb_r - \frac{1}{\rho}\nabla\pi + \frac{1}{\rho_0}\frac{\partial\pi_0}{\partial r}\eb_r - \frac{(\rho-\rho_0)}{\rho}g\eb_r}_{\hbox{forcing terms}}.\label{Perturbational Velocity Equation}
 \end{equation}
 We are going to use a 1D Taylor series extrapolation in space and time.
 By 1D, we mean that we omit any spatial derivatives that are not in the 
@@ -72,8 +72,8 @@ direction of the extrapolation.  We also omit the underbraced forcing terms.
 \subsection{2D Cartesian Case}
 We predict $\ut$ to x-faces using a 1D extrapolation:
 \begin{eqnarray}
-\ut_{L,\ib-\half\eb_x} &=& \ut_{\ib-\eb_x}^n + \left[\half - \frac{\dt}{2h}\max(0,u_{\ib-\eb_x}^n)\right]\Delta_x \ut_{\ib-\eb_x}^n, \label{u_L^1D}\\
-\ut_{R,\ib-\half\eb_x} &=& \ut_{\ib}^n - \left[\half + \frac{\dt}{2h}\min(0,u_{\ib}^n)\right]\Delta_x \ut_{\ib}^n.\label{u_R^1D}
+\ut_{L,\ib-\half\eb_x} &=& \ut_{\ib-\eb_x}^n + \left[\half - \frac{\dt}{2h}\max(0,u_{\ib-\eb_x}^n)\right]\Delta_x \ut_{\ib-\eb_x}^n,\\
+\ut_{R,\ib-\half\eb_x} &=& \ut_{\ib}^n - \left[\half + \frac{\dt}{2h}\min(0,u_{\ib}^n)\right]\Delta_x \ut_{\ib}^n.
 \end{eqnarray}
 We pick the final trans states using a Riemann solver:
 \begin{equation}
@@ -126,8 +126,9 @@ computing $\ut^{\trans}$.  We predict $\vt$ to y-faces using the
 We predict the normal components of velocity to the normal faces 
 using a 1D extrapolation.  The equations for all three directions 
 are identical to those given in the 2D and 3D plane-parallel 
-sections.  Just make sure the advection velocities, as well as 
-the upwinding, is done with the full velocity, not the 
+sections.  As in the plane-parallel case, make sure
+ that the advection velocities, as well as 
+the upwind velocity, is done with the full velocity, not the 
 perturbational velocity.
 
 \newpage
@@ -141,10 +142,15 @@ $\Ubt^{\mac,*}$.  We will only compute the normal component of
 velocity at each face.\\ \\
 For reference, here is the perturbational velocity equation from before:
 \begin{equation}
-\frac{\partial\Ubt}{\partial t} = -\Ubt\cdot\nabla\Ubt - w_0\frac{\partial\Ubt}{\partial r} \underbrace{- (\Ubt\cdot\eb_r)\frac{\partial w_0}{\partial r}\eb_r \underbrace{- \frac{1}{\rho}\nabla\pi + \frac{1}{\rho_0}\frac{\partial\pi_0}{\partial r}\eb_r - \frac{(\rho-\rho_0)}{\rho}g\eb_r}_{\hbox{terms included in $\fb_{\Ubt}$}}}_{\hbox{forcing terms}}.
+\frac{\partial\Ubt}{\partial t} = -\Ub\cdot\nabla\Ubt \underbrace{- (\Ubt\cdot\eb_r)\frac{\partial w_0}{\partial r}\eb_r \underbrace{- \frac{1}{\rho}\nabla\pi + \frac{1}{\rho_0}\frac{\partial\pi_0}{\partial r}\eb_r - \frac{(\rho-\rho_0)}{\rho}g\eb_r}_{\hbox{terms included in $\fb_{\Ubt}$}}}_{\hbox{forcing terms}}.
 \end{equation}
 Note that the $\partial w_0/\partial r$ term is treated like a forcing
-term, but it is not actually part of $\fb_{\Ubt}$.
+term, but it is not actually part of $\fb_{\Ubt}$.  We make use of the 1D
+extrapolations used to compute $\Ubt^{\trans}$ 
+($\ut_{L/R,\ib-\half\eb_x}$, $\vt_{L/R,\ib-\half\eb_y}$, 
+and $\wt_{L/R,\ib-\half\eb_r}$), as well as the ``$\trans$'' states
+($\ut_{\ib-\half\eb_x}^{\trans}$, $\vt_{\ib-\half\eb_y}^{\trans}$, 
+and $\wt_{\ib-\half\eb_r}^{\trans}$)
 
 \newpage
 
@@ -170,8 +176,6 @@ Upwind based on $w^{\trans}$:
 \end{cases}
 \end{equation}
 Predict $\ut$ to x-faces using a full-dimensional extrapolation, 
-where $\ut_{L/R,\ib-\half\eb_x}$ comes from equations (\ref{u_L^1D})
-and (\ref{u_R^1D}):
 \begin{eqnarray}
 \ut_{L,\ib-\half\eb_x}^{\mac,*} &=& \ut_{L,\ib-\half\eb_x} - \frac{\dt}{4h}\left(w_{\ib-\eb_x+\half\eb_r}^{\trans}+w_{\ib-\eb_x-\half\eb_r}^{\trans}\right)\left(\ut_{\ib-\eb_x+\half\eb_r} - \ut_{\ib-\eb_x-\half\eb_r}\right) + \frac{\dt}{2}f_{\ut,\ib-\eb_x}, \nonumber \\
 && \\
@@ -220,15 +224,24 @@ Solve a Riemann problem:
 \newpage
 
 \subsection{3D Cartesian Case}
+This algorithm is more complicated than the 2D case since we include
+the effects of corner coupling.
+
 \begin{enumerate}
 \item Predict $\ut$ to y-faces using a 1D extrapolation.
 \item Predict $\ut$ to r-faces using a 1D extrapolation.
-\item Predict $\ut$ to x-faces using a full-dimensional extrapolation.
 \item Predict $\vt$ to x-faces using a 1D extrapolation.
 \item Predict $\vt$ to r-faces using a 1D extrapolation.
-\item Predict $\vt$ to y-faces using a full-dimensional extrapolation.
 \item Predict $\wt$ to x-faces using a 1D extrapolation.
 \item Predict $\wt$ to y-faces using a 1D extrapolation.
+\item Update prediction of $\ut$ to y-faces by accounting for $r$-derivatives.
+\item Update prediction of $\ut$ to r-faces by accounting for $y$-derivatives.
+\item Update prediction of $\vt$ to x-faces by accounting for $r$-derivatives.
+\item Update prediction of $\vt$ to r-faces by accounting for $x$-derivatives.
+\item Update prediction of $\wt$ to x-faces by accounting for $y$-derivatives.
+\item Update prediction of $\wt$ to y-faces by accounting for $x$-derivatives.
+\item Predict $\ut$ to x-faces using a full-dimensional extrapolation.
+\item Predict $\vt$ to y-faces using a full-dimensional extrapolation.
 \item Predict $\wt$ to r-faces using a full-dimensional extrapolation.
 \end{enumerate}
 
@@ -238,8 +251,8 @@ Solve a Riemann problem:
 The spherical case is the same as the plane-parallel 3D Cartesian 
 case, except the $\partial w_0/\partial r$ term enters 
 in the full dimensional extrapolation for each direction.
-Also, we make sure to upwind based on the full velocity, not the
-perturbational velocity.
+As in the plane-parallel case, make sure to upwind using the 
+full velocity.
 
 \newpage
 
@@ -251,29 +264,23 @@ We call {\tt make\_edge\_scal} to compute $\rho^{'\edge}, X_k^{\edge},
 (\rho h)^{'\edge} / h^{\edge} / T^{\edge} / h'^{\edge} / T'^{\edge}$, 
 and $\Ubt^{\edge}$ at each edge.
 The procedure is the same for each quantitiy, so we shall simply denote 
-the scalar as $s$.  We always need to compute $\rho'$ and $X_k$ to edges, 
+the scalar as $s$.  We always need to compute $\rho'$ and $X_k$ to faces, 
 and the choice of energy prediction is as follows:
 \begin{itemize}
-\item For {\tt enthalpy\_pred\_type} = 1, we predict $(\rho h)'$ to edges.
-\item For {\tt enthalpy\_pred\_type} = 2, we predict $h$ to edges.
-\item For {\tt enthalpy\_pred\_type} = 3 and 4, we predict $T$ to edges.
-\item For {\tt enthalpy\_pred\_type} = 5, we predict $h'$ to edges.
-\item For {\tt enthalpy\_pred\_type} = 6, we predict $T'$ to edges.
+\item For {\tt enthalpy\_pred\_type} = 1, we predict $(\rho h)'$ to faces.
+\item For {\tt enthalpy\_pred\_type} = 2, we predict $h$ to faces.
+\item For {\tt enthalpy\_pred\_type} = 3 and 4, we predict $T$ to faces.
+\item For {\tt enthalpy\_pred\_type} = 5, we predict $h'$ to faces.
+\item For {\tt enthalpy\_pred\_type} = 6, we predict $T'$ to faces.
 \end{itemize}
-We are using {\tt enthalpy\_pred\_type} = 1 for now.  The force terms are:
-\MarginPar{Need to write out the full equations - this will also show which
-terms are treated conservatively.  Also make sure it's clear that the $\partial w_0/\partial r$ term is not part of the velocity forcing.}
+We are using {\tt enthalpy\_pred\_type} = 1 for now.  The equations
+of motion are:
 \begin{eqnarray}
-f_{\rho'} &=& -\rho'\nabla\cdot\Ub^{\mac} - \nabla\cdot(\rho_0\Ubt^{\mac}), \\
-f_{X_k} &=& 0, \\
-f_{(\rho h)'} &=& (\Ubt\cdot\eb_r)\frac{\partial p_0}{\partial r} -(\rho h)'\nabla\cdot\Ub^{\mac} - \nabla\cdot\left[(\rho h)_0\Ubt^{\mac}\right] + \nabla\cdot\kth\nabla T, \\
-%f_h &=& \frac{1}{\rho}\left(\psi + (\Ubt\cdot\eb_r)\frac{\partial p_0}{\partial r} + \nabla\cdot\kth\nabla T \right), \\
-%f_T &=& \frac{1}{\rho c_p}\left\{(1-\rho h_p)\left[\psi + (\Ubt\cdot\eb_r)\frac{\partial p_0}{\partial r}\right] + \nabla\cdot\kth\nabla T \right\}. \\
-\left(\begin{array}{c}
-f_{\ut} \\
-f_{\wt} \\
-\end{array}\right)
-&=& -\frac{1}{\rho}\nabla\pi + \frac{1}{\rho_0}\frac{\partial\pi_0}{\partial r}\eb_r - \frac{(\rho-\rho_0)}{\rho}g\eb_r.
+\frac{\partial \rho'}{\partial t} &=& -\Ub\cdot\nabla\rho' \underbrace{- \rho'\nabla\cdot\Ub - \nabla\cdot(\rho_0\Ubt)}_{f_{\rho'}}, \\
+\frac{\partial(\rho X_k)}{\partial t} &=& -\nabla\cdot(\rho X_k\Ub) ~~~ \text{(no forcing)}, \\
+\frac{\partial(\rho h)'}{\partial t} &=& -\Ub\cdot\nabla(\rho h)' + \underbrace{(\Ubt\cdot\eb_r)\frac{\partial p_0}{\partial r} -(\rho h)'\nabla\cdot\Ub^{\mac} - \nabla\cdot\left[(\rho h)_0\Ubt^{\mac}\right] + \nabla\cdot\kth\nabla T}_{f_{(\rho h)'}}, \nonumber \\
+&& \\
+\frac{\partial\Ubt}{\partial t} &=& -\Ub\cdot\nabla\Ubt \underbrace{- (\Ubt\cdot\eb_r)\frac{\partial w_0}{\partial r}\eb_r \underbrace{- \frac{1}{\rho}\nabla\pi + \frac{1}{\rho_0}\frac{\partial\pi_0}{\partial r}\eb_r - \frac{(\rho-\rho_0)}{\rho}g\eb_r}_{\hbox{terms included in $\fb_{\Ubt}$}}}_{\hbox{forcing terms}}.
 \end{eqnarray}
 
 \newpage
@@ -397,23 +404,35 @@ u_{R,\ib-\half\eb_r}, & w^{\mac}_{\ib-\half\eb_r} < 0. \\
 \newpage
 
 \subsection{3D Cartesian Case}
+This algorithm is more complicated than the 2D case since we include
+the effects of corner coupling.
 \begin{enumerate}
 \item Predict $s$ to y-faces using a 1D extrapolation.
 \item Predict $s$ to r-faces using a 1D extrapolation.
-\item Predict $s$ to x-faces using a full-dimensional extrapolation.
 \item Predict $s$ to x-faces using a 1D extrapolation.
 \item Predict $s$ to r-faces using a 1D extrapolation.
-\item Predict $s$ to y-faces using a full-dimensional extrapolation.
 \item Predict $s$ to x-faces using a 1D extrapolation.
 \item Predict $s$ to y-faces using a 1D extrapolation.
+\item Update prediction of $s$ to y-faces by accounting for $r$-derivatives.
+\item Update prediction of $s$ to r-faces by accounting for $y$-derivatives.
+\item Update prediction of $s$ to x-faces by accounting for $r$-derivatives.
+\item Update prediction of $s$ to r-faces by accounting for $x$-derivatives.
+\item Update prediction of $s$ to x-faces by accounting for $y$-derivatives.
+\item Update prediction of $s$ to y-faces by accounting for $x$-derivatives.
+\item Predict $s$ to x-faces using a full-dimensional extrapolation.
+\item Predict $s$ to y-faces using a full-dimensional extrapolation.
 \item Predict $s$ to r-faces using a full-dimensional extrapolation.
 \end{enumerate}
-We are not using corner coupling yet.
 
 \newpage
 
 \subsection{3D Spherical Case}
-Same as 3D Cartesian case.
+The spherical case is the same as the plane-parallel 3D Cartesian 
+case, except the $\partial w_0/\partial r$ term enters 
+in the full dimensional extrapolation for each direction
+when predicting velocity to faces.
+As in the plane-parallel case, make sure upwind based on the 
+full velocity.
 
 \newpage
 
