@@ -367,7 +367,8 @@ The advance of the state through a single timestep appears as:
 source term in the velocity divergence constraint,
 \begin{equation}
   S =  -\sigma  \sum_k  \xi_k \omegadot_k  + 
-  \frac{1}{\rho p_\rho} \sum_k p_{X_k}  {\omegadot}_k  + \sigma \Hnuc + \sigma \Hext \enskip ,
+  \frac{1}{\rho p_\rho} \sum_k p_{X_k}  {\omegadot}_k  + \sigma \Hnuc + \sigma \Hext 
+  + \frac{\sigma}{\rho}\nabla\cdot\kth\nabla T \enskip ,
 \label{eq:defineS} 
 \end{equation}
 (paper III; eq.~[19]).
@@ -751,7 +752,7 @@ $\rightarrow [ \rho^{n+1,\star},(\rho h)^{n+1,\star}, X_k^{n+1,\star}, T^{n+1,\s
   S^{n+1,\star} =  -\sigma  \sum_k  \xi_k  (\omegadot_k)^{(2),\star}  + 
   \sigma \Hnuc^{(2),\star} +
   \frac{1}{\rho p_\rho} \sum_k p_{X_k}  ({\omegadot}_k)^{(2),\star}  
-  + \sigma \Hext \enskip .
+  + \sigma \Hext + \frac{\sigma}{\rho}\nabla\cdot\kth\nabla T^{n+1,\star} \enskip .
 \end{equation} 
 where $(\omegadot_k)^{(2),\star} = (\rho \omegadot_k)^{(2),\star} / \rho^{(2),\star}$
 and the remaining quantities are defined using $X_k^{n+1,\star},$ $\rho^{n+1,\star},$ 
@@ -824,12 +825,12 @@ and is analogous to the procedure used in step 2, but with updated values
 for $w_0$ and $\pizero.$  We note that $\uadvtwo$ satisfies the discrete versions of 
 equations (\ref{eq:udoterzero}) and (\ref{eq:tildeconstraint}).   The discretization
 with the volume discrepancy correction is
-\begin{equation}
-\nablab \cdotb \left(\beta_0^{\nph,\star} \uadvtwo\right) =
+\begin{eqnarray}
+\nablab \cdotb \left(\beta_0^{\nph,\star} \uadvtwo\right) &=&
 \beta_0^{\nph,\star}\left\{\left(S^{\nph} - \overline{S}^{\nph}\right)
- + \frac{f}{\gammabar^{\nph,\star} p_0^{\nph,\star}}
-\left[\frac{p(\rho,h,X_k)^{\nph,\star} - \overline{p(\rho,h,X_k)}^{\nph,\star}}{\Delta t^n}\right]\right\} \enskip ,
-\end{equation}
+ + \frac{f}{\gammabar^{\nph,\star} p_0^{\nph,\star}}\cdot \right. \nonumber \\
+&& \left.\left[\frac{p(\rho,h,X_k)^{\nph,\star} - \overline{p(\rho,h,X_k)}^{\nph,\star}}{\Delta t^n}\right]\right\} \enskip ,
+\end{eqnarray}
 \begin{equation}
 \beta_0^{\nph,\star} = \frac{ \beta_0^n +  \beta_0^{n+1,\star} }{2} \enskip .
 \end{equation}
@@ -1023,7 +1024,7 @@ interval of $\dt / 2.$}
 \begin{equation}
   S^{n+1} =  -\sigma  \sum_k  \xi_k (\omegadot_k)^{(2)}  + \sigma \Hnuc^{(2)} +
   \frac{1}{\rho p_\rho} \sum_k p_{X_k}  ({\omegadot}_k)^{(2)}  
-   + \sigma \Hext \enskip ,
+   + \sigma \Hext + \frac{\sigma}{\rho}\nabla\cdot\kth\nabla T^{n+1} \enskip ,
 \end{equation}
 where $(\omegadot_k)^{(2)} = (\rho \omegadot_k)^{(2)} / \rho^{(2)}$
 and the remaining quantities are defined using $X_k^{n+1},$ $\rho^{n+1},$
