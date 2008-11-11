@@ -1499,8 +1499,6 @@ contains
     real(dp_t) ::  xa(dm),  xb(dm)
     real(dp_t) :: pxa(dm), pxb(dm)
 
-    type(boxarray) :: bac
-
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "mac_applyop")
