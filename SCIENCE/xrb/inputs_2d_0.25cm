@@ -7,10 +7,10 @@
  use_eos_coulomb = T
 
  prob_lo_x = 0.d0
- prob_lo_y = 2104.0d0
+ prob_lo_y = 2232.0d0
 
  prob_hi_x = 32
- prob_hi_y = 2872.0d0
+ prob_hi_y = 2744.0d0
 
  grav_const = -2.45e14
 
