@@ -135,7 +135,7 @@ $(\rho h)'$ & perturbational enthalpy density
 \hline
 $\sigma$ & $\sigma \equiv p_T/(\rho c_p p_\rho)$ & erg$^{-1}$~g \\
 \hline
-$\psi$  & $\psi \equiv D_0 p_0/Dt$ & erg~cm$^{-3}$~s$^{-1}$ \\
+$\psi$  & $\psi \equiv D_0 p_0/Dt = \partial p_0/\partial t + w_0\partial p_0/\partial r$ & erg~cm$^{-3}$~s$^{-1}$ \\
 \hline
 $\omegadot_k$ & creation rate for species $k$ ($\omegadot_k \equiv DX_k/Dt$) & s$^{-1}$ \\
 \end{longtable}
@@ -231,7 +231,7 @@ is the process by which we update the base state density through $\dt$ in time
 as well as compute time-centered interface states for use later in the algorithm.
 \begin{description}
 
-\item[plane-parallel:] We discretize equation the base state density evolution 
+\item[plane-parallel:] We discretize the base state density evolution 
 equation (paper III; eq.~[29]) without the $\etarho$ term,
 \begin{eqnarray}
 \frac{\partial \rhozero}{\partial t} &=& - \nablab \cdotb \left( \rhozero w_0 \er \right)
@@ -300,8 +300,7 @@ to compute the new base state enthalpy,
 + \dt\psi_j^{\inp} \enskip ,
 \end{equation}
 where the interface states are again found via the procedure described
-in paper II, Appendix A.  Note that the $\psi$ term is not included in 
-the forcing for the interface state calculation, but is used in the update.
+in paper II, Appendix A.
 
 \item[spherical:]
 
@@ -334,8 +333,8 @@ There are several changes to the algorithm since it was last detailed
 in paper III.  The major changes are:
 \begin{itemize}
 \item In paper III we discretized the enthalpy evolution equation in
-full, non-perturbation form.  We have discovered that discretizing the
-enthalpy evolution in non-perturbational form leads to better
+full, non-perturbation form.  Since then we have discovered that 
+discretizing the enthalpy evolution in perturbational form leads to better
 numerical properties.  This is more like paper II.
 
 \item We split the update of the density and enthalpy in steps 4 and 8.
@@ -629,14 +628,14 @@ results in a better solution.
    to the edge separately, and then computing 
    ${(\rho h)_0}_{r+\myhalf} = {\rho_0}_{r+\myhalf} {h_0}_{r+\myhalf}$.
 
-  \item Evolve $(\rho h)^{(1)} \rightarrow (\rho h)^{(2'),\star}$ without
+  \item Evolve $(\rho h)^{(1)} \rightarrow (\rho h)^{(2a),\star}$ without
   explicitly including the reaction terms,
 
 \begin{description}
 \item[plane-parallel:]
 
   \begin{eqnarray}
-  (\rho h)^{(2'),\star} &=& (\rho h)^{(1)} - \dt \; \left\{ \nablab
+  (\rho h)^{(2a),\star} &=& (\rho h)^{(1)} - \dt \; \left\{ \nablab
       \cdotb \left[ \left(\uadvone+w_0^{\nph,\star} \er\right) (\rho
       h)^{(1),\nph,\star} \right] \right\} \nonumber \\ && + \dt \;
     \left(\uadvone \cdotb \er\right) \left(\frac{\partial
@@ -647,7 +646,7 @@ results in a better solution.
 \item[spherical:]
 
   \begin{eqnarray}
-  (\rho h)^{(2'),\star} &=& (\rho h)^{(1)} - \dt \; \left\{ \nablab
+  (\rho h)^{(2a),\star} &=& (\rho h)^{(1)} - \dt \; \left\{ \nablab
       \cdotb \left[ \left(\uadvone+w_0^{\nph,\star} \er\right) (\rho
       h)^{(1),\nph,\star} \right] \right\} \nonumber \\ 
     && + \dt \; \left \{ \nabla \cdot \left (\uadvone p_0^{n} \right ) 
@@ -692,13 +691,13 @@ giving
 
 Compute $\kth^{(1)}, c_p^{(1)}$, and $\xi_k^{(1)}$ from $\rho^{(1)}, T^{(1)}$, and $X_k^{(1)}$ as inputs to the equation of state.  The update is given by
 \begin{eqnarray}
-(\rho h)^{(2),\star} &=& (\rho h)^{(2'),\star} + \frac{\dt}{2}\nabla\cdot\left(\frac{\kth^{(1)}}{c_p^{(1)}}\nabla h^{(2),\star} + \frac{\kth^{(1)}}{c_p^{(1)}}\nabla h^{(1)}\right)\nonumber\\
+(\rho h)^{(2),\star} &=& (\rho h)^{(2a),\star} + \frac{\dt}{2}\nabla\cdot\left(\frac{\kth^{(1)}}{c_p^{(1)}}\nabla h^{(2),\star} + \frac{\kth^{(1)}}{c_p^{(1)}}\nabla h^{(1)}\right)\nonumber\\
 &&- \frac{\dt}{2}\sum_k\nabla\cdot\left(\frac{\xi_k^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla X_k^{(2),\star} + \frac{\xi_k^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla X_k^{(1)}\right)\nonumber\\
 &&- \frac{\dt}{2}\nabla\cdot\left(\frac{h_p^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla p_0^{(2),\star} + \frac{h_p^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla p_0^{(1)}\right),
 \end{eqnarray}
 which is numerically implemented as a diffusion equation for $h^{(2),\star}$,
 \begin{eqnarray}
-\left(\rho^{(2),\star} - \frac{\dt}{2}\nabla\cdot\frac{\kth^{(1)}}{c_p^{(1)}}\nabla\right)h^{(2),\star} &=& (\rho h)^{(2'),\star} + \frac{\dt}{2}\nabla\cdot\frac{\kth^{(1)}}{c_p^{(1)}}\nabla h^{(1)}\nonumber\\
+\left(\rho^{(2),\star} - \frac{\dt}{2}\nabla\cdot\frac{\kth^{(1)}}{c_p^{(1)}}\nabla\right)h^{(2),\star} &=& (\rho h)^{(2a),\star} + \frac{\dt}{2}\nabla\cdot\frac{\kth^{(1)}}{c_p^{(1)}}\nabla h^{(1)}\nonumber\\
 &&- \frac{\dt}{2}\sum_k\nabla\cdot\left(\frac{\xi_k^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla X_k^{(2),\star} + \frac{\xi_k^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla X_k^{(1)}\right)\nonumber\\
 &&- \frac{\dt}{2}\nabla\cdot\left(\frac{h_p^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla p_0^{(2),\star} + \frac{h_p^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla p_0^{(1)}\right),
 \end{eqnarray}
@@ -929,14 +928,14 @@ $\rightarrow [(\rho h)_0^{(2)}]$.
    is computed by averaging $h_0 \equiv (\rho h)_0/\rho_0$ and $\rho_0$
    to the edge separately, and then computing 
    ${(\rho h)_0}_{r+\myhalf} = {\rho_0}_{r+\myhalf} {h_0}_{r+\myhalf}$.
-   \item Evolve $(\rho h)^{(1)} \rightarrow (\rho h)^{(2)}$ without
+   \item Evolve $(\rho h)^{(1)} \rightarrow (\rho h)^{(2a)}$ without
      explicitly including the reaction terms,
 
 \begin{description}
 \item[plane-parallel:]
 
 \begin{eqnarray}
-(\rho h)^{(2')} &=& (\rho h)^{(1)} - \dt \; \left\{ \nablab \cdotb \left[ \left(\uadvtwo+w_0^{\nph} \er\right)  
+(\rho h)^{(2a)} &=& (\rho h)^{(1)} - \dt \; \left\{ \nablab \cdotb \left[ \left(\uadvtwo+w_0^{\nph} \er\right)  
 (\rho h)^{(1),\nph} \right] \right\} \nonumber \\
 && + \frac{\dt}{2} \; \left(\uadvtwo \cdotb \er\right)
 \left [ \left(\frac{\partial p_0}{\partial r} \right)^{n}
@@ -947,7 +946,7 @@ $\rightarrow [(\rho h)_0^{(2)}]$.
 \item[spherical:]
 
 \begin{eqnarray}
-(\rho h)^{(2')} &=& (\rho h)^{(1)} - \dt \; \left\{ \nablab \cdotb \left[ \left(\uadvtwo+w_0^{\nph} \er\right)  
+(\rho h)^{(2a)} &=& (\rho h)^{(1)} - \dt \; \left\{ \nablab \cdotb \left[ \left(\uadvtwo+w_0^{\nph} \er\right)  
 (\rho h)^{(1),\nph} \right] \right\} \nonumber \\
     && + \dt \; \left \{ \nabla \cdot \left (\uadvtwo p_0^{\nph} \right ) 
        - p_0^{\nph} \nabla \cdot \uadvtwo \right \} \nonumber \\
@@ -965,13 +964,13 @@ $\rightarrow [(\rho h)_0^{(2)}]$.
 %--------------------------------------------------------------------------
 \item Diffuse the enthalpy through a time interval of $\dt$.  Compute $\kth^{(2),\star}, c_p^{(2),\star}$, and $\xi_k^{(2),\star}$, from $\rho^{(2),\star}, T^{(2),\star}$, and $X_k^{(2),\star}$ as inputs to the equation of state.  The update is given by
 \begin{eqnarray}
-(\rho h)^{(2)} &=& (\rho h)^{(2')} + \frac{\dt}{2}\nabla\cdot\left(\frac{\kth^{(2),\star}}{c_p^{(2),\star}}\nabla h^{(2)} + \frac{\kth^{(1)}}{c_p^{(1)}}\nabla h^{(1)}\right)\nonumber\\
+(\rho h)^{(2)} &=& (\rho h)^{(2a)} + \frac{\dt}{2}\nabla\cdot\left(\frac{\kth^{(2),\star}}{c_p^{(2),\star}}\nabla h^{(2)} + \frac{\kth^{(1)}}{c_p^{(1)}}\nabla h^{(1)}\right)\nonumber\\
 &&- \frac{\dt}{2}\sum_k\nabla\cdot\left(\frac{\xi_k^{(2),\star}\kth^{(2),\star}}{c_p^{(2),\star}}\nabla X_k^{(2)} + \frac{\xi_k^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla X_k^{(1)}\right)\nonumber\\
 &&- \frac{\dt}{2}\nabla\cdot\left(\frac{h_p^{(2),\star}\kth^{(2),\star}}{c_p^{(2),\star}}\nabla p_0^{(2)} + \frac{h_p^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla p_0^{(1)}\right),
 \end{eqnarray}
 which is numerically implemented as a diffusion equation for $h^{(2)}$,
 \begin{eqnarray}
-\left(\rho^{(2)} - \frac{\dt}{2}\nabla\cdot\frac{\kth^{(2),\star}}{c_p^{(2),\star}}\nabla\right)h^{(2)} &=& (\rho h)^{(2')} + \frac{\dt}{2}\nabla\cdot\frac{\kth^{(1)}}{c_p^{(1)}}\nabla h^{(1)}\nonumber\\
+\left(\rho^{(2)} - \frac{\dt}{2}\nabla\cdot\frac{\kth^{(2),\star}}{c_p^{(2),\star}}\nabla\right)h^{(2)} &=& (\rho h)^{(2a)} + \frac{\dt}{2}\nabla\cdot\frac{\kth^{(1)}}{c_p^{(1)}}\nabla h^{(1)}\nonumber\\
 &&- \frac{\dt}{2}\sum_k\nabla\cdot\left(\frac{\xi_k^{(2),\star}\kth^{(2),\star}}{c_p^{(2),\star}}\nabla X_k^{(2)} + \frac{\xi_k^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla X_k^{(1)}\right)\nonumber\\
 &&- \frac{\dt}{2}\nabla\cdot\left(\frac{h_p^{(2),\star}\kth^{(2),\star}}{c_p^{(2),\star}}\nabla p_0^{(2)} + \frac{h_p^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla p_0^{(1)}\right),
 \end{eqnarray}
@@ -1074,7 +1073,7 @@ and solving
  L_\beta^\rho \phi =
    D \left ( \beta_0^{\nph} {\bf V} \right) - \beta_0^{\nph}\left\{ \left(S^{n+1}-\overline{S}^{n+1} \right)
 - \frac{f}{\gammabar^{n+1} p_0^{n+1}}
-\left[\frac{p(\rho,h,X_k)^{n+1} - \overline{p(\rho,h,X_k)}^{n+1}}{\Delta t^n}\right]\right\} \enskip,
+\left[\frac{p(\rho,h,X_k)^{n+1} - \overline{p(\rho,h,X_k)}^{n+1}}{\Delta t^n}\right]\right\} \enskip, \label{Linear System for Multigrid}
 \end{equation}
 for nodal values of $\phi$, where
 $\beta_0^\nph = ( \beta_0^n + \beta_0^{n+1} )/2$ and
@@ -1087,8 +1086,8 @@ $\mathbf{G} = -D^T.$
 (See (cite almgrenBellSzymczak:1996) for a detailed discussion of this
 approximate projection; see (cite almgren:bell:crutchfield) for a discussion
 of this particular form of the projection operand.)  
-We solve this linear system of equations using multigrid V-cycles with 
-Gauss-Seidel relaxation.
+We solve the linear system of equation (\ref{Linear System for Multigrid})
+using multigrid V-cycles with Gauss-Seidel relaxation.
 
 We determine the new time velocity field from
 \begin{equation}
