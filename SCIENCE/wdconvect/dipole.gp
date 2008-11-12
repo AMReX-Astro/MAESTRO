@@ -72,6 +72,10 @@ set ylabel "angle" 0,0
 
 set title "dipole angles from average velocity"
 
+# an alternate way to do phi, so it ranges from 0 to 360
+# inspiration came from here: http://www.gnuplot.info/faq/faq.html#SECTION00082000000000000000
+# plot "< cat wdconvect_radvel_diag.out | sed 's/#.*//' | awk 'BEGIN { pi = 3.14159} (NF > 0) { t = $1; phi = atan2 ( $3,$2 )*180/pi; if (phi < 0) phi = phi + 360; print t, phi } '" with lines
+
 plot "wdconvect_radvel_diag.out" using 1:(atan2($3,$2)) title "phi" with lines, \
      "wdconvect_radvel_diag.out" using 1:(atan2(sqrt($2**2 + $3**2),$4)) title "theta" with lines
 
