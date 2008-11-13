@@ -4,6 +4,7 @@
 module diag_module
 
   use bl_types
+  use bl_IO_module
   use multifab_module
   use ml_layout_module
   use define_bc_module
@@ -16,7 +17,9 @@ module diag_module
 
 contains
 
-  subroutine diag(time,dt,dx,s,rho0,rhoh0,p0,tempbar,gamma1bar,u,w0,normal, &
+  subroutine diag(time,dt,dx,s,rho_Hnuc,rho_Hext, &
+                  rho0,rhoh0,p0,tempbar,gamma1bar, &
+                  u,w0,normal, &
                   mla,the_bc_tower)
 
     use bl_prof_module
@@ -25,6 +28,8 @@ contains
 
     real(kind=dp_t), intent(in   ) :: dt,dx(:,:),time
     type(multifab) , intent(in   ) :: s(:)
+    type(multifab) , intent(in   ) :: rho_Hnuc(:)
+    type(multifab) , intent(in   ) :: rho_Hext(:)
     type(multifab) , intent(in   ) :: u(:)
     type(multifab) , intent(in   ) :: normal(:)
     real(kind=dp_t), intent(in   ) ::      rho0(:,0:)
@@ -39,10 +44,12 @@ contains
 
     ! Local
     real(kind=dp_t), pointer::  sp(:,:,:,:)
+    real(kind=dp_t), pointer::  rhnp(:,:,:,:)
+    real(kind=dp_t), pointer::  rhep(:,:,:,:)
     real(kind=dp_t), pointer::  up(:,:,:,:)
     real(kind=dp_t), pointer::  np(:,:,:,:)
 
-    integer :: lo(dm),hi(dm),ng_s,ng_u,ng_n
+    integer :: lo(dm),hi(dm),ng_s,ng_u,ng_n,ng_rhn,ng_rhe
     integer :: i,n
 
     type(bl_prof_timer), save :: bpt
@@ -52,11 +59,15 @@ contains
     ng_s = s(1)%ng
     ng_u = u(1)%ng
     ng_n = normal(1)%ng
+    ng_rhn = rho_Hnuc(1)%ng
+    ng_rhe = rho_Hext(1)%ng
 
     do n = 1, nlevs
        do i = 1, s(n)%nboxes
           if ( multifab_remote(s(n), i) ) cycle
           sp => dataptr(s(n) , i)
+          rhnp => dataptr(rho_Hnuc(n), i)
+          rhep => dataptr(rho_Hext(n), i)
           up => dataptr(u(n) , i)
           lo =  lwb(get_box(s(n), i))
           hi =  upb(get_box(s(n), i))
@@ -64,6 +75,8 @@ contains
           case (2)
              call diag_2d(time,dt,dx(n,:), &
                           sp(:,:,1,:),ng_s, &
+                          rhnp(:,:,1,1),ng_rhn, &
+                          rhep(:,:,1,1),ng_rhe, &
                           rho0(n,:),rhoh0(n,:), &
                           p0(n,:),tempbar(n,:),gamma1bar(n,:), &
                           up(:,:,1,:),ng_u, &
@@ -73,6 +86,8 @@ contains
              np => dataptr(normal(n) , i)
              call diag_3d(time,dt,dx(n,:), &
                           sp(:,:,:,:),ng_s, &
+                          rhnp(:,:,:,1),ng_rhn, &
+                          rhep(:,:,:,1),ng_rhe, &
                           rho0(n,:),rhoh0(n,:), &
                           p0(n,:),tempbar(n,:),gamma1bar(n,:), &
                           up(:,:,:,:),ng_u, &
@@ -87,14 +102,22 @@ contains
 
   end subroutine diag
 
-  subroutine diag_2d(time,dt,dx,s,ng_s,rho0,rhoh0,p0,tempbar,gamma1bar, &
-                     u,ng_u,w0,lo,hi)
+  subroutine diag_2d(time,dt,dx, &
+                     s,ng_s, &
+                     rho_Hnuc,ng_rhn, &
+                     rho_Hext,ng_rhe, &
+                     rho0,rhoh0,p0,tempbar,gamma1bar, &
+                     u,ng_u, &
+                     w0, &
+                     lo,hi)
 
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
     use network, only: nspec
 
-    integer, intent(in) :: lo(:), hi(:), ng_s, ng_u
+    integer, intent(in) :: lo(:), hi(:), ng_s, ng_u, ng_rhn, ng_rhe
     real (kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s:,lo(2)-ng_s:,:)
+    real (kind=dp_t), intent(in   ) :: rho_Hnuc(lo(1)-ng_rhn:,lo(2)-ng_rhn:)
+    real (kind=dp_t), intent(in   ) :: rho_Hext(lo(1)-ng_rhe:,lo(2)-ng_rhe:)
     real (kind=dp_t), intent(in   ) :: rho0(0:), rhoh0(0:), &
                                          p0(0:),tempbar(0:),gamma1bar(0:)
     real (kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,:)
@@ -121,14 +144,20 @@ contains
 
   end subroutine diag_2d
 
-  subroutine diag_3d(time,dt,dx,s,ng_s,rho0,rhoh0,p0,tempbar,gamma1bar, &
+  subroutine diag_3d(time,dt,dx, &
+                     s,ng_s, &
+                     rho_Hnuc,ng_rhn, &
+                     rho_Hext,ng_rhe, &
+                     rho0,rhoh0,p0,tempbar,gamma1bar, &
                      u,ng_u,w0,normal,ng_n,lo,hi)
 
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
     use network, only: nspec
 
-    integer, intent(in) :: lo(:), hi(:), ng_s, ng_u, ng_n
+    integer, intent(in) :: lo(:), hi(:), ng_s, ng_u, ng_n, ng_rhn, ng_rhe
     real (kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
+    real (kind=dp_t), intent(in   ) :: rho_Hnuc(lo(1)-ng_rhn:,lo(2)-ng_rhn:,lo(3)-ng_rhn:)
+    real (kind=dp_t), intent(in   ) :: rho_Hext(lo(1)-ng_rhe:,lo(2)-ng_rhe:,lo(3)-ng_rhe:)
     real (kind=dp_t), intent(in   ) :: rho0(0:), rhoh0(0:), &
                                          p0(0:),tempbar(0:),gamma1bar(0:)
     real (kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,lo(3)-ng_u:,:)

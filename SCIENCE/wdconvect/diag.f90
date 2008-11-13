@@ -17,8 +17,10 @@ module diag_module
 
 contains
 
-  subroutine diag(time,dt,dx,s,rho0,rhoh0,p0,tempbar,gamma1bar,u,w0,normal, &
-       mla,the_bc_tower)
+  subroutine diag(time,dt,dx,s,rho_Hnuc,rho_Hext, &
+                  rho0,rhoh0,p0,tempbar,gamma1bar, &
+                  u,w0,normal, &
+                  mla,the_bc_tower)
 
     use bl_prof_module
     use geometry, only: dm, nlevs, spherical
@@ -30,6 +32,8 @@ contains
 
     real(kind=dp_t), intent(in   ) :: dt,dx(:,:),time
     type(multifab) , intent(in   ) :: s(:)
+    type(multifab) , intent(in   ) :: rho_Hnuc(:)
+    type(multifab) , intent(in   ) :: rho_Hext(:)    
     type(multifab) , intent(in   ) :: u(:)
     type(multifab) , intent(in   ) :: normal(:)
     real(kind=dp_t), intent(in   ) ::      rho0(:,0:)
@@ -44,6 +48,8 @@ contains
 
     ! Local
     real(kind=dp_t), pointer::  sp(:,:,:,:)
+    real(kind=dp_t), pointer::  rhnp(:,:,:,:)
+    real(kind=dp_t), pointer::  rhep(:,:,:,:)
     real(kind=dp_t), pointer::  up(:,:,:,:)
     real(kind=dp_t), pointer::  np(:,:,:,:)
     real(kind=dp_t), pointer::  w0rp(:,:,:,:)
@@ -54,10 +60,11 @@ contains
     real(kind=dp_t) :: rhovr(dm), rhovr_local(dm), mass, mass_local
     integer         :: nzones, nzones_local
     real(kind=dp_t) :: T_max, T_max_local
+    real(kind=dp_t) :: enuc_max, enuc_max_local
 
-    integer :: lo(dm),hi(dm),ng_s,ng_u,ng_n,ng_w
+    integer :: lo(dm),hi(dm),ng_s,ng_u,ng_n,ng_w,ng_rhn,ng_rhe
     integer :: i,n
-    integer :: un, un2
+    integer :: un, un2, un3
     logical :: lexist
 
     logical, save :: firstCall = .true.
@@ -93,6 +100,8 @@ contains
     ng_u = u(1)%ng
     ng_n = normal(1)%ng
     ng_w = w0r_cart(1)%ng
+    ng_rhn = rho_Hnuc(1)%ng
+    ng_rhe = rho_Hext(1)%ng
 
     vr(:) = ZERO
     vr_local(:) = ZERO
@@ -112,10 +121,16 @@ contains
     T_max = ZERO
     T_max_local = ZERO
 
+    enuc_max = ZERO
+    enuc_max_local = ZERO
+
+
     do n = 1, nlevs
        do i = 1, s(n)%nboxes
           if ( multifab_remote(s(n), i) ) cycle
           sp => dataptr(s(n) , i)
+          rhnp => dataptr(rho_Hnuc(n), i)
+          rhep => dataptr(rho_Hext(n), i)
           up => dataptr(u(n) , i)
           np => dataptr(normal(n) , i)
           w0rp => dataptr(w0r_cart(n), i)
@@ -129,6 +144,8 @@ contains
           case (3)
              call diag_3d(time,dt,dx(n,:), &
                           sp(:,:,:,:),ng_s, &
+                          rhnp(:,:,:,1), ng_rhn, &
+                          rhep(:,:,:,1), ng_rhe, &
                           up(:,:,:,:),ng_u, &
                           w0rp(:,:,:,1), ng_w, &
                           np(:,:,:,:),ng_n, &
@@ -136,7 +153,7 @@ contains
                           nzones_local, &
                           vr_local(1),vr_local(2),vr_local(3),vr_max_local, &
                           rhovr_local(1), rhovr_local(2), rhovr_local(3), mass_local, &
-                          T_max_local)
+                          T_max_local, enuc_max_local)
           end select
        end do
     end do
@@ -161,6 +178,9 @@ contains
     call parallel_reduce(T_max,T_max_local, MPI_MAX, &
                          proc = parallel_IOProcessorNode())
 
+    call parallel_reduce(enuc_max,enuc_max_local, MPI_MAX, &
+                         proc = parallel_IOProcessorNode())
+
     
     ! normalize
     vr = vr/nzones
@@ -177,6 +197,7 @@ contains
        if (lexist) then
           open(unit=un, file="wdconvect_radvel_diag.out", &
                status="old", position="append")
+          write (un3, *) " "
        else
           open(unit=un, file="wdconvect_radvel_diag.out", status="new")
        endif
@@ -186,8 +207,19 @@ contains
        if (lexist) then
           open(unit=un2, file="wdconvect_temp_diag.out", &
                status="old", position="append")
+          write (un3, *) " "
        else
           open(unit=un2, file="wdconvect_temp_diag.out", status="new")
+       endif
+
+       un3 = unit_new()
+       inquire(file="wdconvect_enuc_diag.out", exist=lexist)
+       if (lexist) then
+          open(unit=un3, file="wdconvect_enuc_diag.out", &
+               status="old", position="append")
+          write (un3, *) " "
+       else
+          open(unit=un3, file="wdconvect_enuc_diag.out", status="new")
        endif
 
        ! write out the headers
@@ -197,6 +229,7 @@ contains
                            "int{rhovr_x}/mass", "int{rhovr_y}/mass", "int{rhovr_z}/mass", &
                            "mass"
           write (un2,1001) "time", "max{T}"
+          write (un3,1001) "time", "max{enuc}"
           firstCall = .false.
        endif
 
@@ -207,8 +240,11 @@ contains
        
        write (un2,1000) time, T_max
 
+       write (un3,1000) time, enuc_max
+
        close(un)
        close(un2)
+       close(un3)
     endif
 
     if (spherical .eq. 1) then
@@ -226,6 +262,8 @@ contains
 
   subroutine diag_3d(time,dt,dx, &
                      s,ng_s, &
+                     rho_Hnuc,ng_rhn, &
+                     rho_Hext,ng_rhe, &
                      u,ng_u, &
                      w0r,ng_w, &
                      normal,ng_n, &
@@ -233,20 +271,23 @@ contains
                      nzones, &
                      vr_x,vr_y,vr_z,vr_max, &
                      rhovr_x,rhovr_y,rhovr_z,mass, &
-                     T_max)
+                     T_max,enuc_max)
 
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
     use network, only: nspec
     use geometry, only: spherical
     use probin_module, only: base_cutoff_density
 
-    integer, intent(in) :: lo(:), hi(:), ng_s, ng_u, ng_n, ng_w
-    real (kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
-    real (kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,lo(3)-ng_u:,:)
-    real (kind=dp_t), intent(in   ) ::    w0r(lo(1)-ng_w:,lo(2)-ng_w:,lo(3)-ng_w:)
-    real (kind=dp_t), intent(in   ) :: normal(lo(1)-ng_n:,lo(2)-ng_n:,lo(3)-ng_n:,:)
+    integer, intent(in) :: lo(:), hi(:), ng_s, ng_u, ng_n, ng_w, ng_rhn, ng_rhe
+    real (kind=dp_t), intent(in   ) ::        s(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
+    real (kind=dp_t), intent(in   ) :: rho_Hnuc(lo(1)-ng_rhn:,lo(2)-ng_rhn:,lo(3)-ng_rhn:)
+    real (kind=dp_t), intent(in   ) :: rho_Hext(lo(1)-ng_rhe:,lo(2)-ng_rhe:,lo(3)-ng_rhe:)
+    real (kind=dp_t), intent(in   ) ::        u(lo(1)-ng_u:,lo(2)-ng_u:,lo(3)-ng_u:,:)
+    real (kind=dp_t), intent(in   ) ::      w0r(lo(1)-ng_w:,lo(2)-ng_w:,lo(3)-ng_w:)
+    real (kind=dp_t), intent(in   ) ::   normal(lo(1)-ng_n:,lo(2)-ng_n:,lo(3)-ng_n:,:)
     real (kind=dp_t), intent(in   ) :: time, dt, dx(:)
-    real (kind=dp_t), intent(inout) :: vr_x, vr_y, vr_z, vr_max, T_max
+    real (kind=dp_t), intent(inout) :: vr_x, vr_y, vr_z, vr_max
+    real (kind=dp_t), intent(inout) :: T_max, enuc_max
     real (kind=dp_t), intent(inout) :: rhovr_x, rhovr_y, rhovr_z, mass
     integer         , intent(inout) :: nzones
 
@@ -283,6 +324,7 @@ contains
                 nzones = nzones + 1
 
                 T_max = max(T_max,s(i,j,k,temp_comp))
+                enuc_max = max(enuc_max,rho_Hnuc(i,j,k)/s(i,j,k,rho_comp))
 
              endif
 
