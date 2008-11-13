@@ -426,8 +426,8 @@ contains
     
     ! This case works
     temp = t0 * (ONE + TWO * ( &
-         .15_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r0))) + &
-         .3_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r1))) + &
+         .150_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r0))) + &
+         .300_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r1))) + &
          .225_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r2)))  ) )
           
     ! Use the EOS to make this temperature perturbation occur at constant 
@@ -453,12 +453,8 @@ contains
     rhoX_pert = dens_pert*xn_eos(1,:)
 
     temp_pert = temp
-    
-!   if ( (r0 .lt. 2.0) .or. (r1 .lt. 2.0) .or. (r2 .lt. 2.0) ) then
-!     trac_pert = ONE
-!   else
-      trac_pert = ZERO
-!   end if
+
+    trac_pert = ZERO
 
   end subroutine perturb_2d
 
@@ -492,15 +488,10 @@ contains
     y2 = 1.8d7
     z2 = 7.5d7
 
-!   temp = t0 * (ONE + TWO * ( &
-!        .0625_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r0))) + &
-!        .1875_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r1))) + &
-!        .1250_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r2)))  ) )
-
-    ! Tanh bubbles from perturb_2d
-    r0 = sqrt( (y-y0)**2 +(z-z0)**2 ) / 2.5e6
-    r1 = sqrt( (y-y1)**2 +(z-z1)**2 ) / 2.5e6
-    r2 = sqrt( (y-y2)**2 +(z-z2)**2 ) / 2.5e6
+    ! Tanh bubbles
+    r0 = sqrt( (x-x0)**2 + (y-y0)**2 + (z-z0)**2 ) / 2.5e6
+    r1 = sqrt( (x-x1)**2 + (y-y1)**2 + (z-z1)**2 ) / 2.5e6
+    r2 = sqrt( (x-x2)**2 + (y-y2)**2 + (z-z2)**2 ) / 2.5e6
     
     ! This case works
     temp = t0 * (ONE + TWO * ( &
@@ -531,12 +522,8 @@ contains
     rhoX_pert = dens_pert*xn_eos(1,:)
 
     temp_pert = temp
-    
-!   if (r1 .lt. 2.0) then
-!     trac_pert = ONE
-!   else
-      trac_pert = ZERO
-!   end if
+
+    trac_pert = ZERO
 
   end subroutine perturb_3d
 
