@@ -317,7 +317,6 @@ we use
 \MarginPar{what about a $\eta_{\rho h}$}
 \end{enumerate}
 
-
 %-----------------------------------------------------------------------------
 % Time Advancement Algorithm
 %-----------------------------------------------------------------------------
@@ -512,7 +511,7 @@ of $\dt.$}
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
 
 \item {\bf Advect Base Density}$[\rhozero^{n},w_0^{\nph,\star}] \rightarrow$ 
-$[\rho_0^{(2),\star}, \rho_0^{\nph,\star,{\rm pred}}]$.
+$[\rho_0^{(2a),\star}, \rho_0^{\nph,\star,{\rm pred}}]$.
 
 \item Update the species.  Here we do a difference approximation
   to 
@@ -535,7 +534,7 @@ $[\rho_0^{(2),\star}, \rho_0^{\nph,\star,{\rm pred}}]$.
   We use 4th-order spatial averaging to get $\rho_0$ on radial faces,
 \begin{equation}
 \rho^{(1),\nph,\star} = 
-\rho^{'(1),\nph,\star} + \frac{\rho_0^n + \rho_0^{(2),\star}}{2} \enskip ,
+\rho^{'(1),\nph,\star} + \frac{\rho_0^n + \rho_0^{(2a),\star}}{2} \enskip ,
 \label{eq:rhoXedgestate}
 \end{equation}
 
@@ -628,14 +627,14 @@ results in a better solution.
    to the edge separately, and then computing 
    ${(\rho h)_0}_{r+\myhalf} = {\rho_0}_{r+\myhalf} {h_0}_{r+\myhalf}$.
 
-  \item Evolve $(\rho h)^{(1)} \rightarrow (\rho h)^{(2a),\star}$ without
+  \item Evolve $(\rho h)^{(1)} \rightarrow (\rho h)^{(1a),\star}$ without
   explicitly including the reaction terms,
 
 \begin{description}
 \item[plane-parallel:]
 
   \begin{eqnarray}
-  (\rho h)^{(2a),\star} &=& (\rho h)^{(1)} - \dt \; \left\{ \nablab
+  (\rho h)^{(1a),\star} &=& (\rho h)^{(1)} - \dt \; \left\{ \nablab
       \cdotb \left[ \left(\uadvone+w_0^{\nph,\star} \er\right) (\rho
       h)^{(1),\nph,\star} \right] \right\} \nonumber \\ && + \dt \;
     \left(\uadvone \cdotb \er\right) \left(\frac{\partial
@@ -646,7 +645,7 @@ results in a better solution.
 \item[spherical:]
 
   \begin{eqnarray}
-  (\rho h)^{(2a),\star} &=& (\rho h)^{(1)} - \dt \; \left\{ \nablab
+  (\rho h)^{(1a),\star} &=& (\rho h)^{(1)} - \dt \; \left\{ \nablab
       \cdotb \left[ \left(\uadvone+w_0^{\nph,\star} \er\right) (\rho
       h)^{(1),\nph,\star} \right] \right\} \nonumber \\ 
     && + \dt \; \left \{ \nabla \cdot \left (\uadvone p_0^{n} \right ) 
@@ -659,7 +658,7 @@ results in a better solution.
 
   \end{enumerate}
 
-\item {\bf Correct Base}$[\rho_0^{(2),\star}, (\nabla\cdot\etarho\er)^{\nph,*}] \rightarrow [\rho_0^{n+1,\star}]$.
+\item {\bf Correct Base}$[\rho_0^{(2a),\star}, (\nabla\cdot\etarho\er)^{\nph,*}] \rightarrow [\rho_0^{n+1,\star}]$.
 
 
 %--------------------------------------------------------------------------
@@ -691,13 +690,13 @@ giving
 
 Compute $\kth^{(1)}, c_p^{(1)}$, and $\xi_k^{(1)}$ from $\rho^{(1)}, T^{(1)}$, and $X_k^{(1)}$ as inputs to the equation of state.  The update is given by
 \begin{eqnarray}
-(\rho h)^{(2),\star} &=& (\rho h)^{(2a),\star} + \frac{\dt}{2}\nabla\cdot\left(\frac{\kth^{(1)}}{c_p^{(1)}}\nabla h^{(2),\star} + \frac{\kth^{(1)}}{c_p^{(1)}}\nabla h^{(1)}\right)\nonumber\\
+(\rho h)^{(2),\star} &=& (\rho h)^{(1a),\star} + \frac{\dt}{2}\nabla\cdot\left(\frac{\kth^{(1)}}{c_p^{(1)}}\nabla h^{(2),\star} + \frac{\kth^{(1)}}{c_p^{(1)}}\nabla h^{(1)}\right)\nonumber\\
 &&- \frac{\dt}{2}\sum_k\nabla\cdot\left(\frac{\xi_k^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla X_k^{(2),\star} + \frac{\xi_k^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla X_k^{(1)}\right)\nonumber\\
 &&- \frac{\dt}{2}\nabla\cdot\left(\frac{h_p^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla p_0^{(2),\star} + \frac{h_p^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla p_0^{(1)}\right),
 \end{eqnarray}
 which is numerically implemented as a diffusion equation for $h^{(2),\star}$,
 \begin{eqnarray}
-\left(\rho^{(2),\star} - \frac{\dt}{2}\nabla\cdot\frac{\kth^{(1)}}{c_p^{(1)}}\nabla\right)h^{(2),\star} &=& (\rho h)^{(2a),\star} + \frac{\dt}{2}\nabla\cdot\frac{\kth^{(1)}}{c_p^{(1)}}\nabla h^{(1)}\nonumber\\
+\left(\rho^{(2),\star} - \frac{\dt}{2}\nabla\cdot\frac{\kth^{(1)}}{c_p^{(1)}}\nabla\right)h^{(2),\star} &=& (\rho h)^{(1a),\star} + \frac{\dt}{2}\nabla\cdot\frac{\kth^{(1)}}{c_p^{(1)}}\nabla h^{(1)}\nonumber\\
 &&- \frac{\dt}{2}\sum_k\nabla\cdot\left(\frac{\xi_k^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla X_k^{(2),\star} + \frac{\xi_k^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla X_k^{(1)}\right)\nonumber\\
 &&- \frac{\dt}{2}\nabla\cdot\left(\frac{h_p^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla p_0^{(2),\star} + \frac{h_p^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla p_0^{(1)}\right),
 \end{eqnarray}
@@ -843,7 +842,7 @@ with the volume discrepancy correction is
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
 
 \item {\bf Advect Base Density}$[\rho_0^{n},w_0^{\nph}] \rightarrow$ 
-$[\rho_0^{(2)}, \rho_0^{\nph,{\rm pred}}]$.
+$[\rho_0^{(2a)}, \rho_0^{\nph,{\rm pred}}]$.
 
 \item Update the species.  Here we do a difference approximation to
   eq.~\ref{eq:species}, neglecting the reaction terms.  The
@@ -861,7 +860,7 @@ $[\rho_0^{(2)}, \rho_0^{\nph,{\rm pred}}]$.
     state density, $\rho_0$, to convert this to an edge state for $\rho$,
 
 \begin{equation}
-\rho^{(1),\nph} = \rho^{'(1),\nph} + \frac{\rho_0^n + \rho_0^{(2)}}{2}\enskip ,
+\rho^{(1),\nph} = \rho^{'(1),\nph} + \frac{\rho_0^n + \rho_0^{(2a)}}{2}\enskip ,
 \end{equation}
 
     \item Evolve $(\rho X_k)^{(1)} \rightarrow (\rho X_k)^{(2)}$
@@ -928,14 +927,14 @@ $\rightarrow [(\rho h)_0^{(2)}]$.
    is computed by averaging $h_0 \equiv (\rho h)_0/\rho_0$ and $\rho_0$
    to the edge separately, and then computing 
    ${(\rho h)_0}_{r+\myhalf} = {\rho_0}_{r+\myhalf} {h_0}_{r+\myhalf}$.
-   \item Evolve $(\rho h)^{(1)} \rightarrow (\rho h)^{(2a)}$ without
+   \item Evolve $(\rho h)^{(1)} \rightarrow (\rho h)^{(1a)}$ without
      explicitly including the reaction terms,
 
 \begin{description}
 \item[plane-parallel:]
 
 \begin{eqnarray}
-(\rho h)^{(2a)} &=& (\rho h)^{(1)} - \dt \; \left\{ \nablab \cdotb \left[ \left(\uadvtwo+w_0^{\nph} \er\right)  
+(\rho h)^{(1a)} &=& (\rho h)^{(1)} - \dt \; \left\{ \nablab \cdotb \left[ \left(\uadvtwo+w_0^{\nph} \er\right)  
 (\rho h)^{(1),\nph} \right] \right\} \nonumber \\
 && + \frac{\dt}{2} \; \left(\uadvtwo \cdotb \er\right)
 \left [ \left(\frac{\partial p_0}{\partial r} \right)^{n}
@@ -946,7 +945,7 @@ $\rightarrow [(\rho h)_0^{(2)}]$.
 \item[spherical:]
 
 \begin{eqnarray}
-(\rho h)^{(2a)} &=& (\rho h)^{(1)} - \dt \; \left\{ \nablab \cdotb \left[ \left(\uadvtwo+w_0^{\nph} \er\right)  
+(\rho h)^{(1a)} &=& (\rho h)^{(1)} - \dt \; \left\{ \nablab \cdotb \left[ \left(\uadvtwo+w_0^{\nph} \er\right)  
 (\rho h)^{(1),\nph} \right] \right\} \nonumber \\
     && + \dt \; \left \{ \nabla \cdot \left (\uadvtwo p_0^{\nph} \right ) 
        - p_0^{\nph} \nabla \cdot \uadvtwo \right \} \nonumber \\
@@ -957,20 +956,20 @@ $\rightarrow [(\rho h)_0^{(2)}]$.
 
 \end{enumerate}
 
-\item {\bf Correct Base}$[\rho_0^{(2)}, (\nabla\cdot\etarho\er)^{\nph}] \rightarrow [\rho_0^{n+1}]$
+\item {\bf Correct Base}$[\rho_0^{(2a)}, (\nabla\cdot\etarho\er)^{\nph}] \rightarrow [\rho_0^{n+1}]$
 
 %--------------------------------------------------------------------------
 % STEP 8.1
 %--------------------------------------------------------------------------
 \item Diffuse the enthalpy through a time interval of $\dt$.  Compute $\kth^{(2),\star}, c_p^{(2),\star}$, and $\xi_k^{(2),\star}$, from $\rho^{(2),\star}, T^{(2),\star}$, and $X_k^{(2),\star}$ as inputs to the equation of state.  The update is given by
 \begin{eqnarray}
-(\rho h)^{(2)} &=& (\rho h)^{(2a)} + \frac{\dt}{2}\nabla\cdot\left(\frac{\kth^{(2),\star}}{c_p^{(2),\star}}\nabla h^{(2)} + \frac{\kth^{(1)}}{c_p^{(1)}}\nabla h^{(1)}\right)\nonumber\\
+(\rho h)^{(2)} &=& (\rho h)^{(1a)} + \frac{\dt}{2}\nabla\cdot\left(\frac{\kth^{(2),\star}}{c_p^{(2),\star}}\nabla h^{(2)} + \frac{\kth^{(1)}}{c_p^{(1)}}\nabla h^{(1)}\right)\nonumber\\
 &&- \frac{\dt}{2}\sum_k\nabla\cdot\left(\frac{\xi_k^{(2),\star}\kth^{(2),\star}}{c_p^{(2),\star}}\nabla X_k^{(2)} + \frac{\xi_k^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla X_k^{(1)}\right)\nonumber\\
 &&- \frac{\dt}{2}\nabla\cdot\left(\frac{h_p^{(2),\star}\kth^{(2),\star}}{c_p^{(2),\star}}\nabla p_0^{(2)} + \frac{h_p^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla p_0^{(1)}\right),
 \end{eqnarray}
 which is numerically implemented as a diffusion equation for $h^{(2)}$,
 \begin{eqnarray}
-\left(\rho^{(2)} - \frac{\dt}{2}\nabla\cdot\frac{\kth^{(2),\star}}{c_p^{(2),\star}}\nabla\right)h^{(2)} &=& (\rho h)^{(2a)} + \frac{\dt}{2}\nabla\cdot\frac{\kth^{(1)}}{c_p^{(1)}}\nabla h^{(1)}\nonumber\\
+\left(\rho^{(2)} - \frac{\dt}{2}\nabla\cdot\frac{\kth^{(2),\star}}{c_p^{(2),\star}}\nabla\right)h^{(2)} &=& (\rho h)^{(1a)} + \frac{\dt}{2}\nabla\cdot\frac{\kth^{(1)}}{c_p^{(1)}}\nabla h^{(1)}\nonumber\\
 &&- \frac{\dt}{2}\sum_k\nabla\cdot\left(\frac{\xi_k^{(2),\star}\kth^{(2),\star}}{c_p^{(2),\star}}\nabla X_k^{(2)} + \frac{\xi_k^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla X_k^{(1)}\right)\nonumber\\
 &&- \frac{\dt}{2}\nabla\cdot\left(\frac{h_p^{(2),\star}\kth^{(2),\star}}{c_p^{(2),\star}}\nabla p_0^{(2)} + \frac{h_p^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla p_0^{(1)}\right),
 \end{eqnarray}
