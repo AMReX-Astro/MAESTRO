@@ -481,15 +481,15 @@ contains
     t0 = s0_init(temp_comp)
 
     x0 = 5.0d7
-    y0 = 5.0d7
+    y0 = 1.8d7
     z0 = 6.5d7
     
     x1 = 1.2d8
-    y1 = 1.2d8
+    y1 = 1.8d7
     z1 = 8.5d7
     
     x2 = 2.0d8
-    y2 = 2.0d8
+    y2 = 1.8d7
     z2 = 7.5d7
 
 !   temp = t0 * (ONE + TWO * ( &
