@@ -197,7 +197,7 @@ contains
        if (lexist) then
           open(unit=un, file="wdconvect_radvel_diag.out", &
                status="old", position="append")
-          write (un3, *) " "
+          write (un, *) " "
        else
           open(unit=un, file="wdconvect_radvel_diag.out", status="new")
        endif
@@ -207,7 +207,7 @@ contains
        if (lexist) then
           open(unit=un2, file="wdconvect_temp_diag.out", &
                status="old", position="append")
-          write (un3, *) " "
+          write (un2, *) " "
        else
           open(unit=un2, file="wdconvect_temp_diag.out", status="new")
        endif
