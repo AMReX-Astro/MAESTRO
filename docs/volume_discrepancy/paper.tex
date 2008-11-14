@@ -1,34 +1,17 @@
-\documentclass[11pt]{book} 
+\documentclass[11pt]{article} 
 
 \tolerance=600
 
-\usepackage{amsmath,color,longtable,epsfig,epsf}
+\usepackage{amsmath,color,longtable}
 
 % Margins
-\usepackage{fullpage}
+\usepackage[lmargin=0.5in,rmargin=1.5in,tmargin=1.0in,bmargin=1.0in]{geometry}
 
 \newcommand{\rhozero}{\rho_0}
 \newcommand{\pizero}{\pi_0}
 \newcommand{\pizeroone}{\pi_0^{(1)}}
 \newcommand{\pizerotwo}{\pi_0^{(2)}}
 \newcommand{\gammabar}{\overline{\Gamma}_1}
-
-\newcommand{\figpath}{./initial_models}
-
-\def\eb    {{\bf e}}
-\def\fb    {{\bf f}}
-\def\ib    {{\bf i}}
-\def\Ub    {{\bf U}}
-\def\Vb    {{\bf V}}
-\def\ut    {\tilde{u}}
-\def\vt    {\tilde{v}}
-\def\wt    {\tilde{w}}
-
-\newcommand{\Ubt}{\widetilde{\Ub}}
-
-\def\edge  {\rm EDGE}
-\def\mac   {\rm MAC}
-\def\trans {\rm TRANS}
 
 \newcommand{\nablab}{\mathbf{\nabla}}
 \newcommand{\cdotb}{\mathbf{\cdot}}
@@ -50,9 +33,6 @@
 \newcommand{\Hext}{{H_{\rm ext}}}
 \newcommand{\Hnuc}{{H_{\rm nuc}}}
 \newcommand{\kth}{k_{\rm th}}
-\def\init  {\rm init}
-\def\model {\rm model}
-\def\raw   {\rm raw}
 
 \newcommand{\Sbar}{\overline{S}}
 
@@ -67,47 +47,30 @@
 \newcommand{\dr}{\Delta r}
 
 \newcommand{\etarho}{\eta_{\rho}}
-\def\etarhoec   {\etarho^{\rm ec}}
-\def\etarhocc   {\etarho^{\rm cc}}
-\def\etarhoflux {\etarho^{\rm flux}}
-\def\divetarho  {\nabla\cdot(\etarho\eb_r)}
+
+\def\Ub    {{\bf U}}
+\def\Vb    {{\bf V}}
+
+\newcommand{\Ubt}{\widetilde{\Ub}}
 
 \newcommand{\omegadot}{\dot{\omega}}
 \newcommand{\er}{\mathbf{e}_r}
 
-\setlength{\marginparwidth}{0.8in}
+\setlength{\marginparwidth}{1.0in}
 \newcommand{\MarginPar}[1]{\marginpar{%
 \vskip-\baselineskip %raise the marginpar a bit
 \raggedright\tiny\sffamily
 \hrule\smallskip{\color{red}#1}\par\smallskip\hrule}}
 
-\title{Notes on {\tt MAESTRO}}
+\title{Notes on the Volume Discrepancy Term}
 
 \begin{document}
 
 \maketitle
-\tableofcontents
+
 \cleardoublepage
 
-\chapter{Algorithm Flowchart}
-\input flowchart/flowchart
 
-\chapter{Notes on the Volume Discrepancy Term}
-\input volume_discrepancy/volume_discrepancy
-
-\chapter{Notes on $\etarho$}
-\input eta_notes/eta
-
-\chapter{Notes on Perturbational Quantities}
-\input pert_notes/pert
-
-\chapter{Notes on Advection}
-\input Godunov_notes/Godunov
-
-\chapter{Initial Models}
-\input initial_models/initial_models
-
-\chapter{Notes on the Low Density Parameters in {\tt MAESTRO}}
-\input lo_density/lo_density
+\input volume_discrepancy
 
 \end{document}
