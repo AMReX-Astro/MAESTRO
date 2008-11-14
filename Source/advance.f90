@@ -557,6 +557,12 @@ contains
        endif
     end if
 
+    if (do_half_alg) then
+       do n=1,nlevs
+          call destroy(etarhoflux(n))
+       end do
+    end if
+
     if (evolve_base_state) then
        call advect_base_pres(w0,Sbar,rho0_new,p0_old,p0_new,gamma1bar,div_coeff_new, &
                              psi,etarho_cc,dx(:,dm),dt)
