@@ -1158,7 +1158,6 @@ contains
                 mla,the_bc_tower%bc_tower_array)
 
     do n=1,nlevs
-       call destroy(rho_Hext(n))
        call destroy(thermal(n))
        call destroy(delta_gamma1(n))
     end do
@@ -1343,6 +1342,11 @@ contains
                    rho0_new,rhoh0_new,p0_new,tempbar,gamma1bar, &
                    unew,w0,normal, &
                    mla,the_bc_tower)
+
+
+    do n=1,nlevs
+       call destroy(rho_Hext(n))
+    enddo
 
     call destroy(bpt)
     
