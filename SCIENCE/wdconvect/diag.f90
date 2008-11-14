@@ -197,7 +197,6 @@ contains
        if (lexist) then
           open(unit=un, file="wdconvect_radvel_diag.out", &
                status="old", position="append")
-          write (un, *) " "
        else
           open(unit=un, file="wdconvect_radvel_diag.out", status="new")
        endif
@@ -207,7 +206,6 @@ contains
        if (lexist) then
           open(unit=un2, file="wdconvect_temp_diag.out", &
                status="old", position="append")
-          write (un2, *) " "
        else
           open(unit=un2, file="wdconvect_temp_diag.out", status="new")
        endif
@@ -217,18 +215,22 @@ contains
        if (lexist) then
           open(unit=un3, file="wdconvect_enuc_diag.out", &
                status="old", position="append")
-          write (un3, *) " "
        else
           open(unit=un3, file="wdconvect_enuc_diag.out", status="new")
        endif
 
        ! write out the headers
        if (firstCall) then
+          write (un, *) " "
           write (un, 1001) "time", "<vr_x>", "<vr_y>", "<vr_z>", "<vr>", &
                            "max{|vr|}", &
                            "int{rhovr_x}/mass", "int{rhovr_y}/mass", "int{rhovr_z}/mass", &
                            "mass"
+
+          write (un2, *) " "
           write (un2,1001) "time", "max{T}"
+
+          write (un3, *) " "
           write (un3,1001) "time", "max{enuc}"
           firstCall = .false.
        endif
