@@ -70,6 +70,9 @@ set angle degrees;
 set xlabel "time (s)";
 set ylabel "angle" 0,0
 
+set yrange [-180:180]
+set ytics 30
+
 set title "dipole angles from average velocity"
 
 # an alternate way to do phi, so it ranges from 0 to 360
@@ -92,11 +95,13 @@ set angle degrees;
 set xlabel "time (s)";
 set ylabel "angle" 0,0
 
+set yrange [-180:180]
+set ytics 30
+
 set title "dipole angles from density-weighted average velocity"
 
 plot "wdconvect_radvel_diag.out" using 1:(atan2($8,$7)) title "phi" with lines, \
      "wdconvect_radvel_diag.out" using 1:(atan2(sqrt($7**2 + $8**2),$9)) title "theta" with lines
-
 
 
 
@@ -107,6 +112,8 @@ set nomultiplot;
 # make a plot of the maximum radial velocity 
 #==============================================================================
 
+set ytics autofreq;
+
 set format y "%3.2l x 10^{%L}"
 
 set size 1, 0.5;
@@ -115,6 +122,8 @@ set origin 0.0, 0.333;
 
 set xlabel "time (s)";
 set ylabel "velocity (cm/s)" 2,0
+
+set yrange [*:*]
 
 set title "peak radial velocity"
 
