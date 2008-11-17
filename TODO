@@ -19,6 +19,3 @@
 
 -- the small scale problem should read in its initial model in our
    standard format
-
--- restore the call to addw0 after mkutrans, and then clean up velpred
-   knowing that full utrans comes in - it will eliminate a lot of code
