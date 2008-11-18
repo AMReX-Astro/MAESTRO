@@ -210,7 +210,7 @@ contains
           case (2)
              call correct_umac_grown_2d(fp(:,:,1,1),ng_f,f_lo,f_hi,i)
           case (3)
-             call correct_umac_grown_3d(fp(:,:,:,1),ng_f,f_lo,f_hi,i)
+!             call correct_umac_grown_3d(fp(:,:,:,1),ng_f,f_lo,f_hi,i)
           end select
        end do
 
