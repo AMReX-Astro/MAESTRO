@@ -7,8 +7,8 @@
 
  use_eos_coulomb = T
 
- prob_lo_x = 600.0d0
- prob_lo_y = 600.0d0
+ prob_lo_x = 2520.0d0
+ prob_lo_y = 2520.0d0
  prob_lo_z = 600.0d0
 
  prob_hi_x = 3160.0d0
