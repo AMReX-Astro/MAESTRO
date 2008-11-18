@@ -42,7 +42,7 @@ contains
     real(kind=dp_t), pointer:: fp(:,:,:,:)
     real(kind=dp_t), pointer:: rp(:,:,:,:)
     real(kind=dp_t), pointer:: np(:,:,:,:)
-    integer                 :: i,lo(dm),hi(dm),ng_s,ng_f,ng_n,ng_gp,n, ng_uo
+    integer                 :: i,lo(dm),hi(dm),ng_s,ng_f,ng_n,ng_gp,n,ng_uo
 
     type(bl_prof_timer), save :: bpt
 
@@ -65,17 +65,18 @@ contains
              call mk_vel_force_2d(fp(:,:,1,:),ng_f,gpp(:,:,1,:),ng_gp,rp(:,:,1,rho_comp),ng_s, &
                                   rho0(n,:),grav(n,:),lo,hi)
           case (3)
+             ng_uo = uold(1)%ng
+             uop => dataptr(uold(n),i)
+
              if (spherical .eq. 1) then
                 ng_n = normal(1)%ng
                 np => dataptr(normal(n), i)
-                call mk_vel_force_3d_sphr(n,fp(:,:,:,:),ng_f,gpp(:,:,:,:),ng_gp, &
-                                          rp(:,:,:,rho_comp),ng_s,np(:,:,:,:),ng_n, &
-                                          rho0(n,:),grav(n,:),lo,hi,dx(n,:))
+                call mk_vel_force_3d_sphr(n,fp(:,:,:,:),ng_f,uop(:,:,:,:),ng_uo, &
+                                          gpp(:,:,:,:),ng_gp,rp(:,:,:,rho_comp),ng_s, &
+                                          np(:,:,:,:),ng_n,rho0(n,:),grav(n,:),lo,hi,dx(n,:))
              else
-                ng_uo = uold(1)%ng
-                uop => dataptr(uold(n),i)
-                call mk_vel_force_3d_cart(fp(:,:,:,:),ng_f,uop(:,:,:,:),ng_uo,gpp(:,:,:,:),ng_gp, &
-                                          rp(:,:,:,rho_comp),ng_s, &
+                call mk_vel_force_3d_cart(fp(:,:,:,:),ng_f,uop(:,:,:,:),ng_uo, &
+                                          gpp(:,:,:,:),ng_gp,rp(:,:,:,rho_comp),ng_s, &
                                           rho0(n,:),grav(n,:),lo,hi)
              end if
           end select
@@ -190,15 +191,17 @@ contains
 
   end subroutine mk_vel_force_3d_cart
 
-  subroutine mk_vel_force_3d_sphr(n,vel_force,ng_f,gpres,ng_gp,rho,ng_s,normal,ng_n, &
+  subroutine mk_vel_force_3d_sphr(n,vel_force,ng_f,uold,ng_uo,gpres,ng_gp,rho,ng_s,normal,ng_n, &
                                   rho0,grav,lo,hi,dx)
 
     use variables, only: rho_comp
     use fill_3d_module
     use bl_constants_module
+    use geometry,  only: omega, center
 
-    integer        , intent(in   ) :: n,lo(:),hi(:),ng_f,ng_gp,ng_s,ng_n
+    integer        , intent(in   ) :: n,lo(:),hi(:),ng_f,ng_gp,ng_s,ng_n,ng_uo
     real(kind=dp_t), intent(inout) :: vel_force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :,:)
+    real(kind=dp_t), intent(in   ) ::      uold(lo(1)-ng_uo:,lo(2)-ng_uo:,lo(3)-ng_uo:,:)
     real(kind=dp_t), intent(in   ) ::     gpres(lo(1)-ng_gp:,lo(2)-ng_gp:,lo(3)-ng_gp:,:)
     real(kind=dp_t), intent(in   ) ::       rho(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :)
     real(kind=dp_t), intent(in   ) ::    normal(lo(1)-ng_n :,lo(2)-ng_n :,lo(3)-ng_n :,:)
@@ -210,6 +213,8 @@ contains
     real(kind=dp_t) :: rho0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1)
     real(kind=dp_t) :: grav_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),3)
     real(kind=dp_t) :: rhopert
+    real(kind=dp_t) :: xx, yy, zz, distance, cos_theta
+    real(kind=dp_t) :: centrifugal_term(3), coriolis_term(3)
 
     vel_force = ZERO
 
@@ -217,16 +222,30 @@ contains
     call put_1d_array_on_cart_3d_sphr(n,.false.,.true.,grav,grav_cart,lo,hi,dx,0,ng_n,normal)
 
     do k = lo(3),hi(3)
+       zz = (dble(k) + HALF)*dx(3) - center(3)
        do j = lo(2),hi(2)
+          yy = (dble(j) + HALF)*dx(2) - center(2)
           do i = lo(1),hi(1)
+             xx = (dble(i) + HALF)*dx(1) - center(1)
 
              rhopert = rho(i,j,k) - rho0_cart(i,j,k,1)
 
-             vel_force(i,j,k,1) = &
+             distance = sqrt(xx**2 + yy**2 + zz**2)
+             cos_theta = normal(i,j,k,3)
+
+             centrifugal_term(1) = -omega * omega * distance * normal(i,j,k,1)
+             centrifugal_term(2) = -omega * omega * distance * normal(i,j,k,2)
+             centrifugal_term(3) = ZERO
+
+             coriolis_term(1) = -TWO * omega * uold(i,j,k,2)
+             coriolis_term(2) =  TWO * omega * uold(i,j,k,1)
+             coriolis_term(3) = ZERO
+
+             vel_force(i,j,k,1) = -coriolis_term(1) - centrifugal_term(1) + &
                   ( rhopert * grav_cart(i,j,k,1) - gpres(i,j,k,1) ) / rho(i,j,k)
-             vel_force(i,j,k,2) = &
+             vel_force(i,j,k,2) = -coriolis_term(2) - centrifugal_term(2) + &
                   ( rhopert * grav_cart(i,j,k,2) - gpres(i,j,k,2) ) / rho(i,j,k)
-             vel_force(i,j,k,3) = &
+             vel_force(i,j,k,3) = -coriolis_term(3) - centrifugal_term(3) + &
                   ( rhopert * grav_cart(i,j,k,3) - gpres(i,j,k,3) ) / rho(i,j,k)
 
           end do
