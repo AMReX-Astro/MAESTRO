@@ -8,6 +8,52 @@ module create_umac_grown_module
 
 contains
 
+  ! The goal of create_umac_grown is to take input face-centered normal velocities
+  ! and fill the fine ghost cells which are not filled with multifab_fill_boundary.
+
+  ! Here is a 2D illustration.
+  ! x and y are input face-centered normal velocities at the fine level.
+  ! X and Y are input face-centered normal velocities at the coarse level.
+  ! We need to compute x-velocities at points "a" and y-velocities at points "b"
+
+  !      |--y--|--y--|--y--|--y--|--y--|--y--|--y--|--y--|--b--Y-----|
+  !      |     |     |     |     |     |     |     |     |           |
+  !      |     |     |     |     |     |     |     |     |           |
+  !      x     x     x     x     x     x     x     x     x     a     |
+  !      |     |     |     |     |     |     |     |     |           |
+  !      |     |     |     |     |     |     |     |     |           |
+  !      |--y--|--y--|--y--|--y--|--y--|--y--|--y--|--y--X  b        X
+  !      |     |     |     |     |     |     |     |     |           |
+  !      |     |     |     |     |     |     |     |     |           |
+  !      x     x     x     x     x     x     x     x     x     a     |
+  !      |     |     |     |     |     |     |     |     |           |
+  !      |     |     |     |     |     |     |     |     |           |
+  !      |--y--|--y--|--y--|--y--|--y--|--y--|--y--|--y--|--b--Y-----|
+  !      |     |     |     |     |     |     |     |     |           |
+  !      |     |     |     |     |     |     |     |     |           |
+  !      x     x     x     x     x     x     x     x     x     a     |
+  !      |     |     |     |     |     |     |     |     |           |
+  !      |     |     |     |     |     |     |     |     |           |
+  !      |--y--|--y--|--y--|--y--|--y--|--y--|--y--|--y--X  b        X
+  !      |     |     |     |     |     |     |     |     |           |
+  !      |     |     |     |     |     |     |     |     |           |
+  !      x     x     x     x     x     x     x     x     x     a     |
+  !      |     |     |     |     |     |     |     |     |           |
+  !      |     |     |     |     |     |     |     |     |           |
+  !      |--y--Y--y--|--y--Y--y--|--y--Y--y--|--y--Y--y--|--b--Y-----|
+  !      |           |           |           |           |           |
+  !      |           |           |           |           |           |
+  !      a     a     a     a     a     a     a     a     a     a     |
+  !      |           |           |           |           |           |
+  !      |           |           |           |           |           |
+  !      X  b     b  X  b     b  X  b     b  X  b     b  X  b        X
+  !      |           |           |           |           |           |
+  !      |           |           |           |           |           |
+  !      |           |           |           |           |           |
+  !      |           |           |           |           |           |
+  !      |           |           |           |           |           |
+  !      |-----Y-----|-----Y-----|-----Y-----|-----Y-----|-----Y-----|
+
   subroutine create_umac_grown(finelev,fine,crse)
 
     use geometry, only: dm
