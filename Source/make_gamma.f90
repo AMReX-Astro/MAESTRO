@@ -16,7 +16,7 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine make_gamma(mla,gamma,s,p0,tempbar,dx,the_bc_level)
+  subroutine make_gamma(mla,gamma,s,p0,tempbar,dx)
 
     use variables, only: foextrap_comp
     use bl_prof_module
@@ -32,7 +32,6 @@ contains
     real(kind=dp_t), intent(in   ) :: p0(:,0:)
     real(kind=dp_t), intent(in   ) :: tempbar(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
-    type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     real(kind=dp_t), pointer:: gamp(:,:,:,:),sp(:,:,:,:)
     integer :: lo(dm),hi(dm)

@@ -259,16 +259,15 @@ contains
     do n = 1,nlevs
 
        ! MAGVEL & MOMENTUM
-       call make_magvel (plotdata(n),icomp_magvel,icomp_mom,u(n),s(n))
+       call make_magvel(plotdata(n),icomp_magvel,icomp_mom,u(n),s(n))
 
        ! RADIAL VELOCITY (spherical only)
        if (spherical .eq. 1) then
-          call make_velr(n,plotdata(n),icomp_velr,u(n),w0(n,:),w0r_cart(n),normal(n),dx(n,:))
+          call make_velr(plotdata(n),icomp_velr,u(n),w0r_cart(n),normal(n))
        endif
 
        ! VEL_PLUS_W0
-       call make_velplusw0(n,plotdata(n),icomp_velplusw0,u(n),w0(n,:),w0mac(n,:), &
-                           normal(n),dx(n,:))
+       call make_velplusw0(plotdata(n),icomp_velplusw0,u(n),w0(n,:),w0mac(n,:))
 
        ! VORTICITY
        call make_vorticity(plotdata(n),icomp_vort,u(n),dx(n,:), &

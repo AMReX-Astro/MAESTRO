@@ -14,12 +14,9 @@ module rhoh_vs_t_module
   
 contains
   
-  subroutine makeHfromRhoT_edge(u,sedge, &
-                                rho0_old,rhoh0_old,t0_old, &
-                                rho0_edge_old,rhoh0_edge_old,t0_edge_old, &
-                                rho0_new,rhoh0_new,t0_new, &
-                                rho0_edge_new,rhoh0_edge_new,t0_edge_new, &
-                                the_bc_level,dx)
+  subroutine makeHfromRhoT_edge(u,sedge,rho0_old,rhoh0_old,t0_old, &
+                                rho0_edge_old,rhoh0_edge_old,rho0_new,rhoh0_new,t0_new, &
+                                rho0_edge_new,rhoh0_edge_new,the_bc_level,dx)
 
     use bl_prof_module
     use bl_constants_module
@@ -36,13 +33,11 @@ contains
     real(kind=dp_t), intent(in   ) :: t0_old(:,0:)
     real(kind=dp_t), intent(in   ) :: rho0_edge_old(:,0:)
     real(kind=dp_t), intent(in   ) :: rhoh0_edge_old(:,0:)
-    real(kind=dp_t), intent(in   ) :: t0_edge_old(:,0:)
     real(kind=dp_t), intent(in   ) :: rho0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: rhoh0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: t0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: rho0_edge_new(:,0:)
     real(kind=dp_t), intent(in   ) :: rhoh0_edge_new(:,0:)
-    real(kind=dp_t), intent(in   ) :: t0_edge_new(:,0:)
     type(bc_level) , intent(in   ) :: the_bc_level(:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     
@@ -539,7 +534,7 @@ contains
     
   end subroutine makeHfromRhoT_edge_3d_sphr
   
-  subroutine makeTfromRhoH(s,p0,tempbar,mla,the_bc_level,dx)
+  subroutine makeTfromRhoH(s,tempbar,mla,the_bc_level,dx)
 
     use variables,             only: temp_comp
     use bl_prof_module
@@ -549,7 +544,6 @@ contains
     use geometry, only: dm, nlevs
 
     type(multifab)    , intent(inout) :: s(:)
-    real (kind = dp_t), intent(in   ) :: p0(:,0:)
     real (kind = dp_t), intent(in   ) :: tempbar(:,0:)
     type(ml_layout)   , intent(inout) :: mla
     type(bc_level)    , intent(in   ) :: the_bc_level(:)
@@ -575,9 +569,9 @@ contains
           hi = upb(get_box(s(n),i))
           select case (dm)
           case (2)
-             call makeTfromRhoH_2d(snp(:,:,1,:), lo, hi, ng, p0(n,:), tempbar(n,:))
+             call makeTfromRhoH_2d(snp(:,:,1,:), lo, hi, ng, tempbar(n,:))
           case (3)
-             call makeTfromRhoH_3d(snp(:,:,:,:), lo, hi, ng, p0(n,:), tempbar(n,:), dx(n,:),n)
+             call makeTfromRhoH_3d(snp(:,:,:,:), lo, hi, ng, tempbar(n,:), dx(n,:),n)
           end select
        end do
 
@@ -614,14 +608,13 @@ contains
 
   end subroutine makeTfromRhoH
 
-  subroutine makeTfromRhoH_2d(state,lo,hi,ng,p0,tempbar)
+  subroutine makeTfromRhoH_2d(state,lo,hi,ng,tempbar)
 
     use variables, only: rho_comp, spec_comp, rhoh_comp, temp_comp
     use eos_module
 
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(inout) ::  state(lo(1)-ng:,lo(2)-ng:,:)
-    real (kind = dp_t), intent(in   ) ::  p0(0:)
     real (kind = dp_t), intent(in   ) ::  tempbar(0:)
     
     ! Local variables
@@ -658,7 +651,7 @@ contains
     
   end subroutine makeTfromRhoH_2d
 
-  subroutine makeTfromRhoH_3d(state,lo,hi,ng,p0,tempbar,dx,n)
+  subroutine makeTfromRhoH_3d(state,lo,hi,ng,tempbar,dx,n)
 
     use variables,      only: rho_comp, spec_comp, rhoh_comp, temp_comp
     use eos_module
@@ -667,7 +660,6 @@ contains
 
     integer, intent(in) :: lo(:), hi(:), ng, n
     real (kind = dp_t), intent(inout) ::  state(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-    real (kind = dp_t), intent(in   ) ::  p0(0:)
     real (kind = dp_t), intent(in   ) ::  tempbar(0:)
     real(kind=dp_t)   , intent(in   ) :: dx(:)
 

@@ -477,18 +477,6 @@ contains
     integer        , intent(in   ) :: phys_bc(:,:)
     integer        , intent(in   ) :: adv_bc(:,:,:)
 
-    ! local variables only needed to non-corner coupling code
-    real(kind=dp_t) :: s_l(lo(1)-1:hi(1)+2)
-    real(kind=dp_t) :: s_r(lo(1)-1:hi(1)+2)
-    real(kind=dp_t) :: s_b(lo(2)-1:hi(2)+2)
-    real(kind=dp_t) :: s_t(lo(2)-1:hi(2)+2)
-    real(kind=dp_t) :: s_u(lo(3)-1:hi(3)+2)
-    real(kind=dp_t) :: s_d(lo(3)-1:hi(3)+2)
-    real(kind=dp_t) :: ubardt2, vbardt2, wbardt2
-    real(kind=dp_t) :: splus, sminus
-    real(kind=dp_t) :: savg,st
-    real(kind=dp_t) :: sptop,spbot,smtop,smbot,splft,sprgt,smlft,smrgt
-
     ! local variables
     real(kind=dp_t) :: slopex(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3)
     real(kind=dp_t) :: slopey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3)

@@ -217,11 +217,6 @@ contains
     ! Local variables
     real(kind=dp_t) :: slopex(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1)
     real(kind=dp_t) :: slopey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1)
-    real(kind=dp_t) :: s_l(lo(1)-1:hi(1)+2)
-    real(kind=dp_t) :: s_r(lo(1)-1:hi(1)+2)
-    real(kind=dp_t) :: s_b(lo(2)-1:hi(2)+2)
-    real(kind=dp_t) :: s_t(lo(2)-1:hi(2)+2)
-
     real(kind=dp_t) :: hx,hy,dt2,dt4,savg
 
     integer :: i,j,is,js,ie,je
@@ -585,16 +580,9 @@ contains
     real(kind=dp_t) :: slopex(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1)
     real(kind=dp_t) :: slopey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1)
     real(kind=dp_t) :: slopez(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1)
-    real(kind=dp_t) :: s_l(lo(1)-1:hi(1)+2)
-    real(kind=dp_t) :: s_r(lo(1)-1:hi(1)+2)
-    real(kind=dp_t) :: s_b(lo(2)-1:hi(2)+2)
-    real(kind=dp_t) :: s_t(lo(2)-1:hi(2)+2)
-    real(kind=dp_t) :: s_u(lo(3)-1:hi(3)+2)
-    real(kind=dp_t) :: s_d(lo(3)-1:hi(3)+2)
 
-    real(kind=dp_t) :: hx,hy,hz,dt2,dt3,dt4,dt6,splus,sminus
-    real(kind=dp_t) :: savg,st
-    real(kind=dp_t) :: sptop,spbot,smtop,smbot,splft,sprgt,smlft,smrgt
+    real(kind=dp_t) :: hx,hy,hz,dt2,dt3,dt4,dt6
+    real(kind=dp_t) :: savg
     real(kind=dp_t) :: Ut_dot_er
 
     integer :: i,j,k,is,js,ks,ie,je,ke

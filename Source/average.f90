@@ -236,11 +236,11 @@ contains
              hi =  upb(get_box(phi(n), i))
              ncell_grid(n,:) = ZERO
              if (n .eq. nlevs) then
-                call average_3d_sphr(n,nlevs,pp(:,:,:,:),phisum_proc(n,:), &
+                call average_3d_sphr(n,pp(:,:,:,:),phisum_proc(n,:), &
                                      lo,hi,ng,dx(n,:),ncell_grid(n,:),incomp,mla)
              else
                 mp => dataptr(mla%mask(n), i)
-                call average_3d_sphr(n,nlevs,pp(:,:,:,:),phisum_proc(n,:), &
+                call average_3d_sphr(n,pp(:,:,:,:),phisum_proc(n,:), &
                                      lo,hi,ng,dx(n,:),ncell_grid(n,:),incomp,mla, &
                                      mp(:,:,:,1))
              end if
@@ -565,13 +565,13 @@ contains
     
   end subroutine compute_phipert_3d
 
-  subroutine average_3d_sphr(n,nlevs,phi,phisum,lo,hi,ng,dx,ncell,incomp,mla,mask)
+  subroutine average_3d_sphr(n,phi,phisum,lo,hi,ng,dx,ncell,incomp,mla,mask)
 
     use geometry, only: spherical, dr, center
     use ml_layout_module
     use bl_constants_module
 
-    integer         , intent(in   ) :: n, nlevs
+    integer         , intent(in   ) :: n
     integer         , intent(in   ) :: lo(:), hi(:), ng, incomp
     real (kind=dp_t), intent(in   ) :: phi(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind=dp_t), intent(inout) :: phisum(0:)
@@ -580,7 +580,7 @@ contains
     type(ml_layout) , intent(in   ) :: mla
     logical         , intent(in   ), optional :: mask(lo(1):,lo(2):,lo(3):)
     real (kind=dp_t) :: x, y, z, radius
-    integer          :: i, j, k, l, idx, cnt
+    integer          :: i, j, k, idx
     real (kind=dp_t) :: cell_weight
     logical          :: cell_valid
 

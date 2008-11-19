@@ -322,7 +322,7 @@ subroutine varden()
      ! tempbar is only used as an initial guess for eos calls
      call average(mla,sold,tempbar,dx,temp_comp)
 
-     call make_gamma(mla,gamma1,sold,p0_old,tempbar,dx,the_bc_tower%bc_tower_array)
+     call make_gamma(mla,gamma1,sold,p0_old,tempbar,dx)
      call average(mla,gamma1,gamma1bar,dx,1)
      
      do n=1,nlevs
@@ -749,7 +749,7 @@ subroutine varden()
               call multifab_build(gamma1(n), mla%la(n), 1, 0)
            end do
            
-           call make_gamma(mla,gamma1,sold,p0_old,tempbar,dx,the_bc_tower%bc_tower_array)
+           call make_gamma(mla,gamma1,sold,p0_old,tempbar,dx)
            call average(mla,gamma1,gamma1bar,dx,1)
            
            do n=1,nlevs

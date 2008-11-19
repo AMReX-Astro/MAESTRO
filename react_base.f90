@@ -24,7 +24,7 @@ contains
     real(kind=dp_t), intent(in   ) :: halfdt_in
     real(kind=dp_t), intent(  out) :: rhoh0_out(:,0:)
     
-    integer :: n,r,comp,i
+    integer :: n,r,i
 
     type(bl_prof_timer), save :: bpt
 

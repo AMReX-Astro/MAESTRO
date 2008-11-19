@@ -107,9 +107,9 @@ contains
                 hi =  upb(get_box(mla%la(n), i))
                 select case (dm)
                 case (2)
-                   call sum_etarho_2d(n,lo,hi,domhi,efp(:,:,1,1),ng_e,etarhosum_proc(n,:))
+                   call sum_etarho_2d(n,lo,hi,efp(:,:,1,1),ng_e,etarhosum_proc(n,:))
                 case (3)
-                   call sum_etarho_3d(n,lo,hi,domhi,efp(:,:,:,1),ng_e,etarhosum_proc(n,:))
+                   call sum_etarho_3d(n,lo,hi,efp(:,:,:,1),ng_e,etarhosum_proc(n,:))
                 end select
              end do
              
@@ -147,9 +147,9 @@ contains
              hi =  upb(get_box(mla%la(1), i))
              select case (dm)
              case (2)
-                call sum_etarho_2d(1,lo,hi,domhi,efp(:,:,1,1),ng_e,etarhosum_proc(1,:))
+                call sum_etarho_2d(1,lo,hi,efp(:,:,1,1),ng_e,etarhosum_proc(1,:))
              case (3)
-                call sum_etarho_3d(1,lo,hi,domhi,efp(:,:,:,1),ng_e,etarhosum_proc(1,:))
+                call sum_etarho_3d(1,lo,hi,efp(:,:,:,1),ng_e,etarhosum_proc(1,:))
              end select
           end do
           
@@ -272,11 +272,11 @@ contains
 
   end subroutine make_etarho_planar
 
-  subroutine sum_etarho_2d(n,lo,hi,domhi,etarhoflux,ng_e,etarhosum)
+  subroutine sum_etarho_2d(n,lo,hi,etarhoflux,ng_e,etarhosum)
 
     use geometry, only: r_end_coord, numdisjointchunks
 
-    integer         , intent(in   ) :: n, lo(:), hi(:), domhi(:), ng_e
+    integer         , intent(in   ) :: n, lo(:), hi(:), ng_e
     real (kind=dp_t), intent(in   ) :: etarhoflux(lo(1)-ng_e:,lo(2)-ng_e:)
     real (kind=dp_t), intent(inout) :: etarhosum(0:)
 
@@ -307,11 +307,11 @@ contains
 
   end subroutine sum_etarho_2d
 
-  subroutine sum_etarho_3d(n,lo,hi,domhi,etarhoflux,ng_e,etarhosum)
+  subroutine sum_etarho_3d(n,lo,hi,etarhoflux,ng_e,etarhosum)
 
     use geometry, only: r_end_coord, numdisjointchunks
 
-    integer         , intent(in   ) :: n,lo(:), hi(:), domhi(:), ng_e
+    integer         , intent(in   ) :: n,lo(:), hi(:), ng_e
     real (kind=dp_t), intent(in   ) :: etarhoflux(lo(1)-ng_e:,lo(2)-ng_e:,lo(3)-ng_e:)
     real (kind=dp_t), intent(inout) :: etarhosum(0:)
 

@@ -597,7 +597,7 @@ contains
     if (use_tfromp) then
        call makeTfromRhoP(s2,p0_new,tempbar,mla,the_bc_tower%bc_tower_array,dx)
     else
-       call makeTfromRhoH(s2,p0_new,tempbar,mla,the_bc_tower%bc_tower_array,dx)
+       call makeTfromRhoH(s2,tempbar,mla,the_bc_tower%bc_tower_array,dx)
     end if
 
     call destroy(bpt)
@@ -1020,7 +1020,7 @@ contains
     if (use_tfromp) then
        call makeTfromRhoP(s2,p0_new,tempbar,mla,the_bc_tower%bc_tower_array,dx)
     else
-       call makeTfromRhoH(s2,p0_new,tempbar,mla,the_bc_tower%bc_tower_array,dx)
+       call makeTfromRhoH(s2,tempbar,mla,the_bc_tower%bc_tower_array,dx)
     end if
 
 !!!!!!!!!!!!!!!!!!!!!!!
@@ -1400,7 +1400,7 @@ contains
     if (use_tfromp) then
        call makeTfromRhoP(s2,p0_new,tempbar,mla,the_bc_tower%bc_tower_array,dx)
     else
-       call makeTfromRhoH(s2,p0_new,tempbar,mla,the_bc_tower%bc_tower_array,dx)
+       call makeTfromRhoH(s2,tempbar,mla,the_bc_tower%bc_tower_array,dx)
     end if
 
     call destroy(bpt)

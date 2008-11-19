@@ -171,7 +171,7 @@ contains
     real(kind=dp_t)   , intent(in   ) :: p0_init(0:)
 
     ! Local variables
-    integer         :: i,j,n
+    integer         :: i,j
     real(kind=dp_t) :: x,y
     real(kind=dp_t) :: dens_pert, rhoh_pert, temp_pert
     real(kind=dp_t) :: rhoX_pert(nspec), trac_pert(ntrac)

@@ -285,10 +285,8 @@ contains
          (enthalpy_pred_type .eq. predict_T_then_h        ) .or. &
          (enthalpy_pred_type .eq. predict_Tprime_then_h) ) then
        call makeHfromRhoT_edge(uold,sedge,rho0_old,rhoh0_old,tempbar, &
-                               rho0_edge_old,rhoh0_edge_old,t0_edge_old, &
-                               rho0_new,rhoh0_new,tempbar, &
-                               rho0_edge_new,rhoh0_edge_new,t0_edge_new, &
-                               the_bc_level,dx)
+                               rho0_edge_old,rhoh0_edge_old,rho0_new,rhoh0_new,tempbar, &
+                               rho0_edge_new,rhoh0_edge_new,the_bc_level,dx)
     end if
 
     !**************************************************************************
@@ -381,7 +379,7 @@ contains
        if (use_tfromp) then
           call makeTfromRhoP(snew,p0_new,tempbar,mla,the_bc_level,dx)
        else
-          call makeTfromRhoH(snew,p0_new,tempbar,mla,the_bc_level,dx)
+          call makeTfromRhoH(snew,tempbar,mla,the_bc_level,dx)
        end if
     else
        do n=1,nlevs

@@ -497,19 +497,14 @@ contains
     ! Local variables
     integer :: r, n
 
-    real(kind=dp_t) :: dtdr,divbetaw,betahalf,factor
+    real(kind=dp_t) :: dtdr
     real(kind=dp_t) :: div_w0_cart, div_w0_sph
-    real(kind=dp_t) :: divw,p0_avg
-    real(kind=dp_t) :: w0dpdr_avg,w0dpdr_avg_1,w0dpdr_avg_2
 
     real (kind = dp_t) ::         force(nlevs,0:nr_fine-1)
     real (kind = dp_t) ::           psi(nlevs,0:nr_fine-1)
     real (kind = dp_t) ::            h0(nlevs,0:nr_fine-1)
     real (kind = dp_t) :: gamma1bar_old(nlevs,0:nr_fine-1)
     real (kind = dp_t) ::          edge(nlevs,0:nr_fine)
-    real (kind = dp_t) ::          beta(nlevs,0:nr_fine)
-    real (kind = dp_t) ::      beta_new(nlevs,0:nr_fine)
-    real (kind = dp_t) ::       beta_nh(nlevs,0:nr_fine)
     
     dtdr = dt / dr(nlevs)
 
