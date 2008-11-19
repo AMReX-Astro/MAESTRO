@@ -91,7 +91,7 @@ contains
 
     ! allocate states
     allocate(uold(nlevs),sold(nlevs),gpres(nlevs),pres(nlevs))
-    allocate(dSdt(nlevs),Source_old(nlevs),rho_omegadot2(nlevs),chk_rho_Hnuc2(nlevs))
+    allocate(dSdt(nlevs),Source_old(nlevs),rho_omegadot2(nlevs),rho_Hnuc2(nlevs))
 
     ! build and fill states
     do n = 1,nlevs
@@ -244,8 +244,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   subroutine initialize_with_fixed_grids(mla,time,dt,pmask,dx,uold,sold,gpres,pres, &
-                                         dSdt,Source_old,rho_omegadot2,rho_Hnuc2, &
-                                         the_bc_tower, &
+                                         dSdt,Source_old,rho_omegadot2,rho_Hnuc2,the_bc_tower, &
                                          div_coeff_old,div_coeff_new,gamma1bar, &
                                          gamma1bar_hold,s0_init,rho0_old,rhoh0_old, &
                                          rho0_new,rhoh0_new,p0_init, &
@@ -402,8 +401,7 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   subroutine initialize_with_adaptive_grids(mla,time,dt,pmask,dx,uold,sold,gpres,pres, &
-                                            dSdt,Source_old,rho_omegadot2,rho_Hnuc2, &
-                                            the_bc_tower, &
+                                            dSdt,Source_old,rho_omegadot2,rho_Hnuc2,the_bc_tower, &
                                             div_coeff_old,div_coeff_new,gamma1bar, &
                                             gamma1bar_hold,s0_init,rho0_old,rhoh0_old, &
                                             rho0_new,rhoh0_new,p0_init, &
