@@ -59,7 +59,6 @@ contains
     real(kind=dp_t), pointer :: ump(:,:,:,:)
     real(kind=dp_t), pointer :: vmp(:,:,:,:)
     real(kind=dp_t), pointer :: wmp(:,:,:,:)
-    real(kind=dp_t), pointer :: np(:,:,:,:)
     real(kind=dp_t), pointer :: fp(:,:,:,:)
     real(kind=dp_t), pointer :: tp(:,:,:,:)
     real(kind=dp_t), pointer :: pp(:,:,:,:)
@@ -345,9 +344,8 @@ contains
     real(kind=dp_t), allocatable :: psi_cart(:,:,:,:)
 
     real(kind=dp_t) :: p0_lox,p0_hix,p0_loy,p0_hiy,p0_loz,p0_hiz
-    real(kind=dp_t) :: x,y,z,radius
     real(kind=dp_t) :: divup, p0divu, p0_cen
-    integer         :: i,j,k,r,index
+    integer         :: i,j,k
 
     ! Here we make u grad p = div (u p) - p div (u) 
     do k = lo(3),hi(3)
@@ -446,7 +444,6 @@ contains
     real(kind=dp_t), pointer :: ump(:,:,:,:)
     real(kind=dp_t), pointer :: vmp(:,:,:,:)
     real(kind=dp_t), pointer :: wmp(:,:,:,:)
-    real(kind=dp_t), pointer :: np(:,:,:,:)
     real(kind=dp_t), pointer :: fp(:,:,:,:)
     real(kind=dp_t), pointer :: tp(:,:,:,:)
     real(kind=dp_t), pointer :: pp(:,:,:,:)
@@ -480,7 +477,7 @@ contains
        do n = 1,nlevs
           p0_nph(n,:) = HALF * (p0_old(n,:) + p0_new(n,:))
           call multifab_build(p0_cart(n),mla%la(n),1,1)
-          h0_nph(n,:) = HALF * (h0_old(n,:) + h0_old(n,:))
+          h0_nph(n,:) = HALF * (h0_old(n,:) + h0_new(n,:))
           call multifab_build(h0_cart(n),mla%la(n),1,1)
        end do
     end if
@@ -602,10 +599,10 @@ contains
 
     real(kind=dp_t) :: p0_lox,p0_hix,p0_loy,p0_hiy,p0_loz,p0_hiz
     real(kind=dp_t) :: h0_lox,h0_hix,h0_loy,h0_hiy,h0_loz,h0_hiz
-    real(kind=dp_t) :: x,y,z,radius,rhoavg
+    real(kind=dp_t) :: rhoavg
     real(kind=dp_t) :: divup, p0divu, p0_cen
     real(kind=dp_t) :: divuh, h0divu, h0_cen
-    integer         :: i,j,k,r,index
+    integer         :: i,j,k
 
     ! Here we make u grad p = div (u p) - p div (u) 
     do k = lo(3),hi(3)
@@ -1003,7 +1000,7 @@ contains
     real(kind=dp_t), intent(in   ) :: psi(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
 
-    integer :: i,j,k,r
+    integer :: i,j,k
     real(kind=dp_t) :: p0_lox,p0_hix,p0_loy,p0_hiy,p0_loz,p0_hiz,p0_cen
     real(kind=dp_t) :: divup,p0divu,ugradp,dhdp
     real(kind=dp_t) :: t0_lox,t0_hix,t0_loy,t0_hiy,t0_loz,t0_hiz,t0_cen
