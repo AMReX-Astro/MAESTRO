@@ -1,0 +1,59 @@
+&PROBIN
+! uncomment for fixed grids
+! test_set = "gr0_3d_3levels"
+ spherical_in = 0
+ plot_base = T
+
+! uncomment for adaptive grids
+ max_levs = 3
+ n_cellx = 48
+ n_celly = 32
+ n_cellz = 80
+ regrid_int = 1
+ max_grid_size = 32
+
+ dm_in = 3
+
+ prob_hi_x = 2.16e8
+ prob_hi_y = 1.44e8
+ prob_hi_z = 3.6e8
+
+ grav_const = -1.5e10
+
+ max_step  = 100000000
+ init_iter = 1
+
+ stop_time = 2.5
+
+ plot_int  = 10
+ chk_int   = 10
+
+ cflfac = 0.9
+ init_shrink = 1.
+
+ bcx_lo = -1
+ bcx_hi = -1
+ bcy_lo = -1
+ bcy_hi = -1
+ bcz_lo = 14
+ bcz_hi = 12
+
+ pmask_x = T
+ pmask_y = T
+ pmask_z = F
+
+    verbose = 1
+ mg_verbose = 1
+ cg_verbose = 0
+
+ do_initial_projection = 1
+ init_divu_iter = 3
+
+ perturb_model = T
+
+!restart = 50
+ 
+ enthalpy_pred_type = 4
+
+ use_eos_coulomb = F
+/

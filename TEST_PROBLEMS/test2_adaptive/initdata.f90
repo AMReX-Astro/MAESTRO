@@ -480,32 +480,23 @@ contains
     t0 = s0_init(temp_comp)
 
     x0 = 5.0d7
-    y0 = 5.0d7
+    y0 = 7.2d7
     z0 = 6.5d7
     
     x1 = 1.2d8
-    y1 = 1.2d8
+    y1 = 7.2d7
     z1 = 8.5d7
     
     x2 = 2.0d8
-    y2 = 2.0d8
+    y2 = 7.2d7
     z2 = 7.5d7
 
-!   temp = t0 * (ONE + TWO * ( &
-!        .0625_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r0))) + &
-!        .1875_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r1))) + &
-!        .1250_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r2)))  ) )
-
-    ! Tanh bubbles from perturb_2d
-    r0 = sqrt( (y-y0)**2 +(z-z0)**2 ) / 2.5e6
-    r1 = sqrt( (y-y1)**2 +(z-z1)**2 ) / 2.5e6
-    r2 = sqrt( (y-y2)**2 +(z-z2)**2 ) / 2.5e6
+    r0 = sqrt( (x-x0)**2 + (y-y0)**2 + (z-z0)**2 ) / 2.5e6
+    r1 = sqrt( (x-x1)**2 + (y-y1)**2 + (z-z1)**2 ) / 2.5e6
+    r2 = sqrt( (z-z2)**2 + (y-y2)**2 + (z-z2)**2 ) / 2.5e6
     
-    ! This case works
     temp = t0 * (ONE + TWO * ( &
-         .150_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r0))) + &
-         .300_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r1))) + &
-         .225_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r2)))  ) )
+         .15_dp_t * 0.5_dp_t * (1.0_dp_t + tanh((2.0-r0))) ) )
 
     ! Use the EOS to make this temperature perturbation occur at constant 
     ! pressure
