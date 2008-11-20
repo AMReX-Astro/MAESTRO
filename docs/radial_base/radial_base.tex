@@ -9,15 +9,22 @@ As there is no alignment between the 3-d Cartesian grid and the 1-d
 spherical base state grid, we are free to choose their grid spacings
 independently.  Experimentation has shown that the best choice results
 from picking the 3-d Cartesian grid spacing, $\Delta x$ to be coarser
-than the 1-d spherical base state spacing, $\Delta r$.  A typical simulation
-may use $5 \Delta r = \Delta x$.
+than the 1-d spherical base state spacing, $\Delta r$.
+A typical simulation may use $5 \Delta r = \Delta x$.
 We call the procedure to go from 1-d to 3-d {\tt fill\_3d} and the
 complementary procedure that takes us from 3-d to 1-d {\tt average}.
 \section{\tt fill\_3d}
-Figure XXX shows the Cartesian grid with the spherical
+There are three different {\tt fill\_3d} modes:
+\begin{enumerate}
+\item The 1D array is cell-centered, and we map to Cartesian cell-centers.
+\item The 1D array is edge-centered, and we map to Cartesian cell-centers.
+\item The 1D array is edge-centered, and we map to Cartesian edges.  
+\end{enumerate}
+\subsection{1D Cell-Centered to Cartesian Cell-Centered}
+This mapping is done in the subroutine {\tt put\_1d\_array\_on\_cart}.
+Figure \ref{fig:mapping} shows the Cartesian grid with the spherical
 base state overlayed (for simplicity, the figure is drawn in 2-d).  
-The {\tt fill\_3d} procedure computes the radius of the cell center
-from the center of the star,
+We compute the radius of the cell center from the center of the star,
 \begin{equation}
 r = \sqrt{(x_i - x_c)^2 + (y_j - y_c)^2 + (z_k - z_c)^2}
 \end{equation}
@@ -26,13 +33,33 @@ We use this radius to find the corresponding radial bin as $n = \mathtt{int}(r
 / \Delta r)$ (here, our convention is to use 0-based indexing for the
 base state).  We can then initialize a Cartesian cell quantity $q$ from its
 corresponding base state quantity, $q_0$ as $q_{i,j,k} = q_{0,n}$.
-\subsection{\tt put\_1d\_array\_on\_cart}
-\subsection{\tt put\_w0\_on\_edges}
+\subsection{1D Edge-Centered to Cartesian Cell-Centered}
+This mapping is done in the subroutine {\tt put\_1d\_array\_on\_cart}.
+\subsection{1D Edge-Centered to Cartesian Edges}
+This mapping is done in the subroutine {\tt put\_1d\_array\_on\_cart}.
+This case is only used to create {\tt w0mac} from {\tt w0} in the 
+subroutine, {\tt put\_w0\_on\_edges}.
 \section{\tt average}
-For the {\tt average} process, we again compute the radius of the
-Cartesian cell center, and compute the index, $n$, of the
-corresponding base state bin as above.  $q_{0,n}$ is then the average
-of all the $q_{i,j,k}$ whose Cartesian cell center maps into radial
-bin $n$.  However, if $\Delta r < \Delta x$, there may be some base
-state bins that are not filled.  In this case, we will fill them via
-interpolation. \MarginPar{more detail will be needed here.}
+For the {\tt average} process, we first create a coarse 1D radial array 
+with $\Delta x = \Delta r$.  Then, we compute the radius of the Cartesian cell 
+center, and compute the index, $n$, of the corresponding coarse radial 
+array bin.  $q_{0,n}$ is then the average of all the $q_{i,j,k}$ whose 
+Cartesian cell center maps into coarse radial bin $n$.  Then, we 
+interpolate the coarse radial array onto the finer radial array.
+
+\clearpage
+
+\begin{figure}[tpb]
+\begin{center}
+\epsffile{./radial_base/mapping.eps}
+\caption{\label{fig:mapping} The Cartesian grid and spherical base
+state (shown here in 2-d for simplicity).  Here we represent the
+spherical base state as concentric shells (blue lines).  Since the
+base state is not aligned with the Cartesian grid we use on which
+we discretize the star, we need to map between the two configurations.
+The `$+$' symbols represent the Cartesian zone centers.  In our
+mapping, the zone marked with the red symbol maps into the gray-shaded
+radial bin. }
+\label{fig:mapping}
+\end{center}
+\end{figure}
