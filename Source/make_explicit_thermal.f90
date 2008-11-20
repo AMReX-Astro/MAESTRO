@@ -14,11 +14,11 @@ module make_explicit_thermal_module
 contains 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Compute thermal = del dot kappa grad T (if temperature_diffusion)
+! Compute thermal = del dot kappa grad T (if temp_diffusion_formulation)
 ! Otherwise, compute thermal with grad h + grad X_k + grad p_0 formulation
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine make_explicit_thermal(mla,dx,thermal,s,p0,the_bc_tower,temperature_diffusion)
+  subroutine make_explicit_thermal(mla,dx,thermal,s,p0,the_bc_tower)
 
     use bc_module
     use bl_prof_module
@@ -33,6 +33,7 @@ contains
     use fill_3d_module
     use thermal_conduct_module
     use geometry, only: dm, nlevs
+    use probin_module, only: temp_diffusion_formulation
 
     type(ml_layout), intent(inout) :: mla
     real(dp_t)     , intent(in   ) :: dx(:,:)
@@ -40,7 +41,6 @@ contains
     type(multifab) , intent(in   ) :: s(:)
     real(kind=dp_t), intent(in   ) :: p0(:,0:)
     type(bc_tower) , intent(in   ) :: the_bc_tower
-    logical        , intent(in   ) :: temperature_diffusion
 
     ! Local
     type(multifab) :: phi(mla%nlevel),alpha(mla%nlevel),beta(mla%nlevel),Xkcoeff(mla%nlevel)
@@ -100,7 +100,7 @@ contains
        end do
     enddo
 
-    if(temperature_diffusion) then
+    if(temp_diffusion_formulation) then
 
        do n=1,nlevs
           call destroy(Xkcoeff(n))
@@ -165,7 +165,7 @@ contains
           call destroy(resid(n))
        enddo
 
-    else ! the if(.not. temperature_diffusion) case
+    else ! the if(.not. temp_diffusion_formulation) case
        
        do n=1,nlevs
           call destroy(Tcoeff(n))
@@ -336,7 +336,7 @@ contains
           call destroy(resid(n))
        enddo
 
-    endif ! end if(temperature_diffusion) logic
+    endif ! end if(temp_diffusion_formulation) logic
     
     if (nlevs .eq. 1) then
 

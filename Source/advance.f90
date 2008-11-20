@@ -461,8 +461,7 @@ contains
     
     ! thermal is the forcing for rhoh or temperature
     if(use_thermal_diffusion) then
-       call make_explicit_thermal(mla,dx,thermal,s1,p0_old, &
-                                  the_bc_tower,temp_diffusion_formulation)
+       call make_explicit_thermal(mla,dx,thermal,s1,p0_old,the_bc_tower)
     else
        do n=1,nlevs
           call setval(thermal(n),ZERO,all=.true.)
@@ -718,8 +717,7 @@ contains
        end do
 
        if(use_thermal_diffusion) then
-          call make_explicit_thermal(mla,dx,thermal,snew,p0_new, &
-                                     the_bc_tower,temp_diffusion_formulation)
+          call make_explicit_thermal(mla,dx,thermal,snew,p0_new,the_bc_tower)
        else
           do n=1,nlevs
              call setval(thermal(n),ZERO,all=.true.)
@@ -933,8 +931,7 @@ contains
 
        ! thermal is the forcing for rhoh or temperature
        if(use_thermal_diffusion) then
-          call make_explicit_thermal(mla,dx,thermal,s1,p0_old, &
-                                     the_bc_tower,temp_diffusion_formulation)
+          call make_explicit_thermal(mla,dx,thermal,s1,p0_old,the_bc_tower)
        else
           do n=1,nlevs
              call setval(thermal(n),ZERO,all=.true.)
@@ -1144,8 +1141,7 @@ contains
     end do
 
     if(use_thermal_diffusion) then
-       call make_explicit_thermal(mla,dx,thermal,snew,p0_new, &
-                                  the_bc_tower,temp_diffusion_formulation)
+       call make_explicit_thermal(mla,dx,thermal,snew,p0_new,the_bc_tower)
     else
        do n=1,nlevs
           call setval(thermal(n),ZERO,all=.true.)

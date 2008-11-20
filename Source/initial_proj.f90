@@ -70,8 +70,7 @@ contains
     end do
     
     if(use_thermal_diffusion) then
-       call make_explicit_thermal(mla,dx,thermal,sold,p0, &
-                                  the_bc_tower,temp_diffusion_formulation)
+       call make_explicit_thermal(mla,dx,thermal,sold,p0,the_bc_tower)
     else
        do n=1,nlevs
           call setval(thermal(n), ZERO, all=.true.)
