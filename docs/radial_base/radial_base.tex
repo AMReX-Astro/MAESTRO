@@ -1,3 +1,38 @@
-Here we talk about the radial base state.
+Since the one-dimensional spherical base state is not aligned with the
+3-d Cartesian grid we use for the full star, computing quantities that
+involve both the base state and the full state becomes complicated.
+Therefore, when we go between the base state and the full state in
+various parts of the algorithm (such as the averaging operations), we
+need to map between the two geometries.
 
-\section{Mapping}
+As there is no alignment between the 3-d Cartesian grid and the 1-d
+spherical base state grid, we are free to choose their grid spacings
+independently.  Experimentation has shown that the best choice results
+from picking the 3-d Cartesian grid spacing, $\Delta x$ to be coarser
+than the 1-d spherical base state spacing, $\Delta r$.  A typical simulation
+may use $5 \Delta r = \Delta x$.
+We call the procedure to go from 1-d to 3-d {\tt fill\_3d} and the
+complementary procedure that takes us from 3-d to 1-d {\tt average}.
+\section{\tt fill\_3d}
+Figure XXX shows the Cartesian grid with the spherical
+base state overlayed (for simplicity, the figure is drawn in 2-d).  
+The {\tt fill\_3d} procedure computes the radius of the cell center
+from the center of the star,
+\begin{equation}
+r = \sqrt{(x_i - x_c)^2 + (y_j - y_c)^2 + (z_k - z_c)^2}
+\end{equation}
+where $(x_c, y_c, z_c)$ are the coordinates of the center of the star.
+We use this radius to find the corresponding radial bin as $n = \mathtt{int}(r
+/ \Delta r)$ (here, our convention is to use 0-based indexing for the
+base state).  We can then initialize a Cartesian cell quantity $q$ from its
+corresponding base state quantity, $q_0$ as $q_{i,j,k} = q_{0,n}$.
+\subsection{\tt put\_1d\_array\_on\_cart}
+\subsection{\tt put\_w0\_on\_edges}
+\section{\tt average}
+For the {\tt average} process, we again compute the radius of the
+Cartesian cell center, and compute the index, $n$, of the
+corresponding base state bin as above.  $q_{0,n}$ is then the average
+of all the $q_{i,j,k}$ whose Cartesian cell center maps into radial
+bin $n$.  However, if $\Delta r < \Delta x$, there may be some base
+state bins that are not filled.  In this case, we will fill them via
+interpolation. \MarginPar{more detail will be needed here.}
