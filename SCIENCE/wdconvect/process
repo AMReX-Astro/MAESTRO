@@ -46,6 +46,33 @@ trap '/bin/rm -f $pidfile' EXIT HUP TERM XCPU KILL
 N=60
 
 
+
+#----------------------------------------------------------------------------
+# make storage directories
+
+# once we process a file, we will move the plotfiles into the plotfiles/
+# directory.  This then hides them from the script, so if the system
+# later purges the files in the pltXXXXX directory and the .processed
+# file, we don't overwrite our archived data with a tarred empty
+# directory structure
+
+if [ ! -d plotfiles ]; then
+  mkdir plotfiles
+fi
+
+
+# also create directories to hold the images and .averages file 
+# produced -- this just keeps the run directory clean
+
+if [ ! -d images ]; then
+  mkdir images
+fi
+
+if [ ! -d averages ]; then
+  mkdir averages
+fi
+
+
 #----------------------------------------------------------------------------
 # the processing function
 
@@ -70,7 +97,7 @@ function process_files
   # written to disk.  Strip out any tar files that are lying around as well 
   # as pltXXXXX.processed files.
   #pltlist=$(ls -d ${plt_prefix}* 2>/dev/null | grep -v tar | grep -v processed)
-  pltlist=$(find . -type d -name "${plt_prefix}*" -print | sort)
+  pltlist=$(find . -maxdepth 1 -type d -name "${plt_prefix}*" -print | sort)
 
   if [ "$pltlist" ]; then
     nl=$(echo "$pltlist" | wc -l)
@@ -109,11 +136,24 @@ function process_files
 
           # mark this file as processed so we skip it next time
           date > ${dir}.processed
+
+	  # move the plotfile into the plotfiles directory
+	  mv ${dir} plotfiles/
+
+	  # the find command will find the plotfiles even in their 
+	  # subdirectory, so we need to move the corresponding .processed 
+	  # file there too.
+	  mv ${dir}.processed plotfiles/
+
+	  mv ${dir}.averages averages/
+
+	  mv ${dir}*.ppm images/
         fi
 
-      fi
+      fi   # end test of whether plotfile already processed
 
-    fi
+    fi   # end test of whether plotfile is a directory (as it should be)
+
   done
 
 
