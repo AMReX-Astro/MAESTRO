@@ -274,6 +274,7 @@ contains
     ! 1 = piecewise constant, 2 = piecewise linear
     interp_type_radial_bin_to_cart = 1
 
+    ! 0.  Compute w0 at edges using a projection
     ! 1.  Interpolate w0 to cell centers, then average to edges
     ! 2.  Interpolate w0 to edges directly
     ! 3.  Interpolate w0 to nodes, then average to edges
