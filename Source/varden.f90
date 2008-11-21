@@ -283,9 +283,7 @@ subroutine varden()
      call init_sponge(rho0_old(1,:),dx(1,:),prob_lo(dm))
   end if
 
-  do n=1,nlevs
-     call make_grav_cell(n,grav_cell(n,:),rho0_old(n,:))
-  end do
+  call make_grav_cell(grav_cell,rho0_old)
 
   ! enforce HSE and then ensure state is thermodynamically consistens
   if (restart < 0) then
@@ -727,9 +725,7 @@ subroutine varden()
 
            call average(mla,sold,rho0_old,dx,rho_comp)
            
-           do n=1,nlevs
-              call make_grav_cell(n,grav_cell(n,:),rho0_old(n,:))
-           end do
+           call make_grav_cell(grav_cell,rho0_old)
 
            ! enforce HSE
            call enforce_HSE(rho0_old,p0_old,grav_cell)
@@ -770,9 +766,7 @@ subroutine varden()
         !---------------------------------------------------------------------
         dtold = dt
 
-        do n=1,nlevs
-           call make_grav_cell(n,grav_cell(n,:),rho0_old(n,:))
-        end do
+        call make_grav_cell(grav_cell,rho0_old)
 
         if (istep > 1) then
 

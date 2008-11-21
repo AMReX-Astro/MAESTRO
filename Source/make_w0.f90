@@ -283,7 +283,7 @@ contains
 
 
     ! make the edge-centered gravity
-    call make_grav_edge(1,grav_edge(1,:),rho0_nph(1,:))
+    call make_grav_edge(grav_edge,rho0_nph)
 
     ! NOTE:  now we solve for the remainder of (r^2 * w0)
 

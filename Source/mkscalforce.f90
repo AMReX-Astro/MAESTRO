@@ -101,10 +101,8 @@ contains
 
     rho0 = HALF*(rho0_old + rho0_new)
 
-    do n=1,nlevs
-       call make_grav_cell(n,grav(n,:),rho0(n,:))
-    end do
-
+    call make_grav_cell(grav,rho0)
+    
     do n=1,nlevs
 
        do i=1,scal_force(n)%nboxes

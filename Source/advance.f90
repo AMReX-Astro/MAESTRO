@@ -430,9 +430,7 @@ contains
        call destroy(rho_Hext(n))
     end do
 
-    do n=1,nlevs
-       call make_grav_cell(n,grav_cell_new(n,:),rho0_old(n,:))
-    end do
+    call make_grav_cell(grav_cell_new,rho0_old)
 
     call make_div_coeff(div_coeff_new,rho0_old,p0_old,gamma1bar,grav_cell_new)
 
@@ -647,9 +645,7 @@ contains
        end do
     end if
 
-    do n=1,nlevs
-       call make_grav_cell(n,grav_cell_new(n,:),rho0_new(n,:))
-    end do
+    call make_grav_cell(grav_cell_new,rho0_new)
 
     call make_div_coeff(div_coeff_new,rho0_new,p0_new,gamma1bar,grav_cell_new)
     
@@ -658,9 +654,7 @@ contains
     rho0_nph = HALF*(rho0_old+rho0_new)
 
     ! Define base state at half time for use in velocity advance
-    do n=1,nlevs
-       call make_grav_cell(n,grav_cell_nph(n,:),rho0_nph(n,:))
-    end do
+    call make_grav_cell(grav_cell_nph,rho0_nph)
     
     if(.not. do_half_alg) then
 
@@ -1048,9 +1042,7 @@ contains
           end do
        end if
        
-       do n=1,nlevs
-          call make_grav_cell(n,grav_cell_new(n,:),rho0_new(n,:))
-       end do
+       call make_grav_cell(grav_cell_new,rho0_new)
 
        call make_div_coeff(div_coeff_new,rho0_new,p0_new,gamma1bar,grav_cell_new)
               
