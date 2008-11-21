@@ -44,18 +44,20 @@ contains
     logical        , intent(in   ) :: is_prediction
     type(multifab) , intent(in   ) :: thermal(:)
     type(multifab) , intent(in   ) :: umac(:,:)
-    real(kind=dp_t), intent(in   ) :: p0_old(:,0:), p0_new(:,0:)
-    real(kind=dp_t), intent(in   ) :: rho0_old(:,0:), rho0_new(:,0:)
-    real(kind=dp_t), intent(in   ) :: psi(:,0:)
+    real(kind=dp_t), intent(in   ) ::   p0_old(:,0:)
+    real(kind=dp_t), intent(in   ) ::   p0_new(:,0:)
+    real(kind=dp_t), intent(in   ) :: rho0_old(:,0:)
+    real(kind=dp_t), intent(in   ) :: rho0_new(:,0:)
+    real(kind=dp_t), intent(in   ) ::      psi(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     logical        , intent(in   ) :: add_thermal
     type(ml_layout), intent(in   ) :: mla
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     ! local
-    integer                  :: i,n
+    integer                  :: i,n,ng_f,ng_um,ng_th
     integer                  :: lo(dm),hi(dm)
-    integer                  :: ng_f,ng_um,ng_th
+
     real(kind=dp_t), pointer :: ump(:,:,:,:)
     real(kind=dp_t), pointer :: vmp(:,:,:,:)
     real(kind=dp_t), pointer :: wmp(:,:,:,:)
@@ -63,10 +65,11 @@ contains
     real(kind=dp_t), pointer :: tp(:,:,:,:)
     real(kind=dp_t), pointer :: pp(:,:,:,:)
 
-    type(multifab)  ::    p0_cart(mla%nlevel)
-    real(kind=dp_t) ::     p0_nph(mla%nlevel,0:nr_fine-1)
-    real(kind=dp_t) ::   rho0(0:nr_fine-1)
-    real(kind=dp_t) ::   grav(0:nr_fine-1)
+    type(multifab)  :: p0_cart(mla%nlevel)
+
+    real(kind=dp_t) :: p0_nph(nlevs,0:nr_fine-1)
+    real(kind=dp_t) ::   rho0(nlevs,0:nr_fine-1)
+    real(kind=dp_t) ::   grav(nlevs,0:nr_fine-1)
 
     type(bl_prof_timer), save :: bpt
 
@@ -96,10 +99,13 @@ contains
                                  dx,the_bc_level,mla)
     end if
 
-    do n=1,nlevs
+    rho0 = HALF*(rho0_old + rho0_new)
 
-       rho0(:) = HALF * (rho0_old(n,:) + rho0_new(n,:))
-       call make_grav_cell(n,grav,rho0)
+    do n=1,nlevs
+       call make_grav_cell(n,grav(n,:),rho0(n,:))
+    end do
+
+    do n=1,nlevs
 
        do i=1,scal_force(n)%nboxes
           if ( multifab_remote(scal_force(n),i) ) cycle
@@ -114,14 +120,14 @@ contains
              call mkrhohforce_2d(n,fp(:,:,1,rhoh_comp), ng_f, is_prediction, &
                                  vmp(:,:,1,1), ng_um, &
                                  tp(:,:,1,1), ng_th, lo, hi, p0_old(n,:), p0_new(n,:), &
-                                 rho0, grav, psi(n,:), add_thermal)
+                                 rho0(n,:), grav(n,:), psi(n,:), add_thermal)
           case(3)
              wmp  => dataptr(umac(n,3), i)
              if (spherical .eq. 0) then
                 call mkrhohforce_3d(n,fp(:,:,:,rhoh_comp), ng_f, is_prediction, &
                                     wmp(:,:,:,1), ng_um, &
                                     tp(:,:,:,1), ng_th, lo, hi, p0_old(n,:), p0_new(n,:), &
-                                    rho0, grav, psi(n,:), add_thermal)
+                                    rho0(n,:), grav(n,:), psi(n,:), add_thermal)
              else
                 pp  => dataptr(p0_cart(n),i)
                 call mkrhohforce_3d_sphr(n,fp(:,:,:,rhoh_comp), ng_f, is_prediction, &
@@ -419,7 +425,6 @@ contains
     use fill_3d_module, only: put_1d_array_on_cart
     use multifab_fill_ghost_module
     use multifab_physbc_module
-    use make_grav_module
     use probin_module, only: enthalpy_pred_type
     use pred_parameters
 
@@ -451,12 +456,11 @@ contains
     real(kind=dp_t), pointer :: sop(:,:,:,:)
     real(kind=dp_t), pointer :: snp(:,:,:,:)
 
-    type(multifab)  :: p0_cart(mla%nlevel)
-    type(multifab)  :: h0_cart(mla%nlevel)
-    real(kind=dp_t) :: p0_nph(mla%nlevel,0:nr_fine-1)
-    real(kind=dp_t) :: h0_nph(mla%nlevel,0:nr_fine-1)
-    real(kind=dp_t) :: rho0(0:nr_fine-1)
-    real(kind=dp_t) :: grav(0:nr_fine-1)
+    type(multifab)  :: p0_cart(nlevs)
+    type(multifab)  :: h0_cart(nlevs)
+
+    real(kind=dp_t) :: p0_nph(nlevs,0:nr_fine-1)
+    real(kind=dp_t) :: h0_nph(nlevs,0:nr_fine-1)
 
     type(bl_prof_timer), save :: bpt
 
@@ -491,8 +495,7 @@ contains
                                     dx,the_bc_level,mla)
        end if
 
-       rho0(:) = HALF * (rho0_old(n,:) + rho0_new(n,:))
-       call make_grav_cell(n,grav,rho0)
+       
 
        do i=1,scal_force(n)%nboxes
           if ( multifab_remote(scal_force(n),i) ) cycle
