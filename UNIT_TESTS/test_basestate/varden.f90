@@ -179,13 +179,14 @@ subroutine varden()
   iter = 0
 
   allocate(anelastic_cutoff_coord(1))
+  allocate(base_cutoff_density_coord(1))
 
   do while (time < stop_time)
 
      print *, 'time = ', time
 
      ! compute the anelastic cutoff
-     anelastic_cutoff_coord(1) = nr_fine
+     anelastic_cutoff_coord(1) = nr_fine-1
      do i = 0, nr_fine-1
         if (s0(1,i,rho_comp) .le. anelastic_cutoff .and. &
              anelastic_cutoff_coord(1) .eq. nr_fine-1) then
@@ -194,6 +195,17 @@ subroutine varden()
         endif
      enddo
 
+
+     ! compute the low density cutoff
+     base_cutoff_density_coord(1) = nr_fine-1
+     do i = 0, nr_fine-1
+        if (s0(1,i,rho_comp) .le. base_cutoff_density .and. &
+             base_cutoff_density_coord(1) .eq. nr_fine-1) then
+           base_cutoff_density_coord(1) = i
+           exit
+        endif
+     enddo
+     
 
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      ! compute the heating term
