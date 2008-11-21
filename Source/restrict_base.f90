@@ -13,7 +13,7 @@ contains
   subroutine restrict_base(s0,is_cell_centered)
 
     use bl_prof_module
-    use geometry, only: r_start_coord, r_end_coord, numdisjointchunks, nlevs
+    use geometry, only: r_start_coord, r_end_coord, numdisjointchunks, nlevs_radial
 
     real(kind=dp_t), intent(inout) :: s0(:,0:)
     logical        , intent(in   ) :: is_cell_centered
@@ -27,7 +27,7 @@ contains
 
     if (is_cell_centered) then
 
-       do n=nlevs,2,-1
+       do n=nlevs_radial,2,-1
           ! for level n, make the coarser cells underneath simply the average of the fine
           do i=1,numdisjointchunks(n)
              do r=r_start_coord(n,i),r_end_coord(n,i)-1,2
@@ -38,7 +38,7 @@ contains
 
     else
 
-       do n=nlevs,2,-1
+       do n=nlevs_radial,2,-1
           ! for level n, make the coarse edge underneath equal to the fine edge value
           do i=1,numdisjointchunks(n)
              do r=r_start_coord(n,1),r_end_coord(n,1)+1,2
@@ -57,7 +57,7 @@ contains
 
     use bl_prof_module
     use bl_constants_module
-    use geometry, only: r_start_coord, r_end_coord, nr, numdisjointchunks, nlevs
+    use geometry, only: r_start_coord, r_end_coord, nr, numdisjointchunks, nlevs_radial
 
     real(kind=dp_t), intent(inout) :: s0(:,0:)
     logical        , intent(in   ) :: is_cell_centered
@@ -71,7 +71,7 @@ contains
 
     if (is_cell_centered) then
 
-       do n=nlevs,2,-1
+       do n=nlevs_radial,2,-1
           do i=1,numdisjointchunks(n)
              if (r_start_coord(n,i) .ne. 0) then
                 s0(n,r_start_coord(n,i)-1) = -(1.d0/5.d0)*s0(n,r_start_coord(n,i)+1) &
@@ -90,7 +90,7 @@ contains
 
     else
 
-       do n=nlevs,2,-1
+       do n=nlevs_radial,2,-1
 
           do i=1,numdisjointchunks(n)
              if (r_start_coord(n,i) .ne. 0) then
