@@ -27,7 +27,8 @@ contains
 
    subroutine make_edge_state_1d(s,sedgex,w0,force,dx,dt)
 
-     use geometry, only: r_start_coord, r_end_coord, nr_fine, nr, numdisjointchunks, nlevs
+     use geometry, only: r_start_coord, r_end_coord, nr_fine, nr, &
+          numdisjointchunks, nlevs_radial
      use probin_module, only: slope_order
      use bl_constants_module
      use variables, only: rel_eps
@@ -46,15 +47,15 @@ contains
      integer        , parameter :: cen = 1, lim = 2, flag = 3, fromm = 4
      real(kind=dp_t), parameter :: fourthirds = 4.0_dp_t / 3.0_dp_t
         
-     real(kind=dp_t) :: slopex(nlevs, 0:nr_fine-1)
-     real(kind=dp_t) ::    s_l(nlevs,-1:nr_fine+1)
-     real(kind=dp_t) ::    s_r(nlevs,-1:nr_fine+1)
-     real(kind=dp_t) ::  dxscr(nlevs, 0:nr_fine-1,4)
+     real(kind=dp_t) :: slopex(nlevs_radial, 0:nr_fine-1)
+     real(kind=dp_t) ::    s_l(nlevs_radial,-1:nr_fine+1)
+     real(kind=dp_t) ::    s_r(nlevs_radial,-1:nr_fine+1)
+     real(kind=dp_t) ::  dxscr(nlevs_radial, 0:nr_fine-1,4)
 
      dth = HALF*dt
 
      ! compute slopes
-     do n=1,nlevs
+     do n=1,nlevs_radial
 
         do i=1,numdisjointchunks(n)
            
@@ -183,7 +184,7 @@ contains
      end do ! end compute slopes
 
      ! compute s_l and s_r
-     do n=1,nlevs
+     do n=1,nlevs_radial
 
         do i=1,numdisjointchunks(n)
            
@@ -206,7 +207,7 @@ contains
      end do ! end compute s_l and s_r
 
      ! compute edge states from s_l and s_r
-     do n=1,nlevs
+     do n=1,nlevs_radial
 
         do i=1,numdisjointchunks(n)
            
@@ -215,7 +216,7 @@ contains
 
            ! if we are not at the finest level
            ! copy in the s_r and s_l states from the next finer level at the c-f interface
-           if (n .ne. nlevs) then
+           if (n .ne. nlevs_radial) then
               s_r(n,r_start_coord(n+1,i)/2) = s_r(n+1,r_start_coord(n+1,i))
               s_l(n,(r_end_coord(n+1,i)+1)/2) = s_l(n+1,r_end_coord(n+1,i)+1)
            end if
