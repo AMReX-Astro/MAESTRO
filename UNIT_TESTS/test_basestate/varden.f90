@@ -265,12 +265,18 @@ subroutine varden()
 
      which_step = 1
 
-     call advect_base(w0,Sbar_in,p0_old,p0, &
-                      s0_old(:,:,rho_comp),s0(:,:,rho_comp), &
-                      s0_old(:,:,rhoh_comp),s0(:,:,rhoh_comp), &
-                      gam1,div_coeff, &
-                      rho0_predicted_edge,psi, &
-                      dx(:,1),dt)
+     
+     call advect_base_dens(w0,s0_old(:,:,rho_comp),s0(:,:,rho_comp), &
+                           rho0_predicted_edge,dx(:,1),dt)
+
+
+     call advect_base_pres(w0,Sbar_in,s0(:,:,rho_comp),p0_old,p0,gam1,div_coeff, &
+                             psi,etarho_cc,dx(:,1),dt)
+
+
+     call advect_base_enthalpy(w0,Sbar_in,s0_old(:,:,rho_comp), &
+                               s0_old(:,:,rhoh_comp),s0(:,:,rhoh_comp), &
+                               p0_old,p0,gam1,rho0_predicted_edge,psi,dx(:,1),dt)
 
 
      ! update the species.  In the real code, this will be done
@@ -331,8 +337,7 @@ subroutine varden()
            enddo
         endif
      enddo
-        
-        
+             
 
 
      ! update the temperature -- advect base does not do this
@@ -344,6 +349,9 @@ subroutine varden()
         p_eos(1)    = p0(1,i)
         xn_eos(1,:) = s0(1,i,spec_comp:spec_comp-1+nspec)/s0(1,i,rho_comp)
         
+
+        !print *, i, den_eos(1), temp_eos(1), p_eos(1), xn_eos(1,:)
+
         call eos(eos_input_rp, den_eos, temp_eos, NP, nspec, &
                  xn_eos, &
                  p_eos, h_eos, e_eos, &
