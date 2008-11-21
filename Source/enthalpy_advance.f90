@@ -190,7 +190,7 @@ contains
     else if (enthalpy_pred_type .eq. predict_hprime) then
 
        ! first compute h0_old
-       do n=1,nlevs
+       do n=1,nlevs_radial
           do i=1,numdisjointchunks(n)
              do r=r_start_coord(n,i),r_end_coord(n,i)
                 h0_old(n,r) = rhoh0_old(n,r) / rho0_old(n,r)
