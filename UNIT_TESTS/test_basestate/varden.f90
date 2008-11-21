@@ -62,7 +62,6 @@ subroutine varden()
   real(dp_t) :: coeff, Hbar
 
   integer :: n
-  integer :: which_step
 
   call probin_init()
   call init_dm()
@@ -75,7 +74,7 @@ subroutine varden()
   call eos_init(use_eos_coulomb=use_eos_coulomb)
 
   nlevs = 1
-
+  nlevs_radial = 1
 
   ! we get the number of points for the base state directly from
   ! the model file and use this to set the resolution.  It should be
@@ -274,8 +273,6 @@ subroutine varden()
      ! update the state
      s0_old(:,:,:) = s0(:,:,:)
      p0_old(:,:) = p0(:,:)
-
-     which_step = 1
 
      
      call advect_base_dens(w0,s0_old(:,:,rho_comp),s0(:,:,rho_comp), &
