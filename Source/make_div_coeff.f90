@@ -19,7 +19,7 @@ contains
 
     use bl_constants_module
     use geometry, only: nr_fine, dr, anelastic_cutoff_coord, r_start_coord, r_end_coord, &
-         nr, numdisjointchunks, nlevs
+         nr, numdisjointchunks, nlevs_radial
     use restrict_base_module
     use probin_module, only: smallscale_beta
 
@@ -30,7 +30,7 @@ contains
     ! local
     integer :: r, n, i, refrat, j
     real(kind=dp_t) :: integral
-    real(kind=dp_t) :: beta0_edge(nlevs,0:nr_fine)
+    real(kind=dp_t) :: beta0_edge(nlevs_radial,0:nr_fine)
     real(kind=dp_t) :: lambda, mu, nu
     real(kind=dp_t) :: denom, coeff1, coeff2
     real(kind=dp_t) :: del,dpls,dmin,slim,sflag
@@ -49,7 +49,7 @@ contains
        !
        ! First, compute beta0 on edges and centers at level 1 only
        ! Obtain the starting value from rho0 at the bottom of the domain.
-       ! do n=2,nlevs
+       ! do n=2,nlevs_radial
        !   Compute beta0 on edges and centers at level n
        !   Obtain the starting value of beta0_edge_lo from the coarser grid
        !   if n>1, compare the difference between beta0 at the top of level n to the
@@ -63,7 +63,7 @@ contains
        ! call restrict_base
        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
        
-       do n=1,nlevs
+       do n=1,nlevs_radial
 
           do j=1,numdisjointchunks(n)
 
