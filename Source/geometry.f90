@@ -87,27 +87,50 @@ contains
     ! local
     integer :: n,i
 
-    allocate(dr(num_levs))
-    allocate(nr(num_levs))
+    if (spherical .eq. 0) then
+       
+       allocate(dr(num_levs))
+       allocate(nr(num_levs))
 
-    allocate(  r_cc_loc(num_levs,0:nr_fine-1))
-    allocate(r_edge_loc(num_levs,0:nr_fine))
+       allocate(  r_cc_loc(num_levs,0:nr_fine-1))
+       allocate(r_edge_loc(num_levs,0:nr_fine))
+       
+       nr(num_levs) = nr_fine
+       dr(num_levs) = dr_fine
+       do n=num_levs-1,1,-1
+          nr(n) = nr(n+1)/mba%rr(n,dm)
+          dr(n) = dr(n+1)*dble(mba%rr(n,dm))
+       enddo
+       
+       do n=1,num_levs
+          do i = 0,nr(n)-1
+             r_cc_loc(n,i) = prob_lo(dm) + (dble(i)+HALF)*dr(n)
+          end do
+          do i = 0,nr(n)
+             r_edge_loc(n,i) = prob_lo(dm) + (dble(i))*dr(n)
+          end do
+       enddo
 
-    nr(num_levs) = nr_fine
-    dr(num_levs) = dr_fine
-    do n=num_levs-1,1,-1
-       nr(n) = nr(n+1)/mba%rr(n,dm)
-       dr(n) = dr(n+1)*dble(mba%rr(n,dm))
-    enddo
+    else
 
-    do n=1,num_levs
-       do i = 0,nr(n)-1
-          r_cc_loc(n,i) = prob_lo(dm) + (dble(i)+HALF)*dr(n)
+       allocate(dr(1))
+       allocate(nr(1))
+
+       allocate(  r_cc_loc(1,0:nr_fine-1))
+       allocate(r_edge_loc(1,0:nr_fine))
+       
+       nr(1) = nr_fine
+       dr(1) = dr_fine
+
+       do i=0,nr_fine-1
+          r_cc_loc(1,i) = prob_lo(dm) + (dble(i)+HALF)*dr(1)
        end do
-       do i = 0,nr(n)
-          r_edge_loc(n,i) = prob_lo(dm) + (dble(i))*dr(n)
+       
+       do i=0,nr_fine
+          r_edge_loc(1,i) = prob_lo(dm) + (dble(i))*dr(1)
        end do
-    enddo
+
+    end if
 
   end subroutine init_radial
 
@@ -117,11 +140,17 @@ contains
 
     ! allocates the cutoff coordinate arrays
 
-    integer          , intent(in)    :: num_levs
+    integer, intent(in)    :: num_levs
 
-    allocate(      anelastic_cutoff_coord(num_levs))
-    allocate(   base_cutoff_density_coord(num_levs))
-    allocate(burning_cutoff_density_coord(num_levs))
+    if (spherical .eq. 0) then
+       allocate(      anelastic_cutoff_coord(num_levs))
+       allocate(   base_cutoff_density_coord(num_levs))
+       allocate(burning_cutoff_density_coord(num_levs))
+    else
+       allocate(      anelastic_cutoff_coord(1))
+       allocate(   base_cutoff_density_coord(1))
+       allocate(burning_cutoff_density_coord(1))
+    end if
 
   end subroutine init_cutoff
 
@@ -145,52 +174,52 @@ contains
     type(boxarray) :: diffboxarray(nlevs)
     type(box)      :: boundingbox(nlevs)
     
-    ! create a "bounding box" for each level
-    ! this the smallest possible box that fits every grid at a particular level
-    ! this even includes the empty spaces if there are gaps between grids
-    do n=1,nlevs
-       boundingbox(n) = get_box(mf(n),1)
-       do i=2, mf(n)%nboxes
-          boundingbox(n) = box_bbox(boundingbox(n),get_box(mf(n),i))
-       end do
-    end do
-
-    ! compute diffboxarray
-    ! each box in diffboxarray corresponds to an "empty space" between valid regions
-    ! at each level, excluding the coarsest level.
-    ! I am going to use this to compute all of the intermediate r_start_coord and 
-    ! r_end_coord
-    do n=1,nlevs
-       call boxarray_build_copy(validboxarr(n),get_boxarray(mf(n)))
-       call boxarray_boxarray_diff(diffboxarray(n),boundingbox(n),validboxarr(n))
-       call boxarray_simplify(diffboxarray(n))
-    end do
-
-    if (allocated(numdisjointchunks)) then
-       deallocate(numdisjointchunks)
-    end if
-    allocate(numdisjointchunks(nlevs))
-
-    do n=1,nlevs
-       numdisjointchunks(n) = diffboxarray(n)%nboxes + 1
-    end do
-
-    maxdisjointchunks = 1
-    do n=2,nlevs
-       maxdisjointchunks = max(maxdisjointchunks,numdisjointchunks(n))
-    end do
-
-    if (allocated(r_start_coord)) then
-       deallocate(r_start_coord)
-    end if
-    allocate(r_start_coord(nlevs,maxdisjointchunks))
-    if (allocated(r_end_coord)) then
-       deallocate(r_end_coord)
-    end if
-    allocate(r_end_coord(nlevs,maxdisjointchunks))
-
     if (spherical .eq. 0) then
-
+    
+       ! create a "bounding box" for each level
+       ! this the smallest possible box that fits every grid at a particular level
+       ! this even includes the empty spaces if there are gaps between grids
+       do n=1,nlevs
+          boundingbox(n) = get_box(mf(n),1)
+          do i=2, mf(n)%nboxes
+             boundingbox(n) = box_bbox(boundingbox(n),get_box(mf(n),i))
+          end do
+       end do
+       
+       ! compute diffboxarray
+       ! each box in diffboxarray corresponds to an "empty space" between valid regions
+       ! at each level, excluding the coarsest level.
+       ! I am going to use this to compute all of the intermediate r_start_coord and 
+       ! r_end_coord
+       do n=1,nlevs
+          call boxarray_build_copy(validboxarr(n),get_boxarray(mf(n)))
+          call boxarray_boxarray_diff(diffboxarray(n),boundingbox(n),validboxarr(n))
+          call boxarray_simplify(diffboxarray(n))
+       end do
+       
+       if (allocated(numdisjointchunks)) then
+          deallocate(numdisjointchunks)
+       end if
+       allocate(numdisjointchunks(nlevs))
+       
+       do n=1,nlevs
+          numdisjointchunks(n) = diffboxarray(n)%nboxes + 1
+       end do
+       
+       maxdisjointchunks = 1
+       do n=2,nlevs
+          maxdisjointchunks = max(maxdisjointchunks,numdisjointchunks(n))
+       end do
+       
+       if (allocated(r_start_coord)) then
+          deallocate(r_start_coord)
+       end if
+       allocate(r_start_coord(nlevs,maxdisjointchunks))
+       if (allocated(r_end_coord)) then
+          deallocate(r_end_coord)
+       end if
+       allocate(r_end_coord(nlevs,maxdisjointchunks))
+       
        do n=1,nlevs
 
           lo = lwb(boundingbox(n))
@@ -227,18 +256,26 @@ contains
 
        end do
 
+       do n=1,nlevs
+          call destroy(validboxarr(n))
+          call destroy(diffboxarray(n))
+       end do
+
     else
 
-       r_start_coord(nlevs,1) = 0
-       r_end_coord(nlevs,1) = nr_fine-1
+       if (allocated(numdisjointchunks)) deallocate(numdisjointchunks)
+       if (allocated(r_start_coord)) deallocate(r_start_coord)
+       if (allocated(r_end_coord)) deallocate(r_end_coord)
+
+       allocate(numdisjointchunks(1))
+       allocate(r_start_coord(1,1))
+       allocate(r_end_coord(1,1))
+
+       numdisjointchunks(1) = 1
+       r_start_coord(1,1) = 0
+       r_end_coord(1,1) = nr_fine-1
 
     end if
-           
-    do n=1,nlevs
-       call destroy(validboxarr(n))
-       call destroy(diffboxarray(n))
-    end do
-
   end subroutine init_multilevel
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
