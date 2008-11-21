@@ -413,12 +413,6 @@ contains
        call average(mla,s1,rhoh0_1,dx,rhoh_comp)
     end if
 
-    do n=1,nlevs
-       call destroy(rho_omegadot1(n))
-       call destroy(rho_Hnuc1(n))
-       call destroy(rho_Hext(n))
-    end do
-
     if (evolve_base_state) then
        do n=1,nlevs
           call multifab_build(gamma1(n), mla%la(n), 1, 0)
@@ -431,6 +425,10 @@ contains
           call destroy(gamma1(n))
        end do
     end if
+
+    do n=1,nlevs
+       call destroy(rho_Hext(n))
+    end do
 
     do n=1,nlevs
        call make_grav_cell(n,grav_cell_new(n,:),rho0_old(n,:))
@@ -462,6 +460,13 @@ contains
     else
        do n=1,nlevs
           call setval(thermal(n),ZERO,all=.true.)
+       end do
+    end if
+            
+    if(do_half_alg) then
+       do n=1,nlevs
+          call destroy(rho_omegadot1(n))
+          call destroy(rho_Hnuc1(n))
        end do
     end if
 
@@ -891,6 +896,11 @@ contains
           end do
        end if
 
+       do n=1,nlevs
+          call destroy(rho_omegadot1(n))
+          call destroy(rho_Hnuc1(n))
+       end do
+       
        do n=1,nlevs
           call multifab_build(s2(n), mla%la(n), nscal, 3)
           call setval(etarhoflux(n),ZERO,all=.true.)
