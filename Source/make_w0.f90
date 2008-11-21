@@ -27,17 +27,20 @@ contains
     use probin_module, only: verbose
     use restrict_base_module, only: fill_ghost_base
 
-    real(kind=dp_t), intent(  out) :: w0(:,0:)
-    real(kind=dp_t), intent(in   ) :: w0_old(:,0:)
-    real(kind=dp_t), intent(in   ) :: psi(:,0:)
-    real(kind=dp_t), intent(in   ) :: etarho_ec(:,0:)
-    real(kind=dp_t), intent(in   ) :: etarho_cc(:,0:)
-    real(kind=dp_t), intent(inout) :: w0_force(:,0:)
-    real(kind=dp_t), intent(in   ) :: rho0_old(:,0:), rho0_new(:,0:)
-    real(kind=dp_t), intent(in   ) :: p0_old(:,0:), p0_new(:,0:)
-    real(kind=dp_t), intent(in   ) :: gamma1bar_old(:,0:), gamma1bar_new(:,0:)
+    real(kind=dp_t), intent(  out) ::                 w0(:,0:)
+    real(kind=dp_t), intent(in   ) ::             w0_old(:,0:)
+    real(kind=dp_t), intent(in   ) ::                psi(:,0:)
+    real(kind=dp_t), intent(in   ) ::          etarho_ec(:,0:)
+    real(kind=dp_t), intent(in   ) ::          etarho_cc(:,0:)
+    real(kind=dp_t), intent(inout) ::           w0_force(:,0:)
+    real(kind=dp_t), intent(in   ) ::           rho0_old(:,0:)
+    real(kind=dp_t), intent(in   ) ::           rho0_new(:,0:)
+    real(kind=dp_t), intent(in   ) ::             p0_old(:,0:)
+    real(kind=dp_t), intent(in   ) ::             p0_new(:,0:)
+    real(kind=dp_t), intent(in   ) ::      gamma1bar_old(:,0:)
+    real(kind=dp_t), intent(in   ) ::      gamma1bar_new(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_minus_pthermbar(:,0:)
-    real(kind=dp_t), intent(in   ) :: Sbar_in(:,0:)
+    real(kind=dp_t), intent(in   ) ::            Sbar_in(:,0:)
     real(kind=dp_t), intent(in   ) :: dt,dtold
 
     integer         :: r,n
@@ -56,15 +59,10 @@ contains
 
     else
 
-       do n=1,nlevs
-          ! NOTE: need to fix this to put loop over nlevs within so we can call
-          ! fill_ghost_base on w0 before computing w0_force
-          call make_w0_spherical(n,w0(n,:),w0_old(n,0:),Sbar_in(n,0:), &
-                                 rho0_old(n,:),rho0_new(n,:),p0_old(n,0:),p0_new(n,0:), &
-                                 gamma1bar_old(n,0:),gamma1bar_new(n,0:), &
-                                 p0_minus_pthermbar(n,0:),etarho_ec(n,0:),etarho_cc(n,0:), &
-                                 w0_force(n,0:),dt,dtold)
-       end do
+       call make_w0_spherical(w0(1,:),w0_old(1,:),Sbar_in(1,:),rho0_old(1,:), &
+                              rho0_new(1,:),p0_old(1,:),p0_new(1,:), &
+                              gamma1bar_old(1,:),gamma1bar_new(1,:),p0_minus_pthermbar(1,:), &
+                              etarho_ec(1,:),etarho_cc(1,:),w0_force(1,:),dt,dtold)
 
     end if
 
@@ -94,14 +92,16 @@ contains
     use probin_module, only: grav_const, dpdt_factor, base_cutoff_density
     use restrict_base_module, only: fill_ghost_base
 
-    real(kind=dp_t), intent(  out) :: w0(:,0:)
-    real(kind=dp_t), intent(in   ) :: w0_old(:,0:)
-    real(kind=dp_t), intent(in   ) :: Sbar_in(:,0:)
-    real(kind=dp_t), intent(in   ) :: p0_old(:,0:), p0_new(:,0:)
-    real(kind=dp_t), intent(in   ) :: gamma1bar_old(:,0:), gamma1bar_new(:,0:)
+    real(kind=dp_t), intent(  out) ::                 w0(:,0:)
+    real(kind=dp_t), intent(in   ) ::             w0_old(:,0:)
+    real(kind=dp_t), intent(in   ) ::            Sbar_in(:,0:)
+    real(kind=dp_t), intent(in   ) ::             p0_old(:,0:)
+    real(kind=dp_t), intent(in   ) ::             p0_new(:,0:)
+    real(kind=dp_t), intent(in   ) ::      gamma1bar_old(:,0:)
+    real(kind=dp_t), intent(in   ) ::      gamma1bar_new(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_minus_pthermbar(:,0:)
-    real(kind=dp_t), intent(in   ) :: psi(:,0:)
-    real(kind=dp_t), intent(inout) :: w0_force(:,0:)
+    real(kind=dp_t), intent(in   ) ::                psi(:,0:)
+    real(kind=dp_t), intent(  out) ::           w0_force(:,0:)
     real(kind=dp_t), intent(in   ) :: dt,dtold
 
     ! Local variables
@@ -208,7 +208,7 @@ contains
 
   end subroutine make_w0_planar
 
-  subroutine make_w0_spherical(n,w0,w0_old,Sbar_in,rho0,rho0_new,p0,p0_new, &
+  subroutine make_w0_spherical(w0,w0_old,Sbar_in,rho0,rho0_new,p0,p0_new, &
                                gamma1bar,gamma1bar_new,p0_minus_pthermbar, &
                                etarho_ec,etarho_cc,w0_force,dt,dtold)
 
@@ -218,26 +218,28 @@ contains
     use fundamental_constants_module, only: Gconst
     use probin_module, only: dpdt_factor, base_cutoff_density
 
-    integer        , intent(in   ) :: n
-    real(kind=dp_t), intent(  out) :: w0(0:)
-    real(kind=dp_t), intent(in   ) :: w0_old(0:)
-    real(kind=dp_t), intent(in   ) :: Sbar_in(0:)
-    real(kind=dp_t), intent(in   ) :: rho0(0:),rho0_new(0:)
-    real(kind=dp_t), intent(in   ) :: p0(0:),p0_new(0:)
-    real(kind=dp_t), intent(in   ) :: gamma1bar(0:),gamma1bar_new(0:),p0_minus_pthermbar(0:)
-    real(kind=dp_t), intent(in   ) :: etarho_ec(0:),etarho_cc(0:)
-    real(kind=dp_t), intent(inout) :: w0_force(0:)
+    real(kind=dp_t), intent(  out) ::                 w0(0:)
+    real(kind=dp_t), intent(in   ) ::             w0_old(0:)
+    real(kind=dp_t), intent(in   ) ::            Sbar_in(0:)
+    real(kind=dp_t), intent(in   ) ::               rho0(0:)
+    real(kind=dp_t), intent(in   ) ::           rho0_new(0:)
+    real(kind=dp_t), intent(in   ) ::                 p0(0:)
+    real(kind=dp_t), intent(in   ) ::             p0_new(0:)
+    real(kind=dp_t), intent(in   ) ::          gamma1bar(0:)
+    real(kind=dp_t), intent(in   ) ::      gamma1bar_new(0:)
+    real(kind=dp_t), intent(in   ) :: p0_minus_pthermbar(0:)
+    real(kind=dp_t), intent(in   ) ::          etarho_ec(0:)
+    real(kind=dp_t), intent(in   ) ::          etarho_cc(0:)
+    real(kind=dp_t), intent(  out) ::           w0_force(0:)
     real(kind=dp_t), intent(in   ) :: dt,dtold
 
     ! Local variables
     integer                    :: r
-    real(kind=dp_t)            :: dpdr, volume_discrepancy
-    real(kind=dp_t)            :: w0_avg, div_avg, dt_avg
+    real(kind=dp_t)            :: dpdr, volume_discrepancy, w0_avg, div_avg, dt_avg
 
     real(kind=dp_t) ::    w0_old_cen(0:nr_fine-1)
     real(kind=dp_t) ::    w0_new_cen(0:nr_fine-1)
     real(kind=dp_t) :: gamma1bar_nph(0:nr_fine-1)
-    real(kind=dp_t) ::      rho0_nph(0:nr_fine-1)
     real(kind=dp_t) ::        p0_nph(0:nr_fine-1)
     real(kind=dp_t) ::             c(0:nr_fine)
     real(kind=dp_t) ::             d(0:nr_fine)
@@ -245,12 +247,15 @@ contains
     real(kind=dp_t) ::             u(0:nr_fine)
     real(kind=dp_t) ::           rhs(0:nr_fine)
     real(kind=dp_t) ::  w0_from_Sbar(0:nr_fine)
-    real(kind=dp_t) ::     grav_edge(0:nr_fine)
+
+    ! These need the extra dimension so we can call make_grav_edge
+    real(kind=dp_t) ::  rho0_nph(1,0:nr_fine-1)
+    real(kind=dp_t) :: grav_edge(1,0:nr_fine-1)
 
     ! create time-centered base-state quantities
     do r = 0, nr_fine-1
        p0_nph(r)        = HALF*(p0(r)        + p0_new(r))
-       rho0_nph(r)      = HALF*(rho0(r)      + rho0_new(r))
+       rho0_nph(1,r)    = HALF*(rho0(r)      + rho0_new(r))
        gamma1bar_nph(r) = HALF*(gamma1bar(r) + gamma1bar_new(r))       
     enddo
 
@@ -266,19 +271,19 @@ contains
           volume_discrepancy = ZERO
        endif
 
-       w0_from_Sbar(r) = w0_from_Sbar(r-1) + dr(n) * Sbar_in(r-1) * r_cc_loc(n,r-1)**2 - &
-            dr(n)* volume_discrepancy * r_cc_loc(n,r-1)**2 / &
+       w0_from_Sbar(r) = w0_from_Sbar(r-1) + dr(1) * Sbar_in(r-1) * r_cc_loc(1,r-1)**2 - &
+            dr(1)* volume_discrepancy * r_cc_loc(1,r-1)**2 / &
             (gamma1bar_nph(r-1)*p0_nph(r-1))
 
     end do
 
     do r = 1,nr_fine
-       w0_from_Sbar(r) = w0_from_Sbar(r) / r_edge_loc(n,r)**2
+       w0_from_Sbar(r) = w0_from_Sbar(r) / r_edge_loc(1,r)**2
     end do
 
 
     ! make the edge-centered gravity
-    call make_grav_edge(n,grav_edge,rho0_nph)
+    call make_grav_edge(1,grav_edge(1,:),rho0_nph(1,:))
 
     ! NOTE:  now we solve for the remainder of (r^2 * w0)
 
@@ -291,30 +296,30 @@ contains
     ! Note that we are solving for (r^2 w0), not just w0. 
 
     do r=1,nr_fine
-       c(r) = gamma1bar_nph(r-1) * p0_nph(r-1) / r_cc_loc(n,r-1)**2
-       c(r) = c(r) / dr(n)**2
+       c(r) = gamma1bar_nph(r-1) * p0_nph(r-1) / r_cc_loc(1,r-1)**2
+       c(r) = c(r) / dr(1)**2
     end do
 
     do r=1,nr_fine-1
-       d(r) = -( gamma1bar_nph(r-1) * p0_nph(r-1) / r_cc_loc(n,r-1)**2 &
-                +gamma1bar_nph(r  ) * p0_nph(r  ) / r_cc_loc(n,r  )**2 ) / dr(n)**2 
+       d(r) = -( gamma1bar_nph(r-1) * p0_nph(r-1) / r_cc_loc(1,r-1)**2 &
+                +gamma1bar_nph(r  ) * p0_nph(r  ) / r_cc_loc(1,r  )**2 ) / dr(1)**2 
 
-       dpdr = (p0_nph(r)-p0_nph(r-1))/dr(n)
-       d(r) = d(r) - four * dpdr / (r_edge_loc(n,r))**3
+       dpdr = (p0_nph(r)-p0_nph(r-1))/dr(1)
+       d(r) = d(r) - four * dpdr / (r_edge_loc(1,r))**3
     end do
 
     do r = 0,nr_fine-1
-       e(r) = gamma1bar_nph(r) * p0_nph(r) / r_cc_loc(n,r)**2
-       e(r) = e(r) / dr(n)**2
+       e(r) = gamma1bar_nph(r) * p0_nph(r) / r_cc_loc(1,r)**2
+       e(r) = e(r) / dr(1)**2
     end do
 
     do r = 1,nr_fine-1
-       dpdr = (p0_nph(r)-p0_nph(r-1))/dr(n)
-       rhs(r) = four * dpdr * w0_from_Sbar(r) / r_edge_loc(n,r) - &
-            grav_edge(r) * (r_cc_loc(n,r  )**2 * etarho_cc(r  ) - &
-                            r_cc_loc(n,r-1)**2 * etarho_cc(r-1)) / &
-                            (dr(n) * r_edge_loc(n,r)**2) - &
-            four * M_PI * Gconst * HALF * (rho0_nph(r) + rho0_nph(r-1)) * etarho_ec(r)
+       dpdr = (p0_nph(r)-p0_nph(r-1))/dr(1)
+       rhs(r) = four * dpdr * w0_from_Sbar(r) / r_edge_loc(1,r) - &
+            grav_edge(1,r) * (r_cc_loc(1,r  )**2 * etarho_cc(r  ) - &
+            r_cc_loc(1,r-1)**2 * etarho_cc(r-1)) / &
+            (dr(1) * r_edge_loc(1,r)**2) - &
+            four * M_PI * Gconst * HALF * (rho0_nph(1,r) + rho0_nph(1,r-1)) * etarho_ec(r)
     end do
 
     ! Lower boundary
@@ -323,7 +328,6 @@ contains
      rhs(0) = zero
 
     ! Upper boundary
-!      c(nr_fine) = -one
        c(nr_fine) = zero
        d(nr_fine) =  one
      rhs(nr_fine) = zero
@@ -333,7 +337,7 @@ contains
 
     w0(0) = ZERO
     do r=1,nr_fine
-       w0(r) = u(r) / r_edge_loc(n,r)**2
+       w0(r) = u(r) / r_edge_loc(1,r)**2
     end do
 
     do r=0,nr_fine
@@ -347,7 +351,7 @@ contains
        w0_new_cen(r) = HALF * (w0    (r) + w0    (r+1))
        w0_avg = HALF * (dt *  w0_old_cen(r)           + dtold *  w0_new_cen(r)  ) / dt_avg
        div_avg = HALF * (dt * (w0_old(r+1)-w0_old(r)) + dtold * (w0(r+1)-w0(r))) / dt_avg
-       w0_force(r) = (w0_new_cen(r)-w0_old_cen(r)) / dt_avg + w0_avg * div_avg / dr(n)
+       w0_force(r) = (w0_new_cen(r)-w0_old_cen(r)) / dt_avg + w0_avg * div_avg / dr(1)
     end do
 
   end subroutine make_w0_spherical
