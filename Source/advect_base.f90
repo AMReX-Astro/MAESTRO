@@ -97,45 +97,39 @@ contains
     use make_edge_state_module
     use geometry, only: r_cc_loc, r_edge_loc, dr, nr_fine, nlevs
     
-    real(kind=dp_t), intent(in   ) :: w0(:,0:)
-    real(kind=dp_t), intent(in   ) :: rho0_old(:,0:)
-    real(kind=dp_t), intent(  out) :: rho0_new(:,0:)
+    real(kind=dp_t), intent(in   ) ::                  w0(:,0:)
+    real(kind=dp_t), intent(in   ) ::            rho0_old(:,0:)
+    real(kind=dp_t), intent(  out) ::            rho0_new(:,0:)
     real(kind=dp_t), intent(  out) :: rho0_predicted_edge(:,0:)
     real(kind=dp_t), intent(in   ) :: dt
     
     ! Local variables
-    integer         :: r, n
+    integer         :: r
     real(kind=dp_t) :: dtdr
-
-    real(kind=dp_t) :: force(nlevs,0:nr_fine-1)
-    real(kind=dp_t) ::  edge(nlevs,0:nr_fine)
+    real(kind=dp_t) :: force(1,0:nr_fine-1)
+    real(kind=dp_t) ::  edge(1,0:nr_fine)
     
-    dtdr = dt / dr(nlevs)
+    dtdr = dt / dr(1)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Predict rho_0 to vertical edges
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    do n=1,nlevs
-       do r=0,nr_fine-1
-          force(n,r) = -rho0_old(n,r) * (w0(n,r+1) - w0(n,r)) / dr(n) - &
-               2.0_dp_t*rho0_old(n,r)*HALF*(w0(n,r) + w0(n,r+1))/r_cc_loc(n,r)
-       end do
+    do r=0,nr_fine-1
+       force(1,r) = -rho0_old(1,r) * (w0(1,r+1) - w0(1,r)) / dr(1) - &
+            2.0_dp_t*rho0_old(1,r)*HALF*(w0(1,r) + w0(1,r+1))/r_cc_loc(1,r)
     end do
     
     call make_edge_state_1d(rho0_old,edge,w0,force,dr,dt)
     
     rho0_predicted_edge = edge
 
-    do n=1,nlevs
-       do r=0,nr_fine-1
-          rho0_new(n,r) = rho0_old(n,r) &
-               - dtdr/r_cc_loc(n,r)**2 * &
-               (r_edge_loc(n,r+1)**2 * edge(n,r+1) * w0(n,r+1) - &
-               r_edge_loc(n,r  )**2 * edge(n,r  ) * w0(n,r  ))
-       end do
+    do r=0,nr_fine-1
+       rho0_new(1,r) = rho0_old(1,r) - dtdr/r_cc_loc(1,r)**2 * &
+            (r_edge_loc(1,r+1)**2 * edge(1,r+1) * w0(1,r+1) - &
+            r_edge_loc(1,r  )**2 * edge(1,r  ) * w0(1,r  ))
     end do
-
+    
   end subroutine advect_base_dens_spherical
 
 
