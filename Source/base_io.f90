@@ -17,7 +17,7 @@ contains
     
     use parallel
     use bl_prof_module
-    use geometry, only : dr, r_start_coord, r_end_coord, numdisjointchunks, nlevs
+    use geometry, only : dr, r_start_coord, r_end_coord, numdisjointchunks, nlevs_radial
     use network, only: nspec
     use variables, only: rho_comp, rhoh_comp
     use bl_constants_module
@@ -51,7 +51,7 @@ contains
 
        open(unit=99,file=out_name,form = "formatted", access = "sequential",action="write")
 
-       do n=1,nlevs
+       do n=1,nlevs_radial
           do i=1,numdisjointchunks(n)
              do r=r_start_coord(n,i),r_end_coord(n,i)
                 base_r = problo + (dble(r)+HALF) * dr(n)
@@ -69,7 +69,7 @@ contains
        write(6,*) ''
 
        open(unit=99,file=out_name,form = "formatted", access = "sequential",action="write")
-       do n=1,nlevs
+       do n=1,nlevs_radial
           do i=1,numdisjointchunks(n)
              do r=r_start_coord(n,i),r_end_coord(n,i)+1
                 base_r = problo + dble(r) * dr(n)
@@ -85,7 +85,7 @@ contains
        write(6,*) ''
 
        open(unit=99,file=out_name,form = "formatted", access = "sequential",action="write")
-       do n=1,nlevs
+       do n=1,nlevs_radial
           do i=1,numdisjointchunks(n)
              do r=r_start_coord(n,i),r_end_coord(n,i)+1
                 base_r = problo + dble(r) * dr(n)
@@ -113,7 +113,7 @@ contains
     use bl_prof_module
     use variables, only: rho_comp, rhoh_comp
     use network, only: nspec
-    use geometry, only : dr, r_start_coord, r_end_coord, numdisjointchunks, nlevs
+    use geometry, only : dr, r_start_coord, r_end_coord, numdisjointchunks, nlevs_radial
     use bl_constants_module
     use restrict_base_module, only: fill_ghost_base
     
@@ -144,7 +144,7 @@ contains
 
     open(unit=99,file=out_name)
 
-    do n=1,nlevs
+    do n=1,nlevs_radial
        do i=1,numdisjointchunks(n)
           do r=r_start_coord(n,i),r_end_coord(n,i)
              read(99,*)  r_dummy, rho0(n,r), p0(n,r), gamma1bar(n,r), &
@@ -162,7 +162,7 @@ contains
     end if
 
     open(unit=99,file=out_name)
-    do n=1,nlevs
+    do n=1,nlevs_radial
        do i=1,numdisjointchunks(n)
           do r=r_start_coord(n,i),r_end_coord(n,i)+1
              read(99,*)  r_dummy, w0(n,r)
@@ -178,7 +178,7 @@ contains
     end if
 
     open(unit=99,file=out_name)
-    do n=1,nlevs
+    do n=1,nlevs_radial
        do i=1,numdisjointchunks(n)
           do r=r_start_coord(n,i),r_end_coord(n,i)+1
              read(99,*)  r_dummy, etarho_ec(n,r)
@@ -187,7 +187,7 @@ contains
     end do
     close(99)
 
-    if (nlevs .gt. 1) then
+    if (nlevs_radial .gt. 1) then
        call fill_ghost_base(rho0,.true.)
        call fill_ghost_base(rhoh0,.true.)
        call fill_ghost_base(p0,.true.)
