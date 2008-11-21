@@ -621,68 +621,72 @@ subroutine varden()
         !---------------------------------------------------------------------
         if (max_levs > 1 .and. regrid_int > 0 .and. (mod(istep-1,regrid_int) .eq. 0) ) then
 
-           ! first 'regrid' the 1d arrays 
-           ! (other than rho0, rhoh0, and p0, which are handled below)
-           ! copy the coarsest level only, interpolate to all the other levels
-           ! and then copy the valid data from the old arrays onto the new
-           ! this must be done before we call init_multilevel or else we lose track
-           ! of where the old valid data was
+           if (spherical .eq. 0) then
+              
+              ! first 'regrid' the 1d arrays 
+              ! (other than rho0, rhoh0, and p0, which are handled below)
+              ! copy the coarsest level only, interpolate to all the other levels
+              ! and then copy the valid data from the old arrays onto the new
+              ! this must be done before we call init_multilevel or else we lose track
+              ! of where the old valid data was
+              
+              ! copy the coarsest level of the real arrays into the temp arrays
+              psi_temp(1,:)        = psi(1,:)
+              etarho_cc_temp(1,:)  = etarho_cc(1,:)
+              div_etarho_temp(1,:) = div_etarho(1,:)
+              etarho_ec_temp(1,:)  = etarho_ec(1,:)
+              w0_temp(1,:)         = w0(1,:)
 
-           ! copy the coarsest level of the real arrays into the temp arrays
-           psi_temp(1,:)        = psi(1,:)
-           etarho_cc_temp(1,:)  = etarho_cc(1,:)
-           div_etarho_temp(1,:) = div_etarho(1,:)
-           etarho_ec_temp(1,:)  = etarho_ec(1,:)
-           w0_temp(1,:)         = w0(1,:)
-
-           ! piecewise constant interpolation to fill the cc temp arrays
-           do n=2,max_levs
-              do r=0,nr(n)-1
-                 psi_temp(n,r)       = psi_temp(n-1,r/2)
-                 etarho_cc_temp(n,r) = etarho_cc_temp(n-1,r/2)
-                 div_etarho_temp(n,r)= div_etarho_temp(n-1,r/2)
-              end do
-           end do
-
-           ! piecewise linear interpolation to fill the edge-centered temp arrays
-           do n=2,max_levs
-              do r=0,nr(n)
-                 if (mod(r,2) .eq. 0) then
-                    etarho_ec_temp(n,r) = etarho_ec_temp(n-1,r/2)
-                    w0_temp(n,r)        = w0_temp(n-1,r/2)
-                 else
-                    etarho_ec_temp(n,r) = &
-                         HALF*(etarho_ec_temp(n-1,r/2)+etarho_ec_temp(n-1,r/2+1))
-                    w0_temp(n,r) = HALF*(w0_temp(n-1,r/2)+w0_temp(n-1,r/2+1))
-                 end if
-              end do
-           end do
-
-           ! copy valid data into temp
-           do n=2,nlevs
-              do i=1,numdisjointchunks(n)
-                 do r=r_start_coord(n,i),r_end_coord(n,i)
-                    psi_temp(n,r)        = psi(n,r)
-                    etarho_cc_temp(n,r)  = etarho_cc(n,r)
-                    div_etarho_temp(n,r) = div_etarho(n,r)
+              ! piecewise constant interpolation to fill the cc temp arrays
+              do n=2,max_levs
+                 do r=0,nr(n)-1
+                    psi_temp(n,r)       = psi_temp(n-1,r/2)
+                    etarho_cc_temp(n,r) = etarho_cc_temp(n-1,r/2)
+                    div_etarho_temp(n,r)= div_etarho_temp(n-1,r/2)
                  end do
               end do
-           end do
-           do n=2,nlevs
-              do i=1,numdisjointchunks(n)
-                 do r=r_start_coord(n,i),r_end_coord(n,i)+1
-                    etarho_ec_temp(n,r) = etarho_ec(n,r)
-                    w0_temp(n,r) = w0(n,r)
+
+              ! piecewise linear interpolation to fill the edge-centered temp arrays
+              do n=2,max_levs
+                 do r=0,nr(n)
+                    if (mod(r,2) .eq. 0) then
+                       etarho_ec_temp(n,r) = etarho_ec_temp(n-1,r/2)
+                       w0_temp(n,r)        = w0_temp(n-1,r/2)
+                    else
+                       etarho_ec_temp(n,r) = &
+                            HALF*(etarho_ec_temp(n-1,r/2)+etarho_ec_temp(n-1,r/2+1))
+                       w0_temp(n,r) = HALF*(w0_temp(n-1,r/2)+w0_temp(n-1,r/2+1))
+                    end if
                  end do
               end do
-           end do
 
-           ! copy temp array back into the real thing
-           psi = psi_temp
-           etarho_cc = etarho_cc_temp
-           div_etarho = div_etarho_temp
-           etarho_ec = etarho_ec_temp
-           w0 = w0_temp
+              ! copy valid data into temp
+              do n=2,nlevs
+                 do i=1,numdisjointchunks(n)
+                    do r=r_start_coord(n,i),r_end_coord(n,i)
+                       psi_temp(n,r)        = psi(n,r)
+                       etarho_cc_temp(n,r)  = etarho_cc(n,r)
+                       div_etarho_temp(n,r) = div_etarho(n,r)
+                    end do
+                 end do
+              end do
+              do n=2,nlevs
+                 do i=1,numdisjointchunks(n)
+                    do r=r_start_coord(n,i),r_end_coord(n,i)+1
+                       etarho_ec_temp(n,r) = etarho_ec(n,r)
+                       w0_temp(n,r) = w0(n,r)
+                    end do
+                 end do
+              end do
+
+              ! copy temp array back into the real thing
+              psi = psi_temp
+              etarho_cc = etarho_cc_temp
+              div_etarho = div_etarho_temp
+              etarho_ec = etarho_ec_temp
+              w0 = w0_temp
+
+           end if
 
            ! create new grids and fill in data on those grids
            call regrid(mla,uold,sold,gpres,pres,dSdt,Source_old,rho_omegadot2,rho_Hnuc2, &
