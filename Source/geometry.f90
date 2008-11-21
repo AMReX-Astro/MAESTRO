@@ -11,7 +11,7 @@ module geometry
 
   implicit none
 
-  integer   , save :: nlevs
+  integer   , save :: nlevs,nlevs_radial
   integer   , save :: spherical
   integer   , save :: dm
   real(dp_t), save :: center(3)
@@ -27,7 +27,7 @@ module geometry
 
   private
 
-  public :: nlevs, spherical, dm, center, nr_fine, dr_fine
+  public :: nlevs, nlevs_radial, spherical, dm, center, nr_fine, dr_fine
   public :: dr, r_cc_loc, r_edge_loc
   public :: numdisjointchunks
   public :: r_start_coord, r_end_coord, nr

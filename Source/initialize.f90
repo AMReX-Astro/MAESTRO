@@ -82,6 +82,7 @@ contains
 
     ! initialize nlevs
     nlevs = mla%nlevel
+    nlevs_radial = merge(1, nlevs, spherical .eq. 1)
 
     ! initialize boundary conditions
     call initialize_bc(the_bc_tower,nlevs,pmask)
@@ -295,6 +296,7 @@ contains
     
     ! initialize nlevs
     nlevs = mla%nlevel
+    nlevs_radial = merge(1, nlevs, spherical .eq. 1)
 
     ! initialize boundary conditions
     call initialize_bc(the_bc_tower,nlevs,pmask)
@@ -531,6 +533,7 @@ contains
     call bc_tower_level_build(the_bc_tower,1,la_array(1))
 
     nlevs = 1
+    nlevs_radial = 1
 
     if (max_levs > 1) then
 
@@ -563,6 +566,7 @@ contains
                                           the_bc_tower%bc_tower_array(nl+1))
 
              nlevs = nl+1
+             nlevs_radial = merge(1, nlevs, spherical .eq. 1)
              nl = nl + 1
              
           endif ! if (new_grid) 
@@ -574,6 +578,7 @@ contains
        end do
 
        nlevs = nl
+       nlevs_radial = merge(1, nlevs, spherical .eq. 1)
 
        ! check for proper nesting
        if (nlevs .ge. 3) then
@@ -589,6 +594,7 @@ contains
     call ml_layout_restricted_build(mla,mba,nlevs,pmask)
     
     nlevs = mla%nlevel
+    nlevs_radial = merge(1, nlevs, spherical .eq. 1)
     
     do n = 1, nlevs
        call destroy(la_array(n))
