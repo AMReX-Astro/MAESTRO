@@ -133,14 +133,12 @@ contains
 
     else
 
-       do n = 1, nlevs
-          call cell_to_edge(n,rho0_old(n,:),rho0_edge_old(n,:))
-          call cell_to_edge(n,rho0_new(n,:),rho0_edge_new(n,:))
-          call cell_to_edge(n,rhoh0_old(n,:),rhoh0_edge_old(n,:))
-          call cell_to_edge(n,rhoh0_new(n,:),rhoh0_edge_new(n,:))
-          call cell_to_edge(n,tempbar(n,:),t0_edge_old(n,:))
-          call cell_to_edge(n,tempbar(n,:),t0_edge_new(n,:))
-       end do
+       call cell_to_edge(rho0_old,rho0_edge_old)
+       call cell_to_edge(rho0_new,rho0_edge_new)
+       call cell_to_edge(rhoh0_old,rhoh0_edge_old)
+       call cell_to_edge(rhoh0_new,rhoh0_edge_new)
+       call cell_to_edge(tempbar,t0_edge_old)
+       call cell_to_edge(tempbar,t0_edge_new)
 
     end if
 

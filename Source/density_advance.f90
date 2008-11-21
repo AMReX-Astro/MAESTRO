@@ -95,10 +95,8 @@ contains
        ! contains edge-centered quantities created via spatial interpolation.
        ! This is to be contrasted to rho0_predicted_edge which is the half-time
        ! edge state created in advect_base.       
-       do n = 1, nlevs
-          call cell_to_edge(n,rho0_old(n,:),rho0_edge_old(n,:))
-          call cell_to_edge(n,rho0_new(n,:),rho0_edge_new(n,:))
-       end do
+       call cell_to_edge(rho0_old,rho0_edge_old)
+       call cell_to_edge(rho0_new,rho0_edge_new)
 
     end if
 

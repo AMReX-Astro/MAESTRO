@@ -367,9 +367,7 @@ contains
           call destroy(div_coeff_3d(n))
        end do
     else
-       do n=1,nlevs
-          call cell_to_edge(n,div_coeff_old(n,:),div_coeff_edge(n,:))
-       end do
+       call cell_to_edge(div_coeff_old,div_coeff_edge)
        call macproject(mla,umac,macphi,sold,dx,the_bc_tower, &
                        press_comp, macrhs,div_coeff_1d=div_coeff_old, &
                        div_coeff_half_1d=div_coeff_edge)
@@ -897,9 +895,7 @@ contains
              call destroy(div_coeff_3d(n))
           end do
        else
-          do n=1,nlevs
-             call cell_to_edge(n,div_coeff_nph(n,:),div_coeff_edge(n,:))
-          end do
+          call cell_to_edge(div_coeff_nph,div_coeff_edge)
           call macproject(mla,umac,macphi,rhohalf,dx,the_bc_tower, &
                           press_comp,macrhs,div_coeff_1d=div_coeff_nph, &
                           div_coeff_half_1d=div_coeff_edge)
