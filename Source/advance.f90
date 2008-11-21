@@ -44,7 +44,6 @@ contains
     use extraphalf_module
     use thermal_conduct_module
     use make_explicit_thermal_module
-    use add_react_to_thermal_module
     use variables, only: nscal, press_comp, temp_comp, rho_comp, rhoh_comp, foextrap_comp
     use geometry, only: spherical, nr_fine, r_end_coord, anelastic_cutoff_coord, &
          base_cutoff_density_coord, burning_cutoff_density_coord, dm, nlevs
@@ -105,8 +104,6 @@ contains
     type(multifab) ::         Source_nph(mla%nlevel)
     type(multifab) ::            thermal(mla%nlevel)
     type(multifab) ::             s2star(mla%nlevel)
-    type(multifab) :: rho_omegadot2_hold(mla%nlevel)
-    type(multifab) ::     rho_Hnuc2_hold(mla%nlevel)
     type(multifab) ::                 s1(mla%nlevel)
     type(multifab) ::                 s2(mla%nlevel)
     type(multifab) ::  delta_gamma1_term(mla%nlevel)
@@ -416,6 +413,12 @@ contains
        call average(mla,s1,rhoh0_1,dx,rhoh_comp)
     end if
 
+    do n=1,nlevs
+       call destroy(rho_omegadot1(n))
+       call destroy(rho_Hnuc1(n))
+       call destroy(rho_Hext(n))
+    end do
+
     if (evolve_base_state) then
        do n=1,nlevs
           call multifab_build(gamma1(n), mla%la(n), 1, 0)
@@ -428,10 +431,6 @@ contains
           call destroy(gamma1(n))
        end do
     end if
-
-    do n=1,nlevs
-       call destroy(rho_Hext(n))
-    end do
 
     do n=1,nlevs
        call make_grav_cell(n,grav_cell_new(n,:),rho0_old(n,:))
@@ -463,48 +462,6 @@ contains
     else
        do n=1,nlevs
           call setval(thermal(n),ZERO,all=.true.)
-       end do
-    end if
-    
-    ! if we are predicting temperature at edges, we need to add the reaction 
-    ! terms to thermal
-    if ( (enthalpy_pred_type .eq. predict_T_then_rhohprime) .or. &
-         (enthalpy_pred_type .eq. predict_T_then_h        ) ) then
-
-       do n=1,nlevs
-          call multifab_build(rho_Hext(n), mla%la(n), 1, 1)
-       end do
-
-       if(istep .le. 1) then
-          call add_react_to_thermal(thermal,rho_omegadot1,rho_Hnuc1,s1,rho_Hext, &
-                                    the_bc_tower%bc_tower_array,mla,dx,time)
-       else
-          ! note: at this point in the evolution, rho_omegadot2/rho_Hnuc2 are
-          ! from the previous timestep
-          call add_react_to_thermal(thermal,rho_omegadot2,rho_Hnuc2,s1,rho_Hext, &
-                                    the_bc_tower%bc_tower_array,mla,dx,time)
-          
-          if(.not. do_half_alg) then
-             do n=1,nlevs
-                call multifab_build(rho_omegadot2_hold(n), mla%la(n), nspec, 1)
-                call multifab_copy_c(rho_omegadot2_hold(n),1,rho_omegadot2(n),1,nspec,1)
-
-                call multifab_build(rho_Hnuc2_hold(n), mla%la(n), 1, 1)
-                call multifab_copy_c(rho_Hnuc2_hold(n),1,rho_Hnuc2(n),1,1,1)
-             end do
-          end if
-       end if
-
-       do n=1,nlevs
-          call destroy(rho_Hext(n))
-       end do
-
-    end if
-            
-    if(do_half_alg) then
-       do n=1,nlevs
-          call destroy(rho_omegadot1(n))
-          call destroy(rho_Hnuc1(n))
        end do
     end if
 
@@ -933,41 +890,7 @@ contains
              call setval(thermal(n),ZERO,all=.true.)
           end do
        end if
-       
-       ! if we are predicting temperature at edges, we need to add the reaction 
-       ! terms to thermal
-       if ( (enthalpy_pred_type .eq. predict_T_then_rhohprime) .or. &
-            (enthalpy_pred_type .eq. predict_T_then_h        ) ) then
 
-          do n=1,nlevs
-             call multifab_build(rho_Hext(n), mla%la(n), 1, 1)
-          end do
-
-          if(istep .le. 1) then
-             call add_react_to_thermal(thermal,rho_omegadot1,rho_Hnuc1,s1,rho_Hext, &
-                                       the_bc_tower%bc_tower_array,mla,dx,time)
-          else
-             call add_react_to_thermal(thermal,rho_omegadot2_hold,rho_Hnuc2_hold,s1,rho_Hext, &
-                                       the_bc_tower%bc_tower_array,mla,dx,time)
-
-             do n=1,nlevs
-                call destroy(rho_omegadot2_hold(n))
-                call destroy(rho_Hnuc2_hold(n))
-             end do
-          end if
-
-          do n=1,nlevs
-             call destroy(rho_Hext(n))
-          end do
-
-
-       end if
-
-       do n=1,nlevs
-          call destroy(rho_omegadot1(n))
-          call destroy(rho_Hnuc1(n))
-       end do
-       
        do n=1,nlevs
           call multifab_build(s2(n), mla%la(n), nscal, 3)
           call setval(etarhoflux(n),ZERO,all=.true.)

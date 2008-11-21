@@ -180,7 +180,7 @@ contains
 
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
-
+          
           rho = s_in(i,j,rho_comp)
           x_in(1:nspec) = s_in(i,j,spec_comp:spec_comp+nspec-1) / rho
           T_in = s_in(i,j,temp_comp)
@@ -193,8 +193,10 @@ contains
              rhoH = ZERO
           endif
 
-          ! update the density and species
+          ! pass the density through
           s_out(i,j,rho_comp) = s_in(i,j,rho_comp)
+
+          ! update the species
           s_out(i,j,spec_comp:spec_comp+nspec-1) = x_out(1:nspec) * rho
 
           ! store the energy generation and species creation quantities
@@ -205,46 +207,29 @@ contains
           s_out(i,j,rhoh_comp) = s_in(i,j,rhoh_comp) &
                + dt * rho_Hnuc(i,j) + dt * rho_Hext(i,j)
 
-
-
-!**********************************************
-! option to compute temperature and put it into s_out
-! dens, enthalpy, and xmass are inputs
-!
-! NOTE: if you update the temperature here for an option other than
-! predict_Tprime_then_h, then you should not add the
-! reaction term explicitly to the temperature equation force returned 
-! by mktempforce in scalar advance, since you will be double counting.
-
-          if (enthalpy_pred_type .eq. predict_Tprime_then_h) then
-             den_eos(1)  = s_out(i,j,rho_comp)
-             h_eos(1)    = s_out(i,j,rhoh_comp)/s_out(i,j,rho_comp)
-             xn_eos(1,:) = s_out(i,j,spec_comp:spec_comp+nspec-1)/s_out(i,j,rho_comp)
-             temp_eos(1) = T_in
+          ! update the temperature with the eos
+          den_eos(1)  = s_out(i,j,rho_comp)
+          h_eos(1)    = s_out(i,j,rhoh_comp)/s_out(i,j,rho_comp)
+          xn_eos(1,:) = s_out(i,j,spec_comp:spec_comp+nspec-1)/s_out(i,j,rho_comp)
+          temp_eos(1) = T_in
              
-             call eos(eos_input_rh, den_eos, temp_eos, &
-                      npts, nspec, &
-                      xn_eos, &
-                      p_eos, h_eos, e_eos, &
-                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                      dpdX_eos, dhdX_eos, &
-                      gam1_eos, cs_eos, s_eos, &
-                      dsdt_eos, dsdr_eos, &
-                      do_diag)
-             
-             s_out(i,j,temp_comp) = temp_eos(1)
+          call eos(eos_input_rh, den_eos, temp_eos, &
+                   npts, nspec, &
+                   xn_eos, &
+                   p_eos, h_eos, e_eos, &
+                   cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                   dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                   dpdX_eos, dhdX_eos, &
+                   gam1_eos, cs_eos, s_eos, &
+                   dsdt_eos, dsdr_eos, &
+                   do_diag)
+          
+          s_out(i,j,temp_comp) = temp_eos(1)
 
-          else
-
-             s_out(i,j,temp_comp) = s_in(i,j,temp_comp)
-
-          end if
-
-
+          ! pass the tracers through
           s_out(i,j,trac_comp:trac_comp+ntrac-1) = &
                s_in(i,j,trac_comp:trac_comp+ntrac-1)   
-
+          
        enddo
     enddo
 
@@ -284,49 +269,41 @@ contains
     update_temp = .false.
 
     do k = lo(3), hi(3)
-     do j = lo(2), hi(2)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
 
-       do i = lo(1), hi(1)
-          rho = s_in(i,j,k,rho_comp)
-          x_in = s_in(i,j,k,spec_comp:spec_comp+nspec-1) / rho
-          T_in = s_in(i,j,k,temp_comp)
+             rho = s_in(i,j,k,rho_comp)
+             x_in = s_in(i,j,k,spec_comp:spec_comp+nspec-1) / rho
+             T_in = s_in(i,j,k,temp_comp)
+             
+             if (do_burning .and. rho > burning_cutoff_density) then
+                call burner(rho, T_in, x_in, dt, x_out, rhowdot, rhoH)
+             else
+                x_out = x_in
+                rhowdot = ZERO
+                rhoH = ZERO
+             endif
+             
+             ! pass the density through
+             s_out(i,j,k,rho_comp) = s_in(i,j,k,rho_comp)
 
-          if (do_burning .and. rho > burning_cutoff_density) then
-             call burner(rho, T_in, x_in, dt, x_out, rhowdot, rhoH)
-          else
-             x_out = x_in
-             rhowdot = ZERO
-             rhoH = ZERO
-          endif
-          
-          ! update the density and species
-          s_out(i,j,k,rho_comp) = s_in(i,j,k,rho_comp)
-          s_out(i,j,k,spec_comp:spec_comp+nspec-1) = x_out(1:nspec) * rho
+             ! update the species
+             s_out(i,j,k,spec_comp:spec_comp+nspec-1) = x_out(1:nspec) * rho
+             
+             ! store the energy generation and species create quantities
+             rho_omegadot(i,j,k,1:nspec) = rhowdot(1:nspec)
+             rho_Hnuc(i,j,k) = rhoH
 
-          ! store the energy generation and species create quantities
-          rho_omegadot(i,j,k,1:nspec) = rhowdot(1:nspec)
-          rho_Hnuc(i,j,k) = rhoH
-
-          ! update the enthalpy -- include the change due to external heating
-          s_out(i,j,k,rhoh_comp) = s_in(i,j,k,rhoh_comp) &
-               + dt * rho_Hnuc(i,j,k) + dt * rho_Hext(i,j,k)
-
-
-
-!**********************************************
-! option to compute temperature and put it into s_out
-! dens, enthalpy, and xmass are inputs
-!
-! NOTE: if you update the temperature here, then you should not add the
-! reaction term explicitly to the temperature equation force returned 
-! by mktempforce in scalar advance, since you will be double counting.
-
-          if (enthalpy_pred_type .eq. predict_Tprime_then_h) then
+             ! update the enthalpy -- include the change due to external heating
+             s_out(i,j,k,rhoh_comp) = s_in(i,j,k,rhoh_comp) &
+                  + dt * rho_Hnuc(i,j,k) + dt * rho_Hext(i,j,k)
+             
+             ! update the temperature with the eos
              den_eos(1)  = s_out(i,j,k,rho_comp)
              h_eos(1)    = s_out(i,j,k,rhoh_comp)/s_out(i,j,k,rho_comp)
              xn_eos(1,:) = s_out(i,j,k,spec_comp:spec_comp+nspec-1)/s_out(i,j,k,rho_comp)
              temp_eos(1) = T_in
-             
+
              call eos(eos_input_rh, den_eos, temp_eos, &
                       npts, nspec, &
                       xn_eos, &
@@ -337,19 +314,15 @@ contains
                       gam1_eos, cs_eos, s_eos, &
                       dsdt_eos, dsdr_eos, &
                       do_diag)
-             
+          
              s_out(i,j,k,temp_comp) = temp_eos(1)
-          end if
-
-!**********************************************
-
-          s_out(i,j,k,temp_comp) = s_in(i,j,k,temp_comp)
-
-          s_out(i,j,k,trac_comp:trac_comp+ntrac-1) = &
-               s_in(i,j,k,trac_comp:trac_comp+ntrac-1)
-
+             
+             ! pass the tracers through
+             s_out(i,j,k,trac_comp:trac_comp+ntrac-1) = &
+                  s_in(i,j,k,trac_comp:trac_comp+ntrac-1)
+             
+          enddo
        enddo
-     enddo
     enddo
 
   end subroutine react_state_3d
