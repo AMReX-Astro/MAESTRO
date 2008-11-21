@@ -188,8 +188,7 @@ subroutine varden()
         call bl_error('zones must be square')
      end if
   else if (dm == 3) then
-     if (abs(dx(1,1) - dx(1,2)) > SMALL .OR. &
-          abs(dx(1,1) - dx(1,3)) > SMALL) then
+     if (abs(dx(1,1) - dx(1,2)) > SMALL .OR. abs(dx(1,1) - dx(1,3)) > SMALL) then
         call bl_error('zones must be square')
      end if
   end if
@@ -485,12 +484,9 @@ subroutine varden()
 
            gamma1bar_hold = gamma1bar
 
-           call advance_timestep(init_mode,mla,uold,sold,unew,snew, &
-                                 gpres,pres,normal, &
-                                 rho0_old,rhoh0_old, &
-                                 rho0_new,rhoh0_new, &
-                                 p0_old,p0_new,tempbar,gamma1bar,w0, &
-                                 rho_omegadot2,rho_Hnuc2,div_coeff_old, &
+           call advance_timestep(init_mode,mla,uold,sold,unew,snew,gpres,pres,normal, &
+                                 rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_old,p0_new, &
+                                 tempbar,gamma1bar,w0,rho_omegadot2,rho_Hnuc2,div_coeff_old, &
                                  div_coeff_new,grav_cell,dx,time,dt,dtold,the_bc_tower, &
                                  dSdt,Source_old,Source_new,etarho_ec,etarho_cc,div_etarho, &
                                  psi,sponge,hgrhs,istep)
@@ -516,20 +512,17 @@ subroutine varden()
         end do
         write(unit=sd_name,fmt='("chk",i5.5)') istep
 
-        call checkpoint_write(sd_name, chkdata, pres, dSdt, Source_old, &
-                              rho_omegadot2, rho_Hnuc2, mla%mba%rr, time, dt)
+        call checkpoint_write(sd_name,chkdata,pres,dSdt,Source_old,rho_omegadot2,rho_Hnuc2, &
+                              mla%mba%rr,time,dt)
 
         last_chk_written = istep
 
         write(unit=base_state_name,fmt='("model_",i5.5)') istep
         write(unit=base_w0_name,fmt='("w0_",i5.5)') istep
         write(unit=base_etarho_name,fmt='("eta_",i5.5)') istep
-        call write_base_state(base_state_name, base_w0_name, &
-                              base_etarho_name, sd_name, &
-                              rho0_old, rhoh0_old, &
-                              p0_old, gamma1bar, w0, &
-                              etarho_ec, etarho_cc, div_etarho, &
-                              div_coeff_old, psi, prob_lo(dm))
+        call write_base_state(base_state_name,base_w0_name,base_etarho_name,sd_name, &
+                              rho0_old,rhoh0_old,p0_old,gamma1bar,w0,etarho_ec,etarho_cc, &
+                              div_etarho,div_coeff_old,psi,prob_lo(dm))
         do n = 1,nlevs
            call destroy(chkdata(n))
         end do
@@ -549,9 +542,9 @@ subroutine varden()
 
         write(unit=plot_index,fmt='(i5.5)') istep
         plot_file_name = trim(plot_base_name) // plot_index
-        call make_plotfile(plot_file_name,mla,uold,sold,gpres,rho_omegadot2,rho_Hnuc2,Source_new, &
-                           sponge,mla%mba,plot_names,time,dx,the_bc_tower,w0,rho0_old, &
-                           rhoh0_old,p0_old,tempbar,gamma1bar,div_coeff_old,normal)
+        call make_plotfile(plot_file_name,mla,uold,sold,gpres,rho_omegadot2,rho_Hnuc2, &
+                           Source_new,sponge,mla%mba,plot_names,time,dx,the_bc_tower,w0, &
+                           rho0_old,rhoh0_old,p0_old,tempbar,gamma1bar,div_coeff_old,normal)
 
         call write_job_info(plot_file_name)
         last_plt_written = istep
@@ -575,8 +568,7 @@ subroutine varden()
      print*,""
   end if
 
-  if ( (max_step >= init_step) .and. &
-       (time < stop_time .or. stop_time < 0.d0) ) then
+  if ( (max_step >= init_step) .and. (time < stop_time .or. stop_time < 0.d0) ) then
 
      do istep = init_step,max_step
 
@@ -599,17 +591,20 @@ subroutine varden()
 
            do n = 1,nlevs
               smax = norm_inf(uold(n),1,1)
-              if ( parallel_IOProcessor()) &
-                   print *,'MAX OF UOLD ', smax,' AT LEVEL ',n
-              
+              if ( parallel_IOProcessor()) then
+                 print *,'MAX OF UOLD ', smax,' AT LEVEL ',n
+              end if
+                   
               smax = norm_inf(uold(n),2,1)
-              if ( parallel_IOProcessor()) &
-                   print *,'MAX OF VOLD ', smax,' AT LEVEL ',n
+              if ( parallel_IOProcessor()) then
+                 print *,'MAX OF VOLD ', smax,' AT LEVEL ',n
+              end if
               
               if (dm > 2) then
                  smax = norm_inf(uold(n),3,1)
-                 if ( parallel_IOProcessor()) &
-                      print *,'MAX OF WOLD ', smax,' AT LEVEL ',n
+                 if ( parallel_IOProcessor()) then
+                    print *,'MAX OF WOLD ', smax,' AT LEVEL ',n
+                 end if
               end if
            end do
         end if
@@ -638,9 +633,9 @@ subroutine varden()
               ! piecewise constant interpolation to fill the cc temp arrays
               do n=2,max_levs
                  do r=0,nr(n)-1
-                    psi_temp(n,r)       = psi_temp(n-1,r/2)
-                    etarho_cc_temp(n,r) = etarho_cc_temp(n-1,r/2)
-                    div_etarho_temp(n,r)= div_etarho_temp(n-1,r/2)
+                    psi_temp(n,r)        = psi_temp(n-1,r/2)
+                    etarho_cc_temp(n,r)  = etarho_cc_temp(n-1,r/2)
+                    div_etarho_temp(n,r) = div_etarho_temp(n-1,r/2)
                  end do
               end do
 
@@ -659,7 +654,7 @@ subroutine varden()
               end do
 
               ! copy valid data into temp
-              do n=2,nlevs
+              do n=2,nlevs_radial
                  do i=1,numdisjointchunks(n)
                     do r=r_start_coord(n,i),r_end_coord(n,i)
                        psi_temp(n,r)        = psi(n,r)
@@ -668,21 +663,21 @@ subroutine varden()
                     end do
                  end do
               end do
-              do n=2,nlevs
+              do n=2,nlevs_radial
                  do i=1,numdisjointchunks(n)
                     do r=r_start_coord(n,i),r_end_coord(n,i)+1
                        etarho_ec_temp(n,r) = etarho_ec(n,r)
-                       w0_temp(n,r) = w0(n,r)
+                       w0_temp(n,r)        = w0(n,r)
                     end do
                  end do
               end do
 
               ! copy temp array back into the real thing
-              psi = psi_temp
-              etarho_cc = etarho_cc_temp
+              psi        = psi_temp
+              etarho_cc  = etarho_cc_temp
               div_etarho = div_etarho_temp
-              etarho_ec = etarho_ec_temp
-              w0 = w0_temp
+              etarho_ec  = etarho_ec_temp
+              w0         = w0_temp
 
            end if
 
@@ -784,8 +779,8 @@ subroutine varden()
            if (spherical .eq. 1) then
               do n=1,nlevs
                  do comp=1,dm
-                    call multifab_build(w0mac(n,comp), mla%la(n),1,1, &
-                                        nodal = edge_nodal_flag(comp,:))
+                    call multifab_build(w0mac(n,comp),mla%la(n),1,1, &
+                                        nodal=edge_nodal_flag(comp,:))
                     call setval(w0mac(n,comp), ZERO, all=.true.)
                  end do
               end do
@@ -841,8 +836,9 @@ subroutine varden()
         if (stop_time >= 0.d0) then
            if (time+dt > stop_time) then
               dt = stop_time - time 
-              if (parallel_IOProcessor()) &
-                   print*, "Stop time limits dt =",dt
+              if (parallel_IOProcessor()) then
+                 print*, "Stop time limits dt =",dt
+              end if
            end if
         end if
 
@@ -856,15 +852,12 @@ subroutine varden()
         end if
         runtime1 = parallel_wtime()
 
-        call advance_timestep(init_mode,mla,uold,sold,unew,snew, &
-                              gpres,pres,normal, &
-                              rho0_old,rhoh0_old, &
-                              rho0_new,rhoh0_new, &
-                              p0_old,p0_new,tempbar,gamma1bar,w0, &
-                              rho_omegadot2,rho_Hnuc2,div_coeff_old,div_coeff_new, &
-                              grav_cell,dx,time,dt,dtold,the_bc_tower, &
-                              dSdt,Source_old,Source_new,etarho_ec,etarho_cc,div_etarho, &
-                              psi,sponge,hgrhs,istep)
+        call advance_timestep(init_mode,mla,uold,sold,unew,snew,gpres,pres,normal,rho0_old, &
+                              rhoh0_old,rho0_new,rhoh0_new,p0_old,p0_new,tempbar,gamma1bar, &
+                              w0,rho_omegadot2,rho_Hnuc2,div_coeff_old,div_coeff_new, &
+                              grav_cell,dx,time,dt,dtold,the_bc_tower,dSdt,Source_old, &
+                              Source_new,etarho_ec,etarho_cc,div_etarho,psi,sponge,hgrhs, &
+                              istep)
 
         runtime2 = parallel_wtime() - runtime1
         call parallel_reduce(runtime1, runtime2, MPI_MAX, proc = parallel_IOProcessorNode())
@@ -992,7 +985,7 @@ subroutine varden()
         if (plot_int > 0 .or. plot_deltat > 0.0) then
            if ( (plot_int > 0 .and. mod(istep,plot_int) .eq. 0) .or. &
                 (plot_deltat > 0.0 .and. &
-                 mod(time - dt,plot_deltat) > mod(time,plot_deltat))) then
+                mod(time - dt,plot_deltat) > mod(time,plot_deltat))) then
               write(unit=plot_index,fmt='(i5.5)') istep
               plot_file_name = trim(plot_base_name) // plot_index
               call make_plotfile(plot_file_name,mla,unew,snew,gpres,rho_omegadot2,rho_Hnuc2,&
@@ -1040,20 +1033,17 @@ subroutine varden()
         write(unit=base_state_name,fmt='("model_",i5.5)') istep
         write(unit=base_w0_name,fmt='("w0_",i5.5)') istep
         write(unit=base_etarho_name,fmt='("eta_",i5.5)') istep
-        call write_base_state(base_state_name, base_w0_name, &
-                              base_etarho_name, sd_name, &
-                              rho0_new, rhoh0_new, &
-                              p0_new, gamma1bar, w0, &
-                              etarho_ec, etarho_cc, div_etarho, &
-                              div_coeff_old, psi, prob_lo(dm))
+        call write_base_state(base_state_name,base_w0_name,base_etarho_name,sd_name, &
+                              rho0_new,rhoh0_new,p0_new,gamma1bar,w0,etarho_ec,etarho_cc, &
+                              div_etarho,div_coeff_old,psi,prob_lo(dm))
      end if
 
      if ( plot_int > 0 .and. last_plt_written .ne. istep ) then
         write(unit=plot_index,fmt='(i5.5)') istep
         plot_file_name = trim(plot_base_name) // plot_index
-        call make_plotfile(plot_file_name,mla,unew,snew,gpres,rho_omegadot2,rho_Hnuc2,Source_new, &
-                           sponge,mla%mba,plot_names,time,dx,the_bc_tower,w0,rho0_new, &
-                           rhoh0_new,p0_new,tempbar,gamma1bar,div_coeff_old,normal)
+        call make_plotfile(plot_file_name,mla,unew,snew,gpres,rho_omegadot2,rho_Hnuc2, &
+                           Source_new,sponge,mla%mba,plot_names,time,dx,the_bc_tower,w0, &
+                           rho0_new,rhoh0_new,p0_new,tempbar,gamma1bar,div_coeff_old,normal)
         
         call write_job_info(plot_file_name)
      end if
