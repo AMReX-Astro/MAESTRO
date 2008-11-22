@@ -38,6 +38,7 @@ contains
   !---------------------------------------------------------------------------
   ! plane-parallel geometry routines
   !---------------------------------------------------------------------------
+
   subroutine make_etarho_planar(etarho_ec,etarho_cc,div_etarho,etarhoflux,mla)
 
     use bl_constants_module
@@ -62,8 +63,6 @@ contains
     real(kind=dp_t) ::   source_buffer(0:nr_fine)
     real(kind=dp_t) ::   target_buffer(0:nr_fine)
 
-    logical :: fine_grids_span_domain_width
-
     type(box) :: domain
 
     integer :: domlo(dm),domhi(dm)
@@ -82,172 +81,49 @@ contains
     etarhopert_proc = ZERO
     etarhopert      = ZERO
     etarho_ec       = ZERO
-
-    if (spherical .eq. 0) then
-
-       fine_grids_span_domain_width = .true.
-
-       if (fine_grids_span_domain_width) then
-          
-          do n=1,nlevs
-             domain = layout_get_pd(mla%la(n))
-             domlo = lwb(domain)
-             domhi = upb(domain)
-
-             if (dm .eq. 2) then
-                ncell(n,:) = domhi(1)-domlo(1)+1
-             else if(dm .eq. 3) then
-                ncell(n,:) = (domhi(1)-domlo(1)+1)*(domhi(2)-domlo(2)+1)
-             end if
-          
-             do i=1,layout_nboxes(mla%la(n))
-                if ( multifab_remote(etarhoflux(n), i) ) cycle
-                efp => dataptr(etarhoflux(n), i)
-                lo =  lwb(get_box(mla%la(n), i))
-                hi =  upb(get_box(mla%la(n), i))
-                select case (dm)
-                case (2)
-                   call sum_etarho_2d(n,lo,hi,efp(:,:,1,1),ng_e,etarhosum_proc(n,:))
-                case (3)
-                   call sum_etarho_3d(n,lo,hi,efp(:,:,:,1),ng_e,etarhosum_proc(n,:))
-                end select
-             end do
-             
-             ! gather etarhosum
-             source_buffer = etarhosum_proc(n,:)
-             call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
-             etarhosum(n,:) = target_buffer
-             
-             do i=1,numdisjointchunks(n)
-                do r=r_start_coord(n,i),r_end_coord(n,i)+1
-                   etarho_ec(n,r) = etarhosum(n,r) / dble(ncell(n,r))
-                end do
-             end do
-             
-          end do
-          
-       else
     
-          domain = layout_get_pd(mla%la(1))
-          domlo = lwb(domain)
-          domhi = upb(domain)
-          
-          if (dm .eq. 2) then
-             ncell(1,:) = domhi(1)-domlo(1)+1
-          else if(dm .eq. 3) then
-             ncell(1,:) = (domhi(1)-domlo(1)+1)*(domhi(2)-domlo(2)+1)
-          end if
-          
-          ! the first step is to compute etarho assuming the coarsest level 
-          ! is the only level in existence
-          do i=1,layout_nboxes(mla%la(1))
-             if ( multifab_remote(etarhoflux(1), i) ) cycle
-             efp => dataptr(etarhoflux(1), i)
-             lo =  lwb(get_box(mla%la(1), i))
-             hi =  upb(get_box(mla%la(1), i))
-             select case (dm)
-             case (2)
-                call sum_etarho_2d(1,lo,hi,efp(:,:,1,1),ng_e,etarhosum_proc(1,:))
-             case (3)
-                call sum_etarho_3d(1,lo,hi,efp(:,:,:,1),ng_e,etarhosum_proc(1,:))
-             end select
-          end do
-          
-          ! gather etarhosum
-          source_buffer = etarhosum_proc(1,:)
-          call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
-          etarhosum(1,:) = target_buffer
-          
-          do r=0,r_end_coord(1,1)
-             etarho_ec(1,r) = etarhosum(1,r) / dble(ncell(1,r))
-          end do
-          
-          ! now we compute etarho at the finer levels
-          do n=2,nlevs
-             
-             rr = mla%mba%rr(n-1,dm)
-             
-             if (mla%mba%rr(n-1,1) .ne. mla%mba%rr(n-1,dm) .or. &
-                  mla%mba%rr(n-1,2) .ne. mla%mba%rr(n-1,dm)) then
-                print*,"ERROR: In make_etarho, refinement ratio in each direction must match"
-                stop
-             endif
-             
-             domain = layout_get_pd(mla%la(n))
-             domlo  = lwb(domain)
-             domhi  = upb(domain)
-             
-             if (dm .eq. 2) then
-                ncell(n,:) = domhi(1)-domlo(1)+1
-             else if (dm .eq. 3) then
-                ncell(n,:) = (domhi(1)-domlo(1)+1)*(domhi(2)-domlo(2)+1)
-             end if
-             
-             ! on faces that exist at the next coarser level, etarho is the same since
-             ! the fluxes have been restricted.  We copy these values of etarho directly and
-             ! copy scaled values of etarhosum directly.
-             do i=1,numdisjointchunks(n)
-                do r=r_start_coord(n-1,i),r_end_coord(n-1,i)+1
-                   etarho_ec(n,r*rr) = etarho_ec(n-1,r)
-                   etarhosum(n,r*rr) = etarhosum(n-1,r)*rr**(dm-1)
-                end do
-             end do
-             
-             ! on faces that do not exist at the next coarser level, we use linear
-             ! interpolation to get etarhosum at these faces.
-             do i=1,numdisjointchunks(n)
-                do r=r_start_coord(n-1,i),r_end_coord(n-1,i)
-                   do rpert=1,rr-1
-                      etarhosum(n,r*rr+rpert) = &
-                           dble(rpert)/dble(rr)*(etarhosum(n,r*rr)) + &
-                           dble(rr-rpert)/dble(rr)*(etarhosum(n,(r+1)*rr))
-                   end do
-                end do
-             end do
-             
-             ! compute etarhopert_proc on faces that do not exist at the coarser level
-             do i=1,layout_nboxes(mla%la(n))
-                if ( multifab_remote(etarhoflux(n), i) ) cycle
-                efp  => dataptr(etarhoflux(n), i)
-                lo =  lwb(get_box(mla%la(n), i))
-                hi =  upb(get_box(mla%la(n), i))
-                select case (dm)
-                case (2)
-                   call compute_etarhopert_2d(lo,hi,efp(:,:,1,1),ng_e,etarhosum_proc(1,:),rr)
-                case (3)
-                   call compute_etarhopert_3d(lo,hi,efp(:,:,:,1),ng_e,etarhosum_proc(1,:),rr)
-                end select
-             end do
-             
-             ! gather etarhopert for rhoh
-             source_buffer = etarhopert_proc(n,:)
-             call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
-             etarhopert(n,:) = target_buffer
-             
-             ! update etasum on faces that do not exist at the coarser level
-             ! then recompute eta on these faces
-             do i=1,numdisjointchunks(n)
-                do r=r_start_coord(n-1,i),r_end_coord(n-1,i)
-                   do rpert=1,rr-1
-                      etarhosum(n,r*rr+rpert) = &
-                           etarhosum(n,r*rr+rpert) + etarhopert(n,r*rr+rpert)
-                      etarho_ec(n,r*rr+rpert) = &
-                           etarhosum(n,r*rr+rpert)/dble(ncell(n,r*rr+rpert))
-                   end do
-                end do
-             end do
+    if (spherical .eq. 1) then
+       call bl_error("ERROR: make_eta should not be called for spherical")
+    end if
+    
+    do n=1,nlevs
+       domain = layout_get_pd(mla%la(n))
+       domlo = lwb(domain)
+       domhi = upb(domain)
 
-          end do ! end loop over levels
-          
+       if (dm .eq. 2) then
+          ncell(n,:) = domhi(1)-domlo(1)+1
+       else if(dm .eq. 3) then
+          ncell(n,:) = (domhi(1)-domlo(1)+1)*(domhi(2)-domlo(2)+1)
        end if
 
-       call restrict_base(etarho_ec,.false.)
-       
-    else
+       do i=1,layout_nboxes(mla%la(n))
+          if ( multifab_remote(etarhoflux(n), i) ) cycle
+          efp => dataptr(etarhoflux(n), i)
+          lo =  lwb(get_box(mla%la(n), i))
+          hi =  upb(get_box(mla%la(n), i))
+          select case (dm)
+          case (2)
+             call sum_etarho_2d(n,lo,hi,efp(:,:,1,1),ng_e,etarhosum_proc(n,:))
+          case (3)
+             call sum_etarho_3d(n,lo,hi,efp(:,:,:,1),ng_e,etarhosum_proc(n,:))
+          end select
+       end do
 
-       call bl_error("ERROR: make_eta should not be called for spherical")
+       ! gather etarhosum
+       source_buffer = etarhosum_proc(n,:)
+       call parallel_reduce(target_buffer, source_buffer, MPI_SUM)
+       etarhosum(n,:) = target_buffer
 
-    end if
+       do i=1,numdisjointchunks(n)
+          do r=r_start_coord(n,i),r_end_coord(n,i)+1
+             etarho_ec(n,r) = etarhosum(n,r) / dble(ncell(n,r))
+          end do
+       end do
+
+    end do
+
+    call restrict_base(etarho_ec,.false.)
 
     ! make the cell-centered etarho_cc by averaging etarho to centers
     do n=1,nlevs
@@ -271,6 +147,8 @@ contains
     call destroy(bpt)
 
   end subroutine make_etarho_planar
+
+!---------------------------------------------------------------------------
 
   subroutine sum_etarho_2d(n,lo,hi,etarhoflux,ng_e,etarhosum)
 
@@ -306,6 +184,8 @@ contains
     end if
 
   end subroutine sum_etarho_2d
+
+!---------------------------------------------------------------------------
 
   subroutine sum_etarho_3d(n,lo,hi,etarhoflux,ng_e,etarhosum)
 
@@ -346,91 +226,10 @@ contains
 
   end subroutine sum_etarho_3d
 
-  subroutine compute_etarhopert_2d(lo,hi,etarhoflux,ng_e,etarhopert,rr)
-
-    use bl_constants_module
-
-    integer         , intent(in   ) :: lo(:), hi(:), rr, ng_e
-    real (kind=dp_t), intent(in   ) :: etarhoflux(lo(1)-ng_e:,lo(2)-ng_e:)
-    real (kind=dp_t), intent(inout) :: etarhopert(0:)
-    
-    ! local
-    integer         :: i,j,ipert,jpert
-    real(kind=dp_t) :: loavg,hiavg,crseavg
-
-    do j=lo(2),hi(2)-rr,rr
-       do jpert=1,rr-1
-
-          do i=lo(1),hi(1)-rr,rr
-
-             loavg = ZERO
-             hiavg = ZERO
-             do ipert=0,rr-1
-                loavg = loavg + etarhoflux(i+ipert,j)
-                hiavg = hiavg + etarhoflux(i+ipert,j+rr)
-             end do
-             loavg = loavg / dble(rr)
-             hiavg = hiavg / dble(rr)
-             crseavg = dble(jpert)/dble(rr)*loavg + dble(rr-jpert)/dble(rr)*hiavg
-             do ipert=0,rr-1
-                etarhopert(j+jpert) = etarhoflux(i+ipert,j+jpert) - crseavg
-             end do
-             
-          end do
-
-       end do
-    end do
-
-  end subroutine compute_etarhopert_2d
-
-  subroutine compute_etarhopert_3d(lo,hi,etarhoflux,ng_e,etarhopert,rr)
-
-    use bl_constants_module
-
-    integer         , intent(in   ) :: lo(:), hi(:), rr, ng_e
-    real (kind=dp_t), intent(in   ) :: etarhoflux(lo(1)-ng_e:,lo(2)-ng_e:,lo(3)-ng_e:)
-    real (kind=dp_t), intent(inout) :: etarhopert(0:)
-    
-    ! local
-    integer         :: i,j,k,ipert,jpert,kpert
-    real(kind=dp_t) :: loavg,hiavg,crseavg
-
-    do k=lo(3),hi(3)-rr,rr
-       do kpert=1,rr-1
-
-          do j=lo(2),hi(2)-rr,rr
-             do i=lo(1),hi(1)-rr,rr
-
-                loavg = ZERO
-                hiavg = ZERO
-                do ipert=0,rr-1
-                   do jpert=0,rr-1
-                      loavg = loavg + etarhoflux(i+ipert,j+jpert,k)
-                      hiavg = hiavg + etarhoflux(i+ipert,j+jpert,k+rr)
-                   end do
-                end do
-                loavg = loavg / dble(rr**2)
-                hiavg = hiavg / dble(rr**2)
-                crseavg = dble(kpert)/dble(rr)*loavg + dble(rr-kpert)/dble(rr)*hiavg
-                do ipert=0,rr-1
-                   do jpert=0,rr-1
-                      etarhopert(k+kpert) = &
-                           etarhoflux(i+ipert,j+jpert,k+kpert) - crseavg
-                   end do
-                end do
-
-             end do
-          end do
-
-       end do
-    end do
-
-  end subroutine compute_etarhopert_3d
-
-
   !---------------------------------------------------------------------------
   ! spherical routines
   !---------------------------------------------------------------------------
+
   subroutine make_etarho_spherical(sold,snew,umac,rho0_old,rho0_new, &
                                    dx,dt,normal,etarho_ec,etarho_cc,div_etarho, &
                                    mla,the_bc_level)
@@ -465,23 +264,27 @@ contains
     integer :: n,i,lo(dm),hi(dm),ng_so,ng_sn,ng_um,ng_n,ng_e,ng_rp
     integer :: r
 
+    if (spherical .eq. 0) then
+       call bl_error("ERROR: make_eta_spherical should not be called for plane-parallel")
+    end if
 
-    ! construct a multifab containing  [ rho' (Utilde . e_r) ] and another
-    ! containing [ rho' ]
+    ! construct a multifab containing  [ rho' (Utilde . e_r) ] 
+    ! and another containing [ rho' ]
     ng_so = sold(1)%ng
     ng_sn = snew(1)%ng
-    ng_um = umac(1,1)%ng    ! here we are assuming all components have the 
-                            ! same # of ghostcells
-    ng_n = normal(1)%ng
+    ng_um = umac(1,1)%ng
+    ng_n  = normal(1)%ng
 
     do n=1,nlevs
 
        call multifab_build(     eta_cart(n), sold(n)%la, 1, 1)
        call multifab_build(rhoprime_cart(n), sold(n)%la, 1, 1)
 
+       ng_e = eta_cart(n)%ng
+       ng_rp = rhoprime_cart(n)%ng 
+
        do i=1,eta_cart(n)%nboxes
           if ( multifab_remote(eta_cart(n),i) ) cycle
-
           ep  => dataptr(eta_cart(n), i)
           rpp  => dataptr(rhoprime_cart(n), i)
           sop => dataptr(sold(n), i)
@@ -490,13 +293,8 @@ contains
           vmp => dataptr(umac(n,2), i)
           wmp => dataptr(umac(n,3), i)
           np  => dataptr(normal(n), i)
-
           lo = lwb(get_box(eta_cart(n),i))
           hi = upb(get_box(eta_cart(n),i))
-
-          ng_e = eta_cart(n)%ng
-          ng_rp = rhoprime_cart(n)%ng 
-
           call construct_eta_cart(n, sop(:,:,:,rho_comp), ng_so, &
                                   snp(:,:,:,rho_comp), ng_sn, &
                                   ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
@@ -504,11 +302,9 @@ contains
                                   rpp(:,:,:,1), ng_rp, &
                                   rho0_old(n,:), rho0_new(n,:), &
                                   dx(n,:), lo, hi)
-          
        enddo
 
     enddo
-
 
     ! fill eta_cart ghostcells
     if (nlevs .eq. 1) then
@@ -546,7 +342,6 @@ contains
        enddo
 
     end if
-    
     
     ! compute etarho_cc as the average of eta_cart = [ rho' (Utilde . e_r) ]
     call average(mla,eta_cart,etarho_cc,dx,1)
@@ -615,7 +410,6 @@ contains
     call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,rho0_new,rho0_new_cart,lo,hi,dx,0,0)
     call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,rho0_nph,rho0_nph_cart,lo,hi,dx,0,0)
 
-    ! construct time-centered [ rho' (Utilde . e_r) ]
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
@@ -624,11 +418,9 @@ contains
                              HALF*(vmac(i,j,k) + vmac(i,j+1,k)) * normal(i,j,k,2) + &
                              HALF*(wmac(i,j,k) + wmac(i,j,k+1)) * normal(i,j,k,3)
 
+             ! construct time-centered [ rho' (Utilde . e_r) ]
              eta_cart(i,j,k) = (HALF*(rho_old(i,j,k) + rho_new(i,j,k)) - &
                                 rho0_nph_cart(i,j,k,1)) * Utilde_dot_er
-
-!            rhoprime_cart(i,j,k) = HALF*(rho_old(i,j,k) + rho_new(i,j,k)) - &
-!                 rho0_nph_cart(i,j,k,1)
 
              ! We want rhoprime at the new time
              rhoprime_cart(i,j,k) = rho_new(i,j,k) - rho0_new_cart(i,j,k,1)
