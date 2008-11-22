@@ -14,8 +14,7 @@ contains
                               rho_omegadot2,rho_Hnuc2,div_coeff_old,div_coeff_new, &
                               grav_cell_old,dx,time,dt,dtold,the_bc_tower, &
                               dSdt,Source_old,Source_new,etarho_ec,etarho_cc,div_etarho, &
-                              psi,sponge,hgrhs, &
-                              istep)
+                              psi,sponge,hgrhs)
 
     use bl_prof_module
     use ml_layout_module
@@ -93,7 +92,6 @@ contains
     real(dp_t)    ,  intent(inout) ::        psi(:,0:)
     type(multifab),  intent(in   ) :: sponge(:)
     type(multifab),  intent(inout) ::  hgrhs(:)
-    integer       ,  intent(in   ) :: istep
 
     ! local
     type(multifab) ::            rhohalf(mla%nlevel)

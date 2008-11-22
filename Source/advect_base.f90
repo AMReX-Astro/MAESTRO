@@ -238,7 +238,7 @@ contains
     real(kind=dp_t), intent(in   ) :: dt
     
     ! Local variables
-    integer :: r, n
+    integer :: r
 
     real(kind=dp_t) :: dtdr,divbetaw,betahalf,factor
     real(kind=dp_t) :: divw,p0_avg

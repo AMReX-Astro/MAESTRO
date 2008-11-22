@@ -413,8 +413,7 @@ contains
   end subroutine mkrhohforce_3d_sphr
 
   subroutine mkhprimeforce(mla, sold, snew, scal_force, is_prediction, thermal, umac, &
-                           p0_old, p0_new, rho0_old, rho0_new, h0_old, h0_new, &
-                           psi, dx, add_thermal, the_bc_level)
+                           p0_old, p0_new, h0_old, h0_new, psi, dx, add_thermal, the_bc_level)
 
     use bl_prof_module
     use variables, only: foextrap_comp, rhoh_comp, rho_comp
@@ -432,7 +431,6 @@ contains
     type(multifab) , intent(in   ) :: thermal(:)
     type(multifab) , intent(in   ) :: umac(:,:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:), p0_new(:,0:)
-    real(kind=dp_t), intent(in   ) :: rho0_old(:,0:), rho0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: h0_old(:,0:), h0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: psi(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
