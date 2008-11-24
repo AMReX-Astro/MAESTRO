@@ -367,7 +367,7 @@ contains
                               grav_cell)
 
     ! now that we have dr and nr we can fill initial state
-    do n=1,nlevs
+    do n=1,nlevs_radial
        call init_base_state(n,model_file,s0_init(n,:,:),p0_init(n,:),dx(n,:))
     end do
 
@@ -516,9 +516,13 @@ contains
                               div_etarho,psi,tempbar,grav_cell)
 
     ! now that we have dr and nr we can fill initial state
-    do n=1,max_levs
-       call init_base_state(n,model_file,s0_init(n,:,:),p0_init(n,:),dx(n,:))
-    end do
+    if (spherical .eq. 1) then
+       call init_base_state(1,model_file,s0_init(1,:,:),p0_init(1,:),dx(1,:))
+    else
+       do n=1,max_levs
+          call init_base_state(n,model_file,s0_init(n,:,:),p0_init(n,:),dx(n,:))
+       end do
+    end if
 
     ! Initialize bc's
     call initialize_bc(the_bc_tower,max_levs,pmask)
