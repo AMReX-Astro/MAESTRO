@@ -1,10 +1,10 @@
 set term post portrait enhanced color 11
 set output 'dipole.ps';
 
-
-
 #set xtics 200
 set rmargin 4
+
+#set key reverse
 
 #==============================================================================
 # radial velocity component plots
@@ -25,11 +25,14 @@ set origin 0.0, 0.5;
 set xlabel "time (s)";
 set ylabel "velocity" 2,0
 
+set yrange [-8.e4:8.e4]
+
 set title "average radial velocity velocity"
 
-plot "wdconvect_radvel_diag.out" using 1:2 title "x" with lines, \
-     "wdconvect_radvel_diag.out" using 1:3 title "y" with lines, \
-     "wdconvect_radvel_diag.out" using 1:4 title "z" with lines
+plot "wdconvect_radvel_diag.out" using 1:2 title "<v_r>_x" with lines, \
+     "wdconvect_radvel_diag.out" using 1:3 title "<v_r>_y" with lines, \
+     "wdconvect_radvel_diag.out" using 1:4 title "<v_r>_z" with lines, \
+     "wdconvect_radvel_diag.out" using 1:(sqrt($2**2 + $3**2 + $4**2)) title "<v_r>" with lines     
 
 #------------------------------------------------------------------------------
 # make a plot of the density-weighted radial velocity statistics
@@ -40,12 +43,17 @@ set origin 0.0, 0.0;
 set xlabel "time (s)";
 set ylabel "velocity (cm/s)"
 
+set yrange [-4.e5:4.e5]
+
 set title "density-weighted average radial velocity"
 
-plot "wdconvect_radvel_diag.out" using 1:7 title "x" with lines, \
-     "wdconvect_radvel_diag.out" using 1:8 title "y" with lines, \
-     "wdconvect_radvel_diag.out" using 1:9 title "z" with lines
+plot "wdconvect_radvel_diag.out" using 1:7 title "< {/Symbol r} v_r >_x / <{/Symbol r}>" with lines, \
+     "wdconvect_radvel_diag.out" using 1:8 title "< {/Symbol r} v_r >_y / <{/Symbol r}>" with lines, \
+     "wdconvect_radvel_diag.out" using 1:9 title "< {/Symbol r} v_r >_z / <{/Symbol r}>" with lines, \
+     "wdconvect_radvel_diag.out" using 1:(sqrt($7**2 + $8**2 + $9**2)) title "< {/Symbol r} v_r > / <{/Symbol r}>" with lines
 
+
+set yrange [*:*]
 
 set nomultiplot;
 
@@ -82,6 +90,8 @@ set title "dipole angles from average velocity"
 plot "wdconvect_radvel_diag.out" using 1:(atan2($3,$2)) title "phi" with lines, \
      "wdconvect_radvel_diag.out" using 1:(atan2(sqrt($2**2 + $3**2),$4)) title "theta" with lines
 
+set yrange [*:*]
+
 
 #------------------------------------------------------------------------------
 # theta, phi for density-weighted average radial velocity
@@ -107,6 +117,8 @@ plot "wdconvect_radvel_diag.out" using 1:(atan2($8,$7)) title "phi" with lines, 
 
 set nomultiplot;
 
+set yrange [*:*]
+
 
 #==============================================================================
 # make a plot of the maximum radial velocity 
@@ -128,7 +140,6 @@ set yrange [*:*]
 set title "peak radial velocity"
 
 plot "wdconvect_radvel_diag.out" using 1:6 notitle with lines
-
 
 
 #==============================================================================
