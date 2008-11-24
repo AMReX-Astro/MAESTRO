@@ -314,9 +314,9 @@ contains
              do i = lo(1),hi(1)
                 x = (dble(i)+HALF)*dx(1) - center(1)
                 radius = sqrt(x**2 + y**2 + z**2)
-                index  = int(radius / dr(n))
+                index  = int(radius / dr(1))
                 
-                rfac = (radius - dble(index)*dr(n)) / dr(n)
+                rfac = (radius - dble(index)*dr(1)) / dr(1)
                 s0_cart_val      = rfac * s0(index) + (ONE-rfac) * s0(index+1)
 
                 if (is_output_a_vector) then
@@ -341,7 +341,7 @@ contains
              do i = lo(1),hi(1)
                 x = (dble(i)+HALF)*dx(1) - center(1)
                 radius = sqrt(x**2 + y**2 + z**2)
-                index  = int(radius / dr(n))
+                index  = int(radius / dr(1))
                 
                 if (interp_type_radial_bin_to_cart .eq. 1) then
 
@@ -349,19 +349,19 @@ contains
 
                 else if (interp_type_radial_bin_to_cart .eq. 2) then
 
-                   if (radius .ge. r_cc_loc(n,index)) then
+                   if (radius .ge. r_cc_loc(1,index)) then
                       if (index .eq. nr_fine-1) then
                          s0_cart_val = s0(index)
                       else
-                         s0_cart_val = s0(index+1)*(radius-r_cc_loc(n,index))/dr(n) &
-                              + s0(index)*(r_cc_loc(n,index+1)-radius)/dr(n)
+                         s0_cart_val = s0(index+1)*(radius-r_cc_loc(1,index))/dr(1) &
+                              + s0(index)*(r_cc_loc(1,index+1)-radius)/dr(1)
                       endif
                    else
                       if (index .eq. 0) then
                          s0_cart_val = s0(index)
                       else
-                         s0_cart_val = s0(index)*(radius-r_cc_loc(n,index-1))/dr(n) &
-                              + s0(index-1)*(r_cc_loc(n,index)-radius)/dr(n)
+                         s0_cart_val = s0(index)*(radius-r_cc_loc(1,index-1))/dr(1) &
+                              + s0(index-1)*(r_cc_loc(1,index)-radius)/dr(1)
                       end if
                    end if
 
