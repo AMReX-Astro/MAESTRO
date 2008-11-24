@@ -232,7 +232,7 @@ contains
    
                 ! parabolic interpolation
                 theta = dble(j) / dble(drdxfac)
-                phibar(nlevs,drdxfac*r+j) = w_lo + theta * del_w + &
+                phibar(1,drdxfac*r+j) = w_lo + theta * del_w + &
                                        theta * (1.d0 - theta) * wsix
 
              end do
@@ -244,9 +244,9 @@ contains
           ! if drdxfac = 1 then divide the total phisum by the number of cells to get phibar
           do r=0,nr_fine-1
              if (ncell(nlevs,r) .gt. ZERO) then
-                phibar(nlevs,r) = phisum(nlevs,r) / ncell(nlevs,r)
+                phibar(1,r) = phisum(nlevs,r) / ncell(nlevs,r)
              else if (r .eq. nr_fine-1 .and. ncell(nlevs,r) .eq. ZERO) then
-                phibar(nlevs,r) = phibar(nlevs,r-1)
+                phibar(1,r) = phibar(nlevs,r-1)
              else
                 call bl_error("ERROR: ncell_crse = 0 in average")
              end if
@@ -259,7 +259,7 @@ contains
        ! that lies in this bin.  This needs to be addressed - perhaps in the 
        ! definition of nr_fine in varden.f90 for spherical problems.
        if (ncell(nlevs,nr_fine-1) .eq. ZERO) then
-          phibar(nlevs,nr_fine-1) = phibar(nlevs,nr_fine-2)
+          phibar(1,nr_fine-1) = phibar(1,nr_fine-2)
        end if
 
     endif

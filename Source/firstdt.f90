@@ -358,7 +358,7 @@ contains
           ! spherical divU constraint
           do r=1,nr_fine-1
              gamma1bar_p_avg = HALF * (gamma1bar(r)*p0(r) + gamma1bar(r-1)*p0(r-1))
-             gp0(r) = ( (p0(r) - p0(r-1))/dr(n) ) / gamma1bar_p_avg
+             gp0(r) = ( (p0(r) - p0(r-1))/dr(1) ) / gamma1bar_p_avg
           end do
           gp0(nr_fine) = gp0(nr_fine-1)
           gp0(      0) = gp0(        1)

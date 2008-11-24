@@ -248,7 +248,7 @@ subroutine varden()
         exit
      end if
   end do
-  do n=2,nlevs
+  do n=2,nlevs_radial
      anelastic_cutoff_coord(n) = 2*anelastic_cutoff_coord(n-1)
   end do
 
@@ -261,7 +261,7 @@ subroutine varden()
         exit
      end if
   end do
-  do n=2,nlevs
+  do n=2,nlevs_radial
      base_cutoff_density_coord(n) = 2*base_cutoff_density_coord(n-1)
   end do
 
@@ -274,7 +274,7 @@ subroutine varden()
         exit
      end if
   end do
-  do n=2,nlevs
+  do n=2,nlevs_radial
      burning_cutoff_density_coord(n) = 2*burning_cutoff_density_coord(n-1)
   end do
 
