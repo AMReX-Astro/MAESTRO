@@ -468,7 +468,7 @@ contains
     if (spdx > eps) dt_adv = min(dt_adv, dx(1)/spdx)
     if (spdy > eps) dt_adv = min(dt_adv, dx(2)/spdy)
     if (spdz > eps) dt_adv = min(dt_adv, dx(3)/spdz)
-    if (spdr > eps) dt_adv = min(dt_adv, dr(n)/spdr)
+    if (spdr > eps) dt_adv = min(dt_adv, dr(1)/spdr)
 
     dt_adv = dt_adv * cfl
     
@@ -501,7 +501,7 @@ contains
     ! divU constraint
     do r=1,nr_fine-1
        gamma1bar_p_avg = HALF * (gamma1bar(r)*p0(r) + gamma1bar(r-1)*p0(r-1))
-       gp0(r) = ( (p0(r) - p0(r-1))/dr(n) ) / gamma1bar_p_avg
+       gp0(r) = ( (p0(r) - p0(r-1))/dr(1) ) / gamma1bar_p_avg
     end do
     gp0(nr_fine) = gp0(nr_fine-1)
     gp0(      0) = gp0(        1)
