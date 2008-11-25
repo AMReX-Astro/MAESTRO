@@ -45,7 +45,7 @@ contains
     use make_explicit_thermal_module
     use variables, only: nscal, press_comp, temp_comp, rho_comp, rhoh_comp, foextrap_comp
     use geometry, only: spherical, nr_fine, r_end_coord, anelastic_cutoff_coord, &
-         base_cutoff_density_coord, burning_cutoff_density_coord, dm, nlevs
+         base_cutoff_density_coord, burning_cutoff_density_coord, dm, nlevs, nlevs_radial
     use network, only: nspec
     use make_grav_module
     use make_eta_module
@@ -173,7 +173,7 @@ contains
           exit
        end if
     end do
-    do n=2,nlevs
+    do n=2,nlevs_radial
        anelastic_cutoff_coord(n) = 2*anelastic_cutoff_coord(n-1)
     end do
 
@@ -186,7 +186,7 @@ contains
           exit
        end if
     end do
-    do n=2,nlevs
+    do n=2,nlevs_radial
        base_cutoff_density_coord(n) = 2*base_cutoff_density_coord(n-1)
     end do
 
@@ -199,7 +199,7 @@ contains
           exit
        end if
     end do
-    do n=2,nlevs
+    do n=2,nlevs_radial
        burning_cutoff_density_coord(n) = 2*burning_cutoff_density_coord(n-1)
     end do
     
