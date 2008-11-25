@@ -14,7 +14,7 @@ contains
   
   subroutine react_base(rhoh0_in,rho_Hnucbar,rho_Hextbar,halfdt_in,rhoh0_out)
 
-    use geometry, only: r_start_coord, r_end_coord, numdisjointchunks, nlevs
+    use geometry, only: r_start_coord, r_end_coord, numdisjointchunks, nlevs_radial
     use bl_prof_module
     use restrict_base_module
      
@@ -30,7 +30,7 @@ contains
 
     call build(bpt, "react_base")
     
-    do n=1,nlevs
+    do n=1,nlevs_radial
        do i=1,numdisjointchunks(n)
           do r=r_start_coord(n,i),r_end_coord(n,i)
              
