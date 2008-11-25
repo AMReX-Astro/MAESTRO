@@ -22,9 +22,6 @@ contains
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:), p0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: Sbar_in(:,0:)
     
-    ! local
-    integer :: n
-
     type(bl_prof_timer), save :: bpt
     call build(bpt, "make_psi")
     

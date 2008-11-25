@@ -67,7 +67,7 @@ contains
 
     integer :: domlo(dm),domhi(dm)
     integer :: lo(dm),hi(dm)
-    integer :: i,r,rpert,n,rr,ng_e
+    integer :: i,r,n,ng_e
 
     type(bl_prof_timer), save :: bpt
 
