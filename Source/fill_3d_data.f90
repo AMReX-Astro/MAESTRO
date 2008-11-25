@@ -635,9 +635,9 @@ contains
                 x = (dble(i)+HALF)*dx(1) - center(1)
 
                 radius = sqrt(x**2 + y**2 + z**2)
-                index  = int(radius / dr(n))
+                index  = int(radius / dr(1))
                 
-                rfac = (radius - dble(index)*dr(n)) / dr(n)
+                rfac = (radius - dble(index)*dr(1)) / dr(1)
 
                 if (index .lt. nr_fine) then
                    w0_cart_val = rfac * w0(index) + (ONE-rfac) * w0(index+1)
@@ -688,9 +688,9 @@ contains
              do i = lo(1)-1,hi(1)+2
                 x = (dble(i)     )*dx(1) - center(1)
                 radius = sqrt(x**2 + y**2 + z**2)
-                index  = int(radius / dr(n))
+                index  = int(radius / dr(1))
 
-                rfac = (radius - dble(index)*dr(n)) / dr(n)
+                rfac = (radius - dble(index)*dr(1)) / dr(1)
 
                 if (index .lt. nr_fine) then
                    w0_cart_val = rfac * w0(index) + (ONE-rfac) * w0(index+1)
@@ -711,9 +711,9 @@ contains
              do i = lo(1)-1,hi(1)+1
                 x = (dble(i)+HALF)*dx(1) - center(1)
                 radius = sqrt(x**2 + y**2 + z**2)
-                index  = int(radius / dr(n))
+                index  = int(radius / dr(1))
 
-                rfac = (radius - dble(index)*dr(n)) / dr(n)
+                rfac = (radius - dble(index)*dr(1)) / dr(1)
 
                 if (index .lt. nr_fine) then
                    w0_cart_val = rfac * w0(index) + (ONE-rfac) * w0(index+1)
@@ -734,9 +734,9 @@ contains
              do i = lo(1)-1,hi(1)+1
                 x = (dble(i)+HALF)*dx(1) - center(1)
                 radius = sqrt(x**2 + y**2 + z**2)
-                index  = int(radius / dr(n))
+                index  = int(radius / dr(1))
 
-                rfac = (radius - dble(index)*dr(n)) / dr(n)
+                rfac = (radius - dble(index)*dr(1)) / dr(1)
 
                 if (index .lt. nr_fine) then
                    w0_cart_val = rfac * w0(index) + (ONE-rfac) * w0(index+1)
@@ -762,9 +762,9 @@ contains
                 x = (dble(i))*dx(1) - center(1)
 
                 radius = sqrt(x**2 + y**2 + z**2)
-                index  = int(radius / dr(n))
+                index  = int(radius / dr(1))
                 
-                rfac = (radius - dble(index)*dr(n)) / dr(n)
+                rfac = (radius - dble(index)*dr(1)) / dr(1)
 
                 if (index .lt. nr_fine) then
                    w0_cart_val = rfac * w0(index) + (ONE-rfac) * w0(index+1)
