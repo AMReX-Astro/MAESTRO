@@ -506,7 +506,7 @@ contains
     gp0(nr_fine) = gp0(nr_fine-1)
     gp0(      0) = gp0(        1)
 
-    call put_1d_array_on_cart_3d_sphr(n,.true.,.true.,gp0,gp0_cart,lo,hi,dx,0,ng_n,normal)
+    call put_1d_array_on_cart_3d_sphr(.true.,.true.,gp0,gp0_cart,lo,hi,dx,0,ng_n,normal)
     
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)

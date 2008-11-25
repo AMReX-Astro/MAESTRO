@@ -84,7 +84,7 @@ contains
              lo = lwb(get_box(gradw0_cart,i))
              hi = upb(get_box(gradw0_cart,i))
 
-             call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,gradw0_rad,gw0p, &
+             call put_1d_array_on_cart_3d_sphr(.false.,.false.,gradw0_rad,gw0p, &
                                                lo,hi,dx(n,:),gradw0_cart%ng,0)
 
           enddo

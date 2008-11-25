@@ -75,12 +75,12 @@ contains
                    np => dataptr(normal(n), i)
                    ng_n = normal(n)%ng
                 
-                   call put_1d_array_on_cart_3d_sphr(n,is_input_edge_centered, &
-                                                     is_output_a_vector, &
-                                                     s0(1,:),sp(:,:,:,:), &
-                                                     lo,hi,dx(n,:),ng_s,ng_n,np(:,:,:,:))
+                   call put_1d_array_on_cart_3d_sphr(is_input_edge_centered, &
+                                                     is_output_a_vector,s0(1,:), &
+                                                     sp(:,:,:,:),lo,hi,dx(n,:),ng_s,ng_n, &
+                                                     np(:,:,:,:))
                 else
-                   call put_1d_array_on_cart_3d_sphr(n,is_input_edge_centered, &
+                   call put_1d_array_on_cart_3d_sphr(is_input_edge_centered, &
                                                      is_output_a_vector,s0(1,:), &
                                                      sp(:,:,:,:),lo,hi,dx(n,:),ng_s,ng_n)
                 end if
@@ -275,7 +275,7 @@ contains
 
   end subroutine put_1d_array_on_cart_3d
 
-  subroutine put_1d_array_on_cart_3d_sphr(n,is_input_edge_centered,is_output_a_vector, &
+  subroutine put_1d_array_on_cart_3d_sphr(is_input_edge_centered,is_output_a_vector, &
                                           s0,s0_cart,lo,hi,dx,ng_s,ng_n,normal)
 
     ! note: ng_n is required only to dimension normal.  Since normal is 
@@ -286,7 +286,6 @@ contains
     use geometry, only: dr, center, r_cc_loc, nr_fine
     use probin_module, only: interp_type_radial_bin_to_cart
 
-    integer        , intent(in   ) :: n
     integer        , intent(in   ) :: lo(:),hi(:),ng_s, ng_n
     logical        , intent(in   ) :: is_input_edge_centered,is_output_a_vector
     real(kind=dp_t), intent(in   ) :: s0(0:)

@@ -404,8 +404,8 @@ contains
        rho0_nph(r) = HALF*(rho0_old(r) + rho0_new(r))
     enddo
 
-    call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,rho0_new,rho0_new_cart,lo,hi,dx,0,0)
-    call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,rho0_nph,rho0_nph_cart,lo,hi,dx,0,0)
+    call put_1d_array_on_cart_3d_sphr(.false.,.false.,rho0_new,rho0_new_cart,lo,hi,dx,0,0)
+    call put_1d_array_on_cart_3d_sphr(.false.,.false.,rho0_nph,rho0_nph_cart,lo,hi,dx,0,0)
 
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)

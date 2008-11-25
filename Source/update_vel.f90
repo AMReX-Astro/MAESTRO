@@ -306,7 +306,7 @@ contains
           gradw0_rad(r) = (w0(r+1) - w0(r)) / dr(n)
        enddo
 
-       call put_1d_array_on_cart_3d_sphr(n,.false.,.true.,gradw0_rad,gradw0_cart, &
+       call put_1d_array_on_cart_3d_sphr(.false.,.true.,gradw0_rad,gradw0_cart, &
                                          lo,hi,dx,0,ng_n,normal)
 
        do k = lo(3), hi(3)

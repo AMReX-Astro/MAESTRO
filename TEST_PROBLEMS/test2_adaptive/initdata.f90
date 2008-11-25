@@ -202,25 +202,25 @@ contains
        allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
 
        ! initialize the scalars
-       call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,s0_init(:,rho_comp), &
+       call put_1d_array_on_cart_3d_sphr(.false.,.false.,s0_init(:,rho_comp), &
                                          s(:,:,:,rho_comp:),lo,hi,dx,ng,0)
 
-       call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,s0_init(:,temp_comp), &
+       call put_1d_array_on_cart_3d_sphr(.false.,.false.,s0_init(:,temp_comp), &
                                          s(:,:,:,temp_comp:),lo,hi,dx,ng,0)
 
        ! initialize p0_cart
-       call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,p0_background(:), &
+       call put_1d_array_on_cart_3d_sphr(.false.,.false.,p0_background(:), &
                                          p0_cart(:,:,:,1:),lo,hi,dx,0,0)
 
        ! initialize species
        do comp = spec_comp, spec_comp+nspec-1
-          call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,s0_init(:,comp), &
+          call put_1d_array_on_cart_3d_sphr(.false.,.false.,s0_init(:,comp), &
                                             s(:,:,:,comp:),lo,hi,dx,ng,0)
        end do
 
        ! initialize tracers
        do comp = trac_comp, trac_comp+ntrac-1
-          call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,s0_init(:,comp), &
+          call put_1d_array_on_cart_3d_sphr(.false.,.false.,s0_init(:,comp), &
                                             s(:,:,:,comp:),lo,hi,dx,ng,0)
        end do
 
