@@ -22,7 +22,7 @@ contains
 
     use parallel
     use bl_prof_module
-    use geometry, only: spherical, dr, r_start_coord, r_end_coord, nlevs
+    use geometry, only: spherical, dr, r_start_coord, r_end_coord, nlevs_radial
     use bl_constants_module
     use probin_module, only: verbose
     use restrict_base_module, only: fill_ghost_base
@@ -68,7 +68,7 @@ contains
 
     call fill_ghost_base(w0_force,.true.)
 
-    do n=1,nlevs
+    do n=1,nlevs_radial
        max_w0 = zero
        do r=r_start_coord(n,1),r_end_coord(n,1)+1
           max_w0 = max(max_w0, abs(w0(n,r)))
