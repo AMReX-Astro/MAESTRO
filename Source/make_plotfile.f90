@@ -183,8 +183,7 @@ contains
           do comp=1,dm
              ! w0mac will contain an edge-centered w0 on a Cartesian grid,
              ! for use in computing divergences.
-             call multifab_build(w0mac(n,comp), mla%la(n),1,1, &
-                  nodal = edge_nodal_flag(comp,:))
+             call multifab_build(w0mac(n,comp), mla%la(n),1,1,nodal=edge_nodal_flag(comp,:))
              call setval(w0mac(n,comp), ZERO, all=.true.)
           enddo
 
@@ -272,8 +271,7 @@ contains
        call make_velplusw0(plotdata(n),icomp_velplusw0,u(n),w0(n,:),w0mac(n,:))
 
        ! VORTICITY
-       call make_vorticity(plotdata(n),icomp_vort,u(n),dx(n,:), &
-                           the_bc_tower%bc_tower_array(n))
+       call make_vorticity(plotdata(n),icomp_vort,u(n),dx(n,:),the_bc_tower%bc_tower_array(n))
 
        ! DIVU
        call multifab_copy_c(plotdata(n),icomp_divu,Source(n),1,1)
@@ -282,15 +280,12 @@ contains
        call make_enthalpy(plotdata(n),icomp_enthalpy,s(n))
 
        ! RHOPERT & TEMP (FROM RHO) & TPERT & MACHNO & (GAM1 - GAM10) & Entropy & RHOHPERT
-       call make_tfromp(n,plotdata(n), &
-                        icomp_tfromp,icomp_tpert,icomp_rhopert,icomp_rhohpert, &
-                        icomp_machno,icomp_dg,icomp_entropy, &
-                        s(n),u(n),rho0(n,:),rhoh0(n,:),tempbar(n,:),gamma1bar(n,:), &
-                        p0(n,:),dx(n,:))
+       call make_tfromp(n,plotdata(n),icomp_tfromp,icomp_tpert,icomp_rhopert,icomp_rhohpert, &
+                        icomp_machno,icomp_dg,icomp_entropy,s(n),u(n),rho0(n,:),rhoh0(n,:), &
+                        tempbar(n,:),gamma1bar(n,:),p0(n,:),dx(n,:))
 
        ! TEMP (FROM H) & DELTA_P
-       call make_tfromH(n,plotdata(n),icomp_tfromH,icomp_dp,s(n),p0(n,:), &
-                        tempbar(n,:),dx(n,:))
+       call make_tfromH(n,plotdata(n),icomp_tfromH,icomp_dp,s(n),p0(n,:),tempbar(n,:),dx(n,:))
        
        ! DIFF BETWEEN TFROMP AND TFROMH
        call make_deltaT (plotdata(n),icomp_dT,icomp_tfromp,icomp_tfromH)
@@ -319,7 +314,8 @@ contains
        call multifab_fill_boundary(tempfab(nlevs))
 
        ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(tempfab(nlevs),1,foextrap_comp,1,the_bc_tower%bc_tower_array(nlevs))
+       call multifab_physbc(tempfab(nlevs),1,foextrap_comp,1, &
+                            the_bc_tower%bc_tower_array(nlevs))
 
     else
 
@@ -327,7 +323,7 @@ contains
        do n=nlevs,2,-1
 
           ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction(tempfab(n-1)    ,tempfab(n)    ,mla%mba%rr(n-1,:))
+          call ml_cc_restriction(tempfab(n-1),tempfab(n),mla%mba%rr(n-1,:))
 
           ! fill level n ghost cells using interpolation from level n-1 data
           ! note that multifab_fill_boundary and multifab_physbc are called for
@@ -343,15 +339,13 @@ contains
     
     call average(mla,tempfab,entropybar,dx,1)
 
-    do n = 1,nlevs
-       call make_entropypert(n,plotdata(n),icomp_entropy,icomp_entropypert,entropybar(n,0:),dx(n,:))
-    enddo
-
+    call make_entropypert(plotdata,icomp_entropy,icomp_entropypert,entropybar,dx)
 
     if (plot_spec) then
        ! OMEGADOT and HNUC
        do n = 1,nlevs
-          call make_omegadot(plotdata(n),icomp_omegadot,icomp_enuc,s(n),rho_omegadot(n),rho_Hnuc(n))
+          call make_omegadot(plotdata(n),icomp_omegadot,icomp_enuc,s(n),rho_omegadot(n), &
+                             rho_Hnuc(n))
        end do
     end if
 

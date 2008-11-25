@@ -565,42 +565,44 @@ contains
   end subroutine make_tfromp_3d_sphr
 
 
-  subroutine make_entropypert(n,plotdata,comp_entropy,comp_entropypert,entropybar,dx)
+  subroutine make_entropypert(plotdata,comp_entropy,comp_entropypert,entropybar,dx)
 
-    use geometry, only: spherical, dm
+    use geometry, only: spherical, dm, nlevs
 
-    integer        , intent(in   ) :: n,comp_entropy,comp_entropypert
-    type(multifab) , intent(inout) :: plotdata
-    real(kind=dp_t), intent(in   ) :: entropybar(0:)
-    real(kind=dp_t), intent(in   ) :: dx(:)
+    integer        , intent(in   ) :: comp_entropy,comp_entropypert
+    type(multifab) , intent(inout) :: plotdata(:)
+    real(kind=dp_t), intent(in   ) :: entropybar(:,0:)
+    real(kind=dp_t), intent(in   ) ::         dx(:,:)
 
-    real(kind=dp_t), pointer:: tp(:,:,:,:)
-    integer :: lo(dm),hi(dm),ng_p
-    integer :: i
+    ! local
+    real(kind=dp_t), pointer :: tp(:,:,:,:)
+    integer                  :: lo(dm),hi(dm),ng_p,n,i
 
-    ng_p = plotdata%ng
+    ng_p = plotdata(1)%ng
 
-    do i = 1, plotdata%nboxes
-       if ( multifab_remote(plotdata, i) ) cycle
-       tp => dataptr(plotdata, i)
-       lo =  lwb(get_box(plotdata, i))
-       hi =  upb(get_box(plotdata, i))
-       select case (dm)
-       case (2)
-          call make_entropypert_2d(tp(:,:,1,comp_entropy), &
-                                   tp(:,:,1,comp_entropypert),ng_p, &
-                                   lo, hi, entropybar)
-       case (3)
-          if (spherical .eq. 1) then
-             call make_entropypert_3d_sphr(n,tp(:,:,:,comp_entropy), &
-                                             tp(:,:,:,comp_entropypert),ng_p, &
-                                           lo, hi, entropybar, dx)
-          else
-             call make_entropypert_3d_cart(tp(:,:,:,comp_entropy), &
-                                           tp(:,:,:,comp_entropypert),ng_p, &
-                                           lo, hi, entropybar)
-          endif
-       end select
+    do n=1,nlevs
+       do i = 1, plotdata(n)%nboxes
+          if ( multifab_remote(plotdata(n), i) ) cycle
+          tp => dataptr(plotdata(n), i)
+          lo =  lwb(get_box(plotdata(n), i))
+          hi =  upb(get_box(plotdata(n), i))
+          select case (dm)
+          case (2)
+             call make_entropypert_2d(tp(:,:,1,comp_entropy), &
+                                      tp(:,:,1,comp_entropypert),ng_p, &
+                                      lo, hi, entropybar(n,:))
+          case (3)
+             if (spherical .eq. 1) then
+                call make_entropypert_3d_sphr(n,tp(:,:,:,comp_entropy), &
+                                              tp(:,:,:,comp_entropypert),ng_p, &
+                                              lo, hi, entropybar(n,:), dx(n,:))
+             else
+                call make_entropypert_3d_cart(tp(:,:,:,comp_entropy), &
+                                              tp(:,:,:,comp_entropypert),ng_p, &
+                                              lo, hi, entropybar(n,:))
+             endif
+          end select
+       end do
     end do
 
   end subroutine make_entropypert
