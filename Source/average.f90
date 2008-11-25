@@ -197,7 +197,9 @@ contains
              ! Now compute the average
              if (ncell_crse(r) .gt. ZERO) then
                 phibar_crse(r) = phibar_crse(r) / ncell_crse(r)
-             else if (r .eq. nr_crse-2 .and. ncell_crse(r) .eq. ZERO) then
+             else if (r .eq. nr_crse-3) then
+                phibar_crse(r) = phibar_crse(nr_crse-4)
+             else if (r .eq. nr_crse-2) then
                 phibar_crse(r) = phibar_crse(nr_crse-3)
              else if (r .eq. nr_crse-1) then
                 phibar_crse(r) = phibar_crse(nr_crse-2)
