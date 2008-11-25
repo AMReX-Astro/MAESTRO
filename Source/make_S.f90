@@ -366,24 +366,28 @@ contains
 
              if (use_delta_gamma1_term .and. spherical .eq. 1) then
                 call bl_error("ERROR: use_delta_gamma1_term not implemented for spherical in make_S")
-             else if (use_delta_gamma1_term .and. k < anelastic_cutoff_coord(n)) then
-                if (k .eq. 0) then
-                   gradp0 = (p0(k+1) - p0(k))/dx(3)
-                else if (k .eq. nr(n)-1) then
-                   gradp0 = (p0(k) - p0(k-1))/dx(3)
+             end if
+
+             if (spherical .eq. 0) then
+                if (use_delta_gamma1_term .and. k < anelastic_cutoff_coord(n)) then
+                   if (k .eq. 0) then
+                      gradp0 = (p0(k+1) - p0(k))/dx(3)
+                   else if (k .eq. nr(n)-1) then
+                      gradp0 = (p0(k) - p0(k-1))/dx(3)
+                   else
+                      gradp0 = HALF*(p0(k+1) - p0(k-1))/dx(3)
+                   endif
+                   
+                   delta_gamma1(i,j,k) = gam1_eos(1) - gamma1bar(k)
+                   
+                   delta_gamma1_term(i,j,k) = &
+                        (gam1_eos(1) - gamma1bar(k))*u(i,j,k,3)* &
+                        gradp0/(gamma1bar(k)*gamma1bar(k)*p0(k))
                 else
-                   gradp0 = HALF*(p0(k+1) - p0(k-1))/dx(3)
+                   delta_gamma1_term(i,j,k) = ZERO
+                   delta_gamma1(i,j,k) = ZERO
                 endif
-
-                delta_gamma1(i,j,k) = gam1_eos(1) - gamma1bar(k)
-
-                delta_gamma1_term(i,j,k) = &
-                     (gam1_eos(1) - gamma1bar(k))*u(i,j,k,3)* &
-                     gradp0/(gamma1bar(k)*gamma1bar(k)*p0(k))
-             else
-                delta_gamma1_term(i,j,k) = ZERO
-                delta_gamma1(i,j,k) = ZERO
-             endif
+             end if
 
           enddo
        enddo
