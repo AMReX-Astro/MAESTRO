@@ -362,10 +362,9 @@ contains
     ! the 0th value of etarho = 0, since Utilde . e_r must be 
     ! zero at the center (since e_r is not defined there)
     etarho_ec(1,0) = ZERO
-    do r=1,nr_fine
+    do r=1,nr_fine-1
        etarho_ec(1,r) = HALF*(etarho_cc(1,r) + etarho_cc(1,r-1))
     enddo
-    
     ! probably should do some better extrapolation here eventually
     etarho_ec(1,nr_fine) = etarho_cc(1,nr_fine-1)
 
