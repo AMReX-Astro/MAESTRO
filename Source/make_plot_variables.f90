@@ -595,7 +595,7 @@ contains
              if (spherical .eq. 1) then
                 call make_entropypert_3d_sphr(n,tp(:,:,:,comp_entropy), &
                                               tp(:,:,:,comp_entropypert),ng_p, &
-                                              lo, hi, entropybar(n,:), dx(n,:))
+                                              lo, hi, entropybar(1,:), dx(n,:))
              else
                 call make_entropypert_3d_cart(tp(:,:,:,comp_entropy), &
                                               tp(:,:,:,comp_entropypert),ng_p, &
