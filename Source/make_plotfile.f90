@@ -104,7 +104,7 @@ contains
     use fill_3d_module
     use probin_module, only: nOutFiles, lUsingNFiles, plot_spec, plot_trac, plot_base
     use probin_module, only: single_prec_plotfiles, edge_nodal_flag
-    use geometry, only: spherical, nr_fine, dm, nlevs
+    use geometry, only: spherical, nr_fine, dm, nlevs, nlevs_radial
     use average_module
     use ml_restriction_module
     use multifab_physbc_module
@@ -133,13 +133,13 @@ contains
     real(dp_t)       , intent(in   ) :: div_coeff(:,0:)
     type(multifab)   , intent(in   ) :: normal(:)
     
-    type(multifab) :: plotdata(mla%nlevel)
-    type(multifab) ::  tempfab(mla%nlevel)
-    type(multifab) ::    w0mac(mla%nlevel,dm)
-    type(multifab) ::    w0r_cart(mla%nlevel)
+    type(multifab) :: plotdata(nlevs)
+    type(multifab) ::  tempfab(nlevs)
+    type(multifab) ::    w0mac(nlevs)
+    type(multifab) :: w0r_cart(nlevs)
 
-    real(dp_t) :: entropybar(nlevs,0:nr_fine-1)
-    real(dp_t) ::         h0(nlevs,0:nr_fine-1)
+    real(dp_t) :: entropybar(nlevs_radial,0:nr_fine-1)
+    real(dp_t) ::         h0(nlevs_radial,0:nr_fine-1)
 
     integer :: n,prec,comp
 
@@ -177,7 +177,9 @@ contains
     end do
 
     if (spherical .eq. 1) then
+
        do n=1,nlevs
+
           do comp=1,dm
              ! w0mac will contain an edge-centered w0 on a Cartesian grid,
              ! for use in computing divergences.
@@ -199,7 +201,7 @@ contains
 
        ! put w0 in Cartesian cell-centers as a scalar (the radial expansion velocity)
        call put_1d_array_on_cart(w0,w0r_cart,foextrap_comp,.true.,.false.,dx, &
-            the_bc_tower%bc_tower_array,mla,normal=normal)
+                                 the_bc_tower%bc_tower_array,mla,normal=normal)
 
     end if
 
