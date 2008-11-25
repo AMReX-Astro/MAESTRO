@@ -83,11 +83,11 @@ contains
              wmp  => dataptr(umac(n,3), i)
              if (spherical .eq. 1) then
                 bcp => dataptr(base_cart(n), i)
-                call modify_scal_force_3d_sphr(n,fp(:,:,:,comp),ng_f,sp(:,:,:,comp),ng_s, &
+                call modify_scal_force_3d_sphr(fp(:,:,:,comp),ng_f,sp(:,:,:,comp),ng_s, &
                                                lo,hi,domlo,domhi, &
                                                ump(:,:,:,1),vmp(:,:,:,1), &
                                                wmp(:,:,:,1),ng_um,bcp(:,:,:,1),ng_b, &
-                                               w0(n,:),dx(n,:))
+                                               w0(1,:),dx(n,:))
              else
                 call modify_scal_force_3d_cart(fp(:,:,:,comp),ng_f,sp(:,:,:,comp),ng_s, &
                                                lo,hi,ump(:,:,:,1), &
@@ -199,14 +199,14 @@ contains
     
   end subroutine modify_scal_force_3d_cart
   
-  subroutine modify_scal_force_3d_sphr(n,force,ng_f,s,ng_s,lo,hi,domlo,domhi, &
+  subroutine modify_scal_force_3d_sphr(force,ng_f,s,ng_s,lo,hi,domlo,domhi, &
                                        umac,vmac,wmac,ng_um,base_cart,ng_b,w0,dx)
 
     use geometry, only: nr_fine, r_edge_loc, dr, r_cc_loc
     use fill_3d_module
     use bl_constants_module
     
-    integer        , intent(in   ) :: n,lo(:),hi(:),domlo(:),domhi(:),ng_f,ng_s,ng_um,ng_b
+    integer        , intent(in   ) :: lo(:),hi(:),domlo(:),domhi(:),ng_f,ng_s,ng_um,ng_b
     real(kind=dp_t), intent(  out) :: force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :)
     real(kind=dp_t), intent(in   ) ::     s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :)
     real(kind=dp_t), intent(in   ) ::  umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
@@ -228,12 +228,12 @@ contains
     real(kind=dp_t) :: divu_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1)
     
     do r=0,nr_fine-1
-       divu(r) = (r_edge_loc(n,r+1)**2 * w0(r+1) - &
-                  r_edge_loc(n,r  )**2 * w0(r  ) ) / &
-                 (dr(n)*r_cc_loc(n,r)**2)
+       divu(r) = (r_edge_loc(1,r+1)**2 * w0(r+1) - &
+                  r_edge_loc(1,r  )**2 * w0(r  ) ) / &
+                 (dr(1)*r_cc_loc(1,r)**2)
     end do
 
-    call put_1d_array_on_cart_3d_sphr(n,.false.,.false.,divu,divu_cart,lo,hi,dx,0,0)
+    call put_1d_array_on_cart_3d_sphr(1,.false.,.false.,divu,divu_cart,lo,hi,dx,0,0)
     
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
