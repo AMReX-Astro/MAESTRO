@@ -387,6 +387,9 @@ contains
                    delta_gamma1_term(i,j,k) = ZERO
                    delta_gamma1(i,j,k) = ZERO
                 endif
+             else
+                delta_gamma1_term(i,j,k) = ZERO
+                delta_gamma1(i,j,k) = ZERO
              end if
 
           enddo
