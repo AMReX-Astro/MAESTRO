@@ -479,7 +479,7 @@ contains
              w0zp => dataptr(w0mac(n,3), i)
              lo = lwb(get_box(w0mac(n,1), i))
              hi = upb(get_box(w0mac(n,1), i))
-             call put_w0_on_edges_3d_sphr(n,w0(n,:),w0xp(:,:,:,1),w0yp(:,:,:,1), &
+             call put_w0_on_edges_3d_sphr(w0(1,:),w0xp(:,:,:,1),w0yp(:,:,:,1), &
                                           w0zp(:,:,:,1),ng_w0,lo,hi,dx(n,:))
           end do
        end do
@@ -599,17 +599,17 @@ contains
 
   end subroutine mk_div_beta0_w0mac_3d
   
-  subroutine put_w0_on_edges_3d_sphr(n,w0,w0macx,w0macy,w0macz,ng_w0,lo,hi,dx)
+  subroutine put_w0_on_edges_3d_sphr(w0,w0macx,w0macy,w0macz,ng_w0,lo,hi,dx)
 
     use bl_constants_module
     use geometry, only: dr, center, nr_fine
     use probin_module, only: w0mac_interp_type
 
-    integer        , intent(in   ) :: n,lo(:),hi(:),ng_w0
+    integer        , intent(in   ) :: lo(:),hi(:),ng_w0
     real(kind=dp_t), intent(in   ) :: w0(0:)
-    real(kind=dp_t), intent(inout) ::  w0macx(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
-    real(kind=dp_t), intent(inout) ::  w0macy(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
-    real(kind=dp_t), intent(inout) ::  w0macz(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
+    real(kind=dp_t), intent(inout) :: w0macx(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
+    real(kind=dp_t), intent(inout) :: w0macy(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
+    real(kind=dp_t), intent(inout) :: w0macz(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
 
     integer         :: i,j,k,index
