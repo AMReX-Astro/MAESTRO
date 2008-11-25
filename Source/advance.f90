@@ -349,7 +349,7 @@ contains
     ! MAC projection !
     if (spherical .eq. 1) then
        do n=1,nlevs
-          call multifab_build(div_coeff_3d(n), mla%la(nlevs), 1, 1)
+          call multifab_build(div_coeff_3d(n), mla%la(n), 1, 1)
        end do
 
        call put_1d_array_on_cart(div_coeff_old,div_coeff_3d,foextrap_comp,.false., &
@@ -836,7 +836,7 @@ contains
        ! MAC projection !
        if (spherical .eq. 1) then
           do n=1,nlevs
-             call multifab_build(div_coeff_3d(n), mla%la(nlevs), 1, 1)
+             call multifab_build(div_coeff_3d(n), mla%la(n), 1, 1)
           end do
 
           call put_1d_array_on_cart(div_coeff_nph,div_coeff_3d,foextrap_comp,.false., &
@@ -1227,7 +1227,7 @@ contains
 
     if (spherical .eq. 1) then
        do n=1,nlevs
-          call multifab_build(div_coeff_3d(n), mla%la(nlevs), 1, 1)
+          call multifab_build(div_coeff_3d(n), mla%la(n), 1, 1)
        end do
        
        call put_1d_array_on_cart(div_coeff_nph,div_coeff_3d,foextrap_comp,.false., &
