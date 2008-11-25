@@ -77,13 +77,12 @@ contains
                 
                    call put_1d_array_on_cart_3d_sphr(n,is_input_edge_centered, &
                                                      is_output_a_vector, &
-                                                     s0(n,:),sp(:,:,:,:), &
+                                                     s0(1,:),sp(:,:,:,:), &
                                                      lo,hi,dx(n,:),ng_s,ng_n,np(:,:,:,:))
                 else
                    call put_1d_array_on_cart_3d_sphr(n,is_input_edge_centered, &
-                                                     is_output_a_vector,s0(n,:), &
-                                                     sp(:,:,:,:), &
-                                                     lo,hi,dx(n,:),ng_s,ng_n)
+                                                     is_output_a_vector,s0(1,:), &
+                                                     sp(:,:,:,:),lo,hi,dx(n,:),ng_s,ng_n)
                 end if
              endif
 
