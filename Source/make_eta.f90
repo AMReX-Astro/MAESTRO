@@ -235,7 +235,7 @@ contains
                                    mla,the_bc_level)
 
     use bl_constants_module
-    use geometry, only: spherical, nr_fine, nr, dm, nlevs
+    use geometry, only: spherical, nr_fine, dm, nlevs
     use variables
     use average_module
     use ml_restriction_module
@@ -300,7 +300,7 @@ contains
                                   ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
                                   np(:,:,:,:), ng_n, ep(:,:,:,1), ng_e, &
                                   rpp(:,:,:,1), ng_rp, &
-                                  rho0_old(n,:), rho0_new(n,:), &
+                                  rho0_old(1,:), rho0_new(1,:), &
                                   dx(n,:), lo, hi)
        enddo
 
@@ -358,19 +358,16 @@ contains
 
     ! put eta on base state edges -- here we are assuming that there
     ! is no refinement
-    do n=1,nlevs
        
-       ! the 0th value of etarho = 0, since Utilde . e_r must be 
-       ! zero at the center (since e_r is not defined there)
-       etarho_ec(n,0) = ZERO
-       do r=1, nr(n)-1
-          etarho_ec(n,r) = HALF*(etarho_cc(n,r) + etarho_cc(n,r-1))
-       enddo
-
-       ! probably should do some better extrapolation here eventually
-       etarho_ec(n,nr(n)) = etarho_cc(n,nr(n)-1)
-
+    ! the 0th value of etarho = 0, since Utilde . e_r must be 
+    ! zero at the center (since e_r is not defined there)
+    etarho_ec(1,0) = ZERO
+    do r=1,nr_fine
+       etarho_ec(1,r) = HALF*(etarho_cc(1,r) + etarho_cc(1,r-1))
     enddo
+    
+    ! probably should do some better extrapolation here eventually
+    etarho_ec(1,nr_fine) = etarho_cc(1,nr_fine-1)
 
   end subroutine make_etarho_spherical
 
