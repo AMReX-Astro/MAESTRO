@@ -135,7 +135,7 @@ contains
     
     type(multifab) :: plotdata(nlevs)
     type(multifab) ::  tempfab(nlevs)
-    type(multifab) ::    w0mac(nlevs)
+    type(multifab) ::    w0mac(nlevs,dm)
     type(multifab) :: w0r_cart(nlevs)
 
     real(dp_t) :: entropybar(nlevs_radial,0:nr_fine-1)
