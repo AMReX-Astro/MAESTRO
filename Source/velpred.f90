@@ -68,7 +68,7 @@ contains
        allocate(gradw0_rad(0:nr_fine-1))
        ! NOTE: here we are doing the computation at the finest level
        do r=0,nr_fine-1
-          gradw0_rad(r) = (w0(nlevs,r+1) - w0(nlevs,r)) / dr(nlevs)
+          gradw0_rad(r) = (w0(1,r+1) - w0(1,r)) / dr(1)
        enddo
     endif
 
