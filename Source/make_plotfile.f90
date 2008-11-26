@@ -113,8 +113,8 @@ contains
 
     character(len=*) , intent(in   ) :: dirname
     type(ml_layout)  , intent(in   ) :: mla
-    type(multifab)   , intent(inout) :: u(:)
-    type(multifab)   , intent(inout) :: s(:)
+    type(multifab)   , intent(in   ) :: u(:)
+    type(multifab)   , intent(in   ) :: s(:)
     type(multifab)   , intent(in   ) :: gpres(:)
     type(multifab)   , intent(in   ) :: rho_omegadot(:)
     type(multifab)   , intent(in   ) :: rho_Hnuc(:)
@@ -156,7 +156,7 @@ contains
     do n = 1,nlevs
 
        call multifab_build(plotdata(n), mla%la(n), n_plot_comps, 0)
-       call multifab_build(tempfab(n), mla%la(n), dm, 1)
+       call multifab_build(tempfab(n),  mla%la(n), dm,           1)
               
        ! VELOCITY 
        call multifab_copy_c(plotdata(n),icomp_vel,u(n),1,dm)
@@ -215,9 +215,15 @@ contains
        end do
 
        ! divw0
-       do n=1,nlevs
-          call make_divw0(tempfab(n),w0(n,:),w0mac(n,:),dx(n,:))
-       end do
+       if (spherical .eq. 1) then
+          do n=1,nlevs
+             call make_divw0(tempfab(n),w0(1,:),w0mac(n,:),dx(n,:))
+          end do
+       else
+          do n=1,nlevs
+             call make_divw0(tempfab(n),w0(n,:),w0mac(n,:),dx(n,:))
+          end do
+       end if
          
        do n=1,nlevs
           call multifab_copy_c(plotdata(n),icomp_divw0,tempfab(n),1,1)
@@ -268,10 +274,15 @@ contains
        endif
 
        ! VEL_PLUS_W0
-       call make_velplusw0(plotdata(n),icomp_velplusw0,u(n),w0(n,:),w0mac(n,:))
+       if (spherical .eq. 1) then
+          call make_velplusw0(plotdata(n),icomp_velplusw0,u(n),w0(1,:),w0mac(n,:))
+       else
+          call make_velplusw0(plotdata(n),icomp_velplusw0,u(n),w0(n,:),w0mac(n,:))
+       end if
 
        ! VORTICITY
-       call make_vorticity(plotdata(n),icomp_vort,u(n),dx(n,:),the_bc_tower%bc_tower_array(n))
+       call make_vorticity(plotdata(n),icomp_vort,u(n),dx(n,:), &
+                           the_bc_tower%bc_tower_array(n))
 
        ! DIVU
        call multifab_copy_c(plotdata(n),icomp_divu,Source(n),1,1)
@@ -280,15 +291,29 @@ contains
        call make_enthalpy(plotdata(n),icomp_enthalpy,s(n))
 
        ! RHOPERT & TEMP (FROM RHO) & TPERT & MACHNO & (GAM1 - GAM10) & Entropy & RHOHPERT
-       call make_tfromp(plotdata(n),icomp_tfromp,icomp_tpert,icomp_rhopert,icomp_rhohpert, &
-                        icomp_machno,icomp_dg,icomp_entropy,s(n),u(n),rho0(n,:),rhoh0(n,:), &
-                        tempbar(n,:),gamma1bar(n,:),p0(n,:),dx(n,:))
+       ! and TEMP (FROM H) & DELTA_P
+       if (spherical .eq. 1) then
+          
+          call make_tfromp(plotdata(n),icomp_tfromp,icomp_tpert,icomp_rhopert, &
+                           icomp_rhohpert,icomp_machno,icomp_dg,icomp_entropy,s(n),u(n), &
+                           rho0(1,:),rhoh0(1,:),tempbar(1,:),gamma1bar(1,:),p0(1,:),dx(n,:))
 
-       ! TEMP (FROM H) & DELTA_P
-       call make_tfromH(plotdata(n),icomp_tfromH,icomp_dp,s(n),p0(n,:),tempbar(n,:),dx(n,:))
+          call make_tfromH(plotdata(n),icomp_tfromH,icomp_dp,s(n),p0(1,:),tempbar(1,:), &
+                           dx(n,:))
+
+       else
+
+          call make_tfromp(plotdata(n),icomp_tfromp,icomp_tpert,icomp_rhopert, &
+                           icomp_rhohpert,icomp_machno,icomp_dg,icomp_entropy,s(n),u(n), &
+                           rho0(n,:),rhoh0(n,:),tempbar(n,:),gamma1bar(n,:),p0(n,:),dx(n,:))
+
+          call make_tfromH(plotdata(n),icomp_tfromH,icomp_dp,s(n),p0(n,:),tempbar(n,:), &
+                           dx(n,:))
+
+       end if
        
        ! DIFF BETWEEN TFROMP AND TFROMH
-       call make_deltaT (plotdata(n),icomp_dT,icomp_tfromp,icomp_tfromH)
+       call make_deltaT(plotdata(n),icomp_dT,icomp_tfromp,icomp_tfromH)
 
        ! PRESSURE GRADIENT
        call multifab_copy_c(plotdata(n),icomp_gp,gpres(n),1,dm)
@@ -352,6 +377,7 @@ contains
     call fabio_ml_multifab_write_d(plotdata, mba%rr(:,1), dirname, plot_names, &
                                    mba%pd(1), time, dx(1,:), nOutFiles = nOutFiles, &
                                    lUsingNFiles = lUsingNFiles, prec = prec)
+
     do n = 1,nlevs
        call destroy(plotdata(n))
        call destroy(tempfab(n))
