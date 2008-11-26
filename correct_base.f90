@@ -13,7 +13,7 @@ contains
   subroutine correct_base(rho0_new,div_etarho,dt)
 
     use bl_prof_module
-    use geometry, only: spherical, nlevs
+    use geometry, only: spherical, nlevs_radial
     use restrict_base_module
 
     real(kind=dp_t), intent(inout) :: rho0_new(:,0:)
@@ -27,7 +27,7 @@ contains
 
     call build(bpt, "correct_base")
     
-    do n=1,nlevs
+    do n=1,nlevs_radial
        if (spherical .eq. 1) then
           call correct_base_state_spherical(n,rho0_new(n,0:),div_etarho(n,0:),dt)
        else
