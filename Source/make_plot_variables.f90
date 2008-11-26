@@ -84,11 +84,11 @@ contains
 
   end subroutine make_enthalpy_3d
 
-  subroutine make_tfromH(n,plotdata,comp_t,comp_dp,state,p0,tempbar,dx)
+  subroutine make_tfromH(plotdata,comp_t,comp_dp,state,p0,tempbar,dx)
 
     use geometry, only: spherical, dm
 
-    integer        , intent(in   ) :: n,comp_t,comp_dp
+    integer        , intent(in   ) :: comp_t,comp_dp
     type(multifab) , intent(inout) :: plotdata
     type(multifab) , intent(in   ) :: state
     real(kind=dp_t), intent(in   ) :: p0(0:)
@@ -115,7 +115,7 @@ contains
                               lo,hi,p0,tempbar)
        case (3)
           if (spherical .eq. 1) then
-             call make_tfromH_3d_sphr(n,tp(:,:,:,comp_t),tp(:,:,:,comp_dp),ng_p, &
+             call make_tfromH_3d_sphr(tp(:,:,:,comp_t),tp(:,:,:,comp_dp),ng_p, &
                                       sp(:,:,:,:),ng_s,lo,hi,p0,tempbar,dx)
           else
              call make_tfromH_3d_cart(tp(:,:,:,comp_t),tp(:,:,:,comp_dp),ng_p, &
@@ -225,13 +225,13 @@ contains
 
   end subroutine make_tfromH_3d_cart
 
-  subroutine make_tfromH_3d_sphr(n,T,deltaP,ng_p,state,ng_s,lo,hi,p0,tempbar,dx)
+  subroutine make_tfromH_3d_sphr(T,deltaP,ng_p,state,ng_s,lo,hi,p0,tempbar,dx)
 
     use variables, only: rho_comp, rhoh_comp, spec_comp
     use eos_module
     use fill_3d_module
 
-    integer, intent(in) :: n, lo(:), hi(:), ng_p, ng_s
+    integer, intent(in) :: lo(:), hi(:), ng_p, ng_s
     real (kind = dp_t), intent(  out) ::      T(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
     real (kind = dp_t), intent(  out) :: deltaP(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
     real (kind = dp_t), intent(in   ) ::  state(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
@@ -282,14 +282,14 @@ contains
   end subroutine make_tfromH_3d_sphr
 
 
-  subroutine make_tfromp(n,plotdata, &
+  subroutine make_tfromp(plotdata, &
                          comp_tfromp,comp_tpert,comp_rhopert,comp_rhohpert, &
                          comp_machno,comp_deltag,comp_entropy, &
                          s,u,rho0,rhoh0,tempbar,gamma1bar,p0,dx)
 
     use geometry, only: spherical, dm
 
-    integer        , intent(in   ) :: n,comp_tfromp,comp_tpert
+    integer        , intent(in   ) :: comp_tfromp,comp_tpert
     integer        , intent(in   ) :: comp_rhopert, comp_rhohpert, comp_machno
     integer        , intent(in   ) :: comp_deltag, comp_entropy
     type(multifab) , intent(inout) :: plotdata
@@ -326,7 +326,7 @@ contains
                               lo, hi, rho0, rhoh0, tempbar, gamma1bar, p0)
        case (3)
           if (spherical .eq. 1) then
-             call make_tfromp_3d_sphr(n,tp(:,:,:,comp_tfromp),tp(:,:,:,comp_tpert), &
+             call make_tfromp_3d_sphr(tp(:,:,:,comp_tfromp),tp(:,:,:,comp_tpert), &
                                       tp(:,:,:,comp_rhopert ),tp(:,:,:,comp_rhohpert), &
                                       tp(:,:,:,comp_machno  ),tp(:,:,:,comp_deltag), &
                                       tp(:,:,:,comp_entropy ), ng_p, &
@@ -481,7 +481,7 @@ contains
 
   end subroutine make_tfromp_3d_cart
 
-  subroutine make_tfromp_3d_sphr(n,t,tpert,rhopert,rhohpert,machno,deltagamma,entropy, &
+  subroutine make_tfromp_3d_sphr(t,tpert,rhopert,rhohpert,machno,deltagamma,entropy, &
                                  ng_p,s,ng_s,u,ng_u, &
                                  lo,hi,rho0,rhoh0,tempbar,gamma1bar,p0,dx)
 
@@ -489,7 +489,7 @@ contains
     use eos_module
     use fill_3d_module
 
-    integer, intent(in)             :: n,lo(:),hi(:),ng_p,ng_s,ng_u
+    integer         , intent(in   ) :: lo(:),hi(:),ng_p,ng_s,ng_u
     real (kind=dp_t), intent(  out) ::          t(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
     real (kind=dp_t), intent(  out) ::      tpert(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
     real (kind=dp_t), intent(  out) ::    rhopert(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
@@ -592,7 +592,7 @@ contains
                                       lo, hi, entropybar(n,:))
           case (3)
              if (spherical .eq. 1) then
-                call make_entropypert_3d_sphr(n,tp(:,:,:,comp_entropy), &
+                call make_entropypert_3d_sphr(tp(:,:,:,comp_entropy), &
                                               tp(:,:,:,comp_entropypert),ng_p, &
                                               lo, hi, entropybar(1,:), dx(n,:))
              else
@@ -647,11 +647,11 @@ contains
 
   end subroutine make_entropypert_3d_cart
 
-  subroutine make_entropypert_3d_sphr(n,entropy,entropypert,ng_p,lo,hi,entropybar,dx)
+  subroutine make_entropypert_3d_sphr(entropy,entropypert,ng_p,lo,hi,entropybar,dx)
 
     use fill_3d_module
 
-    integer, intent(in)             :: n,lo(:),hi(:),ng_p
+    integer         , intent(in)    :: lo(:),hi(:),ng_p
     real (kind=dp_t), intent(inout) ::     entropy(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
     real (kind=dp_t), intent(  out) :: entropypert(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
     real (kind=dp_t), intent(in   ) :: entropybar(0:)

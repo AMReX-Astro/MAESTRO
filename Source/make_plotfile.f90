@@ -280,12 +280,12 @@ contains
        call make_enthalpy(plotdata(n),icomp_enthalpy,s(n))
 
        ! RHOPERT & TEMP (FROM RHO) & TPERT & MACHNO & (GAM1 - GAM10) & Entropy & RHOHPERT
-       call make_tfromp(n,plotdata(n),icomp_tfromp,icomp_tpert,icomp_rhopert,icomp_rhohpert, &
+       call make_tfromp(plotdata(n),icomp_tfromp,icomp_tpert,icomp_rhopert,icomp_rhohpert, &
                         icomp_machno,icomp_dg,icomp_entropy,s(n),u(n),rho0(n,:),rhoh0(n,:), &
                         tempbar(n,:),gamma1bar(n,:),p0(n,:),dx(n,:))
 
        ! TEMP (FROM H) & DELTA_P
-       call make_tfromH(n,plotdata(n),icomp_tfromH,icomp_dp,s(n),p0(n,:),tempbar(n,:),dx(n,:))
+       call make_tfromH(plotdata(n),icomp_tfromH,icomp_dp,s(n),p0(n,:),tempbar(n,:),dx(n,:))
        
        ! DIFF BETWEEN TFROMP AND TFROMH
        call make_deltaT (plotdata(n),icomp_dT,icomp_tfromp,icomp_tfromH)
