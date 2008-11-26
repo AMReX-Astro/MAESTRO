@@ -303,7 +303,7 @@ contains
        allocate(gradw0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),3))
 
        do r=0,nr_fine-1
-          gradw0_rad(r) = (w0(r+1) - w0(r)) / dr(n)
+          gradw0_rad(r) = (w0(r+1) - w0(r)) / dr(1)
        enddo
 
        call put_1d_array_on_cart_3d_sphr(.false.,.true.,gradw0_rad,gradw0_cart, &
