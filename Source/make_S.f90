@@ -29,7 +29,7 @@ contains
     use multifab_physbc_module
     use multifab_fill_ghost_module
     use variables, only: foextrap_comp
-    use geometry, only: dm, nlevs
+    use geometry, only: dm, nlevs, spherical
 
     type(multifab) , intent(inout) :: Source(:)
     type(multifab) , intent(inout) :: delta_gamma1_term(:)
@@ -91,11 +91,19 @@ contains
                             hep(:,:,1,1), ng_he, &
                             tp(:,:,1,1), ng_th, p0(n,:), gamma1bar(n,:), dx(n,:))
           case (3)
-             call make_S_3d(n,lo, hi, srcp(:,:,:,1), ng_sr, dgtp(:,:,:,1), ng_dt, &
-                            dgp(:,:,:,1), ng_dg, sp(:,:,:,:), ng_s, up(:,:,:,:), ng_u, &
-                            omegap(:,:,:,:), ng_rw, hnp(:,:,:,1), ng_hn, &
-                            hep(:,:,:,1), ng_he, &
-                            tp(:,:,:,1), ng_th, p0(n,:), gamma1bar(n,:), dx(n,:))
+             if (spherical .eq. 1) then
+                call make_S_3d_sphr(n,lo, hi, srcp(:,:,:,1), ng_sr, dgtp(:,:,:,1), ng_dt, &
+                                    dgp(:,:,:,1), ng_dg, sp(:,:,:,:), ng_s, up(:,:,:,:), &
+                                    ng_u, omegap(:,:,:,:), ng_rw, hnp(:,:,:,1), ng_hn, &
+                                    hep(:,:,:,1), ng_he, &
+                                    tp(:,:,:,1), ng_th, p0(1,:), gamma1bar(1,:), dx(n,:))
+             else
+                call make_S_3d(n,lo, hi, srcp(:,:,:,1), ng_sr, dgtp(:,:,:,1), ng_dt, &
+                               dgp(:,:,:,1), ng_dg, sp(:,:,:,:), ng_s, up(:,:,:,:), ng_u, &
+                               omegap(:,:,:,:), ng_rw, hnp(:,:,:,1), ng_hn, &
+                               hep(:,:,:,1), ng_he, &
+                               tp(:,:,:,1), ng_th, p0(n,:), gamma1bar(n,:), dx(n,:))
+             end if
           end select
        end do
     enddo
@@ -156,10 +164,17 @@ contains
                                                   gamma1bar(n,:),psi(n,:), &
                                                   delta_gamma1_termbar(n,:),p0(n,:))
              case (3)
-                call correct_delta_gamma1_term_3d(lo,hi,dgtp(:,:,:,1),ng_dt, &
-                                                  dgp(:,:,:,1),ng_dg, &
-                                                  gamma1bar(n,:),psi(n,:), &
-                                                  delta_gamma1_termbar(n,:),p0(n,:))
+                if (spherical .eq. 1) then
+                   call correct_delta_gamma1_term_3d_sphr(lo,hi,dgtp(:,:,:,1),ng_dt, &
+                                                          dgp(:,:,:,1),ng_dg, &
+                                                          gamma1bar(1,:),psi(1,:), &
+                                                          delta_gamma1_termbar(1,:),p0(1,:))
+                else
+                   call correct_delta_gamma1_term_3d(lo,hi,dgtp(:,:,:,1),ng_dt, &
+                                                     dgp(:,:,:,1),ng_dg, &
+                                                     gamma1bar(n,:),psi(n,:), &
+                                                     delta_gamma1_termbar(n,:),p0(n,:))
+                end if
              end select
           end do
        enddo
@@ -298,7 +313,100 @@ contains
 
     use bl_constants_module
     use eos_module
-    use geometry, only: spherical
+    use variables, only: rho_comp, temp_comp, spec_comp
+    use probin_module, only: use_delta_gamma1_term
+    use geometry, only: anelastic_cutoff_coord, nr
+
+    integer         , intent(in   ) :: n,lo(:),hi(:)
+    integer         , intent(in   ) :: ng_sr,ng_dt,ng_dg,ng_s,ng_u,ng_rw,ng_he,ng_hn,ng_th
+    real (kind=dp_t), intent(  out) ::          Source(lo(1)-ng_sr:,lo(2)-ng_sr:,lo(3)-ng_sr:)
+    real (kind=dp_t), intent(  out) :: delta_gamma1_term(lo(1)-ng_dt:,lo(2)-ng_dt:,lo(3)-ng_dt:)
+    real (kind=dp_t), intent(  out) :: delta_gamma1(lo(1)-ng_dg:,lo(2)-ng_dg:,lo(3)-ng_dg:) 
+    real (kind=dp_t), intent(in   ) ::            s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :,:)
+    real (kind=dp_t), intent(in   ) ::            u(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :,:)
+    real (kind=dp_t), intent(in   ) :: rho_omegadot(lo(1)-ng_rw:,lo(2)-ng_rw:,lo(3)-ng_rw:,:)
+    real (kind=dp_t), intent(in   ) ::     rho_Hnuc(lo(1)-ng_hn:,lo(2)-ng_hn:,lo(3)-ng_hn:)
+    real (kind=dp_t), intent(in   ) ::     rho_Hext(lo(1)-ng_he:,lo(2)-ng_he:,lo(3)-ng_he:)
+    real (kind=dp_t), intent(in   ) ::      thermal(lo(1)-ng_th:,lo(2)-ng_th:,lo(3)-ng_th:)
+    real (kind=dp_t), intent(in   ) :: p0(0:)
+    real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
+    real (kind=dp_t), intent(in   ) :: dx(:)
+
+    !     Local variables
+    integer         :: i, j, k, comp
+    real(kind=dp_t) :: sigma, xi_term, pres_term, gradp0
+
+    Source = zero
+
+    do_diag = .false.
+
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+
+             den_eos(1) = s(i,j,k,rho_comp)
+             temp_eos(1) = s(i,j,k,temp_comp)
+             xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
+
+             ! dens, temp, and xmass are inputs
+             call eos(eos_input_rt, den_eos, temp_eos, &
+                      npts, nspec, &
+                      xn_eos, &
+                      p_eos, h_eos, e_eos, & 
+                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                      dpdX_eos, dhdX_eos, &
+                      gam1_eos, cs_eos, s_eos, &
+                      dsdt_eos, dsdr_eos, &
+                      do_diag)
+
+             sigma = dpdt_eos(1) / (den_eos(1) * cp_eos(1) * dpdr_eos(1))
+
+             xi_term = ZERO
+             pres_term = ZERO
+             do comp = 1, nspec
+                xi_term = xi_term - &
+                     dhdX_eos(1,comp)*rho_omegadot(i,j,k,comp)/den_eos(1) 
+
+                pres_term = pres_term + &
+                     dpdX_eos(1,comp)*rho_omegadot(i,j,k,comp)/den_eos(1)
+             enddo
+
+             Source(i,j,k) = (sigma/den_eos(1)) * &
+                  ( rho_Hext(i,j,k) + rho_Hnuc(i,j,k) + thermal(i,j,k) ) &
+                  + sigma*xi_term &
+                  + pres_term/(den_eos(1)*dpdr_eos(1))
+
+             if (use_delta_gamma1_term .and. k < anelastic_cutoff_coord(n)) then
+                if (k .eq. 0) then
+                   gradp0 = (p0(k+1) - p0(k))/dx(3)
+                else if (k .eq. nr(n)-1) then
+                   gradp0 = (p0(k) - p0(k-1))/dx(3)
+                else
+                   gradp0 = HALF*(p0(k+1) - p0(k-1))/dx(3)
+                endif
+                
+                delta_gamma1(i,j,k) = gam1_eos(1) - gamma1bar(k)
+                
+                delta_gamma1_term(i,j,k) = (gam1_eos(1) - gamma1bar(k))*u(i,j,k,3)* &
+                     gradp0/(gamma1bar(k)*gamma1bar(k)*p0(k))
+             else
+                delta_gamma1_term(i,j,k) = ZERO
+                delta_gamma1(i,j,k) = ZERO
+             endif
+             
+          enddo
+       enddo
+    enddo
+
+  end subroutine make_S_3d
+
+  subroutine make_S_3d_sphr(n,lo,hi,Source,ng_sr,delta_gamma1_term,ng_dt,delta_gamma1, &
+                            ng_dg,s,ng_s,u,ng_u,rho_omegadot,ng_rw,rho_Hnuc,ng_hn, &
+                            rho_Hext,ng_he,thermal,ng_th,p0,gamma1bar,dx)
+
+    use bl_constants_module
+    use eos_module
     use variables, only: rho_comp, temp_comp, spec_comp
     use probin_module, only: use_delta_gamma1_term
     use geometry, only: anelastic_cutoff_coord, nr
@@ -364,29 +472,8 @@ contains
                   + pres_term/(den_eos(1)*dpdr_eos(1))
 
 
-             if (use_delta_gamma1_term .and. spherical .eq. 1) then
+             if (use_delta_gamma1_term) then
                 call bl_error("ERROR: use_delta_gamma1_term not implemented for spherical in make_S")
-             end if
-
-             if (spherical .eq. 0) then
-                if (use_delta_gamma1_term .and. k < anelastic_cutoff_coord(n)) then
-                   if (k .eq. 0) then
-                      gradp0 = (p0(k+1) - p0(k))/dx(3)
-                   else if (k .eq. nr(n)-1) then
-                      gradp0 = (p0(k) - p0(k-1))/dx(3)
-                   else
-                      gradp0 = HALF*(p0(k+1) - p0(k-1))/dx(3)
-                   endif
-                   
-                   delta_gamma1(i,j,k) = gam1_eos(1) - gamma1bar(k)
-                   
-                   delta_gamma1_term(i,j,k) = &
-                        (gam1_eos(1) - gamma1bar(k))*u(i,j,k,3)* &
-                        gradp0/(gamma1bar(k)*gamma1bar(k)*p0(k))
-                else
-                   delta_gamma1_term(i,j,k) = ZERO
-                   delta_gamma1(i,j,k) = ZERO
-                endif
              else
                 delta_gamma1_term(i,j,k) = ZERO
                 delta_gamma1(i,j,k) = ZERO
@@ -396,7 +483,7 @@ contains
        enddo
     enddo
 
-  end subroutine make_S_3d
+  end subroutine make_S_3d_sphr
 
   subroutine correct_delta_gamma1_term_2d(lo,hi,delta_gamma1_term,ng_dt,delta_gamma1,ng_dg, &
                                           gamma1bar,psi,delta_gamma1_termbar,p0)
@@ -447,5 +534,20 @@ contains
     end do
 
   end subroutine correct_delta_gamma1_term_3d
+
+  subroutine correct_delta_gamma1_term_3d_sphr(lo,hi,delta_gamma1_term,ng_dt,delta_gamma1, &
+                                               ng_dg,gamma1bar,psi,delta_gamma1_termbar,p0)
+
+    integer         , intent(in   ) :: lo(:), hi(:), ng_dt, ng_dg
+    real (kind=dp_t), intent(inout) :: delta_gamma1_term(lo(1)-ng_dt:,lo(2)-ng_dt:,lo(3)-ng_dt:)
+    real (kind=dp_t), intent(in   ) ::   delta_gamma1(lo(1)-ng_dg:,lo(2)-ng_dg:,lo(3)-ng_dg:)
+    real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
+    real (kind=dp_t), intent(in   ) :: psi(0:)
+    real (kind=dp_t), intent(in   ) :: delta_gamma1_termbar(0:)
+    real (kind=dp_t), intent(in   ) :: p0(0:)
+
+    call bl_error("ERROR: correct_delta_gamma1_term not implemented for spherical in make_S")
+
+  end subroutine correct_delta_gamma1_term_3d_sphr
 
 end module make_S_module
