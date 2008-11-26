@@ -354,10 +354,6 @@ contains
        w0_force(r) = (w0_new_cen(r)-w0_old_cen(r)) / dt_avg + w0_avg * div_avg / dr(1)
     end do
 
-    do r=0,nr_fine
-       print*,"r,w0",r,w0(r)
-    end do
-
   end subroutine make_w0_spherical
 
   subroutine tridiag(a,b,c,r,u,n)
