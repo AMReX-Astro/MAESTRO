@@ -15,7 +15,7 @@ contains
 
   subroutine get_rho_Hext(mla,s,rho_Hext,dx,time)
 
-    use probin_module, only: nlevs
+    use geometry, only: nlevs
     use multifab_module
     use ml_layout_module
     use ml_restriction_module

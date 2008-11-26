@@ -24,7 +24,7 @@ contains
 
   subroutine initscalardata(s,s0_init,p0_background,dx,bc,mla)
 
-    use geometry, only: nlevs
+    use geometry, only: nlevs, spherical
 
     type(multifab) , intent(inout) :: s(:)
     real(kind=dp_t), intent(in   ) :: s0_init(:,0:,:)
@@ -51,8 +51,13 @@ contains
              call initscalardata_2d(sop(:,:,1,:), lo, hi, ng, dx(n,:), s0_init(n,:,:), &
                                     p0_background(n,:))
           case (3)
-             call initscalardata_3d(n,sop(:,:,:,:), lo, hi, ng, dx(n,:), s0_init(n,:,:), &
-                                    p0_background(n,:))
+             if (spherical .eq. 1) then
+                call initscalardata_3d(sop(:,:,:,:), lo, hi, ng, dx(n,:), s0_init(n,:,:), &
+                                       p0_background(n,:))
+             else
+                call initscalardata_3d_sphr(sop(:,:,:,:), lo, hi, ng, dx(n,:), &
+                                            s0_init(1,:,:), p0_background(1,:))
+             end if
           end select
        end do
     enddo
@@ -111,7 +116,7 @@ contains
        case (2)
           call initscalardata_2d(sop(:,:,1,:), lo, hi, ng, dx, s0_init, p0_background)
        case (3)
-          call initscalardata_3d(n,sop(:,:,:,:), lo, hi, ng, dx, s0_init, p0_background)
+          call initscalardata_3d(sop(:,:,:,:), lo, hi, ng, dx, s0_init, p0_background)
        end select
     end do
 
@@ -177,15 +182,15 @@ contains
     
   end subroutine initscalardata_2d
 
-  subroutine initscalardata_3d(n,s,lo,hi,ng,dx,s0_init,p0_background)
+  subroutine initscalardata_3d(s,lo,hi,ng,dx,s0_init,p0_background)
 
     use probin_module, only: prob_lo, perturb_model
 
-    integer, intent(in) :: n, lo(:), hi(:), ng
+    integer           , intent(in   ) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
-    real (kind = dp_t), intent(in ) :: dx(:)
-    real(kind=dp_t), intent(in   ) ::    s0_init(0:,:)
-    real(kind=dp_t), intent(in   ) ::    p0_background(0:)
+    real (kind = dp_t), intent(in   ) :: dx(:)
+    real(kind=dp_t),    intent(in   ) :: s0_init(0:,:)
+    real(kind=dp_t),    intent(in   ) :: p0_background(0:)
 
     !     Local variables
     integer :: i, j, k, comp
@@ -196,114 +201,128 @@ contains
 
     ! initial the domain with the base state
     s = ZERO
-  
-    if (spherical .eq. 1) then
 
-       ! if we are spherical, we want to make sure that p0 is good, since that is
-       ! what is needed for HSE.  Therefore, we will put p0 onto a cart array and
-       ! then initialize h from rho, X, and p0.
-       allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
+    ! initialize the scalars
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+             s(i,j,k,rho_comp)  = s0_init(k,rho_comp)
+             s(i,j,k,rhoh_comp) = s0_init(k,rhoh_comp)
+             s(i,j,k,temp_comp) = s0_init(k,temp_comp)
 
-       ! initialize the scalars
-       call put_1d_array_on_cart_3d_sphr(.false.,.false.,s0_init(:,rho_comp), &
-                                         s(:,:,:,rho_comp:),lo,hi,dx,ng,0)
+             s(i,j,k,spec_comp:spec_comp+nspec-1) = s0_init(k,spec_comp:spec_comp+nspec-1)
 
-       call put_1d_array_on_cart_3d_sphr(.false.,.false.,s0_init(:,temp_comp), &
-                                         s(:,:,:,temp_comp:),lo,hi,dx,ng,0)
+             s(i,j,k,trac_comp:trac_comp+ntrac-1) = s0_init(k,trac_comp:trac_comp+ntrac-1)
+          enddo
+       enddo
+    enddo
 
-       ! initialize p0_cart
-       call put_1d_array_on_cart_3d_sphr(.false.,.false.,p0_background(:), &
-                                         p0_cart(:,:,:,1:),lo,hi,dx,0,0)
+    if (perturb_model) then
 
-       ! initialize species
-       do comp = spec_comp, spec_comp+nspec-1
-          call put_1d_array_on_cart_3d_sphr(.false.,.false.,s0_init(:,comp), &
-                                            s(:,:,:,comp:),lo,hi,dx,ng,0)
-       end do
-
-       ! initialize tracers
-       do comp = trac_comp, trac_comp+ntrac-1
-          call put_1d_array_on_cart_3d_sphr(.false.,.false.,s0_init(:,comp), &
-                                            s(:,:,:,comp:),lo,hi,dx,ng,0)
-       end do
-
-       ! initialize (rho h) using the EOS
+       ! add an optional perturbation
        do k = lo(3), hi(3)
+          z = prob_lo(3) + (dble(k)+HALF) * dx(3)
+
           do j = lo(2), hi(2)
+             y = prob_lo(2) + (dble(j)+HALF) * dx(2)
+
              do i = lo(1), hi(1)
+                x = prob_lo(1) + (dble(i)+HALF) * dx(1)
 
-                temp_eos(1) = s(i,j,k,temp_comp)
-                p_eos(1) = p0_cart(i,j,k,1)
-                den_eos(1) = s(i,j,k,rho_comp)
-                xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
+                call perturb_3d(x, y, z, p0_background(k), s0_init(k,:), &
+                                dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
 
-                call eos(eos_input_rp, den_eos, temp_eos, &
-                         npts, nspec, &
-                         xn_eos, &
-                         p_eos, h_eos, e_eos, &
-                         cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                         dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                         dpdX_eos, dhdX_eos, &
-                         gam1_eos, cs_eos, s_eos, &
-                         dsdt_eos, dsdr_eos, &
-                         do_diag)
-
-                s(i,j,k,rhoh_comp) = den_eos(1)*h_eos(1)
-                s(i,j,k,temp_comp) = temp_eos(1)
-
+                s(i,j,k,rho_comp) = dens_pert
+                s(i,j,k,rhoh_comp) = rhoh_pert
+                s(i,j,k,temp_comp) = temp_pert
+                s(i,j,k,spec_comp:spec_comp+nspec-1) = rhoX_pert(:)
+                s(i,j,k,trac_comp:trac_comp+ntrac-1) = trac_pert(:)
              enddo
           enddo
        enddo
+    endif
 
-       deallocate(p0_cart)
-
-    else 
-
-       ! initialize the scalars
-       do k = lo(3), hi(3)
-          do j = lo(2), hi(2)
-             do i = lo(1), hi(1)
-                s(i,j,k,rho_comp)  = s0_init(k,rho_comp)
-                s(i,j,k,rhoh_comp) = s0_init(k,rhoh_comp)
-                s(i,j,k,temp_comp) = s0_init(k,temp_comp)
-
-                s(i,j,k,spec_comp:spec_comp+nspec-1) = &
-                     s0_init(k,spec_comp:spec_comp+nspec-1)
-
-                s(i,j,k,trac_comp:trac_comp+ntrac-1) = &
-                     s0_init(k,trac_comp:trac_comp+ntrac-1)
-             enddo
-          enddo
-       enddo
-       
-       if (perturb_model) then
-
-          ! add an optional perturbation
-          do k = lo(3), hi(3)
-             z = prob_lo(3) + (dble(k)+HALF) * dx(3)
-             
-             do j = lo(2), hi(2)
-                y = prob_lo(2) + (dble(j)+HALF) * dx(2)
-                
-                do i = lo(1), hi(1)
-                   x = prob_lo(1) + (dble(i)+HALF) * dx(1)
-                   
-                   call perturb_3d(x, y, z, p0_background(k), s0_init(k,:), &
-                                   dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
-
-                   s(i,j,k,rho_comp) = dens_pert
-                   s(i,j,k,rhoh_comp) = rhoh_pert
-                   s(i,j,k,temp_comp) = temp_pert
-                   s(i,j,k,spec_comp:spec_comp+nspec-1) = rhoX_pert(:)
-                   s(i,j,k,trac_comp:trac_comp+ntrac-1) = trac_pert(:)
-                enddo
-             enddo
-          enddo
-       endif
-
-    end if
-    
   end subroutine initscalardata_3d
+
+  subroutine initscalardata_3d_sphr(s,lo,hi,ng,dx,s0_init,p0_background)
+
+    use probin_module, only: prob_lo, perturb_model
+
+    integer           , intent(in   ) :: lo(:), hi(:), ng
+    real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
+    real (kind = dp_t), intent(in   ) :: dx(:)
+    real(kind=dp_t),    intent(in   ) :: s0_init(0:,:)
+    real(kind=dp_t),    intent(in   ) :: p0_background(0:)
+
+    !     Local variables
+    integer :: i, j, k, comp
+    real(kind=dp_t) :: x,y,z
+    real(kind=dp_t) :: dens_pert, rhoh_pert, temp_pert
+    real(kind=dp_t) :: rhoX_pert(nspec), trac_pert(ntrac)
+    real(kind=dp_t), allocatable :: p0_cart(:,:,:,:)
+
+    ! initial the domain with the base state
+    s = ZERO
+
+    ! if we are spherical, we want to make sure that p0 is good, since that is
+    ! what is needed for HSE.  Therefore, we will put p0 onto a cart array and
+    ! then initialize h from rho, X, and p0.
+    allocate(p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
+
+    ! initialize the scalars
+    call put_1d_array_on_cart_3d_sphr(.false.,.false.,s0_init(:,rho_comp), &
+                                      s(:,:,:,rho_comp:),lo,hi,dx,ng,0)
+
+    call put_1d_array_on_cart_3d_sphr(.false.,.false.,s0_init(:,temp_comp), &
+                                      s(:,:,:,temp_comp:),lo,hi,dx,ng,0)
+
+    ! initialize p0_cart
+    call put_1d_array_on_cart_3d_sphr(.false.,.false.,p0_background(:), &
+                                      p0_cart(:,:,:,1:),lo,hi,dx,0,0)
+
+    ! initialize species
+    do comp = spec_comp, spec_comp+nspec-1
+       call put_1d_array_on_cart_3d_sphr(.false.,.false.,s0_init(:,comp), &
+                                         s(:,:,:,comp:),lo,hi,dx,ng,0)
+    end do
+
+    ! initialize tracers
+    do comp = trac_comp, trac_comp+ntrac-1
+       call put_1d_array_on_cart_3d_sphr(.false.,.false.,s0_init(:,comp), &
+                                         s(:,:,:,comp:),lo,hi,dx,ng,0)
+    end do
+
+    ! initialize (rho h) using the EOS
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+
+             temp_eos(1) = s(i,j,k,temp_comp)
+             p_eos(1) = p0_cart(i,j,k,1)
+             den_eos(1) = s(i,j,k,rho_comp)
+             xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
+
+             call eos(eos_input_rp, den_eos, temp_eos, &
+                  npts, nspec, &
+                  xn_eos, &
+                  p_eos, h_eos, e_eos, &
+                  cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                  dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                  dpdX_eos, dhdX_eos, &
+                  gam1_eos, cs_eos, s_eos, &
+                  dsdt_eos, dsdr_eos, &
+                  do_diag)
+
+             s(i,j,k,rhoh_comp) = den_eos(1)*h_eos(1)
+             s(i,j,k,temp_comp) = temp_eos(1)
+
+          enddo
+       enddo
+    enddo
+
+    deallocate(p0_cart)
+
+  end subroutine initscalardata_3d_sphr
 
   subroutine initveldata(u,s0_init,p0_background,dx,bc,mla)
 
