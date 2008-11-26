@@ -295,7 +295,7 @@ subroutine varden()
         call enforce_HSE(rho0_old,p0_old,grav_cell)
 
         ! compute full state T,h = T,h(rho,p0_old,X)
-        call makeTHfromRhoP(sold,p0_old,the_bc_tower%bc_tower_array,mla)
+        call makeTHfromRhoP(sold,p0_old,the_bc_tower%bc_tower_array,mla,dx)
 
         ! force rhoh0 to be the average of rhoh
         call average(mla,sold,rhoh0_old,dx,rhoh_comp)
@@ -712,7 +712,7 @@ subroutine varden()
            call enforce_HSE(rho0_old,p0_old,grav_cell)
 
            ! compute full state h = h(rho,p0_old,X)
-           call makeHfromRhoP(sold,p0_old,the_bc_tower%bc_tower_array,mla)
+           call makeTHfromRhoP(sold,p0_old,the_bc_tower%bc_tower_array,mla,dx)
 
            ! force rhoh0 to be the average of rhoh
            call average(mla,sold,rhoh0_old,dx,rhoh_comp)
