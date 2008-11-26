@@ -344,21 +344,7 @@ subroutine varden()
      call mk_vel_force(vel_force,uold,gpres,sold,normal,rho0_old,grav_cell,dx, &
                        the_bc_tower%bc_tower_array,mla)
 
-     do n=1,nlevs
-        call firstdt(n,uold(n),sold(n),vel_force(n),Source_old(n),normal(n),p0_old(n,:), &
-                     gamma1bar(n,:),dx(n,:),cflfac,dt_lev)
-
-        if (parallel_IOProcessor() .and. verbose .ge. 1) then
-           print*,"Call to firstdt for level",n,"gives dt_lev =",dt_lev
-        end if
-
-        dt_lev = dt_lev*init_shrink
-        if (parallel_IOProcessor() .and. verbose .ge. 1) then
-           print*, "Multiplying dt_lev by init_shrink; dt_lev =",dt_lev
-        end if
-
-        dt = min(dt,dt_lev)
-     end do
+     call firstdt(uold,sold,vel_force,Source_old,normal,p0_old,gamma1bar,dx,cflfac,dt)
 
      do n=1,nlevs
         call destroy(vel_force(n))

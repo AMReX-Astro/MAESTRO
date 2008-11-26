@@ -20,67 +20,89 @@ module firstdt_module
 
 contains
 
-  subroutine firstdt(n,u,s,force,divU,normal,p0,gamma1bar,dx,cflfac,dt)
+  subroutine firstdt(u,s,force,divU,normal,p0,gamma1bar,dx,cflfac,dt)
 
-    use geometry, only: dm
+    use geometry, only: dm, nlevs
     use variables, only: rel_eps
+    use probin_module, only: init_shrink, verbose
 
-    integer        , intent(in   ) :: n
-    type(multifab) , intent(in   ) :: u,s,force,divU,normal
-    real(kind=dp_t), intent(in   ) :: p0(0:), cflfac, gamma1bar(0:)
-    real(kind=dp_t), intent(in   ) :: dx(:)
+    type(multifab) , intent(in   ) ::      u(:)
+    type(multifab) , intent(in   ) ::      s(:)
+    type(multifab) , intent(in   ) ::  force(:)
+    type(multifab) , intent(in   ) ::   divU(:)
+    type(multifab) , intent(in   ) :: normal(:)
+    real(kind=dp_t), intent(in   ) ::        p0(:,0:)
+    real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
+    real(kind=dp_t), intent(in   ) :: dx(:,:)
+    real(kind=dp_t), intent(in   ) :: cflfac
     real(kind=dp_t), intent(  out) :: dt
     
-    real(kind=dp_t), pointer:: uop(:,:,:,:)
-    real(kind=dp_t), pointer:: sop(:,:,:,:)
-    real(kind=dp_t), pointer:: fp(:,:,:,:)
+    real(kind=dp_t), pointer::   uop(:,:,:,:)
+    real(kind=dp_t), pointer::   sop(:,:,:,:)
+    real(kind=dp_t), pointer::    fp(:,:,:,:)
     real(kind=dp_t), pointer:: divup(:,:,:,:)
-    real(kind=dp_t), pointer:: np(:,:,:,:)
+    real(kind=dp_t), pointer::    np(:,:,:,:)
 
-    integer :: lo(dm),hi(dm),ng_u,ng_s,ng_f,ng_dU,ng_n,i
-    real(kind=dp_t) :: dt_proc,dt_grid
+    integer         :: lo(dm),hi(dm),ng_u,ng_s,ng_f,ng_dU,ng_n,i,n
+    real(kind=dp_t) :: dt_proc,dt_grid,dt_lev
     real(kind=dp_t) :: umax,umax_proc,umax_grid
     
-    ng_u = u%ng
-    ng_s = s%ng
-    ng_f = force%ng
-    ng_dU = divU%ng
+    ng_u  =     u(1)%ng
+    ng_s  =     s(1)%ng
+    ng_f  = force(1)%ng
+    ng_dU =  divU(1)%ng
     
-    dt_proc   = 1.d99
-    dt_grid   = 1.d99
-    umax_proc = 0.d0
-    umax_grid = 0.d0
-    
-    do i = 1, u%nboxes
-       if ( multifab_remote(u, i) ) cycle
-       uop   => dataptr(u, i)
-       sop   => dataptr(s, i)
-       fp    => dataptr(force, i)
-       divup => dataptr(divU,i)
-       lo    =  lwb(get_box(u, i))
-       hi    =  upb(get_box(u, i))
-       select case (dm)
-       case (2)
-          call firstdt_2d(n, uop(:,:,1,:), ng_u, sop(:,:,1,:), ng_s, &
-                          fp(:,:,1,:), ng_f, divup(:,:,1,1), ng_dU, &
-                          p0, gamma1bar, lo, hi, dx, dt_grid, umax_grid, cflfac)
-       case (3)
-          np => dataptr(normal, i)
-          ng_n = normal%ng
-          call firstdt_3d(n, uop(:,:,:,:), ng_u, sop(:,:,:,:), ng_s, &
-                          fp(:,:,:,:), ng_f, divup(:,:,:,1), ng_dU, np(:,:,:,:), ng_n, &
-                          p0, gamma1bar, lo, hi, dx, dt_grid, umax_grid, cflfac)
-       end select
+    do n=1,nlevs
 
-       dt_proc   = min(  dt_proc,   dt_grid)
-       umax_proc = max(umax_proc, umax_grid)
+       dt_proc   = 1.d99
+       dt_grid   = 1.d99
+       umax_proc = 0.d0
+       umax_grid = 0.d0
+       
+       do i = 1, u(n)%nboxes
+          if ( multifab_remote(u(n), i) ) cycle
+          uop   => dataptr(u(n), i)
+          sop   => dataptr(s(n), i)
+          fp    => dataptr(force(n), i)
+          divup => dataptr(divU(n),i)
+          lo    =  lwb(get_box(u(n), i))
+          hi    =  upb(get_box(u(n), i))
+          select case (dm)
+          case (2)
+             call firstdt_2d(n, uop(:,:,1,:), ng_u, sop(:,:,1,:), ng_s, fp(:,:,1,:), ng_f, &
+                             divup(:,:,1,1), ng_dU, p0(n,:), gamma1bar(n,:), lo, hi, &
+                             dx(n,:), dt_grid, umax_grid, cflfac)
+          case (3)
+             np => dataptr(normal(n), i)
+             ng_n = normal(1)%ng
+             call firstdt_3d(n, uop(:,:,:,:), ng_u, sop(:,:,:,:), ng_s, fp(:,:,:,:), ng_f, &
+                             divup(:,:,:,1), ng_dU, np(:,:,:,:), ng_n, p0(n,:), &
+                             gamma1bar(n,:), lo, hi, dx(n,:), dt_grid, umax_grid, cflfac)
+          end select
+          
+          dt_proc   = min(  dt_proc,   dt_grid)
+          umax_proc = max(umax_proc, umax_grid)
+    
+       end do
+
+       call parallel_reduce(dt_lev,   dt_proc, MPI_MIN)
+       call parallel_reduce(  umax, umax_proc, MPI_MAX)
+          
+       if (parallel_IOProcessor() .and. verbose .ge. 1) then
+          print*,"Call to firstdt for level",n,"gives dt_lev =",dt_lev
+       end if
+       
+       dt_lev = dt_lev*init_shrink
+       
+       if (parallel_IOProcessor() .and. verbose .ge. 1) then
+          print*, "Multiplying dt_lev by init_shrink; dt_lev =",dt_lev
+       end if
+       
+       dt = min(dt,dt_lev)
+       
+       rel_eps = 1.d-8*umax
 
     end do
-    
-    call parallel_reduce(  dt,   dt_proc, MPI_MIN)
-    call parallel_reduce(umax, umax_proc, MPI_MAX)
-
-    rel_eps = 1.d-8*umax
     
   end subroutine firstdt
   
