@@ -55,7 +55,7 @@ contains
              call pert_form_2d(sp(:,:,1,:),base(n,:),lo,hi,ng,comp,flag)
           case (3)
              if (spherical .eq. 1) then
-                call pert_form_3d_sphr(n,sp(:,:,:,:),base(n,:),lo,hi,ng,dx(n,:),comp,flag)
+                call pert_form_3d_sphr(n,sp(:,:,:,:),base(1,:),lo,hi,ng,dx(n,:),comp,flag)
              else
                 call pert_form_3d_cart(sp(:,:,:,:),base(n,:),lo,hi,ng,comp,flag)
              end if
