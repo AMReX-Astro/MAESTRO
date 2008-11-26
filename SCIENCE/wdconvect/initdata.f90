@@ -52,11 +52,11 @@ contains
                                     p0_background(n,:))
           case (3)
              if (spherical .eq. 1) then
-                call initscalardata_3d(sop(:,:,:,:), lo, hi, ng, dx(n,:), s0_init(n,:,:), &
-                                       p0_background(n,:))
-             else
                 call initscalardata_3d_sphr(sop(:,:,:,:), lo, hi, ng, dx(n,:), &
                                             s0_init(1,:,:), p0_background(1,:))
+             else
+                call initscalardata_3d(sop(:,:,:,:), lo, hi, ng, dx(n,:), s0_init(n,:,:), &
+                                       p0_background(n,:))
              end if
           end select
        end do
