@@ -23,7 +23,7 @@ contains
                   mla,the_bc_tower)
 
     use bl_prof_module
-    use geometry, only: dm, nlevs
+    use geometry, only: dm, nlevs, spherical
     use bl_constants_module
 
     real(kind=dp_t), intent(in   ) :: dt,dx(:,:),time
@@ -84,16 +84,29 @@ contains
                           lo,hi)
           case (3)
              np => dataptr(normal(n) , i)
-             call diag_3d(time,dt,dx(n,:), &
-                          sp(:,:,:,:),ng_s, &
-                          rhnp(:,:,:,1),ng_rhn, &
-                          rhep(:,:,:,1),ng_rhe, &
-                          rho0(n,:),rhoh0(n,:), &
-                          p0(n,:),tempbar(n,:),gamma1bar(n,:), &
-                          up(:,:,:,:),ng_u, &
-                          w0(n,:), &
-                          np(:,:,:,:),ng_n, &
-                          lo,hi)
+             if (spherical .eq. 0) then
+                call diag_3d(time,dt,dx(n,:), &
+                             sp(:,:,:,:),ng_s, &
+                             rhnp(:,:,:,1),ng_rhn, &
+                             rhep(:,:,:,1),ng_rhe, &
+                             rho0(n,:),rhoh0(n,:), &
+                             p0(n,:),tempbar(n,:),gamma1bar(n,:), &
+                             up(:,:,:,:),ng_u, &
+                             w0(n,:), &
+                             np(:,:,:,:),ng_n, &
+                             lo,hi)
+             else
+                call diag_3d_sphr(time,dt,dx(n,:), &
+                                 sp(:,:,:,:),ng_s, &
+                                 rhnp(:,:,:,1),ng_rhn, &
+                                 rhep(:,:,:,1),ng_rhe, &
+                                 rho0(1,:),rhoh0(1,:), &
+                                 p0(1,:),tempbar(1,:),gamma1bar(1,:), &
+                                 up(:,:,:,:),ng_u, &
+                                 w0(1,:), &
+                                 np(:,:,:,:),ng_n, &
+                                 lo,hi)
+             end if
           end select
        end do
     end do
@@ -188,5 +201,50 @@ contains
     enddo
 
   end subroutine diag_3d
+
+  subroutine diag_3d_sphr(time,dt,dx, &
+                          s,ng_s, &
+                          rho_Hnuc,ng_rhn, &
+                          rho_Hext,ng_rhe, &
+                          rho0,rhoh0,p0,tempbar,gamma1bar, &
+                          u,ng_u,w0,normal,ng_n,lo,hi)
+
+    use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
+    use network, only: nspec
+
+    integer, intent(in) :: lo(:), hi(:), ng_s, ng_u, ng_n, ng_rhn, ng_rhe
+    real (kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
+    real (kind=dp_t), intent(in   ) :: rho_Hnuc(lo(1)-ng_rhn:,lo(2)-ng_rhn:,lo(3)-ng_rhn:)
+    real (kind=dp_t), intent(in   ) :: rho_Hext(lo(1)-ng_rhe:,lo(2)-ng_rhe:,lo(3)-ng_rhe:)
+    real (kind=dp_t), intent(in   ) :: rho0(0:), rhoh0(0:), &
+                                         p0(0:),tempbar(0:),gamma1bar(0:)
+    real (kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,lo(3)-ng_u:,:)
+    real (kind=dp_t), intent(in   ) :: w0(0:)
+    real (kind=dp_t), intent(in   ) :: normal(lo(1)-ng_n:,lo(2)-ng_n:,lo(3)-ng_n:,:)
+    real (kind=dp_t), intent(in   ) :: time, dt, dx(:)
+
+    !     Local variables
+    integer            :: i, j, k
+
+    do k = lo(3), hi(3)
+       do j = lo(2), hi(2)
+          do i = lo(1), hi(1)
+
+             ! do diagnostics here
+             !
+             ! access state variables as:
+             !   s(i,j,k,rho_comp)
+             !
+             ! access velocity components as:
+             !   u(i,j,k,1), u(i,j,k,2), u(i,j,k,3)
+             !
+             ! access normal vector as:
+             !   normal(i,j,k,1), normal(i,j,k,2), normal(i,j,k,3)
+
+          enddo
+       enddo
+    enddo
+
+  end subroutine diag_3d_sphr
 
 end module diag_module
