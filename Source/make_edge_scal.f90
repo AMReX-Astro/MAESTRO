@@ -1295,7 +1295,7 @@ contains
                                (HALF*(wmac(i,j,k) + wmac(i,j,k+1)) - &
                                 HALF*(w0macz(i,j,k)+w0macz(i,j,k+1)))*normal(i,j,k,3)
 
-                   sedgelx(i,j,k) = sedgelx(i,j,k) &
+                   sedgerx(i,j,k) = sedgerx(i,j,k) &
                         - dt2*Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,comp)
 
                 end if
@@ -1424,7 +1424,7 @@ contains
                                (HALF*(wmac(i,j,k) + wmac(i,j,k+1)) - &
                                 HALF*(w0macz(i,j,k)+w0macz(i,j,k+1)))*normal(i,j,k,3)
 
-                   sedgely(i,j,k) = sedgely(i,j,k) &
+                   sedgery(i,j,k) = sedgery(i,j,k) &
                         - dt2*Ut_dot_er*gradw0_cart(i,j,k)*normal(i,j,k,comp)
 
                 end if
