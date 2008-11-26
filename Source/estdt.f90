@@ -111,8 +111,8 @@ contains
                 call estdt_3d_sphr(uop(:,:,:,:), ng_u, sop(:,:,:,:), ng_s, &
                                    fp(:,:,:,:), ng_f, dUp(:,:,:,1), ng_dU, &
                                    dSdtp(:,:,:,1), ng_dS, np(:,:,:,:), ng_n, &
-                                   w0(n,:),wxp(:,:,:,1),wyp(:,:,:,1),wzp(:,:,:,1),ng_w, &
-                                   p0(n,:), gamma1bar(n,:), lo, hi, dx(n,:), &
+                                   w0(1,:),wxp(:,:,:,1),wyp(:,:,:,1),wzp(:,:,:,1),ng_w, &
+                                   p0(1,:), gamma1bar(1,:), lo, hi, dx(n,:), &
                                    rho_min, dt_adv_grid, dt_divu_grid, umax_grid, cflfac)
              else
                 call estdt_3d_cart(n, uop(:,:,:,:), ng_u, sop(:,:,:,:), ng_s, &
@@ -420,7 +420,7 @@ contains
     use variables, only: rho_comp
     use fill_3d_module
     
-    integer, intent(in) :: lo(:), hi(:), ng_u, ng_s, ng_f, ng_dU, ng_dS, ng_n, ng_w
+    integer           , intent(in   ) :: lo(:),hi(:),ng_u,ng_s,ng_f,ng_dU,ng_dS,ng_n,ng_w
     real (kind = dp_t), intent(in   ) ::      u(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :,:)  
     real (kind = dp_t), intent(in   ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :,:)  
     real (kind = dp_t), intent(in   ) ::  force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :,:)  
@@ -526,8 +526,7 @@ contains
              denom = divU(i,j,k) - gp_dot_u 
              
              if (denom > ZERO) then
-                dt_divu = &
-                     min(dt_divu,0.4d0*(ONE - rho_min/s(i,j,k,rho_comp))/denom)
+                dt_divu = min(dt_divu,0.4d0*(ONE - rho_min/s(i,j,k,rho_comp))/denom)
              endif
              
           enddo
