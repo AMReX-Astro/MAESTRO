@@ -15,7 +15,7 @@ contains
     use define_bc_module
     use bl_constants_module
     use probin_module
-    use geometry, only: spherical, nr_fine, nlevs
+    use geometry, only: spherical, nr_fine, nlevs, nlevs_radial
     use proj_parameters, only: initial_projection_comp
     use make_explicit_thermal_module
     use make_S_module
@@ -53,9 +53,9 @@ contains
     type(multifab) :: rho_Hext(nlevs)
     type(multifab) :: div_coeff_3d(nlevs)
 
-    real(dp_t) ::                  psi(nlevs,0:nr_fine-1)
-    real(dp_t) ::                 Sbar(nlevs,0:nr_fine-1)
-    real(dp_t) :: delta_gamma1_termbar(nlevs,0:nr_fine-1)
+    real(dp_t) ::                  psi(nlevs_radial,0:nr_fine-1)
+    real(dp_t) ::                 Sbar(nlevs_radial,0:nr_fine-1)
+    real(dp_t) :: delta_gamma1_termbar(nlevs_radial,0:nr_fine-1)
 
     Sbar = ZERO
     psi = ZERO

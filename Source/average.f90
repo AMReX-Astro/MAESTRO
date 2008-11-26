@@ -45,8 +45,6 @@ contains
     real(kind=dp_t) ::        ncell(nlevs,0:nr_fine-1)
     real(kind=dp_t) ::  phisum_proc(nlevs,0:nr_fine-1)
     real(kind=dp_t) ::       phisum(nlevs,0:nr_fine-1)
-    real(kind=dp_t) :: phipert_proc(nlevs,0:nr_fine-1)
-    real(kind=dp_t) ::      phipert(nlevs,0:nr_fine-1)
 
     real(kind=dp_t) :: source_buffer(0:nr_fine-1)
     real(kind=dp_t) :: target_buffer(0:nr_fine-1)
@@ -66,8 +64,6 @@ contains
     ncell_proc   = ZERO
     phisum       = ZERO       
     phisum_proc  = ZERO
-    phipert      = ZERO
-    phipert_proc = ZERO
 
     rr = 2
 

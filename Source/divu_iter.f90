@@ -17,7 +17,7 @@ contains
     use define_bc_module
     use bl_constants_module
     use probin_module
-    use geometry, only: spherical, nr_fine, dm, nlevs
+    use geometry, only: spherical, nr_fine, dm, nlevs, nlevs_radial
     use proj_parameters, only: divu_iters_comp
     use mk_vel_force_module
     use react_state_module
@@ -70,13 +70,13 @@ contains
     type(multifab) :: w0mac(nlevs,dm)
 
 
-    real(dp_t) ::            etarho_ec(nlevs,0:nr_fine)
-    real(dp_t) ::                 Sbar(nlevs,0:nr_fine-1)
-    real(dp_t) ::             w0_force(nlevs,0:nr_fine-1)
-    real(dp_t) ::                  psi(nlevs,0:nr_fine-1)
-    real(dp_t) ::            etarho_cc(nlevs,0:nr_fine-1)
-    real(dp_t) :: delta_gamma1_termbar(nlevs,0:nr_fine-1)
-    real(dp_t) ::   p0_minus_pthermbar(nlevs,0:nr_fine-1)
+    real(dp_t) ::            etarho_ec(nlevs_radial,0:nr_fine)
+    real(dp_t) ::                 Sbar(nlevs_radial,0:nr_fine-1)
+    real(dp_t) ::             w0_force(nlevs_radial,0:nr_fine-1)
+    real(dp_t) ::                  psi(nlevs_radial,0:nr_fine-1)
+    real(dp_t) ::            etarho_cc(nlevs_radial,0:nr_fine-1)
+    real(dp_t) :: delta_gamma1_termbar(nlevs_radial,0:nr_fine-1)
+    real(dp_t) ::   p0_minus_pthermbar(nlevs_radial,0:nr_fine-1)
 
     type(bl_prof_timer), save :: bpt
 

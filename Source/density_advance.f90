@@ -29,7 +29,7 @@ contains
     use pert_form_module
     use cell_to_edge_module
     use network,       only: nspec, spec_names
-    use geometry,      only: spherical, nr_fine, dm, nlevs
+    use geometry,      only: spherical, nr_fine, dm, nlevs, nlevs_radial
     use variables,     only: nscal, ntrac, spec_comp, rho_comp, trac_comp, foextrap_comp
     use probin_module, only: verbose
     use modify_scal_force_module
@@ -62,8 +62,8 @@ contains
     logical    :: is_vel
     real(dp_t) :: smin,smax
 
-    real(kind=dp_t) :: rho0_edge_old(nlevs,0:nr_fine)
-    real(kind=dp_t) :: rho0_edge_new(nlevs,0:nr_fine)
+    real(kind=dp_t) :: rho0_edge_old(nlevs_radial,0:nr_fine)
+    real(kind=dp_t) :: rho0_edge_new(nlevs_radial,0:nr_fine)
 
     type(bl_prof_timer), save :: bpt
 

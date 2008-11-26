@@ -55,13 +55,12 @@ contains
     ! local
     real(kind=dp_t), pointer :: efp(:,:,:,:)
     
-    real(kind=dp_t) ::           ncell(nlevs,0:nr_fine)
-    real(kind=dp_t) ::  etarhosum_proc(nlevs,0:nr_fine)
-    real(kind=dp_t) ::       etarhosum(nlevs,0:nr_fine)
-    real(kind=dp_t) :: etarhopert_proc(nlevs,0:nr_fine)
-    real(kind=dp_t) ::      etarhopert(nlevs,0:nr_fine)
-    real(kind=dp_t) ::   source_buffer(0:nr_fine)
-    real(kind=dp_t) ::   target_buffer(0:nr_fine)
+    real(kind=dp_t) ::          ncell(nlevs,0:nr_fine)
+    real(kind=dp_t) :: etarhosum_proc(nlevs,0:nr_fine)
+    real(kind=dp_t) ::      etarhosum(nlevs,0:nr_fine)
+
+    real(kind=dp_t) :: source_buffer(0:nr_fine)
+    real(kind=dp_t) :: target_buffer(0:nr_fine)
 
     type(box) :: domain
 
@@ -78,8 +77,6 @@ contains
     ncell           = ZERO
     etarhosum_proc  = ZERO
     etarhosum       = ZERO
-    etarhopert_proc = ZERO
-    etarhopert      = ZERO
     etarho_ec       = ZERO
     
     if (spherical .eq. 1) then
@@ -295,7 +292,7 @@ contains
           np  => dataptr(normal(n), i)
           lo = lwb(get_box(eta_cart(n),i))
           hi = upb(get_box(eta_cart(n),i))
-          call construct_eta_cart(n, sop(:,:,:,rho_comp), ng_so, &
+          call construct_eta_cart(sop(:,:,:,rho_comp), ng_so, &
                                   snp(:,:,:,rho_comp), ng_sn, &
                                   ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
                                   np(:,:,:,:), ng_n, ep(:,:,:,1), ng_e, &
@@ -370,8 +367,7 @@ contains
 
   end subroutine make_etarho_spherical
 
-  subroutine construct_eta_cart(n, rho_old, ng_so, rho_new, ng_sn, &
-                                umac, vmac, wmac, ng_um, &
+  subroutine construct_eta_cart(rho_old, ng_so, rho_new, ng_sn, umac, vmac, wmac, ng_um, &
                                 normal, ng_n, eta_cart, ng_e, rhoprime_cart, ng_rp, &
                                 rho0_old, rho0_new, dx, lo, hi)
 
@@ -379,7 +375,7 @@ contains
     use geometry, only: nr_fine
     use fill_3d_module
 
-    integer        , intent(in   ) :: n,lo(:),hi(:),ng_so, ng_sn, ng_um, ng_n, ng_e, ng_rp
+    integer        , intent(in   ) :: lo(:),hi(:),ng_so, ng_sn, ng_um, ng_n, ng_e, ng_rp
     real(kind=dp_t), intent(in   ) ::       rho_old(lo(1)-ng_so:,lo(2)-ng_so:,lo(3)-ng_so:)
     real(kind=dp_t), intent(in   ) ::       rho_new(lo(1)-ng_sn:,lo(2)-ng_sn:,lo(3)-ng_sn:)
     real(kind=dp_t), intent(in   ) ::          umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
