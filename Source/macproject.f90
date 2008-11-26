@@ -22,7 +22,7 @@ contains
   subroutine macproject(mla,umac,phi,rho,dx,the_bc_tower, &
                         bc_comp,divu_rhs,div_coeff_1d,div_coeff_half_1d,div_coeff_3d)
 
-    use geometry, only: dm, nlevs
+    use geometry, only: dm, nlevs, spherical
 
     type(ml_layout), intent(in   ) :: mla
     type(multifab ), intent(inout) :: umac(:,:)
@@ -54,6 +54,14 @@ contains
 
     if (use_div_coeff_1d .and. use_div_coeff_3d) then
        call bl_error('CANT HAVE 1D and 3D DIV_COEFF IN MACPROJECT')
+    end if
+
+    if (spherical .eq. 1 .and. use_div_coeff_1d) then
+       call bl_error('CANT HAVE SPHERICAL .eq. 1 and 1D DIV_COEFF IN MACPROJECT')
+    end if
+
+    if (spherical .eq. 0 .and. use_div_coeff_3d) then
+       call bl_error('CANT HAVE SPHERICAL .eq. 0 and 3D DIV_COEFF IN MACPROJECT')
     end if
 
     stencil_order = 2

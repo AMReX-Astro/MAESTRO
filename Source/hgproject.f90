@@ -25,7 +25,7 @@ contains
     use ml_restriction_module
     use multifab_fill_ghost_module
     use probin_module, only: verbose, mg_verbose, cg_verbose, hg_dense_stencil, nodal
-    use geometry, only: dm, nlevs
+    use geometry, only: dm, nlevs, spherical
 
     integer        , intent(in   ) :: proj_type
     type(ml_layout), intent(inout) :: mla
@@ -78,6 +78,14 @@ contains
 
     if (use_div_coeff_1d .and. use_div_coeff_3d) then
        call bl_error('CANT HAVE 1D and 3D DIV_COEFF IN HGPROJECT')
+    end if
+
+    if (spherical .eq. 1 .and. use_div_coeff_1d) then
+       call bl_error('CANT HAVE SPHERICAL .eq. 1 and 1D DIV_COEFF IN HGPROJECT')
+    end if
+
+    if (spherical .eq. 0 .and. use_div_coeff_3d) then
+       call bl_error('CANT HAVE SPHERICAL .eq. 0 and 3D DIV_COEFF IN HGPROJECT')
     end if
 
     if (verbose .ge. 1) then
