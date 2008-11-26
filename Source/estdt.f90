@@ -24,38 +24,39 @@ module estdt_module
 
 contains
 
-  subroutine estdt(n,u,s,force,divU,dSdt,normal,w0,w0mac,p0,gamma1bar,dx,cflfac,dt)
+  subroutine estdt(u,s,force,divU,dSdt,normal,w0,w0mac,p0,gamma1bar,dx,cflfac,dt)
 
     use bl_prof_module
-    use geometry, only: spherical, dm
+    use geometry, only: spherical, dm, nlevs
     use variables, only: rel_eps
     
-    integer        , intent(in ) :: n
-    type(multifab) , intent(in ) :: u
-    type(multifab) , intent(in ) :: s
-    type(multifab) , intent(in ) :: force
-    type(multifab) , intent(in ) :: divU
-    type(multifab) , intent(in ) :: dSdt
-    type(multifab) , intent(in ) :: normal
-    real(kind=dp_t), intent(in ) :: w0(0:), p0(0:), gamma1bar(0:)
-    type(multifab) , intent(in ) :: w0mac(:)
-    real(kind=dp_t), intent(in ) :: dx(:)
+    type(multifab) , intent(in ) :: u(:)
+    type(multifab) , intent(in ) :: s(:)
+    type(multifab) , intent(in ) :: force(:)
+    type(multifab) , intent(in ) :: divU(:)
+    type(multifab) , intent(in ) :: dSdt(:)
+    type(multifab) , intent(in ) :: normal(:)
+    type(multifab) , intent(in ) :: w0mac(:,:)
+    real(kind=dp_t), intent(in ) :: w0(:,0:)
+    real(kind=dp_t), intent(in ) :: p0(:,0:)
+    real(kind=dp_t), intent(in ) :: gamma1bar(:,0:)
+    real(kind=dp_t), intent(in ) :: dx(:,:)
     real(kind=dp_t), intent(in ) :: cflfac
     real(kind=dp_t), intent(out) :: dt
     
-    real(kind=dp_t), pointer:: uop(:,:,:,:)
-    real(kind=dp_t), pointer:: sop(:,:,:,:)
-    real(kind=dp_t), pointer:: fp(:,:,:,:)
-    real(kind=dp_t), pointer:: np(:,:,:,:)
-    real(kind=dp_t), pointer:: dUp(:,:,:,:)
+    real(kind=dp_t), pointer::   uop(:,:,:,:)
+    real(kind=dp_t), pointer::   sop(:,:,:,:)
+    real(kind=dp_t), pointer::    fp(:,:,:,:)
+    real(kind=dp_t), pointer::    np(:,:,:,:)
+    real(kind=dp_t), pointer::   dUp(:,:,:,:)
     real(kind=dp_t), pointer:: dSdtp(:,:,:,:)
-    real(kind=dp_t), pointer:: wxp(:,:,:,:)
-    real(kind=dp_t), pointer:: wyp(:,:,:,:)
-    real(kind=dp_t), pointer:: wzp(:,:,:,:)
+    real(kind=dp_t), pointer::   wxp(:,:,:,:)
+    real(kind=dp_t), pointer::   wyp(:,:,:,:)
+    real(kind=dp_t), pointer::   wzp(:,:,:,:)
     
-    integer :: lo(dm),hi(dm),i
+    integer :: lo(dm),hi(dm),i,n
     integer :: ng_s,ng_u,ng_f,ng_dU,ng_dS,ng_n,ng_w
-    real(kind=dp_t) :: dt_adv,dt_adv_grid,dt_adv_proc,dt_start
+    real(kind=dp_t) :: dt_adv,dt_adv_grid,dt_adv_proc,dt_start,dt_lev
     real(kind=dp_t) :: dt_divu,dt_divu_grid,dt_divu_proc
     real(kind=dp_t) :: umax,umax_grid,umax_proc
     
@@ -65,83 +66,89 @@ contains
 
     call build(bpt, "estdt")
     
-    ng_u = u%ng
-    ng_s = s%ng
-    ng_f = force%ng
-    ng_dU = divU%ng
-    ng_dS = dSdt%ng
+    ng_u = u(1)%ng
+    ng_s = s(1)%ng
+    ng_f = force(1)%ng
+    ng_dU = divU(1)%ng
+    ng_dS = dSdt(1)%ng
 
-    dt_adv_proc  = 1.d99
-    dt_divu_proc = 1.d99
-    dt_start     = 1.d99
-    umax_grid    = 0.d0
-    umax_proc    = 0.d0
-    
-    do i = 1, u%nboxes
-       if ( multifab_remote(u, i) ) cycle
-       uop   => dataptr(u, i)
-       sop   => dataptr(s, i)
-       fp    => dataptr(force, i)
-       dUp   => dataptr(divU, i)
-       dSdtp => dataptr(dSdt, i)
-       lo =  lwb(get_box(u, i))
-       hi =  upb(get_box(u, i))
-
-       dt_adv_grid   = HUGE(dt_adv_grid)
-       dt_divu_grid  = HUGE(dt_divu_grid)
-
-       select case (dm)
-       case (2)
-          call estdt_2d(n, uop(:,:,1,:), ng_u, sop(:,:,1,:), ng_s, &
-                        fp(:,:,1,:), ng_f, dUp(:,:,1,1), ng_dU, &
-                        dSdtp(:,:,1,1), ng_dS, &
-                        w0, p0, gamma1bar, lo, hi, &
-                        dx, rho_min, dt_adv_grid, dt_divu_grid, umax_grid, cflfac)
-       case (3)
-          if (spherical .eq. 1) then
-             np => dataptr(normal, i)
-             ng_n = normal%ng
-             ng_w = w0mac(1)%ng
-             wxp => dataptr(w0mac(1), i)
-             wyp => dataptr(w0mac(2), i)
-             wzp => dataptr(w0mac(3), i)
-             call estdt_3d_sphr(n, uop(:,:,:,:), ng_u, sop(:,:,:,:), ng_s, &
-                                fp(:,:,:,:), ng_f, dUp(:,:,:,1), ng_dU, &
-                                dSdtp(:,:,:,1), ng_dS, np(:,:,:,:), ng_n, &
-                                w0,wxp(:,:,:,1),wyp(:,:,:,1),wzp(:,:,:,1),ng_w, &
-                                p0, gamma1bar, lo, hi, dx, &
-                                rho_min, dt_adv_grid, dt_divu_grid, umax_grid, cflfac)
-          else
-             call estdt_3d_cart(n, uop(:,:,:,:), ng_u, sop(:,:,:,:), ng_s, &
-                                fp(:,:,:,:), ng_f, dUp(:,:,:,1), ng_dU, &
-                                dSdtp(:,:,:,1), ng_dS, &
-                                w0, p0, gamma1bar, lo, hi, dx, rho_min, &
-                                dt_adv_grid, dt_divu_grid, umax_grid, cflfac)
-          end if
-       end select
+    do n=1,nlevs
        
-       dt_adv_proc  = min( dt_adv_proc,  dt_adv_grid)
-       dt_divu_proc = min(dt_divu_proc, dt_divu_grid)
-       umax_proc    = max(   umax_proc,    umax_grid)
+       dt_adv_proc  = 1.d99
+       dt_divu_proc = 1.d99
+       dt_start     = 1.d99
+       umax_grid    = 0.d0
+       umax_proc    = 0.d0
+
+       do i = 1, u(n)%nboxes
+          if ( multifab_remote(u(n), i) ) cycle
+          uop   => dataptr(u(n), i)
+          sop   => dataptr(s(n), i)
+          fp    => dataptr(force(n), i)
+          dUp   => dataptr(divU(n), i)
+          dSdtp => dataptr(dSdt(n), i)
+          lo =  lwb(get_box(u(n), i))
+          hi =  upb(get_box(u(n), i))
+
+          dt_adv_grid   = HUGE(dt_adv_grid)
+          dt_divu_grid  = HUGE(dt_divu_grid)
+
+          select case (dm)
+          case (2)
+             call estdt_2d(n, uop(:,:,1,:), ng_u, sop(:,:,1,:), ng_s, &
+                           fp(:,:,1,:), ng_f, dUp(:,:,1,1), ng_dU, &
+                           dSdtp(:,:,1,1), ng_dS, &
+                           w0(n,:), p0(n,:), gamma1bar(n,:), lo, hi, &
+                           dx(n,:), rho_min, dt_adv_grid, dt_divu_grid, umax_grid, cflfac)
+          case (3)
+             if (spherical .eq. 1) then
+                np => dataptr(normal(n), i)
+                ng_n = normal(1)%ng
+                ng_w = w0mac(1,1)%ng
+                wxp => dataptr(w0mac(n,1), i)
+                wyp => dataptr(w0mac(n,2), i)
+                wzp => dataptr(w0mac(n,3), i)
+                call estdt_3d_sphr(uop(:,:,:,:), ng_u, sop(:,:,:,:), ng_s, &
+                                   fp(:,:,:,:), ng_f, dUp(:,:,:,1), ng_dU, &
+                                   dSdtp(:,:,:,1), ng_dS, np(:,:,:,:), ng_n, &
+                                   w0(n,:),wxp(:,:,:,1),wyp(:,:,:,1),wzp(:,:,:,1),ng_w, &
+                                   p0(n,:), gamma1bar(n,:), lo, hi, dx(n,:), &
+                                   rho_min, dt_adv_grid, dt_divu_grid, umax_grid, cflfac)
+             else
+                call estdt_3d_cart(n, uop(:,:,:,:), ng_u, sop(:,:,:,:), ng_s, &
+                                   fp(:,:,:,:), ng_f, dUp(:,:,:,1), ng_dU, &
+                                   dSdtp(:,:,:,1), ng_dS, &
+                                   w0(1,:), p0(1,:), gamma1bar(1,:), lo, hi, dx(n,:), &
+                                   rho_min, dt_adv_grid, dt_divu_grid, umax_grid, cflfac)
+             end if
+          end select
+
+          dt_adv_proc  = min( dt_adv_proc,  dt_adv_grid)
+          dt_divu_proc = min(dt_divu_proc, dt_divu_grid)
+          umax_proc    = max(   umax_proc,    umax_grid)
+
+       end do
+
+       ! This sets dt to be the min of dt_proc over all processors.
+       call parallel_reduce( dt_adv,  dt_adv_proc, MPI_MIN)
+       call parallel_reduce(dt_divu, dt_divu_proc, MPI_MIN)
+       call parallel_reduce(   umax,    umax_proc, MPI_MAX)
+
+       rel_eps = 1.d-8*umax
+
+       dt_lev = min(dt_adv,dt_divu)
+
+       if (dt_lev .eq. dt_start) then
+          dt_lev = min(dx(n,1),dx(n,2))
+          if (dm .eq. 3) dt_lev = min(dt_lev,dx(n,3))
+       end if
+
+       dt = min(dt,dt_lev)
 
     end do
-    
-    ! This sets dt to be the min of dt_proc over all processors.
-    call parallel_reduce( dt_adv,  dt_adv_proc, MPI_MIN)
-    call parallel_reduce(dt_divu, dt_divu_proc, MPI_MIN)
-    call parallel_reduce(   umax,    umax_proc, MPI_MAX)
-
-    rel_eps = 1.d-8*umax
-    
-    dt = min(dt_adv,dt_divu)
-
-    if (dt .eq. dt_start) then
-       dt = min(dx(1),dx(2))
-       if (dm .eq. 3) dt = min(dt,dx(3))
-    end if
 
     call destroy(bpt)
-    
+
   end subroutine estdt
   
   
@@ -404,7 +411,7 @@ contains
     
   end subroutine estdt_3d_cart
   
-  subroutine estdt_3d_sphr(n, u, ng_u, s, ng_s, force, ng_f, &
+  subroutine estdt_3d_sphr(u, ng_u, s, ng_s, force, ng_f, &
                            divU, ng_dU, dSdt, ng_dS, normal, ng_n, &
                            w0,w0macx,w0macy,w0macz,ng_w, p0, gamma1bar, &
                            lo, hi, dx, rho_min, dt_adv, dt_divu, umax, cfl)
@@ -413,7 +420,7 @@ contains
     use variables, only: rho_comp
     use fill_3d_module
     
-    integer, intent(in) :: n, lo(:), hi(:), ng_u, ng_s, ng_f, ng_dU, ng_dS, ng_n, ng_w
+    integer, intent(in) :: lo(:), hi(:), ng_u, ng_s, ng_f, ng_dU, ng_dS, ng_n, ng_w
     real (kind = dp_t), intent(in   ) ::      u(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :,:)  
     real (kind = dp_t), intent(in   ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :,:)  
     real (kind = dp_t), intent(in   ) ::  force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :,:)  

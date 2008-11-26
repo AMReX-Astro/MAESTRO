@@ -56,7 +56,7 @@ contains
 
     ! local
     integer        :: n,comp,ng_s
-    real(dp_t)     :: halfdt,dt_temp,dt_hold,dt_lev
+    real(dp_t)     :: halfdt,dt_temp,dt_hold
 
     type(multifab) :: s1(nlevs)  
     type(multifab) :: delta_gamma1_term(nlevs)
@@ -213,13 +213,8 @@ contains
     dt_hold = dt
     dt      = HUGE(dt)
 
-    do n=1,nlevs
-       call estdt(n,uold(n),sold(n),vel_force(n),Source_old(n), &
-                  dSdt(n),normal(n),w0(n,:),w0mac(n,:),p0_old(n,:),gamma1bar(n,:),dx(n,:), &
-                  cflfac,dt_lev)
-       
-       dt = min(dt,dt_lev)
-    end do
+    call estdt(uold,sold,vel_force,Source_old,dSdt,normal,w0,w0mac,p0_old,gamma1bar,dx, &
+               cflfac,dt)
 
     if (spherical .eq. 1) then
        do n=1,nlevs

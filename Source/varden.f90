@@ -41,7 +41,7 @@ subroutine varden()
   integer    :: i,n,r,comp
   integer    :: last_plt_written,last_chk_written
   real(dp_t) :: smin,smax
-  real(dp_t) :: time,dt,dtold,dt_lev
+  real(dp_t) :: time,dt,dtold
 
   type(ml_layout) :: mla
   type(bc_tower)  :: the_bc_tower
@@ -773,12 +773,8 @@ subroutine varden()
               call put_w0_on_edges(mla,w0,w0mac,dx,div_coeff_old,the_bc_tower)
            end if
 
-           do n = 1,nlevs
-              call estdt(n,uold(n),sold(n),vel_force(n),Source_old(n),dSdt(n),normal(n), &
-                         w0(n,:),w0mac(n,:),p0_old(n,:),gamma1bar(n,:),dx(n,:),cflfac,dt_lev)
-
-              dt = min(dt,dt_lev)
-           end do
+           call estdt(uold,sold,vel_force,Source_old,dSdt,normal,w0,w0mac,p0_old, &
+                      gamma1bar,dx,cflfac,dt)
 
            if (spherical .eq. 1) then
               do n=1,nlevs
