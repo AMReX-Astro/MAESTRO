@@ -62,8 +62,8 @@ contains
           hi = upb(get_box(s(n),i))
           select case (dm)
           case (2)
-             call mk_vel_force_2d(fp(:,:,1,:),ng_f,gpp(:,:,1,:),ng_gp,rp(:,:,1,rho_comp),ng_s, &
-                                  rho0(n,:),grav(n,:),lo,hi)
+             call mk_vel_force_2d(fp(:,:,1,:),ng_f,gpp(:,:,1,:),ng_gp,rp(:,:,1,rho_comp), &
+                                  ng_s,rho0(n,:),grav(n,:),lo,hi)
           case (3)
              ng_uo = uold(1)%ng
              uop => dataptr(uold(n),i)
@@ -71,9 +71,9 @@ contains
              if (spherical .eq. 1) then
                 ng_n = normal(1)%ng
                 np => dataptr(normal(n), i)
-                call mk_vel_force_3d_sphr(n,fp(:,:,:,:),ng_f,uop(:,:,:,:),ng_uo, &
+                call mk_vel_force_3d_sphr(fp(:,:,:,:),ng_f,uop(:,:,:,:),ng_uo, &
                                           gpp(:,:,:,:),ng_gp,rp(:,:,:,rho_comp),ng_s, &
-                                          np(:,:,:,:),ng_n,rho0(n,:),grav(n,:),lo,hi,dx(n,:))
+                                          np(:,:,:,:),ng_n,rho0(1,:),grav(1,:),lo,hi,dx(n,:))
              else
                 call mk_vel_force_3d_cart(fp(:,:,:,:),ng_f,uop(:,:,:,:),ng_uo, &
                                           gpp(:,:,:,:),ng_gp,rp(:,:,:,rho_comp),ng_s, &
@@ -191,15 +191,15 @@ contains
 
   end subroutine mk_vel_force_3d_cart
 
-  subroutine mk_vel_force_3d_sphr(n,vel_force,ng_f,uold,ng_uo,gpres,ng_gp,rho,ng_s,normal,ng_n, &
-                                  rho0,grav,lo,hi,dx)
+  subroutine mk_vel_force_3d_sphr(vel_force,ng_f,uold,ng_uo,gpres,ng_gp,rho,ng_s,normal, &
+                                  ng_n,rho0,grav,lo,hi,dx)
 
     use variables, only: rho_comp
     use fill_3d_module
     use bl_constants_module
     use geometry,  only: omega, center
 
-    integer        , intent(in   ) :: n,lo(:),hi(:),ng_f,ng_gp,ng_s,ng_n,ng_uo
+    integer        , intent(in   ) :: lo(:),hi(:),ng_f,ng_gp,ng_s,ng_n,ng_uo
     real(kind=dp_t), intent(inout) :: vel_force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :,:)
     real(kind=dp_t), intent(in   ) ::      uold(lo(1)-ng_uo:,lo(2)-ng_uo:,lo(3)-ng_uo:,:)
     real(kind=dp_t), intent(in   ) ::     gpres(lo(1)-ng_gp:,lo(2)-ng_gp:,lo(3)-ng_gp:,:)

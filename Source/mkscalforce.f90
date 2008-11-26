@@ -128,10 +128,10 @@ contains
                                     rho0(n,:), grav(n,:), psi(n,:), add_thermal)
              else
                 pp  => dataptr(p0_cart(n),i)
-                call mkrhohforce_3d_sphr(n,fp(:,:,:,rhoh_comp), ng_f, is_prediction, &
+                call mkrhohforce_3d_sphr(fp(:,:,:,rhoh_comp), ng_f, is_prediction, &
                                          ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
                                          tp(:,:,:,1), ng_th, pp(:,:,:,1), lo, hi, dx(n,:), &
-                                         psi(n,:), add_thermal)
+                                         psi(1,:), add_thermal)
              end if
           end select
        end do
@@ -322,7 +322,7 @@ contains
 
   end subroutine mkrhohforce_3d
 
-  subroutine mkrhohforce_3d_sphr(n,rhoh_force,ng_f,is_prediction, &
+  subroutine mkrhohforce_3d_sphr(rhoh_force,ng_f,is_prediction, &
                                  umac,vmac,wmac,ng_um,thermal,ng_th,p0_cart, &
                                  lo,hi,dx,psi,add_thermal)
 
@@ -333,7 +333,7 @@ contains
 
     ! compute the source terms for the non-reactive part of the enthalpy equation {w dp0/dr}
 
-    integer,         intent(in   ) :: n,lo(:),hi(:),ng_f,ng_um,ng_th
+    integer,         intent(in   ) :: lo(:),hi(:),ng_f,ng_um,ng_th
     logical,         intent(in   ) :: is_prediction
     real(kind=dp_t), intent(  out) :: rhoh_force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :)
     real(kind=dp_t), intent(in   ) ::       umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
@@ -513,13 +513,13 @@ contains
              else
                 pp  => dataptr(p0_cart(n),i)
                 hp  => dataptr(h0_cart(n),i)
-                call mkhprimeforce_3d_sphr(n,fp(:,:,:,rhoh_comp), ng_f, is_prediction, &
+                call mkhprimeforce_3d_sphr(fp(:,:,:,rhoh_comp), ng_f, is_prediction, &
                                            ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
                                            tp(:,:,:,1), ng_th, &
                                            sop(:,:,:,rho_comp), snp(:,:,:,rho_comp), ng_s, &
                                            pp(:,:,:,1), hp(:,:,:,1), &
                                            lo, hi, dx(n,:), &
-                                           psi(n,:), add_thermal)
+                                           psi(1,:), add_thermal)
              end if
           end select
        end do
@@ -566,11 +566,9 @@ contains
     
   end subroutine mkhprimeforce
 
-  subroutine mkhprimeforce_3d_sphr(n,rhoh_force,ng_f,is_prediction, &
-                                   umac,vmac,wmac,ng_um,thermal,ng_th, &
-                                   rhoold,rhonew,ng_s, &
-                                   p0_cart,h0_cart, &
-                                   lo,hi,dx,psi,add_thermal)
+  subroutine mkhprimeforce_3d_sphr(rhoh_force,ng_f,is_prediction,umac,vmac,wmac,ng_um, &
+                                   thermal,ng_th,rhoold,rhonew,ng_s,p0_cart,h0_cart,lo,hi, &
+                                   dx,psi,add_thermal)
 
     use fill_3d_module
     use geometry, only: nr_fine, dr, center
@@ -579,7 +577,7 @@ contains
 
     ! compute the source terms for the non-reactive part of the enthalpy equation {w dp0/dr}
 
-    integer,         intent(in   ) :: n,lo(:),hi(:),ng_f,ng_um,ng_th,ng_s
+    integer,         intent(in   ) :: lo(:),hi(:),ng_f,ng_um,ng_th,ng_s
     logical,         intent(in   ) :: is_prediction
     real(kind=dp_t), intent(  out) :: rhoh_force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :)
     real(kind=dp_t), intent(in   ) ::       umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
@@ -776,10 +774,10 @@ contains
              if (spherical .eq. 1) then
                 pp  => dataptr(p0_cart(n),i)
                 tpp => dataptr(t0_cart(n),i)
-                call mktempforce_3d_sphr(n,fp(:,:,:,temp_comp), ng_f, sp(:,:,:,:), ng_s, &
+                call mktempforce_3d_sphr(fp(:,:,:,temp_comp), ng_f, sp(:,:,:,:), ng_s, &
                                          ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
                                          tp(:,:,:,1), ng_th, lo, hi, &
-                                         pp(:,:,:,1), tpp(:,:,:,1), psi(n,:), dx(n,:))
+                                         pp(:,:,:,1), tpp(:,:,:,1), psi(1,:), dx(n,:))
              else
                 call mktempforce_3d(n, fp(:,:,:,temp_comp), ng_f, sp(:,:,:,:), ng_s, &
                                     wmp(:,:,:,1), ng_um, tp(:,:,:,1), ng_th, lo, hi, &
@@ -975,7 +973,7 @@ contains
 
   end subroutine mktempforce_3d
 
-  subroutine mktempforce_3d_sphr(n,temp_force, ng_f, s, ng_s, umac, vmac, wmac, ng_um, &
+  subroutine mktempforce_3d_sphr(temp_force, ng_f, s, ng_s, umac, vmac, wmac, ng_um, &
                                  thermal, ng_th, lo, hi, p0_cart, t0_cart, psi, dx)
 
     use fill_3d_module
@@ -987,7 +985,7 @@ contains
 
     ! compute the source terms for temperature
 
-    integer,         intent(in   ) :: n,lo(:),hi(:),ng_f,ng_s,ng_um,ng_th
+    integer,         intent(in   ) :: lo(:),hi(:),ng_f,ng_s,ng_um,ng_th
     real(kind=dp_t), intent(  out) :: temp_force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :)
     real(kind=dp_t), intent(in   ) ::          s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :,:)
     real(kind=dp_t), intent(in   ) ::       umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
