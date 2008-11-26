@@ -31,7 +31,7 @@ contains
 
     use bl_prof_module
     use variables, only: foextrap_comp, rhoh_comp
-    use geometry, only: spherical, nr_fine, dm, nlevs
+    use geometry, only: spherical, nr_fine, dm, nlevs, nlevs_radial
     use ml_restriction_module, only: ml_cc_restriction_c
     use fill_3d_module, only: put_1d_array_on_cart
     use multifab_fill_ghost_module
@@ -67,9 +67,9 @@ contains
 
     type(multifab)  :: p0_cart(mla%nlevel)
 
-    real(kind=dp_t) :: p0_nph(nlevs,0:nr_fine-1)
-    real(kind=dp_t) ::   rho0(nlevs,0:nr_fine-1)
-    real(kind=dp_t) ::   grav(nlevs,0:nr_fine-1)
+    real(kind=dp_t) :: p0_nph(nlevs_radial,0:nr_fine-1)
+    real(kind=dp_t) ::   rho0(nlevs_radial,0:nr_fine-1)
+    real(kind=dp_t) ::   grav(nlevs_radial,0:nr_fine-1)
 
     type(bl_prof_timer), save :: bpt
 
@@ -88,8 +88,8 @@ contains
     ng_th = thermal(1)%ng
 
     if (spherical .eq. 1) then
+       p0_nph = HALF * (p0_old + p0_new)
        do n = 1,nlevs
-          p0_nph(n,:) = HALF * (p0_old(n,:) + p0_new(n,:))
           call multifab_build(p0_cart(n),mla%la(n),1,1)
        end do
     end if
