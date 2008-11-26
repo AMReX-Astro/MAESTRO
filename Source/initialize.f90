@@ -367,9 +367,13 @@ contains
                               grav_cell)
 
     ! now that we have dr and nr we can fill initial state
-    do n=1,nlevs_radial
-       call init_base_state(n,model_file,s0_init(n,:,:),p0_init(n,:),dx(n,:))
-    end do
+    if (spherical .eq. 1) then
+       call init_base_state(1,model_file,s0_init(1,:,:),p0_init(1,:),dx(nlevs,:))
+    else
+       do n=1,nlevs
+          call init_base_state(n,model_file,s0_init(n,:,:),p0_init(n,:),dx(n,:))
+       end do
+    end if
 
     call initveldata(uold,s0_init,p0_init,dx,the_bc_tower%bc_tower_array,mla)
     call initscalardata(sold,s0_init,p0_init,dx,the_bc_tower%bc_tower_array,mla)
@@ -517,7 +521,7 @@ contains
 
     ! now that we have dr and nr we can fill initial state
     if (spherical .eq. 1) then
-       call init_base_state(1,model_file,s0_init(1,:,:),p0_init(1,:),dx(1,:))
+       call init_base_state(1,model_file,s0_init(1,:,:),p0_init(1,:),dx(max_levs,:))
     else
        do n=1,max_levs
           call init_base_state(n,model_file,s0_init(n,:,:),p0_init(n,:),dx(n,:))
