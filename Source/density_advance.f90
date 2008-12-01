@@ -244,8 +244,6 @@ contains
        end do
     end if
 
-    if (parallel_IOProcessor()) write(6,2004) 
-
     if (spherical .eq. 1) then
        do n=1,nlevs
           call destroy(rho0_old_cart(n))
@@ -259,7 +257,6 @@ contains
 2000 format('... new min/max : density           ',e17.10,2x,e17.10)
 2002 format('... new min/max : ',a16,2x,e17.10,2x,e17.10)
 2003 format('... new min/max : tracer            ',e17.10,2x,e17.10)
-2004 format(' ')
 
   end subroutine density_advance
 
