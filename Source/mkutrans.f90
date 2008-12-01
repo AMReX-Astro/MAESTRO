@@ -163,6 +163,9 @@ contains
     else if (phys_bc(1,1) .eq. SLIP_WALL .or. phys_bc(1,1) .eq. NO_SLIP_WALL) then
        ulx(is,js:je) = ZERO
        urx(is,js:je) = ZERO
+    else if (phys_bc(1,1) .eq. OUTLET) then
+       ulx(is,js:je) = min(urx(is,js:je),ZERO)
+       urx(is,js:je) = min(urx(is,js:je),ZERO)
     end if
 
     ! impose hi side bc's    
@@ -172,6 +175,9 @@ contains
     else if (phys_bc(1,2) .eq. SLIP_WALL .or. phys_bc(1,2) .eq. NO_SLIP_WALL) then
        ulx(ie+1,js:je) = ZERO
        urx(ie+1,js:je) = ZERO
+    else if (phys_bc(1,2) .eq. OUTLET) then
+       ulx(ie+1,js:je) = max(ulx(ie+1,js:je),ZERO)
+       urx(ie+1,js:je) = max(ulx(ie+1,js:je),ZERO)
     end if
 
     do j=js,je
@@ -215,7 +221,10 @@ contains
        vry(is:ie,js) = u(is:ie,js-1,2)
     else if (phys_bc(2,1) .eq. SLIP_WALL .or. phys_bc(2,1) .eq. NO_SLIP_WALL) then
        vly(is:ie,js) = ZERO
-       vry(is:ie,js) = ZERO       
+       vry(is:ie,js) = ZERO
+    else if (phys_bc(2,1) .eq. OUTLET) then
+       vly(is:ie,js) = min(vry(is:ie,js),ZERO)
+       vry(is:ie,js) = min(vry(is:ie,js),ZERO)
     end if
 
     ! impose hi side bc's
@@ -225,6 +234,9 @@ contains
     else if (phys_bc(2,2) .eq. SLIP_WALL .or. phys_bc(2,2) .eq. NO_SLIP_WALL) then
        vly(is:ie,je+1) = ZERO
        vry(is:ie,je+1) = ZERO
+    else if (phys_bc(2,2) .eq. OUTLET) then
+       vly(is:ie,je+1) = max(vly(is:ie,je+1),ZERO)
+       vry(is:ie,je+1) = max(vly(is:ie,je+1),ZERO)
     end if
 
     do j=js,je+1
@@ -335,6 +347,9 @@ contains
     else if (phys_bc(1,1) .eq. SLIP_WALL .or. phys_bc(1,1) .eq. NO_SLIP_WALL) then
        ulx(is,js:je,ks:ke) = ZERO
        urx(is,js:je,ks:ke) = ZERO
+    else if (phys_bc(1,1) .eq. OUTLET) then
+       ulx(is,js:je,ks:ke) = min(urx(is,js:je,ks:ke),ZERO)
+       urx(is,js:je,ks:ke) = min(urx(is,js:je,ks:ke),ZERO)
     end if
 
     ! impose hi side bc's
@@ -344,6 +359,9 @@ contains
     else if (phys_bc(1,2) .eq. SLIP_WALL .or. phys_bc(1,2) .eq. NO_SLIP_WALL) then
        ulx(ie+1,js:je,ks:ke) = ZERO
        urx(ie+1,js:je,ks:ke) = ZERO
+    else if (phys_bc(1,2) .eq. OUTLET) then
+       ulx(ie+1,js:je,ks:ke) = max(ulx(ie+1,js:je,ks:ke),ZERO)
+       urx(ie+1,js:je,ks:ke) = max(ulx(ie+1,js:je,ks:ke),ZERO)
     end if
 
     do k=ks,ke
@@ -399,6 +417,9 @@ contains
     else if (phys_bc(2,1) .eq. SLIP_WALL .or. phys_bc(2,1) .eq. NO_SLIP_WALL) then
        vly(is:ie,js,ks:ke) = ZERO
        vry(is:ie,js,ks:ke) = ZERO
+    else if (phys_bc(2,1) .eq. OUTLET) then
+       vly(is:ie,js,ks:ke) = min(vry(is:ie,js,ks:ke),ZERO)
+       vry(is:ie,js,ks:ke) = min(vry(is:ie,js,ks:ke),ZERO)
     end if
 
     ! impose hi side bc's
@@ -408,6 +429,9 @@ contains
     else if (phys_bc(2,2) .eq. SLIP_WALL .or. phys_bc(2,2) .eq. NO_SLIP_WALL) then
        vly(is:ie,je+1,ks:ke) = ZERO
        vry(is:ie,je+1,ks:ke) = ZERO
+    else if (phys_bc(2,2) .eq. OUTLET) then
+       vly(is:ie,je+1,ks:ke) = max(vly(is:ie,je+1,ks:ke),ZERO)
+       vry(is:ie,je+1,ks:ke) = max(vly(is:ie,je+1,ks:ke),ZERO)
     end if
 
     do k=ks,ke
@@ -471,6 +495,9 @@ contains
     else if (phys_bc(3,1) .eq. SLIP_WALL .or. phys_bc(3,1) .eq. NO_SLIP_WALL) then
        wlz(is:ie,js:je,ks) = ZERO
        wrz(is:ie,js:je,ks) = ZERO
+    else if (phys_bc(3,1) .eq. OUTLET) then
+       wlz(is:ie,js:je,ks) = min(wrz(is:ie,js:je,ks),ZERO)
+       wrz(is:ie,js:je,ks) = min(wrz(is:ie,js:je,ks),ZERO)
     end if
 
     ! impose hi side bc's
@@ -480,6 +507,9 @@ contains
     else if (phys_bc(3,2) .eq. SLIP_WALL .or. phys_bc(3,2) .eq. NO_SLIP_WALL) then
        wlz(is:ie,js:je,ke+1) = ZERO
        wrz(is:ie,js:je,ke+1) = ZERO
+    else if (phys_bc(3,2) .eq. OUTLET) then
+       wlz(is:ie,js:je,ke+1) = max(wlz(is:ie,js:je,ke+1),ZERO)
+       wrz(is:ie,js:je,ke+1) = max(wlz(is:ie,js:je,ke+1),ZERO)
     end if
 
     do k=ks,ke+1
