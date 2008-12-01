@@ -904,7 +904,6 @@ contains
        if (parallel_IOProcessor() .and. verbose .ge. 1) then
           write(6,*) '            :  density_advance >>>'
           write(6,*) '            :   tracer_advance >>>'
-          write(6,*) '            : enthalpy_advance >>>'
        end if
 
        ! Build the sedge array.
@@ -951,6 +950,10 @@ contains
                                     gamma1bar,rho0_predicted_edge,psi,dx(:,dm),dt)
        else
           rhoh0_2 = rhoh0_1
+       end if
+
+       if (parallel_IOProcessor() .and. verbose .ge. 1) then
+          write(6,*) '            : enthalpy_advance >>>'
        end if
 
        call enthalpy_advance(mla,2,uold,s1,s2,sedge,sflux,scal_force,&
