@@ -351,8 +351,13 @@ contains
              call initveldata_2d(uop(:,:,1,:), lo, hi, ng, dx(n,:), &
                                  s0_init(n,:,:), p0_background(n,:))
           case (3) 
-             call initveldata_3d(uop(:,:,:,:), lo, hi, ng, dx(n,:), &
-                                 s0_init(n,:,:), p0_background(n,:))
+             if (spherical .eq. 1) then
+                call initveldata_3d(uop(:,:,:,:), lo, hi, ng, dx(n,:), &
+                                    s0_init(1,:,:), p0_background(1,:))
+             else
+                call initveldata_3d(uop(:,:,:,:), lo, hi, ng, dx(n,:), &
+                                    s0_init(n,:,:), p0_background(n,:))
+             end if
           end select
        end do
     enddo

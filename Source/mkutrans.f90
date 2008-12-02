@@ -17,7 +17,7 @@ contains
 
     use bl_prof_module
     use create_umac_grown_module
-    use geometry, only: dm, nlevs
+    use geometry, only: dm, nlevs, spherical
 
     type(multifab) , intent(in   ) :: u(:)
     type(multifab) , intent(inout) :: utrans(:,:)
@@ -66,12 +66,21 @@ contains
              w0xp => dataptr(w0mac(n,1), i)
              w0yp => dataptr(w0mac(n,2), i)
              w0zp => dataptr(w0mac(n,3), i)
-             call mkutrans_3d(n, up(:,:,:,:), ng_u, &
-                              utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), ng_ut, &
-                              w0(n,:), w0xp(:,:,:,1), w0yp(:,:,:,1), w0zp(:,:,:,1),&
-                              ng_w0, lo, hi, dx(n,:), dt, &
-                              the_bc_level(n)%adv_bc_level_array(i,:,:,:), &
-                              the_bc_level(n)%phys_bc_level_array(i,:,:))
+             if (spherical .eq. 1) then
+                call mkutrans_3d(n, up(:,:,:,:), ng_u, &
+                                 utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), ng_ut, &
+                                 w0(1,:), w0xp(:,:,:,1), w0yp(:,:,:,1), w0zp(:,:,:,1),&
+                                 ng_w0, lo, hi, dx(n,:), dt, &
+                                 the_bc_level(n)%adv_bc_level_array(i,:,:,:), &
+                                 the_bc_level(n)%phys_bc_level_array(i,:,:))
+             else
+                call mkutrans_3d(n, up(:,:,:,:), ng_u, &
+                                 utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), ng_ut, &
+                                 w0(n,:), w0xp(:,:,:,1), w0yp(:,:,:,1), w0zp(:,:,:,1),&
+                                 ng_w0, lo, hi, dx(n,:), dt, &
+                                 the_bc_level(n)%adv_bc_level_array(i,:,:,:), &
+                                 the_bc_level(n)%phys_bc_level_array(i,:,:))
+             end if
           end select
        end do
 
