@@ -296,6 +296,13 @@ contains
        else
           slx(is,js-1:je+1) = srx(is,js-1:je+1)
        end if
+    else if (phys_bc(1,1) .eq. OUTLET) then
+       if (is_vel .and. comp .eq. 1) then
+          slx(is,js-1:je+1) = min(srx(is,js-1:je+1),ZERO)
+          srx(is,js-1:je+1) = min(srx(is,js-1:je+1),ZERO)
+       else
+          slx(is,js-1:je+1) = srx(is,js-1:je+1)
+       end if
     end if
 
     ! impose hi side bc's
@@ -313,6 +320,13 @@ contains
        if (is_vel) then
           slx(ie+1,js-1:je+1) = ZERO
           srx(ie+1,js-1:je+1) = ZERO
+       else
+          srx(ie+1,js-1:je+1) = slx(ie+1,js-1:je+1)
+       end if
+    else if (phys_bc(1,2) .eq. OUTLET) then       
+       if (is_vel .and. comp .eq. 1) then
+          slx(ie+1,js-1:je+1) = max(slx(ie+1,js-1:je+1),ZERO)
+          srx(ie+1,js-1:je+1) = max(slx(ie+1,js-1:je+1),ZERO)
        else
           srx(ie+1,js-1:je+1) = slx(ie+1,js-1:je+1)
        end if
@@ -354,6 +368,13 @@ contains
        else
           sly(is-1:ie+1,js) = sry(is-1:ie+1,js)
        end if
+    else if (phys_bc(2,1) .eq. OUTLET) then
+       if (is_vel .and. comp .eq. 2) then
+          sly(is-1:ie+1,js) = min(sry(is-1:ie+1,js),ZERO)
+          sry(is-1:ie+1,js) = min(sry(is-1:ie+1,js),ZERO)
+       else
+          sly(is-1:ie+1,js) = sry(is-1:ie+1,js)
+       end if
     end if
 
     ! impose hi side bc's
@@ -371,6 +392,13 @@ contains
        if (is_vel) then
           sly(is-1:ie+1,je+1) = ZERO
           sry(is-1:ie+1,je+1) = ZERO
+       else
+          sry(is-1:ie+1,je+1) = sly(is-1:ie+1,je+1)
+       end if
+    else if (phys_bc(2,2) .eq. OUTLET) then
+       if (is_vel .and. comp .eq. 2) then
+          sly(is-1:ie+1,je+1) = max(sly(is-1:ie+1,je+1),ZERO)
+          sry(is-1:ie+1,je+1) = max(sly(is-1:ie+1,je+1),ZERO)
        else
           sry(is-1:ie+1,je+1) = sly(is-1:ie+1,je+1)
        end if
@@ -748,6 +776,13 @@ contains
        else
           slx(is,js-1:je+1,ks-1:ke+1) = srx(is,js-1:je+1,ks-1:ke+1)
        end if
+    else if (phys_bc(1,1) .eq. OUTLET) then
+       if (is_vel .and. comp .eq. 1) then
+          slx(is,js-1:je+1,ks-1:ke+1) = min(srx(is,js-1:je+1,ks-1:ke+1),ZERO)
+          srx(is,js-1:je+1,ks-1:ke+1) = min(srx(is,js-1:je+1,ks-1:ke+1),ZERO)
+       else
+          slx(is,js-1:je+1,ks-1:ke+1) = srx(is,js-1:je+1,ks-1:ke+1)
+       end if
     end if
 
     ! impose hi side bc's
@@ -765,6 +800,13 @@ contains
        if (is_vel) then
           slx(ie+1,js-1:je+1,ks-1:ke+1) = ZERO
           srx(ie+1,js-1:je+1,ks-1:ke+1) = ZERO
+       else
+          srx(ie+1,js-1:je+1,ks-1:ke+1) = slx(ie+1,js-1:je+1,ks-1:ke+1)
+       end if
+    else if (phys_bc(1,2) .eq. OUTLET) then
+       if (is_vel .and. comp .eq. 1) then
+          slx(ie+1,js-1:je+1,ks-1:ke+1) = max(slx(ie+1,js-1:je+1,ks-1:ke+1),ZERO)
+          srx(ie+1,js-1:je+1,ks-1:ke+1) = max(slx(ie+1,js-1:je+1,ks-1:ke+1),ZERO)
        else
           srx(ie+1,js-1:je+1,ks-1:ke+1) = slx(ie+1,js-1:je+1,ks-1:ke+1)
        end if
@@ -810,6 +852,13 @@ contains
        else
           sly(is-1:ie+1,js,ks-1:ke+1) = sry(is-1:ie+1,js,ks-1:ke+1)
        end if
+    else if (phys_bc(2,1) .eq. OUTLET) then
+       if (is_vel .and. comp .eq. 2) then
+          sly(is-1:ie+1,js,ks-1:ke+1) = min(sry(is-1:ie+1,js,ks-1:ke+1),ZERO)
+          sry(is-1:ie+1,js,ks-1:ke+1) = min(sry(is-1:ie+1,js,ks-1:ke+1),ZERO)
+       else
+          sly(is-1:ie+1,js,ks-1:ke+1) = sry(is-1:ie+1,js,ks-1:ke+1)
+       end if
     end if
 
     ! impose hi side bc's
@@ -827,6 +876,13 @@ contains
        if (is_vel) then
           sly(is-1:ie+1,je+1,ks-1:ke+1) = ZERO
           sry(is-1:ie+1,je+1,ks-1:ke+1) = ZERO
+       else
+          sry(is-1:ie+1,je+1,ks-1:ke+1) = sly(is-1:ie+1,je+1,ks-1:ke+1)
+       end if
+    else if (phys_bc(2,2) .eq. OUTLET) then
+       if (is_vel .and. comp .eq. 2) then
+          sly(is-1:ie+1,je+1,ks-1:ke+1) = max(sly(is-1:ie+1,je+1,ks-1:ke+1),ZERO)
+          sry(is-1:ie+1,je+1,ks-1:ke+1) = max(sly(is-1:ie+1,je+1,ks-1:ke+1),ZERO)
        else
           sry(is-1:ie+1,je+1,ks-1:ke+1) = sly(is-1:ie+1,je+1,ks-1:ke+1)
        end if
@@ -872,6 +928,13 @@ contains
        else
           slz(is-1:ie+1,js-1:je+1,ks) = srz(is-1:ie+1,js-1:je+1,ks)
        end if
+    else if (phys_bc(3,1) .eq. OUTLET) then
+       if (is_vel .and. comp .eq. 3) then
+          slz(is-1:ie+1,js-1:je+1,ks) = min(srz(is-1:ie+1,js-1:je+1,ks),ZERO)
+          srz(is-1:ie+1,js-1:je+1,ks) = min(srz(is-1:ie+1,js-1:je+1,ks),ZERO)
+       else
+          slz(is-1:ie+1,js-1:je+1,ks) = srz(is-1:ie+1,js-1:je+1,ks)
+       end if
     end if
 
     ! impose hi side bc's
@@ -889,6 +952,13 @@ contains
        if (is_vel) then
           slz(is-1:ie+1,js-1:je+1,ke+1) = ZERO
           srz(is-1:ie+1,js-1:je+1,ke+1) = ZERO
+       else
+          srz(is-1:ie+1,js-1:je+1,ke+1) = slz(is-1:ie+1,js-1:je+1,ke+1)
+       end if
+    else if (phys_bc(3,2) .eq. OUTLET) then
+       if (is_vel .and. comp .eq. 3) then
+          slz(is-1:ie+1,js-1:je+1,ke+1) = max(slz(is-1:ie+1,js-1:je+1,ke+1),ZERO)
+          srz(is-1:ie+1,js-1:je+1,ke+1) = max(slz(is-1:ie+1,js-1:je+1,ke+1),ZERO)
        else
           srz(is-1:ie+1,js-1:je+1,ke+1) = slz(is-1:ie+1,js-1:je+1,ke+1)
        end if
@@ -951,6 +1021,13 @@ contains
        else
           slxy(is,js:je,ks-1:ke+1) = srxy(is,js:je,ks-1:ke+1)
        end if
+    else if (phys_bc(1,1) .eq. OUTLET) then
+       if (is_vel .and. comp .eq. 1) then
+          slxy(is,js:je,ks-1:ke+1) = min(srxy(is,js:je,ks-1:ke+1),ZERO)
+          srxy(is,js:je,ks-1:ke+1) = min(srxy(is,js:je,ks-1:ke+1),ZERO)
+       else
+          slxy(is,js:je,ks-1:ke+1) = srxy(is,js:je,ks-1:ke+1)
+       end if
     end if
 
     ! impose hi side bc's
@@ -968,6 +1045,13 @@ contains
        if (is_vel) then
           slxy(ie+1,js:je,ks-1:ke+1) = ZERO
           srxy(ie+1,js:je,ks-1:ke+1) = ZERO
+       else
+          srxy(ie+1,js:je,ks-1:ke+1) = slxy(ie+1,js:je,ks-1:ke+1)
+       end if
+    else if (phys_bc(1,2) .eq. OUTLET) then
+       if (is_vel .and. comp .eq. 1) then
+          slxy(ie+1,js:je,ks-1:ke+1) = max(slxy(ie+1,js:je,ks-1:ke+1),ZERO)
+          srxy(ie+1,js:je,ks-1:ke+1) = max(slxy(ie+1,js:je,ks-1:ke+1),ZERO)
        else
           srxy(ie+1,js:je,ks-1:ke+1) = slxy(ie+1,js:je,ks-1:ke+1)
        end if
@@ -1026,6 +1110,13 @@ contains
        else
           slxz(is,js-1:je+1,ks:ke) = srxz(is,js-1:je+1,ks:ke)
        end if
+    else if (phys_bc(1,1) .eq. OUTLET) then
+       if (is_vel .and. comp .eq. 1) then
+          slxz(is,js-1:je+1,ks:ke) = min(srxz(is,js-1:je+1,ks:ke),ZERO)
+          srxz(is,js-1:je+1,ks:ke) = min(srxz(is,js-1:je+1,ks:ke),ZERO)
+       else
+          slxz(is,js-1:je+1,ks:ke) = srxz(is,js-1:je+1,ks:ke)
+       end if
     end if
 
     ! impose hi side bc's
@@ -1043,6 +1134,13 @@ contains
        if (is_vel) then
           slxz(ie+1,js-1:je+1,ks:ke) = ZERO
           srxz(ie+1,js-1:je+1,ks:ke) = ZERO
+       else
+          srxz(ie+1,js-1:je+1,ks:ke) = slxz(ie+1,js-1:je+1,ks:ke)
+       end if
+    else if (phys_bc(1,2) .eq. OUTLET) then
+       if (is_vel .and. comp .eq. 1) then
+          slxz(ie+1,js-1:je+1,ks:ke) = max(slxz(ie+1,js-1:je+1,ks:ke),ZERO)
+          srxz(ie+1,js-1:je+1,ks:ke) = max(slxz(ie+1,js-1:je+1,ks:ke),ZERO)
        else
           srxz(ie+1,js-1:je+1,ks:ke) = slxz(ie+1,js-1:je+1,ks:ke)
        end if
@@ -1101,6 +1199,13 @@ contains
        else
           slyx(is:ie,js,ks-1:ke+1) = sryx(is:ie,js,ks-1:ke+1)
        end if
+    else if (phys_bc(2,1) .eq. OUTLET) then
+       if (is_vel .and. comp .eq. 2) then
+          slyx(is:ie,js,ks-1:ke+1) = min(sryx(is:ie,js,ks-1:ke+1),ZERO)
+          sryx(is:ie,js,ks-1:ke+1) = min(sryx(is:ie,js,ks-1:ke+1),ZERO)
+       else
+          slyx(is:ie,js,ks-1:ke+1) = sryx(is:ie,js,ks-1:ke+1)
+       end if
     end if
 
     ! impose hi side bc's
@@ -1118,6 +1223,13 @@ contains
        if (is_vel) then
           slyx(is:ie,je+1,ks-1:ke+1) = ZERO
           sryx(is:ie,je+1,ks-1:ke+1) = ZERO
+       else
+          sryx(is:ie,je+1,ks-1:ke+1) = slyx(is:ie,je+1,ks-1:ke+1)
+       end if
+    else if (phys_bc(2,2) .eq. OUTLET) then
+       if (is_vel .and. comp .eq. 2) then
+          slyx(is:ie,je+1,ks-1:ke+1) = max(slyx(is:ie,je+1,ks-1:ke+1),ZERO)
+          sryx(is:ie,je+1,ks-1:ke+1) = max(slyx(is:ie,je+1,ks-1:ke+1),ZERO)
        else
           sryx(is:ie,je+1,ks-1:ke+1) = slyx(is:ie,je+1,ks-1:ke+1)
        end if
@@ -1176,6 +1288,13 @@ contains
        else
           slyz(is-1:ie+1,js,ks:ke) = sryz(is-1:ie+1,js,ks:ke)
        end if
+    else if (phys_bc(2,1) .eq. OUTLET) then
+       if (is_vel .and. comp .eq. 2) then
+          slyz(is-1:ie+1,js,ks:ke) = min(sryz(is-1:ie+1,js,ks:ke),ZERO)
+          sryz(is-1:ie+1,js,ks:ke) = min(sryz(is-1:ie+1,js,ks:ke),ZERO)
+       else
+          slyz(is-1:ie+1,js,ks:ke) = sryz(is-1:ie+1,js,ks:ke)
+       end if
     end if
 
     ! impose hi side bc's
@@ -1193,6 +1312,13 @@ contains
        if (is_vel) then
           slyz(is-1:ie+1,je+1,ks:ke) = ZERO
           sryz(is-1:ie+1,je+1,ks:ke) = ZERO
+       else
+          sryz(is-1:ie+1,je+1,ks:ke) = slyz(is-1:ie+1,je+1,ks:ke)
+       end if
+    else if (phys_bc(2,2) .eq. OUTLET) then
+       if (is_vel .and. comp .eq. 2) then
+          slyz(is-1:ie+1,je+1,ks:ke) = max(slyz(is-1:ie+1,je+1,ks:ke),ZERO)
+          sryz(is-1:ie+1,je+1,ks:ke) = max(slyz(is-1:ie+1,je+1,ks:ke),ZERO)
        else
           sryz(is-1:ie+1,je+1,ks:ke) = slyz(is-1:ie+1,je+1,ks:ke)
        end if
@@ -1251,6 +1377,13 @@ contains
        else
           slzx(is:ie,js-1:je+1,ks) = srzx(is:ie,js-1:je+1,ks)
        end if
+    else if (phys_bc(3,1) .eq. OUTLET) then
+       if (is_vel .and. comp .eq. 3) then
+          slzx(is:ie,js-1:je+1,ks) = min(srzx(is:ie,js-1:je+1,ks),ZERO)
+          srzx(is:ie,js-1:je+1,ks) = min(srzx(is:ie,js-1:je+1,ks),ZERO)
+       else
+          slzx(is:ie,js-1:je+1,ks) = srzx(is:ie,js-1:je+1,ks)
+       end if
     end if
 
     ! impose hi side bc's
@@ -1268,6 +1401,13 @@ contains
        if (is_vel) then
           slzx(is:ie,js-1:je+1,ke+1) = ZERO
           srzx(is:ie,js-1:je+1,ke+1) = ZERO
+       else
+          srzx(is:ie,js-1:je+1,ke+1) = slzx(is:ie,js-1:je+1,ke+1)
+       end if
+    else if (phys_bc(3,2) .eq. OUTLET) then
+       if (is_vel .and. comp .eq. 3) then
+          slzx(is:ie,js-1:je+1,ke+1) = max(slzx(is:ie,js-1:je+1,ke+1),ZERO)
+          srzx(is:ie,js-1:je+1,ke+1) = max(slzx(is:ie,js-1:je+1,ke+1),ZERO)
        else
           srzx(is:ie,js-1:je+1,ke+1) = slzx(is:ie,js-1:je+1,ke+1)
        end if
@@ -1326,6 +1466,13 @@ contains
        else
           slzy(is-1:ie+1,js:je,ks) = srzy(is-1:ie+1,js:je,ks)
        end if
+    else if (phys_bc(3,1) .eq. OUTLET) then
+       if (is_vel .and. comp .eq. 3) then
+          slzy(is-1:ie+1,js:je,ks) = min(srzy(is-1:ie+1,js:je,ks),ZERO)
+          srzy(is-1:ie+1,js:je,ks) = min(srzy(is-1:ie+1,js:je,ks),ZERO)
+       else
+          slzy(is-1:ie+1,js:je,ks) = srzy(is-1:ie+1,js:je,ks)
+       end if
     end if
 
     ! impose hi side bc's
@@ -1343,6 +1490,13 @@ contains
        if (is_vel) then
           slzy(is-1:ie+1,js:je,ke+1) = ZERO
           srzy(is-1:ie+1,js:je,ke+1) = ZERO
+       else
+          srzy(is-1:ie+1,js:je,ke+1) = slzy(is-1:ie+1,js:je,ke+1)
+       end if
+    else if (phys_bc(3,2) .eq. OUTLET) then
+       if (is_vel .and. comp .eq. 3) then
+          slzy(is-1:ie+1,js:je,ke+1) = max(slzy(is-1:ie+1,js:je,ke+1),ZERO)
+          srzy(is-1:ie+1,js:je,ke+1) = max(slzy(is-1:ie+1,js:je,ke+1),ZERO)
        else
           srzy(is-1:ie+1,js:je,ke+1) = slzy(is-1:ie+1,js:je,ke+1)
        end if
