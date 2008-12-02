@@ -287,8 +287,8 @@ subroutine varden()
   ! enforce HSE and then ensure state is thermodynamically consistens
   if (restart < 0) then
 
-     ! this is turned off for spherical problems since enforce_HSE for spherical
-     !  has not been written
+     ! this section is not needed for spherical since there is only
+     ! one level of refinement of the base state, no matter what nlevs is
      if ( (nlevs .gt. 1 .or. perturb_model) .and. spherical .eq. 0) then
 
         ! enforce HSE
@@ -600,6 +600,8 @@ subroutine varden()
         !---------------------------------------------------------------------
         if (max_levs > 1 .and. regrid_int > 0 .and. (mod(istep-1,regrid_int) .eq. 0) ) then
 
+           ! we do not regrid spherical base state arrays since there is only one
+           ! level of refinement
            if (spherical .eq. 0) then
               
               ! first 'regrid' the 1d arrays 
@@ -665,7 +667,7 @@ subroutine varden()
               etarho_ec  = etarho_ec_temp
               w0         = w0_temp
 
-           end if
+           end if ! end regridding of base state
 
            ! create new grids and fill in data on those grids
            call regrid(mla,uold,sold,gpres,pres,dSdt,Source_old,rho_omegadot2,rho_Hnuc2, &
@@ -704,18 +706,24 @@ subroutine varden()
            ! Create normal now that we have defined center and dx
            call make_normal(normal,dx)
 
-           call average(mla,sold,rho0_old,dx,rho_comp)
+           if (spherical .eq. 0) then
+              call average(mla,sold,rho0_old,dx,rho_comp)
+           end if
            
            call make_grav_cell(grav_cell,rho0_old)
 
-           ! enforce HSE
-           call enforce_HSE(rho0_old,p0_old,grav_cell)
+           if (spherical .eq. 0) then
+              ! enforce HSE
+              call enforce_HSE(rho0_old,p0_old,grav_cell)
+           end if
 
-           ! compute full state h = h(rho,p0_old,X)
+           ! compute full state T,h = T,h(rho,p0_old,X)
            call makeTHfromRhoP(sold,p0_old,the_bc_tower%bc_tower_array,mla,dx)
 
-           ! force rhoh0 to be the average of rhoh
-           call average(mla,sold,rhoh0_old,dx,rhoh_comp)
+           if (spherical .eq. 0) then
+              ! force rhoh0 to be the average of rhoh
+              call average(mla,sold,rhoh0_old,dx,rhoh_comp)
+           end if
 
            ! now that the grids and the full state have changed, recompute tempbar
            call average(mla,sold,tempbar,dx,temp_comp)
