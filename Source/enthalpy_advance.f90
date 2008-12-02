@@ -284,7 +284,7 @@ contains
          (enthalpy_pred_type .eq. predict_Tprime_then_h) ) then
        call makeHfromRhoT_edge(uold,sedge,rho0_old,rhoh0_old,tempbar, &
                                rho0_edge_old,rhoh0_edge_old,rho0_new,rhoh0_new,tempbar, &
-                               rho0_edge_new,rhoh0_edge_new,the_bc_level,dx)
+                               rho0_edge_new,rhoh0_edge_new,the_bc_level,dx,mla)
     end if
 
     !**************************************************************************

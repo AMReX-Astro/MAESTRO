@@ -15,7 +15,7 @@ contains
   
   subroutine makeHfromRhoT_edge(u,sedge,rho0_old,rhoh0_old,t0_old, &
                                 rho0_edge_old,rhoh0_edge_old,rho0_new,rhoh0_new,t0_new, &
-                                rho0_edge_new,rhoh0_edge_new,the_bc_level,dx)
+                                rho0_edge_new,rhoh0_edge_new,the_bc_level,dx,mla)
 
     use bl_prof_module
     use bl_constants_module
@@ -39,6 +39,7 @@ contains
     real(kind=dp_t), intent(in   ) :: rhoh0_edge_new(:,0:)
     type(bc_level) , intent(in   ) :: the_bc_level(:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
+    type(ml_layout), intent(in   ) :: mla
     
     ! local
     integer :: i,r,n,ng_u,ng_se,ng_r0,ng_rh0,ng_t0
@@ -50,66 +51,47 @@ contains
     real(kind=dp_t), pointer ::  rhp(:,:,:,:)
     real(kind=dp_t), pointer ::   tp(:,:,:,:)
 
-    real(kind=dp_t), allocatable ::  rho0_halftime(:)
-    real(kind=dp_t), allocatable :: rhoh0_halftime(:)
-    real(kind=dp_t), allocatable :: t0_halftime(:)
-    type(multifab)               ::  rho0_cart
-    type(multifab)               :: rhoh0_cart
-    type(multifab)               :: t0_cart
+    real(kind=dp_t) ::  rho0_halftime(1,0:nr_fine-1)
+    real(kind=dp_t) :: rhoh0_halftime(1,0:nr_fine-1)
+    real(kind=dp_t) ::    t0_halftime(1,0:nr_fine-1)
+    type(multifab)  ::  rho0_cart(nlevs)
+    type(multifab)  :: rhoh0_cart(nlevs)
+    type(multifab)  ::    t0_cart(nlevs)
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "makeHfromRhoT_edge")
 
     ng_u = u(1)%ng
-    ng_se = sedge(1,1)%ng  ! note we are assuming that ng is the same for all
-                           ! directions
+    ng_se = sedge(1,1)%ng
 
     if (spherical .eq. 1) then
-      allocate( rho0_halftime(0:nr_fine-1))
-      allocate(rhoh0_halftime(0:nr_fine-1))
-      allocate(   t0_halftime(0:nr_fine-1))
-      do r=0,nr_fine-1
-         rho0_halftime(r)  = HALF * (rho0_old(nlevs,r)  + rho0_new(nlevs,r)  )
-         rhoh0_halftime(r) = HALF * (rhoh0_old(nlevs,r) + rhoh0_new(nlevs,r) )
-         t0_halftime(r)    = HALF * (t0_old(nlevs,r)    + t0_new(nlevs,r) )
-      end do
+
+       do n=1,nlevs
+          call multifab_build( rho0_cart(n),u(n)%la,1,2)
+          call multifab_build(rhoh0_cart(n),u(n)%la,1,2)
+          call multifab_build(   t0_cart(n),u(n)%la,1,2)
+       end do
+
+       ng_r0 = rho0_cart(1)%ng
+       ng_rh0 = rhoh0_cart(1)%ng
+       ng_t0  = t0_cart(1)%ng
+
+       do r=0,nr_fine-1
+          rho0_halftime(1,r)  = HALF * (rho0_old(1,r)  + rho0_new(1,r)  )
+          rhoh0_halftime(1,r) = HALF * (rhoh0_old(1,r) + rhoh0_new(1,r) )
+          t0_halftime(1,r)    = HALF * (t0_old(1,r)    + t0_new(1,r) )
+       end do
+
+       call put_1d_array_on_cart(rho0_halftime,rho0_cart,dm+rho_comp,.false.,.false.,dx, &
+                                 the_bc_level,mla)
+       call put_1d_array_on_cart(rhoh0_halftime,rhoh0_cart,dm+rhoh_comp,.false.,.false.,dx, &
+                                 the_bc_level,mla)
+       call put_1d_array_on_cart(t0_halftime,t0_cart,dm+temp_comp,.false.,.false.,dx, &
+                                 the_bc_level,mla)
    endif
 
    do n=1,nlevs
-
-      if (spherical .eq. 1) then
-
-         call multifab_build( rho0_cart,u(n)%la,1,2)
-         call multifab_build(rhoh0_cart,u(n)%la,1,2)
-         call multifab_build(   t0_cart,u(n)%la,1,2)
-
-         do i=1,rho0_cart%nboxes
-            if ( multifab_remote(u(n),i) ) cycle
-            rp  => dataptr( rho0_cart, i)
-            rhp => dataptr(rhoh0_cart, i)
-            tp  => dataptr(   t0_cart, i)
-            lo = lwb(get_box(rho0_cart,i))
-            hi = upb(get_box(rho0_cart,i))
-
-            call put_1d_array_on_cart_3d_sphr(.false.,.false.,rho0_halftime,rp, &
-                                              lo,hi,dx(n,:),2,0)
-            call put_1d_array_on_cart_3d_sphr(.false.,.false.,rhoh0_halftime,rhp, &
-                                              lo,hi,dx(n,:),2,0)
-            call put_1d_array_on_cart_3d_sphr(.false.,.false.,t0_halftime,tp, &
-                                              lo,hi,dx(n,:),2,0)
-         enddo
-
-         ! fill ghost cells for two adjacent grids at the same level
-         ! this includes periodic domain boundary ghost cells
-         call multifab_fill_boundary( rho0_cart)
-         call multifab_fill_boundary(rhoh0_cart)
-
-         ! fill non-periodic domain boundary ghost cells
-         call multifab_physbc( rho0_cart,1,dm+rho_comp ,1,the_bc_level(n))
-         call multifab_physbc(rhoh0_cart,1,dm+rhoh_comp,1,the_bc_level(n))
-
-      endif
 
        do i=1,u(n)%nboxes
           if ( multifab_remote(u(n),i) ) cycle
@@ -128,12 +110,9 @@ contains
           case (3)
              sepz => dataptr(sedge(n,3),i)
              if (spherical .eq. 1) then
-               rp   => dataptr( rho0_cart, i)
-               rhp  => dataptr(rhoh0_cart, i)
-               tp   => dataptr(   t0_cart, i)
-               ng_r0 = rho0_cart%ng
-               ng_rh0 = rhoh0_cart%ng
-               ng_t0  = t0_cart%ng
+               rp   => dataptr( rho0_cart(n), i)
+               rhp  => dataptr(rhoh0_cart(n), i)
+               tp   => dataptr(   t0_cart(n), i)
                call makeHfromRhoT_edge_3d_sphr(sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
                                                ng_se, rp(:,:,:,1), ng_r0, rhp(:,:,:,1), &
                                                ng_rh0, tp(:,:,:,1), ng_t0, lo, hi)
@@ -151,13 +130,11 @@ contains
     end do
 
     if (spherical .eq. 1) then
-      deallocate( rho0_halftime)
-      deallocate(rhoh0_halftime)
-      deallocate(   t0_halftime)
-
-      call destroy( rho0_cart)
-      call destroy(rhoh0_cart)
-      call destroy(   t0_cart)
+       do n=1,nlevs
+          call destroy( rho0_cart(n))
+          call destroy(rhoh0_cart(n))
+          call destroy(   t0_cart(n))
+       end do
     end if
 
     call destroy(bpt)
