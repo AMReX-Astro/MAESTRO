@@ -1,8 +1,16 @@
 &PROBIN
- model_file = "model_6.e8.hse.640"
- drdxfac = 10
-
+! uncomment for fixed grids
  test_set = "gr0_3d.64_2levels"
+
+! uncomment for adaptive grids
+! max_levs = 2
+! n_cellx = 64
+! n_celly = 64
+! n_cellz = 64
+! regrid_int = 2
+
+ drdxfac = 10
+ model_file = "model_6.e8.hse.640"
 
  spherical_in = 1
  dm_in = 3
