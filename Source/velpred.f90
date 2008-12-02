@@ -50,12 +50,16 @@ contains
     real(kind=dp_t), pointer :: np(:,:,:,:)
     real(kind=dp_t), pointer :: gw0p(:,:,:,:)
 
-    real(kind=dp_t), allocatable :: gradw0_rad(:)
-    type(multifab) :: gradw0_cart
+    real(kind=dp_t) :: gradw0_rad(1,0:nr_fine-1)
+    type(multifab)  :: gradw0_cart(nlevs)
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "velpred")
+
+    do n=1,nlevs
+       call multifab_build(gradw0_cart(n),u(n)%la,1,1)
+    end do
 
     ng_u = u(1)%ng
     ng_um = umac(1,1)%ng
@@ -63,48 +67,22 @@ contains
     ng_f = force(1)%ng
     ng_w0 = w0mac(1,1)%ng
     ng_n = normal(1)%ng
+    ng_gw = gradw0_cart(1)%ng
 
+    ! make a Cartesian version of dw0/dr
     if (spherical .eq. 1) then
-       allocate(gradw0_rad(0:nr_fine-1))
-       ! NOTE: here we are doing the computation at the finest level
        do r=0,nr_fine-1
-          gradw0_rad(r) = (w0(1,r+1) - w0(1,r)) / dr(1)
+          gradw0_rad(1,r) = (w0(1,r+1) - w0(1,r)) / dr(1)
        enddo
+       call put_1d_array_on_cart(gradw0_rad,gradw0_cart,foextrap_comp,.false.,.false.,dx, &
+                                 the_bc_level,mla)
+    else
+       do n=1,nlevs
+          call setval(gradw0_cart(n),ZERO,all=.true.)
+       end do
     endif
 
     do n=1,nlevs
-
-       call multifab_build(gradw0_cart, u(n)%la,1,1)
-
-       if (spherical .eq. 1) then
-
-          do i = 1, gradw0_cart%nboxes
-             if ( multifab_remote(u(n),i) ) cycle
-             gw0p => dataptr(gradw0_cart, i)
-             lo = lwb(get_box(gradw0_cart,i))
-             hi = upb(get_box(gradw0_cart,i))
-
-             call put_1d_array_on_cart_3d_sphr(.false.,.false.,gradw0_rad,gw0p, &
-                                               lo,hi,dx(n,:),gradw0_cart%ng,0)
-
-          enddo
-
-
-          ! fill ghost cells for two adjacent grids at the same level
-          ! this includes periodic domain boundary ghost cells 
-          call multifab_fill_boundary(gradw0_cart)
-
-          ! fill non-periodic domain boundary ghost cells.
-          ! NOTE: not sure what the BC should be for gradw0_cart.  Right
-          ! now I am just using foextrap_comp.
-          call multifab_physbc(gradw0_cart,1,foextrap_comp,1,the_bc_level(n))
-
-       else
-          call setval(gradw0_cart, ZERO, all=.true.)
-       endif
-
-       ng_gw = gradw0_cart%ng
-
        do i = 1, u(n)%nboxes
           if ( multifab_remote(u(n),i) ) cycle
           uop  => dataptr(u(n),i)
@@ -130,7 +108,7 @@ contains
              w0xp  => dataptr(w0mac(n,1),i)
              w0yp  => dataptr(w0mac(n,2),i)
              w0zp  => dataptr(w0mac(n,3),i)
-             gw0p => dataptr(gradw0_cart,i)
+             gw0p => dataptr(gradw0_cart(n),i)
              np => dataptr(normal(n),i)
              call velpred_3d(n, uop(:,:,:,:), ng_u, &
                              ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
@@ -142,9 +120,6 @@ contains
                              the_bc_level(n)%adv_bc_level_array(i,:,:,:))
           end select
        end do
-
-       call destroy(gradw0_cart)
-
     end do
 
     do n = nlevs,2,-1
@@ -153,9 +128,9 @@ contains
        enddo
     enddo
 
-    if (spherical .eq. 1) then
-       deallocate(gradw0_rad)
-    endif
+    do n=1,nlevs
+       call destroy(gradw0_cart(n))
+    end do
 
     call destroy(bpt)
 

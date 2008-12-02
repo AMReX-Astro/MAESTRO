@@ -64,12 +64,16 @@ contains
     real(kind=dp_t), pointer :: gw0p(:,:,:,:)
     real(kind=dp_t), pointer :: np(:,:,:,:)
 
-    real(kind=dp_t), allocatable :: gradw0_rad(:)
-    type(multifab) :: gradw0_cart
+    real(kind=dp_t) :: gradw0_rad(1,0:nr_fine-1)
+    type(multifab)  :: gradw0_cart(nlevs)
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "make_edge_scal")
+
+    do n=1,nlevs
+       call multifab_build(gradw0_cart(n),s(n)%la,1,1)
+    end do
 
     ng_s = s(1)%ng
     ng_se = sedge(1,1)%ng
@@ -77,45 +81,22 @@ contains
     ng_f = force(1)%ng
     ng_w0 = w0mac(1,1)%ng
     ng_n = normal(1)%ng
+    ng_gw = gradw0_cart(1)%ng
 
-    if (spherical .eq. 1) then
-       allocate(gradw0_rad(0:nr_fine-1))
-
-       ! NOTE: here we are doing the computation at the finest level
+    ! make a Cartesian version of dw0/dr
+    if (spherical .eq. 1 .and. is_vel) then
        do r=0,nr_fine-1
-          gradw0_rad(r) = (w0(1,r+1) - w0(1,r)) / dr(1)
+          gradw0_rad(1,r) = (w0(1,r+1) - w0(1,r)) / dr(1)
        enddo
-    end if
+       call put_1d_array_on_cart(gradw0_rad,gradw0_cart,foextrap_comp,.false.,.false.,dx, &
+                                 the_bc_level,mla)
+    else
+       do n=1,nlevs
+          call setval(gradw0_cart(n),ZERO,all=.true.)
+       end do
+    endif
 
     do n=1,nlevs
-
-       call multifab_build(gradw0_cart, s(n)%la,1,1)
-
-       if (spherical .eq. 1 .and. is_vel) then
-
-          do i = 1, gradw0_cart%nboxes
-             if ( multifab_remote(s(n),i) ) cycle
-             gw0p => dataptr(gradw0_cart, i)
-             lo = lwb(get_box(gradw0_cart,i))
-             hi = upb(get_box(gradw0_cart,i))
-             
-             call put_1d_array_on_cart_3d_sphr(.false.,.false.,gradw0_rad,gw0p, &
-                                               lo,hi,dx(n,:),gradw0_cart%ng,0)
-             
-          enddo
-          
-          
-          ! fill ghost cells for two adjacent grids at the same level
-          ! this includes periodic domain boundary ghost cells 
-          call multifab_fill_boundary(gradw0_cart)
-
-          ! fill non-periodic domain boundary ghost cells.
-          ! NOTE: not sure what the BC should be for gradw0_cart.  Right
-          ! now I am just using foextrap_comp.
-          call multifab_physbc(gradw0_cart,1,foextrap_comp,1,the_bc_level(n))
-       end if
-
- 
        do i = 1, s(n)%nboxes
           if ( multifab_remote(s(n),i) ) cycle
           sop  => dataptr(s(n),i)
@@ -147,8 +128,7 @@ contains
             w0yp => dataptr(w0mac(n,2),i)
             w0zp => dataptr(w0mac(n,3),i)
             np   => dataptr(normal(n), i)
-            gw0p => dataptr(gradw0_cart, i)
-            ng_gw = gradw0_cart%ng
+            gw0p => dataptr(gradw0_cart(n), i)
             do scomp = start_scomp, start_scomp + num_comp - 1
                bccomp = start_bccomp + scomp - start_scomp
                call make_edge_scal_3d(n, sop(:,:,:,:), ng_s, &
@@ -163,9 +143,6 @@ contains
             end do
           end select
        end do
-
-       call destroy(gradw0_cart)
-
     end do
     !
     ! We call ml_edge_restriction for the output velocity if is_vel .eq. .true.
@@ -180,9 +157,9 @@ contains
        enddo
     end if
 
-    if (spherical .eq. 1 .and. is_vel) then
-       deallocate(gradw0_rad)
-    end if
+    do n=1,nlevs
+       call destroy(gradw0_cart(n))
+    end do
 
     call destroy(bpt)
     
