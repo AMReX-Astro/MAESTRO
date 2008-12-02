@@ -131,15 +131,29 @@ contains
             gw0p => dataptr(gradw0_cart(n), i)
             do scomp = start_scomp, start_scomp + num_comp - 1
                bccomp = start_bccomp + scomp - start_scomp
-               call make_edge_scal_3d(n, sop(:,:,:,:), ng_s, &
-                                      sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), ng_se, &
-                                      ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
-                                      fp(:,:,:,:), ng_f, np(:,:,:,:), ng_n, w0(n,:), &
-                                      w0xp(:,:,:,1), w0yp(:,:,:,1), w0zp(:,:,:,1), ng_w0, &
-                                      gw0p(:,:,:,1), ng_gw, lo, hi, dx(n,:), dt, is_vel, &
-                                      the_bc_level(n)%phys_bc_level_array(i,:,:), &
-                                      the_bc_level(n)%adv_bc_level_array(i,:,:,bccomp:), &
-                                      scomp, is_conservative)
+               if (spherical .eq. 1) then
+                  call make_edge_scal_3d(n, sop(:,:,:,:), ng_s, &
+                                         sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
+                                         ng_se, ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
+                                         ng_um, fp(:,:,:,:), ng_f, np(:,:,:,:), ng_n, &
+                                         w0(1,:), w0xp(:,:,:,1), w0yp(:,:,:,1), &
+                                         w0zp(:,:,:,1), ng_w0, gw0p(:,:,:,1), ng_gw, lo, &
+                                         hi, dx(n,:), dt, is_vel, &
+                                         the_bc_level(n)%phys_bc_level_array(i,:,:), &
+                                         the_bc_level(n)%adv_bc_level_array(i,:,:,bccomp:), &
+                                         scomp, is_conservative)
+               else
+                  call make_edge_scal_3d(n, sop(:,:,:,:), ng_s, &
+                                         sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
+                                         ng_se, ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), &
+                                         ng_um, fp(:,:,:,:), ng_f, np(:,:,:,:), ng_n, &
+                                         w0(n,:), w0xp(:,:,:,1), w0yp(:,:,:,1), &
+                                         w0zp(:,:,:,1), ng_w0, gw0p(:,:,:,1), ng_gw, lo, &
+                                         hi, dx(n,:), dt, is_vel, &
+                                         the_bc_level(n)%phys_bc_level_array(i,:,:), &
+                                         the_bc_level(n)%adv_bc_level_array(i,:,:,bccomp:), &
+                                         scomp, is_conservative)
+               end if
             end do
           end select
        end do

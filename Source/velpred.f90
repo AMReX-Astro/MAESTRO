@@ -110,14 +110,25 @@ contains
              w0zp  => dataptr(w0mac(n,3),i)
              gw0p => dataptr(gradw0_cart(n),i)
              np => dataptr(normal(n),i)
-             call velpred_3d(n, uop(:,:,:,:), ng_u, &
-                             ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
-                             utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), ng_ut, &
-                             fp(:,:,:,:), ng_f, np(:,:,:,:), ng_n, &
-                             w0(n,:),w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1), &
-                             ng_w0, gw0p(:,:,:,1), ng_gw, lo, hi, dx(n,:), dt, &
-                             the_bc_level(n)%phys_bc_level_array(i,:,:), &
-                             the_bc_level(n)%adv_bc_level_array(i,:,:,:))
+             if (spherical .eq. 1) then
+                call velpred_3d(n, uop(:,:,:,:), ng_u, &
+                                ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
+                                utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), ng_ut, &
+                                fp(:,:,:,:), ng_f, np(:,:,:,:), ng_n, &
+                                w0(1,:),w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1), &
+                                ng_w0, gw0p(:,:,:,1), ng_gw, lo, hi, dx(n,:), dt, &
+                                the_bc_level(n)%phys_bc_level_array(i,:,:), &
+                                the_bc_level(n)%adv_bc_level_array(i,:,:,:))
+             else
+                call velpred_3d(n, uop(:,:,:,:), ng_u, &
+                                ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
+                                utp(:,:,:,1), vtp(:,:,:,1), wtp(:,:,:,1), ng_ut, &
+                                fp(:,:,:,:), ng_f, np(:,:,:,:), ng_n, &
+                                w0(n,:),w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1), &
+                                ng_w0, gw0p(:,:,:,1), ng_gw, lo, hi, dx(n,:), dt, &
+                                the_bc_level(n)%phys_bc_level_array(i,:,:), &
+                                the_bc_level(n)%adv_bc_level_array(i,:,:,:))
+             end if
           end select
        end do
     end do

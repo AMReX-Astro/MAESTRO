@@ -97,13 +97,21 @@ contains
              w0yp   => dataptr(w0mac(n,2),i)
              w0zp   => dataptr(w0mac(n,3),i)
              np   =>  dataptr(normal(n),i)
-             call update_velocity_3d(n, &
-                                     uop(:,:,:,:), ng_uo, unp(:,:,:,:), ng_un, &
-                                     ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
-                                     uepx(:,:,:,:), uepy(:,:,:,:), uepz(:,:,:,:), ng_ue, &
-                                     fp(:,:,:,:), ng_f, np(:,:,:,:), ng_n, &
-                                     w0(n,:), w0xp(:,:,:,1), w0yp(:,:,:,1), w0zp(:,:,:,1), &
-                                     ng_w0, lo, hi, dx(n,:), dt, spp(:,:,:,1), ng_sp)
+             if (spherical .eq. 1) then
+                call update_velocity_3d(n, uop(:,:,:,:), ng_uo, unp(:,:,:,:), ng_un, &
+                                        ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
+                                        uepx(:,:,:,:), uepy(:,:,:,:), uepz(:,:,:,:), ng_ue, &
+                                        fp(:,:,:,:), ng_f, np(:,:,:,:), ng_n, w0(1,:), &
+                                        w0xp(:,:,:,1), w0yp(:,:,:,1), w0zp(:,:,:,1), &
+                                        ng_w0, lo, hi, dx(n,:), dt, spp(:,:,:,1), ng_sp)
+             else
+                call update_velocity_3d(n, uop(:,:,:,:), ng_uo, unp(:,:,:,:), ng_un, &
+                                        ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
+                                        uepx(:,:,:,:), uepy(:,:,:,:), uepz(:,:,:,:), ng_ue, &
+                                        fp(:,:,:,:), ng_f, np(:,:,:,:), ng_n, w0(n,:), &
+                                        w0xp(:,:,:,1), w0yp(:,:,:,1), w0zp(:,:,:,1), &
+                                        ng_w0, lo, hi, dx(n,:), dt, spp(:,:,:,1), ng_sp)
+             end if
           end select
        end do
 
