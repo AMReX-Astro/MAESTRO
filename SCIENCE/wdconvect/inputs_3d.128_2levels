@@ -4,9 +4,9 @@
 
 ! uncomment for adaptive grids
 ! max_levs = 2
-! n_cellx = 128
-! n_celly = 128
-! n_cellz = 128
+! n_cellx = 64
+! n_celly = 64
+! n_cellz = 64
 ! regrid_int = 2
 ! max_grid_size = 32
 
