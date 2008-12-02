@@ -407,7 +407,8 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   subroutine initialize_with_adaptive_grids(mla,time,dt,pmask,dx,uold,sold,gpres,pres, &
-                                            dSdt,Source_old,rho_omegadot2,rho_Hnuc2,the_bc_tower, &
+                                            dSdt,Source_old,rho_omegadot2,rho_Hnuc2, &
+                                            the_bc_tower, &
                                             div_coeff_old,div_coeff_new,gamma1bar, &
                                             gamma1bar_hold,s0_init,rho0_old,rhoh0_old, &
                                             rho0_new,rhoh0_new,p0_init, &
@@ -568,10 +569,16 @@ contains
              ! Define bc_tower at level nl+1.
              call bc_tower_level_build(the_bc_tower,nl+1,la_array(nl+1))
              
-             ! fills the physical region of each level with problem data
-             call initscalardata_on_level(nl+1,sold(nl+1),s0_init(nl+1,:,:), &
-                                          p0_init(nl+1,:),dx(nl+1,:), &
-                                          the_bc_tower%bc_tower_array(nl+1))
+             if (spherical .eq. 1) then
+                call initscalardata_on_level(nl+1,sold(nl+1),s0_init(1,:,:), &
+                                             p0_init(1,:),dx(nl+1,:), &
+                                             the_bc_tower%bc_tower_array(nl+1))
+             else
+                ! fills the physical region of each level with problem data
+                call initscalardata_on_level(nl+1,sold(nl+1),s0_init(nl+1,:,:), &
+                                             p0_init(nl+1,:),dx(nl+1,:), &
+                                             the_bc_tower%bc_tower_array(nl+1))
+             end if
 
              nlevs = nl+1
              nlevs_radial = merge(1, nlevs, spherical .eq. 1)
