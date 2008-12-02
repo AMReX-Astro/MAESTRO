@@ -8,6 +8,7 @@
 ! n_celly = 64
 ! n_cellz = 64
 ! regrid_int = 2
+! max_grid_size = 32
 
  drdxfac = 10
  model_file = "model_6.e8.hse.640"
