@@ -45,20 +45,20 @@ contains
     type(ml_layout), intent(in   ) :: mla
     type(bc_tower) , intent(in   ) :: the_bc_tower
 
-
     ! Local
-    real(kind=dp_t), pointer::  sp(:,:,:,:)
-    real(kind=dp_t), pointer::  rhnp(:,:,:,:)
-    real(kind=dp_t), pointer::  rhep(:,:,:,:)
-    real(kind=dp_t), pointer::  up(:,:,:,:)
-    real(kind=dp_t), pointer::  np(:,:,:,:)
-    real(kind=dp_t), pointer::  w0rp(:,:,:,:)
+    real(kind=dp_t), pointer :: sp(:,:,:,:)
+    real(kind=dp_t), pointer :: rhnp(:,:,:,:)
+    real(kind=dp_t), pointer :: rhep(:,:,:,:)
+    real(kind=dp_t), pointer :: up(:,:,:,:)
+    real(kind=dp_t), pointer :: np(:,:,:,:)
+    real(kind=dp_t), pointer :: w0rp(:,:,:,:)
+    logical,         pointer :: mp(:,:,:,:)
 
     type(multifab) ::    w0r_cart(mla%nlevel)
 
     real(kind=dp_t) :: vr(dm), vr_local(dm), vr_max, vr_max_local
     real(kind=dp_t) :: rhovr(dm), rhovr_local(dm), mass, mass_local
-    integer         :: nzones, nzones_local
+    real(kind=dp_t) :: nzones, nzones_local
     real(kind=dp_t) :: T_max, T_max_local
     real(kind=dp_t) :: enuc_max, enuc_max_local
 
@@ -112,8 +112,8 @@ contains
     mass = ZERO
     mass_local = ZERO
 
-    nzones = 0
-    nzones_local = 0
+    nzones = ZERO
+    nzones_local = ZERO
 
     vr_max = ZERO
     vr_max_local = ZERO
@@ -128,6 +128,7 @@ contains
     do n = 1, nlevs
        do i = 1, s(n)%nboxes
           if ( multifab_remote(s(n), i) ) cycle
+          mp => dataptr(mla%mask(n), i)
           sp => dataptr(s(n) , i)
           rhnp => dataptr(rho_Hnuc(n), i)
           rhep => dataptr(rho_Hext(n), i)
@@ -142,7 +143,8 @@ contains
           case (2)
              call bl_error("ERROR: 2-d diag not implmented")
           case (3)
-             call diag_3d(time,dt,dx(n,:), &
+             call diag_3d(n,time,dt,dx(n,:), &
+                          mp(:,:,:,1), &
                           sp(:,:,:,:),ng_s, &
                           rhnp(:,:,:,1), ng_rhn, &
                           rhep(:,:,:,1), ng_rhe, &
@@ -255,14 +257,11 @@ contains
        end do
     end if
 
-
-
-
     call destroy(bpt)
 
   end subroutine diag
 
-  subroutine diag_3d(time,dt,dx, &
+  subroutine diag_3d(n,time,dt,dx,mask, &
                      s,ng_s, &
                      rho_Hnuc,ng_rhn, &
                      rho_Hext,ng_rhe, &
@@ -280,51 +279,52 @@ contains
     use geometry, only: spherical
     use probin_module, only: base_cutoff_density
 
-    integer, intent(in) :: lo(:), hi(:), ng_s, ng_u, ng_n, ng_w, ng_rhn, ng_rhe
-    real (kind=dp_t), intent(in   ) ::        s(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
+    integer,          intent(in   ) :: n,lo(:),hi(:),ng_s,ng_u,ng_n,ng_w,ng_rhn,ng_rhe
+    logical,          intent(in   ) ::     mask(lo(1):       ,lo(2):       ,lo(3):)
+    real (kind=dp_t), intent(in   ) ::        s(lo(1)-ng_s:  ,lo(2)-ng_s:  ,lo(3)-ng_s:,:)
     real (kind=dp_t), intent(in   ) :: rho_Hnuc(lo(1)-ng_rhn:,lo(2)-ng_rhn:,lo(3)-ng_rhn:)
     real (kind=dp_t), intent(in   ) :: rho_Hext(lo(1)-ng_rhe:,lo(2)-ng_rhe:,lo(3)-ng_rhe:)
-    real (kind=dp_t), intent(in   ) ::        u(lo(1)-ng_u:,lo(2)-ng_u:,lo(3)-ng_u:,:)
-    real (kind=dp_t), intent(in   ) ::      w0r(lo(1)-ng_w:,lo(2)-ng_w:,lo(3)-ng_w:)
-    real (kind=dp_t), intent(in   ) ::   normal(lo(1)-ng_n:,lo(2)-ng_n:,lo(3)-ng_n:,:)
+    real (kind=dp_t), intent(in   ) ::        u(lo(1)-ng_u:  ,lo(2)-ng_u:  ,lo(3)-ng_u:,:)
+    real (kind=dp_t), intent(in   ) ::      w0r(lo(1)-ng_w:  ,lo(2)-ng_w:  ,lo(3)-ng_w:)
+    real (kind=dp_t), intent(in   ) ::   normal(lo(1)-ng_n:  ,lo(2)-ng_n:  ,lo(3)-ng_n:,:)
     real (kind=dp_t), intent(in   ) :: time, dt, dx(:)
     real (kind=dp_t), intent(inout) :: vr_x, vr_y, vr_z, vr_max
     real (kind=dp_t), intent(inout) :: T_max, enuc_max
-    real (kind=dp_t), intent(inout) :: rhovr_x, rhovr_y, rhovr_z, mass
-    integer         , intent(inout) :: nzones
+    real (kind=dp_t), intent(inout) :: rhovr_x, rhovr_y, rhovr_z, mass, nzones
 
     !     Local variables
     integer            :: i, j, k
-    real (kind=dp_t) :: velr
+    real (kind=dp_t)   :: velr, weight
+
+    weight = 1.d0 / 8.d0**(n-1)
 
     if (.not. spherical == 1) then
        call bl_error("ERROR: geometry not spherical in diag")
     endif
 
-
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
-          do i = lo(1), hi(1)           
+          do i = lo(1), hi(1) 
 
-             if (s(i,j,k,rho_comp) > base_cutoff_density) then
-
+             if (mask(i,j,k) .and. s(i,j,k,rho_comp) > base_cutoff_density) then
+                   
                 velr = u(i,j,k,1)*normal(i,j,k,1) + &
                        u(i,j,k,2)*normal(i,j,k,2) + &
                        u(i,j,k,3)*normal(i,j,k,3) + w0r(i,j,k)
-
+                
                 vr_max = max(vr_max,abs(velr))
-
-                vr_x = vr_x + velr*normal(i,j,k,1)
-                vr_y = vr_y + velr*normal(i,j,k,2)
-                vr_z = vr_z + velr*normal(i,j,k,3)
-
-                rhovr_x = rhovr_x + s(i,j,k,rho_comp)*velr*normal(i,j,k,1)
-                rhovr_y = rhovr_y + s(i,j,k,rho_comp)*velr*normal(i,j,k,2)
-                rhovr_z = rhovr_z + s(i,j,k,rho_comp)*velr*normal(i,j,k,3)
-
-                mass = mass + s(i,j,k,rho_comp)
-                nzones = nzones + 1
-
+                
+                vr_x = vr_x + weight*velr*normal(i,j,k,1)
+                vr_y = vr_y + weight*velr*normal(i,j,k,2)
+                vr_z = vr_z + weight*velr*normal(i,j,k,3)
+                
+                rhovr_x = rhovr_x + weight*s(i,j,k,rho_comp)*velr*normal(i,j,k,1)
+                rhovr_y = rhovr_y + weight*s(i,j,k,rho_comp)*velr*normal(i,j,k,2)
+                rhovr_z = rhovr_z + weight*s(i,j,k,rho_comp)*velr*normal(i,j,k,3)
+                
+                mass = mass + weight*s(i,j,k,rho_comp)
+                nzones = nzones + weight
+                
                 T_max = max(T_max,s(i,j,k,temp_comp))
                 enuc_max = max(enuc_max,rho_Hnuc(i,j,k)/s(i,j,k,rho_comp))
 
