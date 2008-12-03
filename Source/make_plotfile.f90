@@ -290,6 +290,10 @@ contains
        ! ENTHALPY 
        call make_enthalpy(plotdata(n),icomp_enthalpy,s(n))
 
+    end do
+
+    do n=1,nlevs
+
        ! RHOPERT & TEMP (FROM RHO) & TPERT & MACHNO & (GAM1 - GAM10) & Entropy & RHOHPERT
        ! and TEMP (FROM H) & DELTA_P
        if (spherical .eq. 1) then
@@ -312,6 +316,33 @@ contains
 
        end if
        
+    end do
+
+    ! the loop over nlevs must count backwards to make sure the finer grids are done first
+    do n=nlevs,2,-1
+       ! set level n-1 data to be the average of the level n data covering it
+       call ml_cc_restriction_c(plotdata(n-1),icomp_tfromp,plotdata(n),icomp_tfromp, &
+                                mla%mba%rr(n-1,:),1)
+       call ml_cc_restriction_c(plotdata(n-1),icomp_tpert,plotdata(n),icomp_tpert, &
+                                mla%mba%rr(n-1,:),1)
+       call ml_cc_restriction_c(plotdata(n-1),icomp_rhopert,plotdata(n),icomp_rhopert, &
+                                mla%mba%rr(n-1,:),1)
+       call ml_cc_restriction_c(plotdata(n-1),icomp_rhohpert,plotdata(n),icomp_rhohpert, &
+                                mla%mba%rr(n-1,:),1)
+       call ml_cc_restriction_c(plotdata(n-1),icomp_machno,plotdata(n),icomp_machno, &
+                                mla%mba%rr(n-1,:),1)
+       call ml_cc_restriction_c(plotdata(n-1),icomp_dg,plotdata(n),icomp_dg, &
+                                mla%mba%rr(n-1,:),1)
+       call ml_cc_restriction_c(plotdata(n-1),icomp_entropy,plotdata(n),icomp_entropy, &
+                                mla%mba%rr(n-1,:),1)
+       call ml_cc_restriction_c(plotdata(n-1),icomp_tfromh,plotdata(n),icomp_tfromh, &
+                                mla%mba%rr(n-1,:),1)
+       call ml_cc_restriction_c(plotdata(n-1),icomp_dp,plotdata(n),icomp_dp, &
+                                mla%mba%rr(n-1,:),1)
+    end do
+
+    do n=1,nlevs
+
        ! DIFF BETWEEN TFROMP AND TFROMH
        call make_deltaT(plotdata(n),icomp_dT,icomp_tfromp,icomp_tfromH)
 
@@ -365,6 +396,13 @@ contains
     call average(mla,tempfab,entropybar,dx,1)
 
     call make_entropypert(plotdata,icomp_entropy,icomp_entropypert,entropybar,dx)
+
+    ! the loop over nlevs must count backwards to make sure the finer grids are done first
+    do n=nlevs,2,-1
+       ! set level n-1 data to be the average of the level n data covering it
+       call ml_cc_restriction_c(plotdata(n-1),icomp_entropypert,plotdata(n), &
+                                icomp_entropypert,mla%mba%rr(n-1,:),1)
+    end do
 
     if (plot_spec) then
        ! OMEGADOT and HNUC
