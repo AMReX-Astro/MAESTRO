@@ -69,6 +69,8 @@ contains
     ng_rhn = rho_Hnuc(1)%ng
     ng_rhe = rho_Hext(1)%ng
 
+    ! note that T_max corresponds to the maximum temperature in the 
+    ! helium layer defined by X(He4) >= he_tol 
     T_max          = ZERO
     T_max_local    = ZERO
     enuc_max       = ZERO
@@ -189,12 +191,15 @@ contains
     real (kind=dp_t), intent(inout) :: T_max, enuc_max
 
     !     Local variables
-    integer            :: i, j
+    integer                     :: i, j
+    real (kind=dp_t), parameter :: he_tol = 0.1
 
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
 
-          T_max = max(T_max,s(i,j,temp_comp))
+          ! check to see if we are in the helium layer
+          ! if we are, then get T_max
+          if (s(i,j,spec_comp) .ge. he_tol) T_max = max(T_max,s(i,j,temp_comp))
 
           enuc_max = max(enuc_max,rho_Hnuc(i,j)/s(i,j,rho_comp))
 
@@ -226,13 +231,18 @@ contains
     real (kind=dp_t), intent(inout) :: T_max, enuc_max
 
     !     Local variables
-    integer            :: i, j, k
+    integer                     :: i, j, k
+    real (kind=dp_t), parameter :: he_tol = 0.1
 
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
 
-             T_max = max(T_max,s(i,j,k,temp_comp))
+             ! check to see if we are in the helium layer
+             ! if we are, then get T_max
+             if (s(i,j,k,spec_comp) .ge. he_tol) then
+                T_max = max(T_max,s(i,j,k,temp_comp))
+             endif
 
              enuc_max = max(enuc_max,rho_Hnuc(i,j,k)/s(i,j,k,rho_comp))
 
