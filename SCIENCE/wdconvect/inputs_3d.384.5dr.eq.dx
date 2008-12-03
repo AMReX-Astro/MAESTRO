@@ -1,5 +1,5 @@
 &PROBIN
- model_file = "model_6.e8.hse.1920"
+ model_file = "model_6.e8.hybrid.hse.1920"
  drdxfac = 5
 
  test_set = "gr0_3d.384"
@@ -46,7 +46,7 @@
  init_divu_iter = 3
 
  velpert_amplitude = 1.d5
- velpert_radius = 1.d7
+ velpert_radius = 2.d7
  velpert_scale = 1.d7
  velpert_steep = 1.d5
 
