@@ -134,7 +134,6 @@ contains
 
        do i = 1, s(n)%nboxes
           if ( multifab_remote(s(n), i) ) cycle
-          mp => dataptr(mla%mask(n), i)
           sp => dataptr(s(n) , i)
           rhnp => dataptr(rho_Hnuc(n), i)
           rhep => dataptr(rho_Hext(n), i)
@@ -149,19 +148,35 @@ contains
           case (2)
              call bl_error("ERROR: 2-d diag not implmented")
           case (3)
-             call diag_3d(n,time,dt,dx(n,:), &
-                          mp(:,:,:,1), &
-                          sp(:,:,:,:),ng_s, &
-                          rhnp(:,:,:,1), ng_rhn, &
-                          rhep(:,:,:,1), ng_rhe, &
-                          up(:,:,:,:),ng_u, &
-                          w0rp(:,:,:,1), ng_w, &
-                          np(:,:,:,:),ng_n, &
-                          lo,hi, &
-                          nzones_local, &
-                          vr_local(1),vr_local(2),vr_local(3),vr_max_local, &
-                          rhovr_local(1), rhovr_local(2), rhovr_local(3), mass_local, &
-                          T_max_local, enuc_max_local)
+             if (n .eq. nlevs) then
+                call diag_3d(n,time,dt,dx(n,:), &
+                             sp(:,:,:,:),ng_s, &
+                             rhnp(:,:,:,1), ng_rhn, &
+                             rhep(:,:,:,1), ng_rhe, &
+                             up(:,:,:,:),ng_u, &
+                             w0rp(:,:,:,1), ng_w, &
+                             np(:,:,:,:),ng_n, &
+                             lo,hi, &
+                             nzones_local, &
+                             vr_local(1),vr_local(2),vr_local(3),vr_max_local, &
+                             rhovr_local(1), rhovr_local(2), rhovr_local(3), mass_local, &
+                             T_max_local, enuc_max_local)
+             else
+                mp => dataptr(mla%mask(n), i)
+                call diag_3d(n,time,dt,dx(n,:), &
+                             sp(:,:,:,:),ng_s, &
+                             rhnp(:,:,:,1), ng_rhn, &
+                             rhep(:,:,:,1), ng_rhe, &
+                             up(:,:,:,:),ng_u, &
+                             w0rp(:,:,:,1), ng_w, &
+                             np(:,:,:,:),ng_n, &
+                             lo,hi, &
+                             nzones_local, &
+                             vr_local(1),vr_local(2),vr_local(3),vr_max_local, &
+                             rhovr_local(1), rhovr_local(2), rhovr_local(3), mass_local, &
+                             T_max_local, enuc_max_local, &
+                             mp(:,:,:,1))
+             end if
           end select
        end do
 
@@ -274,7 +289,7 @@ contains
 
   end subroutine diag
 
-  subroutine diag_3d(n,time,dt,dx,mask, &
+  subroutine diag_3d(n,time,dt,dx, &
                      s,ng_s, &
                      rho_Hnuc,ng_rhn, &
                      rho_Hext,ng_rhe, &
@@ -285,7 +300,8 @@ contains
                      nzones, &
                      vr_x,vr_y,vr_z,vr_max, &
                      rhovr_x,rhovr_y,rhovr_z,mass, &
-                     T_max,enuc_max)
+                     T_max,enuc_max, &
+                     mask)
 
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
     use network, only: nspec
@@ -293,7 +309,6 @@ contains
     use probin_module, only: base_cutoff_density
 
     integer,          intent(in   ) :: n,lo(:),hi(:),ng_s,ng_u,ng_n,ng_w,ng_rhn,ng_rhe
-    logical,          intent(in   ) ::     mask(lo(1):       ,lo(2):       ,lo(3):)
     real (kind=dp_t), intent(in   ) ::        s(lo(1)-ng_s:  ,lo(2)-ng_s:  ,lo(3)-ng_s:,:)
     real (kind=dp_t), intent(in   ) :: rho_Hnuc(lo(1)-ng_rhn:,lo(2)-ng_rhn:,lo(3)-ng_rhn:)
     real (kind=dp_t), intent(in   ) :: rho_Hext(lo(1)-ng_rhe:,lo(2)-ng_rhe:,lo(3)-ng_rhe:)
@@ -304,10 +319,12 @@ contains
     real (kind=dp_t), intent(inout) :: vr_x, vr_y, vr_z, vr_max
     real (kind=dp_t), intent(inout) :: T_max, enuc_max
     real (kind=dp_t), intent(inout) :: rhovr_x, rhovr_y, rhovr_z, mass, nzones
+    logical,          intent(in   ), optional :: mask(lo(1):,lo(2):,lo(3):)
 
     !     Local variables
     integer            :: i, j, k
     real (kind=dp_t)   :: velr, weight
+    logical            :: cell_valid
 
     weight = 1.d0 / 8.d0**(n-1)
 
@@ -319,7 +336,12 @@ contains
        do j = lo(2), hi(2)
           do i = lo(1), hi(1) 
 
-             if (mask(i,j,k) .and. s(i,j,k,rho_comp) > base_cutoff_density) then
+             cell_valid = .true.
+             if (present(mask)) then
+                if ( (.not. mask(i,j,k)) ) cell_valid = .false.
+             end if
+
+             if (cell_valid .and. s(i,j,k,rho_comp) > base_cutoff_density) then
                    
                 velr = u(i,j,k,1)*normal(i,j,k,1) + &
                        u(i,j,k,2)*normal(i,j,k,2) + &
