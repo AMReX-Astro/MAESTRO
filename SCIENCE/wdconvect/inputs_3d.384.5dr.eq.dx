@@ -3,6 +3,7 @@
  drdxfac = 5
 
  test_set = "gr0_3d.384"
+! test_set = "gr0_3d.384_2levels"
 
  spherical_in = 1
  dm_in = 3
