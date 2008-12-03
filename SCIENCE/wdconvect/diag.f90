@@ -56,15 +56,15 @@ contains
 
     type(multifab) ::    w0r_cart(mla%nlevel)
 
-    real(kind=dp_t) :: vr(dm), vr_local(dm), vr_max, vr_max_local
-    real(kind=dp_t) :: rhovr(dm), rhovr_local(dm), mass, mass_local
-    real(kind=dp_t) :: nzones, nzones_local
-    real(kind=dp_t) :: T_max, T_max_local
-    real(kind=dp_t) :: enuc_max, enuc_max_local
+    real(kind=dp_t) :: vr(dm),    vr_level(dm),    vr_local(dm)
+    real(kind=dp_t) :: vr_max,    vr_max_level,    vr_max_local
+    real(kind=dp_t) :: rhovr(dm), rhovr_level(dm), rhovr_local(dm)
+    real(kind=dp_t) :: mass,      mass_level,      mass_local
+    real(kind=dp_t) :: nzones,    nzones_level,    nzones_local
+    real(kind=dp_t) :: T_max,     T_max_level,     T_max_local
+    real(kind=dp_t) :: enuc_max,  enuc_max_level,  enuc_max_local
 
-    integer :: lo(dm),hi(dm),ng_s,ng_u,ng_n,ng_w,ng_rhn,ng_rhe
-    integer :: i,n
-    integer :: un, un2, un3
+    integer :: lo(dm),hi(dm),ng_s,ng_u,ng_n,ng_w,ng_rhn,ng_rhe,i,n,un,un2,un3
     logical :: lexist
 
     logical, save :: firstCall = .true.
@@ -75,10 +75,7 @@ contains
 
     if (spherical .eq. 1) then
 
-       ! even though we are looping over levels, this is not multilevel
-       ! aware.  We are assuming here that there is only 1 level.
        do n=1,nlevs
-
           ! w0r_cart is w0 but onto a Cartesian grid in cell-centered as
           ! a scalar.  Since w0 is the radial expansion velocity, w0r_cart
           ! is the radial w0 in a zone
@@ -89,12 +86,13 @@ contains
        ! put w0 in Cartesian cell-centers as a scalar (the radial 
        ! expansion velocity)
        call put_1d_array_on_cart(w0,w0r_cart,foextrap_comp,.true.,.false.,dx, &
-            the_bc_tower%bc_tower_array,mla,normal=normal)
+                                 the_bc_tower%bc_tower_array,mla,normal=normal)
 
     else
-       call bl_error("ERROR: geometry not spherical")
-    endif
 
+       call bl_error("ERROR: wdconvect/diag.f90: geometry not spherical")
+
+    endif
 
     ng_s = s(1)%ng
     ng_u = u(1)%ng
@@ -103,29 +101,37 @@ contains
     ng_rhn = rho_Hnuc(1)%ng
     ng_rhe = rho_Hext(1)%ng
 
-    vr(:) = ZERO
-    vr_local(:) = ZERO
-
+    vr(:)    = ZERO
     rhovr(:) = ZERO
-    rhovr_local(:) = ZERO
-
-    mass = ZERO
-    mass_local = ZERO
-
-    nzones = ZERO
-    nzones_local = ZERO
-
-    vr_max = ZERO
-    vr_max_local = ZERO
-
-    T_max = ZERO
-    T_max_local = ZERO
-
+    mass     = ZERO
+    nzones   = ZERO
+    vr_max   = ZERO
+    T_max    = ZERO
     enuc_max = ZERO
-    enuc_max_local = ZERO
-
 
     do n = 1, nlevs
+
+       vr_level(:) = ZERO
+       vr_local(:) = ZERO
+       
+       rhovr_level(:) = ZERO
+       rhovr_local(:) = ZERO
+       
+       mass_level = ZERO
+       mass_local = ZERO
+       
+       nzones_level = ZERO
+       nzones_local = ZERO
+       
+       vr_max_level = ZERO
+       vr_max_local = ZERO
+       
+       T_max_level = ZERO
+       T_max_local = ZERO
+       
+       enuc_max_level = ZERO
+       enuc_max_local = ZERO
+
        do i = 1, s(n)%nboxes
           if ( multifab_remote(s(n), i) ) cycle
           mp => dataptr(mla%mask(n), i)
@@ -158,32 +164,39 @@ contains
                           T_max_local, enuc_max_local)
           end select
        end do
+
+       ! we now have vr_local, etc., on each processor -- do a reduce
+       call parallel_reduce(vr_level, vr_local, MPI_SUM, &
+                            proc = parallel_IOProcessorNode())
+
+       call parallel_reduce(rhovr_level, rhovr_local, MPI_SUM, &
+                            proc = parallel_IOProcessorNode())
+
+       call parallel_reduce(mass_level, mass_local, MPI_SUM, &
+                            proc = parallel_IOProcessorNode())
+
+       call parallel_reduce(nzones_level, nzones_local, MPI_SUM, &
+                            proc = parallel_IOProcessorNode())
+
+       call parallel_reduce(vr_max_level, vr_max_local, MPI_MAX, &
+                            proc = parallel_IOProcessorNode())
+
+       call parallel_reduce(T_max_level, T_max_local, MPI_MAX, &
+                            proc = parallel_IOProcessorNode())
+
+       call parallel_reduce(enuc_max_level, enuc_max_local, MPI_MAX, &
+                            proc = parallel_IOProcessorNode())
+
+       vr       = vr     + vr_level
+       rhovr    = rhovr  + rhovr_level
+       mass     = mass   + mass_level
+       nzones   = nzones + nzones_level
+       vr_max   = max(vr_max,   vr_max_level)
+       T_max    = max(T_max,    T_max_level)
+       enuc_max = max(enuc_max, enuc_max_level)       
+
     end do
 
-    ! we now have vr_local on each processor -- do a reduce on
-    ! all dm components
-    call parallel_reduce(vr,vr_local, MPI_SUM, &
-                         proc = parallel_IOProcessorNode())
-
-    call parallel_reduce(rhovr,rhovr_local, MPI_SUM, &
-                         proc = parallel_IOProcessorNode())
-
-    call parallel_reduce(mass,mass_local, MPI_SUM, &
-                         proc = parallel_IOProcessorNode())
-
-    call parallel_reduce(nzones,nzones_local, MPI_SUM, &
-                         proc = parallel_IOProcessorNode())
-
-    call parallel_reduce(vr_max,vr_max_local, MPI_MAX, &
-                         proc = parallel_IOProcessorNode())
-
-    call parallel_reduce(T_max,T_max_local, MPI_MAX, &
-                         proc = parallel_IOProcessorNode())
-
-    call parallel_reduce(enuc_max,enuc_max_local, MPI_MAX, &
-                         proc = parallel_IOProcessorNode())
-
-    
     ! normalize
     vr = vr/nzones
     
