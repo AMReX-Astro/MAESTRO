@@ -837,22 +837,25 @@ Now, the transverse terms.\\ \\
 Now, define $\text{VBAR}_{\ib} = (\text{VEDGE}_{\ib+\half\eb_y}+\text{VEDGE}_{\ib-\half\eb_y})/2$.\\ \\
 {\bf If} NOT ICONSERVE {\bf and} $\text{VEDGE}_{\ib+\half\eb_y}\cdot\text{VEDGE}_{\ib-\half\eb_y} < 0$ {\bf and} $\text{VBAR}_{\ib} < 0$ {\bf then:}
 \begin{eqnarray}
+\text{sedge}_L^x = s_{\ib-\eb_x} &+& \left(\half - \frac{\dt}{h_x}\text{UEDGE}_{\ib-\half\eb_x}\right)\Delta^x s_{\ib} + \frac{\dt}{2}\text{TFORCES}_{\ib-\eb_x} \nonumber\\
+&& - \frac{\dt}{2}\left[\frac{\text{VBAR}_{\ib-\eb_x}(s_{\ib-\eb_x+\eb_y}-s_{\ib-\eb_x})}{h_y}\right] \\
 \text{sedge}_R^x = s_{\ib} &-& \left(\half + \frac{\dt}{h_x}\text{UEDGE}_{\ib-\half\eb_x}\right)\Delta^x s_{\ib} + \frac{\dt}{2}\text{TFORCES}_{\ib} \nonumber\\
 && - \frac{\dt}{2}\left[\frac{\text{VBAR}_{\ib}(s_{\ib+\eb_y}-s_{\ib})}{h_y}\right]
 \end{eqnarray}
-Be careful with $\text{sedge}_L^x$ because the conditions correspond to the starting point of the extrapolation, which is different from $\text{sedge}_R^x$.\\ \\
-{\bf If} NOT ICONSERVE {\bf and} $\text{VEDGE}_{\ib+\half\eb_y}\cdot\text{VEDGE}_{\ib-\half\eb_y} < 0$ {\bf and} $\text{VBAR}_{\ib} \ge 0$ {\bf then:}
+{\bf Else If} NOT ICONSERVE {\bf and} $\text{VEDGE}_{\ib+\half\eb_y}\cdot\text{VEDGE}_{\ib-\half\eb_y} < 0$ {\bf and} $\text{VBAR}_{\ib} \ge 0$ {\bf then:}
 \begin{eqnarray}
+\text{sedge}_L^x = s_{\ib-\eb_x} &+& \left(\half - \frac{\dt}{h_x}\text{UEDGE}_{\ib-\half\eb_x}\right)\Delta^x s_{\ib-\eb_x} + \frac{\dt}{2}\text{TFORCES}_{\ib-\eb_x} \nonumber\\
+&& - \frac{\dt}{2}\left[\frac{\text{VBAR}_{\ib-\eb_x}(s_{\ib-\eb_x}-s_{\ib-\eb_x-\eb_y})}{h_y}\right] \\
 \text{sedge}_R^x = s_{\ib} &-& \left(\half + \frac{\dt}{h_x}\text{UEDGE}_{\ib-\half\eb_x}\right)\Delta^x s_{\ib} + \frac{\dt}{2}\text{TFORCES}_{\ib} \nonumber\\
 && - \frac{\dt}{2}\left[\frac{\text{VBAR}_{\ib}(s_{\ib}-s_{\ib-\eb_y})}{h_y}\right]
 \end{eqnarray}
-Be careful with $\text{sedge}_L^x$ because the conditions correspond to the starting point of the extrapolation, which is different from $\text{sedge}_R^x$.\\ \\
-{\bf If} NOT ICONSERVE {\bf and} $\text{VEDGE}_{\ib+\half\eb_y}\cdot\text{VEDGE}_{\ib-\half\eb_y} \ge 0$ {\bf then:}
+{\bf Else If} NOT ICONSERVE {\bf and} $\text{VEDGE}_{\ib+\half\eb_y}\cdot\text{VEDGE}_{\ib-\half\eb_y} \ge 0$ {\bf then:}
 \begin{eqnarray}
-\text{sedge}_R^x = s_{\ib} &-& \left(\half + \frac{\dt}{h_x}\text{UEDGE}_{\ib-\half\eb_x}\right)\Delta^x s_{\ib} + \frac{\dt}{2}\text{TFORCES}_{\ib} \nonumber\\
+\text{sedge}_L^x &=& s_{\ib-\eb_x} + \left(\half - \frac{\dt}{h_x}\text{UEDGE}_{\ib-\half\eb_x}\right)\Delta^x s_{\ib-\eb_x} + \frac{\dt}{2}\text{TFORCES}_{\ib-\eb_x} \nonumber\\
+&& - \frac{\dt}{2}\left[\frac{(\text{VEDGE}_{\ib-\eb_x+\half\eb_y}+\text{VEDGE}_{\ib-\eb_x-\half\eb_y})(s_{\ib-\eb_x+\half\eb_y}-s_{\ib-\eb_x-\half\eb_y})}{2h_y}\right] \\
+\text{sedge}_R^x &=& s_{\ib} - \left(\half + \frac{\dt}{h_x}\text{UEDGE}_{\ib-\half\eb_x}\right)\Delta^x s_{\ib} + \frac{\dt}{2}\text{TFORCES}_{\ib} \nonumber\\
 && - \frac{\dt}{2}\left[\frac{(\text{VEDGE}_{\ib+\half\eb_y}+\text{VEDGE}_{\ib-\half\eb_y})(s_{\ib+\half\eb_y}-s_{\ib-\half\eb_y})}{2h_y}\right]
 \end{eqnarray}
-Be careful with $\text{sedge}_L^x$ because the conditions correspond to the starting point of the extrapolation, which is different from $\text{sedge}_R^x$.\\ \\
 Finally, upwind analogous to equation (\ref{ESTATE_FPU Upwind}) to get $\text{sedge}_{\ib-\half\eb_x}$.
 
 \newpage
@@ -880,16 +883,11 @@ s_L^x, & \text{UAD}_{\ib-\half\eb_x} > 0, \\
 s_R^x, & \text{else}. \\
 \end{cases}\label{ESTATE Upwind}
 \end{equation}
+Then, if $|\text{UAD}_{\ib-\half\eb_x}| \le \epsilon$, we set $s_{\ib-\half\eb_x}^x = (s_L^x+s_R^x)/2$.
 \begin{eqnarray}
+\text{sedge}_L^x = s_{\ib-\eb_x} &+& \left(\half - \frac{\dt}{h_x}u_{\ib-\eb_x}\right)\Delta^x s_{\ib-\eb_x} + \frac{\dt}{2}\text{TFORCES}_{\ib-\eb_x} \nonumber\\
+&& - \frac{\dt}{2}\left[\frac{(\text{VAD}_{\ib-\eb_x+\half\eb_y}+\text{VAD}_{\ib-\eb_x-\half\eb_y})(s_{\ib-\eb_x+\half\eb_y}-s_{\ib-\eb_x-\half\eb_y})}{2h_y}\right] \\
 \text{sedge}_R^x = s_{\ib} &-& \left(\half + \frac{\dt}{h_x}u_{\ib}\right)\Delta^x s_{\ib} + \frac{\dt}{2}\text{TFORCES}_{\ib} \nonumber\\
 && - \frac{\dt}{2}\left[\frac{(\text{VAD}_{\ib+\half\eb_y}+\text{VAD}_{\ib-\half\eb_y})(s_{\ib+\half\eb_y}-s_{\ib-\half\eb_y})}{2h_y}\right]
 \end{eqnarray}
-Be careful with $\text{sedge}_L^x$ because the conditions correspond to the starting point of the extrapolation, which is different from $\text{sedge}_R^x$.\\ \\
-Finally, upwind analogous to equation (\ref{ESTATE Upwind}) to get $\text{sedge}_{\ib-\half\eb_x}$, but use UEDGE instead of UAD,
-\begin{equation}
-\text{sedge}_{\ib-\half\eb_x}^x =
-\begin{cases}
-\text{sedge}_L^x, & \text{UEDGE}_{\ib-\half\eb_x} > 0, \\
-\text{sedge}_R^x, & \text{else}. \\
-\end{cases}
-\end{equation}
+Finally, upwind analogous to equation (\ref{ESTATE Upwind}) to get $\text{sedge}_{\ib-\half\eb_x}$, but use UEDGE instead of UAD.
