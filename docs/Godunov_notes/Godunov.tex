@@ -774,19 +774,23 @@ states.  Now we do a full-dimensional extrapolation of $s$ to each
 face.  The extrapolation of a ``non-conserved'' $s$ to x-faces is:
 \begin{eqnarray}
 s_{L,\ib-\half\eb_x}^{\edge} = s_{L,\ib-\half\eb_x}^{1D} &-& \frac{\dt}{4h}\left(v_{\ib-\eb_x+\half\eb_y}^{\mac}+v_{\ib-\eb_x-\half\eb_y}^{\mac}\right)\left(s_{\ib-\eb_x+\half\eb_y}^{y|z}-s_{\ib-\eb_x-\half\eb_y}^{y|z}\right) \nonumber \\
-&-& \frac{\dt}{4h}\left(w_{\ib-\eb_x+\half\eb_z}^{\mac}+w_{\ib-\eb_x-\half\eb_z}^{\mac}\right)\left(s_{\ib-\eb_x+\half\eb_z}^{z|y}-s_{\ib-\eb_x-\half\eb_z}^{z|y}\right) + \frac{\dt}{2}f_{s,\ib-\eb_x}, \\
+&-& \frac{\dt}{4h}\left(w_{\ib-\eb_x+\half\eb_z}^{\mac}+w_{\ib-\eb_x-\half\eb_z}^{\mac}\right)\left(s_{\ib-\eb_x+\half\eb_z}^{z|y}-s_{\ib-\eb_x-\half\eb_z}^{z|y}\right) \nonumber \\
+&+& \frac{\dt}{2}f_{s,\ib-\eb_x}, \\
 s_{R,\ib-\half\eb_x}^{\edge} = s_{R,\ib-\half\eb_x}^{1D} &-& \frac{\dt}{4h}\left(v_{\ib+\half\eb_y}^{\mac}+v_{\ib-\half\eb_y}^{\mac}\right)\left(s_{\ib+\half\eb_y}^{y|z}-s_{\ib-\half\eb_y}^{y|z}\right) \nonumber \\
-&-& \frac{\dt}{4h}\left(w_{\ib+\half\eb_z}^{\mac}+w_{\ib-\half\eb_z}^{\mac}\right)\left(s_{\ib+\half\eb_z}^{z|y}-s_{\ib-\half\eb_z}^{z|y}\right) + \frac{\dt}{2}f_{s,\ib}.
+&-& \frac{\dt}{4h}\left(w_{\ib+\half\eb_z}^{\mac}+w_{\ib-\half\eb_z}^{\mac}\right)\left(s_{\ib+\half\eb_z}^{z|y}-s_{\ib-\half\eb_z}^{z|y}\right) \nonumber \\
+&+& \frac{\dt}{2}f_{s,\ib}.
 \end{eqnarray}
 The extrapolation of a ``conserved'' $s$ to x-faces is:
 \begin{eqnarray}
 s_{L,\ib-\half\eb_x}^{\edge} = s_{L,\ib-\half\eb_x}^{1D} &-& \frac{\dt}{2h}\left[(s^{y|z}v^{\mac})_{\ib-\eb_x+\half\eb_y}-({s^{y|z}v^{\mac})_{\ib-\eb_x-\half\eb_y}}\right] \nonumber \\
 &-& \frac{\dt}{2h}\left[(s^{z|y}w^{\mac})_{\ib-\eb_x+\half\eb_z}-({s^{z|y}w^{\mac})_{\ib-\eb_x-\half\eb_z}}\right] \nonumber \\
-&-& \frac{\dt}{2}s_{\ib-\eb_x}(\nabla\cdot\Ub^{\mac})_{\ib-\eb_x} + \frac{\dt}{2h}s_{\ib-\eb_x}\left(v_{\ib-\eb_x+\half\eb_y}^{\mac}-v_{\ib-\eb_x-\half\eb_y}^{\mac}+w_{\ib-\eb_x+\half\eb_z}^{\mac}-w_{\ib-\eb_x-\half\eb_z}^{\mac}\right) \nonumber \\
+&-& \frac{\dt}{2}s_{\ib-\eb_x}(\nabla\cdot\Ub^{\mac})_{\ib-\eb_x} \nonumber \\
+&+& \frac{\dt}{2h}s_{\ib-\eb_x}\left(v_{\ib-\eb_x+\half\eb_y}^{\mac}-v_{\ib-\eb_x-\half\eb_y}^{\mac}+w_{\ib-\eb_x+\half\eb_z}^{\mac}-w_{\ib-\eb_x-\half\eb_z}^{\mac}\right) \nonumber \\
 &+& \frac{\dt}{2}f_{s,\ib-\eb_x}, \\
 s_{R,\ib-\half\eb_x}^{\edge} = s_{R,\ib-\half\eb_x}^{1D} &-& \frac{\dt}{2h}\left[(s^{y|z}v^{\mac})_{\ib+\half\eb_y}-({s^{y|z}v^{\mac})_{\ib-\half\eb_y}}\right] \nonumber \\
 &-& \frac{\dt}{2h}\left[(s^{z|y}w^{\mac})_{\ib+\half\eb_z}-({s^{z|y}w^{\mac})_{\ib-\half\eb_z}}\right] \nonumber \\
-&-& \frac{\dt}{2}s_{\ib}(\nabla\cdot\Ub^{\mac})_{\ib} + \frac{\dt}{2h}s_{\ib}\left(v_{\ib+\half\eb_y}^{\mac}-v_{\ib-\half\eb_y}^{\mac}+w_{\ib+\half\eb_z}^{\mac}-w_{\ib-\half\eb_z}^{\mac}\right) \nonumber \\
+&-& \frac{\dt}{2}s_{\ib}(\nabla\cdot\Ub^{\mac})_{\ib} \nonumber \\
+&+& \frac{\dt}{2h}s_{\ib}\left(v_{\ib+\half\eb_y}^{\mac}-v_{\ib-\half\eb_y}^{\mac}+w_{\ib+\half\eb_z}^{\mac}-w_{\ib-\half\eb_z}^{\mac}\right) \nonumber \\
 &+& \frac{\dt}{2}f_{s,\ib}.
 \end{eqnarray}
 Then we upwind based on $u^{\mac}$, as in equation 
@@ -794,3 +798,91 @@ Then we upwind based on $u^{\mac}$, as in equation
 We use an analogous procedure to compute both
 $s_{\ib-\half\eb_y}^{\edge}$ and $s_{\ib-\half\eb_z}$.
 
+\newpage
+
+%-----------------------------------------------------------------------------
+% ESTATE_FPU
+%-----------------------------------------------------------------------------
+
+\section{ESTATE\_FPU in GODUNOV\_2D/3D.f}
+First, the normal predictor.
+\begin{eqnarray}
+s_L^x &=& s_{\ib-\eb_x} + \left(\half - \frac{\dt}{h_x}\mathrm{umac}_{\ib-\half\eb_x}\right)\Delta^x s_{\ib-\eb_x} + \underbrace{\frac{\dt}{2}\mathrm{FORCE}_{\ib-\eb_x}}_{\text{IF USE\_MINION}} \\
+s_R^x &=& s_{\ib} - \left(\half + \frac{\dt}{h_x}\mathrm{umac}_{\ib-\half\eb_x}\right)\Delta^x s_{\ib} + \underbrace{\frac{\dt}{2}\mathrm{FORCE}_{\ib}}_{\text{IF USE\_MINION}}
+\end{eqnarray}
+{\bf If} USE\_MINION {\bf and} ICONSERVE {\bf then:}
+\begin{eqnarray}
+s_L^x &=& s_L^x - \frac{\dt}{2}s_{\ib-\eb_x}\mathrm{DIVU}_{\ib-\eb_x} \\
+s_R^x &=& s_R^x - \frac{\dt}{2}s_{\ib}\mathrm{DIVU}_{\ib}
+\end{eqnarray}
+Apply boundary conditions on $s_L^x$ and $s_R^x$.  Then,
+\begin{equation}
+\mathrm{s}_{\ib-\half\eb_x}^x =
+\begin{cases}
+s_L^x, & \mathrm{umac}_{\ib-\half\eb_x} > 0, \\
+s_R^x, & \mathrm{else}. \\
+\end{cases}\label{ESTATE_FPU Upwind}
+\end{equation}
+Then, if $|\mathrm{umac}_{\ib-\half\eb_x}| \le \epsilon$, we set $s_{\ib-\half\eb_x}^x = (s_L^x+s_R^x)/2$.  The procedure to obtain $s_{\ib-\half\eb_y}^y$ is analogous.\\ \\
+Now, the transverse terms.\\ \\
+{\bf If} ICONSERVE {\bf then:}
+\begin{eqnarray}
+\mathrm{sedge}_L^x = s_{\ib-\eb_x} &+& \left(\half - \frac{\dt}{h_x}\mathrm{umac}_{\ib-\half\eb_x}\right)\Delta^x s_{\ib-\eb_x} + \frac{\dt}{2}\mathrm{FORCE}_{\ib-\eb_x} \nonumber\\
+&& - \frac{\dt}{2}\left[\frac{\mathrm{vmac}_{\ib-\eb_x+\half\eb_y}s_{\ib-\eb_x+\half\eb_y}^y - \mathrm{vmac}_{\ib-\eb_x-\half\eb_y}s_{\ib-\eb_x-\half\eb_y}^y}{h_y}\right.\nonumber\\
+&& ~~~~~~~~~~ \left. - \frac{s_{\ib-\eb_x}(\mathrm{vmac}_{\ib-\eb_x+\half\eb_y}-\mathrm{vmac}_{\ib-\eb_x-\half\eb_y})}{h_y}+s_{\ib-\eb_x}\mathrm{DIVU}_{\ib-\eb_x}\right]\\
+\mathrm{sedge}_R^x = s_{\ib} &-& \left(\half + \frac{\dt}{h_x}\mathrm{umac}_{\ib-\half\eb_x}\right)\Delta^x s_{\ib} + \frac{\dt}{2}\mathrm{FORCE}_{\ib} \nonumber\\
+&& - \frac{\dt}{2}\left[\frac{\mathrm{vmac}_{\ib+\half\eb_y}s_{\ib+\half\eb_y}^y - \mathrm{vmac}_{\ib-\half\eb_y}s_{\ib-\half\eb_y}^y}{h_y}\right.\nonumber\\
+&& ~~~~~~~~~~ \left. - \frac{s_{\ib}(\mathrm{vmac}_{\ib+\half\eb_y}-\mathrm{vmac}_{\ib-\half\eb_y})}{h_y}+s_{\ib}\mathrm{DIVU}_{\ib}\right]
+\end{eqnarray}
+Now, define $\mathrm{vbar}_{\ib} = (\mathrm{vmac}_{\ib+\half\eb_y}+\mathrm{vmac}_{\ib-\half\eb_y})/2$.\\ \\
+{\bf If} NOT ICONSERVE {\bf and} $\mathrm{vmac}_{\ib+\half\eb_y}\cdot\mathrm{vmac}_{\ib-\half\eb_y} < 0$ {\bf and} $\mathrm{vbar}_{\ib} < 0$ {\bf then:}
+\begin{eqnarray}
+\mathrm{sedge}_R^x = s_{\ib} &-& \left(\half + \frac{\dt}{h_x}\mathrm{umac}_{\ib-\half\eb_x}\right)\Delta^x s_{\ib} + \frac{\dt}{2}\mathrm{FORCE}_{\ib} \nonumber\\
+&& - \frac{\dt}{2}\left[\frac{\mathrm{vbar}_{\ib}(s_{\ib+\eb_y}-s_{\ib})}{h_y}\right]
+\end{eqnarray}
+Be careful with $\mathrm{sedge}_L^x$ because the conditions correspond to the starting point of the extrapolation, which is different from $\mathrm{sedge}_R^x$.\\ \\
+{\bf If} NOT ICONSERVE {\bf and} $\mathrm{vmac}_{\ib+\half\eb_y}\cdot\mathrm{vmac}_{\ib-\half\eb_y} < 0$ {\bf and} $\mathrm{vbar}_{\ib} \ge 0$ {\bf then:}
+\begin{eqnarray}
+\mathrm{sedge}_R^x = s_{\ib} &-& \left(\half + \frac{\dt}{h_x}\mathrm{umac}_{\ib-\half\eb_x}\right)\Delta^x s_{\ib} + \frac{\dt}{2}\mathrm{FORCE}_{\ib} \nonumber\\
+&& - \frac{\dt}{2}\left[\frac{\mathrm{vbar}_{\ib}(s_{\ib}-s_{\ib-\eb_y})}{h_y}\right]
+\end{eqnarray}
+Be careful with $\mathrm{sedge}_L^x$ because the conditions correspond to the starting point of the extrapolation, which is different from $\mathrm{sedge}_R^x$.\\ \\
+{\bf If} NOT ICONSERVE {\bf and} $\mathrm{vmac}_{\ib+\half\eb_y}\cdot\mathrm{vmac}_{\ib-\half\eb_y} \ge 0$ {\bf then:}
+\begin{eqnarray}
+\mathrm{sedge}_R^x = s_{\ib} &-& \left(\half + \frac{\dt}{h_x}\mathrm{umac}_{\ib-\half\eb_x}\right)\Delta^x s_{\ib} + \frac{\dt}{2}\mathrm{FORCE}_{\ib} \nonumber\\
+&& - \frac{\dt}{2}\left[\frac{(\mathrm{vmac}_{\ib+\half\eb_y}+\mathrm{vmac}_{\ib-\half\eb_y})(s_{\ib+\half\eb_y}-s_{\ib-\half\eb_y})}{2h_y}\right]
+\end{eqnarray}
+Be careful with $\mathrm{sedge}_L^x$ because the conditions correspond to the starting point of the extrapolation, which is different from $\mathrm{sedge}_R^x$.\\ \\
+Finally, upwind analogous to equation (\ref{ESTATE_FPU Upwind}) to get $\mathrm{sedge}_{\ib-\half\eb_x}$.
+
+\newpage
+
+%-----------------------------------------------------------------------------
+% ESTATE
+%-----------------------------------------------------------------------------
+
+\section{ESTATE in GODUNOV\_2D/3D.f}
+First, the normal predictor.
+\begin{eqnarray}
+s_L^x &=& s_{\ib-\eb_x} + \left(\half - \frac{\dt}{h_x}u_{\ib-\eb_x}\right)\Delta^x s_{\ib-\eb_x} \\
+s_R^x &=& s_{\ib} - \left(\half + \frac{\dt}{h_x}u_{\ib}\right)\Delta^x s_{\ib}
+\end{eqnarray}
+{\bf If} USE\_MINION {\bf then:}
+\begin{eqnarray}
+s_L^x &=& s_L^x + \frac{\dt}{2}\mathrm{FORCE}_{\ib-\eb_x} \\
+s_R^x &=& s_R^x + \frac{\dt}{2}\mathrm{FORCE}_{\ib}
+\end{eqnarray}
+Apply boundary conditions on $s_L^x$ and $s_R^x$.  Then,
+\begin{equation}
+\mathrm{s}_{\ib-\half\eb_x}^x =
+\begin{cases}
+s_L^x, & \mathrm{uedge}_{\ib-\half\eb_x} > 0, \\
+s_R^x, & \mathrm{else}. \\
+\end{cases}\label{ESTATE Upwind}
+\end{equation}
+\begin{eqnarray}
+\mathrm{sedge}_R^x = s_{\ib} &-& \left(\half + \frac{\dt}{h_x}u_{\ib}\right)\Delta^x s_{\ib} + \frac{\dt}{2}\mathrm{FORCE}_{\ib} \nonumber\\
+&& - \frac{\dt}{2}\left[\frac{(\mathrm{vmac}_{\ib+\half\eb_y}+\mathrm{vmac}_{\ib-\half\eb_y})(s_{\ib+\half\eb_y}-s_{\ib-\half\eb_y})}{2h_y}\right]
+\end{eqnarray}
+Be careful with $\mathrm{sedge}_L^x$ because the conditions correspond to the starting point of the extrapolation, which is different from $\mathrm{sedge}_R^x$.\\ \\
+Finally, upwind analogous to equation (\ref{ESTATE Upwind}) to get $\mathrm{sedge}_{\ib-\half\eb_x}$.
