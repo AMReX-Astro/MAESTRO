@@ -1352,8 +1352,8 @@ contains
 
     ! impose lo side bc's
     if (phys_bc(3,1) .eq. INLET) then
-       slzx(is:ie,js-1:je+1,ks) = s(is:ie,js-1:je+1,ks,comp)
-       srzx(is:ie,js-1:je+1,ks) = s(is:ie,js-1:je+1,ks,comp)
+       slzx(is:ie,js-1:je+1,ks) = s(is:ie,js-1:je+1,ks-1,comp)
+       srzx(is:ie,js-1:je+1,ks) = s(is:ie,js-1:je+1,ks-1,comp)
     else if (phys_bc(3,1) .eq. SLIP_WALL) then
        if (is_vel .and. comp .eq. 3) then
           slzx(is:ie,js-1:je+1,ks) = ZERO
@@ -1441,8 +1441,8 @@ contains
 
     ! impose lo side bc's
     if (phys_bc(3,1) .eq. INLET) then
-       slzy(is-1:ie+1,js:je,ks) = s(is-1:ie+1,js:je,ks,comp)
-       srzy(is-1:ie+1,js:je,ks) = s(is-1:ie+1,js:je,ks,comp)
+       slzy(is-1:ie+1,js:je,ks) = s(is-1:ie+1,js:je,ks-1,comp)
+       srzy(is-1:ie+1,js:je,ks) = s(is-1:ie+1,js:je,ks-1,comp)
     else if (phys_bc(3,1) .eq. SLIP_WALL) then
        if (is_vel .and. comp .eq. 3) then
           slzy(is-1:ie+1,js:je,ks) = ZERO
