@@ -919,27 +919,26 @@ systems (thankfully, we only upwind based on the fluid velocity)
 \item Colella and Sekora 2008 - describes new fancy quadratic limiters
 \end{itemize}
 Here are the steps for the $x$-direction.  For simplicity, we replace the vector index notation with a simple scalar notation ($\ib+\eb_x \rightarrow i+1$, etc.):
-\begin{enumerate}
+\begin{itemize}
 \item {\bf Step 1:} Spatially interpolate $s$ to edges.\\ \\
 Use a 6th-order interpolation in space to obtain edge values:
 \begin{equation}
-s_{i+\half}^{6th} = \frac{37}{60}\left(s_{i}+s_{i+1}\right) - \frac{2}{15}\left(s_{i-1}+s_{i+2}\right) + \frac{1}{60}\left(s_{i-2}+s_{i+3}\right),
+s_{i+\half}^{\text{H.O.}} = \frac{37}{60}\left(s_{i}+s_{i+1}\right) - \frac{2}{15}\left(s_{i-1}+s_{i+2}\right) + \frac{1}{60}\left(s_{i-2}+s_{i+3}\right),
 \end{equation}
-\item {\bf Step 2:} Limit $s_{i+\half}^{6th}$.
-Next, we must ensure that $s_{i+\half}^{6th}$ lies between the adjacent 
+Next, we must ensure that $s_{i+\half}^{\text{H.O.}}$ lies between the adjacent 
 cell-centered values:
 \begin{equation}
-\min\left(s_{i},s_{i+1}\right) \le s_{i+\half}^{6th} \le \max\left(s_{i},s_{i+1}\right).
+\min\left(s_{i},s_{i+1}\right) \le s_{i+\half}^{\text{H.O.}} \le \max\left(s_{i},s_{i+1}\right).
 \end{equation}
-If $s_{i+\half}^{6th}$ does not satisfy this condition, we limit this value
+If $s_{i+\half}^{\text{H.O.}}$ does not satisfy this condition, we limit this value
 by using a nonlinear combination of approximations to the second derivative.
 First, define:
 \begin{eqnarray}
-(D^2s)_{i+\half} &=& \frac{3}{h^2}\left(s_{i}-2s_{i+\half}^{6th}+s_{i+1}\right) \\
+(D^2s)_{i+\half} &=& \frac{3}{h^2}\left(s_{i}-2s_{i+\half}^{\text{H.O.}}+s_{i+1}\right) \\
 (D^2s)_{i+\half,L} &=& \frac{1}{h^2}\left(s_{i-1}-2s_{i}+s_{i+1}\right) \\
-(D^2s)_{i+\half,R} &=& \frac{1}{h^2}\left(s_{i}-2s_{i+1}^{6th}+s_{i+2}\right)
+(D^2s)_{i+\half,R} &=& \frac{1}{h^2}\left(s_{i}-2s_{i+1}^{\text{H.O.}}+s_{i+2}\right)
 \end{eqnarray}
-If the signs of $(D^2s)_{i+\half}$, $(D^2s)_{i+\half,L/R}$ are all the
+If the signs of $(D^2s)_{i+s\half}$, $(D^2s)_{i+\half,L/R}$ are all the
 same, we define
 \begin{equation}
 (D^2s)_{i+\half,\text{lim}} = \text{sign}\left[(D^2s)_{i+\half}\right]\min\left[C|(D^2s)_{i+\half,L}|,C|(D^2s)_{i+\half,R}|,|(D^2s)_{i+\half}|\right],
@@ -947,11 +946,37 @@ same, we define
 where $C=1.25$ was used in Colella and Sekora.  Otherwise, 
 $(D^2s)_{i+\half,\text{lim}}=0$.  Then,
 \begin{equation}
-s_{i+\half}^{6th} = \frac{1}{2}\left(s_{i}+s_{i+1}\right) - \frac{h^3}{3}(D^2s)_{i+\half,\text{lim}}.
+s_{i+\half}^{\text{H.O.}} = \frac{1}{2}\left(s_{i}+s_{i+1}\right) - \frac{h^3}{3}(D^2s)_{i+\half,\text{lim}}.
 \end{equation}
 In anticipation of further limiting, we set double-valued face-centered values:
 \begin{equation}
-s_{i,+} = s_{i+1,-} = s_{i+\half}^{6th}.
+s_{i,+} = s_{i+1,-} = s_{i+\half}^{\text{H.O.}}.
+\end{equation}
+\item {\bf Step 1 Alternative:} Spatially interpolate $s$ to edges.  This alternative
+requires 3 ghost cells instead of 4 (since the interpolation must be done in the first
+ghost cell)\\ \\
+Use a 4th-order interpolation in space with van Leer limiting to obtain edge values:
+\begin{equation}
+s_{i+\half}^{\text{H.O.}} = \frac{1}{2}\left(s_{i} + s_{i+1}\right) - \frac{1}{6}\left(\delta s_{i+1}^{vL} - \delta s_{i}^{vL}\right),
+\end{equation}
+\begin{equation}
+\delta s_i = \frac{1}{2}\left(s_{i+1}-s_{i-1}\right),
+\end{equation}
+\begin{equation}
+\delta s_i^{vL} = \text{sign}(\delta s_i)\left(|\delta s_i|, ~ 2|s_{i+1}-s_{i}|, ~ 2|s_i-s_{i-1}|\right).
+\end{equation}
+Without the limiters, this is the familiar 4th-order spatial interpolation formula:
+\begin{equation}
+s_{i+\half}^{\text{H.O.}} = \frac{7}{12}\left(s_{i+1}+s_i\right) - \frac{1}{12}\left(s_{i+2}+s_{i-1}\right).
+\end{equation}
+Next, we must ensure that $s_{i+\half}^{\text{H.O.}}$ lies between the adjacent 
+cell-centered values:
+\begin{equation}
+\min\left(s_{i},s_{i+1}\right) \le s_{i+\half}^{\text{H.O.}} \le \max\left(s_{i},s_{i+1}\right).
+\end{equation}
+In anticipation of further limiting, we set double-valued face-centered values:
+\begin{equation}
+s_{i,+} = s_{i+1,-} = s_{i+\half}^{\text{H.O.}}.
 \end{equation}
 \item {\bf Step 2:} Modify $s_{i,\pm}$ using a discontinuity detector.\\ \\
 This is done in Colella and Woodward, and I don't think we need it.
@@ -1003,6 +1028,25 @@ If $s ~ \delta\mathcal{I}_{\text{ext}} \ge s ~ \delta s$, then we set
 \begin{equation}
 s_{i,\pm} = s_i - \left\{2\delta s + 2s\left[(\delta s)^2 - \delta s ~  \alpha_{i,\mp}\right]^{\myhalf}\right\}.
 \end{equation}
+\item {\bf Step 3 Alternative:} Modify $s_{i,\pm}$ using a quadratic limiter.
+Here are the simpler quadratic limiters.\\ \\
+{\bf First limiter:} There are two quadratic limiters.  
+For the first limiter, we test whether 
+$s_i$ is a local extreumum with the condition:
+\begin{equation}
+\left(s_{i,+}-s_i\right)\left(s_i-s_{i,-}\right) \le 0,
+\end{equation}
+If this condition is true, we constrain $s_{i,\pm}$ by setting 
+$s_{i,+} = s_{i,-} = s_i$\\ \\
+{\bf Second limiter:} If we do not use the first limiter, we then apply a 
+second test to determine 
+whether $s_i$ is sufficiently close to $s_{i,\pm}$ so that a quadratic 
+interpolate would contain a local extremum.  We define 
+$\alpha_{i,\pm} = s_{i,\pm} - s_i$.  If one of $|\alpha_{i,\pm}| \ge 2|\alpha_{i,\mp}|$
+holds, then for that choice of $\pm = +,-$ we set:
+\begin{equation}
+s_{i,\pm} = 3s_i - 2s_{i,\mp}.
+\end{equation}
 \item {\bf Step 4:} Use flattening.\\ \\
 This is done in Miller and Colella, and I don't think we need it.
 \item {\bf Step 5:} Construct quadratic profiles.\\ \\
@@ -1023,6 +1067,19 @@ Plugging in (\ref{Quadratic Interp}) gives:
 \mathcal{I}_{i,+}(\sigma) &=& s_{j,+} - \frac{\sigma}{2}\left[s_{j,+}-s_{j,-}-\left(1-\frac{2}{3}\sigma\right)s_{6,i}\right], \\
 \mathcal{I}_{i,-}(\sigma) &=& s_{j,-} + \frac{\sigma}{2}\left[s_{j,+}-s_{j,-}+\left(1-\frac{2}{3}\sigma\right)s_{6,i}\right].
 \end{eqnarray}
-\item {\bf Step 7:} Perform 1D extrapolation to get left and right edge states.\\ \\
-Details...
-\end{enumerate}
+\item {\bf Step 7:} Obtain 1D edge states.\\ \\
+Perform a 1D extrapolation, without source terms, to get 
+left and right edge states.  Add the source terms later if desired/necessary.\\ \\
+\begin{eqnarray}
+s_{L,\ib-\half\eb_x} &=&
+\begin{cases}
+s_{\ib-\eb_x} + \mathcal{I}_{\ib-\eb_x,+}(\sigma), & u_{\ib-\eb_x} ~ \text{or} ~ u_{\ib-\half\eb_x}^{\mac} > 0 \\
+s_{\ib-\eb_x}, & \text{else}.
+\end{cases}\\
+s_{R,\ib-\half\eb_x} &=& 
+\begin{cases}
+s_{\ib} + \mathcal{I}_{\ib,-}(\sigma), & u_{\ib} ~ \text{or} ~ u_{\ib-\half\eb_x}^{\mac} < 0 \\
+s_{\ib}, & \text{else}.
+\end{cases}
+\end{eqnarray}
+\end{itemize}
