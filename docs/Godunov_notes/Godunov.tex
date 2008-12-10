@@ -942,7 +942,7 @@ First, define:
 If the signs of $(D^2s)_{i+\half}$, $(D^2s)_{i+\half,L/R}$ are all the
 same, we define
 \begin{equation}
-(D^2s)_{i+\half,\text{lim}} = \text{sign}\left((D^2s)_{i+\half}\right)\min\left(C|(D^2s)_{i+\half,L}|,C|(D^2s)_{i+\half,R}|,|(D^2s)_{i+\half}|\right),
+(D^2s)_{i+\half,\text{lim}} = \text{sign}\left[(D^2s)_{i+\half}\right]\min\left[C|(D^2s)_{i+\half,L}|,C|(D^2s)_{i+\half,R}|,|(D^2s)_{i+\half}|\right],
 \end{equation}
 where $C=1.25$ was used in Colella and Sekora.  Otherwise, 
 $(D^2s)_{i+\half,\text{lim}}=0$.  Then,
@@ -968,7 +968,7 @@ $s_i$ is a local extreumum with the conditions:
 If either of these are true, we constrain $s_{i,\pm}$ in a less restrictive 
 way than originally used in Colella and Woodward.  First, we define:
 \begin{eqnarray}
-(D^2s)_i &=& -\frac{2a_{6,i}}{h^2}; ~~~~~~~~~ a_6 = 6s_{i} - 3\left(s_{i,-}+s_{i,+}\right) \\
+(D^2s)_i &=& -\frac{2s_{6,i}}{h^2}; ~~~~~~~~~ s_6 = 6s_{i} - 3\left(s_{i,-}+s_{i,+}\right) \\
 (D^2s)_{i,C} &=& \frac{1}{h^2}\left(s_{i-1}-2s_{i}+s_{i+1}\right) \\
 (D^2s)_{i,L} &=& \frac{1}{h^2}\left(s_{i-2}-2s_{i-1}+s_{i}\right) \\
 (D^2s)_{i,R} &=& \frac{1}{h^2}\left(s_{i}-2s_{i+1}+s_{i+2}\right)
@@ -976,7 +976,7 @@ way than originally used in Colella and Woodward.  First, we define:
 If the signs of $(D^2s)_i$, $(D^2s)_{i,C/L/R}$ are all the
 same, we define
 \begin{equation}
-(D^2s)_{i,\text{lim}} = \text{sign}\left((D^2s)_{i}\right)\min\left(C|(D^2s)_{i,C}|,C|(D^2s)_{i,L}|,C|(D^2s)_{i,R}|,|(D^2s)_{i}|\right),
+(D^2s)_{i,\text{lim}} = \text{sign}\left[(D^2s)_{i}\right]\min\left[C|(D^2s)_{i,C}|,C|(D^2s)_{i,L}|,C|(D^2s)_{i,R}|,|(D^2s)_{i}|\right],
 \end{equation}
 where $C=1.25$ was used in Colella and Sekora.  Otherwise, 
 $(D^2s)_{i+\half,\text{lim}}=0$.  Then,
@@ -1001,14 +1001,28 @@ s = \text{sign}\left(s_{i+1}-s_{i-1}\right).
 \end{equation}
 If $s ~ \delta\mathcal{I}_{\text{ext}} \ge s ~ \delta s$, then we set
 \begin{equation}
-s_{i,\pm} = s_i - \left[2\delta s + 2s\left((\delta s)^2 - \delta s ~  \alpha_{i,\mp}\right)^{\myhalf}\right].
+s_{i,\pm} = s_i - \left\{2\delta s + 2s\left[(\delta s)^2 - \delta s ~  \alpha_{i,\mp}\right]^{\myhalf}\right\}.
 \end{equation}
 \item {\bf Step 4:} Use flattening.\\ \\
 This is done in Miller and Colella, and I don't think we need it.
 \item {\bf Step 5:} Construct quadratic profiles.\\ \\
-Details...
+\begin{equation}
+s_i^I(x) = s_{i,-} + \xi\left[s_{i,+} - s_{i,-} + s_{6,i}(1-\xi)\right], ~~~ s_6 = 6s_{i} - 3\left(s_{i,-}+s_{i,+}\right),\label{Quadratic Interp}
+\end{equation}
+\begin{equation}
+\xi = \frac{x - ih}{h}, ~ 0 \le \xi \le 1.
+\end{equation}
 \item {\bf Step 6:} Integrate quadratic profiles.\\ \\
-Details...
+Define the following integrals, where $\sigma = |u|\Delta t/h$:
+\begin{eqnarray}
+\mathcal{I}_{i,+}(\sigma) &=& \frac{1}{\sigma h}\int_{(i+\half)h-\sigma h}^{(i+\half)h}s_i^I(x)dx \\
+\mathcal{I}_{i,-}(\sigma) &=& \frac{1}{\sigma h}\int_{(i-\half)h}^{(i-\half)h+\sigma h}s_i^I(x)dx
+\end{eqnarray}
+Plugging in (\ref{Quadratic Interp}) gives:
+\begin{eqnarray}
+\mathcal{I}_{i,+}(\sigma) &=& s_{j,+} - \frac{\sigma}{2}\left[s_{j,+}-s_{j,-}-\left(1-\frac{2}{3}\sigma\right)s_{6,i}\right], \\
+\mathcal{I}_{i,-}(\sigma) &=& s_{j,-} + \frac{\sigma}{2}\left[s_{j,+}-s_{j,-}+\left(1-\frac{2}{3}\sigma\right)s_{6,i}\right].
+\end{eqnarray}
 \item {\bf Step 7:} Perform 1D extrapolation to get left and right edge states.\\ \\
 Details...
 \end{enumerate}
