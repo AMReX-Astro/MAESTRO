@@ -49,7 +49,7 @@ contains
   end subroutine ppm_fpu_2d
 
   ! characteristics based on u
-  subroutine ppm_3d(s,ng_s,u,ng_u,slx,sly,lo,hi,bc)
+  subroutine ppm_3d(s,ng_s,u,ng_u,slx,sly,slz,lo,hi,bc)
 
     use bc_module
     use bl_constants_module
@@ -69,7 +69,7 @@ contains
   end subroutine ppm_3d
 
   ! characteristics based on umac
-  subroutine ppm_fpu_3d(s,ng_s,umac,ng_u,slx,sly,lo,hi,bc)
+  subroutine ppm_fpu_3d(s,ng_s,umac,ng_u,slx,sly,slz,lo,hi,bc)
 
     use bc_module
     use bl_constants_module
