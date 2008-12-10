@@ -908,8 +908,16 @@ modifies how we perform the 1D extrapolation to get left and right edge states
 (for example, we modify equations (\ref{3D predict s to left}) and 
 (\ref{3D predict s to right}) in Section 
 \ref{Scalar Edge State Prediction in MAESTRO} to obtain higher-order estimates
-of $s_{L/R,\ib-\half\eb_x}$)  Once these 1D edge states are obtained, we
-continue with the full-dimensional extrapolations as described before.
+of $s_{L/R,\ib-\half\eb_x}$).  Once these 1D edge states are obtained, we
+continue with the full-dimensional extrapolations as described before.\\ \\
+The PPM method is described in a series of papers:
+\begin{itemize}
+\item Colella and Woodward 1984 - describes the basic method
+\item Miller and Colella 2002 - describes how to apply PPM to a multidimensional
+unsplit Godunov method and generalizes the characteristic tracing for more complicated
+systems (thankfully, we only upwind based on the fluid velocity)
+\item Colella and Sekora 2008 - describes new fancy quadratic limiters
+\end{itemize}
 Here are the steps:
 \begin{enumerate}
 \item {\bf Step 1:} Spatially interpolate $s$ to edges.\\ \\
