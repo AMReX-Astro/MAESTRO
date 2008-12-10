@@ -1,6 +1,9 @@
 These are working notes for the Godunov step in {\tt MAESTRO} 
 and {\tt VARDEN}.
 
+%-----------------------------------------------------------------------------
+% Notation
+%-----------------------------------------------------------------------------
 \section{{\tt MAESTRO} Notation}
 \begin{itemize}
 \item For 2D, $\Ub = (u,w)$ and $\Ubt = (\ut,\wt)$.  
@@ -337,7 +340,7 @@ full velocity.
 %-----------------------------------------------------------------------------
 % edge states
 %-----------------------------------------------------------------------------
-\section{Computing $\rho^{'\edge}, X_k^{\edge},(\rho h)^{'\edge} / h^{\edge} / T^{\edge} / h'^{\edge} / T'^{\edge}$, and $\Ubt^{\edge}$ in {\tt MAESTRO}}
+\section{Computing $\rho^{'\edge}, X_k^{\edge},(\rho h)^{'\edge} / h^{\edge} / T^{\edge} / h'^{\edge} / T'^{\edge}$, and $\Ubt^{\edge}$ in {\tt MAESTRO}}\label{Scalar Edge State Prediction in MAESTRO}
 We call {\tt make\_edge\_scal} to compute $\rho^{'\edge}, X_k^{\edge}, 
 (\rho h)^{'\edge} / h^{\edge} / T^{\edge} / h'^{\edge} / T'^{\edge}$, 
 and $\Ubt^{\edge}$ at each edge.
@@ -384,7 +387,7 @@ s_{L,\ib-\half\eb_r}, & w^{\mac}_{\ib-\half\eb_r} > 0, \\
 s_{R,\ib-\half\eb_r}, & w^{\mac}_{\ib-\half\eb_r} < 0. \\
 \end{cases}
 \end{equation}
-Predict $s$ to x-faces using a full-dimensional extrapolation:
+Predict $s$ to x-faces using a full-dimensional extrapolation.  First, the normal derivative and forcing terms:
 \begin{eqnarray}
 s_{L,\ib-\half\eb_x}^{\edge} &=& s_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x s_{\ib-\eb_x}^n + \frac{\dt}{2}f_{\ib-\eb_x}^n \\
 s_{R,\ib-\half\eb_x}^{\edge} &=& s_{\ib}^n - \left(\half + \frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x s_{\ib}^n + \frac{\dt}{2}f_{\ib}^n 
@@ -438,7 +441,7 @@ s_{L,\ib-\half\eb_x}, & u^{\mac}_{\ib-\half\eb_x} > 0, \\
 s_{R,\ib-\half\eb_x}, & u^{\mac}_{\ib-\half\eb_x} < 0. \\
 \end{cases}
 \end{equation}
-Predict $s$ to r-faces using a full-dimensional extrapolation:
+Predict $s$ to r-faces using a full-dimensional extrapolation.  First, the normal derivative and forcing terms:
 \begin{eqnarray}
 s_{L,\ib-\half\eb_r}^{\edge} &=&  s_{\ib-\eb_r}^n + \left(\half - \frac{\dt}{2h}w_{\ib-\half\eb_r}^{\mac}\right)\Delta_r s_{\ib-\eb_r}^n + \frac{\dt}{2}f_{\ib-\eb_r}^n \\
 s_{R,\ib-\half\eb_r}^{\edge} &=&  s_{\ib}^n - \left(\half + \frac{\dt}{2h}w_{\ib-\half\eb_r}^{\mac}\right)\Delta_r s_{\ib}^n + \frac{\dt}{2}f_{\ib}^n 
@@ -500,8 +503,8 @@ the effects of corner coupling.
 \end{enumerate}
 Predict $s$ to x-faces using a 1D extrapolation.
 \begin{eqnarray}
-s_{L,\ib-\half\eb_x} &=& s_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x s_{\ib-\eb_x}^n, \\
-s_{R,\ib-\half\eb_x} &=& s_{\ib} - \left(\half + \frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x s_{\ib}^n.
+s_{L,\ib-\half\eb_x} &=& s_{\ib-\eb_x}^n + \left(\half - \frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x s_{\ib-\eb_x}^n, \label{3D predict s to left}\\
+s_{R,\ib-\half\eb_x} &=& s_{\ib} - \left(\half + \frac{\dt}{2h}u_{\ib-\half\eb_x}^{\mac}\right)\Delta_x s_{\ib}^n.\label{3D predict s to right}
 \end{eqnarray}
 Upwind based on $u^{\mac}$:
 \begin{equation}
@@ -803,7 +806,6 @@ $s_{\ib-\half\eb_y}^{\edge}$ and $s_{\ib-\half\eb_z}$.
 %-----------------------------------------------------------------------------
 % ESTATE_FPU
 %-----------------------------------------------------------------------------
-
 \section{ESTATE\_FPU in GODUNOV\_2D/3D.f}
 First, the normal predictor.
 \begin{eqnarray}
@@ -863,7 +865,6 @@ Finally, upwind analogous to equation (\ref{ESTATE_FPU Upwind}) to get $\text{se
 %-----------------------------------------------------------------------------
 % ESTATE
 %-----------------------------------------------------------------------------
-
 \section{ESTATE in GODUNOV\_2D/3D.f}
 First, the normal predictor.
 \begin{eqnarray}
@@ -890,4 +891,37 @@ Then, if $|\text{UAD}_{\ib-\half\eb_x}| \le \epsilon$, we set $s_{\ib-\half\eb_x
 \text{sedge}_R^x = s_{\ib} &-& \left(\half + \frac{\dt}{h_x}u_{\ib}\right)\Delta^x s_{\ib} + \frac{\dt}{2}\text{TFORCES}_{\ib} \nonumber\\
 && - \frac{\dt}{2}\left[\frac{(\text{VAD}_{\ib+\half\eb_y}+\text{VAD}_{\ib-\half\eb_y})(s_{\ib+\half\eb_y}-s_{\ib-\half\eb_y})}{2h_y}\right]
 \end{eqnarray}
-Note that the 2D and 3D algorithms are different - in 3D the transverse terms use upwinding analogous to equations (\ref{transverse upwinding 1})-(\ref{transverse upwinding 6}), using UAD instead of UEDGE.  Finally, upwind analogous to equation (\ref{ESTATE Upwind}) to get $\text{sedge}_{\ib-\half\eb_x}$, but use UEDGE instead of UAD.
+Note that the 2D and 3D algorithms are different - in 3D the transverse 
+terms use upwinding analogous to equations 
+(\ref{transverse upwinding 1})-(\ref{transverse upwinding 6}), using UAD 
+instead of UEDGE.  Finally, upwind analogous to equation (\ref{ESTATE Upwind}) 
+to get $\text{sedge}_{\ib-\half\eb_x}$, but use UEDGE instead of UAD.
+
+\newpage
+
+%-----------------------------------------------------------------------------
+% PPM
+%-----------------------------------------------------------------------------
+\section{Piecewise Parabolic Method (PPM)}
+Let's consider a scalar, $s$, which we wish to predict to edges.  The PPM method
+modifies how we perform the 1D extrapolation to get left and right edge states
+(for example, we modify equations (\ref{3D predict s to left}) and 
+(\ref{3D predict s to right}) in Section 
+\ref{Scalar Edge State Prediction in MAESTRO} to obtain higher-order estimates
+of $s_{L/R,\ib-\half\eb_x}$)  Once these 1D edge states are obtained, we
+continue with the full-dimensional extrapolations as described before.
+Here are the steps:
+\begin{enumerate}
+\item {\bf Step 1:} Spatially interpolate $s$ to edges.\\ \\
+Details...
+\item {\bf Step 2:} Modify these states using a quadratic limiter.\\ \\
+Details...
+\item {\bf Step 3:} Use flattening.\\ \\
+Details...
+\item {\bf Step 4:} Construct quadratic profiles.\\ \\
+Details...
+\item {\bf Step 5:} Integrate quadratic profiles.\\ \\
+Details...
+\item {\bf Step 6:} Perform 1D extrapolation to get left and right edge states.\\ \\
+Details...
+\end{enumerate}
