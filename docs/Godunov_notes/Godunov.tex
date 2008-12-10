@@ -908,7 +908,7 @@ modifies how we perform the 1D extrapolation to get left and right edge states
 (for example, we modify equations (\ref{3D predict s to left}) and 
 (\ref{3D predict s to right}) in Section 
 \ref{Scalar Edge State Prediction in MAESTRO} to obtain higher-order estimates
-of $s_{L/R,\ib-\half\eb_x}$).  Once these 1D edge states are obtained, we
+of $s_{L/R,\ib-\half}$).  Once these 1D edge states are obtained, we
 continue with the full-dimensional extrapolations as described before.\\ \\
 The PPM method is described in a series of papers:
 \begin{itemize}
@@ -918,11 +918,42 @@ unsplit Godunov method and generalizes the characteristic tracing for more compl
 systems (thankfully, we only upwind based on the fluid velocity)
 \item Colella and Sekora 2008 - describes new fancy quadratic limiters
 \end{itemize}
-Here are the steps:
+Here are the steps for the $x$-direction.  For simplicity, we replace the vector index notation with a simple scalar notation ($\ib+\eb_x \rightarrow i+1$, etc.):
 \begin{enumerate}
 \item {\bf Step 1:} Spatially interpolate $s$ to edges.\\ \\
-Details...
-\item {\bf Step 2:} Modify these states using a quadratic limiter.\\ \\
+Use a 6th-order interpolation in space to obtain edge values:
+\begin{equation}
+s_{i+\half}^{6th} = \frac{37}{60}\left(s_{i}+s_{i+1}\right) - \frac{2}{15}\left(s_{i-1}+s_{i+2}\right) + \frac{1}{60}\left(s_{i-2}+s_{i+3}\right),
+\end{equation}
+\item {\bf Step 2:} Limit $s_{i+\half}^{6th}$.
+Next, we must ensure that $s_{i+\half}^{6th}$ lies between the adjacent 
+cell-centered values:
+\begin{equation}
+\min\left(s_{i},s_{i+1}\right) \le s_{i+\half}^{6th} \le \max\left(s_{i},s_{i+1}\right).
+\end{equation}
+If $s_{i+\half}^{6th}$ does not satisfy this condition, we limit this value
+by using a nonlinear combination of approximations to the second derivative.
+First, define:
+\begin{eqnarray}
+(D^2s)_{i+\half} &=& \frac{3}{h^2}\left(s_{i}-2s_{i+\half}^{6th}+s_{i+1}\right) \\
+(D^2s)_{i+\half,L} &=& \frac{1}{h^2}\left(s_{i-1}-2s_{i}+s_{i+1}\right) \\
+(D^2s)_{i+\half,R} &=& \frac{1}{h^2}\left(s_{i}-2s_{i+1}^{6th}+s_{i+2}\right)
+\end{eqnarray}
+If the signs of $(D^2s)_{i+\half}$, $(D^2s)_{i+\half,L/R}$ are all the
+same, we define
+\begin{equation}
+(D^2s)_{i+\half,\text{lim}} = \text{sign}\left((D^2s)_{i+\half}\right)\min\left(C|(D^2s)_{i+\half,L}|,C|(D^2s)_{i+\half,R}|,|(D^2s)_{i+\half}|\right),
+\end{equation}
+where $C=1.25$ was used in Colella and Sekora.  Otherwise, 
+$(D^2s)_{i+\half,\text{lim}}=0$.  Then,
+\begin{equation}
+s_{i+\half}^{6th} = \frac{1}{2}\left(s_{i}+s_{i+1}\right) - \frac{h^3}{3}(D^2s)_{i+\half,\text{lim}}.
+\end{equation}
+In anticipation of further limiting, we set double-valued face-centered values:
+\begin{equation}
+s_{i,+} = s_{i+1,-} = s_{i+\half}^{6th}.
+\end{equation}
+\item {\bf Step 2:} Modify $s_{i,\pm}$ using a quadratic limiter.\\ \\
 Details...
 \item {\bf Step 3:} Use flattening.\\ \\
 Details...
