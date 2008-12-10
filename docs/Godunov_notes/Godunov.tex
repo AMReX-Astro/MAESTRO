@@ -953,14 +953,62 @@ In anticipation of further limiting, we set double-valued face-centered values:
 \begin{equation}
 s_{i,+} = s_{i+1,-} = s_{i+\half}^{6th}.
 \end{equation}
-\item {\bf Step 2:} Modify $s_{i,\pm}$ using a quadratic limiter.\\ \\
+\item {\bf Step 2:} Modify $s_{i,\pm}$ using a discontinuity detector.\\ \\
+This is done in Colella and Woodward, and I don't think we need it.
+\item {\bf Step 3:} Modify $s_{i,\pm}$ using a quadratic limiter.\\ \\
+{\bf First limiter:} There are two quadratic limiters.  
+For the first limiter, we test whether 
+$s_i$ is a local extreumum with the conditions:
+\begin{equation}
+\left(s_{i,+}-s_i\right)\left(s_i-s_{i,-}\right) \le 0,
+\end{equation}
+\begin{equation}
+\left(s_{i+1}-s_{i}\right)\left(s_{i}-s_{i-1}\right) \le 0.
+\end{equation}
+If either of these are true, we constrain $s_{i,\pm}$ in a less restrictive 
+way than originally used in Colella and Woodward.  First, we define:
+\begin{eqnarray}
+(D^2s)_i &=& -\frac{2a_{6,i}}{h^2}; ~~~~~~~~~ a_6 = 6s_{i} - 3\left(s_{i,-}+s_{i,+}\right) \\
+(D^2s)_{i,C} &=& \frac{1}{h^2}\left(s_{i-1}-2s_{i}+s_{i+1}\right) \\
+(D^2s)_{i,L} &=& \frac{1}{h^2}\left(s_{i-2}-2s_{i-1}+s_{i}\right) \\
+(D^2s)_{i,R} &=& \frac{1}{h^2}\left(s_{i}-2s_{i+1}+s_{i+2}\right)
+\end{eqnarray}
+If the signs of $(D^2s)_i$, $(D^2s)_{i,C/L/R}$ are all the
+same, we define
+\begin{equation}
+(D^2s)_{i,\text{lim}} = \text{sign}\left((D^2s)_{i}\right)\min\left(C|(D^2s)_{i,C}|,C|(D^2s)_{i,L}|,C|(D^2s)_{i,R}|,|(D^2s)_{i}|\right),
+\end{equation}
+where $C=1.25$ was used in Colella and Sekora.  Otherwise, 
+$(D^2s)_{i+\half,\text{lim}}=0$.  Then,
+\begin{equation}
+s_{i,\pm} = s_i + \left(s_{i,\pm}-s_{i}\right)\frac{(D^2s)_{i,\text{lim}}}{(D^2s)_i}.
+\end{equation}
+If $(D^2s)_i=0$, then we set $s_{i,\pm} = s_i$.\\ \\
+{\bf Second limiter:} If we do not use the first limiter, we then apply a 
+second test to determine 
+whether $s_i$ is sufficiently close to $s_{i,\pm}$ so that a quadratic 
+interpolate would contain a local extremum.  We define 
+$\alpha_{i,\pm} = s_{i,\pm} - s_i$.  If one of $|\alpha_{i,\pm}| \ge 2|\alpha_{i,\mp}|$
+holds, then for that choice of $\pm = +,-$ we compute:
+\begin{equation}
+\delta\mathcal{I}_{\text{ext}} = \frac{-\alpha_{i,\pm}^2}{4\left(\alpha_{j,+}+\alpha_{j,-}\right)},
+\end{equation}
+\begin{equation}
+\delta s = s_{i\pm 1} - s_i,
+\end{equation}
+\begin{equation}
+s = \text{sign}\left(s_{i+1}-s_{i-1}\right).
+\end{equation}
+If $s ~ \delta\mathcal{I}_{\text{ext}} \ge s ~ \delta s$, then we set
+\begin{equation}
+s_{i,\pm} = s_i - \left[2\delta s + 2s\left((\delta s)^2 - \delta s ~  \alpha_{i,\mp}\right)^{\myhalf}\right].
+\end{equation}
+\item {\bf Step 4:} Use flattening.\\ \\
+This is done in Miller and Colella, and I don't think we need it.
+\item {\bf Step 5:} Construct quadratic profiles.\\ \\
 Details...
-\item {\bf Step 3:} Use flattening.\\ \\
+\item {\bf Step 6:} Integrate quadratic profiles.\\ \\
 Details...
-\item {\bf Step 4:} Construct quadratic profiles.\\ \\
-Details...
-\item {\bf Step 5:} Integrate quadratic profiles.\\ \\
-Details...
-\item {\bf Step 6:} Perform 1D extrapolation to get left and right edge states.\\ \\
+\item {\bf Step 7:} Perform 1D extrapolation to get left and right edge states.\\ \\
 Details...
 \end{enumerate}
