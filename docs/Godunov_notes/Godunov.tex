@@ -838,7 +838,7 @@ Now, define $\text{VBAR}_{\ib} = (\text{VEDGE}_{\ib+\half\eb_y}+\text{VEDGE}_{\i
 {\bf If} NOT ICONSERVE {\bf and} $\text{VEDGE}_{\ib+\half\eb_y}\cdot\text{VEDGE}_{\ib-\half\eb_y} < 0$ {\bf and} $\text{VBAR}_{\ib} < 0$ {\bf then:}
 \begin{eqnarray}
 \text{sedge}_L^x = s_{\ib-\eb_x} &+& \left(\half - \frac{\dt}{h_x}\text{UEDGE}_{\ib-\half\eb_x}\right)\Delta^x s_{\ib} + \frac{\dt}{2}\text{TFORCES}_{\ib-\eb_x} \nonumber\\
-&& - \frac{\dt}{2}\left[\frac{\text{VBAR}_{\ib-\eb_x}(s_{\ib-\eb_x+\eb_y}-s_{\ib-\eb_x})}{h_y}\right] \\
+&& - \frac{\dt}{2}\left[\frac{\text{VBAR}_{\ib-\eb_x}(s_{\ib-\eb_x+\eb_y}-s_{\ib-\eb_x})}{h_y}\right] \label{transverse upwinding 1} \\
 \text{sedge}_R^x = s_{\ib} &-& \left(\half + \frac{\dt}{h_x}\text{UEDGE}_{\ib-\half\eb_x}\right)\Delta^x s_{\ib} + \frac{\dt}{2}\text{TFORCES}_{\ib} \nonumber\\
 && - \frac{\dt}{2}\left[\frac{\text{VBAR}_{\ib}(s_{\ib+\eb_y}-s_{\ib})}{h_y}\right]
 \end{eqnarray}
@@ -854,7 +854,7 @@ Now, define $\text{VBAR}_{\ib} = (\text{VEDGE}_{\ib+\half\eb_y}+\text{VEDGE}_{\i
 \text{sedge}_L^x &=& s_{\ib-\eb_x} + \left(\half - \frac{\dt}{h_x}\text{UEDGE}_{\ib-\half\eb_x}\right)\Delta^x s_{\ib-\eb_x} + \frac{\dt}{2}\text{TFORCES}_{\ib-\eb_x} \nonumber\\
 && - \frac{\dt}{2}\left[\frac{(\text{VEDGE}_{\ib-\eb_x+\half\eb_y}+\text{VEDGE}_{\ib-\eb_x-\half\eb_y})(s_{\ib-\eb_x+\half\eb_y}-s_{\ib-\eb_x-\half\eb_y})}{2h_y}\right] \\
 \text{sedge}_R^x &=& s_{\ib} - \left(\half + \frac{\dt}{h_x}\text{UEDGE}_{\ib-\half\eb_x}\right)\Delta^x s_{\ib} + \frac{\dt}{2}\text{TFORCES}_{\ib} \nonumber\\
-&& - \frac{\dt}{2}\left[\frac{(\text{VEDGE}_{\ib+\half\eb_y}+\text{VEDGE}_{\ib-\half\eb_y})(s_{\ib+\half\eb_y}-s_{\ib-\half\eb_y})}{2h_y}\right]
+&& - \frac{\dt}{2}\left[\frac{(\text{VEDGE}_{\ib+\half\eb_y}+\text{VEDGE}_{\ib-\half\eb_y})(s_{\ib+\half\eb_y}-s_{\ib-\half\eb_y})}{2h_y}\right]\label{transverse upwinding 6}
 \end{eqnarray}
 Finally, upwind analogous to equation (\ref{ESTATE_FPU Upwind}) to get $\text{sedge}_{\ib-\half\eb_x}$.
 
@@ -890,4 +890,4 @@ Then, if $|\text{UAD}_{\ib-\half\eb_x}| \le \epsilon$, we set $s_{\ib-\half\eb_x
 \text{sedge}_R^x = s_{\ib} &-& \left(\half + \frac{\dt}{h_x}u_{\ib}\right)\Delta^x s_{\ib} + \frac{\dt}{2}\text{TFORCES}_{\ib} \nonumber\\
 && - \frac{\dt}{2}\left[\frac{(\text{VAD}_{\ib+\half\eb_y}+\text{VAD}_{\ib-\half\eb_y})(s_{\ib+\half\eb_y}-s_{\ib-\half\eb_y})}{2h_y}\right]
 \end{eqnarray}
-Finally, upwind analogous to equation (\ref{ESTATE Upwind}) to get $\text{sedge}_{\ib-\half\eb_x}$, but use UEDGE instead of UAD.
+Note that the 2D and 3D algorithms are different - in 3D the transverse terms use upwinding analogous to equations (\ref{transverse upwinding 1})-(\ref{transverse upwinding 6}), using UAD instead of UEDGE.  Finally, upwind analogous to equation (\ref{ESTATE Upwind}) to get $\text{sedge}_{\ib-\half\eb_x}$, but use UEDGE instead of UAD.
