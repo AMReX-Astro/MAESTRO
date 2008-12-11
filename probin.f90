@@ -52,6 +52,7 @@ module probin_module
   logical, save            :: use_tfromp, full_rhoh0_evolution, single_prec_plotfiles
   logical, save            :: use_soundspeed_firstdt, use_divu_firstdt
   logical, save            :: smallscale_beta
+  logical, save            :: use_ppm
   integer, save            :: max_levs, max_grid_size, regrid_int, ref_ratio
   integer, save            :: n_cellx, n_celly, n_cellz
   integer, save            :: drdxfac, min_width
@@ -148,6 +149,7 @@ module probin_module
   namelist /probin/ use_soundspeed_firstdt
   namelist /probin/ use_divu_firstdt
   namelist /probin/ smallscale_beta
+  namelist /probin/ use_ppm
   namelist /probin/ max_levs
   namelist /probin/ max_grid_size
   namelist /probin/ regrid_int
@@ -316,6 +318,8 @@ contains
     use_divu_firstdt = .false.
 
     smallscale_beta = .false.
+
+    use_ppm = .false.
 
     max_levs = 1
     max_grid_size = 64
@@ -814,6 +818,11 @@ contains
           farg = farg + 1
           call get_command_argument(farg, value = fname)
           read(fname, *) smallscale_beta
+
+       case ('--use_ppm')
+          farg = farg + 1
+          call get_command_argument(farg, value = fname)
+          read(fname, *) use_ppm
 
        case ('--max_levs')
           farg = farg + 1
