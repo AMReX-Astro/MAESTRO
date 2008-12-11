@@ -198,7 +198,7 @@ contains
   end subroutine ppm_fpu_2d
 
   ! characteristics based on u
-  subroutine ppm_3d(s,ng_s,u,ng_u,Ip,Im,slz,lo,hi,bc,dx,dt)
+  subroutine ppm_3d(s,ng_s,u,ng_u,Ip,Im,lo,hi,bc,dx,dt)
 
     use bc_module
     use bl_constants_module
@@ -208,7 +208,6 @@ contains
     real(kind=dp_t), intent(in   ) ::   u(lo(1)-ng_u:,lo(2)-ng_u:,hi(3)-ng_u:,:)
     real(kind=dp_t), intent(inout) ::  Ip(lo(1)-1   :,lo(2)-1   :,hi(3)-1   :,:) 
     real(kind=dp_t), intent(inout) ::  Im(lo(1)-1   :,lo(2)-1   :,hi(3)-1   :,:)  
-    real(kind=dp_t), intent(inout) :: slz(lo(1)-1   :,lo(2)-1   :,hi(3)-1   :,:)
     integer        , intent(in   ) :: bc(:,:,:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
 
@@ -219,7 +218,7 @@ contains
   end subroutine ppm_3d
 
   ! characteristics based on umac
-  subroutine ppm_fpu_3d(s,ng_s,umac,ng_u,Ip,Im,slz,lo,hi,bc,dx,dt)
+  subroutine ppm_fpu_3d(s,ng_s,umac,ng_u,Ip,Im,lo,hi,bc,dx,dt)
 
     use bc_module
     use bl_constants_module
@@ -229,7 +228,6 @@ contains
     real(kind=dp_t), intent(in   ) :: umac(lo(1)-ng_u:,lo(2)-ng_u:,hi(3)-ng_u:,:)
     real(kind=dp_t), intent(inout) ::   Ip(lo(1)-1   :,lo(2)-1   :,hi(3)-1   :,:) 
     real(kind=dp_t), intent(inout) ::   Im(lo(1)-1   :,lo(2)-1   :,hi(3)-1   :,:)  
-    real(kind=dp_t), intent(inout) ::  slz(lo(1)-1   :,lo(2)-1   :,hi(3)-1   :,:)
     integer        , intent(in   ) :: bc(:,:,:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
 
