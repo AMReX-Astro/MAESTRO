@@ -127,10 +127,13 @@ contains
     real(kind=dp_t) :: slopex(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1)
     real(kind=dp_t) :: slopey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1)
 
-    real(kind=dp_t) :: Ipx(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2)
-    real(kind=dp_t) :: Imx(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2)
-    real(kind=dp_t) :: Ipy(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2)
-    real(kind=dp_t) :: Imy(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2)
+    real(kind=dp_t), allocatable :: Ipx(:,:,:)
+    real(kind=dp_t), allocatable :: Imx(:,:,:)
+    real(kind=dp_t), allocatable :: Ipy(:,:,:)
+    real(kind=dp_t), allocatable :: Imy(:,:,:)
+    
+    real(kind=dp_t), allocatable :: ulx(:,:),urx(:,:)
+    real(kind=dp_t), allocatable :: vly(:,:),vry(:,:)
 
     real(kind=dp_t) hx,hy,dt2,uavg,vlo,vhi
 
@@ -138,14 +141,16 @@ contains
 
     logical :: test
     
-    real(kind=dp_t), allocatable :: ulx(:,:),urx(:,:)
-    real(kind=dp_t), allocatable :: vly(:,:),vry(:,:)
-    
     allocate(ulx(lo(1):hi(1)+1,lo(2)-1:hi(2)+1))
     allocate(urx(lo(1):hi(1)+1,lo(2)-1:hi(2)+1))
 
     allocate(vly(lo(1)-1:hi(1)+1,lo(2):hi(2)+1))
     allocate(vry(lo(1)-1:hi(1)+1,lo(2):hi(2)+1))
+
+    allocate(Ipx(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
+    allocate(Imx(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
+    allocate(Ipy(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
+    allocate(Imy(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
 
     is = lo(1)
     js = lo(2)
@@ -322,6 +327,7 @@ contains
     enddo
 
     deallocate(ulx,urx,vly,vry)
+    deallocate(Ipx,Imx,Ipy,Imy)
 
   end subroutine mkutrans_2d
   
