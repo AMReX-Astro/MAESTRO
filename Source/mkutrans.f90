@@ -112,6 +112,8 @@ contains
     use slope_module
     use geometry, only: nr
     use variables, only: rel_eps
+    use probin_module, only: use_ppm
+    use ppm_module
 
     integer,         intent(in   ) :: n,lo(:),hi(:),ng_u,ng_ut
     real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u :,lo(2)-ng_u :,:)
@@ -124,6 +126,11 @@ contains
     
     real(kind=dp_t) :: slopex(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1)
     real(kind=dp_t) :: slopey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1)
+
+    real(kind=dp_t) :: Ipx(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2)
+    real(kind=dp_t) :: Imx(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2)
+    real(kind=dp_t) :: Ipy(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2)
+    real(kind=dp_t) :: Imy(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2)
 
     real(kind=dp_t) hx,hy,dt2,uavg,vlo,vhi
 
@@ -150,20 +157,43 @@ contains
     hx = dx(1)
     hy = dx(2)
     
-    call slopex_2d(u(:,:,1:),slopex,lo,hi,ng_u,1,adv_bc(:,:,1:))
-    call slopey_2d(u(:,:,2:),slopey,lo,hi,ng_u,1,adv_bc(:,:,2:))
+    if (use_ppm) then
+       call ppm_2d(u(:,:,1),ng_u,u,ng_u,Ipx,Imx,lo,hi,adv_bc(:,:,1:),dx,dt)
+       call ppm_2d(u(:,:,2),ng_u,u,ng_u,Ipy,Imy,lo,hi,adv_bc(:,:,2:),dx,dt)
+    else
+       call slopex_2d(u(:,:,1:),slopex,lo,hi,ng_u,1,adv_bc(:,:,1:))
+       call slopey_2d(u(:,:,2:),slopey,lo,hi,ng_u,1,adv_bc(:,:,2:))
+    end if
 
     !******************************************************************
     ! create utrans
     !******************************************************************
 
-    do j=js,je
-       do i=is,ie+1
-          ! extrapolate to edges
-          ulx(i,j) = u(i-1,j,1) + (HALF - (dt2/hx)*max(ZERO,u(i-1,j,1)))*slopex(i-1,j,1)
-          urx(i,j) = u(i  ,j,1) - (HALF + (dt2/hx)*min(ZERO,u(i  ,j,1)))*slopex(i  ,j,1)
+    if (use_ppm) then
+       do j=js,je
+          do i=is,ie+1
+             ! extrapolate to edges
+             if (u(i-1,j,1) .gt. ZERO) then
+                ulx(i,j) = u(i-1,j,1) + Ipx(i-1,j,1)
+             else
+                ulx(i,j) = u(i-1,j,1)
+             end if
+             if (u(i,j,1) .lt. ZERO) then
+                urx(i,j) = u(i  ,j,1) + Imx(i  ,j,1)
+             else
+                urx(i,j) = u(i  ,j,1)
+             end if
+          end do
        end do
-    end do
+    else
+       do j=js,je
+          do i=is,ie+1
+             ! extrapolate to edges
+             ulx(i,j) = u(i-1,j,1) + (HALF - (dt2/hx)*max(ZERO,u(i-1,j,1)))*slopex(i-1,j,1)
+             urx(i,j) = u(i  ,j,1) - (HALF + (dt2/hx)*min(ZERO,u(i  ,j,1)))*slopex(i  ,j,1)
+          end do
+       end do
+    end if
 
     ! impose lo side bc's
     if (phys_bc(1,1) .eq. INLET) then
@@ -204,25 +234,57 @@ contains
     ! create vtrans
     !******************************************************************
 
-    do j=js,je+1
-       ! compute effect of w0
-       if (j .eq. 0) then
-          vlo = w0(j)
-          vhi = HALF*(w0(j)+w0(j+1))
-       else if (j .eq. nr(n)) then
-          vlo = HALF*(w0(j-1)+w0(j))
-          vhi = w0(j)
-       else
-          vlo = HALF*(w0(j-1)+w0(j))
-          vhi = HALF*(w0(j)+w0(j+1))
-       end if
+    if (use_ppm) then
+       do j=js,je+1
+          ! compute effect of w0
+          if (j .eq. 0) then
+             vlo = w0(j)
+             vhi = HALF*(w0(j)+w0(j+1))
+          else if (j .eq. nr(n)) then
+             vlo = HALF*(w0(j-1)+w0(j))
+             vhi = w0(j)
+          else
+             vlo = HALF*(w0(j-1)+w0(j))
+             vhi = HALF*(w0(j)+w0(j+1))
+          end if
+          do i=is,ie
+             ! extrapolate to edges
+             if (u(i,j-1,2)+vlo .gt. ZERO) then
+                vly(i,j) = u(i,j-1,2) + Ipy(i,j-1,2)
+             else
+                vly(i,j) = u(i,j-1,2)
+             end if
+             if (u(i,j,2)+vhi .lt. ZERO) then
+                vry(i,j) = u(i,j  ,2) + Imy(i,j,2)
+             else
+                vry(i,j) = u(i,j  ,2)
+             end if
 
-       do i=is,ie
-          ! extrapolate to edges
-          vly(i,j) = u(i,j-1,2) + (HALF - (dt2/hy)*max(ZERO,u(i,j-1,2)+vlo))*slopey(i,j-1,1)
-          vry(i,j) = u(i,j  ,2) - (HALF + (dt2/hy)*min(ZERO,u(i,j  ,2)+vhi))*slopey(i,j  ,1)
+
+             vly(i,j) = u(i,j-1,2) + (HALF - (dt2/hy)*max(ZERO,u(i,j-1,2)+vlo))*slopey(i,j-1,1)
+             vry(i,j) = u(i,j  ,2) - (HALF + (dt2/hy)*min(ZERO,u(i,j  ,2)+vhi))*slopey(i,j  ,1)
+          end do
        end do
-    end do
+    else
+       do j=js,je+1
+          ! compute effect of w0
+          if (j .eq. 0) then
+             vlo = w0(j)
+             vhi = HALF*(w0(j)+w0(j+1))
+          else if (j .eq. nr(n)) then
+             vlo = HALF*(w0(j-1)+w0(j))
+             vhi = w0(j)
+          else
+             vlo = HALF*(w0(j-1)+w0(j))
+             vhi = HALF*(w0(j)+w0(j+1))
+          end if
+          do i=is,ie
+             ! extrapolate to edges
+             vly(i,j) = u(i,j-1,2) + (HALF - (dt2/hy)*max(ZERO,u(i,j-1,2)+vlo))*slopey(i,j-1,1)
+             vry(i,j) = u(i,j  ,2) - (HALF + (dt2/hy)*min(ZERO,u(i,j  ,2)+vhi))*slopey(i,j  ,1)
+          end do
+       end do
+    end if
 
     ! impose lo side bc's
     if (phys_bc(2,1) .eq. INLET) then

@@ -121,11 +121,11 @@ contains
        end do
     end do
 
-    ! fill sedgey
-    do j=lo(2)-1,hi(2)+2
+    ! ! fill y-component of sp and sm
+    do j=lo(2)-1,hi(2)+1
        do i=lo(1)-1,hi(1)+1
-          sp(i,j,2) = sedgex(i,j+1)
-          sm(i,j,2) = sedgex(i,j  )
+          sp(i,j,2) = sedgey(i,j+1)
+          sm(i,j,2) = sedgey(i,j  )
        end do
     end do
 
