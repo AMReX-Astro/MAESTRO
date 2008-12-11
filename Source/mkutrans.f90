@@ -177,17 +177,8 @@ contains
     if (use_ppm) then
        do j=js,je
           do i=is,ie+1
-             ! extrapolate to edges
-             if (u(i-1,j,1) .gt. ZERO) then
-                ulx(i,j) = u(i-1,j,1) + Ipx(i-1,j,1)
-             else
-                ulx(i,j) = u(i-1,j,1)
-             end if
-             if (u(i,j,1) .lt. ZERO) then
-                urx(i,j) = u(i  ,j,1) + Imx(i  ,j,1)
-             else
-                urx(i,j) = u(i  ,j,1)
-             end if
+             ulx(i,j) = u(i-1,j,1) + Ipx(i-1,j,1)
+             urx(i,j) = u(i  ,j,1) + Imx(i  ,j,1)
           end do
        end do
     else
@@ -253,17 +244,8 @@ contains
              vhi = HALF*(w0(j)+w0(j+1))
           end if
           do i=is,ie
-             ! extrapolate to edges
-             if (u(i,j-1,2)+vlo .gt. ZERO) then
-                vly(i,j) = u(i,j-1,2) + Ipy(i,j-1,2)
-             else
-                vly(i,j) = u(i,j-1,2)
-             end if
-             if (u(i,j,2)+vhi .lt. ZERO) then
-                vry(i,j) = u(i,j  ,2) + Imy(i,j,2)
-             else
-                vry(i,j) = u(i,j  ,2)
-             end if
+             vly(i,j) = u(i,j-1,2) + Ipy(i,j-1,2)
+             vry(i,j) = u(i,j  ,2) + Imy(i,j,2)
           end do
        end do
     else

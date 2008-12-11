@@ -108,8 +108,14 @@ contains
        do i=lo(1)-1,hi(1)+1
           sigma = abs(u(i,j,1))*dt/dx(1)
           s6 = SIX*s(i,j) - THREE*(sm(i,j,1)+sp(i,j,1))
-          Ip(i,j,1) = sp(i,j,1) - (sigma/TWO)*(sp(i,j,1)-sm(i,j,1)-(ONE-TWO3RD*sigma)*s6)
-          Im(i,j,1) = sm(i,j,1) + (sigma/TWO)*(sp(i,j,1)-sm(i,j,1)+(ONE-TWO3RD*sigma)*s6)
+          if (u(i,j,1) .gt. ZERO) then
+             Ip(i,j,1) = sp(i,j,1) - (sigma/TWO)*(sp(i,j,1)-sm(i,j,1)-(ONE-TWO3RD*sigma)*s6)
+             Im(i,j,1) = ZERO
+          end if
+          if (u(i,j,1) .lt. ZERO) then
+             Ip(i,j,1) = ZERO
+             Im(i,j,1) = sm(i,j,1) + (sigma/TWO)*(sp(i,j,1)-sm(i,j,1)+(ONE-TWO3RD*sigma)*s6)
+          end if
        end do
     end do
 
@@ -168,8 +174,14 @@ contains
        do i=lo(1)-1,hi(1)+1
           sigma = abs(u(i,j,2))*dt/dx(2)
           s6 = SIX*s(i,j) - THREE*(sm(i,j,2)+sp(i,j,2))
-          Ip(i,j,2) = sp(i,j,2) - (sigma/TWO)*(sp(i,j,2)-sm(i,j,2)-(ONE-TWO3RD*sigma)*s6)
-          Im(i,j,2) = sm(i,j,2) + (sigma/TWO)*(sp(i,j,2)-sm(i,j,2)+(ONE-TWO3RD*sigma)*s6)
+          if (u(i,j,2) .gt. ZERO) then
+             Ip(i,j,2) = sp(i,j,2) - (sigma/TWO)*(sp(i,j,2)-sm(i,j,2)-(ONE-TWO3RD*sigma)*s6)
+             Im(i,j,2) = ZERO
+          end if
+          if (u(i,j,2) .lt. ZERO) then
+             Ip(i,j,2) = ZERO
+             Im(i,j,2) = sm(i,j,2) + (sigma/TWO)*(sp(i,j,2)-sm(i,j,2)+(ONE-TWO3RD*sigma)*s6)
+          end if
        end do
     end do
 
