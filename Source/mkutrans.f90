@@ -127,10 +127,10 @@ contains
     real(kind=dp_t) :: slopex(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1)
     real(kind=dp_t) :: slopey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1)
 
-    real(kind=dp_t), allocatable :: Ipx(:,:,:)
-    real(kind=dp_t), allocatable :: Imx(:,:,:)
-    real(kind=dp_t), allocatable :: Ipy(:,:,:)
-    real(kind=dp_t), allocatable :: Imy(:,:,:)
+    real(kind=dp_t), allocatable :: Ipu(:,:,:)
+    real(kind=dp_t), allocatable :: Imu(:,:,:)
+    real(kind=dp_t), allocatable :: Ipv(:,:,:)
+    real(kind=dp_t), allocatable :: Imv(:,:,:)
     
     real(kind=dp_t), allocatable :: ulx(:,:),urx(:,:)
     real(kind=dp_t), allocatable :: vly(:,:),vry(:,:)
@@ -147,10 +147,10 @@ contains
     allocate(vly(lo(1)-1:hi(1)+1,lo(2):hi(2)+1))
     allocate(vry(lo(1)-1:hi(1)+1,lo(2):hi(2)+1))
 
-    allocate(Ipx(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
-    allocate(Imx(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
-    allocate(Ipy(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
-    allocate(Imy(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
+    allocate(Ipu(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
+    allocate(Imu(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
+    allocate(Ipv(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
+    allocate(Imv(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
 
     is = lo(1)
     js = lo(2)
@@ -163,8 +163,8 @@ contains
     hy = dx(2)
     
     if (use_ppm) then
-       call ppm_2d(u(:,:,1),ng_u,u,ng_u,Ipx,Imx,lo,hi,adv_bc(:,:,1:),dx,dt)
-       call ppm_2d(u(:,:,2),ng_u,u,ng_u,Ipy,Imy,lo,hi,adv_bc(:,:,2:),dx,dt)
+       call ppm_2d(u(:,:,1),ng_u,u,ng_u,Ipu,Imu,lo,hi,adv_bc(:,:,1:),dx,dt)
+       call ppm_2d(u(:,:,2),ng_u,u,ng_u,Ipv,Imv,lo,hi,adv_bc(:,:,2:),dx,dt)
     else
        call slopex_2d(u(:,:,1:),slopex,lo,hi,ng_u,1,adv_bc(:,:,1:))
        call slopey_2d(u(:,:,2:),slopey,lo,hi,ng_u,1,adv_bc(:,:,2:))
@@ -177,8 +177,8 @@ contains
     if (use_ppm) then
        do j=js,je
           do i=is,ie+1
-             ulx(i,j) = u(i-1,j,1) + Ipx(i-1,j,1)
-             urx(i,j) = u(i  ,j,1) + Imx(i  ,j,1)
+             ulx(i,j) = u(i-1,j,1) + Ipu(i-1,j,1)
+             urx(i,j) = u(i  ,j,1) + Imu(i  ,j,1)
           end do
        end do
     else
@@ -244,8 +244,8 @@ contains
              vhi = HALF*(w0(j)+w0(j+1))
           end if
           do i=is,ie
-             vly(i,j) = u(i,j-1,2) + Ipy(i,j-1,2)
-             vry(i,j) = u(i,j  ,2) + Imy(i,j,2)
+             vly(i,j) = u(i,j-1,2) + Ipv(i,j-1,2)
+             vry(i,j) = u(i,j  ,2) + Imv(i,j,2)
           end do
        end do
     else
@@ -305,7 +305,7 @@ contains
     enddo
 
     deallocate(ulx,urx,vly,vry)
-    deallocate(Ipx,Imx,Ipy,Imy)
+    deallocate(Ipu,Imu,Ipv,Imv)
 
   end subroutine mkutrans_2d
   
