@@ -156,6 +156,7 @@ contains
     use bl_constants_module
     use variables, only: rel_eps
     use probin_module, only: use_ppm
+    use ppm_module
 
     integer        , intent(in   ) :: n,lo(:),hi(:),ng_u,ng_um,ng_ut,ng_f
     real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u :,lo(2)-ng_u :,:)
