@@ -27,7 +27,7 @@ contains
     ! local
     integer :: i,j
 
-    real(kind=dp_t) :: dsl, dsr, dsc
+    real(kind=dp_t) :: dsl, dsr, dsc, sigma, s6
 
     ! cell-centered indexing
     ! s_{\ib,+}, s_{\ib,-}
@@ -91,6 +91,16 @@ contains
        end do
     end do
 
+    ! compute Ip and Im
+    do j=lo(2)-1,hi(2)+1
+       do i=lo(1)-1,hi(1)+1
+          sigma = abs(u(i,j,1))*dt/dx(1)
+          s6 = SIX*s(i,j) - THREE*(sm(i,j,1)+sp(i,j,1))
+          Ip(i,j,1) = sp(i,j,1) - (sigma/TWO)*(sp(i,j,1)-sm(i,j,1)-(ONE-TWO3RD*sigma)*s6)
+          Im(i,j,1) = sm(i,j,1) + (sigma/TWO)*(sp(i,j,1)-sm(i,j,1)+(ONE-TWO3RD*sigma)*s6)
+       end do
+    end do
+
     ! compute van Leer slopes in y-direction
     do j=lo(2)-2,hi(2)+2
        do i=lo(1)-1,hi(1)+1
@@ -138,6 +148,16 @@ contains
           if (abs(sm(i,j,2)-s(i,j)) .ge. TWO*abs(sp(i,j,2)-s(i,j))) then
              sm(i,j,2) = THREE*s(i,j) - TWO*sp(i,j,2)
           end if
+       end do
+    end do
+
+    ! compute Ip and Im
+    do j=lo(2)-1,hi(2)+1
+       do i=lo(1)-1,hi(1)+1
+          sigma = abs(u(i,j,2))*dt/dx(2)
+          s6 = SIX*s(i,j) - THREE*(sm(i,j,2)+sp(i,j,2))
+          Ip(i,j,2) = sp(i,j,2) - (sigma/TWO)*(sp(i,j,2)-sm(i,j,2)-(ONE-TWO3RD*sigma)*s6)
+          Im(i,j,2) = sm(i,j,2) + (sigma/TWO)*(sp(i,j,2)-sm(i,j,2)+(ONE-TWO3RD*sigma)*s6)
        end do
     end do
 
