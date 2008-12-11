@@ -111,10 +111,10 @@ contains
           s6 = SIX*s(i,j) - THREE*(sm(i,j,1)+sp(i,j,1))
           if (u(i,j,1) .gt. ZERO) then
              Ip(i,j,1) = sp(i,j,1) - (sigma/TWO)*(sp(i,j,1)-sm(i,j,1)-(ONE-TWO3RD*sigma)*s6)
-             Im(i,j,1) = ZERO
+             Im(i,j,1) = s(i,j)
           end if
           if (u(i,j,1) .lt. ZERO) then
-             Ip(i,j,1) = ZERO
+             Ip(i,j,1) = s(i,j)
              Im(i,j,1) = sm(i,j,1) + (sigma/TWO)*(sp(i,j,1)-sm(i,j,1)+(ONE-TWO3RD*sigma)*s6)
           end if
        end do
@@ -184,10 +184,10 @@ contains
           s6 = SIX*s(i,j) - THREE*(sm(i,j,2)+sp(i,j,2))
           if (u(i,j,2)+v_from_w0 .gt. ZERO) then
              Ip(i,j,2) = sp(i,j,2) - (sigma/TWO)*(sp(i,j,2)-sm(i,j,2)-(ONE-TWO3RD*sigma)*s6)
-             Im(i,j,2) = ZERO
+             Im(i,j,2) = s(i,j)
           end if
           if (u(i,j,2)+v_from_w0 .lt. ZERO) then
-             Ip(i,j,2) = ZERO
+             Ip(i,j,2) = s(i,j)
              Im(i,j,2) = sm(i,j,2) + (sigma/TWO)*(sp(i,j,2)-sm(i,j,2)+(ONE-TWO3RD*sigma)*s6)
           end if
        end do
@@ -301,12 +301,12 @@ contains
           if(umac(i+1,j) .gt. ZERO) then
              Ip(i,j,1) = sp(i,j,1) - (sigmap/TWO)*(sp(i,j,1)-sm(i,j,1)-(ONE-TWO3RD*sigmap)*s6)
           else
-             Ip(i,j,1) = ZERO
+             Ip(i,j,1) = s(i,j)
           end if
           if(umac(i,j) .lt. ZERO) then
              Im(i,j,1) = sm(i,j,1) + (sigmam/TWO)*(sp(i,j,1)-sm(i,j,1)+(ONE-TWO3RD*sigmam)*s6)
           else
-             Im(i,j,1) = ZERO
+             Im(i,j,1) = s(i,j)
           end if
        end do
     end do
@@ -381,12 +381,12 @@ contains
           if(vmac(i,j+1)+vhi .gt. ZERO) then
              Ip(i,j,2) = sp(i,j,2) - (sigmap/TWO)*(sp(i,j,2)-sm(i,j,2)-(ONE-TWO3RD*sigmap)*s6)
           else
-             Ip(i,j,2) = ZERO
+             Ip(i,j,2) = s(i,j)
           end if
           if(vmac(i,j)+vlo .lt. ZERO) then
              Im(i,j,2) = sm(i,j,2) + (sigmam/TWO)*(sp(i,j,2)-sm(i,j,2)+(ONE-TWO3RD*sigmam)*s6)
           else
-             Im(i,j,2) = ZERO
+             Im(i,j,2) = s(i,j)
           end if
        end do
     end do
