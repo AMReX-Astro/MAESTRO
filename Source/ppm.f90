@@ -217,7 +217,7 @@ contains
     ! local
     integer :: i,j
 
-    real(kind=dp_t) :: dsl, dsr, dsc, sigmam, sigmap, s6
+    real(kind=dp_t) :: dsl, dsr, dsc, sigmam, sigmap, s6, vlo, vhi
 
     ! s_{\ib,+}, s_{\ib,-}
     real(kind=dp_t), allocatable :: sp(:,:,:)
@@ -363,16 +363,27 @@ contains
 
     ! compute Ip and Im
     do j=lo(2)-1,hi(2)+1
+       ! compute effect of w0
+       if (j .lt. 0) then
+          vlo = w0(0)
+          vhi = w0(0)
+       else if (j .gt. nr(n)-1) then
+          vlo = w0(nr(n))
+          vhi = w0(nr(n))
+       else
+          vlo = w0(j)
+          vhi = w0(j+1)
+       end if
        do i=lo(1)-1,hi(1)+1
-          sigmam = abs(vmac(i,j))*dt/dx(2)
-          sigmap = abs(vmac(i,j+1))*dt/dx(2)
+          sigmap = abs(vmac(i,j+1)+vhi)*dt/dx(2)
+          sigmam = abs(vmac(i,j  )+vlo)*dt/dx(2)
           s6 = SIX*s(i,j) - THREE*(sm(i,j,2)+sp(i,j,2))
-          if(vmac(i,j+1) .gt. ZERO) then
+          if(vmac(i,j+1)+vhi .gt. ZERO) then
              Ip(i,j,2) = sp(i,j,2) - (sigmap/TWO)*(sp(i,j,2)-sm(i,j,2)-(ONE-TWO3RD*sigmap)*s6)
           else
              Ip(i,j,2) = ZERO
           end if
-          if(vmac(i,j) .lt. ZERO) then
+          if(vmac(i,j)+vlo .lt. ZERO) then
              Im(i,j,2) = sm(i,j,2) + (sigmam/TWO)*(sp(i,j,2)-sm(i,j,2)+(ONE-TWO3RD*sigmam)*s6)
           else
              Im(i,j,2) = ZERO
