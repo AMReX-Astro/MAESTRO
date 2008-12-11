@@ -963,7 +963,7 @@ s_{i+\half}^{\text{H.O.}} = \frac{1}{2}\left(s_{i} + s_{i+1}\right) - \frac{1}{6
 \delta s_i = \frac{1}{2}\left(s_{i+1}-s_{i-1}\right),
 \end{equation}
 \begin{equation}
-\delta s_i^{vL} = \text{sign}(\delta s_i)\left(|\delta s_i|, ~ 2|s_{i+1}-s_{i}|, ~ 2|s_i-s_{i-1}|\right).
+\delta s_i^{vL} = \text{sign}(\delta s_i)\min\left(|\delta s_i|, ~ 2|s_{i+1}-s_{i}|, ~ 2|s_i-s_{i-1}|\right).
 \end{equation}
 Without the limiters, this is the familiar 4th-order spatial interpolation formula:
 \begin{equation}
