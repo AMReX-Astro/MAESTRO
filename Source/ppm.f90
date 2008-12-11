@@ -11,23 +11,25 @@ module ppm_module
 contains
 
   ! characteristics based on u
-  subroutine ppm_2d(s,ng_s,u,ng_u,Ip,Im,lo,hi,bc,dx,dt)
+  subroutine ppm_2d(n,s,ng_s,u,ng_u,Ip,Im,w0,lo,hi,bc,dx,dt)
 
     use bc_module
     use bl_constants_module
+    use geometry, only: nr
 
-    integer        , intent(in   ) :: lo(:),hi(:),ng_s,ng_u
-    real(kind=dp_t), intent(in   ) ::   s(lo(1)-ng_s:,lo(2)-ng_s:)
-    real(kind=dp_t), intent(in   ) ::   u(lo(1)-ng_u:,lo(2)-ng_u:,:)
-    real(kind=dp_t), intent(inout) ::  Ip(lo(1)-1   :,lo(2)-1   :,:) 
-    real(kind=dp_t), intent(inout) ::  Im(lo(1)-1   :,lo(2)-1   :,:) 
+    integer        , intent(in   ) :: n,lo(:),hi(:),ng_s,ng_u
+    real(kind=dp_t), intent(in   ) ::  s(lo(1)-ng_s:,lo(2)-ng_s:)
+    real(kind=dp_t), intent(in   ) ::  u(lo(1)-ng_u:,lo(2)-ng_u:,:)
+    real(kind=dp_t), intent(inout) :: Ip(lo(1)-1   :,lo(2)-1   :,:) 
+    real(kind=dp_t), intent(inout) :: Im(lo(1)-1   :,lo(2)-1   :,:) 
+    real(kind=dp_t), intent(in   ) :: w0(0:)
     integer        , intent(in   ) :: bc(:,:,:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
 
     ! local
     integer :: i,j
 
-    real(kind=dp_t) :: dsl, dsr, dsc, sigma, s6
+    real(kind=dp_t) :: dsl, dsr, dsc, sigma, s6, v_from_w0
 
     ! s_{\ib,+}, s_{\ib,-}
     real(kind=dp_t), allocatable :: sp(:,:,:)
@@ -170,14 +172,21 @@ contains
 
     ! compute Ip and Im
     do j=lo(2)-1,hi(2)+1
+       if (j .le. 0) then
+          v_from_w0 = w0(0)
+       else if (j .ge. nr(n)) then
+          v_from_w0 = w0(nr(n))
+       else
+          v_from_w0 = HALF*(w0(j)+w0(j+1))
+       end if
        do i=lo(1)-1,hi(1)+1
-          sigma = abs(u(i,j,2))*dt/dx(2)
+          sigma = abs(u(i,j,2)+v_from_w0)*dt/dx(2)
           s6 = SIX*s(i,j) - THREE*(sm(i,j,2)+sp(i,j,2))
-          if (u(i,j,2) .gt. ZERO) then
+          if (u(i,j,2)+v_from_w0 .gt. ZERO) then
              Ip(i,j,2) = sp(i,j,2) - (sigma/TWO)*(sp(i,j,2)-sm(i,j,2)-(ONE-TWO3RD*sigma)*s6)
              Im(i,j,2) = ZERO
           end if
-          if (u(i,j,2) .lt. ZERO) then
+          if (u(i,j,2)+v_from_w0 .lt. ZERO) then
              Ip(i,j,2) = ZERO
              Im(i,j,2) = sm(i,j,2) + (sigma/TWO)*(sp(i,j,2)-sm(i,j,2)+(ONE-TWO3RD*sigma)*s6)
           end if
@@ -189,17 +198,19 @@ contains
   end subroutine ppm_2d
 
   ! characteristics based on umac
-  subroutine ppm_fpu_2d(s,ng_s,umac,vmac,ng_u,Ip,Im,lo,hi,bc,dx,dt)
+  subroutine ppm_fpu_2d(n,s,ng_s,umac,vmac,ng_u,Ip,Im,w0,lo,hi,bc,dx,dt)
 
     use bc_module
     use bl_constants_module
+    use geometry, only: nr
 
-    integer        , intent(in   ) :: lo(:),hi(:),ng_s,ng_u
+    integer        , intent(in   ) :: n,lo(:),hi(:),ng_s,ng_u
     real(kind=dp_t), intent(in   ) ::    s(lo(1)-ng_s:,lo(2)-ng_s:)
     real(kind=dp_t), intent(in   ) :: umac(lo(1)-ng_u:,lo(2)-ng_u:)
     real(kind=dp_t), intent(in   ) :: vmac(lo(1)-ng_u:,lo(2)-ng_u:)
     real(kind=dp_t), intent(inout) ::   Ip(lo(1)-1   :,lo(2)-1   :,:) 
     real(kind=dp_t), intent(inout) ::   Im(lo(1)-1   :,lo(2)-1   :,:) 
+    real(kind=dp_t), intent(in   ) :: w0(0:)
     integer        , intent(in   ) :: bc(:,:,:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
 
@@ -287,15 +298,15 @@ contains
           sigmam = abs(umac(i,j))*dt/dx(1)
           sigmap = abs(umac(i+1,j))*dt/dx(1)
           s6 = SIX*s(i,j) - THREE*(sm(i,j,1)+sp(i,j,1))
-          if(umac(i,j) .lt. ZERO) then
-             Im(i,j,1) = sm(i,j,1) + (sigmam/TWO)*(sp(i,j,1)-sm(i,j,1)+(ONE-TWO3RD*sigmam)*s6)
-          else
-             Im(i,j,1) = ZERO
-          end if
           if(umac(i+1,j) .gt. ZERO) then
              Ip(i,j,1) = sp(i,j,1) - (sigmap/TWO)*(sp(i,j,1)-sm(i,j,1)-(ONE-TWO3RD*sigmap)*s6)
           else
              Ip(i,j,1) = ZERO
+          end if
+          if(umac(i,j) .lt. ZERO) then
+             Im(i,j,1) = sm(i,j,1) + (sigmam/TWO)*(sp(i,j,1)-sm(i,j,1)+(ONE-TWO3RD*sigmam)*s6)
+          else
+             Im(i,j,1) = ZERO
           end if
        end do
     end do
@@ -356,15 +367,15 @@ contains
           sigmam = abs(vmac(i,j))*dt/dx(2)
           sigmap = abs(vmac(i,j+1))*dt/dx(2)
           s6 = SIX*s(i,j) - THREE*(sm(i,j,2)+sp(i,j,2))
-          if(vmac(i,j) .lt. ZERO) then
-             Im(i,j,2) = sm(i,j,2) + (sigmam/TWO)*(sp(i,j,2)-sm(i,j,2)+(ONE-TWO3RD*sigmam)*s6)
-          else
-             Im(i,j,2) = ZERO
-          end if
           if(vmac(i,j+1) .gt. ZERO) then
              Ip(i,j,2) = sp(i,j,2) - (sigmap/TWO)*(sp(i,j,2)-sm(i,j,2)-(ONE-TWO3RD*sigmap)*s6)
           else
              Ip(i,j,2) = ZERO
+          end if
+          if(vmac(i,j) .lt. ZERO) then
+             Im(i,j,2) = sm(i,j,2) + (sigmam/TWO)*(sp(i,j,2)-sm(i,j,2)+(ONE-TWO3RD*sigmam)*s6)
+          else
+             Im(i,j,2) = ZERO
           end if
        end do
     end do

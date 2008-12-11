@@ -163,8 +163,8 @@ contains
     hy = dx(2)
     
     if (use_ppm) then
-       call ppm_2d(u(:,:,1),ng_u,u,ng_u,Ipu,Imu,lo,hi,adv_bc(:,:,1:),dx,dt)
-       call ppm_2d(u(:,:,2),ng_u,u,ng_u,Ipv,Imv,lo,hi,adv_bc(:,:,2:),dx,dt)
+       call ppm_2d(n,u(:,:,1),ng_u,u,ng_u,Ipu,Imu,w0,lo,hi,adv_bc(:,:,1:),dx,dt)
+       call ppm_2d(n,u(:,:,2),ng_u,u,ng_u,Ipv,Imv,w0,lo,hi,adv_bc(:,:,2:),dx,dt)
     else
        call slopex_2d(u(:,:,1:),slopex,lo,hi,ng_u,1,adv_bc(:,:,1:))
        call slopey_2d(u(:,:,2:),slopey,lo,hi,ng_u,1,adv_bc(:,:,2:))
