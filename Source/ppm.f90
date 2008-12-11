@@ -29,18 +29,30 @@ contains
 
     real(kind=dp_t) :: dsl, dsr, dsc, sigma, s6
 
-    ! cell-centered indexing
+
     ! s_{\ib,+}, s_{\ib,-}
-    real(kind=dp_t) :: sp(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2)
-    real(kind=dp_t) :: sm(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2)
+    real(kind=dp_t), allocatable :: sp(:,:,:)
+    real(kind=dp_t), allocatable :: sm(:,:,:)
 
     ! \delta s_{\ib}^{vL}
-    real(kind=dp_t) :: dsvl_x(lo(1)-2:hi(1)+2,lo(2)-1:hi(2)+1)
-    real(kind=dp_t) :: dsvl_y(lo(1)-1:hi(1)+1,lo(2)-2:hi(2)+2)
+    real(kind=dp_t), allocatable :: dsvl_x(:,:)
+    real(kind=dp_t), allocatable :: dsvl_y(:,:)
+
+    ! s_{i+\half}^{H.O.}
+    real(kind=dp_t), allocatable :: sedgex(:,:)
+    real(kind=dp_t), allocatable :: sedgey(:,:)
+
+    ! cell-centered indexing
+    allocate(sp(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
+    allocate(sm(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
+
+    ! cell-centered indexing
+    allocate(dsvl_x(lo(1)-2:hi(1)+2,lo(2)-1:hi(2)+1))
+    allocate(dsvl_y(lo(1)-1:hi(1)+1,lo(2)-2:hi(2)+2))
 
     ! edge-centered indexing
-    real(kind=dp_t) :: sedgex(lo(1)-1:hi(1)+2,lo(2)-1:hi(2)+1)
-    real(kind=dp_t) :: sedgey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+2)
+    allocate(sedgex(lo(1)-1:hi(1)+2,lo(2)-1:hi(2)+1))
+    allocate(sedgey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+2))
 
     ! compute van Leer slopes in x-direction
     do j=lo(2)-1,hi(2)+1
@@ -160,6 +172,8 @@ contains
           Im(i,j,2) = sm(i,j,2) + (sigma/TWO)*(sp(i,j,2)-sm(i,j,2)+(ONE-TWO3RD*sigma)*s6)
        end do
     end do
+
+    deallocate(sp,sm,dsvl_x,dsvl_y,sedgex,sedgey)
 
   end subroutine ppm_2d
 
