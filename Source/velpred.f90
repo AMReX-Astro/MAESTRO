@@ -155,6 +155,7 @@ contains
     use slope_module
     use bl_constants_module
     use variables, only: rel_eps
+    use probin_module, only: use_ppm
 
     integer        , intent(in   ) :: n,lo(:),hi(:),ng_u,ng_um,ng_ut,ng_f
     real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u :,lo(2)-ng_u :,:)
@@ -172,6 +173,11 @@ contains
     real(kind=dp_t) :: slopex(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2)
     real(kind=dp_t) :: slopey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2)
 
+    real(kind=dp_t), allocatable :: Ipu(:,:,:)
+    real(kind=dp_t), allocatable :: Imu(:,:,:)
+    real(kind=dp_t), allocatable :: Ipv(:,:,:)
+    real(kind=dp_t), allocatable :: Imv(:,:,:)
+
     ! these correspond to u_L^x, etc.
     real(kind=dp_t), allocatable :: ulx(:,:,:),urx(:,:,:),uimhx(:,:,:)
     real(kind=dp_t), allocatable :: uly(:,:,:),ury(:,:,:),uimhy(:,:,:)
@@ -185,6 +191,11 @@ contains
     integer :: i,j,is,js,ie,je
 
     logical :: test
+
+    allocate(Ipu(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
+    allocate(Imu(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
+    allocate(Ipv(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
+    allocate(Imv(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
 
     allocate(  ulx(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,2))
     allocate(  urx(lo(1):hi(1)+1,lo(2)-1:hi(2)+1,2))
@@ -211,26 +222,42 @@ contains
     hx = dx(1)
     hy = dx(2)
 
-    ! compute velocity slopes
-    call slopex_2d(u,slopex,lo,hi,ng_u,2,adv_bc)
-    call slopey_2d(u,slopey,lo,hi,ng_u,2,adv_bc)
-
+    if (use_ppm) then
+       call ppm_2d(u(:,:,1),ng_u,u,ng_u,Ipu,Imu,lo,hi,adv_bc(:,:,1:),dx,dt)
+       call ppm_2d(u(:,:,2),ng_u,u,ng_u,Ipv,Imv,lo,hi,adv_bc(:,:,2:),dx,dt)
+    else
+       call slopex_2d(u,slopex,lo,hi,ng_u,2,adv_bc)
+       call slopey_2d(u,slopey,lo,hi,ng_u,2,adv_bc)
+    end if
+       
     !******************************************************************
     ! Create u_{\i-\half\e_x}^x, etc.
     !******************************************************************
 
-    do j=js-1,je+1
-       do i=is,ie+1
-          ! extrapolate both components of velocity to left face
-          ulx(i,j,1) = u(i-1,j,1) + (HALF - (dt2/hx)*max(ZERO,u(i-1,j,1)))*slopex(i-1,j,1)
-          ulx(i,j,2) = u(i-1,j,2) + (HALF - (dt2/hx)*max(ZERO,u(i-1,j,1)))*slopex(i-1,j,2)
-
-          ! extrapolate both components of velocity to right face
-          urx(i,j,1) = u(i  ,j,1) - (HALF + (dt2/hx)*min(ZERO,u(i  ,j,1)))*slopex(i  ,j,1)
-          urx(i,j,2) = u(i  ,j,2) - (HALF + (dt2/hx)*min(ZERO,u(i  ,j,1)))*slopex(i  ,j,2)
+    if (use_ppm) then
+       do j=js-1,je+1
+          do i=is,ie+1
+             ! extrapolate both components of velocity to left face
+             ulx(i,j,1) = u(i-1,j,1) + Ipu(i-1,j,1)
+             ulx(i,j,2) = u(i-1,j,2) + Ipv(i-1,j,1)
+             ! extrapolate both components of velocity to right face
+             urx(i,j,1) = u(i  ,j,1) + Imu(i,j,1)
+             urx(i,j,2) = u(i  ,j,2) + Imv(i,j,1)
+          end do
        end do
-    end do
-
+    else
+       do j=js-1,je+1
+          do i=is,ie+1
+             ! extrapolate both components of velocity to left face
+             ulx(i,j,1) = u(i-1,j,1) + (HALF - (dt2/hx)*max(ZERO,u(i-1,j,1)))*slopex(i-1,j,1)
+             ulx(i,j,2) = u(i-1,j,2) + (HALF - (dt2/hx)*max(ZERO,u(i-1,j,1)))*slopex(i-1,j,2)
+             ! extrapolate both components of velocity to right face
+             urx(i,j,1) = u(i  ,j,1) - (HALF + (dt2/hx)*min(ZERO,u(i  ,j,1)))*slopex(i  ,j,1)
+             urx(i,j,2) = u(i  ,j,2) - (HALF + (dt2/hx)*min(ZERO,u(i  ,j,1)))*slopex(i  ,j,2)
+          end do
+       end do
+    end if
+    
     ! impose lo side bc's
     if (phys_bc(1,1) .eq. INLET) then
        ulx(is,js-1:je+1,1:2) = u(is-1,js-1:je+1,1:2)
@@ -275,29 +302,40 @@ contains
        enddo
     enddo
 
-    do j=js,je+1
-       ! compute effect of w0
-       if (j .eq. 0) then
-          vlo = w0(j)
-          vhi = HALF*(w0(j)+w0(j+1))
-       else if (j .eq. nr(n)) then
-          vlo = HALF*(w0(j-1)+w0(j))
-          vhi = w0(j)
-       else
-          vlo = HALF*(w0(j-1)+w0(j))
-          vhi = HALF*(w0(j)+w0(j+1))
-       end if
-
-       do i=is-1,ie+1
-          ! extrapolate both components of velocity to left face
-          uly(i,j,1) = u(i,j-1,1) + (HALF-(dt2/hy)*max(ZERO,u(i,j-1,2)+vlo))*slopey(i,j-1,1)
-          uly(i,j,2) = u(i,j-1,2) + (HALF-(dt2/hy)*max(ZERO,u(i,j-1,2)+vlo))*slopey(i,j-1,2)
-
-          ! extrapolate both components of velocity to right face
-          ury(i,j,1) = u(i,j  ,1) - (HALF+(dt2/hy)*min(ZERO,u(i,j,2)+vhi))*slopey(i,j  ,1)
-          ury(i,j,2) = u(i,j  ,2) - (HALF+(dt2/hy)*min(ZERO,u(i,j,2)+vhi))*slopey(i,j  ,2)
+    if (use_ppm) then
+       do j=js,je+1
+          do i=is-1,ie+1
+             ! extrapolate both components of velocity to left face
+             uly(i,j,1) = u(i,j-1,1) + Ipu(i,j-1,2)
+             uly(i,j,2) = u(i,j-1,2) + Ipv(i,j-1,2)
+             ! extrapolate both components of velocity to right face
+             ury(i,j,1) = u(i,j  ,1) + Imu(i,j,2)
+             ury(i,j,2) = u(i,j  ,2) + Imv(i,j,2)
+          end do
        end do
-    end do
+    else
+       do j=js,je+1
+          ! compute effect of w0
+          if (j .eq. 0) then
+             vlo = w0(j)
+             vhi = HALF*(w0(j)+w0(j+1))
+          else if (j .eq. nr(n)) then
+             vlo = HALF*(w0(j-1)+w0(j))
+             vhi = w0(j)
+          else
+             vlo = HALF*(w0(j-1)+w0(j))
+             vhi = HALF*(w0(j)+w0(j+1))
+          end if
+          do i=is-1,ie+1
+             ! extrapolate both components of velocity to left face
+             uly(i,j,1) = u(i,j-1,1) + (HALF-(dt2/hy)*max(ZERO,u(i,j-1,2)+vlo))*slopey(i,j-1,1)
+             uly(i,j,2) = u(i,j-1,2) + (HALF-(dt2/hy)*max(ZERO,u(i,j-1,2)+vlo))*slopey(i,j-1,2)
+             ! extrapolate both components of velocity to right face
+             ury(i,j,1) = u(i,j  ,1) - (HALF+(dt2/hy)*min(ZERO,u(i,j,2)+vhi))*slopey(i,j  ,1)
+             ury(i,j,2) = u(i,j  ,2) - (HALF+(dt2/hy)*min(ZERO,u(i,j,2)+vhi))*slopey(i,j  ,2)
+          end do
+       end do
+    end if
 
     ! impose lo side bc's
     if (phys_bc(2,1) .eq. INLET) then
@@ -439,6 +477,7 @@ contains
     endif
 
     deallocate(ulx,urx,uimhx,uly,ury,uimhy,umacl,umacr,vmacl,vmacr)
+    deallocate(Ipu,Imu,Ipv,Imv)
 
   end subroutine velpred_2d
 

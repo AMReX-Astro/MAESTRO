@@ -232,20 +232,9 @@ contains
 
     if (use_ppm) then
        do j=js,je+1
-          ! compute effect of w0
-          if (j .eq. 0) then
-             vlo = w0(j)
-             vhi = HALF*(w0(j)+w0(j+1))
-          else if (j .eq. nr(n)) then
-             vlo = HALF*(w0(j-1)+w0(j))
-             vhi = w0(j)
-          else
-             vlo = HALF*(w0(j-1)+w0(j))
-             vhi = HALF*(w0(j)+w0(j+1))
-          end if
           do i=is,ie
              vly(i,j) = u(i,j-1,2) + Ipv(i,j-1,2)
-             vry(i,j) = u(i,j  ,2) + Imv(i,j,2)
+             vry(i,j) = u(i,j  ,2) + Imv(i,j  ,2)
           end do
        end do
     else
