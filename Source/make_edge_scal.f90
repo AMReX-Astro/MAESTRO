@@ -189,6 +189,8 @@ contains
     use slope_module
     use bl_constants_module
     use variables, only: rel_eps
+    use ppm_module
+    use probin_module, only: use_ppm
 
     integer        , intent(in   ) :: lo(:),hi(:),n,ng_s,ng_se,ng_um,ng_f
     real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :,:)
@@ -208,9 +210,13 @@ contains
     ! Local variables
     real(kind=dp_t) :: slopex(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1)
     real(kind=dp_t) :: slopey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1)
+
     real(kind=dp_t) :: hx,hy,dt2,dt4,savg
 
     integer :: i,j,is,js,ie,je
+
+    real(kind=dp_t), allocatable :: Ip(:,:,:)
+    real(kind=dp_t), allocatable :: Im(:,:,:)
 
     ! these correspond to s_L^x, etc.
     real(kind=dp_t), allocatable:: slx(:,:),srx(:,:)
@@ -222,6 +228,9 @@ contains
     ! these correspond to \mathrm{sedge}_L^x, etc.
     real(kind=dp_t), allocatable:: sedgelx(:,:),sedgerx(:,:)
     real(kind=dp_t), allocatable:: sedgely(:,:),sedgery(:,:)
+
+    allocate(Ip(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
+    allocate(Im(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
 
     ! Normal predictor states.
     ! Allocated from lo:hi+1 in the normal direction
@@ -247,8 +256,13 @@ contains
     js = lo(2)
     je = hi(2)
 
-    call slopex_2d(s(:,:,comp:),slopex,lo,hi,ng_s,1,adv_bc)
-    call slopey_2d(s(:,:,comp:),slopey,lo,hi,ng_s,1,adv_bc)
+    if (use_ppm) then
+       call ppm_fpu_2d(n,s(:,:,comp),ng_s,umac,vmac,ng_um,Ip,Im,w0,lo,hi, &
+                       adv_bc(:,:,comp:),dx,dt)
+    else
+       call slopex_2d(s(:,:,comp:),slopex,lo,hi,ng_s,1,adv_bc)
+       call slopey_2d(s(:,:,comp:),slopey,lo,hi,ng_s,1,adv_bc)
+    end if
 
     dt2 = HALF*dt
     dt4 = dt/4.0d0
@@ -259,15 +273,25 @@ contains
     !******************************************************************
     ! Create s_{\i-\half\e_x}^x, etc.
     !******************************************************************
-    
-    ! loop over appropriate x-faces
-    do j=js-1,je+1
-       do i=is,ie+1
-          ! make slx, srx with 1D extrapolation
-          slx(i,j) = s(i-1,j,comp) + (HALF - dt2*umac(i,j)/hx)*slopex(i-1,j,1)
-          srx(i,j) = s(i  ,j,comp) - (HALF + dt2*umac(i,j)/hx)*slopex(i  ,j,1)
+
+    ! loop over appropriate x-faces    
+    if (use_ppm) then
+       do j=js-1,je+1
+          do i=is,ie+1
+             ! make slx, srx with 1D extrapolation
+             slx(i,j) = s(i-1,j,comp) + Ip(i-1,j,1)
+             srx(i,j) = s(i  ,j,comp) + Im(i  ,j,1)
+          end do
+       end do
+    else
+       do j=js-1,je+1
+          do i=is,ie+1
+             ! make slx, srx with 1D extrapolation
+             slx(i,j) = s(i-1,j,comp) + (HALF - dt2*umac(i,j)/hx)*slopex(i-1,j,1)
+             srx(i,j) = s(i  ,j,comp) - (HALF + dt2*umac(i,j)/hx)*slopex(i  ,j,1)
+          enddo
        enddo
-    enddo
+    end if
 
     ! impose lo side bc's
     if (phys_bc(1,1) .eq. INLET) then
@@ -333,13 +357,23 @@ contains
     enddo
 
     ! loop over appropriate y-faces
-    do j=js,je+1
-       do i=is-1,ie+1
-          ! make sly, sry with 1D extrapolation
-          sly(i,j) = s(i,j-1,comp) + (HALF - dt2*vmac(i,j)/hy)*slopey(i,j-1,1)
-          sry(i,j) = s(i,j  ,comp) - (HALF + dt2*vmac(i,j)/hy)*slopey(i,j  ,1)
+    if (use_ppm) then
+       do j=js,je+1
+          do i=is-1,ie+1
+             ! make sly, sry with 1D extrapolation
+             sly(i,j) = s(i,j-1,comp) + Ip(i,j-1,2)
+             sry(i,j) = s(i,j  ,comp) + Im(i,j  ,2)
+          enddo
        enddo
-    enddo
+    else
+       do j=js,je+1
+          do i=is-1,ie+1
+             ! make sly, sry with 1D extrapolation
+             sly(i,j) = s(i,j-1,comp) + (HALF - dt2*vmac(i,j)/hy)*slopey(i,j-1,1)
+             sry(i,j) = s(i,j  ,comp) - (HALF + dt2*vmac(i,j)/hy)*slopey(i,j  ,1)
+          enddo
+       enddo
+    end if
 
     ! impose lo side bc's
     if (phys_bc(2,1) .eq. INLET) then
@@ -589,6 +623,7 @@ contains
     end if
 
     deallocate(slx,srx,sly,sry,simhx,simhy,sedgelx,sedgerx,sedgely,sedgery)
+    deallocate(Ip,Im)
 
   end subroutine make_edge_scal_2d
 
