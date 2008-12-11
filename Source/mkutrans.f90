@@ -194,8 +194,8 @@ contains
        do j=js,je
           do i=is,ie+1
              ! extrapolate to edges
-             ulx(i,j) = u(i-1,j,1) + (HALF - (dt2/hx)*max(ZERO,u(i-1,j,1)))*slopex(i-1,j,1)
-             urx(i,j) = u(i  ,j,1) - (HALF + (dt2/hx)*min(ZERO,u(i  ,j,1)))*slopex(i  ,j,1)
+             ulx(i,j) = u(i-1,j,1) + (HALF-(dt2/hx)*max(ZERO,u(i-1,j,1)))*slopex(i-1,j,1)
+             urx(i,j) = u(i  ,j,1) - (HALF+(dt2/hx)*min(ZERO,u(i  ,j,1)))*slopex(i  ,j,1)
           end do
        end do
     end if
@@ -264,10 +264,6 @@ contains
              else
                 vry(i,j) = u(i,j  ,2)
              end if
-
-
-             vly(i,j) = u(i,j-1,2) + (HALF - (dt2/hy)*max(ZERO,u(i,j-1,2)+vlo))*slopey(i,j-1,1)
-             vry(i,j) = u(i,j  ,2) - (HALF + (dt2/hy)*min(ZERO,u(i,j  ,2)+vhi))*slopey(i,j  ,1)
           end do
        end do
     else
@@ -285,8 +281,8 @@ contains
           end if
           do i=is,ie
              ! extrapolate to edges
-             vly(i,j) = u(i,j-1,2) + (HALF - (dt2/hy)*max(ZERO,u(i,j-1,2)+vlo))*slopey(i,j-1,1)
-             vry(i,j) = u(i,j  ,2) - (HALF + (dt2/hy)*min(ZERO,u(i,j  ,2)+vhi))*slopey(i,j  ,1)
+             vly(i,j) = u(i,j-1,2) + (HALF-(dt2/hy)*max(ZERO,u(i,j-1,2)+vlo))*slopey(i,j-1,1)
+             vry(i,j) = u(i,j  ,2) - (HALF+(dt2/hy)*min(ZERO,u(i,j  ,2)+vhi))*slopey(i,j  ,1)
           end do
        end do
     end if
