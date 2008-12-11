@@ -239,8 +239,8 @@ contains
        do j=js-1,je+1
           do i=is,ie+1
              ! extrapolate both components of velocity to left face
-             ulx(i,j,1) = u(i-1,j,1) + Ipu(i-1,j,1)
-             ulx(i,j,2) = u(i-1,j,2) + Ipv(i-1,j,1)
+             ulx(i,j,1) = Ipu(i-1,j,1)
+             ulx(i,j,2) = Ipv(i-1,j,1)
              ! extrapolate both components of velocity to right face
              urx(i,j,1) = u(i  ,j,1) + Imu(i,j,1)
              urx(i,j,2) = u(i  ,j,2) + Imv(i,j,1)
@@ -307,8 +307,8 @@ contains
        do j=js,je+1
           do i=is-1,ie+1
              ! extrapolate both components of velocity to left face
-             uly(i,j,1) = u(i,j-1,1) + Ipu(i,j-1,2)
-             uly(i,j,2) = u(i,j-1,2) + Ipv(i,j-1,2)
+             uly(i,j,1) = Ipu(i,j-1,2)
+             uly(i,j,2) = Ipv(i,j-1,2)
              ! extrapolate both components of velocity to right face
              ury(i,j,1) = u(i,j  ,1) + Imu(i,j,2)
              ury(i,j,2) = u(i,j  ,2) + Imv(i,j,2)

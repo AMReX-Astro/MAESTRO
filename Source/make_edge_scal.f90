@@ -278,8 +278,8 @@ contains
        do j=js-1,je+1
           do i=is,ie+1
              ! make slx, srx with 1D extrapolation
-             slx(i,j) = s(i-1,j,comp) + Ip(i-1,j,1)
-             srx(i,j) = s(i  ,j,comp) + Im(i  ,j,1)
+             slx(i,j) = Ip(i-1,j,1)
+             srx(i,j) = Im(i  ,j,1)
           end do
        end do
     else
@@ -360,8 +360,8 @@ contains
        do j=js,je+1
           do i=is-1,ie+1
              ! make sly, sry with 1D extrapolation
-             sly(i,j) = s(i,j-1,comp) + Ip(i,j-1,2)
-             sry(i,j) = s(i,j  ,comp) + Im(i,j  ,2)
+             sly(i,j) = Ip(i,j-1,2)
+             sry(i,j) = Im(i,j  ,2)
           enddo
        enddo
     else

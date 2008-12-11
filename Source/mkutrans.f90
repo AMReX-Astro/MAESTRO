@@ -177,8 +177,8 @@ contains
     if (use_ppm) then
        do j=js,je
           do i=is,ie+1
-             ulx(i,j) = u(i-1,j,1) + Ipu(i-1,j,1)
-             urx(i,j) = u(i  ,j,1) + Imu(i  ,j,1)
+             ulx(i,j) = Ipu(i-1,j,1)
+             urx(i,j) = Imu(i  ,j,1)
           end do
        end do
     else
@@ -233,8 +233,8 @@ contains
     if (use_ppm) then
        do j=js,je+1
           do i=is,ie
-             vly(i,j) = u(i,j-1,2) + Ipv(i,j-1,2)
-             vry(i,j) = u(i,j  ,2) + Imv(i,j  ,2)
+             vly(i,j) = Ipv(i,j-1,2)
+             vry(i,j) = Imv(i,j  ,2)
           end do
        end do
     else
