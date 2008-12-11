@@ -260,8 +260,8 @@ contains
        call ppm_fpu_2d(n,s(:,:,comp),ng_s,umac,vmac,ng_um,Ip,Im,w0,lo,hi, &
                        adv_bc(:,:,comp:),dx,dt)
     else
-       call slopex_2d(s(:,:,comp:),slopex,lo,hi,ng_s,1,adv_bc)
-       call slopey_2d(s(:,:,comp:),slopey,lo,hi,ng_s,1,adv_bc)
+       call slopex_2d(s(:,:,comp:),slopex,lo,hi,ng_s,1,adv_bc(:,:,comp:))
+       call slopey_2d(s(:,:,comp:),slopey,lo,hi,ng_s,1,adv_bc(:,:,comp:))
     end if
 
     dt2 = HALF*dt
