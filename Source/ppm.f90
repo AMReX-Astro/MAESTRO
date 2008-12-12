@@ -144,11 +144,9 @@ contains
              if ((sp(i,j,1)-s(i,j))*(s(i,j)-sm(i,j,1)) .le. ZERO) then
                 sp(i,j,1) = s(i,j)
                 sm(i,j,1) = s(i,j)
-             end if
-             if (abs(sp(i,j,1)-s(i,j)) .ge. TWO*abs(sm(i,j,1)-s(i,j))) then
+             else if (abs(sp(i,j,1)-s(i,j)) .ge. TWO*abs(sm(i,j,1)-s(i,j))) then
                 sp(i,j,1) = THREE*s(i,j) - TWO*sm(i,j,1)
-             end if
-             if (abs(sm(i,j,1)-s(i,j)) .ge. TWO*abs(sp(i,j,1)-s(i,j))) then
+             else if (abs(sm(i,j,1)-s(i,j)) .ge. TWO*abs(sp(i,j,1)-s(i,j))) then
                 sm(i,j,1) = THREE*s(i,j) - TWO*sp(i,j,1)
              end if
           end do
@@ -252,11 +250,9 @@ contains
              if ((sp(i,j,2)-s(i,j))*(s(i,j)-sm(i,j,2)) .le. ZERO) then
                 sp(i,j,2) = s(i,j)
                 sm(i,j,2) = s(i,j)
-             end if
-             if (abs(sp(i,j,2)-s(i,j)) .ge. TWO*abs(sm(i,j,2)-s(i,j))) then
+             else if (abs(sp(i,j,2)-s(i,j)) .ge. TWO*abs(sm(i,j,2)-s(i,j))) then
                 sp(i,j,2) = THREE*s(i,j) - TWO*sm(i,j,2)
-             end if
-             if (abs(sm(i,j,2)-s(i,j)) .ge. TWO*abs(sp(i,j,2)-s(i,j))) then
+             else if (abs(sm(i,j,2)-s(i,j)) .ge. TWO*abs(sp(i,j,2)-s(i,j))) then
                 sm(i,j,2) = THREE*s(i,j) - TWO*sp(i,j,2)
              end if
           end do
@@ -431,11 +427,9 @@ contains
              if ((sp(i,j,1)-s(i,j))*(s(i,j)-sm(i,j,1)) .le. ZERO) then
                 sp(i,j,1) = s(i,j)
                 sm(i,j,1) = s(i,j)
-             end if
-             if (abs(sp(i,j,1)-s(i,j)) .ge. TWO*abs(sm(i,j,1)-s(i,j))) then
+             else if (abs(sp(i,j,1)-s(i,j)) .ge. TWO*abs(sm(i,j,1)-s(i,j))) then
                 sp(i,j,1) = THREE*s(i,j) - TWO*sm(i,j,1)
-             end if
-             if (abs(sm(i,j,1)-s(i,j)) .ge. TWO*abs(sp(i,j,1)-s(i,j))) then
+             else if (abs(sm(i,j,1)-s(i,j)) .ge. TWO*abs(sp(i,j,1)-s(i,j))) then
                 sm(i,j,1) = THREE*s(i,j) - TWO*sp(i,j,1)
              end if
           end do
@@ -540,11 +534,9 @@ contains
              if ((sp(i,j,2)-s(i,j))*(s(i,j)-sm(i,j,2)) .le. ZERO) then
                 sp(i,j,2) = s(i,j)
                 sm(i,j,2) = s(i,j)
-             end if
-             if (abs(sp(i,j,2)-s(i,j)) .ge. TWO*abs(sm(i,j,2)-s(i,j))) then
+             else if (abs(sp(i,j,2)-s(i,j)) .ge. TWO*abs(sm(i,j,2)-s(i,j))) then
                 sp(i,j,2) = THREE*s(i,j) - TWO*sm(i,j,2)
-             end if
-             if (abs(sm(i,j,2)-s(i,j)) .ge. TWO*abs(sp(i,j,2)-s(i,j))) then
+             else if (abs(sm(i,j,2)-s(i,j)) .ge. TWO*abs(sp(i,j,2)-s(i,j))) then
                 sm(i,j,2) = THREE*s(i,j) - TWO*sp(i,j,2)
              end if
           end do
