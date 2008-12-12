@@ -242,8 +242,8 @@ contains
              ulx(i,j,1) = Ipu(i-1,j,1)
              ulx(i,j,2) = Ipv(i-1,j,1)
              ! extrapolate both components of velocity to right face
-             urx(i,j,1) = u(i  ,j,1) + Imu(i,j,1)
-             urx(i,j,2) = u(i  ,j,2) + Imv(i,j,1)
+             urx(i,j,1) = Imu(i,j,1)
+             urx(i,j,2) = Imv(i,j,1)
           end do
        end do
     else
@@ -310,8 +310,8 @@ contains
              uly(i,j,1) = Ipu(i,j-1,2)
              uly(i,j,2) = Ipv(i,j-1,2)
              ! extrapolate both components of velocity to right face
-             ury(i,j,1) = u(i,j  ,1) + Imu(i,j,2)
-             ury(i,j,2) = u(i,j  ,2) + Imv(i,j,2)
+             ury(i,j,1) = Imu(i,j,2)
+             ury(i,j,2) = Imv(i,j,2)
           end do
        end do
     else
