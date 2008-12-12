@@ -188,7 +188,7 @@ contains
                    end if
                 else if (abs(alpham) .ge. TWO*abs(alphap)) then
                    dI = -alpham**2 / (FOUR*(alphap+alpham))
-                   ds = s(i+1,j)-s(i,j)
+                   ds = s(i-1,j)-s(i,j)
                    sgn = sign(ONE,s(i+1,j)-s(i-1,j))
                    if (sgn*dI .ge. sgn*ds) then
                       sm(i,j,1) = s(i,j) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alphap))
@@ -337,7 +337,7 @@ contains
                    end if
                 else if (abs(alpham) .ge. TWO*abs(alphap)) then
                    dI = -alpham**2 / (FOUR*(alphap+alpham))
-                   ds = s(i,j+1)-s(i,j)
+                   ds = s(i,j-1)-s(i,j)
                    sgn = sign(ONE,s(i,j+1)-s(i,j-1))
                    if (sgn*dI .ge. sgn*ds) then
                       sm(i,j,2) = s(i,j) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alphap))
@@ -558,7 +558,7 @@ contains
                    end if
                 else if (abs(alpham) .ge. TWO*abs(alphap)) then
                    dI = -alpham**2 / (FOUR*(alphap+alpham))
-                   ds = s(i+1,j)-s(i,j)
+                   ds = s(i-1,j)-s(i,j)
                    sgn = sign(ONE,s(i+1,j)-s(i-1,j))
                    if (sgn*dI .ge. sgn*ds) then
                       sm(i,j,1) = s(i,j) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alphap))
@@ -708,7 +708,7 @@ contains
                    end if
                 else if (abs(alpham) .ge. TWO*abs(alphap)) then
                    dI = -alpham**2 / (FOUR*(alphap+alpham))
-                   ds = s(i,j+1)-s(i,j)
+                   ds = s(i,j-1)-s(i,j)
                    sgn = sign(ONE,s(i,j+1)-s(i,j-1))
                    if (sgn*dI .ge. sgn*ds) then
                       sm(i,j,2) = s(i,j) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alphap))
