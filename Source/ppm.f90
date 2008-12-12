@@ -112,10 +112,12 @@ contains
           if (u(i,j,1) .gt. ZERO) then
              Ip(i,j,1) = sp(i,j,1) - (sigma/TWO)*(sp(i,j,1)-sm(i,j,1)-(ONE-TWO3RD*sigma)*s6)
              Im(i,j,1) = s(i,j)
-          end if
-          if (u(i,j,1) .lt. ZERO) then
+          else if (u(i,j,1) .lt. ZERO) then
              Ip(i,j,1) = s(i,j)
              Im(i,j,1) = sm(i,j,1) + (sigma/TWO)*(sp(i,j,1)-sm(i,j,1)+(ONE-TWO3RD*sigma)*s6)
+          else
+             Ip(i,j,1) = s(i,j)
+             Im(i,j,1) = s(i,j)
           end if
        end do
     end do
@@ -185,10 +187,12 @@ contains
           if (u(i,j,2)+v_from_w0 .gt. ZERO) then
              Ip(i,j,2) = sp(i,j,2) - (sigma/TWO)*(sp(i,j,2)-sm(i,j,2)-(ONE-TWO3RD*sigma)*s6)
              Im(i,j,2) = s(i,j)
-          end if
-          if (u(i,j,2)+v_from_w0 .lt. ZERO) then
+          else if (u(i,j,2)+v_from_w0 .lt. ZERO) then
              Ip(i,j,2) = s(i,j)
              Im(i,j,2) = sm(i,j,2) + (sigma/TWO)*(sp(i,j,2)-sm(i,j,2)+(ONE-TWO3RD*sigma)*s6)
+          else
+             Ip(i,j,2) = s(i,j)
+             Im(i,j,2) = s(i,j)
           end if
        end do
     end do
