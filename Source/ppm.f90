@@ -27,7 +27,7 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:),dt
 
     ! local
-    integer :: i,j
+    integer :: i,j,edge_interp_type,spm_limiter_type
 
     real(kind=dp_t) :: dsl, dsr, dsc
     real(kind=dp_t) :: sigma, s6, w0cen
@@ -56,25 +56,40 @@ contains
     allocate(sedgex(lo(1)-1:hi(1)+2,lo(2)-1:hi(2)+1))
     allocate(sedgey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+2))
 
-    ! compute van Leer slopes in x-direction
-    do j=lo(2)-1,hi(2)+1
-       do i=lo(1)-2,hi(1)+2
-          dsc = HALF * (s(i+1,j) - s(i-1,j))
-          dsl = TWO  * (s(i  ,j) - s(i-1,j))
-          dsr = TWO  * (s(i+1,j) - s(i  ,j))
-          dsvl_x(i,j) = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
-       end do
-    end do
+    ! 1 = 4th order with van Leer limiting
+    ! 2 = 4th order with Colella 2008 limiting
+    edge_interp_type = 1
 
-    ! interpolate s to x-edges
-    do j=lo(2)-1,hi(2)+1
-       do i=lo(1)-1,hi(1)+2
-          sedgex(i,j) = HALF*(s(i,j)+s(i-1,j)) - SIXTH*(dsvl_x(i,j)-dsvl_x(i-1,j))
-          ! make sure sedgex lies in between adjacent cell-centered values
-          sedgex(i,j) = max(sedgex(i,j),min(s(i,j),s(i-1,j)))
-          sedgex(i,j) = min(sedgex(i,j),max(s(i,j),s(i-1,j)))
+    ! 1 = "old" limiters described in Colella 2008
+    ! 2 = "new" limiters described in Colella 2008
+    spm_limiter_type = 1
+
+    ! compute s at x-edges
+    if (edge_interp_type .eq. 1) then
+
+       ! compute van Leer slopes in x-direction
+       do j=lo(2)-1,hi(2)+1
+          do i=lo(1)-2,hi(1)+2
+             dsc = HALF * (s(i+1,j) - s(i-1,j))
+             dsl = TWO  * (s(i  ,j) - s(i-1,j))
+             dsr = TWO  * (s(i+1,j) - s(i  ,j))
+             dsvl_x(i,j) = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
+          end do
        end do
-    end do
+       
+       ! interpolate s to x-edges
+       do j=lo(2)-1,hi(2)+1
+          do i=lo(1)-1,hi(1)+2
+             sedgex(i,j) = HALF*(s(i,j)+s(i-1,j)) - SIXTH*(dsvl_x(i,j)-dsvl_x(i-1,j))
+             ! make sure sedgex lies in between adjacent cell-centered values
+             sedgex(i,j) = max(sedgex(i,j),min(s(i,j),s(i-1,j)))
+             sedgex(i,j) = min(sedgex(i,j),max(s(i,j),s(i-1,j)))
+          end do
+       end do
+
+    else if (edge_interp_type .eq. 2) then
+
+    end if
 
     ! fill x-component of sp and sm
     do j=lo(2)-1,hi(2)+1
@@ -89,21 +104,28 @@ contains
     !
     !
 
-    ! modify sp and sm using quadratic limiters
-    do j=lo(2)-1,hi(2)+1
-       do i=lo(1)-1,hi(1)+1
-          if ((sp(i,j,1)-s(i,j))*(s(i,j)-sm(i,j,1)) .le. ZERO) then
-             sp(i,j,1) = s(i,j)
-             sm(i,j,1) = s(i,j)
-          end if
-          if (abs(sp(i,j,1)-s(i,j)) .ge. TWO*abs(sm(i,j,1)-s(i,j))) then
-             sp(i,j,1) = THREE*s(i,j) - TWO*sm(i,j,1)
-          end if
-          if (abs(sm(i,j,1)-s(i,j)) .ge. TWO*abs(sp(i,j,1)-s(i,j))) then
-             sm(i,j,1) = THREE*s(i,j) - TWO*sp(i,j,1)
-          end if
+    ! limit sp and sm
+    if (spm_limiter_type .eq. 1) then
+
+       ! modify sp and sm using quadratic limiters
+       do j=lo(2)-1,hi(2)+1
+          do i=lo(1)-1,hi(1)+1
+             if ((sp(i,j,1)-s(i,j))*(s(i,j)-sm(i,j,1)) .le. ZERO) then
+                sp(i,j,1) = s(i,j)
+                sm(i,j,1) = s(i,j)
+             end if
+             if (abs(sp(i,j,1)-s(i,j)) .ge. TWO*abs(sm(i,j,1)-s(i,j))) then
+                sp(i,j,1) = THREE*s(i,j) - TWO*sm(i,j,1)
+             end if
+             if (abs(sm(i,j,1)-s(i,j)) .ge. TWO*abs(sp(i,j,1)-s(i,j))) then
+                sm(i,j,1) = THREE*s(i,j) - TWO*sp(i,j,1)
+             end if
+          end do
        end do
-    end do
+
+    else if (spm_limiter_type .eq. 2) then
+
+    end if
 
     ! compute Ip and Im
     do j=lo(2)-1,hi(2)+1
@@ -123,25 +145,32 @@ contains
        end do
     end do
 
-    ! compute van Leer slopes in y-direction
-    do j=lo(2)-2,hi(2)+2
-       do i=lo(1)-1,hi(1)+1
-          dsc = HALF * (s(i,j+1) - s(i,j-1))
-          dsl = TWO  * (s(i,j  ) - s(i,j-1))
-          dsr = TWO  * (s(i,j+1) - s(i,j  ))
-          dsvl_y(i,j) = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
-       end do
-    end do
+    ! compute s at y-edges
+    if (edge_interp_type .eq. 1) then
 
-    ! interpolate s to y-edges
-    do j=lo(2)-1,hi(2)+2
-       do i=lo(1)-1,hi(1)+1
-          sedgey(i,j) = HALF*(s(i,j)+s(i,j-1)) - SIXTH*(dsvl_y(i,j)-dsvl_y(i,j-1))
-          ! make sure sedgey lies in between adjacent cell-centered values
-          sedgey(i,j) = max(sedgey(i,j),min(s(i,j),s(i,j-1)))
-          sedgey(i,j) = min(sedgey(i,j),max(s(i,j),s(i,j-1)))
+       ! compute van Leer slopes in y-direction
+       do j=lo(2)-2,hi(2)+2
+          do i=lo(1)-1,hi(1)+1
+             dsc = HALF * (s(i,j+1) - s(i,j-1))
+             dsl = TWO  * (s(i,j  ) - s(i,j-1))
+             dsr = TWO  * (s(i,j+1) - s(i,j  ))
+             dsvl_y(i,j) = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
+          end do
        end do
-    end do
+       
+       ! interpolate s to y-edges
+       do j=lo(2)-1,hi(2)+2
+          do i=lo(1)-1,hi(1)+1
+             sedgey(i,j) = HALF*(s(i,j)+s(i,j-1)) - SIXTH*(dsvl_y(i,j)-dsvl_y(i,j-1))
+             ! make sure sedgey lies in between adjacent cell-centered values
+             sedgey(i,j) = max(sedgey(i,j),min(s(i,j),s(i,j-1)))
+             sedgey(i,j) = min(sedgey(i,j),max(s(i,j),s(i,j-1)))
+          end do
+       end do
+
+    else if (edge_interp_type .eq. 2) then
+
+    end if
 
     ! ! fill y-component of sp and sm
     do j=lo(2)-1,hi(2)+1
@@ -156,22 +185,27 @@ contains
     !
     !
 
-    ! modify sp and sm using quadratic limiters
-    ! modify sp and sm using quadratic limiters
-    do j=lo(2)-1,hi(2)+1
-       do i=lo(1)-1,hi(1)+1
-          if ((sp(i,j,2)-s(i,j))*(s(i,j)-sm(i,j,2)) .le. ZERO) then
-             sp(i,j,2) = s(i,j)
-             sm(i,j,2) = s(i,j)
-          end if
-          if (abs(sp(i,j,2)-s(i,j)) .ge. TWO*abs(sm(i,j,2)-s(i,j))) then
-             sp(i,j,2) = THREE*s(i,j) - TWO*sm(i,j,2)
-          end if
-          if (abs(sm(i,j,2)-s(i,j)) .ge. TWO*abs(sp(i,j,2)-s(i,j))) then
-             sm(i,j,2) = THREE*s(i,j) - TWO*sp(i,j,2)
-          end if
+    if (spm_limiter_type .eq. 1) then
+
+       ! modify sp and sm using quadratic limiters
+       do j=lo(2)-1,hi(2)+1
+          do i=lo(1)-1,hi(1)+1
+             if ((sp(i,j,2)-s(i,j))*(s(i,j)-sm(i,j,2)) .le. ZERO) then
+                sp(i,j,2) = s(i,j)
+                sm(i,j,2) = s(i,j)
+             end if
+             if (abs(sp(i,j,2)-s(i,j)) .ge. TWO*abs(sm(i,j,2)-s(i,j))) then
+                sp(i,j,2) = THREE*s(i,j) - TWO*sm(i,j,2)
+             end if
+             if (abs(sm(i,j,2)-s(i,j)) .ge. TWO*abs(sp(i,j,2)-s(i,j))) then
+                sm(i,j,2) = THREE*s(i,j) - TWO*sp(i,j,2)
+             end if
+          end do
        end do
-    end do
+
+    else if (spm_limiter_type .eq. 2) then
+
+    end if
 
     ! compute Ip and Im
     do j=lo(2)-1,hi(2)+1
@@ -221,7 +255,7 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:),dt
 
     ! local
-    integer :: i,j
+    integer :: i,j,edge_interp_type,spm_limiter_type
 
     real(kind=dp_t) :: dsl, dsr, dsc
     real(kind=dp_t) :: sigmam, sigmap, s6, w0lo, w0hi
@@ -250,25 +284,40 @@ contains
     allocate(sedgex(lo(1)-1:hi(1)+2,lo(2)-1:hi(2)+1))
     allocate(sedgey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+2))
 
-    ! compute van Leer slopes in x-direction
-    do j=lo(2)-1,hi(2)+1
-       do i=lo(1)-2,hi(1)+2
-          dsc = HALF * (s(i+1,j) - s(i-1,j))
-          dsl = TWO  * (s(i  ,j) - s(i-1,j))
-          dsr = TWO  * (s(i+1,j) - s(i  ,j))
-          dsvl_x(i,j) = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
-       end do
-    end do
+    ! 1 = 4th order with van Leer limiting
+    ! 2 = 4th order with Colella 2008 limiting
+    edge_interp_type = 1
 
-    ! interpolate s to x-edges
-    do j=lo(2)-1,hi(2)+1
-       do i=lo(1)-1,hi(1)+2
-          sedgex(i,j) = HALF*(s(i,j)+s(i-1,j)) - SIXTH*(dsvl_x(i,j)-dsvl_x(i-1,j))
-          ! make sure sedgex lies in between adjacent cell-centered values
-          sedgex(i,j) = max(sedgex(i,j),min(s(i,j),s(i-1,j)))
-          sedgex(i,j) = min(sedgex(i,j),max(s(i,j),s(i-1,j)))
+    ! 1 = "old" limiters described in Colella 2008
+    ! 2 = "new" limiters described in Colella 2008
+    spm_limiter_type = 1
+
+    ! compute s at x-edges
+    if (edge_interp_type .eq. 1) then
+
+       ! compute van Leer slopes in x-direction
+       do j=lo(2)-1,hi(2)+1
+          do i=lo(1)-2,hi(1)+2
+             dsc = HALF * (s(i+1,j) - s(i-1,j))
+             dsl = TWO  * (s(i  ,j) - s(i-1,j))
+             dsr = TWO  * (s(i+1,j) - s(i  ,j))
+             dsvl_x(i,j) = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
+          end do
        end do
-    end do
+       
+       ! interpolate s to x-edges
+       do j=lo(2)-1,hi(2)+1
+          do i=lo(1)-1,hi(1)+2
+             sedgex(i,j) = HALF*(s(i,j)+s(i-1,j)) - SIXTH*(dsvl_x(i,j)-dsvl_x(i-1,j))
+             ! make sure sedgex lies in between adjacent cell-centered values
+             sedgex(i,j) = max(sedgex(i,j),min(s(i,j),s(i-1,j)))
+             sedgex(i,j) = min(sedgex(i,j),max(s(i,j),s(i-1,j)))
+          end do
+       end do
+
+    else if (edge_interp_type .eq. 2) then
+
+    end if
 
     ! fill x-component of sp and sm
     do j=lo(2)-1,hi(2)+1
@@ -283,21 +332,28 @@ contains
     !
     !
 
-    ! modify sp and sm using quadratic limiters
-    do j=lo(2)-1,hi(2)+1
-       do i=lo(1)-1,hi(1)+1
-          if ((sp(i,j,1)-s(i,j))*(s(i,j)-sm(i,j,1)) .le. ZERO) then
-             sp(i,j,1) = s(i,j)
-             sm(i,j,1) = s(i,j)
-          end if
-          if (abs(sp(i,j,1)-s(i,j)) .ge. TWO*abs(sm(i,j,1)-s(i,j))) then
-             sp(i,j,1) = THREE*s(i,j) - TWO*sm(i,j,1)
-          end if
-          if (abs(sm(i,j,1)-s(i,j)) .ge. TWO*abs(sp(i,j,1)-s(i,j))) then
-             sm(i,j,1) = THREE*s(i,j) - TWO*sp(i,j,1)
-          end if
+    ! limit sp and sm
+    if (spm_limiter_type .eq. 1) then
+
+       ! modify sp and sm using quadratic limiters
+       do j=lo(2)-1,hi(2)+1
+          do i=lo(1)-1,hi(1)+1
+             if ((sp(i,j,1)-s(i,j))*(s(i,j)-sm(i,j,1)) .le. ZERO) then
+                sp(i,j,1) = s(i,j)
+                sm(i,j,1) = s(i,j)
+             end if
+             if (abs(sp(i,j,1)-s(i,j)) .ge. TWO*abs(sm(i,j,1)-s(i,j))) then
+                sp(i,j,1) = THREE*s(i,j) - TWO*sm(i,j,1)
+             end if
+             if (abs(sm(i,j,1)-s(i,j)) .ge. TWO*abs(sp(i,j,1)-s(i,j))) then
+                sm(i,j,1) = THREE*s(i,j) - TWO*sp(i,j,1)
+             end if
+          end do
        end do
-    end do
+
+    else if (spm_limiter_type .eq. 2) then
+
+    end if
 
     ! compute Ip and Im
     do j=lo(2)-1,hi(2)+1
@@ -318,25 +374,32 @@ contains
        end do
     end do
 
-    ! compute van Leer slopes in y-direction
-    do j=lo(2)-2,hi(2)+2
-       do i=lo(1)-1,hi(1)+1
-          dsc = HALF * (s(i,j+1) - s(i,j-1))
-          dsl = TWO  * (s(i,j  ) - s(i,j-1))
-          dsr = TWO  * (s(i,j+1) - s(i,j  ))
-          dsvl_y(i,j) = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
-       end do
-    end do
+    ! compute s at y-edges
+    if (edge_interp_type .eq. 1) then
 
-    ! interpolate s to y-edges
-    do j=lo(2)-1,hi(2)+2
-       do i=lo(1)-1,hi(1)+1
-          sedgey(i,j) = HALF*(s(i,j)+s(i,j-1)) - SIXTH*(dsvl_y(i,j)-dsvl_y(i,j-1))
-          ! make sure sedgey lies in between adjacent cell-centered values
-          sedgey(i,j) = max(sedgey(i,j),min(s(i,j),s(i,j-1)))
-          sedgey(i,j) = min(sedgey(i,j),max(s(i,j),s(i,j-1)))
+       ! compute van Leer slopes in y-direction
+       do j=lo(2)-2,hi(2)+2
+          do i=lo(1)-1,hi(1)+1
+             dsc = HALF * (s(i,j+1) - s(i,j-1))
+             dsl = TWO  * (s(i,j  ) - s(i,j-1))
+             dsr = TWO  * (s(i,j+1) - s(i,j  ))
+             dsvl_y(i,j) = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
+          end do
        end do
-    end do
+       
+       ! interpolate s to y-edges
+       do j=lo(2)-1,hi(2)+2
+          do i=lo(1)-1,hi(1)+1
+             sedgey(i,j) = HALF*(s(i,j)+s(i,j-1)) - SIXTH*(dsvl_y(i,j)-dsvl_y(i,j-1))
+             ! make sure sedgey lies in between adjacent cell-centered values
+             sedgey(i,j) = max(sedgey(i,j),min(s(i,j),s(i,j-1)))
+             sedgey(i,j) = min(sedgey(i,j),max(s(i,j),s(i,j-1)))
+          end do
+       end do
+
+    else if (edge_interp_type .eq. 2) then
+
+    end if
 
     ! ! fill y-component of sp and sm
     do j=lo(2)-1,hi(2)+1
@@ -351,22 +414,27 @@ contains
     !
     !
 
-    ! modify sp and sm using quadratic limiters
-    ! modify sp and sm using quadratic limiters
-    do j=lo(2)-1,hi(2)+1
-       do i=lo(1)-1,hi(1)+1
-          if ((sp(i,j,2)-s(i,j))*(s(i,j)-sm(i,j,2)) .le. ZERO) then
-             sp(i,j,2) = s(i,j)
-             sm(i,j,2) = s(i,j)
-          end if
-          if (abs(sp(i,j,2)-s(i,j)) .ge. TWO*abs(sm(i,j,2)-s(i,j))) then
-             sp(i,j,2) = THREE*s(i,j) - TWO*sm(i,j,2)
-          end if
-          if (abs(sm(i,j,2)-s(i,j)) .ge. TWO*abs(sp(i,j,2)-s(i,j))) then
-             sm(i,j,2) = THREE*s(i,j) - TWO*sp(i,j,2)
-          end if
+    if (spm_limiter_type .eq. 1) then
+
+       ! modify sp and sm using quadratic limiters
+       do j=lo(2)-1,hi(2)+1
+          do i=lo(1)-1,hi(1)+1
+             if ((sp(i,j,2)-s(i,j))*(s(i,j)-sm(i,j,2)) .le. ZERO) then
+                sp(i,j,2) = s(i,j)
+                sm(i,j,2) = s(i,j)
+             end if
+             if (abs(sp(i,j,2)-s(i,j)) .ge. TWO*abs(sm(i,j,2)-s(i,j))) then
+                sp(i,j,2) = THREE*s(i,j) - TWO*sm(i,j,2)
+             end if
+             if (abs(sm(i,j,2)-s(i,j)) .ge. TWO*abs(sp(i,j,2)-s(i,j))) then
+                sm(i,j,2) = THREE*s(i,j) - TWO*sp(i,j,2)
+             end if
+          end do
        end do
-    end do
+
+    else if (spm_limiter_type .eq. 2) then
+
+    end if
 
     ! compute Ip and Im
     do j=lo(2)-1,hi(2)+1
