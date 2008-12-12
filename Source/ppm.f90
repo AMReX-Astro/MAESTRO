@@ -29,7 +29,8 @@ contains
     ! local
     integer :: i,j,edge_interp_type,spm_limiter_type
 
-    real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, C
+    real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, C, alphap, alpham, ds
+    real(kind=dp_t) :: dI, sgn
     real(kind=dp_t) :: sigma, s6, w0cen
 
     ! s_{\ib,+}, s_{\ib,-}
@@ -154,6 +155,45 @@ contains
 
     else if (spm_limiter_type .eq. 2) then
 
+       ! modify sp and sm using Colella 2008 limiters
+       do j=lo(2)-1,hi(2)+1
+          do i=lo(1)-1,hi(1)+1
+             if ((sp(i,j,1)-s(i,j))*(s(i,j)-sm(i,j,1)) .le. ZERO .or. &
+                 (s(i+1,j)-s(i,j))*(s(i,j)-s(i-1,j)) .le. ZERO ) then
+                s6 = SIX*s(i,j) - THREE*(sm(i,j,1)+sp(i,j,1))
+                D2  = -TWO*s6/dx(1)**2
+                D2C = (ONE/dx(1)**2)*(s(i-1,j)-TWO*s(i,j)+s(i+1,j))
+                D2L = (ONE/dx(1)**2)*(s(i-2,j)-TWO*s(i-1,j)+s(i,j))
+                D2R = (ONE/dx(1)**2)*(s(i,j)-TWO*s(i+1,j)+s(i+2,j))
+                if (sign(ONE,D2) .eq. sign(ONE,D2C) .and. &
+                    sign(ONE,D2) .eq. sign(ONE,D2L) .and. &
+                    sign(ONE,D2) .eq. sign(ONE,D2R)) then
+                   D2LIM = sign(ONE,D2)*min(C*abs(D2C),C*abs(D2L),C*abs(D2R),abs(D2))
+                   sp(i,j,1) = s(i,j) + (sp(i,j,1)-s(i,j))*(D2LIM/D2)
+                   sm(i,j,1) = s(i,j) + (sm(i,j,1)-s(i,j))*(D2LIM/D2)
+                end if
+             else
+                alphap = sp(i,j,1)-s(i,j)
+                alpham = sm(i,j,1)-s(i,j)
+                if (abs(alphap) .ge. TWO*abs(alpham)) then
+                   dI = -alphap**2 / (FOUR*(alphap+alpham))
+                   ds = s(i+1,j)-s(i,j)
+                   sgn = sign(ONE,s(i,j+1)-s(i,j-1))
+                   if (sgn*dI .ge. sgn*ds) then
+                      sp(i,j,1) = s(i,j) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alpham))
+                   end if
+                else if (abs(alpham) .ge. TWO*abs(alphap)) then
+                   dI = -alpham**2 / (FOUR*(alphap+alpham))
+                   ds = s(i+1,j)-s(i,j)
+                   sgn = sign(ONE,s(i,j+1)-s(i,j-1))
+                   if (sgn*dI .ge. sgn*ds) then
+                      sm(i,j,1) = s(i,j) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alphap))
+                   end if
+                end if
+             end if
+          end do
+       end do
+
     end if
 
     ! compute Ip and Im
@@ -260,6 +300,45 @@ contains
 
     else if (spm_limiter_type .eq. 2) then
 
+       ! modify sp and sm using Colella 2008 limiters
+       do j=lo(2)-1,hi(2)+1
+          do i=lo(1)-1,hi(1)+1
+             if ((sp(i,j,2)-s(i,j))*(s(i,j)-sm(i,j,2)) .le. ZERO .or. &
+                 (s(i,j+1)-s(i,j))*(s(i,j)-s(i,j-1)) .le. ZERO ) then
+                s6 = SIX*s(i,j) - THREE*(sm(i,j,2)+sp(i,j,2))
+                D2  = -TWO*s6/dx(2)**2
+                D2C = (ONE/dx(2)**2)*(s(i,j-1)-TWO*s(i,j)+s(i,j+1))
+                D2L = (ONE/dx(2)**2)*(s(i,j-2)-TWO*s(i,j-1)+s(i,j))
+                D2R = (ONE/dx(2)**2)*(s(i,j)-TWO*s(i,j+1)+s(i,j+2))
+                if (sign(ONE,D2) .eq. sign(ONE,D2C) .and. &
+                    sign(ONE,D2) .eq. sign(ONE,D2L) .and. &
+                    sign(ONE,D2) .eq. sign(ONE,D2R)) then
+                   D2LIM = sign(ONE,D2)*min(C*abs(D2C),C*abs(D2L),C*abs(D2R),abs(D2))
+                   sp(i,j,2) = s(i,j) + (sp(i,j,2)-s(i,j))*(D2LIM/D2)
+                   sm(i,j,2) = s(i,j) + (sm(i,j,2)-s(i,j))*(D2LIM/D2)
+                end if
+             else
+                alphap = sp(i,j,2)-s(i,j)
+                alpham = sm(i,j,2)-s(i,j)
+                if (abs(alphap) .ge. TWO*abs(alpham)) then
+                   dI = -alphap**2 / (FOUR*(alphap+alpham))
+                   ds = s(i,j+1)-s(i,j)
+                   sgn = sign(ONE,s(i,j+1)-s(i,j-1))
+                   if (sgn*dI .ge. sgn*ds) then
+                      sp(i,j,2) = s(i,j) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alpham))
+                   end if
+                else if (abs(alpham) .ge. TWO*abs(alphap)) then
+                   dI = -alpham**2 / (FOUR*(alphap+alpham))
+                   ds = s(i,j+1)-s(i,j)
+                   sgn = sign(ONE,s(i,j+1)-s(i,j-1))
+                   if (sgn*dI .ge. sgn*ds) then
+                      sm(i,j,2) = s(i,j) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alphap))
+                   end if
+                end if
+             end if
+          end do
+       end do
+
     end if
 
     ! compute Ip and Im
@@ -312,7 +391,8 @@ contains
     ! local
     integer :: i,j,edge_interp_type,spm_limiter_type
 
-    real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, C
+    real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, C, alphap, alpham, ds
+    real(kind=dp_t) :: dI, sgn
     real(kind=dp_t) :: sigmam, sigmap, s6, w0lo, w0hi
 
     ! s_{\ib,+}, s_{\ib,-}
@@ -437,6 +517,45 @@ contains
 
     else if (spm_limiter_type .eq. 2) then
 
+       ! modify sp and sm using Colella 2008 limiters
+       do j=lo(2)-1,hi(2)+1
+          do i=lo(1)-1,hi(1)+1
+             if ((sp(i,j,1)-s(i,j))*(s(i,j)-sm(i,j,1)) .le. ZERO .or. &
+                 (s(i+1,j)-s(i,j))*(s(i,j)-s(i-1,j)) .le. ZERO ) then
+                s6 = SIX*s(i,j) - THREE*(sm(i,j,1)+sp(i,j,1))
+                D2  = -TWO*s6/dx(1)**2
+                D2C = (ONE/dx(1)**2)*(s(i-1,j)-TWO*s(i,j)+s(i+1,j))
+                D2L = (ONE/dx(1)**2)*(s(i-2,j)-TWO*s(i-1,j)+s(i,j))
+                D2R = (ONE/dx(1)**2)*(s(i,j)-TWO*s(i+1,j)+s(i+2,j))
+                if (sign(ONE,D2) .eq. sign(ONE,D2C) .and. &
+                    sign(ONE,D2) .eq. sign(ONE,D2L) .and. &
+                    sign(ONE,D2) .eq. sign(ONE,D2R)) then
+                   D2LIM = sign(ONE,D2)*min(C*abs(D2C),C*abs(D2L),C*abs(D2R),abs(D2))
+                   sp(i,j,1) = s(i,j) + (sp(i,j,1)-s(i,j))*(D2LIM/D2)
+                   sm(i,j,1) = s(i,j) + (sm(i,j,1)-s(i,j))*(D2LIM/D2)
+                end if
+             else
+                alphap = sp(i,j,1)-s(i,j)
+                alpham = sm(i,j,1)-s(i,j)
+                if (abs(alphap) .ge. TWO*abs(alpham)) then
+                   dI = -alphap**2 / (FOUR*(alphap+alpham))
+                   ds = s(i+1,j)-s(i,j)
+                   sgn = sign(ONE,s(i,j+1)-s(i,j-1))
+                   if (sgn*dI .ge. sgn*ds) then
+                      sp(i,j,1) = s(i,j) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alpham))
+                   end if
+                else if (abs(alpham) .ge. TWO*abs(alphap)) then
+                   dI = -alpham**2 / (FOUR*(alphap+alpham))
+                   ds = s(i+1,j)-s(i,j)
+                   sgn = sign(ONE,s(i,j+1)-s(i,j-1))
+                   if (sgn*dI .ge. sgn*ds) then
+                      sm(i,j,1) = s(i,j) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alphap))
+                   end if
+                end if
+             end if
+          end do
+       end do
+
     end if
 
     ! compute Ip and Im
@@ -543,6 +662,45 @@ contains
        end do
 
     else if (spm_limiter_type .eq. 2) then
+
+       ! modify sp and sm using Colella 2008 limiters
+       do j=lo(2)-1,hi(2)+1
+          do i=lo(1)-1,hi(1)+1
+             if ((sp(i,j,2)-s(i,j))*(s(i,j)-sm(i,j,2)) .le. ZERO .or. &
+                 (s(i,j+1)-s(i,j))*(s(i,j)-s(i,j-1)) .le. ZERO ) then
+                s6 = SIX*s(i,j) - THREE*(sm(i,j,2)+sp(i,j,2))
+                D2  = -TWO*s6/dx(2)**2
+                D2C = (ONE/dx(2)**2)*(s(i,j-1)-TWO*s(i,j)+s(i,j+1))
+                D2L = (ONE/dx(2)**2)*(s(i,j-2)-TWO*s(i,j-1)+s(i,j))
+                D2R = (ONE/dx(2)**2)*(s(i,j)-TWO*s(i,j+1)+s(i,j+2))
+                if (sign(ONE,D2) .eq. sign(ONE,D2C) .and. &
+                    sign(ONE,D2) .eq. sign(ONE,D2L) .and. &
+                    sign(ONE,D2) .eq. sign(ONE,D2R)) then
+                   D2LIM = sign(ONE,D2)*min(C*abs(D2C),C*abs(D2L),C*abs(D2R),abs(D2))
+                   sp(i,j,2) = s(i,j) + (sp(i,j,2)-s(i,j))*(D2LIM/D2)
+                   sm(i,j,2) = s(i,j) + (sm(i,j,2)-s(i,j))*(D2LIM/D2)
+                end if
+             else
+                alphap = sp(i,j,2)-s(i,j)
+                alpham = sm(i,j,2)-s(i,j)
+                if (abs(alphap) .ge. TWO*abs(alpham)) then
+                   dI = -alphap**2 / (FOUR*(alphap+alpham))
+                   ds = s(i,j+1)-s(i,j)
+                   sgn = sign(ONE,s(i,j+1)-s(i,j-1))
+                   if (sgn*dI .ge. sgn*ds) then
+                      sp(i,j,2) = s(i,j) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alpham))
+                   end if
+                else if (abs(alpham) .ge. TWO*abs(alphap)) then
+                   dI = -alpham**2 / (FOUR*(alphap+alpham))
+                   ds = s(i,j+1)-s(i,j)
+                   sgn = sign(ONE,s(i,j+1)-s(i,j-1))
+                   if (sgn*dI .ge. sgn*ds) then
+                      sm(i,j,2) = s(i,j) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alphap))
+                   end if
+                end if
+             end if
+          end do
+       end do
 
     end if
 
