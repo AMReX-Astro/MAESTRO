@@ -18,10 +18,10 @@ contains
     use geometry, only: nr
 
     integer        , intent(in   ) :: n,lo(:),hi(:),ng_s,ng_u
-    real(kind=dp_t), intent(in   ) ::  s(lo(1)-ng_s:,lo(2)-ng_s:)
-    real(kind=dp_t), intent(in   ) ::  u(lo(1)-ng_u:,lo(2)-ng_u:,:)
-    real(kind=dp_t), intent(inout) :: Ip(lo(1)-1   :,lo(2)-1   :,:) 
-    real(kind=dp_t), intent(inout) :: Im(lo(1)-1   :,lo(2)-1   :,:) 
+    real(kind=dp_t), intent(in   ) ::    s(lo(1)-ng_s:,lo(2)-ng_s:)
+    real(kind=dp_t), intent(in   ) ::    u(lo(1)-ng_u:,lo(2)-ng_u:,:)
+    real(kind=dp_t), intent(inout) ::   Ip(lo(1)-1   :,lo(2)-1   :,:) 
+    real(kind=dp_t), intent(inout) ::   Im(lo(1)-1   :,lo(2)-1   :,:) 
     real(kind=dp_t), intent(in   ) :: w0(0:)
     integer        , intent(in   ) :: bc(:,:,:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
@@ -29,7 +29,8 @@ contains
     ! local
     integer :: i,j
 
-    real(kind=dp_t) :: dsl, dsr, dsc, sigma, s6, v_from_w0
+    real(kind=dp_t) :: dsl, dsr, dsc
+    real(kind=dp_t) :: sigma, s6, w0cen
 
     ! s_{\ib,+}, s_{\ib,-}
     real(kind=dp_t), allocatable :: sp(:,:,:)
@@ -174,20 +175,21 @@ contains
 
     ! compute Ip and Im
     do j=lo(2)-1,hi(2)+1
+       ! compute effect of w0
        if (j .le. 0) then
-          v_from_w0 = w0(0)
+          w0cen = w0(0)
        else if (j .ge. nr(n)) then
-          v_from_w0 = w0(nr(n))
+          w0cen = w0(nr(n))
        else
-          v_from_w0 = HALF*(w0(j)+w0(j+1))
+          w0cen = HALF*(w0(j)+w0(j+1))
        end if
        do i=lo(1)-1,hi(1)+1
-          sigma = abs(u(i,j,2)+v_from_w0)*dt/dx(2)
+          sigma = abs(u(i,j,2)+w0cen)*dt/dx(2)
           s6 = SIX*s(i,j) - THREE*(sm(i,j,2)+sp(i,j,2))
-          if (u(i,j,2)+v_from_w0 .gt. ZERO) then
+          if (u(i,j,2)+w0cen .gt. ZERO) then
              Ip(i,j,2) = sp(i,j,2) - (sigma/TWO)*(sp(i,j,2)-sm(i,j,2)-(ONE-TWO3RD*sigma)*s6)
              Im(i,j,2) = s(i,j)
-          else if (u(i,j,2)+v_from_w0 .lt. ZERO) then
+          else if (u(i,j,2)+w0cen .lt. ZERO) then
              Ip(i,j,2) = s(i,j)
              Im(i,j,2) = sm(i,j,2) + (sigma/TWO)*(sp(i,j,2)-sm(i,j,2)+(ONE-TWO3RD*sigma)*s6)
           else
@@ -221,7 +223,8 @@ contains
     ! local
     integer :: i,j
 
-    real(kind=dp_t) :: dsl, dsr, dsc, sigmam, sigmap, s6, vlo, vhi
+    real(kind=dp_t) :: dsl, dsr, dsc
+    real(kind=dp_t) :: sigmam, sigmap, s6, w0lo, w0hi
 
     ! s_{\ib,+}, s_{\ib,-}
     real(kind=dp_t), allocatable :: sp(:,:,:)
@@ -299,15 +302,15 @@ contains
     ! compute Ip and Im
     do j=lo(2)-1,hi(2)+1
        do i=lo(1)-1,hi(1)+1
-          sigmam = abs(umac(i,j))*dt/dx(1)
           sigmap = abs(umac(i+1,j))*dt/dx(1)
+          sigmam = abs(umac(i,j))*dt/dx(1)
           s6 = SIX*s(i,j) - THREE*(sm(i,j,1)+sp(i,j,1))
-          if(umac(i+1,j) .gt. ZERO) then
+          if (umac(i+1,j) .gt. ZERO) then
              Ip(i,j,1) = sp(i,j,1) - (sigmap/TWO)*(sp(i,j,1)-sm(i,j,1)-(ONE-TWO3RD*sigmap)*s6)
           else
              Ip(i,j,1) = s(i,j)
           end if
-          if(umac(i,j) .lt. ZERO) then
+          if (umac(i,j) .lt. ZERO) then
              Im(i,j,1) = sm(i,j,1) + (sigmam/TWO)*(sp(i,j,1)-sm(i,j,1)+(ONE-TWO3RD*sigmam)*s6)
           else
              Im(i,j,1) = s(i,j)
@@ -369,25 +372,25 @@ contains
     do j=lo(2)-1,hi(2)+1
        ! compute effect of w0
        if (j .lt. 0) then
-          vlo = w0(0)
-          vhi = w0(0)
+          w0lo = w0(0)
+          w0hi = w0(0)
        else if (j .gt. nr(n)-1) then
-          vlo = w0(nr(n))
-          vhi = w0(nr(n))
+          w0lo = w0(nr(n))
+          w0hi = w0(nr(n))
        else
-          vlo = w0(j)
-          vhi = w0(j+1)
+          w0lo = w0(j)
+          w0hi = w0(j+1)
        end if
        do i=lo(1)-1,hi(1)+1
-          sigmap = abs(vmac(i,j+1)+vhi)*dt/dx(2)
-          sigmam = abs(vmac(i,j  )+vlo)*dt/dx(2)
+          sigmap = abs(vmac(i,j+1)+w0hi)*dt/dx(2)
+          sigmam = abs(vmac(i,j  )+w0lo)*dt/dx(2)
           s6 = SIX*s(i,j) - THREE*(sm(i,j,2)+sp(i,j,2))
-          if(vmac(i,j+1)+vhi .gt. ZERO) then
+          if (vmac(i,j+1)+w0hi .gt. ZERO) then
              Ip(i,j,2) = sp(i,j,2) - (sigmap/TWO)*(sp(i,j,2)-sm(i,j,2)-(ONE-TWO3RD*sigmap)*s6)
           else
              Ip(i,j,2) = s(i,j)
           end if
-          if(vmac(i,j)+vlo .lt. ZERO) then
+          if (vmac(i,j)+w0lo .lt. ZERO) then
              Im(i,j,2) = sm(i,j,2) + (sigmam/TWO)*(sp(i,j,2)-sm(i,j,2)+(ONE-TWO3RD*sigmam)*s6)
           else
              Im(i,j,2) = s(i,j)
