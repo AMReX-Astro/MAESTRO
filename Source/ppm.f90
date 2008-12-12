@@ -23,7 +23,7 @@ contains
     real(kind=dp_t), intent(inout) ::   Ip(lo(1)-1   :,lo(2)-1   :,:) 
     real(kind=dp_t), intent(inout) ::   Im(lo(1)-1   :,lo(2)-1   :,:) 
     real(kind=dp_t), intent(in   ) :: w0(0:)
-    integer        , intent(in   ) :: bc(:,:,:)
+    integer        , intent(in   ) :: bc(:,:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
 
     ! local
@@ -67,6 +67,10 @@ contains
     ! 1 = "old" limiters described in Colella 2008
     ! 2 = "new" limiters described in Colella 2008
     spm_limiter_type = 1
+
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ! x-direction
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     ! compute s at x-edges
     if (edge_interp_type .eq. 1) then
@@ -130,11 +134,6 @@ contains
           sm(i,j,1) = sedgex(i  ,j)
        end do
     end do
-
-    ! different stencil needed for EXT_DIR and HOEXTRAP bc's
-    !
-    !
-    !
 
     ! limit sp and sm
     if (spm_limiter_type .eq. 1) then
@@ -200,6 +199,19 @@ contains
 
     end if
 
+    ! different stencil needed for EXT_DIR and HOEXTRAP bc's
+    if (bc(1,1) .eq. EXT_DIR  .or. bc(1,1) .eq. HOEXTRAP) then
+
+
+
+    end if
+
+    if (bc(1,2) .eq. EXT_DIR  .or. bc(1,2) .eq. HOEXTRAP) then
+
+
+
+    end if
+
     ! compute Ip and Im
     do j=lo(2)-1,hi(2)+1
        do i=lo(1)-1,hi(1)+1
@@ -217,6 +229,10 @@ contains
           end if
        end do
     end do
+
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ! y-direction
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     ! compute s at y-edges
     if (edge_interp_type .eq. 1) then
@@ -281,11 +297,6 @@ contains
        end do
     end do
 
-    ! different stencil needed for EXT_DIR and HOEXTRAP bc's
-    !
-    !
-    !
-
     if (spm_limiter_type .eq. 1) then
 
        ! modify sp and sm using quadratic limiters
@@ -346,6 +357,19 @@ contains
              end if
           end do
        end do
+
+    end if
+
+    ! different stencil needed for EXT_DIR and HOEXTRAP bc's
+    if (bc(2,1) .eq. EXT_DIR  .or. bc(2,1) .eq. HOEXTRAP) then
+
+
+
+    end if
+
+    if (bc(2,2) .eq. EXT_DIR  .or. bc(2,2) .eq. HOEXTRAP) then
+
+
 
     end if
 
@@ -393,7 +417,7 @@ contains
     real(kind=dp_t), intent(inout) ::   Ip(lo(1)-1   :,lo(2)-1   :,:) 
     real(kind=dp_t), intent(inout) ::   Im(lo(1)-1   :,lo(2)-1   :,:) 
     real(kind=dp_t), intent(in   ) :: w0(0:)
-    integer        , intent(in   ) :: bc(:,:,:)
+    integer        , intent(in   ) :: bc(:,:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
 
     ! local
@@ -437,6 +461,10 @@ contains
     ! 1 = "old" limiters described in Colella 2008
     ! 2 = "new" limiters described in Colella 2008
     spm_limiter_type = 1
+
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ! x-direction
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     ! compute s at x-edges
     if (edge_interp_type .eq. 1) then
@@ -500,11 +528,6 @@ contains
           sm(i,j,1) = sedgex(i  ,j)
        end do
     end do
-
-    ! different stencil needed for EXT_DIR and HOEXTRAP bc's
-    !
-    !
-    !
 
     ! limit sp and sm
     if (spm_limiter_type .eq. 1) then
@@ -570,6 +593,19 @@ contains
 
     end if
 
+    ! different stencil needed for EXT_DIR and HOEXTRAP bc's
+    if (bc(1,1) .eq. EXT_DIR  .or. bc(1,1) .eq. HOEXTRAP) then
+
+
+
+    end if
+
+    if (bc(1,2) .eq. EXT_DIR  .or. bc(1,2) .eq. HOEXTRAP) then
+
+
+
+    end if
+
     ! compute Ip and Im
     do j=lo(2)-1,hi(2)+1
        do i=lo(1)-1,hi(1)+1
@@ -588,6 +624,10 @@ contains
           end if
        end do
     end do
+
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ! y-direction
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     ! compute s at y-edges
     if (edge_interp_type .eq. 1) then
@@ -652,11 +692,6 @@ contains
        end do
     end do
 
-    ! different stencil needed for EXT_DIR and HOEXTRAP bc's
-    !
-    !
-    !
-
     if (spm_limiter_type .eq. 1) then
 
        ! modify sp and sm using quadratic limiters
@@ -720,6 +755,19 @@ contains
 
     end if
 
+    ! different stencil needed for EXT_DIR and HOEXTRAP bc's
+    if (bc(2,1) .eq. EXT_DIR  .or. bc(2,1) .eq. HOEXTRAP) then
+
+
+
+    end if
+
+    if (bc(2,2) .eq. EXT_DIR  .or. bc(2,2) .eq. HOEXTRAP) then
+
+
+
+    end if
+
     ! compute Ip and Im
     do j=lo(2)-1,hi(2)+1
        ! compute effect of w0
@@ -755,17 +803,18 @@ contains
   end subroutine ppm_fpu_2d
 
   ! characteristics based on u
-  subroutine ppm_3d(s,ng_s,u,ng_u,Ip,Im,lo,hi,bc,dx,dt)
+  subroutine ppm_3d(n,s,ng_s,u,ng_u,Ip,Im,lo,hi,bc,dx,dt)
 
     use bc_module
     use bl_constants_module
+    use geometry, only: nr
 
-    integer        , intent(in   ) :: lo(:),hi(:),ng_s,ng_u
-    real(kind=dp_t), intent(in   ) ::   s(lo(1)-ng_s:,lo(2)-ng_s:,hi(3)-ng_s:)
-    real(kind=dp_t), intent(in   ) ::   u(lo(1)-ng_u:,lo(2)-ng_u:,hi(3)-ng_u:,:)
-    real(kind=dp_t), intent(inout) ::  Ip(lo(1)-1   :,lo(2)-1   :,hi(3)-1   :,:) 
-    real(kind=dp_t), intent(inout) ::  Im(lo(1)-1   :,lo(2)-1   :,hi(3)-1   :,:)  
-    integer        , intent(in   ) :: bc(:,:,:)
+    integer        , intent(in   ) :: n,lo(:),hi(:),ng_s,ng_u
+    real(kind=dp_t), intent(in   ) ::    s(lo(1)-ng_s:,lo(2)-ng_s:,hi(3)-ng_s:)
+    real(kind=dp_t), intent(in   ) ::    u(lo(1)-ng_u:,lo(2)-ng_u:,hi(3)-ng_u:,:)
+    real(kind=dp_t), intent(inout) ::   Ip(lo(1)-1   :,lo(2)-1   :,hi(3)-1   :,:) 
+    real(kind=dp_t), intent(inout) ::   Im(lo(1)-1   :,lo(2)-1   :,hi(3)-1   :,:)  
+    integer        , intent(in   ) :: bc(:,:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
 
     ! local
@@ -775,19 +824,20 @@ contains
   end subroutine ppm_3d
 
   ! characteristics based on umac
-  subroutine ppm_fpu_3d(s,ng_s,umac,vmac,wmac,ng_u,Ip,Im,lo,hi,bc,dx,dt)
+  subroutine ppm_fpu_3d(n,s,ng_s,umac,vmac,wmac,ng_u,Ip,Im,lo,hi,bc,dx,dt)
 
     use bc_module
     use bl_constants_module
+    use geometry, only: nr
 
-    integer        , intent(in   ) :: lo(:),hi(:),ng_s,ng_u
+    integer        , intent(in   ) :: n,lo(:),hi(:),ng_s,ng_u
     real(kind=dp_t), intent(in   ) ::    s(lo(1)-ng_s:,lo(2)-ng_s:,hi(3)-ng_s:)
     real(kind=dp_t), intent(in   ) :: umac(lo(1)-ng_u:,lo(2)-ng_u:,hi(3)-ng_u:)
     real(kind=dp_t), intent(in   ) :: vmac(lo(1)-ng_u:,lo(2)-ng_u:,hi(3)-ng_u:)
     real(kind=dp_t), intent(in   ) :: wmac(lo(1)-ng_u:,lo(2)-ng_u:,hi(3)-ng_u:)
     real(kind=dp_t), intent(inout) ::   Ip(lo(1)-1   :,lo(2)-1   :,hi(3)-1   :,:) 
     real(kind=dp_t), intent(inout) ::   Im(lo(1)-1   :,lo(2)-1   :,hi(3)-1   :,:)  
-    integer        , intent(in   ) :: bc(:,:,:)
+    integer        , intent(in   ) :: bc(:,:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
 
     ! local

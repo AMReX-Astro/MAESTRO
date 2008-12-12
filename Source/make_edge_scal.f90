@@ -257,7 +257,7 @@ contains
     je = hi(2)
 
     if (use_ppm) then
-       call ppm_fpu_2d(n,s(:,:,comp),ng_s,umac,vmac,ng_um,Ip,Im,w0,lo,hi,adv_bc,dx,dt)
+       call ppm_fpu_2d(n,s(:,:,comp),ng_s,umac,vmac,ng_um,Ip,Im,w0,lo,hi,adv_bc(:,:,1),dx,dt)
     else
        call slopex_2d(s(:,:,comp:),slopex,lo,hi,ng_s,1,adv_bc)
        call slopey_2d(s(:,:,comp:),slopey,lo,hi,ng_s,1,adv_bc)
