@@ -167,10 +167,14 @@ contains
                 D2R = (ONE/dx(1)**2)*(s(i,j)-TWO*s(i+1,j)+s(i+2,j))
                 if (sign(ONE,D2) .eq. sign(ONE,D2C) .and. &
                     sign(ONE,D2) .eq. sign(ONE,D2L) .and. &
-                    sign(ONE,D2) .eq. sign(ONE,D2R)) then
+                    sign(ONE,D2) .eq. sign(ONE,D2R) .and. &
+                    D2 .ne. ZERO) then
                    D2LIM = sign(ONE,D2)*min(C*abs(D2C),C*abs(D2L),C*abs(D2R),abs(D2))
                    sp(i,j,1) = s(i,j) + (sp(i,j,1)-s(i,j))*(D2LIM/D2)
                    sm(i,j,1) = s(i,j) + (sm(i,j,1)-s(i,j))*(D2LIM/D2)
+                else
+                   sp(i,j,1) = s(i,j)
+                   sm(i,j,1) = s(i,j)
                 end if
              else
                 alphap = sp(i,j,1)-s(i,j)
@@ -312,10 +316,14 @@ contains
                 D2R = (ONE/dx(2)**2)*(s(i,j)-TWO*s(i,j+1)+s(i,j+2))
                 if (sign(ONE,D2) .eq. sign(ONE,D2C) .and. &
                     sign(ONE,D2) .eq. sign(ONE,D2L) .and. &
-                    sign(ONE,D2) .eq. sign(ONE,D2R)) then
+                    sign(ONE,D2) .eq. sign(ONE,D2R) .and. &
+                    D2 .ne. ZERO) then
                    D2LIM = sign(ONE,D2)*min(C*abs(D2C),C*abs(D2L),C*abs(D2R),abs(D2))
                    sp(i,j,2) = s(i,j) + (sp(i,j,2)-s(i,j))*(D2LIM/D2)
                    sm(i,j,2) = s(i,j) + (sm(i,j,2)-s(i,j))*(D2LIM/D2)
+                else
+                   sp(i,j,2) = s(i,j)
+                   sm(i,j,2) = s(i,j)
                 end if
              else
                 alphap = sp(i,j,2)-s(i,j)
@@ -529,10 +537,14 @@ contains
                 D2R = (ONE/dx(1)**2)*(s(i,j)-TWO*s(i+1,j)+s(i+2,j))
                 if (sign(ONE,D2) .eq. sign(ONE,D2C) .and. &
                     sign(ONE,D2) .eq. sign(ONE,D2L) .and. &
-                    sign(ONE,D2) .eq. sign(ONE,D2R)) then
+                    sign(ONE,D2) .eq. sign(ONE,D2R) .and. &
+                    D2 .ne. ZERO) then
                    D2LIM = sign(ONE,D2)*min(C*abs(D2C),C*abs(D2L),C*abs(D2R),abs(D2))
                    sp(i,j,1) = s(i,j) + (sp(i,j,1)-s(i,j))*(D2LIM/D2)
                    sm(i,j,1) = s(i,j) + (sm(i,j,1)-s(i,j))*(D2LIM/D2)
+                else
+                   sp(i,j,1) = s(i,j)
+                   sm(i,j,1) = s(i,j)
                 end if
              else
                 alphap = sp(i,j,1)-s(i,j)
@@ -675,10 +687,14 @@ contains
                 D2R = (ONE/dx(2)**2)*(s(i,j)-TWO*s(i,j+1)+s(i,j+2))
                 if (sign(ONE,D2) .eq. sign(ONE,D2C) .and. &
                     sign(ONE,D2) .eq. sign(ONE,D2L) .and. &
-                    sign(ONE,D2) .eq. sign(ONE,D2R)) then
+                    sign(ONE,D2) .eq. sign(ONE,D2R) .and. &
+                    D2 .ne. ZERO) then
                    D2LIM = sign(ONE,D2)*min(C*abs(D2C),C*abs(D2L),C*abs(D2R),abs(D2))
                    sp(i,j,2) = s(i,j) + (sp(i,j,2)-s(i,j))*(D2LIM/D2)
                    sm(i,j,2) = s(i,j) + (sm(i,j,2)-s(i,j))*(D2LIM/D2)
+                else
+                   sp(i,j,2) = s(i,j)
+                   sm(i,j,2) = s(i,j)
                 end if
              else
                 alphap = sp(i,j,2)-s(i,j)
