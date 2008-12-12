@@ -29,7 +29,7 @@ contains
     ! local
     integer :: i,j,edge_interp_type,spm_limiter_type
 
-    real(kind=dp_t) :: dsl, dsr, dsc
+    real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, C
     real(kind=dp_t) :: sigma, s6, w0cen
 
     ! s_{\ib,+}, s_{\ib,-}
@@ -55,6 +55,9 @@ contains
     ! edge-centered indexing
     allocate(sedgex(lo(1)-1:hi(1)+2,lo(2)-1:hi(2)+1))
     allocate(sedgey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+2))
+
+    ! constant used in Colella 2008
+    C = 1.25d0
 
     ! 1 = 4th order with van Leer limiting
     ! 2 = 4th order with Colella 2008 limiting
@@ -88,6 +91,34 @@ contains
        end do
 
     else if (edge_interp_type .eq. 2) then
+
+       ! store centered differences in dsvl_x
+       do j=lo(2)-1,hi(2)+1
+          do i=lo(1)-2,hi(1)+2
+             dsvl_x(i,j) = HALF * (s(i+1,j) - s(i-1,j))
+          end do
+       end do
+       
+       ! interpolate s to x-edges
+       do j=lo(2)-1,hi(2)+1
+          do i=lo(1)-1,hi(1)+2
+             sedgex(i,j) = HALF*(s(i,j)+s(i-1,j)) - SIXTH*(dsvl_x(i,j)-dsvl_x(i-1,j))
+             ! if sedgex is not in between the neighboring s values, we limit
+             if (sedgex(i,j) .lt. min(s(i,j),s(i-1,j)) .or. &
+                 sedgex(i,j) .gt. max(s(i,j),s(i-1,j))) then
+                D2  = (THREE/dx(1)**2)*(s(i-1,j)-TWO*sedgex(i,j)+s(i,j))
+                D2L = (ONE/dx(1)**2)*(s(i-2,j)-TWO*s(i-1,j)+s(i,j))
+                D2R = (ONE/dx(1)**2)*(s(i-1,j)-TWO*s(i,j)+s(i+1,j))
+                if (sign(ONE,D2) .eq. sign(ONE,D2L) .and. &
+                    sign(ONE,D2) .eq. sign(ONE,D2R)) then
+                   sedgex(i,j) = HALF*(s(i-1,j)+s(i,j)) - (dx(1)**2/THREE) &
+                        *sign(ONE,D2)*min(C*abs(D2L),C*abs(D2R),abs(D2))
+                else
+                   sedgex(i,j) = HALF*(s(i-1,j)+s(i,j))
+                end if
+             end if
+          end do
+       end do
 
     end if
 
@@ -169,6 +200,34 @@ contains
        end do
 
     else if (edge_interp_type .eq. 2) then
+
+       ! store centered differences in dsvl_y
+       do j=lo(2)-2,hi(2)+2
+          do i=lo(1)-1,hi(1)+1
+             dsvl_y(i,j) = HALF * (s(i,j+1) - s(i,j-1))
+          end do
+       end do
+       
+       ! interpolate s to y-edges
+       do j=lo(2)-1,hi(2)+2
+          do i=lo(1)-1,hi(1)+1
+             sedgey(i,j) = HALF*(s(i,j)+s(i,j-1)) - SIXTH*(dsvl_y(i,j)-dsvl_y(i,j-1))
+             ! if sedgey is not in between the neighboring s values, we limit
+             if (sedgey(i,j) .lt. min(s(i,j),s(i,j-1)) .or. &
+                 sedgey(i,j) .gt. max(s(i,j),s(i,j-1))) then
+                D2  = (THREE/dx(2)**2)*(s(i,j-1)-TWO*sedgey(i,j)+s(i,j))
+                D2L = (ONE/dx(2)**2)*(s(i,j-2)-TWO*s(i,j-1)+s(i,j))
+                D2R = (ONE/dx(2)**2)*(s(i,j-1)-TWO*s(i,j)+s(i,j+1))
+                if (sign(ONE,D2) .eq. sign(ONE,D2L) .and. &
+                    sign(ONE,D2) .eq. sign(ONE,D2R)) then
+                   sedgey(i,j) = HALF*(s(i,j-1)+s(i,j)) - (dx(2)**2/THREE) &
+                        *sign(ONE,D2)*min(C*abs(D2L),C*abs(D2R),abs(D2))
+                else
+                   sedgey(i,j) = HALF*(s(i,j-1)+s(i,j))
+                end if
+             end if
+          end do
+       end do
 
     end if
 
@@ -257,7 +316,7 @@ contains
     ! local
     integer :: i,j,edge_interp_type,spm_limiter_type
 
-    real(kind=dp_t) :: dsl, dsr, dsc
+    real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, C
     real(kind=dp_t) :: sigmam, sigmap, s6, w0lo, w0hi
 
     ! s_{\ib,+}, s_{\ib,-}
@@ -283,6 +342,9 @@ contains
     ! edge-centered indexing
     allocate(sedgex(lo(1)-1:hi(1)+2,lo(2)-1:hi(2)+1))
     allocate(sedgey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+2))
+
+    ! constant used in Colella 2008
+    C = 1.25d0
 
     ! 1 = 4th order with van Leer limiting
     ! 2 = 4th order with Colella 2008 limiting
@@ -316,6 +378,34 @@ contains
        end do
 
     else if (edge_interp_type .eq. 2) then
+
+       ! store centered differences in dsvl_x
+       do j=lo(2)-1,hi(2)+1
+          do i=lo(1)-2,hi(1)+2
+             dsvl_x(i,j) = HALF * (s(i+1,j) - s(i-1,j))
+          end do
+       end do
+       
+       ! interpolate s to x-edges
+       do j=lo(2)-1,hi(2)+1
+          do i=lo(1)-1,hi(1)+2
+             sedgex(i,j) = HALF*(s(i,j)+s(i-1,j)) - SIXTH*(dsvl_x(i,j)-dsvl_x(i-1,j))
+             ! if sedgex is not in between the neighboring s values, we limit
+             if (sedgex(i,j) .lt. min(s(i,j),s(i-1,j)) .or. &
+                 sedgex(i,j) .gt. max(s(i,j),s(i-1,j))) then
+                D2  = (THREE/dx(1)**2)*(s(i-1,j)-TWO*sedgex(i,j)+s(i,j))
+                D2L = (ONE/dx(1)**2)*(s(i-2,j)-TWO*s(i-1,j)+s(i,j))
+                D2R = (ONE/dx(1)**2)*(s(i-1,j)-TWO*s(i,j)+s(i+1,j))
+                if (sign(ONE,D2) .eq. sign(ONE,D2L) .and. &
+                    sign(ONE,D2) .eq. sign(ONE,D2R)) then
+                   sedgex(i,j) = HALF*(s(i-1,j)+s(i,j)) - (dx(1)**2/THREE) &
+                        *sign(ONE,D2)*min(C*abs(D2L),C*abs(D2R),abs(D2))
+                else
+                   sedgex(i,j) = HALF*(s(i-1,j)+s(i,j))
+                end if
+             end if
+          end do
+       end do
 
     end if
 
@@ -398,6 +488,34 @@ contains
        end do
 
     else if (edge_interp_type .eq. 2) then
+
+       ! store centered differences in dsvl_y
+       do j=lo(2)-2,hi(2)+2
+          do i=lo(1)-1,hi(1)+1
+             dsvl_y(i,j) = HALF * (s(i,j+1) - s(i,j-1))
+          end do
+       end do
+       
+       ! interpolate s to y-edges
+       do j=lo(2)-1,hi(2)+2
+          do i=lo(1)-1,hi(1)+1
+             sedgey(i,j) = HALF*(s(i,j)+s(i,j-1)) - SIXTH*(dsvl_y(i,j)-dsvl_y(i,j-1))
+             ! if sedgey is not in between the neighboring s values, we limit
+             if (sedgey(i,j) .lt. min(s(i,j),s(i,j-1)) .or. &
+                 sedgey(i,j) .gt. max(s(i,j),s(i,j-1))) then
+                D2  = (THREE/dx(2)**2)*(s(i,j-1)-TWO*sedgey(i,j)+s(i,j))
+                D2L = (ONE/dx(2)**2)*(s(i,j-2)-TWO*s(i,j-1)+s(i,j))
+                D2R = (ONE/dx(2)**2)*(s(i,j-1)-TWO*s(i,j)+s(i,j+1))
+                if (sign(ONE,D2) .eq. sign(ONE,D2L) .and. &
+                    sign(ONE,D2) .eq. sign(ONE,D2R)) then
+                   sedgey(i,j) = HALF*(s(i,j-1)+s(i,j)) - (dx(2)**2/THREE) &
+                        *sign(ONE,D2)*min(C*abs(D2L),C*abs(D2R),abs(D2))
+                else
+                   sedgey(i,j) = HALF*(s(i,j-1)+s(i,j))
+                end if
+             end if
+          end do
+       end do
 
     end if
 
