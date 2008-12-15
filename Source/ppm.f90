@@ -2476,8 +2476,8 @@ contains
                 velhi = wmac(i,j,k+1) + w0macz(i,j,k+1)
                 vello = wmac(i,j,k  ) + w0macz(i,j,k  )
              else
-                velhi = wmac(i,j+1,k) + w0hi
-                vello = wmac(i,j  ,k) + w0lo
+                velhi = wmac(i,j,k+1) + w0hi
+                vello = wmac(i,j,k  ) + w0lo
              end if
              sigmap = abs(velhi)*dt/dx(2)
              sigmam = abs(vello)*dt/dx(2)
