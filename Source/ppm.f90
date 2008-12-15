@@ -31,7 +31,7 @@ contains
 
     real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, C, alphap, alpham, ds
     real(kind=dp_t) :: dI, sgn
-    real(kind=dp_t) :: sigma, s6, w0_cc
+    real(kind=dp_t) :: sigma, s6, w0cc
 
     ! s_{\ib,+}, s_{\ib,-}
     real(kind=dp_t), allocatable :: sp(:,:)
@@ -450,19 +450,19 @@ contains
     do j=lo(2)-1,hi(2)+1
        ! compute effect of w0
        if (j .le. 0) then
-          w0_cc = w0(0)
+          w0cc = w0(0)
        else if (j .ge. nr(n)) then
-          w0_cc = w0(nr(n))
+          w0cc = w0(nr(n))
        else
-          w0_cc = HALF*(w0(j)+w0(j+1))
+          w0cc = HALF*(w0(j)+w0(j+1))
        end if
        do i=lo(1)-1,hi(1)+1
-          sigma = abs(u(i,j,2)+w0_cc)*dt/dx(2)
+          sigma = abs(u(i,j,2)+w0cc)*dt/dx(2)
           s6 = SIX*s(i,j) - THREE*(sm(i,j)+sp(i,j))
-          if (u(i,j,2)+w0_cc .gt. ZERO) then
+          if (u(i,j,2)+w0cc .gt. ZERO) then
              Ip(i,j,2) = sp(i,j) - (sigma/TWO)*(sp(i,j)-sm(i,j)-(ONE-TWO3RD*sigma)*s6)
              Im(i,j,2) = s(i,j)
-          else if (u(i,j,2)+w0_cc .lt. ZERO) then
+          else if (u(i,j,2)+w0cc .lt. ZERO) then
              Ip(i,j,2) = s(i,j)
              Im(i,j,2) = sm(i,j) + (sigma/TWO)*(sp(i,j)-sm(i,j)+(ONE-TWO3RD*sigma)*s6)
           else
@@ -949,20 +949,21 @@ contains
   end subroutine ppm_fpu_2d
 
   ! characteristics based on u
-  subroutine ppm_3d(n,s,ng_s,u,ng_u,Ip,Im,w0,w0macx,w0macy,w0macz,ng_wm,lo,hi,bc,dx,dt)
+  subroutine ppm_3d(n,s,ng_s,u,ng_u,Ip,Im,w0,w0macx,w0macy,w0macz, &
+                    ng_w0,lo,hi,bc,dx,dt)
 
     use bc_module
     use bl_constants_module
     use geometry, only: nr, spherical
 
-    integer        , intent(in   ) :: n,lo(:),hi(:),ng_s,ng_u,ng_wm
+    integer        , intent(in   ) :: n,lo(:),hi(:),ng_s,ng_u,ng_w0
     real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :,hi(3)-ng_s :)
     real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u :,lo(2)-ng_u :,hi(3)-ng_u :,:)
     real(kind=dp_t), intent(inout) ::     Ip(lo(1)-1    :,lo(2)-1    :,hi(3)-1    :,:)
     real(kind=dp_t), intent(inout) ::     Im(lo(1)-1    :,lo(2)-1    :,hi(3)-1    :,:)
-    real(kind=dp_t), intent(in   ) :: w0macx(lo(1)-ng_wm:,lo(2)-ng_wm:,hi(3)-ng_wm:)
-    real(kind=dp_t), intent(in   ) :: w0macy(lo(1)-ng_wm:,lo(2)-ng_wm:,hi(3)-ng_wm:)
-    real(kind=dp_t), intent(in   ) :: w0macz(lo(1)-ng_wm:,lo(2)-ng_wm:,hi(3)-ng_wm:)
+    real(kind=dp_t), intent(in   ) :: w0macx(lo(1)-ng_w0:,lo(2)-ng_w0:,hi(3)-ng_w0:)
+    real(kind=dp_t), intent(in   ) :: w0macy(lo(1)-ng_w0:,lo(2)-ng_w0:,hi(3)-ng_w0:)
+    real(kind=dp_t), intent(in   ) :: w0macz(lo(1)-ng_w0:,lo(2)-ng_w0:,hi(3)-ng_w0:)
     real(kind=dp_t), intent(in   ) :: w0(0:)
     integer        , intent(in   ) :: bc(:,:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
@@ -972,7 +973,7 @@ contains
 
     real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, C, alphap, alpham, ds
     real(kind=dp_t) :: dI, sgn
-    real(kind=dp_t) :: sigma, s6, w0_cc, vel_cc
+    real(kind=dp_t) :: sigma, s6, w0cc, velcc
 
     ! s_{\ib,+}, s_{\ib,-}
     real(kind=dp_t), allocatable :: sp(:,:,:)
@@ -1212,16 +1213,16 @@ contains
        do j=lo(2)-1,hi(2)+1
           do i=lo(1)-1,hi(1)+1
              if (spherical .eq. 1) then
-                vel_cc = u(i,j,k,1)+HALF*(w0macx(i+1,j,k)+w0macx(i,j,k))
+                velcc = u(i,j,k,1)+HALF*(w0macx(i+1,j,k)+w0macx(i,j,k))
              else
-                vel_cc = u(i,j,k,1)
+                velcc = u(i,j,k,1)
              end if
-             sigma = abs(vel_cc)*dt/dx(1)
+             sigma = abs(velcc)*dt/dx(1)
              s6 = SIX*s(i,j,k) - THREE*(sm(i,j,k)+sp(i,j,k))
-             if (vel_cc .gt. ZERO) then
+             if (velcc .gt. ZERO) then
                 Ip(i,j,k,1) = sp(i,j,k) - (sigma/TWO)*(sp(i,j,k)-sm(i,j,k)-(ONE-TWO3RD*sigma)*s6)
                 Im(i,j,k,1) = s(i,j,k)
-             else if (vel_cc .lt. ZERO) then
+             else if (velcc .lt. ZERO) then
                 Ip(i,j,k,1) = s(i,j,k)
                 Im(i,j,k,1) = sm(i,j,k) + (sigma/TWO)*(sp(i,j,k)-sm(i,j,k)+(ONE-TWO3RD*sigma)*s6)
              else
@@ -1262,31 +1263,300 @@ contains
 
   ! characteristics based on umac
   subroutine ppm_fpu_3d(n,s,ng_s,umac,vmac,wmac,ng_um,Ip,Im,w0,w0macx,w0macy,w0macz, &
-                        ng_wm,lo,hi,bc,dx,dt)
+                        ng_w0,lo,hi,bc,dx,dt)
 
     use bc_module
     use bl_constants_module
     use geometry, only: nr, spherical
 
-    integer        , intent(in   ) :: n,lo(:),hi(:),ng_s,ng_um,ng_wm
+    integer        , intent(in   ) :: n,lo(:),hi(:),ng_s,ng_um,ng_w0
     real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :,hi(3)-ng_s :)
     real(kind=dp_t), intent(in   ) ::   umac(lo(1)-ng_um:,lo(2)-ng_um:,hi(3)-ng_um:)
     real(kind=dp_t), intent(in   ) ::   vmac(lo(1)-ng_um:,lo(2)-ng_um:,hi(3)-ng_um:)
     real(kind=dp_t), intent(in   ) ::   wmac(lo(1)-ng_um:,lo(2)-ng_um:,hi(3)-ng_um:)
     real(kind=dp_t), intent(inout) ::     Ip(lo(1)-1    :,lo(2)-1    :,hi(3)-1    :,:)
     real(kind=dp_t), intent(inout) ::     Im(lo(1)-1    :,lo(2)-1    :,hi(3)-1    :,:)
-    real(kind=dp_t), intent(in   ) :: w0macx(lo(1)-ng_wm:,lo(2)-ng_wm:,hi(3)-ng_wm:)
-    real(kind=dp_t), intent(in   ) :: w0macy(lo(1)-ng_wm:,lo(2)-ng_wm:,hi(3)-ng_wm:)
-    real(kind=dp_t), intent(in   ) :: w0macz(lo(1)-ng_wm:,lo(2)-ng_wm:,hi(3)-ng_wm:)
+    real(kind=dp_t), intent(in   ) :: w0macx(lo(1)-ng_w0:,lo(2)-ng_w0:,hi(3)-ng_w0:)
+    real(kind=dp_t), intent(in   ) :: w0macy(lo(1)-ng_w0:,lo(2)-ng_w0:,hi(3)-ng_w0:)
+    real(kind=dp_t), intent(in   ) :: w0macz(lo(1)-ng_w0:,lo(2)-ng_w0:,hi(3)-ng_w0:)
     real(kind=dp_t), intent(in   ) :: w0(0:)
     integer        , intent(in   ) :: bc(:,:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
 
     ! local
+    integer :: i,j,k,edge_interp_type,spm_limiter_type
 
+    real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, C, alphap, alpham, ds
+    real(kind=dp_t) :: dI, sgn
+    real(kind=dp_t) :: sigmam, sigmap, s6, w0lo, w0hi, vello, velhi
 
+    ! s_{\ib,+}, s_{\ib,-}
+    real(kind=dp_t), allocatable :: sp(:,:,:)
+    real(kind=dp_t), allocatable :: sm(:,:,:)
+
+    ! \delta s_{\ib}^{vL}
+    real(kind=dp_t), allocatable :: dsvl(:,:,:)
+
+    ! s_{i+\half}^{H.O.}
+    real(kind=dp_t), allocatable :: sedge(:,:,:)
+
+    ! cell-centered indexing
+    allocate(sp(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
+    allocate(sm(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
+
+    ! constant used in Colella 2008
+    C = 1.25d0
+
+    ! 1 = 4th order with van Leer limiting
+    ! 2 = 4th order with Colella 2008 limiting
+    edge_interp_type = 1
+
+    ! 1 = "old" limiters described in Colella 2008
+    ! 2 = "new" limiters described in Colella 2008
+    spm_limiter_type = 1
+
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ! x-direction
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    ! cell-centered indexing w/extra x-ghost cell
+    allocate(dsvl(lo(1)-2:hi(1)+2,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
+
+    ! edge-centered indexing for x-faces
+    allocate(sedge(lo(1)-1:hi(1)+2,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
+
+    ! compute s at x-edges
+    if (edge_interp_type .eq. 1) then
+       
+       ! compute van Leer slopes in x-direction
+       do k=lo(3)-1,hi(3)+1
+          do j=lo(2)-1,hi(2)+1
+             do i=lo(1)-2,hi(1)+2
+                dsc = HALF * (s(i+1,j,k) - s(i-1,j,k))
+                dsl = TWO  * (s(i  ,j,k) - s(i-1,j,k))
+                dsr = TWO  * (s(i+1,j,k) - s(i  ,j,k))
+                dsvl(i,j,k) = sign(ONE,dsc)*min(abs(dsc),abs(dsl),abs(dsr))
+             end do
+          end do
+       end do
+       
+       ! interpolate s to x-edges
+       do k=lo(3)-1,hi(3)+1
+          do j=lo(2)-1,hi(2)+1
+             do i=lo(1)-1,hi(1)+2
+                sedge(i,j,k) = HALF*(s(i,j,k)+s(i-1,j,k)) - SIXTH*(dsvl(i,j,k)-dsvl(i-1,j,k))
+                ! make sure sedge lies in between adjacent cell-centered values
+                sedge(i,j,k) = max(sedge(i,j,k),min(s(i,j,k),s(i-1,j,k)))
+                sedge(i,j,k) = min(sedge(i,j,k),max(s(i,j,k),s(i-1,j,k)))
+             end do
+          end do
+       end do
+
+    else if (edge_interp_type .eq. 2) then
+       
+       ! store centered differences in dsvl
+       do k=lo(3)-1,hi(3)+1
+          do j=lo(2)-1,hi(2)+1
+             do i=lo(1)-2,hi(1)+2
+                dsvl(i,j,k) = HALF * (s(i+1,j,k) - s(i-1,j,k))
+             end do
+          end do
+       end do
+
+       ! interpolate s to x-edges
+       do k=lo(3)-1,hi(3)+1
+          do j=lo(2)-1,hi(2)+1
+             do i=lo(1)-1,hi(1)+2
+                sedge(i,j,k) = HALF*(s(i,j,k)+s(i-1,j,k)) - SIXTH*(dsvl(i,j,k)-dsvl(i-1,j,k))
+                ! if sedge is not in between the neighboring s values, we limit
+                if (sedge(i,j,k) .lt. min(s(i,j,k),s(i-1,j,k)) .or. &
+                     sedge(i,j,k) .gt. max(s(i,j,k),s(i-1,j,k))) then
+                   D2  = (THREE/dx(1)**2)*(s(i-1,j,k)-TWO*sedge(i,j,k)+s(i,j,k))
+                   D2L = (ONE/dx(1)**2)*(s(i-2,j,k)-TWO*s(i-1,j,k)+s(i,j,k))
+                   D2R = (ONE/dx(1)**2)*(s(i-1,j,k)-TWO*s(i,j,k)+s(i+1,j,k))
+                   if (sign(ONE,D2) .eq. sign(ONE,D2L) .and. &
+                        sign(ONE,D2) .eq. sign(ONE,D2R)) then
+                      sedge(i,j,k) = HALF*(s(i-1,j,k)+s(i,j,k)) - (dx(1)**2/THREE) &
+                           *sign(ONE,D2)*min(C*abs(D2L),C*abs(D2R),abs(D2))
+                   else
+                      sedge(i,j,k) = HALF*(s(i-1,j,k)+s(i,j,k))
+                   end if
+                end if
+             end do
+          end do
+       end do
+
+    end if
+
+    ! fill x-component of sp and sm
+    do k=lo(3)-1,hi(3)+1
+       do j=lo(2)-1,hi(2)+1
+          do i=lo(1)-1,hi(1)+1
+             sp(i,j,k) = sedge(i+1,j,k)
+             sm(i,j,k) = sedge(i  ,j,k)
+          end do
+       end do
+    end do
+    
+    ! limit x-component of sp and sm
+    if (spm_limiter_type .eq. 1) then
+
+       ! modify using quadratic limiters
+       do k=lo(3)-1,hi(3)+1
+          do j=lo(2)-1,hi(2)+1
+             do i=lo(1)-1,hi(1)+1
+                if ((sp(i,j,k)-s(i,j,k))*(s(i,j,k)-sm(i,j,k)) .le. ZERO) then
+                   sp(i,j,k) = s(i,j,k)
+                   sm(i,j,k) = s(i,j,k)
+                else if (abs(sp(i,j,k)-s(i,j,k)) .ge. TWO*abs(sm(i,j,k)-s(i,j,k))) then
+                   sp(i,j,k) = THREE*s(i,j,k) - TWO*sm(i,j,k)
+                else if (abs(sm(i,j,k)-s(i,j,k)) .ge. TWO*abs(sp(i,j,k)-s(i,j,k))) then
+                   sm(i,j,k) = THREE*s(i,j,k) - TWO*sp(i,j,k)
+                end if
+             end do
+          end do
+       end do
+
+    else if (spm_limiter_type .eq. 2) then
+
+       ! modify using Colella 2008 limiters
+       do k=lo(3)-1,hi(3)+1
+          do j=lo(2)-1,hi(2)+1
+             do i=lo(1)-1,hi(1)+1
+                if ((sp(i,j,k)-s(i,j,k))*(s(i,j,k)-sm(i,j,k)) .le. ZERO .or. &
+                     (s(i+1,j,k)-s(i,j,k))*(s(i,j,k)-s(i-1,j,k)) .le. ZERO ) then
+                   s6 = SIX*s(i,j,k) - THREE*(sm(i,j,k)+sp(i,j,k))
+                   D2  = -TWO*s6/dx(1)**2
+                   D2C = (ONE/dx(1)**2)*(s(i-1,j,k)-TWO*s(i,j,k)+s(i+1,j,k))
+                   D2L = (ONE/dx(1)**2)*(s(i-2,j,k)-TWO*s(i-1,j,k)+s(i,j,k))
+                   D2R = (ONE/dx(1)**2)*(s(i,j,k)-TWO*s(i+1,j,k)+s(i+2,j,k))
+                   if (sign(ONE,D2) .eq. sign(ONE,D2C) .and. &
+                        sign(ONE,D2) .eq. sign(ONE,D2L) .and. &
+                        sign(ONE,D2) .eq. sign(ONE,D2R) .and. &
+                        D2 .ne. ZERO) then
+                      D2LIM = sign(ONE,D2)*min(C*abs(D2C),C*abs(D2L),C*abs(D2R),abs(D2))
+                      sp(i,j,k) = s(i,j,k) + (sp(i,j,k)-s(i,j,k))*(D2LIM/D2)
+                      sm(i,j,k) = s(i,j,k) + (sm(i,j,k)-s(i,j,k))*(D2LIM/D2)
+                   else
+                      sp(i,j,k) = s(i,j,k)
+                      sm(i,j,k) = s(i,j,k)
+                   end if
+                else
+                   alphap = sp(i,j,k)-s(i,j,k)
+                   alpham = sm(i,j,k)-s(i,j,k)
+                   if (abs(alphap) .ge. TWO*abs(alpham)) then
+                      dI = -alphap**2 / (FOUR*(alphap+alpham))
+                      ds = s(i+1,j,k)-s(i,j,k)
+                      sgn = sign(ONE,s(i+1,j,k)-s(i-1,j,k))
+                      if (sgn*dI .ge. sgn*ds) then
+                         sp(i,j,k) = s(i,j,k) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alpham))
+                      end if
+                   else if (abs(alpham) .ge. TWO*abs(alphap)) then
+                      dI = -alpham**2 / (FOUR*(alphap+alpham))
+                      ds = s(i-1,j,k)-s(i,j,k)
+                      sgn = sign(ONE,s(i+1,j,k)-s(i-1,j,k))
+                      if (sgn*dI .ge. sgn*ds) then
+                         sm(i,j,k) = s(i,j,k) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alphap))
+                      end if
+                   end if
+                end if
+             end do
+          end do
+       end do
+
+    end if
+    
+    ! different stencil needed for x-component of EXT_DIR and HOEXTRAP bc's
+    if (bc(1,1) .eq. EXT_DIR  .or. bc(1,1) .eq. HOEXTRAP) then
+       ! the value in the first cc ghost cell represents the edge value
+       sm(lo(1),lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1) = s(lo(1)-1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1)
+
+       ! use a modified stencil to get sedge on the first interior edge
+       sedge(lo(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1) = &
+            -FIFTH        *s(lo(1)-1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1) &
+            + (THREE/FOUR)*s(lo(1)  ,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1) &
+            + HALF        *s(lo(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1) &
+            - (ONE/20.0d0)*s(lo(1)+2,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1)
+
+       ! make sure sedge lies in between adjacent cell-centered values
+       do k=lo(3)-1,hi(3)+1
+          do j=lo(2)-1,hi(2)+1
+             sedge(lo(1)+1,j,k) = max(sedge(lo(1)+1,j,k),min(s(lo(1)+1,j,k),s(lo(1),j,k)))
+             sedge(lo(1)+1,j,k) = min(sedge(lo(1)+1,j,k),max(s(lo(1)+1,j,k),s(lo(1),j,k)))
+          end do
+       end do
+
+       ! copy sedge into sp and sm
+       do k=lo(3)-1,hi(3)+1
+          do j=lo(2)-1,hi(2)+1
+             sp(lo(1)  ,j,k) = sedge(lo(1)+1,j,k)
+             sm(lo(1)+1,j,k) = sedge(lo(1)+1,j,k)
+          end do
+       end do
+    end if
+
+    if (bc(1,2) .eq. EXT_DIR  .or. bc(1,2) .eq. HOEXTRAP) then
+       ! the value in the first cc ghost cell represents the edge value
+       sp(hi(1),lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1) = s(hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1)
+
+       ! use a modified stencil to get sedge on the first interior edge
+       sedge(hi(1),lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1) = &
+            -FIFTH        *s(hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1) &
+            + (THREE/FOUR)*s(hi(1)  ,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1) &
+            + HALF        *s(hi(1)-1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1) &
+            - (ONE/20.0d0)*s(hi(1)-2,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1)
+
+       ! make sure sedge lies in between adjacent cell-centered values
+       do k=lo(3)-1,hi(3)+1
+          do j=lo(2)-1,hi(2)+1
+             sedge(hi(1),j,k) = max(sedge(hi(1),j,k),min(s(hi(1)-1,j,k),s(hi(1),j,k)))
+             sedge(hi(1),j,k) = min(sedge(hi(1),j,k),max(s(hi(1)-1,j,k),s(hi(1),j,k)))
+          end do
+       end do
+
+       ! copy sedge into sp and sm
+       do k=lo(3)-1,hi(3)+1
+          do j=lo(2)-1,hi(2)+1
+             sp(hi(1)-1,j,k) = sedge(hi(1),j,k)
+             sm(hi(1)  ,j,k) = sedge(hi(1),j,k)
+          end do
+       end do
+    end if
+    
+    ! compute x-component of Ip and Im
+    do k=lo(3)-1,hi(3)+1
+       do j=lo(2)-1,hi(2)+1
+          do i=lo(1)-1,hi(1)+1
+             if (spherical .eq. 1) then
+                velhi = umac(i+1,j,k) + w0macx(i+1,j,k)
+                vello = umac(i  ,j,k) + w0macx(i  ,j,k)
+             else
+                velhi = umac(i+1,j,k)
+                vello = umac(i  ,j,k)
+             end if
+             sigmap = abs(velhi)*dt/dx(1)
+             sigmam = abs(vello)*dt/dx(1)
+             s6 = SIX*s(i,j,k) - THREE*(sm(i,j,k)+sp(i,j,k))
+             if (velhi .gt. ZERO) then
+                Ip(i,j,k,1) = sp(i,j,k) - (sigmap/TWO)*(sp(i,j,k)-sm(i,j,k)-(ONE-TWO3RD*sigmap)*s6)
+             else
+                Ip(i,j,k,1) = s(i,j,k)
+             end if
+             if (vello .lt. ZERO) then
+                Im(i,j,k,1) = sm(i,j,k) + (sigmam/TWO)*(sp(i,j,k)-sm(i,j,k)+(ONE-TWO3RD*sigmam)*s6)
+             else
+                Im(i,j,k,1) = s(i,j,k)
+             end if
+          end do
+       end do
+    end do
+
+    deallocate(sedge,dsvl)
+
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ! y-direction
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   end subroutine ppm_fpu_3d
-
 
 end module ppm_module
