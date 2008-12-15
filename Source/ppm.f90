@@ -20,8 +20,8 @@ contains
     integer        , intent(in   ) :: n,lo(:),hi(:),ng_s,ng_u
     real(kind=dp_t), intent(in   ) ::    s(lo(1)-ng_s:,lo(2)-ng_s:)
     real(kind=dp_t), intent(in   ) ::    u(lo(1)-ng_u:,lo(2)-ng_u:,:)
-    real(kind=dp_t), intent(inout) ::   Ip(lo(1)-1   :,lo(2)-1   :,:) 
-    real(kind=dp_t), intent(inout) ::   Im(lo(1)-1   :,lo(2)-1   :,:) 
+    real(kind=dp_t), intent(inout) ::   Ip(lo(1)-1   :,lo(2)-1   :,:)
+    real(kind=dp_t), intent(inout) ::   Im(lo(1)-1   :,lo(2)-1   :,:)
     real(kind=dp_t), intent(in   ) :: w0(0:)
     integer        , intent(in   ) :: bc(:,:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
@@ -47,12 +47,6 @@ contains
     allocate(sp(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1))
     allocate(sm(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1))
 
-    ! cell-centered indexing w/extra x-ghost cell
-    allocate(dsvl(lo(1)-2:hi(1)+2,lo(2)-1:hi(2)+1))
-
-    ! edge-centered indexing for x-faces
-    allocate(sedge(lo(1)-1:hi(1)+2,lo(2)-1:hi(2)+1))
-
     ! constant used in Colella 2008
     C = 1.25d0
 
@@ -67,6 +61,12 @@ contains
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! x-direction
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    ! cell-centered indexing w/extra x-ghost cell
+    allocate(dsvl(lo(1)-2:hi(1)+2,lo(2)-1:hi(2)+1))
+
+    ! edge-centered indexing for x-faces
+    allocate(sedge(lo(1)-1:hi(1)+2,lo(2)-1:hi(2)+1))
 
     ! compute s at x-edges
     if (edge_interp_type .eq. 1) then
@@ -477,18 +477,18 @@ contains
   end subroutine ppm_2d
 
   ! characteristics based on umac
-  subroutine ppm_fpu_2d(n,s,ng_s,umac,vmac,ng_u,Ip,Im,w0,lo,hi,bc,dx,dt)
+  subroutine ppm_fpu_2d(n,s,ng_s,umac,vmac,ng_um,Ip,Im,w0,lo,hi,bc,dx,dt)
 
     use bc_module
     use bl_constants_module
     use geometry, only: nr
 
-    integer        , intent(in   ) :: n,lo(:),hi(:),ng_s,ng_u
-    real(kind=dp_t), intent(in   ) ::    s(lo(1)-ng_s:,lo(2)-ng_s:)
-    real(kind=dp_t), intent(in   ) :: umac(lo(1)-ng_u:,lo(2)-ng_u:)
-    real(kind=dp_t), intent(in   ) :: vmac(lo(1)-ng_u:,lo(2)-ng_u:)
-    real(kind=dp_t), intent(inout) ::   Ip(lo(1)-1   :,lo(2)-1   :,:) 
-    real(kind=dp_t), intent(inout) ::   Im(lo(1)-1   :,lo(2)-1   :,:) 
+    integer        , intent(in   ) :: n,lo(:),hi(:),ng_s,ng_um
+    real(kind=dp_t), intent(in   ) ::    s(lo(1)-ng_s :,lo(2)-ng_s :)
+    real(kind=dp_t), intent(in   ) :: umac(lo(1)-ng_um:,lo(2)-ng_um:)
+    real(kind=dp_t), intent(in   ) :: vmac(lo(1)-ng_um:,lo(2)-ng_um:)
+    real(kind=dp_t), intent(inout) ::   Ip(lo(1)-1    :,lo(2)-1    :,:)
+    real(kind=dp_t), intent(inout) ::   Im(lo(1)-1    :,lo(2)-1    :,:)
     real(kind=dp_t), intent(in   ) :: w0(0:)
     integer        , intent(in   ) :: bc(:,:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
@@ -514,12 +514,6 @@ contains
     allocate(sp(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1))
     allocate(sm(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1))
 
-    ! cell-centered indexing w/extra x-ghost cell
-    allocate(dsvl(lo(1)-2:hi(1)+2,lo(2)-1:hi(2)+1))
-
-    ! edge-centered indexing for x-faces
-    allocate(sedge(lo(1)-1:hi(1)+2,lo(2)-1:hi(2)+1))
-
     ! constant used in Colella 2008
     C = 1.25d0
 
@@ -534,6 +528,12 @@ contains
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! x-direction
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    ! cell-centered indexing w/extra x-ghost cell
+    allocate(dsvl(lo(1)-2:hi(1)+2,lo(2)-1:hi(2)+1))
+
+    ! edge-centered indexing for x-faces
+    allocate(sedge(lo(1)-1:hi(1)+2,lo(2)-1:hi(2)+1))
 
     ! compute s at x-edges
     if (edge_interp_type .eq. 1) then
@@ -949,40 +949,113 @@ contains
   end subroutine ppm_fpu_2d
 
   ! characteristics based on u
-  subroutine ppm_3d(n,s,ng_s,u,ng_u,Ip,Im,lo,hi,bc,dx,dt)
+  subroutine ppm_3d(n,s,ng_s,u,ng_u,Ip,Im,w0,w0macx,w0macy,w0macz,ng_wm,lo,hi,bc,dx,dt)
 
     use bc_module
     use bl_constants_module
     use geometry, only: nr
 
-    integer        , intent(in   ) :: n,lo(:),hi(:),ng_s,ng_u
-    real(kind=dp_t), intent(in   ) ::    s(lo(1)-ng_s:,lo(2)-ng_s:,hi(3)-ng_s:)
-    real(kind=dp_t), intent(in   ) ::    u(lo(1)-ng_u:,lo(2)-ng_u:,hi(3)-ng_u:,:)
-    real(kind=dp_t), intent(inout) ::   Ip(lo(1)-1   :,lo(2)-1   :,hi(3)-1   :,:) 
-    real(kind=dp_t), intent(inout) ::   Im(lo(1)-1   :,lo(2)-1   :,hi(3)-1   :,:)  
+    integer        , intent(in   ) :: n,lo(:),hi(:),ng_s,ng_u,ng_wm
+    real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :,hi(3)-ng_s :)
+    real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u :,lo(2)-ng_u :,hi(3)-ng_u :,:)
+    real(kind=dp_t), intent(inout) ::     Ip(lo(1)-1    :,lo(2)-1    :,hi(3)-1    :,:)
+    real(kind=dp_t), intent(inout) ::     Im(lo(1)-1    :,lo(2)-1    :,hi(3)-1    :,:)
+    real(kind=dp_t), intent(in   ) :: w0macx(lo(1)-ng_wm:,lo(2)-ng_wm:,hi(3)-ng_wm:)
+    real(kind=dp_t), intent(in   ) :: w0macy(lo(1)-ng_wm:,lo(2)-ng_wm:,hi(3)-ng_wm:)
+    real(kind=dp_t), intent(in   ) :: w0macz(lo(1)-ng_wm:,lo(2)-ng_wm:,hi(3)-ng_wm:)
+    real(kind=dp_t), intent(in   ) :: w0(0:)
     integer        , intent(in   ) :: bc(:,:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
 
     ! local
+    integer :: i,j,k,edge_interp_type,spm_limiter_type
 
+    real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, C, alphap, alpham, ds
+    real(kind=dp_t) :: dI, sgn
+    real(kind=dp_t) :: sigma, s6, w0cen
 
+    ! s_{\ib,+}, s_{\ib,-}
+    real(kind=dp_t), allocatable :: sp(:,:,:)
+    real(kind=dp_t), allocatable :: sm(:,:,:)
+
+    ! \delta s_{\ib}^{vL}
+    real(kind=dp_t), allocatable :: dsvl(:,:,:)
+
+    ! s_{i+\half}^{H.O.}
+    real(kind=dp_t), allocatable :: sedge(:,:,:)
+
+    ! cell-centered indexing
+    allocate(sp(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
+    allocate(sm(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
+
+    ! constant used in Colella 2008
+    C = 1.25d0
+
+    ! 1 = 4th order with van Leer limiting
+    ! 2 = 4th order with Colella 2008 limiting
+    edge_interp_type = 1
+
+    ! 1 = "old" limiters described in Colella 2008
+    ! 2 = "new" limiters described in Colella 2008
+    spm_limiter_type = 1
+
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ! x-direction
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    ! cell-centered indexing w/extra x-ghost cell
+    allocate(dsvl(lo(1)-2:hi(1)+2,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
+
+    ! edge-centered indexing for x-faces
+    allocate(sedge(lo(1)-1:hi(1)+2,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
+
+    deallocate(sedge,dsvl)
+
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ! y-direction
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    ! cell-centered indexing w/extra y-ghost cell
+    allocate( dsvl(lo(1)-1:hi(1)+1,lo(2)-2:hi(2)+2,lo(3)-1:hi(3)+1))
+
+    ! edge-centered indexing for y-faces
+    allocate(sedge(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+2,lo(3)-1:hi(3)+1))
+
+    deallocate(sedge,dsvl)
+
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ! z-direction
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    ! cell-centered indexing w/extra y-ghost cell
+    allocate( dsvl(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-2:hi(3)+2))
+
+    ! edge-centered indexing for y-faces
+    allocate(sedge(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+2))
+
+    deallocate(sp,sm,dsvl,sedge)
 
   end subroutine ppm_3d
 
   ! characteristics based on umac
-  subroutine ppm_fpu_3d(n,s,ng_s,umac,vmac,wmac,ng_u,Ip,Im,lo,hi,bc,dx,dt)
+  subroutine ppm_fpu_3d(n,s,ng_s,umac,vmac,wmac,ng_um,Ip,Im,w0,w0macx,w0macy,w0macz, &
+                        ng_wm,lo,hi,bc,dx,dt)
 
     use bc_module
     use bl_constants_module
     use geometry, only: nr
 
-    integer        , intent(in   ) :: n,lo(:),hi(:),ng_s,ng_u
-    real(kind=dp_t), intent(in   ) ::    s(lo(1)-ng_s:,lo(2)-ng_s:,hi(3)-ng_s:)
-    real(kind=dp_t), intent(in   ) :: umac(lo(1)-ng_u:,lo(2)-ng_u:,hi(3)-ng_u:)
-    real(kind=dp_t), intent(in   ) :: vmac(lo(1)-ng_u:,lo(2)-ng_u:,hi(3)-ng_u:)
-    real(kind=dp_t), intent(in   ) :: wmac(lo(1)-ng_u:,lo(2)-ng_u:,hi(3)-ng_u:)
-    real(kind=dp_t), intent(inout) ::   Ip(lo(1)-1   :,lo(2)-1   :,hi(3)-1   :,:) 
-    real(kind=dp_t), intent(inout) ::   Im(lo(1)-1   :,lo(2)-1   :,hi(3)-1   :,:)  
+    integer        , intent(in   ) :: n,lo(:),hi(:),ng_s,ng_um,ng_wm
+    real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :,hi(3)-ng_s :)
+    real(kind=dp_t), intent(in   ) ::   umac(lo(1)-ng_um:,lo(2)-ng_um:,hi(3)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::   vmac(lo(1)-ng_um:,lo(2)-ng_um:,hi(3)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::   wmac(lo(1)-ng_um:,lo(2)-ng_um:,hi(3)-ng_um:)
+    real(kind=dp_t), intent(inout) ::     Ip(lo(1)-1    :,lo(2)-1    :,hi(3)-1    :,:)
+    real(kind=dp_t), intent(inout) ::     Im(lo(1)-1    :,lo(2)-1    :,hi(3)-1    :,:)
+    real(kind=dp_t), intent(in   ) :: w0macx(lo(1)-ng_wm:,lo(2)-ng_wm:,hi(3)-ng_wm:)
+    real(kind=dp_t), intent(in   ) :: w0macy(lo(1)-ng_wm:,lo(2)-ng_wm:,hi(3)-ng_wm:)
+    real(kind=dp_t), intent(in   ) :: w0macz(lo(1)-ng_wm:,lo(2)-ng_wm:,hi(3)-ng_wm:)
+    real(kind=dp_t), intent(in   ) :: w0(0:)
     integer        , intent(in   ) :: bc(:,:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
 
