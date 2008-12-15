@@ -2473,11 +2473,11 @@ contains
        do j=lo(2)-1,hi(2)+1
           do i=lo(1)-1,hi(1)+1
              if (spherical .eq. 1) then
-                velhi = vmac(i,j+1,k) + w0macy(i,j+1,k)
-                vello = vmac(i,j  ,k) + w0macy(i,j  ,k)
+                velhi = wmac(i,j,k+1) + w0macz(i,j,k+1)
+                vello = wmac(i,j,k  ) + w0macz(i,j,k  )
              else
-                velhi = vmac(i,j+1,k) + w0hi
-                vello = vmac(i,j  ,k) + w0lo
+                velhi = wmac(i,j+1,k) + w0hi
+                vello = wmac(i,j  ,k) + w0lo
              end if
              sigmap = abs(velhi)*dt/dx(2)
              sigmam = abs(vello)*dt/dx(2)
