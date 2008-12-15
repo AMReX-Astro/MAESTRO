@@ -957,13 +957,13 @@ contains
     use geometry, only: nr, spherical
 
     integer        , intent(in   ) :: n,lo(:),hi(:),ng_s,ng_u,ng_w0
-    real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :,hi(3)-ng_s :)
-    real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u :,lo(2)-ng_u :,hi(3)-ng_u :,:)
-    real(kind=dp_t), intent(inout) ::     Ip(lo(1)-1    :,lo(2)-1    :,hi(3)-1    :,:)
-    real(kind=dp_t), intent(inout) ::     Im(lo(1)-1    :,lo(2)-1    :,hi(3)-1    :,:)
-    real(kind=dp_t), intent(in   ) :: w0macx(lo(1)-ng_w0:,lo(2)-ng_w0:,hi(3)-ng_w0:)
-    real(kind=dp_t), intent(in   ) :: w0macy(lo(1)-ng_w0:,lo(2)-ng_w0:,hi(3)-ng_w0:)
-    real(kind=dp_t), intent(in   ) :: w0macz(lo(1)-ng_w0:,lo(2)-ng_w0:,hi(3)-ng_w0:)
+    real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :)
+    real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :,:)
+    real(kind=dp_t), intent(inout) ::     Ip(lo(1)-1    :,lo(2)-1    :,lo(3)-1    :,:)
+    real(kind=dp_t), intent(inout) ::     Im(lo(1)-1    :,lo(2)-1    :,lo(3)-1    :,:)
+    real(kind=dp_t), intent(in   ) :: w0macx(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
+    real(kind=dp_t), intent(in   ) :: w0macy(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
+    real(kind=dp_t), intent(in   ) :: w0macz(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
     real(kind=dp_t), intent(in   ) :: w0(0:)
     integer        , intent(in   ) :: bc(:,:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
@@ -1726,15 +1726,15 @@ contains
     use geometry, only: nr, spherical
 
     integer        , intent(in   ) :: n,lo(:),hi(:),ng_s,ng_um,ng_w0
-    real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :,hi(3)-ng_s :)
-    real(kind=dp_t), intent(in   ) ::   umac(lo(1)-ng_um:,lo(2)-ng_um:,hi(3)-ng_um:)
-    real(kind=dp_t), intent(in   ) ::   vmac(lo(1)-ng_um:,lo(2)-ng_um:,hi(3)-ng_um:)
-    real(kind=dp_t), intent(in   ) ::   wmac(lo(1)-ng_um:,lo(2)-ng_um:,hi(3)-ng_um:)
-    real(kind=dp_t), intent(inout) ::     Ip(lo(1)-1    :,lo(2)-1    :,hi(3)-1    :,:)
-    real(kind=dp_t), intent(inout) ::     Im(lo(1)-1    :,lo(2)-1    :,hi(3)-1    :,:)
-    real(kind=dp_t), intent(in   ) :: w0macx(lo(1)-ng_w0:,lo(2)-ng_w0:,hi(3)-ng_w0:)
-    real(kind=dp_t), intent(in   ) :: w0macy(lo(1)-ng_w0:,lo(2)-ng_w0:,hi(3)-ng_w0:)
-    real(kind=dp_t), intent(in   ) :: w0macz(lo(1)-ng_w0:,lo(2)-ng_w0:,hi(3)-ng_w0:)
+    real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :)
+    real(kind=dp_t), intent(in   ) ::   umac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::   vmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+    real(kind=dp_t), intent(in   ) ::   wmac(lo(1)-ng_um:,lo(2)-ng_um:,lo(3)-ng_um:)
+    real(kind=dp_t), intent(inout) ::     Ip(lo(1)-1    :,lo(2)-1    :,lo(3)-1    :,:)
+    real(kind=dp_t), intent(inout) ::     Im(lo(1)-1    :,lo(2)-1    :,lo(3)-1    :,:)
+    real(kind=dp_t), intent(in   ) :: w0macx(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
+    real(kind=dp_t), intent(in   ) :: w0macy(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
+    real(kind=dp_t), intent(in   ) :: w0macz(lo(1)-ng_w0:,lo(2)-ng_w0:,lo(3)-ng_w0:)
     real(kind=dp_t), intent(in   ) :: w0(0:)
     integer        , intent(in   ) :: bc(:,:)
     real(kind=dp_t), intent(in   ) :: dx(:),dt
