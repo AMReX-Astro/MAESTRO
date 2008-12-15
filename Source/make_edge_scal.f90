@@ -636,6 +636,8 @@ contains
     use slope_module
     use bl_constants_module
     use variables, only: rel_eps
+    use ppm_module
+    use probin_module, only: use_ppm
 
     integer        , intent(in   ) :: n,lo(:),hi(:),ng_s,ng_se,ng_um,ng_f,ng_w0,ng_n,ng_gw
     real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :,:)
@@ -670,6 +672,9 @@ contains
 
     integer :: i,j,k,is,js,ks,ie,je,ke
 
+    real(kind=dp_t), allocatable :: Ip(:,:,:,:)
+    real(kind=dp_t), allocatable :: Im(:,:,:,:)
+
     ! these correspond to s_L^x, etc.
     real(kind=dp_t), allocatable:: slx(:,:,:),srx(:,:,:)
     real(kind=dp_t), allocatable:: sly(:,:,:),sry(:,:,:)
@@ -692,6 +697,9 @@ contains
     real(kind=dp_t), allocatable:: sedgelx(:,:,:),sedgerx(:,:,:)
     real(kind=dp_t), allocatable:: sedgely(:,:,:),sedgery(:,:,:)
     real(kind=dp_t), allocatable:: sedgelz(:,:,:),sedgerz(:,:,:)
+
+    allocate(Ip(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
+    allocate(Im(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
 
     ! Normal predictor states.
     ! Allocated from lo:hi+1 in the normal direction
@@ -753,11 +761,16 @@ contains
     ks = lo(3)
     ke = hi(3)
 
-    do k = lo(3)-1,hi(3)+1
-       call slopex_2d(s(:,:,k,comp:),slopex(:,:,k,:),lo,hi,ng_s,1,adv_bc)
-       call slopey_2d(s(:,:,k,comp:),slopey(:,:,k,:),lo,hi,ng_s,1,adv_bc)
-    end do
-    call slopez_3d(s(:,:,:,comp:),slopez,lo,hi,ng_s,1,adv_bc)
+    if (use_ppm) then
+       call ppm_fpu_3d(n,s(:,:,:,comp),ng_s,umac,vmac,wmac,ng_um,Ip,Im,w0, &
+                       w0macx,w0macy,w0macz,ng_w0,lo,hi,adv_bc(:,:,1),dx,dt)
+    else
+       do k = lo(3)-1,hi(3)+1
+          call slopex_2d(s(:,:,k,comp:),slopex(:,:,k,:),lo,hi,ng_s,1,adv_bc)
+          call slopey_2d(s(:,:,k,comp:),slopey(:,:,k,:),lo,hi,ng_s,1,adv_bc)
+       end do
+       call slopez_3d(s(:,:,:,comp:),slopez,lo,hi,ng_s,1,adv_bc)
+    end if
 
     dt2 = HALF*dt
     dt3 = dt/3.0d0
@@ -773,15 +786,27 @@ contains
     !******************************************************************
     
     ! loop over appropriate x-faces
-    do k=ks-1,ke+1
-       do j=js-1,je+1
-          do i=is,ie+1
-             ! make slx, srx with 1D extrapolation
-             slx(i,j,k) = s(i-1,j,k,comp) + (HALF - dt2*umac(i,j,k)/hx)*slopex(i-1,j,k,1)
-             srx(i,j,k) = s(i  ,j,k,comp) - (HALF + dt2*umac(i,j,k)/hx)*slopex(i  ,j,k,1)
+    if (use_ppm) then
+       do k=ks-1,ke+1
+          do j=js-1,je+1
+             do i=is,ie+1
+                ! make slx, srx with 1D extrapolation
+                slx(i,j,k) = Ip(i-1,j,k,1)
+                srx(i,j,k) = Im(i  ,j,k,1)
+             end do
+          end do
+       end do
+    else
+       do k=ks-1,ke+1
+          do j=js-1,je+1
+             do i=is,ie+1
+                ! make slx, srx with 1D extrapolation
+                slx(i,j,k) = s(i-1,j,k,comp) + (HALF - dt2*umac(i,j,k)/hx)*slopex(i-1,j,k,1)
+                srx(i,j,k) = s(i  ,j,k,comp) - (HALF + dt2*umac(i,j,k)/hx)*slopex(i  ,j,k,1)
+             enddo
           enddo
        enddo
-    enddo
+    end if
 
     ! impose lo side bc's
     if (phys_bc(1,1) .eq. INLET) then
@@ -849,15 +874,27 @@ contains
     enddo
 
     ! loop over appropriate y-faces
-    do k=ks-1,ke+1
-       do j=js,je+1
-          do i=is-1,ie+1
-             ! make sly, sry with 1D extrapolation
-             sly(i,j,k) = s(i,j-1,k,comp) + (HALF - dt2*vmac(i,j,k)/hy)*slopey(i,j-1,k,1)
-             sry(i,j,k) = s(i,j  ,k,comp) - (HALF + dt2*vmac(i,j,k)/hy)*slopey(i,j  ,k,1)
+    if (use_ppm) then
+       do k=ks-1,ke+1
+          do j=js,je+1
+             do i=is-1,ie+1
+                ! make sly, sry with 1D extrapolation
+                sly(i,j,k) = Ip(i,j-1,k,2)
+                sry(i,j,k) = Im(i,j  ,k,2)
+             enddo
           enddo
        enddo
-    enddo
+    else
+       do k=ks-1,ke+1
+          do j=js,je+1
+             do i=is-1,ie+1
+                ! make sly, sry with 1D extrapolation
+                sly(i,j,k) = s(i,j-1,k,comp) + (HALF - dt2*vmac(i,j,k)/hy)*slopey(i,j-1,k,1)
+                sry(i,j,k) = s(i,j  ,k,comp) - (HALF + dt2*vmac(i,j,k)/hy)*slopey(i,j  ,k,1)
+             enddo
+          enddo
+       enddo
+    end if
 
     ! impose lo side bc's
     if (phys_bc(2,1) .eq. INLET) then
@@ -925,15 +962,27 @@ contains
     enddo
 
     ! loop over appropriate z-faces
-    do k=ks,ke+1
-       do j=js-1,je+1
-          do i=is-1,ie+1
-             ! make slz, srz with 1D extrapolation
-             slz(i,j,k) = s(i,j,k-1,comp) + (HALF - dt2*wmac(i,j,k)/hz)*slopez(i,j,k-1,1)
-             srz(i,j,k) = s(i,j,k  ,comp) - (HALF + dt2*wmac(i,j,k)/hz)*slopez(i,j,k  ,1)
+    if (use_ppm) then
+       do k=ks,ke+1
+          do j=js-1,je+1
+             do i=is-1,ie+1
+                ! make slz, srz with 1D extrapolation
+                slz(i,j,k) = Ip(i,j,k-1,3)
+                srz(i,j,k) = Im(i,j,k  ,3)
+             enddo
           enddo
        enddo
-    enddo
+    else
+       do k=ks,ke+1
+          do j=js-1,je+1
+             do i=is-1,ie+1
+                ! make slz, srz with 1D extrapolation
+                slz(i,j,k) = s(i,j,k-1,comp) + (HALF - dt2*wmac(i,j,k)/hz)*slopez(i,j,k-1,1)
+                srz(i,j,k) = s(i,j,k  ,comp) - (HALF + dt2*wmac(i,j,k)/hz)*slopez(i,j,k  ,1)
+             enddo
+          enddo
+       enddo
+    end if
 
     ! impose lo side bc's
     if (phys_bc(3,1) .eq. INLET) then
@@ -1953,6 +2002,7 @@ contains
     deallocate(slxy,srxy,simhxy,slxz,srxz,simhxz,slyx,sryx,simhyx)
     deallocate(slyz,sryz,simhyz,slzx,srzx,simhzx,slzy,srzy,simhzy)
     deallocate(sedgelx,sedgerx,sedgely,sedgery,sedgelz,sedgerz)    
+    deallocate(Ip,Im)
 
   end subroutine make_edge_scal_3d
 

@@ -492,6 +492,8 @@ contains
     use bl_constants_module
     use geometry, only: spherical, nr
     use variables, only: rel_eps
+    use probin_module, only: use_ppm
+    use ppm_module
 
     integer        , intent(in   ) :: n,lo(:),hi(:)
     integer        , intent(in   ) :: ng_u,ng_um,ng_ut,ng_f,ng_n,ng_w0,ng_gw
@@ -517,6 +519,13 @@ contains
     real(kind=dp_t) :: slopex(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3)
     real(kind=dp_t) :: slopey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3)
     real(kind=dp_t) :: slopez(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3)
+
+    real(kind=dp_t), allocatable :: Ipu(:,:,:,:)
+    real(kind=dp_t), allocatable :: Imu(:,:,:,:)
+    real(kind=dp_t), allocatable :: Ipv(:,:,:,:)
+    real(kind=dp_t), allocatable :: Imv(:,:,:,:)
+    real(kind=dp_t), allocatable :: Ipw(:,:,:,:)
+    real(kind=dp_t), allocatable :: Imw(:,:,:,:)
 
     ! these correspond to u_L^x, etc.
     real(kind=dp_t), allocatable:: ulx(:,:,:,:),urx(:,:,:,:),uimhx(:,:,:,:)
@@ -559,6 +568,13 @@ contains
     integer :: i,j,k,is,js,ie,je,ks,ke
 
     logical :: test
+
+    allocate(Ipu(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
+    allocate(Imu(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
+    allocate(Ipv(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
+    allocate(Imv(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
+    allocate(Ipw(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
+    allocate(Imw(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
 
     ! normal predictor states
     ! Allocated from lo:hi+1 in the normal direction
@@ -628,40 +644,67 @@ contains
     hy = dx(2)
     hz = dx(3)
 
-    do k = lo(3)-1,hi(3)+1
-       call slopex_2d(u(:,:,k,:),slopex(:,:,k,:),lo,hi,ng_u,3,adv_bc)
-       call slopey_2d(u(:,:,k,:),slopey(:,:,k,:),lo,hi,ng_u,3,adv_bc)
-    end do
-    call slopez_3d(u,slopez,lo,hi,ng_u,3,adv_bc)
+    if (use_ppm) then
+       call ppm_3d(n,u(:,:,:,1),ng_u,u,ng_u,Ipu,Imu,w0,w0macx,w0macy,w0macz,ng_w0, &
+                   lo,hi,adv_bc(:,:,1),dx,dt)
+       call ppm_3d(n,u(:,:,:,2),ng_u,u,ng_u,Ipv,Imv,w0,w0macx,w0macy,w0macz,ng_w0, &
+                   lo,hi,adv_bc(:,:,2),dx,dt)
+       call ppm_3d(n,u(:,:,:,3),ng_u,u,ng_u,Ipw,Imw,w0,w0macx,w0macy,w0macz,ng_w0, &
+                   lo,hi,adv_bc(:,:,3),dx,dt)
+    else
+       do k = lo(3)-1,hi(3)+1
+          call slopex_2d(u(:,:,k,:),slopex(:,:,k,:),lo,hi,ng_u,3,adv_bc)
+          call slopey_2d(u(:,:,k,:),slopey(:,:,k,:),lo,hi,ng_u,3,adv_bc)
+       end do
+       call slopez_3d(u,slopez,lo,hi,ng_u,3,adv_bc)
+    end if
 
     !******************************************************************
     ! Create u_{\i-\half\e_x}^x, etc.
     !******************************************************************
 
-    do k=ks-1,ke+1
-       do j=js-1,je+1
-          do i=is,ie+1
-             ! compute effect of w0
-             if (spherical .eq. 1) then
-                ulo = u(i-1,j,k,1) + HALF * (w0macx(i-1,j,k)+w0macx(i  ,j,k))
-                uhi = u(i  ,j,k,1) + HALF * (w0macx(i  ,j,k)+w0macx(i+1,j,k))
-             else
-                ulo = u(i-1,j,k,1)
-                uhi = u(i  ,j,k,1)
-             end if
-             
-             ! extrapolate all components of velocity to left face
-             ulx(i,j,k,1) = u(i-1,j,k,1) + (HALF - dt2*max(ZERO,ulo)/hx)*slopex(i-1,j,k,1)
-             ulx(i,j,k,2) = u(i-1,j,k,2) + (HALF - dt2*max(ZERO,ulo)/hx)*slopex(i-1,j,k,2)
-             ulx(i,j,k,3) = u(i-1,j,k,3) + (HALF - dt2*max(ZERO,ulo)/hx)*slopex(i-1,j,k,3)
+    if (use_ppm) then
+       do k=ks-1,ke+1
+          do j=js-1,je+1
+             do i=is,ie+1
+                ! extrapolate all components of velocity to left face
+                ulx(i,j,k,1) = Ipu(i-1,j,k,1)
+                ulx(i,j,k,2) = Ipv(i-1,j,k,1)
+                ulx(i,j,k,3) = Ipw(i-1,j,k,1)
 
-             ! extrapolate all components of velocity to right face
-             urx(i,j,k,1) = u(i,j,k,1) - (HALF + dt2*min(ZERO,uhi)/hx)*slopex(i,j,k,1)
-             urx(i,j,k,2) = u(i,j,k,2) - (HALF + dt2*min(ZERO,uhi)/hx)*slopex(i,j,k,2)
-             urx(i,j,k,3) = u(i,j,k,3) - (HALF + dt2*min(ZERO,uhi)/hx)*slopex(i,j,k,3)
+                ! extrapolate all components of velocity to right face
+                urx(i,j,k,1) = Imu(i,j,k,1)
+                urx(i,j,k,2) = Imv(i,j,k,1)
+                urx(i,j,k,3) = Imw(i,j,k,1)
+             end do
           end do
        end do
-    end do
+    else
+       do k=ks-1,ke+1
+          do j=js-1,je+1
+             do i=is,ie+1
+                ! compute effect of w0
+                if (spherical .eq. 1) then
+                   ulo = u(i-1,j,k,1) + HALF * (w0macx(i-1,j,k)+w0macx(i  ,j,k))
+                   uhi = u(i  ,j,k,1) + HALF * (w0macx(i  ,j,k)+w0macx(i+1,j,k))
+                else
+                   ulo = u(i-1,j,k,1)
+                   uhi = u(i  ,j,k,1)
+                end if
+
+                ! extrapolate all components of velocity to left face
+                ulx(i,j,k,1) = u(i-1,j,k,1) + (HALF - dt2*max(ZERO,ulo)/hx)*slopex(i-1,j,k,1)
+                ulx(i,j,k,2) = u(i-1,j,k,2) + (HALF - dt2*max(ZERO,ulo)/hx)*slopex(i-1,j,k,2)
+                ulx(i,j,k,3) = u(i-1,j,k,3) + (HALF - dt2*max(ZERO,ulo)/hx)*slopex(i-1,j,k,3)
+
+                ! extrapolate all components of velocity to right face
+                urx(i,j,k,1) = u(i,j,k,1) - (HALF + dt2*min(ZERO,uhi)/hx)*slopex(i,j,k,1)
+                urx(i,j,k,2) = u(i,j,k,2) - (HALF + dt2*min(ZERO,uhi)/hx)*slopex(i,j,k,2)
+                urx(i,j,k,3) = u(i,j,k,3) - (HALF + dt2*min(ZERO,uhi)/hx)*slopex(i,j,k,3)
+             end do
+          end do
+       end do
+    end if
 
     ! impose lo side bc's
     if (phys_bc(1,1) .eq. INLET) then
@@ -717,30 +760,48 @@ contains
        enddo
     enddo
 
-    do k=ks-1,ke+1
-       do j=js,je+1
-          do i=is-1,ie+1
-             ! compute effect of w0
-             if (spherical .eq. 1) then
-                vlo = u(i,j-1,k,2) + HALF * (w0macy(i,j-1,k)+w0macy(i,j  ,k))
-                vhi = u(i,j  ,k,2) + HALF * (w0macy(i,j  ,k)+w0macy(i,j+1,k))
-             else
-                vlo = u(i,j-1,k,2)
-                vhi = u(i,j  ,k,2)
-             end if
+    if (use_ppm) then
+       do k=ks-1,ke+1
+          do j=js,je+1
+             do i=is-1,ie+1
+                ! extrapolate all components of velocity to left face
+                uly(i,j,k,1) = Ipu(i,j-1,k,2)
+                uly(i,j,k,2) = Ipv(i,j-1,k,2)
+                uly(i,j,k,3) = Ipw(i,j-1,k,2)
 
-             ! extrapolate all components of velocity to left face
-             uly(i,j,k,1) = u(i,j-1,k,1) + (HALF - dt2*max(ZERO,vlo)/hy)*slopey(i,j-1,k,1)
-             uly(i,j,k,2) = u(i,j-1,k,2) + (HALF - dt2*max(ZERO,vlo)/hy)*slopey(i,j-1,k,2)
-             uly(i,j,k,3) = u(i,j-1,k,3) + (HALF - dt2*max(ZERO,vlo)/hy)*slopey(i,j-1,k,3)
-
-             ! extrapolate all components of velocity to right face
-             ury(i,j,k,1) = u(i,j,k,1) - (HALF + dt2*min(ZERO,vhi)/hy)*slopey(i,j,k,1)
-             ury(i,j,k,2) = u(i,j,k,2) - (HALF + dt2*min(ZERO,vhi)/hy)*slopey(i,j,k,2)
-             ury(i,j,k,3) = u(i,j,k,3) - (HALF + dt2*min(ZERO,vhi)/hy)*slopey(i,j,k,3)
-         enddo
+                ! extrapolate all components of velocity to right face
+                ury(i,j,k,1) = Imu(i,j,k,2)
+                ury(i,j,k,2) = Imv(i,j,k,2)
+                ury(i,j,k,3) = Imw(i,j,k,2)
+             enddo
+          enddo
        enddo
-    enddo
+    else
+       do k=ks-1,ke+1
+          do j=js,je+1
+             do i=is-1,ie+1
+                ! compute effect of w0
+                if (spherical .eq. 1) then
+                   vlo = u(i,j-1,k,2) + HALF * (w0macy(i,j-1,k)+w0macy(i,j  ,k))
+                   vhi = u(i,j  ,k,2) + HALF * (w0macy(i,j  ,k)+w0macy(i,j+1,k))
+                else
+                   vlo = u(i,j-1,k,2)
+                   vhi = u(i,j  ,k,2)
+                end if
+
+                ! extrapolate all components of velocity to left face
+                uly(i,j,k,1) = u(i,j-1,k,1) + (HALF - dt2*max(ZERO,vlo)/hy)*slopey(i,j-1,k,1)
+                uly(i,j,k,2) = u(i,j-1,k,2) + (HALF - dt2*max(ZERO,vlo)/hy)*slopey(i,j-1,k,2)
+                uly(i,j,k,3) = u(i,j-1,k,3) + (HALF - dt2*max(ZERO,vlo)/hy)*slopey(i,j-1,k,3)
+
+                ! extrapolate all components of velocity to right face
+                ury(i,j,k,1) = u(i,j,k,1) - (HALF + dt2*min(ZERO,vhi)/hy)*slopey(i,j,k,1)
+                ury(i,j,k,2) = u(i,j,k,2) - (HALF + dt2*min(ZERO,vhi)/hy)*slopey(i,j,k,2)
+                ury(i,j,k,3) = u(i,j,k,3) - (HALF + dt2*min(ZERO,vhi)/hy)*slopey(i,j,k,3)
+             enddo
+          enddo
+       enddo
+    end if
 
     ! impose lo side bc's
     if (phys_bc(2,1) .eq. INLET) then
@@ -796,38 +857,56 @@ contains
        enddo
     enddo
 
-    do k=ks,ke+1
-       do j=js-1,je+1
-          do i=is-1,ie+1
-             ! compute effect of w0
-             if (spherical .eq. 1) then
-                wlo = u(i,j,k-1,3) + HALF * (w0macz(i,j,k-1)+w0macz(i,j,k  ))
-                whi = u(i,j,k  ,3) + HALF * (w0macz(i,j,k  )+w0macz(i,j,k+1))
-             else
-                if (k .eq. 0) then
-                   wlo = u(i,j,k-1,3) + w0(k)
-                   whi = u(i,j,k  ,3) + HALF*(w0(k)+w0(k+1))
-                else if (k .eq. nr(n)) then
-                   wlo = u(i,j,k-1,3) + HALF*(w0(k-1)+w0(k))
-                   whi = u(i,j,k  ,3) + w0(k)
-                else
-                   wlo = u(i,j,k-1,3) + HALF*(w0(k-1)+w0(k))
-                   whi = u(i,j,k  ,3) + HALF*(w0(k)+w0(k+1))
-                end if
-             end if
+    if (use_ppm) then
+       do k=ks,ke+1
+          do j=js-1,je+1
+             do i=is-1,ie+1
+                ! extrapolate all components of velocity to left face
+                ulz(i,j,k,1) = Ipu(i,j,k-1,3)
+                ulz(i,j,k,2) = Ipv(i,j,k-1,3)
+                ulz(i,j,k,3) = Ipw(i,j,k-1,3)
 
-             ! extrapolate all components of velocity to left face
-             ulz(i,j,k,1) = u(i,j,k-1,1) + (HALF - dt2*max(ZERO,wlo)/hz)*slopez(i,j,k-1,1)
-             ulz(i,j,k,2) = u(i,j,k-1,2) + (HALF - dt2*max(ZERO,wlo)/hz)*slopez(i,j,k-1,2)
-             ulz(i,j,k,3) = u(i,j,k-1,3) + (HALF - dt2*max(ZERO,wlo)/hz)*slopez(i,j,k-1,3)
-
-             ! extrapolate all components of velocity to right face
-             urz(i,j,k,1) = u(i,j,k,1) - (HALF + dt2*min(ZERO,whi)/hz)*slopez(i,j,k,1)
-             urz(i,j,k,2) = u(i,j,k,2) - (HALF + dt2*min(ZERO,whi)/hz)*slopez(i,j,k,2)
-             urz(i,j,k,3) = u(i,j,k,3) - (HALF + dt2*min(ZERO,whi)/hz)*slopez(i,j,k,3)
+                ! extrapolate all components of velocity to right face
+                urz(i,j,k,1) = Imu(i,j,k,3)
+                urz(i,j,k,2) = Imv(i,j,k,3)
+                urz(i,j,k,3) = Imw(i,j,k,3)
+             end do
           end do
        end do
-    end do
+    else
+       do k=ks,ke+1
+          do j=js-1,je+1
+             do i=is-1,ie+1
+                ! compute effect of w0
+                if (spherical .eq. 1) then
+                   wlo = u(i,j,k-1,3) + HALF * (w0macz(i,j,k-1)+w0macz(i,j,k  ))
+                   whi = u(i,j,k  ,3) + HALF * (w0macz(i,j,k  )+w0macz(i,j,k+1))
+                else
+                   if (k .eq. 0) then
+                      wlo = u(i,j,k-1,3) + w0(k)
+                      whi = u(i,j,k  ,3) + HALF*(w0(k)+w0(k+1))
+                   else if (k .eq. nr(n)) then
+                      wlo = u(i,j,k-1,3) + HALF*(w0(k-1)+w0(k))
+                      whi = u(i,j,k  ,3) + w0(k)
+                   else
+                      wlo = u(i,j,k-1,3) + HALF*(w0(k-1)+w0(k))
+                      whi = u(i,j,k  ,3) + HALF*(w0(k)+w0(k+1))
+                   end if
+                end if
+
+                ! extrapolate all components of velocity to left face
+                ulz(i,j,k,1) = u(i,j,k-1,1) + (HALF - dt2*max(ZERO,wlo)/hz)*slopez(i,j,k-1,1)
+                ulz(i,j,k,2) = u(i,j,k-1,2) + (HALF - dt2*max(ZERO,wlo)/hz)*slopez(i,j,k-1,2)
+                ulz(i,j,k,3) = u(i,j,k-1,3) + (HALF - dt2*max(ZERO,wlo)/hz)*slopez(i,j,k-1,3)
+
+                ! extrapolate all components of velocity to right face
+                urz(i,j,k,1) = u(i,j,k,1) - (HALF + dt2*min(ZERO,whi)/hz)*slopez(i,j,k,1)
+                urz(i,j,k,2) = u(i,j,k,2) - (HALF + dt2*min(ZERO,whi)/hz)*slopez(i,j,k,2)
+                urz(i,j,k,3) = u(i,j,k,3) - (HALF + dt2*min(ZERO,whi)/hz)*slopez(i,j,k,3)
+             end do
+          end do
+       end do
+    end if
 
     ! impose lo side bc's
     if (phys_bc(3,1) .eq. INLET) then
@@ -1409,6 +1488,7 @@ contains
     deallocate(vlxz,vrxz,vimhxz,vlzx,vrzx,vimhzx)
     deallocate(wlxy,wrxy,wimhxy,wlyx,wryx,wimhyx)
     deallocate(umacl,umacr,vmacl,vmacr,wmacl,wmacr)
+    deallocate(Ipu,Imu,Ipv,Imv,Ipw,Imw)
 
   end subroutine velpred_3d
 

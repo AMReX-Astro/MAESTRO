@@ -177,6 +177,7 @@ contains
     if (use_ppm) then
        do j=js,je
           do i=is,ie+1
+             ! extrapolate to edges
              ulx(i,j) = Ipu(i-1,j,1)
              urx(i,j) = Imu(i  ,j,1)
           end do
@@ -233,6 +234,7 @@ contains
     if (use_ppm) then
        do j=js,je+1
           do i=is,ie
+             ! extrapolate to edges
              vly(i,j) = Ipv(i,j-1,2)
              vry(i,j) = Imv(i,j  ,2)
           end do
@@ -250,6 +252,7 @@ contains
              vlo = HALF*(w0(j-1)+w0(j))
              vhi = HALF*(w0(j)+w0(j+1))
           end if
+
           do i=is,ie
              ! extrapolate to edges
              vly(i,j) = u(i,j-1,2) + (HALF-(dt2/hy)*max(ZERO,u(i,j-1,2)+vlo))*slopey(i,j-1,1)
@@ -305,6 +308,8 @@ contains
     use slope_module
     use geometry, only: nr, spherical
     use variables, only: rel_eps
+    use probin_module, only: use_ppm
+    use ppm_module
     
     integer,         intent(in)    :: n,lo(:),hi(:),ng_u,ng_ut,ng_w0    
     real(kind=dp_t), intent(in   ) ::      u(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :,:)
@@ -323,6 +328,13 @@ contains
     real(kind=dp_t) :: slopey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1)
     real(kind=dp_t) :: slopez(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1)
     
+    real(kind=dp_t), allocatable :: Ipu(:,:,:,:)
+    real(kind=dp_t), allocatable :: Imu(:,:,:,:)
+    real(kind=dp_t), allocatable :: Ipv(:,:,:,:)
+    real(kind=dp_t), allocatable :: Imv(:,:,:,:)
+    real(kind=dp_t), allocatable :: Ipw(:,:,:,:)
+    real(kind=dp_t), allocatable :: Imw(:,:,:,:)
+
     real(kind=dp_t) hx,hy,hz,dt2,uavg,uhi,ulo,vhi,vlo,whi,wlo
     
     logical :: test
@@ -342,6 +354,11 @@ contains
     allocate(wlz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
     allocate(wrz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
 
+    allocate(Ipu(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
+    allocate(Imu(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
+    allocate(Ipv(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
+    allocate(Imv(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
+
     is = lo(1)
     js = lo(2)
     ks = lo(3)
@@ -355,34 +372,55 @@ contains
     hy = dx(2)
     hz = dx(3)
     
-    do k = lo(3)-1,hi(3)+1
-       call slopex_2d(u(:,:,k,1:),slopex(:,:,k,:),lo,hi,ng_u,1,adv_bc(:,:,1:))
-       call slopey_2d(u(:,:,k,2:),slopey(:,:,k,:),lo,hi,ng_u,1,adv_bc(:,:,2:))
-    end do
-    call slopez_3d(u(:,:,:,3:),slopez,lo,hi,ng_u,1,adv_bc(:,:,3:))
+    if (use_ppm) then
+       call ppm_3d(n,u(:,:,:,1),ng_u,u,ng_u,Ipu,Imu,w0,w0macx,w0macy,w0macz,ng_w0, &
+                   lo,hi,adv_bc(:,:,1),dx,dt)
+       call ppm_3d(n,u(:,:,:,2),ng_u,u,ng_u,Ipv,Imv,w0,w0macx,w0macy,w0macz,ng_w0, &
+                   lo,hi,adv_bc(:,:,2),dx,dt)
+       call ppm_3d(n,u(:,:,:,3),ng_u,u,ng_u,Ipw,Imw,w0,w0macx,w0macy,w0macz,ng_w0, &
+                   lo,hi,adv_bc(:,:,3),dx,dt)
+    else
+       do k = lo(3)-1,hi(3)+1
+          call slopex_2d(u(:,:,k,1:),slopex(:,:,k,:),lo,hi,ng_u,1,adv_bc(:,:,1:))
+          call slopey_2d(u(:,:,k,2:),slopey(:,:,k,:),lo,hi,ng_u,1,adv_bc(:,:,2:))
+       end do
+       call slopez_3d(u(:,:,:,3:),slopez,lo,hi,ng_u,1,adv_bc(:,:,3:))
+    end if
     
     !******************************************************************
     ! create utrans
     !******************************************************************
 
-    do k=ks,ke
-       do j=js,je
-          do i=is,ie+1
-             ! compute effect of w0
-             if (spherical .eq. 1) then
-                ulo = u(i-1,j,k,1) + HALF * (w0macx(i-1,j,k)+w0macx(i  ,j,k))
-                uhi = u(i  ,j,k,1) + HALF * (w0macx(i  ,j,k)+w0macx(i+1,j,k))
-             else
-                ulo = u(i-1,j,k,1)
-                uhi = u(i  ,j,k,1)
-             end if
-             
-             ! extrapolate to edges
-             ulx(i,j,k) = u(i-1,j,k,1) + (HALF - dt2*max(ZERO,ulo)/hx)*slopex(i-1,j,k,1)
-             urx(i,j,k) = u(i  ,j,k,1) - (HALF + dt2*min(ZERO,uhi)/hx)*slopex(i  ,j,k,1)
+    if (use_ppm) then
+       do k=ks,ke
+          do j=js,je
+             do i=is,ie+1
+                ! extrapolate to edges
+                ulx(i,j,k) = Ipu(i-1,j,k,1)
+                urx(i,j,k) = Imu(i  ,j,k,1)
+             end do
           end do
        end do
-    end do
+    else
+       do k=ks,ke
+          do j=js,je
+             do i=is,ie+1
+                ! compute effect of w0
+                if (spherical .eq. 1) then
+                   ulo = u(i-1,j,k,1) + HALF * (w0macx(i-1,j,k)+w0macx(i  ,j,k))
+                   uhi = u(i  ,j,k,1) + HALF * (w0macx(i  ,j,k)+w0macx(i+1,j,k))
+                else
+                   ulo = u(i-1,j,k,1)
+                   uhi = u(i  ,j,k,1)
+                end if
+
+                ! extrapolate to edges
+                ulx(i,j,k) = u(i-1,j,k,1) + (HALF - dt2*max(ZERO,ulo)/hx)*slopex(i-1,j,k,1)
+                urx(i,j,k) = u(i  ,j,k,1) - (HALF + dt2*min(ZERO,uhi)/hx)*slopex(i  ,j,k,1)
+             end do
+          end do
+       end do
+    end if
 
     ! impose lo side bc's
     if (phys_bc(1,1) .eq. INLET) then
@@ -435,24 +473,36 @@ contains
     ! create vtrans
     !******************************************************************
 
-    do k=ks,ke
-       do j=js,je+1
-          do i=is,ie
-             ! compute effect of w0
-             if (spherical .eq. 1) then
-                vlo = u(i,j-1,k,2) + HALF * (w0macy(i,j-1,k)+w0macy(i,j  ,k))
-                vhi = u(i,j  ,k,2) + HALF * (w0macy(i,j  ,k)+w0macy(i,j+1,k))
-             else
-                vlo = u(i,j-1,k,2)
-                vhi = u(i,j  ,k,2)
-             end if
-
-             ! extrapolate to edges
-             vly(i,j,k) = u(i,j-1,k,2) + (HALF - dt2*max(ZERO,vlo)/hy)*slopey(i,j-1,k,1)
-             vry(i,j,k) = u(i,j  ,k,2) - (HALF + dt2*min(ZERO,vhi)/hy)*slopey(i,j  ,k,1)
-         enddo
+    if (use_ppm) then
+       do k=ks,ke
+          do j=js,je+1
+             do i=is,ie
+                ! extrapolate to edges
+                vly(i,j,k) = Ipv(i,j-1,k,2)
+                vry(i,j,k) = Imv(i,j  ,k,2)
+             enddo
+          enddo
        enddo
-    enddo
+    else
+       do k=ks,ke
+          do j=js,je+1
+             do i=is,ie
+                ! compute effect of w0
+                if (spherical .eq. 1) then
+                   vlo = u(i,j-1,k,2) + HALF * (w0macy(i,j-1,k)+w0macy(i,j  ,k))
+                   vhi = u(i,j  ,k,2) + HALF * (w0macy(i,j  ,k)+w0macy(i,j+1,k))
+                else
+                   vlo = u(i,j-1,k,2)
+                   vhi = u(i,j  ,k,2)
+                end if
+
+                ! extrapolate to edges
+                vly(i,j,k) = u(i,j-1,k,2) + (HALF - dt2*max(ZERO,vlo)/hy)*slopey(i,j-1,k,1)
+                vry(i,j,k) = u(i,j  ,k,2) - (HALF + dt2*min(ZERO,vhi)/hy)*slopey(i,j  ,k,1)
+             enddo
+          enddo
+       enddo
+    end if
 
     ! impose lo side bc's
     if (phys_bc(2,1) .eq. INLET) then
@@ -505,32 +555,44 @@ contains
     ! create wtrans
     !******************************************************************
 
-    do k=ks,ke+1
-       do j=js,je
-          do i=is,ie
-             ! compute effect of w0
-             if (spherical .eq. 1) then
-                wlo = u(i,j,k-1,3) + HALF * (w0macz(i,j,k-1)+w0macz(i,j,k  ))
-                whi = u(i,j,k  ,3) + HALF * (w0macz(i,j,k  )+w0macz(i,j,k+1))
-             else
-                if (k .eq. 0) then
-                   wlo = u(i,j,k-1,3) + w0(k)
-                   whi = u(i,j,k  ,3) + HALF*(w0(k)+w0(k+1))
-                else if (k .eq. nr(n)) then
-                   wlo = u(i,j,k-1,3) + HALF*(w0(k-1)+w0(k))
-                   whi = u(i,j,k  ,3) + w0(k)
-                else
-                   wlo = u(i,j,k-1,3) + HALF*(w0(k-1)+w0(k))
-                   whi = u(i,j,k  ,3) + HALF*(w0(k)+w0(k+1))
-                end if
-             end if
-
-             ! extrapolate to edges
-             wlz(i,j,k) = u(i,j,k-1,3) + (HALF - dt2*max(ZERO,wlo)/hz)*slopez(i,j,k-1,1)
-             wrz(i,j,k) = u(i,j,k  ,3) - (HALF + dt2*min(ZERO,whi)/hz)*slopez(i,j,k  ,1)
+    if (use_ppm) then
+       do k=ks,ke+1
+          do j=js,je
+             do i=is,ie
+                ! extrapolate to edges
+                wlz(i,j,k) = Ipw(i,j,k-1,3)
+                wrz(i,j,k) = Imw(i,j,k  ,3)
+             end do
           end do
        end do
-    end do
+    else
+       do k=ks,ke+1
+          do j=js,je
+             do i=is,ie
+                ! compute effect of w0
+                if (spherical .eq. 1) then
+                   wlo = u(i,j,k-1,3) + HALF * (w0macz(i,j,k-1)+w0macz(i,j,k  ))
+                   whi = u(i,j,k  ,3) + HALF * (w0macz(i,j,k  )+w0macz(i,j,k+1))
+                else
+                   if (k .eq. 0) then
+                      wlo = u(i,j,k-1,3) + w0(k)
+                      whi = u(i,j,k  ,3) + HALF*(w0(k)+w0(k+1))
+                   else if (k .eq. nr(n)) then
+                      wlo = u(i,j,k-1,3) + HALF*(w0(k-1)+w0(k))
+                      whi = u(i,j,k  ,3) + w0(k)
+                   else
+                      wlo = u(i,j,k-1,3) + HALF*(w0(k-1)+w0(k))
+                      whi = u(i,j,k  ,3) + HALF*(w0(k)+w0(k+1))
+                   end if
+                end if
+
+                ! extrapolate to edges
+                wlz(i,j,k) = u(i,j,k-1,3) + (HALF - dt2*max(ZERO,wlo)/hz)*slopez(i,j,k-1,1)
+                wrz(i,j,k) = u(i,j,k  ,3) - (HALF + dt2*min(ZERO,whi)/hz)*slopez(i,j,k  ,1)
+             end do
+          end do
+       end do
+    end if
     
     ! impose lo side bc's
     if (phys_bc(3,1) .eq. INLET) then
@@ -580,6 +642,7 @@ contains
     enddo
 
     deallocate(ulx,urx,vly,vry,wlz,wrz)
+    deallocate(Ipu,Imu,Ipv,Imv,Ipw,Imw)
 
   end subroutine mkutrans_3d
   
