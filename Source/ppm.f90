@@ -197,15 +197,49 @@ contains
 
     ! different stencil needed for x-component of EXT_DIR and HOEXTRAP bc's
     if (bc(1,1) .eq. EXT_DIR  .or. bc(1,1) .eq. HOEXTRAP) then
+       ! the value in the first cc ghost cell represents the edge value
+       sm(lo(1),lo(2)-1:hi(2)+1) = s(lo(1)-1,lo(2)-1:hi(2)+1)
 
+       ! use a modified stencil to get sedge on the first interior edge
+       sedge(lo(1)+1,lo(2)-1:hi(2)+1) = -FIFTH        *s(lo(1)-1,lo(2)-1:hi(2)+1) &
+                                        + (THREE/FOUR)*s(lo(1)  ,lo(2)-1:hi(2)+1) &
+                                        + HALF        *s(lo(1)+1,lo(2)-1:hi(2)+1) &
+                                        - (ONE/20.0d0)*s(lo(1)+2,lo(2)-1:hi(2)+1)
 
+       ! make sure sedge lies in between adjacent cell-centered values
+       do j=lo(2)-1,hi(2)+1
+          sedge(lo(1)+1,j) = max(sedge(lo(1)+1,j),min(s(lo(1)+1,j),s(lo(1),j)))
+          sedge(lo(1)+1,j) = min(sedge(lo(1)+1,j),max(s(lo(1)+1,j),s(lo(1),j)))
+       end do
 
+       ! copy sedge into sp and sm
+       do j=lo(2)-1,hi(2)+1
+          sp(lo(1)  ,j) = sedge(lo(1)+1,j)
+          sm(lo(1)+1,j) = sedge(lo(1)+1,j)
+       end do
     end if
 
     if (bc(1,2) .eq. EXT_DIR  .or. bc(1,2) .eq. HOEXTRAP) then
+       ! the value in the first cc ghost cell represents the edge value
+       sp(hi(1),lo(2)-1:hi(2)+1) = s(hi(1)+1,lo(2)-1:hi(2)+1)
 
+       ! use a modified stencil to get sedge on the first interior edge
+       sedge(hi(1),lo(2)-1:hi(2)+1) = -FIFTH        *s(hi(1)+1,lo(2)-1:hi(2)+1) &
+                                      + (THREE/FOUR)*s(hi(1)  ,lo(2)-1:hi(2)+1) &
+                                      + HALF        *s(hi(1)-1,lo(2)-1:hi(2)+1) &
+                                      - (ONE/20.0d0)*s(hi(1)-2,lo(2)-1:hi(2)+1)
 
+       ! make sure sedge lies in between adjacent cell-centered values
+       do j=lo(2)-1,hi(2)+1
+          sedge(hi(1),j) = max(sedge(hi(1),j),min(s(hi(1)-1,j),s(hi(1),j)))
+          sedge(hi(1),j) = min(sedge(hi(1),j),max(s(hi(1)-1,j),s(hi(1),j)))
+       end do
 
+       ! copy sedge into sp and sm
+       do j=lo(2)-1,hi(2)+1
+          sp(hi(1)-1,j) = sedge(hi(1),j)
+          sm(hi(1)  ,j) = sedge(hi(1),j)
+       end do
     end if
 
     ! compute x-component of Ip and Im
@@ -367,15 +401,49 @@ contains
 
     ! different stencil needed for y-component of EXT_DIR and HOEXTRAP bc's
     if (bc(2,1) .eq. EXT_DIR  .or. bc(2,1) .eq. HOEXTRAP) then
+       ! the value in the first cc ghost cell represents the edge value
+       sm(lo(1)-1:hi(1)+1,lo(2)) = s(lo(1)-1:hi(1)+1,lo(2)-1)
 
+       ! use a modified stencil to get sedge on the first interior edge
+       sedge(lo(1)-1:hi(1)+1,lo(2)+1) = -FIFTH        *s(lo(1)-1:hi(1)+1,lo(2)-1) &
+                                        + (THREE/FOUR)*s(lo(1)-1:hi(1)+1,lo(2)  ) &
+                                        + HALF        *s(lo(1)-1:hi(1)+1,lo(2)+1) &
+                                        - (ONE/20.0d0)*s(lo(1)-1:hi(1)+1,lo(2)+2)
 
+       ! make sure sedge lies in between adjacent cell-centered values
+       do i=lo(1)-1,hi(1)+1
+          sedge(i,lo(2)+1) = max(sedge(i,lo(2)+1),min(s(i,lo(2)+1),s(i,lo(2))))
+          sedge(i,lo(2)+1) = min(sedge(i,lo(2)+1),max(s(i,lo(2)+1),s(i,lo(2))))
+       end do
 
+       ! copy sedge into sp and sm
+       do i=lo(1)-1,hi(1)+1
+          sp(i,lo(2)  ) = sedge(i,lo(2)+1)
+          sm(i,lo(2)+1) = sedge(i,lo(2)+1)
+       end do
     end if
 
     if (bc(2,2) .eq. EXT_DIR  .or. bc(2,2) .eq. HOEXTRAP) then
+       ! the value in the first cc ghost cell represents the edge value
+       sp(lo(1)-1:hi(1)+1,hi(2)) = s(lo(1)-1:hi(1)+1,hi(2)+1)
 
+       ! use a modified stencil to get sedge on the first interior edge
+       sedge(lo(1)-1:hi(1)+1,hi(2)) = -FIFTH        *s(lo(1)-1:hi(1)+1,hi(2)+1) &
+                                      + (THREE/FOUR)*s(lo(1)-1:hi(1)+1,hi(2)  ) &
+                                      + HALF        *s(lo(1)-1:hi(1)+1,hi(2)-1) &
+                                      - (ONE/20.0d0)*s(lo(1)-1:hi(1)+1,hi(2)-2)
 
+       ! make sure sedge lies in between adjacent cell-centered values
+       do i=lo(1)-1,hi(1)+1
+          sedge(i,hi(2)) = max(sedge(i,hi(2)),min(s(i,hi(2)-1),s(i,hi(2))))
+          sedge(i,hi(2)) = min(sedge(i,hi(2)),max(s(i,hi(2)-1),s(i,hi(2))))
+       end do
 
+       ! copy sedge into sp and sm
+       do i=lo(1)-1,hi(1)+1
+          sp(i,hi(2)-1) = sedge(i,hi(2))
+          sm(i,hi(2)  ) = sedge(i,hi(2))
+       end do
     end if
 
     ! compute y-component of Ip and Im
@@ -596,15 +664,49 @@ contains
 
     ! different stencil needed for x-component of EXT_DIR and HOEXTRAP bc's
     if (bc(1,1) .eq. EXT_DIR  .or. bc(1,1) .eq. HOEXTRAP) then
+       ! the value in the first cc ghost cell represents the edge value
+       sm(lo(1),lo(2)-1:hi(2)+1) = s(lo(1)-1,lo(2)-1:hi(2)+1)
 
+       ! use a modified stencil to get sedge on the first interior edge
+       sedge(lo(1)+1,lo(2)-1:hi(2)+1) = -FIFTH        *s(lo(1)-1,lo(2)-1:hi(2)+1) &
+                                        + (THREE/FOUR)*s(lo(1)  ,lo(2)-1:hi(2)+1) &
+                                        + HALF        *s(lo(1)+1,lo(2)-1:hi(2)+1) &
+                                        - (ONE/20.0d0)*s(lo(1)+2,lo(2)-1:hi(2)+1)
 
+       ! make sure sedge lies in between adjacent cell-centered values
+       do j=lo(2)-1,hi(2)+1
+          sedge(lo(1)+1,j) = max(sedge(lo(1)+1,j),min(s(lo(1)+1,j),s(lo(1),j)))
+          sedge(lo(1)+1,j) = min(sedge(lo(1)+1,j),max(s(lo(1)+1,j),s(lo(1),j)))
+       end do
 
+       ! copy sedge into sp and sm
+       do j=lo(2)-1,hi(2)+1
+          sp(lo(1)  ,j) = sedge(lo(1)+1,j)
+          sm(lo(1)+1,j) = sedge(lo(1)+1,j)
+       end do
     end if
 
     if (bc(1,2) .eq. EXT_DIR  .or. bc(1,2) .eq. HOEXTRAP) then
+       ! the value in the first cc ghost cell represents the edge value
+       sp(hi(1),lo(2)-1:hi(2)+1) = s(hi(1)+1,lo(2)-1:hi(2)+1)
 
+       ! use a modified stencil to get sedge on the first interior edge
+       sedge(hi(1),lo(2)-1:hi(2)+1) = -FIFTH        *s(hi(1)+1,lo(2)-1:hi(2)+1) &
+                                      + (THREE/FOUR)*s(hi(1)  ,lo(2)-1:hi(2)+1) &
+                                      + HALF        *s(hi(1)-1,lo(2)-1:hi(2)+1) &
+                                      - (ONE/20.0d0)*s(hi(1)-2,lo(2)-1:hi(2)+1)
 
+       ! make sure sedge lies in between adjacent cell-centered values
+       do j=lo(2)-1,hi(2)+1
+          sedge(hi(1),j) = max(sedge(hi(1),j),min(s(hi(1)-1,j),s(hi(1),j)))
+          sedge(hi(1),j) = min(sedge(hi(1),j),max(s(hi(1)-1,j),s(hi(1),j)))
+       end do
 
+       ! copy sedge into sp and sm
+       do j=lo(2)-1,hi(2)+1
+          sp(hi(1)-1,j) = sedge(hi(1),j)
+          sm(hi(1)  ,j) = sedge(hi(1),j)
+       end do
     end if
 
     ! compute x-component of Ip and Im
@@ -767,15 +869,49 @@ contains
 
     ! different stencil needed for y-component of EXT_DIR and HOEXTRAP bc's
     if (bc(2,1) .eq. EXT_DIR  .or. bc(2,1) .eq. HOEXTRAP) then
+       ! the value in the first cc ghost cell represents the edge value
+       sm(lo(1)-1:hi(1)+1,lo(2)) = s(lo(1)-1:hi(1)+1,lo(2)-1)
 
+       ! use a modified stencil to get sedge on the first interior edge
+       sedge(lo(1)-1:hi(1)+1,lo(2)+1) = -FIFTH        *s(lo(1)-1:hi(1)+1,lo(2)-1) &
+                                        + (THREE/FOUR)*s(lo(1)-1:hi(1)+1,lo(2)  ) &
+                                        + HALF        *s(lo(1)-1:hi(1)+1,lo(2)+1) &
+                                        - (ONE/20.0d0)*s(lo(1)-1:hi(1)+1,lo(2)+2)
 
+       ! make sure sedge lies in between adjacent cell-centered values
+       do i=lo(1)-1,hi(1)+1
+          sedge(i,lo(2)+1) = max(sedge(i,lo(2)+1),min(s(i,lo(2)+1),s(i,lo(2))))
+          sedge(i,lo(2)+1) = min(sedge(i,lo(2)+1),max(s(i,lo(2)+1),s(i,lo(2))))
+       end do
 
+       ! copy sedge into sp and sm
+       do i=lo(1)-1,hi(1)+1
+          sp(i,lo(2)  ) = sedge(i,lo(2)+1)
+          sm(i,lo(2)+1) = sedge(i,lo(2)+1)
+       end do
     end if
 
     if (bc(2,2) .eq. EXT_DIR  .or. bc(2,2) .eq. HOEXTRAP) then
+       ! the value in the first cc ghost cell represents the edge value
+       sp(lo(1)-1:hi(1)+1,hi(2)) = s(lo(1)-1:hi(1)+1,hi(2)+1)
 
+       ! use a modified stencil to get sedge on the first interior edge
+       sedge(lo(1)-1:hi(1)+1,hi(2)) = -FIFTH        *s(lo(1)-1:hi(1)+1,hi(2)+1) &
+                                      + (THREE/FOUR)*s(lo(1)-1:hi(1)+1,hi(2)  ) &
+                                      + HALF        *s(lo(1)-1:hi(1)+1,hi(2)-1) &
+                                      - (ONE/20.0d0)*s(lo(1)-1:hi(1)+1,hi(2)-2)
 
+       ! make sure sedge lies in between adjacent cell-centered values
+       do i=lo(1)-1,hi(1)+1
+          sedge(i,hi(2)) = max(sedge(i,hi(2)),min(s(i,hi(2)-1),s(i,hi(2))))
+          sedge(i,hi(2)) = min(sedge(i,hi(2)),max(s(i,hi(2)-1),s(i,hi(2))))
+       end do
 
+       ! copy sedge into sp and sm
+       do i=lo(1)-1,hi(1)+1
+          sp(i,hi(2)-1) = sedge(i,hi(2))
+          sm(i,hi(2)  ) = sedge(i,hi(2))
+       end do
     end if
 
     ! compute y-component of Ip and Im
