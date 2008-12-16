@@ -127,10 +127,8 @@ contains
     real(kind=dp_t) :: slopex(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1)
     real(kind=dp_t) :: slopey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,1)
 
-    real(kind=dp_t), allocatable :: Ipu(:,:,:)
-    real(kind=dp_t), allocatable :: Imu(:,:,:)
-    real(kind=dp_t), allocatable :: Ipv(:,:,:)
-    real(kind=dp_t), allocatable :: Imv(:,:,:)
+    real(kind=dp_t), allocatable :: Ip(:,:,:)
+    real(kind=dp_t), allocatable :: Im(:,:,:)
     
     real(kind=dp_t), allocatable :: ulx(:,:),urx(:,:)
     real(kind=dp_t), allocatable :: vly(:,:),vry(:,:)
@@ -147,10 +145,8 @@ contains
     allocate(vly(lo(1)-1:hi(1)+1,lo(2):hi(2)+1))
     allocate(vry(lo(1)-1:hi(1)+1,lo(2):hi(2)+1))
 
-    allocate(Ipu(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
-    allocate(Imu(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
-    allocate(Ipv(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
-    allocate(Imv(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
+    allocate(Ip(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
+    allocate(Im(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,2))
 
     is = lo(1)
     js = lo(2)
@@ -163,8 +159,7 @@ contains
     hy = dx(2)
     
     if (use_ppm) then
-       call ppm_2d(n,u(:,:,1),ng_u,u,ng_u,Ipu,Imu,w0,lo,hi,adv_bc(:,:,1),dx,dt)
-       call ppm_2d(n,u(:,:,2),ng_u,u,ng_u,Ipv,Imv,w0,lo,hi,adv_bc(:,:,2),dx,dt)
+       call ppm_2d(n,u(:,:,1),ng_u,u,ng_u,Ip,Im,w0,lo,hi,adv_bc(:,:,1),dx,dt)
     else
        call slopex_2d(u(:,:,1:),slopex,lo,hi,ng_u,1,adv_bc(:,:,1:))
        call slopey_2d(u(:,:,2:),slopey,lo,hi,ng_u,1,adv_bc(:,:,2:))
@@ -178,8 +173,8 @@ contains
        do j=js,je
           do i=is,ie+1
              ! extrapolate to edges
-             ulx(i,j) = Ipu(i-1,j,1)
-             urx(i,j) = Imu(i  ,j,1)
+             ulx(i,j) = Ip(i-1,j,1)
+             urx(i,j) = Im(i  ,j,1)
           end do
        end do
     else
@@ -232,11 +227,15 @@ contains
     !******************************************************************
 
     if (use_ppm) then
+       call ppm_2d(n,u(:,:,2),ng_u,u,ng_u,Ip,Im,w0,lo,hi,adv_bc(:,:,2),dx,dt)
+    end if
+       
+    if (use_ppm) then
        do j=js,je+1
           do i=is,ie
              ! extrapolate to edges
-             vly(i,j) = Ipv(i,j-1,2)
-             vry(i,j) = Imv(i,j  ,2)
+             vly(i,j) = Ip(i,j-1,2)
+             vry(i,j) = Im(i,j  ,2)
           end do
        end do
     else
@@ -297,7 +296,7 @@ contains
     enddo
 
     deallocate(ulx,urx,vly,vry)
-    deallocate(Ipu,Imu,Ipv,Imv)
+    deallocate(Ip,Im)
 
   end subroutine mkutrans_2d
   
@@ -328,12 +327,8 @@ contains
     real(kind=dp_t) :: slopey(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1)
     real(kind=dp_t) :: slopez(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,1)
     
-    real(kind=dp_t), allocatable :: Ipu(:,:,:,:)
-    real(kind=dp_t), allocatable :: Imu(:,:,:,:)
-    real(kind=dp_t), allocatable :: Ipv(:,:,:,:)
-    real(kind=dp_t), allocatable :: Imv(:,:,:,:)
-    real(kind=dp_t), allocatable :: Ipw(:,:,:,:)
-    real(kind=dp_t), allocatable :: Imw(:,:,:,:)
+    real(kind=dp_t), allocatable :: Ip(:,:,:,:)
+    real(kind=dp_t), allocatable :: Im(:,:,:,:)
 
     real(kind=dp_t) hx,hy,hz,dt2,uavg,uhi,ulo,vhi,vlo,whi,wlo
     
@@ -354,12 +349,8 @@ contains
     allocate(wlz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
     allocate(wrz(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3):hi(3)+1))
 
-    allocate(Ipu(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
-    allocate(Imu(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
-    allocate(Ipv(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
-    allocate(Imv(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
-    allocate(Ipw(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
-    allocate(Imw(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
+    allocate(Ip(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
+    allocate(Im(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1,3))
 
     is = lo(1)
     js = lo(2)
@@ -375,12 +366,8 @@ contains
     hz = dx(3)
     
     if (use_ppm) then
-       call ppm_3d(n,u(:,:,:,1),ng_u,u,ng_u,Ipu,Imu,w0,w0macx,w0macy,w0macz,ng_w0, &
+       call ppm_3d(n,u(:,:,:,1),ng_u,u,ng_u,Ip,Im,w0,w0macx,w0macy,w0macz,ng_w0, &
                    lo,hi,adv_bc(:,:,1),dx,dt)
-       call ppm_3d(n,u(:,:,:,2),ng_u,u,ng_u,Ipv,Imv,w0,w0macx,w0macy,w0macz,ng_w0, &
-                   lo,hi,adv_bc(:,:,2),dx,dt)
-       call ppm_3d(n,u(:,:,:,3),ng_u,u,ng_u,Ipw,Imw,w0,w0macx,w0macy,w0macz,ng_w0, &
-                   lo,hi,adv_bc(:,:,3),dx,dt)
     else
        do k = lo(3)-1,hi(3)+1
           call slopex_2d(u(:,:,k,1:),slopex(:,:,k,:),lo,hi,ng_u,1,adv_bc(:,:,1:))
@@ -398,8 +385,8 @@ contains
           do j=js,je
              do i=is,ie+1
                 ! extrapolate to edges
-                ulx(i,j,k) = Ipu(i-1,j,k,1)
-                urx(i,j,k) = Imu(i  ,j,k,1)
+                ulx(i,j,k) = Ip(i-1,j,k,1)
+                urx(i,j,k) = Im(i  ,j,k,1)
              end do
           end do
        end do
@@ -476,12 +463,17 @@ contains
     !******************************************************************
 
     if (use_ppm) then
+       call ppm_3d(n,u(:,:,:,2),ng_u,u,ng_u,Ip,Im,w0,w0macx,w0macy,w0macz,ng_w0, &
+                   lo,hi,adv_bc(:,:,2),dx,dt)
+    end if
+
+    if (use_ppm) then
        do k=ks,ke
           do j=js,je+1
              do i=is,ie
                 ! extrapolate to edges
-                vly(i,j,k) = Ipv(i,j-1,k,2)
-                vry(i,j,k) = Imv(i,j  ,k,2)
+                vly(i,j,k) = Ip(i,j-1,k,2)
+                vry(i,j,k) = Im(i,j  ,k,2)
              enddo
           enddo
        enddo
@@ -558,12 +550,17 @@ contains
     !******************************************************************
 
     if (use_ppm) then
+       call ppm_3d(n,u(:,:,:,3),ng_u,u,ng_u,Ip,Im,w0,w0macx,w0macy,w0macz,ng_w0, &
+                   lo,hi,adv_bc(:,:,3),dx,dt)
+    end if
+
+    if (use_ppm) then
        do k=ks,ke+1
           do j=js,je
              do i=is,ie
                 ! extrapolate to edges
-                wlz(i,j,k) = Ipw(i,j,k-1,3)
-                wrz(i,j,k) = Imw(i,j,k  ,3)
+                wlz(i,j,k) = Ip(i,j,k-1,3)
+                wrz(i,j,k) = Im(i,j,k  ,3)
              end do
           end do
        end do
@@ -644,7 +641,7 @@ contains
     enddo
 
     deallocate(ulx,urx,vly,vry,wlz,wrz)
-    deallocate(Ipu,Imu,Ipv,Imv,Ipw,Imw)
+    deallocate(Ip,Im)
 
   end subroutine mkutrans_3d
   
