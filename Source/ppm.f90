@@ -2,6 +2,7 @@ module ppm_module
 
   use bl_types
   use probin_module, only: ppm_edge_interp_type, ppm_spm_limiter_type
+  use variables, only: rel_eps
 
   implicit none
 
@@ -240,10 +241,10 @@ contains
        do i=lo(1)-1,hi(1)+1
           sigma = abs(u(i,j,1))*dt/dx(1)
           s6 = SIX*s(i,j) - THREE*(sm(i,j)+sp(i,j))
-          if (u(i,j,1) .gt. ZERO) then
+          if (u(i,j,1) .gt. rel_eps) then
              Ip(i,j,1) = sp(i,j) - (sigma/TWO)*(sp(i,j)-sm(i,j)-(ONE-TWO3RD*sigma)*s6)
              Im(i,j,1) = s(i,j)
-          else if (u(i,j,1) .lt. ZERO) then
+          else if (u(i,j,1) .lt. -rel_eps) then
              Ip(i,j,1) = s(i,j)
              Im(i,j,1) = sm(i,j) + (sigma/TWO)*(sp(i,j)-sm(i,j)+(ONE-TWO3RD*sigma)*s6)
           else
@@ -452,10 +453,10 @@ contains
        do i=lo(1)-1,hi(1)+1
           sigma = abs(u(i,j,2)+w0cc)*dt/dx(2)
           s6 = SIX*s(i,j) - THREE*(sm(i,j)+sp(i,j))
-          if (u(i,j,2)+w0cc .gt. ZERO) then
+          if (u(i,j,2)+w0cc .gt. rel_eps) then
              Ip(i,j,2) = sp(i,j) - (sigma/TWO)*(sp(i,j)-sm(i,j)-(ONE-TWO3RD*sigma)*s6)
              Im(i,j,2) = s(i,j)
-          else if (u(i,j,2)+w0cc .lt. ZERO) then
+          else if (u(i,j,2)+w0cc .lt. -rel_eps) then
              Ip(i,j,2) = s(i,j)
              Im(i,j,2) = sm(i,j) + (sigma/TWO)*(sp(i,j)-sm(i,j)+(ONE-TWO3RD*sigma)*s6)
           else
@@ -700,12 +701,12 @@ contains
           sigmap = abs(umac(i+1,j))*dt/dx(1)
           sigmam = abs(umac(i,j))*dt/dx(1)
           s6 = SIX*s(i,j) - THREE*(sm(i,j)+sp(i,j))
-          if (umac(i+1,j) .gt. ZERO) then
+          if (umac(i+1,j) .gt. rel_eps) then
              Ip(i,j,1) = sp(i,j) - (sigmap/TWO)*(sp(i,j)-sm(i,j)-(ONE-TWO3RD*sigmap)*s6)
           else
              Ip(i,j,1) = s(i,j)
           end if
-          if (umac(i,j) .lt. ZERO) then
+          if (umac(i,j) .lt. -rel_eps) then
              Im(i,j,1) = sm(i,j) + (sigmam/TWO)*(sp(i,j)-sm(i,j)+(ONE-TWO3RD*sigmam)*s6)
           else
              Im(i,j,1) = s(i,j)
@@ -916,12 +917,12 @@ contains
           sigmap = abs(vmac(i,j+1)+w0hi)*dt/dx(2)
           sigmam = abs(vmac(i,j  )+w0lo)*dt/dx(2)
           s6 = SIX*s(i,j) - THREE*(sm(i,j)+sp(i,j))
-          if (vmac(i,j+1)+w0hi .gt. ZERO) then
+          if (vmac(i,j+1)+w0hi .gt. rel_eps) then
              Ip(i,j,2) = sp(i,j) - (sigmap/TWO)*(sp(i,j)-sm(i,j)-(ONE-TWO3RD*sigmap)*s6)
           else
              Ip(i,j,2) = s(i,j)
           end if
-          if (vmac(i,j)+w0lo .lt. ZERO) then
+          if (vmac(i,j)+w0lo .lt. -rel_eps) then
              Im(i,j,2) = sm(i,j) + (sigmam/TWO)*(sp(i,j)-sm(i,j)+(ONE-TWO3RD*sigmam)*s6)
           else
              Im(i,j,2) = s(i,j)
@@ -1196,10 +1197,10 @@ contains
              end if
              sigma = abs(velcc)*dt/dx(1)
              s6 = SIX*s(i,j,k) - THREE*(sm(i,j,k)+sp(i,j,k))
-             if (velcc .gt. ZERO) then
+             if (velcc .gt. rel_eps) then
                 Ip(i,j,k,1) = sp(i,j,k) - (sigma/TWO)*(sp(i,j,k)-sm(i,j,k)-(ONE-TWO3RD*sigma)*s6)
                 Im(i,j,k,1) = s(i,j,k)
-             else if (velcc .lt. ZERO) then
+             else if (velcc .lt. -rel_eps) then
                 Ip(i,j,k,1) = s(i,j,k)
                 Im(i,j,k,1) = sm(i,j,k) + (sigma/TWO)*(sp(i,j,k)-sm(i,j,k)+(ONE-TWO3RD*sigma)*s6)
              else
@@ -1431,10 +1432,10 @@ contains
              end if
              sigma = abs(velcc)*dt/dx(2)
              s6 = SIX*s(i,j,k) - THREE*(sm(i,j,k)+sp(i,j,k))
-             if (velcc .gt. ZERO) then
+             if (velcc .gt. rel_eps) then
                 Ip(i,j,k,2) = sp(i,j,k) - (sigma/TWO)*(sp(i,j,k)-sm(i,j,k)-(ONE-TWO3RD*sigma)*s6)
                 Im(i,j,k,2) = s(i,j,k)
-             else if (velcc .lt. ZERO) then
+             else if (velcc .lt. -rel_eps) then
                 Ip(i,j,k,2) = s(i,j,k)
                 Im(i,j,k,2) = sm(i,j,k) + (sigma/TWO)*(sp(i,j,k)-sm(i,j,k)+(ONE-TWO3RD*sigma)*s6)
              else
@@ -1676,10 +1677,10 @@ contains
              end if
              sigma = abs(velcc)*dt/dx(3)
              s6 = SIX*s(i,j,k) - THREE*(sm(i,j,k)+sp(i,j,k))
-             if (velcc .gt. ZERO) then
+             if (velcc .gt. rel_eps) then
                 Ip(i,j,k,3) = sp(i,j,k) - (sigma/TWO)*(sp(i,j,k)-sm(i,j,k)-(ONE-TWO3RD*sigma)*s6)
                 Im(i,j,k,3) = s(i,j,k)
-             else if (velcc .lt. ZERO) then
+             else if (velcc .lt. -rel_eps) then
                 Ip(i,j,k,3) = s(i,j,k)
                 Im(i,j,k,3) = sm(i,j,k) + (sigma/TWO)*(sp(i,j,k)-sm(i,j,k)+(ONE-TWO3RD*sigma)*s6)
              else
@@ -1962,12 +1963,12 @@ contains
              sigmap = abs(velhi)*dt/dx(1)
              sigmam = abs(vello)*dt/dx(1)
              s6 = SIX*s(i,j,k) - THREE*(sm(i,j,k)+sp(i,j,k))
-             if (velhi .gt. ZERO) then
+             if (velhi .gt. rel_eps) then
                 Ip(i,j,k,1) = sp(i,j,k) - (sigmap/TWO)*(sp(i,j,k)-sm(i,j,k)-(ONE-TWO3RD*sigmap)*s6)
              else
                 Ip(i,j,k,1) = s(i,j,k)
              end if
-             if (vello .lt. ZERO) then
+             if (vello .lt. -rel_eps) then
                 Im(i,j,k,1) = sm(i,j,k) + (sigmam/TWO)*(sp(i,j,k)-sm(i,j,k)+(ONE-TWO3RD*sigmam)*s6)
              else
                 Im(i,j,k,1) = s(i,j,k)
@@ -2200,12 +2201,12 @@ contains
              sigmap = abs(velhi)*dt/dx(2)
              sigmam = abs(vello)*dt/dx(2)
              s6 = SIX*s(i,j,k) - THREE*(sm(i,j,k)+sp(i,j,k))
-             if (velhi .gt. ZERO) then
+             if (velhi .gt. rel_eps) then
                 Ip(i,j,k,2) = sp(i,j,k) - (sigmap/TWO)*(sp(i,j,k)-sm(i,j,k)-(ONE-TWO3RD*sigmap)*s6)
              else
                 Ip(i,j,k,2) = s(i,j,k)
              end if
-             if (vello .lt. ZERO) then
+             if (vello .lt. -rel_eps) then
                 Im(i,j,k,2) = sm(i,j,k) + (sigmam/TWO)*(sp(i,j,k)-sm(i,j,k)+(ONE-TWO3RD*sigmam)*s6)
              else
                 Im(i,j,k,2) = s(i,j,k)
@@ -2451,12 +2452,12 @@ contains
              sigmap = abs(velhi)*dt/dx(2)
              sigmam = abs(vello)*dt/dx(2)
              s6 = SIX*s(i,j,k) - THREE*(sm(i,j,k)+sp(i,j,k))
-             if (velhi .gt. ZERO) then
+             if (velhi .gt. rel_eps) then
                 Ip(i,j,k,3) = sp(i,j,k) - (sigmap/TWO)*(sp(i,j,k)-sm(i,j,k)-(ONE-TWO3RD*sigmap)*s6)
              else
                 Ip(i,j,k,3) = s(i,j,k)
              end if
-             if (vello .lt. ZERO) then
+             if (vello .lt. -rel_eps) then
                 Im(i,j,k,3) = sm(i,j,k) + (sigmam/TWO)*(sp(i,j,k)-sm(i,j,k)+(ONE-TWO3RD*sigmam)*s6)
              else
                 Im(i,j,k,3) = s(i,j,k)
