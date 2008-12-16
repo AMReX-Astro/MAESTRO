@@ -1,11 +1,13 @@
+#!/bin/ksh
+
 # Sample LCRM script to be submitted with psub
 #PSUB -c atlas             # machine to run on
 #PSUB -pool pbatch         # pool to use
 #PSUB -r wdconvect         # sets job name
-#PSUB -tM 4:00             # sets maximum total CPU time
+#PSUB -tM 12:00             # sets maximum total CPU time
 
 #PSUB -b suprnova          # sets bank account
-#PSUB -ln 8                # each node is 8 processors
+#PSUB -ln 108               # each node is 8 processors
 #PSUB -x                   # export current env var settings
 #PSUB -o sn.log            # sets output log name
 #PSUB -e sn.err            # sets error log name
@@ -22,8 +24,24 @@ echo LCRM job id = $PSUB_JOBID
 sinfo
 squeue
 
+# find the latest restart file
+restartFile=`ls -1 | grep -i chk | grep -v tar | grep -v processed | tail -1`
+
+# cut out the numerical part of the chkXXXXX file, here we use the 'k' in
+# 'chk' as the delimiter
+restartNum=`echo ${restartFile} | cut -d'k' -f2`
+
+# restartString will be empty if no chk files are found -- i.e. new run
+if [ "${restartNum}" = "" ]; then
+    restartString=""
+else
+    restartString="--restart ${restartNum}"
+fi
+
+
+
 # Run info
-srun -n 64 ./main.Linux.Intel.mpi.exe inputs_3d >> run.out
+srun -n 864 ./main.Linux.Intel.mpi.exe inputs_3d.384.5dr.eq.dx ${restartString} >> run.out
  
 echo 'ALL DONE'
 
