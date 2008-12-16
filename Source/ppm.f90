@@ -1,6 +1,7 @@
 module ppm_module
 
   use bl_types
+  use probin_module, only: ppm_edge_interp_type, ppm_spm_limiter_type
 
   implicit none
 
@@ -27,7 +28,7 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:),dt
 
     ! local
-    integer :: i,j,edge_interp_type,spm_limiter_type
+    integer :: i,j
 
     real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, C, alphap, alpham, ds
     real(kind=dp_t) :: dI, sgn
@@ -50,14 +51,6 @@ contains
     ! constant used in Colella 2008
     C = 1.25d0
 
-    ! 1 = 4th order with van Leer limiting
-    ! 2 = 4th order with Colella 2008 limiting
-    edge_interp_type = 1
-
-    ! 1 = "old" limiters described in Colella 2008
-    ! 2 = "new" limiters described in Colella 2008
-    spm_limiter_type = 1
-
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! x-direction
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -69,7 +62,7 @@ contains
     allocate(sedge(lo(1)-1:hi(1)+2,lo(2)-1:hi(2)+1))
 
     ! compute s at x-edges
-    if (edge_interp_type .eq. 1) then
+    if (ppm_edge_interp_type .eq. 1) then
 
        ! compute van Leer slopes in x-direction
        do j=lo(2)-1,hi(2)+1
@@ -91,7 +84,7 @@ contains
           end do
        end do
 
-    else if (edge_interp_type .eq. 2) then
+    else if (ppm_edge_interp_type .eq. 2) then
 
        ! store centered differences in dsvl
        do j=lo(2)-1,hi(2)+1
@@ -132,7 +125,7 @@ contains
     end do
 
     ! limit x-component of sp and sm
-    if (spm_limiter_type .eq. 1) then
+    if (ppm_spm_limiter_type .eq. 1) then
 
        ! modify using quadratic limiters
        do j=lo(2)-1,hi(2)+1
@@ -148,7 +141,7 @@ contains
           end do
        end do
 
-    else if (spm_limiter_type .eq. 2) then
+    else if (ppm_spm_limiter_type .eq. 2) then
 
        ! modify using Colella 2008 limiters
        do j=lo(2)-1,hi(2)+1
@@ -273,7 +266,7 @@ contains
     allocate(sedge(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+2))
 
     ! compute s at y-edges
-    if (edge_interp_type .eq. 1) then
+    if (ppm_edge_interp_type .eq. 1) then
 
        ! compute van Leer slopes in y-direction
        do j=lo(2)-2,hi(2)+2
@@ -295,7 +288,7 @@ contains
           end do
        end do
 
-    else if (edge_interp_type .eq. 2) then
+    else if (ppm_edge_interp_type .eq. 2) then
 
        ! store centered differences in dsvl
        do j=lo(2)-2,hi(2)+2
@@ -336,7 +329,7 @@ contains
     end do
 
     ! limit y-component of sp and sm
-    if (spm_limiter_type .eq. 1) then
+    if (ppm_spm_limiter_type .eq. 1) then
 
        ! modify using quadratic limiters
        do j=lo(2)-1,hi(2)+1
@@ -352,7 +345,7 @@ contains
           end do
        end do
 
-    else if (spm_limiter_type .eq. 2) then
+    else if (ppm_spm_limiter_type .eq. 2) then
 
        ! modify using Colella 2008 limiters
        do j=lo(2)-1,hi(2)+1
@@ -494,7 +487,7 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:),dt
 
     ! local
-    integer :: i,j,edge_interp_type,spm_limiter_type
+    integer :: i,j
 
     real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, C, alphap, alpham, ds
     real(kind=dp_t) :: dI, sgn
@@ -517,14 +510,6 @@ contains
     ! constant used in Colella 2008
     C = 1.25d0
 
-    ! 1 = 4th order with van Leer limiting
-    ! 2 = 4th order with Colella 2008 limiting
-    edge_interp_type = 1
-
-    ! 1 = "old" limiters described in Colella 2008
-    ! 2 = "new" limiters described in Colella 2008
-    spm_limiter_type = 1
-
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! x-direction
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -536,7 +521,7 @@ contains
     allocate(sedge(lo(1)-1:hi(1)+2,lo(2)-1:hi(2)+1))
 
     ! compute s at x-edges
-    if (edge_interp_type .eq. 1) then
+    if (ppm_edge_interp_type .eq. 1) then
 
        ! compute van Leer slopes in x-direction
        do j=lo(2)-1,hi(2)+1
@@ -558,7 +543,7 @@ contains
           end do
        end do
 
-    else if (edge_interp_type .eq. 2) then
+    else if (ppm_edge_interp_type .eq. 2) then
 
        ! store centered differences in dsvl
        do j=lo(2)-1,hi(2)+1
@@ -599,7 +584,7 @@ contains
     end do
 
     ! limit x-component of sp and sm
-    if (spm_limiter_type .eq. 1) then
+    if (ppm_spm_limiter_type .eq. 1) then
 
        ! modify using quadratic limiters
        do j=lo(2)-1,hi(2)+1
@@ -615,7 +600,7 @@ contains
           end do
        end do
 
-    else if (spm_limiter_type .eq. 2) then
+    else if (ppm_spm_limiter_type .eq. 2) then
 
        ! modify using Colella 2008 limiters
        do j=lo(2)-1,hi(2)+1
@@ -741,7 +726,7 @@ contains
     allocate(sedge(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+2))
 
     ! compute s at y-edges
-    if (edge_interp_type .eq. 1) then
+    if (ppm_edge_interp_type .eq. 1) then
 
        ! compute van Leer slopes in y-direction
        do j=lo(2)-2,hi(2)+2
@@ -763,7 +748,7 @@ contains
           end do
        end do
 
-    else if (edge_interp_type .eq. 2) then
+    else if (ppm_edge_interp_type .eq. 2) then
 
        ! store centered differences in dsvl
        do j=lo(2)-2,hi(2)+2
@@ -804,7 +789,7 @@ contains
     end do
 
     ! limit y-component of sp and sm
-    if (spm_limiter_type .eq. 1) then
+    if (ppm_spm_limiter_type .eq. 1) then
 
        ! modify using quadratic limiters
        do j=lo(2)-1,hi(2)+1
@@ -820,7 +805,7 @@ contains
           end do
        end do
 
-    else if (spm_limiter_type .eq. 2) then
+    else if (ppm_spm_limiter_type .eq. 2) then
 
        ! modify using Colella 2008 limiters
        do j=lo(2)-1,hi(2)+1
@@ -969,7 +954,7 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:),dt
 
     ! local
-    integer :: i,j,k,edge_interp_type,spm_limiter_type
+    integer :: i,j,k
 
     real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, C, alphap, alpham, ds
     real(kind=dp_t) :: dI, sgn
@@ -992,14 +977,6 @@ contains
     ! constant used in Colella 2008
     C = 1.25d0
 
-    ! 1 = 4th order with van Leer limiting
-    ! 2 = 4th order with Colella 2008 limiting
-    edge_interp_type = 1
-
-    ! 1 = "old" limiters described in Colella 2008
-    ! 2 = "new" limiters described in Colella 2008
-    spm_limiter_type = 1
-
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! x-direction
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1011,7 +988,7 @@ contains
     allocate(sedge(lo(1)-1:hi(1)+2,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
 
     ! compute s at x-edges
-    if (edge_interp_type .eq. 1) then
+    if (ppm_edge_interp_type .eq. 1) then
        
        ! compute van Leer slopes in x-direction
        do k=lo(3)-1,hi(3)+1
@@ -1037,7 +1014,7 @@ contains
           end do
        end do
 
-    else if (edge_interp_type .eq. 2) then
+    else if (ppm_edge_interp_type .eq. 2) then
        
        ! store centered differences in dsvl
        do k=lo(3)-1,hi(3)+1
@@ -1084,7 +1061,7 @@ contains
     end do
     
     ! limit x-component of sp and sm
-    if (spm_limiter_type .eq. 1) then
+    if (ppm_spm_limiter_type .eq. 1) then
 
        ! modify using quadratic limiters
        do k=lo(3)-1,hi(3)+1
@@ -1102,7 +1079,7 @@ contains
           end do
        end do
 
-    else if (spm_limiter_type .eq. 2) then
+    else if (ppm_spm_limiter_type .eq. 2) then
 
        ! modify using Colella 2008 limiters
        do k=lo(3)-1,hi(3)+1
@@ -1246,7 +1223,7 @@ contains
     allocate(sedge(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+2,lo(3)-1:hi(3)+1))
 
     ! compute s at y-edges
-    if (edge_interp_type .eq. 1) then
+    if (ppm_edge_interp_type .eq. 1) then
        
        ! compute van Leer slopes in y-direction
        do k=lo(3)-1,hi(3)+1
@@ -1272,7 +1249,7 @@ contains
           end do
        end do
 
-    else if (edge_interp_type .eq. 2) then
+    else if (ppm_edge_interp_type .eq. 2) then
 
        ! store centered differences in dsvl
        do k=lo(3)-1,hi(3)+1
@@ -1319,7 +1296,7 @@ contains
     end do
 
     ! limit y-component of sp and sm
-    if (spm_limiter_type .eq. 1) then
+    if (ppm_spm_limiter_type .eq. 1) then
 
        ! modify using quadratic limiters
        do k=lo(3)-1,hi(3)+1
@@ -1337,7 +1314,7 @@ contains
           end do
        end do
 
-    else if (spm_limiter_type .eq. 2) then
+    else if (ppm_spm_limiter_type .eq. 2) then
 
        ! modify using Colella 2008 limiters
        do k=lo(3)-1,hi(3)+1
@@ -1481,7 +1458,7 @@ contains
     allocate(sedge(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+2))
 
     ! compute s at z-edges
-    if (edge_interp_type .eq. 1) then
+    if (ppm_edge_interp_type .eq. 1) then
        
        ! compute van Leer slopes in z-direction
        do k=lo(3)-2,hi(3)+2
@@ -1507,7 +1484,7 @@ contains
           end do
        end do
 
-    else if (edge_interp_type .eq. 2) then
+    else if (ppm_edge_interp_type .eq. 2) then
 
        ! store centered differences in dsvl
        do k=lo(3)-2,hi(3)+2
@@ -1554,7 +1531,7 @@ contains
     end do
 
     ! limit z-component of sp and sm
-    if (spm_limiter_type .eq. 1) then
+    if (ppm_spm_limiter_type .eq. 1) then
 
        ! modify using quadratic limiters
        do k=lo(3)-1,hi(3)+1
@@ -1572,7 +1549,7 @@ contains
           end do
        end do
 
-    else if (spm_limiter_type .eq. 2) then
+    else if (ppm_spm_limiter_type .eq. 2) then
 
        ! modify using Colella 2008 limiters
        do k=lo(3)-1,hi(3)+1
@@ -1740,7 +1717,7 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:),dt
 
     ! local
-    integer :: i,j,k,edge_interp_type,spm_limiter_type
+    integer :: i,j,k
 
     real(kind=dp_t) :: dsl, dsr, dsc, D2, D2C, D2L, D2R, D2LIM, C, alphap, alpham, ds
     real(kind=dp_t) :: dI, sgn
@@ -1763,14 +1740,6 @@ contains
     ! constant used in Colella 2008
     C = 1.25d0
 
-    ! 1 = 4th order with van Leer limiting
-    ! 2 = 4th order with Colella 2008 limiting
-    edge_interp_type = 1
-
-    ! 1 = "old" limiters described in Colella 2008
-    ! 2 = "new" limiters described in Colella 2008
-    spm_limiter_type = 1
-
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! x-direction
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1782,7 +1751,7 @@ contains
     allocate(sedge(lo(1)-1:hi(1)+2,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+1))
 
     ! compute s at x-edges
-    if (edge_interp_type .eq. 1) then
+    if (ppm_edge_interp_type .eq. 1) then
        
        ! compute van Leer slopes in x-direction
        do k=lo(3)-1,hi(3)+1
@@ -1808,7 +1777,7 @@ contains
           end do
        end do
 
-    else if (edge_interp_type .eq. 2) then
+    else if (ppm_edge_interp_type .eq. 2) then
        
        ! store centered differences in dsvl
        do k=lo(3)-1,hi(3)+1
@@ -1855,7 +1824,7 @@ contains
     end do
     
     ! limit x-component of sp and sm
-    if (spm_limiter_type .eq. 1) then
+    if (ppm_spm_limiter_type .eq. 1) then
 
        ! modify using quadratic limiters
        do k=lo(3)-1,hi(3)+1
@@ -1873,7 +1842,7 @@ contains
           end do
        end do
 
-    else if (spm_limiter_type .eq. 2) then
+    else if (ppm_spm_limiter_type .eq. 2) then
 
        ! modify using Colella 2008 limiters
        do k=lo(3)-1,hi(3)+1
@@ -2020,7 +1989,7 @@ contains
     allocate(sedge(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+2,lo(3)-1:hi(3)+1))
 
     ! compute s at y-edges
-    if (edge_interp_type .eq. 1) then
+    if (ppm_edge_interp_type .eq. 1) then
        
        ! compute van Leer slopes in y-direction
        do k=lo(3)-1,hi(3)+1
@@ -2046,7 +2015,7 @@ contains
           end do
        end do
 
-    else if (edge_interp_type .eq. 2) then
+    else if (ppm_edge_interp_type .eq. 2) then
 
        ! store centered differences in dsvl
        do k=lo(3)-1,hi(3)+1
@@ -2093,7 +2062,7 @@ contains
     end do
 
     ! limit y-component of sp and sm
-    if (spm_limiter_type .eq. 1) then
+    if (ppm_spm_limiter_type .eq. 1) then
 
        ! modify using quadratic limiters
        do k=lo(3)-1,hi(3)+1
@@ -2111,7 +2080,7 @@ contains
           end do
        end do
 
-    else if (spm_limiter_type .eq. 2) then
+    else if (ppm_spm_limiter_type .eq. 2) then
 
        ! modify using Colella 2008 limiters
        do k=lo(3)-1,hi(3)+1
@@ -2258,7 +2227,7 @@ contains
     allocate(sedge(lo(1)-1:hi(1)+1,lo(2)-1:hi(2)+1,lo(3)-1:hi(3)+2))
 
     ! compute s at z-edges
-    if (edge_interp_type .eq. 1) then
+    if (ppm_edge_interp_type .eq. 1) then
        
        ! compute van Leer slopes in z-direction
        do k=lo(3)-2,hi(3)+2
@@ -2284,7 +2253,7 @@ contains
           end do
        end do
 
-    else if (edge_interp_type .eq. 2) then
+    else if (ppm_edge_interp_type .eq. 2) then
 
        ! store centered differences in dsvl
        do k=lo(3)-2,hi(3)+2
@@ -2331,7 +2300,7 @@ contains
     end do
 
     ! limit z-component of sp and sm
-    if (spm_limiter_type .eq. 1) then
+    if (ppm_spm_limiter_type .eq. 1) then
 
        ! modify using quadratic limiters
        do k=lo(3)-1,hi(3)+1
@@ -2349,7 +2318,7 @@ contains
           end do
        end do
 
-    else if (spm_limiter_type .eq. 2) then
+    else if (ppm_spm_limiter_type .eq. 2) then
 
        ! modify using Colella 2008 limiters
        do k=lo(3)-1,hi(3)+1
