@@ -258,9 +258,7 @@ subroutine varden()
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
      ! compute the divergance coefficient (beta_0)
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-     do n=1,nlevs
-        call make_grav_cell(n,grav_cell(n,:),s0(n,:,rho_comp))
-     enddo
+     call make_grav_cell(grav_cell,s0(:,:,rho_comp))     
 
      call make_div_coeff(div_coeff,s0(:,:,rho_comp),p0,gam1,grav_cell)     
 
