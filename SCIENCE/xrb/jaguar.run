@@ -6,4 +6,4 @@
 
 cd $PBS_O_WORKDIR
 
-aprun -n 64 ./main.Linux.PathScale.mpi.exe inputs_2d_5cm > output.txt
+aprun -n 64 ./main.Linux.PathScale.mpi.exe inputs_2d_5cm >& output.$PBS_JOBID
