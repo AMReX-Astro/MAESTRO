@@ -178,7 +178,7 @@ contains
                 else if (abs(alpham) .ge. TWO*abs(alphap)) then
                    dI = -alpham**2 / (FOUR*(alphap+alpham))
                    ds = s(i-1,j)-s(i,j)
-                   sgn = -sign(ONE,s(i+1,j)-s(i-1,j)) ! inverted - changed from Colella 2008
+                   sgn = sign(ONE,s(i+1,j)-s(i-1,j))
                    if (sgn*dI .ge. sgn*ds) then
                       sm(i,j) = s(i,j) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alphap))
                    end if
@@ -382,7 +382,7 @@ contains
                 else if (abs(alpham) .ge. TWO*abs(alphap)) then
                    dI = -alpham**2 / (FOUR*(alphap+alpham))
                    ds = s(i,j-1)-s(i,j)
-                   sgn = -sign(ONE,s(i,j+1)-s(i,j-1)) ! inverted - changed from Colella 2008
+                   sgn = sign(ONE,s(i,j+1)-s(i,j-1))
                    if (sgn*dI .ge. sgn*ds) then
                       sm(i,j) = s(i,j) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alphap))
                    end if
@@ -637,7 +637,7 @@ contains
                 else if (abs(alpham) .ge. TWO*abs(alphap)) then
                    dI = -alpham**2 / (FOUR*(alphap+alpham))
                    ds = s(i-1,j)-s(i,j)
-                   sgn = -sign(ONE,s(i+1,j)-s(i-1,j)) ! inverted - changed from Colella 2008
+                   sgn = sign(ONE,s(i+1,j)-s(i-1,j))
                    if (sgn*dI .ge. sgn*ds) then
                       sm(i,j) = s(i,j) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alphap))
                    end if
@@ -842,7 +842,7 @@ contains
                 else if (abs(alpham) .ge. TWO*abs(alphap)) then
                    dI = -alpham**2 / (FOUR*(alphap+alpham))
                    ds = s(i,j-1)-s(i,j)
-                   sgn = -sign(ONE,s(i,j+1)-s(i,j-1)) ! inverted - changed from Colella 2008
+                   sgn = sign(ONE,s(i,j+1)-s(i,j-1))
                    if (sgn*dI .ge. sgn*ds) then
                       sm(i,j) = s(i,j) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alphap))
                    end if
@@ -1117,7 +1117,7 @@ contains
                    else if (abs(alpham) .ge. TWO*abs(alphap)) then
                       dI = -alpham**2 / (FOUR*(alphap+alpham))
                       ds = s(i-1,j,k)-s(i,j,k)
-                      sgn = -sign(ONE,s(i+1,j,k)-s(i-1,j,k)) ! inverted - changed from Colella 2008
+                      sgn = sign(ONE,s(i+1,j,k)-s(i-1,j,k))
                       if (sgn*dI .ge. sgn*ds) then
                          sm(i,j,k) = s(i,j,k) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alphap))
                       end if
@@ -1352,7 +1352,7 @@ contains
                    else if (abs(alpham) .ge. TWO*abs(alphap)) then
                       dI = -alpham**2 / (FOUR*(alphap+alpham))
                       ds = s(i,j-1,k)-s(i,j,k)
-                      sgn = -sign(ONE,s(i,j+1,k)-s(i,j-1,k)) ! inverted - changed from Colella 2008
+                      sgn = sign(ONE,s(i,j+1,k)-s(i,j-1,k))
                       if (sgn*dI .ge. sgn*ds) then
                          sm(i,j,k) = s(i,j,k) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alphap))
                       end if
@@ -1587,7 +1587,7 @@ contains
                    else if (abs(alpham) .ge. TWO*abs(alphap)) then
                       dI = -alpham**2 / (FOUR*(alphap+alpham))
                       ds = s(i,j,k-1)-s(i,j,k)
-                      sgn = -sign(ONE,s(i,j,k+1)-s(i,j,k-1)) ! inverted - changed from Colella 2008
+                      sgn = sign(ONE,s(i,j,k+1)-s(i,j,k-1))
                       if (sgn*dI .ge. sgn*ds) then
                          sm(i,j,k) = s(i,j,k) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alphap))
                       end if
@@ -1880,7 +1880,7 @@ contains
                    else if (abs(alpham) .ge. TWO*abs(alphap)) then
                       dI = -alpham**2 / (FOUR*(alphap+alpham))
                       ds = s(i-1,j,k)-s(i,j,k)
-                      sgn = -sign(ONE,s(i+1,j,k)-s(i-1,j,k)) ! inverted - changed from Colella 2008
+                      sgn = sign(ONE,s(i+1,j,k)-s(i-1,j,k))
                       if (sgn*dI .ge. sgn*ds) then
                          sm(i,j,k) = s(i,j,k) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alphap))
                       end if
@@ -2118,7 +2118,7 @@ contains
                    else if (abs(alpham) .ge. TWO*abs(alphap)) then
                       dI = -alpham**2 / (FOUR*(alphap+alpham))
                       ds = s(i,j-1,k)-s(i,j,k)
-                      sgn = -sign(ONE,s(i,j+1,k)-s(i,j-1,k)) ! inverted - changed from Colella 2008
+                      sgn = sign(ONE,s(i,j+1,k)-s(i,j-1,k))
                       if (sgn*dI .ge. sgn*ds) then
                          sm(i,j,k) = s(i,j,k) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alphap))
                       end if
@@ -2356,7 +2356,7 @@ contains
                    else if (abs(alpham) .ge. TWO*abs(alphap)) then
                       dI = -alpham**2 / (FOUR*(alphap+alpham))
                       ds = s(i,j,k-1)-s(i,j,k)
-                      sgn = -sign(ONE,s(i,j,k+1)-s(i,j,k-1)) ! inverted - changed from Colella 2008
+                      sgn = sign(ONE,s(i,j,k+1)-s(i,j,k-1))
                       if (sgn*dI .ge. sgn*ds) then
                          sm(i,j,k) = s(i,j,k) - (TWO*ds + TWO*sgn*sqrt(ds**2 - ds*alphap))
                       end if
