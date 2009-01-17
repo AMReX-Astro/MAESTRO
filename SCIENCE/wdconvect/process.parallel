@@ -3,6 +3,10 @@
 #----------------------------------------------------------------------------
 # user modifiable variables:
 
+# number of parallel tasks to run
+NCPUS=4
+
+
 # pidfile is a lock file that is used to make sure that only one instance 
 # of this script is working on the current directory
 pidfile=process.pid
@@ -17,6 +21,7 @@ chk_prefix=chk??[05]??
 # the working directory so compute nodes can access them.
 fwdconvect=./fwdconvect.Linux.Intel.exe
 fsnapshot3d=./fsnapshot3d.Linux.Intel.exe
+
 
 # set the name of the variable we want to process with fsnapshot
 pvar=radial_velocity
@@ -74,7 +79,7 @@ fi
 
 
 #----------------------------------------------------------------------------
-# the processing function
+# the processing functions
 
 # Process Files.  Once a plotfile is successfully processed, we will output
 # a file pltXXXXX.processed (checkpoint files are only archived, with a
@@ -90,6 +95,8 @@ function process_plotfiles
     # operating on
 
     echo "working on " $1
+    root=$(basename $1)
+    echo $1 > _process.$root
 
     if [ -d $1 ]; then
 
@@ -133,6 +140,7 @@ function process_plotfiles
 
     fi   # end test of whether plotfile is a directory (as it should be)
 
+    rm -f _process.$root
 }
 
 
@@ -143,6 +151,8 @@ function process_checkfiles
     # operating on
 
     echo "working on " $1
+    root=$(basename $1)
+    echo $1 > _process.$root
 
     if [ -d $1 ]; then
 
@@ -164,13 +174,37 @@ function process_checkfiles
 
     fi
 
+    rm -f _process.$root
+
+}
+
+
+#----------------------------------------------------------------------------
+# The function freecpus looks counts the _process.XX files to determine 
+# how many files we are currently processing.  If we are processing <
+# NCPUS, return 1 to indicate that there are free CPUs available to 
+# do more processing.
+function freecpus
+{
+    num=$(ls -l _process.* | wc -l)
+
+    if [ $num -lt $NCPUS ]; then
+        return 1
+    else
+        return 0
+    fi
 }
 
 
 #----------------------------------------------------------------------------
 # the main loop
 
-# Looping waiting for plt and chk directories to appear.
+# Looping waiting for plt and chk directories to appear.  We process
+# NCPUS files at a time.  We loop over files, waiting for free CPUs.
+# When a CPU becomes available, we launch the processing job in the 
+# background, and move to the next file, again waiting for an available
+# CPU.
+
 
 while true
 do
@@ -199,7 +233,18 @@ do
 
   for dir in ${pltlist}
   do
-      process_plotfiles ${dir}
+
+      # wait for available CPUS
+      freecpus
+      while [ $? -eq 0 ]
+      do
+          sleep 5
+          freecpus
+      done
+
+      process_plotfiles ${dir} &
+
+      sleep 5
   done
 
 
@@ -221,9 +266,22 @@ do
 
   for dir in ${chklist}
   do
-      process_checkfiles ${dir}
+
+      # wait for available CPUS
+      freecpus
+      while [ $? -eq 0 ]
+      do
+          sleep 5
+          freecpus
+      done
+
+      process_checkfiles ${dir} &
+
+      sleep 5
   done
 
 
+  # we've processed all of the files.  Sleep a bit and repeat on any
+  # newly written files.
   sleep $N
 done
