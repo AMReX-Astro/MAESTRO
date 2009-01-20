@@ -1226,22 +1226,22 @@ $\etarho^{-\myhalf} = 0$, $\psi^{-\myhalf} = 0$, and $\pi^{-\myhalf} = 0.$
     
   \end{enumerate}
 
-
-\section{Outstanding Questions}
-
-\begin{enumerate}
-
-\item Why do we only update the temperature at the end of steps 4 and
-      8.  This means that at the top of the algorithm, the temperature
-      going into {\bf React State} in step 2 does not include the
-      effects of the previous reactions.
-
-      To be thermodynamically consistent, I think that we need to
-      update the temperature at the very end of step 9.  That way we
-      end the time-level update with $T^{n+1}$ instead of $T^{(2)}$,
-      and we go into the next sequence, step 2 with a valid temperature.
-
-\item Why is there no equivalent of $\etarho$ for enthalpy---e.g.\ an
-      $\eta_{\rho h}$?
-
-\end{enumerate}
+In summary:
+\begin{equation}
+\left.\begin{array}{ccccccccc}
+& \text{React State} & & \text{Advect State} & & \text{Diffuse Enthalpy} & & \text{React State} & \\
+\rho^n & & & \longrightarrow & & & & & \rho^{n+1} \\
+(\rho X)^n & \longrightarrow & (\rho X)^{(1)} & \longrightarrow & & & (\rho X)^{(2)} & \longrightarrow & (\rho X)^{n+1} \\
+(\rho h)^n & \longrightarrow & (\rho h)^{(1)} & \longrightarrow & (\rho h)^{(2a)} & \longrightarrow & (\rho h)^{(2)} & \longrightarrow & (\rho h)^{n+1}\\
+T^n & \longrightarrow & T^{(1)} & & & \longrightarrow & T^{(2)} & \longrightarrow & T^{n+1} \\
+\end{array}\right.\nonumber
+\end{equation}
+\begin{equation}
+\left.\begin{array}{ccccccccc}
+& \text{React Base} & & \text{Advect Base} & & \text{Correct Base} & & \text{React Base} & \\
+\rho_0^n & & & \longrightarrow & \rho_0^{(2a)} & \longrightarrow & & & \rho_0^{n+1} \\
+(\rho h)_0^n & \longrightarrow & (\rho h)_0^{(1)} & \longrightarrow & & & (\rho h)_0^{(2)} & \longrightarrow & (\rho h)_0^{n+1} \\
+p_0^n & & & \longrightarrow & & & & & p_0^{n+1} \\
+\end{array}\right.
+\end{equation}
+Note that this chart indicates, for example, that $\rho^n = \rho^{(1)}$, $\rho^{(2a)} = \rho^{(2)} = \rho^{n+1}$, etc.
