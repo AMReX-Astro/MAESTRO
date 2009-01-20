@@ -25,13 +25,41 @@ J.~B.~Bell, M.~S.~Day, C.~A.~Rendleman, S.~E.~Woosley, \& M.~Zingale
 2004, JCP, 195, 2, 677 (henceforth BDRWZ)
 \end{itemize}
 
+\section{Algorithm Updates}
+
+There are several changes to the algorithm since it was last detailed
+in paper III.  The major changes are:
+
+\begin{itemize}
+\item In paper III we discretized the enthalpy evolution equation in
+full, non-perturbation form.  Since then we have discovered that 
+discretizing the enthalpy evolution in perturbational form leads to better
+numerical properties.  This is more like paper II.
+
+\item We split the update of the density and enthalpy in steps 4 and 8.
+Now, density is updated first, allowing us to compute new values of 
+$\psi$ that are then used in the enthalpy update.
+
+\item We split {\bf Advect Base} into separate {\bf Advect Base Density},
+{\bf Advect Base Pressure}, and {\bf Advect Base Enthalpy}.  This is because we use
+the results from {\bf Advect Base Density} to compute a time-centered $\etarho$ which 
+is used as an input to {\bf Advect Base Pressure}.  Also, we use the results from
+{\bf Advect Base Pressure} to compute a time-centered $\psi$ which is used as an input
+to {\bf Advect Base Enthalpy}.
+
+\item We discuss spherical geometries.
+
+\item We add thermal diffusion.
+
+\item We added the volume-discrepancy term to the velocity constraint
+equation.
+\end{itemize}
 
 %-----------------------------------------------------------------------------
 % Notation
 %-----------------------------------------------------------------------------
 
 \section{Notation}
-
 
 %%%%%%%%%%%%%%%%
 % symbol table
@@ -328,27 +356,6 @@ We now describe the full time advancement algorithm, making frequent
 use of the shorthand developed above.  Here, we assume that the
 problem is already properly initialized.  We describe the details of
 the initialization in \S~\ref{Sec:Initialization}.
-
-There are several changes to the algorithm since it was last detailed
-in paper III.  The major changes are:
-\begin{itemize}
-\item In paper III we discretized the enthalpy evolution equation in
-full, non-perturbation form.  Since then we have discovered that 
-discretizing the enthalpy evolution in perturbational form leads to better
-numerical properties.  This is more like paper II.
-
-\item We split the update of the density and enthalpy in steps 4 and 8.
-Now, density is updated first, allowing us to compute new values of 
-$\psi$ that are then used in the enthalpy update.
-
-\item We discuss spherical geometries.
-
-\item We add thermal diffusion.
-
-\item We added the volume-discrepancy term to the velocity constraint
-equation.
-\end{itemize}
-%
 The advance of the state through a single timestep appears as:
 
 %--------------------------------------------------------------------------
@@ -1207,7 +1214,7 @@ $\etarho^{-\myhalf} = 0$, $\psi^{-\myhalf} = 0$, and $\pi^{-\myhalf} = 0.$
     The only other difference in the time advancement is that in step 11
     we define ${\bf V} = (\Ubt^{1,\star} - \Ubt^0)$ and solve
     \begin{equation}  L_\beta^\rho \phi =
-      D \left ( \beta_0^{\myhalf} {\bf V} \right) - \beta_0^{\myhalf} \left[ (S^{1}-\overline{S}^{1}) - (S^{0}-\overline{S}^{0}) \right] \enskip . 
+      D \left ( \beta_0^{\myhalf} {\bf V} \right) - \beta_0^{\myhalf} \left[ \left(S^{1}-\overline{S}^{1}\right) - \left(S^{0}-\overline{S}^{0}\right) \right] \enskip . 
     \end{equation}
     (The motivation for this form of the projection in the initial pressure iterations
     is discussed in (cite almgren:bell:crutchfield).)
@@ -1231,7 +1238,7 @@ In summary:
 \left.\begin{array}{ccccccccc}
 & \text{React State} & & \text{Advect State} & & \text{Diffuse Enthalpy} & & \text{React State} & \\
 \rho^n & & & \longrightarrow & & & & & \rho^{n+1} \\
-(\rho X)^n & \longrightarrow & (\rho X)^{(1)} & \longrightarrow & & & (\rho X)^{(2)} & \longrightarrow & (\rho X)^{n+1} \\
+(\rho X_k)^n & \longrightarrow & (\rho X_k)^{(1)} & \longrightarrow & & & (\rho X_k)^{(2)} & \longrightarrow & (\rho X_k)^{n+1} \\
 (\rho h)^n & \longrightarrow & (\rho h)^{(1)} & \longrightarrow & (\rho h)^{(2a)} & \longrightarrow & (\rho h)^{(2)} & \longrightarrow & (\rho h)^{n+1}\\
 T^n & \longrightarrow & T^{(1)} & & & \longrightarrow & T^{(2)} & \longrightarrow & T^{n+1} \\
 \end{array}\right.\nonumber
