@@ -315,7 +315,7 @@ we use
 \rho_{0,j}^{\outp} = \rho_{0,j}^{\inp} - \dt (\nabla\cdot\etarho\er)^{\inp}_j \enskip . 
 \end{equation}
 
-\MarginPar{what about a $\eta_{\rho h}$}
+\MarginPar{what about an $\eta_{\rho h}$?}
 \end{enumerate}
 
 %-----------------------------------------------------------------------------
@@ -478,8 +478,6 @@ and
 \item[Step 3.] {\em React the full state and base state through the first time 
 interval of $\dt / 2.$}
 
-\MarginPar{don't we set $h_0 = \overline{h}$ somewhere around here?}
-
 \begin{enumerate}
 \renewcommand{\theenumi}{{\bf \alph{enumi}}}
 
@@ -487,13 +485,14 @@ interval of $\dt / 2.$}
                    \rightarrow$ $[ \rho^{(1)}, (\rho h)^{(1)}, X_k^{(1)}, T^{(1)},
                                   (\rho \omegadot_k)^{(1)}, (\rho \Hnuc)^{(1)} ].$  
 
-\item {\bf if} ~ {\tt full\_rhoh0\_evolution = T} ~ {\bf then}\\
-{\bf React Base}$[(\rho h)_0^n,(\overline{\rho \Hnuc})^{(1)},(\overline{\rho\Hext})^n] \rightarrow [(\rho h)_0^{(1)}]$ \\
-{\bf else}\\
-$(\rho h)_0^{(1)} = (\overline{\rho h})^{(1)}$\\
+\item {\bf if} ~ {\tt full\_rhoh0\_evolution = T} ~ {\bf then}
+
+~~~ {\bf React Base}$[(\rho h)_0^n,(\overline{\rho \Hnuc})^{(1)},(\overline{\rho\Hext})^n] \rightarrow [(\rho h)_0^{(1)}]$ \\
+{\bf else}
+
+~~~ $(\rho h)_0^{(1)} = (\overline{\rho h})^{(1)}$\\
 {\bf end if}
-\item
-Define
+\item Define
 \begin{eqnarray}
 \gammabar^{(1)}        &=& {\rm{\bf Avg}} \left[ \Gamma_1(\rho^{(1)}, p_0^{n}, X_k^{(1)}) \right] \enskip , \\
  {\beta   }_0^{(1)}    &=& \beta   \left(\rho_0^{n}, p_0^{n}, \gammabar^{(1)}\right) \enskip .
@@ -581,7 +580,6 @@ $\rightarrow [p_0^{n+1,\star}, \psi^{\nph,\star}]$.
 $\rightarrow [(\rho h)_0^{(2),\star}]$.
 
 \item Update the enthalpy.  The full enthalpy equation is 
-\MarginPar{we should say something about {\tt use\_tfromp}, and {\tt do\_eos\_h\_above\_cutoff}}
   \begin{equation}
   \frac{\partial (\rho h)}{\partial t}  = - \nablab \cdotb (\Ub \rho h)
 + \psi + (\Ubt \cdot \er) \frac{\partial p_0}{\partial r} + \nabla\cdot\kth\nabla T + \rho \Hnuc + \rho \Hext 
@@ -616,7 +614,6 @@ results in a better solution.
     already in {\bf React State}.  We use the base state enthalpy,
     $(\rho h)_0$, to convert this to an edge state for $(\rho h)$.
     We use 4th-order spatial averaging to get $(\rho h)_0$ on radial faces,
-    \MarginPar{in these notes we currently assume pred type 1, $(\rho h)'$}
 \begin{equation}
 (\rho h)^{(1),\nph,\star} = 
 (\rho h)^{'(1),\nph,\star} + \frac{(\rho h)_0^n + (\rho h)_0^{(2),\star}}{2}
@@ -644,6 +641,7 @@ results in a better solution.
   \MarginPar{we should also show the update in the case that $(\rho h)'$ is the flux}
 
 \item[spherical:]
+\MarginPar{Should we time-center $p_0$ now that we have split out {\tt advect\_base\_pres}?}
 
   \begin{eqnarray}
   (\rho h)^{(1a),\star} &=& (\rho h)^{(1)} - \dt \; \left\{ \nablab
@@ -654,10 +652,15 @@ results in a better solution.
     && + \dt \; \psi^{\nph,*} \enskip ,
   \end{eqnarray}
 
-\MarginPar{We could time-center $p_0$ now that we have split out {\tt advect\_base\_pres}}
 \end{description}
 
-  \end{enumerate}
+\end{enumerate}
+
+If {\tt do\_eos\_h\_above\_cutoff=T} (which is the default setting), then if
+$\rho^{(2),\star} < {\tt base\_cutoff\_density}$, then we recompute enthalpy using
+\begin{equation}
+(\rho h)^{(1a),\star} = \rho^{(2),\star}h\left(\rho^{(2),\star},p_0^{n+1,\star},X_k^{(2),\star}\right).
+\end{equation}
 
 \item {\bf Correct Base}$[\rho_0^{(2a),\star}, (\nabla\cdot\etarho\er)^{\nph,*}] \rightarrow [\rho_0^{n+1,\star}]$.
 
@@ -701,19 +704,17 @@ which is numerically implemented as a diffusion equation for $h^{(2),\star}$,
 &&- \frac{\dt}{2}\sum_k\nabla\cdot\left(\frac{\xi_k^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla X_k^{(2),\star} + \frac{\xi_k^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla X_k^{(1)}\right)\nonumber\\
 &&- \frac{\dt}{2}\nabla\cdot\left(\frac{h_p^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla p_0^{(2),\star} + \frac{h_p^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla p_0^{(1)}\right),
 \end{eqnarray}
-\item Update the temperature using the equation of state.
-
-The default is to do
+\item Update the temperature using the equation of state.  For plane-parallel,
+we update using
 \begin{equation}
 T^{(2),\star} = T\left(\rho^{(2),\star}, h^{(2),\star}, X_k^{(2),\star}\right) \enskip ,
 \end{equation}
-but if {\tt use\_tfromp = T}, then we do
+but in spherical, we set {\tt use\_tfromp = T}, and we use
 \begin{equation}
 T^{(2),\star} = T\left(\rho^{(2),\star}, p_0^{(2),\star}, X_k^{(2),\star}\right) \enskip .
 \end{equation}
-This has the effect of completely decoupling the enthalpy equation from the 
+The latter has the effect of completely decoupling the enthalpy equation from the 
 evolution.
-
 
 \end{enumerate}
 
@@ -957,6 +958,12 @@ $\rightarrow [(\rho h)_0^{(2)}]$.
 
 \end{enumerate}
 
+If {\tt do\_eos\_h\_above\_cutoff=T} (which is the default setting), then if
+$\rho^{(2)} < {\tt base\_cutoff\_density}$, then we recompute enthalpy using
+\begin{equation}
+(\rho h)^{(1a)} = \rho^{(2)}h\left(\rho^{(2)},p_0^{n+\myhalf},X_k^{(2)}\right).
+\end{equation}
+
 \item {\bf Correct Base}$[\rho_0^{(2a)}, (\nabla\cdot\etarho\er)^{\nph}] \rightarrow [\rho_0^{n+1}]$
 
 %--------------------------------------------------------------------------
@@ -974,17 +981,16 @@ which is numerically implemented as a diffusion equation for $h^{(2)}$,
 &&- \frac{\dt}{2}\sum_k\nabla\cdot\left(\frac{\xi_k^{(2),\star}\kth^{(2),\star}}{c_p^{(2),\star}}\nabla X_k^{(2)} + \frac{\xi_k^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla X_k^{(1)}\right)\nonumber\\
 &&- \frac{\dt}{2}\nabla\cdot\left(\frac{h_p^{(2),\star}\kth^{(2),\star}}{c_p^{(2),\star}}\nabla p_0^{(2)} + \frac{h_p^{(1)}\kth^{(1)}}{c_p^{(1)}}\nabla p_0^{(1)}\right),
 \end{eqnarray}
-\item Update the temperature using the equation of state
-
-The default is to do
+\item Update the temperature using the equation of state.  For plane-parallel we
+update using
 \begin{equation}
 T^{(2)} = T\left(\rho^{(2)}, h^{(2)}, X_k^{(2)}\right) \enskip ,
 \end{equation}
-but if {\tt use\_tfromp = T}, then we do
+but in spherical, we set {\tt use\_tfromp = T}, and we use
 \begin{equation}
 T^{(2)} = T\left(\rho^{(2)}, {p_0}^{(2)}, X_k^{(2)}\right) \enskip .
 \end{equation}
-This has the effect of completely decoupling the enthalpy equation from the 
+The latter has the effect of completely decoupling the enthalpy equation from the 
 evolution.
 
 \end{enumerate}
