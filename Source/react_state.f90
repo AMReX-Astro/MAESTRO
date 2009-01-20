@@ -152,7 +152,8 @@ contains
     use burner_module
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp, trac_comp, ntrac
     use network, only: nspec
-    use probin_module, ONLY: do_burning, burning_cutoff_density, enthalpy_pred_type
+    use probin_module, ONLY: do_burning, burning_cutoff_density, enthalpy_pred_type, &
+         use_tfromp
     use pred_parameters
     use bl_constants_module, only: zero
     use eos_module
@@ -207,24 +208,33 @@ contains
           s_out(i,j,rhoh_comp) = s_in(i,j,rhoh_comp) &
                + dt * rho_Hnuc(i,j) + dt * rho_Hext(i,j)
 
-          ! update the temperature with the eos
-          den_eos(1)  = s_out(i,j,rho_comp)
-          h_eos(1)    = s_out(i,j,rhoh_comp)/s_out(i,j,rho_comp)
-          xn_eos(1,:) = s_out(i,j,spec_comp:spec_comp+nspec-1)/s_out(i,j,rho_comp)
-          temp_eos(1) = T_in
+          if (use_tfromp) then
+
+             ! pass temperature through
+             s_out(i,j,temp_comp) = s_in(i,j,temp_comp)
+
+          else
+
+             ! update the temperature with the eos
+             den_eos(1)  = s_out(i,j,rho_comp)
+             h_eos(1)    = s_out(i,j,rhoh_comp)/s_out(i,j,rho_comp)
+             xn_eos(1,:) = s_out(i,j,spec_comp:spec_comp+nspec-1)/s_out(i,j,rho_comp)
+             temp_eos(1) = T_in
              
-          call eos(eos_input_rh, den_eos, temp_eos, &
-                   npts, nspec, &
-                   xn_eos, &
-                   p_eos, h_eos, e_eos, &
-                   cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                   dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                   dpdX_eos, dhdX_eos, &
-                   gam1_eos, cs_eos, s_eos, &
-                   dsdt_eos, dsdr_eos, &
-                   do_diag)
-          
-          s_out(i,j,temp_comp) = temp_eos(1)
+             call eos(eos_input_rh, den_eos, temp_eos, &
+                      npts, nspec, &
+                      xn_eos, &
+                      p_eos, h_eos, e_eos, &
+                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                      dpdX_eos, dhdX_eos, &
+                      gam1_eos, cs_eos, s_eos, &
+                      dsdt_eos, dsdr_eos, &
+                      do_diag)
+             
+             s_out(i,j,temp_comp) = temp_eos(1)
+
+          end if
 
           ! pass the tracers through
           s_out(i,j,trac_comp:trac_comp+ntrac-1) = &
@@ -242,7 +252,8 @@ contains
     use burner_module
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp, trac_comp, ntrac
     use network, only: nspec
-    use probin_module, ONLY: do_burning, burning_cutoff_density, enthalpy_pred_type
+    use probin_module, ONLY: do_burning, burning_cutoff_density, enthalpy_pred_type, &
+         use_tfromp
     use pred_parameters
     use bl_constants_module, only: zero
     use eos_module
@@ -298,24 +309,33 @@ contains
              s_out(i,j,k,rhoh_comp) = s_in(i,j,k,rhoh_comp) &
                   + dt * rho_Hnuc(i,j,k) + dt * rho_Hext(i,j,k)
              
-             ! update the temperature with the eos
-             den_eos(1)  = s_out(i,j,k,rho_comp)
-             h_eos(1)    = s_out(i,j,k,rhoh_comp)/s_out(i,j,k,rho_comp)
-             xn_eos(1,:) = s_out(i,j,k,spec_comp:spec_comp+nspec-1)/s_out(i,j,k,rho_comp)
-             temp_eos(1) = T_in
+             if (use_tfromp) then
 
-             call eos(eos_input_rh, den_eos, temp_eos, &
-                      npts, nspec, &
-                      xn_eos, &
-                      p_eos, h_eos, e_eos, &
-                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                      dpdX_eos, dhdX_eos, &
-                      gam1_eos, cs_eos, s_eos, &
-                      dsdt_eos, dsdr_eos, &
-                      do_diag)
+                ! pass temperature through
+                s_out(i,j,k,temp_comp) = s_in(i,j,k,temp_comp)
+
+             else
+
+                ! update the temperature with the eos
+                den_eos(1)  = s_out(i,j,k,rho_comp)
+                h_eos(1)    = s_out(i,j,k,rhoh_comp)/s_out(i,j,k,rho_comp)
+                xn_eos(1,:) = s_out(i,j,k,spec_comp:spec_comp+nspec-1)/s_out(i,j,k,rho_comp)
+                temp_eos(1) = T_in
+                
+                call eos(eos_input_rh, den_eos, temp_eos, &
+                         npts, nspec, &
+                         xn_eos, &
+                         p_eos, h_eos, e_eos, &
+                         cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
+                         dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
+                         dpdX_eos, dhdX_eos, &
+                         gam1_eos, cs_eos, s_eos, &
+                         dsdt_eos, dsdr_eos, &
+                         do_diag)
           
-             s_out(i,j,k,temp_comp) = temp_eos(1)
+                s_out(i,j,k,temp_comp) = temp_eos(1)
+                
+             end if
              
              ! pass the tracers through
              s_out(i,j,k,trac_comp:trac_comp+ntrac-1) = &
