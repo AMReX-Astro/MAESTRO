@@ -224,7 +224,7 @@ when solving these equations, we do not keep the final temperature,
 nor do we use it to compute the final change in enthalpy.  Therefore,
 $T^{\outp} = T^{\inp}$.  Also, note that the density remains unchanged
 during the {\bf React State} step, i.e., $\rho^{\outp} = \rho^{\inp}$.
-\MarginPar{Currently we do update the temperature if {\tt use\_tfromp}=F .}
+\MarginPar{Currently we do update the temperature if {\tt use\_tfromp}=F}
 
 After the new mass fractions have been computed, the reaction rates are defined as:
 \begin{equation}
@@ -648,7 +648,6 @@ results in a better solution.
   \MarginPar{we should also show the update in the case that $(\rho h)'$ is the flux}
 
 \item[spherical:]
-\MarginPar{Should we time-center $p_0$ now that we have split out {\tt advect\_base\_pres}?}
 
   \begin{eqnarray}
   (\rho h)^{(1a),\star} &=& (\rho h)^{(1)} - \dt \; \left\{ \nablab
@@ -658,6 +657,8 @@ results in a better solution.
        - p_0^{n} \nabla \cdot \uadvone \right \} \nonumber \\
     && + \dt \; \psi^{\nph,*} \enskip ,
   \end{eqnarray}
+
+\MarginPar{Should we time-center $p_0$ now that we have split out {\tt advect\_base\_pres}?}
 
 \end{description}
 
@@ -1092,7 +1093,6 @@ for nodal values of $\phi$, where
 $\beta_0^\nph = ( \beta_0^n + \beta_0^{n+1} )/2$ and
 $L_\beta^\rho$ is the standard bilinear
 finite element approximation to $\nablab \cdotb ({\beta_0^\nph}/{\rho^\nph}) \nablab.$
-\MarginPar{Why are $\beta$ and $\rho$ time centered here instead using the new time value?  Does this have something to do with how $\phi$ relates to a lagged pressure?}
 In this step, $D$ is a discrete second-order operator that approximates the 
 divergence at nodes from cell-centered data and satisfies
 $\mathbf{G} = -D^T.$ 
