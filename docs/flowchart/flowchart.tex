@@ -208,9 +208,9 @@ Here are some charts demonstrating what the superscript notation above scalars i
 \begin{equation}
 \left.\begin{array}{ccccccccc}
 & \text{React State} & & \text{Advect State} & & \text{Diffuse Enthalpy} & & \text{React State} & \\
-\rho^n & & & \longrightarrow & & & & & \rho^{n+1} \\
+\rho^n & = & \rho^{(1)} & \longrightarrow & & & \rho^{(2)} & = & \rho^{n+1} \\
 (\rho X_k)^n & \longrightarrow & (\rho X_k)^{(1)} & \longrightarrow & & & (\rho X_k)^{(2)} & \longrightarrow & (\rho X_k)^{n+1} \\
-(\rho h)^n & \longrightarrow & (\rho h)^{(1)} & \longrightarrow & (\rho h)^{(2a)} & \longrightarrow & (\rho h)^{(2)} & \longrightarrow & (\rho h)^{n+1}\\
+(\rho h)^n & \longrightarrow & (\rho h)^{(1)} & \longrightarrow & (\rho h)^{(1a)} & \longrightarrow & (\rho h)^{(2)} & \longrightarrow & (\rho h)^{n+1}\\
 T^n & \longrightarrow & T^{(1)} & & & \longrightarrow & T^{(2)} & \longrightarrow & T^{n+1} \\
 \end{array}\right.\nonumber
 \end{equation}
@@ -222,7 +222,7 @@ T^n & \longrightarrow & T^{(1)} & & & \longrightarrow & T^{(2)} & \longrightarro
 p_0^n & & & \longrightarrow & & & & & p_0^{n+1} \\
 \end{array}\right.\nonumber
 \end{equation}
-Note that this chart indicates, for example, that $\rho^n = \rho^{(1)}$, $\rho^{(2a)} = \rho^{(2)} = \rho^{n+1}$, etc.\\ \\
+\\ \\
 We make use of the following shorthand notations in outlining the algorithm:
 \begin{enumerate}
 
@@ -283,7 +283,7 @@ After the new mass fractions have been computed, the reaction rates are defined 
 \end{equation}
 and the nuclear energy generation rate is defined as
 \begin{equation}
-(\rho\Hnuc) = -\sum_k(\rho\omegadot_k)^{\outp} \; q_k \enskip.
+(\rho\Hnuc)^{\outp} = -\sum_k(\rho\omegadot_k)^{\outp} \; q_k \enskip.
 \end{equation}
 for the case where only strong-mediated reactions are involved.  As
 $\Hnuc$ is an output of the reaction network, more general networks
@@ -292,7 +292,7 @@ update incorporates the external heating, $(\rho\Hext)^{\inp}$, and is
 updated by
 \begin{equation}
 (\rho h)^{\outp} = 
-(\rho h)^{\inp} + \frac{\dt}{2} (\rho\Hnuc) + \frac{\dt}{2} (\rho\Hext)^{\inp}\enskip.
+(\rho h)^{\inp} + \frac{\dt}{2} (\rho\Hnuc)^{\outp} + \frac{\dt}{2} (\rho\Hext)^{\inp}\enskip.
 \end{equation}
 
 \item {\bf React Base}$[(\rho h)_0^{\inp},(\overline{\rho\Hnuc})^{\inp},(\overline{\rho\Hext})^{\inp}] \rightarrow [(\rho h)_0^{\outp}]$\\
@@ -588,13 +588,16 @@ $[\rho_0^{(2a),\star}, \rho_0^{\nph,\star,{\rm pred}}]$.
   $\rho^{'(1),\nph,\star}$ and $X_k^{(1),\nph,\star}$ using a second-order
   Taylor expansion in space and time, as described in paper II,
   Appendix A, using $\Vb = \uadvone+w_0^{\nph,\star} \er$.  We use the base
-  state density, $\rho_0$, to convert this to an edge state for $\rho$.
-  We use 4th-order spatial averaging to get $\rho_0$ on radial faces,
+  state density, $\rho_0$, to convert this to an edge state for $\rho$,
 \begin{equation}
 \rho^{(1),\nph,\star} = 
-\rho^{'(1),\nph,\star} + \frac{\rho_0^n + \rho_0^{(2a),\star}}{2} \enskip ,
+\rho^{'(1),\nph,\star} + \frac{\rho_0^n + \rho_0^{(2a),\star}}{2} \enskip .
 \label{eq:rhoXedgestate}
 \end{equation}
+  In plane-parallel, we use 4th-order spatial averaging to compute $\rho_0$ on 
+  radial faces.  In spherical, we first map $\rho_0$ to Cartesian cell-centers 
+  using the mapping in Section \ref{Sec:1D Cell-Centered to Cartesian Cell-Centered}, 
+  and then use 2nd-order spatial averaging to compute $\rho_0$ on all faces.
 
   \item Evolve $(\rho X_k)^{(1)} \rightarrow (\rho X_k)^{(2),\star}$
   without explicitly including the reaction terms,
@@ -670,18 +673,20 @@ results in a better solution.
     \uadvone+w_0^{\nph,\star} \er$.  We do not include the reaction
     terms in the enthalpy prediction, since we accounted for them
     already in {\bf React State}.  We use the base state enthalpy,
-    $(\rho h)_0$, to convert this to an edge state for $(\rho h)$.
-    We use 4th-order spatial averaging to get $(\rho h)_0$ on radial faces,
+    $(\rho h)_0$, to convert this to an edge state for $(\rho h)$,
+
+    
 \begin{equation}
 (\rho h)^{(1),\nph,\star} = 
 (\rho h)^{'(1),\nph,\star} + \frac{(\rho h)_0^n + (\rho h)_0^{(2),\star}}{2}
 \enskip .
 \end{equation}
-   
-   We note that for spherical geometry, the edge state of $(\rho h)_0$
-   is computed by averaging $h_0 \equiv (\rho h)_0/\rho_0$ and $\rho_0$
-   to the edge separately, and then computing 
-   ${(\rho h)_0}_{r+\myhalf} = {\rho_0}_{r+\myhalf} {h_0}_{r+\myhalf}$.
+  In plane-parallel, we use 4th-order spatial averaging to compute $(\rho h)_0$
+  on radial faces.  In spherical, we first map $h_0 \equiv (\rho h)_0/\rho_0$ 
+  and $\rho_0$ to Cartesian cell-centers using the mapping in Section 
+  \ref{Sec:1D Cell-Centered to Cartesian Cell-Centered}, use 2nd-order spatial 
+  averaging to compute $h_0$ and $\rho_0$ on all faces, and then multiply these 
+  terms to get $(\rho h)_0$ on all faces.
 
   \item Evolve $(\rho h)^{(1)} \rightarrow (\rho h)^{(1a),\star}$ without
   explicitly including the reaction terms,
@@ -921,8 +926,12 @@ $[\rho_0^{(2a)}, \rho_0^{\nph,{\rm pred}}]$.
     state density, $\rho_0$, to convert this to an edge state for $\rho$,
 
 \begin{equation}
-\rho^{(1),\nph} = \rho^{'(1),\nph} + \frac{\rho_0^n + \rho_0^{(2a)}}{2}\enskip ,
+\rho^{(1),\nph} = \rho^{'(1),\nph} + \frac{\rho_0^n + \rho_0^{(2a)}}{2}\enskip .
 \end{equation}
+  In plane-parallel, we use 4th-order spatial averaging to compute $\rho_0$ on 
+  radial faces.  In spherical, we first map $\rho_0$ to Cartesian cell-centers 
+  using the mapping in Section \ref{Sec:1D Cell-Centered to Cartesian Cell-Centered}, 
+  and then use 2nd-order spatial averaging to compute $\rho_0$ on all faces.
 
     \item Evolve $(\rho X_k)^{(1)} \rightarrow (\rho X_k)^{(2)}$
       without explicitly including the reaction terms,
@@ -983,13 +992,12 @@ $\rightarrow [(\rho h)_0^{(2)}]$.
 (\rho h)^{(1),\nph} = 
 (\rho h)^{'(1),\nph} + \frac{(\rho h)_0^n + (\rho h)_0^{(2)}}{2} \enskip .
 \end{equation}
-
-   We note that for spherical geometry, the edge state of $(\rho h)_0$
-   is computed by averaging $h_0 \equiv (\rho h)_0/\rho_0$ and $\rho_0$
-   to the edge separately, and then computing 
-   ${(\rho h)_0}_{r+\myhalf} = {\rho_0}_{r+\myhalf} {h_0}_{r+\myhalf}$.
-   \item Evolve $(\rho h)^{(1)} \rightarrow (\rho h)^{(1a)}$ without
-     explicitly including the reaction terms,
+  In plane-parallel, we use 4th-order spatial averaging to compute $(\rho h)_0$
+  on radial faces.  In spherical, we first map $h_0 \equiv (\rho h)_0/\rho_0$ 
+  and $\rho_0$ to Cartesian cell-centers using the mapping in Section 
+  \ref{Sec:1D Cell-Centered to Cartesian Cell-Centered}, use 2nd-order spatial 
+  averaging to compute $h_0$ and $\rho_0$ on all faces, and then multiply these 
+  terms to get $(\rho h)_0$ on all faces.
 
 \begin{description}
 \item[plane-parallel:]

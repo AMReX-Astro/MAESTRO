@@ -21,6 +21,7 @@ There are three different {\tt fill\_3d} modes:
 \item The 1D array is edge-centered, and we map to Cartesian edges.  
 \end{enumerate}
 \subsection{1D Cell-Centered to Cartesian Cell-Centered}
+\label{Sec:1D Cell-Centered to Cartesian Cell-Centered}
 This mapping is done in the subroutine {\tt put\_1d\_array\_on\_cart}.
 Figure \ref{fig:mapping} shows the Cartesian grid with the spherical
 base state overlayed (for simplicity, the figure is drawn in 2-d).  
@@ -37,6 +38,7 @@ we are doing a piecewise constant interpolation of the radial array onto the
 Cartesian grid.  If the output is a vector quantity, rather than a scalar, we
 multiply the result by the unit vector in the normal direction.
 \subsection{1D Edge-Centered to Cartesian Cell-Centered}
+\label{Sec:1D Edge-Centered to Cartesian Cell-Centered}
 This mapping is done in the subroutine {\tt put\_1d\_array\_on\_cart}.
 Again, for each Cartesian cell-center, we compute the corresponding radial
 bin.  We linearly interpolate from the two nearest radial edge values 
@@ -45,6 +47,7 @@ we are doing a piecewise linear interpolation of the radial array onto the
 Cartesian grid.  If the output is a vector quantity, rather than a scalar, we
 multiply the result by the unit vector in the normal direction.
 \subsection{1D Edge-Centered to Cartesian Edges}
+\label{Sec:1D Edge-Centered to Cartesian Edges}
 This mapping is done in the subroutine {\tt put\_1d\_array\_on\_cart}.
 This case is only used to create {\tt w0mac} from {\tt w0} in the 
 subroutine, {\tt put\_w0\_on\_edges}.  There are several variations 
