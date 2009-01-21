@@ -31,10 +31,25 @@ There are several changes to the algorithm since it was last detailed
 in paper III.  The major changes are:
 
 \begin{itemize}
+
+\item We have added thermal diffusion with {\tt use\_thermal\_diffusion = T}.
+
+\item We discuss spherical geometries, in paricular:
+\begin{itemize}
+\item We are working on {\bf Advect Base}, {\bf React Base}, and 
+{\bf Correct Base} details.
+\item We are working on $\etarho$ details.
+\item We compute the full state T on cell-centers after the advection-diffusion step 
+from $T=T(\rho,X_k,p_0)$ by setting {\tt use\_tfromp = T} rather than $T=T(\rho,h,X_k)$.
+\item We have changed the discretization of $\Ub\cdot\nabla p_0$ in the enthalpy
+update to instead be $\nabla\cdot(\Ub p_0) - p_0\nabla\cdot\Ub$.
+\end{itemize}
+
 \item In paper III we discretized the enthalpy evolution equation in
-full, non-perturbation form.  Since then we have discovered that 
-discretizing the enthalpy evolution in perturbational form leads to better
-numerical properties.  This is more like paper II.
+full, non-perturbation form, $\rho h$.  Since then we have discovered that 
+discretizing the enthalpy evolution in perturbational form, $(\rho h)'$,
+leads to better numerical properties.  We use {\tt enthalpy\_pred\_type = 1}.
+This is more like paper II.
 
 \item We split the update of the density and enthalpy in steps 4 and 8.
 Now, density is updated first, allowing us to compute new values of 
@@ -47,12 +62,26 @@ is used as an input to {\bf Advect Base Pressure}.  Also, we use the results fro
 {\bf Advect Base Pressure} to compute a time-centered $\psi$ which is used as an input
 to {\bf Advect Base Enthalpy}.
 
-\item We discuss spherical geometries.
+\item We added the volume-discrepancy term to the velocity constraint equation.
 
-\item We add thermal diffusion.
+\item We have turned off the evolution of $h$ above the atmosphere and instead
+compute $h$ with the EOS using {\tt do\_eos\_h\_above\_cutoff} = T.
 
-\item We added the volume-discrepancy term to the velocity constraint
-equation.
+\item We have created a {\tt burning\_cutoff\_density}, where the burning does
+not happen below this density.  It is presently set to {\tt base\_cutoff\_density}.
+
+\item We have added the flag, {\tt full\_rhoh0\_evolution}, when false, sets
+$(\rho h)_0 = (\overline{\rho h})^n$ before {\bf Advect Base}.  {\bf React Base}
+will not be called.  Note that we do not have a {\bf Correct Base} or 
+{\bf Diffuse Base} for enthalpy.
+
+\item We have given the advection scheme a face-lift, with some nifty options like
+corner coupling and various PPM limiters.
+
+\item We now update the density and enthalpy as full states with full-state fluxes, 
+not as perturbational quantities.
+
+
 \end{itemize}
 
 %-----------------------------------------------------------------------------
@@ -170,8 +199,25 @@ $\omegadot_k$ & creation rate for species $k$ ($\omegadot_k \equiv DX_k/Dt$) & s
 \end{center}
 %
 \renewcommand{\arraystretch}{1.0}
-
-
+Here are some charts demonstrating what the superscript notation above scalars implies:
+\begin{equation}
+\left.\begin{array}{ccccccccc}
+& \text{React State} & & \text{Advect State} & & \text{Diffuse Enthalpy} & & \text{React State} & \\
+\rho^n & & & \longrightarrow & & & & & \rho^{n+1} \\
+(\rho X_k)^n & \longrightarrow & (\rho X_k)^{(1)} & \longrightarrow & & & (\rho X_k)^{(2)} & \longrightarrow & (\rho X_k)^{n+1} \\
+(\rho h)^n & \longrightarrow & (\rho h)^{(1)} & \longrightarrow & (\rho h)^{(2a)} & \longrightarrow & (\rho h)^{(2)} & \longrightarrow & (\rho h)^{n+1}\\
+T^n & \longrightarrow & T^{(1)} & & & \longrightarrow & T^{(2)} & \longrightarrow & T^{n+1} \\
+\end{array}\right.\nonumber
+\end{equation}
+\begin{equation}
+\left.\begin{array}{ccccccccc}
+& \text{React Base} & & \text{Advect Base} & & \text{Correct Base} & & \text{React Base} & \\
+\rho_0^n & & & \longrightarrow & \rho_0^{(2a)} & \longrightarrow & & & \rho_0^{n+1} \\
+(\rho h)_0^n & \longrightarrow & (\rho h)_0^{(1)} & \longrightarrow & & & (\rho h)_0^{(2)} & \longrightarrow & (\rho h)_0^{n+1} \\
+p_0^n & & & \longrightarrow & & & & & p_0^{n+1} \\
+\end{array}\right.\nonumber
+\end{equation}
+Note that this chart indicates, for example, that $\rho^n = \rho^{(1)}$, $\rho^{(2a)} = \rho^{(2)} = \rho^{n+1}$, etc.\\ \\
 We make use of the following shorthand notations in outlining the algorithm:
 \begin{enumerate}
 
@@ -1232,23 +1278,3 @@ $\etarho^{-\myhalf} = 0$, $\psi^{-\myhalf} = 0$, and $\pi^{-\myhalf} = 0.$
     Finally, we define $S^1 = S^{1,N_{\rm iters}^\pi}.$
     
   \end{enumerate}
-
-In summary:
-\begin{equation}
-\left.\begin{array}{ccccccccc}
-& \text{React State} & & \text{Advect State} & & \text{Diffuse Enthalpy} & & \text{React State} & \\
-\rho^n & & & \longrightarrow & & & & & \rho^{n+1} \\
-(\rho X_k)^n & \longrightarrow & (\rho X_k)^{(1)} & \longrightarrow & & & (\rho X_k)^{(2)} & \longrightarrow & (\rho X_k)^{n+1} \\
-(\rho h)^n & \longrightarrow & (\rho h)^{(1)} & \longrightarrow & (\rho h)^{(2a)} & \longrightarrow & (\rho h)^{(2)} & \longrightarrow & (\rho h)^{n+1}\\
-T^n & \longrightarrow & T^{(1)} & & & \longrightarrow & T^{(2)} & \longrightarrow & T^{n+1} \\
-\end{array}\right.\nonumber
-\end{equation}
-\begin{equation}
-\left.\begin{array}{ccccccccc}
-& \text{React Base} & & \text{Advect Base} & & \text{Correct Base} & & \text{React Base} & \\
-\rho_0^n & & & \longrightarrow & \rho_0^{(2a)} & \longrightarrow & & & \rho_0^{n+1} \\
-(\rho h)_0^n & \longrightarrow & (\rho h)_0^{(1)} & \longrightarrow & & & (\rho h)_0^{(2)} & \longrightarrow & (\rho h)_0^{n+1} \\
-p_0^n & & & \longrightarrow & & & & & p_0^{n+1} \\
-\end{array}\right.
-\end{equation}
-Note that this chart indicates, for example, that $\rho^n = \rho^{(1)}$, $\rho^{(2a)} = \rho^{(2)} = \rho^{n+1}$, etc.
