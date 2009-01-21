@@ -395,6 +395,10 @@ contains
 
     call react_state(mla,sold,s1,rho_omegadot1,rho_Hnuc1,rho_Hext,halfdt,dx, &
                      the_bc_tower%bc_tower_array,time)
+
+    do n=1,nlevs
+       call destroy(rho_omegadot1(n))
+    end do
     
     if (full_rhoh0_evolution) then
        if (evolve_base_state) then
@@ -461,7 +465,6 @@ contains
             
     if(do_half_alg) then
        do n=1,nlevs
-          call destroy(rho_omegadot1(n))
           call destroy(rho_Hnuc1(n))
        end do
     end if
@@ -892,7 +895,6 @@ contains
        end if
 
        do n=1,nlevs
-          call destroy(rho_omegadot1(n))
           call destroy(rho_Hnuc1(n))
        end do
        
