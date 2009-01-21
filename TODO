@@ -19,3 +19,10 @@
 
 -- the small scale problem should read in its initial model in our
    standard format
+
+-- I'd like to propose eliminating div_etarho from the code completely 
+   (for plane-parallel and spherical).  Now that we have split up the 
+   density and enthalpy advance, there is no need to store it in the 
+   checkpoint file.  And if you instead set rho0 = Avg(rho) in place of 
+   correct_base, we accomplish exactly the same thing.  This will simplify
+   both code and paper IV tremendously.
