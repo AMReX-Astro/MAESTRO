@@ -32,17 +32,19 @@ in paper III.  The major changes are:
 
 \begin{itemize}
 
-\item We have added thermal diffusion with {\tt use\_thermal\_diffusion = T}.
+\item We have added thermal diffusion with {\tt use\_thermal\_diffusion = TRUE}.
 
 \item We discuss spherical geometries, in paricular:
 \begin{itemize}
+\item We are still working out the fill, average, and interpolate stencils.
 \item We are working on {\bf Advect Base}, {\bf React Base}, and 
 {\bf Correct Base} details.
 \item We are working on $\etarho$ details.
-\item We compute the full state T on cell-centers after the advection-diffusion step 
-from $T=T(\rho,X_k,p_0)$ by setting {\tt use\_tfromp = T} rather than $T=T(\rho,h,X_k)$.
+\item We compute the full state temperature on cell-centers after the 
+advection-diffusion step using $T=T(\rho,X_k,p_0)$ by setting 
+{\tt use\_tfromp = TRUE} rather than using $T=T(\rho,h,X_k)$.
 \item We have changed the discretization of $\Ub\cdot\nabla p_0$ in the enthalpy
-update to instead be $\nabla\cdot(\Ub p_0) - p_0\nabla\cdot\Ub$.
+update to $\nabla\cdot(\Ub p_0) - p_0\nabla\cdot\Ub$.
 \end{itemize}
 
 \item In paper III we discretized the enthalpy evolution equation in
@@ -52,35 +54,38 @@ leads to better numerical properties.  We use {\tt enthalpy\_pred\_type = 1}.
 This is more like paper II.
 
 \item We split the update of the density and enthalpy in steps 4 and 8.
-Now, density is updated first, allowing us to compute new values of 
+Now, density is updated first, allowing us to compute time-centered values of 
 $\psi$ that are then used in the enthalpy update.
 
 \item We split {\bf Advect Base} into separate {\bf Advect Base Density},
-{\bf Advect Base Pressure}, and {\bf Advect Base Enthalpy}.  This is because we use
-the results from {\bf Advect Base Density} to compute a time-centered $\etarho$ which 
-is used as an input to {\bf Advect Base Pressure}.  Also, we use the results from
-{\bf Advect Base Pressure} to compute a time-centered $\psi$ which is used as an input
-to {\bf Advect Base Enthalpy}.
+{\bf Advect Base Pressure}, and {\bf Advect Base Enthalpy}.
+\begin{itemize}
+\item First, we call {\bf Advect Base Density}, which computes a time-centered
+$\etarho$.
+\item Second, we call {\bf Advect Base Pressure}, which takes $\etarho$ as an
+input and computes a time-centered $\psi$.
+\item Third, we call {\bf Advect Base Enthalpy}, which takes $\psi$ as an input.
+\end{itemize}
 
-\item We added the volume-discrepancy term to the velocity constraint equation.
+\item We added the volume-discrepancy term to the velocity constraint equation,
+controlled by the input parameter, $f$.
 
 \item We have turned off the evolution of $h$ above the atmosphere and instead
-compute $h$ with the EOS using {\tt do\_eos\_h\_above\_cutoff} = T.
+compute $h$ with the EOS using {\tt do\_eos\_h\_above\_cutoff = TRUE}.
 
 \item We have created a {\tt burning\_cutoff\_density}, where the burning does
 not happen below this density.  It is presently set to {\tt base\_cutoff\_density}.
 
-\item We have added the flag, {\tt full\_rhoh0\_evolution}, when false, sets
-$(\rho h)_0 = (\overline{\rho h})^n$ before {\bf Advect Base}.  {\bf React Base}
-will not be called.  Note that we do not have a {\bf Correct Base} or 
-{\bf Diffuse Base} for enthalpy.
+\item We have added the flag, {\tt full\_rhoh0\_evolution}, which defaults to 
+{\tt TRUE} (note that we do not have a {\bf Correct Base} or 
+{\bf Diffuse Base} for enthalpy).  When {\tt FALSE}, we do not call {\bf React Base},
+but instead set $(\rho h)_0 = (\overline{\rho h})^n$ before {\bf Advect Base}.
 
 \item We have given the advection scheme a face-lift, with some nifty options like
 corner coupling and various PPM limiters.
 
 \item We now update the density and enthalpy as full states with full-state fluxes, 
 not as perturbational quantities.
-
 
 \end{itemize}
 
@@ -227,9 +232,9 @@ the average over $\Omega_H,$ as
 \overline{\phi}(r) 
 = \frac{1}{\mathrm{A}(\Omega_H)}\int_{\Omega_H} \phi(r,{\bf x}) \; dA \enskip .
 \end{equation}
-here $\Omega_H$ is a layer at constant radius $r$.
-
-For spherical problems, see Paper IV for details.
+here $\Omega_H$ is a layer at constant radius $r$.  In plane-parallel, this is 
+as straightforward as averaging cell values at a particular height.  For spherical 
+problems, see the description in Section \ref{Sec:Avg}.
 
 \item {\bf React State}$[\rho^{\inp},(\rho h)^{\inp},X_k^{\inp},T^{\inp}, (\rho\Hext)^{\inp}]\rightarrow [\rho^{\outp}, (\rho h)^{\outp}, X_k^{\outp}, T^{\outp}, (\rho \omegadot_k)^{\outp}, (\rho\Hnuc)^{\outp}]$ \\
 is the process by which we evolve the species and enthalpy from 

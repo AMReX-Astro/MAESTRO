@@ -54,8 +54,8 @@ map $w_0$ onto Cartesian cell-centers, and multiply the result by
 the unit vector in the normal direction.  Then, for each Cartesian 
 face, we obtain the normal velocity by averaging the corresponding 
 velocities from the Cartesian cell-centers adjacent to the face.
-\section{\tt average}
-For the {\tt average} process, we first create a coarse 1D radial array 
+\section{Avg}\label{Sec:Avg}
+For the {\bf Avg} process, we first create a coarse 1D radial array 
 with $\Delta x = \Delta r$.  Then, we compute the radius of the Cartesian cell 
 center, and compute the index, $n$, of the corresponding coarse radial 
 bin.  $q_{0,n}$ is then the average of all the $q_{i,j,k}$ whose 
