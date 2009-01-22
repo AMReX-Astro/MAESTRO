@@ -79,7 +79,7 @@ not happen below this density.  It is presently set to {\tt base\_cutoff\_densit
 \item We have added the flag, {\tt full\_rhoh0\_evolution}, which defaults to 
 {\tt TRUE} (note that we do not have a {\bf Correct Base} or 
 {\bf Diffuse Base} for enthalpy).  When {\tt FALSE}, we do not call {\bf React Base},
-but instead set $(\rho h)_0 = (\overline{\rho h})^n$ before {\bf Advect Base}.
+but instead set $(\rho h)_0 = \overline{(\rho h)^n}$ before {\bf Advect Base}.
 
 \item We have given the advection scheme a face-lift, with some nifty options like
 corner coupling and various PPM limiters.
@@ -176,7 +176,7 @@ $\beta_0$ & coefficient to velocity
 \hline
 $\Gamma_1$ & first adiabatic exponent ($\Gamma_1 \equiv \left . d \log p/d \log \rho \right |_s$) & -- \\
 \hline
-$\etarho$ & $\etarho \equiv (\overline{ \rho' \Ubt \cdot \er})$ & g~cm$^{-2}$~s$^{-1}$ \\
+$\etarho$ & $\etarho \equiv \overline{(\rho' \Ubt \cdot \er)}$ & g~cm$^{-2}$~s$^{-1}$ \\
 \hline
 $\xi_k$ & $\xi_k \equiv \left . \partial h / \partial X_k \right |_{p,T,X_{j,j\ne k}}$ & erg~g$^{-1}$ \\
 \hline 
@@ -229,7 +229,7 @@ We make use of the following shorthand notations in outlining the algorithm:
 \item For any quantity, $\phi,$ we define $\overline{\phi} = ${\bf Avg}$(\phi),$ 
 the average over $\Omega_H,$ as
 \begin{equation}
-\overline{\phi}(r) 
+\overline{\phi(r)}
 = \frac{1}{\mathrm{A}(\Omega_H)}\int_{\Omega_H} \phi(r,{\bf x}) \; dA \enskip .
 \end{equation}
 here $\Omega_H$ is a layer at constant radius $r$.  In plane-parallel, this is 
@@ -295,14 +295,14 @@ updated by
 (\rho h)^{\inp} + \frac{\dt}{2} (\rho\Hnuc)^{\outp} + \frac{\dt}{2} (\rho\Hext)^{\inp}\enskip.
 \end{equation}
 
-\item {\bf React Base}$[(\rho h)_0^{\inp},(\overline{\rho\Hnuc})^{\inp},(\overline{\rho\Hext})^{\inp}] \rightarrow [(\rho h)_0^{\outp}]$\\
+\item {\bf React Base}$[(\rho h)_0^{\inp},\overline{(\rho\Hnuc)^{\inp}},\overline{(\rho\Hext)^{\inp}}] \rightarrow [(\rho h)_0^{\outp}]$\\
 is the process by which we update the base state enthalpy through $\dt/2$ in time using
 \begin{equation}
-\frac{\partial(\rho h)_0}{\partial t} = (\overline{\rho\Hnuc})^{\inp} + (\overline{\rho\Hext})^{\inp}\enskip ,
+\frac{\partial(\rho h)_0}{\partial t} = \overline{(\rho\Hnuc)^{\inp}} + \overline{(\rho\Hext)^{\inp}}\enskip ,
 \end{equation}
 discretized as
 \begin{equation}
-(\rho h)_{0,j}^{\outp} = (\rho h)_{0,j}^{\inp} + \frac{\dt}{2}(\overline{\rho\Hnuc})_{j}^{\inp} + \frac{\dt}{2}(\overline{\rho\Hext})_{j}^{\inp} \enskip .
+(\rho h)_{0,j}^{\outp} = (\rho h)_{0,j}^{\inp} + \frac{\dt}{2}\overline{(\rho\Hnuc)_{j}^{\inp}} + \frac{\dt}{2}\overline{(\rho\Hext)_{j}^{\inp}} \enskip .
 \end{equation}
 
 \item {\bf Advect Base Density}$[\rho_0^\inp,w_0^\inp]$
@@ -442,9 +442,9 @@ terms at the previous and current time levels
 S^{\nph,\star} = S^n + \frac{\Delta t^n}{2} \frac{S^n - S^{n-1}}{\Delta t^{n-1}} \enskip .
 \end{equation}
 
-\item Define
+\item Compute
 \begin{equation}
-\overline{S}^{\nph,\star} = {\mathrm{\bf Avg}} \left(S^{\nph,\star}\right) \enskip .
+\overline{S^{\nph,\star}} = {\mathrm{\bf Avg}} \left(S^{\nph,\star}\right) \enskip .
 \end{equation}
 
 \item Construct $w_0^{\nph,\star}$
@@ -458,10 +458,10 @@ S^{\nph,\star} = S^n + \frac{\Delta t^n}{2} \frac{S^n - S^{n-1}}{\Delta t^{n-1}}
 \end{equation}
 using the lagged $\psi^{\nmh}$ and the volume discrepancy correction with $f=0.3$,
 \begin{equation}
-\frac{\partial w_0^{\nph,\star}}{\partial r} =  \overline{S}^{\nph,\star} 
+\frac{\partial w_0^{\nph,\star}}{\partial r} =  \overline{S^{\nph,\star}}
 - \frac{1}{\gammabar^{n} p_0^{n}}
 \left\{ \psi^{\nmh} + 
-f \left[\frac{p_0^n - \overline{p(\rho,h,X_k)}^n}{\Delta t^n} \right]\right\}
+f \left[\frac{p_0^n - \overline{p(\rho,h,X_k)^n}}{\Delta t^n} \right]\right\}
 \enskip .
 \end{equation}
 
@@ -525,9 +525,9 @@ and
 (paper III; eq.~[39]).  The discretization with the volume discrepancy correction is
 \begin{equation}
 \nablab \cdotb \left(\beta_0^n \uadvone\right) = 
-\beta_0^n \left\{ \left(S^{\nph,\star} - \overline{S}^{\nph,\star}\right)
+\beta_0^n \left\{ \left(S^{\nph,\star} - \overline{S^{\nph,\star}}\right)
 + \frac{f}{\gammabar^n p_0^n}
-\left[\frac{p(\rho,h,X_k)^n - \overline{p(\rho,h,X_k)}^n}{\Delta t^n}\right]\right\} \enskip .
+\left[\frac{p(\rho,h,X_k)^n - \overline{p(\rho,h,X_k)^n}}{\Delta t^n}\right]\right\} \enskip .
 \end{equation}
 
 %--------------------------------------------------------------------------
@@ -545,10 +545,10 @@ interval of $\dt / 2.$}
 
 \item {\bf if} ~ {\tt full\_rhoh0\_evolution = T} ~ {\bf then}
 
-~~~ {\bf React Base}$[(\rho h)_0^n,(\overline{\rho \Hnuc})^{(1)},(\overline{\rho\Hext})^n] \rightarrow [(\rho h)_0^{(1)}]$ \\
+~~~ {\bf React Base}$[(\rho h)_0^n,\overline{(\rho \Hnuc)^{(1)}},\overline{(\rho\Hext)^n}] \rightarrow [(\rho h)_0^{(1)}]$ \\
 {\bf else}
 
-~~~ $(\rho h)_0^{(1)} = (\overline{\rho h})^{(1)}$\\
+~~~ $(\rho h)_0^{(1)} = \overline{(\rho h)^{(1)}}$\\
 {\bf end if}
 \item Define
 \begin{eqnarray}
@@ -797,8 +797,8 @@ $\rightarrow [ \rho^{n+1,\star},(\rho h)^{n+1,\star}, X_k^{n+1,\star}, T^{n+1,\s
 
 \item Define
 \begin{eqnarray}
- \gammabar^{n+1,\star}    &=& {\rm{\bf Avg}} \left[ \Gamma_1(\rho^{n+1,\star}, p_0^{n+1,\star}, 
-                                                      X_k^{n+1,\star}) \right] \enskip , \\
+ \gammabar^{n+1,\star}    &=& {\rm{\bf Avg}} \left[ \Gamma_1\left(\rho^{n+1,\star}, p_0^{n+1,\star}, 
+                                                      X_k^{n+1,\star}\right) \right] \enskip , \\
  {\beta   }_0^{n+1,\star}    &=& \beta   \left(\rho_0^{n+1,\star}, p_0^{n+1,\star}, \gammabar^{n+1,\star}\right) \enskip .
 \end{eqnarray}
 
@@ -826,9 +826,9 @@ Then define
  S^\nph = \frac{S^n + S^{n+1,\star}}{2} \enskip. 
 \end{equation}
 
-\item Define
+\item Compute
 \begin{equation}
-\overline{S}^{\nph} = {\mathrm{\bf Avg}} (S^{\nph}) \enskip.
+\overline{S^{\nph}} = {\mathrm{\bf Avg}} (S^{\nph}) \enskip.
 \end{equation}
 
 \item Construct $w_0^{\nph}$
@@ -839,8 +839,8 @@ Then define
 volume discrepancy correction,
 \begin{equation}
 \frac{\partial w_0^{\nph}}{\partial r} = 
-\overline{S}^{\nph,\star} - \frac{1}{\gammabar^{\nph,\star} p_0^{\nph,\star}}
-\left\{ \psi^{\nph,\star} + f \left[\frac{p_0^{\nph,\star} - \overline{p(\rho,h,X_k)}^{\nph,\star}}{\Delta t^n}\right]\right\}
+\overline{S^{\nph,\star}} - \frac{1}{\gammabar^{\nph,\star} p_0^{\nph,\star}}
+\left\{ \psi^{\nph,\star} + f \left[\frac{p_0^{\nph,\star} - \overline{p(\rho,h,X_k)^{\nph,\star}}}{\Delta t^n}\right]\right\}
 \enskip ,
 \end{equation}
 \begin{equation}
@@ -850,8 +850,8 @@ volume discrepancy correction,
 p_0^{\nph,\star} = \frac{p_0^{n} + p_0^{n+1,\star}}{2}
 \end{equation}
 \begin{equation}
-\overline{p(\rho,h,X_k)}^{\nph,\star} = 
-\frac{\overline{p(\rho,h,X_k)}^n + \overline{p(\rho,h,X_k)}^{n+1,\star}}{2}
+\overline{p(\rho,h,X_k)^{\nph,\star}} = 
+\frac{\overline{p(\rho,h,X_k)^n} + \overline{p(\rho,h,X_k)^{n+1,\star}}}{2}
 \end{equation}
 
 \item[spherical:] See Paper IV for working notes until we finalize this.
@@ -891,9 +891,9 @@ equations (\ref{eq:udoterzero}) and (\ref{eq:tildeconstraint}).   The discretiza
 with the volume discrepancy correction is
 \begin{eqnarray}
 \nablab \cdotb \left(\beta_0^{\nph,\star} \uadvtwo\right) &=&
-\beta_0^{\nph,\star}\left\{\left(S^{\nph} - \overline{S}^{\nph}\right)
+\beta_0^{\nph,\star}\left\{\left(S^{\nph} - \overline{S^{\nph}}\right)
  + \frac{f}{\gammabar^{\nph,\star} p_0^{\nph,\star}}\cdot \right. \nonumber \\
-&& \left.\left[\frac{p(\rho,h,X_k)^{\nph,\star} - \overline{p(\rho,h,X_k)}^{\nph,\star}}{\Delta t^n}\right]\right\} \enskip ,
+&& \left.\left[\frac{p(\rho,h,X_k)^{\nph,\star} - \overline{p(\rho,h,X_k)^{\nph,\star}}}{\Delta t^n}\right]\right\} \enskip ,
 \end{eqnarray}
 \begin{equation}
 \beta_0^{\nph,\star} = \frac{ \beta_0^n +  \beta_0^{n+1,\star} }{2} \enskip .
@@ -1075,11 +1075,11 @@ interval of $\dt / 2.$}
                    $\rightarrow [\rho^{n+1}, (\rho h)^{n+1}, X_k^{n+1}, T^{n+1}, 
                                (\rho \omegadot_k)^{(2)}, (\rho \Hnuc)^{(2)} ].$  
 
-\item {\bf React Base}$[(\rho h)_0^{(2)},(\overline{\rho \Hnuc})^{(2)},(\overline{\rho\Hext})^{(2)}] \rightarrow [(\rho h)_0^{n+1}]$
+\item {\bf React Base}$[(\rho h)_0^{(2)},\overline{(\rho \Hnuc)^{(2)}},\overline{(\rho\Hext)^{(2)}}] \rightarrow [(\rho h)_0^{n+1}]$
 
 \item Define
 \begin{eqnarray}
- \gammabar^{n+1}    &=& {\rm{\bf Avg}}\left[\Gamma_1(\rho^{n+1}, p_0^{n+1}, {X_k}^{n+1}) \right] \enskip , \\ 
+ \gammabar^{n+1}    &=& {\rm{\bf Avg}}\left[\Gamma_1\left(\rho^{n+1}, p_0^{n+1}, {X_k}^{n+1}\right) \right] \enskip , \\ 
  {\beta   }_0^{n+1}    &=& \beta   \left(\rho_0^{n+1}, p_0^{n+1},   \gammabar^{n+1}\right) \enskip .
 \end{eqnarray}
 
@@ -1102,9 +1102,9 @@ where $(\omegadot_k)^{(2)} = (\rho \omegadot_k)^{(2)} / \rho^{(2)}$
 and the thermodynamic quantities are defined using $\rho^{n+1}, X_k^{n+1},$
 and $T^{n+1}$ as inputs to the equation of state.
 
-\item Define
+\item Compute
 \begin{equation}
-\overline{S}^{n+1} = {\mathrm{\bf Avg}} (S^{n+1}) \enskip.
+\overline{S^{n+1}} = {\mathrm{\bf Avg}} (S^{n+1}) \enskip.
 \end{equation}
 
 \end{enumerate}
@@ -1135,18 +1135,18 @@ component of $\Ubt^n$ individually.
 Finally, we impose the divergence constraint from equation (\ref{eq:tildeconstraint}) 
 including the volume discrepancy correction,
 \begin{equation}
-\nablab \cdotb \left(\beta_0^{\nph} \Ubt^{n+1} \right)  = \beta_0^{\nph}\left\{  \left(S^{n+1} - \overline{S}^{n+1} \right)
+\nablab \cdotb \left(\beta_0^{\nph} \Ubt^{n+1} \right)  = \beta_0^{\nph}\left\{  \left(S^{n+1} - \overline{S^{n+1}} \right)
 + \frac{f}{\gammabar^{n+1} p_0^{n+1}}
-\left[\frac{p(\rho,h,X_k)^{n+1} - \overline{p(\rho,h,X_k)}^{n+1}}{\Delta t^n}\right]\right\}
+\left[\frac{p(\rho,h,X_k)^{n+1} - \overline{p(\rho,h,X_k)^{n+1}}}{\Delta t^n}\right]\right\}
 \enskip,
 \end{equation}
 by defining ${\bf V} = \Ubt^{n+1,\star} + ( \dt / \rho^\nph ) \; \mathbf{G} \pi^\nmh$ 
 and solving
 \begin{equation}
  L_\beta^\rho \phi =
-   D \left ( \beta_0^{\nph} {\bf V} \right) - \beta_0^{\nph}\left\{ \left(S^{n+1}-\overline{S}^{n+1} \right)
+   D \left ( \beta_0^{\nph} {\bf V} \right) - \beta_0^{\nph}\left\{ \left(S^{n+1}-\overline{S^{n+1}} \right)
 - \frac{f}{\gammabar^{n+1} p_0^{n+1}}
-\left[\frac{p(\rho,h,X_k)^{n+1} - \overline{p(\rho,h,X_k)}^{n+1}}{\Delta t^n}\right]\right\} \enskip, \label{Linear System for Multigrid}
+\left[\frac{p(\rho,h,X_k)^{n+1} - \overline{p(\rho,h,X_k)^{n+1}}}{\Delta t^n}\right]\right\} \enskip, \label{Linear System for Multigrid}
 \end{equation}
 for nodal values of $\phi$, where
 $\beta_0^\nph = ( \beta_0^n + \beta_0^{n+1} )/2$ and
@@ -1238,13 +1238,13 @@ proceeds as follows.
   \item Compute $S^{0,\nu}$ from equation (\ref{eq:defineS}) 
         using $(\rho \omegadot_k)^{0,\nu}$ and the initial data.
 
-  \item Compute $\overline{S}^{0,\nu} = {\mathrm{\bf Avg}} (S^{0,\nu}).$
+  \item Compute $\overline{S^{0,\nu}} = {\mathrm{\bf Avg}} (S^{0,\nu}).$
 
-  \item Compute $w_0^{\nu+1}$ as in step 1c using $\overline{S}^{0,\nu}$ and $\psi^{\nmh} = 0$.
+  \item Compute $w_0^{\nu+1}$ as in step 1c using $\overline{S^{0,\nu}}$ and $\psi^{\nmh} = 0$.
         
 
   \item Project $\Ub^{0,\nu}$ using $\beta_0^{\initp}$ and 
-        $(S^{0,\nu} - \overline{S}^{0,\nu})$ as the source term.  
+        $(S^{0,\nu} - \overline{S^{0,\nu}})$ as the source term.  
         This yields $\Ub^{0,\nu+1}.$
 
   \end{enumerate}
@@ -1273,7 +1273,7 @@ $\etarho^{-\myhalf} = 0$, $\psi^{-\myhalf} = 0$, and $\pi^{-\myhalf} = 0.$
     The only other difference in the time advancement is that in step 11
     we define ${\bf V} = (\Ubt^{1,\star} - \Ubt^0)$ and solve
     \begin{equation}  L_\beta^\rho \phi =
-      D \left ( \beta_0^{\myhalf} {\bf V} \right) - \beta_0^{\myhalf} \left[ \left(S^{1}-\overline{S}^{1}\right) - \left(S^{0}-\overline{S}^{0}\right) \right] \enskip . 
+      D \left ( \beta_0^{\myhalf} {\bf V} \right) - \beta_0^{\myhalf} \left[ \left(S^{1}-\overline{S^{1}}\right) - \left(S^{0}-\overline{S^{0}}\right) \right] \enskip . 
     \end{equation}
     (The motivation for this form of the projection in the initial pressure iterations
     is discussed in (cite almgren:bell:crutchfield).)
