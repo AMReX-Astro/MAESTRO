@@ -415,6 +415,11 @@ contains
        call average(mla,s1,rhoh0_1,dx,rhoh_comp)
     end if
 
+    do n=1,nlevs
+       call destroy(rho_Hnuc1(n))
+       call destroy(rho_Hext(n))
+    end do
+
     if (evolve_base_state) then
        do n=1,nlevs
           call multifab_build(gamma1(n), mla%la(n), 1, 0)
@@ -427,10 +432,6 @@ contains
           call destroy(gamma1(n))
        end do
     end if
-
-    do n=1,nlevs
-       call destroy(rho_Hext(n))
-    end do
 
     call make_grav_cell(grav_cell_new,rho0_old)
 
@@ -460,12 +461,6 @@ contains
     else
        do n=1,nlevs
           call setval(thermal(n),ZERO,all=.true.)
-       end do
-    end if
-            
-    if(do_half_alg) then
-       do n=1,nlevs
-          call destroy(rho_Hnuc1(n))
        end do
     end if
 
@@ -545,23 +540,19 @@ contains
                           p0_old,p0_new,tempbar,psi,&
                           dx,dt,the_bc_tower%bc_tower_array)
 
-    ! Destroy the sedge array.
     do n = 1, nlevs
        do comp = 1,dm
           call destroy(sedge(n,comp))
           call destroy(sflux(n,comp))
        end do
        call destroy(scal_force(n))
+       call destroy(thermal(n))
     end do
 
     ! Correct the base state using the lagged etarho and psi
     if (use_etarho .and. evolve_base_state) then
        call correct_base(rho0_new,div_etarho,dt)
     end if
-
-    do n=1,nlevs
-       call destroy(thermal(n))
-    end do
 
     if(.not. do_half_alg) then
        do n=1,nlevs
@@ -893,10 +884,6 @@ contains
              call setval(thermal(n),ZERO,all=.true.)
           end do
        end if
-
-       do n=1,nlevs
-          call destroy(rho_Hnuc1(n))
-       end do
        
        do n=1,nlevs
           call multifab_build(s2(n), mla%la(n), nscal, 3)
@@ -940,6 +927,10 @@ contains
           endif
        end if
 
+       do n=1,nlevs
+          call destroy(etarhoflux(n))
+       end do
+
        if (evolve_base_state) then
           call advect_base_pres(w0,Sbar,rho0_new,p0_old,p0_new,gamma1bar,div_coeff_nph, &
                                 psi,etarho_cc,dx(:,dm),dt)
@@ -965,24 +956,19 @@ contains
                              p0_old,p0_new,tempbar,psi,&
                              dx,dt,the_bc_tower%bc_tower_array)
 
-       ! Destroy the sedge array.
-       do n = 1, nlevs
+       do n=1,nlevs
           do comp = 1,dm
              call destroy(sedge(n,comp))
              call destroy(sflux(n,comp))
           end do
           call destroy(scal_force(n))
+          call destroy(thermal(n))
        end do
 
        ! Correct the base state using the lagged etarho and psi
        if (use_etarho .and. evolve_base_state) then
           call correct_base(rho0_new,div_etarho,dt)
        end if
-
-       do n=1,nlevs
-          call destroy(thermal(n))
-          call destroy(etarhoflux(n))
-       end do
        
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 8a (Option I) -- Add thermal conduction (only enthalpy terms)
@@ -1145,11 +1131,6 @@ contains
           do comp=1,dm
              call destroy(w0mac(n,comp))
           end do
-       end do
-    end if
-
-    if (dm .eq. 3) then
-       do n=1,nlevs
           call destroy(w0_force_cart_vec(n))
        end do
     end if
