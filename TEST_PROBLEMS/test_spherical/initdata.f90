@@ -24,8 +24,6 @@ contains
 
   subroutine initscalardata(s,s0_init,p0_background,dx,bc,mla)
 
-    use geometry, only: nlevs, spherical
-
     type(multifab) , intent(inout) :: s(:)
     real(kind=dp_t), intent(in   ) :: s0_init(:,0:,:)
     real(kind=dp_t), intent(in   ) :: p0_background(:,0:)
@@ -53,7 +51,7 @@ contains
           case (3)
              if (spherical .eq. 1) then
                 call initscalardata_3d_sphr(sop(:,:,:,:), lo, hi, ng, dx(n,:), &
-                                            s0_init(n,:,:), p0_background(n,:))
+                                            s0_init(1,:,:), p0_background(1,:))
              else
                 call initscalardata_3d(sop(:,:,:,:), lo, hi, ng, dx(n,:), s0_init(n,:,:), &
                                        p0_background(n,:))
@@ -116,7 +114,11 @@ contains
        case (2)
           call initscalardata_2d(sop(:,:,1,:), lo, hi, ng, dx, s0_init, p0_background)
        case (3)
-          call initscalardata_3d(sop(:,:,:,:), lo, hi, ng, dx, s0_init, p0_background)
+          if (spherical .eq. 1) then
+             call initscalardata_3d_sphr(sop(:,:,:,:), lo, hi, ng, dx, s0_init, p0_background)
+          else
+             call initscalardata_3d(sop(:,:,:,:), lo, hi, ng, dx, s0_init, p0_background)
+          endif
        end select
     end do
 
@@ -210,11 +212,9 @@ contains
              s(i,j,k,rhoh_comp) = s0_init(k,rhoh_comp)
              s(i,j,k,temp_comp) = s0_init(k,temp_comp)
 
-             s(i,j,k,spec_comp:spec_comp+nspec-1) = &
-                  s0_init(k,spec_comp:spec_comp+nspec-1)
+             s(i,j,k,spec_comp:spec_comp+nspec-1) = s0_init(k,spec_comp:spec_comp+nspec-1)
 
-             s(i,j,k,trac_comp:trac_comp+ntrac-1) = &
-                  s0_init(k,trac_comp:trac_comp+ntrac-1)
+             s(i,j,k,trac_comp:trac_comp+ntrac-1) = s0_init(k,trac_comp:trac_comp+ntrac-1)
           enddo
        enddo
     enddo
@@ -328,7 +328,6 @@ contains
 
   subroutine initveldata(u,s0_init,p0_background,dx,bc,mla)
 
-    use geometry, only: nlevs
     use mt19937_module
     
     type(multifab) , intent(inout) :: u(:)
@@ -406,9 +405,15 @@ contains
              call initveldata_2d(uop(:,:,1,:), lo, hi, ng, dx(n,:), &
                                  s0_init(n,:,:), p0_background(n,:))   
           case (3)
-             call initveldata_3d(uop(:,:,:,:), lo, hi, ng, dx(n,:), &
-                                 s0_init(n,:,:), p0_background(n,:), &
-                                 alpha, beta, gamma, phix, phiy, phiz, normk)
+             if (spherical .eq. 1) then
+                call initveldata_3d(uop(:,:,:,:), lo, hi, ng, dx(n,:), &
+                                    s0_init(1,:,:), p0_background(1,:), &
+                                    alpha, beta, gamma, phix, phiy, phiz, normk)
+             else
+                call initveldata_3d(uop(:,:,:,:), lo, hi, ng, dx(n,:), &
+                                    s0_init(n,:,:), p0_background(n,:), &
+                                    alpha, beta, gamma, phix, phiy, phiz, normk)
+             endif
           end select
        end do
     
