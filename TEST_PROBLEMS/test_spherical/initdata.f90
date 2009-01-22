@@ -340,58 +340,8 @@ contains
     real(kind=dp_t), pointer:: uop(:,:,:,:)
     integer :: lo(dm),hi(dm),ng
     integer :: i,j,k,n
-
-    ! random numbers between -1 and 1
-    real(kind=dp_t) :: alpha(3,3,3), beta(3,3,3), gamma(3,3,3)
-
-    ! random numbers between 0 and 2*pi
-    real(kind=dp_t) :: phix(3,3,3), phiy(3,3,3), phiz(3,3,3)
-
-    ! L2 norm of k
-    real(kind=dp_t) :: normk(3,3,3)
-
-    ! random number
-    real(kind=dp_t) :: rand
     
     ng = u(1)%ng
-
-    ! load in random numbers alpha, beta, gamma, phix, phiy, and phiz
-    if (dm .eq. 3) then
-       call init_genrand(20908)
-       do i=1,3
-          do j=1,3
-             do k=1,3
-                rand = genrand_real1()
-                rand = 2.0d0*rand - 1.0d0
-                alpha(i,j,k) = rand
-                rand = genrand_real1()
-                rand = 2.0d0*rand - 1.0d0
-                beta(i,j,k) = rand
-                rand = genrand_real1()
-                rand = 2.0d0*rand - 1.0d0
-                gamma(i,j,k) = rand
-                rand = genrand_real1()
-                rand = 2.0d0*M_PI*rand
-                phix(i,j,k) = rand
-                rand = genrand_real1()
-                rand = 2.0d0*M_PI*rand
-                phiy(i,j,k) = rand
-                rand = genrand_real1()
-                rand = 2.0d0*M_PI*rand
-                phiz(i,j,k) = rand
-             enddo
-          enddo
-       enddo
-
-       ! compute the norm of k
-       do i=1,3
-          do j=1,3
-             do k=1,3
-                normk(i,j,k) = sqrt(dble(i)**2+dble(j)**2+dble(k)**2)
-             enddo
-          enddo
-       enddo
-    end if
 
     do n=1,nlevs
 
@@ -407,12 +357,10 @@ contains
           case (3)
              if (spherical .eq. 1) then
                 call initveldata_3d(uop(:,:,:,:), lo, hi, ng, dx(n,:), &
-                                    s0_init(1,:,:), p0_background(1,:), &
-                                    alpha, beta, gamma, phix, phiy, phiz, normk)
+                                    s0_init(1,:,:), p0_background(1,:))
              else
                 call initveldata_3d(uop(:,:,:,:), lo, hi, ng, dx(n,:), &
-                                    s0_init(n,:,:), p0_background(n,:), &
-                                    alpha, beta, gamma, phix, phiy, phiz, normk)
+                                    s0_init(n,:,:), p0_background(n,:))
              endif
           end select
        end do
@@ -471,8 +419,7 @@ contains
   ! The steepness of the cutoff is controlled by "velpert_steep".  The
   ! relative amplitude of the modes is controlled by
   ! "velpert_amplitude".
-  subroutine initveldata_3d(u,lo,hi,ng,dx,s0_init,p0_background, &
-                            alpha,beta,gamma,phix,phiy,phiz,normk)
+  subroutine initveldata_3d(u,lo,hi,ng,dx,s0_init,p0_background)
 
     use probin_module, only: prob_lo, prob_hi, &
          velpert_amplitude, velpert_radius, velpert_steep, velpert_scale
@@ -483,22 +430,8 @@ contains
     real(kind=dp_t), intent(in   ) ::    s0_init(0:,:)
     real(kind=dp_t), intent(in   ) ::    p0_background(0:)
 
-    ! random numbers between -1 and 1
-    real(kind=dp_t), intent(in) :: alpha(3,3,3), beta(3,3,3), gamma(3,3,3)
-
-    ! random numbers between 0 and 2*pi
-    real(kind=dp_t), intent(in) :: phix(3,3,3), phiy(3,3,3), phiz(3,3,3)
-
-    ! L2 norm of k
-    real(kind=dp_t), intent(in) :: normk(3,3,3)
-
     ! Local variables
-    integer :: i, j, k
-    integer :: iloc, jloc, kloc
-
-    ! cos and sin of (2*pi*kx/L + phix), etc
-    real(kind=dp_t) :: cx(3,3,3), cy(3,3,3), cz(3,3,3)
-    real(kind=dp_t) :: sx(3,3,3), sy(3,3,3), sz(3,3,3)
+    integer :: i, j, k, n
 
     ! location of center of star
     real(kind=dp_t) :: xc(3)
@@ -512,6 +445,8 @@ contains
     ! perturbational velocity to add
     real(kind=dp_t) :: upert(3)
 
+    real(kind=dp_t) :: A, r_vort, u_r, u_z, theta, r, z
+
     ! initialize the velocity to zero everywhere
     u = ZERO
 
@@ -522,72 +457,52 @@ contains
     xc(3) = 0.5d0*(prob_lo(3)+prob_hi(3))
 
     ! now do the big loop over all points in the domain
-    do iloc = lo(1),hi(1)
-       do jloc = lo(2),hi(2)
-          do kloc = lo(3),hi(3)
+    do i = lo(1),hi(1)
+       do j = lo(2),hi(2)
+          do k = lo(3),hi(3)
 
              ! set perturbational velocity to zero
              upert = ZERO
 
              ! compute where we physically are
-             xloc(1) = prob_lo(1) + (dble(iloc)+0.5d0)*dx(1)
-             xloc(2) = prob_lo(2) + (dble(jloc)+0.5d0)*dx(2)
-             xloc(3) = prob_lo(3) + (dble(kloc)+0.5d0)*dx(3)
+             xloc(1) = prob_lo(1) + (dble(i)+0.5d0)*dx(1)
+             xloc(2) = prob_lo(2) + (dble(j)+0.5d0)*dx(2)
+             xloc(3) = prob_lo(3) + (dble(k)+0.5d0)*dx(3)
 
              ! compute distance to the center of the star
              rloc = ZERO
-             do i=1,3
-                rloc = rloc + (xloc(i) - xc(i))**2
+             do n=1,3
+                rloc = rloc + (xloc(n) - xc(n))**2
              enddo
              rloc = sqrt(rloc)
 
-             ! loop over the 27 combinations of fourier components
-             do i=1,3
-                do j=1,3
-                   do k=1,3
-                      ! compute cosines and sines
-                      cx(i,j,k) = cos(2.0d0*M_PI*dble(i)*xloc(1)/velpert_scale + phix(i,j,k))
-                      cy(i,j,k) = cos(2.0d0*M_PI*dble(j)*xloc(2)/velpert_scale + phiy(i,j,k))
-                      cz(i,j,k) = cos(2.0d0*M_PI*dble(k)*xloc(3)/velpert_scale + phiz(i,j,k))
-                      sx(i,j,k) = sin(2.0d0*M_PI*dble(i)*xloc(1)/velpert_scale + phix(i,j,k))
-                      sy(i,j,k) = sin(2.0d0*M_PI*dble(j)*xloc(2)/velpert_scale + phiy(i,j,k))
-                      sz(i,j,k) = sin(2.0d0*M_PI*dble(k)*xloc(3)/velpert_scale + phiz(i,j,k))
-                   enddo
-                enddo
-             enddo
 
-             ! loop over the 27 combinations of fourier components
-             do i=1,3
-                do j=1,3
-                   do k=1,3
-                      ! compute contribution from perturbation velocity from each mode
-                      upert(1) = upert(1) + &
-                           (-gamma(i,j,k)*dble(j)*cx(i,j,k)*cz(i,j,k)*sy(i,j,k) &
-                             +beta(i,j,k)*dble(k)*cx(i,j,k)*cy(i,j,k)*sz(i,j,k)) &
-                            / normk(i,j,k)
+             ! we will use a Hill spherical vortex to stir things up
+             ! see "Vortex Dynamics" by P. G. Saffman
 
-                      upert(2) = upert(2) + &
-                           (gamma(i,j,k)*dble(i)*cy(i,j,k)*cz(i,j,k)*sx(i,j,k) &
-                           -alpha(i,j,k)*dble(k)*cx(i,j,k)*cy(i,j,k)*sz(i,j,k)) &
-                            / normk(i,j,k)
+             A = 1.e7
+             r_vort = 2.e6
 
-                      upert(3) = upert(3) + &
-                           ( -beta(i,j,k)*dble(i)*cy(i,j,k)*cz(i,j,k)*sx(i,j,k) &
-                            +alpha(i,j,k)*dble(j)*cx(i,j,k)*cz(i,j,k)*sy(i,j,k)) &
-                            / normk(i,j,k)
-                   enddo
-                enddo
-             enddo
+             z = xloc(3) - xc(3)
+             r = sqrt( (xloc(1) - xc(1))**2 + (xloc(2) - xc(2))**2 )
 
-             ! apply the cutoff function to the perturbational velocity
-             do i=1,3
-                upert(i) = velpert_amplitude*upert(i)*(0.5d0+0.5d0*tanh((velpert_radius-rloc)/velpert_steep))
-             enddo
+             u_r = 0.2*A*r*z
+             u_z = -0.1*A*(4.0*r**2 + 2.0*z**2 + (10./3.)*r_vort**2)
+
+             if (r**2 + z**2 < r_vort**2) then
+                
+                theta = atan( (xloc(2) - xc(2))/(xloc(1) - xc(1)) )
+
+                upert(1) = u_r*cos(theta)
+                upert(2) = u_r*sin(theta)
+                upert(3) = u_z
+
+             else
+                upert(:) = ZERO
+             endif
 
              ! add perturbational velocity to background velocity
-             do i=1,3
-                u(iloc,jloc,kloc,i) = u(iloc,jloc,kloc,i) + upert(i)
-             enddo
+             u(i,j,k,:) = u(i,j,k,:) + upert(:)
 
           enddo
        enddo
