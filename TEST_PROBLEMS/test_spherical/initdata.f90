@@ -410,15 +410,7 @@ contains
 
   end subroutine initveldata_2d
 
-  ! the velocity is initialized to zero plus a perturbation which is a
-  ! summation of 27 fourier modes with random amplitudes and phase
-  ! shifts over a square of length "velpert_scale".  The parameter
-  ! "velpert_radius" is the cutoff radius, such that the actual
-  ! perturbation that gets added to the initial velocity decays to
-  ! zero quickly if r > "velpert_radius", via the tanh function.
-  ! The steepness of the cutoff is controlled by "velpert_steep".  The
-  ! relative amplitude of the modes is controlled by
-  ! "velpert_amplitude".
+
   subroutine initveldata_3d(u,lo,hi,ng,dx,s0_init,p0_background)
 
     use probin_module, only: prob_lo, prob_hi, &
@@ -445,7 +437,7 @@ contains
     ! perturbational velocity to add
     real(kind=dp_t) :: upert(3)
 
-    real(kind=dp_t) :: A, r_vort, u_r, u_z, theta, r, z
+    real(kind=dp_t) :: u_r, u_z, theta, r, z
 
     ! initialize the velocity to zero everywhere
     u = ZERO
@@ -480,16 +472,14 @@ contains
              ! we will use a Hill spherical vortex to stir things up
              ! see "Vortex Dynamics" by P. G. Saffman
 
-             A = 1.e7
-             r_vort = 2.e6
-
              z = xloc(3) - xc(3)
              r = sqrt( (xloc(1) - xc(1))**2 + (xloc(2) - xc(2))**2 )
 
-             u_r = 0.2*A*r*z
-             u_z = -0.1*A*(4.0*r**2 + 2.0*z**2 + (10./3.)*r_vort**2)
+             u_r = 0.2*velpert_amplitude*r*z
+             u_z = -0.1*velpert_amplitude*(4.0*r**2 + 2.0*z**2 + (10./3.)*velpert_radius**2)
 
-             if (r**2 + z**2 < r_vort**2) then
+
+             if (r**2 + z**2 < velpert_radius**2) then
                 
                 theta = atan( (xloc(2) - xc(2))/(xloc(1) - xc(1)) )
 
