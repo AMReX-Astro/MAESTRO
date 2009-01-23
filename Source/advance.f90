@@ -412,7 +412,11 @@ contains
           rhoh0_1 = rhoh0_old
        end if
     else
-       call average(mla,s1,rhoh0_1,dx,rhoh_comp)
+       if (evolve_base_state) then
+          call average(mla,s1,rhoh0_1,dx,rhoh_comp)
+       else
+          rhoh0_1 = rhoh0_old
+       end if
     end if
 
     do n=1,nlevs
