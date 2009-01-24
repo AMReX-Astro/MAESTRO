@@ -52,14 +52,13 @@ module probin_module
   logical, save            :: use_tfromp, full_rhoh0_evolution, single_prec_plotfiles
   logical, save            :: use_soundspeed_firstdt, use_divu_firstdt
   logical, save            :: smallscale_beta
-  logical, save            :: use_ppm
+  integer, save            :: use_ppm
   integer, save            :: max_levs, max_grid_size, regrid_int, ref_ratio
   integer, save            :: n_cellx, n_celly, n_cellz
   integer, save            :: drdxfac, min_width
   real(dp_t), save         :: min_eff
   real(dp_t), save         :: burning_cutoff_density  ! note: presently not runtime parameter
   real(dp_t), save         :: rotational_frequency, co_latitude, radius
-  integer, save            :: ppm_edge_interp_type, ppm_spm_limiter_type
 
   ! These will be allocated and defined below
   logical,    allocatable, save :: edge_nodal_flag(:,:)
@@ -164,8 +163,6 @@ module probin_module
   namelist /probin/ rotational_frequency
   namelist /probin/ co_latitude
   namelist /probin/ radius
-  namelist /probin/ ppm_edge_interp_type
-  namelist /probin/ ppm_spm_limiter_type
 
 contains
 
@@ -322,7 +319,10 @@ contains
 
     smallscale_beta = .false.
 
-    use_ppm = .false.
+    ! 0 = no ppm
+    ! 1 = 1985 ppm
+    ! 2 = 2009 ppm
+    use_ppm = 0
 
     max_levs = 1
     max_grid_size = 64
@@ -337,14 +337,6 @@ contains
     rotational_frequency = ZERO
     co_latitude = ZERO
     radius = 1.0e6_dp_t    ! 10 km neutron star
-
-    ! 1 = 4th order with van Leer limiting
-    ! 2 = 4th order with Colella 2008 limiting
-    ppm_edge_interp_type = 1
-
-    ! 1 = "old" limiters described in Colella 2008
-    ! 2 = "new" limiters described in Colella 2008
-    ppm_spm_limiter_type = 1
 
     !
     ! Don't have more than 64 processes trying to read from disk at once.
@@ -889,15 +881,6 @@ contains
           farg = farg + 1
           call get_command_argument(farg, value = fname)
           read(fname, *) radius
-
-       case ('--ppm_edge_interp_type')
-          farg = farg + 1
-          call get_command_argument(farg, value = fname)
-          read(fname, *) ppm_edge_interp_type
-       case ('--ppm_spm_limiter_type')
-          farg = farg + 1
-          call get_command_argument(farg, value = fname)
-          read(fname, *) ppm_spm_limiter_type
 
        case ('--')
           farg = farg + 1

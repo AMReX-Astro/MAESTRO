@@ -256,7 +256,7 @@ contains
     js = lo(2)
     je = hi(2)
 
-    if (use_ppm) then
+    if (use_ppm .gt. 0) then
        call ppm_fpu_2d(n,s(:,:,comp),ng_s,umac,vmac,ng_um,Ip,Im,w0,lo,hi,adv_bc(:,:,1),dx,dt)
     else
        call slopex_2d(s(:,:,comp:),slopex,lo,hi,ng_s,1,adv_bc)
@@ -274,7 +274,7 @@ contains
     !******************************************************************
 
     ! loop over appropriate x-faces    
-    if (use_ppm) then
+    if (use_ppm .gt. 0) then
        do j=js-1,je+1
           do i=is,ie+1
              ! make slx, srx with 1D extrapolation
@@ -356,7 +356,7 @@ contains
     enddo
 
     ! loop over appropriate y-faces
-    if (use_ppm) then
+    if (use_ppm .gt. 0) then
        do j=js,je+1
           do i=is-1,ie+1
              ! make sly, sry with 1D extrapolation
@@ -761,7 +761,7 @@ contains
     ks = lo(3)
     ke = hi(3)
 
-    if (use_ppm) then
+    if (use_ppm .gt. 0) then
        call ppm_fpu_3d(n,s(:,:,:,comp),ng_s,umac,vmac,wmac,ng_um,Ip,Im,w0, &
                        w0macx,w0macy,w0macz,ng_w0,lo,hi,adv_bc(:,:,1),dx,dt)
     else
@@ -786,7 +786,7 @@ contains
     !******************************************************************
     
     ! loop over appropriate x-faces
-    if (use_ppm) then
+    if (use_ppm .gt. 0) then
        do k=ks-1,ke+1
           do j=js-1,je+1
              do i=is,ie+1
@@ -874,7 +874,7 @@ contains
     enddo
 
     ! loop over appropriate y-faces
-    if (use_ppm) then
+    if (use_ppm .gt. 0) then
        do k=ks-1,ke+1
           do j=js,je+1
              do i=is-1,ie+1
@@ -962,7 +962,7 @@ contains
     enddo
 
     ! loop over appropriate z-faces
-    if (use_ppm) then
+    if (use_ppm .gt. 0) then
        do k=ks,ke+1
           do j=js-1,je+1
              do i=is-1,ie+1

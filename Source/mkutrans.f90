@@ -158,7 +158,7 @@ contains
     hx = dx(1)
     hy = dx(2)
     
-    if (use_ppm) then
+    if (use_ppm .gt. 0) then
        call ppm_2d(n,u(:,:,1),ng_u,u,ng_u,Ip,Im,w0,lo,hi,adv_bc(:,:,1),dx,dt)
     else
        call slopex_2d(u(:,:,1:),slopex,lo,hi,ng_u,1,adv_bc(:,:,1:))
@@ -169,7 +169,7 @@ contains
     ! create utrans
     !******************************************************************
 
-    if (use_ppm) then
+    if (use_ppm .gt. 0) then
        do j=js,je
           do i=is,ie+1
              ! extrapolate to edges
@@ -226,11 +226,11 @@ contains
     ! create vtrans
     !******************************************************************
 
-    if (use_ppm) then
+    if (use_ppm .gt. 0) then
        call ppm_2d(n,u(:,:,2),ng_u,u,ng_u,Ip,Im,w0,lo,hi,adv_bc(:,:,2),dx,dt)
     end if
        
-    if (use_ppm) then
+    if (use_ppm .gt. 0) then
        do j=js,je+1
           do i=is,ie
              ! extrapolate to edges
@@ -365,7 +365,7 @@ contains
     hy = dx(2)
     hz = dx(3)
     
-    if (use_ppm) then
+    if (use_ppm .gt. 0) then
        call ppm_3d(n,u(:,:,:,1),ng_u,u,ng_u,Ip,Im,w0,w0macx,w0macy,w0macz,ng_w0, &
                    lo,hi,adv_bc(:,:,1),dx,dt)
     else
@@ -380,7 +380,7 @@ contains
     ! create utrans
     !******************************************************************
 
-    if (use_ppm) then
+    if (use_ppm .gt. 0) then
        do k=ks,ke
           do j=js,je
              do i=is,ie+1
@@ -462,12 +462,12 @@ contains
     ! create vtrans
     !******************************************************************
 
-    if (use_ppm) then
+    if (use_ppm .gt. 0) then
        call ppm_3d(n,u(:,:,:,2),ng_u,u,ng_u,Ip,Im,w0,w0macx,w0macy,w0macz,ng_w0, &
                    lo,hi,adv_bc(:,:,2),dx,dt)
     end if
 
-    if (use_ppm) then
+    if (use_ppm .gt. 0) then
        do k=ks,ke
           do j=js,je+1
              do i=is,ie
@@ -549,12 +549,12 @@ contains
     ! create wtrans
     !******************************************************************
 
-    if (use_ppm) then
+    if (use_ppm .gt. 0) then
        call ppm_3d(n,u(:,:,:,3),ng_u,u,ng_u,Ip,Im,w0,w0macx,w0macy,w0macz,ng_w0, &
                    lo,hi,adv_bc(:,:,3),dx,dt)
     end if
 
-    if (use_ppm) then
+    if (use_ppm .gt. 0) then
        do k=ks,ke+1
           do j=js,je
              do i=is,ie
