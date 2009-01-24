@@ -393,7 +393,7 @@ contains
        call multifab_build(rho_Hext(n),      mla%la(n), 1,     1)
     end do
 
-    call react_state(mla,sold,s1,rho_omegadot1,rho_Hnuc1,rho_Hext,halfdt,dx, &
+    call react_state(mla,sold,s1,rho_omegadot1,rho_Hnuc1,rho_Hext,tempbar,p0_old,halfdt,dx, &
                      the_bc_tower%bc_tower_array,time)
 
     do n=1,nlevs
@@ -609,7 +609,7 @@ contains
        call multifab_build(rho_Hext(n), mla%la(n), 1, 1)
     end do
     
-    call react_state(mla,s2,snew,rho_omegadot2,rho_Hnuc2,rho_Hext,halfdt,dx, &
+    call react_state(mla,s2,snew,rho_omegadot2,rho_Hnuc2,rho_Hext,tempbar,p0_new,halfdt,dx, &
                      the_bc_tower%bc_tower_array,time)
 
     do n=1,nlevs
@@ -1007,8 +1007,8 @@ contains
           call multifab_build(rho_Hext(n), mla%la(n), 1, 1)
        end do
        
-       call react_state(mla,s2,snew,rho_omegadot2,rho_Hnuc2,rho_Hext,halfdt,dx,&
-                        the_bc_tower%bc_tower_array,time)
+       call react_state(mla,s2,snew,rho_omegadot2,rho_Hnuc2,rho_Hext,tempbar,p0_new, &
+                        halfdt,dx,the_bc_tower%bc_tower_array,time)
 
        do n=1,nlevs
           call destroy(s2(n))

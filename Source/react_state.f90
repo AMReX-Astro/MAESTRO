@@ -13,9 +13,10 @@ module react_state_module
 
 contains
 
-  subroutine react_state (mla,s_in,s_out,rho_omegadot,rho_Hnuc,rho_Hext,dt,dx,the_bc_level,time)
+  subroutine react_state(mla,s_in,s_out,rho_omegadot,rho_Hnuc,rho_Hext,tempbar,p0, &
+                         dt,dx,the_bc_level,time)
 
-    use variables, only: rho_comp, nscal, foextrap_comp
+    use variables, only: rho_comp, nscal, foextrap_comp, temp_comp
     use network, only: nspec
     use bl_prof_module
     use ml_restriction_module
@@ -23,6 +24,8 @@ contains
     use multifab_fill_ghost_module
     use heating_module
     use geometry, only: dm, nlevs
+    use probin_module, only: use_tfromp
+    use rhoh_vs_t_module
 
     type(ml_layout), intent(in   ) :: mla
     type(multifab) , intent(in   ) :: s_in(:)
@@ -30,6 +33,8 @@ contains
     type(multifab) , intent(inout) :: rho_omegadot(:)
     type(multifab) , intent(inout) :: rho_Hnuc(:)
     type(multifab) , intent(inout) :: rho_Hext(:)
+    real(dp_t)     , intent(in   ) :: tempbar(:,0:)
+    real(dp_t)     , intent(in   ) :: p0(:,0:)
     real(kind=dp_t), intent(in   ) :: dt,dx(:,:),time
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
@@ -78,6 +83,18 @@ contains
        end do
     end do
 
+!    ! now update temperature
+!    if (use_tfromp) then
+!       ! option to update with eos
+!!       call makeTfromRhoP(s_out,p0,tempbar,mla,the_bc_level,dx)
+!       ! option to pass temperature through
+!       do n=1,nlevs
+!          call multifab_copy_c(s_out(n),temp_comp,s_in(n),temp_comp,1,3)
+!       end do
+!    else
+!       call makeTfromRhoH(s_out,tempbar,mla,the_bc_level,dx)
+!    end if
+
     if (nlevs .eq. 1) then
 
        ! fill ghost cells for two adjacent grids at the same level
@@ -87,19 +104,16 @@ contains
        ! fill non-periodic domain boundary ghost cells
        call multifab_physbc(s_out(nlevs),rho_comp,dm+rho_comp,nscal,the_bc_level(nlevs))
 
-
-       ! since rho_omegadot, rho_Hnuc, and rho_Hext are going to be averaged later, we need to 
-       ! also fill the ghostcells on those -- we'll use extrapolation
+       ! since rho_omegadot, rho_Hnuc, and rho_Hext are going to be averaged later, we 
+       ! need to also fill the ghostcells on those -- we'll use extrapolation
        call multifab_fill_boundary(rho_omegadot(nlevs))
+       call multifab_fill_boundary(rho_Hnuc(nlevs))
+       call multifab_fill_boundary(rho_Hext(nlevs))
 
        do ispec = 1, nspec
           call multifab_physbc(rho_omegadot(nlevs),ispec,foextrap_comp,1,the_bc_level(nlevs))
        enddo
-
-       call multifab_fill_boundary(rho_Hnuc(nlevs))
        call multifab_physbc(rho_Hnuc(nlevs),1,foextrap_comp,1,the_bc_level(nlevs))
-
-       call multifab_fill_boundary(rho_Hext(nlevs))
        call multifab_physbc(rho_Hext(nlevs),1,foextrap_comp,1,the_bc_level(nlevs))
 
     else
@@ -169,7 +183,6 @@ contains
     !     Local variables
     integer            :: i, j
     real (kind = dp_t) :: rho,T_in
-
     real (kind = dp_t) :: x_in(nspec)
     real (kind = dp_t) :: x_out(nspec)
     real (kind = dp_t) :: rhowdot(nspec)
@@ -336,7 +349,7 @@ contains
                 s_out(i,j,k,temp_comp) = temp_eos(1)
                 
              end if
-             
+
              ! pass the tracers through
              s_out(i,j,k,trac_comp:trac_comp+ntrac-1) = &
                   s_in(i,j,k,trac_comp:trac_comp+ntrac-1)

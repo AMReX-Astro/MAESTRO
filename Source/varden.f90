@@ -379,7 +379,7 @@ subroutine varden()
 
         call divu_iter(istep_divu_iter,uold,sold,pres,gpres,vel_force,normal, &
                        Source_old,hgrhs,dSdt,div_coeff_old,rho0_old,p0_old, &
-                       gamma1bar,w0,grav_cell,dx,dt,time,the_bc_tower,mla)
+                       gamma1bar,tempbar,w0,grav_cell,dx,dt,time,the_bc_tower,mla)
 
      end do
 

@@ -9,8 +9,8 @@ module divu_iter_module
 contains
 
   subroutine divu_iter(istep_divu_iter,uold,sold,pres,gpres,vel_force,normal, &
-                       Source_old,hgrhs,dSdt,div_coeff_old,rho0_old,p0_old,gamma1bar,w0, &
-                       grav_cell,dx,dt,time,the_bc_tower,mla)
+                       Source_old,hgrhs,dSdt,div_coeff_old,rho0_old,p0_old,gamma1bar, &
+                       tempbar,w0,grav_cell,dx,dt,time,the_bc_tower,mla)
 
     use variables, only: press_comp, nscal, foextrap_comp, rho_comp
     use network, only: nspec
@@ -46,6 +46,7 @@ contains
     real(kind=dp_t), intent(in   ) :: rho0_old(:,0:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
+    real(dp_t)    ,  intent(in   ) :: tempbar(:,0:)
     real(kind=dp_t), intent(inout) :: w0(:,0:)
     real(kind=dp_t), intent(in   ) :: grav_cell(:,:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
@@ -68,7 +69,6 @@ contains
     type(multifab) :: rho_Hext(nlevs)
     type(multifab) :: div_coeff_3d(nlevs)
     type(multifab) :: w0mac(nlevs,dm)
-
 
     real(dp_t) ::            etarho_ec(nlevs_radial,0:nr_fine)
     real(dp_t) ::                 Sbar(nlevs_radial,0:nr_fine-1)
@@ -104,8 +104,8 @@ contains
     end do
 
     ! burn to define rho_omegadot and rho_Hnuc -- needed to make S
-    call react_state(mla,sold,s1,rho_omegadot1,rho_Hnuc1,rho_Hext,halfdt,dx, &
-                     the_bc_tower%bc_tower_array,time)
+    call react_state(mla,sold,s1,rho_omegadot1,rho_Hnuc1,rho_Hext,tempbar,p0_old, &
+                     halfdt,dx,the_bc_tower%bc_tower_array,time)
 
     do n=1,nlevs
        call destroy(s1(n))
