@@ -741,7 +741,7 @@ contains
     type(multifab)    , intent(inout) :: s(:)
     real (kind = dp_t), intent(in   ) :: p0(:,0:)
     real (kind = dp_t), intent(in   ) :: tempbar(:,0:)
-    type(ml_layout)   , intent(inout) :: mla
+    type(ml_layout)   , intent(in   ) :: mla
     type(bc_level)    , intent(in   ) :: the_bc_level(:)
     real(kind=dp_t)   , intent(in   ) :: dx(:,:)
 
