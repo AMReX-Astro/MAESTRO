@@ -84,16 +84,16 @@ contains
     end do
 
 !    ! now update temperature
-!    if (use_tfromp) then
-!       ! option to update with eos
-!!       call makeTfromRhoP(s_out,p0,tempbar,mla,the_bc_level,dx)
-!       ! option to pass temperature through
-!       do n=1,nlevs
-!          call multifab_copy_c(s_out(n),temp_comp,s_in(n),temp_comp,1,3)
-!       end do
-!    else
-!       call makeTfromRhoH(s_out,tempbar,mla,the_bc_level,dx)
-!    end if
+    if (use_tfromp) then
+       ! option to update with eos
+!       call makeTfromRhoP(s_out,p0,tempbar,mla,the_bc_level,dx)
+       ! option to pass temperature through
+       do n=1,nlevs
+          call multifab_copy_c(s_out(n),temp_comp,s_in(n),temp_comp,1,3)
+       end do
+    else
+       call makeTfromRhoH(s_out,tempbar,mla,the_bc_level,dx)
+    end if
 
     if (nlevs .eq. 1) then
 
@@ -218,40 +218,10 @@ contains
           rho_Hnuc(i,j) = rhoH
 
           ! update the enthalpy -- include the change due to external heating
-          s_out(i,j,rhoh_comp) = s_in(i,j,rhoh_comp) &
-               + dt * rho_Hnuc(i,j) + dt * rho_Hext(i,j)
-
-          if (use_tfromp) then
-
-             ! pass temperature through
-             s_out(i,j,temp_comp) = s_in(i,j,temp_comp)
-
-          else
-
-             ! update the temperature with the eos
-             den_eos(1)  = s_out(i,j,rho_comp)
-             h_eos(1)    = s_out(i,j,rhoh_comp)/s_out(i,j,rho_comp)
-             xn_eos(1,:) = s_out(i,j,spec_comp:spec_comp+nspec-1)/s_out(i,j,rho_comp)
-             temp_eos(1) = T_in
-             
-             call eos(eos_input_rh, den_eos, temp_eos, &
-                      npts, nspec, &
-                      xn_eos, &
-                      p_eos, h_eos, e_eos, &
-                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                      dpdX_eos, dhdX_eos, &
-                      gam1_eos, cs_eos, s_eos, &
-                      dsdt_eos, dsdr_eos, &
-                      do_diag)
-             
-             s_out(i,j,temp_comp) = temp_eos(1)
-
-          end if
+          s_out(i,j,rhoh_comp) = s_in(i,j,rhoh_comp) + dt*rho_Hnuc(i,j) + dt*rho_Hext(i,j)
 
           ! pass the tracers through
-          s_out(i,j,trac_comp:trac_comp+ntrac-1) = &
-               s_in(i,j,trac_comp:trac_comp+ntrac-1)   
+          s_out(i,j,trac_comp:trac_comp+ntrac-1) = s_in(i,j,trac_comp:trac_comp+ntrac-1)   
           
        enddo
     enddo
@@ -320,35 +290,7 @@ contains
 
              ! update the enthalpy -- include the change due to external heating
              s_out(i,j,k,rhoh_comp) = s_in(i,j,k,rhoh_comp) &
-                  + dt * rho_Hnuc(i,j,k) + dt * rho_Hext(i,j,k)
-             
-             if (use_tfromp) then
-
-                ! pass temperature through
-                s_out(i,j,k,temp_comp) = s_in(i,j,k,temp_comp)
-
-             else
-
-                ! update the temperature with the eos
-                den_eos(1)  = s_out(i,j,k,rho_comp)
-                h_eos(1)    = s_out(i,j,k,rhoh_comp)/s_out(i,j,k,rho_comp)
-                xn_eos(1,:) = s_out(i,j,k,spec_comp:spec_comp+nspec-1)/s_out(i,j,k,rho_comp)
-                temp_eos(1) = T_in
-                
-                call eos(eos_input_rh, den_eos, temp_eos, &
-                         npts, nspec, &
-                         xn_eos, &
-                         p_eos, h_eos, e_eos, &
-                         cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                         dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                         dpdX_eos, dhdX_eos, &
-                         gam1_eos, cs_eos, s_eos, &
-                         dsdt_eos, dsdr_eos, &
-                         do_diag)
-          
-                s_out(i,j,k,temp_comp) = temp_eos(1)
-                
-             end if
+                  + dt*rho_Hnuc(i,j,k) + dt*rho_Hext(i,j,k)
 
              ! pass the tracers through
              s_out(i,j,k,trac_comp:trac_comp+ntrac-1) = &
