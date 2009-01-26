@@ -160,15 +160,26 @@ contains
     call build(bpt, "advect_base")
 
     if (spherical .eq. 0) then
+
+       ! make psi
        call make_psi_planar(etarho_cc,psi)
+       call fill_ghost_base(psi,.true.)
+       call restrict_base(psi,.true.)
+
+       ! advect p0
        call advect_base_pres_planar(w0,p0_old,p0_new,psi,dz,dt)
        call restrict_base(p0_new,.true.)
        call fill_ghost_base(p0_new,.true.)
+
     else
+
+       ! advect p0
        call advect_base_pres_spherical(w0,Sbar_in,p0_old,p0_new,rho0_new,gamma1bar, &
                                        div_coeff,dt)
        call restrict_base(p0_new,.true.)
        call fill_ghost_base(p0_new,.true.)
+
+       ! make psi
        call make_psi_spherical(psi(1,:),w0(1,:),gamma1bar(1,:),p0_old(1,:), &
                                p0_new(1,:),Sbar_in(1,:))
     end if
