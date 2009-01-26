@@ -5,39 +5,9 @@ module make_psi_module
   use bl_types
   implicit none
   private
-  public :: make_psi
+  public :: make_psi_planar, make_psi_spherical
 
 contains
-
-  subroutine make_psi(etarho_cc,psi,w0,gamma1bar,p0_old,p0_new,Sbar_in)
-
-    use bl_prof_module
-    use geometry, only: spherical
-    use restrict_base_module
-
-    real(kind=dp_t), intent(in   ) :: etarho_cc(:,0:)
-    real(kind=dp_t), intent(inout) :: psi(:,0:)
-    real(kind=dp_t), intent(in   ) :: w0(:,0:)
-    real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
-    real(kind=dp_t), intent(in   ) :: p0_old(:,0:), p0_new(:,0:)
-    real(kind=dp_t), intent(in   ) :: Sbar_in(:,0:)
-    
-    type(bl_prof_timer), save :: bpt
-    call build(bpt, "make_psi")
-    
-    if (spherical .eq. 0) then 
-       call make_psi_planar(etarho_cc,psi)
-    else
-       call make_psi_spherical(psi(1,0:),w0(1,0:),gamma1bar(1,0:),p0_old(1,0:), &
-                               p0_new(1,0:),Sbar_in(1,0:))
-    endif
-
-    call fill_ghost_base(psi,.true.)
-    call restrict_base(psi,.true.)
-
-    call destroy(bpt)
-       
-  end subroutine make_psi
 
   subroutine make_psi_planar(etarho_cc,psi)
 
