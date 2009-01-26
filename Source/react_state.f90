@@ -83,14 +83,9 @@ contains
        end do
     end do
 
-!    ! now update temperature
+    ! now update temperature
     if (use_tfromp) then
-       ! option to update with eos
-!       call makeTfromRhoP(s_out,p0,tempbar,mla,the_bc_level,dx)
-       ! option to pass temperature through
-       do n=1,nlevs
-          call multifab_copy_c(s_out(n),temp_comp,s_in(n),temp_comp,1,3)
-       end do
+       call makeTfromRhoP(s_out,p0,tempbar,mla,the_bc_level,dx)
     else
        call makeTfromRhoH(s_out,tempbar,mla,the_bc_level,dx)
     end if
