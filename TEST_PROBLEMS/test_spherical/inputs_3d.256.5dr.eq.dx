@@ -48,7 +48,7 @@
  velpert_amplitude = 1.d7
  velpert_radius = 5.d7
  velpert_scale = 1.d7
- velpret_steep = 1.d5
+ velpert_steep = 1.d5
 
  do_burning = F
 
