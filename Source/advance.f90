@@ -141,6 +141,7 @@ contains
     real(dp_t) ::       div_coeff_edge(nlevs_radial,0:nr_fine)
     real(dp_t) ::  rho0_predicted_edge(nlevs_radial,0:nr_fine)
     real(dp_t) ::          rho_Hnucbar(nlevs_radial,0:nr_fine-1)
+    real(dp_t) ::          div_etarhoh(nlevs_radial,0:nr_fine-1)
 
     integer    :: r,n,comp,proj_type
     real(dp_t) :: halfdt
@@ -413,10 +414,31 @@ contains
        end if
     else
        if (evolve_base_state) then
-          call average(mla,s1,rhoh0_1,dx,rhoh_comp)
+          if (spherical .eq. 0) then
+
+             call average(mla,s1,rhoh0_1,dx,rhoh_comp)
+
+          else
+
+             ! Simply setting rhoh0_1 = Avg(rhoh^{(1)}) doesn't work.
+             ! Instead, what we need to do first set
+             ! set rhoh0_1 = rhoh0_old
+             rhoh0_1 = rhoh0_old
+             
+             ! compute rhohprime_cart = rhoh^{(1)} - rhoh0_1_cart
+             ! compute div_etarhoh = Avg(rhohprime_cart)
+             call make_div_etarhoh_spherical(s1,rhoh0_1,dx,div_etarhoh,mla, &
+                                             the_bc_tower%bc_tower_array)
+                          
+             ! compute rhoh0_1 = rhoh0_1 - div_etarhoh 
+             ! (this can be done with correct_base machinery)
+             call correct_base(rhoh0_1,div_etarhoh,1.d0)
+             
+          end if
        else
           rhoh0_1 = rhoh0_old
        end if
+
     end if
 
     do n=1,nlevs
