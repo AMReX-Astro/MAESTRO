@@ -11,7 +11,7 @@
 ! max_grid_size = 32
 
  drdxfac = 5
- model_file = "model_6.e8.hse.640"
+ model_file = "model_6.e8.hybrid.hse.640"
 
  spherical_in = 1
  dm_in = 3
