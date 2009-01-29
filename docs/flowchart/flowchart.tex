@@ -92,6 +92,31 @@ not as perturbational quantities.
 \end{itemize}
 
 %-----------------------------------------------------------------------------
+% Future Considerations
+%-----------------------------------------------------------------------------
+
+\section{Future Considerations}
+
+\begin{itemize}
+
+\item Replacing {\bf Correct Base} with $\rho_0 = {\rm{\bf Avg}}(\rho)$ in 
+plane-parallel and $\rho_0 = \rho_0 - {\rm{\bf Avg}}(\rho_0 - \rho)$ in spherical.  
+This eliminates the need for $\nabla\cdot\etarho$.
+
+\item After {\bf React State}, setting $(\rho h)_0 = {\rm{\bf Avg}}(\rho h)$ in 
+plane-parallel and $(\rho h)_0 = (\rho h)_0 - {\rm{\bf Avg}}[(\rho h)_0 - (\rho h)]$ 
+in spherical by making {\tt full\_rhoh0\_evolution = FALSE} by default.  This means
+that {\bf Correct Base} no longer has to exist, and the intermediate states, 
+$(\rho h)_0^{(1)}$ and $(\rho h)_0^{(2)}$, no longer have to exist.  
+{\bf Advect Base Enthalpy} advances $(\rho h)_0^n \rightarrow (\rho h)_0^{n+1}$ directly.
+
+\item Eliminating {\bf Advect Base Pressure} entirely, and instead enforcing HSE 
+directly after {\bf Correct Base}.  {\bf Correct Base} should occur directly after 
+creating $\etarho$, there is no need to delay the call as is currently being done.
+
+\end{itemize}
+
+%-----------------------------------------------------------------------------
 % Notation
 %-----------------------------------------------------------------------------
 
@@ -388,8 +413,6 @@ in paper II, Appendix A.
 
 \end{description}
 
-\MarginPar{Instead of calling Correct Base, if we set $\rho_0 = \overline\rho$, 
-we don't even need $\nabla\cdot\etarho\er$.}
 \item {\bf Correct Base}$[\rho_0^{\inp}, (\nabla\cdot\etarho\er)^{\inp}] \rightarrow [\rho_0^{\outp}]$\\
 is the process by which we adjust the base state density to account for
 large-scale mixing, through $\etarho$.  For both plane-parallel and spherical
