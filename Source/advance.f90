@@ -426,7 +426,7 @@ contains
              rhoh0_1 = rhoh0_old
              
              ! compute rhohprime_cart = rhoh^{(1)} - rhoh0_1_cart
-             ! compute div_etarhoh = Avg(rhohprime_cart)
+             ! compute div_etarhoh = -Avg(rhohprime_cart)
              call make_div_etarhoh_spherical(s1,rhoh0_1,dx,div_etarhoh,mla, &
                                              the_bc_tower%bc_tower_array)
                           
@@ -494,24 +494,19 @@ contains
        call multifab_build(s2(n), mla%la(n), nscal, 3)
     end do
 
-    ! Build etarhoflux here so that we can call correct_base before make_etarho.
-    do n=1,nlevs
-       call multifab_build(etarhoflux(n), mla%la(n), 1, nodal=edge_nodal_flag(dm,:))
-       call setval(etarhoflux(n),ZERO,all=.true.)
-    end do
-
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
        write(6,*) '            :  density_advance >>> '
        write(6,*) '            :   tracer_advance >>> '
     end if
 
-    ! Build the sedge array.
     do n=1,nlevs
        do comp = 1,dm
           call multifab_build(sedge(n,comp),mla%la(n),nscal,0,nodal=edge_nodal_flag(comp,:))
           call multifab_build(sflux(n,comp),mla%la(n),nscal,0,nodal=edge_nodal_flag(comp,:))
        end do
        call build(scal_force(n), mla%la(n), nscal, 1)
+       call multifab_build(etarhoflux(n), mla%la(n), 1, nodal=edge_nodal_flag(dm,:))
+       call setval(etarhoflux(n),ZERO,all=.true.)
     end do
 
     call density_advance(mla,1,s1,s2,sedge,sflux,scal_force,&
@@ -575,7 +570,7 @@ contains
        call destroy(thermal(n))
     end do
 
-    ! Correct the base state using the lagged etarho and psi
+    ! Correct the base state using the time-centered etarho and psi
     if (use_etarho .and. evolve_base_state) then
        call correct_base(rho0_new,div_etarho,dt)
     end if
@@ -991,7 +986,7 @@ contains
           call destroy(thermal(n))
        end do
 
-       ! Correct the base state using the lagged etarho and psi
+       ! Correct the base state using the time-centered etarho and psi
        if (use_etarho .and. evolve_base_state) then
           call correct_base(rho0_new,div_etarho,dt)
        end if
