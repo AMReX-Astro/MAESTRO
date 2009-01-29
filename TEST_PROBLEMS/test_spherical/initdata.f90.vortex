@@ -431,13 +431,15 @@ contains
     ! radius, or distance, to center of star
     real(kind=dp_t) :: rloc
 
+    real(kind=dp_t) :: z_vel_offset
+
     ! the point we're at
-    real(kind=dp_t) :: xloc(3)
+    real(kind=dp_t) :: x(3)
 
     ! perturbational velocity to add
     real(kind=dp_t) :: upert(3)
 
-    real(kind=dp_t) :: u_r, u_z, theta, r, z
+    real(kind=dp_t) :: u_r, u_z, r, z
 
     ! initialize the velocity to zero everywhere
     u = ZERO
@@ -448,6 +450,8 @@ contains
     xc(2) = 0.5d0*(prob_lo(2)+prob_hi(2))
     xc(3) = 0.5d0*(prob_lo(3)+prob_hi(3))
 
+    z_vel_offset = 8.d0 * velpert_amplitude * velpert_radius**2 / 15.d0
+
     ! now do the big loop over all points in the domain
     do i = lo(1),hi(1)
        do j = lo(2),hi(2)
@@ -457,34 +461,28 @@ contains
              upert = ZERO
 
              ! compute where we physically are
-             xloc(1) = prob_lo(1) + (dble(i)+0.5d0)*dx(1)
-             xloc(2) = prob_lo(2) + (dble(j)+0.5d0)*dx(2)
-             xloc(3) = prob_lo(3) + (dble(k)+0.5d0)*dx(3)
+             x(1) = prob_lo(1) + (dble(i)+0.5d0)*dx(1) - xc(1)
+             x(2) = prob_lo(2) + (dble(j)+0.5d0)*dx(2) - xc(2)
+             x(3) = prob_lo(3) + (dble(k)+0.5d0)*dx(3) - xc(3)
 
              ! compute distance to the center of the star
-             rloc = ZERO
-             do n=1,3
-                rloc = rloc + (xloc(n) - xc(n))**2
-             enddo
-             rloc = sqrt(rloc)
-
+             rloc = sqrt(x(1)**2  + x(2)**2 + x(3)**2)
 
              ! we will use a Hill spherical vortex to stir things up
              ! see "Vortex Dynamics" by P. G. Saffman
 
-             z = xloc(3) - xc(3)
-             r = sqrt( (xloc(1) - xc(1))**2 + (xloc(2) - xc(2))**2 )
+             z = x(3) 
+             r = sqrt( x(1)**2 + x(2)**2 )
 
              u_r = 0.2*velpert_amplitude*r*z
              u_z = -0.1*velpert_amplitude*(4.0*r**2 + 2.0*z**2 + (10./3.)*velpert_radius**2)
 
+             u_z = u_z + z_vel_offset
 
              if (r**2 + z**2 < velpert_radius**2) then
-                
-                theta = atan( (xloc(2) - xc(2))/(xloc(1) - xc(1)) )
 
-                upert(1) = u_r*cos(theta)
-                upert(2) = u_r*sin(theta)
+                upert(1) = u_r * x(1)/r 
+                upert(2) = u_r * x(2)/r 
                 upert(3) = u_z
 
              else
