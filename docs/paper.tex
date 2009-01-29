@@ -15,6 +15,8 @@
 
 \newcommand{\figpath}{./initial_models}
 \newcommand{\radbasefigpath}{./radial_base}
+\newcommand{\sphericalfigpath}{./spherical_basestate}
+
 
 \def\eb    {{\bf e}}
 \def\fb    {{\bf f}}
@@ -73,6 +75,12 @@
 \def\etarhoflux {\etarho^{\rm flux}}
 \def\divetarho  {\nabla\cdot(\etarho\eb_r)}
 
+\newcommand{\ow}{\overline{w}_0}
+\newcommand{\dw}{\delta w_0}
+\newcommand{\thalf}{\sfrac{3}{2}}
+
+
+
 \newcommand{\omegadot}{\dot{\omega}}
 \newcommand{\er}{\mathbf{e}_r}
 
@@ -113,5 +121,8 @@
 
 \chapter{Radial Base State}
 \input radial_base/radial_base
+
+\chapter{Spherical Expansion}
+\input spherical_basestate/basestate
 
 \end{document}
