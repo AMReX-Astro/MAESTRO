@@ -286,18 +286,16 @@ contains
 
        call average(mla,Source_nph,Sbar,dx,1)
 
-       call make_w0(w0,w0_old,w0_force,Sbar,rho0_old,rho0_old,p0_old,p0_old, &
-                    gamma1bar,gamma1bar,p0_minus_pthermbar, &
-                    psi,etarho_ec,etarho_cc,dt,dtold)
+       call make_w0(w0,w0_old,w0_force,Sbar,rho0_old,rho0_old,p0_old,p0_old,gamma1bar, &
+                    gamma1bar,p0_minus_pthermbar,psi,etarho_ec,etarho_cc,dt,dtold)
 
        if (spherical .eq. 1) then
           call put_w0_on_edges(mla,w0,w0mac,dx,div_coeff_old,the_bc_tower)
        end if
 
        if (dm .eq. 3) then
-          call put_1d_array_on_cart(w0_force,w0_force_cart_vec,foextrap_comp, &
-                                    .false.,.true.,dx,the_bc_tower%bc_tower_array,mla, &
-                                    normal)
+          call put_1d_array_on_cart(w0_force,w0_force_cart_vec,foextrap_comp,.false., &
+                                    .true.,dx,the_bc_tower%bc_tower_array,mla,normal)
        end if
 
     end if
@@ -316,9 +314,8 @@ contains
        end do
     end do
     
-    call advance_premac(uold,sold,umac,gpres,normal,w0,w0mac, &
-                        w0_force,w0_force_cart_vec,rho0_old,grav_cell_old,dx,dt, &
-                        the_bc_tower%bc_tower_array,mla)
+    call advance_premac(uold,sold,umac,gpres,normal,w0,w0mac,w0_force,w0_force_cart_vec, &
+                        rho0_old,grav_cell_old,dx,dt,the_bc_tower%bc_tower_array,mla)
 
     if (dm .eq. 3) then
        do n=1,nlevs
@@ -332,8 +329,7 @@ contains
        call setval(delta_gamma1_term(n), ZERO, all=.true.)
     end do
 
-    call make_macrhs(macrhs,rho0_old,Source_nph,delta_gamma1_term,Sbar, &
-                     div_coeff_old,dx, &
+    call make_macrhs(macrhs,rho0_old,Source_nph,delta_gamma1_term,Sbar,div_coeff_old,dx, &
                      gamma1bar,gamma1bar,p0_old,p0_old,delta_p_term,dt)
 
     do n=1,nlevs
@@ -356,23 +352,16 @@ contains
        call put_1d_array_on_cart(div_coeff_old,div_coeff_3d,foextrap_comp,.false., &
                                  .false.,dx,the_bc_tower%bc_tower_array,mla)
 
-       call macproject(mla,umac,macphi,sold,dx,the_bc_tower, &
-                       press_comp, macrhs,div_coeff_3d=div_coeff_3d)
+       call macproject(mla,umac,macphi,sold,dx,the_bc_tower,press_comp, &
+                       macrhs,div_coeff_3d=div_coeff_3d)
 
        do n=1,nlevs
           call destroy(div_coeff_3d(n))
        end do
     else
        call cell_to_edge(div_coeff_old,div_coeff_edge)
-       call macproject(mla,umac,macphi,sold,dx,the_bc_tower, &
-                       press_comp, macrhs,div_coeff_1d=div_coeff_old, &
-                       div_coeff_half_1d=div_coeff_edge)
-    end if
-
-    if(do_half_alg) then
-       do n=1,nlevs
-          call destroy(macphi(n))
-       end do
+       call macproject(mla,umac,macphi,sold,dx,the_bc_tower,press_comp, &
+                       macrhs,div_coeff_1d=div_coeff_old,div_coeff_half_1d=div_coeff_edge)
     end if
 
     do n=1,nlevs
@@ -415,30 +404,23 @@ contains
     else
        if (evolve_base_state) then
           if (spherical .eq. 0) then
-
              call average(mla,s1,rhoh0_1,dx,rhoh_comp)
-
           else
-
              ! Simply setting rhoh0_1 = Avg(rhoh^{(1)}) doesn't work.
              ! Instead, what we need to do first set
              ! set rhoh0_1 = rhoh0_old
              rhoh0_1 = rhoh0_old
-             
              ! compute rhohprime_cart = rhoh^{(1)} - rhoh0_1_cart
              ! compute div_etarhoh = -Avg(rhohprime_cart)
              call make_div_etarhoh_spherical(s1,rhoh0_1,dx,div_etarhoh,mla, &
                                              the_bc_tower%bc_tower_array)
-                          
              ! compute rhoh0_1 = rhoh0_1 - div_etarhoh 
              ! (this can be done with correct_base machinery)
              call correct_base(rhoh0_1,div_etarhoh,1.d0)
-             
           end if
        else
           rhoh0_1 = rhoh0_old
        end if
-
     end if
 
     do n=1,nlevs
@@ -509,10 +491,8 @@ contains
        call setval(etarhoflux(n),ZERO,all=.true.)
     end do
 
-    call density_advance(mla,1,s1,s2,sedge,sflux,scal_force,&
-                         umac,w0,w0mac,etarhoflux,normal, &
-                         rho0_old,rho0_new,&
-                         p0_new,rho0_predicted_edge, &
+    call density_advance(mla,1,s1,s2,sedge,sflux,scal_force,umac,w0,w0mac,etarhoflux, &
+                         normal,rho0_old,rho0_new,p0_new,rho0_predicted_edge, &
                          dx,dt,the_bc_tower%bc_tower_array)
 
     ! Now compute the new etarho and psi
@@ -528,12 +508,6 @@ contains
           endif
 
        endif
-    end if
-
-    if (do_half_alg) then
-       do n=1,nlevs
-          call destroy(etarhoflux(n))
-       end do
     end if
 
     if (evolve_base_state) then
@@ -554,17 +528,15 @@ contains
        write(6,*) '            : enthalpy_advance >>> '
     end if
 
-    call enthalpy_advance(mla,1,uold,s1,s2,sedge,sflux,scal_force,&
-                          thermal,umac,w0,w0mac,normal, &
-                          rho0_old,rhoh0_1, &
-                          rho0_new,rhoh0_2, &
-                          p0_old,p0_new,tempbar,psi,&
-                          dx,dt,the_bc_tower%bc_tower_array)
+    call enthalpy_advance(mla,1,uold,s1,s2,sedge,sflux,scal_force,thermal,umac,w0,w0mac, &
+                          normal,rho0_old,rhoh0_1,rho0_new,rhoh0_2,p0_old,p0_new,tempbar, &
+                          psi,dx,dt,the_bc_tower%bc_tower_array)
 
     do n = 1, nlevs
        do comp = 1,dm
           call destroy(sedge(n,comp))
           call destroy(sflux(n,comp))
+             call destroy(umac(n,comp))
        end do
        call destroy(scal_force(n))
        call destroy(thermal(n))
@@ -575,14 +547,6 @@ contains
        call correct_base(rho0_new,div_etarho,dt)
     end if
 
-    if(.not. do_half_alg) then
-       do n=1,nlevs
-          do comp=1,dm
-             call destroy(umac(n,comp))
-          end do
-       end do
-    end if
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 4a (Option I) -- Add thermal conduction (only enthalpy terms)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -591,29 +555,18 @@ contains
        if (parallel_IOProcessor() .and. verbose .ge. 1) then
           write(6,*) '<<< STEP  4a: thermal conduct >>>'
        end if
-       
-       if(do_half_alg) then
-          call thermal_conduct_half_alg(mla,dx,dt,s1,s2,p0_old,p0_new, &
-                                        tempbar,the_bc_tower)
-       else
-          call thermal_conduct_full_alg(mla,dx,dt,s1,s1,s2,p0_old,p0_new, &
-                                        tempbar,the_bc_tower)
+
+       call thermal_conduct(mla,dx,dt,s1,s1,s2,p0_old,p0_new,tempbar,the_bc_tower)
           
-          ! make a copy of s2star since these are needed to compute
-          ! coefficients in the call to thermal_conduct_full_alg
-          do n=1,nlevs
-             call multifab_build(s2star(n), mla%la(n), nscal, 3)
-             call multifab_copy_c(s2star(n), 1, s2(n), 1, nscal, 3)
-          end do
-       end if
+       ! make a copy of s2star since these are needed to compute
+       ! coefficients in the call to thermal_conduct_full_alg
+       do n=1,nlevs
+          call multifab_build(s2star(n), mla%la(n), nscal, 3)
+          call multifab_copy_c(s2star(n), 1, s2(n), 1, nscal, 3)
+       end do
+
     end if
 
-    if(do_half_alg) then
-       do n=1,nlevs
-          call destroy(s1(n))
-       end do
-    end if
-    
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 5 -- react the full state and then base state through dt/2
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -633,21 +586,6 @@ contains
        call destroy(s2(n))
     end do
     
-    ! if we are doing the full algorithm, there is no need to call react_base since
-    ! rhoh0_new isn't actually used
-    if (do_half_alg) then
-       if (evolve_base_state .and. full_rhoh0_evolution) then
-          if (parallel_IOProcessor() .and. verbose .ge. 1) then
-             write(6,*) '            : react  base >>> '
-          end if
-          call average(mla,rho_Hnuc2,rho_Hnucbar,dx,1)
-          call average(mla,rho_Hext,rho_Hextbar,dx,1)
-          call react_base(rhoh0_2,rho_Hnucbar,rho_Hextbar,halfdt,rhoh0_new)
-       else
-          rhoh0_new = rhoh0_2
-       end if
-    end if
-
     if (evolve_base_state) then
        do n=1,nlevs
           call multifab_build(gamma1(n), mla%la(n), 1, 0)
@@ -672,394 +610,375 @@ contains
     ! Define base state at half time for use in velocity advance
     call make_grav_cell(grav_cell_nph,rho0_nph)
     
-    if(.not. do_half_alg) then
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 6 -- define a new average expansion rate at n+1/2
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-       
-       if (parallel_IOProcessor() .and. verbose .ge. 1) then
-          write(6,*) '<<< STEP  6 : make new S and new w0 >>> '
+    
+    if (parallel_IOProcessor() .and. verbose .ge. 1) then
+       write(6,*) '<<< STEP  6 : make new S and new w0 >>> '
+    end if
+
+    do n=1,nlevs
+       call multifab_build(thermal(n), mla%la(n), 1, 1)
+    end do
+
+    if(use_thermal_diffusion) then
+       call make_explicit_thermal(mla,dx,thermal,snew,p0_new,the_bc_tower)
+    else
+       do n=1,nlevs
+          call setval(thermal(n),ZERO,all=.true.)
+       end do
+    end if
+
+    do n=1,nlevs
+       call multifab_build(delta_gamma1_term(n), mla%la(n), 1, 0)
+       call multifab_build(delta_gamma1(n), mla%la(n), 1, 0)
+    end do
+
+    ! p0 is only used for the delta_gamma1_term
+    call make_S(Source_new,delta_gamma1_term,delta_gamma1,snew,uold,rho_omegadot2, &
+                rho_Hnuc2,rho_Hext,thermal,p0_old,gamma1bar,delta_gamma1_termbar,psi,dx, &
+                mla,the_bc_tower%bc_tower_array)
+
+    do n=1,nlevs
+       call destroy(rho_Hext(n))
+       call destroy(thermal(n))
+       call destroy(delta_gamma1(n))
+    end do
+
+    do n=1,nlevs
+       call multifab_build(Source_nph(n), mla%la(n), 1, 1)
+    end do
+
+    call make_S_at_halftime(mla,Source_nph,Source_old,Source_new,the_bc_tower%bc_tower_array)
+
+    do n=1,nlevs
+       call multifab_build(delta_p_term(n), mla%la(n), 1, 0)
+       call setval(delta_p_term(n),ZERO,all=.true.)
+    end do
+
+    if (dpdt_factor .gt. ZERO) then
+
+       ! compute p0_minus_pthermbar = p0_nph - pthermbar (for making w0)
+       ! and delta_p_term = ptherm_nph - pthermbar_cart (for RHS of projection)
+
+       do n=1,nlevs
+          call multifab_build(ptherm_new(n), mla%la(n), 1, 0)
+       end do
+
+       ! ptherm_new now holds the thermodynamic p computed from snew(rho h X)
+       call makePfromRhoH(snew,ptherm_new,tempbar,mla,the_bc_tower%bc_tower_array,dx)
+
+       do n=1,nlevs
+          call multifab_build(ptherm_nph(n), mla%la(n), 1, 0)
+       end do
+
+       ! compute ptherm_nph = (1/2)*(ptherm_old+ptherm_new)
+       do n=1,nlevs
+          call multifab_copy(ptherm_nph(n), ptherm_old(n))
+          call multifab_plus_plus(ptherm_nph(n), ptherm_new(n))
+          call multifab_div_div_s(ptherm_nph(n), TWO)
+       enddo
+
+       do n=1,nlevs
+          call destroy(ptherm_new(n))
+       end do
+
+       ! compute pthermbar = Avg(ptherm_nph)
+       call average(mla,ptherm_nph,pthermbar,dx,1)
+
+       ! compute p0_nph = (1/2)*(p0_old+p0_new)
+       p0_nph = HALF*(p0_old + p0_new)
+
+       ! compute p0_minus_pthermbar = p0_nph - pthermbar
+       p0_minus_pthermbar = p0_nph - pthermbar
+
+       do n=1,nlevs
+          call multifab_build(pthermbar_cart(n), mla%la(n), 1, 0)
+       end do
+
+       ! compute pthermbar_cart = fill(pthermbar)
+       call put_1d_array_on_cart(pthermbar,pthermbar_cart,foextrap_comp, &
+            .false.,.false.,dx,the_bc_tower%bc_tower_array,mla)
+
+       ! compute delta_p_term = ptherm_nph - pthermbar_cart
+       do n=1,nlevs
+          call multifab_copy(delta_p_term(n), ptherm_nph(n))
+          call multifab_sub_sub(delta_p_term(n), pthermbar_cart(n))
+       end do
+
+       do n=1,nlevs
+          call destroy(ptherm_nph(n))
+          call destroy(pthermbar_cart(n))
+       end do
+
+    end if
+
+    if (dm .eq. 3) then
+       do n=1,nlevs
+          call multifab_build(w0_force_cart_vec(n), mla%la(n), dm, 1)
+          call setval(w0_force_cart_vec(n),ZERO,all=.true.)
+       end do
+    end if
+
+    if (evolve_base_state) then
+
+       call average(mla,Source_nph,Sbar,dx,1)
+
+       if(use_delta_gamma1_term) then
+          ! add delta_gamma1_termbar to Sbar
+          Sbar = Sbar + delta_gamma1_termbar
        end if
-       
-       do n=1,nlevs
-          call multifab_build(thermal(n), mla%la(n), 1, 1)
-       end do
 
-       if(use_thermal_diffusion) then
-          call make_explicit_thermal(mla,dx,thermal,snew,p0_new,the_bc_tower)
-       else
-          do n=1,nlevs
-             call setval(thermal(n),ZERO,all=.true.)
-          end do
-       end if
-       
-       do n=1,nlevs
-          call multifab_build(delta_gamma1_term(n), mla%la(n), 1, 0)
-          call multifab_build(delta_gamma1(n), mla%la(n), 1, 0)
-       end do
+       call make_w0(w0,w0_old,w0_force,Sbar,rho0_old,rho0_new,p0_old,p0_new, &
+            gamma1bar_old,gamma1bar,p0_minus_pthermbar, &
+            psi,etarho_ec,etarho_cc,dt,dtold)
 
-       ! p0 is only used for the delta_gamma1_term
-       call make_S(Source_new,delta_gamma1_term,delta_gamma1, &
-                   snew,uold,rho_omegadot2,rho_Hnuc2,rho_Hext,thermal, &
-                   p0_old,gamma1bar,delta_gamma1_termbar,psi,dx, &
-                   mla,the_bc_tower%bc_tower_array)
-       
-       do n=1,nlevs
-          call destroy(rho_Hext(n))
-          call destroy(thermal(n))
-          call destroy(delta_gamma1(n))
-       end do
-
-       do n=1,nlevs
-          call multifab_build(Source_nph(n), mla%la(n), 1, 1)
-       end do
-
-       call make_S_at_halftime(mla,Source_nph,Source_old,Source_new, &
-                               the_bc_tower%bc_tower_array)
-
-       do n=1,nlevs
-          call multifab_build(delta_p_term(n), mla%la(n), 1, 0)
-          call setval(delta_p_term(n),ZERO,all=.true.)
-       end do
-
-       if (dpdt_factor .gt. ZERO) then
-
-          ! compute p0_minus_pthermbar = p0_nph - pthermbar (for making w0)
-          ! and delta_p_term = ptherm_nph - pthermbar_cart (for RHS of projection)
-
-          do n=1,nlevs
-             call multifab_build(ptherm_new(n), mla%la(n), 1, 0)
-          end do
-          
-          ! ptherm_new now holds the thermodynamic p computed from snew(rho h X)
-          call makePfromRhoH(snew,ptherm_new,tempbar,mla,the_bc_tower%bc_tower_array,dx)
-          
-          do n=1,nlevs
-             call multifab_build(ptherm_nph(n), mla%la(n), 1, 0)
-          end do
-          
-          ! compute ptherm_nph = (1/2)*(ptherm_old+ptherm_new)
-          do n=1,nlevs
-             call multifab_copy(ptherm_nph(n), ptherm_old(n))
-             call multifab_plus_plus(ptherm_nph(n), ptherm_new(n))
-             call multifab_div_div_s(ptherm_nph(n), TWO)
-          enddo
-          
-          do n=1,nlevs
-             call destroy(ptherm_new(n))
-          end do
-          
-          ! compute pthermbar = Avg(ptherm_nph)
-          call average(mla,ptherm_nph,pthermbar,dx,1)
-          
-          ! compute p0_nph = (1/2)*(p0_old+p0_new)
-          p0_nph = HALF*(p0_old + p0_new)
-          
-          ! compute p0_minus_pthermbar = p0_nph - pthermbar
-          p0_minus_pthermbar = p0_nph - pthermbar
-          
-          do n=1,nlevs
-             call multifab_build(pthermbar_cart(n), mla%la(n), 1, 0)
-          end do
-          
-          ! compute pthermbar_cart = fill(pthermbar)
-          call put_1d_array_on_cart(pthermbar,pthermbar_cart,foextrap_comp, &
-                                    .false.,.false.,dx,the_bc_tower%bc_tower_array,mla)
-          
-          ! compute delta_p_term = ptherm_nph - pthermbar_cart
-          do n=1,nlevs
-             call multifab_copy(delta_p_term(n), ptherm_nph(n))
-             call multifab_sub_sub(delta_p_term(n), pthermbar_cart(n))
-          end do
-          
-          do n=1,nlevs
-             call destroy(ptherm_nph(n))
-             call destroy(pthermbar_cart(n))
-          end do
-
+       if (spherical .eq. 1) then
+          call put_w0_on_edges(mla,w0,w0mac,dx,div_coeff_nph,the_bc_tower)
        end if
 
        if (dm .eq. 3) then
-          do n=1,nlevs
-             call multifab_build(w0_force_cart_vec(n), mla%la(n), dm, 1)
-             call setval(w0_force_cart_vec(n),ZERO,all=.true.)
-          end do
+          call put_1d_array_on_cart(w0_force,w0_force_cart_vec,foextrap_comp,.false., &
+                                    .true.,dx,the_bc_tower%bc_tower_array,mla,normal)
        end if
+    end if
 
-       if (evolve_base_state) then
-       
-          call average(mla,Source_nph,Sbar,dx,1)
-
-          if(use_delta_gamma1_term) then
-             ! add delta_gamma1_termbar to Sbar
-             Sbar = Sbar + delta_gamma1_termbar
-          end if
-
-          call make_w0(w0,w0_old,w0_force,Sbar,rho0_old,rho0_new,p0_old,p0_new, &
-                       gamma1bar_old,gamma1bar,p0_minus_pthermbar, &
-                       psi,etarho_ec,etarho_cc,dt,dtold)
-
-          if (spherical .eq. 1) then
-             call put_w0_on_edges(mla,w0,w0mac,dx,div_coeff_nph,the_bc_tower)
-          end if
-
-          if (dm .eq. 3) then
-             call put_1d_array_on_cart(w0_force,w0_force_cart_vec,foextrap_comp, &
-                                       .false.,.true.,dx,the_bc_tower%bc_tower_array,mla, &
-                                       normal)
-          end if
-       end if
-       
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 7 -- redo the construction of the advective velocity using the current w0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-       if (parallel_IOProcessor() .and. verbose .ge. 1) then
-          write(6,*) '<<< STEP  7 : create MAC velocities >>> '
-       end if
+    if (parallel_IOProcessor() .and. verbose .ge. 1) then
+       write(6,*) '<<< STEP  7 : create MAC velocities >>> '
+    end if
 
+    do n=1,nlevs
+       do comp=1,dm
+          call multifab_build(umac(n,comp),mla%la(n),1,1,nodal=edge_nodal_flag(comp,:))
+       end do
+    end do
+
+    call advance_premac(uold,sold,umac,gpres,normal,w0,w0mac,w0_force,w0_force_cart_vec, &
+                        rho0_old,grav_cell_old,dx,dt,the_bc_tower%bc_tower_array,mla)
+
+    do n=1,nlevs
+       call multifab_build(macrhs(n), mla%la(n), 1, 0)
+    end do
+
+    ! note delta_gamma1_term here is not time-centered
+    call make_macrhs(macrhs,rho0_old,Source_nph,delta_gamma1_term,Sbar,div_coeff_nph,dx, &
+                     gamma1bar_old,gamma1bar,p0_old,p0_new,delta_p_term,dt)
+
+    do n=1,nlevs
+       call destroy(delta_gamma1_term(n))
+       call destroy(Source_nph(n))
+       call destroy(delta_p_term(n))
+    end do
+
+    do n=1,nlevs
+       call multifab_build(rhohalf(n), mla%la(n), 1, 1)
+    end do
+
+    call make_at_halftime(rhohalf,sold,snew,rho_comp,1,the_bc_tower%bc_tower_array,mla)
+
+    ! MAC projection !
+    if (spherical .eq. 1) then
        do n=1,nlevs
-          do comp=1,dm
-             call multifab_build(  umac(n,comp),mla%la(n),1,1,nodal=edge_nodal_flag(comp,:))
-          end do
+          call multifab_build(div_coeff_3d(n), mla%la(n), 1, 1)
        end do
 
-       call advance_premac(uold,sold,umac,gpres,normal,w0,w0mac, &
-                           w0_force,w0_force_cart_vec,rho0_old,grav_cell_old,dx,dt, &
-                           the_bc_tower%bc_tower_array,mla)
+       call put_1d_array_on_cart(div_coeff_nph,div_coeff_3d,foextrap_comp,.false., &
+                                 .false.,dx,the_bc_tower%bc_tower_array,mla)
+
+       call macproject(mla,umac,macphi,rhohalf,dx,the_bc_tower,press_comp,macrhs, &
+                       div_coeff_3d=div_coeff_3d)
 
        do n=1,nlevs
-          call multifab_build(macrhs(n), mla%la(n), 1, 0)
+          call destroy(div_coeff_3d(n))
        end do
+    else
+       call cell_to_edge(div_coeff_nph,div_coeff_edge)
+       call macproject(mla,umac,macphi,rhohalf,dx,the_bc_tower,press_comp,macrhs, &
+                       div_coeff_1d=div_coeff_nph,div_coeff_half_1d=div_coeff_edge)
+    end if
 
-       ! note delta_gamma1_term here is not time-centered
-       call make_macrhs(macrhs,rho0_old,Source_nph,delta_gamma1_term,Sbar, &
-                        div_coeff_nph,dx, &
-                        gamma1bar_old,gamma1bar,p0_old,p0_new,delta_p_term,dt)
-    
-       do n=1,nlevs
-          call destroy(delta_gamma1_term(n))
-          call destroy(Source_nph(n))
-          call destroy(delta_p_term(n))
-       end do
+    do n=1,nlevs
+       call destroy(rhohalf(n))
+       call destroy(macrhs(n))
+       call destroy(macphi(n))
+    end do
 
-       do n=1,nlevs
-          call multifab_build(rhohalf(n), mla%la(n), 1, 1)
-       end do
-
-       call make_at_halftime(rhohalf,sold,snew,rho_comp,1, &
-                             the_bc_tower%bc_tower_array,mla)
-       
-       ! MAC projection !
-       if (spherical .eq. 1) then
-          do n=1,nlevs
-             call multifab_build(div_coeff_3d(n), mla%la(n), 1, 1)
-          end do
-
-          call put_1d_array_on_cart(div_coeff_nph,div_coeff_3d,foextrap_comp,.false., &
-                                    .false.,dx,the_bc_tower%bc_tower_array,mla)
-
-          call macproject(mla,umac,macphi,rhohalf,dx,the_bc_tower, &
-                          press_comp,macrhs,div_coeff_3d=div_coeff_3d)
-
-          do n=1,nlevs
-             call destroy(div_coeff_3d(n))
-          end do
-       else
-          call cell_to_edge(div_coeff_nph,div_coeff_edge)
-          call macproject(mla,umac,macphi,rhohalf,dx,the_bc_tower, &
-                          press_comp,macrhs,div_coeff_1d=div_coeff_nph, &
-                          div_coeff_half_1d=div_coeff_edge)
-       end if
-
-       do n=1,nlevs
-          call destroy(rhohalf(n))
-          call destroy(macrhs(n))
-          call destroy(macphi(n))
-       end do
-        
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 8 -- advect the base state and full state through dt
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-       
-       if (parallel_IOProcessor() .and. verbose .ge. 1) then
-          write(6,*) '<<< STEP  8 : advect base   '
-       end if
 
-       if (evolve_base_state) then
-          call advect_base_dens(w0,rho0_old,rho0_new,rho0_predicted_edge,dx(:,dm),dt)
-       else
-          rho0_new = rho0_old
-       end if
-              
+    if (parallel_IOProcessor() .and. verbose .ge. 1) then
+       write(6,*) '<<< STEP  8 : advect base   '
+    end if
+
+    if (evolve_base_state) then
+       call advect_base_dens(w0,rho0_old,rho0_new,rho0_predicted_edge,dx(:,dm),dt)
+    else
+       rho0_new = rho0_old
+    end if
+
+    do n=1,nlevs
+       call multifab_build(thermal(n), mla%la(n), 1, 1)
+    end do
+
+    ! thermal is the forcing for rhoh or temperature
+    if(use_thermal_diffusion) then
+       call make_explicit_thermal(mla,dx,thermal,s1,p0_old,the_bc_tower)
+    else
        do n=1,nlevs
-          call multifab_build(thermal(n), mla%la(n), 1, 1)
+          call setval(thermal(n),ZERO,all=.true.)
        end do
+    end if
 
-       ! thermal is the forcing for rhoh or temperature
-       if(use_thermal_diffusion) then
-          call make_explicit_thermal(mla,dx,thermal,s1,p0_old,the_bc_tower)
-       else
-          do n=1,nlevs
-             call setval(thermal(n),ZERO,all=.true.)
-          end do
-       end if
-       
-       do n=1,nlevs
-          call multifab_build(s2(n), mla%la(n), nscal, 3)
-          call setval(etarhoflux(n),ZERO,all=.true.)
+    do n=1,nlevs
+       call multifab_build(s2(n), mla%la(n), nscal, 3)
+       call setval(etarhoflux(n),ZERO,all=.true.)
+    end do
+
+    if (parallel_IOProcessor() .and. verbose .ge. 1) then
+       write(6,*) '            :  density_advance >>>'
+       write(6,*) '            :   tracer_advance >>>'
+    end if
+
+    ! Build the sedge array.
+    do n=1,nlevs
+       do comp = 1,dm
+          call multifab_build(sedge(n,comp),mla%la(n),nscal,0,nodal=edge_nodal_flag(comp,:))
+          call multifab_build(sflux(n,comp),mla%la(n),nscal,0,nodal=edge_nodal_flag(comp,:))
        end do
+       call multifab_build(scal_force(n), mla%la(n), nscal, 1)
+    end do
 
-       if (parallel_IOProcessor() .and. verbose .ge. 1) then
-          write(6,*) '            :  density_advance >>>'
-          write(6,*) '            :   tracer_advance >>>'
-       end if
+    call density_advance(mla,2,s1,s2,sedge,sflux,scal_force,umac,w0,w0mac,etarhoflux, &
+                         normal,rho0_old,rho0_new,p0_new,rho0_predicted_edge,dx,dt, &
+                         the_bc_tower%bc_tower_array)
 
-       ! Build the sedge array.
-       do n=1,nlevs
-          do comp = 1,dm
-             call multifab_build(sedge(n,comp),mla%la(n),nscal,0, &
-                                 nodal=edge_nodal_flag(comp,:))
-             call multifab_build(sflux(n,comp),mla%la(n),nscal,0, &
-                                 nodal=edge_nodal_flag(comp,:))
-          end do
-          call multifab_build(scal_force(n), mla%la(n), nscal, 1)
-       end do
+    ! Now compute the new etarho and psi
+    if (evolve_base_state) then
+       if (use_etarho) then
 
-       call density_advance(mla,2,s1,s2,sedge,sflux,scal_force,&
-                            umac,w0,w0mac,etarhoflux,normal, &
-                            rho0_old,rho0_new,&
-                            p0_new,rho0_predicted_edge, &
-                            dx,dt,the_bc_tower%bc_tower_array)
-
-       ! Now compute the new etarho and psi
-       if (evolve_base_state) then
-          if (use_etarho) then
-
-             if (spherical .eq. 0) then
-                call make_etarho_planar(etarho_ec,etarho_cc,div_etarho,etarhoflux,mla)
-             else
-                call make_etarho_spherical(s1,s2,umac,rho0_old,rho0_new,dx,dt,normal, &
-                                           etarho_ec,etarho_cc,div_etarho, &
-                                           mla,the_bc_tower%bc_tower_array)
-             endif
-
+          if (spherical .eq. 0) then
+             call make_etarho_planar(etarho_ec,etarho_cc,div_etarho,etarhoflux,mla)
+          else
+             call make_etarho_spherical(s1,s2,umac,rho0_old,rho0_new,dx,dt,normal, &
+                                        etarho_ec,etarho_cc,div_etarho, &
+                                        mla,the_bc_tower%bc_tower_array)
           endif
-       end if
 
-       do n=1,nlevs
-          call destroy(etarhoflux(n))
+       endif
+    end if
+
+    do n=1,nlevs
+       call destroy(etarhoflux(n))
+    end do
+
+    if (evolve_base_state) then
+       call advect_base_pres(w0,Sbar,rho0_new,p0_old,p0_new,gamma1bar,div_coeff_nph, &
+                             psi,etarho_cc,dx(:,dm),dt)
+    else
+       p0_new = p0_old
+    end if
+
+    if (evolve_base_state) then
+       call advect_base_enthalpy(w0,Sbar,rho0_old,rhoh0_1,rhoh0_2,p0_old,p0_new, &
+                                 gamma1bar,rho0_predicted_edge,psi,dx(:,dm),dt)
+    else
+       rhoh0_2 = rhoh0_1
+    end if
+
+    if (parallel_IOProcessor() .and. verbose .ge. 1) then
+       write(6,*) '            : enthalpy_advance >>>'
+    end if
+
+    call enthalpy_advance(mla,2,uold,s1,s2,sedge,sflux,scal_force,thermal,umac,w0,w0mac, &
+                          normal,rho0_old,rhoh0_1,rho0_new,rhoh0_2,p0_old,p0_new,tempbar, &
+                          psi,dx,dt,the_bc_tower%bc_tower_array)
+
+    do n=1,nlevs
+       do comp = 1,dm
+          call destroy(sedge(n,comp))
+          call destroy(sflux(n,comp))
        end do
+       call destroy(scal_force(n))
+       call destroy(thermal(n))
+    end do
 
-       if (evolve_base_state) then
-          call advect_base_pres(w0,Sbar,rho0_new,p0_old,p0_new,gamma1bar,div_coeff_nph, &
-                                psi,etarho_cc,dx(:,dm),dt)
-       else
-          p0_new = p0_old
-       end if
+    ! Correct the base state using the time-centered etarho and psi
+    if (use_etarho .and. evolve_base_state) then
+       call correct_base(rho0_new,div_etarho,dt)
+    end if
 
-       if (evolve_base_state) then
-          call advect_base_enthalpy(w0,Sbar,rho0_old,rhoh0_1,rhoh0_2,p0_old,p0_new, &
-                                    gamma1bar,rho0_predicted_edge,psi,dx(:,dm),dt)
-       else
-          rhoh0_2 = rhoh0_1
-       end if
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !! STEP 8a (Option I) -- Add thermal conduction (only enthalpy terms)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+    if (use_thermal_diffusion) then
        if (parallel_IOProcessor() .and. verbose .ge. 1) then
-          write(6,*) '            : enthalpy_advance >>>'
+          write(6,*) '<<< STEP  8a: thermal conduct >>>'
        end if
 
-       call enthalpy_advance(mla,2,uold,s1,s2,sedge,sflux,scal_force,&
-                             thermal,umac,w0,w0mac,normal, &
-                             rho0_old,rhoh0_1, &
-                             rho0_new,rhoh0_2, &
-                             p0_old,p0_new,tempbar,psi,&
-                             dx,dt,the_bc_tower%bc_tower_array)
+       call thermal_conduct(mla,dx,dt,s1,s2star,s2,p0_old,p0_new,tempbar,the_bc_tower)
 
        do n=1,nlevs
-          do comp = 1,dm
-             call destroy(sedge(n,comp))
-             call destroy(sflux(n,comp))
-          end do
-          call destroy(scal_force(n))
-          call destroy(thermal(n))
+          call destroy(s2star(n))
        end do
+    end if
 
-       ! Correct the base state using the time-centered etarho and psi
-       if (use_etarho .and. evolve_base_state) then
-          call correct_base(rho0_new,div_etarho,dt)
-       end if
-       
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! STEP 8a (Option I) -- Add thermal conduction (only enthalpy terms)
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-       
-       if (use_thermal_diffusion) then
-          if (parallel_IOProcessor() .and. verbose .ge. 1) then
-             write(6,*) '<<< STEP  8a: thermal conduct >>>'
-          end if
-          
-          call thermal_conduct_full_alg(mla,dx,dt,s1,s2star,s2,p0_old,p0_new, &
-                                        tempbar,the_bc_tower)
-
-          do n=1,nlevs
-             call destroy(s2star(n))
-          end do
-       end if
-
-       do n=1,nlevs
-          call destroy(s1(n))
-       end do
+    do n=1,nlevs
+       call destroy(s1(n))
+    end do
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 9 -- react the full state and then base state through dt/2
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-       
+
+    if (parallel_IOProcessor() .and. verbose .ge. 1) then
+       write(6,*) '<<< STEP  9 : react state '
+    end if
+
+    do n=1,nlevs
+       call multifab_build(rho_Hext(n), mla%la(n), 1, 1)
+    end do
+
+    call react_state(mla,s2,snew,rho_omegadot2,rho_Hnuc2,rho_Hext,tempbar,p0_new,halfdt,dx, &
+                     the_bc_tower%bc_tower_array,time)
+
+    do n=1,nlevs
+       call destroy(s2(n))
+    end do
+
+    if (evolve_base_state .and. full_rhoh0_evolution) then
        if (parallel_IOProcessor() .and. verbose .ge. 1) then
-          write(6,*) '<<< STEP  9 : react state '
+          write(6,*) '            : react  base >>>'
        end if
+       call average(mla,rho_Hnuc2,rho_Hnucbar,dx,1)
+       call average(mla,rho_Hext,rho_Hextbar,dx,1)
+       call react_base(rhoh0_2,rho_Hnucbar,rho_Hextbar,halfdt,rhoh0_new)
+    else
+       rhoh0_new = rhoh0_2
+    end if
+
+    if (evolve_base_state) then
+       do n=1,nlevs
+          call multifab_build(gamma1(n), mla%la(n), 1, 0)
+       end do
+
+       call make_gamma(mla,gamma1,snew,p0_new,tempbar,dx)
+       call average(mla,gamma1,gamma1bar,dx,1)
 
        do n=1,nlevs
-          call multifab_build(rho_Hext(n), mla%la(n), 1, 1)
+          call destroy(gamma1(n))
        end do
-       
-       call react_state(mla,s2,snew,rho_omegadot2,rho_Hnuc2,rho_Hext,tempbar,p0_new, &
-                        halfdt,dx,the_bc_tower%bc_tower_array,time)
+    end if
 
-       do n=1,nlevs
-          call destroy(s2(n))
-       end do
+    call make_grav_cell(grav_cell_new,rho0_new)
 
-       if (evolve_base_state .and. full_rhoh0_evolution) then
-          if (parallel_IOProcessor() .and. verbose .ge. 1) then
-             write(6,*) '            : react  base >>>'
-          end if
-          call average(mla,rho_Hnuc2,rho_Hnucbar,dx,1)
-          call average(mla,rho_Hext,rho_Hextbar,dx,1)
-          call react_base(rhoh0_2,rho_Hnucbar,rho_Hextbar,halfdt,rhoh0_new)
-       else
-          rhoh0_new = rhoh0_2
-       end if
-
-       if (evolve_base_state) then
-          do n=1,nlevs
-             call multifab_build(gamma1(n), mla%la(n), 1, 0)
-          end do
-          
-          call make_gamma(mla,gamma1,snew,p0_new,tempbar,dx)
-          call average(mla,gamma1,gamma1bar,dx,1)
-          
-          do n=1,nlevs
-             call destroy(gamma1(n))
-          end do
-       end if
-       
-       call make_grav_cell(grav_cell_new,rho0_new)
-
-       call make_div_coeff(div_coeff_new,rho0_new,p0_new,gamma1bar,grav_cell_new)
-              
-    end if ! end if corresponding to .not. do_half_alg
+    call make_div_coeff(div_coeff_new,rho0_new,p0_new,gamma1bar,grav_cell_new)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 10 -- compute S^{n+1} for the final projection
@@ -1088,9 +1007,8 @@ contains
     end do
 
     ! p0 is only used for the delta_gamma1_term
-    call make_S(Source_new,delta_gamma1_term,delta_gamma1, &
-                snew,uold,rho_omegadot2,rho_Hnuc2,rho_Hext,thermal, &
-                p0_new,gamma1bar,delta_gamma1_termbar,psi,dx, &
+    call make_S(Source_new,delta_gamma1_term,delta_gamma1,snew,uold,rho_omegadot2, &
+                rho_Hnuc2,rho_Hext,thermal,p0_new,gamma1bar,delta_gamma1_termbar,psi,dx, &
                 mla,the_bc_tower%bc_tower_array)
 
     do n=1,nlevs
@@ -1130,11 +1048,9 @@ contains
 
     call make_at_halftime(rhohalf,sold,snew,rho_comp,1,the_bc_tower%bc_tower_array,mla)
     
-    call velocity_advance(mla,uold,unew,sold,rhohalf,umac,gpres, &
-                          normal,w0,w0mac,w0_force,w0_force_cart_vec, &
-                          rho0_old,rho0_nph, &
-                          grav_cell_old,grav_cell_nph,dx,dt, &
-                          the_bc_tower%bc_tower_array,sponge)
+    call velocity_advance(mla,uold,unew,sold,rhohalf,umac,gpres,normal,w0,w0mac,w0_force, &
+                          w0_force_cart_vec,rho0_old,rho0_nph,grav_cell_old,grav_cell_nph, &
+                          dx,dt,the_bc_tower%bc_tower_array,sponge)
 
     if (init_mode) then
        ! throw away w0 by setting w0 = w0_old
@@ -1243,17 +1159,15 @@ contains
        call put_1d_array_on_cart(div_coeff_nph,div_coeff_3d,foextrap_comp,.false., &
                                  .false.,dx,the_bc_tower%bc_tower_array,mla)
 
-       call hgproject(proj_type, mla, unew, uold, rhohalf, pres, gpres, dx, dt, &
-                      the_bc_tower, press_comp, &
-                      hgrhs, div_coeff_3d=div_coeff_3d,eps_in=1.d-12)
+       call hgproject(proj_type,mla,unew,uold,rhohalf,pres,gpres,dx,dt,the_bc_tower, &
+                      press_comp,hgrhs,div_coeff_3d=div_coeff_3d,eps_in=1.d-12)
 
        do n=1,nlevs
           call destroy(div_coeff_3d(n))
        end do
     else
-       call hgproject(proj_type, mla, unew, uold, rhohalf, pres, gpres, dx, dt, &
-                      the_bc_tower, press_comp, &
-                      hgrhs, div_coeff_1d=div_coeff_nph)
+       call hgproject(proj_type,mla,unew,uold,rhohalf,pres,gpres,dx,dt,the_bc_tower, &
+                      press_comp,hgrhs,div_coeff_1d=div_coeff_nph)
     end if
 
     do n=1,nlevs
@@ -1269,11 +1183,8 @@ contains
     end if
 
     if (.not. init_mode) &
-         call diag(time,dt,dx,snew,rho_Hnuc2,rho_Hext, &
-                   rho0_new,rhoh0_new,p0_new,tempbar,gamma1bar, &
-                   unew,w0,normal, &
-                   mla,the_bc_tower)
-
+         call diag(time,dt,dx,snew,rho_Hnuc2,rho_Hext,rho0_new,rhoh0_new,p0_new,tempbar, &
+                   gamma1bar,unew,w0,normal,mla,the_bc_tower)
 
     do n=1,nlevs
        call destroy(rho_Hext(n))

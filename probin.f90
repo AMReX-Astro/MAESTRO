@@ -32,7 +32,7 @@ module probin_module
   logical, save            :: evolve_base_state
   logical, save            :: use_thermal_diffusion, temp_diffusion_formulation
   integer, save            :: thermal_diffusion_type
-  logical, save            :: do_half_alg, do_eos_h_above_cutoff
+  logical, save            :: do_eos_h_above_cutoff
   integer, save            :: enthalpy_pred_type
   real(dp_t), save         :: max_dt_growth, fixed_dt
   real(dp_t), save         :: velpert_amplitude, velpert_radius, velpert_scale, velpert_steep
@@ -117,7 +117,6 @@ module probin_module
   namelist /probin/ use_thermal_diffusion
   namelist /probin/ temp_diffusion_formulation
   namelist /probin/ thermal_diffusion_type
-  namelist /probin/ do_half_alg
   namelist /probin/ do_eos_h_above_cutoff
   namelist /probin/ enthalpy_pred_type
   namelist /probin/ max_dt_growth
@@ -259,8 +258,6 @@ contains
 
     ! 1 = Crank-Nicolson, 2 = Backward Euler
     thermal_diffusion_type = 1
-
-    do_half_alg = .false.
 
     do_eos_h_above_cutoff = .true.
 
@@ -661,11 +658,6 @@ contains
           farg = farg + 1
           call get_command_argument(farg, value = fname)
           read(fname, *) thermal_diffusion_type
-
-       case ('--do_half_alg')
-          farg = farg + 1
-          call get_command_argument(farg, value = fname)
-          read(fname, *) do_half_alg
 
        case ('--do_eos_h_above_cutoff')
           farg = farg + 1
