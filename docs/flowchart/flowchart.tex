@@ -87,6 +87,8 @@ corner coupling and various PPM limiters.
 \item We now update the density and enthalpy as full states with full-state fluxes, 
 not as perturbational quantities.
 
+\item We update temperature at the end of {\bf React State}.
+
 \end{itemize}
 
 %-----------------------------------------------------------------------------
@@ -270,12 +272,11 @@ theory, this means evaluating the equation of state for each
 right-hand side evaluation that {\tt VODE} requires.  In practice, we
 freeze $c_p$ and $\xi_k$ at the start of the integration time step and
 compute them using $\rho^{\inp}, X_k^{\inp},$ and $T^{\inp}$ as inputs
-to the equation of state.  We note that while temperature is evolved
-when solving these equations, we do not keep the final temperature,
-nor do we use it to compute the final change in enthalpy.  Therefore,
-$T^{\outp} = T^{\inp}$.  Also, note that the density remains unchanged
+to the equation of state.  We update temperature using
+$T^{\outp} = T(\rho^\outp,h^\outp,X_k^\outp)$ if {\tt use\_tfromp = FALSE} or 
+$T^{\outp} = T(\rho^\outp,p_0,X_k^\outp)$  if {\tt use\_tfromp = TRUE}.  
+Note that the density remains unchanged
 during the {\bf React State} step, i.e., $\rho^{\outp} = \rho^{\inp}$.
-\MarginPar{Currently we do update the temperature if {\tt use\_tfromp}=F}
 
 After the new mass fractions have been computed, the reaction rates are defined as:
 \begin{equation}
@@ -329,7 +330,7 @@ where $j$ refers to the one-dimensional index in the radial direction.
 The interface states, ${{\rho}_0}^{\outp,\nph}$, are found via the
 procedure described in paper II, Appendix A.
 
-\item[spherical:]
+\item[spherical:] See Section \ref{Sec: Advect Base Spherical} for working notes.
 
 \end{description}
 
@@ -359,7 +360,7 @@ p_{0,j}^\outp = p_{0,j}^\inp - \frac{\dt}{2\dr} \left (w_{0,j+\myhalf}^\inp
 where the interface states are again found via the procedure described
 in paper II, Appendix A.
 
-\item[spherical:]
+\item[spherical:] See Section \ref{Sec: Advect Base Spherical} for working notes.
 
 \end{description}
 
@@ -382,7 +383,8 @@ to compute the new base state enthalpy,
 where the interface states are again found via the procedure described
 in paper II, Appendix A.
 
-\item[spherical:]
+\item[spherical:] 
+\MarginPar{Need to write this up somewhere}
 
 \end{description}
 
@@ -467,7 +469,7 @@ f \left[\frac{p_0^n - \overline{p(\rho,h,X_k)^n}}{\Delta t^n} \right]\right\}
 \enskip .
 \end{equation}
 
-\item[spherical:] See Paper IV for working notes until we finalize this.
+\item[spherical:] See Section \ref{Sec:Spherical w0 Calculation} for working notes.
 
 \end{description}
 
@@ -633,8 +635,7 @@ $(\nabla\cdot\etarho\er)^{\nph,\star}$:
 \frac{\eta_{\rho,j+\myhalf}^{\nph,\star}-\eta_{\rho,j-\myhalf}^{\nph,\star}}{\Delta r} \enskip ,
 \end{equation}
 
-\item[spherical:] See {\tt MAESTRO/docs/eta\_notes} for working notes until we finalize 
-the details.
+\item[spherical:] See Section \ref{Sec:eta Spherical} for working notes.
 
 \end{description}
 
@@ -705,7 +706,6 @@ results in a better solution.
     \left(\uadvone \cdotb \er\right) \left(\frac{\partial
       p_0}{\partial r} \right)^{n} + \dt \; \psi^{\nph,*} \enskip ,
   \end{eqnarray}
-  \MarginPar{we should also show the update in the case that $(\rho h)'$ is the flux}
 
 \item[spherical:]
 
@@ -717,8 +717,6 @@ results in a better solution.
        - p_0^{n} \nabla \cdot \uadvone \right \} \nonumber \\
     && + \dt \; \psi^{\nph,*} \enskip ,
   \end{eqnarray}
-
-\MarginPar{Should we time-center $p_0$ now that we have split out {\tt advect\_base\_pres}?}
 
 \end{description}
 
@@ -858,7 +856,7 @@ p_0^{\nph,\star} = \frac{p_0^{n} + p_0^{n+1,\star}}{2}
 \frac{\overline{p(\rho,h,X_k)^n} + \overline{p(\rho,h,X_k)^{n+1,\star}}}{2}
 \end{equation}
 
-\item[spherical:] See Paper IV for working notes until we finalize this.
+\item[spherical:] See Section \ref{Sec:Spherical w0 Calculation} for working notes.
 
 \end{description}
 
@@ -958,7 +956,7 @@ $(\nabla\cdot\etarho\er)^{\nph}$:
 
 \begin{description}
 
-\item[plane-parallel:] ~
+\item[plane-parallel:]
 
 \begin{equation}
  \etarho^{\nph} = {\rm {\bf Avg}} \sum_k \left [\left(\uadvtwo \cdotb \er + w_0^{\nph}\right) (\rho X_k)^{(1),\nph} \right] - w_0^{\nph} \rho_0^{\nph,{\rm pred}} \enskip ,
@@ -967,7 +965,7 @@ $(\nabla\cdot\etarho\er)^{\nph}$:
 (\nabla\cdot\etarho\er)_j^{\nph} = \frac{\eta_{\rho,j+\myhalf}^{\nph} - \eta_{\rho,j-\myhalf}^{\nph}}{\Delta r} \enskip , \\
 \end{equation}
 
-\item[spherical:]~
+\item[spherical:] See Section \ref{Sec:eta Spherical} for working notes.
 
 \end{description}
 
