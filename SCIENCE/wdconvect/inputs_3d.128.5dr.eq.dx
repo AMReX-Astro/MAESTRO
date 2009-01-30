@@ -2,6 +2,9 @@
  model_file = "model_6.e8.hybrid.hse.640"
  drdxfac = 5
 
+ anelastic_cutoff = 3.e6
+ base_cutoff_density = 3.e6
+
  test_set = "gr0_3d.128"
 
  spherical_in = 1

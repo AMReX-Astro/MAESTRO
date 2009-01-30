@@ -1,6 +1,9 @@
 &PROBIN
  model_file = "model_6.e8.hse.48"
 
+ anelastic_cutoff = 3.e6
+ base_cutoff_density = 3.e6
+
  test_set = "gr0_3d.48"
 
  spherical_in = 1

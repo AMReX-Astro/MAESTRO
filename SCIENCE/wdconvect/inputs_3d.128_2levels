@@ -13,6 +13,9 @@
  drdxfac = 5
  model_file = "model_6.e8.hybrid.hse.640"
 
+ anelastic_cutoff = 3.e6
+ base_cutoff_density = 3.e6
+
  spherical_in = 1
  dm_in = 3
  do_sponge = .true.
