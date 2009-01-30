@@ -381,7 +381,7 @@ contains
        end if
     else
        do n=1,nlevs
-          call multifab_copy_c(snew(n),temp_comp,sold(n),temp_comp,1)
+          call multifab_copy_c(snew(n),temp_comp,sold(n),temp_comp,1,3)
        end do
     end if
 
