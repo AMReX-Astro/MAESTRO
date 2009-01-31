@@ -10,7 +10,11 @@ subroutine write_job_info(dirname)
 
   implicit none
   character (len=*)   :: dirname
-  character (len=256) :: build_date, build_dir, build_machine
+
+  ! NOTE: the length of build_date, ... should be the same
+  ! as the strings allocated in build_info.f90
+  character (len=128) :: build_date, build_dir, build_machine
+
   character (len=256) :: out_name
   character (len=16) :: date, time
   integer, dimension(8) :: values
