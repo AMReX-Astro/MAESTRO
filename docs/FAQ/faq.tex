@@ -1,0 +1,35 @@
+\begin{enumerate}
+
+\item {\em  How do we turn off all the initial projections to look at the
+   initial velocity field as specified in initdata, instead of as
+   modified by the velocity constraint?} 
+%
+\begin{verbatim}
+    max_step  = 1
+    init_iter = 0
+    init_divu_iter = 0
+    do_initial_projection = 0
+\end{verbatim}
+
+
+\item {\em How can we dump out a variable to a plotfile from any point in the
+   code?} 
+%
+\begin{verbatim}
+    use fabio_module
+
+    call fabio_ml_multifab_write_d(uold,mla%mba%rr(:,1),"a_uold")
+    call fabio_ml_multifab_write_d(umac(:,1),mla%mba%rr(:,1),"a_umacx")
+\end{verbatim}
+
+\item {\em Does it matter if we use a Fortran 90 compiler instead of a 
+   Fortran 95 compiler?}
+
+
+   On some machines it does---Fortran 95 specifies that any local
+   allocated arrays are automatically deallocated when a subroutine
+   ends.  Fortran 90 does not do this.  On IBM machines, for instance,
+   using {\tt xlf90} instead of {\tt xlf95} for MAESTRO will produce
+   memory leaks.
+
+\end{enumerate}
