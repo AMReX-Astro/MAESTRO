@@ -527,13 +527,6 @@ contains
        write(6,*) '            : enthalpy_advance >>> '
     end if
 
-
-
-    ! Correct the base state using the time-centered etarho and psi
-    if (use_etarho .and. evolve_base_state) then
-       call correct_base(rho0_new,div_etarho,dt)
-    end if
-
     call enthalpy_advance(mla,1,uold,s1,s2,sedge,sflux,scal_force,thermal,umac,w0,w0mac, &
                           normal,rho0_old,rhoh0_1,rho0_new,rhoh0_2,p0_old,p0_new,tempbar, &
                           psi,dx,dt,the_bc_tower%bc_tower_array)
@@ -547,6 +540,11 @@ contains
        call destroy(scal_force(n))
        call destroy(thermal(n))
     end do
+
+    ! Correct the base state using the time-centered etarho and psi
+    if (use_etarho .and. evolve_base_state) then
+       call correct_base(rho0_new,div_etarho,dt)
+    end if
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 4a (Option I) -- Add thermal conduction (only enthalpy terms)
@@ -895,14 +893,6 @@ contains
        write(6,*) '            : enthalpy_advance >>>'
     end if
 
-
-
-    ! Correct the base state using the time-centered etarho and psi
-    if (use_etarho .and. evolve_base_state) then
-       call correct_base(rho0_new,div_etarho,dt)
-    end if
-
-
     call enthalpy_advance(mla,2,uold,s1,s2,sedge,sflux,scal_force,thermal,umac,w0,w0mac, &
                           normal,rho0_old,rhoh0_1,rho0_new,rhoh0_2,p0_old,p0_new,tempbar, &
                           psi,dx,dt,the_bc_tower%bc_tower_array)
@@ -915,6 +905,12 @@ contains
        call destroy(scal_force(n))
        call destroy(thermal(n))
     end do
+
+    ! Correct the base state using the time-centered etarho and psi
+    if (use_etarho .and. evolve_base_state) then
+       call correct_base(rho0_new,div_etarho,dt)
+    end if
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !! STEP 8a (Option I) -- Add thermal conduction (only enthalpy terms)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
