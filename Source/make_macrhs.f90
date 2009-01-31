@@ -77,8 +77,8 @@ contains
                                          dx(n,:),gamma1bar_old(1,:),gamma1bar_new(1,:), &
                                          p0_old(1,:),p0_new(1,:),pop(:,:,:,1),ng_dp,dt)
              else
-                call make_macrhs_3d(n,lo,hi,rho0(n,:),mp(:,:,:,1),ng_rh,sp(:,:,:,1),ng_sr, &
-                                    gp(:,:,:,1),ng_dg,Sbar(n,:),div_coeff(n,:),dx(n,:), &
+                call make_macrhs_3d(n,lo,hi,mp(:,:,:,1),ng_rh,sp(:,:,:,1),ng_sr, &
+                                    gp(:,:,:,1),ng_dg,Sbar(n,:),div_coeff(n,:), &
                                     gamma1bar_old(n,:),gamma1bar_new(n,:), &
                                     p0_old(n,:),p0_new(n,:),pop(:,:,:,1),ng_dp,dt)
              end if
@@ -134,8 +134,8 @@ contains
 
   end subroutine make_macrhs_2d
 
-  subroutine make_macrhs_3d(n,lo,hi,rho0,rhs,ng_rh,Source,ng_sr,delta_gamma1_term,ng_dg, &
-                            Sbar,div_coeff,dx,gamma1bar_old,gamma1bar_new,p0_old,p0_new, &
+  subroutine make_macrhs_3d(n,lo,hi,rhs,ng_rh,Source,ng_sr,delta_gamma1_term,ng_dg, &
+                            Sbar,div_coeff,gamma1bar_old,gamma1bar_new,p0_old,p0_new, &
                             delta_p_term,ng_dp,dt)
 
     use geometry, only: base_cutoff_density_coord
@@ -143,13 +143,11 @@ contains
     use fill_3d_module
 
     integer         , intent(in   ) :: n,lo(:),hi(:),ng_rh,ng_sr,ng_dg,ng_dp
-    real (kind=dp_t), intent(in   ) :: rho0(0:)
     real (kind=dp_t), intent(  out) ::            rhs(lo(1)-ng_rh:,lo(2)-ng_rh:,lo(3)-ng_rh:)
     real (kind=dp_t), intent(in   ) ::         Source(lo(1)-ng_sr:,lo(2)-ng_sr:,lo(3)-ng_sr:)
     real (kind=dp_t), intent(in) :: delta_gamma1_term(lo(1)-ng_dg:,lo(2)-ng_dg:,lo(3)-ng_dg:)
     real (kind=dp_t), intent(in   ) ::      Sbar(0:)  
     real (kind=dp_t), intent(in   ) :: div_coeff(0:)  
-    real (kind=dp_t), intent(in   ) :: dx(:)
     real (kind=dp_t), intent(in   ) :: gamma1bar_old(0:),gamma1bar_new(0:)
     real (kind=dp_t), intent(in   ) :: p0_old(0:),p0_new(0:)
     real (kind=dp_t), intent(in   ) ::   delta_p_term(lo(1)-ng_dp:,lo(2)-ng_dp:,lo(3)-ng_dp:)

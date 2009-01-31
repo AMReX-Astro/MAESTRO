@@ -92,11 +92,11 @@ contains
                             tp(:,:,1,1), ng_th, p0(n,:), gamma1bar(n,:), dx(n,:))
           case (3)
              if (spherical .eq. 1) then
-                call make_S_3d_sphr(n,lo, hi, srcp(:,:,:,1), ng_sr, dgtp(:,:,:,1), ng_dt, &
-                                    dgp(:,:,:,1), ng_dg, sp(:,:,:,:), ng_s, up(:,:,:,:), &
-                                    ng_u, omegap(:,:,:,:), ng_rw, hnp(:,:,:,1), ng_hn, &
+                call make_S_3d_sphr(lo, hi, srcp(:,:,:,1), ng_sr, dgtp(:,:,:,1), ng_dt, &
+                                    dgp(:,:,:,1), ng_dg, sp(:,:,:,:), ng_s, &
+                                    omegap(:,:,:,:), ng_rw, hnp(:,:,:,1), ng_hn, &
                                     hep(:,:,:,1), ng_he, &
-                                    tp(:,:,:,1), ng_th, p0(1,:), gamma1bar(1,:), dx(n,:))
+                                    tp(:,:,:,1), ng_th)
              else
                 call make_S_3d(n,lo, hi, srcp(:,:,:,1), ng_sr, dgtp(:,:,:,1), ng_dt, &
                                dgp(:,:,:,1), ng_dg, sp(:,:,:,:), ng_s, up(:,:,:,:), ng_u, &
@@ -401,9 +401,9 @@ contains
 
   end subroutine make_S_3d
 
-  subroutine make_S_3d_sphr(n,lo,hi,Source,ng_sr,delta_gamma1_term,ng_dt,delta_gamma1, &
-                            ng_dg,s,ng_s,u,ng_u,rho_omegadot,ng_rw,rho_Hnuc,ng_hn, &
-                            rho_Hext,ng_he,thermal,ng_th,p0,gamma1bar,dx)
+  subroutine make_S_3d_sphr(lo,hi,Source,ng_sr,dg1_term,ng_dt,delta_gamma1, &
+                            ng_dg,s,ng_s,rho_omegadot,ng_rw,rho_Hnuc,ng_hn, &
+                            rho_Hext,ng_he,thermal,ng_th)
 
     use bl_constants_module
     use eos_module
@@ -411,24 +411,20 @@ contains
     use probin_module, only: use_delta_gamma1_term
     use geometry, only: anelastic_cutoff_coord, nr
 
-    integer         , intent(in   ) :: n,lo(:),hi(:)
-    integer         , intent(in   ) :: ng_sr,ng_dt,ng_dg,ng_s,ng_u,ng_rw,ng_he,ng_hn,ng_th
-    real (kind=dp_t), intent(  out) ::          Source(lo(1)-ng_sr:,lo(2)-ng_sr:,lo(3)-ng_sr:)
-    real (kind=dp_t), intent(  out) :: delta_gamma1_term(lo(1)-ng_dt:,lo(2)-ng_dt:,lo(3)-ng_dt:)
+    integer         , intent(in   ) :: lo(:),hi(:)
+    integer         , intent(in   ) :: ng_sr,ng_dt,ng_dg,ng_s,ng_rw,ng_he,ng_hn,ng_th
+    real (kind=dp_t), intent(  out) ::       Source(lo(1)-ng_sr:,lo(2)-ng_sr:,lo(3)-ng_sr:)
+    real (kind=dp_t), intent(  out) ::     dg1_term(lo(1)-ng_dt:,lo(2)-ng_dt:,lo(3)-ng_dt:)
     real (kind=dp_t), intent(  out) :: delta_gamma1(lo(1)-ng_dg:,lo(2)-ng_dg:,lo(3)-ng_dg:) 
     real (kind=dp_t), intent(in   ) ::            s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :,:)
-    real (kind=dp_t), intent(in   ) ::            u(lo(1)-ng_u :,lo(2)-ng_u :,lo(3)-ng_u :,:)
     real (kind=dp_t), intent(in   ) :: rho_omegadot(lo(1)-ng_rw:,lo(2)-ng_rw:,lo(3)-ng_rw:,:)
     real (kind=dp_t), intent(in   ) ::     rho_Hnuc(lo(1)-ng_hn:,lo(2)-ng_hn:,lo(3)-ng_hn:)
     real (kind=dp_t), intent(in   ) ::     rho_Hext(lo(1)-ng_he:,lo(2)-ng_he:,lo(3)-ng_he:)
     real (kind=dp_t), intent(in   ) ::      thermal(lo(1)-ng_th:,lo(2)-ng_th:,lo(3)-ng_th:)
-    real (kind=dp_t), intent(in   ) :: p0(0:)
-    real (kind=dp_t), intent(in   ) :: gamma1bar(0:)
-    real (kind=dp_t), intent(in   ) :: dx(:)
 
     !     Local variables
     integer         :: i, j, k, comp
-    real(kind=dp_t) :: sigma, xi_term, pres_term, gradp0
+    real(kind=dp_t) :: sigma, xi_term, pres_term
 
     Source = zero
 
@@ -475,7 +471,7 @@ contains
              if (use_delta_gamma1_term) then
                 call bl_error("ERROR: use_delta_gamma1_term not implemented for spherical in make_S")
              else
-                delta_gamma1_term(i,j,k) = ZERO
+                dg1_term(i,j,k) = ZERO
                 delta_gamma1(i,j,k) = ZERO
              end if
 

@@ -55,7 +55,7 @@ contains
              call pert_form_2d(sp(:,:,1,:),base(n,:),lo,hi,ng,comp,flag)
           case (3)
              if (spherical .eq. 1) then
-                call pert_form_3d_sphr(n,sp(:,:,:,:),base(1,:),lo,hi,ng,dx(n,:),comp,flag)
+                call pert_form_3d_sphr(sp(:,:,:,:),base(1,:),lo,hi,ng,dx(n,:),comp,flag)
              else
                 call pert_form_3d_cart(sp(:,:,:,:),base(n,:),lo,hi,ng,comp,flag)
              end if
@@ -147,12 +147,12 @@ contains
 
   end subroutine pert_form_3d_cart
 
-  subroutine pert_form_3d_sphr(n,s,s0,lo,hi,ng,dx,comp,flag)
+  subroutine pert_form_3d_sphr(s,s0,lo,hi,ng,dx,comp,flag)
 
     use fill_3d_module
 
-    integer        , intent(in   ) :: n,lo(:),hi(:),ng,comp
-    real(kind=dp_t), intent(inout) ::  s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
+    integer        , intent(in   ) :: lo(:),hi(:),ng,comp
+    real(kind=dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real(kind=dp_t), intent(in   ) :: s0(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
     logical        , intent(in   ) :: flag

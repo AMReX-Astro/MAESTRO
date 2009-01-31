@@ -98,14 +98,14 @@ contains
              w0zp   => dataptr(w0mac(n,3),i)
              np   =>  dataptr(normal(n),i)
              if (spherical .eq. 1) then
-                call update_velocity_3d(n, uop(:,:,:,:), ng_uo, unp(:,:,:,:), ng_un, &
+                call update_velocity_3d(uop(:,:,:,:), ng_uo, unp(:,:,:,:), ng_un, &
                                         ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
                                         uepx(:,:,:,:), uepy(:,:,:,:), uepz(:,:,:,:), ng_ue, &
                                         fp(:,:,:,:), ng_f, np(:,:,:,:), ng_n, w0(1,:), &
                                         w0xp(:,:,:,1), w0yp(:,:,:,1), w0zp(:,:,:,1), &
                                         ng_w0, lo, hi, dx(n,:), dt, spp(:,:,:,1), ng_sp)
              else
-                call update_velocity_3d(n, uop(:,:,:,:), ng_uo, unp(:,:,:,:), ng_un, &
+                call update_velocity_3d(uop(:,:,:,:), ng_uo, unp(:,:,:,:), ng_un, &
                                         ump(:,:,:,1), vmp(:,:,:,1), wmp(:,:,:,1), ng_um, &
                                         uepx(:,:,:,:), uepy(:,:,:,:), uepz(:,:,:,:), ng_ue, &
                                         fp(:,:,:,:), ng_f, np(:,:,:,:), ng_n, w0(n,:), &
@@ -200,7 +200,7 @@ contains
 
   end subroutine update_velocity_2d
 
-  subroutine update_velocity_3d(n,uold,ng_uo,unew,ng_un,umac,vmac,wmac,ng_um, &
+  subroutine update_velocity_3d(uold,ng_uo,unew,ng_un,umac,vmac,wmac,ng_um, &
                                 uedgex,uedgey,uedgez,ng_ue,force,ng_f, &
                                 normal,ng_n,w0,w0macx,w0macy,w0macz,ng_w0,lo,hi,dx,dt, &
                                 sponge,ng_sp)
@@ -210,7 +210,7 @@ contains
     use bl_constants_module
     use probin_module, only: do_sponge
 
-    integer, intent(in) :: n, lo(:), hi(:)
+    integer, intent(in) :: lo(:), hi(:)
     integer, intent(in) :: ng_uo, ng_un, ng_um, ng_ue, ng_f, ng_n, ng_w0, ng_sp
     real (kind = dp_t), intent(in   ) ::    uold(lo(1)-ng_uo:,lo(2)-ng_uo:,lo(3)-ng_uo:,:)
     real (kind = dp_t), intent(  out) ::    unew(lo(1)-ng_un:,lo(2)-ng_un:,lo(3)-ng_un:,:)

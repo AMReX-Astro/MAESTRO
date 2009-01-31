@@ -446,7 +446,6 @@ contains
     real(kind=dp_t), pointer :: sp(:,:,:,:)
 
     integer :: n,i,lo(dm),hi(dm),ng_rh,ng_s
-    integer :: r
 
     if (spherical .eq. 0) then
        call bl_error("ERROR: make_div_etarhoh_spherical should not be called for plane-parallel")
@@ -523,7 +522,7 @@ contains
 
     real(kind=dp_t) :: rhoh0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1)
 
-    integer :: i,j,k,r
+    integer :: i,j,k
 
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,rhoh0,rhoh0_cart,lo,hi,dx,0,0)
 

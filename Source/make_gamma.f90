@@ -62,7 +62,7 @@ contains
                                         tempbar(1,:),dx(n,:))
              else
                 call make_gamma_3d(lo,hi,gamp(:,:,:,1),ng_g,sp(:,:,:,:),ng_s,p0(n,:), &
-                                   tempbar(n,:),dx(n,:))
+                                   tempbar(n,:))
              end if
           end select
        end do
@@ -122,7 +122,7 @@ contains
 
   end subroutine make_gamma_2d
 
-  subroutine make_gamma_3d(lo,hi,gamma,ng_g,s,ng_s,p0,tempbar,dx)
+  subroutine make_gamma_3d(lo,hi,gamma,ng_g,s,ng_s,p0,tempbar)
 
     use eos_module
     use variables, only: rho_comp, rhoh_comp, spec_comp
@@ -133,7 +133,6 @@ contains
     real (kind=dp_t), intent(in   ) ::     s(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
     real (kind=dp_t), intent(in   ) :: p0(0:)
     real (kind=dp_t), intent(in   ) :: tempbar(0:)
-    real (kind=dp_t), intent(in   ) :: dx(:)
 
     ! local variables
     integer :: i, j, k

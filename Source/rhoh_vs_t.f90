@@ -550,7 +550,7 @@ contains
              if (spherical .eq. 1) then
                 call makeTfromRhoH_3d_sphr(snp(:,:,:,:), lo, hi, ng, tempbar(1,:), dx(n,:))
              else
-                call makeTfromRhoH_3d(snp(:,:,:,:), lo, hi, ng, tempbar(n,:), dx(n,:))
+                call makeTfromRhoH_3d(snp(:,:,:,:), lo, hi, ng, tempbar(n,:))
              end if
           end select
        end do
@@ -631,7 +631,7 @@ contains
     
   end subroutine makeTfromRhoH_2d
 
-  subroutine makeTfromRhoH_3d(state,lo,hi,ng,tempbar,dx)
+  subroutine makeTfromRhoH_3d(state,lo,hi,ng,tempbar)
 
     use variables,      only: rho_comp, spec_comp, rhoh_comp, temp_comp
     use eos_module
@@ -640,7 +640,6 @@ contains
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(inout) ::  state(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind = dp_t), intent(in   ) ::  tempbar(0:)
-    real(kind=dp_t)   , intent(in   ) :: dx(:)
 
     ! Local variables
     integer :: i, j, k
@@ -771,7 +770,7 @@ contains
                 call makeTfromRhoP_3d_sphr(snp(:,:,:,:),lo,hi,ng,p0(1,:),tempbar(1,:), &
                                            dx(n,:))
              else
-                call makeTfromRhoP_3d(snp(:,:,:,:),lo,hi,ng,p0(n,:),tempbar(n,:),dx(n,:))
+                call makeTfromRhoP_3d(snp(:,:,:,:),lo,hi,ng,p0(n,:),tempbar(n,:))
              end if
           end select
        end do
@@ -853,7 +852,7 @@ contains
     
   end subroutine makeTfromRhoP_2d
 
-  subroutine makeTfromRhoP_3d(state,lo,hi,ng,p0,tempbar,dx)
+  subroutine makeTfromRhoP_3d(state,lo,hi,ng,p0,tempbar)
 
     use variables,      only: rho_comp, spec_comp, rhoh_comp, temp_comp
     use eos_module
@@ -863,7 +862,6 @@ contains
     real (kind = dp_t), intent(inout) ::  state(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
     real (kind = dp_t), intent(in   ) ::  p0(0:)
     real (kind = dp_t), intent(in   ) ::  tempbar(0:)
-    real(kind=dp_t)   , intent(in   ) :: dx(:)
 
     ! Local variables
     integer :: i, j, k
@@ -1005,7 +1003,7 @@ contains
                                            tempbar(1,:), dx(n,:))
              else
                 call makePfromRhoH_3d(snp(:,:,:,:), pnp(:,:,:,1), lo, hi, ng_s, ng_p, &
-                                      tempbar(n,:), dx(n,:))
+                                      tempbar(n,:))
              end if
           end select
        end do
@@ -1086,7 +1084,7 @@ contains
 
   end subroutine makePfromRhoH_2d
 
-  subroutine makePfromRhoH_3d(state,p,lo,hi,ng_s,ng_p,tempbar,dx)
+  subroutine makePfromRhoH_3d(state,p,lo,hi,ng_s,ng_p,tempbar)
 
     use variables,      only: rho_comp, spec_comp, rhoh_comp
     use eos_module
@@ -1096,7 +1094,6 @@ contains
     real (kind = dp_t), intent(in   ) :: state(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
     real (kind = dp_t), intent(inout) ::     p(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)
     real (kind = dp_t), intent(in   ) :: tempbar(0:)
-    real(kind=dp_t)   , intent(in   ) :: dx(:)
 
     ! Local variables
     integer :: i, j, k
