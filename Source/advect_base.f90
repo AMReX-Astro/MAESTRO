@@ -135,8 +135,7 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine advect_base_pres(w0,Sbar_in,rho0_new,p0_old,p0_new, &
-                              gamma1bar,div_coeff,psi,etarho_cc,dz,dt)
+  subroutine advect_base_pres(w0,Sbar_in,p0_old,p0_new,gamma1bar,psi,etarho_cc,dz,dt)
 
     use bl_prof_module
     use geometry, only: spherical, nlevs
@@ -145,11 +144,9 @@ contains
 
     real(kind=dp_t), intent(in   ) ::        w0(:,0:)
     real(kind=dp_t), intent(in   ) ::   Sbar_in(:,0:)
-    real(kind=dp_t), intent(in   ) ::  rho0_new(:,0:)
     real(kind=dp_t), intent(in   ) ::    p0_old(:,0:)
     real(kind=dp_t), intent(  out) ::    p0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
-    real(kind=dp_t), intent(in   ) :: div_coeff(:,0:)
     real(kind=dp_t), intent(inout) ::       psi(:,0:)
     real(kind=dp_t), intent(in   ) :: etarho_cc(:,0:)
     real(kind=dp_t), intent(in   ) :: dz(:),dt
@@ -174,8 +171,7 @@ contains
     else
 
        ! advect p0
-       call advect_base_pres_spherical(w0,Sbar_in,p0_old,p0_new,rho0_new,gamma1bar, &
-                                       div_coeff,dt)
+       call advect_base_pres_spherical(w0,Sbar_in,p0_old,p0_new,gamma1bar,dt)
        call restrict_base(p0_new,.true.)
        call fill_ghost_base(p0_new,.true.)
 
@@ -230,8 +226,7 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   
-  subroutine advect_base_pres_spherical(w0,Sbar_in,p0_old,p0_new,rho0_new, &
-                                        gamma1bar,div_coeff_old,dt)
+  subroutine advect_base_pres_spherical(w0,Sbar_in,p0_old,p0_new,gamma1bar,dt)
 
     use bl_constants_module
     use make_edge_state_module
@@ -240,31 +235,27 @@ contains
     use cell_to_edge_module
     use make_div_coeff_module
 
-    real(kind=dp_t), intent(in   ) ::            w0(:,0:)
-    real(kind=dp_t), intent(in   ) ::       Sbar_in(:,0:)
-    real(kind=dp_t), intent(in   ) ::        p0_old(:,0:)
-    real(kind=dp_t), intent(in   ) ::      rho0_new(:,0:)
-    real(kind=dp_t), intent(  out) ::        p0_new(:,0:)
-    real(kind=dp_t), intent(in   ) ::     gamma1bar(:,0:)
-    real(kind=dp_t), intent(in   ) :: div_coeff_old(:,0:)
+    real(kind=dp_t), intent(in   ) ::        w0(:,0:)
+    real(kind=dp_t), intent(in   ) ::   Sbar_in(:,0:)
+    real(kind=dp_t), intent(in   ) ::    p0_old(:,0:)
+    real(kind=dp_t), intent(  out) ::    p0_new(:,0:)
+    real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
     real(kind=dp_t), intent(in   ) :: dt
     
     ! Local variables
     integer :: r
 
-    real(kind=dp_t) :: dtdr,divbetaw,betahalf,factor
-    real(kind=dp_t) :: divw,p0_avg
+    real(kind=dp_t) :: factor,divw,p0_avg
     real(kind=dp_t) :: w0dpdr_avg,w0dpdr_avg_1,w0dpdr_avg_2
 
-    real (kind = dp_t) :: div_coeff_new(1,0:nr_fine-1)
-    real (kind = dp_t) :: gamma1bar_old(1,0:nr_fine-1)
-    real (kind = dp_t) ::     grav_cell(1,0:nr_fine-1)
-    real (kind = dp_t) ::          beta(1,0:nr_fine)
-    real (kind = dp_t) ::      beta_new(1,0:nr_fine)
-    real (kind = dp_t) ::       beta_nh(1,0:nr_fine)
+!    real(kind=dp_t) :: divbetaw,betahalf
+!    real(kind=dp_t) :: div_coeff_new(1,0:nr_fine-1)
+!    real(kind=dp_t) ::     grav_cell(1,0:nr_fine-1)
+!    real(kind=dp_t) ::          beta(1,0:nr_fine)
+!    real(kind=dp_t) ::      beta_new(1,0:nr_fine)
+!    real(kind=dp_t) ::       beta_nh(1,0:nr_fine)
+!    real(kind=dp_t) :: gamma1bar_old(1,0:nr_fine-1)
     
-    dtdr = dt / dr(1)
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! UPDATE P0
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -310,12 +301,11 @@ contains
        
     end do
     
-    gamma1bar_old = gamma1bar
-    
 !   Define beta^n+1 at cell edges using the new gravity above
 !   call make_grav_cell(grav_cell,rho0_new)
 !   call make_div_coeff(div_coeff_new,rho0_new,p0_new,gamma1bar,grav_cell)
 !   NOTE: Make sure ghost cells are filled for div_coeff_new before calling this
+!   gamma1bar_old = gamma1bar
 !   call cell_to_edge(1,div_coeff_new,beta_new)
 !   beta_nh = HALF*(beta + beta_new)
 !   Update p0 -- corrector
