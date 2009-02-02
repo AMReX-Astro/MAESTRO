@@ -103,6 +103,13 @@ not as perturbational quantities.
 plane-parallel and $\rho_0 = \rho_0 - {\rm{\bf Avg}}(\rho_0 - \rho)$ in spherical.  
 This eliminates the need for $\nabla\cdot\etarho$.
 
+\item In {\bf Step 4} and {\bf Step 8}, move {\bf Correct Base} to immediately
+before {\bf Advect Base Pressure}.
+
+\item Should we use a predictor-corrector for updating the full-state density?
+In particular, after {\bf Correct Base}, do a full-state density advance and
+{\bf Correct Base} again?
+
 \item After {\bf React State}, setting $(\rho h)_0 = {\rm{\bf Avg}}(\rho h)$ in 
 plane-parallel and $(\rho h)_0 = (\rho h)_0 - {\rm{\bf Avg}}[(\rho h)_0 - (\rho h)]$ 
 in spherical by making {\tt full\_rhoh0\_evolution = FALSE} by default.  This means
@@ -114,6 +121,8 @@ This also means we don't have to deal with $\eta_{\rho h}$ or a {\bf Diffuse Bas
 \item Eliminating {\bf Advect Base Pressure} entirely, and instead enforcing HSE 
 directly after {\bf Correct Base}.  {\bf Correct Base} should occur directly after 
 creating $\etarho$, there is no need to delay the call as is currently being done.
+
+
 
 \end{itemize}
 
