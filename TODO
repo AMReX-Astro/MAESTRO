@@ -13,16 +13,5 @@
 -- should we be computing beta_0 differently for spherical?  In 
    particular, should we do linear reconstruction on g?
 
--- If full_rhoh0_evolution=T, we need a correct_base and diffuse_base
-   for enthalpy so the base state enthalpy agrees with the average of 
-   the full state enthalpy.
-
 -- the small scale problem should read in its initial model in our
    standard format
-
--- I'd like to propose eliminating div_etarho from the code completely 
-   (for plane-parallel and spherical).  Now that we have split up the 
-   density and enthalpy advance, there is no need to store it in the 
-   checkpoint file.  And if you instead set rho0 = Avg(rho) in place of 
-   correct_base, we accomplish exactly the same thing.  This will simplify
-   both code and paper IV tremendously.
