@@ -440,7 +440,7 @@ we use
 % Time Advancement Algorithm
 %-----------------------------------------------------------------------------
 
-\section{Time Advancement Algorithm}
+\section{Time Advancement Algorithm}\label{Sec:Time Advancement Algorithm}
 
 We now describe the full time advancement algorithm, making frequent
 use of the shorthand developed above.  Here, we assume that the
@@ -1243,7 +1243,8 @@ $N_{\rm iters}^{S},$ in this first step of the initialization procedure.
 The initial perturbational pressure also needs to be determined for
 use in steps 2, 7 and 11. 
 This is done through a second iterative procedure which follows the
-time advancement algorithm as described in steps 1-11 in \S~ref{Sec:Alg}.  
+time advancement algorithm as described in steps 1-11 in 
+\S~\ref{Sec:Time Advancement Algorithm}.  
 The user specifies the number of iterations, 
 $N_{\rm iters}^{\pi},$ in this second step of the initialization procedure.
 The details for both iterations are given below.\\
@@ -1253,10 +1254,11 @@ The details for both iterations are given below.\\
 %--------------------------------------------------------------------------
 \noindent {\bf Step 0.} {\em Initialization}
 
-Start with initial data $X_k^{\initp}, \rho^{\initp},$ $T^{\initp},$ an 
-initial base state, and an initial guess for the velocity, $\Ub^{\initp}.$
-Use the equation of state to determine $(\rho h)^{\initp}$.  Set
-$w_0^0 = 0$ as an initial approximation.  Compute $\beta_0^{\initp}$ as a function of 
+First, we need to construct approximations to $S^0, w_0^{-\myhalf}, \Delta t^0$, 
+and $\Ub^0$.  Start with initial data $X_k^{\initp}, \rho^{\initp},$ $T^{\initp},$ an 
+initial base state, and an initial guess for the velocity, $\Ub^{\initp}$.
+Set $w_0^0 = 0$ as an initial approximation.  Use the equation of state to 
+determine $(\rho h)^{\initp}$.  Compute $\beta_0^{\initp}$ as a function of 
 the initial data.  Then, project $\Ub^{\initp}$ using $\beta_0^{\initp}$ and 
 $S = \rho\Hext$, giving $\Ub^{0,0}$.  The next part of the initialization process 
 proceeds as follows.
@@ -1292,10 +1294,9 @@ $\dt^0 = \Delta t^{N_{\rm iters}^S},$ and $\Ub^0 = \Ub^{0,N_{\rm iters}^S}.$
 
 \end{enumerate}
 
-Next, we need to construct an approximation to the time-centered perturbational pressure,
-$\pi,$  and an approximation to the divergence constraint at the end of the
-first time step.  As initial approximations, set $\etarho^{-\myhalf}=0$, $\psi^{-\myhalf}=0$,
-$S^{1,0}=S^0$, and $\pi^{-\myhalf}=0.$
+Next, we need to construct approximations to $\etarho^{-\myhalf}, \psi^{-\myhalf}, S^1$,
+and $\pi^{-\myhalf}$.  As initial approximations, set 
+$\etarho^{-\myhalf}=0, \psi^{-\myhalf}=0, S^{1,0}=S^0$, and $\pi^{-\myhalf}=0.$
 \begin{enumerate}
   \renewcommand{\theenumi}{{\bf \alph{enumi}}}
   \renewcommand{\labelenumii}{\roman{enumii}.}
