@@ -1256,9 +1256,9 @@ The details for both iterations are given below.\\
 Start with initial data $X_k^{\initp}, \rho^{\initp},$ $T^{\initp},$ an 
 initial base state, and an initial guess for the velocity, $\Ub^{\initp}.$
 Use the equation of state to determine $(\rho h)^{\initp}$.  Set
-$w_0^1 = 0$ as an initial approximation.  Compute $\beta_0^{\initp}$ as a function of 
+$w_0^0 = 0$ as an initial approximation.  Compute $\beta_0^{\initp}$ as a function of 
 the initial data.  Then, project $\Ub^{\initp}$ using $\beta_0^{\initp}$ and 
-$S = \rho\Hext$, giving $\Ub^{0,1}$.  The next part of the initialization process 
+$S = \rho\Hext$, giving $\Ub^{0,0}$.  The next part of the initialization process 
 proceeds as follows.
 
 \begin{enumerate}
@@ -1268,7 +1268,7 @@ proceeds as follows.
 \item {\bf Do} {$\nu = 1,...,N_{\rm iters}^{S}$.}
   \begin{enumerate}
 
-  \item Estimate $\Delta t^\nu$ using $\Ub^{0,\nu}$ and $w_0^\nu.$
+  \item Estimate $\Delta t^\nu$ using $\Ub^{0,\nu-1}$ and $w_0^{\nu-1}.$
 
   \item {\bf React State}$[ \rho^{\initp},(\rho h)^{\initp}, X_k^{\initp}, T^{\initp}, (\rho^{\initp} \Hext) ] \rightarrow [\rho^{\outp}, (\rho h)^{\outp}, X_k^{\outp}, T^{\outp}, (\rho \omegadot_k)^{0,\nu} ].$
 
@@ -1277,36 +1277,35 @@ proceeds as follows.
 
   \item Compute $\overline{S^{0,\nu}} = {\mathrm{\bf Avg}} (S^{0,\nu}).$
 
-  \item Compute $w_0^{\nu+1}$ as in step 1c using $\overline{S^{0,\nu}}$ and $\psi^{\nmh} = 0$.
+  \item Compute $w_0^{\nu}$ as in step 1c using $\overline{S^{0,\nu}}$ and $\psi=0$.
         
-
-  \item Project $\Ub^{0,\nu}$ using $\beta_0^{\initp}$ and 
+  \item Project $\Ub^{0,\nu-1}$ using $\beta_0^{\initp}$ and 
         $(S^{0,\nu} - \overline{S^{0,\nu}})$ as the source term.  
-        This yields $\Ub^{0,\nu+1}.$
+        This yields $\Ub^{0,\nu}.$
 
   \end{enumerate}
 
   {\bf End do.}
 
-  Define $S^0 = S^{0,N_{\rm iters}^S}$, $w_0^{-\myhalf} = w_0^{N_{\rm iters}^S+1}$, 
-$\dt^0 = \Delta t^{N_{\rm iters}^S},$ and $\Ub^0 = \Ub^{0,N_{\rm iters}^S+1}.$
+  Define $S^0 = S^{0,N_{\rm iters}^S}$, $w_0^{-\myhalf} = w_0^{N_{\rm iters}^S}$, 
+$\dt^0 = \Delta t^{N_{\rm iters}^S},$ and $\Ub^0 = \Ub^{0,N_{\rm iters}^S}.$
 
 \end{enumerate}
 
 Next, we need to construct an approximation to the time-centered perturbational pressure,
 $\pi,$  and an approximation to the divergence constraint at the end of the
-first time step.  As initial approximations, set $S^{1,0} = S^0$,
-$\etarho^{-\myhalf} = 0$, $\psi^{-\myhalf} = 0$, and $\pi^{-\myhalf} = 0.$
+first time step.  As initial approximations, set $\etarho^{-\myhalf}=0$, $\psi^{-\myhalf}=0$,
+$S^{1,0}=S^0$, and $\pi^{-\myhalf}=0.$
 \begin{enumerate}
   \renewcommand{\theenumi}{{\bf \alph{enumi}}}
   \renewcommand{\labelenumii}{\roman{enumii}.}
   \addtocounter{enumi}{1}
   
-\item {\bf Do} {$\nu = 0,...,N_{\rm iters}^{\pi}-1$.}
+\item {\bf Do} {$\nu = 1,...,N_{\rm iters}^{\pi}$.}
   
   \begin{enumerate}
   \item Perform steps 1--11 as described above, using 
-    $S^{\myhalf,\star} = (S^0 + S^{1,\nu})/2$ in step 1 as described.
+    $S^{\myhalf,\star} = (S^0 + S^{1,\nu-1})/2$ in step 1 as described.
     The only other difference in the time advancement is that in step 11
     we define ${\bf V} = (\Ubt^{1,\star} - \Ubt^0)$ and solve
     \begin{equation}  L_\beta^\rho \phi =
@@ -1318,7 +1317,7 @@ $\etarho^{-\myhalf} = 0$, $\psi^{-\myhalf} = 0$, and $\pi^{-\myhalf} = 0.$
       value for $\pi^{\myhalf} = \pi^{-\myhalf} + (1 / \dt) \; \phi.$  
       These steps also yield new scalar data at time $\dt,$ which
       we discard,  and new values for $\etarho^{\myhalf}$ (step 8), $\psi^{\myhalf}$ (step 8), 
-      $S^{1,\nu+1}$ (step 10), and $\pi^{\myhalf}$ (step 11), which we keep.
+      $S^{1,\nu}$ (step 10), and $\pi^{\myhalf}$ (step 11), which we keep.
     \item Set $\pi^{-\myhalf} = \pi^{\myhalf}$, $\etarho^{-\myhalf} = \etarho^{\myhalf}$,
       and $\psi^{-\myhalf} = \psi^{\myhalf}$. 
     \end{enumerate}
