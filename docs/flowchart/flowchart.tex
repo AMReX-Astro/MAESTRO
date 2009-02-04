@@ -99,18 +99,9 @@ not as perturbational quantities.
 
 \begin{itemize}
 
-\item Should we eeplace {\bf Correct Base} with $\rho_0 = {\rm{\bf Avg}}(\rho)$ in 
+\item Should we replace {\bf Correct Base} with $\rho_0 = {\rm{\bf Avg}}(\rho)$ in 
 plane-parallel and $\rho_0 = \rho_0 - {\rm{\bf Avg}}(\rho_0 - \rho)$ in spherical?
 This eliminates the need for $\nabla\cdot\etarho$.
-
-\item In {\bf Step 4} and {\bf Step 8}, should we move {\bf Correct Base} so it 
-occurs immediately before {\bf Advect Base Pressure}?  Since the full
-enthalpy advance ``feels'' the effects of the time-centered $\etarho$, we should
-rely on a $\rho_0^{n+1}$ that also feels the effects.
-
-\item Should we use a predictor-corrector for updating the full-state density?
-Specifically, after calling {\bf Correct Base}, should we do a full-state density 
-advance and {\bf Correct Base} using the more accurate estimate of $\rho_0^{n+1}$?
 
 \item After {\bf React State}, should we set $(\rho h)_0 = {\rm{\bf Avg}}(\rho h)$ in 
 plane-parallel and $(\rho h)_0 = (\rho h)_0 - {\rm{\bf Avg}}[(\rho h)_0 - (\rho h)]$ 
@@ -125,7 +116,9 @@ directly.  This also means we don't have to deal with $\eta_{\rho h}$ or a
 enforce HSE after {\bf Correct Base}?  {\bf Advect Base Pressure} was just a fancy
 way of enforcing HSE anyway, so why not just compute the new pressure directly?
 
-
+\item Should we use a predictor-corrector for updating the full-state density?
+Specifically, after calling {\bf Correct Base}, should we do a full-state density 
+advance and {\bf Correct Base} using the more accurate estimate of $\rho_0^{n+1}$?
 
 \end{itemize}
 
@@ -674,6 +667,8 @@ $(\nabla\cdot\etarho\er)^{\nph,\star}$:
 
 \end{description}
 
+\item {\bf Correct Base}$[\rho_0^{(2a),\star}, (\nabla\cdot\etarho\er)^{\nph,*}] \rightarrow [\rho_0^{n+1,\star}]$.
+
 \item {\bf Advect Base Pressure}$[p_0^{n}, w_0^{\nph,\star}, \etarho^{n+\myhalf,\star}]$ 
 $\rightarrow [p_0^{n+1,\star}, \psi^{\nph,\star}]$.
 
@@ -762,8 +757,6 @@ $\rho^{(2),\star} < {\tt base\_cutoff\_density}$, then we recompute enthalpy usi
 \begin{equation}
 (\rho h)^{(1a),\star} = \rho^{(2),\star}h\left(\rho^{(2),\star},p_0^{n+1,\star},X_k^{(2),\star}\right).
 \end{equation}
-
-\item {\bf Correct Base}$[\rho_0^{(2a),\star}, (\nabla\cdot\etarho\er)^{\nph,*}] \rightarrow [\rho_0^{n+1,\star}]$.
 
 
 %--------------------------------------------------------------------------
@@ -1004,6 +997,8 @@ $(\nabla\cdot\etarho\er)^{\nph}$:
 
 \end{description}
 
+\item {\bf Correct Base}$[\rho_0^{(2a)}, (\nabla\cdot\etarho\er)^{\nph}] \rightarrow [\rho_0^{n+1}]$
+
 \item {\bf Advect Base Pressure}$[p_0^{n}, w_0^{\nph}, \etarho^{n+\myhalf}]$ 
 $\rightarrow [p_0^{n+1}, \psi^{n+\myhalf}]$.
 
@@ -1067,8 +1062,6 @@ $\rho^{(2)} < {\tt base\_cutoff\_density}$, then we recompute enthalpy using
 \begin{equation}
 (\rho h)^{(1a)} = \rho^{(2)}h\left(\rho^{(2)},p_0^{n+\myhalf},X_k^{(2)}\right).
 \end{equation}
-
-\item {\bf Correct Base}$[\rho_0^{(2a)}, (\nabla\cdot\etarho\er)^{\nph}] \rightarrow [\rho_0^{n+1}]$
 
 %--------------------------------------------------------------------------
 % STEP 8.1

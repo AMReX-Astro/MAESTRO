@@ -510,6 +510,11 @@ contains
        endif
     end if
 
+    ! Correct the base state using the time-centered etarho and psi
+    if (use_etarho .and. evolve_base_state) then
+       call correct_base(rho0_new,div_etarho,dt)
+    end if
+
     if (evolve_base_state) then
        call advect_base_pres(w0,Sbar,p0_old,p0_new,gamma1bar,psi,etarho_cc,dx(:,dm),dt)
     else
@@ -540,11 +545,6 @@ contains
        call destroy(scal_force(n))
        call destroy(thermal(n))
     end do
-
-    ! Correct the base state using the time-centered etarho and psi
-    if (use_etarho .and. evolve_base_state) then
-       call correct_base(rho0_new,div_etarho,dt)
-    end if
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 4a (Option I) -- Add thermal conduction (only enthalpy terms)
@@ -876,6 +876,11 @@ contains
        call destroy(etarhoflux(n))
     end do
 
+    ! Correct the base state using the time-centered etarho and psi
+    if (use_etarho .and. evolve_base_state) then
+       call correct_base(rho0_new,div_etarho,dt)
+    end if
+
     if (evolve_base_state) then
        call advect_base_pres(w0,Sbar,p0_old,p0_new,gamma1bar,psi,etarho_cc,dx(:,dm),dt)
     else
@@ -905,11 +910,6 @@ contains
        call destroy(scal_force(n))
        call destroy(thermal(n))
     end do
-
-    ! Correct the base state using the time-centered etarho and psi
-    if (use_etarho .and. evolve_base_state) then
-       call correct_base(rho0_new,div_etarho,dt)
-    end if
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !! STEP 8a (Option I) -- Add thermal conduction (only enthalpy terms)
