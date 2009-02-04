@@ -89,6 +89,11 @@ not as perturbational quantities.
 
 \item We update temperature at the end of {\bf React State}.
 
+\item In {\bf Step 4} and {\bf Step 8}, we moved {\bf Correct Base} so it
+occurs immediately before {\bf Advect Base Pressure}.  Since the full
+enthalpy advance ``feels'' the effects of the time-centered $\etarho$, we should
+rely on a $\rho_0^{n+1}$ that also feels the effects.
+
 \end{itemize}
 
 %-----------------------------------------------------------------------------
