@@ -13,7 +13,7 @@ contains
                               rho0_new,rhoh0_new,p0_old,p0_new,tempbar,gamma1bar,w0, &
                               rho_omegadot2,rho_Hnuc2,div_coeff_old,div_coeff_new, &
                               grav_cell_old,dx,time,dt,dtold,the_bc_tower, &
-                              dSdt,Source_old,Source_new,etarho_ec,etarho_cc,div_etarho, &
+                              dSdt,Source_old,Source_new,etarho_ec,etarho_cc, &
                               psi,sponge,hgrhs)
 
     use bl_prof_module
@@ -87,7 +87,6 @@ contains
     type(multifab),  intent(inout) :: Source_new(:)
     real(dp_t)    ,  intent(inout) ::  etarho_ec(:,0:)
     real(dp_t)    ,  intent(inout) ::  etarho_cc(:,0:)
-    real(dp_t)    ,  intent(inout) :: div_etarho(:,0:)
     real(dp_t)    ,  intent(inout) ::        psi(:,0:)
     type(multifab),  intent(in   ) :: sponge(:)
     type(multifab),  intent(inout) ::  hgrhs(:)
@@ -136,6 +135,7 @@ contains
     real(dp_t) ::               w0_old(nlevs_radial,0:nr_fine)
     real(dp_t) ::       div_coeff_edge(nlevs_radial,0:nr_fine)
     real(dp_t) ::  rho0_predicted_edge(nlevs_radial,0:nr_fine)
+    real(dp_t) ::           div_etarho(nlevs_radial,0:nr_fine-1)
     real(dp_t) ::          div_etarhoh(nlevs_radial,0:nr_fine-1)
 
     integer    :: r,n,comp,proj_type

@@ -151,7 +151,7 @@ where we have made use of the fact that $\overline{\rhop^n} = 0$ by construction
 %-----------------------------------------------------------------------------
 \section{$\eta$ Flow Chart}
 \begin{enumerate}
-\item Enter {\tt advance\_timestep} with $[\etarhoec, \etarhocc, \divetarho]^{n-\myhalf}$.
+\item Enter {\tt advance\_timestep} with $[\etarhoec, \etarhocc]^{n-\myhalf}$.
 \item Call {\tt make\_w0}.  The spherical version uses uses $\etarhoec$ and $\etarhocc$.
 \item Call {\tt density\_advance}.  The plane-parallel version computes $\etarhoflux$.
 \item Call {\tt make\_etarho} to compute $[\etarhoec, \etarhocc, \divetarho]^{n+\myhalf,*}$

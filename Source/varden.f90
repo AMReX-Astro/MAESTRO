@@ -98,14 +98,12 @@ subroutine varden()
   real(dp_t), pointer :: w0(:,:)
   real(dp_t), pointer :: etarho_ec(:,:)
   real(dp_t), pointer :: etarho_cc(:,:)
-  real(dp_t), pointer :: div_etarho(:,:)
   real(dp_t), pointer :: psi(:,:)
   real(dp_t), pointer :: tempbar(:,:)
   real(dp_t), pointer :: grav_cell(:,:)
 
   real(dp_t), allocatable :: psi_temp(:,:)
   real(dp_t), allocatable :: etarho_cc_temp(:,:)
-  real(dp_t), allocatable :: div_etarho_temp(:,:)
   real(dp_t), allocatable :: etarho_ec_temp(:,:)
   real(dp_t), allocatable :: w0_temp(:,:)
 
@@ -133,8 +131,7 @@ subroutine varden()
                                   dSdt,Source_old,rho_omegadot2,rho_Hnuc2,the_bc_tower, &
                                   div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold, &
                                   s0_init,rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_init, &
-                                  p0_old,p0_new,w0,etarho_ec,etarho_cc,div_etarho,psi, &
-                                  tempbar,grav_cell)
+                                  p0_old,p0_new,w0,etarho_ec,etarho_cc,psi,tempbar,grav_cell)
      
 
   else if (test_set /= '') then
@@ -144,8 +141,7 @@ subroutine varden()
                                       div_coeff_old,div_coeff_new,gamma1bar, &
                                       gamma1bar_hold,s0_init,rho0_old,rhoh0_old, &
                                       rho0_new,rhoh0_new,p0_init,p0_old,p0_new,w0, &
-                                      etarho_ec,etarho_cc,div_etarho,psi,tempbar, &
-                                      grav_cell)
+                                      etarho_ec,etarho_cc,psi,tempbar,grav_cell)
 
   else
 
@@ -154,8 +150,7 @@ subroutine varden()
                                          div_coeff_old,div_coeff_new,gamma1bar, &
                                          gamma1bar_hold,s0_init,rho0_old,rhoh0_old, &
                                          rho0_new,rhoh0_new,p0_init,p0_old,p0_new,w0, &
-                                         etarho_ec,etarho_cc,div_etarho,psi,tempbar, &
-                                         grav_cell)
+                                         etarho_ec,etarho_cc,psi,tempbar,grav_cell)
 
   end if
 
@@ -210,7 +205,6 @@ subroutine varden()
 
   allocate(       psi_temp(max_levs,0:nr_fine-1))
   allocate( etarho_cc_temp(max_levs,0:nr_fine-1))
-  allocate(div_etarho_temp(max_levs,0:nr_fine-1))
   allocate( etarho_ec_temp(max_levs,0:nr_fine))
   allocate(        w0_temp(max_levs,0:nr_fine))
 
@@ -472,10 +466,10 @@ subroutine varden()
 
            call advance_timestep(init_mode,mla,uold,sold,unew,snew,gpres,pres,normal, &
                                  rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_old,p0_new, &
-                                 tempbar,gamma1bar,w0,rho_omegadot2,rho_Hnuc2,div_coeff_old, &
-                                 div_coeff_new,grav_cell,dx,time,dt,dtold,the_bc_tower, &
-                                 dSdt,Source_old,Source_new,etarho_ec,etarho_cc,div_etarho, &
-                                 psi,sponge,hgrhs)
+                                 tempbar,gamma1bar,w0,rho_omegadot2,rho_Hnuc2, &
+                                 div_coeff_old,div_coeff_new,grav_cell,dx,time,dt,dtold, &
+                                 the_bc_tower,dSdt,Source_old,Source_new,etarho_ec, &
+                                 etarho_cc,psi,sponge,hgrhs)
 
            gamma1bar = gamma1bar_hold
 
@@ -508,7 +502,7 @@ subroutine varden()
         write(unit=base_etarho_name,fmt='("eta_",i5.5)') istep
         call write_base_state(base_state_name,base_w0_name,base_etarho_name,sd_name, &
                               rho0_old,rhoh0_old,p0_old,gamma1bar,w0,etarho_ec,etarho_cc, &
-                              div_etarho,div_coeff_old,psi,prob_lo(dm))
+                              div_coeff_old,psi,prob_lo(dm))
         do n = 1,nlevs
            call destroy(chkdata(n))
         end do
@@ -614,7 +608,6 @@ subroutine varden()
               ! copy the coarsest level of the real arrays into the temp arrays
               psi_temp(1,:)        = psi(1,:)
               etarho_cc_temp(1,:)  = etarho_cc(1,:)
-              div_etarho_temp(1,:) = div_etarho(1,:)
               etarho_ec_temp(1,:)  = etarho_ec(1,:)
               w0_temp(1,:)         = w0(1,:)
 
@@ -623,7 +616,6 @@ subroutine varden()
                  do r=0,nr(n)-1
                     psi_temp(n,r)        = psi_temp(n-1,r/2)
                     etarho_cc_temp(n,r)  = etarho_cc_temp(n-1,r/2)
-                    div_etarho_temp(n,r) = div_etarho_temp(n-1,r/2)
                  end do
               end do
 
@@ -647,7 +639,6 @@ subroutine varden()
                     do r=r_start_coord(n,i),r_end_coord(n,i)
                        psi_temp(n,r)        = psi(n,r)
                        etarho_cc_temp(n,r)  = etarho_cc(n,r)
-                       div_etarho_temp(n,r) = div_etarho(n,r)
                     end do
                  end do
               end do
@@ -663,7 +654,6 @@ subroutine varden()
               ! copy temp array back into the real thing
               psi        = psi_temp
               etarho_cc  = etarho_cc_temp
-              div_etarho = div_etarho_temp
               etarho_ec  = etarho_ec_temp
               w0         = w0_temp
 
@@ -846,7 +836,7 @@ subroutine varden()
                               rhoh0_old,rho0_new,rhoh0_new,p0_old,p0_new,tempbar,gamma1bar, &
                               w0,rho_omegadot2,rho_Hnuc2,div_coeff_old,div_coeff_new, &
                               grav_cell,dx,time,dt,dtold,the_bc_tower,dSdt,Source_old, &
-                              Source_new,etarho_ec,etarho_cc,div_etarho,psi,sponge,hgrhs)
+                              Source_new,etarho_ec,etarho_cc,psi,sponge,hgrhs)
 
         runtime2 = parallel_wtime() - runtime1
         call parallel_reduce(runtime1, runtime2, MPI_MAX, proc = parallel_IOProcessorNode())
@@ -959,10 +949,9 @@ subroutine varden()
               write(unit=base_state_name,fmt='("model_",i5.5)') istep
               write(unit=base_w0_name,fmt='("w0_",i5.5)') istep
               write(unit=base_etarho_name,fmt='("eta_",i5.5)') istep
-              call write_base_state(base_state_name, base_w0_name, base_etarho_name, &
-                                    sd_name, rho0_new, rhoh0_new, p0_new, gamma1bar(:,:), &
-                                    w0, etarho_ec, etarho_cc, div_etarho, &
-                                    div_coeff_old, psi, prob_lo(dm))
+              call write_base_state(base_state_name,base_w0_name,base_etarho_name,sd_name, &
+                                    rho0_new,rhoh0_new,p0_new,gamma1bar(:,:),w0,etarho_ec, &
+                                    etarho_cc,div_coeff_old,psi,prob_lo(dm))
               do n = 1,nlevs
                  call destroy(chkdata(n))
               end do
@@ -1024,7 +1013,7 @@ subroutine varden()
         write(unit=base_etarho_name,fmt='("eta_",i5.5)') istep
         call write_base_state(base_state_name,base_w0_name,base_etarho_name,sd_name, &
                               rho0_new,rhoh0_new,p0_new,gamma1bar,w0,etarho_ec,etarho_cc, &
-                              div_etarho,div_coeff_old,psi,prob_lo(dm))
+                              div_coeff_old,psi,prob_lo(dm))
      end if
 
      if ( plot_int > 0 .and. last_plt_written .ne. istep ) then
@@ -1071,7 +1060,7 @@ subroutine varden()
   deallocate(uold,sold,pres,gpres,dSdt,Source_old,rho_omegadot2,rho_Hnuc2,dx)
   deallocate(div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold,s0_init,rho0_old)
   deallocate(rhoh0_old,rho0_new,rhoh0_new,p0_init,p0_old,p0_new,w0,etarho_ec,etarho_cc)
-  deallocate(div_etarho,psi,tempbar,grav_cell)
+  deallocate(psi,tempbar,grav_cell)
 
   if (verbose .ge. 1) then
      if ( parallel_IOProcessor() ) then

@@ -25,7 +25,7 @@ contains
                                      dSdt,Source_old,rho_omegadot2,rho_Hnuc2,the_bc_tower, &
                                      div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold, &
                                      s0_init,rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_init, &
-                                     p0_old,p0_new,w0,etarho_ec,etarho_cc,div_etarho,psi, &
+                                     p0_old,p0_new,w0,etarho_ec,etarho_cc,psi, &
                                      tempbar,grav_cell)
 
     use restart_module
@@ -46,8 +46,7 @@ contains
     real(dp_t)    , pointer       :: gamma1bar_hold(:,:),s0_init(:,:,:),rho0_old(:,:)
     real(dp_t)    , pointer       :: rhoh0_old(:,:),rho0_new(:,:),rhoh0_new(:,:),p0_init(:,:)
     real(dp_t)    , pointer       :: p0_old(:,:),p0_new(:,:),w0(:,:),etarho_ec(:,:)
-    real(dp_t)    , pointer       :: etarho_cc(:,:),div_etarho(:,:),psi(:,:),tempbar(:,:)
-    real(dp_t)    , pointer       :: grav_cell(:,:)
+    real(dp_t)    , pointer       :: etarho_cc(:,:),psi(:,:),tempbar(:,:),grav_cell(:,:)
 
     ! local
     type(ml_boxarray) :: mba
@@ -181,7 +180,7 @@ contains
     ! now that we have nr_fine we can allocate 1d arrays
     call initialize_1d_arrays(nlevs,div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold, &
                               s0_init,rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_init, &
-                              p0_old,p0_new,w0,etarho_ec,etarho_cc,div_etarho,psi,tempbar, &
+                              p0_old,p0_new,w0,etarho_ec,etarho_cc,psi,tempbar, &
                               grav_cell)
 
     ! now that we have nr we can read in the base state
@@ -192,8 +191,7 @@ contains
     
     call read_base_state(base_state_name, base_w0_name, base_etarho_name, sd_name, &
                          rho0_old, rhoh0_old, p0_old, gamma1bar, w0, &
-                         etarho_ec, etarho_cc, div_etarho, &
-                         div_coeff_old, psi)
+                         etarho_ec, etarho_cc, div_coeff_old, psi)
 
     ! fill ghost cells
     ! this need to be done after read_base_state since in some problems, the inflow
@@ -245,11 +243,11 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   subroutine initialize_with_fixed_grids(mla,time,dt,pmask,dx,uold,sold,gpres,pres, &
-                                         dSdt,Source_old,rho_omegadot2,rho_Hnuc2,the_bc_tower, &
-                                         div_coeff_old,div_coeff_new,gamma1bar, &
-                                         gamma1bar_hold,s0_init,rho0_old,rhoh0_old, &
-                                         rho0_new,rhoh0_new,p0_init, &
-                                         p0_old,p0_new,w0,etarho_ec,etarho_cc,div_etarho, &
+                                         dSdt,Source_old,rho_omegadot2,rho_Hnuc2, &
+                                         the_bc_tower,div_coeff_old,div_coeff_new, &
+                                         gamma1bar,gamma1bar_hold,s0_init,rho0_old, &
+                                         rhoh0_old,rho0_new,rhoh0_new,p0_init, &
+                                         p0_old,p0_new,w0,etarho_ec,etarho_cc, &
                                          psi,tempbar,grav_cell)
 
     use box_util_module
@@ -269,8 +267,7 @@ contains
     real(dp_t)    , pointer       :: gamma1bar_hold(:,:),s0_init(:,:,:),rho0_old(:,:)
     real(dp_t)    , pointer       :: rhoh0_old(:,:),rho0_new(:,:),rhoh0_new(:,:),p0_init(:,:)
     real(dp_t)    , pointer       :: p0_old(:,:),p0_new(:,:),w0(:,:),etarho_ec(:,:)
-    real(dp_t)    , pointer       :: etarho_cc(:,:),div_etarho(:,:),psi(:,:),tempbar(:,:)
-    real(dp_t)    , pointer       :: grav_cell(:,:)
+    real(dp_t)    , pointer       :: etarho_cc(:,:),psi(:,:),tempbar(:,:),grav_cell(:,:)
 
     ! local
     type(ml_boxarray) :: mba
@@ -363,7 +360,7 @@ contains
     ! now that we have nr_fine we can allocate 1d arrays
     call initialize_1d_arrays(nlevs,div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold, &
                               s0_init,rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_init, &
-                              p0_old,p0_new,w0,etarho_ec,etarho_cc,div_etarho,psi,tempbar, &
+                              p0_old,p0_new,w0,etarho_ec,etarho_cc,psi,tempbar, &
                               grav_cell)
 
     ! now that we have dr and nr we can fill initial state
@@ -408,12 +405,11 @@ contains
 
   subroutine initialize_with_adaptive_grids(mla,time,dt,pmask,dx,uold,sold,gpres,pres, &
                                             dSdt,Source_old,rho_omegadot2,rho_Hnuc2, &
-                                            the_bc_tower, &
-                                            div_coeff_old,div_coeff_new,gamma1bar, &
-                                            gamma1bar_hold,s0_init,rho0_old,rhoh0_old, &
-                                            rho0_new,rhoh0_new,p0_init, &
+                                            the_bc_tower,div_coeff_old,div_coeff_new, &
+                                            gamma1bar,gamma1bar_hold,s0_init,rho0_old, &
+                                            rhoh0_old,rho0_new,rhoh0_new,p0_init, &
                                             p0_old,p0_new,w0,etarho_ec,etarho_cc, &
-                                            div_etarho,psi,tempbar,grav_cell)
+                                            psi,tempbar,grav_cell)
 
     use probin_module, only: n_cellx, n_celly, n_cellz, regrid_int, max_grid_size, &
          ref_ratio, max_levs
@@ -434,8 +430,7 @@ contains
     real(dp_t)    , pointer       :: gamma1bar_hold(:,:),s0_init(:,:,:),rho0_old(:,:)
     real(dp_t)    , pointer       :: rhoh0_old(:,:),rho0_new(:,:),rhoh0_new(:,:),p0_init(:,:)
     real(dp_t)    , pointer       :: p0_old(:,:),p0_new(:,:),w0(:,:),etarho_ec(:,:)
-    real(dp_t)    , pointer       :: etarho_cc(:,:),div_etarho(:,:),psi(:,:),tempbar(:,:)
-    real(dp_t)    , pointer       :: grav_cell(:,:)
+    real(dp_t)    , pointer       :: etarho_cc(:,:),psi(:,:),tempbar(:,:),grav_cell(:,:)
 
     ! local
     type(ml_boxarray) :: mba
@@ -518,7 +513,7 @@ contains
     call initialize_1d_arrays(max_levs,div_coeff_old,div_coeff_new,gamma1bar, &
                               gamma1bar_hold,s0_init,rho0_old,rhoh0_old,rho0_new, &
                               rhoh0_new,p0_init,p0_old,p0_new,w0,etarho_ec,etarho_cc, &
-                              div_etarho,psi,tempbar,grav_cell)
+                              psi,tempbar,grav_cell)
 
     ! now that we have dr and nr we can fill initial state
     if (spherical .eq. 1) then
@@ -736,14 +731,14 @@ contains
   subroutine initialize_1d_arrays(num_levs,div_coeff_old,div_coeff_new,gamma1bar, &
                                   gamma1bar_hold,s0_init,rho0_old,rhoh0_old,rho0_new, &
                                   rhoh0_new,p0_init,p0_old,p0_new,w0,etarho_ec,etarho_cc, &
-                                  div_etarho,psi,tempbar,grav_cell)
+                                  psi,tempbar,grav_cell)
 
     integer    , intent(in) :: num_levs    
     real(dp_t) , pointer    :: div_coeff_old(:,:),div_coeff_new(:,:),gamma1bar(:,:)
     real(dp_t) , pointer    :: gamma1bar_hold(:,:),s0_init(:,:,:),rho0_old(:,:)
     real(dp_t) , pointer    :: rhoh0_old(:,:),rho0_new(:,:),rhoh0_new(:,:),p0_init(:,:)
     real(dp_t) , pointer    :: p0_old(:,:),p0_new(:,:),w0(:,:),etarho_ec(:,:),etarho_cc(:,:)
-    real(dp_t) , pointer    :: div_etarho(:,:),psi(:,:),tempbar(:,:),grav_cell(:,:)
+    real(dp_t) , pointer    :: psi(:,:),tempbar(:,:),grav_cell(:,:)
     
     if (spherical .eq. 0) then
        allocate(div_coeff_old (num_levs,0:nr_fine-1))
@@ -761,7 +756,6 @@ contains
        allocate(w0            (num_levs,0:nr_fine))
        allocate(etarho_ec     (num_levs,0:nr_fine))
        allocate(etarho_cc     (num_levs,0:nr_fine-1))
-       allocate(div_etarho    (num_levs,0:nr_fine-1))
        allocate(psi           (num_levs,0:nr_fine-1))
        allocate(tempbar       (num_levs,0:nr_fine-1))
        allocate(grav_cell     (num_levs,0:nr_fine-1))
@@ -781,7 +775,6 @@ contains
        allocate(w0            (1,0:nr_fine))
        allocate(etarho_ec     (1,0:nr_fine))
        allocate(etarho_cc     (1,0:nr_fine-1))
-       allocate(div_etarho    (1,0:nr_fine-1))
        allocate(psi           (1,0:nr_fine-1))
        allocate(tempbar       (1,0:nr_fine-1))
        allocate(grav_cell     (1,0:nr_fine-1))
@@ -802,7 +795,6 @@ contains
     w0 = ZERO
     etarho_ec = ZERO
     etarho_cc = ZERO
-    div_etarho = ZERO
     psi = ZERO
     tempbar = ZERO
     grav_cell = ZERO
