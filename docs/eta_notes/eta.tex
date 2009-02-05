@@ -154,20 +154,18 @@ where we have made use of the fact that $\overline{\rhop^n} = 0$ by construction
 \item Enter {\tt advance\_timestep} with $[\etarhoec, \etarhocc]^{n-\myhalf}$.
 \item Call {\tt make\_w0}.  The spherical version uses uses $\etarhoec$ and $\etarhocc$.
 \item Call {\tt density\_advance}.  The plane-parallel version computes $\etarhoflux$.
-\item Call {\tt make\_etarho} to compute $[\etarhoec, \etarhocc, \divetarho]^{n+\myhalf,*}$
+\item Call {\tt make\_etarho} to compute $[\etarhoec, \etarhocc]$
 \item Call {\tt make\_psi}.  The plane-parallel version uses $\etarhocc$.
-\item Call {\tt correct\_base}, which uses $\divetarho$.
 \item Call {\tt make\_w0}.  The spherical version uses uses $\etarhoec$ and $\etarhocc$.
 \item Call {\tt density\_advance}.  The plane-parallel version computes $\etarhoflux$.
-\item Call {\tt make\_etarho} to compute $[\etarhoec, \etarhocc, \divetarho]^{n+\myhalf}$
+\item Call {\tt make\_etarho} to compute $[\etarhoec, \etarhocc]^{n+\myhalf}$
 \item Call {\tt make\_psi}.  The plane-parallel version uses $\etarhocc$.
-\item Call {\tt correct\_base}, which uses $\divetarho$.
 \end{enumerate}
 
 %-----------------------------------------------------------------------------
 % computing
 %-----------------------------------------------------------------------------
-\section{Computing $\etarhoec, \etarhocc$, and $\divetarho$}
+\section{Computing $\etarhoec$ and $\etarhocc$}
 This is done in {\tt make\_eta.f90}.
 
 \subsection{Plane-Parallel}
@@ -182,10 +180,6 @@ $\etarhoec$ is the edge-centered ``average'' value of $\eta_{\rho}^{\rm flux}$,
 $\etarhocc$ is a cell-centered average of $\etarhoec$,
 \begin{equation}
 \eta_{\rho,r}^{\rm cc} = \frac{\eta_{\rho,r+\myhalf}^{\rm ec} + \eta_{\rho,r-\myhalf}^{\rm ec}}{2}.
-\end{equation}
-$\divetarho$ is the cell-centered divergence of $\etarhoec$,
-\begin{equation}
-\left[\divetarho\right]_r = \frac{\eta_{\rho,r+\myhalf}^{\rm ec} - \eta_{\rho,r-\myhalf}^{\rm ec}}{\Delta r}.
 \end{equation}
 
 \subsection{Spherical}\label{Sec:eta Spherical}
@@ -207,11 +201,6 @@ At the upper and lower boundaries, we use
 \eta_{\rho,-\myhalf}^{\rm ec} &=& 0, \\
 \eta_{\rho,{\rm nr}-\myhalf}^{\rm ec} &=& \eta_{\rho,{\rm nr}-1}^{\rm cc}.
 \end{eqnarray}
-$\divetarho$ is constructed from the cell-centered average of
-$\rho'^{n+1} = \rho^{n+1} - \rho_0^{n+1}$ as
-\begin{equation}
-\divetarho = -\overline{\rho'^{n+1}}/\Delta t
-\end{equation}
 
 %-----------------------------------------------------------------------------
 % etarho_ec
@@ -234,14 +223,4 @@ In {\tt make\_psi}, $\psi = \etarhocc g$.
 \subsection{Spherical}
 In {\tt make\_w0}, $\etarhocc$ is used in the construction of the RHS
 for the $\delta w_0$ equation.
-
-%-----------------------------------------------------------------------------
-% div etarho
-%-----------------------------------------------------------------------------
-\section{Using $\divetarho$}
-\subsection{Plane-Parallel}
-In {\tt correct\_base}, $\rho_0^{n+1} = \rho_0^{n+1} - \Delta t \divetarho$.
-
-\subsection{Spherical}
-In {\tt correct\_base}, $\rho_0^{n+1} = \rho_0^{n+1} - \Delta t \divetarho$. \\
 
