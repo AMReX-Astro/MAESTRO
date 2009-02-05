@@ -31,7 +31,7 @@ module make_eta_module
 
   private
 
-  public :: make_etarho_planar, make_etarho_spherical, make_div_etarhoh_spherical
+  public :: make_etarho_planar, make_etarho_spherical, make_sprimebar_spherical
 
 contains
 
@@ -423,7 +423,7 @@ contains
 
   end subroutine construct_eta_cart
 
-  subroutine make_div_etarhoh_spherical(s,rhoh0,dx,div_etarhoh,mla,the_bc_level)
+  subroutine make_sprimebar_spherical(s,comp,s0,dx,sprimebar,mla,the_bc_level)
 
     use bl_constants_module
     use geometry, only: spherical, nr_fine, dm, nlevs
@@ -433,52 +433,52 @@ contains
     use multifab_physbc_module
     use multifab_fill_ghost_module
 
+    integer        , intent(in   ) :: comp
     type(multifab) , intent(in   ) :: s(:)
-    real(kind=dp_t), intent(in   ) :: rhoh0(:,0:)
+    real(kind=dp_t), intent(in   ) :: s0(:,0:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
-    real(kind=dp_t), intent(  out) :: div_etarhoh(:,0:)
+    real(kind=dp_t), intent(  out) :: sprimebar(:,0:)
     type(ml_layout), intent(in   ) :: mla
     type(bc_level) , intent(in   ) :: the_bc_level(:)
 
-    type(multifab) :: rhohprime_cart(mla%nlevel)
+    type(multifab) :: sprime(mla%nlevel)
     
-    real(kind=dp_t), pointer :: rhp(:,:,:,:)
+    real(kind=dp_t), pointer :: spp(:,:,:,:)
     real(kind=dp_t), pointer :: sp(:,:,:,:)
 
-    integer :: n,i,lo(dm),hi(dm),ng_rh,ng_s
+    integer :: n,i,lo(dm),hi(dm),ng_sp,ng_s
 
     if (spherical .eq. 0) then
-       call bl_error("ERROR: make_div_etarhoh_spherical should not be called for plane-parallel")
+       call bl_error("ERROR: make_sprimebar_spherical shouldn't be called in plane-parallel")
     end if
 
     do n=1,nlevs
 
-       call multifab_build(rhohprime_cart(n), s(n)%la, 1, 1)
+       call multifab_build(sprime(n),s(n)%la,1,1)
 
-       ng_rh = rhohprime_cart(n)%ng
+       ng_sp = sprime(n)%ng
        ng_s = s(n)%ng
 
-       do i=1,rhohprime_cart(n)%nboxes
-          if ( multifab_remote(rhohprime_cart(n),i) ) cycle
-          rhp  => dataptr(rhohprime_cart(n), i)
+       do i=1,sprime(n)%nboxes
+          if ( multifab_remote(sprime(n),i) ) cycle
+          spp  => dataptr(sprime(n), i)
           sp => dataptr(s(n), i)
-          lo = lwb(get_box(rhohprime_cart(n),i))
-          hi = upb(get_box(rhohprime_cart(n),i))
-          call construct_rhohprime_cart(sp(:,:,:,rhoh_comp), ng_s, rhp(:,:,:,1), ng_rh, &
-                                        rhoh0(1,:), dx(n,:), lo, hi)
+          lo = lwb(get_box(sprime(n),i))
+          hi = upb(get_box(sprime(n),i))
+          call construct_sprime(sp(:,:,:,comp),ng_s,spp(:,:,:,1),ng_sp,s0(1,:),dx(n,:),lo,hi)
        enddo
 
     enddo
 
-    ! fill eta_cart ghostcells
+    ! fill sprime ghostcells
     if (nlevs .eq. 1) then
 
        ! fill ghost cells for two adjacent grids at the same level
        ! this includes periodic domain boundary ghost cells
-       call multifab_fill_boundary(rhohprime_cart(nlevs))
+       call multifab_fill_boundary(sprime(nlevs))
 
        ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(rhohprime_cart(nlevs),1,foextrap_comp,1,the_bc_level(nlevs))
+       call multifab_physbc(sprime(nlevs),1,foextrap_comp,1,the_bc_level(nlevs))
 
     else
 
@@ -486,56 +486,54 @@ contains
        do n=nlevs,2,-1
 
           ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction(rhohprime_cart(n-1),rhohprime_cart(n),mla%mba%rr(n-1,:))
+          call ml_cc_restriction(sprime(n-1),sprime(n),mla%mba%rr(n-1,:))
 
           ! fill level n ghost cells using interpolation from level n-1 data
           ! note that multifab_fill_boundary and multifab_physbc are called for
           ! both levels n-1 and n
-          call multifab_fill_ghost_cells(rhohprime_cart(n),rhohprime_cart(n-1), &
-                                         ng_rh,mla%mba%rr(n-1,:), &
-                                         the_bc_level(n-1), the_bc_level(n), &
-                                         1,foextrap_comp,1)
+          call multifab_fill_ghost_cells(sprime(n),sprime(n-1),ng_sp,mla%mba%rr(n-1,:), &
+                                         the_bc_level(n-1),the_bc_level(n),1,foextrap_comp,1)
        enddo
 
     end if
 
-    call average(mla,rhohprime_cart,div_etarhoh,dx,1)
-    div_etarhoh = -div_etarhoh
+    call average(mla,sprime,sprimebar,dx,1)
+    sprimebar = -sprimebar
 
     do n=1,nlevs
-       call destroy(rhohprime_cart(n))
+       call destroy(sprime(n))
     enddo
 
-  end subroutine make_div_etarhoh_spherical
+  end subroutine make_sprimebar_spherical
 
-  subroutine construct_rhohprime_cart(rhoh, ng_s, rhohprime_cart, ng_rh, rhoh0, dx, lo, hi)
+  subroutine construct_sprime(s,ng_s,sprime,ng_sp,s0,dx,lo,hi)
 
     use bl_constants_module
     use geometry, only: nr_fine
     use fill_3d_module
 
-    integer        , intent(in   ) :: lo(:),hi(:),ng_s,ng_rh
-    real(kind=dp_t), intent(in   ) ::           rhoh(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :)
-    real(kind=dp_t), intent(inout) :: rhohprime_cart(lo(1)-ng_rh:,lo(2)-ng_rh:,lo(3)-ng_rh:)
-    real(kind=dp_t), intent(in   ) :: rhoh0(0:)
+    integer        , intent(in   ) :: lo(:),hi(:),ng_s,ng_sp
+    real(kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s :,lo(2)-ng_s :,lo(3)-ng_s :)
+    real(kind=dp_t), intent(inout) :: sprime(lo(1)-ng_sp:,lo(2)-ng_sp:,lo(3)-ng_sp:)
+    real(kind=dp_t), intent(in   ) :: s0(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
 
-    real(kind=dp_t) :: rhoh0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1)
+    real(kind=dp_t) :: s0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1)
 
     integer :: i,j,k
 
-    call put_1d_array_on_cart_3d_sphr(.false.,.false.,rhoh0,rhoh0_cart,lo,hi,dx,0,0)
+    call put_1d_array_on_cart_3d_sphr(.false.,.false.,s0,s0_cart,lo,hi,dx,0,0)
 
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
 
-             rhohprime_cart(i,j,k) = rhoh(i,j,k) - rhoh0_cart(i,j,k,1)
+             sprime(i,j,k) = s(i,j,k) - s0_cart(i,j,k,1)
  
           enddo
        enddo
     enddo
 
-  end subroutine construct_rhohprime_cart
+  end subroutine construct_sprime
 
 end module make_eta_module

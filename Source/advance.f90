@@ -136,7 +136,7 @@ contains
     real(dp_t) ::       div_coeff_edge(nlevs_radial,0:nr_fine)
     real(dp_t) ::  rho0_predicted_edge(nlevs_radial,0:nr_fine)
     real(dp_t) ::           div_etarho(nlevs_radial,0:nr_fine-1)
-    real(dp_t) ::          div_etarhoh(nlevs_radial,0:nr_fine-1)
+    real(dp_t) ::         rhohprimebar(nlevs_radial,0:nr_fine-1)
 
     integer    :: r,n,comp,proj_type
     real(dp_t) :: halfdt
@@ -392,11 +392,10 @@ contains
           call average(mla,s1,rhoh0_old,dx,rhoh_comp)
        else
           ! set rhoh0_old = rhoh0_old - Avg(rhoh0_old - rhoh^{(1)})
-          ! currently uses calls to make_div_etarhoh_spherical and
-          ! correct_base - I'm going to clean this up
-          call make_div_etarhoh_spherical(s1,rhoh0_old,dx,div_etarhoh,mla, &
-                                          the_bc_tower%bc_tower_array)
-          call correct_base(rhoh0_old,div_etarhoh,1.d0)
+          ! need to clean this up
+          call make_sprimebar_spherical(s1,rhoh_comp,rhoh0_old,dx,rhohprimebar,mla, &
+                                        the_bc_tower%bc_tower_array)
+          call correct_base(rhoh0_old,rhohprimebar,1.d0)
        end if
     end if
 
