@@ -657,6 +657,8 @@ $(\nabla\cdot\etarho\er)^{\nph,\star}$:
 
 \item {\bf Correct Base}$[\rho_0^{(2a),\star}, (\nabla\cdot\etarho\er)^{\nph,*}] \rightarrow [\rho_0^{n+1,\star}]$.
 
+\item update gravity, $g^{n+1,\star} = g(\rho_0^{n+1,\star})$
+
 \item {\bf Advect Base Pressure}$[p_0^{n}, w_0^{\nph,\star}, \etarho^{n+\myhalf,\star}]$ 
 $\rightarrow [p_0^{n+1,\star}, \psi^{\nph,\star}]$.
 
@@ -986,6 +988,8 @@ $(\nabla\cdot\etarho\er)^{\nph}$:
 \end{description}
 
 \item {\bf Correct Base}$[\rho_0^{(2a)}, (\nabla\cdot\etarho\er)^{\nph}] \rightarrow [\rho_0^{n+1}]$
+
+\item update gravity, $g^{n+1} = g(\rho_0^{n+1})$; $g^{\nph} = g(\rho_0^\nph)$
 
 \item {\bf Advect Base Pressure}$[p_0^{n}, w_0^{\nph}, \etarho^{n+\myhalf}]$ 
 $\rightarrow [p_0^{n+1}, \psi^{n+\myhalf}]$.
