@@ -14,7 +14,7 @@ contains
 
     use geometry, only: dr, r_start_coord, r_end_coord, numdisjointchunks, spherical, &
          base_cutoff_density_coord, nr, nlevs_radial, nr_fine
-    use restrict_base_module, only: fill_ghost_base
+    use restrict_base_module
     use bl_error_module
     use make_grav_module
 
@@ -117,6 +117,7 @@ contains
        end do
     end do
 
+    call restrict_base(p0,.true.)
     call fill_ghost_base(p0,.true.)
 
   end subroutine enforce_HSE
