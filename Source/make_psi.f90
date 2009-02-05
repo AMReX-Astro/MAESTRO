@@ -15,6 +15,7 @@ contains
     use geometry, only: anelastic_cutoff_coord, r_start_coord, r_end_coord, &
          numdisjointchunks, nlevs_radial
     use probin_module, only: grav_const
+    use restrict_base_module
 
     real(kind=dp_t), intent(in   ) :: etarho_cc(:,0:)
     real(kind=dp_t), intent(inout) ::       psi(:,0:)
@@ -33,6 +34,9 @@ contains
           end do
        end do
     end do
+
+    call fill_ghost_base(psi,.true.)
+    call restrict_base(psi,.true.)
     
   end subroutine make_psi_planar
 
@@ -41,12 +45,12 @@ contains
     use bl_constants_module
     use geometry, only: dr, r_cc_loc, r_edge_loc, nr_fine
 
-    real(kind=dp_t), intent(inout) ::       psi(0:)
-    real(kind=dp_t), intent(in   ) ::        w0(0:)
-    real(kind=dp_t), intent(in   ) :: gamma1bar(0:)
-    real(kind=dp_t), intent(in   ) ::    p0_old(0:)
-    real(kind=dp_t), intent(in   ) ::    p0_new(0:)
-    real(kind=dp_t), intent(in   ) ::   Sbar_in(0:)
+    real(kind=dp_t), intent(inout) ::       psi(:,0:)
+    real(kind=dp_t), intent(in   ) ::        w0(:,0:)
+    real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
+    real(kind=dp_t), intent(in   ) ::    p0_old(:,0:)
+    real(kind=dp_t), intent(in   ) ::    p0_new(:,0:)
+    real(kind=dp_t), intent(in   ) ::   Sbar_in(:,0:)
     
     ! local variables
     integer :: r
@@ -55,10 +59,11 @@ contains
     do r=0,nr_fine-1
 
        div_w0_sph = one/(r_cc_loc(1,r)**2)* &
-            (r_edge_loc(1,r+1)**2 * w0(r+1) - &
-             r_edge_loc(1,r  )**2 * w0(r  )) / dr(1)
+            (r_edge_loc(1,r+1)**2 * w0(1,r+1) - &
+             r_edge_loc(1,r  )**2 * w0(1,r  )) / dr(1)
 
-       psi(r) = gamma1bar(r) * HALF*(p0_old(r) + p0_new(r)) * (Sbar_in(r) - div_w0_sph)
+       psi(1,r) = gamma1bar(1,r) * HALF*(p0_old(1,r) + p0_new(1,r)) * &
+            (Sbar_in(1,r) - div_w0_sph)
 
     enddo
 

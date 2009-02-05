@@ -56,6 +56,7 @@ contains
     use rhoh_vs_t_module
     use probin_module
     use diag_module
+    use enforce_HSE_module
     
     logical,         intent(in   ) :: init_mode
     type(ml_layout), intent(inout) :: mla
@@ -490,8 +491,16 @@ contains
     call make_grav_cell(grav_cell_new,rho0_new)
 
     if (evolve_base_state) then
-       call advect_base_pres(w0,Sbar,rho0_new,grav_cell_new,p0_old,p0_new,gamma1bar,psi, &
-                             etarho_cc,dx(:,dm),dt)
+       ! set new p0 through HSE
+       p0_new = p0_old
+       call enforce_HSE(rho0_new,p0_new,grav_cell_new)
+
+       ! make psi
+       if (spherical .eq. 0) then
+          call make_psi_planar(etarho_cc,psi)
+       else
+          call make_psi_spherical(psi,w0,gamma1bar,p0_old,p0_new,Sbar)
+       end if
     else
        p0_new = p0_old
     end if
@@ -863,8 +872,16 @@ contains
     call make_grav_cell(grav_cell_nph,rho0_nph)
 
     if (evolve_base_state) then
-       call advect_base_pres(w0,Sbar,rho0_new,grav_cell_new,p0_old,p0_new,gamma1bar,psi, &
-                             etarho_cc,dx(:,dm),dt)
+       ! set new p0 through HSE
+       p0_new = p0_old
+       call enforce_HSE(rho0_new,p0_new,grav_cell_new)
+
+       ! make psi
+       if (spherical .eq. 0) then
+          call make_psi_planar(etarho_cc,psi)
+       else
+          call make_psi_spherical(psi,w0,gamma1bar,p0_old,p0_new,Sbar)
+       end if
     else
        p0_new = p0_old
     end if
