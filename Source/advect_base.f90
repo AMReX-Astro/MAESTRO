@@ -135,15 +135,19 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine advect_base_pres(w0,Sbar_in,p0_old,p0_new,gamma1bar,psi,etarho_cc,dz,dt)
+  subroutine advect_base_pres(w0,Sbar_in,rho0_new,grav_cell,p0_old,p0_new,gamma1bar, &
+                              psi,etarho_cc,dz,dt)
 
     use bl_prof_module
     use geometry, only: spherical, nlevs
     use make_psi_module
     use restrict_base_module
+    use enforce_HSE_module
 
     real(kind=dp_t), intent(in   ) ::        w0(:,0:)
     real(kind=dp_t), intent(in   ) ::   Sbar_in(:,0:)
+    real(kind=dp_t), intent(in   ) ::  rho0_new(:,0:)
+    real(kind=dp_t), intent(in   ) :: grav_cell(:,0:)
     real(kind=dp_t), intent(in   ) ::    p0_old(:,0:)
     real(kind=dp_t), intent(  out) ::    p0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: gamma1bar(:,0:)
@@ -163,17 +167,15 @@ contains
        call fill_ghost_base(psi,.true.)
        call restrict_base(psi,.true.)
 
-       ! advect p0
-       call advect_base_pres_planar(w0,p0_old,p0_new,psi,dz,dt)
-       call restrict_base(p0_new,.true.)
-       call fill_ghost_base(p0_new,.true.)
+       ! set new p0 through HSE
+       p0_new = p0_old
+       call enforce_HSE(rho0_new,p0_new,grav_cell)
 
     else
 
-       ! advect p0
-       call advect_base_pres_spherical(w0,Sbar_in,p0_old,p0_new,gamma1bar,dt)
-       call restrict_base(p0_new,.true.)
-       call fill_ghost_base(p0_new,.true.)
+       ! set new p0 through HSE
+       p0_new = p0_old
+       call enforce_HSE(rho0_new,p0_new,grav_cell)
 
        ! make psi
        call make_psi_spherical(psi(1,:),w0(1,:),gamma1bar(1,:),p0_old(1,:), &

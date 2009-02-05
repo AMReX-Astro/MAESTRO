@@ -490,7 +490,8 @@ contains
     call make_grav_cell(grav_cell_new,rho0_new)
 
     if (evolve_base_state) then
-       call advect_base_pres(w0,Sbar,p0_old,p0_new,gamma1bar,psi,etarho_cc,dx(:,dm),dt)
+       call advect_base_pres(w0,Sbar,rho0_new,grav_cell_new,p0_old,p0_new,gamma1bar,psi, &
+                             etarho_cc,dx(:,dm),dt)
     else
        p0_new = p0_old
     end if
@@ -862,7 +863,8 @@ contains
     call make_grav_cell(grav_cell_nph,rho0_nph)
 
     if (evolve_base_state) then
-       call advect_base_pres(w0,Sbar,p0_old,p0_new,gamma1bar,psi,etarho_cc,dx(:,dm),dt)
+       call advect_base_pres(w0,Sbar,rho0_new,grav_cell_new,p0_old,p0_new,gamma1bar,psi, &
+                             etarho_cc,dx(:,dm),dt)
     else
        p0_new = p0_old
     end if
