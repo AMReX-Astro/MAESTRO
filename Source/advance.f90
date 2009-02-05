@@ -412,9 +412,7 @@ contains
        end do
     end if
 
-    call make_grav_cell(grav_cell_new,rho0_old)
-
-    call make_div_coeff(div_coeff_new,rho0_old,p0_old,gamma1bar,grav_cell_new)
+    call make_div_coeff(div_coeff_new,rho0_old,p0_old,gamma1bar,grav_cell_old)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 4 -- advect the base state and full state through dt
