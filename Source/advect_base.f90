@@ -231,7 +231,7 @@ contains
     use bl_constants_module
     use make_edge_state_module
     use geometry, only: r_cc_loc, r_edge_loc, dr, nr_fine
-    use make_grav_module
+!    use make_grav_module
     use cell_to_edge_module
     use make_div_coeff_module
 
