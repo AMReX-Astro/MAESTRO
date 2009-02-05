@@ -482,6 +482,8 @@ contains
        call correct_base(rho0_new,div_etarho,dt)
     end if
 
+    call make_grav_cell(grav_cell_new,rho0_new)
+
     if (evolve_base_state) then
        call advect_base_pres(w0,Sbar,p0_old,p0_new,gamma1bar,psi,etarho_cc,dx(:,dm),dt)
     else
@@ -564,8 +566,6 @@ contains
           call destroy(gamma1(n))
        end do
     end if
-
-    call make_grav_cell(grav_cell_new,rho0_new)
 
     call make_div_coeff(div_coeff_new,rho0_new,p0_new,gamma1bar,grav_cell_new)
     
@@ -843,6 +843,14 @@ contains
        call correct_base(rho0_new,div_etarho,dt)
     end if
 
+    call make_grav_cell(grav_cell_new,rho0_new)
+
+    ! Define base state at half time for use in velocity advance
+    rho0_nph = HALF*(rho0_old+rho0_new)
+
+    ! Define gravicyt at half time for use in velocity advance
+    call make_grav_cell(grav_cell_nph,rho0_nph)
+
     if (evolve_base_state) then
        call advect_base_pres(w0,Sbar,p0_old,p0_new,gamma1bar,psi,etarho_cc,dx(:,dm),dt)
     else
@@ -925,17 +933,9 @@ contains
        end do
     end if
 
-    call make_grav_cell(grav_cell_new,rho0_new)
-
     call make_div_coeff(div_coeff_new,rho0_new,p0_new,gamma1bar,grav_cell_new)
 
     div_coeff_nph = HALF*(div_coeff_old+div_coeff_new)
-
-    ! Define base state at half time for use in velocity advance
-    rho0_nph = HALF*(rho0_old+rho0_new)
-
-    ! Define gravicyt at half time for use in velocity advance
-    call make_grav_cell(grav_cell_nph,rho0_nph)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 10 -- compute S^{n+1} for the final projection
