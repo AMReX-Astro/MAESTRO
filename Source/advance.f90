@@ -135,7 +135,6 @@ contains
     real(dp_t) ::               w0_old(nlevs_radial,0:nr_fine)
     real(dp_t) ::       div_coeff_edge(nlevs_radial,0:nr_fine)
     real(dp_t) ::  rho0_predicted_edge(nlevs_radial,0:nr_fine)
-    real(dp_t) ::           div_etarho(nlevs_radial,0:nr_fine-1)
     real(dp_t) ::          rhoprimebar(nlevs_radial,0:nr_fine-1)
     real(dp_t) ::         rhohprimebar(nlevs_radial,0:nr_fine-1)
 
@@ -395,7 +394,7 @@ contains
           ! set rhoh0_old = rhoh0_old - Avg(rhoh0_old - rhoh^{(1)})
           call make_sprimebar_spherical(s1,rhoh_comp,rhoh0_old,dx,rhohprimebar,mla, &
                                         the_bc_tower%bc_tower_array)
-          call correct_base(rhoh0_old,rhohprimebar,1.d0)
+          call correct_base(rhoh0_old,rhohprimebar)
        end if
     end if
 
@@ -467,11 +466,10 @@ contains
        if (use_etarho) then
 
           if (spherical .eq. 0) then
-             call make_etarho_planar(etarho_ec,etarho_cc,div_etarho,etarhoflux,mla)
+             call make_etarho_planar(etarho_ec,etarho_cc,etarhoflux,mla)
           else
              call make_etarho_spherical(s1,s2,umac,rho0_old,rho0_new,dx,dt,normal, &
-                                        etarho_ec,etarho_cc,div_etarho, &
-                                        mla,the_bc_tower%bc_tower_array)
+                                        etarho_ec,etarho_cc,mla,the_bc_tower%bc_tower_array)
           endif
 
        endif
@@ -485,7 +483,7 @@ contains
           ! set rho0_new = rho0_new - Avg(rho0_new - rho^{(2)})
           call make_sprimebar_spherical(s2,rho_comp,rho0_new,dx,rhoprimebar,mla, &
                                         the_bc_tower%bc_tower_array)
-          call correct_base(rho0_new,rhoprimebar,1.d0)
+          call correct_base(rho0_new,rhoprimebar)
        end if
     end if
 
@@ -831,11 +829,10 @@ contains
        if (use_etarho) then
 
           if (spherical .eq. 0) then
-             call make_etarho_planar(etarho_ec,etarho_cc,div_etarho,etarhoflux,mla)
+             call make_etarho_planar(etarho_ec,etarho_cc,etarhoflux,mla)
           else
              call make_etarho_spherical(s1,s2,umac,rho0_old,rho0_new,dx,dt,normal, &
-                                        etarho_ec,etarho_cc,div_etarho, &
-                                        mla,the_bc_tower%bc_tower_array)
+                                        etarho_ec,etarho_cc,mla,the_bc_tower%bc_tower_array)
           endif
 
        endif
@@ -852,7 +849,7 @@ contains
        else
           call make_sprimebar_spherical(s2,rho_comp,rho0_new,dx,rhoprimebar,mla, &
                                         the_bc_tower%bc_tower_array)
-          call correct_base(rho0_new,rhoprimebar,1.d0)
+          call correct_base(rho0_new,rhoprimebar)
        end if
     end if
 
