@@ -412,8 +412,6 @@ contains
        end do
     end if
 
-    call make_div_coeff(div_coeff_new,rho0_old,p0_old,gamma1bar,grav_cell_old)
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 4 -- advect the base state and full state through dt
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -573,11 +571,6 @@ contains
     
     div_coeff_nph = HALF*(div_coeff_old + div_coeff_new)
 
-    rho0_nph = HALF*(rho0_old+rho0_new)
-
-    ! Define base state at half time for use in velocity advance
-    call make_grav_cell(grav_cell_nph,rho0_nph)
-    
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 6 -- define a new average expansion rate at n+1/2
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -936,6 +929,14 @@ contains
 
     call make_div_coeff(div_coeff_new,rho0_new,p0_new,gamma1bar,grav_cell_new)
 
+    div_coeff_nph = HALF*(div_coeff_old+div_coeff_new)
+
+    ! Define base state at half time for use in velocity advance
+    rho0_nph = HALF*(rho0_old+rho0_new)
+
+    ! Define gravicyt at half time for use in velocity advance
+    call make_grav_cell(grav_cell_nph,rho0_nph)
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! STEP 10 -- compute S^{n+1} for the final projection
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1027,9 +1028,6 @@ contains
           call destroy(w0_force_cart_vec(n))
        end do
     end if
-
-    ! Define beta at half time using the div_coeff_new from step 9!
-    div_coeff_nph = HALF*(div_coeff_old+div_coeff_new)
        
     ! Project the new velocity field.
     if (init_mode) then
@@ -1041,7 +1039,7 @@ contains
           call multifab_copy(hgrhs_old(n),hgrhs(n))
        end do
        call make_hgrhs(the_bc_tower,mla,hgrhs,Source_new,delta_gamma1_term, &
-                       Sbar,div_coeff_new,dx)
+                       Sbar,div_coeff_nph,dx)
        do n=1,nlevs
           call multifab_sub_sub(hgrhs(n),hgrhs_old(n))
           call multifab_div_div_s(hgrhs(n),dt)
@@ -1051,7 +1049,7 @@ contains
 
        proj_type = regular_timestep_comp
        call make_hgrhs(the_bc_tower,mla,hgrhs,Source_new,delta_gamma1_term, &
-                       Sbar,div_coeff_new,dx)
+                       Sbar,div_coeff_nph,dx)
 
        if (dpdt_factor .gt. ZERO) then
 
@@ -1092,7 +1090,7 @@ contains
              call destroy(pthermbar_cart(n))
           end do
           
-          call correct_hgrhs(the_bc_tower,mla,rho0_new,hgrhs,div_coeff_new,dx,dt, &
+          call correct_hgrhs(the_bc_tower,mla,rho0_new,hgrhs,div_coeff_nph,dx,dt, &
                              gamma1bar,p0_new,delta_p_term)
           
           do n=1,nlevs
