@@ -49,7 +49,7 @@ module probin_module
   integer, save            :: w0mac_interp_type
   integer, save            :: nOutFiles
   logical, save            :: lUsingNFiles
-  logical, save            :: use_tfromp, full_rhoh0_evolution, single_prec_plotfiles
+  logical, save            :: use_tfromp, single_prec_plotfiles
   logical, save            :: use_soundspeed_firstdt, use_divu_firstdt
   logical, save            :: smallscale_beta
   integer, save            :: use_ppm
@@ -143,7 +143,6 @@ module probin_module
   namelist /probin/ nOutFiles
   namelist /probin/ lUsingNFiles
   namelist /probin/ use_tfromp
-  namelist /probin/ full_rhoh0_evolution
   namelist /probin/ single_prec_plotfiles
   namelist /probin/ use_soundspeed_firstdt
   namelist /probin/ use_divu_firstdt
@@ -307,7 +306,6 @@ contains
     lUsingNFiles = .true.
 
     use_tfromp = .false.
-    full_rhoh0_evolution = .true.
 
     single_prec_plotfiles = .false.
 
@@ -788,11 +786,6 @@ contains
           farg = farg + 1
           call get_command_argument(farg, value = fname)
           read(fname, *) use_tfromp
-
-       case ('--full_rhoh0_evolution')
-          farg = farg + 1
-          call get_command_argument(farg, value = fname)
-          read(fname, *) full_rhoh0_evolution
 
        case ('--use_single_prec_plotfiles')
           farg = farg + 1

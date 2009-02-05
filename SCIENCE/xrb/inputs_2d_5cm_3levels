@@ -54,8 +54,6 @@
  use_thermal_diffusion = T
  dpdt_factor = 0.3d0
 
- full_rhoh0_evolution = F
-
  base_cutoff_density = 1.d4
  anelastic_cutoff = 1.d4
 

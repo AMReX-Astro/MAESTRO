@@ -132,15 +132,11 @@ contains
     real(dp_t) ::             w0_force(nlevs_radial,0:nr_fine-1)
     real(dp_t) ::                 Sbar(nlevs_radial,0:nr_fine-1)
     real(dp_t) ::        div_coeff_nph(nlevs_radial,0:nr_fine-1)
-    real(dp_t) ::          rho_Hextbar(nlevs_radial,0:nr_fine-1)
-    real(dp_t) ::              rhoh0_1(nlevs_radial,0:nr_fine-1)
-    real(dp_t) ::              rhoh0_2(nlevs_radial,0:nr_fine-1)
     real(dp_t) ::        gamma1bar_old(nlevs_radial,0:nr_fine-1)
     real(dp_t) :: delta_gamma1_termbar(nlevs_radial,0:nr_fine-1)
     real(dp_t) ::               w0_old(nlevs_radial,0:nr_fine)
     real(dp_t) ::       div_coeff_edge(nlevs_radial,0:nr_fine)
     real(dp_t) ::  rho0_predicted_edge(nlevs_radial,0:nr_fine)
-    real(dp_t) ::          rho_Hnucbar(nlevs_radial,0:nr_fine-1)
     real(dp_t) ::          div_etarhoh(nlevs_radial,0:nr_fine-1)
 
     integer    :: r,n,comp,proj_type
@@ -388,45 +384,22 @@ contains
 
     do n=1,nlevs
        call destroy(rho_omegadot1(n))
-    end do
-    
-    if (full_rhoh0_evolution) then
-       if (evolve_base_state) then
-          if (parallel_IOProcessor() .and. verbose .ge. 1) then
-             write(6,*) '            : react  base >>> '
-          end if
-          call average(mla,rho_Hnuc1,rho_Hnucbar,dx,1)
-          call average(mla,rho_Hext, rho_Hextbar,dx,1)
-          call react_base(rhoh0_old,rho_Hnucbar,rho_Hextbar,halfdt,rhoh0_1)
-       else
-          rhoh0_1 = rhoh0_old
-       end if
-    else
-       if (evolve_base_state) then
-          if (spherical .eq. 0) then
-             call average(mla,s1,rhoh0_1,dx,rhoh_comp)
-          else
-             ! Simply setting rhoh0_1 = Avg(rhoh^{(1)}) doesn't work.
-             ! Instead, what we need to do first set
-             ! set rhoh0_1 = rhoh0_old
-             rhoh0_1 = rhoh0_old
-             ! compute rhohprime_cart = rhoh^{(1)} - rhoh0_1_cart
-             ! compute div_etarhoh = -Avg(rhohprime_cart)
-             call make_div_etarhoh_spherical(s1,rhoh0_1,dx,div_etarhoh,mla, &
-                                             the_bc_tower%bc_tower_array)
-             ! compute rhoh0_1 = rhoh0_1 - div_etarhoh 
-             ! (this can be done with correct_base machinery)
-             call correct_base(rhoh0_1,div_etarhoh,1.d0)
-          end if
-       else
-          rhoh0_1 = rhoh0_old
-       end if
-    end if
-
-    do n=1,nlevs
        call destroy(rho_Hnuc1(n))
        call destroy(rho_Hext(n))
     end do
+
+    if (evolve_base_state) then
+       if (spherical .eq. 0) then
+          call average(mla,s1,rhoh0_old,dx,rhoh_comp)
+       else
+          ! set rhoh0_old = rhoh0_old - Avg(rhoh0_old - rhoh^{(1)})
+          ! currently uses calls to make_div_etarhoh_spherical and
+          ! correct_base - I'm going to clean this up
+          call make_div_etarhoh_spherical(s1,rhoh0_old,dx,div_etarhoh,mla, &
+                                          the_bc_tower%bc_tower_array)
+          call correct_base(rhoh0_old,div_etarhoh,1.d0)
+       end if
+    end if
 
     if (evolve_base_state) then
        do n=1,nlevs
@@ -522,10 +495,10 @@ contains
     end if
 
     if (evolve_base_state) then
-       call advect_base_enthalpy(w0,Sbar,rho0_old,rhoh0_1,rhoh0_2,p0_old,p0_new, &
+       call advect_base_enthalpy(w0,Sbar,rho0_old,rhoh0_old,rhoh0_new,p0_old,p0_new, &
                                  gamma1bar,rho0_predicted_edge,psi,dx(:,dm),dt)
     else
-       rhoh0_2 = rhoh0_1
+       rhoh0_new = rhoh0_old
     end if
 
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
@@ -533,8 +506,8 @@ contains
     end if
 
     call enthalpy_advance(mla,1,uold,s1,s2,sedge,sflux,scal_force,thermal,umac,w0,w0mac, &
-                          normal,rho0_old,rhoh0_1,rho0_new,rhoh0_2,p0_old,p0_new,tempbar, &
-                          psi,dx,dt,the_bc_tower%bc_tower_array)
+                          normal,rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_old,p0_new, &
+                          tempbar,psi,dx,dt,the_bc_tower%bc_tower_array)
 
     do n = 1, nlevs
        do comp = 1,dm
@@ -888,10 +861,10 @@ contains
     end if
 
     if (evolve_base_state) then
-       call advect_base_enthalpy(w0,Sbar,rho0_old,rhoh0_1,rhoh0_2,p0_old,p0_new, &
+       call advect_base_enthalpy(w0,Sbar,rho0_old,rhoh0_old,rhoh0_new,p0_old,p0_new, &
                                  gamma1bar,rho0_predicted_edge,psi,dx(:,dm),dt)
     else
-       rhoh0_2 = rhoh0_1
+       rhoh0_new = rhoh0_old
     end if
 
     if (parallel_IOProcessor() .and. verbose .ge. 1) then
@@ -899,8 +872,8 @@ contains
     end if
 
     call enthalpy_advance(mla,2,uold,s1,s2,sedge,sflux,scal_force,thermal,umac,w0,w0mac, &
-                          normal,rho0_old,rhoh0_1,rho0_new,rhoh0_2,p0_old,p0_new,tempbar, &
-                          psi,dx,dt,the_bc_tower%bc_tower_array)
+                          normal,rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_old,p0_new, &
+                          tempbar,psi,dx,dt,the_bc_tower%bc_tower_array)
 
     do n=1,nlevs
        do comp = 1,dm
@@ -949,17 +922,6 @@ contains
     do n=1,nlevs
        call destroy(s2(n))
     end do
-
-    if (evolve_base_state .and. full_rhoh0_evolution) then
-       if (parallel_IOProcessor() .and. verbose .ge. 1) then
-          write(6,*) '            : react  base >>>'
-       end if
-       call average(mla,rho_Hnuc2,rho_Hnucbar,dx,1)
-       call average(mla,rho_Hext,rho_Hextbar,dx,1)
-       call react_base(rhoh0_2,rho_Hnucbar,rho_Hextbar,halfdt,rhoh0_new)
-    else
-       rhoh0_new = rhoh0_2
-    end if
 
     if (evolve_base_state) then
        do n=1,nlevs

@@ -37,8 +37,7 @@ in paper III.  The major changes are:
 \item We discuss spherical geometries, in paricular:
 \begin{itemize}
 \item We are still working out the fill, average, and interpolate stencils.
-\item We are working on {\bf Advect Base}, {\bf React Base}, and 
-{\bf Correct Base} details.
+\item We are working on {\bf Advect Base} and {\bf Correct Base} details.
 \item We are working on $\etarho$ details.
 \item We compute the full state temperature on cell-centers after the 
 advection-diffusion step using $T=T(\rho,X_k,p_0)$ by setting 
@@ -76,11 +75,6 @@ compute $h$ with the EOS using {\tt do\_eos\_h\_above\_cutoff = TRUE}.
 \item We have created a {\tt burning\_cutoff\_density}, where the burning does
 not happen below this density.  It is presently set to {\tt base\_cutoff\_density}.
 
-\item We have added the flag, {\tt full\_rhoh0\_evolution}, which defaults to 
-{\tt TRUE} (note that we do not have a {\bf Correct Base} or 
-{\bf Diffuse Base} for enthalpy).  When {\tt FALSE}, we do not call {\bf React Base},
-but instead set $(\rho h)_0 = \overline{(\rho h)^n}$ before {\bf Advect Base}.
-
 \item We have given the advection scheme a face-lift, with some nifty options like
 corner coupling and various PPM limiters.
 
@@ -93,6 +87,14 @@ not as perturbational quantities.
 occurs immediately before {\bf Advect Base Pressure}.  Since the full
 enthalpy advance ``feels'' the effects of the time-centered $\etarho$, we should
 rely on a $\rho_0^{n+1}$ that also feels the effects.
+
+\item After {\bf React State}, we set $(\rho h)_0 = {\rm{\bf Avg}}(\rho h)$ in 
+plane-parallel and $(\rho h)_0 = (\rho h)_0 - {\rm{\bf Avg}}[(\rho h)_0 - (\rho h)]$ 
+in spherical.  This means that {\bf React Base} no longer exists, and the intermediate states, 
+$(\rho h)_0^{(1)}$ and $(\rho h)_0^{(2)}$, no longer have to exist.  
+{\bf Advect Base Enthalpy} will advance $(\rho h)_0^n \rightarrow (\rho h)_0^{n+1}$ 
+directly.  This also means we don't have to deal with $\eta_{\rho h}$ or a 
+{\bf Diffuse Base}.
 
 \end{itemize}
 
@@ -107,15 +109,6 @@ rely on a $\rho_0^{n+1}$ that also feels the effects.
 \item Should we replace {\bf Correct Base} with $\rho_0 = {\rm{\bf Avg}}(\rho)$ in 
 plane-parallel and $\rho_0 = \rho_0 - {\rm{\bf Avg}}(\rho_0 - \rho)$ in spherical?
 This eliminates the need for $\nabla\cdot\etarho$.
-
-\item After {\bf React State}, should we set $(\rho h)_0 = {\rm{\bf Avg}}(\rho h)$ in 
-plane-parallel and $(\rho h)_0 = (\rho h)_0 - {\rm{\bf Avg}}[(\rho h)_0 - (\rho h)]$ 
-in spherical?  This can currently be done by making {\tt full\_rhoh0\_evolution = FALSE}.
-This means that {\bf React Base} no longer has to exist, and the intermediate states, 
-$(\rho h)_0^{(1)}$ and $(\rho h)_0^{(2)}$, no longer have to exist.  
-{\bf Advect Base Enthalpy} will advance $(\rho h)_0^n \rightarrow (\rho h)_0^{n+1}$ 
-directly.  This also means we don't have to deal with $\eta_{\rho h}$ or a 
-{\bf Diffuse Base}.
 
 \item Should we eliminate {\bf Advect Base Pressure} entirely, and instead directly
 enforce HSE after {\bf Correct Base}?  {\bf Advect Base Pressure} was just a fancy
@@ -253,11 +246,11 @@ T^n & \longrightarrow & T^{(1)} & & & \longrightarrow & T^{(2)} & \longrightarro
 \end{array}\right.\nonumber
 \end{equation}
 \begin{equation}
-\left.\begin{array}{ccccccccc}
-& \text{React Base} & & \text{Advect Base} & & \text{Correct Base} & & \text{React Base} & \\
-\rho_0^n & & & \longrightarrow & \rho_0^{(2a)} & \longrightarrow & & & \rho_0^{n+1} \\
-(\rho h)_0^n & \longrightarrow & (\rho h)_0^{(1)} & \longrightarrow & & & (\rho h)_0^{(2)} & \longrightarrow & (\rho h)_0^{n+1} \\
-p_0^n & & & \longrightarrow & & & & & p_0^{n+1} \\
+\left.\begin{array}{ccccccc}
+& \text{Advect Base} & & \text{Correct Base} & \\
+\rho_0^n & \longrightarrow & \rho_0^{(2a)} & \longrightarrow & \rho_0^{n+1} \\
+(\rho h)_0^n & \longrightarrow & & & (\rho h)_0^{n+1} \\
+p_0^n & \longrightarrow & & & p_0^{n+1} \\
 \end{array}\right.\nonumber
 \end{equation}
 \\ \\
@@ -330,16 +323,6 @@ updated by
 \begin{equation}
 (\rho h)^{\outp} = 
 (\rho h)^{\inp} + \frac{\dt}{2} (\rho\Hnuc)^{\outp} + \frac{\dt}{2} (\rho\Hext)^{\inp}\enskip.
-\end{equation}
-
-\item {\bf React Base}$[(\rho h)_0^{\inp},\overline{(\rho\Hnuc)^{\inp}},\overline{(\rho\Hext)^{\inp}}] \rightarrow [(\rho h)_0^{\outp}]$\\
-is the process by which we update the base state enthalpy through $\dt/2$ in time using
-\begin{equation}
-\frac{\partial(\rho h)_0}{\partial t} = \overline{(\rho\Hnuc)^{\inp}} + \overline{(\rho\Hext)^{\inp}}\enskip ,
-\end{equation}
-discretized as
-\begin{equation}
-(\rho h)_{0,j}^{\outp} = (\rho h)_{0,j}^{\inp} + \frac{\dt}{2}\overline{(\rho\Hnuc)_{j}^{\inp}} + \frac{\dt}{2}\overline{(\rho\Hext)_{j}^{\inp}} \enskip .
 \end{equation}
 
 \item {\bf Advect Base Density}$[\rho_0^\inp,w_0^\inp]$
@@ -578,17 +561,16 @@ interval of $\dt / 2.$}
 
 \item {\bf React State}$[\rho^n, (\rho h)^n, X_k^n, T^n, (\rho\Hext)^n]
                    \rightarrow$ $[ \rho^{(1)}, (\rho h)^{(1)}, X_k^{(1)}, T^{(1)},
-                                  (\rho \omegadot_k)^{(1)}, (\rho \Hnuc)^{(1)} ].$  
+                                  (\rho \omegadot_k)^{(1)}, (\rho \Hnuc)^{(1)} ].$
+\item
+\begin{description}
 
-\item {\bf if} ~ {\tt full\_rhoh0\_evolution = T} ~ {\bf then}
+\item[plane-parallel:] Set $(\rho h)_0^{n} = \overline{(\rho h)^{(1)}}$.
 
-~~~ {\bf React Base}$[(\rho h)_0^n,\overline{(\rho \Hnuc)^{(1)}},\overline{(\rho\Hext)^n}] \rightarrow [(\rho h)_0^{(1)}]$ \\
-{\bf else}
+\item[spherical:] Set $(\rho h)_0^{n} = (\rho h)_0^{n} - {\rm{\bf Avg}}\left[(\rho h)_0^{n} - (\rho h)^{(1)}\right]$.
 
-~~~ $(\rho h)_0^{(1)} = \overline{(\rho h)^{(1)}}$ in plane-parallel
+\end{description}
 
-~~~ $(\rho h)_0^{(1)} = (\rho h)_0^{n} - {\rm{\bf Avg}}\left[(\rho h)_0^{n} - (\rho h)^{(1)}\right] $ in spherical. \\
-{\bf end if}
 \item Define
 \begin{eqnarray}
 \gammabar^{(1)}        &=& {\rm{\bf Avg}} \left[ \Gamma_1\left(\rho^{(1)}, p_0^{n}, X_k^{(1)}\right) \right] \enskip , \\
@@ -677,8 +659,8 @@ $(\nabla\cdot\etarho\er)^{\nph,\star}$:
 \item {\bf Advect Base Pressure}$[p_0^{n}, w_0^{\nph,\star}, \etarho^{n+\myhalf,\star}]$ 
 $\rightarrow [p_0^{n+1,\star}, \psi^{\nph,\star}]$.
 
-\item {\bf Advect Base Enthalpy}$[(\rho h)_0^{(1)}, w_0^{\nph,\star}, \psi^{\nph,\star}]$ 
-$\rightarrow [(\rho h)_0^{(2),\star}]$.
+\item {\bf Advect Base Enthalpy}$[(\rho h)_0^{n}, w_0^{\nph,\star}, \psi^{\nph,\star}]$ 
+$\rightarrow [(\rho h)_0^{n+1,\star}]$.
 
 \item Update the enthalpy.  The full enthalpy equation is 
   \begin{equation}
@@ -718,7 +700,7 @@ results in a better solution.
     
 \begin{equation}
 (\rho h)^{(1),\nph,\star} = 
-(\rho h)^{'(1),\nph,\star} + \frac{(\rho h)_0^n + (\rho h)_0^{(2),\star}}{2}
+(\rho h)^{'(1),\nph,\star} + \frac{(\rho h)_0^n + (\rho h)_0^{n+1,\star}}{2}
 \enskip .
 \end{equation}
   In plane-parallel, we use 4th-order spatial averaging to compute $(\rho h)_0$
@@ -1007,8 +989,8 @@ $(\nabla\cdot\etarho\er)^{\nph}$:
 \item {\bf Advect Base Pressure}$[p_0^{n}, w_0^{\nph}, \etarho^{n+\myhalf}]$ 
 $\rightarrow [p_0^{n+1}, \psi^{n+\myhalf}]$.
 
-\item {\bf Advect Base Enthalpy}$[(\rho h)_0^{(1)}, w_0^{\nph}, \psi^{\nph}]$ 
-$\rightarrow [(\rho h)_0^{(2)}]$.
+\item {\bf Advect Base Enthalpy}$[(\rho h)_0^{n}, w_0^{\nph}, \psi^{\nph}]$ 
+$\rightarrow [(\rho h)_0^{n+1}]$.
 
 \item Update the enthalpy, using a difference approximation to
   eq.~\ref{eq:rhohupd}, neglecting the reaction terms.
@@ -1027,7 +1009,7 @@ $\rightarrow [(\rho h)_0^{(2)}]$.
     $(\rho h)_0$, to convert these to edge states for $(\rho h)$,
 \begin{equation}
 (\rho h)^{(1),\nph} = 
-(\rho h)^{'(1),\nph} + \frac{(\rho h)_0^n + (\rho h)_0^{(2)}}{2} \enskip .
+(\rho h)^{'(1),\nph} + \frac{(\rho h)_0^n + (\rho h)_0^{n+1}}{2} \enskip .
 \end{equation}
   In plane-parallel, we use 4th-order spatial averaging to compute $(\rho h)_0$
   on radial faces.  In spherical, we first map $h_0 \equiv (\rho h)_0/\rho_0$ 
@@ -1109,8 +1091,6 @@ interval of $\dt / 2.$}
 \item {\bf React State}$[\rho^{(2)},(\rho h)^{(2)}, X_k^{(2)},T^{(2)}, (\rho^{(2)} \Hext) ]$\\
                    $\rightarrow [\rho^{n+1}, (\rho h)^{n+1}, X_k^{n+1}, T^{n+1}, 
                                (\rho \omegadot_k)^{(2)}, (\rho \Hnuc)^{(2)} ].$  
-
-\item {\bf React Base}$[(\rho h)_0^{(2)},\overline{(\rho \Hnuc)^{(2)}},\overline{(\rho\Hext)^{(2)}}] \rightarrow [(\rho h)_0^{n+1}]$
 
 \item Define
 \begin{eqnarray}
