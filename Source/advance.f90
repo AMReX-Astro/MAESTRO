@@ -136,6 +136,7 @@ contains
     real(dp_t) ::       div_coeff_edge(nlevs_radial,0:nr_fine)
     real(dp_t) ::  rho0_predicted_edge(nlevs_radial,0:nr_fine)
     real(dp_t) ::           div_etarho(nlevs_radial,0:nr_fine-1)
+    real(dp_t) ::          rhoprimebar(nlevs_radial,0:nr_fine-1)
     real(dp_t) ::         rhohprimebar(nlevs_radial,0:nr_fine-1)
 
     integer    :: r,n,comp,proj_type
@@ -392,7 +393,6 @@ contains
           call average(mla,s1,rhoh0_old,dx,rhoh_comp)
        else
           ! set rhoh0_old = rhoh0_old - Avg(rhoh0_old - rhoh^{(1)})
-          ! need to clean this up
           call make_sprimebar_spherical(s1,rhoh_comp,rhoh0_old,dx,rhohprimebar,mla, &
                                         the_bc_tower%bc_tower_array)
           call correct_base(rhoh0_old,rhohprimebar,1.d0)
@@ -479,7 +479,14 @@ contains
 
     ! Correct the base state using the time-centered etarho and psi
     if (use_etarho .and. evolve_base_state) then
-       call correct_base(rho0_new,div_etarho,dt)
+       if (spherical .eq. 0) then
+          call average(mla,s2,rho0_new,dx,rho_comp)
+       else
+          ! set rho0_new = rho0_new - Avg(rho0_new - rho^{(2)})
+          call make_sprimebar_spherical(s2,rho_comp,rho0_new,dx,rhoprimebar,mla, &
+                                        the_bc_tower%bc_tower_array)
+          call correct_base(rho0_new,rhoprimebar,1.d0)
+       end if
     end if
 
     call make_grav_cell(grav_cell_new,rho0_new)
@@ -840,7 +847,13 @@ contains
 
     ! Correct the base state using the time-centered etarho and psi
     if (use_etarho .and. evolve_base_state) then
-       call correct_base(rho0_new,div_etarho,dt)
+       if (spherical .eq. 0) then
+          call average(mla,s2,rho0_new,dx,rho_comp)
+       else
+          call make_sprimebar_spherical(s2,rho_comp,rho0_new,dx,rhoprimebar,mla, &
+                                        the_bc_tower%bc_tower_array)
+          call correct_base(rho0_new,rhoprimebar,1.d0)
+       end if
     end if
 
     call make_grav_cell(grav_cell_new,rho0_new)
