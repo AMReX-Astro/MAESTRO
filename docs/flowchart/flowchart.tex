@@ -563,14 +563,8 @@ interval of $\dt / 2.$}
 \item {\bf React State}$[\rho^n, (\rho h)^n, X_k^n, T^n, (\rho\Hext)^n]
                    \rightarrow$ $[ \rho^{(1)}, (\rho h)^{(1)}, X_k^{(1)}, T^{(1)},
                                   (\rho \omegadot_k)^{(1)}, (\rho \Hnuc)^{(1)} ].$
-\item
-\begin{description}
 
-\item[plane-parallel:] Set $(\rho h)_0^{n} = \overline{(\rho h)^{(1)}}$.
-
-\item[spherical:] Set $(\rho h)_0^{n} = (\rho h)_0^{n} + {\rm{\bf Avg}}\left[(\rho h)^{(1)} - (\rho h)_0^{n}\right]$.
-
-\end{description}
+\item {\bf Correct Base}$[(\rho h)_0^{n},(\rho h)^{(1)}] \rightarrow [(\rho h)_0^{n}]$.
 
 \item Define
 \begin{eqnarray}
@@ -655,7 +649,7 @@ $(\nabla\cdot\etarho\er)^{\nph,\star}$:
 
 \end{description}
 
-\item {\bf Correct Base}$[\rho_0^{(2a),\star}, (\nabla\cdot\etarho\er)^{\nph,*}] \rightarrow [\rho_0^{n+1,\star}]$.
+\item {\bf Correct Base}$[\rho_0^{(2a),\star},\rho^{(2),\star}] \rightarrow [\rho_0^{n+1,\star}]$.
 
 \item update gravity, $g^{n+1,\star} = g(\rho_0^{n+1,\star})$
 
@@ -987,7 +981,7 @@ $(\nabla\cdot\etarho\er)^{\nph}$:
 
 \end{description}
 
-\item {\bf Correct Base}$[\rho_0^{(2a)}, (\nabla\cdot\etarho\er)^{\nph}] \rightarrow [\rho_0^{n+1}]$
+\item {\bf Correct Base}$[\rho_0^{(2a)},\rho^{(2)}] \rightarrow [\rho_0^{n+1}]$.
 
 \item update gravity, $g^{n+1} = g(\rho_0^{n+1})$; $g^{\nph} = g(\rho_0^\nph)$
 
