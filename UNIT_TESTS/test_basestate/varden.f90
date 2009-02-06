@@ -23,6 +23,8 @@ subroutine varden()
   use probin_module
   use bl_constants_module
   use initialize_module
+  use enforce_HSE_module
+  use make_psi_module
 
   implicit none
 
@@ -277,9 +279,9 @@ subroutine varden()
                            rho0_predicted_edge,dx(:,1),dt)
 
 
-     call advect_base_pres(w0,Sbar_in,s0(:,:,rho_comp),p0_old,p0,gam1,div_coeff, &
-                             psi,etarho_cc,dx(:,1),dt)
-
+     p0 = p0_old
+     call enforce_HSE(s0(:,:,rho_comp),p0,grav_cell)
+     call make_psi_spherical(psi,w0,gam1,p0_old,p0,Sbar_in)
 
      call advect_base_enthalpy(w0,Sbar_in,s0_old(:,:,rho_comp), &
                                s0_old(:,:,rhoh_comp),s0(:,:,rhoh_comp), &
