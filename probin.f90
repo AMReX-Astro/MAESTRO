@@ -6,6 +6,7 @@ module probin_module
   use bl_types
   use bl_space
   use pred_parameters
+  use multifab_module, only: multifab_set_alltoallv
   use cluster_module
 
   implicit none
@@ -51,7 +52,7 @@ module probin_module
   logical, save            :: lUsingNFiles
   logical, save            :: use_tfromp, single_prec_plotfiles
   logical, save            :: use_soundspeed_firstdt, use_divu_firstdt
-  logical, save            :: smallscale_beta
+  logical, save            :: smallscale_beta, do_alltoallv
   integer, save            :: use_ppm
   integer, save            :: max_levs, max_grid_size, regrid_int, ref_ratio
   integer, save            :: n_cellx, n_celly, n_cellz
@@ -147,6 +148,7 @@ module probin_module
   namelist /probin/ use_soundspeed_firstdt
   namelist /probin/ use_divu_firstdt
   namelist /probin/ smallscale_beta
+  namelist /probin/ do_alltoallv
   namelist /probin/ use_ppm
   namelist /probin/ max_levs
   namelist /probin/ max_grid_size
@@ -313,6 +315,8 @@ contains
     use_divu_firstdt = .false.
 
     smallscale_beta = .false.
+
+    do_alltoallv = .false.
 
     ! 0 = no ppm
     ! 1 = 1985 ppm
@@ -807,6 +811,11 @@ contains
           call get_command_argument(farg, value = fname)
           read(fname, *) smallscale_beta
 
+       case ('--do_alltoallv')
+          farg = farg + 1
+          call get_command_argument(farg, value = fname)
+          read(fname, *) do_alltoallv
+
        case ('--use_ppm')
           farg = farg + 1
           call get_command_argument(farg, value = fname)
@@ -912,6 +921,8 @@ contains
 
     call cluster_set_min_eff(min_eff)
     call cluster_set_minwidth(min_width)
+
+    if (do_alltoallv) call multifab_set_alltoallv(.true.)
 
     call destroy(bpt)
     
