@@ -4,29 +4,33 @@ These are working notes for the low density parameters in {\tt MAESTRO}.
 
 \begin{itemize}
 
-\item In {\tt init\_base\_state}, we abort the program if {\tt
-  anelastic\_cutoff} $<$ {\tt base\_cutoff\_density}.
-
 \item After we initilize the base state in {\tt varden} and at the
   beginning of {\tt advance\_timestep}, We compute the coordinate
-  associated with {\tt anelastic\_cutoff}, {\tt
-    anelastic\_cutoff\_coord}.  This is done by setting ${\tt
-    anelastic\_cutoff\_coord}= r$ as soon as $\rho_0(r) <$ {\tt
-    anelastic\_cutoff}.
+  associated with {\tt anelastic\_cutoff}, {\tt anelastic\_cutoff\_coord}.  
+  This is done by setting ${\tt anelastic\_cutoff\_coord}= r$ as soon as 
+  $\rho_0(r) <$ {\tt anelastic\_cutoff}.
 
-\item In {\tt correct\_base}, we only update $\rho_0$ for $r\in[{\tt
-    r\_start\_coord},{\tt anelastic\_cutoff\_coord}-1]$.
+\item In {\tt correct\_base}, we only update $\rho_0$ for 
+  $r\in[{\tt r\_start\_coord},{\tt anelastic\_cutoff\_coord}-1]$.
 
-\item In {\tt make\_div\_coeff}, we change how we compute {\tt
-  div\_coeff} for $r\in[{\tt anelastic\_cutoff\_coord},{\tt
-    r\_end\_coord}]$.
+\item In {\tt init\_base\_state}, we abort the program if 
+  {\tt anelastic\_cutoff} $<$ {\tt base\_cutoff\_density}.
 
-\item In {\tt make\_psi}, we only compute $\psi$ for $r\in[{\tt
-    r\_start\_coord},{\tt anelastic\_cutoff\_coord}-1]$.
+\item In {\tt make\_div\_coeff}, we change how we compute {\tt div\_coeff} 
+  for $r\in[{\tt anelastic\_cutoff\_coord},{\tt r\_end\_coord}]$.
 
-\item in {\tt make\_S}, we set {\tt delta\_gamma1\_term} and {\tt
-  delta\_gamma1} to zero for $r\in[{\tt anelastic\_cutoff\_coord},{\tt
-    r\_end\_coord}]$.
+\item In {\tt make\_psi}, we only compute $\psi$ for 
+  $r\in[{\tt r\_start\_coord},{\tt anelastic\_cutoff\_coord}-1]$.
+
+\item in {\tt make\_S}, we set {\tt delta\_gamma1\_term} and {\tt delta\_gamma1} 
+  to zero for $r\in[{\tt anelastic\_cutoff\_coord},{\tt r\_end\_coord}]$.
+
+\item In {\tt sponge}, {\tt anelastic\_cutoff} is used in a problem
+  dependent way.
+
+\item In {\tt probin}, {\tt anelastic\_cutoff} is set to $3\times 10^6$
+  by default.
+
 \end{itemize}
 
 \section{base\_cutoff\_density}
