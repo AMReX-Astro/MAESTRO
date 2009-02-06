@@ -18,8 +18,8 @@ contains
   subroutine make_div_coeff(div_coeff,rho0,p0,gamma1bar,grav_center)
 
     use bl_constants_module
-    use geometry, only: nr_fine, dr, anelastic_cutoff_coord, r_start_coord, r_end_coord, &
-         nr, numdisjointchunks, nlevs_radial
+    use geometry, only: nr_fine, dr, r_start_coord, r_end_coord, nr, numdisjointchunks, &
+         nlevs_radial
     use restrict_base_module
     use probin_module, only: smallscale_beta
 
