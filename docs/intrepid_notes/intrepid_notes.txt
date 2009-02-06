@@ -51,3 +51,6 @@ nodes, and <queue_name> is the name of the queue to run the job in.
 There are many [more options] but an important one is the "--mode
 <mode_type>" option; <mode_type> can be either "dual" or "vn".
 Omitting this option defaults to SMP mode.
+
+Monitoring jobs can be done via the "qstat" command.  Monitoring
+account allocation/usage can be done using the "cbank" command.
