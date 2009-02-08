@@ -29,7 +29,7 @@ module probin_module
   real(dp_t), save         :: anelastic_cutoff, base_cutoff_density, dpdt_factor
   integer, save            :: spherical_in, dm_in
   logical, save            :: perturb_model, plot_spec, plot_trac, plot_base
-  character(len=128), save :: plot_base_name
+  character(len=128), save :: plot_base_name, check_base_name
   logical, save            :: evolve_base_state
   logical, save            :: use_thermal_diffusion, temp_diffusion_formulation
   integer, save            :: thermal_diffusion_type
@@ -114,6 +114,7 @@ module probin_module
   namelist /probin/ plot_trac
   namelist /probin/ plot_base
   namelist /probin/ plot_base_name
+  namelist /probin/ check_base_name
   namelist /probin/ evolve_base_state
   namelist /probin/ use_thermal_diffusion
   namelist /probin/ temp_diffusion_formulation
@@ -253,6 +254,7 @@ contains
     plot_trac     = .true.
     plot_base     = .false.
     plot_base_name = "plt"
+    check_base_name = "chk"
     evolve_base_state = .true.
     use_thermal_diffusion = .false.
     temp_diffusion_formulation = .false.
@@ -640,6 +642,10 @@ contains
        case ('--plot_base_name')
           farg = farg + 1
           call get_command_argument(farg, value = plot_base_name)
+
+       case ('--check_base_name')
+          farg = farg + 1
+          call get_command_argument(farg, value = check_base_name)
 
        case ('--evolve_base_state')
           farg = farg + 1

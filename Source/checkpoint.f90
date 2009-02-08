@@ -30,7 +30,7 @@ contains
 
     ! local
     integer :: un, nlevs
-    character(len=128) :: header, sd_name, sd_name_nodal
+    character(len=256) :: header, sd_name, sd_name_nodal
 
     namelist /chkpoint/ nlevs
 
@@ -123,7 +123,7 @@ contains
 
     ! local
     integer            :: un
-    character(len=128) :: header, sd_name
+    character(len=256) :: header, sd_name
     integer            :: nlevs
     real(kind=dp_t)    :: time, dt
 

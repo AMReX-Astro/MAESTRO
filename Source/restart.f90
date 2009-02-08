@@ -19,6 +19,7 @@ contains
     use bl_prof_module
     use checkpoint_module
     use geometry, only: dm
+    use probin_module, only: check_base_name
 
     integer          , intent(in   ) :: restart_int
     real(dp_t)       , intent(  out) :: time,dt
@@ -30,18 +31,21 @@ contains
     type(multifab)   , pointer        :: chk_src_old(:)
     type(multifab)   , pointer        :: chk_rho_omegadot2(:)
     type(multifab)   , pointer        :: chk_rho_Hnuc2(:)
-    character(len=8)                  :: sd_name
+    character(len=5)                  :: check_index
+    character(len=256)                :: check_file_name
     integer                           :: n,nlevs_local
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "fill_restart_data")
 
-    write(unit=sd_name,fmt='("chk",i5.5)') restart_int
+    write(unit=check_index,fmt='(i5.5)') restart_int
+    check_file_name = trim(check_base_name) // check_index
+
     if ( parallel_IOProcessor()) &
-      print *,'Reading ',sd_name,' to get state data for restart'
+      print *,'Reading ', trim(check_file_name), ' to get state data for restart'
     call checkpoint_read(chkdata, chk_p, chk_dsdt, chk_src_old, &
-         chk_rho_omegadot2, chk_rho_Hnuc2, sd_name, time, dt, nlevs_local)
+         chk_rho_omegadot2, chk_rho_Hnuc2, check_file_name, time, dt, nlevs_local)
 
     call build(mba,nlevs_local,dm)
     mba%pd(1) =  bbox(get_boxarray(chkdata(1)))

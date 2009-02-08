@@ -24,7 +24,7 @@ contains
     character(len=11), intent(in) :: state_name
     character(len=8) , intent(in) :: w0_name
     character(len=9) , intent(in) :: etarho_name
-    character(len=8) , intent(in) :: chk_name
+    character(len=*) , intent(in) :: chk_name
     real(kind=dp_t)  , intent(in) :: rho0(:,0:),rhoh0(:,0:)
     real(kind=dp_t)  , intent(in) :: p0(:,0:),gamma1bar(:,0:)
     real(kind=dp_t)  , intent(in) :: div_coeff(:,0:), psi(:,0:)
@@ -32,7 +32,7 @@ contains
     real(kind=dp_t)  , intent(in) :: etarho_ec(:,0:),etarho_cc(:,0:)
 
     real(kind=dp_t) :: base_r, problo
-    character(len=20) :: out_name
+    character(len=256) :: out_name
     integer :: n, r, i
 
     type(bl_prof_timer), save :: bpt
@@ -41,12 +41,12 @@ contains
 
     if (parallel_IOProcessor()) then
 
-       print*,"chk_name",chk_name
+       print*,"chk_name", trim(chk_name)
        print*,"state_name",state_name
 
        ! write out the base state quantities
-       out_name = chk_name // "/" // state_name
-       write(6,*) 'Writing base state to ',out_name
+       out_name = trim(chk_name) // "/" // state_name
+       write(6,*) 'Writing base state to ', trim(out_name)
 
        open(unit=99,file=out_name,form = "formatted", access = "sequential",action="write")
 
@@ -63,8 +63,8 @@ contains
        close(99)
 
        ! write out w0 (it is edge-based, so it gets a separate file)
-       out_name = chk_name // "/" // w0_name
-       write(6,*) 'Writing w0 state to ',out_name
+       out_name = trim(chk_name) // "/" // w0_name
+       write(6,*) 'Writing w0 state to ', trim(out_name)
        write(6,*) ''
 
        open(unit=99,file=out_name,form = "formatted", access = "sequential",action="write")
@@ -79,8 +79,8 @@ contains
        close(99)
 
        ! write out etarho_ec (it is edge-based, so it gets a separate file)
-       out_name = chk_name // "/" // etarho_name
-       write(6,*) 'Writing etarho on edges to ',out_name
+       out_name = trim(chk_name) // "/" // etarho_name
+       write(6,*) 'Writing etarho on edges to ', trim(out_name)
        write(6,*) ''
 
        open(unit=99,file=out_name,form = "formatted", access = "sequential",action="write")
@@ -118,7 +118,7 @@ contains
     character(len=11), intent(in   ) :: state_name
     character(len=8) , intent(in   ) :: w0_name
     character(len=9) , intent(in   ) :: etarho_name
-    character(len=8) , intent(in   ) :: chk_name    
+    character(len=*) , intent(in   ) :: chk_name    
     real(kind=dp_t)  , intent(inout) :: rho0(:,0:),rhoh0(:,0:)
     real(kind=dp_t)  , intent(inout) :: p0(:,0:),gamma1bar(:,0:)
     real(kind=dp_t)  , intent(inout) :: div_coeff(:,0:), psi(:,0:)
@@ -127,7 +127,7 @@ contains
 
     ! local
     real(kind=dp_t) :: r_dummy
-    character(len=20) :: out_name
+    character(len=256) :: out_name
     integer :: r, n, i
 
     type(bl_prof_timer), save :: bpt
@@ -135,9 +135,9 @@ contains
     call build(bpt, "read_base_state")
 
     ! read in the state variables
-    out_name = chk_name // "/" // state_name
+    out_name = trim(chk_name) // "/" // state_name
     if (parallel_IOProcessor()) then
-      print *,'Reading base state from ',out_name
+      print *,'Reading base state from ', trim(out_name)
     end if
 
     open(unit=99,file=out_name)
@@ -154,9 +154,9 @@ contains
     close(99)
 
     ! read in w0
-    out_name = chk_name // "/" // w0_name
+    out_name = trim(chk_name) // "/" // w0_name
     if (parallel_IOProcessor()) then
-      print *,'Reading w0 state from ',out_name
+      print *,'Reading w0 state from ', trim(out_name)
     end if
 
     open(unit=99,file=out_name)
@@ -170,9 +170,9 @@ contains
     close(99)
 
     ! read in etarho_ec
-    out_name = chk_name // "/" // etarho_name
+    out_name = trim(chk_name) // "/" // etarho_name
     if (parallel_IOProcessor()) then
-      print *,'Reading etarho_ec state from ',out_name
+      print *,'Reading etarho_ec state from ', trim(out_name)
     end if
 
     open(unit=99,file=out_name)

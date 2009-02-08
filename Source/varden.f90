@@ -70,9 +70,8 @@ subroutine varden()
 
   type(multifab), pointer :: chkdata(:)
 
-  character(len=8)               :: sd_name
-  character(len=5)               :: plot_index
-  character(len=256)             :: plot_file_name
+  character(len=5)               :: plot_index, check_index
+  character(len=256)             :: plot_file_name, check_file_name
   character(len=11)              :: base_state_name
   character(len=8)               :: base_w0_name
   character(len=9)               :: base_etarho_name
@@ -490,19 +489,26 @@ subroutine varden()
            call multifab_copy_c(chkdata(n),rho_comp+dm      ,sold(n), 1,nscal)
            call multifab_copy_c(chkdata(n),rho_comp+dm+nscal,gpres(n),1,dm)
         end do
-        write(unit=sd_name,fmt='("chk",i5.5)') istep
 
-        call checkpoint_write(sd_name,chkdata,pres,dSdt,Source_old,rho_omegadot2,rho_Hnuc2, &
-                              mla%mba%rr,time,dt)
+        write(unit=check_index,fmt='(i5.5)') istep
+        check_file_name = trim(check_base_name) // check_index
+
+        call checkpoint_write(check_file_name, chkdata, &
+                              pres, dSdt, Source_old, &
+                              rho_omegadot2, rho_Hnuc2, mla%mba%rr, &
+                              time, dt)
 
         last_chk_written = istep
 
         write(unit=base_state_name,fmt='("model_",i5.5)') istep
         write(unit=base_w0_name,fmt='("w0_",i5.5)') istep
         write(unit=base_etarho_name,fmt='("eta_",i5.5)') istep
-        call write_base_state(base_state_name,base_w0_name,base_etarho_name,sd_name, &
-                              rho0_old,rhoh0_old,p0_old,gamma1bar,w0,etarho_ec,etarho_cc, &
-                              div_coeff_old,psi,prob_lo(dm))
+        call write_base_state(base_state_name, base_w0_name, &
+                              base_etarho_name, check_file_name, &
+                              rho0_old, rhoh0_old, p0_old, gamma1bar, &
+                              w0, etarho_ec, etarho_cc, &
+                              div_coeff_old, psi, prob_lo(dm))
+
         do n = 1,nlevs
            call destroy(chkdata(n))
         end do
@@ -941,17 +947,26 @@ subroutine varden()
                  call multifab_copy_c(chkdata(n),rho_comp+dm,snew(n),1,nscal)
                  call multifab_copy_c(chkdata(n),rho_comp+dm+nscal,gpres(n),1,dm)
               end do
-              write(unit=sd_name,fmt='("chk",i5.5)') istep
-              call checkpoint_write(sd_name, chkdata, pres, dSdt,Source_old, &
-                                    rho_omegadot2, rho_Hnuc2, mla%mba%rr, time, dt)
+
+              write(unit=check_index,fmt='(i5.5)') istep
+              check_file_name = trim(check_base_name) // check_index
+
+              call checkpoint_write(check_file_name, chkdata, &
+                                    pres, dSdt, Source_old, &
+                                    rho_omegadot2, rho_Hnuc2, mla%mba%rr, &
+                                    time, dt)
+
               last_chk_written = istep
 
               write(unit=base_state_name,fmt='("model_",i5.5)') istep
               write(unit=base_w0_name,fmt='("w0_",i5.5)') istep
               write(unit=base_etarho_name,fmt='("eta_",i5.5)') istep
-              call write_base_state(base_state_name,base_w0_name,base_etarho_name,sd_name, &
-                                    rho0_new,rhoh0_new,p0_new,gamma1bar(:,:),w0,etarho_ec, &
-                                    etarho_cc,div_coeff_old,psi,prob_lo(dm))
+              call write_base_state(base_state_name, base_w0_name, &
+                                    base_etarho_name, check_file_name, &
+                                    rho0_new, rhoh0_new, p0_new, gamma1bar(:,:), &
+                                    w0, etarho_ec, etarho_cc, &
+                                    div_coeff_old, psi, prob_lo(dm))
+
               do n = 1,nlevs
                  call destroy(chkdata(n))
               end do
@@ -1000,9 +1015,15 @@ subroutine varden()
            call multifab_copy_c(chkdata(n),rho_comp+dm,snew(n),1,nscal)
            call multifab_copy_c(chkdata(n),rho_comp+dm+nscal,gpres(n),1,dm)
         end do
-        write(unit=sd_name,fmt='("chk",i5.5)') istep
-        call checkpoint_write(sd_name, chkdata, pres, dSdt, Source_old, &
-                              rho_omegadot2, rho_Hnuc2,mla%mba%rr, time, dt)
+
+        write(unit=check_index,fmt='(i5.5)') istep
+        check_file_name = trim(check_base_name) // check_index
+
+        call checkpoint_write(check_file_name, chkdata, &
+                              pres, dSdt, Source_old, &
+                              rho_omegadot2, rho_Hnuc2, mla%mba%rr, &
+                              time, dt)
+
         do n = 1,nlevs
            call destroy(chkdata(n))
         end do
@@ -1011,9 +1032,11 @@ subroutine varden()
         write(unit=base_state_name,fmt='("model_",i5.5)') istep
         write(unit=base_w0_name,fmt='("w0_",i5.5)') istep
         write(unit=base_etarho_name,fmt='("eta_",i5.5)') istep
-        call write_base_state(base_state_name,base_w0_name,base_etarho_name,sd_name, &
-                              rho0_new,rhoh0_new,p0_new,gamma1bar,w0,etarho_ec,etarho_cc, &
-                              div_coeff_old,psi,prob_lo(dm))
+        call write_base_state(base_state_name, base_w0_name, &
+                              base_etarho_name, check_file_name, &
+                              rho0_new, rhoh0_new, p0_new, gamma1bar, &
+                              w0, etarho_ec, etarho_cc, &
+                              div_coeff_old, psi, prob_lo(dm))
      end if
 
      if ( plot_int > 0 .and. last_plt_written .ne. istep ) then
