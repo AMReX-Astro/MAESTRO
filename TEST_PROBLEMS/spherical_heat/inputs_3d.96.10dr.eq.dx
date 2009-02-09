@@ -1,5 +1,5 @@
 &PROBIN
- model_file = "model_6.e8.hybrid.hse.960"
+ model_file = "spherical.hse.960"
  drdxfac = 10
 
  anelastic_cutoff = 3.e6
