@@ -28,7 +28,7 @@ contains
     real(kind=dp_t), intent(in   ) :: grav_center(:,0:)
 
     ! local
-    integer :: r, n, i, refrat, j
+    integer :: r, n, refrat, j
     real(kind=dp_t) :: integral
     real(kind=dp_t) :: beta0_edge(nlevs_radial,0:nr_fine)
     real(kind=dp_t) :: lambda, mu, nu
@@ -50,7 +50,7 @@ contains
 
              do r=r_start_coord(n,j),r_end_coord(n,j)
 
-                div_coeff(i,r) = rho0(i,r)
+                div_coeff(n,r) = rho0(n,r)
 
              enddo
 
