@@ -18,11 +18,17 @@
  max_step  = 100000000
  init_iter = 1
 
+ do_initial_projection = 1
+ init_divu_iter = 3
+
  stop_time = 3000.
 
  plot_base = T
  plot_int  = 25
  chk_int   = 25
+
+ plot_base = T
+ plot_trac = F
 
  cflfac = 0.5
  init_shrink = 0.1
@@ -45,27 +51,10 @@
  mg_verbose = 1
  cg_verbose = 0
 
- do_initial_projection = 1
- init_divu_iter = 3
-
- velpert_amplitude = 0.d0
- velpert_radius = 5.d7
- velpert_scale = 5.d7
- velpert_steep = 1.d5
-
- enthalpy_pred_type = 1
- evolve_base_state = T
-
- dpdt_factor = 0.0
-
  use_tfromp = T
-
- interp_type_radial_bin_to_cart = 1
 
  single_prec_plotfiles = T
 
  use_eos_coulomb = T
-
- plot_trac = F
 
 /
