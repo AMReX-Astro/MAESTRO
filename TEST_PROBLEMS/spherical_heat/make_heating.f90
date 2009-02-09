@@ -101,7 +101,7 @@ contains
 
              r = sqrt(x**2 + y**2 + z**2)
 
-             rho_Hext(i,j,k) = 1.d17 * s(i,j,k,rho_comp) * exp(-r**2/width**2)
+             rho_Hext(i,j,k) = 1.d16 * s(i,j,k,rho_comp) * exp(-r**2/width**2)
              
           enddo
        enddo
