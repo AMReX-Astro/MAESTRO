@@ -14,6 +14,7 @@ contains
   subroutine addw0(umac,w0,w0mac,mult)
 
     use bl_prof_module
+    use create_umac_grown_module
     use geometry, only: spherical, dm, nlevs
     
     type(multifab) , intent(inout) :: umac(:,:)
@@ -64,6 +65,16 @@ contains
           end select
        end do
     end do
+
+    if (nlevs .gt. 1) then
+       do n=2,nlevs
+          call create_umac_grown(n,umac(n,:),umac(n-1,:))
+       end do
+    else
+       do i=1,dm
+          call multifab_fill_boundary(umac(1,i))
+       enddo
+    end if
 
     call destroy(bpt)
 

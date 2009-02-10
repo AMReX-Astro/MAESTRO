@@ -91,11 +91,9 @@ contains
           call create_umac_grown(n,utrans(n,:),utrans(n-1,:))
        end do
     else
-       do n=1,nlevs
-          do i=1,dm
-             call multifab_fill_boundary(utrans(n,i))
-          enddo
-       end do
+       do i=1,dm
+          call multifab_fill_boundary(utrans(1,i))
+       enddo
     end if
     
     ! we don't need calls to multifab_physbc or multifab_fill_ghost cells since the boundary 
