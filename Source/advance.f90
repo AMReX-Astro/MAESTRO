@@ -384,6 +384,7 @@ contains
     
     if (evolve_base_state) then
        call advect_base_dens(w0,rho0_old,rho0_new,rho0_predicted_edge,dx(:,dm),dt)
+       call compute_cutoff_coords(rho0_new)
     else
        rho0_new = rho0_old
     end if
@@ -442,11 +443,13 @@ contains
     if (use_etarho .and. evolve_base_state) then
        if (spherical .eq. 0) then
           call average(mla,s2,rho0_new,dx,rho_comp)
+          call compute_cutoff_coords(rho0_new)
        else
           ! set rho0_new = rho0_new - Avg(rho0_new - rho^{(2)})
           call make_sprimebar_spherical(s2,rho_comp,rho0_new,dx,rhoprimebar,mla, &
                                         the_bc_tower%bc_tower_array)
           call correct_base(rho0_new,rhoprimebar)
+          call compute_cutoff_coords(rho0_new)
        end if
     end if
 
@@ -756,6 +759,7 @@ contains
 
     if (evolve_base_state) then
        call advect_base_dens(w0,rho0_old,rho0_new,rho0_predicted_edge,dx(:,dm),dt)
+       call compute_cutoff_coords(rho0_new)
     else
        rho0_new = rho0_old
     end if
@@ -818,10 +822,12 @@ contains
     if (use_etarho .and. evolve_base_state) then
        if (spherical .eq. 0) then
           call average(mla,s2,rho0_new,dx,rho_comp)
+          call compute_cutoff_coords(rho0_new)
        else
           call make_sprimebar_spherical(s2,rho_comp,rho0_new,dx,rhoprimebar,mla, &
                                         the_bc_tower%bc_tower_array)
           call correct_base(rho0_new,rhoprimebar)
+          call compute_cutoff_coords(rho0_new)
        end if
     end if
 
