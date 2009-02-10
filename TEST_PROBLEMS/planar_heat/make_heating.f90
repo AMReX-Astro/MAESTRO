@@ -45,40 +45,19 @@ contains
           hi =  upb(get_box(s(n), i))
           select case (dm)
           case (2)
-             call get_rho_Hext_2d(hp(:,:,1,1), ng_h, sp(:,:,1,:), ng_s, lo, hi, dx(n,:), time)
+             call get_rho_Hext_2d(hp(:,:,1,1),ng_h,sp(:,:,1,:),ng_s,lo,hi,dx(n,:),time)
           case (3)
-             call get_rho_Hext_3d(hp(:,:,:,1), ng_h, sp(:,:,:,:), ng_s, lo, hi, dx(n,:), time)
+             call get_rho_Hext_3d(hp(:,:,:,1),ng_h,sp(:,:,:,:),ng_s,lo,hi,dx(n,:),time)
           end select
        end do
 
     end do
 
-    if (nlevs .eq. 1) then
-
-       ! fill ghost cells for two adjacent grids at the same level
-       ! this includes periodic domain boundary ghost cells
-       call multifab_fill_boundary_c(rho_Hext(nlevs),1,1)
-
-       ! fill non-periodic domain boundary ghost cells
-!       call multifab_physbc(rho_Hext(nlevs),1,foextrap_comp,1,the_bc_level(nlevs))
-
-    else
-
-       ! the loop over nlevs must count backwards to make sure the finer grids are done first
-       do n=nlevs,2,-1
-          ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction(rho_Hext(n-1), rho_Hext(n), mla%mba%rr(n-1,:))
-
-          ! fill level n ghost cells using interpolation from level n-1 data
-          ! note that multifab_fill_boundary and multifab_physbc are called for
-          ! both levels n-1 and n
-!          call multifab_fill_ghost_cells(rho_Hext(n),rho_Hext(n-1), &
-!                                         ng_h,mla%mba%rr(n-1,:), &
-!                                         the_bc_level(n-1),the_bc_level(n), &
-!                                         1,foextrap_comp,1)      
-       end do
-
-    end if
+    ! the loop over nlevs must count backwards to make sure the finer grids are done first
+    do n=nlevs,2,-1
+       ! set level n-1 data to be the average of the level n data covering it
+       call ml_cc_restriction(rho_Hext(n-1), rho_Hext(n), mla%mba%rr(n-1,:))     
+    end do
 
   end subroutine get_rho_Hext
   

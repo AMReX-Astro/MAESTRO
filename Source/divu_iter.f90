@@ -97,10 +97,10 @@ contains
                       the_bc_tower%bc_tower_array,mla)
 
     do n = 1,nlevs
-       call multifab_build(s1(n), mla%la(n), nscal, ng_s)      
-       call multifab_build(rho_omegadot1(n), mla%la(n), nspec, 1)
-       call multifab_build(rho_Hnuc1(n), mla%la(n), 1, 1)
-       call multifab_build(rho_Hext(n), mla%la(n), 1, 1)
+       call multifab_build(s1(n),            mla%la(n), nscal, ng_s)      
+       call multifab_build(rho_omegadot1(n), mla%la(n), nspec, 0)
+       call multifab_build(rho_Hnuc1(n),     mla%la(n), 1,     0)
+       call multifab_build(rho_Hext(n),      mla%la(n), 1,     0)
     end do
 
     ! burn to define rho_omegadot and rho_Hnuc -- needed to make S

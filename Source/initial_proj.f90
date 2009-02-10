@@ -78,11 +78,11 @@ contains
     end if
     
     do n=1,nlevs
-       call multifab_build(delta_gamma1_term(n), mla%la(n), 1, 1)
-       call multifab_build(delta_gamma1(n), mla%la(n), 1, 1)
-       call multifab_build(rho_omegadot1(n), mla%la(n), nspec, 1)
-       call multifab_build(rho_Hnuc1(n), mla%la(n), 1, 1)
-       call multifab_build(rho_Hext(n),      mla%la(n), 1,     1)
+       call multifab_build(delta_gamma1_term(n), mla%la(n), 1,     1)
+       call multifab_build(delta_gamma1(n),      mla%la(n), 1,     1)
+       call multifab_build(rho_omegadot1(n),     mla%la(n), nspec, 0)
+       call multifab_build(rho_Hnuc1(n),         mla%la(n), 1,     0)
+       call multifab_build(rho_Hext(n),          mla%la(n), 1,     0)
        ! we don't have a legit timestep yet, so we set rho_omegadot1, rho_Hnuc1,
        ! and rho_Hext to 0 
        call setval(     rho_omegadot1(n), ZERO, all=.true.)
