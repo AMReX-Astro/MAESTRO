@@ -95,7 +95,7 @@ contains
     integer         :: i,j
     real(kind=dp_t) :: y,width
 
-    width = 5.d7
+    width = 1.d7
 
     do j=lo(2),hi(2)
 
@@ -103,7 +103,7 @@ contains
 
        do i=lo(1),hi(1)
 
-          rho_Hext(i,j) = 1.d16*s(i,j,rho_comp) * exp(-y**2/width**2)
+          rho_Hext(i,j) = 1.d16*s(i,j,rho_comp) * exp(-(y-2.5d7)**2/width**2)
 
        end do
 

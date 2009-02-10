@@ -15,6 +15,7 @@
 
  stop_time = 100.0
 
+ plot_base = T
  plot_int  = 10
  chk_int   = 100
 
