@@ -37,7 +37,7 @@ module geometry
   public :: sin_theta, cos_theta, omega, centrifugal_term
 
   public :: init_dm, init_spherical, init_center, init_radial, init_cutoff, &
-       init_multilevel, init_rotation, destroy_geometry
+       compute_cutoff_coords, init_multilevel, init_rotation, destroy_geometry
 
 contains
 
@@ -153,6 +153,58 @@ contains
     end if
 
   end subroutine init_cutoff
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  subroutine compute_cutoff_coords(rho0)
+
+    use probin_module, only: anelastic_cutoff, base_cutoff_density, burning_cutoff_density
+
+    real(kind=dp_t), intent(in   ) :: rho0(:,0:)
+
+    ! local
+    integer :: n,r
+
+    ! compute the coordinates of the anelastic cutoff
+    anelastic_cutoff_coord(1) = r_end_coord(1,1)+1
+    do r=0,r_end_coord(1,1)
+       if (rho0(1,r) .lt. anelastic_cutoff .and. &
+            anelastic_cutoff_coord(1) .eq. r_end_coord(1,1)+1) then
+          anelastic_cutoff_coord(1) = r
+          exit
+       end if
+    end do
+    do n=2,nlevs_radial
+       anelastic_cutoff_coord(n) = 2*anelastic_cutoff_coord(n-1)
+    end do
+
+    ! compute the coordinates of the base cutoff density
+    base_cutoff_density_coord(1) = r_end_coord(1,1)+1
+    do r=0,r_end_coord(1,1)
+       if (rho0(1,r) .lt. base_cutoff_density .and. &
+            base_cutoff_density_coord(1) .eq. r_end_coord(1,1)+1) then
+          base_cutoff_density_coord(1) = r
+          exit
+       end if
+    end do
+    do n=2,nlevs_radial
+       base_cutoff_density_coord(n) = 2*base_cutoff_density_coord(n-1)
+    end do
+
+    ! compute the coordinates of the burning cutoff density
+    burning_cutoff_density_coord(1) = r_end_coord(1,1)+1
+    do r=0,r_end_coord(1,1)
+       if (rho0(1,r) .lt. burning_cutoff_density .and. &
+            burning_cutoff_density_coord(1) .eq. r_end_coord(1,1)+1) then
+          burning_cutoff_density_coord(1) = r
+          exit
+       end if
+    end do
+    do n=2,nlevs_radial
+       burning_cutoff_density_coord(n) = 2*burning_cutoff_density_coord(n-1)
+    end do
+
+  end subroutine compute_cutoff_coords
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 

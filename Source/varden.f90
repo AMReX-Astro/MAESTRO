@@ -232,44 +232,7 @@ subroutine varden()
   ! Create normal now that we have defined center and dx
   call make_normal(normal,dx)
 
-  ! compute the coordinates of the anelastic cutoff
-  anelastic_cutoff_coord(1) = r_end_coord(1,1)+1
-  do r=0,r_end_coord(1,1)
-     if (rho0_old(1,r) .lt. anelastic_cutoff .and. &
-          anelastic_cutoff_coord(1) .eq. r_end_coord(1,1)+1) then
-        anelastic_cutoff_coord(1) = r
-        exit
-     end if
-  end do
-  do n=2,nlevs_radial
-     anelastic_cutoff_coord(n) = 2*anelastic_cutoff_coord(n-1)
-  end do
-
-  ! compute the coordinates of the base cutoff density
-  base_cutoff_density_coord(1) = r_end_coord(1,1)+1
-  do r=0,r_end_coord(1,1)
-     if (rho0_old(1,r) .lt. base_cutoff_density .and. &
-          base_cutoff_density_coord(1) .eq. r_end_coord(1,1)+1) then
-        base_cutoff_density_coord(1) = r
-        exit
-     end if
-  end do
-  do n=2,nlevs_radial
-     base_cutoff_density_coord(n) = 2*base_cutoff_density_coord(n-1)
-  end do
-
-  ! compute the coordinates of the burning cutoff density
-  burning_cutoff_density_coord(1) = r_end_coord(1,1)+1
-  do r=0,r_end_coord(1,1)
-     if (rho0_old(1,r) .lt. burning_cutoff_density .and. &
-          burning_cutoff_density_coord(1) .eq. r_end_coord(1,1)+1) then
-        burning_cutoff_density_coord(1) = r
-        exit
-     end if
-  end do
-  do n=2,nlevs_radial
-     burning_cutoff_density_coord(n) = 2*burning_cutoff_density_coord(n-1)
-  end do
+  call compute_cutoff_coords(rho0_old)
 
   if (do_sponge) then
      call init_sponge(rho0_old(1,:),dx(1,:),prob_lo(dm))

@@ -43,8 +43,7 @@ contains
     use thermal_conduct_module
     use make_explicit_thermal_module
     use variables, only: nscal, press_comp, temp_comp, rho_comp, rhoh_comp, foextrap_comp
-    use geometry, only: spherical, nr_fine, r_end_coord, anelastic_cutoff_coord, &
-         base_cutoff_density_coord, burning_cutoff_density_coord, dm, nlevs, nlevs_radial
+    use geometry
     use network, only: nspec
     use make_grav_module
     use make_eta_module
@@ -161,44 +160,7 @@ contains
 
     halfdt = half*dt
 
-    ! compute the coordinates of the anelastic cutoff
-    anelastic_cutoff_coord(1) = r_end_coord(1,1)+1
-    do r=0,r_end_coord(1,1)
-       if (rho0_old(1,r) .lt. anelastic_cutoff .and. &
-            anelastic_cutoff_coord(1) .eq. r_end_coord(1,1)+1) then
-          anelastic_cutoff_coord(1) = r
-          exit
-       end if
-    end do
-    do n=2,nlevs_radial
-       anelastic_cutoff_coord(n) = 2*anelastic_cutoff_coord(n-1)
-    end do
-
-    ! compute the coordinates of the base cutoff density
-    base_cutoff_density_coord(1) = r_end_coord(1,1)+1
-    do r=0,r_end_coord(1,1)
-       if (rho0_old(1,r) .lt. base_cutoff_density .and. &
-            base_cutoff_density_coord(1) .eq. r_end_coord(1,1)+1) then
-          base_cutoff_density_coord(1) = r
-          exit
-       end if
-    end do
-    do n=2,nlevs_radial
-       base_cutoff_density_coord(n) = 2*base_cutoff_density_coord(n-1)
-    end do
-
-    ! compute the coordinates of the burning cutoff density
-    burning_cutoff_density_coord(1) = r_end_coord(1,1)+1
-    do r=0,r_end_coord(1,1)
-       if (rho0_old(1,r) .lt. burning_cutoff_density .and. &
-            burning_cutoff_density_coord(1) .eq. r_end_coord(1,1)+1) then
-          burning_cutoff_density_coord(1) = r
-          exit
-       end if
-    end do
-    do n=2,nlevs_radial
-       burning_cutoff_density_coord(n) = 2*burning_cutoff_density_coord(n-1)
-    end do
+    call compute_cutoff_coords(rho0_old)
     
     ! tempbar is only used as an initial guess for eos calls
     if (enthalpy_pred_type .ne. predict_Tprime_then_h) then
