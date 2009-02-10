@@ -40,7 +40,7 @@ contains
 
   subroutine correct_base_state_spherical(s0_new,sprimebar)
 
-    use geometry, only: anelastic_cutoff_coord, r_cc_loc, r_edge_loc, dr
+    use geometry, only: r_cc_loc, r_edge_loc, dr, nr
 
     real(kind=dp_t), intent(inout) :: s0_new(0:)
     real(kind=dp_t), intent(in   ) :: sprimebar(0:)
@@ -48,7 +48,7 @@ contains
     ! Local variables
     integer :: r
 
-    do r=0,anelastic_cutoff_coord(1)-1
+    do r=0,nr(1)-1
        s0_new(r) = s0_new(r) + sprimebar(r)
     end do
     
