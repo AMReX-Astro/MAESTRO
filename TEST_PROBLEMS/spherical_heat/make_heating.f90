@@ -88,7 +88,7 @@ contains
     integer :: i, j, k
     real(kind=dp_t) :: x, y, z, r, width
 
-    width = 5.d7
+    width = 2.5d7
 
     do k = lo(3), hi(3)
        z = (dble(k) + HALF)*dx(3) - center(3)
@@ -101,7 +101,7 @@ contains
 
              r = sqrt(x**2 + y**2 + z**2)
 
-             rho_Hext(i,j,k) = 1.d16 * s(i,j,k,rho_comp) * exp(-r**2/width**2)
+             rho_Hext(i,j,k) = 1.d17 * s(i,j,k,rho_comp) * exp(-r**2/width**2)
              
           enddo
        enddo
