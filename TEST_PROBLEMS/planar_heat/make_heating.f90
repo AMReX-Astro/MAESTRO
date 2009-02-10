@@ -53,17 +53,39 @@ contains
 
     end do
 
-    ! the loop over nlevs must count backwards to make sure the finer grids are done first
-    do n=nlevs,2,-1
-       ! set level n-1 data to be the average of the level n data covering it
-       call ml_cc_restriction(rho_Hext(n-1), rho_Hext(n), mla%mba%rr(n-1,:))
-    end do
+    if (nlevs .eq. 1) then
+
+       ! fill ghost cells for two adjacent grids at the same level
+       ! this includes periodic domain boundary ghost cells
+       call multifab_fill_boundary_c(rho_Hext(nlevs),1,1)
+
+       ! fill non-periodic domain boundary ghost cells
+!       call multifab_physbc(rho_Hext(nlevs),1,foextrap_comp,1,the_bc_level(nlevs))
+
+    else
+
+       ! the loop over nlevs must count backwards to make sure the finer grids are done first
+       do n=nlevs,2,-1
+          ! set level n-1 data to be the average of the level n data covering it
+          call ml_cc_restriction(rho_Hext(n-1), rho_Hext(n), mla%mba%rr(n-1,:))
+
+          ! fill level n ghost cells using interpolation from level n-1 data
+          ! note that multifab_fill_boundary and multifab_physbc are called for
+          ! both levels n-1 and n
+!          call multifab_fill_ghost_cells(rho_Hext(n),rho_Hext(n-1), &
+!                                         ng_h,mla%mba%rr(n-1,:), &
+!                                         the_bc_level(n-1),the_bc_level(n), &
+!                                         1,foextrap_comp,1)      
+       end do
+
+    end if
 
   end subroutine get_rho_Hext
   
   subroutine get_rho_Hext_2d(rho_Hext,ng_h,s,ng_s,lo,hi,dx,time)
     
     use bl_constants_module
+    use variables, only: rho_comp
     
     integer, intent(in) :: lo(:), hi(:), ng_s, ng_h
     real(kind=dp_t), intent(inout) :: rho_Hext(lo(1)-ng_h:,lo(2)-ng_h:)
@@ -100,6 +122,8 @@ contains
     real(kind=dp_t), intent(in   ) ::        s(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
     real(kind=dp_t), intent(in   ) :: dx(:),time
     
+    rho_Hext = 0.d0
+
   end subroutine get_rho_Hext_3d
   
 end module heating_module
