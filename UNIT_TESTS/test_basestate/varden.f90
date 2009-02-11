@@ -281,7 +281,9 @@ subroutine varden()
 
      p0 = p0_old
      call enforce_HSE(s0(:,:,rho_comp),p0,grav_cell)
-     call make_psi_spherical(psi,w0,gam1,p0_old,p0,Sbar_in)
+     if (spherical .eq. 1) then
+        call make_psi_spherical(psi,w0,gam1,p0_old,p0,Sbar_in)
+     end if
 
      call advect_base_enthalpy(w0,Sbar_in,s0_old(:,:,rho_comp), &
                                s0_old(:,:,rhoh_comp),s0(:,:,rhoh_comp), &
