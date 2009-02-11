@@ -212,13 +212,22 @@ subroutine varden()
      ! compute the heating term
      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-     y_0 = 4.d7
 
      print *, 'calling the eos', nr_fine
      do i = 0, nr_fine-1
 
-        Hbar = 1.d16 * exp(-((r_cc_loc(1,i) - y_0)**2)/ 1.d14)
-     
+        if (spherical .eq. 0) then
+
+           ! plane-parallel -- do the heating term in paper II (section 4)
+           y_0 = 4.d7
+           Hbar = 1.d17 * exp(-((r_cc_loc(1,i) - y_0)**2)/ 1.d14)
+        else
+
+           ! spherical -- lower amplitude heating term
+           y_0 = 4.d7
+           Hbar = 1.d16 * exp(-((r_cc_loc(1,i) - y_0)**2)/ 1.d14)
+        endif
+
         ! (rho, T) --> p,h, etc
         den_eos(1)  = s0(1,i,rho_comp)
         temp_eos(1) = s0(1,i,temp_comp)
