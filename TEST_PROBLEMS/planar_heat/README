@@ -11,3 +11,4 @@ In subroutine make_macrhs_2d, set rhs=0.d0
 
 In subroutine mk_vel_force_2d, set rhopert = 0.d0
 
+In subroutine add_w0_force_2d, comment out the w0_force contribution
