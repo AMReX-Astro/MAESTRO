@@ -26,6 +26,8 @@ pvar=radial_velocity
 work_dir=`pwd`
 HPSS_DIR=`basename $work_dir`
 
+# set HTAR command
+HTAR=/opt/public/bin/htar
 
 #----------------------------------------------------------------------------
 # initialization stuff
@@ -127,15 +129,23 @@ function process_files
         ${fsnapshot3d} -p ${dir} -n 3 -cname "${pvar}" -m -1.e6 -M 1.e6
 
         # store the file on HPSS
-        htar -cvf ${HPSS_DIR}/${dir}.tar ${dir} 
+        ${HTAR} -cvf ${HPSS_DIR}/${dir}.tar ${dir} > ${dir}.htar
 
-	# htar's exit status is 0 if it was successful.  The variable $? 
-	# holds the exit status of the previous command
+	# Ordinarily, we'd check htar's exit status (0 = successful), but 
+	# on some machines (like Atlas) htar doesn't return a valid exit
+	# status.  Instead we'll grep for the success line at the end of 
+	# htar's output (which we piped into a file) and check the output 
+	# status of grep
+	grep "HTAR: HTAR SUCCESSFUL" ${dir}.htar >> /dev/null
 
+	# $? holds the exit status of the previous command
 	if [ $? -eq 0 ]; then
-
+	    
           # mark this file as processed so we skip it next time
           date > ${dir}.processed
+
+	  # remove the htar temporary file
+	  rm ${dir}.htar
 
 	  # move the plotfile into the plotfiles directory
 	  mv ${dir} plotfiles/
@@ -183,7 +193,14 @@ function process_files
       if [ ! -f ${dir}.processed ]; then
 
         # store the file on HPSS
-        htar -cvf ${HPSS_DIR}/${dir}.tar ${dir} 
+        ${HTAR} -cvf ${HPSS_DIR}/${dir}.tar ${dir} > ${dir}.htar
+
+	# Ordinarily, we'd check htar's exit status (0 = successful), but 
+	# on some machines (like Atlas) htar doesn't return a valid exit
+	# status.  Instead we'll grep for the success line at the end of 
+	# htar's output (which we piped into a file) and check the output 
+	# status of grep
+        grep "HTAR: HTAR SUCCESSFUL" ${dir}.htar >> /dev/null
 
 	# htar's exit status is 0 if it was successful.  The variable $? 
 	# holds the exit status of the previous command
@@ -192,6 +209,10 @@ function process_files
 
           # mark this file as processed so we skip it next time
           date > ${dir}.processed
+
+          # remove the htar temporary file
+          rm ${dir}.htar
+
         fi
 
       fi
