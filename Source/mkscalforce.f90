@@ -328,7 +328,7 @@ contains
 
     use fill_3d_module
     use geometry, only: nr_fine, dr, center
-    use probin_module, only: enthalpy_pred_type, base_cutoff_density
+    use probin_module, only: enthalpy_pred_type
     use pred_parameters
 
     ! compute the source terms for the non-reactive part of the enthalpy equation {w dp0/dr}
@@ -572,7 +572,7 @@ contains
 
     use fill_3d_module
     use geometry, only: nr_fine, dr, center
-    use probin_module, only: enthalpy_pred_type, base_cutoff_density
+    use probin_module, only: enthalpy_pred_type
     use pred_parameters
 
     ! compute the source terms for the non-reactive part of the enthalpy equation {w dp0/dr}
