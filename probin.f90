@@ -8,6 +8,7 @@ module probin_module
   use pred_parameters
   use multifab_module, only: multifab_set_alltoallv
   use cluster_module
+  use layout_module
 
   implicit none
 
@@ -56,7 +57,7 @@ module probin_module
   integer, save            :: use_ppm
   integer, save            :: max_levs, max_grid_size, regrid_int, ref_ratio
   integer, save            :: n_cellx, n_celly, n_cellz
-  integer, save            :: drdxfac, min_width
+  integer, save            :: drdxfac, min_width, the_sfc_threshold
   real(dp_t), save         :: min_eff
   real(dp_t), save         :: burning_cutoff_density  ! note: presently not runtime parameter
   real(dp_t), save         :: rotational_frequency, co_latitude, radius
@@ -159,6 +160,7 @@ module probin_module
   namelist /probin/ n_celly
   namelist /probin/ n_cellz
   namelist /probin/ drdxfac
+  namelist /probin/ the_sfc_threshold
   namelist /probin/ min_eff
   namelist /probin/ min_width
   namelist /probin/ rotational_frequency
@@ -319,6 +321,8 @@ contains
     smallscale_beta = .false.
 
     do_alltoallv = .false.
+
+    the_sfc_threshold = 4  ! Same as the default in layout_module.
 
     ! 0 = no ppm
     ! 1 = 1985 ppm
@@ -822,6 +826,11 @@ contains
           call get_command_argument(farg, value = fname)
           read(fname, *) do_alltoallv
 
+       case ('--the_sfc_threshold')
+          farg = farg + 1
+          call get_command_argument(farg, value = fname)
+          read(fname, *) the_sfc_threshold
+
        case ('--use_ppm')
           farg = farg + 1
           call get_command_argument(farg, value = fname)
@@ -929,6 +938,8 @@ contains
     call cluster_set_minwidth(min_width)
 
     if (do_alltoallv) call multifab_set_alltoallv(.true.)
+
+    call layout_set_sfc_threshold(the_sfc_threshold)
 
     call destroy(bpt)
     
