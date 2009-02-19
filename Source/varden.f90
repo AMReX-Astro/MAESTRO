@@ -274,6 +274,7 @@ subroutine varden()
 
      ! tempbar is only used as an initial guess for eos calls
      call average(mla,sold,tempbar,dx,temp_comp)
+     tempbar = max(tempbar,small_temp)
 
      call make_gamma(mla,gamma1,sold,p0_old,tempbar,dx)
      call average(mla,gamma1,gamma1bar,dx,1)
@@ -355,6 +356,7 @@ subroutine varden()
         ! Note: if we keep enthalpy_pred_type .eq. predict_Tprime_then_h, then
         ! we need to instead store tempbar (or t0 if we renname it) in the checkpoint file
         call average(mla,sold,tempbar,dx,temp_comp)
+        tempbar = max(tempbar,small_temp)
 
         ! we generate this only for the initial plotfile
         if (do_sponge) then
@@ -487,6 +489,7 @@ subroutine varden()
         ! tempbar is only used as an initial guess for eos calls
         if (enthalpy_pred_type .ne. predict_Tprime_then_h) then
            call average(mla,sold,tempbar,dx,temp_comp)
+           tempbar = max(tempbar,small_temp)
         end if
 
         write(unit=plot_index,fmt='(i5.5)') istep
@@ -686,6 +689,7 @@ subroutine varden()
 
            ! now that the grids and the full state have changed, recompute tempbar
            call average(mla,sold,tempbar,dx,temp_comp)
+           tempbar = max(tempbar,small_temp)
 
            ! gamma1bar needs to be recomputed
            if (allocated(gamma1)) then

@@ -165,6 +165,7 @@ contains
     ! tempbar is only used as an initial guess for eos calls
     if (enthalpy_pred_type .ne. predict_Tprime_then_h) then
        call average(mla,sold,tempbar,dx,temp_comp)
+       tempbar = max(tempbar,small_temp)
     end if
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
