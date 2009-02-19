@@ -39,6 +39,7 @@ contains
     integer                      :: domlo(dm),domhi(dm),lo(dm),hi(dm)
     integer                      :: i,j,r,n,ng,rr,nr_crse
     real(kind=dp_t)              :: w_lo, w_hi, del_w, wsix, theta
+    real(kind=dp_t)              :: w_min, w_max
 
     real(kind=dp_t) ::   ncell_grid(nlevs,0:nr_fine-1)
     real(kind=dp_t) ::   ncell_proc(nlevs,0:nr_fine-1)
@@ -220,18 +221,36 @@ contains
              w_hi = ( 7.d0 * (phibar_crse(r  ) + phibar_crse(r+1)) &
                      -1.d0 * (phibar_crse(r-1) + phibar_crse(r+2)) ) / 12.d0
 
+             w_min = min(phibar_crse(r),phibar_crse(r-1))
+             w_max = max(phibar_crse(r),phibar_crse(r-1))
+             w_lo = max(w_lo,w_min)
+             w_lo = min(w_lo,w_max)
+
+             w_min = min(phibar_crse(r),phibar_crse(r+1))
+             w_max = max(phibar_crse(r),phibar_crse(r+1))
+             w_hi = max(w_hi,w_min)
+             w_hi = min(w_hi,w_max)
+
              del_w = w_hi - w_lo
 
              wsix = 6.d0 * ( phibar_crse(r) - 0.5d0 * (w_lo + w_hi) )
+
+             w_min = min(w_lo,w_hi)
+             w_max = max(w_lo,w_hi)
 
              do j = 0, min(drdxfac-1,nr_fine-drdxfac*r-1)
                 ! piecewise constant
                 ! phibar(nlevs,drdxfac*r+j) = phibar_crse(r)
    
                 ! parabolic interpolation
-                theta = dble(j) / dble(drdxfac)
-                phibar(1,drdxfac*r+j) = w_lo + theta * del_w + &
-                                       theta * (1.d0 - theta) * wsix
+                theta = (dble(j)+0.5d0) / dble(drdxfac)
+                phibar(1,drdxfac*r+j) = &
+                       w_lo + &
+                       theta * del_w + &
+                       theta * (1.d0 - theta) * wsix
+
+                phibar(1,drdxfac*r+j) = max(phibar(1,drdxfac*r+j),w_min)
+                phibar(1,drdxfac*r+j) = min(phibar(1,drdxfac*r+j),w_max)
 
              end do
 
