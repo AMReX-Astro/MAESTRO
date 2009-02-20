@@ -194,21 +194,21 @@ contains
              ! Now compute the average
              if (ncell_crse(r) .gt. ZERO) then
                 phibar_crse(r) = phibar_crse(r) / ncell_crse(r)
-             else if (r .eq. nr_crse-3) then
-                phibar_crse(r) = phibar_crse(nr_crse-4)
-             else if (r .eq. nr_crse-2) then
-                phibar_crse(r) = phibar_crse(nr_crse-3)
-             else if (r .eq. nr_crse-1) then
-                phibar_crse(r) = phibar_crse(nr_crse-2)
-             else 
-                call bl_error("ERROR: ncell_crse = 0 in average")
+             else
+                ! if this is ever the case, it means we are in a very coarse
+                ! region away from the center of the star so assuming the 
+                ! average stays constant is a reasonable assumption
+                phibar_crse(r) = phibar_crse(r-1)
              end if
+
           end do
 
+          ! "ghost cells" needed to compute 4th order profiles
           ! Reflect (even) across origin
           phibar_crse(-1) = phibar_crse(0)
           phibar_crse(-2) = phibar_crse(1)
 
+          ! "ghost cells" needed to compute 4th order profiles
           ! Extend at high r
           phibar_crse(nr_crse  ) = phibar_crse(nr_crse-1)
           phibar_crse(nr_crse+1) = phibar_crse(nr_crse-1)
@@ -251,7 +251,6 @@ contains
 
                 phibar(1,drdxfac*r+j) = max(phibar(1,drdxfac*r+j),w_min)
                 phibar(1,drdxfac*r+j) = min(phibar(1,drdxfac*r+j),w_max)
-
              end do
 
           end do
