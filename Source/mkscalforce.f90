@@ -992,7 +992,7 @@ contains
     integer :: i,j,k
     real(kind=dp_t) :: p0_lox,p0_hix,p0_loy,p0_hiy,p0_loz,p0_hiz
     real(kind=dp_t) :: divup,p0divu,ugradp,dhdp
-    real(kind=dp_t) :: t0_lox,t0_hix,t0_loy,t0_hiy,t0_loz,t0_hiz,t0_cen
+    real(kind=dp_t) :: t0_lox,t0_hix,t0_loy,t0_hiy,t0_loz,t0_hiz
     real(kind=dp_t) :: divut,t0divu
     real(kind=dp_t) :: psi_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1)
 
@@ -1065,12 +1065,9 @@ contains
                         (vmac(i,j+1,k) * t0_hiy - vmac(i,j,k) * t0_loy) / dx(2) + &
                         (wmac(i,j,k+1) * t0_hiz - wmac(i,j,k) * t0_loz) / dx(3)
                 
-                t0_cen = (t0_lox + t0_hix + t0_loy + t0_hiy + t0_loz + t0_hiz) / 6.d0
-                ! t0_cen = t0_cart(i,j,k)
-                
                 t0divu = ( (umac(i+1,j,k) - umac(i,j,k)) / dx(1) + &
                            (vmac(i,j+1,k) - vmac(i,j,k)) / dx(2) + &
-                           (wmac(i,j,k+1) - wmac(i,j,k)) / dx(3) ) * t0_cen
+                           (wmac(i,j,k+1) - wmac(i,j,k)) / dx(3) ) * t0_cart(i,j,k)
                 
                 temp_force(i,j,k) = temp_force(i,j,k) + t0divu - divut
 
