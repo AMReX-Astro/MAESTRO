@@ -348,7 +348,7 @@ contains
     real(kind=dp_t), allocatable :: psi_cart(:,:,:,:)
 
     real(kind=dp_t) :: p0_lox,p0_hix,p0_loy,p0_hiy,p0_loz,p0_hiz
-    real(kind=dp_t) :: divup, p0divu, p0_cen
+    real(kind=dp_t) :: divup, p0divu
     integer         :: i,j,k
 
     ! Here we make u grad p = div (u p) - p div (u) 
@@ -367,13 +367,9 @@ contains
                      (vmac(i,j+1,k) * p0_hiy - vmac(i,j,k) * p0_loy) / dx(2) + &
                      (wmac(i,j,k+1) * p0_hiz - wmac(i,j,k) * p0_loz) / dx(3)
 
-             ! This version of p0_cen seems to give a better tfromh
-             p0_cen = (p0_lox + p0_hix + p0_loy + p0_hiy + p0_loz + p0_hiz) / 6.d0
-!            p0_cen = p0_cart(i,j,k)
-
              p0divu = ( (umac(i+1,j,k) - umac(i,j,k)) / dx(1) + &
                         (vmac(i,j+1,k) - vmac(i,j,k)) / dx(2) + &
-                        (wmac(i,j,k+1) - wmac(i,j,k)) / dx(3) ) * p0_cen
+                        (wmac(i,j,k+1) - wmac(i,j,k)) / dx(3) ) * p0_cart(i,j,k)
 
              rhoh_force(i,j,k) = divup - p0divu
 
@@ -597,7 +593,7 @@ contains
     real(kind=dp_t) :: p0_lox,p0_hix,p0_loy,p0_hiy,p0_loz,p0_hiz
     real(kind=dp_t) :: h0_lox,h0_hix,h0_loy,h0_hiy,h0_loz,h0_hiz
     real(kind=dp_t) :: rhoavg
-    real(kind=dp_t) :: divup, p0divu, p0_cen
+    real(kind=dp_t) :: divup, p0divu
     real(kind=dp_t) :: divuh, h0divu, h0_cen
     integer         :: i,j,k
 
@@ -617,11 +613,9 @@ contains
                      (vmac(i,j+1,k) * p0_hiy - vmac(i,j,k) * p0_loy) / dx(2) + &
                      (wmac(i,j,k+1) * p0_hiz - wmac(i,j,k) * p0_loz) / dx(3)
 
-             p0_cen = (p0_lox + p0_hix + p0_loy + p0_hiy + p0_loz + p0_hiz) / 6.d0
-
              p0divu = ( (umac(i+1,j,k) - umac(i,j,k)) / dx(1) + &
                         (vmac(i,j+1,k) - vmac(i,j,k)) / dx(2) + &
-                        (wmac(i,j,k+1) - wmac(i,j,k)) / dx(3) ) * p0_cen
+                        (wmac(i,j,k+1) - wmac(i,j,k)) / dx(3) ) * p0_cart(i,j,k)
 
              rhoavg = 0.5d0* (rhoold(i,j,k) + rhonew(i,j,k))
 
@@ -998,7 +992,7 @@ contains
     real(kind=dp_t), intent(in   ) :: dx(:)
 
     integer :: i,j,k
-    real(kind=dp_t) :: p0_lox,p0_hix,p0_loy,p0_hiy,p0_loz,p0_hiz,p0_cen
+    real(kind=dp_t) :: p0_lox,p0_hix,p0_loy,p0_hiy,p0_loz,p0_hiz
     real(kind=dp_t) :: divup,p0divu,ugradp,dhdp
     real(kind=dp_t) :: t0_lox,t0_hix,t0_loy,t0_hiy,t0_loz,t0_hiz,t0_cen
     real(kind=dp_t) :: divut,t0divu
@@ -1041,13 +1035,9 @@ contains
                      (vmac(i,j+1,k) * p0_hiy - vmac(i,j,k) * p0_loy) / dx(2) + &
                      (wmac(i,j,k+1) * p0_hiz - wmac(i,j,k) * p0_loz) / dx(3)
 
-             ! This version of p0_cen seems to give a better tfromh
-             p0_cen = (p0_lox + p0_hix + p0_loy + p0_hiy + p0_loz + p0_hiz) / 6.d0
-             ! p0_cen = p0_cart(i,j,k)
-
              p0divu = ( (umac(i+1,j,k) - umac(i,j,k)) / dx(1) + &
                         (vmac(i,j+1,k) - vmac(i,j,k)) / dx(2) + &
-                        (wmac(i,j,k+1) - wmac(i,j,k)) / dx(3) ) * p0_cen
+                        (wmac(i,j,k+1) - wmac(i,j,k)) / dx(3) ) * p0_cart(i,j,k)
              
              ugradp = divup - p0divu
              
