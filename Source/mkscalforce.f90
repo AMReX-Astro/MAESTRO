@@ -594,7 +594,7 @@ contains
     real(kind=dp_t) :: h0_lox,h0_hix,h0_loy,h0_hiy,h0_loz,h0_hiz
     real(kind=dp_t) :: rhoavg
     real(kind=dp_t) :: divup, p0divu
-    real(kind=dp_t) :: divuh, h0divu, h0_cen
+    real(kind=dp_t) :: divuh, h0divu
     integer         :: i,j,k
 
     ! Here we make u grad p = div (u p) - p div (u) 
@@ -641,11 +641,9 @@ contains
                      (vmac(i,j+1,k) * h0_hiy - vmac(i,j,k) * h0_loy) / dx(2) + &
                      (wmac(i,j,k+1) * h0_hiz - wmac(i,j,k) * h0_loz) / dx(3)
 
-             h0_cen = (h0_lox + h0_hix + h0_loy + h0_hiy + h0_loz + h0_hiz) / 6.d0
-
              h0divu = ( (umac(i+1,j,k) - umac(i,j,k)) / dx(1) + &
                         (vmac(i,j+1,k) - vmac(i,j,k)) / dx(2) + &
-                        (wmac(i,j,k+1) - wmac(i,j,k)) / dx(3) ) * h0_cen
+                        (wmac(i,j,k+1) - wmac(i,j,k)) / dx(3) ) * h0_cart(i,j,k)
 
              rhoh_force(i,j,k) = rhoh_force(i,j,k) - divuh + h0divu
 
