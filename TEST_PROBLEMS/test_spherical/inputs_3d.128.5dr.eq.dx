@@ -1,5 +1,6 @@
 &PROBIN
- model_file = "spherical.hse.128"
+ model_file = "spherical.hse.640"
+ drdxfac = 5
 
  test_set = "gr0_3d.128"
 
