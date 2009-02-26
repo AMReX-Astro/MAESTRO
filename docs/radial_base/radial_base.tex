@@ -14,7 +14,8 @@ A typical simulation may use $5 \Delta r = \Delta x$.
 We call the procedure to go from 1-d to 3-d {\tt fill\_3d} and the
 complementary procedure that takes us from 3-d to 1-d {\tt average}.
 \section{\tt fill\_3d}
-There are three different {\tt fill\_3d} modes:
+There are three different {\tt fill\_3d} modes, each performed with the
+subroutine, {\tt put\_1d\_array\_on\_cart}:
 \begin{enumerate}
 \item The 1D array is bin-centered, and we map to Cartesian cell-centers.
 \item The 1D array is edge-centered, and we map to Cartesian cell-centers.
@@ -22,9 +23,9 @@ There are three different {\tt fill\_3d} modes:
 \end{enumerate}
 \subsection{1D Cell-Centered to Cartesian Cell-Centered}
 \label{Sec:1D Cell-Centered to Cartesian Cell-Centered}
-This mapping is done in the subroutine {\tt put\_1d\_array\_on\_cart}.
 Figure \ref{fig:mapping} shows the Cartesian grid with the spherical
-base state overlayed (for simplicity, the figure is drawn in 2-d).  
+base state overlayed (for simplicity, the figure is drawn in 2-d 
+using $2 \Delta r = \Delta x$).  
 We compute the radius of the Cartesian cell center from the center of the star,
 \begin{equation}
 r = \sqrt{(x_i - x_c)^2 + (y_j - y_c)^2 + (z_k - z_c)^2}
@@ -39,7 +40,6 @@ Cartesian grid.  If the output is a vector quantity, rather than a scalar, we
 multiply the result by the unit vector in the normal direction.
 \subsection{1D Edge-Centered to Cartesian Cell-Centered}
 \label{Sec:1D Edge-Centered to Cartesian Cell-Centered}
-This mapping is done in the subroutine {\tt put\_1d\_array\_on\_cart}.
 Again, for each Cartesian cell-center, we compute the corresponding radial
 bin.  We linearly interpolate from the two nearest radial edge values 
 to get the Cartesian cell-centered value.  In essence,
@@ -48,7 +48,6 @@ Cartesian grid.  If the output is a vector quantity, rather than a scalar, we
 multiply the result by the unit vector in the normal direction.
 \subsection{1D Edge-Centered to Cartesian Edges}
 \label{Sec:1D Edge-Centered to Cartesian Edges}
-This mapping is done in the subroutine {\tt put\_1d\_array\_on\_cart}.
 This case is only used to create {\tt w0mac} from {\tt w0} in the 
 subroutine, {\tt put\_w0\_on\_edges}.  There are several variations 
 of the interpolation, controlled by {\tt w0mac\_interp\_type}.  We 
@@ -57,13 +56,26 @@ map $w_0$ onto Cartesian cell-centers, and multiply the result by
 the unit vector in the normal direction.  Then, for each Cartesian 
 face, we obtain the normal velocity by averaging the corresponding 
 velocities from the Cartesian cell-centers adjacent to the face.
-\section{Avg}\label{Sec:Avg}
-For the {\bf Avg} process, we first create a coarse 1D radial array 
-with $\Delta x = \Delta r$.  Then, we compute the radius of the Cartesian cell 
-center, and compute the index, $n$, of the corresponding coarse radial 
-bin.  $q_{0,n}$ is then the average of all the $q_{i,j,k}$ whose 
-Cartesian cell center maps into coarse radial bin $n$.  Then, we 
-interpolate the coarse radial array onto the finer radial array.
+\subsection{1D Cell-Centered to Cartesian Edges}
+We don't have a subroutine that does this directly, but at various points
+in the algorithm we need base state quantities on edges.  For example, we 
+need $\rho_0$ at edges to compute the full state $\rho$ used to compute 
+fluxes.  More to come...
+\MarginPar{This section needs to be written.}
+\section{{\tt average}}\label{Sec:Avg}
+For the {\tt average} process, we first define a coarse 1D radial array 
+with $\Delta r_{\rm c} = \Delta x$.  Then, we compute the radius of each
+Cartesian cell center, and compute the index of the corresponding coarse radial 
+bin, $n_{\rm c} = \mathtt{int}(r / \Delta r_{\rm c})$.  
+We define $q_{0,n_{\rm c}}$ as the average of all the $q_{i,j,k}$ whose 
+Cartesian cell center maps into coarse radial bin $n_{\rm c}$.
+Next, we construct edge-centered states on the coarse radial bin using 
+$q_{0,n_{\rm c}+\myhalf} = (7/12)(q_{0,n_{\rm c}}+q_{0,n_{\rm c}+1}) 
+- (1/12)(q_{0,n_{\rm c}-1}+q_{0,n_{\rm c}+2})$ along with limiters to prevent
+new extrema.  Then, for each coarse radial bin
+we construct a quadratic profile using $q_{0,n_{\rm c}+\myhalf}, q_{0,n_{\rm c}}$ 
+and $q_{0,n_{\rm c}-\myhalf}$.  We use these quadratic profiles along with limiters
+to prevent new extrema to fill the fine radial bins.
 
 \clearpage
 
@@ -71,7 +83,8 @@ interpolate the coarse radial array onto the finer radial array.
 \begin{center}
 \epsffile{\radbasefigpath/mapping.eps}
 \caption{\label{fig:mapping} The Cartesian grid and spherical base
-state (shown here in 2-d for simplicity).  Here we represent the
+state (shown here in 2-d for simplicity using $2 \Delta r = \Delta x$).
+Here we represent the
 spherical base state as concentric shells (blue lines).  Since the
 base state is not aligned with the Cartesian grid we use on which
 we discretize the star, we need to map between the two configurations.
