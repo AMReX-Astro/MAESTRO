@@ -133,7 +133,8 @@ contains
     
   end subroutine modify_scal_force
   
-  subroutine modify_scal_force_2d(force,ng_f,s,ng_s,lo,hi,umac,vmac,ng_um,base,base_edge,w0,dx)
+  subroutine modify_scal_force_2d(force,ng_f,s,ng_s,lo,hi,umac,vmac,ng_um, &
+                                  base,base_edge,w0,dx)
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_f,ng_s,ng_um
     real(kind=dp_t), intent(  out) :: force(lo(1)-ng_f :,lo(2)-ng_f :)
@@ -149,9 +150,13 @@ contains
     
     do j = lo(2),hi(2)
        do i = lo(1),hi(1)
+
+          ! umac does not contain w0
           divu =  (umac(i+1,j) - umac(i,j)) / dx(1) &
-               +( (vmac(i,j+1) + w0(j+1)) &
-                 -(vmac(i,j)   + w0(j)  ) ) / dx(2)
+                 +(vmac(i,j+1) - vmac(i,j)) / dx(2)
+
+          ! add w0 contribution
+          divu = divu + (w0(j+1)-w0(j))/dx(2)
 
           divbaseu = base(j)*(umac(i+1,j) - umac(i,j))/dx(1) &
                             +(vmac(i,j+1) * base_edge(j+1) - &
@@ -163,7 +168,8 @@ contains
           
   end subroutine modify_scal_force_2d
   
-  subroutine modify_scal_force_3d_cart(force,ng_f,s,ng_s,lo,hi,umac,vmac,wmac,ng_um,base,base_edge,w0,dx)
+  subroutine modify_scal_force_3d_cart(force,ng_f,s,ng_s,lo,hi,umac,vmac,wmac,ng_um, &
+                                       base,base_edge,w0,dx)
 
     integer        , intent(in   ) :: lo(:),hi(:),ng_f,ng_s,ng_um
     real(kind=dp_t), intent(  out) :: force(lo(1)-ng_f :,lo(2)-ng_f :,lo(3)-ng_f :)
@@ -181,10 +187,13 @@ contains
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
+
+             ! umac does not contain w0
              divu = (umac(i+1,j,k) - umac(i,j,k)) / dx(1) &
                    +(vmac(i,j+1,k) - vmac(i,j,k)) / dx(2) &
                    +(wmac(i,j,k+1) - wmac(i,j,k)) / dx(3)
 
+             ! add w0 contribution
              divu = divu + (w0(k+1)-w0(k))/dx(3)
 
              divbaseu = base(k)*( (umac(i+1,j,k) - umac(i,j,k))/dx(1) &
@@ -233,12 +242,14 @@ contains
                  (dr(1)*r_cc_loc(1,r)**2)
     end do
 
+    ! compute w0 contribution to divu
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,divu,divu_cart,lo,hi,dx,0,0)
     
     do k = lo(3),hi(3)
        do j = lo(2),hi(2)
           do i = lo(1),hi(1)
              
+             ! umac does not contain w0
              divumac = (umac(i+1,j,k) - umac(i,j,k)) / dx(1) &
                       +(vmac(i,j+1,k) - vmac(i,j,k)) / dx(2) &
                       +(wmac(i,j,k+1) - wmac(i,j,k)) / dx(3)
