@@ -87,7 +87,7 @@ fi
 $RM chk[0-8]* chk9[0-8]* chk99[0-8]* chk999[0-8]* chk9999[0-8]*
 
 # rename chk99999/ to chk00001/ and fix the filenames within that directory to 
-# numbered 00001
+# be numbered 00001
 mv $last_chkfile $first_chkfile
 cd $first_chkfile
 for file in *99999
@@ -102,7 +102,13 @@ echo "Done."
 if [ $modify_inputs -eq 1 ]
     then
     echo "Changing the inputs file, \"${inputsFile},\" to restart from 00001."
-    sed -i '/^[ ]*restart =/c\ restart = 1' $inputsFile
+
+    # this searches for " restart ="
+    sed -i '/^[ ]*restart =/c\ restart = 1' ${inputsFile}
+
+    # this searches for "! restart ="
+    sed -i '/^![ ]*restart =/c\ restart = 1' ${inputsFile}
+
     echo "Done."
 fi
 
