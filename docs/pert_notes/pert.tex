@@ -21,11 +21,10 @@ terms, noting that $\Ub = \Ubt + w_o\eb_r$, to obtain the
 perturbational density equation,
 \begin{equation}
 \frac{\partial\rho'}{\partial t} = -\Ub\cdot\nabla\rho' \underbrace{- \rho'\nabla\cdot\Ub 
-- \nabla\cdot(\rho_0\Ubt)}_{f_{\rho'}},
+- \nabla\cdot(\rho_0\Ubt)}_{\rho' ~ \text{force}},
 \label{rhoprime equation}
 \end{equation}
-where the underbraced term is the "$\rho'$ force'', which is computed 
-in {\tt modify\_scal\_force}.
+where the underbraced "$\rho'$ force'' is computed in {\tt modify\_scal\_force}.
 
 \subsection{Predicting $\rho'$ at edges}
 We define $\rho' = \rho^{(1)} - \rho_0^n$.  Then we predict $\rho'$ to
@@ -38,29 +37,28 @@ There are two ways to predict $\rho_0$ at edges.
 
 \item We call {\tt make\_edge\_state\_1d} using the underbraced term
 in (\ref{rho0 equation}) as the forcing.  This gives us
-$\rho_0^{n+\half,{\rm pred}}$.  This term is used to advect $\rho_0$
+$\rho_0^{n+\myhalf,{\rm pred}}$.  This term is used to advect $\rho_0$
 in {\bf Advect Base Density}.  In plane-parallel geometries, we also use
-$\rho_0^{n+\half,{\rm pred}}$ to compute $\etarho$, which will be used 
+$\rho_0^{n+\myhalf,{\rm pred}}$ to compute $\etarho$, which will be used 
 to compute $\psi$.
 
-\item We define $\rho_0^{n+\half,{\rm avg}} = (\rho_0^n +
+\item We define $\rho_0^{n+\myhalf,{\rm avg}} = (\rho_0^n +
 \rho_0^{(2)})/2$.  We compute $\rho_0^{(2)}$ from $\rho_0^n$ using
 {\bf Advect Base Density}, which advances equation (\ref{rho0 equation})
 through $\Delta t$ in time.  The $(2)$ in the superscript indicates
 that we have not called {\bf Correct Base} yet, which computes
 $\rho_0^{n+1}$ from $\rho_0^{(2)}$.  We use $\rho_0^{(2)}$ rather than
-$\rho_0^{n+1}$ to construct $\rho_0^{n+\half,{\rm avg}}$ to be
-consistent with the fact that we do not include an $\eta_\rho$
-contribution to compute $\rho'$ at edges.  $\rho_0^{n+\half,{\rm
-avg}}$ is used to construct $\rho$ at edges from $\rho'$ at edges, and
+$\rho_0^{n+1}$ to construct $\rho_0^{n+\myhalf,{\rm avg}}$ since $\rho_0^{n+1}$
+is not available yet.  $\rho_0^{n+\myhalf,{\rm avg}}$ is used to construct 
+$\rho$ at edges from $\rho'$ at edges, and
 this $\rho$ at edges is used to compute fluxes for $\rho X_k$.
 \end{enumerate}
 
 \subsection{Computing $\rho$ at edges}\label{Computing rho at edges}
-For the non-radial edges, we directly add $\rho_0^{n+\half,{\rm avg}}$
-to $\rho'$ since $\rho_0^{n+\half,{\rm avg}}$ is a cell-centered
+For the non-radial edges, we directly add $\rho_0^{n+\myhalf,{\rm avg}}$
+to $\rho'$ since $\rho_0^{n+\myhalf,{\rm avg}}$ is a cell-centered
 quantity.  For the radial edges, we interpolate to obtain
-$\rho_0^{n+\half,{\rm avg}}$ at radial edges before adding it to
+$\rho_0^{n+\myhalf,{\rm avg}}$ at radial edges before adding it to
 $\rho'$.
 
 \subsection{Advancing $\rho X_k$}\label{Advancing rhoX_k}
@@ -69,15 +67,15 @@ that were already accounted for in {\tt react\_state}, and the
 associated discretization is
 \begin{equation}
 \frac{\partial\rho X_k}{\partial t} = -\nabla\cdot(\rho X_k\Ub) = 
--\nabla\cdot\left\{\left[\left(\rho_0^{n+\half,{\rm avg}} 
+-\nabla\cdot\left\{\left[\left(\rho_0^{n+\myhalf,{\rm avg}} 
 + \rho'\right)X_k\right](\Ubt+w_0\eb_r)\right\}.
 \end{equation}
-
 
 %-----------------------------------------------------------------------------
 % energy
 %-----------------------------------------------------------------------------
 \section{Energy Evolution}
+We use {\tt enthalpy\_pred\_type} = 1, in which we predict $(\rho h)'$ at edges.
 The full enthalpy equation is
 \begin{eqnarray}
 \frac{\partial(\rho h)}{\partial t} &=& -\nabla\cdot(\rho h \Ub) + \frac{Dp_0}{Dt} 
@@ -86,20 +84,18 @@ The full enthalpy equation is
 + \underbrace{\psi + (\Ubt \cdot \er) \frac{\partial p_0}{\partial r}}_{\frac{Dp_0}{Dt}} 
 + \nabla\cdot\kth\nabla T + \rho H_{\rm nuc} + \rho H_{\rm ext}.
 \end{eqnarray}
-The full temperature equation is
-\begin{equation}
-\frac{\partial T}{\partial t} = -\Ub\cdot\nabla T
-+ \frac{1}{\rho c_p}\left\{(1-\rho h_p)\left[\psi
-+ (\Ubt \cdot \er )\frac{\partial p_0}{\partial r}\right] - \sum_k\rho\xi_k\dot\omega_k 
-+ \rho H_{\rm nuc} + \rho H_{\rm ext}\right\}.
-\end{equation}
-
-\subsection{Predicting $(\rho h)'$ ({\tt enthalpy\_pred\_type = 1} - default)}
+%The full temperature equation is
+%\begin{equation}
+%\frac{\partial T}{\partial t} = -\Ub\cdot\nabla T
+%+ \frac{1}{\rho c_p}\left\{(1-\rho h_p)\left[\psi
+%+ (\Ubt \cdot \er )\frac{\partial p_0}{\partial r}\right] - \sum_k\rho\xi_k\dot\omega_k 
+%+ \rho H_{\rm nuc} + \rho H_{\rm ext}\right\}.
+%\end{equation}
 Due to operator splitting, the call to {\tt react\_state} has already
 been made.  Hence, the goal is to compute an edge state enthalpy
 starting from $(\rho h)^{(1)}$ using an enthalpy equation that does
 not include the $\rho H_{\rm nuc}$ and $\rho H_{\rm ext}$ terms, where
-were already accounted for in {\tt react\_state}
+were already accounted for in {\tt react\_state}, so our equation becomes
 \begin{equation}
 \frac{\partial(\rho h)}{\partial t} = -\Ub\cdot\nabla(\rho h) - \rho h\nabla\cdot\Ub 
 + \psi + (\Ubt \cdot \er) \frac{\partial p_0}{\partial r} + \nabla\cdot\kth\nabla T. \label{rhoh equation}
@@ -120,46 +116,42 @@ the perturbational enthalpy equation
 + \nabla\cdot\kth\nabla T\nonumber \\
 &=& -\Ub\cdot\nabla(\rho h)' \underbrace{- (\rho h)'\nabla\cdot\Ub 
 - \nabla\cdot[(\rho h)_0\Ubt] + (\Ubt \cdot \er)\frac{\partial p_0}{\partial r}
-+ \nabla\cdot\kth\nabla T}_{"(\rho h)' ~ \text{force}"}. \label{rhohprime equation}
++ \nabla\cdot\kth\nabla T}_{"(\rho h)' ~ \text{force}"}, \label{rhohprime equation}
 \end{eqnarray}
-Note that the pressure term in the $(\rho h)'$ force can be represented as:
+where the first two terms in $(\rho h)'$ force are computed in 
+{\tt modify\_scal\_force}, and the last two terms are accounted for in
+{\tt mkrhohforce}.  For spherical problems, we have found that a different 
+representation of the pressure term in the $(\rho h)'$ force gives better
+results, namely:
 \begin{equation}
 (\Ubt \cdot \er)\frac{\partial p_0}{\partial r} \equiv \Ubt\cdot\nabla p_0 = 
 \nabla\cdot(\Ubt p_0) - p_0\nabla\cdot\Ubt.
 \end{equation}
-For spherical problems, we use the RHS representation of this term, as we have
-seen it gives better results.
 
-\subsubsection{Advancing $(\rho h)_0$}
-Define $(\rho h)_0^{n} = \overline{(\rho h)^{(1)}}$  
-and $(\rho h)' = (\rho h)^{(1)}-(\rho h)_0^{n}$.  Then, $(\rho h)_0^{n} \rightarrow$ 
-{\bf Advect Base Enthalpy} $\rightarrow (\rho h)_0^{n+1}$.
+\subsection{Predicting $(\rho h)'$ at edges}\label{Predicting rhohprime at edges}
+We define $(\rho h)' = (\rho h)^{(1)} - (\rho h)_0^n$.  Then we predict 
+$(\rho h)'$ to edges using {\tt make\_edge\_scal} in {\tt scalar\_advance} 
+and the underbraced term in (\ref{rhohprime equation}) as the forcing.
 
-\subsubsection{Predicting $(\rho h)'$ at edges}\label{Predicting rhohprime at edges}
-We predict $(\rho h)'$ to edges using {\tt make\_edge\_scal} in {\tt
-scalar\_advance} and the underbraced term in (\ref{rhohprime
-equation}) as the forcing, except that we omit the $\psi$ in the
-forcing for plane-parallel, and we omit the $\partial w_0/\partial r$
-part of $\psi$ in spherical.  Note that we still use full $\psi$ to
-update the cell.
-
-\subsubsection{Predicting $(\rho h)_0$ at edges}
+\subsection{Predicting $(\rho h)_0$ at edges}
 We use an analogous procedure described in Section \ref{Predicting
-rho0 at edges} to obtain $(\rho h)_0^{n+\half,\rm{pred}}$ and $(\rho
-h)_0^{n+\half,\rm{avg}}$.  Note that $(\rho h)_0^{n+\half,{\rm avg}} =
-[(\rho h)_0^{(1)} + (\rho h)_0^{(2)}]/2$.
+rho0 at edges} for computing $\rho_0^{n+\myhalf,\rm{avg}}$ to obtain 
+$(\rho h)_0^{n+\myhalf,\rm{avg}}$, i.e., 
+$(\rho h)_0^{n+\myhalf,{\rm avg}} = [(\rho h)_0^{n} + (\rho h)_0^{n+1}]/2$.
 
-\subsubsection{Computing $\rho h$ at edges}
+\subsection{Computing $\rho h$ at edges}
 We use an analogous procedure described in Section \ref{Computing rho
-at edges} to compute $\rho h$ at edges.
+at edges} for computing $\rho$ at edges to compute $\rho h$ at edges.
+However, instead of computing $(\rho h)_0$ to edges directly, we compute $\rho$
+and $h$ separately, and multiply to get $(\rho h)_0$.
 
-\subsubsection{Advancing $\rho h$}
+\subsection{Advancing $\rho h$}
 We update the enthalpy analogously to the species update in 
-Section \ref{Advancing rhoX_k}.  The only difference is that we also 
-have a forcing term
+Section \ref{Advancing rhoX_k}.  The forcing term does not include reaction
+source terms accounted for in {\bf React State}.
 \begin{equation}
 \frac{\partial(\rho h)}{\partial t} = -\nabla\cdot(\rho h\Ub) = 
--\nabla\cdot\left\{\left[(\rho h)_0^{n+\half,{\rm avg}} 
+-\nabla\cdot\left\{\left[(\rho h)_0^{n+\myhalf,{\rm avg}} 
 + (\rho h)'\right]\left(\Ubt + w_0\eb_r\right)\right\} + (\Ubt \cdot \er)\frac{\partial p_0}{\partial r} + \psi  \enskip .
 \end{equation}
 
