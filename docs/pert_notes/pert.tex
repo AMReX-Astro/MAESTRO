@@ -4,12 +4,12 @@
 %-----------------------------------------------------------------------------
 \section{Density Evolution}
 The full density evolution equation is
-\begin{equation}
-\frac{\partial\rho}{\partial t} = -\nabla\cdot(\rho\Ub) = -\Ub\cdot\nabla\rho 
-- \rho\nabla\cdot\Ub. \label{rho equation}
-\end{equation}
-We predict both $\rho'$ and $\rho_0$ to edges and later reconstruct $\rho$.
-The base state density evolution equation is
+\begin{eqnarray}
+\frac{\partial\rho}{\partial t} &=& -\nabla\cdot(\rho\Ub) \nonumber \\
+&=& -\Ub\cdot\nabla\rho - \rho\nabla\cdot\Ub. \label{rho equation}
+\end{eqnarray}
+We predict both $\rho'$ and $\rho_0$ to edges separately and later use them to 
+reconstruct $\rho$ at edges.  The base state density evolution equation is
 \begin{equation}
 \frac{\partial\rho_0}{\partial t} = -\nabla\cdot(\rho_0 w_0 \eb_r) = 
 -w_0\frac{\partial\rho_0}{\partial r} 
@@ -21,28 +21,33 @@ terms, noting that $\Ub = \Ubt + w_o\eb_r$, to obtain the
 perturbational density equation,
 \begin{equation}
 \frac{\partial\rho'}{\partial t} = -\Ub\cdot\nabla\rho' \underbrace{- \rho'\nabla\cdot\Ub 
-- \nabla\cdot(\rho_0\Ubt)}_{"\rho' ~ \text{force}"}. 
+- \nabla\cdot(\rho_0\Ubt)}_{f_{\rho'}},
 \label{rhoprime equation}
 \end{equation}
+where the underbraced term is the "$\rho'$ force'', which is computed 
+in {\tt modify\_scal\_force}.
 
 \subsection{Predicting $\rho'$ at edges}
-We define $\rho' = \rho^n - \rho_0^n$.  Then we predict $\rho'$ to
+We define $\rho' = \rho^{(1)} - \rho_0^n$.  Then we predict $\rho'$ to
 edges using {\tt make\_edge\_scal} in {\tt scalar\_advance} and the
 underbraced term in (\ref{rhoprime equation}) as the forcing.
 
 \subsection{Predicting $\rho_0$ at edges}\label{Predicting rho0 at edges}
 There are two ways to predict $\rho_0$ at edges.
 \begin{enumerate}
+
 \item We call {\tt make\_edge\_state\_1d} using the underbraced term
 in (\ref{rho0 equation}) as the forcing.  This gives us
 $\rho_0^{n+\half,{\rm pred}}$.  This term is used to advect $\rho_0$
-in {\tt advect\_base} and therefore must also be used to compute
-$\eta_\rho$, which will be used in {\tt correct\_base}.
+in {\bf Advect Base Density}.  In plane-parallel geometries, we also use
+$\rho_0^{n+\half,{\rm pred}}$ to compute $\etarho$, which will be used 
+to compute $\psi$.
+
 \item We define $\rho_0^{n+\half,{\rm avg}} = (\rho_0^n +
 \rho_0^{(2)})/2$.  We compute $\rho_0^{(2)}$ from $\rho_0^n$ using
-{\tt advect\_base}, which advances equation (\ref{rho0 equation})
+{\bf Advect Base Density}, which advances equation (\ref{rho0 equation})
 through $\Delta t$ in time.  The $(2)$ in the superscript indicates
-that we have not called {\tt correct\_base} yet, which computes
+that we have not called {\bf Correct Base} yet, which computes
 $\rho_0^{n+1}$ from $\rho_0^{(2)}$.  We use $\rho_0^{(2)}$ rather than
 $\rho_0^{n+1}$ to construct $\rho_0^{n+\half,{\rm avg}}$ to be
 consistent with the fact that we do not include an $\eta_\rho$
@@ -117,21 +122,18 @@ the perturbational enthalpy equation
 - \nabla\cdot[(\rho h)_0\Ubt] + (\Ubt \cdot \er)\frac{\partial p_0}{\partial r}
 + \nabla\cdot\kth\nabla T}_{"(\rho h)' ~ \text{force}"}. \label{rhohprime equation}
 \end{eqnarray}
+Note that the pressure term in the $(\rho h)'$ force can be represented as:
+\begin{equation}
+(\Ubt \cdot \er)\frac{\partial p_0}{\partial r} \equiv \Ubt\cdot\nabla p_0 = 
+\nabla\cdot(\Ubt p_0) - p_0\nabla\cdot\Ubt.
+\end{equation}
+For spherical problems, we use the RHS representation of this term, as we have
+seen it gives better results.
 
 \subsubsection{Advancing $(\rho h)_0$}
-\begin{itemize}
-\item {\bf Using full\_rhoh0\_evolution = F:}\\
- Define $(\rho h)_0^{(1)} = \overline{(\rho h)^{(1)}}$  
-and $(\rho h)' = (\rho h)^{(1)}-(\rho h)_0^{(1)}$.  Then, $(\rho h)_0^{(1)} \rightarrow$ 
-{\tt advect\_base} $\rightarrow (\rho h)_0^{(2)}$.
-\item {\bf Using full\_rhoh0\_evolution = T:}\\
- Instead of defining $(\rho h)_0^{(1)} = \overline{(\rho h)^{(1)}}$, the code carries 
-through the complete evolution of $(\rho h)_0$ using $(\rho h)_0^n \rightarrow$ 
-{\tt react\_base} $\rightarrow (\rho h)_0^{(1)} \rightarrow$ {\tt advect\_base}
-$\rightarrow (\rho h)_0^{(2)} \rightarrow$ {\tt react\_base} $\rightarrow (\rho h)_0^{n+1}$.  
-There is no {\tt correct\_base} function for $(\rho h)_0$ written yet, nor is any 
-adjustment made to sync up $(\rho h)_0$ after the thermal diffusion step.
-\end{itemize}
+Define $(\rho h)_0^{n} = \overline{(\rho h)^{(1)}}$  
+and $(\rho h)' = (\rho h)^{(1)}-(\rho h)_0^{n}$.  Then, $(\rho h)_0^{n} \rightarrow$ 
+{\bf Advect Base Enthalpy} $\rightarrow (\rho h)_0^{n+1}$.
 
 \subsubsection{Predicting $(\rho h)'$ at edges}\label{Predicting rhohprime at edges}
 We predict $(\rho h)'$ to edges using {\tt make\_edge\_scal} in {\tt
@@ -160,12 +162,6 @@ have a forcing term
 -\nabla\cdot\left\{\left[(\rho h)_0^{n+\half,{\rm avg}} 
 + (\rho h)'\right]\left(\Ubt + w_0\eb_r\right)\right\} + (\Ubt \cdot \er)\frac{\partial p_0}{\partial r} + \psi  \enskip .
 \end{equation}
-
-\subsection{Predicting $h$ ({\tt enthalpy\_pred\_type = 2})}
-
-\subsection{Predicting $T$ then $(\rho h)'$ ({\tt enthalpy\_pred\_type = 3})}
-
-\subsection{Predicting $T$ then $h$ ({\tt enthalpy\_pred\_type = 4})}
 
 \subsection{Summary of Forcing}
 
