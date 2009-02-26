@@ -147,7 +147,6 @@ contains
 
        ! print the headers
        if(firstCall) then
-          write(un ,    *) " "
           write(un , 1001) "time", "max{T}"
           write(un2, 1001) "time", "max{enuc}"
 
