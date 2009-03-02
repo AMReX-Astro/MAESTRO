@@ -5,7 +5,7 @@ module initialize_module
   use multifab_module
   use bc_module
   use probin_module
-  use variables, only: nscal, rho_comp, rhoh_comp
+  use variables, only: nscal, rho_comp, rhoh_comp, temp_comp
   use geometry
   use network, only: nspec
   use bl_constants_module
@@ -192,6 +192,7 @@ contains
     write(unit=base_w0_name,fmt='("w0_",i5.5)') restart
     write(unit=base_etarho_name,fmt='("eta_",i5.5)') restart
     
+    ! note: still need to load/store tempbar
     call read_base_state(base_state_name, base_w0_name, base_etarho_name, check_file_name, &
                          rho0_old, rhoh0_old, p0_old, gamma1bar, w0, &
                          etarho_ec, etarho_cc, div_coeff_old, psi)
@@ -400,6 +401,10 @@ contains
     call fill_ghost_base(rhoh0_old,.true.)
     call restrict_base(rhoh0_old,.true.)
 
+    tempbar = s0_init(:,:,temp_comp)
+    call fill_ghost_base(tempbar,.true.)
+    call restrict_base(tempbar,.true.)
+    
     call destroy(mba)
 
   end subroutine initialize_with_fixed_grids
@@ -661,6 +666,10 @@ contains
     rhoh0_old = s0_init(:,:,rhoh_comp)
     call fill_ghost_base(rhoh0_old,.true.)
     call restrict_base(rhoh0_old,.true.)
+
+    tempbar = s0_init(:,:,temp_comp)
+    call fill_ghost_base(tempbar,.true.)
+    call restrict_base(tempbar,.true.)
 
     call destroy(mba)
 
