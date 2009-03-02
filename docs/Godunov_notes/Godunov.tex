@@ -340,10 +340,9 @@ full velocity.
 %-----------------------------------------------------------------------------
 % edge states
 %-----------------------------------------------------------------------------
-\section{Computing $\rho^{'\edge}, X_k^{\edge},(\rho h)^{'\edge} / h^{\edge} / T^{\edge} / h'^{\edge} / T'^{\edge}$, and $\Ubt^{\edge}$ in {\tt MAESTRO}}\label{Scalar Edge State Prediction in MAESTRO}
+\section{Computing $\rho^{'\edge}, X_k^{\edge},(\rho h)^{'\edge}$, and $\Ubt^{\edge}$ in {\tt MAESTRO}}\label{Scalar Edge State Prediction in MAESTRO}
 We call {\tt make\_edge\_scal} to compute $\rho^{'\edge}, X_k^{\edge}, 
-(\rho h)^{'\edge} / h^{\edge} / T^{\edge} / h'^{\edge} / T'^{\edge}$, 
-and $\Ubt^{\edge}$ at each edge.
+(\rho h)^{'\edge}$, and $\Ubt^{\edge}$ at each edge.
 The procedure is the same for each quantitiy, so we shall simply denote 
 the scalar as $s$.  We always need to compute $\rho'$ and $X_k$ to faces, 
 and the choice of energy prediction is as follows:
@@ -359,7 +358,7 @@ of motion are:
 \begin{eqnarray}
 \frac{\partial \rho'}{\partial t} &=& -\Ub\cdot\nabla\rho' \underbrace{- \rho'\nabla\cdot\Ub - \nabla\cdot(\rho_0\Ubt)}_{f_{\rho'}}, \\
 \frac{\partial(\rho X_k)}{\partial t} &=& -\nabla\cdot(\rho X_k\Ub) ~~~ \text{(no forcing)}, \\
-\frac{\partial(\rho h)'}{\partial t} &=& -\Ub\cdot\nabla(\rho h)' + \underbrace{(\Ubt\cdot\eb_r)\frac{\partial p_0}{\partial r} -(\rho h)'\nabla\cdot\Ub^{\mac} - \nabla\cdot\left[(\rho h)_0\Ubt^{\mac}\right] + \nabla\cdot\kth\nabla T}_{f_{(\rho h)'}}, \nonumber \\
+\frac{\partial(\rho h)'}{\partial t} &=& -\Ub\cdot\nabla(\rho h)' + \underbrace{(\Ubt\cdot\eb_r)\frac{\partial p_0}{\partial r} -(\rho h)'\nabla\cdot\Ub - \nabla\cdot\left[(\rho h)_0\Ubt\right] + \nabla\cdot\kth\nabla T}_{f_{(\rho h)'}}, \nonumber \\
 && \\
 \frac{\partial\Ubt}{\partial t} &=& -\Ub\cdot\nabla\Ubt \underbrace{- (\Ubt\cdot\eb_r)\frac{\partial w_0}{\partial r}\eb_r \underbrace{- \frac{1}{\rho}\nabla\pi + \frac{1}{\rho_0}\frac{\partial\pi_0}{\partial r}\eb_r - \frac{(\rho-\rho_0)}{\rho}g\eb_r}_{\hbox{terms included in $\fb_{\Ubt}$}}}_{\hbox{forcing terms}}.
 \end{eqnarray}

@@ -358,12 +358,12 @@ equation (paper III; eq.~[29]) without the $\etarho$ term,
 to compute the new base state density,
 \begin{eqnarray}
 \rho_{0,j}^{\outp} &=& \rho_{0,j}^{\inp} - \frac{\dt}{\dr} 
-\left [ \left( {{\rho}_0}^{\outp,\nph} {w_0}^{\inp}\right)_{j+\myhalf} -  
-         \left( {{\rho}_0}^{\outp,\nph} {w_0}^{\inp}\right)_{j-\myhalf} \right ]
+\left [ \left( \rho_0^{\outp,\nph} w_0^{\inp}\right)_{j+\myhalf} -  
+         \left( \rho_0^{\outp,\nph} w_0^{\inp}\right)_{j-\myhalf} \right ]
          \nonumber \enskip,
 \end{eqnarray}
 where $j$ refers to the one-dimensional index in the radial direction.
-The interface states, ${{\rho}_0}^{\outp,\nph}$, are found via the
+The interface states, $\rho_0^{\outp,\nph}$, are found via the
 procedure described in paper II, Appendix A.
 
 \item[spherical:] See Section \ref{Sec:Advect Base Spherical} for working notes.
@@ -412,8 +412,8 @@ is the process by which we update the base state enthalpy through $\dt$ in time.
 to compute the new base state enthalpy,
 \begin{equation}
 (\rho h)_{0,j}^{\outp} = (\rho h)_{0,j}^{\inp} - \frac{\dt}{\Delta r}
-\left\{ \left[ {(\rho h)_0}^{\nph} {w_0}^{\inp}\right]_{j+\myhalf} -  
-         \left[ {(\rho h)_0}^{\nph} {w_0}^{\inp}\right]_{j-\myhalf} \right\}
+\left\{ \left[ (\rho h)_0^{\nph} w_0^{\inp}\right]_{j+\myhalf} -  
+         \left[ (\rho h)_0^{\nph} w_0^{\inp}\right]_{j-\myhalf} \right\}
 + \dt\psi_j^{\inp} \enskip ,
 \end{equation}
 where the interface states are again found via the procedure described
@@ -1080,7 +1080,7 @@ T^{(2)} = T\left(\rho^{(2)}, h^{(2)}, X_k^{(2)}\right) \enskip ,
 \end{equation}
 but in spherical, we set {\tt use\_tfromp = T}, and we use
 \begin{equation}
-T^{(2)} = T\left(\rho^{(2)}, {p_0}^{(2)}, X_k^{(2)}\right) \enskip .
+T^{(2)} = T\left(\rho^{(2)}, p_0^{(2)}, X_k^{(2)}\right) \enskip .
 \end{equation}
 The latter has the effect of completely decoupling the enthalpy equation from the 
 evolution.
@@ -1102,7 +1102,7 @@ interval of $\dt / 2.$}
 
 \item Define
 \begin{eqnarray}
- \gammabar^{n+1}    &=& {\rm{\bf Avg}}\left[\Gamma_1\left(\rho^{n+1}, p_0^{n+1}, {X_k}^{n+1}\right) \right] \enskip , \\ 
+ \gammabar^{n+1}    &=& {\rm{\bf Avg}}\left[\Gamma_1\left(\rho^{n+1}, p_0^{n+1}, X_k^{n+1}\right) \right] \enskip , \\ 
  {\beta   }_0^{n+1}    &=& \beta   \left(\rho_0^{n+1}, p_0^{n+1},   \gammabar^{n+1}\right) \enskip .
 \end{eqnarray}
 
