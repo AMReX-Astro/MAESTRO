@@ -71,10 +71,11 @@ subroutine varden()
   type(multifab), pointer :: chkdata(:)
 
   character(len=5)               :: plot_index, check_index
+  character(len=6)               :: plot_index6, check_index6
   character(len=256)             :: plot_file_name, check_file_name
-  character(len=11)              :: base_state_name
-  character(len=8)               :: base_w0_name
-  character(len=9)               :: base_etarho_name
+  character(len=256)             :: base_state_name
+  character(len=256)             :: base_w0_name
+  character(len=256)             :: base_etarho_name
   character(len=20), allocatable :: plot_names(:)
 
   real(dp_t), parameter :: SMALL = 1.d-13
@@ -365,8 +366,14 @@ subroutine varden()
            call make_sponge(sponge,dx,dt,mla)
         end if
 
-        write(unit=plot_index,fmt='(i5.5)') restart
-        plot_file_name = trim(plot_base_name) // plot_index
+        if (restart <= 99999) then
+           write(unit=plot_index,fmt='(i5.5)') restart
+           plot_file_name = trim(plot_base_name) // plot_index
+        else
+           write(unit=plot_index6,fmt='(i6.6)') restart
+           plot_file_name = trim(plot_base_name) // plot_index6
+        endif
+
         call make_plotfile(plot_file_name,mla,uold,sold,gpres,rho_omegadot2,rho_Hnuc2, &
                            Source_old,sponge,mla%mba,plot_names,time,dx, &
                            the_bc_tower,w0,rho0_old,rhoh0_old,p0_old,tempbar,gamma1bar, &
@@ -457,8 +464,13 @@ subroutine varden()
            call multifab_copy_c(chkdata(n),rho_comp+dm+nscal,gpres(n),1,dm)
         end do
 
-        write(unit=check_index,fmt='(i5.5)') istep
-        check_file_name = trim(check_base_name) // check_index
+        if (istep <= 99999) then
+           write(unit=check_index,fmt='(i5.5)') istep
+           check_file_name = trim(check_base_name) // check_index
+        else
+           write(unit=check_index6,fmt='(i6.6)') istep
+           check_file_name = trim(check_base_name) // check_index6
+        endif
 
         call checkpoint_write(check_file_name, chkdata, &
                               pres, dSdt, Source_old, &
@@ -467,9 +479,16 @@ subroutine varden()
 
         last_chk_written = istep
 
-        write(unit=base_state_name,fmt='("model_",i5.5)') istep
-        write(unit=base_w0_name,fmt='("w0_",i5.5)') istep
-        write(unit=base_etarho_name,fmt='("eta_",i5.5)') istep
+        if (istep <= 99999) then
+           write(unit=base_state_name,fmt='("model_",i5.5)') istep
+           write(unit=base_w0_name,fmt='("w0_",i5.5)') istep
+           write(unit=base_etarho_name,fmt='("eta_",i5.5)') istep
+        else
+           write(unit=base_state_name,fmt='("model_",i6.6)') istep
+           write(unit=base_w0_name,fmt='("w0_",i6.6)') istep
+           write(unit=base_etarho_name,fmt='("eta_",i6.6)') istep
+        endif
+
         call write_base_state(base_state_name, base_w0_name, &
                               base_etarho_name, check_file_name, &
                               rho0_old, rhoh0_old, p0_old, gamma1bar, &
@@ -493,8 +512,14 @@ subroutine varden()
            call average(mla,sold,tempbar,dx,temp_comp)
         end if
 
-        write(unit=plot_index,fmt='(i5.5)') istep
-        plot_file_name = trim(plot_base_name) // plot_index
+        if (istep <= 99999) then
+           write(unit=plot_index,fmt='(i5.5)') istep
+           plot_file_name = trim(plot_base_name) // plot_index
+        else
+           write(unit=plot_index6,fmt='(i6.6)') istep
+           plot_file_name = trim(plot_base_name) // plot_index6
+        endif
+
         call make_plotfile(plot_file_name,mla,uold,sold,gpres,rho_omegadot2,rho_Hnuc2, &
                            Source_new,sponge,mla%mba,plot_names,time,dx,the_bc_tower,w0, &
                            rho0_old,rhoh0_old,p0_old,tempbar,gamma1bar,div_coeff_old,normal)
@@ -914,8 +939,13 @@ subroutine varden()
                  call multifab_copy_c(chkdata(n),rho_comp+dm+nscal,gpres(n),1,dm)
               end do
 
-              write(unit=check_index,fmt='(i5.5)') istep
-              check_file_name = trim(check_base_name) // check_index
+              if (istep <= 99999) then
+                 write(unit=check_index,fmt='(i5.5)') istep
+                 check_file_name = trim(check_base_name) // check_index
+              else
+                 write(unit=check_index6,fmt='(i6.6)') istep
+                 check_file_name = trim(check_base_name) // check_index6
+              endif
 
               call checkpoint_write(check_file_name, chkdata, &
                                     pres, dSdt, Source_old, &
@@ -924,9 +954,16 @@ subroutine varden()
 
               last_chk_written = istep
 
-              write(unit=base_state_name,fmt='("model_",i5.5)') istep
-              write(unit=base_w0_name,fmt='("w0_",i5.5)') istep
-              write(unit=base_etarho_name,fmt='("eta_",i5.5)') istep
+              if (istep <= 99999) then
+                 write(unit=base_state_name,fmt='("model_",i5.5)') istep
+                 write(unit=base_w0_name,fmt='("w0_",i5.5)') istep
+                 write(unit=base_etarho_name,fmt='("eta_",i5.5)') istep
+              else
+                 write(unit=base_state_name,fmt='("model_",i6.6)') istep
+                 write(unit=base_w0_name,fmt='("w0_",i6.6)') istep
+                 write(unit=base_etarho_name,fmt='("eta_",i6.6)') istep
+              endif
+
               call write_base_state(base_state_name, base_w0_name, &
                                     base_etarho_name, check_file_name, &
                                     rho0_new, rhoh0_new, p0_new, gamma1bar(:,:), &
@@ -945,8 +982,15 @@ subroutine varden()
            if ( (plot_int > 0 .and. mod(istep,plot_int) .eq. 0) .or. &
                 (plot_deltat > 0.0 .and. &
                 mod(time - dt,plot_deltat) > mod(time,plot_deltat))) then
-              write(unit=plot_index,fmt='(i5.5)') istep
-              plot_file_name = trim(plot_base_name) // plot_index
+
+              if (istep <= 99999) then
+                 write(unit=plot_index,fmt='(i5.5)') istep
+                 plot_file_name = trim(plot_base_name) // plot_index
+              else
+                 write(unit=plot_index6,fmt='(i6.6)') istep
+                 plot_file_name = trim(plot_base_name) // plot_index6
+              endif
+
               call make_plotfile(plot_file_name,mla,unew,snew,gpres,rho_omegadot2,rho_Hnuc2,&
                                  Source_new,sponge,mla%mba,plot_names,time,dx,the_bc_tower, &
                                  w0,rho0_new,rhoh0_new,p0_new,tempbar,gamma1bar, &
@@ -970,7 +1014,7 @@ subroutine varden()
      ! write the final checkpoint and plotfile
      !---------------------------------------------------------------------
 
-1000 format('STEP = ',i5,1x,' TIME = ',f16.10,1x,'DT = ',f14.9)
+1000 format('STEP = ',i6,1x,' TIME = ',f16.10,1x,'DT = ',f14.9)
 
      if ( chk_int > 0 .and. last_chk_written .ne. istep ) then
         !       This writes a checkpoint file.
@@ -982,8 +1026,13 @@ subroutine varden()
            call multifab_copy_c(chkdata(n),rho_comp+dm+nscal,gpres(n),1,dm)
         end do
 
-        write(unit=check_index,fmt='(i5.5)') istep
-        check_file_name = trim(check_base_name) // check_index
+        if (istep <= 99999) then
+           write(unit=check_index,fmt='(i5.5)') istep
+           check_file_name = trim(check_base_name) // check_index
+        else
+           write(unit=check_index6,fmt='(i6.6)') istep
+           check_file_name = trim(check_base_name) // check_index6
+        endif
 
         call checkpoint_write(check_file_name, chkdata, &
                               pres, dSdt, Source_old, &
@@ -995,9 +1044,16 @@ subroutine varden()
         end do
         deallocate(chkdata)
 
-        write(unit=base_state_name,fmt='("model_",i5.5)') istep
-        write(unit=base_w0_name,fmt='("w0_",i5.5)') istep
-        write(unit=base_etarho_name,fmt='("eta_",i5.5)') istep
+        if (istep <= 99999) then
+           write(unit=base_state_name,fmt='("model_",i5.5)') istep
+           write(unit=base_w0_name,fmt='("w0_",i5.5)') istep
+           write(unit=base_etarho_name,fmt='("eta_",i5.5)') istep
+        else
+           write(unit=base_state_name,fmt='("model_",i6.6)') istep
+           write(unit=base_w0_name,fmt='("w0_",i6.6)') istep
+           write(unit=base_etarho_name,fmt='("eta_",i6.6)') istep
+        endif
+        
         call write_base_state(base_state_name, base_w0_name, &
                               base_etarho_name, check_file_name, &
                               rho0_new, rhoh0_new, p0_new, gamma1bar, &
@@ -1006,8 +1062,15 @@ subroutine varden()
      end if
 
      if ( plot_int > 0 .and. last_plt_written .ne. istep ) then
-        write(unit=plot_index,fmt='(i5.5)') istep
-        plot_file_name = trim(plot_base_name) // plot_index
+
+        if (istep <= 99999) then
+           write(unit=plot_index,fmt='(i5.5)') istep
+           plot_file_name = trim(plot_base_name) // plot_index
+        else
+           write(unit=plot_index6,fmt='(i6.6)') istep
+           plot_file_name = trim(plot_base_name) // plot_index6
+        endif
+
         call make_plotfile(plot_file_name,mla,unew,snew,gpres,rho_omegadot2,rho_Hnuc2, &
                            Source_new,sponge,mla%mba,plot_names,time,dx,the_bc_tower,w0, &
                            rho0_new,rhoh0_new,p0_new,tempbar,gamma1bar,div_coeff_old,normal)

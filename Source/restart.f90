@@ -32,6 +32,7 @@ contains
     type(multifab)   , pointer        :: chk_rho_omegadot2(:)
     type(multifab)   , pointer        :: chk_rho_Hnuc2(:)
     character(len=5)                  :: check_index
+    character(len=6)                  :: check_index6
     character(len=256)                :: check_file_name
     integer                           :: n,nlevs_local
 
@@ -39,8 +40,14 @@ contains
 
     call build(bpt, "fill_restart_data")
 
-    write(unit=check_index,fmt='(i5.5)') restart_int
-    check_file_name = trim(check_base_name) // check_index
+    if (restart_int <= 99999) then
+       write(unit=check_index,fmt='(i5.5)') restart_int
+       check_file_name = trim(check_base_name) // check_index
+    else
+       write(unit=check_index6,fmt='(i6.6)') restart_int
+       check_file_name = trim(check_base_name) // check_index6
+    endif
+
 
     if ( parallel_IOProcessor()) &
       print *,'Reading ', trim(check_file_name), ' to get state data for restart'
