@@ -5,12 +5,8 @@
  anelastic_cutoff = 3.e6
  base_cutoff_density = 3.e6
 
- max_levs = 3
- n_cellx = 96
- n_celly = 96
- n_cellz = 96
- regrid_int = 2
- max_grid_size = 32
+ test_set = "gr0_3d.384"
+! test_set = "gr0_3d.384_2levels"
 
  spherical_in = 1
  dm_in = 3
@@ -20,8 +16,8 @@
  prob_hi_y = 5.e8
  prob_hi_z = 5.e8
 
- max_step  = 0
- init_iter = 0
+ max_step  = 100000000
+ init_iter = 1
 
  stop_time = 30000.
 
@@ -50,8 +46,8 @@
  mg_verbose = 1
  cg_verbose = 0
 
- do_initial_projection = 0
- init_divu_iter = 0
+ do_initial_projection = 1
+ init_divu_iter = 3
 
  velpert_amplitude = 1.d5
  velpert_radius = 2.d7
