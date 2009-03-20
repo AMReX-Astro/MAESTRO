@@ -437,6 +437,8 @@ subroutine varden()
 
            gamma1bar_hold = gamma1bar
 
+           runtime1 = parallel_wtime()
+
            call advance_timestep(init_mode,mla,uold,sold,unew,snew,gpres,pres,normal, &
                                  rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_old,p0_new, &
                                  tempbar,gamma1bar,w0,rho_omegadot2,rho_Hnuc2, &
@@ -444,6 +446,12 @@ subroutine varden()
                                  the_bc_tower,dSdt,Source_old,Source_new,etarho_ec, &
                                  etarho_cc,psi,sponge,hgrhs)
 
+           runtime2 = parallel_wtime() - runtime1
+           call parallel_reduce(runtime1, runtime2, MPI_MAX, proc = parallel_IOProcessorNode())
+           if (parallel_IOProcessor()) print*,'Time to advance timestep: ',runtime1,' seconds'
+           
+           call print_and_reset_fab_byte_spread()
+           
            gamma1bar = gamma1bar_hold
 
         end do ! end do istep_init_iter = 1,init_iter
