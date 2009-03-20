@@ -67,7 +67,7 @@
 
  use_tfromp = T
 
- nOutFiles    = 16
+ nOutFiles    = 64
  lUsingNFiles = .true.
 
  interp_type_radial_bin_to_cart = 1
