@@ -61,6 +61,7 @@ module probin_module
   real(dp_t), save         :: min_eff
   real(dp_t), save         :: burning_cutoff_density  ! note: presently not runtime parameter
   real(dp_t), save         :: rotational_frequency, co_latitude, radius
+  character(len=256), save :: job_name
 
   ! These will be allocated and defined below
   logical,    allocatable, save :: edge_nodal_flag(:,:)
@@ -166,6 +167,7 @@ module probin_module
   namelist /probin/ rotational_frequency
   namelist /probin/ co_latitude
   namelist /probin/ radius
+  namelist /probin/ job_name
 
 contains
 
@@ -342,6 +344,8 @@ contains
     rotational_frequency = ZERO
     co_latitude = ZERO
     radius = 1.0e6_dp_t    ! 10 km neutron star
+
+    job_name = ""
 
     !
     ! Don't have more than 64 processes trying to read from disk at once.
@@ -890,6 +894,10 @@ contains
           farg = farg + 1
           call get_command_argument(farg, value = fname)
           read(fname, *) radius
+
+       case ('--job_name')
+          farg = farg + 1
+          call get_command_argument(farg, value = job_name)
 
        case ('--')
           farg = farg + 1
