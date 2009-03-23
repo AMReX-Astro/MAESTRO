@@ -1,0 +1,15 @@
+changes to wdconvect runs for the next paper
+
+-- use CFL = 0.7
+
+-- change the diagnostics to only look at radial velocity inside the
+   convective zone
+
+-- turn on base state evolution
+
+-- use PPM
+
+-- use AMR
+
+-- add 2% Keplerian rotation
+
