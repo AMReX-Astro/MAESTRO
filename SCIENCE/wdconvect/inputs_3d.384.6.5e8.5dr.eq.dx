@@ -2,10 +2,10 @@
  model_file = "model_6.5e8.hse.1920"
  drdxfac = 5
 
+ test_set = "gr0_3d.384"
+
  anelastic_cutoff = 3.e6
  base_cutoff_density = 3.e6
-
- test_set = "gr0_3d.384"
 
  spherical_in = 1
  dm_in = 3
@@ -49,14 +49,14 @@
  init_divu_iter = 3
 
  velpert_amplitude = 1.d5
- velpert_radius = 1.d7
+ velpert_radius = 2.d7
  velpert_scale = 1.d7
  velpert_steep = 1.d5
 
  do_burning = T
 
  enthalpy_pred_type = 1
- evolve_base_state = F
+ evolve_base_state = T
 
  dpdt_factor = 0.0
 

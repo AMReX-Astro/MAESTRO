@@ -2,15 +2,15 @@
  model_file = "model_6.e8.hybrid.hse.3840"
  drdxfac = 5
 
- anelastic_cutoff = 3.e6
- base_cutoff_density = 3.e6
-
  max_levs = 2
  n_cellx = 384
  n_celly = 384
  n_cellz = 384
  regrid_int = 2
  max_grid_size = 32
+
+ anelastic_cutoff = 3.e6
+ base_cutoff_density = 3.e6
 
  spherical_in = 1
  dm_in = 3
@@ -61,7 +61,7 @@
  do_burning = T
 
  enthalpy_pred_type = 1
- evolve_base_state = F
+ evolve_base_state = T
 
  dpdt_factor = 0.0
 
