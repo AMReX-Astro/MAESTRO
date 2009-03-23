@@ -28,7 +28,8 @@ contains
     use variables, only: foextrap_comp
     use fill_3d_module
     use probin_module, only: prob_lo_x, prob_lo_y, prob_lo_z, &
-                             prob_hi_x, prob_hi_y, prob_hi_z
+                             prob_hi_x, prob_hi_y, prob_hi_z, &
+                             job_name
 
     real(kind=dp_t), intent(in   ) :: dt,dx(:,:),time
     type(multifab) , intent(in   ) :: s(:)
@@ -215,6 +216,7 @@ contains
     ! normalize
     vr = vr/nzones
     
+ 999 format("# job name: ",a)
 1000 format(1x,10(g20.10,1x))
 1001 format("#",10(a20,1x))
 
@@ -251,16 +253,20 @@ contains
 
        ! write out the headers
        if (firstCall) then
+          
           write (un, *) " "
+          write (un, 999) trim(job_name)
           write (un, 1001) "time", "<vr_x>", "<vr_y>", "<vr_z>", "<vr>", &
                            "max{|vr|}", &
                            "int{rhovr_x}/mass", "int{rhovr_y}/mass", "int{rhovr_z}/mass", &
                            "mass"
 
           write (un2, *) " "
+          write (un2, 999) trim(job_name)
           write (un2,1001) "time", "max{T}"
 
           write (un3, *) " "
+          write (un3, 999) trim(job_name)
           write (un3,1001) "time", "max{enuc}"
           firstCall = .false.
        endif
