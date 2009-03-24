@@ -1,6 +1,6 @@
 &PROBIN
  model_file = "model_6.e8.hse.48"
- drxfac = 1
+ drdxfac = 1
 
  test_set = "gr0_3d.48"
 
