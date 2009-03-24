@@ -53,7 +53,7 @@ module probin_module
   logical, save            :: lUsingNFiles
   logical, save            :: use_tfromp, single_prec_plotfiles
   logical, save            :: use_soundspeed_firstdt, use_divu_firstdt
-  logical, save            :: smallscale_beta, do_alltoallv
+  logical, save            :: smallscale_beta, do_alltoallv, the_knapsack_verbosity
   integer, save            :: use_ppm
   integer, save            :: max_levs, max_grid_size, regrid_int, ref_ratio
   integer, save            :: n_cellx, n_celly, n_cellz
@@ -152,6 +152,7 @@ module probin_module
   namelist /probin/ use_divu_firstdt
   namelist /probin/ smallscale_beta
   namelist /probin/ do_alltoallv
+  namelist /probin/ the_knapsack_verbosity
   namelist /probin/ use_ppm
   namelist /probin/ max_levs
   namelist /probin/ max_grid_size
@@ -180,6 +181,7 @@ contains
     use bl_prof_module
     use bl_error_module
     use bl_constants_module
+    use knapsack_module
     
     integer    :: narg, farg
 
@@ -323,6 +325,8 @@ contains
     smallscale_beta = .false.
 
     do_alltoallv = .false.
+
+    the_knapsack_verbosity = .false.
 
     the_sfc_threshold = 4  ! Same as the default in layout_module.
 
@@ -830,6 +834,11 @@ contains
           call get_command_argument(farg, value = fname)
           read(fname, *) do_alltoallv
 
+       case ('--the_knapsack_verbosity')
+          farg = farg + 1
+          call get_command_argument(farg, value = fname)
+          read(fname, *) the_knapsack_verbosity
+
        case ('--the_sfc_threshold')
           farg = farg + 1
           call get_command_argument(farg, value = fname)
@@ -946,6 +955,8 @@ contains
     call cluster_set_minwidth(min_width)
 
     if (do_alltoallv) call multifab_set_alltoallv(.true.)
+
+    call knapsack_set_verbose(the_knapsack_verbosity)
 
     call layout_set_sfc_threshold(the_sfc_threshold)
 
