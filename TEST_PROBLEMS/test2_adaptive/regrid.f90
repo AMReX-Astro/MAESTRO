@@ -25,9 +25,8 @@ contains
 
   subroutine regrid(mla,uold,sold,gpres,pres,dSdt,src,rw2,rH2,dx,the_bc_tower)
 
-    use probin_module, only : nodal, pmask, regrid_int, max_grid_size, ref_ratio, &
-         max_levs
-    use geometry, only: dm, nr_fine, nlevs
+    use probin_module, only : nodal, pmask, regrid_int, max_grid_size, ref_ratio, max_levs
+    use geometry, only: dm, nlevs, nlevs_radial, spherical, nr_fine
     use variables, only: nscal, rho_comp, foextrap_comp, temp_comp
     use network, only: nspec
     use average_module
@@ -229,6 +228,7 @@ contains
           end if
 
           nlevs = nl+1
+          nlevs_radial = merge(1, nlevs, spherical .eq. 1)
           nl = nl + 1
 
        endif
@@ -247,6 +247,7 @@ contains
     end do
 
     nlevs = nl
+    nlevs_radial = merge(1, nlevs, spherical .eq. 1)
 
     call ml_layout_restricted_build(mla,mba,nlevs,pmask)
 
@@ -284,6 +285,7 @@ contains
     call multifab_copy_c(  rH2(1),1,  rH2_temp(1), 1,    1)
 
     nlevs = mla%nlevel
+    nlevs_radial = merge(1, nlevs, spherical .eq. 1)
 
     ! Now make the data for the final time.
     do nl = 1,nlevs-1
@@ -437,6 +439,7 @@ contains
                                          the_bc_tower%bc_tower_array(n-1), &
                                          the_bc_tower%bc_tower_array(n), &
                                          1,foextrap_comp,1)
+
 
        enddo
 

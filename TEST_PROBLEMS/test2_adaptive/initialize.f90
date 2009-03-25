@@ -5,7 +5,7 @@ module initialize_module
   use multifab_module
   use bc_module
   use probin_module
-  use variables, only: nscal, rho_comp, rhoh_comp
+  use variables, only: nscal, rho_comp, rhoh_comp, temp_comp
   use geometry
   use network, only: nspec
   use bl_constants_module
@@ -25,7 +25,7 @@ contains
                                      dSdt,Source_old,rho_omegadot2,rho_Hnuc2,the_bc_tower, &
                                      div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold, &
                                      s0_init,rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_init, &
-                                     p0_old,p0_new,w0,etarho_ec,etarho_cc,div_etarho,psi, &
+                                     p0_old,p0_new,w0,etarho_ec,etarho_cc,psi, &
                                      tempbar,grav_cell)
 
     use restart_module
@@ -46,8 +46,7 @@ contains
     real(dp_t)    , pointer       :: gamma1bar_hold(:,:),s0_init(:,:,:),rho0_old(:,:)
     real(dp_t)    , pointer       :: rhoh0_old(:,:),rho0_new(:,:),rhoh0_new(:,:),p0_init(:,:)
     real(dp_t)    , pointer       :: p0_old(:,:),p0_new(:,:),w0(:,:),etarho_ec(:,:)
-    real(dp_t)    , pointer       :: etarho_cc(:,:),div_etarho(:,:),psi(:,:),tempbar(:,:)
-    real(dp_t)    , pointer       :: grav_cell(:,:)
+    real(dp_t)    , pointer       :: etarho_cc(:,:),psi(:,:),tempbar(:,:),grav_cell(:,:)
 
     ! local
     type(ml_boxarray) :: mba
@@ -63,10 +62,12 @@ contains
     type(multifab), pointer :: chk_rho_omegadot2(:)
     type(multifab), pointer :: chk_rho_Hnuc2(:)
 
-    character(len=8)  :: sd_name
-    character(len=11) :: base_state_name
-    character(len=8)  :: base_w0_name
-    character(len=9)  :: base_etarho_name
+    character(len=5)   :: check_index
+    character(len=6)   :: check_index6
+    character(len=256) :: check_file_name
+    character(len=256) :: base_state_name
+    character(len=256) :: base_w0_name
+    character(len=256) :: base_etarho_name
 
     ! create mba, chk stuff, time, and dt
     call fill_restart_data(restart, mba, chkdata, chk_p, chk_dsdt, chk_src_old, &
@@ -102,8 +103,8 @@ contains
        call multifab_build(         pres(n), mla%la(n),     1, 1, nodal)
        call multifab_build(         dSdt(n), mla%la(n),     1, 0)
        call multifab_build(   Source_old(n), mla%la(n),     1, 1)
-       call multifab_build(rho_omegadot2(n), mla%la(n), nspec, 1)
-       call multifab_build(    rho_Hnuc2(n), mla%la(n),     1, 1)
+       call multifab_build(rho_omegadot2(n), mla%la(n), nspec, 0)
+       call multifab_build(    rho_Hnuc2(n), mla%la(n),     1, 0)
     end do
 
     do n=1,nlevs
@@ -156,7 +157,7 @@ contains
     if (spherical .eq. 1) then
 
        ! for spherical, we will now require that dr_fine = dx
-       dr_fine = dx(1,nlevs) / dble(drdxfac)
+       dr_fine = dx(nlevs,1) / dble(drdxfac)
        
        lenx = HALF * (prob_hi(1) - prob_lo(1))
        leny = HALF * (prob_hi(2) - prob_lo(2))
@@ -181,19 +182,32 @@ contains
     ! now that we have nr_fine we can allocate 1d arrays
     call initialize_1d_arrays(nlevs,div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold, &
                               s0_init,rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_init, &
-                              p0_old,p0_new,w0,etarho_ec,etarho_cc,div_etarho,psi,tempbar, &
+                              p0_old,p0_new,w0,etarho_ec,etarho_cc,psi,tempbar, &
                               grav_cell)
 
     ! now that we have nr we can read in the base state
-    write(unit=sd_name,fmt='("chk",i5.5)') restart
-    write(unit=base_state_name,fmt='("model_",i5.5)') restart
-    write(unit=base_w0_name,fmt='("w0_",i5.5)') restart
-    write(unit=base_etarho_name,fmt='("eta_",i5.5)') restart
-    
-    call read_base_state(base_state_name, base_w0_name, base_etarho_name, sd_name, &
+    if (restart <= 99999) then
+       write(unit=check_index,fmt='(i5.5)') restart
+       check_file_name = trim(check_base_name) // check_index
+    else
+       write(unit=check_index6,fmt='(i6.6)') restart
+       check_file_name = trim(check_base_name) // check_index6
+    endif
+
+    if (restart <= 99999) then
+       write(unit=base_state_name,fmt='("model_",i5.5)') restart
+       write(unit=base_w0_name,fmt='("w0_",i5.5)') restart
+       write(unit=base_etarho_name,fmt='("eta_",i5.5)') restart
+    else
+       write(unit=base_state_name,fmt='("model_",i6.6)') restart
+       write(unit=base_w0_name,fmt='("w0_",i6.6)') restart
+       write(unit=base_etarho_name,fmt='("eta_",i6.6)') restart
+    endif
+
+    ! note: still need to load/store tempbar
+    call read_base_state(base_state_name, base_w0_name, base_etarho_name, check_file_name, &
                          rho0_old, rhoh0_old, p0_old, gamma1bar, w0, &
-                         etarho_ec, etarho_cc, div_etarho, &
-                         div_coeff_old, psi)
+                         etarho_ec, etarho_cc, div_coeff_old, psi)
 
     ! fill ghost cells
     ! this need to be done after read_base_state since in some problems, the inflow
@@ -245,11 +259,11 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   subroutine initialize_with_fixed_grids(mla,time,dt,pmask,dx,uold,sold,gpres,pres, &
-                                         dSdt,Source_old,rho_omegadot2,rho_Hnuc2,the_bc_tower, &
-                                         div_coeff_old,div_coeff_new,gamma1bar, &
-                                         gamma1bar_hold,s0_init,rho0_old,rhoh0_old, &
-                                         rho0_new,rhoh0_new,p0_init, &
-                                         p0_old,p0_new,w0,etarho_ec,etarho_cc,div_etarho, &
+                                         dSdt,Source_old,rho_omegadot2,rho_Hnuc2, &
+                                         the_bc_tower,div_coeff_old,div_coeff_new, &
+                                         gamma1bar,gamma1bar_hold,s0_init,rho0_old, &
+                                         rhoh0_old,rho0_new,rhoh0_new,p0_init, &
+                                         p0_old,p0_new,w0,etarho_ec,etarho_cc, &
                                          psi,tempbar,grav_cell)
 
     use box_util_module
@@ -269,8 +283,7 @@ contains
     real(dp_t)    , pointer       :: gamma1bar_hold(:,:),s0_init(:,:,:),rho0_old(:,:)
     real(dp_t)    , pointer       :: rhoh0_old(:,:),rho0_new(:,:),rhoh0_new(:,:),p0_init(:,:)
     real(dp_t)    , pointer       :: p0_old(:,:),p0_new(:,:),w0(:,:),etarho_ec(:,:)
-    real(dp_t)    , pointer       :: etarho_cc(:,:),div_etarho(:,:),psi(:,:),tempbar(:,:)
-    real(dp_t)    , pointer       :: grav_cell(:,:)
+    real(dp_t)    , pointer       :: etarho_cc(:,:),psi(:,:),tempbar(:,:),grav_cell(:,:)
 
     ! local
     type(ml_boxarray) :: mba
@@ -316,8 +329,8 @@ contains
        call multifab_build(         pres(n), mla%la(n),     1, 1, nodal)
        call multifab_build(         dSdt(n), mla%la(n),     1, 0)
        call multifab_build(   Source_old(n), mla%la(n),     1, 1)
-       call multifab_build(rho_omegadot2(n), mla%la(n), nspec, 1)
-       call multifab_build(    rho_Hnuc2(n), mla%la(n),     1, 1)
+       call multifab_build(rho_omegadot2(n), mla%la(n), nspec, 0)
+       call multifab_build(    rho_Hnuc2(n), mla%la(n),     1, 0)
 
        call setval(         uold(n), ZERO, all=.true.)
        call setval(         sold(n), ZERO, all=.true.)
@@ -338,7 +351,7 @@ contains
     if (spherical .eq. 1) then
 
        ! for spherical, we will now require that dr_fine = dx
-       dr_fine = dx(1,nlevs) / dble(drdxfac)
+       dr_fine = dx(nlevs,1) / dble(drdxfac)
        
        lenx = HALF * (prob_hi(1) - prob_lo(1))
        leny = HALF * (prob_hi(2) - prob_lo(2))
@@ -363,13 +376,17 @@ contains
     ! now that we have nr_fine we can allocate 1d arrays
     call initialize_1d_arrays(nlevs,div_coeff_old,div_coeff_new,gamma1bar,gamma1bar_hold, &
                               s0_init,rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_init, &
-                              p0_old,p0_new,w0,etarho_ec,etarho_cc,div_etarho,psi,tempbar, &
+                              p0_old,p0_new,w0,etarho_ec,etarho_cc,psi,tempbar, &
                               grav_cell)
 
     ! now that we have dr and nr we can fill initial state
-    do n=1,nlevs
-       call init_base_state(n,model_file,s0_init(n,:,:),p0_init(n,:),dx(n,:))
-    end do
+    if (spherical .eq. 1) then
+       call init_base_state(1,model_file,s0_init(1,:,:),p0_init(1,:),dx(nlevs,:))
+    else
+       do n=1,nlevs
+          call init_base_state(n,model_file,s0_init(n,:,:),p0_init(n,:),dx(n,:))
+       end do
+    end if
 
     call initveldata(uold,s0_init,p0_init,dx,the_bc_tower%bc_tower_array,mla)
     call initscalardata(sold,s0_init,p0_init,dx,the_bc_tower%bc_tower_array,mla)
@@ -396,6 +413,10 @@ contains
     call fill_ghost_base(rhoh0_old,.true.)
     call restrict_base(rhoh0_old,.true.)
 
+    tempbar = s0_init(:,:,temp_comp)
+    call fill_ghost_base(tempbar,.true.)
+    call restrict_base(tempbar,.true.)
+    
     call destroy(mba)
 
   end subroutine initialize_with_fixed_grids
@@ -403,12 +424,12 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   subroutine initialize_with_adaptive_grids(mla,time,dt,pmask,dx,uold,sold,gpres,pres, &
-                                            dSdt,Source_old,rho_omegadot2,rho_Hnuc2,the_bc_tower, &
-                                            div_coeff_old,div_coeff_new,gamma1bar, &
-                                            gamma1bar_hold,s0_init,rho0_old,rhoh0_old, &
-                                            rho0_new,rhoh0_new,p0_init, &
+                                            dSdt,Source_old,rho_omegadot2,rho_Hnuc2, &
+                                            the_bc_tower,div_coeff_old,div_coeff_new, &
+                                            gamma1bar,gamma1bar_hold,s0_init,rho0_old, &
+                                            rhoh0_old,rho0_new,rhoh0_new,p0_init, &
                                             p0_old,p0_new,w0,etarho_ec,etarho_cc, &
-                                            div_etarho,psi,tempbar,grav_cell)
+                                            psi,tempbar,grav_cell)
 
     use probin_module, only: n_cellx, n_celly, n_cellz, regrid_int, max_grid_size, &
          ref_ratio, max_levs
@@ -430,8 +451,7 @@ contains
     real(dp_t)    , pointer       :: gamma1bar_hold(:,:),s0_init(:,:,:),rho0_old(:,:)
     real(dp_t)    , pointer       :: rhoh0_old(:,:),rho0_new(:,:),rhoh0_new(:,:),p0_init(:,:)
     real(dp_t)    , pointer       :: p0_old(:,:),p0_new(:,:),w0(:,:),etarho_ec(:,:)
-    real(dp_t)    , pointer       :: etarho_cc(:,:),div_etarho(:,:),psi(:,:),tempbar(:,:)
-    real(dp_t)    , pointer       :: grav_cell(:,:)
+    real(dp_t)    , pointer       :: etarho_cc(:,:),psi(:,:),tempbar(:,:),grav_cell(:,:)
 
     ! local
     type(ml_boxarray) :: mba
@@ -491,7 +511,7 @@ contains
     if (spherical .eq. 1) then
 
        ! for spherical, we will now require that dr_fine = dx
-       dr_fine = dx(1,max_levs) / dble(drdxfac)
+       dr_fine = dx(max_levs,1) / dble(drdxfac)
 
        lenx = HALF * (prob_hi(1) - prob_lo(1))
        leny = HALF * (prob_hi(2) - prob_lo(2))
@@ -514,12 +534,16 @@ contains
     call initialize_1d_arrays(max_levs,div_coeff_old,div_coeff_new,gamma1bar, &
                               gamma1bar_hold,s0_init,rho0_old,rhoh0_old,rho0_new, &
                               rhoh0_new,p0_init,p0_old,p0_new,w0,etarho_ec,etarho_cc, &
-                              div_etarho,psi,tempbar,grav_cell)
+                              psi,tempbar,grav_cell)
 
     ! now that we have dr and nr we can fill initial state
-    do n=1,max_levs
-       call init_base_state(n,model_file,s0_init(n,:,:),p0_init(n,:),dx(n,:))
-    end do
+    if (spherical .eq. 1) then
+       call init_base_state(1,model_file,s0_init(1,:,:),p0_init(1,:),dx(max_levs,:))
+    else
+       do n=1,max_levs
+          call init_base_state(n,model_file,s0_init(n,:,:),p0_init(n,:),dx(n,:))
+       end do
+    end if
 
     ! Initialize bc's
     call initialize_bc(the_bc_tower,max_levs,pmask)
@@ -563,10 +587,16 @@ contains
              ! Define bc_tower at level nl+1.
              call bc_tower_level_build(the_bc_tower,nl+1,la_array(nl+1))
              
-             ! fills the physical region of each level with problem data
-             call initscalardata_on_level(nl+1,sold(nl+1),s0_init(nl+1,:,:), &
-                                          p0_init(nl+1,:),dx(nl+1,:), &
-                                          the_bc_tower%bc_tower_array(nl+1))
+             if (spherical .eq. 1) then
+                call initscalardata_on_level(nl+1,sold(nl+1),s0_init(1,:,:), &
+                                             p0_init(1,:),dx(nl+1,:), &
+                                             the_bc_tower%bc_tower_array(nl+1))
+             else
+                ! fills the physical region of each level with problem data
+                call initscalardata_on_level(nl+1,sold(nl+1),s0_init(nl+1,:,:), &
+                                             p0_init(nl+1,:),dx(nl+1,:), &
+                                             the_bc_tower%bc_tower_array(nl+1))
+             end if
 
              nlevs = nl+1
              nlevs_radial = merge(1, nlevs, spherical .eq. 1)
@@ -598,7 +628,7 @@ contains
     
     nlevs = mla%nlevel
     nlevs_radial = merge(1, nlevs, spherical .eq. 1)
-
+    
     do n = 1, nlevs
        call destroy(la_array(n))
     end do
@@ -611,8 +641,8 @@ contains
        call multifab_build(         pres(n), mla%la(n),     1, 1, nodal)
        call multifab_build(         dSdt(n), mla%la(n),     1, 0)
        call multifab_build(   Source_old(n), mla%la(n),     1, 1)
-       call multifab_build(rho_omegadot2(n), mla%la(n), nspec, 1)
-       call multifab_build(    rho_Hnuc2(n), mla%la(n),     1, 1)
+       call multifab_build(rho_omegadot2(n), mla%la(n), nspec, 0)
+       call multifab_build(    rho_Hnuc2(n), mla%la(n),     1, 0)
 
        call setval(         uold(n), ZERO, all=.true.)
        call setval(         sold(n), ZERO, all=.true.)
@@ -651,6 +681,10 @@ contains
     rhoh0_old = s0_init(:,:,rhoh_comp)
     call fill_ghost_base(rhoh0_old,.true.)
     call restrict_base(rhoh0_old,.true.)
+
+    tempbar = s0_init(:,:,temp_comp)
+    call fill_ghost_base(tempbar,.true.)
+    call restrict_base(tempbar,.true.)
 
     call destroy(mba)
 
@@ -724,34 +758,54 @@ contains
   subroutine initialize_1d_arrays(num_levs,div_coeff_old,div_coeff_new,gamma1bar, &
                                   gamma1bar_hold,s0_init,rho0_old,rhoh0_old,rho0_new, &
                                   rhoh0_new,p0_init,p0_old,p0_new,w0,etarho_ec,etarho_cc, &
-                                  div_etarho,psi,tempbar,grav_cell)
+                                  psi,tempbar,grav_cell)
 
-    integer, intent(in)  :: num_levs    
-    real(dp_t) , pointer :: div_coeff_old(:,:),div_coeff_new(:,:),gamma1bar(:,:)
-    real(dp_t) , pointer :: gamma1bar_hold(:,:),s0_init(:,:,:),rho0_old(:,:)
-    real(dp_t) , pointer :: rhoh0_old(:,:),rho0_new(:,:),rhoh0_new(:,:),p0_init(:,:)
-    real(dp_t) , pointer :: p0_old(:,:),p0_new(:,:),w0(:,:),etarho_ec(:,:),etarho_cc(:,:)
-    real(dp_t) , pointer :: div_etarho(:,:),psi(:,:),tempbar(:,:),grav_cell(:,:)
-
-    allocate(div_coeff_old (num_levs,0:nr_fine-1))
-    allocate(div_coeff_new (num_levs,0:nr_fine-1))
-    allocate(gamma1bar     (num_levs,0:nr_fine-1))
-    allocate(gamma1bar_hold(num_levs,0:nr_fine-1))
-    allocate(s0_init       (num_levs,0:nr_fine-1,nscal))
-    allocate(rho0_old      (num_levs,0:nr_fine-1))
-    allocate(rhoh0_old     (num_levs,0:nr_fine-1))
-    allocate(rho0_new      (num_levs,0:nr_fine-1))
-    allocate(rhoh0_new     (num_levs,0:nr_fine-1))
-    allocate(p0_init       (num_levs,0:nr_fine-1))
-    allocate(p0_old        (num_levs,0:nr_fine-1))
-    allocate(p0_new        (num_levs,0:nr_fine-1))
-    allocate(w0            (num_levs,0:nr_fine))
-    allocate(etarho_ec     (num_levs,0:nr_fine))
-    allocate(etarho_cc     (num_levs,0:nr_fine-1))
-    allocate(div_etarho    (num_levs,0:nr_fine-1))
-    allocate(psi           (num_levs,0:nr_fine-1))
-    allocate(tempbar       (num_levs,0:nr_fine-1))
-    allocate(grav_cell     (num_levs,0:nr_fine-1))
+    integer    , intent(in) :: num_levs    
+    real(dp_t) , pointer    :: div_coeff_old(:,:),div_coeff_new(:,:),gamma1bar(:,:)
+    real(dp_t) , pointer    :: gamma1bar_hold(:,:),s0_init(:,:,:),rho0_old(:,:)
+    real(dp_t) , pointer    :: rhoh0_old(:,:),rho0_new(:,:),rhoh0_new(:,:),p0_init(:,:)
+    real(dp_t) , pointer    :: p0_old(:,:),p0_new(:,:),w0(:,:),etarho_ec(:,:),etarho_cc(:,:)
+    real(dp_t) , pointer    :: psi(:,:),tempbar(:,:),grav_cell(:,:)
+    
+    if (spherical .eq. 0) then
+       allocate(div_coeff_old (num_levs,0:nr_fine-1))
+       allocate(div_coeff_new (num_levs,0:nr_fine-1))
+       allocate(gamma1bar     (num_levs,0:nr_fine-1))
+       allocate(gamma1bar_hold(num_levs,0:nr_fine-1))
+       allocate(s0_init       (num_levs,0:nr_fine-1,nscal))
+       allocate(rho0_old      (num_levs,0:nr_fine-1))
+       allocate(rhoh0_old     (num_levs,0:nr_fine-1))
+       allocate(rho0_new      (num_levs,0:nr_fine-1))
+       allocate(rhoh0_new     (num_levs,0:nr_fine-1))
+       allocate(p0_init       (num_levs,0:nr_fine-1))
+       allocate(p0_old        (num_levs,0:nr_fine-1))
+       allocate(p0_new        (num_levs,0:nr_fine-1))
+       allocate(w0            (num_levs,0:nr_fine))
+       allocate(etarho_ec     (num_levs,0:nr_fine))
+       allocate(etarho_cc     (num_levs,0:nr_fine-1))
+       allocate(psi           (num_levs,0:nr_fine-1))
+       allocate(tempbar       (num_levs,0:nr_fine-1))
+       allocate(grav_cell     (num_levs,0:nr_fine-1))
+    else
+       allocate(div_coeff_old (1,0:nr_fine-1))
+       allocate(div_coeff_new (1,0:nr_fine-1))
+       allocate(gamma1bar     (1,0:nr_fine-1))
+       allocate(gamma1bar_hold(1,0:nr_fine-1))
+       allocate(s0_init       (1,0:nr_fine-1,nscal))
+       allocate(rho0_old      (1,0:nr_fine-1))
+       allocate(rhoh0_old     (1,0:nr_fine-1))
+       allocate(rho0_new      (1,0:nr_fine-1))
+       allocate(rhoh0_new     (1,0:nr_fine-1))
+       allocate(p0_init       (1,0:nr_fine-1))
+       allocate(p0_old        (1,0:nr_fine-1))
+       allocate(p0_new        (1,0:nr_fine-1))
+       allocate(w0            (1,0:nr_fine))
+       allocate(etarho_ec     (1,0:nr_fine))
+       allocate(etarho_cc     (1,0:nr_fine-1))
+       allocate(psi           (1,0:nr_fine-1))
+       allocate(tempbar       (1,0:nr_fine-1))
+       allocate(grav_cell     (1,0:nr_fine-1))
+    end if
 
     div_coeff_old = ZERO
     div_coeff_new = ZERO
@@ -768,7 +822,6 @@ contains
     w0 = ZERO
     etarho_ec = ZERO
     etarho_cc = ZERO
-    div_etarho = ZERO
     psi = ZERO
     tempbar = ZERO
     grav_cell = ZERO
