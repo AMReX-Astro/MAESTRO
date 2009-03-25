@@ -342,7 +342,7 @@ contains
 
     drdxfac = 1
 
-    min_width = 4
+    min_width = 16
     min_eff = 0.7d0
 
     rotational_frequency = ZERO
