@@ -328,7 +328,7 @@ contains
 
     the_knapsack_verbosity = .false.
 
-    the_sfc_threshold = 4  ! Same as the default in layout_module.
+    the_sfc_threshold = 1
 
     ! 0 = no ppm
     ! 1 = 1985 ppm
