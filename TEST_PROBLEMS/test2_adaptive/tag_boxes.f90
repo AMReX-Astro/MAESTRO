@@ -251,7 +251,7 @@ contains
              do i = lo(1),hi(1)
 
                 if (abs(mf(i,j,k)-tempbar_cart(i,j,k,1)) .gt. 3.d7) then
-                   tagbox(:,:,k) = .true.
+                   tagbox(i,j,k) = .true.
                 end if
 
              end do
