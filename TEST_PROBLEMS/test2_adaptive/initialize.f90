@@ -545,6 +545,8 @@ contains
        end do
     end if
 
+    tempbar = s0_init(:,:,temp_comp)
+
     ! Initialize bc's
     call initialize_bc(the_bc_tower,max_levs,pmask)
 
@@ -571,8 +573,6 @@ contains
        
        do while ( (nl .lt. max_levs) .and. (new_grid) )
           
-          call average_one_level(nl,sold,tempbar,temp_comp)
-
           ! Do we need finer grids?
           call make_new_grids(new_grid,la_array(nl),la_array(nl+1),sold(nl),dx(nl,1), &
                               buf_wid,ref_ratio,nl,max_grid_size,tempbar)
