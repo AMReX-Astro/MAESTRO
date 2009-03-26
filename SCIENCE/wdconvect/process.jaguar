@@ -10,7 +10,7 @@ pidfile=process.pid
 
 # set the prefix of the plotfiles and checkpoint files
 plt_prefix=plt
-chk_prefix=chk*[05]00
+chk_prefix=chk
 
 
 # set the full name of the analysis routines -- note, these need to be in 
@@ -176,8 +176,8 @@ function process_files
   # written to disk.  Strip out any tar files that are lying around as well 
   # as chkXXXXX.processed files.
   #chklist=$(ls -d ${chk_prefix}* 2>/dev/null | grep -v tar | grep -v processed)
-  chklist5=$(find . -type d -name "${chk_prefix}?????" -print | sort)
-  chklist6=$(find . -type d -name "${chk_prefix}??????" -print | sort)
+  chklist5=$(find . -type d -name "${chk_prefix}??[05]00" -print | sort)
+  chklist6=$(find . -type d -name "${chk_prefix}???[05]00" -print | sort)
 
   chklist="$chklist5 $chklist6"
 
