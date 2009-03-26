@@ -230,7 +230,7 @@ contains
     integer, optional, intent(in   ) :: lev
 
     integer    :: i,j,k,llev
-    real(dp_t) :: dx_vec(dm)
+    real(dp_t) :: dx_vec(dm),x,y,z,dist
 
     real(kind=dp_t), allocatable :: tempbar_cart(:,:,:,:)
 
@@ -247,10 +247,15 @@ contains
     select case(llev)
     case default
        do k = lo(3),hi(3)
+          z = (dble(k)+0.5d0) * dx
           do j = lo(2),hi(2)
+             y = (dble(j)+0.5d0) * dx
              do i = lo(1),hi(1)
+                x = (dble(i)+0.5d0) * dx
 
-                if (abs(mf(i,j,k)-tempbar_cart(i,j,k,1)) .gt. 3.d7) then
+                dist = sqrt((x-2.5d8)**2 + (y-2.5d8)**2 + (z-2.5d8)**2)
+
+                if (abs(mf(i,j,k)-tempbar_cart(i,j,k,1)).gt.3.d7 .and. dist.lt.1.5d8) then
                    tagbox(i,j,k) = .true.
                 end if
 
