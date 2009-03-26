@@ -53,8 +53,8 @@ module probin_module
   logical, save            :: lUsingNFiles
   logical, save            :: use_tfromp, single_prec_plotfiles
   logical, save            :: use_soundspeed_firstdt, use_divu_firstdt
-  logical, save            :: smallscale_beta, do_alltoallv, the_knapsack_verbosity
-  integer, save            :: use_ppm
+  logical, save            :: do_alltoallv, the_knapsack_verbosity
+  integer, save            :: use_ppm, beta_type
   integer, save            :: max_levs, max_grid_size, regrid_int, ref_ratio
   integer, save            :: n_cellx, n_celly, n_cellz
   integer, save            :: drdxfac, min_width, the_sfc_threshold
@@ -150,10 +150,10 @@ module probin_module
   namelist /probin/ single_prec_plotfiles
   namelist /probin/ use_soundspeed_firstdt
   namelist /probin/ use_divu_firstdt
-  namelist /probin/ smallscale_beta
   namelist /probin/ do_alltoallv
   namelist /probin/ the_knapsack_verbosity
   namelist /probin/ use_ppm
+  namelist /probin/ beta_type
   namelist /probin/ max_levs
   namelist /probin/ max_grid_size
   namelist /probin/ regrid_int
@@ -322,7 +322,10 @@ contains
     use_soundspeed_firstdt = .false.
     use_divu_firstdt = .false.
 
-    smallscale_beta = .false.
+    ! 1 - full beta0
+    ! 2 - beta0 = rho0
+    ! 3 - beta0 = 1
+    beta_type = 1
 
     do_alltoallv = .false.
 
@@ -824,10 +827,10 @@ contains
           call get_command_argument(farg, value = fname)
           read(fname, *) use_divu_firstdt
 
-       case ('--smallscale_beta')
+       case ('--beta_type')
           farg = farg + 1
           call get_command_argument(farg, value = fname)
-          read(fname, *) smallscale_beta
+          read(fname, *) beta_type
 
        case ('--do_alltoallv')
           farg = farg + 1

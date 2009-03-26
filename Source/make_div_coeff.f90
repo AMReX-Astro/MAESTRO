@@ -21,7 +21,7 @@ contains
     use geometry, only: nr_fine, dr, anelastic_cutoff_coord, r_start_coord, r_end_coord, &
          nr, numdisjointchunks, nlevs_radial
     use restrict_base_module
-    use probin_module, only: smallscale_beta
+    use probin_module, only: beta_type
 
     real(kind=dp_t), intent(  out) :: div_coeff(:,0:)
     real(kind=dp_t), intent(in   ) :: rho0(:,0:), p0(:,0:), gamma1bar(:,0:)
@@ -36,11 +36,8 @@ contains
     real(kind=dp_t) :: del,dpls,dmin,slim,sflag
     real(kind=dp_t) :: offset
 
-    if (smallscale_beta) then
 
-       div_coeff = 1.d0
-
-    else
+    if (beta_type .eq. 1) then
 
        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
        ! Compute beta0 on the edges and average to the center      
@@ -192,10 +189,25 @@ contains
 
        end do ! end loop over levels
 
-       call fill_ghost_base(div_coeff,.true.)
-       call restrict_base(div_coeff,.true.)
+    else if (beta_type .eq. 2) then
+
+       ! beta_0 = rho_0
+       do n=1,nlevs_radial
+          do j=1,numdisjointchunks(n)
+             do r=r_start_coord(n,j),r_end_coord(n,j)
+                div_coeff(n,r) = rho0(n,r)
+             enddo
+          end do
+       end do
+
+    else if (beta_type .eq. 3) then
+
+       div_coeff = 1.d0
 
     end if
+
+    call fill_ghost_base(div_coeff,.true.)
+    call restrict_base(div_coeff,.true.)
 
   end subroutine make_div_coeff
 

@@ -36,7 +36,7 @@
  use_thermal_diffusion = T
 
  evolve_base_state = F
- smallscale_beta = T
+ beta_type = 3
 
 !restart = 50
 
