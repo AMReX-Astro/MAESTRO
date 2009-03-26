@@ -10,7 +10,7 @@ pidfile=process.pid
 
 # set the prefix of the plotfiles and checkpoint files
 plt_prefix=plt
-chk_prefix=chk??[05]??
+chk_prefix=chk*[05]00
 
 
 # set the full name of the analysis routines -- note, these need to be in 
@@ -99,7 +99,10 @@ function process_files
   # written to disk.  Strip out any tar files that are lying around as well 
   # as pltXXXXX.processed files.
   #pltlist=$(ls -d ${plt_prefix}* 2>/dev/null | grep -v tar | grep -v processed)
-  pltlist=$(find . -maxdepth 1 -type d -name "${plt_prefix}*" -print | sort)
+  pltlist5=$(find . -maxdepth 1 -type d -name "${plt_prefix}?????" -print | sort)
+  pltlist6=$(find . -maxdepth 1 -type d -name "${plt_prefix}??????" -print | sort)
+
+  pltlist="$pltlist5 $pltlist6"
 
   if [ "$pltlist" ]; then
     nl=$(echo "$pltlist" | wc -l)
@@ -173,7 +176,10 @@ function process_files
   # written to disk.  Strip out any tar files that are lying around as well 
   # as chkXXXXX.processed files.
   #chklist=$(ls -d ${chk_prefix}* 2>/dev/null | grep -v tar | grep -v processed)
-  chklist=$(find . -type d -name "${chk_prefix}*" -print | sort)
+  chklist5=$(find . -type d -name "${chk_prefix}?????" -print | sort)
+  chklist6=$(find . -type d -name "${chk_prefix}??????" -print | sort)
+
+  chklist="$chklist5 $chklist6"
 
   if [ "$chklist" ]; then
     nl=$(echo "$chklist" | wc -l)
