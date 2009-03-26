@@ -19,19 +19,20 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine tag_boxes(mf,tagboxes,lev,tempbar)
+  subroutine tag_boxes(mf,tagboxes,lev,tempbar,dx)
 
     use variables, only: temp_comp
-    use geometry, only: dm, nr_fine
+    use geometry, only: dm, nr_fine, spherical
 
     type( multifab), intent(in   ) :: mf
     type(lmultifab), intent(inout) :: tagboxes
     integer        , intent(in   ) :: lev
     real(dp_t)     , intent(in   ) :: tempbar(:,0:)
+    real(dp_t)     , intent(in   ) :: dx
 
     real(kind = dp_t), pointer :: sp(:,:,:,:)
     logical          , pointer :: tp(:,:,:,:)
-    integer           :: i, lo(dm), ng_s
+    integer           :: i, lo(dm), hi(dm), ng_s
     logical           ::      radialtag(0:nr_fine-1)
     logical           :: radialtag_proc(0:nr_fine-1)
 
@@ -40,30 +41,39 @@ contains
 
     ng_s = mf%ng
 
-    do i = 1, mf%nboxes
-       if ( multifab_remote(mf, i) ) cycle
-       sp => dataptr(mf, i)
-       lo =  lwb(get_box(tagboxes, i))
-       select case (dm)
-       case (2)
-          call radialtag_2d(radialtag_proc,sp(:,:,1,temp_comp),lo,ng_s,tempbar,lev)
-       case  (3)
-          call radialtag_3d(radialtag_proc,sp(:,:,:,temp_comp),lo,ng_s,tempbar,lev)
-       end select
-    end do
-
-    ! gather radialtag
-    call parallel_reduce(radialtag, radialtag_proc, MPI_LOR)
+    if (spherical .eq. 0) then
+       do i = 1, mf%nboxes
+          if ( multifab_remote(mf, i) ) cycle
+          sp => dataptr(mf, i)
+          lo =  lwb(get_box(tagboxes, i))
+          select case (dm)
+          case (2)
+             call radialtag_2d(radialtag_proc,sp(:,:,1,temp_comp),lo,ng_s,tempbar,lev)
+          case (3)
+             call radialtag_3d(radialtag_proc,sp(:,:,:,temp_comp),lo,ng_s,tempbar,lev)
+          end select
+       end do
+       
+       ! gather radialtag
+       call parallel_reduce(radialtag, radialtag_proc, MPI_LOR)
+    end if
 
     do i = 1, mf%nboxes
        if ( multifab_remote(mf, i) ) cycle
        tp => dataptr(tagboxes, i)
        lo =  lwb(get_box(tagboxes, i))
+       hi =  upb(get_box(tagboxes, i))
        select case (dm)
        case (2)
           call tag_boxes_2d(tp(:,:,1,1),radialtag,lo,lev)
-       case  (3)
-          call tag_boxes_3d(tp(:,:,:,1),radialtag,lo,lev)
+       case (3)
+          if (spherical .eq. 0) then
+             call tag_boxes_3d(tp(:,:,:,1),radialtag,lo,lev)
+          else
+             sp => dataptr(mf, i)
+             call tag_boxes_3d_sphr(tp(:,:,:,1),sp(:,:,:,temp_comp),ng_s,tempbar(lev,:), &
+                                    lo,hi,dx,lev)
+          end if
        end select
     end do
 
@@ -204,6 +214,52 @@ contains
     end select
 
   end subroutine tag_boxes_3d
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  subroutine tag_boxes_3d_sphr(tagbox,mf,ng,tempbar,lo,hi,dx,lev)
+
+    use fill_3d_module, only: put_1d_array_on_cart_3d_sphr
+    use geometry, only: dm
+
+    integer          , intent(in   ) :: lo(:),hi(:),ng
+    logical          , intent(  out) :: tagbox(lo(1)   :,lo(2)   :,lo(3)   :)
+    real(kind = dp_t), intent(in   ) ::     mf(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:)
+    real(dp_t)       , intent(in   ) :: tempbar(0:)
+    real(kind=dp_t)  , intent(in   ) :: dx
+    integer, optional, intent(in   ) :: lev
+
+    integer    :: i,j,k,llev
+    real(dp_t) :: dx_vec(dm)
+
+    real(kind=dp_t), allocatable :: tempbar_cart(:,:,:,:)
+
+    dx_vec(:) = dx
+
+    allocate(tempbar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
+    call put_1d_array_on_cart_3d_sphr(.false.,.false.,tempbar,tempbar_cart,lo,hi,dx_vec,0,0)
+
+    llev = 1; if (present(lev)) llev = lev
+
+    tagbox = .false.
+
+    ! tag all boxes with radialtag = .true.
+    select case(llev)
+    case default
+       do k = lo(3),hi(3)
+          do j = lo(2),hi(2)
+             do i = lo(1),hi(1)
+
+                if (abs(mf(i,j,k)-tempbar_cart(i,j,k,1)) .gt. 3.d7) then
+                   tagbox(:,:,k) = .true.
+                end if
+
+             end do
+          end do
+       end do
+    end select
+
+  end subroutine tag_boxes_3d_sphr
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
