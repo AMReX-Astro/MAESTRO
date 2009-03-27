@@ -46,7 +46,6 @@
 
  do_initial_projection = 1
  init_divu_iter = 3
- init_iter = 1
 
  velpert_amplitude = 0.d0
  velpert_radius = 1.d7
