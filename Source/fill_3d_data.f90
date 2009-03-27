@@ -484,6 +484,8 @@ contains
 
     end if
 
+    call destroy(bpt)
+
   end subroutine put_w0_on_edges
 
   subroutine mk_w0mac_rhs(w0,div_coeff,w0rhs)
