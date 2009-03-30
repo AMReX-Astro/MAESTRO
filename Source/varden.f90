@@ -38,7 +38,7 @@ subroutine varden()
 
   integer    :: init_step,istep
   integer    :: istep_divu_iter,istep_init_iter
-  integer    :: i,n,r,comp
+  integer    :: i,n,r,comp,numcell
   integer    :: last_plt_written,last_chk_written
   real(dp_t) :: smin,smax
   real(dp_t) :: time,dt,dtold
@@ -191,12 +191,27 @@ subroutine varden()
   if (parallel_IOProcessor()) then
      print *, 'number of processors = ', parallel_nprocs()
      print *, 'number of dimensions = ', dm
-
      do n = 1, nlevs
         print *, 'level: ', n
         print *, '   number of boxes = ', uold(n)%nboxes
         print *, '   maximum zones   = ', (extent(mla%mba%pd(n),i),i=1,dm)
      end do
+  end if
+
+  if (verbose .ge. 1) then
+     do n=1,nlevs
+        numcell = multifab_volume(pres(n),.false.)
+        if (parallel_IOProcessor()) then
+           print*,"Number of valid cells at level        ",n,numcell
+        end if
+        numcell = multifab_volume(pres(n),.true.)
+        if (parallel_IOProcessor()) then
+           print*,"Number of valid + ghost cells at level",n,numcell
+        end if
+     end do
+     if (parallel_IOProcessor()) then
+        print*,""
+     end if
   end if
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

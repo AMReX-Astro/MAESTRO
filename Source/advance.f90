@@ -138,12 +138,28 @@ contains
     real(dp_t) ::          rhoprimebar(nlevs_radial,0:nr_fine-1)
     real(dp_t) ::         rhohprimebar(nlevs_radial,0:nr_fine-1)
 
-    integer    :: r,n,comp,proj_type
+    integer    :: r,n,comp,proj_type,numcell
     real(dp_t) :: halfdt
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "advance_timestep")
+
+    if (verbose .ge. 1) then
+       do n=1,nlevs
+          numcell = multifab_volume(pres(n),.false.)
+          if (parallel_IOProcessor()) then
+             print*,"Number of valid cells at level        ",n,numcell
+          end if
+          numcell = multifab_volume(pres(n),.true.)
+          if (parallel_IOProcessor()) then
+             print*,"Number of valid + ghost cells at level",n,numcell
+          end if
+       end do
+       if (parallel_IOProcessor()) then
+          print*,""
+       end if
+    end if
 
     ! Set this to zero so if evolve_base_state = F there is no effect in update_vel
     w0_force = ZERO
