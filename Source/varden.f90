@@ -196,6 +196,7 @@ subroutine varden()
         print *, '   number of boxes = ', uold(n)%nboxes
         print *, '   maximum zones   = ', (extent(mla%mba%pd(n),i),i=1,dm)
      end do
+     print *, ''
   end if
 
   if (verbose .ge. 1) then
@@ -326,6 +327,7 @@ subroutine varden()
 
      if (parallel_IOProcessor()) then
         print*,"Minimum firstdt over all levels =",dt
+        print*,""
      end if
 
      if(fixed_dt .ne. -1.0d0) then

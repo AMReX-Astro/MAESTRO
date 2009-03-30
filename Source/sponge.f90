@@ -62,6 +62,7 @@ contains
 
     if ( parallel_IOProcessor() ) write(6,1000) r_sp, r_tp
     if ( parallel_IOProcessor() ) write(6,1001) r_sp_outer, r_tp_outer
+    if ( parallel_IOProcessor() ) print*,""
 
 1000 format('inner sponge: r_sp      , r_tp      : ',e20.12,2x,e20.12)
 1001 format('outer sponge: r_sp_outer, r_tp_outer: ',e20.12,2x,e20.12)

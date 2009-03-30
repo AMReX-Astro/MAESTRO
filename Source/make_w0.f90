@@ -73,8 +73,10 @@ contains
        do r=r_start_coord(n,1),r_end_coord(n,1)+1
           max_w0 = max(max_w0, abs(w0(n,r)))
        end do
-       if (parallel_IOProcessor() .and. verbose .ge. 1) &
-            write(6,*) '... max CFL of w0: ',max_w0 * dt / dr(n)
+       if (parallel_IOProcessor() .and. verbose .ge. 1) then
+          write(6,*) '... max CFL of w0: ',max_w0 * dt / dr(n)
+          write(6,*) ''
+       end if
     end do
 
     call destroy(bpt)

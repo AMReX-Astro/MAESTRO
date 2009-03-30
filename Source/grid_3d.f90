@@ -2,12 +2,12 @@ program grid_3d
 
   integer :: i, j, k
 
-  integer, parameter :: nx = 32
-  integer, parameter :: ny = 32
-  integer, parameter :: nz = 32
-  integer, parameter :: nzonesx = 1024
-  integer, parameter :: nzonesy = 1024
-  integer, parameter :: nzonesz = 1024
+  integer, parameter :: nx = 12
+  integer, parameter :: ny = 12
+  integer, parameter :: nz = 12
+  integer, parameter :: nzonesx = 768
+  integer, parameter :: nzonesy = 768
+  integer, parameter :: nzonesz = 768
 
   integer :: ix, iy, iz
   integer :: nlevs, ngrids
