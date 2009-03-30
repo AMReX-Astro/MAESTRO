@@ -129,7 +129,8 @@ contains
           ! both levels n-1 and n
           call multifab_fill_ghost_cells(snew(n),snew(n-1),ng_sn,mla%mba%rr(n-1,:), &
                                          the_bc_level(n-1),the_bc_level(n), &
-                                         nstart,dm+nstart,nstop-nstart+1)
+                                         nstart,dm+nstart,nstop-nstart+1, &
+                                         fill_crse_input=.false.)
 
           ! do the same for density if we updated the species
           if (nstart .eq. spec_comp .and. nstop .eq. (spec_comp+nspec-1)) then
@@ -139,7 +140,7 @@ contains
 
              call multifab_fill_ghost_cells(snew(n),snew(n-1),ng_sn,mla%mba%rr(n-1,:), &
                                             the_bc_level(n-1),the_bc_level(n), &
-                                            rho_comp,dm+rho_comp,1)
+                                            rho_comp,dm+rho_comp,1,fill_crse_input=.false.)
 
           endif
 

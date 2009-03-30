@@ -579,7 +579,7 @@ contains
           ! both levels n-1 and n
           call multifab_fill_ghost_cells(s(n),s(n-1),ng,mla%mba%rr(n-1,:), &
                                          the_bc_level(n-1),the_bc_level(n  ), &
-                                         temp_comp,dm+temp_comp,1)
+                                         temp_comp,dm+temp_comp,1,fill_crse_input=.false.)
        enddo
 
     end if
@@ -799,7 +799,7 @@ contains
           ! both levels n-1 and n
           call multifab_fill_ghost_cells(s(n),s(n-1),ng,mla%mba%rr(n-1,:), &
                                          the_bc_level(n-1),the_bc_level(n  ), &
-                                         temp_comp,dm+temp_comp,1)
+                                         temp_comp,dm+temp_comp,1,fill_crse_input=.false.)
        enddo
 
     end if
@@ -1031,7 +1031,8 @@ contains
           ! note that multifab_fill_boundary and multifab_physbc are called for
           ! both levels n-1 and n
           call multifab_fill_ghost_cells(p(n),p(n-1),ng_p,mla%mba%rr(n-1,:), &
-                                         the_bc_level(n-1),the_bc_level(n),1,foextrap_comp,1)
+                                         the_bc_level(n-1),the_bc_level(n),1, &
+                                         foextrap_comp,1,fill_crse_input=.false.)
        enddo
 
     end if
@@ -1250,9 +1251,11 @@ contains
           ! note that multifab_fill_boundary and multifab_physbc are called for
           ! both levels n-1 and n
           call multifab_fill_ghost_cells(s(n),s(n-1),ng_s,mla%mba%rr(n-1,:), &
-                                         bc(n-1),bc(n),1,dm+rhoh_comp,1)
+                                         bc(n-1),bc(n),1,dm+rhoh_comp,1, &
+                                         fill_crse_input=.false.)
           call multifab_fill_ghost_cells(s(n),s(n-1),ng_s,mla%mba%rr(n-1,:), &
-                                         bc(n-1),bc(n),1,dm+temp_comp,1)
+                                         bc(n-1),bc(n),1,dm+temp_comp,1, &
+                                         fill_crse_input=.false.)
 
        enddo
 

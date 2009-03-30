@@ -371,7 +371,7 @@ contains
           call multifab_fill_ghost_cells(p0_oldfab(n),p0_oldfab(n-1),1,mla%mba%rr(n-1,:), &
                                          the_bc_tower%bc_tower_array(n-1), &
                                          the_bc_tower%bc_tower_array(n), &
-                                         1,foextrap_comp,1)
+                                         1,foextrap_comp,1,fill_crse_input=.false.)
        end do
 
     end if
@@ -452,7 +452,7 @@ contains
           call multifab_fill_ghost_cells(p0_newfab(n),p0_newfab(n-1),1,mla%mba%rr(n-1,:), &
                                          the_bc_tower%bc_tower_array(n-1), &
                                          the_bc_tower%bc_tower_array(n), &
-                                         1,foextrap_comp,1)
+                                         1,foextrap_comp,1,fill_crse_input=.false.)
        end do
 
     end if
@@ -588,7 +588,7 @@ contains
           call multifab_fill_ghost_cells(s2(n),s2(n-1),s2(1)%ng,mla%mba%rr(n-1,:), &
                                          the_bc_tower%bc_tower_array(n-1), &
                                          the_bc_tower%bc_tower_array(n  ), &
-                                         rhoh_comp,dm+rhoh_comp,1)
+                                         rhoh_comp,dm+rhoh_comp,1,fill_crse_input=.false.)
        enddo
 
     end if

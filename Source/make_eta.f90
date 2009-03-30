@@ -302,7 +302,7 @@ contains
           call multifab_fill_ghost_cells(eta_cart(n),eta_cart(n-1), &
                                          ng_e,mla%mba%rr(n-1,:), &
                                          the_bc_level(n-1), the_bc_level(n), &
-                                         1,foextrap_comp,1)
+                                         1,foextrap_comp,1,fill_crse_input=.false.)
 
        enddo
 
@@ -449,7 +449,8 @@ contains
           ! note that multifab_fill_boundary and multifab_physbc are called for
           ! both levels n-1 and n
           call multifab_fill_ghost_cells(sprime(n),sprime(n-1),ng_sp,mla%mba%rr(n-1,:), &
-                                         the_bc_level(n-1),the_bc_level(n),1,foextrap_comp,1)
+                                         the_bc_level(n-1),the_bc_level(n),1, &
+                                         foextrap_comp,1,fill_crse_input=.false.)
        enddo
 
     end if

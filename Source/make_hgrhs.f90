@@ -134,7 +134,8 @@ contains
           ! both levels n-1 and n
           call multifab_fill_ghost_cells(rhs_cc(n),rhs_cc(n-1),1,mla%mba%rr(n-1,:), &
                                          the_bc_tower%bc_tower_array(n-1), &
-                                         the_bc_tower%bc_tower_array(n),1,foextrap_comp,1)
+                                         the_bc_tower%bc_tower_array(n),1,foextrap_comp,1, &
+                                         fill_crse_input=.false.)
        end do
 
     end if
@@ -419,7 +420,8 @@ contains
           call multifab_fill_ghost_cells(correction_cc(n),correction_cc(n-1),1, &
                                          mla%mba%rr(n-1,:), &
                                          the_bc_tower%bc_tower_array(n-1), &
-                                         the_bc_tower%bc_tower_array(n),1,foextrap_comp,1)
+                                         the_bc_tower%bc_tower_array(n),1,foextrap_comp,1, &
+                                         fill_crse_input=.false.)
        end do
 
     end if

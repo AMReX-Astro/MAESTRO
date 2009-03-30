@@ -87,7 +87,7 @@ contains
              call multifab_fill_ghost_cells(s(n),s(n-1), &
                                             s(n)%ng,mla%mba%rr(n-1,:), &
                                             the_bc_level(n-1),the_bc_level(n), &
-                                            comp,bc_comp,1)
+                                            comp,bc_comp,1,fill_crse_input=.false.)
           end do
 
        end do
@@ -159,7 +159,7 @@ contains
           call multifab_fill_ghost_cells(s(n),s(n-1), &
                                          s(n)%ng,mla%mba%rr(n-1,:), &
                                          the_bc_level(n-1),the_bc_level(n), &
-                                         rhoh_comp,bc_comp,1)
+                                         rhoh_comp,bc_comp,1,fill_crse_input=.false.)
        end do
 
     end if

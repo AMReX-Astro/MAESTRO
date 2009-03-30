@@ -84,7 +84,7 @@ contains
        do n=nlevs,2,-1
 
           ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction(Source_nph(n-1)    ,Source_nph(n)    ,mla%mba%rr(n-1,:))
+          call ml_cc_restriction(Source_nph(n-1),Source_nph(n),mla%mba%rr(n-1,:))
 
           ! fill level n ghost cells using interpolation from level n-1 data
           ! note that multifab_fill_boundary and multifab_physbc are called for
@@ -92,7 +92,7 @@ contains
           call multifab_fill_ghost_cells(Source_nph(n),Source_nph(n-1), &
                                          ng_h,mla%mba%rr(n-1,:), &
                                          the_bc_level(n-1), the_bc_level(n), &
-                                         1,foextrap_comp,1)
+                                         1,foextrap_comp,1,fill_crse_input=.false.)
        enddo
 
     end if

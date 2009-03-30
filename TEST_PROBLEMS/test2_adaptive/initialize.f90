@@ -242,12 +242,12 @@ contains
                                          3,mla%mba%rr(n-1,:), &
                                          the_bc_tower%bc_tower_array(n-1), &
                                          the_bc_tower%bc_tower_array(n  ), &
-                                         1,1,dm)
+                                         1,1,dm,fill_crse_input=.false.)
           call multifab_fill_ghost_cells(sold(n),sold(n-1), &
                                          3,mla%mba%rr(n-1,:), &
                                          the_bc_tower%bc_tower_array(n-1), &
                                          the_bc_tower%bc_tower_array(n  ), &
-                                         1,dm+rho_comp,nscal)
+                                         1,dm+rho_comp,nscal,fill_crse_input=.false.)
        end do
        
     end if

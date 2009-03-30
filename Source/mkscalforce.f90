@@ -168,7 +168,7 @@ contains
           call multifab_fill_ghost_cells(scal_force(n),scal_force(n-1), &
                                          scal_force(n)%ng,mla%mba%rr(n-1,:), &
                                          the_bc_level(n-1),the_bc_level(n), &
-                                         rhoh_comp,foextrap_comp,1)      
+                                         rhoh_comp,foextrap_comp,1,fill_crse_input=.false.)
        end do
 
     end if
@@ -553,7 +553,7 @@ contains
           call multifab_fill_ghost_cells(scal_force(n),scal_force(n-1), &
                                          scal_force(n)%ng,mla%mba%rr(n-1,:), &
                                          the_bc_level(n-1),the_bc_level(n), &
-                                         rhoh_comp,foextrap_comp,1)      
+                                         rhoh_comp,foextrap_comp,1,fill_crse_input=.false.)
        end do
 
     end if
@@ -811,7 +811,7 @@ contains
           call multifab_fill_ghost_cells(temp_force(n),temp_force(n-1), &
                                          temp_force(n)%ng,mla%mba%rr(n-1,:), &
                                          the_bc_level(n-1),the_bc_level(n), &
-                                         temp_comp,foextrap_comp,1)
+                                         temp_comp,foextrap_comp,1,fill_crse_input=.false.)
        enddo
 
     end if

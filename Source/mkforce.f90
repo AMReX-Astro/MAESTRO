@@ -109,7 +109,7 @@ contains
              call multifab_fill_ghost_cells(vel_force(n),vel_force(n-1), &
                                             ng_f,mla%mba%rr(n-1,:), &
                                             the_bc_level(n-1),the_bc_level(n), &
-                                            i,foextrap_comp,1)
+                                            i,foextrap_comp,1,fill_crse_input=.false.)
           end do
 
        enddo
@@ -329,7 +329,7 @@ contains
              call multifab_fill_ghost_cells(vel_force(n),vel_force(n-1), &
                                             1,mla%mba%rr(n-1,:), &
                                             the_bc_level(n-1),the_bc_level(n), &
-                                            i,foextrap_comp,1)
+                                            i,foextrap_comp,1,fill_crse_input=.false.)
           end do
 
        enddo

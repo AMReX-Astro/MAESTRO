@@ -116,7 +116,7 @@ contains
           call multifab_fill_ghost_cells(s_out(n),s_out(n-1), &
                                          ng_so,mla%mba%rr(n-1,:), &
                                          the_bc_level(n-1), the_bc_level(n), &
-                                         rho_comp,dm+rho_comp,nscal)
+                                         rho_comp,dm+rho_comp,nscal,fill_crse_input=.false.)
        enddo
 
     end if

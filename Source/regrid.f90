@@ -411,30 +411,33 @@ contains
           ! both levels n-1 and n
           call multifab_fill_ghost_cells(uold(n),uold(n-1),3,mla%mba%rr(n-1,:), &
                                          the_bc_tower%bc_tower_array(n-1), &
-                                         the_bc_tower%bc_tower_array(n),1,1,dm)
+                                         the_bc_tower%bc_tower_array(n),1,1,dm, &
+                                         fill_crse_input=.false.)
           call multifab_fill_ghost_cells(sold(n),sold(n-1),3,mla%mba%rr(n-1,:), &
                                          the_bc_tower%bc_tower_array(n-1), &
-                                         the_bc_tower%bc_tower_array(n),1,dm+rho_comp,nscal)
+                                         the_bc_tower%bc_tower_array(n),1,dm+rho_comp, &
+                                         nscal,fill_crse_input=.false.)
           do d=1,dm
              call multifab_fill_ghost_cells(gpres(n),gpres(n-1),1,mla%mba%rr(n-1,:), &
                                             the_bc_tower%bc_tower_array(n-1), &
                                             the_bc_tower%bc_tower_array(n), &
-                                            d,foextrap_comp,1)
+                                            d,foextrap_comp,1,fill_crse_input=.false.)
           end do
           call multifab_fill_ghost_cells(src(n),src(n-1),1,mla%mba%rr(n-1,:), &
                                          the_bc_tower%bc_tower_array(n-1), &
-                                         the_bc_tower%bc_tower_array(n),1,foextrap_comp,1)
+                                         the_bc_tower%bc_tower_array(n),1,foextrap_comp,1, &
+                                         fill_crse_input=.false.)
 
           do d=1,nspec
              call multifab_fill_ghost_cells(rw2(n),rw2(n-1),1,mla%mba%rr(n-1,:), &
                                             the_bc_tower%bc_tower_array(n-1), &
                                             the_bc_tower%bc_tower_array(n), &
-                                            d,foextrap_comp,1)
+                                            d,foextrap_comp,1,fill_crse_input=.false.)
           end do
           call multifab_fill_ghost_cells(rH2(n),rH2(n-1),1,mla%mba%rr(n-1,:), &
                                          the_bc_tower%bc_tower_array(n-1), &
                                          the_bc_tower%bc_tower_array(n), &
-                                         1,foextrap_comp,1)
+                                         1,foextrap_comp,1,fill_crse_input=.false.)
 
 
        enddo
