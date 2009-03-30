@@ -331,7 +331,7 @@ contains
 
     the_knapsack_verbosity = .false.
 
-    the_sfc_threshold = 0
+    the_sfc_threshold = 5
 
     ! 0 = no ppm
     ! 1 = 1985 ppm
