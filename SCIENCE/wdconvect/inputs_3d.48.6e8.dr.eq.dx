@@ -2,7 +2,11 @@
  model_file = "model_6.e8.hse.48"
  drdxfac = 1
 
- test_set = "gr0_3d.48"
+ max_levs = 1
+ n_cellx = 48
+ n_celly = 48
+ n_cellz = 48
+ max_grid_size = 24
 
  anelastic_cutoff = 3.e6
  base_cutoff_density = 3.e6
@@ -53,16 +57,7 @@
  velpert_scale = 1.d7
  velpert_steep = 1.d5
 
- do_burning = T
-
- enthalpy_pred_type = 1
- evolve_base_state = T
-
- dpdt_factor = 0.0
-
  use_tfromp = T
-
- interp_type_radial_bin_to_cart = 1
 
  single_prec_plotfiles = T
 

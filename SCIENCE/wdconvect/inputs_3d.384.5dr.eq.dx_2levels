@@ -2,16 +2,12 @@
  model_file = "model_6.e8.hybrid.hse.1920"
  drdxfac = 5
 
-! uncomment for fixed grids
- test_set = "gr0_3d.384_2levels"
-
-! uncomment for adaptive grids
-! max_levs = 2
-! n_cellx = 192
-! n_celly = 192
-! n_cellz = 192
-! regrid_int = 2
-! max_grid_size = 32
+ max_levs = 2
+ n_cellx = 192
+ n_celly = 192
+ n_cellz = 192
+ regrid_int = 2
+ max_grid_size = 32
 
  anelastic_cutoff = 3.e6
  base_cutoff_density = 3.e6
@@ -62,19 +58,7 @@
  velpert_scale = 1.d7
  velpert_steep = 1.d5
 
- do_burning = T
-
- enthalpy_pred_type = 1
- evolve_base_state = T
-
- dpdt_factor = 0.0
-
  use_tfromp = T
-
- nOutFiles    = 16
- lUsingNFiles = .true.
-
- interp_type_radial_bin_to_cart = 1
 
  single_prec_plotfiles = T
 
