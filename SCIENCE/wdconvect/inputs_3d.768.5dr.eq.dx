@@ -1,17 +1,8 @@
 &PROBIN
- model_file = "model_6.e8.hybrid.hse.1920"
+ model_file = "model_6.e8.hybrid.hse.3840"
  drdxfac = 5
 
-! uncomment for fixed grids
- test_set = "gr0_3d.384_2levels"
-
-! uncomment for adaptive grids
-! max_levs = 2
-! n_cellx = 192
-! n_celly = 192
-! n_cellz = 192
-! regrid_int = 2
-! max_grid_size = 32
+ test_set = "gr0_3d.768"
 
  anelastic_cutoff = 3.e6
  base_cutoff_density = 3.e6
@@ -71,7 +62,7 @@
 
  use_tfromp = T
 
- nOutFiles    = 16
+ nOutFiles    = 64
  lUsingNFiles = .true.
 
  interp_type_radial_bin_to_cart = 1
