@@ -89,7 +89,7 @@ contains
 
     ! now update temperature
     if (use_tfromp) then
-       call makeTfromRhoP(snew,p0,tempbar,mla,the_bc_level,dx)
+       call makeTfromRhoP(snew,p0,sold,mla,the_bc_level,dx)
     else
        call makeTfromRhoH(snew,sold,mla,the_bc_level)
     end if

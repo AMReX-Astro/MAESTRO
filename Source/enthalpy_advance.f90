@@ -367,7 +367,7 @@ contains
 
     if (.not. use_thermal_diffusion) then
        if (use_tfromp) then
-          call makeTfromRhoP(snew,p0_new,tempbar,mla,the_bc_level,dx)
+          call makeTfromRhoP(snew,p0_new,sold,mla,the_bc_level,dx)
        else
           call makeTfromRhoH(snew,sold,mla,the_bc_level)
        end if

@@ -595,7 +595,7 @@ contains
 
     ! compute updated temperature
     if (use_tfromp) then
-       call makeTfromRhoP(s2,p0_new,tempbar,mla,the_bc_tower%bc_tower_array,dx)
+       call makeTfromRhoP(s2,p0_new,s1,mla,the_bc_tower%bc_tower_array,dx)
     else
        call makeTfromRhoH(s2,s1,mla,the_bc_tower%bc_tower_array)
     end if
