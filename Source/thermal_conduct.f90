@@ -47,7 +47,6 @@ contains
     type(multifab) :: rhsalpha(mla%nlevel),lhsalpha(mla%nlevel)
     type(multifab) :: rhsbeta(mla%nlevel),lhsbeta(mla%nlevel)
     type(multifab) :: phi(mla%nlevel),Lphi(mla%nlevel),rhs(mla%nlevel)
-    type(multifab) :: p0_oldfab(mla%nlevel),p0_newfab(mla%nlevel)
     type(multifab) :: hcoeff1(mla%nlevel),hcoeff2(mla%nlevel)
     type(multifab) :: Xkcoeff1(mla%nlevel),Xkcoeff2(mla%nlevel)
     type(multifab) :: pcoeff1(mla%nlevel),pcoeff2(mla%nlevel)
@@ -340,51 +339,8 @@ contains
        call destroy(pcoeff1(n))
     end do
 
-    do n=1,nlevs
-       call multifab_build(p0_oldfab(n), mla%la(n),  1, 1)
-    end do
-
-    call put_1d_array_on_cart(p0_old,p0_oldfab,foextrap_comp,.false.,.false., &
+    call put_1d_array_on_cart(p0_old,phi,foextrap_comp,.false.,.false., &
                               dx,the_bc_tower%bc_tower_array,mla)
-
-    if (nlevs .eq. 1) then
-
-       ! fill ghost cells for two adjacent grids at the same level
-       ! this includes periodic domain boundary ghost cells
-       call multifab_fill_boundary(p0_oldfab(nlevs))
-
-       ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(p0_oldfab(nlevs),1,foextrap_comp,1, &
-                            the_bc_tower%bc_tower_array(nlevs))
-
-    else
-
-       do n=nlevs,2,-1
-
-          ! we shouldn't need a call to ml_cc_restriction here
-          ! as long as the coarse p0_oldfab under fine cells is reasonably valued,
-          ! the results of mac_applyop are identical
-
-          ! fill level n ghost cells using interpolation from level n-1 data
-          ! note that multifab_fill_boundary and multifab_physbc are called for
-          ! both levels n-1 and n
-          call multifab_fill_ghost_cells(p0_oldfab(n),p0_oldfab(n-1),1,mla%mba%rr(n-1,:), &
-                                         the_bc_tower%bc_tower_array(n-1), &
-                                         the_bc_tower%bc_tower_array(n), &
-                                         1,foextrap_comp,1,fill_crse_input=.false.)
-       end do
-
-    end if
-
-    ! load phi = p0_old
-    do n=1,nlevs
-       call multifab_copy_c(phi(n),1,p0_oldfab(n),1,1,1)
-    enddo
-
-    do n=1,nlevs
-       call destroy(p0_oldfab(n))
-    end do
-
     ! apply the operator
     call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
                      foextrap_comp,stencil_order,mla%mba%rr)
@@ -421,54 +377,12 @@ contains
        call destroy(pcoeff2(n))
     end do
 
-    do n=1,nlevs
-       call multifab_build(p0_newfab(n), mla%la(n),  1, 1)
-    end do
-
-    call put_1d_array_on_cart(p0_new,p0_newfab,foextrap_comp,.false.,.false., &
+    call put_1d_array_on_cart(p0_new,phi,foextrap_comp,.false.,.false., &
                               dx,the_bc_tower%bc_tower_array,mla)
-
-    if (nlevs .eq. 1) then
-
-       ! fill ghost cells for two adjacent grids at the same level
-       ! this includes periodic domain boundary ghost cells
-       call multifab_fill_boundary(p0_newfab(nlevs))
-
-       ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(p0_newfab(nlevs),1,foextrap_comp,1, &
-                            the_bc_tower%bc_tower_array(nlevs))
-
-    else
-
-       do n=nlevs,2,-1
-
-          ! we shouldn't need a call to ml_cc_restriction here
-          ! as long as the coarse p0_newfab under fine cells is reasonably valued,
-          ! the results of mac_applyop are identical
-
-          ! fill level n ghost cells using interpolation from level n-1 data
-          ! note that multifab_fill_boundary and multifab_physbc are called for
-          ! both levels n-1 and n
-          call multifab_fill_ghost_cells(p0_newfab(n),p0_newfab(n-1),1,mla%mba%rr(n-1,:), &
-                                         the_bc_tower%bc_tower_array(n-1), &
-                                         the_bc_tower%bc_tower_array(n), &
-                                         1,foextrap_comp,1,fill_crse_input=.false.)
-       end do
-
-    end if
-
-    ! load phi = p0_new
-    do n=1,nlevs
-       call multifab_copy_c(phi(n),1,p0_newfab(n),1,1,1)
-    enddo
-
-    do n=1,nlevs
-       call destroy(p0_newfab(n))
-    end do
 
     ! apply the operator
     call mac_applyop(mla,Lphi,phi,rhsalpha,rhsbeta,dx,the_bc_tower, &
-         foextrap_comp,stencil_order,mla%mba%rr)
+                     foextrap_comp,stencil_order,mla%mba%rr)
 
     do n=1,nlevs
        call destroy(rhsalpha(n))
