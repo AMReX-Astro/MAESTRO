@@ -282,9 +282,9 @@ contains
     if ( (enthalpy_pred_type .eq. predict_T_then_rhohprime) .or. &
          (enthalpy_pred_type .eq. predict_T_then_h        ) .or. &
          (enthalpy_pred_type .eq. predict_Tprime_then_h) ) then
-       call makeHfromRhoT_edge(uold,sedge,rho0_old,rhoh0_old,tempbar, &
-                               rho0_edge_old,rhoh0_edge_old,rho0_new,rhoh0_new,tempbar, &
-                               rho0_edge_new,rhoh0_edge_new,the_bc_level,dx,mla)
+       call makeHfromRhoT_edge(uold,sedge,rho0_old,rhoh0_old,tempbar,rho0_edge_old, &
+                               rhoh0_edge_old,t0_edge_old,rho0_new,rhoh0_new,tempbar, &
+                               rho0_edge_new,rhoh0_edge_new,t0_edge_new,the_bc_level,dx,mla)
     end if
 
     !**************************************************************************

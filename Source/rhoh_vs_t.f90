@@ -13,9 +13,12 @@ module rhoh_vs_t_module
   
 contains
   
-  subroutine makeHfromRhoT_edge(u,sedge,rho0_old,rhoh0_old,t0_old, &
-                                rho0_edge_old,rhoh0_edge_old,rho0_new,rhoh0_new,t0_new, &
-                                rho0_edge_new,rhoh0_edge_new,the_bc_level,dx,mla)
+  subroutine makeHfromRhoT_edge(u,sedge, &
+                                rho0_old,rhoh0_old,t0_old, &
+                                rho0_edge_old,rhoh0_edge_old,t0_edge_old, &
+                                rho0_new,rhoh0_new,t0_new, &
+                                rho0_edge_new,rhoh0_edge_new,t0_edge_new, &
+                                the_bc_level,dx,mla)
 
     use bl_prof_module
     use bl_constants_module
@@ -32,11 +35,13 @@ contains
     real(kind=dp_t), intent(in   ) :: t0_old(:,0:)
     real(kind=dp_t), intent(in   ) :: rho0_edge_old(:,0:)
     real(kind=dp_t), intent(in   ) :: rhoh0_edge_old(:,0:)
+    real(kind=dp_t), intent(in   ) :: t0_edge_old(:,0:)
     real(kind=dp_t), intent(in   ) :: rho0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: rhoh0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: t0_new(:,0:)
     real(kind=dp_t), intent(in   ) :: rho0_edge_new(:,0:)
     real(kind=dp_t), intent(in   ) :: rhoh0_edge_new(:,0:)
+    real(kind=dp_t), intent(in   ) :: t0_edge_new(:,0:)
     type(bc_level) , intent(in   ) :: the_bc_level(:)
     real(kind=dp_t), intent(in   ) :: dx(:,:)
     type(ml_layout), intent(in   ) :: mla
@@ -102,11 +107,11 @@ contains
           select case (dm)
           case (2)
              call makeHfromRhoT_edge_2d(sepx(:,:,1,:), sepy(:,:,1,:), ng_se, &
-                                        rho0_old(n,:), rhoh0_old(n,:), &
+                                        rho0_old(n,:), rhoh0_old(n,:), t0_old(n,:), &
                                         rho0_edge_old(n,:), rhoh0_edge_old(n,:), &
-                                        rho0_new(n,:), rhoh0_new(n,:), &
-                                        rho0_edge_new(n,:), rhoh0_edge_new(n,:), &
-                                        lo, hi)
+                                        t0_edge_old(n,:), rho0_new(n,:), rhoh0_new(n,:), &
+                                        t0_new(n,:), rho0_edge_new(n,:), &
+                                        rhoh0_edge_new(n,:), t0_edge_new(n,:), lo, hi)
           case (3)
              sepz => dataptr(sedge(n,3),i)
              if (spherical .eq. 1) then
@@ -119,9 +124,11 @@ contains
              else
                call makeHfromRhoT_edge_3d_cart(sepx(:,:,:,:), sepy(:,:,:,:), sepz(:,:,:,:), &
                                                ng_se, rho0_old(n,:), rhoh0_old(n,:), &
-                                               rho0_edge_old(n,:), rhoh0_edge_old(n,:), &
+                                               t0_old(n,:), rho0_edge_old(n,:), &
+                                               rhoh0_edge_old(n,:), t0_edge_old(n,:), &
                                                rho0_new(n,:), rhoh0_new(n,:), &
-                                               rho0_edge_new(n,:), rhoh0_edge_new(n,:), &
+                                               t0_new(n,:), rho0_edge_new(n,:), &
+                                               rhoh0_edge_new(n,:), t0_edge_new(n,:), &
                                                lo, hi)
              end if
           end select
@@ -142,8 +149,10 @@ contains
   end subroutine makeHfromRhoT_edge
 
   subroutine makeHfromRhoT_edge_2d(sx,sy,ng_se, &
-                                   rho0_old,rhoh0_old,rho0_edge_old,rhoh0_edge_old,&
-                                   rho0_new,rhoh0_new,rho0_edge_new,rhoh0_edge_new,&
+                                   rho0_old,rhoh0_old,t0_old, &
+                                   rho0_edge_old,rhoh0_edge_old,t0_edge_old, &
+                                   rho0_new,rhoh0_new,t0_new, &
+                                   rho0_edge_new,rhoh0_edge_new,t0_edge_new, &
                                    lo,hi)
 
     use bl_constants_module
@@ -155,19 +164,25 @@ contains
     integer        , intent(in   ) :: lo(:),hi(:),ng_se
     real(kind=dp_t), intent(inout) :: sx(lo(1)-ng_se:,lo(2)-ng_se:,:)
     real(kind=dp_t), intent(inout) :: sy(lo(1)-ng_se:,lo(2)-ng_se:,:)
-    real(kind=dp_t), intent(in   ) :: rho0_old(0:),      rhoh0_old(0:)
-    real(kind=dp_t), intent(in   ) :: rho0_edge_old(0:), rhoh0_edge_old(0:)
-    real(kind=dp_t), intent(in   ) :: rho0_new(0:),      rhoh0_new(0:)
-    real(kind=dp_t), intent(in   ) :: rho0_edge_new(0:), rhoh0_edge_new(0:)
+    real(kind=dp_t), intent(in   ) :: rho0_old(0:),rhoh0_old(0:),t0_old(0:)
+    real(kind=dp_t), intent(in   ) :: rho0_edge_old(0:),rhoh0_edge_old(0:),t0_edge_old(0:)
+    real(kind=dp_t), intent(in   ) :: rho0_new(0:),rhoh0_new(0:),t0_new(0:)
+    real(kind=dp_t), intent(in   ) :: rho0_edge_new(0:),rhoh0_edge_new(0:),t0_edge_new(0:)
  
-    integer :: i, j
+    integer :: i,j
+    real(kind=dp_t) :: t0_edge
     
     do_diag = .false.
     
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)+1
           
-          temp_eos(1) = max(sx(i,j,temp_comp),small_temp)
+          if (enthalpy_pred_type .eq. predict_Tprime_then_h) then
+             t0_edge = HALF*(t0_old(j)+t0_new(j))
+             temp_eos(1) = max(sx(i,j,temp_comp)+t0_edge,small_temp)
+          else
+             temp_eos(1) = max(sx(i,j,temp_comp),small_temp)
+          end if
           den_eos(1)  = sx(i,j,rho_comp) + HALF * (rho0_old(j) + rho0_new(j))
 
           ! sx(i,j,spec_comp:spec_comp+nspec-1) holds X
@@ -184,23 +199,25 @@ contains
                    dsdt_eos, dsdr_eos, &
                    do_diag)
           
-          if (enthalpy_pred_type .eq. predict_T_then_h) then
+          if (enthalpy_pred_type .eq. predict_T_then_h .or. &
+              enthalpy_pred_type .eq. predict_Tprime_then_h) then
              sx(i,j,rhoh_comp) = h_eos(1)
           else if (enthalpy_pred_type .eq. predict_T_then_rhohprime) then
-             sx(i,j,rhoh_comp) = den_eos(1)*h_eos(1)
+             sx(i,j,rhoh_comp) = den_eos(1)*h_eos(1) - HALF*(rhoh0_old(j)+rhoh0_new(j))
           end if
-          
-          if (enthalpy_pred_type .eq. predict_T_then_rhohprime) &
-             sx(i,j,rhoh_comp) = sx(i,j,rhoh_comp) - &
-                  HALF * (rhoh0_old(j) + rhoh0_new(j))
           
        enddo
     enddo
     
     do j = lo(2), hi(2)+1
        do i = lo(1), hi(1)
-          
-          temp_eos(1) = max(sy(i,j,temp_comp),small_temp)
+              
+          if (enthalpy_pred_type .eq. predict_Tprime_then_h) then
+             t0_edge = HALF*(t0_edge_old(j)+t0_edge_new(j))
+             temp_eos(1) = max(sx(i,j,temp_comp)+t0_edge,small_temp)
+          else
+             temp_eos(1) = max(sy(i,j,temp_comp),small_temp)
+          end if
           den_eos(1)  = sy(i,j,rho_comp) + HALF * (rho0_edge_old(j) + rho0_edge_new(j))
           
           ! sy(i,j,spec_comp:spec_comp+nspec-1) holds X
@@ -217,15 +234,13 @@ contains
                    dsdt_eos, dsdr_eos, &
                    do_diag)
           
-          if (enthalpy_pred_type .eq. predict_T_then_h) then
+          if (enthalpy_pred_type .eq. predict_T_then_h .or. &
+              enthalpy_pred_type .eq. predict_Tprime_then_h) then
              sy(i,j,rhoh_comp) = h_eos(1) 
           else if (enthalpy_pred_type .eq. predict_T_then_rhohprime) then
-             sy(i,j,rhoh_comp) = den_eos(1)*h_eos(1) 
+             sy(i,j,rhoh_comp) = den_eos(1)*h_eos(1) &
+                  - HALF*(rhoh0_edge_old(j) + rhoh0_edge_new(j))
           end if
-          
-          if (enthalpy_pred_type .eq. predict_T_then_rhohprime) &
-             sy(i,j,rhoh_comp) = sy(i,j,rhoh_comp) - &
-                  HALF * (rhoh0_edge_old(j) + rhoh0_edge_new(j))
           
        enddo
     enddo
@@ -233,8 +248,10 @@ contains
   end subroutine makeHfromRhoT_edge_2d
   
   subroutine makeHfromRhoT_edge_3d_cart(sx,sy,sz,ng_se, &
-                                        rho0_old,rhoh0_old,rho0_edge_old,rhoh0_edge_old, &
-                                        rho0_new,rhoh0_new,rho0_edge_new,rhoh0_edge_new, &
+                                        rho0_old,rhoh0_old,t0_old, &
+                                        rho0_edge_old,rhoh0_edge_old,t0_edge_old, &
+                                        rho0_new,rhoh0_new,t0_new, &
+                                        rho0_edge_new,rhoh0_edge_new,t0_edge_new, &
                                         lo,hi)
 
     use variables,     only: rho_comp, temp_comp, spec_comp, rhoh_comp
@@ -247,20 +264,26 @@ contains
     real(kind=dp_t), intent(inout) :: sx(lo(1)-ng_se:,lo(2)-ng_se:,lo(3)-ng_se:,:)
     real(kind=dp_t), intent(inout) :: sy(lo(1)-ng_se:,lo(2)-ng_se:,lo(3)-ng_se:,:)
     real(kind=dp_t), intent(inout) :: sz(lo(1)-ng_se:,lo(2)-ng_se:,lo(3)-ng_se:,:)
-    real(kind=dp_t), intent(in   ) :: rho0_old(0:),      rhoh0_old(0:)
-    real(kind=dp_t), intent(in   ) :: rho0_edge_old(0:), rhoh0_edge_old(0:)
-    real(kind=dp_t), intent(in   ) :: rho0_new(0:),      rhoh0_new(0:)
-    real(kind=dp_t), intent(in   ) :: rho0_edge_new(0:), rhoh0_edge_new(0:)
+    real(kind=dp_t), intent(in   ) :: rho0_old(0:),rhoh0_old(0:),t0_old(0:)
+    real(kind=dp_t), intent(in   ) :: rho0_edge_old(0:),rhoh0_edge_old(0:),t0_edge_old(0:)
+    real(kind=dp_t), intent(in   ) :: rho0_new(0:),rhoh0_new(0:),t0_new(0:)
+    real(kind=dp_t), intent(in   ) :: rho0_edge_new(0:),rhoh0_edge_new(0:),t0_edge_new(0:)
     
-    integer :: i, j, k
+    integer         :: i,j,k
+    real(kind=dp_t) :: t0_edge
     
     do_diag = .false.
     
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)+1
-             
-             temp_eos(1) = max(sx(i,j,k,temp_comp),small_temp)
+              
+             if (enthalpy_pred_type .eq. predict_Tprime_then_h) then
+                t0_edge = HALF*(t0_old(k)+t0_new(k))
+                temp_eos(1) = max(sx(i,j,k,temp_comp)+t0_edge,small_temp)
+             else
+                temp_eos(1) = max(sx(i,j,k,temp_comp),small_temp)
+             end if
              den_eos(1) = sx(i,j,k,rho_comp) + HALF * (rho0_old(k) + rho0_new(k))
 
              ! sx(i,j,k,spec_comp:spec_comp+nspec-1) holds X
@@ -277,15 +300,12 @@ contains
                       dsdt_eos, dsdr_eos, &
                       do_diag)
              
-             if (enthalpy_pred_type .eq. predict_T_then_h) then
+             if (enthalpy_pred_type .eq. predict_T_then_h .or. &
+                 enthalpy_pred_type .eq. predict_Tprime_then_h) then
                 sx(i,j,k,rhoh_comp) = h_eos(1)
              else if (enthalpy_pred_type .eq. predict_T_then_rhohprime) then
-                sx(i,j,k,rhoh_comp) = den_eos(1)*h_eos(1)
+                sx(i,j,k,rhoh_comp) = den_eos(1)*h_eos(1) - HALF*(rhoh0_old(k)+rhoh0_new(k))
              end if
-             
-             if (enthalpy_pred_type .eq. predict_T_then_rhohprime) &
-                sx(i,j,k,rhoh_comp) = sx(i,j,k,rhoh_comp) - &
-                     HALF * (rhoh0_old(k) + rhoh0_new(k))
              
           enddo
        enddo
@@ -295,7 +315,12 @@ contains
        do j = lo(2), hi(2)+1
           do i = lo(1), hi(1)
              
-             temp_eos(1) = max(sy(i,j,k,temp_comp),small_temp)
+             if (enthalpy_pred_type .eq. predict_Tprime_then_h) then
+                t0_edge = HALF*(t0_old(k)+t0_new(k))
+                temp_eos(1) = max(sx(i,j,k,temp_comp)+t0_edge,small_temp)
+             else
+                temp_eos(1) = max(sy(i,j,k,temp_comp),small_temp)
+             end if
              den_eos(1)  = sy(i,j,k,rho_comp) + HALF * (rho0_old(k) + rho0_new(k))
 
              ! sy(i,j,k,spec_comp:spec_comp+nspec-1) holds X
@@ -312,16 +337,13 @@ contains
                       dsdt_eos, dsdr_eos, &
                       do_diag)
              
-             if (enthalpy_pred_type .eq. predict_T_then_h) then
+             if (enthalpy_pred_type .eq. predict_T_then_h .or. &
+                 enthalpy_pred_type .eq. predict_Tprime_then_h) then
                 sy(i,j,k,rhoh_comp) = h_eos(1)
              else if (enthalpy_pred_type .eq. predict_T_then_rhohprime) then
-                sy(i,j,k,rhoh_comp) = den_eos(1)*h_eos(1)
+                sy(i,j,k,rhoh_comp) = den_eos(1)*h_eos(1) - HALF*(rhoh0_old(k)+rhoh0_new(k))
              end if
-             
-             if (enthalpy_pred_type .eq. predict_T_then_rhohprime) &
-                sy(i,j,k,rhoh_comp) = sy(i,j,k,rhoh_comp) - &
-                     HALF * (rhoh0_old(k) + rhoh0_new(k))
-             
+
           enddo
        enddo
     enddo
@@ -330,7 +352,12 @@ contains
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
              
-             temp_eos(1) = max(sz(i,j,k,temp_comp),small_temp)
+             if (enthalpy_pred_type .eq. predict_Tprime_then_h) then
+                t0_edge = HALF*(t0_edge_old(k)+t0_edge_new(k))
+                temp_eos(1) = max(sx(i,j,k,temp_comp)+t0_edge,small_temp)
+             else
+                temp_eos(1) = max(sz(i,j,k,temp_comp),small_temp)
+             end if
              den_eos(1) = sz(i,j,k,rho_comp) + HALF * (rho0_edge_old(k) + rho0_edge_new(k))
 
              ! sz(i,j,k,spec_comp:spec_comp+nspec-1) X
@@ -347,15 +374,13 @@ contains
                       dsdt_eos, dsdr_eos, &
                       do_diag)
              
-             if (enthalpy_pred_type .eq. predict_T_then_h) then
+             if (enthalpy_pred_type .eq. predict_T_then_h .or. &
+                 enthalpy_pred_type .eq. predict_Tprime_then_h) then
                 sz(i,j,k,rhoh_comp) = h_eos(1)
              else if (enthalpy_pred_type .eq. predict_T_then_rhohprime) then
-                sz(i,j,k,rhoh_comp) = den_eos(1)*h_eos(1)
+                sz(i,j,k,rhoh_comp) =  den_eos(1)*h_eos(1) &
+                     - HALF*(rhoh0_edge_old(k)+rhoh0_edge_new(k))
              end if
-             
-             if (enthalpy_pred_type .eq. predict_T_then_rhohprime) &
-                sz(i,j,k,rhoh_comp) = sz(i,j,k,rhoh_comp) - &
-                     HALF * (rhoh0_edge_old(k) + rhoh0_edge_new(k))
              
           enddo
        enddo
