@@ -210,7 +210,7 @@ contains
   !---------------------------------------------------------------------------
 
   subroutine make_etarho_spherical(sold,snew,umac,rho0_old,rho0_new, &
-                                   dx,dt,normal,etarho_ec,etarho_cc,mla,the_bc_level)
+                                   dx,normal,etarho_ec,etarho_cc,mla,the_bc_level)
 
     use bl_constants_module
     use geometry, only: spherical, nr_fine, dm, nlevs
@@ -223,7 +223,7 @@ contains
     type(multifab) , intent(in   ) :: umac(:,:)
     type(multifab) , intent(in   ) :: sold(:), snew(:)
     real(kind=dp_t), intent(in   ) :: rho0_old(:,0:), rho0_new(:,0:) 
-    real(kind=dp_t), intent(in   ) :: dx(:,:), dt
+    real(kind=dp_t), intent(in   ) :: dx(:,:)
     type(multifab) , intent(in   ) :: normal(:)
     real(kind=dp_t), intent(  out) :: etarho_ec(:,0:)
     real(kind=dp_t), intent(  out) :: etarho_cc(:,0:)
@@ -232,7 +232,7 @@ contains
 
     type(multifab) :: eta_cart(mla%nlevel)
     
-    real(kind=dp_t), pointer :: ep(:,:,:,:),rpp(:,:,:,:)
+    real(kind=dp_t), pointer :: ep(:,:,:,:)
     real(kind=dp_t), pointer :: sop(:,:,:,:), snp(:,:,:,:)
     real(kind=dp_t), pointer :: ump(:,:,:,:), vmp(:,:,:,:), wmp(:,:,:,:)
     real(kind=dp_t), pointer :: np(:,:,:,:)

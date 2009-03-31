@@ -138,7 +138,7 @@ contains
     real(dp_t) ::          rhoprimebar(nlevs_radial,0:nr_fine-1)
     real(dp_t) ::         rhohprimebar(nlevs_radial,0:nr_fine-1)
 
-    integer    :: r,n,comp,proj_type,numcell
+    integer    :: n,comp,proj_type,numcell
     real(dp_t) :: halfdt
 
     type(bl_prof_timer), save :: bpt
@@ -448,7 +448,7 @@ contains
           if (spherical .eq. 0) then
              call make_etarho_planar(etarho_ec,etarho_cc,etarhoflux,mla)
           else
-             call make_etarho_spherical(s1,s2,umac,rho0_old,rho0_new,dx,dt,normal, &
+             call make_etarho_spherical(s1,s2,umac,rho0_old,rho0_new,dx,normal, &
                                         etarho_ec,etarho_cc,mla,the_bc_tower%bc_tower_array)
           endif
 
@@ -827,7 +827,7 @@ contains
           if (spherical .eq. 0) then
              call make_etarho_planar(etarho_ec,etarho_cc,etarhoflux,mla)
           else
-             call make_etarho_spherical(s1,s2,umac,rho0_old,rho0_new,dx,dt,normal, &
+             call make_etarho_spherical(s1,s2,umac,rho0_old,rho0_new,dx,normal, &
                                         etarho_ec,etarho_cc,mla,the_bc_tower%bc_tower_array)
           endif
 

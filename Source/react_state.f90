@@ -46,7 +46,7 @@ contains
     real(kind=dp_t), pointer::   hep(:,:,:,:)
 
     integer :: lo(dm),hi(dm),ng_si,ng_so,ng_rw,ng_he,ng_hn
-    integer :: i,n,ispec
+    integer :: i,n
 
     type(bl_prof_timer), save :: bpt
 
