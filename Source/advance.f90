@@ -357,7 +357,7 @@ contains
        call multifab_build(rho_Hext(n),      mla%la(n), 1,     0)
     end do
 
-    call react_state(mla,sold,s1,rho_omegadot1,rho_Hnuc1,rho_Hext,tempbar,p0_old,halfdt,dx, &
+    call react_state(mla,sold,s1,rho_omegadot1,rho_Hnuc1,rho_Hext,p0_old,halfdt,dx, &
                      the_bc_tower%bc_tower_array,time)
 
     do n=1,nlevs
@@ -524,7 +524,7 @@ contains
           write(6,*) '<<< STEP  4a: thermal conduct >>>'
        end if
 
-       call thermal_conduct(mla,dx,dt,s1,s1,s2,p0_old,p0_new,tempbar,the_bc_tower)
+       call thermal_conduct(mla,dx,dt,s1,s1,s2,p0_old,p0_new,the_bc_tower)
           
        ! make a copy of s2star since these are needed to compute
        ! coefficients in the call to thermal_conduct_full_alg
@@ -547,7 +547,7 @@ contains
        call multifab_build(rho_Hext(n), mla%la(n), 1, 0)
     end do
     
-    call react_state(mla,s2,snew,rho_omegadot2,rho_Hnuc2,rho_Hext,tempbar,p0_new,halfdt,dx, &
+    call react_state(mla,s2,snew,rho_omegadot2,rho_Hnuc2,rho_Hext,p0_new,halfdt,dx, &
                      the_bc_tower%bc_tower_array,time)
 
     do n=1,nlevs
@@ -911,7 +911,7 @@ contains
           write(6,*) '<<< STEP  8a: thermal conduct >>>'
        end if
 
-       call thermal_conduct(mla,dx,dt,s1,s2star,s2,p0_old,p0_new,tempbar,the_bc_tower)
+       call thermal_conduct(mla,dx,dt,s1,s2star,s2,p0_old,p0_new,the_bc_tower)
 
        do n=1,nlevs
           call destroy(s2star(n))
@@ -934,7 +934,7 @@ contains
        call multifab_build(rho_Hext(n), mla%la(n), 1, 0)
     end do
 
-    call react_state(mla,s2,snew,rho_omegadot2,rho_Hnuc2,rho_Hext,tempbar,p0_new,halfdt,dx, &
+    call react_state(mla,s2,snew,rho_omegadot2,rho_Hnuc2,rho_Hext,p0_new,halfdt,dx, &
                      the_bc_tower%bc_tower_array,time)
 
     do n=1,nlevs

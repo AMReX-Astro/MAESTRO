@@ -21,8 +21,7 @@ contains
   ! Crank-Nicholson solve for enthalpy, taking into account only the
   ! enthalpy-diffusion terms in the temperature conduction term.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine thermal_conduct(mla,dx,dt,s1,s_for_new_coeff,s2,p0_old,p0_new,tempbar, &
-                             the_bc_tower)
+  subroutine thermal_conduct(mla,dx,dt,s1,s_for_new_coeff,s2,p0_old,p0_new,the_bc_tower)
 
     use variables, only: foextrap_comp, rho_comp, spec_comp, rhoh_comp
     use macproject_module
@@ -40,7 +39,7 @@ contains
     type(multifab) , intent(in   ) :: s1(:)
     type(multifab) , intent(in   ) :: s_for_new_coeff(:)
     type(multifab) , intent(inout) :: s2(:)
-    real(kind=dp_t), intent(in   ) :: p0_old(:,0:),p0_new(:,0:),tempbar(:,0:)
+    real(kind=dp_t), intent(in   ) :: p0_old(:,0:),p0_new(:,0:)
     type(bc_tower) , intent(in   ) :: the_bc_tower
 
     ! Local

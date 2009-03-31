@@ -13,7 +13,7 @@ module react_state_module
 
 contains
 
-  subroutine react_state(mla,sold,snew,rho_omegadot,rho_Hnuc,rho_Hext,tempbar,p0, &
+  subroutine react_state(mla,sold,snew,rho_omegadot,rho_Hnuc,rho_Hext,p0, &
                          dt,dx,the_bc_level,time)
 
     use variables, only: rho_comp, nscal, foextrap_comp, temp_comp
@@ -33,7 +33,6 @@ contains
     type(multifab) , intent(inout) :: rho_omegadot(:)
     type(multifab) , intent(inout) :: rho_Hnuc(:)
     type(multifab) , intent(inout) :: rho_Hext(:)
-    real(dp_t)     , intent(in   ) :: tempbar(:,0:)
     real(dp_t)     , intent(in   ) :: p0(:,0:)
     real(kind=dp_t), intent(in   ) :: dt,dx(:,:),time
     type(bc_level) , intent(in   ) :: the_bc_level(:)
