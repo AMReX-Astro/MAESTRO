@@ -216,7 +216,7 @@ contains
        ! and delta_p_term = ptherm_old - pthermbar_cart (for RHS of projection)
 
        ! ptherm_old now holds the thermodynamic p computed from sold(rho,h,X)
-       call makePfromRhoH(sold,ptherm_old,tempbar,mla,the_bc_tower%bc_tower_array,dx)
+       call makePfromRhoH(sold,sold,ptherm_old,mla,the_bc_tower%bc_tower_array)
 
        ! compute pthermbar = Avg(ptherm_old)
        call average(mla,ptherm_old,pthermbar,dx,1)
@@ -628,7 +628,7 @@ contains
        end do
 
        ! ptherm_new now holds the thermodynamic p computed from snew(rho h X)
-       call makePfromRhoH(snew,ptherm_new,tempbar,mla,the_bc_tower%bc_tower_array,dx)
+       call makePfromRhoH(snew,snew,ptherm_new,mla,the_bc_tower%bc_tower_array)
 
        do n=1,nlevs
           call multifab_build(ptherm_nph(n), mla%la(n), 1, 0)
@@ -1081,7 +1081,7 @@ contains
           ! compute delta_p_term = ptherm_new - pthermbar_cart (for RHS of projection)
 
           ! ptherm_new now holds the thermodynamic p computed from snew(rho h X)
-          call makePfromRhoH(snew,ptherm_new,tempbar,mla,the_bc_tower%bc_tower_array,dx)
+          call makePfromRhoH(snew,snew,ptherm_new,mla,the_bc_tower%bc_tower_array)
 
           ! compute pthermbar = Avg(ptherm_new)
           call average(mla,ptherm_new,pthermbar,dx,1)
