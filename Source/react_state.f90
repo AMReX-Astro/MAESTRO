@@ -48,7 +48,7 @@ contains
     integer :: lo(dm),hi(dm),ng_si,ng_so,ng_rw,ng_he,ng_hn
     integer :: i,n
 
-    type(bl_prof_timer), save :: bpt
+    type(bl_prof_timer), save :: bpt, bpt2
 
     call build(bpt, "react_state")
 
@@ -59,6 +59,8 @@ contains
     ng_he = rho_Hext(1)%ng
 
     call get_rho_Hext(mla,s_in,rho_Hext,dx,time)
+
+    call build(bpt2, "burner_loop")
 
     do n = 1, nlevs
        do i = 1, s_in(n)%nboxes
@@ -82,6 +84,8 @@ contains
           end select
        end do
     end do
+
+    call destroy(bpt2)
 
     ! now update temperature
     if (use_tfromp) then
