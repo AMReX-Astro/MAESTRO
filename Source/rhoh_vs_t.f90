@@ -1206,6 +1206,10 @@ contains
     integer                  :: i,n,ng_s
     integer                  :: lo(dm),hi(dm)
 
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "makeTHfromRhoP")
+
     ng_s = s(1)%ng
 
     do n=1,nlevs
@@ -1260,6 +1264,8 @@ contains
        enddo
 
     end if
+
+    call destroy(bpt)
 
   end subroutine makeTHfromRhoP
 
