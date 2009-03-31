@@ -143,14 +143,6 @@ contains
 
     end if
 
-    ! This can be uncommented if you wish to compute T
-    ! note -- not sure if p0_old or p0_new should be used here
-    ! if (use_tfromp) then
-    !    call makeTfromRhoP(sold,p0_old,tempbar,mla,the_bc_level,dx)
-    ! else
-    !    call makeTfromRhoH(sold,p0_old,tempbar,mla,the_bc_level,dx)
-    ! end if
-
     if (enthalpy_pred_type .eq. predict_h .or. &
         enthalpy_pred_type .eq. predict_hprime) then
        ! convert (rho h) -> h
@@ -377,7 +369,7 @@ contains
        if (use_tfromp) then
           call makeTfromRhoP(snew,p0_new,tempbar,mla,the_bc_level,dx)
        else
-          call makeTfromRhoH(snew,tempbar,mla,the_bc_level,dx)
+          call makeTfromRhoH(snew,sold,mla,the_bc_level)
        end if
     else
        do n=1,nlevs

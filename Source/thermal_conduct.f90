@@ -597,7 +597,7 @@ contains
     if (use_tfromp) then
        call makeTfromRhoP(s2,p0_new,tempbar,mla,the_bc_tower%bc_tower_array,dx)
     else
-       call makeTfromRhoH(s2,tempbar,mla,the_bc_tower%bc_tower_array,dx)
+       call makeTfromRhoH(s2,s1,mla,the_bc_tower%bc_tower_array)
     end if
 
     call destroy(bpt)

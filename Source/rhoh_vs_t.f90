@@ -535,7 +535,7 @@ contains
     
   end subroutine makeHfromRhoT_edge_3d_sphr
   
-  subroutine makeTfromRhoH(s,tempbar,mla,the_bc_level,dx)
+  subroutine makeTfromRhoH(state,sold,mla,the_bc_level)
 
     use variables,             only: temp_comp
     use bl_prof_module
@@ -544,39 +544,38 @@ contains
     use multifab_fill_ghost_module
     use geometry, only: dm, nlevs, spherical
 
-    type(multifab)    , intent(inout) :: s(:)
-    real (kind = dp_t), intent(in   ) :: tempbar(:,0:)
+    type(multifab)    , intent(inout) :: state(:)
+    type(multifab)    , intent(in   ) :: sold(:)
     type(ml_layout)   , intent(in   ) :: mla
     type(bc_level)    , intent(in   ) :: the_bc_level(:)
-    real(kind=dp_t)   , intent(in   ) :: dx(:,:)
 
     ! local
     integer                  :: i,ng,n
     integer                  :: lo(dm),hi(dm)
-    real(kind=dp_t), pointer :: snp(:,:,:,:)
+    real(kind=dp_t), pointer :: sp(:,:,:,:)
 
     type(bl_prof_timer), save :: bpt
 
     call build(bpt, "makeTfromRhoH")
 
-    ng = s(1)%ng
+    ng = state(1)%ng
+
+    do n=1,nlevs
+       call multifab_copy_c(state(n),temp_comp,sold(n),temp_comp,1,ng)
+    end do
 
     do n=1,nlevs
 
-       do i=1,s(n)%nboxes
-          if (multifab_remote(s(n),i)) cycle
-          snp => dataptr(s(n),i)
-          lo = lwb(get_box(s(n),i))
-          hi = upb(get_box(s(n),i))
+       do i=1,state(n)%nboxes
+          if (multifab_remote(state(n),i)) cycle
+          sp => dataptr(state(n),i)
+          lo = lwb(get_box(state(n),i))
+          hi = upb(get_box(state(n),i))
           select case (dm)
           case (2)
-             call makeTfromRhoH_2d(snp(:,:,1,:), lo, hi, ng, tempbar(n,:))
+             call makeTfromRhoH_2d(sp(:,:,1,:), lo, hi, ng)
           case (3)
-             if (spherical .eq. 1) then
-                call makeTfromRhoH_3d_sphr(snp(:,:,:,:), lo, hi, ng, tempbar(1,:), dx(n,:))
-             else
-                call makeTfromRhoH_3d(snp(:,:,:,:), lo, hi, ng, tempbar(n,:))
-             end if
+             call makeTfromRhoH_3d(sp(:,:,:,:), lo, hi, ng)
           end select
        end do
 
@@ -586,10 +585,10 @@ contains
 
        ! fill ghost cells for two adjacent grids at the same level
        ! this includes periodic domain boundary ghost cells
-       call multifab_fill_boundary_c(s(nlevs),temp_comp,1)
+       call multifab_fill_boundary_c(state(nlevs),temp_comp,1)
 
        ! fill non-periodic domain boundary ghost cells
-       call multifab_physbc(s(nlevs),temp_comp,dm+temp_comp,1,the_bc_level(nlevs))
+       call multifab_physbc(state(nlevs),temp_comp,dm+temp_comp,1,the_bc_level(nlevs))
 
     else
 
@@ -597,12 +596,13 @@ contains
        do n=nlevs,2,-1
 
           ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction_c(s(n-1),temp_comp,s(n),temp_comp,mla%mba%rr(n-1,:),1)
+          call ml_cc_restriction_c(state(n-1),temp_comp,state(n),temp_comp, &
+                                   mla%mba%rr(n-1,:),1)
 
           ! fill level n ghost cells using interpolation from level n-1 data
           ! note that multifab_fill_boundary and multifab_physbc are called for
           ! both levels n-1 and n
-          call multifab_fill_ghost_cells(s(n),s(n-1),ng,mla%mba%rr(n-1,:), &
+          call multifab_fill_ghost_cells(state(n),state(n-1),ng,mla%mba%rr(n-1,:), &
                                          the_bc_level(n-1),the_bc_level(n  ), &
                                          temp_comp,dm+temp_comp,1,fill_crse_input=.false.)
        enddo
@@ -613,14 +613,13 @@ contains
 
   end subroutine makeTfromRhoH
 
-  subroutine makeTfromRhoH_2d(state,lo,hi,ng,tempbar)
+  subroutine makeTfromRhoH_2d(state,lo,hi,ng)
 
     use variables, only: rho_comp, spec_comp, rhoh_comp, temp_comp
     use eos_module
 
-    integer, intent(in) :: lo(:), hi(:), ng
-    real (kind = dp_t), intent(inout) ::  state(lo(1)-ng:,lo(2)-ng:,:)
-    real (kind = dp_t), intent(in   ) ::  tempbar(0:)
+    integer, intent(in)               :: lo(:), hi(:), ng
+    real (kind = dp_t), intent(inout) :: state(lo(1)-ng:,lo(2)-ng:,:)
     
     ! Local variables
     integer :: i, j
@@ -633,7 +632,7 @@ contains
           ! (rho, H) --> T, p
           
           den_eos(1)  = state(i,j,rho_comp)
-          temp_eos(1) = tempbar(j)
+          temp_eos(1) = state(i,j,temp_comp)
           xn_eos(1,:) = state(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
           
           h_eos(1) = state(i,j,rhoh_comp) / state(i,j,rho_comp)
@@ -656,15 +655,14 @@ contains
     
   end subroutine makeTfromRhoH_2d
 
-  subroutine makeTfromRhoH_3d(state,lo,hi,ng,tempbar)
+  subroutine makeTfromRhoH_3d(state,lo,hi,ng)
 
     use variables,      only: rho_comp, spec_comp, rhoh_comp, temp_comp
     use eos_module
     use fill_3d_module
 
-    integer, intent(in) :: lo(:), hi(:), ng
-    real (kind = dp_t), intent(inout) ::  state(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-    real (kind = dp_t), intent(in   ) ::  tempbar(0:)
+    integer        , intent(in)    :: lo(:), hi(:), ng
+    real(kind=dp_t), intent(inout) :: state(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
 
     ! Local variables
     integer :: i, j, k
@@ -678,7 +676,7 @@ contains
              ! (rho, H) --> T, p
              
              den_eos(1)  = state(i,j,k,rho_comp)
-             temp_eos(1) = tempbar(k)
+             temp_eos(1) = state(i,j,k,temp_comp)
              xn_eos(1,:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
              h_eos(1) = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp)
              
@@ -700,58 +698,6 @@ contains
     enddo
 
   end subroutine makeTfromRhoH_3d
-
-  subroutine makeTfromRhoH_3d_sphr(state,lo,hi,ng,tempbar,dx)
-
-    use variables,      only: rho_comp, spec_comp, rhoh_comp, temp_comp
-    use eos_module
-    use fill_3d_module
-
-    integer, intent(in) :: lo(:), hi(:), ng
-    real (kind = dp_t), intent(inout) ::  state(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-    real (kind = dp_t), intent(in   ) ::  tempbar(0:)
-    real(kind=dp_t)   , intent(in   ) :: dx(:)
-
-    ! Local variables
-    integer :: i, j, k
-    real(kind=dp_t), allocatable :: tempbar_cart(:,:,:,:)
-
-    allocate(tempbar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1))
-    call put_1d_array_on_cart_3d_sphr(.false.,.false.,tempbar,tempbar_cart,lo,hi,dx,0,0)
-
-    do_diag = .false.
-    
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-             
-             ! (rho, H) --> T, p
-             
-             den_eos(1)  = state(i,j,k,rho_comp)
-             temp_eos(1) = tempbar_cart(i,j,k,1)
-             xn_eos(1,:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
-             h_eos(1) = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp)
-             
-             call eos(eos_input_rh, den_eos, temp_eos, &
-                      npts, nspec, &
-                      xn_eos, &
-                      p_eos, h_eos, e_eos, &
-                      cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                      dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                      dpdX_eos, dhdX_eos, &
-                      gam1_eos, cs_eos, s_eos, &
-                      dsdt_eos, dsdr_eos, &
-                      do_diag)
-             
-             state(i,j,k,temp_comp) = temp_eos(1)
-             
-          enddo
-       enddo
-    enddo
-
-    deallocate(tempbar_cart)
-
-  end subroutine makeTfromRhoH_3d_sphr
 
   subroutine makeTfromRhoP(s,p0,tempbar,mla,the_bc_level,dx)
 
