@@ -84,7 +84,7 @@ contains
 
   end subroutine make_enthalpy_3d
 
-  subroutine make_tfromH(plotdata,comp_t,comp_dp,state,p0,tempbar,dx)
+  subroutine make_tfromH(plotdata,comp_t,comp_dp,state,p0,dx)
 
     use geometry, only: spherical, dm
 
@@ -92,7 +92,6 @@ contains
     type(multifab) , intent(inout) :: plotdata
     type(multifab) , intent(in   ) :: state
     real(kind=dp_t), intent(in   ) :: p0(0:)
-    real(kind=dp_t), intent(in   ) :: tempbar(0:)
     real(kind=dp_t), intent(in   ) :: dx(:)
 
     real(kind=dp_t), pointer:: sp(:,:,:,:)
@@ -112,23 +111,23 @@ contains
        select case (dm)
        case (2)
           call make_tfromH_2d(tp(:,:,1,comp_t),tp(:,:,1,comp_dp),ng_p,sp(:,:,1,:),ng_s, &
-                              lo,hi,p0,tempbar)
+                              lo,hi,p0)
        case (3)
           if (spherical .eq. 1) then
              call make_tfromH_3d_sphr(tp(:,:,:,comp_t),tp(:,:,:,comp_dp),ng_p, &
-                                      sp(:,:,:,:),ng_s,lo,hi,p0,tempbar,dx)
+                                      sp(:,:,:,:),ng_s,lo,hi,p0,dx)
           else
              call make_tfromH_3d_cart(tp(:,:,:,comp_t),tp(:,:,:,comp_dp),ng_p, &
-                                      sp(:,:,:,:),ng_s,lo,hi,p0,tempbar)
+                                      sp(:,:,:,:),ng_s,lo,hi,p0)
           end if
        end select
     end do
 
   end subroutine make_tfromH
 
-  subroutine make_tfromH_2d(T,deltaP,ng_p,state,ng_s,lo,hi,p0,tempbar)
+  subroutine make_tfromH_2d(T,deltaP,ng_p,state,ng_s,lo,hi,p0)
 
-    use variables, only: rho_comp, spec_comp, rhoh_comp
+    use variables, only: rho_comp, spec_comp, rhoh_comp, temp_comp
     use eos_module
     use bl_constants_module
 
@@ -137,7 +136,6 @@ contains
     real (kind = dp_t), intent(  out) :: deltaP(lo(1)-ng_p:,lo(2)-ng_p:)  
     real (kind = dp_t), intent(in   ) ::  state(lo(1)-ng_s:,lo(2)-ng_s:,:)
     real (kind = dp_t), intent(in   ) ::  p0(0:)
-    real (kind = dp_t), intent(in   ) ::  tempbar(0:)
 
     ! Local variables
     integer :: i, j
@@ -148,10 +146,9 @@ contains
        do i = lo(1), hi(1)
 
           ! (rho, H) --> T, p
-
           den_eos(1)  = state(i,j,rho_comp)
           p_eos(1)    = p0(j)
-          temp_eos(1) = tempbar(j)
+          temp_eos(1) = state(i,j,temp_comp)
           xn_eos(1,:) = state(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
           h_eos(1) = state(i,j,rhoh_comp) / state(i,j,rho_comp)
 
@@ -175,9 +172,9 @@ contains
 
   end subroutine make_tfromH_2d
 
-  subroutine make_tfromH_3d_cart(T,deltaP,ng_p,state,ng_s,lo,hi,p0,tempbar)
+  subroutine make_tfromH_3d_cart(T,deltaP,ng_p,state,ng_s,lo,hi,p0)
 
-    use variables, only: rho_comp, spec_comp, rhoh_comp
+    use variables, only: rho_comp, spec_comp, rhoh_comp, temp_comp
     use eos_module
 
     integer, intent(in) :: lo(:), hi(:), ng_p, ng_s
@@ -185,7 +182,6 @@ contains
     real (kind = dp_t), intent(  out) :: deltaP(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
     real (kind = dp_t), intent(in   ) ::  state(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
     real (kind = dp_t), intent(in   ) :: p0(0:)
-    real (kind = dp_t), intent(in   ) :: tempbar(0:)
 
     ! Local variables
     integer :: i, j, k
@@ -199,7 +195,7 @@ contains
              ! (rho, H) --> T, p
              den_eos(1)  = state(i,j,k,rho_comp)
              p_eos(1)    = p0(k)
-             temp_eos(1) = tempbar(k)
+             temp_eos(1) = state(i,j,k,temp_comp)
              xn_eos(1,:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
              h_eos(1) = state(i,j,k,rhoh_comp)/state(i,j,k,rho_comp)
 
@@ -225,9 +221,9 @@ contains
 
   end subroutine make_tfromH_3d_cart
 
-  subroutine make_tfromH_3d_sphr(T,deltaP,ng_p,state,ng_s,lo,hi,p0,tempbar,dx)
+  subroutine make_tfromH_3d_sphr(T,deltaP,ng_p,state,ng_s,lo,hi,p0,dx)
 
-    use variables, only: rho_comp, rhoh_comp, spec_comp
+    use variables, only: rho_comp, rhoh_comp, spec_comp, temp_comp
     use eos_module
     use fill_3d_module
 
@@ -235,16 +231,13 @@ contains
     real (kind = dp_t), intent(  out) ::      T(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
     real (kind = dp_t), intent(  out) :: deltaP(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)  
     real (kind = dp_t), intent(in   ) ::  state(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
-    real (kind = dp_t), intent(in   ) ::      p0(0:)
-    real (kind = dp_t), intent(in   ) :: tempbar(0:)
+    real (kind = dp_t), intent(in   ) :: p0(0:)
     real (kind = dp_t), intent(in   ) :: dx(:)
 
     ! Local variables
     integer          :: i, j, k
-    real (kind=dp_t) :: tempbar_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1)
-    real (kind=dp_t) ::      p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1)
+    real (kind=dp_t) :: p0_cart(lo(1):hi(1),lo(2):hi(2),lo(3):hi(3),1)
 
-    call put_1d_array_on_cart_3d_sphr(.false.,.false.,tempbar,tempbar_cart,lo,hi,dx,0,0)
     call put_1d_array_on_cart_3d_sphr(.false.,.false.,p0,p0_cart,lo,hi,dx,0,0)
 
     do_diag = .false.
@@ -256,7 +249,7 @@ contains
              den_eos(1)  = state(i,j,k,rho_comp)
              h_eos(1)    = state(i,j,k,rhoh_comp) / state(i,j,k,rho_comp)
              p_eos(1)    = p0_cart(i,j,k,1)
-             temp_eos(1) = tempbar_cart(i,j,k,1)
+             temp_eos(1) = state(i,j,k,temp_comp)
              xn_eos(1,:) = state(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
 
              ! (rho, H) --> T, p
@@ -350,7 +343,7 @@ contains
                             lo,hi,rho0,rhoh0,tempbar,gamma1bar,p0)
 
     use eos_module
-    use variables, only: rho_comp, rhoh_comp, spec_comp
+    use variables, only: rho_comp, rhoh_comp, spec_comp, temp_comp
 
     integer, intent(in) :: lo(:), hi(:), ng_p, ng_s, ng_u
     real (kind=dp_t), intent(  out) ::          t(lo(1)-ng_p:,lo(2)-ng_p:)  
@@ -379,7 +372,7 @@ contains
        do i = lo(1), hi(1)
 
           den_eos(1) = s(i,j,rho_comp)
-          temp_eos(1) = tempbar(j)
+          temp_eos(1) = s(i,j,temp_comp)
           p_eos(1) = p0(j)
           xn_eos(1,:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
 
@@ -416,7 +409,7 @@ contains
                                  ng_p,s,ng_s,u,ng_u, &
                                  lo,hi,rho0,rhoh0,tempbar,gamma1bar,p0)
 
-    use variables, only: rho_comp, rhoh_comp, spec_comp
+    use variables, only: rho_comp, rhoh_comp, spec_comp, temp_comp
     use eos_module
 
     integer, intent(in) :: lo(:), hi(:), ng_p, ng_s, ng_u
@@ -447,7 +440,7 @@ contains
           do i = lo(1), hi(1)
 
              den_eos(1) = s(i,j,k,rho_comp)
-             temp_eos(1) = tempbar(k)
+             temp_eos(1) = s(i,j,k,temp_comp)
              p_eos(1) = p0(k)
              xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
 
@@ -485,7 +478,7 @@ contains
                                  ng_p,s,ng_s,u,ng_u, &
                                  lo,hi,rho0,rhoh0,tempbar,gamma1bar,p0,dx)
 
-    use variables, only: rho_comp, rhoh_comp, spec_comp
+    use variables, only: rho_comp, rhoh_comp, spec_comp, temp_comp
     use eos_module
     use fill_3d_module
 
@@ -529,7 +522,7 @@ contains
           do i = lo(1), hi(1)
 
              den_eos(1) = s(i,j,k,rho_comp)
-             temp_eos(1) = tempbar_cart(i,j,k,1)
+             temp_eos(1) = s(i,j,k,temp_comp)
              p_eos(1) = p0_cart(i,j,k,1)
              xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
 
