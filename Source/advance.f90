@@ -137,6 +137,7 @@ contains
     real(dp_t) ::  rho0_predicted_edge(nlevs_radial,0:nr_fine)
     real(dp_t) ::          rhoprimebar(nlevs_radial,0:nr_fine-1)
     real(dp_t) ::         rhohprimebar(nlevs_radial,0:nr_fine-1)
+    real(dp_t) ::         tempprimebar(nlevs_radial,0:nr_fine-1)
 
     integer    :: n,comp,proj_type,numcell
     real(dp_t) :: halfdt
@@ -178,9 +179,13 @@ contains
 
     call compute_cutoff_coords(rho0_old)
     
-    ! tempbar is only used as an initial guess for eos calls
-    if (enthalpy_pred_type .ne. predict_Tprime_then_h) then
+    if (spherical .eq. 0) then
        call average(mla,sold,tempbar,dx,temp_comp)
+    else
+       ! set tempbar = tempbar - Avg(tempbar - temp^n)
+       call make_sprimebar_spherical(sold,temp_comp,tempbar,dx,tempprimebar,mla, &
+                                     the_bc_tower%bc_tower_array)
+       call correct_base(tempbar,tempprimebar)
     end if
     
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

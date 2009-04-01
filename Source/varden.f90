@@ -33,6 +33,8 @@ subroutine varden()
   use initialize_module
   use make_new_grids_module
   use regrid_module
+  use correct_base_module
+  use make_eta_module
 
   implicit none
 
@@ -106,6 +108,7 @@ subroutine varden()
   real(dp_t), allocatable :: etarho_cc_temp(:,:)
   real(dp_t), allocatable :: etarho_ec_temp(:,:)
   real(dp_t), allocatable :: w0_temp(:,:)
+  real(dp_t), allocatable :: tempprimebar(:,:)
 
   last_plt_written = -1
   last_chk_written = -1
@@ -289,9 +292,15 @@ subroutine varden()
         call multifab_build(gamma1(n), mla%la(n), 1, 0)
      end do
 
-     ! tempbar is only used as an initial guess for eos calls
-     if (enthalpy_pred_type .ne. predict_Tprime_then_h) then
+     if (spherical .eq. 0) then
         call average(mla,sold,tempbar,dx,temp_comp)
+     else
+        ! set tempbar = tempbar - Avg(tempbar - temp^n)
+        allocate(tempprimebar(nlevs_radial,0:nr_fine-1))
+        call make_sprimebar_spherical(sold,temp_comp,tempbar,dx,tempprimebar,mla, &
+                                      the_bc_tower%bc_tower_array)
+        call correct_base(tempbar,tempprimebar)
+        deallocate(tempprimebar)
      end if
 
      call make_gamma(mla,gamma1,sold,p0_old,dx)
@@ -371,11 +380,19 @@ subroutine varden()
         ! write out a plotfile
         !------------------------------------------------------------------------
 
-        ! tempbar is only used as an initial guess for eos calls
-        ! Note: if we keep enthalpy_pred_type .eq. predict_Tprime_then_h, then
-        ! we need to instead store tempbar (or t0 if we renname it) in the checkpoint file
-        if (enthalpy_pred_type .ne. predict_Tprime_then_h) then
+        if (enthalpy_pred_type .eq. predict_Tprime_then_h) then
+           call bl_error("Restart with predict_Tprime_then_h option needs tempbar in checkpoint")
+        end if
+
+        if (spherical .eq. 0) then
            call average(mla,sold,tempbar,dx,temp_comp)
+        else
+           ! set tempbar = tempbar - Avg(tempbar - temp^n)
+           allocate(tempprimebar(nlevs_radial,0:nr_fine-1))
+           call make_sprimebar_spherical(sold,temp_comp,tempbar,dx,tempprimebar,mla, &
+                                         the_bc_tower%bc_tower_array)
+           call correct_base(tempbar,tempprimebar)
+           deallocate(tempprimebar)
         end if
 
         ! we generate this only for the initial plotfile
@@ -464,7 +481,7 @@ subroutine varden()
                                  etarho_cc,psi,sponge,hgrhs)
 
            runtime2 = parallel_wtime() - runtime1
-           call parallel_reduce(runtime1, runtime2, MPI_MAX, proc = parallel_IOProcessorNode())
+           call parallel_reduce(runtime1, runtime2, MPI_MAX, proc=parallel_IOProcessorNode())
            if (parallel_IOProcessor()) print*,'Time to advance timestep: ',runtime1,' seconds'
            
            call print_and_reset_fab_byte_spread()
@@ -532,9 +549,15 @@ subroutine varden()
         ! write a plotfile
         !------------------------------------------------------------------------
 
-        ! tempbar is only used as an initial guess for eos calls
-        if (enthalpy_pred_type .ne. predict_Tprime_then_h) then
+        if (spherical .eq. 0) then
            call average(mla,sold,tempbar,dx,temp_comp)
+        else
+           ! set tempbar = tempbar - Avg(tempbar - temp^n)
+           allocate(tempprimebar(nlevs_radial,0:nr_fine-1))
+           call make_sprimebar_spherical(sold,temp_comp,tempbar,dx,tempprimebar,mla, &
+                                         the_bc_tower%bc_tower_array)
+           call correct_base(tempbar,tempprimebar)
+           deallocate(tempprimebar)
         end if
 
         if (istep <= 99999) then
