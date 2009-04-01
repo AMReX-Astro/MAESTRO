@@ -387,6 +387,8 @@ subroutine varden()
         if (spherical .eq. 0) then
            call average(mla,sold,tempbar,dx,temp_comp)
         else
+           ! until we store tempbar in checkpoint, we have to simply set tempbar=Avg(temp)
+           tempbar = 0.d0
            ! set tempbar = tempbar - Avg(tempbar - temp^n)
            allocate(tempprimebar(nlevs_radial,0:nr_fine-1))
            call make_sprimebar_spherical(sold,temp_comp,tempbar,dx,tempprimebar,mla, &
