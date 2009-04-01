@@ -201,8 +201,7 @@ contains
               (enthalpy_pred_type .eq. predict_Tprime_then_h) ) then
 
        ! make force for temperature
-       call mktempforce(mla,scal_force,umac,sold,thermal,p0_old,p0_old, &
-                        tempbar,tempbar,psi,dx,the_bc_level)
+       call mktempforce(mla,scal_force,umac,sold,thermal,p0_old,p0_old,psi,dx,the_bc_level)
 
     end if        
       
