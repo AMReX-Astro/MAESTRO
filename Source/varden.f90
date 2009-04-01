@@ -294,7 +294,7 @@ subroutine varden()
         call average(mla,sold,tempbar,dx,temp_comp)
      end if
 
-     call make_gamma(mla,gamma1,sold,p0_old,tempbar,dx)
+     call make_gamma(mla,gamma1,sold,p0_old,dx)
      call average(mla,gamma1,gamma1bar,dx,1)
      
      do n=1,nlevs
@@ -750,7 +750,7 @@ subroutine varden()
               call multifab_build(gamma1(n), mla%la(n), 1, 0)
            end do
            
-           call make_gamma(mla,gamma1,sold,p0_old,tempbar,dx)
+           call make_gamma(mla,gamma1,sold,p0_old,dx)
            call average(mla,gamma1,gamma1bar,dx,1)
            
            do n=1,nlevs

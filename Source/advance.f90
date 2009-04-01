@@ -382,7 +382,7 @@ contains
           call multifab_build(gamma1(n), mla%la(n), 1, 0)
        end do
        
-       call make_gamma(mla,gamma1,s1,p0_old,tempbar,dx)
+       call make_gamma(mla,gamma1,s1,p0_old,dx)
        call average(mla,gamma1,gamma1bar,dx,1)
 
        do n=1,nlevs
@@ -559,7 +559,7 @@ contains
           call multifab_build(gamma1(n), mla%la(n), 1, 0)
        end do
        
-       call make_gamma(mla,gamma1,snew,p0_new,tempbar,dx)
+       call make_gamma(mla,gamma1,snew,p0_new,dx)
        call average(mla,gamma1,gamma1bar,dx,1)
 
        do n=1,nlevs
@@ -946,7 +946,7 @@ contains
           call multifab_build(gamma1(n), mla%la(n), 1, 0)
        end do
 
-       call make_gamma(mla,gamma1,snew,p0_new,tempbar,dx)
+       call make_gamma(mla,gamma1,snew,p0_new,dx)
        call average(mla,gamma1,gamma1bar,dx,1)
 
        do n=1,nlevs
