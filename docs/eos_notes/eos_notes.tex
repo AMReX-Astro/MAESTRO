@@ -1,4 +1,98 @@
 \section{EOS Calls}
+\subsection{{\tt advance\_timestep}}
+\begin{description}
+\item[Step 1.] {\em Define the average expansion at time $t^\nph$ and the new $w_0.$}\\
+
+\item[Step 2.] {\em Construct the provisional edge-based advective velocity, $\uadvone.$}\\
+
+\item[Step 3.] {\em React the full state and base state through the first time interval 
+of $\dt/2.$}\\
+
+\item[Step 4.] {\em Advect the base state, then the full state, through a time interval 
+of $\dt.$}\\
+
+\item[Step 5.] {\em React the full state through a second time interval of $\dt/2.$}\\
+
+\item[Step 6.] {\em Define a new average expansion rate at time $t^\nph.$}\\
+
+\item[Step 7.] {\em Construct the final edge-based advective velocity, $\uadvtwo.$}\\
+
+\item[Step 8.] {\em Advect the base state, then the full state, through a time interval 
+of $\dt.$}\\
+
+\item[Step 9.] {\em React the full state and base state through a second time interval 
+of $\dt/2.$}\\
+
+\item[Step 10.] {\em Compute $S^{n+1}$ for the final projection.}\\
+
+\item[Step 11.] {\em Update the velocity.}\\
+
+\item[Step 12.] {\em Compute a new $\dt.$}\\
+
+\end{description}
+\subsection{Initialization}
+\subsection{{\tt make\_plotfile}}
 \section{Temperature Usage}
-
-
+\subsection{{\tt advance\_timestep}}
+\begin{description}
+\item[Step 1.] {\em Define the average expansion at time $t^\nph$ and the new $w_0.$}
+\item[Step 2.] {\em Construct the provisional edge-based advective velocity, $\uadvone.$}
+\item[Step 3.] {\em React the full state and base state through the first time interval 
+of $\dt/2.$}
+\begin{itemize}
+\item{\tt react\_state} uses $T^n$ in burner and then computes $T^1$.
+\end{itemize}
+\item[Step 4.] {\em Advect the base state, then the full state, through a time interval 
+of $\dt.$}\\
+If {\tt use\_thermal\_diffusion} = T:
+\begin{itemize}
+\item {\tt make\_explicit\_thermal} computes coefficients for 
+$\nabla\cdot\kth\nabla h + \cdots$ using $(\rho,T,X)^1$.
+\item {\tt thermal\_conduct\_full\_alg} computes coefficients with $(\rho,T,X)^1$, then 
+computes $T^{2,*}$ from $(\rho,h,X)^{2,*}$ or $(\rho,p,X)^{2,*}$ if {\tt use\_tfromp} = T.
+\end{itemize}
+If {\tt use\_thermal\_diffusion} = F:
+\begin{itemize}
+\item {\tt enthalpy\_advance} computes $T^{2,*}$ from $(\rho,h,X)^{2,*}$ or $(\rho,p,X)^{2,*}$
+if {\tt use\_tfromp} = T.
+\end{itemize}
+\item[Step 5.] {\em React the full state through a second time interval of $\dt/2.$}
+\begin{itemize}
+\item {\tt react\_state} uses $T^{2,*}$ in burner and then computes $T^{n+1,*}$.
+\end{itemize}
+\item[Step 6.] {\em Define a new average expansion rate at time $t^\nph.$}
+\begin{itemize}
+\item {make\_explicit\_thermal} computes coefficients for 
+$\nabla\cdot\kth\nabla h + \cdots$ using $(\rho,T,X)^{n+1,*}$.
+\item {make\_S} thermodynamic variables are functions of $(\rho,T,X)^{n+1,*}$.
+\end{itemize}
+\item[Step 7.] {\em Construct the final edge-based advective velocity, $\uadvtwo.$}
+\item[Step 8.] {\em Advect the base state, then the full state, through a time interval 
+of $\dt.$}\\
+If {\tt use\_thermal\_diffusion} = T:
+\begin{itemize}
+\item {\tt make\_explicit\_thermal} computes coefficients for 
+$\nabla\cdot\kth\nabla h + \cdots$ using $(\rho,T,X)^1$.
+\item {\tt thermal\_conduct\_full\_alg} computes coefficients with $(\rho,T,X)^1$ and
+$(\rho,T,X)^{2,*}$, then computes $T^{2}$ from $(\rho,h,X)^{2}$ or $(\rho,p,X)^{2}$ if 
+{\tt use\_tfromp} = T.
+\end{itemize}
+If {\tt use\_thermal\_diffusion} = F:
+\begin{itemize}
+\item {\tt enthalpy\_advance} computes $T^2$ from $(\rho,h,X)^2$ or $(\rho,p,X)^2$
+if {\tt use\_tfromp} = T.
+\end{itemize}
+\item[Step 9.] {\em React the full state and base state through a second time interval 
+of $\dt/2.$}
+\begin{itemize}
+\item {\tt react\_state} uses $T^2$ in burner and computes $T^{n+1}$.
+\end{itemize}
+\item[Step 10.] {\em Compute $S^{n+1}$ for the final projection.}
+\begin{itemize}
+\item {\tt make\_explicit\_thermal} computes coefficients for 
+$\nabla\cdot\kth\nabla h + \cdots$ using $(\rho,T,X)^{n+1}$.
+\item {\tt make\_S} thermodynamic variables are functions of $(\rho,T,X)^{n+1}$.
+\end{itemize}
+\item[Step 11.] {\em Update the velocity.}
+\item[Step 12.] {\em Compute a new $\dt.$}
+\end{description}
