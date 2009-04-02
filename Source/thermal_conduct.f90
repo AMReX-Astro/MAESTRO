@@ -33,6 +33,7 @@ contains
     use multifab_fill_ghost_module
     use ml_restriction_module, only: ml_cc_restriction_c
     use geometry, only: dm, nlevs
+    use make_explicit_thermal_module
 
     type(ml_layout), intent(inout) :: mla
     real(dp_t)     , intent(in   ) :: dx(:,:),dt
@@ -49,6 +50,7 @@ contains
     type(multifab) :: hcoeff1(mla%nlevel),hcoeff2(mla%nlevel)
     type(multifab) :: Xkcoeff1(mla%nlevel),Xkcoeff2(mla%nlevel)
     type(multifab) :: pcoeff1(mla%nlevel),pcoeff2(mla%nlevel)
+    type(multifab) :: Tcoeff1(mla%nlevel),Tcoeff2(mla%nlevel)
 
     real(kind=dp_t), pointer    :: s1p(:,:,:,:)
     real(kind=dp_t), pointer    :: s_for_new_coeffp(:,:,:,:)
@@ -72,51 +74,22 @@ contains
        call bndry_reg_build(fine_flx(n),mla%la(n),ml_layout_get_pd(mla,n))
     end do
 
-    do n = 1,nlevs
-       call multifab_build( hcoeff1(n), mla%la(n), 1,     1)
-       call multifab_build(Xkcoeff1(n), mla%la(n), nspec, 1)
-       call multifab_build( pcoeff1(n), mla%la(n), 1,     1)
-    end do
-
     ! compute hcoeff1, Xkcoeff1, and pcoeff1
     ! defined as:
     ! hcoeff1 = -(dt/2)k_{th}^{(1)}/c_p^{(1)}
     ! Xkcoeff1 = (dt/2)\xi_k^{(1)}k_{th}^{(1)}/c_p^{(1)}
     ! pcoeff1 =  (dt/2)h_p^{(1)}k_{th}^{(1)}/c_p^{(1)}
+    do n = 1,nlevs
+       call multifab_build( hcoeff1(n), mla%la(n), 1,     1)
+       call multifab_build(Xkcoeff1(n), mla%la(n), nspec, 1)
+       call multifab_build( pcoeff1(n), mla%la(n), 1,     1)
+       call multifab_build( Tcoeff1(n), mla%la(n), 1,     1)
+    end do
 
-    ng_s = s1(1)%ng
-    ng_h = hcoeff1(1)%ng
-    ng_X = Xkcoeff1(1)%ng
-    ng_p = pcoeff1(1)%ng
-
-    do n=1,nlevs
-       do i=1,s1(n)%nboxes
-          if (multifab_remote(s1(n),i)) cycle
-          s1p       => dataptr(s1(n),i)
-          hcoeff1p  => dataptr(hcoeff1(n),i)
-          Xkcoeff1p => dataptr(Xkcoeff1(n),i)
-          pcoeff1p  => dataptr(pcoeff1(n),i)
-          lo = lwb(get_box(s1(n), i))
-          hi = upb(get_box(s1(n), i))
-          select case (dm)
-          case (2)
-             call compute_thermo_quantities_2d(lo,hi,dt,s1p(:,:,1,:),ng_s, &
-                                               hcoeff1p(:,:,1,1),ng_h,&
-                                               Xkcoeff1p(:,:,1,:),ng_X, &
-                                               pcoeff1p(:,:,1,1),ng_p)
-          case (3)
-             call compute_thermo_quantities_3d(lo,hi,dt,s1p(:,:,:,:),ng_s, &
-                                               hcoeff1p(:,:,:,1),ng_h, &
-                                               Xkcoeff1p(:,:,:,:),ng_X, &
-                                               pcoeff1p(:,:,:,1),ng_p)
-          end select
-       end do
-    enddo
+    call make_thermal_coeffs(s1,Tcoeff1,hcoeff1,Xkcoeff1,pcoeff1)
 
     do n = 1,nlevs
-       call multifab_build( hcoeff2(n), mla%la(n), 1,     1)
-       call multifab_build(Xkcoeff2(n), mla%la(n), nspec, 1)
-       call multifab_build( pcoeff2(n), mla%la(n), 1,     1)
+       call destroy(Tcoeff1(n))
     end do
 
     ! compute hcoeff2, Xkcoeff2, and pcoeff2
@@ -128,35 +101,18 @@ contains
     ! hcoeff2 = -(dt/2)k_{th}^{(2),*}/c_p^{(2),*}
     ! Xkcoeff2 = (dt/2)\xi_k^{(2),*}k_{th}^{(2),*}/c_p^{(2),*}
     ! pcoeff2 =  (dt/2)h_p^{(2),*}k_{th}^{(2),*}/c_p^{(2),*}
+    do n = 1,nlevs
+       call multifab_build( hcoeff2(n), mla%la(n), 1,     1)
+       call multifab_build(Xkcoeff2(n), mla%la(n), nspec, 1)
+       call multifab_build( pcoeff2(n), mla%la(n), 1,     1)
+       call multifab_build( Tcoeff2(n), mla%la(n), 1,     1)
+    end do
 
-    ng_s = s_for_new_coeff(1)%ng
-    ng_h = hcoeff2(1)%ng
-    ng_X = Xkcoeff2(1)%ng
-    ng_p = pcoeff2(1)%ng
+    call make_thermal_coeffs(s_for_new_coeff,Tcoeff2,hcoeff2,Xkcoeff2,pcoeff2)
 
-    do n=1,nlevs
-       do i=1,s_for_new_coeff(n)%nboxes
-          if (multifab_remote(s_for_new_coeff(n),i)) cycle
-          s_for_new_coeffp => dataptr(s_for_new_coeff(n),i)
-          hcoeff2p  => dataptr(hcoeff2(n),i)
-          Xkcoeff2p => dataptr(Xkcoeff2(n),i)
-          pcoeff2p  => dataptr(pcoeff2(n),i)
-          lo = lwb(get_box(s_for_new_coeff(n), i))
-          hi = upb(get_box(s_for_new_coeff(n), i))
-          select case (dm)
-          case (2)
-             call compute_thermo_quantities_2d(lo,hi,dt,s_for_new_coeffp(:,:,1,:),ng_s, &
-                                               hcoeff2p(:,:,1,1),ng_h, &
-                                               Xkcoeff2p(:,:,1,:),ng_X, &
-                                               pcoeff2p(:,:,1,1),ng_p)
-          case (3)
-             call compute_thermo_quantities_3d(lo,hi,dt,s_for_new_coeffp(:,:,:,:),ng_s, &
-                                               hcoeff2p(:,:,:,1),ng_h, &
-                                               Xkcoeff2p(:,:,:,:),ng_X, &
-                                               pcoeff2p(:,:,:,1),ng_p)
-          end select
-       end do
-    enddo
+    do n = 1,nlevs
+       call destroy(Tcoeff2(n))
+    end do
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! add enthalpy diffusion to rhs
@@ -189,6 +145,17 @@ contains
     do n=1,nlevs
        call destroy(hcoeff1(n))
     end do
+
+    ! scale by dt/2
+    if (thermal_diffusion_type .eq. 1) then
+       do n=1,nlevs
+          call multifab_mult_mult_s_c(rhsbeta(n),1,dt/2.d0,dm,1)
+       enddo
+    else
+       do n=1,nlevs
+          call multifab_mult_mult_s_c(rhsbeta(n),1,dt,dm,1)
+       enddo
+    end if
 
     ! set rhsalpha = 0
     ! set phi = h^{(1)}
@@ -248,6 +215,17 @@ contains
           end do
        enddo
 
+       ! scale by dt/2
+       if (thermal_diffusion_type .eq. 1) then
+          do n=1,nlevs
+             call multifab_mult_mult_s_c(rhsbeta(n),1,dt/2.d0,dm,1)
+          enddo
+       else
+          do n=1,nlevs
+             call multifab_mult_mult_s_c(rhsbeta(n),1,dt,dm,1)
+          enddo
+       end if
+
        ! load phi = X_k^{(1)}
        do n=1,nlevs
           call multifab_copy_c(phi(n),1,s1(n),spec_comp+comp-1,1,1)
@@ -287,6 +265,17 @@ contains
              end select
           end do
        enddo
+
+       ! scale by dt/2
+       if (thermal_diffusion_type .eq. 1) then
+          do n=1,nlevs
+             call multifab_mult_mult_s_c(rhsbeta(n),1,dt/2.d0,dm,1)
+          enddo
+       else
+          do n=1,nlevs
+             call multifab_mult_mult_s_c(rhsbeta(n),1,dt,dm,1)
+          enddo
+       end if
 
        ! load phi = X_k^{(2)}
        do n=1,nlevs
@@ -338,6 +327,17 @@ contains
        call destroy(pcoeff1(n))
     end do
 
+    ! scale by dt/2
+    if (thermal_diffusion_type .eq. 1) then
+       do n=1,nlevs
+          call multifab_mult_mult_s_c(rhsbeta(n),1,dt/2.d0,dm,1)
+       enddo
+    else
+       do n=1,nlevs
+          call multifab_mult_mult_s_c(rhsbeta(n),1,dt,dm,1)
+       enddo
+    end if
+
     call put_1d_array_on_cart(p0_old,phi,foextrap_comp,.false.,.false., &
                               dx,the_bc_tower%bc_tower_array,mla)
     ! apply the operator
@@ -376,6 +376,17 @@ contains
        call destroy(pcoeff2(n))
     end do
 
+    ! scale by dt/2
+    if (thermal_diffusion_type .eq. 1) then
+       do n=1,nlevs
+          call multifab_mult_mult_s_c(rhsbeta(n),1,dt/2.d0,dm,1)
+       enddo
+    else
+       do n=1,nlevs
+          call multifab_mult_mult_s_c(rhsbeta(n),1,dt,dm,1)
+       enddo
+    end if
+
     call put_1d_array_on_cart(p0_new,phi,foextrap_comp,.false.,.false., &
                               dx,the_bc_tower%bc_tower_array,mla)
 
@@ -406,7 +417,7 @@ contains
     end do
 
     ! create lhsbeta = -hcoeff2 = (dt/2)k_{th}^{(2'')}/c_p^{(2'')}
-    ! put beta on faces (remember to scale by -1 afterwards)
+    ! put beta on faces (remember to scale by -dt/2 afterwards)
     ng_cc = hcoeff2(1)%ng
     ng_fc = lhsbeta(1)%ng
 
@@ -430,10 +441,16 @@ contains
        call destroy(hcoeff2(n))
     end do
 
-    ! scale by -1
-    do n=1,nlevs
-       call multifab_mult_mult_s_c(lhsbeta(n),1,-1.0d0,dm,1)
-    enddo
+    ! scale by -dt/2
+    if (thermal_diffusion_type .eq. 1) then
+       do n=1,nlevs
+          call multifab_mult_mult_s_c(lhsbeta(n),1,-dt/2.d0,dm,1)
+       enddo
+    else
+       do n=1,nlevs
+          call multifab_mult_mult_s_c(lhsbeta(n),1,-dt,dm,1)
+       enddo
+    end if
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! Now do the implicit solve
@@ -516,153 +533,6 @@ contains
     call destroy(bpt)
 
   end subroutine thermal_conduct
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  ! compute hcoeff and Xkcoeff, defined as:
-  ! hcoeff = -(dt/2)k_{th}/c_p
-  ! Xkcoeff = (dt/2)\xi_k k_{th}/c_p
-  ! pcoeff = (dt/2)h_p*k_{th}/c_p
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine compute_thermo_quantities_2d(lo,hi,dt,s,ng_s,hcoeff,ng_h,Xkcoeff,ng_X, &
-                                          pcoeff,ng_p)
-
-    use variables, only: rho_comp, spec_comp, temp_comp
-    use eos_module
-    use probin_module, ONLY: thermal_diffusion_type
-
-    integer        , intent(in   ) :: lo(:),hi(:)
-    integer        , intent(in   ) :: ng_s, ng_h, ng_X, ng_p
-    real(dp_t)    ,  intent(in   ) :: dt
-    real(kind=dp_t), intent(in   ) ::       s(lo(1)-ng_s:,lo(2)-ng_s:,:)
-    real(kind=dp_t), intent(inout) ::  hcoeff(lo(1)-ng_h:,lo(2)-ng_h:)
-    real(kind=dp_t), intent(inout) :: Xkcoeff(lo(1)-ng_X:,lo(2)-ng_X:,:)
-    real(kind=dp_t), intent(inout) ::  pcoeff(lo(1)-ng_p:,lo(2)-ng_p:)
-
-    ! Local
-    integer :: i,j,comp
-
-    do j=lo(2)-1,hi(2)+1
-       do i=lo(1)-1,hi(1)+1
-
-          den_eos(1) = s(i,j,rho_comp)
-          temp_eos(1) = s(i,j,temp_comp)
-          xn_eos(1,:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
-
-          do_diag = .false.
-
-          call conducteos(eos_input_rt, den_eos, temp_eos, &
-                          npts, nspec, &
-                          xn_eos, &
-                          p_eos, h_eos, e_eos, & 
-                          cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                          dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                          dpdX_eos, dhdX_eos, &
-                          gam1_eos, cs_eos, s_eos, &
-                          dsdt_eos, dsdr_eos, &
-                          do_diag, conduct_eos)
-
-          hcoeff(i,j) = -dt*conduct_eos(1)/cp_eos(1)
-          pcoeff(i,j) = dt*(conduct_eos(1)/cp_eos(1))*((1.0d0/den_eos(1))* &
-               (1.0d0-p_eos(1)/(den_eos(1)*dpdr_eos(1)))+dedr_eos(1)/dpdr_eos(1))
-
-          do comp=1,nspec
-             Xkcoeff(i,j,comp) = dt*conduct_eos(1)*dhdX_eos(1,comp)/cp_eos(1)
-          enddo
-
-       enddo
-    enddo
-
-    if(thermal_diffusion_type .eq. 1) then
-       do j=lo(2)-1,hi(2)+1
-          do i=lo(1)-1,hi(1)+1
-             hcoeff(i,j) = HALF*hcoeff(i,j)
-             pcoeff(i,j) = HALF*pcoeff(i,j)
-             do comp=1,nspec
-                Xkcoeff(i,j,comp) = HALF*Xkcoeff(i,j,comp)
-             end do
-          end do
-       end do
-    end if
-
-  end subroutine compute_thermo_quantities_2d
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  ! hcoeff = -(dt/2)k_{th}/c_p
-  ! Xkcoeff = (dt/2)\xi_k k_{th}/c_p
-  ! pcoeff = (dt/2)h_p*k_{th}/c_p
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine compute_thermo_quantities_3d(lo,hi,dt,s,ng_s,hcoeff,ng_h,Xkcoeff,ng_X, &
-                                          pcoeff,ng_p)
-
-    use variables, only: rho_comp, temp_comp, spec_comp
-    use eos_module
-    use probin_module, ONLY: thermal_diffusion_type
-    use geometry, only: spherical
-
-    integer        , intent(in   ) :: lo(:),hi(:)
-    integer        , intent(in   ) :: ng_s,ng_h,ng_X,ng_p
-    real(dp_t)    ,  intent(in   ) :: dt
-    real(kind=dp_t), intent(in   ) ::       s(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
-    real(kind=dp_t), intent(inout) ::  hcoeff(lo(1)-ng_h:,lo(2)-ng_h:,lo(3)-ng_h:)
-    real(kind=dp_t), intent(inout) :: Xkcoeff(lo(1)-ng_X:,lo(2)-ng_X:,lo(3)-ng_X:,:)
-    real(kind=dp_t), intent(inout) ::  pcoeff(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)
-
-    ! Local
-    integer :: i,j,k,comp
-
-    if(spherical .eq. 1) then
-       call bl_error("compute_thermo1_quantities_3d spherical case not written!")
-    endif
-
-    do k=lo(3)-1,hi(3)+1
-       do j=lo(2)-1,hi(2)+1
-          do i=lo(1)-1,hi(1)+1
-
-             den_eos(1) = s(i,j,k,rho_comp)
-             temp_eos(1) = s(i,j,k,temp_comp)
-             xn_eos(1,:) = s(i,j,k,spec_comp:spec_comp+nspec-1)/den_eos(1)
-
-             do_diag = .false.
-
-             call conducteos(eos_input_rt, den_eos, temp_eos, &
-                             npts, nspec, &
-                             xn_eos, &
-                             p_eos, h_eos, e_eos, & 
-                             cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                             dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                             dpdX_eos, dhdX_eos, &
-                             gam1_eos, cs_eos, s_eos, &
-                             dsdt_eos, dsdr_eos, &
-                             do_diag, conduct_eos)
-
-             hcoeff(i,j,k) = -dt*conduct_eos(1)/cp_eos(1)
-             pcoeff(i,j,k) = dt*(conduct_eos(1)/cp_eos(1))*((1.0d0/den_eos(1))* &
-                  (1.0d0-p_eos(1)/(den_eos(1)*dpdr_eos(1)))+dedr_eos(1)/dpdr_eos(1))
-
-             do comp=1,nspec
-                Xkcoeff(i,j,k,comp) = dt*conduct_eos(1)*dhdX_eos(1,comp)/cp_eos(1)
-             enddo
-
-          enddo
-       enddo
-    enddo
-
-    if(thermal_diffusion_type .eq. 1) then
-       do k=lo(3)-1,hi(3)+1
-          do j=lo(2)-1,hi(2)+1
-             do i=lo(1)-1,hi(1)+1
-                hcoeff(i,j,k) = HALF*hcoeff(i,j,k)
-                pcoeff(i,j,k) = HALF*pcoeff(i,j,k)
-                do comp=1,nspec
-                   Xkcoeff(i,j,k,comp) = HALF*Xkcoeff(i,j,k,comp)
-                end do
-             end do
-          end do
-       end do
-    end if
-
-  end subroutine compute_thermo_quantities_3d
-
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! put beta on faces
