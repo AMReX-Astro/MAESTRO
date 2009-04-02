@@ -52,6 +52,10 @@ contains
     type(multifab) :: rho_Hnuc1(nlevs)
     type(multifab) :: rho_Hext(nlevs)
     type(multifab) :: div_coeff_3d(nlevs)
+    type(multifab) :: Tcoeff(nlevs)
+    type(multifab) :: hcoeff(nlevs)
+    type(multifab) :: Xkcoeff(nlevs)
+    type(multifab) :: pcoeff(nlevs)
 
     real(dp_t) ::                  psi(nlevs_radial,0:nr_fine-1)
     real(dp_t) ::                 Sbar(nlevs_radial,0:nr_fine-1)
@@ -70,7 +74,26 @@ contains
     end do
     
     if(use_thermal_diffusion) then
-       call make_explicit_thermal(mla,dx,thermal,sold,p0,the_bc_tower)
+
+       do n=1,nlevs
+          call multifab_build(Tcoeff(n),  mla%la(n), 1,     1)
+          call multifab_build(hcoeff(n),  mla%la(n), 1,     1)
+          call multifab_build(Xkcoeff(n), mla%la(n), nspec, 1)
+          call multifab_build(pcoeff(n),  mla%la(n), 1,     1)
+       end do
+
+       call make_thermal_coeffs(sold,Tcoeff,hcoeff,Xkcoeff,pcoeff)
+
+       call make_explicit_thermal(mla,dx,thermal,sold,Tcoeff,hcoeff,Xkcoeff,pcoeff, &
+                                  p0,the_bc_tower)
+
+       do n=1,nlevs
+          call destroy(Tcoeff(n))
+          call destroy(hcoeff(n))
+          call destroy(Xkcoeff(n))
+          call destroy(pcoeff(n))
+       end do
+
     else
        do n=1,nlevs
           call setval(thermal(n), ZERO, all=.true.)

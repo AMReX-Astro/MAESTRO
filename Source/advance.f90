@@ -116,6 +116,14 @@ contains
     type(multifab) ::         ptherm_new(mla%nlevel)
     type(multifab) ::     pthermbar_cart(mla%nlevel)
     type(multifab) ::       delta_p_term(mla%nlevel)
+    type(multifab) ::            Tcoeff1(mla%nlevel)
+    type(multifab) ::            hcoeff1(mla%nlevel)
+    type(multifab) ::           Xkcoeff1(mla%nlevel)
+    type(multifab) ::            pcoeff1(mla%nlevel)
+    type(multifab) ::            Tcoeff2(mla%nlevel)
+    type(multifab) ::            hcoeff2(mla%nlevel)
+    type(multifab) ::           Xkcoeff2(mla%nlevel)
+    type(multifab) ::            pcoeff2(mla%nlevel)
     type(multifab) ::         scal_force(mla%nlevel)
     type(multifab) ::              w0mac(mla%nlevel,dm)
     type(multifab) ::               umac(mla%nlevel,dm)
@@ -417,7 +425,23 @@ contains
     
     ! thermal is the forcing for rhoh or temperature
     if(use_thermal_diffusion) then
-       call make_explicit_thermal(mla,dx,thermal1,s1,p0_old,the_bc_tower)
+
+       do n=1,nlevs
+          call multifab_build(Tcoeff1(n),  mla%la(n), 1,     1)
+          call multifab_build(hcoeff1(n),  mla%la(n), 1,     1)
+          call multifab_build(Xkcoeff1(n), mla%la(n), nspec, 1)
+          call multifab_build(pcoeff1(n),  mla%la(n), 1,     1)
+       end do
+
+       call make_thermal_coeffs(s1,Tcoeff1,hcoeff1,Xkcoeff1,pcoeff1)
+
+       call make_explicit_thermal(mla,dx,thermal1,s1,Tcoeff1,hcoeff1,Xkcoeff1,pcoeff1, &
+                                  p0_old,the_bc_tower)
+
+       do n=1,nlevs
+          call destroy(Tcoeff1(n))
+       end do
+
     else
        do n=1,nlevs
           call setval(thermal1(n),ZERO,all=.true.)
@@ -529,7 +553,8 @@ contains
           write(6,*) '<<< STEP  4a: thermal conduct >>>'
        end if
 
-       call thermal_conduct(mla,dx,dt,s1,s1,s2,p0_old,p0_new,the_bc_tower)
+       call thermal_conduct(mla,dx,dt,s1,hcoeff1,Xkcoeff1,pcoeff1,hcoeff1,Xkcoeff1,pcoeff1, &
+                            s2,p0_old,p0_new,the_bc_tower)
           
        ! make a copy of s2star since these are needed to compute
        ! coefficients in the call to thermal_conduct_full_alg
@@ -589,7 +614,26 @@ contains
     end do
 
     if(use_thermal_diffusion) then
-       call make_explicit_thermal(mla,dx,thermal2,snew,p0_new,the_bc_tower)
+
+       do n=1,nlevs
+          call multifab_build(Tcoeff2(n),  mla%la(n), 1,     1)
+          call multifab_build(hcoeff2(n),  mla%la(n), 1,     1)
+          call multifab_build(Xkcoeff2(n), mla%la(n), nspec, 1)
+          call multifab_build(pcoeff2(n),  mla%la(n), 1,     1)
+       end do
+
+       call make_thermal_coeffs(snew,Tcoeff2,hcoeff2,Xkcoeff2,pcoeff2)
+
+       call make_explicit_thermal(mla,dx,thermal2,snew,Tcoeff2,hcoeff2,Xkcoeff2,pcoeff2, &
+                                  p0_new,the_bc_tower)
+
+       do n=1,nlevs
+          call destroy(Tcoeff2(n))
+          call destroy(hcoeff2(n))
+          call destroy(Xkcoeff2(n))
+          call destroy(pcoeff2(n))
+       end do
+
     else
        do n=1,nlevs
           call setval(thermal2(n),ZERO,all=.true.)
@@ -903,9 +947,29 @@ contains
           write(6,*) '<<< STEP  8a: thermal conduct >>>'
        end if
 
-       call thermal_conduct(mla,dx,dt,s1,s2star,s2,p0_old,p0_new,the_bc_tower)
+       do n=1,nlevs
+          call multifab_build(Tcoeff2(n),  mla%la(n), 1,     1)
+          call multifab_build(hcoeff2(n),  mla%la(n), 1,     1)
+          call multifab_build(Xkcoeff2(n), mla%la(n), nspec, 1)
+          call multifab_build(pcoeff2(n),  mla%la(n), 1,     1)
+       end do
+
+       call make_thermal_coeffs(s2star,Tcoeff2,hcoeff2,Xkcoeff2,pcoeff2)
 
        do n=1,nlevs
+          call destroy(Tcoeff2(n))
+       end do
+
+       call thermal_conduct(mla,dx,dt,s1,hcoeff1,Xkcoeff1,pcoeff1,hcoeff2,Xkcoeff2,pcoeff2, &
+                            s2,p0_old,p0_new,the_bc_tower)
+
+       do n=1,nlevs
+          call destroy(hcoeff1(n))
+          call destroy(Xkcoeff1(n))
+          call destroy(pcoeff1(n))
+          call destroy(hcoeff2(n))
+          call destroy(Xkcoeff2(n))
+          call destroy(pcoeff2(n))
           call destroy(s2star(n))
        end do
     end if
@@ -964,7 +1028,26 @@ contains
     end do
 
     if(use_thermal_diffusion) then
-       call make_explicit_thermal(mla,dx,thermal2,snew,p0_new,the_bc_tower)
+
+       do n=1,nlevs
+          call multifab_build(Tcoeff2(n),  mla%la(n), 1,     1)
+          call multifab_build(hcoeff2(n),  mla%la(n), 1,     1)
+          call multifab_build(Xkcoeff2(n), mla%la(n), nspec, 1)
+          call multifab_build(pcoeff2(n),  mla%la(n), 1,     1)
+       end do
+
+       call make_thermal_coeffs(snew,Tcoeff2,hcoeff2,Xkcoeff2,pcoeff2)
+
+       call make_explicit_thermal(mla,dx,thermal2,snew,Tcoeff2,hcoeff2,Xkcoeff2,pcoeff2, &
+                                  p0_new,the_bc_tower)
+
+       do n=1,nlevs
+          call destroy(Tcoeff2(n))
+          call destroy(hcoeff2(n))
+          call destroy(Xkcoeff2(n))
+          call destroy(pcoeff2(n))
+       end do
+
     else
        do n=1,nlevs
           call setval(thermal2(n),ZERO,all=.true.)

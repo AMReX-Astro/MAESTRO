@@ -19,7 +19,8 @@ contains
 ! Otherwise, compute thermal with grad h + grad X_k + grad p_0 formulation
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  subroutine make_explicit_thermal(mla,dx,thermal,s,p0,the_bc_tower)
+  subroutine make_explicit_thermal(mla,dx,thermal,s,Tcoeff,hcoeff,Xkcoeff,pcoeff, &
+                                   p0,the_bc_tower)
 
     use bc_module
     use bl_prof_module
@@ -39,19 +40,18 @@ contains
     real(dp_t)     , intent(in   ) :: dx(:,:)
     type(multifab) , intent(inout) :: thermal(:)
     type(multifab) , intent(in   ) :: s(:)
+    type(multifab) , intent(in   ) :: Tcoeff(:)
+    type(multifab) , intent(in   ) :: hcoeff(:)
+    type(multifab) , intent(in   ) :: Xkcoeff(:)
+    type(multifab) , intent(in   ) :: pcoeff(:)
     real(kind=dp_t), intent(in   ) :: p0(:,0:)
     type(bc_tower) , intent(in   ) :: the_bc_tower
 
     ! Local
-    type(multifab) :: phi(mla%nlevel),alpha(mla%nlevel),beta(mla%nlevel),Xkcoeff(mla%nlevel)
-    type(multifab) :: Tcoeff(mla%nlevel),hcoeff(mla%nlevel),pcoeff(mla%nlevel)
+    type(multifab) :: phi(mla%nlevel),alpha(mla%nlevel),beta(mla%nlevel)
     type(multifab) :: resid(mla%nlevel)
 
     integer                     :: i,comp,n,stencil_order
-    integer                     :: lo(dm),hi(dm)
-    real(kind=dp_t), pointer    :: betap(:,:,:,:)
-    real(kind=dp_t), pointer    :: Tcoeffp(:,:,:,:),hcoeffp(:,:,:,:)
-    real(kind=dp_t), pointer    :: Xkcoeffp(:,:,:,:),pcoeffp(:,:,:,:)
 
     type(bl_prof_timer), save :: bpt
 
@@ -60,22 +60,10 @@ contains
     stencil_order = 2
 
     do n=1,nlevs
-       call multifab_build(Xkcoeff(n), mla%la(n), nspec, 1)
-       call multifab_build(Tcoeff(n),  mla%la(n), 1,     1)
-       call multifab_build(hcoeff(n),  mla%la(n), 1,     1)
-       call multifab_build(pcoeff(n),  mla%la(n), 1,     1)
        call setval(thermal(n), ZERO, all=.true.)
     end do
 
-    call make_thermal_coeffs(s,Tcoeff,hcoeff,Xkcoeff,pcoeff)
-
     if(temp_diffusion_formulation) then
-
-       do n=1,nlevs
-          call destroy(Xkcoeff(n))
-          call destroy(hcoeff(n))
-          call destroy(pcoeff(n))
-       end do
 
        do n=1,nlevs
           call multifab_build(phi(n), mla%la(n), 1,  1)
@@ -88,10 +76,6 @@ contains
        end do
 
        call put_beta_on_faces(Tcoeff,1,beta)
-       
-       do n=1,nlevs
-          call destroy(Tcoeff(n))
-       end do
 
        do n=1,nlevs
           call multifab_build(alpha(n), mla%la(n), 1, 1)
@@ -121,10 +105,6 @@ contains
     else ! the if(.not. temp_diffusion_formulation) case
        
        do n=1,nlevs
-          call destroy(Tcoeff(n))
-       end do
-          
-       do n=1,nlevs
           call multifab_build(phi(n),  mla%la(n), 1,  1)
           call multifab_build(beta(n), mla%la(n), dm, 1)
        end do
@@ -136,10 +116,6 @@ contains
        end do
 
        call put_beta_on_faces(hcoeff,1,beta)
-
-       do n=1,nlevs
-          call destroy(hcoeff(n))
-       end do
 
        do n=1,nlevs
           call multifab_build(alpha(n), mla%la(n), 1, 1)
@@ -176,10 +152,6 @@ contains
           enddo
        enddo ! end loop over species
 
-       do n=1,nlevs
-          call destroy(Xkcoeff(n))
-       end do
-       
        call put_1d_array_on_cart(p0,phi,foextrap_comp,.false.,.false., &
                                  dx,the_bc_tower%bc_tower_array,mla)       
 
@@ -214,10 +186,6 @@ contains
 
        call put_beta_on_faces(pcoeff,1,beta)
 
-       do n=1,nlevs
-          call destroy(pcoeff(n))
-       end do
-       
        ! applyop to compute resid = del dot pcoeff grad p0
        call mac_applyop(mla,resid,phi,alpha,beta,dx,the_bc_tower,foextrap_comp, &
                         stencil_order,mla%mba%rr)

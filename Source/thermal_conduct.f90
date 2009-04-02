@@ -20,7 +20,8 @@ contains
   ! Crank-Nicholson solve for enthalpy, taking into account only the
   ! enthalpy-diffusion terms in the temperature conduction term.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine thermal_conduct(mla,dx,dt,s1,s_for_new_coeff,s2,p0_old,p0_new,the_bc_tower)
+  subroutine thermal_conduct(mla,dx,dt,s1,hcoeff1,Xkcoeff1,pcoeff1, &
+                             hcoeff2,Xkcoeff2,pcoeff2,s2,p0_old,p0_new,the_bc_tower)
 
     use variables, only: foextrap_comp, rho_comp, spec_comp, rhoh_comp
     use macproject_module
@@ -37,7 +38,12 @@ contains
     type(ml_layout), intent(inout) :: mla
     real(dp_t)     , intent(in   ) :: dx(:,:),dt
     type(multifab) , intent(in   ) :: s1(:)
-    type(multifab) , intent(in   ) :: s_for_new_coeff(:)
+    type(multifab) , intent(in   ) :: hcoeff1(:)
+    type(multifab) , intent(in   ) :: Xkcoeff1(:)
+    type(multifab) , intent(in   ) :: pcoeff1(:)
+    type(multifab) , intent(in   ) :: hcoeff2(:)
+    type(multifab) , intent(in   ) :: Xkcoeff2(:)
+    type(multifab) , intent(in   ) :: pcoeff2(:)
     type(multifab) , intent(inout) :: s2(:)
     real(kind=dp_t), intent(in   ) :: p0_old(:,0:),p0_new(:,0:)
     type(bc_tower) , intent(in   ) :: the_bc_tower
@@ -46,17 +52,10 @@ contains
     type(multifab) :: rhsalpha(mla%nlevel),lhsalpha(mla%nlevel)
     type(multifab) :: rhsbeta(mla%nlevel),lhsbeta(mla%nlevel)
     type(multifab) :: phi(mla%nlevel),Lphi(mla%nlevel),rhs(mla%nlevel)
-    type(multifab) :: hcoeff1(mla%nlevel),hcoeff2(mla%nlevel)
-    type(multifab) :: Xkcoeff1(mla%nlevel),Xkcoeff2(mla%nlevel)
-    type(multifab) :: pcoeff1(mla%nlevel),pcoeff2(mla%nlevel)
-    type(multifab) :: Tcoeff1(mla%nlevel),Tcoeff2(mla%nlevel)
 
     real(kind=dp_t), pointer    :: s1p(:,:,:,:)
     real(kind=dp_t), pointer    :: s_for_new_coeffp(:,:,:,:)
     real(kind=dp_t), pointer    :: rhsbetap(:,:,:,:),lhsbetap(:,:,:,:)
-    real(kind=dp_t), pointer    :: hcoeff1p(:,:,:,:),hcoeff2p(:,:,:,:)
-    real(kind=dp_t), pointer    :: Xkcoeff1p(:,:,:,:),Xkcoeff2p(:,:,:,:)
-    real(kind=dp_t), pointer    :: pcoeff1p(:,:,:,:),pcoeff2p(:,:,:,:)
     integer                     :: stencil_order
     integer                     :: i,n,comp
     integer                     :: lo(dm),hi(dm)
@@ -72,46 +71,6 @@ contains
        call bndry_reg_build(fine_flx(n),mla%la(n),ml_layout_get_pd(mla,n))
     end do
 
-    ! compute hcoeff1, Xkcoeff1, and pcoeff1
-    ! defined as:
-    ! hcoeff1 = -(dt/2)k_{th}^{(1)}/c_p^{(1)}
-    ! Xkcoeff1 = (dt/2)\xi_k^{(1)}k_{th}^{(1)}/c_p^{(1)}
-    ! pcoeff1 =  (dt/2)h_p^{(1)}k_{th}^{(1)}/c_p^{(1)}
-    do n = 1,nlevs
-       call multifab_build( hcoeff1(n), mla%la(n), 1,     1)
-       call multifab_build(Xkcoeff1(n), mla%la(n), nspec, 1)
-       call multifab_build( pcoeff1(n), mla%la(n), 1,     1)
-       call multifab_build( Tcoeff1(n), mla%la(n), 1,     1)
-    end do
-
-    call make_thermal_coeffs(s1,Tcoeff1,hcoeff1,Xkcoeff1,pcoeff1)
-
-    do n = 1,nlevs
-       call destroy(Tcoeff1(n))
-    end do
-
-    ! compute hcoeff2, Xkcoeff2, and pcoeff2
-    ! defined as (if we're in the first call to this function):
-    ! hcoeff2 = -(dt/2)k_{th}^{(1)}/c_p^{(1)}
-    ! Xkcoeff2 = (dt/2)\xi_k^{(1)}k_{th}^{(1)}/c_p^{(1)}
-    ! pcoeff2 =  (dt/2)h_p^{(1)}k_{th}^{(1)}/c_p^{(1)}
-    ! or defined as (if we're in the second call to this function):
-    ! hcoeff2 = -(dt/2)k_{th}^{(2),*}/c_p^{(2),*}
-    ! Xkcoeff2 = (dt/2)\xi_k^{(2),*}k_{th}^{(2),*}/c_p^{(2),*}
-    ! pcoeff2 =  (dt/2)h_p^{(2),*}k_{th}^{(2),*}/c_p^{(2),*}
-    do n = 1,nlevs
-       call multifab_build( hcoeff2(n), mla%la(n), 1,     1)
-       call multifab_build(Xkcoeff2(n), mla%la(n), nspec, 1)
-       call multifab_build( pcoeff2(n), mla%la(n), 1,     1)
-       call multifab_build( Tcoeff2(n), mla%la(n), 1,     1)
-    end do
-
-    call make_thermal_coeffs(s_for_new_coeff,Tcoeff2,hcoeff2,Xkcoeff2,pcoeff2)
-
-    do n = 1,nlevs
-       call destroy(Tcoeff2(n))
-    end do
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! add enthalpy diffusion to rhs
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -122,10 +81,6 @@ contains
 
     ! put beta on faces
     call put_beta_on_faces(hcoeff1,1,rhsbeta)
-
-    do n=1,nlevs
-       call destroy(hcoeff1(n))
-    end do
 
     ! scale by dt/2
     if (thermal_diffusion_type .eq. 1) then
@@ -236,11 +191,6 @@ contains
        enddo
     enddo
 
-    do n=1,nlevs
-       call destroy(Xkcoeff1(n))
-       call destroy(Xkcoeff2(n))
-    end do
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! add pressure diffusion to rhs
 !!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -248,10 +198,6 @@ contains
     ! do p0_old term first
     ! put beta on faces
     call put_beta_on_faces(pcoeff1,1,rhsbeta)
-
-    do n=1,nlevs
-       call destroy(pcoeff1(n))
-    end do
 
     ! scale by dt/2
     if (thermal_diffusion_type .eq. 1) then
@@ -280,10 +226,6 @@ contains
     ! now do p0_new term
     ! put beta on faces
     call put_beta_on_faces(pcoeff2,1,rhsbeta)
-
-    do n=1,nlevs
-       call destroy(pcoeff2(n))
-    end do
 
     ! scale by dt/2
     if (thermal_diffusion_type .eq. 1) then
@@ -328,10 +270,6 @@ contains
     ! create lhsbeta = -hcoeff2 = (dt/2)k_{th}^{(2'')}/c_p^{(2'')}
     ! put beta on faces (remember to scale by -dt/2 afterwards)
     call put_beta_on_faces(hcoeff2,1,lhsbeta)
-
-    do n=1,nlevs
-       call destroy(hcoeff2(n))
-    end do
 
     ! scale by -dt/2
     if (thermal_diffusion_type .eq. 1) then

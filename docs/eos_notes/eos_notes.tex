@@ -27,12 +27,10 @@ end if
 of $\dt.$}\\ \\
 if {\tt use\_thermal\_diffusion} = T then
 \begin{itemize}
-\item In {\tt make\_explicit\_thermal}, we compute the coefficients for 
+\item In {\tt advance} before {\tt make\_explicit\_thermal}, we compute the coefficients for 
 $\nabla\cdot(\kth/c_p)\nabla h + \cdots$ using $(\rho,T,X)^{(1)}$.
 \item In {\tt enthalpy\_advance} $\rightarrow$ {\tt update\_scal}, we compute $h$ above
 the {\tt base\_cutoff\_density} using $(\rho,X)^{(2),*}$ and $p_0^{n+1,*}$.
-\item In {\tt thermal\_conduct}, we compute the coefficients for 
-$\nabla\cdot(\kth/c_p)\nabla h + \cdots$ using $(\rho,T,X)^{(1)}$.
 \item In {\tt thermal\_conduct}, we compute $T^{(2),*}$ using $(\rho,h,X)^{(2),*}$
 (if {\tt use\_tfromp}=F) or $(\rho,X)^{(2),*}$ and $p_0^{n+1,*}$ (if {\tt use\_tfromp}=T).
 \end{itemize}
@@ -59,7 +57,7 @@ end if
 \item[Step 6.] {\em Define a new average expansion rate at time $t^\nph.$}\\ \\
 if {\tt use\_thermal\_diffusion} then
 \begin{itemize}
-\item In {\tt make\_explicit\_thermal}, we compute the coefficients for 
+\item In {\tt advance} before {\tt make\_explicit\_thermal}, we compute the coefficients for 
 $\nabla\cdot(\kth/c_p)\nabla h + \cdots$ using $(\rho,T,X)^{n+1,*}$.
 \end{itemize}
 end if
@@ -79,8 +77,8 @@ if {\tt use\_thermal\_diffusion} = T then
 \begin{itemize}
 \item In {\tt enthalpy\_advance} $\rightarrow$ {\tt update\_scal}, we compute $h$ above
 the {\tt base\_cutoff\_density} using $(\rho,X)^{(2)}$ and $p_0^{n+1}$.
-\item In {\tt thermal\_conduct}, we compute the coefficients for 
-$\nabla\cdot(\kth/c_p)\nabla h + \cdots$ using $(\rho,T,X)^{(1)}$ and $(\rho,T,X)^{(2),*}$.
+\item In {\tt advance} before {\tt thermal\_conduct}, we compute the coefficients for 
+$\nabla\cdot(\kth/c_p)\nabla h + \cdots$ using $(\rho,T,X)^{(2),*}$.
 \item In {\tt thermal\_conduct}, we compute $T^{(2)}$ using $(\rho,h,X)^{(2)}$
 (if {\tt use\_tfromp}=F) or $(\rho,X)^{(2)}$ and $p_0^{n+1}$ (if {\tt use\_tfromp}=T).
 \end{itemize}
@@ -108,7 +106,7 @@ end if
 \item[Step 10.] {\em Compute $S^{n+1}$ for the final projection.}\\ \\
 if {\tt make\_explicit\_thermal} then
 \begin{itemize}
-\item In {\tt make\_explicit\_thermal}, we compute the coefficients for 
+\item In {\tt advance} before {\tt make\_explicit\_thermal}, we compute the coefficients for 
 $\nabla\cdot(\kth/c_p)\nabla h + \cdots$ using $(\rho,T,X)^{n+1}$.
 \end{itemize}
 end if
@@ -142,9 +140,7 @@ for inputs to {\tt VODE} using $(\rho,T,X)^n$.
 of $\dt.$}\\ \\
 if {\tt use\_thermal\_diffusion} = T then
 \begin{itemize}
-\item In {\tt make\_explicit\_thermal}, we compute the coefficients for 
-$\nabla\cdot(\kth/c_p)\nabla h + \cdots$ using $(\rho,T,X)^{(1)}$.
-\item In {\tt thermal\_conduct}, we compute the coefficients for 
+\item In {\tt advance} before {\tt make\_explicit\_thermal}, we compute the coefficients for 
 $\nabla\cdot(\kth/c_p)\nabla h + \cdots$ using $(\rho,T,X)^{(1)}$.
 \item In {\tt thermal\_conduct}, we compute $T^{(2),*}$ using $(\rho,h,X)^{(2),*}$
 (if {\tt use\_tfromp}=F) or $(\rho,X)^{(2),*}$ and $p_0^{n+1,*}$ (if {\tt use\_tfromp}=T).
@@ -165,7 +161,7 @@ for inputs to {\tt VODE} using $(\rho,T,X)^{(2),*}$.
 \item[Step 6.] {\em Define a new average expansion rate at time $t^\nph.$}\\ \\
 if {\tt use\_thermal\_diffusion} then
 \begin{itemize}
-\item In {\tt make\_explicit\_thermal}, we compute the coefficients for 
+\item In {\tt advance} before {\tt make\_explicit\_thermal}, we compute the coefficients for 
 $\nabla\cdot(\kth/c_p)\nabla h + \cdots$ using $(\rho,T,X)^{n+1,*}$.
 \end{itemize}
 end if
@@ -177,8 +173,8 @@ end if
 of $\dt.$}\\ \\
 if {\tt use\_thermal\_diffusion} = T then
 \begin{itemize}
-\item In {\tt thermal\_conduct}, we compute the coefficients for 
-$\nabla\cdot(\kth/c_p)\nabla h + \cdots$ using $(\rho,T,X)^{(1)}$ and $(\rho,T,X)^{(2),*}$.
+\item In {\tt advance} before {\tt thermal\_conduct}, we compute the coefficients for 
+$\nabla\cdot(\kth/c_p)\nabla h + \cdots$ using $(\rho,T,X)^{(2),*}$.
 \item In {\tt thermal\_conduct}, we compute $T^{(2)}$ using $(\rho,h,X)^{(2)}$
 (if {\tt use\_tfromp}=F) or $(\rho,X)^{(2)}$ and $p_0^{n+1}$ (if {\tt use\_tfromp}=T).
 \end{itemize}
@@ -199,7 +195,7 @@ for inputs to {\tt VODE} using $(\rho,T,X)^{(2)}$.
 \item[Step 10.] {\em Compute $S^{n+1}$ for the final projection.}\\ \\
 if {\tt make\_explicit\_thermal} then
 \begin{itemize}
-\item In {\tt make\_explicit\_thermal}, we compute the coefficients for 
+\item In {\tt advance} before {\tt make\_explicit\_thermal}, we compute the coefficients for 
 $\nabla\cdot(\kth/c_p)\nabla h + \cdots$ using $(\rho,T,X)^{n+1}$.
 \end{itemize}
 end if
