@@ -98,7 +98,8 @@ contains
     type(multifab) ::             macphi(mla%nlevel)
     type(multifab) ::          hgrhs_old(mla%nlevel)
     type(multifab) ::         Source_nph(mla%nlevel)
-    type(multifab) ::            thermal(mla%nlevel)
+    type(multifab) ::           thermal1(mla%nlevel)
+    type(multifab) ::           thermal2(mla%nlevel)
     type(multifab) ::             s2star(mla%nlevel)
     type(multifab) ::                 s1(mla%nlevel)
     type(multifab) ::                 s2(mla%nlevel)
@@ -411,15 +412,15 @@ contains
     end if
 
     do n=1,nlevs
-       call multifab_build(thermal(n), mla%la(n), 1, 1)
+       call multifab_build(thermal1(n), mla%la(n), 1, 1)
     end do
     
     ! thermal is the forcing for rhoh or temperature
     if(use_thermal_diffusion) then
-       call make_explicit_thermal(mla,dx,thermal,s1,p0_old,the_bc_tower)
+       call make_explicit_thermal(mla,dx,thermal1,s1,p0_old,the_bc_tower)
     else
        do n=1,nlevs
-          call setval(thermal(n),ZERO,all=.true.)
+          call setval(thermal1(n),ZERO,all=.true.)
        end do
     end if
 
@@ -506,7 +507,7 @@ contains
        write(6,*) '            : enthalpy_advance >>> '
     end if
 
-    call enthalpy_advance(mla,1,uold,s1,s2,sedge,sflux,scal_force,thermal,umac,w0,w0mac, &
+    call enthalpy_advance(mla,1,uold,s1,s2,sedge,sflux,scal_force,thermal1,umac,w0,w0mac, &
                           normal,rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_old,p0_new, &
                           tempbar,psi,dx,dt,the_bc_tower%bc_tower_array)
 
@@ -517,7 +518,6 @@ contains
              call destroy(umac(n,comp))
        end do
        call destroy(scal_force(n))
-       call destroy(thermal(n))
     end do
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -585,14 +585,14 @@ contains
     end if
 
     do n=1,nlevs
-       call multifab_build(thermal(n), mla%la(n), 1, 1)
+       call multifab_build(thermal2(n), mla%la(n), 1, 1)
     end do
 
     if(use_thermal_diffusion) then
-       call make_explicit_thermal(mla,dx,thermal,snew,p0_new,the_bc_tower)
+       call make_explicit_thermal(mla,dx,thermal2,snew,p0_new,the_bc_tower)
     else
        do n=1,nlevs
-          call setval(thermal(n),ZERO,all=.true.)
+          call setval(thermal2(n),ZERO,all=.true.)
        end do
     end if
 
@@ -603,12 +603,12 @@ contains
 
     ! p0 is only used for the delta_gamma1_term
     call make_S(Source_new,delta_gamma1_term,delta_gamma1,snew,uold,rho_omegadot2, &
-                rho_Hnuc2,rho_Hext,thermal,p0_old,gamma1bar,delta_gamma1_termbar,psi,dx, &
+                rho_Hnuc2,rho_Hext,thermal2,p0_old,gamma1bar,delta_gamma1_termbar,psi,dx, &
                 mla,the_bc_tower%bc_tower_array)
 
     do n=1,nlevs
        call destroy(rho_Hext(n))
-       call destroy(thermal(n))
+       call destroy(thermal2(n))
        call destroy(delta_gamma1(n))
     end do
 
@@ -790,19 +790,6 @@ contains
     end if
 
     do n=1,nlevs
-       call multifab_build(thermal(n), mla%la(n), 1, 1)
-    end do
-
-    ! thermal is the forcing for rhoh or temperature
-    if(use_thermal_diffusion) then
-       call make_explicit_thermal(mla,dx,thermal,s1,p0_old,the_bc_tower)
-    else
-       do n=1,nlevs
-          call setval(thermal(n),ZERO,all=.true.)
-       end do
-    end if
-
-    do n=1,nlevs
        call multifab_build(s2(n), mla%la(n), nscal, 3)
        call setval(etarhoflux(n),ZERO,all=.true.)
     end do
@@ -894,7 +881,7 @@ contains
        write(6,*) '            : enthalpy_advance >>>'
     end if
 
-    call enthalpy_advance(mla,2,uold,s1,s2,sedge,sflux,scal_force,thermal,umac,w0,w0mac, &
+    call enthalpy_advance(mla,2,uold,s1,s2,sedge,sflux,scal_force,thermal1,umac,w0,w0mac, &
                           normal,rho0_old,rhoh0_old,rho0_new,rhoh0_new,p0_old,p0_new, &
                           tempbar,psi,dx,dt,the_bc_tower%bc_tower_array)
 
@@ -904,7 +891,7 @@ contains
           call destroy(sflux(n,comp))
        end do
        call destroy(scal_force(n))
-       call destroy(thermal(n))
+       call destroy(thermal1(n))
     end do
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -973,14 +960,14 @@ contains
           
     do n=1,nlevs
        call multifab_destroy(ptherm_old(n))
-       call multifab_build(thermal(n), mla%la(n), 1, 1)
+       call multifab_build(thermal2(n), mla%la(n), 1, 1)
     end do
 
     if(use_thermal_diffusion) then
-       call make_explicit_thermal(mla,dx,thermal,snew,p0_new,the_bc_tower)
+       call make_explicit_thermal(mla,dx,thermal2,snew,p0_new,the_bc_tower)
     else
        do n=1,nlevs
-          call setval(thermal(n),ZERO,all=.true.)
+          call setval(thermal2(n),ZERO,all=.true.)
        end do
     end if
     
@@ -991,11 +978,11 @@ contains
 
     ! p0 is only used for the delta_gamma1_term
     call make_S(Source_new,delta_gamma1_term,delta_gamma1,snew,uold,rho_omegadot2, &
-                rho_Hnuc2,rho_Hext,thermal,p0_new,gamma1bar,delta_gamma1_termbar,psi,dx, &
+                rho_Hnuc2,rho_Hext,thermal2,p0_new,gamma1bar,delta_gamma1_termbar,psi,dx, &
                 mla,the_bc_tower%bc_tower_array)
 
     do n=1,nlevs
-       call destroy(thermal(n))
+       call destroy(thermal2(n))
        call destroy(delta_gamma1(n))
     end do
 

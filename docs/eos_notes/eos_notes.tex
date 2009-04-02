@@ -77,8 +77,6 @@ end if
 of $\dt.$}\\ \\
 if {\tt use\_thermal\_diffusion} = T then
 \begin{itemize}
-\item In {\tt make\_explicit\_thermal}, we compute the coefficients for 
-$\nabla\cdot(\kth/c_p)\nabla h + \cdots$ using $(\rho,T,X)^{(1)}$.
 \item In {\tt enthalpy\_advance} $\rightarrow$ {\tt update\_scal}, we compute $h$ above
 the {\tt base\_cutoff\_density} using $(\rho,X)^{(2)}$ and $p_0^{n+1}$.
 \item In {\tt thermal\_conduct}, we compute the coefficients for 
@@ -179,8 +177,6 @@ end if
 of $\dt.$}\\ \\
 if {\tt use\_thermal\_diffusion} = T then
 \begin{itemize}
-\item In {\tt make\_explicit\_thermal}, we compute the coefficients for 
-$\nabla\cdot(\kth/c_p)\nabla h + \cdots$ using $(\rho,T,X)^{(1)}$.
 \item In {\tt thermal\_conduct}, we compute the coefficients for 
 $\nabla\cdot(\kth/c_p)\nabla h + \cdots$ using $(\rho,T,X)^{(1)}$ and $(\rho,T,X)^{(2),*}$.
 \item In {\tt thermal\_conduct}, we compute $T^{(2)}$ using $(\rho,h,X)^{(2)}$
