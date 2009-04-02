@@ -9,7 +9,7 @@ module make_explicit_thermal_module
 
   private
 
-  public :: make_explicit_thermal
+  public :: make_explicit_thermal, make_thermal_coeffs
 
 contains 
 
@@ -48,12 +48,11 @@ contains
     type(multifab) :: resid(mla%nlevel)
 
     integer                     :: i,comp,n,stencil_order
-    integer                     :: ng_s,ng_T,ng_h,ng_X,ng_p,ng_cc,ng_fc
+    integer                     :: ng_cc,ng_fc
     integer                     :: lo(dm),hi(dm)
-    real(kind=dp_t), pointer    :: sp(:,:,:,:)
-    real(kind=dp_t), pointer    :: betap(:,:,:,:),Xkcoeffp(:,:,:,:)
+    real(kind=dp_t), pointer    :: betap(:,:,:,:)
     real(kind=dp_t), pointer    :: Tcoeffp(:,:,:,:),hcoeffp(:,:,:,:)
-    real(kind=dp_t), pointer    :: pcoeffp(:,:,:,:)
+    real(kind=dp_t), pointer    :: Xkcoeffp(:,:,:,:),pcoeffp(:,:,:,:)
 
     type(bl_prof_timer), save :: bpt
 
@@ -68,36 +67,8 @@ contains
        call multifab_build(pcoeff(n),  mla%la(n), 1,     1)
        call setval(thermal(n), ZERO, all=.true.)
     end do
-    
-    ng_s = s(1)%ng
-    ng_T = Tcoeff(1)%ng
-    ng_h = hcoeff(1)%ng
-    ng_X = Xkcoeff(1)%ng
-    ng_p = pcoeff(1)%ng
 
-    ! create Tcoeff = -kth, hcoeff = -kth/cp, Xkcoeff = xik*kth/cp, pcoeff = hp*kth/cp
-    do n=1,nlevs
-       do i=1,s(n)%nboxes
-          if (multifab_remote(s(n),i)) cycle
-          sp       => dataptr(s(n),i)
-          Tcoeffp  => dataptr(Tcoeff(n),i)
-          hcoeffp  => dataptr(hcoeff(n),i)
-          Xkcoeffp => dataptr(Xkcoeff(n),i)
-          pcoeffp  => dataptr(pcoeff(n),i)
-          lo = lwb(get_box(s(n),i))
-          hi = upb(get_box(s(n),i))
-          select case (dm)
-          case (2)
-             call make_coeffs_2d(lo,hi,sp(:,:,1,:),ng_s,Tcoeffp(:,:,1,1),ng_T, &
-                                 hcoeffp(:,:,1,1),ng_h,Xkcoeffp(:,:,1,:),ng_X, &
-                                 pcoeffp(:,:,1,1),ng_p)
-          case (3)
-             call make_coeffs_3d(lo,hi,sp(:,:,:,:),ng_s,Tcoeffp(:,:,:,1),ng_T, &
-                                 hcoeffp(:,:,:,1),ng_h,Xkcoeffp(:,:,:,:),ng_X, &
-                                 pcoeffp(:,:,:,1),ng_p)
-          end select
-       end do
-    enddo
+    call make_thermal_coeffs(s,Tcoeff,hcoeff,Xkcoeff,pcoeff)
 
     if(temp_diffusion_formulation) then
 
@@ -370,11 +341,61 @@ contains
     
   end subroutine make_explicit_thermal
 
+  subroutine make_thermal_coeffs(s,Tcoeff,hcoeff,Xkcoeff,pcoeff)
+
+    use geometry, only: dm,nlevs
+
+    type(multifab) , intent(in   ) :: s(:)
+    type(multifab) , intent(inout) :: Tcoeff(:)
+    type(multifab) , intent(inout) :: hcoeff(:)
+    type(multifab) , intent(inout) :: Xkcoeff(:)
+    type(multifab) , intent(inout) :: pcoeff(:)
+
+    ! local
+    integer :: n,i
+    integer :: ng_s,ng_T,ng_h,ng_X,ng_p
+    integer :: lo(dm),hi(dm)
+
+    real(kind=dp_t), pointer    :: sp(:,:,:,:)
+    real(kind=dp_t), pointer    :: Tcoeffp(:,:,:,:),hcoeffp(:,:,:,:)
+    real(kind=dp_t), pointer    :: Xkcoeffp(:,:,:,:),pcoeffp(:,:,:,:)
+
+    ng_s = s(1)%ng
+    ng_T = Tcoeff(1)%ng
+    ng_h = hcoeff(1)%ng
+    ng_X = Xkcoeff(1)%ng
+    ng_p = pcoeff(1)%ng
+
+    ! create Tcoeff = -kth, hcoeff = -kth/cp, Xkcoeff = xik*kth/cp, pcoeff = hp*kth/cp
+    do n=1,nlevs
+       do i=1,s(n)%nboxes
+          if (multifab_remote(s(n),i)) cycle
+          sp       => dataptr(s(n),i)
+          Tcoeffp  => dataptr(Tcoeff(n),i)
+          hcoeffp  => dataptr(hcoeff(n),i)
+          Xkcoeffp => dataptr(Xkcoeff(n),i)
+          pcoeffp  => dataptr(pcoeff(n),i)
+          lo = lwb(get_box(s(n),i))
+          hi = upb(get_box(s(n),i))
+          select case (dm)
+          case (2)
+             call make_thermal_coeffs_2d(lo,hi,sp(:,:,1,:),ng_s,Tcoeffp(:,:,1,1),ng_T, &
+                                         hcoeffp(:,:,1,1),ng_h,Xkcoeffp(:,:,1,:),ng_X, &
+                                         pcoeffp(:,:,1,1),ng_p)
+          case (3)
+             call make_thermal_coeffs_3d(lo,hi,sp(:,:,:,:),ng_s,Tcoeffp(:,:,:,1),ng_T, &
+                                         hcoeffp(:,:,:,1),ng_h,Xkcoeffp(:,:,:,:),ng_X, &
+                                         pcoeffp(:,:,:,1),ng_p)
+          end select
+       end do
+    enddo
+
+  end subroutine make_thermal_coeffs
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! create Tcoeff = -kth, hcoeff = -kth/cp, Xkcoeff = xik*kth/cp, pcoeff = hp*kth/cp
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine make_coeffs_2d(lo,hi,s,ng_s,Tcoeff,ng_T,hcoeff,ng_h,Xkcoeff,ng_X,pcoeff,ng_p)
+  subroutine make_thermal_coeffs_2d(lo,hi,s,ng_s,Tcoeff,ng_T,hcoeff,ng_h,Xkcoeff,ng_X,pcoeff,ng_p)
 
     use variables, only: rho_comp, temp_comp, spec_comp
     use eos_module
@@ -423,13 +444,13 @@ contains
        enddo
     enddo
     
-  end subroutine make_coeffs_2d
+  end subroutine make_thermal_coeffs_2d
   
   
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! create Tcoeff = -kth, hcoeff = -kth/cp, Xkcoeff = xik*kth/cp, pcoeff = hp*kth/cp
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine make_coeffs_3d(lo,hi,s,ng_s,Tcoeff,ng_T,hcoeff,ng_h,Xkcoeff,ng_X,pcoeff,ng_p)
+  subroutine make_thermal_coeffs_3d(lo,hi,s,ng_s,Tcoeff,ng_T,hcoeff,ng_h,Xkcoeff,ng_X,pcoeff,ng_p)
 
     use variables, only: rho_comp, temp_comp, spec_comp
     use eos_module
@@ -482,6 +503,6 @@ contains
        enddo
     enddo
     
-  end subroutine make_coeffs_3d
+  end subroutine make_thermal_coeffs_3d
   
 end module make_explicit_thermal_module
