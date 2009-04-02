@@ -10,7 +10,7 @@ module make_explicit_thermal_module
 
   private
 
-  public :: make_explicit_thermal, make_thermal_coeffs, put_beta_on_faces_2d, put_beta_on_faces_3d
+  public :: make_explicit_thermal, make_thermal_coeffs, put_beta_on_faces
 
 contains 
 
@@ -48,7 +48,6 @@ contains
     type(multifab) :: resid(mla%nlevel)
 
     integer                     :: i,comp,n,stencil_order
-    integer                     :: ng_cc,ng_fc
     integer                     :: lo(dm),hi(dm)
     real(kind=dp_t), pointer    :: betap(:,:,:,:)
     real(kind=dp_t), pointer    :: Tcoeffp(:,:,:,:),hcoeffp(:,:,:,:)
@@ -83,28 +82,12 @@ contains
           call multifab_build(beta(n),mla%la(n), dm, 1)
        end do
 
-       ng_cc = Tcoeff(1)%ng
-       ng_fc = beta(1)%ng
-
        do n=1,nlevs
           ! load T into phi
           call multifab_copy_c(phi(n),1,s(n),temp_comp,1,1)
-       
-          ! setup beta = Tcoeff on faces
-          do i=1,s(n)%nboxes
-             if (multifab_remote(s(n),i)) cycle
-             Tcoeffp => dataptr(Tcoeff(n),i)
-             betap   => dataptr(beta(n),i)
-             lo = lwb(get_box(s(n),i))
-             hi = upb(get_box(s(n),i))
-             select case (dm)
-             case (2)
-                call put_beta_on_faces_2d(lo,Tcoeffp(:,:,1,1),ng_cc,betap(:,:,1,:),ng_fc)
-             case (3)
-                call put_beta_on_faces_3d(lo,Tcoeffp(:,:,:,1),ng_cc,betap(:,:,:,:),ng_fc)
-             end select
-          end do
-       enddo ! end loop over levels
+       end do
+
+       call put_beta_on_faces(Tcoeff,1,beta)
        
        do n=1,nlevs
           call destroy(Tcoeff(n))
@@ -146,29 +129,13 @@ contains
           call multifab_build(beta(n), mla%la(n), dm, 1)
        end do
 
-       ng_cc = hcoeff(1)%ng
-       ng_fc = beta(1)%ng
-
        do n=1,nlevs
           ! load h into phi
           call multifab_copy_c(phi(n),1,s(n),rhoh_comp,1,1)
           call multifab_div_div_c(phi(n),1,s(n),rho_comp,1,1)
-                 
-          ! setup beta = hcoeff on faces
-          do i=1,s(n)%nboxes
-             if (multifab_remote(s(n),i)) cycle
-             hcoeffp => dataptr(hcoeff(n),i)
-             betap   => dataptr(beta(n),i)
-             lo =  lwb(get_box(s(n),i))
-             hi =  upb(get_box(s(n),i))
-             select case (dm)
-             case (2)
-                call put_beta_on_faces_2d(lo,hcoeffp(:,:,1,1),ng_cc,betap(:,:,1,:),ng_fc)
-             case (3)
-                call put_beta_on_faces_3d(lo,hcoeffp(:,:,:,1),ng_cc,betap(:,:,:,:),ng_fc)
-             end select
-          end do
-       enddo ! end loop over levels
+       end do
+
+       call put_beta_on_faces(hcoeff,1,beta)
 
        do n=1,nlevs
           call destroy(hcoeff(n))
@@ -188,9 +155,6 @@ contains
        do n=1,nlevs
           call multifab_plus_plus_c(thermal(n),1,resid(n),1,1,0)
        enddo
-     
-       ng_cc = Xkcoeff(1)%ng
-       ng_fc = beta(1)%ng
 
        ! loop over species
        do comp=1,nspec
@@ -198,24 +162,9 @@ contains
              ! load X_k into phi
              call multifab_copy_c(phi(n),1,s(n),spec_comp+comp-1,1,1)
              call multifab_div_div_c(phi(n),1,s(n),rho_comp,1,1)
-             
-             ! setup beta = Xkcoeff on faces
-             do i=1,s(n)%nboxes
-                if (multifab_remote(s(n),i)) cycle
-                Xkcoeffp => dataptr(Xkcoeff(n),i)
-                betap    => dataptr(beta(n),i)
-                lo = lwb(get_box(s(n),i))
-                hi = upb(get_box(s(n),i))
-                select case (dm)
-                case (2)
-                   call put_beta_on_faces_2d(lo,Xkcoeffp(:,:,1,comp),ng_cc, &
-                                             betap(:,:,1,:),ng_fc)
-                case (3)
-                   call put_beta_on_faces_3d(lo,Xkcoeffp(:,:,:,comp),ng_cc, &
-                                             betap(:,:,:,:),ng_fc)
-                end select
-             end do
-          enddo ! end loop over levels
+          end do
+
+          call put_beta_on_faces(Xkcoeff,comp,beta)
           
           ! applyop to compute resid = del dot Xkcoeff grad X_k
           call mac_applyop(mla,resid,phi,alpha,beta,dx,the_bc_tower,dm+spec_comp+comp-1, &
@@ -263,25 +212,7 @@ contains
 
        end if
 
-       ng_cc = pcoeff(1)%ng
-       ng_fc = beta(1)%ng
-
-       ! setup beta = pcoeff on faces
-       do n=1,nlevs
-          do i=1,beta(n)%nboxes
-             if (multifab_remote(beta(n),i)) cycle
-             pcoeffp => dataptr(pcoeff(n),i)
-             betap   => dataptr(beta(n),i)
-             lo = lwb(get_box(beta(n),i))
-             hi = upb(get_box(beta(n),i))
-             select case (dm)
-             case (2)
-                call put_beta_on_faces_2d(lo,pcoeffp(:,:,1,1),ng_cc,betap(:,:,1,:),ng_fc)
-             case (3)
-                call put_beta_on_faces_3d(lo,pcoeffp(:,:,:,1),ng_cc,betap(:,:,:,:),ng_fc)
-             end select
-          end do
-       enddo
+       call put_beta_on_faces(pcoeff,1,beta)
 
        do n=1,nlevs
           call destroy(pcoeff(n))
@@ -401,7 +332,8 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! create Tcoeff = -kth, hcoeff = -kth/cp, Xkcoeff = xik*kth/cp, pcoeff = hp*kth/cp
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine make_thermal_coeffs_2d(lo,hi,s,ng_s,Tcoeff,ng_T,hcoeff,ng_h,Xkcoeff,ng_X,pcoeff,ng_p)
+  subroutine make_thermal_coeffs_2d(lo,hi,s,ng_s,Tcoeff,ng_T,hcoeff,ng_h,Xkcoeff,ng_X, &
+                                    pcoeff,ng_p)
 
     use variables, only: rho_comp, temp_comp, spec_comp
     use eos_module
@@ -456,7 +388,8 @@ contains
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! create Tcoeff = -kth, hcoeff = -kth/cp, Xkcoeff = xik*kth/cp, pcoeff = hp*kth/cp
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  subroutine make_thermal_coeffs_3d(lo,hi,s,ng_s,Tcoeff,ng_T,hcoeff,ng_h,Xkcoeff,ng_X,pcoeff,ng_p)
+  subroutine make_thermal_coeffs_3d(lo,hi,s,ng_s,Tcoeff,ng_T,hcoeff,ng_h,Xkcoeff,ng_X, &
+                                    pcoeff,ng_p)
 
     use variables, only: rho_comp, temp_comp, spec_comp
     use eos_module
@@ -511,6 +444,50 @@ contains
     
   end subroutine make_thermal_coeffs_3d
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  ! put beta on faces
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  subroutine put_beta_on_faces(ccfab,comp,beta)
+
+    use geometry, only: nlevs, dm
+
+    type(multifab) , intent(in   ) :: ccfab(:)
+    type(multifab) , intent(inout) :: beta(:)
+    integer        , intent(in   ) :: comp
+
+    ! local
+    integer :: n,i,ng_cc,ng_fc
+    integer :: lo(dm),hi(dm)
+
+    real(kind=dp_t), pointer :: ccfabp(:,:,:,:),betap(:,:,:,:)
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "put_beta_on_faces")
+
+    ng_cc = ccfab(1)%ng
+    ng_fc = beta(1)%ng
+
+    ! setup beta = ccfab on faces
+    do n=1,nlevs
+       do i=1,beta(n)%nboxes
+          if (multifab_remote(beta(n),i)) cycle
+          ccfabp => dataptr(ccfab(n),i)
+          betap   => dataptr(beta(n),i)
+          lo = lwb(get_box(beta(n),i))
+          hi = upb(get_box(beta(n),i))
+          select case (dm)
+          case (2)
+             call put_beta_on_faces_2d(lo,ccfabp(:,:,1,comp),ng_cc,betap(:,:,1,:),ng_fc)
+          case (3)
+             call put_beta_on_faces_3d(lo,ccfabp(:,:,:,comp),ng_cc,betap(:,:,:,:),ng_fc)
+          end select
+       end do
+    enddo
+
+    call destroy(bpt)
+
+  end subroutine put_beta_on_faces
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
