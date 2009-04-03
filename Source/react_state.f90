@@ -142,6 +142,8 @@ contains
 
     end if
 
+    call destroy(bpt)
+
   end subroutine burner_loop
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
