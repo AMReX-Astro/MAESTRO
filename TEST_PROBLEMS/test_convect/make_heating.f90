@@ -5,6 +5,7 @@
 module heating_module
 
   use bl_types
+  use define_bc_module
 
   implicit none
 
@@ -13,23 +14,29 @@ module heating_module
 
 contains
 
-  subroutine get_rho_Hext(mla,s,rho_Hext,dx,time)
+  subroutine get_rho_Hext(mla,s,rho_Hext,dx,time,the_bc_level)
 
     use multifab_module
     use ml_layout_module
     use ml_restriction_module
     use geometry, only: dm, nlevs
+    use variables, only: foextrap_comp
+    use multifab_fill_ghost_module
 
     type(ml_layout), intent(in   ) :: mla
     type(multifab) , intent(in   ) :: s(:)
     type(multifab) , intent(inout) :: rho_Hext(:)
     real(kind=dp_t), intent(in   ) :: dx(:,:),time
+    type(bc_level) , intent(in   ) :: the_bc_level(:)
 
     ! local
     integer                  :: n,i,ng_s,ng_h
     integer                  :: lo(dm),hi(dm)
     real(kind=dp_t), pointer :: sp(:,:,:,:)
     real(kind=dp_t), pointer :: hp(:,:,:,:)
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "get_rho_Hext")
 
     ng_s = s(1)%ng
     ng_h = rho_Hext(1)%ng
@@ -56,7 +63,17 @@ contains
     do n=nlevs,2,-1
        ! set level n-1 data to be the average of the level n data covering it
        call ml_cc_restriction(rho_Hext(n-1), rho_Hext(n), mla%mba%rr(n-1,:))
+
+       ! fill level n ghost cells using interpolation from level n-1 data
+       ! note that multifab_fill_boundary and multifab_physbc are called for
+       ! both levels n-1 and n
+       call multifab_fill_ghost_cells(rho_Hext(n),rho_Hext(n-1), &
+                                      ng_h,mla%mba%rr(n-1,:), &
+                                      the_bc_level(n-1), the_bc_level(n), &
+                                      1,foextrap_comp,1,fill_crse_input=.false.)
     end do
+
+    call destroy(bpt)
 
   end subroutine get_rho_Hext
 

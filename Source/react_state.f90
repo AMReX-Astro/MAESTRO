@@ -57,7 +57,7 @@ contains
     ng_hn = rho_Hnuc(1)%ng
     ng_he = rho_Hext(1)%ng
 
-    call get_rho_Hext(mla,sold,rho_Hext,dx,time)
+    call get_rho_Hext(mla,sold,rho_Hext,dx,time,the_bc_level)
 
     do n = 1, nlevs
        do i = 1, sold(n)%nboxes
