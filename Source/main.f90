@@ -20,7 +20,7 @@ program main
 
   call varden()
 
-  !call layout_flush_copyassoc_cache ()
+  call layout_flush_copyassoc_cache ()
   !
   ! TODO -- add ability to specify filename via inputs file.
   !
