@@ -257,7 +257,7 @@ contains
   
     perturb_model = .false.
     plot_spec     = .true.
-    plot_trac     = .true.
+    plot_trac     = .false.
     plot_base     = .false.
     plot_base_name = "plt"
     check_base_name = "chk"
