@@ -59,8 +59,6 @@ contains
 
     call get_rho_Hext(mla,sold,rho_Hext,dx,time)
 
-    call build(bpt2, "burner_loop")
-
     do n = 1, nlevs
        do i = 1, sold(n)%nboxes
           if ( multifab_remote(sold(n), i) ) cycle
@@ -84,15 +82,6 @@ contains
        end do
     end do
 
-    call destroy(bpt2)
-
-    ! now update temperature
-    if (use_tfromp) then
-       call makeTfromRhoP(snew,p0,sold,mla,the_bc_level,dx)
-    else
-       call makeTfromRhoH(snew,sold,mla,the_bc_level)
-    end if
-
     if (nlevs .eq. 1) then
 
        ! fill ghost cells for two adjacent grids at the same level
@@ -108,7 +97,7 @@ contains
        do n=nlevs,2,-1
 
           ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction(snew(n-1)       ,snew(n)       ,mla%mba%rr(n-1,:))
+          call ml_cc_restriction(snew(n-1)        ,snew(n)        ,mla%mba%rr(n-1,:))
           call ml_cc_restriction(rho_omegadot(n-1),rho_omegadot(n),mla%mba%rr(n-1,:))
           call ml_cc_restriction(rho_Hext(n-1)    ,rho_Hext(n)    ,mla%mba%rr(n-1,:))
           call ml_cc_restriction(rho_Hnuc(n-1)    ,rho_Hnuc(n)    ,mla%mba%rr(n-1,:))
@@ -122,6 +111,13 @@ contains
                                          rho_comp,dm+rho_comp,nscal,fill_crse_input=.false.)
        enddo
 
+    end if
+
+    ! now update temperature
+    if (use_tfromp) then
+       call makeTfromRhoP(snew,p0,sold,mla,the_bc_level,dx)
+    else
+       call makeTfromRhoH(snew,sold,mla,the_bc_level)
     end if
 
     call destroy(bpt)
