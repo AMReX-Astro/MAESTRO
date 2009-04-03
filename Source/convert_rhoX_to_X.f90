@@ -21,7 +21,7 @@ contains
     use variables, only: spec_comp, foextrap_comp, rho_comp
     use ml_layout_module
     use define_bc_module
-    use ml_restriction_module, only: ml_cc_restriction
+    use ml_restriction_module, only: ml_cc_restriction_c
     use multifab_fill_ghost_module
     use multifab_physbc_module
     use geometry, only: dm, nlevs
@@ -72,7 +72,7 @@ contains
        do n=nlevs,2,-1
 
           ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction(s(n-1),s(n),mla%mba%rr(n-1,:))
+          call ml_cc_restriction_c(s(n-1),spec_comp,s(n),spec_comp,mla%mba%rr(n-1,:),nspec)
           
           do comp = spec_comp,spec_comp+nspec-1
              if (flag) then
@@ -101,7 +101,7 @@ contains
     use variables, only: rho_comp, rhoh_comp, foextrap_comp
     use ml_layout_module
     use define_bc_module
-    use ml_restriction_module, only: ml_cc_restriction
+    use ml_restriction_module, only: ml_cc_restriction_c
     use multifab_fill_ghost_module
     use multifab_physbc_module
     use geometry, only: dm, nlevs
@@ -145,7 +145,7 @@ contains
        do n=nlevs,2,-1
 
           ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction(s(n-1),s(n),mla%mba%rr(n-1,:))
+          call ml_cc_restriction_c(s(n-1),rhoh_comp,s(n),rhoh_comp,mla%mba%rr(n-1,:),1)
           
           if (flag) then
              bc_comp = foextrap_comp

@@ -25,7 +25,7 @@ contains
     use variables, only: foextrap_comp, nscal
     use ml_layout_module
     use define_bc_module
-    use ml_restriction_module, only: ml_cc_restriction
+    use ml_restriction_module, only: ml_cc_restriction_c
     use multifab_fill_ghost_module
     use multifab_physbc_module
 
@@ -77,7 +77,7 @@ contains
        do n=nlevs,2,-1
 
           ! set level n-1 data to be the average of the level n data covering it
-          call ml_cc_restriction(s(n-1),s(n),mla%mba%rr(n-1,:))
+          call ml_cc_restriction_c(s(n-1),comp,s(n),comp,mla%mba%rr(n-1,:),1)
           ! fill level n ghost cells using interpolation from level n-1 data
           ! note that multifab_fill_boundary and multifab_physbc are called for
           ! both levels n-1 and n

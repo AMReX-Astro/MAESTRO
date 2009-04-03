@@ -22,7 +22,6 @@ contains
     use ml_restriction_module
     use geometry, only: dm
     use variables, only: foextrap_comp
-    use multifab_fill_ghost_module
 
     type(ml_layout), intent(in   ) :: mla
     type(multifab) , intent(in   ) :: s(:)
@@ -64,14 +63,6 @@ contains
     do n=nlevs,2,-1
        ! set level n-1 data to be the average of the level n data covering it
        call ml_cc_restriction(rho_Hext(n-1), rho_Hext(n), mla%mba%rr(n-1,:)) 
-
-       ! fill level n ghost cells using interpolation from level n-1 data
-       ! note that multifab_fill_boundary and multifab_physbc are called for
-       ! both levels n-1 and n
-       call multifab_fill_ghost_cells(rho_Hext(n),rho_Hext(n-1), &
-                                      ng_h,mla%mba%rr(n-1,:), &
-                                      the_bc_level(n-1), the_bc_level(n), &
-                                      1,foextrap_comp,1,fill_crse_input=.false.)
     end do
 
     call destroy(bpt)
