@@ -1,28 +1,38 @@
 #!/bin/ksh
 
 # Sample LCRM script to be submitted with psub
-#PSUB -c atlas             # machine to run on
-#PSUB -pool pbatch         # pool to use
-#PSUB -r wdconvect         # sets job name
-#PSUB -tM 12:00             # sets maximum total CPU time
+#MSUB -l feature=atlas
+#MSUB -q pbatch             # pool to use
+#MSUB -N anel_cut_3.e6      # sets job name
+#MSUB -l walltime=24:00:00  # sets maximum wallclock time
+#MSUB -A suprnova           # sets bank account
+#MSUB -l nodes=32           # each node is 8 processors
+#MSUB -V                    # export current env var settings
+#MSUB -o sn.log            # sets output log name
+#MSUB -e sn.err            # sets error log name
+#MSUB -mbe                  # send email at execution start
+#MSUB -l qos=expedite,flags=ADVRES:atlas_pbatch_suprnova.2  # reservation
 
-#PSUB -b suprnova          # sets bank account
-#PSUB -ln 108               # each node is 8 processors
-#PSUB -x                   # export current env var settings
-#PSUB -o sn.log            # sets output log name
-#PSUB -e sn.err            # sets error log name
-#PSUB -nr                  # do NOT rerun job after system reboot
-#PSUB -mb                  # send email at execution start
-#PSUB -me                  # send email at execution finish
-#PSUB                      # no more psub commands
+
+# submit this job with msub
+# cancel jobs with canceljob
+# display status with checkjob
+# show queue with mshow
+
 
 # job commands start here
 # Display job information for possible diagnostic use
 set echo
 hostname
-echo LCRM job id = $PSUB_JOBID
 sinfo
 squeue
+
+# run the compression script to tar up the plot and checkpoint files
+# as they are created.
+./process.atlas &
+PID=$!
+trap 'kill -s TERM $PID' EXIT TERM HUP XCPU KILL
+
 
 # find the latest restart file
 restartFile=`ls -1 | grep -i chk | grep -v tar | grep -v processed | tail -1`
@@ -41,7 +51,10 @@ fi
 
 
 # Run info
-srun -n 864 ./main.Linux.Intel.mpi.exe inputs_3d.384.5dr.eq.dx ${restartString} >> run.out
+srun -n 256 ./main.Linux.Intel.mpi.exe inputs_3d.256.5dr.eq.dx ${restartString} >> run.out
+
+rm -f process.pid
+
  
 echo 'ALL DONE'
 
