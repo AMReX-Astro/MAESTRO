@@ -11,7 +11,6 @@
 #MSUB -o sn.log            # sets output log name
 #MSUB -e sn.err            # sets error log name
 #MSUB -mbe                  # send email at execution start
-#MSUB -l qos=expedite,flags=ADVRES:atlas_pbatch_suprnova.2  # reservation
 
 
 # submit this job with msub
