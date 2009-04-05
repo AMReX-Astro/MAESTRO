@@ -13,3 +13,9 @@ changes to wdconvect runs for the next paper
 
 -- add 2% Keplerian rotation
 
+-- in diag.f90, we normalize the mass with the coarse-level dx
+   -- is this right for multilevel?
+
+-- store the location of the peak temperature
+
+-- store the total kinetic energy and the max velocity
