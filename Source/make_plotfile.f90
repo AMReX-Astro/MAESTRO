@@ -232,17 +232,13 @@ contains
        ! divw0
        if (spherical .eq. 1) then
           do n=1,nlevs
-             call make_divw0(tempfab(n),w0(1,:),w0mac(n,:),dx(n,:))
+             call make_divw0(plotdata(n),icomp_divw0,w0(1,:),w0mac(n,:),dx(n,:))
           end do
        else
           do n=1,nlevs
-             call make_divw0(tempfab(n),w0(n,:),w0mac(n,:),dx(n,:))
+             call make_divw0(plotdata(n),icomp_divw0,w0(n,:),w0mac(n,:),dx(n,:))
           end do
        end if
-         
-       do n=1,nlevs
-          call multifab_copy_c(plotdata(n),icomp_divw0,tempfab(n),1,1)
-       end do
 
        ! rho0
        call put_1d_array_on_cart(rho0,tempfab,dm+rho_comp,.false.,.false.,dx, &
@@ -307,8 +303,8 @@ contains
 
     do n=1,nlevs
 
-       ! RHOPERT & TEMP (FROM RHO) & TPERT & MACHNO & (GAM1 - GAM10) & Entropy & RHOHPERT
-       ! and TEMP (FROM H) & DELTA_P
+       ! make_tfromp -> RHOPERT, TFROMP, TPERT, MACHNUMBER, DELTAGAMMA, ENTROPY, AND RHOPERT
+       ! make_tfromH -> TFROMP AND DELTA_P
        if (spherical .eq. 1) then
           
           call make_tfromp(plotdata(n),icomp_tfromp,icomp_tpert,icomp_rhopert, &
@@ -346,7 +342,7 @@ contains
                                 mla%mba%rr(n-1,:),1)
        call ml_cc_restriction_c(plotdata(n-1),icomp_entropy,plotdata(n),icomp_entropy, &
                                 mla%mba%rr(n-1,:),1)
-       call ml_cc_restriction_c(plotdata(n-1),icomp_tfromh,plotdata(n),icomp_tfromh, &
+       call ml_cc_restriction_c(plotdata(n-1),icomp_tfromH,plotdata(n),icomp_tfromH, &
                                 mla%mba%rr(n-1,:),1)
        call ml_cc_restriction_c(plotdata(n-1),icomp_dp,plotdata(n),icomp_dp, &
                                 mla%mba%rr(n-1,:),1)
