@@ -1,5 +1,12 @@
-! This is a general interface for doing runtime diagnostics on the state.
-! It is called at the end of advance
+! wdconvect-specific diagnostic routine
+! 
+! currently, there are 4 output files:
+!
+! wdconvect_enuc_diag.out          peak nuc energy / g / s
+! wdconvect_radvel_diag.out        radial velocity components
+! wdconvect_temp_diag.out          peak temperature
+! wdconvect_vel_diag.out           peak total velocity, total kinetic energy
+
 
 module diag_module
 
