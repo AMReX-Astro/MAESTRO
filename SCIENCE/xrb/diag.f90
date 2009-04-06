@@ -18,7 +18,7 @@ module diag_module
 contains
 
   subroutine diag(time,dt,dx,s,rho_Hnuc,rho_Hext, &
-                  rho0,rhoh0,p0,tempbar,gamma1bar,div_coeff_new, &
+                  rho0,rhoh0,p0,tempbar,gamma1bar,div_coeff, &
                   u,w0,normal, &
                   mla,the_bc_tower)
 
