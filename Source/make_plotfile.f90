@@ -100,14 +100,15 @@ contains
     use variables
     use plot_variables_module
     use fill_3d_module
-    use probin_module, only: nOutFiles, lUsingNFiles, plot_spec, plot_trac, plot_base
-    use probin_module, only: single_prec_plotfiles, edge_nodal_flag
+    use probin_module, only: nOutFiles, lUsingNFiles, plot_spec, plot_trac, plot_base, &
+         single_prec_plotfiles, edge_nodal_flag
     use geometry, only: spherical, nr_fine, dm, nlevs, nlevs_radial
     use average_module
     use ml_restriction_module
     use multifab_physbc_module
     use multifab_fill_ghost_module
     use bl_constants_module
+    use network, only: nspec
 
     character(len=*) , intent(in   ) :: dirname
     type(ml_layout)  , intent(in   ) :: mla
@@ -162,9 +163,25 @@ contains
        ! DENSITY AND (RHO H) 
        call multifab_copy_c(plotdata(n),icomp_rho,s(n),rho_comp,2)
 
-       ! SPECIES
+       
        if (plot_spec) then
-          call make_XfromrhoX(plotdata(n),icomp_spec,s(n))
+          
+          ! SPECIES
+          call multifab_copy_c(plotdata(n),icomp_spec,s(n),spec_comp,nspec)
+          do comp=1,nspec
+             call multifab_div_div_c(plotdata(n),icomp_spec+comp-1,s(n),rho_comp,1)
+          end do
+
+          ! OMEGADOT
+          call multifab_copy_c(plotdata(n),icomp_omegadot,rho_omegadot(n),1,nspec)
+          do comp=1,nspec
+             call multifab_div_div_c(plotdata(n),icomp_omegadot+comp-1,s(n),rho_comp,1)
+          end do
+
+          ! ENUCDOT
+          call multifab_copy_c(plotdata(n),icomp_enuc,rho_Hnuc(n),1)
+          call multifab_div_div_c(plotdata(n),icomp_enuc,s(n),rho_comp,1)
+
        end if
 
        ! TRACER
@@ -268,7 +285,7 @@ contains
           call make_velr(plotdata(n),icomp_velr,u(n),w0r_cart(n),normal(n))
        endif
 
-       ! VEL_PLUS_W0
+       ! MAGVEL = |U + w0|
        if (spherical .eq. 1) then
           call make_magvel(plotdata(n),icomp_magvel,u(n),w0(1,:),w0mac(n,:))
        else
@@ -283,7 +300,8 @@ contains
        call multifab_copy_c(plotdata(n),icomp_divu,Source(n),1,1)
 
        ! ENTHALPY 
-       call make_enthalpy(plotdata(n),icomp_enthalpy,s(n))
+       call multifab_copy_c(plotdata(n),icomp_enthalpy,s(n),rhoh_comp)
+       call multifab_div_div_c(plotdata(n),icomp_enthalpy,s(n),rho_comp,1)
 
     end do
 
@@ -396,14 +414,6 @@ contains
        call ml_cc_restriction_c(plotdata(n-1),icomp_entropypert,plotdata(n), &
                                 icomp_entropypert,mla%mba%rr(n-1,:),1)
     end do
-
-    if (plot_spec) then
-       ! OMEGADOT and HNUC
-       do n = 1,nlevs
-          call make_omegadot(plotdata(n),icomp_omegadot,icomp_enuc,s(n),rho_omegadot(n), &
-                             rho_Hnuc(n))
-       end do
-    end if
 
     call fabio_ml_multifab_write_d(plotdata, mba%rr(:,1), dirname, plot_names, &
                                    mba%pd(1), time, dx(1,:), nOutFiles = nOutFiles, &
