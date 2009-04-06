@@ -2,10 +2,21 @@
 ! 
 ! currently, there are 4 output files:
 !
-! wdconvect_enuc_diag.out          peak nuc energy / g / s
-! wdconvect_radvel_diag.out        radial velocity components
-! wdconvect_temp_diag.out          peak temperature
-! wdconvect_vel_diag.out           peak total velocity, total kinetic energy
+!   wdconvect_enuc_diag.out:
+!          peak nuc energy / g / s
+!
+!   wdconvect_radvel_diag.out:
+!          radial velocity components (std. average & Favre average)
+!          peak radial velocity
+!          total mass
+!
+!   wdconvect_temp_diag.out:          
+!          peak temperature
+!
+!   wdconvect_vel_diag.out:
+!          peak total velocity
+!          total kinetic energy
+!          gravitational potential energy
 
 
 module diag_module
