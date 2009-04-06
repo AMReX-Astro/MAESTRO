@@ -503,7 +503,7 @@ contains
 
     if (evolve_base_state) then
 
-       call advect_base_pres(w0,Sbar,p0_old,p0_new,gamma1bar,psi,etarho_cc,dx(:,1),dt)
+       call advect_base_pres(w0,Sbar,p0_old,p0_new,gamma1bar,psi,etarho_cc,dx(:,dm),dt)
 
 !       ! set new p0 through HSE
 !       p0_new = p0_old
@@ -897,7 +897,7 @@ contains
 
     if (evolve_base_state) then
 
-       call advect_base_pres(w0,Sbar,p0_old,p0_new,gamma1bar,psi,etarho_cc,dx(:,1),dt)
+       call advect_base_pres(w0,Sbar,p0_old,p0_new,gamma1bar,psi,etarho_cc,dx(:,dm),dt)
 
 !       ! set new p0 through HSE
 !       p0_new = p0_old
