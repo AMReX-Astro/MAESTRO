@@ -110,7 +110,7 @@ contains
     use slope_module
     use geometry, only: nr
     use variables, only: rel_eps
-    use probin_module, only: use_ppm
+    use probin_module, only: ppm_type
     use ppm_module
 
     integer,         intent(in   ) :: n,lo(:),hi(:),ng_u,ng_ut
@@ -156,7 +156,7 @@ contains
     hx = dx(1)
     hy = dx(2)
     
-    if (use_ppm .gt. 0) then
+    if (ppm_type .gt. 0) then
        call ppm_2d(n,u(:,:,1),ng_u,u,ng_u,Ip,Im,w0,lo,hi,adv_bc(:,:,1),dx,dt)
     else
        call slopex_2d(u(:,:,1:),slopex,lo,hi,ng_u,1,adv_bc(:,:,1:))
@@ -167,7 +167,7 @@ contains
     ! create utrans
     !******************************************************************
 
-    if (use_ppm .gt. 0) then
+    if (ppm_type .gt. 0) then
        do j=js,je
           do i=is,ie+1
              ! extrapolate to edges
@@ -224,11 +224,11 @@ contains
     ! create vtrans
     !******************************************************************
 
-    if (use_ppm .gt. 0) then
+    if (ppm_type .gt. 0) then
        call ppm_2d(n,u(:,:,2),ng_u,u,ng_u,Ip,Im,w0,lo,hi,adv_bc(:,:,2),dx,dt)
     end if
        
-    if (use_ppm .gt. 0) then
+    if (ppm_type .gt. 0) then
        do j=js,je+1
           do i=is,ie
              ! extrapolate to edges
@@ -305,7 +305,7 @@ contains
     use slope_module
     use geometry, only: nr, spherical
     use variables, only: rel_eps
-    use probin_module, only: use_ppm
+    use probin_module, only: ppm_type
     use ppm_module
     
     integer,         intent(in)    :: n,lo(:),hi(:),ng_u,ng_ut,ng_w0    
@@ -363,7 +363,7 @@ contains
     hy = dx(2)
     hz = dx(3)
     
-    if (use_ppm .gt. 0) then
+    if (ppm_type .gt. 0) then
        call ppm_3d(n,u(:,:,:,1),ng_u,u,ng_u,Ip,Im,w0,w0macx,w0macy,w0macz,ng_w0, &
                    lo,hi,adv_bc(:,:,1),dx,dt)
     else
@@ -378,7 +378,7 @@ contains
     ! create utrans
     !******************************************************************
 
-    if (use_ppm .gt. 0) then
+    if (ppm_type .gt. 0) then
        do k=ks,ke
           do j=js,je
              do i=is,ie+1
@@ -460,12 +460,12 @@ contains
     ! create vtrans
     !******************************************************************
 
-    if (use_ppm .gt. 0) then
+    if (ppm_type .gt. 0) then
        call ppm_3d(n,u(:,:,:,2),ng_u,u,ng_u,Ip,Im,w0,w0macx,w0macy,w0macz,ng_w0, &
                    lo,hi,adv_bc(:,:,2),dx,dt)
     end if
 
-    if (use_ppm .gt. 0) then
+    if (ppm_type .gt. 0) then
        do k=ks,ke
           do j=js,je+1
              do i=is,ie
@@ -547,12 +547,12 @@ contains
     ! create wtrans
     !******************************************************************
 
-    if (use_ppm .gt. 0) then
+    if (ppm_type .gt. 0) then
        call ppm_3d(n,u(:,:,:,3),ng_u,u,ng_u,Ip,Im,w0,w0macx,w0macy,w0macz,ng_w0, &
                    lo,hi,adv_bc(:,:,3),dx,dt)
     end if
 
-    if (use_ppm .gt. 0) then
+    if (ppm_type .gt. 0) then
        do k=ks,ke+1
           do j=js,je
              do i=is,ie

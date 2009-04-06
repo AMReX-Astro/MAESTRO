@@ -54,7 +54,7 @@ module probin_module
   logical, save            :: use_tfromp, single_prec_plotfiles
   logical, save            :: use_soundspeed_firstdt, use_divu_firstdt
   logical, save            :: do_alltoallv, the_knapsack_verbosity
-  integer, save            :: use_ppm, beta_type
+  integer, save            :: ppm_type, beta_type
   integer, save            :: max_levs, max_grid_size, regrid_int, ref_ratio
   integer, save            :: n_cellx, n_celly, n_cellz
   integer, save            :: drdxfac, min_width, the_sfc_threshold
@@ -152,7 +152,7 @@ module probin_module
   namelist /probin/ use_divu_firstdt
   namelist /probin/ do_alltoallv
   namelist /probin/ the_knapsack_verbosity
-  namelist /probin/ use_ppm
+  namelist /probin/ ppm_type
   namelist /probin/ beta_type
   namelist /probin/ max_levs
   namelist /probin/ max_grid_size
@@ -336,7 +336,7 @@ contains
     ! 0 = no ppm
     ! 1 = 1985 ppm
     ! 2 = 2009 ppm
-    use_ppm = 0
+    ppm_type = 0
 
     max_levs = 1
     max_grid_size = 64
@@ -847,10 +847,10 @@ contains
           call get_command_argument(farg, value = fname)
           read(fname, *) the_sfc_threshold
 
-       case ('--use_ppm')
+       case ('--ppm_type')
           farg = farg + 1
           call get_command_argument(farg, value = fname)
-          read(fname, *) use_ppm
+          read(fname, *) ppm_type
 
        case ('--max_levs')
           farg = farg + 1

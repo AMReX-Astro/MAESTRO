@@ -155,7 +155,7 @@ contains
     use slope_module
     use bl_constants_module
     use variables, only: rel_eps
-    use probin_module, only: use_ppm
+    use probin_module, only: ppm_type
     use ppm_module
 
     integer        , intent(in   ) :: n,lo(:),hi(:),ng_u,ng_um,ng_ut,ng_f
@@ -223,7 +223,7 @@ contains
     hx = dx(1)
     hy = dx(2)
 
-    if (use_ppm .gt. 0) then
+    if (ppm_type .gt. 0) then
        call ppm_2d(n,u(:,:,1),ng_u,u,ng_u,Ipu,Imu,w0,lo,hi,adv_bc(:,:,1),dx,dt)
        call ppm_2d(n,u(:,:,2),ng_u,u,ng_u,Ipv,Imv,w0,lo,hi,adv_bc(:,:,2),dx,dt)
     else
@@ -235,7 +235,7 @@ contains
     ! Create u_{\i-\half\e_x}^x, etc.
     !******************************************************************
 
-    if (use_ppm .gt. 0) then
+    if (ppm_type .gt. 0) then
        do j=js-1,je+1
           do i=is,ie+1
              ! extrapolate both components of velocity to left face
@@ -303,7 +303,7 @@ contains
        enddo
     enddo
 
-    if (use_ppm .gt. 0) then
+    if (ppm_type .gt. 0) then
        do j=js,je+1
           do i=is-1,ie+1
              ! extrapolate both components of velocity to left face
@@ -492,7 +492,7 @@ contains
     use bl_constants_module
     use geometry, only: spherical, nr
     use variables, only: rel_eps
-    use probin_module, only: use_ppm
+    use probin_module, only: ppm_type
     use ppm_module
 
     integer        , intent(in   ) :: n,lo(:),hi(:)
@@ -644,7 +644,7 @@ contains
     hy = dx(2)
     hz = dx(3)
 
-    if (use_ppm .gt. 0) then
+    if (ppm_type .gt. 0) then
        call ppm_3d(n,u(:,:,:,1),ng_u,u,ng_u,Ipu,Imu,w0,w0macx,w0macy,w0macz,ng_w0, &
                    lo,hi,adv_bc(:,:,1),dx,dt)
        call ppm_3d(n,u(:,:,:,2),ng_u,u,ng_u,Ipv,Imv,w0,w0macx,w0macy,w0macz,ng_w0, &
@@ -663,7 +663,7 @@ contains
     ! Create u_{\i-\half\e_x}^x, etc.
     !******************************************************************
 
-    if (use_ppm .gt. 0) then
+    if (ppm_type .gt. 0) then
        do k=ks-1,ke+1
           do j=js-1,je+1
              do i=is,ie+1
@@ -760,7 +760,7 @@ contains
        enddo
     enddo
 
-    if (use_ppm .gt. 0) then
+    if (ppm_type .gt. 0) then
        do k=ks-1,ke+1
           do j=js,je+1
              do i=is-1,ie+1
@@ -857,7 +857,7 @@ contains
        enddo
     enddo
 
-    if (use_ppm .gt. 0) then
+    if (ppm_type .gt. 0) then
        do k=ks,ke+1
           do j=js-1,je+1
              do i=is-1,ie+1
