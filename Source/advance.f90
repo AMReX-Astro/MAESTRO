@@ -1234,7 +1234,7 @@ contains
 
     if (.not. init_mode) &
          call diag(time,dt,dx,snew,rho_Hnuc2,rho_Hext,rho0_new,rhoh0_new,p0_new,tempbar, &
-                   gamma1bar,unew,w0,normal,mla,the_bc_tower)
+                   gamma1bar,div_coeff_new,unew,w0,normal,mla,the_bc_tower)
 
     do n=1,nlevs
        call destroy(rho_Hext(n))
