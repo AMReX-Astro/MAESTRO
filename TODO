@@ -15,3 +15,6 @@
 
 -- the small scale problem should read in its initial model in our
    standard format
+
+-- can we remove w0mac_interp_type = 0 (i.e. doing a MAC project to put
+   w0 on edges?
