@@ -30,13 +30,16 @@ contains
                   mla,the_bc_tower)
 
     use bl_prof_module
-    use geometry, only: dm, nlevs, spherical
+    use geometry, only: dm, nlevs, spherical, nr_fine, r_cc_loc, r_edge_loc, dr
+    use fundamental_constants_module, only: Gconst
     use bl_constants_module
     use variables, only: foextrap_comp
     use fill_3d_module
     use probin_module, only: prob_lo_x, prob_lo_y, prob_lo_z, &
                              prob_hi_x, prob_hi_y, prob_hi_z, &
-                             job_name,edge_nodal_flag
+                             job_name, &
+                             edge_nodal_flag, &
+                             base_cutoff_density
 
     real(kind=dp_t), intent(in   ) :: dt,dx(:,:),time
     type(multifab) , intent(in   ) :: s(:)
@@ -81,9 +84,13 @@ contains
 
     real(kind=dp_t) :: vr_favre(dm)
 
+    real(kind=dp_t) :: grav_ener, term1, term2
+    real(kind=dp_t), allocatable :: m(:)
+
+
     integer :: lo(dm),hi(dm)
     integer :: ng_s,ng_u,ng_n,ng_w,ng_wm,ng_rhn,ng_rhe
-    integer :: i,n, comp
+    integer :: i,n, comp, r
     integer :: un,un2,un3,un4
     logical :: lexist
 
@@ -279,6 +286,56 @@ contains
 
     end do
 
+    !-------------------------------------------------------------------------
+    ! compute the gravitational potential energy too.
+    !-------------------------------------------------------------------------
+    allocate(m(0:nr_fine-1))
+    grav_ener = 0.0
+
+    ! m(r) will contain mass enclosed by the center
+    m(0) = FOUR3RD*M_PI*rho0(1,0)*r_cc_loc(1,0)**3
+
+    ! dU = - G M dM / r;  dM = 4 pi r**2 rho dr  -->  dU = - 4 pi G r rho dr
+    grav_ener = -FOUR*M_PI*Gconst*m(0)*r_cc_loc(1,0)*rho0(1,0)*dr(1)
+
+    do r=1,nr_fine-1
+
+       ! the mass is defined at the cell-centers, so to compute the
+       ! mass at the current center, we need to add the contribution of
+       ! the upper half of the zone below us and the lower half of the
+       ! current zone.
+       
+       ! don't add any contributions from outside the star -- i.e.
+       ! rho < base_cutoff_density
+       if (rho0(1,r-1) > base_cutoff_density) then
+          term1 = FOUR3RD*M_PI*rho0(1,r-1) * &
+               (r_edge_loc(1,r) - r_cc_loc(1,r-1)) * &
+               (r_edge_loc(1,r)**2 + &
+                r_edge_loc(1,r)*r_cc_loc(1,r-1) + &
+                r_cc_loc(1,r-1)**2)
+       else
+          term1 = ZERO
+       endif
+
+       if (rho0(1,r) > base_cutoff_density) then
+          term2 = FOUR3RD*M_PI*rho0(1,r  )*&
+               (r_cc_loc(1,r) - r_edge_loc(1,r  )) * &
+               (r_cc_loc(1,r)**2 + &
+                r_cc_loc(1,r)*r_edge_loc(1,r  ) + &
+                r_edge_loc(1,r  )**2)          
+       else
+          term2 = ZERO
+       endif
+
+       m(r) = m(r-1) + term1 + term2
+          
+       ! dU = - G M dM / r;  dM = 4 pi r**2 rho dr  -->  dU = - 4 pi G r rho dr
+       grav_ener = grav_ener - FOUR*M_PI*Gconst*m(r)*r_cc_loc(1,r)*rho0(1,r)*dr(1)
+
+    enddo
+
+
+    
 
     !=========================================================================
     ! normalize
@@ -357,7 +414,7 @@ contains
 
           write (un4, *) " "
           write (un4, 999) trim(job_name)
-          write (un4,1001) "time", "max{|U + w0|}", "tot. kin. energy"
+          write (un4,1001) "time", "max{|U + w0|}", "tot. kin. energy", "grav. pot. energy"
 
           firstCall = .false.
        endif
@@ -371,7 +428,7 @@ contains
 
        write (un3,1000) time, enuc_max
 
-       write (un4,1000) time, U_max, kin_ener
+       write (un4,1000) time, U_max, kin_ener, grav_ener
 
        close(un)
        close(un2)
