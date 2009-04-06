@@ -44,7 +44,6 @@ f90sources += make_plot_variables.f90
 f90sources += make_psi.f90
 f90sources += make_explicit_thermal.f90
 f90sources += make_S.f90
-f90sources += makevort.f90
 f90sources += make_w0.f90
 f90sources += mkflux.f90
 f90sources += mk_rhoX_flux.f90

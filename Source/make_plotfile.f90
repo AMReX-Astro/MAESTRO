@@ -61,13 +61,12 @@ contains
     endif
 
     plot_names(icomp_magvel)      = "magvel"
-    plot_names(icomp_velplusw0)   = "velplusw0"
     plot_names(icomp_mom)         = "momentum"
     plot_names(icomp_vort)        = "vort"
     plot_names(icomp_divu)        = "divu"
     plot_names(icomp_enthalpy)    = "enthalpy"
     plot_names(icomp_rhopert)     = "rhopert"
-    plot_names(icomp_rhohpert)     = "rhohpert"
+    plot_names(icomp_rhohpert)    = "rhohpert"
     plot_names(icomp_tfromp)      = "tfromp"
     plot_names(icomp_tfromH)      = "tfromh"
     plot_names(icomp_tpert)       = "tpert"
@@ -98,7 +97,6 @@ contains
 
     use bl_prof_module
     use fabio_module
-    use vort_module
     use variables
     use plot_variables_module
     use fill_3d_module
@@ -265,9 +263,6 @@ contains
 
     do n = 1,nlevs
 
-       ! MAGVEL & MOMENTUM
-       call make_magvel(plotdata(n),icomp_magvel,icomp_mom,u(n),s(n))
-
        ! RADIAL VELOCITY (spherical only)
        if (spherical .eq. 1) then
           call make_velr(plotdata(n),icomp_velr,u(n),w0r_cart(n),normal(n))
@@ -275,9 +270,9 @@ contains
 
        ! VEL_PLUS_W0
        if (spherical .eq. 1) then
-          call make_velplusw0(plotdata(n),icomp_velplusw0,u(n),w0(1,:),w0mac(n,:))
+          call make_magvel(plotdata(n),icomp_magvel,u(n),w0(1,:),w0mac(n,:))
        else
-          call make_velplusw0(plotdata(n),icomp_velplusw0,u(n),w0(n,:),w0mac(n,:))
+          call make_magvel(plotdata(n),icomp_magvel,u(n),w0(n,:),w0mac(n,:))
        end if
 
        ! VORTICITY

@@ -13,7 +13,7 @@ module variables
   integer, save :: icomp_vel, icomp_rho, icomp_rhoh, icomp_spec, icomp_trac
   integer, save :: icomp_w0, icomp_divw0, icomp_rho0, icomp_rhoh0, icomp_h0
   integer, save :: icomp_p0, icomp_velr
-  integer, save :: icomp_magvel, icomp_velplusw0, icomp_mom, icomp_vort, icomp_divu
+  integer, save :: icomp_magvel, icomp_mom, icomp_vort, icomp_divu
   integer, save :: icomp_enthalpy,icomp_tfromp,icomp_tpert,icomp_rhopert,icomp_rhohpert
   integer, save :: icomp_machno,icomp_dg,icomp_gp,icomp_entropy,icomp_entropypert
   integer, save :: icomp_tfromH,icomp_dp,icomp_dT
@@ -95,25 +95,24 @@ contains
        first_derive_comp = first_derive_comp + 1
     endif
 
-    icomp_velplusw0   = first_derive_comp
-    icomp_magvel      = first_derive_comp+1
-    icomp_mom         = first_derive_comp+2
-    icomp_vort        = first_derive_comp+3
-    icomp_divu        = first_derive_comp+4
-    icomp_enthalpy    = first_derive_comp+5
-    icomp_rhopert     = first_derive_comp+6
-    icomp_rhohpert    = first_derive_comp+7
-    icomp_tfromp      = first_derive_comp+8
-    icomp_tfromH      = first_derive_comp+9
-    icomp_tpert       = first_derive_comp+10
+    icomp_magvel      = first_derive_comp
+    icomp_mom         = first_derive_comp+1
+    icomp_vort        = first_derive_comp+2
+    icomp_divu        = first_derive_comp+3
+    icomp_enthalpy    = first_derive_comp+4
+    icomp_rhopert     = first_derive_comp+5
+    icomp_rhohpert    = first_derive_comp+6
+    icomp_tfromp      = first_derive_comp+7
+    icomp_tfromH      = first_derive_comp+8
+    icomp_tpert       = first_derive_comp+9
+    icomp_dT          = first_derive_comp+10
     icomp_machno      = first_derive_comp+11
     icomp_dp          = first_derive_comp+12
     icomp_dg          = first_derive_comp+13
     icomp_entropy     = first_derive_comp+14
     icomp_entropypert = first_derive_comp+15
-    icomp_dT          = first_derive_comp+16
-    icomp_sponge      = first_derive_comp+17
-    icomp_gp          = first_derive_comp+18
+    icomp_sponge      = first_derive_comp+16
+    icomp_gp          = first_derive_comp+17
 
     if (plot_spec) then
       icomp_omegadot = icomp_gp + dm
