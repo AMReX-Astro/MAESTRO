@@ -350,7 +350,7 @@ contains
 
           write (un4, *) " "
           write (un4, 999) trim(job_name)
-          write (un4,1001) "time", "max{|U|}", "tot. kin. energy"
+          write (un4,1001) "time", "max{|U + w0|}", "tot. kin. energy"
 
           firstCall = .false.
        endif
