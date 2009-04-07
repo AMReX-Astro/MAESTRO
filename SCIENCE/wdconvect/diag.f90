@@ -93,6 +93,15 @@ contains
     real(kind=dp_t) :: kin_ener,  kin_ener_level,  kin_ener_local
     real(kind=dp_t) :: U_max,     U_max_level,     U_max_local
 
+    real(kind=dp_t) :: xloc_Tmax_local, yloc_Tmax_local, zloc_Tmax_local
+    real(kind=dp_t) :: xloc_Tmax_level, yloc_Tmax_level, zloc_Tmax_level
+    real(kind=dp_t) :: xloc_Tmax,       yloc_Tmax,       zloc_Tmax
+
+    real(kind=dp_t) :: T_max_data_local(1), T_max_coords_local(dm)
+    real(kind=dp_t), allocatable :: T_max_data(:), T_max_coords(:)
+
+    integer :: index_max
+
     real(kind=dp_t) :: vr_favre(dm)
 
     real(kind=dp_t) :: grav_ener, term1, term2
@@ -164,7 +173,9 @@ contains
     enuc_max = ZERO
     kin_ener = ZERO
     U_max    = ZERO
-
+    xloc_Tmax = ZERO
+    yloc_Tmax = ZERO
+    zloc_Tmax = ZERO
 
     !=========================================================================
     ! loop over the levels and compute the global quantities
@@ -198,6 +209,14 @@ contains
        U_max_level = ZERO
        U_max_local = ZERO
 
+       xloc_Tmax_local = ZERO
+       yloc_Tmax_local = ZERO
+       zloc_Tmax_local = ZERO
+
+       xloc_Tmax_level = ZERO
+       yloc_Tmax_level = ZERO
+       zloc_Tmax_level = ZERO
+       
 
        !----------------------------------------------------------------------
        ! loop over boxes in a given level
@@ -228,13 +247,14 @@ contains
                              rhep(:,:,:,1), ng_rhe, &
                              up(:,:,:,:),ng_u, &
                              w0rp(:,:,:,1), ng_w, &
-                             w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1),ng_wm, &                             
+                             w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1),ng_wm, & 
                              np(:,:,:,:),ng_n, &
                              lo,hi, &
                              nzones_local, &
                              vr_local(1),vr_local(2),vr_local(3),vr_max_local, &
                              rhovr_local(1), rhovr_local(2), rhovr_local(3), mass_local, &
-                             T_max_local, enuc_max_local, kin_ener_local, U_max_local)
+                             T_max_local, xloc_Tmax_local, yloc_Tmax_local, zloc_Tmax_local, &
+                             enuc_max_local, kin_ener_local, U_max_local)
              else
                 mp => dataptr(mla%mask(n), i)
                 call diag_3d(n,time,dt,dx(n,:), &
@@ -243,13 +263,14 @@ contains
                              rhep(:,:,:,1), ng_rhe, &
                              up(:,:,:,:),ng_u, &
                              w0rp(:,:,:,1), ng_w, &
-                             w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1),ng_wm, &                             
+                             w0xp(:,:,:,1),w0yp(:,:,:,1),w0zp(:,:,:,1),ng_wm, & 
                              np(:,:,:,:),ng_n, &
                              lo,hi, &
                              nzones_local, &
                              vr_local(1),vr_local(2),vr_local(3),vr_max_local, &
                              rhovr_local(1), rhovr_local(2), rhovr_local(3), mass_local, &
-                             T_max_local, enuc_max_local, kin_ener_local, U_max_local, &
+                             T_max_local, xloc_Tmax_local, yloc_Tmax_local, zloc_Tmax_local, &
+                             enuc_max_local, kin_ener_local, U_max_local, &
                              mp(:,:,:,1))
              end if
           end select
@@ -258,6 +279,9 @@ contains
        !----------------------------------------------------------------------
        ! do the appropriate parallel reduction for the current level
        !----------------------------------------------------------------------
+
+       ! NOTE: only the I/O Processor will have the correct reduced value
+
        call parallel_reduce(vr_level, vr_local, MPI_SUM, &
                             proc = parallel_IOProcessorNode())
 
@@ -273,9 +297,6 @@ contains
        call parallel_reduce(vr_max_level, vr_max_local, MPI_MAX, &
                             proc = parallel_IOProcessorNode())
 
-       call parallel_reduce(T_max_level, T_max_local, MPI_MAX, &
-                            proc = parallel_IOProcessorNode())
-
        call parallel_reduce(enuc_max_level, enuc_max_local, MPI_MAX, &
                             proc = parallel_IOProcessorNode())
 
@@ -285,15 +306,57 @@ contains
        call parallel_reduce(U_max_level, U_max_local, MPI_MAX, &
                             proc = parallel_IOProcessorNode())
 
-       vr       = vr     + vr_level
-       rhovr    = rhovr  + rhovr_level
-       mass     = mass   + mass_level
-       nzones   = nzones + nzones_level
-       vr_max   = max(vr_max,   vr_max_level)
-       T_max    = max(T_max,    T_max_level)
-       enuc_max = max(enuc_max, enuc_max_level)     
-       kin_ener = kin_ener + kin_ener_level
-       U_max    = max(U_max,    U_max_level)
+       ! for T_max, we want to know where the hot spot is, so we do a gather on
+       ! the temperature and find the index corresponding to the maxiumum.  We
+       ! then pack the coordinates into a local array and gather that to the 
+       ! I/O processor and pick the values corresponding to the maximum.
+       allocate(T_max_data(parallel_nprocs()))
+       T_max_data_local(1) = T_max_local
+
+       call parallel_gather(T_max_data_local, T_max_data, 1, &
+                            root = parallel_IOProcessorNode())
+
+
+       index_max = maxloc(T_max_data, dim=1)
+       
+       allocate(T_max_coords(dm*parallel_nprocs()))
+       T_max_coords_local(1) = xloc_Tmax_local
+       T_max_coords_local(2) = yloc_Tmax_local
+       T_max_coords_local(3) = zloc_Tmax_local
+       
+       call parallel_gather(T_max_coords_local, T_max_coords, dm, &
+                            root = parallel_IOProcessorNode())
+
+       
+       T_max_level = T_max_data(index_max)
+
+       xloc_Tmax_level = T_max_coords(dm*(index_max-1)+1)
+       yloc_Tmax_level = T_max_coords(dm*(index_max-1)+2)
+       zloc_Tmax_level = T_max_coords(dm*(index_max-1)+3)
+
+       deallocate(T_max_data)
+       deallocate(T_max_coords)
+
+       ! reduce the current level's data with the global data
+       if (parallel_IOProcessor()) then
+          vr       = vr     + vr_level
+          rhovr    = rhovr  + rhovr_level
+          mass     = mass   + mass_level
+          nzones   = nzones + nzones_level
+          vr_max   = max(vr_max,   vr_max_level)
+          enuc_max = max(enuc_max, enuc_max_level)     
+          kin_ener = kin_ener + kin_ener_level
+          U_max    = max(U_max,    U_max_level)
+          
+          ! if T_max_level is the new max, then copy the location as well
+          if (T_max_level > T_max) then
+             T_max = T_max_level
+             xloc_Tmax = xloc_Tmax_level
+             yloc_Tmax = yloc_Tmax_level
+             zloc_Tmax = zloc_Tmax_level
+          endif
+
+       endif
 
     end do
 
@@ -417,7 +480,7 @@ contains
 
           write (un2, *) " "
           write (un2, 999) trim(job_name)
-          write (un2,1001) "time", "max{T}"
+          write (un2,1001) "time", "max{T}", 'x(max{T})', 'y(max{T})', 'z(max{T})'
 
           write (un3, *) " "
           write (un3, 999) trim(job_name)
@@ -435,7 +498,7 @@ contains
             sqrt(vr(1)**2 + vr(2)**2 + vr(3)**2), vr_max, &
             vr_favre(1), vr_favre(2), vr_favre(3), mass
        
-       write (un2,1000) time, T_max
+       write (un2,1000) time, T_max, xloc_Tmax, yloc_Tmax, zloc_Tmax
 
        write (un3,1000) time, enuc_max
 
@@ -473,14 +536,15 @@ contains
                      nzones, &
                      vr_x,vr_y,vr_z,vr_max, &
                      rhovr_x,rhovr_y,rhovr_z,mass, &
-                     T_max,enuc_max,kin_ener,U_max, &
+                     T_max,xloc_Tmax,yloc_Tmax,zloc_Tmax, &
+                     enuc_max,kin_ener,U_max, &
                      mask)
 
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
     use bl_constants_module
     use network, only: nspec
     use geometry, only: spherical
-    use probin_module, only: base_cutoff_density
+    use probin_module, only: base_cutoff_density, prob_lo
 
     integer,          intent(in   ) :: n,lo(:),hi(:),ng_s,ng_u,ng_n,ng_w,ng_wm,ng_rhn,ng_rhe
     real (kind=dp_t), intent(in   ) ::        s(lo(1)-ng_s:  ,lo(2)-ng_s:  ,lo(3)-ng_s:,:)
@@ -494,7 +558,8 @@ contains
     real (kind=dp_t), intent(in   ) ::   normal(lo(1)-ng_n:  ,lo(2)-ng_n:  ,lo(3)-ng_n:,:)
     real (kind=dp_t), intent(in   ) :: time, dt, dx(:)
     real (kind=dp_t), intent(inout) :: vr_x, vr_y, vr_z, vr_max
-    real (kind=dp_t), intent(inout) :: T_max, enuc_max, kin_ener, U_max
+    real (kind=dp_t), intent(inout) :: T_max, xloc_Tmax, yloc_Tmax, zloc_Tmax
+    real (kind=dp_t), intent(inout) :: enuc_max, kin_ener, U_max
     real (kind=dp_t), intent(inout) :: rhovr_x, rhovr_y, rhovr_z, mass, nzones
     logical,          intent(in   ), optional :: mask(lo(1):,lo(2):,lo(3):)
 
@@ -502,6 +567,7 @@ contains
     integer            :: i, j, k
     real (kind=dp_t)   :: velr, vel, weight
     logical            :: cell_valid
+    real (kind=dp_t)   :: x, y, z
 
     weight = 1.d0 / 8.d0**(n-1)
 
@@ -510,9 +576,14 @@ contains
     endif
 
     do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1) 
+       z = prob_lo(3) + (dble(k)+HALF) * dx(3)
 
+       do j = lo(2), hi(2)
+          y = prob_lo(2) + (dble(j)+HALF) * dx(2)
+
+          do i = lo(1), hi(1) 
+             x = prob_lo(1) + (dble(i)+HALF) * dx(1)
+                
              cell_valid = .true.
              if (present(mask)) then
                 if ( (.not. mask(i,j,k)) ) cell_valid = .false.
@@ -540,8 +611,14 @@ contains
                 
                 mass = mass + weight*s(i,j,k,rho_comp)
                 nzones = nzones + weight
-                
-                T_max = max(T_max,s(i,j,k,temp_comp))
+
+                if (s(i,j,k,temp_comp) > T_max) then
+                   T_max = s(i,j,k,temp_comp)
+                   xloc_Tmax = x
+                   yloc_Tmax = y
+                   zloc_Tmax = z
+                endif
+
                 enuc_max = max(enuc_max,rho_Hnuc(i,j,k)/s(i,j,k,rho_comp))
 
                 kin_ener = kin_ener + weight*s(i,j,k,rho_comp)*vel**2
