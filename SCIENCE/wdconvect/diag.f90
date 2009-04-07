@@ -116,8 +116,8 @@ contains
        do n=1,nlevs
 
           do comp=1,dm
-             ! w0mac will contain an edge-centered w0 on a Cartesian grid,                             
-             ! for use in computing divergences.                                                       
+             ! w0mac will contain an edge-centered w0 on a Cartesian grid,   
+             ! for use in computing divergences.                            
              call multifab_build(w0mac(n,comp), mla%la(n),1,1,nodal=edge_nodal_flag(comp,:))
              call setval(w0mac(n,comp), ZERO, all=.true.)
           enddo
@@ -129,7 +129,7 @@ contains
           call setval(w0r_cart(n), ZERO, all=.true.)
        end do
 
-       ! put w0 on Cartesian edges as a vector                                                         
+       ! put w0 on Cartesian edges as a vector  
        call put_w0_on_edges(mla,w0,w0mac,dx,div_coeff,the_bc_tower)
 
 
