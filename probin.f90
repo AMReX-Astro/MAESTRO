@@ -57,7 +57,8 @@ module probin_module
   integer, save            :: ppm_type, beta_type
   integer, save            :: max_levs, max_grid_size, regrid_int, ref_ratio
   integer, save            :: n_cellx, n_celly, n_cellz
-  integer, save            :: drdxfac, min_width, the_sfc_threshold
+  integer, save            :: drdxfac, min_width
+  integer, save            :: the_sfc_threshold, the_layout_verbosity, the_copy_cache_max
   real(dp_t), save         :: min_eff
   real(dp_t), save         :: burning_cutoff_density  ! note: presently not runtime parameter
   real(dp_t), save         :: rotational_frequency, co_latitude, radius
@@ -163,6 +164,8 @@ module probin_module
   namelist /probin/ n_cellz
   namelist /probin/ drdxfac
   namelist /probin/ the_sfc_threshold
+  namelist /probin/ the_layout_verbosity
+  namelist /probin/ the_copy_cache_max
   namelist /probin/ min_eff
   namelist /probin/ min_width
   namelist /probin/ rotational_frequency
@@ -331,7 +334,9 @@ contains
 
     the_knapsack_verbosity = .false.
 
-    the_sfc_threshold = 5
+    the_sfc_threshold    = 5
+    the_copy_cache_max   = 50
+    the_layout_verbosity = 0
 
     ! 0 = no ppm
     ! 1 = 1985 ppm
@@ -847,6 +852,16 @@ contains
           call get_command_argument(farg, value = fname)
           read(fname, *) the_sfc_threshold
 
+       case ('--the_layout_verbosity')
+          farg = farg + 1
+          call get_command_argument(farg, value = fname)
+          read(fname, *) the_layout_verbosity
+
+       case ('--the_copy_cache_max')
+          farg = farg + 1
+          call get_command_argument(farg, value = fname)
+          read(fname, *) the_copy_cache_max
+
        case ('--ppm_type')
           farg = farg + 1
           call get_command_argument(farg, value = fname)
@@ -961,6 +976,8 @@ contains
 
     call knapsack_set_verbose(the_knapsack_verbosity)
 
+    call layout_set_verbosity(the_layout_verbosity)
+    call layout_set_copyassoc_max(the_copy_cache_max)
     call layout_set_sfc_threshold(the_sfc_threshold)
 
     call destroy(bpt)

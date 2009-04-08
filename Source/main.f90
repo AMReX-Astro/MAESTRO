@@ -15,9 +15,6 @@ program main
 
   call bl_prof_initialize(on = .true.)
 
-  !call layout_set_verbosity(1)
-  !call layout_set_copyassoc_max(50)
-
   call varden()
 
   call layout_flush_copyassoc_cache ()
