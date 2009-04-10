@@ -246,7 +246,9 @@ contains
     need_inputs = .true.
     test_set = ''
     restart  = -1
-  
+
+    cflfac = 0.5
+
     bcx_lo = SLIP_WALL
     bcy_lo = SLIP_WALL
     bcz_lo = SLIP_WALL
