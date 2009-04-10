@@ -53,17 +53,17 @@
 \verb=  do_eos_h_above_cutoff =  &   &  .true. \\
 \verb=  do_initial_projection =  &   &  \\
 \verb=  do_sponge =  &   &  .false. \\
-\verb=  dpdt_factor =  &   &  0.0d0 \\
-\verb=  drdxfac =  &   &  1 \\
+\verb=  dpdt_factor =  & factor in front of the volume discrepancy term (0.0 = off)  &  0.0d0 \\
+\verb=  drdxfac =  & ratio of radial base state zones to Cartesian full state zones for spherical geometry  &  1 \\
 \verb=  enthalpy_pred_type =  &   &  predict\_rhohprime \\
-\verb=  evolve_base_state =  &   &  .true. \\
+\verb=  evolve_base_state =  & turn on (.true.) or off (.false.) basestate evolution  &  .true. \\
 \verb=  fixed_dt =  &   &  -1.0d0 \\
-\verb=  grav_const =  &   &  -1.5d10 \\
+\verb=  grav_const =  & the gravitational acceleration (cm~s$^{-2}$) for plane-parallel geometry  &  -1.5d10 \\
 \verb=  hg_bottom_solver =  &   &  -1 \\
 \verb=  hg_dense_stencil =  &   &  .true. \\
 \verb=  init_divu_iter =  &   &  4 \\
 \verb=  init_iter =  &   &  4 \\
-\verb=  init_shrink =  &   &  1.0 \\
+\verb=  init_shrink =  & the multiplicative factor ($\le 1$) to reduce the initial timestep as computed by the various timestep estimators   &  1.0 \\
 \verb=  interp_type_radial_bin_to_cart =  &   &  1 \\
 \verb=  job_name =  &   &  "" \\
 \verb=  lUsingNFiles =  &   &  .true. \\
