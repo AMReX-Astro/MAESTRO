@@ -1,0 +1,138 @@
+
+\section{Runtime Parameters}
+
+%%%%%%%%%%%%%%%%
+% symbol table
+%%%%%%%%%%%%%%%%
+
+\renewcommand{\arraystretch}{1.5}
+%
+% note: list generated via:
+% grep namelist probin.f90 | awk '{print ``\\verb= ``, $3, `` = &   &   \\\\"}' | sort
+
+\begin{center}
+\begin{longtable}{|l|p{3.0in}|l|}
+\caption[runtime parameters]{runtime parameters.} \label{table:runtime} \\
+%
+\hline \multicolumn{1}{|c|}{\textbf{parameter}} & 
+       \multicolumn{1}{ c|}{\textbf{description}} & 
+       \multicolumn{1}{ c|}{\textbf{default value}} \\ \hline 
+\endfirsthead
+
+\multicolumn{3}{c}%
+{{\tablename\ \thetable{}---continued}} \\
+\hline \multicolumn{1}{|c|}{\textbf{parameter}} & 
+       \multicolumn{1}{ c|}{\textbf{description}} & 
+       \multicolumn{1}{ c|}{\textbf{default value}} \\ \hline 
+\endhead
+
+\multicolumn{3}{|r|}{{\em continued on next page}} \\ \hline
+\endfoot
+
+\hline 
+\endlastfoot
+
+\verb=  anelastic_cutoff  = &   &   \\
+\verb=  base_cutoff_density  = &   &   \\
+\verb=  bcx_hi  = &   &   \\
+\verb=  bcx_lo  = &   &   \\
+\verb=  bcy_hi  = &   &   \\
+\verb=  bcy_lo  = &   &   \\
+\verb=  bcz_hi  = &   &   \\
+\verb=  bcz_lo  = &   &   \\
+\verb=  beta_type  = &   &   \\
+\verb=  cflfac  = &   &   \\
+\verb=  cg_verbose  = &   &   \\
+\verb=  check_base_name  = &   &   \\
+\verb=  chk_int  = &   &   \\
+\verb=  co_latitude  = &   &   \\
+\verb=  dm_in  = &   &   \\
+\verb=  do_alltoallv  = &   &   \\
+\verb=  do_burning  = &   &   \\
+\verb=  do_eos_h_above_cutoff  = &   &   \\
+\verb=  do_initial_projection  = &   &   \\
+\verb=  do_sponge  = &   &   \\
+\verb=  dpdt_factor  = &   &   \\
+\verb=  drdxfac  = &   &   \\
+\verb=  enthalpy_pred_type  = &   &   \\
+\verb=  evolve_base_state  = &   &   \\
+\verb=  fixed_dt  = &   &   \\
+\verb=  grav_const  = &   &   \\
+\verb=  hg_bottom_solver  = &   &   \\
+\verb=  hg_dense_stencil  = &   &   \\
+\verb=  init_divu_iter  = &   &   \\
+\verb=  init_iter  = &   &   \\
+\verb=  init_shrink  = &   &   \\
+\verb=  interp_type_radial_bin_to_cart  = &   &   \\
+\verb=  job_name  = &   &   \\
+\verb=  lUsingNFiles  = &   &   \\
+\verb=  max_dt_growth  = &   &   \\
+\verb=  max_grid_size  = &   &   \\
+\verb=  max_levs  = &   &   \\
+\verb=  max_step  = &   &   \\
+\verb=  mg_bottom_solver  = &   &   \\
+\verb=  mg_verbose  = &   &   \\
+\verb=  min_eff  = &   &   \\
+\verb=  min_width  = &   &   \\
+\verb=  model_file  = &   &   \\
+\verb=  n_cellx  = &   &   \\
+\verb=  n_celly  = &   &   \\
+\verb=  n_cellz  = &   &   \\
+\verb=  nOutFiles  = &   &   \\
+\verb=  perturb_model  = &   &   \\
+\verb=  plot_base  = &   &   \\
+\verb=  plot_base_name  = &   &   \\
+\verb=  plot_deltat  = &   &   \\
+\verb=  plot_int  = &   &   \\
+\verb=  plot_spec  = &   &   \\
+\verb=  plot_trac  = &   &   \\
+\verb=  pmask_x  = &   &   \\
+\verb=  pmask_xyz  = &   &   \\
+\verb=  pmask_y  = &   &   \\
+\verb=  pmask_z  = &   &   \\
+\verb=  prob_hi_x  = &   &   \\
+\verb=  prob_hi_y  = &   &   \\
+\verb=  prob_hi_z  = &   &   \\
+\verb=  prob_lo_x  = &   &   \\
+\verb=  prob_lo_y  = &   &   \\
+\verb=  prob_lo_z  = &   &   \\
+\verb=  radius  = &   &   \\
+\verb=  ref_ratio  = &   &   \\
+\verb=  regrid_int  = &   &   \\
+\verb=  restart  = &   &   \\
+\verb=  rotational_frequency  = &   &   \\
+\verb=  single_prec_plotfiles  = &   &   \\
+\verb=  slope_order  = &   &   \\
+\verb=  small_dens  = &   &   \\
+\verb=  small_temp  = &   &   \\
+\verb=  spherical_in  = &   &   \\
+\verb=  sponge_kappa  = &   &   \\
+\verb=  stop_time  = &   &   \\
+\verb=  temp_diffusion_formulation  = &   &   \\
+\verb=  test_set  = &   &   \\
+\verb=  the_knapsack_verbosity  = &   &   \\
+\verb=  thermal_diffusion_type  = &   &   \\
+\verb=  the_sfc_threshold  = &   &   \\
+\verb=  use_delta_gamma1_term  = &   &   \\
+\verb=  use_divu_firstdt  = &   &   \\
+\verb=  use_eos_coulomb  = &   &   \\
+\verb=  use_etarho  = &   &   \\
+\verb=  use_ppm  = &   &   \\
+\verb=  use_soundspeed_firstdt  = &   &   \\
+\verb=  use_tfromp  = &   &   \\
+\verb=  use_thermal_diffusion  = &   &   \\
+\verb=  velpert_amplitude  = &   &   \\
+\verb=  velpert_radius  = &   &   \\
+\verb=  velpert_scale  = &   &   \\
+\verb=  velpert_steep  = &   &   \\
+\verb=  verbose  = &   &   \\
+\verb=  w0mac_interp_type  = &   &   \\
+\verb=  xrb_pert_factor  = &   &   \\
+\verb=  xrb_pert_size  = &   &   \\
+\verb=  xrb_pert_type  = &   &   \\
+\verb=  xrb_use_bottom_sponge  = &   &   \\
+
+
+\end{longtable}
+\end{center}
+%
