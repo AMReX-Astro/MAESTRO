@@ -45,13 +45,13 @@
 \verb=  cflfac =  & CFL factor to use in the computation of the advection timestep constraint  &  0.5 \\
 \verb=  cg_verbose =  &   &  0 \\
 \verb=  check_base_name =  & prefix to use in checkpoint file names  &  "chk" \\
-\verb=  chk_int =  & number of timesteps between writing a checkpoint file  &  \\
+\verb=  chk_int =  & number of timesteps between writing a checkpoint file  & 0 \\
 \verb=  co_latitude =  &   &  ZERO \\
 \verb=  dm_in =  & dimensionality (valid values are 2 or 3)  &  2 \\
 \verb=  do_alltoallv =  &   &  .false. \\
 \verb=  do_burning =  &   &  .true. \\
 \verb=  do_eos_h_above_cutoff =  &   &  .true. \\
-\verb=  do_initial_projection =  &   &  \\
+\verb=  do_initial_projection =  &   & 1 \\
 \verb=  do_sponge =  &   &  .false. \\
 \verb=  dpdt_factor =  & factor in front of the volume discrepancy term (0.0 = off)  &  0.0d0 \\
 \verb=  drdxfac =  & ratio of radial base state zones to Cartesian full state zones for spherical geometry  &  1 \\
@@ -70,23 +70,23 @@
 \verb=  max_dt_growth =  &   &  1.1D0 \\
 \verb=  max_grid_size =  &   &  64 \\
 \verb=  max_levs =  &   &  1 \\
-\verb=  max_step =  &   &  \\
+\verb=  max_step =  &   & 1 \\
 \verb=  mg_bottom_solver =  &   &  -1 \\
 \verb=  mg_verbose =  &   &  0 \\
 \verb=  min_eff =  &   &  0.7d0 \\
 \verb=  min_width =  &   &  16 \\
-\verb=  model_file =  &   &  \\
+\verb=  model_file =  &   & ``model.hse'' \\
 \verb=  n_cellx =  &   &  \\
 \verb=  n_celly =  &   &  \\
 \verb=  n_cellz =  &   &  \\
-\verb=  nOutFiles =  &   &  \\
+\verb=  nOutFiles =  &   & 64 \\
 \verb=  perturb_model =  &   &  .false. \\
-\verb=  plot_base =  &   &  \\
+\verb=  plot_base =  &   & .false. \\
 \verb=  plot_base_name =  &   &  "plt" \\
 \verb=  plot_deltat =  &   &  0.0 \\
-\verb=  plot_int =  &   &  \\
-\verb=  plot_spec =  &   &  \\
-\verb=  plot_trac =  &   &  \\
+\verb=  plot_int =  &   & 0 \\
+\verb=  plot_spec =  &   & .true. \\
+\verb=  plot_trac =  &   & .false. \\
 \verb=  pmask_x =  &   &  .false. \\
 \verb=  pmask_y =  &   &  .false. \\
 \verb=  pmask_z =  &   &  .false. \\
@@ -97,10 +97,10 @@
 \verb=  prob_lo_x =  &   &  ZERO \\
 \verb=  prob_lo_y =  &   &  ZERO \\
 \verb=  prob_lo_z =  &   &  ZERO \\
-\verb=  radius =  &   &  0.75d8 \\
+\verb=  radius =  &   &  1.0e6 \\
 \verb=  ref_ratio =  &   &  2 \\
 \verb=  regrid_int =  &   &  -1 \\
-\verb=  restart =  &   &  \\
+\verb=  restart =  &   & -1 \\
 \verb=  rotational_frequency =  &   &  ZERO \\
 \verb=  single_prec_plotfiles =  &   &  .false. \\
 \verb=  slope_order =  &   &  4 \\
@@ -111,11 +111,11 @@
 \verb=  stop_time =  &   &  -1.d0 \\
 \verb=  temp_diffusion_formulation =  &   &  .false. \\
 \verb=  test_set =  &   &  '' \\
-\verb=  the_copy_cache_max =  &   &  \\
+\verb=  the_copy_cache_max =  &   & 50 \\
 \verb=  the_knapsack_verbosity =  &   &  .false. \\
 \verb=  the_layout_verbosity =  &   &  0 \\
 \verb=  thermal_diffusion_type =  &   &  1 \\
-\verb=  the_sfc_threshold =  &   &  \\
+\verb=  the_sfc_threshold =  &   & 5 \\
 \verb=  use_delta_gamma1_term =  &   &  .false. \\
 \verb=  use_divu_firstdt =  &   &  .false. \\
 \verb=  use_eos_coulomb =  &   &  .false. \\
