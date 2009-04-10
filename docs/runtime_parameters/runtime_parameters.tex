@@ -28,107 +28,110 @@
 
 \hline 
 \endlastfoot
-\verb=  anelastic_cutoff =  &   &  3.e6  \\
+
+\verb=  anelastic_cutoff =  &   &  3.e6 \\
 \verb=  base_cutoff_density =  &   &  3.e6 \\
-\verb=  bcx_hi =  &   & \verb=  SLIP_WALL = \\
-\verb=  bcx_lo =  &   & \verb=  SLIP_WALL = \\
-\verb=  bcy_hi =  &   & \verb=  SLIP_WALL = \\
-\verb=  bcy_lo =  &   & \verb=  SLIP_WALL = \\
-\verb=  bcz_hi =  &   & \verb=  SLIP_WALL = \\
-\verb=  bcz_lo =  &   & \verb=  SLIP_WALL = \\
-\verb=  beta_type =  &   &  1  \\
-\verb=  cflfac =  &   &   \\
-\verb=  cg_verbose =  &   &  0  \\
-\verb=  check_base_name =  &   & "chk" \\
-\verb=  chk_int =  &   &  0  \\
-\verb=  co_latitude =  &   &  ZERO  \\
-\verb=  dm_in =  &   & 2 \\
-\verb=  do_alltoallv =  &   &  .false.  \\
-\verb=  do_burning =  &   &  .true.  \\
-\verb=  do_eos_h_above_cutoff =  &   &  .true.  \\
-\verb=  do_initial_projection =  &   &  1  \\
-\verb=  do_sponge =  &   &  .false.  \\
-\verb=  dpdt_factor =  &   &  0.0d0  \\
-\verb=  drdxfac =  &   &  1  \\
-\verb=  enthalpy_pred_type =  &   & \verb=  predict_rhohprime = \\
-\verb=  evolve_base_state =  &   &  .true.  \\
-\verb=  fixed_dt =  &   &  -1.0d0  \\
-\verb=  grav_const =  &   &  -1.5d10  \\
-\verb=  hg_bottom_solver =  &   &  -1  \\
-\verb=  hg_dense_stencil =  &   &  .true.  \\
-\verb=  init_divu_iter =  &   &  4  \\
-\verb=  init_iter =  &   &  4  \\
-\verb=  init_shrink =  &   &  1.0  \\
-\verb=  interp_type_radial_bin_to_cart =  &   &  1  \\
-\verb=  job_name =  &   & "" \\
-\verb=  lUsingNFiles =  &   &  .true.  \\
-\verb=  max_dt_growth =  &   &  1.1D0  \\
-\verb=  max_grid_size =  &   &  64  \\
-\verb=  max_levs =  &   &  1  \\
-\verb=  max_step =  &   &  1  \\
+\verb=  bcx_hi =  &   &  SLIP\_WALL \\
+\verb=  bcx_lo =  &   &  SLIP\_WALL \\
+\verb=  bcy_hi =  &   &  SLIP\_WALL \\
+\verb=  bcy_lo =  &   &  SLIP\_WALL \\
+\verb=  bcz_hi =  &   &  SLIP\_WALL \\
+\verb=  bcz_lo =  &   &  SLIP\_WALL \\
+\verb=  beta_type =  &   &  1 \\
+\verb=  cflfac =  &   &  \\
+\verb=  cg_verbose =  &   &  0 \\
+\verb=  check_base_name =  &   &  "chk" \\
+\verb=  chk_int =  &   &  \\
+\verb=  co_latitude =  &   &  ZERO \\
+\verb=  dm_in =  &   &  2 \\
+\verb=  do_alltoallv =  &   &  .false. \\
+\verb=  do_burning =  &   &  .true. \\
+\verb=  do_eos_h_above_cutoff =  &   &  .true. \\
+\verb=  do_initial_projection =  &   &  \\
+\verb=  do_sponge =  &   &  .false. \\
+\verb=  dpdt_factor =  &   &  0.0d0 \\
+\verb=  drdxfac =  &   &  1 \\
+\verb=  enthalpy_pred_type =  &   &  predict\_rhohprime \\
+\verb=  evolve_base_state =  &   &  .true. \\
+\verb=  fixed_dt =  &   &  -1.0d0 \\
+\verb=  grav_const =  &   &  -1.5d10 \\
+\verb=  hg_bottom_solver =  &   &  -1 \\
+\verb=  hg_dense_stencil =  &   &  .true. \\
+\verb=  init_divu_iter =  &   &  4 \\
+\verb=  init_iter =  &   &  4 \\
+\verb=  init_shrink =  &   &  1.0 \\
+\verb=  interp_type_radial_bin_to_cart =  &   &  1 \\
+\verb=  job_name =  &   &  "" \\
+\verb=  lUsingNFiles =  &   &  .true. \\
+\verb=  max_dt_growth =  &   &  1.1D0 \\
+\verb=  max_grid_size =  &   &  64 \\
+\verb=  max_levs =  &   &  1 \\
+\verb=  max_step =  &   &  \\
 \verb=  mg_bottom_solver =  &   &  -1 \\
-\verb=  mg_verbose =  &   &  0  \\
-\verb=  min_eff =  &   &  0.7d0  \\
-\verb=  min_width =  &   &  16  \\
-\verb=  model_file =  &   & "model.hse" \\
-\verb=  n_cellx =  &   &   \\
-\verb=  n_celly =  &   &   \\
-\verb=  n_cellz =  &   &   \\
-\verb=  nOutFiles =  &   &  64  \\
-\verb=  perturb_model =  &   &  .false.  \\
-\verb=  plot_base =  &   & .false. \\
-\verb=  plot_base_name =  &   & "plt" \\
-\verb=  plot_deltat =  &   &  0.0  \\
-\verb=  plot_int =  &   &  0  \\
-\verb=  plot_spec =  &   &  .true.  \\
-\verb=  plot_trac =  &   &  .false.  \\
-\verb=  pmask_x =  &   & .false. \\
-\verb=  pmask_y =  &   & .false. \\
-\verb=  pmask_z =  &   & .false. \\
-\verb=  ppm_type =  &   &  0  \\
+\verb=  mg_verbose =  &   &  0 \\
+\verb=  min_eff =  &   &  0.7d0 \\
+\verb=  min_width =  &   &  16 \\
+\verb=  model_file =  &   &  \\
+\verb=  n_cellx =  &   &  \\
+\verb=  n_celly =  &   &  \\
+\verb=  n_cellz =  &   &  \\
+\verb=  nOutFiles =  &   &  \\
+\verb=  perturb_model =  &   &  .false. \\
+\verb=  plot_base =  &   &  \\
+\verb=  plot_base_name =  &   &  "plt" \\
+\verb=  plot_deltat =  &   &  0.0 \\
+\verb=  plot_int =  &   &  \\
+\verb=  plot_spec =  &   &  \\
+\verb=  plot_trac =  &   &  \\
+\verb=  pmask_x =  &   &  .false. \\
+\verb=  pmask_xyz =  &   &  (/pmask\_x, pmask\_y, pmask\_z/) \\
+\verb=  pmask_y =  &   &  .false. \\
+\verb=  pmask_z =  &   &  .false. \\
+\verb=  ppm_type =  &   &  0 \\
 \verb=  prob_hi_x =  &   &  \\
 \verb=  prob_hi_y =  &   &  \\
 \verb=  prob_hi_z =  &   &  \\
-\verb=  prob_lo_x =  &   &  0.0 \\
-\verb=  prob_lo_y =  &   &  0.0 \\
-\verb=  prob_lo_z =  &   &  0.0 \\
-\verb=  radius =  &   & 1.0e6 \\
-\verb=  ref_ratio =  &   &  2  \\
-\verb=  regrid_int =  &   &  -1  \\
-\verb=  restart =  &   &  -1  \\
-\verb=  rotational_frequency =  &   &  ZERO  \\
-\verb=  single_prec_plotfiles =  &   &  .false.  \\
-\verb=  slope_order =  &   &  4  \\
-\verb=  small_dens =  &   &  1.d-5  \\
-\verb=  small_temp =  &   &  5.d6  \\
-\verb=  spherical_in =  &   &  0  \\
-\verb=  sponge_kappa =  &   &  10.d0  \\
-\verb=  stop_time =  &   &  -1.d0  \\
-\verb=  temp_diffusion_formulation =  &   &  .false.  \\
-\verb=  test_set =  &   & '' \\
-\verb=  the_copy_cache_max =  &   &  50  \\
-\verb=  the_knapsack_verbosity =  &   &  .false.  \\
-\verb=  the_layout_verbosity =  &   &  0  \\
-\verb=  thermal_diffusion_type =  &   &  1  \\
-\verb=  the_sfc_threshold =  &   &  5  \\
-\verb=  use_delta_gamma1_term =  &   &  .false.  \\
-\verb=  use_divu_firstdt =  &   &  .false.  \\
-\verb=  use_eos_coulomb =  &   &  .false.  \\
-\verb=  use_etarho =  &   &  .true.  \\
-\verb=  use_soundspeed_firstdt =  &   &  .false.  \\
-\verb=  use_tfromp =  &   &  .false.  \\
-\verb=  use_thermal_diffusion =  &   &  .false.  \\
-\verb=  velpert_amplitude =  &   &  0.d0  \\
-\verb=  velpert_radius =  &   &  0.75d8  \\
-\verb=  velpert_scale =  &   &  0.8d8  \\
-\verb=  velpert_steep =  &   &  1.d0  \\
-\verb=  verbose =  &   &  0  \\
-\verb=  w0mac_interp_type =  &   &  1  \\
-\verb=  xrb_pert_factor =  &   &  1.d-2  \\
-\verb=  xrb_pert_size =  &   &  5.0d1  \\
-\verb=  xrb_pert_type =  &   &  1  \\
-\verb=  xrb_use_bottom_sponge =  &   &  .true.  \\
+\verb=  prob_lo_x =  &   &  ZERO \\
+\verb=  prob_lo_y =  &   &  ZERO \\
+\verb=  prob_lo_z =  &   &  ZERO \\
+\verb=  radius =  &   &  0.75d8 \\
+\verb=  ref_ratio =  &   &  2 \\
+\verb=  regrid_int =  &   &  -1 \\
+\verb=  restart =  &   &  \\
+\verb=  rotational_frequency =  &   &  ZERO \\
+\verb=  single_prec_plotfiles =  &   &  .false. \\
+\verb=  slope_order =  &   &  4 \\
+\verb=  small_dens =  &   &  1.d-5 \\
+\verb=  small_temp =  &   &  5.d6 \\
+\verb=  spherical_in =  &   &  0 \\
+\verb=  sponge_kappa =  &   &  10.d0 \\
+\verb=  stop_time =  &   &  -1.d0 \\
+\verb=  temp_diffusion_formulation =  &   &  .false. \\
+\verb=  test_set =  &   &  '' \\
+\verb=  the_copy_cache_max =  &   &  \\
+\verb=  the_knapsack_verbosity =  &   &  .false. \\
+\verb=  the_layout_verbosity =  &   &  0 \\
+\verb=  thermal_diffusion_type =  &   &  1 \\
+\verb=  the_sfc_threshold =  &   &  \\
+\verb=  use_delta_gamma1_term =  &   &  .false. \\
+\verb=  use_divu_firstdt =  &   &  .false. \\
+\verb=  use_eos_coulomb =  &   &  .false. \\
+\verb=  use_etarho =  &   &  .true. \\
+\verb=  use_soundspeed_firstdt =  &   &  .false. \\
+\verb=  use_tfromp =  &   &  .false. \\
+\verb=  use_thermal_diffusion =  &   &  .false. \\
+\verb=  velpert_amplitude =  &   &  0.d0 \\
+\verb=  velpert_radius =  &   &  0.75d8 \\
+\verb=  velpert_scale =  &   &  0.8d8 \\
+\verb=  velpert_steep =  &   &  1.d0 \\
+\verb=  verbose =  &   &  0 \\
+\verb=  w0mac_interp_type =  &   &  1 \\
+\verb=  xrb_pert_factor =  &   &  1.d-2 \\
+\verb=  xrb_pert_size =  &   &  5.0d1 \\
+\verb=  xrb_pert_type =  &   &  1 \\
+\verb=  xrb_use_bottom_sponge =  &   &  .true. \\
 
 \end{longtable}
 \end{center}
 %
+
