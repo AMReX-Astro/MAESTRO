@@ -6,6 +6,6 @@ for i in ${parameters}
 do
     value=$(grep -m 1 "$i =" probin.f90 | cut -d'=' -f2 | cut -d"!" -f1)
 
-    echo "\\verb= " $i "=" " &   & " ${value} "//"
+    echo "\\verb= " $i "=" " &   & " `echo ${value} | sed 's/\_/\\\_/g'` "//"
 done
 
