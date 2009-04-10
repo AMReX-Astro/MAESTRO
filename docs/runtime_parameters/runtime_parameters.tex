@@ -5,10 +5,12 @@
 % symbol table
 %%%%%%%%%%%%%%%%
 
+{\small
+
 \renewcommand{\arraystretch}{1.5}
 %
 \begin{center}
-\begin{longtable}{|l|p{3.0in}|l|}
+\begin{longtable}{|l|p{3.25in}|l|}
 \caption[runtime parameters]{runtime parameters.} \label{table:runtime} \\
 %
 \hline \multicolumn{1}{|c|}{\textbf{parameter}} & 
@@ -31,19 +33,21 @@
 
 \verb=  anelastic_cutoff =  &   &  3.e6 \\
 \verb=  base_cutoff_density =  &   &  3.e6 \\
-\verb=  bcx_hi =  &   &  SLIP\_WALL \\
-\verb=  bcx_lo =  &   &  SLIP\_WALL \\
-\verb=  bcy_hi =  &   &  SLIP\_WALL \\
-\verb=  bcy_lo =  &   &  SLIP\_WALL \\
-\verb=  bcz_hi =  &   &  SLIP\_WALL \\
-\verb=  bcz_lo =  &   &  SLIP\_WALL \\
-\verb=  beta_type =  &   &  1 \\
-\verb=  cflfac =  &   &  \\
+\verb=  bcx_hi =  & $+x$ boundary condition (valid values are listed in {\tt  boxlib/bc.f90})  &  SLIP\_WALL \\
+\verb=  bcx_lo =  & $-x$ boundary condition  &  SLIP\_WALL \\
+\verb=  bcy_hi =  & $+y$ boundary condition  &  SLIP\_WALL \\
+\verb=  bcy_lo =  & $-y$ boundary condition  &  SLIP\_WALL \\
+\verb=  bcz_hi =  & $+z$ boundary condition  &  SLIP\_WALL \\
+\verb=  bcz_lo =  & $-z$ boundary condition  &  SLIP\_WALL \\
+\verb=  beta_type =  & what type of coefficient to use inside the velocity divergence constraint.  
+                       {\tt beta\_type} = 1 uses $\beta_0$; {\tt beta\_type} = 2 uses $\rho_0$ (anelastic);
+                       {\tt beta\_type} = 3 uses 1 (small-scale combustion).  &  1 \\
+\verb=  cflfac =  & CFL factor to use in the computation of the advection timestep constraint  &  0.5 \\
 \verb=  cg_verbose =  &   &  0 \\
-\verb=  check_base_name =  &   &  "chk" \\
-\verb=  chk_int =  &   &  \\
+\verb=  check_base_name =  & prefix to use in checkpoint file names  &  "chk" \\
+\verb=  chk_int =  & number of timesteps between writing a checkpoint file  &  \\
 \verb=  co_latitude =  &   &  ZERO \\
-\verb=  dm_in =  &   &  2 \\
+\verb=  dm_in =  & dimensionality (valid values are 2 or 3)  &  2 \\
 \verb=  do_alltoallv =  &   &  .false. \\
 \verb=  do_burning =  &   &  .true. \\
 \verb=  do_eos_h_above_cutoff =  &   &  .true. \\
@@ -84,7 +88,6 @@
 \verb=  plot_spec =  &   &  \\
 \verb=  plot_trac =  &   &  \\
 \verb=  pmask_x =  &   &  .false. \\
-\verb=  pmask_xyz =  &   &  (/pmask\_x, pmask\_y, pmask\_z/) \\
 \verb=  pmask_y =  &   &  .false. \\
 \verb=  pmask_z =  &   &  .false. \\
 \verb=  ppm_type =  &   &  0 \\
@@ -133,5 +136,8 @@
 
 \end{longtable}
 \end{center}
+
+} % ends \small
+
 %
 
