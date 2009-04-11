@@ -312,7 +312,7 @@ subroutine varden()
 
      call make_div_coeff(div_coeff_old,rho0_old,p0_old,gamma1bar,grav_cell)
 
-     if(do_initial_projection > 0) then
+     if(do_initial_projection) then
         call initial_proj(uold,sold,pres,gpres,Source_old,hgrhs, &
                           div_coeff_old,p0_old,gamma1bar,dx,the_bc_tower,mla)
      end if

@@ -12,7 +12,7 @@
  max_step  = 300
  stop_time = 2.5
 
- do_initial_projection = 1
+ do_initial_projection = T
  init_divu_iter = 3
  init_iter = 1
 

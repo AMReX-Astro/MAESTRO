@@ -108,8 +108,8 @@ subroutine varden()
 
   call probin_init()
 
-  if(parallel_IOProcessor() .and. do_initial_projection .eq. 0) then
-     print*,'Warning: do_initial_projection = 0'
+  if(parallel_IOProcessor() .and. do_initial_projection) then
+     print*,'Warning: do_initial_projection = F'
      print*,'Setting init_divu_iter = init_iter = max_step = 0'
      print*,'So the output will be the loaded in data'
 
@@ -515,7 +515,7 @@ subroutine varden()
      ! Do an initial projection with omegadot = 0 and rho_Hext = 0
      !----------------------------------------------------------------------
 
-     if(do_initial_projection > 0) then
+     if(do_initial_projection) then
         call initial_proj(nlevs,uold,sold,pres,gpres,Source_old,hgrhs, &
                           div_coeff_old,s0_old,p0_old,gamma1bar(:,:,1),dx,the_bc_tower,mla)
      end if

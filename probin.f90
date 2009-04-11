@@ -18,15 +18,14 @@ module probin_module
   real(dp_t), save         :: prob_hi_x, prob_hi_y, prob_hi_z
   integer, save            :: max_step, plot_int
   real(dp_t), save         :: plot_deltat
-  integer, save            :: chk_int, init_iter, init_divu_iter
+  integer, save            :: chk_int, init_iter, init_divu_iter, restart
   real(dp_t), save         :: cflfac, init_shrink
   character(len=128), save :: test_set
-  integer, save            :: restart, do_initial_projection
   integer, save            :: bcx_lo, bcx_hi, bcy_lo, bcy_hi, bcz_lo, bcz_hi
   logical, save            :: pmask_x, pmask_y, pmask_z, pmask_xyz(MAX_SPACEDIM)
   integer, save            :: verbose, mg_verbose, cg_verbose
   integer, save            :: hg_bottom_solver, mg_bottom_solver
-  logical, save            :: do_sponge, hg_dense_stencil
+  logical, save            :: do_sponge, hg_dense_stencil, do_initial_projection
   real(dp_t), save         :: anelastic_cutoff, base_cutoff_density, dpdt_factor
   integer, save            :: spherical_in, dm_in
   logical, save            :: perturb_model, plot_spec, plot_trac, plot_base
@@ -241,7 +240,7 @@ contains
 
     init_shrink = 1.0
 
-    do_initial_projection  = 1
+    do_initial_projection  = .true.
 
     need_inputs = .true.
     test_set = ''
@@ -307,7 +306,7 @@ contains
     xrb_pert_type = 1
     xrb_use_bottom_sponge = .true.
 
-    use_eos_coulomb = .false.
+    use_eos_coulomb = .true.
 
     small_temp = 5.d6
     small_dens = 1.d-5

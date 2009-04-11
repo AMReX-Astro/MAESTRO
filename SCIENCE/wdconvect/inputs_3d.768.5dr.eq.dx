@@ -49,7 +49,7 @@
  mg_verbose = 1
  cg_verbose = 0
 
- do_initial_projection = 1
+ do_initial_projection = T
  init_divu_iter = 3
 
  velpert_amplitude = 1.d5

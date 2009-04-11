@@ -25,7 +25,7 @@
  max_step  = 100000000
  max_step  = 200
 
- do_initial_projection = 1
+ do_initial_projection = T
  init_divu_iter = 1
  init_iter = 1
 

@@ -36,7 +36,7 @@
  mg_verbose = 1
  cg_verbose = 0
 
- do_initial_projection = 0
+ do_initial_projection = T
 
 !restart = 50
 
