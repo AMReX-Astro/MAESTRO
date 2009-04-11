@@ -9,6 +9,8 @@ cat <<EOF
 % symbol table
 %%%%%%%%%%%%%%%%
 
+{\small
+
 \renewcommand{\arraystretch}{1.5}
 %
 \begin{center}
@@ -50,6 +52,9 @@ cat <<EOF
 
 \end{longtable}
 \end{center}
+
+} % ends \small
+
 %
 
 EOF
