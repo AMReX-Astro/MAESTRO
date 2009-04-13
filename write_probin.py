@@ -228,6 +228,10 @@ def write_probin(probinTemplate, paramFiles):
 
     
 
+    fout.close()
+
+
+
 
 if __name__ == "__main__":
 
