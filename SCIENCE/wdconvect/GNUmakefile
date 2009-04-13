@@ -1,4 +1,3 @@
-NDEBUG :=  
 NDEBUG := t
 MPI    := t
 OMP    :=
@@ -44,6 +43,13 @@ VPATH_LOCATIONS += $(FPARALLEL)/extern/VODE
 main.$(suf).exe: $(objects)
 	$(LINK.f90) -o main.$(suf).exe $(objects) $(libraries)
 	@echo SUCCESS
+
+PROBIN_PARAMETERS := ../_parameters
+PROBIN_TEMPLATE   := ../probin.template
+
+probin.f90: $(PROBIN_PARAMETERS) $(PROBIN_TEMPLATE)
+	../write_probin.py -t $(PROBIN_TEMPLATE) $(PROBIN_PARAMETERS)
+
 
 include $(FPARALLEL)/mk/GMakerules.mak
 
