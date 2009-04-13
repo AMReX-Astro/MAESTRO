@@ -22,7 +22,7 @@ module probin_module
   real(dp_t), save         :: cflfac, init_shrink
   character(len=128), save :: test_set
   integer, save            :: bcx_lo, bcx_hi, bcy_lo, bcy_hi, bcz_lo, bcz_hi
-  logical, save            :: pmask_x, pmask_y, pmask_z, pmask_xyz(MAX_SPACEDIM)
+  logical, save            :: pmask_x, pmask_y, pmask_z
   integer, save            :: verbose, mg_verbose, cg_verbose
   integer, save            :: hg_bottom_solver, mg_bottom_solver
   logical, save            :: do_sponge, hg_dense_stencil, do_initial_projection
@@ -70,6 +70,8 @@ module probin_module
   real(dp_t), allocatable, save :: prob_lo(:)
   real(dp_t), allocatable, save :: prob_hi(:)
 
+  logical :: pmask_xyz(MAX_SPACEDIM)
+
   namelist /probin/ model_file
   namelist /probin/ stop_time
   namelist /probin/ prob_lo_x
@@ -98,7 +100,6 @@ module probin_module
   namelist /probin/ pmask_x
   namelist /probin/ pmask_y
   namelist /probin/ pmask_z
-  namelist /probin/ pmask_xyz
   namelist /probin/ verbose
   namelist /probin/ mg_verbose
   namelist /probin/ cg_verbose
@@ -574,11 +575,6 @@ contains
           farg = farg + 1
           call get_command_argument(farg, value = fname)
           read(fname, *) pmask_xyz(3)
-       case ('--pmask_xyz')
-          farg = farg + 1
-          call get_command_argument(farg, value = fname)
-          read(fname, *) pmask_xyz(1)
-          pmask_xyz = pmask_xyz(1)
 
        case ('--verbose')
           farg = farg + 1
