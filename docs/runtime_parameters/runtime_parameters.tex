@@ -67,7 +67,7 @@
 \verb=  enthalpy_pred_type =  & predict\_rhohprime = 1; predict\_h = 2; 
                                       predict\_T\_then\_rhohprime = 3;
                                       predict\_T\_then\_h = 4; predict\_hprime = 5; 
-                                      predict\_Tprime\_then\_h = 6;  &  predict\_rhohprime \\
+                                      predict\_Tprime\_then\_h = 6.  &  predict\_rhohprime \\
 \verb=  evolve_base_state =  & turn on (.true.) or off (.false.) basestate evolution  
                                    &  .true. \\
 \verb=  fixed_dt =  & Fix the time step.  If -1.0, then use the standard time step.  
@@ -143,30 +143,54 @@
 \verb=  spherical_in =  &   &  0 \\
 \verb=  sponge_kappa =  &   &  10.d0 \\
 \verb=  stop_time =  &   &  -1.d0 \\
-\verb=  temp_diffusion_formulation =  &   &  .false. \\
-\verb=  test_set =  &   &  '' \\
-\verb=  the_copy_cache_max =  &   & 50 \\
-\verb=  the_knapsack_verbosity =  &   &  .false. \\
+\verb=  temp_diffusion_formulation =  & How to compute the explicit thermal diffusion
+                                                term.  .true. = in terms of $T$; .false. =
+                                                in terms of $\rho,p_0,X$.  &  .false. \\
+\verb=  test_set =  & Fixed grid file.  &  '' \\
+\verb=  the_copy_cache_max =  & Number of boxassoc layouts we keep in memory to avoid 
+                                      having to recompute the boxassoc, which is 
+                                      computationally expensive.  & 50 \\
+\verb=  the_knapsack_verbosity =  & Verbosity of the knapscak processor-to-grid
+                                           algorithm.  &  .false. \\
 \verb=  the_layout_verbosity =  &   &  0 \\
-\verb=  thermal_diffusion_type =  &   &  1 \\
-\verb=  the_sfc_threshold =  &   & 5 \\
+\verb=  thermal_diffusion_type =  & In the thermal diffusion solver, 1 = 
+                                           Crank-Nicholson; 2 = Backward Euler.  &  1 \\
+\verb=  the_sfc_threshold =  & When assigning processors for grids, this determines 
+                                     whether we use the sfc algorithm or knapsack 
+                                     algorithm.  If the total number of grids divided by 
+                                     the number of processors is greater than this number, 
+                                     use sfc.  & 5 \\
 \verb=  use_delta_gamma1_term =  &   &  .false. \\
-\verb=  use_divu_firstdt =  &   &  .false. \\
+\verb=  use_divu_firstdt =  & Use the divu constraint when computing the first
+                                   time step.  &  .false. \\
 \verb=  use_eos_coulomb =  &   &  .false. \\
 \verb=  use_etarho =  &   &  .true. \\
-\verb=  use_soundspeed_firstdt =  &   &  .false. \\
-\verb=  use_tfromp =  &   &  .false. \\
-\verb=  use_thermal_diffusion =  &   &  .false. \\
-\verb=  velpert_amplitude =  &   &  0.d0 \\
-\verb=  velpert_radius =  &   &  0.75d8 \\
-\verb=  velpert_scale =  &   &  0.8d8 \\
-\verb=  velpert_steep =  &   &  1.d0 \\
-\verb=  verbose =  &   &  0 \\
-\verb=  w0mac_interp_type =  &   &  1 \\
-\verb=  xrb_pert_factor =  &   &  1.d-2 \\
-\verb=  xrb_pert_size =  &   &  5.0d1 \\
-\verb=  xrb_pert_type =  &   &  1 \\
-\verb=  xrb_use_bottom_sponge =  &   &  .true. \\
+\verb=  use_soundspeed_firstdt =  & Use the soundspeed constraint when computing the
+                                           first time step.  &  .false. \\
+\verb=  use_tfromp =  & When updating temperature, use $T=T(\rho,p_0,X) $ rather than
+                            $T=T(\rho,h,X)$. &  .false. \\
+\verb=  use_thermal_diffusion =  & Use thermal diffusion.  &  .false. \\
+\verb=  velpert_amplitude =  & (spherical stars only) Amplitude of random Fourier
+                                     modes.  &  0.d0 \\
+\verb=  velpert_radius =  & (spherical stars only) Cutoff radius where we start 
+                                 applying a tanh function to decay the random Fourier
+                                 modes. &  0.75d8 \\
+\verb=  velpert_scale =  & (spherical stars only) Square length which defines the 
+                                random Fourier modes correspond to. &  0.8d8 \\
+\verb=  velpert_steep =  & (spherical stars only) Steepness of the cutoff of the random
+                                Fourier modes. &  1.d0 \\
+\verb=  verbose =  & General verbosity  &  0 \\
+\verb=  w0mac_interp_type =  & 0 = Compute w0 at edges using a projection; 1 = 
+                                     Interpolate w0 to cell centers, then average to edges; 
+                                     2 = Interpolate w0 to edges directly; 3 = Interpolate 
+                                     w0 to nodes, then average to edges.  &  1 \\
+\verb=  xrb_pert_factor =  & (xrb problem only) Increase in amplitude of 
+                                  perturbational quantity relative to ambient. &  1.d-2 \\
+\verb=  xrb_pert_size =  & (xrb problem only)  Width of Gaussian distribution &  5.0d1 \\
+\verb=  xrb_pert_type =  & (xrb problem only) 1 = perturb temperature; 2 = perturb 
+                                density. &  1 \\
+\verb=  xrb_use_bottom_sponge =  & (xrb problem only)  Put a sponge at the bottom of 
+                                          the domain.  &  .true. \\
 
 \end{longtable}
 \end{center}
