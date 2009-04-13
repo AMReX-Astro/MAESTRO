@@ -37,9 +37,15 @@ VPATH_LOCATIONS += $(FPARALLEL)/extern/networks/triple_alpha
 include $(FPARALLEL)/extern/VODE/GPackage.mak
 VPATH_LOCATIONS += $(FPARALLEL)/extern/VODE
 
+PROBIN_PARAMETERS := ../_parameters ./_parameters
+PROBIN_TEMPLATE   := ../probin.template
+
 main.$(suf).exe: $(objects)
 	$(LINK.f90) -o main.$(suf).exe $(objects) $(libraries)
 	@echo SUCCESS
+
+probin.f90: $(PROBIN_PARAMETERS) $(PROBIN_TEMPLATE)
+	../write_probin.py -t $(PROBIN_TEMPLATE) $(PROBIN_PARAMETERS)
 
 include $(FPARALLEL)/mk/GMakerules.mak
 
