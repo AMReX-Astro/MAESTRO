@@ -1,3 +1,10 @@
+# This file contains the runtime parameters for all MAESTRO problems.  It 
+# is parsed by write_probin.py and merged with probin.template to produce
+# the probin.f90 at compile time.
+#
+# problem-specific runtime parameters should be defined in a _parameters
+# file in the problem directory.
+
 model_file                          character          "model.hse"         
 stop_time                           real               -1.d0               
 prob_lo_x                           real               ZERO                
