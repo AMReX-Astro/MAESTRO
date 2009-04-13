@@ -37,6 +37,27 @@ def getNextLine(fin):
 
 
 #=============================================================================
+# getParamIndex looks through the list and returns the index corresponding to
+# the parameter specified by var
+#=============================================================================
+def getParamIndex(paramList, var):
+
+    index = -1
+
+    n = 0
+    while (n < len(paramList)):
+        
+        if (paramList[n].var == var):
+            index = n
+            break
+
+        n += 1
+
+    return index
+
+
+
+#=============================================================================
 # write_probin will read through the list of parameter files and output 
 # the new probin.f90
 #=============================================================================
@@ -76,6 +97,13 @@ def write_probin(probinTemplate, paramFiles):
             currentParam.type  = fields[1]
             currentParam.value = fields[2]
 
+            index = getParamIndex(params, currentParam.var)
+
+            if (index >= 0):
+                print "WARNING: parameter %s already defined.  Using new values." % (currentParam.var)
+                oldParam = params.pop(index)
+                
+            
             params.append(currentParam)
 
             line = getNextLine(f)
