@@ -44,7 +44,7 @@ main.$(suf).exe: $(objects)
 	$(LINK.f90) -o main.$(suf).exe $(objects) $(libraries)
 	@echo SUCCESS
 
-PROBIN_PARAMETERS := ../_parameters
+PROBIN_PARAMETERS := ../_parameters ./_parameters.wdconvect
 PROBIN_TEMPLATE   := ../probin.template
 
 probin.f90: $(PROBIN_PARAMETERS) $(PROBIN_TEMPLATE)

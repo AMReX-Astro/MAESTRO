@@ -48,7 +48,7 @@ main.$(suf).exe: $(objects)
 	@echo SUCCESS
 
 
-PROBIN_PARAMETERS := ../_parameters
+PROBIN_PARAMETERS := ../_parameters ./_parameters.test_spherical
 PROBIN_TEMPLATE   := ../probin.template
 
 probin.f90: $(PROBIN_PARAMETERS) $(PROBIN_TEMPLATE)
