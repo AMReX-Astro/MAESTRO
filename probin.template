@@ -1,0 +1,241 @@
+! This module stores the runtime parameters.  The probin_init() routine is
+! used to initialize the runtime parameters
+
+module probin_module
+
+  use bl_types
+  use bl_space
+  use pred_parameters
+  use multifab_module, only: multifab_set_alltoallv
+  use cluster_module
+  use layout_module
+
+  implicit none
+
+
+  @@declarations@@
+
+
+  logical, save :: pmask_xyz(MAX_SPACEDIM)
+
+  real(dp_t), save         :: burning_cutoff_density  ! note: presently not runtime parameter
+
+
+  ! These will be allocated and defined below
+  logical,    allocatable, save :: edge_nodal_flag(:,:)
+  logical,    allocatable, save :: nodal(:)
+  logical,    allocatable, save :: pmask(:)
+  real(dp_t), allocatable, save :: prob_lo(:)
+  real(dp_t), allocatable, save :: prob_hi(:)
+
+
+  @@namelist@@
+
+
+contains
+
+  subroutine probin_init()
+
+    use f2kcli
+    use parallel
+    use bc_module
+    use bl_IO_module
+    use bl_prof_module
+    use bl_error_module
+    use bl_constants_module
+    use knapsack_module
+    
+    integer    :: narg, farg
+
+    character(len=128) :: fname
+    character(len=128) :: probin_env
+
+    logical    :: lexist, need_inputs
+    integer    :: i, natonce, myproc, nprocs, nsets, myset, iset, ibuff(1)
+    integer    :: wakeuppid, waitforpid, tag, un, ierr
+    real(dp_t) :: pistart, piend, pitotal, pistartall, piendall, pitotalall
+    real(dp_t) :: pitotal_max, pitotalall_max
+
+    type(bl_prof_timer), save :: bpt
+
+    call build(bpt, "probin_init")
+
+    narg = command_argument_count()
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! initialize the runtime parameters
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+    @@defaults@@
+
+
+    !
+    ! Don't have more than 64 processes trying to read from disk at once.
+    !
+    natonce = min(64,parallel_nprocs())
+    myproc  = parallel_myproc()
+    nprocs  = parallel_nprocs()
+    nsets   = ((nprocs + (natonce - 1)) / natonce)
+    myset   = (myproc / natonce)
+
+    pistartall = parallel_wtime()
+
+    do iset = 0, nsets-1
+
+       if (myset .eq. iset) then
+
+          pistart = parallel_wtime()
+          
+          call get_environment_variable('PROBIN', probin_env, status = ierr)
+          if ( need_inputs .AND. ierr == 0 ) then
+             un = unit_new()
+             open(unit=un, file = probin_env, status = 'old', action = 'read')
+             read(unit=un, nml = probin)
+             close(unit=un)
+             need_inputs = .false.
+          end if
+
+          farg = 1
+          if ( need_inputs .AND. narg >= 1 ) then
+             call get_command_argument(farg, value = fname)
+             inquire(file = fname, exist = lexist )
+             if ( lexist ) then
+                farg = farg + 1
+                un = unit_new()
+                open(unit=un, file = fname, status = 'old', action = 'read')
+                read(unit=un, nml = probin)
+                close(unit=un)
+                need_inputs = .false.
+             end if
+          end if
+
+          inquire(file = 'inputs_varden', exist = lexist)
+          if ( need_inputs .AND. lexist ) then
+             un = unit_new()
+             open(unit=un, file = 'inputs_varden', status = 'old', action = 'read')
+             read(unit=un, nml = probin)
+             close(unit=un)
+             need_inputs = .false.
+          end if
+
+          piend = parallel_wtime()
+
+          ibuff(1)  = 0
+          wakeuppid = myproc + natonce
+          tag       = mod(myproc,natonce)
+          
+          if (wakeuppid < nprocs) call parallel_send(ibuff, wakeuppid, tag)
+
+       end if
+
+      if (myset .eq. (iset + 1)) then
+
+         tag        = mod(myproc,natonce)
+         waitforpid = myproc - natonce
+
+         call parallel_recv(ibuff, waitforpid, tag)
+      endif
+
+    end do
+
+    piendall   = parallel_wtime()
+    pitotal    = piend - pistart
+    pitotalall = piendall - pistartall
+
+    call parallel_reduce(pitotal_max,    pitotal,    MPI_MAX, &
+                         proc = parallel_IOProcessorNode())
+    call parallel_reduce(pitotalall_max, pitotalall, MPI_MAX, &
+                         proc = parallel_IOProcessorNode())
+
+    if (parallel_IOProcessor()) then
+      print*, "PROBINIT max time   = ", pitotal_max
+      print*, "PROBINIT total time = ", pitotalall_max
+    endif
+
+    pmask_xyz = (/pmask_x, pmask_y, pmask_z/)
+    
+    do while ( farg <= narg )
+       call get_command_argument(farg, value = fname)
+       select case (fname)
+
+
+       @@commandline@@
+
+
+       case ('--')
+          farg = farg + 1
+          exit
+
+       case default
+          if ( .not. parallel_q() ) then
+             write(*,*) 'UNKNOWN option = ', fname
+             call bl_error("MAIN")
+          end if
+       end select
+
+       farg = farg + 1
+    end do
+
+    pmask_xyz = (/pmask_x, pmask_y, pmask_z/)
+
+
+    ! for the moment, set the cutoff for burning to be base_cutoff_density
+    burning_cutoff_density = base_cutoff_density
+
+    ! initialize edge_nodal_flag
+    allocate(edge_nodal_flag(dm_in,dm_in))
+    edge_nodal_flag = .false.
+    do i = 1,dm_in
+       edge_nodal_flag(i,i) = .true.
+    end do
+
+    ! initialize nodal
+    allocate(nodal(dm_in))
+    nodal = .true.
+
+    ! initialize pmask
+    allocate(pmask(dm_in))
+    pmask = .FALSE.
+    pmask = pmask_xyz(1:dm_in)
+
+    ! initialize prob_lo and prob_hi
+    allocate(prob_lo(dm_in))
+    prob_lo(1) = prob_lo_x
+    if (dm_in > 1) prob_lo(2) = prob_lo_y
+    if (dm_in > 2) prob_lo(3) = prob_lo_z
+    allocate(prob_hi(dm_in))
+    prob_hi(1) = prob_hi_x
+    if (dm_in > 1) prob_hi(2) = prob_hi_y
+    if (dm_in > 2) prob_hi(3) = prob_hi_z
+
+    call cluster_set_min_eff(min_eff)
+    call cluster_set_minwidth(min_width)
+
+    if (do_alltoallv) call multifab_set_alltoallv(.true.)
+    
+    call knapsack_set_verbose(the_knapsack_verbosity)
+
+    call layout_set_verbosity(the_layout_verbosity)
+    call layout_set_copyassoc_max(the_copy_cache_max)
+    call layout_set_sfc_threshold(the_sfc_threshold)
+
+    call destroy(bpt)
+    
+  end subroutine probin_init
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  subroutine probin_close()
+
+    deallocate(edge_nodal_flag)
+    deallocate(nodal)
+    deallocate(pmask)
+    deallocate(prob_lo)
+    deallocate(prob_hi)
+
+  end subroutine probin_close
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+end module probin_module

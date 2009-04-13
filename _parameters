@@ -1,0 +1,128 @@
+model_file                          character          "model.hse"         
+stop_time                           real               -1.d0               
+prob_lo_x                           real               ZERO                
+prob_lo_y                           real               ZERO                
+prob_lo_z                           real               ZERO                
+prob_hi_x                           real               1.0                    
+prob_hi_y                           real               1.0                    
+prob_hi_z                           real               1.0                    
+max_step                            integer            1                   
+plot_int                            integer            0                   
+plot_deltat                         real               0.0                 
+chk_int                             integer            0                   
+init_iter                           integer            4                   
+init_divu_iter                      integer            4                   
+cflfac                              real               0.5                 
+init_shrink                         real               1.0                 
+test_set                            character          ''                  
+restart                             integer            -1                  
+do_initial_projection               logical            .true.              
+bcx_lo                              integer            SLIP_WALL           
+bcx_hi                              integer            SLIP_WALL           
+bcy_lo                              integer            SLIP_WALL           
+bcy_hi                              integer            SLIP_WALL           
+bcz_lo                              integer            SLIP_WALL           
+bcz_hi                              integer            SLIP_WALL           
+pmask_x                             logical            .false.
+pmask_y                             logical            .false.             
+pmask_z                             logical            .false.             
+verbose                             integer            0                   
+mg_verbose                          integer            0                   
+cg_verbose                          integer            0                   
+
+# valid values are >= 0
+hg_bottom_solver                    integer            -1                  
+
+# valid values are >= 0
+mg_bottom_solver                    integer            -1                  
+
+do_sponge                           logical            .false.             
+hg_dense_stencil                    logical            .true.              
+anelastic_cutoff                    real               3.e6                
+base_cutoff_density                 real               3.e6                
+dpdt_factor                         real               0.0d0               
+spherical_in                        integer            0                   
+dm_in                               integer            2                   
+perturb_model                       logical            .false.             
+plot_spec                           logical            .true.              
+plot_trac                           logical            .false.             
+plot_base                           logical            .false.
+plot_base_name                      character          "plt"               
+check_base_name                     character          "chk"               
+evolve_base_state                   logical            .true.              
+use_thermal_diffusion               logical            .false.             
+temp_diffusion_formulation          logical            .false.             
+
+# 1 = Crank-Nicolson, 2 = Backward Euler
+thermal_diffusion_type              integer            1                   
+
+do_eos_h_above_cutoff               logical            .true.              
+
+# 1 = (rho h)', 2 = h, 3 = T into (rho h)prime, 4 = T into h
+enthalpy_pred_type                  integer            predict_rhohprime   
+
+max_dt_growth                       real               1.1D0               
+fixed_dt                            real               -1.0d0              
+velpert_amplitude                   real               0.d0                
+velpert_radius                      real               0.75d8              
+velpert_scale                       real               0.8d8               
+velpert_steep                       real               1.d0                
+do_burning                          logical            .true.              
+grav_const                          real               -1.5d10             
+xrb_pert_factor                     real               1.d-2               
+xrb_pert_size                       real               5.0d1               
+xrb_pert_type                       integer            1                   
+xrb_use_bottom_sponge               logical            .true.              
+use_eos_coulomb                     logical            .true.              
+small_temp                          real               5.d6                
+small_dens                          real               1.d-5               
+sponge_kappa                        real               10.d0               
+use_delta_gamma1_term               logical            .false.             
+use_etarho                          logical            .true.              
+slope_order                         integer            4                   
+
+# 1 = piecewise constant, 2 = piecewise linear
+interp_type_radial_bin_to_cart      integer            1                   
+
+# 0.  Compute w0 at edges using a projection                                
+# 1.  Interpolate w0 to cell centers, then average to edges                 
+# 2.  Interpolate w0 to edges directly                                      
+# 3.  Interpolate w0 to nodes, then average to edges   
+w0mac_interp_type                   integer            1                   
+
+nOutFiles                           integer            64                  
+lUsingNFiles                        logical            .true.              
+use_tfromp                          logical            .false.             
+single_prec_plotfiles               logical            .false.             
+use_soundspeed_firstdt              logical            .false.             
+use_divu_firstdt                    logical            .false.             
+do_alltoallv                        logical            .false.             
+the_knapsack_verbosity              logical            .false.             
+
+# 0 = no ppm                                                                
+# 1 = 1985 ppm                                                              
+# 2 = 2009 ppm   
+ppm_type                            integer            0                   
+
+# 1 - full beta0                                                            
+# 2 - beta0 = rho0                                                          
+# 3 - beta0 = 1    
+beta_type                           integer            1                   
+
+max_levs                            integer            1                   
+max_grid_size                       integer            64                  
+regrid_int                          integer            -1                  
+ref_ratio                           integer            2                   
+n_cellx                             integer            -1                     
+n_celly                             integer            -1                     
+n_cellz                             integer            -1                    
+drdxfac                             integer            1                   
+the_sfc_threshold                   integer            5                   
+the_layout_verbosity                integer            0                   
+the_copy_cache_max                  integer            50                  
+min_eff                             real               0.7d0               
+min_width                           integer            16                  
+rotational_frequency                real               ZERO                
+co_latitude                         real               ZERO                
+radius                              real               1.0e6_dp_t          
+job_name                            character          ""                  
