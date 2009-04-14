@@ -283,9 +283,9 @@ contains
 
        ! MAGVEL = |U + w0|
        if (spherical .eq. 1) then
-          call make_magvel(plotdata(n),icomp_magvel,u(n),w0(1,:),w0mac(n,:))
+          call make_magvel(plotdata(n),icomp_magvel,icomp_mom,s(n),u(n),w0(1,:),w0mac(n,:))
        else
-          call make_magvel(plotdata(n),icomp_magvel,u(n),w0(n,:),w0mac(n,:))
+          call make_magvel(plotdata(n),icomp_magvel,icomp_mom,s(n),u(n),w0(n,:),w0mac(n,:))
        end if
 
        ! VORTICITY

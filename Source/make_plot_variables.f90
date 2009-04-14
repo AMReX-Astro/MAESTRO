@@ -1389,59 +1389,67 @@ contains
 
   end subroutine makevort_3d
 
-  subroutine make_magvel(plotdata,comp_magvel,u,w0,w0mac)
+  subroutine make_magvel(plotdata,comp_magvel,comp_mom,s,u,w0,w0mac)
 
     use bc_module
     use bl_constants_module
     use geometry, only : spherical, dm
+    use variables, only : rho_comp
 
-    integer        , intent(in   ) :: comp_magvel
+    integer        , intent(in   ) :: comp_magvel, comp_mom
     type(multifab) , intent(inout) :: plotdata
-    type(multifab) , intent(in   ) :: u
+    type(multifab) , intent(in   ) :: s, u
     real(kind=dp_t), intent(in   ) :: w0(0:)
     type(multifab) , intent(in   ) :: w0mac(:)
 
     real(kind=dp_t), pointer:: pp(:,:,:,:)
+    real(kind=dp_t), pointer:: sp(:,:,:,:)
     real(kind=dp_t), pointer:: up(:,:,:,:)
     real(kind=dp_t), pointer:: wxp(:,:,:,:)
     real(kind=dp_t), pointer:: wyp(:,:,:,:)
     real(kind=dp_t), pointer:: wzp(:,:,:,:)
 
-    integer :: lo(dm),hi(dm),ng_p,ng_u,ng_w
+    integer :: lo(dm),hi(dm),ng_p,ng_s,ng_u,ng_w
     integer :: i
 
+    ng_s = s%ng
     ng_u = u%ng
     ng_p = plotdata%ng
 
     do i = 1, u%nboxes
        if ( multifab_remote(u, i) ) cycle
        pp => dataptr(plotdata, i)
+       sp => dataptr(s, i)
        up => dataptr(u, i)
        lo =  lwb(get_box(u, i))
        hi =  upb(get_box(u, i))
        select case (dm)
        case (2)
-          call makemagvel_2d(pp(:,:,1,comp_magvel),ng_p,up(:,:,1,:),ng_u,w0,lo,hi)
+          call makemagvel_2d(pp(:,:,1,comp_magvel),pp(:,:,1,comp_mom),ng_p,sp(:,:,1,rho_comp),ng_s,up(:,:,1,:),ng_u,w0,lo,hi)
        case (3)
           if (spherical .eq. 1) then
              wxp => dataptr(w0mac(1), i)
              wyp => dataptr(w0mac(2), i)
              wzp => dataptr(w0mac(3), i)
              ng_w = w0mac(1)%ng
-             call makemagvel_3d_sphr(pp(:,:,:,comp_magvel),ng_p,up(:,:,:,:),ng_u, &
+             call makemagvel_3d_sphr(pp(:,:,:,comp_magvel),pp(:,:,:,comp_mom),ng_p, &
+                                     sp(:,:,:,rho_comp),ng_s,up(:,:,:,:),ng_u, &
                                      wxp(:,:,:,1),wyp(:,:,:,1),wzp(:,:,:,1),ng_w,lo,hi)
           else
-             call makemagvel_3d_cart(pp(:,:,:,comp_magvel),ng_p,up(:,:,:,:),ng_u,w0,lo,hi)
+             call makemagvel_3d_cart(pp(:,:,:,comp_magvel),pp(:,:,:,comp_mom),ng_p, &
+                                     sp(:,:,:,rho_comp),ng_s,up(:,:,:,:),ng_u,w0,lo,hi)
           end if
        end select
     end do
 
   end subroutine make_magvel
 
-  subroutine makemagvel_2d(magvel,ng_p,u,ng_u,w0,lo,hi)
+  subroutine makemagvel_2d(magvel,mom,ng_p,rho,ng_s,u,ng_u,w0,lo,hi)
 
-    integer           , intent(in   ) :: lo(:), hi(:), ng_p, ng_u
+    integer           , intent(in   ) :: lo(:), hi(:), ng_p, ng_u, ng_s
     real (kind = dp_t), intent(  out) :: magvel(lo(1)-ng_p:,lo(2)-ng_p:)
+    real (kind = dp_t), intent(  out) ::    mom(lo(1)-ng_p:,lo(2)-ng_p:)
+    real (kind = dp_t), intent(in   ) ::    rho(lo(1)-ng_s:,lo(2)-ng_s:)  
     real (kind = dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,:)  
     real (kind = dp_t), intent(in   ) :: w0(0:)
 
@@ -1454,17 +1462,20 @@ contains
        w0_cent = 0.5d0 * (w0(j) + w0(j+1))
        do i = lo(1), hi(1)
           magvel(i,j) = sqrt( u(i,j,1)**2 + (u(i,j,2)+w0_cent)**2 )
+          mom(i,j) = rho(i,j)*magvel(i,j)
        enddo
     enddo
 
   end subroutine makemagvel_2d
 
-  subroutine makemagvel_3d_cart(magvel,ng_p,u,ng_u,w0,lo,hi)
+  subroutine makemagvel_3d_cart(magvel,mom,ng_p,rho,ng_s,u,ng_u,w0,lo,hi)
 
     use geometry, only : spherical
 
-    integer           , intent(in   ) :: lo(:), hi(:), ng_p, ng_u
+    integer           , intent(in   ) :: lo(:), hi(:), ng_p, ng_u, ng_s
     real (kind = dp_t), intent(  out) :: magvel(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)
+    real (kind = dp_t), intent(  out) ::    mom(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)
+    real (kind = dp_t), intent(in   ) ::    rho(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:) 
     real (kind = dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,lo(3)-ng_u:,:) 
     real (kind = dp_t), intent(in   ) :: w0(0:)
 
@@ -1478,19 +1489,22 @@ contains
        do j = lo(2), hi(2)
        do i = lo(1), hi(1)
           magvel(i,j,k) = sqrt(u(i,j,k,1)**2 + u(i,j,k,2)**2 + (u(i,j,k,3)+w0_cent)**2)
+          mom(i,j,k) = rho(i,j,k)*magvel(i,j,k)
        enddo
        enddo
     enddo
 
   end subroutine makemagvel_3d_cart
 
-  subroutine makemagvel_3d_sphr(magvel,ng_p,u,ng_u,w0macx,w0macy,w0macz,ng_w,lo,hi)
+  subroutine makemagvel_3d_sphr(magvel,mom,ng_p,rho,ng_s,u,ng_u,w0macx,w0macy,w0macz,ng_w,lo,hi)
 
 
     use bl_constants_module
 
-    integer           , intent(in   ) :: lo(:), hi(:), ng_p, ng_u, ng_w
+    integer           , intent(in   ) :: lo(:), hi(:), ng_p, ng_u, ng_w, ng_s
     real (kind = dp_t), intent(  out) :: magvel(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)
+    real (kind = dp_t), intent(  out) ::    mom(lo(1)-ng_p:,lo(2)-ng_p:,lo(3)-ng_p:)
+    real (kind = dp_t), intent(in   ) ::    rho(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:) 
     real (kind = dp_t), intent(in   ) ::      u(lo(1)-ng_u:,lo(2)-ng_u:,lo(3)-ng_u:,:) 
     real (kind = dp_t), intent(in   ) :: w0macx(lo(1)-ng_w:,lo(2)-ng_w:,lo(3)-ng_w:)
     real (kind = dp_t), intent(in   ) :: w0macy(lo(1)-ng_w:,lo(2)-ng_w:,lo(3)-ng_w:)
@@ -1505,6 +1519,7 @@ contains
              magvel(i,j,k) = sqrt( (u(i,j,k,1)+HALF*(w0macx(i,j,k)+w0macx(i+1,j,k)))**2 + &
                                    (u(i,j,k,2)+HALF*(w0macy(i,j,k)+w0macy(i,j+1,k)))**2 + &
                                    (u(i,j,k,3)+HALF*(w0macz(i,j,k)+w0macz(i,j,k+1)))**2)
+             mom(i,j,k) = rho(i,j,k)*magvel(i,j,k)
           enddo
        enddo
     enddo
