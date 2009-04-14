@@ -51,7 +51,7 @@ contains
     type(multifab) :: phi(mla%nlevel),alpha(mla%nlevel),beta(mla%nlevel)
     type(multifab) :: resid(mla%nlevel)
 
-    integer                     :: i,comp,n,stencil_order
+    integer                     :: comp,n,stencil_order
 
     type(bl_prof_timer), save :: bpt
 
