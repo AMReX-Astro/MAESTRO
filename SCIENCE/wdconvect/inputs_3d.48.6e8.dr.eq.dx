@@ -1,4 +1,6 @@
 &PROBIN
+ job_name = "small test problem"
+
  model_file = "model_6.e8.hse.48"
  drdxfac = 1
 
@@ -26,7 +28,7 @@
 
  plot_int  = -1
  plot_deltat = 10.0
- chk_int   = 100
+ chk_int   = 10
 
  cflfac = 0.7
  init_shrink = 0.1
