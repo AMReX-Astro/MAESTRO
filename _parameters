@@ -6,96 +6,216 @@
 # file in the problem directory.
 
 model_file                          character          "model.hse"         
+
 stop_time                           real               -1.d0               
+
 prob_lo_x                           real               ZERO                
+
 prob_lo_y                           real               ZERO                
+
 prob_lo_z                           real               ZERO                
+
 prob_hi_x                           real               1.0                    
+
 prob_hi_y                           real               1.0                    
+
 prob_hi_z                           real               1.0                    
+
+# Maximum number of steps in the simulation.
 max_step                            integer            1                   
+
 plot_int                            integer            0                   
+
 plot_deltat                         real               0.0                 
+
+# number of timesteps between writing a checkpoint file
 chk_int                             integer            0                   
+
+# Number of initial pressure iterations.
 init_iter                           integer            4                   
+
+# Number of initial divu iterations.
 init_divu_iter                      integer            4                   
+
+# CFL factor to use in the computation of the advection timestep constraint
 cflfac                              real               0.5                 
+
+# the multiplicative factor ($\le 1$) to reduce the initial timestep as 
+# computed by the various timestep estimators
 init_shrink                         real               1.0                 
+
+# Fixed grid file.
 test_set                            character          ''                  
+
 restart                             integer            -1                  
+
+# Do the initial projection.
 do_initial_projection               logical            .true.              
+
+# $-x$ boundary condition
 bcx_lo                              integer            SLIP_WALL           
+
+# $+x$ boundary condition (valid values are listed in {\tt  boxlib/bc.f90})
 bcx_hi                              integer            SLIP_WALL           
+
+# $-y$ boundary condition
 bcy_lo                              integer            SLIP_WALL           
+
+# $+y$ boundary condition
 bcy_hi                              integer            SLIP_WALL           
+
+# $-z$ boundary condition
 bcz_lo                              integer            SLIP_WALL           
+
+# $+z$ boundary condition
 bcz_hi                              integer            SLIP_WALL           
+
 pmask_x                             logical            .false.
+
 pmask_y                             logical            .false.             
+
 pmask_z                             logical            .false.             
+
+# General verbosity
 verbose                             integer            0                   
+
+# Verbsoity of the multigrid solver, but not the bottom solver.
 mg_verbose                          integer            0                   
+
+# Verbosity of bottom solver
 cg_verbose                          integer            0                   
 
-# valid values are >= 0
+# valid values are $\le$ 0
 hg_bottom_solver                    integer            -1                  
 
-# valid values are >= 0
+# valid values are $\le$ 0
 mg_bottom_solver                    integer            -1                  
 
+# Use sponging.
 do_sponge                           logical            .false.             
+
+# In hgproject, in 2D, use a 9 point Laplacian (.true.) or 5-point 
+# Laplacian (.false.).  In 3D, use a 27 point Laplacian (.true.) or 
+# 7-point Laplacian (.false.).
 hg_dense_stencil                    logical            .true.              
+
+# Refer to Section \ref{Sec:Anelastic Cutoff}.
 anelastic_cutoff                    real               3.e6                
+
+# Refer to Section \ref{Sec:Base Cutoff Density}
 base_cutoff_density                 real               3.e6                
+
+# factor in front of the volume discrepancy term (0.0 = off)
 dpdt_factor                         real               0.0d0               
+
 spherical_in                        integer            0                   
+
+# dimensionality (valid values are 2 or 3)
 dm_in                               integer            2                   
+
+# Turn on a perturbation in the initial data.  Problem specific.
 perturb_model                       logical            .false.             
+
 plot_spec                           logical            .true.              
+
 plot_trac                           logical            .false.             
+
 plot_base                           logical            .false.
+
 plot_base_name                      character          "plt"               
+
+# prefix to use in checkpoint file names
 check_base_name                     character          "chk"               
+
+# turn on (.true.) or off (.false.) basestate evolution
 evolve_base_state                   logical            .true.              
+
+# Use thermal diffusion.
 use_thermal_diffusion               logical            .false.             
+
+# How to compute the explicit thermal diffusion term.  
+# .true. = in terms of $T$;
+# .false. = in terms of $\rho,p_0,X$.
 temp_diffusion_formulation          logical            .false.             
 
-# 1 = Crank-Nicolson, 2 = Backward Euler
+# In the thermal diffusion solver, 1 = Crank-Nicholson; 2 = Backward Euler.
 thermal_diffusion_type              integer            1                   
 
+# After the advective enthalpy update, recompute the enthalpy if we are 
+# below the base cutoff density.
 do_eos_h_above_cutoff               logical            .true.              
 
-# 1 = (rho h)', 2 = h, 3 = T into (rho h)prime, 4 = T into h
+# predict\_rhohprime = 1; 
+# predict\_h = 2; 
+# predict\_T\_then\_rhohprime = 3;
+# predict\_T\_then\_h = 4; 
+# predict\_hprime = 5; 
+# predict\_Tprime\_then\_h = 6.
 enthalpy_pred_type                  integer            predict_rhohprime   
 
-max_dt_growth                       real               1.1D0               
+# The maximum scale factor that the time step is allowed to grow by per 
+# time step.
+max_dt_growth                       real               1.1D0
+
+# Fix the time step.  If -1.0, then use the standard time step.
 fixed_dt                            real               -1.0d0              
+
+# turn on (.true.) or off (.false.) burning
 do_burning                          logical            .true.              
+
+# the gravitational acceleration (cm~s$^{-2}$) for plane-parallel geometry
 grav_const                          real               -1.5d10             
+
 use_eos_coulomb                     logical            .true.              
+
 small_temp                          real               5.d6                
+
 small_dens                          real               1.d-5               
+
 sponge_kappa                        real               10.d0               
+
 use_delta_gamma1_term               logical            .false.             
+
 use_etarho                          logical            .true.              
+
 slope_order                         integer            4                   
 
-# 1 = piecewise constant, 2 = piecewise linear
+# The interpolation for filling a full multifab from a 1D bin-centered array.
+# 1 = piecewise constant; 
+# 2 = piecewise linear.
 interp_type_radial_bin_to_cart      integer            1                   
 
-# 0.  Compute w0 at edges using a projection                                
-# 1.  Interpolate w0 to cell centers, then average to edges                 
-# 2.  Interpolate w0 to edges directly                                      
-# 3.  Interpolate w0 to nodes, then average to edges   
+# 0 = Compute w0 at edges using a projection;
+# 1 = Interpolate w0 to cell centers, then average to edges;
+# 2 = Interpolate w0 to edges directly;                
+# 3 = Interpolate w0 to nodes, then average to edges.
 w0mac_interp_type                   integer            1                   
 
+# If lUsingNFiles = .true., use this many processors to write checkpoint 
+# and plotfiles.  Fortran has the unfortunate feature of each processor 
+# only being able to write out 1-2GB each without crashing.
 nOutFiles                           integer            64                  
+
+# If .true., use nOutFiles processors to write checkpoint and plotfiles.  
+# Fortran has the unfortunate feature of each processor only being able 
+# to write out 1-2GB each without crashing.
 lUsingNFiles                        logical            .true.              
+
+# When updating temperature, use $T=T(\rho,p_0,X) $ rather than
+# $T=T(\rho,h,X)$.
 use_tfromp                          logical            .false.             
+
 single_prec_plotfiles               logical            .false.             
+
+# Use the soundspeed constraint when computing the first time step.
 use_soundspeed_firstdt              logical            .false.             
+
+# Use the divu constraint when computing the first time step. 
 use_divu_firstdt                    logical            .false.             
+
 do_alltoallv                        logical            .false.             
+
+# Verbosity of the knapscak processor-to-grid algorithm.
 the_knapsack_verbosity              logical            .false.             
 
 # 0 = no ppm                                                                
@@ -103,25 +223,57 @@ the_knapsack_verbosity              logical            .false.
 # 2 = 2009 ppm   
 ppm_type                            integer            0                   
 
-# 1 - full beta0                                                            
-# 2 - beta0 = rho0                                                          
-# 3 - beta0 = 1    
+# what type of coefficient to use inside the velocity divergence constraint.
+# {\tt beta\_type} = 1 uses $\beta_0$;
+# {\tt beta\_type} = 2 uses $\rho_0$ (anelastic);
+# {\tt beta\_type} = 3 uses 1 (small-scale combustion).
 beta_type                           integer            1                   
 
+# Total number of levels.  1 = single level.
 max_levs                            integer            1                   
+
+#  The largest grid size that will be created using make\_new\_grids.
 max_grid_size                       integer            64                  
+
 regrid_int                          integer            -1                  
+
 ref_ratio                           integer            2                   
+
+# Number of cells for the base level in the x-direction
 n_cellx                             integer            -1                     
+
+# Number of cells for the base level in the y-direction
 n_celly                             integer            -1                     
+
+# Number of cells for the base level in the z-direction
 n_cellz                             integer            -1                    
+
+# ratio of radial base state zones to Cartesian full state zones for 
+# spherical geometry 
 drdxfac                             integer            1                   
+
+# When assigning processors for grids, this determines whether we use 
+# the sfc algorithm or knapsack algorithm.  If the total number of grids 
+# divided by the number of processors is greater than this number, use sfc.
 the_sfc_threshold                   integer            5                   
+
 the_layout_verbosity                integer            0                   
+
+#  Number of boxassoc layouts we keep in memory to avoid having to 
+# recompute the boxassoc, which is computationally expensive.
 the_copy_cache_max                  integer            50                  
+
 min_eff                             real               0.7d0               
+
+# The minimum size on a side for a grid created using make\_new\_grids.
 min_width                           integer            16                  
+
 rotational_frequency                real               ZERO                
+
+# latitude, in radians, for problems with rotation where the domain is 
+# only a subset of a full star.
 co_latitude                         real               ZERO                
+
 radius                              real               1.0e6_dp_t          
+
 job_name                            character          ""                  
