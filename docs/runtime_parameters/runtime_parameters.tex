@@ -31,166 +31,100 @@
 \hline 
 \endlastfoot
 
-\verb=  anelastic_cutoff =  & Refer to Section \ref{Sec:Anelastic Cutoff}.  &  3.e6 \\
-\verb=  base_cutoff_density =  & Refer to Section \ref{Sec:Base Cutoff Density}  
-                                     &  3.e6 \\
-\verb=  bcx_hi =  & $+x$ boundary condition (valid values are listed in 
-                       {\tt  boxlib/bc.f90})  &  SLIP\_WALL \\
-\verb=  bcx_lo =  & $-x$ boundary condition  &  SLIP\_WALL \\
-\verb=  bcy_hi =  & $+y$ boundary condition  &  SLIP\_WALL \\
-\verb=  bcy_lo =  & $-y$ boundary condition  &  SLIP\_WALL \\
-\verb=  bcz_hi =  & $+z$ boundary condition  &  SLIP\_WALL \\
-\verb=  bcz_lo =  & $-z$ boundary condition  &  SLIP\_WALL \\
-\verb=  beta_type =  & what type of coefficient to use inside the velocity divergence 
-                           constraint.  {\tt beta\_type} = 1 uses $\beta_0$; 
-                           {\tt beta\_type} = 2 uses $\rho_0$ (anelastic);
-                           {\tt beta\_type} = 3 uses 1 (small-scale combustion).  &  1 \\
-\verb=  cflfac =  & CFL factor to use in the computation of the advection timestep 
-                       constraint  &  0.5 \\
-\verb=  cg_verbose =  & Verbosity of bottom solver.  &  0 \\
-\verb=  check_base_name =  & prefix to use in checkpoint file names  &  "chk" \\
-\verb=  chk_int =  & number of timesteps between writing a checkpoint file  & 0 \\
-\verb=  co_latitude =  & latitude, in radians, for problems with rotation where the 
-                             domain is only a subset of a full star.  &  ZERO \\
-\verb=  dm_in =  & dimensionality (valid values are 2 or 3)  &  2 \\
-\verb=  do_alltoallv =  &   &  .false. \\
-\verb=  do_burning =  & turn on (.true.) or off (.false.) burning  &  .true. \\
-\verb=  do_eos_h_above_cutoff =  & After the advective enthalpy update, recompute 
-                                          the enthalpy if we are below the base cutoff 
-                                          density.   &  .true. \\
-\verb=  do_initial_projection =  & Do the initial projection.  & .true. \\
-\verb=  do_sponge =  & Use sponging.  &  .false. \\
-\verb=  dpdt_factor =  & factor in front of the volume discrepancy term (0.0 = off)  
-                           &  0.0d0 \\
-\verb=  drdxfac =  & ratio of radial base state zones to Cartesian full state zones for 
-                        spherical geometry  &  1 \\
-\verb=  enthalpy_pred_type =  & predict\_rhohprime = 1; predict\_h = 2; 
-                                      predict\_T\_then\_rhohprime = 3;
-                                      predict\_T\_then\_h = 4; predict\_hprime = 5; 
-                                      predict\_Tprime\_then\_h = 6.  &  predict\_rhohprime \\
-\verb=  evolve_base_state =  & turn on (.true.) or off (.false.) basestate evolution  
-                                   &  .true. \\
-\verb=  fixed_dt =  & Fix the time step.  If -1.0, then use the standard time step.  
-                        &  -1.0d0 \\
-\verb=  grav_const =  & the gravitational acceleration (cm~s$^{-2}$) for plane-parallel 
-                            geometry  &  -1.5d10 \\
-\verb=  hg_bottom_solver =  &   &  -1 \\
-\verb=  hg_dense_stencil =  & In hgproject, in 2D, use a 9 point Laplacian (.true.) 
-                                    or 5-point Laplacian (.false.).  In 3D, use a 27 point 
-                                    Laplacian (.true.) or 7-point Laplacian (.false.). 
-                                  &  .true. \\
-\verb=  init_divu_iter =  & Number of initial divu iterations.  &  4 \\
-\verb=  init_iter =  & Number of initial pressure iterations.  &  4 \\
-\verb=  init_shrink =  & the multiplicative factor ($\le 1$) to reduce the initial 
-                             timestep as computed by the various timestep estimators   
-                            &  1.0 \\
-\verb=  interp_type_radial_bin_to_cart =  & The interpolation for filling a full 
-                                                     multifab from a 1D bin-centered array.  
-                                                     1 = piecewise constant; 
-                                                     2 = piecewise linear.  &  1 \\
-\verb=  job_name =  &   &  "" \\
-\verb=  lUsingNFiles =  & If .true., use nOutFiles processors to write checkpoint and 
-                               plotfiles.  Fortran has the unfortunate feature of each 
-                               processor only being able to write out 
-                               1-2GB each without crashing.  &  .true. \\
-\verb=  max_dt_growth =  & The maximum scale factor that the time step is allowed to 
-                                grow by per time step.  &  1.1D0 \\
-\verb=  max_grid_size =  & The largest grid size that will be created using 
-                                make\_new\_grids.  &  64 \\
-\verb=  max_levs =  & Total number of levels.  1 = single level.  &  1 \\
-\verb=  max_step =  & Maximum number of steps in the simulation.  & 1 \\
-\verb=  mg_bottom_solver =  &   &  -1 \\
-\verb=  mg_verbose =  & Verbsoity of the multigrid solver, but not the bottom solver.  
-                          &  0 \\
-\verb=  min_eff =  &   &  0.7d0 \\
-\verb=  min_width =  & The minimum size on a side  for a grid created using 
-                           make\_new\_grids.  &  16 \\
-\verb=  model_file =  &   & ``model.hse'' \\
-\verb=  n_cellx =  & Number of cells for the base level in the x-direction  &  \\
-\verb=  n_celly =  & Number of cells for the base level in the y-direction  &  \\
-\verb=  n_cellz =  & Number of cells for the base level in the z-direction  &  \\
-\verb=  nOutFiles =  & If lUsingNFiles = .true., use this many processors to write 
-                           checkpoint and plotfiles.  Fortran has the unfortunate feature 
-                           of each processor only being able to write out 1-2GB each 
-                           without crashing.  & 64 \\
-\verb=  perturb_model =  & Turn on a perturbation in the initial data.  
-                                Problem specific.  &  .false. \\
-\verb=  plot_base =  &   & .false. \\
-\verb=  plot_base_name =  &   &  "plt" \\
-\verb=  plot_deltat =  &   &  0.0 \\
-\verb=  plot_int =  &   & 0 \\
-\verb=  plot_spec =  &   & .true. \\
-\verb=  plot_trac =  &   & .false. \\
-\verb=  pmask_x =  &   &  .false. \\
-\verb=  pmask_y =  &   &  .false. \\
-\verb=  pmask_z =  &   &  .false. \\
-\verb=  ppm_type =  &   &  0 \\
-\verb=  prob_hi_x =  &   &  \\
-\verb=  prob_hi_y =  &   &  \\
-\verb=  prob_hi_z =  &   &  \\
-\verb=  prob_lo_x =  &   &  ZERO \\
-\verb=  prob_lo_y =  &   &  ZERO \\
-\verb=  prob_lo_z =  &   &  ZERO \\
-\verb=  radius =  &   &  1.0e6 \\
-\verb=  ref_ratio =  &   &  2 \\
-\verb=  regrid_int =  &   &  -1 \\
-\verb=  restart =  &   & -1 \\
-\verb=  rotational_frequency =  &   &  ZERO \\
-\verb=  single_prec_plotfiles =  &   &  .false. \\
-\verb=  slope_order =  &   &  4 \\
-\verb=  small_dens =  &   &  1.d-5 \\
-\verb=  small_temp =  &   &  5.d6 \\
-\verb=  spherical_in =  &   &  0 \\
-\verb=  sponge_kappa =  &   &  10.d0 \\
-\verb=  stop_time =  &   &  -1.d0 \\
-\verb=  temp_diffusion_formulation =  & How to compute the explicit thermal diffusion
-                                                term.  .true. = in terms of $T$; .false. =
-                                                in terms of $\rho,p_0,X$.  &  .false. \\
-\verb=  test_set =  & Fixed grid file.  &  '' \\
-\verb=  the_copy_cache_max =  & Number of boxassoc layouts we keep in memory to avoid 
-                                      having to recompute the boxassoc, which is 
-                                      computationally expensive.  & 50 \\
-\verb=  the_knapsack_verbosity =  & Verbosity of the knapscak processor-to-grid
-                                           algorithm.  &  .false. \\
-\verb=  the_layout_verbosity =  &   &  0 \\
-\verb=  thermal_diffusion_type =  & In the thermal diffusion solver, 1 = 
-                                           Crank-Nicholson; 2 = Backward Euler.  &  1 \\
-\verb=  the_sfc_threshold =  & When assigning processors for grids, this determines 
-                                     whether we use the sfc algorithm or knapsack 
-                                     algorithm.  If the total number of grids divided by 
-                                     the number of processors is greater than this number, 
-                                     use sfc.  & 5 \\
-\verb=  use_delta_gamma1_term =  &   &  .false. \\
-\verb=  use_divu_firstdt =  & Use the divu constraint when computing the first
-                                   time step.  &  .false. \\
-\verb=  use_eos_coulomb =  &   &  .false. \\
-\verb=  use_etarho =  &   &  .true. \\
-\verb=  use_soundspeed_firstdt =  & Use the soundspeed constraint when computing the
-                                           first time step.  &  .false. \\
-\verb=  use_tfromp =  & When updating temperature, use $T=T(\rho,p_0,X) $ rather than
-                            $T=T(\rho,h,X)$. &  .false. \\
-\verb=  use_thermal_diffusion =  & Use thermal diffusion.  &  .false. \\
-\verb=  velpert_amplitude =  & (spherical stars only) Amplitude of random Fourier
-                                     modes.  &  0.d0 \\
-\verb=  velpert_radius =  & (spherical stars only) Cutoff radius where we start 
-                                 applying a tanh function to decay the random Fourier
-                                 modes. &  0.75d8 \\
-\verb=  velpert_scale =  & (spherical stars only) Square length which defines the 
-                                random Fourier modes correspond to. &  0.8d8 \\
-\verb=  velpert_steep =  & (spherical stars only) Steepness of the cutoff of the random
-                                Fourier modes. &  1.d0 \\
-\verb=  verbose =  & General verbosity  &  0 \\
-\verb=  w0mac_interp_type =  & 0 = Compute w0 at edges using a projection; 1 = 
-                                     Interpolate w0 to cell centers, then average to edges; 
-                                     2 = Interpolate w0 to edges directly; 3 = Interpolate 
-                                     w0 to nodes, then average to edges.  &  1 \\
-\verb=  xrb_pert_factor =  & (xrb problem only) Increase in amplitude of 
-                                  perturbational quantity relative to ambient. &  1.d-2 \\
-\verb=  xrb_pert_size =  & (xrb problem only)  Width of Gaussian distribution &  5.0d1 \\
-\verb=  xrb_pert_type =  & (xrb problem only) 1 = perturb temperature; 2 = perturb 
-                                density. &  1 \\
-\verb=  xrb_use_bottom_sponge =  & (xrb problem only)  Put a sponge at the bottom of 
-                                          the domain.  &  .true. \\
+
+\verb=  anelastic_cutoff  = &   Refer to Section \ref{Sec:Anelastic Cutoff}.  &  3.e6 \\
+\verb=  base_cutoff_density  = &   Refer to Section \ref{Sec:Base Cutoff Density}  &  3.e6 \\
+\verb=  bcx_hi  = &   $+x$ boundary condition (valid values are listed in {\tt  boxlib/bc.f90})  &  SLIP\_WALL \\
+\verb=  bcx_lo  = &   $-x$ boundary condition  &  SLIP\_WALL \\
+\verb=  bcy_hi  = &   $+y$ boundary condition  &  SLIP\_WALL \\
+\verb=  bcy_lo  = &   $-y$ boundary condition  &  SLIP\_WALL \\
+\verb=  bcz_hi  = &   $+z$ boundary condition  &  SLIP\_WALL \\
+\verb=  bcz_lo  = &   $-z$ boundary condition  &  SLIP\_WALL \\
+\verb=  beta_type  = &   what type of coefficient to use inside the velocity divergence constraint. {\tt beta\_type} = 1 uses $\beta_0$; {\tt beta\_type} = 2 uses $\rho_0$ (anelastic); {\tt beta\_type} = 3 uses 1 (small-scale combustion).  &  1 \\
+\verb=  cflfac  = &   CFL factor to use in the computation of the advection timestep constraint  &  0.5 \\
+\verb=  cg_verbose  = &   Verbosity of bottom solver  &  0 \\
+\verb=  check_base_name  = &   prefix to use in checkpoint file names  &  "chk" \\
+\verb=  chk_int  = &   number of timesteps between writing a checkpoint file  &  0 \\
+\verb=  co_latitude  = &   latitude, in radians, for problems with rotation where the domain is only a subset of a full star.  &  ZERO \\
+\verb=  dm_in  = &   dimensionality (valid values are 2 or 3)  &  2 \\
+\verb=  do_alltoallv  = &    &  .false. \\
+\verb=  do_burning  = &   turn on (.true.) or off (.false.) burning  &  .true. \\
+\verb=  do_eos_h_above_cutoff  = &   After the advective enthalpy update, recompute the enthalpy if we are below the base cutoff density.  &  .true. \\
+\verb=  do_initial_projection  = &   Do the initial projection.  &  .true. \\
+\verb=  do_sponge  = &   Use sponging.  &  .false. \\
+\verb=  dpdt_factor  = &   factor in front of the volume discrepancy term (0.0 = off)  &  0.0d0 \\
+\verb=  drdxfac  = &   ratio of radial base state zones to Cartesian full state zones for spherical geometry  &  1 \\
+\verb=  enthalpy_pred_type  = &   predict\_rhohprime = 1; predict\_h = 2; predict\_T\_then\_rhohprime = 3; predict\_T\_then\_h = 4; predict\_hprime = 5; predict\_Tprime\_then\_h = 6.  &  predict\_rhohprime \\
+\verb=  evolve_base_state  = &   turn on (.true.) or off (.false.) basestate evolution  &  .true. \\
+\verb=  fixed_dt  = &   Fix the time step.  If -1.0, then use the standard time step.  &  -1.0d0 \\
+\verb=  grav_const  = &   the gravitational acceleration (cm~s$^{-2}$) for plane-parallel geometry  &  -1.5d10 \\
+\verb=  hg_bottom_solver  = &   valid values are $\le$ 0  &  -1 \\
+\verb=  hg_dense_stencil  = &   In hgproject, in 2D, use a 9 point Laplacian (.true.) or 5-point Laplacian (.false.).  In 3D, use a 27 point Laplacian (.true.) or 7-point Laplacian (.false.).  &  .true. \\
+\verb=  init_divu_iter  = &   Number of initial divu iterations.  &  4 \\
+\verb=  init_iter  = &   Number of initial pressure iterations.  &  4 \\
+\verb=  init_shrink  = &   the multiplicative factor ($\le 1$) to reduce the initial timestep as computed by the various timestep estimators  &  1.0 \\
+\verb=  interp_type_radial_bin_to_cart  = &   The interpolation for filling a full multifab from a 1D bin-centered array. 1 = piecewise constant; 2 = piecewise linear.  &  1 \\
+\verb=  job_name  = &    &  "" \\
+\verb=  lUsingNFiles  = &   If .true., use nOutFiles processors to write checkpoint and plotfiles. Fortran has the unfortunate feature of each processor only being able to write out 1-2GB each without crashing.  &  .true. \\
+\verb=  max_dt_growth  = &   The maximum scale factor that the time step is allowed to grow by per time step.  &  1.1D0 \\
+\verb=  max_grid_size  = &    The largest grid size that will be created using make\_new\_grids.  &  64 \\
+\verb=  max_levs  = &   Total number of levels.  1 = single level.  &  1 \\
+\verb=  max_step  = &   Maximum number of steps in the simulation.  &  1 \\
+\verb=  mg_bottom_solver  = &   valid values are $\le$ 0  &  -1 \\
+\verb=  mg_verbose  = &   Verbsoity of the multigrid solver, but not the bottom solver.  &  0 \\
+\verb=  min_eff  = &    &  0.7d0 \\
+\verb=  min_width  = &   The minimum size on a side for a grid created using make\_new\_grids.  &  16 \\
+\verb=  model_file  = &    &  "model.hse" \\
+\verb=  nOutFiles  = &   If lUsingNFiles = .true., use this many processors to write checkpoint and plotfiles.  Fortran has the unfortunate feature of each processor only being able to write out 1-2GB each without crashing.  &  64 \\
+\verb=  n_cellx  = &   Number of cells for the base level in the x-direction  &  -1 \\
+\verb=  n_celly  = &   Number of cells for the base level in the y-direction  &  -1 \\
+\verb=  n_cellz  = &   Number of cells for the base level in the z-direction  &  -1 \\
+\verb=  perturb_model  = &   Turn on a perturbation in the initial data.  Problem specific.  &  .false. \\
+\verb=  plot_base  = &    &  .false. \\
+\verb=  plot_base_name  = &    &  "plt" \\
+\verb=  plot_deltat  = &    &  0.0 \\
+\verb=  plot_int  = &    &  0 \\
+\verb=  plot_spec  = &    &  .true. \\
+\verb=  plot_trac  = &    &  .false. \\
+\verb=  pmask_x  = &    &  .false. \\
+\verb=  pmask_y  = &    &  .false. \\
+\verb=  pmask_z  = &    &  .false. \\
+\verb=  ppm_type  = &   0 = no ppm 1 = 1985 ppm 2 = 2009 ppm  &  0 \\
+\verb=  prob_hi_x  = &    &  1.0 \\
+\verb=  prob_hi_y  = &    &  1.0 \\
+\verb=  prob_hi_z  = &    &  1.0 \\
+\verb=  prob_lo_x  = &    &  ZERO \\
+\verb=  prob_lo_y  = &    &  ZERO \\
+\verb=  prob_lo_z  = &    &  ZERO \\
+\verb=  radius  = &    &  1.0e6\_dp\_t \\
+\verb=  ref_ratio  = &    &  2 \\
+\verb=  regrid_int  = &    &  -1 \\
+\verb=  restart  = &    &  -1 \\
+\verb=  rotational_frequency  = &    &  ZERO \\
+\verb=  single_prec_plotfiles  = &    &  .false. \\
+\verb=  slope_order  = &    &  4 \\
+\verb=  small_dens  = &    &  1.d-5 \\
+\verb=  small_temp  = &    &  5.d6 \\
+\verb=  spherical_in  = &    &  0 \\
+\verb=  sponge_kappa  = &    &  10.d0 \\
+\verb=  stop_time  = &    &  -1.d0 \\
+\verb=  temp_diffusion_formulation  = &   How to compute the explicit thermal diffusion term. .true. = in terms of $T$; .false. = in terms of $\rho,p_0,X$.  &  .false. \\
+\verb=  test_set  = &   Fixed grid file.  &  '' \\
+\verb=  the_copy_cache_max  = &    Number of boxassoc layouts we keep in memory to avoid having to recompute the boxassoc, which is computationally expensive.  &  50 \\
+\verb=  the_knapsack_verbosity  = &   Verbosity of the knapscak processor-to-grid algorithm.  &  .false. \\
+\verb=  the_layout_verbosity  = &    &  0 \\
+\verb=  the_sfc_threshold  = &   When assigning processors for grids, this determines whether we use the sfc algorithm or knapsack algorithm.  If the total number of grids divided by the number of processors is greater than this number, use sfc.  &  5 \\
+\verb=  thermal_diffusion_type  = &   In the thermal diffusion solver, 1 = Crank-Nicholson; 2 = Backward Euler.  &  1 \\
+\verb=  use_delta_gamma1_term  = &    &  .false. \\
+\verb=  use_divu_firstdt  = &   Use the divu constraint when computing the first time step.  &  .false. \\
+\verb=  use_eos_coulomb  = &    &  .true. \\
+\verb=  use_etarho  = &    &  .true. \\
+\verb=  use_soundspeed_firstdt  = &   Use the soundspeed constraint when computing the first time step.  &  .false. \\
+\verb=  use_tfromp  = &   When updating temperature, use $T=T(\rho,p_0,X) $ rather than $T=T(\rho,h,X)$.  &  .false. \\
+\verb=  use_thermal_diffusion  = &   Use thermal diffusion.  &  .false. \\
+\verb=  verbose  = &   General verbosity  &  0 \\
+\verb=  w0mac_interp_type  = &   0 = Compute w0 at edges using a projection; 1 = Interpolate w0 to cell centers, then average to edges; 2 = Interpolate w0 to edges directly; 3 = Interpolate w0 to nodes, then average to edges.  &  1 \\
+
 
 \end{longtable}
 \end{center}
@@ -198,4 +132,5 @@
 } % ends \small
 
 %
+
 
