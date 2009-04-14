@@ -53,12 +53,8 @@ contains
     type(multifab) :: rhsbeta(mla%nlevel),lhsbeta(mla%nlevel)
     type(multifab) :: phi(mla%nlevel),Lphi(mla%nlevel),rhs(mla%nlevel)
 
-    real(kind=dp_t), pointer    :: s1p(:,:,:,:)
-    real(kind=dp_t), pointer    :: s_for_new_coeffp(:,:,:,:)
-    real(kind=dp_t), pointer    :: rhsbetap(:,:,:,:),lhsbetap(:,:,:,:)
     integer                     :: stencil_order
-    integer                     :: i,n,comp
-    integer                     :: lo(dm),hi(dm)
+    integer                     :: n,comp
     type(bndry_reg)             :: fine_flx(2:mla%nlevel)
 
     type(bl_prof_timer), save :: bpt
