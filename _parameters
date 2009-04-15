@@ -28,7 +28,7 @@ plot_int                            integer            0
 
 plot_deltat                         real               0.0                 
 
-# number of timesteps between writing a checkpoint file
+# Number of timesteps between writing a checkpoint file
 chk_int                             integer            0                   
 
 # Number of initial pressure iterations.
@@ -133,8 +133,8 @@ evolve_base_state                   logical            .true.
 # Use thermal diffusion.
 use_thermal_diffusion               logical            .false.             
 
-# How to compute the explicit thermal diffusion term.  
-# .true. = in terms of $T$;
+# How to compute the explicit thermal diffusion term.  @@
+# .true. = in terms of $T$; @@
 # .false. = in terms of $\rho,p_0,X$.
 temp_diffusion_formulation          logical            .false.             
 
@@ -145,11 +145,11 @@ thermal_diffusion_type              integer            1
 # below the base cutoff density.
 do_eos_h_above_cutoff               logical            .true.              
 
-# predict\_rhohprime = 1; 
-# predict\_h = 2; 
-# predict\_T\_then\_rhohprime = 3;
-# predict\_T\_then\_h = 4; 
-# predict\_hprime = 5; 
+# predict\_rhohprime = 1; @@
+# predict\_h = 2; @@
+# predict\_T\_then\_rhohprime = 3; @@
+# predict\_T\_then\_h = 4; @@
+# predict\_hprime = 5; @@
 # predict\_Tprime\_then\_h = 6.
 enthalpy_pred_type                  integer            predict_rhohprime   
 
@@ -180,15 +180,15 @@ use_etarho                          logical            .true.
 
 slope_order                         integer            4                   
 
-# The interpolation for filling a full multifab from a 1D bin-centered array.
-# 1 = piecewise constant; 
+# The interpolation for filling a full multifab from a 1D bin-centered array. @@
+# 1 = piecewise constant; @@
 # 2 = piecewise linear.
 interp_type_radial_bin_to_cart      integer            1                   
 
-# 0 = Compute w0 at edges using a projection;
-# 1 = Interpolate w0 to cell centers, then average to edges;
-# 2 = Interpolate w0 to edges directly;                
-# 3 = Interpolate w0 to nodes, then average to edges.
+# 0 = Compute w0 at edges using a projection; @@
+# 1 = Interpolate w0 to cell centers, then average to edges; @@
+# 2 = Interpolate w0 to edges directly;                @@
+# 3 = Interpolate w0 to nodes, then average to edges. 
 w0mac_interp_type                   integer            1                   
 
 # If lUsingNFiles = .true., use this many processors to write checkpoint 
@@ -218,14 +218,14 @@ do_alltoallv                        logical            .false.
 # Verbosity of the knapscak processor-to-grid algorithm.
 the_knapsack_verbosity              logical            .false.             
 
-# 0 = no ppm                                                                
-# 1 = 1985 ppm                                                              
+# 0 = no ppm @@
+# 1 = 1985 ppm @@
 # 2 = 2009 ppm   
 ppm_type                            integer            0                   
 
-# what type of coefficient to use inside the velocity divergence constraint.
-# {\tt beta\_type} = 1 uses $\beta_0$;
-# {\tt beta\_type} = 2 uses $\rho_0$ (anelastic);
+# what type of coefficient to use inside the velocity divergence constraint. @@
+# {\tt beta\_type} = 1 uses $\beta_0$; @@
+# {\tt beta\_type} = 2 uses $\rho_0$ (anelastic); @@
 # {\tt beta\_type} = 3 uses 1 (small-scale combustion).
 beta_type                           integer            1                   
 

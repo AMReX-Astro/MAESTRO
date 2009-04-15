@@ -97,7 +97,7 @@ def make_tex_table():
 
         elif line.startswith("#"):
             # handle descriptions here
-            descr+=line[1:].rstrip()
+            descr+=line[1:].rstrip().replace("@@",r"\newline")
             continue
 
         else:
