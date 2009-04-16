@@ -21,3 +21,5 @@ changes to wdconvect runs for the next paper
 -- store the total kinetic energy and the max velocity
 
 -- effective 768^3 resolution
+
+-- add max Mach number to diagnostics
