@@ -1087,6 +1087,7 @@ contains
           sc_orig = sc_grown
        end do
 
+       call destroy(new_coeffs_grown)
        call destroy(new_coarse_ba)
        !   END SPECIAL COPY
 
@@ -1155,8 +1156,10 @@ contains
        call destroy(rh(n))
     end do
 
-    if (bottom_solver == 4) &
+    if (bottom_solver == 4) then
+       call destroy(new_coarse_la)
        call mg_tower_destroy(bottom_mgt)
+    end if
 
     if (stencil_type .ne. ST_DENSE) then
        do n = nlevs, 2, -1
