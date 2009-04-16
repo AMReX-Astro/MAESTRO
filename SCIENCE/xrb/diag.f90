@@ -178,6 +178,7 @@ contains
 
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
     use network, only: nspec
+    use probin_module, only: diag_define_he_layer
 
     integer, intent(in) :: lo(:), hi(:), ng_s, ng_u, ng_rhn, ng_rhe
     real (kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s:,lo(2)-ng_s:,:)
@@ -192,14 +193,13 @@ contains
 
     !     Local variables
     integer                     :: i, j
-    real (kind=dp_t), parameter :: he_tol = 0.1
 
     do j = lo(2), hi(2)
        do i = lo(1), hi(1)
 
           ! check to see if we are in the helium layer
           ! if we are, then get T_max
-          if (s(i,j,spec_comp) .ge. he_tol) T_max = max(T_max,s(i,j,temp_comp))
+          if (s(i,j,spec_comp) .ge. diag_define_he_layer) T_max = max(T_max,s(i,j,temp_comp))
 
           enuc_max = max(enuc_max,rho_Hnuc(i,j)/s(i,j,rho_comp))
 
@@ -217,6 +217,7 @@ contains
 
     use variables, only: rho_comp, spec_comp, temp_comp, rhoh_comp
     use network, only: nspec
+    use probin_module, only: diag_define_he_layer
 
     integer, intent(in) :: lo(:), hi(:), ng_s, ng_u, ng_n, ng_rhn, ng_rhe
     real (kind=dp_t), intent(in   ) ::      s(lo(1)-ng_s:,lo(2)-ng_s:,lo(3)-ng_s:,:)
@@ -232,7 +233,6 @@ contains
 
     !     Local variables
     integer                     :: i, j, k
-    real (kind=dp_t), parameter :: he_tol = 0.1
 
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
@@ -240,7 +240,7 @@ contains
 
              ! check to see if we are in the helium layer
              ! if we are, then get T_max
-             if (s(i,j,k,spec_comp) .ge. he_tol) then
+             if (s(i,j,k,spec_comp) .ge. diag_define_he_layer) then
                 T_max = max(T_max,s(i,j,k,temp_comp))
              endif
 
