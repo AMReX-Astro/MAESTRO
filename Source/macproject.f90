@@ -1555,6 +1555,8 @@ contains
           call destroy(ba_cc)
           call multifab_build(new_coeffs_grown,new_la_grown,1,ng=0)
           call multifab_copy_c(new_coeffs_grown,1,stored_coeffs_grown,1,1)
+          call destroy(stored_coeffs_grown)
+          call destroy(old_la_grown)
 
           do i = 1, new_coeffs_grown%nboxes
              if (remote(new_coeffs_grown,i)) cycle 
@@ -1562,6 +1564,9 @@ contains
              sc_grown => dataptr(new_coeffs_grown    ,i,get_pbox(new_coeffs_grown,i),1  ,1)
              sc_orig = sc_grown
           end do
+
+          call destroy(new_coeffs_grown)
+          call destroy(new_la_grown)
 
        end do
        call destroy(new_coarse_ba)
@@ -1591,9 +1596,6 @@ contains
        end do
        deallocate(coarse_coeffs)
        call destroy(stored_coeffs)
-       call destroy(stored_coeffs_grown)
-       call destroy(old_la_grown)
-       call destroy(new_la_grown)
     end if
     ! END   OF BOTTOM_SOLVER == 4
 
@@ -1618,6 +1620,10 @@ contains
     do n = 1, nlevs
        call mg_tower_destroy(mgt(n))
     end do
+
+    if (bottom_solver == 4) then
+       call mg_tower_destroy(bottom_mgt)
+    end if
 
     call destroy(bpt)
 
