@@ -1417,7 +1417,6 @@ contains
     end do
 
     !! Fill coefficient array
-
     do n = nlevs,1,-1
 
        allocate(coeffs(mgt(n)%nlevels))
@@ -1470,6 +1469,7 @@ contains
 
     end do
 
+    ! START OF BOTTOM_SOLVER == 4
     if (bottom_solver == 4) then
 
        ! Get the old/new coarse problem domain
@@ -1595,6 +1595,7 @@ contains
        call destroy(old_la_grown)
        call destroy(new_la_grown)
     end if
+    ! END   OF BOTTOM_SOLVER == 4
 
     if (mg_verbose >= 3) then
        do_diagnostics = 1
