@@ -6,8 +6,8 @@ xrb_pert_factor                     real               1.d-2
 xrb_pert_size                       real               5.0d1               
 
 # Type of perturbation @@
-# 1 = Density perturbation @@
-# 2 = Temperature perturbation
+# 1 = Temperature perturbation @@
+# 2 = Density perturbation
 xrb_pert_type                       integer            1                   
 
 # Turn on (.true.) or off (.false.) sponging at the bottom of the domain.
