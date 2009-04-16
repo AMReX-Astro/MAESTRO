@@ -18,7 +18,7 @@ module init_module
   implicit none
 
   private
-  public :: initscalardata, initscalardata_on_level, initveldata, scalar_diags
+  public :: initscalardata, initscalardata_on_level, initveldata
 
 contains
 
@@ -446,7 +446,6 @@ contains
     
   end subroutine initveldata_3d
 
-
   subroutine perturb_2d(x, y, p0_background, s0_init, dens_pert, rhoh_pert, rhoX_pert, &
                         temp_pert, trac_pert)
 
@@ -636,95 +635,5 @@ contains
     trac_pert = ZERO
 
   end subroutine perturb_3d_sphr
-
-  subroutine scalar_diags (istep,s,s0_init,p0_background,dx)
-
-    integer        , intent(in   ) :: istep
-    type(multifab) , intent(inout) :: s
-    real(kind=dp_t), intent(in)    :: s0_init(:,:)
-    real(kind=dp_t), intent(in)    :: p0_background(:)
-    real(kind=dp_t), intent(in)    :: dx(:)
-
-    real(kind=dp_t), pointer:: sop(:,:,:,:)
-    integer :: lo(dm),hi(dm),ng
-    integer :: i
-    
-    ng = s%ng
-
-    do i = 1, s%nboxes
-       if ( multifab_remote(s, i) ) cycle
-       sop => dataptr(s, i)
-       lo =  lwb(get_box(s, i))
-       hi =  upb(get_box(s, i))
-
-       select case (dm)
-       case (2)
-          call scalar_diags_2d(istep, sop(:,:,1,:), lo, hi, ng, dx, s0_init, p0_background)
-       case (3)
-!         call scalar_diags_3d(istep, sop(:,:,:,:), lo, hi, ng, dx, s0_init)
-       end select
-    end do
-
-  end subroutine scalar_diags
-
-  subroutine scalar_diags_2d (istep, s,lo,hi,ng,dx,s0_init,p0_background)
-
-    use probin_module, only: grav_const
-
-    integer, intent(in) :: istep, lo(:), hi(:), ng
-    real (kind = dp_t), intent(in) ::  s(lo(1)-ng:,lo(2)-ng:,:)
-    real (kind = dp_t), intent(in) :: dx(:)
-    real(kind=dp_t)   , intent(in) :: s0_init(0:,:)
-    real(kind=dp_t)   , intent(in) :: p0_background(0:)
-
-    ! Local variables
-    integer :: i, j
-    real(kind=dp_t) :: fac, mass, mass0
-
-    real(kind=dp_t) ::  rhoavg(lo(2):hi(2))
-    real(kind=dp_t) :: rhopert(lo(2):hi(2))
-    real(kind=dp_t) ::    pavg(lo(2):hi(2))
-
-    character(len=11) :: file_name
-    character(len=10) :: file_name2
-    character(len= 8) :: file_name3
-
-    write(unit=file_name ,fmt='("rhopert",i4.4)') istep
-    write(unit=file_name2,fmt='("rhoavg",i4.4)') istep
-    write(unit=file_name3,fmt='("pavg",i4.4)') istep
-    open(90,file=file_name)
-    open(91,file=file_name2)
-    open(92,file=file_name3)
-
-    fac = ONE / dble(hi(1)-lo(1)+1)
-    mass  = ZERO
-    mass0 = ZERO
-    do j = lo(2), hi(2)
-      rhoavg(j) = ZERO
-      rhopert(j) = ZERO
-      do i = lo(1), hi(1)
-         rhopert(j) = rhopert(j) + (s(i,j,rho_comp) - s0_init(j,rho_comp))
-         rhoavg(j) = rhoavg(j) +  s(i,j,rho_comp)
-      enddo
-      rhoavg(j)  = rhoavg(j) * fac
-      rhopert(j)  = rhopert(j) * fac
-      write(90,*) (dble(j)+HALF)*dx(2),rhopert(j)
-      write(91,*) (dble(j)+HALF)*dx(2),rhoavg(j)
-      mass  = mass  + rhoavg(j)
-      mass0 = mass0 + s0_init(j,rho_comp)
-    enddo
-
-!   print *,'TOTAL MASS ',istep, mass, mass0
-
-    pavg(hi(2)) = p0_background(hi(2))
-    do j = hi(2)-1,lo(2),-1
-      pavg(j) = pavg(j+1) + 0.5d0 * (rhoavg(j+1)+rhoavg(j))*abs(grav_const)*dx(2)
-    enddo
-    do j = lo(2),hi(2)
-      write(92,*) (dble(j)+HALF)*dx(2),p0_background(j),pavg(j)
-    enddo
-
-  end subroutine scalar_diags_2d
-
 
 end module init_module

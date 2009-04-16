@@ -19,7 +19,7 @@ module init_module
   implicit none
 
   private
-  public :: initscalardata, initveldata, scalar_diags
+  public :: initscalardata, initveldata
 
 contains
 
@@ -300,7 +300,6 @@ contains
 
     do j = lo(2), hi(2)
        if (j .ge. hi(2)/8 .and. j .le. 3*hi(2)/8) then
-!           y = prob_lo(2) + (dble(j) + half)*dx(2) / (prob_hi(2)-prob_lo(2)) - (hi(2)/8)*dx(2)
             y = (dble(j) - hi(2)/8 + half)*dx(2) / (prob_hi(2)-prob_lo(2))
             spy = sin(Pi*FOUR*y)
             cpy = cos(Pi*FOUR*y)
@@ -335,7 +334,8 @@ contains
   end subroutine initveldata_3d
 
 
-  subroutine perturb_2d(x, y, p0_init, s0_init, dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
+  subroutine perturb_2d(x, y, p0_init, s0_init, dens_pert, rhoh_pert, rhoX_pert, &
+                        temp_pert, trac_pert)
 
     ! apply an optional perturbation to the initial temperature field
     ! to see some bubbles
@@ -410,7 +410,8 @@ contains
 
   end subroutine perturb_2d
 
-  subroutine perturb_3d(x, y, z, p0_init, s0_init, dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
+  subroutine perturb_3d(x, y, z, p0_init, s0_init, dens_pert, rhoh_pert, rhoX_pert, &
+                        temp_pert, trac_pert)
 
     ! apply an optional perturbation to the initial temperature field
     ! to see some bubbles
@@ -487,137 +488,4 @@ contains
 
   end subroutine perturb_3d
 
-  subroutine scalar_diags (istep,s,s0_init,p0_init,dx)
-
-    integer        , intent(in   ) :: istep
-    type(multifab) , intent(inout) :: s
-    real(kind=dp_t), intent(in)    :: s0_init(:,:)
-    real(kind=dp_t), intent(in)    :: p0_init(:)
-    real(kind=dp_t), intent(in)    :: dx(:)
-
-    real(kind=dp_t), pointer:: sop(:,:,:,:)
-    integer :: lo(dm),hi(dm),ng
-    integer :: i,n
-    
-    ng = s%ng
-
-    do i = 1, s%nboxes
-       if ( multifab_remote(s, i) ) cycle
-       sop => dataptr(s, i)
-       lo =  lwb(get_box(s, i))
-       hi =  upb(get_box(s, i))
-
-       select case (dm)
-       case (2)
-          call scalar_diags_2d(istep, sop(:,:,1,:), lo, hi, ng, dx, s0_init, p0_init)
-       case (3)
-!         call scalar_diags_3d(istep, sop(:,:,:,:), lo, hi, ng, dx, s0_init)
-       end select
-    end do
-
-  end subroutine scalar_diags
-
-  subroutine scalar_diags_2d (istep, s,lo,hi,ng,dx,s0_init,p0_init)
-
-    integer, intent(in) :: istep, lo(:), hi(:), ng
-    real (kind = dp_t), intent(in) ::  s(lo(1)-ng:,lo(2)-ng:,:)  
-    real (kind = dp_t), intent(in) :: dx(:)
-    real(kind=dp_t)   , intent(in) :: s0_init(0:,:)
-    real(kind=dp_t)   , intent(in) :: p0_init(0:)
-
-    ! Local variables
-    integer :: i, j, n
-    real(kind=dp_t) :: fac, stot_pert, mass, mass0
-    real(kind=dp_t) :: deltap_avg, dp_avg, deltaP
-    real(kind=dp_t) :: phsevs0_init
-    real(kind=dp_t) :: rhoavg(lo(2):hi(2))
-    real(kind=dp_t) ::   phse(lo(2):hi(2))
-    character(len=11) :: file_name
-    character(len=10) :: file_name1
-    character(len=10) :: file_name2
-    character(len= 8) :: file_name3
-    character(len= 8) :: file_name4
-
-    write(unit=file_name ,fmt='("rhopert",i4.4)') istep
-    write(unit=file_name1,fmt='("rhoavg",i4.4)') istep
-    write(unit=file_name2,fmt='("p0_init",i4.4)') istep
-    write(unit=file_name3,fmt='("phse",i4.4)') istep
-    write(unit=file_name4,fmt='("rho0",i4.4)') istep
-    open(90,file=file_name)
-    open(91,file=file_name1)
-    open(92,file=file_name2)
-    open(93,file=file_name3)
-    open(94,file=file_name4)
-
-    fac = ONE / dble(hi(1)-lo(1)+1)
-    mass  = ZERO
-    mass0 = ZERO
-    do j = lo(2), hi(2)
-      rhoavg(j) = ZERO
-      stot_pert = ZERO
-      do i = lo(1), hi(1)
-         stot_pert = stot_pert + (s(i,j,rho_comp) - s0_init(j,rho_comp))
-         rhoavg(j) = rhoavg(j) +  s(i,j,rho_comp)
-      enddo
-      rhoavg(j)  = rhoavg(j) * fac
-      stot_pert  = stot_pert * fac
-      if (j.eq.lo(2)) then
-        phse(j) = p0_init(j)
-      else
-        phse(j) = phse(j-1) - 0.5d0 * (rhoavg(j-1)+rhoavg(j))*abs(grav_const)*dx(2)
-      end if
-      write(90,*) (dble(j)+HALF)*dx(2),stot_pert
-      write(91,*) (dble(j)+HALF)*dx(2),rhoavg(j)
-      write(92,*) (dble(j)+HALF)*dx(2),p0_init(j)
-      write(93,*) (dble(j)+HALF)*dx(2),phse(j)
-      write(94,*) (dble(j)+HALF)*dx(2),s0_init(j,rho_comp)
-      mass  = mass  + rhoavg(j)
-      mass0 = mass0 + s0_init(j,rho_comp)
-    enddo
-
-    print *,'TOTAL MASS ',istep, mass, mass0
-
-    do j = lo(2), hi(2)
-       dp_avg = 0.d0
-       deltap_avg = 0.d0
-       do i = lo(1), hi(1)
-
-          ! (rho, H) --> T, p
-
-          den_eos(1)  = s(i,j,rho_comp)
-          p_eos(1)    = p0_init(j)
-          temp_eos(1) = s0_init(j,temp_comp)
-          xn_eos(1,:) = s(i,j,spec_comp:spec_comp+nspec-1)/den_eos(1)
-
-          h_eos(1) = s(i,j,rhoh_comp) / s(i,j,rho_comp)
-
-          call eos(eos_input_rh, den_eos, temp_eos, &
-                   npts, nspec, &
-                   xn_eos, &
-                   p_eos, h_eos, e_eos, &
-                   cv_eos, cp_eos, xne_eos, eta_eos, pele_eos, &
-                   dpdt_eos, dpdr_eos, dedt_eos, dedr_eos, &
-                   dpdX_eos, dhdX_eos, &
-                   gam1_eos, cs_eos, s_eos, &
-                   dsdt_eos, dsdr_eos, &
-                   do_diag)
-
-          deltaP = abs(p_eos(1)-phse(j))
-
-          dp_avg = dp_avg + deltaP
-          deltap_avg =  deltap_avg + abs(p_eos(1)-p0_init(j))
-
-       enddo
-       dp_avg = dp_avg / dble(hi(1)-lo(1)+1)
-       deltap_avg =  deltap_avg / dble(hi(1)-lo(1)+1)
-       phsevs0_init = (phse(j)-p0_init(j))
-       write(68,*)  (dble(j)+HALF)*dx(2),dp_avg
-       write(69,*)  (dble(j)+HALF)*dx(2),deltap_avg
-       write(70,*)  (dble(j)+HALF)*dx(2),phsevs0_init
-    enddo
-    write(68,*)  ' '
-    write(69,*)  ' '
-    write(70,*)  ' '
-
-  end subroutine scalar_diags_2d
 end module init_module

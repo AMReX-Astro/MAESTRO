@@ -18,7 +18,7 @@ module init_module
   implicit none
 
   private
-  public :: initscalardata, initscalardata_on_level, initveldata, scalar_diags
+  public :: initscalardata, initscalardata_on_level, initveldata
 
 contains
 
@@ -46,15 +46,13 @@ contains
           
           select case (dm)
           case (2)
-             call initscalardata_2d(sop(:,:,1,:), lo, hi, ng, dx(n,:), s0_init(n,:,:), &
-                                    p0_background(n,:))
+             call bl_error('initscalardata_2d not written')
           case (3)
              if (spherical .eq. 1) then
                 call initscalardata_3d_sphr(sop(:,:,:,:), lo, hi, ng, dx(n,:), &
                                             s0_init(1,:,:), p0_background(1,:))
              else
-                call initscalardata_3d(sop(:,:,:,:), lo, hi, ng, dx(n,:), s0_init(n,:,:), &
-                                       p0_background(n,:))
+                call bl_error('initscalardata_3d not written')
              end if
           end select
        end do
@@ -113,12 +111,12 @@ contains
        hi =  upb(get_box(s,i))
        select case (dm)
        case (2)
-          call initscalardata_2d(sop(:,:,1,:),lo,hi,ng,dx,s0_init,p0_background)
+          call bl_error('initscalardata_2d not written')
        case (3)
           if (spherical .eq. 1) then
              call initscalardata_3d_sphr(sop(:,:,:,:),lo,hi,ng,dx,s0_init,p0_background)
           else
-             call initscalardata_3d(sop(:,:,:,:),lo,hi,ng,dx,s0_init,p0_background)
+             call bl_error('initscalardata_3d not written')
           end if
        end select
     end do
@@ -128,124 +126,6 @@ contains
     call multifab_physbc(s,rho_comp,dm+rho_comp,nscal,bc)
 
   end subroutine initscalardata_on_level
-
-  subroutine initscalardata_2d(s,lo,hi,ng,dx,s0_init,p0_background)
-
-    use probin_module, only: prob_lo, perturb_model
-
-    integer, intent(in) :: lo(:), hi(:), ng
-    real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,:)  
-    real (kind = dp_t), intent(in ) :: dx(:)
-    real(kind=dp_t), intent(in   ) :: s0_init(0:,:)
-    real(kind=dp_t), intent(in   ) :: p0_background(0:)
-
-    !     Local variables
-    integer :: i, j
-    real(kind=dp_t) :: x,y
-    real(kind=dp_t) :: dens_pert, rhoh_pert, temp_pert
-    real(kind=dp_t) :: rhoX_pert(nspec), trac_pert(ntrac)
-
-    ! initial the domain with the base state
-    s = ZERO
-
-    ! initialize the scalars
-    do j = lo(2), hi(2)
-       do i = lo(1), hi(1)
-          s(i,j,rho_comp)  = s0_init(j,rho_comp)
-          s(i,j,rhoh_comp) = s0_init(j,rhoh_comp)
-          s(i,j,temp_comp) = s0_init(j,temp_comp)
-
-          s(i,j,spec_comp:spec_comp+nspec-1) = &
-               s0_init(j,spec_comp:spec_comp+nspec-1)
-
-          s(i,j,trac_comp:trac_comp+ntrac-1) = &
-               s0_init(j,trac_comp:trac_comp+ntrac-1)
-       enddo
-    enddo
-    
-    ! add an optional perturbation
-    if (perturb_model) then
-       do j = lo(2), hi(2)
-          y = prob_lo(2) + (dble(j)+HALF) * dx(2)
-       
-          do i = lo(1), hi(1)
-             x = prob_lo(1) + (dble(i)+HALF) * dx(1)
-          
-             call perturb_2d(x, y, p0_background(j), s0_init(j,:), &
-                             dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
-
-             s(i,j,rho_comp) = dens_pert
-             s(i,j,rhoh_comp) = rhoh_pert
-             s(i,j,temp_comp) = temp_pert
-             s(i,j,spec_comp:spec_comp+nspec-1) = rhoX_pert(1:)
-             s(i,j,trac_comp:trac_comp+ntrac-1) = trac_pert(:)
-          enddo
-       enddo
-    endif
-    
-  end subroutine initscalardata_2d
-
-  subroutine initscalardata_3d(s,lo,hi,ng,dx,s0_init,p0_background)
-
-    use probin_module, only: prob_lo, perturb_model
-
-    integer           , intent(in   ) :: lo(:), hi(:), ng
-    real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
-    real (kind = dp_t), intent(in   ) :: dx(:)
-    real(kind=dp_t),    intent(in   ) :: s0_init(0:,:)
-    real(kind=dp_t),    intent(in   ) :: p0_background(0:)
-
-    !     Local variables
-    integer :: i, j, k, comp
-    real(kind=dp_t) :: x,y,z
-    real(kind=dp_t) :: dens_pert, rhoh_pert, temp_pert
-    real(kind=dp_t) :: rhoX_pert(nspec), trac_pert(ntrac)
-    real(kind=dp_t), allocatable :: p0_cart(:,:,:,:)
-
-    ! initial the domain with the base state
-    s = ZERO
-
-    ! initialize the scalars
-    do k = lo(3), hi(3)
-       do j = lo(2), hi(2)
-          do i = lo(1), hi(1)
-             s(i,j,k,rho_comp)  = s0_init(k,rho_comp)
-             s(i,j,k,rhoh_comp) = s0_init(k,rhoh_comp)
-             s(i,j,k,temp_comp) = s0_init(k,temp_comp)
-
-             s(i,j,k,spec_comp:spec_comp+nspec-1) = s0_init(k,spec_comp:spec_comp+nspec-1)
-
-             s(i,j,k,trac_comp:trac_comp+ntrac-1) = s0_init(k,trac_comp:trac_comp+ntrac-1)
-          enddo
-       enddo
-    enddo
-
-    if (perturb_model) then
-
-       ! add an optional perturbation
-       do k = lo(3), hi(3)
-          z = prob_lo(3) + (dble(k)+HALF) * dx(3)
-
-          do j = lo(2), hi(2)
-             y = prob_lo(2) + (dble(j)+HALF) * dx(2)
-
-             do i = lo(1), hi(1)
-                x = prob_lo(1) + (dble(i)+HALF) * dx(1)
-
-                call perturb_3d(x, y, z, p0_background(k), s0_init(k,:), &
-                                dens_pert, rhoh_pert, rhoX_pert, temp_pert, trac_pert)
-
-                s(i,j,k,rho_comp) = dens_pert
-                s(i,j,k,rhoh_comp) = rhoh_pert
-                s(i,j,k,temp_comp) = temp_pert
-                s(i,j,k,spec_comp:spec_comp+nspec-1) = rhoX_pert(:)
-                s(i,j,k,trac_comp:trac_comp+ntrac-1) = trac_pert(:)
-             enddo
-          enddo
-       enddo
-    endif
-
-  end subroutine initscalardata_3d
 
   subroutine initscalardata_3d_sphr(s,lo,hi,ng,dx,s0_init,p0_background)
 
@@ -263,6 +143,10 @@ contains
     real(kind=dp_t) :: dens_pert, rhoh_pert, temp_pert
     real(kind=dp_t) :: rhoX_pert(nspec), trac_pert(ntrac)
     real(kind=dp_t), allocatable :: p0_cart(:,:,:,:)
+
+    if (perturb_model) then
+       call bl_error('perturb_model not written for initscalardata_3d_sphr')
+    end if
 
     ! initial the domain with the base state
     s = ZERO
@@ -357,7 +241,7 @@ contains
     ng = u(1)%ng
 
     ! load in random numbers alpha, beta, gamma, phix, phiy, and phiz
-    if (dm .eq. 3) then
+    if (dm .eq. 3 .and. spherical .eq. 1) then
        call init_genrand(20908)
        do i=1,3
           do j=1,3
@@ -403,17 +287,14 @@ contains
           hi =  upb(get_box(u(n),i))
           select case (dm)
           case (2)
-             call initveldata_2d(uop(:,:,1,:), lo, hi, ng, dx(n,:), &
-                                 s0_init(n,:,:), p0_background(n,:))   
+             call bl_error('initveldata_2d not written')
           case (3)
              if (spherical .eq. 1) then
-                call initveldata_3d(uop(:,:,:,:), lo, hi, ng, dx(n,:), &
-                                    s0_init(1,:,:), p0_background(1,:), &
-                                    alpha, beta, gamma, phix, phiy, phiz, normk)
+                call initveldata_3d_sphr(uop(:,:,:,:), lo, hi, ng, dx(n,:), &
+                                         s0_init(1,:,:), p0_background(1,:), &
+                                         alpha, beta, gamma, phix, phiy, phiz, normk)
              else
-                call initveldata_3d(uop(:,:,:,:), lo, hi, ng, dx(n,:), &
-                                    s0_init(n,:,:), p0_background(n,:), &
-                                    alpha, beta, gamma, phix, phiy, phiz, normk)
+                call bl_error('initveldata_3d not written')
              end if
           end select
        end do
@@ -448,21 +329,6 @@ contains
 
   end subroutine initveldata
 
-  subroutine initveldata_2d (u,lo,hi,ng,dx,s0_init,p0_background)
-
-    integer, intent(in) :: lo(:), hi(:), ng
-    real (kind = dp_t), intent(out) :: u(lo(1)-ng:,lo(2)-ng:,:)  
-    real (kind = dp_t), intent(in ) :: dx(:)
-    real(kind=dp_t), intent(in   ) ::    s0_init(0:,:)
-    real(kind=dp_t), intent(in   ) ::    p0_background(0:)
-
-    !     Local variables
-
-    ! initial the velocity
-    u = ZERO
-
-  end subroutine initveldata_2d
-
   ! the velocity is initialized to zero plus a perturbation which is a
   ! summation of 27 fourier modes with random amplitudes and phase
   ! shifts over a square of length "velpert_scale".  The parameter
@@ -472,8 +338,8 @@ contains
   ! The steepness of the cutoff is controlled by "velpert_steep".  The
   ! relative amplitude of the modes is controlled by
   ! "velpert_amplitude".
-  subroutine initveldata_3d(u,lo,hi,ng,dx,s0_init,p0_background, &
-                            alpha,beta,gamma,phix,phiy,phiz,normk)
+  subroutine initveldata_3d_sphr(u,lo,hi,ng,dx,s0_init,p0_background, &
+                                 alpha,beta,gamma,phix,phiy,phiz,normk)
 
     use probin_module, only: prob_lo, prob_hi, &
          velpert_amplitude, velpert_radius, velpert_steep, velpert_scale
@@ -582,7 +448,8 @@ contains
 
              ! apply the cutoff function to the perturbational velocity
              do i=1,3
-                upert(i) = velpert_amplitude*upert(i)*(0.5d0+0.5d0*tanh((velpert_radius-rloc)/velpert_steep))
+                upert(i) = velpert_amplitude*upert(i) &
+                     *(0.5d0+0.5d0*tanh((velpert_radius-rloc)/velpert_steep))
              enddo
 
              ! add perturbational velocity to background velocity
@@ -594,92 +461,6 @@ contains
        enddo
     enddo
       
-  end subroutine initveldata_3d
-
-
-  subroutine perturb_2d(x, y, p0_background, s0_init, dens_pert, rhoh_pert, rhoX_pert, &
-                        temp_pert, trac_pert)
-
-    ! apply an optional perturbation to the initial temperature field
-    ! to see some bubbles
-
-    real(kind=dp_t), intent(in ) :: x, y
-    real(kind=dp_t), intent(in ) :: p0_background, s0_init(:)
-    real(kind=dp_t), intent(out) :: dens_pert, rhoh_pert, temp_pert
-    real(kind=dp_t), intent(out) :: rhoX_pert(:)
-    real(kind=dp_t), intent(out) :: trac_pert(:)
-
-    ! no perturbation for wdconvect -- put these here so compiler stops complaining
-    dens_pert = 0.d0
-    rhoh_pert = 0.d0
-    rhoX_pert = 0.d0
-    temp_pert = 0.d0
-    trac_pert = 0.d0
-    call bl_error("perturb_2d not written")
-
-  end subroutine perturb_2d
-
-  subroutine perturb_3d(x, y, z, p0_background, s0_init, dens_pert, rhoh_pert, &
-                        rhoX_pert, temp_pert, trac_pert)
-
-    ! apply an optional perturbation to the initial temperature field
-    ! to see some bubbles
-
-    real(kind=dp_t), intent(in ) :: x, y, z
-    real(kind=dp_t), intent(in ) :: p0_background, s0_init(:)
-    real(kind=dp_t), intent(out) :: dens_pert, rhoh_pert, temp_pert
-    real(kind=dp_t), intent(out) :: rhoX_pert(:)
-    real(kind=dp_t), intent(out) :: trac_pert(:)
-    
-    ! no perturbation for wdconvect -- put these here so compiler stops complaining
-    dens_pert = 0.d0
-    rhoh_pert = 0.d0
-    rhoX_pert = 0.d0
-    temp_pert = 0.d0
-    trac_pert = 0.d0
-    call bl_error("perturb_3d not written")
-
-  end subroutine perturb_3d
-
-  subroutine scalar_diags (istep,s,s0_init,p0_background,dx)
-
-    integer        , intent(in   ) :: istep
-    type(multifab) , intent(inout) :: s
-    real(kind=dp_t), intent(in)    :: s0_init(:,:)
-    real(kind=dp_t), intent(in)    :: p0_background(:)
-    real(kind=dp_t), intent(in)    :: dx(:)
-
-    real(kind=dp_t), pointer:: sop(:,:,:,:)
-    integer :: lo(dm),hi(dm),ng
-    integer :: i
-    
-    ng = s%ng
-
-    do i = 1, s%nboxes
-       if ( multifab_remote(s, i) ) cycle
-       sop => dataptr(s, i)
-       lo =  lwb(get_box(s, i))
-       hi =  upb(get_box(s, i))
-
-       select case (dm)
-       case (2)
-          call scalar_diags_2d(istep, sop(:,:,1,:), lo, hi, ng, dx, s0_init, p0_background)
-       case (3)
-!         call scalar_diags_3d(istep, sop(:,:,:,:), lo, hi, ng, dx, s0_init)
-       end select
-    end do
-
-  end subroutine scalar_diags
-
-  subroutine scalar_diags_2d (istep, s,lo,hi,ng,dx,s0_init,p0_background)
-
-    integer, intent(in) :: istep, lo(:), hi(:), ng
-    real (kind = dp_t), intent(in) ::  s(lo(1)-ng:,lo(2)-ng:,:)  
-    real (kind = dp_t), intent(in) :: dx(:)
-    real(kind=dp_t)   , intent(in) :: s0_init(0:,:)
-    real(kind=dp_t)   , intent(in) :: p0_background(0:)
-
-    
-  end subroutine scalar_diags_2d
+  end subroutine initveldata_3d_sphr
 
 end module init_module

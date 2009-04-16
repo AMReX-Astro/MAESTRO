@@ -16,7 +16,7 @@ module init_module
   implicit none
 
   private
-  public :: initscalardata, initscalardata_on_level, initveldata, scalar_diags
+  public :: initscalardata, initscalardata_on_level, initveldata
 
 contains
 
@@ -120,13 +120,19 @@ contains
 
   subroutine initscalardata_2d(s,lo,hi,ng,dx,s0_init)
 
+    use probin_module, only: perturb_model
+
     integer, intent(in) :: lo(:), hi(:), ng
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,:)  
     real (kind = dp_t), intent(in ) :: dx(:)
     real(kind=dp_t), intent(in   ) ::    s0_init(0:,:)
 
-    !     Local variables
+    ! Local variables
     integer :: i,j
+
+    if (perturb_model) then
+       call bl_error('perturb_model not written for initscalardata_2d')
+    end if
 
     ! initial the domain with the base state
     s = ZERO
@@ -146,6 +152,8 @@ contains
 
   subroutine initscalardata_3d(n,s,lo,hi,ng,dx,s0_init)
 
+    use probin_module, only: perturb_model
+
     integer, intent(in) :: n, lo(:), hi(:), ng
     real (kind = dp_t), intent(inout) :: s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)  
     real (kind = dp_t), intent(in ) :: dx(:)
@@ -153,6 +161,10 @@ contains
 
     !     Local variables
     integer :: i, j, k, comp
+
+    if (perturb_model) then
+       call bl_error('perturb_model not written for initscalardata_3d')
+    end if
 
     ! initial the domain with the base state
     s = ZERO
@@ -307,62 +319,5 @@ contains
     enddo
 
   end subroutine initveldata_3d
-
-  subroutine scalar_diags(istep,s,s0_init,dx)
-
-    integer        , intent(in   ) :: istep
-    type(multifab) , intent(inout) :: s
-    real(kind=dp_t), intent(in)    :: s0_init(:,:)
-    real(kind=dp_t), intent(in)    :: dx(:)
-
-    real(kind=dp_t), pointer:: sop(:,:,:,:)
-    integer :: lo(dm),hi(dm),ng
-    integer :: i,n
-
-    ng = s%ng
-
-    do i = 1, s%nboxes
-       if ( multifab_remote(s, i) ) cycle
-       sop => dataptr(s, i)
-       lo =  lwb(get_box(s, i))
-       hi =  upb(get_box(s, i))
-
-       select case (dm)
-       case (2)
-          call scalar_diags_2d(istep, sop(:,:,1,:), lo, hi, ng, dx, s0_init)
-       case (3)
-          ! 3d case not written yet
-       end select
-    end do
-
-  end subroutine scalar_diags
-
-  subroutine scalar_diags_2d(istep, s,lo,hi,ng,dx,s0_init)
-
-    integer, intent(in) :: istep, lo(:), hi(:), ng
-    real (kind = dp_t), intent(in) ::  s(lo(1)-ng:,lo(2)-ng:,:)  
-    real (kind = dp_t), intent(in) :: dx(:)
-    real(kind=dp_t)   , intent(in) :: s0_init(0:,:)
-
-    ! Local variables
-    integer :: i, j, n
-    real(kind=dp_t) :: fac, stot, smax
-    character(len=11) :: file_name
-
-    write(unit=file_name,fmt='("rhodiag",i4.4)') istep
-    open(90,file=file_name)
-
-    fac = ONE / dble(hi(1)-lo(1)+1)
-    do j = lo(2), hi(2)
-       stot = ZERO
-       smax = ZERO
-       do i = lo(1), hi(1)
-          stot = stot + (s(i,j,rho_comp) - s0_init(j,rho_comp))
-          smax = max(smax,abs(s(i,j,rho_comp) - s0_init(j,rho_comp)))
-       enddo
-       write(90,*) j,stot*fac/ s0_init(j,rho_comp), smax / s0_init(j,rho_comp)
-    enddo
-
-  end subroutine scalar_diags_2d
 
 end module init_module

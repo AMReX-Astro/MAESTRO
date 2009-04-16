@@ -18,7 +18,7 @@ module init_module
   implicit none
 
   private
-  public :: initscalardata, initscalardata_on_level, initveldata, scalar_diags
+  public :: initscalardata, initscalardata_on_level, initveldata
 
 contains
 
@@ -237,19 +237,11 @@ contains
 
     ! random number
     real(kind=dp_t) :: rand
-
-    if (dm .eq. 2) then
-       call bl_error('initveldata not written for 2d')
-    end if
-
-    if (spherical .eq. 0) then
-       call bl_error('initveldata not written for plane parallel')
-    end if
     
     ng = u(1)%ng
 
     ! load in random numbers alpha, beta, gamma, phix, phiy, and phiz
-    if (dm .eq. 3) then
+    if (dm .eq. 3 .and. spherical .eq. 1) then
        call init_genrand(20908)
        do i=1,3
           do j=1,3
@@ -456,7 +448,8 @@ contains
 
              ! apply the cutoff function to the perturbational velocity
              do i=1,3
-                upert(i) = velpert_amplitude*upert(i)*(0.5d0+0.5d0*tanh((velpert_radius-rloc)/velpert_steep))
+                upert(i) = velpert_amplitude*upert(i) &
+                     *(0.5d0+0.5d0*tanh((velpert_radius-rloc)/velpert_steep))
              enddo
 
              ! add perturbational velocity to background velocity
@@ -469,57 +462,5 @@ contains
     enddo
       
   end subroutine initveldata_3d_sphr
-
-  subroutine scalar_diags (istep,s,s0_init,p0_background,dx)
-
-    integer        , intent(in   ) :: istep
-    type(multifab) , intent(inout) :: s
-    real(kind=dp_t), intent(in)    :: s0_init(:,:)
-    real(kind=dp_t), intent(in)    :: p0_background(:)
-    real(kind=dp_t), intent(in)    :: dx(:)
-
-    real(kind=dp_t), pointer:: sop(:,:,:,:)
-    integer :: lo(dm),hi(dm),ng
-    integer :: i
-    
-    ng = s%ng
-
-    do i = 1, s%nboxes
-       if ( multifab_remote(s, i) ) cycle
-       sop => dataptr(s, i)
-       lo =  lwb(get_box(s, i))
-       hi =  upb(get_box(s, i))
-
-       select case (dm)
-       case (2)
-          call scalar_diags_2d(istep, sop(:,:,1,:), lo, hi, ng, dx, s0_init, p0_background)
-       case (3)
-          call scalar_diags_3d(istep, sop(:,:,:,:), lo, hi, ng, dx, s0_init, p0_background)
-       end select
-    end do
-
-  end subroutine scalar_diags
-
-  subroutine scalar_diags_2d (istep, s,lo,hi,ng,dx,s0_init,p0_background)
-
-    integer, intent(in) :: istep, lo(:), hi(:), ng
-    real (kind = dp_t), intent(in) ::  s(lo(1)-ng:,lo(2)-ng:,:)  
-    real (kind = dp_t), intent(in) :: dx(:)
-    real(kind=dp_t)   , intent(in) :: s0_init(0:,:)
-    real(kind=dp_t)   , intent(in) :: p0_background(0:)
-
-    
-  end subroutine scalar_diags_2d
-
-  subroutine scalar_diags_3d (istep, s,lo,hi,ng,dx,s0_init,p0_background)
-
-    integer, intent(in) :: istep, lo(:), hi(:), ng
-    real (kind = dp_t), intent(in) ::  s(lo(1)-ng:,lo(2)-ng:,lo(3)-ng:,:)
-    real (kind = dp_t), intent(in) :: dx(:)
-    real(kind=dp_t)   , intent(in) :: s0_init(0:,:)
-    real(kind=dp_t)   , intent(in) :: p0_background(0:)
-
-    
-  end subroutine scalar_diags_3d
 
 end module init_module
